@@ -153,15 +153,16 @@ ormask = 0 ; Free memory
          if (NOT keyword_set(namearr)) then namearr = subclasslist[isub] $
           else namearr = [namearr, subclasslist[isub]]
 
+         plotflux = thisflux / max(thisflux) ; Re-scale for plotting
          if (isub EQ 0) then $
-          djs_plot, 10^newloglam, thisflux, color=colorvec[0], $
+          djs_plot, 10^newloglam, plotflux, color=colorvec[0], $
            xtitle='Wavelength [Ang]', ytitle='Flux [arbitrary units]', $
            title='STAR '+classlist[iclass]+': Eigenspectra Reconstructions' $
          else $
-          djs_oplot, 10^newloglam, thisflux, $
+          djs_oplot, 10^newloglam, plotflux, $
            color=colorvec[isub MOD n_elements(colorvec)]
          nnew = n_elements(newloglam)
-         xyouts, 10^newloglam[nnew-1], thisflux[nnew-1], $
+         xyouts, 10^newloglam[nnew-1], plotflux[nnew-1], $
           subclasslist[isub], align=-0.5, $
           color=djs_icolor(colorvec[isub MOD n_elements(colorvec)])
       endfor
