@@ -262,8 +262,11 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
       struct_assign, tempplug, tempfibertag
       tempfibertag.plateid = 0 ; FIX!!!
       tempfibertag.mjd = 0 ; FIX!!!
-      tempfibertag.camcolor = strmid(cameras, 0, 1)
+      tempfibertag[*].camcolor = strmid(cameras, 0, 1)
       tempfibertag.expid = expstr
+      ; spectrograph ID (1/2) is reset b/c sometimes it is -1 for a few 
+      ; fibers in the plugmap -- what does this signify???
+      tempfibertag[*].spectrographid = strmid(cameras, 1, 1)
 
       ;---------------
       ; Match tsObj to plugmap and update fibertag structure with fibermags
@@ -382,7 +385,7 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
                     fibertag.camcolor eq camcol AND $ 
                     fibertag.spectrographid eq specnum)
 
-       junk = mrdfits(fcalfiles[iframe], 0, calibhdr)
+       junk = mrdfits(fcalfiles[iframe], 0, calibhdr, /silent)
        calibset = mrdfits(fcalfiles[iframe], 1)
        sphoto_err[where(camerasvec eq camid and expid eq frames[iframe])] $
                   = sxpar(calibhdr, 'SPHOTERR')
@@ -404,7 +407,7 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
        flux[*,indx] = tempflux
        fluxivar[*,indx] = tempivar
        pixelmask[*,indx] = pixelmask[*,indx] $
-         OR (calibfac LE 0.05*mean(calibfac)) * pixelmask_bits('BADFLUXFACTOR')
+         OR (calibfac LE 0.005*mean(calibfac)) * pixelmask_bits('BADFLUXFACTOR')
      endfor
    endfor
 
@@ -423,17 +426,46 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
                       fibertag.spectrographid eq specid)
 
         nspec = n_elements(bindx)
-        medfluxr = fltarr(nspec)
+        bdflux = fltarr(nspec)
+        rdflux = fltarr(nspec)
+        weight = fltarr(nspec)
         for ispec = 0, nspec - 1 do begin
           boverlap = where(wave[*,bindx[ispec]] gt min(wave[*,rindx[ispec]]))
           roverlap = where(wave[*,rindx[ispec]] lt max(wave[*,rindx[ispec]]))
-          medfluxr[ispec] = median(flux[roverlap,rindx[ispec]]) / $
-                            median(flux[boverlap,bindx[ispec]])
+          bdflux[ispec] = median(flux[boverlap,bindx[ispec]]) 
+          rdflux[ispec] = median(flux[roverlap,rindx[ispec]]) 
+          weight[ispec] = median(fluxivar[boverlap,bindx[ispec]]) > $
+                          median(fluxivar[roverlap,rindx[ispec]])
         endfor
-        rb_dichroic_ratio = median(medfluxr)
-        flux[*,bindx] = flux[*,bindx] * rb_dichroic_ratio
-        splog, 'R/B dichroic ratio for ' + frames[iframe] + ': ' + $
-               rb_dichroic_ratio
+
+        ok = where(rdflux gt 0 and finite(rdflux) and $
+                   bdflux gt 0 and finite(bdflux) and $
+                   weight gt 0 and finite(weight))
+        tempratio = rdflux[ok]/bdflux[ok]
+        meanclip, tempratio, subs = goodpts
+        ok = ok[goodpts]
+        mean_ratio = total(rdflux[ok]/bdflux[ok] * weight[ok]) $
+                            / total(weight[ok])
+
+        ; If weighted mean not near median, then use median
+        median_ratio = median(rdflux[ok]/bdflux[ok])
+        
+        ;if abs(mean_ratio - median_ratio) gt 0.2 then $
+          rb_dichroic_ratio = median_ratio ;$
+        ;else rb_dichroic_ratio = mean_ratio
+        
+        ;QA plot
+         plothist, rdflux[ok]/bdflux[ok], xr=[0.5, 1.5], bin=0.01, $
+           xtitle = 'Red/Blue Dichroic flux ratio', ytitle = 'Number'
+         djs_oplot, [1, 1] * mean_ratio, [0, 200], color='red'
+         djs_oplot, [1, 1] * median_ratio, [0, 200], color='blue'
+         djs_oplot, [1, 1] * rb_dichroic_ratio, [0, 200], color='green', $
+            linestyle = 2
+
+        splog, 'R/B dichroic ratio for ' + frames[iframe] + ': ', $
+               string(rb_dichroic_ratio, format = '(F6.3)')
+
+;        flux[*,bindx] = flux[*,bindx] * rb_dichroic_ratio
      endfor
    endfor
 
@@ -499,24 +531,20 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
 
      traceset2xy, corrset, wave[*,indx], corrimg
 
-;    thismask = mrdfits(corrfile, 2)
-;    if n_elements(thismask) EQ nfib then $
-;      temppixmask = temppixmask OR replicate(1,npix) # thismask
-
      invertcorr = 1.0 / corrimg
      medcor = median(corrimg)
      tempflux = flux[*,indx]
      tempivar = fluxivar[*,indx]
-     divideflat, tempflux, invvar=tempivar, invertcorr, minval=0.005*medcor
+     divideflat, tempflux, invvar=tempivar, invertcorr, minval=0.05/medcor
 
-;    temppixmask = temppixmask OR $
-;         (corrimg GE 20.0 * medcor) * pixelmask_bits('BADFLUXFACTOR')
+     pixelmask[*,indx] = pixelmask[*,indx] OR $
+         (corrimg GE 20.0 * medcor) * pixelmask_bits('BADFLUXFACTOR')
 
      flux[*,indx] = tempflux
      fluxivar[*,indx] = tempivar
    endfor
 
-   stopprint
+   set_plot, 'x'
 
    ;***********************************************************************
 
@@ -608,11 +636,13 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
           nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep, $
           maxiter=50, upper=3.0, lower=3.0, maxrej=1
 
+   ;---------------------------------------------------------------------------
+   
          ; QA plot
-         ;plot, 10.0^finalwave, bestflux, xr=[3800, 9200], /xs
-         ;for ii = 0, n_elements(indx) - 1 do $
-         ;  djs_oplot, 10.0^wave[*,indx[ii]], djs_median(flux[*,indx[ii]], $
-         ;             width=75, boundary='reflect'), color=!red
+         plot, 10.0^finalwave, bestflux, xr=[3800, 9200], /xs
+         for ii = 0, n_elements(indx) - 1 do $
+           djs_oplot, 10.0^wave[*,indx[ii]], djs_median(flux[*,indx[ii]], $
+                      width=75, boundary='reflect'), color=!red
 
    ;---------------------------------------------------------------------------
 
@@ -786,8 +816,8 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    ; Bad pixels are any with SKYMASK(INVVAR)=0, excluding those where
    ; the NODATA bit is set in the pixel mask.
 
-   ifib1 = where(finalplugmap.spectrographid EQ 1, nfib1)
-   ifib2 = where(finalplugmap.spectrographid EQ 2, nfib2)
+   ifib1 = where(finalfibertag.spectrographid EQ 1, nfib1)
+   ifib2 = where(finalfibertag.spectrographid EQ 2, nfib2)
    qbadpix = skymask(finalivar, finalandmask, finalormask) EQ 0 $
     AND (finalandmask AND pixelmask_bits('NODATA')) EQ 0
    if (nfib1 GT 0) then $
