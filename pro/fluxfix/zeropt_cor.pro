@@ -103,14 +103,16 @@ pro zeropt_cor, hdr, wave, flux, invvar, plugmap, fcor1_zpt = fcor1_zpt, $
   fthru = filter_thru(flux * flambda2fnu * 1e-17, waveimg=wave, $
                       mask=(invvar LE 0), /toair)
 
-  r_spectro_fnu = fthru[*,2]   
+  r_spectro_fnu = double(fthru[*,2])   
 
   ;----------------------------------------------------------------------------
   ; Now compute the same from the photo fiber mag
   ;----------------------------------------------------------------------------
 
   r_photo_mag = r_photo_mag + 0.015  ; transform to AB 
-  r_photo_fnu = 10.0^(-0.4 * (r_photo_mag + 48.6))
+  r_photo_fnu = fltarr(640)
+  ok = where(finite(r_photo_mag) eq 1 and r_photo_mag lt 35)
+  r_photo_fnu[ok] = 10.D^(-0.4 * (r_photo_mag[ok] + 48.6))
 
   ;----------------------------------------------------------------------------
   ; There ratio of the spectro and photo fluxes is used to set the zeropoint
@@ -119,8 +121,14 @@ pro zeropt_cor, hdr, wave, flux, invvar, plugmap, fcor1_zpt = fcor1_zpt, $
   ifib1 = indgen(320)
   ifib2 = ifib1 + 320
 
-  fcor1_zpt = median(r_photo_fnu[ifib1] / r_spectro_fnu[ifib1])
-  fcor2_zpt = median(r_photo_fnu[ifib2] / r_spectro_fnu[ifib2])
+  ok1 = where((r_photo_fnu[ifib1] gt 0) and finite(r_photo_fnu[ifib1]) and $
+              (r_spectro_fnu[ifib1] gt 0) and finite(r_spectro_fnu[ifib1]))
+
+  ok2 = where((r_photo_fnu[ifib2] gt 0) and finite(r_photo_fnu[ifib2]) and $
+              (r_spectro_fnu[ifib2] gt 0) and finite(r_spectro_fnu[ifib2]))
+
+  fcor1_zpt = median(r_photo_fnu[ifib1[ok1]] / r_spectro_fnu[ifib1[ok1]])
+  fcor2_zpt = median(r_photo_fnu[ifib2[ok2]] / r_spectro_fnu[ifib2[ok2]])
 
   splog, 'Flux Zeropoint Correction to ' + platename + ' Spectrograph 1: ' + $
           string(fcor1_zpt, format = '(F6.3)')
