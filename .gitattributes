@@ -22,6 +22,7 @@ doc/mk_doc -text
 doc/www/.cvsignore -text
 doc/www/idlspec2d_install.html -text
 doc/www/idlspec2d_reduce.html -text
+doc/www/platelist.txt -text
 doc/www/spectroSOS.html -text
 doc/www/spectro_apodisplay.html -text
 doc/www/spectro_home.html -text
