@@ -6,13 +6,16 @@
 ;   Merge all Spectro-1D outputs with tsObj files.
 ;
 ; CALLING SEQUENCE:
-;   platemerge, [ zfile, outroot=, public= ]
+;   platemerge, [ plate, mjd=, outroot=, public= ]
 ;
 ; INPUTS:
 ;
 ; OPTIONAL INPUTS:
-;   zfile       - Redshift file(s) from spectro-1D; default to all files
+;   plate       - Plates to include; default to all files
 ;                 specified by the PLATELIST routine.
+;   mjd         - Optional MJDs corresponding to the specified PLATEs;
+;                 if specified, then PLATE and MJD should have the same
+;                 number of elements.
 ;   outroot     - Root name for output files; default to '$SPECTRO_DATA/spAll';
 ;                 the files are then 'spAll.fits', 'spAll.dat', 'spAllLine.dat'.
 ;                 If /PUBLIC is set, then add '-public' to the root name.
@@ -66,7 +69,7 @@
 ; REVISION HISTORY:
 ;   30-Oct-2000  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
-pro platemerge, zfile, outroot=outroot1, public=public
+pro platemerge, plate, mjd=mjd, outroot=outroot1, public=public
 
    dtheta = 2.0 / 3600.
 
@@ -88,37 +91,51 @@ pro platemerge, zfile, outroot=outroot1, public=public
    ;----------
    ; Find the list of spZ files.
 
-   if (NOT keyword_set(zfile)) then begin
-      platelist, plist=plist
-      if (NOT keyword_set(plist)) then return
+   platelist, plist=plist
+   if (NOT keyword_set(plist)) then return
 
-      indx = where(strtrim(plist.status1d,2) EQ 'Done' AND $
-       (strtrim(plist.platequality,2) EQ 'good' $
-       OR strtrim(plist.platequality,2) EQ 'marginal' $
-       OR strtrim(plist.public,2) NE ''), ct)
-      if (ct EQ 0) then return
-      if (keyword_set(public)) then begin
-         if (size(public,/tname) EQ 'STRING') then begin
-            itrim = where(strmatch(plist[indx].public,'*'+public+'*'), ntrim)
-         endif else begin
-            itrim = where(strtrim(plist[indx].public) NE '', ntrim)
-         endelse
-         if (ntrim EQ 0) then return
-         indx = indx[itrim]
-      endif
-      plist = plist[indx]
+   if (keyword_set(plate)) then begin
+      nplate = n_elements(plist)
+      if (keyword_set(mjd) AND n_elements(mjd) NE nplate) then $
+       message, 'Number of elements in PLATE and MJD must agree'
 
-      nfile = n_elements(plist)
-      fullzfile = strarr(nfile)
-      fullzfile = 'spZbest-' + string(plist.plate, format='(i4.4)') $
-       + '-' + string(plist.mjd, format='(i5.5)') + '.fits'
-      zsubdir = string(plist.plate, format='(i4.4)')
-      for i=0L, nfile-1 do $
-       fullzfile[i] = djs_filepath(fullzfile[i], $
-        root_dir=getenv('SPECTRO_DATA'), subdirectory=zsubdir[i])
-   endif else begin
-      fullzfile = findfile(zfile, count=nfile)
-   endelse
+      qkeep = bytarr(nplate)
+      if (keyword_set(mjd)) then begin
+         for i=0L, n_elements(plate)-1 do $
+          qkeep = qkeep OR plist.plate EQ plate[i]
+      endif else begin
+         for i=0L, n_elements(plate)-1 do $
+          qkeep = qkeep OR (plist.plate EQ plate[i] AND plist.mjd EQ mjd[i])
+      endelse
+      ikeep = where(qkeep, nkeep)
+      if (nkeep EQ 0) then return
+      plist = plist[ikeep]
+   endif
+
+   indx = where(strtrim(plist.status1d,2) EQ 'Done' AND $
+    (strtrim(plist.platequality,2) EQ 'good' $
+    OR strtrim(plist.platequality,2) EQ 'marginal' $
+    OR strtrim(plist.public,2) NE ''), ct)
+   if (ct EQ 0) then return
+   if (keyword_set(public)) then begin
+      if (size(public,/tname) EQ 'STRING') then begin
+         itrim = where(strmatch(plist[indx].public,'*'+public+'*'), ntrim)
+      endif else begin
+         itrim = where(strtrim(plist[indx].public) NE '', ntrim)
+      endelse
+      if (ntrim EQ 0) then return
+      indx = indx[itrim]
+   endif
+   plist = plist[indx]
+
+   nfile = n_elements(plist)
+   fullzfile = strarr(nfile)
+   fullzfile = 'spZbest-' + string(plist.plate, format='(i4.4)') $
+    + '-' + string(plist.mjd, format='(i5.5)') + '.fits'
+   zsubdir = string(plist.plate, format='(i4.4)')
+   for i=0L, nfile-1 do $
+    fullzfile[i] = djs_filepath(fullzfile[i], $
+     root_dir=getenv('SPECTRO_DATA'), subdirectory=zsubdir[i])
 
    splog, 'Found ', nfile, ' files'
    if (nfile EQ 0) then return
@@ -417,9 +434,16 @@ pro platemerge, zfile, outroot=outroot1, public=public
          nper = n_elements(linedat) / 640L
          sxaddpar, linehdr, 'DIMS0', nper, ' Number of emission lines'
          sxaddpar, linehdr, 'DIMS1', nobj, ' Number of objects'
+         linedat1 = linedat[0]
+         struct_assign, {junk:0}, linedat1
       endif
 
-      mwrfits_chunks, linedat, outroot[1]+'.fits.tmp', $
+      ; Demand that the structure has the same format as the first
+      ; one written.
+      linedat_out = replicate(linedat1, n_elements(linedat))
+      struct_assign, linedat, linedat_out
+
+      mwrfits_chunks, linedat_out, outroot[1]+'.fits.tmp', $
        create=(ifile EQ 0), append=(ifile GT 0)
    endfor
 
