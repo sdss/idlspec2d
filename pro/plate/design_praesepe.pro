@@ -48,8 +48,8 @@ pro design_praesepe
    magmin = [ 6.0, 10.0, 13.0]
    magmax = [10.2, 13.2, 16.5]
    guidemag = [10.5, 12.5]
-   tilenums = [9901,9902,9903]
-   platenums = [901,902,903]
+   tilenums = [9207,9208,9209]
+   platenums = [798,799,800]
    matchdist = 2.0/3600. ; match distance in degrees
 
    ntile = n_elements(racen)
@@ -135,18 +135,17 @@ pro design_praesepe
    ; as possible guide stars.  These will be duplicate entries
    ; but with HOLETYPE = 'GUIDE'
 
-   iadd = where(stardata.mag[2] GE guidemag[0] $
-            AND stardata.mag[2] LE guidemag[1], nadd)
-   if (nadd EQ 0) then $
-    message, 'No guide stars available'
-   addstar = stardata[iadd]
-   addstar.tilenum = 0
-   addstar.holetype = 'GUIDE'
-   newdata = [newdata, addstar]
+;   iadd = where(stardata.mag[2] GE guidemag[0] $
+;            AND stardata.mag[2] LE guidemag[1], nadd)
+;   if (nadd EQ 0) then $
+;    message, 'No guide stars available'
+;   addstar = stardata[iadd]
+;   addstar.tilenum = 0
+;   addstar.holetype = 'GUIDE'
+;   newdata = [newdata, addstar]
 
    stardata = newdata
 
-stop
 ;splot,stardata.ra,stardata.dec,ps=4,color='green'
 ;soplot,tycdat.radeg,tycdat.dedeg,ps=1,symsize=0.5
 
