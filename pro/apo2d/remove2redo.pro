@@ -24,6 +24,12 @@
 ; OUTPUT:
 ;
 ; COMMENTS:
+;   The way this procedure works is to actually remove the sdR*.fit files
+;   from /data/spectro.  The Son-of-Spectro cron jobs will then re-copy
+;   and re-reduce those files.  It does not look for or remove sdR*.fit.gz
+;   files, which SOS currently makes too.  If the raw data no longer exists
+;   on sdsshost.apo, then the data will not be re-reduced.
+;
 ;   If $SPECTROLOG_DIR is not set, then it is assumed to be
 ;     /data/spectro/spectrologs
 ;   When using the PLATE keyword, never re-reduce the very last exposure
