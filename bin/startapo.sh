@@ -11,6 +11,12 @@
 # S. Burles, APO, 4 May 2000
 #------------------------------------------------------------------------------
 
+if [ ! $speclog_dir ] 
+then
+   speclog_dir='/data/spectro/astrolog'
+fi
+
+
 #
 # Wait for first file to finish complete copy
 #
@@ -25,7 +31,7 @@ do
   filename=`echo $input | sed -n 's/\/.*\///p'`
   echo STARTAPO: Directory $dir
   echo STARTAPO: Filename $filename
-  astrolog=`echo $dir | sed -n 's/\/data\/spectro/\/astrolog/p'`
+  astrolog=`echo $dir | sed -n 's/\/data\/spectro/$speclog_dir/p'`
   outdir=`echo $dir | sed -n 's/\/spectro/\/spectro\/spectrologs/p'`
   copydir=/data/spectro/spectrologs/html/
 

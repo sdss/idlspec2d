@@ -15,20 +15,33 @@
 
 echo "APORSYNC: Launched at "`date`
 
+if [ ! $rawdata_dir ]  
+then 
+   rawdata_dir='/data/spectro'
+fi
+
+if [ ! $speclog_dir ]  
+then 
+   speclog_dir='/data/spectro/astrolog'
+fi
+
+   
+
 # This syncs /astrolog/[56789]???? from sdsshost to plate-mapper, excluding
 # the id* files.  Only get /data/spectro/ directories
+# This is hardwired to match the sdsshost directory structure
 
-dataspectro=`ssh sdsshost ls -d /data/spectro/[5-9]????`
-astrolog=`echo $dataspectro | sed -n 's/\/data\/spectro/\/astrolog/pg'`
+datadirs=`ssh sdsshost ls -d /data/spectro/[5-9]????`
+astrologdirs=`echo $datadirs | sed -n 's/\/data\/spectro/\/astrolog/pg'`
 
-for dir in $astrolog
+for dir in $astrologdirs
 do
 
   rsync -ar --rsh="ssh -c blowfish" \
       --rsync-path=/p/rsync/v2_4_3/rsync \
       --exclude="*id*" \
       --exclude="*log" --log-format="/astrolog/%f" \
-      sdsshost:$dir /astrolog/   
+      sdsshost:$dir $speclog_dir
 
 done
 
@@ -41,7 +54,7 @@ rsync -ar --rsh="ssh -c blowfish" \
       --rsync-path=/p/rsync/v2_4_3/rsync \
       --exclude="*guider*" \
       --log-format="/data/spectro/%f" --exclude="*-r*" \
-      "sdsshost:/data/spectro/[56789]????" /data/spectro/ | startapo.sh &
+      "sdsshost:/data/spectro/[56789]????" $rawdata_dir | startapo.sh &
 
 # This sleep is to try to keep the blue side copying over before the red
 # side.  We do this because APOREDUCE creates its summary files after the r2
@@ -54,5 +67,5 @@ rsync -ar --rsh="ssh -c blowfish" \
       --rsync-path=/p/rsync/v2_4_3/rsync \
       --exclude="*guider*" \
       --log-format="/data/spectro/%f" --exclude="*-b*" \
-      "sdsshost:/data/spectro/[56789]????" /data/spectro/ | startapo.sh 
+      "sdsshost:/data/spectro/[56789]????" $rawdata_dir | startapo.sh 
 
