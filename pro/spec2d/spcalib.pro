@@ -421,14 +421,16 @@ splog,'Arc fbadpix ', fbadpix ; ???
          flatstruct[iflat].tsep = tsep
       endif
 
-      if (iarc GE 0) then $
-       splog, 'Flat ' + flatname[iflat] + ' paired with arc ' + arcname[iarc] $
-      else $
-       splog, 'Flat ' + flatname[iflat] + ' paired with no arc'
+      if (iarc GE 0) then begin
+         splog, 'Flat ' + flatname[iflat] + ' paired with arc ' + arcname[iarc]
+      endif else begin
+         splog, 'Flat ' + flatname[iflat] + ' paired with no arc'
+         flatstruct[iflat].qbad = 1 ; Flat is bad if no companion arc exists
+      endelse
 
       flatstruct[iflat].iarc = iarc
 
-      if (NOT flatstruct[iflat].qbad AND iarc NE -1) then begin
+      if (NOT flatstruct[iflat].qbad) then begin
 
          wset = *(arcstruct[iarc].wset)
          xsol = *(flatstruct[iflat].xsol)
