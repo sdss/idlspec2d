@@ -160,7 +160,7 @@ sky, and there are a few instances where two PLATEs are drilled for one TILE.
 is auto-updated each day based upon which reductions have completed.</A>
 To date (Feb 2002), we have observed over 500 plates.
 This list comes from a FITS file (<A HREF="platelist.fits">platelist.fits</A>)
-which contains somewhat more information than the ASCII list.
+which contains considerably more information than the ASCII list.
 
 <P>
 Aside from PLATE, TILE and MJD, this list contains the following:
@@ -311,22 +311,12 @@ and log files (about 35 Gb as of Feb 2002):
 </PRE></DD></DL>
 </B>
 
-<!--
 <P>
-This is approximately 25 Gb of data, which can be copied from Fermi with:
-<DL><DD><PRE>
-scp -r sdssdp3.fnal.gov:/data/dp3.p/data/schlegel/2d_v4_7 .
-</PRE></DD></DL>
-If you don't have permissions on this machine, contact your
-<A HREF="http://www-sdss.fnal.gov:8000/guru/gurulist.html">local data guru</A>
-or <A HREF="mailto:jen_a@fnal.gov">Jen Adelman at Fermi</A>.
--->
-
-<P>
-Each plate has three files associated with it:
+Each plate has the following files associated with it:
 <DL><DD><PRE>
 $SPECTRO_DATA/$PLATE/spPlate-$PLATE-$MJD.fits
 $SPECTRO_DATA/$PLATE/spZbest-$PLATE-$MJD.fits
+$SPECTRO_DATA/$PLATE/spZline-$PLATE-$MJD.fits
 $SPECTRO_DATA/$PLATE/spZall-$PLATE-$MJD.fits
 </PRE></DD></DL>
 where $SPECTRO_DATA refers to the top-level directory (spectro), and $PLATE
@@ -356,19 +346,6 @@ If you run "rsync" again, it will copy any files that have been
 changed or added.  Note that you need "ssh" to work without asking for a
 pass-phrase for "rsync" to work as a cron job (see below) -- see your system
 admin if you need help with that.
-
-<!--
-<P>
-An older and more heterogeneous set of reductions are available on the
-fsgi03 machine.  These were not kept up to date at Fermi after February 2001
-due to problems with the fsgi03 machine.  You can copy over those reductions
-by specifying my version of "rsync" on the remote machine:
-<DL><DD><PRE>
-rsync -arv --rsh="ssh" \
- --rsync-path=/afs/fnal.gov/files/home/room2/schlegel/bin/rsync \
- fsgi03.fnal.gov:/usr/sdss/data04/schlegel/2d_v4 .
-</PRE></DD></DL>
--->
 
 <P>
 Finally, you could set up a "cron" job to update your copy of the data on
@@ -479,30 +456,46 @@ either the hardware or target selection for the survey.  These plates are:
 <H2><A NAME="summary">What Is the Summary File?</A></H2>
 
 <P>
-I've attempted to generate one monstrous file with all the spectroscopic
-and photometric outputs (but not the actual images or spectra).
+We generated one monstrous file with all the spectroscopic
+and photometric outputs (but not the actual images, spectra
+or spectroscopic line fits).
 This is a FITS binary table called "spAll.fits".
-At present, there are three versions of this file as follows:
+At present, there are two versions of this file as follows:
 <OL>
-   <LI><B>spAll.fits</B> - All spectroscopic data taken to date (approximately 226,000 spectra).
-   <LI><B>spAll-qsurvey.fits</B> - spAll trimmed to only those plates
-       that comprise unique
-       tiles with survey quality S/N (e.g., where QSURVEY=1 in the
-       <A HREF="#platelist">platelist file</A>)
+   <LI><B>spAll.fits</B> - All spectroscopic data taken to date
+       from 'marginal' or 'good' plates
+       (see PLATEQUALITY in the <A HREF="#platelist">platelist file</A>)
    <LI><B>spAll-public.fits</B> - spAll trimmed to only those plates
-       that should be in the Early Data Release (including repeat observations
-       that are survey quality)
+       that should be in the Early Data Release (EDR) or Data Release 1 (DR1)
 </OL>
 
 <P>
-In addition, I've also made ASCII files with the most relevant quantities
+The following information is compiled for each object:
+<TABLE BORDER=1 CELLPADDING=3>
+ <TR><TD> PROGNAME     <TD> Spectroscopic program: 'main' for the SDSS main survey,
+                            'southern' for the SDSS Southern survey, and
+                            'devel', 'special', 'photoz' for other assorted programs
+ <TR><TD> CHUNKNAME    <TD> Targetting chunk name (this is a numeric value for
+                            all plates in the 'main' or 'southern' survey)
+ <TR><TD> PLATEQUALITY <TD> Quality of plate from platelist file: 'bad', 'marginal', or 'good'
+ <TR><TD> PLATESN2     <TD> Signal-of-noise measure of the plate
+ <TR><TD> SMEARUSE     <TD> 'T' if a smear is used for spectrophotometry; 'F' otherwise
+ <TR><TD> SPECPRIMARY  <TD> 1 for the best spectroscopic observation of each object
+ <TR><TD> ZANS         <TD> ZANS structure from <A HREF="#dm_spzbest">spZbest</A> file
+                            with spectroscopic classifications, redshifts, etc.
+ <TR><TD> TSOBJ        <TD> TSOBJ structure with all imaging and target-selection paramters
+                            (excluding the FIRST and ROSAT fields)
+</TABLE>
+
+<P>
+In addition, we've also made ASCII files with the most relevant quantities
 that one may wish to search on.  This file is "spAll*.dat", and is basically
 a stripped-down version of "spAll*.fits" for those FITS-challenged astronomers.
 
 <P>
 These photometric outputs were assembled by Daniel Eisenstein and Mike Blanton.
 Where the PHOTO data does exist, they are selected from the tsObj files
-used to drill the plates, <B>not the most recent calibrations</B>.
+used to drill the plates, <B>not necessarily the most recent calibrations</B>.
 This is what Eisenstein & Blanton call their "skyVersion==0" outputs.
 
 <P>
@@ -535,7 +528,7 @@ If you write any such tools, it would be useful to make them available
 to the collaboration by posting them on this site.
 
 <P>
-The absolute simplest way to look at the data is to use SAOimage or XIMTOOL
+The absolute simplest way to look at the data is to use ATV, SAOimage or XIMTOOL
 to display the plate images (spPlate*.fits), which will show you all 640
 spectra on a plate at once.
 
@@ -760,8 +753,39 @@ v.2     011207  Read "phist.hlp" ("phelp phist opt=sys" in IRAF) for an
 
 <H2><A NAME="datamodel">What Is the Data Model?</A></H2>
 
+Intermediate outputs:
+<UL>
+<LI><A HREF="#dm_spframe">spFrame-<I>cc</I>-<I>eeeeeeee</I>.fits</A>
+<LI><A HREF="#dm_spdiag2dlog">spDiag2d-<I>pppp</I>-<I>mmmmm</I>.log</A>
+<LI><A HREF="#dm_spdiag2dps">spDiag2d-<I>pppp</I>-<I>mmmmm</I>.ps</A>
+</UL>
+
+Final spectra:
+<UL>
+<LI><A HREF="#dm_spplate">spPlate-<I>pppp</I>-<I>mmmmm</I>.fits</A>
+<LI><A HREF="#dm_spdiagcomblog">spDiagcomb-<I>pppp</I>-<I>mmmmm</I>.log</A>
+<LI><A HREF="#dm_spdiagcombps">spDiagcomb-<I>pppp</I>-<I>mmmmm</I>.ps</A>
+</UL>
+
+Spectroscopic classifications, redshifts, and line fitting:
+<UL>
+<LI><A HREF="#dm_spzbest">spZbest-<I>pppp</I>-<I>mmmmm</I>.fits</A>
+<LI><A HREF="#dm_spzline">spZline-<I>pppp</I>-<I>mmmmm</I>.fits</A>
+<LI><A HREF="#dm_spzall">spZall-<I>pppp</I>-<I>mmmmm</I>.fits</A>
+<LI><A HREF="#dm_spdiag1dlog">spDiag1d-<I>pppp</I>-<I>mmmmm</I>.log</A>
+<LI><A HREF="#dm_spdiag1dps">spDiag1d-<I>pppp</I>-<I>mmmmm</I>.ps</A>
+</UL>
+
+<H4><A NAME="dm_spplate">spPlate-<I>pppp</I>-<I>mmmmm</I>.fits</H4>
+
 <P>
-The first FITS file (spPlate*.fits) contains the following: <BR>
+This file contains the combined spectra for all exposures
+(potentially spanning multiple nights) for a given mapped plate.
+The first 5 HDU's contain NPIX by 640 images, where NPIX is the
+number of wavelengths.
+
+<P>
+The spPlate file contains the following:<BR>
 <PRE>
 HDU #0 = Flux in units of 10^(-17) erg/cm/s/Ang [FLOAT]
 HDU #1 = Inverse variance (1/sigma^2) for the above [FLOAT]
@@ -771,7 +795,8 @@ HDU #4 = Wavelength dispersion in pixels [FLOAT]
 HDU #5 = Plug-map structure from plPlugMapM file [BINARY FITS TABLE]
 </PRE>
 
-The following header keywords are of interest: <BR>
+<P>
+The following header keywords are of interest (in HDU #0): <BR>
 <PRE>
 PLATEID = Plate ID
 TILEID  = Tile ID
@@ -799,15 +824,15 @@ EXPT_B2 = b2 camera exposure time (seconds)
 EXPT_R1 = r1 camera exposure time (seconds)
 EXPT_R2 = r2 camera exposure time (seconds)
 EXPTIME = Minimum of exposure times for all cameras
-SMEARUSE = Set to 'T' if the spectra were normalized to a smear exposure,
-           which is effectively a 1-minute exposure on a 5 x 7 arcsec
-           aperature.
-SPEC1_G  = (S/N)^2 per pixel at g=20.2 on spectrograph #1.
-SPEC2_G  = (S/N)^2 per pixel at g=20.2 on spectrograph #2.
-SPEC1_R  = (S/N)^2 per pixel at r=20.25 on spectrograph #1.
-SPEC2_R  = (S/N)^2 per pixel at r=20.25 on spectrograph #2.
-SPEC1_I  = (S/N)^2 per pixel at i=19.9 on spectrograph #1.
-SPEC2_I  = (S/N)^2 per pixel at i=19.9 on spectrograph #2.
+SMEARUSE= Set to 'T' if the spectra were normalized to a smear exposure,
+          which is effectively a 1-minute exposure on a 5 x 7 arcsec
+          aperature.
+SPEC1_G = (S/N)^2 per pixel at g=20.2 on spectrograph #1.
+SPEC2_G = (S/N)^2 per pixel at g=20.2 on spectrograph #2.
+SPEC1_R = (S/N)^2 per pixel at r=20.25 on spectrograph #1.
+SPEC2_R = (S/N)^2 per pixel at r=20.25 on spectrograph #2.
+SPEC1_I = (S/N)^2 per pixel at i=19.9 on spectrograph #1.
+SPEC2_I = (S/N)^2 per pixel at i=19.9 on spectrograph #2.
 TAI     = Number of seconds since Nov 17 1858 for mid-point of observation
 TAI-BEG = Number of seconds since Nov 17 1858 for beginning of observation
 TAI-END = Number of seconds since Nov 17 1858 for end of observation
@@ -826,10 +851,66 @@ HELIO_RV= Barycentric velocity correction (km/sec)
 </PRE>
 
 <P>
-The second file (spZbest*.fits) is the Princeton-1D output file.
-Early reductions have a single HDU, which is the FITS binary table
-described below.  Reductions with version v4_7_0+ also include
-a 2nd HDU which is the best-fit eigen-spectrum for each object.
+There are two masks, an "AND" mask and an "OR" mask.  The spectra
+are constructed from 3 or more 15-minute observations, and the "AND" mask
+bits are set if that bit is set for each and every input observation.
+The "OR" mask bits are set if that bit is set for any of the observations.
+Usually, I only look at the "AND" mask.
+
+<P>
+The mask bits are set as follows: <BR>
+<PRE>
+ 0 NOPLUG          Fiber not listed in plugmap file
+ 1 BADTRACE        Bad trace from routine TRACE320CRUDE
+ 2 BADFLAT         Low counts in fiberflat
+ 3 BADARC          Bad arc solution
+ 4 MANYBADCOLUMNS  >10% pixels are bad columns
+ 5 MANYREJECTED    >10% pixels are rejected in extraction
+ 6 LARGESHIFT      Large spatial shift between flat and object pos'n
+ 7 BADSKYFIBER     Sky Fiber shows extreme residuals
+ 8 NEARWHOPPER     Within 2 fibers of a whopping fiber (inclusive)
+10 SMEARIMAGE      Smear available for red and blue cameras
+11 SMEARHIGHSN     S/N sufficient for full smear fit
+12 SMEARMEDSN      S/N only sufficient for scaled median fit
+16 NEARBADPIXEL    Bad pixel within 3 pixels of trace
+17 LOWFLAT         Flat field less than 0.5
+18 FULLREJECT      Pixel fully rejected in extraction (INVVAR=0)
+19 PARTIALREJECT   Some pixels rejected in extraction
+20 SCATTEREDLIGHT  Scattered light significant
+21 CROSSTALK       Cross-talk significant
+22 NOSKY           Sky level unknown at this wavelength (INVVAR=0)
+23 BRIGHTSKY       Sky level > flux + 10*(flux error)
+                   AND sky > 2.0 * median(sky,99 pixels)
+24 NODATA          No data available in combine B-spline (INVVAR=0)
+25 COMBINEREJ      Rejected in combine B-spline
+26 BADFLUXFACTOR   Low flux-calibration or flux-correction factor
+27 BADSKYCHI       Relative chi^2 > 3 in sky residuals at this wavelength
+28 REDMONSTER      Contiguous region of bad chi^2 in sky residuals
+                   (with threshhold of relative chi^2 > 3)
+</PRE>
+
+<P>
+When low numbered bits (<16) are set, those will be set for half
+of the spectra -- either the blue or red spectrograph.  The higher-numbered
+bits (>=16) are set for individual pixels.
+
+<P>
+<B>Which mask bits are important?</B>  The conditions that are considered
+very bad are already used to set the errors to infinity for the
+effected pixels (specifically, the inverse variance is set to zero).
+The most useful mask bit to look at is BRIGHTSKY, which indicates
+when the sky is so bright relative to the object that perhaps one
+shouldn't trust any of the object flux there.  Our reported errors
+are meant to include sky-subtraction errors, but there are instances
+(particularly around 5577) where these errors may be untrustworthy.
+
+<H4><A NAME="dm_spzbest">spZbest-<I>pppp</I>-<I>mmmmm</I>.fits</H4>
+
+<P>
+This file contains the spectroscopic classifications and redshifts
+from the Princeton-1D code.
+Ths first HDU is the FITS binary table described below.
+The 2nd HDU is the best-fit eigen-spectrum for each object.
 These can be regenerated from the tabular information, but for
 convenience I've explicitly computed them.
 
@@ -904,59 +985,66 @@ SPEC2_R    (S/N)^2 at r=20.25 for spectrograph #2 (same value for 320 fibers)
 SPEC2_I    (S/N)^2 at i=19.90 for spectrograph #2 (same value for 320 fibers)
 </PRE>
 
-<P>
-There are two masks, an "AND" mask and an "OR" mask.  The spectra
-are constructed from 3 or more 15-minute observations, and the "AND" mask
-bits are set if that bit is set for each and every input observation.
-The "OR" mask bits are set if that bit is set for any of the observations.
-Usually, I only look at the "AND" mask.
+<H4><A NAME="dm_spzline">spZline-<I>pppp</I>-<I>mmmmm</I>.fits</H4>
 
 <P>
-The mask bits are set as follows: <BR>
+This file contains the line fits from from the Princeton-1D code.
+
+<P>
+The columns in the first HDU are as follows: <BR>
 <PRE>
- 0 NOPLUG          Fiber not listed in plugmap file
- 1 BADTRACE        Bad trace from routine TRACE320CRUDE
- 2 BADFLAT         Low counts in fiberflat
- 3 BADARC          Bad arc solution
- 4 MANYBADCOLUMNS  >10% pixels are bad columns
- 5 MANYREJECTED    >10% pixels are rejected in extraction
- 6 LARGESHIFT      Large spatial shift between flat and object pos'n
- 7 BADSKYFIBER     Sky Fiber shows extreme residuals
- 8 NEARWHOPPER     Within 2 fibers of a whopping fiber (inclusive)
-10 SMEARIMAGE      Smear available for red and blue cameras
-11 SMEARHIGHSN     S/N sufficient for full smear fit
-12 SMEARMEDSN      S/N only sufficient for scaled median fit
-16 NEARBADPIXEL    Bad pixel within 3 pixels of trace
-17 LOWFLAT         Flat field less than 0.5
-18 FULLREJECT      Pixel fully rejected in extraction (INVVAR=0)
-19 PARTIALREJECT   Some pixels rejected in extraction
-20 SCATTEREDLIGHT  Scattered light significant
-21 CROSSTALK       Cross-talk significant
-22 NOSKY           Sky level unknown at this wavelength (INVVAR=0)
-23 BRIGHTSKY       Sky level > flux + 10*(flux error)
-                   AND sky > 2.0 * median(sky,99 pixels)
-24 NODATA          No data available in combine B-spline (INVVAR=0)
-25 COMBINEREJ      Rejected in combine B-spline
-26 BADFLUXFACTOR   Low flux-calibration or flux-correction factor
-27 BADSKYCHI       Relative chi^2 > 3 in sky residuals at this wavelength
-28 REDMONSTER      Contiguous region of bad chi^2 in sky residuals
-                   (with threshhold of relative chi^2 > 3)
-
+PLATE      Plate number
+MJD        Modified Julian date of observation
+FIBERID    Fiber ID (1 to 640)
+LINENAME   Line name
+LINEWAVE   Catalog wavelength for this line in vacuum Angstroms
+LINEZ          Redshift
+LINEZ_ERR      Redshift error (negative for invalid fit)
+LINESIGMA      Gaussian width in km/sec
+LINESIGMA_ERR  Error in gaussian width (negative for invalid fit)
+LINEAREA       Area in gaussian fit where units are (flux-units) * Ang
+LINEAREA_ERR   Flux error (negative for invalid fit)
+LINEEW         Equivalent width
+LINEEW_ERR     Equivalent width error (negative for invalid fit)
+LINECONTLEVEL      Continuum level at line center
+LINECONTLEVEL_ERR  Error in continuum level at line center
+LINENPIX           Number of good pixels within +/- 3 sigma of the line center
+LINEDOF            Degrees of freedom in fit, approximated as LINENPIX minus
+                   the number of terms fit for that line, which can be
+                   fractional if one parameter if fixed betwen several lines
+LINECHI2           Chi^2 for all points within +/- 3 sigma of the line center
+                   (negative if no such points)
 </PRE>
 
-When low numbered bits (<16) are set, those will be set for half
-of the spectra -- either the blue or red spectrograph.  The higher-numbered
-bits (>=16) are set for individual pixels.
-
 <P>
-<B>Which mask bits are important?</B>  The conditions that are considered
-very bad are already used to set the errors to infinity for the
-effected pixels (specifically, the inverse variance is set to zero).
-The most useful mask bit to look at is BRIGHTSKY, which indicates
-when the sky is so bright relative to the object that perhaps one
-shouldn't trust any of the object flux there.  Our reported errors
-are meant to include sky-subtraction errors, but there are instances
-(particularly around 5577) where these errors may be untrustworthy.
+The following lines are fit.  Lines with the same ZINDEX are constrained to
+have the same redshift.  Lines with the same WINDEX are constrained to have
+the same gaussian width.  The flux ratios of [O_III] and [N_II] are are
+constrained to be 1:3.
+<TABLE BORDER=1 CELLPADDING=3>
+ <TR><TH> LINEWAVE  <TH> LINENAME    <TH> ZINDEX    <TH> WINDEX     <TH> Flux ratio
+ <TR><TD> 1215.67   <TD> Ly_alpha    <TD> z_lya     <TD> w_ly_a     <TD>
+ <TR><TD> 1240.81   <TD> N_V 1240    <TD> zemission <TD> w_n_v      <TD>
+ <TR><TD> 1549.48   <TD> C_IV 1549   <TD> zemission <TD> wemission  <TD>
+ <TR><TD> 1640.42   <TD> He_II 1640  <TD> zemission <TD> wemission  <TD>
+ <TR><TD> 1908.734  <TD> C_III] 1908 <TD> zemission <TD> wemission  <TD>
+ <TR><TD> 2799.49   <TD> Mg_II 2799  <TD> zemission <TD> wemission  <TD>
+ <TR><TD> 3725.94   <TD> [O_II] 3725 <TD> zemission <TD> wemission  <TD>
+ <TR><TD> 3727.24   <TD> [O_II] 3727 <TD> zemission <TD> wemission  <TD>
+ <TR><TD> 4101.734  <TD> H_delta     <TD> zemission <TD> w_balmer   <TD>
+ <TR><TD> 4340.464  <TD> H_gamma     <TD> zemission <TD> wemission  <TD>
+ <TR><TD> 4363.209  <TD> [O_III] 4363<TD> zemission <TD> wemission  <TD>
+ <TR><TD> 4861.325  <TD> H_beta      <TD> zemission <TD> w_balmer   <TD>
+ <TR><TD> 4958.911  <TD> [O_III] 4959<TD> zemission <TD> wemission  <TD>
+ <TR><TD> 5006.843  <TD> [O_III] 5007<TD> zemission <TD> wemission  <TD> 3 * ([O_III] 4959)
+ <TR><TD> 6300.304  <TD> [O_I] 6300  <TD> zemission <TD> wemission  <TD>
+ <TR><TD> 6363.776  <TD> [O_I] 6363  <TD> zemission <TD> wemission  <TD>
+ <TR><TD> 6548.05   <TD> [N_II] 6548 <TD> zemission <TD> wemission  <TD>
+ <TR><TD> 6562.801  <TD> H_alpha     <TD> zemission <TD> w_balmer   <TD>
+ <TR><TD> 6583.45   <TD> [N_II] 6583 <TD> zemission <TD> wemission  <TD> 3 * ([N_II] 6548)
+ <TR><TD> 6716.44   <TD> [S_II] 6716 <TD> zemission <TD> wemission  <TD>
+ <TR><TD> 6730.82   <TD> [S_II] 6730 <TD> zemission <TD> wemission  <TD>
+</TABLE>
 
 <H2><A NAME="targetflags">What Are the Target Flags?</A></H2>
 
@@ -1074,11 +1162,11 @@ Below, I've listed the vacuum wavelength of some transitions:
 <PRE>
  Air       Vacuum
  --------  --------
- 4861.363  4862.721  H-beta
+ 4861.363  4862.721  H_beta
  4958.911  4960.295  [O III]
  5006.843  5008.239  [O III]
  6548.05   6549.86   [N II]
- 6562.801  6564.614  H-alpha
+ 6562.801  6564.614  H_alpha
  6583.45   6585.27   [N II]
  6716.44   6718.29   [S II]
  6730.82   6732.68   [S II]
@@ -1168,7 +1256,7 @@ MJD 51688 - 51703 (22 May 2000): Electronics "dropped pixel" problem
 MJD 51779 only (22 Aug 2000): Terrible electronics problem on r2.
                    This only effects plate 356/51779.
 MJD 51789 - today: (2 Sep 2000): Smear implemented for most plates, improving
-                   spectro-photometry
+                   spectro-photometry.
 MJD 52220 - 52266, 52312 - 52356 (Nov-Dec 2001, Feb-Mar 2002) Spectrograph
                   slit-head latch problems.  The kinematic mounts for the
                   slit-heads were not always engaged, resulting in out-of-focus
