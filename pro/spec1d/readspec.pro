@@ -67,6 +67,7 @@
 ; PROCEDURES CALLED:
 ;   copy_struct_inx
 ;   headfits()
+;   lookforgzip()
 ;   mrdfits
 ;   plug2tsobj()
 ;   spec_append
@@ -93,7 +94,7 @@ pro readspec1, plate, range, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
     else mjdstr = string(mjd,format='(i5.5)')
 
    filename = 'spPlate-' + platestr + '-' + mjdstr + '.fits'
-   filename = findfile(filepath(filename, root_dir=root_dir, $
+   filename = lookforgzip(filepath(filename, root_dir=root_dir, $
     subdirectory=platestr), count=ct)
 
    if (ct GT 1) then filename = filename[ (reverse(sort(filename)))[0] ] $
@@ -170,7 +171,7 @@ pro readspec1, plate, range, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       else $
        zfile = 'spZall-' + platestr + '-' + mjdstr + '.fits'
 
-      zfile = findfile(filepath(zfile, root_dir=root_dir, $
+      zfile = lookforgzip(filepath(zfile, root_dir=root_dir, $
        subdirectory=platestr), count=ct)
       if (ct GT 1) then zfile = zfile[ (reverse(sort(zfile)))[0] ] $
        else zfile = zfile[0]

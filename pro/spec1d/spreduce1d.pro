@@ -53,7 +53,7 @@
 ;------------------------------------------------------------------------------
 pro spreduce1d, platefile, fiberid=fiberid
 
-   if (NOT keyword_set(platefile)) then platefile = findfile('spPlate*.fits')
+   if (NOT keyword_set(platefile)) then platefile = findfile('spPlate*.fits*')
 
    ;----------
    ; If multiple plate files exist, then call this script recursively
