@@ -72,6 +72,7 @@
 ;
 ; REVISION HISTORY:
 ;   14-Jun-2002  Written by David Schlegel, Princeton.
+;                This is based upon the code in SPCOADD_FRAMES.
 ;-
 ;------------------------------------------------------------------------------
 pro write_uros1, plate, fiber, mjd=mjd
@@ -109,7 +110,7 @@ pro write_uros1, plate, fiber, mjd=mjd
        format='("spFluxcalib-",i4.4,"-",i5.5,"-",a2,".fits*")')
       outfile = string(plate,mjd,fiber,expnums[iuse[ifile]], $
        expcams[iuse[ifile]], $
-       format='("spUros-",i4.4,"-",i5.5,"-",i3.3,"-",i8.8,"-",a2,".fits")')
+       format='("spUros-",i4.4,"-",i5.5,"-",i3.3,"-",i8.8,"-",a2,".dat")')
 
       framefile = (findfile(filepath(framefile, root_dir=topdir, $
        subdir=platestr)))[0]
@@ -198,6 +199,7 @@ pro write_uros1, plate, fiber, mjd=mjd
       ;----------
       ; Write the output file
 
+      splog, 'Writing file ', outfile
       openw, lun, outfile, /get_lun
       printf, lun, '#log-Wave Flux          InverseVar   ' $
        + ' Pixelmask   Dispers   Calibfac  Invercorr'
@@ -209,6 +211,7 @@ pro write_uros1, plate, fiber, mjd=mjd
         invertcorr[ipix], $
         format='(1x,f8.6,1x,e13.6,1x,e13.6,1x,i11,1x,f9.4,1x,f9.4,1x,f9.4)'
       close, lun
+      free_lun, lun
    endfor
 
    return
