@@ -138,7 +138,7 @@ if [ -n "$SPROBOT_RSH" ] ; then
    echo "SPROBOT_RSH=$SPROBOT_RSH" >> $cronfile
 fi
 echo "# This job will run at 12:59 am every day." >> $cronfile
-echo "59 0 * * * \mv $SPRLOG.1dayold $SPRLOG2dayold; \mv $SPRLOG $SPRLOG.1dayold" >> $cronfile
+echo "59 0 * * * \mv $SPRLOG.1dayold $SPRLOG.2dayold; \mv $SPRLOG $SPRLOG.1dayold" >> $cronfile
 echo "# This job will run at 1:00 am every day." >> $cronfile
 echo "0 1 * * * sprobotlist.sh >> $SPRLOG 2>&1" >> $cronfile
 echo "# This job will run at 10:00 am every day (local time)." >> $cronfile
