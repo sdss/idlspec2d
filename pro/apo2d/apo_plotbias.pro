@@ -41,7 +41,9 @@
 ;   fileandpath()
 ;   headfits()
 ;   plothist
+;   quickbias
 ;   sdssproc
+;   struct_append()
 ;   sxpar()
 ;
 ; REVISION HISTORY:
@@ -125,5 +127,31 @@ pro apo_plotbias, expnum, root_dir=root_dir, plotfile=plotfile
    if (keyword_set(plotfile)) then $
     dfpsclose
 
+   ;----------
+   ; Compute and print statistics
+
+   print
+   print, 'Now re-computing percentiles...'
+   for ifile=0, nfile-1 do $
+    rstruct = struct_append(rstruct, quickbias(fullname[ifile]))
+
+   print
+   print, 'Filename           ', $
+    '  02%     05%     10%     50%     90%     95%     98%   '
+   print, '-------------------', $
+    '  ------  ------  ------  ------  ------  ------  ------'
+   for ifile=0, nfile-1 do $
+    print, fileandpath(fullname[ifile]), $
+     rstruct[ifile].percentile[2], $
+     rstruct[ifile].percentile[5], $
+     rstruct[ifile].percentile[10], $
+     rstruct[ifile].percentile[50], $
+     rstruct[ifile].percentile[90], $
+     rstruct[ifile].percentile[95], $
+     rstruct[ifile].percentile[98], $
+     format='(a19,7f8.1)'
+   print
+
    return
 end
+;------------------------------------------------------------------------------
