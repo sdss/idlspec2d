@@ -1,4 +1,7 @@
 
+APOREDUCE: No longer do the test in the beginning of this procedure that
+            the FITS file should exist, since FITS_WAIT() will do that test
+            and repeatably look for the file for several minutes.
 BATCH1D,BATCH2D: Set the DISPLAY environment variable on remote machines
             to always be ":0.0", so that only one IDL license on each
             remote machine.  Also, pipe the commands through the bash shell
