@@ -136,8 +136,7 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
    ncam = N_elements(camnames)
 
    ;----------
-   ; Select frames that match the cameras specified by DOCAM, then trim
-   ; to files that aren't names UNKNOWN, and that actually exist on disk.
+   ; Select frames that match the cameras specified by DOCAM.
 
    for ido=0, n_elements(docams)-1 do begin
       ii = (where(camnames EQ docams[ido], camct))[0]
@@ -146,120 +145,74 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
        else icams = [icams,ii]
    endfor
 
-   objname = allseq.name[icams]
-
-   ; If all file names are UNKNOWN, then abort.
-   j = where(objname NE 'UNKNOWN')
-   if (j[0] EQ -1) then begin
-      splog, 'ABORT: All file names are UNKNOWN in plan file ' + thisplan
-      cd, origdir
-      return
-   endif
-
+   ;----------
+   ; Compute a score for each frame and each exposure.
    ; Replace all UNKNOWN file names with nulls.
-   j = where(objname EQ 'UNKNOWN')
-   if (j[0] NE -1) then objname[j] = ''
+   ; The score will be zero if the file name is set to "NULL" or does not exist.
 
-   ; Replace all file names that do not exist on disk with nulls.
-   for ifile=0, n_elements(objname)-1 do $
-    if (keyword_set(objname[ifile])) then $
-     objname[ifile] = (lookforgzip(djs_filepath(objname[ifile], $
-      root_dir=extractdir)))[0]
+   dims = size(allseq)
+   nexp = n_elements(allseq)
+   ndocam = n_elements(icams)
+   score = fltarr(ndocam, nexp)
+   camspecid = lonarr(ndocam, nexp)
+   expnum = lonarr(ndocam, nexp)
+   for i=0L, nexp-1 do begin
+      for j=0L, ndocam-1 do begin
+         if (allseq[i].name[icams[j]] EQ 'UNKNOWN') then begin
+            allseq[i].name[icams[j]] = ''
+         endif else begin
+            thisfile = (lookforgzip(djs_filepath(allseq[i].name[icams[j]], $
+             root_dir=extractdir)))[0]
+            if (keyword_set(thisfile)) then begin
+               hdr = headfits(allseq[i].name[j])
+               score[j,i] = sxpar(hdr, 'FRAMESN2')
+               cameras = strtrim(sxpar(hdr, 'CAMERAS'),2)
+               camspecid[j,i] = strmid(cameras, 1, 1)
+               expnum[j,i] = sxpar(hdr, 'EXPOSURE')
+            endif else begin
+               allseq[i].name[icams[j]] = ''
+            endelse
+         endelse
+      endfor
+   endfor
 
-   ; Now all the file names in ALLSEQ.NAME should exist or be set to null.
-   allseq.name[icams] = objname
+   ; Discard the smear exposures by setting their scores equal to zero
+   for iexp=0L, nexp-1 do $
+    score[*,iexp] = score[*,iexp] * (allseq[iexp].flavor NE 'smear')
 
-   j = where(allseq.name[icams])
-   if (j[0] EQ -1) then begin
-      splog, 'ABORT: No files on disk for plan file ' + thisplan
-      cd, origdir
-      return
-   endif
+; WHAT ABOUT A MINIMUM S/N CUT, OR MINIMUM RELATIVE TO THE MAX !!!???
+
+   ;----------
+   ; Select the "best" exposure based upon the minimum score in all cameras
+
+   expscore = fltarr(nexp)
+   for iexp=0L, nexp-1 do $
+    expscore[iexp] = min([score[*,iexp]])
+   bestscore = max(expscore, ibest)
+   splog, 'Best exposure = ', expnum[ibest,0], ' score = ', bestscore
 
    ;----------
    ; Compute the spectro-photometry
 
-   objname = (allseq.name[icams])[j]
-
-   i1 = where(strmid(objname,9,1) EQ '1')
-   spflux_v5, objname[i1], adderr=adderr, combinedir=combinedir
-   i2 = where(strmid(objname,9,1) EQ '2')
-   spflux_v5, objname[i2], adderr=adderr, combinedir=combinedir
-dfpsclose & stop
+   objname = allseq.name[icams]
+   i1 = where(camspecid EQ 1 AND score GT 0, ct)
+   if (ct GT 0) then $
+    spflux_v5, objname[i1], adderr=adderr, combinedir=combinedir
+   i2 = where(camspecid EQ 2 AND score GT 0, ct)
+   if (ct GT 0) then $
+    spflux_v5, objname[i2], adderr=adderr, combinedir=combinedir
 
    ;----------
    ; Co-add the fluxed exposures
 
-   spcoadd_v5, objname, combinefile, mjd=thismjd, combinedir=combinedir, $
+   ii = where(score GT 0)
+   spcoadd_v5, objname[ii], combinefile, mjd=thismjd, combinedir=combinedir, $
     adderr=adderr, docams=docams, plotsnfile=plotsnfile
 
    ;----------
    ; Close plot file - S/N plots are then put in the PLOTSNFILE file.
 
    if (keyword_set(plotfile) AND NOT keyword_set(xdisplay)) then dfpsclose
-stop
-
-   ;----------
-   ; Select only the science+smear frames
-
-   isci = where(allseq.flavor EQ 'science' OR allseq.flavor EQ 'smear')
-
-   if (isci[0] EQ -1) then begin
-      splog, 'No science frames in this plan ' + thisplan
-      cd, origdir
-      return
-   endif
-
-   sciname = allseq[isci].name[icams]
-   j = where(sciname)
-
-   if (j[0] EQ -1) then begin
-      splog, 'No science frames in this plan ' + thisplan
-      cd, origdir
-      return
-   endif
-
-   sciname = sciname[j]
-
-   ;----------
-   ;  Check for Minimum S/N in science frame
-   ;
-   if keyword_set(minsn2) then begin
-      nsci = n_elements(sciname)
-      framesn2 = fltarr(nsci)
-
-      for i=0,nsci-1 do begin
-         checkhdr = headfits(sciname[i])
-         if size(checkhdr,/tname) NE 'INT' then begin
-           framesn2[i] = sxpar(checkhdr,'FRAMESN2')
-           cameras = strtrim(sxpar(checkhdr, 'CAMERAS'),2)
-           expstr = string(sxpar(checkhdr, 'EXPOSURE'), format='(i8.8)')
-           spectroid = strmid(cameras,1,1)
-           corrfile = djs_filepath('spFluxcorr-'+expstr+'-'+spectroid+'.fits', $
-                   root_dir=combinedir)
-           corrset = mrdfits(corrfile, 1, /silent)
-           if size(corrset, /tname) NE 'INT' then begin
-             traceset2xy, corrset, tempwave, corrimg
-             if total(corrimg) EQ 0 then framesn2[i] = 0.0
-           endif else framesn2[i] = 0.0
-         endif
-      endfor
-
-      j = where(framesn2 GE minsn2)
-      if j[0] NE -1 then begin 
-        sciname = sciname[j] 
-        splog, 'Excluded ', fix(total(framesn2 LT minsn2)), $
-             ' frames with SN^2 less than ', minsn2, format='(a,i4,a,f7.2)'
-      endif else $
-        splog, 'WARNING: All Frames would be rejected due to minimum S/N limit'
-   endif
-
-   ;----------
-   ; Co-add the fluxed exposures
-
-   spcoadd_frames, sciname, combinefile, mjd=thismjd, combinedir=combinedir, $
-    fcalibprefix=fcalibprefix, adderr=adderr, docams=docams, $
-    plotsnfile=plotsnfile
 
    heap_gc   ; garbage collection
 
