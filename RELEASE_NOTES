@@ -9,7 +9,11 @@ CREATE_LINESTRUCT,LINEBACKFIT,SPREDUCE1D: Replace LINENPIX with the number
 FLUX_STANDARD: Added empirical correction to SPECTRUM-Kurucz models.
            Then got rid of them!
 GET_TAI: Trigger a Warning if (TAI-END) - (TAI-BEG) < EXPTIME + 20 sec.
-PLATEMERGE: Create spAllLine files.
+PLATELINKS: New proc for generating symbolic links to either all of the
+           interesting files in the $SPECTRO_DATA tree, or one of the
+           public subsets (e.g., "EDR" or "DR1").
+PLATEMERGE: Create spAllLine files.  Allow PUBLIC to be a keyword specifying
+           any of the public subsets (e.g., "EDR" or "DR1").
 PLOTSPEC: Fix trivial bug (had "EXTRA" instead of "_EXTRA") in passing
            additional plotting keywords to plots.  Also, pass those
            keywords along to the XYOUTS commands.
@@ -26,6 +30,7 @@ bin/sprobot.sh: Instead of looking for "/data/spectro/$MJD" to get
            an MJD list, look for "/data/spectro/astrolog/$MJD".
            This will get the log files for MJDs where there are no
            spectroscopic data.
+bin/sprobotlist.sh: Add calls to PLATEMERGE for the EDR and DR1 subsets.
 etc/kurucz_model_fix.fit - New file for empirical corrections to
            SPECTRUM-Kurucz models, used by FLUX_STANDARD.
 examples/opHdrFix.par: More updates, in an attempt to identify
