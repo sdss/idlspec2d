@@ -75,12 +75,12 @@ function skyline_dispersion, flux, fluxivar, xcen, iskies, dispset
    ; Construct a mask that is nonzero only for those pixels within
    ; +/- 12 pixels from each sky line center on each fiber.
 
-   skymask = make_array(size=size(flux), /byte)
+   smask = make_array(size=size(flux), /byte)
    for itrace=0, ntrace-1 do begin
       for iline=0, nline-1 do begin
          i1 = floor(xsky[itrace,iline] - 12) > 0
          i2 = ceil(xsky[itrace,iline] + 12) < (npix - 1)
-         if (i1 LT npix-1 AND i2 GT 0) then skymask[i1:i2,itrace] = 1
+         if (i1 LT npix-1 AND i2 GT 0) then smask[i1:i2,itrace] = 1
       endfor
    endfor
 
@@ -96,7 +96,7 @@ function skyline_dispersion, flux, fluxivar, xcen, iskies, dispset
    ; SKYLINEFLUX = [NFIBER,NLINE]
    ; SKYLINEIVAR = [NFIBER,NLINE]
 
-   extract_image, flux, fluxivar*skymask, xsky, transpose(arcwidth), $
+   extract_image, flux, fluxivar*smask, xsky, transpose(arcwidth), $
     skylineflux, skylineivar, ansimage=ansimage, wfixed=[1,1], $
     highrej=10, lowrej=10, relative=1, npoly=5, proftype=1
 

@@ -39,10 +39,10 @@ pro fluxrebin, filename, newloglam, newflux, newivar, adderr=adderr
    ; Mask where the spectrum may be dominated by sky-subtraction
    ; residuals.  Grow that mask by 2 pixels in each direction.
 
-   skymask = (objmask AND pixelmask_bits('BRIGHTSKY')) NE 0
+   smask = (objmask AND pixelmask_bits('BRIGHTSKY')) NE 0
    for ifiber=0L, nfiber-1 do $
-    skymask[*,ifiber] = smooth(float(skymask[*,ifiber]),5) GT 0
-   ibad = where(skymask)
+    smask[*,ifiber] = smooth(float(smask[*,ifiber]),5) GT 0
+   ibad = where(smask)
    if (ibad[0] NE -1) then objivar[ibad] = 0
 
    ;----------
