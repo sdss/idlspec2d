@@ -222,6 +222,26 @@ pro platelist, infile, plist=plist, create=create, $
     'sn2_g2'   , 0.0, $
     'sn2_r2'   , 0.0, $
     'sn2_i2'   , 0.0, $
+    'goffstd'  , 0., $
+    'grmsstd'  , 0., $
+    'roffstd'  , 0., $
+    'rrmsstd'  , 0., $
+    'ioffstd'  , 0., $
+    'irmsstd'  , 0., $
+    'groffstd' , 0., $
+    'grrmsstd' , 0., $
+    'rioffstd' , 0., $
+    'rirmsstd' , 0., $
+    'goffgal'  , 0., $
+    'grmsgal'  , 0., $
+    'roffgal'  , 0., $
+    'rrmsgal'  , 0., $
+    'ioffgal'  , 0., $
+    'irmsgal'  , 0., $
+    'groffgal' , 0., $
+    'grrmsgal' , 0., $
+    'rioffgal' , 0., $
+    'rirmsgal' , 0., $
     'nguide'   , 0L , $
     'seeing20' , 0.0, $
     'seeing50' , 0.0, $
@@ -430,6 +450,26 @@ pro platelist, infile, plist=plist, create=create, $
          plist[ifile].sn2_g2 = sxpar(hdr1, 'SPEC2_G')
          plist[ifile].sn2_r2 = sxpar(hdr1, 'SPEC2_R')
          plist[ifile].sn2_i2 = sxpar(hdr1, 'SPEC2_I')
+         plist[ifile].goffstd = sxpar(hdr1, 'GOFFSTD')
+         plist[ifile].grmsstd = sxpar(hdr1, 'GRMSSTD')
+         plist[ifile].roffstd = sxpar(hdr1, 'ROFFSTD')
+         plist[ifile].rrmsstd = sxpar(hdr1, 'RRMSSTD')
+         plist[ifile].ioffstd = sxpar(hdr1, 'IOFFSTD')
+         plist[ifile].irmsstd = sxpar(hdr1, 'IRMSSTD')
+         plist[ifile].groffstd = sxpar(hdr1, 'GROFFSTD')
+         plist[ifile].grrmsstd = sxpar(hdr1, 'GRRMSSTD')
+         plist[ifile].rioffstd = sxpar(hdr1, 'RIOFFSTD')
+         plist[ifile].rirmsstd = sxpar(hdr1, 'RIRMSSTD')
+         plist[ifile].goffgal = sxpar(hdr1, 'GOFFGAL')
+         plist[ifile].grmsgal = sxpar(hdr1, 'GRMSGAL')
+         plist[ifile].roffgal = sxpar(hdr1, 'ROFFGAL')
+         plist[ifile].rrmsgal = sxpar(hdr1, 'RRMSGAL')
+         plist[ifile].ioffgal = sxpar(hdr1, 'IOFFGAL')
+         plist[ifile].irmsgal = sxpar(hdr1, 'IRMSGAL')
+         plist[ifile].groffgal = sxpar(hdr1, 'GROFFGAL')
+         plist[ifile].grrmsgal = sxpar(hdr1, 'GRRMSGAL')
+         plist[ifile].rioffgal = sxpar(hdr1, 'RIOFFGAL')
+         plist[ifile].rirmsgal = sxpar(hdr1, 'RIRMSGAL')
          plist[ifile].nguide = sxpar(hdr1, 'NGUIDE')
          plist[ifile].seeing20 = sxpar(hdr1, 'SEEING20')
          plist[ifile].seeing50 = sxpar(hdr1, 'SEEING50')
