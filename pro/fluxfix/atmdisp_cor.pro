@@ -53,14 +53,14 @@ ok = where(abs(groff - 0.05) lt 0.5 and $
 !P.MULTI = [0, 2, 2]
 plot, xpos[ok], groff[ok], psym=3, xtitle = 'Plate X-position', title = title, $
       ytitle = '(g-r) [Spectro - Photo]', /xs, yr = [-0.2, 0.4], /nodata
-oplot, xpos[ok], groff[ok], psym=6, symsize=0.2, color=!blue
-oplot, xpos[std], groff[std], psym=6, symsize=0.2, color=!red, thick=3
+djs_oplot, xpos[ok], groff[ok], psym=6, symsize=0.2, color='blue'
+djs_oplot, xpos[std], groff[std], psym=6, symsize=0.2, color='red', thick=3
 oplot, [-500, 500], [0, 0], thick=3
 
 plot, ypos[ok], groff[ok], psym=3, xtitle = 'Plate Y-position', title = title, $
       ytitle = '(g-r) [Spectro - Photo]', /xs, yr = [-0.2, 0.4], /nodata
-oplot, ypos[ok], groff[ok], psym=6, symsize=0.2, color=!blue
-oplot, ypos[std], groff[std], psym=6, symsize=0.2, color=!red, thick=3
+djs_oplot, ypos[ok], groff[ok], psym=6, symsize=0.2, color='blue'
+djs_oplot, ypos[std], groff[std], psym=6, symsize=0.2, color='red', thick=3
 oplot, [-500, 500], [0, 0], thick=3
 
 ; Do iterative fit
@@ -72,19 +72,19 @@ acoeff = djs_sfit_iter(groff, xpos, ypos, 3, 3, yfit=zfit, mask=mask, maxrej = 2
 ; After plot   
 plot, xpos, groff, psym=3, xtitle = 'Plate X-position',  $
       ytitle = '(g-r) [Spectro - Photo]', /xs, yr = [-0.2, 0.4], /nodata
-oplot, xpos, groff - zfit, psym=6, symsize=0.2, color=!blue
-oplot, xpos[std], groff[std] - zfit[std], psym=6, symsize=0.3, color=!red, thick=3
+djs_oplot, xpos, groff - zfit, psym=6, symsize=0.2, color='blue'
+djs_oplot, xpos[std], groff[std] - zfit[std], psym=6, symsize=0.3, color='red', thick=3
 oplot, [-500, 500], [0, 0], thick=3
 
 rej = where(outmask ne 1)
-oplot, xpos[rej], groff[rej] - zfit[rej], psym=2, symsize=0.5, color=!green
+djs_oplot, xpos[rej], groff[rej] - zfit[rej], psym=2, symsize=0.5, color='green'
 
 plot, ypos, groff, psym=3, xtitle = 'Plate Y-position', $
       ytitle = '(g-r) [Spectro - Photo]', /xs, yr = [-0.2, 0.4], /nodata
-oplot, ypos, groff - zfit, psym=6, symsize=0.2, color=!blue
-oplot, ypos[std], groff[std] - zfit[std], psym=6, symsize=0.3, color=!red, thick=3
+djs_oplot, ypos, groff - zfit, psym=6, symsize=0.2, color='blue'
+djs_oplot, ypos[std], groff[std] - zfit[std], psym=6, symsize=0.3, color='red', thick=3
 oplot, [-500, 500], [0, 0], thick=3
-oplot, ypos[rej], groff[rej] - zfit[rej], psym=2, symsize=0.5, color=!green
+djs_oplot, ypos[rej], groff[rej] - zfit[rej], psym=2, symsize=0.5, color='green'
 
 ;----------------------------------------------------------------------------------
 ; Translate (g-r) offsets into correction vectors
@@ -113,8 +113,8 @@ ymax = 50
 
 nplothist, rioff[ok], bin=0.01, xr=[-0.4, 0.4], yr = [0, ymax], $
     xtitle = '(g-r) model - photo', ytitle = 'Number of Spectra', title = title
-nplothist, rioff[ok], rixhist, riyhist, bin=0.01, color=!red, /over, thick=3
-nplothist, groff[ok], grxhist, gryhist, bin=0.01, color=!green, /over, thick=3
+nplothist, rioff[ok], rixhist, riyhist, bin=0.01, color=djs_icolor('red'), /over, thick=3
+nplothist, groff[ok], grxhist, gryhist, bin=0.01, color=djs_icolor('green'), /over, thick=3
 oplot, [0, 0], [0, 1e4], thick=4
 grfit = gaussfit(grxhist, gryhist, nterms=3, grcoef)
 rifit = gaussfit(rixhist, riyhist, nterms=3, ricoef)
@@ -139,8 +139,9 @@ nrioff = (nsmag[1,*] - nsmag[2,*])  - (pmag[1,*] - pmag[2,*])
 
 nplothist, nrioff[ok], bin=0.01, xr=[-0.4, 0.4], yr = [0, ymax], $
     xtitle = '(g-r) model - photo', ytitle = 'Number of Spectra', title = title
-nplothist, nrioff[ok], rixhist, riyhist, bin=0.01, color=!red, /over, thick=3
-nplothist, ngroff[ok], grxhist, gryhist, bin=0.01, color=!green, /over, thick=3
+nplothist, nrioff[ok], rixhist, riyhist, bin=0.01, color=djs_icolor('red'), /over, thick=3
+nplothist, ngroff[ok], grxhist, gryhist, bin=0.01, color=djs_icolor('green'), /over, $
+           thick=3
 oplot, [0, 0], [0, 1e4], thick=4
 grfit = gaussfit(grxhist, gryhist, nterms=3, grcoef)
 rifit = gaussfit(rixhist, riyhist, nterms=3, ricoef)
@@ -148,7 +149,7 @@ xyouts, -0.30, ymax*0.90, '(g-r) offset = ' + string(grcoef[1], format='(F6.3)')
 xyouts, -0.30, ymax*0.80, '(g-r) sigma = ' + string(grcoef[2], format='(F6.3)')
 xyouts, -0.30, ymax*0.70, '(r-i) offset = ' + string(ricoef[1], format='(F6.3)')
 xyouts, -0.30, ymax*0.60, '(r-i) sigma = ' + string(ricoef[2], format='(F6.3)')
-xyouts, 0.0, ymax*0.95, 'Corrected', align=0.5, color=!red
+xyouts, 0.0, ymax*0.95, 'Corrected', align=0.5, color=djs_icolor('red')
 
 ngroff_mean = grcoef[1]
 ngroff_sig = grcoef[2]
