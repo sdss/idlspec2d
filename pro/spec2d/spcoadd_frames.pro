@@ -354,22 +354,15 @@ pro spcoadd_frames, filenames, outputname, $
       return
    endif
 
+;stop
 ;set_plot,'x'
-;ifib=193
+;ifib=295
 ;colorv=['default','red','green','blue','magenta','yellow','cyan','default']
 ;lam = 10^wave
-;splot, lam[where(specnum EQ 0),ifib], $
-; flux[where(specnum EQ 0),ifib], color=colorv[0]
+;indx = where(plugmap.fiberid EQ ifib)
+;splot, lam[*,indx[0]], flux[*,indx[0]], color=colorv[0]
 ;for jnum=1, nfiles-1 do $
-; soplot, lam[where(specnum EQ jnum),ifib], $
-;  flux[where(specnum EQ jnum),ifib], color=colorv[jnum]
-;
-;splot, lam[where(specnum EQ 0),ifib], $
-; pixelmask[where(specnum EQ 0),ifib], color=colorv[0]
-;for jnum=1, nfiles-1 do $
-; soplot, lam[where(specnum EQ jnum),ifib], $
-;  pixelmask[where(specnum EQ jnum),ifib], color=colorv[jnum]
-;stop ; ???
+; soplot, lam[*,indx[jnum]], flux[*,indx[jnum]], color=colorv[jnum]
 
    ;---------------------------------------------------------------------------
    ; Construct output data structures, including the wavelength scale
@@ -405,6 +398,8 @@ pro spcoadd_frames, filenames, outputname, $
    finalandmask = lonarr(nfinalpix, nfiber)
    finalormask = lonarr(nfinalpix, nfiber)
    finalplugmap = replicate(plugmap[0], nfiber)
+   struct_assign, {fiberid: 0L}, finalplugmap ; Zero out all elements in this
+                                              ; FINALPLUGMAP structure.
 
    ;---------------------------------------------------------------------------
    ; Combine each fiber, one at a time
