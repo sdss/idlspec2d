@@ -147,6 +147,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    splog, 'Median counts in all fibers = ', fullscrunch
    splog, 'Number of bright fibers = ', whopct
 
+   ; Assume that all fiber-mask bits are fatal for selecting sky fibers???
    iskies = where(strtrim(plugsort.objtype,2) EQ 'SKY' $
     AND plugsort.fiberid GT 0 AND (fibermask EQ 0), nskies)
 
