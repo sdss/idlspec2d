@@ -6,13 +6,15 @@
 ;   Construct synthetic spectrum from eigen-templates.
 ;
 ; CALLING SEQUENCE:
-;   synflux = synthspec(hdr, zans, [eigndir= ])
+;   synflux = synthspec(zans, [ loglam=, hdr=, eigndir= ])
 ;
 ; INPUTS:
-;   hdr        - 
 ;   zans       - 
 ;
 ; OPTIONAL KEYWORDS:
+;   loglam     - Log-10 wavelengths at which to synthesize the spectrum.
+;   hdr        - If specified, then use this header to construct LOGLAM.
+;                Either LOGLAM or HDR must be specified.
 ;   eigendir   - Directory for EIGENFILE; default to $IDLSPEC2D/templates.
 ;
 ; OUTPUTS:
@@ -32,7 +34,7 @@
 ; REVISION HISTORY:
 ;   20-Aug-2000  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
-function synthspec, hdr, zans, eigendir=eigendir
+function synthspec, zans, loglam=objloglam, hdr=hdr, eigendir=eigendir
 
    if (n_elements(eigendir) EQ 0) then $
     eigendir = concat_dir(getenv('IDLSPEC2D_DIR'), 'templates')
@@ -42,10 +44,18 @@ function synthspec, hdr, zans, eigendir=eigendir
    ; Determine the wavelength mapping for the object spectra,
    ; which are the same for all of them.
 
-   naxis1 = sxpar(hdr, 'NAXIS1')
-   objloglam0 = sxpar(hdr, 'COEFF0')
-   objdloglam = sxpar(hdr, 'COEFF1')
-   objloglam = objloglam0 + dindgen(naxis1) * objdloglam
+   if (keyword_set(objloglam)) then begin
+      naxis1 = n_elements(objloglam)
+      objdloglam = objloglam[1] - objloglam[0]
+   endif else if (keyword_set(hdr)) then begin
+      naxis1 = sxpar(hdr, 'NAXIS1')
+      objloglam0 = sxpar(hdr, 'COEFF0')
+      objdloglam = sxpar(hdr, 'COEFF1')
+      objloglam = objloglam0 + dindgen(naxis1) * objdloglam
+   endif else begin
+      print, 'Either LOGLAM or HDR must be specified'
+      return, -1
+   endelse
 
    ;----------
    ; If no template file, then return all zeros.
@@ -82,14 +92,6 @@ function synthspec, hdr, zans, eigendir=eigendir
    ; Construct the synthetic spectrum as a linear combination of templates
 
    synflux = starflux # zans.theta[0:ncol-1+zans.npoly]
-
-   ;----------
-   ; Determine the wavelength mapping for the object spectra,
-   ; which are the same for all of them.
-
-   objloglam0 = sxpar(hdr, 'COEFF0')
-   objdloglam = sxpar(hdr, 'COEFF1')
-   objloglam = objloglam0 + dindgen(sxpar(hdr,'NAXIS1')) * objdloglam
 
    ;----------
    ; Apply redshift...

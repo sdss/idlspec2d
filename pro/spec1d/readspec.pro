@@ -7,7 +7,8 @@
 ;
 ; CALLING SEQUENCE:
 ;   readspec, plate, fiber, [mjd=, flux=, flerr=, invvar=, $
-;    andmask=, ormask=, disp=, plugmap=, loglam=, wave=, tsobj=, /silent ]
+;    andmask=, ormask=, disp=, plugmap=, loglam=, wave=, tsobj=, $
+;    zans=, /silent ]
 ;
 ; INPUTS:
 ;   plate      - Plate number(s)
@@ -33,6 +34,7 @@
 ;   loglam     - Log10-wavelength in log10-Angstroms [NPIXEL,NFIBER]
 ;   wave       - Wavelength in Angstroms [NPIXEL,NFIBER]
 ;   tsobj      - tsObj-structure output [NFIBER]
+;   zans       - Redshift output structure [NFIBER]
 ;
 ; COMMENTS:
 ;   One can input PLATE and FIBER as vectors, in which case there must
@@ -69,10 +71,11 @@
 ;------------------------------------------------------------------------------
 pro readspec1, plate, range, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
  andmask=andmask, ormask=ormask, disp=disp, plugmap=plugmap, $
- loglam=loglam, wave=wave, tsobj=tsobj, root_dir=root_dir, silent=silent
+ loglam=loglam, wave=wave, tsobj=tsobj, zans=zans, $
+ root_dir=root_dir, silent=silent
 
    common com_readspec, q_flux, q_flerr, q_invvar, q_andmask, q_ormask, $
-    q_disp, q_plugmap, q_loglam, q_wave, q_tsobj
+    q_disp, q_plugmap, q_loglam, q_wave, q_tsobj, q_zans
 
    platestr = string(plate,format='(i4.4)')
    if (NOT keyword_set(mjd)) then mjdstr = '*' $
@@ -82,12 +85,8 @@ pro readspec1, plate, range, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    filename = findfile(filepath(filename, root_dir=root_dir, $
     subdirectory=platestr), count=ct)
 
-   if (ct GT 1) then begin
-      i = reverse(sort(filename))
-      filename = filename[i[0]]
-   endif else begin
-      filename = filename[0]
-   endelse
+   if (ct GT 1) then filename = zfile[ (reverse(sort(filename)))[0] ] $
+    else filename = filename[0]
 
    if (NOT keyword_set(filename)) then begin
       flux = 0
@@ -100,6 +99,7 @@ pro readspec1, plate, range, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       loglam = 0
       wave = 0
       tsobj = 0
+      zans = 0
       return
    end
 
@@ -152,23 +152,36 @@ pro readspec1, plate, range, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       tsobj = plug2tsobj(plate, plugmap=plugmap)
    endif
 
+   if (q_zans) then begin
+      zfile = 'spZ-' + platestr + '-' + mjdstr + '.fits'
+      zfile = findfile(filepath(zfile, root_dir=root_dir, $
+       subdirectory=platestr), count=ct)
+
+      if (ct GT 1) then zfile = zfile[ (reverse(sort(zfile)))[0] ] $
+       else zfile = zfile[0]
+
+      zall = mrdfits(zfile, 1)
+      zans = zall[ (where(zall.fiberid EQ range[0]+1))[0] ]
+   endif
+
    return
 end
 
 ;------------------------------------------------------------------------------
 pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
  andmask=andmask, ormask=ormask, disp=disp, plugmap=plugmap, $
- loglam=loglam, wave=wave, tsobj=tsobj, silent=silent
+ loglam=loglam, wave=wave, tsobj=tsobj, zans=zans, silent=silent
 
    if (n_params() LT 1) then begin
       print, 'Syntax: readspec, plate, [ fiber, mjd=, flux=, flerr=, invvar=, $'
-      print, ' andmask=, ormask=, disp=, plugmap=, loglam=, wave=, tsobj=, /silent ] '
+      print, ' andmask=, ormask=, disp=, plugmap=, loglam=, wave=, tsobj=, $'
+      print, ' zans=, /silent ] '
       return
    endif
 
    ; This common block specifies which keywords will be returned.
    common com_readspec, q_flux, q_flerr, q_invvar, q_andmask, q_ormask, $
-    q_disp, q_plugmap, q_loglam, q_wave, q_tsobj
+    q_disp, q_plugmap, q_loglam, q_wave, q_tsobj, q_zans
 
    root_dir = getenv('SPECTRO_DATA')
    if (NOT keyword_set(root_dir)) then $
@@ -184,6 +197,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    q_loglam = arg_present(loglam)
    q_wave = arg_present(wave)
    q_tsobj = arg_present(tsobj)
+   q_zans = arg_present(zans)
 
    if (NOT keyword_set(fiber)) then fiber = lindgen(640) + 1
 ;      nfiber = n_elements(fiber)
@@ -221,6 +235,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       loglam1 = 0
       wave1 = 0
       tsobj1 = 0
+      zans1 = 0
 
       indx = where(platevec EQ platenums[ifile] AND mjdvec EQ mjdnums[ifile])
       irow = fibervec[indx] - 1
@@ -232,7 +247,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       readspec1, platenums[ifile], [i1,i2], mjd=mjdnums[ifile], $
        flux=flux1, flerr=flerr1, invvar=invvar1, andmask=andmask1, $
        ormask=ormask1, disp=disp1, plugmap=plugmap1, loglam=loglam1, $
-       wave=wave1, tsobj=tsobj1, root_dir=root_dir, silent=silent
+       wave=wave1, tsobj=tsobj1, zans=zans1, root_dir=root_dir, silent=silent
 
       if (ifile EQ 0) then begin
          allindx = indx
@@ -246,6 +261,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
          if (q_loglam) then loglam = loglam1[*,irow-i1]
          if (q_wave) then wave = wave1[*,irow-i1]
          if (q_tsobj) then tsobj = tsobj1[irow-i1]
+         if (q_zans) then zans = zans1[irow-i1]
       endif else begin
          allindx = [allindx, indx]
          if (q_flux) then spec_append, flux, flux1[*,irow-i1]
@@ -258,6 +274,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
          if (q_loglam) then spec_append, loglam, loglam1[*,irow-i1]
          if (q_wave) then spec_append, wave, wave1[*,irow-i1]
          if (q_tsobj) then tsobj = struct_append(tsobj, tsobj1[irow-i1])
+         if (q_zans) then zans = struct_append(zans, zans1[irow-i1])
       endelse
    endfor
 
@@ -277,6 +294,10 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    if (q_tsobj) then begin
       if (keyword_set(tsobj[0])) then $
        copy_struct_inx, tsobj, tsobj, index_to=allindx
+   endif
+   if (q_zans) then begin
+      if (keyword_set(zans[0])) then $
+       copy_struct_inx, zans, zans, index_to=allindx
    endif
 
    if (keyword_set(silent)) then print

@@ -125,6 +125,7 @@ pro/spec1d/pca_gal.pro -text
 pro/spec1d/pca_qso.pro -text
 pro/spec1d/pca_solve.pro -text
 pro/spec1d/pca_star.pro -text
+pro/spec1d/plotspec.pro -text
 pro/spec1d/plug2tsobj.pro -text
 pro/spec1d/poly_array.pro -text
 pro/spec1d/primfac.pro -text
@@ -138,6 +139,7 @@ pro/spec1d/synthspec.pro -text
 pro/spec1d/veldisp.pro -text
 pro/spec1d/wavelets.pro -text
 pro/spec1d/wavevector.pro -text
+pro/spec1d/writespec.pro -text
 pro/spec1d/zcompute.pro -text
 pro/spec1d/zfind.pro -text
 pro/spec1d/zfitmax.pro -text

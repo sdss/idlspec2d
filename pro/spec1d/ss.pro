@@ -10,7 +10,7 @@ pro ss, fiber
    nper = n_elements(zans) / 640L
    zans = zans[nper*(fiber-1)]
 
-   synflux = synthspec(hdr, zans)
+   synflux = synthspec(zans, hdr=hdr)
 
    yrange = minmax(synflux)
    ymin = 1.2 * yrange[0] - 0.2 * yrange[1]
