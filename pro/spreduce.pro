@@ -121,27 +121,30 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
    bestarc = select_arc(arcstruct)
 
-   if (NOT keyword_set(bestarc)) then 
+   if (NOT keyword_set(bestarc)) then begin
       splog, 'ABORT: No good arcs (saturated?)'
       return
    endif
 
-   splog, 'Best arc = ', arcname[ibest]
+   splog, 'Best arc = ', bestarc.name
    if ((color EQ 'blue' AND bestarc.bestcorr LT 0.5) $
     OR (color EQ 'red'  AND bestarc.bestcorr LT 0.5) ) then begin
       splog, 'ABORT: Best arc correlation = ', bestarc.bestcorr
+ 
+      ;  We want an return here don't we, instead of below
+      return
+
    endif else $
     if ((color EQ 'blue' AND bestarc.bestcorr LT 0.7) $
     OR (color EQ 'red'  AND bestarc.bestcorr LT 0.7) ) then begin
       splog, 'WARNING: Best arc correlation = ', bestarc.bestcorr
-      return
    endif
 
-   lambda = bestarc.lambda
-   xpeak = bestarc.xpeak
-   wset = bestarc.wset
+   lambda = *(bestarc.lambda)
+   xpeak = *(bestarc.xpeak)
+   wset =  *(bestarc.wset)
 
-   qaplot_arcline, bestarc.xdif_tset, bestarc.lambda, $
+   qaplot_arcline, *(bestarc.xdif_tset), lambda, $
     filename=bestarc.name, color=color
 
    ;------------------------------------------------------------------
@@ -195,13 +198,13 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       tai = sxpar(objhdr, 'TAI') + 0.5 * sxpar(objhdr, 'EXPTIME')
       bestflat = select_flat(flatstruct, tai)
 
-      if (NOT keyword_set(bestflat)) then
+      if (NOT keyword_set(bestflat)) then begin
          splog, 'ABORT: No good flats (saturated?)'
          return
       endif
 
-      xsol = bestflat.xsol
-      fflat = bestflat.fflat
+      xsol = *(bestflat.xsol)
+      fflat = *(bestflat.fflat)
 
       qaplot_fflat, fflat, wset, filename=bestflat.name
 
@@ -214,8 +217,8 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
        '-',framenum,'.fits'), root_dir=outdir)
 
       sxaddpar, objhdr, 'PLUGMAPF', plugfilename
-      sxaddpar, objhdr, 'FLATFILE', flatname[ibest]
-      sxaddpar, objhdr, 'ARCFILE', arcname[ibest]
+      sxaddpar, objhdr, 'FLATFILE', bestflat.name
+      sxaddpar, objhdr, 'ARCFILE', bestarc.name
       sxaddpar, objhdr, 'OBJFILE', objname[iobj]
       sxaddpar, objhdr, 'LAMPLIST', lampfile
       sxaddpar, objhdr, 'SKYLIST', skylinefile

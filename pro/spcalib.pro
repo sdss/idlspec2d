@@ -110,7 +110,7 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
 
    nflat = N_elements(flatname)
 
-   ftemp = create_flatstruct(nflat)
+   flatstruct = create_flatstruct(nflat)
 
    for iflat=0, nflat-1 do begin
 
@@ -147,7 +147,7 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
          ;------------------------------------------------------------------
 
          splog, 'Tracing 320 fibers in ',  flatname[iflat]
-         xsol = trace320crude(flatimg, yset=ycen, maxdev=0.15)
+         xsol = trace320crude(flatimg, flativar, yset=ycen, maxdev=0.15)
 
          splog, 'Fitting traces in ',  flatname[iflat]
          xy2traceset, ycen, xsol, tset, ncoeff=5, maxdev=0.1

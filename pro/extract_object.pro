@@ -109,7 +109,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
       endif 
 
       skymedian = djs_median(scrunch[iskies])
-      if (skymedian GT 1000.0) then begin
+      if (skymedian GT 3000.0) then begin
         splog, 'ABORT: Sky fibers are too bright '+string(skymedian)
         return
       endif
@@ -117,7 +117,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
       splog, '5% and 95% count levels ', scrunch[scrunch_sort[i5]], $
                                          scrunch[scrunch_sort[i95]]
 
-      if (scrunch[scrunch_sort[i5]] GT 2000.0) then begin
+      if (scrunch[scrunch_sort[i5]] GT 5000.0) then begin
          splog, 'ABORT: Fibers have '+ string(scrunch[scrunch_sort[i5]]) + $
                 ' at the 5% '
          ;
