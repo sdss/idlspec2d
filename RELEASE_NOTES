@@ -1,4 +1,10 @@
 
+-------------------------------------------------------------------------------
+v4_10_0 (Apr 8, 2003 idlspec2d running on IDL 5.3 - 5.5
+Built against specflat v1_5, elodie v1_0, idlutils v4_10_0.
+
+Test against new idlutils.
+
 APOHEADER: Allow an optional keyword MJD (to speed things up).
 CREATE_LINESTRUCT,LINEBACKFIT,SPREDUCE1D: Replace LINENPIX with the number
            of pixels to the left and right of the line center, LINENPIXLEFT
