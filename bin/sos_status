@@ -1,6 +1,8 @@
 #!/bin/bash -f
 #------------------------------------------------------------------------------
 # Script to check the status of Son-of-Spectro.
+# Hardwire the location of /data/spectro/spectrologs, whereas we should
+# really get it from the cron table???
 #
 # D. Schlegel, Princeton, 11 Dec 2000
 #------------------------------------------------------------------------------
@@ -61,8 +63,7 @@ fi
 echo
 logdir=$SPECTROLOG_DIR
 if [ -z "$SPECTROLOG_DIR" ] ; then
-   echo "Abort: SPECTROLOG_DIR not set!"
-   exit
+   SPECTROLOG_DIR=/data/spectro/spectrologs
 fi
 
 if [ -e $logdir ] ; then
