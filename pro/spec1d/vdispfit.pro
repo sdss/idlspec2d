@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   vdispfit, objflux, objivar, [ objloglam, hdr=, zobj=, npoly=, $
-;    sigma=, sigerr=, yfit= ]
+;    eigenfile=, eigendir=, sigma=, sigerr=, yfit= ]
 ;
 ; INPUTS:
 ;   objflux    - Galaxy spectrum (spectra); array of [NPIX,NGALAXY].
@@ -24,6 +24,9 @@
 ;   zobj       - Redshift for each galaxy; default to 0.
 ;   npoly      - Number of polynomial terms to append to eigenspectra;
 ;                default to 5.
+;   eigenfile  - File name for eigenvectors; default to 'spEigenVdisp*.fits'
+;   eigendir   - Directory name for EIGENFILE; default to
+;                '$IDLSPEC2D_DIR/templates'
 ;
 ; OUTPUTS:
 ;
@@ -44,6 +47,9 @@
 ;     linelist = [3725.94, 3727.24, 3970.072, 4101.73, 4340.46, $
 ;      4861.3632, 4958.911, 5006.843, 6300.32, 6548.05, 6562.801, $
 ;      6583.45, 6716.44, 6730.82]
+;
+;   The constructed over-sampled and smoothed eigenspectra are stored
+;   in a common block between calls if the eigen-vector file is the same.
 ;
 ; EXAMPLES:
 ;
@@ -85,10 +91,10 @@ end
 
 ;------------------------------------------------------------------------------
 pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
- sigma=sigma, sigerr=sigerr, yfit=yfit
+ eigenfile=eigenfile, eigendir=eigendir, sigma=sigma, sigerr=sigerr, yfit=yfit
 
    common com_vdispfit, bigflux, bigloglam, bigmask, nsamp, bigsig, $
-    nbigpix, nsig, dsig, nstar
+    nbigpix, nsig, dsig, nstar, lastfile
 
    if (NOT keyword_set(objloglam) AND NOT keyword_set(hdr)) then $
     message, 'Must specify either OBJLOGLAM or HDR!'
@@ -99,6 +105,7 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
    if (size(objflux, /n_dimen) EQ 1) then nobj = 1 $
     else nobj = dims[1]
    if (NOT keyword_set(zobj)) then zobj = fltarr(nobj)
+   if (NOT keyword_set(lastfile)) then lastfile = ''
 
    ;---------------------------------------------------------------------------
    ; If multiple object flux vectors exist, then call this routine recursively.
@@ -138,23 +145,25 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
    ; Generate the over-sampled eigen-templates for the stellar spectra.
    ; This is saved in a common block between calls.
 
-   if (NOT keyword_set(bigflux)) then begin
+   ;----------
+   ; Find the template file matching EIGENFILE
+
+   if (NOT keyword_set(eigenfile)) then $
+    eigenfile = 'spEigenVdisp*.fits'
+   if (NOT keyword_set(eigendir)) then $
+    eigendir = concat_dir(getenv('IDLSPEC2D_DIR'), 'templates')
+   allfiles = findfile(djs_filepath(eigenfile, root_dir=eigendir), count=ct)
+   if (ct EQ 0) then $
+    message, 'Unable to find EIGENFILE matching '+eigenfile
+   thisfile = allfiles[ (reverse(sort(allfiles)))[0] ]
+   splog, 'Selecting EIGENFILE=' + thisfile
+
+   if (NOT keyword_set(bigflux) OR (thisfile NE lastfile)) then begin
 
       nsamp = 10
       nsig = 25
       dsig = 25.0
       bigsig = findgen(nsig) * dsig ; in km/sec
-
-      ;----------
-      ; Find the most recent template file matching EIGENFILE
-
-      eigenfile = 'spEigenVdisp*.fits'
-      eigendir = concat_dir(getenv('IDLSPEC2D_DIR'), 'templates')
-      allfiles = findfile(djs_filepath(eigenfile, root_dir=eigendir), count=ct)
-      if (ct EQ 0) then $
-       message, 'Unable to find EIGENFILE matching '+eigenfile
-      thisfile = allfiles[ (reverse(sort(allfiles)))[0] ]
-      splog, 'Selecting EIGENFILE=' + thisfile
 
       ;----------
       ; Read the stellar templates
@@ -216,6 +225,7 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
        bigmask = bigmask AND (bigloglam LT vaclist[iline] - mwidth $
         OR bigloglam GT vaclist[iline] + mwidth)
 
+      lastfile = thisfile
    endif
 
    ;----------
