@@ -12,14 +12,14 @@ typedef struct {
 
 # For biases, insist on exposure times of 0 sec.
 
-speclimit red flat EXPTIME b1 -9e9 -1
-speclimit red flat EXPTIME b2 -9e9 -1
-speclimit red flat EXPTIME r1 -9e9 -1
-speclimit red flat EXPTIME r2 -9e9 -1
-speclimit red flat EXPTIME b1 1 9e9
-speclimit red flat EXPTIME b2 1 9e9
-speclimit red flat EXPTIME r1 1 9e9
-speclimit red flat EXPTIME r2 1 9e9
+speclimit red bias EXPTIME b1 -9e9 -1
+speclimit red bias EXPTIME b2 -9e9 -1
+speclimit red bias EXPTIME r1 -9e9 -1
+speclimit red bias EXPTIME r2 -9e9 -1
+speclimit red bias EXPTIME b1 1 9e9
+speclimit red bias EXPTIME b2 1 9e9
+speclimit red bias EXPTIME r1 1 9e9
+speclimit red bias EXPTIME r2 1 9e9
 
 # Issue errors if the 98th percentile of the bias frames is not in the
 # range (0,20).
