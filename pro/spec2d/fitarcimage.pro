@@ -67,7 +67,6 @@
 ;   arcfit_guess()
 ;   djs_median
 ;   djsig()
-;   finalarcfit
 ;   trace_crude()
 ;   trace_fweight()
 ;   traceset2pix()
