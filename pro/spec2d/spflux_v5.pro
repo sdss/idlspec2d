@@ -498,7 +498,7 @@ function spflux_bspline, loglam, mratio, mrativar, outmask=outmask, $
  everyn=everyn, airmass=airmass
 
    isort = sort(loglam)
-   nord = 4 ; ???
+   nord = 3 ; ???
 
    ; Choose the break points using the EVERYN option, but masking
    ; out more pixels near stellar features just when selecting them.
@@ -606,11 +606,10 @@ pro spflux_plotcalib, mratiologlam, mratioflux, mrativar, $
 
    xrange = 10.^logrange
    ii = where(fitloglam GE logrange[0] AND fitloglam LE logrange[1])
-   yrange = [min(fitflux[ii])>0.04*median(fitflux[ii])/1.1, $
-    max(fitflux[ii])*1.1]
+   yrange = [0.9 * min(fitflux[ii]), 1.1 * max(fitflux[ii])]
    nfinal = (size(mratioflux, /dimens))[2]
 
-   djs_plot, xrange, yrange, /xstyle, /ystyle, /nodata, /ylog, $
+   djs_plot, xrange, yrange, /xstyle, /ystyle, /nodata, $
     xtitle='Wavelength [Ang]', ytitle='Counts/(10^{-17}erg/cm^2/s/Ang', $
     title=plottitle
    for k=0, nfinal-1 do begin
@@ -850,7 +849,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       ;----------
       ; Do the B-spline fits for the blue CCDs.
 
-      everyn = nblue * nfinal * 5
+      everyn = nblue * nfinal * 10
       sset_b = spflux_bspline(loglam[*,iblue,ifinal], $
        mratio[*,iblue,ifinal], mrativar[*,iblue,ifinal], $
        everyn=everyn, outmask=mask_b)
