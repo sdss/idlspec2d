@@ -35,25 +35,25 @@ speclimit red PERCENTILE98 r2 20 65536
 # CCD's, we'll issue warnings if they go more than 2 pixel off, and
 # an error if more than 10 pixels off.
 
-speclimit yellow XMIN b1 -999 -2
-speclimit yellow XMIN b2 -999 -2
-speclimit yellow XMIN r1 -999 -2
-speclimit yellow XMIN r2 -999 -2
+speclimit yellow XMIN b1 -9e9 -2
+speclimit yellow XMIN b2 -9e9 -2
+speclimit yellow XMIN r1 -9e9 -2
+speclimit yellow XMIN r2 -9e9 -2
 
-speclimit red XMIN b1 -999 -10
-speclimit red XMIN b2 -999 -10
-speclimit red XMIN r1 -999 -10
-speclimit red XMIN r2 -999 -10
+speclimit red XMIN b1 -9e9 -10
+speclimit red XMIN b2 -9e9 -10
+speclimit red XMIN r1 -9e9 -10
+speclimit red XMIN r2 -9e9 -10
 
-speclimit yellow XMAX b1 2050 9999
-speclimit yellow XMAX b2 2050 9999
-speclimit yellow XMAX r1 2050 9999
-speclimit yellow XMAX r2 2061 9999
+speclimit yellow XMAX b1 2050 9e9
+speclimit yellow XMAX b2 2050 9e9
+speclimit yellow XMAX r1 2050 9e9
+speclimit yellow XMAX r2 2061 9e9
 
-speclimit red XMAX b1 2059 9999
-speclimit red XMAX b2 2059 9999
-speclimit red XMAX r1 2059 9999
-speclimit red XMAX r2 2070 9999
+speclimit red XMAX b1 2059 9e9
+speclimit red XMAX b2 2059 9e9
+speclimit red XMAX r1 2059 9e9
+speclimit red XMAX r2 2070 9e9
 
 # Issue a warning if 3 or more fibers are missing on either side of
 # the spectrograph, and an error if 10 or more.
@@ -77,25 +77,25 @@ speclimit red NGOODFIBER r2 0 310
 # Issue warning if more than 15 Ang from these best values, and error if
 # more than 30 Ang.
 
-speclimit yellow WAVEMIN b1 3807 9999
-speclimit yellow WAVEMIN b2 3808 9999
-speclimit yellow WAVEMIN r1 5785 9999
-speclimit yellow WAVEMIN r2 5805 9999
+speclimit yellow WAVEMIN b1 3807 9e9
+speclimit yellow WAVEMIN b2 3808 9e9
+speclimit yellow WAVEMIN r1 5785 9e9
+speclimit yellow WAVEMIN r2 5805 9e9
 
-speclimit red WAVEMIN b1 3822 9999
-speclimit red WAVEMIN b2 3823 9999
-speclimit red WAVEMIN r1 5800 9999
-speclimit red WAVEMIN r2 5820 9999
+speclimit red WAVEMIN b1 3822 9e9
+speclimit red WAVEMIN b2 3823 9e9
+speclimit red WAVEMIN r1 5800 9e9
+speclimit red WAVEMIN r2 5820 9e9
 
-speclimit yellow WAVEMAX b1 0 6150
-speclimit yellow WAVEMAX b2 0 6151
-speclimit yellow WAVEMAX r1 0 9210
-speclimit yellow WAVEMAX r2 0 9225
+speclimit yellow WAVEMAX b1 -9e9 6150
+speclimit yellow WAVEMAX b2 -9e9 6151
+speclimit yellow WAVEMAX r1 -9e9 9210
+speclimit yellow WAVEMAX r2 -9e9 9225
 
-speclimit red WAVEMAX b1 0 6135
-speclimit red WAVEMAX b2 0 6136
-speclimit red WAVEMAX r1 0 9195
-speclimit red WAVEMAX r2 0 9210
+speclimit red WAVEMAX b1 -9e9 6135
+speclimit red WAVEMAX b2 -9e9 6136
+speclimit red WAVEMAX r1 -9e9 9195
+speclimit red WAVEMAX r2 -9e9 9210
 
 
 # The correlations of the arc lamps to that expected almost always
@@ -131,15 +131,15 @@ speclimit red NLAMPS r2 0 30
 # if the sky levels are 2X higher, and an error (red) if they are
 # 4X higher.
 
-speclimit yellow SKYPERSEC b1 0.30 9999
-speclimit yellow SKYPERSEC b2 0.30 9999
-speclimit yellow SKYPERSEC r1 0.60 9999
-speclimit yellow SKYPERSEC r2 0.60 9999
+speclimit yellow SKYPERSEC b1 0.30 9e9
+speclimit yellow SKYPERSEC b2 0.30 9e9
+speclimit yellow SKYPERSEC r1 0.60 9e9
+speclimit yellow SKYPERSEC r2 0.60 9e9
 
-speclimit red SKYPERSEC b1 0.60 9999
-speclimit red SKYPERSEC b2 0.60 9999
-speclimit red SKYPERSEC r1 1.20 9999
-speclimit red SKYPERSEC r2 1.20 9999
+speclimit red SKYPERSEC b1 0.60 9e9
+speclimit red SKYPERSEC b2 0.60 9e9
+speclimit red SKYPERSEC r1 1.20 9e9
+speclimit red SKYPERSEC r2 1.20 9e9
 
 # Don't issue any warnings about (S/N)^2 for individual exposures.
 
