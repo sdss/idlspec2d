@@ -366,14 +366,17 @@ RA=2h, z=4.3, is due to bad reductions on plate 202.
 <P>
 I've attempted to generate one monstrous file with all the spectroscopic
 and photometric outputs.  This is a FITS binary table called "spAll.fits".
-At present, there are two versions of this file.  One contains all of
-the spectroscopic data taken to date (approximately 150,000 spectra).
-The other ("spAll-qsurvey.fits") is trimmed to only those plates that
-comprise unique tiles with survey quality S/N (e.g., where QSURVEY=1 in the
-<A HREF="#platelist">platelist file</A>).
+At present, there are three versions of this file as follows:
+<OL>
+   <LI><B>spAll.fits</B> - All spectroscopic data taken to date (approximately 200,000 spectra).
+   <LI><B>spAll-qsurvey.fits</B> - spAll trimmed to only those plates that comprise unique
+       tiles with survey quality S/N (e.g., where QSURVEY=1 in the
+       <A HREF="#platelist">platelist file</A>).
+   <LI><B>spAll-public.fits</B> - spAll trimmed to only those plates in the Early Data Release.
+</OL>
 
 <P>
-In addition, I've also made an ASCII file with the most relevant quantities
+In addition, I've also made ASCII files with the most relevant quantities
 that one may wish to search on.  This file is "spAll*.dat", and is basically
 a stripped-down version of "spAll*.fits" for those FITS-challenged astronomers.
 
