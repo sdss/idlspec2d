@@ -62,6 +62,7 @@
 ; DATA FILES:
 ;   $SPECTRO_DATA/$PLATE/spPlate-$PLATE-$MJD.fits
 ;   $SPECTRO_DATA/$PLATE/spZbest-$PLATE-$MJD.fits
+;   $SPECTRO_DATA/plates/tsObj*-$PLATE.fit
 ;   $IDLSPEC2D_DIR/templates/TEMPLATEFILES
 ;
 ; PROCEDURES CALLED:
