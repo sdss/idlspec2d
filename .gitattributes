@@ -357,6 +357,7 @@ pro/spec1d/primfac.pro -text
 pro/spec1d/qaplot_fcalibvec.pro -text
 pro/spec1d/qsorebin.pro -text
 pro/spec1d/read_elodie.pro -text
+pro/spec1d/readonespec.pro -text
 pro/spec1d/readspec.pro -text
 pro/spec1d/redindices.pro -text
 pro/spec1d/redmonsterlist.pro -text
