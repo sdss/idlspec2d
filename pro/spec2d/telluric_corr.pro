@@ -93,19 +93,35 @@ function telluric_corr,flux, fluxivar, wset, plugsort, $
       tellbands1 = { TELLBAND, $
        twave1: 6850., $
        twave2: 6960., $
-       cwave1: [6600., 6950.], $
-       cwave2: [6860., 7200.] }
+       cwave1: [6600., 6950., 0], $
+       cwave2: [6860., 7200., 0] }
       tellbands2 = { TELLBAND, $
+       twave1: 7150., $
+       twave2: 7350., $
+       cwave1: [7050., 7115., 7340.], $
+       cwave2: [7160., 7130., 7440.] }
+      tellbands3 = { TELLBAND, $
        twave1: 7560., $
        twave2: 7720., $
-       cwave1: [7400., 7700.], $
-       cwave2: [7580., 8000.] }
-      tellbands3 = { TELLBAND, $
-       twave1: 8220., $
+       cwave1: [7400., 7700., 0], $
+       cwave2: [7580., 8000., 0] }
+      tellbands4 = { TELLBAND, $
+       twave1: 8105., $
        twave2: 8240., $
-       cwave1: [8125., 8235.], $
-       cwave2: [8225., 8325.] }
-      tellbands = [tellbands1, tellbands2, tellbands3]
+       cwave1: [8000., 8225., 0], $
+       cwave2: [8105., 8325., 0] }
+      tellbands5 = { TELLBAND, $
+       twave1: 8530., $
+       twave2: 8865., $
+       cwave1: [8490., 8865., 0], $
+       cwave2: [8530., 8905., 0] }
+      tellbands6 = { TELLBAND, $
+       twave1: 8644., $
+       twave2: 8697., $
+       cwave1: [8604., 8697., 0], $
+       cwave2: [8644., 8737., 0] }
+      tellbands = [tellbands1, tellbands2, tellbands3, tellbands4, $
+       tellbands5, tellbands6]
    endif
 
    ;----------
@@ -285,7 +301,12 @@ function telluric_corr,flux, fluxivar, wset, plugsort, $
 
    if (keyword_set(plottitle)) then begin
 
-      !p.multi = [0,1,n_elements(tellbands)]
+      nbands = n_elements(tellbands)
+      if (nbands LE 3) then $
+       !p.multi = [0,1,nbands] $
+      else $
+       !p.multi = [0,2,ceil(nbands/2.)]
+
       xmargin = 50 ; Extra plot range in Angstroms
 
       for iband=0, n_elements(tellbands)-1 do begin
