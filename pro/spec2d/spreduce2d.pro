@@ -40,6 +40,7 @@
 ;   splog
 ;   spreduce
 ;   yanny_free
+;   yanny_par()
 ;   yanny_read
 ;
 ; INTERNAL SUPPORT ROUTINES:
@@ -106,7 +107,7 @@ pro spreduce2d, planfile, docams=docams, xdisplay=xdisplay
    ;----------
    ; Find keywords from the header
 
-   mjd = yanny_par(hdr, 'MJD')
+   mjd = long(yanny_par(hdr, 'MJD'))
    mjdstr = string(mjd, format='(i05.5)')
 
    inputdir = concat_dir(rawdata_dir, mjdstr)

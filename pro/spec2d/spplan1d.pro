@@ -109,7 +109,7 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
 
       for iplan=0, nplan-1 do begin
          yanny_read, allplan[iplan], pp, hdr=hdr
-         thismjd = yanny_par(hdr, 'MJD')
+         thismjd = long(yanny_par(hdr, 'MJD'))
          for ii=0, n_elements(pp)-1 do begin
             sname = tag_names(*pp[ii], /structure_name)
             if (sname EQ 'SPEXP') then begin

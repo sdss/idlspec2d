@@ -39,7 +39,7 @@ function batch2d_rawfiles, planfile, outfile=outfile
 
    yanny_read, planfile, pp, hdr=hdr
    extractdir = yanny_par(hdr, 'extractdir')
-   thismjd = yanny_par(hdr, 'MJD')
+   thismjd = long(yanny_par(hdr, 'MJD'))
    logfile = yanny_par(hdr, 'logfile')
    plotfile = yanny_par(hdr, 'plotfile')
    for ii=0, n_elements(pp)-1 do begin
@@ -164,7 +164,7 @@ pro batch2d, platenums, topdir=topdir, mjd=mjd, mjstart=mjstart, mjend=mjend, $
 
       for ifile=0, nfile-1 do begin
          yanny_read, planfile[ifile], hdr=hdr
-         thismjd = yanny_par(hdr, 'MJD')
+         thismjd = long(yanny_par(hdr, 'MJD'))
 ; GET ONLY THE MJD's THAT WE WANT ???
          if (keyword_set(platelist)) then begin
             platelist = [platelist, platedirs[idir]]

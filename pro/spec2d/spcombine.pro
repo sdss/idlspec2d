@@ -94,7 +94,7 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay
    plotsnfile = yanny_par(hdr, 'plotsnfile')
    fcalibprefix = yanny_par(hdr, 'fcalibprefix')
    combinefile = yanny_par(hdr, 'combinefile')
-   thismjd = yanny_par(hdr, 'MJD')
+   thismjd = long(yanny_par(hdr, 'MJD'))
    if (NOT keyword_set(thismjd)) then $
     thismjd = max(allseq.mjd)
 

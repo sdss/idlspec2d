@@ -24,6 +24,7 @@
 ;
 ; PROCEDURES CALLED:
 ;   spflatten
+;   yanny_par()
 ;   yanny_read
 ;
 ; INTERNAL SUPPORT ROUTINES:
@@ -49,7 +50,7 @@ pro spallflat, planfile=planfile
    ; Find keywords from the header
    inputDir = yanny_par(hdr, 'inputDir')
    flatDir = yanny_par(hdr, 'flatDir')
-   mjd = yanny_par(hdr, 'MJD')
+   mjd = long(yanny_par(hdr, 'MJD'))
 
    camnames = ['b1', 'r2', 'b2', 'r1']
    camnums = ['01', '02', '03', '04']

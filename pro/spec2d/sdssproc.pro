@@ -76,6 +76,7 @@
 ;   sxpar()
 ;   writefits
 ;   yanny_free
+;   yanny_par()
 ;   yanny_read
 ;
 ; INTERNAL SUPPORT ROUTINES:
@@ -119,7 +120,7 @@ function findopfile, expres, mjd, indir
    mjdlist = lonarr(nfile)
    for i=0,nfile-1 do begin
       yanny_read, files[i], hdr=hdr
-      mjdlist[i] = yanny_par(hdr, 'mjd')
+      mjdlist[i] = long(yanny_par(hdr, 'mjd'))
    endfor
 
    diff = mjd - mjdlist
