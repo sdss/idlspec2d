@@ -6,7 +6,7 @@
 ;   Construct a tsObj structure that matches all entries in a plugmap structure
 ;
 ; CALLING SEQUENCE:
-;   tsobj = plug2tsobj(plateid, [ra, dec, plugmap=, dmin= ])
+;   tsobj = plug2tsobj(plateid, [ra, dec, plugmap=, dmin=, /silent ])
 ;
 ; INPUTS:
 ;   plateid    - Plate number; this can be either a scalar, in which case
@@ -27,6 +27,7 @@
 ;                tsObj file was not found on disk.
 ;
 ; OPTIONAL OUTPUTS:
+;   silent     - Make the call to MRDFITS silent.
 ;
 ; COMMENTS:
 ;   The calibObj files are assumed to be in the directory $SPECTRO_DATA/calibobj.
@@ -55,7 +56,8 @@
 ;   25-Jun-2000  Written by David Schlegel, Princeton.
 ;-
 ;------------------------------------------------------------------------------
-function plug2tsobj, plateid, ra1, dec1, plugmap=plugmap, dmin=dmin
+function plug2tsobj, plateid, ra1, dec1, plugmap=plugmap, dmin=dmin, $
+ silent=silent
 
    root_dir = getenv('SPECTRO_DATA')
    if (NOT keyword_set(root_dir)) then $
@@ -113,7 +115,7 @@ function plug2tsobj, plateid, ra1, dec1, plugmap=plugmap, dmin=dmin
    message = 0
    fits_read, filename, junk, /no_abort, message=message
    if (keyword_set(message)) then tstemp = 0 $ ; File is invalid FITS file
-    else tstemp = mrdfits(filename, 1)
+    else tstemp = mrdfits(filename, 1, silent=silent)
    if (NOT keyword_set(tstemp)) then begin
       print, 'WARNING: calibObj file is empty: ' + filename
       return, 0
