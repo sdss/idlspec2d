@@ -298,6 +298,7 @@ pro/spec2d/readplugmap.pro -text
 pro/spec2d/redmonster.pro -text
 pro/spec2d/reject_arc.pro -text
 pro/spec2d/reject_flat.pro -text
+pro/spec2d/sdreportmake.pro -text
 pro/spec2d/sdsshead.pro -text
 pro/spec2d/sdssproc.pro -text
 pro/spec2d/select_arc.pro -text
