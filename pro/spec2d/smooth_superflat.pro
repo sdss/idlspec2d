@@ -61,8 +61,8 @@ function smooth_superflat, superflatset, airset, plottitle=plottitle
    bad = where(outmask EQ 0, nbad)
 
    splog, 'Number of pixels rejected: '+strtrim(string(nbad),2)
-   if nbad GT 20 then $
-    splog, 'WARNING: possible Argon lines in Superflat!'
+   if nbad GT 30 then $
+    splog, 'Warning: possible Argon lines in Superflat!'
 
    ; if pixels were rejected (especially emission lines), then grow one pixel
    ; and refit.
