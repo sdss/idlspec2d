@@ -7,8 +7,8 @@
 ;
 ; CALLING SEQUENCE:
 ;   xy2traceset, xpos, ypos, tset, [ func=func, ncoeff=ncoeff, $
-;    xmin=xmin, xmax=xmax, maxdev=maxdev, maxiter=maxiter, $
-;    singlerej=singlerej, xmask=xmask, _EXTRA=KeywordsForFuncFit ]
+;    xmin=xmin, xmax=xmax, maxdev=maxdev, maxsig=maxsig, maxiter=maxiter, $
+;    singlerej=singlerej, xmask=xmask, yfit=yfit, _EXTRA=extra ]
 ;
 ; INPUTS:
 ;   xpos       - X positions corresponding to YPOS as an [nx,Ntrace] array
@@ -24,10 +24,13 @@
 ;                in XPOS
 ;   xmax       - Explicitly set XMAX for trace set rather than using maximum
 ;                in XPOS
-;   maxdev     - Maximum deviation in the fit to YPOS; default to rejecting any
-;                points that deviate by more than 1.0 from the fit.
-;   maxiter    - Maximum number of rejection iterations; default to 10;
-;                set to 0 for no rejection.
+;   maxdev     - Maximum deviation in the fit to YPOS; set to 0 for no reject;
+;                default to 0.
+;   maxsig     - Maximum deviation in the fit to YPOS in terms of the 1-sigma
+;                dispersion of the residuals; set to 0 for no reject;
+;                default to 0.
+;   maxiter    - Maximum number of rejection iterations; set to 0 for no
+;                rejection; default to 10 if either MAXDEV or MAXSIG are set.
 ;                Rejection iterations continues until convergence
 ;                (actually, until the number of rejected pixels is unchanged).
 ;   singlerej  - If set, then reject at most one deviant point per iteration,
@@ -41,8 +44,13 @@
 ; OPTIONAL OUTPUTS:
 ;   xmask      - Mask set to 1 for good points and 0 for rejected points;
 ;                same dimensions as XPOS, YPOS.
+;   yfit       - Fit values at each XPOS.
 ;
 ; COMMENTS:
+;   Note that both MAXDEV and MAXSIG can be set for applying both rejection
+;   schemes at once.
+;
+;   The HALFINTWO keyword can be passed to FCHEBYSHEV by this procedure.
 ;
 ; EXAMPLES:
 ;
@@ -60,19 +68,25 @@
 ;-
 ;------------------------------------------------------------------------------
 pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
- xmin=xmin, xmax=xmax, maxdev=maxdev, maxiter=maxiter, $
- singlerej=singlerej, xmask=xmask, _EXTRA=KeywordsForFuncFit
+ xmin=xmin, xmax=xmax, maxdev=maxdev, maxsig=maxsig, maxiter=maxiter, $
+ singlerej=singlerej, xmask=xmask, yfit=yfit, _EXTRA=extra
 
    ; Need 3 parameters
    if (N_params() LT 3) then begin
       print, 'Syntax - xy2traceset, xpos, ypos, tset, [ func=, ncoeff=, $
-      print, ' xmin=, xmax=, maxdev=, maxiter=, /singlerej, xmask= ]'
+      print, ' xmin=, xmax=, maxdev=, maxsig=, maxiter=, /singlerej, yfit=, xmask= ]'
       return
    endif
 
    if (NOT keyword_set(func)) then func = 'legendre'
-   if (NOT keyword_set(maxdev)) then maxdev = 1.0
-   if (N_elements(maxiter) EQ 0) then maxiter = 10
+   if (N_elements(maxdev) EQ 0) then maxdev = 0
+   if (N_elements(maxsig) EQ 0) then maxsig = 0
+   if (N_elements(maxiter) EQ 0) then begin
+      if (maxdev NE 0 or maxsig NE 0) then numiter = 10 $
+       else numiter = 0
+   endif else begin
+      numiter = maxiter
+   endelse
 
    ndim = size(ypos, /n_dim)
    dims = size(ypos, /dim)
@@ -122,8 +136,8 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
          iiter = 0
          ngood = nx
          nglast = nx+1 ; Set to anything other than NGOOD for 1st iteration
-         while ( (iiter EQ 0 AND maxiter EQ 0) $
-              OR (ngood NE nglast AND iiter LE maxiter AND ngood GE 1) $
+         while ( (iiter EQ 0 AND numiter EQ 0) $
+              OR (ngood NE nglast AND iiter LE numiter AND ngood GE 1) $
           ) do begin
 
             if (iiter EQ 0) then begin
@@ -132,26 +146,35 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
             endif else begin
                nglast = ngood
                if (keyword_set(singlerej)) then begin
-                  worstdiff = max(abs(yfit[igood]-ypos[igood,itrace]), iworst)
-                  if (worstdiff GT maxdev) then begin
+                  ydiff = yfit[igood] - ypos[igood,itrace]
+                  ysig = stdev(ydiff)
+                  worstdiff = max(abs(ydiff), iworst)
+                  if ( (keyword_set(maxdev) AND worstdiff GT maxdev) $
+                    OR (keyword_set(maxsig) AND worstdiff GT maxsig*ysig) ) $
+                   then begin
                      qgood[igood[iworst]] = 0
-                     igood = where(qgood, ngood)
                   endif
                endif else begin
-                  qgood = abs(yfit-ypos[*,itrace]) LT maxdev
-                  igood = where(qgood, ngood)
+                  ydiff = yfit - ypos[*,itrace]
+                  ysig = stdev(ydiff)
+                  qgood = bytarr(nx) + 1
+                  if (keyword_set(maxdev)) then $
+                   qgood = qgood AND (abs(ydiff) LT maxdev)
+                  if (keyword_set(maxsig)) then $
+                   qgood = qgood AND (abs(ydiff) LT maxsig*ysig)
                endelse
+               igood = where(qgood, ngood)
             endelse
 
             nreject = nx - ngood
 
             res = func_fit(xnorm, ypos[*,itrace], ncoeff, weights=qgood, $
-             function_name=function_name, yfit=yfit, _EXTRA=KeywordsForFuncFit)
+             function_name=function_name, yfit=yfit, _EXTRA=extra)
 
             if (func EQ 'legendre') then $
-               yfit = flegendre(xnorm, ncoeff) # res
+             yfit = flegendre(xnorm, ncoeff) # res
             if (func EQ 'chebyshev') then $
-               yfit = fchebyshev(xnorm, ncoeff) # res
+             yfit = fchebyshev(xnorm, ncoeff, _EXTRA=extra) # res
 
             iiter = iiter + 1
          endwhile
