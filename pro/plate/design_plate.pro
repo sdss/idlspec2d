@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   design_plate, stardata, [ racen=, deccen=, tilenum=, platenum=, $
-;    airtemp=, nstd=, nminsky= ]
+;    airtemp=, nstd=, nminsky=, nextra= ]
 ;
 ; INPUTS:
 ;   stardata   - Structure with data for each star; must contain the
@@ -27,6 +27,11 @@
 ;                This will be split with NSTD/2 standards on the North
 ;                half of the plate, and the same number on the South.
 ;   nminsky    - Minimum number of sky fibers; default to 32.
+;   nextra     - Number of extra fibers to assign, beyond the 640 science
+;                fibers.  In principle, this should be 0.  In practice,
+;                the "fiberPlates" code in the PLATE product will either
+;                crash or multiply-assign fibers to the same object unless
+;                there are extra objects.  Default to 10.
 ;
 ; OUTPUTS:
 ;
@@ -114,14 +119,14 @@ function design_append, allplug, oneplug, nadd=nadd
 
    ;----------
    ; Discard objects within 68 arcsec of the center hole or more
-   ; then 1.49 deg from the plate center.
+   ; then 1.49 deg from the plate center (pad to 70 arcsec and 1.485 deg).
 
    thisrad = sqrt(oneplug.xfocal^2 + oneplug.yfocal^2)
-   if (thisrad LE platescale*68.1/3600. $
-    OR thisrad GE platescale*1.489) then return, allplug
+   if (thisrad LE platescale*70./3600. $
+    OR thisrad GE platescale*1.485) then return, allplug
 
    ;----------
-   ; Discard objects within 55 arcsec of existing objects.
+   ; Discard objects within 55 arcsec of existing objects. (Pad to 57 arcsec.)
    ; Do this based upon XFOCAL,YFOCAL positions.
    ; The closest two fibers can be is PLATESCALE * 55/3600(deg) = 3.32652 mm
 
@@ -129,7 +134,7 @@ function design_append, allplug, oneplug, nadd=nadd
       r2 = (allplug.xfocal - oneplug.xfocal)^2 $
            + (allplug.yfocal - oneplug.yfocal)^2
       mindist = min(sqrt(r2))
-      if (mindist LT platescale*55./3600.) then return, allplug
+      if (mindist LT platescale*57./3600.) then return, allplug
    endif
 
    ;----------
@@ -151,7 +156,8 @@ end
 
 ;------------------------------------------------------------------------------
 pro design_plate, stardata1, tilenums=tilenum, platenums=platenum, $
- racen=racen, deccen=deccen, airtemp=airtemp, nstd=nstd, nminsky=nminsky
+ racen=racen, deccen=deccen, airtemp=airtemp, nstd=nstd, nminsky=nminsky, $
+ nextra=nextra
 
    if (NOT keyword_set(tilenum)) then tilenum = 1
    if (NOT keyword_set(platenum)) then platenum = tilenum
@@ -160,7 +166,8 @@ pro design_plate, stardata1, tilenums=tilenum, platenums=platenum, $
    if (n_elements(airtemp) EQ 0) then airtemp = 5.0
    if (NOT keyword_set(nstd)) then nstd = 8L
    if (NOT keyword_set(nminsky)) then nminsky = 32L
-   ntot = 651L ; Number of guide + science fibers
+   if (n_elements(nextra) EQ 0) then nextra = 10L
+   ntot = 651L + nextra ; Number of guide + science fibers
 
    plugmaptfile = 'plPlugMapT-' + string(tilenum,format='(i4.4)') + '.par'
    plugmappfile = 'plPlugMapP-' + string(platenum,format='(i4.4)') + '.par'
@@ -342,10 +349,11 @@ pro design_plate, stardata1, tilenums=tilenum, platenums=platenum, $
              'raCen ' + string(racen), $
              'decCen ' + string(deccen) ]
 
-   allplug.xfocal = 0. ; These values will be computed by PLATE
-   allplug.yfocal = 0. ; These values will be computed by PLATE
-   allplug.fiberid = -9999L ; These values will be computed by PLATE
-   allplug.throughput = -9999L ; These values will be computed by PLATE
+   allplug.xfocal = -999 ; These values will be computed by PLATE
+   allplug.yfocal = -999 ; These values will be computed by PLATE
+   allplug.spectrographid = -999L ; These values will be computed by PLATE
+   allplug.fiberid = -999L ; These values will be computed by PLATE
+   allplug.throughput = 1L ; These values will be computed by PLATE
    yanny_write, plugmaptfile, ptr_new(allplug), hdr=outhdr, $
     enums=plugenum, structs=plugstruct
 
