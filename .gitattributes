@@ -66,9 +66,6 @@ etc/sdss_z_atm.dat -text
 etc/skylines.dat -text
 etc/spChunkList.par -text
 etc/spMaskbits.par -text
-etc/spTemplateE.dat -text
-etc/spTemplateQSO.dat -text
-etc/template5gal.dat -text
 examples/Makefile -text
 examples/README -text
 examples/batch1d.par -text
