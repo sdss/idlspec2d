@@ -6,12 +6,13 @@
 ;   Extract the flux with profile weighting at centroid positions.
 ;
 ; CALLING SEQUENCE:
-;   ans = extract_row( fimage, invvar, xcen, [ymodel=ymodel,
+;   ans = extract_row( fimage, invvar, xcen, sigma, [ymodel=ymodel,
 ;              fscat = fscat, proftype = proftype, wfixed = wfixed,
 ;              inputans=inputans, iback = iback, oback =oback, bfixarr=bfixarr,
+;              xvar = xvar,
 ;              diagonal=diagonal, fullcovar=fullcovar, wfixarr = wfixarr,
-;              sigma=sigma, nPoly=nPoly, maxIter=maxIter, highrej=highrej, 
-;              lowrej=lowrej])
+;              nPoly=nPoly, maxIter=maxIter, highrej=highrej, 
+;              lowrej=lowrej, calcCovar=calcCovar])
 ;
 ; INPUTS:
 ;   fimage     - Image[nCol]
@@ -27,6 +28,7 @@
 ;                    (needed if fixed parameters are non-zero)
 ;   bfixarr    - array of 1's and zero's which set which background 
 ;                    parameters are fixed.
+;   xvar       - x values of fimage and invvar, default is findgen(nx) 
 ;   nPoly      - order of chebyshev scattered light background; default to 5
 ;   maxIter    - maximum number of profile fitting iterations; default to 5
 ;   highrej    - positive sigma deviation to be rejected (default 5.0)
@@ -38,7 +40,9 @@
 ; OPTIONAL OUTPUTS:
 ;   ymodel     - model best fit of row[nCol]
 ;   fscat      - scattered light contribution in each fiber[nFibers]
-;   diagonal   - full 1d diagonal of covariance matrix
+;   diagonal   - full 1d diagonal of covariance matrix 
+;		     (Currently, this is diagonal from cholesky decompostion,
+;                     which is 1/error(j) ).
 ;   fullcovar  - full 2d covariance matrix
 ;   wfixarr    - 1d integer array of 1's and zero's which specify fixed params
 ;
@@ -57,19 +61,20 @@
 function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
                    fscat = fscat, proftype = proftype, wfixed = wfixed, $
                    inputans=inputans, iback = iback, oback =oback, $
-                   bfixarr = bfixarr, $
-                   diagonal=diagonal, fullcovar=fullcovar, wfixarr = wfixarr, $
+                   bfixarr = bfixarr, xvar=xvar, $
+                   diagonal=p, fullcovar=fullcovar, wfixarr = wfixarr, $
                    nPoly=nPoly, maxIter=maxIter, highrej=highrej, $
-                   lowrej=lowrej
+                   lowrej=lowrej, calcCovar=calcCovar
 
    ; Need 4 parameters
    if (N_params() LT 4) then begin
-      print, 'Syntax - ans = extract_row( fimage, invvar, xcen, [ymodel=ymodel,'
+      print, 'Syntax - ans = extract_row( fimage, invvar, xcen, sigma, [ymodel=ymodel,'
       print, ' fscat = fscat, proftype = proftype, wfixed = wfixed,'
       print, ' inputans=inputans, iback = iback, oback =oback, bfixarr=bfixarr,'
+      print, ' xvar=xvar, '
       print, ' diagonal=diagonal, fullcovar=fullcovar, wfixarr = wfixarr,'
-      print, ' sigma=sigma, nPoly=nPoly, maxIter=maxIter, highrej=highrej, '
-      print, ' lowrej=lowrej])'
+      print, ' nPoly=nPoly, maxIter=maxIter, highrej=highrej, '
+      print, ' lowrej=lowrej, calcCovar=calcCovar])'
       return, -1
    endif
 
@@ -87,6 +92,8 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
    if (NOT keyword_set(highrej)) then highrej = 5.0
    if (NOT keyword_set(lowrej)) then lowrej = 5.0
    if (NOT keyword_set(wfixed)) then wfixed = [1]
+   if (NOT keyword_set(calcCovar)) then calcCovar = [0]
+   if (NOT keyword_set(xvar)) then xvar = findgen(nx)
 
    nCoeff = n_elements(wfixed)       ;Number of parameters per fibers
    proftype = 1                      ;Gaussian
@@ -107,17 +114,21 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
    nPoly = LONG(nPoly)
    ma = nPoly + nTrace*nCoeff
    maxIter = LONG(maxIter)
+   proftype = LONG(proftype)
+   calcCovar = LONG(calcCovar)
 		
+   p = fltarr(ma)         ; diagonal errors
    ymodel = fltarr(nx)
-   x = findgen(nx)*2.0/nx - 1.0;
    fscat = fltarr(nTrace)
 
-   ia = lonarr(ma) + 1 	       ; Fixed parameter array
 
-   for i=0,nCoeff-1 do ia(lindgen(nTrace)*nCoeff+i) = wfixed[i]
-   if (keyword_set(bfixarr)) then ia(nTrace*nCoeff:ma-1) = bfixarr
+   if (NOT keyword_set(wfixarr)) then begin
+      wfixarr = lonarr(ma) + 1 	       ; Fixed parameter array
+      for i=0,nCoeff-1 do wfixarr(lindgen(nTrace)*nCoeff+i) = wfixed[i]
+      if (keyword_set(bfixarr)) then wfixarr(nTrace*nCoeff:ma-1) = bfixarr
+   endif
 
-   ans = fltarr(ma)       ; paramter values
+   ans = fltarr(ma)       ; parameter values
 
    if (keyword_set(iback)) then ans(nTrace*nCoeff:ma-1) = iback 
    if (keyword_set(inputans)) then ans(0:nTrace*nCoeff-1) = inputans
@@ -126,11 +137,11 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
    covar = fltarr(ma,ma)  ; full covariance matrix
 
    result = call_external(getenv('IDL_EVIL')+'libspec2d.so','extract_row',$
-    nx, x, float(fimage), float(invvar), float(ymodel), nTrace, nPoly, $
-    float(xcen), float(sigma), profype, nCoeff, ma, ans, ia, p, covar, fscat)
-    
+    nx, float(xvar), float(fimage), float(invvar), float(ymodel), nTrace, $
+    nPoly, float(xcen), float(sigma), proftype, calcCovar, nCoeff, ma, ans, $
+    wfixarr, p, fscat, covar)
 
    oback = ans[ma-nPoly:ma-1]
-   return, rebin(ans[0:nTrace*nCoeff-1],nCoeff,nTrace)
+   return, reform(ans[0:nTrace*nCoeff-1],nCoeff,nTrace)
 end
 ;------------------------------------------------------------------------------

@@ -19,6 +19,7 @@ void recenter_fweight
    long        ix;
    long        ix1;
    long        ix2;
+   long        nsum;
    float       x1;
    float       x2;
    float       sumfx;
@@ -119,7 +120,7 @@ void Profile(float *x, int ndat, float *y, float xcen, int xmin,
 	  y[k] = 0.0;
 	  if(i >= 0 && i < ndat) {
 	     for(frac = -0.4; frac <= 0.5; frac += 0.2)  {
-	        diff = rabs(xcen - x[i] + frac)/sigma;
+	        diff = fabs(xcen - x[i] + frac)/sigma;
 /*
 			Gaussian                     
 	        y[k] += exp(-diff*diff/2.0 + 6.9077553)*denom; */
@@ -150,7 +151,7 @@ void Profilex2(float *x, int ndat, float *y, float xcen, int xmin,
 	  y[k] = 0.0;
 	  if(i >= 0 && i < ndat) {
 	     for(frac = -0.4; frac <= 0.5; frac += 0.2)  {
-	        diff = rabs(xcen - x[i] + frac)/sigma;
+	        diff = fabs(xcen - x[i] + frac)/sigma;
 /*
 			Gaussian                     
 	        y[k] += exp(-diff*diff/2.0 + 6.9077553)*denom; */
@@ -459,208 +460,4 @@ int choldcCustom2(float **a, int *ia, int nTrace, int nPoly, float p[])
 	return 0;
 }
            
-
-int fixedGauss2(float x[], float y[], float ymod[], float invvar[],float *xcen, 
-	int ndat, int nTrace, int nPoly, float *sigma, 
-	float a[], int ia[], int ma, float **covar, float *chisq,
-	int *xmin, int *xmax, float **abig)
-{
-/*     Stolen from NR lfit, but customized to fit fixed width gaussian's +
-	a background chebyshev :
-	Question, perform rejection inside here? */
-/*	New version: 7/19/99, perform fit with fixed gaussian + a term
-		for peturbed sigma */
-
-        int i,j,k,l,m,mfit=0;
-	int mfitTrace=0;
-	int mfitPoly=0;
-        float wt;
-	int dTrace = 2*nTrace;
-	int lm, extra, extra2;
-        float *ysub = (float *)malloc(ndat * sizeof(float));   
-        float *p= (float *)malloc(ma * sizeof(float));   
-        float *beta = (float *)malloc(ma * sizeof(float));   
-        float *a2= (float *)malloc(ma * sizeof(float));   
-
-//
-//	  Find basis functions (stored in ABig)
-//	  Find max and min of profile influence
-//	  Fill covar and beta matrices
-//
-
-/*  Expect xcen and x to be monotonically increasing  */
-
-
-      FillXs2(xmin, xmax, x, xcen, ndat, nTrace, sigma, abig);
-
-	printf("hello\n");
-      FillABig2(abig, x, xcen, xmin, xmax, ndat, nTrace, nPoly, sigma);
-	printf("hello2\n");
-
-      CheckFibers(abig, xmin, xmax, nTrace, a, ia, invvar);
-	printf("hello3\n");
-
-        for (j=0;j<ma;j++) {
-                if (ia[j]) mfit++;
-	        }
-        if (mfit == 0) {
-	   printf("lfit: no parameters to be fitted\n");
-	   return 3;
-	}
-
-        printf("mfit: %d\n",mfit);
-
-        for (j=0;j<dTrace;j++) if (ia[j]) mfitTrace++;
-        for (j=dTrace;j<dTrace+nPoly;j++) if (ia[j]) mfitPoly++;
-
-//  zero out entire covar matrix
-
-        for (j=0;j<ma;j++) {
-                for (k=0;k<ma;k++) covar[j][k]=0.0;
-                beta[j]=0.0;
-        }
-
-/* Subtract out fixed variables first */
-     for(i=0;i<ndat;i++) {
-         ysub[i] = y[i];
-     }
-
-     if(mfit < ma) {	
-        for (j=0;j<dTrace;j++) 
-           if (!ia[j]) 
-              for (i=xmin[j/2],k=0;i<=xmax[j/2];i++,k++) 
-                 ysub[i] -= a[j] * abig[j][k];
-        
-        for (j=dTrace;j<dTrace+nPoly;j++) 
-           if (!ia[j]) 
-              for (i=0;i<ndat;i++) 
-                 ysub[i] -= a[j] * abig[j][i];
-     }
-           
-   
-/* Fill dTrace x dTrace  of covar first  */
-
-  for (l=0,j=0;l<nTrace;l++) 
-    for (extra=0; extra < 2; extra++)
-       j=2*l+extra;
-       if (ia[j]) {
-         for (i=xmin[l];i<=xmax[l];i++) {
-            wt = abig[j][i-xmin[l]] * invvar[i];
-            beta[j] += wt * ysub[i];
-            covar[j][j] += wt * abig[j][i-xmin[l]];
-
-/*	Overlap with with chebyshev polynomial*/
-
-            for (m = dTrace+nPoly-1; m>=dTrace; m--) 
-                if(ia[m]) covar[j][m] += wt*abig[m][i];
-         }
-
-/*	Fill in symmetric pieces   */
-
-         for (m = dTrace+nPoly-1; m>=dTrace; m--) 
-                if(ia[m]) covar[m][j] = covar[j][m];
-	
-
-/*	Overlap with previous fiber  */
-
-	 if (j > 0) {
-	    k= j;
-	    for (extra2 = extra; extra2 > -2; extra2--) 
-              k=2*l+extra2-1;
-              if (ia[k])  {
-	       lm = l - 1;
-	       if(extra2 > 0) lm = l;
-	       if(lm >= 0) {
-                  for (i = xmin[l];i<=xmax[lm];i++) {
-                     wt = abig[j][i-xmin[l]] * invvar[i];
-                     covar[j][k] += wt * abig[k][i-xmin[lm]];
-	          }
-                  covar[k][j] = covar[j][k];
-               }
-	    }
-	 }
-
-      }
-/*   printf("nTrace done\n");
-
- Fill nPoly x nPoly of covar */
-   for (l = dTrace+nPoly-1 , j=mfit; l >= dTrace ; l--) 
-      if (ia[l]) {
-         j--;
-         for (i=0; i<ndat; i++) {
-            wt = abig[l][i] * invvar[i];
-            beta[j] += wt * ysub[i];
-            for (k=mfit-1,m=dTrace+nPoly-1; m>=l; m--)
-               if (ia[m]) covar[j][k--] += wt * abig[m][i];
-         }
-         for (k=mfit-1,m=dTrace+nPoly-1; m>l; m--)
-            if (ia[m]) covar[k][j] = covar[j][k--];
-      }
-   printf("nPoly done\n");
-   
-   choldcCustom2(covar, ia, dTrace, nPoly, p); 
-   printf("choldc Custom2 done\n");
-
-   cholslCustom2(covar, ia, dTrace, nPoly, p, beta, a2); 
-   printf("cholsl done\n");
-
-   cholslCustomCovar(covar, ia, dTrace, nPoly, p); 
-   printf("cholsl Covar done\n");
-         
-//   printf("Gaussj done\n");
-
-   for (j=-1,l=0;l<ma;l++)
-       if (ia[l]) {
-	   a[l]=a2[++j];
-//	   a[l]=beta[++j];
-//           printf("%d %f %f \n", l, a[l], a2[l]);
-//	   error[l] = 1.0/p[j];
-       }
-
-
-   *chisq=0.0;
-
-   for(i=0;i<ndat;i++) ymod[i] = 0.0;
-
-   for (l=0;l<dTrace;l++) {
-//      fprintf(stderr,"%d %f %f\n", l, a[l], error[l]);
-      for (i=xmin[l/2], k=0; i <= xmax[l/2]; i++, k++) 
-         ymod[i] += a[l]*abig[l][k];
-    }
-
-   for (l=dTrace;l<dTrace+nPoly;l++) {
-//      fprintf(stderr,"%d %f %f\n", l, a[l], error[l]);
-      for(i=0; i < ndat; i++) 
-         ymod[i] += a[l]*abig[l][i];
-    }
-
-   for (i=0;i<ndat;i++) *chisq += (y[i]-ymod[i])*(y[i]-ymod[i])*invvar[i];
-
-   printf("Chisq: %f\n", *chisq);
-
-	free(beta);
-	free(p);
-	free(ysub);
-	free(a2);
-	printf("wrapping up\n");
-        return 1;
-}
-
-void chebyshevFunc(float x, float *coeff, int nCoeff)
-{
-	/* Return Terms of Chebyshev Polynomial */
-
-        int i;
-        float twox;
-
-        if(nCoeff > 0) coeff[0] = 1.0;
-        if(nCoeff > 1) coeff[1] = x;
-
-        twox = 2.0*x;
-        for(i=2;i<nCoeff;i++)
-           coeff[i] = twox * coeff[i-1] - coeff[i-2];
-
-      return;
-}
-
 

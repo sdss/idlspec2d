@@ -81,7 +81,7 @@ all :
 		"SO_EXT=so" \
 		"CC=gcc" \
 		"LD=ld" \
-		"X_CFLAGS=-fPIC -g -Wall" \
+		"X_CFLAGS=-fPIC -g -Wall -O3" \
 		"X_LD_FLAGS=-shared" ;;\
 	*) echo "This system is not supported" ;; \
 	esac

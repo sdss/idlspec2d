@@ -4,11 +4,6 @@
 #include "export.h"
 #include "extract_row.h"
 
-float rabs(float x) {
-        if(x < 0.0) return -x;
-        return x;
-}
-  
 IDL_LONG extract_row
   (int      argc,
    void *   argv[])
@@ -79,7 +74,7 @@ IDL_LONG extract_row
    covar  = (float **)malloc(ma * sizeof(float *)); 
    for (iy=0; iy < ma; iy++) covar[iy] = (float *)argv[argct]+iy*ma;
 
-   fprintf(stderr, "Going to fit_row now\n");
+//   fprintf(stderr, "Going to fit_row now\n");
 
 //   for (i=0; i < nx; i++) 
 //      fprintf(stderr, "%d %f %f %f\n",(int) i,x[i],fimage[i],invvar[i]);
@@ -145,17 +140,18 @@ IDL_LONG extract_row
           beta, ia, covar, xmin, xmax);
 
    choldcRow(covar, ia, nTrace, nCoeff, nPoly, p); 
-   printf("choldc Custom2 done\n");
+//   printf("choldc Custom2 done\n");
 
    cholslRow(covar, ia, nTrace, nCoeff, nPoly, p, beta, ans); 
-   printf("cholsl done\n");
+//   printf("cholsl done\n");
 
    if (calcCovar > 0) {
       cholslRowCovar(covar, ia, nTrace, nCoeff, nPoly, p); 
-      printf("cholsl Covar done\n");
-   } else {
-      printf("Skipping Covariance Calculation\n");
-   }
+//      printf("cholsl Covar done\n");
+   }  
+//     else {
+//      printf("Skipping Covariance Calculation\n");
+//   }
          
    for(i=0;i<nx;i++) ymod[i] = 0.0;
     
@@ -182,6 +178,8 @@ IDL_LONG extract_row
 
    free(aprofile);
    free(apoly);
+   free(ysub);
+   free(beta);
    free(xmin);
    free(xmax);
    free(covar);
@@ -208,7 +206,7 @@ void ProfileGauss(float *x, IDL_LONG ndat, float **y, float xcen, IDL_LONG xmin,
 	   for (j=0;j<nCoeff;j++) y[j][k] = 0.0;
 	  if(i >= 0 && i < ndat && nCoeff > 0) {
 	     for(frac = -0.4; frac <= 0.5; frac += 0.2)  {
-	        diff = rabs(xcen - x[i] + frac)/sigma;
+	        diff = (xcen - x[i] + frac)/sigma;
 	        base = exp(-diff*diff/2.0)*denom;
 
                 y[0][k] += base;
@@ -407,7 +405,7 @@ void fillCovar(float *ysub, float *invvar, IDL_LONG nx, float **aprofile,
                   covar[j][m] += apoly[k][i] * apoly[l][i] * invvar[i];
       }
 	
-   printf("nPoly done\n");
+//   printf("nPoly done\n");
 }
 
 /* cholslRow replaces lower triangle of a with sqrt(covar)  
