@@ -47,10 +47,20 @@
 ;------------------------------------------------------------------------------
 pro plotspec, plate, fiberid, mjd=mjd, nsmooth=nsmooth
 
+   if (n_elements(plate) NE 1 OR n_elements(fiberid) NE 1) then $
+    message, 'PLATE and FIBERID must be scalars'
+
    readspec, plate, fiberid, mjd=mjd, flux=objflux, flerr=objerr, $
     loglam=loglam, plug=plug, zans=zans
    wave = 10^loglam
-   synflux = synthspec(zans, loglam=loglam)
+
+   if (size(zans,/tname) EQ 'STRUCT') then begin
+      synflux = synthspec(zans, loglam=loglam)
+   endif else begin
+      zans = 0
+      synflux = 0
+      print, 'WARNING: Redshift file not found'
+   endelse
 
    if (keyword_set(nsmooth)) then begin
       objflux = smooth(objflux, nsmooth)
@@ -69,7 +79,7 @@ pro plotspec, plate, fiberid, mjd=mjd, nsmooth=nsmooth
 
    title = 'Plate ' + strtrim(string(plate),2) $
     + '  Fiber ' + strtrim(string(fiberid),2) $
-    + '  MJD=' + strtrim(string(zans.mjd),2)
+    + '  MJD=' + strtrim(string(mjd),2)
    splot, wave, objflux, yrange=[ymin,ymax], $
     xtitle='Wavelength [Ang]', $
     ytitle=TeXtoIDL('Flux [10^{-17} erg/cm/s/Ang]'), $
@@ -80,14 +90,17 @@ pro plotspec, plate, fiberid, mjd=mjd, nsmooth=nsmooth
    xpos = 0.9 * !x.crange[0] + 0.1 * !x.crange[1]
    dypos = 0.05 * (!y.crange[0] - !y.crange[1])
    ypos = !y.crange[1] + 1.5 * dypos
-   sxyouts, xpos, ypos, zans.class + ' ' + zans.subclass $
-    + '  z=' + strtrim(string(zans.z),2), $
-    charsize=csize
 
-   ypos = ypos + dypos
-   sxyouts, xpos, ypos, $
-    TeXtoIDL('X^2_r =' + strtrim(string(zans.rchi2, format='(f6.2)'),2)), $
-    charsize=csize
+   if (keyword_set(zans)) then begin
+      sxyouts, xpos, ypos, zans.class + ' ' + zans.subclass $
+       + '  z=' + strtrim(string(zans.z),2), $
+       charsize=csize
+
+      ypos = ypos + dypos
+      sxyouts, xpos, ypos, $
+       TeXtoIDL('X^2_r =' + strtrim(string(zans.rchi2, format='(f6.2)'),2)), $
+       charsize=csize
+   endif
 
    if (keyword_set(primtarget)) then begin
       ypos = ypos + dypos
