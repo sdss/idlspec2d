@@ -165,7 +165,7 @@ account on any remote computer.  The only requirements are as following:
 <LI>This user@machine must have permission to copy files with "ssh"
     "from sdsshost.apo.nmsu.edu".  This must be set up to work without
     typing a passphrase.
-</OL>
+</UL>
 
 <H2><A NAME="install">Installing a new version</A></H2>
 
@@ -287,6 +287,8 @@ OBSCOMM = This keyword is used to identify the dithered flat sequence
           The arcs in this sequence must have OBSCOMM="{dithered flats-arc}".
           This keyword also identifies the Hartmann focus exposures, with
           the entries OBSCOMM="{{focus, hartmann l}" or "{focus, hartmann r}".
+QUALITY = This should be either "excellent" or "bad".  Exposures are declared
+          "bad" using the <A HREF="http://spectro.princeton.edu/idlspec2d_doc.html#APOFIX">APOFIX</A> procedure.
 </PRE>
 
 <H4><A NAME="headers_informational">Informational FITS header cards</A></H4>
@@ -548,6 +550,8 @@ The following messages may appear:
     There can also be a scattered light contribution just from a very
     bright sky, or if there are super-bright objects on some fibers that
     are scattering or bleeding light across the CCD.
+    It's best to carefully inspect the raw images for problems
+    (see <A HREF="spectro_apodisplay.html">Displaying Spectra at APO</A>).
 <LI><B>Median spatial widths = ...</B> <BR>
     The spatial (X) widths of the fibers typically are gaussians with a
     sigma of 0.85 to 1.05 pixels.  If the sigma is larger than 1.10 pixels
@@ -556,7 +560,8 @@ The following messages may appear:
     that either the spectrographs are out of focus, or the slit-heads are
     not properly latched.  Note that these widths are computed for both
     the flat and science exposures (but not for arcs -- we compute the
-    widths in the dispersion dimension for arcs).
+    widths in the dispersion dimension for arcs, and not for smears since
+    they have low S/N).
 <LI><B>Median wavelength widths = ...</B> <BR>
     The widths of the arc lines in the dispersion (Y) dimension typically
     are gaussians with a sigma of 0.90 to 1.10 pixels.
@@ -595,8 +600,8 @@ The following messages may appear:
     There is very poor sky-subtraction of the sky fibers at these wavelengths.
     This means that, somehow, there is excess light down the fibers that
     varies across the plate.  This could be due to a light source near the
-    telescope, or possibly a bright, non-uniform sky.  The threshhold is
-    set at chi=2.  Note that other, horrendous problems (like a warm CCD,
+    telescope, or possibly a bright, non-uniform sky.  The threshhold is set
+    at reduced chi=2.  Note that other, horrendous problems (like a warm CCD,
     scattered light, or out-of-focus spectrographs) could also trigger this.
     In that case, there should be relevant warning messages preceding this one.
 <LI><B>Red Monster at ....</B> <BR>
@@ -604,13 +609,17 @@ The following messages may appear:
     is specifically in the wavelength range of about 6400-6600 Ang.
     We think this happens when the handpaddle is still plugged in,
     in which case the observers should unplug it immediately.
-    The treshhold is set at chi=2, and the worst that we have ever seen
-    is at about the level chi=6  The last time we definitively saw this was on
+    The treshhold is set at reduced chi=2, and the worst that we have ever seen
+    is at about the level chi=6.  The last time we definitively saw this was on
     plate 426 on 3/4 Dec 2000 (MJD 51882).
 <LI><B>SOS disk is ...% full</B> <BR>
     The specified disk on sos.apo is more than 95% full.  This could be
     either the disk used to copy the raw sdR images from sdsshost.apo,
     or the disk used for SOS outputs (/data/spectro/spectrologs/$MJD).
+    If you must clean out old data, do not delete files from sos.apo
+    whose original copies still exist on sdsshost.apo or they will be
+    re-rsynced and re-reduced
+    (see <A HREF="#howwork">How Son-of-Spectro Works</A>).
 </UL>
 
 <H4><A NAME="outputs_log">Log files</A></H4>
@@ -734,10 +743,14 @@ However, if it appears to not be working one could check the following:
     delete this file, which would basically wipe out all the previous
     reductions for that night from the web page.  Alternatively, one
     could delete all the raw and reduced data for that night from
-    "sos.apo" (but not from sdsshost!!) :
+    "sos.apo" (but not from sdsshost.apo!).  Best to stop the SOS robot
+    before doing this:
     <DL><DD><PRE>
+    % sos_stop
+    % sos_status   <-- Wait for any running processes to complete.
     % rm -rf /data/spectro/spectrologs/$MJD
     % rm -rf /data/spectro/$MJD
+    % sos_start
     </PRE></DD></DL>
     That might sound extreme, but SOS will simply start re-copying
     everything from "sdsshost" and re-build the reductions for the night.
