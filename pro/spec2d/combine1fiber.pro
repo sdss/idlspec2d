@@ -152,11 +152,17 @@ pro combine1fiber, inloglam, objflux, objivar, $
 
    if (ngood EQ 0) then begin
 
+      ; In this case of no good points, set the NODATA bit everywhere.
+      ; Also, if NOPLUG is set in the first input bit-mask, assume it
+      ; should be set everywhere in the output bit masks.
+      ; No other bits are set.
+
       if (keyword_set(verbose)) then splog, 'No good points'
-      if (keyword_set(andmask)) then $
-       andmask = andmask AND pixelmask_bits('NODATA')
-      if (keyword_set(ormask)) then $
-       ormask = ormask AND pixelmask_bits('NODATA')
+      bitval = pixelmask_bits('NODATA')
+      if (keyword_set(finalmask)) then bitval = bitval OR $
+       (pixelmask_bits('NOPLUG') * (finalmask[0] AND pixelmask_bits('NOPLUG')))
+      if (keyword_set(andmask)) then andmask = andmask OR bitval
+      if (keyword_set(ormask)) then ormask = ormask OR bitval
 
       return
 
