@@ -124,6 +124,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
  plottitle=plottitle
 
    objname = strtrim(sxpar(objhdr,'OBJFILE'),2) 
+   flavor  = strtrim(sxpar(objhdr,'FLAVOR'),2) 
  
    ;------------------
    ; Identify very bright objects
@@ -249,13 +250,13 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    lowrej = 4
    wfixed = [1,1]
    nterms = n_elements(wfixed)
+   reject = [0.2,0.6,0.6]
 
 
    extract_image, (image - smooth), invvar, xnow, sigma2, flux, fluxivar, $
     proftype=proftype, wfixed=wfixed, ansimage=ansimage, $
     highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
-    chisq=chisq, ymodel=ym, pixelmask=pixelmask, reject=[0.2,0.8,0.8], $
-    /relative
+    chisq=chisq, ymodel=ym, pixelmask=pixelmask, reject=reject, /relative
 
    ;----------------------------------------------------------------------
    ; can we find cosmic rays by looking for outlandish ansimage ratios?
