@@ -3,6 +3,7 @@ Product=idlspec2d
 
 Group:
 Flavor=IRIX+6
+Flavor=Linux
 Flavor=Linux+2
 Flavor=Linux+2.2
 Flavor=OSF1
