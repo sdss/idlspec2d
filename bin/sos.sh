@@ -9,14 +9,14 @@
 
 if \ps -elf | grep aporsync_logs.sh  | grep -v -e grep
 then
-  echo "APORSYNC_LOGS: Already running at "`date`
+  echo "APORSYNC_LOGS: Already running at "`date -u`
 else
   aporsync_logs.sh &
 fi
 
 if \ps -elf | grep aporsync_blue.sh  | grep -v -e grep
 then
-  echo "APORSYNC_BLUE: Already running at "`date`
+  echo "APORSYNC_BLUE: Already running at "`date -u`
 else
   aporsync_blue.sh &
 fi

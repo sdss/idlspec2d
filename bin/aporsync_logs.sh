@@ -19,7 +19,7 @@
 # S. Burles, APO, 4 May 2000
 #------------------------------------------------------------------------------
 
-echo "APORSYNC_LOGS: Launched at "`date` UID=$UID PPID=$PPID
+echo "APORSYNC_LOGS: Launched at "`date -u` UID=$UID PPID=$PPID
 
 if [ -z "$RAWDATA_DIR" ] ; then
    echo "Abort: RAWDATA_DIR not set!"
@@ -69,5 +69,5 @@ rsync -ar --rsh="ssh -c blowfish" \
       --exclude="*" \
       "sdsshost.apo.nmsu.edu:/data/spectro/[5-9]????" $RAWDATA_DIR
 
-echo "APORSYNC_LOGS: Finished at "`date` UID=$UID PPID=$PPID
+echo "APORSYNC_LOGS: Finished at "`date -u` UID=$UID PPID=$PPID
 
