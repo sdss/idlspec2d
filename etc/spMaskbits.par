@@ -1,0 +1,27 @@
+
+typedef struct {
+  int bit;        # Bit number, 0-indexed (0 to 31)
+  char label[20]; # Bit label
+} maskbits;
+
+# The following mask bits are for the fiber, set in FIBERMASK_BITS()
+maskbits  0 NOPLUG          # Fiber not listed in plugmap file
+maskbits  1 BADTRACE        # Bad trace from routine TRACE320CRUDE
+maskbits  2 BADFLAT         # Low counts in fiberflat
+maskbits  3 BADARC          # Bad arc solution
+maskbits  4 MANYBADCOLUMNS  # >10% pixels are bad columns
+maskbits  5 MANYREJECTED    # >10% pixels are rejected in extraction
+maskbits  6 LARGESHIFT      # Large spatial shift between flat and object pos'n
+
+# The following mask bits are for a pixel, set in PIXELMASK_BITS()
+maskbits 16 NEARBADPIXEL    # Bad pixel within 3 pixels of trace
+maskbits 17 LOWFLAT         # Flat field less than 0.5
+maskbits 18 FULLREJECT      # Pixel fully rejected in extraction
+maskbits 19 PARTIALREJECT   # Some pixels rejected in extraction
+maskbits 20 SCATTEREDLIGHT  # Scattered light significant
+maskbits 21 CROSSTALK       # Cross-talk significant
+maskbits 22 NOSKY           # No sky subtraction
+maskbits 23 SKYLEVEL        # Sky background is > 10*flux
+maskbits 24 NODATA          # No data available in combine B-spline
+maskbits 25 COMBINEREJ      # Rejected in combine B-spline
+

@@ -3,21 +3,22 @@
 ;   pixelmask_bits
 ;
 ; PURPOSE:
-;   Return mask value corresponding to a mask condition for PIXELMASK.
+;   Return mask value corresponding to a mask condition for either FIBERMASK
+;   or PIXELMASK.
 ;
 ; CALLING SEQUENCE:
-;   mask = pixelmask_bits(bitlabel)
+;   mask = pixelmask_bits(label)
 ;
 ; INPUTS:
-;   bitlabel   - String name specifying bit
+;   label      - String name specifying bit
 ;
 ; OUTPUTS:
-;   mask       - Signed long set to 2^BIT, where BIT is the bit specified by
-;                BITLABEL, or set to 0 if no label is matched
+;   mask       - Signed long set to 2^BIT, with BIT specified by LABEL.
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
+;   This routine is also called by FIBERMASK_BITS().
 ;
 ; EXAMPLES:
 ;   mask = pixelmask_bits('FULLREJECT') 
@@ -26,30 +27,35 @@
 ;
 ; PROCEDURES CALLED:
 ;
+; DATA FILES:
+;   $IDLSPEC2D_DIR/etc/spMaskbits.par
+;
 ; REVISION HISTORY:
 ;   23-Jan-2000 Written by S. Burles, Chicago
-;   27-Jan-2000 Changed from signed int to signed long
+;   27-Jan-2000 Changed from signed int to signed long.
+;   14-Jul-2000 Combine with FIBERMASK_BITS(), and use data file in /etc
+;               subdirectory (DJS).
 ;-
 ;------------------------------------------------------------------------------
-function pixelmask_bits, bitlabel
+function pixelmask_bits, label
 
-     pixelbits = ['NEARBADPIXEL', $      ; Bad pixel within 3 pixels of trace
-                  'LOWFLAT', $           ; Flat field less than 0.5
-                  'FULLREJECT',  $       ; Pixel fully rejected in extraction
-                  'PARTIALREJECT',  $    ; Some pixels rejected in extraction
-                  'SCATTEREDLIGHT',   $  ; Scattered light significant
-                  'CROSSTALK',$          ; Cross-talk significant
-                  'NOSKY',$              ; No sky subtraction
-                  'SKYLEVEL',$           ; Sky background is > 10*flux
-                  'NODATA',$             ; No data available in combine B-spline
-                  'COMBINEREJ']          ; Rejected in combine B-spline
+   ; Declare a common block so that the mask names are remembered between calls.
+   common com_maskbits, maskbits
 
-     ss = strpos(pixelbits,strupcase(bitlabel))
+   if (NOT keyword_set(maskbits)) then begin
+      maskfile = filepath('spMaskbits.par', $
+       root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
+      if (NOT keyword_set(maskfile)) then $
+       message, 'File with mask bits not found'
+      yanny_read, maskfile, pdat
+      maskbits = *pdat[0]
+      yanny_free, pdat
+   endif
 
-     match = where(ss NE -1, nmatch)
+   imatch = where(strupcase(label) EQ strupcase(maskbits.label), ct)
+   if (ct NE 1) then $
+    message, 'Error matching bit name: ' + label
 
-     if (nmatch NE 1) then return, 0
-
-     return, 2L^match[0]
+   return, 2L^(maskbits[imatch[0]].bit)
 end
-
+;------------------------------------------------------------------------------
