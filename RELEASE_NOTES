@@ -26,6 +26,8 @@ GET_TAI: A short proc to determine, beginning, mid-point, and ending
            early data.
 LINEBACKFIT: New generic proc for fitting emission lines + linear background
            terms.
+PCA_ELODIE,READ_ELODIE(): New routines for reading the Elodie eschelle
+           spectra and generating eigenvectors for velocity dispersion fits.
 SPADD_GUIDERINFO: New routine to compute seeing and average guider offsets
            from the guiderMon param file, and add those results to a FITS
            header.
@@ -55,9 +57,12 @@ SPCOMBINE: Set default value of MINSN2 to 0.2 instead of 0.0.  This is a
 SPREDUCE1D: Set the ZWARNING=8 flag (synthetic spectrum is negative) only
            for stars, not for QSO's any more since we use several eigen-
            components to fit QSO's now, nor for CV stars for the same reason.
+           Use the file 'spEigenElodie.fits' for computing velocity dispersions.
+           Write out the best-fit velocity-dispersion spectrum as HDU#3.
 TRACE320CRUDE: Threshold to set 'BADTRACE' is now 45% bad pixels, whereas
            it used to be 20%.
 VDISPFIT: Option to return the best fit with YFIT keyword.
+           Mask out +/- 6 pix from emission lines instead of only 4 pix.
            Option to pass EIGENFILE,EIGENDIR rather than use default file.
 
 aporsync_logs.sh : 
@@ -70,6 +75,7 @@ aporsync_logs.sh :
              op*.par
              plPlugMap*.par
              sdReport*.par
+sprobot.sh: Fix syntax bug when passing $upsversion to BATCH1D,BATCH2D.
 killdata.sh,mailhtml.sh: Spectrolog cleanup is now done +25 MJDs afterwards,
            which will allow for sos_redo, apoplot and debugging to have
            a buffer.  Enable the call to data_rsync.sh again for copying
