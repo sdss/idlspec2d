@@ -309,6 +309,14 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    sxaddpar, hdr, 'FLAVOR', flavor
    sxaddpar, hdr, 'CAMERAS', camname
 
+   ;-----------
+   ; If the OBSCOMM keyword contains the words "dithered" or "focus",
+   ; then assume this is test data (set QUALITY=test).
+
+   obscomm = sxpar(hdr,'OBSCOMM')
+   if (strmatch(obscomm,'*dithered*') OR strmatch(obscomm,'*focus*')) then $
+    sxaddpar, hdr, 'QUALITY', 'test'
+
    if (NOT readimg AND NOT readivar) then return
 
    ;-----------
