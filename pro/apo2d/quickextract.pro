@@ -13,6 +13,7 @@ function quickextract, flatname, arcname, sciname, outname, radius=radius
    ; Read in image
    sdssproc, sciname, image, hdr=hdr, color=color
    camname = strtrim(sxpar(hdr, 'CAMERAS'),2)
+   exptime = sxpar(hdr, 'EXPTIME')
 
    tset = mrdfits(flatname,1)
    plugsort = mrdfits(flatname,2)
@@ -32,8 +33,7 @@ function quickextract, flatname, arcname, sciname, outname, radius=radius
    mwrfits, fluxivar, outname
 
    ; Select wavelength range to analyze
-   color = strmid(camname,0,1)
-   if (color EQ 'b') then wrange = [4000,5500] $
+   if (strmid(color,0,1) EQ 'b') then wrange = [4000,5500] $
     else wrange = [6910,8500]
 
    ; Find which fibers are sky fibers + object fibers
@@ -55,7 +55,7 @@ function quickextract, flatname, arcname, sciname, outname, radius=radius
    if (isky[0] NE -1) then begin
       tmpw = logwave[*,isky]
       tmpf = flux[*,isky]
-      skylevel = djs_mean( medflux[isky] )
+      skylevel = djs_mean( medflux[isky] ) / (exptime > 1)
    endif else begin
       skylevel = 0
    endelse
@@ -68,7 +68,7 @@ function quickextract, flatname, arcname, sciname, outname, radius=radius
 
    rstruct = create_struct('FLAVOR', 'science', $
                            'CAMERA', camname, $
-                           'SKYLEVEL', skylevel, $
+                           'SKYPERSEC', skylevel, $
                            'SN2', snoise^2 )
 
    return, rstruct

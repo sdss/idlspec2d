@@ -1,16 +1,66 @@
+;+
+; NAME:
+;   aporeduce
+;
+; PURPOSE:
+;   Quick on-the-mountain reduction pipeline for 1 file at a time.
+;
+; CALLING SEQUENCE:
+;   aporeduce, filename, [ indir=, outdir=, $
+;    plugfile=, plugdir=, minexp=, $
+;    copydir=copydir ]
+;
+; INPUTS:
+;   filename   - Raw spectroscopic image file name of any flavor
+;
+; OPTIONAL INPUTS:
+;   indir      - Input directory for FILENAME; default to './'
+;   outdir     - Output directory for reduced data and log files;
+;                default to INDIR
+;   plugfile   - Name of plugmap file (Yanny parameter file); default to
+;                'plPlugMapM-'+NAME+'.par', where NAME is taken from that
+;                keyword in the file FILENAME
+;   plugdir    - Input directory for PLUGFILE; default to '.'
+;   minexp     - Minimum exposure time for science frames; default to 61 sec
+;   copydir    - If set, then copy the output log files to this directory using
+;                "scp1" copy.  Normally, one want to set this to
+;                'plate-mapper:/???'
+;
+; OUTPUT:
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;   After reducing any 'r2' frame, we re-generate the HTML file and optionally
+;   copy it to the file specified by COPYDIR.
+;
+; EXAMPLES:
+;
+; BUGS:
+;
+; PROCEDURES CALLED:
+;   apo_log2html
+;   djs_lockfile()
+;   djs_unlockfile
+;
+; REVISION HISTORY:
+;   30-Apr-2000  Written by D. Schlegel & S. Burles, APO
+;-
+;------------------------------------------------------------------------------
 pro aporeduce, filename, indir=indir, outdir=outdir, $
- plugmapfile=plugmapfile, plugdir=plugdir, minexptime=minexptime
+ plugfile=plugfile, plugdir=plugdir, minexp=minexp, $
+ copydir=copydir
 
    if (n_params() LT 1) then begin
       print, 'Syntax - aporeduce, filename, [ indir=, outdir=, $'
-      print, ' plugmapfile=, plugdir=, minexptime= ]'
+      print, ' plugfile=, plugdir=, minexp= ]'
       return
    endif
 
-   if (NOT keyword_set(indir)) then indir='./'
-   if (NOT keyword_set(plugdir)) then plugdir='./'
-   if (NOT keyword_set(outdir)) then outdir=indir
-   if (NOT keyword_set(minexptime)) then minexptime = 61
+   if (NOT keyword_set(indir)) then indir = './'
+   if (NOT keyword_set(plugdir)) then plugdir = './'
+   if (NOT keyword_set(outdir)) then outdir = indir
+   if (NOT keyword_set(minexp)) then minexp = 61
 
    if (size(filename, /tname) NE 'STRING') then begin
       message, 'FILENAME is not a string', /cont
@@ -18,14 +68,14 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    endif
 
    filer = strmid(filename,0,3)  ; root 'sdR'
-   filec = strmid(filename,4,2)  ; camera number
+   filec = strmid(filename,4,2)  ; camera name
    filee = strmid(filename,7,8)  ; exposure number
 
    camnames = ['b1','b2','r1','r2']
 
-   cam = (where(filec EQ camnames))[0]
+   icam = (where(filec EQ camnames))[0]
 
-   if (filer NE 'sdR' OR cam EQ -1) then begin
+   if (filer NE 'sdR' OR icam EQ -1) then begin
       message, 'Cannot parse FILENAME '+filename, /cont
       return
    endif
@@ -44,26 +94,49 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    if (size(hdr,/tname) NE 'STRING') then return
 
    flavor = strtrim(sxpar(hdr, 'FLAVOR'),2)
-   if (flavor EQ 'target') then flavor = 'science'
 
    plate = sxpar(hdr, 'PLATEID')
    platestr = string(plate, format='(i4.4)')
    mjd = sxpar(hdr, 'MJD')
 
+   ;----------
+   ; Fix up some header information from early data
+
+   if (flavor EQ 'target') then flavor = 'science'
+
+   ;----------
+   ; Determine names for the FITS and HTML output log files
+
    logfile = filepath('logfile-' + strtrim(string(mjd),2) + '.fits', $
     root_dir=outdir)
+   htmlfile = filepath('logfile-' + strtrim(string(mjd),2) + '.html', $
+    root_dir=outdir)
     
-   if (NOT keyword_set(plugmapfile)) then $
-       plugmapfile = 'plPlugMapM-'+sxpar(hdr,'NAME')+'.par'
-   fullplugmapfile = filepath(plugmapfile, root_dir=plugdir)
+   ;----------
+   ; Find the full name of the plugmap file
 
-   plugexist = keyword_set( findfile(fullplugmapfile) )
+   if (NOT keyword_set(plugfile)) then begin
+       name = strtrim(sxpar(hdr,'NAME'),2)
+       ; This string should contain PLATE-MJD-PLUGID, but it may not
+       ; in some of the early data, in which case we're search using wildcards
+       if (strlen(name) LT 13) then name = '*' + name + '*'
+       plugfile = 'plPlugMapM-'+name+'.par'
+   endif
+   fullplugfile = findfile( filepath(plugfile, root_dir=plugdir) )
+   ; If we found several plugmap files (using wildcards), take the most
+   ; recent as determined by simply doing an ASCII sort of the file names.
+   if (n_elements(fullplugfile) EQ 1) then fullplugfile = fullplugfile[0] $
+    else fullplugfile = fullplugfile[ (reverse(sort(fullplugfile)))[0] ]
 
-   outflat = filepath('tset-'+platestr+'-'+filec+'.fits', $
-                           root_dir=outdir)
+   ;----------
+   ; Determine if a flat or arc for this plate has already been reduced,
+   ; and test if the plugmap file exists.
+
+   outflat = filepath('tset-'+platestr+'-'+filec+'.fits', root_dir=outdir)
+   outarc = filepath('wset-'+platestr+'-'+filec+'.fits', root_dir=outdir)
+
+   plugexist = keyword_set(fullplugfile)
    flatexist = keyword_set( findfile(outflat) )
-   outarc = filepath('wset-'+platestr+'-'+filec+'.fits', $
-                           root_dir=outdir)
    arcexist = keyword_set( findfile(outarc) )
 
    ;----------
@@ -73,37 +146,65 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    case flavor of
       'flat' : begin
          if (NOT flatexist AND plugexist) then $
-          rstruct = quicktrace(fullname, outflat, fullplugmapfile)
+          rstruct = quicktrace(fullname, outflat, fullplugfile)
       end
+
       'arc' : begin
          if (flatexist AND (NOT arcexist)) then $
           rstruct = quickwave(fullname, outflat, outarc)
       end
+
       'science': begin
           exptime = sxpar(hdr, 'EXPTIME')
           outsci = filepath('sci-'+platestr+'-'+filec+'-'+filee+'.fits',$
                  root_dir=outdir)
 
-          if (flatexist AND arcexist AND exptime GT minexptime) then $
+          if (flatexist AND arcexist AND exptime GT minexp) then $
            rstruct = quickextract(outflat, outarc, fullname, outsci)
-
-          ; Now we should check to see if all 4 images have been reduced
-;          all4 = findfile(filepath('sci-'+platestr+'-??-'+filee+'.fits',$
-;                root_dir=outdir))
-;          if (n_elements(all4) EQ 4) then message, 'should check S/N', /cont
        end
+
        else : begin
           splog, 'Unknown flavor: ', flavor
        end
    endcase
 
+   ;----------
+   ; Fix up some header information from early data
+
    if (keyword_set(rstruct)) then begin
-      ; Append to binary FITS log file a structure with info for this frame
+      if (rstruct.camera NE filec) then rstruct.camera = filec
+   endif
+
+   ;----------
+   ; Append to binary FITS log file a structure with info for this frame
+   ; Lock the file to do this.
+
+   if (keyword_set(rstruct)) then begin
+      while(djs_lockfile(logfile) EQ 0) do wait, 1
       rstruct = create_struct('MJD', mjd, $
                               'PLATE', plate, $
                               'EXPNUM', filee, $
                               rstruct )
       mwrfits, rstruct, logfile
+      djs_unlockfile, logfile
    endif
 
+   ;----------
+   ; After reducing any 'r2' frame, we re-generate the HTML file and optionally
+   ; copy it to the file specified by COPYDIR.
+
+   if (camnames[icam] EQ 'r2') then begin
+      wait, 15
+      apo_log2html, logfile, htmlfile
+
+      if (keyword_set(copydir)) then begin
+         print
+         print, 'Copying files to ', copydir
+         spawn, 'scp1 ' + htmlfile + ' ' + copydir
+         print, 'Done.'
+      endif
+   endif
+
+   return
 end
+;------------------------------------------------------------------------------
