@@ -23,6 +23,7 @@ In this document:
   <LI><A HREF="#get_data">Getting the Reduced Data</A>
   <OL>
      <LI><A HREF="#platelist">Which Plates Are Reduced?</A>
+     <LI><A HREF="#duplicates">Avoiding Duplicates</A>
      <LI><A HREF="#get_version">What Version of the Code Was Used?</A>
      <LI><A HREF="#get_where">Where Is the Data?</A>
      <LI><A HREF="#get_rsync">How to Keep Your Data Up-to-Date</A>
@@ -165,12 +166,14 @@ at that magnitude.  If all these values are > 15, then the plate is "good".
 Plate 310 is "not good".  The first observation of plate 302
 would be called "horrible".
 
+<H4><A NAME="duplicates">Avoiding Duplicates</A></H4>
+
 <P>
 Selecting only those plates with QSURVEY=1 will yield non-duplicate
 observations of tiles on the sky that meet the survey requirements
 for signal-to-noise.  There still may be a few duplicate objects,
 as some objects are put on multiple tiles for "quality assurance".
-I'm uncertain as to any easy way to identify these duplicate objects.
+These duplicates can be identified with OBJTYPE="QA".
 
 <H4><A NAME="get_version">What Version of the Code Was Used?</A></H4>
 
@@ -180,9 +183,9 @@ header keywords VERS2D, VERSCOMB, VERS1D as described in the
 <A HREF="#datamodel">data model</A>.
 
 <P>
-All these reductions were done using versions between v4_1_2 and v4_6_0.
-The differences between these versions are not terribly significant.
-We have not yet reduced the data with the most recent code.
+All these reductions were done using versions between v4_1_2 and v4_6_0,
+though some were done with "untagged" versions in between.
+We have not yet re-reduced the data with the most recent code.
 
 <H4><A NAME="get_where">Where Is the Data?</A></H4>
 
@@ -342,13 +345,13 @@ RA=2h, z=4.3, is due to bad reductions on plate 202.
 I've attempted to generate one monstrous file with all the spectroscopic
 and photometric outputs.  This is a FITS binary table called "spAll.fits".
 At present, this file is trimmed to only those 150 or so plates that
-comprise unique tiles with survey quality S/N (e.g., where QSURVEY=1
-in the platelist file).
+comprise unique tiles with survey quality S/N (e.g., where QSURVEY=1 in the
+<A HREF="#platelist">platelist file</A>).
 
 <P>
 In addition, I've also made an ASCII file with the most relevant quantities
 that one may wish to search on.  This file is "spAll.dat", and is basically
-a stripped-down version of "spAll.fits" for the FITS-challenged.
+a stripped-down version of "spAll.fits" for those FITS-challenged astronomers.
 
 <P>
 <B>HOWEVER</B>, I was unable to find the photometric outputs for all
@@ -358,8 +361,17 @@ to zero -- though the spectroscopic outputs are still in these files.
 <P>
 Where the PHOTO data does exist, they are selected from the tsObj files
 used to drill the plates, <B>not the most recent calibrations</B>.
+Most of these trimmed tsObj files can be found at:
+<PRE>
+  fsgi03.fnal.gov:/usr/sdss/data01/imaging/plates/eisenste
+</PRE>
 If anyone has the Knowledge and Power to extract the more recent
 calibrations for the same objects, I will make that available.
+
+<P>
+Another technical point: the <A HREF="#targetflags">target flags</A>
+have been over-written with those found in the plPlugMapM files,
+since Eisenstein reports that they are incorrect in many of the tsObj files.
 
 <H2><A NAME="display">Looking at the Data</A></H2>
 
