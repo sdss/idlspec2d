@@ -108,11 +108,20 @@ pro guidermovie, mjd=mjd, plate=plate, expnum=expnum, _EXTRA=KeywordsForATV
       for ifile=0, nfile-1 do begin
          hdr = headfits(gfiles[ifile])
 
+         ; The old format for the date was, for ex, "Sun, Apr 1, 2001".
+         ; The new format for the date is, for ex, "2002/07/08".
          utdate = sxpar(hdr,'UTDATE')
          ww = strsplit(utdate, ', ', /extract)
-         year = long(ww[3])
-         month = (where(ww[1] EQ monthname))[0] > 0
-         date = long(ww[2])
+         if (n_elements(ww) EQ 3) then begin
+            year = long(ww[3])
+            month = (where(ww[1] EQ monthname))[0] > 0
+            date = long(ww[2])
+         endif else begin
+            ww = strsplit(utdate, '/', /extract)
+            year = long(ww[0])
+            month = long(ww[1])
+            date = long(ww[2])
+         endelse
 
          uttime = sxpar(hdr,'UTTIME')
          ww = strsplit(uttime, ': ', /extract)
