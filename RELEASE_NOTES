@@ -36,6 +36,7 @@ PLOTSN: Re-write of the code that makes all the plots beyond the first
         page of S/N plots.  Compare the spectro-photometry to the CALIBFLUX
         entries in the plug-map structure if they exist.
 PLOTSPEC: Add the /SKY option for over-plotting the sky.
+PLUG2TSOBJ: Add /SILENT option.
 PLUGFILE_RELABEL: Relabel the OBJTYPE's for specified objects in all
         plPlugMapM files.
 READPLUGMAP: Many changes to this code, which is now used by both SOS
