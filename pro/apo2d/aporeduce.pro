@@ -249,7 +249,9 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    ; Optionally copy it to the directory specified by COPYDIR.
    ; Make an additional copy of the HTML file called 'logsheet-current.html'.
 
-   if (camnames[icam] EQ 'r2' AND keyword_set(rstruct)) then begin
+;   if (camnames[icam] EQ 'r2' AND keyword_set(rstruct)) then begin
+; Instead, create the HTML file after any reduced frame.
+   if (keyword_set(rstruct)) then begin
       wait, 10
 
       plotfile = filepath('snplot-'+mjdstr+'-'+platestr+'.ps', root_dir=outdir)
