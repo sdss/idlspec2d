@@ -195,8 +195,8 @@ pro spreduce, flatname, arcname, objname, $
       ; flat-field frames
 
       ; Set TAI equal to the time half-way through the exposure
-      tai = sxpar(objhdr, 'TAI') + 0.5 * sxpar(objhdr, 'EXPTIME')
-      bestflat = select_flat(flatstruct, tai)
+      tai_mid = sxpar(objhdr, 'TAI-BEG') + 0.5 * sxpar(objhdr, 'EXPTIME')
+      bestflat = select_flat(flatstruct, tai_mid)
       splog, 'Best flat = ', bestflat.name
 
       sxaddpar, objhdr, 'FRAMESN2', 0.0
@@ -241,10 +241,6 @@ pro spreduce, flatname, arcname, objname, $
           'spFrame-'+string(format='(a1,i1,a,i8.8,a)',color,spectrographid, $
           '-',framenum,'.fits'), root_dir=outdir)
 
-         skyoutname = filepath( $
-          'spSky-'+string(format='(a1,i1,a,i8.8,a)',color,spectrographid, $
-          '-',framenum,'.fits'), root_dir=outdir)
-
          sxaddpar, objhdr, 'PLUGFILE', fileandpath(plugfilename)
          sxaddpar, objhdr, 'FLATFILE', fileandpath(bestflat.name)
          sxaddpar, objhdr, 'ARCFILE', fileandpath(bestarc.name)
@@ -259,7 +255,7 @@ pro spreduce, flatname, arcname, objname, $
           xpeak, lambda, xsol, fflat, fibermask, color=color, $
           proftype=proftype, superflatset=superflatset, $
           widthset=widthset, dispset=dispset, skylinefile=fullskyfile, $
-          plottitle=plottitle, skyoutname=skyoutname
+          plottitle=plottitle
 
          splog, 'Elapsed time = ', systime(1)-stimeobj, ' seconds', $
           format='(a,f6.0,a)' 
