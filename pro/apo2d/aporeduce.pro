@@ -56,12 +56,14 @@
 ;   apo_plotsn
 ;   djs_filepath()
 ;   fits_wait()
+;   get_tai
 ;   idlspec2d_version()
 ;   idlutils_version()
 ;   quickextract()
 ;   quicktrace()
 ;   quickwave()
 ;   splog
+;   tai2airmass()
 ;
 ; REVISION HISTORY:
 ;   30-Apr-2000  Written by D. Schlegel & S. Burles, APO
@@ -338,7 +340,11 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    if (keyword_set(rstruct)) then begin
 
       ; Get the time in TAI, which we convert on-the-fly to UT when needed.
-      tai = sxpar(hdr, 'TAI')
+      get_tai, hdr, tai_beg, tai_mid, tai_end
+
+      ; Get telescope position, which is used to compute airmass.
+      radeg = sxpar(hdr,'RADEG')
+      decdeg = sxpar(hdr,'DECDEG')
 
       ; Get the CCD temperatures.
       ; Note that b1=01, b2=03, r1=04, r2=02
@@ -357,9 +363,15 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
                               'EXPTIME', double(sxpar(hdr, 'EXPTIME')), $
                               'FLAVOR', string(flavor), $
                               'CAMERA', string(camnames[icam]), $
-                              'TAI', double(tai), $
+                              'TAI', double(tai_mid), $
                               'AIRTEMP', float(sxpar(hdr,'AIRTEMP')), $
                               'CCDTEMP', ccdtemp, $
+                              'QUALITY', string(sxpar(hdr,'QUALITY')), $
+                              'NAME', string(sxpar(hdr,'QUALITY')), $
+                              'OBSCOMM', string(sxpar(hdr,'QUALITY')), $
+                              'RADEG', float(radeg), $
+                              'DECDEG', float(decdeg), $
+                              'AIRMASS', float(tai2airmass(radeg,decdeg,tai=tai_mid)), $
                               rstruct )
    endif
 
