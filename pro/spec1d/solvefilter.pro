@@ -14,8 +14,8 @@
 ;
 ; OPTIONAL INPUTS:
 ;   filttype   - Type of functional form for the filter curve.  Options are:
-;                  'sdss': Modified SDSS filter curve (default)
-;                  'tanh': Function with tanh() shape at edges
+;                  'sdss': Modified SDSS filter curve (default).  3 params.
+;                  'tanh': Function with tanh() shape at edges. 5 params.
 ;   filternum  - Filter number, 1=g, 2=r, 3=i; default to 3.
 ;   plate      - Plate number(s); if not specified, then select all DR1 plates
 ;                with number > 431.
@@ -28,9 +28,10 @@
 ;                default to 9300 Ang.
 ;   sncut      - Minimum SN_MEDIAN (median S/N per pixel) for spectroscopic
 ;                objects used in sample; default to 2.0
-;   maxiter    - Maximum number of iterations in iterative fit; default to 200
+;   maxiter    - Maximum number of iterations in call to MPFIT(); default to 200
 ;   fluxpath   - Path name for spPlate files used for reading the spectra.
-;                The spZ files are still read from $SPECTRO_DATA/$PLATE.
+;                The spZ files are still read from $SPECTRO_DATA/$PLATE
+;                regardless of this keyword.
 ;   value      - Initial guess values for the fit parameters.  The default
 ;                values are chosen to closely match the Gunn Jun-2001 curves.
 ;   fixed      - A vector of elements set to 0 for each parameter to be fit,
@@ -42,6 +43,34 @@
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
+;   For FILTTYPE='tanh', the following function response(loglam) is fit:
+;     m = (a[4] - 1) / (a[1] - a[0])
+;     b = 1 - m * a[0]
+;     Filter = tahn((loglam - a[0])*a[2]) + 1)
+;            * tahn((a[1] - loglam)*a[3]) + 1)
+;            * (m * loglam + b)
+;   There are a total of five a[] parameters above.
+;   The default initial-guess values for g-band are:
+;     a = [alog10(3950), alog10(5325), 100, 140, 2.0]
+;   The default initial-guess values for r-band are:
+;     a = [alog10(5580), alog10(6750), 130, 160, 1.2]
+;   The default initial-guess values for i-band are:
+;     a = [alog10(6915), alog10(8210), 150, 220, 0.55]
+;
+;   For FILTTYPE='sdss', we fit a modified version of the Gunn Jun-2001
+;   filter curves.  The wavelength scale is remapped with a shift and
+;   rescaling, which has the effect of moving the filter edges.  The
+;   filter shape is also multiplied by a function that is linear in
+;   log-wavelength, which has the effect of changing the broad-band
+;   slope of the filter.  Given a filter curve Gunnfilt(loglam), it is
+;   re-mapped as follows:
+;     slopeterm = (loglam - 3.5)^theta[2]
+;     Filter(loglam) = Gunnfilt((loglam + a[1]) * a[0]) * slopeterm
+;   The default initial-guess values for the three a[] parameters are always:
+;     a = [0, 1.0, 0.01]
+;   The effect of a positive a[2] makes the filter slope more upwards
+;   with wavelength, and a negative a[2] makes it slope more downwards.
+;
 ;   Iteratively solve for the SDSS 2.5-m filter curves, using one of
 ;   the several possible parameterizations as specified by FILTTYPE.
 ;   For each possible filter curve, we regress the spectroscopic magnitude
@@ -129,7 +158,7 @@ function solvefiltshape, theta, loglam
              * (mm * loglam + bb)
       end
    'sdss': begin
-      slopeterm = max(bigloglam) + theta[2] * bigloglam
+      slopeterm = (bigloglam - 3.5d0)^theta[2]
       linterp, bigloglam, gunnfilt[*,filternum] * slopeterm, $
        (bigloglam - theta[0]) * theta[1], fcurve
       end
@@ -569,13 +598,16 @@ objivar = 0
    xplot = total(!x.crange * [0.95,0.05])
    yplot = !y.crange[1]
    djs_xyouts, xplot, 0.32*yplot, 'Gunn Jun-2001', $
-    charsize=0.75*csize
+    charsize=csize
    djs_xyouts, xplot, 0.26*yplot, 'Schlegel Best-Fit '+datestring $
     + ' \chi^2_r=' + string(chi2pdof,format='(f6.3)'), $
-    charsize=0.75*csize, color='green'
+    charsize=csize, color='green'
    djs_xyouts, xplot, 0.20*yplot, 'Initial guess for fit' $
      + ' \chi^2_r=' + string(origrchi2,format='(f6.3)'), $
-    charsize=0.75*csize, color='red'
+    charsize=csize, color='red'
+   djs_xyouts, xplot, 0.14*yplot, 'DOF =' + string(dof) $
+    + '  \Delta \chi^2 =' + string((origrchi2-chi2pdof)*dof,format='(f6.3)'), $
+    charsize=csize
 
    !p.multi = [0,1,2]
    iplot = where(rchi2plate GT 0)
