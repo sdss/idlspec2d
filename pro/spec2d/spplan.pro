@@ -6,30 +6,33 @@
 ;   Create plan file(s) for running the Spectro-2D pipeline.
 ;
 ; CALLING SEQUENCE:
-;   spplan, [ rawdir, astrolog=, mjd=, flatdir=, minexp= ]
+;   spplan, [ rawdir, astrolog=, flatdir=, mjd=, mjstart=, mjend=, minexp= ]
 ;
 ; INPUTS:
 ;
 ; OPTIONAL INPUTS:
-;   rawdir     - Search for raw data files in RAWDIR/MJD/*.
-;                This should be an absolute file path, and we default to
+;   rawdir     - Search for raw data files in RAWDIR/MJD/*.  Default to
 ;                '/usr/sdss/data05/spectro/rawdata'.
-;   astrolog   - Search for plug-map files in PLUGDIR/MJD/*.
-;                This should be an absolute file path, and we default to
-;                '/usr/sdss/data05/spectro/astrolog'.
+;   astrolog   - Search for plug-map files in PLUGDIR/MJD/*.  Default to
+;                '../astrolog' relative to RAWDIR.
+;   flatdir    - Directory for pixel flat files.  Default to
+;                '../pixflat' relative to RAWDIR.
 ;   mjd        - Look for raw data files in RAWDIR/MJD; default to '*' to
 ;                search all subdirectories.  Note that this need not be
 ;                integer-valued, but could be for example '51441_test'.
-;   flatdir    - Directory for pixel flat files.  For now, default
-;                to 'pixflat'.
+;   mjstart    - Starting MJD.
+;   mjend      - Ending MJD.
 ;   minexp     - Minimum exposure time for science frames; default to 300 sec.
 ;
 ; OUTPUT:
 ;
 ; COMMENTS:
 ;   Look for the input files in:
-;     RAWDIR/MJD/sdR-cs-eeeeeeee.fit          - Raw frames, c=color, s=spec #
-;     RAWDIR/MJD/plPlugMapM-pppp-mmmmm-aa.par - Plug map files, aa=mapper
+;     RAWDIR/MJD/sdR-cs-eeeeeeee.fit            - Raw frames
+;     ASTROLOG/MJD/plPlugMapM-pppp-mmmmm-aa.par - Plug map files
+;     FLATS/pixflat-mmmmm-cs.fits               - Pixel flats
+;   where c=color, s=spectrograph number, pppp=plate number, aa=mapper ID,
+;   mmmmm=MJD.
 ;
 ;   The top-level of the output directory structure, TOPDIR, is 2d_VERSION,
 ;   where we read the version with IDLSPEC2d_VERSION().  If this is not a CVS-
@@ -40,7 +43,8 @@
 ;   If an output plan file already exists, this procedure will crash rather
 ;   than overwrite that file.
 ;
-;   Note we assume Unix directory names and we SPAWN the Unix 'ls' command.
+;   Note that RAWDIR, ASTROLOG, and FLATDIR variables will be replaced
+;   with their fully qualified path names.
 ;
 ; EXAMPLES:
 ;   Create the plan file(s) for reducing the data for MJD=51441, with that
@@ -48,13 +52,15 @@
 ;     spplan, '/u/schlegel/rawdata', mjd=51441
 ;
 ; BUGS:
+;   This routine spawns the Unix command 'mkdir'.
 ;
 ; PROCEDURES CALLED:
-;   headfits()
+;   fileandpath()
+;   get_mjd_dir()
 ;   idlspec2d_version()
 ;   splog
+;   sdsshead()
 ;   sxpar()
-;   yanny_read
 ;   yanny_write
 ;
 ; INTERNAL SUPPORT ROUTINES:
@@ -100,7 +106,11 @@ end
 
 ;------------------------------------------------------------------------------
 
-pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
+pro spplan, rawdir, astrolog=astrolog, flatdir=flatdir, mjd=mjd, $
+ mjstart=mjstart, mjend=mjend, minexp=minexp
+
+   ;----------
+   ; Set directory names RAWDIR, ASTROLOG, FLATDIR
 
    if (NOT keyword_set(rawdir)) then begin
       if ((findfile('/usr/sdss/data05/spectro/rawdata'))[0] NE '') then $
@@ -115,16 +125,26 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
       endelse
    endif
 
-   if (NOT keyword_set(astrolog)) then $
-    astrolog = strmid(rawdir, 0, rstrpos(rawdir,'/')+1) + 'astrolog'
-   if (NOT keyword_set(flatdir)) then flatdir = 'pixflat'
+   ;  This trick expands directory names to full path names
+   cd, rawdir, current=origdir
+   cd, origdir, current=rawdir
+
+   if (NOT keyword_set(astrolog)) then begin
+      cd, rawdir
+      cd, '../astrolog'
+      cd, origdir, current=astrolog
+   endif
+   if (NOT keyword_set(flatdir)) then begin
+      cd, rawdir
+      cd, '../pixflat'
+      cd, origdir, current=flatdir
+   endif
    if (NOT keyword_set(minexp)) then minexp = 300
 
-   ;  This trick expands directories
-   cd, rawdir, current=olddir
-   cd, olddir, current=rawdir
-   cd, astrolog, current=olddir
-   cd, olddir, current=astrolog
+   ;  This trick expands directory names to full path names
+   cd, astrolog
+   cd, flatdir, current=astrolog
+   cd, origdir, current=flatdir
 
    ;----------
    ; Determine the top-level of the output directory tree, and quit if
@@ -137,28 +157,13 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
        dirver = strmid(dirver,1)
      topdir = '2d_' + dirver 
    endif else topdir = '2d_test'
+   topdir = filepath(topdir, root_dir=origdir)
    splog, 'Setting top-level of output directory to ' + topdir
 
+   ;----------
    ; Create a list of the MJD directories (as strings)
-   if (NOT keyword_set(mjd)) then begin
-      spawn, '\ls -d '+rawdir+'/*', mjdlist
-   endif else begin
-      tmpstring = ''
-      for i=0, N_elements(mjd)-1 do $
-       tmpstring = tmpstring + ' ' + rawdir+'/'+strtrim(string(mjd[i]),2)
-      spawn, '\ls -d '+tmpstring, mjdlist
-   endelse
 
-   ; Strip leading directory names from MJDLIST
-   for imjd=0, N_elements(mjdlist)-1 do begin
-      i = rstrpos(mjdlist[imjd], '/') > 0
-
-
-      ;!!!!!!!!!!!!!!!!!!!!!SMB 02/21/00
-      ;  Added 1 to index to store just MJD with no '/' ???
-      ;
-      mjdlist[imjd] = strmid(mjdlist[imjd], i+1)
-   endfor
+   mjdlist = get_mjd_dir(rawdir, mjd=mjd, mjstart=mjstart, mjend=mjend)
 
    camnames = ['b1', 'b2', 'r1', 'r2']
    ncam = N_elements(camnames)
@@ -169,6 +174,7 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
    for imjd=0, N_elements(mjdlist)-1 do begin
 
       mjddir = mjdlist[imjd]
+; The following isn't quite the right way to append directory names ???!!!
       inputdir = filepath('', root_dir=rawdir, subdirectory=mjddir)
       plugdir = filepath('', root_dir=astrolog, subdirectory=mjddir)
 
@@ -177,9 +183,7 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
       splog, 'Astrolog directory ', plugdir
 
       ; Find all raw FITS files in this directory
-	cd, inputdir, current=olddir
-      fullname = findfile('sdR*.fit', count=nfile)
-	cd, olddir
+      fullname = findfile(filepath('sdR*.fit',root_dir=inputdir), count=nfile)
 
       splog, 'Number of FITS files found: ', nfile
 
@@ -189,61 +193,32 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
          ; Remove the path from the file names
 
          shortname = strarr(nfile)
-         for i=0, nfile-1 do begin
-            res = str_sep(fullname[i],'/')
-            shortname[i] = res[N_elements(res)-1]
-         endfor
-
-         ;----------
-         ; Sort the files based upon exposure number + camera number
-
-;         isort = sort( strmid(shortname,7,8) + strmid(shortname,4,2) )
-;         fullname = fullname[isort]
-;         shortname = shortname[isort]
+         for i=0, nfile-1 do shortname[i] = fileandpath(fullname[i])
 
          ;----------
          ; Find all useful header keywords
 
          PLATEID = lonarr(nfile)
          EXPTIME = fltarr(nfile)
-
-;
-;	Why is exposure fltarr??
-;
          EXPOSURE = lonarr(nfile)
          FLAVOR = strarr(nfile)
          CAMERAS = strarr(nfile)
          for i=0, nfile-1 do begin
 
-            hdr = headfits(filepath(fullname[i], root_dir=inputdir))
+            hdr = sdsshead(fullname[i])
 
             if (size(hdr,/tname) EQ 'STRING') then begin
-              PLATEID[i] = long( sxpar(hdr, 'PLATEID') )
-              EXPTIME[i] = sxpar(hdr, 'EXPTIME')
-              EXPOSURE[i] = long( sxpar(hdr, 'EXPOSURE') )
-              FLAVOR[i] = strtrim(sxpar(hdr, 'FLAVOR'),2)
-              CAMERAS[i] = $
-                strmid(shortname[i],4,2) ; Camera number from file name
+               PLATEID[i] = long( sxpar(hdr, 'PLATEID') )
+               EXPTIME[i] = sxpar(hdr, 'EXPTIME')
+               EXPOSURE[i] = long( sxpar(hdr, 'EXPOSURE') )
+               FLAVOR[i] = strtrim(sxpar(hdr, 'FLAVOR'),2)
+               CAMERAS[i] = strtrim(sxpar(hdr, 'CAMERAS'),2)
 
-              ; Rename 'target' -> 'science', and 'calibration' -> 'arc'
-              if (FLAVOR[i] EQ 'target') then FLAVOR[i] = 'science'
-              if (FLAVOR[i] EQ 'calibration') then FLAVOR[i] = 'arc'
+               ; Read the MJD from the header of the first file
+               ; This should usually be the same as MJDDIR, though an integer
+               ; rather than a string variable.
+               if (i EQ 0) then thismjd = sxpar(hdr, 'MJD')
 
-
-              ; Read the MJD from the header of the first file
-              ; This should usually be the same as MJDDIR, though an integer
-              ; rather than a string variable.
-              if (i EQ 0) then thismjd = sxpar(hdr, 'MJD')
-
-	      ; Test Column and row binning
-              if (thismjd GT 51576) then begin
-	        if (sxpar(hdr, 'COLBIN') NE 1 OR $
-                    sxpar(hdr, 'ROWBIN') NE 1) then  begin
-                   splog, 'Unusual binning!', PLATEID[i], EXPOSURE[i], $ 
-                      CAMERAS[i], sxpar(hdr, 'COLBIN'), sxpar(hdr, 'ROWBIN')
-                   FLAVOR[i] = 'unkn'
-                endif
-              endif
             endif
          endfor
 
@@ -284,7 +259,7 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
                        AND FLAVOR[ifile] NE 'science', ct)
             if (ct GT 0) then qdone[ifile[ignore]] = 1
             if (ct GT 0) then $
-             splog, 'Ignore ' + strtrim(string(ct),2) $
+             splog, 'Ignore ' + strtrim(string(ct),3) $
               + ' frames with unusable flavor'
 ;            for i=0, ct-1 do $
 ;             splog, 'Ignore file ', shortname[ifile[ignore[i]]], $
@@ -298,7 +273,7 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
 ;             splog, 'Ignore file ', shortname[ifile[ignore[i]]], $
 ;              ' EXPTIME=', EXPTIME[ifile[ignore[i]]]
             if (ct GT 0) then $
-             splog, 'Ignore ' + strtrim(string(ct),2) $
+             splog, 'Ignore ' + strtrim(string(ct),3) $
               + ' science frames with EXPTIME < ', minexp
 
             while (min(qdone[ifile]) EQ 0) do begin
@@ -361,9 +336,7 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
                endif
                if (ct EQ 1) then begin
                   ; Take the only plugmap file -- remove leading directory name
-                  j = rstrpos(files[0], '/')
-                  if (j EQ -1) then oneplug.name = files[0] $
-                   else oneplug.name = strmid(files[0],j+1,strlen(files[0])-j)
+                  oneplug.name = fileandpath(files[0])
                   splog, 'Setting plug map file = ', oneplug.name
                endif
                if (ct EQ 0) then begin
@@ -392,9 +365,7 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
                endif
                if (ct EQ 1) then begin
                   ; Take the only pixel flat
-                  j = rstrpos(files[0], '/')
-                  if (j EQ -1) then pixflats.name[icam] = files[0] $
-                   else pixflats.name[icam] = strmid(files[0],j+1,strlen(files[0])-j)
+                  pixflats.name[icam] = fileandpath(files[0])
                endif
                if (ct EQ 0) then begin
                   splog, 'No pixel flats found for CAMERA= ' + camnames[icam]
@@ -405,20 +376,10 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
             ;----------
             ; Determine names of output files
 
-            outdir = topdir + '/' + platestr
+; The following isn't quite the right way to append directory names ???!!!
+            tmpname = filepath('', root_dir=topdir, subdirectory=platestr)
+            junk = fileandpath(tmpname, path=outdir)
 
-            ;  This trick expands directories
-            cd, flatdir, current=olddir
-            cd, olddir, current=fullflatdir
-
-;	!!!!!!!!!!!!!!!!!!!!!!!  SMB 02/21/99 !!!!!!!!!!!!!!!!!!!!!!!
-;            I'm not sure what two lines below are used for??
-;
-;
-;            if (strmid(flatdir,0,1) EQ '/') then fullflatdir = flatdir $
-;             else fullflatdir = '../../' + flatdir
- 
- 
             planfile = string( 'spPlan2d-', thismjd, '-', pltid, '.par', $
              format='(a,i5.5,a,i4.4,a)' )
             logfile = string( 'spDiag2d-', thismjd, '-', pltid, '.log', $
@@ -433,7 +394,7 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
             hdr = [hdr, "MJD     " + string(thismjd) + "  # Modified Julian Date"]
             hdr = [hdr, "inputDir    '" + inputdir + "'  # Directory for raw images"]
             hdr = [hdr, "plugDir     '" + plugdir + "'  # Directory for plugmap files"]
-            hdr = [hdr, "flatDir     '" + fullflatdir + "'  # Directory for pixel flats"]
+            hdr = [hdr, "flatDir     '" + flatdir + "'  # Directory for pixel flats"]
             hdr = [hdr, "extractDir  '2d'       # Directory for 2d spectra"]
             hdr = [hdr, "combineDir  '2dmerge'  # Directory for combined spectra"]
             hdr = [hdr, "logfile     '" + logfile + "'  # Text log file"]
