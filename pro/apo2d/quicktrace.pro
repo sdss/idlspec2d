@@ -5,8 +5,18 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
    ;----------
    ; Read in image
 
-   sdssproc, filename, flatimg, flativar, hdr=hdr, $
+   sdssproc, filename, flatimg, flativar, hdr=flathdr, $
+    nsatrow=nsatrow, fbadpix=fbadpix, $
     spectrographid=spectrographid, camname=camname
+
+   ;-----
+   ; Decide if this flat is bad
+
+   qbadflat = reject_flat(flatimg, flathdr, nsatrow=nsatrow, fbadpix=fbadpix)
+   if (qbadflat) then begin
+      splog, 'ABORT: Unable to reduce flat'
+      return, 0
+   endif
 
    ;----------
    ; Read in the plug map file, and sort it
@@ -24,7 +34,7 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
    nrow = dims[1]
 
    if (nrow MOD nbin NE 0) then begin
-      print, 'Binning does not match'
+      splog, 'ABORT: Unable to bin at ', nbin
       return, 0
    endif
 

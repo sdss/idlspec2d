@@ -9,7 +9,17 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
    ;----------
    ; Read in image
 
-   sdssproc, arcname, arcimg, hdr=hdr, color=color, camname=camname
+   sdssproc, arcname, arcimg, hdr=archdr, color=color, camname=camname, $
+    nsatrow=nsatrow, fbadpix=fbadpix
+
+   ;-----
+   ; Decide if this arc is bad
+
+   qbadarc = reject_arc(arcimg, archdr, nsatrow=nsatrow, fbadpix=fbadpix)
+   if (qbadarc) then begin
+      splog, 'ABORT: Unable to reduce arc'
+      return, 0
+   endif
 
    ;----------
    ; Read in the reduced flat
