@@ -45,6 +45,8 @@ PLOTSN: Changed auto-scaling of fitted magnitudes, when less than 20 objects
             are in the desired range.  Now the fitting range will expand to
             [10.0, snmag + 1.0].  So in case of g' [10.0, 21.2], this should
             work much better for the photo-z S/N estimates.
+PLOTSPEC: New keyword option /NETIMAGE to plot corresponding PHOTO images
+            in a Netscape window using Steve Kent's web tool.
 QUICKBIAS: Remove message which preempts logging.  Instead, return a
             set of precentiles that are all -9999, which shows up as ****
             in the HTML file.
