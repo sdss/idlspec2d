@@ -409,9 +409,10 @@ The following messages may appear:
     This condition is triggered when the 80-th percentile of the image
     is less than 1000 electrons.
     When this happens, the flat is not reduced.
-<LI><B>Argon is present</B> <BR>
-    Argon emission lines are present in the quartz-halogen flat-field images,
-    which are supposed to be featureless.  JEG's best guess is that these
+<LI><B>Emission lines (Argon?) in flats</B> <BR>
+    Emission lines are present in the quartz-halogen flat-field images,
+    which are supposed to be featureless.  We have identified these rogue
+    lines as argon.  JEG's best guess is that these
     contaminating lines come from trace amounts of argon in the HgCd lamps,
     which must still have current running through them when they are supposed
     to be off.  If possible, it is much better to get flat-field exposures
@@ -444,8 +445,10 @@ The following messages may appear:
 <LI><B>Large flexure flat<->science</B> <BR>
     There is a large shift (more than 0.1 pix) between the flat-field and
     the science exposure, presumably from flexure in the spectrographs.
-    When this happens, another set of flat-fields (post-calibs) should
-    be taken.
+    When this happens, another set of flat-fields (post-calibs) is
+    recommended.  (However, don't bother to take a set of calibrations
+    on a different night.  The Spectro-2D reductions never use calibrations
+    from one night for science exposures on another.)
 <LI><B>Red Monster at ....</B> <BR>
     There is sometimes a light source at 6400-6600 Ang that we detect
     by very poor sky-subtraction of the sky fibers at these wavelengths.

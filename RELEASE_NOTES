@@ -13,6 +13,12 @@ Add new mask bit: NEARWHOPPER.  This effects the following routines:
               because the sky-fiber selection implicitly assumes all fiber-
               mask bits are fatal (in EXTRACT_OBJECT).
 
+Son-of-Spectro changes:
+QUICKEXTRACT: Change message about post-cabibs from "REQUIRED" to merely
+              "recommended."
+QUICKTRACE: Tweak test for putative Argon lines in flats to be a less
+            sensitive trigger.
+
 -------------------------------------------------------------------------------
 v4_7_0 (Mar 16, 2001)
 
