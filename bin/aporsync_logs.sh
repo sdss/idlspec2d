@@ -50,6 +50,7 @@ for dir in $astrologdirs
 do
    rsync -ar --rsh="ssh -c blowfish" \
     --rsync-path=/p/rsync/v2_4_3/rsync \
+    --include "sdHdrFix*.par"    \
     --include "sdReport*.par"    \
     --include "plPlugMap*.par"   \
     --include "guiderMon*.par"   \
