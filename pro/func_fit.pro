@@ -6,20 +6,21 @@
 ;   Convert from an array of x,y positions to a trace set
 ;
 ; CALLING SEQUENCE:
-;   res = function func_fit( x, y, ncoeff, [ function_name=function_name, $
-;    /halfintwo, yfit=yfit ]
+;   res = function func_fit( x, y, ncoeff, [weights=weights, $
+;    function_name=function_name, /halfintwo, yfit=yfit ]
 ;
 ; INPUTS:
 ;   x          - X values (independent variable)
 ;   y          - Y values (dependent variable)
 ;   ncoeff     - Number of coefficients to fit
+;   weights    - Weight values; only supports 0<= for masked, >0 for unmasked
 ;
 ; OPTIONAL KEYWORDS:
 ;   function_name - Function to fit; options are:
 ;                'legendre'
 ;                'chebyshev'
 ;                Default to 'legendre'
-;   halfintwo  - Optional keyword for Chebyshev function
+;   halfintwo  - Optional keyword for Chebyshev function, FCHEBYSHEV
 ;
 ; OUTPUTS:
 ;   res        - Fit coefficients
@@ -44,26 +45,38 @@
 ;-
 ;------------------------------------------------------------------------------
 
-function func_fit, x, y, ncoeff, function_name=function_name, $
- halfintwo=halfintwo, yfit=yfit
+function func_fit, x, y, ncoeff, weights=weights, $
+ function_name=function_name, halfintwo=halfintwo, yfit=yfit
 
    if (N_params() LT 3) then begin
-     print,'function func_fit, x, y, ncoeff, function_name=function_name' 
-     print,'function_name can be legendre or chebyshev'
-     return, 0
+      print,'function func_fit, x, y, ncoeff, w, function_name=function_name'
+      print,'function_name can be legendre or chebyshev'
+      return, 0
    endif
-   
+
    if (NOT keyword_set(function_name)) then function_name = 'flegendre'
    nx = N_elements(x)
    ny = N_elements(y)
    if (nx NE ny) then message, 'Dimensions of X and Y do not agree'
 
+   if (keyword_set(weights)) then begin
+      nw = N_elements(weights)
+      if (nx NE nw) then message, 'Dimensions of X and W do not agree'
+   endif else begin
+      weights = intarr(nx) + 1
+   endelse
+
+   ; Select unmasked points
+   igood = where(weights GT 0, ngood)
+   if (ngood EQ 0) then $
+    message, 'No good data points in fit'
+
    res = fltarr(ncoeff)
 
-   if (nx EQ 1) then begin
+   if (ngood EQ 1) then begin
 
-      res[0] = y[0]
-      yfit = y[0]
+      res[0] = y[igood[0]]
+      yfit = y[igood[0]]
 
    endif else begin
 
@@ -74,11 +87,12 @@ function func_fit, x, y, ncoeff, function_name=function_name, $
        legarr = flegendre(x, ncfit)
       if (function_name EQ 'fchebyshev') then $
        legarr = fchebyshev(x, ncfit, halfintwo=halfintwo)
-       
-      beta = transpose(y # legarr)
-      alpha = transpose(legarr) # legarr
-      svdc, alpha, w, u, v, /double
-      res[0:ncfit-1] = svsol(u, w, v, beta, /double)
+
+      beta = transpose(y[igood] # legarr[igood,*])
+      alpha = transpose(legarr[igood,*]) # legarr[igood,*]
+      svdc, alpha, singular, u, v, /double
+      res[0:ncfit-1] = svsol(u, singular, v, beta, /double)
+
       yfit = legarr # res
 
    endelse

@@ -331,7 +331,6 @@ for i=0,16 do oplot,fflat[*,i*19]
       ;------------------
       ; Tweak up the wavelength solution to agree with the sky lines.
 
-stop
       locateskylines, skylinefile, flux, fluxivar, $
        wset, xsky, ysky, skywaves, lambda=skylambda
 

@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   xy2traceset, xpos, ypos, tset, [ func=func, ncoeff=ncoeff, $
 ;    xmin=xmin, xmax=xmax, maxdev=maxdev, maxiter=maxiter, $
-;    singlerej=singlerej, xmask=xmask ]
+;    singlerej=singlerej, xmask=xmask, _EXTRA=KeywordsForFuncFit ]
 ;
 ; INPUTS:
 ;   xpos       - X positions corresponding to YPOS as an [nx,Ntrace] array
@@ -61,7 +61,7 @@
 ;------------------------------------------------------------------------------
 pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
  xmin=xmin, xmax=xmax, maxdev=maxdev, maxiter=maxiter, $
- singlerej=singlerej, xmask=xmask
+ singlerej=singlerej, xmask=xmask, _EXTRA=KeywordsForFuncFit
 
    ; Need 3 parameters
    if (N_params() LT 3) then begin
@@ -145,8 +145,8 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
 
             nreject = nx - ngood
 
-            res = func_fit(xnorm[igood], ypos[igood,itrace], ncoeff, $
-             function_name=function_name)
+            res = func_fit(xnorm, ypos[*,itrace], ncoeff, weights=qgood, $
+             function_name=function_name, yfit=yfit, _EXTRA=KeywordsForFuncFit)
 
             if (func EQ 'legendre') then $
                yfit = flegendre(xnorm, ncoeff) # res
