@@ -24,6 +24,8 @@ ZEROPT_COR (removed)
 
 COMPUTECHI2: Do the chi^2 computation in double-precision.
 FILTER_THRU: Make silent in call to xy2traceset.
+FITSN: Changed call to the obsolete function POLYFITW, to the newer
+           but worse POLY_FIT.
 PLATESN: New header keywords ROFFSET & RSIGMA store the offset and standard
            deviation of the r-band difference in the spectro and photo mags.  
            GIOFF and GISIGMA store the offset and scatter in the (g-i) color.
@@ -32,6 +34,11 @@ PCA_SOLVE: Added /quiet keyword.
 PLATESN: Changed (g-i) to (g-r).
 PLOTSN: Fixed histogram scales, changed colors for histograms.
         Changed (g-i) to (g-r).
+        Tremonti has added return values for ROFFSET,RSIGMA,GROFFSET,GRSIGMA,
+        but these are not documented.  Also, ignore objects with PLUG.MAG[2]
+        <= 0 (but what would those be?).  Plotting ranges changed.
+        A 3rd set of plots for histograms.
+        (Revert this code back to v4_10_1 if need be.)
 
 etc/atmdisp_vec_am1.1.see2.0.fit - Tremonti's atmos. dispersion corrrection?
 etc/atmdisp_vec_am1.2.see2.0.fit - Tremonti's atmos. dispersion corrrection?
