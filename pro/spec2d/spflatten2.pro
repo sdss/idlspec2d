@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   spflatten2, flatname, arcname, allflats, [ pixflat, sigrej=, maxiter=, $
 ;    oldflat=, outfile=, indir=, outdir=, tmpdir=, $
-;    pixspace=, nord=, lower=, upper= ]
+;    pixspace=, nord=, lower=, upper=, /nodelete ]
 ;
 ; INPUTS:
 ;   flatname   - Name of flat image for tracing arc
@@ -33,6 +33,7 @@
 ;                the flux variations of multiple fibers crossing a single
 ;                column, but it need not fit out the actual flat-field
 ;                variations.
+;   nodelete   - If set, then do not delete temporary files.
 ;
 ; PARAMETERS FOR SLATEC_SPLINEFIT:
 ;   nord       - Default to 4
@@ -86,7 +87,7 @@
 pro spflatten2, flatname, arcname, allflats, pixflat, $
  sigrej=sigrej, maxiter=maxiter, $
  oldflat=oldflat, outfile=outfile, indir=indir, outdir=outdir, tmpdir=tmpdir, $
- pixspace=pixspace, nord=nord, lower=lower, upper=upper
+ pixspace=pixspace, nord=nord, lower=lower, upper=upper, nodelete=nodelete
 
    if (NOT keyword_set(indir)) then indir = './'
    if (NOT keyword_set(outdir)) then outdir = './'
@@ -363,8 +364,10 @@ pixflatarr = 0
          flatimgsum = flatimgsum + outmask[*,*,iflat] * readfits(tmpname1[iflat])
          ymodelsum = ymodelsum + outmask[*,*,iflat] * readfits(tmpname2[iflat])
 
-         rmfile, tmpname1[iflat]
-         rmfile, tmpname2[iflat]
+         if (NOT keyword_set(nodelete)) then begin
+            rmfile, tmpname1[iflat]
+            rmfile, tmpname2[iflat]
+         endif
 
       endfor
 
