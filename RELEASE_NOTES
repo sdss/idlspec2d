@@ -1,9 +1,13 @@
 
+FILTER_THRU: Fix failure mode when only a 1-d WAVEIMG is passed.
 PLOTSPEC: Major re-write to allow flipping through many plots on a plate
           and change plotting parameters.  Or, send plots to PostScript files.
           Usage of ZNUM changed -- see READSPEC for new usage.
+          Plot labels in green for legibility in the plot window, and
+          include the ZWARNING flag in the label if it is nonzero.
 READSPEC: Return successfully even if redshift files not found.
           Change usage of ZNUM such that ZNUM=1 is best fit, ZNUM=2 is 2nd best.
+SPCOADD_FRAMES: Set keyword SMEARUSE to T or F.
 SPFLATAVE, SPFLATTEN2: Handle edge effects better.  In SPFLATTEN2, set
           any pixels more than 2 pixels from the left/right of the first/last
           fiber equal to zero.  Then, in SPFLATAVE, any edge pixels that are
