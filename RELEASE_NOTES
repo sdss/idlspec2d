@@ -96,6 +96,8 @@ Many of these were in the hoggpt product:
   STRIPE_TO_ETA
   STRIPE_TO_INCL
 COMDIS: Minor bug fix, making loop variable type long.
+GAUSS_KERNEL: sigma should have been sigma^2 (This proc is used
+            by SKYSUBTRACT,SMOOTH_HALO,RLINE_FINDEW in idlspec2d).
 SPHEREMATCH,chunks.c: Bug fix for wrap.
 
 -------------------------------------------------------------------------------
