@@ -99,6 +99,16 @@ ophdrfix sdR-??-00003226 EXPTIME  985
 ophdrfix sdR-??-00003576 MAPID    517701
 ophdrfix sdR-??-00003576 NAME     "'0235-51577-01'"
 
+# The night of MJD=51779 (22/23 Aug 2000) had horrible electronics problems.
+# See PR #2335 for some details.  The amplifier had random bits being
+# set wrong on the left amplifier of r2, in particular the 32 bit
+# and the 256 bit.  We've already put a kludge in SDSSPROC to add a large
+# error to these r2 exposures, but better to just declare them bad.
+# This only effects plate 356/51779.
+ophdrfix sdR-r2-0000609[8-9] FLAVOR   "'unknown'"
+ophdrfix sdR-r2-0000610[0-9] FLAVOR   "'unknown'"
+ophdrfix sdR-r2-0000611[0-2] FLAVOR   "'unknown'"
+
 # Observers say bad smear for plate 395 on MJD=51783.
 ophdrfix sdR-??-00006280 FLAVOR   "'unknown'"
 
