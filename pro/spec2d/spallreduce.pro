@@ -320,31 +320,30 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
       set_plot, 'x'
    endif
 
-   if (NOT keyword_set(skipsn) AND keyword_set(combineDir)) then begin
-
-     if (NOT keyword_set(snfile) AND keyword_set(plotfile)) then begin
-       snfile = plotfile
-       strput, snfile, 'spSignal'
-     endif
-
-     cpbackup, snfile
-     set_plot, 'ps'
-     device, filename=snfile, /color, /inches, xs=8.0, ys=10.0, xoff=0.25, $
-                 yoff=0.4
-     splog, 'Plot file ', snfile, ' opened ', systime()
-
-     cd, combineDir, current=old_dir
-
-     expres=outputname
-     dot = strpos(outputname, '.')
-     strput, expres, '*', dot
-
-     checksn, expres=expres, title=outputname
-     device, /close
-     set_plot,'x'
-
-     cd, old_dir
-   endif  
+;   if (NOT keyword_set(skipsn) AND keyword_set(combineDir)) then begin
+;
+;     if (NOT keyword_set(snfile) AND keyword_set(plotfile)) then begin
+;       snfile = plotfile
+;       strput, snfile, 'spSignal'
+;     endif
+;
+;     cpbackup, snfile
+;     set_plot, 'ps'
+;     device, filename=snfile, /color, /inches, xs=8.0, ys=10.0, xoff=0.25, $
+;                 yoff=0.4
+;     splog, 'Plot file ', snfile, ' opened ', systime()
+;
+;     cd, combineDir, current=old_dir
+;     expres=outputname
+;     dot = strpos(outputname, '.')
+;     strput, expres, '*', dot
+;     checksn, expres=expres, title=outputname ; ???
+;     cd, old_dir
+;
+;     device, /close
+;     set_plot,'x'
+;
+;   endif  
 
    if (keyword_set(logfile)) then splog, /close
 
