@@ -461,9 +461,11 @@ ormask = 0 ; Free memory
    sxaddpar, hdr, 'VERS1D', idlspec2d_version(), $
     'Version of idlspec2d for 1D reduction', after='VERSCOMB'
 
+   cpbackup, zallfile
    mwrfits, 0, zallfile, hdr, /create ; Retain the original header in first HDU
    mwrfits, res_all, zallfile
 
+   cpbackup, zbestfile
    mwrfits, 0, zbestfile, hdr, /create ; Retain the original header in first HDU
    mwrfits, (res_all[0,*])[*], zbestfile
    mwrfits, synflux, zbestfile
