@@ -107,6 +107,7 @@ andmask = 0 ; Free memory
 ;jj = jj[0:9] ; Trim to first few objects
 jj = lindgen(640)
 ;jj = lindgen(2)
+;jj = [28]
 chicz = chicz[jj]
 chicclass = chicclass[jj]
 objflux = objflux[*,jj]
@@ -127,7 +128,7 @@ nobj=n_elements(jj)
    ; Find GALAXY redshifts
 
    npoly = 3
-   zmin = -0.01
+   zmin = -0.01 ; -3000 km/sec
    zmax = 0.5 ; Limit for now until template goes further into the UV ???
    pspace = 2
    nfind = 5
@@ -151,11 +152,13 @@ nobj=n_elements(jj)
    res_gal.class = 'GALAXY'
    res_gal.subclass = ' '
 
+   res_all = res_gal ; Append results
+
    ;----------
    ; Find QSO redshifts
 
    npoly = 3
-   zmin = -0.01
+   zmin = 0.0033 ; +1000 km/sec
    zmax = 3.75 ; Max range to use for now, with the template starting at
                ; 800 Ang (rest), which corresponds to 3800 Ang at this z. ???
    pspace = 4
@@ -180,10 +183,41 @@ nobj=n_elements(jj)
    res_qso.class = 'QSO'
    res_qso.subclass = ' '
 
-   ;----------
-   ; Append and sort results for each object by chi^2/DOF
+   res_all = [res_all, res_qso] ; Append results
 
-   res_all = [res_gal, res_qso]
+   ;----------
+   ; Find STAR redshifts
+
+   npoly = 3
+   zmin = -0.002 ; -600 km/sec
+   zmax = 0.002 ; +600 km/sec
+   pspace = 1
+   nfind = 1
+
+   eigenfile = 'spEigenStar.fits'
+
+   eigendir = concat_dir(getenv('IDLSPEC2D_DIR'), 'templates')
+   shdr = headfits( djs_filepath(eigenfile, root_dir=eigendir) )
+   nstar = sxpar(shdr, 'NAXIS2') > 1
+
+   for istar=0, nstar-1 do begin
+      splog, 'Compute QSO redshifts: ZMIN=', zmin, ' ZMAX=', zmax, $
+       ' PSPACE=', pspace
+      t0 = systime(1)
+      res_star = zfind(objflux, objivar, hdr=hdr, fiberid=plugmap.fiberid, $
+       eigenfile=eigenfile, columns=istar, npoly=npoly, $
+       zmin=zmin, zmax=zmax, pspace=1, $
+       nfind=nfind, width=pspace*3)
+      splog, 'CPU time to compute STAR redshifts = ', systime(1)-t0
+
+      res_star.class = 'STAR'
+      res_star.subclass = sxpar(shdr, 'NAME'+strtrim(string(istar),2))
+
+      res_all = [res_all, res_star] ; Append results
+   endfor
+
+   ;----------
+   ; Sort results for each object by chi^2/DOF
 
    for iobj=0, nobj-1 do begin
       res1 = res_all[*,iobj]
@@ -231,6 +265,7 @@ print,[transpose(chicz),res_all[0,*].z]
    writefits, outfile, 0, hdr ; Retain the original header in the first HDU
    mwrfits, res_all, outfile
 
+stop
 return
 stop
 davez=res_all[0,*].z

@@ -141,7 +141,7 @@ function zfind, objflux, objivar, hdr=hdr, fiberid=fiberid, $
    if (ndim EQ 1) then nstar = 1 $
     else nstar = dims[1]
 
-   if (keyword_set(columns)) then begin
+   if (n_elements(columns) NE 0) then begin
       starflux = starflux[*,columns]
    endif else begin
       columns = lindgen(nstar)
@@ -194,7 +194,8 @@ function zfind, objflux, objivar, hdr=hdr, fiberid=fiberid, $
    for iobj=0, nobj-1 do $
     result[*,iobj].wcoverage = wcoverage[iobj]
    result.tfile = eigenfile
-   result.tcolumn[0:n_elements(columns)-1] = columns
+   for iobj=0, nobj-1 do $
+    result[iobj].tcolumn[0:n_elements(columns)-1] = columns
    result.npoly = npoly
 
    return, result

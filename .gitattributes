@@ -101,6 +101,7 @@ pro/spec1d/make_regress1d.pro -text
 pro/spec1d/pca_gal.pro -text
 pro/spec1d/pca_qso.pro -text
 pro/spec1d/pca_solve.pro -text
+pro/spec1d/pca_star.pro -text
 pro/spec1d/plug2tsobj.pro -text
 pro/spec1d/poly_array.pro -text
 pro/spec1d/primfac.pro -text
@@ -235,5 +236,6 @@ templates/qso.template -text
 templates/qsolist.27plates -text
 templates/spEigenGals.fits -text svneol=unset#unset
 templates/spEigenQSO.fits -text svneol=unset#unset
+templates/spEigenStar.fits -text svneol=unset#unset
 ups/Makefile -text
 ups/idlspec2d.table -text

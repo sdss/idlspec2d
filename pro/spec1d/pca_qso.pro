@@ -1,7 +1,7 @@
 ;------------------------------------------------------------------------------
 pro pca_qso
 
-   wavemin = 800
+   wavemin = 700
    wavemax = 7000
    snmax = 100
    niter = 10
@@ -47,13 +47,15 @@ andmask = 0 ; Free memory
    pcaflux = pca_solve(objflux, objivar, objloglam, zfit, $
     wavemin=wavemin, wavemax=wavemax, $
     niter=niter, nkeep=nkeep, newloglam=newloglam, eigenval=eigenval)
+   pcaflux = float(pcaflux)
 
    sxaddpar, hdr, 'OBJECT', 'QSO'
    sxaddpar, hdr, 'COEFF0', newloglam[0]
    sxaddpar, hdr, 'COEFF1', objdloglam
    for i=0, n_elements(eigenval)-1 do $
     sxaddpar, hdr, 'EIGEN'+strtrim(string(i),1), eigenval[i]
-   mwrfits, float(pcaflux), outfile, hdr, /create
+
+   mwrfits, pcaflux, outfile, hdr, /create
 
    return
 end
