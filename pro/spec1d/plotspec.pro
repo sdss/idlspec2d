@@ -241,11 +241,15 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
       return
    endif
 
+   quiet = !quiet
+   !quiet = 1
+
    if (n_elements(plate) NE 1) then $
     message, 'PLATE must be a scalar'
    if (NOT keyword_set(mjd)) then readspec, plate, mjd=mjd
    if (NOT keyword_set(mjd)) then begin
       print, 'Plate not found!!'
+      !quiet = quiet
       return
    endif
    
@@ -320,6 +324,7 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
                     if (NOT keyword_set(mjd)) then readspec, plate, mjd=mjd
                     if (NOT keyword_set(mjd)) then begin
                        print, 'Plate not found!!'
+                       !quiet = quiet
                        return
                     endif
                  end
@@ -356,6 +361,7 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
       endelse
    endwhile
 
+   !quiet = quiet
    return
 end
 ;------------------------------------------------------------------------------

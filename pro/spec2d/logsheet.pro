@@ -32,6 +32,8 @@
 ;------------------------------------------------------------------------------
 pro logsheet, dir, outfile=outfile
 
+   quiet = !quiet
+   !quiet = 1
    fullname = findfile(djs_filepath('sdR*.fit*',root_dir=dir), count=nfile)
 
    if (nfile EQ 0) then begin
@@ -91,6 +93,8 @@ pro logsheet, dir, outfile=outfile
       endif
 
    endelse
+
+   !quiet = quiet
 
    return
 end

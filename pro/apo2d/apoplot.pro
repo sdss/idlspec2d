@@ -337,6 +337,9 @@ pro apoplot, plate, fiberid, mjd=mjd, nsmooth=nsmooth, $
       return
    endif
 
+   quiet = !quiet
+   !quiet = 1
+
    if (n_elements(plate) NE 1) then $
     message, 'PLATE must be a scalar'
 
@@ -464,6 +467,7 @@ pro apoplot, plate, fiberid, mjd=mjd, nsmooth=nsmooth, $
       endelse
    endwhile
 
+   !quiet = quiet
    return
 end
 ;------------------------------------------------------------------------------
