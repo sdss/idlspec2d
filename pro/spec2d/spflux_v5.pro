@@ -111,7 +111,15 @@ function spflux_masklines, loglam
     [[4290., 4320.]]  , $  ; G-band
     [4340.5 + [-8,8]] , $  ; H-gamma
     [4861.3 + [-10,10]] , $  ; H-beta
-    [6562.8 + [-12,12]] ] ; H-alpha
+    [5893.0 + [-12,12]] , $  ; Mg
+    [6562.8 + [-12,12]] , $ ; H-alpha
+    [8500.8 + [-14,14]] , $ ; ?
+    [8544.6 + [-14,14]] , $ ; ?
+    [8665.0 + [-14,14]] , $ ; ?
+    [8753.3 + [-14,14]] , $ ; ?
+    [8866.1 + [-14,14]] , $ ; ?
+    [9017.5 + [-14,14]] , $ ; ?
+    [9232.0 + [-14,14]] ]   ; ?
    airtovac, rejwave
    nreject = n_elements(rejwave) / 2
 
@@ -193,7 +201,7 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1
    junk = spflux_read_kurucz(kindx=kindx)
    nmodel = n_elements(kindx)
 
-; NEED TO MASK OUT 5577, etc !!!???
+; NEED TO MASK OUT 5577, TELLURIC BANDS, etc !!!???
    ;----------
    ; Fit the redshift just by using a canonical model
 
@@ -204,6 +212,8 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1
    logshift = (-nshift/2. + findgen(nshift)) * 1.d-4
    chivec = fltarr(nshift)
    for ishift=0L, nshift-1 do begin
+; VERIFY THAT THE DISPIMG BELOW IS IN EXACTLY THE SAME UNITS
+; OF /10^-4 dloglam and not /pix !!!???
       modflux = spflux_read_kurucz(loglam-logshift[ishift], $
        dispimg, iselect=ifud)
       ; Median-filter this model
@@ -331,40 +341,41 @@ pro spframe_read, filename, indx, objflux=objflux, objivar=objivar, $
 end
 
 ;------------------------------------------------------------------------------
-function spflux_pca, loglam, mratio, mrativar, nkeep=nkeep, $
- newloglam=newloglam, acoeff=acoeff, outmask=outmask
+function spflux_bspline, loglam, mratio, mrativar, outmask=outmask, $
+ _EXTRA=KeywordsForBkpts
 
-   ; We'll want to reform all the arrays into NPIX * NSPECTRA,
-   ; since they may be passed as NPIX * NSPECTRA1 * NSPECTRA2.
-   dims = size(loglam, /dimens)
-   npix = dims[0]
-   nspec = n_elements(loglam) / npix
+   isort = sort(loglam)
+   nord = 4
 
-   ; Get the full wavelength mapping but on a uniform grid in log-wavelength
-   minlog1 = min(loglam, max=maxlog1)
-   newloglam = wavevector(minlog1, maxlog1)
-
-   ; Reject pixels near stellar lines
-   mask = spflux_masklines(loglam)
+   ; The following generates break points spaced every Nth good value
+   bkpt = 0
+   fullbkpts = bspline_bkpts(loglam[isort], nord=4, _EXTRA=KeywordsForBkpts, $
+    bkpt=bkpt, /silent)
 
    outmask = 0
-   pcaflux = pca_solve(reform(mratio,npix,nspec), $
-    reform(mrativar*mask,npix,nspec), reform(loglam,npix,nspec), $
-    nkeep=nkeep, nreturn=nkeep, newloglam=newloglam, $
-    acoeff=acoeff, outmask=outmask)
+   sset = bspline_iterfit(loglam[isort], mratio[isort], $
+    invvar=mrativar[isort], nord=nord, bkpt=bkpt, lower=3, upper=3, $
+    maxrej=ceil(0.05*n_elements(indx)), outmask=outmask)
 
-   return, pcaflux
+   return, sset
 end
 
 ;------------------------------------------------------------------------------
-function spflux_mratio_flatten, loglam, mratio, mrativar
+function spflux_mratio_flatten, loglam1, mratio1, mrativar1, pres=pres
 
    ;--------
-   ; First re-bin the spectra to the same spacing
+   ; Re-form the input data arrays from multi-dimensional to N x M
 
-   dims = size(loglam, /dimens)
+   ndim = size(loglam1, /n_dimen)
+   dims = size(loglam1, /dimens)
    npix = dims[0]
-   nobj = n_elements(loglam) / npix
+   nobj = n_elements(loglam1) / npix
+   loglam = reform(loglam1, npix, nobj)
+   mratio = reform(mratio1, npix, nobj)
+   mrativar = reform(mrativar1, npix, nobj)
+
+   ;--------
+   ; Re-bin the spectra to the same spacing
 
    minlog1 = min(loglam, max=maxlog1)
    newloglam = wavevector(minlog1, maxlog1)
@@ -374,9 +385,9 @@ function spflux_mratio_flatten, loglam, mratio, mrativar
    newivar = fltarr(nnewpix, nobj)
 
    for iobj=0L, nobj-1 do begin
-      isort = sort(loglam[*,0,iobj])
-      combine1fiber, loglam[isort,0,iobj], mratio[isort,0,iobj], $
-       mrativar[isort,0,iobj], $
+      isort = sort(loglam[*,iobj])
+      combine1fiber, loglam[isort,iobj], mratio[isort,iobj], $
+       mrativar[isort,iobj], $
        newloglam=newloglam, newflux=newratio1, newivar=newivar1
       newratio[*,iobj] = newratio1
       newivar[*,iobj] = newivar1
@@ -394,18 +405,22 @@ function spflux_mratio_flatten, loglam, mratio, mrativar
    ;--------
    ; Now for each object, compute the polynomial fit of it relative to the mean
 
-   flatarr = fltarr(npix,1,nobj)
+   npoly = 3
+   flatarr = fltarr(npix, nobj)
+   pres = fltarr(npoly, nobj)
    for iobj=0L, nobj-1 do begin
       ii = where(newivar[*,iobj] GT 0)
       thisloglam = newloglam[ii]
       thisratio = newratio[ii,iobj] / meanratio[ii]
       thisivar = newivar[ii,iobj] * meanratio[ii]^2
-      res1 = poly_fit(thisloglam, thisratio, 2, $
+      pres1 = poly_fit(thisloglam, thisratio, npoly-1, $
        measure_errors=1./sqrt(thisivar))
-      flatarr[*,0,iobj] = poly(loglam[*,0,iobj], res1)
+      flatarr[*,iobj] = poly(loglam[*,iobj], pres1)
+      pres[*,iobj] = reform(pres1, npoly)
    endfor
 
-   return, flatarr
+   pres = reform(pres, [npoly, dims[1:ndim-1]])
+   return, reform(flatarr, dims)
 end
 
 ;------------------------------------------------------------------------------
@@ -457,7 +472,8 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
    dispimg = fltarr(npix, nfile, nphoto)
    for ifile=0L, nfile-1 do begin
       spframe_read, objname[ifile], iphoto, wset=wset1, loglam=loglam1, $
-       objflux=objflux1, objivar=objivar1, dispimg=dispimg1, adderr=adderr
+       objflux=objflux1, objivar=objivar1, dispimg=dispimg1, $
+       mask=mask1, adderr=adderr
 
       ; Make a map of the size of each pixel in delta-(log10-Angstroms),
       ; and re-normalize the flux to ADU/(dloglam).
@@ -466,7 +482,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
 
       loglam[*,ifile,*] = loglam1
       objflux[*,ifile,*] = objflux1
-      objivar[*,ifile,*] = objivar1
+      objivar[*,ifile,*] = skymask(objivar1, mask1, mask1)
       dispimg[*,ifile,*] = dispimg1
    endfor
 
@@ -543,30 +559,57 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       mratio = objflux / modflux
       mrativar = objivar * modflux^2
 
+      ; Ignore regions around the stellar features
+      mrativar = mrativar * spflux_masklines(loglam)
+
       ;----------
-      ; For each CCD + exposure, divide-out a low-order polynomial from
+      ; For each camera (blue or red), divide-out a low-order polynomial from
       ; MRATIO each star to get them all to the same mean flux levels.
-      ; (This will remove the ~5% large-scale spectrophotometry errors
+      ; This takes out gross throughput differences between exposures.
+      ; Also, it will remove the ~5% large-scale spectrophotometry errors
       ; between invidual stars, both from spectrograph throughput variations
-      ; and from slight mis-typing of the stars.)
+      ; and from slight mis-typing of the stars.
 
-      for ifile=0L, nfile-1 do begin
-         flatarr = spflux_mratio_flatten(loglam[*,ifile,ifinal], $
-          mratio[*,ifile,ifinal], mrativar[*,ifile,ifinal])
-         mratio[*,ifile,ifinal] = mratio[*,ifile,ifinal] / flatarr
-         mrativar[*,ifile,ifinal] = mrativar[*,ifile,ifinal] * flatarr^2
-      endfor
+      flatarr_b = spflux_mratio_flatten(loglam[*,iblue,ifinal], $
+       mratio[*,iblue,ifinal], mrativar[*,iblue,ifinal], pres=pres_b)
+      mratio[*,iblue,ifinal] = mratio[*,iblue,ifinal] / flatarr_b
+      mrativar[*,iblue,ifinal] = mrativar[*,iblue,ifinal] * flatarr_b^2
 
-      pca_b = spflux_pca(loglam[*,iblue,ifinal], $
-       mratio[*,iblue,ifinal], mrativar[*,iblue,ifinal], nkeep=nkeep, $
-       newloglam=loglam_b, acoeff=acoeff_b, outmask=mask_b)
+      flatarr_r = spflux_mratio_flatten(loglam[*,ired,ifinal], $
+       mratio[*,ired,ifinal], mrativar[*,ired,ifinal], pres=pres_r)
+      mratio[*,ired,ifinal] = mratio[*,ired,ifinal] / flatarr_r
+      mrativar[*,ired,ifinal] = mrativar[*,ired,ifinal] * flatarr_r^2
 
-      pca_r = spflux_pca(loglam[*,ired,ifinal], $
-       mratio[*,ired,ifinal], mrativar[*,ired,ifinal], nkeep=nkeep, $
-       newloglam=loglam_r, acoeff=acoeff_r, outmask=mask_r)
+      ;----------
+      ; Do the B-spline fits
 
+      everyn = nblue * nfinal * 3
+      ii = where(mrativar[*,ired,ifinal] GT 0)
+      sset_b = spflux_bspline((loglam[*,iblue,ifinal])[ii], $
+       (mratio[*,iblue,ifinal])[ii], (mrativar[*,iblue,ifinal])[ii], $
+       everyn=everyn, outmask=mask_b)
+;set_plot,'x'
+;foo=bspline_valu(loglam[*,iblue,ifinal],sset_b)
+;splot,10^loglam[*,iblue,ifinal],mratio[*,iblue,ifinal],ps=3,yr=[0,20]
+;ii=sort(loglam[*,iblue,ifinal])
+;soplot,10^(loglam[*,iblue,ifinal])[ii],foo[ii]
+
+      everyn = nred * nfinal * 1.5
+      ii = where(mrativar[*,ired,ifinal] GT 0)
+      sset_r = spflux_bspline((loglam[*,ired,ifinal])[ii], $
+       (mratio[*,ired,ifinal])[ii], (mrativar[*,ired,ifinal])[ii], $
+       everyn=everyn, outmask=mask_r)
+;set_plot,'x'
+;jj=where(mrativar[*,ired,ifinal] GT 0)
+;splot,10^(loglam[*,ired,ifinal])[jj],(mratio[*,ired,ifinal])[jj],ps=3,yr=[0,15]
+;foo=bspline_valu(loglam[*,ired,ifinal],sset_r)
+;ii=sort(loglam[*,ired,ifinal])
+;soplot,10^(loglam[*,ired,ifinal])[ii],foo[ii],color='red'
+
+      ;----------
       ; Find which star has the most pixels rejected, and reject
       ; that star if it's bad enough
+
       fracgood_b = total(mask_b,nkeep) / (size(mask_b,/dimens))[0]
       fracgood_r = total(mask_r,nkeep) / (size(mask_r,/dimens))[0]
       fracgood = 0.5 * (fracgood_b + fracgood_r)
@@ -589,96 +632,58 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
    splog, 'Rejected ', nphoto-nfinal, ' of ', nphoto, ' std stars'
 
    ;----------
-   ; Select break points for spline.
-   ; These are the same values we have always used.
-   
-   bkptfile = filepath('blue.bkpts', $
-    root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
-   readcol, bkptfile, allbkpts_b
-   bkptfile = filepath('red.bkpts', $
-    root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
-   readcol, bkptfile, allbkpts_r
-   allbkpts_b = alog10(allbkpts_b) ; Convert to log-10 Angstroms
-   allbkpts_r = alog10(allbkpts_r) ; Convert to log-10 Angstroms
-
-   ;----------
    ; Construct the final (B-splined) flux-calibration vectors
 
-   acoeff_b = reform(acoeff_b,nkeep,nblue,nfinal)
-   acoeff_r = reform(acoeff_r,nkeep,nred,nfinal)
    for ifile=0, nfile-1 do begin
       ; Is this a blue CCD?
       ii = where(ifile EQ iblue, ct)
       if (ct EQ 1) then begin
-         thisloglam = loglam_b
-         thispca = pca_b
-         thiscoeff = acoeff_b[*,ii,*]
-         thisbkpts = allbkpts_b
+         thisloglam = loglam[*,ifile,ifinal]
+         thisset = sset_b
+         thisflatarr = flatarr_b[*,ii,ifinal]
+         thispres = pres_b[*,ii,ifinal]
       endif
 
-      ; Is this a blue CCD?
+      ; Is this a red CCD?
       ii = where(ifile EQ ired, ct)
       if (ct EQ 1) then begin
-         thisloglam = loglam_r
-         thispca = pca_r
-         thiscoeff = acoeff_r[*,ii,*]
-         thisbkpts = allbkpts_r
+         thisloglam = loglam[*,ifile,ifinal]
+         thisset = sset_r
+         thisflatarr = flatarr_r[*,ii,ifinal]
+         thispres = pres_r[*,ii,ifinal]
       endif
+      thismratio = mratio[*,ifile,ifinal]
+      thismrativar = mrativar[*,ifile,ifinal]
 
-      ; Construct a straight average of all the final F star
-      ; reconstructed PCA fluxes.
-      fluxcalib = 0 * thisloglam
-      for j=0, nfinal-1 do $
-       fluxcalib = fluxcalib + thispca # thiscoeff[*,0,j] / nfinal
-; ???
-;splot, 10^thisloglam, fluxcalib
-;for j=0, nfinal-1 do $
-; soplot, 10^thisloglam, thispca # thiscoeff[*,0,j], color=j+1
+      ; Evaluate the B-spline for the stars at their measured wavelengths
+      ; in this exposure, then modulated by the mean FLATARR
+      ; for the stars in this exposure
 
-      ; Fit a B-spline to this flux-calibration vector, after
-      ; masking the usual stellar absorp. features
-      mask = spflux_masklines(thisloglam)
-      indx = where(mask)
-      logmin = min(thisloglam[indx], max=logmax)
-
-      ; The following selects break points exactly like we always have,
-      ; hard-wired to particular values.
-;      ibk = where(thisbkpts GE logmin AND thisbkpts LE logmax, nbk)
-;      if (nbk LT 4) then $
-;       message, 'Error selecting break points'
-;      bkpt = [logmin, thisbkpts[ibk[1:nbk-2]], logmax]
-
-      ; The following generates a number of uniformly-spaced break points
-;      bkpt = 0
-;      fullbkpts = bspline_bkpts(thisloglam[indx], nord=4, nbkpts=100, $
-;       bkpt=bkpt, /silent)
-
-; WE SHOULD PROBABLY CHOOSE BREAK POINTS EVERY CERTAIN TOTAL S/N,
-; LIKE WE DO FOR THE SUPER-SKY FIT !!???
-      ; The following generates break points spaced every Nth good value
-      bkpt = 0
-      fullbkpts = bspline_bkpts(thisloglam[indx], nord=4, everyn=nfinal, $
-       bkpt=bkpt, /silent)
-
-      calibset = bspline_iterfit(thisloglam[indx], fluxcalib[indx], $
-       nord=4, bkpt=bkpt, lower=3, upper=3, $
-       maxrej=ceil(0.05*n_elements(indx)))
-;foo = bspline_valu(thisloglam, calibset)
-;splot, 10^thisloglam, fluxcalib
-;soplot, 10^thisloglam, foo, color='green'
+      logmin = min(thisloglam[where(mrativar GT 0)], max=logmax)
+      tmploglam = wavevector(logmin, logmax)
+      flatarr_mean = 0 * tmploglam
+      for i=0L, nfinal-1 do $
+       flatarr_mean = flatarr_mean $
+        + poly(tmploglam, thispres[*,0,i]) / nfinal
+      tmpflux = bspline_valu(tmploglam, thisset) * flatarr_mean
+      sset_tmp = bspline_iterfit(tmploglam, tmpflux, $
+       nord=thisset.nord, bkpt=thisset.fullbkpt, maxiter=0)
+;set_plot,'x'
+;foo=bspline_valu(thisloglam, sset_tmp)
+;splot,10^thisloglam,tmpflux,ps=3,yr=[0,20]
+;soplot,10^(thisloglam)[ii],foo[ii]
+if (min(tmpflux) LT 0 OR max(tmpflux) GT 1000) then stop ; ???
 
       ;----------
       ; Make plots
 
-      xplot = thisloglam[sort(thisloglam)]
-      yplot = bspline_valu(xplot, calibset)
       xrange = [10.^logmin, 10.^logmax]
-      yrange = minmax(yplot)
-      djs_plot, xrange, yrange, xrange=xrange, /xsytle, /nodata, $
+      djs_plot, 10.^tmploglam, tmpflux/flatarr_mean, $
+       xrange=xrange, /xsytle, /nodata, $
        xtitle='Wavelength [Ang]', ytitle='Counts/(10^{-17}erg/cm^2/s/Ang'
       for j=0, nfinal-1 do $
-       djs_oplot, 10.^thisloglam, thispca # thiscoeff[*,0,j], psym=3
-      djs_oplot, 10.^xplot, yplot, color='red'
+       djs_oplot, 10.^thisloglam[*,0,j], thismratio[*,0,j], psym=3
+      djs_oplot, 10.^tmploglam, tmpflux/flatarr_mean, color='red'
 
       ;----------
       ; Create header cards describing the fit range
