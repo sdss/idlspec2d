@@ -123,6 +123,12 @@ function spflux_read_kurucz, loglam, dispimg, iselect=iselect1, $
       for imodel=0L, nmodel-1 do $
        kflux[*,imodel] = rebin_spectrum(krawflux[*,imodel], rawloglam, kloglam)
 
+      ; The above rebinning conserves flux, so we are no longer in
+      ; units of erg/cm^2/s/Ang.  Multiply by one power of wavelength
+      ; to recover those units.
+      for imodel=0L, nmodel-1 do $
+       kflux[*,imodel] = kflux[*,imodel] * 10.d0^(kloglam/4.)
+
       ; Convolve the Kurucz models with a boxcar response
       ; representing the size of the SDSS pixels.
       splog, 'Convolving Kurucz models with SDSS pixel size'
