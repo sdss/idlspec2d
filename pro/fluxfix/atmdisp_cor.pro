@@ -47,8 +47,8 @@ ypos = plugtag.yfocal
 ; Fit 2d surface to (g-r) offsets
 ;-----------------------------------------------------------------------------
 
-ok = where(abs(groff - 0.03) lt 0.5 and $
-           strmatch(plugtag.objtype, '*SKY*') ne 1, nok)
+ok = where(abs(groff - 0.03) lt 0.5 and pmag[1,*] gt 0 and smag[1,*] gt 0 $
+           and strmatch(plugtag.objtype, '*SKY*') ne 1, nok)
 
 ; Do iterative fit
 mask = groff * 0
@@ -170,6 +170,7 @@ nsmag = transpose(mag[*,[1,2,3]])
       
 ngroff = (nsmag[0,*] - nsmag[1,*])  - (pmag[0,*] - pmag[1,*])
 nrioff = (nsmag[1,*] - nsmag[2,*])  - (pmag[1,*] - pmag[2,*])
+nroff = nsmag[1,*] - pmag[1,*]
 ok = where(abs(nrioff) lt 1 and abs(ngroff) lt 1)
 
 plothist, nrioff[ok], bin=0.01, xr=[-0.4, 0.4], yr = [0, ymax], charsize=1.5, $
@@ -193,6 +194,23 @@ xyouts, 0.10, ymax*0.60, '(r-i) sigma = ' + $
 
 ngroff_mean = grcoef[1]
 ngroff_sig = grcoef[2]
+
+;-----------------------------------------------------------------------------
+; Now correct the total fluxes using the r-band mags
+;-----------------------------------------------------------------------------
+
+; Do iterative 2d fit
+ok = where(abs(nroff) lt 1 and pmag[1,*] gt 0 and nsmag[1,*] gt 0 $
+           and strmatch(plugtag.objtype, '*SKY*') ne 1, nok)
+mask = nroff * 0
+mask[ok] = 1
+acoeff = djs_sfit_iter(nroff, xpos, ypos, 3, 3, yfit=zfit, mask=mask, $
+         maxrej = 25, maxdev=0.4, lower=2.5, upper=3.0, freeiter=10, $
+         maxiter=19, outmask = outmask)
+
+;zfit = zfit - median(zfit[std])
+fluxcor = 10.0^(-0.4*zfit)
+model = model * transpose(rebin(fluxcor, nfib, npix))
 
 !P.MULTI = 0
 
