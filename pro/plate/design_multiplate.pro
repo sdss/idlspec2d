@@ -83,6 +83,7 @@ function design_append, newplug, newplatearr, oneplug, oneplate
 
    platescale = 217.7358 ; mm/degree
 
+   ; If this is the 1st object in the list, then we can always keep it
    if (NOT keyword_set(newplug)) then begin
       newplatearr = oneplate
       return, oneplug
@@ -96,6 +97,16 @@ function design_append, newplug, newplatearr, oneplug, oneplate
         + (newplug.yfocal - oneplug.yfocal)^2
    mindist = min(sqrt(r2))
    if (mindist LT platescale*55./3600.) then return, newplug
+
+   ; Discard objects within 7.0 mm of existing guide fibers
+
+   iguide = where(strtrim(newplug.holetype) EQ 'GUIDE')
+   if (iguide[0] NE -1) then begin
+      r2 = (newplug[iguide].xfocal - oneplug.xfocal)^2 $
+           + (newplug[iguide].yfocal - oneplug.yfocal)^2
+      mindist = min(sqrt(r2))
+      if (mindist LT 7.0) then return, newplug
+   endif
 
    newplatearr = [newplatearr, oneplate]
    return, [newplug, oneplug]
@@ -909,7 +920,7 @@ addplug.sectarget = 32L
    print, 'In the "plate" product run the following commands:"
    print, '   makeFanuc'
    print, '   makeDrillPos'
-   print, '   use_cs3  <-- This erroneously complains about some collisions'
+   print, '   use_cs3'
    print, '   makePlots -skipBrightCheck'
    print, 'Then you are done!'
 
