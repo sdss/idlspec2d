@@ -6,7 +6,7 @@
 ;   Routine for reading 2D/1D spectro outputs at Princeton
 ;
 ; CALLING SEQUENCE:
-;   readspec, plate, fiber, [mjd=, flux=, flerr=, invvar=, $
+;   readspec, plate, fiber, [mjd=, znum=, flux=, flerr=, invvar=, $
 ;    andmask=, ormask=, disp=, plugmap=, loglam=, wave=, tsobj=, $
 ;    zans=, synflux=synflux, /silent ]
 ;
@@ -19,6 +19,8 @@
 ;                are exactly 640 fibers.
 ;   mjd        - MJD number(s); if not set, then select the most recent
 ;                data for this plate (largest MJD).
+;   znum       - If set, then return not the best-fit redshift, but the
+;                (ZUM+1)-th best-fit; e.g., set ZNUM=1 for second-best fit.
 ;   silent     - If set, then call MRDFITS with /SILENT.
 ;
 ; OUTPUTS:
@@ -81,7 +83,7 @@
 pro readspec1, plate, range, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
  andmask=andmask, ormask=ormask, disp=disp, plugmap=plugmap, $
  loglam=loglam, wave=wave, tsobj=tsobj, zans=zans, synflux=synflux, $
- root_dir=root_dir, silent=silent
+ znum=znum, root_dir=root_dir, silent=silent
 
    common com_readspec, q_flux, q_flerr, q_invvar, q_andmask, q_ormask, $
     q_disp, q_plugmap, q_loglam, q_wave, q_tsobj, q_zans, q_synflux, q_mjd
@@ -163,14 +165,24 @@ pro readspec1, plate, range, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    endif
 
    if (q_zans OR q_synflux) then begin
-      zfile = 'spZbest-' + platestr + '-' + mjdstr + '.fits'
+      if (NOT keyword_set(znum)) then $
+       zfile = 'spZbest-' + platestr + '-' + mjdstr + '.fits' $
+      else $
+       zfile = 'spZall-' + platestr + '-' + mjdstr + '.fits'
+
       zfile = findfile(filepath(zfile, root_dir=root_dir, $
        subdirectory=platestr), count=ct)
-
       if (ct GT 1) then zfile = zfile[ (reverse(sort(zfile)))[0] ] $
        else zfile = zfile[0]
 
-      zans = mrdfits(zfile, 1, range=range)
+      if (NOT keyword_set(znum)) then begin
+         zans = mrdfits(zfile, 1, range=range)
+      endif else begin
+         zhdr = headfits(zfile, exten=1)
+         nper = sxpar(zhdr,'NAXIS2') / 640L
+         zans = mrdfits(zfile, 1, range=[range[0]*nper,range[1]*nper+nper-1])
+         zans = zans[lindgen(range[1]-range[0]+1)*nper + znum]
+      endelse
    endif
 
    if (q_synflux) then begin
@@ -190,7 +202,7 @@ end
 pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
  andmask=andmask, ormask=ormask, disp=disp, plugmap=plugmap, $
  loglam=loglam, wave=wave, tsobj=tsobj, zans=zans, synflux=synflux, $
- silent=silent
+ znum=znum, silent=silent
 
    if (n_params() LT 1) then begin
       print, 'Syntax: readspec, plate, [ fiber, mjd=, flux=, flerr=, invvar=, $'
@@ -283,7 +295,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
        flux=flux1, flerr=flerr1, invvar=invvar1, andmask=andmask1, $
        ormask=ormask1, disp=disp1, plugmap=plugmap1, loglam=loglam1, $
        wave=wave1, tsobj=tsobj1, zans=zans1, synflux=synflux1, $
-       root_dir=root_dir, silent=silent
+       znum=znum, root_dir=root_dir, silent=silent
 
       if (ifile EQ 0) then begin
          allindx = indx

@@ -15,6 +15,8 @@
 ; OPTIONAL INPUTS:
 ;   mjd        - MJD number; if not set, then select the most recent
 ;                data for this plate (largest MJD).
+;   znum       - If set, then return not the best-fit redshift, but the
+;                (ZUM+1)-th best-fit; e.g., set ZNUM=1 for second-best fit.
 ;   nsmooth    - If set, then boxcar smooth both the object and synthetic
 ;                spectra with a width equal to NSMOOTH.
 ;   _EXTRA     - Kewords for SPLOT, such as XRANGE, YRANGE, THICK.
@@ -61,7 +63,7 @@
 ;   01-Sep-2000  Written by D. Schlegel, Princeton
 ;-
 ;------------------------------------------------------------------------------
-pro plotspec, plate, fiberid, mjd=mjd, nsmooth=nsmooth, $
+pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
  _EXTRA=KeywordsForSplot
 
    cspeed = 2.9979e5
@@ -69,7 +71,7 @@ pro plotspec, plate, fiberid, mjd=mjd, nsmooth=nsmooth, $
    if (n_elements(plate) NE 1 OR n_elements(fiberid) NE 1) then $
     message, 'PLATE and FIBERID must be scalars'
 
-   readspec, plate, fiberid, mjd=mjd, flux=objflux, flerr=objerr, $
+   readspec, plate, fiberid, mjd=mjd, znum=znum, flux=objflux, flerr=objerr, $
     loglam=loglam, plug=plug, zans=zans
    wave = 10^loglam
 
@@ -117,6 +119,8 @@ pro plotspec, plate, fiberid, mjd=mjd, nsmooth=nsmooth, $
         zstring = '  cz=' + string(cz,format='(f5.0)') + ' km/s' $
        else $
         zstring = '  z=' + string(zans.z,format='(f8.5)')
+      if (keyword_set(znum)) then $
+       zstring = zstring + ' (fit #' + strtrim(string(znum+1),2) + ')'
       sxyouts, xpos, ypos, zans.class + ' ' + zans.subclass + zstring, $
        charsize=csize
 
