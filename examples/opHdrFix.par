@@ -256,3 +256,7 @@ ophdrfix sdR-??-0001247[4-4] NAME     "'0799-52277-01F'"
 # on spectro-2 for that plate.
 ophdrfix sdR-?2-0001306[6-8] FLAVOR   "'unknown'"
 
+# The observers had problems acquiring guide stars on this only
+# exposure of plate 866 on MJD=52317.
+ophdrfix sdR-??-00013132 FLAVOR   "'unknown'"
+
