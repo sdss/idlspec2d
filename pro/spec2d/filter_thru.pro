@@ -117,7 +117,7 @@ function filter_thru, flux, waveimg=waveimg, wset=wset, mask=mask, $
    for ifile=0, nfile-1 do begin
 
       filename = filepath(ffiles[ifile], $
-       root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
+       root_dir=getenv('IDLUTILS_DIR'), subdirectory=['data','filters'])
       readcol, filename, fwave, fthru, /silent
 
       ; Use the Goddard routine LINTERP instead of the IDL built-in INTERPOL.
