@@ -4,6 +4,7 @@
 bin/Makefile -text
 doc/Makefile -text
 doc/mk_doc -text
+doc/www/.cvsignore -text
 doc/www/idlspec2d_install.html -text
 etc/BG14.txt -text
 etc/FG3.txt -text
