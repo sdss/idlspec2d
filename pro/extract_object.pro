@@ -268,15 +268,16 @@ endif
        chisq=chisq, ymodel=ymodel2, pixelmask=pixelmask
 
 ; Write out a non-sky-sub image???
-rawname=outname
-i=rstrpos(outname,'spSpec')
-strput,rawname,'spRaw',i
-mwrfits, flux, rawname, objhdr, /create
-mwrfits, fluxivar, rawname
-mwrfits, plugsort, rawname
-mwrfits, wset, rawname
-mwrfits, pixelmask, rawname
-mwrfits, fibermask, rawname
+;rawname=outname
+;i=rstrpos(outname,'spSpec')
+;strput,rawname,'spRaw',i
+;mwrfits, flux, rawname, objhdr, /create
+;mwrfits, fluxivar, rawname
+;mwrfits, plugsort, rawname
+;mwrfits, wset, rawname
+;mwrfits, pixelmask, rawname
+;mwrfits, fibermask, rawname
+;save, filename=rawname+'.sav'
 
       ;------
       ; QA chisq plot for fit calculated in extract image (make QAPLOT ???)
