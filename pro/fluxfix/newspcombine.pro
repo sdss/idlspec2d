@@ -49,7 +49,7 @@
 ;-
 ;------------------------------------------------------------------------------
 pro newspcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
-   minsn2=minsn2 
+   minsn2=minsn2, best_exposure = best_exposure
 
    if (NOT keyword_set(planfile)) then planfile = findfile('spPlancomb*.par')
    if (n_elements(adderr) EQ 0) then adderr = 0.03
@@ -283,7 +283,7 @@ pro newspcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
    spcoadd_fluxed_frames, sciname, combinefile, mjd=thismjd, $
     combinedir=combinedir, fcalibprefix=fcalibprefix, adderr=adderr, $
     docams=docams, plotsnfile=plotsnfile, tsobjname = tsobjname, $
-    smearname = smearname
+    smearname = smearname, best_exposure = best_exposure
 
    ;----------
    ; Close plot file - S/N plots are then put in the PLOTSNFILE file.
