@@ -137,7 +137,7 @@ function extract_profile, fimage, invvar, xcen, ycen, ferror=ferror, $
     ymod = fimage*0.0
     fscattered = fimage*0.0
 
-    result = call_external(getenv('IDL_EVIL')+'libevil.so', 'extract_profile',$
+    result = call_external(getenv('IDL_EVIL')+'libspec2d.so','extract_profile',$
     nx, ny, float(fimage), float(invvar), float (ymod), nTrace, $
     LONG(nRowExtract), float(xcen), LONG(ycen), float(sigma), float(fextract),$
     float(ferror), float(fscattered), float(fwidth),$

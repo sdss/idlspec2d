@@ -407,7 +407,7 @@ void cholslCustomCovar(float **a, int nTrace, int nPoly, float p[])
 }
 
 /*	Custom2 requires two (2) parameters per Trace in top left of covar */           
-void choldcCustom2(float **a, int nTrace, int nPoly, float p[])
+int choldcCustom2(float **a, int nTrace, int nPoly, float p[])
 {
 	int i,j,k;
 	float sum;
@@ -418,7 +418,17 @@ void choldcCustom2(float **a, int nTrace, int nPoly, float p[])
                   sum -= a[i][k]*a[j][k];
               
 	       if(i==j) {
-	         if (sum <= 0.0) fprintf(stderr,"choldc failed\n");
+	         if (sum <= 0.0) {
+	           fprintf(stderr,"choldc failed %d %f\n",i,sum);
+                   sum = a[i][j];
+	           fprintf(stderr,"%f\n",sum);
+                   for(k=i-1; k >= 0 && k >= i-3; k--) {
+                      sum -= a[i][k]*a[j][k];
+	              fprintf(stderr,"%f %f %f\n",sum, a[i][k], a[j][k]);
+	           }
+	          return -i;
+	         }
+
 	         p[i] = sqrt(sum);
 	       } 
                else a[j][i] = sum/p[i];
@@ -440,6 +450,7 @@ void choldcCustom2(float **a, int nTrace, int nPoly, float p[])
 	      } else a[j][i] = sum/p[i];
            }
         }
+	return 0;
 }
            
 
