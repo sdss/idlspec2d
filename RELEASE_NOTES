@@ -2,6 +2,9 @@
 SPCOADD_FRAMES: Remove the following keywords from the spPlate file:
             PIXBIAS,FLATFILE,ARCFILE,OBJFILE.
 
+opHdrFix.par: Declare bad aborted smears for plate 601 and 803.
+            Declare bad exposure on plate 866.
+
 -------------------------------------------------------------------------------
 v4_9_3 (Feb 12, 2002 idlspec2d only) running on IDL 5.3 - 5.5
 Built against idlutils v4_9_2, specflat v1_3.
