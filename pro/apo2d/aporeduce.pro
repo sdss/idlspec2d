@@ -395,9 +395,10 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       addstring = $
        '<BODY ONLOAD=\"timerID=setTimeout(' $
        +squote+'location.reload(true)'+squote+',60000)\">'
-      sedcommand = '"s/<\/HEAD>/<\/HEAD>'+addstring+'/g"'
+      sedcommand = '-e "s/<\/HEAD>/<\/HEAD>'+addstring+'/g"'
+      sedcommand = sedcommand + ' -e "s/APO Spectro/APO Spectro (Current)/g"'
       setenv, 'SHELL=bash'
-      spawn, 'sed -e ' + sedcommand + ' ' + htmlfile + ' > ' + currentfile
+      spawn, 'sed ' + sedcommand + ' ' + htmlfile + ' > ' + currentfile
 
        ; scp1 does not work on sos.apo, let's switch to scp
 

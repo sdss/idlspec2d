@@ -129,9 +129,10 @@ pro collimate, expnum1, expnum2, docams=docams, indir=indir, $
    ; Locate the input files (either compressed or un-compressed)
 
    if (NOT keyword_set(indir)) then begin
-      indir = getenv('RAWDATA_DIR') + '/*'
-      if (NOT keyword_set(rawdata_dir)) then $
-       rawdata_dir = '/data/spectro/*'
+      indir = getenv('RAWDATA_DIR')
+      if (NOT keyword_set(indir)) then $
+       indir = '/data/spectro'
+      indir = indir + '/*'
    endif
 
    filename1 = 'sdR-' + docams[0] + '-' + string(expnum1, format='(i8.8)') $
