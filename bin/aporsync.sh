@@ -7,19 +7,22 @@
 # We set up two jobs, one for the blue files and one for the red.
 # We do this so that we can utilize both processors on plate-mapper.
 #
+# We need the executable code "rsync" in the default path
+# (e.g., as /usr/bin/rsync).
+#
 # S. Burles, APO, 4 May 2000
 #------------------------------------------------------------------------------
 
 # This syncs /astrlog/5???? from sdsshost to plate-mapper, excluding
 # the id* files.
-/home/scott/rsync-2.4.3/rsync -ar --rsh="ssh -c arcfour" \
+rsync -ar --rsh="ssh -c arcfour" \
      --rsync-path=/p/rsync/v2_4_3/rsync --exclude="*id*" \
      --exclude="*log" \
      --log-format="/astrolog/%f" "sdsshost:/astrolog/5????" /astrolog/   
 
 # This syncs /astrolog/5???? from sdsshost to plate-mapper, excluding
 # the red and guider files.
-/home/scott/rsync-2.4.3/rsync -ar --rsh="ssh -c arcfour" \
+rsync -ar --rsh="ssh -c arcfour" \
       --rsync-path=/p/rsync/v2_4_3/rsync --exclude="*guider*" \
       --log-format="/data/spectro/%f" --exclude="*-r*" \
       "sdsshost:/data/spectro/5????" /data/spectro/ | startapo.sh &
@@ -31,7 +34,7 @@ sleep 10
 
 # This syncs /astrolog/5???? from sdsshost to plate-mapper, excluding
 # the blue and guider files.
-/home/scott/rsync-2.4.3/rsync -ar --rsh="ssh -c arcfour" \
+rsync -ar --rsh="ssh -c arcfour" \
       --rsync-path=/p/rsync/v2_4_3/rsync --exclude="*guider*" \
       --log-format="/data/spectro/%f" --exclude="*-b*" \
       "sdsshost:/data/spectro/5????" /data/spectro/ | startapo.sh 
