@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   aporeduce, filename, [ indir=, outdir=, $
 ;    plugfile=, plugdir=, minexp=, $
-;    copydir=copydir ]
+;    copydir=, /no_diskcheck ]
 ;
 ; INPUTS:
 ;   filename   - Raw spectroscopic image file name(s) of any flavor; this
@@ -28,6 +28,8 @@
 ;   copydir    - If set, then copy the output log files to this directory using
 ;                "scp" copy (not "scp1" any longer).  Make an additional copy
 ;                of the HTML file called 'logsheet-current.html'.
+;   no_diskcheck- If set, then do not do the check for filling input or
+;                output disks.  (This option is always set by the APOALL proc).
 ;
 ; OUTPUT:
 ;
@@ -87,11 +89,11 @@ end
 ;------------------------------------------------------------------------------
 pro aporeduce, filename, indir=indir, outdir=outdir, $
  plugfile=plugfile, plugdir=plugdir, minexp=minexp, $
- copydir=copydir
+ copydir=copydir, no_diskcheck=no_diskcheck
 
    if (n_params() LT 1) then begin
       print, 'Syntax - aporeduce, filename, [ indir=, outdir=, $'
-      print, ' plugfile=, plugdir=, minexp= ]'
+      print, ' plugfile=, plugdir=, minexp=, copydir=, /no_diskcheck ]'
       return
    endif
 
@@ -157,8 +159,10 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    ;----------
    ; Check disk space on both the input and the output disk.
 
-   apo_diskcheck, indir
-   apo_diskcheck, outdir
+   if (NOT keyword_set(no_diskcheck)) then begin
+      apo_diskcheck, indir
+      apo_diskcheck, outdir
+   endif
 
    ;----------
    ; Wait for an input FITS file to be fully written to disk, and exit

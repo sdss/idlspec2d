@@ -146,7 +146,8 @@ pro apoall, mjd=mjd, mjstart=mjstart, mjend=mjend, $
             if (ii[0] NE -1) then $
              aporeduce, fileandpath(fullname[ii]), $
               indir=inputdir, outdir=outdir, $
-              plugdir=plugdir, minexp=minexp, copydir=copydir
+              plugdir=plugdir, minexp=minexp, copydir=copydir, $
+              /no_diskcheck
          endfor
          endfor
          endfor
