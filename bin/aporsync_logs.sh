@@ -37,18 +37,20 @@ fi
 #   plPlugMap*.par
 #   sdReport*.par
 
-datadirs=`ssh sdsshost ls -d /data/spectro/[5-9]????`
+datadirs=`ssh sdsshost.apo.nmsu.edu ls -d /data/spectro/[5-9]????`
 astrologdirs=`echo $datadirs | sed -n 's/\/data\/spectro/\/astrolog/pg'`
 
 for dir in $astrologdirs
 do
    rsync -ar --rsh="ssh -c blowfish" \
     --rsync-path=/p/rsync/v2_4_3/rsync \
+    --include "*/" \
     --include "Unplugged*.ps" --include "fiberScan*.par" \
     --include "guiderMon*.par" --include "op*.par" \
     --include "plPlugMap*.par" --include "sdReport*.par" \
-    --exclude="*" --log-format="/astrolog/%f" \
-    sdsshost:$dir $speclog_dir
+    --exclude="*" \
+    --log-format="/astrolog/%f" \
+    sdsshost.apo.nmsu.edu:$dir $speclog_dir
 done
 
 # This syncs /astrolog/[5-9]???? from sdsshost to the local machine,
@@ -56,9 +58,11 @@ done
 rsync -ar --rsh="ssh -c blowfish" \
       --rsync-path=/p/rsync/v2_4_3/rsync \
       --log-format="/data/spectro/%f" \
-      --exclude="*-b*" \
-      --exclude="*-r*" \
-      "sdsshost:/data/spectro/[5-9]????" $rawdata_dir | startapo.sh
+      --include "*/" \
+      --include "*/guider/*" \
+      --include "*/gimg*" \
+      --exclude="*" \
+      "sdsshost.apo.nmsu.edu:/data/spectro/[5-9]????" $rawdata_dir
 
 echo "APORSYNC_LOGS: Finished at "`date` UID=$UID PPID=$PPID
 

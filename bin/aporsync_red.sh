@@ -26,7 +26,7 @@ rsync -ar --rsh="ssh -c blowfish" \
       --log-format="/data/spectro/%f" \
       --exclude="*-b*" \
       --exclude="*guider*" \
-      "sdsshost:/data/spectro/[5-9]????" $rawdata_dir | startapo.sh 
+      "sdsshost.apo.nmsu.edu:/data/spectro/[5-9]????" $rawdata_dir | startapo.sh 
 
 echo "APORSYNC_RED: Finished at "`date` UID=$UID PPID=$PPID
 
