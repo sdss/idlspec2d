@@ -22,6 +22,7 @@
 ;                [NPIX,NOBJ]
 ;
 ; COMMENTS:
+;   Grow the mask by 2 pixels in each direction for each spectrum.
 ;
 ; EXAMPLES:
 ;
