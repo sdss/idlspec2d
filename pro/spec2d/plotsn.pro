@@ -6,8 +6,8 @@
 ;   Plot S/N and residuals in up to 3 bands
 ;
 ; CALLING SEQUENCE:
-;   plotsn, snvec, plugmap, [ bands=, plotmag=, fitmag=, plottitle=, plotfile=, $
-;                             synthmag=  ]
+;   plotsn, snvec, plugmap, [ bands=, plotmag=, fitmag=, plottitle=, $
+;    plotfile=, synthmag=, snplate=  ]
 ;
 ; INPUTS:
 ;   snvec      - S/N array [nbands, nfibers]
@@ -43,14 +43,16 @@
 ;   djs_icolor()
 ;   djs_oplot
 ;   djs_plot
+;   djs_xyouts
+;   fitsn()
+;   splog
 ;
 ; REVISION HISTORY:
 ;   15-Apr-2000  Written by S. Burles, FNAL
 ;-
 ;------------------------------------------------------------------------------
 pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
- plottitle=plottitle, plotfile=plotfile, snplate=snplate, $
- synthmag=synthmag
+ plottitle=plottitle, plotfile=plotfile, synthmag=synthmag, snplate=snplate
 
    if (size(snvec,/n_dim) NE 2) then return
    if (NOT keyword_set(bands)) then bands=[1, 2, 3]
@@ -138,7 +140,7 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
        xmargin=xmargin, ymargin=ymargin, /xstyle, yrange=[0.5,100], /ystyle
 
       if (iband EQ 0 AND keyword_set(plottitle)) then $
-       xyouts, plotmag[1], 110.0, plottitle, align=0.5
+       xyouts, plotmag[1], 110.0, plottitle, align=0.5, charsize=1.5
 
       ;----------
       ; Plot the fiducial line (a thick blue line)
@@ -262,33 +264,43 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
 
    endfor
 
-   if keyword_set(synthmag) then begin
+   if (keyword_set(synthmag)) then begin
       !p.multi = [0,2,2]
       symsize = 0.35
       psym = 4
+      xrange = [14.,24.]
+      yrange = [-4.,4.]
 
       for ispecnum=1, 2 do begin
          if (ispecnum EQ 1) then sindx = s1 $
           else sindx = s2
 
-         djs_plot, [14,22], [14,22], xchars=xchars, ychars=ychars, $
-          /xstyle, /ystyle, $
-          xtitle='Fiber Magnitude', ytitle='Synthetic Magnitude', $
-          title='(S/N)^2 for Spectro-' + string(ispecnum,format='(i1)')
+         djs_plot, xrange, [0,0], xchars=xchars, ychars=ychars, $
+          xrange=xrange, yrange=yrange, /xstyle, /ystyle, $
+          xtitle='Fiber Magnitude', ytitle='Synthetic Magnitude Resid.'
 
-         djs_oplot, plugc[sindx].mag[1], synthmag[0,iobj[sindx]], $
+         djs_oplot, plugc[sindx].mag[1], $
+          synthmag[0,iobj[sindx]] - plugc[sindx].mag[1], $
           psym=psym, symsize=symsize, color='blue'
-         djs_oplot, plugc[sindx].mag[2], synthmag[1,iobj[sindx]], $
+         djs_oplot, plugc[sindx].mag[2], $
+          synthmag[1,iobj[sindx]] - plugc[sindx].mag[2], $
           psym=psym, symsize=symsize, color='green'
-         djs_oplot, plugc[sindx].mag[3], synthmag[2,iobj[sindx]], $
+         djs_oplot, plugc[sindx].mag[3], $
+          synthmag[2,iobj[sindx]] - plugc[sindx].mag[3], $
           psym=psym, symsize=symsize, color='red'
 
-         djs_oplot, [14.6], [21.1], psym=psym, symsize=symsize, color='blue'
-         djs_oplot, [14.6], [20.6], psym=psym, symsize=symsize, color='green'
-         djs_oplot, [14.6], [20.1], psym=psym, symsize=symsize, color='red'
-         djs_xyouts, 15.0, 21.0, 'g-filter'
-         djs_xyouts, 15.0, 20.5, 'r-filter'
-         djs_xyouts, 15.0, 20.0, 'i-filter'
+         djs_oplot, [14.6], [3.2], psym=psym, symsize=symsize, color='blue'
+         djs_oplot, [14.6], [2.8], psym=psym, symsize=symsize, color='green'
+         djs_oplot, [14.6], [2.4], psym=psym, symsize=symsize, color='red'
+         djs_xyouts, 14.6, 3.5, 'Spectro-' + string(ispecnum,format='(i1)')
+         djs_xyouts, 15.0, 3.1, 'g-filter'
+         djs_xyouts, 15.0, 2.7, 'r-filter'
+         djs_xyouts, 15.0, 2.3, 'i-filter'
+
+         if (ispecnum EQ 1 AND keyword_set(plottitle)) then $
+          xyouts, 1.1*xrange[1] - 0.1*xrange[0], $
+           1.05*yrange[1] - 0.05*yrange[0], $
+           plottitle, align=0.5, charsize=1.5
       endfor
 
       qgal = strtrim(plugc.objtype,2) EQ 'GALAXY'
@@ -302,22 +314,24 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
          ii = where(qgal[sindx] EQ 0, nstar)
          if (nstar GT 0) then istar = sindx[ii]
 
-         djs_plot, [14,22], [14,22], xchars=xchars, ychars=ychars, $
-          /xstyle, /ystyle, $
-          xtitle='Fiber Magnitude', ytitle='Synthetic Magnitude', $
-          title='(S/N)^2 for Spectro-' + string(ispecnum,format='(i1)')
+         djs_plot, xrange, [0,0], xchars=xchars, ychars=ychars, $
+          xrange=xrange, yrange=yrange, /xstyle, /ystyle, $
+          xtitle='Fiber Magnitude', ytitle='Synthetic Magnitude Resid.'
 
          if (nstar GT 0) then $
-          djs_oplot, plugc[istar].mag[3], synthmag[2,iobj[istar]], $
+          djs_oplot, plugc[istar].mag[3], $
+           synthmag[2,iobj[istar]] - plugc[istar].mag[3], $
            psym=psym, symsize=symsize, color='blue'
          if (ngal GT 0) then $
-          djs_oplot, plugc[igal].mag[3], synthmag[2,iobj[igal]], $
+          djs_oplot, plugc[igal].mag[3], $
+           synthmag[2,iobj[igal]] - plugc[igal].mag[3], $
            psym=psym, symsize=symsize, color='red'
 
-         djs_oplot, [14.6], [21.1], psym=psym, symsize=symsize, color='blue'
-         djs_oplot, [14.6], [20.6], psym=psym, symsize=symsize, color='red'
-         djs_xyouts, 15.0, 21.0, 'Stellar objects (r-filter)'
-         djs_xyouts, 15.0, 20.5, 'Galaxies (r-filter)'
+         djs_oplot, [14.6], [3.2], psym=psym, symsize=symsize, color='blue'
+         djs_oplot, [14.6], [2.8], psym=psym, symsize=symsize, color='red'
+         djs_xyouts, 14.6, 3.5, 'Spectro-' + string(ispecnum,format='(i1)')
+         djs_xyouts, 15.0, 3.1, 'Stellar objects (r-filter)'
+         djs_xyouts, 15.0, 2.7, 'Galaxies (r-filter)'
       endfor
 
    endif
