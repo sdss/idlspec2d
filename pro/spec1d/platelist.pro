@@ -303,7 +303,7 @@ pro platelist, infile, plist=plist, create=create
          ;----------
          ; Find the state of the 1D reductions -- spZbest file is missing
 
-         thislogfile = repstr(fullzfile, 'spPlate', 'spDiag1d')
+         thislogfile = repstr(fileandpath(platefile), 'spPlate', 'spDiag1d')
          thislogfile = repstr(thislogfile, '.fits', '.log')
          thislogfile = djs_filepath(thislogfile, root_dir=path)
          thislogfile = (findfile(thislogfile))[0]
