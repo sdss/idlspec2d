@@ -387,39 +387,40 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
       for ispecnum=1, 2 do begin
          qobj = where(plugc.spectrographid eq ispecnum and $
                       abs(goff) lt 1 and abs(roff) lt 1 and abs(ioff) lt 1)
-        
-         plothist, roff[qobj], xr=[-0.6, 0.6], yr =[0, 30], bin=0.01, $
+       
+         ymax = 80 
+         plothist, roff[qobj], xr=[-0.6, 0.6], yr =[0, ymax], bin=0.02, $
            xtitle = 'Spectro Mag - Photo Fiber Mag', $
-           ytitle = 'Number of Spectra', $
-           xticklen=1, yticklen=1, xgrids=1, ygrids=1, /xs, charthick=2
+           ytitle = 'Number of Spectra', /xs, charthick=2, thick=3
+;           xticklen=1, yticklen=1, xgrids=1, ygrids=1 
         
-         plothist, goff[qobj], gxhist, gyhist, bin=0.01, $
-                   color=djs_icolor('green'), /over, thick=3
-         plothist, roff[qobj], rxhist, ryhist, bin=0.01, $
-                   color=djs_icolor('red'), /over, thick=3
-         plothist, ioff[qobj], ixhist, iyhist, bin=0.01, $
-           color=djs_icolor('dark red'), /over, thick=3
+         plothist, goff[qobj], gxhist, gyhist, bin=0.02, $
+                   color=djs_icolor('green'), /over, thick=4
+         plothist, roff[qobj], rxhist, ryhist, bin=0.02, $
+                   color=djs_icolor('red'), /over, thick=4
+         plothist, ioff[qobj], ixhist, iyhist, bin=0.02, $
+           color=djs_icolor('dark red'), /over, thick=4
         
         legend, ['g', 'r', 'i'], color=djs_icolor(['green', 'red', $
-          'dark red']), linestyle=0, charthick=3
+          'dark red']), linestyle=0, charthick=2, charsize = 0.7, thick=4
 
         gfit = gaussfit(gxhist, gyhist, nterms=3, gcoef)
         rfit = gaussfit(rxhist, ryhist, nterms=3, rcoef)
         ifit = gaussfit(ixhist, iyhist, nterms=3, icoef)
         oplot, [0, 0], [0,100], thick=4
 
-        xyouts, 0.10, 27, 'g offset = ' + string(gcoef[1], format='(F6.3)'), $
-                charsize = 0.8
-        xyouts, 0.10, 24, 'g sigma = ' + string(gcoef[2], format='(F6.3)'), $
-                charsize = 0.8
-        xyouts, 0.10, 21, 'r offset = ' + string(rcoef[1], format='(F6.3)'), $
-                charsize = 0.8
-        xyouts, 0.10, 18, 'r sigma = ' + string(rcoef[2], format='(F6.3)'), $
-                charsize = 0.8
-        xyouts, 0.10, 15, 'i offset = ' + string(icoef[1], format='(F6.3)'), $
-                charsize = 0.8
-        xyouts, 0.10, 12, 'i sigma = ' + string(icoef[2], format='(F6.3)'), $
-                charsize = 0.8
+        xyouts, 0.15, ymax*0.90, 'g offset = ' + $
+                string(gcoef[1], format='(F6.3)'), charsize = 0.7
+        xyouts, 0.15,  ymax*0.80, 'g sigma = ' + $
+                string(gcoef[2], format='(F6.3)'), charsize = 0.7
+        xyouts, 0.15, ymax*0.70, 'r offset = ' + $
+                string(rcoef[1], format='(F6.3)'), charsize = 0.7
+        xyouts, 0.15,  ymax*0.60, 'r sigma = ' + $
+                string(rcoef[2], format='(F6.3)'), charsize = 0.7
+        xyouts, 0.15,  ymax*0.50, 'i offset = ' + $
+                string(icoef[1], format='(F6.3)'), charsize = 0.7
+        xyouts, 0.15,  ymax*0.40, 'i sigma = ' + $
+                string(icoef[2], format='(F6.3)'), charsize = 0.7
       endfor
 
       for ispecnum=1, 2 do begin
@@ -427,31 +428,31 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
                       plugc.spectrographid eq ispecnum and $
                       abs(goff) lt 1 and abs(roff) lt 1 and abs(ioff) lt 1)
 
-        plothist, groff[qobj], xr=[-0.6, 0.6], bin=0.01, yr = [0, 30], $
+        plothist, groff[qobj], xr=[-0.6, 0.6], bin=0.02, yr = [0,ymax], $
            xtitle = 'Color Difference (Spectro - Photo)', $
-           ytitle = 'Number of Spectra', $
-           xticklen=1, yticklen=1, xgrids=1, ygrids=1, /xs, charthick=2
+           ytitle = 'Number of Spectra', /xs, charthick=2, thick=3
+;           xticklen=1, yticklen=1, xgrids=1, ygrids=1
 
-        plothist, groff[qobj], grxhist, gryhist, bin=0.01, $
-                  color=djs_icolor('green'), /over, thick=3
-        plothist, rioff[qobj], rixhist, riyhist, bin=0.01, $
-                  color=djs_icolor('red'), /over, thick=3
+        plothist, groff[qobj], grxhist, gryhist, bin=0.02, $
+                  color=djs_icolor('green'), /over, thick=4
+        plothist, rioff[qobj], rixhist, riyhist, bin=0.02, $
+                  color=djs_icolor('red'), /over, thick=4
 
         legend, ['(g-r)', '(r-i)'], color=djs_icolor(['green', 'red']), $
-               linestyle=0, charthick=3
+               linestyle=0, charthick=2, charsize = 0.7, thick=4
 
         grfit = gaussfit(grxhist, gryhist, nterms=3, grcoef)
         rifit = gaussfit(rixhist, riyhist, nterms=3, ricoef)
         oplot, [0, 0], [0,100], thick=4
 
-        xyouts, 0.05, 27, '(g-r) offset = ' +string(grcoef[1], format='(F6.3)'), $
-                charsize = 0.8
-        xyouts, 0.05, 24, '(g-r) sigma = ' +string(grcoef[2], format='(F6.3)'), $
-                charsize = 0.8
-        xyouts, 0.05, 21, '(r-i) offset = ' +string(ricoef[1], format='(F6.3)'), $
-                charsize = 0.8
-        xyouts, 0.05, 18, '(r-i) sigma = ' + string(ricoef[2], format='(F6.3)'), $
-                charsize = 0.8
+        xyouts, 0.10,  ymax*0.90, '(g-r) offset = ' + $
+                string(grcoef[1], format='(F6.3)'), charsize = 0.7
+        xyouts, 0.10,  ymax*0.80, '(g-r) sigma = ' + $
+                string(grcoef[2], format='(F6.3)'), charsize = 0.7
+        xyouts, 0.10,  ymax*0.70, '(r-i) offset = ' + $
+                string(ricoef[1], format='(F6.3)'), charsize = 0.7
+        xyouts, 0.10,  ymax*0.60, '(r-i) sigma = ' + $
+                string(ricoef[2], format='(F6.3)'), charsize = 0.7
          
      endfor
    endif
