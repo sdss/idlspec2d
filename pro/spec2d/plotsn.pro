@@ -16,7 +16,7 @@
 ;   bands      - Index of bands to fit; default to [1,2,3] for g,r,i bands.
 ;   plotmag    - Magnitude range for plotting; default to [15,21].
 ;   fitmag     - Magnitude range over which to fit (S/N) as function of mag;
-;                default to [-1,0.5] mags around the fiducial magntidues
+;                default to [-2,-0.5] mags around the fiducial magntidues
 ;                at which we evaluate the fit.  But if there are fewer than
 ;                20 points in the specified magnitude range, then set
 ;                FITMAG[0] = 1.0.
@@ -29,7 +29,7 @@
 ;
 ; COMMENTS:
 ;   The fiducial magnitudes at which to evaluate the fit to (S/N) are
-;   [19.0, 19.2, 19.25, 18.9, 18.0] in u,g,r,i,z bands.
+;   [20.0, 20.2, 20.25, 19.9, 19.0] in u,g,r,i,z bands.
 ;
 ; EXAMPLES:
 ;
@@ -53,7 +53,7 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
    if (NOT keyword_set(plotmag)) then plotmag = [15.0, 21.0]
 
    ; Set fiducial magnitudes about which to fit and evaluate the fit
-   snmag = [19.0, 19.2, 19.25, 18.9, 18.0]
+   snmag = [20.0, 20.2, 20.25, 19.9, 19.0]
 
    nbands = n_elements(bands)
    nfibers = n_elements(plug)
@@ -175,7 +175,7 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
       if (keyword_set(fitmag)) then $
        myfitmag = fitmag $
       else $
-       myfitmag = snmag[bands[iband]] + [-1.0,0.5]
+       myfitmag = snmag[bands[iband]] + [-2.0,-0.5]
       if (n_elements(where(mag GT myfitmag[0] AND mag LT myfitmag[1])) LT 20) $
        then myfitmag[0] = 1.0
 

@@ -96,11 +96,13 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    if (strmid(color,0,1) EQ 'b') then begin
       icolor = 1
       wrange = [4000,5500] ; coverage of g-band
-      snmag = 19.2
+      fitmag = [18.2, 19.7]
+      snmag = 20.2
    endif else begin
       icolor = 3
       wrange = [6910,8500] ; coverage of i-band
-      snmag = 18.9
+      fitmag = [17.9, 19.4]
+      snmag = 19.9
    endelse
 
    ;----------

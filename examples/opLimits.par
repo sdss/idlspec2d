@@ -108,13 +108,19 @@ speclimit red NLAMPS r1 0 33
 speclimit red NLAMPS r2 0 33
 
 # The sky levels were 0.15 e-/pix and 0.30 e-/pix in the blue and
-# cameras on MJD 51612 (8/9 March 2000).  Flag the reported sky levels
-# as high if they is more than twice these values.
+# cameras on MJD 51612 (8/9 March 2000).  Report a warning (yellow)
+# if the sky levels are 2X higher, and an error (red) if they are
+# 3X higher.
 
-speclimit red SKYPERSEC b1 0.30 9999
-speclimit red SKYPERSEC b2 0.30 9999
-speclimit red SKYPERSEC r1 0.60 9999
-speclimit red SKYPERSEC r2 0.60 9999
+speclimit yellow SKYPERSEC b1 0.30 9999
+speclimit yellow SKYPERSEC b2 0.30 9999
+speclimit yellow SKYPERSEC r1 0.60 9999
+speclimit yellow SKYPERSEC r2 0.60 9999
+
+speclimit red SKYPERSEC b1 0.45 9999
+speclimit red SKYPERSEC b2 0.45 9999
+speclimit red SKYPERSEC r1 0.90 9999
+speclimit red SKYPERSEC r2 0.90 9999
 
 # Don't issue any warnings about (S/N)^2 for individual exposures.
 
@@ -123,10 +129,10 @@ speclimit red SN2 b2 0 0
 speclimit red SN2 r1 0 0
 speclimit red SN2 r2 0 0
 
-# Issue warnings about total (S/N)^2 for any camera not hitting 60/pix.
+# Issue warnings about total (S/N)^2 for any camera not hitting 15/pix.
 
-speclimit red TOTALSN2 b1 0 59.9999
-speclimit red TOTALSN2 b2 0 59.9999
-speclimit red TOTALSN2 r1 0 59.9999
-speclimit red TOTALSN2 r2 0 59.9999
+speclimit red TOTALSN2 b1 0 14.9999
+speclimit red TOTALSN2 b2 0 14.9999
+speclimit red TOTALSN2 r1 0 14.9999
+speclimit red TOTALSN2 r2 0 14.9999
 
