@@ -15,3 +15,7 @@ Fri Feb  6 12:09:54 EST 2004	RHL
 	cp ~/idlspec2d-MAIN/pro/spec2d/platesn.pro pro/spec2d
 
 	cvs rtag -r v4_11 v4_11_1 idlspec2d
+
+Thu Mar 18 13:37:58 CST 2004
+	Add a retro-active v4_10_2 tag, "v4_10_2-2003/8/13"
+	cvs rtag -D 2003/8/13  v4_10_2-2003/8/13 idlspec2d
