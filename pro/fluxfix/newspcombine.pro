@@ -133,7 +133,8 @@ pro newspcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
    splog, 'idlspec2d version ' + idlspec2d_version()
    splog, 'idlutils version ' + idlutils_version()
 
-   camnames = ['b1', 'r1', 'b2', 'r2']
+   ; This is the assumed ordering of the cameras in the par file (should check)
+   camnames = ['b1', 'b2', 'r1', 'r2']  
    ncam = N_elements(camnames)
 
    ;----------
@@ -167,8 +168,22 @@ pro newspcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
      objname[ifile] = (lookforgzip(djs_filepath(objname[ifile], $
       root_dir=extractdir)))[0]
 
+   ; Log missing files
+   planname = allseq.name[icams]
+   missing = where(objname ne planname)
+   if missing[0] ne -1 then $
+      splog, 'Files not found on disk: ' + planname[missing]
+ 
    ; Now all the file names in ALLSEQ.NAME should exist or be set to null.
    allseq.name[icams] = objname
+
+   ;-------------------------------
+   ;  For simplicity require data for all 4 cameras -- if this is not done
+   ; then some changes need to be made to "frame_flux_tweak"  
+   fourcam = (allseq.name[0] ne '') + (allseq.name[2] ne '') + $
+             (allseq.name[1] ne '') + (allseq.name[3] ne '')
+   missing1 = where(fourcam gt 0 and fourcam lt 4)
+   if missing1[0] ne -1 then allseq[missing1].name[*] = ''
 
    j = where(allseq.name[icams])
    if (j[0] EQ -1) then begin
@@ -216,7 +231,7 @@ pro newspcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
    endelse
 
    ;----------
-   ;  Check for Minimum S/N in science frame
+   ;  Check for Minimum S/N in science frame  
    ;
    if keyword_set(minsn2) then begin
       nsci = n_elements(sciname)
