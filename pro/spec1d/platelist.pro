@@ -314,7 +314,12 @@ pro platelist, infile, plist=plist, create=create, $
                plist[ifile].statuscombine = 'FAILED'
             endif else begin
                ; Case where this combine log file isn't completed
-               plist[ifile].statuscombine = 'RUNNING'
+               spawn, 'grep ABORT '+thislogfile, abortline
+               if (keyword_set(abortline)) then begin
+                  plist[ifile].statuscombine = 'FAILED' ; Combining step aborted
+               endif else begin
+                  plist[ifile].statuscombine = 'RUNNING'
+               endelse
             endelse
          endif else begin
             ; Case where this combine log file missing
