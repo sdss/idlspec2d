@@ -41,8 +41,12 @@ fi
 # subset of these files should live elsewhere, with only symbolic
 # links in the /astrolog/$MJD directory.
 
-datadirs=`ssh sdsshost.apo.nmsu.edu ls -d /data/spectro/[5-9]????`
-astrologdirs=`echo $datadirs | sed -n 's/\/data\/spectro/\/astrolog/pg'`
+# datadirs=`ssh sdsshost.apo.nmsu.edu ls -d /data/spectro/[5-9]????`
+# astrologdirs=`echo $datadirs | sed -n 's/\/data\/spectro/\/astrolog/pg'`
+
+# Instead, rsync the largest 7 MJDs in the /astrolog directory, whether
+# or not there is a corresponding data directory in /data/spectro for the same MJD.
+astrologdirs=`ssh sdsshost.apo.nmsu.edu 'ls -d /astrolog/[5-9]???? | sort | tail -7'`
 
 for thisdir in $astrologdirs
 do
