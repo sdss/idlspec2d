@@ -157,6 +157,7 @@ pro platelist, infile, plist=plist, create=create, $
     'sn2_g2'   , 0.0, $
     'sn2_r2'   , 0.0, $
     'sn2_i2'   , 0.0, $
+    'smearuse' , ' ', $
     'n_galaxy' , 0L,  $
     'n_qso'    , 0L,  $
     'n_star'   , 0L,  $
@@ -299,6 +300,7 @@ pro platelist, infile, plist=plist, create=create, $
          plist[ifile].sn2_g2 = sxpar(hdr1, 'SPEC2_G')
          plist[ifile].sn2_r2 = sxpar(hdr1, 'SPEC2_R')
          plist[ifile].sn2_i2 = sxpar(hdr1, 'SPEC2_I')
+         plist[ifile].smearuse = sxpar(hdr1, 'SMEARUSE') ? 'T' : 'F'
          plist[ifile].mapname = strtrim(sxpar(hdr1, 'NAME'))
          plist[ifile].vers2d = strtrim(sxpar(hdr1, 'VERS2D'))
          plist[ifile].verscomb = strtrim(sxpar(hdr1, 'VERSCOMB'))
