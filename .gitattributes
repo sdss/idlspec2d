@@ -24,7 +24,6 @@ bin/sprobot2d.sh -text
 bin/sprobot_start -text
 bin/sprobot_status -text
 bin/sprobot_stop -text
-bin/sprobotcopy.sh -text
 bin/sprobotlist.sh -text
 bin/startapo.sh -text
 bin/zplot -text
