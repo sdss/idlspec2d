@@ -166,6 +166,11 @@ something like:
 Other environment variables that need to be set for the Spectro-Robot:
 <DL><DD><PRE>
   SPROBOT_LOCALDISKS -- List of local disks to which to copy the data.
+  SPROBOT_HOST -- Remote host name for copying the raw data; I currently
+                  use "sos.apo.nmsu.edu".
+  SPROBOT_RSH -- Optional environment variable setting protocol for copying
+                 data from the remote host $SPROBOT_HOST; default to "ssh"
+                 if not set, but I currently use "ssh1".
   RAWDATA_DIR -- Root directory for links to raw data directories, which
                  then live in $RAWDATA_DIR/$MJD
   ASTROLOG_DIR -- Root directory for astrolog files, which then live in

@@ -2,9 +2,14 @@
 BATCH2D: Include 'smear' exposures when generating list of output files.
             (Not doing this caused a crash for plates w/ only smears).
 QUICKTRACE: Reverted to doing full trace for flats.  Time saving by only 
-           tracing part of the flat image introduces a risk not worth the gain.
+            tracing part of the flat image introduces a risk not worth the gain.
 TRACE320CRUDE:  Fix bug dependent on invvar being set.
-               Small change to note number of goodrows in xmask, non-critical
+            Small change to note number of goodrows in xmask, non-critical
+
+sprobot_start: No longer reference $BATCH2DFILE,$BATCH1DFILE, which are
+            no longer used.
+sprobot_start,sprobot.sh: Added optional $SPROBOT_RSH environment variable
+            for specifying the protocol for copying the raw data.
 
 In specflat:
 specflat.table: Added "Flavor=Linux"
