@@ -470,6 +470,7 @@ pro spcoadd_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    ncoeff = sxpar(hdr, 'NWORDER')
    for i=2, ncoeff-1 do sxdelpar, hdr, 'COEFF'+strtrim(string(i),2)
 
+   sxdelpar, hdr, ['SPA', 'IPA', 'IPARATE']
    sxdelpar, hdr, 'EXPOSURE'
    sxdelpar, hdr, 'SEQID'
    sxdelpar, hdr, 'DARKTIME'
@@ -477,6 +478,10 @@ pro spcoadd_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    sxdelpar, hdr, 'PLUGMAPO'
    for i=1, 4 do sxdelpar, hdr, 'GAIN'+strtrim(string(i),2)
    for i=1, 4 do sxdelpar, hdr, 'RDNOISE'+strtrim(string(i),2)
+   sxdelpar, hdr, ['CAMCOL', 'CAMROW']
+   sxdelpar, hdr, ['AMPLL', 'AMPLR', 'AMPUL', 'AMPUR']
+   sxdelpar, hdr, ['FFS', 'FF', 'NE', 'HGCD']
+   sxdelpar, hdr, ['SPEC1', 'SPEC2']
    sxdelpar, hdr, 'NBLEAD'
    sxdelpar, hdr, 'PIXFLAT'
    sxdelpar, hdr, 'FRAMESN2'
