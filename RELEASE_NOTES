@@ -117,6 +117,12 @@ doc/www/idlspec2d_reduce.html,spectro_home.html: The machine alias name
         sdssdata.princeton.edu should really be sdssdata.astro.princeton.edu
 etc/spChunkList.par: Add chunks 91 through 107, 99A, 100A.
 etc/spPlateList.par: Add 436 new plates, through MJD 53360 (Dec 21, 2004).
+        Add the DR4 public plates, consistent with sdss-archive/2374.
+        (I posted some inconsistencies about these plate lists to
+        sdss-archive/2376.)  Note that I have all the same plates being
+        marked as public, except there are four plates from the EDR
+        the FNAL has dropped from their lists: 314/51641, 357/51813, 
+        362/51999, 412/51871.
 examples/opECalib-51577.par: Update the gains based upon work by Eric Switzer
         and a more careful look at a recent set of identical flats taken
         on the night MJD 53114.  I've updated the numbers as follows for
