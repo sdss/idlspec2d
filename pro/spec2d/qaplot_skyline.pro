@@ -133,8 +133,7 @@ pro qaplot_skyline, lwave, obj, objivar, objsub, objsubivar, plugsort, wset, $
    djs_oplot, [0,nrow], [lmean,lmean], color='red'
    xyouts, 20, 0.80*!y.crange[0]+0.20*!y.crange[1], 'RED = sky fiber'
    xyouts, 20, 0.90*!y.crange[0]+0.10*!y.crange[1], $
-    string(format='(a,f6.2,a)', 'Dispersion = ', $
-    lwave, ' = ', 100*lsig/lmean, ' %')
+    string(format='(a,f6.2,a)', 'Dispersion = ', 100*lsig/lmean, ' %')
 
    radius = sqrt(plugsort.xfocal^2 + plugsort.yfocal^2)
    plot, radius, lflux, psym=1, $
