@@ -99,6 +99,8 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
 
       ;----------
       ; Read all the 2D plan files
+      ; The string array PLANLIST keeps a list of the plan file that each
+      ; element of the ALLEXP structure came from.
 
       allexp = 0
       planlist = 0
@@ -110,12 +112,14 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
          for ii=0, n_elements(pp)-1 do begin
             sname = tag_names(*pp[ii], /structure_name)
             if (sname EQ 'SPEXP') then begin
+               nadd = n_elements(*pp[ii])
                if (NOT keyword_set(allexp)) then begin
                   allexp = *pp[ii]
-                  planlist = fileandpath(allplan[iplan])
+                  planlist = replicate(fileandpath(allplan[iplan]), nadd)
                endif else begin
                   allexp = [allexp, *pp[ii]]
-                  planlist = [planlist, fileandpath(allplan[iplan])]
+                  planlist = [planlist, $
+                   replicate(fileandpath(allplan[iplan]), nadd)]
                endelse
                if (NOT keyword_set(extractdir)) then $
                 extractdir = yanny_par(hdr, 'extractdir')
