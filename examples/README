@@ -5,6 +5,8 @@ opConfig.par            CCD dimensions:  data, bias, overscan sections
 opConfig.fit		fits version, no change
 
 opECalib.par		CCD electronics: gain, readout, fullwell and linearity
+opECalib-51574.par      updated to include changes in red CCD gains
+
 opECalib.short.par 	abbreviated version of opECalib, no linearity
 opECalib.fit            fits version of opECalib.short  
 
