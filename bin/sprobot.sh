@@ -60,7 +60,7 @@ for mjdstr in $remotedir ; do
       for fdisk in $localdisks ; do
          qgood=`df -m $fdisk | awk '{if (FNR==2 && $4>4000) {print 1}}'`
          if [ -n "$qgood" ] ; then
-            if [ -z $localdir ] ; then
+            if [ -z "$localdir" ] ; then
                localdir=$fdisk/$mjdstr
             fi
          fi
@@ -72,10 +72,10 @@ for mjdstr in $remotedir ; do
 
       if [ -n "$localdir" ] ; then
          echo SPROBOT: mkdir -p $localdir
-#         mkdir -p $toprawdir/$mjdstr
+         mkdir -p $localdir
          if [ $localdir != $toprawdir/$mjdstr ] ; then
             echo SPROBOT: ln -s $localdir $toprawdir/$mjdstr
-#            ln -fs $localdir $toprawdir/$mjdstr
+            ln -fs $localdir $toprawdir/$mjdstr
          fi
       fi
    fi
@@ -84,16 +84,16 @@ for mjdstr in $remotedir ; do
    # Proceed only if a good local directory exists to copy the data
 
    if [ -n "$localdir" ] ; then
-      echo SPROBOT: rsync $hostname:/astrolog/$mjdstr $astrologdir
-      echo SPROBOT: rsync $hostname:/data/spectro/$mjdstr $localdir
-#      rsync -ar --rsh="ssh -c arcfour" \
-#       --rsync-path=/p/rsync/v2_4_3/rsync \
-#       $hostname:/astrolog/$mjdstr $astrologdir
-#      rsync -ar --rsh="ssh -c arcfour" \
-#       --rsync-path=/p/rsync/v2_4_3/rsync \
-#       $hostname:/data/spectro/$mjdstr $localdir
+      echo SPROBOT: rsync "$hostname:/astrolog/$mjdstr" $astrologdir
+      rsync -ar --rsh="ssh -c arcfour" \
+       --rsync-path=/p/rsync/v2_4_3/rsync \
+       "$hostname:/astrolog/$mjdstr" $astrologdir
+      echo SPROBOT: rsync "$hostname:/data/spectro/$mjdstr/*" $localdir
+      rsync -ar --rsh="ssh -c arcfour" \
+       --rsync-path=/p/rsync/v2_4_3/rsync \
+       "$hostname:/data/spectro/$mjdstr/*" $localdir
 
-      if [ -z $mjdlist ] ; then
+      if [ -z "$mjdlist" ] ; then
          mjdlist=$mjdstr
       else
          mjdlist=$mjdlist,$mjdstr
@@ -107,11 +107,11 @@ done
 #------------------------------------------------------------------------------
 # If no new data or if $topoutdir is not defined, then exit.
 
-if [ -z $mjdlist ] ; then
+if [ -z "$mjdlist" ] ; then
    exit
 fi
 
-if [ -z $topoutdir ] ; then
+if [ -z "$topoutdir" ] ; then
    exit
 fi
 
@@ -120,31 +120,35 @@ fi
 
 echo SPROBOT: MJDLIST=$mjdlist
 
+echo ""
 echo SPROBOT: "spplan2d, topoutdir='$topoutdir', mjd=["$mjdlist"]"
-echo SPROBOT: "spplan1d, topoutdir='$topoutdir', mjd=["$mjdlist"]"
-#echo "spplan2d, topoutdir='$topoutdir', mjd=["$mjdlist"]" | idl
-#echo "spplan1d, topoutdir='$topoutdir', mjd=["$mjdlist"]" | idl
-
-#------------------------------------------------------------------------------
-# Start the batch processing for Spectro-2D if it's not already running.
-
-if ps ax | grep sprobot2d.sh  | grep -v -e grep
-then
-   echo "SPROBOT: BATCH2D already running at "`date`
-else
-   echo "SPROBOT: BATCH2D started at "`date`
-   sprobot2d.sh ",topdir='$topoutdir', nice=10"
-fi
+echo "spplan2d, topoutdir='$topoutdir', mjd=["$mjdlist"]" | idl
+echo ""
+echo SPROBOT: "spplan1d, topindir='$topoutdir', mjd=["$mjdlist"]"
+echo "spplan1d, topindir='$topoutdir', mjd=["$mjdlist"]" | idl
 
 #------------------------------------------------------------------------------
 # Start the batch processing for Spectro-1D if it's not already running.
+# Put this parent process in the background so this script will continue.
 
 if ps ax | grep sprobot1d.sh  | grep -v -e grep
 then
    echo "SPROBOT: BATCH1D already running at "`date`
 else
    echo "SPROBOT: BATCH1D started at "`date`
-   sprobot1d.sh ",topdir='$topoutdir', nice=10"
+   sprobot1d.sh ",topdir='$topoutdir', nice=10" &
+fi
+
+#------------------------------------------------------------------------------
+# Start the batch processing for Spectro-2D if it's not already running.
+# Put this parent process in the background so this script will continue.
+
+if ps ax | grep sprobot2d.sh  | grep -v -e grep
+then
+   echo "SPROBOT: BATCH2D already running at "`date`
+else
+   echo "SPROBOT: BATCH2D started at "`date`
+   sprobot2d.sh ",topdir='$topoutdir', nice=10" &
 fi
 
 exit

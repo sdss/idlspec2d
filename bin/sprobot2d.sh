@@ -13,7 +13,7 @@
 # process to determine if this is already running!
 
 echo SPROBOT2D: batch2d $1
-#echo batch2d $1 | idl
+echo batch2d $1 | idl
 
 exit
 #------------------------------------------------------------------------------
