@@ -336,6 +336,8 @@ pro batch, topdir, localfile, outfile, protocol, remotehost, remotedir, $
     priority=priority)
    nprog = n_elements(proglist)
    splog, 'Number of batch programs = ', nprog
+   for iprog=0, nprog-1 do $
+    splog, proglist[iprog].progname + ' = ' + proglist[iprog].command
 
    ;----------
    ; Create a list of available remote hosts (and their status)
