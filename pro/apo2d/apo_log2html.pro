@@ -164,7 +164,7 @@ function apo_log_fields, pp, fields, printnames=printnames, formats=formats
    if (pp[igood[0]].tai NE 0) then begin
       jd = 2400000.5D + pp[igood[0]].tai / (24.D*3600.D)
       caldat, jd, jd_month, jd_day, jd_year, jd_hr, jd_min, jd_sec
-      utstring = string(jd_hr, jd_sec, format='(i2.2,":",i2.2,"Z")')
+      utstring = string(jd_hr, jd_min, format='(i2.2,":",i2.2,"Z")')
    endif else begin
       utstring = ''
    endelse
