@@ -16,7 +16,7 @@ pro pca_qso
 
    eigenfile = filepath('eigeninput_qso.dat', $
     root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='templates')
-   readcol, eigenfile, skip=2, plate, mjd, fiber, zfit, format='(L,L,L,D)'
+   djs_readcol, eigenfile, skip=2, plate, mjd, fiber, zfit, format='(L,L,L,D)'
 ;readcol, eigenfile, skip=2, plate, mjd, fiber, zfit, format='(L,L,L,D)', $
 ; numline=20 ; ???
 
