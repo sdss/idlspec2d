@@ -355,7 +355,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ;------------------
    ; Sky-subtract
 
-   nbkpt = color EQ 'blue' ? nx/2 : nx
+   nbkpt = color EQ 'blue' ? 3*nx/4 : nx
    skystruct = skysubtract(flux, fluxivar, plugsort, vacset, $
     skysub, skysubivar, iskies=iskies, pixelmask=pixelmask, $
     fibermask=fibermask, upper=3.0, lower=3.0, tai=tai, $
@@ -520,6 +520,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    sn2 = 10^(2.0 * poly([snmag],sncoeff))
 
    sxaddpar, objhdr, 'FRAMESN2', sn2[0]
+   sxaddpar, objhdr, 'EXTEND', 'T', after='NAXIS2'
 
    ;----------
    ; Write extracted, lambda-calibrated, sky-subtracted spectra to disk
