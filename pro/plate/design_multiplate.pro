@@ -536,8 +536,9 @@ pro design_multiplate, stardata, tilenums=tilenums, platenums=platenums, $
       iobj = where(modplug.holetype EQ 'OBJECT' $
        AND newplatearr NE thisplate)
       if (indx[0] NE -1) then begin
-         modplug[iobj].holetype = 'COHERENT_SKY'
-         modplug[iobj].objtype = 'NA'
+         modplug[iobj].holetype = 'OBJECT'
+         modplug[iobj].objtype = 'SKY'
+         modplug[iobj].mag = fakemag
          modplug[iobj].primtarget = 0L
          modplug[iobj].sectarget = 16L
       endif else begin
