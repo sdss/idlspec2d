@@ -4,6 +4,8 @@ COLLIMATE: Since the DJS_SVDFIT() function was removed in v4_10_1,
 LRG_PHOTOZ: New simple photo-z finder for LRGs using a single template.
 NEWSPCOMBINE: Christy's code: changed so that if one frame does not make
         the S/N cut then all 4 frames of that exposure are rejected.
+PLATELINKS: Call SPAWN with the /noshell option to greatly increase
+        the speed of this procedure.
 PLATEMERGE: Major re-write to use less memory.  All of the ZANS structures
         are read into memory at once, but not all of the TSOBJ structures.
         The output file are written one plate at a time, with the TSOBJ
