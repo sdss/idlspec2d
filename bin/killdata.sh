@@ -14,6 +14,11 @@ if [ -z "$RAWDATA_DIR" ] ; then
    exit
 fi
 
+if [ -z "$SPECTROLOG_DIR" ] ; then
+   echo "Abort: SPECTROLOG_DIR not set!"
+   exit
+fi
+
 if [ -z "$ASTROLOG_DIR" ] ; then
    echo "Abort: ASTROLOG_DIR not set!"
    exit
@@ -38,7 +43,7 @@ do
 
 done
 
-spectrologs=`ls -d /data/spectro/spectrologs/[56789]???? | sort -r | tail +25`
+spectrologs=`ls -d $SPECTROLOG_DIR/[56789]???? | sort -r | tail +25`
 
 for dir in $spectrologs
 do
