@@ -159,6 +159,7 @@ ormask = 0 ; Free memory
    endif else begin
       fiberid = lindgen(nobj) + 1
    endelse
+   splog, 'Number of fibers = ', nobj
 
    ;----------
    ; Look for where the S/N is unreasonably large
@@ -201,9 +202,12 @@ ormask = 0 ; Free memory
    t0 = systime(1)
    for ifind=0, nfind-1 do begin
       vdispfit, objflux, objivar, hdr=hdr, zobj=res_gal[ifind,*].z, $
-       sigma=sigma, sigerr=sigerr
+       eigenfile='spEigenElodie.fits', columns=lindgen(20), $
+       sigma=sigma, sigerr=sigerr, yfit=dispflux1
       res_gal[ifind,*].vdisp = reform([sigma],1,nobj)
       res_gal[ifind,*].vdisp_err = reform([sigerr],1,nobj)
+      if (ifind EQ 0) then dispflux = dispflux1
+      dispflux1 = 0 ; clear memory
    endfor
    splog, 'CPU time to fit GALAXY velocity dispersions = ', systime(1)-t0
 
@@ -398,6 +402,14 @@ ormask = 0 ; Free memory
    splog, 'CPU time to generate chi^2 statistics = ', systime(1)-t0
 
    ;----------
+   ; Zero-out the dispersion template if the best-fit was not a galaxy.
+
+   for iobj=0, nobj-1 do begin
+      if (strtrim(res_gal[iobj].class,2) NE 'GALAXY') then $
+       dispflux[*,iobj] = 0
+   endfor
+
+   ;----------
    ; Add other fields to the output structure
 
    res1 = { plate:    long(sxpar(hdr, 'PLATEID')), $
@@ -520,6 +532,7 @@ ormask = 0 ; Free memory
    mwrfits, 0, zbestfile, hdr, /create ; Retain the original header in first HDU
    mwrfits, (res_all[0,*])[*], zbestfile
    mwrfits, synflux, zbestfile
+   mwrfits, dispflux, zbestfile
 
    ;----------
    ; Close log file
