@@ -51,6 +51,7 @@
 ;   dust_getval()
 ;   euler
 ;   ext_odonnell
+;   fileandpath()
 ;   filter_thru()
 ;   find_nminima()
 ;   mrdfits()
@@ -515,6 +516,8 @@ function spflux_bspline, loglam, mratio, mrativar, outmask=outmask, $
     invvar=mrativar[isort], lower=3, upper=3, fullbkpt=fullbkpt, $
     maxrej=ceil(0.05*n_elements(indx)), outmask=outmask1, nord=nord, $
     x2=x2, npoly=2*keyword_set(airmass))
+   if (max(sset.coeff) EQ 0) then $
+    message, 'B-spline fit failed!!'
    if (arg_present(outmask)) then begin
       outmask = bytarr(size(loglam,/dimens))
       outmask[isort] = outmask1
@@ -575,7 +578,7 @@ function spflux_mratio_flatten, loglam1, mratio1, mrativar1, pres=pres
    medratio = djs_median(newratio, 2)
    rescale = median( medratio[igoodpix] / meanratio[igoodpix] )
    meanratio = rescale * meanratio
-splog, 'MEANRATIO ', meanratio, ' ???'
+   splog, 'Rescale factor median/mean = ', rescale
 
    ;--------
    ; Now for each object, compute the polynomial fit of it relative to the mean
@@ -967,6 +970,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
    ; Construct the final (B-splined) flux-calibration vectors
 
    for ifile=0, nfile-1 do begin
+      splog, prelog=fileandpath(objname[ifile])
       ; Is this a blue CCD?
       ii = where(ifile EQ iblue, ct)
       if (ct EQ 1) then begin
@@ -1004,21 +1008,32 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       for i=0L, nfinal-1 do $
        flatarr_mean = flatarr_mean $
         + poly(tmploglam-3.5d0, thispres[*,0,i]) / nfinal
+
+      ; Rather than re-generating the B-spline, I'll simply cheat and
+      ; multiply the B-spline coefficients at their wavelengths.
+      ; This is a bit of a hack, since there are NORD more values
+      ; for FULLBKPT than there are for COEFF, so there's not exactly
+      ; a 1-to-1 mapping between the two.
+      tmpmult = interpol(flatarr_mean, tmploglam, thisset.fullbkpt)
+      tmpmult = tmpmult[1:n_elements(thisset.fullbkpt)-thisset.nord]
+      if (keyword_set(x2)) then begin
+         for ipoly=0, thisset.npoly-1 do $
+          thisset.coeff[ipoly,*] = thisset.coeff[ipoly,*] * tmpmult
+         for ipoly=0, thisset.npoly-1 do $
+          thisset.icoeff[ipoly,*] = thisset.icoeff[ipoly,*] * tmpmult
+      endif else begin
+         thisset.coeff = thisset.coeff * tmpmult
+         thisset.icoeff = thisset.icoeff * tmpmult
+      endelse
+
       if (keyword_set(x2)) then begin
          x2_min = min(x2, max=x2_max)
          splog, 'Exposure ', objname[ifile], $
           ' spans airmass range ', x2_min, x2_max
-         tmpflux1 = bspline_valu(tmploglam, thisset, x2=x2_min+0*tmploglam) $
-          * flatarr_mean
-         tmpflux2 = bspline_valu(tmploglam, thisset, x2=x2_max+0*tmploglam) $
-          * flatarr_mean
-         calibset = bspline_iterfit([tmploglam,tmploglam], $
-          [tmpflux1,tmpflux2], oldset=thisset, maxiter=0, $
-          x2=[0*tmploglam+x2_min,0*tmploglam+x2_max])
+         tmpflux1 = bspline_valu(tmploglam, thisset, x2=x2_min+0*tmploglam)
+         tmpflux2 = bspline_valu(tmploglam, thisset, x2=x2_max+0*tmploglam)
       endif else begin
-         tmpflux1 = bspline_valu(tmploglam, thisset) * flatarr_mean
-         calibset = bspline_iterfit(tmploglam, tmpflux1, oldset=thisset, $
-          maxiter=0)
+         tmpflux1 = bspline_valu(tmploglam, thisset)
          tmpflux2 = 0
       endelse
 
@@ -1055,9 +1070,10 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       ; Generate the pixel map of the flux-calibration for this exposure+CCD
 
       spframe_read, objname[ifile], loglam=loglam1
-      if (tag_exist(calibset,'NPOLY')) then x2 = airmass[*,ifile,*] $
+      if (tag_exist(thisset,'NPOLY')) then x2 = airmass[*,ifile,*] $
        else x2 = 0
-      calibimg = bspline_valu(loglam1, calibset, x2=x2)
+      calibimg = bspline_valu(loglam1, thisset, x2=x2)
+if (max(calibimg) EQ 0) then stop ; ???
 
       ; Set to zero any pixels outside the known flux-calibration region
       qbad = loglam1 LT logmin OR loglam1 GT logmax
@@ -1079,9 +1095,10 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
        format='("spFluxcalib-", a2, "-", i8.8, ".fits")'), $
        root_dir=combinedir)
       mwrfits, calibimg, calibfile, hdr, /create
-      mwrfits, calibset, calibfile
+      mwrfits, thisset, calibfile
       mwrfits, kindx, calibfile
       spawn, ['gzip','-f',calibfile], /noshell
+      splog, prelog=''
    endfor
 
    return
