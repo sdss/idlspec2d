@@ -27,6 +27,11 @@ BSPLINE_FIT: The YFIT vector was not always being computed, depending upon
            how this routine completed.  Also, some Schlegelization of the code.
 DJS_MEDIAN: Allow ARRAY to be a vector, and pass DIMENSION=1; this is the
            degenerate case where a scalar is returned.
+FITS_READ: This Goddard routine seems to have had a bug introduced,
+           whereby MESSAGE is not always set when reading a partially-written
+           FITS file.
+FITS_WAIT: Add _EXTRA keyword for passing options to FITS_READ, such
+           as /HEADER_ONLY or EXTEN=.
 HOGG_OPLOT_COVAR: New ellipse plotting routine.
 YANNY_WRITE: Put quotes around empty strings.  Otherwise, this is not
            a valid Yanny file.  Bug fix for when passing STNAMES.
