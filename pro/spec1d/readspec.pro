@@ -429,7 +429,9 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
          if (q_wave) then spec_append, wave, wave1
          if (q_tsobj) then tsobj = struct_append(tsobj, [tsobj1])
          if (q_zans) then zans = struct_append(zans, [zans1])
-         if (q_zline) then zline = struct_append(zline, [zline1])
+;         if (q_zline) then zline = struct_append(zline, [zline1])
+; ???
+         if (q_zline) then zline = [[zline], [zline1]]
          if (q_synflux) then spec_append, synflux, synflux1
          if (q_mjd) then mjd = [mjd, mjd1]
       endelse
@@ -457,7 +459,6 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
        copy_struct_inx, zans, zans, index_to=allindx
    endif
    if (q_zline) then begin
-;;; ??? Will not work... multi-dimensional...
       if (keyword_set(zline[0])) then $
        copy_struct_inx, zline, zline, index_to=allindx
    endif

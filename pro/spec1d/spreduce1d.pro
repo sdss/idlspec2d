@@ -557,11 +557,9 @@ ormask = 0 ; Free memory
    ww = strsplit(uname[0], '.', /extract)
    if (ww[1<(n_elements(ww)-1)] EQ 'fnal') then return
 
-   cpbackup, zallfile
    mwrfits, 0, zallfile, hdr, /create ; Retain the original header in first HDU
    mwrfits, res_all, zallfile
 
-   cpbackup, zbestfile
    zans = (res_all[0,*])[*]
    mwrfits, 0, zbestfile, hdr, /create ; Retain the original header in first HDU
    mwrfits, zans, zbestfile
