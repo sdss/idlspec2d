@@ -505,10 +505,9 @@ void ProfileDoubleGauss(float *x, IDL_LONG ndat, float **y, float xcen, IDL_LONG
 		IDL_LONG xmax, float sigma, IDL_LONG nCoeff)
 { 
 	IDL_LONG i,j,k;
-	float base, mult;
+	float base;
 	float diff, denom, frac;
         float sigma2, diff2, base2, denom2;
-	float sqbase;
 	float epow, epow2;
 
 	sigma2 = 2.0*sigma;
