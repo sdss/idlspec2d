@@ -136,7 +136,7 @@ qs = median(q, 75)
 
       deltachisq = 1./n_elements(inside)
       findchi2min, testsigma2, chi2, minchi2, minsigma, errsigma, $
-	  deltachisq = deltachisq, doplot=doplot, npts= ninside
+	  deltachisq = deltachisq, npts= ninside
 
       bestalpha = (interpol(alpha, testsigma2, minsigma))[0]
       fsig= 1.d/(2.*!dpi)/sqrt(minsigma)
@@ -144,11 +144,13 @@ qs = median(q, 75)
       res = broad*starfft[inside]-galfft[inside]
 
       errsigma = errsigma*sqrt(minchi2)
-
-      plot, knums[inside], qs, ps=3, yr=[-1, 2]
-      oplot, knums[inside], broad*bestalpha, ps=3
-      plot, testsigma2, chi2, ps=-7
-      oplot,[0,100],[1,1]*minchi2+deltachisq
+      
+      IF keyword_set(doplot) THEN BEGIN 
+          plot, knums[inside], qs, ps=3, yr=[-1, 2]
+          oplot, knums[inside], broad*bestalpha, ps=3
+          plot, testsigma2, chi2, ps=-7
+          oplot,[0,100],[1,1]*minchi2+deltachisq
+      ENDIF 
 
       return, [minchi2, minsigma, errsigma, bestalpha]
 end 
