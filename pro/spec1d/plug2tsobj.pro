@@ -111,7 +111,7 @@ function plug2tsobj, plateid, ra, dec, plugmap=plugmap, dmin=dmin
          adist = djs_diff_angle(tstemp.ra, tstemp.dec, ra[iplug], dec[iplug])
          thismin = min(adist, imin)
          if (thismin GT dmin/3600.) then $
-          splog, 'WARNING: No matches to within 1 arcsec at RA=', $
+          splog, 'WARNING: No matches to within ', dmin, ' arcsec at RA=', $
            ra[iplug], ' DEC=', dec[iplug] $
          else $
           tsobj[iplug] = tstemp[imin]
