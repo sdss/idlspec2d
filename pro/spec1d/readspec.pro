@@ -85,7 +85,7 @@ pro readspec1, plate, range, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    filename = findfile(filepath(filename, root_dir=root_dir, $
     subdirectory=platestr), count=ct)
 
-   if (ct GT 1) then filename = zfile[ (reverse(sort(filename)))[0] ] $
+   if (ct GT 1) then filename = filename[ (reverse(sort(filename)))[0] ] $
     else filename = filename[0]
 
    if (NOT keyword_set(filename)) then begin
