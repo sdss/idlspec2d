@@ -1,4 +1,7 @@
 
+sprobot_start: Remove "sprobotcopy" from the cron jobs, since copying
+               reduced data to Fermi always fails.
+
 -------------------------------------------------------------------------------
 v4_7_4 (May 10, 2001 idlspec2d+idlutils)
 
