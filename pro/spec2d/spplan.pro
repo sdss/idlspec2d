@@ -196,6 +196,9 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
          platenums = PLATEID[ uniq(PLATEID, sort(PLATEID)) ]
          nseq = N_elements(platenums)
 
+         qdone = bytarr(nfile) ; Set equal to 1 as each seq
+                               ; frame is written to a structure
+
          ;----------
          ; Loop through each plate
 
@@ -217,28 +220,25 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
             ; Set the sequence ID equal to the first exposure number
             seqid = EXPOSURE[ifile[0]]
 
-            qdone = bytarr(N_elements(ifile)) ; Set equal to 1 as each seq
-                                              ; frame is written to a structure
-
             ; Only look at those frames labelled as 'flat', 'arc', or 'science'
             ignore = where(FLAVOR[ifile] NE 'flat' $
                        AND FLAVOR[ifile] NE 'arc' $
                        AND FLAVOR[ifile] NE 'science', ct)
-            if (ct GT 0) then qdone[ignore] = 1
+            if (ct GT 0) then qdone[ifile[ignore]] = 1
             for i=0, ct-1 do $
-             splog, 'Ignore file ', shortname[ignore[i]], $
-              ' FLAVOR=', FLAVOR[ignore[i]]
+             splog, 'Ignore file ', shortname[ifile[ignore[i]]], $
+              ' FLAVOR=', FLAVOR[ifile[ignore[i]]]
 
             ; Ignore short science exposures
             ignore = where(FLAVOR[ifile] EQ 'science' $
              AND EXPTIME[ifile] LT minexp, ct)
-            if (ct GT 0) then qdone[ignore] = 1
+            if (ct GT 0) then qdone[ifile[ignore]] = 1
             for i=0, ct-1 do $
-             splog, 'Ignore file ', shortname[ignore[i]], $
-              ' EXPTIME=', EXPTIME[ignore[i]]
+             splog, 'Ignore file ', shortname[ifile[ignore[i]]], $
+              ' EXPTIME=', EXPTIME[ifile[ignore[i]]]
 
-            while (min(qdone) EQ 0) do begin
-               inotdone = where(qdone EQ 0)
+            while (min(qdone[ifile]) EQ 0) do begin
+               inotdone = where(qdone[ifile] EQ 0)
                indx = ifile[inotdone]
                indx = indx[ where( EXPOSURE[indx] EQ EXPOSURE[indx[0]] $
                                AND FLAVOR[indx] EQ FLAVOR[indx[0]] ) ]
@@ -248,7 +248,7 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
                   j = where(CAMERAS[indx] EQ camnames[icam], ct)
                   if (ct EQ 1) then begin
                      oneexp.name[icam] = shortname[indx[j[0]]]
-                      qdone[indx[j[0]]] = 1
+                     qdone[indx[j[0]]] = 1
                   endif else if (ct GT 1) then begin
                      message, 'Several frames with EXPOSURE=' $
                       + string(EXPOSURE[indx[0]]) $
@@ -365,9 +365,12 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
          hdr = [hdr, "logfile     '" + logfile + "'  # Text log file"]
          hdr = [hdr, "plotfile    '" + plotfile + "'  # PostScript log file"]
 
-         spawn, 'mkdir -p '+outdir
-         yanny_write, outdir+'/'+planfile, $
-          [ptr_new(pixflats), ptr_new(oneplug), ptr_new(oneseq)], hdr=hdr
+         ; Only output plan file if some raw FITS data files exist
+         if (keyword_set(oneseq)) then begin
+            spawn, 'mkdir -p '+outdir
+            yanny_write, outdir+'/'+planfile, $
+             [ptr_new(pixflats), ptr_new(oneplug), ptr_new(oneseq)], hdr=hdr
+         endif
 
       endif
       splog, camname=0
