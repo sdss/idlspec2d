@@ -37,6 +37,8 @@
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
+;   Do not use the calibObj structure if more than 10% of the non-sky
+;   objects do not have fluxes.
 ;
 ; EXAMPLES:
 ;
@@ -94,10 +96,20 @@ function readplugmap, plugfile, plugdir=plugdir, $
       iobj = where(strmatch(plugmap.holetype,'OBJECT*'))
       tsobj = plug2tsobj(plateid, plugmap=plugmap[iobj])
 
+      ; Do not use the calibObj structure if more than 10% of the non-sky
+      ; objects do not have fluxes.
+      if (keyword_set(tsobj)) then begin
+         qexist = tsobj.psfflux[2] NE 0
+         qsky = strmatch(plugmap[iobj].objtype,'SKY*')
+         if (total((qsky EQ 0) AND qexist) LT 0.9*total(sky EQ 0)) then begin
+            splog, 'Discarding calibObj structure because < 90% matches'
+            tsobj = 0
+         endif
+      endif
+
       if (keyword_set(tsobj)) then begin
 
          ; Assume that all objects not called a 'GALAXY' are stellar objects
-         qexist = tsobj.psfflux[2] NE 0
          qstar = strmatch(plugmap[iobj].objtype, 'GALAXY*') EQ 0
          istar = where(qstar AND qexist, nstar)
          igal = where(qstar EQ 0 AND qexist, ngal)
