@@ -98,6 +98,7 @@ pro/spec1d/readspec.pro -text
 pro/spec1d/reduce_plate.pro -text
 pro/spec1d/spec_append.pro -text
 pro/spec1d/spgo.pro -text
+pro/spec1d/struct_addtags.pro -text
 pro/spec1d/veldisp.pro -text
 pro/spec1d/veldisp_fft.pro -text
 pro/spec1d/veldisp_struc.pro -text
