@@ -87,10 +87,9 @@ pro mfindchi2min, x, chi2, minchi2, minsigma, errsigma, npts=npts, $
      if (doplot EQ 1) then begin
        wset,1
        plot, x, chi2-minchi2, ps=1, yr=[-10,100], $
-          title='Chi2: quot_diff (squares), quot (diamonds), diff (crosses)'
+          title='Chi2: diff (crosses), realspace (diamonds)'
      endif
      if (doplot EQ 2) then djs_oplot, x, chi2-minchi2, ps=4    
-     if (doplot EQ 3) then djs_oplot, x, chi2-minchi2, ps=6
      djs_oplot, x2, chifit-minchi2
      djs_oplot, x2[range], (chifit-minchi2)[range],color='red'
 
