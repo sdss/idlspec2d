@@ -19,10 +19,11 @@ pro monster, loglam, skyimage
 ;     print, strmid(allrframes[i],12), mjd, ' ', name, median, sigma, sigma2, $
 ;          format='(a,i6,a,a,3f8.3)'
 
-      if (sigma GT 3 * sigma2) then $
+      if (sigma GT 3 * sigma2) then begin
        splog, 'WARNING: Red Monster light at 6500 Ang has been spotted ', $
         sigma/sigma2
        splog, 'WARNING: IS THE HANDPADDLE STILL PLUGGED IN??'
+      endif
 
  return
 end
