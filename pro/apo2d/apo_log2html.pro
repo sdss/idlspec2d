@@ -27,6 +27,7 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   apo_checklimits()
 ;   copy_struct_inx
 ;   djs_filepath()
 ;   djs_findfile()
@@ -376,8 +377,8 @@ pro apo_log2html, logfile, htmlfile
             endfor
 
             ; Output table line for this one flat exposure
-            fields = ['NGOODFIBER', 'XMIN', 'XMAX']
-            formats = ['(i4)', '(f7.1)', '(f7.1)']
+            fields = ['NGOODFIBER', 'XMIN', 'XMAX', 'XSIGMA']
+            formats = ['(i4)', '(f7.1)', '(f7.1)', '(f5.2)']
             textout = [ textout, $
              apo_log_fields(pflats, fields, formats=formats) ]
 
@@ -405,8 +406,8 @@ pro apo_log2html, logfile, htmlfile
                 copy_struct_inx, PPARC[jj], parcs, index_to=icam
             endfor
 
-            formats = ['(f7.1)', '(f7.1)', '(f4.2)', '(i)']
-            fields = ['WAVEMIN', 'WAVEMAX', 'BESTCORR', 'NLAMPS']
+            formats = ['(f7.1)', '(f7.1)', '(f4.2)', '(i)', '(f5.2)']
+            fields = ['WAVEMIN', 'WAVEMAX', 'BESTCORR', 'NLAMPS', 'DISPSIGMA']
             textout = [ textout, $
              apo_log_fields(parcs, fields, formats=formats) ]
          endfor
