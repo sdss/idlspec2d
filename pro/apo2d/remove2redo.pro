@@ -6,7 +6,7 @@
 ;   Removed specified exposures from the SOS log files and re-reduce them.
 ;
 ; CALLING SEQUENCE:
-;   remove2redo, [ mjd=, plate=, expnum= ]
+;   remove2redo, [ mjd=, plate=, expnum=, /not_sos ]
 ;
 ; INPUTS:
 ;
@@ -20,6 +20,10 @@
 ;   expnum     - If specified, then force the re-reduction of this exposure
 ;                number(s) even if they have already been successfully reduced.
 ;                Do not specify both PLATE and EXPNUM.
+;   not_sos    - This keyword can be set to run this proc on a machine
+;                that is not named "sos".  This would only be done for
+;                testing purposes, or if Son-of-Spectro has been moved
+;                to another machine.
 ;
 ; OUTPUT:
 ;
@@ -56,7 +60,7 @@
 ;   03-April-2001  Written by Scott Burles, FNAL
 ;-
 ;------------------------------------------------------------------------------
-pro remove2redo, mjd=mjd, plate=plate, expnum=expnum
+pro remove2redo, mjd=mjd, plate=plate, expnum=expnum, not_sos=not_sos
 
    quiet = !quiet
    !quiet = 1
@@ -69,6 +73,21 @@ pro remove2redo, mjd=mjd, plate=plate, expnum=expnum
 
    if (NOT keyword_set(getenv('SPECLOG_DIR'))) then $
     setenv,'SPECLOG_DIR=/data/spectro/astrolog'
+
+   ;----------
+   ; Insist that this proc only run on machines named "sos"
+
+   if (NOT keyword_set(apo_uname)) then begin
+      spawn, 'uname -n', uname_string
+      apo_uname = (strsplit(uname_string[0], '.', /extract))[0]
+   endif
+
+   if (apo_uname NE 'sos' AND keyword_set(not_sos) EQ 0) then begin
+      print, 'This procedure can only be run on the machine sos.apo.nmsu.edu'
+      print, 'If Son-of-Spectro is now running on a different machine, you'
+      print, 'can call this routine with /not_sos'
+      return
+   endif
 
    ;----------
    ; If MJD is not specified, then find the most recent MJD for output files
