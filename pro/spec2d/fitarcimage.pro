@@ -32,7 +32,7 @@
 ;                default to (NFIBER-30)/2
 ;   nmed       - Number of rows around ROW to median filter for initial
 ;                wavelengths solution; default to 5
-;   masdev     - max deviation in log lambda to allow (default 1.0e-5=7 km/s)
+;   maxdev     - max deviation in log lambda to allow (default 1.0e-5=7 km/s)
 ;   gauss      - Use gaussian profile fitting for final centroid fit
 ;
 ; OUTPUTS:
