@@ -1,12 +1,24 @@
 
+-------------------------------------------------------------------------------
+v4_8_4 (Aug 29, 2001 idlspec2d+idlutils)
+
+Minor fix to 2D-combining code for running plates 214,340,270 which failed.
+
 MYFLUXCALIB: Fix bug whereby the PCA spectrum could be negative.
      (The routine PCA_SOLVE() can return a negative-valued spectrum even
      if all the input spectra are positive-valued.)  This crashed plate 340.
 PCA_SOLVE: Forgot to return optional outputs OUTMASK, USEMASK in the case
            of only a single spectrum being passed.  This happened in the
            combining of plate 214 in MYFLUXCALIB, and crashed.
+SDSSPROC: Prevent dividing-by-zero when using /APPLYPIXFLAT,
+          though the resulting NaN's had been caught and replaced anyway.
 SPREDUCE1D: The outputs ANYANDMASK,ANYORMASK were not being constructed
             properly, and were simply wrong.  Should be fixed now.
+sprobot,sprobot_start: Scripts now use the environment variables
+          SPROBOT_HOST,SPROBOT_LOCALDISKS for telling which machine to copy
+          the raw data from, and which local disks to write to.
+          These scripts are now generalized to the point where they can
+          be run from anywhere by just setting up environment variables.
 
 BSPLINE_BKPTS (in idlutils): Do not crash even in the case of very few
          data points.  But untested whether this actually does what we want
@@ -18,6 +30,8 @@ eviltarball (in idlutils): New script to export a version of a code
 
 -------------------------------------------------------------------------------
 v4_8_3 (Aug 24, 2001 idlspec2d+idlutils)
+
+Cut version for running P-1D, improving the redshift fits + errors.
 
 BATCH1D,BATCH2D: Added /CLOBBER option to reduce all specified plates,
          over-writing any previous reductions.
@@ -76,6 +90,8 @@ build_links (in idlutils): Do not build a link for any file if the link
 -------------------------------------------------------------------------------
 v4_8_2 (Aug 16, 2001 idlspec2d+idlutils)
 
+Trivial changes for running this version at Fermi.
+
 SPALLREDUCE: SPECFLAT_DIR is not set now, if SPECFLAT product exists and 
           is specified
 
@@ -90,6 +106,8 @@ evilinstall (in idlutils): Syntax changes to work with bash on spectro.
 -------------------------------------------------------------------------------
 v4_8_1 (Aug 9, 2001 idlspec2d+idlutils)
 v1_2 of specflat
+
+Cut version for re-running Spectro-2D on all data.
 
 EXTRACT_OBJECT,SMOOTH_SUPERFLAT: Better working smooth_superflat (with a QA
           plot).  Added "Area" to plot anything above 0.01 gives a warning.
@@ -120,6 +138,8 @@ SPHEREMATCH (in idlutils): New code to match two lists of RA,DEC.
 -------------------------------------------------------------------------------
 v4_8_0 (Jul 17, 2001 idlspec2d+idlutils)
 v1_1 of specflat
+
+First cut of v4_8 with many major changes.  Not yet tested for prime time.
 
 ******MAJOR CHANGE: spFrame output is now normalized with superflat,
                     to correct for small scale features which cannot be removed
