@@ -7,7 +7,7 @@
 
 if ps ax | grep aporsync.sh  | grep -v -e grep
 then
-  echo "aporsync already running, exiting..."
+  echo "APORSYNC: Already running at "`date`
   exit
 fi
 

@@ -23,8 +23,8 @@ do
   input=$f
   dir=`echo $input | sed -n 's/\/[^\/]*$//p'`
   filename=`echo $input | sed -n 's/\/.*\///p'`
-  echo Dir: $dir
-  echo file: $filename
+  echo STARTAPO: Directory $dir
+  echo STARTAPO: Filename $filename
   astrolog=`echo $dir | sed -n 's/\/data\/spectro/\/astrolog/p'`
   outdir=`echo $dir | sed -n 's/spectro/spectrologs/p'`
   copydir=/data/spectrologs/html/
@@ -39,13 +39,12 @@ do
     mkdir $copydir
   fi
 
-  good=`expr "$filename" : 'sdR'` 
-  echo $good
+  good=`expr "$filename" : 'sdR'`
   if [ "$good" -gt 0 ] 
     then
-     echo Processing ... $input 
-     echo  "aporeduce, '$filename',indir='$dir', outdir='$outdir', \
-          plugdir='$astrolog', copydir='$copydir' " | nice idl
+     echo STARTAPO: Processing $input at `date`
+     echo "aporeduce, '$filename',indir='$dir', outdir='$outdir', \
+          plugdir='$astrolog', copydir='$copydir' " | nice idl >& /dev/null
   fi
 
 done

@@ -1,21 +1,22 @@
 #! /bin/sh
 #------------------------------------------------------------------------------
-# This is a cron job that should run once per day from plate-mapper.apo.nmsu.edu,
-# currently at 7am.
+# This is a cron job that should run once per day from
+# plate-mapper.apo.nmsu.edu, currently at 7:20 am.
 #
-# Look for all MJD directories, "/data/spectro/spectrologs/5*".  Loop through
-# each such directory.  If a file "logfile*html" exists, then construct a
-# message to send to the SDSS mailing list sdss-test (???).
+# Look for all MJD directories, "/data/spectro/spectrologs/[56789]*".
+# Loop through each such directory.  If a file "logfile*html" exists, then
+# construct a message to send to the SDSS mailing list at:
+#    sdss-speclog.princeton.edu
 # This message is a 1-line text message that links to the HTML file, which in
 # turn links to any PostScript plots that were also in that same directory.
 #
 # S. Burles, APO, 4 May 2000
 #------------------------------------------------------------------------------
 
-logs=`find /data/spectro/spectrologs/5* -name "logfile*html" -print | grep -v current`
+logs=`find /data/spectro/spectrologs/[56789]* -name "logfile*html" -print | grep -v current`
 
 #   This doesn't work below below the argument list gets too large
-# logs=`ls -d /data/spectro/spectrologs/5*/* \
+# logs=`ls -d /data/spectro/spectrologs/[56789]*/* \
 #          | grep logfile | grep html | grep -v lock`
 
 # The variable $thislog is the name of the HTML file with its full path.
@@ -43,7 +44,7 @@ do
 #     sn=`ls $dir | grep snplot | grep ps`
       for thissn in $sn
       do 
-        echo $thissn
+        echo MAILHTML: SNFILE $thissn
         snname=`echo $thissn | sed -n 's/\/.*\///p'`
         echo '!'"$snname <<EOT" >> $mailfile
         cat $thissn >> $mailfile
@@ -52,13 +53,11 @@ do
 
       mail -s "$subject" sdss-speclog@astro.princeton.edu < $mailfile
 
-#
-#	Kill almost everything in the log directory
-#
+#     Kill almost everything in the log directory
 
-     rm -f $dir/*.fits
-     rm -f $dir/*.ps
-     rm -f $dir/logfile*.html
+      rm -f $dir/*.fits
+      rm -f $dir/*.ps
+      rm -f $dir/logfile*.html
    fi
 done
 
