@@ -256,7 +256,8 @@ ophdrfix sdR-??-00011085  SPEC2 "'1 0 1 1 '"
 # science exposure on plate 727 on MJD 52207.
 ophdrfix sdR-??-00011504 FLAVOR   "'unknown'"
 
-# These data taken on plate 724 on MJD 52240 were really just test data.
+# These data taken on plate 724 on MJD 52240 were really just test data
+# (using plate 724 during twilight).
 ophdrfix sdR-??-0001197[6-9] FLAVOR   "'unknown'"
 
 # Wrong exposure time (2 sec instead of 1509 sec) for plate 757 on MJD 52238.
