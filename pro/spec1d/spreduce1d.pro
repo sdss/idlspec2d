@@ -159,7 +159,7 @@ ormask = 0 ; Free memory
    ; Trim to specified fibers if FIBERID is set
 
    if (keyword_set(fiberid)) then begin
-      if (min(fiberid) LT 0 OR max(fiberid) GT nobj) then $
+      if (min(fiberid) LE 0 OR max(fiberid) GT nobj) then $
        message, 'Invalid value for FIBERID: must be between 0 and '+string(nobj)
       objflux = objflux[*,fiberid-1]
       objivar = objivar[*,fiberid-1]
