@@ -1,6 +1,7 @@
 * text=auto !eol
 etc/BG14.txt -text
 etc/FG3.txt -text
+etc/altbg14.txt -text
 etc/intrinsic1.dat -text
 etc/lamphgcdne.dat -text
 etc/lamplist.dat -text
