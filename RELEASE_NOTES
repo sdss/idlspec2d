@@ -16,6 +16,9 @@ LOCATESKYLINES: Change MAXSHIFT from 2.0 pixels to 3.5 pixels.  The worst-
            case real arc->science flexure that we've seen is 3.2 pix
            for the r2 camera on plate 192 MJD 51461.
            Use the INMASK keyword in the call of FITMEANX().
+PLATELIST: Use PLUG_RA,PLUG_DEC to match duplicate observations of
+           individual objects, rather than RA,DEC (which can be zeros
+           if there was no match to the photometry).
 SDSSPROC: Call the new proc WARN_DAYTIME.
 SPCALIB: The correct TSET structure was not always being written
            to the spFlat files (though those files aren't actually
