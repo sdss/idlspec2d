@@ -6,14 +6,17 @@
 ;   Extract, wavelength-calibrate, and flatten SDSS spectral frame(s).
 ;
 ; CALLING SEQUENCE:
-;   spreduce, flatname, arcname, objname, $
+;   spreduce, flatname, arcname, objname, pixflatname, $
 ;    plugfile=plugfile, lampfile=lampfile, $
 ;    indir=indir, plugdir=plugdir, outdir=outdir
 ;
 ; INPUTS:
-;   flatname   - Name of flat-field SDSS image(s)
+;   flatname   - Name of flat-field SDSS image
 ;   arcname    - Name of arc SDSS image
 ;   objname    - Name of object SDSS image(s)
+;
+; OPTIONAL INPUT:
+;   pixflatname- Name of pixel-to-pixel flat, produced with SPFLAT.
 ;
 ; REQUIRED KEYWORDS:
 ;   plugfile   - Name of plugmap file (Yanny parameter file)
@@ -43,8 +46,8 @@
 ;   extract_boxcar()
 ;   extract_image
 ;   readcol
+;   readfits()
 ;   sdssproc
-;   spflatten()
 ;   traceset2xy
 ;   xy2traceset
 ;   yanny_read
@@ -54,7 +57,7 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro spreduce, flatname, arcname, objname, $
+pro spreduce, flatname, arcname, objname, pixflatname, $
  plugfile=plugfile, lampfile=lampfile, $
  indir=indir, plugdir=plugdir, outdir=outdir
 
@@ -91,10 +94,53 @@ pro spreduce, flatname, arcname, objname, $
    plugmap = *pstruct[0]
 
    ;---------------------------------------------------------------------------
-   ; Construct pixel-to-pixel flat-field
+   ; Read pixel-to-pixel flat-field
    ;---------------------------------------------------------------------------
 
-   pixflat = spflatten(flatname, indir=indir, xsol=xsol, flat_flux=flat_flux)
+   if (keyword_set(pixflatname)) then begin
+      fullpath = filepath(pixflatname, root_dir=indir)
+      fullname = findfile(fullpath, count=ct)
+      if (ct NE 1) then $
+       message, 'Cannot find pixflat image' + pixflatname
+      pixflat = readfits(pixflatname)
+   endif
+
+   ;---------------------------------------------------------------------------
+   ; Read flat-field image
+   ;---------------------------------------------------------------------------
+
+   fullpath = filepath(flatname, root_dir=indir)
+   fullname = findfile(fullpath, count=ct)
+   if (ct NE 1) then $
+    message, 'Cannot find flat image' + flatname
+   sdssproc, fullname[0], flatimg, flativar, hdr=flathdr
+ 
+   ; Flat-field the flat image
+   if (keyword_set(pixflatname)) then $
+    flatimg = flatimg / pixflat
+
+   ;---------------------------------------------------------------------------
+   ; Create spatial tracing from flat-field image
+   ;---------------------------------------------------------------------------
+
+   xcen = trace320crude(flatimg, yset=ycen, maxdev=0.15)
+
+   xy2traceset, ycen, xcen, tset, ncoeff=5, maxdev=0.1
+   traceset2xy, tset, ycen, xsol
+
+   ;---------------------------------------------------------------------------
+   ; Extract the flat-field image
+   ;---------------------------------------------------------------------------
+
+   sigma = 1.0
+   proftype = 1 ; Gaussian
+   highrej = 20
+   lowrej = 25
+   nPoly = 4
+
+   extract_image, flatimg, flativar, xsol, sigma, flat_flux, flat_fluxivar, $
+    proftype=proftype, wfixed=[1,1,1], $
+    highrej=highrej, lowrej=lowrej, nPoly=nPoly, relative=1, ymodel=ymodel
 
    ;---------------------------------------------------------------------------
    ; Read the arc
@@ -107,7 +153,8 @@ pro spreduce, flatname, arcname, objname, $
    sdssproc, fullname[0], arcimg, arcivar, hdr=archdr
 
    ; Flat-field the arc image
-   arcimg = arcimg / pixflat
+   if (keyword_set(pixflatname)) then $
+    arcimg = arcimg / pixflat
 
    ;---------------------------------------------------------------------------
    ; Extract the arc image
@@ -208,7 +255,8 @@ stop
       sdssproc, fullname[0], objimg, objivar, hdr=objhdr
 
       ; Flat-field the object image
-      objimg = objimg / pixflat
+      if (keyword_set(pixflatname)) then $
+       objimg = objimg / pixflat
 
       ;------------------
       ; Tweak up the spatial traces
