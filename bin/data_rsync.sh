@@ -49,7 +49,7 @@ do
 #   First move to rawcopy locally...	
 #   Exclude plain .fit files, assuming that .gz versions exist
 #
-    rsync -arv --exclude="*.fit" $dir $rdir
+    rsync -arv --exclude="*.fit" --exclude="*.fits" $dir $rdir
 
 
 #######################################################

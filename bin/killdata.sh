@@ -50,7 +50,7 @@ do
 
     introuble=`ls $dir/fflat*.fits $dir/sci*.fits $dir/tset*.fits $dir/wset*.fits $dir/*.ps $dir/logfile*.html 2>1`
 
-    if  [ $introuble ]
+    if  [ "$introuble" ]
     then
       echo KILLDATA: cleaning up $dir
       rm -f $introuble
