@@ -53,7 +53,7 @@ function smear_compare, smearname, finalwave, sciflux, sciivar, $
 
      sphoto_calib, wave[*,isphoto], flux[*,isphoto], fluxivar[*,isphoto], $
        pixelmask[*,isphoto], plugtag[isphoto], fcalfiles, $
-       stdstarfile, input_calibset=incalib
+       stdstarfile, input_calibset=incalib, noplot=noplot
 
      ;---------------------------------
      ; Apply sphoto calibration to all fibers in each frame
@@ -154,10 +154,10 @@ function smear_compare, smearname, finalwave, sciflux, sciivar, $
   medwave2d = float(medwave) # replicate(1, nfiber)
 
   xy2traceset, medwave2d, smear_medflux, smearset, invvar=smear_mask, $
-    ncoeff=4, inputfunc=sci_medflux, lower=3, upper=3
+    ncoeff=3, inputfunc=sci_medflux, lower=3, upper=3
 
   ; Save as binary table with science & smear S/N ratios
-  smear_struct = {sci_sn: 0.0, smear_sn: 0.0, legendre_coeff: fltarr(4)}
+  smear_struct = {sci_sn: 0.0, smear_sn: 0.0, legendre_coeff: fltarr(3)}
 
   smear_hdu = make_array(dim=nfiber, value=smear_struct)
   smear_hdu.legendre_coeff = smearset.coeff
