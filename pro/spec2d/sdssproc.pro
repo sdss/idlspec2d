@@ -135,18 +135,18 @@ function make_badcolumn_mask, bcfile, camrow, camcol, nc=nc, nr=nr
 
    yanny_read, bcfile, pdata
    if (size(pdata,/tname)) EQ 'INT' then begin
-     splog,' Could not read BC file '+bcfile
-     return, 0
+      splog, 'WARNING: Could not read BC file ' + fileandpath(bcfile)
+      return, 0
    endif
 
    bc = *pdata[0]
    yanny_free, pdata
 
    ibc = where(bc.camrow EQ camrow AND bc.camcol EQ camcol, nbc)
-   if NOT keyword_set(nbc) then begin
-     splog,' Could not parse BC file contents or find corresponding camera' $
-               +bcfile
-     return, 0
+   if (NOT keyword_set(nbc)) then begin
+      splog,'WARNING: Could not find this camera info in BC file ' $
+       + fileandpath(bcfile)
+      return, 0
    endif
 
    bc = bc[ibc]
