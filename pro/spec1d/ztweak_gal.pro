@@ -48,7 +48,7 @@ pro ztweak_gal, platefile, subsamp=subsamp
    if (NOT keyword_set(subsamp)) then subsamp = 10
 
 platefile = 'spPlate-0306-51690.fits'
-djs_readcol, '/home/schlegel/idlspec2d/etc/regress1d_all.dat', $
+djs_readcol, getenv('IDLSPEC2D_DIR') + '/etc/regress1d_all.dat', $
  chicplate, junk, chicfiberid, chicz, chicclass, format='(L,L,L,F,A)'
 ii=where(chicplate EQ 306)
 chicz=chicz[ii]
