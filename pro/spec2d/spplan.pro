@@ -36,6 +36,7 @@
 ;     spplan, indir='51441/'
 ;
 ; BUGS:
+;   Need to implement lampfile.
 ;
 ; PROCEDURES CALLED:
 ;   yanny_read

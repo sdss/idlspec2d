@@ -115,13 +115,8 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    ;---------------------------------------------------------------------------
 
    if (keyword_set(pixflatname)) then begin
-      fullpath = filepath(pixflatname, root_dir=indir)
-      fullname = findfile(fullpath, count=ct)
-      if (ct NE 1) then begin
-	fullpath = filepath(pixflatname, root_dir=getenv('EVIL_PAR'))
-        fullname = findfile(fullpath, count=ct)
-      endif
-      if (ct NE 1) then $
+      fullname = findfile(pixflatname, count=ct)
+      if (ct EQ 0) then $
        message, 'Cannot find pixflat image ' + pixflatname
       pixflat = readfits(fullname[0])
    endif
@@ -281,6 +276,7 @@ for i=0,16 do oplot,fflat[*,i*19]
       whopping = where(scrunch GT 10000.0, whopct)
       print, 'Number of bright fibers = ', whopct
 
+; QUICK EXTRACTION...
 ;extract_image, objimg, objivar, xsol, sigma, obj_flux, obj_fluxivar, $
 ; proftype=proftype, wfixed=[1,1,1], $
 ; highrej=highrej, lowrej=lowrej, nPoly=nPoly, whopping=whopping
@@ -301,7 +297,6 @@ for i=0,16 do oplot,fflat[*,i*19]
       yrow = lindgen(nrow/skiprow)*skiprow + skiprow/2
       nfirst = n_elements(yrow)
 
-; COMMENT OUT FOR NOW SINCE extract_image crashes on step 3 ???
       ; 1) First extraction
       print, 'Object extraction: Step 1'
       extract_image, objimg, objivar, xsol, sigma, obj_flux, obj_fluxivar, $
@@ -317,8 +312,8 @@ for i=0,16 do oplot,fflat[*,i*19]
       fitans = fitansimage(ansimage, nparams, nTrace, nPoly, nfirst, yrow, $
        fluxm = [1,1,0])
 
-;
-;	shiftfit, fitans, nTrace, xsol, sigma, xsolout, sigmaout
+; ???
+;     shiftfit, fitans, nTrace, xsol, sigma, xsolout, sigmaout
 ;      
 
       ; 3) Second and final extraction
@@ -336,16 +331,19 @@ for i=0,16 do oplot,fflat[*,i*19]
       ;------------------
       ; Tweak up the wavelength solution to agree with the sky lines.
 
-      locateskylines, skylinefile, obj_flux, obj_fluxivar, $
-       wset, invset, xsky, ysky, skywaves,lambda=skylambda
+; DO NOT TWEAK THE SKY LINES -- THIS ROUTINE MESSES UP NEAR ROW 145 ???
+; COMMENT OUT locateskylines, fit_skyset
+
+;      locateskylines, skylinefile, obj_flux, obj_fluxivar, $
+;       wset, invset, xsky, ysky, skywaves,lambda=skylambda
 
        wset_tweak = wset
        invset_tweak = invset
 
-	print, 'now tweaking to sky lines'
-	skycoeff = 2
-      fit_skyset, xpeak, ypeak, lambda, xsky, ysky, skylambda, skycoeff, $
-        goodlines, wset_tweak, invset_tweak, ymin=ymin, ymax=ymax, func=func
+;      print, 'now tweaking to sky lines'
+;      skycoeff = 2
+;      fit_skyset, xpeak, ypeak, lambda, xsky, ysky, skylambda, skycoeff, $
+;        goodlines, wset_tweak, invset_tweak, ymin=ymin, ymax=ymax, func=func
 
       ;------------------
       ; Sky-subtract
@@ -380,6 +378,5 @@ for i=0,16 do oplot,fflat[*,i*19]
    print,'> SPREDUCE: ', systime(1)-t_begin, ' seconds TOTAL', $
     format='(A,F8.2,A)'
 
-stop
 end
 ;------------------------------------------------------------------------------
