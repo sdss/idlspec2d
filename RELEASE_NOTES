@@ -6,6 +6,7 @@ EXTRACT_OBJECT: Set the "NEARWHOPPER" mask bits only for fibers within 2
 EXTRACT_OBJECT, SKYSUBTRACT: Exit gracefully in the case of no good sky
           fibers.  In that case, issue an "ABORT" log message, return
           SKYSTRUCT=0 from SKYSUBTRACT, then do not write an spFrame file.
+EXTRACT_ROW: Do not correct rejection levels in relative mode if chi^2 < 1.0.
 FIBERFLAT: Update to call SUPERFLAT() as a function instead of a proc,
            though should not be functionally different yet.
 FITMEANX: Make robust to no good sky lines for tweaking wavelength solution.
@@ -33,6 +34,9 @@ REJECT_SCIENCE: New proc to reject science exposures if they are blatantly
                 science frame is rejected.
 SDSSPROC: Add VERSLOG, VERSFLAT keywords to specify versions of the
           products SPECLOG, SPECFLAT.
+SDSSPROC, SPCALIB, SPREDUCE, SPREDUCE2D: No longer pass the name of the pixel
+          flat between all these files.  Instead, just let SDSSPROC find the
+          correct one in the "specflat" product, in $SPECLOG_DIR/flats.
 SPCOADD_FRAMES: Include MJDLIST keyword in spPlate header, which will be
                 the list of all MJD's used in an SPCOMBINE.
                 Add BUNIT keyword for the flux, inverse variance, and
