@@ -28,16 +28,28 @@ function zfitmax, yarr, xarr, xguess=xguess, width=width, xerr=xerr, ypeak=ypeak
    if (ct LT 3) then $
     return, xguess
 
-   if (!version.release LT '5.4') then begin
-      coeff = poly_fit(xarr[indx]-xguess, yarr[indx], 2, $
-       yfit, junk, junk, corrm)
-   endif else begin
-      coeff = poly_fit(xarr[indx]-xguess, yarr[indx], 2, $
-       yfit=yfit, covar=corrm, /double)
-   endelse
+;   if (!version.release LT '5.4') then begin
+;      coeff = poly_fit(xarr[indx]-xguess, yarr[indx], 2, $
+;       yfit, junk, junk, corrm)
+;   endif else begin
+;      coeff = poly_fit(xarr[indx]-xguess, yarr[indx], 2, $
+;       yfit=yfit, covar=corrm, /double)
+;   endelse
+;   xbest = -0.5 * coeff[1] / coeff[2] + xguess
+;   xerr = - 0.5 * sqrt(corrm[1,1]) / coeff[2] $
+;    + 0.5 * coeff[1] * sqrt(corrm[2,2]) / (coeff[2])^2
+
+   ; Replace above with SVDFIT, and it should work with IDL 5.3 or 5.4.
+   ; The above code gave wrong XERR from IDL 5.4 due to changes in POLY_FIT().
+   ndegree = 3
+   coeff = svdfit(xarr[indx]-xguess, yarr[indx], ndegree, $
+    yfit=yfit, sigma=corrsig, /double)
+   yerror = sqrt(total( (yarr[indx]-yfit)^2 / (n_elements(indx)-ndegree) ))
    xbest = -0.5 * coeff[1] / coeff[2] + xguess
-   xerr = - 0.5 * sqrt(corrm[1,1]) / coeff[2] $
-    + 0.5 * coeff[1] * sqrt(corrm[2,2]) / (coeff[2])^2
+   xerr = - 0.5 * corrsig[1] / coeff[2] $
+    + 0.5 * coeff[1] * corrsig[2] / (coeff[2])^2
+   xerr = xerr * yerror ; Rescale by the apparent errors in Y
+   ; Would be equiv. to SVDFIT(WEIGHTS=REPLICATE(1.,N_ELEMENTS(INDX))/YERROR)
 
    ; Insist that XBEST is a maximum (not a minimum)
    if (coeff[2] GE 0) then $
