@@ -87,8 +87,8 @@ pro fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
    ;  Create basic smear mask
    ;
    smearmask = lonarr(nfiber) 
-   if (sxpar(bhdr, 'FLAVOR') EQ 'smear' AND $
-       sxpar(rhdr, 'FLAVOR') EQ 'smear') then $
+   if (strtrim(sxpar(bhdr, 'FLAVOR'),2) EQ 'smear' AND $
+       strtrim(sxpar(rhdr, 'FLAVOR'),2) EQ 'smear') then $
          smearmask = smearmask OR pixelmask_bits('SMEARIMAGE')
 
    ;----------
@@ -248,12 +248,12 @@ pro fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
          corrset = finalset
          traceset2xy, corrset, wave, corrimage
 
-         bad = where(djs_median(corrimage,1) GT 3.0*median(corrimage))
+         bad = where(djs_median(corrimage,1) GT 3.0*median(corrimage),nbad)
          if bad[0] NE -1 then begin
            splog, 'WARNING: Large deviations in flux correction '
            splog, 'WARNING: Replacing with median solution in fibers:', $
                 string(bad + 1)
-           corrset[bad].coeff = mediancoeff
+           corrset.coeff[*,bad] = mediancoeff # replicate(1,nbad)
            fibersn[bad] = 3
          endif
          ; Set maskbits and append to end of corrfile
