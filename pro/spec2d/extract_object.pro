@@ -319,14 +319,19 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ra = sxpar(objhdr,'RA')
    dec = sxpar(objhdr,'DEC')
    tai = sxpar(objhdr,'TAI')
-   if (size(ra, /tname) NE 'INT' AND size(dec, /tname) NE 'INT' AND  $
-    size(tai, /tname) NE 'INT') then begin
+   ; If all these keywords are present in the header, they will be either
+   ; type FLOAT or DOUBLE.  Note that SDSS will put NaN in the header for
+   ; these values if they are unknown.
+   if ( size(ra, /tname) NE 'INT' $
+    AND size(dec, /tname) NE 'INT' $
+    AND size(tai, /tname) NE 'INT' $
+    AND finite(ra) AND finite(dec) AND finite(tai) ) then begin
       helio = heliocentric(ra, dec, tai=tai)
       splog, 'Heliocentric correction = ', helio, ' km/s'
       sxaddpar, objhdr, 'HELIO_RV', helio, $
        ' Heliocentric correction (added to velocities)'
    endif else begin
-      splog, 'WARNING: Header info not present to compute heliocentric correcoin'
+      splog, 'WARNING: Header info not present to compute heliocentric correction'
    endelse
 
    ;------------------
