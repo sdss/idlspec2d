@@ -29,10 +29,6 @@ bashstring=sos_redo
 idlstring=remove2redo
 remotehost=""
 
-if [ -z "$SPECLOG_DIR" ] ; then
-   SPECLOG_DIR=/data/spectro/astrolog
-fi
-
 for thisarg in "$@" ; do
   if [ `echo "$thisarg" | grep "="` ] ; then
     bashstring="$bashstring $thisarg"
