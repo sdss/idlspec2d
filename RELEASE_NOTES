@@ -1,9 +1,10 @@
 
-v4_9_2 (Feb ??, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
+v4_9_2 (Feb 12, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
 Built against specflat v1_3.
 
 This tagged version is for running Spectro-2D.
 It also addresses some rsync bugs for Son-of-Spectro.
+Re-write of velocity dispersion + line-fitting for P-1D.
 
 APO_CHECKLIMITS: Wasn't matching on flavor.  Fixed.
 APO_LOG2HTML: Mistakenly was listing times as hr:sec instead of hr:min!
