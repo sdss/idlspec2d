@@ -126,7 +126,6 @@ function spflux_read_kurucz, loglam, dispimg, iselect=iselect1, $
       ; The above rebinning conserves flux, so we are no longer in
       ; units of erg/cm^2/s/Ang.  Divide by one power of wavelength
       ; to recover those units.  (The -4. is an arbitrary scaling.)
-; Check this ???
       for imodel=0L, nmodel-1 do $
        kflux[*,imodel] = kflux[*,imodel] / 10.d0^(kloglam-4.)
 
@@ -212,7 +211,7 @@ function spflux_read_kurucz, loglam, dispimg, iselect=iselect1, $
    return, modflux
 end
 ;------------------------------------------------------------------------------
-; Create a mask of 1's and 0's, where wavelenths that should not be used
+; Create a mask of 1's and 0's, where wavelengths that should not be used
 ; for fluxing (like near stellar features) are masked.
 ; 0 = not near lines, 1 = near lines
 ; HWIDTH = half width in log-wavelength for masking stellar lines
@@ -581,7 +580,7 @@ function spflux_mratio_flatten, loglam1, mratio1, mrativar1, pres=pres
 
 ; The following fit should probably have some kind of rejection !!!???
          ; The following is a weighted fit...
-         pres1 = poly_fit(thisloglam-3.5, thisratio, npoly-1, $
+         pres1 = poly_fit(thisloglam-3.5d0, thisratio, npoly-1, $
           measure_errors=1./sqrt(thisivar))
 
          ; The following would be an unweighted fit...
@@ -730,7 +729,6 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
 
       ; The returned models are redshifted, but not fluxed or
       ; reddened.  Do that now...  we compare data vs. model reddened.
-; Check this ???
       extcurve1 = ext_odonnell(10.^loglam[*,*,ip], 3.1)
       thismodel = thismodel * 10.^(-extcurve1 * 3.1 * ebv[ip] / 2.5)
       extcurve2 = ext_odonnell(10.^tmploglam, 3.1)
@@ -1003,6 +1001,9 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
        splog, 'WARNING: Min/max fluxcorr = ', minval, maxval $
       else $
        splog, 'Min/max fluxcorr = ', minval, maxval
+;stop ; ???
+;plot,10^loglam[*,iblue,ifinal],flatarr_b,ps=3
+;plot,10^loglam[*,ired,ifinal],flatarr_r,ps=3
 
       ;----------
       ; Write the output file
