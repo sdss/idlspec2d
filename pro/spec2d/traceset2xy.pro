@@ -12,9 +12,11 @@
 ;   tset       - Structure containing trace set
 ;
 ; OPTIONAL KEYWORDS:
+;   xpos       - Input positions to evaluate YPOS; if not specified, then
+;                generate an [NX,NTRACE] array of each pixel position
 ;
 ; OUTPUTS:
-;   xpos       - X positions corresponding to YPOS as an [nx,Ntrace] array
+;   xpos       - X positions corresponding to YPOS
 ;   ypos       - Y centers as an [nx,nTrace] array
 ;
 ; OPTIONAL OUTPUTS:
