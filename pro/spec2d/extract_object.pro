@@ -86,6 +86,7 @@
 ;   qaplot_skysub
 ;   skyline_dispersion()
 ;   skysubtract
+;   smooth_halo2d()
 ;   spadd_guiderinfo
 ;   splog
 ;   sxaddpar
@@ -231,11 +232,12 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
     title=plottitle+'Scattered Light on '+objname
 
    ; (3) Calculate halo image
-   splog, 'Step 3: Calculate Halo Image'
+   splog, 'Step 3: Calculate halo image'
    smooth2 = 1.5 * smooth_halo2d(ymodel - scatfit, wset)
 
-   ; (4) Re-extract with no halo image
-   splog, 'Step 4: Extracting with halos removed
+   ; (4) Re-extract with halo image subtracted in order to measure
+   ;     any remaining scattered light
+   splog, 'Step 4: Extracting with halos removed'
    image_sub = image - smooth2
 
    extract_image, image_sub, invvar, xnow, sigma2, tempflux, tempfluxivar, $
@@ -250,8 +252,8 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ;-----------------------------------------------------------------------
    ;  Now, subtract halo image and do final extraction with all rows
    ;-----------------------------------------------------------------------
-   ; (4) Second and final extraction
-   splog, 'Step 4: Final Object extraction'
+   ; (6) Final extraction
+   splog, 'Step 6: Final Object extraction'
 
    highrej = 8
    lowrej = 5
@@ -260,9 +262,9 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    wfixed = [1] ; Fit to height only (fixed width + center)
    nterms = n_elements(wfixed)
    reject = [0.2,0.2,0.2]
-   npoly = 0 ; maybe more structure, lots of structure
+   npoly = 0
 
-   extract_image, (image_sub - scatfit2), invvar, xnow,sigma2, flux,fluxivar,$
+   extract_image, image_sub - scatfit2, invvar, xnow, sigma2, flux, fluxivar,$
     proftype=proftype, wfixed=wfixed, ansimage=ansimage, $
     highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
     chisq=chisq, ymodel=ymodel, pixelmask=pixelmask, reject=reject, /relative
