@@ -12,7 +12,6 @@ all :;
 #
 install :
 	- cp *.pro $(IDLSPEC2D_DIR)/pro/science/lya
-	- cp sp* $(IDLSPEC2D_DIR)/pro/science/lya
 	- cp Makefile $(IDLSPEC2D_DIR)/pro/science/lya
 
 clean :
