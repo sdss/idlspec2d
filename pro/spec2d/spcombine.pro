@@ -122,7 +122,8 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay
    ncam = N_elements(camnames)
 
    ;----------
-   ; Select frames that match the cameras specified by DOCAM
+   ; Select frames that match the cameras specified by DOCAM, then trim
+   ; to files that aren't names UNKNOWN, and that actually exist on disk.
 
    for ido=0, n_elements(docams)-1 do begin
       ii = (where(camnames EQ docams[ido], camct))[0]
@@ -135,6 +136,16 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay
    j = where(objname NE 'UNKNOWN')
    if (j[0] EQ -1) then begin
       splog, 'ABORT: All file names are UNKNOWN in plan file ' + thisplan
+      cd, origdir
+      return
+   endif
+   objname = objname[j]
+
+   for ifile=0, n_elements(objname)-1 do $
+    if ((findfile(objname[ifile]))[0] EQ '') then objname[ifile] = ''
+   j = where(objname)
+   if (j[0] EQ -1) then begin
+      splog, 'ABORT: No files on disk for plan file ' + thisplan
       cd, origdir
       return
    endif
