@@ -144,7 +144,6 @@ pro remove2redo, mjd=mjd, plate=plate, expnum=expnum
       if (idone[0] NE -1) then $
        qdone[idone] = 1B
    endif
-help,fullname,shortname,qdone,total(qdone)
 
    ;----------
    ; Lock the file to do this - otherwise we might read/write to a partially
