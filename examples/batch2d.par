@@ -4,19 +4,18 @@
 typedef struct {
   char remotehost[40];   # Remote host name
   char remotedir[40];    # Remote directory
-  char protocol[5];      # Protocol name, ssh or rsh
+  char protocol[5];      # Protocol name: ssh, ssh1, ssh2 or rsh
 } hostconfig;
 
-hostconfig photo1.astro.princeton.edu "" ssh1
-hostconfig wire1.princeton.edu "" ssh1
-hostconfig wire2.princeton.edu "" ssh1
-hostconfig wire3.princeton.edu "" ssh1
-hostconfig wire4.princeton.edu "" ssh1
-hostconfig wire5.princeton.edu "" ssh1
-hostconfig wire6.princeton.edu "" ssh1
-hostconfig wire7.princeton.edu "" ssh1
-hostconfig wire8.princeton.edu "" ssh1
+hostconfig photo1.astro.princeton.edu "" ssh
+hostconfig photo2.astro.princeton.edu "" ssh
+hostconfig photo3.astro.princeton.edu "" ssh
+hostconfig photo5.astro.princeton.edu "" ssh
+hostconfig wire3.princeton.edu "" ssh
+hostconfig wire5.princeton.edu "" ssh
+hostconfig wire7.princeton.edu "" ssh
+hostconfig wire8.princeton.edu "" ssh
 #hostconfig localhost "" ""
-#hostconfig dusty.princeton.edu "" ssh1
-#hostconfig kaze.princeton.edu "" ssh1
+#hostconfig dusty.princeton.edu "" ssh
+#hostconfig kaze.princeton.edu "" ssh
 
