@@ -1,7 +1,7 @@
 File=Table
 Product=evilspec
 #*************************************************
-# Starting Group definition
+
 Group:
 Flavor=Linux+2
 Qualifiers=""
@@ -10,23 +10,8 @@ Common:
    Action=setup
       proddir()
       setupenv()
-      sourceRequired(${EVILSPEC_DIR}/ups/setup.${UPS_SHELL},UPS_ENV)
+      envSet(EVIL_STARTUP, ${UPS_PROD_DIR}/etc/evilStartup.tcl)
+      pathAppend(PATH, ${UPS_PROD_DIR}/bin)
 End:
-# End Group definition
-#*************************************************
 
 #*************************************************
-# Starting Group definition
-Group:
-Flavor=Linux+2
-Qualifiers="build"
-
-Common:
-   Action=setup
-      proddir()
-      setupenv()
-      sourceRequired(${EVILSPEC_UPS}/ups/setup.${UPS_SHELL},UPS_ENV)
-End:
-# End Group definition
-#*************************************************
-
