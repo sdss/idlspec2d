@@ -151,6 +151,19 @@ FIND_SIMPLE
 QUICK_PHOTFRAC
 SQUAREPHOT
 
+These SFD dust routines have been moved here:
+BH_RDFORT
+DJS_PLANCK
+DUST_GETVAL
+FAC_TEMP2FLUX
+FAC_FLUX2TEMP
+PLANCKCORR
+PREDICT_SYNC
+PREDICT_THERMAL
+SETLOG
+WCS_COORD2PIX
+WCS_GETVAL
+
 Various astrometric routines have been moved from the hoggpt product
 into pro/astrom:
 ANGLE_FROM_PAIRS
