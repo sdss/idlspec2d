@@ -1097,16 +1097,16 @@ IDL> print, transpose([[a[i].plate],[a[i].mjd],[a[i].fiberid]])
 
      [ Prints list of objects targetted as a Carbon star.]
 
-IDL> i = where(strmatch(a.subclass, 'Carbon*'))
+IDL> i = where(strmatch(a.subclass, 'Carbon*') AND a.zwarning EQ 0)
 IDL> print, transpose([[a[i].plate],[a[i].mjd],[a[i].fiberid]])
 
      [ Prints list of objects spectroscopically called a Carbon star.]
 </PRE></DD></DL>
 
 <P>
-Now plot the first object that was found above:
+Now plot all of the objects found above:
 <DL><DD><PRE>
-IDL> i=0 & <A HREF="idlspec2d_doc.html#PLOTSPEC">plotspec</A>, a[i].plate, a[i].fiberid, mjd=a[i].mjd
+IDL> i=0 & <A HREF="idlspec2d_doc.html#PLOTSPEC">plotspec</A>, a.plate, a.fiberid, mjd=a.mjd
 </PRE></DD></DL>
 
 <P>
