@@ -6,8 +6,7 @@
 ;   Compute throughput in SDSS filters
 ;
 ; CALLING SEQUENCE:
-;   res = filter_thru( flux, [waveimg=, wset=, mask=, filter_prefix=,
-;   /converttoair ] )
+;   res = filter_thru( flux, [waveimg=, wset=, mask=, filter_prefix=, /toair ])
 ;
 ; INPUTS:
 ;   flux       - Flux image [NX,NTRACE]
@@ -23,8 +22,7 @@
 ;                [NX,NTRACE]
 ;   filter_prefix  - Use alternate prefix for filter curves to use
 ;                    (allowed are sdss or doi) [sdss]
-;   converttoair   - Convert the wavelengths to air from vacuum before
-;                    computation
+;   toair      - Convert the wavelengths to air from vacuum before computing
 ;
 ; OUTPUTS:
 ;   res        - Integrated response in all 5 SDSS filters, ordered ugriz;
@@ -35,7 +33,7 @@
 ; EXAMPLES:
 ;
 ; BUGS:
-;       Needs waveimg to be equally spaced in log lambda (MRB 4.5.01) 
+;   Needs waveimg to be equally spaced in log lambda (MRB 4.5.01) ???
 ;
 ; PROCEDURES CALLED:
 ;   vactoair
@@ -57,22 +55,21 @@
 ;
 ; REVISION HISTORY:
 ;   10-Mar-2000  Written by D. Schlegel, Princeton
-;    5-Apr-2001  Modified by Michael Blanton to allow alternate
-;    filters
+;   05-Apr-2001  Modified by Michael Blanton to allow alternate filters
 ;-
 ;------------------------------------------------------------------------------
 function filter_thru, flux, waveimg=waveimg, wset=wset, mask=mask, norm=norm, $
-                      filter_prefix=filter_prefix
+ filter_prefix=filter_prefix
 
    dims = size(flux, /dimens)
    nx = dims[0]
    if (N_elements(dims) EQ 1) then ntrace = 1 $
     else ntrace = dims[1]
 
-   if(not keyword_set(filter_prefix)) filter_prefix='sdss'
+   if (NOT keyword_set(filter_prefix)) then filter_prefix='sdss'
    ffiles = [filter_prefix+'_u_atm.dat', filter_prefix+'_g_atm.dat', $
              filter_prefix+'_r_atm.dat', filter_prefix+'_i_atm.dat', $
-             filter_prefix+'_z_atm.dat'] $
+             filter_prefix+'_z_atm.dat']
    nfile = N_elements(ffiles)
 
    if (ntrace EQ 1) then res = fltarr(1, nfile) $
@@ -86,19 +83,19 @@ function filter_thru, flux, waveimg=waveimg, wset=wset, mask=mask, norm=norm, $
       newwaveimg = 10^logwave
    endif else begin
       newwaveimg = waveimg
-   endif
+   endelse
    
-   ;---------
-   ; Convert to air if desired
-   if (keyword_set(converttoair)) then $
-     vactoair,newwaveimg
+   ;----------
+   ; Convert wavelengths from vacuum to air if necessary
+
+   if (keyword_set(ttoair)) then $
+    vactoair, newwaveimg
 
    ;----------
    ; Interpolate over masked or low-S/N pixels in each spectrum
 
    if (keyword_set(mask)) then $
     flux_interp = djs_maskinterp(flux, mask, iaxis=0, /const)
-
 
    ;----------
    ; Integrate over each filter response curve
