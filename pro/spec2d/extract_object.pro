@@ -518,7 +518,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    sxaddpar, objhdr, 'SCATPOLY', npoly, ' Extraction: Order of scattered light polynomial'
    sxaddpar, objhdr, 'PROFTYPE', proftype, ' Extraction profile: 1=Gaussian'
    sxaddpar, objhdr, 'NFITPOLY', nterms, ' Extraction: Number of parameters in each profile'
-   sxaddpar, objhdr, 'OPTCHI2', mean(chisq), ' Extraction: Mean chi^2'
+   sxaddpar, objhdr, 'XCHI2', mean(chisq), ' Extraction: Mean chi^2'
 
    snvec = djs_median(flambda*sqrt(flambdaivar),1)
    if color EQ 'blue' then begin
