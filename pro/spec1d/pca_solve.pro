@@ -1,52 +1,34 @@
 ;------------------------------------------------------------------------------
-pro zeigen, platefile
+function pca_solve, objflux, objivar, objloglam, zfit, $
+ niter=niter, nkeep=nkeep, newloglam=newloglam, eigenval=eigenval
 
-   ;----------
-   ; Read the 2D output file
-
-   eigenfile = filepath('eigeninputs.dat', $
-    root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
-   readcol, eigenfile, skip=2, plate, mjd, fiber, zfit, format='(L L L D)'
-;numline=20
-   readspec, plate, fiber, mjd=mjd, flux=objflux, invvar=objivar, $
-    andmask=andmask, plugmap=plugmap, loglam=objloglam
+   if (NOT keyword_set(niter)) then niter = 10
+   if (NOT keyword_set(nkeep)) then nkeep = 3
 
    dims = size(objflux, /dimens)
    npix = dims[0]
    nobj = dims[1]
    objdloglam = objloglam[1] - objloglam[0]
 
-objivar = objivar < 10.0 ; ??? Set limit for maximum inverse-variance
-
-   ;----------
-   ; Do not fit where the spectrum may be dominated by sky-subtraction
-   ; residuals.  Grow that mask by 2 pixels in each direction.
-
-   skymask = (andmask AND pixelmask_bits('BRIGHTSKY')) NE 0
-   for iobj=0, nobj-1 do $
-    skymask[*,iobj] = smooth(float(skymask[*,iobj]),5) GT 0
-   ibad = where(skymask)
-andmask = 0 ; Free memory
-   if (ibad[0] NE -1) then objivar[ibad] = 0
+   splog, 'Building PCA from ', nobj, ' object spectra'
 
    ;----------
    ; The redshift of each object in pixels would be LOGSHIFT/OBJDLOGLAM
 
    logshift = alog10(1.d + zfit)
-;chicpix = alog10(1.d + zfit) / objdloglam
 
    ;----------
    ; Determine the new wavelength mapping
 
-   newloglam = wavevector(min(objloglam)-max(logshift), $
-    max(objloglam)-min(logshift), binsz=objdloglam)
+   newloglam = wavevector(min(objloglam) - max(logshift), $
+    max(objloglam) - min(logshift), binsz=objdloglam)
 ;newloglam=newloglam[1000:4000] ; ???
    nnew = n_elements(newloglam)
    newflux = fltarr(nnew,nobj)
    newivar = fltarr(nnew,nobj)
 
    ;----------
-   ; Shift to z=0
+   ; Shift each spectra to z=0
 
    for iobj=0, nobj-1 do begin
 print,'OBJECT ',iobj
@@ -56,12 +38,6 @@ print,'OBJECT ',iobj
       newflux[*,iobj] = flux1
       newivar[*,iobj] = ivar1
    endfor
-
-; Interpolate over bright emission lines
-;bmask = (10^newloglam GT 6535 AND 10^newloglam LT 6600) $
-;     OR (10^newloglam GT 6700 AND 10^newloglam LT 6745)
-;for iobj=0, nobj-1 do $
-; newflux[*,iobj] = djs_maskinterp(newflux[*,iobj], bmask, /const)
 
    ;----------
    ; Construct the synthetic weight vector
@@ -89,18 +65,14 @@ print,'OBJECT ',iobj
          synflux[ipix] = total( newflux[ipix,*] / normflux) / nobj
       endelse
    endfor
-;stop
 
    ;----------
 
-niter = 20
-nkeep = 4 ; Number of modes to keep in replacement
    filtflux = newflux
 
+   t0=systime(1)
    for iiter=0, niter-1 do begin
-t0=systime(1)
       pres = pcomp(transpose(filtflux), coeff=coeff, eigenval=eigenval,/double)
-print,systime(1)-t0
 
       sqivar = sqrt(newivar)
       bvec = filtflux * sqivar
@@ -110,27 +82,21 @@ print,systime(1)-t0
       mmatrixt = transpose(mmatrix)
 
       for iobj=0, nobj-1 do begin
-         zz = computez(newflux[*,iobj], newivar[*,iobj], $
-          transpose(pres[0:nkeep-1,*]), 0*transpose(pres[0:nkeep-1,*])+1, $
-          zoffset=0, zmin=0, zmax=0, nfind=1)
-         synflux = zz.theta # pres[0:nkeep-1,*]
+         junk = computechi2(newflux[*,iobj], sqrt(newivar[*,iobj]), $
+          transpose(pres[0:nkeep-1,*]), acoeff=theta)
+         synflux = theta # pres[0:nkeep-1,*]
          filtflux[*,iobj] = (newivar[*,iobj] * newflux[*,iobj] + $
           synwvec * synflux) / (newivar[*,iobj] + synwvec)
 ;splot,filtflux[*,iobj]
 ;soplot,synflux,color='red'
       endfor
+
+mwrfits, float(transpose(pres[0:nkeep-1,*])), $
+ 'test-'+strtrim(string(iiter),1)+'.fits'
+      splog, 'Elapsed time for iteration #', iiter, ' = ', systime(1)-t0
    endfor
 
-save,file='eigen.ss'
-stop
-
-indx = where(10^newloglam GT 3300 AND 10^newloglam LT 8800)
-sxaddpar, hdr, 'COEFF0', newloglam[indx[0]]
-sxaddpar, hdr, 'COEFF1', objdloglam
-mwrfits, transpose(pres[0:2,indx]), $
- '/home/schlegel/idlspec2d/etc/spEigenGals.fits', hdr, /create
-
-
-   return
+   eigenval = eigenval[0:nkeep-1]
+   return, transpose(pres[0:nkeep-1,*])
 end
 ;------------------------------------------------------------------------------

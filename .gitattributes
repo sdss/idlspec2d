@@ -102,6 +102,9 @@ pro/spec1d/fundamental_line.pro -text
 pro/spec1d/gauss_periodic.pro -text
 pro/spec1d/lambda_match.pro -text
 pro/spec1d/make_regress1d.pro -text
+pro/spec1d/pca_gal.pro -text
+pro/spec1d/pca_qso.pro -text
+pro/spec1d/pca_solve.pro -text
 pro/spec1d/plug2tsobj.pro -text
 pro/spec1d/poly_array.pro -text
 pro/spec1d/primfac.pro -text
@@ -114,8 +117,6 @@ pro/spec1d/veldisp.pro -text
 pro/spec1d/wavelets.pro -text
 pro/spec1d/wavevector.pro -text
 pro/spec1d/zcompute.pro -text
-pro/spec1d/zeigen.pro -text
-pro/spec1d/zeigenq.pro -text
 pro/spec1d/zfind.pro -text
 pro/spec1d/zfitmax.pro -text
 pro/spec1d/ztweak.pro -text
