@@ -1,4 +1,8 @@
 
+BSPLINE_ITERFIT (in idlutils): Modified to avoid crashing SPREDUCE1D.
+   Two changes: (1) Return a valid solution even in the case where the variance
+   of the y-vector is zero.  (2) In the case where there are too few points to
+   fit, still return a valid solution of all zeros.
 FINDSPEC: New routine for finding SDSS spectra that match a given RA, DEC.
 SPREDUCE1D: Search for stars at velocities to +/- 1200 km/s (was 600 km/s).
             No longer identify objects as UNKNOWN, but rather set bits
