@@ -148,7 +148,7 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    nfiber = (size(flux,/dimens))[1]
 
    ; Flat-field
-   divideflat, fluxsub, fluxivar, fflat, /quiet
+   divideflat, fluxsub, invvar=fluxivar, fflat, /quiet
 
    ;--------------------------------------------------------------------
    ; Check for whopping fibers in SOS reductions, 
