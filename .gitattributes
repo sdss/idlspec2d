@@ -476,7 +476,7 @@ templates/eigeninput_vstnd.dat -text
 templates/qso.template -text
 templates/qsolist.27plates -text
 templates/spEigenCVstar-52223.fits -text svneol=unset#unset
-templates/spEigenElodie.fits -text
+templates/spEigenElodie.fits -text svneol=unset#unset
 templates/spEigenGal-51838.fits -text svneol=unset#unset
 templates/spEigenGal-51846.fits -text svneol=unset#unset
 templates/spEigenGal-51984.fits -text svneol=unset#unset
