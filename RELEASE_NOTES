@@ -9,6 +9,8 @@ EXTRACT_OBJECT, SKYSUBTRACT: Exit gracefully in the case of no good sky
           fibers.  In that case, issue an "ABORT" log message, return
           SKYSTRUCT=0 from SKYSUBTRACT, then do not write an spFrame file.
 EXTRACT_ROW: Do not correct rejection levels in relative mode if chi^2 < 1.0.
+             This means that we can boost the errors to be larger than the
+             expected Poisson errors, but not smaller.
 FIBERFLAT: Update to call SUPERFLAT() as a function instead of a proc,
            though should not be functionally different yet.
 FITMEANX: Make robust to no good sky lines for tweaking wavelength solution.
