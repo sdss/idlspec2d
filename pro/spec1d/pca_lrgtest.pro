@@ -1,9 +1,69 @@
+;+
+; NAME:
+;   pca_lrgtest
+;
+; PURPOSE:
+;   Build PCA templates for LRGs within a specified redshift range.
+;
+; CALLING SEQUENCE:
+;   pca_lrgtest, [ platenums, nkeep=, zrange= ]
+;
+; INPUTS:
+;
+; OPTIONAL INPUTS:
+;   platenums  - Plate number(s) from which to select the LRGs; if not set,
+;                then select all 'main' survey plates with QSURVEY=1
+;                in the plate list file (which are required to be unique
+;                tiles with good quality observations)
+;   zrange     - 2-element array with redshift range for fitting; if not set,
+;                then call this routine iteratively with redshift ranges
+;                starting at [0,0.05] and extending to [0.45,0.50], spaced
+;                every 0.05 in redshift.
+;
+; OUTPUT:
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;   The output are written to FITS files named "spLRG_xxx_yyy.fits" where
+;   "xxx" is the starting redshift times 100, and "yyy" is the ending
+;   redshift times ten.
+;
+; EXAMPLES:
+;   Create a set of PCA templates for LRGs from plates 400 through 409:
+;     IDL> pca_lrgtest, 400+lindgen(10)
+;
+; BUGS:
+;
+; PROCEDURES CALLED:
+;   djs_maskinterp()
+;   djs_median
+;   mwrfits
+;   pca_solve()
+;   platelist
+;   readspec
+;   splog
+;   skymask()
+;   sxaddhist
+;   sxaddpar
+;   wavevector()
+;
+; REVISION HISTORY:
+;   23-Mar-2001  Written by David Schlegel, Princeton.
+;   17-Sep-2003  Modified for N. Padmanabhan
+;-
 ;------------------------------------------------------------------------------
-pro pca_lrgtest, platenums, nkeep=nkeep, $
- zmin=zmin, zmax=zmax, outfile=outfile, loz=loz, midz=midz, hiz=hiz
+pro pca_lrgtest, platenums, nkeep=nkeep, zrange=zrange
 
-   wavemin = 3600.
-   wavemax = 6200.
+   if (NOT keyword_set(zrange)) then begin
+      for z1=0.0, 0.45, 0.05 do begin
+         pca_lrgtest, platenums, nkeep=nkeep, zrange=[z1,z1+0.05]
+      endfor
+      return
+   endif
+
+   wavemin = 2500.
+   wavemax = 9200.
    snmax = 100
    niter = 10
    if (NOT keyword_set(nkeep)) then nkeep = 2
@@ -14,34 +74,20 @@ pro pca_lrgtest, platenums, nkeep=nkeep, $
       platenums = plist[ where(plist.qsurvey) ].plate
    endif
 
-   if (keyword_set(loz)) then begin
-      outfile = 'spLRG-loz.fits'
-      zmin = 0.15
-      zmax = 0.25
-   endif else if (keyword_set(midz)) then begin
-      outfile = 'spLRG-midz.fits'
-      zmin = 0.30
-      zmax = 0.40
-   endif else if (keyword_set(hiz)) then begin
-      outfile = 'spLRG-hiz.fits'
-      zmin = 0.40
-      zmax = 0.50
-   endif
-
-   if (NOT keyword_set(zmin)) then zmin = 0.0
-   if (NOT keyword_set(zmax)) then zmax = 0.5
-   if (NOT keyword_set(outfile)) then $
-    outfile = string(long(zmin*100), long(zmax*100), $
-     format='("spLRG_", i3.3, "_", i3.3, ".fits")')
+   outfile = string(long(zrange[0]*100), long(zrange[1]*100), $
+    format='("spLRG_", i3.3, "_", i3.3, ".fits")')
 
    ;----------
-   ; Read the input spectra
+   ; Read the input spectra.
+   ; Select good spectra of galaxies that were actually targetted
+   ; as LRGs in the main survey.
 
    readspec, platenums, zans=zans, plug=plug
    indx = where(((plug.primtarget AND 2LL^5) NE 0 $
            OR (plug.primtarget AND 2LL^26) NE 0) $
     AND strtrim(zans.class) EQ 'GALAXY' $
-    AND zans.z GE zmin AND zans.z LE zmax)
+    AND zans.zwarning EQ 0 $
+    AND zans.z GE zrange[0] AND zans.z LE zrange[1])
    zans = zans[indx]
    splog, 'Number of objects = ', n_elements(zans)
 
@@ -73,7 +119,6 @@ ormask = 0 ; Free memory
    ; Do PCA solution
 
    pcaflux = pca_solve(objflux, objivar, objloglam, zans.z, $
-;    wavemin=wavemin, wavemax=wavemax, $
     niter=niter, nkeep=nkeep, newloglam=newloglam, eigenval=eigenval, $
     usemask=usemask)
    pcaflux = float(pcaflux)
@@ -97,9 +142,11 @@ ormask = 0 ; Free memory
    ;----------
    ; Write output file
 
-   sxaddpar, hdr, 'OBJECT', 'LRG z=' + string(zmin) + ' ' + string(zmax)
+   sxaddpar, hdr, 'OBJECT', $
+    'LRG z=' + string(zrange[0]) + ' ' + string(zrange[1])
    sxaddpar, hdr, 'COEFF0', newloglam[0]
    sxaddpar, hdr, 'COEFF1', objdloglam
+   sxaddpar, hdr, 'NPLATE', n_elements(platenums), ' Number of plates used'
    sxaddpar, hdr, 'NGALAXY', n_elements(zans), ' Number of galaxies in fit'
    for i=0, n_elements(eigenval)-1 do $
     sxaddpar, hdr, 'EIGEN'+strtrim(string(i),1), eigenval[i]
