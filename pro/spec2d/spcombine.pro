@@ -216,8 +216,8 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
 
       for i=0,nsci-1 do begin
          checkhdr = headfits(sciname[i])
-         if size(checkhdr,/tname) NE 'INT' then framesn2[i] = 0 $
-         else framesn2[i] = sxpar(checkhdr,'FRAMESN2')
+         if size(checkhdr,/tname) NE 'INT' then $
+           framesn2[i] = sxpar(checkhdr,'FRAMESN2')
       endfor
 
       j = where(framesn2 GE minsn2)
