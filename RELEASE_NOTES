@@ -1,4 +1,7 @@
 
+vector_avsigclip_mask: Fix a bug in the C code vector_avsigclip_mask
+           that could potentially affect the IDL proc DJS_AVSIGCLIP
+           in the case when a mask is used but all points are rejected.
 evilinstall (in idlutils): If unable to check-out or install the code,
            then do not declare it current in the UPS table!
            Print "ABORT" for any failures in the install.
@@ -67,6 +70,10 @@ QAPLOT_SKYSUB: Don't be quite so severe with warning messages.  If a single
 QUICKBIAS: Remove message which preempts logging.  Instead, return a
             set of precentiles that are all -9999, which shows up as ****
             in the HTML file.
+QUICKEXTRACT: Put exposure time dependence in scattered light warning.
+            It is the same limit as we had before for 900-sec exposures,
+            the same limit for shorter exposures, and a (scaled) higher
+            limit for longer exposures.
 REDMONSTER: Change the warning message to "Bad sky residuals...",
             and only send the message "Red Monster at..." if it
             is around 6400-6600 Ang, where we think the problem may
@@ -77,6 +84,9 @@ REDMONSTERLIST: New procedure: List of number of galaxies and quasars per
             plate, the number of redshifts that differ from prior reductions,
             and the fraction of various 2D flags set.
 REMOVE2TODO: Make more robust, and give more descriptive messages.
+            Another attempt to fix errors in remove2redo.  It might now
+            work with plate argument: "sos_redo plate=665", but should
+            definitely work with simple invocation: "sos_redo".
 SDSS_FLAGS: Add "SOUTHERN_SURVEY" flags for TARGET and TTARGET.
             Also, return a warning message for any bits that are set
             but whose meaning is unknown.  Previously, a wrong answer
