@@ -141,6 +141,10 @@ pro platelist, infile, plist=plist, create=create, $
     'chunkname', ' ', $
     'mjdlist'  , ' ', $
     'nexp'     , 0L,  $
+    'expt_b1'  , 0.0, $
+    'expt_b2'  , 0.0, $
+    'expt_r1'  , 0.0, $
+    'expt_r2'  , 0.0, $
     'sn2_g1'   , 0.0, $
     'sn2_r1'   , 0.0, $
     'sn2_i1'   , 0.0, $
@@ -218,6 +222,10 @@ pro platelist, infile, plist=plist, create=create, $
           plist[ifile].dec, tai=plist[ifile].tai)
          plist[ifile].exptime = sxpar(hdr1, 'EXPTIME')
          plist[ifile].nexp = sxpar(hdr1, 'NEXP')
+         plist[ifile].expt_b1 = sxpar(hdr1, 'EXPT_B1')
+         plist[ifile].expt_b2 = sxpar(hdr1, 'EXPT_B2')
+         plist[ifile].expt_r1 = sxpar(hdr1, 'EXPT_R1')
+         plist[ifile].expt_r2 = sxpar(hdr1, 'EXPT_R2')
          plist[ifile].sn2_g1 = sxpar(hdr1, 'SPEC1_G')
          plist[ifile].sn2_r1 = sxpar(hdr1, 'SPEC1_R')
          plist[ifile].sn2_i1 = sxpar(hdr1, 'SPEC1_I')
