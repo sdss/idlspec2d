@@ -172,7 +172,7 @@ pro stype_standard, loglam, flux, invvar, plugmap, outname
    ninvvar = invvar * 0
 
    for iobj=0, nsphoto-1 do begin
-     normflux = smooth(djs_median(flux[*,iobj], width=75, $
+     normflux = smooth(djs_median(flux[*,iobj], width=150, $
                                   boundary = 'reflect'), 25)
      nflux[*,iobj] = flux[*,iobj] / normflux 
      ninvvar[*,iobj] = invvar[*,iobj] * normflux^2
