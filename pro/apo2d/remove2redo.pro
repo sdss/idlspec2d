@@ -3,29 +3,43 @@
 ;   remove2redo
 ;
 ; PURPOSE:
-;   Removes raw data files which are missing in the current logfile-$MJD.fits
+;   Removed specified exposures from the SOS log files and re-reduce them.
 ;
 ; CALLING SEQUENCE:
-;   remove2redo, [ logfile=logfile, outdir=outdir, plate=]
+;   remove2redo, [ mjd=, plate=, expnum= ]
 ;
 ; INPUTS:
 ;
 ; OPTIONAL INPUTS:
-;   logfile    - FITS log file to which Son-of-Spectro results are ouput;
-;                default to the file 'logfile*fits' in the OUTDIR directory.
-;   outdir     - The spectrolog directory which should be checked; default
-;                to the largest MJD in /data/spectro/spectrologs/$MJD.
-;   plate      - Specify a single plate if only those entries should be checked
+;   mjd        - MJD number; if not set, then select the most recent MJD
+;                in the $SPECTROLOG_DIR directory.
+;   plate      - If specified, then search for all sdR files for this plate
+;                that were not successfully reduced.  They are assumed to
+;                have been successfully reduced if they have an entry in
+;                HDU #1, 2, or 3 in the SOS log file.
+;   expnum     - If specified, then force the re-reduction of this exposure
+;                number(s) even if they have already been successfully reduced.
+;                Do not specify both PLATE and EXPNUM.
 ;
 ; OUTPUT:
 ;
 ; COMMENTS:
+;   If $SPECTROLOG_DIR is not set, then it is assumed to be
+;     /data/spectro/spectrologs
+;   When using the PLATE keyword, never re-reduce the very last exposure
+;   number on disk.  If the last exposure is not for the specified plate,
+;   then we can try re-reducing any exposures for that plate.
 ;
 ; EXAMPLES:
 ;
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   djs_filename()
+;   djs_lockfile()
+;   djs_modfits
+;   djs_unlockfile
+;   sdsshead()
 ;
 ; INTERNAL SUPPORT ROUTINES:
 ;
@@ -33,87 +47,171 @@
 ;   03-April-2001  Written by Scott Burles, FNAL
 ;-
 ;------------------------------------------------------------------------------
-pro remove2redo, logfile=logfile, outdir=outdir, plate=plate
+pro remove2redo, mjd=mjd, plate=plate, expnum=expnum
 
-   if NOT keyword_set(outdir) then begin
-     cd, '/data/spectro/spectrologs'
-     dirs = findfile() 
-     dirs = dirs[where(dirs GT '50000' AND dirs LT '90000')]
-     cd, strtrim(string(max(dirs)),2) 
-   endif else cd, outdir 
+   quiet = !quiet
+   !quiet = 1
 
-   if NOT keyword_set(logfile) then begin
-     logfile = findfile('logfile*fits')
-     logfile = logfile[0]
+   if (keyword_set(plate) AND keyword_set(expnum)) then begin
+      splog, 'Cannot specify both MJD and PLATE -- quitting!'
+      !quiet = quiet
+      return
    endif
 
-   print, 'Working on ', logfile   
-   for i=1,4 do begin
-     list = mrdfits(logfile, i, /silent)
+   ;----------
+   ; If MJD is not specified, then find the most recent MJD for output files
 
+   spectrolog_dir = getenv('SPECTROLOG_DIR')
+   if (NOT keyword_set(spectrolog_dir)) then $
+    spectrolog_dir = '/data/spectro/spectrologs'
 
-     if size(list, /tname) NE 'INT' then begin
-       if keyword_set(plate) then begin
-         good = where(list.plate EQ plate)
-         if good[0] EQ -1 then list = 0 $
-         else list = list[good]
-       endif
-     endif
+   if (NOT keyword_set(mjd)) then begin
+      mjdlist = get_mjd_dir(spectrolog_dir)
+      mjd = (reverse(mjdlist[sort(mjdlist)]))[0]
+   endif
 
-     if size(list, /tname) NE 'INT' then begin
-       if NOT keyword_set(expnum) then begin
-         expnum = list.expnum
-         camera = list.camera
-       endif else begin
-         expnum = [expnum, list.expnum]
-         camera = [camera, list.camera]
-       endelse
-     endif
+   ;----------
+   ; Find the log file
+
+   mjdstr = string(mjd, format='(i5.5)')
+   mjddir = concat_dir(spectrolog_dir, mjdstr)
+
+   logfile = 'logfile-' + mjdstr + '.fits'
+   logfile = filepath(logfile, root_dir=mjddir)
+   if (NOT keyword_set(findfile(logfile))) then begin
+      splog, 'Unable to find logfile '+logfile
+      !quiet = quiet
+      return
+   endif
+
+   ;----------
+   ; If PLATE is specified, then read the headers of all the files
+   ; to find out which files correspond to this plate.
+   ; All those files are put in the array FULLNAME.
+
+   if (keyword_set(plate)) then begin
+      rawdata_dir = getenv('RAWDATA_DIR')
+      if (NOT keyword_set(rawdata_dir)) then $
+       rawdata_dir = '/data/spectro'
+      filename = 'sdR-*-*.fit*'
+      fullname = findfile( djs_filepath(filename, root_dir=rawdata_dir, $
+       subdirectory=mjdstr), count=nfile)
+      if (nfile EQ 0) then begin
+         splog, 'No sdR files for MJD=', mjd
+         !quiet = quiet
+         return
+      endif
+      qthisplate = bytarr(nfile)
+      allexpnum = lonarr(nfile)
+      splog, 'Reading headers for all files in MJD=', mjd
+      for i=0, nfile-1 do begin
+         hdr = sdsshead(fullname[i])
+         allexpnum[i] = sxpar(hdr, 'EXPNUM')
+         if (sxpar(hdr, 'PLATEID') EQ plate) then qthisplate[i] = 1B
+      endfor
+      ifile = where(qthisplate, nfile)
+      if (nfile EQ 0) then begin
+         splog, 'No sdR files for MJD=', mjd, ' PLATE=', plate
+         !quiet = quiet
+         return
+      endif
+      fullname = fullname[ifile]
+      shortname = fileandpath(fullname)
+      qdone = bytarr(nfile)
+
+      ; Always mark the last exposure number as 'done', since SOS may
+      ; still be trying to reduce it.
+      idone = where(allexpnum[ifile] EQ max(allexpnum))
+      if (idone[0] NE -1) then $
+       qdone[idone] = 1B
+   endif
+
+   ;----------
+   ; Lock the file to do this - otherwise we might read/write to a partially
+   ; written file.
+
+   while(djs_lockfile(logfile) EQ 0) do wait, 1
+
+   ;----------
+   ; Loop through each HDU in the log file.
+   ; If EXPNUM is specified, then remove all entries corresponding to this
+   ; exposure number.
+   ; If PLATE is specified, then determine which of our list of files for
+   ; that plate have been succesfully reduced, and we will try re-reducing
+   ; the others.
+
+   splog, 'Working on ', logfile   
+   for thishdu=1, 5 do begin
+      rstruct = mrdfits(logfile, thishdu)
+      nstruct = n_elements(rstruct)
+
+      if (keyword_set(expnum) AND keyword_set(rstruct)) then begin
+         qkeep = bytarr(nstruct)
+         for i=0, nstruct-1 do $
+          qkeep[i] = total(rstruct[i].expnum EQ expnum) EQ 0
+         ikeep = where(qkeep, nkeep)
+         if (nkeep LT nstruct) then $
+          djs_modfits, logfile, rstruct[ikeep], exten_no=thishdu
+      endif
+
+      if (keyword_set(plate) AND keyword_set(rstruct)) then begin
+         if (thishdu LE 4) then begin
+            ; Flat, arc, science, or smear -- note any file that's been
+            ; successfully reduced.
+            for i=0, nstruct-1 do $
+             qdone = qdone OR (rstruct[i].filename EQ shortname)
+         endif else begin
+            ; Warning or aborts -- remove any for files that haven't been
+            ; successfullyl reduced and that we'll re-reduce.
+            qkeep = bytarr(nstruct)
+            for i=0, nstruct-1 do $
+             qkeep[i] = total(rstruct[i].filename EQ shortname $
+              AND qdone EQ 0) EQ 0
+            ikeep = where(qkeep, nkeep)
+            if (nkeep LT nstruct) then begin
+               splog, 'Removing ', nstruct-nkeep, ' warning and abort messages'
+               djs_modfits, logfile, rstruct[ikeep], exten_no=thishdu
+            endif
+         endelse
+      endif
    endfor
 
-   if NOT keyword_set(expnum) then begin
-     print, ''
-     print, 'Did not find any exposures to redo!'
-     print, ''
-     return
+   ;----------
+   ; Now unlock the log file. 
+
+   djs_unlockfile, logfile
+
+   ;----------
+   ; Construct the list of files to re-reduce.
+
+   if (keyword_set(expnum)) then begin
+      camnames = ['b1', 'b2', 'r1', 'r2']
+      redofiles = ''
+      for iexp=0, n_elements(expnum)-1 do $
+       for icam=0, n_elements(camnames)-1 do $
+        redofiles = [redofiles, findfile('sdR-' + camnames[icam] + '-' $
+         + string(expnum[iexp],format='(i8.8)') + '.fit*')]
+      iredo = where(redofiles NE '')
+      if (iredo[0] NE -1) then redofiles = redofiles[iredo] $
+       else redofiles = 0
    endif
 
-   expmin = min(expnum + 0L)
-   expmax = max(expnum + 0L)
-   nexp = expmax - expmin 
-   if nexp LE 0 then begin
-     print, ''
-     print, 'Did not find any exposures to redo!'
-     print, ''
-     return
+   if (keyword_set(plate)) then begin
+      iredo = where(qdone EQ 0)
+      if (iredo[0] NE -1) then redofiles = fullname[iredo] +'*'
    endif
 
-   cam = ['b1', 'b2', 'r1', 'r2']
-   missing = ' '
+   if (NOT keyword_set(redofiles)) then begin
+      splog, 'No files to re-reduce'
+      !quiet = quiet
+      return
+   endif
 
+   for iredo=0, n_elements(redofiles)-1 do $
+    splog, 'Re-reduce file ' + redofiles[iredo]
+   spawn, 'rm -f ' + redofiles
 
-   for i=expmin, expmax - 1 do begin 
-     for icam = 0,3 do begin
-       gotcha = where(cam[icam] EQ camera AND i EQ expnum + 0L)
-       if gotcha[0] EQ -1 then $
-         missing = missing + string(format='(a,a,a,i8.8,a)', $
-                      ' sdR-',cam[icam],'-',i,'.fit')
-     endfor
-   endfor
-
-   print, missing
-   if missing EQ ' ' then return
-
-   mjd = strmid(logfile, 8, 5)
-   cd, '/data/spectro/'+mjd
-
-   print, 'rm -f '+missing
-   spawn, 'rm -f '+missing
-
-   print, ''
-   print, 'Successfully removed files, sos should get these on the next pass!'
-   print, ''
-   
+   !quiet = quiet
    return
 end
 ;------------------------------------------------------------------------------
