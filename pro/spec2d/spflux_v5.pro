@@ -59,12 +59,12 @@
 ;   rebin_spectrum()
 ;   spframe_read
 ;   skymask()
+;   spflux_read_kurucz()
 ;   splog
 ;   tai2airmass()
 ;   wavevector()
 ;
 ; INTERNAL SUPPORT ROUTINES:
-;   spflux_read_kurucz()
 ;   spflux_masklines()
 ;   spflux_medianfilt()
 ;   spflux_bestmodel()
