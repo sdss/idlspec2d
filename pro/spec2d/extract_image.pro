@@ -68,8 +68,8 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
                ymodel=ymodel, fscat=fscat,proftype=proftype,ansimage=ansimage, $
                wfixed=wfixed, sigmacor=sigmacor, xcencor=xcencor, mask=mask, $
                nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej, $
-	       calcCovar=calcCovar, fitans=fitans, whopping=whopping,relative=relative, $
-               multirow=multirow
+	       calcCovar=calcCovar, fitans=fitans, whopping=whopping, $
+               relative=relative
 
    ; Need 5 parameters
    if (N_params() LT 5) then begin
@@ -201,6 +201,14 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
    finv = fltarr(nRowExtract, nTrace)
    inputans = fltarr(nCoeff, nTrace)
 
+   whoppingct = 0
+   if(whopping[0] NE -1) then $
+	 whoppingct = n_elements(whopping)
+
+   ma = nTrace*nCoeff + nPoly + whoppingct
+
+   fullcovar = fltarr(ma,ma)
+
    squashprofile = 0
    if ARG_PRESENT(fitans) then squashprofile = 1
 ;
@@ -214,7 +222,6 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
    for iy=0, nRowExtract-1 do begin
      cur = yrow[iy]
      curend = yrow[iy]
-     if (keyword_set(multirow)) then curend = yrow[iy] + multirow - 1
      print, format='($, ".",i4.4,a5)',cur,string([8b,8b,8b,8b,8b])
      xcencurrent = xcenuse[*,cur:curend]
      sigmacur = sigma1[*, cur:curend]
@@ -229,16 +236,24 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
 
      masktemp = mask[*,cur:curend]
 
-     if(whopping[0] NE -1) then $
+     whoppingct = 0
+     if(whopping[0] NE -1) then begin
          whoppingcur = xcenuse[whopping,cur:curend] 
+	 whoppingct = n_elements(whopping)
+     endif
      
-     if ARG_PRESENT(fitans) then inputans = fitans[*,*,cur]
-     ansrow = extract_row(fimage[*,cur:curend], invvar[*,cur:curend], xcencurrent, $
-      sigmacur, ymodel=ymodelrow, fscat=fscatrow, proftype=proftype, $
+     if ARG_PRESENT(fitans) then begin
+          inputans = fitans[0:nTrace*nCoeff-1,cur]
+          iback = fitans[nTrace*nCoeff:nTrace*nCoeff+nPoly-1,cur]
+     endif
+          
+     ansrow = extract_row(fimage[*,cur:curend], invvar[*,cur:curend], $
+      xcencurrent, sigmacur, ymodel=ymodelrow, fscat=fscatrow, $
+      proftype=proftype, iback=iback, $
       wfixed=wfixed, mask=masktemp, diagonal=prow, nPoly=nPoly, $
       oback=oback, niter=niter, squashprofile=squashprofile,inputans=inputans, $
       maxIter=maxIter, highrej=highrej, lowrej=lowrej, calcCovar=calcCovar, $
-      whopping=whoppingcur, relative=relative, multirow=multirow)
+      whopping=whoppingcur, relative=relative, fullcovar=fullcovar)
 
      mask[*,cur:curend] = masktemp
      ansimage[0:nTrace*nCoeff-1,iy] = ansrow
