@@ -132,8 +132,8 @@ function batch2d_rawfiles, planfile, outfile=outfile
 
    i = where((*pp[0]).flavor EQ 'science')
    framefiles = expfiles[*,i]
-   framefiles = repstr(framefiles[*,i], 'sdR', 'spFrame')
-   framefiles = repstr(framefiles[*,i], '.fit', '.fits')
+   framefiles = repstr(framefiles, 'sdR', 'spFrame')
+   framefiles = repstr(framefiles, '.fit', '.fits')
 
    outfile = [ djs_filepath(logfile, root_dir=extractdir), $
                djs_filepath(plotfile, root_dir=extractdir), $
