@@ -6,16 +6,18 @@
 ;   Interactive comparison of descrepant redshifts for the same objects.
 ;
 ; CALLING SEQUENCE:
-;   platecompare, plate, [mjd=, psfile= ]
+;   platecompare, plate, [mjd=, topdir=, psfile= ]
 ;
 ; INPUTS:
 ;   plate       - Plate number(s)
 ;
 ; OPTIONAL INPUTS:
-;   mjd         - MJD for each plate number.  If specified, then this
-;                 must have one MJD per plate number.  If not specified,
-;                 then all MJD's associated with each plate are read.
-;                 That list of MJD's comes from the PLATELIST command.
+;   mjd        - MJD for each plate number.  If specified, then this
+;                must have one MJD per plate number.  If not specified,
+;                then all MJD's associated with each plate are read.
+;                That list of MJD's comes from the PLATELIST command.
+;   topdir     - Top-level directory for outputs if comparing different
+;                reductions (i.e., different versions) of the same data.
 ;   psfile     - If set, then send plot to a PostScript file instead of
 ;                to the SPLOT interactive widget.  The PostScript file name
 ;                can be set explicitly, e.g. with PSFILE='test.ps'.  Or if
@@ -38,6 +40,10 @@
 ;   same tile on the sky:
 ;   IDL> platecompare, [360,360,362], mjd=[51780,51816,51999]
 ;
+;   Compare different reductions of the same data, in this case plate 401/51788:
+;   IDL> platecompare, 401, mjd=51788, $
+;   IDL>  topdir=['/u/dss/spectro','/u/dss/spectro/test']
+;
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
@@ -50,16 +56,19 @@
 ;   platelist
 ;   readspec
 ;   sdss_flagname()
+;   struct_append()
 ;
 ; REVISION HISTORY:
 ;   14-Aug-2001  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
-pro platecompare, plate, mjd=mjd, psfile=psfile
+pro platecompare, plate, mjd=mjd, topdir=topdir, psfile=psfile
 
    if (n_params() LT 1) then begin
       print, 'Syntax - platecompare, plate, [mjd= ]'
       return
    endif
+
+   charsize = 2.0
 
    if (keyword_set(mjd)) then begin
       if (n_elements(plate) EQ 1) then begin
@@ -93,7 +102,21 @@ pro platecompare, plate, mjd=mjd, psfile=psfile
    cspeed = 2.99792458e5
 
    ; Read the redshift files
-   readspec, platevec, mjd=mjdvec, zans=zansall, plug=plugall
+   if (NOT keyword_set(topdir)) then begin
+      readspec, platevec, mjd=mjdvec, zans=zansall, plug=plugall
+   endif else begin
+      topsave = getenv('SPECTRO_DATA')
+      for itop=0, n_elements(topdir)-1 do begin
+         setenv, 'SPECTRO_DATA=' + topdir[itop]
+         readspec, platevec, mjd=mjdvec1, zans=zans1, plug=plug1
+         zansall = struct_append(zansall, zans1)
+         plugall = struct_append(plugall, plug1)
+         if (itop EQ 0) then $
+          topall = replicate(topdir[itop], n_elements(zans1)) $
+         else $
+          topall = [topall, replicate(topdir[itop], n_elements(zans1))]
+      endfor
+   endelse
 
    ; Group duplicate objects together
    ngroup = djs_angle_group(zansall.plug_ra, zansall.plug_dec, 1./3600., $
@@ -112,6 +135,8 @@ pro platecompare, plate, mjd=mjd, psfile=psfile
    for igroup=0, ngroup-1 do begin
       thiszans = zansall[gindx[gstart[igroup]:gstart[igroup]+gcount[igroup]-1]]
       thisplug = plugall[gindx[gstart[igroup]:gstart[igroup]+gcount[igroup]-1]]
+      if (keyword_set(topdir)) then $
+       thistop = topall[gindx[gstart[igroup]:gstart[igroup]+gcount[igroup]-1]]
 
       vdiff = (max(thiszans.z) - min(thiszans.z)) * cspeed
       vbad = ((vdiff GT 250.) AND (thiszans[0].class EQ 'GALAXY')) $
@@ -138,6 +163,8 @@ pro platecompare, plate, mjd=mjd, psfile=psfile
             title = string(thiszans[ii].plate, thiszans[ii].mjd, $
              thiszans[ii].fiberid, $
              format='("Plate ", i4, "-", i5, " Fiber ", i3)')
+            if (keyword_set(topdir)) then $
+             title = title + '  ' + thistop[ii]
             cz = thiszans[ii].z * cspeed
             zstring = string(strtrim(thiszans[ii].class), $
              strtrim(' '+thiszans[ii].subclass), $
@@ -149,6 +176,8 @@ pro platecompare, plate, mjd=mjd, psfile=psfile
             if (thiszans[ii].zwarning NE 0) then $
              zstring = zstring + $
               '  ZWARNING=' + strtrim(string(thiszans[ii].zwarning),2)
+            if (keyword_set(topdir)) then $
+             setenv, 'SPECTRO_DATA=' + thistop[ii]
             readspec, thiszans[ii].plate, thiszans[ii].fiberid, $
              mjd=thiszans[ii].mjd, wave=wave, flux=objflux, synflux=synflux
             ytitle = 'F_\lambda'
@@ -166,12 +195,12 @@ pro platecompare, plate, mjd=mjd, psfile=psfile
             yrange = [ymin, ymax]
             djs_plot, wave, objflux, $
              xrange=xrange, yrange=yrange, /xstyle, /ystyle, $
-             xtitle=zstring, ytitle=ytitle, title=title, charsize=2.5
+             xtitle=zstring, ytitle=ytitle, title=title, charsize=charsize
             djs_oplot, wave, synflux, color='blue'
-            xpos = 1.0 * !x.crange[0] + 0.0 * !x.crange[1]
-            ypos = -0.03 * !y.crange[0] + 1.03 * !y.crange[1]
+            xpos = 0.95 * !x.crange[0] + 0.05 * !x.crange[1]
+            ypos = 0.08 * !y.crange[0] + 0.92 * !y.crange[1]
             xyouts, xpos, ypos, primtarget+' '+sectarget, $
-             color=djs_icolor(textcolor)
+             color=djs_icolor(textcolor), charsize=charsize
          endfor
          if (NOT keyword_set(psfile)) then $
           cc = strupcase(get_kbrd(1))
@@ -179,6 +208,9 @@ pro platecompare, plate, mjd=mjd, psfile=psfile
    endfor
 
    if (keyword_set(psfile)) then dfpsclose
+
+   if (keyword_set(topdir)) then $
+    setenv, 'SPECTRO_DATA=' + topsave
 
    return
 end
