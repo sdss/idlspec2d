@@ -9,6 +9,15 @@ GUIDERMOVIE: The format for the date in the header of the guider images
 LINEBACKFIT: Change how the error on equiv. width (LINEEW_ERR) is computed.
            I believe it was incorrect before, and should simply be
            computed from LINEAREA_ERR,LINECONTLEVEL_ERR.
+PLATELIST: Replace the plate center RA,DEC with that of the object
+           closest to the center for those cases in which the spPlate
+           headers got the wrong coordinates (see PR #2419).  When
+           these are replaced, print a WARNING statement.
+           Be more silent when calling MRDFITS(),HEADFITS().
+PLATEMERGE: Search for overlaps in plates with a somewhat larger radius,
+           just to be somewhat immune to errors in listed plate centers
+           (for ex, see PR #2419).  Also, print some more informational
+           messages.
 PLOTSPEC: Bug fix to allow one to specify the output file name with PSFILE=.
            Fix units on Y axis to /cm^2 instead of /cm.
 QUICKEXTRACT: Change print statement for whopping fibers to one per line.
@@ -24,6 +33,12 @@ SPCOADD_FRAMES: Change BUNIT header keywords in output files to have
            comment '10E-17 erg/cm/s/Ang'.
 WRITE_UROS: Add Flatvec,Rnois to output files.
 
+aporsync_alllog.sh: New shell script for copying all of the log files
+           from sdsshost.apo:/astrolog/$MJD to the sos.apo machine.
+           This will be done once per day at 7:45.  This rsync must
+           follow symbolic links on sdsshost.apo, since it now looks
+           like quite a few of the files there are now symbolic links.
+           (That's crazy, but what's a guy to do?)
 aporsync_logs.sh: The last line of the first rsync command was accidentally
            dropped in this last version - fix.  Also, only copy sdHdrFix file
            if it exists.  This addresses PR #3968.
@@ -37,6 +52,8 @@ opHdrFix.par: Fix the RA,DEC positions in the raw file headers to fix
 sos_start,sprobot_start: If the environment variable PATH has more than 1020
            characters than abort.  This is because the PATH appears to be
            truncated beyond that point on certain Linux systems.
+           Run the mail program at 8:10 in the morning, rather than 7:20.
+           This addresses PR #4194.
 spEigenElodie.fits: Recreate with fixed READ_ELODIE().  New first eigenspectrum
            now looks like a normal stellar spectrum.
 sprobot_start: Fix tiny typo (extra quotation on line 141).
@@ -44,7 +61,7 @@ sprobot.sh: Change the name of the astrolog directory on sos.apo.nmsu.edu
            from /astrolog -> /data/spectro/astrolog (they changed it!)
 sprobot.sh,sprobot1d.sh,sprobot2d.sh,sprobotlist.sh:
            Output the environment variables $IDLSPEC2D_DIR,$IDLUTILS_DIR.
-spChunkList.par: Added chunks 48-51.
+spChunkList.par: Added chunks 48-55.
 
 In idlutils:
 
