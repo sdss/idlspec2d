@@ -169,6 +169,7 @@ endelse
 
    if (nobj EQ 1) then begin
       eigenval = 1.0
+      acoeff = 1.0
       return, newflux
    endif
 

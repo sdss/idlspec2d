@@ -300,7 +300,7 @@ objmask = 0 ; Free memory
 
    refmag = plugmap[iphoto].mag[2] + 2.5 * alog10(acoeff)
    splog, 'Estimates of spectro-photo PCA r-mag = ', refmag
-   refmag = median(refmag)
+   refmag = median([refmag])
 
    ;----------
    ; Set up for QA plots
