@@ -45,6 +45,8 @@ IDL_LONG extract_row
    float    ** aprofile;
    float    ** apoly;
    float       sigmal = 5.0; 	/* set limits of profile influence   */
+   float       tsigma = 5.0; 	/* set limits of profile influence   */
+   float       contribution = 0.0;  /* set limits of profile influence   */
    float       x2; 	/* Top Chebyshev x limit */
    float       x1; 	/* Lower Chebyshev x limit  */
    IDL_LONG    wPoly; 	/* Number of coefficients nPoly + whopping terms */
@@ -114,10 +116,20 @@ IDL_LONG extract_row
    xmin = (IDL_LONG *)malloc(sizeof(IDL_LONG)*nTrace);
    xmax = (IDL_LONG *)malloc(sizeof(IDL_LONG)*nTrace);
 
-   if (proftype == 10) 
-      findXLimits(xmin, xmax, x, xcen, nx, nTrace, sigma, 6.0*sigmal);
-   else 
-      findXLimits(xmin, xmax, x, xcen, nx, nTrace, sigma, sigmal);
+   tsigma = 5.0;
+
+   if (proftype >= 10)  tsigma = 30.0;
+
+   if (proftype == 12)  {
+      argct++;
+      sigmal = *(float *)argv[argct++];
+      contribution = *(float *)argv[argct++];
+      tsigma = 200.0;
+   fprintf(stderr, "Going to fit_row now %f %f \n", sigmal, contribution);  
+   }
+
+
+   findXLimits(xmin, xmax, x, xcen, nx, nTrace, sigma, tsigma);
 
 /*
 //	ma = nCoeff*nTrace + nPoly
@@ -145,7 +157,7 @@ IDL_LONG extract_row
       }
 
    fillProfile(aprofile, x, xcen, xmin, xmax, sigma, nx, nCoeff, 
-          nTrace, proftype);
+          nTrace, proftype, sigmal, contribution);
 
    if (squashprofile) {
 /*     printf("Squashing Profile\n");  */
@@ -285,7 +297,9 @@ void AddGaussWings(float *x, IDL_LONG ndat, float **y, float xcen,
 	float base;
 	float diff, denom;
 	float epow;
-	float sigmal = 10.0*sigma;
+
+/*   !!!!!!!!!! Hardwired sigma for wide gaussian 10 pixels!!!!!!! */
+	float sigmal = 10.0;  
 
 	denom = 1.0/sqrt(6.2832 * sigmal * sigmal);
 
@@ -301,6 +315,24 @@ void AddGaussWings(float *x, IDL_LONG ndat, float **y, float xcen,
               y[0][k] /= (1.0 + contribution);
           }
 	}
+
+}
+void AddExponentialWings(float *x, IDL_LONG ndat, float **y, float xcen, 
+                   IDL_LONG xmin, IDL_LONG xmax, float sigmal, 
+                   float contribution)
+{ 
+	IDL_LONG i,k;
+	float diff;
+
+	for (i=xmin,k=0; i<=xmax; i++, k++) {
+	  if(i >= 0 && i < ndat) {
+	      diff = fabs(xcen - x[i])/sigmal;
+	      y[0][k] += contribution * 0.5*exp(-diff)/sigmal;
+//	      printf("%f ", y[0][k]);
+
+          }
+	}
+//	printf("\n");
 
 }
 void ProfileGauss(float *x, IDL_LONG ndat, float **y, float xcen, IDL_LONG xmin,
@@ -837,9 +869,11 @@ void CheckMultiRowFibers(float **abig, IDL_LONG *xmin, IDL_LONG *xmax,
 
 void fillProfile(float **y, float *x, float *xcen, IDL_LONG *xmin, 
              IDL_LONG *xmax, float *sigma, IDL_LONG nx, IDL_LONG nCoeff, 
-             IDL_LONG nTrace, IDL_LONG proftype)
+             IDL_LONG nTrace, IDL_LONG proftype, float sigmal, 
+             float contribution)
 {
-	int i, j, length;
+	int i, j, m, length;
+        IDL_LONG tCoeff;
 
 	for (i=0,j=0; i<nTrace; i++,j+=nCoeff) {
 	    length = xmax[i] - xmin[i] + 1;
@@ -876,6 +910,24 @@ void fillProfile(float **y, float *x, float *xcen, IDL_LONG *xmin,
                       sigma[i], nCoeff);
                  AddGaussWings(x, nx, &y[j], xcen[i], xmin[i],xmax[i],
                       sigma[i], nCoeff, 0.025);
+                 }
+	      else if (proftype == 11)  {
+                 tCoeff = 1;
+                 ProfileGauss(x, nx, &y[j], xcen[i], xmin[i],xmax[i],
+                      sigma[i], tCoeff);
+                 if (nCoeff > 1)  {
+                   for (m=0; m<length; m++) { y[j+1][m] = 0.0; }
+                   AddGaussWings(x, nx, &y[j+1], xcen[i], xmin[i],xmax[i],
+                      sigma[i], nCoeff, 1.0);
+                   }
+                 }
+/*      This is to put a sigma = 25.0 exponential profile    */
+
+	      else if (proftype == 12)  {
+                 ProfileGauss(x, nx, &y[j], xcen[i], xmin[i],xmax[i],
+                      sigma[i], nCoeff);
+                   AddExponentialWings(x, nx, &y[j], xcen[i], xmin[i],
+                      xmax[i], sigmal, contribution);
                  }
               else {
 	         fprintf(stderr,"Using Gaussian");
