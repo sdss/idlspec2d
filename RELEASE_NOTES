@@ -123,6 +123,10 @@ DJS_MEDIAN: Bug fix for crash condition when WIDTH is greater than
 DJS_REJECT  : Major bug in /groupbadpix option, should now work as intended
 BSPLINE_ITERFIT: Fix major bug with /GROUPBADPIX option which is used
            by COMBINE1FIBER.
+SPLOT: For gaussian line fitting, display the Area (not the peak height),
+           and try fitting absorption lines as well as emission lines.
+           Still not always a good fit, since I'm using the IDL build-in
+           CURVEFIT() rather than MPFITFUN, which would be better.
 SXCOMBINEPAR: New proc to combine values of specified header cards from
            many FITS headers.  (This option used by SPCOADD_FRAMES.)
 
