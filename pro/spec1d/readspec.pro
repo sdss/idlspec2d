@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   readspec, plate, fiber, [mjd=, silent=, flux=, flerr=, invvar=, $
-;    andmask=, ormask=, plugmap=, loglam=, wave=, tsobj=]
+;    andmask=, ormask=, plugmap=, loglam=, wave=, tsobj=, root_dir= ]
 ;
 ; INPUTS:
 ;   plate      - Plate number(s)
@@ -18,6 +18,10 @@
 ;   mjd        - MJD number(s); if not set, then select the most recent
 ;                data for this plate (largest MJD).
 ;   silent     - Set to read files in a (more) silent way.
+;   root_dir   - Root directory for reduced spectro data files, which
+;                are assumed to be ROOT_DIR/pppp/spPlate-pppp-mmmmm.fits,
+;                where pppp=plate number and mmmm=MJD.
+;                Default to '/data/spectro/2d_3c'.
 ;
 ; OUTPUTS:
 ;
@@ -100,18 +104,20 @@ end
 ;------------------------------------------------------------------------------
 pro readspec1, plate, range, mjd=mjd, silent=silent, flux=flux, flerr=flerr, $
  invvar=invvar, andmask=andmask, ormask=ormask, plugmap=plugmap, $
- loglam=loglam, wave=wave, tsobj=tsobj
+ loglam=loglam, wave=wave, tsobj=tsobj, root_dir=root_dir
 
    common com_readspec, q_flux, q_flerr, q_invvar, q_andmask, q_ormask, $
     q_plugmap, q_loglam, q_wave, q_tsobj
+
+   if (NOT keyword_set(root_dir)) then root_dir = '/data/spectro/2d_3c'
 
    platestr = string(plate,format='(i4.4)')
    if (NOT keyword_set(mjd)) then mjdstr = '*' $
     else mjdstr = string(mjd,format='(i5.5)')
 
-   dirname = '/data/spectro/2d_3c/' + platestr
    filename = 'spPlate-' + platestr + '-' + mjdstr + '.fits'
-   filename = findfile(filepath(filename, root_dir=dirname), count=ct)
+   filename = findfile(filepath(filename, root_dir=root_dir, $
+    subdirectory=platestr), count=ct)
 
    if (ct GT 1) then begin
       i = reverse(sort(filename))
