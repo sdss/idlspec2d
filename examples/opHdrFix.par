@@ -167,8 +167,14 @@ spechdrfix sdR-??-00006630 FLAVOR   "'unknown'"
 # Shutters may have not opened on this exposure on MJD 51900.
 spechdrfix sdR-??-00007376 FLAVOR   "'unknown'"
 
+# Axis abort during smear
+spechdrfix sdR-??-00009296 FLAVOR   "'unknown'"
+
 # Wrong exposure time in these headers on MJD 51928
 spechdrfix sdR-??-00008299 EXPTIME  900
+
+# Wrong reported time although exposure looked "fine"
+spechdrfix sdR-??-00009027 EXPTIME  900
 
 # Flat field was on in these exposures on MJD 51929
 spechdrfix sdR-??-00008323 FLAVOR   "'unknown'"
@@ -176,3 +182,32 @@ spechdrfix sdR-??-00008323 FLAVOR   "'unknown'"
 # Guider was still on in this smear exposures on MJD 51981
 spechdrfix sdR-??-00008957 FLAVOR   "'unknown'"
 
+#
+# Wrong plugmap file entered for plate 0503
+#
+spechdrfix sdR-??-0000930[0-7] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0503-51991-01.par'"
+spechdrfix sdR-??-0000930[0-7] MAPID    5199101
+spechdrfix sdR-??-0000930[6-7] NAME     "'0503-51991-01'"
+
+#
+# Wrong plugmap file entered for plate 0542
+#
+spechdrfix sdR-??-0000904[6-9] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0542-51984-02.par'"
+spechdrfix sdR-??-0000904[6-9] MAPID    5198402
+spechdrfix sdR-??-0000904[6-9] NAME     "'0542-51984-02'"
+
+spechdrfix sdR-??-0000905[0-3] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0542-51984-02.par'"
+spechdrfix sdR-??-0000905[0-3] MAPID    5198402
+spechdrfix sdR-??-0000905[0-3] NAME     "'0542-51984-02'"
+
+spechdrfix sdR-??-0000921[5-9] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0542-51984-02.par'"
+spechdrfix sdR-??-0000921[5-9] MAPID    5198402
+spechdrfix sdR-??-0000921[5-9] NAME     "'0542-51984-02'"
+
+spechdrfix sdR-??-0000922[0-2] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0542-51984-02.par'"
+spechdrfix sdR-??-0000922[0-2] MAPID    5198402
+spechdrfix sdR-??-0000922[0-2] NAME     "'0542-51984-02'"
+
+spechdrfix sdR-??-0000926[3-6] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0542-51984-02.par'"
+spechdrfix sdR-??-0000926[3-6] MAPID    5198402
+spechdrfix sdR-??-0000926[3-6] NAME     "'0542-51984-02'"
