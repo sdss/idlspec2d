@@ -258,11 +258,11 @@ pro batch2d, platenums, topdir=topdir, mjd=mjd, mjstart=mjstart, mjend=mjend, $
    fullscriptfile = fullscriptfile[iplate]
 
    ;----------
-   ; Prioritize to do the most recent plates first
+   ; Prioritize to do the lowest-numbered plates first
 
    priority = lonarr(nplate)
    isort = sort(platelist)
-   priority[isort] = lindgen(nplate) + 1
+   priority[isort] = reverse(lindgen(nplate)) + 1
 
    ;----------
    ; Determine which computers to use for these reductions

@@ -99,11 +99,11 @@ pro batch1d, fullplatefile, topdir=topdir, nice=nice
    endfor
 
    ;----------
-   ; Prioritize to do the most recent plates first
+   ; Prioritize to do the lowest-numbered plates first
 
    priority = lonarr(nplate)
    isort = sort(platemjd)
-   priority[isort] = lindgen(nplate) + 1
+   priority[isort] = reverse(lindgen(nplate)) + 1
 
    ;----------
    ; Determine which computers to use for these reductions
