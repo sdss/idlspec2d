@@ -1,4 +1,13 @@
 
+doc/Makefile: Remove invalid copy line.
+etc/Makefile: Change copy of "*" to "*.*" so the "make install" does
+           not crash on IRIX+6 platforms.
+pro/Makefile: Remove invalid copy line.
+pro/inspect/Makefile: Added this makefile.
+pro/science/qso/Makefile: Fix Makefile.
+templates/Makefile: Change copy of "*" to "*.*" so the "make install" does
+           not crash on IRIX+6 platforms.
+
 In idlutils:
 
 bin/Makefile: For the "make install", explicitly copy file names
