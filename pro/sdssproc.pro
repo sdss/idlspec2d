@@ -74,6 +74,32 @@
 ;-
 ;------------------------------------------------------------------------------
 
+function findopfile, expres, mjd, indir
+
+   cd, indir, current=olddir
+   files = findfile(expres)
+   nfiles = n_elements(files)
+   if (nfiles EQ 0) then begin
+     cd, olddir
+     message, 'ABORT: Cannot find opFile '+expres
+   endif
+
+   mjdlist = lonarr(nfiles)
+   for i=0,nfiles-1 do begin
+     yanny_read, files[i], info, hdr=hdr
+     mjdlist[i] = yanny_par(hdr, 'mjd')
+     yanny_free, info
+   endfor 
+
+   diff = mjd - mjdlist 
+   score = min(diff  + 10000000L*(diff LT 0), bestmjd)
+
+   cd, olddir
+   return, files[bestmjd]
+      
+end
+
+;------------------------------------------------------------------------------
 pro sdssproc, infile, image, invvar, indir=indir, $
  outfile=outfile, varfile=varfile, nsatrow=nsatrow, fbadpix=fbadpix, $
  hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, bcfile=bcfile, $
@@ -87,42 +113,12 @@ pro sdssproc, infile, image, invvar, indir=indir, $
       print, ' pixflatname=, spectrographid=, color= ]'
       return
    endif
-   if (NOT keyword_set(configfile)) then configfile = 'opConfig.par'
-   if (NOT keyword_set(ecalibfile)) then ecalibfile = 'opECalib.par'
-   if (NOT keyword_set(bcfile)) then bcfile = 'opBC.par'
+
 
    readimg = arg_present(image) OR keyword_set(outfile)
    readivar = arg_present(invvar) OR keyword_set(varfile) $
     OR arg_present(nsatrow) OR arg_present(fbadpix)
 
-   pp = getenv('IDLSPEC2D_DIR')+'/examples'
-
-   tempname = findfile(configfile, count=ct)
-   if (ct NE 1) then begin
-     tempname = findfile(filepath(configfile, root_dir=pp), count=ct)
-   endif
-   if (ct NE 1) then $
-     message, 'No configuration file ' + string(configfile)
-
-   realconfig = tempname[0]
-
-   tempname = findfile(ecalibfile, count=ct)
-   if (ct NE 1) then begin
-     tempname = findfile(filepath(ecalibfile, root_dir=pp), count=ct)
-   endif
-   if (ct NE 1) then $
-    message, 'No ECalib file ' + string(ecalibfile)
-
-   realecalib = tempname[0]
-
-   tempname = findfile(bcfile, count=ct)
-   if (ct NE 1) then begin
-     tempname = findfile(filepath(bcfile, root_dir=pp), count=ct)
-   endif
-   if (ct NE 1) then $
-    message, 'No BC file ' + string(bcfile)
-
-   realbc = tempname[0]
 
    if (keyword_set(indir)) then fullname = filepath(infile, root_dir=indir) $
     else fullname = infile
@@ -134,6 +130,17 @@ pro sdssproc, infile, image, invvar, indir=indir, $
     rawdata = rdss_fits(fullname, hdr, /nofloat) $
    else $
     hdr = headfits(fullname)
+
+   mjd = sxpar(hdr, 'MJD')
+
+   pp = getenv('IDLSPEC2D_DIR')+'/examples'
+
+   if (NOT keyword_set(configfile)) then $
+       configfile = findopfile('opConfig*par',mjd,pp)
+   if (NOT keyword_set(ecalibfile)) then $
+       ecalibfile = findopfile('opECalib*par',mjd,pp)
+   if (NOT keyword_set(bcfile)) then $
+       bcfile = findopfile('opBC*par',mjd,pp)
 
    naxis = sxpar(hdr,'NAXIS*')
    if (naxis[0] NE 2128 OR naxis[1] NE 2069) then $
@@ -199,7 +206,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    ; Take the first entry for the configuration of each CCD in the event
    ; that there are several.
 
-   yanny_read, realconfig, pdata
+   yanny_read, filepath(configfile, root_dir=pp), pdata
    config = *pdata[0]
    yanny_free, pdata
    i = where(config.camrow EQ camrow AND config.camcol EQ camcol)
@@ -253,7 +260,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
     
 
    ; Read in ECalib File
-   yanny_read, realecalib, pdata
+   yanny_read, filepath(ecalibfile, root_dir=pp), pdata
    ecalib = *pdata[0]
    yanny_free, pdata
    ecalib = ecalib[ where(ecalib.camrow EQ camrow AND ecalib.camcol EQ camcol) ]
@@ -272,7 +279,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    else if ((size(image))[1] NE nc OR (size(image))[2] NE nr OR $
             (size(image))[3] NE 4) then image = fltarr(nc, nr) 
 
-   yanny_read, realbc, pdata
+   yanny_read, filepath(bcfile, root_dir=pp), pdata
    bc = *pdata[0]
    yanny_free, pdata
    
@@ -284,7 +291,6 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    ; was longer than 640 seconds.
 
    exptime = sxpar(hdr, 'EXPTIME')
-   mjd = sxpar(hdr, 'MJD')
    flavor = sxpar(hdr, 'FLAVOR')
    qshutter = 0
 
