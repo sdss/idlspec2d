@@ -358,21 +358,21 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
             linestruct[iline].linecontlevel = bfit[ipix]
             linestruct[iline].linecontlevel_err = berr[ipix]
 
-            ; Find the pixels that bracket +/- 3 sigma of the line center
-            indx1 = where(loglam GE lfit[iline*3+1] - 3 * lfit[iline*3+2])
-            junk = min(loglam[indx1], i1)
-            i1 = indx1[i1]
-            indx2 = where(loglam LE lfit[iline*3+1] + 3 * lfit[iline*3+2])
-            junk = max(loglam[indx2], i2)
-            i2 = indx2[i2]
+            ; Find the pixels that are within +/- 3 sigma of the line center
+            ; Note that if the line is very (unphysically) narrow, it is
+            ; possible to have no lines within this domain.
+            indx = where( loglam GE lfit[iline*3+1] - 3 * lfit[iline*3+2] $
+                      AND loglam LE lfit[iline*3+1] + 3 * lfit[iline*3+2] )
 
-            linestruct[iline].linenpix = total(invvar[i1:i2] GT 0)
-            linestruct[iline].linedof = $
-             linestruct[iline].linenpix - nfitterms[iline]
+            if (indx[0] NE -1) then begin
+               linestruct[iline].linenpix = total(invvar[indx] GT 0)
+               linestruct[iline].linedof = $
+                linestruct[iline].linenpix - nfitterms[iline]
 
-            if (linestruct[iline].linedof GT 0) then begin
-               linestruct[iline].linechi2 = $
-                total( (flux[i1:i2] - yfit[i1:i2])^2 * invvar[i1:i2] )
+               if (linestruct[iline].linedof GT 0) then begin
+                  linestruct[iline].linechi2 = $
+                   total( (flux[indx] - yfit[indx])^2 * invvar[indx] )
+               endif
             endif
          endelse
       endfor
