@@ -78,8 +78,10 @@ function smooth_superflat, superflatset, airset, plottitle=plottitle
    fullfit = bspline_valu(loglam, smoothset)
    ratio = model/(yfit + (yfit EQ 0))
    area = total(ratio-1)/sqrt(nsparse)
+   sarea = string(area, format='(f8.4)')
+
    if total(ratio-1)/sqrt(nsparse) GT 0.01 then $
-     splog, 'WARNING: Possible Argon lines in superflat: ' + strtrim(string(area),2)
+     splog, 'WARNING: Possible Argon lines in superflat: ' + sarea
    
    ;
    ; Let's attempt a QA plot here: 
@@ -96,8 +98,7 @@ function smooth_superflat, superflatset, airset, plottitle=plottitle
      djs_plot, wave, ratio, /yno,$
         ymargin=[4,-4],/xs, xrange=xrange, xtitle='Wavelength (\AA)'
      djs_oplot, wave, yfit-yfit+1
-     polyfill, [wave, reverse(wave)], [ratio, ratio*0+1], color=djs_icolor('red')
-     xyouts, [0.95], [0.5], 'Area= '+strtrim(string(area),2)+' ', $
+     xyouts, [0.95], [0.5], 'Area= '+sarea+' ', $
              alignment=1.0, /normal 
      !p.multi = oldmulti
    endif
