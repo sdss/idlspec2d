@@ -21,6 +21,7 @@ KURUCZ_FITSFILE: New proc for generating a single FITS file from a list
         of ASCII-formatted Kurucz models.
 LRGMODEL_TRAIN: Calling script for training the Bruzual-Charlot models
         for photo-z's.
+PLATELIST: Get rid of the SMEARUSE entry, since it is now deprecated.
 PLATESN,PLOTSN: Added E(B-V) keyword to handle spectra which have
         been corrected for foreground dereddening.
 PLOTSIGNAL: New routine for making diagnostic plots of the signal seen
