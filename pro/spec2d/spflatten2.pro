@@ -24,9 +24,9 @@
 ;   oldflat    - Name of old flat-field from which to select pixels to mask;
 ;                if not set, then read the masks in this source distribution.
 ;   outfile    - Write the image PIXFLAT to this file.
-;   indir      - Input directory for FLATNAME; default to './'
-;   outdir     - Output directory for OUTFILE; default to './'
-;   tmpdir     - Directory for temporary files; default to same as OUTDIR
+;   indir      - Input directory for FLATNAME; default to current directory
+;   outdir     - Output directory for OUTFILE; default to current directory
+;   tmpdir     - Directory for temporary files; default to current directory
 ;   pixspace   - Approximate spacing in pixels for break points in the
 ;                spline fits to individual fibers; default to 50 pixels.
 ;                Note that this spacing need be small enough to fit out
@@ -66,15 +66,16 @@
 ;     the hole.
 ;
 ; PROCEDURES CALLED:
+;   bspline_iterfit()
+;   bspline_valu()
 ;   djs_avsigclip()
+;   djs_filepath()
 ;   extract_image
 ;   genflatmask()
 ;   readfits()
 ;   rmfile
-;   slatec_bvalu()
-;   slatec_splinefit()
 ;   sdssproc
-;   superflat
+;   superflat()
 ;   trace320crude()
 ;   traceset2xy
 ;   writefits
@@ -88,10 +89,6 @@ pro spflatten2, flatname, arcname, allflats, pixflat, $
  sigrej=sigrej, maxiter=maxiter, $
  oldflat=oldflat, outfile=outfile, indir=indir, outdir=outdir, tmpdir=tmpdir, $
  pixspace=pixspace, nord=nord, lower=lower, upper=upper, nodelete=nodelete
-
-   if (NOT keyword_set(indir)) then indir = './'
-   if (NOT keyword_set(outdir)) then outdir = './'
-   if (NOT keyword_set(tmpdir)) then tmpdir = outdir
 
    if (N_elements(pixspace) EQ 0) then pixspace = 50
    if (N_elements(nord) EQ 0) then nord = 4
@@ -111,9 +108,11 @@ pro spflatten2, flatname, arcname, allflats, pixflat, $
    endif
    if (NOT keyword_set(maxiter)) then maxiter = 2
 
-   tmpname1 = filepath('tmp.flatimg.'+strtrim(string(indgen(nflat)),2)+'.fits',$
+   tmpname1 = djs_filepath( $
+    'tmp.flatimg.'+strtrim(string(indgen(nflat)),2)+'.fits',$
     root_dir=tmpdir)
-   tmpname2 = filepath('tmp.ymodel.'+strtrim(string(indgen(nflat)),2)+'.fits',$
+   tmpname2 = djs_filepath( $
+    'tmp.ymodel.'+strtrim(string(indgen(nflat)),2)+'.fits',$
     root_dir=tmpdir)
 
    ;---------------------------------------------------------------------------
@@ -214,11 +213,11 @@ arcivar = 0
    ; Construct the flat
    ;---------------------------------------------------------------------------
 
-   ; Always select the same break points in log-wavelength for all fibers
-
-   nbkpts = fix(ny / pixspace) + 2
-   bkpt = (findgen(nbkpts)-1) * (max(waveimg) - min(waveimg)) / (nbkpts-1) $
-    + min(waveimg)
+;   ; Always select the same break points in log-wavelength for all fibers
+;
+;   nbkpts = fix(ny / pixspace) + 2
+;   bkpt = (findgen(nbkpts)-1) * (max(waveimg) - min(waveimg)) / (nbkpts-1) $
+;    + min(waveimg)
 
    for iflat=0, nflat-1 do begin
 
@@ -226,6 +225,7 @@ arcivar = 0
       ; Read flat-field image
 
       sdssproc, allflats[iflat], flatimg, flativar, indir=indir, hdr=flathdr
+      if (iflat EQ 0) then hdr0 = flathdr
 
       ;----------------------
       ; Create spatial tracing from flat-field image
@@ -255,14 +255,15 @@ arcivar = 0
       ;----------------------
       ; Construct the "superflat" vector for this particular frame
 
-;      superflat, flux, fluxivar, wset, afullbkpt, acoeff, $
-;       fibermask=fibermask, minval=0.0, lower=lower, upper=upper
-      superflat, flux, fluxivar, wset, sset, $
-       fibermask=fibermask, minval=0.0, lower=lower, upper=upper
+      x2 = xsol / 2048. ; CCD-X position ???
+      asset = superflat(flux, fluxivar, wset, x2=x2, $
+       fibermask=fibermask, minval=0.0, lower=lower, upper=upper, $
+       nord=3, npoly=4)
 flux = 0
 fluxivar = 0
-;      fitimg = slatec_bvalu(waveimg, afullbkpt, acoeff)
-      fitimg = bspline_valu(waveimg, sset)
+      x2 = float(djs_laxisgen([nx,ny],iaxis=0)) / 2048. ; CCD-X position ???
+      fitimg = bspline_valu(waveimg, asset, x2=x2)
+fitimg = fitimg > 0.02 ; ???
 
       ;----------------------
       ; Divide by the superflat image
@@ -321,10 +322,15 @@ fitimg = 0
 
          yaxis = findgen(ny)
 
-         fullbkpt = slatec_splinefit(yaxis[indx], flatimg[i,indx], coeff, $
-          invvar=flativar[i,indx], bkspace=pixspace, nord=nord, $
-          lower=4, upper=4, maxiter=3)
-         ymodel[i,*] = slatec_bvalu(yaxis, fullbkpt, coeff)
+         sset = bspline_iterfit(yaxis[indx], transpose(flatimg[i,indx]), $
+          invvar=transpose(flativar[i,indx]), nord=nord, bkspace=pixspace, $
+          upper=4, lower=4, maxiter=3, maxrej=ceil(0.05*n_elements(indx)))
+         ymodel[i,*] = bspline_valu(yaxis, sset)
+
+;         fullbkpt = slatec_splinefit(yaxis[indx], flatimg[i,indx], coeff, $
+;          invvar=flativar[i,indx], bkspace=pixspace, nord=nord, $
+;          lower=4, upper=4, maxiter=3)
+;         ymodel[i,*] = slatec_bvalu(yaxis, fullbkpt, coeff)
 
       endfor
 
@@ -375,7 +381,7 @@ pixflatarr = 0
    endelse
 
    if (keyword_set(outfile)) then $
-    writefits, outdir+outfile, pixflat
+    writefits, djs_filepath(outfile, root_dir=outdir), pixflat, hdr0
 
    return
 end
