@@ -399,8 +399,11 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       if (myflavor EQ 'science') then begin
          plotfile = filepath('snplot-'+mjdstr+'-'+platestr+'.ps', $
           root_dir=outdir)
+         giffile = filepath('snplot-'+mjdstr+'-'+platestr+'.gif', $
+          root_dir=outdir)
          splog, 'Generating S/N plot '+plotfile
          apo_plotsn, logfile, plate, plugdir=plugdir, plotfile=plotfile
+         spawn, 'pstogif ' + plotfile
          splog, 'Done generating plot'
       endif
 
@@ -428,7 +431,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
          spawn, 'scp ' + currentfile + ' ' + copydir
          spawn, 'scp ' + logfile  + ' ' + copydir
          if (keyword_set(plotfile)) then $
-          spawn, 'scp ' + plotfile + ' ' + copydir
+          spawn, 'scp ' + plotfile + ' ' + giffile + ' ' + copydir
          splog, 'Done.'
       endif
    endif
