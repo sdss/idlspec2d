@@ -479,6 +479,7 @@ templates/spEigenStar-51845.fits -text svneol=unset#unset
 templates/spEigenStar-51984.fits -text svneol=unset#unset
 templates/spEigenStar-52146.fits -text svneol=unset#unset
 templates/spEigenStar-52223.fits -text svneol=unset#unset
+templates/spEigenStar-52333.fits -text svneol=unset#unset
 templates/spEigenVdisp.fits -text svneol=unset#unset
 templates/spEigenVstnd.fits -text svneol=unset#unset
 ups/Makefile -text
