@@ -325,7 +325,12 @@ pro platemerge, zfile, outroot=outroot1, public=public
       else $
        splog, 'WARNING: No tsObj file found for plate ', outdat[indx[0]].plate
 ;      copy_struct_inx, outdat, platedat, index_from=indx
-      copy_struct_inx, outdat[indx], platedat
+      copy_struct, outdat[indx], platedat
+
+      ; All strings must be the same length, or appending to the FITS file
+      ; will result in corruption.  The only string in the tsobj structure
+      ; is for the RERUN.
+      platedat.rerun = string(platedat.rerun+'   ',format='(a3)')
 
       mwrfits_chunks, platedat, outroot[0]+'.fits.tmp', $
        create=(ifile EQ 0), append=(ifile GT 0)
