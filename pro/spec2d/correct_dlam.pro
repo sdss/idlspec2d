@@ -3,25 +3,28 @@
 ;   correct_dlam
 ;
 ; PURPOSE:
-;   Correct ADU/pixel to ADU/dlam
+;   Correct ADU/pixel to ADU/d(log-lambda)
 ;
 ; CALLING SEQUENCE:
 ;   correct_dlam, flux, fluxivar, wset, dlam=dlam
 ;
 ; INPUTS:
-;   flux       - object counts
-;   fluxivar   - inverse variance
-;   wset       - wavelength coefficient traceset
+;   flux       - Flux
+;   fluxivar   - Flux inverse variance
+;   wset       - Wavelength coefficient trace-set
 ;
 ; OPTIONAL KEYWORDS:
-;   dlam       - log lambda pixel size to convert to (1.0e-4 default)
+;   dlam       - Log-lambda pixel size to convert to; default to 1.0d-4
 ;
 ; OUTPUTS:
+;   flux       - (Modified.)
+;   fluxivar   - (Modified.)
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
-;   flux and fluxivar are overwritten
+;   Make a map of the size of each pixel in delta-(log10-Angstroms),
+;   and re-normalize the flux to ADU/d(log10-Angstroms).
 ;
 ; EXAMPLES:
 ;
@@ -32,20 +35,20 @@
 ;   traceset2xy
 ;
 ; REVISION HISTORY:
-;    4-Oct-2000  Written by S. Burles, FNAL
+;   04-Oct-2000  Written by S. Burles, FNAL
 ;-
 ;------------------------------------------------------------------------------
 pro correct_dlam, flux, fluxivar, wset, dlam=dlam
 
-     if NOT keyword_set(dlam) then dlam=1.0e-4
+   if (NOT keyword_set(dlam)) then dlam = 1.0d-4
 
-     traceset2xy,wset, xx, central
-     traceset2xy,wset, xx-0.5, lower
-     traceset2xy,wset, xx+0.5, upper
+   traceset2xy, wset, xx, central
+   traceset2xy, wset, xx-0.5, lower
+   traceset2xy, wset, xx+0.5, upper
 
-     dlogimg = abs(upper - lower)
-     divideflat, flux, fluxivar, (dlogimg/dlam), minval=0
+   dlogimg = abs(upper - lower)
+   divideflat, flux, fluxivar, (dlogimg/dlam), minval=0
 
-return
+   return
 end
-   
+;------------------------------------------------------------------------------
