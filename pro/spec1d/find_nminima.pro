@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   xpeak = find_nminima( yflux, [ xvec, dofarr=, nfind=, minsep=, $
-;    width=, ypeak=, xerr=, errcode=, npeak=, plottitle=, /doplot ]
+;    width=, ypeak=, xerr=, errcode=, npeak=, plottitle=, /doplot, /debug ]
 ;
 ; INPUTS:
 ;   yflux          - Y values
@@ -26,7 +26,7 @@
 ;   width          - Width to use when selecting the points used in the fit.
 ;                    Only use points where XVEC is within WIDTH of the
 ;                    the lowest-values point (which is used as the initial
-;                    guess).
+;                    guess); default to using all points.
 ;
 ; OUTPUTS:
 ;   ypeak          - Fit value for either chi^2 or chi^2/DOF at the minima.
@@ -37,6 +37,7 @@
 ;   npeak          - The number of peaks found, between [0,NFIND].
 ;   plottitle      - Title of plot (if /DOPLOT is set).
 ;   doplot         - If set, then make plots.  Discarded peaks are not plotted.
+;   debug          - If set, then wait for keystroke after plot.
 ;
 ; COMMENTS:
 ;   This routine calls SVDFIT for fitting quadratics, or MPFIT for
@@ -234,7 +235,7 @@ end
 ;------------------------------------------------------------------------------
 function find_nminima, yflux, xvec, dofarr=dofarr, nfind=nfind, minsep=minsep, $
  width=width, ypeak=ypeak, xerr=xerr, errcode=errcode, npeak=npeak, $
- plottitle=plottitle, doplot=doplot
+ plottitle=plottitle, doplot=doplot, debug=debug
 
    ndata = n_elements(yflux)
    if (ndata EQ 1) then $
@@ -264,11 +265,14 @@ function find_nminima, yflux, xvec, dofarr=dofarr, nfind=nfind, minsep=minsep, $
       bangx = !x
       bangy = !y
       dxplot = 0.85 / nfind
-      !p.position = [0.10, 0.10, 0.10+dxplot, 0.45]
+      !p.position = [0.15, 0.10, 0.10+dxplot, 0.45]
 ;      !x.margin = [0,0]
 ;      !x.omargin = [10,3]
       !y.range = minmax(ycopy)
-      !y.title = textoidl('\chi^2/DOF')
+      if (keyword_set(chi2arr)) then $
+       !y.title = textoidl('\chi^2/DOF') $
+      else $
+       !y.title = textoidl('\chi^2')
       !p.multi = [0,nfind+1,1]
       !p.charsize = 1.5
       !x.charsize = 1.5
@@ -370,7 +374,7 @@ function find_nminima, yflux, xvec, dofarr=dofarr, nfind=nfind, minsep=minsep, $
    npeak = n_elements(xpeak)
 
    if (keyword_set(doplot)) then begin
-      !p.position = [0.10, 0.55, 0.95, 0.95]
+      !p.position = [0.15, 0.55, 0.95, 0.95]
       xcsize = !x.charsize
       ycsize = !y.charsize
       yrange = !y.range
@@ -378,9 +382,9 @@ function find_nminima, yflux, xvec, dofarr=dofarr, nfind=nfind, minsep=minsep, $
       !y = bangy
       yplot = yflux
       if (keyword_set(dofarr)) then yplot = yplot / dofarr
-      djs_plot, xvec, yplot, yrange=yrange, $
+      djs_plot, xvec, yplot, yrange=yrange, psym=-4, $
        xcharsize=xcsize, ycharsize=ycsize, yrange=yrange, $
-       title=plottitle, xtitle='Lag [pixels]', ytitle='\chi^2/DOF'
+       title=plottitle, xtitle='Lag [pixels]'
       for ipeak=0, npeak-1 do begin
          if (errcode[ipeak] EQ 0) then color = 'green' $
           else color = 'red'
@@ -388,6 +392,12 @@ function find_nminima, yflux, xvec, dofarr=dofarr, nfind=nfind, minsep=minsep, $
       endfor
       !p = bangp
       !p.color = djs_icolor('default')
+
+      ; Wait for a keystroke...
+      if (keyword_set(debug)) then begin
+         print, 'Press any key...'
+         cc = strupcase(get_kbrd(1))
+      endif
    endif
 
    return, xpeak
