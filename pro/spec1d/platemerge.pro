@@ -6,7 +6,7 @@
 ;   Merge all Spectro-1D outputs with tsObj files.
 ;
 ; CALLING SEQUENCE:
-;   platemerge, [zfile, outroot=, /qsurvey, /public]
+;   platemerge, [zfile, outroot=, /public]
 ;
 ; INPUTS:
 ;
@@ -15,9 +15,7 @@
 ;                 specified by the PLATELIST routine.
 ;   outroot     - Root name for output files; default to '$SPECTRO_DATA/spAll';
 ;                 the files are then 'spAll.fits' and 'spAll.dat'.
-;                 If /QSURVEY is set, then add '-qsurvey' to the root name.
 ;                 If /PUBLIC is set, then add '-public' to the root name.
-;   qsurvey     - If set, then limit to plates in platelist with QSURVEY=1.
 ;   public      - If set, then limit to plates in platelist with PUBLIC != ''
 ;
 ; OUTPUTS:
@@ -45,11 +43,10 @@
 ; REVISION HISTORY:
 ;   30-Oct-2000  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
-pro platemerge, zfile, outroot=outroot, qsurvey=qsurvey, public=public
+pro platemerge, zfile, outroot=outroot, public=public
 
    if (NOT keyword_set(outroot)) then begin
       outroot = 'spAll'
-      if (keyword_set(qsurvey)) then outroot = outroot + '-qsurvey'
       if (keyword_set(public)) then outroot = outroot + '-public'
       outroot = djs_filepath(outroot, root_dir=getenv('SPECTRO_DATA'))
    endif
@@ -61,10 +58,8 @@ pro platemerge, zfile, outroot=outroot, qsurvey=qsurvey, public=public
       platelist, plist=plist
       if (NOT keyword_set(plist)) then return
 
-      indx = where(strtrim(plist.status1d,2) EQ 'Done')
-      if (indx[0] EQ -1) then return
-      if (keyword_set(qsurvey)) then $
-       indx = indx[ where(plist[indx].qsurvey) ]
+      indx = where(strtrim(plist.platequality,2) EQ 'Good' $
+       OR strtrim(plist.platequality,2) EQ 'Marginal')
       if (indx[0] EQ -1) then return
       if (keyword_set(public)) then $
        indx = indx[ where(strtrim(plist[indx].public)) ]
