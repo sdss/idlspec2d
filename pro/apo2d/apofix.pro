@@ -165,27 +165,31 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad
          thishdr = headfits(filename[ifile])
          thismjd = sxpar(thishdr, 'MJD')
          oldval = sxpar(thishdr, card)
-         if (size(oldval, /tname) EQ 'STRING') then begin
-            qdiff = strtrim(oldval,2) NE strval
-         endif else begin
-            qdiff = oldval NE newval
-         endelse
-print,oldval,newval,qdiff
+; ???
+;         if (size(oldval, /tname) EQ 'STRING') then begin
+;            qdiff = strtrim(oldval,2) NE strval
+;         endif else begin
+;            qdiff = oldval NE newval
+;         endelse
+;print,oldval,newval,qdiff
       endif
    endfor
 
    ;----------
+   ; Construct the output structure
+
+   fstruct.fileroot = fileroot
+   fstruct.keyword = strupcase(card)
+   fstruct.value = strval
+
+   ;----------
    ; Read the sdHdrFix file
 
-   if (NOT keyword_set(mjd)) then begin
+   if (NOT keyword_set(thismjd)) then begin
       print, 'MJD could not be determined from the FITS headers'
       !quiet = quiet
       return
    endif
-
-   fstruct.fileroot = fileroot
-   fstruct.keyword = card
-   fstruct.value = string(newval)
 
    mjdstr = string(thismjd, format='(i5.5)')
    sdfixname = filepath('sdHdrFix-' + mjdstr + '.par', root_dir=astrolog_dir, $
@@ -195,6 +199,10 @@ print,oldval,newval,qdiff
    yanny_read, sdfixname, pdata, hdr=hdr, enums=enums, structs=structs, $
     stnames=stnames, /anonymous
    djs_unlockfile, sdfixname
+
+   ;----------
+   ; Append to the existing data structures in the sdHdrFix file,
+   ; or create a new one if the file does not yet exist.
 
    if (NOT keyword_set(pdata)) then begin
       while (djs_lockfile(sdfixname) EQ 0) do wait, 2
@@ -208,9 +216,7 @@ print,oldval,newval,qdiff
          !quiet = quiet
          return
       endif
-      newdat = *pdata[i]
-      struct_append, newdat, fstruct
-      pdata[i] = ptr_new(newdat)
+      pdata[i] = ptr_new(struct_append(*pdata[i], fstruct))
 
       while (djs_lockfile(sdfixname) EQ 0) do wait, 2
       yanny_write, sdfixname, pdata, hdr=hdr, enums=enums, structs=structs, $
@@ -218,7 +224,6 @@ print,oldval,newval,qdiff
       djs_unlockfile, sdfixname
    endelse
 
-stop
    yanny_free, pdata
    !quiet = quiet
 
