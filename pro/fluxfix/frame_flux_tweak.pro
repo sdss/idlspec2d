@@ -167,11 +167,11 @@ end
 
 ;------------------------------------------------------------------------------
 pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
-    best_exp, fibertag, corrfile
+    best_exp, plugtag, corrfile
 
-   expid = fibertag[uniq(fibertag.expid)].expid
+   expid = plugtag[uniq(plugtag.expid)].expid
    splog, 'Best Exposure =', best_exp
-   indx = where(fibertag.expid eq best_exp)
+   indx = where(plugtag.expid eq best_exp)
 
    ;----------
    ; Create red & blue smoothed best images
@@ -206,7 +206,7 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
 
    for ifile=0, nfiles-1 do begin
 
-      indx = where(fibertag.expid eq expid[ifile])
+      indx = where(plugtag.expid eq expid[ifile])
       splog, 'Fluxing science image =', expid[ifile]
 
       ;------------
@@ -295,7 +295,7 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
 
       ;----------
       ; Identify sky fibers from the plug map   
-      sky = where(strmatch(fibertag[indx].objtype, '*SKY*'))
+      sky = where(strmatch(plugtag[indx].objtype, '*SKY*'))
       corrset.coeff[0,sky] = 1.0
       corrset.coeff[1,sky] = 0.0
       corrset.coeff[2,sky] = 0.0
@@ -358,7 +358,7 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
       traceset2xy, corrset, wave, corrimage
 
       !P.MULTI = [0, 1, 2]
-      std = where(strmatch(fibertag[indx].objtype, '*_STD*'), nstd)
+      std = where(strmatch(plugtag[indx].objtype, '*_STD*'), nstd)
       for ii = 0, nstd - 1 do begin
         istd = std[ii]
         plot, 10.0^wave[*,istd], corrimage[*,istd], yr=[0.5, 1.5], /nodata, $
@@ -377,7 +377,7 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
 
       hipts = where(fiber_coeff eq 3, nhipts)
       lowpts = where(fiber_coeff ne 3, nlowpts)
-      std = where(strmatch(fibertag[indx].objtype, '*_STD*'), nstd)
+      std = where(strmatch(plugtag[indx].objtype, '*_STD*'), nstd)
 
       for iobj=0, nlowpts -1 do $
         djs_oplot, 10.0^wave[*,lowpts[iobj]], corrimage[*,lowpts[iobj]], $
