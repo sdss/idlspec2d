@@ -4,9 +4,16 @@ PLOTSPEC: Major re-write to allow flipping through many plots on a plate
           Usage of ZNUM changed -- see READSPEC for new usage.
 READSPEC: Return successfully even if redshift files not found.
           Change usage of ZNUM such that ZNUM=1 is best fit, ZNUM=2 is 2nd best.
+SPFLATAVE, SPFLATTEN2: Handle edge effects better.  In SPFLATTEN2, set
+          any pixels more than 2 pixels from the left/right of the first/last
+          fiber equal to zero.  Then, in SPFLATAVE, any edge pixels that are
+          zero from all nights are set to unity.
 idlspec2d.table: Make an optional dependence upon the "specflat" product.
 
 evilinstall (in idlutils): Minor syntax changes to work with RH7.1 on spectro.
+ATV (in idlutils): Handle unsupported CTYPE, CTYPE reversal gracefully;
+                   left click on apphot (Imexam) prints coords
+
 
 -------------------------------------------------------------------------------
 v4_8_0 (Jul 17, 2001 idlspec2d+idlutils)
