@@ -262,8 +262,8 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
             if (pltid GT 0 AND pltid LT 9999) then $
              platestr = string(pltid,format='(i04.4)') $
              else platestr = '0000'
-            splog, camname=0, ''
-            splog, camname='Plate '+platestr
+            splog, prelog=0, ''
+            splog, prelog='Plate '+platestr
 
             ; Zero-out data structure
             oneseq = 0
@@ -451,7 +451,7 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
 
          endfor ; End loop through sequence number (one plate)
 
-         splog, camname=0
+         splog, prelog=0
 
       endif
 

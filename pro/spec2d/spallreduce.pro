@@ -152,7 +152,7 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
       for ido=0, ndocam-1 do begin
 
          icam = (where(camnames EQ docams[ido], camct))[0]
-         splog, camname=camnames[icam]
+         splog, prelog=camnames[icam]
          if (camct NE 1) then message, 'Non-unique camera ID '
 
          ; Find the corresponding pixel flat
@@ -218,7 +218,7 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
             heap_gc   ; garbage collection
          endif
 
-         splog, camname=''
+         splog, prelog=''
       endfor ; End loop for camera number
 
       splog, 'Time to reduce all cameras = ', $

@@ -161,7 +161,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    for iobj=0, N_elements(objname)-1 do begin
 
       stimeobj = systime(1)
-      splog, camname=objname[iobj]
+      splog, prelog=objname[iobj]
 
       ;------------------
       ; Read object image
@@ -229,7 +229,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
    heap_gc   ; Garbage collection for all lost pointers
    splog, 'Elapsed time = ', systime(1)-stime0, ' seconds', $
-    format='(a,f6.0,a)', camname=''
+    format='(a,f6.0,a)', prelog=''
 
    return
 end

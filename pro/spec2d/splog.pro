@@ -6,7 +6,7 @@
 ;   Logging routine for spectroscopic pipeline.
 ;
 ; CALLING SEQUENCE:
-;   splog, v1, v2 ..., [, _EXTRA=extra, /noname, camname=, filename=, $
+;   splog, v1, v2 ..., [, _EXTRA=extra, /noname, prelog=, filename=, $
 ;    /append, /close ]
 ;
 ; INPUTS:
@@ -15,7 +15,7 @@
 ; OPTIONAL KEYWORDS:
 ;   _EXTRA     - Any keywords for PRINT or PRINTF, such as FORMAT
 ;   noname     - If set, then suppress printing name of calling routine
-;   camname    - If set, then print this string immediately after the
+;   prelog     - If set, then print this string immediately after the
 ;                name of the calling routine on each line, i.e. 'b1'
 ;   filename   - If specified, then open this file for text output
 ;   append     - If set at the same time as FILENAME, then append to this file;
@@ -46,12 +46,12 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro splog, noname=noname, camname=camname, $
+pro splog, noname=noname, prelog=prelog, $
  filename=filename, append=append, close=close, $
  v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, _EXTRA=extra
 
    ; Declare LOGLUN in a common block so that it is remembered between calls.
-   common com_splog, loglun, logcamname
+   common com_splog, loglun, fullprelog
 
    if (keyword_set(filename)) then begin
       ; First close a file if one is already open
@@ -62,7 +62,7 @@ pro splog, noname=noname, camname=camname, $
       openw, loglun, filename, append=append
    endif
 
-   if (N_elements(camname) EQ 1) then logcamname = camname
+   if (N_elements(prelog) EQ 1) then fullprelog = prelog
 
    ; Determine the name of the calling routine
    help, calls=calls
@@ -75,8 +75,8 @@ pro splog, noname=noname, camname=camname, $
    nv = N_params()
    if (nv GT 0 OR keyword_set(extra)) then begin
       if (NOT keyword_set(noname)) then print, fname, format='(a,$)'
-      if (keyword_set(logcamname)) then $
-       print, logcamname+': ', format='(a,$)'
+      if (keyword_set(fullprelog)) then $
+       print, fullprelog+': ', format='(a,$)'
 
       case nv of
       0: print, _EXTRA=extra
@@ -97,8 +97,8 @@ pro splog, noname=noname, camname=camname, $
 
    if ((nv GT 0 OR keyword_set(extra)) AND keyword_set(loglun)) then begin
       if (NOT keyword_set(noname)) then printf, loglun, fname, format='(a,$)'
-      if (keyword_set(logcamname)) then $
-       printf, loglun, logcamname+': ', format='(a,$)'
+      if (keyword_set(fullprelog)) then $
+       printf, loglun, fullprelog+': ', format='(a,$)'
 
       case nv of
       0: printf, loglun, _EXTRA=extra
@@ -122,7 +122,7 @@ pro splog, noname=noname, camname=camname, $
       close, loglun
       free_lun, loglun
       loglun = 0
-      logcamname = ''
+      fullprelog = ''
    endif
 
    return
