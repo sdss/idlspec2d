@@ -142,6 +142,7 @@ pro/spec1d/findchi2min.pro -text
 pro/spec1d/findfiber.pro -text
 pro/spec1d/fitredshift.pro -text
 pro/spec1d/fixfits1d.pro -text
+pro/spec1d/fixmjd.pro -text
 pro/spec1d/fourier_difference.pro -text
 pro/spec1d/fourier_quotient.pro -text
 pro/spec1d/ftest.pro -text
