@@ -12,9 +12,6 @@ Plate  camera   fiber (0 indexed)      Problem
   robust?  Also, check the value of MAXDEV, which Scott set to 2.0e-5
   from SOS reductions (passed there from QUICKWAVE).
 
-* Pass batch1d.par, batch2d.par file names as environ variables, or use
-  defaults.
-
 * Output Cartridge# on SOS web page. (But where is this information??)
   Also look for "fail" in sos.log, in case the disks fill.
 
@@ -24,18 +21,12 @@ Plate  camera   fiber (0 indexed)      Problem
 
 * Confirm proper dispset in combined spectra
      Currently using variance weighted dispersion, but this has scatter
-    
 
 * Report non-gaussian errors in SDSSPROC from the overscan region.
   Search for other possible electronics problems.
   Do a QUICKBIAS to reduce the bias frames and look for these problems.
 
 * Have APO2D report whopping fibers.
-
-* Reject entire fibers for use in SKY if those fibers appear inconsistent.
-
-* For calls to COMBINE1FIBER, first normalize to ergs/1e-4 log-lam,
-  just as is done for flux-calibration.
 
 * SPPLAN1D needs a fully-qualified TOPINDIR, but should be able to work
   relative from current directory.
@@ -80,8 +71,6 @@ Plate  camera   fiber (0 indexed)      Problem
 * When combining files, set an additional mask bit for when part of a
   spectrum has been constructed with only one input spectrum.  In those
   cases, we don't have information for CR rejection.
-
-* Use DJS_FILEPATH() where appropriate.
 
 * Add /DEBUG keyword for writing out spArc and spFlat files.
 
@@ -152,8 +141,6 @@ Plate  camera   fiber (0 indexed)      Problem
 
 * Measure system throughput (Q.E.) for g,r,i !!
 
-* Look at the bias frames
-
 * The b1 CCD has too much overscan subtracted on rows 0 and 1.
   Check all overscan regions in SDSSPROC.
 
@@ -162,6 +149,18 @@ Plate  camera   fiber (0 indexed)      Problem
 -------------------------------------------------------------------------------
 ;   These have been dealt with
 -------------------------------------------------------------------------------
+* Reject entire fibers for use in SKY if those fibers appear inconsistent.
+
+* For calls to COMBINE1FIBER, first normalize to ergs/1e-4 log-lam,
+  just as is done for flux-calibration.
+
+* Use DJS_FILEPATH() where appropriate.
+
+* Look at the bias frames
+
+* Pass batch1d.par, batch2d.par file names as environ variables, or use
+  defaults.
+
 * Preserve header info in APOREDUCE.
   Don't bother (Jan 2001).
 
