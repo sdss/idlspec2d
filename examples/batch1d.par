@@ -8,9 +8,9 @@
 # hydra         Pentium   3x 200  1024  public
 # diomedes      PentiumII    450   256  public
 # tantalus      PentiumII    450   256  public
-# lepus         PentiumIII   450   256  dept.
-# polaris       PentiumIII   450   256  dept.
-# draco         PentiumIII   450   256  dept.
+# lepus         PentiumIII   450   256  dept.(Zoltan Haiman)
+# polaris       PentiumIII   450   256  dept.(Kristen Menou)
+# draco         PentiumIII   450   256  dept.(Brad)
 # gandalf       Pentium      200    96  ?
 
 typedef struct {
@@ -27,7 +27,7 @@ typedef struct {
 #hostconfig hydra.princeton.edu /u/schlegel/tmp ssh1
 #hostconfig diomedes.princeton.edu /u/schlegel/tmp ssh1
 #hostconfig tantalus.princeton.edu /u/schlegel/tmp ssh1
-hostconfig lepus.princeton.edu /u/schlegel/tmp ssh1
+#hostconfig lepus.princeton.edu /u/schlegel/tmp ssh1
 hostconfig polaris.princeton.edu /u/schlegel/tmp ssh1
 hostconfig draco.princeton.edu /u/schlegel/tmp ssh1
 

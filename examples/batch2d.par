@@ -19,12 +19,12 @@ typedef struct {
   char protocol[5];      # Protocol name, ssh or rsh
 } hostconfig;
 
-#hostconfig localhost "" ""
-#hostconfig localhost "" ""
+hostconfig localhost "" ""
+hostconfig localhost "" ""
 hostconfig coma.princeton.edu "" ssh1
 hostconfig hydra.princeton.edu "" ssh1
-hostconfig diomedes.princeton.edu "" ssh1
-hostconfig tantalus.princeton.edu "" ssh1
+#hostconfig diomedes.princeton.edu "" ssh1
+#hostconfig tantalus.princeton.edu "" ssh1
 #hostconfig lepus.princeton.edu "" ssh1
 #hostconfig polaris.princeton.edu "" ssh1
 #hostconfig draco.princeton.edu "" ssh1
