@@ -105,6 +105,8 @@ function corrlamps, a
 	bestcorr = 0.0
 	bestlag = 0
 	model = sqrt(model)
+
+;	stop
         if (total(model) GT 0) then begin
 	  res = c_correlate(model,speccorr, lag)
 	  bestcorr = max(res,val)
@@ -124,7 +126,7 @@ function fullfit, spec, linelist, guess
 	scale[0] = scale[0]*0.03
 
 	first = lampfit(spec, linelist, guess0, transpose([[p0],[scale]]), $
-	   width = 20.0, lagwidth=200, ftol=1.0e-3)
+	   width = 30.0, lagwidth=250, ftol=1.0e-3)
 	
 	final = first
 
@@ -134,15 +136,15 @@ function fullfit, spec, linelist, guess
 	  scale = abs(p0)*0.5
 	  scale[0] = scale[0]*0.02
 	  final = lampfit(spec, linelist, guess0, transpose([[p0],[scale]]), $
-	     width = 10.0, lagwidth=100, ftol=1.0e-3)
+	     width = 20.0, lagwidth=100, ftol=1.0e-3)
 	endwhile
 
 	return,final
 end
 
-pro fitarcimage, arc, side, linelist, xcen, ycen, tset, invset, $
+pro fitarcimage, arc, side, linelist, xnew, ycen, tset, invset, $
                   func=func, ncoeff=ncoeff, ans=ans, lambda=lambda, $
-                  thresh=thresh, row=row
+                  thresh=thresh, row=row, goodlines=goodlines
 
    common lagstuff, lag, bestlag, bestcorr, zeroterm
 
@@ -171,8 +173,11 @@ pro fitarcimage, arc, side, linelist, xcen, ycen, tset, invset, $
 
 	xcen = trace_crude(arc, yset=ycen, nave=1, nmed=1, thresh = thresh, $
                maxshifte=1.0)
+	xnew = trace_fweight(arc, xcen, ycen)
 
-	xcen = trace_fix(xcen, ycen=ycen)
+	bad = where(abs(xnew-xcen) GT 3.0)
+	if(bad[0] NE -1) then xnew[bad] = xcen[bad]
+
 
 	
 ;
@@ -201,7 +206,7 @@ pro fitarcimage, arc, side, linelist, xcen, ycen, tset, invset, $
 
 	endif
 
-	wnorm = 2.0*xcen/(npix-1) - 1.0
+	wnorm = 2.0*xnew/(npix-1) - 1.0
 	wpeak = poly(wnorm, ans)		
 	
 	thispeak = (wpeak[row,*])[*]
@@ -217,9 +222,14 @@ pro fitarcimage, arc, side, linelist, xcen, ycen, tset, invset, $
               lambda[i] = loglamlist[place]
 	endfor
 
-	goodlines = where(lambda GT 0.0, oldcount)
-	if(oldcount EQ 0) then $
-	  message, 'no good arc lines found'
+	nonzero = where(lambda GT 0.0, oldcount)
+	if(oldcount LT 6) then $
+	  message, 'only '+string(oldcount)+ ' good arclines found'
+
+	xnew = xnew[*,nonzero]
+	ycen = ycen[*,nonzero]
+        lambda = lambda[nonzero]
+	wnorm = 2.0*xnew/(npix-1) - 1.0
 	
 ;
 ;	Now store best log lambda solutions in tset
@@ -257,31 +267,31 @@ pro fitarcimage, arc, side, linelist, xcen, ycen, tset, invset, $
       if (func EQ 'legendre') then function_name = 'flegendre'
       if (func EQ 'chebyshev') then function_name = 'fchebyshev'
 
-      keep = lonarr(nlines) 
+	goodlines = lonarr(oldcount,nTrace) + 1
+        
 
 	for i=0,nTrace-1 do begin
 
 	  done = 0
-	  goodlines = where(lambda GT 0.0, oldcount)
+
 	  while (done EQ 0) do begin
-	    res = svdfit((wnorm[i,goodlines])[*], lambda[goodlines], ncoeff, $
+	    
+	    use = where(goodlines[*,i] NE 0)
+	    res = svdfit((wnorm[i,use])[*], lambda[use], ncoeff, $
                function_name=function_name, singular=singular,yfit=yfit)
-	    diff = yfit - lambda[goodlines]
+	    diff = yfit - lambda[use]
 
 ;
 ;	Take lines within 20 km/s
 ;
-	    allgood = where(abs(diff) LT 3.0e-5, ngood)
-	    if (ngood EQ oldcount OR ngood EQ 0) then done = 1 $ 
+	    bad = where(abs(diff) GT 3.0e-5, nbad)
+	    if (nbad EQ 0) then done = 1 $ 
 	    else begin
 	      maxdiff = max(abs(diff),badplace)
-	      allgood = where(lindgen(oldcount) NE badplace, ngood)
-	      goodlines = goodlines[allgood]
-	      oldcount = ngood
+	      goodlines[use[badplace],i] = 0
 	    endelse 
 	  endwhile
-          keep[goodlines] = keep[goodlines] + 1
-	  
+
 	  tset.coeff[*,i] = res
 
 ;
@@ -297,7 +307,6 @@ pro fitarcimage, arc, side, linelist, xcen, ycen, tset, invset, $
 	
           print, format='($, ".",i4.4,a5)',i,string([8b,8b,8b,8b,8b])
 	endfor	
-        lambda = lambda * (keep GT 0)
 
 	return
   end

@@ -48,8 +48,11 @@ function trace_fweight, fimage, xcen, ycen, radius=radius, xerr=xerr
    ncen = N_elements(xcen)
    xnew = float(xcen)
    xerr = fltarr(ncen)
+   invtemp = 1.0 / (abs(fimage) + 20.0)
+
    result = call_external(getenv('IDL_EVIL')+'libspec2d.so', 'trace_fweight', $
-    nx, ny, float(fimage), float(radius), ncen, xnew, long(ycen), xerr)
+    nx, ny, float(fimage), float(invtemp), $
+         float(radius), ncen, xnew, long(ycen), xerr)
 
    return, xnew
 end
