@@ -1,32 +1,29 @@
-; Design the special plate for the Praesepe star cluster.
-; Cluster center is around RA=130.0 deg, DEC=19.6 deg (J2000)
+; Design the special plate for the Pleiades star cluster.
 
 ;------------------------------------------------------------------------------
 ;------------------------------------------------------------------------------
-function read_praesepe
+function read_pleiades
 
-   p3 = design_read2mass('praesepe.j10')
-   p2 = design_read2mass('praesepe.match.j10')
-   p1 = design_read2mass('praesepe.j13')
-   p3.priority = 3
+   p1 = design_read2mass('pleiades.j10')
+   p2 = design_read2mass('pleiades.j14')
+   p1.priority = 3
    p2.priority = 2
-   p1.priority = 1
 
-   result = [p3, p2, p1]
+   result = [p1, p2]
    return, result
 end
 
 ;------------------------------------------------------------------------------
-pro design_praesepe
+pro design_pleiades
 
    epoch = 1998.
-   racen = [130.0d, 129.8d, 130.2d]
-   deccen = [19.6d,  19.6d, 19.6d]
-   magmin = reverse([ 6.0, 10.0, 13.0])
-   magmax = reverse([10.2, 13.2, 16.5])
+   racen = [57.0d, 56.8d, 56.6d, 57.2d, 57.4d]
+   deccen = [23.7d,  23.7d, 23.7d, 23.7d, 23.7d]
+   magmin = reverse([ 2.5,  5.5,  8.5, 11.5, 14.5])
+   magmax = reverse([ 5.7,  8.7, 11.7, 14.7, 17.7])
    guidemag = [10.5, 12.5]
-   tilenums = [9207,9208,9209]
-   platenums = [798,799,800]
+   tilenums = [9210,9211,9212,9213,9214]
+   platenums = [801,802,803,804,805]
    matchdist = 2.0/3600. ; match distance in degrees
 
    ntile = n_elements(racen)
@@ -35,7 +32,7 @@ pro design_praesepe
    ; Read stars from Eisenstein's lists which use 2MASS positions.
    ; Discard duplicates.
 
-   stardata = read_praesepe()
+   stardata = read_pleiades()
    junk = djs_angle_group(stardata.ra, stardata.dec, matchdist, $
     gstart=gstart, gindx=gindx)
    stardata = stardata[gindx[gstart]]

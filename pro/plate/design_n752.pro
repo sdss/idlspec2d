@@ -1,32 +1,31 @@
-; Design the special plate for the Praesepe star cluster.
-; Cluster center is around RA=130.0 deg, DEC=19.6 deg (J2000)
+; Design the special plate for the N752 star cluster.
 
 ;------------------------------------------------------------------------------
 ;------------------------------------------------------------------------------
-function read_praesepe
+function read_n752
 
-   p3 = design_read2mass('praesepe.j10')
-   p2 = design_read2mass('praesepe.match.j10')
-   p1 = design_read2mass('praesepe.j13')
-   p3.priority = 3
+   p1 = design_read2mass('n752.match') ; These are known cluster members
+   p2 = design_read2mass('n752.j10')
+   p3 = design_read2mass('n752.j14')
+   p1.priority = 3
    p2.priority = 2
-   p1.priority = 1
+   p3.priority = 1
 
-   result = [p3, p2, p1]
+   result = [p1, p2, p3]
    return, result
 end
 
 ;------------------------------------------------------------------------------
-pro design_praesepe
+pro design_n752
 
    epoch = 1998.
-   racen = [130.0d, 129.8d, 130.2d]
-   deccen = [19.6d,  19.6d, 19.6d]
-   magmin = reverse([ 6.0, 10.0, 13.0])
-   magmax = reverse([10.2, 13.2, 16.5])
+   racen = [29.2d, 29.0d, 29.4d]
+   deccen = [37.7d,  37.7d, 37.7d]
+   magmin = reverse([ 6.0,  9.0, 12.0])
+   magmax = reverse([ 9.2, 12.2, 15.2])
    guidemag = [10.5, 12.5]
-   tilenums = [9207,9208,9209]
-   platenums = [798,799,800]
+   tilenums = [9215,9216,9217]
+   platenums = [806,807,808]
    matchdist = 2.0/3600. ; match distance in degrees
 
    ntile = n_elements(racen)
@@ -35,7 +34,7 @@ pro design_praesepe
    ; Read stars from Eisenstein's lists which use 2MASS positions.
    ; Discard duplicates.
 
-   stardata = read_praesepe()
+   stardata = read_n752()
    junk = djs_angle_group(stardata.ra, stardata.dec, matchdist, $
     gstart=gstart, gindx=gindx)
    stardata = stardata[gindx[gstart]]

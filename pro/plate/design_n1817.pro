@@ -1,32 +1,29 @@
-; Design the special plate for the Praesepe star cluster.
-; Cluster center is around RA=130.0 deg, DEC=19.6 deg (J2000)
+; Design the special plate for the N1817 star cluster.
 
 ;------------------------------------------------------------------------------
 ;------------------------------------------------------------------------------
-function read_praesepe
+function read_n1817
 
-   p3 = design_read2mass('praesepe.j10')
-   p2 = design_read2mass('praesepe.match.j10')
-   p1 = design_read2mass('praesepe.j13')
-   p3.priority = 3
+   p1 = design_read2mass('n1817.match')
+   p2 = design_read2mass('n1817.j11')
+   p1.priority = 3
    p2.priority = 2
-   p1.priority = 1
 
-   result = [p3, p2, p1]
+   result = [p1, p2]
    return, result
 end
 
 ;------------------------------------------------------------------------------
-pro design_praesepe
+pro design_n1817
 
    epoch = 1998.
-   racen = [130.0d, 129.8d, 130.2d]
-   deccen = [19.6d,  19.6d, 19.6d]
-   magmin = reverse([ 6.0, 10.0, 13.0])
-   magmax = reverse([10.2, 13.2, 16.5])
+   racen = [78.0d, 77.8d, 78.2d]
+   deccen = [16.7d,  16.7d, 16.7d]
+   magmin = reverse([ 6.0,  9.0, 12.0])
+   magmax = reverse([ 9.2, 12.2, 15.2])
    guidemag = [10.5, 12.5]
-   tilenums = [9207,9208,9209]
-   platenums = [798,799,800]
+   tilenums = [9218,9219,9220]
+   platenums = [809,810,811]
    matchdist = 2.0/3600. ; match distance in degrees
 
    ntile = n_elements(racen)
@@ -35,7 +32,7 @@ pro design_praesepe
    ; Read stars from Eisenstein's lists which use 2MASS positions.
    ; Discard duplicates.
 
-   stardata = read_praesepe()
+   stardata = read_n1817()
    junk = djs_angle_group(stardata.ra, stardata.dec, matchdist, $
     gstart=gstart, gindx=gindx)
    stardata = stardata[gindx[gstart]]
@@ -43,27 +40,27 @@ pro design_praesepe
    ;----------
    ; Read the Tycho stars
 
-   tycdat = tyc_read(/small, epoch=epoch)
-   adiff = djs_diff_angle(tycdat.radeg, tycdat.dedeg, racen[0], deccen[0])
-   tycdat = tycdat[ where(adiff LT 1.5) ]
+;   tycdat = tyc_read(/small, epoch=epoch)
+;   adiff = djs_diff_angle(tycdat.radeg, tycdat.dedeg, racen[0], deccen[0])
+;   tycdat = tycdat[ where(adiff LT 1.5) ]
 
    ;----------
    ; For every Tycho star, find the match in the Eisenstein catalog.
    ; If there are objects not in Eisenstein, then add them.
 
-   junk = djs_angle_match(tycdat.radeg, tycdat.dedeg, $
-    stardata.ra, stardata.dec, dtheta=matchdist, mindx=mindx, mdist=mdist)
-
-   iadd = where(mindx EQ -1, nadd)
-   if (nadd GT 0) then begin
-      tycadd = design_starstruct(nadd)
-      tycadd.ra = tycdat[iadd].radeg
-      tycadd.dec = tycdat[iadd].dedeg
-      tycadd.mag = tyc_sdssmags(tycdat[iadd])
-      tycadd.objtype = 'SERENDIPITY_MANUAL'
-      tycadd.priority = 3
-      stardata = [stardata, tycadd]
-   endif
+;   junk = djs_angle_match(tycdat.radeg, tycdat.dedeg, $
+;    stardata.ra, stardata.dec, dtheta=matchdist, mindx=mindx, mdist=mdist)
+;
+;   iadd = where(mindx EQ -1, nadd)
+;   if (nadd GT 0) then begin
+;      tycadd = design_starstruct(nadd)
+;      tycadd.ra = tycdat[iadd].radeg
+;      tycadd.dec = tycdat[iadd].dedeg
+;      tycadd.mag = tyc_sdssmags(tycdat[iadd])
+;      tycadd.objtype = 'SERENDIPITY_MANUAL'
+;      tycadd.priority = 3
+;      stardata = [stardata, tycadd]
+;   endif
 
    ;----------
    ; Select objects that may be good spectro-photo standards.

@@ -17,6 +17,9 @@ However, NGC 1817 is the exception.  There the priority should be:
 	other stars (and not super-bright)
 
 -----------------------------------------------------------------------
+PRAESEPE
+TILEID 9207 - 9209
+PLATEID 798 - 800
 
 Praesepe:  We're missing a small band of data near RA=129.5.
 
@@ -34,6 +37,9 @@ This gave 531 more stars, but I forgot to remove the members, so there
 will be ~450 new stars.  File: praesepe.j13
 
 -----------------------------------------------------------------------
+PLEIADES
+TILEID 9210 - 9214
+PLATEID 801 - 805
 
 Pleiades: We're missing a lot of data: the quadrant at ra<56.5 and dec>24,
 plus another patch at dec>24, 58<ra<58.6, plus a couple strips.
@@ -57,6 +63,9 @@ density of members is so high that we won't care.
 Note that the nebulousity may affect our sky subtraction!
 
 -----------------------------------------------------------------------
+N752
+TILEID 9215 - 9217
+PLATEID 806 - 808
 
 N752:  We are missing data at RA>30 (and a small band at 27.8ish), so I 
 moved the plate center off the cluster center a bit.
@@ -79,10 +88,15 @@ Also, the Hipparcos catalog will have some extra bright stars that
 we didn't have 2Mass data for.  We should have room to add them.
 
 -----------------------------------------------------------------------
+N1817
+TILEID 9218 - 9220
+PLATEID 809 - 811
+
 
 N1817:  This cluster is closer to the galactic plane and further away, 
 hence the contamination by field stars is worse.  This leads to special
 instructions as regards priorities and bright limits!
+Don't include Tycho/Hipparcos stars.
 
 Fortunately, Scott Burles found a membership list from Balaguer-Nunnez 
 et al 1998.  I took objects whose P_field was less than 0.5.  Matching (1") 

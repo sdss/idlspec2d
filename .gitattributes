@@ -138,7 +138,11 @@ pro/fplan/spplancomb.pro -text
 pro/makefile.old -text
 pro/plate/README -text
 pro/plate/design_multiplate.pro -text
+pro/plate/design_n1817.pro -text
+pro/plate/design_n752.pro -text
+pro/plate/design_pleiades.pro -text
 pro/plate/design_praesepe.pro -text
+pro/plate/design_read2mass.pro -text
 pro/plate/design_starstruct.pro -text
 pro/plate/n1817.j11 -text
 pro/plate/n1817.match -text
@@ -153,6 +157,7 @@ pro/plate/praesepe.j13 -text
 pro/plate/praesepe.match.j10 -text
 pro/plate/sbss_testplate.pro -text
 pro/plate/test_sbss_testplate.pro -text
+pro/plate/tyc_sdssmags.pro -text
 pro/science/Makefile -text
 pro/science/README -text
 pro/science/bandpassinfo.pro -text

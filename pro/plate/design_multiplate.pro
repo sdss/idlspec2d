@@ -127,8 +127,15 @@ pro design_multiplate, stardata, tilenums=tilenums, platenums=platenums, $
          ; For 3rd pointing use guide fibers 4,7
          ; For 4th pointing use guide fibers 2,9
          guidetiles = [2,4,1,3,1,2,3,1,4,1,1]
+      endif else if (ntile EQ 5) then begin
+         ; For 1st pointing use guide fibers 3,5,8,10,11
+         ; For 2nd pointing use guide fibers 1,6
+         ; For 3rd pointing use guide fibers 4,7
+         ; For 4th pointing use guide fibers 2
+         ; For 5th pointing use guide fibers 9
+         guidetiles = [2,4,1,3,1,2,3,1,5,1,1]
       endif else begin
-         message, 'GUIDETILES must be specified if using more than 4 tiles'
+         message, 'GUIDETILES must be specified if using more than 5 tiles'
       endelse
       ; Now re-assigne the guide tile numbers to the actual tile numbers
       guidetiles = tilenums[guidetiles-1]
@@ -370,6 +377,19 @@ pro design_multiplate, stardata, tilenums=tilenums, platenums=platenums, $
          allplug = allplug[igood]
          iobj = iobj + 1L
       endwhile
+
+      ;----------
+      ; Trim to only 592 real objects at most, or "fiberPlates" will crash
+      ; (excluding spectro-photo and reddening standards)
+
+      iobj = where(strtrim(allplug.holetype) EQ 'OBJECT' $
+       AND strtrim(allplug.objtype) NE 'SPECTROPHOTO_STD' $
+       AND strtrim(allplug.objtype) NE 'REDDEN_STD', nobj)
+      if (nobj GT 592) then begin
+         qgood = lindgen(n_elements(allplug)) + 1B
+         qgood[iobj[592:nobj-1]] = 0 ; Mark these last ones as bad
+         allplug = allplug[ where(qgood) ]
+      endif
 
       ;----------
       ; Write the plPlugMapT file for this tile...
