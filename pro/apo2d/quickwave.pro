@@ -48,14 +48,14 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius
        /dospline)
       flat_flux = 0 ; clear memory
       flat_ivar = 0 ; clear memory
-      mwrfits, fflat, fflatfile
+      mwrfits, fflat, fflatfile, /create
       fflat = 0 ; clear memory
    endif
 
    ;----------
    ; Write out wavelength solution
 
-   mwrfits, wset, wsetfile ; Without /create, this appends to any existing file
+   mwrfits, wset, wsetfile, /create
 
    wavemin = 10^(min(yy))
    wavemax = 10^(max(yy))

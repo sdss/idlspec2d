@@ -139,20 +139,43 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
     else fullplugfile = fullplugfile[ (reverse(sort(fullplugfile)))[0] ]
 
    ;----------
+   ; Construct the names of the flat and arc output files if we generate
+   ; them from this exposure.
+
+   tsetfile1 = filepath( $
+    'tset-'+mjdstr+'-'+platestr+'-'+filee+'-'+filec+'.fits', $
+    root_dir=outdir)
+   wsetfile1 = filepath( $
+    'wset-'+mjdstr+'-'+platestr+'-'+filee+'-'+filec+'.fits', $
+    root_dir=outdir)
+   fflatfile1 = filepath( $
+    'fflat-'+mjdstr+'-'+platestr+'-'+filee+'-'+filec+'.fits', $
+    root_dir=outdir)
+
+   ;----------
    ; Determine if a flat or arc for this plate has already been reduced,
    ; and test if the plugmap file exists.
+   ; Use the last flat and arc files on disk.
 
-   tsetfile = filepath('tset-'+mjdstr+'-'+platestr+'-'+filec+'.fits', $
-    root_dir=outdir)
-   wsetfile = filepath('wset-'+mjdstr+'-'+platestr+'-'+filec+'.fits', $
-    root_dir=outdir)
-   fflatfile = filepath('fflat-'+mjdstr+'-'+platestr+'-'+filec+'.fits', $
-    root_dir=outdir)
+   tsetfiles = findfile(filepath( $
+    'tset-'+mjdstr+'-'+platestr+'-*-'+filec+'.fits', $
+    root_dir=outdir))
+   wsetfiles = findfile(filepath( $
+    'wset-'+mjdstr+'-'+platestr+'-*-'+filec+'.fits', $
+    root_dir=outdir))
+   fflatfiles = findfile(filepath( $
+    'fflat-'+mjdstr+'-'+platestr+'-*-'+filec+'.fits', $
+    root_dir=outdir))
+
+   tsetfile_last = (reverse(tsetfiles))[0]
+   wsetfile_last = (reverse(wsetfiles))[0]
+   fflatfile_last = (reverse(fflatfiles))[0]
+
    splgfile = filepath('splog-'+filec+'-'+filee+'.log', root_dir=outdir)
 
    plugexist = keyword_set(fullplugfile)
-   flatexist = keyword_set( findfile(tsetfile) )
-   arcexist = keyword_set( findfile(wsetfile) )
+   flatexist = keyword_set( findfile(tsetfile_last) )
+   arcexist = keyword_set( findfile(wsetfile_last) )
 
    ;----------
    ; Open the log file to catch WARNINGs and ABORTs.
@@ -167,7 +190,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       'flat' : begin
 ;         if (NOT flatexist AND plugexist) then $ ; Only reduce 1 flat/camera?
          if (plugexist) then $
-          rstruct = quicktrace(fullname, tsetfile, fullplugfile) $
+          rstruct = quicktrace(fullname, tsetfile1, fullplugfile) $
          else $
           splog, 'Unable to reduce this flat exposure'
       end
@@ -175,7 +198,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       'arc' : begin
 ;         if (flatexist AND (NOT arcexist)) then $ ; Only reduce 1 arc/camera?
          if (flatexist) then $
-          rstruct = quickwave(fullname, tsetfile, wsetfile, fflatfile) $
+          rstruct = quickwave(fullname, tsetfile_last, wsetfile1, fflatfile1) $
           else $
            splog, 'Unable to reduce this arc exposure'
       end
@@ -186,7 +209,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
                  root_dir=outdir)
 
           if (flatexist AND arcexist AND exptime GT minexp) then $
-           rstruct = quickextract(tsetfile, wsetfile, fflatfile, $
+           rstruct = quickextract(tsetfile_last, wsetfile_last, fflatfile_last, $
             fullname, outsci) $
           else $
            splog, 'Unable to reduce this science exposure'
@@ -235,6 +258,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
                               'MJD', mjd, $
                               'PLATE', plate, $
                               'EXPNUM', filee, $
+                              'TIME', strmid(sxpar(hdr, 'TAIHMS'),0,5), $
                               rstruct, $
                               'WARNINGS', warnings, $
                               'ABORTS', aborts )
