@@ -31,13 +31,17 @@ pro platehist
    for i=0, nbin-1 do $
     unkvec[i] = total(plist[where(plist.mjd LE mjdvec[i])].n_unknown)
 
+   mjd2datelist, min(mjdvec), max(mjdvec), step='year', $
+    mjdlist=mjdlist, datelist=datelist
+
    csize = 1.6
 
    dfpsplot, 'platehist.ps', /color, /square
-   djs_plot, mjdvec, totvec, psym=10, charsize=csize, $
-    xtickformat='(i10)', $
+   djs_plot, minmax(mjdlist), minmax(totvec), /nodata, charsize=csize, $
+    xtickformat='(i10)', /xstyle, $
     xtitle='Modified Julian Date', ytitle='Cumulative Number', $
     title='SDSS Survey Quality Spectra'
+   djs_oplot, mjdvec, totvec, psym=10
    djs_oplot, mjdvec, galvec, psym=10, color='red'
    djs_oplot, mjdvec, qsovec, psym=10, color='green'
    djs_oplot, mjdvec, starvec, psym=10, color='blue'
@@ -59,17 +63,23 @@ pro platehist
     string(unkvec[nbin-1], format='("Unclassified (",i6,")")'), $
     charsize=csize, align=0.5
 
-   ; Jan 1, 2000 = MJD 51544
-   ; Jul 1, 2000 = MJD 51726
-   ; Jan 1, 2001 = MJD 51910
-   ; Jul 1, 2001 = MJD 52092 ?
-   mjdlist = [51544, 51726, 51910, 52092]
-   datelist = ['1 Jan 2000', '1 July 2000', '1 Jan 2001', '1 July 2001']
-   for i=0, n_elements(mjdlist)-1 do begin
+   for i=1, n_elements(mjdlist)-1 do begin
       djs_oplot, [mjdlist[i],mjdlist[i]], !y.crange, linestyle=1
       xyouts, mjdlist[i]-18, total(!y.crange * [0.60,0.40]), $
        datelist[i], orient=90, charsize=csize, align=0.5
    endfor
+
+   ; Jan 1, 2000 = MJD 51544
+   ; Jul 1, 2000 = MJD 51726
+   ; Jan 1, 2001 = MJD 51910
+   ; Jul 1, 2001 = MJD 52092 ?
+;   mjdlist = [51544, 51726, 51910, 52092]
+;   datelist = ['1 Jan 2000', '1 July 2000', '1 Jan 2001', '1 July 2001']
+;   for i=0, n_elements(mjdlist)-1 do begin
+;      djs_oplot, [mjdlist[i],mjdlist[i]], !y.crange, linestyle=1
+;      xyouts, mjdlist[i]-18, total(!y.crange * [0.60,0.40]), $
+;       datelist[i], orient=90, charsize=csize, align=0.5
+;   endfor
 
    dfpsclose
 
