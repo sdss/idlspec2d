@@ -14,11 +14,14 @@
 ;   outfile    - Array of output files created on remote machine and copied
 ;                to local machine upon completion [NOUTFILE,NPROGRAM]
 ;   remotehost - List of remote hosts [NHOST]
-;   remotedir  - List of remote directories, one per host [NHOST]
-;   command    -
-;   endstring  - 
+;   remotedir  - List of remote directories; scalar or [NHOST]
+;   command    - Command to execute to begin a job; scalar or [NPROGAM]
+;   endstring  - A job is considered done when the last line of the first
+;                output file contains this string; scalar or [NPROGRAM]
 ;
 ; OPTIONAL KEYWORDS:
+;   wtime      - Sleep time between checking status of all jobs; default to
+;                600 seconds.
 ;
 ; OUTPUTS:
 ;
@@ -40,9 +43,9 @@
 pro batch_spawn, command, retval
 
    splog, command
+   spawn, command, retval
 ; ???
-;   spawn, command, retval
-retval = ''
+;retval = ''
 
    return
 end
@@ -104,10 +107,12 @@ function batch_if_done, remotehost, remotedir, protocol, outfile0, endstring
       batch_spawn, 'tail -1 ' + outfile0, tailstring
    endelse
 
-   if (strpos(tailstring, endstring) NE -1) then $
-    return, 'DONE'
+   if (strpos(tailstring[0], endstring) NE -1) then retval = 'DONE' $
+    else retval = 'NOTDONE'
 
-   return, 'NOTDONE'
+   splog, 'Status of ' + outfile0 + ' = ' + retval
+
+   return, retval
 end
 
 ;------------------------------------------------------------------------------
@@ -138,12 +143,14 @@ pro batch_assign_job, ihost, iprog
          indx = where(newdir EQ newdir1)
 
          batch_spawn, prothost + 'mkdir -p ' + newdir1
-         tmp1 = string(allinput[indx]+' ',format='(99a )')
-         batch_spawn, cpstring + ' ' + tmp1 + ' ' + hostlist[ihost].remotehost + ':' + newdir1
+         tmp1 = string((*proglist[iprog].localfile)[indx]+' ',format='(99a )')
+         batch_spawn, cpstring + ' ' + tmp1 + ' ' $
+          + hostlist[ihost].remotehost + ':' + newdir1
       endfor
 
       ; Create directories on remote machine for output files
-      alloutput = djs_filepath(*proglist[iprog].outfile, root_dir=hostlist[ihost].remotedir)
+      alloutput = djs_filepath(*proglist[iprog].outfile, $
+       root_dir=hostlist[ihost].remotedir)
       junk = fileandpath(alloutput, path=alloutdir)
       newdir = string(alloutdir+' ',format='(99a )')
       batch_spawn, prothost + 'mkdir -p ' + newdir
@@ -159,6 +166,7 @@ pro batch_assign_job, ihost, iprog
       batch_spawn, 'mkdir -p ' + newdir
 
       ; Launch the command in the background
+stop
       batch_spawn, proglist[iprog].command + ' &'
 
    endelse
