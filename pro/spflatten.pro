@@ -108,14 +108,6 @@ pro spflatten, flatname, pixflat, sigrej=sigrej, maxiter=maxiter, $
       if (iflat EQ 0) then pixflatarr = fltarr(nx,ny,nflat)
 
       ;----------------------
-      ; Extract the flat-field image
-
-      sigma = 1.0
-      proftype = 1 ; Gaussian
-      highrej = 10
-      lowrej = 15
-      nPoly = 4
-
       ; Determine YMODEL image
 print, 'Working on file ', fullname[0]
 
