@@ -584,10 +584,12 @@ ormask = 0 ; Free memory
             OR zline.linename EQ 'Mg_II' $
             OR zline.linename EQ 'H_beta' $
             OR zline.linename EQ 'H_alpha') )
-         qflag = total(zline[indx].linearea LT 0 $
-          AND zline[indx].linearea_err GT 0 $
-          AND zline[indx].linedof GT 2) NE 0
-         zwarning[0,iobj] = zwarning[0,iobj] OR 64L * qflag
+         if (indx[0] NE -1) then begin
+            qflag = total(zline[indx].linearea LT 0 $
+             AND zline[indx].linearea_err GT 0 $
+             AND zline[indx].linedof GT 2) NE 0
+            zwarning[0,iobj] = zwarning[0,iobj] OR 64L * qflag
+         endif
       endif
    endfor
 
