@@ -34,6 +34,7 @@
 ;
 ; BUGS:
 ;   Needs waveimg to be equally spaced in log lambda (MRB 4.5.01) ???
+;    Now calculates pixel size in log lambda to do correct spectrophotometry
 ;
 ; PROCEDURES CALLED:
 ;   vactoair
@@ -58,7 +59,7 @@
 ;   05-Apr-2001  Modified by Michael Blanton to allow alternate filters
 ;-
 ;------------------------------------------------------------------------------
-function filter_thru, flux, waveimg=waveimg, wset=wset, mask=mask, norm=norm, $
+function filter_thru, flux, waveimg=waveimg, wset=wset, mask=mask, $
  filter_prefix=filter_prefix, toair=toair
 
    dims = size(flux, /dimens)
@@ -91,6 +92,14 @@ function filter_thru, flux, waveimg=waveimg, wset=wset, mask=mask, norm=norm, $
    if (keyword_set(ttoair)) then $
     vactoair, newwaveimg
 
+   logwave = alog10(newwaveimg)
+   diffx   = (findgen(nx-1) + 0.5) # replicate(1,ntrace)
+   diffy   = logwave[1:*,*] - logwave[0:nx-2,*]
+   xy2traceset, diffx, diffy, diffset, ncoeff=4, xmin=0, xmax=nx-1.
+   traceset2xy, diffset, pixnorm, logdiff
+
+   logdiff = abs(logdiff)
+
    ;----------
    ; Interpolate over masked or low-S/N pixels in each spectrum
 
@@ -112,15 +121,15 @@ function filter_thru, flux, waveimg=waveimg, wset=wset, mask=mask, norm=norm, $
       else $
        filtimg[*] = interpol(fthru, fwave, newwaveimg) 
 
+      filtimg = filtimg * logdiff
+
       if (keyword_set(mask)) then $
        res[*,ifile] = total(flux_interp * filtimg, 1) $
       else $
        res[*,ifile] = total(flux * filtimg, 1)
 
-      if (keyword_set(norm)) then begin
-         sumfilt = total(filtimg,1)
-         res[*,ifile] = res[*,ifile] / (sumfilt + (sumfilt LE 0))
-      endif
+      sumfilt = total(filtimg,1)
+      res[*,ifile] = res[*,ifile] / (sumfilt + (sumfilt LE 0))
 
    endfor
 
