@@ -131,6 +131,7 @@ function telluric_corr,flux, fluxivar, wset, plugsort, $
    qgfib = fibermask NE fibermask_bits('NOPLUG') $
        AND fibermask NE fibermask_bits('BADTRACE') $
        AND fibermask NE fibermask_bits('BADFLAT') $
+       AND fibermask NE fibermask_bits('NEARWHOPPER') $
        AND fibermask NE fibermask_bits('BADARC')
    tindx = where(qphoto AND qgfib, ntell)
 

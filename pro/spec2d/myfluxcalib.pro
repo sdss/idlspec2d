@@ -121,6 +121,7 @@ function qgoodfiber, fibermask
        AND ((fibermask AND fibermask_bits('BADFLAT')) EQ 0) $
        AND ((fibermask AND fibermask_bits('BADARC')) EQ 0) $
        AND ((fibermask AND fibermask_bits('MANYBADCOLUMNS')) EQ 0) $
+       AND ((fibermask AND fibermask_bits('NEARWHOPPER')) EQ 0) $
        AND ((fibermask AND fibermask_bits('MANYREJECTED')) EQ 0)
    return, qgood
 end
@@ -287,6 +288,7 @@ objmask = 0 ; Free memory
    ; (~40 pixels) for each 10% of the spectrum (~800 pixels).
 
    npix = (size(allflux,/dimens))[0]
+
    pcaflux = pca_solve(allflux, allivar, $
     niter=10, nkeep=1, usemask=usemask, eigenval=eigenval, acoeff=acoeff, $
     maxiter=3, upper=5, lower=5, maxrej=ceil(0.01*npix), $
