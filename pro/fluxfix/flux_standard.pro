@@ -157,6 +157,14 @@ function avg_fluxvect, wave, corvector, sn, cvectok = cvectok
    plot, indgen(5), xr = [3800, 9000], /xs, yr = [0, 1.4]
    for i = 0, nok - 1 do oplot, wave, corvect_hif[*,i]
 
+   ;kmodel_fix = mrdfits(filepath('kurucz_model_fix.fit', $
+   ;             root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc'), 0, hdr)
+   ;crval = sxpar(hdr, 'CRVAL1')
+   ;kwave = 10.0^(lindgen(n_elements(kmodel_fix)) * 1d-4 + crval)
+
+   ;djs_oplot, kwave, 1.0 / kmodel_fix, color='purple', thick=3
+   ;wait, 2
+
    ;-----------------
    ; Call iterative rejection on hi-frequency correction vectors
 
@@ -235,6 +243,13 @@ function avg_fluxvect, wave, corvector, sn, cvectok = cvectok
  
    fcor = fcor_hif * fcor_lowf
 
+
+   ;---------------
+   ; Clip out any extreme outliers (usually @ blue edge)
+
+   bad = where(fcor lt 0.4 or fcor gt 1.6)
+   if bad[0] ne -1 then fcor[bad] = 1
+
    return, fcor
 end
 
@@ -274,11 +289,11 @@ pro flux_standard, loglam, stdflux, stdivar, stdmask, stdstarfile, $
    ;---------------
    ; Apply wavelength dependent empirical correction to models
 
-   kmodel_fix = mrdfits(filepath('kurucz_model_fix.fit', $
-                root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc'), 0)
+   ;kmodel_fix = mrdfits(filepath('kurucz_model_fix.fit', $
+   ;             root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc'), 0)
 
-   kflux = kflux * rebin(kmodel_fix, n_elements(kflux[*,0]), $
-                         n_elements(kflux[0,*]))
+   ;kflux = kflux * rebin(kmodel_fix, n_elements(kflux[*,0]), $
+   ;                      n_elements(kflux[0,*]))
 
    ;--------------
    ; Compute the offset of the models from the data in pixels 
@@ -357,7 +372,8 @@ pro flux_standard, loglam, stdflux, stdivar, stdmask, stdstarfile, $
    ;---------------
    ; Now find the average vector, with iterative rejection 
 
-   fcor = avg_fluxvect(wave, corvector[*,ok], stdstars[ok].sn, cvectok = cvectok)
+   fcor = avg_fluxvect(wave, corvector[*,ok], stdstars[ok].sn, $
+                       cvectok = cvectok)
    
    ;--------------
    ; Recompute the mean without rejected fibers
