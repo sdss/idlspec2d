@@ -179,9 +179,9 @@ print, 'nlag', nlag
          bestlambda = loglambda
          lagbest = lags[icorr]
 ; PLOT ???
-splot,speccorr,xr=[0,2048]
-soplot,shift(model,-lagbest)*mean(speccorr)/mean(model),color='red'
-print,bestcorr,lagbest,tempset.coeff
+;splot,speccorr,xr=[0,2048]
+;soplot,shift(model,-lagbest)*mean(speccorr)/mean(model),color='red'
+;print,bestcorr,lagbest,tempset.coeff
       endif
 
    endfor
@@ -313,7 +313,6 @@ pro fitarcimage, arc, arcinvvar, color, linelist, xnew, ycen, wset, $
       aset.coeff = acoeff
       wset = fullfit(spec, linelist, aset, dcoeff, nsteps, $
        bestcorr=bestcorr)
-stop
 
       if (color EQ 'blue' AND bestcorr LT 0.70) then $
        print, 'Initial wavelength solution looks suspicious'
