@@ -33,7 +33,7 @@ function fluxcorr, flux, fluxivar, wset, plugsort, color=color, $
 	spectrophoto = where(plugsort.objtype EQ 'SPECTROPHOTO_STD' $
                AND fibermask)
 	if (spectrophoto[0] EQ -1) then begin
-	  print,'FLUXCORR: no spectrophoto stds on this side, trying reddening'
+	  splog, 'WARNING: No spectrophoto stds on this side, trying reddening'
 	  spectrophoto = where(plugsort.objtype EQ 'REDDEN_STD' $
                AND fibermask)
 	  if (spectrophoto[0] EQ -1) then $
