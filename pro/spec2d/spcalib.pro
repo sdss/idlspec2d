@@ -68,6 +68,8 @@
 ; REVISION HISTORY:
 ;   24-Jan-2000  Written by D. Schlegel, Princeton
 ;   27-Nov-2000  Changed to proftype 3, added minflat, maxflat keywords
+;    8-Jan-2001  And now back to proftype 1, more robust against bad columns
+;     
 ;-
 ;------------------------------------------------------------------------------
 function create_arcstruct, narc
@@ -206,7 +208,7 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
          ;---------------------------------------------------------------------
 
          sigma = 1.0 ; Initial guess for gaussian width
-         proftype = 3 ; Gaussian + exp(-|x|^3)
+         proftype = 1 ; Gaussian 
          splog, 'Extracting flat-field image with proftype', proftype
          highrej = 15
          lowrej = 15
@@ -219,7 +221,7 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
          splog, 'Extracting flat to obtain width and flux'
          extract_image, flatimg, flativar, xsol, sigma, flux, fluxivar, $
           proftype=proftype, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
-          npoly=npoly, relative=1, ansimage=ansimage
+          npoly=npoly, relative=1, ansimage=ansimage, reject=[0.1, 0.6, 0.6]
 
          widthset = fitflatwidth(flux, fluxivar, ansimage, tmp_fibmask, $
           ncoeff=5, sigma=sigma)
@@ -335,7 +337,8 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
          splog, 'Extracting arc'
          extract_image, arcimg, arcivar, xcor, sigma2, $
           flux, fluxivar, proftype=proftype, wfixed=wfixed, $
-          highrej=highrej, lowrej=lowrej, npoly=npoly, relative=1
+          highrej=highrej, lowrej=lowrej, npoly=npoly, relative=1, $
+          reject=[0.1, 0.6, 0.6]
 
          ;---------------------------------------------------------------------
          ; Compute correlation coefficient for this arc image
@@ -477,15 +480,16 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
          ;---------------------------------------------------------------------
 
          traceset2xy, widthset, xx, sigma2   ; sigma2 is real width
-         proftype = 3 ; Half Gaussian  Half Abs^3
+         proftype = 1 ; Gaussian  
          highrej = 15
          lowrej = 15
-         npoly = 20 ; Fit 20 terms to background
+         npoly = 5 ; Fit 10 terms to background, just get best model
          wfixed = [1,1] ; Fit gaussian plus both derivatives
 
          extract_image, flatimg, flativar, xsol, sigma2, flux, fluxivar, $
           proftype=proftype, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
-          npoly=npoly, relative=1, ymodel=ym, chisq=fchisq
+          npoly=npoly, relative=1, ymodel=ym, chisq=fchisq, $
+          reject=[0.1, 0.6, 0.6]
 
 ;-----------------------------------------------------------------------------
 ;    Another attempt to remove halo, but proftype has **MUCH** bigger
@@ -500,11 +504,10 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
 ;  with NIR and optical scattered light removed 
 ;----------------------------------------------------------------------------
 
-         npoly = 5  
          extract_image, flatimg, flativar, xsol, sigma2, flux, fluxivar, $
           proftype=proftype, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
-          npoly=npoly, relative=1, chisq=schisq
-          
+          npoly=npoly, relative=1, chisq=schisq, reject=[0.1, 0.6, 0.6]
+         
          splog, 'First  extraction chi^2 ', minmax(fchisq)
          splog, 'Second extraction chi^2 ', minmax(schisq)
 
