@@ -478,6 +478,7 @@ pro/spec2d/spbiasave.pro -text
 pro/spec2d/spbiasgen.pro -text
 pro/spec2d/spcalib.pro -text
 pro/spec2d/spcoadd_frames.pro -text
+pro/spec2d/spcoadd_v5.pro -text
 pro/spec2d/spcombine.pro -text
 pro/spec2d/spcombine_v5.pro -text
 pro/spec2d/spflatave.pro -text
