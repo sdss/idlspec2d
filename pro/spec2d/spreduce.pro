@@ -196,6 +196,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
          xsol = *(bestflat.xsol)
          fflat = *(bestflat.fflat)
          widthset = *(bestflat.widthset)
+         dispset = *(bestarc.dispset)
 
          qaplot_fflat, fflat, wset, $
           title=plottitle+'Fiber-Flats for '+bestflat.name
