@@ -11,7 +11,7 @@
 
 # Exit if this process is already running.
 
-n=`ps -elf | grep sprobot2d.sh | grep -v grep | wc -l`
+n=`\ps -elf | grep sprobot2d.sh | grep -v grep | wc -l`
 if [ X"$n" != X"" -a "$n" -gt 2 ]; then
   echo "Already running sprobot2d.sh.  Exiting."
   exit
