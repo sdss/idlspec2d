@@ -39,7 +39,7 @@
 ;-
 ;--------------------------------------------------------------------------------
 pro dr1_spplate_cor, platelist_par, logfile = logfile, $
-    spectro_data_dir = spectro_data_dir
+    spectro_data_dir = spectro_data_dir, tsobj_dir = tsobj_dir
 
   splog, filename = logfile
 
