@@ -7,7 +7,8 @@
 ;
 ; CALLING SEQUENCE:
 ;   solvefilter, [ filttype=, filternum=, plate=, mjd=, $
-;    adderr=, wavemin=, wavemax=, sncut=, maxiter=, fluxpath=
+;    adderr=, wavemin=, wavemax=, sncut=, maxiter=, fluxpath=, $
+;    value=, fixed= ]
 ;
 ; INPUTS:
 ;
@@ -30,6 +31,11 @@
 ;   maxiter    - Maximum number of iterations in iterative fit; default to 200
 ;   fluxpath   - Path name for spPlate files used for reading the spectra.
 ;                The spZ files are still read from $SPECTRO_DATA/$PLATE.
+;   value      - Initial guess values for the fit parameters.  The default
+;                values are chosen to closely match the Gunn Jun-2001 curves.
+;   fixed      - A vector of elements set to 0 for each parameter to be fit,
+;                and 1 for each parameter value to fix.  Default to fitting
+;                all parameters.
 ;
 ; OUTPUTS:
 ;
@@ -44,7 +50,16 @@
 ;   CAMCOL, PLATE, SPECTROGRAPHID) is allowed to have a floating zero-point
 ;   offset.  These offsets are plotted as MAGOFFSET in one of the final plots.
 ;
-;   We only use unblended stars and QSOs, not any galaxies.
+;   We only use spectroscopically-confirmed stars and QSOs, not any galaxies.
+;   Anything targetted as a galaxy is rejected.  Any blended objects are
+;   rejected.  Anything with the following bits set is rejected:
+;   OBJECT2_SATUR_CENTER, OBJECT2_INTERP_CENTER, OBJECT2_PSF_FLUX_INTERP.
+;   These last cuts remove stars with CRs in the core on the i-band images
+;   that were targetted as QSOs -- this was actually due to a bug in PHOTO
+;   that called stars CRs when the seeing was too good, then the incorrect
+;   CR-removal made the i-band 2 mags fainter, and these things were targetted
+;   as QSOs.
+;
 ;   All calculations are done in vacuum wavelengths, but then converted
 ;   to air wavelengths at the end.
 ;
@@ -75,6 +90,7 @@
 ;   djs_plot
 ;   djs_xyouts
 ;   headfits()
+;   idlspec2d_version()
 ;   mpfit()
 ;   mrdfits()
 ;   readcol
@@ -121,6 +137,8 @@ function solvefiltshape, theta, loglam
 
    if (total(finite(fcurve)) NE n_elements(fcurve)) then $
     message, 'NaN in filter shape'
+
+   fcurve = fcurve > 0
 
    return, fcurve
 end
@@ -173,7 +191,7 @@ end
 ;------------------------------------------------------------------------------
 pro solvefilter, filttype=filttype1, filternum=filternum1, $
  plate=plate, mjd=mjd, adderr=adderr, wavemin=wavemin, wavemax=wavemax, $
- sncut=sncut, maxiter=maxiter, fluxpath=fluxpath
+ sncut=sncut, maxiter=maxiter, fluxpath=fluxpath, value=value, fixed=fixed
 
    ;----------
    ; Set common block
@@ -236,16 +254,18 @@ pro solvefilter, filttype=filttype1, filternum=filternum1, $
    ;----------
    ; Set the structure to pass to MPFIT
 
+   blankpar = {value:0.D, fixed:0, limited:[0b,0b], $
+    limits:[0.D,0], mpmaxstep: 0.D}
+
    case filttype of
    'tanh': begin
-      parinfo = replicate({value:0.D, fixed:0, limited:[0b,0b], $
-       limits:[0.D,0], mpmaxstep: 0.D}, 5)
+      parinfo = replicate(blankpar, 5)
       if (filternum EQ 1) then $
-       parinfo.value = [alog10(3950), alog10(5325), 2.0, 100, 140]
+       parinfo.value = [alog10(3950), alog10(5325), 100, 140, 2.0]
       if (filternum EQ 2) then $
-       parinfo.value = [alog10(5580), alog10(6750), 1.2, 130, 160]
+       parinfo.value = [alog10(5580), alog10(6750), 130, 160, 1.2]
       if (filternum EQ 3) then $
-       parinfo.value = [alog10(6915), alog10(8210), 0.55, 150, 220]
+       parinfo.value = [alog10(6915), alog10(8210), 150, 220, 0.55]
       parinfo.limited = [[0,1], [1,0], [1,0], [1,0], [1,0]]
       logmid = 0.5 * (parinfo[0].value + parinfo[1].value)
       parinfo.limits = [[0,logmid-5.d-4], [logmid+5.d-4,0], $
@@ -253,13 +273,15 @@ pro solvefilter, filttype=filttype1, filternum=filternum1, $
       parinfo.mpmaxstep = [5.d-4, 5.d-4, 10., 10., 0.05]
       end
    'sdss': begin
-      parinfo = replicate({value:0.D, fixed:0, limited:[0b,0b], $
-       limits:[0.D,0], mpmaxstep: 0.D}, 3)
-      parinfo.value = [-10.d-5, 1.001, 0.01]
+      parinfo = replicate(blankpar, 3)
+      parinfo.value = [0.d-5, 1.000, 0.01]
       parinfo.mpmaxstep = [5.d-4, 0.01, 0.02]
       end
    else: message, 'Unknown FILTTYPE'
    endcase
+
+   if (keyword_set(value)) then parinfo.value = value
+   if (keyword_set(fixed)) then parinfo.fixed = fixed
 
    ;----------
    ; Construct the atmospheric extinction curve
@@ -349,10 +371,15 @@ pro solvefilter, filttype=filttype1, filternum=filternum1, $
 
       ; Identify objects that are not blends
       bflag = djs_int2bin(ulong(tsobj.objc_flags), ndigit=32)
+      bflag2 = djs_int2bin(ulong(tsobj.objc_flags2), ndigit=32)
       qblend = transpose(bflag[3,*] EQ 1 AND bflag[6,*] EQ 0)
       qbright = transpose(bflag[1,*])
       qchild = transpose(bflag[4,*])
       qsingle = (qblend EQ 0) AND (qbright EQ 0) AND (qchild EQ 0)
+
+      ; Find which objects have interpolated pixels near the center
+      ; (we'll throw them out)
+      qinterp = transpose(bflag2[11,*] OR bflag2[12,*] OR bflag2[15,*])
 
       ; Compute the airmass for each object
       junk = sdss_run2mu(tsobj.run, tsobj.field, tai=tai)
@@ -377,6 +404,7 @@ pro solvefilter, filttype=filttype1, filternum=filternum1, $
          igood = where(zans[indx].zwarning EQ 0 $
           AND qsingle[indx] EQ 1 $
           AND qgalaxy[indx] EQ 0 $
+          AND qinterp[indx] EQ 0 $
           AND ( strmatch(zans[indx].class,'STAR*') $
            OR strmatch(zans[indx].class,'QSO*') ) $
           AND magdiff GT median([magdiff])-0.5 $
@@ -457,24 +485,32 @@ objivar = 0
    photoflux = photoflux * 10.d0^(-aboffsets[filternum]/2.5)
 
    ;----------
+   ; Compute the chi^2 for the initial guess parameters
+
+   origchi =  solvefiltfn(parinfo.value)
+   dof = ntot - n_elements(parinfo) - ngroup
+   origrchi2 = total(origchi^2) / dof
+   splog, 'Start Chi2/DOF = ', origrchi2
+
+   ;----------
    ; Do the actual fit to the filter curve
 
    t1 = systime(1)
    theta = mpfit('solvefiltfn', $
     parinfo=parinfo, perror=perror, maxiter=maxiter, $
     nfev=nfev, niter=niter, status=status)
+   t2 = systime(1)
    chivec = solvefiltfn(theta)
-   dof = n_elements(chivec) - n_elements(theta) - ngroup
    chi2pdof = total(chivec^2) / dof
 
-   splog, 'Time for non-linear fitting = ', systime(1)-t1, ' sec'
+   splog, 'Time for non-linear fitting = ', t2-t1, ' sec'
    splog, 'Number of iterations = ', niter
    splog, 'Number of function evaluations = ', nfev
    splog, 'Fit values = ', theta
    splog, 'Fit errors = ', perror
    splog
    splog, 'Median |chi| = ', median(abs(chivec))
-   splog, 'Chi2/DOF = ', chi2pdof
+   splog, 'Final Chi2/DOF = ', chi2pdof
 
    ;----------
    ; Identify the 10 most deviant points
@@ -520,10 +556,30 @@ objivar = 0
    plottitle = 'Best-Fit ' + filtname[filternum]+'-band Filter ' + datestring
    plotfile = 'sdss_djs_' + datestring + '_' + filtname[filternum] + '.ps'
 
-   csize = 2
+   csize = 1.1
    dfpsplot, plotfile, /square, /color
 
-   djs_plot, plist.plate, rchi2plate, psym=4, $
+   xrange = [ bigwave[(where(fbest GT 0.01))[0]] - 300, $
+    bigwave[(reverse(where(fbest GT 0.01)))[0]] + 300 ]
+   plot, bigwave, gunnfilt[*,filternum], $
+    xtitle='Air Wavelength [Ang]', ytitle='Filter Response at 1.3 Airmass', $
+    charsize=csize, xrange=xrange, /xstyle, title=plottitle
+   djs_oplot, bigwave, fguess, color='red'
+   djs_oplot, bigwave, fbest, color='green'
+   xplot = total(!x.crange * [0.95,0.05])
+   yplot = !y.crange[1]
+   djs_xyouts, xplot, 0.32*yplot, 'Gunn Jun-2001', $
+    charsize=0.75*csize
+   djs_xyouts, xplot, 0.26*yplot, 'Schlegel Best-Fit '+datestring $
+    + ' \chi^2_r=' + string(chi2pdof,format='(f6.3)'), $
+    charsize=0.75*csize, color='green'
+   djs_xyouts, xplot, 0.20*yplot, 'Initial guess for fit' $
+     + ' \chi^2_r=' + string(origrchi2,format='(f6.3)'), $
+    charsize=0.75*csize, color='red'
+
+   !p.multi = [0,1,2]
+   iplot = where(rchi2plate GT 0)
+   djs_plot, plist[iplot].plate, rchi2plate[iplot], psym=4, $
     xtitle='Plate Number', ytitle='\chi^2 / DOF', $
     charsize=csize, title=plottitle
 
@@ -532,16 +588,23 @@ objivar = 0
    plot, zall[iuniq].plate, magoffset, psym=4, $
     xtitle='Plate Number', ytitle='(SPECTRO - PHOTO) Mag Offset per group', $
     charsize=csize, title=plottitle
+   !p.multi = 0
 
+   !p.multi = [0,1,2]
    magdiff = -2.5 * alog10(spectroflux / photoflux)
    plot, zall.plate + zall.fiberid/1000., magdiff, psym=3, $
     xtitle='Plate Number', ytitle='(SPECTRO - PHOTO) w/out mag offsets', $
     charsize=csize, title=plottitle
+   oplot, !x.crange, [0,0]
    magdiff = -2.5 * alog10(spectroflux * groupratio[groupnum] / photoflux)
    plot, zall.plate + zall.fiberid/1000., magdiff, psym=3, $
+    yrange=!y.crange, /ystyle, $ ; Use same Y plotting limits as above
     xtitle='Plate Number', ytitle='(SPECTRO - PHOTO) w/ mag offsets', $
     charsize=csize, title=plottitle
+   oplot, !x.crange, [0,0]
    ; Label the NWORST worst points, according to their chi-deviation
+   djs_xyouts, total(!x.crange*[0.95,0.05]), total(!y.crange*[0.08,0.92]), $
+    'Worst outliers by \chi^2 in red', color='red'
    djs_oplot, zall[iworst].plate+zall[iworst].fiberid/1000., $
     magdiff[iworst], psym=4, color='red'
    for i=0, nworst-1 do $
@@ -549,19 +612,30 @@ objivar = 0
      magdiff[iworst[i]], string(zall[iworst[i]].plate, $
      zall[iworst[i]].mjd, zall[iworst[i]].fiberid, $
      format='(i4,"/",i5,"-",i3," ")'), orient=90, align=1.0, color='red'
+   !p.multi = 0
 
-   xrange = [ bigwave[(where(fbest GT 0.02))[0]] - 300, $
-    bigwave[(reverse(where(fbest GT 0.02)))[0]] + 300 ]
-   plot, bigwave, gunnfilt[*,filternum], $
-    xtitle='Air Wavelength [Ang]', ytitle='Filter Response at 1.3 Airmass', $
-    charsize=csize, xrange=xrange, /xstyle, title=plottitle
-;   djs_oplot, bigwave, fguess, color='red'
-   djs_oplot, bigwave, fbest, color='green'
-   xplot = total(!x.crange * [0.95,0.05])
-   yplot = !y.crange[1]
-   djs_xyouts, xplot, 0.92*yplot, 'Gunn Jun-2001 Curve', charsize=0.75*csize
-   djs_xyouts, xplot, 0.86*yplot, 'Schlegel Best-Fit '+datestring, $
-   charsize=0.75*csize, color='green'
+   !p.multi = [0,1,2]
+   istar = where(strmatch(zall.class,'STAR*'))
+   iqso = where(strmatch(zall.class,'QSO*'))
+   photocolor = tsall.psfcounts[1] - tsall.psfcounts[2]
+   plot, photocolor[istar], magdiff, psym=3, charsize=csize, $
+    xtitle='(g-r) for stars', ytitle='(SPECTRO - PHOTO) w/ mag offsets'
+   oplot, !x.crange, [0,0]
+   isort = sort(photocolor[istar])
+   djs_oplot, photocolor[istar[isort]], $
+    djs_median(magdiff[isort],width=51,boundary='reflect'), color='red'
+   djs_xyouts, total(!x.crange*[0.95,0.05]), total(!y.crange*[0.08,0.92]), $
+    'Running median of 51 pts', color='red', charsize=csize
+
+   plot, zall[iqso].z, magdiff, psym=3, charsize=csize, $
+    xtitle='z for QSOs', ytitle='(SPECTRO - PHOTO) w/ mag offsets'
+   oplot, !x.crange, [0,0]
+   isort = sort(zall[iqso].z)
+   djs_oplot, zall[iqso[isort]].z, $
+    djs_median(magdiff[isort],width=51,boundary='reflect'), color='red'
+   djs_xyouts, total(!x.crange*[0.95,0.05]), total(!y.crange*[0.08,0.92]), $
+    'Running median of 51 pts', color='red', charsize=csize
+   !p.multi = 0
 
    dfpsclose
 
@@ -571,16 +645,30 @@ objivar = 0
    outfile = 'sdss_djs_' + datestring + '_' + filtname[filternum] + '.dat'
    openw, olun, outfile, /get_lun
    printf, olun, '# Filename = ' + outfile
+   printf, olun, '# Generated by SOLVEFILTER in idlspec2d ' + idlspec2d_version()
    printf, olun, '# Generated on ' + systime()
+   printf, olun, '#'
+   printf, olun, '# FILTER = ' + filtname[filternum]
+   printf, olun, '# FILTTYPE = ' + filttype
+   printf, olun, '# ADDERR = ' + string(adderr)
+   printf, olun, '# SNCUT = ' + string(sncut)
+   printf, olun, '# WAVEMIN = ' + string(wavemin)
+   printf, olun, '# WAVEMAX = ' + string(wavemax)
+   printf, olun, '# MAXITER = ' + string(maxiter)
+   printf, olun, '# SPECTRO_DATA = ' + getenv('SPECTRO_DATA')
+   if (keyword_set(fluxpath)) then printf, olun, '# FLUXPATH = ' + fluxpath
    printf, olun, '#'
    printf, olun, '# Number of plates = ' + string(nplate)
    printf, olun, '# Number of spectra = ' + string(ntot)
    printf, olun, '# Number of groups = ' + string(max(groupnum)+1)
-   printf, olun, '# Fit values = ' + string(theta, format='(99f)')
-   printf, olun, '# Fit errors = ' + string(perror, format='(99f)')
+   printf, olun, '# Start values = ' + string(parinfo.value, format='(99e14.6)')
+   printf, olun, '# Fit values = ' + string(theta, format='(99e14.6)')
+   printf, olun, '# Fit errors = ' + string(perror, format='(99e14.6)')
+   printf, olun, '# Number of iterations = ' + string(niter)
+   printf, olun, '#'
    printf, olun, '# Median |chi| = ' + string(median(abs(chivec)))
-   printf, olun, '# Chi2/DOF = ' + string(chi2pdof)
-   if (keyword_set(fluxpath)) then print, olun, '# FLUXPATH = ' + fluxpath
+   printf, olun, '# Start Chi2/DOF = ', origrchi2
+   printf, olun, '# Final Chi2/DOF = ' + string(chi2pdof)
    printf, olun, '#'
    printf, olun, '# lambda  response response resnoa   xatm(1.3)'
    for i=0, nbigpix-1 do $
