@@ -7,7 +7,7 @@ ALINK="#FF0000">
 <CENTER><H1 ALIGN="center">SDSS IDLSPEC2D Installation</H1></CENTER>
 
 <P>
-This document explains how to install the idlutils,idlspec2d products
+This document explains how to install the idlutils,idlspec2d,specflat products
 needed for reducing SDSS spectroscopic data.
 
 <P>
@@ -21,18 +21,19 @@ In this document:
 <H2><A NAME="install_ups">Installing w/UPS</A></H2>
 
 <P>
-Check out a tagged version, such as v4_3_1, of both "idlutils" and "idlspec2d".
+Check out tagged versions of "idlutils", "specflat" and "idlspec2d".
 These should be checked out to your home directory, then installed in the
-products directory (/p).
+products directory (e.g., under /p).
 
 <OL>
 
 <LI>
-To avoid typing mistakes, I start by defining two environment variables
+To avoid typing mistakes, I start by defining environment variables
 for the version numbers:
 <DL><DD><PRE>
-  % setenv IDLUTILS_VERS v4_3_1
-  % setenv IDLSPEC2D_VERS v4_3_1
+  % setenv IDLUTILS_VERS v4_8_1
+  % setenv SPECFLAT_VERS v1_2
+  % setenv IDLSPEC2D_VERS v4_8_1
 </PRE></DD></DL>
 
 <LI>
@@ -52,8 +53,24 @@ Install this version of "idlutils" and declare it current:
 </PRE></DD></DL>
 
 <LI>
+Install this version of "specflat" and declare it current:
+<DL><DD><PRE>
+  % setup sdsscvs # Only needed on machines set up by Fermi
+  % cd
+  % cvs export -r $SPECFLAT_VERS specflat
+  % cd ~/specflat
+  % setup -r ~/specflat specflat
+  % setup sdsstools # Only needed on machines set up by Fermi
+  % sdssmake -idl -opt -debug
+  % setenv SPECFLAT_DIR /p/specflat/$SPECFLAT_VERS
+  % sdssmake install
+  % ups declare -f Linux+2 -m specflat.table \
+    -r /p/specflat/$SPECFLAT_VERS -c specflat $SPECFLAT_VERS
+</PRE></DD></DL>
+
+<LI>
 Install this version of "idlspec2d" with a dependency on the above
-version of "idlutils", and declare it current:
+versions of "idlutils" and "specflat", and declare it current:
 <DL><DD><PRE>
   % cd
   % cvs export -r $IDLSPEC2D_VERS idlspec2d
@@ -77,16 +94,18 @@ IDL must already be installed on your system, and
 the environment variables IDL_DIR and IDL_PATH must already be set.
 
 <LI>
-Check out a tagged version, such as v4_3_1, of both "idlutils" and "idlspec2d",
-into your home directory (for this example).
-To avoid typing mistakes, I start by defining two environment variables
+Check out tagged versions of "idlutils", "specflat" and "idlspec2d".
+Put them into your home directory (for this example).
+To avoid typing mistakes, I start by defining environment variables
 for the version numbers:
 <DL><DD><PRE>
-  % setenv IDLUTILS_VERS v4_3_1
-  % setenv IDLSPEC2D_VERS v4_3_1
+  % setenv IDLUTILS_VERS v4_8_1
+  % setenv SPECFLAT_VERS v1_2
+  % setenv IDLSPEC2D_VERS v4_8_1
   % setup sdsscvs # Only needed on machines set up by Fermi
   % cd
   % cvs co -r $IDLUTILS_VERS idlutils
+  % cvs co -r $SPECFLAT_VERS specflat
   % cvs co -r $IDLSPEC2D_VERS idlspec2d
 </PRE></DD></DL>
 
@@ -94,8 +113,9 @@ for the version numbers:
 Set the environment variables.  From a "csh" or "tcsh" shell:
 <DL><DD><PRE>
   % setenv IDLUTILS_DIR $HOME/idlutils
+  % setenv SPECFLAT_DIR $HOME/specflat
   % setenv IDLSPEC2D_DIR $HOME/idlspec2d
-  % set path=( $IDLUTILS_DIR/bin $IDLSPEC2D_DIR/bin $path )
+  % set path=( $IDLUTILS_DIR/bin $SPECFLAT_DIR/bin $IDLSPEC2D_DIR/bin $path )
   % setenv IDL_PATH +{$IDLUTILS_DIR}/goddard/pro:{$IDL_PATH}
   % setenv IDL_PATH +{$IDLUTILS_DIR}/pro:{$IDL_PATH}
   % setenv IDL_PATH +{$IDLSPEC2D_DIR}/pro:{$IDL_PATH}
@@ -107,6 +127,8 @@ Build the code:
 <DL><DD><PRE>
   % setup idl # Only needed on machines set up by Fermi
   % cd $IDLUTILS_DIR
+  % evilmake all
+  % cd $SPECFLAT_DIR
   % evilmake all
   % cd $IDSPEC2D_DIR
   % evilmake all
@@ -123,9 +145,10 @@ IDL must already be installed on your system, and
 the environment variables IDL_DIR and IDL_PATH must already be set.
 
 <LI>
-Unpack the tar files for both "idlutils" and "idlspec2d":
+Unpack the tar files for "idlutils", "specflat" and "idlspec2d":
 <DL><DD><PRE>
   % tar xvf idlutils*.tar
+  % tar xvf specflat*.tar
   % tar xvf idlspec2d*.tar
 </PRE></DD></DL>
 

@@ -7,7 +7,7 @@
 
 These are the instructions for running the spectroscopic pipeline on
 the raw SDSS data.  You must first <A HREF="idlspec2d_install.html">install
-the IDL code</A>.
+the IDL code</A>, which are the three products: idlspec2d, idlutils, specflat.
 
 <HR>
 
@@ -19,7 +19,6 @@ variables as follows:
 <DL><DD><PRE>
    $RAWDATA_DIR/<I>mmmmm</I> - The raw image, "sdR-<I>cc-eeeeeeee</I>.fit"
    $SPECLOG_DIR/<I>mmmmm</I> - The plug-map files, "plPlugMapM-<I>pppp-mmmmm-rr</I>.par"
-   $SPECFLAT_DIR      - The spectroscopic pixel flats, "pixflat-<I>mmmmm-cc</I>.fits"
 </PRE></DD></DL>
 where <I>mmmmm</I> refers to an MJD (such as 51690), <I>cc</I> refers
 to a camera name (such as b1 for blue-1), <I>pppp</I> refers to a plate
@@ -32,12 +31,11 @@ At Princeton, these paths would be set as follows:
 <DL><DD><PRE>
    setenv RAWDATA_DIR    /u/dss/rawdata
    setenv SPECLOG_DIR    /u/dss/astrolog
-   setenv SPECFLAT_DIR   /u/dss/specflat
 </PRE></DD></DL>
 
 <P>
 To re-run a plate through the spectro pipeline, you need all of these files.
-And the three paths must be set appropriately.
+Both paths must be set appropriately.
 
 <H2 ALIGN="left">Obtaining the Raw Data</H2>
 
@@ -55,13 +53,6 @@ The plug-map files for a particular night ($MJD) can be found at:
 </PRE></DD></DL>
 These are also available from the CVS product "speclog", though that
 may be out of date by several days or weeks.
-
-<P>
-A set of pixel flats can be found at:
-<DL><DD><PRE>
-   sdssdata.princeton.edu:/u/dss/pixflats
-</PRE></DD></DL>
-These are also available from the CVS product "specflat".
 
 
 <H2 ALIGN="left">Generating Plan Files</H2>
