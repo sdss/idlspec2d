@@ -40,7 +40,7 @@ function bandpassfilter, datafft, klo_cut=klo_cut, khi_cut=khi_cut
    if (NOT keyword_set(klo_cut) AND NOT keyword_set(khi_cut)) then $
     return, datafft
 
-   if (size(datafft, tname) EQ 'DOUBLE') then PI = !dpi $
+   if (size(datafft, /tname) EQ 'DOUBLE') then PI = !dpi $
     else PI = !pi
 
    ndata = N_elements(datafft)
