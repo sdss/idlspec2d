@@ -47,9 +47,10 @@
 ; PROCEDURES CALLED:
 ;   djs_angle_match()
 ;   djs_diff_angle()
+;   djs_filepath()
 ;   headfits()
+;   hogg_mrdfits()
 ;   mrdfits()
-;   mwrfits
 ;   mwrfits_chunks
 ;   plug2tsobj()
 ;   platelist
@@ -65,7 +66,6 @@
 pro platemerge, zfile, outroot=outroot1, public=public
 
    dtheta = 2.0 / 3600.
-   tags_exclude = ['FIRST*','ROSAT*','MATCHID']
 
    if (keyword_set(outroot1)) then begin
       outroot = [outroot1, outroot1+'Line']
@@ -80,6 +80,7 @@ pro platemerge, zfile, outroot=outroot1, public=public
    endelse
 
    t1 = systime(1)
+   thismem = memory()
 
    ;----------
    ; Find the list of spZ files.
@@ -115,12 +116,12 @@ pro platemerge, zfile, outroot=outroot1, public=public
       fullzfile = findfile(zfile, count=nfile)
    endelse
 
-   print, 'Found ', nfile, ' files'
+   splog, 'Found ', nfile, ' files'
    if (nfile EQ 0) then return
    fullzfile = fullzfile[ sort(fullzfile) ]
 
    nout = nfile * 640L
-   print, 'Total number of objects = ', nout
+   splog, 'Total number of objects = ', nout
 
    ;----------
    ; Find the corresponding spPlate files (needed only for PRIMTARGET+SECTARGET
@@ -141,87 +142,52 @@ pro platemerge, zfile, outroot=outroot1, public=public
    endwhile
 
    ;----------
+   ; Create the additional tags to add to the output structure
+
+   pstuff = create_struct( $
+    'progname'    , ' ', $
+    'chunkname'   , ' ', $
+    'platequality', ' ', $
+    'platesn2'    , 0.0, $
+    'smearuse'    , ' ', $
+    'primtarget'  ,  0L, $
+    'sectarget'   ,  0L, $
+    'specprimary' ,  0B, $
+    'specobj_id'  ,  0L, $
+    'nspecobs'    ,  0  )
+
+   ;----------
    ; Loop through each file
 
+   splog, 'Reading ZANS files'
    for ifile=0L, nfile-1 do begin
-      print,'File ',ifile+1, ' of ', nfile,': '+fullzfile[ifile]
+      print, 'Reading ZANS file ',ifile+1, ' of ', nfile,': '+fullzfile[ifile]
 
       hdr = headfits(fullzfile[ifile])
       plate = sxpar(hdr, 'PLATEID')
       zans = mrdfits(fullzfile[ifile], 1, /silent)
       plugmap = mrdfits(fullplatefile[ifile], 5, /silent)
-      tsobj = plug2tsobj(plate, zans.plug_ra, zans.plug_dec, plugmap=plugmap)
-      if (NOT keyword_set(tsobj)) then $
-       splog, 'WARNING: No tsObj file found for plate ', plate
 
-      if (NOT keyword_set(outdat)) then begin
-         pstuff = create_struct( $
-          'progname'    , ' ', $
-          'chunkname'   , ' ', $
-          'platequality', ' ', $
-          'platesn2'    , 0.0, $
-          'smearuse'    , ' ', $
-          'primtarget'  ,  0L, $
-          'sectarget'   ,  0L, $
-          'specprimary' ,  0B, $
-          'specobj_id'  ,  0L, $
-          'nspecobs'    ,  0  )
-         ; Trim away tag names from the tsObj structure that
-         ; is also in the ZANS structure.  At the moment (May 2003),
-         ; the only such tag is "MJD".
-         tsobj0 = struct_trimtags(tsobj0, except_tags=tag_names(zans[0]))
-         tmpout = create_struct(pstuff, zans[0], tsobj0)
-
-         ; Exclude tags we don't want
-         tags = tag_names(tmpout)
-         ntag = n_elements(tags)
-         qkeep = bytarr(ntag) + 1B
-         for itag=0, ntag-1 do begin
-            for jtag=0, n_elements(tags_exclude)-1 do begin
-               if (strmatch(tags[itag], tags_exclude[jtag])) then $
-                qkeep[itag] = 0B
-            endfor
-         endfor
-         ikeep = where(qkeep, nkeep)
-         outdat1 = create_struct(tags[ikeep[0]], tmpout.(ikeep[0]))
-         for ii=1, nkeep-1 do $
-          outdat1 = create_struct(outdat1, tags[ikeep[ii]], tmpout.(ikeep[ii]))
-
+      if (ifile EQ 0) then begin
+         outdat1 = create_struct(pstuff, zans[0])
          struct_assign, {junk:0}, outdat1 ; Zero-out all elements
-         sz1 = n_tags(outdat1, /length)
-         splog, 'Size of one FITS structure = ', sz1, ' bytes'
-         splog, 'Number of objects = ', nout
-         splog, 'Total size of FITS structure = ', float(sz1)*nout/1.e6, ' Mbyte'
          outdat = replicate(outdat1, nout)
       endif
 
-      ; Assign the tsObj entries first, then over-write any
-      ; duplicate tags with ZANS (such as MJD).
-      thisdat = replicate(outdat1, 640)
-      if (keyword_set(tsobj)) then $
-       struct_assign, tsobj, thisdat, /nozero
-      struct_assign, zans, thisdat, /nozero
+      indx = (ifile * 640L) + lindgen(640)
+      copy_struct_inx, zans, outdat, index_to=indx
 
       ; Fill in the first columns of this output structure
-      thisdat.progname = plist[ifile].progname
-      thisdat.chunkname = plist[ifile].chunkname
-      thisdat.platequality = plist[ifile].platequality
-      thisdat.platesn2 = plist[ifile].platesn2
-      thisdat.smearuse = plist[ifile].smearuse
+      outdat[indx].progname = plist[ifile].progname
+      outdat[indx].chunkname = plist[ifile].chunkname
+      outdat[indx].platequality = plist[ifile].platequality
+      outdat[indx].platesn2 = plist[ifile].platesn2
+      outdat[indx].smearuse = plist[ifile].smearuse
 
       ; Get PRIMTARGET+SECTARGET with those values from
       ; the plug-map structure in spPlate file.
-      thisdat.primtarget = plugmap.primtarget
-      thisdat.sectarget = plugmap.sectarget
-
-      ; Over-write the MJD with that from the plate file name ???
-      ; Early versions of 2D (such as v4_3_1) could have an inconsistent value.
-;      thismjd = long( strmid(fileandpath(fullplatefile[ifile]), 13, 5) )
-;      thisdat.mjd = thismjd
-
-      ; Copy the data for this plate into the big output structure
-      indx = lindgen(640)+640L*ifile
-      outdat[indx] = thisdat
+      outdat[indx].primtarget = plugmap.primtarget
+      outdat[indx].sectarget = plugmap.sectarget
    endfor
 
    splog, 'Time to read data = ', systime(1)-t1, ' sec'
@@ -240,8 +206,8 @@ pro platemerge, zfile, outroot=outroot1, public=public
    ; (This is a rather generous match distance; 3.0 deg should be enough
    ; unless there is a mistake somewhere.)
 
-   for ifile1=0, nfile-1 do begin
-      for ifile2=ifile1+1, nfile-1 do begin
+   for ifile1=0L, nfile-1 do begin
+      for ifile2=ifile1+1L, nfile-1 do begin
          adist = djs_diff_angle(plist[ifile1].ra, plist[ifile1].dec, $
           plist[ifile2].ra, plist[ifile2].dec)
          if (adist LT 4.5) then begin
@@ -313,15 +279,55 @@ pro platemerge, zfile, outroot=outroot1, public=public
    splog, 'Time to assign primaries = ', systime(1)-t2, ' sec'
 
    ;----------
-   ; Write the output FITS file, in chunks of 20 plates
+   ; Pre-condition to FITS structure to have same-length strings
+   ; (for any given tag name) by concatenating spaces.
+
+   ntag = n_tags(outdat)
+   tags = tag_names(outdat)
+   for itag=0L, ntag-1L do begin
+      if (size(outdat[0].(itag), /tname) EQ 'STRING') then begin
+         if (NOT keyword_set(silent)) then $
+          print, 'Padding whitespace for string array ' + tags[itag]
+         taglen = strlen(outdat.(itag))
+         maxlen = max(taglen)
+         padspace = string('', format='(a'+string(maxlen)+')')
+         outdat.(itag) = strmid(outdat.(itag) + padspace, 0, maxlen)
+      endif
+   endfor
+
+   ;----------
+   ; Write the output FITS file, writing one plate at a time
+
+   ; Don't allow duplicate tags between the tsObj structure and what
+   ; is already in the output structure.  For ex, MJD is in both.
+   tsobj0 = struct_selecttags(tsobj0, except_tags=tag_names(outdat))
+   platedat1 = create_struct(outdat[0], tsobj0)
+   struct_assign, {junk:0}, platedat1 ; Zero-out all elements
 
    splog, 'Writing FITS file ' + outroot[0]+'.fits'
-   mwrfits_chunks, outdat, outroot[0]+'.fits', /create, chunksize=640*20
+   for ifile=0L, nfile-1 do begin
+      print, 'Writing plate ', ifile+1, ' of ', nfile
+
+      platedat = replicate(platedat1, 640)
+      indx = (ifile * 640L) + lindgen(640)
+      tsobj = plug2tsobj(plist[ifile].plate, outdat[indx].plug_ra, $
+       outdat[indx].plug_dec)
+      if (keyword_set(tsobj)) then $
+       copy_struct_inx, tsobj, platedat $
+      else $
+       splog, 'WARNING: No tsObj file found for plate ', oudat[indx[0]].plate
+      copy_struct_inx, outdat, platedat, index_from=indx
+
+      mwrfits_chunks, platedat, outroot[0]+'.fits', $
+       create=(ifile EQ 0), append=(ifile GT 0)
+   endfor
+
+   outdat = 0 ; Clear memory
 
    ;----------
    ; Create the structure for ASCII output
 
-   adat = create_struct( $
+   adat1 = create_struct( $
     'plate'      ,  0L, $
     'mjd'        ,  0L, $
     'fiberid'    ,  0L, $
@@ -341,12 +347,18 @@ pro platemerge, zfile, outroot=outroot1, public=public
     'progname',     '', $
     'specprimary',  0L, $
     'objtype'    ,  '' )
-   sz2 = n_tags(adat, /length)
-   splog, 'Size of one ASCII structure = ', sz2, ' bytes'
-   splog, 'Number of objects = ', nout
-   splog, 'Total size of ASCII structure = ', float(sz2)*nout/1.e6, ' Mbyte'
-   adat = replicate(adat, nout)
-   struct_assign, outdat, adat
+
+   ascii_tags = [ $
+    'plate', 'mjd', 'fiberid', 'class', 'subclass', 'z', 'z_err', $
+    'zwarning', 'rchi2', 'plug_ra', 'plug_dec', 'platesn2', $
+    'modelflux', 'objc_type', 'primtarget', 'sectarget', 'progname', $
+    'specprimary']
+
+   ; Read the tags that we need from the FITS file
+   outdat = hogg_mrdfits(outroot[0]+'.fits', 1, nrowchunk=10000L, $
+    select_tags=ascii_tags)
+   adat = replicate(adat1, n_elements(outdat))
+   copy_struct, outdat, adat
 
    ; Replace any blank strings for CLASS with "".
    ii = where(strtrim(adat.class,2) EQ '')
@@ -363,30 +375,36 @@ pro platemerge, zfile, outroot=outroot1, public=public
    objtypes = ['UNKNOWN', 'CR', 'DEFECT', 'GALAXY', 'GHOST', 'KNOWNOBJ', $
     'STAR', 'TRAIL', 'SKY']
    adat.objc_type = objtypes[outdat.objc_type]
-outdat = 0 ; Free memory
+
+   outdat = 0 ; Clear memory
 
    splog, 'Writing ASCII file ' + outroot[0]+'.dat'
    struct_print, adat, filename=outroot[0]+'.dat'
 
+   adat = 0 ; Clear memory
+
    ;----------
    ; Create the merged line data
 
-   plate = adat.plate
-   mjd = adat.mjd
-   fiberid = adat.fiberid
-adat = 0 ; Free memory
+   splog, 'Writing FITS zline file ' + outroot[1]+'.fits'
+   for ifile=0L, nfile-1 do begin
+      splog, 'Writing zline ', ifile+1, ' of ', nfile
+      readspec, plist[ifile].plate, mjd=plist[ifile].mjd, zline=linedat
 
-   splog, 'Reading zline files'
-   readspec, plate, mjd=mjd, fiberid, zline=linedat
-   nobj = n_elements(plate)
-   nper = n_elements(linedat) / nobj
-   sxaddpar, linehdr, 'DIMS0', nper, ' Number of emission lines'
-   sxaddpar, linehdr, 'DIMS1', nobj, ' Number of objects'
+      if (ifile EQ 0) then begin
+         nobj = nfile * 640L
+         nper = n_elements(linedat) / 640L
+         sxaddpar, linehdr, 'DIMS0', nper, ' Number of emission lines'
+         sxaddpar, linehdr, 'DIMS1', nobj, ' Number of objects'
+      endif
 
-   splog, 'Writing zline file ' + outroot[1]+'.fits'
-   mwrfits, 0, outroot[1]+'.fits', linehdr, /create
-   mwrfits_chunks, linedat, outroot[1]+'.fits', chunksize=640*nper*20
+      mwrfits_chunks, linedat, outroot[1]+'.fits', $
+       create=(ifile EQ 0), append=(ifile GT 0)
+   endfor
 
+   thismem = memory()
+   maxmem = thismem[3]
+   splog, 'Maximum memory usage = ', maxmem/1.d6, ' MB'
    splog, 'Total time = ', systime(1)-t1, ' sec'
 
    return
