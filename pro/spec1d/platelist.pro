@@ -44,7 +44,10 @@
 ;   plist       - Output structure with information for each plate.
 ;
 ; COMMENTS:
-;   Two files are generated: 'platelist.txt' and 'platelist.fits'.
+;   Three files are generated:
+;     $SPECTRO_DATA/platelist.fits
+;     $SPECTRO_DATA/platelist.txt
+;     $SPECTRO_DATA/platequality.txt
 ;
 ;   If INFILE is a list of plan files, i.e.
 ;     spPlancomb-0306-51690.par
@@ -59,9 +62,16 @@
 ;     spZbest-0306-51690.fits
 ;     spDiag1d-0306-51690.log
 ;
+;   PLATESN2 is set to the minimum of the 4 cameras.
+;   PLATEQUALITY defaults to 'good'.
+;   PLATEQUALITY is set to 'marginal' if MINSN2 < 15.0
+;                          'bad'      if MINSN2 < 13.0
+;   PLATEQUALITY is set to 'marginal' if FBADPIX > 0.05
+;                          'bad'      if FBADPIX > 0.10
+;
 ;   Decide which plates constitute unique tiles with the required S/N,
-;   then set QSURVEY=1.  Require (S/N)^2 > 13 for G1,I1,G2,I2.
-;   Also require that the target version is not "special" or "devel".
+;   then set QSURVEY=1.  Require PLATEQUALITY='good' or 'marginal'.
+;   Also require PROGNAME='main'.
 ;
 ; EXAMPLES:
 ;
@@ -69,9 +79,8 @@
 ;   Spawns the Unix command 'tail' to get the last line of log files.
 ;
 ; DATA FILES:
+;   $IDLSPEC2D_DIR/etc/spChunkList.par
 ;   $IDLSPEC2D_DIR/etc/spPlateList.par
-;   $SPECTRO_DATA/platelist.fits
-;   $SPECTRO_DATA/platelist.txt
 ;
 ; PROCEDURES CALLED:
 ;   chunkinfo()
@@ -148,6 +157,9 @@ pro platelist, infile, plist=plist, create=create, $
     'vers1d'   , ' ', $
     'progname' , ' ', $
     'chunkname', ' ', $
+    'platequality' , ' ', $
+    'platesn2' , 0.0, $
+    'qsurvey'  , 0L,  $
     'mjdlist'  , ' ', $
     'nexp'     , 0L,  $
     'expt_b1'  , 0.0, $
@@ -192,7 +204,6 @@ pro platelist, infile, plist=plist, create=create, $
     'status2d' , 'Missing', $
     'statuscombine', 'Missing', $
     'status1d' , 'Missing', $
-    'qsurvey'  , 0L, $
     'public'  , '' )
    plist = replicate(plist, nfile)
 
@@ -530,16 +541,27 @@ pro platelist, infile, plist=plist, create=create, $
    ;----------
    ; Make a list of one S/N for each plate which is the minimum of
    ; G1, I1, G2, I2.
+   ; Assign a plate quality.
 
-   snvec = fltarr(nfile)
-   for ifile=0, nfile-1 do $
-    snvec[ifile] = min([plist[ifile].sn2_g1, plist[ifile].sn2_i1, $
-     plist[ifile].sn2_g2, plist[ifile].sn2_i2])
+   qualstring = ['bad', 'marginal', 'good']
+   for ifile=0, nfile-1 do begin
+      if (strtrim(plist[ifile].statuscombine,2) EQ 'Done') then begin
+         plist[ifile].platesn2 = min( $
+          [plist[ifile].sn2_g1, plist[ifile].sn2_i1, $
+          plist[ifile].sn2_g2, plist[ifile].sn2_i2])
+         iqual = 2
+         if (plist[ifile].platesn2 LT 13) then iqual = iqual < 0
+         if (plist[ifile].platesn2 LT 15) then iqual = iqual < 1
+         if (plist[ifile].fbadpix GT 0.10) then iqual = iqual < 0
+         if (plist[ifile].fbadpix GT 0.05) then iqual = iqual < 1
+         plist[ifile].platequality = qualstring[iqual]
+      endif
+   endfor
 
    ;----------
    ; Decide which plates constitute unique tiles with the required S/N,
    ; then set QSURVEY=1.
-   ; Also insist that the target version isn't "special" or "devel".
+   ; Also insist that PROGNAME='main'.
 
    ; First get the unique list of TILE
    isort = sort(plist.tile)
@@ -548,10 +570,12 @@ pro platelist, infile, plist=plist, create=create, $
 
    for itile=0, n_elements(tilelist)-1 do begin
       indx = where(plist.tile EQ tilelist[itile] $
+       AND (strtrim(plist.platequality,2) EQ 'good' $
+         OR strtrim(plist.platequality,2) EQ 'marginal') $
        AND strtrim(plist.progname,2) EQ 'main')
       if (indx[0] NE -1) then begin
-         snbest = max(snvec[indx], ibest)
-         if (snbest GE minsn2) then plist[indx[ibest]].qsurvey = 1
+         snbest = max(plist[indx].platesn2, ibest)
+         plist[indx[ibest]].qsurvey = 1
       endif
    endfor
 
@@ -564,9 +588,9 @@ pro platelist, infile, plist=plist, create=create, $
     olun = -1L
 
    printf, olun, 'PLATE  MJD   RA    DEC   SN2_G1 SN2_I1 SN2_G2 SN2_I2 ' $
-    + 'Ngal Nqso Nsta Nunk Nsky Stat2D  StatCom Stat1D  Vers2D    Vers1D    ? Pub'
+    + 'Ngal Nqso Nsta Nunk Nsky Stat2D  StatCom Stat1D  Vers2D    Vers1D    Quality   Public '
    printf, olun, '-----  ----- ----- ----- ------ ------ ------ ------ ' $
-    + '---- ---- ---- ---- ---- ------- ------- ------- --------- --------- - ---'
+    + '---- ---- ---- ---- ---- ------- ------- ------- --------- --------- --------- -------'
 
    ;----------
    ; Loop through all files
@@ -580,8 +604,8 @@ pro platelist, infile, plist=plist, create=create, $
        plist[ifile].status2d, plist[ifile].statuscombine, $
        plist[ifile].status1d, $
        plist[ifile].vers2d, plist[ifile].vers1d, $
-       plist[ifile].qsurvey, plist[ifile].public, $
-       format='(i5,i7,f6.1,f6.1,4f7.1,5i5,3(1x,a7),2(1x,a9),i2,a4)'
+       plist[ifile].platequality, plist[ifile].public, $
+       format='(i5,i7,f6.1,f6.1,4f7.1,5i5,3(1x,a7),2(1x,a9),a10,a8)'
    endfor
 
    ;----------
