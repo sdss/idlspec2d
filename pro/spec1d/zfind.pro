@@ -184,13 +184,14 @@ function zfind, objflux, objivar, hdr=hdr, $
    indx = where(zans.dof GT 0, npeak)
    if (npeak GT 0) then $
     zans[indx].z = 10.^(objdloglam * zans[indx].z) - 1.
-   indx = where(zans.dof GT 0 and zans.z_err GT 0)
-   if (npeak GT 0) then $
-    zans[indx].z_err = $
-     alog(10d) * objdloglam * zans[indx].z_err * (1 + zans[indx].z)
+
+   jndx = where(zans.dof GT 0 and zans.z_err GE 0)
+   if (jndx[0] NE -1) then $
+    zans[jndx].z_err = $
+     alog(10d) * objdloglam * zans[jndx].z_err * (1 + zans[jndx].z)
 
    ;----------
-   ; Copy into the output structure
+   ; Copy valid peaks into the output structure
 
    result = replicate(sp1d_struct(), nfind, nobj)
    if (npeak GT 0) then begin
