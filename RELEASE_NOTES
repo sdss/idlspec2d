@@ -17,7 +17,13 @@ SPREDUCE1D: Simply overwrite any existing spZ files, rather than
             using cpbackup to save old ones.
 SDSSPROC: Add "WARNING" to the warning messages about invalid or
             missing BC files.
-SKYLINE_DISPERSION: Avoid a crash condition.
+SKYLINE_DISPERSION: Re-write to get the indexing correct.  The first version
+            was not comparing the skyline widths to the correct arcline widths.
+            The measurement should mean something now.
+SKYSUBTRACT: Some cleaning up of the code and catch crash conditions
+            for when all the sky fibers are bad (as happened for
+            exposure #10965 of plate 644/52173).  For most cases,
+            the code should be functionally equivalent.
 TRACE320CRUDE: Fix a bug just introduced in v4_9_5 that would cause
             the code to crash if ystart at any trace falls off the
             left or right edge of the CCD.  This caused the
@@ -36,6 +42,8 @@ sprobot.sh: Add more time stamps to the robot log file.
             sed command no longer works the same.
 
 In idlutils:
+BSPLINE_ITERFIT: Always reset OUTMASK so that the input value does not matter.
+            Set YFIT to all zeros in the case that the fit fails.
 RADEC_TO_FIELDS: Configurable option allfieldfile.
 SXPAR: Landsman fixed to handle CRVALn of different type properly
 src/spheregroup/chunks.c: Roundoff error problem fixed.
