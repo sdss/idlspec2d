@@ -212,8 +212,7 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams, $
 
             spreduce, flatsortname, arcname, objname, $
              pixflatname=pixflatname, plugfile=plugfile, lampfile=lampfile, $
-             indir=inputDir, plugdir=plugDir, outdir=plateDir, $
-             qadir=extractDir
+             indir=inputDir, plugdir=plugDir, outdir=plateDir
 
             heap_gc   ; garbage collection
          endif

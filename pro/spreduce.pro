@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 ;    plugfile=plugfile, lampfile=lampfile, $
-;    indir=indir, plugdir=plugdir, outdir=outdir, qadir=qadir, qa=qa
+;    indir=indir, plugdir=plugdir, outdir=outdir
 ;
 ; INPUTS:
 ;   flatname   - Name(s) of flat-field SDSS image(s)
@@ -26,8 +26,6 @@
 ;                default to '.'
 ;   plugdir    - Input directory for PLUGFILE; default to '.'
 ;   outdir     - Directory for output files; default to '.'
-;   qadir      - Directory for QA files; default to '.'
-;   qa         - QA (quality assurance flag) 
 ;
 ; OUTPUTS:
 ;
@@ -50,6 +48,7 @@
 ;   fluxcorr()
 ;   locateskylines
 ;   qaplot_arcline
+;   qaplot_fflat
 ;   readcol
 ;   readfits()
 ;   sdssproc
@@ -68,12 +67,11 @@
 
 pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
  plugfile=plugfile, lampfile=lampfile, $
- indir=indir, plugdir=plugdir, outdir=outdir, qadir=qadir, qa=qa
+ indir=indir, plugdir=plugdir, outdir=outdir
 
    if (NOT keyword_set(indir)) then indir = '.'
    if (NOT keyword_set(plugdir)) then plugdir=indir
    if (NOT keyword_set(outdir)) then outdir = '.'
-   if (NOT keyword_set(qadir)) then qadir = outdir
 
    t_begin = systime(1)
 
@@ -249,7 +247,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
      
    wsave = wset
 
-   qaplot_arcline, xdif_tset, lambda, arcname[ibest]
+   qaplot_arcline, xdif_tset, lambda, filename=arcname[ibest], color=color
 
    ;---------------------------------------------------------------------
    ; Read best flat-field image (again)
@@ -285,13 +283,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
    fflat = fiberflat(flat_flux, flat_fluxivar, wset, fibermask=fibermask)
 
-
-; Plot flat-field ???
-plot,fflat[*,0], yr=[0,2], /ystyle, $
- xtitle='Wavelength',ytitle='Intensity', $
- title='Flat Vectors (every 20th fib)', $
- charsize=2, charthick=2
-for i=0,16 do oplot,fflat[*,i*19]
+   qaplot_fflat, fflat, wset, filename=flatname[ibest]
 
    ;---------------------------------------------------------------------------
    ; LOOP THROUGH OBJECT FRAMES
@@ -352,7 +344,7 @@ for i=0,16 do oplot,fflat[*,i*19]
       sigmanow = xsol*0.0 + sigma
 
       ;
-      ;	My fitansimage is not going to work well without good profiles
+      ; My fitansimage is not going to work well without good profiles
       ; Using it to tweak up traces, and then performing free fit to
       ; object
       ;
@@ -437,13 +429,13 @@ for i=0,16 do oplot,fflat[*,i*19]
       splog, 'Tweaking to sky lines'
 
       ;
-      ;	Fit to arc lines with sky shifts included
+      ; Fit to arc lines with sky shifts included
       ;
 
 
-;
-;	This procedure produces numerical steps at 10^-6, 1 km/s
-;
+      ;
+      ; This procedure produces numerical steps at 10^-6, 1 km/s
+      ;
     
       traceset2xy, xset, transpose(xpeak), xshift
       xshift = transpose(xshift)

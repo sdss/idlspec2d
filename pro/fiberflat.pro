@@ -10,7 +10,7 @@
 ;
 ; INPUTS:
 ;   flux       - Array of extracted flux from a flat-field image [Nrow,Ntrace]
-;   fluxivar   - Inverse variance map for FLAT_FLUX.
+;   fluxivar   - Inverse variance map for FLUX.
 ;   wset       - Wavelength solution
 ;
 ; OPTIONAL KEYWORDS:
