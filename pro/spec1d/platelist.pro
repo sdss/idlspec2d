@@ -99,6 +99,7 @@
 ;   repstr()
 ;   rmfile
 ;   splog
+;   struct_print
 ;   sxpar()
 ;   tai2airmass()
 ;   yanny_free
