@@ -375,6 +375,7 @@ src/trace_crude.c -text
 src/trace_fweight.c -text
 src/trace_gweight.c -text
 templates/Makefile -text
+templates/eigeninput_cvstar.dat -text
 templates/eigeninput_gal.dat -text
 templates/eigeninput_qso.dat -text
 templates/eigeninput_star.dat -text
