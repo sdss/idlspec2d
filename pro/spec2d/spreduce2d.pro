@@ -142,6 +142,8 @@ pro spreduce2d, planfile, docams=docams, xdisplay=xdisplay
 
    splog, 'idlspec2d version ' + idlspec2d_version()
    splog, 'idlutils version ' + idlutils_version()
+   spawn, 'specflat_version', flatvers
+   splog, 'specflat version ' + flatvers[0]
 
    splog, 'Plan file ' + thisplan
    splog, 'DOCAMS = ', docams
