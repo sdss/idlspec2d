@@ -576,5 +576,7 @@ templates/ssp_640Myr_z05.spec -text
 templates/ssp_900Myr_z008.spec -text
 templates/ssp_900Myr_z02.spec -text
 templates/ssp_900Myr_z05.spec -text
+templates/wfEigenGal-52223.fits -text
+templates/wfEigenStar-52374.fits -text
 ups/Makefile -text
 ups/idlspec2d.table -text
