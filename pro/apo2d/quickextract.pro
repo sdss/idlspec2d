@@ -253,6 +253,24 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
     objsub, objsubivar, iskies=iskies, fibermask=fibermask, tai=tai_mid, $
     relchi2struct=relchi2struct)
 
+   ;----------
+   ; Issue warnings about very large sky-subtraction chi^2
+
+   if (keyword_set(skystruct)) then begin
+      ; Ignore wavelengths near 5577 Ang
+      i5577 = where(relchi2struct.wave GT alog10(5577.-10.) $
+       AND relchi2struct.wave LT alog10(5577.+10.))
+      if (i5577[0] NE -1) then relchi2struct.chi2[i5577] = 0
+      medval = median(relchi2struct.chi2)
+      maxval = max(relchi2struct.chi2, imax)
+      maxwave = 10.^relchi2struct.wave[imax]
+      if (medval GT 2.) then $
+       splog, 'WARNING: Median sky-residual chi2 = ', medval
+      if (maxval GT 60.) then $
+       splog, 'WARNING: Max sky-residual chi2 = ', maxval, $
+        ' at' , maxwave, ' Ang (ignoring 5577)'
+   endif
+
    ;---------------------------------------------------------------------------
    ; Analyze spectra for the sky level and signal-to-noise
    ;---------------------------------------------------------------------------
