@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   wset = arcfit_guess( spec, loglam, intensity, color=color, $
-;    [ func=func, bestcorr=bestcorr ] )
+;    [ func=func, bestcorr=bestcorr, acoeff=, dcoeff=, nsteps= ] )
 ;
 ; INPUTS:
 ;   spec       - 1-D spectrum
@@ -19,6 +19,9 @@
 ;
 ; OPTIONAL KEYWORDS:
 ;   func       - Name of fitting function; default to 'legendre'
+;   acoeff     - central values of coefficents to explore
+;   dcoeff     - range (-.5*dcoeff to .5*dcoeff) of values to explore
+;   nsteps     - array of steps to use
 ;
 ; OUTPUTS:
 ;   wset       - traceset (pix -> lambda)
@@ -43,6 +46,7 @@
 ; REVISION HISTORY:
 ;   18-Nov-1999  Written by D. Schlegel, Princeton.
 ;                Excised code from FITARCIMAGE.
+;   01-Dec-2000  added acoeff, dcoeff, nsteps keywords
 ;-
 ;------------------------------------------------------------------------------
 
@@ -191,7 +195,7 @@ end
 ;------------------------------------------------------------------------------
 
 function arcfit_guess, spec, loglam, intensity, color=color, func=func, $
- bestcorr=bestcorr
+ bestcorr=bestcorr, acoeff=acoeff, dcoeff=dcoeff, nsteps=nsteps
 
    if (NOT keyword_set(func)) then func = 'legendre'
 
@@ -203,17 +207,19 @@ function arcfit_guess, spec, loglam, intensity, color=color, func=func, $
 
    ; Give arcfit_iter initial starting point for wavelength solutions.
 
-   if (color EQ 'blue') then begin
+   if not (keyword_set(acoeff) and keyword_set(dcoeff)) then begin 
+      if (color EQ 'blue') then begin
 ;      acoeff = [3.6846, -0.1060, -0.0042, 0.00012] ; Blue-1 (01)
 ;      acoeff = [3.7014, -0.1028, -0.0040, 0.00020] ; Blue-2 (03)
-      acoeff = [3.6930, -0.1044, -0.0041, 0.00016]
-      dcoeff = [0.0500,  0.0080,  0.0003, 0.00010]
-   endif else if (color EQ 'red') then begin
+         acoeff = [3.6930, -0.1044, -0.0041, 0.00016]
+         dcoeff = [0.0500,  0.0080,  0.0003, 0.00010]
+      endif else if (color EQ 'red') then begin
 ;      acoeff = [ 3.8640, 0.1022, -0.0044, -0.00024] ; Red-1 (01)
 ;      acoeff = [ 3.8740, 0.0994, -0.0043, -0.00020] ; Red-2 (02)
 ;      acoeff = [ 3.8808, 0.0980, -0.0044, -0.00023] ; Another Red-2 (02)
-      acoeff = [ 3.8700, 0.1008, -0.0044, -0.00022]
-      dcoeff = [ 0.0500, 0.0080,  0.0003,  0.00010]
+         acoeff = [ 3.8700, 0.1008, -0.0044, -0.00022]
+         dcoeff = [ 0.0500, 0.0080,  0.0003,  0.00010]
+      endif
    endif
 
    nacoeff = N_elements(acoeff)
@@ -224,7 +230,7 @@ function arcfit_guess, spec, loglam, intensity, color=color, func=func, $
 
    ; First search only varies the first 3 coefficients
    splog, 'Searching about coefficients = ', aset.coeff, format='(a,99f9.5)'
-   nsteps = [1, 20, 5, 1]
+   if not keyword_set(nsteps) then nsteps = [1, 20, 5, 1]
    wset = arcfit_iter(spec, loglam, intensity, $
     aset, dcoeff, nsteps, nsmooth=6.0, dlag=2, bestcorr=bestcorr)
 
