@@ -244,7 +244,9 @@ SOS web page</A>.
 
 <P>
 The following FITSheader cards are required to be correct for either
-Son-of-Spectro or Spectro-2D to reduce the data properly:
+Son-of-Spectro or Spectro-2D to reduce the data properly.
+The AIRMASS is not read from the header, but computed from RADEG,DECDEG
+and the TAI-BEG,TAI-END keywords.
 <PRE>
 EXPOSURE= Exposure number.  We always override the value of this keyword
           with the exposure number in the file name.
@@ -286,7 +288,7 @@ OBSCOMM = This keyword is used to identify the dithered flat sequence
           The flats in this sequence must have OBSCOMM="{dithered flats-flat}".
           The arcs in this sequence must have OBSCOMM="{dithered flats-arc}".
           This keyword also identifies the Hartmann focus exposures, with
-          the entries OBSCOMM="{{focus, hartmann l}" or "{focus, hartmann r}".
+          the entries OBSCOMM="{focus, hartmann l}" or "{focus, hartmann r}".
 QUALITY = This should be either "excellent" or "bad".  Exposures are declared
           "bad" using the <A HREF="http://spectro.princeton.edu/idlspec2d_doc.html#APOFIX">APOFIX</A> procedure.
 </PRE>
