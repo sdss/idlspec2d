@@ -2,9 +2,8 @@
 pro kurucz_restore, kwave, kflux, nkflux = nkflux, hdr = hdr, kindx = kindx, $
     smoothpix = smoothpix
 
-;kurucz_file = filepath('kurucz_stds_interp.fit', $
-;              root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
-kurucz_file = '/home/tremonti/sdss/recal/kurucz/kurucz_stds_v5.fit'
+kurucz_file = filepath('kurucz_stds_v5.fit', $
+              root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
 
 kflux = mrdfits(kurucz_file, 0, hdr, /silent)  ; flux
 kindx = mrdfits(kurucz_file, 1, /silent)
