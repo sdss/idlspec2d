@@ -48,7 +48,6 @@
 ;   djs_oplot
 ;   djs_plot
 ;   djs_xyouts
-;   dust_getval()
 ;   euler
 ;   ext_odonnell
 ;   fileandpath()
@@ -720,12 +719,6 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
    endfor
 
    ;----------
-   ; Read the dust maps
-
-   euler, plugmap[iphoto].ra, plugmap[iphoto].dec, ll, bb, 1
-   ebv = dust_getval(ll, bb, /interp)
-
-   ;----------
    ; Keep track of which F stars are good
 
    qfinal = bytarr(nphoto) + 1B
@@ -757,9 +750,11 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       ; The returned models are redshifted, but not fluxed or
       ; reddened.  Do that now...  we compare data vs. model reddened.
       extcurve1 = ext_odonnell(10.^loglam[*,*,ip], 3.1)
-      thismodel = thismodel * 10.^(-extcurve1 * 3.1 * ebv[ip] / 2.5)
+      thismodel = thismodel $
+       * 10.^(-extcurve1 * 3.1 * plugmap[iphoto[ip]].sfd_ebv / 2.5)
       extcurve2 = ext_odonnell(10.^tmploglam, 3.1)
-      tmpflux = tmpflux * 10.^(-extcurve2 * 3.1 * ebv[ip] / 2.5)
+      tmpflux = tmpflux $
+       * 10.^(-extcurve2 * 3.1 * plugmap[iphoto[ip]].sfd_ebv / 2.5)
 
       ; Now integrate the apparent magnitude for this spectrum,
       ; The units of FTHRU are such that m = -2.5*alog10(FTHRU) + (48.6-2.5*17)
