@@ -184,6 +184,7 @@ for the version numbers:
 Install this version of "idlutils" and declare it current:
 <DL><DD><PRE>
   % setup sdsscvs # Only needed on machines set up by Fermi
+  % setup sdsstools # (if you didn't setup sdsscvs)
   % cd
   % cvs export -r $IDLUTILS_VERS idlutils
   % cd ~/idlutils
@@ -200,6 +201,8 @@ Install this version of "idlutils" and declare it current:
 Install this version of "idlspec2d" with a dependency on the above
 version of "idlutils", and declare it current:
 <DL><DD><PRE>
+  % setup sdsscvs # Only needed on machines set up by Fermi
+  % setup sdsstools # (if you didn't setup sdsscvs)
   % cd
   % cvs export -r $IDLSPEC2D_VERS idlspec2d
   % cd ~/idlspec2d
