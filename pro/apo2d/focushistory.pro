@@ -102,6 +102,10 @@ pro focushistory, mjdrange=mjdrange
     title='Focus History'
    oplot, !x.crange, [1,1]
 
+   plothist, dispmax, bin=0.01, $
+    xtitle='Focus [pix]', ytitle='Number of Plates', $
+    title='Distribution of Focus Values'
+
    dfpsclose
 stop
 
