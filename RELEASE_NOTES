@@ -5,6 +5,7 @@ PCA_SOLVE, COMPUTECHI2: Make robust to one or all of the template spectra
               The routine PCA_SOLVE could crash w/out special-casing this
               due to an apparent bug in the built-in routine PCOMP().
 SPCOMBINE, SPCOADD_FRAMES: Optionally allow spFrame files to be g-zipped.
+READSPEC, SPREDUCE1D: Allow spPlate, spZ files to be g-zipped.
 
 -------------------------------------------------------------------------------
 v4_7_0 (Mar 16, 2001)
