@@ -54,6 +54,7 @@ pro/apo2d/apo_log2html.pro -text
 pro/apo2d/apo_plotsn.pro -text
 pro/apo2d/apo_readlog.pro -text
 pro/apo2d/aporeduce.pro -text
+pro/apo2d/quickboxcar.pro -text
 pro/apo2d/quickextract.pro -text
 pro/apo2d/quicktrace.pro -text
 pro/apo2d/quickwave.pro -text

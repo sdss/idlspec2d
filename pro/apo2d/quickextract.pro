@@ -15,7 +15,7 @@ function quickextract, flatname, arcname, sciname, outname, $
    ;----------
    ; Read in the raw science image
 
-   sdssproc, sciname, image, hdr=hdr, color=color
+   sdssproc, sciname, image, invvar, hdr=hdr, color=color
    camname = strtrim(sxpar(hdr, 'CAMERAS'),2)
    exptime = sxpar(hdr, 'EXPTIME')
 
@@ -27,17 +27,18 @@ function quickextract, flatname, arcname, sciname, outname, $
    fibermask = mrdfits(flatname,3)
    wset = mrdfits(arcname,1)
 
-   traceset2xy, tset, ytemp, xcen
    traceset2xy, wset, ytemp, logwave
 
    ;----------
    ; Extract and sky-subtract the science image
 
    ; Boxcar extract - no scattered light correction!
-   flux = extract_boxcar(image, xcen, radius=radius)
+   flux = quickboxcar(image, invvar, tset=tset, fluxivar=fluxivar)
 
-   ; Estimate fluxivar
-   fluxivar = 1.0 / (abs(flux) + 10.0)
+;   traceset2xy, tset, ytemp, xcen
+;   flux = extract_boxcar(image, xcen, radius=radius)
+;   ; Estimate fluxivar
+;   fluxivar = 1.0 / (abs(flux) + 10.0)
 
    ; Sky-subtract
    skystruct = skysubtract(flux, fluxivar, plugsort, wset, $
@@ -109,7 +110,7 @@ function quickextract, flatname, arcname, sciname, outname, $
    ;----------
    ; Write out the extracted spectra
 
-   mwrfits, objsub, outname ;, /create
+   mwrfits, objsub, outname, /create
    mwrfits, ojbsubivar, outname
 ;   mwrfits, meansn, outname
 
