@@ -454,8 +454,9 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    flambdaivar = skysubivar
    skyimg = flux - flambda
    sxaddpar, objhdr, 'PSFSKY', nskypoly, ' Order of PSF skysubtraction'
-   sxaddpar, objhdr, 'SKYCHI2', mean(relchi2struct.chi2), $
-    ' Mean chi^2 of sky-subtraction'
+   if (keyword_set(relchi2struct)) then skychi2 = mean(relchi2struct.chi2) $
+    else skychi2 = 0.0
+   sxaddpar, objhdr, 'SKYCHI2', skychi2, ' Mean chi^2 of sky-subtraction'
 
    ;------------------------------------------
    ; Telluric correction called for 'red' side
