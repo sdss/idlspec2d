@@ -97,7 +97,6 @@ function zrefind, objflux, objivar, hdr=hdr, $
       result[indx].chi2 = res1[*].chi2
       result[indx].dof = res1[*].dof
       result[indx].theta = res1[*].theta
-      result[indx].wcoverage = res1[*].wcoverage
 
    endfor
 
