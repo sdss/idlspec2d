@@ -111,7 +111,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       for ifile=0, n_elements(filename)-1 do $
        aporeduce, filename[ifile], indir=indir, outdir=outdir, $
        plugfile=plugfile, plugdir=plugdir, minexp=minexp, $
-       copydir=copydir
+       copydir=copydir, no_diskcheck=no_diskcheck
       return
    endif else begin
       filename = filename[0] ; Convert from an array to a scalar.
@@ -160,7 +160,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    ;----------
    ; Check disk space on both the input and the output disk.
 
-   if (keyword_set(no_diskcheck) EQ 0) then begin
+   if (NOT keyword_set(no_diskcheck)) then begin
       apo_diskcheck, indir
       apo_diskcheck, outdir
    endif
@@ -331,6 +331,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
                               'MJD', mjd, $
                               'PLATE', plate, $
                               'EXPNUM', filee, $
+                              'CAMERA', camnames[icam], $
                               'TEXT', '' )
       tstruct = replicate(tstruct, n_elements(tstring))
       tstruct.text = tstring
