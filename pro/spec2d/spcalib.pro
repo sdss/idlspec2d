@@ -274,7 +274,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
       endif
 
       flatstruct[iflat].name = flatname[iflat]
-      flatstruct[iflat].tai = sxpar(flathdr, 'TAI-BEG')
+      get_tai, flathdr, tai_beg, tai_mid, tai_end
+      flatstruct[iflat].tai = tai_mid
       flatstruct[iflat].qbad = qbadflat
 
    endfor
@@ -311,7 +312,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
       ; Identify the nearest flat-field for this arc, which must be
       ; within TIMESEP seconds and be a good flat.
 
-      tai = sxpar(archdr, 'TAI-BEG')
+      get_tai, archdr, tai_beg, tai_mid, tai_end
+      tai = tai_mid
 
       iflat = -1
       igood = where(flatstruct.qbad EQ 0)

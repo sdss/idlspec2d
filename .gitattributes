@@ -350,6 +350,7 @@ pro/spec2d/funccheb.pro -text
 pro/spec2d/gauss_smooth.pro -text
 pro/spec2d/genflatmask.pro -text
 pro/spec2d/get_mjd_dir.pro -text
+pro/spec2d/get_tai.pro -text
 pro/spec2d/heliocentric.pro -text
 pro/spec2d/idlspec2d_version.pro -text
 pro/spec2d/locateskylines.pro -text
@@ -391,6 +392,7 @@ pro/spec2d/skysubtract.pro -text
 pro/spec2d/smooth_halo.pro -text
 pro/spec2d/smooth_superflat.pro -text
 pro/spec2d/sortplugmap.pro -text
+pro/spec2d/spadd_guiderinfo.pro -text
 pro/spec2d/spallflat.pro -text
 pro/spec2d/spbiasgen.pro -text
 pro/spec2d/spcalib.pro -text

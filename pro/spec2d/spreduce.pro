@@ -194,8 +194,9 @@ pro spreduce, flatname, arcname, objname, $
       ; Construct the best flat for this object from all of the reduced
       ; flat-field frames
 
-      ; Set TAI equal to the time half-way through the exposure
-      tai_mid = sxpar(objhdr, 'TAI-BEG') + 0.5 * sxpar(objhdr, 'EXPTIME')
+      ; Set tai_mid equal to the time half-way through the exposure
+      get_tai, objhdr, tai_beg, tai_mid, tai_end
+
       bestflat = select_flat(flatstruct, tai_mid)
       splog, 'Best flat = ', bestflat.name
 

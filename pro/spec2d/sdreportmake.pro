@@ -158,7 +158,7 @@ pro sdreportmake, speclog_dir=speclog_dir, mjd=mjd, $
                outstruct[i].program = strtrim(sxpar(hdr, 'PROGRAM'),2)
                outstruct[i].exposure = sxpar(hdr, 'EXPOSURE')
                outstruct[i].exptime = sxpar(hdr, 'EXPTIME')
-               tai = sxpar(hdr,'TAI-BEG')
+               tai = sxpar(hdr,'TAI')
                outstruct[i].mjd = tai / (24.D*3600.D) ; Fractional value!
                outstruct[i].ra = sxpar(hdr, 'RA')
                outstruct[i].dec = sxpar(hdr, 'DEC')

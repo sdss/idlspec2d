@@ -308,8 +308,13 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    helio=0.0
    ra = sxpar(objhdr,'RA')
    dec = sxpar(objhdr,'DEC')
+
+   ;--------------------------------------------------------
+   ; Call standard proc to determine time-stamps
+   ;
+   get_tai, objhdr, tai_beg, tai_mid, tai_end
+
    ; Set TAI equal to the time half-way through the exposure
-   tai_mid = sxpar(objhdr, 'TAI-BEG') + 0.5 * sxpar(objhdr, 'EXPTIME')
    ; If all these keywords are present in the header, they will be either
    ; type FLOAT or DOUBLE.  Note that SDSS will put NaN in the header for
    ; these values if they are unknown.
@@ -514,7 +519,14 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    sncoeff = fitsn(mag, snvec, fitmag=fitmag)
    sn2 = 10^(2.0 * poly([snmag],sncoeff))
 
-   sxaddpar, objhdr, 'FRAMESN2', sn2[0]
+   sxaddpar,objhdr,'FRAMESN2', sn2[0]
+   sxaddpar,objhdr,'EQUINOX',2000.0,after='DEC'
+   sxaddpar,objhdr,'RADECSYS', 'FK5', after='EQUINOX'
+   sxaddpar,objhdr,'AIRMASS',$
+          float(tai2airmass(ra, dec, tai=tai_mid)), after='ALT'
+
+   spadd_guider_info, objhdr
+
    sxaddpar, objhdr, 'EXTEND', 'T', after='NAXIS2'
 
    ;----------
