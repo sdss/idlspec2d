@@ -15,7 +15,8 @@
 ;   filenames      - Name(s) of files written by SPREDUCE
 ;   outputroot     - Root name for all output files
 ;   spectrographid - Spectrograph ID (1 or 2) for use in computing fiber
-;                    number for output file name
+;                    number for output file name; fibers from spectro-1
+;                    are numbered from 1, those from spectro-2 from 321.
 ;
 ; REQUIRED KEYWORDS:
 ;

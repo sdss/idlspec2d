@@ -26,7 +26,6 @@
 ;
 ; BUGS:
 ;   Try to avoid using SPAWN.
-;   Let COMBINE2DOUT select files based upon the plan file...
 ;
 ; PROCEDURES CALLED:
 ;   combine2dout
@@ -112,6 +111,7 @@ pro spallreduce, planfile=planfile, docams=docams, $
    splog, 'idlutils version ' + idlutils_version()
 
    camnames = ['b1', 'b2', 'r1', 'r2']
+   specnums = [1, 2, 1, 2] ; Spectrograph ID corresponding to CAMNAMES above
    ncam = N_elements(camnames)
 
    ; Find all the sequence IDs
@@ -238,16 +238,28 @@ pro spallreduce, planfile=planfile, docams=docams, $
 
          for side=1, 2 do begin
 
-            outputroot = string('spMerge2d-',mjd,'-',plateid, $
-             format='(a,i5.5,a1,i4.4)')
+            j = where(allseq.seqid EQ seqid[iseq])
+            icam = where(specnums EQ side)
+            rawfiles = allseq[j].name[icam] ; Raw file names
+            j = where(rawfiles NE 'UNKNOWN', nfile)
+            if (nfile GT 0) then rawfiles = rawfiles[j]
 
-            expres = string(format='(a,i1,a)', 'spSpec2d-*', side, '-*.fit')
-            files = findfile(filepath(expres, root_dir=extractDir), count=nfile)
+            ; Now search for any extracted spectra on disk, overwriting
+            ; FILES[i] with '' if a file does not exist.
+            files = 'spSpec2d-' + strmid(rawfiles, 4)
+            for i=0, nfile-1 do $
+             files[i] = findfile(filepath(files[i], root_dir=extractDir))
+            j = where(files NE '', nfile)
+            if (nfile GT 0) then files = files[j] $
+             else files = 0
+
             splog, 'Combining ' + strtrim(string(nfile),2) $
              + ' files for side ' + strtrim(string(side),2)
 
-stop
             if (nfile GT 0) then begin
+               outputroot = string('spMerge2d-',mjd,'-',plateid, $
+                format='(a,i5.5,a1,i4.4)')
+
                for i=0, nfile-1 do splog, 'Combine file ', files[i]
                combine2dout, files, filepath(outputroot, root_dir=combineDir), $
                 side, wavemin=alog10(3750.0), window=100

@@ -1,4 +1,6 @@
 
+* Try not to overwrite PostScript log file.
+
 * BUG: For arc 51441/sdR-b2-00001347.fit (plate 214), bizarre wavelength
   solution!!  Were too many fibers rejected or something??
   This then shows up as horrible sky-subtraction!!
