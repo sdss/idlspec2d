@@ -1,3 +1,68 @@
+;+
+; NAME:
+;   find_nminima
+;
+; PURPOSE:
+;   Find one or several minima in a vector of chi^2 values.
+;
+; CALLING SEQUENCE:
+;   xpeak = find_nminima( yflux, [ xvec, dofarr=, nfind=, minsep=, $
+;    width=, ypeak=, xerr=, errcode=, npeak=, plottitle=, /doplot ]
+;
+; INPUTS:
+;   yflux          - Y values
+;
+; OPTIONAL INPUTS:
+;   xvec           - X values, which must either be sorted in ascending
+;                    or descending order; default to 0-indexed integers.
+;   dofarr         - If set, then fit to the minima in the function
+;                    YFLUX/DOFARR, but avoiding any points where DOFARR
+;                    is set to zero.
+;   nfind          - Number of minima to find; default to 1.  It is possible
+;                    to find fewer than NFIND minima.
+;   minsep         - Minimum separation between local minima.  If a peak
+;                    is found closer than MINSEP to an existing peak, then
+;                    the latter peak is discarded.
+;   width          - Width to use when selecting the points used in the fit.
+;                    Only use points where XVEC is within WIDTH of the
+;                    the lowest-values point (which is used as the initial
+;                    guess).
+
+;
+; OUTPUTS:
+;   ypeak          - Fit value for either chi^2 or chi^2/DOF at the minima.
+;
+; OPTIONAL OUTPUTS:
+;   xerr           - Formal errors of XPEAK.
+;   errcode        - Error codes for each minima; 0 for no errors in the fit.
+;   npeak          - The number of peaks found, between [0,NFIND].
+;   plottitle      - Title of plot (if /DOPLOT is set).
+;   doplot         - If set, then make plots.
+;
+; COMMENTS:
+;   This routine calls SVDFIT for fitting quadratics, or MPFIT for
+;   fitting gaussians.
+;   
+; EXAMPLES:
+;   
+; BUGS:
+;
+; PROCEDURES CALLED:
+;   djs_icolor()
+;   djs_oplot
+;   djs_plot
+;   mpfitpeak
+;   mpfitpeak_gauss
+;   splog
+;   textoidl
+;
+; INTERNAL SUPPORT ROUTINES:
+;   zfitmin()
+;  
+; REVISION HISTORY:
+;   22-Aug-2001  Written by D. Schlegel, Princeton 
+;-  
+;------------------------------------------------------------------------------
 
 forward_function mpfit, mpfitfun, mpfitpeak, mpfitpeak_gauss, $
   mpfitpeak_lorentz, mpfitpeak_moffat, mpfitpeak_u
@@ -296,7 +361,7 @@ function find_nminima, yflux, xvec, dofarr=dofarr, nfind=nfind, minsep=minsep, $
       if (keyword_set(dofarr)) then yplot = yplot / dofarr
       djs_plot, xvec, yplot, yrange=yrange, $
        xcharsize=xcsize, ycharsize=ycsize, yrange=yrange, $
-       title=plottitle, ytitle='\chi^2/DOF'
+       title=plottitle, xtitle='Lag [pixels]', ytitle='\chi^2/DOF'
       for ipeak=0, npeak-1 do begin
          if (errcode[ipeak] EQ 0) then color = 'green' $
           else color = 'red'
