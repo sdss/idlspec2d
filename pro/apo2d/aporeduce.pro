@@ -49,6 +49,7 @@
 ;   apo_appendlog
 ;   apo_log2html
 ;   apo_plotsn
+;   djs_filepath()
 ;   fits_wait()
 ;   quickextract()
 ;   quicktrace()
@@ -126,12 +127,13 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       return
    endif
 
-   fullname = (findfile(filepath(filename, root_dir=indir), count=ct))[0]
-   if (ct NE 1) then begin
-      splog, 'Found '+string(ct)+' instead of 1'
-      print, fullname
-      return
-   endif
+; No need to do this test, since the FITS_WAIT() function below will do it.
+;   fullname = (findfile(filepath(filename, root_dir=indir), count=ct))[0]
+;   if (ct NE 1) then begin
+;      splog, 'Found '+string(ct)+' instead of 1'
+;      print, fullname
+;      return
+;   endif
 
    ;----------
    ; Open the log file to catch WARNINGs and ABORTs.
@@ -151,11 +153,12 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    ; Wait for an input FITS file to be fully written to disk, and exit
    ; if that doesn't happen within 3 minutes.
 
+   fullname = djs_filepath(filename, root_dir=indir)
    spawn, 'ls -l '+fullname, lsstring
    splog, 'DIRLIST '+lsstring
 
    if (fits_wait(fullname, deltat=10, tmax=180) EQ 0) then begin
-      splog, 'File never fully written to disk: '+ fullname
+      splog, 'WARNING: File never fully written to disk: '+ fullname
       splog, /close
       return
    endif
