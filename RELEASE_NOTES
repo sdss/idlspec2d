@@ -68,6 +68,8 @@ SPREDUCE1D: Set the ZWARNING=8 flag (synthetic spectrum is negative) only
            Use the file 'spEigenElodie.fits' for computing velocity dispersions.
            Write out the best-fit velocity-dispersion spectrum as HDU#3.
            Make consistent with changes to VDISPFIT.
+           Add CHI68P to output structure, for the 68-th percentile value
+           of abs(chi).
 TRACE320CRUDE: Threshold to set 'BADTRACE' is now 45% bad pixels, whereas
            it used to be 20%.
 VDISPFIT: Option to return the best fit with YFIT keyword.
@@ -77,6 +79,7 @@ VDISPFIT: Option to return the best fit with YFIT keyword.
            since the latter did a spline fit that could wiggle in
            unconstrained ways.
            In cases of bad fits, return error codes as negative VDISP_ERR.
+           Return a code of -4L if there is no wavelength overlap.
            Insist that convolution kernel have odd number of elements, and
            convolve with /CENTER keyword.
            Only cache over-sampled templates if the template file name
@@ -115,6 +118,8 @@ opBC-empty.par: New file with no bad columns for use when generating the
            2D pixel flats and bias images with SPFLATTEN2 and SPBIASGEN.
 
 In idlutils:
+DJS_MEDIAN: Bug fix for crash condition when WIDTH is greater than
+            the number of elements in the array.
 DJS_REJECT  : Major bug in /groupbadpix option, should now work as intended
 BSPLINE_ITERFIT: Fix major bug with /GROUPBADPIX option which is used
            by COMBINE1FIBER.
