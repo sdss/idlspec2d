@@ -11,7 +11,8 @@
 ;    copydir=copydir ]
 ;
 ; INPUTS:
-;   filename   - Raw spectroscopic image file name of any flavor
+;   filename   - Raw spectroscopic image file name(s) of any flavor; this
+;                can be an array of file names, but cannot include wildcards
 ;
 ; OPTIONAL INPUTS:
 ;   indir      - Input directory for FILENAME; default to './'
@@ -57,15 +58,27 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       return
    endif
 
-   if (NOT keyword_set(indir)) then indir = './'
-   if (NOT keyword_set(plugdir)) then plugdir = './'
-   if (NOT keyword_set(outdir)) then outdir = indir
-   if (NOT keyword_set(minexp)) then minexp = 61
-
    if (size(filename, /tname) NE 'STRING') then begin
       message, 'FILENAME is not a string', /cont
       return
    endif
+
+   ;----------
+   ; If multiple file names are passed, then call this script recursively
+   ; for each file.
+
+   if (n_elements(filename) GT 1) then begin
+      for ifile=0, n_elements(filename)-1 do $
+       aporeduce, filename[ifile], indir=indir, outdir=outdir, $
+       plugfile=plugfile, plugdir=plugdir, minexp=minexp, $
+       copydir=copydir
+      return
+   endif
+
+   if (NOT keyword_set(indir)) then indir = './'
+   if (NOT keyword_set(plugdir)) then plugdir = './'
+   if (NOT keyword_set(outdir)) then outdir = indir
+   if (NOT keyword_set(minexp)) then minexp = 61
 
    filer = strmid(filename,0,3)  ; root 'sdR'
    filec = strmid(filename,4,2)  ; camera name

@@ -27,7 +27,7 @@ function quickextract, flatname, arcname, sciname, outname, radius=radius
    flux = extract_boxcar(image, xcen, radius=radius)
 
    ; Estimate fluxivar
-   fluxivar = 1.0/(abs(flux) + 10.0)
+   fluxivar = 1.0 / (abs(flux) + 10.0)
 
    mwrfits, flux, outname, /create
    mwrfits, fluxivar, outname
