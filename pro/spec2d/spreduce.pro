@@ -46,12 +46,15 @@
 ;   extract_object
 ;   qaplot_arcline
 ;   qaplot_fflat
+;   reject_science()
 ;   select_arc()
 ;   select_flat()
 ;   sortplugmap
 ;   sdssproc
 ;   spcalib
 ;   splog
+;   sxaddpar
+;   sxpar()
 ;   yanny_free
 ;   yanny_read
 ;
@@ -198,7 +201,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
       sxaddpar, objhdr, 'FRAMESN2', 0.0
       sxaddpar, objhdr, 'CARTID', long(yanny_par(hdrplug, 'cartridgeId')), $
-             'Cartridge used in this plugging', after='TILEID'
+       'Cartridge used in this plugging', after='TILEID'
 
       if (qbadsci) then begin
 
