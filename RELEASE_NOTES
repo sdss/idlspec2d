@@ -62,6 +62,11 @@ SDSSPROC, SPCALIB, SPREDUCE, SPREDUCE2D: No longer pass the name of the pixel
           flat between all these files.  Instead, just let SDSSPROC find the
           correct one in the "specflat" product, in $SPECLOG_DIR/flats.
 SMOOTH_HALO: A new version of smooth halo, which should be closer to the truth.
+SORTPLUGMAP: Fill in unplugged fibers with arbitrary entries, and assign
+       them a FIBERID.  For spectrograph #1, we assign the unplugged fibers
+       from the beginning of the plugmap, and for #2 from the end.
+       This should result in the unplugged objects being uniquely placed
+       on only one of the spectrographs.  This addressed PR #2487.
 SPCOADD_FRAMES: Include MJDLIST keyword in spPlate header, which will be
                 the list of all MJD's used in an SPCOMBINE.
                 Add BUNIT keyword for the flux, inverse variance, and
