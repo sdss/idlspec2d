@@ -18,7 +18,7 @@
 ;                integer-valued, but could be for example '51441_test'.
 ;   mjstart    - Starting MJD.
 ;   mjend      - Ending MJD.
-;   minexp     - Minimum exposure time for science frames; default to 300 sec.
+;   minexp     - Minimum exposure time for science frames; default to 1 sec.
 ;   clobber    - If set, then over-write conflicting plan files; default to
 ;                not over-write files.
 ;
@@ -67,7 +67,7 @@
 pro spplan2d, topoutdir=topoutdir, mjd=mjd, $
  mjstart=mjstart, mjend=mjend, minexp=minexp, clobber=clobber
 
-   if (NOT keyword_set(minexp)) then minexp = 300
+   if (NOT keyword_set(minexp)) then minexp = 1
 
    ;----------
    ; Determine the top-level of the output directory tree
