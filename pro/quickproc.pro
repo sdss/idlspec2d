@@ -41,7 +41,7 @@ function quickproc, infile, hdr=hdr, configfile=configfile
    endif
    if (NOT keyword_set(configfile)) then configfile = 'opConfig.par'
 
-   junk = findfile(configfile, count=ct)
+   tempname = findfile(configfile, count=ct)
    if (ct NE 1) then begin
      pp = getenv('IDLSPEC2D_DIR')+'/examples'
      tempname = findfile(filepath(configfile, root_dir=pp), count=ct)

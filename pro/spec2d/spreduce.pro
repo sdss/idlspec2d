@@ -80,11 +80,11 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    ;---------------------------------------------------------------------------
 
    if (keyword_set(skylinefile)) then begin
-      skyfilenames = findfile(skylinefile, count=ct)
+      skyfilenames = (findfile(skylinefile, count=ct))[0]
       if (ct EQ 0) then message, 'No SKYLINEFILE found '+skylinefile
    endif else begin
       skydefault = getenv('IDLSPEC2D_DIR') + '/etc/skylines.dat'
-      skyfilenames = findfile(skydefault, count=ct)
+      skyfilenames = (findfile(skydefault, count=ct))[0]
       if (skyfilenames EQ '') then message, 'No SKYLINEFILE found '+skydefault
    endelse
 
