@@ -33,6 +33,8 @@
 ;   But since plates can be re-plugged, we must re-sort these
 ;   files to match the object ordering in the plug-map structure.
 ;
+;   Print a warning message for non-matched objects only if they are not skies.
+;
 ; EXAMPLES:
 ;   Read the plug-map for plate 306, fibers 1 to 10, then construct the
 ;   calibObj structure:
@@ -128,11 +130,14 @@ function plug2tsobj, plateid, ra, dec, plugmap=plugmap, dmin=dmin
       if (ra[iplug] NE 0 AND dec[iplug] NE 0) then begin
          adist = djs_diff_angle(tstemp.ra, tstemp.dec, ra[iplug], dec[iplug])
          thismin = min(adist, imin)
-         if (thismin GT dmin/3600.) then $
-          splog, 'Warning: No matches to within ', dmin, ' arcsec at RA=', $
-           ra[iplug], ' DEC=', dec[iplug] $
-         else $
-          tsobj[iplug] = tstemp[imin]
+         if (thismin GT dmin/3600.) then begin
+            if (strmatch(plugmap[iplug].objtype,'SKY*') EQ 0) then $
+             splog, 'Warning: Unmatched OBJTYPE=', $
+              strtrim(plugmap[iplug].objtype,2), $
+              ' at RA=', ra[iplug], ',DEC=', dec[iplug]
+         endif else begin
+            tsobj[iplug] = tstemp[imin]
+         endelse
       endif
    endfor
 
