@@ -480,6 +480,11 @@ The following messages may appear:
     This condition is triggered when the 80-th percentile of the image
     is less than 1000 electrons.
     When this happens, the flat is not reduced.
+<LI><B>Reject science ... </B> <BR>
+    A science exposure can be rejected if the header keywords indicate
+    that the flat-field petals are closed, any flat-field or arc lamps
+    are turned on, too many pixels are bad or saturated, or if the
+    25-th percentile of the image too large.
 <LI><B>Possible Argon lines in superflat</B> <BR>
     Emission lines are present in the quartz-halogen flat-field images,
     which are supposed to be featureless.  When a number follows this message,
@@ -547,6 +552,10 @@ The following messages may appear:
     The treshhold is set at chi=2, and the worst that we have ever seen
     is at about the level chi=6  The last we definitively saw this was on
     plate 426 on 3/4 Dec 2000 (MJD 51882).
+<LI><B>SOS disk is ...% full</B> <BR>
+    The specified disk on sos.apo is more than 95% full.  This could be
+    either the disk used to copy the raw sdR images from sdsshost.apo,
+    or the disk used for SOS outputs (/data/spectro/spectrologs/$MJD).
 </UL>
 
 <H4><A NAME="outputs_log">Log files</A></H4>
