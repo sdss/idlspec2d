@@ -40,12 +40,14 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   djs_mean()
 ;   djs_median()
 ;   filter_thru()
 ;   pixelmask_bits()
 ;   plotsn
 ;   splog
 ;   sxaddpar
+;   sxpar()
 ;
 ; REVISION HISTORY:
 ;   06-Oct-2000  Written by S. Burles & D. Schlegel
@@ -70,7 +72,7 @@ pro platesn, finalflux, finalivar, finalandmask, finalplugmap, loglam, $
    snvec = fltarr(3, nfiber)
 
 ;  Do the same S/N calculation as in apo2d/quickextract.pro
-;  Horribly bulky, but what can we do?
+;  Horribly bulky, but what can we do???
 
    for ifib=0, nfiber-1 do begin
      sntemp = 0.0
@@ -116,6 +118,8 @@ pro platesn, finalflux, finalivar, finalandmask, finalplugmap, loglam, $
    ;----------
    ; Make S/N plot
 
+   plottitle = 'PLATE=' + strtrim(string(sxpar(hdr,'PLATE')),2) $
+    + 'MJD=' + strtrim(string(sxpar(hdr,'MJD')),2)
    plotsn, snvec, finalplugmap, plotfile=plotfile, plottitle=plottitle, $
     synthmag=synthmag, snplate=snplate
 
