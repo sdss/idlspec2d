@@ -1,21 +1,27 @@
 
+* QA plot for how well the telluric-removal is doing
+
+* When doing red/blue merging, apply a window function to the **variance**
+  of each to smoothly merge the two.  E.g., at the long-wavelengths of blue,
+  increase the variance -> infinity.
+
+* Bug when writing out files:
+  % Type conversion error: Unable to convert given STRING to Integer.
+  % Detected at:  CHK_AND_UPD       206 
+    /home/schlegel/evilspec/goddard/pro/fits/mwrfits.pro
+
 * Special-case a combine routine for only 2 exposures that will reject CR's
 
 * Count dead fibers in trace_crude
 
-* Compare throughput from dome flats vs. that on bright sky lines.
+* Compare throughput from dome flats vs. throughput on bright sky lines.
 
 * Sky-subtraction: Fix edge effects in inverse variance scaling
 
 * In flat-fields, be smarter with break points
   Also, tune pix-to-pix flat with global flat to be high-pass / low-pass filter
 
-* Make QA plots
-
 * Carry header around + add header cards
-
-* How to apply the flat-fields to the inverse variance?
-* Watch for numeric overflows when FLAT <= 0
 
 * Measure gain + read noise
 

@@ -130,15 +130,46 @@ pro skysubtract, obj, objivar, plugmap, wset, skysub, skysubivar, $
 ;
 ;	Try plotting sky residuals as a function of wavelength
 ;
-	plot, 10^allwave, diff, ps=3, yr=[0,10], /xstyle, $
-               title='Skysubtraction chi squared'
-
 	pos67 = 2*binsize/3
 	diff67 = fltarr(nn)
 	alphav = fltarr(nn)
 	for i=0,nn-1 do diff67[i] = (diffr[sort(diffr[*,i]),i])[pos67]
 	for i=0,nn-1 do alphav[i] = median(rivar[*,i])
-        djs_oplot, 10^rwave, diff67, color = 'red'
+
+   ;---------------------------------------------------------------------------
+   ; Make plots
+   ; This should probably be moved to a QAPLOT file ???
+
+   ; Set multi-plot format
+   npanel = 3
+   pmulti = !p.multi
+   !p.multi = [0,1,npanel]
+
+   xmin = min(10^allwave)
+   xmax = max(10^allwave)
+
+   for ipanel=0, npanel-1 do begin
+
+      if (ipanel EQ 0) then $
+       title='Sky-Subtraction Residuals on Sky Fibers' $
+       else title=''
+      xrange = xmin + [ipanel, ipanel+1] * (xmax-xmin) / float(npanel)
+
+      djs_plot, 10^allwave, diff<9.9, ps=3, $
+       xrange=xrange, yrange=[-0.5,7.5], xstyle=1, ystyle=1, $
+       xtitle='\lambda [A]', ytitle='\chi^2', title=title, charsize=2.0
+      djs_oplot, 10^rwave, diff67, color='red', ps=10
+
+      if (ipanel EQ 0) then $
+       xyouts, 0.95*xrange[0] + 0.05*xrange[1], 6.0, $
+        'Number of sky fibers = ' + strtrim(string(nskies),2), $
+        charsize=1.5
+
+   endfor
+
+   !p.multi= pmulti
+
+   ;---------------------------------------------------------------------------
 
 	alpha = diff67 - median(diff67,2*(nn/40) + 1)
 	
