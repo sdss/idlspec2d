@@ -71,6 +71,7 @@
 ; PROCEDURES CALLED:
 ;   djs_oplot
 ;   djs_plot
+;   djs_xyouts
 ;   readspec
 ;   soplot
 ;   splot
