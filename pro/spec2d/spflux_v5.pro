@@ -937,7 +937,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
    else $
     mratfit[*,ired,ifinal] = bspline_valu(loglam[*,ired,ifinal], sset_r)
 
-   !p.multi = [0,2,2]
+   !p.multi = [0,1,2]
    explist = expnum[uniq(expnum, sort(expnum))]
    colorvec = ['default','red','green','blue','cyan','magenta','grey']
    xrange = 10^minmax(loglam[*,*,ifinal])
