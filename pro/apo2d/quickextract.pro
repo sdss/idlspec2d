@@ -40,20 +40,22 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    skiprow = 8
    yrow = lindgen(nrow/skiprow) * skiprow + skiprow/2
    nfirst = n_elements(yrow)
+   wfixed=[1,1]
 
    sigma = 1.0
    proftype = 1 ; Gaussian
-   npoly = 8
+   npoly=8
+   nterms=2
 
    traceset2xy, tset, ytemp, xcen
 
    extract_image, image, invvar, xcen, sigma, tempflux, tempfluxivar, $
-          proftype=proftype, wfixed=[1], yrow=yrow, highrej=5, lowrej=5, $
+          proftype=proftype, wfixed=wfixed, yrow=yrow, highrej=5, lowrej=5, $
           npoly=npoly, ansimage=ansimage, relative=1
 
-   ntrace = (size(tempflux,/dimens))[1]
-   junk = fitansimage(ansimage, 1, ntrace, npoly, yrow, $
-            tempflux, fluxm=[1], scatfit=scatfit)
+   ntrace = (size(tempflux))[2]
+   junk = fitansimage(ansimage, nterms, ntrace, npoly, yrow, $
+            tempflux, fluxm = wfixed, scatfit=scatfit)
 
    scatflux = extract_boxcar(scatfit, xcen, radius=radius)
 
