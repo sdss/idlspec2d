@@ -133,33 +133,60 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay
    endfor
 
    objname = allseq.name[icams]
+
    j = where(objname NE 'UNKNOWN')
    if (j[0] EQ -1) then begin
       splog, 'ABORT: All file names are UNKNOWN in plan file ' + thisplan
       cd, origdir
       return
    endif
-   objname = objname[j]
 
+   j = where(objname EQ 'UNKNOWN')
+   if j[0] NE -1 then (allseq.name[icams])[j] = ''
+
+   objname = allseq.name[icams]
    for ifile=0, n_elements(objname)-1 do $
-    if ((findfile(objname[ifile]))[0] EQ '') then objname[ifile] = ''
-   j = where(objname)
+    if ((findfile(objname[ifile]))[0] EQ '') then $ (
+            (allseq.name[icams])[ifile] = ''
+
+
+   j = where(allseq.name[icams])
    if (j[0] EQ -1) then begin
       splog, 'ABORT: No files on disk for plan file ' + thisplan
       cd, origdir
       return
    endif
-   objname = objname[j]
 
    ;----------
    ; Compute the spectro-photometry
+
+   objname = (allseq.name[icams])[j]
 
    spflux, objname, fcalibprefix, adderr=adderr
 
    ;----------
    ; Co-add the fluxed exposures
 
-   spcoadd_frames, djs_filepath(objname, root_dir=extractdir), $
+   science = where(allseq.flavor EQ 'science')
+
+   if science[0] EQ -1 then begin 
+      splog, 'No Science Frames in this plan ' + thisplan
+      cd, origdir
+      return
+   endif
+
+   sciname = allseq[science].name[icams]
+   j = where(sciname)
+
+   if j[0] EQ -1 then begin 
+      splog, 'No Science Frames in this plan ' + thisplan
+      cd, origdir
+      return
+   endif
+
+   sciname = sciname[j]
+
+   spcoadd_frames, djs_filepath(sciname, root_dir=extractdir), $
     djs_filepath(combinefile, root_dir=combinedir), $
     fcalibprefix=fcalibprefix, adderr=adderr
 
