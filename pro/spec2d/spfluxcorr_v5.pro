@@ -97,9 +97,9 @@ function spfluxcorr_solve2, loglam1, allflux1, allflux2, allivar1, allivar2, $
    gtol = 1d-20
    xtol = 1d-20
 
-;limits = [0.1, 10] ; ???
 ;   ; Add constraints that the multiplicative term must be in the
 ;   ; bounds set by LIMITS, at least at the end points.
+;   limits = [0.1, 10]
 ;   xmin = min(xvector)
 ;   xmax = max(xvector)
 ;   if (npoly EQ 1) then begin
@@ -127,21 +127,20 @@ function spfluxcorr_solve2, loglam1, allflux1, allflux2, allivar1, allivar2, $
 
    totchi2 = total( (fcorr_chi_fn(acoeff))^2 )
 
-; ???
-;   print, 'STATUS = ', status
-;   print, 'Best-fit coeffs = ', acoeff
-;   print, 'Errors = = ', perror
-
    yfit = spfluxcorr_fn(acoeff, ymult=ymult, yadd=yadd)
 
-if (keyword_set(debug)) then begin ; ???
-set_plot,'x'
-splot,10^loglam[0:2047],smooth(bflux[0:2047], 9), xr=[3800,9200]
-soplot,10^loglam[2048:4095],smooth(bflux[2048:4095], 9)
-soplot,10^loglam[0:2048],smooth(yfit[0:2047], 9), color='red'
-soplot,10^loglam[2048:4095],smooth(yfit[2048:4095], 9), color='red'
-cc = strupcase(get_kbrd(1))
-endif
+   if (keyword_set(debug)) then begin
+      print, 'STATUS = ', status
+      print, 'Best-fit coeffs = ', acoeff
+      print, 'Errors = = ', perror
+
+      set_plot,'x'
+      splot,10^loglam[0:2047],smooth(bflux[0:2047], 9), xrange=[3800,9200]
+      soplot,10^loglam[2048:4095],smooth(bflux[2048:4095], 9)
+      soplot,10^loglam[0:2048],smooth(yfit[0:2047], 9), color='red'
+      soplot,10^loglam[2048:4095],smooth(yfit[2048:4095], 9), color='red'
+      cc = strupcase(get_kbrd(1))
+   endif
 
    return, acoeff
 end
@@ -151,16 +150,15 @@ end
 ; The errors are the simple quadrature sum from AIVAR and BIAVAR.
 ; SIGVEC = the returned sigma per pixel, even for masked pixels
 ;          which were excluded from the fit
-; The additive term should be **per camera** !!!???
+; The additive term should be **per camera** ?
 function spfluxcorr_solve, loglam, aflux, bflux, sqivar, mask=mask1, $
- sigvec=sigvec, npoly=npoly, nback=nback, ymult=ymult, yadd=yadd, $
- debug=debug
+ sigvec=sigvec, npoly=npoly, nback=nback, ymult=ymult, yadd=yadd
 
    if (NOT keyword_set(npoly)) then npoly = 3
    if (n_elements(nback) EQ 0) then nback = 1
    if (keyword_set(mask1)) then mask = mask1 $
     else mask = 1
-   constraint = 10 ; The weight of the constraints ???
+   wconstrain = 10 ; The weight of the constraints
 
    ; Set default return values
    ymult = 0
@@ -188,18 +186,18 @@ function spfluxcorr_solve, loglam, aflux, bflux, sqivar, mask=mask1, $
    bvec[0:npix-1] = bflux[*] * sqivar * mask
 
    ; Put the constraints into the matrix: a[0] = 1
-   mmatrix[npix,0] = 1 * constraint
-   bvec[npix] = 1 * constraint
+   mmatrix[npix,0] = 1 * wconstrain
+   bvec[npix] = 1 * wconstrain
 
    ; Put the constraints into the matrix: a[1...] = 0
    if (npoly GT 1) then begin
-      for i=1, npoly-1 do mmatrix[npix+i,i] = 1 * constraint
-      bvec[npix+1:npix+npoly-1] = 0 * constraint
+      for i=1, npoly-1 do mmatrix[npix+i,i] = 1 * wconstrain
+      bvec[npix+1:npix+npoly-1] = 0 * wconstrain
    endif
 
    ; Put the constraints into the matrix: b[0...] = 0
    if (nback GT 0) then begin
-      for j=0, nback-1 do mmatrix[npix+npoly+j,npoly+j] = 1 * constraint
+      for j=0, nback-1 do mmatrix[npix+npoly+j,npoly+j] = 1 * wconstrain
    endif
 
    ; Now invert the matrix
@@ -228,19 +226,6 @@ function spfluxcorr_solve, loglam, aflux, bflux, sqivar, mask=mask1, $
    yfit = ymult * aflux[*] + yadd
    sigvec = (yfit - bflux[*]) * sqivar
 
-if (keyword_set(debug)) then begin ; ???
-set_plot,'x'
-splot,10^loglam[0:2047],djs_median(bflux[0:2047], $
- width=7,boundary='reflect'),xr=[3800,9200]
-soplot,10^loglam[2048:4095],djs_median(bflux[2048:4095], $
- width=7,boundary='reflect')
-soplot,10^loglam[0:2048],djs_median(yfit[0:2047], $
- width=7,boundary='reflect'),color='red'
-soplot,10^loglam[2048:4095],djs_median(yfit[2048:4095], $
- width=7,boundary='reflect'),color='red'
-cc = strupcase(get_kbrd(1))
-endif
-
    return, yfit
 end
 ;------------------------------------------------------------------------------
@@ -250,11 +235,21 @@ pro spfluxcorr_v5, objname, adderr=adderr, combinedir=combinedir, $
    common com_fcorr_lam, minlog, maxlog
 
    if (n_elements(adderr) EQ 0) then adderr = 0.03
-   nfile = n_elements(objname)
+
+   ; The following parameters are used for the first pass, which is used only
+   ; in rejecting points.
+   maxiter1 = 5
+   sigrej = 2.5
+
+   ; The following parameters are used for the final fits, where there is
+   ; no more rejection and the errors are re-scaled in each iteration.
+   maxpoly = 3
+   nback = 0
 
    ;----------
    ; Get the list of spectrograph ID and camera names
 
+   nfile = n_elements(objname)
    camname = strarr(nfile)
    camcolor = strarr(nfile)
    expnum = lonarr(nfile)
@@ -354,10 +349,6 @@ pro spfluxcorr_v5, objname, adderr=adderr, combinedir=combinedir, $
    ymult = fltarr(npix,nobj,nfile) + 1.
    yadd = fltarr(npix,nobj,nfile)
 
-   nback = 0 ; ???
-maxiter1 = 5 ; ???
-sigrej = 2.5 ; ???
-maxpoly = 3 ; ???
    i1 = [ibest_b,ibest_r]
    for iobj=0L, nobj-1 do begin
       outmask = 0
@@ -366,7 +357,6 @@ maxpoly = 3 ; ???
       ; and is primarily to reject outlier points.
       iiter = 0L
       while (iiter LT maxiter1) do begin
-splog,'Object', iobj, ' iter ', iiter
          ; Loop over exposures
          sigvec = 0 * allflux[*,iobj,i1]
          for iexp=0L, nexp-1 do begin
@@ -422,14 +412,15 @@ splog,'Object', iobj, ' iter ', iiter
              AND allivar[*,iobj,i1] GT 0 $
              AND outmask GT 0
             igood = where(qgood, ct)
+            npoly1 = 0
             if (ct GT 0) then begin
-               npoly1 = 1
                qcont = 1B
                lastchi2 = 0
                ; Add more polynomial terms to the fit as long as
-               ; the vectors are still good, and the chi^2 is significantly
-               ; improved (by at least 5).
-               while (qcont AND npoly1 LE maxpoly) do begin
+               ; the vectors are still good (no crazy values), and
+               ; the chi^2 is significantly improved (by at least 5).
+               while (qcont AND npoly1 LT maxpoly) do begin
+                  npoly1 = npoly1 + 1
                   thiscoeff = spfluxcorr_solve2(loglam[*,iobj,*], $
                    allflux[*,iobj,i2], allflux[*,iobj,i1], $
                    allivar[*,iobj,i2], allivar[*,iobj,i1] * qgood, $
@@ -437,16 +428,16 @@ splog,'Object', iobj, ' iter ', iiter
                    totchi2=thischi2)
                   if (fcorr_goodvector(ymult1) $
                    AND (npoly1 EQ 1 OR lastchi2-thischi2 GT 5.)) then begin
-splog,'---> Object', iobj,iexp,npoly1,lastchi2-thischi2 ; ???
                      ymult[*,iobj,i2] = ymult1
                      yadd[*,iobj,i2] = yadd1
                      lastchi2 = thischi2
                   endif else begin
                      qcont = 0B
                   endelse
-                  npoly1 = npoly1 + 1
                endwhile
             endif
+            splog, 'Fiber #', 320*(spectroid[0]-1)+iobj+1, $
+             ' exposure #', explist[iexp], ' npoly=', npoly1
          endif
       endfor
 
