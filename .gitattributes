@@ -292,6 +292,7 @@ pro/spec1d/rline_sample.pro -text
 pro/spec1d/sdss_flagname.pro -text
 pro/spec1d/skymask.pro -text
 pro/spec1d/spec_append.pro -text
+pro/spec1d/speclinefit.pro -text
 pro/spec1d/spreduce1d.pro -text
 pro/spec1d/synthspec.pro -text
 pro/spec1d/vdispfit.pro -text
