@@ -1,11 +1,12 @@
 
-function atmdisp_cor, wave, flux, plugtag, hdr, ngroff = ngroff, nrioff = nrioff, $
+function atmdisp_cor, loglam, flux, plugtag, hdr, ngroff = ngroff, nrioff = nrioff, $
          title = title, mean_groff = groff_mean, mean_ngroff = ngroff_mean, $
          sig_groff = groff_sig, sig_ngroff = ngroff_sig
 
 npix = n_elements(flux[*,0])
 nfib = n_elements(flux[0,*])
 std = where(strmatch(plugtag.objtype, '*R*STD*') eq 1)
+wave = 10.0^loglam
 
 ;-------------------------------------------------------------------------------
 ; Read atmospheric dispersion vecotor matched in seeing & airmass
