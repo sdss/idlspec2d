@@ -58,8 +58,9 @@ pro platemerge, zfile, outroot=outroot, public=public
       platelist, plist=plist
       if (NOT keyword_set(plist)) then return
 
-      indx = where(strtrim(plist.platequality,2) EQ 'Good' $
-       OR strtrim(plist.platequality,2) EQ 'Marginal')
+      indx = where(strtrim(plist.status1d,2) EQ 'Done' AND $
+       (strtrim(plist.platequality,2) EQ 'good' $
+       OR strtrim(plist.platequality,2) EQ 'marginal'))
       if (indx[0] EQ -1) then return
       if (keyword_set(public)) then $
        indx = indx[ where(strtrim(plist[indx].public)) ]
@@ -117,7 +118,13 @@ pro platemerge, zfile, outroot=outroot, public=public
        splog, 'WARNING: No tsObj file found for plate ', plate
 
       if (NOT keyword_set(outdat)) then begin
-         outdat = replicate( create_struct(zans[0], tsobj0), nout)
+         pstuff = create_struct( $
+          'progname'    , ' ', $
+          'chunkname'   , ' ', $
+          'platequality', ' ', $
+          'platesn2'    , 0.0, $
+          'specprimary' ,  0L )
+         outdat = replicate(create_struct(pstuff, zans[0], tsobj0), nout)
          struct_assign, {junk:0}, outdat ; Zero-out all elements
       endif
 
@@ -125,6 +132,12 @@ pro platemerge, zfile, outroot=outroot, public=public
       copy_struct_inx, zans, outdat, index_to=indx
       if (keyword_set(tsobj)) then $
        copy_struct_inx, tsobj, outdat, index_to=indx
+
+      ; Fill in the first columns of this output structure
+      outdat[indx].progname = plist[ifile].progname
+      outdat[indx].chunkname = plist[ifile].chunkname
+      outdat[indx].platequality = plist[ifile].platequality
+      outdat[indx].platesn2 = plist[ifile].platesn2
 
       ; Over-write PRIMTARGET+SECTARGET with those values from spPlate file.
       plugmap = mrdfits(fullplatefile[ifile], 5)
