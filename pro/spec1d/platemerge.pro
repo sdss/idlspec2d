@@ -133,8 +133,9 @@ pro platemerge, zfile, outfile=outfile, ascfile=ascfile, qsurvey=qsurvey
     'class'      ,  '', $
     'subclass'   ,  '', $
     'z'          , 0.0, $
+    'z_err'      , 0.0, $
+    'zwarning'   ,  0L, $
     'rchi2'      , 0.0, $
-    'dof'        ,  0L, $
     'ra'         , 0.0d, $
     'dec'        , 0.0d, $
     'plate_sn2'  ,  0.0, $
