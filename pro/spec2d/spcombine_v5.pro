@@ -194,13 +194,24 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
    ;----------
    ; Compute the spectro-photometry
 
+   i1 = where(camspecid EQ 1 AND score GT 0, ct1)
+   i2 = where(camspecid EQ 2 AND score GT 0, ct2)
    objname = allseq.name[icams]
-   i1 = where(camspecid EQ 1 AND score GT 0, ct)
-   if (ct GT 0) then $
+
+   if (ct1 GT 0) then $
     spflux_v5, objname[i1], adderr=adderr, combinedir=combinedir
-   i2 = where(camspecid EQ 2 AND score GT 0, ct)
-   if (ct GT 0) then $
+   if (ct2 GT 0) then $
     spflux_v5, objname[i2], adderr=adderr, combinedir=combinedir
+
+   ;----------
+   ; Compute the flux-correction vectors
+
+   if (ct1 GT 0) then $
+    spfluxcorr_v5, objname[i1], adderr=adderr, combinedir=combinedir, $
+     bestexpnum=expnum[0,ibest]
+   if (ct2 GT 0) then $
+    spfluxcorr_v5, objname[i2], adderr=adderr, combinedir=combinedir, $
+     bestexpnum=expnum[0,ibest]
 
    ;----------
    ; Co-add the fluxed exposures

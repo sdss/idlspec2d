@@ -487,6 +487,7 @@ pro/spec2d/spflatten.pro -text
 pro/spec2d/spflatten2.pro -text
 pro/spec2d/spflux.pro -text
 pro/spec2d/spflux_v5.pro -text
+pro/spec2d/spfluxcorr_v5.pro -text
 pro/spec2d/spframe_read.pro -text
 pro/spec2d/spgain.pro -text
 pro/spec2d/sphdrfix.pro -text
