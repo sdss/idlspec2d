@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   spgain, flatfile1, flatfile2, [ biasfile1, biasfile2, indir=, $
-;    xskip=, yskip=, xave, yave=, /simulate, gain=, rnoise=]
+;    xskip=, yskip=, /simulate, gain=, rnoise=]
 ;
 ; INPUTS:
 ;   flatfile1  - File name for flat #1
@@ -21,10 +21,6 @@
 ;                amplifier; default to 50
 ;   yskip      - Number of rows to ignore at beginning and end of each
 ;                amplifier; default to 5
-;   xave       - Number of columns to analyze for each calculation of gain and
-;                read noise; default to 100
-;   yave       - Number of rows to analyze for each calculation of gain and
-;                read noise; default to 10
 ;   simulate   - If set, then replace the images with simulated images with
 ;                a gain of 1.3 e-/ADU and read noise of 3.5 ADU.
 ;
@@ -52,7 +48,7 @@
 ;-
 ;------------------------------------------------------------------------------
 pro spgain, flatfile1, flatfile2, biasfile1, biasfile2, indir=indir, $
- xskip=xskip, yskip=yskip, xave=xave, yave=yave, gain=gain, rnoise=rnoise, $
+ xskip=xskip, yskip=yskip, gain=gain, rnoise=rnoise, $
  simulate=simulate
 
    if (N_params() NE 2 AND N_params() NE 4) then $
@@ -60,8 +56,6 @@ pro spgain, flatfile1, flatfile2, biasfile1, biasfile2, indir=indir, $
 
    if (NOT keyword_set(xskip)) then xskip = 50
    if (NOT keyword_set(yskip)) then yskip = 5
-   if (NOT keyword_set(xave)) then xave = 100
-   if (NOT keyword_set(yave)) then yave = 10
 
    namp = 2 ; 2 amplifiers
 
@@ -118,68 +112,71 @@ pro spgain, flatfile1, flatfile2, biasfile1, biasfile2, indir=indir, $
    dims = size(flatimg1, /dimens)
    nx = dims[0]
    ny = dims[1]
+   ximg = djs_laxisgen([nx, ny], iaxis=0)
+   ampimg = 1 + (ximg GT nx/2)
+   ampimg[0:xskip-1,*] = 0
+   ampimg[nx-xskip:nx-1,*] = 0
+   ampimg[*,0:yskip-1] = 0
+   ampimg[*,ny-yskip:ny-1] = 0
 
-   xstart = [0, 1024] + xskip
-   xend = [1023, 2047] - xskip
+   nloop = 100L
+   ngoodpix = lonarr(nloop,2)
+   gainarr = fltarr(nloop,2)
+   rnoisearr = fltarr(nloop,2)
 
-   nxblock = fix((nx-2*xskip)/xave)
-   nyblock = fix(ny/yave)
-   gainarr = fltarr(nxblock,nyblock)
-   rnoisearr = fltarr(nxblock,nyblock)
-   corrfac = sqrt(xave*yave / (xave*yave-1.)) ; Correction factor for measured sigmas
+   ; Loop over different count levels
+   for iloop=0, nloop-1 do begin
+      for iamp=0, 1 do begin
+         flux1 = (iloop+1) * 200. + 1000.
+         flux2 = (iloop+2) * 200. + 1000.
+         indx = where(flatimg1 GE flux1 AND flatimg1 LT flux2 $
+          AND ampimg EQ iamp+1, ct)
+         ngoodpix[iloop,iamp] = ct
 
-   for ix=0, nxblock-1 do begin
-   for iy=0, nyblock-1 do begin
+         if (ct GT 1000) then begin ; At least 1000 pixels...
 
-      x1 = ix * xave + xskip
-      x2 = x1 + xave - 1
-      y1 = iy * yave
-      y2 = y1 + yave - 1
+            ; Correction factor for measured sigmas...
+            corrfac = sqrt(ct / (ct-1.))
 
-      flatsub1 = flatimg1[x1:x2,y1:y2]
-      flatsub2 = flatimg2[x1:x2,y1:y2]
+            flatsub1 = flatimg1[indx]
+            flatsub2 = flatimg2[indx]
 
-      ; Compute statistics for flats
-      djs_iterstat, flatsub1, sigrej=sigrej, maxiter=maxiter, $
-       mean=flatmean1
-      djs_iterstat, flatsub2, sigrej=sigrej, maxiter=maxiter, $
-       mean=flatmean2
-      djs_iterstat, flatsub2 - flatsub1, sigrej=sigrej, maxiter=maxiter, $
-       sigma=flatdifsig
-      flatdifsig = corrfac * flatdifsig
+            ; Compute statistics for flats
+            djs_iterstat, flatsub1, sigrej=sigrej, mean=flatmean1
+            djs_iterstat, flatsub2, sigrej=sigrej, mean=flatmean2
+            djs_iterstat, flatsub2 - flatsub1, sigrej=sigrej, $
+             sigma=flatdifsig
+            flatdifsig = corrfac * flatdifsig
 
-      ; Compute statistics for biases
-      if (N_params() EQ 4) then begin
-         biassub1 = biasimg1[x1:x2,y1:y2]
-         biassub2 = biasimg2[x1:x2,y1:y2]
+            ; Compute statistics for biases
+            if (N_params() EQ 4) then begin
+               biassub1 = biasimg1[indx]
+               biassub2 = biasimg2[indx]
 
-         djs_iterstat, biassub1, sigrej=sigrej, maxiter=maxiter, $
-          mean=biasmean1
-         djs_iterstat, biassub2, sigrej=sigrej, maxiter=maxiter, $
-          mean=biasmean2
-         djs_iterstat, biassub2 - biassub1, sigrej=sigrej, maxiter=maxiter, $
-          sigma=biasdifsig
-         biasdifsig = corrfac * biasdifsig
-      endif
+               djs_iterstat, biassub1, sigrej=sigrej, mean=biasmean1
+               djs_iterstat, biassub2, sigrej=sigrej, mean=biasmean2
+               djs_iterstat, biassub2 - biassub1, sigrej=sigrej, $
+                sigma=biasdifsig
+               biasdifsig = corrfac * biasdifsig
+            endif
 
-      gainarr[ix,iy] = (flatmean1 + flatmean2 - biasmean1 - biasmean2) / $
-       (flatdifsig^2 - biasdifsig^2)
-      rnoisearr[ix,iy] = biasdifsig / sqrt(2.)
+            gainarr[iloop,iamp] = $
+             (flatmean1 + flatmean2 - biasmean1 - biasmean2) / $
+             (flatdifsig^2 - biasdifsig^2)
+            rnoisearr[iloop,iamp] = biasdifsig / sqrt(2.)
 
-   endfor
-   ; Burles counter of row number...
-   print, format='($, ".",i4.4,a5)', ix, string([8b,8b,8b,8b,8b])
+         endif
+      endfor
    endfor
 
    ; Compute the median gain + read noise for each amplifier
    for iamp=0, namp-1 do begin
-      djs_iterstat, gainarr[nxblock/2*[iamp,iamp+1]+[0,-1],*], $
-       median=med1, sigma=sig1
+      ii = where(gainarr[*,iamp] GT 0)
+      djs_iterstat, gainarr[ii,iamp], median=med1, sigma=sig1
       gain[iamp] = med1
       gain_rms[iamp] = sig1
       if (N_params() EQ 4) then begin
-         djs_iterstat, rnoisearr[nxblock/2*[iamp,iamp+1]+[0,-1],*], $
-          median=med1, sigma=sig1
+         djs_iterstat, rnoisearr[ii,iamp], median=med1, sigma=sig1
          rnoise[iamp] = med1
          rnoise_rms[iamp] = sig1
       endif
