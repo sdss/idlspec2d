@@ -48,6 +48,9 @@
 ;   lrgmodel_photoz()
 ;   mpfit()
 ;
+; INTERNAL SUPPORT ROUTINES:
+;  lrgmodel_tweak_fn()
+;
 ; REVISION HISTORY:
 ;   10-Dec-2003  Written by D. Schlegel, Princeton
 ;-
