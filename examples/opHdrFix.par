@@ -189,3 +189,12 @@ spechdrfix sdR-??-00010850  HGCD  "'0 0 0 0 '"
 spechdrfix sdR-??-00010850  SPEC1 "'1 0 1 1 '"
 spechdrfix sdR-??-00010850  SPEC2 "'1 0 1 1 '"
 
+# Telescope status information missing for the pre-arc on plate 676
+# on MJD 52178.
+spechdrfix sdR-??-00011085  FFS   "'1 1 1 1 1 1 1 1'"
+spechdrfix sdR-??-00011085  FF    "'0 0 0 0 '"
+spechdrfix sdR-??-00011085  NE    "'1 1 1 1 '"
+spechdrfix sdR-??-00011085  HGCD  "'1 1 1 1 '"
+spechdrfix sdR-??-00011085  SPEC1 "'1 0 1 1 '"
+spechdrfix sdR-??-00011085  SPEC2 "'1 0 1 1 '"
+
