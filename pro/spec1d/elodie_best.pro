@@ -1,14 +1,13 @@
 ;+
 ; NAME:
-;   zfind
+;   elodie_best
 ;
 ; PURPOSE:
-;   Find possible redshift matches for a set of spectra using a set of
-;   eigen-templates.
+;   Find the best-fit Elodie spectrum to a set of spectra.
 ;
 ; CALLING SEQUENCE:
-;   result = zfind( objflux, objivar, [ hdr=, objloglam0=, objdloglam=, $
-;    zmin=, zmax= ])
+;   res = elodie_best(objflux, objivar, $
+;    hdr=, objloglam0=, objdloglam=, zmin=, zmax= ])
 ;
 ; INPUTS:
 ;   objflux    - Flux for spectra [NPIX,NOBJECT]
