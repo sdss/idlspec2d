@@ -5,6 +5,7 @@ examples/opConfig.par -text
 examples/opECalib.par -text
 include/evilmath.h -text
 include/export.h -text
+include/extract_row.h -text
 pro/extract_boxcar.pro -text
 pro/extract_profile.pro -text
 pro/extract_row.pro -text
