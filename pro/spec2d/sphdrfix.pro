@@ -21,7 +21,7 @@
 ;   This routine implements "hand edits" of the raw FITS headers for
 ;   SDSS spectroscopic images.  The list of edits to make can be stored
 ;   in two possible Yanny parameter file, the static "opHdrFix.par" file
-;   in the IDLSPEC2D product, and in the "sdReport-$MJD.par" file for
+;   in the IDLSPEC2D product, and in the "sdHdrFix-$MJD.par" file for
 ;   the relevant night.
 ;
 ;   This proc only works in IDL version 5.3 and later, because it
@@ -33,8 +33,8 @@
 ;   sphdrfix, filename, hdr
 ;
 ; BUGS:
-;   This will fail if the MJD needs hand-editing in the sdReport file,
-;   since we need the MJD to find the sdReport file in the first place!
+;   This will fail if the MJD needs hand-editing in the sdHdrFix file,
+;   since we need the MJD to find the sdHdrFix file in the first place!
 ;
 ; PROCEDURES CALLED:
 ;   fileandpath()
@@ -48,7 +48,7 @@
 ;
 ; DATA FILES:
 ;   $IDLSPEC2D_DIR/examples/opHdrFix.par
-;   $SPECLOG_DIR/$MJD/sdReport-$MJD.par
+;   $SPECLOG_DIR/$MJD/sdHdrFix-$MJD.par
 ;
 ; REVISION HISTORY:
 ;   29-Dec-2009  Written by D. Schlegel, Princeton
@@ -135,7 +135,7 @@ pro sphdrfix, filename, hdr
    sphdrfix1, filename, hdr, hfix1
 
    ;----------
-   ; Read the sdReport file for this night to look for more possible header
+   ; Read the sdHdrFix file for this night to look for more possible header
    ; changes from the APO observers.
 
    speclog_dir = getenv('SPECLOG_DIR')
@@ -145,8 +145,8 @@ pro sphdrfix, filename, hdr
    mjdstr = string(mjd, format='(i05.5)')
    plugdir = concat_dir(speclog_dir, mjdstr)
 
-   reportfile = filepath('sdReport-'+mjdstr+'.par', root_dir=plugdir)
-   yanny_read, reportfile, pdata, stnames=stnames, /anonymous
+   reportfile = filepath('sdHdrFix-'+mjdstr+'.par', root_dir=plugdir)
+   yanny_read, reportfile, pdata, stnames=stnames, /anonymous, errcode=errcode
 
    if (keyword_set(pdata)) then begin
       ; Find the ONEEXP structure
@@ -155,14 +155,14 @@ pro sphdrfix, filename, hdr
        if (stnames[i] EQ 'OPHDRFIX') then $
         hfix2 = *pdata[i]
 
-      ; Apply header fixes from  the "sdReport-$MJD.par" file.
+      ; Apply header fixes from  the "sdHdrFix-$MJD.par" file.
       if (keyword_set(hfix2)) then $
        sphdrfix1, filename, hdr, hfix2
 
       yanny_free, pdata
-   endif else begin
-      splog, 'WARNING: Empty or invalid sdReport file '+fileandpath(reportfile)
-   endelse
+   endif else if (errcode NE 0) then begin
+      splog, 'WARNING: Error reading sdHdrFix file '+fileandpath(reportfile)
+   endif
 
    return
 end
