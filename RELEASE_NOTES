@@ -13,7 +13,12 @@ APO_LOG2HTML: Mistakenly was listing times as hr:sec instead of hr:min!
            original FITS file from which the HTML is generated).
 APOPLOT,PLOTSPEC: Change the http address for Kent's image server to
            its new location at http://sdssmosaic.fnal.gov:8015/.
+DJS_SVDFIT: This is a modified version of SVDFIT from IDL 5.3, since the version
+            in IDL 5.4.1 crashes when the matrix is singular!!
+            Presently, this is called by FIND_NMINIMA().
 FIND_NMINIMA: Add /DEBUG keyword; small changes to plotting.
+            Call DJS_SVDFIT instead of the IDL library function SVDFIT(),
+            since it looks like they broke the latter in IDL 5.4.1.
 FINDCHI2MIN: Clean up this code some.
            This routine used to be used by VDISPFIT, but is no longer.
 FLUXCORR_NEW:  Return all zeros in fluxcorr image if 
