@@ -8,12 +8,16 @@ MYFLUXCALIB: Make robust to degenerate case of only 1 input spectro-photo std.
 PLATELIST: Lower (S/N)^2 cutoff to 13 for all G,I bands (from 15 previously).
            If ZWARNING flag exists in 1D outputs, use that to determine
            number of UNKNOWN or SKY identifications.
+REDMONSTER: New routine for looking for Red Monster (large regions of
+            bad sky residuals, which, for example happens when the hand-paddle
+            light is on at the telescope).  Flag these pixels with the
+            REDMONSTER mask bit.  This routine replaces MONSTER.
 SPREDUCE1D: Search for stars at velocities to +/- 1200 km/s (was 600 km/s).
             No longer identify objects as UNKNOWN, but rather set bits
               in a ZWARNING flag.
             Add outputs ZWARNING, SN_MEDIAN, FRACNSIGMA,
               COUNTS_SPECTRO, COUNTS_SYNTH, COUNTS_SKY (not used yet),
-              VDISP, VDISP_ERR.
+              VDISP, VDISP_ERR, ANYANDMASK, ANYORMASK.
             Compute velocity dispersions using real-space method (VDISPFIT).
             Slightly increase width for re-fitting galaxy redshifts from
               PWIDTH=5 to 7.  This may fix PR #1938.
@@ -26,6 +30,8 @@ YANNY_PAR (in idlutils): If several lines have the same keyword name,
             routine backwards-compatable with Yanny files written previously
             with SPPLAN2D.
 ZFIND: Get rid of SIGMA2,SIGMA2_ERR and add VDISP,VDISP_ERR.
+
+Add new mask bits: BADSKYCHI, REDMONSTER.
 
 New installation script "evilinstall" in the idlutils product.
 

@@ -689,6 +689,10 @@ ZWARNING   A flag set for bad redshift fits in place of calling CLASS=UNKNOWN.
            2 = Chi^2 is too close to chi^2 for the next best fit (within 0.01)
            3 = Synthetic spectrum is negative (only set for stars and QSO's)
            4 = Fraction of points above 5 sigma is too large (> 5%)
+ANYANDMASK Mask bits which are set if any pixels for an object's ANDMASK
+           have that bit set.
+ANYORMASK  Mask bits which are set if any pixels for an object's ORMASK
+           have that bit set.
 SN_MEDIAN  Median S/N for all good pixels
 FRACNSIGMA Fraction of pixels deviant by more than N sigma, where N=[1,2,...10]
 COUNTS_SPECTRO  5-element array of total flux in each of the 5 PHOTO filters;
@@ -729,6 +733,9 @@ The mask bits are set as follows: <BR>
 24 NODATA          No data available in combine B-spline (INVVAR=0)
 25 COMBINEREJ      Rejected in combine B-spline
 26 BADFLUXFACTOR   Low flux-calibration or flux-correction factor
+27 BADSKYCHI       Chi^2 > 4 in sky residuals at this wavelength
+28 REDMONSTER      Contiguous region of bad chi^2 in sky residuals
+
 </PRE>
 
 When low numbered bits (<16) are set, those will be set for half
