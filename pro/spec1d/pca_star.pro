@@ -135,8 +135,10 @@ ormask = 0 ; Free memory
       ; Now loop through each stellar subclass and reconstruct
       ; an eigenspectrum for that subclass
 
+      thesesubclassnum = lonarr(n_elements(thesesubclass))
       for isub=0, nsubclass-1 do begin
          ii = where(thesesubclass EQ subclasslist[isub])
+         thesesubclassnum[ii] = isub
          if (nkeep EQ 1) then begin
             thisflux = pcaflux
          endif else begin
@@ -163,13 +165,15 @@ ormask = 0 ; Free memory
 
       if (nkeep GT 1) then begin
          allratio = transpose(acoeff[1,*] / acoeff[0,*])
-         subnums = fix( strmid(thesesubclass,1,1) )
-         isort = sort(subnums)
-         djs_plot, subnums[isort], allratio[isort], ps=-4, $
+         isort = sort(thesesubclassnum)
+         djs_plot, thesesubclassnum[isort], allratio[isort], ps=-4, $
+          xrange=[-1,nsubclass], xstyle=1, xtickname=subclasslist, $
+          xtickv=lindgen(nsubclass), xticks=nsubclass-1, $
           xtitle='Subclass', ytitle='Eigenvalue Ratio (a_1/a_0)', $
           title='STAR '+classlist[iclass]+': Eigenvalue Ratios'
          for j=0, n_elements(indx)-1 do $
-          xyouts, subnums[isort[j]], allratio[isort[j]], align=0.0, orient=45, $
+          xyouts, thesesubclassnum[isort[j]], allratio[isort[j]], $
+           align=0.0, orient=45, $
            string(plate[indx[isort[j]]], fiber[indx[isort[j]]], $
            format='(i4,"-",i3)')
       endif
