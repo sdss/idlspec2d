@@ -1,4 +1,7 @@
 
+* Look at plate 306, MJD 51637, fiber#295 (0-indexed 294).
+  Appears that fluxing for b1 is bad redward of 6000 Ang.
+
 * Remove WARNING, ABORT words from HTML file from APO2HTML.
 
 * Preserve header info in APOREDUCE.
