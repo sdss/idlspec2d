@@ -76,7 +76,7 @@ pro platemerge, zfile, outroot=outroot, qsurvey=qsurvey, public=public
       fullzfile = 'spZbest-' + string(plist.plate, format='(i4.4)') $
        + '-' + string(plist.mjd, format='(i5.5)') + '.fits'
       zsubdir = string(plist.plate, format='(i4.4)')
-      for i=0, nfile-1 do $
+      for i=0L, nfile-1 do $
        fullzfile[i] = djs_filepath(fullzfile[i], $
         root_dir=getenv('SPECTRO_DATA'), subdirectory=zsubdir[i])
    endif else begin
@@ -111,8 +111,8 @@ pro platemerge, zfile, outroot=outroot, qsurvey=qsurvey, public=public
    ;----------
    ; Loop through each file
 
-   for ifile=0, nfile-1 do begin
-      print,'File ',ifile, ' of ', nfile,': '+fullzfile[ifile]
+   for ifile=0L, nfile-1 do begin
+      print,'File ',ifile+1, ' of ', nfile,': '+fullzfile[ifile]
 
       hdr = headfits(fullzfile[ifile])
       plate = sxpar(hdr, 'PLATEID')
