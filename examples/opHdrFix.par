@@ -239,3 +239,15 @@ ophdrfix sdR-??-00011952 EXPTIME   1509
 # Wrong PLATEID in all headers for plate 568 on MJD 52254.
 ophdrfix sdR-??-0001221[4-6] PLATEID  568
 
+# Wrong PLATEID in the original plPlugMapM files for plate 799,
+# which put the wrong info in these headers on MJD 52278.
+# Also, the incorrect plug-map files were selected by the observers,
+# so the NAME fields must be changed to point to the correct plug-maps.
+ophdrfix sdR-??-0001246[8-9] PLATEID  799
+ophdrfix sdR-??-0001247[0-4] PLATEID  799
+ophdrfix sdR-??-0001246[3-7] NAME     "'0799-52277-01'"
+ophdrfix sdR-??-0001246[8-9] NAME     "'0799-52277-01D'"
+ophdrfix sdR-??-0001247[0-0] NAME     "'0799-52277-01D'"
+ophdrfix sdR-??-0001247[1-3] NAME     "'0799-52277-01E'"
+ophdrfix sdR-??-0001247[4-4] NAME     "'0799-52277-01F'"
+
