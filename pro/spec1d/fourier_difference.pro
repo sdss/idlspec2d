@@ -9,13 +9,11 @@
 ;    and uncertainty on velocity dispersion
 ;
 ; CALLING SEQUENCE:
-;   answers = fourier_difference(fftfreq, galfft, starfft, galvar0, starvar0, $
-;          testsigma=testsigma, lowlimit = lowlimit, highlimit=highlimit, $
-;          deltachisq=deltachisq, doplot=doplot)
+;   answers = fourier_difference(galfft, starfft, galvar0, starvar0, $
+;          testsigma=, lowlimit=, highlimit=, $
+;          deltachisq=deltachisq, /doplot)
 ;
 ; INPUTS:
-;   fftfreq    - Frequencies (x values) of fft's 
-;                   should span between -0.5 to 0.5
 ;   galfft     - Fourier transform of galaxy
 ;   starfft    - Fourier transform of stellar template
 ;   galvar0    - error in galaxy fft (0th element of galaxy error FFT)
@@ -23,8 +21,8 @@
 ;
 ; OPTIONAL KEYWORDS:
 ;   testsigma  - Array of sigma values to calculate chi2
-;   lowlimit   - lower boundary of chi2 sum (in fftfreq units)
-;   highlimit  - upper boundary of chi2 sum (in fftfreq units)
+;   lowlimit   - lower boundary of chi2 sum (in knums units)
+;   highlimit  - upper boundary of chi2 sum (in knums units)
 ;   deltachisq - chi2 difference from minimum to set error on velocity dispersion
 ;   doplot     - Output plots to xwindow
 ;
@@ -71,15 +69,17 @@ function alpha_chisq, alpha, gal, star, galvar, starvar, br, minchi2
 end
 
 ;------------------------------------------------------------------------------
-function fourier_difference, fftfreq, galfft, starfft, galvar0, starvar0, $
+function fourier_difference, galfft, starfft, galvar0, starvar0, $
           testsigma=testsigma, lowlimit = lowlimit, highlimit=highlimit, $
           deltachisq=deltachisq, doplot=doplot
 
       if (NOT keyword_set(lowlimit)) then lowlimit = 1.0/80.0
       if (NOT keyword_set(highlimit)) then highlimit = 1.0/2.2
 
-      inside = where(abs(fftfreq) GT lowlimit AND $
-                     abs(fftfreq) LT highlimit, ninside)
+      knums = fft_wavenums(N_elements(galfft))
+
+      inside = where(abs(knums) GT lowlimit AND $
+                     abs(knums) LT highlimit, ninside)
 
 
       if (inside[0] EQ -1) then begin
@@ -104,7 +104,7 @@ function fourier_difference, fftfreq, galfft, starfft, galvar0, starvar0, $
 
      
       for i=0,nloop-1 do begin
-        broad = exp(-(fftfreq*testsigma[i] * 2.0 * !Pi)^2/2.0)
+        broad = exp(-(knums*testsigma[i] * 2.0 * !Pi)^2/2.0)
 
         alpha[i] = alpha_chisq(alphatry, galfft[inside], starfft[inside], $
                       galvar0, starvar0, broad[inside], bestchisq)

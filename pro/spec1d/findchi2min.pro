@@ -40,7 +40,7 @@ pro findchi2min, x, chi2, minchi2, minsigma, errsigma, npts=npts, $
 
    if (keyword_set(doplot)) then begin
      if (doplot EQ 1) then begin
-       window,1
+       wset,1
        plot, x, chi2-minchi2, ps=1, yr=[-10,100], $
           title='Chi2 functions for difference (crosses) and quotient (diamonds)'
      endif else oplot, x, chi2-minchi2, ps=4

@@ -51,7 +51,10 @@ pro/apo2d/quickwave.pro -text
 pro/makefile.old -text
 pro/spec1d/MCsimul2.pro -text
 pro/spec1d/Makefile -text
+pro/spec1d/bandpassfilter.pro -text
 pro/spec1d/cosbell.pro -text
+pro/spec1d/fft_apodize.pro -text
+pro/spec1d/fft_wavenums.pro -text
 pro/spec1d/fftpad.pro -text
 pro/spec1d/findchi2min.pro -text
 pro/spec1d/findfiber.pro -text
@@ -59,6 +62,9 @@ pro/spec1d/fitredshift.pro -text
 pro/spec1d/fitsimul.pro -text
 pro/spec1d/fourier_difference.pro -text
 pro/spec1d/fourier_quotient.pro -text
+pro/spec1d/ftest.pro -text
+pro/spec1d/gauss_periodic.pro -text
+pro/spec1d/primfac.pro -text
 pro/spec1d/veldisp.pro -text
 pro/spec1d/wavelets.pro -text
 pro/spec2d/Makefile -text
