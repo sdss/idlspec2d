@@ -61,6 +61,7 @@
 ; PROCEDURES CALLED:
 ;   concat_dir()
 ;   djs_filepath()
+;   fileandpath()
 ;   readfits()
 ;   sxpar()
 ;   zcompute()
@@ -85,7 +86,6 @@ function sp1d_struct
     'chi2'       , 0.0, $
     'dof'        ,  0L, $
     'rchi2diff'  , 0.0, $
-    'wcoverage'  , 0.0, $
     'tfile'      ,  '', $
     'tcolumn'    , lonarr(10) - 1L, $
     'npoly'      ,  0L, $
@@ -116,7 +116,6 @@ function zfind, objflux, objivar, hdr=hdr, fiberid=fiberid, $
 
    objloglam0 = sxpar(hdr, 'COEFF0')
    objdloglam = sxpar(hdr, 'COEFF1')
-   wcoverage = total(objivar NE 0,1) * objdloglam
 
    if (n_elements(zmin) NE 0) then $
     pmin = floor( alog10(1.0 + zmin) / objdloglam )
@@ -203,9 +202,7 @@ function zfind, objflux, objivar, hdr=hdr, fiberid=fiberid, $
    result.dof = zans.dof
    ntheta = n_elements(zans[0].theta)
    result.theta[0:ntheta-1] = zans.theta
-   for iobj=0, nobj-1 do $
-    result[*,iobj].wcoverage = wcoverage[iobj]
-   result.tfile = eigenfile
+   result.tfile = fileandpath(thisfile)
    for icol=0, n_elements(columns)-1 do $
     result.tcolumn[icol] = columns[icol]
    result.npoly = npoly

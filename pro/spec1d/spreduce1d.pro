@@ -265,14 +265,43 @@ andmask = 0 ; Free memory
    endfor
 
    ;----------
+   ; Add other fields to the output structure
+
+   res1 = { wavemin: 0.0, $
+            wavemax: 0.0, $
+            wcoverage: 0.0, $
+            spec1_g: sxpar(hdr, 'SPEC1_G'), $
+            spec1_r: sxpar(hdr, 'SPEC1_R'), $
+            spec1_i: sxpar(hdr, 'SPEC1_I'), $
+            spec2_g: sxpar(hdr, 'SPEC2_G'), $
+            spec2_r: sxpar(hdr, 'SPEC2_R'), $
+            spec2_i: sxpar(hdr, 'SPEC2_I') }
+   res_append = make_array(value=res1, dimension=size(res_all,/dimens))
+
+   objloglam0 = sxpar(hdr, 'COEFF0')
+   objdloglam = sxpar(hdr, 'COEFF1')
+   for iobj=0, nobj-1 do begin
+      igood = where(objivar[*,iobj] NE 0, ngood)
+      res_append[*,iobj].wavemin = $
+       10^(objloglam0 + (igood[0]>0)*objdloglam) * (ngood NE 0)
+      res_append[*,iobj].wavemax = $
+       10^(objloglam0 + (igood[(ngood-1)>0])*objdloglam) * (ngood NE 0)
+      res_append[*,iobj].wcoverage = ngood * objdloglam
+   endfor
+
+   res_all = struct_addtags(res_all, res_append)
+
+   ;----------
    ; Write the output files
 
    sxaddpar, hdr, 'NAXIS', 0
+   sxdelpar, hdr, 'NAXIS1'
+   sxdelpar, hdr, 'NAXIS2'
 
-   writefits, zallfile, 0, hdr ; Retain the original header in the first HDU
+   mwrfits, 0, zallfile, hdr, /create ; Retain the original header in first HDU
    mwrfits, res_all, zallfile
 
-   writefits, zbestfile, 0, hdr ; Retain the original header in the first HDU
+   mwrfits, 0, zbestfile, hdr, /create ; Retain the original header in first HDU
    mwrfits, (res_all[0,*])[*], zbestfile
 
    ;----------
