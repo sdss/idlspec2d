@@ -443,7 +443,7 @@ ormask = 0 ; Free memory
       res_all[*,iobj].anyormask = anyormask[iobj]
       if (ngood GT 0) then $
        res_all[*,iobj].sn_median = $
-        median( sqrt(objivar[igood,iobj]) * objflux[igood,iobj])
+        median( sqrt(objivar[igood,iobj]) * abs(objflux[igood,iobj]))
    endfor
 
    res_all.fracnsigma = fracnsigma
