@@ -78,9 +78,9 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad
    endif
 
    if (apo_uname NE 'sos') then begin
-;      print, 'This procedure can only be run on the machine sos.apo.nmsu.edu'
-;      !quiet = quiet
-;      return
+      print, 'This procedure can only be run on the machine sos.apo.nmsu.edu'
+      !quiet = quiet
+      return
    endif
 
    ;----------
