@@ -236,7 +236,7 @@ end
 ;------------------------------------------------------------------------------
 function find_nminima, yflux, xvec, dofarr=dofarr, nfind=nfind, minsep=minsep, $
  width=width, ypeak=ypeak, xerr=xerr, errcode=errcode, npeak=npeak, $
- plottitle=plottitle, doplot=doplot, debug=debug
+ plottitle=plottitle, xtitle=xtitle, doplot=doplot, debug=debug
 
    ndata = n_elements(yflux)
    if (ndata EQ 1) then $
@@ -269,7 +269,7 @@ function find_nminima, yflux, xvec, dofarr=dofarr, nfind=nfind, minsep=minsep, $
       !p.position = [0.15, 0.10, 0.10+dxplot, 0.45]
 ;      !x.margin = [0,0]
 ;      !x.omargin = [10,3]
-      !y.range = minmax(ycopy)
+;      !y.range = minmax(ycopy)
       if (keyword_set(chi2arr)) then $
        !y.title = textoidl('\chi^2/DOF') $
       else $
@@ -342,7 +342,7 @@ function find_nminima, yflux, xvec, dofarr=dofarr, nfind=nfind, minsep=minsep, $
          nthis = n_elements(xplotval)
          !x.tickv = [xplotval[0], xpeak1, xplotval[nthis-1]]
          !x.tickname = [' ', strtrim(string(xpeak1),2), ' ']
-         djs_plot, [xplotval], [yplotval], psym=4
+         djs_plot, [xplotval], [yplotval], psym=4, /ynozero
          if (errcode1 EQ 0) then color = 'green' $
           else color='red'
          if (keyword_set(yplotfit)) then $
@@ -384,9 +384,9 @@ function find_nminima, yflux, xvec, dofarr=dofarr, nfind=nfind, minsep=minsep, $
       !y = bangy
       yplot = yflux
       if (keyword_set(dofarr)) then yplot = yplot / dofarr
-      djs_plot, xvec, yplot, yrange=yrange, psym=-4, $
+      djs_plot, xvec, yplot, yrange=yrange, psym=-4, /ynozero, $
        xcharsize=xcsize, ycharsize=ycsize, yrange=yrange, $
-       title=plottitle, xtitle='Lag [pixels]'
+       title=plottitle, xtitle=xtitle
       for ipeak=0, npeak-1 do begin
          if (errcode[ipeak] EQ 0) then color = 'green' $
           else color = 'red'

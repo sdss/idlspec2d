@@ -223,7 +223,7 @@ function zcompute, objflux, objivar, starflux, starmask, nfind=nfind, $
       xpeak1 = find_nminima(chi2arr[indx], lags[indx], $
        dofarr=dofarr[indx], nfind=nfind, minsep=minsep, width=width, $
        ypeak=ypeak1, xerr=xerr1, npeak=npeak, errcode=errcode, $
-       plottitle=plottitle, doplot=doplot)
+       plottitle=plottitle, xtitle='Lag [pixels]', doplot=doplot)
       zans[0:npeak-1].z = poffset - xpeak1
       ; Set Z_ERR equal to the error-code if it is non-zero
       zans[0:npeak-1].z_err = xerr1 * (errcode EQ 0) + errcode

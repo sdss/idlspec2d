@@ -359,7 +359,8 @@ function vdispfit, objflux, objivar, objloglam, $
    if (imin GT 0) then $
     sigma = find_nminima(chi2arr, bigsig, $
      width=1.5*dsig, ypeak=minchi2, xerr=sigerr, $
-     errcode=errcode, plottitle=plottitle, doplot=doplot, debug=debug) $
+     errcode=errcode, plottitle=plottitle, xtitle=textoidl('\sigma [km/s]'), $
+     doplot=doplot, debug=debug) $
    else $
     sigma = find_nminima([chi2arr[1],chi2arr], [-bigsig[1],bigsig], $
      width=1.5*dsig, ypeak=minchi2, xerr=sigerr, $
