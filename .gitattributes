@@ -339,6 +339,7 @@ pro/spec2d/filter_thru.pro -text
 pro/spec2d/finalarcfit.pro -text
 pro/spec2d/find_whopping.pro -text
 pro/spec2d/findobjects.pro -text
+pro/spec2d/findopfile.pro -text
 pro/spec2d/fit_skyset.pro -text
 pro/spec2d/fit_tset.pro -text
 pro/spec2d/fitansimage.pro -text
