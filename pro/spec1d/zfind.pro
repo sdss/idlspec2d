@@ -78,7 +78,7 @@ function sp1d_struct
     'subclass'   ,  '', $
     'z'          , 0.0, $
     'z_err'      , 0.0, $
-    'chi2'       , 0.0, $
+    'rchi2'      , 0.0, $
     'dof'        ,  0L, $
     'rchi2diff'  , 0.0, $
     'tfile'      ,  '', $
@@ -188,7 +188,7 @@ function zfind, objflux, objivar, hdr=hdr, $
    result = replicate(sp1d_struct(), nfind, nobj)
    result.z = zans.z
    result.z_err = zans.z_err
-   result.chi2 = zans.chi2
+   result.rchi2 = zans.chi2 / (zans.dof > 1)
    result.dof = zans.dof
    ntheta = n_elements(zans[0].theta)
    result.theta[0:ntheta-1] = zans.theta

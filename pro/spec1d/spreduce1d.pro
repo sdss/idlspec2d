@@ -201,11 +201,12 @@ andmask = 0 ; Free memory
    ; but putting any results with zero degrees-of-freedom at the end.
 
    minvdiff = 1000.0 ; km/s
+   cspeed = 2.9979e5
 
    for iobj=0, nobj-1 do begin
       res1 = res_all[*,iobj]
 
-      rchi2 = res1.chi2 / (res1.dof > 1)
+      rchi2 = res1.rchi2
 
       isort = sort(rchi2 + (res1.dof EQ 0)*max(rchi2))
       for ii=0, nper-1 do begin
@@ -214,9 +215,10 @@ andmask = 0 ; Free memory
 
       ; Find the difference in reduced chi^2 between each result and the next
       res1 = res_all[*,iobj]
-      rchi2 = res1.chi2 / (res1.dof > 1)
+      rchi2 = res1.rchi2
       for ii=0, nper-2 do begin
-         inext = (where(res1[ii+1:nper-1].z - res1[ii].z GT minvdiff/3.e5 $
+         inext = (where( $
+          abs(res1[ii+1:nper-1].z - res1[ii].z) GT minvdiff/cspeed $
           AND res1[ii+1:nper-1].dof GT 0))[0]
          if (inext NE -1) then $
           res_all[ii,iobj].rchi2diff = rchi2[ii+1+inext] - rchi2[ii]

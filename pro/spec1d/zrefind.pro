@@ -94,7 +94,7 @@ function zrefind, objflux, objivar, hdr=hdr, $
       ; Copy the results into the output structure
       result[indx].z = res1[*].z
       result[indx].z_err = res1[*].z_err
-      result[indx].chi2 = res1[*].chi2
+      result[indx].rchi2 = res1[*].rchi2
       result[indx].dof = res1[*].dof
       result[indx].theta = res1[*].theta
 
