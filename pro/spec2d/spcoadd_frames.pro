@@ -72,7 +72,6 @@
 ;   02-Jan-2000  Written by D. Schlegel; modified from COMBINE2DOUT
 ;-
 ;------------------------------------------------------------------------------
-
 function makelabel, hdr
 
    plate = strtrim(string(sxpar(hdr, 'PLATEID')),2)
