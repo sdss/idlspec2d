@@ -6,8 +6,8 @@
 ;   Routine for plotting spectra from Princeton-1D spectro outputs.
 ;
 ; CALLING SEQUENCE:
-;   plotspec, plate, [ fiberid, mjd=, znum=, nsmooth=, psfile=, $
-;    /netimage, /zwarning, topdir=, _EXTRA= ]
+;   plotspec, plate, [ fiberid, mjd=, znum=, nsmooth=, /zline, /nosyn, /noerr, $
+;    psfile=, /netimage, /zwarning, topdir=, _EXTRA= ]
 ;
 ; INPUTS:
 ;   plate      - Plate number
@@ -20,6 +20,9 @@
 ;                ZUM-th best-fit; e.g., set ZNUM=2 for second-best fit.
 ;   nsmooth    - If set, then boxcar smooth both the object and synthetic
 ;                spectra with a width equal to NSMOOTH.
+;   zline      - If set, then overplot the emission line fits.
+;   nosyn      - If set, then do not overplot the synthetic fit spectrum.
+;   noerr      - If set, then do not overplot the error vector.
 ;   psfile     - If set, then send plot to a PostScript file instead of
 ;                to the SPLOT interactive widget.  The PostScript file name
 ;                can be set explicitly, e.g. with PSFILE='test.ps'.  Or if
@@ -94,32 +97,32 @@
 ;-
 ;------------------------------------------------------------------------------
 pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
+ zline=q_zline, nosyn=nosyn, noerr=noerr, $
  psfile=psfile, xrange=passxr, yrange=passyr, noerase=noerase, $
  netimage=netimage, topdir=topdir, EXTRA=KeywordsForSplot
 
    cspeed = 2.99792458e5
 
-   readspec, plate, fiberid, mjd=mjd, znum=znum, flux=objflux, flerr=objerr, $
-    loglam=loglam, plug=plug, zans=zans, synflux=synflux, topdir=topdir, /silent
+   readspec, plate, fiberid, mjd=mjd, znum=znum, flux=objflux, $
+    wave=wave, plug=plug, zans=zans, topdir=topdir, /silent
    if (NOT keyword_set(objflux)) then begin
       print, 'Plate not found!!'
       return
    endif
-   wave = 10^loglam
-
-;   if (size(zans,/tname) EQ 'STRUCT') then begin
-;      synflux = synthspec(zans, loglam=loglam)
-;   endif else begin
-;      zans = 0
-;      synflux = 0
-;      print, 'WARNING: Redshift file not found'
-;   endelse
+   if (NOT keyword_set(noerr)) then $
+    readspec, plate, fiberid, mjd=mjd, flerr=objerr
+   if (NOT keyword_set(nosyn)) then $
+    readspec, plate, fiberid, mjd=mjd, znum=znum, synflux=synflux
+   if (keyword_set(zans) AND keyword_set(q_zline)) then $
+    readspec, plate, fiberid, mjd=mjd, zline=zline, lineflux=lineflux
 
    if (keyword_set(nsmooth)) then begin
       if (nsmooth GT 1) then begin
          objflux = smooth(objflux, nsmooth)
          if (keyword_set(synflux)) then $
           synflux = smooth(synflux, nsmooth)
+         if (keyword_set(lineflux)) then $
+          lineflux = smooth(lineflux, nsmooth)
       endif
    endif
 
@@ -133,10 +136,14 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
       ymin = yrange[0]
       ymax = yrange[1]
    endif else begin
-      yrange = minmax(synflux)
+      if (keyword_set(synflux)) then $
+       yrange = minmax(synflux) $
+      else $
+       yrange = minmax(objflux)
+
       if (yrange[0] EQ yrange[1]) then yrange = minmax(objflux)
-      ymin = (1.2 * yrange[0] - 0.2 * yrange[1]) < 0
-      ymax = -0.2 * yrange[0] + 1.2 * yrange[1]
+      ymin = (1.3 * yrange[0] - 0.3 * yrange[1]) < 0
+      ymax = -0.3 * yrange[0] + 1.3 * yrange[1]
       if (ymax EQ ymin) then ymax = ymin + 1
       yrange = [ymin, ymax]
    endelse
@@ -150,8 +157,10 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
        xtitle='Wavelength [Ang]', $
        ytitle=TeXtoIDL('Flux [10^{-17} erg/cm/s/Ang]'), $
        title=title, charsize=csize, _EXTRA=KeywordsForSplot, /xstyle, /ystyle
-      djs_oplot, wave, objerr, color='red', _EXTRA=KeywordsForSplot
-      djs_oplot, wave, synflux, color='blue', _EXTRA=KeywordsForSplot, lw=2
+      if (NOT keyword_set(noerr)) then $
+       djs_oplot, wave, objerr, color='red', _EXTRA=KeywordsForSplot
+      if (keyword_set(synflux)) then $
+       djs_oplot, wave, synflux, color='blue', _EXTRA=KeywordsForSplot, lw=2
    endif else begin
       if (NOT keyword_set(noerase)) then $
        splot, wave, objflux, xrange=xrange, yrange=yrange, $
@@ -160,8 +169,10 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
         title=title, charsize=csize, _EXTRA=KeywordsForSplot $
       else $
        soplot, wave, objflux, _EXTRA=KeywordsForSplot
-      soplot, wave, objerr, color='red', _EXTRA=KeywordsForSplot
-      soplot, wave, synflux, color='blue', _EXTRA=KeywordsForSplot, lw=2
+      if (NOT keyword_set(noerr)) then $
+       soplot, wave, objerr, color='red', _EXTRA=KeywordsForSplot
+      if (keyword_set(synflux)) then $
+       soplot, wave, synflux, color='blue', _EXTRA=KeywordsForSplot, lw=2
    endelse
 
    xpos = 0.9 * !x.crange[0] + 0.1 * !x.crange[1]
@@ -196,6 +207,31 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
        sxyouts, xpos, ypos, $
         TeXtoIDL('X^2_r =' + strtrim(string(zans.rchi2, format='(f6.2)'),2)), $
         charsize=csize, color=textcolor
+   endif
+
+   if (keyword_set(lineflux)) then begin
+      linecolor = 'magenta'
+      if (keyword_set(psfile)) then $
+       djs_oplot, wave, lineflux, color=linecolor, _EXTRA=KeywordsForSplot, lw=2 $
+      else $
+       soplot, wave, lineflux, color=linecolor, _EXTRA=KeywordsForSplot, lw=2
+
+      linewave = zline.linewave * (1 + zline.linez)
+      ; Convert line sigma from km/sec to Angstroms
+      linesigma = linewave * zline.linesigma / cspeed
+      linepeak = zline.linecontlevel + zline.linearea / (sqrt(2*!pi) * linesigma)
+      for iline=0, n_elements(zline)-1 do begin
+         if (zline[iline].linearea_err GT 0) then begin
+            if (keyword_set(psfile)) then $
+             xyouts, linewave[iline], linepeak[iline], $
+              '  '+zline[iline].linename, orient=90, $
+              charsize=0.75*csize, color=djs_icolor(linecolor) $
+            else $
+             sxyouts, linewave[iline], linepeak[iline], $
+              '  '+zline[iline].linename, orient=90, $
+              charsize=0.75*csize, color=linecolor
+         endif
+      endfor
    endif
 
    if (keyword_set(primtarget)) then begin
@@ -233,12 +269,13 @@ print,netstring
 end
 ;------------------------------------------------------------------------------
 pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
+ zline=zline, nosyn=nosyn, noerr=noerr, $
  psfile=psfile, xrange=xrange, yrange=yrange, noerase=noerase, $
  netimage=netimage, zwarning=zwarning, topdir=topdir, _EXTRA=KeywordsForSplot
 
    if (n_params() LT 1) then begin
       print, 'Syntax - plotspec, plate, [ fiberid, mjd=, znum=, nsmooth=, $'
-      print, '         psfile=, xrange=, yrange=, /noerase, $'
+      print, '         /zline, /nosyn, /noerr, psfile=, xrange=, yrange=, /noerase, $'
       print, '         /netimage, /zwarning, _EXTRA=KeywordsForSplot'
       return
    endif
@@ -318,7 +355,7 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
       endif
 
       plotspec1, plate, fiberid[ifiber], mjd=mjd, znum=znum, $
-       nsmooth=nsmooth, psfile=psfile, $
+       nsmooth=nsmooth, zline=zline, nosyn=nosyn, noerr=noerr, psfile=psfile, $
        xrange=xrange, yrange=yrange, noerase=noerase, netimage=netimage, $
        topdir=topdir, _EXTRA=KeywordsForSplot
 
