@@ -55,7 +55,8 @@ pro lrgmodel_plots, suffix, public=public, recalibrate=recalibrate, $
 
    if (NOT keyword_set(suffix)) then suffix = ''
    if (NOT keyword_set(subsamp)) then subsamp = 4
-   csize = 2.0
+   csize = 2.5
+   thick = 2
 
    ;----------
    ; Read the data files
@@ -140,20 +141,22 @@ pro lrgmodel_plots, suffix, public=public, recalibrate=recalibrate, $
 
    djs_plot, spall[0:nsdss-1].z, zfit[0:nsdss-1], $
     psym=3, xr=[0,0.8], yr=[0,0.8], $
-    xtitle='Spectroscopic Z', ytitle='Photometric Z', charsize=csize
-   djs_oplot, !x.crange, !x.crange, color='red'
-   djs_oplot, [0.1,0.1], !y.crange, color='red'
+    xtitle='Spectroscopic Z', ytitle='Photometric Z', charsize=csize, $
+    thick=thick, charthick=thick
+   djs_oplot, !x.crange, !x.crange, color='red', thick=thick
 
    ; Re-plot with the SDSS-2dF points in color
    djs_plot, spall[0:nsdss-1].z, zfit[0:nsdss-1], $
     psym=3, xr=[0,0.8], yr=[0,0.8], $
-    xtitle='Spectroscopic Z', ytitle='Photometric Z', charsize=csize
+    xtitle='Spectroscopic Z', ytitle='Photometric Z', charsize=csize, $
+    thick=thick, charthick=thick
    indx1 = nsdss + lindgen(nadd1)
    indx2 = nsdss + nadd1 + lindgen(nadd2)
-   djs_oplot, spall[indx1].z, zfit[indx1], psym=1, symsize=0.25, color='green'
-   djs_oplot, spall[indx2].z, zfit[indx2], psym=1, symsize=0.25, color='blue'
-   djs_oplot, !x.crange, !x.crange, color='red'
-   djs_oplot, [0.1,0.1], !y.crange, color='red'
+   djs_oplot, spall[indx1].z, zfit[indx1], psym=1, symsize=0.25, $
+    color='green', thick=thick
+   djs_oplot, spall[indx2].z, zfit[indx2], psym=1, symsize=0.25, $
+    color='blue', thick=thick
+   djs_oplot, !x.crange, !x.crange, color='red', thick=thick
 
    ;----------
    ; PLOT: Photo-z vs. spectro-z (greyscale)
