@@ -223,3 +223,6 @@ spechdrfix sdR-??-00011085  HGCD  "'1 1 1 1 '"
 spechdrfix sdR-??-00011085  SPEC1 "'1 0 1 1 '"
 spechdrfix sdR-??-00011085  SPEC2 "'1 0 1 1 '"
 
+# Wrong exposure time (2 sec instead of 1509 sec) for plate 757 on MJD 52238.
+spechdrfix sdR-??-00011952 EXPTIME   1509
+
