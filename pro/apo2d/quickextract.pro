@@ -146,7 +146,7 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    endelse
 
    if (iobj[0] NE -1) then begin
-      fitmag = snmag+[-1.0,0.5]
+;      fitmag = snmag+[-1.0,0.5]
       if (n_elements(where(plugsort[iobj].mag[icolor] GT fitmag[0] $
        AND plugsort[iobj].mag[icolor] LT fitmag[1])) LT 20) $
        then fitmag[0] = 1.0
