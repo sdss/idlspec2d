@@ -50,6 +50,9 @@
 ;   arrays.  Or, one can pass it several spectra, in which case these inputs
 ;   are 2-dimensional arrays.
 ;
+;   There's also some code in here to grow masked regions by another pixel
+;   on either end if the region is more than 3 pixels wide.
+;
 ; EXAMPLES:
 ;
 ; BUGS:
@@ -287,14 +290,15 @@ endelse
    endelse
 
 
-   ;-----------------------------------------------------------------------
-   ;  Grow regions where 3 or more pixels are rejected together
-   ;
+   ;----------
+   ; Grow regions where 3 or more pixels are rejected together ???
 
-   badregion = where(smooth(newivar,3) EQ 0) 
-   if badregion[0] NE -1 then begin
-     newivar[(badregion - 2) > 0] = 0.0
-     newivar[(badregion + 2) < (nfinalpix - 1)] = 0.0
+   if (keyword_set(newivar)) then begin
+      badregion = where(smooth(newivar,3) EQ 0) 
+      if badregion[0] NE -1 then begin
+         newivar[(badregion - 2) > 0] = 0.0
+         newivar[(badregion + 2) < (nfinalpix - 1)] = 0.0
+      endif
    endif
 
    ;----------
