@@ -57,8 +57,8 @@ function fitdispersion, arc_flux, arc_fluxivar, xcen, $
         ;
         ;	Put blue arcs in correct order for extraction
         ;
-        if (xcen[0] GT xcen[1]) then xcentemp = reverse(xcen,2) $
-        else xcentemp = xcen
+        if (xcen[0,0] GT xcen[0,1]) then xcentemp = reverse(xcen,2) $
+         else xcentemp = xcen
 
 	;
         ; Extract arc lines  	
