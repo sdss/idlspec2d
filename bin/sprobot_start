@@ -123,8 +123,8 @@ echo "ASTROLOG_DIR=$ASTROLOG_DIR" >> $cronfile
 echo "SPECFLAT_DIR=$SPECFLAT_DIR" >> $cronfile
 echo "RAWDATA_DIR=$RAWDATA_DIR" >> $cronfile
 echo "SPECTRO_DATA=$SPECTRO_DATA" >> $cronfile
-echo "# This job will run at 5:30 am every day." >> $cronfile
-echo "30 5 * * * sprobotcopy.sh >> $SPRLOG 2>&1" >> $cronfile
+echo "# This job will run at 4:00 am every day." >> $cronfile
+echo "0 4 * * * sprobotcopy.sh >> $SPRLOG 2>&1" >> $cronfile
 echo "# This job will run at 8:30 am every day." >> $cronfile
 echo "30 8 * * * sprobot.sh >> $SPRLOG 2>&1" >> $cronfile
 #echo "# This job will run at 45 minutes past each hour." >> $cronfile
