@@ -93,6 +93,8 @@ pro/science/kinematics/template.pro -text
 pro/science/lickindex/gauss_smooth_wave.pro -text
 pro/science/lickindex/lickindices.pro -text
 pro/science/lickindex/one_indices.pro -text
+pro/science/spec_param_str.pro -text
+pro/science/spectra_sample.pro -text
 pro/spec1d/Makefile -text
 pro/spec1d/TODO -text
 pro/spec1d/bandpassfilter.pro -text
