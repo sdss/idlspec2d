@@ -15,7 +15,8 @@
 ;   mjd        - Look for raw data files in TOPINDIR/MJD; default to all
 ;                subdirectories.  Note that this need not be integer-valued,
 ;                but could be for example '51441_test'.  Wildcards are allowed,
-;                e.g. '514*'.
+;                e.g. '514*'.  Leading zeros are significant, so that '1*'
+;                will not match the directory '0123'.
 ;   mjstart    - Starting MJD.
 ;   mjend      - Ending MJD.
 ;
@@ -67,7 +68,7 @@ function get_mjd_dir, topdir, mjd=mjd, mjstart=mjstart, mjend=mjend
       if (NOT keyword_set(topdir)) then topdir = '.'
       for i=0, N_elements(mjd)-1 do $
        tmpstring = tmpstring + ' ' $
-        + filepath('*'+strtrim(string(mjd[i]),2), root_dir=topdir)
+        + filepath(strtrim(string(mjd[i]),2), root_dir=topdir)
       spawn, '\ls -d '+tmpstring, mjdlist
    endif else begin
       mjdlist = findfile()
