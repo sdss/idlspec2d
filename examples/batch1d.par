@@ -1,17 +1,5 @@
 # List of computers to use for batch jobs of Spectro-1D
 # This file is used by the IDL procedure BATCH1D.
-#
-# MACHINE       CPU        SPEED  MEM   OWNER
-# ------------  ---------  -----  ----  -----
-# darkness      PentiumII    363   256  Schlegel
-# coma          Pentium   4x 200  1024  public
-# hydra         Pentium   3x 200  1024  public
-# diomedes      PentiumII    450   256  public
-# tantalus      PentiumII    450   256  public
-# lepus         PentiumIII   450   256  dept.(Zoltan Haiman)
-# polaris       PentiumIII   450   256  dept.(Kristen Menou)
-# draco         PentiumIII   450   256  dept.(Brad)
-# gandalf       Pentium      200    96  ?
 
 typedef struct {
   char remotehost[40];   # Remote host name
@@ -19,30 +7,25 @@ typedef struct {
   char protocol[5];      # Protocol name, ssh or rsh
 } hostconfig;
 
-hostconfig wire1.princeton.edu "" ssh
-hostconfig wire2.princeton.edu "" ssh
-hostconfig wire3.princeton.edu "" ssh
-hostconfig wire4.princeton.edu "" ssh
-hostconfig wire5.princeton.edu "" ssh
-hostconfig wire6.princeton.edu "" ssh
+hostconfig wire1.princeton.edu "" ssh1
+hostconfig wire2.princeton.edu "" ssh1
+hostconfig wire3.princeton.edu "" ssh1
+hostconfig wire4.princeton.edu "" ssh1
+hostconfig wire5.princeton.edu "" ssh1
+hostconfig wire6.princeton.edu "" ssh1
+hostconfig wire7.princeton.edu "" ssh1
 #hostconfig localhost "" ""
 #hostconfig dusty.princeton.edu "" ssh
 #hostconfig kaze.princeton.edu "" ssh
 
-hostconfig wire1.princeton.edu "" ssh
-hostconfig wire2.princeton.edu "" ssh
-hostconfig wire3.princeton.edu "" ssh
-hostconfig wire4.princeton.edu "" ssh
-hostconfig wire5.princeton.edu "" ssh
-hostconfig wire6.princeton.edu "" ssh
+hostconfig wire1.princeton.edu "" ssh1
+hostconfig wire2.princeton.edu "" ssh1
+hostconfig wire3.princeton.edu "" ssh1
+hostconfig wire4.princeton.edu "" ssh1
+hostconfig wire5.princeton.edu "" ssh1
+hostconfig wire6.princeton.edu "" ssh1
+hostconfig wire7.princeton.edu "" ssh1
 #hostconfig localhost "" ""
 #hostconfig dusty.princeton.edu "" ssh
 #hostconfig kaze.princeton.edu "" ssh
-
-#hostconfig coma.princeton.edu /u/schlegel/tmp/coma ssh1
-#hostconfig hydra.princeton.edu /u/schlegel/tmp/hydra ssh1
-#hostconfig tantalus.princeton.edu /u/schlegel/tmp/tantalus ssh1
-#hostconfig lepus.princeton.edu /u/schlegel/tmp/lepus ssh1
-#hostconfig polaris.princeton.edu /u/schlegel/tmp/polaris ssh1
-#hostconfig draco.princeton.edu /u/schlegel/tmp/draco ssh1
 
