@@ -179,6 +179,8 @@ pro/spec1d/rline_findpeaks.pro -text
 pro/spec1d/rline_getplate.pro -text
 pro/spec1d/rline_loop.pro -text
 pro/spec1d/rline_matchpeaks.pro -text
+pro/spec1d/rline_plotsamp.pro -text
+pro/spec1d/rline_plotsome.pro -text
 pro/spec1d/rline_sample.pro -text
 pro/spec1d/sdss_flagname.pro -text
 pro/spec1d/skymask.pro -text
