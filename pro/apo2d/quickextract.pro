@@ -252,7 +252,7 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
 
    rstruct = create_struct('SCIFILE', fileandpath(outsci), $
                            'SKYPERSEC', skylevel, $
-;                           'MAG', plugsort.mag[icolor], $
+                           'FIBERMAG', plugsort.mag[icolor], $
                            'SN2VECTOR', meansn^2, $
                            'SN2', snoise2 )
 
