@@ -5,6 +5,7 @@ PLATEMERGE: Add the fields CALIBFLUX,CALIBFLUX_IVAR which are explicitly
 SDSSPROC: Re-enable the call to 'speclog_version'.
 
 etc/spChunkList.par: Add chunks 91-93.
+templates/wfEigen*.fits: Add WFCCD templates from Prochaska
 
 -------------------------------------------------------------------------------
 v4_11 branch + v4_11_0 (Feb 6, 2004)
