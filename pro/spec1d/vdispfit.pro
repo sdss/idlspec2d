@@ -35,6 +35,12 @@
 ;   Note that the wavelength spacing in the galaxy and stellar template spectra
 ;   must be the same.
 ;
+;   We currently mask within +/- 280 km/sec of the following wavelengths
+;   that could have emission lines:
+;     linelist = [3725.94, 3727.24, 3970.072, 4101.73, 4340.46, $
+;      4861.3632, 4958.911, 5006.843, 6300.32, 6548.05, 6562.801, $
+;      6583.45, 6716.44, 6730.82]
+;
 ; EXAMPLES:
 ;
 ; BUGS:
@@ -43,6 +49,7 @@
 ;   $IDLSPEC2D_DIR/templates/TEMPLATEFILES
 ;
 ; PROCEDURES CALLED:
+;   airtovac
 ;   combine1fiber
 ;   computechi2()
 ;   djs_filepath()
@@ -69,9 +76,7 @@ function vdisp_gconv, x, sigma, _EXTRA=EXTRA
    kernel = exp(-xx^2 / (2*sigma^2))
    kernel = kernel / total(kernel)
 
-   sm = convol(x, kernel, _EXTRA=EXTRA)
-
-   return, sm
+   return, convol(x, kernel, _EXTRA=EXTRA)
 end
 
 ;------------------------------------------------------------------------------
@@ -179,6 +184,28 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
              vdisp_gconv(bigflux[*,istar,0], bigsig[isig]/pixsz, /edge_truncate)
          endfor
       endfor
+
+      ;----------
+      ; Mask out the first few and last few pixels, since those would not
+      ; have been smoothed properly.  The masked region is 350 km/sec
+      ; for a native binning of 70 km/sec.
+
+      bigmask[0:4*nsamp-1] = 0
+      bigmask[nbigpix-4*nsamp:nbigpix-1] = 0
+
+      ;----------
+      ; Mask out emission lines, setting bigmask=0 near these wavelengths.
+
+      linelist = [3725.94, 3727.24, 3970.072, 4101.73, 4340.46, $
+       4861.3632, 4958.911, 5006.843, 6300.32, 6548.05, 6562.801, $
+       6583.45, 6716.44, 6730.82]
+      vaclist = linelist
+      airtovac, vaclist
+      vaclist = alog10(vaclist)
+      mwidth = 4.e-4 ; Mask out any pixels within +/- 280 km/s
+      for iline=0, n_elements(vaclist)-1 do $
+       bigmask = bigmask AND (bigloglam LT vaclist[iline] - mwidth $
+        OR bigloglam GT vaclist[iline] + mwidth)
 
    endif
 
