@@ -1,10 +1,12 @@
 
 BATCH2D: Include 'smear' exposures when generating list of output files.
             (Not doing this caused a crash for plates w/ only smears).
+FLUXCORR_NEW: Provide a better test of valid smear correction, fixes PR 2478
 QUICKTRACE: Reverted to doing full trace for flats.  Time saving by only 
             tracing part of the flat image introduces a risk not worth the gain.
+SPCOADD_FRAMES: set BADFLUXFACTOR only for extreme smear corrections=20x median 
 TRACE320CRUDE:  Fix bug dependent on invvar being set.
-            Small change to note number of goodrows in xmask, non-critical
+              Small change to note number of goodrows in xmask, non-critical
 
 sprobot_start: No longer reference $BATCH2DFILE,$BATCH1DFILE, which are
             no longer used.
