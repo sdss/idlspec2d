@@ -10,7 +10,7 @@ SHELL = /bin/sh
 #
 CFLAGS  = $(SDSS_CFLAGS) -DCHECK_LEAKS -I../include
 
-SUBDIRS = apo2d fplan science spec1d spec2d
+SUBDIRS = kinematics lickindex
 
 all :
 	@ for f in $(SUBDIRS); do \
@@ -26,9 +26,9 @@ install :
 	@ for f in $(SUBDIRS); do \
 		(mkdir $(IDLSPEC2D_DIR)/pro/$$f; cd $$f ; echo In $$f; $(MAKE) $(MFLAGS) install ); \
 	done
-	- cp Makefile $(IDLSPEC2D_DIR)/pro
-	- cp makefile.old $(IDLSPEC2D_DIR)/pro
-
+        - cp *.pro $(IDLSPEC2D_DIR)/pro/science
+	- cp Makefile $(IDLSPEC2D_DIR)/pro/science
+	- cp README $(IDLSPEC2D_DIR)/pro/science
 
 clean :
 	- /bin/rm -f *~ core
