@@ -33,7 +33,7 @@ fi
 
 echo
 rproc=`\ps ax | grep aporsync.sh | grep -v -e grep`
-if [ $? = 0 ] ; then
+if [ -n "$rproc" ] ; then
   echo "The following aporsync jobs are currently running:"
   echo `\ps ax | head -1`
 #  for i in $rproc ; do echo $i ; done
@@ -53,7 +53,7 @@ echo
 logdir=/data/spectro/spectrologs
 if [ -e $logdir ] ; then
   files=`find $logdir -name "*.lock"`
-  if [ $? = 0 ] ; then
+  if [ -n "$files" ] ; then
     echo "The following lock files exist:"
     for i in $files ; do echo `ls -l $i` ; done
     echo "You may need to delete old lock files if there is a problem."
