@@ -92,87 +92,29 @@
 ;   08-Sep-2000  Formerly newfluxcalib Written by D. Schlegel & S. Burles
 ;-
 ;------------------------------------------------------------------------------
-; Compute flux correction vector from ratio of observed star flux to 
-; reddened model flux
 
-function kfluxratio, wave, objflux, objivar, kflux, fiber, $
-         fluxvivar = fluxvivar
-
-   ;------------
-   ; Get extinction from SFD maps
-   
-   A_v = 3.1 * fiber.e_bv_sfd
-   a_odonnell = ext_odonnell(wave, 3.1)
-   red_kflux = kflux * exp(-1 * a_odonnell * A_v / 1.086) 
-
-   ;-------------
-   ; Get zeropoint from phot fiber mag 
-
-   scalefactor = 10.0^(-0.4 * (fiber.mag[2] - fiber.red_model_mag[2]))
-   red_kflux = red_kflux * scalefactor / 1e-17
-
-   ;-----------
-   ; Divide star flux in counts by model flux in erg/s/cm^2/A
-
-   fluxvect = objflux
-   fluxvivar = objivar
-   divideflat, fluxvect, invvar=fluxvivar,  red_kflux, minval = 0.1
-    
-   ;-----------
-   ; Smooth the flux vector to reduce noise (do we need to smooth invar?)
-
-   fluxvect = djs_median(fluxvect, width = 75, boundary = 'reflect')
-   fluxvect = smooth(fluxvect, 25, /NAN)
-
-   return, fluxvect
-end
-
-;------------------------------------------------------------------------------
-
-pro pca_flux_standard, loglam, stdflux, stdivar, stdinfo, $
+pro pca_flux_standard, loglam, stdflux, stdivar, stdinfo, camid, $
     corvector = corvector, corvivar = corvivar, cormed = cormed, $
     fcor = fcor, fsig = fsig, bkpts = bkpts, calibset = calibset, $
     noplot = noplot 
 
-   ;--------------
-   ; Read in Kurucz model files
+   ; Compute ratio of data to model for each standard
+   corvector = spdata2model_ratio(loglam, stdflux, stdivar, stdmask, stdinfo, $
+               corvivar = corvivar)
 
-   kurucz_restore, kwave, kflux, kindx = kindx
- 
-   ;-----------------
-   ; Compute the flux correction vector from the ratio of model/data
-
-   cspeed = 2.99792458e5
-   npix = n_elements(stdflux[*,0])
-   nstd = n_elements(stdflux[0,*])
-
-   corvector = fltarr(npix, nstd)
-   corvivar = fltarr(npix, nstd)
+   nstd = n_elements(corvector[0,*])
+   npix = n_elements(corvector[*,0])
    cormed = fltarr(nstd)
 
-   wave = 10.0^loglam 
-   ;medwave = djs_median(wave)
-   ; Wavelength range over which to compute normalization
-   ;norm_indx = where(wave gt medwave - 500 and wave lt medwave + 500)
-
    ; Normalize in the dichroic region but avoiding the exact edges
+   wave = 10.0^loglam 
    norm_indx = where(wave gt 5700 and wave lt 6300 and $
                      wave lt max(wave) - 200 and wave gt min(wave) + 200)
 
    for istd=0, nstd-1 do begin
-     model_index = (where(kindx.model eq stdinfo[istd].model))[0]
-
-     kwave_full = kwave*(1 + stdinfo[istd].v_off/cspeed)
-     kflux_full = kflux[*,model_index]
-     linterp, kwave_full, kflux_full, wave, kfluxi
-
-     corvectori = kfluxratio(wave, stdflux[*,istd], stdivar[*,istd], $
-                  kfluxi, stdinfo[istd], fluxvivar = corvivari)
-
-     ; Normalize by median
-     cormed[istd] = djs_median(corvectori[norm_indx])
-     corvector[*,istd] = corvectori / cormed[istd]
-     corvivar[*, istd] = corvivari * cormed[istd]^2 
+     cormed[istd] = djs_median(corvector[norm_indx,istd])
+     corvector[*,istd] = corvector[*,istd] / cormed[istd]
+     corvivar[*, istd] = corvivar[*,istd] * cormed[istd]^2 
    endfor
 
    ;---------------
@@ -181,7 +123,7 @@ pro pca_flux_standard, loglam, stdflux, stdivar, stdinfo, $
    pcaflux = pca_solve(corvector, corvivar, $
              niter=30, nkeep=1, usemask=usemask, eigenval=eigenval, $
              acoeff=acoeff, maxiter=5, upper=5, lower=5, $
-             maxrej=ceil(0.01*npix), groupsize=ceil(npix/5.))
+             maxrej=ceil(0.01*npix), groupsize=ceil(npix/5.), /quiet)
 
    ; Demand that the first eigenspectrum is positive-valued.
    ; (The routine PCA_SOLVE() can return a negative-valued spectrum even
@@ -234,15 +176,15 @@ pro pca_flux_standard, loglam, stdflux, stdivar, stdinfo, $
    djs_plot, [minwave-100,maxwave+100], [0,1.1*max(corvector)], /nodata, $
              /xstyle, /ystyle, xtitle='\lambda [A]', $
              ytitle='Counts / (10^{-17}erg/cm^{2}/s/A)', $
-             title = 'Average Spectrophoto Correction'  
+             title = 'Average Spectrophoto Correction for ' + camid + ' Frames' 
 
    for istd=0, nstd - 1 do oplot, wave, corvector[*,istd] 
    djs_oplot, wave, fcor, color='green', thick=3
    djs_oplot, wave, calibvector, color='red', thick=3
    djs_oplot, 10^bkpts, bspline_valu(bkpts,calibset), psym=4, color='red'
  
-   xyouts, mean(wave) - 500, [0.9*max(corvector)], $
-     'Standard star variation = ' + string(fsig * 100, format='(I3)') + ' %' 
+   ;xyouts, mean(wave) - 500, [0.9*max(corvector)], $
+   ;  'Standard star variation = ' + string(fsig * 100, format='(I3)') + ' %' 
 
    return
 
