@@ -185,7 +185,7 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
       else $
        myfitmag = snmag[bands[iband]] + [-2.0,-0.5]
       if (n_elements(where(mag GT myfitmag[0] AND mag LT myfitmag[1])) LT 20) $
-       then myfitmag[0] = 1.0
+       then myfitmag = [10.0, myfitmag[1] + 1.5] 
 
       snoise2 = fltarr(2)
       xloc = snmag[bands[iband]]
