@@ -10,7 +10,6 @@ bin/sos.sh -text
 bin/sos_start -text
 bin/sos_status -text
 bin/sos_stop -text
-bin/spinstall -text
 bin/sprobot.sh -text
 bin/sprobot1d.sh -text
 bin/sprobot2d.sh -text
