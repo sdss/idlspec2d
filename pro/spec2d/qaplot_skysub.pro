@@ -113,13 +113,13 @@ pro qaplot_skysub, obj, objivar, objsub, objsubivar, wset, iskies, $
 
    djs_plot, iskies, $
     djs_median( objsub[*,iskies]^2 * objivar[*,iskies], 1), $
-    xrange=[1,nrow], xstyle=1, psym=2, charsize=1.5, $
+    xrange=[1,nrow], xstyle=1, psym=2, charsize=1.1, $
     xtitle = 'Fiber number', ytitle='Median \chi^2', $
     title=title+' Sky Fibers'
    djs_oplot, iskies, $
     djs_median( objsub[*,iskies]^2 * objsubivar[*,iskies], 1), $
     psym=2, color='blue'
-   xyouts, 10, 0.1, 'BLUE=After rescaling variance', charsize=1.5
+   xyouts, 10, 0.1, 'BLUE=After rescaling variance', charsize=1.1
 
    ;----------
    ; Report all sky-subtracted sky fibers with |median flux| > 10 electrons
