@@ -36,12 +36,14 @@
 ;   extract_boxcar()
 ;   fiberflat()
 ;   fileandpath()
+;   findfile()
 ;   fitarcimage
 ;   fitdispersion()
 ;   qbadarc
 ;   mrdfits()
 ;   mwrfits
 ;   reject_arc()
+;   rmfile
 ;   sdssproc
 ;   traceset2xy
 ;
@@ -56,6 +58,11 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
    if (n_elements(wsetfile) NE 1) then return, 0
    if (n_elements(tsetfile) NE 1) then return, 0
    if (NOT keyword_set(radius)) then radius = 3.0
+
+   ;----------
+   ; Dispose of any pre-existing wsetfile for this exposure.
+
+   if (keyword_set(findfile(wsetfile))) then rmfile, wsetfile
 
    ;----------
    ; Read in image
@@ -135,7 +142,11 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
    ;----------
    ; Write out wavelength solution
 
-   mwrfits, wset, wsetfile, /create
+   if (sxpar(archdr,'quality') EQ 'excellent') then begin
+      mwrfits, wset, wsetfile, /create
+   endif else begin
+      splog, 'Quality is not excellent - do not write wsetfile'
+   endelse
 
    wavemin = 10^(min(loglam))
    wavemax = 10^(max(loglam))

@@ -33,11 +33,13 @@
 ;   apo_checklimits()
 ;   extract_image
 ;   fileandpath()
+;   findfile()
 ;   fitflatwidth()
 ;   mwrfits
 ;   quickboxcar()
 ;   readplugmap()
 ;   reject_flat()
+;   rmfile
 ;   sdssproc
 ;   sortplugmap()
 ;   splog
@@ -53,6 +55,11 @@
 function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
 
    if (NOT keyword_set(nbin)) then nbin = 16
+
+   ;----------
+   ; Dispose of any pre-existing tsetfile for this exposure.
+
+   if (keyword_set(findfile(tsetfile))) then rmfile, tsetfile
 
    ;----------
    ; Read in image
@@ -143,11 +150,15 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
    ;----------
    ; Write traceset to FITS file
 
-   mwrfits, flux, tsetfile, /create
-   mwrfits, fluxivar, tsetfile
-   mwrfits, tset, tsetfile
-   mwrfits, plugsort, tsetfile
-   mwrfits, fibermask, tsetfile
+   if (sxpar(flathdr,'quality') EQ 'excellent') then begin
+      mwrfits, flux, tsetfile, /create
+      mwrfits, fluxivar, tsetfile
+      mwrfits, tset, tsetfile
+      mwrfits, plugsort, tsetfile
+      mwrfits, fibermask, tsetfile
+   endif else begin
+      splog, 'Quality is not excellent - do not write tsetfile'
+   endelse
 
    ;----------
    ; Construct the returned structure
