@@ -486,7 +486,7 @@ splog,'Arc fbadpix ', fbadpix ; ???
 
       if (NOT flatstruct[iflat].qbad) then begin
 
-         widthset = *(flatstruct[iarc].widthset)
+         widthset = *(flatstruct[iflat].widthset)
          wset = *(arcstruct[iarc].wset)
          xsol = *(flatstruct[iflat].xsol)
          tmp_fibmask = *(flatstruct[iflat].fibermask)
