@@ -5,7 +5,7 @@
 # S. Burles, APO, 4 May 2000
 #------------------------------------------------------------------------------
 
-if ps ax | grep aporsync.sh  | grep -v -e grep
+if \ps awx | grep aporsync.sh  | grep -v -e grep
 then
   echo "APORSYNC: Already running at "`date`
   exit
