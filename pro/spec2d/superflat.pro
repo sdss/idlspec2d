@@ -223,8 +223,11 @@ function superflat, flux, fluxivar, wset, x2=x2, $
       wmin = fix(10^min(allwave))
       wmax = ceil(10^max(allwave))
       plot_lam = wmin + lindgen(wmax-wmin+1)
-      plot_x2 = 0*plot_lam + median(allx2)
-      plot_fit  = bspline_valu(alog10(plot_lam), sset, x2=plot_x2)
+      if keyword_set(allx2) then begin
+        plot_x2 = 0*plot_lam + median(allx2)
+        plot_fit  = bspline_valu(alog10(plot_lam), sset, x2=plot_x2)
+      endif else plot_fit  = bspline_valu(alog10(plot_lam), sset)
+
       djs_plot, plot_lam, plot_fit, xrange=[wmin,wmax], xstyle=1, $
        xtitle='\lambda [A]', ytitle='Normalized flux', $
        title=title
