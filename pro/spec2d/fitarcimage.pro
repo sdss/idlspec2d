@@ -244,10 +244,13 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    igood = where(qgood, ngood)
    splog, 'Number of good arc lines: ', ngood
    if (ngood LT 6) then begin
-      splog, 'ABORT: Only '+string(ngood)+ ' good arclines found'
+      splog, 'ABORT: Number of arclines  = ', ngood
       wset = 0
       return
-   endif
+   endif else begin
+      splog, 'Number of arclines  = ', ngood
+   endelse
+
    xcen = xcen[*,igood]
    ycen = ycen[*,igood]
    lamps = lamps[igood]
@@ -296,11 +299,12 @@ maxdev = 1.0d-5
    testg = reform(testg, nlamp, 20, 16)
    gind = where(total(total(testg EQ 0,2) GT 3, 2) EQ 0, nlamp)
    if (nlamp LT 6) then begin
-      splog, 'ABORT: Only ' + string(nlamp) + $
-       ' good arclines found after bundle test'
+      splog, 'ABORT: Number of arclines after bundle test = ', nlamp
       wset = 0
       return
-   endif
+   endif else begin
+      splog, 'Number of arclines after bundle test = ', nlamp
+   endelse
 
    xcen = xcen[*,gind]
    xmask = xmask[*,gind]
