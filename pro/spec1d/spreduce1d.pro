@@ -420,7 +420,7 @@ ormask = 0 ; Free memory
             for isig=0, nfsig-1 do begin
                fracnsigma[isig,iper,iobj] = total(abschivec GT isig+1) / ngood
                fracnsighi[isig,iper,iobj] = total(chivec GT isig+1) / ngood
-               fracnsiglo[isig,iper,iobj] = total(chivec LT isig+1) / ngood
+               fracnsiglo[isig,iper,iobj] = total(chivec LT (-isig-1)) / ngood
             endfor
          endif
       endfor
