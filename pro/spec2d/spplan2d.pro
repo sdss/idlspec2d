@@ -36,6 +36,10 @@
 ;     TOPOUTDIR/PLATE/spPlan2d-pppp-mmmmm.par
 ;   where pppp=plate number, mmmmm=MJD.
 ;
+;   For the earliest data (before MJD=51455), then NAME keyword in the FITS
+;   files did not properly describe the plug-map name.  In those cases,
+;   look for the actual plug-map files in SPECLOG_DIR/MJD.
+;
 ; EXAMPLES:
 ;   Create the plan file(s) for reducing the data for MJD=51441, with that
 ;   top level directory set to '/u/schlegel/2d_test'
@@ -79,6 +83,10 @@ pro spplan2d, topoutdir=topoutdir, mjd=mjd, $
    if (NOT keyword_set(rawdata_dir)) then $
     message, 'Must set environment variable RAWDATA_DIR'
 
+   speclog_dir = getenv('SPECLOG_DIR')
+   if (NOT keyword_set(speclog_dir)) then $
+    message, 'Must set environment variable SPECLOG_DIR'
+    
    ;----------
    ; Create a list of the MJD directories (as strings)
 
@@ -94,6 +102,7 @@ pro spplan2d, topoutdir=topoutdir, mjd=mjd, $
 
       mjddir = mjdlist[imjd]
       inputdir = concat_dir(rawdata_dir, mjddir)
+      plugdir = concat_dir(speclog_dir, mjddir)
 
       splog, ''
       splog, 'Data directory ', inputdir
@@ -137,6 +146,17 @@ pro spplan2d, topoutdir=topoutdir, mjd=mjd, $
                ; rather than a string variable.
                if (i EQ 0) then thismjd = sxpar(hdr, 'MJD')
 
+               ; MAPNAME should be of the form '0306-51683-01'.
+               ; If it only contains the PLATEID (for MJD <= 51454),
+               ; then find the actual plug-map file.
+               if (strlen(MAPNAME[i]) LE 4) then begin
+                  plugfile = 'plPlugMapM-' $
+                   + string(long(MAPNAME[i]), format='(i4.4)') + '-*.par'
+                  plugfile = (findfile(filepath(plugfile, root_dir=plugdir), $
+                   count=ct))[0]
+                  if (ct EQ 1) then $
+                   MAPNAME[i] = strmid(fileandpath(plugfile), 11, 13)
+               endif
             endif
          endfor
 
