@@ -166,7 +166,7 @@ function apo_log_fields, pp, fields, printnames=printnames, formats=formats
       caldat, jd, jd_month, jd_day, jd_year, jd_hr, jd_min, jd_sec
       utstring = string(jd_hr, jd_sec, format='(i2.2,":",i2.2,"Z")')
    endif else begin
-      ustring = ''
+      utstring = ''
    endelse
 
    tags = tag_names(pp[igood[0]])
