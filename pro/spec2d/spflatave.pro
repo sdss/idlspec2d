@@ -95,10 +95,18 @@ pro spflatave, mjd=mjd, mjstart=mjstart, mjend=mjend, mjout=mjout, $
           pixflatarr[*,*,ifile] = mrdfits(files[ifile])
 
          ;----------
-         ; Set the first and last column of every flat as bad.
+         ; For each MJD's pixel flat, remove the first two and last two
+         ; nonzero pixels in each row.
 
-;         pixflatarr[0,*,*] = 0
-;         pixflatarr[naxis1-1,*,*] = 0
+         for ifile=0, nfile-1 do begin
+            for iy=0, naxis2-1 do begin
+               igood = where(pixflatarr[*,iy,ifile] GT 0, ngood)
+               if (ngood GT 0) then begin
+                  pixflatarr[igood[0]:(igood[0]+1)<(naxis1-1),iy,ifile] = 0
+                  pixflatarr[(igood[ngood-1]-1)>0:igood[ngood-1],iy,ifile] = 0
+               endif
+            endfor
+         endfor
 
          ;----------
          ; Generate a map of the sigma at each pixel (doing some rejection).
