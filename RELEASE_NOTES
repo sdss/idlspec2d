@@ -25,6 +25,7 @@ SPREDUCE: Major change to how the flat+arc calibrations are chosen.
            an arc taken during the afternoon (as happened for plate 820
            on MJD 52405, c.f., PR #3966) if it is not explicitly marked
            as a test exposure.
+ups/idlspec2d.table: Add dependency on "speclog" product.
 
 -------------------------------------------------------------------------------
 v4_10_0 (Apr 8, 2003 idlspec2d running on IDL 5.3 - 5.5
