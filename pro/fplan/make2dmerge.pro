@@ -91,8 +91,7 @@ pro make2dmerge, planfile
      mwrfits, [[flux[*,i]],[err]], fibername, thishdr, /create
 
      ; 2nd HDU are pixelmasks
-     mkhdr, maskhdr, maskstruct, /extend
-     mwrfits, maskstruct, fibername, maskhdr
+     mwrfits, maskstruct, fibername
     
    endfor
 

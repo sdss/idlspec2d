@@ -436,6 +436,7 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
    for i=1, 4 do sxdelpar, hdr, 'RDNOISE'+strtrim(string(i),2)
    sxdelpar, hdr, 'NBLEAD'
    sxdelpar, hdr, 'PIXFLAT'
+   sxdelpar, hdr, 'FRAMESN2'
 
    ;----------
    ; Add new header cards
