@@ -229,13 +229,13 @@ pro checksn, flux, err, plug, wave, expres=expres, noplot=noplot, title=title
       xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.62], $
          10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.84], 'Spec 2'
 
-      minutes = (bin.gsn[6,*]/10.0)^2 * 60.0
+      gminutes = (bin.gsn[6,*]/10.0)^2 * 60.0
       xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.8], $
            10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.9], $
-           string(format='(f5.1)', minutes[0]), color=djs_icolor('red')
+           string(format='(f5.1)', gminutes[0]), color=djs_icolor('red')
       xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.8], $
            10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.84], $
-           string(format='(f5.1)', minutes[1])
+           string(format='(f5.1)', gminutes[1])
 
 
       plot, plug.mag[2], allspec.r, /nodata, /ylog, ytitle = 'S/N', $
@@ -254,13 +254,13 @@ pro checksn, flux, err, plug, wave, expres=expres, noplot=noplot, title=title
         rfit, " * r'")
       if (size(rabsdev, /tname) NE 'UNDEFINED') then $
       xyouts, xmin+0.5, 2.0, string(format='(a,f5.3)','Deviation: ', rabsdev)
-      minutes = (bin.rsn[6,*]/10.0)^2 * 60.0
+      rminutes = (bin.rsn[6,*]/10.0)^2 * 60.0
       xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.8], $
            10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.9], $
-           string(format='(f5.1)', minutes[0]), color=djs_icolor('red')
+           string(format='(f5.1)', rminutes[0]), color=djs_icolor('red')
       xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.8], $
            10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.84], $
-           string(format='(f5.1)', minutes[1]) 
+           string(format='(f5.1)', rminutes[1]) 
 
       plot, plug.mag[3], allspec.i, /nodata, /ylog, $
            xtitle = 'Fiber Magnitude', ychars=2.0, xchars = 2.0, $
@@ -279,13 +279,13 @@ pro checksn, flux, err, plug, wave, expres=expres, noplot=noplot, title=title
 
       if (size(iabsdev, /tname) NE 'UNDEFINED') then $
         xyouts, xmin+0.5, 2.0, string(format='(a,f5.3)','Deviation: ', iabsdev)
-      minutes = (bin.isn[5,*]/10.0)^2 * 52.0
+      iminutes = (bin.isn[5,*]/10.0)^2 * 52.0
       xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.8], $
            10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.9], $
-           string(format='(f5.1)', minutes[0]), color=djs_icolor('red')
+           string(format='(f5.1)', iminutes[0]), color=djs_icolor('red')
       xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.8], $
            10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.84], $
-           string(format='(f5.1)', minutes[1])
+           string(format='(f5.1)', iminutes[1])
 
     if (ngoodg GT 0) then $
         s_plotdev, plug[nonsky[goodg]].xfocal, plug[nonsky[goodg]].yfocal, $
@@ -344,6 +344,10 @@ pro checksn, flux, err, plug, wave, expres=expres, noplot=noplot, title=title
 
    splog,transpose([[bin.mags], [bin.gsn], [bin.rsn], [bin.isn]]), $
      format='(f5.2,3x,f8.3,f8.3,3x,f8.3,f8.3,3x,f8.3,f8.3)' ,/noname
+
+   splog, ' Estimated Minutes in G: ', transpose(gminutes)
+   splog, ' Estimated Minutes in R: ', transpose(rminutes)
+   splog, ' Estimated Minutes in I: ', transpose(iminutes)
 
    nomap  = where(plug.fiberid EQ -1, nnomap)
    splog, 'Total number of Fibers read in: ', nplug
