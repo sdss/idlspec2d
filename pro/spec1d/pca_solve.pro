@@ -175,8 +175,10 @@ endelse
    ; (after it has been re-binned).
 
    if (nobj EQ 1) then begin
-      eigenval = 1.0
-      acoeff = 1.0
+      if (arg_present(eigenval)) then eigenval = 1.0
+      if (arg_present(acoeff)) then acoeff = 1.0
+      if (arg_present(outmask)) then outmask = lonarr(nnew) + 1
+      if (arg_present(usemask)) then usemask = lonarr(nnew) + 1
       return, newflux
    endif
 
@@ -253,10 +255,12 @@ endelse
       iiter = iiter + 1
    endwhile ; End rejection iterations
 
-   if (nobj EQ 1) then $
-    usemask = outmask $
-   else $
-    usemask = total(outmask, 2)
+   if (arg_present(usemask)) then begin
+      if (nobj EQ 1) then $
+       usemask = outmask $
+      else $
+       usemask = total(outmask, 2)
+   endif
 
    eigenval = eigenval[0:nkeep-1]
    return, transpose(pres[0:nkeep-1,*])
