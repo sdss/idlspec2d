@@ -9,6 +9,12 @@ bin/sos.sh -text
 bin/sos_start -text
 bin/sos_status -text
 bin/sos_stop -text
+bin/sprobot.sh -text
+bin/sprobot1d.sh -text
+bin/sprobot2d.sh -text
+bin/sprobot_start -text
+bin/sprobot_status -text
+bin/sprobot_stop -text
 bin/startapo.sh -text
 doc/Makefile -text
 doc/mk_doc -text

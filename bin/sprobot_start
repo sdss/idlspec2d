@@ -1,0 +1,117 @@
+#!/bin/bash -f
+#------------------------------------------------------------------------------
+# Script to start Spectro-Robot (as a cron job).
+# Logging information is written to the file "$RAWDATA_DIR/sprobot.log".
+#
+# D. Schlegel, Princeton, 20 Dec 2000
+#------------------------------------------------------------------------------
+# If a second argument is give, such as "sprobot_start plate-mapper", or 
+# "sprobot_start observer@plate-mapper.apo.nmsu.edu", then run this command 
+# remotely on the machine "plate-mapper".
+
+if [ $# = 1 ] ; then
+  ssh $1 sprobot_start
+  exit
+fi
+
+#------------------------------------------------------------------------------
+# Set file names.
+
+cronfile=/tmp/$USER.sprobot.cron
+SPRLOG=$RAWDATA_DIR/sprobot.log
+
+#------------------------------------------------------------------------------
+# Test that certain environment variables are already set.
+
+if [ -z "$IDLSPEC2D_DIR" ] ; then
+  echo "IDLSPEC2D_DIR must be set!"
+  exit
+fi
+
+if [ -z "$IDLUTILS_DIR" ] ; then
+  echo "IDLUTILS_DIR must be set!"
+  exit
+fi
+
+if [ -z "$IDL_DIR" ] ; then
+  echo "IDL_DIR must be set!"
+  exit
+fi
+
+if [ -z "$IDL_PATH" ] ; then
+  echo "IDL_PATH must be set!"
+  exit
+fi
+
+if [ -z "$SPECLOG_DIR" ] ; then
+  echo "SPECLOG_DIR must be set!"
+  exit
+fi
+
+if [ -z "$RAWDATA_DIR" ] ; then
+  echo "RAWDATA_DIR must be set!"
+  exit
+fi
+
+if [ -z "$SPECTRO_DATA" ] ; then
+  echo "SPECTRO_DATA must be set!"
+  exit
+fi
+
+#------------------------------------------------------------------------------
+# Don't allow this to be run from the machine "sdsshost"!
+
+echo
+
+if [ `uname -n` = "sdsshost" ] ; then
+  echo "You are not allowed to launch Spectro-Robot from sdsshost!"
+  exit
+fi
+
+#------------------------------------------------------------------------------
+# Test to see if the cron job is already loaded.  If so, then quit.
+
+qrun=`crontab -l | awk 'BEGIN{begin = 0; end = 0}{if ($2 == "SPROBOT" && $3 == "BEGIN") {begin = 1}; if ($2 == "SPROBOT" && $3 == "END" && begin == 1) {end = 1}}END{if (begin == 1 && end == 1){print "1"} else {print "0"}}'`
+if [ $qrun = 1 ] ; then
+  echo "The Spectro-Robot cron job is already running."
+  exit
+fi
+
+#------------------------------------------------------------------------------
+# Decide what the current version of idlspec2d is.
+
+vers=`echo $SETUP_IDLSPEC2D | awk '{print $2}'`
+
+#------------------------------------------------------------------------------
+# Construct the cron file to be loaded.  Start with the existing cron file,
+# then append more to it.
+
+# Print the cron tab w/out the first 3 lines and w/out the SPROBOT lines.
+crontab -l | awk 'BEGIN{doprint = 1}{if ($2 == "SPROBOT" && $3 == "BEGIN") {doprint = 0}; if (NR > 3 && doprint == 1) {print $0}; if ($2 == "SPROBOT" && $3 == "END") {doprint = 1} }' > $cronfile
+
+echo "# SPROBOT BEGIN "$vers >> $cronfile
+echo "PATH=$PATH" >> $cronfile
+echo "IDLSPEC2D_DIR=$IDLSPEC2D_DIR" >> $cronfile
+echo "IDLUTILS_DIR=$IDLUTILS_DIR" >> $cronfile
+echo "IDL_DIR=$IDL_DIR" >> $cronfile
+echo "IDL_PATH=$IDL_PATH" >> $cronfile
+echo "SPECLOG_DIR=$SPECLOG_DIR" >> $cronfile
+echo "RAWDATA_DIR=$RAWDATA_DIR" >> $cronfile
+echo "SPECTRO_DATA=$SPECTRO_DATA" >> $cronfile
+echo "# This job will run at 8:30 am every day." >> $cronfile
+#echo "30 8 * * * sprobot.sh >> $SPRLOG 2>&1" >> $cronfile
+# TEST !!!???
+echo "* * * * * sprobot.sh >> $SPRLOG 2>&1" >> $cronfile
+#echo "* * * * * sos.sh >> $SOSLOG 2>&1" >> $cronfile
+echo "# SPROBOT END" >> $cronfile
+crontab $cronfile
+
+#------------------------------------------------------------------------------
+# Load this new cron file.
+
+crontab $cronfile
+echo "Now running Spectro-Robot version "$vers"."
+
+\rm $cronfile
+
+#------------------------------------------------------------------------------
