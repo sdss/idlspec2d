@@ -40,10 +40,10 @@
 ;                the exponentail tails of flux near bright fibers; default
 ;                to -1, which means not to use any such terms.
 ;   wsigma     - Sigma width for exponential whopping profiles; default to 25
-;   reject     - Two-element array setting partial and full rejection
-;                thresholds for profiles; default [0.8, 0.2].
+;   reject     - Three-element array setting partial and full rejection
+;                thresholds for profiles; default [0.2, 0.5, 0.8].
 ;                What does this mean???
-;                When this was hardwired, it was [0.8,0.4].
+;                When this was hardwired, it was [0.4, ??, 0.8].
 ;
 ; MODIFIED INPUTS (OPTIONAL):
 ;   wfixed     - Array to describe which parameters to fix in the profile;
@@ -149,11 +149,7 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
    ; The third parameter is the area required
    ; in the profile fit containing good pixels to do a full fit.
 
-   defaultreject = [0.2, 0.5, 0.8]
-   if (n_elements(reject) EQ 3) then begin
-      checkreject = sort([0.0,reject,1.0])
-      if (total(abs(checkreject - [0,1,2,3,4])) NE 0) then reject = defaultreject
-   endif else reject = defaultreject
+   if (n_elements(reject) NE 3) then reject = [0.2, 0.5, 0.8]
 
    if (n_elements(pixelmask) NE ntrace $
     OR size(pixelmask,/tname) NE 'LONG') then $
