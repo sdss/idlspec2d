@@ -165,18 +165,20 @@ pro combine1fiber, inloglam, objflux, objivar, $
          bkpt = 0
          bmask = 0
 
-       if (n_elements(ss) GT 2) then begin
-          if (keyword_set(objivar)) then $
-            sset = bspline_iterfit(inloglam[ss], objflux[ss], $
+         if (n_elements(ss) GT 2) then begin
+            if (keyword_set(objivar)) then $
+             sset = bspline_iterfit(inloglam[ss], objflux[ss], $
               nord=nord, /groupbadpix, $
               bkspace=bkptbin, bkpt=bkpt, invvar=objivar[ss], outmask=bmask, $
               _EXTRA=KeywordsForReject, /silent) $
-          else sset = bspline_iterfit(inloglam[ss], objflux[ss], $
+            else $
+             sset = bspline_iterfit(inloglam[ss], objflux[ss], $
               nord=nord, /groupbadpix, $
               bkspace=bkptbin, bkpt=bkpt, outmask=bmask, $
               _EXTRA=KeywordsForReject, /silent)
-
-       endif else bmask = bytarr(n_elements(ss)) ; All set to zero
+         endif else begin
+            bmask = bytarr(n_elements(ss)) ; All set to zero (rejected)
+         endelse
 
          inside = where(newloglam GE min(inloglam[ss])-EPS $
           AND newloglam LE max(inloglam[ss])+EPS, numinside)
@@ -196,7 +198,7 @@ pro combine1fiber, inloglam, objflux, objivar, $
             if goodvalu[0] NE -1 then newmask[inside[goodvalu]] = 1
 
             if (keyword_set(verbose)) then $
-             splog, 'Masked ', fix(total(1-bmask)), ' of', $
+             splog, 'Masked ', long(total(1-bmask)), ' of', $
               n_elements(bmask), ' pixels'
 
             ;----------
