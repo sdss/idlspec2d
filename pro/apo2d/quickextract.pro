@@ -248,7 +248,8 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    get_tai, hdr, tai_beg, tai_mid, tai_end
 
    skystruct = skysubtract(fluxsub, fluxivar, plugsort, wset, $
-    objsub, objsubivar, iskies=iskies, fibermask=fibermask, tai=tai_mid)
+    objsub, objsubivar, iskies=iskies, fibermask=fibermask, tai=tai_mid, $
+    relchi2struct=relchi2struct)
 
    ;---------------------------------------------------------------------------
    ; Analyze spectra for the sky level and signal-to-noise
@@ -315,10 +316,14 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
       snoise2 = 0
    endelse
 
+   if (keyword_set(relchi2struct)) then skychi2 = mean(relchi2struct.chi2) $
+    else skychi2 = 0.0
+
    rstruct = create_struct('SCIFILE', fileandpath(outsci), $
                            'SKYPERSEC', skylevel, $
                            'XSIGMA_QUADRANT', medwidth, $
                            'XSIGMA', max(medwidth), $
+                           'SKYCHI2', skychi2, $
                            'FIBERMAG', plugsort.mag[icolor], $
                            'SN2VECTOR', meansn^2, $
                            'SN2', snoise2 )
