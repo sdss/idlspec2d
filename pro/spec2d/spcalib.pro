@@ -147,7 +147,7 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
       splog, 'Reading flat ', flatname[iflat]
       sdssproc, flatname[iflat], flatimg, flativar, indir=indir, $
        hdr=flathdr, pixflatname=pixflatname, nsatrow=nsatrow, fbadpix=fbadpix,$
-       ecalibfile=ecalibfile, minflat = 0.1, maxflat=1.5
+       ecalibfile=ecalibfile, minflat = 0.5, maxflat=1.5
 
       ;-----
       ; Decide if this flat is bad:
@@ -270,7 +270,7 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
       splog, 'Reading arc ', arcname[iarc]
       sdssproc, arcname[iarc], arcimg, arcivar, indir=indir, $
        hdr=archdr, pixflatname=pixflatname, nsatrow=nsatrow, fbadpix=fbadpix, $
-       ecalibfile=ecalibfile, minflat = 0.1, maxflat=1.5
+       ecalibfile=ecalibfile, minflat = 0.5, maxflat=1.5
 
       splog, 'Fraction of bad pixels in arc = ', fbadpix
 
@@ -492,7 +492,7 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
             splog, 'Reading flat ', flatname[iflat]
             sdssproc, flatname[iflat], flatimg, flativar, indir=indir, $
              hdr=flathdr, pixflatname=pixflatname, ecalibfile=ecalibfile, $
-             minflat = 0.1, maxflat=1.5
+             minflat = 0.5, maxflat=1.5
          endif
 
          ;---------------------------------------------------------------------

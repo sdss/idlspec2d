@@ -179,7 +179,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       splog, 'Reading object ', objname[iobj]
       sdssproc, objname[iobj], image, invvar, indir=indir, hdr=objhdr, $
        pixflatname=pixflatname, spectrographid=spectrographid, color=color, $
-       ecalibfile=ecalibfile, minflat = 0.1, maxflat=1.5
+       ecalibfile=ecalibfile, minflat = 0.5, maxflat=1.5
 
       ;----------
       ; Construct the best flat for this object from all of the reduced
