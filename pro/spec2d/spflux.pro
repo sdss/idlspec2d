@@ -60,69 +60,73 @@ pro spflux, sciname, fcalibprefix, adderr=adderr
          endif
       endfor
       junk = max(score, ibest)
-      if (score[ibest] EQ 0) then $
-       message, 'No valid blue+red exposure for spectro-photometry'
-      bestexpnum = allexpnum[ibest]
-      splog, 'Select smear image as exposure #', bestexpnum, $
-       ' for spectro-', ispec
+      if (score[ibest] EQ 0) then begin 
+        splog, 'ABORT: No valid blue+red exposure for spectro-photometry'
+      endif else begin
 
-      ibcalib = (where(camcolor EQ 'b' AND long(camspecid) EQ ispec $
-       AND exposure EQ bestexpnum))[0]
-      ircalib = (where(camcolor EQ 'r' AND long(camspecid) EQ ispec $
-       AND exposure EQ bestexpnum))[0]
+        bestexpnum = allexpnum[ibest]
+        splog, 'Select smear image as exposure #', bestexpnum, $
+         ' for spectro-', ispec
 
-      ;----------
-      ; Compute the flux-calibration function from the spectro-photometric
-      ; stars on this best exposure.  This is in 10^(-17) erg/ADU.
+        ibcalib = (where(camcolor EQ 'b' AND long(camspecid) EQ ispec $
+         AND exposure EQ bestexpnum))[0]
+        ircalib = (where(camcolor EQ 'r' AND long(camspecid) EQ ispec $
+         AND exposure EQ bestexpnum))[0]
 
-      if (ispec EQ 1) then $
-       fcalibfiles = fcalibprefix + ['-b1.fits','-r1.fits'] $
-      else $
-       fcalibfiles = fcalibprefix + ['-b2.fits','-r2.fits']
+        ;----------
+        ; Compute the flux-calibration function from the spectro-photometric
+        ; stars on this best exposure.  This is in 10^(-17) erg/ADU.
 
-      myfluxcalib, [sciname[ibcalib], sciname[ircalib]], $
-       fcalibfiles, colors=['b','r'], adderr=adderr, rset=rset, bset=bset
+        if (ispec EQ 1) then $
+         fcalibfiles = fcalibprefix + ['-b1.fits','-r1.fits'] $
+        else $
+         fcalibfiles = fcalibprefix + ['-b2.fits','-r2.fits']
 
-      ;----------
-      ; Loop through each exposure and construct the flux-correction function
-      ; for each fiber to make it agree with the specro-photo (smear) image.
-      ; Make a correction file for each spectrograph, but that includes both
-      ; blue and red.
+        myfluxcalib, [sciname[ibcalib], sciname[ircalib]], $
+         fcalibfiles, colors=['b','r'], adderr=adderr, rset=rset, bset=bset
+
+        ;----------
+        ; Loop through each exposure and construct the flux-correction function
+        ; for each fiber to make it agree with the specro-photo (smear) image.
+        ; Make a correction file for each spectrograph, but that includes both
+        ; blue and red.
 
 
-      bluelist = 0
-      redlist = 0
-      corrlist = 0
+        bluelist = 0
+        redlist = 0
+        corrlist = 0
 
-      for iexp=0, nall-1 do begin
-         iblue = (where(camcolor EQ 'b' AND long(camspecid) EQ ispec $
-          AND exposure EQ allexpnum[iexp]))[0]
-         ired = (where(camcolor EQ 'r' AND long(camspecid) EQ ispec $
-          AND exposure EQ allexpnum[iexp]))[0]
-         if (iblue NE -1) then bluefile = sciname[iblue] $
-          else bluefile = ''
-         if (ired NE -1) then redfile = sciname[ired] $
-          else redfile = ''
+        for iexp=0, nall-1 do begin
+           iblue = (where(camcolor EQ 'b' AND long(camspecid) EQ ispec $
+            AND exposure EQ allexpnum[iexp]))[0]
+           ired = (where(camcolor EQ 'r' AND long(camspecid) EQ ispec $
+            AND exposure EQ allexpnum[iexp]))[0]
+           if (iblue NE -1) then bluefile = sciname[iblue] $
+            else bluefile = ''
+           if (ired NE -1) then redfile = sciname[ired] $
+            else redfile = ''
 
-         expstr = string(allexpnum[iexp], format='(i8.8)')
-         corrfile = 'spFluxcorr-' + expstr + '-' + camspecid[iblue] + '.fits'
+           expstr = string(allexpnum[iexp], format='(i8.8)')
+           corrfile = 'spFluxcorr-' + expstr + '-' + camspecid[iblue] + '.fits'
 
-         if keyword_set(bluelist) then bluelist = [bluelist, bluefile] $
-         else bluelist = bluefile 
+           if keyword_set(bluelist) then bluelist = [bluelist, bluefile] $
+           else bluelist = bluefile 
 
-         if keyword_set(redlist) then redlist = [redlist, redfile] $
-         else redlist = redfile 
+           if keyword_set(redlist) then redlist = [redlist, redfile] $
+           else redlist = redfile 
 
-         if keyword_set(corrlist) then corrlist = [corrlist, corrfile] $
-         else corrlist = corrfile 
+           if keyword_set(corrlist) then corrlist = [corrlist, corrfile] $
+           else corrlist = corrfile 
 
-      endfor
+        endfor
 
 ;         myfluxcorr, sciname[ibcalib], sciname[ircalib], $
 ;          bluelist, redlist, corrlist, adderr=adderr, rset=rset, bset=bset
 
          fluxcorr_new, sciname[ibcalib], sciname[ircalib], $
           bluelist, redlist, corrlist
+
+     endelse
 
    endfor
 
