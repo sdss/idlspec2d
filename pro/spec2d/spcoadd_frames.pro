@@ -55,6 +55,7 @@
 ;   djs_laxisgen()
 ;   djs_maskinterp()
 ;   djs_median()
+;   idlspec2d_version()
 ;   mrdfits()
 ;   pixelmask_bits()
 ;   sxaddpar
@@ -457,6 +458,8 @@ pro spcoadd_frames, filenames, outputname, $
    sxdelpar, hdr, 'EXPOSURE'
    sxdelpar, hdr, 'SEQID'
 
+   sxaddpar, objhdr, 'VERSCOMB', idlspec2d_version(), $
+    'Version of idlspec2d for combining multiple spectra', after='VERS2D'
    sxaddpar, hdr, 'NEXP', nfiles, $
     'Number of exposures in this file', before='EXPTIME'
    for ifile=0,nfiles-1 do $

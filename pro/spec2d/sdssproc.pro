@@ -182,8 +182,9 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    sxaddpar, hdr, 'CAMCOL', camcol
    sxaddpar, hdr, 'TELESCOP', 'SDSS 2.5-M', ' Sloan Digital Sky Survey'
    sxaddpar, hdr, 'AUTHOR', 'Scott Burles & David Schlegel'
-   sxaddpar, hdr, 'SPEC2D_V', idlspec2d_version(), ' Version of idlspec2d'
-   sxaddpar, hdr, 'UTILS_V', idlutils_version(), ' Version of idlutils'
+   sxaddpar, hdr, 'VERSUTIL', idlutils_version(), ' Version of idlutils'
+   sxaddpar, hdr, 'VERSREAD', idlspec2d_version(), $
+    ' Version of idlspec2d for pre-processing raw data', after='VERSUTIL'
  
    ; Rename 'target' -> 'science', and 'calibration' -> 'arc'
    mjd = sxpar(hdr, 'MJD')

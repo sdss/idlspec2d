@@ -493,6 +493,8 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
       ;------------------
       ; Add keywords to object header
 
+      sxaddpar, objhdr, 'VERS2D', idlspec2d_version(), $
+       'Version of idlspec2d for 2D reduction', after='VERSREAD'
       sxaddpar, objhdr, 'OSIGMA',  sigma, $
        'Original guess at spatial sigma in pix'
       sxaddpar, objhdr, 'SKIPROW', skiprow, 'Number of rows skipped in step 1'
