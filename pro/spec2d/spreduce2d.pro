@@ -139,7 +139,7 @@ pro spreduce2d, planfile, docams=docams, xdisplay=xdisplay
       splog, 'Plot file ' + plotfile
    endif
    splog, 'Plan file ' + thisplan
-   splog, 'DOCAMS = ' + docams
+   splog, 'DOCAMS = ', docams
 
    splog, 'idlspec2d version ' + idlspec2d_version()
    splog, 'idlutils version ' + idlutils_version()
