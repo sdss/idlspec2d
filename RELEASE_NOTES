@@ -2,6 +2,8 @@
 FLUX_STANDARD: Added empirical correction to SPECTRUM-Kurucz models.
            Then got rid of them!
 GET_TAI: Trigger a Warning if (TAI-END) - (TAI-BEG) < EXPTIME + 20 sec.
+READSPEC: Fix minor bug that would truncate the wavelength mapping
+           when spectra are read from multiple plates and /ALIGN not used.
 SPPLATE_CORRECT: Fixed small bug so that it works with the smear left in.
 STYPE_STANDARD: Fixed error in smoothing box size.
 ZEROPT_COR: Added range checks to get rid of seg faults.
