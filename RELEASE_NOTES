@@ -2,6 +2,7 @@
 COMBINE1FIBER: Add the skies by inputting SKYFLUX and outputting NEWSKY.
         The skies are combined in the same simplistic manner as the
         dispersion pixel map.
+        Make loop variables type long.
 EXTRACT_OBJECT: Turn off telluric-corrections by default, which must now
         be enabled with the /DO_TELLURIC keyword.  Also, delete some old code.
         Compress (with gzip) the output file.
