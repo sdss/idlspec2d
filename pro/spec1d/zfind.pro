@@ -7,7 +7,7 @@
 ;   eigen-templates.
 ;
 ; CALLING SEQUENCE:
-;   result = zfind( objflux, objivar, hdr=hdr, fiberid=fiberid, $
+;   result = zfind( objflux, objivar, hdr=hdr, $
 ;    eigenfile=, [eigendir=, columns=, npoly=, $
 ;     zmin=, zmax=, zguess=, pwidth=, pspace=, nfind=, width= ]
 ;
@@ -16,8 +16,8 @@
 ;   objivar    - Object inverse variances [NPIXOBJ,NOBJ]
 ;
 ; REQUIRED KEYWORDS:
-;   hdr        - FITS header for objects, used for the following fields:
-;                COEFF0, COEFF1, PLATEID, MJD.
+;   hdr        - FITS header for objects, used to construct the wavelengths
+;                from the following keywords: COEFF0, COEFF1.
 ;   eigenfile  - Input FITS file with an [NPIXSTAR,NSTAR] image with
 ;                either templates or eigenspectra.  If a wildcard appears
 ;                in the file name, then the file that appears last in a sort
@@ -27,8 +27,6 @@
 ;
 ; OPTIONAL KEYWORDS:
 ;   eigendir   - Directory for EIGENFILE; default to $IDLSPEC2D/templates.
-;   fiberid    - Integer fiber ID number for each object (copy to output
-;                structure).
 ;   columns    - Column numbers of the eigenspectra image to use in the
 ;                PCA fit; default to all columns.
 ;   npoly      - Number of polynomial terms to append to eigenspectra;
@@ -76,9 +74,6 @@ function sp1d_struct
 
    result = create_struct( $
     name = 'ZANS', $
-    'plate'      ,  0L, $
-    'mjd'        ,  0L, $
-    'fiberid'    ,  0L, $
     'class'      ,  '', $
     'subclass'   ,  '', $
     'z'          , 0.0, $
@@ -98,7 +93,7 @@ function sp1d_struct
 end
 
 ;------------------------------------------------------------------------------
-function zfind, objflux, objivar, hdr=hdr, fiberid=fiberid, $
+function zfind, objflux, objivar, hdr=hdr, $
  eigenfile=eigenfile, eigendir=eigendir, columns=columns, npoly=npoly, $
  zmin=zmin, zmax=zmax, zguess=zguess, pwidth=pwidth, $
  pspace=pspace, nfind=nfind, width=width
@@ -191,11 +186,6 @@ function zfind, objflux, objivar, hdr=hdr, fiberid=fiberid, $
    ; Copy into the output structure
 
    result = replicate(sp1d_struct(), nfind, nobj)
-   result.plate = sxpar(hdr, 'PLATEID')
-   result.mjd = sxpar(hdr, 'MJD')
-   if (keyword_set(fiberid)) then $
-    for iobj=0, nobj-1 do $
-     result[*,iobj].fiberid = fiberid[iobj]
    result.z = zans.z
    result.z_err = zans.z_err
    result.chi2 = zans.chi2

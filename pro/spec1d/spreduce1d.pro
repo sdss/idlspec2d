@@ -113,7 +113,7 @@ andmask = 0 ; Free memory
    splog, 'Compute GALAXY redshifts:', $
     ' ZMIN=', zmin, ' ZMAX=', zmax, ' PSPACE=', pspace
    t0 = systime(1)
-   res_gal = zfind(objflux, objivar, hdr=hdr, fiberid=plugmap.fiberid, $
+   res_gal = zfind(objflux, objivar, hdr=hdr, $
     eigenfile=eigenfile, npoly=npoly, zmin=zmin, zmax=zmax, pspace=pspace, $
     nfind=nfind, width=pspace*3)
    splog, 'CPU time to compute GALAXY redshifts = ', systime(1)-t0
@@ -144,7 +144,7 @@ andmask = 0 ; Free memory
    splog, 'Compute QSO redshifts:', $
     ' ZMIN=', zmin, ' ZMAX=', zmax, ' PSPACE=', pspace
    t0 = systime(1)
-   res_qso = zfind(objflux, objivar, hdr=hdr, fiberid=plugmap.fiberid, $
+   res_qso = zfind(objflux, objivar, hdr=hdr, $
     eigenfile=eigenfile, npoly=npoly, zmin=zmin, zmax=zmax, pspace=pspace, $
     nfind=nfind, width=pspace*5)
    splog, 'CPU time to compute QSO redshifts = ', systime(1)-t0
@@ -181,7 +181,7 @@ andmask = 0 ; Free memory
       splog, 'Compute STAR (' + subclass + ') redshifts:', $
        ' ZMIN=', zmin, ' ZMAX=', zmax, ' PSPACE=', pspace
       t0 = systime(1)
-      res_star = zfind(objflux, objivar, hdr=hdr, fiberid=plugmap.fiberid, $
+      res_star = zfind(objflux, objivar, hdr=hdr, $
        eigenfile=eigenfile, columns=istar, npoly=npoly, $
        zmin=zmin, zmax=zmax, pspace=1, $
        nfind=nfind, width=pspace*3)
@@ -230,10 +230,7 @@ andmask = 0 ; Free memory
       if (strtrim(plugmap[iobj].objtype,2) EQ 'SKY') then begin
          if (nper GT 1) then $
           res_all[1:nper-1,iobj] = res_all[0:nper-2,iobj]
-         rcopy = { plate: res_all[0,iobj].plate, $
-                   mjd: res_all[0,iobj].mjd, $
-                   fiberid: res_all[0,iobj].fiberid, $
-                   class: 'SKY', $
+         rcopy = { class: 'SKY', $
                    subclass: ' ', $
                    tfile: ' ' }
          res1 = res_all[0,iobj]
@@ -252,10 +249,7 @@ andmask = 0 ; Free memory
        AND res_all[0,iobj].class NE 'SKY') then begin
          if (nper GT 1) then $
           res_all[1:nper-1,iobj] = res_all[0:nper-2,iobj]
-         rcopy = { plate: res_all[0,iobj].plate, $
-                   mjd: res_all[0,iobj].mjd, $
-                   fiberid: res_all[0,iobj].fiberid, $
-                   class: 'UNKNOWN', $
+         rcopy = { class: 'UNKNOWN', $
                    subclass: ' ', $
                    tfile: ' ' }
          res1 = res_all[0,iobj]
@@ -267,29 +261,47 @@ andmask = 0 ; Free memory
    ;----------
    ; Add other fields to the output structure
 
-   res1 = { wavemin: 0.0, $
-            wavemax: 0.0, $
+   res1 = { plate:    long(sxpar(hdr, 'PLATEID')), $
+            tile:     long(sxpar(hdr, 'TILEID')), $
+            mjd:      long(sxpar(hdr, 'MJD')), $
+            fiberid:  0L        , $
+            objid:    lindgen(5), $
+            objtype:  ' '       , $
+            plug_ra:  0.0d      , $
+            plug_dec: 0.0d      }
+   res_prepend = make_array(value=res1, dimension=size(res_all,/dimens))
+   res_all = struct_addtags(res_prepend, res_all)
+
+   for iobj=0, nobj-1 do begin
+      res_all[*,iobj].fiberid = iobj+1
+      res_all[*,iobj].objid = plugmap[iobj].objid
+      res_all[*,iobj].objtype = plugmap[iobj].objtype
+      res_all[*,iobj].plug_ra = plugmap[iobj].ra
+      res_all[*,iobj].plug_dec = plugmap[iobj].dec
+   endfor
+
+   res1 = { wavemin:   0.0, $
+            wavemax:   0.0, $
             wcoverage: 0.0, $
-            spec1_g: sxpar(hdr, 'SPEC1_G'), $
-            spec1_r: sxpar(hdr, 'SPEC1_R'), $
-            spec1_i: sxpar(hdr, 'SPEC1_I'), $
-            spec2_g: sxpar(hdr, 'SPEC2_G'), $
-            spec2_r: sxpar(hdr, 'SPEC2_R'), $
-            spec2_i: sxpar(hdr, 'SPEC2_I') }
+            spec1_g:   sxpar(hdr, 'SPEC1_G'), $
+            spec1_r:   sxpar(hdr, 'SPEC1_R'), $
+            spec1_i:   sxpar(hdr, 'SPEC1_I'), $
+            spec2_g:   sxpar(hdr, 'SPEC2_G'), $
+            spec2_r:   sxpar(hdr, 'SPEC2_R'), $
+            spec2_i:   sxpar(hdr, 'SPEC2_I') }
    res_append = make_array(value=res1, dimension=size(res_all,/dimens))
+   res_all = struct_addtags(res_all, res_append)
 
    objloglam0 = sxpar(hdr, 'COEFF0')
    objdloglam = sxpar(hdr, 'COEFF1')
    for iobj=0, nobj-1 do begin
       igood = where(objivar[*,iobj] NE 0, ngood)
-      res_append[*,iobj].wavemin = $
+      res_all[*,iobj].wavemin = $
        10^(objloglam0 + (igood[0]>0)*objdloglam) * (ngood NE 0)
-      res_append[*,iobj].wavemax = $
+      res_all[*,iobj].wavemax = $
        10^(objloglam0 + (igood[(ngood-1)>0])*objdloglam) * (ngood NE 0)
-      res_append[*,iobj].wcoverage = ngood * objdloglam
+      res_all[*,iobj].wcoverage = ngood * objdloglam
    endfor
-
-   res_all = struct_addtags(res_all, res_append)
 
    ;----------
    ; Write the output files
