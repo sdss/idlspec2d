@@ -115,7 +115,7 @@ pro spbiasgen1, files, outfile=outfile, outdir=outdir, $
           before='EXPTIME'
       endif
       imgarr[*,*,ifile] = thisimg
-      inmask[*,*,ifile] = thisivar LT 0
+      inmask[*,*,ifile] = thisivar LE 0
 
       sxaddpar, hdr0, string(ifile+1,format='("EXPID",i2.2)'), $
        string( sxpar(hdr,'CAMERAS'), sxpar(hdr,'EXPOSURE'), $
