@@ -235,6 +235,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
             iback = fitans[nTrace*nCoeff:nTrace*nCoeff+nPoly-1,cur]
      endif
 
+     pixelmasktemp = 0
      ansrow = extract_row(fimage[*,cur], invvar[*,cur], $
       xcen[cur,*],sigmacur,ymodel=ymodelrow, fscat=fscatrow, $
       proftype=proftype, iback=iback, reject=reject, pixelmask=pixelmasktemp, $

@@ -474,7 +474,7 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
       ;------
       ; Interpolate over masked pixels, just for aesthetic purposes
 
-      bestguess = djs_maskinterp(flambda, flambdaivar EQ 0, /const)
+      flambda = djs_maskinterp(flambda, flambdaivar EQ 0, /const, iaxis=0 )
 
       ;------
       ; Add keywords to object header
