@@ -6,7 +6,7 @@
 ;   Generate goodness-of-fit plots from the LRG model photo-z fits.
 ;
 ; CALLING SEQUENCE:
-;   lrgmodel_plots, [ suffix, public=, /recalibrate, _EXTRA= ]
+;   lrgmodel_plots, [ suffix, public=, /recalibrate, /colorcut, _EXTRA= ]
 ;
 ; INPUTS:
 ;
@@ -15,6 +15,7 @@
 ;   public         - Select public data; this keyword is passed
 ;                    to LRGMODEL_READ_SPALL()
 ;   recalibrate    - Recalibrate the photometry using SDSS_RECALIBRATE
+;   colorcut       - If set, then make Nikhil's color-cuts on the 2dF data
 ;   _EXTRA         - Additional keywords to pass to LRGMODEL_PHOTOZ(),
 ;
 ; OUTPUTS:
@@ -48,7 +49,7 @@
 ;-
 ;------------------------------------------------------------------------------
 pro lrgmodel_plots, suffix, public=public, recalibrate=recalibrate, $
- _EXTRA=KeywordsForPhotoz
+ colorcut=colorcut, _EXTRA=KeywordsForPhotoz
 
    if (NOT keyword_set(suffix)) then suffix = ''
 
@@ -58,8 +59,8 @@ pro lrgmodel_plots, suffix, public=public, recalibrate=recalibrate, $
    spall = lrgmodel_read_spall(public=public)
 ;spall = spall[0:10000] ; Test ???
    nsdss = n_elements(spall)
-   spall = lrgmodel_append_twodf(spall, '2003A', nadd=nadd1)
-   spall = lrgmodel_append_twodf(spall, '2003B', nadd=nadd2)
+   spall = lrgmodel_append_twodf(spall,'2003A',colorcut=colorcut, nadd=nadd1)
+   spall = lrgmodel_append_twodf(spall,'2003B',colorcut=colorcut, nadd=nadd2)
 
    ;----------
    ; Optionally recalibrate the photometry
@@ -69,6 +70,12 @@ pro lrgmodel_plots, suffix, public=public, recalibrate=recalibrate, $
       sdss_recalibrate,spall
       splog,'...done'
    endif
+
+   ;----------
+   ; Compute the colors
+
+   grcolor = - 2.5*alog10((spall.modelflux[1]>0.1) / (spall.modelflux[2]>0.1))
+   ricolor = - 2.5*alog10((spall.modelflux[2]>0.1) / (spall.modelflux[3]>0.1))
 
    ;----------
    ; Fit the photo-z's
@@ -95,13 +102,15 @@ pro lrgmodel_plots, suffix, public=public, recalibrate=recalibrate, $
          zmax = 0.80
       endelse
       indx = where(spall.z GT zmin AND spall.z LE zmax, ct)
-      isort = indx[sort(azdiff[indx])]
-      i68 = isort[0.68*ct]
-      i95 = isort[0.95*ct]
-      i99 = isort[0.99*ct]
-      print, zmin, zmax, ct, median(zdiff[indx]), $
-       azdiff[i68], azdiff[i95], azdiff[i99], $
-       format='(2f5.2,i7,f10.4,3f9.4)'
+      if (ct GT 0) then begin
+         isort = indx[sort(azdiff[indx])]
+         i68 = isort[0.68*ct]
+         i95 = isort[0.95*ct]
+         i99 = isort[0.99*ct]
+         print, zmin, zmax, ct, median([zdiff[indx]]), $
+          azdiff[i68], azdiff[i95], azdiff[i99], $
+          format='(2f5.2,i7,f10.4,3f9.4)'
+      endif
    endfor
 
    ;----------
@@ -192,7 +201,6 @@ pro lrgmodel_plots, suffix, public=public, recalibrate=recalibrate, $
    ;----------
    ; PLOT: Delta-z vs. (g-r) (greyscale)
 
-   grcolor = - 2.5*alog10((spall.modelflux[1]>0.1) / (spall.modelflux[2]>0.1))
    ii = where(zfit GT 0.01)
    hogg_scatterplot, grcolor[ii], zdiff[ii], xr=[0.5,3.0], yr=[-0.3,0.3], $
     xtitle='(g-r)', ytitle='z(photo) - z(spectro)', /conditional, $
@@ -207,6 +215,26 @@ pro lrgmodel_plots, suffix, public=public, recalibrate=recalibrate, $
    djs_oplot, grcolor[indx1], zdiff[indx1], psym=1, symsize=0.5, color='green'
    djs_oplot, grcolor[indx2], zdiff[indx2], psym=1, symsize=0.5, color='blue'
 
+   ;----------
+   ; PLOT: Delta-z vs. [(r-i)-(g-r)/8.] (greyscale)
+
+   xaxis = ricolor - grcolor/8.
+   ii = where(zfit GT 0.01)
+   hogg_scatterplot, xaxis[ii], zdiff[ii], xr=[-0.5,2.0], yr=[-0.3,0.3], $
+    xtitle='(r-i)-(g-r)/8', ytitle='z(photo) - z(spectro)', /conditional, $
+    quantile=[0.025, 0.05, 0.16, 0.5, 0.84, 0.95, 0.975]
+   djs_oplot, !x.crange, [0,0], color='red'
+
+   ; Re-plot with the SDSS-2dF points in color
+   hogg_scatterplot, xaxis[ii], zdiff[ii], xr=[-0.5,2.0], yr=[-0.3,0.3], $
+    xtitle='(r-i)-(g-r)/8', ytitle='z(photo) - z(spectro)', /conditional, $
+    quantile=[0.025, 0.05, 0.16, 0.5, 0.84, 0.95, 0.975]
+   djs_oplot, !x.crange, [0,0], color='red'
+   djs_oplot, xaxis[indx1], zdiff[indx1], psym=1, symsize=0.5, color='green'
+   djs_oplot, xaxis[indx2], zdiff[indx2], psym=1, symsize=0.5, color='blue'
+
    dfpsclose
 
+   return
 end
+;------------------------------------------------------------------------------

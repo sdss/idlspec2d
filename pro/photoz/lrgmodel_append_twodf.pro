@@ -1,6 +1,6 @@
 ; Input an existing SPALL structure, and append data from 2dF files.
 ;------------------------------------------------------------------------------
-function lrgmodel_append_twodf, spall, prefix, nadd=nadd
+function lrgmodel_append_twodf, spall, prefix, nadd=nadd, colorcut=colorcut
 
    blankobj = spall[0]
    struct_assign, {junk:0}, blankobj
@@ -15,8 +15,17 @@ function lrgmodel_append_twodf, spall, prefix, nadd=nadd
     message, 'Problem reading the 2dF data files'
 
    ; Trim to only good redshifts where we have matched photometry
-   itrim = where(dat1.z_final GT 0.01 AND dat2.modelflux[2] GT 0, ntrim)
+   qgood = dat1.z_final GT 0.01 AND dat2.modelflux[2] GT 0
 
+   ; Make Nikhil's color cuts if so requested
+   if (keyword_set(colorcut)) then begin
+      grcolor = - 2.5*alog10((dat2.modelflux[1]>0.1) / (dat2.modelflux[2]>0.1))
+      ricolor = - 2.5*alog10((dat2.modelflux[2]>0.1) / (dat2.modelflux[3]>0.1))
+      ourcolor = ricolor - grcolor/8.
+      qgood = qgood AND ourcolor GT 0.55 AND grcolor GT 1.4
+   endif
+
+   itrim = where(qgood, ntrim)
    moredat = replicate(blankobj, ntrim)
    copy_struct, dat2[itrim], moredat
    moredat.z = dat1[itrim].z_final
