@@ -7,6 +7,14 @@
 forward_function mpfit, fcorr_chi_fn
 
 ;------------------------------------------------------------------------------
+; Return 1 if the flux-correction vector appears to be in bounds.
+function fcorr_goodvector, ymult1
+
+   ymin = min(ymult1, max=ymax)
+
+   return, ymin GT 0.2 AND ymax LT 5.
+end
+;------------------------------------------------------------------------------
 function spfluxcorr_fn, acoeff, ymult=ymult, yadd=yadd
 
    common com_fcorr_chi, npoly, nback, loglam, aflux, bflux, $
@@ -119,8 +127,9 @@ function spfluxcorr_solve2, loglam1, allflux1, allflux2, allivar1, allivar2, $
 
    totchi2 = total( (fcorr_chi_fn(acoeff))^2 )
 
+; ???
 ;   print, 'STATUS = ', status
-   print, 'Best-fit coeffs = ', acoeff
+;   print, 'Best-fit coeffs = ', acoeff
 ;   print, 'Errors = = ', perror
 
    yfit = spfluxcorr_fn(acoeff, ymult=ymult, yadd=yadd)
@@ -209,7 +218,6 @@ function spfluxcorr_solve, loglam, aflux, bflux, sqivar, mask=mask1, $
 
    acoeff = mmi # (mmatrixt # bvec)
    chi2 = total( (mmatrix # acoeff - bvec)^2, /double )
-print,acoeff
 
    ymult = acoeff[0] * aarr[*,0]
    for i=1, npoly-1 do ymult = ymult + acoeff[i] * aarr[*,i]
@@ -346,13 +354,10 @@ pro spfluxcorr_v5, objname, adderr=adderr, combinedir=combinedir, $
    ymult = fltarr(npix,nobj,nfile) + 1.
    yadd = fltarr(npix,nobj,nfile)
 
-   npoly = 3 ; ???
    nback = 0 ; ???
-   allcoeff = dblarr(npoly+nback,nobj,nexp)
-   allcoeff[0,*,*] = 1
-
 maxiter1 = 5 ; ???
 sigrej = 2.5 ; ???
+maxpoly = 3 ; ???
    i1 = [ibest_b,ibest_r]
    for iobj=0L, nobj-1 do begin
       outmask = 0
@@ -402,31 +407,46 @@ splog,'Object', iobj, ' iter ', iiter
 
       ; This second iteration rescales the errors.
       ; No more pixels will be rejected in this loop.
-splog,'Object', iobj
       ; Loop over exposures
       for iexp=0L, nexp-1 do begin
          if (explist[iexp] NE bestexpnum) then begin
-; We want to add more parameters as long as chi^2 is significantly improved???
             i_b = where(camcolor EQ 'b' AND expnum EQ explist[iexp], ct1)
             i_r = where(camcolor EQ 'r' AND expnum EQ explist[iexp], ct2)
             i2 = [i_b,i_r]
+
+            ; Set default values in caes all fits are bad
+            ymult[*,iobj,i2] = 1
+            yadd[*,iobj,i2] = 0
+
             qgood =allivar[*,iobj,i2] GT 0 $
              AND allivar[*,iobj,i1] GT 0 $
              AND outmask GT 0
             igood = where(qgood, ct)
             if (ct GT 0) then begin
-               thiscoeff = spfluxcorr_solve2(loglam[*,iobj,*], $
-                allflux[*,iobj,i2], allflux[*,iobj,i1], $
-                allivar[*,iobj,i2], allivar[*,iobj,i1] * qgood, $
-                npoly=npoly, nback=nback, ymult=ymult1, yadd=yadd1, $
-                totchi2=totchi2)
-;if (min(ymult1) LT 0) then stop ; ???
-            endif else begin
-               ymult1 = 1
-               yadd1 = 0
-            endelse
-            ymult[*,iobj,i2] = ymult1
-            yadd[*,iobj,i2] = yadd1
+               npoly1 = 1
+               qcont = 1B
+               lastchi2 = 0
+               ; Add more polynomial terms to the fit as long as
+               ; the vectors are still good, and the chi^2 is significantly
+               ; improved (by at least 5).
+               while (qcont AND npoly1 LE maxpoly) do begin
+                  thiscoeff = spfluxcorr_solve2(loglam[*,iobj,*], $
+                   allflux[*,iobj,i2], allflux[*,iobj,i1], $
+                   allivar[*,iobj,i2], allivar[*,iobj,i1] * qgood, $
+                   npoly=npoly1, nback=nback, ymult=ymult1, yadd=yadd1, $
+                   totchi2=thischi2)
+                  if (fcorr_goodvector(ymult1) $
+                   AND (npoly1 EQ 1 OR lastchi2-thischi2 GT 5.)) then begin
+splog,'---> Object', iobj,iexp,npoly1,lastchi2-thischi2 ; ???
+                     ymult[*,iobj,i2] = ymult1
+                     yadd[*,iobj,i2] = yadd1
+                     lastchi2 = thischi2
+                  endif else begin
+                     qcont = 0B
+                  endelse
+                  npoly1 = npoly1 + 1
+               endwhile
+            endif
          endif
       endfor
 
