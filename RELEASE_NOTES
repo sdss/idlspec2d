@@ -1,7 +1,9 @@
 
-v4_9_? (Nov ??, 2001 idlspec2d+idlutils) running on IDL 5.3 - 5.5
-v1_? of specflat
+-------------------------------------------------------------------------------
+v4_9_1 (Jan 24, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
+Built against specflat v1_3.
 
+This tagged version is for running Son-of-Spectro.
 Bug fixes to run on IDL 5.5.
 Changes to how the SOS robot launches the rsync jobs and fix other SOS bugs.
 Bias-subtraction now implemented (bias images in the "specflat" product).
@@ -54,6 +56,16 @@ FIND_NMINIMA: Retain each peak only if it is at least MINSEP from all
 FINDSPEC: Crash if the plate list file is missing w/ an informative message.
             Do not crash if spPlate files missing for some plates.
 FITARCIMAGE: Bug fix to prevent IDL 5.5 from crashing.
+FITSN: The logic for choosing fitting limits for all possible bands
+            has been moved to this function.  This function will now
+            choose the full mag range [0,23] to fit if there are fewer
+            than 20 points in the default ranges and at least 3 good points.
+            This function is called by the following routes in Son-of-Spectro:
+               APO_PLOTSN -> PLOTSN -> FITSN
+               QUICKEXTRACT -> FITSN
+            This function is called by the following routes in Spectro-2D:
+               PLATESN -> PLOTSN -> FITSN
+               EXTRACT_OBJECT -> FITSN
 MULTISYNTHSPEC,SYNTHSPEC: Bug fix for when wavelength spacing is different
             between the template and the requested synthetic spectrum.
 PCA_CVSTAR: New proc for generating eigen-spectra for CV stars.
@@ -203,6 +215,8 @@ aporsync_logs.sh, aporsync_blue.sh, aporsync_red.sh:
              This should be more robust, and prevent the logging+guider
              files from hanging up the whole system.
 sos.sh, sos_status, startapo.sh: Use the new aporync scripts.
+sos_start: Set defaults for RAWDATA_DIR and ASTROLOG_DIR appropriate for
+             the machine sos.apo.
 eigeninput_cvstar.dat: New file for PCA_CVSTAR.
 eigeninput_star.dat: Many more M stars added for implementing changes
             to PCA_STAR.
@@ -307,6 +321,7 @@ evilmake: Turn optimization flags back on, which we commented
 
 -------------------------------------------------------------------------------
 v4_9_0 (Nov 10, 2001 idlutils only) running on IDL 5.3 - 5.5
+Built against specflat v1_2.
 
 YANNY_PAR (in idlutils): Add INDX keyword, and fix bug in returned COUNT.
          Support for KEYNAME input as an array.
@@ -318,6 +333,7 @@ evilinstall (in idlutils): If $CVSROOT is not set, then set it either
 
 -------------------------------------------------------------------------------
 v4_8_4 (Aug 29, 2001 idlspec2d+idlutils) running on IDL 5.3 - 5.4
+Built against specflat v1_2.
 
 Minor fix to 2D-combining code for running plates 214,340,270 which failed.
 
@@ -348,6 +364,7 @@ eviltarball (in idlutils): New script to export a version of a code
 
 -------------------------------------------------------------------------------
 v4_8_3 (Aug 24, 2001 idlspec2d+idlutils) running on IDL 5.3 - 5.4
+Built against specflat v1_2.
 
 Cut version for running P-1D, improving the redshift fits + errors.
 
@@ -407,6 +424,7 @@ build_links (in idlutils): Do not build a link for any file if the link
 
 -------------------------------------------------------------------------------
 v4_8_2 (Aug 16, 2001 idlspec2d+idlutils) running on IDL 5.3 - 5.4
+Built against specflat v1_2.
 
 Trivial changes for running this version at Fermi.
 
@@ -423,7 +441,7 @@ evilinstall (in idlutils): Syntax changes to work with bash on spectro.
 
 -------------------------------------------------------------------------------
 v4_8_1 (Aug 9, 2001 idlspec2d+idlutils) running on IDL 5.3 - 5.4
-v1_2 of specflat
+Built against specflat v1_2.
 
 Cut version for re-running Spectro-2D on all data.
 
@@ -455,7 +473,7 @@ SPHEREMATCH (in idlutils): New code to match two lists of RA,DEC.
 
 -------------------------------------------------------------------------------
 v4_8_0 (Jul 17, 2001 idlspec2d+idlutils) running on IDL 5.3 - 5.4
-v1_1 of specflat
+Built against specflat v1_1.
 
 First cut of v4_8 with many major changes.  Not yet tested for prime time.
 
