@@ -43,6 +43,7 @@ etc/intrinsic1.dat -text
 etc/intrinsicF2.dat -text
 etc/lamphgcdne.dat -text
 etc/lamplist.dat -text
+etc/linematch.par -text
 etc/red.bkpts -text
 etc/regress1d_all.chicago -text
 etc/regress1d_all.dat -text
@@ -176,6 +177,7 @@ pro/spec1d/reduce_plate.pro -text
 pro/spec1d/rline_findew.pro -text
 pro/spec1d/rline_findpeaks.pro -text
 pro/spec1d/rline_getplate.pro -text
+pro/spec1d/rline_matchpeaks.pro -text
 pro/spec1d/sdss_flagname.pro -text
 pro/spec1d/skymask.pro -text
 pro/spec1d/spec_append.pro -text
