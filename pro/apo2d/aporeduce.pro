@@ -136,11 +136,12 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    hdr = sdsshead(fullname)
 
    flavor = strtrim(sxpar(hdr, 'FLAVOR'),2)
-
    plate = sxpar(hdr, 'PLATEID')
    platestr = string(plate, format='(i4.4)')
    mjd = sxpar(hdr, 'MJD')
    mjdstr = strtrim(string(mjd),2)
+
+   splog, 'FLAVOR=', flavor, ' PLATEID=', plateid, 'MJD=', mjd
 
    ;----------
    ; Determine names for the FITS and HTML output log files
