@@ -216,6 +216,10 @@ sprobot.sh: Run the same version of the idlspec2d product as is set up
             current version is not a UPS version, but just NOCVS; in that
             case, the version declared current on each remote host is used.
 
+Combine all of the install instructions into one place,
+in the file "idlspec2d_install.html".  The instructions
+from "spectroSOS.html" have been moved there.
+
 In idlutils:
 
 All Goddard libraries updated to the versions as of 3 January 2002 from
