@@ -72,7 +72,11 @@ pro spallreduce, planfile, docams=docams, ncombine=ncombine, $
    ; Set environment variables for call to SPREDUCE2D
    setenv, 'RAWDATA_DIR=' + inputdir
    setenv, 'SPECLOG_DIR=' + plugdir
-   setenv, 'SPECFLAT_DIR=' + flatdir
+
+   ;  Specflat dir is not set in Specflat product!
+
+   if (getenv('SPECFLAT_DIR') EQ '') then $
+     setenv, 'SPECFLAT_DIR=' + flatdir
 
    spreduce2d, planfile[0], docams=docams, xdisplay=xdisplay
 
