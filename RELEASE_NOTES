@@ -24,6 +24,10 @@ DUST_SDSSFILTER: New proc to integrate the extinction curve over
 DUST_INTFILTER: New proc to integrate the extinction curve over a
            given source function + filter curve.
 HOGG_SCATTERPLOT: New proc to plot greyscale scatterplot with contours.
+STRUCT_PRINT: If /NO_HEAD is set, do not increase the width of a column
+           to occomodate the column name.  New FORMATCODES option.
+YANNY_WRITE: New options /ALIGN and FORMATCODES, even though these options
+           make it possible to write invalid Yanny files.
 
 Various astrometric routines have been moved from the hoggpt product
 into pro/astrom.  The USNO routines have been modified for reading
