@@ -82,6 +82,13 @@ speclimit red flat NGOODFIBER b2 0 310
 speclimit red flat NGOODFIBER r1 0 310
 speclimit red flat NGOODFIBER r2 0 310
 
+# Issue an error if the spatial widths are gaussians with sigma > 1.10 pix.
+
+speclimit red flat XSIGMA b1 1.10 9e9
+speclimit red flat XSIGMA b2 1.10 9e9
+speclimit red flat XSIGMA r1 1.10 9e9
+speclimit red flat XSIGMA r2 1.10 9e9
+
 # The wavelength ranges should match closely to how we tuned the spectrographs
 # on MJD 51612 (8/9 March 2000).  Our best values were:
 #   b1  3792 - 6165
@@ -139,6 +146,13 @@ speclimit red arc NLAMPS b1 0 13
 speclimit red arc NLAMPS b2 0 13
 speclimit red arc NLAMPS r1 0 30
 speclimit red arc NLAMPS r2 0 30
+
+# Issue an error if the wavelength widths are gaussians with sigma > 1.20 pix.
+
+speclimit red arc DISPSIGMA b1 1.20 9e9
+speclimit red arc DISPSIGMA b2 1.20 9e9
+speclimit red arc DISPSIGMA r1 1.20 9e9
+speclimit red arc DISPSIGMA r2 1.20 9e9
 
 # The sky levels were 0.15 e-/pix and 0.30 e-/pix in the blue and
 # cameras on MJD 51612 (8/9 March 2000).  Report a warning (yellow)
