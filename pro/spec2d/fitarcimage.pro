@@ -32,6 +32,7 @@
 ;                default to (NFIBER-30)/2
 ;   nmed       - Number of rows around ROW to median filter for initial
 ;                wavelengths solution; default to 5
+;   masdev     - max deviation in log lambda to allow (default 1.0e-5)
 ;   gauss      - Use gaussian profile fitting for final centroid fit
 ;
 ; OUTPUTS:
@@ -87,7 +88,7 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
  color=color, lampfile=lampfile, fibermask=fibermask, $
  func=func, aset=aset, ncoeff=ncoeff, lambda=lambda, thresh=thresh, $
  row=row, nmed=nmed, xdif_tset=xdif_tset, bestcorr=bestcorr, $
- gauss=gauss
+ gauss=gauss, maxdev=maxdev
 
    ;---------------------------------------------------------------------------
    ; Preliminary stuff
@@ -99,6 +100,7 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    endif
    if (NOT keyword_set(func)) then func = 'legendre'
    if (NOT keyword_set(ans)) then ans = 0
+   if NOT keyword_set(maxdev) then maxdev = 1.0d-5
 
    t_begin = systime(1)
 
@@ -271,7 +273,6 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    ;---------------------------------------------------------------------------
 
 ; ??? Let maxdev be a parameter; should be about 3.0d-5 = 20 km/s
-maxdev = 1.0d-5
 ;maxsig = 3.0
 
    nlamp = N_elements(lamps)
