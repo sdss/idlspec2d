@@ -206,7 +206,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
 
    if (!version.release LT '5.3') then begin
       if (NOT keyword_set(silent)) then $
-       splog, 'Warning: Unable to fix headers with this version of IDL' $
+       splog, 'Warning: Unable to fix headers with this version of IDL'
    endif else begin
       sphdrfix, infile, hdr
    endelse
