@@ -116,6 +116,7 @@ pro fitredshift, fluxfft, fluxerr, starfft, starerr, $
 ; returned value defaults
    zfit = 0.
    z_err = 999.
+   zconf = 0.
    veldisp = 0.
    veldisp_err = 999.
 
