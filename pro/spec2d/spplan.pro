@@ -156,7 +156,9 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
       splog, 'Astrolog directory ', plugdir
 
       ; Find all raw FITS files in this directory
-      fullname = findfile(inputdir+'/sdR*.fit', count=nfile)
+	cd, inputdir, current=olddir
+      fullname = findfile('sdR*.fit', count=nfile)
+	cd, olddir
       splog, 'Number of FITS files found: ', nfile
 
       if (nfile GT 0) then begin
@@ -187,7 +189,7 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
          CAMERAS = strarr(nfile)
          for i=0, nfile-1 do begin
 
-            hdr = headfits(fullname[i])
+            hdr = headfits(inputdir+'/'+fullname[i])
 
             PLATEID[i] = long( sxpar(hdr, 'PLATEID') )
             EXPTIME[i] = sxpar(hdr, 'EXPTIME')
