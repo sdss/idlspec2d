@@ -1,10 +1,12 @@
+v4_6_0 (Feb 9, 2001)
 
-EXTRACT_OBJECT: NEARBADPIXEL only if it is within 1 pixel of trace center
-                used to reject possibly bad sky pixels.
+EXTRACT_OBJECT: Reverted to Gaussian Profile, more robust flat field 
+                 interpolation, still 3% are fluctuations when 
+                 NEARBADPIXEL is set.
 FIBERFLAT: Fiber is flagged BADFLAT is more than 30% of pixels are masked.
 FLATINTERP: Remove call to this code.
 SPCALIB: Back to original flat field rejection levels matches object extraction.
-SKYSUBTRACT: Check for NEARBADPIXEL bit as well in pixelmask.
+SKYSUBTRACT: Check for NEARBADPIXEL and LOWFLAT bit as well in pixelmask.
 
 Add BADFLUXFACTOR mask bit when applying flux-calibration and flux-correction
 vectors.
@@ -20,7 +22,7 @@ Major changes to PLATELIST routine to return more info, and make a FITS
 binary table.
 
 -------------------------------------------------------------------------------
-v4_5_0 (Jan 31, 2000)
+v4_5_0 (Jan 31, 2001)
 
 Edits to raw frame headers now possible with SPHDRFIX procedure, which
 reads the list of changes from opHdrFix.par file.  In particular, this
@@ -40,7 +42,7 @@ SPREDUCE1D: If an object is fit by a negative STAR or negative QSO, then
             re-classify it as UNKNOWN.
 
 -------------------------------------------------------------------------------
-v4_4_0 (Jan 23, 2000)
+v4_4_0 (Jan 23, 2001)
 
 Remove any telluric-correction beyond 8250 Ang, since we don't believe
 any of it there.  In fact, it looks like we were multiplying-in features
