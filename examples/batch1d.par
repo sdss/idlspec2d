@@ -7,6 +7,6 @@ typedef struct {
   char protocol[5];      # Protocol name, ssh or rsh
 } hostconfig;
 
+hostconfig localhost "" ""
 hostconfig coma.princeton.edu /scr0/schlegel ssh1
-hostconfig spectro.princeton.edu "" ""
 

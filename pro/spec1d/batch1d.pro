@@ -1,10 +1,19 @@
-pro batch1d, fullplatefile
+; Run from within top level directory 2d_test
+; If using other machines in Peyton, set
+;   topdir='/peyton/scr/spectro0/data/2d_test'
+
+pro batch1d, fullplatefile, topdir=topdir
+
+   if (NOT keyword_set(topdir)) then begin
+      cd, current=topdir
+      cd, topdir
+   endif
 
    ;----------
    ; Create list of plate files
 
    if (NOT keyword_set(fullplatefile)) then $
-    fullplatefile = findfile('*/spPlate-*.fits')
+    fullplatefile = findfile( filepath('spPlate-*.fits', root_dir='*') )
    platefile = fileandpath(fullplatefile, path=localpath)
    nplate = n_elements(platefile)
 
@@ -55,17 +64,23 @@ pro batch1d, fullplatefile
    endfor
 
    ;----------
-   ; Create list of input files
+   ; Create lists of input files
 
-   infile = transpose( [ [fullscriptfile], [fullplatefile] ] )
+   infile = ptrarr(nplate)
+   for i=0, nplate-1 do $
+    infile[i] = ptr_new([ fullscriptfile[i],fullplatefile[i] ])
 
    ;----------
-   ; Create list of expected output files
+   ; Create lists of expected output files
 
    zallfile = localpath + '/spZall-' + platemjd + '.fits'
    zbestfile = localpath + '/spZbest-' + platemjd + '.fits'
    diagps = localpath + '/spDiag1d-' + platemjd + '.ps'
-   outfile = transpose( [ [diaglog], [diagps], [zallfile], [zbestfile] ] )
+
+   outfile = ptrarr(nplate)
+   for i=0, nplate-1 do $
+    outfile[i] = $
+     ptr_new([ diaglog[i], diagps[i], zallfile[i], zbestfile[i] ])
 
    ;----------
    ; Prioritize to do the most recent plates first
@@ -87,7 +102,7 @@ pro batch1d, fullplatefile
    ; Begin the batch jobs
 
    command = 'nice +19 idl ' + fullscriptfile
-   batch, infile, outfile, $
+   batch, topdir, infile, outfile, $
     hostconfig.protocol, hostconfig.remotehost, hostconfig.remotedir, $
     command, priority=priority
 

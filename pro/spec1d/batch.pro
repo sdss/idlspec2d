@@ -9,10 +9,12 @@
 ;   batch,
 ;
 ; INPUTS:
-;   localfile  - Array of input files on local machine, where there are
-;                NFILE files per program [NINFILE,NPROGRAM]
-;   outfile    - Array of output files created on remote machine and copied
-;                to local machine upon completion [NOUTFILE,NPROGRAM]
+;   topdir     - Local top-level directory for input and output files.
+;                Also use this directory for remote hosts where REMOTEDIR
+;                is not specified.
+;   localfile  - Array of pointers to input files on local machine [NPROGRAM]
+;   outfile    - Array of pointers to output files created on remote machine
+;                and copied to local machine upon completion [NPROGRAM]
 ;   remotehost - List of remote hosts [NHOST]
 ;   remotedir  - List of remote directories; scalar or [NHOST]
 ;   command    - Command to execute to begin a job; scalar or [NPROGAM]
@@ -26,6 +28,9 @@
 ; OUTPUTS:
 ;
 ; COMMENTS:
+;   The file names will support wildcards.  For example, if you want to
+;   return all files from the directory REMOTEDIR/abc on the remote machine,
+;   then set OUTFILE = 'abc/*'.
 ;
 ; EXAMPLES:
 ;
@@ -52,11 +57,12 @@ pro batch_spawn, command, retval
 
    return
 end
+
 ;------------------------------------------------------------------------------
 function create_program_list, localfile, outfile, command, $
  priority=priority
 
-   nprog = n_elements(localfile[0,*])
+   nprog = n_elements(localfile)
 
    ftemp = create_struct( name='PROGLIST_STRUCT', $
     'PROGNAME', '', $
@@ -70,8 +76,8 @@ function create_program_list, localfile, outfile, command, $
    proglist = replicate(ftemp, nprog)
 
    for iprog=0, nprog-1 do begin
-      proglist[iprog].localfile = ptr_new(localfile[*,iprog])
-      proglist[iprog].outfile = ptr_new(outfile[*,iprog])
+      proglist[iprog].localfile = localfile[iprog] ; (pointer)
+      proglist[iprog].outfile = outfile[iprog] ; (pointer)
       proglist[iprog].progname = 'JOB#' + strtrim(string(iprog),2)
    endfor
 
@@ -82,7 +88,7 @@ function create_program_list, localfile, outfile, command, $
 end
 
 ;------------------------------------------------------------------------------
-function create_host_list, protocol, remotehost, remotedir
+function create_host_list, protocol, remotehost, remotedir, topdir
 
    nhost = n_elements(remotehost)
 
@@ -101,13 +107,19 @@ function create_host_list, protocol, remotehost, remotedir
    hostlist[*].protocol = protocol
 
    for ihost=0, n_elements(hostlist)-1 do begin
-      case hostlist[ihost].protocol of
-         'ssh' : hostlist[ihost].cpstring = 'scp'
-         'ssh1': hostlist[ihost].cpstring = 'scp1'
-         'ssh2': hostlist[ihost].cpstring = 'scp2'
-         'rsh' : hostlist[ihost].cpstring = 'rcp'
-         else  :
-      endcase
+      if (keyword_set(hostlist[ihost].remotedir)) then begin
+         case hostlist[ihost].protocol of
+            'ssh' : hostlist[ihost].cpstring = 'scp'
+            'ssh1': hostlist[ihost].cpstring = 'scp1'
+            'ssh2': hostlist[ihost].cpstring = 'scp2'
+            'rsh' : hostlist[ihost].cpstring = 'rcp'
+            ''    : hostlist[ihost].cpstring = ''
+            else  : message, 'Invalid protocol: ' + hostlist[ihost].protocol
+         endcase
+      endif else begin
+         ; Retain CPSTRING=''
+         hostlist[ihost].remotedir = topdir
+      endelse
    endfor
 
    return, hostlist
@@ -145,26 +157,30 @@ pro batch_assign_job, ihost, iprog
    if (hostlist[ihost].status NE 'IDLE') then $
     message, 'Host is not idle'
 
+   splog, ''
    splog, 'Assigning job ' + proglist[iprog].progname $
     + ' to host ' + hostlist[ihost].remotehost
 
    cpstring = hostlist[ihost].cpstring
    prothost = hostlist[ihost].protocol + ' ' + hostlist[ihost].remotehost + ' '
 
-   if (keyword_set(hostlist[ihost].protocol)) then begin
+   if (keyword_set(cpstring)) then begin
 
       ; Create directories on remote machine for input files.
-      ; Create one remote directory at a time, copying files over it it.
+      ; Create all remote directories at once, then copy files into one
+      ; directory at a time.
       allinput = djs_filepath(*proglist[iprog].localfile, $
        root_dir=hostlist[ihost].remotedir)
       junk = fileandpath(allinput, path=newdir)
 
       iuniq = uniq(newdir, sort(newdir))
+      batch_spawn, prothost + 'mkdir -p ' $
+       + string(newdir[iuniq]+' ',format='(99a)')
+
       for i=0, n_elements(iuniq)-1 do begin
          newdir1 = newdir[iuniq[i]]
          indx = where(newdir EQ newdir1)
 
-         batch_spawn, prothost + 'mkdir -p ' + newdir1
          tmp1 = string((*proglist[iprog].localfile)[indx]+' ',format='(99a )')
          batch_spawn, cpstring + ' ' + tmp1 + ' ' $
           + hostlist[ihost].remotehost + ':' + newdir1
@@ -173,9 +189,10 @@ pro batch_assign_job, ihost, iprog
       ; Create directories on remote machine for output files
       alloutput = djs_filepath(*proglist[iprog].outfile, $
        root_dir=hostlist[ihost].remotedir)
-      junk = fileandpath(alloutput, path=alloutdir)
-      newdir = string(alloutdir+' ',format='(99a )')
-      batch_spawn, prothost + 'mkdir -p ' + newdir
+      junk = fileandpath(alloutput, path=newdir)
+      iuniq = uniq(newdir, sort(newdir))
+      batch_spawn, prothost + 'mkdir -p ' $
+       + string(newdir[iuniq]+' ',format='(99a)')
 
       ; Launch the command in the background
       batch_spawn, prothost + sq+'cd '+hostlist[ihost].remotedir+'; ' $
@@ -184,9 +201,10 @@ pro batch_assign_job, ihost, iprog
    endif else begin
 
       ; Only need to create local directories for output files
-      junk = fileandpath(*proglist[iprog].outfile, path=alloutdir)
-      newdir = string(alloutdir+' ',format='(99a )')
-      batch_spawn, 'mkdir -p ' + newdir
+      junk = fileandpath(*proglist[iprog].outfile, path=newdir)
+      iuniq = uniq(newdir, sort(newdir))
+      batch_spawn, 'mkdir -p ' $
+       + string(newdir[iuniq]+' ',format='(99a)')
 
       ; Launch the command in the background
       batch_spawn, proglist[iprog].command + ' &', retstring
@@ -194,7 +212,8 @@ pro batch_assign_job, ihost, iprog
    endelse
 
    ; Save the process ID number, which is the 2nd word of the return string
-   proglist[iprog].pid = long( (str_sep(retstring,' '))[1] )
+   retwords = str_sep(retstring, ' ')
+   proglist[iprog].pid = long( retwords[1] )
 
    hostlist[ihost].status = 'BUSY'
    hostlist[ihost].progname = proglist[iprog].progname
@@ -217,27 +236,22 @@ pro batch_finish_job, ihost, iprog
    cpstring = hostlist[ihost].cpstring
    prothost = hostlist[ihost].protocol + ' ' + hostlist[ihost].remotehost + ' '
 
-   if (keyword_set(hostlist[ihost].protocol)) then begin
+   if (keyword_set(cpstring)) then begin
 
       alloutput = djs_filepath(*proglist[iprog].outfile, $
        root_dir=hostlist[ihost].remotedir)
 
-      ; Now create local directories for output files
-      junk = fileandpath(*proglist[iprog].outfile, path=newdir)
-      newdir = string(newdir+' ',format='(99a )')
-      batch_spawn, 'mkdir -p ' + newdir
-
       ; Create directories on local machine for output files.
-      ; Create one local directory at a time, copying files over it it.
+      ; Create all local directories at once, then copy files into one
+      ; directory at a time.
       junk = fileandpath(*proglist[iprog].outfile, path=newdir)
 
       iuniq = uniq(newdir, sort(newdir))
+      batch_spawn, 'mkdir -p ' $
+       + string(newdir[iuniq]+' ',format='(99a)')
       for i=0, n_elements(iuniq)-1 do begin
          newdir1 = newdir[iuniq[i]]
          indx = where(newdir EQ newdir1)
-
-         ; Create local directory
-         batch_spawn, 'mkdir -p ' + newdir1
 
          ; Copy output files from remote machine to local
          tmp1 = string(hostlist[ihost].remotehost+':' $
@@ -267,12 +281,14 @@ pro batch_finish_job, ihost, iprog
 end
 
 ;------------------------------------------------------------------------------
-pro batch, localfile, outfile, protocol, remotehost, remotedir, $
+pro batch, topdir, localfile, outfile, protocol, remotehost, remotedir, $
  command, priority=priority, wtime=wtime
 
    common com_batch, hostlist, proglist
 
    if (NOT keyword_set(wtime)) then wtime = 600 ; Default to wait 10 mins
+
+   if (keyword_set(topdir)) then cd, topdir
 
    ;----------
    ; Create a list of programs to execute (and their status)
@@ -285,7 +301,7 @@ pro batch, localfile, outfile, protocol, remotehost, remotedir, $
    ;----------
    ; Create a list of available remote hosts (and their status)
 
-   hostlist = create_host_list(protocol, remotehost, remotedir)
+   hostlist = create_host_list(protocol, remotehost, remotedir, topdir)
    nhost = n_elements(hostlist)
    splog, 'Number of hosts = ', nhost
 
