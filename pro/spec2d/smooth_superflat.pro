@@ -97,6 +97,9 @@ function smooth_superflat, superflatset, airset, plottitle=plottitle
         ymargin=[4,-4],/xs, xrange=xrange, xtitle='Wavelength (\AA)'
      djs_oplot, wave, yfit-yfit+1
      polyfill, [wave, reverse(wave)], [ratio, ratio*0+1], color=djs_icolor('red')
+     xyouts, [0.95], [0.5], 'Area= '+strtrim(string(area),2)+' ', $
+             alignment=1.0, /normal 
+     !p.multi = oldmulti
    endif
  
    return, fullfit
