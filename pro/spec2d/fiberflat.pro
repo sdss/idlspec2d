@@ -29,6 +29,7 @@
 ;                This is now what we use?
 ;   plottitle  - Title for QA plot; if not set, then do not plot.
 ;   nonorm     - Do not normalize the fluxes in FFLAT by the super-flat.
+;   superflatset-Bspline set to reconstruct superflat
 ;
 ; PARAMETERS FOR SLATEC_SPLINEFIT:
 ;   nord
@@ -78,7 +79,7 @@
 function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
  minval=minval, ncoeff=ncoeff, pixspace=pixspace, nord=nord, $
  lower=lower, upper=upper, dospline=dospline, plottitle=plottitle, $
- nonorm=nonorm
+ nonorm=nonorm, superflatset=superflatset
 
    dims = size(flux, /dimens)
    ny = dims[0]
@@ -107,7 +108,7 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
    ;----------
    ; Construct the "superflat" vector
 
-   sset = superflat(flux, fluxivar, wset, $
+   superflatset = superflat(flux, fluxivar, wset, $
     fibermask=fibermask, minval=minval, lower=3.0, upper=3.0, $
     medval=medval, title=plottitle)
 
@@ -116,7 +117,7 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
       return, -1
    endif
 
-   fit2  = bspline_valu(loglam, sset)
+   fit2  = bspline_valu(loglam, superflatset)
 
    ;----------
 
