@@ -273,8 +273,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    camcol = indx[0] + 1
    camrow = 0
 
-; Disable this for now, since we're not using it yet.
-;   spawn, 'speclog_version', verslog
+   spawn, 'speclog_version', verslog
    if (NOT keyword_set(verslog)) then verslog = 'Unknown'
 
    spawn, 'specflat_version', versflat
