@@ -6,9 +6,9 @@ pro id_summarize, id_list, spec, summary=s, filename=filename
   if nin EQ 0 then return
 
   template = { index: 0L, plate: 0L, mjd : 0L, fiberid : 0L, $
-               ra : 0.0d, dec : 0.0d, zqso : 0.0, zabs : 0.0, $
+               ra : 0.0d, dec : 0.0d, imag : 0.0, zqso : 0.0, zabs : 0.0, $
                ew2796: 0.0, ew2803: 0.0, ew2852: 0.0, ew2600 : 0.0, $
-               ew2382 : 0.0 }
+               ew2382 : 0.0 , rank: 0.0 }
 
   s = replicate(template,nin)
   index = id_list[mg1].index
@@ -19,6 +19,10 @@ pro id_summarize, id_list, spec, summary=s, filename=filename
   s.mjd     = spec[index].zans.mjd
   s.fiberid = spec[index].zans.fiberid
   s.zqso    = spec[index].zans.z
+;
+;  Guess  i' band magnitude
+;
+  s.imag    = spec[index].plug.mag[3] - 0.2
 
 ;
 ;  Now fill in absorption information and print out
@@ -33,7 +37,7 @@ pro id_summarize, id_list, spec, summary=s, filename=filename
      zabs = 0.0
      weight = 0.0
 
-     for j=8,12 do begin
+     for j=9,13 do begin
        exist = where(tag_wave[j] EQ fix(id_list[lines].restwave))
        if exist[0] NE -1 then begin
           s[i].(j) = id_list[lines[exist]].ew_pix

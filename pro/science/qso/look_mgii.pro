@@ -40,13 +40,28 @@ function look_mgii, this_list, spec, index, pixel_sep, $
 ;   Don't blindly search for MgII above 7800 Ang.
 ;
         good = 1
-        if work_wave[mgq[0]] GT alog10(7800.0) then good = 0
+        if work_wave[mgq[0]] GT alog10(7800.0) then begin
+           print, 'Discarding because wavelength falls in sky lines'
+           good = 0
+        endif
         
 ;
 ;   Reject odd EW ratios
 ;
         ratio = work_list[j].y/work_list[mgq].y 
-        if ratio GT 2.2 OR ratio LT 0.8 then good = 0
+        if ratio GT 2.2 OR ratio LT 0.8 then begin
+          print, 'Discarding because EW ratio= ', ratio
+          good = 0
+        endif
+
+;
+;   Reject zabs > zqso + 0.1
+;
+        if work_wave[j] GT alog10((1.1+spec.zans.z)*restwave[mg1]) then begin
+           print, 'Discarding because zabs > zqso + 0.1'
+           good=0
+        endif
+
 
         if good EQ 0 then j=j+1  $
         else begin

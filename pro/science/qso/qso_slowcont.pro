@@ -26,8 +26,8 @@ pro qso_slowcont, loglam, flux, invvar, range=range, model=model, mask=mask
 
     modelset = bspline_iterfit(loglam[inrange], flux[inrange], $
                   invvar=invvar[inrange], nord=4, yfit=yfit, $
-                  maxiter=maxiter, upper=10.0, lower=4.0, /silent, $
-                  outmask=outmask, everyn=30, maxrej=1, grow=7, /groupbadpix)
+                  maxiter=maxiter, upper=10.0, lower=3.0, /silent, $
+                  outmask=outmask, everyn=20, maxrej=1, grow=3, /groupbadpix)
 
     diff = (flux[inrange] - yfit) * sqrt(invvar[inrange])
     close = where(diff LT 10.0 AND diff GT -2.0)
@@ -35,8 +35,8 @@ pro qso_slowcont, loglam, flux, invvar, range=range, model=model, mask=mask
 
     modelset = bspline_iterfit(loglam[inrange], flux[inrange], $
                   invvar=invvar[inrange], nord=4, yfit=yfit, $
-                  maxiter=maxiter, upper=5.0, lower=3.0, /silent, $
-                  outmask=outmask, everyn=18, maxrej=1, /groupbadpix, grow=1)
+                  maxiter=maxiter, upper=5.0, lower=2.0, /silent, $
+                  outmask=outmask, everyn=15, maxrej=1, /groupbadpix, grow=1)
 
     if total(outmask EQ 0) LT maxiter then begin
       model[inrange] = yfit
