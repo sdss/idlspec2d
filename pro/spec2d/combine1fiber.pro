@@ -233,7 +233,7 @@ endelse
 
                   smask = interpol(float(fullcombmask[these]), $
                    inloglam[these], newloglam[inbetween])
-                  ibad = where(smask LT 1.0)
+                  ibad = where(smask LT 1.0 - (machar()).eps) ; check roundoff
                   if (ibad[0] NE -1) then result[ibad] = 0
 
                   newivar[inbetween] = newivar[inbetween] + result
