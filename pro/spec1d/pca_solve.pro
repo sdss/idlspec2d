@@ -16,7 +16,9 @@
 ;   objivar        - Object inverse variances [NPIX,NSPEC]
 ;
 ; OPTIONAL INPUTS:
-;   objloglam      - Object wavelengths in log10(Angstroms) [NPIX,NSPEC]
+;   objloglam      - Object wavelengths in log10(Angstroms)
+;                    [NPIX] if the same wavelength mapping for all spectra,
+;                    or [NPIX,NSPEC] if the wavelength mappings are different.
 ;   zfit           - Redshifts of each input spectrum [NSPEC]; if set, then
 ;                    each input spectrum is de-redshifted to z=0.
 ;   wavemin        - Minimum wavelength to use in PCA solution, in Angstroms;
@@ -113,13 +115,22 @@ if (keyword_set(objloglam)) then begin ; ???
    newflux = fltarr(nnew,nobj)
    newivar = fltarr(nnew,nobj)
 
+   ndim = size(objloglam, /n_dimen)
+   if (ndim EQ 1) then begin
+      qwavevec = 0B
+   endif else begin
+      qwavevec = 1B
+      if ((size(objloglam, /dimens))[1] NE nobj) then $
+       message, 'Wrong number of dimensions for OBJLOGLAM'
+   endelse
+
    ;----------
    ; Shift each spectra to z=0 and sample at the output wavelengths
 
    for iobj=0, nobj-1 do begin
-      indx = where(objloglam[*,iobj] GT 0)
+      indx = where(objloglam[*,iobj*qwavevec] GT 0)
 print,'OBJECT ',iobj
-      combine1fiber, objloglam[indx,iobj]-logshift[iobj], $
+      combine1fiber, objloglam[indx,iobj*qwavevec]-logshift[iobj], $
        objflux[indx,iobj], objivar[indx,iobj], $
        newloglam=newloglam, binsz=objdloglam, newflux=flux1, newivar=ivar1
       newflux[*,iobj] = flux1
