@@ -3,8 +3,13 @@ Runnable version for P-1D.
 
 CREATE_LINESTRUCT(): Function broken out of LINEBACKFIT so that it
             can be called by SPECLINEFIT.
+READSPEC: Don't fail when asking for SYNFLUX, but the spZ file doesn't exist.
+            (This prevented PLOTSPEC from plotting anything in that case.)
 SPCOADD_FRAMES: Remove the following keywords from the spPlate file:
             PIXBIAS,FLATFILE,ARCFILE,OBJFILE.
+            Issue a warning message if any object fibers have OBJTYPE=NA,
+            which should be impossible, but the special plate 673 and
+            possibly others had some such fibers.
 SPECLINEFIT: Fixed dumb mistake on indexing that could crash.
             Always create an NLINE x NOBJ output structure, with blank
             entries where we do not measure lines (currently, only
@@ -13,6 +18,9 @@ SPECLINEFIT: Fixed dumb mistake on indexing that could crash.
 opHdrFix.par: Declare bad aborted smears for plate 601 and 803.
             Declare bad exposure on plate 866.
             Don't include test data from MJD 52318.
+            Remove bad data for plate 727 on MJD 52207.
+            Remove bad data for plate 724 on MJD 52240.
+            Remove bad smear for plate 860 on MJD 52319.
 
 -------------------------------------------------------------------------------
 v4_9_3 (Feb 12, 2002 idlspec2d only) running on IDL 5.3 - 5.5
