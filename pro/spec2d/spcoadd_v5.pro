@@ -423,18 +423,23 @@ pro spcoadd_v5, spframes, outputname, $
       endelse
    endfor
 
+   ;----------
+   ; Modify the 1st file's header to use for the combined plate header.
+
+   bighdr = *hdrarr[0]
+
    ;---------------------------------------------------------------------------
    ; FLUX DISTORTION IMAGE
    ;---------------------------------------------------------------------------
 
    ; Compute the flux distortion image
    corrimg = flux_distortion(finalflux, finalivar, finalandmask, finalormask, $
-    plugmap=finalplugmap, loglam=finalwave, plotfile=distortpsfile, hdr=hdr)
+    plugmap=finalplugmap, loglam=finalwave, plotfile=distortpsfile, hdr=bighdr)
 
    ; Plot S/N and throughput **before** this distortion-correction.
    splog, prelog='Initial'
    platesn, finalflux, finalivar, finalandmask, finalplugmap, finalwave, $
-    hdr=hdr, plotfile=djs_filepath(plotsnfile+'.orig', root_dir=combinedir)
+    hdr=bighdr, plotfile=djs_filepath(plotsnfile+'.orig', root_dir=combinedir)
    splog, prelog=''
 
    ; Apply this flux-distortion to the final, co-added fluxes.
@@ -450,7 +455,7 @@ pro spcoadd_v5, spframes, outputname, $
    ; (This over-writes header cards written in the first call.)
    splog, prelog='Final'
    platesn, finalflux, finalivar, finalandmask, finalplugmap, finalwave, $
-    hdr=hdr, plotfile=djs_filepath(plotsnfile, root_dir=combinedir)
+    hdr=bighdr, plotfile=djs_filepath(plotsnfile, root_dir=combinedir)
    splog, prelog=''
 
    ;---------------------------------------------------------------------------
@@ -512,36 +517,31 @@ pro spcoadd_v5, spframes, outputname, $
    fiber_rollcall, finalandmask, finalwave
 
    ;----------
-   ; Modify the 1st file's header to use for the combined plate header.
-
-   hdr = *hdrarr[0]
-
-   ;----------
    ; Remove header cards that were specific to this first exposure
    ; (where we got the header).
 
-   ncoeff = sxpar(hdr, 'NWORDER')
-   for i=2, ncoeff-1 do sxdelpar, hdr, 'COEFF'+strtrim(string(i),2)
+   ncoeff = sxpar(bighdr, 'NWORDER')
+   for i=2, ncoeff-1 do sxdelpar, bighdr, 'COEFF'+strtrim(string(i),2)
 
-   sxdelpar, hdr, ['SPA', 'IPA', 'IPARATE']
-   sxdelpar, hdr, 'EXPOSURE'
-   sxdelpar, hdr, 'SEQID'
-   sxdelpar, hdr, 'DARKTIME'
-   sxdelpar, hdr, 'CAMERAS'
-   sxdelpar, hdr, 'PLUGMAPO'
-   for i=1, 4 do sxdelpar, hdr, 'GAIN'+strtrim(string(i),2)
-   for i=1, 4 do sxdelpar, hdr, 'RDNOISE'+strtrim(string(i),2)
-   sxdelpar, hdr, ['CAMCOL', 'CAMROW']
-   sxdelpar, hdr, ['AMPLL', 'AMPLR', 'AMPUL', 'AMPUR']
-   sxdelpar, hdr, ['FFS', 'FF', 'NE', 'HGCD']
-   sxdelpar, hdr, ['SPEC1', 'SPEC2']
-   sxdelpar, hdr, 'NBLEAD'
-   sxdelpar, hdr, 'PIXFLAT'
-   sxdelpar, hdr, 'PIXBIAS'
-   sxdelpar, hdr, 'FLATFILE'
-   sxdelpar, hdr, 'ARCFILE'
-   sxdelpar, hdr, 'OBJFILE'
-   sxdelpar, hdr, 'FRAMESN2'
+   sxdelpar, bighdr, ['SPA', 'IPA', 'IPARATE']
+   sxdelpar, bighdr, 'EXPOSURE'
+   sxdelpar, bighdr, 'SEQID'
+   sxdelpar, bighdr, 'DARKTIME'
+   sxdelpar, bighdr, 'CAMERAS'
+   sxdelpar, bighdr, 'PLUGMAPO'
+   for i=1, 4 do sxdelpar, bighdr, 'GAIN'+strtrim(string(i),2)
+   for i=1, 4 do sxdelpar, bighdr, 'RDNOISE'+strtrim(string(i),2)
+   sxdelpar, bighdr, ['CAMCOL', 'CAMROW']
+   sxdelpar, bighdr, ['AMPLL', 'AMPLR', 'AMPUL', 'AMPUR']
+   sxdelpar, bighdr, ['FFS', 'FF', 'NE', 'HGCD']
+   sxdelpar, bighdr, ['SPEC1', 'SPEC2']
+   sxdelpar, bighdr, 'NBLEAD'
+   sxdelpar, bighdr, 'PIXFLAT'
+   sxdelpar, bighdr, 'PIXBIAS'
+   sxdelpar, bighdr, 'FLATFILE'
+   sxdelpar, bighdr, 'ARCFILE'
+   sxdelpar, bighdr, 'OBJFILE'
+   sxdelpar, bighdr, 'FRAMESN2'
 
    ;----------
    ; Average together some of the fields from the individual headers.
@@ -552,39 +552,39 @@ pro spcoadd_v5, spframes, outputname, $
     'TEMP03', 'TEMP04', 'HELIO_RV', 'SEEING20', 'SEEING50', 'SEEING80', $
     'RMSOFF20', 'RMSOFF50', 'RMSOFF80', 'XCHI2', 'SKYCHI2', $
     'WSIGMA', 'XSIGMA' ]
-   sxcombinepar, hdrarr, cardname, hdr, func='average'
+   sxcombinepar, hdrarr, cardname, bighdr, func='average'
 
-   sxcombinepar, hdrarr, 'TAI-BEG', hdr, func='min'
-   sxcombinepar, hdrarr, 'TAI-END', hdr, func='max'
+   sxcombinepar, hdrarr, 'TAI-BEG', bighdr, func='min'
+   sxcombinepar, hdrarr, 'TAI-END', bighdr, func='max'
 
-   sxcombinepar, hdrarr, 'XCHI2', hdr, func='max', outcard='XCHI2MAX', $
+   sxcombinepar, hdrarr, 'XCHI2', bighdr, func='max', outcard='XCHI2MAX', $
     after='XCHI2'
-   sxcombinepar, hdrarr, 'XCHI2', hdr, func='min', outcard='XCHI2MIN', $
+   sxcombinepar, hdrarr, 'XCHI2', bighdr, func='min', outcard='XCHI2MIN', $
     after='XCHI2'
 
-   sxcombinepar, hdrarr, 'SKYCHI2', hdr, func='max', outcard='SCHI2MAX', $
+   sxcombinepar, hdrarr, 'SKYCHI2', bighdr, func='max', outcard='SCHI2MAX', $
     after='SKYCHI2'
-   sxcombinepar, hdrarr, 'SKYCHI2', hdr, func='min', outcard='SCHI2MIN', $
+   sxcombinepar, hdrarr, 'SKYCHI2', bighdr, func='min', outcard='SCHI2MIN', $
     after='SKYCHI2'
 
-   sxcombinepar, hdrarr, 'WSIGMA', hdr, func='max', outcard='WSIGMAX', $
+   sxcombinepar, hdrarr, 'WSIGMA', bighdr, func='max', outcard='WSIGMAX', $
     after='WSIGMA'
-   sxcombinepar, hdrarr, 'WSIGMA', hdr, func='min', outcard='WSIGMIN', $
+   sxcombinepar, hdrarr, 'WSIGMA', bighdr, func='min', outcard='WSIGMIN', $
     after='WSIGMA'
 
-   sxcombinepar, hdrarr, 'XSIGMA', hdr, func='max', outcard='XSIGMAX', $
+   sxcombinepar, hdrarr, 'XSIGMA', bighdr, func='max', outcard='XSIGMAX', $
     after='XSIGMA'
-   sxcombinepar, hdrarr, 'XSIGMA', hdr, func='min', outcard='XSIGMIN', $
+   sxcombinepar, hdrarr, 'XSIGMA', bighdr, func='min', outcard='XSIGMIN', $
     after='XSIGMA'
 
    ; Add the NGUIDE keywords for all headers of one flavor of CAMERAS
    ; (e.g., for all the 'b1' exposures if the first frame is 'b1'.)
    cardname = 'NGUIDE'
-   sxcombinepar, hdrarr[0], cardname, hdr, func='total'
+   sxcombinepar, hdrarr[0], cardname, bighdr, func='total'
    cameras0 = sxpar(*(hdrarr[0]), 'CAMERAS')
    for ihdr=1, n_elements(hdrarr)-1 do begin
       if (sxpar(*(hdrarr[ihdr]), 'CAMERAS') EQ cameras0) then $
-       sxcombinepar, hdrarr[ihdr], cardname, hdr, func='total'
+       sxcombinepar, hdrarr[ihdr], cardname, bighdr, func='total'
    endfor
 
    ;----------
@@ -592,53 +592,53 @@ pro spcoadd_v5, spframes, outputname, $
    ; observation, and be consistent with the output file names
 
    if (keyword_set(mjd)) then $
-    sxaddpar, hdr, 'MJD', mjd
+    sxaddpar, bighdr, 'MJD', mjd
 
    ; Get the list of MJD's used for these reductions, then convert to a string
    mjdlist = mjdlist[uniq(mjdlist, sort(mjdlist))]
    mjdlist = strtrim(strcompress(string(mjdlist,format='(99a)')),2)
-   sxaddpar, hdr, 'MJDLIST', mjdlist, after='MJD'
+   sxaddpar, bighdr, 'MJDLIST', mjdlist, after='MJD'
 
    ;----------
    ; Add new header cards
 
-   sxaddpar, hdr, 'VERSCOMB', idlspec2d_version(), $
+   sxaddpar, bighdr, 'VERSCOMB', idlspec2d_version(), $
     ' Version of idlspec2d for combining multiple spectra', after='VERS2D'
-   sxaddpar, hdr, 'NEXP', nfiles, $
+   sxaddpar, bighdr, 'NEXP', nfiles, $
     ' Number of exposures in this file', before='EXPTIME'
    for ifile=0,nfiles-1 do $
-    sxaddpar, hdr, string('EXPID',ifile+1, format='(a5,i2.2)'), label[ifile], $
+    sxaddpar, bighdr, string('EXPID',ifile+1, format='(a5,i2.2)'), label[ifile], $
      ' ID string for exposure '+strtrim(ifile+1,2), before='EXPTIME'
    if (keyword_set(bestexpnum)) then $
-    sxaddpar, hdr, 'BESTEXP', bestexpnum, before='EXPID01'
+    sxaddpar, bighdr, 'BESTEXP', bestexpnum, before='EXPID01'
 
-   sxaddpar, hdr, 'EXPTIME', min(exptimevec), $
+   sxaddpar, bighdr, 'EXPTIME', min(exptimevec), $
     ' Minimum of exposure times for all cameras'
    for icam=0, ncam-1 do $
-    sxaddpar, hdr, 'EXPT_'+camnames[icam], exptimevec[icam], $
+    sxaddpar, bighdr, 'EXPT_'+camnames[icam], exptimevec[icam], $
      ' '+camnames[icam]+' camera exposure time (seconds)', before='EXPTIME'
-   sxaddpar, hdr, 'SPCOADD', systime(), $
+   sxaddpar, bighdr, 'SPCOADD', systime(), $
     ' SPCOADD finished', after='EXPTIME'
 
-   sxaddpar, hdr, 'NWORDER', 2, ' Linear-log10 coefficients'
-   sxaddpar, hdr, 'NWORDER', 2, ' Linear-log10 coefficients'
-   sxaddpar, hdr, 'WFITTYPE', 'LOG-LINEAR', ' Linear-log10 dispersion'
-   sxaddpar, hdr, 'COEFF0', wavemin, $
+   sxaddpar, bighdr, 'NWORDER', 2, ' Linear-log10 coefficients'
+   sxaddpar, bighdr, 'NWORDER', 2, ' Linear-log10 coefficients'
+   sxaddpar, bighdr, 'WFITTYPE', 'LOG-LINEAR', ' Linear-log10 dispersion'
+   sxaddpar, bighdr, 'COEFF0', wavemin, $
     ' Central wavelength (log10) of first pixel'
-   sxaddpar, hdr, 'COEFF1', binsz, ' Log10 dispersion per pixel'
+   sxaddpar, bighdr, 'COEFF1', binsz, ' Log10 dispersion per pixel'
 
-   sxaddpar, hdr, 'NAXIS1', n_elements(bestflux)
-   sxaddpar, hdr, 'NAXIS2', nfiber
+   sxaddpar, bighdr, 'NAXIS1', n_elements(bestflux)
+   sxaddpar, bighdr, 'NAXIS2', nfiber
 
    spawn, 'uname -n', uname
-   sxaddpar, hdr, 'UNAME', uname[0]
+   sxaddpar, bighdr, 'UNAME', uname[0]
 
    ;----------
    ; Check for smear exposure used and place info in header
 
 ;   smearused = total((finalandmask AND pixelmask_bits('SMEARIMAGE')) NE 0) $
 ;    GT 0 ? 'T' : 'F'
-;   sxaddpar, hdr, 'SMEARUSE', smearused, ' Smear image used?'
+;   sxaddpar, bighdr, 'SMEARUSE', smearused, ' Smear image used?'
 
    ;----------
    ; Compute the fraction of bad pixels in total, and on each spectrograph.
@@ -662,14 +662,14 @@ pro spcoadd_v5, spframes, outputname, $
    else $
     fbadpix = 0
 
-   sxaddpar, hdr, 'FBADPIX', fbadpix, ' Fraction of bad pixels'
-   sxaddpar, hdr, 'FBADPIX1', fbadpix1, ' Fraction of bad pixels on spectro-1'
-   sxaddpar, hdr, 'FBADPIX2', fbadpix2, ' Fraction of bad pixels on spectro-2'
+   sxaddpar, bighdr, 'FBADPIX', fbadpix, ' Fraction of bad pixels'
+   sxaddpar, bighdr, 'FBADPIX1', fbadpix1, ' Fraction of bad pixels on spectro-1'
+   sxaddpar, bighdr, 'FBADPIX2', fbadpix2, ' Fraction of bad pixels on spectro-2'
 
    ;----------
    ; Add keywords for IRAF-compatability
 
-   add_iraf_keywords, hdr, wavemin, binsz
+   add_iraf_keywords, bighdr, wavemin, binsz
 
    mkhdr, hdrfloat, finalivar, /image, /extend
    add_iraf_keywords, hdrfloat, wavemin, binsz
@@ -682,13 +682,13 @@ pro spcoadd_v5, spframes, outputname, $
    ;---------------------------------------------------------------------------
 
    ; First write the file with the flux distortion vectors
-   mwrfits, corrimg, distortfitsfile, hdr, /create
+   mwrfits, corrimg, distortfitsfile, hdrfloat, /create
 
    fulloutname = djs_filepath(outputname, root_dir=combinedir)
 
    ; HDU #0 is flux
-   sxaddpar, hdr, 'BUNIT', '1E-17 erg/cm^2/s/Ang'
-   mwrfits, finalflux, fulloutname, hdr, /create
+   sxaddpar, bighdr, 'BUNIT', '1E-17 erg/cm^2/s/Ang'
+   mwrfits, finalflux, fulloutname, bighdr, /create
 
    ; HDU #1 is inverse variance
    sxaddpar, hdrfloat, 'BUNIT', '1/(1E-17 erg/cm^2/s/Ang)^2'
