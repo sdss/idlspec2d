@@ -5,11 +5,48 @@ typedef struct {
   char value;       # Keyword value (as a string)
 } spechdrfix;
 
-# Wrong exposure time in these headers on MJD 51433
+# Wrong exposure time in these headers on MJD 51433.
 
 spechdrfix sdR-??-00001142 EXPTIME  60
 
+# Complete the mapping name in these headers on MJD 51433 for plate 198.
+# It properly says plate 198, but doesn't give the full map name.
+
+spechdrfix sdR-??-00001137 NAME     "'0198-51433-01'"
+spechdrfix sdR-??-00001138 NAME     "'0198-51433-01'"
+spechdrfix sdR-??-00001139 NAME     "'0198-51433-01'"
+spechdrfix sdR-??-0000114? NAME     "'0198-51433-01'"
+spechdrfix sdR-??-00001150 NAME     "'0198-51433-01'"
+spechdrfix sdR-??-00001151 NAME     "'0198-51433-01'"
+spechdrfix sdR-??-00001152 NAME     "'0198-51433-01'"
+
+# Wrong mapping name in these headers on MJD 51441 for plate 202.
+
+spechdrfix sdR-??-00001362 NAME     "'0202-51434-01'"
+spechdrfix sdR-??-00001363 NAME     "'0202-51434-01'"
+spechdrfix sdR-??-00001364 NAME     "'0202-51434-01'"
+spechdrfix sdR-??-00001365 NAME     "'0202-51434-01'"
+spechdrfix sdR-??-00001366 NAME     "'0202-51434-01'"
+spechdrfix sdR-??-00001367 NAME     "'0202-51434-01'"
+spechdrfix sdR-??-00001368 NAME     "'0202-51434-01'"
+spechdrfix sdR-??-00001369 NAME     "'0202-51434-01'"
+spechdrfix sdR-??-00001370 NAME     "'0202-51434-01'"
+spechdrfix sdR-??-00001371 NAME     "'0202-51434-01'"
+spechdrfix sdR-??-00001372 NAME     "'0202-51434-01'"
+spechdrfix sdR-??-00001373 NAME     "'0202-51434-01'"
+
+# Wrong mapping name in these headers on MJD 51454 for plate 191.
+# This doesn't actually matter, since there are no arcs for this plate anyway!
+
+spechdrfix sdR-??-00001388 NAME     "'0191-51454-01'"
+spechdrfix sdR-??-00001389 NAME     "'0191-51454-01'"
+spechdrfix sdR-??-00001390 NAME     "'0191-51454-01'"
+
 # Wrong plate information in these headers on MJD 51455
+
+spechdrfix sdR-??-00001404 NAME     "'0187-51454-01'"
+spechdrfix sdR-??-00001405 NAME     "'0187-51454-01'"
+spechdrfix sdR-??-00001406 NAME     "'0187-51454-01'"
 
 spechdrfix sdR-??-00001431 PLATEID  231
 spechdrfix sdR-??-00001431 TILEID   55
@@ -45,6 +82,22 @@ spechdrfix sdR-??-00001437 PLATEID  231
 spechdrfix sdR-??-00001437 TILEID   55
 spechdrfix sdR-??-00001437 MAPID    5145502
 spechdrfix sdR-??-00001437 NAME     "'0231-51455-01'"
+
+# Wrong plate information in these headers on MJD 51456.
+
+spechdrfix sdR-??-00001452 NAME     "'0217-51455-01'"
+spechdrfix sdR-??-00001453 NAME     "'0217-51455-01'"
+spechdrfix sdR-??-00001454 NAME     "'0217-51455-01'"
+spechdrfix sdR-??-00001455 NAME     "'0217-51455-01'"
+spechdrfix sdR-??-00001456 NAME     "'0217-51455-01'"
+spechdrfix sdR-??-00001457 NAME     "'0217-51455-01'"
+spechdrfix sdR-??-00001458 NAME     "'0217-51455-01'"
+spechdrfix sdR-??-00001459 NAME     "'0217-51455-01'"
+spechdrfix sdR-??-00001460 NAME     "'0217-51455-01'"
+
+# This exposure on MJD 51581 was a garbage 1-second exposure for plate 295.
+
+spechdrfix sdR-??-00002309 FLAVOR   "'unknown'"
 
 # Wrong plate information in these headers on MJD 51629
 
