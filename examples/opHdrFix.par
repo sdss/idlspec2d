@@ -142,7 +142,11 @@ spechdrfix sdR-??-00007112 IPARATE  -0.0107
 spechdrfix sdR-??-00007112 AZ       345.32650
 spechdrfix sdR-??-00007112 ALT      71.520262
 
-# Shutters may have not opened on this one
+# The data on this image looks scrambled in a bad way on MJD 51811.
+# This would have been the smear exposure for plate 381.
+spechdrfix sdR-??-00006630 FLAVOR   "'unknown'"
+
+# Shutters may have not opened on this exposure on MJD 51900.
 spechdrfix sdR-??-00007376 FLAVOR   "'unknown'"
 
 # Wrong exposure time in these headers on MJD 51828
