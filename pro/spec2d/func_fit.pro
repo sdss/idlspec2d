@@ -6,8 +6,8 @@
 ;   Fit X, Y positions to a functional form.
 ;
 ; CALLING SEQUENCE:
-;   res = function func_fit( x, y, ncoeff, [invvar=, function_name=, $
-;    yfit=, ia=, inputans=, _EXTRA= ]
+;   res = func_fit( x, y, ncoeff, [invvar=, function_name=, $
+;    ia=, inputans=, yfit=, _EXTRA= ]
 ;
 ; INPUTS:
 ;   x          - X values (independent variable)
@@ -49,7 +49,7 @@
 ;------------------------------------------------------------------------------
 
 function func_fit, x, y, ncoeff, invvar=invvar, function_name=function_name, $
- yfit=yfit, ia=ia, inputans=inputans, _EXTRA=KeywordsForFunc
+ ia=ia, inputans=inputans, yfit=yfit, _EXTRA=KeywordsForFunc
 
    if (N_params() LT 3) then begin
       print,'function func_fit, x, y, ncoeff, [invvar=invvar, function_name=function_name' 
