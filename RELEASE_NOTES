@@ -15,6 +15,7 @@ READ_ELODIE: Optionally return the Elodie header in HDR.
 READSPEC: Add TOPDIR input keyword and ZLINE output keyword.
 SDSSPROC: Add "WARNING" to the warning messages about invalid or
             missing BC files.
+SKYLINE_DISPERSION: Avoid a crash condition.
 TRACE320CRUDE: Fix a bug just introduced in v4_9_5 that would cause
             the code to crash if ystart at any trace falls off the
             left or right edge of the CCD.  This caused the
@@ -25,6 +26,7 @@ ZFIND: Make EIGENFILE an optional input, so that STARFLUX,STARLOGLAM0
 opHdrFix.par: Declare data bad on MJD 52336-52337 due to spectrograph
             mechanicals problems, and other problems from 52312-52337.
 mailhtml.sh: Comment out the rm lines (as in 1.18) and leave to killdata.sh
+spChunkList.par: Add chunks 36-39.
 sprobot.sh: Add more time stamps to the robot log file.
             Change the ssh command that retrieves the MJD directory list
             from the remote machine -- it appears that something about the
