@@ -5,6 +5,7 @@ Built against specflat v1_3.
 This tagged version is for running Spectro-2D.
 It also addresses some rsync bugs for Son-of-Spectro.
 
+APO_LOG2HTML: Mistakenly was listing times as hr:sec instead of hr:min!
 GET_TAI: A short proc to determine, beginning, mid-point, and ending
            timestamps for sdR exposures.  Uses TAI-BEG,TAI-END in header
            if they exist; otherwise compute from TAI and EXPTIME.
@@ -26,17 +27,20 @@ SPCOADD_FRAMES: Combine a whole bunch of header cards from the individual
            all 'TAI-END' cards.
 
 aporsync_logs.sh : 
-           Changed the syntax to just copy these type of files in astrolog:
--------------------------------------------------------------------------------
-Unplugged-0827-52296-01.ps   opBC-51791.par      plPlugMapM-0827-52296-01.par
-exposureLog-52305.par        opCamera-51960.par  sdReport-52305.par
-fiberScan-0827-52296-01.par  opConfig-52305.par
-guiderMon-52305.par          opECalib-52114.par
--------------------------------------------------------------------------------
-
+           Changed the syntax to just copy these type of files in astrolog
+           (which we *thought* we were doing, but wasn't quite working):
+             Unplugged*.ps
+             exposureLog*.par
+             fiberScan*.par
+             guiderMon*.par
+             op*.par
+             plPlugMap*.par
+             sdReport*.par
 killdata.sh,mailhtml.sh: Spectrolog cleanup is now done +25 MJDs afterwards,
            which will allow for sos_redo, apoplot and debugging to have
-           a buffer.
+           a buffer.  Enable the call to data_rsync.sh again for copying
+           the *.gz files locally from /data/spectro/$MJD to
+           /data/spectro/rawcopy/$MJD.
 sprobot.sh: Copy the guider image directory.  We mistakenly lost this copying
            when we went to explicitly copying only the sdR*.fit.gz files.
 sos.sh,startapo.sh: Forget to switch to UT time in a couple of instances.
