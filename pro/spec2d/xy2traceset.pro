@@ -147,7 +147,7 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
                nglast = ngood
                if (keyword_set(singlerej)) then begin
                   ydiff = yfit[igood] - ypos[igood,itrace]
-                  ysig = stdev(ydiff)
+                  ysig = stddev(ydiff)
                   worstdiff = max(abs(ydiff), iworst)
                   if ( (keyword_set(maxdev) AND worstdiff GT maxdev) $
                     OR (keyword_set(maxsig) AND worstdiff GT maxsig*ysig) ) $
@@ -156,7 +156,7 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
                   endif
                endif else begin
                   ydiff = yfit - ypos[*,itrace]
-                  ysig = stdev(ydiff)
+                  ysig = stddev(ydiff)
                   qgood = bytarr(nx) + 1
                   if (keyword_set(maxdev)) then $
                    qgood = qgood AND (abs(ydiff) LT maxdev)

@@ -6,7 +6,8 @@
 ;   Determine initial wavelength solution by comparing spectrum to arc spectrum
 ;
 ; CALLING SEQUENCE:
-;   wset = arcfit_guess( spec, loglam, intensity, color=color, [func=func] )
+;   wset = arcfit_guess( spec, loglam, intensity, color=color, $
+;    [ func=func, bestcorr=bestcorr ] )
 ;
 ; INPUTS:
 ;   spec       - 1-D spectrum
@@ -23,6 +24,7 @@
 ;   wset       - traceset (pix -> lambda)
 ;
 ; OPTIONAL OUTPUTS:
+;   bestcorr   - Correlation coefficient with simulated arc spectrum
 ;
 ; COMMENTS:
 ;
@@ -171,7 +173,6 @@ function arcfit_iter, spec, loglam, intensity, $
        istep, nsteptot, string(13b)
 
    endfor
-   splog, 'Best correlation = ', bestcorr
 
    ; Convert to a trace set with XMIN=0, XMAX=NPIX-1
    xy2traceset, dindgen(npix)-lagbest, bestlambda, wset, ncoeff=ncoeff, $
@@ -182,7 +183,8 @@ end
 
 ;------------------------------------------------------------------------------
 
-function arcfit_guess, spec, loglam, intensity, color=color, func=func
+function arcfit_guess, spec, loglam, intensity, color=color, func=func, $
+ bestcorr=bestcorr
 
    if (NOT keyword_set(func)) then func = 'legendre'
 

@@ -94,7 +94,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    if (ct NE 1) then $
     message, 'No BC file ' + string(bcfile)
 
-   realbc= tempname[0]
+   realbc = tempname[0]
 
    inpath = filepath(infile, root_dir=indir)
    fullname = (findfile(inpath, count=ct))[0]

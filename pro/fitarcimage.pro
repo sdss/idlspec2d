@@ -7,10 +7,10 @@
 ;
 ; CALLING SEQUENCE:
 ;   fitarcimage, arc, arcivar, xnew, ycen, wset, $
-;    color=color, lampfile=lampfile, fibermask=fibermask, $
+;    [ color=color, lampfile=lampfile, fibermask=fibermask, $
 ;    func=func, aset=aset, ncoeff=ncoeff, lambda=lambda, $
 ;    thresh=thresh, row=row, nmed=nmed, $
-;    xdif_lfit=xdif_lfit, xdif_tset=xdif_tset
+;    xdif_lfit=xdif_lfit, xdif_tset=xdif_tset, bestcorr=bestcorr ]
 ;
 ; INPUTS:
 ;   arc        - Extracted arc spectra with dimensions [NY,NFIBER]
@@ -44,8 +44,11 @@
 ;   fibermask  - (Modified)
 ;   xdif_lfit  - fit residual for individual arclines
 ;   xdif_tset  - fit residual of traceset
+;   bestcorr   - Correlation coefficient with simulated arc spectrum
 ;
 ; COMMENTS:
+;   Return from routine after computing BESTCORR if XCEN, YCEN and WSET
+;   are not to be returned.
 ;
 ; EXAMPLES:
 ;
@@ -101,8 +104,8 @@ function fitmeanx, wset, lambda, xpos, nord=nord
       res1 = yfit - dif
 
       ; Find which points are most deviant (4-sigma cut; 2 iterations)
-      qgood = abs(res1) LT 4.*stdev(res1)
-      qgood = abs(res1) LT 4.*stdev(res1*qgood)
+      qgood = abs(res1) LT 4.*stddev(res1)
+      qgood = abs(res1) LT 4.*stddev(res1*qgood)
 
       ; Re-fit to DIF as a function of fiber number (rejecting outliers)
       junk = polyfitw(x, dif, qgood, nord, yfit)
@@ -119,7 +122,7 @@ end
 pro fitarcimage, arc, arcivar, xnew, ycen, wset, $
  color=color, lampfile=lampfile, fibermask=fibermask, $
  func=func, aset=aset, ncoeff=ncoeff, lambda=lambda, thresh=thresh, $
- row=row, nmed=nmed, xdif_lfit=xdif_lfit, xdif_tset=xdif_tset
+ row=row, nmed=nmed, xdif_lfit=xdif_lfit, xdif_tset=xdif_tset, bestcorr=bestcorr
 
    ;---------------------------------------------------------------------------
    ; Preliminary stuff
@@ -199,7 +202,10 @@ pro fitarcimage, arc, arcivar, xnew, ycen, wset, $
 
       spec = djs_median(arc[*,ii], 2)
 
-      wset = arcfit_guess( spec, lamps.loglam, lamps.intensity, color=color )
+      wset = arcfit_guess( spec, lamps.loglam, lamps.intensity, color=color, $
+       bestcorr=bestcorr )
+
+      splog, 'Best correlation = ', bestcorr
 
    endif else begin
 
@@ -207,8 +213,12 @@ pro fitarcimage, arc, arcivar, xnew, ycen, wset, $
 
    endelse
 
+   ; Return from routine if XCEN, YCEN and WSET are not to be returned
+   if (N_params() LE 2) then return
+
    ; Trim lamp list to only those within the wavelength range
    ; and denoted as good in the LAMPS structure.
+
    xstart = traceset2pix(wset, lamps.loglam)
    qtrim = xstart GT 1 AND xstart LT npix-2 AND lamps.good
    itrim = where(qtrim, ct)

@@ -96,7 +96,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    ; Determine spectrograph ID and color from first object file
    ;---------------------------------------------------------------------------
 
-   sdssproc, objfile, indir=indir, spectrographid=spectrographid, color=color
+   sdssproc, objname[0], indir=indir, spectrographid=spectrographid, color=color
 
    ;---------------------------------------------------------------------------
    ; Read PLUGMAP file and sort
@@ -134,8 +134,8 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       ; Read flat-field image
       ;------------------------------------------------------------------------
 
-      splog, 'Reading flat ', flatfile
-      sdssproc, flatfile, image, invvar, indir=indir, $
+      splog, 'Reading flat ', flatname[ifile]
+      sdssproc, flatname[ifile], image, invvar, indir=indir, $
        hdr=flathdr, pixflatname=pixflatname
 
       ;------------------------------------------------------------------------
@@ -166,7 +166,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       highpixels = where(flux GT 1.0e5, numhighpixels)
 
       splog, 'Found ', numhighpixels, ' highpixels in extracted flat ', $
-       flatfile
+       flatname[ifile]
 
       ;------------------------------------------------------------------------
       ; Compute fiber-to-fiber flat-field variations
@@ -178,8 +178,8 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       ; Read the arc
       ;------------------------------------------------------------------------
 
-      splog, 'Reading arc ', arcfile
-      sdssproc, arcfile, image, invvar, indir=indir, $
+      splog, 'Reading arc ', arcname[ifile]
+      sdssproc, arcname[ifile], image, invvar, indir=indir, $
        hdr=archdr, pixflatname=pixflatname
 
       ;------------------------------------------------------------------------
@@ -272,8 +272,8 @@ for i=0,16 do oplot,fflat[*,i*19]
       ;------------------
       ; Read object image
 
-      splog, 'Reading object ', objfile
-      sdssproc, objfile, image, invvar, indir=indir, hdr=objhdr, $
+      splog, 'Reading object ', objname[iobj]
+      sdssproc, objname[iobj], image, invvar, indir=indir, hdr=objhdr, $
        pixflatname=pixflatname, spectrographid=spectrographid, color=color
 
       ;------------------
@@ -437,7 +437,7 @@ for i=0,16 do oplot,fflat[*,i*19]
       sxaddpar, objhdr, 'PLUGMAPF', plugfilename
       sxaddpar, objhdr, 'FLATFILE', flatname[ibest]
       sxaddpar, objhdr, 'ARCFILE', arcname[ibest]
-      sxaddpar, objhdr, 'OBJFILE', objfile
+      sxaddpar, objhdr, 'OBJFILE', objname[iobj]
       sxaddpar, objhdr, 'LAMPLIST', lampfile
       sxaddpar, objhdr, 'SKYLIST', skylinefile
       sxaddpar, objhdr, 'PIXFLAT', pixflatname

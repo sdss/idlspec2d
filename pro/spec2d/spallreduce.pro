@@ -26,6 +26,8 @@
 ;   Need to implement lampfile.
 ;   Pass QA flags to SPREDUCE
 ;   Try to avoid using SPAWN.
+;   Should pair up flats+arcs like Scott had done previously before passing
+;     to SPREDUCE.
 ;
 ; PROCEDURES CALLED:
 ;   combine2dout
@@ -150,29 +152,62 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
             ; String array with all science exposures at this sequence + camera
             objname = allseq[j].name[icam]
 
-            ; Select the first flat exposure at this sequence + camera
+            ;------
+            ; Select **all** flat exposures at this sequence + camera
+
             j = where(allseq.seqid EQ seqid[iseq] $
                   AND allseq.flavor EQ 'flat' $
-                  AND allseq.name[icam] NE 'UNKNOWN' )
-            if (j[0] NE -1) then flatname = allseq[j[0]].name[icam] $
+                  AND allseq.name[icam] NE 'UNKNOWN', nflat )
+            if (nflat GT 0) then flatname = allseq[j].name[icam] $
              else message, 'No flat for SEQID= ' $
               + strtrim(string(seqid[iseq]),2) + ', PLATEID= ' $
               + strtrim(string(plateid),2) + ', CAMERA= ' + camnums[icam]
 
-            ; Select the first arc exposure at this sequence + camera
+            ;------
+            ; Select **all** arc exposures at this sequence + camera
+
             j = where(allseq.seqid EQ seqid[iseq] $
                   AND allseq.flavor EQ 'arc' $
-                  AND allseq.name[icam] NE 'UNKNOWN' )
-            if (j[0] NE -1) then arcname = allseq[j[0]].name[icam] $
+                  AND allseq.name[icam] NE 'UNKNOWN', narc )
+            if (narc GT 0) then arcname = allseq[j].name[icam] $
              else message, 'No arc for SEQID= ' $
               + strtrim(string(seqid[iseq]),2) + ', PLATEID= ' $
               + strtrim(string(plateid),2) + ', CAMERA= ' + camnums[icam]
 
+            ;-----
+            ; Read the time of each flat + arc
+
+            arctime = dblarr(narc)
+            for iarc=0, narc-1 do begin
+               sdssproc, arcname[iarc], indir=inputDir, hdr=hdr
+               arctime[iarc] = sxpar(hdr, 'TAI')
+            endfor
+
+            flattime = dblarr(nflat)
+            for iflat=0, nflat-1 do begin
+               sdssproc, flatname[iflat], indir=inputDir, hdr=hdr
+               flattime[iflat] = sxpar(hdr, 'TAI')
+            endfor
+
+            ;-----
+            ; Enforce a one-to-one match between arcs + flats.
+            ; Do this by pairing each arc with the flat w/ the nearest SEQID.
+            ; This will create a list of flats that is the same length
+            ; as the list of arcs
+
+            flatsortname = strarr(narc)
+            for iarc=0, narc-1 do begin
+               junk = min( abs(flattime - arctime[iarc]), iclose)
+               flatsortname[iarc] = flatname[iclose]
+               splog, 'Pair arc ', arcname[iarc], ' with flat ', flatname[iarc]
+            endfor
+
+            ; Get full name of pixel flat
             pixflatname = filepath(pixflatname, root_dir=flatDir)
 
             spawn, 'mkdir -p '+plateDir
 
-            spreduce, flatname, arcname, objname, $
+            spreduce, flatsortname, arcname, objname, $
              pixflatname=pixflatname, plugfile=plugfile, lampfile=lampfile, $
              indir=inputDir, plugdir=plugDir, outdir=plateDir, $
              qadir=extractDir
