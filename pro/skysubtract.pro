@@ -63,7 +63,7 @@ pro skysubtract, obj, objivar, plugmap, wset, skysub, skysubivar, $
 
           plot, 10^allwave, allfit, ps=3, xr=[5570,5590], $
            title = 'All fibers'
-          oplot, 10^wave, obj, ps=3, 
+          oplot, 10^wave, obj, ps=3 
           djs_oplot, 10^allwave, allfit, color='red
 
 ;
