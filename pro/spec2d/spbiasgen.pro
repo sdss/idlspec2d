@@ -116,10 +116,10 @@ pro spbiasgen1, files, outfile=outfile, outdir=outdir, $
       imgarr[*,*,ifile] = thisimg
       inmask[*,*,ifile] = thisivar LT 0
 
-      sxaddpar, hdr0, string(ifile,format='("EXPID",i2.2)'), $
-       string( sxpar(hdr,'CAMERAS'), sxpar(hdr,'MJD'), sxpar(hdr,'EXPOSURE'), $
-        format='(a2,"-",i5.5,"-",i8.8)'), $
-        'ID string for exposure ' + strtrim(string(ifile),2), before='EXPTIME'
+      sxaddpar, hdr0, string(ifile+1,format='("EXPID",i2.2)'), $
+       string( sxpar(hdr,'CAMERAS'), sxpar(hdr,'EXPOSURE'), $
+        format='(a2,"-",i8.8)'), $
+        'ID string for exposure ' + strtrim(ifile+1,2), before='EXPTIME'
    endfor
 
    mnimg = djs_avsigclip(imgarr, sigrej=sigrej, maxiter=maxiter, $

@@ -248,11 +248,11 @@ arcivar = 0
           before='EXPTIME'
       endif
 
-      sxaddpar, hdr0, string(iflat,format='("EXPID",i2.2)'), $
-       string( sxpar(flathdr,'CAMERAS'), sxpar(flathdr,'MJD'), $
+      sxaddpar, hdr0, string(iflat+1,format='("EXPID",i2.2)'), $
+       string( sxpar(flathdr,'CAMERAS'), $
         sxpar(flathdr,'EXPOSURE'), sxpar(archdr,'EXPOSURE'), $
-        format='(a2,"-",i5.5,"-",i8.8,"-",i8.8)'), $
-        'ID string for exposure ' + strtrim(string(iflat),2), before='EXPTIME'
+        format='(a2,"-",i8.8,"-",i8.8)'), $
+        'ID string for exposure ' + strtrim(iflat+1,2), before='EXPTIME'
 
       ;----------------------
       ; Create spatial tracing from flat-field image
