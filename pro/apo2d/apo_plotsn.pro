@@ -54,7 +54,10 @@ pro apo_plotsn, logfile, plate, plugdir=plugdir, plotfile=plotfile
    ;----------
    ; Read the science frames for this plate
 
+   while(djs_lockfile(logfile) EQ 0) do wait, 5
    PPSCIENCE = mrdfits(logfile, 4)
+   djs_unlockfile, logfile
+
    if (NOT keyword_set(PPSCIENCE)) then return
    ii = where(PPSCIENCE.plate EQ plate)
    if (ii[0] EQ -1) then return

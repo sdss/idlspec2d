@@ -257,8 +257,9 @@ pro apo_log2html, logfile, htmlfile
    camnames = ['b1', 'r1', 'b2', 'r2']
    ncams = n_elements(camnames)
 
-   ; Lock the file to do this.
+   ; Lock the files.
    while(djs_lockfile(htmlfile, lun=html_lun) EQ 0) do wait, 5
+   while(djs_lockfile(logfile) EQ 0) do wait, 5
 
    ; Read the 0th header to get the version of the code
    hdr = headfits(logfile)
@@ -269,6 +270,7 @@ pro apo_log2html, logfile, htmlfile
    PPFLAT = mrdfits(logfile, 2)
    PPARC = mrdfits(logfile, 3)
    PPSCIENCE = mrdfits(logfile, 4)
+   djs_unlockfile, logfile
    if (NOT keyword_set(PPBIAS) AND NOT keyword_set(PPFLAT)) then begin
       djs_unlockfile, htmlfile, lun=html_lun
       return
