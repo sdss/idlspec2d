@@ -105,30 +105,35 @@ pro logsheet, mjd=mjd, camera=camera, outfile=outfile
    shortname = shortname[isort]
 
    printf, olun, $
-    'DATEOBS    TAIHMS      FILENAME               PLATE CA EXPTIME  FLAVOR      '
+    'UT      FILENAME        NAME           PLATE CART  EXPTIME FLAVOR    QUALITY  '
    printf, olun, $
-    '---------- ----------- ---------------------- ----- -- -------- ------------'
+    '------- --------------- -------------- ----- ----- ------- --------- ---------'
 
    for i=0, nfile-1 do begin
       hdr = sdsshead(fullname[i])
-      DATEOBS = sxpar(hdr, 'DATE-OBS')
-      TAIHMS = sxpar(hdr, 'TAIHMS')
-      PLATEID = sxpar(hdr, 'PLATEID')
-      CAMERAS = sxpar(hdr, 'CAMERAS')
-      EXPTIME = sxpar(hdr, 'EXPTIME')
-      FLAVOR = sxpar(hdr, 'FLAVOR') + '               '
+
+      jd = 2400000.5D + sxpar(hdr, 'TAI') / (24.D*3600.D)
+      caldat, jd, jd_month, jd_day, jd_year, jd_hr, jd_min, jd_sec
+      utstring = string(jd_hr, jd_min, format='(i2.2,":",i2.2," Z")')
+
+      printname = strmid(shortname[i],0,15)
+      plugname = sxpar(hdr, 'NAME') + '              '
+      plateid = sxpar(hdr, 'PLATEID')
+      cartid = sxpar(hdr, 'CARTID')
+      exptime = sxpar(hdr, 'EXPTIME')
+      flavor = sxpar(hdr, 'FLAVOR') + '         '
+      quality = sxpar(hdr, 'QUALITY') + '         '
 
       ; Put a blank line before a new plate
-      if (i EQ 0) then lastplate = PLATEID
-      if (PLATEID NE lastplate) then begin
+      if (i EQ 0) then lastplate = plateid
+      if (plateid NE lastplate) then begin
          printf, olun, ' '
-         lastplate = PLATEID
+         lastplate = plateid
       endif
 
-      printf, olun, DATEOBS, TAIHMS, $
-       shortname[i]+string(' ',format='(a22)'), $ ; pad with spaces
-       PLATEID, CAMERAS, EXPTIME, FLAVOR, $
-       format='(a10, " ", a11, " ", a22, i6, " ", a2, f9.2, " ", a12)'
+      printf, olun, utstring, printname, $
+       plugname, plateid, cartid, exptime, flavor, quality, $
+       format='(a7, " ", a15, " ", a14, " ", i5, " ", i5, f8.1, " ", a9, " ", a9)'
    endfor
 
    ; Close output file
