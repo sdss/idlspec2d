@@ -1,0 +1,148 @@
+
+<HTML>
+<HEAD>
+   <TITLE>Displaying Raw Spectro Images at APO</TITLE>
+</HEAD>
+<BODY TEXT="#000000" LINK="#0000ff" VLINK="#800080" BGCOLOR="#eeeeee"
+ALINK="#FF0000">
+
+<CENTER><H1>Displaying Raw Spectro Images at APO</H1></CENTER>
+
+This document desribes ways of displaying raw spectro images at Apache Point.
+
+<P>
+In this document:
+<UL>
+  <LI><A HREF="#display_sop">Displaying Images From SOP</A>
+  <LI><A HREF="#display_idl">Displaying Images From IDL</A>
+  <LI><A HREF="#plot_bias">Analyzing Bias+Dark Frames</A>
+</UL>
+
+<H2><A NAME="display_sop">Displaying Images From SOP</A></H2>
+
+<P>
+The fSAO display tool can be used to display the raw spectro images.
+This can only display the raw images, without overscan-correction.
+This means that there will be a baseline value of between 500 and 1250 ADU
+on each of the amplifiers.  You will clearly see the split in overscan
+values between the left and right amplifiers.
+
+<P>
+From within SOP (or IOP), type the following (substituting for $MJD
+and $filename as appropriate):
+<DL><DD><PRE>
+  sop> cd /data/spectro/$MJD
+  sop> set img [ regReadAsFits [regNew] $filename ]
+  sop> saoDisplay $img
+</PRE></DD></DL>
+The default scaling will be for the full range of pixel values, which
+is usually not desirable.  If you wish to display only in the range
+of 1000 to 1300 ADU,
+<DL><DD><PRE>
+  sop> saoDisplay $img "-min 1000 -max 1300"
+</PRE></DD></DL>
+
+<H2><A NAME="display_idl">Displaying Images From IDL</A></H2>
+
+<P>
+I've set up IDL on sdsshost (and on plate-mapper), for use in displaying
+spectro images.  Note that since all the spectro data is automatically
+copied to plate-mapper (by the Son-of-Spectro cron job),
+you can display images on either machine.
+
+<P>
+<B>NOTE:</B> As of this writing (Dec 2000), the IDL license manager
+is not running on sdsshost, and you may have to run these routines
+on plate-mapper.
+
+<P>
+First, set up IDL and the idlspec2d product, and start up IDL:
+<DL><DD><PRE>
+  % setup idl
+  % setup idlutils
+  % setup idlspec2d
+  % idl
+</PRE></DD></DL>
+
+<P>
+Move into the directory for MJD 51886 and display the first image:
+<DL><DD><PRE>
+  IDL> cd,'/data/spectro/51886'
+  IDL> img=rdss_fits('sdR-b1-00007538.fit')
+  IDL> atv,img
+</PRE></DD></DL>
+A display widget, ATV, will then pop up.  It functions much like SAOimage.
+There's a "Help" pull-down if you want to read what it does.  But typically,
+you'll want to change the display limits in the "Min=" and "Max=" windows
+to be something reasonable - say, 0 to 20 for a bias.  Row and column
+plots can be made by hitting the "r" and "c" keys.
+
+<P>
+You may wish to overscan-correct the image before displaying it.
+This is done with the SDSSPROC procedure:
+<DL><DD><PRE>
+  IDL> sdssproc,'sdR-b1-00007538.fit',img
+  IDL> atv,img
+  IDL> atv,img,min=0,max=20  ; Force display range to [0,20]
+</PRE></DD></DL>
+
+<P>
+To median-filter an image before displaying it,
+<DL><DD><PRE>
+  IDL> atv,median(a,9)
+</PRE></DD></DL>
+
+<P>
+Another useful command is
+<DL><DD><PRE>
+  IDL> logsheet
+</PRE></DD></DL>
+which will list select header information for the images in your current
+directory.
+
+<H2><A NAME="plot_bias">Analyzing Bias+Dark Frames</A></H2>
+
+<P>
+There's another useful (but slow!) command for analyzing bias and dark frames.
+This is the APO_PLOTBIAS procedure.  It takes as its only argument
+a spectroscopic exposure number, then plots a histogram of bias values
+for all 4 cameras of that exposure:
+<DL><DD><PRE>
+  IDL> apo_plotbias, 7538
+</PRE></DD></DL>
+This plot can optionally be written to a PostScript file with:
+<DL><DD><PRE>
+  IDL> apo_plotbias, 7538, plotfile='bias.ps'
+</PRE></DD></DL>
+Bad regions on the CCD and saturated pixels are excluded from these
+histograms.
+The four histograms should be very near the fiducial, thick blue line.
+If not, you have a problem.  The dark frames may show an increase
+in the tail of large values due to cosmic rays (though again, saturated
+cosmics are exluded from the plot).
+
+<P>
+After making its plot, the APO_PLOTBIAS procedure prints out a select
+number of percentiles.  The 2-percentile is the value at which only 2%
+of the pixels are below, the 50-percentile is the value at which 50%
+of the pixels are below (e.g., the median), etc.
+
+<P>
+I find the typical percentiles for a bias to be:
+<DL><DD><PRE>
+Filename          02%   05%   10%   50%   90%   95%   98%
+----------------  ----  ----  ----- ----  ----  ----- ----
+sdR-any-exposure   -8    -5    -3     1     7     9    11
+</PRE></DD></DL>
+15-minute dark frames should have very similar values, since the saturated
+cosmics are excluded.
+
+<HR>
+
+<ADDRESS> Maintained by
+<A HREF="mailto:schlegel@astro.princeton.edu">David Schlegel</A>
+and <A HREF="mailto:sburles@fnal.gov">Scott Burles</A>
+</ADDRESS>
+
+</BODY>
+</HTML>
