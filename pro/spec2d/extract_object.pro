@@ -33,7 +33,6 @@
 ;   widthset   - ???
 ;   dispset    - ???
 ;   skylinefile- ???
-;   plottitle  - ???
 ;
 ; REQUIRED KEYWORDS:
 ;   color      - camera color (red or blue)
@@ -43,12 +42,12 @@
 ;
 ; OUTPUTS:
 ;   A fits file is output in outname, which contains
-;      float flux [nx,ntrace]
-;      float flux_invvar [nx,ntrace]
-;      plugsort struct [ntrace]
-;      vacuum wavelength coefficients 
-;      integer pixelmask [nx,ntrace]
-;      byte    fibermask [ntrace]
+;      FLOAT flambda [NX,NTRACE]
+;      FLOAT flambda_invvar [NX,NTRACE]
+;      LONG finalmask [NX,NTRACE]
+;      STRUCT vacuum wavelengths
+;      STRUCT wavelength dispersion
+;      STRUCT plugmap [NTRACE]
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -509,12 +508,12 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
     'Version of idlspec2d for 2D reduction', after='VERSREAD'
    sxaddpar, objhdr, 'OSIGMA',  sigma, $
     'Original guess at spatial sigma in pix'
-   sxaddpar, objhdr, 'SKIPROW', skiprow, 'Number of rows skipped in step 1'
-   sxaddpar, objhdr, 'LOWREJ', lowrej, 'Extraction, low rejection'
-   sxaddpar, objhdr, 'HIGHREJ', highrej, 'Extraction, high rejection'
-   sxaddpar, objhdr, 'SCATPOLY', npoly, 'Order of scattered light polynomial'
-   sxaddpar, objhdr, 'PROFTYPE', proftype, '1=Gaussian'
-   sxaddpar, objhdr, 'NFITPOLY', nterms, 'Order of profile parameter fit'
+   sxaddpar, objhdr, 'SKIPROW', skiprow, 'Extraction: Number of rows skipped in step 1'
+   sxaddpar, objhdr, 'LOWREJ', lowrej, 'Extraction: low rejection'
+   sxaddpar, objhdr, 'HIGHREJ', highrej, 'Extraction: high rejection'
+   sxaddpar, objhdr, 'SCATPOLY', npoly, 'Extraction: Order of scattered light polynomial'
+   sxaddpar, objhdr, 'PROFTYPE', proftype, 'Extraction profile: 1=Gaussian'
+   sxaddpar, objhdr, 'NFITPOLY', nterms, 'Extraction: Order of profile parameter fit'
 
    ;----------
    ; Write extracted, lambda-calibrated, sky-subtracted spectra to disk

@@ -1,4 +1,6 @@
 
+* Improve mask bits for bright sky features.
+
 * Use DJS_FILEPATH() where appropriate.
 
 * Add /DEBUG keyword for writing out spArc and spFlat files.
