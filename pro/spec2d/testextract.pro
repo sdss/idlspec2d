@@ -1,16 +1,23 @@
 ;---------------
 ; Run in directory with 15may99 data
+
+; Read image and make crude traces
 sdssproc,'sdR-01-00000384.fit',image,invvar
-;image = image[*,900:999]
-;invvar = invvar[*,900:999]
 xcen = trace_crude(image, yset=ycen, nmed=5, nave=21)
 
+; Display image with traces
 ntrace = (size(xcen,/dim))[1]
 atv,image
 for i=0,ntrace-1 do atvplot,xcen[*,i],ycen[*,i]
 
+; Fix traces and overplot
+xnew = trace_fix(xcen)
+for i=0,ntrace-1 do atvplot,xnew[*,i],ycen[*,i], color='green'
+
 ;xy2traceset,ycen,xcen,tset
-extract_image,image,invvar,xcen,1.2,flux,error
+
+; Optimaal extraction
+extract_image,image,invvar,xnew,1.2,flux,error
 ;---------------
 
 sdssproc,'sdR-01-00000384.fit',image,invvar

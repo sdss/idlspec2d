@@ -32,6 +32,7 @@ pro/spec2d/sshiftvec.pro -text
 pro/spec2d/svdcheb.pro -text
 pro/spec2d/testextract.pro -text
 pro/spec2d/trace_crude.pro -text
+pro/spec2d/trace_fix.pro -text
 pro/spec2d/trace_fweight.pro -text
 pro/spec2d/traceset2xy.pro -text
 pro/spec2d/xy2traceset.pro -text
@@ -41,6 +42,7 @@ pro/sshiftvec.pro -text
 pro/svdcheb.pro -text
 pro/testextract.pro -text
 pro/trace_crude.pro -text
+pro/trace_fix.pro -text
 pro/trace_fweight.pro -text
 pro/traceset2xy.pro -text
 pro/xy2traceset.pro -text
