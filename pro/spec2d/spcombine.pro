@@ -32,6 +32,7 @@
 ;   idlspec2d_version()
 ;   idlutils_version()
 ;   spcoadd_frames
+;   spflux
 ;   splog
 ;   yanny_free
 ;   yanny_par()
