@@ -1,3 +1,4 @@
+; Input an existing SPALL structure, and append data from 2dF files.
 ;------------------------------------------------------------------------------
 function lrgmodel_append_twodf, spall, prefix, nadd=nadd
 
@@ -19,6 +20,13 @@ function lrgmodel_append_twodf, spall, prefix, nadd=nadd
    moredat = replicate(blankobj, ntrim)
    copy_struct, dat2[itrim], moredat
    moredat.z = dat1[itrim].z_final
+
+   ; Nikhil's calibObj files omit RUN,RERUN,CAMCOL,FIELD, which must
+   ; be found in the 2dF file.
+   moredat.run = dat1[itrim].run
+   moredat.rerun = dat1[itrim].rerun
+   moredat.camcol = dat1[itrim].camcol
+   moredat.field = dat1[itrim].field
 
    nadd = ntrim
    return, [spall, moredat]
