@@ -137,7 +137,8 @@ pro spplancomb, topindir=topindir, topoutdir=topoutdir, $
          for imap=0, n_elements(allmaps)-1 do begin
 
             indx = where(allexp.mapname EQ allmaps[imap] $
-             AND allexp.flavor EQ 'science')
+             AND (allexp.flavor EQ 'science' $
+               OR allexp.flavor EQ 'smear' ))
             if (indx[0] NE -1) then spexp = allexp[indx] $
              else spexp = 0
 

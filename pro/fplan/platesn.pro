@@ -63,7 +63,7 @@ pro platesn, platefile, snplot, planfile=planfile
 
 
    for ispec=1,2 do begin
-     for bb=0,n_elements(bands) do begin
+     for bb=0,n_elements(bands) - 1 do begin
 
          key1 = 'SPEC'+ strtrim(ispec,2)+'_'+bands[bb]
          comment = string(format='(a,i2,a,f5.2)', '(S/N)^2 for spec ', ispec, ' at mag ', snmag[bb])
