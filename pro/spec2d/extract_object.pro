@@ -480,11 +480,12 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ;------------------
    ; Flux calibrate to spectrophoto_std fibers
 
-   fluxfactor = fluxcorr(flambda, flambdaivar, vacset, plugsort, $
-    color=color, lower=3.0, upper=3.0, fibermask=fibermask)
-
-   minfluxfactor = median(fluxfactor) * 0.01
-   divideflat, flambda, flambdaivar, fluxfactor, minval=minfluxfactor
+; Remove this code???
+;   fluxfactor = fluxcorr(flambda, flambdaivar, vacset, plugsort, $
+;    color=color, lower=3.0, upper=3.0, fibermask=fibermask)
+;
+;   minfluxfactor = median(fluxfactor) * 0.01
+;   divideflat, flambda, flambdaivar, fluxfactor, minval=minfluxfactor
 
    ;----------
    ; Interpolate over masked pixels, just for aesthetic purposes
@@ -524,7 +525,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    mwrfits, plugsort, outname
 
 ; Save sky, fluxfactor, telluricfactor???
-   mwrfits, fluxfactor, outname
+;   mwrfits, fluxfactor, outname
    if (color EQ 'red') then mwrfits, telluricfactor, outname
 
    return
