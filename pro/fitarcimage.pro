@@ -168,6 +168,7 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
        bestcorr=bestcorr )
 
       splog, 'Best correlation = ', bestcorr
+      splog, 'ASET = ', aset.coeff, format='(a,99f9.5)'
    endif
 
    ; Return from routine if XCEN, YCEN and WSET are not to be returned
@@ -228,7 +229,7 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    for i=0, nmatch-1 do begin
       xpix = round(xcen[*,i]) ; Nearest X position (wavelength) in all traces
       mivar = fltarr(ngfiber) + 1
-      for ix=-1, 1 do begin
+      for ix=-1, 1 do begin  ; Loop +/- 1 pix in the wavelength direction
          mivar = mivar * arcivar[ (((xpix+ix)>0)<(npix-1))[igfiber], igfiber ]
       endfor
       junk = where(mivar EQ 0, nbad)
@@ -242,8 +243,11 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
 
    igood = where(qgood, ngood)
    splog, 'Number of good arc lines: ', ngood
-   if (ngood EQ 0) then $
-    message, 'No good arc lines'
+   if (ngood LT 6) then begin
+      splog, 'ABORT: Only '+string(ngood)+ ' good arclines found'
+      wset = 0
+      return
+   endif
    xcen = xcen[*,igood]
    ycen = ycen[*,igood]
    lamps = lamps[igood]
@@ -298,7 +302,6 @@ maxdev = 1.0d-5
    xmask = xmask[*,gind]
    ycen = ycen[*,gind]
    lamps = lamps[gind]
-
 
    ;---------------------------------------------------------------------------
    ;  Now look to replace pixels masked 
