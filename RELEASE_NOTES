@@ -13,7 +13,8 @@ More iterations added to the arc-line centroiding in FITARCIMAGE
 (addresses PR #874).
 
 Son-of-Spectro now tests for the Red Monster (light at 6400-6550 Ang in
-science frames), and tests for argon lines in the flat-fields.
+science frames), and tests for argon lines in the flat-fields.  The Red
+Monster is presumably from the handpaddle being left plugged in.
 
 -------------------------------------------------------------------------------
 v4_4_0 (Jan 23, 2000)
