@@ -529,5 +529,6 @@ templates/spEigenStar-52333.fits -text svneol=unset#unset
 templates/spEigenStar-52374.fits -text svneol=unset#unset
 templates/spEigenVdisp.fits -text svneol=unset#unset
 templates/spEigenVstnd.fits -text svneol=unset#unset
+templates/spLRG-52928.fits -text
 ups/Makefile -text
 ups/idlspec2d.table -text
