@@ -142,7 +142,7 @@ fi
 # Start the batch processing for Spectro-1D if it's not already running.
 # Put this parent process in the background so this script will continue.
 
-if \ps awx | grep sprobot1d.sh  | grep -v -e grep
+if \ps -elf | grep sprobot1d.sh  | grep -v -e grep
 then
    echo "SPROBOT: BATCH1D already running at "`date`
 else
@@ -154,7 +154,7 @@ fi
 # Start the batch processing for Spectro-2D if it's not already running.
 # Put this parent process in the background so this script will continue.
 
-if \ps awx | grep sprobot2d.sh  | grep -v -e grep
+if \ps -elf | grep sprobot2d.sh  | grep -v -e grep
 then
    echo "SPROBOT: BATCH2D already running at "`date`
 else
