@@ -19,8 +19,6 @@ typedef struct {
   char protocol[5];      # Protocol name, ssh or rsh
 } hostconfig;
 
-hostconfig localhost "" ""
-hostconfig localhost "" ""
 hostconfig wire1.princeton.edu "" ssh
 hostconfig wire1.princeton.edu "" ssh
 hostconfig wire2.princeton.edu "" ssh
@@ -29,6 +27,12 @@ hostconfig wire3.princeton.edu "" ssh
 hostconfig wire3.princeton.edu "" ssh
 hostconfig wire4.princeton.edu "" ssh
 hostconfig wire4.princeton.edu "" ssh
+hostconfig localhost "" ""
+hostconfig localhost "" ""
+hostconfig dusty.princeton.edu "" ssh
+hostconfig dusty.princeton.edu "" ssh
+hostconfig kaze.princeton.edu "" ssh
+hostconfig kaze.princeton.edu "" ssh
 
 #hostconfig coma.princeton.edu /u/schlegel/tmp/coma ssh1
 #hostconfig hydra.princeton.edu /u/schlegel/tmp/hydra ssh1
