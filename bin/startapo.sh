@@ -71,6 +71,7 @@ do
   if [ $good ]
   then 
     gzip -c $input > $input.gz &
+    chmod 664 $input.gz
   fi
 
 
