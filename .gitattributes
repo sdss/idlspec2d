@@ -37,6 +37,7 @@ etc/sdss_r_atm.dat -text
 etc/sdss_u_atm.dat -text
 etc/sdss_z_atm.dat -text
 etc/skylines.dat -text
+etc/template5gal.dat -text
 examples/Makefile -text
 examples/README -text
 examples/opBC.par -text
