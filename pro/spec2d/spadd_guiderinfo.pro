@@ -75,8 +75,7 @@ pro spadd_guiderinfo, hdr
          tags = tag_names(*pdata[i])
          ; Ensure that this guiderMon file has all of the following tag
          ; names, which wasn't the case for the early data.
-         if (where(tags EQ 'plateId') NE -1 $
-          AND where(tags EQ 'timeStamp') NE -1 $
+         if (where(tags EQ 'timeStamp') NE -1 $
           AND where(tags EQ 'fwhm') NE -1 $
           AND where(tags EQ 'dra') NE -1 $
           AND where(tags EQ 'ddec') NE -1) then begin
@@ -100,42 +99,41 @@ pro spadd_guiderinfo, hdr
    rms50 = 0.0
    rms80 = 0.0
 
-   if (keyword_set(pdata)) then begin
-      plate = sxpar(hdr, 'PLATEID')
-      found = where(guidermon.plateId EQ plate)
-      if (found[0] NE -1) then begin
-         guidermon = guidermon[found] 
+   if (keyword_set(guidermon)) then begin
+;      plate = sxpar(hdr, 'PLATEID')
+;      found = where(guidermon.plateId EQ plate)
+;      if (found[0] NE -1) then begin
+;         guidermon = guidermon[found] 
 
-         get_tai, hdr, tai_beg, tai_mid, tai_end
-         taiplate = guidermon.timeStamp + 3506716800.0d
-         found2 = where(taiplate GE tai_beg AND taiplate LE tai_end, ct2)
+      get_tai, hdr, tai_beg, tai_mid, tai_end
+      taiplate = guidermon.timeStamp + 3506716800.0d
+      found2 = where(taiplate GE tai_beg AND taiplate LE tai_end, ct2)
 
-         if (ct2 GT 8) then begin   ; at least 8 fibers in the time interval?
-            guidermon = guidermon[found2]
-            seeing  = 0.0
-            good_seeing = where(guidermon.fwhm GT 0.0,ct_seeing)
-            if good_seeing[0] NE -1 then begin
-               seeing = guidermon[good_seeing].fwhm
-               seeing = seeing[sort(seeing)]           
-               see20 = seeing[long(ct_seeing*0.2) - 1]
-               see50 = seeing[long(ct_seeing*0.5) - 1]
-               see80 = seeing[long(ct_seeing*0.8) - 1]
-            endif else splog, 'Warning: No non-zero FWHM entries'
+      if (ct2 GT 8) then begin   ; at least 8 fibers in the time interval?
+         guidermon = guidermon[found2]
+         seeing  = 0.0
+         good_seeing = where(guidermon.fwhm GT 0.0,ct_seeing)
+         if good_seeing[0] NE -1 then begin
+            seeing = guidermon[good_seeing].fwhm
+            seeing = seeing[sort(seeing)]           
+            see20 = seeing[long(ct_seeing*0.2) - 1]
+            see50 = seeing[long(ct_seeing*0.5) - 1]
+            see80 = seeing[long(ct_seeing*0.8) - 1]
+         endif else splog, 'Warning: No non-zero FWHM entries'
 
-            rmsoff = 0.0
-            good_rms = where(guidermon.dra NE 0.0 OR $
-                             guidermon.ddec NE 0.0,ct_rms)
-            if good_rms[0] NE -1 then begin
-                rmsoff = sqrt(guidermon[good_rms].dra^2 +$
-                              guidermon[good_rms].ddec^2)
+         rmsoff = 0.0
+         good_rms = where(guidermon.dra NE 0.0 OR $
+                          guidermon.ddec NE 0.0,ct_rms)
+         if good_rms[0] NE -1 then begin
+            rmsoff = sqrt(guidermon[good_rms].dra^2 +$
+                          guidermon[good_rms].ddec^2)
 
-                rmsoff = rmsoff[sort(rmsoff)]
-                rms20 = rmsoff[long(ct_rms*0.2) - 1]
-                rms50 = rmsoff[long(ct_rms*0.5) - 1]
-                rms80 = rmsoff[long(ct_rms*0.8) - 1]
-            endif else splog, 'Warning: No non-zero DRA and DDEC entries'
-         endif else splog, 'Warning: No inclusive times ', tai_beg, tai_end
-      endif else splog, 'Warning: Could not find plateId ', plate
+            rmsoff = rmsoff[sort(rmsoff)]
+            rms20 = rmsoff[long(ct_rms*0.2) - 1]
+            rms50 = rmsoff[long(ct_rms*0.5) - 1]
+            rms80 = rmsoff[long(ct_rms*0.8) - 1]
+         endif else splog, 'Warning: No non-zero DRA and DDEC entries'
+      endif else splog, 'Warning: No inclusive times ', tai_beg, tai_end
    endif
 
    sxaddpar, hdr, 'RMSOFF80', rms80, $
