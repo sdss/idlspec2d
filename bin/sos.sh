@@ -7,21 +7,21 @@
 # S. Burles, APO, 4 May 2000
 #------------------------------------------------------------------------------
 
-if \ps -A | grep aporsync_logs.sh  | grep -v -e grep
+if \ps -elf | grep aporsync_logs.sh  | grep -v -e grep
 then
   echo "APORSYNC_LOGS: Already running at "`date`
 else
   aporsync_logs.sh &
 fi
 
-if \ps -A | grep aporsync_blue.sh  | grep -v -e grep
+if \ps -elf | grep aporsync_blue.sh  | grep -v -e grep
 then
   echo "APORSYNC_BLUE: Already running at "`date`
 else
   aporsync_blue.sh &
 fi
 
-if \ps -A | grep aporsync_red.sh  | grep -v -e grep
+if \ps -elf | grep aporsync_red.sh  | grep -v -e grep
 then
   echo "APORSYNC_RED: Already running at "`date`
 else
