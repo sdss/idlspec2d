@@ -21,7 +21,8 @@
 ;                for 1,2,3,4,5 or 6 flats.  For more then 6 flats, default
 ;                to 2.0.
 ;   maxiter    - Number of rejection iterations; default to 2.
-;   oldflat    - Name of old flat-field from which to select pixels to mask
+;   oldflat    - Name of old flat-field from which to select pixels to mask;
+;                if not set, then read the masks in this source distribution.
 ;   outfile    - Write the image PIXFLAT to this file.
 ;   indir      - Input directory for FLATNAME; default to './'
 ;   outdir     - Output directory for OUTFILE; default to './'
@@ -58,11 +59,15 @@
 ; PROCEDURES CALLED:
 ;   djs_avsigclip()
 ;   extract_image
+;   genflatmask()
 ;   readfits()
 ;   slatec_bvalu()
 ;   slatec_splinefit()
 ;   sdssproc
 ;   writefits
+;
+; INTERNAL SUPPORT ROUTINES:
+;   superflat
 ;
 ; REVISION HISTORY:
 ;   13-Oct-1999  Written by D. Schlegel, APO
@@ -195,29 +200,6 @@ pro spflatten2, flatname, arcname, allflats, pixflat, $
    tmpname2 = tmpdir+'/tmp.ymodel.'+strtrim(string(indgen(nflat)),2)+'.fits'
 
    ;---------------------------------------------------------------------------
-   ; Create a mask image
-   ;---------------------------------------------------------------------------
-
-thresh = 0.7
-   if (keyword_set(oldflat)) then begin
-
-      flatimg = readfits(oldflat)
-
-      ; First mask all points less than THRESH and everything within
-      ; NGROW pixels
-      maskimg1 = flatimg LT thresh
-flatimg = 0
-      maskimg1 = smooth(maskimg1 * (2*ngrow+1)^2, ngrow) GT 0
-
-      ; Now find large regions of masked points, and grow them by many pixels
-      maskimg2 = smooth((smooth(maskimg1+0.0,7,/edge) GT 0.9) +0., 35) GT 0.1
-
-      maskimg = maskimg1 OR maskimg2
-maskimg1 = 0
-maskimg2 = 0
-   endif
-
-   ;---------------------------------------------------------------------------
    ; First find the wavelength solution
    ;---------------------------------------------------------------------------
 
@@ -225,7 +207,8 @@ maskimg2 = 0
    ; Read flat-field image that corresponds to the arc
 
    splog, 'Reading flat ', flatname
-   sdssproc, flatname[0], flatimg, flativar, indir=indir, hdr=flathdr
+   sdssproc, flatname[0], flatimg, flativar, indir=indir, hdr=flathdr, $
+    spectrographid=spectrographid, color=color
 
    dims = size(flatimg, /dimens)
    nx = dims[0]
@@ -292,6 +275,13 @@ arcivar = 0
    traceset2xy, tmpset, xtmp, waveimg
 
    ;---------------------------------------------------------------------------
+   ; Read or create a mask image
+   ;---------------------------------------------------------------------------
+
+   maskimg = genflatmask(oldflat, spectrographid=spectrographid, color=color, $
+    indir=indir, tmpdir=tmpdir)
+
+   ;---------------------------------------------------------------------------
    ; Construct the flat
    ;---------------------------------------------------------------------------
 
@@ -336,8 +326,8 @@ arcivar = 0
       ;----------------------
       ; Determine YMODEL image
 
-splot,transpose(10^waveimg[1000,*]),transpose(flatimg[1000,*])
-for i=0,5 do soplot, transpose(10^waveimg[i*10,*]),transpose(flatimg[i*10,*])
+;splot,transpose(10^waveimg[1000,*]),transpose(flatimg[1000,*])
+;for i=0,5 do soplot, transpose(10^waveimg[i*10,*]),transpose(flatimg[i*10,*])
 
       ymodel = 0.0 * flatimg
       for i=0, nx-1 do begin
@@ -396,9 +386,8 @@ pixflatarr = 0
          flatimgsum = flatimgsum + outmask[*,*,iflat] * readfits(tmpname1[iflat])
          ymodelsum = ymodelsum + outmask[*,*,iflat] * readfits(tmpname2[iflat])
 
-; ???
-;         rmfile, tmpname1[iflat]
-;         rmfile, tmpname2[iflat]
+         rmfile, tmpname1[iflat]
+         rmfile, tmpname2[iflat]
 
       endfor
 

@@ -11,6 +11,10 @@ etc/altbg14.txt -text
 etc/blue.bkpts -text
 etc/f8v.abs -text
 etc/f8vspline.dat -text
+etc/flatmask-b1.fits.gz -text svneol=unset#unset
+etc/flatmask-b2.fits.gz -text svneol=unset#unset
+etc/flatmask-r1.fits.gz -text svneol=unset#unset
+etc/flatmask-r2.fits.gz -text svneol=unset#unset
 etc/fluxcorr.bkpts -text
 etc/intrinsic1.dat -text
 etc/intrinsicF2.dat -text
@@ -61,6 +65,7 @@ pro/fluxcorr.pro -text
 pro/func_fit.pro -text
 pro/funccheb.pro -text
 pro/gauss_smooth.pro -text
+pro/genflatmask.pro -text
 pro/idlspec2d_version.pro -text
 pro/locateskylines.pro -text
 pro/logsheet.pro -text
@@ -106,6 +111,7 @@ pro/spec2d/fluxcorr.pro -text
 pro/spec2d/func_fit.pro -text
 pro/spec2d/funccheb.pro -text
 pro/spec2d/gauss_smooth.pro -text
+pro/spec2d/genflatmask.pro -text
 pro/spec2d/idlspec2d_version.pro -text
 pro/spec2d/locateskylines.pro -text
 pro/spec2d/logsheet.pro -text
