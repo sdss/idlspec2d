@@ -141,6 +141,8 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
       if (NOT keyword_set(tempflux)) then $
        message, 'Error reading file ' + filenames[ifile]
 
+      if (ifile EQ 0) then hdr0 = hdr
+
       ;----------
       ; Add an additional error term equal to ADDERR of the flux.
 
@@ -154,7 +156,7 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
       ; Read header info
 
       cameras = strtrim(sxpar(hdr, 'CAMERAS'),2)
-      expstr = string(sxpar(hdr,'EXPOSURE'), format='(i8.8)')
+      expstr = string(sxpar(hdr, 'EXPOSURE'), format='(i8.8)')
 
       ;----------
       ; Solve for wavelength and lambda-dispersion at each pixel in the image
@@ -388,6 +390,10 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
    ; Generate S/N plots
    ;---------------------------------------------------------------------------
 
+   ; Modify the 1st file's header to use for the combined plate header.
+
+   hdr = hdr0
+
    platesn, finalflux, finalivar, finalandmask, finalplugmap, finalwave, $
     hdr=hdr, plotfile=plotsnfile
 
@@ -395,13 +401,25 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
    ; Create the output header
    ;---------------------------------------------------------------------------
 
+   ;----------
+   ; Remove header cards that were specific to this first exposure
+   ; (where we got the header).
+
    ncoeff = sxpar(hdr, 'NWORDER')
    for i=2, ncoeff-1 do sxdelpar, hdr, 'COEFF'+strtrim(string(i),2)
 
-   ; Now get rid of exposure, and add list of exposures
-
    sxdelpar, hdr, 'EXPOSURE'
    sxdelpar, hdr, 'SEQID'
+   sxdelpar, hdr, 'DARKTIME'
+   sxdelpar, hdr, 'CAMERAS'
+   sxdelpar, hdr, 'PLUGMAPO'
+   for i=1, 4 do sxdelpar, hdr, 'GAIN'+strtrim(string(i),2)
+   for i=1, 4 do sxdelpar, hdr, 'RDNOISE'+strtrim(string(i),2)
+   sxdelpar, hdr, 'NBLEAD'
+   sxdelpar, hdr, 'PIXFLAT'
+
+   ;----------
+   ; Add new header cards
 
    sxaddpar, hdr, 'VERSCOMB', idlspec2d_version(), $
     'Version of idlspec2d for combining multiple spectra', after='VERS2D'
