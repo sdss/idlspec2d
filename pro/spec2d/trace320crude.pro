@@ -100,7 +100,7 @@ function trace320crude, image, invvar, ystart=ystart, nmed=nmed, $
    xmask = xerr LT 990  ; =1 for good centers, =0 for bad
 
    ;--------------------------------------------------------------------
-   ; started on near two or more bad columns? THEN set xgood[itrace] = 0
+   ; started on near a bad columns? THEN set xgood[itrace] = 0
 
    ncol = (size(invvar,/dimen))[0]
    if ncol GT 0 then begin
@@ -191,8 +191,22 @@ function trace320crude, image, invvar, ystart=ystart, nmed=nmed, $
 
 
    ;----------------------------------------------------------------------
-   ;  Find good centroids and compare with upper and lower fibers if they
+   ;  This is new code to replace traces which have been 
+   ;  affected by bad columns (or masked pixels in general) at the 
+   ;  starting row.  Any start position which is offset from the true
+   ;  position will produce systematic errors in all of the centroids
+   ;  which are corrected above and based on xstart.
    ;  
+   ;  This algorithm works as follows:
+   ;  1) Select from the near eight neighbors (-4 to +4) traces
+   ;       which have fewer than 100 bad pixels. (Checktrace)
+   ;  2) Calculate the mean trace of the selected neighbors = meantrace
+   ;  3) Calculate the offset of the problem trace with the selected neighbors
+   ;           a) use only rows (goodrows) which have good centroids in 
+   ;                        all selected neighbors AND in the problem trace.
+   ;           b) calculate median offset w.r.t. neighbors in goodrows only
+   ;           c) Use this mean offset to correct the meantrace to the correct 
+   ;                zero point position
 
    problemtraces = where(xgood EQ 0, ct)
    nrow = (size(xset,/dimen))[1]
@@ -208,25 +222,41 @@ function trace320crude, image, invvar, ystart=ystart, nmed=nmed, $
    for ii=0, ct-1 do begin
       itrace = problemtraces[ii] 
 
-;
+;----------------------------------------------------------------------------
 ;	Really simple minded loop to check for nearest 8 neighbors who might
 ;        be suitable for substitution
 ;
       checktrace = -1
       for icheck = itrace-4 > 0, (itrace+4) < (ntrace-1) do begin
+
+      ;-------------------------------------------------------------------
+      ; accept only good traces (xgood), which are not itself, and 
+      ; have less than 100 bad centroids returned from trace_fweight
+      ;
          if xgood[icheck] AND icheck NE itrace AND $
                badpix[icheck] LT 100 then begin
            if checktrace[0] EQ -1 then checktrace = icheck $
            else checktrace = [checktrace, icheck]
          endif
       endfor
+
+      ;-------------------------------------------------------------------
+      ;  Checktrace contains the selected good neighbors
+      ;
       ncheck = n_elements(checktrace)
 
+      ;---------------------------------------------------------------------
+      ;  Need at least two good neighbors to perform correction
+      ;
       if ncheck GE 2 then begin
         clean = total(tmp_xerr[*,checktrace] EQ 999,2) EQ 0
         meantrace = total(xset[*,checktrace],2)/ncheck 
 
         goodrows = where(clean AND tmp_xerr[*,itrace] NE 999, ngoodrows)
+
+      ;---------------------------------------------------------------------
+      ;  Require at least 100 common good rows to carry-on
+      ;
         if ngoodrows GE 100 then begin
           xmask[goodrows,itrace] = 1
           xset_good = xset[goodrows,*]
