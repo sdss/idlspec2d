@@ -25,6 +25,10 @@
 ; EXAMPLES:
 ;
 ; BUGS:
+;   Only does a 1d halo correction, does not spread the halo scattering
+;    in the dispersion correction.  
+;   Parameters for halo term are hardwired and only qualitatively tested
+;    on a few frames.
 ;
 ; PROCEDURES CALLED:
 ;   traceset2xy
@@ -62,7 +66,7 @@ function halo, image, sigma, exp=exp
    return, smooth
 end 
 
-function smooth_halo, image, wset
+function smooth_halo, image, wset 
 
    nx = (size(image))[1]
    ny = (size(image))[2]
@@ -73,12 +77,13 @@ function smooth_halo, image, wset
 ;
    lam = 10^(djs_median(lam,2)-4)
 
-   smooth = 0.03 * halo(image, 10.0)
+   ; smooth = 0.03 * halo(image, 10.0)
 
    exp = 50.0 * lam^2
-   correction = exp(9.0*lam - 9.5)
-   smooth2 = halo(image, 1.0, exp=exp)
+   correction = exp(9.0*lam - 9.7)
+   smooth2 = halo(image, 4.0, exp=exp)
 
-   return, smooth + smooth2 * (correction ## replicate(1,ny))
+   ; return, smooth + smooth2 * (correction ## replicate(1,ny))
+   return, smooth2 * (correction ## replicate(1,ny))
 end
 
