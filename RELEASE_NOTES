@@ -40,6 +40,8 @@ READSPEC: Change how the internal procedure READSPEC1 works, such that
         the desired behaviour.  For ex, requesting a non-existent plate
         will now return 640-element arrays of zeros.
 SDSSPROC: Re-enable the call to 'speclog_version'.
+        Add call to FITS_PURGE_NANS in order to address PR #6032, 6084,
+        whereby the DA has written invalid FITS header keywords.
 SKYSUBTRACT: Return the trace-set RELCHI2SET instead of RELCHI2STRUCT,
         for use by the EXTRACT_OBJECT code.
 SMOOTH_SUPERFLAT: Bug fix, whereby we could trigger a warning message when
