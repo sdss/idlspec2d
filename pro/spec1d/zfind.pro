@@ -146,6 +146,8 @@ function zfind, objflux, objivar, hdr=hdr, $
        message, 'Unable to find EIGENFILE matching '+eigenfile
       thisfile = allfiles[ (reverse(sort(allfiles)))[0] ]
       splog, 'Selecting EIGENFILE=' + thisfile
+      if (keyword_set(columns)) then $
+       splog, 'Selecting columns=', columns
 
       ;----------
       ; Read the template file, and optionally trim to only those columns
