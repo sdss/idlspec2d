@@ -345,7 +345,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    qaplot_skydev, flux, fluxivar, vacset, plugsort, color, $
     title=plottitle+objname
 
-   sxaddpar, objhdr, 'VACUUM', 'T', 'Wavelengths are in vacuum'
+   sxaddpar, objhdr, 'VACUUM', 'T', ' Wavelengths are in vacuum'
 
    ;------------------
    ; Sky-subtract
