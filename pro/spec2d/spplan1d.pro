@@ -3,7 +3,7 @@
 ;   spplan1d
 ;
 ; PURPOSE:
-;   Create plan file(s) for running the Spectro-1D pipeline.
+;   Create plan file(s) for combining Spectro-2D outputs into one plate.
 ;
 ; CALLING SEQUENCE:
 ;   spplan1d, [ topindir=, topoutdir=, mjd=, mjstart=, mjend=, $
@@ -135,7 +135,7 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
          for imap=0, n_elements(allmaps)-1 do begin
 
             indx = where(allexp.mapname EQ allmaps[imap] $
-             AND allexp.flavor EQ 'science')
+             AND (allexp.flavor EQ 'science' OR allexp.flavor EQ 'smear'))
             if (indx[0] NE -1) then spexp = allexp[indx] $
              else spexp = 0
 
@@ -165,12 +165,11 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
                mjdstr = string(thismjd, format='(i05.5)')
                outdir = concat_dir(topoutdir, platedir)
 
-               planfile = 'spPlan1d-' + platestr + '-' + mjdstr + '.par'
-               logfile = 'spDiag1d-' + platestr + '-' + mjdstr + '.log'
-               plotfile = 'spDiag1d-' + platestr + '-' + mjdstr + '.ps'
+               planfile = 'spPlancomb-' + platestr + '-' + mjdstr + '.par'
+               logfile = 'spDiagcomb-' + platestr + '-' + mjdstr + '.log'
+               plotfile = 'spDiagcomb-' + platestr + '-' + mjdstr + '.ps'
                combinefile = 'spPlate-' + platestr + '-' + mjdstr + '.fits'
                fcalibprefix = 'spFluxcalib-' + platestr + '-' + mjdstr
-               zfile = 'spZ-' + platestr + '-' + mjdstr + '.fits'
 
                ;----------
                ; Create keyword pairs for plan file
@@ -188,8 +187,6 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
                 + "'  # Prefix for flux-calibration files"]
                hdr = [hdr, "combinefile   '" + combinefile $
                 + "'  # Output combined spectra file"]
-               hdr = [hdr, "zfile   '" + zfile $
-                + "'  # Output redshift file"]
 
                ;----------
                ; Write output file

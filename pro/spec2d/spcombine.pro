@@ -12,7 +12,7 @@
 ;
 ; OPTIONAL INPUTS:
 ;   planfile   - Name(s) of output plan file; default to reducing all
-;                plan files matching 'spPlan1d*.par'
+;                plan files matching 'spPlancomb*.par'
 ;   docams     - Cameras to combine; default to ['b1', 'b2', 'r1', 'r2']
 ;   adderr     - Additional error to add to the formal errors, as a
 ;                fraction of the flux; default to 0.03 (3 per cent).
@@ -45,7 +45,7 @@
 
 pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay
 
-   if (NOT keyword_set(planfile)) then planfile = findfile('spPlan1d*.par')
+   if (NOT keyword_set(planfile)) then planfile = findfile('spPlancomb*.par')
    if (n_elements(adderr) EQ 0) then adderr = 0.03
 
    ;----------
