@@ -19,7 +19,7 @@ void findXLimits(IDL_LONG *xmin, IDL_LONG *xmax, float *x, float *xcen,
                IDL_LONG nx, IDL_LONG nTrace, float *sigma, float sigmal);
 void fillProfile(float **y, float *x, float *xcen, IDL_LONG *xmin, 
              IDL_LONG *xmax, float *sigma, IDL_LONG nx, IDL_LONG nCoeff, 
-             IDL_LONG nTrace, IDL_LONG proftype);
+             IDL_LONG nTrace, IDL_LONG proftype, float, float);
 void fillPoly(float **y, float *x, IDL_LONG nx, IDL_LONG nPoly, 
          float x1, float x2);
 void fillWhopping(float **y, float *x, IDL_LONG nx, IDL_LONG whoppingct,
