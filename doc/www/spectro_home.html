@@ -378,8 +378,8 @@ There are also some intermediate output files (e.g., spCFrame files)
 that can be ignored by most users.
 
 <P>
-Most people will only want the summary files, combined spectra, 1D outputs,
-and log files.  These total about 125 Gb for 697 plates as of 31 May 2002.
+Most people will only want the summary files, combined spectra and 1D outputs
+(redshifts).  These total about 125 Gb for 1300 plates as of Feb 2004.
 The following command will copy that entire list of files (eventually).
 Should the copy be interrupted, the "rsync" command can be invoked again
 to successfully copy the remainder of the data.
@@ -388,7 +388,6 @@ to successfully copy the remainder of the data.
     --include "*/" \
     --include "platelist*" --include "spAll*" \ 
     --include "*spZ*.fits" --include "spPlate*.fits" \ 
-    --include "*.log" --include "*.ps" \
     --exclude "*" \
     alfred@sdssdata.princeton.edu:/u/dss/spectro/ .
 </PRE></DD></DL>
