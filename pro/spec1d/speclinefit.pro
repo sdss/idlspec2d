@@ -16,6 +16,9 @@
 ;   fiberid    - If specified, then only reduce these fiber numbers;
 ;                this must be a vector with unique values between 1 and
 ;                the number of rows in the plate file (typically 640).
+;                This keyword must be set to only those fibers that exist
+;                in the spZbest file if FIBERID was specified when
+;                running SPREDUCE1D.
 ;   doplot     - If set, then generate plots.  Send plots to a PostScript
 ;                file unless /DEBUG is set.
 ;   debug      - If set, then send plots to the X display and wait for
@@ -168,21 +171,33 @@ ormask = 0 ; Free memory
    endif
 
    ;----------
-   ; Trim to specified fibers if FIBERID is set
+   ; Trim to specified fibers if FIBERID is set.
+   ; The following logic works if the spZbest file does not contain
+   ; all fibers, for example if SPREDUCE1D was run with FIBERID set.
 
    if (keyword_set(fiberid)) then begin
       if (min(fiberid) LT 0 OR max(fiberid) GT nobj) then $
        message, 'Invalid value for FIBERID: must be between 0 and '+string(nobj)
-      objflux = objflux[*,fiberid-1]
-      objivar = objivar[*,fiberid-1]
-      anyandmask = anyandmask[fiberid-1]
-      anyormask = anyormask[fiberid-1]
-      plugmap = plugmap[fiberid-1]
-      zans = zans[fiberid-1]
-      nobj = n_elements(fiberid)
+      fiblist = fiberid
    endif else begin
-      fiberid = lindgen(nobj) + 1
+      fiblist = lindgen(nobj) + 1
    endelse
+   if (n_elements(zans) LT nobj) then begin
+      nfib = n_elements(fiblist)
+      zindx = lonarr(nfib)
+      for i=0, nfib-1 do zindx[i] = (where(zans.fiberid EQ fiblist[i]))[0]
+      if ((where(zindx EQ -1))[0] NE -1) then $
+       message, 'Some FIBERIDs do not exist in spZbest file'
+   endif
+
+   objflux = objflux[*,fiberid-1]
+   objivar = objivar[*,fiberid-1]
+   anyandmask = anyandmask[fiberid-1]
+   anyormask = anyormask[fiberid-1]
+   plugmap = plugmap[fiberid-1]
+   zans = zans[zindx]
+   dispflux = dispflux[*,zindx]
+   nobj = nfib
    splog, 'Number of fibers = ', nobj
 
    ;----------
