@@ -77,8 +77,14 @@ pro redmonster, relloglam, relchi2, objloglam, filtsz=filtsz, $
       i1 = (where(badmask[i0:nbin-1] EQ 0))[0]
       if (i1 EQ -1) then i1 = nbin - 1 $
        else i1 = i1 + i0
-      splog, 'WARNING: Red Monster at ', 10^relloglam[i0], ' to ', $
+      splog, 'WARNING: Bad sky residuals at ', 10^relloglam[i0], ' to ', $
        10^relloglam[i1], ' Ang'
+      if ( 10^relloglam[i0] GT 6250 AND 10^relloglam[i0] LT 6500 $
+       AND 10^relloglam[i1] GT 6500 AND 10^relloglam[i1] LT 6750) then begin
+         splog, 'WARNING: Red Monster at ', 10^relloglam[i0], ' to ', $
+          10^relloglam[i1], ' Ang'
+      endif
+      endelse
       badmask[i0:i1] = 0
 
       if (keyword_set(objloglam) AND keyword_set(pixelmask)) then begin
