@@ -1,0 +1,21 @@
+###############################################################################
+# Sloan Digital Sky Survey (SDSS) -- 2D spectroscopic reduction code
+# S. Burles & D. Schlegel
+###############################################################################
+
+SHELL = /bin/sh
+#
+all :
+
+#
+# Install things in their proper places in $(IDLSPEC2D_DIR)
+#
+install :
+	@ rm -rf $(IDLSPEC2D_DIR)/doc/www
+	@ mkdir $(IDLSPEC2D_DIR)/doc/www
+	- cp *.txt $(IDLSPEC2D_DIR)/doc
+	- cp www/*.html $(IDLSPEC2D_DIR)/doc/www
+
+clean :
+	- /bin/rm -f *~ core www/*~ www/core
+

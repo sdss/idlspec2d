@@ -213,7 +213,8 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
        ans(0:ma-nPoly-whoppingct-1) = inputans
      endif
 
-      result = call_external(getenv('IDL_EVIL')+'libspec2d.so','extract_row',$
+      result = call_external(getenv('IDLSPEC2D_DIR')+'/lib/libspec2d.so', $
+       'extract_row',$
        nx, float(xvar), float(fimage), workinvvar, float(ymodel), nTrace, $
        nPoly, float(xcen), float(sigma), proftype, calcCovar, squashprofile, $
        whopping, whoppingct, $

@@ -1,6 +1,11 @@
 * text=auto !eol
+/Makefile -text
+bin/Makefile -text
+bin/evilmake -text
+doc/Makefile -text
 etc/BG14.txt -text
 etc/FG3.txt -text
+etc/Makefile -text
 etc/altbg14.txt -text
 etc/f8vspline.dat -text
 etc/fluxcorr.bkpts -text
@@ -9,16 +14,21 @@ etc/intrinsicF2.dat -text
 etc/lamphgcdne.dat -text
 etc/lamplist.dat -text
 etc/skylines.dat -text
+examples/Makefile -text
 examples/README -text
 examples/opBC.par -text
 examples/opConfig.par -text
 examples/opECalib.par -text
+include/Makefile -text
 include/evilmath.h -text
 include/export.h -text
 include/extract_row.h -text
+lib/Makefile -text
+misc/Makefile -text
 misc/distort.blue -text
 misc/distort.red -text
 misc/uomoto.distortions -text
+pro/Makefile -text
 pro/TODO -text
 pro/arcfit_guess.pro -text
 pro/arcsky_fit.pro -text
@@ -61,6 +71,7 @@ pro/skysubtract.pro -text
 pro/sortplugmap.pro -text
 pro/spallflat.pro -text
 pro/spallreduce.pro -text
+pro/spec2d/Makefile -text
 pro/spec2d/TODO -text
 pro/spec2d/arcfit_guess.pro -text
 pro/spec2d/arcsky_fit.pro -text
@@ -149,6 +160,7 @@ pro/ushift.pro -text
 pro/writeapid.pro -text
 pro/writespectra.pro -text
 pro/xy2traceset.pro -text
+src/Makefile -text
 src/evilmath.c -text
 src/extract_boxcar.c -text
 src/extract_profile.c -text

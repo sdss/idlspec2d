@@ -66,9 +66,10 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    readimg = arg_present(image) OR keyword_set(outfile)
    readivar = arg_present(invvar) OR keyword_set(varfile)
 
+   pp = getenv('IDLSPEC2D_DIR')+'/examples'
+
    junk = findfile(configfile, count=ct)
    if (ct NE 1) then begin
-     pp = getenv('EVIL_PAR') 
      tempname = findfile(filepath(configfile, root_dir=pp), count=ct)
    endif
    if (ct NE 1) then $
@@ -78,7 +79,6 @@ pro sdssproc, infile, image, invvar, indir=indir, $
 
    tempname = findfile(ecalibfile, count=ct)
    if (ct NE 1) then begin
-     pp = getenv('EVIL_PAR') 
      tempname = findfile(filepath(ecalibfile, root_dir=pp), count=ct)
    endif
    if (ct NE 1) then $
@@ -88,7 +88,6 @@ pro sdssproc, infile, image, invvar, indir=indir, $
 
    tempname = findfile(bcfile, count=ct)
    if (ct NE 1) then begin
-     pp = getenv('EVIL_PAR') 
      tempname = findfile(filepath(bcfile, root_dir=pp), count=ct)
    endif
    if (ct NE 1) then $

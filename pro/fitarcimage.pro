@@ -19,7 +19,7 @@
 ; OPTIONAL KEYWORDS:
 ;   color      - 'red' or 'blue'; not required if ANS is set
 ;   lampfile   - Name of file describing arc lamp lines;
-;                default to the file 'lamphgcdne.dat' in the IDL path.
+;                default to the file 'lamphgcdne.dat' in $IDLSPEC2D_DIR/etc.
 ;   fibermask  - Mask of 0 for bad fibers and 1 for good fibers [NFIBER]
 ;   func       - Name of fitting function; default to 'legendre'
 ;   aset       - Trace set for initial wavelength solution in row number ROW.
@@ -125,8 +125,8 @@ pro fitarcimage, arc, arcivar, xnew, ycen, wset, $
       lampfilename = (findfile(lampfile, count=ct))[0]
       if (ct EQ 0) then message, 'No LAMPFILE found '+lampfile
    endif else begin
-      lampdefault = 'lamphgcdne.dat'
-      lampfilename = (djs_locate_file(lampdefault))[0]
+      lampdefault = getenv('IDLSPEC2D_DIR') + '/etc/lamphgcdne.dat'
+      lampfilename = (findfile(lampdefault, count=ct))[0]
       if (NOT keyword_set(lampfilename)) then $
        message, 'No LAMPFILE found '+lampdefault
    endelse

@@ -43,7 +43,7 @@ function quickproc, infile, hdr=hdr, configfile=configfile
 
    junk = findfile(configfile, count=ct)
    if (ct NE 1) then begin
-     pp = getenv('EVIL_PAR') 
+     pp = getenv('IDLSPEC2D_DIR')+'/examples'
      tempname = findfile(filepath(configfile, root_dir=pp), count=ct)
    endif
    if (ct NE 1) then $

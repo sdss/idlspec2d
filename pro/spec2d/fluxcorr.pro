@@ -18,7 +18,7 @@ function fluxcorr, flux, fluxivar, wset, plugsort, $
 	if (keyword_set(spectrostd)) then $
 	  filename = findfile(spectrostd) $
 	else $
-	  filename = djs_locate_file('f8vspline.dat')
+	  filename = getenv('IDLSPEC2D_DIR') + '/etc/f8vspline.dat'
 
 	if (filename EQ '') then $
              message, 'cannot fluxcorrect, no intrinsic spectrum'
@@ -86,7 +86,7 @@ function fluxcorr, flux, fluxivar, wset, plugsort, $
 	if (keyword_set(bkptfile)) then $
 	  filename = findfile(bkptfile) $
 	else $
-	  filename = djs_locate_file('fluxcorr.bkpts')
+	  filename = getenv('IDLSPEC2D_DIR') + '/etc/fluxcorr.bkpts'
 
 	if (filename EQ '') then begin
              print, 'FLUXCORR cannot find bkpt file, filling in here'

@@ -83,8 +83,8 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       skyfilenames = findfile(skylinefile, count=ct)
       if (ct EQ 0) then message, 'No SKYLINEFILE found '+skylinefile
    endif else begin
-      skydefault = 'skylines.dat'
-      skyfilenames = djs_locate_file(skydefault)
+      skydefault = getenv('IDLSPEC2D_DIR') + '/etc/skylines.dat'
+      skyfilenames = findfile(skydefault, count=ct)
       if (skyfilenames EQ '') then message, 'No SKYLINEFILE found '+skydefault
    endelse
 
