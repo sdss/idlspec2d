@@ -1,0 +1,12 @@
+# List of computers to use for batch jobs of Spectro-1D
+# This file is used by the IDL procedure BATCH1D.
+
+typedef struct {
+  char remotehost[40];   # Remote host name
+  char remotedir[40];    # Remote directory
+  char protocol[5];      # Protocol name, ssh or rsh
+} hostconfig;
+
+hostconfig coma.princeton.edu /u/schlegel ssh
+hostconfig spectro.princeton.edu "" ""
+
