@@ -50,6 +50,7 @@ pro/sdssproc.pro -text
 pro/skysubtract.pro -text
 pro/sortplugmap.pro -text
 pro/spallflat.pro -text
+pro/spallreduce.pro -text
 pro/spec2d/TODO -text
 pro/spec2d/arcsky_fit.pro -text
 pro/spec2d/calcflux.pro -text
@@ -81,6 +82,7 @@ pro/spec2d/sdssproc.pro -text
 pro/spec2d/skysubtract.pro -text
 pro/spec2d/sortplugmap.pro -text
 pro/spec2d/spallflat.pro -text
+pro/spec2d/spallreduce.pro -text
 pro/spec2d/spflatten.pro -text
 pro/spec2d/spplan.pro -text
 pro/spec2d/spreduce.pro -text
