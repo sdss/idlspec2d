@@ -68,7 +68,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
                ymodel=ymodel, fscat=fscat,proftype=proftype,ansimage=ansimage, $
                wfixed=wfixed, mask=mask, pixelmask=pixelmask, reject=reject, $
                nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej, $
-	       fitans=fitans, whopping=whopping, $
+	       fitans=fitans, whopping=whopping, oldreject=oldreject, $
                relative=relative, chisq=chisq, wsigma=wsigma
 
    ; Need 5 parameters
@@ -217,7 +217,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
    for iy=0, nRowExtract-1 do begin
      cur = yrow[iy]
 
-     if (sigmasize[0] EQ 2) then  sigmacur = sigma[*, cur] $
+     if (sigmasize[0] EQ 2) then  sigmacur = sigma[cur, *] $
      else sigmacur = sigma1
      
 
@@ -242,7 +242,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
       wfixed=wfixed, mask=masktemp, diagonal=prow, nPoly=nPoly, $
       niter=niter, squashprofile=squashprofile,inputans=inputans, $
       maxIter=maxIter, highrej=highrej, lowrej=lowrej, $
-      whopping=whoppingcur, relative=relative, $
+      whopping=whoppingcur, relative=relative, oldreject=oldreject, $
       reducedChi=chisqrow)
 
      mask[*,cur] = masktemp
