@@ -224,8 +224,10 @@ pro readspec, plate, fiber, mjd=mjd, silent=silent, flux=flux, flerr=flerr, $
 ;   endelse
 
    nvec = n_elements(plate) > n_elements(fiber)
-   platevec = lonarr(nvec) + plate
-   fibervec = lonarr(nvec) + fiber
+   if (n_elements(plate) GT 1) then platevec = plate $
+    else platevec = lonarr(nvec) + plate[0]
+   if (n_elements(fiber) GT 1) then fibervec = fiber $
+    else fibervec = lonarr(nvec) + fiber[0]
    if (keyword_set(mjd)) then mjdvec = lonarr(nvec) + mjd $
     else mjdvec = lonarr(nvec)
 
@@ -258,7 +260,7 @@ pro readspec, plate, fiber, mjd=mjd, silent=silent, flux=flux, flerr=flerr, $
       readspec1, platenums[ifile], [i1,i2], mjd=mjdnums[ifile], $
        silent=silent, flux=flux1, flerr=flerr1, invvar=invvar1, $
         andmask=andmask1, ormask=ormask1, plugmap=plugmap1, $
-        loglam=loglam1, wave=wave1, tsobj=tsobj1
+        loglam=loglam1, wave=wave1, tsobj=tsobj1, root_dir=root_dir
 
       if (ifile EQ 0) then begin
          allindx = indx
@@ -291,10 +293,16 @@ pro readspec, plate, fiber, mjd=mjd, silent=silent, flux=flux, flerr=flerr, $
    if (q_invvar) then invvar[*,[allindx]] = invvar[*]
    if (q_andmask) then andmask[*,[allindx]] = andmask[*]
    if (q_ormask) then ormask[*,[allindx]] = ormask[*]
-   if (q_plugmap) then copy_struct_inx, plugmap, plugmap, index_to=allindx
+   if (q_plugmap) then begin
+      if (keyword_set(plugmap[0])) then $
+       copy_struct_inx, plugmap, plugmap, index_to=allindx
+   endif
    if (q_loglam) then loglam[*,[allindx]] = loglam[*]
    if (q_wave) then wave[*,[allindx]] = wave[*]
-   if (q_tsobj) then copy_struct_inx, tsobj, tsobj, index_to=allindx
+   if (q_tsobj) then begin
+      if (keyword_set(tsobj[0])) then $
+       copy_struct_inx, tsobj, tsobj, index_to=allindx
+   endif
 
    if (keyword_set(silent)) then print
 
