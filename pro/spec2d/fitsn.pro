@@ -65,8 +65,8 @@ function fitsn, mag, snvec, sigrej=sigrej, maxiter=maxiter, $
 
    if (keyword_set(colorband)) then begin
       case strupcase(colorband) of
-         'B' : fitmag = [18.20, 19.70]
-         'R' : fitmag = [17.90, 19.40]
+         'B' : fitmag = [18.33, 19.83] ; For SOS
+         'R' : fitmag = [18.06, 19.56] ; For SOS
          'G' : fitmag = [18.20, 19.70]
          'R' : fitmag = [18.25, 19.75]
          'I' : fitmag = [17.90, 19.40]
