@@ -15,6 +15,8 @@
 #
 # This script will not run if it looks like it is already running.
 #
+# Set the default location for SPECLOG_DIR=/data/spectro/astrolog???
+#
 # In detail, if there is an argument on the command-line not of the
 # form "a=b", then we assume that is the name of a remote machine and
 # execute the rest of the command on that remote machine.  All other
@@ -26,6 +28,10 @@
 bashstring=sos_redo
 idlstring=remove2redo
 remotehost=""
+
+if [ -z "$SPECLOG_DIR" ] ; then
+   SPECLOG_DIR=/data/spectro/astrolog
+fi
 
 for thisarg in "$@" ; do
   if [ `echo "$thisarg" | grep "="` ] ; then
