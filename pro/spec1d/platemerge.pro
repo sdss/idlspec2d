@@ -236,8 +236,8 @@ pro platemerge, zfile, outroot=outroot1, public=public
              ' (of ', nfile, ')'
             indx1 = ifile1 * 640L + lindgen(640)
             indx2 = ifile2 * 640L + lindgen(640)
-            nn = djs_angle_match(outdat[indx1].ra, outdat[indx1].dec, $
-             outdat[indx2].ra, outdat[indx2].dec, dtheta=dtheta, $
+            nn = djs_angle_match(outdat[indx1].plug_ra, outdat[indx1].plug_dec, $
+             outdat[indx2].plug_ra, outdat[indx2].plug_dec, dtheta=dtheta, $
              mcount=mcount, mindx=mindx, mmax=1)
             for i1=0, n_elements(indx1)-1 do begin
                if (mcount[i1] GT 1) then $
