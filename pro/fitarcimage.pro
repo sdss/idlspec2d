@@ -7,9 +7,9 @@
 ;
 ; CALLING SEQUENCE:
 ;   fitarcimage, arc, arcivar, xnew, ycen, wset, $
-;    color=color, lampfile=lampfile, $
+;    color=color, lampfile=lampfile, fibermask=fibermask, $
 ;    func=func, aset=aset, ncoeff=ncoeff, lambda=lambda, $
-;    thresh=thresh, row=row, $
+;    thresh=thresh, row=row, nmed=nmed, $
 ;    xdif_lfit=xdif_lfit, xdif_tset=xdif_tset
 ;
 ; INPUTS:
@@ -20,6 +20,7 @@
 ;   color      - 'red' or 'blue'; not required if ANS is set
 ;   lampfile   - Name of file describing arc lamp lines;
 ;                default to the file 'lamphgcdne.dat' in the IDL path.
+;   fibermask  - Mask of 0 for bad fibers and 1 for good fibers [NFIBER]
 ;   func       - Name of fitting function; default to 'legendre'
 ;   aset       - Trace set for initial wavelength solution in row number ROW.
 ;   ncoeff     - Number of coefficients in fits.  This may be different than
@@ -29,6 +30,8 @@
 ;                default to 200 if COLOR='blue' or 500 if COLOR='red'
 ;   row        - Row to use in initial guess of wavelength solution;
 ;                default to (NFIBER-30)/2
+;   nmed       - Number of rows around ROW to median filter for initial
+;                wavelengths solution; default to 5
 ;
 ; OUTPUTS:
 ;   xnew       - pixel position of lines [nfiber, nlambda]
@@ -38,6 +41,7 @@
 ; OPTIONAL OUTPUTS:
 ;   lampfile   - Modified from input to include full path name of file
 ;   lambda     - returns alog10(wavelength) of good lamp lines
+;   fibermask  - (Modified)
 ;   xdif_lfit  - fit residual for individual arclines
 ;   xdif_tset  - fit residual of traceset
 ;
@@ -46,14 +50,12 @@
 ; EXAMPLES:
 ;
 ; BUGS:
-;   Check for case where initial ROW is an un-illuminated fiber.
 ;   Not making sure that only the same lines are fit for each fiber.
 ;      (Different lines can be rejected in xy2traceset.)
 ;   THRESH is unused.
 ;   TRACESET2PIX maybe returns the transpose of what is natural?
 ;   Check QA stuff at end.
-;   When constructing MX, exclude any fibers with bad (e.g., saturated) pixels.
-;   Need to tag dead fibers - esp. for sky-subtraction.
+;   FIBERMASK not yet modified if an arc is atrociously bad.
 ;
 ; INTERNAL PROCEDURES:
 ;   fitmeanx()
@@ -115,9 +117,9 @@ end
 ;------------------------------------------------------------------------------
 
 pro fitarcimage, arc, arcivar, xnew, ycen, wset, $
- color=color, lampfile=lampfile, $
- func=func, aset=aset, ncoeff=ncoeff, lambda=lambda, thresh=thresh, row=row, $
- xdif_lfit=xdif_lfit, xdif_tset=xdif_tset
+ color=color, lampfile=lampfile, fibermask=fibermask, $
+ func=func, aset=aset, ncoeff=ncoeff, lambda=lambda, thresh=thresh, $
+ row=row, nmed=nmed, xdif_lfit=xdif_lfit, xdif_tset=xdif_tset
 
    ;---------------------------------------------------------------------------
    ; Preliminary stuff
@@ -140,8 +142,10 @@ pro fitarcimage, arc, arcivar, xnew, ycen, wset, $
    nfiber = dims[1]
    if (total(dims NE size(arcivar, /dim))) then $
     message, 'ARC and ARCIVAR must have same dimensions'
+   if (NOT keyword_set(fibermask)) then fibermask = bytarr(nfiber) + 1
 
    if (NOT keyword_set(row)) then row = (nfiber-30)/2
+   if (NOT keyword_set(nmed)) then nmed = 5
 
    if (NOT keyword_set(thresh)) then begin
       if (color EQ 'blue') then thresh = 200
@@ -183,10 +187,17 @@ pro fitarcimage, arc, arcivar, xnew, ycen, wset, $
 
    if (NOT keyword_set(aset)) then begin
 
-      ; Extract one spectrum from the 5 spectra around fiber number ROW
-      ; by taking the median value at each wavelength
+      ; Extract one spectrum from the NMED spectra around fiber number ROW
+      ; by taking the median value at each wavelength.
+      ; Find the NMED fibers nearest to ROW that are not masked.
 
-      spec = djs_median(arc[*,row-2:row+2], 2)
+      ii = where(fibermask, ngfiber)
+      if (ngfiber EQ 0) then $
+       message, 'No unmasked fibers according to FIBERMASK'
+      ii = ii[ sort(abs(ii-row)) ]
+      ii = ii[0:(nmed<ngfiber)] ; At most NGFIBER good fibers
+
+      spec = djs_median(arc[*,ii], 2)
 
       wset = arcfit_guess( spec, lamps.loglam, lamps.intensity, color=color )
 
@@ -229,22 +240,23 @@ pro fitarcimage, arc, arcivar, xnew, ycen, wset, $
    ; Reject bad (i.e., saturated) lines
    ;---------------------------------------------------------------------------
 
-   ; Reject any arc line with more than 10% of the fibers are bad.
+   ; Reject any arc line with more than 10% of the "good" fibers have bad arcs.
    ; Bad fibers are any with an infinite error (ARCIVAR=0) within 1 pixel
    ; of the central wavelength.  Note that saturated lines should then
    ; show up as bad.
 
    nmatch = N_elements(xstart) ; Number of lamp lines traced
+   igfiber = where(fibermask, ngfiber) ; Number of good fibers
    qgood = bytarr(nmatch)
 
    for i=0, nmatch-1 do begin
       xpix = round(xnew[*,i]) ; Nearest X position (wavelength) in all traces
       mivar = fltarr(nfiber) + 1
       for ix=-1, 1 do begin
-         mivar = mivar * arcivar[ ((xpix+ix)>0)<(npix-1), * ]
+         mivar = mivar * arcivar[ ((xpix+ix)>0)<(npix-1), igfiber ]
       endfor
       junk = where(mivar EQ 0, nbad)
-      fracbad = float(nbad) / nfiber
+      fracbad = float(nbad) / ngfiber
       qgood[i] = fracbad LE 0.10
       if (qgood[i] EQ 0) then $
        splog, 'Discarding trace', i, ',   fraction bad', fracbad
@@ -300,15 +312,73 @@ maxdev = 3.0d-5
    ; Do the third traceset fit
    ;---------------------------------------------------------------------------
 
-   ; Fit arc lines subtracting out scatter term
+wsave = wset
+
+   ;------
+   ; Fit and replace all the coefficients numbered 1 through NCOEFF-1
+   ; with their fit value.  Fit a Chebyshev with 8 coefficients, and
+   ; a split in the baseline at the central fibers.
+   for ic=1, ncoeff-1 do begin
+      xy2traceset, dindgen(nfiber), transpose(wset.coeff[ic,*]), tmpset, $
+       func='chebyshev', ncoeff=8, maxsig=2.0, xmask=xmask, yfit=yfit, $
+       /halfintwo
+      wset.coeff[ic,*] = yfit
+; jj=where(xmask EQ 0)
+; plot,transpose(wset.coeff[ic,*]),/yno
+; djs_oplot,yfit,color='green'
+; djs_oplot,jj,(transpose(wset.coeff[ic,*]))[jj],color='red',ps=1
+   endfor
+
+   ;------
+   ; Re-fit the 0th coefficient for each fiber, e.g. the 0-pt shift term
+   ; THIS CODE SHOULD BE SPAWNED OFF TO A ROUTINE FUNC_EVAL() ???
+
+   ifit = [0,1] ; List of the coefficients to fit for each fiber
+   ifix = indgen(ncoeff-2) + 2 ; List of coefficients to keep fixed
+   ncfit = N_elements(ifit)
+   tset = wset
+   tset.coeff[ifit,*] = 0
+   dims = size(tset.coeff, /dim)
+   ncoeff = dims[0]
+   nTrace = dims[1]
+   xmid = 0.5 * (tset.xmin + tset.xmax)
+   xrange = tset.xmax - tset.xmin
+   xpos = transpose(xnew)
+   ypos = fltarr(nlamp, ntrace)
+   for i=0, ntrace-1 do begin
+      xvec = 2.0 * xpos[*,i]/(npix-1) - 1.0
+      if (tset.func EQ 'legendre') then legarr = flegendre(xvec, ncoeff)
+      if (tset.func EQ 'chebyshev') then legarr = fchebyshev(xvec, ncoeff)
+      ypos[*,i] = legarr # tset.coeff[*,i]
+   endfor
+
+   ;-----
+   ; Fit the first NCFIT coefficients to the residuals, with same rejection
+   ; as before
+
+   xy2traceset, transpose(xnew), lamps.loglam # (dblarr(nfiber)+1) - ypos, $
+    tset2, func=func, ncoeff=ncfit, maxdev=maxdev, maxiter=nlamp, /singlerej, $
+    xmask=xmask, xmin=0, xmax=npix-1
+
+   ;-----
+   ; Now replace WSET with the re-fit coefficients
+
+   wset.coeff[ifit,*] = tset2.coeff
+   wset.coeff[ifix,*] = tset.coeff[ifix,*]
+
+   ;-----
+   ; Comment out this FITMEANX code...
+
    xmeasured = xnew
-   xnew = fitmeanx(wset, lamps.loglam, xmeasured)
 
-   ; In this final fit, do no rejection
-
-   xy2traceset, transpose(xnew), lamps.loglam # (dblarr(nfiber)+1), wset, $
-    func=func, ncoeff=ncoeff, maxdev=0, maxiter=nlamp, $
-    xmin=0, xmax=npix-1
+;   ; Fit arc lines subtracting out scatter term
+;   xnew = fitmeanx(wset, lamps.loglam, xmeasured)
+;
+;   ; In this final fit, do no rejection
+;
+;   xy2traceset, transpose(xnew), lamps.loglam # (dblarr(nfiber)+1), wset, $
+;    func=func, ncoeff=ncoeff, maxiter=0, $
+;    xmin=0, xmax=npix-1
 
    print, 'Pass 3 complete'
 
@@ -346,6 +416,11 @@ maxdev = 3.0d-5
 
    lampfile = lampfilename
    lambda = lamps.lambda
+
+   ; Replace the "measured" arc line positions (XNEW) with the fit positions
+   ; Do this so that the sky-line fitting will use those fit positions for
+   ; the arc lines
+   xnew = tset_pix
 
    return
 end
