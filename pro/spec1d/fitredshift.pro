@@ -128,7 +128,7 @@ pro fitredshift, fluxfft, fluxerr, starfft, starerr, $
        message, 'dimensions do not match!'
    ENDIF 
 
-   IF (stdev(fluxfft) EQ 0) OR (stdev(starfft) EQ 0) THEN BEGIN 
+   IF (total(abs(fluxfft)) EQ 0) OR (total(abs(starfft)) EQ 0) THEN BEGIN 
        print, 'FITREDSHIFT:  FAILED - array full of zeros'
        return
    ENDIF 
