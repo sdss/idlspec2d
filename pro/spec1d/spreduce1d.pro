@@ -140,6 +140,7 @@ pro spreduce1d, platefile, fiberid=fiberid, doplot=doplot, debug=debug
    ormask = mrdfits(platefile,3)
 ;   dispmap = mrdfits(platefile,4)
    plugmap = mrdfits(platefile,5)
+   skyflux = mrdfits(platefile,6)
 
    anyandmask = transpose(andmask[0,*])
    anyormask = transpose(ormask[0,*])
@@ -166,6 +167,7 @@ ormask = 0 ; Free memory
       anyandmask = anyandmask[fiberid-1]
       anyormask = anyormask[fiberid-1]
       plugmap = plugmap[fiberid-1]
+      skyflux = skyflux[*,fiberid-1]
       nobj = n_elements(fiberid)
    endif else begin
       fiberid = lindgen(nobj) + 1
@@ -387,16 +389,22 @@ ormask = 0 ; Free memory
    fracnsigma = fltarr(nfsig,nper,nobj)
    fracnsighi = fltarr(nfsig,nper,nobj)
    fracnsiglo = fltarr(nfsig,nper,nobj)
-   counts_spectro = fltarr(5,nper,nobj)
-   counts_synth = fltarr(5,nper,nobj)
+   spectroflux = fltarr(5,nper,nobj)
+   spectrosynflux = fltarr(5,nper,nobj)
+   spectroskyflux = fltarr(5,nper,nobj)
 
    objloglam = objloglam0 + lindgen(npixobj) * objdloglam
    wavevec = 10d^objloglam
    flambda2fnu = wavevec^2 / 2.99792e18
 
+   ; The 22.5 is to convert to nanomaggies.
    fthru = filter_thru(objflux * rebin(flambda2fnu,npixobj,nobj), $
     waveimg=wavevec, mask=(objivar EQ 0))
-   counts_spectro[*,0,*] = transpose(fthru) * 10^((48.6 - 2.5*17.)/2.5)
+   spectroflux[*,0,*] = transpose(fthru) * 10^((22.5 + 48.6 - 2.5*17.)/2.5)
+
+   sthru = filter_thru(skyflux * rebin(flambda2fnu,npixobj,nobj), $
+    waveimg=wavevec, mask=(objivar EQ 0))
+   spectroskyflux[*,0,*] = transpose(sthru) * 10^((22.5 + 48.6 - 2.5*17.)/2.5)
 
    ; Loop in reverse order, so that we look at the best-fit spectra last,
    ; and keep those spectra around for later.
@@ -406,7 +414,8 @@ ormask = 0 ; Free memory
 ;   for iper=nper-1, 0, -1 do begin
    for iper=0, 0, -1 do begin
       ; Copy this for all fits, since the measured magnitudes are the same
-      counts_spectro[*,iper,*] = counts_spectro[*,0,*]
+      spectroflux[*,iper,*] = spectroflux[*,0,*]
+      spectroskyflux[*,iper,*] = spectroskyflux[*,0,*]
 
       synflux = synthspec(res_all[iper,*], loglam=objloglam)
 
@@ -425,9 +434,11 @@ ormask = 0 ; Free memory
          endif
       endfor
 
+      ; The 22.5 is to convert to nanomaggies.
       fthru = filter_thru(synflux * rebin(flambda2fnu,npixobj,nobj), $
        waveimg=wavevec)
-      counts_synth[*,iper,*] = transpose(fthru) * 10^((48.6 - 2.5*17.)/2.5)
+      spectrosynflux[*,iper,*] = $
+       transpose(fthru) * 10^((22.5 + 48.6 - 2.5*17.)/2.5)
    endfor
 
    splog, 'CPU time to generate chi^2 statistics = ', systime(1)-t0
@@ -473,11 +484,10 @@ ormask = 0 ; Free memory
             fracnsighi: fltarr(nfsig), $
             fracnsiglo: fltarr(nfsig), $
             spectroflux: fltarr(5), $
-            spectrosynthflux: fltarr(5), $
+            spectroflux_ivar: fltarr(5), $
+            spectrosynflux: fltarr(5), $
+            spectrosynflux_ivar: fltarr(5), $
             spectroskyflux: fltarr(5), $
-            counts_spectro: fltarr(5), $
-            counts_synth: fltarr(5), $
-            counts_sky: fltarr(5), $
             anyandmask: 0L, $
             anyormask:  0L, $
             spec1_g:   sxpar(hdr, 'SPEC1_G'), $
@@ -507,13 +517,9 @@ ormask = 0 ; Free memory
    res_all.fracnsigma = fracnsigma
    res_all.fracnsighi = fracnsighi
    res_all.fracnsiglo = fracnsiglo
-   res_all.counts_spectro = counts_spectro
-   res_all.counts_synth = counts_synth
-
-   ; Convert fluxes from maggies to nanomaggies.
-   res_all.spectroflux = 1e9 * res_all.counts_spectro
-   res_all.spectrosynthflux = 1e9 * res_all.counts_synth
-   res_all.spectroskyflux = 1e9 * res_all.counts_sky
+   res_all.spectroflux = spectroflux
+   res_all.spectrosynflux = spectrosynflux
+   res_all.spectroskyflux = spectroskyflux
 
    ;----------
    ; Generate output headers for spZbest, spZall, spZline files.
@@ -612,6 +618,17 @@ ormask = 0 ; Free memory
    res_elodie = elodie_best(objflux, objivar, hdr=hdr, fitindx=fitindx)
 
    splog, 'CPU time to fit to Elodie = ', systime(1)-t0
+
+   ;----------
+   ; Compute the errors in the magnitudes.
+   ; Do this by looking at the dispersion in the sky-fiber fluxes.
+   ; We assign identical errors (in linear flux units) to all 640 fibers.
+
+   iskies = where(strtrim(plugmap[iobj].objtype,2) EQ 'SKY', nskies)
+   if (nskies GT 1) then begin
+      res_all.spectroflux_ivar = 1. / stdev(res_all[0,iskies].spectroflux)
+      res_all.spectrosynflux_ivar = 1. / stdev(res_all[0,iskies].spectrosynflux)
+   endif
 
    ;----------
    ; Set ZWARNING flags.
