@@ -17,6 +17,7 @@ etc/Makefile -text
 etc/altbg14.txt -text
 etc/blue.bkpts -text
 etc/brg.08.gk.01 -text
+etc/eigeninputs.dat -text
 etc/f8v.abs -text
 etc/f8vspline.dat -text
 etc/flatmask-b1.fits.gz -text svneol=unset#unset
