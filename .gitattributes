@@ -9,6 +9,7 @@ bin/data_rsync.sh -text
 bin/killdata.sh -text
 bin/mailhtml.sh -text
 bin/make_room.sh -text
+bin/pullspectra -text
 bin/pushguider -text
 bin/sos.sh -text
 bin/sos_redo -text
