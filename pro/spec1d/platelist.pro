@@ -114,6 +114,20 @@ pro platelist, infile, outfile=outfile
          snvec = [0,0,0,0]
       endelse
 
+      ;----------
+      ; The RA,DEC in the header is sometimes wrong, so try to derive
+      ; the field center from the plug-map information.  Choose the
+      ; coordinates of the object closest to the center of the plate
+      ; as defined by XFOCAL=YFOCAL=0.
+
+      plug = mrdfits(platefile, 5)
+      if (keyword_set(plug)) then begin
+         iobj = where(strtrim(plug.holetype,2) EQ 'OBJECT')
+         junk = min( plug[iobj].xfocal^2 + plug[iobj].yfocal^2, imin)
+         ra = plug[iobj[imin]].ra
+         dec = plug[iobj[imin]].dec
+      endif
+
       if (size(hdr2, /tname) EQ 'STRING') then begin
          zans = mrdfits(fullzfile, 1, /silent)
          class = strtrim(zans.class,2)
