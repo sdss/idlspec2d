@@ -16,14 +16,26 @@
 echo "APORSYNC: Launched at "`date`
 
 # This syncs /astrolog/[56789]???? from sdsshost to plate-mapper, excluding
-# the id* files.
-rsync -ar --rsh="ssh -c blowfish" \
+# the id* files.  Only get /data/spectro/ directories
+
+dataspectro=`ssh sdsshost ls -d /data/spectro/[5-9]????`
+astrolog=`echo $dataspectro | sed -n 's/\/data\/spectro/\/astrolog/pg'`
+
+for dir in $astrolog
+do
+
+  rsync -ar --rsh="ssh -c blowfish" \
       --rsync-path=/p/rsync/v2_4_3/rsync \
       --exclude="*id*" \
-      --exclude="*log" \
-      --log-format="/astrolog/%f" "sdsshost:/astrolog/[56789]????" /astrolog/   
+      --exclude="*log" --log-format="/astrolog/%f" \
+      sdsshost:$dir /astrolog/   
 
-# This syncs /astrolog/[56789]???? from sdsshost to plate-mapper, excluding
+done
+
+
+#     --log-format="/astrolog/%f" "sdsshost:/astrolog/[56789]????" /astrolog/   
+
+# This syncs /data/spectro/[56789]???? from sdsshost to plate-mapper, excluding
 # the red and guider files.
 rsync -ar --rsh="ssh -c blowfish" \
       --rsync-path=/p/rsync/v2_4_3/rsync \
@@ -34,7 +46,7 @@ rsync -ar --rsh="ssh -c blowfish" \
 # This sleep is to try to keep the blue side copying over before the red
 # side.  We do this because APOREDUCE creates its summary files after the r2
 # CCD is reduced, and assumes that all other CCD's have been reduced by then.
-sleep 10
+sleep 1
 
 # This syncs /astrolog/[56789]???? from sdsshost to plate-mapper, excluding
 # the blue and guider files.
