@@ -387,6 +387,7 @@ pro batch, topdir, localfile, outfile, protocol, remotehost, remotedir, $
 
       iidle = where(hostlist.status EQ 'IDLE', nidle)
 
+      splog, 'Current time = ', systime()
       splog, 'Number of UNASSIGNED jobs = ', nunassign
       splog, 'Number of RUNNING jobs = ', nrunning
       splog, 'Number of DONE jobs = ', ndone
@@ -413,7 +414,7 @@ pro batch, topdir, localfile, outfile, protocol, remotehost, remotedir, $
 
    endwhile
 
-   print, 'All jobs have completed.'
+   splog, 'All jobs have completed at ', systime()
 
    return
 end
