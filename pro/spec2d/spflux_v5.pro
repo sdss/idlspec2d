@@ -577,8 +577,12 @@ function spflux_mratio_flatten, loglam1, mratio1, mrativar1, pres=pres
    igoodpix = where(qbadpix EQ 0)
    medratio = djs_median(newratio, 2)
    rescale = median( medratio[igoodpix] / meanratio[igoodpix] )
-   meanratio = rescale * meanratio
-   splog, 'Rescale factor median/mean = ', rescale
+   if (rescale LE 0) then begin
+     splog, 'Warning: RESCALE = ', rescale
+   endif else begin
+      meanratio = rescale * meanratio
+      splog, 'Rescale factor median/mean = ', rescale
+   endelse
 
    ;--------
    ; Now for each object, compute the polynomial fit of it relative to the mean
@@ -623,7 +627,8 @@ pro spflux_plotcalib, mratiologlam, mratioflux, mrativar, $
    xrange = 10.^logrange
    ii = where(fitloglam GE logrange[0] AND fitloglam LE logrange[1])
    yrange = [0.9 * min(fitflux[ii]), 1.1 * max(fitflux[ii])]
-   nfinal = (size(mratioflux, /dimens))[2]
+   if (size(mratioflux, /n_dimen) EQ 1) then nfinal = 1 $
+    else nfinal = (size(mratioflux, /dimens))[2]
 
    djs_plot, xrange, yrange, /xstyle, /ystyle, /nodata, $
     xtitle='Wavelength [Ang]', ytitle='Counts/(10^{-17}erg/cm^2/s/Ang', $
@@ -847,7 +852,11 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
    ired = where(strmatch(camname,'r*'), nred)
 
    qdone = 0L
+   iiter = 0L
    while (qdone EQ 0) do begin
+      iiter = iiter + 1
+      splog, 'Iteration #', iiter
+
       ifinal = where(qfinal,nfinal) ; This is the list of the good stars
 
       ;----------
