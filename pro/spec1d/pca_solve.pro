@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   res = pca_solve( objflux, objivar, objloglam, [ zfit, $
 ;    wavemin=, wavemax=, newloglam=, $
-;    niter=, nkeep=, eigenval=, usemask= ] )
+;    niter=, nkeep=, eigenval=, acoeff=, usemask= ] )
 ;
 ; INPUTS:
 ;   objflux        - Object fluxes [NPIX,NSPEC]
@@ -33,10 +33,13 @@
 ; OPTIONAL OUTPUTS:
 ;   newloglam      - PCA wavelength sampling in log-10(Angstroms) [NNEWPIX]
 ;   eigenval       - Eigenvalue for each output eigenspectra [NKEEP]
+;   acoeff         - PCA coefficients [NKEEP,NOBJ]
 ;   usemask        - Number of unmasked spectra used for each pixel, so these
 ;                    are integers in the range 0 to NSPEC [NNEWPIX]
 ;
 ; COMMENTS:
+;   The best-fit eigenspectra for each of the input spectra can be determined
+;   for object number IOBJ by ACOEFF[*,IOBJ] # RES.
 ;
 ; EXAMPLES:
 ;
@@ -53,7 +56,7 @@
 ;------------------------------------------------------------------------------
 function pca_solve, objflux, objivar, objloglam, zfit, $
  wavemin=wavemin, wavemax=wavemax, newloglam=newloglam, $
- niter=niter, nkeep=nkeep, eigenval=eigenval, usemask=usemask
+ niter=niter, nkeep=nkeep, eigenval=eigenval, acoeff=acoeff, usemask=usemask
 
    if (NOT keyword_set(niter)) then niter = 10
    if (NOT keyword_set(nkeep)) then nkeep = 3
@@ -163,6 +166,7 @@ endelse
    ; Iteratively do the PCA solution
 
    filtflux = newflux
+   acoeff = fltarr(nkeep,nobj)
 
    t0=systime(1)
    for iiter=0, niter-1 do begin
@@ -182,6 +186,7 @@ endelse
          synflux = theta # pres[0:nkeep-1,*]
          filtflux[*,iobj] = (newivar[*,iobj] * newflux[*,iobj] + $
           synwvec * synflux) / (newivar[*,iobj] + synwvec)
+         acoeff[*,iobj] = theta
 ;splot,filtflux[*,iobj]
 ;soplot,synflux,color='red'
       endfor
