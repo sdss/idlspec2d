@@ -1,4 +1,7 @@
 
+Changes to how the SOS robot launches the rsync jobs.
+Changes to P-1D not yet fully implemented.
+
 DANVB_CONVERT,DANVB_QSOLIST: Procs for generating a list of input
             QSO's from Dan van den Berk's EDR list "plateEDR.summ"
             for generating QSO eingenvectors.  The output file
@@ -63,6 +66,11 @@ aporsync.sh, sprobot.sh, sprobot1d.sh, sprobot2d.sh:
              Log the UID and PPID (parent process ID) to the file "sos.log",
              and record the timestamp both when this script is launched
              and finishes.
+aporsync_logs.sh, aporsync_blue.sh, aporsync_red.sh:
+             New scripts called from "sos.sh" instead of "aporsync.sh".
+             This should be more robust, and prevent the logging+guider
+             files from hanging up the whole system.
+sos.sh, sos_status, startapo.sh: Use the new aporync scripts.
 eigeninput_cvstar.dat: New file for PCA_CVSTAR.
 eigeninput_star.dat: Many more M stars added for implementing changes
             to PCA_STAR.
