@@ -185,7 +185,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    ;----------
    ; Find flavor, plate and MJD
 
-   splog, 'Using SDSSHEAD to read FITS header'
+   splog, 'Using SDSSHEAD() to read FITS header'
    hdr = sdsshead(fullname, /do_lock)
 
    flavor = strtrim(sxpar(hdr, 'FLAVOR'),2)
@@ -236,7 +236,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    ;----------
    ; Determine if a flat or arc for this plate has already been reduced,
    ; and test if the plugmap file exists.
-   ; Use the last flat and arc files on disk.
+   ; Use the last flat and arc files on disk, as selected with MAX().
 
    tsetfiles = findfile(filepath( $
     'tset-'+mjdstr+'-'+platestr+'-*-'+filec+'.fits', $
@@ -248,9 +248,13 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
     'fflat-'+mjdstr+'-'+platestr+'-*-'+filec+'.fits', $
     root_dir=outdir))
 
-   tsetfile_last = (reverse(tsetfiles))[0]
-   wsetfile_last = (reverse(wsetfiles))[0]
-   fflatfile_last = (reverse(fflatfiles))[0]
+   tsetfile_last = max(tsetfiles)
+   wsetfile_last = max(wsetfiles)
+   fflatfile_last = max(fflatfiles)
+
+   splog, 'TSETFILE = ' + tsetfile_last
+   splog, 'WSETFILE = ' + wsetfile_last
+   splog, 'FFLATFILE = ' + fflatfile_last
 
    plugexist = keyword_set(fullplugfile)
    flatexist = keyword_set(tsetfile_last) AND $
