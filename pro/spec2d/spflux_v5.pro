@@ -562,8 +562,20 @@ function spflux_mratio_flatten, loglam1, mratio1, mrativar1, pres=pres
    denom = total(newivar, 2) ; avoid divide-by-zeros
    meanratio = total(newratio * newivar, 2) / (denom + (denom EQ 0))
 
-   ibadpix = where(meanratio LE 0, nbadpix)
+   qbadpix = meanratio LE 0
+   ibadpix = where(qbadpix, nbadpix)
    if (nbadpix GT 0) then newivar[ibadpix,*] = 0
+
+   ;--------
+   ; Actually take this "mean" and turn it into something more like
+   ; a median, to protect us against standard stars that have bad
+   ; magnitudes from the imaging.
+
+   igoodpix = where(qbadpix EQ 0)
+   medratio = djs_median(newratio, 2)
+   rescale = median( medratio[igoodpix] / meanratio[igoodpix] )
+   meanratio = rescale * meanratio
+splog, 'MEANRATIO ', meanratio, ' ???'
 
    ;--------
    ; Now for each object, compute the polynomial fit of it relative to the mean
@@ -578,13 +590,15 @@ function spflux_mratio_flatten, loglam1, mratio1, mrativar1, pres=pres
          thisratio = newratio[ii,iobj] / meanratio[ii]
          thisivar = newivar[ii,iobj] * meanratio[ii]^2
 
-; The following fit should probably have some kind of rejection !!!???
+         ; This fit requires no rejection, because this function falls
+         ; within an iteration loop that rejects points.
+
          ; The following is a weighted fit...
-         pres1 = poly_fit(thisloglam-3.5d0, thisratio, npoly-1, $
-          measure_errors=1./sqrt(thisivar))
+;         pres1 = poly_fit(thisloglam-3.5d0, thisratio, npoly-1, $
+;          measure_errors=1./sqrt(thisivar))
 
          ; The following would be an unweighted fit...
-;         pres1 = poly_fit(thisloglam-3.5d0, thisratio, npoly-1)
+         pres1 = poly_fit(thisloglam-3.5d0, thisratio, npoly-1)
 
          flatarr[*,iobj] = poly(loglam[*,iobj]-3.5d0, pres1)
          pres[*,iobj] = reform(pres1, npoly)
@@ -704,6 +718,11 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
    ebv = dust_getval(ll, bb, /interp)
 
    ;----------
+   ; Keep track of which F stars are good
+
+   qfinal = bytarr(nphoto) + 1B
+
+   ;----------
    ; For each star, find the best-fit model.
 
    !p.multi = [0,2,3]
@@ -747,6 +766,13 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       if (tag_exist(plugmap, 'CALIBFLUX')) then begin
          scalefac = plugmap[iphoto[ip]].calibflux[2] $
           / 10.^((22.5-thismag[2])/2.5)
+         ; Reject this star if we don't know its flux.
+         if (plugmap[iphoto[ip]].calibflux[2] LE 0) then begin
+            splog, 'Rejecting std star in fiber = ', $
+             iphoto + 1 + 320 * (spectroid[0] - 1), $
+             ' with unknown calibObj flux'
+            qfinal[iphoto] = 0
+         endif
       endif else begin
          splog, 'WARNING: No CALIBFLUX for zero-pointing the fluxes'
          scalefac = 10.^((thismag[2] - plugmap[iphoto[ip]].mag[2])/2.5)
@@ -771,13 +797,10 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
    !p.multi = 0
 
    ;----------
-   ; Keep track of which F stars are good
-
-   qfinal = bytarr(nphoto) + 1B
-
    ; Start with a rejection of any stars with a bad chi^2/DOF either
    ; in the full spectrum or in just the absorp. line regions.
    ; Do not reject more than half the stars.
+
    chi2limit = 2.0 ; ???
    chi2list = (kindx.chi2 / (kindx.dof>1)) $
     > (kindx.linechi2 / (kindx.linedof>1))
@@ -791,8 +814,10 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       qfinal[iworst] = 0B
    endwhile
 
+   ;----------
    ; Reject any stars with a very low S/N in the absorp. line regions.
    ; Do not reject more than half the stars.
+
    snlimit = 2.0 ; ???
    ; Do not reject any stars that are already rejected above...
    snlist = kindx.linesn_median + (snlimit+1) * (qfinal EQ 0)
@@ -822,6 +847,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
 
       mratio = objflux / modflux
       mrativar = objivar * modflux^2
+      flatarr = 0 * mratio
 
       ; Ignore regions around the stellar features
       mrativar = mrativar * (1 - spflux_masklines(loglam, /stellar))
@@ -834,15 +860,14 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       ; between invidual stars, both from spectrograph throughput variations
       ; and from slight mis-typing of the stars.
 
-      flatarr_b = spflux_mratio_flatten(loglam[*,iblue,ifinal], $
+      flatarr[*,iblue,ifinal] = spflux_mratio_flatten(loglam[*,iblue,ifinal], $
        mratio[*,iblue,ifinal], mrativar[*,iblue,ifinal], pres=pres_b)
-      mratio[*,iblue,ifinal] = mratio[*,iblue,ifinal] / flatarr_b
-      mrativar[*,iblue,ifinal] = mrativar[*,iblue,ifinal] * flatarr_b^2
 
-      flatarr_r = spflux_mratio_flatten(loglam[*,ired,ifinal], $
+      flatarr[*,ired,ifinal] = spflux_mratio_flatten(loglam[*,ired,ifinal], $
        mratio[*,ired,ifinal], mrativar[*,ired,ifinal], pres=pres_r)
-      mratio[*,ired,ifinal] = mratio[*,ired,ifinal] / flatarr_r
-      mrativar[*,ired,ifinal] = mrativar[*,ired,ifinal] * flatarr_r^2
+
+      mratio[*,*,ifinal] = mratio[*,*,ifinal] / flatarr[*,*,ifinal]
+      mrativar[*,*,ifinal] = mrativar[*,*,ifinal] * flatarr[*,*,ifinal]^2
 
       ;----------
       ; Do the B-spline fits for the blue CCDs.
@@ -897,6 +922,48 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
    splog, 'Rejected ', nphoto-nfinal, ' of ', nphoto, ' std stars'
 
    ;----------
+   ; Plot fluxing vectors and their polynomial offsets for individual stars
+   ; in individual exposures.
+
+; ???
+   mratfit = 0 * mratio
+   mratfit[*,iblue,ifinal] = bspline_valu(loglam[*,iblue,ifinal], sset_b)
+   if (tag_exist(sset_r,'NPOLY')) then $
+    mratfit[*,ired,ifinal] = bspline_valu(loglam[*,ired,ifinal], sset_r, $
+     x2=airmass[*,ired,iphoto[ifinal]]) $
+   else $
+    mratfit[*,ired,ifinal] = bspline_valu(loglam[*,ired,ifinal], sset_r)
+
+   !p.multi = [0,2,2]
+   explist = expnum[uniq(expnum, sort(expnum))]
+   colorvec = ['default','red','green','blue','cyan','magenta','grey']
+   xrange = 10^minmax(loglam[*,*,ifinal])
+   yrange = minmax(mratfit[*,*,ifinal] * flatarr[*,*,ifinal])
+   plottitle = 'PLATE=' + string(plateid[0], format='(i4.4)') $
+    + ' MJD=' + string(maxmjd, format='(i5.5)')
+   for iexp=0, n_elements(explist)-1 do begin
+      djs_plot, [0], [0], xrange=xrange, yrange=yrange, /xstyle, /ystyle, $
+       /nodata, xtitle='Wavelength [Ang]', ytitle='Flux-calib', $
+       title=plottitle+' Exp #' + string(explist[iexp], format='(i8.8)')
+      kk = where(expnum EQ explist[iexp], kct) ; blue+red files for this exp
+      for j=0, nfinal-1 do begin
+         thiscolor = colorvec[j MOD n_elements(colorvec)]
+         for k=0, kct-1 do begin
+            djs_oplot, 10^loglam[*,kk[k],ifinal[j]], $
+             mratio[*,kk[k],ifinal[j]] * flatarr[*,kk[k],ifinal[j]], $
+             psym=3, color=thiscolor
+            djs_oplot, 10^loglam[*,kk[k],ifinal[j]], $
+             mratfit[*,kk[k],ifinal[j]] * flatarr[*,kk[k],ifinal[j]], $
+             color=thiscolor
+         endfor
+         djs_xyouts, 0.9*xrange[0]+0.1*xrange[1], $
+          yrange[0] + (j+1)*(yrange[1]-yrange[0])/(nfinal+1), $
+          'Fiber '+strtrim(iphoto[ifinal[j]],2), color=thiscolor
+      endfor
+   endfor
+   !p.multi = 0
+
+   ;----------
    ; Construct the final (B-splined) flux-calibration vectors
 
    for ifile=0, nfile-1 do begin
@@ -905,7 +972,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       if (ct EQ 1) then begin
          thisloglam = loglam[*,ifile,ifinal]
          thisset = sset_b
-         thisflatarr = flatarr_b[*,ii,ifinal]
+         thisflatarr = flatarr[*,iblue[ii],ifinal]
          thispres = pres_b[*,ii,ifinal]
       endif
 
@@ -914,14 +981,14 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       if (ct EQ 1) then begin
          thisloglam = loglam[*,ifile,ifinal]
          thisset = sset_r
-         thisflatarr = flatarr_r[*,ii,ifinal]
+         thisflatarr = flatarr[*,ired[ii],ifinal]
          thispres = pres_r[*,ii,ifinal]
       endif
 
       thismratio = mratio[*,ifile,ifinal]
       thismrativar = mrativar[*,ifile,ifinal]
       if (tag_exist(thisset,'NPOLY')) then $
-       x2 = airmass[ifile,iphoto[ifinal]] $
+       x2 = airmass[*,ifile,iphoto[ifinal]] $
       else $
        x2 = 0
 
@@ -938,7 +1005,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
        flatarr_mean = flatarr_mean $
         + poly(tmploglam-3.5d0, thispres[*,0,i]) / nfinal
       if (keyword_set(x2)) then begin
-         x2_min = min(airmass[*,ifile,iphoto[ifinal]], max=x2_max)
+         x2_min = min(x2, max=x2_max)
          splog, 'Exposure ', objname[ifile], $
           ' spans airmass range ', x2_min, x2_max
          tmpflux1 = bspline_valu(tmploglam, thisset, x2=x2_min+0*tmploglam) $
@@ -1001,9 +1068,6 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
        splog, 'WARNING: Min/max fluxcorr = ', minval, maxval $
       else $
        splog, 'Min/max fluxcorr = ', minval, maxval
-;stop ; ???
-;plot,10^loglam[*,iblue,ifinal],flatarr_b,ps=3
-;plot,10^loglam[*,ired,ifinal],flatarr_r,ps=3
 
       ;----------
       ; Write the output file
