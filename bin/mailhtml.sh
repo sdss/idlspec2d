@@ -27,38 +27,39 @@ do
     filename=`echo $thislog | sed -n 's/\/.*\///p'`
     mailfile=`echo $thislog | sed -n 's/logfile/mail/p'`
 
-    subject=`grep LOGSHEET $thislog | grep TITLE | sed -n 's/<.[A-Z]*>//pg'`
-    echo $subject
-    echo "" > $mailfile
-    echo '<A HREF="'$filename'">'$filename'</A>' >> $mailfile
-    echo "" >> $mailfile
+    if [ ! -f $mailfile ]
+    then 
+      subject=`grep LOGSHEET $thislog | grep TITLE | sed -n 's/<.[A-Z]*>//pg'`
+      echo $subject
+      echo "" > $mailfile
+      echo '<A HREF="'$filename'">'$filename'</A>' >> $mailfile
+      echo "" >> $mailfile
 
-    echo '!'"$filename<<EOT" >> $mailfile
-    cat $thislog | sed -e 's/<BODY.*>/<BODY>/' >> $mailfile
-    echo "EOT" >> $mailfile
+      echo '!'"$filename<<EOT" >> $mailfile
+      cat $thislog | sed -e 's/<BODY.*>/<BODY>/' >> $mailfile
+      echo "EOT" >> $mailfile
    
-    sn=`find $dir -name "snplot*ps" -print` 
-#    sn=`ls $dir | grep snplot | grep ps`
-    for thissn in $sn
-    do 
-       echo $thissn
-       snname=`echo $thissn | sed -n 's/\/.*\///p'`
-       echo '!'"$snname <<EOT" >> $mailfile
-       cat $thissn >> $mailfile
-       echo "EOT" >> $mailfile
-    done 
+      sn=`find $dir -name "snplot*ps" -print` 
+#     sn=`ls $dir | grep snplot | grep ps`
+      for thissn in $sn
+      do 
+        echo $thissn
+        snname=`echo $thissn | sed -n 's/\/.*\///p'`
+        echo '!'"$snname <<EOT" >> $mailfile
+        cat $thissn >> $mailfile
+        echo "EOT" >> $mailfile
+      done 
 
-    mail -s "$subject" sdss-speclog@astro.princeton.edu < $mailfile
-#    mail -s "$subject" sdss-test@astro.princeton.edu < $mailfile
+      mail -s "$subject" sdss-speclog@astro.princeton.edu < $mailfile
 
 #
 #	Kill almost everything in the log directory
 #
 
-    rm -f $dir/*.fits
-    rm -f $dir/*.ps
-    rm -f $dir/*.html
-
+     rm -f $dir/*.fits
+     rm -f $dir/*.ps
+     rm -f $dir/logfile*.html
+   fi
 done
 
 killdata.sh
