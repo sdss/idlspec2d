@@ -24,6 +24,7 @@
 ; EXAMPLES:
 ;
 ; PROCEDURES CALLED:
+;   djs_laxisgen()
 ;   flegendre()
 ;
 ; REVISION HISTORY:
@@ -37,7 +38,6 @@ pro traceset2xy, tset, xpos, ypos
       print, 'Syntax - traceset2xy, tset, xpos, ypos'
       return
    endif
-
 
    if (tset.func EQ 'legendre' OR tset.func EQ 'chebyshev') then begin
 
