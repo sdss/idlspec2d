@@ -66,7 +66,8 @@
 function lrgmodel_photoz, pflux, pflux_ivar, z_err=z_err, $
  abcorrect=abcorrect, extinction=extinction, abfudge=abfudge, $
  ageburst=ageburst1, zmetal=zmetal1, $
- filterlist=filterlist, adderr=adderr, chi2=chi2
+ filterlist=filterlist, adderr=adderr, chi2=chi2, synfluxarr=synfluxarr, $
+ nodata=nodata, zsplinearr=zsplinearr
 
    common com_lrgmodel_photoz, zarr, agevec, metalvec, $
     allwave, allflux, synflux, ageburst_save, zmetal_save
@@ -170,7 +171,11 @@ function lrgmodel_photoz, pflux, pflux_ivar, z_err=z_err, $
       print
       ageburst_save = ageburst
       zmetal_save = zmetal
-   endif
+  endif
+
+  if (arg_present(zsplinearr)) then zsplinearr=zarr
+  if (arg_present(synfluxarr)) then synfluxarr=synflux
+  if (keyword_set(nodata)) then return,0
 
    ;----------
    ; Initialize variables
