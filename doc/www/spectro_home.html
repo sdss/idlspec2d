@@ -22,6 +22,13 @@ SuperMongo or IRAF.  There are also <A HREF="#summary">summary ASCII files</A>
 that contain positions, magnitudes, classification information, and redshifts.
 
 <P>
+<A HREF="http://astro.princeton.edu/~schlegel/">David Schlegel</A>,
+<A HREF="mailto:schlegel@astro.princeton.edu">schlegel@astro.princeton.edu</A>
+</ADDRESS>
+
+<HR>
+
+<P>
 In this document:
 <UL>
   <LI><A HREF="#plots">Some Nifty Plots</A>
@@ -67,7 +74,8 @@ Related documents:
   <LI><A HREF="idlspec2d_install.html">Installing Spectro-2D + Princeton-1D</A> <-- Publicly available code
   <LI><A HREF="spectro_inspect.html">Manual Inspection of Spectra</A>
   <LI><A HREF="idlspec2d_reduce.html">Reducing <B>raw</B> spectroscopic data</A>
-  <LI>Full documentation: <A HREF="idlspec2d_doc.html">idlspec2d</A>,
+  <LI>Full source code documentation:
+      <A HREF="idlspec2d_doc.html">idlspec2d</A>,
       <A HREF="idlutils_doc.html">idlutils</A>,
       <A HREF="goddard_doc.html">Goddard IDL utilities</A>
 </UL>
@@ -75,10 +83,10 @@ Related documents:
 <P>
 Science web sites:
 <UL>
-  <LI><A HREF="http://www.astro.washington.edu/anderson/sdss/serendip/odd_spectra.html">Scott Anderson's Odd Spectrum Page</A>
   <LI><A HREF="http://physics.nyu.edu/~mb144/lss/">
       Mike Blanton's LSS Sample</A>
   <LI><A HREF="http://wassup.physics.nyu.edu/">
+  <LI><A HREF="http://www.astro.washington.edu/anderson/sdss/serendip/odd_spectra.html">Scott Anderson's Odd Spectrum Page</A>
       SDSS @ NYU</A>
 </UL>
 
@@ -227,6 +235,9 @@ N_STAR   = The number of objects Princeton-1D called a star.
 N_UNKNOWN= The number of objects Princeton-1D declared spectroscopically 
            unknown (a ZWARNING flag is set)
 N_SKY    = The number of sky fibers (almost always exactly 32)
+N_TARGET_MAIN = Number of objects targetted for the main galaxy survey.
+N_TARGET_LRG  = Number of objects targetted for the LRG galaxy survey.
+N_TARGET_QSO  = Number of objects targetted for the QSO survey.
 SUCCESS_MAIN = Percentage success rate for objects targetted as "main" galaxies
            and spectroscopically classified as either "GALAXY" or "QSO".
 SUCCESS_LRG  = Percentage success rate for objects targetted as LRG galaxies
@@ -254,6 +265,11 @@ All these values must be > 13 for a plate to be "marginal".
 All these values must be > 15 for a plate to be "good".
 
 <H4><A NAME="duplicates">Avoiding Duplicate Objects</A></H4>
+
+<P>
+The best effort to avoid duplicate objects is to make use of
+the SPECPRIMARY field in the <A HREF="#summary">spAll summary file</A>.
+That selects the best observation of any given object.
 
 <P>
 Selecting only those plates with QSURVEY=1 will yield non-duplicate
@@ -308,40 +324,15 @@ At Princeton, the top-level directory for the reduced data is:
 </PRE></DD></DL>
 Older reductions exist at:
 <DL><DD><PRE>
-/u/dss/spectro_v4
+/u/dss/spectro_v4_8
 </PRE></DD></DL>
-
-<!--
-<P>
-Note that we have not been able to copy all these data to the Fermi machines.
-Some fraction of these data are available at the following sites:
-<DL><DD><PRE>
-sdssdp3.fnal.gov:/data/dp3.p/data/schlegel/2d_v4_7 (some new reductions)
-fsgi03.fnal.gov:/usr/sdss/data04/schlegel/2d_v4 (old reductions)
-</PRE></DD></DL>
--->
 
 <P>
 To obtain the data from Princeton you will need access to the "alfred"
 account.  Send your SSH public key (in the file ".ssh/identity.pub") to
 <A HREF="mailto:schlegel@astro.princeton.edu">schlegel@astro.princeton.edu</A>.
 Once you have been added to the authorized_keys list for user "alfred",
-then you can copy all 160 Gb of outputs (as of Feb 2002) with:
-<DL><DD><PRE>
-   rsync -arv --rsh="ssh" \
-    alfred@sdssdata.princeton.edu:/u/dss/spectro/ .
-</PRE></DD></DL>
-Most people will only want the summary files, combined spectra, 1D outputs,
-and log files (about 35 Gb as of Feb 2002):
-<DL><DD><PRE>
-   rsync -arv --rsh="ssh" --include "*/" \
-    --include "platelist*" --include "spAll*" \ 
-    --include "*spZ*.fits" --include "spPlate*.fits" \ 
-    --include "*.log" --include "*.ps" \
-    --exclude "*"  \
-    alfred@sdssdata.princeton.edu:/u/dss/spectro/ .
-</PRE></DD></DL>
-</B>
+then you can copy the data with "rsync" or "scp".
 
 <P>
 Each plate has the following files associated with it:
@@ -354,6 +345,25 @@ $SPECTRO_DATA/$PLATE/spZall-$PLATE-$MJD.fits
 where $SPECTRO_DATA refers to the top-level directory (spectro), and $PLATE
 refers to a subdirectory with the plate name (e.g., 0301), and $MJD refers
 to the date of observation (e.g., 52000).
+There are also some intermediate output files (e.g., spFrame files)
+that can be ignored by most users.
+
+<P>
+Most people will only want the summary files, combined spectra, 1D outputs,
+and log files.  These total about 125 Gb for 697 plates as of 31 May 2002.
+The following command will copy that entire list of files (eventually).
+Should the copy be interrupted, the "rsync" command can be invoked again
+to successfully copy the remainder of the data.
+<DL><DD><PRE>
+   rsync -arv --rsh="ssh1" --copy-unsafe-links \
+    --include "*/" \
+    --include "platelist*" --include "spAll*" \ 
+    --include "*spZ*.fits" --include "spPlate*.fits" \ 
+    --include "*.log" --include "*.ps" \
+    --exclude "*" \
+    alfred@sdssdata.princeton.edu:/u/dss/spectro/ .
+</PRE></DD></DL>
+</B>
 
 <H4><A NAME="get_rsync">How to Keep Your Data Up-to-Date</A></H4>
 
@@ -362,40 +372,34 @@ These spectroscopic reductions are completely automated with the
 Spectro Robot.  As data are taken at Apache Point, the data are copied
 to Princeton, plan files are built that describe how to reduce the
 data, and the reductions are batched on local and remote CPU's.
-<!--
-Once each day, these reduced data are synced with a Fermi mirror site.
--->
 You can expect all spectroscopic observations to be reduced within 24 hours.
 
 <P>
 An efficient way to keep your copy of these reductions current is to use
-the Unix "rsync" command:
-<DL><DD><PRE>
-rsync -arv --rsh="ssh" alfred@sdssdata.princeton.edu:/u/dss/spectro/ .
-</PRE></DD></DL>
-You can use this to copy the data to your own computer in the first place.
-If you run "rsync" again, it will copy any files that have been
-changed or added.  Note that you need "ssh" to work without asking for a
+the Unix "rsync" command as described above.  A cleaner implementation
+of this is to use the
+<A HREF="http://spectro.princeton.edu/pullspectra">pullspectra</A>
+script from the "idlspec2d" product.
+If you run "rsync" or "pullspectra" each day or each week, it will only
+copy files that have been changed or added.  This is a convenient way
+to keep your data up-to-date without re-copying everything en-masse.
+Note that you need "ssh" to work without asking for a
 pass-phrase for "rsync" to work as a cron job (see below) -- see your system
 admin if you need help with that.
 
 <P>
 Finally, you could set up a "cron" job to update your copy of the data on
 a daily basis.  This would be done by creating a cron table file (call it
-"cron.table" in this example).  If you want to copy all 160 Gb of spectro
-outputs, this file would look like:
+"cron.table" in this example).  If you want to copy the typical set of
+spectroscopic outputs every day at 3:15 am, this file would look something
+like this:
 <DL><DD><PRE>
-15 3 * * * /usr/bin/rsync -arv --rsh="ssh" alfred@sdssdata.princeton.edu:/u/dss/spectro/ /my/directory
+15 3 * * * /my/directory/bin/pullspectra /my/data
 </PRE></DD></DL>
-replacing "/my/directory" with your local data-directory name.
-Most people will want only the following files (35 Gb of data):
-<DL><DD><PRE>
-15 3 * * * /usr/bin/rsync -arv --rsh="ssh" --include "*/" --include "platelist*" --include "spAll*" --include "*spZ*.fits" --include "spPlate*.fits" --include "*.log" --include "*.ps" --exclude "*" alfred@sdssdata.princeton.edu:/u/dss/spectro/ /my/directory
-</PRE></DD></DL>
-Finally, you may simply want the summary files:
-<DL><DD><PRE>
-15 3 * * * /usr/bin/rsync -arv --rsh="ssh" --include "platelist*" --include "spAll*" --exclude "*" alfred@sdssdata.princeton.edu:/u/dss/spectro/ /my/directory
-</PRE></DD></DL>
+replacing "/my/directory/bin" with your local path to the "pullspectra"
+command, and replacing "/my/data" with your data directory.
+Note that "cron" jobs do not inheret your environment variables, so
+it is necessary to use explicit paths.
 Then load this "cron" job by typing:
 <DL><DD><PRE>
 crontab cron.table
@@ -505,6 +509,8 @@ At present, there are two versions of this file as follows:
    <LI><B>spAll-public.fits</B> - spAll trimmed to only those plates
        that should be in the Early Data Release (EDR) or Data Release 1 (DR1)
 </OL>
+Although these files are quite large, most FITS readers will allow
+you to read such files piece-wise.
 
 <P>
 The following information is compiled for each object:
@@ -571,8 +577,11 @@ the PROGNAME="main" survey (not "southern", "photoz", etc.) and the
 primary observations of each object (SPECPRIMARY=1).
 
 <P>
-The following bit of IDL code will select all objects targetted by
-the main galaxy survey that have been spectroscopically confirmed
+The main galaxy survey is selected from the
+<A HREF="#targetflags">target flags</A> being set
+to GALAXY, GALAXY_BIG, or GALAXY_BRIGHT_CORE.
+The following bit of IDL code will select a unique list of objects targetted
+by the main galaxy survey that have been spectroscopically confirmed
 as galaxies or QSOs:
 <DL><DD><PRE>
 IDL> spall = mrdfits('spAll.fits',1)
@@ -582,28 +591,56 @@ IDL> imain = where(spall.specprimary EQ 1 $
       AND (strmatch(spall.class,'GALAXY*') OR strmatch(spall.class,'QSO*')) $
       AND spall.zwarning EQ 0)
 </PRE></DD></DL>
-The following bit of IDL code will select all objects targetted by
-the LRG galaxy survey that have been spectroscopically confirmed
+The Luminous Red Galaxy survey is selected from the
+<A HREF="#targetflags">target flags</A> being set
+to GALAXY_RED or GALAXY_RED_II.
+The following bit of IDL code will select a unique list of objects targetted
+by the LRG galaxy survey that have been spectroscopically confirmed
 as galaxies:
 <DL><DD><PRE>
 IDL> spall = mrdfits('spAll.fits',1)
 IDL> lrg = where(spall.specprimary EQ 1 $
       AND strmatch(spall.progname,'main*') $
       AND (spall.primtarget AND 2L^5 + 2L^26) NE 0 $
-      AND (strmatch(spall.class,'GALAXY*') OR strmatch(spall.class,'QSO*')) $
+      AND strmatch(spall.class,'GALAXY*') $
       AND spall.zwarning EQ 0)
 </PRE></DD></DL>
-The following bit of IDL code will select all objects targetted by
-the QSO survey that have been spectroscopically confirmed
+The QSO survey is selected from the
+<A HREF="#targetflags">target flags</A> being set
+to QSO_HIZ, QSO_CAP, QSO_SKIRT, QSO_FIRST_CAP or QSO_FIRST_SKIRT.
+(The flags QSO_MAG_OUTLIER and QSO_REJECT do not define a complete sample).
+The following bit of IDL code will select a unique list of objects targetted
+by the QSO survey that have been spectroscopically confirmed
 as QSOs:
 <DL><DD><PRE>
 IDL> spall = mrdfits('spAll.fits',1)
 IDL> iqso = where(spall.specprimary EQ 1 $
       AND strmatch(spall.progname,'main*') $
-      AND (spall.primtarget AND 2L^0 + 2L^1 + 2L^2) NE 0 $
+      AND (spall.primtarget AND 2L^0 + 2L^1 + 2L^2 +2L^3 + 2L^4) NE 0 $
       AND strmatch(spall.class,'QSO*') $
       AND spall.zwarning EQ 0)
 </PRE></DD></DL>
+
+<P>
+These same selections can be made from the ASCII version of the spAll
+summary files using the Unix "awk" command.
+To select the main sample of galaxies (the following must all be on one line):
+<DL><DD><PRE>
+% awk '{if (($22=1) && ($21="main" && (and($19,2^6+2^7+2^8) != 0)
+   && ($4="GALAXY" || $4=="QSO") && ($8=0)) {print $0}}' spAll.dat > galaxies.dat
+</PRE></DD></DL>
+To select the LRG sample of galaxies (the following must all be on one line):
+<DL><DD><PRE>
+% awk '{if (($22=1) && ($21="main" && (and($19,2^5+2^26) != 0)
+   && ($4="GALAXY") && ($8=0)) {print $0}}' spAll.dat > lrgs.dat
+</PRE></DD></DL>
+To select the QSO sample (the following must all be on one line):
+<DL><DD><PRE>
+% awk '{if (($22=1) && ($21="main" && (and($19,2^0+2^1+2^2+2^3+2^4) != 0)
+   && ($4="QSO") && ($8=0)) {print $0}}' spAll.dat > qsos.dat
+</PRE></DD></DL>
+
+<P>
 As of 31 May 2002, the above would select complete samples of
 185,899 galaxies, 22,114 LRGs, and 51,483 QSOs.
 
