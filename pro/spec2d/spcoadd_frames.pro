@@ -98,6 +98,22 @@ function makelabel, hdr
 end
 
 ;------------------------------------------------------------------------------
+pro add_iraf_keywords, hdr, wavemin, binsz
+
+   sxaddpar, hdr, 'WAT0_001', 'system=linear'
+   sxaddpar, hdr, 'WAT1_001', $
+    'wtype=linear label=Wavelength units=Angstroms'
+   sxaddpar, hdr, 'CRVAL1', wavemin, $
+    'Central wavelength (log10) of first pixel'
+   sxaddpar, hdr, 'CD1_1', binsz, 'Log10 dispersion per pixel'
+   sxaddpar, hdr, 'CRPIX1', 1, 'Starting pixel (1-indexed)'
+   sxaddpar, hdr, 'CTYPE1', 'LINEAR'
+   sxaddpar, hdr, 'DC-FLAG', 1, 'Log-linear flag'
+
+return
+end
+
+;------------------------------------------------------------------------------
 pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
  binsz=binsz, zeropoint=zeropoint, nord=nord, wavemin=wavemin, $
  bkptbin=bkptbin, window=window, maxsep=maxsep, adderr=adderr, $
@@ -449,18 +465,14 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
    sxaddpar, hdr, 'NAXIS1', n_elements(bestflux)
    sxaddpar, hdr, 'NAXIS2', nfiber
 
-   ;----------
-   ; Add keywords for anyone dumb enough to use IRAF
 
-   sxaddpar, hdr, 'WAT0_001', 'system=linear'
-   sxaddpar, hdr, 'WAT1_001', $
-    'wtype=linear label=Wavelength units=Angstroms'
-   sxaddpar, hdr, 'CRVAL1', wavemin, $
-    'Central wavelength (log10) of first pixel'
-   sxaddpar, hdr, 'CD1_1', binsz, 'Log10 dispersion per pixel'
-   sxaddpar, hdr, 'CRPIX1', 1, 'Starting pixel (1-indexed)'
-   sxaddpar, hdr, 'CTYPE1', 'LINEAR'
-   sxaddpar, hdr, 'DC-FLAG', 1, 'Log-linear flag'
+   add_iraf_keywords, hdr, wavemin, binsz
+
+   mkhdr, hdrfloat, finalivar, /image, /extend
+   add_iraf_keywords, hdrfloat, wavemin, binsz
+
+   mkhdr, hdrlong, finalandmask, /image, /extend
+   add_iraf_keywords, hdrlong, wavemin, binsz
 
    ;---------------------------------------------------------------------------
    ; Write combined output file
@@ -470,16 +482,16 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
    mwrfits, finalflux, outputname, hdr, /create
 
    ; 2nd HDU is inverse variance
-   mwrfits, finalivar, outputname
+   mwrfits, finalivar, outputname, hdrfloat
 
    ; 3rd HDU is AND-pixelmask
-   mwrfits, finalandmask, outputname
+   mwrfits, finalandmask, outputname, hdrlong
 
    ; 4th HDU is OR-pixelmask
-   mwrfits, finalormask, outputname
+   mwrfits, finalormask, outputname, hdrlong
 
    ; 5th HDU is dispersion map
-   mwrfits, finaldispersion, outputname
+   mwrfits, finaldispersion, outputname, hdrfloat
 
    ; 6th HDU is plugmap
    mwrfits, finalplugmap, outputname

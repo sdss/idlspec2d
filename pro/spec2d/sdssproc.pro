@@ -237,12 +237,12 @@ pro sdssproc, infile, image, invvar, indir=indir, $
          redfile = infile
          strput, redfile, 'r2', i1
          redfile = (lookforgzip(djs_filepath(redfile, root_dir=indir)))[0]
-         reddata = ptr_new( rdss_fits(redfile, /nofloat))
+         reddata = rdss_fits(redfile, /nofloat)
       endif else begin
-         reddata = ptr_new(rawdata)
+         reddata = rawdata
       endelse
 
-      ibad = where( (*reddata)[20,*] LT median((*reddata)[20,*]) - 100 , nbad )
+      ibad = where( reddata[20,*] LT median(reddata[20,*]) - 100 , nbad )
 
       if (nbad GT 0) then begin
          splog, 'WARNING: Fixing ', nbad, ' shifted rows (from electronics)'
@@ -254,18 +254,22 @@ pro sdssproc, infile, image, invvar, indir=indir, $
          for ii=0, nbad-1 do begin
             nshift = $
              (reverse(where(rawdata[20:39,ibad[ii]] GT medval + 100)))[0]
-            if (nshift LT 10) then begin
-               rawdata[0:1063-nshift,ibad[ii]] = rawdata[nshift:1063,ibad[ii]]
-               killdata[1063-nshift+1:1063,ibad[ii]] = 0
+
+;
+;	  If nshift is -1, we will also zero the whole row
+;
+
+            if (nshift GE 0 AND nshift LT 10 ) then begin
+                rawdata[0:1063-nshift,ibad[ii]] = rawdata[nshift:1063,ibad[ii]]
+                killdata[1063-nshift+1:1063,ibad[ii]] = 0
             endif else begin
-               killdata[*,ibad[ii]] = 0
+                killdata[*,ibad[ii]] = 0
             endelse
+
          endfor
       endif
 
-      if (camname EQ 'b2') then begin
-         reddata = 0  ; Free memory
-      endif
+      reddata = 0  ; Free memory
    endif
 
    ;-----------
@@ -287,13 +291,13 @@ pro sdssproc, infile, image, invvar, indir=indir, $
          redfile = infile
          strput, redfile, 'r2', i1
          redfile = (lookforgzip(djs_filepath(redfile, root_dir=indir)))[0]
-         reddata = ptr_new( rdss_fits(redfile, /nofloat) )
+         reddata = rdss_fits(redfile, /nofloat) 
       endif else begin
-         reddata = ptr_new(rawdata)
+         reddata = rawdata
       endelse
 
-      ibad = where( (*reddata)[20,*] LT median((*reddata)[20,*]) - 100 $
-       AND (*reddata)[2107,*] GT median((*reddata)[2107,*]) + 100, nbad )
+      ibad = where( reddata[20,*] LT median(reddata[20,*]) - 100 $
+       AND reddata[2107,*] GT median(reddata[2107,*]) + 100, nbad )
 
       if (nbad GT 0) then begin
          splog, 'WARNING: Fixing ', nbad, ' dropped-pixel rows (from electronics)'
@@ -303,9 +307,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
          rawdata[2107,ibad] = median( rawdata[2107,ibad] )
       endif
 
-      if (camname EQ 'b2') then begin
-         reddata = 0  ; Free memory
-      endif
+      reddata = 0  ; Free memory
    endif
 
    ;-----------
