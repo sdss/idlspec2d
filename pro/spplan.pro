@@ -150,7 +150,7 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
       splog, 'Astrolog directory ', plugdir
 
       ; Find all raw FITS files in this directory
-      fullname = findfile(inputdir+'/*.fit', count=nfile)
+      fullname = findfile(inputdir+'/sdR*.fit', count=nfile)
       splog, 'Number of FITS files found: ', nfile
 
       if (nfile GT 0) then begin
