@@ -85,6 +85,7 @@
 ;
 ; INTERNAL SUPPORT ROUTINES:
 ;   findopfile()
+;   make_badcolumn_mask()
 ;
 ; DATA FILES:
 ;   $IDLSPEC2D_DIR/examples/opConfig*par
@@ -140,6 +141,47 @@ function findopfile, expres, mjd, indir
    score = min(diff  + 10000000L*(diff LT 0), bestmjd)
 
    return, fileandpath(files[bestmjd])
+end
+;------------------------------------------------------------------------------
+;  Create the bad column mask (1 for a masked pixel) with image size nc,nr
+;  If the operation doesn't work just return 0 for no masked pixels
+;
+function make_badcolumn_mask, bcfile, camrow, camcol, nc=nc, nr=nr
+
+   if NOT keyword_set(nc) then nc=2048L
+   if NOT keyword_set(nr) then nr=2048L
+
+   yanny_read, bcfile, pdata
+   if (size(pdata,/tname)) EQ 'INT' then begin
+     splog,' Could not read BC file '+bcfile
+     return, 0
+   endif
+
+   bc = *pdata[0]
+   yanny_free, pdata
+
+   bchere = where(bc.camrow EQ camrow AND bc.camcol EQ camcol, nbc)
+   if NOT keyword_set(nbc) then begin
+     splog,' Could not parse BC file contents or find corresponding camera' $
+               +bcfile
+     return, 0
+   endif
+
+   bc = bc[ bchere ]
+   bcmask = bytarr(nc, nr)
+
+   ; Mask out bad columns
+
+   if (nbc GT 0) then begin
+     bcsc = (bc.dfcol0 > 0) < (nc-1)
+     bcec = (bc.dfcol0 + bc.dfncol - 1 < (nc-1)) > bcsc
+     bcsr = (bc.dfrow0 > 0) < (nr-1)
+     bcer = (bc.dfrow0 + bc.dfnrow - 1 < (nr-1)) > bcsr
+
+     for i=0, nbc-1 do bcmask[bcsc[i]:bcec[i],bcsr[i]:bcer[i]] = 1
+   endif
+
+   return, bcmask
 end
 
 ;------------------------------------------------------------------------------
@@ -243,17 +285,22 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    camcol = indx[0] + 1
    camrow = 0
 
-   if (!version.release LT '5.4') then $
-    spawn, 'speclog_version', verslog $
-   else $
-    spawn, 'speclog_version', verslog, errstring
-   if (NOT keyword_set(verslog)) then verslog = 'Unknown'
 
-   if (!version.release LT '5.4') then $
-    spawn, 'specflat_version', versflat $
-   else $
-    spawn, 'specflat_version', versflat, errstring
-   if (NOT keyword_set(versflat)) then versflat = 'Unknown'
+;   if (!version.release LT '5.4') then $
+;    spawn, 'speclog_version', verslog $
+;   else $
+;    spawn, 'speclog_version', verslog, errstring
+;   if (NOT keyword_set(verslog)) then verslog = 'Unknown'
+;
+;   if (!version.release LT '5.4') then $
+;    spawn, 'specflat_version', versflat $
+;   else $
+;    spawn, 'speclog_version', verslog, errstring
+;    spawn, 'specflat_version', versflat, errstring
+;   if (NOT keyword_set(versflat)) then versflat = 'Unknown'
+
+   spawn, 'speclog_version  2>& /dev/null', verslog
+   spawn, 'specflat_version 2>& /dev/null', versflat
 
    sxaddpar, hdr, 'CAMROW', camrow
    sxaddpar, hdr, 'CAMCOL', camcol
@@ -390,32 +437,34 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    ;-----------
    ; Find names of the configurations files
 
-   pp = filepath('', root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='examples')
+   config_dir = filepath('', $
+      root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='examples')
 
    if (NOT keyword_set(configfile)) then $
-       configfile = findopfile('opConfig*par',mjd,pp)
+       configfile = findopfile('opConfig*par',mjd,config_dir)
    if (NOT keyword_set(ecalibfile)) then $
-       ecalibfile = findopfile('opECalib*par',mjd,pp)
+       ecalibfile = findopfile('opECalib*par',mjd,config_dir)
    if (NOT keyword_set(bcfile)) then $
-       bcfile = findopfile('opBC*par',mjd,pp)
+       bcfile = findopfile('opBC*par',mjd,config_dir)
 
-   naxis = sxpar(hdr,'NAXIS*')
-   if (naxis[0] NE 2128 OR naxis[1] NE 2069) then $
-    splog, 'WARNING: Expecting 2128x2069, found '+string(naxis[0])+'x'$
-     +string(naxis[1])
+   naxis1 = sxpar(hdr,'NAXIS1')
+   naxis2 = sxpar(hdr,'NAXIS2')
+   if (naxis1 NE 2128 OR naxis2 NE 2069) then $
+    splog, 'WARNING: Expecting 2128x2069, found '+string(naxis1)+'x'$
+     +string(naxis2)
 
    ;------
    ; Read in opConfig.par file
    ; Take the first entry for the configuration of each CCD in the event
    ; that there are several.
 
-   yanny_read, filepath(configfile, root_dir=pp), pdata
+   yanny_read, filepath(configfile, root_dir=config_dir), pdata
    config = *pdata[0]
    yanny_free, pdata
    i = where(config.camrow EQ camrow AND config.camcol EQ camcol)
    config = config[i[0]]
 
-   if (naxis[0] NE config.ncols OR naxis[1] NE config.nrows) then $
+   if (naxis1 NE config.ncols OR naxis2 NE config.nrows) then $
       splog, 'WARNING! Config file dimensions do not match raw image'
 
    qexist = [config.amp0, config.amp1, config.amp2, config.amp3]
@@ -464,7 +513,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    scol = [config.sccdcolsec0, config.sccdcolsec1, $
     config.sccdcolsec2, config.sccdcolsec3]
 
-   if (naxis[1] EQ 2049) then begin
+   if (naxis2 EQ 2049) then begin
      splog, 'WARNING: NROWS is 2049, adjusting config entries' 
      sdatarow = sdatarow - 20
      noverrow = 1
@@ -473,7 +522,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    ;------
    ; Read in ECalib File
 
-   yanny_read, filepath(ecalibfile, root_dir=pp), pdata
+   yanny_read, filepath(ecalibfile, root_dir=config_dir), pdata
    ecalib = *pdata[0]
    yanny_free, pdata
    ecalib = ecalib[ where(ecalib.camrow EQ camrow AND ecalib.camcol EQ camcol) ]
@@ -494,12 +543,14 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    else if ((size(image))[1] NE nc OR (size(image))[2] NE nr OR $
             (size(image))[3] NE 4) then image = fltarr(nc, nr) 
 
-   yanny_read, filepath(bcfile, root_dir=pp), pdata
-   bc = *pdata[0]
-   yanny_free, pdata
-   
-   bchere = where(bc.camrow EQ camrow AND bc.camcol EQ camcol, nbc)
-   if (nbc GT 0) then bc = bc[ bchere ]
+   ;------
+   ; Moved the Bad Column mask creation to the function above
+   ;
+   ; yanny_read, filepath(bcfile, root_dir=config_dir), pdata
+   ;  bc = *pdata[0]
+   ;  yanny_free, pdata
+   ;  bchere = where(bc.camrow EQ camrow AND bc.camcol EQ camcol, nbc)
+   ;  if (nbc GT 0) then bc = bc[ bchere ]
 
    ;------
    ; Test to see if the shutter was open during readout if the exposure
@@ -716,14 +767,8 @@ pro sdssproc, infile, image, invvar, indir=indir, $
       ;------
       ; Mask out bad columns
 
-      if (nbc GT 0) then begin
-         bcsc = (bc.dfcol0 > 0) < (nc-1)
-         bcec = (bc.dfcol0 + bc.dfncol - 1 < (nc-1)) > bcsc
-         bcsr = (bc.dfrow0 > 0) < (nr-1)
-         bcer = (bc.dfrow0 + bc.dfnrow - 1 < (nr-1)) > bcsr
-
-         for i=0, nbc-1 do bcmask[bcsc[i]:bcec[i],bcsr[i]:bcer[i]] = 1
-      endif
+      bcmask = make_badcolumn_mask($
+          filepath(bcfile,root_dir=config_dir), camrow, camcol)
 
       ;------
       ; For masked pixels, set INVVAR=0
@@ -740,7 +785,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
 
 satmask = 0 ; clear memory
 admask = 0 ; clear memory
-bcmask = 0 ; clear memory
+; bcmask = 0 ; clear memory
    endif
 
    ;---------------------------------------------------------------------------
@@ -758,7 +803,7 @@ bcmask = 0 ; clear memory
        message, 'Pixel flat not found for camera ' + camname
       splog, 'Correcting with pixel flat ' + pixflatname
 
-      pixflatimg = readfits(djs_filepath(pixflatname, root_dir=pp))
+      pixflatimg = mrdfits(djs_filepath(pixflatname, root_dir=pp))
 
       if (readimg) then image = image / pixflatimg
       if (NOT keyword_set(minflat)) then minflat = 0.0
@@ -766,12 +811,14 @@ bcmask = 0 ; clear memory
       if (readivar) then $
        invvar = invvar * pixflatimg^2 * (pixflatimg GT minflat) $
         * (pixflatimg LT maxflat)
+stop
 pixflatimg = 0 ; clear memory
 
       ; add pixflatname to header since it has just been applied
 
       sxaddpar, hdr, 'PIXFLAT', pixflatname
    endif
+
 
    ;---------------------------------------------------------------------------
    ; Check for NaN's

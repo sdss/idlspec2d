@@ -30,6 +30,7 @@
 ;                information
 ;   flatinfoname-File name (with path) to output flat field extraction and
 ;                fitting information
+;   minflat, maxflat- to mask pixflat
 ;
 ; OUTPUTS:
 ;   arcstruct  - Structure array with extracted arc calibration information
@@ -118,10 +119,13 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
  lampfile=lampfile, indir=indir, timesep=timesep, $
  ecalibfile=ecalibfile, plottitle=plottitle, $
  arcinfoname=arcinfoname, flatinfoname=flatinfoname, $
- arcstruct=arcstruct, flatstruct=flatstruct
+ arcstruct=arcstruct, flatstruct=flatstruct, $
+ minflat=minflat, maxflat=maxflat
 
    if (NOT keyword_set(indir)) then indir = '.'
    if (NOT keyword_set(timesep)) then timesep = 7200
+   if (NOT keyword_set(minflat)) then minflat = 0.8
+   if (NOT keyword_set(maxflat)) then maxflat = 1.2
 
    stime1 = systime(1)
 
@@ -151,7 +155,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
       splog, 'Reading flat ', flatname[iflat]
       sdssproc, flatname[iflat], flatimg, flativar, indir=indir, $
        hdr=flathdr, /applypixflat, nsatrow=nsatrow, fbadpix=fbadpix,$
-       ecalibfile=ecalibfile, minflat = 0.5, maxflat=1.5
+       ecalibfile=ecalibfile, minflat=minflat, maxflat=maxflat
 
       ;-----
       ; Decide if this flat is bad
@@ -263,7 +267,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
       splog, 'Reading arc ', arcname[iarc]
       sdssproc, arcname[iarc], arcimg, arcivar, indir=indir, $
        hdr=archdr, /applypixflat, nsatrow=nsatrow, fbadpix=fbadpix, $
-       ecalibfile=ecalibfile, minflat = 0.5, maxflat=1.5
+       ecalibfile=ecalibfile, minflat=minflat, maxflat=maxflat
 
       splog, 'Fraction of bad pixels in arc = ', fbadpix
 
@@ -464,7 +468,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
             splog, 'Reading flat ', flatname[iflat]
             sdssproc, flatname[iflat], flatimg, flativar, indir=indir, $
              hdr=flathdr, /applypixflat, ecalibfile=ecalibfile, $
-             minflat = 0.5, maxflat=1.5
+             minflat=minflat, maxflat=maxflat
          endif
 
          ;---------------------------------------------------------------------
