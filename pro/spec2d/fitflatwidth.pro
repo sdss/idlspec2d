@@ -130,10 +130,10 @@ function fitflatwidth, flux, fluxivar, ansimage, fibermask, $
    ; Compute the widths in each of 4 quandrants on the CCD.
 
    traceset2xy, widthset, xx, width_fit
-   medwidth = [ median(width_fit[0:npix/2-1,0:ntrace/2-1]), $
-                median(width_fit[0:npix/2-1,ntrace/2:ntrace-1]), $
-                median(width_fit[npix/2:npix-1,0:ntrace/2-1]), $
-                median(width_fit[npix/2:npix-1,ntrace/2:ntrace-1]) ]
+   medwidth = [ median(width_fit[0:nrow/2-1,0:ntrace/2-1]), $
+                median(width_fit[0:nrow/2-1,ntrace/2:ntrace-1]), $
+                median(width_fit[nrow/2:nrow-1,0:ntrace/2-1]), $
+                median(width_fit[nrow/2:nrow-1,ntrace/2:ntrace-1]) ]
    splog, 'Median spatial widths = ' $
     + string(medwidth,format='(4f5.2)') + ' pix (LL LR UL UR)'
 
