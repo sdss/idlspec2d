@@ -224,36 +224,36 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
 
    for iamp=0, 3 do begin
       if (qexist[iamp] EQ 1) then begin
-
          if (readimg OR readivar) then begin
+           if (nover[iamp] NE 0) then begin
+              ; Use the "overscan" region
+              biasreg = rawdata[sover[iamp]:sover[iamp]+nover[iamp]-1, $
+                  sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1]
+           endif else if (nmapover[iamp] NE 0) then begin
+              ; Use the "mapped overscan" region
+              biasreg = rawdata[smapover[iamp]:smapover[iamp]+nmapover[iamp]-1, $
+               sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] 
+           endif
 
-            if (nover[iamp] NE 0) then begin
-               ; Use the "overscan" region
-               biasval = median( $
-                rawdata[sover[iamp]:sover[iamp]+nover[iamp]-1, $
-                sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] )
-            endif else if (nmapover[iamp] NE 0) then begin
-               ; Use the "mapped overscan" region
-               biasval = median( $
-                rawdata[smapover[iamp]:smapover[iamp]+nmapover[iamp]-1, $
-                sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] )
-            endif
+	   biasval = median( biasreg )
+           djs_iterstat, biasreg, sigma=readoutDN
 
-            ; Copy the data for this amplifier into the final image
-            image[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
-                     srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
-            rawdata[sdatacol[iamp]:sdatacol[iamp]+ncol[iamp]-1, $
-                     sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] - biasval
+           splog, 'readout noise in DN for amp#', iamp, ' is ', readoutDN
 
-            ; Add to the header
-            sxaddpar, hdr, 'BIAS'+string(iamp,format='(i1)'), biasval
 
-         endif
+           ; Copy the data for this amplifier into the final image
+           ; Now image is in electrons
+
+           image[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
+                  srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
+            (rawdata[sdatacol[iamp]:sdatacol[iamp]+ncol[iamp]-1, $
+                  sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] - biasval) * gain[iamp]
 
          ; Add to the header
          sxaddpar, hdr, 'GAIN'+string(iamp,format='(i1)'), gain[iamp]
          sxaddpar, hdr, 'RDNOISE'+string(iamp,format='(i1)'), $
-          gain[iamp]*readnoiseDN[iamp]
+          gain[iamp]*readnoiseDN[iamp], 'Readout Noise in electrons'
+        endif
       endif
    endfor
 
@@ -278,8 +278,8 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
          invvar[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
                   srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
            1.0/(abs(image[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
-                  srow[iamp]:srow[iamp]+nrow[iamp]-1]) /gain[iamp] + $
-                  readnoiseDN[iamp]*readnoiseDN[iamp])
+                  srow[iamp]:srow[iamp]+nrow[iamp]-1]) + $
+                  (readnoiseDN[iamp]*gain[iamp])^2)
          endif
       endfor
 
