@@ -163,7 +163,7 @@ pixflatname = pixflatname[0]
 splog, 'Selecting pixel flat ' + pixflatname
 
          j = where(allseq.mapname EQ thismap $
-               AND allseq.flavor EQ 'science' $
+               AND (allseq.flavor EQ 'science' OR allseq.flavor EQ 'smear') $
                AND allseq.name[icam] NE 'UNKNOWN' )
 
          if (j[0] NE -1) then begin
