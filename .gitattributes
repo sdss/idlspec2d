@@ -2,6 +2,7 @@
 /Makefile -text
 bin/Makefile -text
 bin/aporsync.sh -text
+bin/sos.sh -text
 bin/startapo.sh -text
 doc/Makefile -text
 doc/mk_doc -text
