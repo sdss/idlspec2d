@@ -259,6 +259,10 @@ DJS_REJECT: Added GROW option to mask neighboring pixels.
             dimensional data (Scott thinks).
             Also some small changes to the way grouping works.
 EFCMN: Small change declaring a loop index as a long int.
+EXTAST: Allow GSSS coordinate systems other than RA,DEC.  Specifically,
+            allow the use of 'GLON-GSS' and 'GLAT-GSS' which we use
+            in the PT image headers.  This means that our version of this
+            code is currently branched from Wayne Landsman's Goddard version.
 RMFILE: Bug fix for the case that one element of the filename array is blank.
 YANNY_FREE: Don't crash if PDATA is not set.
 YANNY_READ: If there are too few words on a line for a structure entry,
