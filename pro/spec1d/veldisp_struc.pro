@@ -18,7 +18,13 @@ FUNCTION veldisp_struc, N
             sigma_quotient     : 0.0, $
             sigma_quotient_err : 0.0, $
             sigma_diff         : 0.0, $
-            sigma_diff_err     : 0.0 }
+            sigma_diff_err     : 0.0, $
+            run                : 0L,  $
+            rerun              : 0L,  $
+            camcol             : 0L,  $
+            field              : 0L,  $
+            id                 : 0L,  $
+}
   
   IF keyword_set(N) THEN $
     arr = replicate(struc, N) $
