@@ -162,7 +162,7 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
     nord=nord, upper=upper, lower=lower, maxiter=maxiter, $
     /eachgroup, everyn=2*nskies/3, bkpt=bkpt, outmask=outmask, yfit=skyfit)
 
-   if (total(skyfit) LE 0) then begin
+   if (NOT keyword_set(skyfit)) then begin
       splog, 'ABORT: Fit sky is all zeros'
       return, 0
    endif
