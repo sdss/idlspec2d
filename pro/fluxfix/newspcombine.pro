@@ -61,7 +61,7 @@ pro newspcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
 
    if (N_elements(planfile) GT 1) then begin
       for i=0, N_elements(planfile)-1 do $
-       spcombine, planfile[i], docams=docams, xdisplay=xdisplay
+       newspcombine, planfile[i], docams=docams, xdisplay=xdisplay
       return
    endif
 
@@ -122,6 +122,8 @@ pro newspcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
    endif
    if (keyword_set(plotfile) AND NOT keyword_set(xdisplay)) then begin
       cpbackup, djs_filepath(plotfile, root_dir=combinedir)
+      if keyword_set(plotsnfile) then $
+        cpbackup, djs_filepath(plotsnfile, root_dir = combinedir)
       set_plot, 'ps'
       device, filename=djs_filepath(plotfile, root_dir=combinedir), /color, $
         /portrait, xsize=8.0, ysize=9.5, xoffset=0.25, yoffset=0.5, /inch
