@@ -13,6 +13,8 @@ PLATELIST: Use manually-assigned platequality from "spPlateList.par"
 PLATEMERGE: Use MWRFITS_CHUNKS to allow us to write bigger files
            (approximately up to your memory size).
            Add PROGNAME,SPECPRIMARY to ASCII output.
+           If SUBCLASS contains several words, then use a plus sign between
+           the words in the ASCII file rather than a space (so that awk will work).
 ZPLOT: Change "brg" names to "lrg".
 
 opLimits.par: Use the SKYPERSEC limit for either science or smear exposures.
@@ -21,9 +23,14 @@ spPlateList.par: Update to data through MJD 52413 (19 May 2002).
            Add PLATEQUALITY,QUALCOMMENTS to Yanny structure.
            Remove the following (bad) plates from public data releases:
              266/51602 (Internal LEDs), 360/51780 (b1 CCD warmed up).
+sprobotlist.sh: Call the IDL commands ZPLOT and PLATEHIST each night
+           from the Spectro-Robot.
 
 In idlutils:
 
+REPSTR: Change loop indices to type long, which was necessary to the
+           call from PLATEMERGE.  We should be sure that this gets
+           into Landsman's code version.
 MWRFITS_CHUNKS: New proc to write a FITS binary table in chunks
            (used by PLATEMERGE).
 STRUCT_PRINT: Add options TARRAY, /NO_HEAD, /HTML, FDIDIT, DDIGIT, ALIAS.

@@ -86,8 +86,8 @@ Science web sites:
   <LI><A HREF="http://physics.nyu.edu/~mb144/lss/">
       Mike Blanton's LSS Sample</A>
   <LI><A HREF="http://wassup.physics.nyu.edu/">
-  <LI><A HREF="http://www.astro.washington.edu/anderson/sdss/serendip/odd_spectra.html">Scott Anderson's Odd Spectrum Page</A>
       SDSS @ NYU</A>
+  <LI><A HREF="http://www.astro.washington.edu/anderson/sdss/serendip/odd_spectra.html">Scott Anderson's Odd Spectrum Page</A>
 </UL>
 
 <P>
@@ -492,6 +492,9 @@ either the hardware or target selection for the survey.  These plates are:
      These plates were designed by Alex Szalay.
 <LI> <B>Plate 811 : Loveday photo-z plate</B><BR>
      This plate was designed by Jon Loveday.
+<LI> <B>Plates 1021-1037 : Annis low-z galaxies + Eisenstein LRGs</B><BR>
+     The only information we have on these plates was posted to
+     <A HREF="http://www.astro.princeton.edu:81/sdss-target/msg.670.html">sdss-target/670</A>.
 </UL>
 
 <H2><A NAME="summary">Summary Files</A></H2>
@@ -1403,8 +1406,8 @@ of each 15-minute exposure (using TAI-BEG + 0.5 * EXPTIME from the header).
 <H4><A NAME="problems_known">Known Problems</A></H4>
 
 <P>
-Here is a list of the most offensive known problems in Spectro-2D as
-of version v4_9_11 (31 May 2002):
+Here is a list of the most offensive known problems in either the
+data or in the Spectro-2D reduction code as of version v4_9_11 (31 May 2002):
 <PRE>
 Plate 0187/51455 has no good b2 arc on the first night of data 51454.
                  This plate has severe scattered light problems.  The r2 camera
@@ -1432,6 +1435,25 @@ Plate 0426/51882 has the Red Monster light at 6400-6550 Ang in exp #7366-7367.
 Plate 0541/51959 has bad extraction chi^2 and sky-subtraction, especially in r1.
 Plate 0644/52149 has bad extraction chi^2 and sky-subtraction.  Is this the same
                  problem as for plate 0541/51959?
+</PRE>
+The following list of plates were rejected because of out-of-collimation
+spectrographs (c.f., <A HREF="http://www.astro.princeton.edu:81/sdss-spectro/msg.873.html">sdss-spectro/873</A>):
+<PRE>
+Plate 0504/52316 - Many rejected pixels
+Plate 0704/52205 - Many rejected pixels
+Plate 0721/52228 - Many rejected pixels
+Plate 0736/52210 - Many rejected pixels
+Plate 0756/52237 - Badly out-of-focus
+Plate 0761/52266 - Many rejected pixels
+Plate 0769/52282 - Many rejected pixels
+Plate 0770/52282 - Many rejected pixels
+Plate 0775/52295 - Many rejected pixels
+Plate 0778/52337 - Many rejected pixels
+Plate 0790/52346 - Badly out-of-focus night
+Plate 0791/52347 - Badly out-of-focus
+Plate 0873/52347 - Badly out-of-focus
+Plate 0876/52346 - Badly out-of-focus night
+Plate 0889/52346 - Badly out-of-focus night; many rejected pixels
 </PRE>
 
 <H4><A NAME="problems_failed">Failed Plates</A></H4>
