@@ -84,8 +84,10 @@ pro spplan2d, topoutdir=topoutdir, mjd=mjd, $
    splog, 'Setting RAWDATA_DIR=', rawdata_dir
 
    speclog_dir = getenv('SPECLOG_DIR')
-   if (NOT keyword_set(speclog_dir)) then $
-    speclog_dir = getenv('ASTROLOG_DIR')
+   if (NOT keyword_set(speclog_dir)) then begin
+      speclog_dir = getenv('ASTROLOG_DIR')
+      setenv, 'SPECLOG_DIR='+speclog_dir
+   endif
    if (NOT keyword_set(speclog_dir)) then $
     message, 'Must set environment variable SPECLOG_DIR or ASTROLOG_DIR'
    splog, 'Setting SPECLOG_DIR=', speclog_dir
