@@ -178,7 +178,7 @@ function readplugmap, plugfile, plugdir=plugdir, $
 
       ibad = where(plugmap[iobj].calibflux EQ 0, nbad)
       if (nbad GT 0) then begin
-         splog, 'Using plug-map fluxes for ', nbad, ' objects'
+         splog, 'Using plug-map fluxes for ', nbad, ' values'
          plugmap[iobj[ibad]].calibflux = $
           10.^((22.5 - plugmap[iobj[ibad]].mag) / 2.5)
       endif
