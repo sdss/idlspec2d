@@ -176,7 +176,7 @@ ormask = 0 ; Free memory
    nfind = 5
    plottitle = 'Galaxy Redshift'
 
-   eigenfile = 'spEigenGal*.fits'
+   eigenfile = 'spEigenGal-*.fits'
 
    splog, 'Compute GALAXY redshifts:', $
     ' ZMIN=', zmin, ' ZMAX=', zmax, ' PSPACE=', pspace
@@ -220,7 +220,7 @@ ormask = 0 ; Free memory
    nfind = 5
    plottitle = 'QSO Redshift'
 
-   eigenfile = 'spEigenQSO*.fits'
+   eigenfile = 'spEigenQSO-*.fits'
 
    splog, 'Compute QSO redshifts:', $
     ' ZMIN=', zmin, ' ZMAX=', zmax, ' PSPACE=', pspace
@@ -252,7 +252,7 @@ ormask = 0 ; Free memory
    pspace = 1
    nfind = 1
 
-   eigenfile = 'spEigenStar*.fits'
+   eigenfile = 'spEigenStar-*.fits'
 
    eigendir = concat_dir(getenv('IDLSPEC2D_DIR'), 'templates')
    shdr = headfits( djs_filepath(eigenfile, root_dir=eigendir) )
@@ -276,6 +276,34 @@ ormask = 0 ; Free memory
 
       res_all = [res_all, res_star] ; Append results
    endfor
+
+   ;----------
+   ; Find CV STAR redshifts
+
+   npoly = 3
+   zmin = -0.004 ; -1200 km/sec
+   zmax = 0.004 ; +1200 km/sec
+   pspace = 1
+   nfind = 1
+
+   eigenfile = 'spEigenCVstar-*.fits'
+
+   subclass = 'CV'
+   plottitle = subclass + '-Star Redshift'
+
+   splog, 'Compute STAR (' + subclass + ') redshifts:', $
+    ' ZMIN=', zmin, ' ZMAX=', zmax, ' PSPACE=', pspace
+   t0 = systime(1)
+   res_cvstar = zfind(objflux, objivar, hdr=hdr, $
+    eigenfile=eigenfile, npoly=npoly, $
+    zmin=zmin, zmax=zmax, pspace=1, nfind=nfind, width=5*pspace, $
+    plottitle=plottitle, doplot=doplot, debug=debug)
+   splog, 'CPU time to compute STAR redshifts = ', systime(1)-t0
+
+   res_cvstar.class = 'STAR'
+   res_cvstar.subclass = subclass
+
+   res_all = [res_all, res_cvstar] ; Append results
 
    ;----------
    nper = (size(res_all,/dimens))[0]

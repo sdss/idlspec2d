@@ -194,6 +194,7 @@ pro/spec1d/lambda_match.pro -text
 pro/spec1d/make_regress1d.pro -text
 pro/spec1d/matchplugmap.pro -text
 pro/spec1d/multisynthspec.pro -text
+pro/spec1d/pca_cvstar.pro -text
 pro/spec1d/pca_gal.pro -text
 pro/spec1d/pca_lrgtest.pro -text
 pro/spec1d/pca_qso.pro -text
