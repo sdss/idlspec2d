@@ -355,6 +355,7 @@ ormask = 0 ; Free memory
 
    t0 = systime(1)
    nfsig = 10
+   chi68p = fltarr(nper,nobj)
    fracnsigma = fltarr(nfsig,nper,nobj)
    fracnsighi = fltarr(nfsig,nper,nobj)
    fracnsiglo = fltarr(nfsig,nper,nobj)
@@ -382,16 +383,18 @@ ormask = 0 ; Free memory
       synflux = synthspec(res_all[iper,*], loglam=objloglam)
 
       for iobj=0, nobj-1 do begin
-         goodmask = objivar[*,iobj] GT 0
-         chivec = (objflux[*,iobj] - synflux[*,iobj]) * sqrt(objivar[*,iobj])
-         for isig=0, nfsig-1 do begin
-            fracnsigma[isig,iper,iobj] = $
-             total((abs(chivec) GT isig+1) * goodmask) / (total(goodmask) > 1)
-            fracnsighi[isig,iper,iobj] = $
-             total((chivec GT isig+1) * goodmask) / (total(goodmask) > 1)
-            fracnsiglo[isig,iper,iobj] = $
-             total((chivec LT isig+1) * goodmask) / (total(goodmask) > 1)
-         endfor
+         igood = where(objivar[*,iobj] GT 0, ngood)
+         if (ngood GT 0) then begin
+            chivec = (objflux[igood,iobj] - synflux[igood,iobj]) $
+             * sqrt(objivar[igood,iobj])
+            abschivec = abs(chivec)
+            chi68p[iper,iobj] = (abschivec[sort(abschivec)])[floor(0.68*ngood)]
+            for isig=0, nfsig-1 do begin
+               fracnsigma[isig,iper,iobj] = total(abschivec GT isig+1) / ngood
+               fracnsighi[isig,iper,iobj] = total(chivec GT isig+1) / ngood
+               fracnsiglo[isig,iper,iobj] = total(chivec LT isig+1) / ngood
+            endfor
+         endif
       endfor
 
       fthru = filter_thru(synflux * rebin(flambda2fnu,npixobj,nobj), $
@@ -437,6 +440,7 @@ ormask = 0 ; Free memory
             wcoverage: 0.0, $
             zwarning:  0L, $
             sn_median: 0.0, $
+            chi68p: 0.0, $
             fracnsigma: fltarr(nfsig), $
             fracnsighi: fltarr(nfsig), $
             fracnsiglo: fltarr(nfsig), $
@@ -468,6 +472,7 @@ ormask = 0 ; Free memory
         median( sqrt(objivar[igood,iobj]) * abs(objflux[igood,iobj]))
    endfor
 
+   res_all.chi68p = chi68p
    res_all.fracnsigma = fracnsigma
    res_all.fracnsighi = fracnsighi
    res_all.fracnsiglo = fracnsiglo
