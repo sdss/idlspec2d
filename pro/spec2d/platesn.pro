@@ -129,7 +129,7 @@ pro platesn, finalflux, finalivar, finalandmask, finalplugmap, loglam, $
     + '  MJD=' + strtrim(string(sxpar(hdr,'MJD')),2)
    plotsn, snvec, finalplugmap, plotfile=plotfile, plottitle=plottitle, $
     synthmag=synthmag, snplate=snplate, roffset = roffset, rsigma = rsigma, $
-    gioffset = gioffset, gisigma = gisigma
+    groffset = groffset, grsigma = grsigma
 
    ;----------
    ; Print roll call of bad fibers and bad pixels.
@@ -208,21 +208,21 @@ pro platesn, finalflux, finalivar, finalandmask, finalplugmap, loglam, $
       ; photo mags in the plugmap.  
 
       sxaddpar, hdr, 'ROFFSET1', roffset[0], $
-                'Mean r-band mag difference (spectro mag - photo mag)'
+                'Mean r-band mag difference (spectro - photo)'
       sxaddpar, hdr, 'RSIGMA1', rsigma[0], $
-             'Stddev of r-band mag difference (spectro mag - photo mag)'
-      sxaddpar, hdr, 'GIOFF1', gioffset[0], $
-                'Mean (g - i) color difference (spectro mag - photo mag)'
-      sxaddpar, hdr, 'GISIGMA1', gisigma[0], $
-                'Stddev of (g - i) color difference (spectro mag - photo mag)'
+             'Stddev of r-band mag difference (spectro - photo)'
+      sxaddpar, hdr, 'GROFF1', groffset[0], $
+                'Mean (g-r) color difference (spectro - photo)'
+      sxaddpar, hdr, 'GRSIGMA1', grsigma[0], $
+                'Stddev of (g-r) color difference (spectro - photo)'
       sxaddpar, hdr, 'ROFFSET2', roffset[1], $
-                'Mean r-band mag difference (spectro mag - photo mag)'
+                'Mean r-band mag difference (spectro - photo)'
       sxaddpar, hdr, 'RSIGMA2', rsigma[1], $
-             'Stddev of r-band mag difference (spectro mag - photo mag)'
-      sxaddpar, hdr, 'GIOFF2', gioffset[1], $
-                'Mean (g - i) color difference (spectro mag - photo mag)'
-      sxaddpar, hdr, 'GISIGMA2', gisigma[1], $
-                'Stddev of (g - i) color difference (spectro mag - photo mag)'
+             'Stddev of r-band mag difference (spectro - photo)'
+      sxaddpar, hdr, 'GROFF2', groffset[1], $
+                'Mean (g-r) color difference (spectro - photo)'
+      sxaddpar, hdr, 'GRSIGMA2', grsigma[1], $
+                'Stddev of (g-r) color difference (spectro - photo)'
 
    endif
 

@@ -52,7 +52,7 @@
 ;------------------------------------------------------------------------------
 pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
  plottitle=plottitle, plotfile=plotfile, synthmag=synthmag, snplate=snplate, $
- roffset = roffset, rsigma = rsigma, gioffset = gioffset, gisigma = gisigma
+ roffset = roffset, rsigma = rsigma, groffset = groffset, grsigma = grsigma
 
    if (size(snvec,/n_dim) NE 2) then return
    if (NOT keyword_set(bands)) then bands=[1, 2, 3]
@@ -277,8 +277,8 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
 
       roffset = fltarr(2)
       rsigma = fltarr(2)
-      gioffset = fltarr(2)
-      gisigma = fltarr(2)
+      groffset = fltarr(2)
+      grsigma = fltarr(2)
 
       for ispecnum=1, 2 do begin
          if (ispecnum EQ 1) then sindx = s1 $
@@ -326,9 +326,9 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
         roffset[ispecnum - 1] = rmean
         rsigma[ispecnum - 1] = rsig
 
-        meanclip, (gspectro - ispectro) - (gphoto - iphoto), gimean, gisig
-        gioffset[ispecnum - 1] = gimean
-        gisigma[ispecnum - 1] = gisig
+        meanclip, (gspectro - rspectro) - (gphoto - rphoto), grmean, grsig
+        groffset[ispecnum - 1] = grmean
+        grsigma[ispecnum - 1] = grsig
         
       endfor
 
