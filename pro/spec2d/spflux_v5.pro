@@ -399,6 +399,18 @@ pro spframe_read, filename, indx, objflux=objflux, objivar=objivar, $
 end
 
 ;------------------------------------------------------------------------------
+function spflux_goodfiber, pixmask
+   qgood = ((pixmask AND pixelmask_bits('NOPLUG')) EQ 0) $
+       AND ((pixmask AND pixelmask_bits('BADTRACE')) EQ 0) $
+       AND ((pixmask AND pixelmask_bits('BADFLAT')) EQ 0) $
+       AND ((pixmask AND pixelmask_bits('BADARC')) EQ 0) $
+       AND ((pixmask AND pixelmask_bits('MANYBADCOLUMNS')) EQ 0) $
+       AND ((pixmask AND pixelmask_bits('NEARWHOPPER')) EQ 0) $
+       AND ((pixmask AND pixelmask_bits('MANYREJECTED')) EQ 0)
+   return, qgood
+end
+
+;------------------------------------------------------------------------------
 function spflux_bspline, loglam, mratio, mrativar, outmask=outmask, $
  everyn=everyn, airmass=airmass
 
@@ -478,14 +490,20 @@ function spflux_mratio_flatten, loglam1, mratio1, mrativar1, pres=pres
    flatarr = fltarr(npix, nobj)
    pres = fltarr(npoly, nobj)
    for iobj=0L, nobj-1 do begin
-      ii = where(newivar[*,iobj] GT 0)
-      thisloglam = newloglam[ii]
-      thisratio = newratio[ii,iobj] / meanratio[ii]
-      thisivar = newivar[ii,iobj] * meanratio[ii]^2
-      pres1 = poly_fit(thisloglam, thisratio, npoly-1, $
-       measure_errors=1./sqrt(thisivar))
-      flatarr[*,iobj] = poly(loglam[*,iobj], pres1)
-      pres[*,iobj] = reform(pres1, npoly)
+      ii = where(newivar[*,iobj] GT 0, ct)
+      if (ct GT npoly+1) then begin ; At least NPOLY+1 pixels for a fit...
+         thisloglam = newloglam[ii]
+         thisratio = newratio[ii,iobj] / meanratio[ii]
+         thisivar = newivar[ii,iobj] * meanratio[ii]^2
+         pres1 = poly_fit(thisloglam, thisratio, npoly-1, $
+          measure_errors=1./sqrt(thisivar))
+         flatarr[*,iobj] = poly(loglam[*,iobj], pres1)
+         pres[*,iobj] = reform(pres1, npoly)
+       endif else begin
+         flatarr[*,iobj] = 1
+         pres[*,iobj] = 0
+         pres[0,iobj] = 1
+       endelse
    endfor
 
    pres = reform(pres, [npoly, dims[1:ndim-1]])
@@ -494,7 +512,7 @@ end
 
 ;------------------------------------------------------------------------------
 pro spflux_plotcalib, mratiologlam, mratioflux, mrativar, $
- fitloglam, fitflux, fitflux2, logrange=logrange
+ fitloglam, fitflux, fitflux2, logrange=logrange, plottitle=plottitle
 
    xrange = 10.^logrange
    ii = where(fitloglam GE logrange[0] AND fitloglam LE logrange[1])
@@ -503,7 +521,8 @@ pro spflux_plotcalib, mratiologlam, mratioflux, mrativar, $
    nfinal = (size(mratioflux, /dimens))[2]
 
    djs_plot, xrange, yrange, /xstyle, /ystyle, /nodata, /ylog, $
-    xtitle='Wavelength [Ang]', ytitle='Counts/(10^{-17}erg/cm^2/s/Ang'
+    xtitle='Wavelength [Ang]', ytitle='Counts/(10^{-17}erg/cm^2/s/Ang', $
+    title=plottitle
    for k=0, nfinal-1 do begin
       jj = where(mratiologlam[*,0,k] GE logrange[0] $
        AND mratiologlam[*,0,k] LE logrange[1] $
@@ -544,7 +563,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
    iphoto = where(objtype EQ 'SPECTROPHOTO_STD' OR objtype EQ 'REDDEN_STD', $
     nphoto)
    if (nphoto EQ 0) then begin
-      splog, 'WARNING: No spectro-photo stars!'
+      splog, 'WARNING: No SPECTROPHOTO or REDDEN stars for flux calibration'
       return
    endif
 
@@ -581,6 +600,9 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       ; Re-normalize the dispersion from /(raw pixel) to /(new pixel).
       correct_dlam, objflux1, objivar1, wset1, dlam=dloglam
       correct_dlam, dispimg1, 0, wset1, dlam=dloglam, /inverse
+
+      ; Mask pixels on bad fibers
+      objivar1 = objivar1 * spflux_goodfiber(mask1)
 
       loglam[*,ifile,*] = loglam1
       objflux[*,ifile,*] = objflux1
@@ -788,12 +810,18 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       ; Make plots of the spectro-photometry data for this exposure only,
       ; overplotting the global fit to all exposures in red.
 
+      ; The following info is just used for the plot title
+      platestr = string(sxpar(hdr1,'PLATEID'), format='(i4.4)')
+      mjdstr = string(sxpar(hdr1,'MJD'), format='(i5.5)')
+      plottitle = 'PLATE=' + platestr + ' MJD=' + mjdstr $
+       + ' Spectro-Photo Calibration for ' + camname[ifile]
+
       !p.multi = [0,1,2]
       logrange = logmax - logmin
       spflux_plotcalib, $
        thisloglam, thismratio, thismrativar, $
        tmploglam, tmpflux1/flatarr_mean, tmpflux2/flatarr_mean, $
-       logrange=(logmin+[0,1]*logrange/2.)
+       logrange=(logmin+[0,1]*logrange/2.), plottitle=plottitle
       spflux_plotcalib, $
        thisloglam, thismratio, thismrativar, $
        tmploglam, tmpflux1/flatarr_mean, tmpflux2/flatarr_mean, $
