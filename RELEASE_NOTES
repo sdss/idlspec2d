@@ -1,4 +1,5 @@
 
+BADFSTARS: Find bad F stars used for spectro-photometry in the Spectro-2D.
 BATCH2D: Call SPCOMBINE_V5 instead of SPCOMBINE.
         Update the list of output files to correspond to the new v5 outputs.
 COMBINE1FIBER: Add the skies by inputting SKYFLUX and outputting NEWSKY.
@@ -27,6 +28,8 @@ PLOTSIGNAL: New routine for making diagnostic plots of the signal seen
 PLOTSN: Recent changes can make this routine crash if the photo and spectro
         mags are grossly different.  Fix that (though the points will be
         outside the plotting limits).
+PLUGFILE_RELABEL: Relabel the OBJTYPE's for specified objects in all
+        plPlugMapM files.
 READSPEC: Add support for reading the sky (SKY=) from HDU #6 of the spPlate
         files.
 SKYSUBTRACT: Fix possible crash condition, whereby the re-fit to the
@@ -50,6 +53,7 @@ SPFLUX_V5: New code to replace SPFLUX for version 5 outputs.  This computes
 SPFLUXCORR_V5: New code to replace FLUXCORR_NEW.  This will be called
         by SPCOMBINE_V5.
 SPREDUCE: Abort and return from this procedure if no good flats exist.
+SPREDUCE2D: Report peak memory usage.
 UPDATE_PLATE_RELEASE: Code to mark the DR2 plates (for example) from
         the "etc/dr2spectro.par" file into "etc/spPlateList.par".
 
