@@ -68,13 +68,14 @@ end
 
 
 ;------------------------------------------------------------------------------
-function get_alpha, galvar0norm, starvar0norm, inside, broad, galfftnorm, $
+function get_alpha, galvar0norm, starvar0norm, broad, galfftnorm, $
         starfftnorm, maxiter=maxiter
       alpha_old = 1
+      num1 = float(galfftnorm*conj(starfftnorm)*broad)
+      num2 = abs(starfftnorm*broad)^2   
       for j=0,maxiter-1 do begin 
-        denom  = galvar0norm + starvar0norm*(alpha_old*broad[inside])^2
-     alpha  = total(float(galfftnorm*conj(starfftnorm)*broad[inside])/denom)/ $
-                      total(abs(starfftnorm*broad[inside])^2/denom)
+        denom  = galvar0norm + (starvar0norm*alpha_old^2)*broad^2
+        alpha  = total(num1/denom)/total(num2/denom)
         alpha_old = alpha
 ;	print,j,alpha
       endfor
@@ -84,9 +85,23 @@ end
 
 
 ;------------------------------------------------------------------------------
+; Suggestion on errors: 
+;  The error on fourier modes can be estimated from the high k modes. 
+;  Correlations between pixels leads to rolloff in the errors at high k,
+;  compensated by increased errors at low k.  Suggest that 2-d output an
+;  approximate sub-diagonal correlation term.  (Eisenstein)
+;  Chi^2 can be calibrated by taking a random wavelength-space vector of 
+;  unit normals and passing through cosbell (apodized) FFT, estimating
+;  Fourier mode variance in same way as galaxy, computing chi^2 and
+;  comparing result with analytic result. 
+
+; Could also use realization of quoted errors from 2-D for galaxy spectra. 
+; 
+;------------------------------------------------------------------------------
+;------------------------------------------------------------------------------
 function newdiff, galfft, starfft, galvar0, starvar0, $
  testsigma=testsigma, lowlimit = lowlimit, highlimit=highlimit, $
- deltachisq=deltachisq, doplot=doplot
+ deltachisq=deltachisq, doplot=doplot, broadarr=broadarr
 
    if (NOT keyword_set(lowlimit)) then lowlimit = 1.0/80.0
    if (NOT keyword_set(highlimit)) then highlimit = 1.0/2.2
@@ -121,18 +136,34 @@ function newdiff, galfft, starfft, galvar0, starvar0, $
    galvar0norm= galvar0/galnorm^2
    starvar0norm = starvar0/starnorm^2
 
+   ones = 1.+fltarr(ninside)
+   IF NOT keyword_set(broadarr) THEN BEGIN 
+          broadarr = dblarr(ninside, nloop)
+          for i=0,nloop-1 do begin
+             IF testsigma[i] EQ 0 THEN broad = ones ELSE BEGIN 
+                fsig = 1.d/(2.*!dpi)/testsigma[i]
+                broad = gauss_periodic(knums[inside], [1., 0., fsig], shft=1.)
+             ENDELSE 
+             broadarr[*, i] = broad
+          ENDFOR     
+   ENDIF 
+
+
+
+t1=systime(1)
+print,'BEGIN',systime(1)-t1
+
+
    for i=0,nloop-1 do begin
-      fsig = 1.d/(2.*!dpi)/testsigma[i]
-      broad = gauss_periodic(knums, [1., 0., fsig], shft=1.)
-;      broad = exp(-(knums*testsigma[i] * 2.0 * PI)^2/2.0)
-      alpha[i] = get_alpha(galvar0norm, starvar0norm, inside, broad, $
+      broad = broadarr[*, i]
+      alpha[i] = get_alpha(galvar0norm, starvar0norm, broad, $
         galfftnorm, starfftnorm, maxiter=4)
 
-      denom = galvar0norm + starvar0norm*(alpha[i]*broad[inside])^2
-      chi2diff[i] = total(abs(galfftnorm- $
-         starfftnorm*broad[inside]*alpha[i])^2 / denom)
+      denom = galvar0norm + starvar0norm*(alpha[i]*broad)^2
+      num1 = abs(galfftnorm-starfftnorm*(broad*alpha[i]))^2
+      chi2diff[i] = total(num1 / denom)
 ;      plot,knumsinside, float(galfftnorm)
-;      oplot,knumsinside, float(starfftnorm*broad[inside]*alpha[i]),col=150
+;      oplot,knumsinside, float(starfftnorm*broad*alpha[i]),col=150
 
    endfor
 
@@ -141,8 +172,8 @@ function newdiff, galfft, starfft, galvar0, starvar0, $
    mfindchi2min, testsigma, chi2diff, minchi2, minsigma, errsigma, $
     deltachisq = deltachisq, doplot=doplot, npts=ninside
 
-   broad = exp(-(knums*minsigma * 2.0 * PI)^2/2.0)
-   bestalpha = get_alpha(galvar0norm, starvar0norm, inside, broad, $
+   broad = exp(-(knums[inside]*minsigma * 2.0 * PI)^2/2.0)
+   bestalpha = get_alpha(galvar0norm, starvar0norm, broad, $
      galfftnorm, starfftnorm, maxiter=4)
 
 ;   plot,knumsinside, float(galfftnorm)
@@ -157,23 +188,7 @@ print,minsigma, minchi2
    minc = min(chi2diff, alphaplace)
    bestalpha =alpha[alphaplace]
 
-;    bestbroad = exp(-(knums[inside]*minsigma * 2.0 * PI)^2/2.0)    
-;    res= galfft[inside] - starfft[inside]*bestbroad*bestalpha
-;    rediff = float(res*conj(res))
-;   errres=galvar0 + starvar0*bestalpha^2*bestbroad^2
-;    chi= total(rediff/errres)
-;    plot,galfft[inside],ps=0
-;    djs_oplot,starfft[inside]*bestbroad*bestalpha,ps=0,color='red'
-;stop
-;    meanrms=median(sqrt(rediff))
-;    rms=stddev(sqrt(rediff))
-
-;    errsigma = sqrt(minchi2 * deltachisq) * rms/meanrms
-;stop
-;        uppersigma =  minsigma + errsigma
-;        lowersigma = minsigma - errsigma 
-;        errplot, lowersigma,-10, +10
-;	errplot, uppersigma, -10, +10
+print,'END',systime(1)-t1
 
    return, [minchi2, minsigma, errsigma, bestalpha]
 end

@@ -66,7 +66,7 @@ pro mveldisp, objflux, objivar, objwave, starflux, starivar, starwave, $
  result, redshifts= redshifts, czmin=czmin, czmax=czmax, klo_cut=klo_cut, $
  khi_cut=khi_cut, maxsig=maxsig, sigmastep=sigmastep, doplot=doplot, $
  nodiff=nodiff, noquotient=noquotient, nobe=nobe, keep=keep, $
- starnoise=starnoise, continuum=continuum
+ starnoise=starnoise, continuum=continuum, noxcorr=noxcorr
 
 ; set keyword defaults
    if (NOT keyword_set(klo_cut)) then klo_cut = 1.0/128.
@@ -307,23 +307,11 @@ pro mveldisp, objflux, objivar, objwave, starflux, starivar, starwave, $
           fluxfft, fluxfilt, fluxvar0, fluxvariancefft, fluxivar_pad,  $
           khigh, klo_cut=klo_cut, khi_cut=khi_cut
 	
+      if not keyword_set(noxcorr) then begin 
       mfitredshift, fluxfilt, fluxivar_pad, starfilt, starivar_pad, $
         nsearch=5, zfit=fitcen, z_err=fitcen_err, $
         veldispfit=galsigma, veldisp_err=galsigma_err, zconf=zconf, $
         doplot=doplot
-
-      
-; 2nd try
-
-;      IF keyword_set(keep) THEN BEGIN 
-;          mveldisp_fft, objflux[*,iobj], fluxivar, npixbig,  $
-;            fluxfft, fluxfilt, fluxvar0, fluxvariancefft, fluxivar_pad, $
-;            keep=keep*10.^(fitcen/10000.)
-          
-;          mfitredshift, fluxfilt, fluxivar_pad, starfilt, starivar_pad, $
-;            nsearch=5, zfit=fitcen, z_err=fitcen_err, $
-;            veldispfit=galsigma, veldisp_err=galsigma_err, doplot=doplot
-;      ENDIF 
 
       if (keyword_set(redshifts)) then $
       result[iobj].z[istar] = redshifts[iobj] + 10.^(fitcen/10000)-1. $
@@ -344,9 +332,9 @@ pro mveldisp, objflux, objivar, objwave, starflux, starivar, starwave, $
 	fluxobj1=fluxobj/mean(fluxobj)
 	fluxstar1=fluxstar/mean(fluxstar)
 	if (keyword_set(continuum)) then plot,wavestar,fluxstar,ps=0 $
-        else plot,wavestar,fluxstar1,ps=0
+        else plot,wavestar,fluxstar1,ps=0,xr=[5050,5250]
 	if (keyword_set(continuum)) then djs_oplot,waveobj,fluxobj,ps=0,color='red'$
-        else  djs_oplot,waveobj,fluxobj1,ps=0,color='red'
+        else  oplot,waveobj,fluxobj1,ps=0,color=150
 
       endif
 
@@ -361,11 +349,16 @@ pro mveldisp, objflux, objivar, objwave, starflux, starivar, starwave, $
          result[iobj].sigma_cc_err[istar] = sqrt((galsigma_err)^2 + $
           (starsigma_err)^2)*70
       endif
+      ENDIF
 
       twopiei = 2.0 * PI * complex(0.0,1.0)
       knums = fft_wavenums(npixbig)
-      phase = exp( - twopiei * knums * fitcen)
-      starshift = starfft * phase
+; fitcen generated from passed redshift
+;      fitcen = alog10(redshifts[iobj]+1)*1E4  ; in pixels
+
+;      phase = exp( - twopiei * knums * fitcen)
+;      starshift = starfft * phase
+       starshift = starfft
 
       testsigma = findgen(ceil(float(maxsig)/sigmastep) + 1) * sigmastep
 
@@ -375,7 +368,8 @@ pro mveldisp, objflux, objivar, objwave, starflux, starivar, starwave, $
       if (NOT keyword_set(nodiff)) then $
        answer = newdiff(fluxfft, starshift, fluxvar0, $
                 starvar0, testsigma=testsigma, deltachisq=1.0, $
-                lowlimit = 1.0/80.0, highlimit=1.0/5.0, doplot=doplot)
+                lowlimit = 1.0/80.0, highlimit=1.0/5.0, $
+		broadarr=broadarr, doplot=doplot)
 
       bestalpha = -9999.0
 
@@ -404,31 +398,25 @@ pro mveldisp, objflux, objivar, objwave, starflux, starivar, starwave, $
 
 
         if (keyword_set(doplot)) then qtoplot = 3 else qtoplot = 0
+        IF NOT keyword_set(noquotient) THEN BEGIN 
          answerq = mfourier_quot_diff(fluxfft, starshift, fluxvar0, $
                   starvar0, testsigma2=testsigma, deltachisq=1.0, $
                   lowlimit = 1.0/80.0, highlimit=1.0/5., doplot=qtoplot, $
                                      broadarr=broadarrqt)
-
       if (n_elements(answerq) EQ 4) then begin
          result[iobj].sigma_quot_diff[istar] = answerq[1]*70
          result[iobj].sigma_quot_diff_err[istar]  = answerq[2]*70
           bestalpha_q_d = answerq[3]
       endif
+        ENDIF
 
           r = result[iobj]
-      IF NOT keyword_set(noquotient) THEN BEGIN
           print, iobj, istar, r.z[istar], r.z_err[istar], r.sigma_cc[istar], $
             r.sigma_cc_err[istar], r.sigma_quot_diff[istar], r.sigma_quot_diff_err[istar], $
             r.sigma_quotient[istar], r.sigma_quotient_err[istar], r.sigma_diff[istar], $
             r.sigma_diff_err[istar],redshifts[iobj],$
             format='(2(i4),x,f8.5," +/-",f8.5,4(2x,i3," +-",i3),x,f8.5)'
 
-      ENDIF ELSE BEGIN 
-          print, iobj, r.z[istar], r.z_err[istar],  $
-            r.sigma_cc[istar], r.sigma_cc_err[istar], $
-            r.sigma_quot_diff[istar], r.sigma_quot_diff_err[istar], $
-            format='(i4,x,f8.5," +/-",f8.5,2(2x,i3," +-",i3))'
-      ENDELSE 
 
    endfor
    endfor
