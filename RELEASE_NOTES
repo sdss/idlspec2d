@@ -1,9 +1,23 @@
 
+DANVB_CONVERT,DANVB_QSOLIST: Procs for generating a list of input
+            QSO's from Dan van den Berk's EDR list "plateEDR.summ"
+            for generating QSO eingenvectors.  The output file
+            "eigeninput_qso.dat" is then used by PCA_QSO.
 FIND_NMINIMA: Retain each peak only if it is at least MINSEP from all
             previous peaks.
+PCA_CVSTAR: New proc for generating eigen-spectra for CV stars.
+PCA_QSO: Major re-write now that we're trying to use the eigen-spectra
+            from this routine for the redshift-finding code, rather
+            than using the single QSO template that we've used to date.
+            Solve for 4 eigencomponents in rest-frame [460,9300] Ang.
+            Try solving for one eigen-component at a time.  When I tried
+            solving for them all simultaneously, this resulted in an
+            unphysical 1st eigencomponent, probably because each spectrum
+            only covers a small range of rest wavelength.
+            Also, make some plots.
 PCA_SOLVE: Add NRETURN keyword for returning a different number of
             eigen-components from the number used (NKEEP) for replacing
-            bad and noisy data points.
+            bad and noisy data points.  Optionally return NEWFLUX,NEWIVAR.
 PCA_STAR: Major changes to read stellar classes and subclasses,
           then generate the 2-component PCA solution for all M stars
           (for example) and reconstruct types M1 through M9.
@@ -30,6 +44,7 @@ ZFIND: If fewer than NFIND peaks are found, then return blank structures
             for the remaining (NFIND-NPEAK).  Previously, some of those
             fields (such as TFILE,TCOLUMN) were filled with information.
 
+eigeninput_cvstar.dat: New file for PCA_CVSTAR.
 eigeninput_star.dat: Many more M stars added for implementing changes
             to PCA_STAR.
 
