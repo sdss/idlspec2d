@@ -43,14 +43,14 @@
 ;
 ; EXAMPLES:
 ;   Plot the sky spectrum for exposure number 9425 taken in the most
-;   recent night's data in the r2-camera, using the SPLOT plotting tool:
+;   recent night's data in the r1-camera, using the SPLOT plotting tool:
 ;     IDL> apoplotsky, 9425
 ;   The mouse buttons will zoom in (left), recenter (center), or zoom out
 ;   (right).  The frame can be saved as a PostScript file by selecting
 ;   File->WriteEPS from the left-hand corner. 
 ;
-;   Make the same plot, but write a PostScript file:
-;     IDL> apoplotsky, 9425, /psfile
+;   Make the same plot, but change the Y limits and write a PostScript file:
+;     IDL> apoplotsky, 9425, yrange=[0,1000], /psfile
 ;
 ; BUGS:
 ;
@@ -142,7 +142,8 @@ pro apoplotsky, expnum, camname=camname, mjd=mjd, $
    ;----------
    ; Find the tset file, from which we'll read the plug-map structure
 
-   tsetfile = filepath('tset-'+mjdstr+'-'+platestr+'-????????-'+camname+'.fits', $
+   tsetfile = filepath( $
+    'tset-'+mjdstr+'-'+platestr+'-????????-'+camname+'.fits', $
     root_dir=spectrolog_dir, subdir=mjdstr)
    thisfile = (findfile(tsetfile, count=ct))[0]
    if (ct EQ 0) then begin
@@ -167,7 +168,7 @@ pro apoplotsky, expnum, camname=camname, mjd=mjd, $
 
    title = 'Sky for Plate ' + platestr + '  MJD=' + mjdstr $
     + '  ' + camname+'-'+expstr
-   xtitle = 'Wavelength [Ang]'
+   xtitle = 'Vacuum Wavelength [Ang]'
    ytitle = 'Flux [electrons]'
    if (NOT keyword_set(xrange)) then xrange = 10.d0^minmax(loglam)
    if (NOT keyword_set(yrange)) then yrange = minmax(supersky)
@@ -180,14 +181,18 @@ pro apoplotsky, expnum, camname=camname, mjd=mjd, $
       dfpsplot, psfilename, /color, /square
       djs_plot, 10.d0^(loglam[*,iskies]), eachsky, psym=3, $
        xrange=xrange, yrange=yrange, /xstyle, /ystyle, $
-       xtitle=xtitle, ytitle=ytitle, title=title, charsize=1.3
-      djs_oplot, 10.d0^loglam[*,iskies[0]], supersky[*,0], color='red'
+       xtitle=xtitle, ytitle=ytitle, title=title, charsize=1.3, $
+       _EXTRA=KeywordsForSplot
+      djs_oplot, 10.d0^loglam[*,iskies[0]], supersky[*,0], color='red', $
+       _EXTRA=KeywordsForSplot
       dfpsclose
    endif else begin
       splot, 10.d0^(loglam[*,iskies]), eachsky, psym=3, $
        xrange=xrange, yrange=yrange, /xstyle, /ystyle, $
-       xtitle=xtitle, ytitle=ytitle, title=title, charsize=1.3
-      soplot, 10.d0^loglam[*,iskies[0]], supersky[*,0], color='red'
+       xtitle=xtitle, ytitle=ytitle, title=title, charsize=1.3, $
+       _EXTRA=KeywordsForSplot
+      soplot, 10.d0^loglam[*,iskies[0]], supersky[*,0], color='red', $
+       _EXTRA=KeywordsForSplot
    endelse
 
    !quiet = quiet

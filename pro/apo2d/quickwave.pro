@@ -144,6 +144,10 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
 
    if (sxpar(archdr,'quality') EQ 'excellent') then begin
       mwrfits, wset, wsetfile, /create
+      mwrfits, flux, wsetfile
+      mwrfits, fluxivar, wsetfile
+      mwrfits, xpeak, wsetfile
+      mwrfits, ypeak, wsetfile
    endif else begin
       splog, 'Quality is not excellent - do not write wsetfile'
    endelse
