@@ -121,7 +121,7 @@ function lrgmodel_photoz, pflux, pflux_ivar, z_err=z_err, $
    ; Initialize the colors for the templates as a function of redshift.
 
    if (ageburst NE ageburst_save OR zmetal NE zmetal_save $
-    OR keyword_set(synarr) EQ 0) then begin
+    OR keyword_set(synflux) EQ 0) then begin
 
       numz = 101
       zarr = 0.01 * findgen(numz)
