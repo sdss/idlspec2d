@@ -198,17 +198,17 @@ ormask = 0 ; Free memory
     plottitle=plottitle, doplot=doplot, debug=debug)
    splog, 'CPU time to re-fit GALAXY redshifts = ', systime(1)-t0
 
+   ; Only solve for velocity dispersions for the best-fit
    splog, 'Find velocity dispersions for galaxies'
    t0 = systime(1)
-   for ifind=0, nfind-1 do begin
-      vdispfit, objflux, objivar, hdr=hdr, zobj=res_gal[ifind,*].z, $
-       eigenfile='spEigenElodie.fits', columns=lindgen(20), $
-       sigma=sigma, sigerr=sigerr, yfit=dispflux1
-      res_gal[ifind,*].vdisp = reform([sigma],1,nobj)
-      res_gal[ifind,*].vdisp_err = reform([sigerr],1,nobj)
-      if (ifind EQ 0) then dispflux = dispflux1
-      dispflux1 = 0 ; clear memory
-   endfor
+   ifind = 0
+   vdans = vdispfit(objflux, objivar, hdr=hdr, zobj=res_gal[ifind,*].z, $
+    eigenfile='spEigenElodie.fits', columns=lindgen(24), yfit=dispflux)
+   res_gal[ifind,*].vdisp = reform([vdans.vdisp],1,nobj)
+   res_gal[ifind,*].vdisp_err = reform([vdans.vdisp_err],1,nobj)
+   res_gal[ifind,*].vdispchi2 = reform([vdans.vdispchi2],1,nobj)
+   res_gal[ifind,*].vdispnpix = reform([vdans.vdispnpix],1,nobj)
+   res_gal[ifind,*].vdispdof = reform([vdans.vdispdof],1,nobj)
    splog, 'CPU time to fit GALAXY velocity dispersions = ', systime(1)-t0
 
    res_gal.class = 'GALAXY'
@@ -412,6 +412,7 @@ ormask = 0 ; Free memory
    ;----------
    ; Add other fields to the output structure
 
+   splog, 'Adding other fields to output structure'
    res1 = { plate:    long(sxpar(hdr, 'PLATEID')), $
             tile:     long(sxpar(hdr, 'TILEID')), $
             mjd:      long(sxpar(hdr, 'MJD')), $
@@ -476,6 +477,7 @@ ormask = 0 ; Free memory
    ;----------
    ; Set ZWARNING flags.
 
+   splog, 'Setting ZWARNING flags'
    zwarning = lonarr(nper,nobj)
 
    ; Warning: Sky fiber.
@@ -517,6 +519,7 @@ ormask = 0 ; Free memory
    ;----------
    ; Write the output files
 
+   splog, 'Writing output files'
    sxaddpar, hdr, 'NAXIS', 0
    sxdelpar, hdr, 'NAXIS1'
    sxdelpar, hdr, 'NAXIS2'
