@@ -13,6 +13,9 @@ APO_LOG2HTML: Mistakenly was listing times as hr:sec instead of hr:min!
            original FITS file from which the HTML is generated).
 APOPLOT,PLOTSPEC: Change the http address for Kent's image server to
            its new location at http://sdssmosaic.fnal.gov:8015/.
+FIND_NMINIMA: Add /DEBUG keyword; small changes to plotting.
+FINDCHI2MIN: Clean up this code some.
+           This routine used to be used by VDISPFIT, but is no longer.
 FLUXCORR_NEW:  Return all zeros in fluxcorr image if 
                   "WARNING: No spectrophoto with high S/N"
            No longer required checking of "Bad" values for medium S/N.
@@ -59,11 +62,23 @@ SPREDUCE1D: Set the ZWARNING=8 flag (synthetic spectrum is negative) only
            components to fit QSO's now, nor for CV stars for the same reason.
            Use the file 'spEigenElodie.fits' for computing velocity dispersions.
            Write out the best-fit velocity-dispersion spectrum as HDU#3.
+           Make consistent with changes to VDISPFIT.
 TRACE320CRUDE: Threshold to set 'BADTRACE' is now 45% bad pixels, whereas
            it used to be 20%.
 VDISPFIT: Option to return the best fit with YFIT keyword.
            Mask out +/- 6 pix from emission lines instead of only 4 pix.
            Option to pass EIGENFILE,EIGENDIR rather than use default file.
+           Use FIND_NMINIMA instead of FINCHI2MIN to find the minimum,
+           since the latter did a spline fit that could wiggle in
+           unconstrained ways.
+           In cases of bad fits, return error codes as negative VDISP_ERR.
+           Insist that convolution kernel have odd number of elements, and
+           convolve with /CENTER keyword.
+           Only cache over-sampled templates if the template file name
+           is unchanged between calls.
+           Make this routine a function that returns a structure.
+           Also return VDISPCHI2,VDISPNPIX,VDISPDOF in output structure.
+ZFIND: Add fields to the output structure needed for velocity dispersions.
 
 aporsync_logs.sh : 
            Changed the syntax to just copy these type of files in astrolog
