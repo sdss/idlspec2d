@@ -1,7 +1,12 @@
 
+CREATE_LINESTRUCT(): Function broken out of LINEBACKFIT so that it
+            can be called by SPECLINEFIT.
 SPCOADD_FRAMES: Remove the following keywords from the spPlate file:
             PIXBIAS,FLATFILE,ARCFILE,OBJFILE.
 SPECLINEFIT: Fixed dumb mistake on indexing that could crash.
+            Always create an NLINE x NOBJ output structure, with blank
+            entries where we do not measure lines (currently, only
+            measuring for GALAXY objects).
 
 opHdrFix.par: Declare bad aborted smears for plate 601 and 803.
             Declare bad exposure on plate 866.
