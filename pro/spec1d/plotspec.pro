@@ -17,6 +17,7 @@
 ;                data for this plate (largest MJD).
 ;   nsmooth    - If set, then boxcar smooth both the object and synthetic
 ;                spectra with a width equal to NSMOOTH.
+;   _EXTRA     - Kewords for SPLOT, such as XRANGE, YRANGE, THICK.
 ;
 ; OUTPUTS:
 ;
@@ -37,8 +38,9 @@
 ;   The frame can be saved as a PostScript file by selecting File->WriteEPS
 ;   from the left-hand corner. 
 ;
-;   Make the same plot, but boxcar-smooth the spectrum: 
-;     IDL> plotspec, 401, 100, nsmooth=10
+;   Make the same plot, but boxcar-smooth the spectrum and limit the
+;   wavelength range to [4000,5000] Angstroms:
+;     IDL> plotspec, 401, 100, nsmooth=10, xrange=[5000,6000]
 ;
 ;   Some plates are observed on multiple nights. To select one of the two
 ;   observations of plate 306: 
@@ -59,7 +61,8 @@
 ;   01-Sep-2000  Written by D. Schlegel, Princeton
 ;-
 ;------------------------------------------------------------------------------
-pro plotspec, plate, fiberid, mjd=mjd, nsmooth=nsmooth
+pro plotspec, plate, fiberid, mjd=mjd, nsmooth=nsmooth, $
+ _EXTRA=KeywordsForSplot
 
    if (n_elements(plate) NE 1 OR n_elements(fiberid) NE 1) then $
     message, 'PLATE and FIBERID must be scalars'
@@ -98,9 +101,9 @@ pro plotspec, plate, fiberid, mjd=mjd, nsmooth=nsmooth
    splot, wave, objflux, yrange=[ymin,ymax], $
     xtitle='Wavelength [Ang]', $
     ytitle=TeXtoIDL('Flux [10^{-17} erg/cm/s/Ang]'), $
-    title=title, charsize=csize
-   soplot, wave, objerr, color='red'
-   soplot, wave, synflux, color='blue', lw=2
+    title=title, charsize=csize, _EXTRA=KeywordsForSplot
+   soplot, wave, objerr, color='red', _EXTRA=KeywordsForSplot
+   soplot, wave, synflux, color='blue', _EXTRA=KeywordsForSplot, lw=2
 
    xpos = 0.9 * !x.crange[0] + 0.1 * !x.crange[1]
    dypos = 0.05 * (!y.crange[0] - !y.crange[1])
