@@ -340,10 +340,10 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
       return
    endif
 
-   ;***********************************************************************
+   ;-----------------------------------------------------------------------
    ; Do spectral typing of standards & derive sphoto correction for 
    ; each frame, then apply it
-   ;***********************************************************************
+   ;-----------------------------------------------------------------------
 
    words = strsplit(fcalibprefix, '-', /extract)
    sphoto_err = fltarr(n_elements(camerasvec))
@@ -387,8 +387,12 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
 
        junk = mrdfits(fcalfiles[iframe], 0, calibhdr, /silent)
        calibset = mrdfits(fcalfiles[iframe], 1)
+
+       ; Store measures of spectrophotometry error to use later in 
+       ; deciding which exposure is the best
        sphoto_err[where(camerasvec eq camid and expid eq frames[iframe])] $
                   = sxpar(calibhdr, 'SPHOTERR')
+
        cwavemin = sxpar(calibhdr, 'WAVEMIN')
        cwavemax = sxpar(calibhdr, 'WAVEMAX')
        calibfac = bspline_valu(wave[*,indx], calibset)
@@ -411,82 +415,26 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
      endfor
    endfor
 
-   ;***********************************************************************
-   ; Check for offsets in dichroic region & adjust the blue frame to 
-   ; match the red
-   ;***********************************************************************
-
-   for specid = 1, 2 do begin
-     for iframe = 0, n_elements(frames) - 1 do begin
-        bindx = where(fibertag.expid eq frames[iframe] AND $
-                      fibertag.camcolor eq 'b' AND $
-                      fibertag.spectrographid eq specid)
-        rindx = where(fibertag.expid eq frames[iframe] AND $
-                      fibertag.camcolor eq 'r' AND $
-                      fibertag.spectrographid eq specid)
-
-        nspec = n_elements(bindx)
-        bdflux = fltarr(nspec)
-        rdflux = fltarr(nspec)
-        weight = fltarr(nspec)
-        for ispec = 0, nspec - 1 do begin
-          boverlap = where(wave[*,bindx[ispec]] gt min(wave[*,rindx[ispec]]))
-          roverlap = where(wave[*,rindx[ispec]] lt max(wave[*,rindx[ispec]]))
-          bdflux[ispec] = median(flux[boverlap,bindx[ispec]]) 
-          rdflux[ispec] = median(flux[roverlap,rindx[ispec]]) 
-          weight[ispec] = median(fluxivar[boverlap,bindx[ispec]]) > $
-                          median(fluxivar[roverlap,rindx[ispec]])
-        endfor
-
-        ok = where(rdflux gt 0 and finite(rdflux) and $
-                   bdflux gt 0 and finite(bdflux) and $
-                   weight gt 0 and finite(weight))
-        tempratio = rdflux[ok]/bdflux[ok]
-        meanclip, tempratio, subs = goodpts
-        ok = ok[goodpts]
-        mean_ratio = total(rdflux[ok]/bdflux[ok] * weight[ok]) $
-                            / total(weight[ok])
-
-        ; If weighted mean not near median, then use median
-        median_ratio = median(rdflux[ok]/bdflux[ok])
-        
-        ;if abs(mean_ratio - median_ratio) gt 0.2 then $
-          rb_dichroic_ratio = median_ratio ;$
-        ;else rb_dichroic_ratio = mean_ratio
-        
-        ;QA plot
-         plothist, rdflux[ok]/bdflux[ok], xr=[0.5, 1.5], bin=0.01, $
-           xtitle = 'Red/Blue Dichroic flux ratio', ytitle = 'Number'
-         djs_oplot, [1, 1] * mean_ratio, [0, 200], color='red'
-         djs_oplot, [1, 1] * median_ratio, [0, 200], color='blue'
-         djs_oplot, [1, 1] * rb_dichroic_ratio, [0, 200], color='green', $
-            linestyle = 2
-
-        splog, 'R/B dichroic ratio for ' + frames[iframe] + ': ', $
-               string(rb_dichroic_ratio, format = '(F6.3)')
-
-;        flux[*,bindx] = flux[*,bindx] * rb_dichroic_ratio
-     endfor
-   endfor
-
-   ;***********************************************************************
-   ; Now correct each fiber of each frame to look like the calib exposure
-   ;***********************************************************************
-
-   ;--------------------------------------
-   ; Correct each spectrum for frame to frame differences (formerly using
-   ; the smear exposure -- now using the best quality exposure) 
-   ; This needs to be done in blue-red pairs!!!
+   ;-----------------------------------------------------------------------
+   ; Correct each spectrum for exposure to exposure differences (formerly 
+   ; using the smear exposure -- now using the best quality exposure) 
+   ; Note -- this is done in blue-red pairs!
+   ;-----------------------------------------------------------------------
 
    iframe_b1 = where(fibertag.camcolor eq 'b' and fibertag.spectrographid eq 1)
    iframe_r1 = where(fibertag.camcolor eq 'r' and fibertag.spectrographid eq 1)
    iframe_b2 = where(fibertag.camcolor eq 'b' and fibertag.spectrographid eq 2)
    iframe_r2 = where(fibertag.camcolor eq 'r' and fibertag.spectrographid eq 2)
 
+   ;---------------
+   ; Determine which exposure is best from the S/N and spectrophotometry errors
+  
+   ; add up the S/N^2 of the 4 frames per exposure (b1, b2, r1, r2)
    sn2_exp = sn2[where(camerasvec eq 'b1')] + sn2[where(camerasvec eq 'r1')] $
            + sn2[where(camerasvec eq 'b2')] + sn2[where(camerasvec eq 'r2')] 
 
-   sphoto_err = 1 - sphoto_err
+   ; add up the spectrophotometry errors for the 4 frames per exposure
+   sphoto_sn2 = (1 / sphoto_err)^2
    sphoto_exp = sphoto_err[where(camerasvec eq 'b1')] + $
                 sphoto_err[where(camerasvec eq 'r1')] + $
                 sphoto_err[where(camerasvec eq 'b2')] + $
@@ -494,10 +442,14 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
 
    ; Pick the best exposure (want the same one for spec 1 & 2)
    maxval = max(sn2_exp/median(sn2_exp) + $
-                3 * sphoto_exp/median(sphoto_exp), iframe_best)
+                sphoto_exp/median(sphoto_exp), iframe_best)
    uniqexp = expid[where(camerasvec eq 'b1')]
    best_exp = uniqexp[iframe_best]
- 
+   splog, 'Best Exposure is: ' + best_exp
+
+   ;------------------
+   ; Compute the exposure-to-exposure corrections (1/fiber)
+
    corrfiles1 = 'spFluxcorr-' + uniqexp + '-1.fits'
    corrfiles2 = 'spFluxcorr-' + uniqexp + '-2.fits'
 
@@ -516,10 +468,8 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
 
    ;--------------------------------------
    ; Read back the corrections and apply
-   ;--------------------------------------
 
    ; Loop through each exposure & camera
-   
    for iexp = 0, n_elements(expid) - 1 do begin
      corrfile = 'spFluxcorr-' + expid[iexp] + '-' + $
                 strmid(camerasvec[iexp], 1, 1) + '.fits'
@@ -531,22 +481,22 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
 
      traceset2xy, corrset, wave[*,indx], corrimg
 
+     ; Don't let the flux correction be more than a factor of 5!!
      invertcorr = 1.0 / corrimg
-     medcor = median(corrimg)
      tempflux = flux[*,indx]
      tempivar = fluxivar[*,indx]
-     divideflat, tempflux, invvar=tempivar, invertcorr, minval=0.05/medcor
-
-     pixelmask[*,indx] = pixelmask[*,indx] OR $
-         (corrimg GE 20.0 * medcor) * pixelmask_bits('BADFLUXFACTOR')
+     divideflat, tempflux, invvar=tempivar, invertcorr, minval=0.25
 
      flux[*,indx] = tempflux
      fluxivar[*,indx] = tempivar
+     pixelmask[*,indx] = pixelmask[*,indx] OR $
+                         (corrimg GE 4) * pixelmask_bits('BADFLUXFACTOR')
+     pixelmask[*,indx] = pixelmask[*,indx] OR $
+                         (corrimg LE 0.25) * pixelmask_bits('BADFLUXFACTOR')
+
    endfor
 
    set_plot, 'x'
-
-   ;***********************************************************************
 
    ;---------------------------------------------------------------------------
    ; Construct output data structures, including the wavelength scale
@@ -630,21 +580,11 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
       if (indx[0] NE -1) then begin
          temppixmask = pixelmask[*,indx]
          combine1fiber, wave[*,indx], flux[*,indx], fluxivar[*,indx], $
-          finalmask=temppixmask, indisp=dispersion[*,indx], $
-          newloglam=finalwave, newflux=bestflux, newivar=bestivar, $
-          andmask=bestandmask, ormask=bestormask, newdisp=bestdispersion, $
-          nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep, $
-          maxiter=50, upper=3.0, lower=3.0, maxrej=1
-
-   ;---------------------------------------------------------------------------
-   
-         ; QA plot
-         plot, 10.0^finalwave, bestflux, xr=[3800, 9200], /xs
-         for ii = 0, n_elements(indx) - 1 do $
-           djs_oplot, 10.0^wave[*,indx[ii]], djs_median(flux[*,indx[ii]], $
-                      width=75, boundary='reflect'), color=!red
-
-   ;---------------------------------------------------------------------------
+           finalmask=temppixmask, indisp=dispersion[*,indx], $
+           newloglam=finalwave, newflux=bestflux, newivar=bestivar, $
+           andmask=bestandmask, ormask=bestormask, newdisp=bestdispersion, $
+           nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep, $
+           maxiter=50, upper=3.0, lower=3.0, maxrej=1
 
          finalflux[*,ifiber] = bestflux
          finalivar[*,ifiber] = bestivar
@@ -654,6 +594,15 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
 
          ; The following adds the COMBINEREJ bit to the input pixel masks
          pixelmask[*,indx] = temppixmask
+
+         ;-------------
+         ; QA plot
+
+         plot, 10.0^finalwave, bestflux, xr=[3800, 9200], /xs
+         for ii = 0, n_elements(indx) - 1 do $
+           djs_oplot, 10.0^wave[*,indx[ii]], djs_median(flux[*,indx[ii]], $
+                      width=75, boundary='reflect'), color=!red
+
       endif else begin
          splog, 'Fiber', ifiber+1, ' NO DATA'
          finalandmask[*,ifiber] = pixelmask_bits('NODATA')
@@ -661,7 +610,7 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
       endelse
    endfor
 
-   ;----------
+   ;-------------
    ; Clear memory
 
    wave = 0
