@@ -38,8 +38,9 @@ pro traceset2xy, tset, xpos, ypos
       return
    endif
 
-   case tset.func of
-   'legendre': begin
+
+   if (tset.func EQ 'legendre' OR tset.func EQ 'chebyshev') then begin
+
       ndim = size(tset.coeff, /n_dim)
       dims = size(tset.coeff, /dim)
 
@@ -61,14 +62,15 @@ pro traceset2xy, tset, xpos, ypos
 
       ypos = fltarr(nx, nTrace)
       xvec = 2.0 * findgen(nx)/(nx-1) - 1.0
-      legarr = flegendre(xvec, ncoeff)
+      if (tset.func EQ 'legendre') then legarr = flegendre(xvec, ncoeff)
+      if (tset.func EQ 'chebyshev') then legarr = fchebyshev(xvec, ncoeff)
       for iTrace=0, nTrace-1 do begin
          ypos[*,iTrace] = legarr # tset.coeff[*,iTrace]
       endfor
 
-      end
-   else: error, 'Unknown function' + func
-   endcase
+   endif else begin
+      error, 'Unknown function' + func
+   endelse
 
    return
 end

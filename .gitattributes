@@ -7,12 +7,14 @@ include/evilmath.h -text
 include/export.h -text
 pro/extract_boxcar.pro -text
 pro/extract_profile.pro -text
+pro/flegendre.pro -text
 pro/funccheb.pro -text
 pro/makefile -text
 pro/rdss_fits.pro -text
 pro/sdssproc.pro -text
 pro/spec2d/extract_boxcar.pro -text
 pro/spec2d/extract_profile.pro -text
+pro/spec2d/flegendre.pro -text
 pro/spec2d/funccheb.pro -text
 pro/spec2d/makefile -text
 pro/spec2d/rdss_fits.pro -text

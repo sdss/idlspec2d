@@ -15,7 +15,9 @@
 ; OPTIONAL KEYWORDS:
 ;   func       - Function for trace set; options are:
 ;                'legendre'
-;   ncoeff     - Number of coefficients in fit
+;                'chebyshev'
+;                Default to 'legendre'
+;   ncoeff     - Number of coefficients in fit; default to 3
 ;
 ; OUTPUTS:
 ;   tset       - Structure containing trace set
@@ -28,9 +30,11 @@
 ;
 ; PROCEDURES CALLED:
 ;   flegendre()
+;   fchebyshev()
 ;
 ; REVISION HISTORY:
 ;   19-May-1999  Written by David Schlegel, Princeton.
+;   04-Aug-1999  Added chebyshev option (DJS).
 ;-
 ;------------------------------------------------------------------------------
 pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff
@@ -56,12 +60,14 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff
       message, 'XPOS contains invalid number of dimensions'
    endelse
 
-   case func of
-   'legendre': begin
+   if (func EQ 'legendre' OR func EQ 'chebyshev') then begin
+      if (func EQ 'legendre') then function_name = 'flegendre'
+      if (func EQ 'chebyshev') then function_name = 'fchebyshev'
+
       if (NOT keyword_set(ncoeff)) then ncoeff = 3
 
       tset = $
-      { func    :    'legendre'        , $
+      { func    :    func              , $
         xmin    :    0.0               , $
         xmax    :    0.0               , $
         coeff   :    fltarr(ncoeff, nTrace) $
@@ -76,13 +82,13 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff
 ;         res = svdfit(2.0*(xpos[*,i]-xmid)/xrange, ypos[*,i], ncoeff, $
 ;          /double, /legendre, singular=singular)
          res = svdfit(2.0*(xpos[*,i]-xmid)/xrange, ypos[*,i], ncoeff, $
-          /double, function_name='flegendre', singular=singular)
+          /double, function_name=function_name, singular=singular)
          tset.coeff[*,i] = res
       endfor
 
-      end
-   else: error, 'Unknown function' + func
-   endcase
+   endif else begin
+      error, 'Unknown function' + func
+   endelse
 
    return
 end
