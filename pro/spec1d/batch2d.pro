@@ -103,7 +103,7 @@ end
 ; This doesn't yet check to see if things have already been run for some plates
 pro batch2d, platenums, topdir=topdir, mjd=mjd, mjstart=mjstart, mjend=mjend
 
-   if (NOT keyword_set(platenums)) then platenums = ''
+   if (NOT keyword_set(platenums)) then platenums = '*'
    if (NOT keyword_set(topdir)) then begin
       cd, current=topdir
       cd, topdir
