@@ -41,13 +41,16 @@
 ; PROCEDURES CALLED:
 ;   djs_locate_file()
 ;   djs_median()
+;   djs_plot
 ;   extract_boxcar()
 ;   extract_image
+;   fiberflat()
 ;   fit_skyset
 ;   fitarcimage
 ;   fluxcorr()
 ;   locateskylines
 ;   qaplot_arcline
+;   qaplot_fflat
 ;   qaskylines
 ;   qaplot_fflat
 ;   readcol
@@ -412,15 +415,20 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
          fluxivar, proftype=proftype, wfixed=wfixed, fitans=fitans, $
          highrej=highrej, lowrej=lowrej, nPoly=0, whopping=whopping, $
          chisq=chisq, ymodel=ymodel2
-;
-;	contour plot of scattered light
-;
-	contour, scatfit, /follow, nlevels = 10, /xstyle, /ystyle, $
-           title='Scattered light fit for '+objname[iobj], c_charsize=1.5
-;
-;	chisq plot for fit calculcated in extract image 
-;
-        plot, chisq, ytitle = 'Chi^2', title=objname[iobj], xtitle='Row number'
+
+         ;------
+         ; QA contour plot of scattered light
+
+         contour, scatfit, /follow, nlevels = 10, /xstyle, /ystyle, $
+          title='Scattered light image for '+objname[iobj], c_charsize=1.5
+
+         ;------
+         ; QA chisq plot for fit calculcated in extract image 
+
+         xaxis = indgen(N_elements(chisq)) + 1
+         djs_plot, fibernum, chisq, $
+          xtitle='Row number',  ytitle = '\chi^2', $
+          title='Extraction chi^2 for '+objname[iobj]
 
         ;------------------
         ; Flat-field the extracted object fibers with the global flat
