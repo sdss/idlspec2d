@@ -491,6 +491,9 @@ The following messages may appear:
     exists but is not a valid Yanny parameter file.  This file is written
     by the IDL procedure APOFIX if the observers' have run that proc
     on sos.apo, but can also be edited by hand.
+    If the file is invalid, you should edit it to be valid, or delete it.
+    If the APOFIX command somehow generated an invalid file, then file
+    a PR against sospectro.
 <LI><B>Exposure number in header disagrees w/filename</B> <BR>
     This means that IOP/SOP is in a very confused state, and it
     is putting a different exposure number in the header (EXPOSURE
@@ -627,31 +630,6 @@ The following messages may appear:
     (see <A HREF="spectro_apodisplay.html">Displaying Spectra at APO</A>).
     Should it be saturating, reduce the exposure time to prevent saturation
     or move on to the next plate.
-<LI><B>Bad sky residuals at ....</B> <BR>
-    There is very poor sky-subtraction of the sky fibers at these wavelengths.
-    This means that, somehow, there is excess light down the fibers that
-    varies across the plate.  This could be due to a light source near the
-    telescope, or possibly a bright, non-uniform sky.  The threshhold is set
-    at reduced chi=2.  Note that other, horrendous problems (like a warm CCD,
-    scattered light, or out-of-focus spectrographs) could also trigger this.
-    In that case, there should be relevant warning messages preceding this one.
-    If there is auroral activity, then this could be triggered at a few
-    specific lines like O_I at 6300 Ang.
-    This message can also be ignored at the edges of the CCDs
-    wavelength coverage -- near 3800 or 6200 Ang for b1,b2 or near
-    5800 or 9200 Ang for r1,r2 (c.f. PR 3656).
-    If none of the above apply, then there is some real problem.
-    I would look at the images and/or spectra to look for any obvious problems,
-    and file a PR against sospectro.  Might as well keep observing?
-<LI><B>Red Monster at ....</B> <BR>
-    This warning is triggered if we see bad sky residuals (above) that
-    is specifically in the wavelength range of about 6400-6600 Ang.
-    We think this happens when the handpaddle is still plugged in,
-    in which case the observers should unplug it immediately.
-    The treshhold is set at reduced chi=2, and the worst that we have ever seen
-    is at about the level chi=6.  The last time we definitively saw this was on
-    plate 426 on 3/4 Dec 2000 (MJD 51882).  If you cannot find the source
-    of the excess light, keep observing but file a PR against sospectro.
 <LI><A NAME="diskfull"><B>SOS disk is ...% full</B></A> <BR>
     The specified disk on sos.apo is more than 95% full.  This could be
     either the disk used to copy the raw sdR images from sdsshost.apo,
@@ -662,6 +640,61 @@ The following messages may appear:
     (see <A HREF="#howwork">How Son-of-Spectro Works</A>).
     You could delete files from a previous night first on sdsshost.apo,
     then from sos.apo.
+</UL>
+The following warning messages are all based upon the quality of
+the sky-subtraction.  Typically, we are able to model the sky spectrum
+(from the 16 sky fibers on each spectrograph) with a relative chi^2
+of around unity.  At very bright sky lines, like 5577 Ang, the relative
+chi^2 may be as large at 25.  If the relative chi^2 is large at
+other wavelengths, this means that there is excess light down the fibers
+that varies across the plate.  This could be due to a light source near the
+telescope, or possibly a bright, non-uniform sky.  Strong auroral activity
+is something that can do this, since the O I lines at 6300 and 6366 Ang
+are resolved on the sky.
+<UL>
+<LI><B>Median sky-residual chi2 = ... at ... Ang</B> <BR>
+    The median reduced chi^2 for sky-subtraction is always around unity.
+    If it is greater than 2, this message is triggered.  If this message
+    appears and you are not observing during twilight or with warm CCDs,
+    then there must be a serious problem.  Seriously out-of-focus
+    spectrographs might trigger this, or lights on near the telescope.
+<LI><B>Max sky-residual chi2 = ... at ... Ang (ignoring 5577)</B> <BR>
+    This is an informational message triggered if the reduced chi^2 is
+    greater than 100 anywhere other than at the 5577 Ang sky line.
+    If there is auroral activity, then this could be triggered at a few
+    specific lines like O I at 6300 and 6366 Ang.  These O I lines has
+    reduced chi^2 values of about 100 on MJD 51999 during a solar storm
+    (i.e. plate 336/51999).
+    The Spectro-2D pipeline will automatically mask these wavelengths
+    for any down-stream analyses.
+<LI><B>Bad sky residuals at ....</B> <BR>
+    This warning is triggered if there is a range of at least 25 Angstroms
+    with a reduced chi in the sky-subtraction worse than 2.
+    This could be due to a light source near the telescope, a bright,
+    non-uniform sky, a warm CCD, scattered light, or out-of-focus spectrographs.
+    For most of those cases, there should be other relevant warning messages
+    preceding this one (like a warm CCD message).
+    This message should be ignored at the edges of the CCDs
+    wavelength coverage -- near 3800 or 6200 Ang for b1,b2 or near
+    5800 or 9200 Ang for r1,r2 (c.f. PR 3656).
+    If none of the above explanations apply, then there is some real problem.
+    I would look at the images and/or spectra to look for any obvious problems,
+    and file a PR against sospectro
+    (see <A HREF="spectro_apodisplay.html">Displaying Spectra at APO</A>).
+    Might as well keep observing?
+<LI><B>Red Monster at ....</B> <BR>
+    This warning is triggered if we see bad sky residuals (above) that
+    is specifically in the wavelength range of about 6400-6600 Ang.
+    We think this happens when the handpaddle is still plugged in,
+    in which case the observers should unplug it immediately.
+    The treshhold is set at reduced chi=2, and the worst that we have ever seen
+    is at about the level chi=6.  The last time we definitively saw this was on
+    plate 426 on 3/4 Dec 2000 (MJD 51882).
+    You should be able to see a bump in the extracted spectra, especially
+    for the sky fibers
+    (see <A HREF="spectro_apodisplay.html">Displaying Spectra at APO</A>).
+    If you cannot find the source
+    of the excess light, keep observing but file a PR against sospectro.
 </UL>
 
 <H4><A NAME="outputs_log">Log files</A></H4>
