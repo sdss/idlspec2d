@@ -92,7 +92,6 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
 
        if hmm[0] NE -1 then begin
          spcombine, planfile[i], adderr=0
-         platesn, planfile=planfile[i]
          make2dmerge, planfile[i]  
        endif
      endfor
