@@ -35,6 +35,13 @@ DANVB_CONVERT,DANVB_QSOLIST: Procs for generating a list of input
             "eigeninput_qso.dat" is then used by PCA_QSO.
 DIVIDEFLAT: Make INVVAR an optional keyword instead of an input for DIVIDEFLAT.
             Change the procedures that call this.
+EXTRACT_OBJECT,SPBIASGEN,SPCALIB,SPREDUCE: For TAI time, use the midpoint
+            of the observation as determined by TAI-BEG + 0.5 * EXPTIME
+            from the header.
+EXTRACT_OBJECT,SPREDUCE: No longer write the sky vectors to a different file,
+            but write them to the spFrame files.  Also, always write the
+            telluric-correction array, which will simply be an empty HDU
+            for the blue CCDs.
 FIND_NMINIMA: Retain each peak only if it is at least MINSEP from all
             previous peaks.
 FINDSPEC: Crash if the plate list file is missing w/ an informative message.
