@@ -38,6 +38,9 @@
 ; OPTIONAL OUTPUTS:
 ;   newflux        - Resampled flux.
 ;   newivar        - Resampled inverse variance.
+;   finalmask      - Modified from its input by setting the COMBINEREJ bit
+;                    for deviant pixels in individual spectra that have
+;                    been rejected.
 ;   andmask        - Resampled mask. For each mask bit, set that bit only if
 ;                    every input spectrum at this wavelength has that bit set
 ;                    (e.g., this is a logical AND).
