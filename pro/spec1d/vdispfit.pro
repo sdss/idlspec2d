@@ -1,14 +1,67 @@
-; OPTIONAL KEYWORDS:
+;+
+; NAME:
+;   vdispfit
+;
+; PURPOSE:
+;   Compute velocity dispersions for galaxy spectra.
+;
+; CALLING SEQUENCE:
+;   vdispfit, objflux, objivar, [ objloglam, hdr=, zobj=, npoly=, $
+;    sigma=, sigerr= ]
+;
+; INPUTS:
+;   objflux    - Galaxy spectrum (spectra); array of [NPIX,NGALAXY].
+;   objivar    - Galaxy inverse variance; array of [NPIX,NGALAXY].
+;
+; OPTIONAL INPUTS:
+;   objloglam  - Log-10 wavelengths; this can be either an NPIX vector
+;                if all the galaxy spectra have the same wavelength mapping,
+;                or an array with the same dimensions as OBJFLUX.
+;                Either OBJLOGLAM or HDR must be specified.
+;   hdr        - FITS header from which to read COEFF0, COEFF1 for the
+;                wavelength mapping.
+;                Either OBJLOGLAM or HDR must be specified.
+;   zobj       - Redshift for each galaxy; default to 0.
 ;   npoly      - Number of polynomial terms to append to eigenspectra;
-;                default to none.
-
+;                default to 5.
+;
+; OUTPUTS:
+;
+; OPTIONAL OUTPUTS:
+;   sigma      - Velocity dispersion in km/sec.
+;   sigerr     - Error for SIGMA in km/sec.
+;
+; COMMENTS:
+;   Note that the wavelength spacing in the galaxy and stellar template spectra
+;   must be the same.
+;
+; EXAMPLES:
+;
+; BUGS:
+;
 ; DATA FILES:
 ;   $IDLSPEC2D_DIR/templates/TEMPLATEFILES
+;
+; PROCEDURES CALLED:
+;   combine1fiber
+;   computechi2()
+;   djs_filepath()
+;   findchi2min
+;   mrdfits()
+;   poly_array()
+;   splog
+;   sxpar()
+;
+; INTERNAL SUPPORT ROUTINES:
+;   vdisp_gconv()
+;
+; REVISION HISTORY:
+;   13-Mar-2001  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
 function vdisp_gconv, x, sigma, _EXTRA=EXTRA
 
    ; Special case for no smoothing
-   if sigma eq 0 then return, x
+   if (sigma EQ 0) then return, x
 
    ksize = round(4*sigma+1) * 2
    xx = findgen(ksize) - ksize/2
@@ -20,8 +73,8 @@ function vdisp_gconv, x, sigma, _EXTRA=EXTRA
 
    return, sm
 end
-;------------------------------------------------------------------------------
 
+;------------------------------------------------------------------------------
 pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
  sigma=sigma, sigerr=sigerr
 
@@ -35,6 +88,7 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
    npixobj = dims[0]
    if (size(objflux, /n_dimen) EQ 1) then nobj = 1 $
     else nobj = dims[1]
+   if (NOT keyword_set(zobj)) then zobj = fltarr(nobj)
 
    ;---------------------------------------------------------------------------
    ; If multiple object flux vectors exist, then call this routine recursively.
@@ -42,20 +96,17 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
    if (nobj GT 1) then begin
       sigma = fltarr(nobj)
       sigerr = fltarr(nobj)
+      lamdims = size(objloglam, /n_dimens)
       for iobj=0, nobj-1 do begin
-         if (keyword_set(objloglam)) then $
-          vdispfit, objflux[*,iobj], objivar[*,iobj], objloglam[*,iobj], $
-           zobj=zobj[iobj], npoly=npoly, sigma=sigma1, sigerr=sigerr1 $
-         else $
-          vdispfit, objflux[*,iobj], objivar[*,iobj], hdr=hdr, $
-           zobj=zobj[iobj], npoly=npoly, sigma=sigma1, sigerr=sigerr1
+         if (lamdims EQ 1) then thisloglam = objloglam $
+          else if (lamdims EQ 2) then thisloglam = objloglam[*,iobj]
+         vdispfit, objflux[*,iobj], objivar[*,iobj], thisloglam, hdr=hdr, $
+          zobj=zobj[iobj], npoly=npoly, sigma=sigma1, sigerr=sigerr1
          sigma[iobj] = sigma1
          sigerr[iobj] = sigerr1
       endfor
       return
    endif
-
-   ;---------------------------------------------------------------------------
 
    ;----------
    ; Determine the wavelength mapping for the object spectra,
@@ -69,6 +120,10 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
       objdloglam = objloglam[1] - objloglam[0]
    endelse
    restloglam = objloglam - alog10(1 + zobj) ; De-redshift this!
+
+   ;---------------------------------------------------------------------------
+   ; Generate the over-sampled eigen-templates for the stellar spectra.
+   ; This is saved in a common block between calls.
 
    if (NOT keyword_set(bigflux)) then begin
 
@@ -136,7 +191,9 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
 
    if (max(restloglam) LT min(bigloglam[indx]) $
     OR min(restloglam) GT max(bigloglam[indx])) then begin
-      splog, 'No wavelength overlap with template'
+;      splog, 'No wavelength overlap with template'
+      sigma = 0.0
+      sigerr = 9999.
       return
    endif
 
@@ -172,13 +229,24 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
       eigenflux = bigflux[indxt,*,isig]
       if (keyword_set(npoly)) then eigenflux = [[eigenflux], [polyflux]]
 
-      chi2arr[isig] = computechi2(objsmall, sqivar, eigenflux, $
-       acoeff=acoeff, dof=dof, yfit=yfit)
+      chi2arr[isig] = computechi2(objsmall, sqivar, eigenflux)
 
    endfor
 
-   findchi2min, bigsig, chi2arr, minchi2, sigma, sigerr
-print,sigma
+   ;----------
+   ; Fit for the dispersion value at the minimum in chi^2
 
+   findchi2min, bigsig, chi2arr, minchi2, sigma, sigerr
+
+   ;----------
+   ; If the best-fit value is at the maximum dispersion value tested,
+   ; then we don't really know the answer and should set the error
+   ; to a large value.
+
+   if (sigma GE max(bigsig)) then begin
+      sigerr = 9999.
+   endif
+
+   return
 end
 ;------------------------------------------------------------------------------
