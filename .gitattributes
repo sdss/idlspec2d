@@ -192,6 +192,7 @@ pro/photoz/lrg_photoz_test.pro -text
 pro/photoz/lrg_tweak_template.pro -text
 pro/photoz/lrgmodel_append_twodf.pro -text
 pro/photoz/lrgmodel_photoz.pro -text
+pro/photoz/lrgmodel_plots.pro -text
 pro/photoz/lrgmodel_read_spall.pro -text
 pro/photoz/lrgmodel_train.pro -text
 pro/photoz/lrgmodel_tweak_template.pro -text
