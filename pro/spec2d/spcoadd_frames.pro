@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   spcoadd_frames, filenames, outputname, $
 ;    fcalibprefix=, [ mjd=, binsz=, zeropoint=, nord=, wavemin=, $
-;    bkptbin=, window=, maxsep=, adderr=, plotsnfile= ]
+;    bkptbin=, window=, maxsep=, adderr=, plotsnfile=, combinedir= ]
 ;
 ; INPUTS:
 ;   filenames      - Name(s) of files to combine (written by SPREDUCE)
@@ -37,6 +37,7 @@
 ;   maxsep         - ???
 ;   adderr         - Additional error to add to the formal errors, as a
 ;                    fraction of the flux.
+;   combinedir     - Optional output directory
 ;
 ; OUTPUTS:
 ;
@@ -118,12 +119,13 @@ end
 pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
  mjd=mjd, binsz=binsz, zeropoint=zeropoint, nord=nord, wavemin=wavemin, $
  bkptbin=bkptbin, window=window, maxsep=maxsep, adderr=adderr, $
- docams=camnames, plotsnfile=plotsnfile
+ docams=camnames, plotsnfile=plotsnfile, combinedir=combinedir
 
    if (NOT keyword_set(binsz)) then binsz = 1.0d-4 $
     else binsz = double(binsz)
    if (NOT keyword_set(zeropoint)) then zeropoint = 3.5D
    if (n_elements(window) EQ 0) then window = 100
+   if (NOT keyword_set(combinedir)) then combinedir=''
 
    ;----------
    ; Sort filenames such that this list contains first the blue then the red
@@ -205,7 +207,9 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
       ;----------
       ; Apply spectro-photometric calibration
 
-      fcalibfile = fcalibprefix + '-' + camnames[icam] + '.fits'
+      fcalibfile = djs_filepath(fcalibprefix + '-' + camnames[icam] + '.fits', $
+                     root_dir=combinedir)
+
       calibhdr = headfits(fcalibfile)
       cwavemin = sxpar(calibhdr, 'WAVEMIN')
       cwavemax = sxpar(calibhdr, 'WAVEMAX')
@@ -226,7 +230,9 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
       ; and this exposure.
 
       spectroid = strmid(cameras,1,1)
-      corrset = mrdfits('spFluxcorr-'+expstr+'-'+spectroid+'.fits', 1)
+      corrfile = djs_filepath('spFluxcorr-'+expstr+'-'+spectroid+'.fits', $
+                   root_dir=combinedir)
+      corrset = mrdfits(corrfile, 1)
       traceset2xy, corrset, tempwave, corrimg
 
       invertcorr = 1.0 / corrimg
@@ -429,7 +435,8 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
    hdr = hdr0
 
    platesn, finalflux, finalivar, finalandmask, finalplugmap, finalwave, $
-    hdr=hdr, plotfile=plotsnfile, snvec=snvec, synthmag=synthmag
+     hdr=hdr, plotfile=djs_filepath(plotsnfile, root_dir=combinedir), $
+     snvec=snvec, synthmag=synthmag
 
    ;---------------------------------------------------------------------------
    ; Create the output header
@@ -500,29 +507,31 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
    ; Write combined output file
    ;---------------------------------------------------------------------------
 
+   fulloutname = djs_filepath(outputname, root_dir=combinedir)
+
    ; 1st HDU is flux
-   mwrfits, finalflux, outputname, hdr, /create
+   mwrfits, finalflux, fulloutname, hdr, /create
 
    ; 2nd HDU is inverse variance
-   mwrfits, finalivar, outputname, hdrfloat
+   mwrfits, finalivar, fulloutname, hdrfloat
 
    ; 3rd HDU is AND-pixelmask
-   mwrfits, finalandmask, outputname, hdrlong
+   mwrfits, finalandmask, fulloutname, hdrlong
 
    ; 4th HDU is OR-pixelmask
-   mwrfits, finalormask, outputname, hdrlong
+   mwrfits, finalormask, fulloutname, hdrlong
 
    ; 5th HDU is dispersion map
-   mwrfits, finaldispersion, outputname, hdrfloat
+   mwrfits, finaldispersion, fulloutname, hdrfloat
 
    ; 6th HDU is plugmap
-   mwrfits, finalplugmap, outputname
+   mwrfits, finalplugmap, fulloutname
 
    ; 7th HDU are S/N vectors for g,r,i
-   mwrfits, snvec, outputname
+   mwrfits, snvec, fulloutname
 
    ; 8th HDU are synthetic magnitude vectors
-   mwrfits, synthmag, outputname
+   mwrfits, synthmag, fulloutname
 
    ;---------------------------------------------------------------------------
    ; Write the modified pixel masks to the input files

@@ -208,16 +208,10 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay
    ;----------
    ; Co-add the fluxed exposures
 
-   if (keyword_set(combinedir)) then $
-    cd, combinedir, current=old_dir
-
    spcoadd_frames, djs_filepath(sciname, root_dir=extractdir), $
-    combinefile, mjd=thismjd, $
+    combinefile, mjd=thismjd, combinedir=combinedir, $
     fcalibprefix=fcalibprefix, adderr=adderr, docams=docams, $
     plotsnfile=plotsnfile
-
-   if (keyword_set(combinedir)) then $
-    cd, old_dir
 
    heap_gc   ; garbage collection
 
