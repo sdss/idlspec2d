@@ -55,6 +55,11 @@ pro platelist, infile, outfile=outfile
    if (nfile EQ 0) then return
 
    ;----------
+   ; Sort these files
+
+   fullfile = fullfile[sort(fullfile)]
+
+   ;----------
    ; Open output file
 
    if (keyword_set(outfile)) then $
@@ -98,8 +103,8 @@ pro platelist, infile, outfile=outfile
       hdr2 = headfits(fullzfile)
 
       if (size(hdr1, /tname) EQ 'STRING') then begin
-         plate = sxpar(hdr1, 'PLATEID')
-         mjd = sxpar(hdr1, 'MJD')
+;         plateid = sxpar(hdr1, 'PLATEID')
+;         mjd = sxpar(hdr1, 'MJD')
          ra = sxpar(hdr1, 'RA')
          dec = sxpar(hdr1, 'DEC')
          snvec = [ sxpar(hdr1, 'SPEC1_G'), $
@@ -107,12 +112,15 @@ pro platelist, infile, outfile=outfile
                    sxpar(hdr1, 'SPEC2_G'), $
                    sxpar(hdr1, 'SPEC2_I') ]
       endif else begin
-         plate = long( strmid(fileandpath(platefile), 8, 4) )
-         mjd = long( strmid(fileandpath(platefile), 13, 5) )
          ra = 0
          dec = 0
          snvec = [0,0,0,0]
       endelse
+
+      ; Get the following from the file names, since sometimes they
+      ; are wrong in the file headers!!
+      plateid = long( strmid(fileandpath(platefile), 8, 4) )
+      mjd = long( strmid(fileandpath(platefile), 13, 5) )
 
       ;----------
       ; The RA,DEC in the header is sometimes wrong, so try to derive
@@ -140,7 +148,7 @@ pro platelist, infile, outfile=outfile
          nums = lonarr(5)
       endelse
 
-      printf, olun, plate, mjd, ra, dec, snvec, nums, $
+      printf, olun, plateid, mjd, ra, dec, snvec, nums, $
        format='(i5,i7,f6.1,f6.1,4f7.1,5i5)'
       flush, olun
 
