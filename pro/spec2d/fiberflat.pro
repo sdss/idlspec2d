@@ -75,7 +75,8 @@
 
 function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
  minval=minval, ncoeff=ncoeff, pixspace=pixspace, nord=nord, $
- lower=lower, upper=upper, dospline=dospline, plottitle=plottitle
+ lower=lower, upper=upper, dospline=dospline, plottitle=plottitle, $
+ smoothflat=smoothflat
 
    dims = size(flux, /dimens)
    ny = dims[0]
@@ -180,6 +181,8 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
          endelse
 
       endfor
+
+      if keyword_set(smoothflat) then return, fflat*fit2
 
    endif else begin
 
