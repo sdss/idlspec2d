@@ -4,7 +4,7 @@ pro pca_qso
    wavemin = 460
    wavemax = 9300
    snmax = 100
-   niter = 10
+   niter = 200
    nkeep = 4
    minuse = 3
 

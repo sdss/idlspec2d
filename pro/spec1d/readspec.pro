@@ -178,21 +178,23 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    if (ct GT 1) then filename = filename[ (reverse(sort(filename)))[0] ] $
     else filename = filename[0]
 
+   nrows = n_elements(rownums)
+
    if (NOT keyword_set(filename)) then begin
-      flux = 0
-      flerr = 0
-      invvar = 0
-      andmask = 0
-      ormask = 0
-      disp = 0
-      sky = 0
-      plugmap = 0
-      loglam = 0
-      tsobj = 0
-      zans = 0
-      zline = 0
-      synflux = 0
-      lineflux = 0
+      flux = fltarr(1,nrows)
+      flerr = fltarr(1,nrows)
+      invvar = fltarr(1,nrows)
+      andmask = lonarr(1,nrows)
+      ormask = lonarr(1,nrows)
+      disp = fltarr(1,nrows)
+      sky = fltarr(1,nrows)
+      plugmap = lonarr(nrows)
+      loglam = fltarr(1,nrows)
+      tsobj = lonarr(nrows)
+      zans = lonarr(nrows)
+      zline = lonarr(nrows)
+      synflux = fltarr(1,nrows)
+      lineflux = fltarr(1,nrows)
       coeff0 = 0
       coeff1 = 0
       npix = 0
@@ -236,8 +238,8 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
 
    if (q_needwave) then begin
       if (NOT keyword_set(objhdr)) then objhdr = headfits(filename)
-      coeff0 = replicate(sxpar(objhdr, 'COEFF0'), n_elements(rownums))
-      coeff1 = replicate(sxpar(objhdr, 'COEFF1'), n_elements(rownums))
+      coeff0 = replicate(sxpar(objhdr, 'COEFF0'), nrows)
+      coeff1 = replicate(sxpar(objhdr, 'COEFF1'), nrows)
       npix = sxpar(objhdr, 'NAXIS1')
    endif
 
@@ -307,8 +309,6 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       nlines = sxpar(linehdr, 'DIMS0')
       if (nlines EQ 0) then $
        nlines = sxpar(linehdr, 'NAXIS2') / 640L ; Assume 640 objects???
-
-      nrows = n_elements(rownums)
 
       fits_open, linefile, linefcb
       allrows = reform( rebin(reform(rownums*nlines,1,nrows), nlines, nrows), $
