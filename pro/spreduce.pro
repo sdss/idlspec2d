@@ -39,14 +39,11 @@
 ;   Should test that arcs and flats are valid images with CHECKFLAVOR.
 ;
 ; PROCEDURES CALLED:
-;   djs_median()
-;   djs_plot
-;   extract_image
 ;   extract_object
-;   fiberflat()
-;   fitarcimage
 ;   qaplot_arcline
 ;   qaplot_fflat
+;   select_arc()
+;   select_flat()
 ;   sortplugmap
 ;   sdssproc
 ;   spcalib

@@ -75,6 +75,9 @@ pro combine2dout, filenames, outputroot, spectrographid, $
    nfiles = N_elements(filenames)
    if (nfiles EQ 0) then return
 
+   redfiles = 0
+   bluefiles = 0
+
    ; Read first file
 
    flux     = mrdfits(filenames[0], 0, hdr)
@@ -87,7 +90,12 @@ pro combine2dout, filenames, outputroot, spectrographid, $
    npix  = dims[0]
    nfiber = dims[1]
    specnum = bytarr(npix)
-   bluered = bytarr(npix) + (strpos(sxpar(hdr, 'CAMERAS'),'r') EQ 0)
+   isred = (strpos(sxpar(hdr, 'CAMERAS'),'r') EQ 0)
+   bluered = bytarr(npix) + isred
+
+   if (isred) then redfiles = redfiles + 1 
+   if (strpos(sxpar(hdr, 'CAMERAS'),'b') EQ 0) then bluefiles = bluefiles + 1 
+
    label =  makelabel(hdr)
    exptime = sxpar(hdr, 'EXPTIME')
 
@@ -108,12 +116,26 @@ pro combine2dout, filenames, outputroot, spectrographid, $
       fluxivar = [fluxivar, tempivar]
       wave = [wave, tempwave]
       specnum = [specnum, bytarr(npix) + i]
-      bluered = [bluered, bytarr(npix) + $ 
-       (strpos(sxpar(hdr, 'CAMERAS'),'r') EQ 0)] 
-     
+
+      isred = (strpos(sxpar(hdr, 'CAMERAS'),'r') EQ 0)
+      bluered = [bluered, bytarr(npix) + isred] 
+
+      if (isred) then redfiles = redfiles + 1 
+      if (strpos(sxpar(hdr, 'CAMERAS'),'b') EQ 0) then $
+                 bluefiles = bluefiles + 1 
+        
       label = [label, makelabel(hdr)]
       exptime = exptime + sxpar(hdr, 'EXPTIME')
    endfor
+
+
+   splog, 'Found '+string(redfiles)+' Red files'
+   splog, 'Found '+string(bluefiles)+' Blue files'
+   if (redfiles LT 3 OR bluefiles LT 3) then begin
+      splog, 'For the time being, I expect at least 3 of each to work'
+      return
+   endif
+
 ;set_plot,'x'
 ;ifib=237
 ;colorv=['default','red','green','blue','magenta','yellow','cyan','default']

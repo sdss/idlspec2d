@@ -1,7 +1,62 @@
-
+;+
+; NAME:
+;   fluxcorr
+;
+; PURPOSE:
+;   Use sky-subtracted SPECTROPHOTO_STD's to calculate flux correction
+;   as a function of wavelength.  We assume the correction is uniform
+;   for all fibers (This may change).
+;
+; CALLING SEQUENCE:
+;   ff = fluxcorr(flux, fluxivar, wset, plugsort, color=color, $
+;        spectrostd=spectrostd, bkptfile=bkptfile, lower=lower, upper=upper, $
+;        fibermask=fibermask)
+;
+; INPUTS:
+;   flux         - sky-subtracted extracted spectra [nx,ntrace]
+;   fluxivar     - corresponding inverse variance [nx,ntrace]
+;   wset         - wavelength coefficients as a trace set
+;   plugsort     - plugmap entries
+;
+; REQUIRED KEYWORDS:
+;   color        - 'red' or 'blue'
+;
+; OPTIONAL KEYWORDS:
+;   spectrostd   - file with spectrophoto continuum, set to 1.0 at 5556 Ang.
+;   bkptfile     - file with wavelengths of specific bkpts 
+;                     default is (red.bkpts or blue.bkpts)
+;   absfile      - file delineating regions of absorption to avoid in
+;                     in continuum fitting
+;   lower        - lower rejection threshold for continuum fitting
+;   upper        - upper rejection threshold for continuum fitting
+;   fibermask    - use to reject possible standards which have spectral troubles
+;   
+; OUTPUTS:
+;   ff           - Flux calibration to correct each pixel in flux array
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;
+; BUGS:
+;	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+;	  What we really need is an accurate prediction of
+;	  f-star continua as a function of u',g',r', and i'
+;         Right now, all we can do is estimate.
+;         Also need to rewrite to make use of all f-stars.
+;       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+;
+; PROCEDURES CALLED:
+;
+; REVISION HISTORY:
+;   19-Oct-1999  Written by S. Burles, Chicago
+;-
+;------------------------------------------------------------------------------
 function fluxcorr, flux, fluxivar, wset, plugsort, color=color, $
-        spectrostd=spectrostd, bkptfile=bkptfile, lower=lower, upper=upper, $
-        fibermask=fibermask
+        spectrostd=spectrostd, bkptfile=bkptfile, absfile=absfile, $
+        lower=lower, upper=upper, fibermask=fibermask
 
         nord=3
 	if (NOT keyword_set(lower)) then lower = 5
@@ -70,7 +125,7 @@ function fluxcorr, flux, fluxivar, wset, plugsort, color=color, $
 
 	filename = ''
 	if (keyword_set(absfile)) then $
-	  filename = findfile(bkptfile) $
+	  filename = findfile(absfile) $
         else $
 	  filename = getenv('IDLSPEC2D_DIR') + '/etc/f8v.abs'
       
@@ -140,13 +195,23 @@ function fluxcorr, flux, fluxivar, wset, plugsort, color=color, $
 
 ;	cheap scaling
 ;
-;	at v=0, flux at 5556A is 956/3.42 photons/cm/A/s
-;	        = 9.72e-10 ergs/cm^2/s/A
+;	at v=0, flux at 5556A is 956 photons/cm/A/s
+;	        = 3.32e-10 ergs/cm^2/s/A
 ;	scale to r', with 10^(-r'/2.5)
 ;	and return in units to 1e-17 ergs/cm/s/A
-;	so factor in exponent is 10^((20.0 - r')/2.5)
+;	so factor in exponent is 10^((21.34 - r')/2.5)
+;
+;	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+;	  What we really need is an accurate prediction of
+;	  f-star continua as a function of u',g',r', and i'
+;         Right now, all we can do is estimate.
+;         Also need to rewrite to make use of all f-stars.
+;       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+;
+;
 
-	scaling = 10^((20.0 - plugsort[spectrophoto[bestcolor]].mag[2])/2.5)
+
+	scaling = 10^((21.34 - plugsort[spectrophoto[bestcolor]].mag[2])/2.5)
 
         fullfit = slatec_bvalu(wave, fullbkpt, coeff)
 
