@@ -30,6 +30,10 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   readidlout
+;   sdsshead()
+;   splog
+;   sxpar()
 ;   s_plotdev
 ;
 ; REVISION HISTORY:
@@ -377,7 +381,7 @@ pro checksn, flux, err, plug, wave, expres=expres, noplot=noplot, title=title
 
 
     if (n_elements(files) GT 0) then begin
-      hdr = headfits(files[0])
+      hdr = sdsshead(files[0])
      splog, sxpar(hdr,'PLATEID'), sxpar(hdr,'DATE-OBS'), $
             sxpar(hdr,'MJD'), sxpar(hdr, 'TILEID'), $
             sxpar(hdr,'RA'), sxpar(hdr,'DEC'), sxpar(hdr, 'EXPTIME'), $

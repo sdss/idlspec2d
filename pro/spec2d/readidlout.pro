@@ -84,7 +84,7 @@ pro readidlout, flux, sig=sig, wave=wave, expres=expres, plugmap=plugmap, $
          plugmap = replicate(shortplugmap,nfiles)
 
       for i=0,nfiles - 1 do begin
-        hdr = headfits(files[i])
+        hdr = sdsshead(files[i])
         npix[i] = sxpar(hdr, 'NAXIS1')
         disp[0,i] = sxpar(hdr, 'COEFF0')
         disp[1,i] = sxpar(hdr, 'COEFF1')

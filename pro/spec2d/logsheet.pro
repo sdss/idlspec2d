@@ -22,7 +22,7 @@
 ; EXAMPLES:
 ;
 ; PROCEDURES CALLED:
-;   headfits()
+;   sdsshead()
 ;   sxpar()
 ;
 ; REVISION HISTORY:
@@ -65,7 +65,7 @@ pro logsheet, dir, outfile=outfile
        '---------- ----------- ------------------- ----- -- -------- ------'
 
       for i=0, nfile-1 do begin
-         hdr = headfits(fullname[i])
+         hdr = sdsshead(fullname[i])
          DATEOBS = sxpar(hdr, 'DATE-OBS')
          TAIHMS = sxpar(hdr, 'TAIHMS')
          PLATEID = sxpar(hdr, 'PLATEID')
