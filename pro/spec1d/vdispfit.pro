@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   vdispfit, objflux, objivar, [ objloglam, hdr=, zobj=, npoly=, $
-;    sigma=, sigerr= ]
+;    sigma=, sigerr=, yfit= ]
 ;
 ; INPUTS:
 ;   objflux    - Galaxy spectrum (spectra); array of [NPIX,NGALAXY].
@@ -30,6 +30,10 @@
 ; OPTIONAL OUTPUTS:
 ;   sigma      - Velocity dispersion in km/sec.
 ;   sigerr     - Error for SIGMA in km/sec.
+;   yfit       - Best-fit template (actually, the one with the closest
+;                velocity dispersion to the best-fit sigma); wavelengths
+;                outside of those available with the templates have their
+;                values set to zero [NPIX,NGALAXY]
 ;
 ; COMMENTS:
 ;   Note that the wavelength spacing in the galaxy and stellar template spectra
@@ -81,10 +85,10 @@ end
 
 ;------------------------------------------------------------------------------
 pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
- sigma=sigma, sigerr=sigerr
+ sigma=sigma, sigerr=sigerr, yfit=yfit
 
    common com_vdispfit, bigflux, bigloglam, bigmask, nsamp, bigsig, $
-    nbigpix, nsig, dsig
+    nbigpix, nsig, dsig, nstar
 
    if (NOT keyword_set(objloglam) AND NOT keyword_set(hdr)) then $
     message, 'Must specify either OBJLOGLAM or HDR!'
@@ -102,14 +106,17 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
    if (nobj GT 1) then begin
       sigma = fltarr(nobj)
       sigerr = fltarr(nobj)
+      if (arg_present(yfit)) then yfit = fltarr(npixobj,nobj)
       lamdims = size(objloglam, /n_dimens)
       for iobj=0, nobj-1 do begin
          if (lamdims EQ 1) then thisloglam = objloglam $
           else if (lamdims EQ 2) then thisloglam = objloglam[*,iobj]
          vdispfit, objflux[*,iobj], objivar[*,iobj], thisloglam, hdr=hdr, $
-          zobj=zobj[iobj], npoly=npoly, sigma=sigma1, sigerr=sigerr1
+          zobj=zobj[iobj], npoly=npoly, sigma=sigma1, sigerr=sigerr1, $
+          yfit=yfit1
          sigma[iobj] = sigma1
          sigerr[iobj] = sigerr1
+         if (keyword_set(yfit)) then yfit[*,iobj] = yfit1
       endfor
       return
    endif else zobj= zobj[0]
@@ -226,6 +233,7 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
 ;      splog, 'No wavelength overlap with template'
       sigma = 0.0
       sigerr = 9999.
+      yfit = fltarr(npixobj)
       return
    endif
 
@@ -256,19 +264,30 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
    objsmall = objflux[indxo]
    sqivar = sqrt( objivar[indxo] ) * bigmask[indxt]
 
+   acoeffarr = fltarr(nstar+npoly,nsig)
    for isig=0, nsig-1 do begin
-
       eigenflux = bigflux[indxt,*,isig]
       if (keyword_set(npoly)) then eigenflux = [[eigenflux], [polyflux]]
-
-      chi2arr[isig] = computechi2(objsmall, sqivar, eigenflux)
-
+      chi2arr[isig] = computechi2(objsmall, sqivar, eigenflux, acoeff=acoeff)
+      acoeffarr[*,isig] = acoeff
    endfor
 
    ;----------
    ; Fit for the dispersion value at the minimum in chi^2
 
    findchi2min, bigsig, chi2arr, minchi2, sigma, sigerr
+
+   ;----------
+   ; Return the best-fit template (actually, the one with the closest
+   ; velocity dispersion to the best-fit sigma).
+
+   if (arg_present(yfit)) then begin
+      junk = min(abs(bigsig - sigma), isig)
+      eigenflux = bigflux[indxt,*,isig]
+      if (keyword_set(npoly)) then eigenflux = [[eigenflux], [polyflux]]
+      yfit = fltarr(npixobj)
+      yfit[indxo] = acoeffarr[*,isig] ## eigenflux
+   endif
 
    ;----------
    ; If the best-fit value is at the maximum dispersion value tested,
