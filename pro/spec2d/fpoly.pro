@@ -1,11 +1,11 @@
 function fpoly, x, ncoeff
 
   if N_params() LT 2 then begin
-        print,'Syntax - result = FPOLY( x, m)
+        print,'Syntax - result = FPOLY( x, ncoeff)
         return,0
   endif
 
-  if m LT 1 then message, $
+  if ncoeff LT 1 then message, $
         'ERROR - Order of polynomial must be at least 1'
   N = N_elements(x)
 
