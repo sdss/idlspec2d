@@ -42,6 +42,9 @@
 ; BUGS:
 ;   scp1 does not exist on sos.apo.nmsu.edu, reverted to scp
 ;
+; INTERNAL SUPPORT ROUTINES:
+;   apo_diskcheck
+;
 ; PROCEDURES CALLED:
 ;   apo_appendlog
 ;   apo_log2html
@@ -55,6 +58,26 @@
 ; REVISION HISTORY:
 ;   30-Apr-2000  Written by D. Schlegel & S. Burles, APO
 ;-
+;------------------------------------------------------------------------------
+; Check disk space on the input or output disk.
+pro apo_diskcheck, dirname
+
+   if (NOT keyword_set(dirname)) then return
+
+   spawn, 'df -k '+dirname, dfout
+   if (size(dfout,/tname) EQ 'STRING') then begin
+      dfout_entry = dfout[n_elements(dfout)-1]
+      if (dfout_entry NE '') then begin
+         perc  = str_sep(dfout_entry,'%')
+         percentfull = long(strmid(perc[0],rstrpos(perc[0],' ')))
+         if (percentfull GT 95) then $
+          splog, 'WARNING: SOS disk '+dirname+' is ' $
+           +strtrim(string(percentfull),2)+'% full'
+      endif else splog, 'Warning: Could not check disk space on '+dirname
+   endif else splog, 'Warning: Could not check disk space on '+dirname
+
+   return
+end
 ;------------------------------------------------------------------------------
 pro aporeduce, filename, indir=indir, outdir=outdir, $
  plugfile=plugfile, plugdir=plugdir, minexp=minexp, $
@@ -119,18 +142,10 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    t0 = systime(1)
 
    ;----------
-   ; Check disk space on the output disk.
+   ; Check disk space on both the input and the output disk.
 
-   spawn, 'df -k '+outdir, dfout
-   if (size(dfout,/tname) EQ 'STRING') then begin
-      dfout_entry = dfout[n_elements(dfout)-1]
-      if (dfout_entry NE '') then begin
-         perc  = str_sep(dfout_entry,'%')
-         percentfull = long(strmid(perc[0],rstrpos(perc[0],' ')))
-         if (percentfull GT 95) then $
-          splog, 'WARNING: SOS output disk is almost full: ' + dfout
-      endif else splog, 'Warning: Could not check disk space for SOS outputs '+outdir
-   endif else splog, 'Warning: Could not check disk space for SOS outputs '+outdir
+   apo_diskcheck, indir
+   apo_diskcheck, outdir
 
    ;----------
    ; Wait for an input FITS file to be fully written to disk, and exit
