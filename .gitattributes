@@ -252,6 +252,7 @@ pro/spec1d/ftest.pro -text
 pro/spec1d/fundamental_line.pro -text
 pro/spec1d/gauss_periodic.pro -text
 pro/spec1d/lambda_match.pro -text
+pro/spec1d/linebackfit.pro -text
 pro/spec1d/make_regress1d.pro -text
 pro/spec1d/matchplugmap.pro -text
 pro/spec1d/multisynthspec.pro -text
