@@ -13,29 +13,32 @@
 # S. Burles, APO, 4 May 2000
 #------------------------------------------------------------------------------
 
-# This syncs /astrlog/5???? from sdsshost to plate-mapper, excluding
+# This syncs /astrolog/[56789]???? from sdsshost to plate-mapper, excluding
 # the id* files.
-rsync -ar --rsh="ssh -c arcfour" \
-     --exclude="*id*" \
-     --exclude="*log" \
-     --log-format="/astrolog/%f" "sdsshost:/astrolog/5????" /astrolog/   
+rsync -ar --rsh="ssh -c blowfish" \
+      --rsync-path=/p/rsync/v2_4_3/rsync \
+      --exclude="*id*" \
+      --exclude="*log" \
+      --log-format="/astrolog/%f" "sdsshost:/astrolog/[56789]????" /astrolog/   
 
-# This syncs /astrolog/5???? from sdsshost to plate-mapper, excluding
+# This syncs /astrolog/[56789]???? from sdsshost to plate-mapper, excluding
 # the red and guider files.
-rsync -ar --rsh="ssh -c arcfour" \
+rsync -ar --rsh="ssh -c blowfish" \
+      --rsync-path=/p/rsync/v2_4_3/rsync \
       --exclude="*guider*" \
       --log-format="/data/spectro/%f" --exclude="*-r*" \
-      "sdsshost:/data/spectro/5????" /data/spectro/ | startapo.sh &
+      "sdsshost:/data/spectro/[56789]????" /data/spectro/ | startapo.sh &
 
 # This sleep is to try to keep the blue side copying over before the red
 # side.  We do this because APOREDUCE creates its summary files after the r2
 # CCD is reduced, and assumes that all other CCD's have been reduced by then.
 sleep 10
 
-# This syncs /astrolog/5???? from sdsshost to plate-mapper, excluding
+# This syncs /astrolog/[56789]???? from sdsshost to plate-mapper, excluding
 # the blue and guider files.
-rsync -ar --rsh="ssh -c arcfour" \
+rsync -ar --rsh="ssh -c blowfish" \
+      --rsync-path=/p/rsync/v2_4_3/rsync \
       --exclude="*guider*" \
       --log-format="/data/spectro/%f" --exclude="*-b*" \
-      "sdsshost:/data/spectro/5????" /data/spectro/ | startapo.sh 
+      "sdsshost:/data/spectro/[56789]????" /data/spectro/ | startapo.sh 
 
