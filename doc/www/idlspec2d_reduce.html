@@ -30,9 +30,9 @@ number (such as 0306), <I>eeeeeeee</I> refers to an exposure number
 <P>
 At Princeton, these paths would be set as follows:
 <DL><DD><PRE>
-   setenv RAWDATA_DIR    /peyton/scr/spectro0/data/rawdata
-   setenv SPECLOG_DIR    /peyton/scr/spectro0/data/astrolog
-   setenv SPECFLAT_DIR   /peyton/scr/spectro0/data/pixflats
+   setenv RAWDATA_DIR    /u/dss/rawdata
+   setenv SPECLOG_DIR    /u/dss/astrolog
+   setenv SPECFLAT_DIR   /u/dss/specflat
 </PRE></DD></DL>
 
 <P>
@@ -42,26 +42,26 @@ And the three paths must be set appropriately.
 <H2 ALIGN="left">Obtaining the Raw Data</H2>
 
 <P>
-The raw data is available from Fermilab.  Much, but not all of it, is
-spinning on disk.  The rest is recoverable from their tape robot.
-
-<P>
-The raw images for a particular night ($MJD) can be found at:
+The raw data is available from Princeton, where we keep two copies
+spinning.  The raw images for a particular night ($MJD) can be found at:
 <DL><DD><PRE>
-   fsgi03.fnal.gov:/usr/sdss/data05/spectro/rawdata/$MJD/sdR*.fit
+   sdssdata.princeton.edu:/u/dss/rawdata/$MJD/sdR*.fit
 </PRE></DD></DL>
 
 <P>
 The plug-map files for a particular night ($MJD) can be found at:
 <DL><DD><PRE>
-   fsgi03.fnal.gov:/usr/sdss/data05/spectro/astrolog/$MJD/plPlugMapM*.par
+   sdssdata.princeton.edu:/u/dss/astrolog/$MJD/plPlugMapM*.par
 </PRE></DD></DL>
+These are also available from the CVS product "speclog", though that
+may be out of date by several days or weeks.
 
 <P>
 A set of pixel flats can be found at:
 <DL><DD><PRE>
-   fsgi03.fnal.gov:/usr/sdss/data05/spectro/pixflats/pixflat-*.fits
+   sdssdata.princeton.edu:/u/dss/pixflats
 </PRE></DD></DL>
+These are also available from the CVS product "specflat".
 
 
 <H2 ALIGN="left">Generating Plan Files</H2>
@@ -71,10 +71,10 @@ My convention is to put the reduced data in a directory separate from
 the data where the top-level directory is $SPECTRO_DATA.  At Princeton,
 this would be set to
 <DL><DD><PRE>
-   setenv SPECTRO_DATA     /u/dss/data/2d_v4
+   setenv SPECTRO_DATA     /u/dss/spectro
 </PRE></DD></DL>
 Each plate is put in its own subdirectory, so the reductions of plate 306
-would be in "/u/dss/data/2d_v4/0306".
+would be in "/u/dss/spectro/0306".
 
 <P>
 Before running the spectro pipeline, you need to build plan files for
@@ -109,8 +109,8 @@ marks (#).
 <H2 ALIGN="left">Running from the IDL Prompt</H2>
 
 <P>
-It takes approximately 8 hours to run one plate through Spectro-2D on
-an 800 MHz Pentium, and another 10 hours to run Spectro-1D.
+It takes approximately 3.5 hours to run one plate through Spectro-2D on
+a 1-GHz Pentium-III, and another 4 hours to run Princeton-1D.
 
 <P>
 In each output plate directory, you can run the following three commands
