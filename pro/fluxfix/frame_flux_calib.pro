@@ -39,7 +39,7 @@ function frame_flux_calib, wave, corvector, corvivar, avgcorvset, cormed, $
   ; Recombine high & low-frequencey parts (but only use high-f is S/N > 5)  
 
   fcor = lowfmed * avgcorv[*,0]
-  if sig2noise gt 12 then fcor = fcor * hifmed
+  if sig2noise gt 16 then fcor = fcor * hifmed
 
   ;--------------
   ; Measure the variance between the fluxcalib vectors derived
