@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   combine1fiber, inloglam, objflux, [ objivar, finalmask=, indisp=, $
 ;    newloglam=, newflux=, newivar=, andmask=, ormask=, newdisp=, $
-;    nord=, binsz=, bkptbin=, maxsep=, _EXTRA=KeywordsForReject ]
+;    nord=, binsz=, bkptbin=, maxsep=, _EXTRA=KeywordsForReject, /verbose ]
 ;
 ; INPUTS:
 ;   inloglam       - Wavelengths in log10-Angstroms [NPIX,NSPEC]
@@ -30,6 +30,8 @@
 ;                    fit is split into pieces, with the breaks wherever this
 ;                    spacing is exceeded.  Default to 2.0 * BINSZ.
 ;   _EXTRA         - Keywords for DJS_REJECT().
+;   verbose        - If set, then output messages about bad break points and
+;                    masked data points.
 ;
 ; OUTPUTS:
 ;
@@ -72,7 +74,7 @@ pro combine1fiber, inloglam, objflux, objivar, $
  newloglam=newloglam, newflux=newflux, newivar=newivar, $
  andmask=andmask, ormask=ormask, newdisp=newdisp, $
  nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep, $
- _EXTRA=KeywordsForReject
+ _EXTRA=KeywordsForReject, verbose=verbose
 
    ;----------
    ; Check that dimensions of inputs are valid
@@ -133,7 +135,7 @@ pro combine1fiber, inloglam, objflux, objivar, $
 
    if (ngood EQ 0) then begin
 
-      splog, 'No good points'
+      if (keyword_set(verbose)) then splog, 'No good points'
       andmask = pixelmask_bits('NODATA')
       ormask = pixelmask_bits('NODATA')
       return
@@ -181,9 +183,11 @@ endelse
 
 ; Another work-around for the Slatec code ???
          if (numinside LE 2) then begin
-            splog,'WARNING: No wavelengths inside breakpoints'
+            if (keyword_set(verbose)) then $
+             splog,'WARNING: No wavelengths inside breakpoints'
          endif else if (total(abs(sset.coeff)) EQ 0.0) then begin
-            splog,'WARNING: All B-spline coefficients have been set to zero!'
+            if (keyword_set(verbose)) then $
+             splog,'WARNING: All B-spline coefficients have been set to zero!'
          endif else begin
 
             newflux[inside] = bspline_valu(newloglam[inside], sset, $
@@ -191,8 +195,9 @@ endelse
             goodvalu = where(bvalumask)
             if goodvalu[0] NE -1 then newmask[inside[goodvalu]] = 1
 
-            splog, 'Masked ', fix(total(1-bmask)), ' of', $
-             n_elements(bmask), ' pixels'
+            if (keyword_set(verbose)) then $
+             splog, 'Masked ', fix(total(1-bmask)), ' of', $
+              n_elements(bmask), ' pixels'
 
             ;----------
             ; Determine which pixels should be masked based upon the spline fit.
@@ -282,10 +287,9 @@ endelse
 
          endif
       endfor
-;      splog, 'Medians:', djs_median(objflux,1)) ; ???
 
       if (arg_present(newdisp)) then $
-            newdisp  = newdisp / (newdispweight + (newdispweight EQ 0))
+       newdisp  = newdisp / (newdispweight + (newdispweight EQ 0))
         
    endelse
 
