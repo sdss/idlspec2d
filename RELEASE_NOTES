@@ -33,6 +33,9 @@ FITDISPERSION: Re-organization of this code  Add support for SIGMA being
 FITFLATWIDTH: Re-organization of this code  Add support for SIGMA being
             a scalar, vector, or array.  Optional MEDWIDTH output.
             Output warning messages if out-of-focus.
+FOCUSHISTORY: First stab at a proc for plotting the spectrograph focus
+            as a function of time.  Simply use the wavelength dispersions
+            from the arcs, which we have in the spPlate files.
 LINEBACKFIT: Force the output sigmas to be non-negative (which also
             prevents a bug later in the code that assumes this is true
             when measuring the chi^2 of each line, as pointed out by
