@@ -1,4 +1,13 @@
 
+* Looks like combining now fails if blue side is missing (21-Dec-99).
+
+* Do something fancier for overscan-correction?
+  JEG points out that the b1 CCD has a terrible transient at the beginning.
+
+* Track total exposure time in combined spectra
+
+* For the calibration op*.par files, make versions based upon MJD in /examples
+
 * Make bad pixel masks for "opBC.par" file.
   Include bad pixels from pixflat.
 
@@ -188,3 +197,5 @@ testextract
 trace_fix
 writeapid
 
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
