@@ -90,13 +90,12 @@
 function makelabel, hdr
 
    camera = strtrim(sxpar(hdr, 'CAMERAS'),2)
-   mjd = strtrim(string(sxpar(hdr, 'MJD')),2)
    expos =  strtrim(string(sxpar(hdr, 'EXPOSURE')),2)
-   flat  =  strmid(sxpar(hdr, 'FLATFILE'),6,9)
-   arc   =  strmid(sxpar(hdr, 'ARCFILE'),6,9)
+   flat  =  strmid(sxpar(hdr, 'FLATFILE'),7,8)
+   arc   =  strmid(sxpar(hdr, 'ARCFILE'),7,8)
 
-   label = string(camera, "-", mjd, "-", expos, flat, arc, $
-            format='(a2,a1,i5.5,a1,i8.8,a9,a9)')
+   label = string(camera, "-", expos, flat, arc, $
+    format='(a2,"-",i8.8,"-",a8,"-",a8)')
 
    return, label
 end
@@ -557,7 +556,7 @@ pro spcoadd_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    sxaddpar, hdr, 'NEXP', nfiles, $
     ' Number of exposures in this file', before='EXPTIME'
    for ifile=0,nfiles-1 do $
-    sxaddpar, hdr, string('EXPID',ifile, format='(a5,i2.2)'), label[ifile], $
+    sxaddpar, hdr, string('EXPID',ifile+1, format='(a5,i2.2)'), label[ifile], $
      ' ID string for exposure '+strtrim(string(ifile),2), before='EXPTIME'
 
    sxaddpar, hdr, 'EXPTIME', min(exptimevec), $
