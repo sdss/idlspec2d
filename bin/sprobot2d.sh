@@ -17,6 +17,8 @@ if [ X"$n" != X"" -a "$n" -gt 2 ]; then
    exit
 fi
 echo "SPROBOT2D: Launched at "`date` UID=$UID PPID=$PPID
+echo "IDLSPEC2D_DIR="$IDLSPEC2D_DIR
+echo "IDLUTILS_DIR="$IDLUTILS_DIR
 
 # Do not put this in the background, because we search for the "sprobot2d.sh"
 # process to determine if this is already running!

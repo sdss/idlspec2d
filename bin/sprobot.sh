@@ -62,6 +62,8 @@ fi
 echo ""
 echo "-------------------------------------------------------------------------------"
 echo "SPROBOT: Launched at "`date` UID=$UID PPID=$PPID
+echo "IDLSPEC2D_DIR="$IDLSPEC2D_DIR
+echo "IDLUTILS_DIR="$IDLUTILS_DIR
 
 #------------------------------------------------------------------------------
 # Find raw data directories on the machine $hostname, and loop through them

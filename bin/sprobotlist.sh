@@ -9,6 +9,8 @@
 echo ""
 echo "-------------------------------------------------------------------------------"
 echo "SPROBOTLIST: Started at "`date`
+echo "IDLSPEC2D_DIR="$IDLSPEC2D_DIR
+echo "IDLUTILS_DIR="$IDLUTILS_DIR
 
 cd $SPECTRO_DATA
 echo "platelist, /create" | idl
