@@ -17,7 +17,6 @@ function zfitmin, yarr, xarr, dofarr=dofarr, $
       junk = min(abs(xarr - xguess), imin)
       ypeak = ydof[imin]
    endelse
-   if (NOT keyword_set(width)) then width = 1
 
    ; Set return values in the event of a bad fit
    xerr = 0.0
@@ -30,8 +29,13 @@ function zfitmin, yarr, xarr, dofarr=dofarr, $
       return, xguess
    endif
 
-   xleft = xguess - width
-   xright = xguess + width
+   if (keyword_set(width)) then begin
+      xleft = xguess - width
+      xright = xguess + width
+   endif else begin
+      xleft = min(xarr)
+      xright = max(xarr)
+   endelse
    indx = where(xarr GE xleft AND xarr LE xright, nthis)
    if (nthis LT 3) then begin
       xerr = -2L
@@ -129,7 +133,7 @@ function zfitmin, yarr, xarr, dofarr=dofarr, $
    endif
 
    if (keyword_set(doplot)) then begin
-      djs_plot, thisx, thisy, /yno
+      djs_plot, thisx, thisy, psym=-4, /yno
       djs_oplot, thisx, yfit, color='green'
       djs_oplot, [xbest], [ypeak], psym=4, symsize=2, color='green'
       djs_oplot, [xbest,xbest]-xerr, !y.crange, linestyle=2, color='green'
@@ -142,7 +146,7 @@ end
 ;------------------------------------------------------------------------------
 ;------------------------------------------------------------------------------
 function find_nminima, yflux, xvec, dofarr=dofarr, nfind=nfind, minsep=minsep, $
- width=width, ypeak=ypeak, xerr=xerr, npeak=npeak
+ width=width, ypeak=ypeak, xerr=xerr, npeak=npeak, _EXTRA=EXTRA
 
    ndata = n_elements(yflux)
    if (ndata EQ 1) then $
@@ -152,7 +156,6 @@ function find_nminima, yflux, xvec, dofarr=dofarr, nfind=nfind, minsep=minsep, $
    if (NOT keyword_set(dofarr)) then dofarr = 1
    if (NOT keyword_set(nfind)) then nfind = 1
    if (n_elements(minsep) EQ 0) then minsep = 0
-   if (NOT keyword_set(width)) then width = 5
    if (xvec[1] GT xvec[0]) then isign = 1 $ ; ascending X
     else isign = -1 ; descending X
 
@@ -179,7 +182,7 @@ function find_nminima, yflux, xvec, dofarr=dofarr, nfind=nfind, minsep=minsep, $
       ; Centroid on this peak (local minimum)
 
       xpeak1 = zfitmin(yflux, xvec, dofarr=dofarr, xguess=xvec[imin], $
-       width=width, xerr=xerr1, ypeak=ypeak1)
+       width=width, xerr=xerr1, ypeak=ypeak1, _EXTRA=EXTRA)
 
       ;----------
       ; Save return values
