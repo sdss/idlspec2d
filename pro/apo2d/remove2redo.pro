@@ -58,6 +58,9 @@ pro remove2redo, mjd=mjd, plate=plate, expnum=expnum
       return
    endif
 
+   if (NOT keyword_set(getenv('SPECLOG_DIR'))) then $
+    setenv,'SPECLOG_DIR=/data/spectro/astrolog'
+
    ;----------
    ; If MJD is not specified, then find the most recent MJD for output files
 
@@ -66,9 +69,10 @@ pro remove2redo, mjd=mjd, plate=plate, expnum=expnum
     spectrolog_dir = '/data/spectro/spectrologs'
 
    if (NOT keyword_set(mjd)) then begin
-      mjdlist = get_mjd_dir(spectrolog_dir)
+      mjdlist = get_mjd_dir(spectrolog_dir, mjstart=1, mjend=99999, mjd='?????')
       mjd = (reverse(mjdlist[sort(mjdlist)]))[0]
    endif
+   splog, 'Selecting MJD=', mjd
 
    ;----------
    ; Find the log file
@@ -84,15 +88,18 @@ pro remove2redo, mjd=mjd, plate=plate, expnum=expnum
       return
    endif
 
+   if (keyword_set(plate) OR keyword_set(expnum)) then begin
+      rawdata_dir = getenv('RAWDATA_DIR')
+      if (NOT keyword_set(rawdata_dir)) then $
+       rawdata_dir = '/data/spectro'
+   endif
+
    ;----------
    ; If PLATE is specified, then read the headers of all the files
    ; to find out which files correspond to this plate.
    ; All those files are put in the array FULLNAME.
 
    if (keyword_set(plate)) then begin
-      rawdata_dir = getenv('RAWDATA_DIR')
-      if (NOT keyword_set(rawdata_dir)) then $
-       rawdata_dir = '/data/spectro'
       filename = 'sdR-*-*.fit*'
       fullname = findfile( djs_filepath(filename, root_dir=rawdata_dir, $
        subdirectory=mjdstr), count=nfile)
@@ -142,7 +149,7 @@ pro remove2redo, mjd=mjd, plate=plate, expnum=expnum
 
    splog, 'Working on ', logfile   
    for thishdu=1, 5 do begin
-      rstruct = mrdfits(logfile, thishdu)
+      rstruct = mrdfits(logfile, thishdu, /silent)
       nstruct = n_elements(rstruct)
 
       if (keyword_set(expnum) AND keyword_set(rstruct)) then begin
@@ -189,8 +196,10 @@ pro remove2redo, mjd=mjd, plate=plate, expnum=expnum
       redofiles = ''
       for iexp=0, n_elements(expnum)-1 do $
        for icam=0, n_elements(camnames)-1 do $
-        redofiles = [redofiles, findfile('sdR-' + camnames[icam] + '-' $
-         + string(expnum[iexp],format='(i8.8)') + '.fit*')]
+        redofiles = [redofiles, $
+         findfile(filepath('sdR-' + camnames[icam] + '-' $
+         + string(expnum[iexp],format='(i8.8)') + '.fit*', $
+         root_dir=rawdata_dir, subdirectory=mjdstr))]
       iredo = where(redofiles NE '')
       if (iredo[0] NE -1) then redofiles = redofiles[iredo] $
        else redofiles = 0
@@ -207,9 +216,10 @@ pro remove2redo, mjd=mjd, plate=plate, expnum=expnum
       return
    endif
 
-   for iredo=0, n_elements(redofiles)-1 do $
-    splog, 'Re-reduce file ' + redofiles[iredo]
-   spawn, 'rm -f ' + redofiles
+   for iredo=0, n_elements(redofiles)-1 do begin
+      splog, 'Re-reduce file ' + redofiles[iredo]
+      spawn, 'rm -f ' + redofiles[iredo]
+   endfor
 
    !quiet = quiet
    return
