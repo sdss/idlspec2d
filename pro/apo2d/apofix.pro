@@ -6,7 +6,7 @@
 ;   Add line to sdHdrFix file to denote change in FITS header for sdR files.
 ;
 ; CALLING SEQUENCE:
-;   apofix, expnum, [ card, value, camera=, /bad, /test, /notsos ]
+;   apofix, expnum, [ card, value, camera=, /bad, /test, /no_tsos ]
 ;
 ; INPUTS:
 ;   expnum     - Exposure number
@@ -23,7 +23,7 @@
 ;                This is equivalent to setting QUALITY='bad'.
 ;   test       - If set, then declare the specified exposure number to be test.
 ;                This is equivalent to setting QUALITY='test'.
-;   notsos     - This keyword can be set to run this proc on a machine
+;   not_sos    - This keyword can be set to run this proc on a machine
 ;                that is not named "sos".  This would only be done for
 ;                testing purposes.
 ;
@@ -84,7 +84,7 @@
 ;-
 ;------------------------------------------------------------------------------
 pro apofix, expnum, card, newval, camera=camera, bad=bad, test=test, $
- notsos=notsos
+ not_sos=not_sos
 
    common apofix_com, apo_uname
 
@@ -103,8 +103,10 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad, test=test, $
       apo_uname = (strsplit(uname_string[0], '.', /extract))[0]
    endif
 
-   if (apo_uname NE 'sos' AND NOT keyword_set(notsos)) then begin
+   if (apo_uname NE 'sos' AND keyword_set(not_sos) EQ 0) then begin
       print, 'This procedure can only be run on the machine sos.apo.nmsu.edu'
+      print, 'If Son-of-Spectro is now running on a different machine, you'
+      print, 'can call this routine with /not_sos'
       return
    endif
 
@@ -150,26 +152,26 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad, test=test, $
    endif
 
    if (keyword_set(bad) AND keyword_set(test)) then begin
-      print, 'Invalid to set both the /BAD and /TEST keywords. Ignoring!'
+      print, 'Invalid to set both the /BAD and /TEST keywords. Aborting!'
       return
    endif
 
    if (keyword_set(bad)) then begin
       if (keyword_set(card) OR keyword_set(value)) then begin
-         print, 'Invalid to set the /BAD flag along with CARD or VALUE. Ignoring!'
+         print, 'Invalid to set the /BAD flag along with CARD or VALUE. Aborting!'
          return
       endif
       card = 'QUALITY'
-      value = 'bad'
+      newval = 'bad'
    endif
 
    if (keyword_set(test)) then begin
       if (keyword_set(card) OR keyword_set(value)) then begin
-         print, 'Invalid to set the /TEST flag along with CARD or VALUE. Ignoring!'
+         print, 'Invalid to set the /TEST flag along with CARD or VALUE. Aborting!'
          return
       endif
       card = 'QUALITY'
-      value = 'test'
+      newval = 'test'
    endif
 
    if (size(card, /tname) NE 'STRING' $
@@ -201,31 +203,31 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad, test=test, $
    qstring = size(newval, /tname) EQ 'STRING'
    case strupcase(card) of
    'EXPOSURE': begin
-      print, 'The EXPOSURE number is always set to that in the file name. Ignoring!'
+      print, 'The EXPOSURE number is always set to that in the file name. Aborting!'
       return
       end
    'CAMERAS': begin
       possible = ['b1','b2','r1','r2']
       if (total(newval EQ possible) EQ 0) then begin
          print, 'Valid values = ', "'"+possible+"'"
-         print, 'Invalid value for CAMERAS. Ignoring!'
+         print, 'Invalid value for CAMERAS. Aborting!'
          return
       endif
       end
    'FLAVOR': begin
       if (newval EQ 'unknown') then begin
-         print, 'Please set QUALITY to bad instead of setting FLAVOR=unknown. Ignoring!'
+         print, 'Please set QUALITY to bad instead of setting FLAVOR=unknown. Aborting!'
          return
       endif
       possible = ['bias','dark','flat','arc','science','smear']
       if (total(newval EQ possible) EQ 0) then begin
          print, 'Valid values = ', "'"+possible+"'"
-         print, 'Invalid value for CAMERAS. Ignoring!'
+         print, 'Invalid value for CAMERAS. Aborting!'
          return
       endif
       end
    'MJD': begin
-      print, 'Not possible to change MJD. This is simply big trouble. Ignoring!'
+      print, 'Not possible to change MJD. This is simply big trouble. Aborting!'
       return
       end
    'PLATEID': begin
@@ -236,55 +238,55 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad, test=test, $
       end
    'NAME': begin
       if (strmatch(newval,'[0-9][0-9][0-9][0-9]-[5-9][0-9][0-9][0-9][0-9]-[0-9][0-9]')) then begin
-         print, 'NAME must be of the form "????-?????-??" [all digits]. Ignoring!'
+         print, 'NAME must be of the form "????-?????-??" [all digits]. Aborting!'
          return
       endif
       end
    'EXPTIME': begin
       if (long(newval) LT 0 OR long(newval) GT 3600 OR qstring) then begin
-         print, 'Valid exposure times must be between 0 and 3600 sec. Ignoring!'
+         print, 'Valid exposure times must be between 0 and 3600 sec. Aborting!'
          return
       endif
       end
    'TAI-BEG': begin
       if (double(newval) LT 4d9 OR double(newval) GT 6d9) then begin
-         print, 'Valid times are between 4d9 and 6d9. Ignoring!'
+         print, 'Valid times are between 4d9 and 6d9. Aborting!'
          return
       endif
       end
    'TAI-END': begin
       if (double(newval) LT 4d9 OR double(newval) GT 6d9) then begin
-         print, 'Valid times are between 4d9 and 6d9. Ignoring!'
+         print, 'Valid times are between 4d9 and 6d9. Aborting!'
          return
       endif
       end
    'TAI': begin
       if (double(newval) LT 4d9 OR double(newval) GT 6d9) then begin
-         print, 'Valid times are between 4d9 and 6d9. Ignoring!'
+         print, 'Valid times are between 4d9 and 6d9. Aborting!'
          return
       endif
       end
    'FFS': begin
       if (strmatch(newval,'[01] [01] [01] [01] [01] [01] [01] [01]')) then begin
-         print, 'FFS must be of the form "? ? ? ? ? ? ? ?" [all 0 or 1]. Ignoring!'
+         print, 'FFS must be of the form "? ? ? ? ? ? ? ?" [all 0 or 1]. Aborting!'
          return
       endif
       end
    'FF': begin
       if (strmatch(newval,'[01] [01] [01] [01]')) then begin
-         print, 'FF must be of the form "? ? ? ?" [all 0 or 1]. Ignoring!'
+         print, 'FF must be of the form "? ? ? ?" [all 0 or 1]. Aborting!'
          return
       endif
       end
    'NE': begin
       if (strmatch(newval,'[01] [01] [01] [01]')) then begin
-         print, 'NE must be of the form "? ? ? ?" [all 0 or 1]. Ignoring!'
+         print, 'NE must be of the form "? ? ? ?" [all 0 or 1]. Aborting!'
          return
       endif
       end
    'HGCD': begin
       if (strmatch(newval,'[01] [01] [01] [01]')) then begin
-         print, 'HGCD must be of the form "? ? ? ?" [all 0 or 1]. Ignoring!'
+         print, 'HGCD must be of the form "? ? ? ?" [all 0 or 1]. Aborting!'
          return
       endif
       end
@@ -293,7 +295,7 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad, test=test, $
        '{focus, hartmann l}', '{focus, hartmann r}']
       if (total(newval EQ possible) EQ 0) then begin
          print, 'Valid values = ', "'"+possible+"'"
-         print, 'Invalid value for OBSCOMM. Ignoring!'
+         print, 'Invalid value for OBSCOMM. Aborting!'
          return
       endif
       end
@@ -301,7 +303,7 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad, test=test, $
       possible = ['excellent','test','bad']
       if (total(newval EQ possible) EQ 0) then begin
          print, 'Valid values = ', "'"+possible+"'"
-         print, 'Invalid value for QUALITY. Ignoring!'
+         print, 'Invalid value for QUALITY. Aborting!'
          return
       endif
       end
@@ -313,36 +315,36 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad, test=test, $
       end
    'RA': begin
       if (double(newval) LT 0d OR double(newval) GT 360d OR qstring) then begin
-         print, 'Valid RA are between 0d and 360d. Ignoring!'
+         print, 'Valid RA are between 0d and 360d. Aborting!'
          return
       endif
       end
    'DEC': begin
       if (double(newval) LT -90d OR double(newval) GT 90d OR qstring) then begin
-         print, 'Valid DEC are between -90d and 90d. Ignoring!'
+         print, 'Valid DEC are between -90d and 90d. Aborting!'
          return
       endif
       end
    'RADEG': begin
       if (double(newval) LT 0d OR double(newval) GT 360d OR qstring) then begin
-         print, 'Valid RADEG are between 0d and 360d. Ignoring!'
+         print, 'Valid RADEG are between 0d and 360d. Aborting!'
          return
       endif
       end
    'DECDEG': begin
       if (double(newval) LT -90d OR double(newval) GT 90d OR qstring) then begin
-         print, 'Valid DECDEG are between -90d and 90d. Ignoring!'
+         print, 'Valid DECDEG are between -90d and 90d. Aborting!'
          return
       endif
       end
    'AIRTEMP': begin
       if (float(newval) LT -40 OR double(newval) GT 40 OR qstring) then begin
-         print, 'Valid AIRTEMP are between -40 and 40. Ignoring!'
+         print, 'Valid AIRTEMP are between -40 and 40. Aborting!'
          return
       endif
       end
    else: begin
-      print, 'This keyword is not of interest. Ignoring!'
+      print, 'This keyword is not of interest. Aborting!'
       return
       end
    endcase
@@ -450,7 +452,8 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad, test=test, $
        spectrolog_dir = '/data/spectro/spectrologs'
 
       logfile = 'logfile-' + mjdstr + '.fits'
-      logfile = filepath(logfile, root_dir=mjddir)
+      logfile = filepath(logfile, root_dir=spectrolog_dir, $
+       subdir=mjdstr)
       if (NOT keyword_set(findfile(logfile))) then begin
          splog, 'Unable to find logfile '+logfile
          return
@@ -460,18 +463,18 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad, test=test, $
       while(djs_lockfile(logfile) EQ 0) do wait, 1
 
       ;----------
-      ; Loop through each HDU in the log file.
+      ; Loop through each of the first 4 HDUs in the log file.
 
       splog, 'Reading the logfile ' + logfile
-      for thishdu=1, 5 do begin
+      for thishdu=1, 4 do begin
          rstruct = mrdfits(logfile, thishdu, /silent)
          nstruct = n_elements(rstruct) * (keyword_set(rstruct))
 
          qchange = 0
          for i=0, nstruct-1 do begin
             if (expnum EQ rstruct[i].expnum $
-             AND strmatch(rstruct[i].camera,camname)) then begin
-               rstruct[i].quality = strval
+             AND strmatch(rstruct[i].camera,camera)) then begin
+               rstruct[i].quality = newval
                qchange = 1
             endif
          endfor
