@@ -117,50 +117,64 @@ The following intructions only apply to versions of "idlspec2d" v4_3_1 and later
 
 <P>
 Check out a tagged version, such as v4_3_1, of both "idlutils" and "idlspec2d".
+These should be checked out to your home directory, then installed in the
+products directory (/p).
+
+<OL>
+
+<LI>
 To avoid typing mistakes, I start by defining two environment variables
 for the version numbers:
 <DL><DD><PRE>
   % setenv IDLUTILS_VERS v4_3_1
   % setenv IDLSPEC2D_VERS v4_3_1
-  % setup sdsscvs # Only needed on machines set up by Fermi
-  % cd /p/idlutils
-  % cvs co -d $IDLUTILS_VERS -r $IDLUTILS_VERS idlutils
-  % cd /p/idlspec2d
-  % cvs co -d $IDLSPEC2D_VERS -r $IDLSPEC2D_VERS idlspec2d
 </PRE></DD></DL>
 
-<P>
-Declare these versions (and optionally declare them as current with the "-c"
-flag):
+<LI>
+Install this version of "idlutils" and declare it current:
 <DL><DD><PRE>
+  % setup sdsscvs # Only needed on machines set up by Fermi
+  % cd
+  % cvs export -r $IDLUTILS_VERS idlutils
+  % cd ~/idlutils
+  % setup -r ~/idlutils idlutils
+  % sdssmake -idl -opt -debug
+  % setenv IDLUTILS_DIR /p/idlutils/$IDLUTILS_VERS
+  % sdssmake install
   % ups declare -f Linux+2 -m idlutils.table \
     -r /p/idlutils/$IDLUTILS_VERS -c idlutils $IDLUTILS_VERS
+</PRE></DD></DL>
+
+<LI>
+Install this version of "idlspec2d" with a dependency on the above
+version of "idlutils", and declare it current:
+<DL><DD><PRE>
+  % cd
+  % cvs export -r $IDLSPEC2D_VERS idlspec2d
+  % cd ~/idlspec2d
+  % setup -r ~/idlspec2d idlspec2d
+  % setup idlutils $IDLUTILS_VERS  # This makes the dependency
+  % sdssmake -idl -opt -debug
+  % setenv IDLSPEC2D_DIR /p/idlspec2d/$IDLSPEC2D_VERS
+  % sdssmake install
   % ups declare -f Linux+2 -m idlspec2d.table \
     -r /p/idlspec2d/$IDLSPEC2D_VERS -c idlspec2d $IDLSPEC2D_VERS
 </PRE></DD></DL>
 
-<P>
-Build the code:
-<DL><DD><PRE>
-  % setup idl  # Only needed for machines set up by Fermi
-  % setup idlutils $IDLUTILS_VERS
-  % setup idlspec2d $IDLSPEC2D_VERS
-  % cd $IDLUTILS_DIR
-  % evilmake all
-  % cd $IDLSPEC2D_DIR
-  % evilmake all
-</PRE></DD></DL>
+</OL>
 
 <P>
 Now you are ready to <A HREF="#launch">launch</A> this new version of the code.
 
 <H3><A NAME="install_cvs">Installing w/out UPS</A></H3>
 
-<P>
+<OL>
+
+<LI>
 IDL must already be installed on your system, and
 the environment variables IDL_DIR and IDL_PATH must already be set.
 
-<P>
+<LI>
 Check out a tagged version, such as v4_3_1, of both "idlutils" and "idlspec2d",
 into your home directory (for this example).
 To avoid typing mistakes, I start by defining two environment variables
@@ -174,7 +188,7 @@ for the version numbers:
   % cvs co -r $IDLSPEC2D_VERS idlspec2d
 </PRE></DD></DL>
 
-<P>
+<LI>
 Set the environment variables.  From a "csh" or "tcsh" shell:
 <DL><DD><PRE>
   % setenv IDLUTILS_DIR $HOME/idlutils
@@ -184,15 +198,19 @@ Set the environment variables.  From a "csh" or "tcsh" shell:
   % setenv IDL_PATH +{$IDLUTILS_DIR}/pro:{$IDL_PATH}
   % setenv IDL_PATH +{$IDLSPEC2D_DIR}/pro:{$IDL_PATH}
 </PRE></DD></DL>
+You may wish to add the above lines to your ``~/.cshrc'' file.
 
-<P>
+<LI>
 Build the code:
 <DL><DD><PRE>
+  % setup idl # Only needed on machines set up by Fermi
   % cd $IDLUTILS_DIR
   % evilmake all
   % cd $IDSPEC2D_DIR
   % evilmake all
 </PRE></DD></DL>
+
+</OL>
 
 <P>
 Now you are ready to <A HREF="#launch">launch</A> the code.

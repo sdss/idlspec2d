@@ -1,210 +1,136 @@
 <HTML>
 <HEAD><TITLE>SDSS IDLSPEC2D Installation</TITLE></HEAD>
 
-<BODY>
+<BODY TEXT="#000000" LINK="#0000ff" VLINK="#800080" BGCOLOR="#eeeeee"
+ALINK="#FF0000">
 
-<H1 ALIGN="center">SDSS IDLSPEC2D Installation</H1>
+<CENTER><H1 ALIGN="center">SDSS IDLSPEC2D Installation</H1></CENTER>
 
-<HR>
+<P>
+This document explains how to install the idlutils,idlspec2d products
+needed for reducing SDSS spectroscopic data.
 
-<H2 ALIGN="left">Installing IDLSPEC2D w/UPD </H2>
+<P>
+In this document:
+<UL>
+  <LI><A HREF="#install_ups">Installing w/UPS</A>
+  <LI><A HREF="#install_cvs">Installing w/out UPS</A>
+  <LI><A HREF="#install_tar">Installing from a tar file</A>
+</UL>
 
-The following instructions are for installing IDLSPEC2D from
-the UPD repository at Fermilab.  This would be the proper way to install
-a cut version of the code, though it appears that only the very first
-version of the code (v1_0) is in the repository. <BR>
+<H2><A NAME="install_ups">Installing w/UPS</A></H2>
+
+<P>
+Check out a tagged version, such as v4_3_1, of both "idlutils" and "idlspec2d".
+These should be checked out to your home directory, then installed in the
+products directory (/p).
 
 <OL>
 
-<LI> ``<TT>idl</TT>'' should already be installed on the system.
-Try the following:<BR>
-<DL><DD>
-<TT> which idl </TT><BR>
-</DD></DL>
-which should return the path for <TT>idl</TT>.  On some Fermi machines,
-you'll need to
-<DL><DD>
-<TT> setup idl </TT><BR>
-</DD></DL>
-
-<LI> Install ``idlspec2d'', which will also install ``idlutils''.
-The following example is for installing version v1_0 (which is useless). <BR>
+<LI>
+To avoid typing mistakes, I start by defining two environment variables
+for the version numbers:
 <DL><DD><PRE>
-setup upd
-upd install idlspec2d v1_0 -H Linux+2 "-c -f Linux+2"
+  % setenv IDLUTILS_VERS v4_3_1
+  % setenv IDLSPEC2D_VERS v4_3_1
+</PRE></DD></DL>
+
+<LI>
+Install this version of "idlutils" and declare it current:
+<DL><DD><PRE>
+  % setup sdsscvs # Only needed on machines set up by Fermi
+  % cd
+  % cvs export -r $IDLUTILS_VERS idlutils
+  % cd ~/idlutils
+  % setup -r ~/idlutils idlutils
+  % sdssmake -idl -opt -debug
+  % setenv IDLUTILS_DIR /p/idlutils/$IDLUTILS_VERS
+  % sdssmake install
+  % ups declare -f Linux+2 -m idlutils.table \
+    -r /p/idlutils/$IDLUTILS_VERS -c idlutils $IDLUTILS_VERS
+</PRE></DD></DL>
+
+<LI>
+Install this version of "idlspec2d" with a dependency on the above
+version of "idlutils", and declare it current:
+<DL><DD><PRE>
+  % cd
+  % cvs export -r $IDLSPEC2D_VERS idlspec2d
+  % cd ~/idlspec2d
+  % setup -r ~/idlspec2d idlspec2d
+  % setup idlutils $IDLUTILS_VERS  # This makes the dependency
+  % sdssmake -idl -opt -debug
+  % setenv IDLSPEC2D_DIR /p/idlspec2d/$IDLSPEC2D_VERS
+  % sdssmake install
+  % ups declare -f Linux+2 -m idlspec2d.table \
+    -r /p/idlspec2d/$IDLSPEC2D_VERS -c idlspec2d $IDLSPEC2D_VERS
 </PRE></DD></DL>
 
 </OL>
 
-<HR>
-
-<H2 ALIGN="left">Installing IDLSPEC2D from CVS w/SDSSTOOLS </H2>
-
-The following instructions are for building a version of IDLSPEC2D from
-the current version of the code in the Fermilab CVS repository.
+<H2><A NAME="install_cvs">Installing w/out UPS</A></H2>
 
 <OL>
+<LI>
+IDL must already be installed on your system, and
+the environment variables IDL_DIR and IDL_PATH must already be set.
 
-<LI> ``<TT>idl</TT>'' should already be installed on the system.
-Try the following:<BR>
-<DL><DD>
-<TT> which idl </TT><BR>
-</DD></DL>
-which should return the path for <TT>idl</TT>.  On some Fermi machines,
-you'll need to
-<DL><DD>
-<TT> setup idl </TT><BR>
-</DD></DL>
-
-<LI> Download the ``idlutils'' and ``idlspec2d'' packages. <BR>
+<LI>
+Check out a tagged version, such as v4_3_1, of both "idlutils" and "idlspec2d",
+into your home directory (for this example).
+To avoid typing mistakes, I start by defining two environment variables
+for the version numbers:
 <DL><DD><PRE>
-cd
-setup sdsscvs
-cvs co idlutils
-cvs co idlspec2d
+  % setenv IDLUTILS_VERS v4_3_1
+  % setenv IDLSPEC2D_VERS v4_3_1
+  % setup sdsscvs # Only needed on machines set up by Fermi
+  % cd
+  % cvs co -r $IDLUTILS_VERS idlutils
+  % cvs co -r $IDLSPEC2D_VERS idlspec2d
 </PRE></DD></DL>
 
-If these packages already exist, you may choose to update them instead: <BR>
+<LI>
+Set the environment variables.  From a "csh" or "tcsh" shell:
 <DL><DD><PRE>
-cd ~/idlutils
-cvs update -d
-cd ~/idlspec2d
-cvs update -d
+  % setenv IDLUTILS_DIR $HOME/idlutils
+  % setenv IDLSPEC2D_DIR $HOME/idlspec2d
+  % set path=( $IDLUTILS_DIR/bin $IDLSPEC2D_DIR/bin $path )
+  % setenv IDL_PATH +{$IDLUTILS_DIR}/goddard/pro:{$IDL_PATH}
+  % setenv IDL_PATH +{$IDLUTILS_DIR}/pro:{$IDL_PATH}
+  % setenv IDL_PATH +{$IDLSPEC2D_DIR}/pro:{$IDL_PATH}
 </PRE></DD></DL>
-
-<BR>
-
-<LI> Log in as user ``products'' and declare the products:
-
-<DL><DD><PRE>
-su products    (need the password for this)
-ups declare -f Linux+2 -m idlutils.table \
-    -c -r $HOME/idlutils idlutils cvs
-ups declare -f Linux+2 -m idlspec2d.table \
-    -c -r $HOME/idlspec2d idlspec2d cvs
-exit    (log out as user ``products'')
-</PRE></DD></DL>
-
-<LI> Build the ``idlutils'' and ``idlspec2d'' packages. <BR>
-<DL><DD><PRE>
-setup sdsstools
-setup idlutils
-setup idlspec2d
-cd ~/idlutils
-sdssmake -idl -opt -debug
-cd ~/idlspec2d
-sdssmake -idl -opt -debug
-</PRE></DD></DL>
-
-</OL>
-
-<BR>
-
-
-The following instructions are for building a tagged version of IDLSPEC2D from
-the Fermilab CVS repository.  In this example, we build version v4_1_2.
-
-<OL>
-
-<LI> ``<TT>idl</TT>'' should already be installed on the system.
-Try the following:<BR>
-<DL><DD><PRE>
-which idl
-</PRE></DD></DL>
-which should return the path for <TT>idl</TT>.
-
-<BR><BR>
-
-<LI> Download the ``idlutils'' and ``idlspec2d'' packages, putting them
-in subdirectories named after the version. <BR>
-<DL><DD><PRE>
-setup sdsscvs
-mkdir $HOME/idlutils $HOME/idlspec2d
-setenv IDLVERS v4_1_2
-cd $HOME/idlutils
-cvs co -r $IDLVERS -d $IDLVERS idlutils
-cd $HOME/idlspec2d
-cvs co -r $IDLVERS -d $IDLVERS idlspec2d
-</PRE></DD></DL>
-
-<BR>
-
-<LI> Log in as user ``products'' and declare this version of the code
-as current:
-<DL><DD><PRE>
-su products    (need the password for this)
-ups declare -f Linux+2 -m idlutils.table \
-    -c -r $HOME/idlutils/$IDLVERS/$IDLVERS idlutils $IDLVERS
-ups declare -f Linux+2 -m idlspec2d.table \
-    -c -r $HOME/idlspec2d/$IDLVERS/$IDLVERS idlspec2d $IDLVERS
-exit    (log out as user ``products'')
-</PRE></DD></DL>
-
-<BR>
-
-<LI> Build the ``idlutils'' and ``idlspec2d'' packages. <BR>
-<DL><DD><PRE>
-setup sdsstools
-setup idlutils
-setup idlspec2d
-cd $HOME/idlutils/$IDLVERS
-sdssmake -idl -opt -debug
-cd $HOME/idlspec2d/$IDLVERS
-sdssmake -idl -opt -debug
-</PRE></DD></DL>
-
-</OL>
-
-
-<HR>
-
-<H2 ALIGN="left">Installing IDLSPEC2D from CVS w/out SDSSTOOLS </H2>
-
-The following instructions are for building a version of IDLSPEC2D without
-any other Fermi code (such as <TT>sdssmake</TT>).
-This is not the recommended method of installation.
-
-<OL>
-
-<LI> ``<TT>idl</TT>'' should already be installed on the system.
-Try the following:<BR>
-<DL><DD><PRE>
-which idl
-</PRE></DD></DL>
-which should return the path for <TT>idl</TT>.
-
-<BR><BR>
-
-<LI> Download the ``idlutils'' and ``idlspec2d'' packages (as above). <BR>
-
-<BR>
-
-<LI> Build everything using the utility <TT>$IDLUTILS_DIR/bin/evilmake</TT>:
-<DL><DD><PRE>
-setenv IDLUTILS_DIR $HOME/idlutils
-setenv IDLSPEC2D_DIR $HOME/idlspec2d
-set path = ( $path {$IDLUTILS_DIR}/bin )
-cd $IDLUTILS_DIR
-evilmake all
-cd $IDLSPEC2D_DIR
-evilmake all
-</PRE></DD></DL>
-
-<BR>
-
-<LI> Then set the necessary environment variables (assuming IDL version 5.2):
-<DL><DD><PRE>
-setenv IDL_DEVICE X </TT><BR>
-setenv IDL_DIR /usr/local/rsi/idl_5.2
-setenv IDL_PATH .:+$IDL_DIR/lib
-setenv IDL_PATH {$IDL_PATH}:+{$IDLSPEC2D_DIR}/pro
-setenv IDL_PATH {$IDL_PATH}:+{$IDLUTILS_DIR}/pro
-setenv IDL_PATH {$IDL_PATH}:+{$IDLUTILS_DIR}/goddard/pro
-</PRE></DD></DL>
-
-</DL></DD>
-
 You may wish to add the above lines to your ``~/.cshrc'' file.
+
+<LI>
+Build the code:
+<DL><DD><PRE>
+  % setup idl # Only needed on machines set up by Fermi
+  % cd $IDLUTILS_DIR
+  % evilmake all
+  % cd $IDSPEC2D_DIR
+  % evilmake all
+</PRE></DD></DL>
+
+</OL>
+
+<H2><A NAME="install_tar">Installing from a tar file</A></H2>
+
+<OL>
+
+<LI>
+IDL must already be installed on your system, and
+the environment variables IDL_DIR and IDL_PATH must already be set.
+
+<LI>
+Unpack the tar files for both "idlutils" and "idlspec2d":
+<DL><DD><PRE>
+  % tar xvf idlutils*.tar
+  % tar xvf idlspec2d*.tar
+</PRE></DD></DL>
+
+<LI>
+Continue from <A HREF="#install_cvs">step 3</A> of the CVS-install
+instructions.
 
 </OL>
 
