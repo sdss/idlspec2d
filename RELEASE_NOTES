@@ -15,6 +15,8 @@ SPREDUCE1D: Search for stars at velocities to +/- 1200 km/s (was 600 km/s).
               COUNTS_SPECTRO, COUNTS_SYNTH, COUNTS_SKY (not used yet),
               VDISP, VDISP_ERR.
             Compute velocity dispersions using real-space method (VDISPFIT).
+            Slightly increase width for re-fitting galaxy redshifts from
+              PWIDTH=5 to 7.  This may fix PR #1938.
 TELLURIC_CORR: If a telluric star is deemded bad, then reject all of
             its FITFLUX pixels from the global fit.  Previously, we were
             only rejecting the pixels INDT, but still allowing bad continuum
