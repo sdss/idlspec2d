@@ -1,4 +1,9 @@
 
+LRG_PHOTOZ: New simple photo-z finder for LRGs using a single template.
+
+templates/spLRG-52928.fits: LRG templates for LRG_PHOTOZ function.
+pro/Makefile: Add photoz directory
+
 -------------------------------------------------------------------------------
 v4_10_6 (Oct 15, 2003 idlspec2d running on IDL 5.3 - 5.6
 Built against specflat v1_5, elodie v1_0, idlutils v4_10_6.
