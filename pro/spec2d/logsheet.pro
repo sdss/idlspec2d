@@ -22,6 +22,7 @@
 ; EXAMPLES:
 ;
 ; PROCEDURES CALLED:
+;   djs_filepath()
 ;   sdsshead()
 ;   sxpar()
 ;
@@ -31,9 +32,7 @@
 ;------------------------------------------------------------------------------
 pro logsheet, dir, outfile=outfile
 
-   if (NOT keyword_set(dir)) then dir = '.'
-
-   fullname = findfile(filepath('*.fit*',root_dir=dir), count=nfile)
+   fullname = findfile(djs_filepath('sdR*.fit',root_dir=dir), count=nfile)
 
    if (nfile EQ 0) then begin
       print, 'No files found.'
@@ -41,8 +40,7 @@ pro logsheet, dir, outfile=outfile
 
       ; Open output file
       if (keyword_set(outfile)) then begin
-         get_lun, olun
-         openw, olun, outfile
+         openw, olun, outfile, /get_lun
       endif else begin
          olun = -1
       endelse
