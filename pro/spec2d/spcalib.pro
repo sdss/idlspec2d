@@ -503,7 +503,7 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
          npoly = 5  
          extract_image, flatimg, flativar, xsol, sigma2, flux, fluxivar, $
           proftype=proftype, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
-          npoly=npoly, relative=1, chisq=schisq, reject=[0.3,0.9,0.9]
+          npoly=npoly, relative=1, chisq=schisq, reject=[0.2,0.7,0.7]
           
          splog, 'First  extraction chi^2 ', minmax(fchisq)
          splog, 'Second extraction chi^2 ', minmax(schisq)
