@@ -1,5 +1,54 @@
 
 
+\subsection{Extraction}
+
+We utilize an optimal extraction procedure to transform a 2-dimensional image of
+the fiber spectrograms to a set of 320 1-dimensional spectra.  We use the same procedure
+on all processed frames, and will describe the details in processing the flat-field frames, the
+arc lamp frames, and finally the science frames.  
+The extraction is performed row-by-row, so each frame requires an outside loop over 2048 individual rows.
+The counts in each row of 2048 pixels are modeled with a linear combination of 320 profiles plus a low-order
+polynomial background.  We decided to perform profile fitting to the SDSS spectral images 
+for the following reasons:  
+
+\begin{enumerate}
+
+\item{The fiber profiles overlap significantly with their nearest neighbors.}
+
+\item{The profiles are relatively stable and smoothly vary over location on the CCDs.  
+They result from the convolution of the fiber illumination pattern + the point-spread function
+of the optics in the SDSS spectrographs + the window funciton of the Site CCD 24 micron square pixels. }
+
+\item{A least-squares fit with the true profile delivers an unbiased and minimum variance estimate of the counts
+(e.g. Horne et al. 1995).}
+
+\end{enumerate}
+
+The major obstacle to actual optimal extraction is the determination of the exact shape and position 
+of the underlying profile.  We investigated a range of symmetric, analytic profiles with a 
+minimum number of free parameters.  In the end, we found the best results using a simple gaussian 
+or a slightly steeper profile characterized by $e^{-|x|^3/\sigma^3}$.  The profiles
+are defined to be normalized to unity, so the amplitude of the profile fit gives a direct estimator
+of the counts at a single spectral position. 
+
+
+Extraction is first carried out on all flat-field exposures (typically 10 second observations of
+4 quartz lamps projected on petals covering the entrance aperture of the telescope) which were observed
+with a common plug plate configuration.  The flat-field extraction is used to determine the shape of
+the profile as a function of wavelength and position on the CCD.  The resulting spectral extractions are also used to 
+determine the empirical fiber-to-fiber variations in throughput (as a function of wavelength) 
+during a single setup.   
+
+
+
+
+
+Three types of exposures, corresponding to flat-field, arc lamp and science frames,
+ are extracted with the same basic procedure
+which we describe below.  The frames associated with a single observing sequence 
+are processed in a certain order.  The first types to be extracted are the 
+flat-fields frames ("FLATS").  
+
 The object extraction lists 5 steps in header:
 
 \begin{enumerate}
@@ -35,17 +84,19 @@ for the midpoint of the observation to produce respresentative sky spectra for
 an airmass of 1.  The inverse variance is scaled accordingly.}
 
 \item{Group and sort the sky spectra as a function of wavelength.  This step
-transforms a 2-dimensional set of N_sky x 2048 pixels into a sorted 1-dimensional array.  Each pixel maintains its associated central wavelength and 
-inverse variance. }
+transforms a 2-dimensional set of N_sky x 2048 pixels into a sorted 1-dimensional array.  
+Each pixel maintains its associated central wavelength and inverse variance. }
 
 \item{Perform a single cubic b-spline fit as a function of wavelength.  
 The number of breakpoints (number of free parameters is 4 greater) is set 
 at 2048 on the red side and 1536 on the blue side.  The breakpoint spacing 
 is set automatically to maintain approximately constant S/N between breakpoint 
-positions. The b-spline fit itself is iterative, with upper and lower rejection thresholds set to mask bad or deviant pixels. }
+positions. The b-spline fit itself is iterative, with upper and lower rejection 
+thresholds set to mask bad or deviant pixels. }
 
 \item{The b-spline fit is evaluated at all 320x2048 wavelengths representing all
-spectral pixels in the frame.  The airmass correction is applied for each individual fiber, and the rescaled super-sky is subtracted from each spectrum.}
+spectral pixels in the frame.  The airmass correction is applied for each individual 
+fiber, and the rescaled super-sky is subtracted from each spectrum.}
 
 \item{Estimate the significance of the residuals in the sky fibers used for the
 fit in wavelength bins separated by breakpoints determined above.  for each bin
@@ -84,10 +135,12 @@ at the central wavelengths of the single spectral frames.
 The accuracy of the SDSS spectral sky subtraction has been tested in recent
 scientific analyses using large numbers of background-limited spectra.   
 The distribution of flux residuals between spectral observations 
-on separate nights has been shown to be 6\%-9\% larger in width than expected
+on separate nights has been shown to be 8\% larger in width than the average expected
 from the reported errors (McDonald et al. 2004, Burgess \& Burles 2005).
-For combined observations of faint galaxies, the distribution of residuals 
-about the best model fit is well described by a gaussian with exponential
-tails (Bolton et al. 2004), where the magnitude of tails is greatly enhanced in
-the vicinity of strong sky emission lines.  
+The spectra of faint, background-limited galaxies observed with SDSS exhibit a 
+distribution of residuals about the best fit spectral models described by the sum of a
+Gaussian and Laplace distribution (Bolton et al. 2004).  
+The influence of the exponential tail is greatly enhanced in the vicinity of strong sky 
+emission lines representative of systematic errors in the brightest lines, but the gaussian 
+width closely is closely represented by the reported variance array.
 
