@@ -51,10 +51,12 @@
 ;   Spawns the Unix command 'tail' to get the last line of log files.
 ;
 ; DATA FILES:
+;   $IDLSPEC2D_DIR/etc/spPlateList.par
 ;   $SPECTRO_DATA/platelist.fits
 ;   $SPECTRO_DATA/platelist.txt
 ;
 ; PROCEDURES CALLED:
+;   chunkinfo()
 ;   djs_filepath()
 ;   fileandpath()
 ;   headfits()
@@ -62,6 +64,7 @@
 ;   repstr()
 ;   splog
 ;   sxpar()
+;   yanny_free
 ;   yanny_par()
 ;   yanny_read
 ;
@@ -131,8 +134,18 @@ pro platelist, infile, plist=plist, create=create
     'n_sky'    , 0L, $
     'status2d' , 'Missing', $
     'status1d' , 'Missing', $
-    'qsurvey'  , 0L )
+    'qsurvey'  , 0L, $
+    'public'  , '' )
    plist = replicate(plist, nfile)
+
+   ;----------
+   ; Read the data file with the public plate information
+
+   publicfile = filepath('spPlateList.par', $
+    root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
+   yanny_read, publicfile, pdata
+   publicdata = *pdata[0]
+   yanny_free, pdata
 
    ;---------------------------------------------------------------------------
    ; Loop through all files
@@ -265,6 +278,14 @@ pro platelist, infile, plist=plist, create=create
       plist[ifile].verstarg = cinfo.verstarg
 
       ;----------
+      ; Determine which public data release has this plate+MJD
+
+      j = where(plist[ifile].plate EQ publicdata.plate $
+       AND plist[ifile].mjd EQ publicdata.mjd)
+      if (j[0] NE -1) then $
+       plist[ifile].public = publicdata[j[0]].public
+
+      ;----------
       ; The RA,DEC in the header is sometimes wrong, so try to derive
       ; the field center from the plug-map information.  Choose the
       ; coordinates of the object closest to the center of the plate
@@ -391,9 +412,9 @@ pro platelist, infile, plist=plist, create=create
     olun = -1L
 
    printf, olun, 'PLATE  MJD   RA    DEC   SN2_G1 SN2_I1 SN2_G2 SN2_I2 ' $
-    + 'Ngal Nqso Nsta Nunk Nsky Stat2D  Stat1D  Vers2D    Vers1D    ?'
+    + 'Ngal Nqso Nsta Nunk Nsky Stat2D  Stat1D  Vers2D    Vers1D    ? Pub'
    printf, olun, '-----  ----- ----- ----- ------ ------ ------ ------ ' $
-    + '---- ---- ---- ---- ---- ------- ------- --------- --------- -'
+    + '---- ---- ---- ---- ---- ------- ------- --------- --------- - ---'
 
    ;----------
    ; Loop through all files
@@ -405,8 +426,9 @@ pro platelist, infile, plist=plist, create=create
        plist[ifile].n_galaxy, plist[ifile].n_qso, plist[ifile].n_star, $
        plist[ifile].n_unknown, plist[ifile].n_sky, $
        plist[ifile].status2d, plist[ifile].status1d, $
-       plist[ifile].vers2d, plist[ifile].vers1d, plist[ifile].qsurvey, $
-       format='(i5,i7,f6.1,f6.1,4f7.1,5i5,2(1x,a7),2(1x,a9),i2)'
+       plist[ifile].vers2d, plist[ifile].vers1d, $
+       plist[ifile].qsurvey, plist[ifile].public, $
+       format='(i5,i7,f6.1,f6.1,4f7.1,5i5,2(1x,a7),2(1x,a9),i2,a4)'
    endfor
 
    ;----------
