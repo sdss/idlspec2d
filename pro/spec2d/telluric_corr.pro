@@ -216,10 +216,13 @@ function telluric_corr,flux, fluxivar, wset, plugsort, $
                iend = (where(bkpt GT max(tellloglam[indc,itell])))[0]
                if (iend EQ -1) then iend = nbkpts-1
 
+               ; Reject at most 10% of the points
+               maxrej = ceil(0.10 * (istart - iend + 1))
+
                sset = bspline_iterfit(tellloglam[indc,itell], $
                 tellflux[indc,itell], invvar=tellivar[indc,itell], $
                 maxiter=10, upper=upper, lower=lower, $
-                nord=nord, bkpt=bkpt[istart:iend], rejper=0.10)
+                nord=nord, bkpt=bkpt[istart:iend], maxrej=maxrej)
 
                continuum = bspline_valu(tellloglam[*,itell], sset)
 
