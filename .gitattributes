@@ -179,7 +179,6 @@ pro/spec2d/xy2traceset.pro -text
 src/Makefile -text
 src/evilmath.c -text
 src/extract_boxcar.c -text
-src/extract_profile.c -text
 src/extract_row.c -text
 src/sshiftvec.c -text
 src/trace_crude.c -text
