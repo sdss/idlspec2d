@@ -344,7 +344,7 @@ pro spfluxcorr_v5, objname, adderr=adderr, combinedir=combinedir, $
 
    for ifile=0L, nfile-1 do begin
       splog, 'Reading + rebinning raw spectra ', objname[ifile]
-; Should we also read in the mask and reject around bright sky, etc ???
+      ; Should we also read in the mask and reject around bright sky, etc ?
       icolor = (camcolor[ifile] EQ 'b') ? 0 : 1
 
       ; Read the raw spectra for this file
