@@ -6,7 +6,8 @@
 ;   Plot S/N and residuals in up to 3 bands
 ;
 ; CALLING SEQUENCE:
-;   plotsn, snvec, plugmap, [ bands=, plotmag=, fitmag=, plottitle=, plotfile= ]
+;   plotsn, snvec, plugmap, [ bands=, plotmag=, fitmag=, plottitle=, plotfile=, $
+;                             synthmag=  ]
 ;
 ; INPUTS:
 ;   snvec      - S/N array [nbands, nfibers]
@@ -22,10 +23,12 @@
 ;                FITMAG[0] = 1.0.
 ;   plottitle  - Title for top of plot
 ;   plotfile   - Optional plot file
+;   synthmag   - Vector of synthetic magnitudes
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL OUTPUTS:
+;   snplate    - Best fit (S/N)^2 at fiducial magnitude
 ;
 ; COMMENTS:
 ;   The fiducial magnitudes at which to evaluate the fit to (S/N) are
@@ -46,7 +49,8 @@
 ;-
 ;------------------------------------------------------------------------------
 pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
- plottitle=plottitle, plotfile=plotfile, snplate=snplate
+ plottitle=plottitle, plotfile=plotfile, snplate=snplate, $
+ synthmag=synthmag
 
    if (size(snvec,/n_dim) NE 2) then return
    if (NOT keyword_set(bands)) then bands=[1, 2, 3]

@@ -1,10 +1,8 @@
+;platesn, 'spPlate-0306-51637.fits', 'spSN2d-0306-51637.ps'
 pro platesn, platefile, snplot
 
    finalflux=mrdfits( platefile, 0, hdr)
    finalivar=mrdfits( platefile , 1)
-   finalandmask=mrdfits( platefile, 2)
-   finalormask=mrdfits( platefile, 3)
-   finaldispersion=mrdfits( platefile, 4)
    finalplugmap=mrdfits( platefile, 5)
 
    nfiber = (size(finalflux))[2]
@@ -22,51 +20,76 @@ pro platesn, platefile, snplot
 
    ;--------------------------------------------------------------------
    ;  spectra are already in 10^-17 flambda
+   ;  that's why we add 2.5*17 to the magnitude
    ;
-   waveimg = finalwave # replicate(1,nfiber)
-   flambda2fnu = (10^(waveimg))^2 / 2.99792e11
+   waveimg = 10^(finalwave) 
+   flambda2fnu = (waveimg*waveimg / 2.99792e18) # replicate(1,nfiber)
 
    filter=transpose(filter_thru(finalflux*flambda2fnu, waveimg=waveimg, $
-             mask=(finalivar GT 0), /norm))
+             mask=(finalivar LE 0), /norm))
 
    synthetic_mags = fltarr(3,nfiber)
    posfilter = where(filter[1:3,*] GT 0)
    if posfilter[0] NE -1 then $
        synthetic_mags[posfilter] = $
-                -2.5 * alog10((filter[1:3,*])[posfilter]) - 48.6 + 60.0
+                -2.5 * alog10((filter[1:3,*])[posfilter]) - 48.6 + 2.5*17.0
 
    ;---------------------------------------------------------------------------
    ;  Make S/N plot
    ;
  
-   plotsn, snvec, finalplugmap, plotfile=snplot, plottitle=plottitle
+   plotsn, snvec, finalplugmap, plotfile=snplot, plottitle=plottitle, $
+      synthmag=synthetic_mags, snplate=snplate
+
+   ;---------------------------------------------------------------------------
+   ;	!!! This is crazy, but I'm going to write out the S/N 
+   ;    !!!   per plate in the hdr !!
+  
+
+   if NOT keyword_set(snplate) then return
+
+   bands = ['G','R','I']
+   snmag = [20.2, 20.25, 19.9]
+
+
+   for ispec=1,2 do begin
+     for bb=0,n_elements(bands) do begin
+
+         key1 = 'SPEC'+ strtrim(ispec,2)+'_'+bands[bb]
+         comment = string(format='(a,i2,a,f5.2)', '(S/N)^2 for spec ', ispec, ' at mag ', snmag[bb])
+
+         sxaddpar, hdr, key1, snplate[ispec-1,bb], comment, before='LOWREJ'
+     endfor
+   endfor
 
    ;---------------------------------------------------------------------------
    ; Write combined output file
    ;---------------------------------------------------------------------------
 
+   finalandmask=mrdfits( platefile, 2)
+   finalormask=mrdfits( platefile, 3)
+   finaldispersion=mrdfits( platefile, 4)
+
    ; 1st HDU is flux
-;   mwrfits, finalflux, platefile, hdr, /create
-;
+   mwrfits, finalflux, platefile, hdr, /create
+
    ; 2nd HDU is inverse variance
-;   mwrfits, finalivar, platefile
+   mwrfits, finalivar, platefile
 
    ; 3rd HDU is AND-pixelmask
-;   mwrfits, finalandmask, platefile
+   mwrfits, finalandmask, platefile
 
    ; 4th HDU is OR-pixelmask
-;   mwrfits, finalormask, platefile
+   mwrfits, finalormask, platefile
 
    ; 5th HDU is dispersion map
-;   mwrfits, finaldispersion, platefile
+   mwrfits, finaldispersion, platefile
 
    ; 6th HDU is plugmap
-;   mwrfits, finalplugmap, platefile
+   mwrfits, finalplugmap, platefile
 
-;   mwrfits, snvec, platefile
-;   mwrfits, synthetic_mags, platefile
-
-    stop
+   mwrfits, snvec, platefile
+   mwrfits, synthetic_mags, platefile
 
    return
 end

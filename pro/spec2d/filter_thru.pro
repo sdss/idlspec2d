@@ -73,6 +73,7 @@ function filter_thru, flux, waveimg=waveimg, wset=wset, mask=mask, norm=norm
    if (keyword_set(mask)) then $
     flux_interp = djs_maskinterp(flux, mask, iaxis=0, /const)
 
+
    ;----------
    ; Integrate over each filter response curve
 
@@ -83,7 +84,10 @@ function filter_thru, flux, waveimg=waveimg, wset=wset, mask=mask, norm=norm
       readcol, filename, fwave, fthru
 
       filtimg = 0.0 * flux
-      filtimg[*] = interpol(fthru, fwave, waveimg)
+      if (size(waveimg))[0] EQ 1 then $
+         filtimg[*] = interpol(fthru, fwave, waveimg) # replicate(1,ntrace) $
+      else filtimg[*] = interpol(fthru, fwave, waveimg) 
+
       if (keyword_set(mask)) then $
        res[*,ifile] = total(flux_interp * filtimg, 1) $
       else $
