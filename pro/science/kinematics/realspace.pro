@@ -74,18 +74,72 @@ pro testsetup
 
   save, lam, eig, lamg, gal, ivar, file='quicktest.sav'
 
+
+  restore, 'sample_MAIN_sept00.dat'
+  i = lindgen(100)
+  galflux = galflux[*, i]
+  galsig  = galsig[*, i]
+  galwave = galwave[*, i]
+  sample  = sample[i]
+
+
+  save, galflux, galsig, galwave, sample, $
+    file='small_sample.sav'
+
+
+
+
   return
 end 
 
 
+
 pro callrealspace, width, doplot=doplot
+  
 
   fname = findfile('quicktest.sav', count=ct)
   if ct eq 0 then testsetup
   restore, 'quicktest.sav'  ;lam, eig, lamg, gal, ivar
+  restore, 'small_sample.sav'
 
-  ans = realspace(width, lam, eig, lamg, gal, ivar, testsigma=testsigma, $
-                  lamrange=lamrange, doplot=doplot, broadarr=broadarr)
+  N = (size(galflux))[2]
+  b = fltarr(N)
+  berr = fltarr(N)
+  chi2 = fltarr(N)
+
+  testsigma = (findgen(20)+0)/2.
+
+  galivar = 1./((galsig^2) + (galsig eq 0))
+  fac = (10.^(1e-4)-1)*299792   ; 69.0458
+
+  FOR i=0, N-1 DO BEGIN 
+     gal = galflux[*, i]
+     ivar = galivar[*, i]
+     wavg = galwave[*, i]
+     lamg = 10^wavg
+     z = sample[i].z
+     combine1fiber, wavg, gal, ivar, newloglam=wavg+alog10(1+z), $
+       newflux=newflux, newivar=newivar
+     
+     
+     ans = realspace(width, lam, eig, lamg, newflux, newivar, $
+                     testsigma=testsigma, $
+                     lamrange=lamrange, doplot=doplot, broadlam=broadlam, $
+                     broadarr=broadarr, dof=dof)
+
+     minchi2  = ans[0]
+     minsigma = ans[1]
+     errsig   = ans[2]
+;     dof = n_elements(gal)
+     b[i] = minsigma*fac
+     berr[i] = errsig*fac
+     chi2[i] = minchi2/dof
+
+     print, 'Best Chi2', minchi2, '/', fix(dof), ' sigma:', minsigma, ' pix ', $
+       minsigma*fac, ' +-', errsig*fac, ' km/s'
+  ENDFOR 
+
+  save, b, berr, chi2, file='results.sav'
 
   return
 end
@@ -123,6 +177,7 @@ end
 ;   lamrange   - wavelength range (Angstroms) to use in fit
 ;   doplot     - Output diagnostic plots to Xwindow
 ;   broadarr   - array of pre-broadened templates (calculated if not passed)
+;   broadlam   - lambda array (A) for broadarr
 ;
 ; OUTPUTS:
 ;   answers    - Four element array with:
@@ -147,8 +202,10 @@ end
 ;                     with Daniel Eisenstein and David Schlegel. 
 ;-
 ;------------------------------------------------------------------------------
-function realspace, width, lameig, eig, lamg, gal, ivar, testsigma=testsigma, $
-                    lamrange=lamrange, doplot=doplot, broadarr=broadarr
+function realspace, width, lameig, eig, lamg, gal_in, ivar_in, $
+                    testsigma=testsigma, broadlam=broadlam, $
+                    lamrange=lamrange, doplot=doplot, broadarr=broadarr, $
+                    dof=dof
   
 ; Set wavelength range to use for fit
   if n_elements(lamrange) eq 2 then begin 
@@ -160,19 +217,20 @@ function realspace, width, lameig, eig, lamg, gal, ivar, testsigma=testsigma, $
 ; Velocity dispersion is sigma, NOT FWHM.  Measured in pixels. 
   if not keyword_set(testsigma) then testsigma = (findgen(10)+5)/2.
 
-; number of eigenmodes
-  neig = (size(eig))[2]
-
+  nsigma = n_elements(testsigma)
   if not keyword_set(broadarr) then begin 
+; number of eigenmodes
+     neig = (size(eig))[2]
+
 ; number of Fourier components
      nf = 16
 
 ; trim wavelength range of lameig
      w   = where((lameig gt lam0) and (lameig lt lam1),nlam)
      lam = lameig[w]            ; good for both eigenmodes and galaxy 
-        
+     broadlam = lam
+
 ; compute smoothed templates once and store in broadarr
-     nsigma = n_elements(testsigma)
      broadarr = dblarr(nlam, neig+nf, nsigma)
 
      u = (findgen(nlam)+0.5)/nlam
@@ -190,88 +248,40 @@ function realspace, width, lameig, eig, lamg, gal, ivar, testsigma=testsigma, $
   endif 
 
   w    = where((lamg gt lam0) and (lamg lt lam1),nlam)
-  gal  = double(gal[w])
-  ivar = ivar[w]
+  gal  = double(gal_in[w])
+  ivar = ivar_in[w]
+  dof  = n_elements(gal)
 
 ;  temp = comp_fit(eig, lam, gal, lam1)
 
+  chi2 = fltarr(nsigma)
 
   for i=0, nsigma-1 do begin 
 
      base = broadarr[*, *, i]
+     chi2[i] = computechi2(gal, sqrt(ivar), base, acoeff=acoeff, dof=dof, yfit=yfit)
+     fake = yfit
+     C = acoeff
+     
+;     print,'i,sigma,chi2',i, testsigma[i], chi2[i]
+     
 
-     if 1 eq 1 then begin 
-        chi2 = computechi2(gal, ivar, base, acoeff=acoeff, dof=dof, yfit=yfit)
-        fake = yfit
-        C = acoeff
-     endif else begin 
-        nn = (size(base))[2]
-        ep=base/((fltarr(nn)+1)#ivar)
-        
-        galp=gal/ivar
-        
-; do fit
-        
-        G = galp#ep
-        
-        E = transpose(ep)#ep
-        C = invert(E)##G
-;  print,C
-        
-        fake = base#transpose(c)
-        
-        f2=eig[*,0:6]#transpose(c[*,0:6])
-        
-        
-        chi2 = total(galp^2) - transpose(G)##C
-     endelse 
-     
-     print,'i,sigma,chi2',i, testsigma[i], chi2
-     
-; Make diagnostic plots
-     if keyword_set(doplot) then begin 
-        
-        plot, lam, gal, /yno
-        oplot, lam, fake,color=185
-        oplot, lam, (fake-gal)+1, color=215
-        
+     if keyword_set(doplot) then begin ; Make diagnostic plots
+        plot,  broadlam, gal, /yno
+        oplot, broadlam, fake,color=185, thick=3
+        oplot, broadlam, (fake-gal)+1, color=215
      endif 
-     
-     print,'stdev', stdev(fake-gal)
      
   endfor 
 
+  findchi2min, testsigma, chi2, minchi2, minsigma, errsigma
 
 
 ; assign variables to return
-  minchi2 = 0
-  minsigma = 0
-  errsigma = 0
-  bestalpha = 0
+  bestalpha = 0  ; deprecated
 
   return, [minchi2, minsigma, errsigma, bestalpha]
 end
-
-
-; Legacy
-
-
-; 12
-;chi2      0.32753873
-;stdev     0.015254566
-
-; 8
-;chi2      0.17706853
-;stdev     0.011415969
-
-; 4
-;chi2      0.63045199
-;stdev     0.021313765
-
-
-
-
-
 
 
 
