@@ -195,6 +195,7 @@ endelse
       t0=systime(1)
       for ipiter=0, niter-1 do begin
          eigenval = 1 ; Set so that the PCOMP() routine returns this.
+         coeff = 1 ; Set so that the PCOMP() routine returns this.
          pres = pcomp(transpose(filtflux), coeff=coeff, eigenval=eigenval, $
           /double)
 
