@@ -6,8 +6,8 @@
 ;   Routine for reading 2D/1D spectro outputs at Princeton
 ;
 ; CALLING SEQUENCE:
-;   readspec, plate, fiber, [mjd=, flux=, flerr=, invvar=, $
-;    andmask=, ormask=, plugmap=, loglam=, wave=, tsobj= ]
+;   readspec, plate, fiber, [mjd=, silent=, flux=, flerr=, invvar=, $
+;    andmask=, ormask=, plugmap=, loglam=, wave=, tsobj=]
 ;
 ; INPUTS:
 ;   plate      - Plate number(s)
@@ -17,6 +17,7 @@
 ;                read all fibers for each plate.
 ;   mjd        - MJD number(s); if not set, then select the most recent
 ;                data for this plate (largest MJD).
+;   silent     - Set to read files in a (more) silent way.
 ;
 ; OUTPUTS:
 ;
@@ -54,6 +55,7 @@
 ;
 ; REVISION HISTORY:
 ;   25-Jun-2000  Written by David Schlegel, Princeton.
+;   27-Jun-2000  silent keyword added - Doug Finkbeiner
 ;-
 ;------------------------------------------------------------------------------
 ; Append the array ARG2 to the array ARG1.
@@ -96,9 +98,9 @@ pro spec_append, arg1, arg2
 end
 
 ;------------------------------------------------------------------------------
-pro readspec1, plate, range, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
- andmask=andmask, ormask=ormask, plugmap=plugmap, loglam=loglam, wave=wave, $
- tsobj=tsobj
+pro readspec1, plate, range, mjd=mjd, silent=silent, flux=flux, flerr=flerr, $
+ invvar=invvar, andmask=andmask, ormask=ormask, plugmap=plugmap, $
+ loglam=loglam, wave=wave, tsobj=tsobj
 
    common com_readspec, q_flux, q_flerr, q_invvar, q_andmask, q_ormask, $
     q_plugmap, q_loglam, q_wave, q_tsobj
@@ -132,11 +134,11 @@ pro readspec1, plate, range, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    end
 
    if (q_flux) then begin
-      flux = mrdfits(filename, 0, hdr, range=range)
+      flux = mrdfits(filename, 0, hdr, range=range, silent=silent)
    endif
 
    if (q_invvar OR q_flerr) then begin
-      invvar = mrdfits(filename, 1, range=range)
+      invvar = mrdfits(filename, 1, range=range, silent=silent)
       if (q_flerr) then begin
          i = where(invvar GT 0)
          flerr = 0 * invvar
@@ -145,15 +147,15 @@ pro readspec1, plate, range, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    endif
 
    if (q_andmask) then begin
-      andmask = mrdfits(filename, 2, range=range)
+      andmask = mrdfits(filename, 2, range=range, silent=silent)
    endif
 
    if (q_ormask) then begin
-      ormask = mrdfits(filename, 3, range=range)
+      ormask = mrdfits(filename, 3, range=range, silent=silent)
    endif
 
    if (q_plugmap) then begin
-      plugmap = mrdfits(filename, 4, range=range, $
+      plugmap = mrdfits(filename, 4, range=range, silent=silent, $
        structyp='PLUGMAPOBJ')
    endif
 
@@ -180,12 +182,12 @@ pro readspec1, plate, range, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
 end
 
 ;------------------------------------------------------------------------------
-pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
- andmask=andmask, ormask=ormask, plugmap=plugmap, loglam=loglam, wave=wave, $
- tsobj=tsobj
+pro readspec, plate, fiber, mjd=mjd, silent=silent, flux=flux, flerr=flerr, $
+ invvar=invvar, andmask=andmask, ormask=ormask, plugmap=plugmap, $
+ loglam=loglam, wave=wave, tsobj=tsobj
 
    if (n_params() LT 1) then begin
-      print, 'Syntax: readspec, plate, [ fiber, mjd=, flux=, flerr=, invvar=, $'
+      print, 'Syntax: readspec, plate, [ fiber, mjd=, /silent, flux=, flerr=, invvar=, $'
       print, ' andmask=, ormask=, plugmap=, loglam=, wave=, tsobj= ] '
       return
    endif
@@ -240,8 +242,9 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
             irow = fibervec[ifiber] -1
             range = [irow,irow]
          endelse
+         IF keyword_set(silent) THEN print, '+', format='(A,$)'
          readspec1, platevec[ifiber], range, mjd=mjdvec[ifiber], $
-          flux=flux1, flerr=flerr1, invvar=invvar1, $
+          silent=silent, flux=flux1, flerr=flerr1, invvar=invvar1, $
            andmask=andmask1, ormask=ormask1, plugmap=plugmap1, $
            loglam=loglam1, wave=wave1, tsobj=tsobj1
          if (ifiber EQ 0) then begin
@@ -266,6 +269,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
             if (q_tsobj) then tsobj = struct_append(tsobj, tsobj1)
          endelse
       endfor
+      IF keyword_set(silent) THEN print
    endif else begin
       if (fiber EQ 0) then begin
          range = 0
@@ -273,7 +277,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
          irow = fiber -1
          range = [irow,irow]
       endelse
-      readspec1, plate, range, mjd=mjd, $
+      readspec1, plate, range, mjd=mjd, silent=silent, $
        flux=flux, flerr=flerr, invvar=invvar, $
         andmask=andmask, ormask=ormask, plugmap=plugmap, $
         loglam=loglam, wave=wave, tsobj=tsobj
