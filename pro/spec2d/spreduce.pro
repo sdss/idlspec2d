@@ -348,7 +348,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       ; Using it to tweak up traces, and then performing free fit to
       ; object
       ;
-      for i = 0, 0 do begin
+      for i = 0, 1 do begin
       
         ; 1) First extraction
         splog, 'Object extraction: Step', i*3+1
@@ -376,7 +376,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
         endif
       endfor
 
-      splog, 'Skipping steps 4 and 5'
+;      splog, 'Skipping steps 4 and 5'
       splog, 'Scattered light: median ', median(scatfit), ' electrons'
 
       ; 4) Second and final extraction
@@ -387,18 +387,18 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       ; check timing in the future
       ; subtract off fit to scattered light and don't allow any polynomial terms
 
-      extract_image, image-scatfit, invvar, xnow, sigma, flux, $
-       fluxivar, proftype=proftype, wfixed=wfixed, $
-       highrej=highrej, lowrej=lowrej, nPoly=0, whopping=whopping, chisq=chisq
-
-
-;      fitans = fitans[0:nparams*nTrace-1,*]
 ;      extract_image, image-scatfit, invvar, xnow, sigma, flux, $
-;       fluxivar, proftype=proftype, wfixed=wfixed, fitans=fitans, $
-;       highrej=highrej, lowrej=lowrej, nPoly=0, whopping=whopping, chisq=chisq
+;       fluxivar, proftype=proftype, wfixed=wfixed, $
+;       highrej=highrej, lowrej=lowrej, nPoly=0, whopping=whopping, chisq=chisq, $
+
+
+      fitans = fitans[0:nparams*nTrace-1,*]
+      extract_image, image-scatfit, invvar, xnow, sigma, flux, $
+       fluxivar, proftype=proftype, wfixed=wfixed, fitans=fitans, $
+       highrej=highrej, lowrej=lowrej, nPoly=0, whopping=whopping, chisq=chisq
 ;       ymodel=ymodel2
 
-      plot, chisq, ytitle = 'Chi^2', title=objname[iobj]
+      plot, chisq, ytitle = 'Chi^2', title=objname[iobj], xtitle='Row number'
 
       ;------------------
       ; Flat-field the extracted object fibers with the global flat
@@ -436,11 +436,17 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       ;
       ; This procedure produces numerical steps at 10^-6, 1 km/s
       ;
-    
-      traceset2xy, xset, transpose(xpeak), xshift
-      xshift = transpose(xshift)
+   
+      xshift = xpeak * 0.0
 
-       plot, xpeak, xshift, ps=3 
+      if (size(xset,/tname) NE 'UNDEFINED') then begin
+        traceset2xy, xset, transpose(xpeak), xshift
+        xshift = transpose(xshift)
+      endif else splog, 'Sky lines are TOO NOISY!! No shifting!!'
+
+      plot, xpeak, xshift, ps=3, xtitle='Arc line position', $
+          ytitle = 'Offset to Sky line', $
+          title = 'Offset sky lines positions - arc line positions (in pix)'
 
       vacset = wset
       fixabove = 2

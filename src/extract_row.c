@@ -390,17 +390,17 @@ void ProfileAbs25(float *x, IDL_LONG ndat, float **y, float xcen,
 	         base = exp(-diff*diff*diffabs/3.0)*denom3;
 
 /*	Add in ^3 term first  */
-                 model[nm][0][k] += base;
+                 model[nm][0][k] += 1.5*base;
                  sqbase = diff*diff*diffabs*base;
-	         model[nm][1][k] += sqbase;
-	         model[nm][2][k] += diff*diffabs*base;
+	         model[nm][1][k] += 1.5*sqbase;
+	         model[nm][2][k] += 1.5*diff*diffabs*base;
 
 /*	Add in ^2 term next  */
 	         base = exp(-diff*diff/2.0)*denom2;
-                 model[nm][0][k] += base;
+                 model[nm][0][k] += 0.5*base;
                  sqbase = diff*diff*base;
-	         model[nm][1][k] += sqbase;
-	         model[nm][2][k] += diff*base;
+	         model[nm][1][k] += 0.5*sqbase;
+	         model[nm][2][k] += 0.5*diff*base;
                 }
 /*	Divide by 10 instead of 5 to get area 1.0  */
 	     for (j=0;j<3;j++) model[nm][j][k] /= 10.0;

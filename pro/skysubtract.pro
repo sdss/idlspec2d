@@ -52,13 +52,14 @@ pro skysubtract, obj, objivar, plugmap, wset, skysub, skysubivar, $
 	fullfit = slatec_bvalu(wave, fullbkpt, coeff) 
 	skysub = obj - fullfit * (objivar GT 0.0)
 
+        stop
         ; blue plot
 	if (min(wave) LT alog10(5600.0)) then begin
           plot, 10^allwave, allfit, ps=3, xr=[5570,5590], $
            title = 'Sky fibers'
-          oplot, 10^allwave, allsky, ps=3
+          oplot, 10^allwave, allsky, ps=1
           djs_oplot, 10^allwave, allfit, color='red'
-          plot, 10^allwave, allsky-allfit, ps=3, xr=[5570,5590], $
+          plot, 10^allwave, allsky-allfit, ps=1, xr=[5570,5590], $
            title = 'Sky subtracted sky fibers ', yr=[-1000,1000]
 
           plot, 10^allwave, allfit, ps=3, xr=[5570,5590], $
@@ -100,19 +101,17 @@ pro skysubtract, obj, objivar, plugmap, wset, skysub, skysubivar, $
         endif
 
         ; red plot
-	if (max(wave) GT alog10(8000.0)) then begin
-          plot, 10^allwave, allsky, ps=3, xr=[8000,8100], $
+	if (max(wave) GT alog10(8800.0)) then begin
+          plot, 10^allwave, allsky, ps=3, xr=[8800,9000], $
            title = 'Sky fibers'
           oplot, 10^allwave, allfit
-          plot, 10^allwave, allsky-allfit, ps=3, xr=[8000,8100], $
+          plot, 10^allwave, allsky-allfit, ps=3, xr=[8800,9000], $
            title = 'Sky subtracted sky fibers '
 
-          plot, 10^wave, obj, ps=3, xr=[8000,8100], $
+          plot, 10^wave, obj, ps=3, xr=[8800,9000], $
            title = 'All fibers'
           oplot, 10^allwave, allfit
         endif
-
-;	if (max(wave) GT alog10(8500.0)) then begin
 
 ;
 ;	Now attempt to model variance with residuals on sky
@@ -187,10 +186,13 @@ pro skysubtract, obj, objivar, plugmap, wset, skysub, skysubivar, $
                      maxIter=maxIter, upper=30, $
                      lower=30, nbkpts=nn/2)
 	within = where(wave GE rwave[0] AND wave LE rwave[nn-1] $
-                         AND skysubivar NE 0.0)
+                         AND skysubivar GT 0.0)
 
         deltaans = slatec_bvalu(wave[within], fullbkpt, coeff)
 	skysubivar[within] = 1.0/(1.0/skysubivar[within] + abs(deltaans))
+
+        outside = where(wave LT min(allwave) OR wave GT max(allwave))
+        if (outside[0] NE -1) then skysubivar[outside] = 0.0
 
 	endif
 

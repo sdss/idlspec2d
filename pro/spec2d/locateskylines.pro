@@ -87,6 +87,7 @@ pro locateskylines, skylinefile, fimage, ivar, wset, $
 
    ; Iterate trace_fweight ???
    xskytmp = trace_fweight(fimage, xarc, ysky, invvar=ivar) 
+   xskytmp = trace_fweight(fimage, xskytmp, ysky, invvar=ivar)  ; Good sky positions?? 
    xsky = trace_fweight(fimage, xskytmp, ysky, invvar=ivar, radius=2.0) 
 
    lambda = alog10(skywaves)

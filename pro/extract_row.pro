@@ -231,14 +231,19 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
 
        finished = 1
        if(badhighct GT 0) then begin
-          mask(badhigh) = 0
+          mask[badhigh] = 0
           totalreject = totalreject + badhighct
           finished = 0
        endif 
        if(badlowct GT 0) then begin
-          mask(badlow) = 0
+          mask[badlow] = 0
           totalreject = totalreject + badlowct
           finished = 0
+       endif
+
+       if (finished EQ 0) then begin
+         good = where(diffs GE -lowrej*scaleError AND diffs LE highrej*scaleError, goodct)
+         if (goodct GT 0) then mask[good] = 1
        endif
 
        niter = niter + 1

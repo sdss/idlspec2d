@@ -121,7 +121,7 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
             fullspec = flux[*,i] 
             fullivar = fluxivar[*,i] 
 
-            outputfile = outputroot+string(format='(i3.3,a)',i)+'.fit'
+            outputfile = outputroot+string(format='(i3.3,a)',i+1)+'.fit'
 ;
 ;	Use medians to merge red and blue here
 ;
