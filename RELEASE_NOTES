@@ -36,6 +36,15 @@ SPFLUX_V5: Pull out the SPFLUX_READ_KURUCZ() code as a separate function.
         problem with plate 662/52147 where a bad star throws the fits.)
         Rescale the per-fiber plots of the spectro-photo vectors using
         the FLATARR such that they should all lie on top of one another.
+SPFLUXCORR_V5: Return chi instead of sqrt(chi2) from the function FCORR_CHI_FN.
+        Add INPARAMS option to SPFLUXCORR_SOLVE2() function.
+        In the final loop, first do a fit using the SPFLUXCORR_SOLVE() code
+        that does not rescale the errors, then use those fits as the starting
+        point when calling SPFLUXCORR_SOLVE2().
+        Test all solutions up to MAXPOLY terms, not necessarily stopping
+        when there is no improvement to chi^2.  This is because one could
+        imaging that going from 1->2 terms is very little improvment, but
+        then 2->3 is substantial improvment.
 SPCOADD_V5: Apply the flux-distortion image to the sky vectors, as well
         as to OBJFLUX,OBJIVAR.
 ZTWEAK_STAR: Add optional keywords.
