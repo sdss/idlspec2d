@@ -127,6 +127,15 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    objsub = obj - fullfit
 
 
+   ; Fit to sky variance (not inverse variance)
+
+   posvar = where(skyivar GT 0)
+   if (posvar[0] NE -1) then begin
+      skyvariance = 1.0/skyivar[posvar]
+      skyvarbkpt = slatec_splinefit(skywave[posvar], skyvariance, skyvarcoeff, invvar=skyivar[posvar], $
+        nord=nord, upper=upper, lower=lower, maxiter=maxiter, /eachgroup, bkpt=bkpt)
+      skyvarfit = slatec_bvalu(wave, skyvarbkpt, skyvarcoeff)
+   endif
 
    ;---------------------------------------------------------
    ;  Store "super" sky information in a structure
@@ -219,7 +228,14 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    ;----------
    ; Modify OBJSUBIVAR with the relative variance
 
-   objsubivar = objivar / relchi2fit
+   objsubivar = objivar 
+   if (size(skyvarfit,/tname) NE 'UNDEFINED') then begin
+      posvar = where(objivar GT 0)
+      if (posvar[0] NE -1) then begin
+        objvar = 1.0/objivar[posvar]
+        objsubivar[posvar] = 1.0/(objvar + ((relchi2fit[posvar] > 1)-1.0)*skyvarfit[posvar])
+      endif
+   endif 
 
    ; Reselect the values of SKYIVAR from OBJSUBIVAR
 ;   skyivar = (objsubivar[*,iskies])[*]
