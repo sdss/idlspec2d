@@ -902,7 +902,23 @@ Spectroscopic classifications, redshifts, and line fitting:
 <LI><A HREF="#dm_spdiag1dps">spDiag1d-<I>pppp</I>-<I>mmmmm</I>.ps</A>
 </UL>
 
-<H4><A NAME="dm_spplate">spPlate-<I>pppp</I>-<I>mmmmm</I>.fits</H4>
+<H4><A NAME="dm_spframe">spFrame-<I>cc</I>-<I>eeeeeeee</I>.fits</A></H4>
+
+<P>
+The extracted spectra for a single CCD of a single exposure.
+
+<H4><A NAME="dm_spdiag2dlog">spDiag2d-<I>pppp</I>-<I>mmmmm</I>.log</A></H4>
+
+<P>
+The log file from running SPREDUCE2D for one night of data for one plate.
+
+<H4><A NAME="dm_spdiag2dps">spDiag2d-<I>pppp</I>-<I>mmmmm</I>.ps</A></H4>
+
+<P>
+The PostScript plots associated with the 
+<A HREF="#dm_spdiag2dlog">spDiag2d-<I>pppp</I>-<I>mmmmm</I>.log</A> file.
+
+<H4><A NAME="dm_spplate">spPlate-<I>pppp</I>-<I>mmmmm</I>.fits</A></H4>
 
 <P>
 This file contains the combined spectra for all exposures
@@ -1030,7 +1046,17 @@ shouldn't trust any of the object flux there.  Our reported errors
 are meant to include sky-subtraction errors, but there are instances
 (particularly around 5577) where these errors may be untrustworthy.
 
-<H4><A NAME="dm_spzbest">spZbest-<I>pppp</I>-<I>mmmmm</I>.fits</H4>
+<H4><A NAME="dm_spdiagcomblog">spDiagcomb-<I>pppp</I>-<I>mmmmm</I>.log</A></H4>
+
+The log file from running SPCOMBINE for one plate (possibly combining
+data from multiple nights if the fibers have the same plugging).
+
+<H4><A NAME="dm_spdiagcombps">spDiagcomb-<I>pppp</I>-<I>mmmmm</I>.ps</A></H4>
+
+The PostScript plots associated with the 
+<A HREF="#dm_spdiagcomblog">spDiagcomb-<I>pppp</I>-<I>mmmmm</I>.log</A> file.
+
+<H4><A NAME="dm_spzbest">spZbest-<I>pppp</I>-<I>mmmmm</I>.fits</A></H4>
 
 <P>
 This file contains the spectroscopic classifications and redshifts
@@ -1141,7 +1167,7 @@ ELODIE_RCHI2      Reduced chi^2
 ELODIE_DOF        Degrees of freedom for fit
 </PRE>
 
-<H4><A NAME="dm_spzline">spZline-<I>pppp</I>-<I>mmmmm</I>.fits</H4>
+<H4><A NAME="dm_spzline">spZline-<I>pppp</I>-<I>mmmmm</I>.fits</A></H4>
 
 <P>
 This file contains the line fits from from the Princeton-1D code.
@@ -1201,6 +1227,41 @@ constrained to be 1:3.
  <TR><TD> 6716.44   <TD> [S_II] 6716 <TD> zemission <TD> wemission  <TD>
  <TR><TD> 6730.82   <TD> [S_II] 6730 <TD> zemission <TD> wemission  <TD>
 </TABLE>
+
+<H4><A NAME="dm_spzall">spZall-<I>pppp</I>-<I>mmmmm</I>.fits</A></H4>
+
+<P>
+This file is a FITS binary table identical in form to the spZbest file,
+but with all the fits ever done to each object.  This includes 5
+possible galaxy redshifts, 5 possible Q redshifts, and 1 for each
+of many types of stars.  They are rank-sorted for each object,
+letting you go through and keep asking "but what's the next best fit?".
+This is what the IDL procedure
+<A HREF="idlspec2d_doc.html#PLOTSPEC">plotspec</A>
+uses when the ZNUM keyword is specified.
+For example, ZNUM=2 will over-plot the 2nd-best fit eigenspectrum.
+
+<P>
+For the v4_9_8 reductions, NAXIS2=33280 in HDU#1
+for the spZall files, meaning there are fits for 33280/640 = 52
+sets of eigentemplates per object.  Most of those are single-eigenspectra
+stars.
+
+<P>
+Not all of the parameters in the spZbest file are computed for
+the spZall file.  For example, the SDSS filter convolutions are not done.
+
+<H4><A NAME="dm_spdiag1dlog">spDiag1d-<I>pppp</I>-<I>mmmmm</I>.log</A></H4>
+
+<P>
+The log file from running the Princeton-1D reduction code (SPREDUCE1D)
+on a plate.
+
+<H4><A NAME="dm_spdiag1dps">spDiag1d-<I>pppp</I>-<I>mmmmm</I>.ps</A></H4>
+
+<P>
+The PostScript plots associated with the
+<A HREF="#dm_spdiag1dlog">spDiag1d-<I>pppp</I>-<I>mmmmm</I>.log</A> file.
 
 <H2><A NAME="targetflags">What Are the Target Flags?</A></H2>
 
