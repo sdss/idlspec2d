@@ -44,11 +44,12 @@ Flat-fielding
   Remove dichroic effects
   Model relative wavelength-response between fibers
 
-Sky-subtraction
+Sky-subtraction (SB)
   Construct "supersky"
   Re-scalining the errors using the chi^2 from sky fibers
   * Test: Chi distribution of sky fibers vs. wavelength
   * Test: Chi distribution of LRGs minus best-fit-models
+    Reference: Bolton, Ly-alpha forest papers
 
 Flux-calibration and flux-correction vectors (DJS)
   Selection of F star standards
