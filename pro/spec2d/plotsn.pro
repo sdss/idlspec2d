@@ -415,21 +415,29 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
          xtitle1 = 'Radius [mm]'
          xtitle2 = 'X [mm]'
       endelse
-      psym = 1
+      psym = strmatch(plugc.objtype, 'QSO*') * 1 $ ; Plus
+       + strmatch(plugc.objtype, 'GALAXY*') * 6 ; Square
+      psym = psym + (symvec EQ 0) * 2 ; Asterisk for anything else
 
       plot, [0], [0], /nodata, $
-       xtickname=xtickname, xrange=[0,330], $
-       xtitle=xtitle1, ytitle='(Spectro-PHOTO) '+bandnames[bands[iband]]+'-mag', $
+       xtickname=xtickname, xrange=[0,330], xtitle=xtitle1, $
+       ytitle='(Spectro-PHOTO) '+bandnames[bands[iband]]+'-mag', $
        /xstyle, yrange=[-0.6,0.6], /ystyle, charsize=csize
       oplot, !x.crange, [0,0]
       if (ngood GT 0) then begin
-         thisdiff = magdiff[bands[iband],igood]
+         thisdiff = transpose(magdiff[bands[iband],igood])
          colorvec = (thisdiff LT 0) * djs_icolor('green') $
           + (thisdiff GE 0) * djs_icolor('red')
          symvec = (abs(thisdiff) * 5 < 2) > 0.1
          djs_oplot, radius[igood], thisdiff, $
-          symsize=symvec, color=colorvec, psym=psym
+          symsize=symvec, color=colorvec, psym=psym[igood]
       endif
+      oplot, [15], [0.5], psym=6
+      oplot, [15], [0.4], psym=1
+      oplot, [15], [0.3], psym=2
+      xyouts, 30, 0.5, 'Galaxy'
+      xyouts, 30, 0.4, 'QSO'
+      xyouts, 30, 0.3, 'other'
 
       if (iband EQ 0 AND keyword_set(plottitle)) then $
        xyouts, !x.crange[1], 1.03*!y.crange[1]-0.03*!y.crange[0], $
@@ -440,7 +448,7 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
        xrange=[-320,320], yrange=[-320,320], /xstyle, /ystyle, charsize=csize
       if (ngood GT 0) then begin
          djs_oplot, plugc[igood].xfocal, plugc[igood].yfocal, $
-          symsize=symvec, color=colorvec, psym=psym
+          symsize=symvec, color=colorvec, psym=psym[igood]
       endif
    endfor
 
