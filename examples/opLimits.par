@@ -17,10 +17,10 @@ speclimit XMAX b2 0 2048
 speclimit XMAX r1 0 2048
 speclimit XMAX r2 0 2048
 
-speclimit NFIBER b1 635 640
-speclimit NFIBER b2 635 640
-speclimit NFIBER r1 635 640
-speclimit NFIBER r2 635 640
+speclimit NGOODFIBER b1 317 320
+speclimit NGOODFIBER b2 317 320
+speclimit NGOODFIBER r1 317 320
+speclimit NGOODFIBER r2 317 320
 
 speclimit WAVEMIN b1 0 3780
 speclimit WAVEMIN b2 0 3780
