@@ -12,6 +12,12 @@ etc/kurucz_model_fix.fit - New file for empirical corrections to
 
 In idlutils:
 
+DUST_SDSSFILTER: New proc to integrate the extinction curve over
+           a selection of representative source function and the SDSS filters.
+DUST_INTFILTER: New proc to integrate the extinction curve over a
+           given source function + filter curve.
+HOGG_SCATTERPLOT: New proc to plot greyscale scatterplot with contours.
+
 Various astrometric routines have been moved from the hoggpt product
 into pro/astrom.  The USNO routines have been modified for reading
 the USNO-B1.0 catalog (as well as USNO-A1,USNO-A2).
@@ -19,6 +25,7 @@ LL2UV
 USNO_CONE
 USNO_READ
 USNO_READZONE
+USNOB10_EXTRACT
 UV2LL
 
 evilmake: Turn on optimization for all platforms except IRIX.
