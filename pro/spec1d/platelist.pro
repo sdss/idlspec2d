@@ -6,19 +6,24 @@
 ;   Make list of reduced plates
 ;
 ; CALLING SEQUENCE:
-;   platelist, [fullplatefile, outfile= ]
+;   platelist, [fullplatefile, /create, plist= ]
 ;
 ; INPUTS:
 ;
 ; OPTIONAL INPUTS:
-;   infile      - Either a list of spPlancomb-*.par files, or a list of
-;                 spPlate*.fits files; default to all files matching
-;                 '$SPECTRO_DATA/*/spPlancomb-*.par'.
-;   outfile     - Output ASCII file name; default to 'platelist.txt'
+;   infile      - Either a list of combine-plan files or a list of plate files.
+;                 If not specified, then search for all plan files matching
+;                   '$SPECTRO_DATA/*/spPlancomb-*.par'.
+;                 If no such plan files are found, then search for all plate
+;                 files matching
+;                   '$SPECTRO_DATA/*/spPlate-*.fits'.
+;   create      - If set, then re-generate the "platelist.fits" file;
+;                 if not set, then simply read this file from a previous call.
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL OUTPUTS:
+;   plist       - Output structure with information for each plate.
 ;
 ; COMMENTS:
 ;   Two files are generated: 'platelist.txt' and 'platelist.fits'.
@@ -45,6 +50,8 @@
 ;   Spawns the Unix command 'tail' to get the last line of log files.
 ;
 ; DATA FILES:
+;   $SPECTRO_DATA/platelist.fits
+;   $SPECTRO_DATA/platelist.txt
 ;
 ; PROCEDURES CALLED:
 ;   djs_filepath()
@@ -60,23 +67,39 @@
 ; REVISION HISTORY:
 ;   29-Oct-2000  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
-pro platelist, infile, outfile=outfile, plist=plist
+pro platelist, plist=plist, create=create
+
+   minsn2 = 15.0
+   fitsfile = djs_filepath('platelist.fits', root_dir=getenv('SPECTRO_DATA'))
+   ascfile = djs_filepath('platelist.txt', root_dir=getenv('SPECTRO_DATA'))
+
+   ;----------
+   ; If the /CREATE flag is not set, and the platelist file already exists
+   ; on disk, then simply return the info in that file.
+
+   if (NOT keyword_set(create)) then begin
+      thisfile = (findfile(fitsfile))[0]
+      if (keyword_set(thisfile)) then begin
+         plist = mrdfits(thisfile,1)
+         return
+      endif
+   endif
+
+   ;----------
+   ; Generate the list of plan files or plate files if not specified
 
    if (NOT keyword_set(infile)) then $
     infile = djs_filepath('spPlancomb-*.par', $
      root_dir=getenv('SPECTRO_DATA'), subdirectory='*')
    fullfile = findfile(infile, count=nfile)
+   if (nfile EQ 0) then begin
+      infile = djs_filepath('spPlate-*.fits', $
+       root_dir=getenv('SPECTRO_DATA'), subdirectory='*')
+      fullfile = findfile(infile, count=nfile)
+   endif
    if (nfile EQ 0) then return
 
-   if (NOT keyword_set(outfile)) then outfile = 'platelist.txt'
-   fitsfile = 'platelist.fits'
-
-   minsn2 = 15.0
-
-   ;----------
-   ; Sort these files
-
-   fullfile = fullfile[sort(fullfile)]
+   fullfile = fullfile[sort(fullfile)] ; Sort these files
 
    ;----------
    ; Create output structure
@@ -346,8 +369,8 @@ pro platelist, infile, outfile=outfile, plist=plist
    ;---------------------------------------------------------------------------
    ; Open output file
 
-   if (keyword_set(outfile)) then $
-    openw, olun, outfile, /get_lun $
+   if (keyword_set(ascfile)) then $
+    openw, olun, ascfile, /get_lun $
    else $
     olun = -1L
 
@@ -373,7 +396,7 @@ pro platelist, infile, outfile=outfile, plist=plist
    ;----------
    ; Close output file
 
-   if (keyword_set(outfile)) then begin
+   if (keyword_set(ascfile)) then begin
       close, olun
       free_lun, olun
    endif

@@ -6,15 +6,16 @@
 ;   Merge all Spectro-1D outputs with tsObj files.
 ;
 ; CALLING SEQUENCE:
-;   platemerge, [zfile, outfile=, ascfile=]
+;   platemerge, [zfile, outfile=, ascfile=, /qsurvey]
 ;
 ; INPUTS:
 ;
 ; OPTIONAL INPUTS:
 ;   zfile       - Redshift file(s) from spectro-1D; default to all files
-;                   matching '*/spZbest*.fits'
-;   outfile     - Output FITS file name; default to 'spAll.fits'
-;   ascfile     - Output ASCII file name; default to 'spAll.dat'
+;                 specified by the PLATELIST routine.
+;   outfile     - Output FITS file name; default to '$SPECTRO_DATA/spAll.fits'
+;   ascfile     - Output ASCII file name; default to '$SPECTR_DATA/spAll.dat'
+;   qsurvey     - If set, then limit to plates in platelist with QSURVEY=1.
 ;
 ; OUTPUTS:
 ;
@@ -34,23 +35,45 @@
 ;   mrdfits()
 ;   mwrfits
 ;   plug2tsobj()
+;   platelist
 ;   struct_print
 ;   sxpar()
 ;
 ; REVISION HISTORY:
 ;   30-Oct-2000  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
-pro platemerge, zfile, outfile=outfile, ascfile=ascfile
+pro platemerge, zfile, outfile=outfile, ascfile=ascfile, qsurvey=qsurvey
 
-   if (NOT keyword_set(zfile)) then zfile = '*/spZbest*.fits'
+   if (NOT keyword_set(outfile)) then $
+    outfile = djs_filepath('spAll.fits', root_dir=getenv('SPECTRO_DATA'))
+   if (NOT keyword_set(ascfile)) then $
+    ascfile = djs_filepath('spAll.dat', root_dir=getenv('SPECTRO_DATA'))
 
-   fullzfile = findfile(zfile, count=nfile)
+   if (NOT keyword_set(zfile)) then begin
+      platelist, plist=plist
+      if (NOT keyword_set(plist)) then return
+      if (keyword_set(qsurvey)) then begin
+         indx = where(plist.qsurvey AND strtrim(plist.status1d,2) EQ 'Done')
+      endif else begin
+         indx = where(strtrim(plist.status1d,2) EQ 'Done')
+      endelse
+      if (indx[0] EQ -1) then return
+      plist = plist[indx]
+      nfile = n_elements(plist)
+      fullzfile = strarr(nfile)
+      fullzfile = 'spZbest-' + string(plist.plate, format='(i4.4)') $
+       + '-' + string(plist.mjd, format='(i5.5)') + '.fits'
+      zsubdir = string(plist.plate, format='(i4.4)')
+      for i=0, nfile-1 do $
+       fullzfile[i] = djs_filepath(fullzfile[i], $
+        root_dir=getenv('SPECTRO_DATA'), subdirectory=zsubdir[i])
+   endif else begin
+      fullzfile = findfile(zfile, count=nfile)
+   endelse
+
    print, 'Found ', nfile, ' files'
    if (nfile EQ 0) then return
    fullzfile = fullzfile[ sort(fullzfile) ]
-
-   if (NOT keyword_set(outfile)) then outfile = 'spAll.fits'
-   if (NOT keyword_set(ascfile)) then ascfile = 'spAll.dat'
 
    nout = nfile * 640L
    print, 'Total number of objects = ', nout
@@ -118,6 +141,7 @@ pro platemerge, zfile, outfile=outfile, ascfile=ascfile
    objtypes = ['UNKNOWN', 'CR', 'DEFECT', 'GALAXY', 'GHOST', 'KNOWNOBJ', $
     'STAR', 'TRAIL', 'SKY']
    adat.objc_type = objtypes[outdat.objc_type]
+outdat = 0 ; Free memory
 
    struct_print, adat, filename=ascfile
 
