@@ -12,7 +12,9 @@
 ;
 ; INPUTS:
 ;   fluxfft    - complex fft of prepared galaxy spectrum
+;   fluxerr    - error vector for flux (only test if it is zero)
 ;   starfft    - complex fft of stellar template
+;   starerr    - error vector for flux (only test if it is zero)
 ;
 ; OPTIONAL KEYWORDS:
 ;   nsearch    - number of peaks to search, almost always only 1 is searched
@@ -46,9 +48,11 @@
 ;
 ; REVISION HISTORY:
 ;   25-Mar-2000  Written by S. Burles, FNAL
+;   26-Jun-2000  D. Finkbeiner - modified to properly weight corr
+;                                vector for variable overlap
 ;-
 ;------------------------------------------------------------------------------
-; This is used to locate the 20 highest peaks, and measure
+; This routine locates the 20 highest peaks, and measures
 ; the peak, center, and area of each.  xcen and peak
 ; contain the best velues.
 
@@ -100,35 +104,47 @@ pro findmaxarea, look, xcen, peak, maxarea, cen=cen, area=area, pks=pks
 end
 
 ;------------------------------------------------------------------------------ 
-pro fitredshift, fluxfft, starfft, $
+pro fitredshift, fluxfft, fluxerr, starfft, starerr, $
  nsearch=nsearch, zmin=zmin, zfit=z, z_err=z_err, $
  veldispfit=veldisp, veldisp_err=veldisp_err, doplot=doplot
 
    if (NOT keyword_set(nsearch)) then nsearch = 5
    if (NOT keyword_set(zmin)) then zmin = -60
 
-   ; The following compiles GAUSS_FUNCT, which is in the routine GAUSSFIT
+; check dimensions - ASSUME everything is already padded to 2^N
+   IF stdev([n_elements(fluxfft), n_elements(fluxerr),  $
+             n_elements(starfft), n_elements(starerr)]) NE 0 THEN BEGIN 
+       help, fluxfft, fluxerr, starfft, starerr 
+       message, 'dimensions do not match!'
+   ENDIF 
+
+
+; The following compiles GAUSS_FUNCT, which is in the routine GAUSSFIT
    junk = gaussfit(findgen(7),findgen(7))
 
+; compute correlation of object flux to stellar template
    corr = float(fft(fluxfft * conj(starfft),/inverse))
-
    nx = n_elements(corr)
    pad = nx / 2
 
-   ; Need to fill an array of length fluxfilt which records the number
-   ; of good pixels cross-correlated between star and galaxy as a function
-   ; of shift.  Will need to construct this from the error vectors ???
-; This should be symmetric about the center of the zero-lag overlap -
-; but it is not - DPF ???
-   denom = pad * (1.0 - abs(findgen(nx)-pad)/pad)
-   reweight = pad / (denom > 1.0)
-
+; shift corr vector so there is no discontinuity at zero lag. 
    corr = shift(corr, pad)
 
-   ; This loop finds the redshift by searching the nsearch highest peaks
+; Need to fill an array of length fluxfilt which records the number
+; of good pixels cross-correlated between star and galaxy as a function
+; of shift.  We construct this from the error vectors. 
+  
+   denom = shift(double( $
+         fft(fft(fluxerr NE 0)*conj(fft(starerr NE 0)), /inverse)), pad) *nx
+
+   reweight = pad / (denom > 10.0) ; never use less than 10 pix
+
+
+; This loop finds the redshift by searching the nsearch highest peaks
 
    good = 0
    x = lindgen(nx)
+
    for i=0, nsearch-1 do begin
 
       newcorr = corr * sqrt(reweight) ; A hack!!!???
@@ -180,20 +196,33 @@ pro fitredshift, fluxfft, starfft, $
    ; gaussian falls.  FWHM and sigma depend on where the gaussian fit
    ; goes to zero.  Very troubling.
 
-   if (asig GT 0) then weights = xtemp*0.0 + 1.0/asig^2 $
-    else weights = xtemp*0.0 + 1.0
+; new xtemp
+   lowerbound = max(where(corr LT 0 AND x LT velcen))-2
+   upperbound = min(where(corr LT 0 AND x GT velcen))+2
+   xtemp2 = x[lowerbound:upperbound] - velcen
 
-   a = [height, xcen, guesssig]
-   gaussf = curvefit(xtemp,corr[xtemp+velcen] + height/3.0, weights, $
-    a+0D, gausserrors, function_name="GAUSS_FUNCT")
-   gaussf = gaussf - height/3.0
+
+
+   if (asig GT 0) then weights = xtemp2*0.0 + 1.0/asig^2 $
+    else weights = xtemp2*0.0 + 1.0
+
+   base = -height/3. ; empirical guess of gaussian baseline
+
+   a = double([height, xcen, guesssig, base])
+;   gaussf = curvefit(xtemp,corr[xtemp+velcen] + height/3.0, weights, $
+;    a+0D, gausserrors, function_name="GAUSS_FUNCT")
+;   gaussf = gaussf - height/3.0
+
+   gaussf = curvefit(xtemp2,corr[xtemp2+velcen], weights, $
+    a, gausserrors, function_name="GAUSS_FUNCT")
+
 
    if (keyword_set(doplot)) then begin
       wset,0
       djs_plot, x-velcen, corr, ps =10, xr=[-20,20], $
        title='Best correlation peak w/fits (Green:gauss, Red: Parabola)'
       djs_oplot, xtemp, poly(xtemp, parabola), color='red'
-      djs_oplot, xtemp, gaussf, color='green'
+      djs_oplot, xtemp2, gaussf, color='green'
    endif
 
    z = velcen + a[1] - pad
