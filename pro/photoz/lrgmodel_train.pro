@@ -94,7 +94,7 @@ function lrgmodel_read_spall, public=public, regenerate=regenerate
        'MODELFLUX', 'MODELFLUX_IVAR', 'EXTINCTION']
       spall = hogg_mrdfits(spfile, 1, columns=columns, $
        nrowchunk=10000L)
-;       nrowchunk=10000L, range=[0,10000L]) ; ??? test
+;       nrowchunk=10000L, range=[0,10000L]) ; ??? Test
 
       ; Trim to LRGs
       itrim = where( (strmatch(spall.platequality,'good*') $
@@ -173,11 +173,14 @@ pro lrgmodel_train, public=public, regenerate=regenerate, $
    ; redshift bins
 
    if (keyword_set(dzweight)) then begin
-      weights = fltarr(ntrim)
+      nobj = n_elements(spall)
+      weights = fltarr(nobj)
       for z1=0.0, max(spall.z), dzweight do begin
          ii = where(spall.z GE z1 AND  spall.z LT z1+dzweight, ct)
          if (ct GT 0) then weights[ii] = 1./ct
       endfor
+      ; Set the mean weight to unity
+      weights = weights / mean(weights)
    endif
 
    ;----------
@@ -185,7 +188,9 @@ pro lrgmodel_train, public=public, regenerate=regenerate, $
    ; in order to get a good starting point
 
    ageburst = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0]
-   zmetal = [0.008, 0.014, 0.02, 0.03, 0.04, 0.05]
+   zmetal = [0.008, 0.014, 0.02, 0.03, 0.04]
+;ageburst = 4.0 ; Test ???
+;zmetal = 0.03 ; Test ???
 
    ageguess = 0
    metalguess = 0
@@ -195,7 +200,7 @@ pro lrgmodel_train, public=public, regenerate=regenerate, $
          zfit = lrgmodel_photoz(spall.modelflux, spall.modelflux_ivar, $
           ageburst=ageburst[iage], zmetal=zmetal[imetal], $
           _EXTRA=KeywordsForPhotoz)
-         chivec = zfit - spall.z
+         chivec = (zfit - spall.z) / 0.01 ; This is an arbitrary normalization
          if (keyword_set(weights)) then chivec = chivec * sqrt(weights)
          thischi2 = total(chivec^2)
          splog, 'For AGE=', ageburst[iage], ' ZMETAL=', zmetal[imetal], $
@@ -215,7 +220,7 @@ pro lrgmodel_train, public=public, regenerate=regenerate, $
 
    lrgmodel_tweak_template, spall.modelflux, spall.modelflux_ivar, $
     spall.z, weights=weights, $
-    ageburst=ageburst[iage], zmetal=zmetal[imetal], $
+    ageguess=ageguess, metalguess=metalguess, $
     coeff=coeff, _EXTRA=KeywordsForPhotoz
 
    splog, 'Best guess = ', coeff

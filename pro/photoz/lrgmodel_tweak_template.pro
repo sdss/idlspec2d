@@ -71,7 +71,7 @@ function lrgmodel_tweak_fn, coeff
     _EXTRA=KeywordsForPhotoz)
 
    ; Return the redshift errors as the "chi" values
-   chivec = zfit - zz
+   chivec = (zfit - zz) / 0.01 ; This is an arbitrary normalization
    if (keyword_set(sqweights)) then chivec = chivec * sqweights
 
    return, chivec
@@ -104,8 +104,8 @@ pro lrgmodel_tweak_template, pflux1, pflux_ivar1, zz1, weights=weights, $
 
    ; Discard any objects where the baseline photo-z is discrepent by
    ; more than 0.10, and discard any low-redshift objects with z > 0.10.
-;   pflux = pflux1
-;   pflux_ivar = pflux_ivar1
+   pflux = pflux1
+   pflux_ivar = pflux_ivar1
 ;   zfit = lrgmodel_photoz(pflux, pflux_ivar, _EXTRA=KeywordsForPhotoz)
 ;   ibad = where(abs(zfit - zz) GT 0.10 OR zz LT 0.10, nbad)
 ; Only discard the low-redshift objects...
@@ -118,7 +118,7 @@ pro lrgmodel_tweak_template, pflux1, pflux_ivar1, zz1, weights=weights, $
 
    ; Call MPFIT to iterate on the solution for the template
    parinfo = {value: 0.D, fixed: 0, limited: [0b,0b], $
-    limits: [0.d0,0.d0]}
+    limits: [0.d0,0.d0], step: 0.D}
    parinfo = replicate(parinfo, 2)
    parinfo.value = [ageguess, metalguess]
 ;   parinfo.step = [0.01, 0.0005]
