@@ -1,11 +1,24 @@
 
+APO_LOG2HTML: Add columns for EXPTIME and AIRTEMP to web page tables.
 APOPLOT: Bug fix to prevent crash when specifying EXPNUM.
+APOREDUCE: Add CARTID,AIRTEMP,CCDTEMP to all output structures.
+EXTRACT_OBJECT: Mitigate possible crash condition if relchi2struct not set.
+PLATELIST: Add NGUIDE,FBADPIX,FBADPIX1,FBADPIX2 to structure.
+QUICKEXTRACT: Return the relchi2struct from SKYSUBTRACT, and put SKYCHI2
+           in the output structure.
 SKYSUBTRACT: Merely clean out some commented-out code and update internal
            comments.  Avoid a possible crash condition in the case of
            all bad sky fibers.
+
+opLimits.par: Impose limits on EXPTIME for bias,arc,flat,smear.
+           Impose limits on (S/N)^2 for smear exposures.
+spChunkList.par: Add chunks 40-42.
+
 In idlutils:
 
 HOGG_OPLOT_COVAR: New ellipse plotting routine.
+YANNY_WRITE: Put quotes around empty strings.  Otherwise, this is not
+           a valid Yanny file.
 
 -------------------------------------------------------------------------------
 v4_9_8 (Apr 12, 2002 idlspec2d only) running on IDL 5.3 - 5.5
