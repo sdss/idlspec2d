@@ -101,56 +101,65 @@ pro spadd_guiderinfo, hdr
    rms20 = 0.0
    rms50 = 0.0
    rms80 = 0.0
+   nguide = 0
 
    if (keyword_set(guidermon)) then begin
+; No need to introduce the dependence below upon the plate numbers
+; being correct in both the image headers and the guiderMon file.
 ;      plate = sxpar(hdr, 'PLATEID')
-;      found = where(guidermon.plateId EQ plate)
-;      if (found[0] NE -1) then begin
-;         guidermon = guidermon[found] 
+;      ifound = where(guidermon.plateId EQ plate)
+;      if (ifound[0] NE -1) then guidermon = guidermon[ifound] 
 
       get_tai, hdr, tai_beg, tai_mid, tai_end
       taiplate = guidermon.timeStamp + 3506716800.0d
-      found2 = where(taiplate GE tai_beg AND taiplate LE tai_end, ct2)
+      ifound = where(taiplate GE tai_beg AND taiplate LE tai_end, nfound)
 
-      if (ct2 GT 8) then begin   ; at least 8 fibers in the time interval?
-         guidermon = guidermon[found2]
+      if (nfound GT 8) then begin   ; at least 8 fibers in the time interval?
+         guidermon = guidermon[ifound]
+
+         ; Count the number of guider frames based upon the unique number
+         ; of time stamps.
+         alltimes = guidermon.timestamp
+         alltimes = uniq(alltimes, sort(alltimes))
+         nguide = n_elements(alltimes)
+         splog, 'Number of guider frames = ', nguide
+
          seeing  = 0.0
-         good_seeing = where(guidermon.fwhm GT 0.0,ct_seeing)
-         if good_seeing[0] NE -1 then begin
-            seeing = guidermon[good_seeing].fwhm
+         igood = where(guidermon.fwhm GT 0.0, ngood)
+         if (igood[0] NE -1) then begin
+            seeing = guidermon[igood].fwhm
             seeing = seeing[sort(seeing)]           
-            see20 = seeing[long(ct_seeing*0.2) - 1]
-            see50 = seeing[long(ct_seeing*0.5) - 1]
-            see80 = seeing[long(ct_seeing*0.8) - 1]
+            see20 = seeing[(long(ngood*0.20) - 1) > 0]
+            see50 = seeing[(long(ngood*0.50) - 1) > 0]
+            see80 = seeing[(long(ngood*0.80) - 1) > 0]
          endif else splog, 'Warning: No non-zero FWHM entries'
 
          rmsoff = 0.0
-         good_rms = where(guidermon.dra NE 0.0 OR $
-                          guidermon.ddec NE 0.0,ct_rms)
-         if good_rms[0] NE -1 then begin
-            rmsoff = sqrt(guidermon[good_rms].dra^2 +$
-                          guidermon[good_rms].ddec^2)
-
+         igood = where(guidermon.dra NE 0.0 OR guidermon.ddec NE 0.0, ngood)
+         if (igood[0] NE -1) then begin
+            rmsoff = sqrt(guidermon[igood].dra^2 + guidermon[igood].ddec^2)
             rmsoff = rmsoff[sort(rmsoff)]
-            rms20 = rmsoff[long(ct_rms*0.2) - 1]
-            rms50 = rmsoff[long(ct_rms*0.5) - 1]
-            rms80 = rmsoff[long(ct_rms*0.8) - 1]
+            rms20 = rmsoff[(long(ngood*0.20) - 1) > 0]
+            rms50 = rmsoff[(long(ngood*0.50) - 1) > 0]
+            rms80 = rmsoff[(long(ngood*0.80) - 1) > 0]
          endif else splog, 'Warning: No non-zero DRA and DDEC entries'
-      endif else splog, 'Warning: No inclusive times ', tai_beg, tai_end
+      endif else splog, 'Warning: Too few inclusive times ', tai_beg, tai_end
    endif
 
    sxaddpar, hdr, 'RMSOFF80', rms80, $
-       ' 80% RMS offset of guide fibers (arcsec)', after='CAMERAS'
+    ' 80% RMS offset of guide fibers (arcsec)', after='CAMERAS'
    sxaddpar, hdr, 'RMSOFF50', rms50, $
-       ' 50% RMS offset of guide fibers (arcsec)', after='CAMERAS'
+    ' 50% RMS offset of guide fibers (arcsec)', after='CAMERAS'
    sxaddpar, hdr, 'RMSOFF20', rms20, $
-       ' 20% RMS offset of guide fibers (arcsec)', after='CAMERAS'
-   sxaddpar, hdr, 'SEEING80', see80, ' 80% seeing during exposure (arcsec)', $
-                             after='CAMERAS'
-   sxaddpar, hdr, 'SEEING50', see50, ' 50% seeing during exposure (arcsec)', $
-                              after='CAMERAS'
-   sxaddpar, hdr, 'SEEING20', see20, ' 20% seeing during exposure (arcsec)', $
-                             after='CAMERAS'
+    ' 20% RMS offset of guide fibers (arcsec)', after='CAMERAS'
+   sxaddpar, hdr, 'SEEING80', see80, $
+    ' 80% seeing during exposure (arcsec)', after='CAMERAS'
+   sxaddpar, hdr, 'SEEING50', see50, $
+    ' 50% seeing during exposure (arcsec)', after='CAMERAS'
+   sxaddpar, hdr, 'SEEING20', see20, $
+    ' 20% seeing during exposure (arcsec)', after='CAMERAS'
+   sxaddpar, hdr, 'NGUIDE', nguide, $
+    ' Number of guider frames during exposure', after='CAMERAS'
 
    return
 end
