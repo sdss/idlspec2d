@@ -5,7 +5,7 @@
 #    /astrolog/$MJD
 #    /data/spectro/$MJD
 # The astrolog data is copied into the local directory
-#    $SPECLOG_DIR/$MJD
+#    $ASTROLOG_DIR/$MJD
 # and the image files are copied to the first disk in $localdisks
 # with more than 4 Gb free, with a pointer to this from
 #    $RAWDATA_DIR/$MJD -> $localdisks[i]/$MJD
@@ -18,16 +18,16 @@
 #------------------------------------------------------------------------------
 # Set file names.
 
-astrologdir=$SPECLOG_DIR
+astrologdir=$ASTROLOG_DIR
 toprawdir=$RAWDATA_DIR
-localdisks='/peyton/scr/spectro0/data/rawdata /peyton/scr/spectro1/data/rawdata /peyton/scr/spectro2/data/rawdata'
+localdisks='/peyton/scr/spectro0/data/rawdata /peyton/scr/spectro1/data/rawdata /peyton/scr/spectro3/data/rawdata'
 topoutdir=$SPECTRO_DATA
 
 #------------------------------------------------------------------------------
 # Test that certain environment variables are already set.
 
-if [ -z "$SPECLOG_DIR" ] ; then
-  echo "SPECLOG_DIR must be set!"
+if [ -z "$ASTROLOG_DIR" ] ; then
+  echo "ASTROLOG_DIR must be set!"
   exit
 fi
 
