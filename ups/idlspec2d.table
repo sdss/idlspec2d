@@ -10,6 +10,7 @@ Common:
       setupOptional("-f ${UPS_PROD_FLAVOR} elodie")
       setupOptional("-f ${UPS_PROD_FLAVOR} spinspect")
       setupOptional("-f ${UPS_PROD_FLAVOR} specflat")
+      setupOptional("-f ${UPS_PROD_FLAVOR} speclog")
       setupRequired("-f ${UPS_PROD_FLAVOR} idlutils")
       proddir()
       setupenv()
