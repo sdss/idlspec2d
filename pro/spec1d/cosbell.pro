@@ -8,7 +8,7 @@ function cosbell, data, fraction
 	if N_params() LT 2 then return, -1
  
         npix = n_elements(data)
-        window = make_array(npix,type=size(data,/type),value=1)
+        window = fltarr(npix)+1.0
 
 ;
 ;

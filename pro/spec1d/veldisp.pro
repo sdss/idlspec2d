@@ -1,4 +1,61 @@
-
+;+
+; NAME:
+;   veldisp
+;
+; PURPOSE:
+;   Fit a series of galaxy spectrum with a single stellar template.
+;    For each object, this procedure will first find the best redshift 
+;    between object and template.  The correlation function is formed
+;    in fitredshift, and the best redshift and width of the correlation
+;    peak is calculated (along with error estimates).  Next perform chi2
+;    fitting with fourier_difference and fourier_quotient methods
+;
+; CALLING SEQUENCE:
+;   veldisp, objflux, objerr, star, starerr, result, lowcutoff=lowcutoff, $
+;     nloop=nloop, sigmastep=sigmastep, highcutoff=highcutoff, doplot=doplot, $
+;     nodiff=nodiff
+;
+; INPUTS:
+;   objflux    - array of spectra [npix, nobj]
+;   objerr     - corresponding error [npix, nobj]
+;   star       - stellar template [nstarpix]
+;   starerr    - corresponding error [nstarpix]
+;
+; OPTIONAL KEYWORDS:
+;   nloop      - number of sigmas to fit in chi2 tests
+;   sigmastep  - steps between sigmas to test
+;   lowcutoff  - low frequency cutoff for cross-correlation peak finding
+;   highcutoff - high frequency cutoff for cross-correlation peak finding
+;   doplot     - Show plots of spectra, chi2 and correlation peaks
+;   nodiff     - skip fourier_difference (as it's slow right now)
+;
+; OUTPUTS:
+;   result     - structure array containing desired outputs
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+;   We assume that objflux and star have the same zeropoint
+;    And that all spectra are binned log-linear in wavelength
+;    If there is a zeropoint difference between objects and star
+;    this needs to be included after veldisp has run.
+;
+; EXAMPLES:
+;
+; BUGS:
+;
+; PROCEDURES CALLED:
+;  getidlfreq  - quick function to return idl specific frequencies in FFT
+;  fft()
+;  fitredshift
+;  fourier_difference()
+;  fourier_quotient()
+;
+; REVISION HISTORY:
+;   25-Mar-2000  Written by S. Burles, FNAL
+;-
+;------------------------------------------------------------------------------
 ;-----------------------------------------------------------
 ;  This is the IDL way to store FFT frequencies,
 ;  IDL will do odd pixel FFT's, but it's likely much slower
@@ -15,15 +72,20 @@ end
 ;	Do we need to pass wavelengths here?  
 ;       Or do we do this before this proc?
 ;
-pro veldisp, objflux, objerr, star, starerr, result, lowcutoff=lowcutoff
+pro veldisp, objflux, objerr, star, starerr, result, lowcutoff=lowcutoff, $
+    nloop=nloop, sigmastep=sigmastep, highcutoff=highcutoff, doplot=doplot, $
+    nodiff=nodiff
        
    if N_params() LT 2 then begin
-     print, 'syntax - veldisp, flux, err, star, starerr, lowcutoff=lowcutoff'
+     print, 'syntax - veldisp, flux, err, star, starerr, lowcutoff=lowcutoff,'
+     print, '           nloop=nloop, sigmastep=sigmastep'
      return
    endif
 
    if (NOT keyword_set(lowcutoff)) then lowcutoff = 1.0/30.0
-
+   if (NOT keyword_set(highcutoff)) then highcutoff = 1.0/3.0
+   if (NOT keyword_set(nloop)) then nloop = 40
+   if (NOT keyword_set(sigmastep)) then sigmastep = 0.2
 
 
    tempresult = { $
@@ -40,7 +102,7 @@ pro veldisp, objflux, objerr, star, starerr, result, lowcutoff=lowcutoff
 
    ;  We want to loop over objects, and just take star FFT once.
    ;  Let's do stellar FFT first
-   if (size(star))[0] NE 1 then error, 'Stellar template is not 1d'
+   if (size(star))[0] NE 1 then message, 'Stellar template is not 1d'
 
    npixstar = n_elements(star)
    starmean = mean(star)
@@ -48,8 +110,18 @@ pro veldisp, objflux, objerr, star, starerr, result, lowcutoff=lowcutoff
    if (starmean LE 0) then error, 'star has negative mean counts'
 
    ; Take cosbell of normalized stellar spectra,  0.2 is cosbell fraction
-   starbell = (star/starmean - 1.0) * cosbell(star, 0.2)
-   starerrbell = (starerr/starmean)* cosbell(star, 0.2)
+
+   stargood = where(starerr GT 0.0)
+   starup = max(stargood)
+   stardown = min(stargood)
+   nfill = starup - stardown + 1
+   filled = lindgen(nfill) + stardown
+   
+   starbell = fltarr(npixstar) 
+   starerrbell = fltarr(npixstar) 
+
+   starbell[filled] = ((star/starmean - 1.0))[filled] * cosbell(filled, 0.2)
+   starerrbell[filled] = ((starerr/starmean))[filled] * cosbell(filled, 0.2)
     
    ;---------------------------------------------------------------------
    pad = 2L^(fix(alog(npixstar)/alog(2) + 2)) - npixstar
@@ -58,9 +130,31 @@ pro veldisp, objflux, objerr, star, starerr, result, lowcutoff=lowcutoff
    starbell = [starbell,fltarr(pad)]
    starerrbell = [starerrbell,fltarr(pad)]
    npixbell = n_elements(starbell)
+   fftfreq = getidlfreq(npixbell)
    starfft = fft(starbell)  * npixbell
    starvariancefft = fft(starerrbell*starerrbell)  * npixbell
    starvar0 = float(starvariancefft[0])
+
+   ; Should write a routine to perform band pass filtering here
+
+     lowpixels = where(abs(fftfreq) LT lowcutoff)
+     highpass = fftfreq * 0.0 + 1.0
+
+     if (lowpixels[0] NE -1) then highpass[lowpixels] = $
+        0.5 * (1.0 - cos(!Pi*abs(fftfreq[lowpixels])/lowcutoff))
+
+     highpixels = where(abs(fftfreq) GT highcutoff)
+     lowpass = fftfreq * 0.0 + 1.0
+     sep = max(fftfreq) - highcutoff
+     if (highpixels[0] NE -1) then lowpass[highpixels] = $
+        0.5 * (1.0 - cos(!Pi*(max(fftfreq) - abs(fftfreq[highpixels]))/sep))
+
+
+   starfilt = starfft * highpass * lowpass
+
+   fitredshift, starfilt, starfilt, pad=pad, $
+      nsearch=5, zfit=starcen, z_err=starcen_err, $
+      veldispfit=starsigma, veldisp_err=starsigma_err, doplot=doplot
 
    ; Now we have our star ready, let's loop out objects
 
@@ -69,6 +163,8 @@ pro veldisp, objflux, objerr, star, starerr, result, lowcutoff=lowcutoff
    else error, 'flux array is neither 1d or 2d'
 
    result = replicate(tempresult, nobj)
+
+   print,'    Gal    z      z_err   vel_cc (err)  vel_q  (err)  vel_d  (err)  alpha_d  alpha_q'
 
    for iobj=0,nobj-1 do begin
 
@@ -98,26 +194,40 @@ pro veldisp, objflux, objerr, star, starerr, result, lowcutoff=lowcutoff
      nonzero = where(temperr GT 0.0)
      x = findgen(npixerr)
      lessthanzero = where(temperr LE 0.0)
-     inrange = where(temperr LE 0.0 AND x GT min(nonzero) AND x LT max(nonzero))
+     if (lessthanzero[0] NE -1) then tempflux[lessthanzero] = 0.0
 
-     if (nonzero[0] NE -1 AND inrange[0] NE -1) then begin
-       spl0 = spl_init(x[nonzero],tempflux[nonzero])
-       tempflux[lessthanzero] = 0.0
-       tempflux[inrange] = spl_interp(x[nonzero],tempflux[nonzero], spl0, x[inrange])
-     endif
+     galup = max(nonzero)
+     galdown = min(nonzero)
+     nfill = galup - galdown + 1
+     filled = lindgen(nfill) + galdown
+    
+
+     inrange = where(temperr LE 0.0 AND x GT galdown AND x LT galup)
+
 
      ; Here we need to match the stellar spectrum, 
      ; after cosbell 
 
-     objbell = cosbell(tempflux, 0.2)
+     objbell = tempflux*0.0
+     objbell = cosbell(filled, 0.2)
+
      fluxmean = mean(tempflux)
  
      if (fluxmean LE 0) then begin
-       print, i, 'th  galaxy has negative mean counts', galmean     
+       print, iobj, 'th  galaxy has negative mean counts', fluxmean     
      endif else begin
 
-       fluxbell = (tempflux/fluxmean - 1.0) * objbell
-       errbell = (temperr/fluxmean)*objbell
+       fluxbell = fltarr(npixflux) 
+       errbell = fltarr(npixerr)
+
+     if (nonzero[0] NE -1 AND inrange[0] NE -1) then begin
+       spl0 = spl_init(x[nonzero],tempflux[nonzero])
+;       tempflux[inrange] = spl_interp(x[nonzero],tempflux[nonzero], spl0, x[inrange])
+       tempflux[inrange] = fluxmean
+     endif
+
+       fluxbell[filled] = (tempflux/fluxmean - 1.0)[filled] * objbell
+       errbell[filled] = (temperr/fluxmean)[filled]*objbell
 
        if npixbell LE npixflux then error, 'Not enough padding'
 
@@ -128,123 +238,95 @@ pro veldisp, objflux, objerr, star, starerr, result, lowcutoff=lowcutoff
        fluxvariancefft = fft(errbell*errbell)  * npixbell
        fluxvar0 = float(fluxvariancefft[0])
 
-       fftfreq = getidlfreq(npixbell)
 
        ;
        ;  Do bandpass filter of fft here
        ;
 
-        ;  Use a cosbell for high pass filter  at 15?? pixels
-
-       ; Should write a routine to perform band pass filtering here
-
-        lowpixels = where(abs(fftfreq) LT lowcutoff)
-        highpass = fftfreq * 0.0 + 1.0
-        if (lowpixels[0] NE -1) then highpass[lowpixels] = $
-           0.5 * (1.0 - cos(!Pi*abs(fftfreq[lowpixels])/lowcutoff))
 
        
-        starfilt = starfft * highpass 
-        fluxfilt = fluxfft * highpass 
-
-        corr =  float(fft(fluxfilt * conj(starfilt),1))
-
-        corr = shift(corr,pad)
+        fluxfilt = fluxfft * highpass  * lowpass
 
 
-        ;  This loop finds the redshift by searching the 5 highest peaks
+       ;
+       ;  Need to fill an array of length fluxfilt which records the number
+       ;   of good pixels cross-correlated between star and galaxy as a 
+       ;   a function of shift
 
-        for i=0,5 do begin
-           nhalffit = 5
-           xtemp = findgen(2*nhalffit + 1)-nhalffit
-           peak = max(corr,velcen)
-           parabola = poly_fit(xtemp, corr[xtemp+velcen], 2)
+        npixtot = n_elements(fluxbell)
+	ngoodpixels = lonarr(npixtot)
+        for i=0, npixtot-1 do ngoodpixels[i] = $
+             min([starup,galup+pad-i]) - max([stardown,galdown+pad-i])
 
-;           plot, corr
-;           oplot, xtemp+velcen, poly(xtemp, parabola), color=500
+        fitredshift, fluxfilt, starfilt, pad=pad, ngoodpixels= ngoodpixels, $
+          nsearch=5, zfit=fitcen, z_err=fitcen_err, $
+          veldispfit=galsigma, veldisp_err=galsigma_err, doplot=doplot
 
-
-           if (parabola[2] GE 0.0) then begin
-             print, 'peak is not well fit at ', velcen
-             corr[xtemp+velcen] = 0.0
-           endif else if (total(corr[xtemp+velcen]) LT 0.0) then begin
-             print, 'total corr is less than zero at ', velcen
-             corr[xtemp+velcen] = 0.0
-           endif else i=5
-
-        endfor
-
-        fitcen = velcen - 0.5 * parabola[1]/parabola[2]  - pad
         result[iobj].z = fitcen   ; this redshift is in pixels!
+        result[iobj].z_err = fitcen_err 
+
+        if (keyword_set(doplot)) then begin
+          window,2, ypos = 50
+          plot, star/starmean, xr=[0,2000], yr=[0,2.0], $
+            title='Rest frame spectra of template (white) and galaxy (red)'
+          oplot, smooth(shift(tempflux/fluxmean,-fitcen),5) + 0.1, color=500
+        endif
+        if (galsigma GT starsigma AND starsigma GT 0.0) then begin
+           result[iobj].sigma_cc = sqrt(galsigma^2 - starsigma^2)
+           result[iobj].sigma_cc_err = sqrt((galsigma*galsigma_err)^2 + $
+                (starsigma*starsigma_err)^2)/result[iobj].sigma_cc
+        endif
+
 
         twopiei = 2.0 * !Pi * complex(0.0,1.0)
         phase = exp( - twopiei * fftfreq * fitcen)
         starshift = starfft * phase
 
+	testsigma = findgen(nloop)*sigmastep
+
 ;
 ;	Need to pick lower and upper limits to do comparison
 ;	Let's try to compare from 80 pixels to 2.2 pixels
+;       Don't do fourier_difference if nodiff keyword is set
 ;
- 
-        lowlimit = 1.0/80.0
-        highlimit = 1.0/2.2
-
-        inside = where(abs(fftfreq) GT lowlimit AND abs(fftfreq) LT highlimit)
-
-        if (inside[0] EQ -1) then begin
-           print, 'no pixels in correct frequency range'
-           return
-        endif
-	
-;
-;       Tonry and Davis show a simple expression to maximize
-;       This is a slow minimizer, stepping through 100 sigmas to
-;       find best one.  This method is the fft difference method
-;       We need a routine for each method.
-;
-
-        nloop = 30
-        chi2diff = fltarr(nloop)
-        chi2quotient = fltarr(nloop)
-        sigma = fltarr(nloop)
-        alpha = fltarr(nloop)
-        for i=0,nloop-1 do begin
-           
-          sigma[i] = i/5.0;  in pixels
-          broad = exp(-(fftfreq*sigma[i] * 2.0 * !Pi)^2/2.0)
-
-          numer = fluxfft * conj(starshift) * broad
-          denom = starshift * conj(starshift) * broad^2
-          alpha[i] = total(numer[inside])/total(denom[inside])
-
-          diff = fluxfft[inside] - alpha[i] * starshift[inside] * broad[inside]
-;          chi2[i] = float(total(diff * conj(diff)/(fluxvar0 + starvar0 * broad[inside]^2)))
-          chi2diff[i] = float(total(diff * conj(diff)/(fluxvar0)))
+	if (NOT keyword_set(nodiff)) then $
+	answer = fourier_difference(fftfreq, fluxfft, starshift, fluxvar0, $
+             starvar0, testsigma=testsigma, deltachisq=1.0, $ 
+             lowlimit = 1.0/80.0, highlimit=1.0/2.2, doplot=doplot)
 
 ;---------------------------------------------------------
 ;          quotient = float(fluxfft/(starshift))
 ;          quotient = float(fluxfft/(alpha[i]*starshift))
 ;          diff = (quotient[inside] - broad[inside])
 ;          chi2quotient[i] = total(diff^2)/fluxvar0
-        endfor
  
 
-      minchi2 = min(chi2diff,minplace)
+       bestalpha = -9999.0
 
+       if (n_elements(answer) EQ 4) then begin
+         result[iobj].sigma_diff = answer[1]
+         result[iobj].sigma_diff_err = answer[2]
+         bestalpha = answer[3]
+       endif
 
-      ; ------------------------------------------------------------------
-      ;  do fine grid to locate chi^2 minimum
+;         print, iobj, result[iobj].z, exp(result[iobj].z*0.000230259)-1.0, $
+;              result[iobj].sigma_diff*70.0, result[iobj].sigma_diff_err*70.0, $
+;             answer[0], bestalpha
 
+        if (keyword_set(doplot)) then quoplot = 2 else quoplot = 0
+	answerq = fourier_quotient(fftfreq, fluxfft, starshift, fluxvar0, $
+             starvar0, testsigma=testsigma, deltachisq=1.0, $ 
+             lowlimit = 1.0/80.0, highlimit=1.0/2.2, doplot=quoplot)
 
-      y2 = spl_init(sigma, chi2diff)
-      lotsofsigma = findgen(6000)/1000.0
-      chifit = spl_interp(sigma, chi2diff, y2, lotsofsigma)
-      minchifit = min(chifit,fitplace)
-      result[iobj].sigma_diff = lotsofsigma[fitplace]
+       if (n_elements(answerq) EQ 4) then begin
+         result[iobj].sigma_quotient = answerq[1]
+         result[iobj].sigma_quotient_err  = answerq[2]
+         bestalpha_q = answerq[3]
+       endif
 
+         print,iobj,result[iobj], format='(i,f9.2,7(f7.2),$)' 
+         print, bestalpha, bestalpha_q, format='(f10.4,f9.4)'
 
-      print, iobj, result[iobj].z, result[iobj].z*0.000230259, $
-              result[iobj].sigma_diff, result[iobj].sigma_diff*70.0, minchi2, alpha[minplace]
 ;      window,1 
 ;      plot,sigma,chi2diff,ps=1,/yno
 ;      oplot,lotsofsigma,chifit, color=500
