@@ -171,6 +171,8 @@ print,'OBJECT ', iobj
 ntest = 100
       p1vec = long(-pinit * subsamp + (lindgen(ntest) - ntest/2))
       zvec = 10.d^( (float(-p1vec)/subsamp + poffset) * objdloglam) - 1
+; The above doesn't quite seem to be correct - always off by 1 pix???
+zvec = dblarr(ntest)
 
       ;----------
       ; Loop over each possible redshift, and redshift the spectrum of
@@ -200,7 +202,9 @@ ntest = 100
          npsmall = ((nbigpix - p1) / subsamp) < (npix - q1) ; integer-valued
 
          if (npsmall GT 1) then begin
+
             indx = p1 + subsamp * lindgen(npsmall)
+zvec[itest] = 10d^(objloglam[q1] - bigloglam[indx[0]]) - 1 ; This is correct???
 
             ;----------
             ; Compute the chi^2
@@ -232,6 +236,11 @@ for j=0, n_elements(ii)-1 do $
  printf, olun, plate[j], mjd[j], fiberid[j], zstruct[ii[j]].z, $
   format='(i5, i7, i5, f12.6)'
 close, olun
+
+vdiff = (zstruct[ii].z-zold)*3e5
+vdiff = vdiff - median(vdiff)
+ibad = where(abs(vdiff) GT 100)
+print,fiberid[ibad]
 
    return
 end
