@@ -44,6 +44,15 @@
 
 remotehost=alfred@spectro.princeton.edu
 
+# Exit if this process is already running.
+
+n=`\ps -elf | grep pullspectra | grep -v grep | wc -l`
+if [ X"$n" != X"" -a "$n" -gt 2 ]; then
+   echo "pullspectra already running at "`date`
+   exit
+fi
+exit
+
 # Use the first argument to this command as the local destination directory.
 # Otherwise, use the environment variable $SPECTRO_DATA.
 
