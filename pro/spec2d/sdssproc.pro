@@ -32,7 +32,7 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
    if (N_params() LT 1) then begin
       print, 'Syntax - sdssproc, infile, [image, invvar, outfile=outfile, varfile=varfile, ' 
       print, ' hdr=hdr, configfile=configfile, ccdfile=ccdfile]'
-      return, -1
+      return
    endif
    if (NOT keyword_set(configfile)) then configfile = 'opConfig.fit'
    if (NOT keyword_set(ccdfile)) then ccdfile = 'opECalib.fit'
