@@ -28,7 +28,11 @@
 ;   outdir     - Output directory for OUTFILE; default to './'
 ;   tmpdir     - Directory for temporary files; default to same as OUTDIR
 ;   pixspace   - Approximate spacing in pixels for break points in the
-;                spline fits to individual fibers; default to 50 pixels
+;                spline fits to individual fibers; default to 50 pixels.
+;                Note that this spacing need be small enough to fit out
+;                the flux variations of multiple fibers crossing a single
+;                column, but it need not fit out the actual flat-field
+;                variations.
 ;
 ; PARAMTERS FOR SLATEC_SPLINEFIT:
 ;   nord       - Default to 4
@@ -54,7 +58,11 @@
 ;   Not sure what to do if exactly 2 frames are passed.
 ;   Pass UPPER and LOWER.
 ;   Look for bad fibers or outlier fibers to exclude from superflat.
-;   Exclude masked pixels from superflat.
+;   Right now, we can get bad spline fits across the large hole in the
+;     b1 flat-field if the break points fall too close to the edges of
+;     that hole.  Try to keep more data points between the last break point
+;     and the beginning of the hole, or do a linear interpolation across
+;     the hole.
 ;
 ; PROCEDURES CALLED:
 ;   djs_avsigclip()
@@ -281,6 +289,18 @@ arcivar = 0
    maskimg = genflatmask(oldflat, spectrographid=spectrographid, color=color, $
     indir=indir, tmpdir=tmpdir)
 
+   ; If a column contains fewer than 5 good points, mask that entire column
+   for i=0, nx-1 do begin
+      junk = where(maskimg[i,*] EQ 0, ngind)
+      if (ngind LT 5) then begin
+         splog, 'Masking column ', i
+         maskimg[i,*] = 1
+      endif
+   endfor
+
+   junk = where(maskimg NE 0, ct)
+   splog, 'Number of pixels in bad pixel mask = ', ct
+
    ;---------------------------------------------------------------------------
    ; Construct the flat
    ;---------------------------------------------------------------------------
@@ -310,6 +330,7 @@ arcivar = 0
 
       flatimg = flatimg / fitimg
       flativar = flativar * fitimg^2
+fitimg = 0
 
 ; Test extraction...
 ;extract_image, flatimg, flativar, xsol, sigma, tmpflux, tmpivar, $
@@ -326,31 +347,45 @@ arcivar = 0
       ;----------------------
       ; Determine YMODEL image
 
+      splog, 'Solving for YMODEL'
+
 ;splot,transpose(10^waveimg[1000,*]),transpose(flatimg[1000,*])
 ;for i=0,5 do soplot, transpose(10^waveimg[i*10,*]),transpose(flatimg[i*10,*])
 
       ymodel = 0.0 * flatimg
       for i=0, nx-1 do begin
+         ; Burles counter for column number...
          print, format='($, ".",i4.4,a5)',i,string([8b,8b,8b,8b,8b])
 
-         indx = where(maskimg[i,*] EQ 0)
+         indx = where(maskimg[i,*] EQ 0 AND flativar[i,*] GT 0, ngind)
+
+         ; If fewer than 5 good points, then fit all points in this column.
+         ; Also, change the values of FLATIVAR to prevent SLATEC_SPLINEFIT()
+         ; from crashing.
+         if (ngind LT 5) then begin
+            indx = lindgen(ny)
+            flativar[i,*] = 1.0
+         endif
+
+         ;------
+         ; The following spline fit chooses breaks points even separated
+         ; in log-wavelength. ???
 
 ;         yaxis = waveimg[i,*]
-; Trim the break-points first???
 ;         fullbkpt = slatec_splinefit(yaxis[indx], flatimg[i,indx], coeff, $
 ;          invvar=flativar[i,*], bkpt=bkpt, nord=nord, $
 ;          lower=lower, upper=upper, maxiter=3)
 
-yaxis = findgen(ny)
+         ;------
+         ; The following spline fit chooses breaks points even separated
+         ; in row number.
 
-fullbkpt = slatec_splinefit(yaxis[indx], flatimg[i,indx], coeff, $
- invvar=flativar[i,*], bkspace=pixspace, nord=nord, $
- lower=4, upper=4, maxiter=3)
+         yaxis = findgen(ny)
+
+         fullbkpt = slatec_splinefit(yaxis[indx], flatimg[i,indx], coeff, $
+          invvar=flativar[i,*], bkspace=pixspace, nord=nord, $
+          lower=4, upper=4, maxiter=3)
          ymodel[i,*] = slatec_bvalu(yaxis, fullbkpt, coeff)
-
-;splot,10^waveimg[i,*],flatimg[i,*]
-;soplot,10^waveimg[i,*],ymodel[i,*],color='red'
-;splot,10^waveimg[i,*],flatimg[i,*]/ymodel[i,*]
 
       endfor
 
@@ -377,11 +412,15 @@ ymodel = 0
        outmask=outmask)
 meanimg = 0
 pixflatarr = 0
+
       outmask = temporary(1-outmask) ; Change to 0=bad, 1=good
 
       flatimgsum = 0
       ymodelsum = 0
       for iflat=0, nflat-1 do begin
+
+         junk = where(outmask[*,*,iflat] EQ 0, ct)
+         splog, 'Number of pixels masked in ', allflats[iflat], ' = ', ct
 
          flatimgsum = flatimgsum + outmask[*,*,iflat] * readfits(tmpname1[iflat])
          ymodelsum = ymodelsum + outmask[*,*,iflat] * readfits(tmpname2[iflat])
