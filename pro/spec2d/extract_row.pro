@@ -164,7 +164,7 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
     pixelmask = lonarr(ntrace)
 
    if (NOT keyword_set(whopping)) then whopping = -1
-   if (whopping[0] EQ -1) then whoppingct = 0 $
+   if (whopping[0] EQ -1) then whoppingct = 0L $
     else whoppingct = n_elements(whopping)
 
    if (NOT keyword_set(xvar)) then xvar = findgen(nx) $
@@ -296,10 +296,10 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
       sigmal = 15.0
 
       result = call_external(soname, 'extract_row',$
-       nx, FLOAT(xvar), FLOAT(fimage), workinvvar, ymodel, ntrace, $
+       LONG(nx), FLOAT(xvar), FLOAT(fimage), workinvvar, ymodel, LONG(ntrace), $
        LONG(npoly), FLOAT(xcen), FLOAT(sigma), LONG(proftype), $
        FLOAT(reject), partial, fullreject, qcovar, LONG(squashprofile), $
-       FLOAT(whopping), whoppingct, FLOAT(wsigma), $
+       FLOAT(whopping), LONG(whoppingct), FLOAT(wsigma), $
        ncoeff, LONG(nband), ma, ans, wfixarr, p, fscat, fullcovar, $
        sigmal, contribution)
 
