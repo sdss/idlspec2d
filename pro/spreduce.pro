@@ -168,8 +168,8 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
             tmp_xsol = trace320crude(image, invvar, yset=ycen, maxdev=0.15)
 
             splog, 'Fitting traces in ',  flatname[ifile]
-            xy2traceset, ycen, tmp_xsol, tset, ncoeff=5, maxdev=0.1
-            traceset2xy, tset, ycen, tmp_xsol
+            xy2traceset, ycen, tmp_xsol, tmp_tset, ncoeff=5, maxdev=0.1
+            traceset2xy, tmp_tset, ycen, tmp_xsol
          endif
 
          oldflatfile = flatname[ifile]
@@ -183,7 +183,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
          splog, 'Reading arc ', arcname[ifile]
          sdssproc, arcname[ifile], image, invvar, indir=indir, $
-          hdr=archdr, pixflatname=pixflatname, nsatrow=nsatrow
+          hdr=tmp_archdr, pixflatname=pixflatname, nsatrow=nsatrow
 
          ;-----
          ; Decide if this arc is bad:
@@ -234,8 +234,10 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
                bestcorr = corr
                arcimg = flux
                arcivar = fluxivar
+               archdr = tmp_archdr
                xsol = tmp_xsol
                aset = tmp_aset
+               tset = tmp_tset
             endif
          endif
       endif
@@ -267,7 +269,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    ; Compute wavelength calibration for arc lamp only
    ;---------------------------------------------------------------------------
 
-   arccoeff = 6
+   arccoeff = 5
 
    splog, 'Searching for wavelength solution'
    fitarcimage, arcimg, arcivar, xpeak, ypeak, wset, ncoeff=arccoeff, $
@@ -326,6 +328,34 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
     /dospline)
 
    qaplot_fflat, fflat, wset, filename=flatname[ibest]
+
+   ;------------------------------------------------------------------
+   ; Write information on flat field processing
+   ;
+   flatframenum = sxpar(flathdr, 'EXPOSURE')
+   flatinfoname = filepath( $
+       'spFlatInfo-'+string(format='(a1,i1,a,i8.8,a)',color,spectrographid, $
+       '-',flatframenum,'.fits'), root_dir=outdir)
+
+   mwrfits, fflat, flatinfoname, flathdr, /create
+   mwrfits, tset, flatinfoname
+   mwrfits, plugsort, flatinfoname
+   mwrfits, fibermask, flatinfoname
+
+   ;------------------------------------------------------------------
+   ; Write information on arc image processing
+   ;
+   arcframenum = sxpar(archdr, 'EXPOSURE')
+   arcinfoname = filepath( $
+       'spArcInfo-'+string(format='(a1,i1,a,i8.8,a)',color,spectrographid, $
+       '-',arcframenum,'.fits'), root_dir=outdir)
+
+   mwrfits, arcimg, arcinfoname, archdr, /create
+   mwrfits, [transpose(lambda), xpeak], arcinfoname
+   mwrfits, wset, arcinfoname
+   mwrfits, plugsort, arcinfoname
+   mwrfits, fibermask, arcinfoname
+
 
    ;---------------------------------------------------------------------------
    ; LOOP THROUGH OBJECT FRAMES
