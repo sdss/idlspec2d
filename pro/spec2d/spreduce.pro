@@ -219,10 +219,17 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
     xdif_lfit=xdif_lfit, xdif_tset=xdif_tset, errcode=errcode
 
    if (errcode NE 0) then begin
-	message, 'Fitarcimage failed - abort'
+      message, 'Fitarcimage failed'
    endif 
 
    qaplot_arcline, xdif_tset, lambda, arcname
+
+; Plot flat-field ???
+plot,fflat[*,0], yr=[0,2], /ystyle, $
+ xtitle='Wavelength',ytitle='Intensity', $
+ title='Flat Vectors (every 20th fib)', $
+ charsize=2, charthick=2
+for i=0,16 do oplot,fflat[*,i*19]
 
    ;---------------------------------------------------------------------------
    ; LOOP THROUGH OBJECT FRAMES
@@ -231,7 +238,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    for iobj=0, N_elements(objname)-1 do begin
 
       print,'> SPREDUCE: ',systime(1)-t_begin, ' seconds so far', $
-	   format='(A,F8.2,A)'
+       format='(A,F8.2,A)'
 
       ;------------------
       ; Read object image
@@ -306,8 +313,8 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       ; Tweak up the wavelength solution to agree with the sky lines.
 
       locateskylines, skylinefile, obj_flux, obj_fluxivar, $
-        wset, invset, wset_tweak, invset_tweak, $
-        xsky, ysky, skywaves
+       wset, invset, wset_tweak, invset_tweak, $
+       xsky, ysky, skywaves
 
       ;------------------
       ; Sky-subtract
@@ -323,7 +330,7 @@ stop
    endfor
 
    print,'> SPREDUCE: ',systime(1)-t_begin, ' seconds TOTAL', $
-	 format='(A,F8.2,A)'
+    format='(A,F8.2,A)'
 
 
 stop

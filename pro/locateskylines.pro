@@ -134,7 +134,7 @@ PRO locateskylines, skylinefile, fimage, ivar, $
 
         pmulti = !p.multi
         !p.multi = [0,1,2]
-	plot,skywaves,mean1,xr=[5500,9500],yr=[-.3,.3]+median(mean),/yst, $
+	plot,skywaves,mean1,yr=[-.3,.3]+median(mean),/yst, $
 	    xtit='Wavelength (A)', ytit='Delta x (Pix)', /xst, $
             title='Sky line residual'
 	errplot,skywaves,mean1-sigma1,mean1+sigma1
@@ -166,30 +166,26 @@ PRO locateskylines, skylinefile, fimage, ivar, $
 	infostr=string('Dispersion:', stdev(mean-yfit)*1E3,' mpix', $
 	   format='(A,F7.1,A)')
 
-	plot,skywaves,mean-yfit,xr=[5500,9500],yr=[-.2,.2], /xst, $
+	plot, skywaves, mean-yfit, $
+         xrange=[min(skywaves)-100,max(skywaves)+100], yr=[-.2,.2], $
 	    xtit='Wavelength (A)', ytit='Delta x (Pix)', $
             title='After flexure correction'
 	errplot,skywaves,mean-yfit-sigma,mean-yfit+sigma
         xyouts, 0.95, 0., systime(), /normal, align=1, chars=0.5
         xyouts, 0.05, 0., infostr, /norm
 	print, infostr
-	
 
-print, 'do nothing'
+print, 'No flexure correction...'
 
         tset_tweak   = tset_arc
         invset_tweak = invset
-return
 
-	traceset2xy, tset_arc, xpos, ypos
-
-
-        fit_tset, xnew, ycen, lambda, goodlines, tset_tweak, invset_tweak
+; What is this ??? 
+;	traceset2xy, tset_arc, xpos, ypos
+;        fit_tset, xnew, ycen, lambda, goodlines, tset_tweak, invset_tweak
 
 
 	!p.multi=pmulti
-
-
   return
 
 END
