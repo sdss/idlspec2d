@@ -298,7 +298,7 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    xy2traceset, transpose(double(xcen)), ytmp, $
      wfirst, invvar=transpose(xmask), func=func, ncoeff=ncoeff, $
      maxdev=maxdev, maxiter=nlamp, maxrej=1, /sticky, $
-     outmask=xfitmask, /sticky, xmin=0, xmax=npix-1, yfit=yfit
+     outmask=xfitmask, xmin=0, xmax=npix-1, yfit=yfit
 
    print, 'Pass 1 complete'
 
