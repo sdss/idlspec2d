@@ -55,7 +55,6 @@ do
     --include "plPlugMap*.par" --include "sdReport*.par" \
     --include "exposureLog*.par" \
     --exclude="*/*" \
-    --include "*/" \
     --log-format="/astrolog/%f" \
     sdsshost.apo.nmsu.edu:$dir $ASTROLOG_DIR
 done
