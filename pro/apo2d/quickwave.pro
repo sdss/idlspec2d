@@ -1,42 +1,46 @@
-pro quickwave, rawfile, arcname, flatname
+function quickwave, arcname, flatname, outarc, radius=radius
 
-   nin = n_elements(rawfile)
-   nout = n_elements(arcname)
-   nflat = n_elements(flatname)
+   if (n_elements(arcname) NE 1) then return, 0
+   if (n_elements(outarc) NE 1) then return, 0
+   if (n_elements(flatname) NE 1) then return, 0
+   if (NOT keyword_set(radius)) then radius = 3.0
 
-  
-   if (nin NE nout) then begin
-       print, 'Number of files IN is different then number of files OUT"
-       return
-   endif
+   ; Read in image
+   sdssproc, arcname, arcimg, hdr=hdr, color=color
+   camname = strtrim(sxpar(hdr, 'CAMERAS'),2)
 
-   if (nin NE nflat) then begin
-       print, 'Number of files IN is different then number of FLAT files"
-       return
-   endif
+   tset = mrdfits(flatname,1)
+   fibermask = mrdfits(flatname,3)
 
-   for i=0,nin - 1 do begin
+   traceset2xy, tset, ycen, xcen 
 
-     sdssproc, rawfile[i], arcimg, hdr=archdr, color=color
+   ; Boxcar extract
+   flux = extract_boxcar(arcimg, xcen, radius=radius)
 
-     camname = strtrim(sxpar(archdr, 'CAMERAS'),2)
+   ; Estimate inverse variance
+   fluxivar = 1.0 / (abs(flux) + 10.0)
 
-     tset = mrdfits(flatname[i],1)
-     fibermask = mrdfits(flatname[i],3)
+   fitarcimage, flux, fluxivar, xpeak, ypeak, wset, aset=aset, $
+     fibermask=fibermask, bestcorr=bestcorr, $
+     color=color
 
-     traceset2xy, tset, ycen, xcen 
+   ; Only output file if a wavelength solution was found
+   if (keyword_set(wset)) then begin
+      mwrfits, wset, outarc, /create
 
-     ; boxcar extract
-     flux = extract_boxcar(arcimg, xcen, radius = 3.0)
+      traceset2xy, wset, xx, yy
+      wavemin = 10^(min(yy))
+      wavemax = 10^(max(yy))
+      nlamps = (size(xpeak,/dimens))[1]
+      rstruct = create_struct('FLAVOR', 'arc', $
+                              'CAMERA', camname, $
+                              'WAVEMIN', wavemin, $
+                              'WAVEMAX', wavemax, $
+                              'BESTCORR', bestcorr, $
+                              'NLAMPS', nlamps )
+   endif else begin
+      rstruct = 0
+   endelse
 
-     ; estimate fluxivar
-     fluxivar = 1.0/(abs(flux) + 10.0)
-
-     fitarcimage, flux, fluxivar, xpeak, ypeak, wset, aset=aset, $
-        lampfile=lampfile, fibermask=fibermask, bestcorr=bestcorr, $
-        color=color
-
-     if (keyword_set(wset)) then mwrfits, wset, arcname[i], /create
-
-   endfor
+   return, rstruct
 end
