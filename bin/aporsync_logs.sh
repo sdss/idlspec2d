@@ -49,11 +49,12 @@ for dir in $astrologdirs
 do
    rsync -ar --rsh="ssh -c blowfish" \
     --rsync-path=/p/rsync/v2_4_3/rsync \
-    --include "*/" \
-    --include "Unplugged*.ps" --include "fiberScan*.par" \
+    --include "Unplugged*.ps"  --include "fiberScan*.par" \
     --include "guiderMon*.par" --include "op*.par" \
     --include "plPlugMap*.par" --include "sdReport*.par" \
-    --exclude="*" \
+    --include "exposureLog*.par" \
+    --exclude="*/*" \
+    --include "*/" \
     --log-format="/astrolog/%f" \
     sdsshost.apo.nmsu.edu:$dir $ASTROLOG_DIR
 done
@@ -63,11 +64,10 @@ done
 rsync -ar --rsh="ssh -c blowfish" \
       --rsync-path=/p/rsync/v2_4_3/rsync \
       --log-format="/data/spectro/%f" \
-      --include "*/" \
-      --include "*/guider/*" \
-      --include "*/gimg*" \
-      --exclude="*" \
-      "sdsshost.apo.nmsu.edu:/data/spectro/[5-9]????" $RAWDATA_DIR
+      --include "*/guider" \
+      --include "gimg*" \
+      --exclude="*/*" \
+      "sdsshost.apo.nmsu.edu:/data/spectro/[5-9]????" $RAWDATA_DIR | startapo.sh
 
 echo "APORSYNC_LOGS: Finished at "`date -u` UID=$UID PPID=$PPID
 
