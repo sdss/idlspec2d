@@ -1,0 +1,37 @@
+#!/bin/bash -f
+#------------------------------------------------------------------------------
+# Script to retry Son-of-Spectro jobs
+#
+#------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
+# If a second argument is give, such as "sos_redo plate-mapper", or 
+# "sos_redo observer@plate-mapper.apo.nmsu.edu", then run this command 
+# remotely on the machine "plate-mapper".
+
+# But we want to pass the additional keyword (e.g.) plate=666 
+# sos_redo plate=666
+
+if [ $# = 1 ] ; then
+  if [ ! `echo $1 | grep plate=` ] ; then
+    ssh $1 sos_redo 
+    exit
+  fi
+fi
+
+if [ $# = 2 ] ; then
+  if [ ! `echo $1 | grep plate=` ] ; then
+    ssh $1 sos_redo $2
+    exit
+  fi
+  if [ ! `echo $2 | grep plate=` ] ; then
+    ssh $2 sos_redo $1
+    exit
+  fi
+fi
+
+#------------------------------------------------------------------------------
+# Attempt to run the idl procedure remove2redo
+
+echo remove2redo, $1 | idl
+

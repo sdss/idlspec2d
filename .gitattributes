@@ -7,6 +7,7 @@ bin/hostcopy.sh -text
 bin/killdata.sh -text
 bin/mailhtml.sh -text
 bin/sos.sh -text
+bin/sos_redo -text
 bin/sos_start -text
 bin/sos_status -text
 bin/sos_stop -text
