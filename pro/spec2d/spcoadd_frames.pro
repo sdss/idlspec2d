@@ -194,7 +194,17 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
       ; Solve for wavelength and lambda-dispersion at each pixel in the image
 
       traceset2xy, tempwset, junk, tempwave
+      traceset2xy, tempwset, junk-0.5, lowerwave
+      traceset2xy, tempwset, junk+0.5, upperwave
       traceset2xy, tempdispset, junk, tempdispersion
+
+      ;----------
+      ; Here is the correct conversion from pixels to log-lambda dispersion
+
+      dlogimg = abs(upperwave - lowerwave)
+      tempdispersion = dlogimg/binsz * tempdispersion
+      upperwave = 0
+      lowerwave = 0
 
       dims = size(tempflux, /dimens)
       npix = dims[0]
@@ -204,7 +214,7 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
       ; Make a map of the size of each pixel in delta-(log10-Angstroms),
       ; and re-normalize the flux to ADU/(dloglam)
 
-      correct_dlam, tempflux, tempivar, tempwset
+      correct_dlam, tempflux, tempivar, tempwset, dlam=binsz
 
       ;----------
       ; Determine if this is a blue or red spectrum

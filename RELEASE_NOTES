@@ -112,6 +112,8 @@ SMOOTH_SUPERFLAT: Located the spurious WARNING, changed to Warning, and
             smooth_superflat warnings.
 SPBIASGEN: New routine for generating mean biases for a night.
 SPCALIB,SPFLATTEN2,SPREDUCE: Use /APPLYBIAS option in call to SDSSPROC.
+SPCOADD  :  Convert dispersion vectors to log-lambda units (1.0d-4, PR 1870)
+SPCOMBINE:  Use threshold of FRAMESN2 > 1.0 to include in coadd (PR 1901)
 SPFLATGEN: Add optional keywords EXPNUM,EXPSTART,EXPEND.
 SPREDUCE1D, ZFIND, ZCOMPUTE, FIND_NMINIMA: Plotting and debugging
             tools added with the /DOPLOT, /DEBUG keywords.

@@ -17,6 +17,7 @@
 ;   adderr     - Additional error to add to the formal errors, as a
 ;                fraction of the flux; default to 0.03 (3 per cent).
 ;   xdisplay   - Send plots to X display rather than to plot file
+;   minsn2     - Minimum S/N^2 to include science frame in coadd (default 1.0)
 ;
 ; OUTPUT:
 ;
@@ -45,10 +46,12 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay
+pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
+   minsn2=minsn2
 
    if (NOT keyword_set(planfile)) then planfile = findfile('spPlancomb*.par')
    if (n_elements(adderr) EQ 0) then adderr = 0.03
+   if n_elements(minsn2) EQ 0 then minsn2 = 1.0
 
    ;----------
    ; If multiple plan files exist, then call this script recursively
@@ -203,6 +206,28 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay
    endif
 
    sciname = sciname[j]
+
+   ;----------
+   ;  Check for Minimum S/N in science frame
+   ;
+   if keyword_set(minsn2) then begin
+      nsci = n_elements(sciname)
+      framesn2 = fltarr(nsci)
+
+      for i=0,nsci-1 do begin
+         checkhdr = hdrfits(sciname[i], /silent)
+         if size(checkhdr,/tname) NE 'INT' then framesn2[i] = 0 $
+         else framesn2[i] = sxpar(checkhdr,'FRAMESN2')
+      endfor
+
+      j = where(framesn2 GE minsn2)
+      if j[0] NE -1 then begin 
+        sciname = sciname[j] 
+        splog, 'Excluded ', fix(total(framesn2 LT minsn2), $
+             ' frames with SN^2 less than ', minsn2, format='(a,i4,a,f7.2)'
+      endif else $
+        splog, 'WARNING: All Frames would be rejected due to minimum S/N limit'
+   endif
 
    ;----------
    ; Co-add the fluxed exposures
