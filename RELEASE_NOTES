@@ -13,6 +13,9 @@ LINEBACKFIT: Fix possible crash condition when computing LINENPIX if
 PLOTSPEC: Optional /ZWARNING flag.  Report error if FIBERID out of range.
 QUICKEXTRACT: Call REJECT_SCIENCE() to decide if a science exposure is bad
             due to lamps being turned on, too many saturated pixels, etc.
+            If number of sky fibers > 20, then select one good sky fiber
+            from each of the 16 bundles.  Assumes 20 fibers per bundle.
+            This addresses PR #3238.
 READSPEC: Don't fail when asking for SYNFLUX, but the spZ file doesn't exist.
             (This prevented PLOTSPEC from plotting anything in that case.)
 REJECT_SCIENCE: Check in the header that all the flat-field screens are
