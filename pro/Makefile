@@ -27,8 +27,6 @@ install :
 		(mkdir $(IDLSPEC2D_DIR)/pro/$$f; cd $$f ; echo In $$f; $(MAKE) $(MFLAGS) install ); \
 	done
 	- cp Makefile $(IDLSPEC2D_DIR)/pro
-	- cp makefile.old $(IDLSPEC2D_DIR)/pro
-
 
 clean :
 	- /bin/rm -f *~ core
