@@ -70,7 +70,11 @@ pro spreduce1d, platefile, outfile
 
    if (NOT keyword_set(outfile)) then $
     outfile = 'spZ' + strmid(platefile,strpos(platefile,'spPlate')+7)
+   if (NOT keyword_set(logfile)) then $
+    logfile = 'spDiag1d' + strmid(platefile,strpos(platefile,'spPlate')+7)
 
+   splog, filename=logfile
+   splog, 'Log file ', logfile, ' opened ', systime()
    stime0 = systime(1)
 
    ;----------
@@ -236,6 +240,8 @@ andmask = 0 ; Free memory
    sxaddpar, hdr, 'NAXIS', 0
    writefits, outfile, 0, hdr ; Retain the original header in the first HDU
    mwrfits, res_all, outfile
+
+   splog, /close
 
    return
 end
