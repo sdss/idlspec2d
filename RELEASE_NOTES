@@ -9,6 +9,11 @@ READSPEC: Bug fix when reading one range of fiber numbers for a FITS
           returning the correct values.
 ZPLOT: Include MJD in call to READSPEC.
 
+spPlateList.par: Enlarge list of EDR plates to include multiple pluggings,
+       and other plates that should have been in the list according to van
+       den Berk's mail to sdss-spectro/665 on 2 May 2001.  The list now
+       includes 137 plates, many of which are repeat observations.
+
 -------------------------------------------------------------------------------
 v4_7_3 (Apr 30, 2001 idlspec2d+idlutils)
 
