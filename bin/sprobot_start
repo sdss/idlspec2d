@@ -122,7 +122,7 @@ fi
 if [ -n "$SSH_AGENT_PID" ] ; then
    echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> $cronfile
 fi
-echo "DISPLAY=:0.0" >> $cronfile
+echo "DISPLAY=" >> $cronfile
 echo "IDLSPEC2D_DIR=$IDLSPEC2D_DIR" >> $cronfile
 echo "IDLUTILS_DIR=$IDLUTILS_DIR" >> $cronfile
 echo "IDL_DIR=$IDL_DIR" >> $cronfile

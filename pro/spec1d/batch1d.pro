@@ -44,10 +44,10 @@
 ;
 ;   The command that is spawned will look something like (but all in one line):
 ;     ssh1 wire1.princeton.edu 'cd /u/dss/spectro;
-;       echo "DISPLAY=:0.0; setup idlspec2d v4_9_6; /bin/nice -n 10
+;       echo "DISPLAY=; setup idlspec2d v4_9_6; /bin/nice -n 10
 ;       idl 0406/spPlate-0406-51817.batch" | bash --login >& /dev/null'
 ;
-;   The $DISPLAY environment variable is always set to ":0.0" on the remote
+;   The $DISPLAY environment variable is always set to "" on the remote
 ;   machine to make certain that we only use one IDL license per machine.
 ;   (Any IDL jobs that have the same the username, machine name, and $DISPLAY
 ;   use the same license.)
@@ -205,11 +205,11 @@ pro batch1d, fullplatefile, topdir=topdir, upsversion=upsversion, $
    ;   either bash or csh shells.
    ; The command will look something like (but all in one line):
    ;   cd /u/dss/spectro;
-   ;     echo "DISPLAY=:0.0; setup idlspec2d v4_9_6; /bin/nice -n 10
+   ;     echo "DISPLAY=; setup idlspec2d v4_9_6; /bin/nice -n 10
    ;     idl 0406/spPlate-0406-51817.batch" | bash --login >& /dev/null'
 
    setenv, 'SHELL=bash'
-   precommand = 'echo "DISPLAY=:0.0; '
+   precommand = 'echo "DISPLAY=; '
    if (keyword_set(upsversion)) then $
     precommand = precommand + 'setup idlspec2d ' + upsversion + '; '
    if (keyword_set(nice)) then $
