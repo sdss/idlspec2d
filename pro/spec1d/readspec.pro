@@ -211,22 +211,33 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    q_zans = arg_present(zans)
    q_mjd = arg_present(mjd) AND (keyword_set(mjd) EQ 0)
 
-   if (NOT keyword_set(fiber)) then fiber = lindgen(640) + 1
-;      nfiber = n_elements(fiber)
-;      if (nplate GT 1 AND nfiber GT 1 AND nplate NE nfiber) then $
-;       message, 'Number of elements in PLATE and FIBER must agree or be 1'
-;   endif else begin
-;      nfiber = 1
-;      fiber = 0 ; This will force a read of all fiber numbers
-;   endelse
+   nplate = n_elements(plate)
+   if (nplate EQ 0) then $
+    message, 'PLATE must be defined'
+   if (n_elements(mjd) GT 0 AND n_elements(mjd) NE nplate) then $
+    message, 'Number of elements in PLATE and MJD must agree'
 
-   nvec = n_elements(plate) > n_elements(fiber)
-   if (n_elements(plate) GT 1) then platevec = plate $
-    else platevec = lonarr(nvec) + plate[0]
-   if (n_elements(fiber) GT 1) then fibervec = fiber $
-    else fibervec = lonarr(nvec) + fiber[0]
-   if (keyword_set(mjd)) then mjdvec = lonarr(nvec) + mjd $
-    else mjdvec = lonarr(nvec)
+   if (NOT keyword_set(fiber)) then begin
+      ; Special case to read all 640 fibers of each plate
+      platevec = reform( plate ## replicate(1,640L), 640L*nplate)
+      fibervec = reform( (lindgen(640L) + 1) # replicate(1,nplate), 640L*nplate)
+      if (keyword_set(mjd)) then $
+       mjdvec = reform( mjd ## replicate(1,640L), 640L*nplate) $
+      else $
+       mjdvec = lonarr(640L*nplate)
+   endif else begin
+      nfiber = n_elements(fiber)
+      if (nplate GT 1 AND nfiber GT 1 AND nplate NE nfiber) then $
+       message, 'Number of elements in PLATE and FIBER must agree or be 1'
+
+      nvec = nplate > nfiber
+      if (nplate GT 1) then platevec = plate $
+       else platevec = lonarr(nvec) + plate[0]
+      if (nfiber GT 1) then fibervec = fiber $
+       else fibervec = lonarr(nvec) + fiber[0]
+      if (keyword_set(mjd)) then mjdvec = lonarr(nvec) + mjd $
+       else mjdvec = lonarr(nvec)
+   endelse
 
    ; Find unique plate+MJD combinations, since each has its own data file
    sortstring = strtrim(string(platevec),2) + '-' + strtrim(string(mjdvec),2)
