@@ -228,7 +228,7 @@ function zfitmin, yarr, xarr, dofarr=dofarr, $
 
       if (keyword_set(doplot)) then begin
          yplotfit = coeff[0]
-         for ic=1, ndegree-1 do $
+         for ic=1, n_elements(coeff)-1 do $
           yplotfit = yplotfit + coeff[ic] * (xplotfit - xguess)^ic
          yplotfit = yplotfit / meandof
       endif
