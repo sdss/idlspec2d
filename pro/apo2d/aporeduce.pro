@@ -113,6 +113,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    splgfile = filepath('splog-'+filec+'-'+filee+'.log', root_dir=outdir)
    splog, filename=splgfile, prelog=filename
    splog, 'Started at ', systime()
+   t0 = systime(1)
 
    ;----------
    ; Wait for a file to be fully written to disk, and exit if that doesn't
@@ -341,6 +342,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    ;----------
    ; Close splog file
 
+   splog, 'Elapsed time = ', systime(1)-t0
    splog, 'Finished at ', systime()
    splog, /close
 
