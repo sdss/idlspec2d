@@ -1,5 +1,8 @@
 
+COLLIMATE: Since the DJS_SVDFIT() function was removed in v4_10_1,
+        explicitly compute the chi^2 minimum with a matrix inversion.
 LRG_PHOTOZ: New simple photo-z finder for LRGs using a single template.
+SDSSPROC: Don't print bias noise level if /silent is set.
 
 templates/spLRG-52928.fits: LRG templates for LRG_PHOTOZ function.
 pro/Makefile: Add photoz directory
