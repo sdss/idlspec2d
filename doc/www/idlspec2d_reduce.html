@@ -150,7 +150,10 @@ This script will run jobs across local or remote networks using rsh
 or ssh protocols.  For a remote machine, the raw data files are shipped
 across the network, the plate is reduced, then the reductions are shipped
 back.  Presumably, this would work just fine on the Fermi farms.  The plan
-files need to be built before running this script.
+files need to be built before running this script.  Also make certain
+that the remote machines have their UPS environment and the idlspec2d
+product set up from the ".bashrc" file, since the remote commands are
+launched from the bash shell.
 
 <P>
 There is a Spectro-Robot that automatically fetches data, builds plan files,
