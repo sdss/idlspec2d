@@ -53,6 +53,7 @@ ZFIND: If fewer than NFIND peaks are found, then return blank structures
             for the remaining (NFIND-NPEAK).  Previously, some of those
             fields (such as TFILE,TCOLUMN) were filled with information.
 
+aporsync.sh: Keep archiving guider images (gzipped).
 eigeninput_cvstar.dat: New file for PCA_CVSTAR.
 eigeninput_star.dat: Many more M stars added for implementing changes
             to PCA_STAR.
