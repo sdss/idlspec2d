@@ -85,8 +85,10 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
    if (N_elements(fibermask) NE ntrace) then fibermask = bytarr(ntrace)
 
    igood = where(fibermask EQ 0, ngood)
-   if (ngood EQ 0) then $
-    message, 'No good fibers according to FIBERMASK'
+   if (ngood EQ 0) then begin
+     splog, 'WARNING: No good fibers according to FIBERMASK'
+     return, -1
+   endif 
 
    ;-----
    ; Compute the wavelengths for all flat vectors from the trace set

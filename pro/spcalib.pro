@@ -440,7 +440,11 @@ splog,'Arc fbadpix ', fbadpix ; ???
          fflat = fiberflat(flux, fluxivar, wset, fibermask=tmp_fibmask, $
           /dospline)
 
-;         qaplot_fflat, fflat, wset, filename=flatname[iflat]
+         if (n_elements(fflat) EQ 1) then begin
+            flatstruct[iflat].qbad  = 1
+            splog, 'Reject flat ' + flatname[iflat] + $
+               ':  No good traces?!?'
+         endif
 
          flatstruct[iflat].fflat = ptr_new(fflat)
          flatstruct[iflat].fibermask = ptr_new(tmp_fibmask)

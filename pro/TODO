@@ -1,4 +1,7 @@
 
+* Bug in fitans image, do not get smooth fits for centershift and
+     sigmashift, what is going on?
+
 * Fiberflats can have wacky values (look at its plot)
 
 * Fiberflat plot doesn't indicate bad fibers.

@@ -150,9 +150,12 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    lambda = *(bestarc.lambda)
    xpeak = *(bestarc.xpeak)
    wset =  *(bestarc.wset)
+   xsol = *(bestflat.xsol)
+   fflat = *(bestflat.fflat)
 
    qaplot_arcline, *(bestarc.xdif_tset), lambda, $
     filename=bestarc.name, color=color
+   qaplot_fflat, fflat, wset, filename=bestflat.name
 
    ;---------------------------------------------------------------------------
    ; LOOP THROUGH OBJECT FRAMES
@@ -186,8 +189,6 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
          return
       endif
 
-      xsol = *(bestflat.xsol)
-      fflat = *(bestflat.fflat)
 
       ;-----
       ; Combine FIBERMASK bits from the plug-map file, best flat
@@ -198,7 +199,6 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
        OR (*(bestflat.fibermask) AND fibermask_bits('BADFLAT')) $
        OR (*(bestarc.fibermask) AND fibermask_bits('BADARC'))
 
-      qaplot_fflat, fflat, wset, filename=bestflat.name
 
       ;-----
       ; Determine output file name and modify the object header

@@ -229,7 +229,11 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
 
          PLATEID = lonarr(nfile)
          EXPTIME = fltarr(nfile)
-         EXPOSURE = fltarr(nfile)
+
+;
+;	Why is exposure fltarr??
+;
+         EXPOSURE = lonarr(nfile)
          FLAVOR = strarr(nfile)
          CAMERAS = strarr(nfile)
          for i=0, nfile-1 do begin
@@ -248,10 +252,21 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
               if (FLAVOR[i] EQ 'target') then FLAVOR[i] = 'science'
               if (FLAVOR[i] EQ 'calibration') then FLAVOR[i] = 'arc'
 
+
               ; Read the MJD from the header of the first file
               ; This should usually be the same as MJDDIR, though an integer
               ; rather than a string variable.
               if (i EQ 0) then thismjd = sxpar(hdr, 'MJD')
+
+	      ; Test Column and row binning
+              if (thismjd GT 51576) then begin
+	        if (sxpar(hdr, 'COLBIN') NE 1 OR $
+                    sxpar(hdr, 'ROWBIN') NE 1) then  begin
+                   splog, 'Unusual binning!', PLATEID[i], EXPOSURE[i], $ 
+                      CAMERAS[i], sxpar(hdr, 'COLBIN'), sxpar(hdr, 'ROWBIN')
+                   FLAVOR[i] = 'unkn'
+                endif
+              endif
             endif
          endfor
 
