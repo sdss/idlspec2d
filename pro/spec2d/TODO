@@ -7,16 +7,10 @@ Plate  camera   fiber (0 indexed)      Problem
 * Look at plate 306, MJD 51637, fiber#295 (0-indexed 294).
   Appears that fluxing for b1 is bad redward of 6000 Ang.
 
-
 ----------------------------------------------------------------------------
-* The telluric regions #5 and #6 accidentally overlap in TELLURIC_CORR.
-  Fix it!!
-
 * Do we need to try to sky-subtract the arcs to make the centering more
   robust?  Also, check the value of MAXDEV, which Scott set to 2.0e-5
   from SOS reductions (passed there from QUICKWAVE).
-
-* Need to save WARNING/ABORT messages as a separate HDU from APOREDUCE.
 
 * Pass batch1d.par, batch2d.par file names as environ variables, or use
   defaults.
@@ -79,12 +73,6 @@ Plate  camera   fiber (0 indexed)      Problem
    --- Here we need Robust fitting of skyline, arcline widths 
    --- we could just try to fit sky fibers to see how widths have changed
 
-* Horrible bug in plate 343, but evident in other plates:
-  If throughput varies for some fibers (due to atmospheric refraction
-  in this case) relative to the standard star, then fluxing between
-  frames is horrible.  When combining multiple spectra of high S/N objects,
-  lots of random points get rejected, and the combined spectra looks horrible.
-
 * Modify SDSSPROC to read in the binned images.
 
 * For SPFLATTEN2, set any bad columns (from opBC file) to unity.
@@ -97,13 +85,7 @@ Plate  camera   fiber (0 indexed)      Problem
 
 * Add /DEBUG keyword for writing out spArc and spFlat files.
 
-* Remove WARNING, ABORT words from HTML file from APO2HTML.
-
-* Preserve header info in APOREDUCE.
-
 * Add keywords: INSTRUME ?
-
-* ATV bug displaying BYTE images, or NaN's
 
 * In SPALLREDUCE, don't send the name UNKNOWN to COMBINE2DOUT.
 
@@ -113,7 +95,6 @@ Plate  camera   fiber (0 indexed)      Problem
   then use the known relative shifts to pick the best match.
 
    Can easily use match_trace to solve the item above.
-
 
 * Add in error as a fraction of the whopping terms?
   Or at least set a pixelmask bit.
@@ -160,9 +141,6 @@ Plate  camera   fiber (0 indexed)      Problem
 * Choose bkpts in combine2dout more carefully, bad behavior ensues
   with current choice (uniform bins).
 
-* Fit spline to each spectrum before full combine2dout spline to
-   register each spectrum in scale (including red/blue merge)
-
 * Special-case a combine routine for only 2 exposures that will reject CR's
 
 * Sky-subtraction: Fix edge effects in inverse variance scaling
@@ -184,6 +162,26 @@ Plate  camera   fiber (0 indexed)      Problem
 -------------------------------------------------------------------------------
 ;   These have been dealt with
 -------------------------------------------------------------------------------
+* Preserve header info in APOREDUCE.
+  Don't bother (Jan 2001).
+
+* Need to save WARNING/ABORT messages as a separate HDU from APOREDUCE.
+  Fixed Jan 2001.
+
+* The telluric regions #5 and #6 accidentally overlap in TELLURIC_CORR.
+  Fix it!!  Fixed Jan 2001.
+
+* Horrible bug in plate 343, but evident in other plates:
+  If throughput varies for some fibers (due to atmospheric refraction
+  in this case) relative to the standard star, then fluxing between
+  frames is horrible.  When combining multiple spectra of high S/N objects,
+  lots of random points get rejected, and the combined spectra looks horrible.
+  Fixed v4_x with flux-corr vectors.
+
+* Fit spline to each spectrum before full combine2dout spline to
+   register each spectrum in scale (including red/blue merge)
+  Fixed v4_x with flux-corr vectors.
+
 * Re-instate S/N plot, and include global S/N values in spPlate files,
   evaluated at 20th mag or so just like in APO-2D.
 
