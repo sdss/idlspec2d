@@ -174,7 +174,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ;------------------------------------------------------------
    ;  Check for bad pixels within 3 pixels of trace
 
-   badcheck = extract_boxcar((invvar LE 0), xtrace, radius=1.0)
+   badcheck = extract_boxcar((invvar LE 0), xtrace, radius=2.5)
    badplace = where(badcheck GT 0)
 
    nx = (size(fextract,/dim))[0] 
@@ -216,7 +216,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    nrow = (size(image))[2]
    yrow = lindgen(nrow) 
    nfirst = n_elements(yrow)
-   proftype = 3 ; Gaussian + Cubic
+   proftype = 1 ; Gaussian 
 
    splog, 'Extracting frame '+objname+' with 3 step process'
 
@@ -257,6 +257,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    wfixed = [1,1]
    nterms = n_elements(wfixed)
    reject = [0.2,0.6,0.6]
+   npoly = 5 ; maybe more structure, lots of structure
 
 
    extract_image, (image - smooth), invvar, xnow, sigma2, flux, fluxivar, $
