@@ -130,11 +130,11 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
 
           outputfile = outputroot+string(format='(i3.3,a)',i+1)+'.fit'
 
+	  bad = 0
 	  nonzero = where(fullivar GT 0.0)
 	  if (nonzero[0] EQ -1) then begin
 	    splog, 'no good points, all have 0.0 or negative sigma'
-            bestguess = [-1.0,-1.0]
-            besterr = [-1.0,-1.0]
+            bad = 1
 
           endif else begin 
                
@@ -278,13 +278,14 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
 	   if (nonzero[0] NE -1) then $
              besterr[nonzero] = 1.0/sqrt(bestivar[nonzero])
 
-          djs_plot, 10^fullwave, fullspec, ps=3, xr=[3700,4800], yr=[-2,10], $
-                title=string(format='(i4,x,a,5(f7.3))', $
-                   plugmap[i].fiberid, plugmap[i].objtype, plugmap[i].mag), $
-                xtitle='\lambda [A]', ytitle='Flux (10^-17 cgs)'
-
-          djs_oplot, 10^newwave, bestguess,color='red',ps=10
-
+          if (keyword_set(display)) then begin
+            djs_plot, 10^fullwave, fullspec, ps=3, xr=[3700,4800], yr=[-2,10], $
+                  title=string(format='(i4,x,a,5(f7.3))', $
+                     plugmap[i].fiberid, plugmap[i].objtype, plugmap[i].mag), $
+                   xtitle='\lambda [A]', ytitle='Flux (10^-17 cgs)'
+  
+             djs_oplot, 10^newwave, bestguess,color='red',ps=10
+	    endif
 
           endelse
 	  newhdr = hdr
@@ -331,8 +332,13 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
 	  sxaddpar, newhdr, 'DC-FLAG', 1, 'Log-linear flag'
 
 
-          output = [[newwave],[bestguess],[besterr]]
-
+;
+;	This is place holding for a fiber with no counts at all!
+;
+	  if (bad EQ 1) then begin
+            bestguess = fltarr(npix)
+            besterr = fltarr(npix)
+	  endif
 
 	  writefits, outputfile, [[bestguess],[besterr]], newhdr
 

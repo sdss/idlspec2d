@@ -315,8 +315,11 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       ; counts are 10000 ADU per row.
 
       fextract = extract_boxcar(image, xsol)
+
       scrunch = djs_median(fextract, 1) ; Find median counts/row in each fiber
-      whopping = where(scrunch GT 10000.0, whopct)
+      fullscrunch = djs_median(fextract) ; Find median counts/row in all fibers
+      whopping = where(scrunch - fullscrunch GT 10000.0, whopct)
+      splog, 'Median counts in all fibers = ', fullscrunch
       splog, 'Number of bright fibers = ', whopct
 
       ;------------------
