@@ -6,6 +6,7 @@ lock=/data/spectro/maillock
 if [ ! -r $lock ] 
 then
    echo "Lock file does not exists"
+   echo "please create $lock"
    exit
 fi
 
@@ -23,9 +24,13 @@ do
 
     subject=`grep LOGSHEET $thislog | grep TITLE | sed -n 's/<.[A-Z]*>//pg'`
     echo $subject
-    echo "</pre>" > $mailfile
-    cat $thislog | grep -v HTML | grep -v HEAD >> $mailfile
-    echo "<pre>" >> $mailfile
+    echo "" > $mailfile
+    echo '<A HREF="'$thislog'">'$thislog'</A>' >> $mailfile
+    echo "" >> $mailfile
+
+    echo "!$thislog <<EOT" >> $mailfile
+    cat $thislog >> $mailfile
+    echo "EOT" >> $mailfile
     
     sn=`ls $dir | grep snplot | grep ps`
     for thissn in $sn
