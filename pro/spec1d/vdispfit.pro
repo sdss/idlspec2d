@@ -160,9 +160,9 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
    if (ct EQ 0) then $
     message, 'Unable to find EIGENFILE matching '+eigenfile
    thisfile = allfiles[ (reverse(sort(allfiles)))[0] ]
-   splog, 'Selecting EIGENFILE=' + thisfile
 
    if (NOT keyword_set(bigflux) OR (thisfile NE lastfile)) then begin
+      splog, 'Computing grid of dispersion templates from ' + thisfile
 
       nsamp = 10
       nsig = 25
@@ -224,7 +224,7 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
       vaclist = linelist
       airtovac, vaclist
       vaclist = alog10(vaclist)
-      mwidth = 4.e-4 ; Mask out any pixels within +/- 280 km/s
+      mwidth = 6.e-4 ; Mask out any pixels within +/- 420 km/s
       for iline=0, n_elements(vaclist)-1 do $
        bigmask = bigmask AND (bigloglam LT vaclist[iline] - mwidth $
         OR bigloglam GT vaclist[iline] + mwidth)
