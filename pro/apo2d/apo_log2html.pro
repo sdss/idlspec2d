@@ -261,7 +261,7 @@ pro apo_log2html, logfile, htmlfile
    textout = apo_log_header(title1, title2)
    textout = [textout, $
     '<P>IDLSPEC2D version ' + vers2d + ' (' $
-    + '<A HREF="http://sdsshost.apo.nmsu.edu/sdssProcedures/spectroSOS.html">(documentation</A>).']
+    + '<A HREF="http://sdsshost.apo.nmsu.edu/sdssProcedures/spectroSOS.html">documentation</A>).']
    if (!version.release LT '5.4') then $
     textout = [textout, $
      '<BR>This page last updated <B>'+systime()+' local time</B>.<P>'] $
