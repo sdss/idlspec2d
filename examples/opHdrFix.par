@@ -20,7 +20,6 @@ ophdrfix sdR-??-0000114[0-9] NAME     "'0198-51433-01'"
 ophdrfix sdR-??-0000115[0-2] NAME     "'0198-51433-01'"
 
 # Wrong mapping name in these headers for plate 214 on MJD 51441.
-
 ophdrfix sdR-??-0000134[7-9] NAME     "'0214-51432-02'"
 ophdrfix sdR-??-0000135[0-9] NAME     "'0214-51432-02'"
 ophdrfix sdR-??-0000136[0-1] NAME     "'0214-51432-02'"
@@ -35,7 +34,6 @@ ophdrfix sdR-??-0000135[0-9] DECDEG   0.061307
 ophdrfix sdR-??-0000136[0-1] DECDEG   0.061307
 
 # Wrong mapping name in these headers for plate 202 on MJD 51441.
-
 ophdrfix sdR-??-0000136[2-9] NAME     "'0202-51434-01'"
 ophdrfix sdR-??-0000137[0-3] NAME     "'0202-51434-01'"
 ophdrfix sdR-??-0000136[2-9] TILEID   41
@@ -47,12 +45,10 @@ ophdrfix sdR-??-0000137[0-3] DECDEG   0.159442
 
 # Wrong mapping name in these headers for plate 191 on MJD 51454.
 # This doesn't actually matter, since there are no arcs for this plate anyway!
-
 ophdrfix sdR-??-0000138[8-9] NAME     "'0191-51454-01'"
 ophdrfix sdR-??-00001390 NAME     "'0191-51454-01'"
 
 # Wrong plate information in these headers for plate 187 on MJD 51454
-
 ophdrfix sdR-??-00001379     NAME     "'0187-51454-01'"
 ophdrfix sdR-??-0000138[0-7] NAME     "'0187-51454-01'"
 ophdrfix sdR-??-00001379     TILEID   26
@@ -63,21 +59,21 @@ ophdrfix sdR-??-00001379     DECDEG   0.067442
 ophdrfix sdR-??-0000138[0-7] DECDEG   0.067442
 
 # Wrong plate information in these headers for plate 187 on MJD 51455
-
 ophdrfix sdR-??-0000140[4-6] NAME     "'0187-51454-01'"
 ophdrfix sdR-??-0000140[4-6] TILEID   26
 ophdrfix sdR-??-0000140[4-6] RADEG    356.671046
 ophdrfix sdR-??-0000140[4-6] DECDEG   0.067442
 
-# Wrong plate information in these headers for plate 231 on MJD 51455
+# This exposure on plate 231 on MJD 51455 was taken during morning twilight.
+ophdrfix sdR-??-00001434 QUALITY   "'bad'"
 
+# Wrong plate information in these headers for plate 231 on MJD 51455
 ophdrfix sdR-??-0000143[1-7] PLATEID  231
 ophdrfix sdR-??-0000143[1-7] TILEID   55
 ophdrfix sdR-??-0000143[1-7] MAPID    5145502
 ophdrfix sdR-??-0000143[1-7] NAME     "'0231-51455-01'"
 
 # Wrong plate information in these headers for plate 217 on MJD 51456.
-
 ophdrfix sdR-??-0000145[2-9] NAME     "'0217-51455-01'"
 ophdrfix sdR-??-00001460 NAME     "'0217-51455-01'"
 
@@ -90,6 +86,10 @@ ophdrfix sdR-??-00002309 QUALITY   "'bad'"
 ophdrfix sdR-??-0000236[0-9] QUALITY   "'test'"
 ophdrfix sdR-??-0000237[0-3] QUALITY   "'test'"
 
+# These are all afternoon test data taken on MJD 51590.
+ophdrfix sdR-??-0000246[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0000247[0-5] QUALITY   "'test'"
+
 # These should be considered test data for plate 316 on MJD 51609.
 # All that were taken were some early diamond-pattern tests.
 ophdrfix sdR-??-0000277[4-9] QUALITY   "'test'"
@@ -97,7 +97,6 @@ ophdrfix sdR-??-0000278[0-9] QUALITY   "'test'"
 ophdrfix sdR-??-0000279[0-7] QUALITY   "'test'"
 
 # Wrong plate information in these headers for plate 318 on MJD 51629.
-
 ophdrfix sdR-??-0000321[0-3] PLATEID  318
 ophdrfix sdR-??-0000321[0-3] TILEID   124
 ophdrfix sdR-??-0000321[0-3] MAPID    5162601
@@ -105,18 +104,28 @@ ophdrfix sdR-??-0000321[0-3] NAME     "'0318-51626-01'"
 ophdrfix sdR-??-0000321[0-3] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0318-51626-01.par'"
 
 # Wrong exposure time in these headers for plate 282 on MJD 51629.
-
 ophdrfix sdR-??-00003225 EXPTIME  1148
 ophdrfix sdR-??-00003226 EXPTIME  985
+
+# These are afternoon test data taken on plate 270 on MJD 51637.
+ophdrfix sdR-??-0000328[8-9] QUALITY   "'test'"
 
 #  A single incorrect plugmap for plate 235 on MJD=51665, unsure why only one?
 ophdrfix sdR-??-00003576 MAPID    517701
 ophdrfix sdR-??-00003576 NAME     "'0235-51577-01'"
 
+# These are afternoon test data taken on plate 302 on MJD 51688.
+ophdrfix sdR-??-0000390[2-5] QUALITY   "'test'"
+
 # The following information in the headers for plate 351 on MJD 51695
 # is incorrect:
 ophdrfix sdR-??-0000418[5-9] CARTID   9
 ophdrfix sdR-??-0000419[0-9] CARTID   9
+
+# These are all test data taken on MJD 51696.
+ophdrfix sdR-??-0000420[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0000421[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0000422[0-6] QUALITY   "'test'"
 
 # The night of MJD=51779 (22/23 Aug 2000) had horrible electronics problems.
 # See PR #2335 for some details.  The amplifier had random bits being
@@ -154,6 +163,11 @@ ophdrfix sdR-??-0000618[0-9] DEC      61.61932
 ophdrfix sdR-??-0000619[0-9] CARTID   4
 ophdrfix sdR-??-0000619[0-9] RA       264.3484
 ophdrfix sdR-??-0000619[0-9] DEC      54.53896
+
+# These are all test data taken on MJD 51781.
+ophdrfix sdR-??-0000620[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0000621[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0000622[0-9] QUALITY   "'test'"
 
 # The following information in the headers for plate 391 on MJD 51782
 # is incorrect:
@@ -259,7 +273,10 @@ ophdrfix sdR-??-0000858[8-9] QUALITY   "'test'"
 
 # These were test data taken during shake on MJD 51950,
 # with plate 492 mounted.
-ophdrfix sdR-??-0000863[3-9] QUALITY   "'test'"
+ophdrfix sdR-??-0000860[4-9] QUALITY   "'test'"
+ophdrfix sdR-??-0000861[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0000862[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0000863[0-9] QUALITY   "'test'"
 
 # Wrong plugmap indicated for plate 413 on MJD 51951.
 ophdrfix sdR-??-0000864[3-8] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0413-51942-01.par'"
@@ -346,9 +363,30 @@ ophdrfix sdR-??-0000930[0-7] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0503-5
 ophdrfix sdR-??-0000930[0-7] MAPID    5199101
 ophdrfix sdR-??-0000930[0-7] NAME     "'0503-51991-01'"
 
+# These were afternoon test data taken on plate 540 on MJD 51999.
+ophdrfix sdR-??-0000939[8-9] QUALITY   "'test'"
+ophdrfix sdR-??-0000940[0-5] QUALITY   "'test'"
+
+# These were all test data taken on MJD 52010.
+ophdrfix sdR-??-0000950[8-9] QUALITY   "'test'"
+ophdrfix sdR-??-0000951[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0000952[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0000953[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0000954[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0000955[0-7] QUALITY   "'test'"
+
 # Clouds came in and guide stars were lost for this 2nd exposure
 # on plate 588 on MJD 52028.  I'll discard that exposure.
 ophdrfix sdR-??-00009858 QUALITY   "'bad'"
+
+# These were all afternoon test data taken on MJD 52038.
+ophdrfix sdR-??-0000989[1-9] QUALITY   "'test'"
+ophdrfix sdR-??-0000990[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0000991[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-00009920 QUALITY   "'test'"
+
+# These were all afternoon test data taken on MJD 52048.
+ophdrfix sdR-??-0000996[1-4] QUALITY   "'test'"
 
 # First smear exposure accidentally taken with guider on for plate 583
 # on MJD 52055.
@@ -358,13 +396,35 @@ ophdrfix sdR-??-00010048 QUALITY   "'bad'"
 # on MJD 52055.
 ophdrfix sdR-??-00010061 QUALITY   "'bad'"
 
+# These were all afternoon test data taken on MJD 52069.
+ophdrfix sdR-??-0001014[7-9] QUALITY   "'test'"
+ophdrfix sdR-??-0001015[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0001016[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0001017[0-1] QUALITY   "'test'"
+
 # The wrong MJD appears in these headers on MJD=52130.  Note that only 3
 # exposures (all biases) were taken this night.  The first 2 had this problem.
 ophdrfix sdR-??-00010516 MJD   "52130"
 ophdrfix sdR-??-00010517 MJD   "52130"
 
+# These were all afternoon test data taken on MJD 52129.
+ophdrfix sdR-??-0001048[6-9] QUALITY   "'test'"
+ophdrfix sdR-??-0001049[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0001050[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0001051[0-5] QUALITY   "'test'"
+
+# This was an afternoon test exposure on MJD 52132
+ophdrfix sdR-??-00010522 QUALITY   "'test'"
+
 # This science exposure on plate 656 on MJD 52148 had no signal.
 ophdrfix sdR-??-00010751 QUALITY   "'bad'"
+
+# These are all test data taken on MJD 52161.
+ophdrfix sdR-??-0001080[8-9] QUALITY   "'test'"
+ophdrfix sdR-??-0001081[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0001082[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0001083[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0001084[0-1] QUALITY   "'test'"
 
 # Telescope status information missing for the pre-flat on plate 655
 # on MJD 52162.
@@ -402,6 +462,12 @@ ophdrfix sdR-??-00011192 QUALITY   "'bad'"
 # science exposure on plate 727 on MJD 52207.
 ophdrfix sdR-??-00011504 QUALITY   "'bad'"
 
+# These are all test data taken on MJD 52216.
+ophdrfix sdR-??-0001160[5-9] QUALITY   "'test'"
+ophdrfix sdR-??-0001161[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0001162[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-00011630 QUALITY   "'test'"
+
 # Reject this science exposure on plate 406 on MJD 52237, since the flat-field
 # screens were closed.
 ophdrfix sdR-??-00011906 QUALITY   "'bad'"
@@ -428,6 +494,13 @@ ophdrfix sdR-??-000012124 DEC      37.801324
 
 # Wrong PLATEID in all headers for plate 568 on MJD 52254.
 ophdrfix sdR-??-0001221[4-6] PLATEID  568
+
+# These are all test data taken on MJD 52276.
+ophdrfix sdR-??-0001241[2-9] QUALITY   "'test'"
+ophdrfix sdR-??-0001242[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0001243[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0001244[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0001245[0-8] QUALITY   "'test'"
 
 # Wrong PLATEID in the original plPlugMapM files for plate 799,
 # which put the wrong info in these headers on MJD 52278.
@@ -458,6 +531,14 @@ ophdrfix sdR-??-00012846 QUALITY   "'bad'"
 # These data for plate 827 were taken through thick clouds
 # on MJD 52297, though other exposures had reasonable S/N.
 ophdrfix sdR-??-0001285[2-4] QUALITY   "'bad'"
+
+# These are all test data taken on MJD 52305.
+ophdrfix sdR-??-00012909 QUALITY   "'test'"
+ophdrfix sdR-??-0001291[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0001292[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0001293[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0001294[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0001295[0-2] QUALITY   "'test'"
 
 # There were serious SOP problems at this point that made
 # these exposures bad for plate 827 on MJD 52312.
@@ -556,14 +637,20 @@ ophdrfix sdR-??-0001357[3-9] QUALITY   "'bad'"
 # (Note also that the exposure times are incorrect in these headers.)
 ophdrfix sdR-??-0001358[0-9] QUALITY   "'bad'"
 
+# These are bad test data taken on MJD 52337 using plate 778.
+ophdrfix sdR-??-0001359[3-9] QUALITY   "'bad'"
+ophdrfix sdR-??-0001360[0-9] QUALITY   "'bad'"
+ophdrfix sdR-??-0001361[0-9] QUALITY   "'bad'"
+ophdrfix sdR-??-0001362[0-6] QUALITY   "'bad'"
+
 # Wrong exposure time (0 sec instead of approx. 2460 sec) for plate 574
 # on MJD 52337.  This probably has something to do with the spectrograph
 # mechanicals problems opening and closing shutters on this night and
 # the previous night.
 ophdrfix sdR-??-00013631 EXPTIME   2460
 
-# These are bad test data taken on MJD 52337 using plate 778.
-ophdrfix sdR-??-0001362[4-5] QUALITY   "'bad'"
+# These appear to be bad flat+arc exposures on plate 778 on MJD 52337.
+ophdrfix sdR-??-0001363[2-3] QUALITY   "'bad'"
 
 # Wrong exposure time in these headers for plate 778 on MJD 52337.
 # The observers were trying to pause and re-start exposures.
@@ -609,12 +696,21 @@ ophdrfix sdR-??-00013977 EXPTIME  1800
 # (Reported to be 22065 sec!)
 ophdrfix sdR-??-00013995 EXPTIME  1200
 
+# Test data taken in the afternoon on plate 574 on MJD 52363.
+ophdrfix sdR-??-0001402[6-9] QUALITY   "'test'"
+ophdrfix sdR-??-0001403[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0001404[0-7] QUALITY   "'test'"
+
 # Wrong exposure time in these headers for plate 606 on MJD 52364.
 ophdrfix sdR-??-00014085 EXPTIME  900
 
 # Wrong exposure time in these headers for plate 508 on MJD 52366.
 # (Reported to be 23837 sec!)
 ophdrfix sdR-??-00014138 EXPTIME  1500
+
+# Test data taken in the afternoon on plate 880 on MJD 52367.
+ophdrfix sdR-??-0001415[7-9] QUALITY   "'test'"
+ophdrfix sdR-??-00014160 QUALITY   "'test'"
 
 # Wrong exposure time in these headers for plate 880 on MJD 52367.
 # (Reported to be 23236 sec!)
@@ -635,6 +731,9 @@ ophdrfix sdR-??-00014255 EXPTIME  1200
 # Wrong exposure time in these headers for plate 780 on MJD 52370.
 # (Reported to be 23338 sec!)
 ophdrfix sdR-??-00014262 EXPTIME  1000
+
+# Test data taken in the afternoon on plates -9999,908 on MJD 52372.
+ophdrfix sdR-??-0001430[5-8] QUALITY   "'test'"
 
 # Wrong exposure time in these headers for plate 907 on MJD 52373.
 # (Reported to be 21765 sec!)
@@ -692,6 +791,10 @@ ophdrfix sdR-??-00014701 EXPTIME  1800
 # This smear for plate 903 on MJD 52385 had very little S/N
 ophdrfix sdR-??-00014719 QUALITY   "'bad'"
 
+# Test data taken in the afternoon on plates 903,9999 on MJD 52392.
+ophdrfix sdR-??-0001472[3-9] QUALITY   "'test'"
+ophdrfix sdR-??-0001473[0-5] QUALITY   "'test'"
+
 # A bunch of test smears were taken for plate 951 on MJD 52394,
 # and some low-quality science exposures.  Discard all these
 # data in favor of those taken on MJD 52398.
@@ -739,6 +842,9 @@ ophdrfix sdR-??-00014982 EXPTIME  1200
 # (Reported to be 23536 sec!)
 ophdrfix sdR-??-00014985 EXPTIME  1200
 
+# Test data taken in the afternoon on plate 9999 on MJD 52406.
+ophdrfix sdR-??-0001501[6-7] QUALITY   "'test'"
+
 # Wrong exposure time in these headers for plate 946 on MJD 52407.
 # (Reported to be 22066 sec!)
 ophdrfix sdR-??-00015025 EXPTIME  1200
@@ -753,6 +859,10 @@ ophdrfix sdR-??-00015040 QUALITY   "'bad'"
 
 # This exposure on plate 819 on MJD 52408 taken through clouds.
 ophdrfix sdR-??-00015068 QUALITY   "'bad'"
+
+# Test data taken in the afternoon on plates 819,902 on MJD 52409.
+ophdrfix sdR-??-0001507[3-9] QUALITY   "'test'"
+ophdrfix sdR-??-0001508[0-6] QUALITY   "'test'"
 
 # Reject this exposure taken for plate 902 on MJD 52409
 # when the sky was very bright.
@@ -807,3 +917,7 @@ ophdrfix sdR-??-00015227 EXPTIME  1200
 # (Reported to be 23236 sec!)
 ophdrfix sdR-??-00015340 EXPTIME  900
 
+#------------------------------------------------------------------------------
+# All corrections on and after MJD 52426 (1-Jun-03) are in
+# the files sdHdrFix-$MJD.par in the speclog product.
+#------------------------------------------------------------------------------
