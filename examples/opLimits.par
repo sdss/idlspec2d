@@ -1,4 +1,5 @@
-# Limits to test for on-the-mountain reductions
+# Limits to test for on-the-mountain reductions.
+# This file is used by the procedure APO_LOG2HTML.
 
 typedef struct {
   char field[40];    # Field name
@@ -6,6 +7,18 @@ typedef struct {
   float lovalue;     # Low value
   float hivalue;     # High value
 } speclimit;
+
+# The locations of the fibers on the CCD's should match closely to how we
+# tuned the spectrographs on MJD 51612 (8/9 March 2000).
+#   b1  x = 10 - 2037
+#   b2  x =  2 - 2020
+#   r1  x =  7 - 2047
+#   r2  x =  9 - 2057
+# Any values are fine as long as they fall on the CCD, e.g. in the
+# range [0,2048].  But we'll make allowances for the r2 camera being
+# further off the CCD, since the best we could do was have the last
+# trace extend out to 2057, e.g. 10 pixels off the CCD.  For all other
+# CCD's, we'll insist that the traces don't go more than 2 pixels off.
 
 speclimit XMIN b1 -2 2050
 speclimit XMIN b2 -2 2050
@@ -15,46 +28,71 @@ speclimit XMIN r2 -2 2050
 speclimit XMAX b1 -2 2050
 speclimit XMAX b2 -2 2050
 speclimit XMAX r1 -2 2050
-speclimit XMAX r2 -2 2050
+speclimit XMAX r2 -2 2060
+
+# Issue a warning if more than 3 fibers are missing on either side of
+# the spectrograph.
 
 speclimit NGOODFIBER b1 317 320
 speclimit NGOODFIBER b2 317 320
 speclimit NGOODFIBER r1 317 320
 speclimit NGOODFIBER r2 317 320
 
-speclimit WAVEMIN b1 0 3780
-speclimit WAVEMIN b2 0 3780
-speclimit WAVEMIN r1 0 5750
-speclimit WAVEMIN r2 0 5750
+# The wavelength ranges should match closely to how we tuned the spectrographs
+# on MJD 51612 (8/9 March 2000).  Our best values were:
+#   b1  3792 - 6165
+#   b2  3793 - 6166
+#   r1  5770 - 9225
+#   r2  5790 - 9240
+# Insist that we fall within 10 Angstroms of these best values.
 
-speclimit WAVEMAX b1 6140 9999
-speclimit WAVEMAX b2 6140 9999
-speclimit WAVEMAX r1 9200 9999
-speclimit WAVEMAX r2 9200 9999
+speclimit WAVEMIN b1 0 3802
+speclimit WAVEMIN b2 0 3803
+speclimit WAVEMIN r1 0 5780
+speclimit WAVEMIN r2 0 5800
+
+speclimit WAVEMAX b1 6155 9999
+speclimit WAVEMAX b2 6176 9999
+speclimit WAVEMAX r1 9215 9999
+speclimit WAVEMAX r2 9230 9999
+
+# The correlations of the arc lamps to that expected almost always
+# exceeds 0.80.  Issue a warning if it drops below 0.75.
 
 speclimit BESTCORR b1 0.75 1.01
 speclimit BESTCORR b2 0.75 1.01
 speclimit BESTCORR r1 0.75 1.01
 speclimit BESTCORR r2 0.75 1.01
 
+# The arcs should contain 16 (39) lines on the blue (red) cameras.
+# Issue warnings if we find fewer than 15 (36).
+
 speclimit NLAMPS b1 15 999
 speclimit NLAMPS b2 15 999
-speclimit NLAMPS r1 35 999
-speclimit NLAMPS r2 35 999
+speclimit NLAMPS r1 36 999
+speclimit NLAMPS r2 36 999
 
-speclimit SKYPERSEC b1 0 0.25
-speclimit SKYPERSEC b2 0 0.25
-speclimit SKYPERSEC r1 0 0.80
-speclimit SKYPERSEC r2 0 0.80
+# The sky levels were 0.15 e-/pix and 0.30 e-/pix in the blue and red
+# cameras on MJD 51612 (8/9 March 2000).  Flag the reported sky levels
+# as high if they is more than twice these values.
+
+speclimit SKYPERSEC b1 0 0.30
+speclimit SKYPERSEC b2 0 0.30
+speclimit SKYPERSEC r1 0 0.60
+speclimit SKYPERSEC r2 0 0.60
+
+# Don't issue any warnings about (S/N)^2 for individual exposures.
 
 speclimit SN2 b1 0 99999
 speclimit SN2 b2 0 99999
 speclimit SN2 r1 0 99999
 speclimit SN2 r2 0 99999
 
-speclimit TOTALSN2 b1 100 99999
-speclimit TOTALSN2 b2 100 99999
-speclimit TOTALSN2 r1 100 99999
-speclimit TOTALSN2 r2 100 99999
-speclimit TOTALSN2 ALL 100 99999
+# Issue warnings about total (S/N)^2 for any camera not hitting 80/pix.
+
+speclimit TOTALSN2 b1 80 99999
+speclimit TOTALSN2 b2 80 99999
+speclimit TOTALSN2 r1 80 99999
+speclimit TOTALSN2 r2 80 99999
+speclimit TOTALSN2 ALL 80 99999
 
