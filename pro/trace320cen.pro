@@ -19,10 +19,10 @@
 ;   nmed       - Number of rows to median filter around YSTART; default to 21
 ;
 ; OUTPUTS:
-;   xfiber       - Vector of 320 X centers
+;   xfiber     - Vector of 320 X centers
 ;
 ; OPTIONAL OUTPUTS:
-;   xgood        - Set to 1 for fibers that were actually found, 0 otherwise
+;   xgood      - Set to 1 for fibers that were actually found, 0 otherwise
 ;
 ; COMMENTS:
 ;
@@ -107,7 +107,8 @@ function trace320cen, fimage, mthresh=mthresh, ystart=ystart, nmed=nmed, $
             xfiber[j] = xpeak[k[i]]
             ibiggap[nbiggap] = j
             nbiggap = nbiggap + 1
-print,'BIG GAP',j,xfiber[j], xfiber[j]-xfiber[j-1]
+            splog, 'Big gap at fiber=', j, ', x=', xfiber[j], $
+             ', dx=', xfiber[j]-xfiber[j-1], format='(a,i4,a,f7.2,a,f5.2)'
          endif else begin
             xfiber[j] = xfiber[j-1] + deltax
          endelse

@@ -42,7 +42,11 @@
 ;   Document use of ROOT2D, COMBROOT.
 ;
 ; PROCEDURES CALLED:
+;   headfits()
+;   quickproc()
+;   sxpar()
 ;   yanny_read
+;   yanny_write
 ;
 ; INTERNAL SUPPORT ROUTINES:
 ;   spplan_create_exp
@@ -51,7 +55,7 @@
 ;
 ; REVISION HISTORY:
 ;   02-Nov-1999  Written by David Schlegel, Princeton.
-;   10-Nov-1999    SMB added checkstats to verify flavors
+;   10-Nov-1999  SMB added checkstats to verify flavors
 ;-
 ;------------------------------------------------------------------------------
 
@@ -149,15 +153,13 @@ pro spplan, indir=indir, plugdir=plugdir, flatdir=flatdir, $
    CAMERAS = strarr(nfile)
    for i=0, nfile-1 do begin
       if (NOT keyword_set(checkstats)) then hdr = headfits(fullname[i]) $
-      else image = quickproc(fullname[i],hdr=hdr)
-
+       else image = quickproc(fullname[i],hdr=hdr)
 
       PLATEID[i] = long( sxpar(hdr, 'PLATEID') )
       EXPTIME[i] = sxpar(hdr, 'EXPTIME')
       EXPOSURE[i] = long( sxpar(hdr, 'EXPOSURE') )
       FLAVOR[i] = strtrim(sxpar(hdr, 'FLAVOR'),2)
       CAMERAS[i] = strmid(shortname[i],4,2) ; Camera number from file name
-
 
       goodcamera = where(CAMERAS[i] EQ camnames,ct)
       if (ct EQ 1) then CAMERAS[i] = camnums[goodcamera] $

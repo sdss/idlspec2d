@@ -24,7 +24,7 @@
 ;
 ; PROCEDURES CALLED:
 ;
-;; REVISION HISTORY:
+; REVISION HISTORY:
 ;   01-Dec-1999  Written by D. Schlegel, Princeton.
 ;-
 ;------------------------------------------------------------------------------

@@ -12,7 +12,7 @@
 ;    pixflatname=pixflatname, spectrographid=spectrographid, color=color ]
 ;
 ; INPUTS:
-;   infile     - Raw SDSS frame
+;   infile     - Raw SDSS file name
 ;
 ; OPTIONAL KEYWORDS:
 ;   indir      - Input directory for INFILE
@@ -48,6 +48,7 @@
 ;   idlutils_version()
 ;   rdss_fits()
 ;   readfits()
+;   splog
 ;   sxaddpar
 ;   sxpar()
 ;   writefits
@@ -331,7 +332,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    ; and is multiplied by the gain.
 
    if (qshutter) then begin
-      splog, 'WARNING: Correcting for open shutter during readout'
+      splog, 'WARNING: Correcting for open shutter during readout '
 
       t1 = 900.0 ; Read time for entire frame
       t2 = 0.026976 ; Read time for one row of data (from Connie Rockosi)

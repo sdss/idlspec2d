@@ -32,7 +32,7 @@
 ;
 ; BUGS:
 ;
-; INTERNAL PROCEDURES:
+; INTERNAL SUPPORT PROCEDURES:
 ;   tset_struc()
 ;   arcfit_iter()
 ;
@@ -169,7 +169,7 @@ function arcfit_iter, spec, loglam, intensity, $
          bestcorr = corrval
          bestlambda = loglambda
          lagbest = lags[icorr]
-; PLOT ???
+; DEBUG PLOTS
 ; splot,speccorr,xr=[npad,npix+npad]
 ; soplot,shift(model,-lagbest)*mean(speccorr)/mean(model),color='red'
 ; print,bestcorr,lagbest,tempset.coeff
