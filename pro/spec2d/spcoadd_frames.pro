@@ -503,17 +503,32 @@ pro spcoadd_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
     'DEWDEP', 'DUSTA', 'DUSTB', 'DUSTC', 'DUSTD', 'GUSTS', 'HUMIDITY', $
     'HUMIDOUT', 'PRESSURE', 'WINDD', 'WINDS', 'TEMP01', 'TEMP02', $
     'TEMP03', 'TEMP04', 'HELIO_RV', 'SEEING20', 'SEEING50', 'SEEING80', $
-    'RMSOFF20', 'RMSOFF50', 'RMSOFF80', 'XCHI2', 'SKYCHI2' ]
+    'RMSOFF20', 'RMSOFF50', 'RMSOFF80', 'XCHI2', 'SKYCHI2', $
+    'WSIGMA', 'XSIGMA' ]
    sxcombinepar, hdrarr, cardname, hdr, func='average'
 
    sxcombinepar, hdrarr, 'TAI-BEG', hdr, func='min'
    sxcombinepar, hdrarr, 'TAI-END', hdr, func='max'
 
-   sxcombinepar, hdrarr, 'XCHI2', hdr, func='max', outcard='XCHI2MAX', after='XCHI2'
-   sxcombinepar, hdrarr, 'XCHI2', hdr, func='min', outcard='XCHI2MIN', after='XCHI2'
+   sxcombinepar, hdrarr, 'XCHI2', hdr, func='max', outcard='XCHI2MAX', $
+    after='XCHI2'
+   sxcombinepar, hdrarr, 'XCHI2', hdr, func='min', outcard='XCHI2MIN', $
+    after='XCHI2'
 
-   sxcombinepar, hdrarr, 'SKYCHI2', hdr, func='max', outcard='SCHI2MAX', after='SKYCHI2'
-   sxcombinepar, hdrarr, 'SKYCHI2', hdr, func='min', outcard='SCHI2MIN', after='SKYCHI2'
+   sxcombinepar, hdrarr, 'SKYCHI2', hdr, func='max', outcard='SCHI2MAX', $
+    after='SKYCHI2'
+   sxcombinepar, hdrarr, 'SKYCHI2', hdr, func='min', outcard='SCHI2MIN', $
+    after='SKYCHI2'
+
+   sxcombinepar, hdrarr, 'WSIGMA', hdr, func='max', outcard='WSIGMAX', $
+    after='WSIGMA'
+   sxcombinepar, hdrarr, 'WSIGMA', hdr, func='min', outcard='WSIGMIN', $
+    after='WSIGMA'
+
+   sxcombinepar, hdrarr, 'XSIGMA', hdr, func='max', outcard='XSIGMAX', $
+    after='XSIGMA'
+   sxcombinepar, hdrarr, 'XSIGMA', hdr, func='min', outcard='XSIGMIN', $
+    after='XSIGMA'
 
    ; Add the NGUIDE keywords for all headers of one flavor of CAMERAS
    ; (e.g., for all the 'b1' exposures if the first frame is 'b1'.)
