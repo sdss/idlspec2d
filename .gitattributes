@@ -496,6 +496,7 @@ pro/spec2d/writeapid.pro -text
 pro/specdb/Makefile -text
 pro/specdb/README -text
 pro/specdb/mysql_write.pro -text
+pro/specdb/photo_loader.pro -text
 pro/specdb/postgres_write.pro -text
 pro/specdb/specdb_create.pro -text
 src/Makefile -text
