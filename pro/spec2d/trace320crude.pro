@@ -182,11 +182,13 @@ function trace320crude, image, invvar, ystart=ystart, nmed=nmed, $
 
    ;----------
    ; Set FIBERMASK bit for any fiber with more than 20% of its positions
+   ; --->let's change it to 45%, there are far too many traces flagged as
+   ;      BADTRACE with so many bad columns and a 3 pixel radius!)
    ; masked, which includes any positions off the CCD.  Do not pay any
    ; attention to XGOOD, since that may indicate that a fiber is only
    ; bad near YSTART.
 
-   ibad = where(total(1-xmask, 1) GT 0.20*ny)
+   ibad = where(total(1-xmask, 1) GT 0.45*ny)
    if (ibad[0] NE -1) then $
     fibermask[ibad] = fibermask[ibad] OR fibermask_bits('BADTRACE')
 
