@@ -35,9 +35,9 @@
 ;                default to 10.
 ;   width      - Parameter for FIND_NMINIMA(); default to 3 * PSPACE.
 ;   minsep     - Parameter for FIND_NMINIMA(); default to the same as WIDTH.
-;   plottitle  - ???
-;   doplot     - ???
-;   debug      - ???
+;   plottitle  - Title of plot (if /DOPLOT is set).
+;   doplot     - If set, then make plots.
+;   debug      - If set, then wait for keystroke after plot.
 ;
 ; OUTPUTS:
 ;   zans       - Output structure [NOBJECT,NFIND] with the following elements:
