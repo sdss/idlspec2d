@@ -9,6 +9,9 @@ PLATEMERGE: Major re-write to use less memory.  All of the ZANS structures
         The output file are written one plate at a time, with the TSOBJ
         structure for that plate read only when it is needed.
         Functionally, the outputs are exactly identical.
+PLOTSN: Christy's last page of plots calls GAUSSFIT(), which can crash
+        with too few points.  This happened on the special plate 1180
+        on MJD 52974.  I've changed this to using DJS_ITERSTAT.
 QUICKEXTRACT: The logic to trim away extra sky fibers when there are
         more than 20 appeared to be incorrect, and could trim away most
         or all sky fibers.  I fixed this, and also now choose 40 skies
