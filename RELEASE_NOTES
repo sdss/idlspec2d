@@ -1,4 +1,20 @@
 
+MYFLUXCALIB: Put the plate+MJD+camname in the plot titles.
+SKYSUBTRACT: Fix stupid bug where sky-fits are rejected if the mean
+           sky is negative, though that only happens rarely.  This did
+           cause all the b1 exposures on plate 283/51584 to get rejected
+           (one of at least several such examples).
+TELLURIC_CORR: Center the plot title.
+
+sprobot_start: Set the environment variable "DISPLAY=:0.0" so that any
+           IDL jobs launched from these scripts don't use any additional
+           IDL licenses.
+
+In idlutils:
+
+goddard/Makefile: Remove tape_io from the subdir list, since this causes it to
+            crash when building under IRIX+6.
+
 -------------------------------------------------------------------------------
 v4_9_6 (Mar 29, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
 Built against specflat v1_4.
