@@ -111,7 +111,7 @@ function flux_distort_corrvec, coeff, wavevec, thisplug
 end
 ;------------------------------------------------------------------------------
 ; Return a vector of all chi values.
-function flux_distort_fn, coeff
+function flux_distort_fn, coeff, nomask=nomask
 
    common com_flux_distort, trimflux, wavevec, fmask, calibflux, calibisig, $
     trimplug, outmask
@@ -125,8 +125,9 @@ function flux_distort_fn, coeff
 
 ;   retval = (newflux / calibflux) - 1.
    retval = (newflux - calibflux) * calibisig
-   if (keyword_set(outmask)) then for j=0, 2 do $
-    retval[*,j] = retval[*,j] * outmask
+   if (keyword_set(outmask) AND (keyword_set(nomask) EQ 0)) then $
+    for j=0, 2 do $
+     retval[*,j] = retval[*,j] * outmask
 
    ; Re-caste from an array to a vector, since MPFIT needs a vector.
    return, retval[*]
@@ -248,7 +249,6 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
 
    parinfo = {value: 0.d0, fixed: 0, limited: [0b,0b], limits: [0.d0,0.d0]}
    parinfo = replicate(parinfo, npar)
-   parinfo.value = 1.d-3
    ftol = 1d-20
    gtol = 1d-20
    xtol = 1d-20
@@ -257,29 +257,45 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
    while (iiter LT maxiter1) do begin
       splog, 'Flux distortion fit iteration #', iiter
       splog, 'Initial chi^2=', total((flux_distort_fn(parinfo.value*0))^2)
+
+      ; Always start with tiny values, rather than values from the
+      ; previous fit.  This is to prevent us from "walking away" from
+      ; the correction solution in the case where some initially bad points
+      ; effect the fit.
+      parinfo.value = 1.d-3
       coeff = mpfit('flux_distort_fn', parinfo=parinfo, $
        maxiter=maxiter2, ftol=ftol, gtol=gtol, xtol=xtol, $
        niter=niter, status=status, /quiet)
       splog, 'MPFIT niter=', niter, ' status=', status
 
       ; For each object, set CHIVEC equal to the worst value in the 3 filters
-      chiarr = abs(reform(flux_distort_fn(coeff), ntrim, 3))
+      chiarr = abs(reform(flux_distort_fn(coeff, /nomask), ntrim, 3))
       splog, 'Iteration #', iiter, ' chi^2=', total(chiarr^2)
       chivec = (chiarr[*,0] > chiarr[*,1]) > chiarr[*,2]
 
-      ; Reject points w/out using the errors, but rather by simply compute
+      ; There was a bug in v5_0_0 of this code, before the /nomask option
+      ; was implemented.  Rejected objects had chi values of zero, which
+      ; meant that they would be put back in the fits.
+
+      ; Reject points w/out using the errors, but rather by simply computing
       ; the standard deviation of the results; this is the default behaviour
       ; for DJS_REJECT().
-      if (djs_reject(chivec, 0*chivec, invvar=0*chivec+1, outmask=outmask, $
-;      if (djs_reject(chivec, 0*chivec, outmask=outmask, $
+;      if (djs_reject(chivec, 0*chivec, invvar=0*chivec+1, outmask=outmask, $
+      ; Reject points using the errors.
+      if (djs_reject(chivec, 0*chivec, outmask=outmask, $
        lower=sigrej, upper=sigrej, maxrej=maxrej)) $
        then iiter = maxiter1 $
       else $
        iiter = iiter + 1
       splog, 'Number of rejected objects = ', long(total(1-outmask))
+; ???
+corrimg = fltarr(npixobj, nobj)
+for i=0L, nobj-1 do $
+ corrimg[*,i] = flux_distort_corrvec(coeff, wavevec, plugmap[i])
+splog,'Deviations = ', minmax(corrimg),stdev(corrimg)
 
       ; For the next iteration, start with the last best fit.
-      parinfo.value = coeff
+;      parinfo.value = coeff
    endwhile
 
    for i=0, npar-1 do $
