@@ -177,7 +177,8 @@ function apo_log_fields, pp, fields, printnames=printnames, formats=formats
       exptimestring = apo_checklimits(pp[igood[0]].flavor, 'EXPTIME', $
        pp[igood[0]].camera, pp[igood[0]].exptime, /html) $
        + string(pp[igood[0]].exptime, format='(f8.1)')
-      qualstring = pp[igood[0]].quality
+      qualstring = apo_checklimits(pp[igood[0]].flavor, 'QUALITY', $
+       pp[igood[0]].camera, pp[igood[0]].quality, /html)
    endif else begin
       utstring = ''
       airtempstring = ''
