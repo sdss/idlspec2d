@@ -13,6 +13,7 @@ pro platehist
    galvec = lonarr(nbin)
    qsovec = lonarr(nbin)
    starvec = lonarr(nbin)
+   skyvec = lonarr(nbin)
    unkvec = lonarr(nbin)
 ;   for i=0, nbin-1 do $
 ;    totvec[i] = total(640 - plist[where(plist.mjd LE mjdvec[i])].n_sky)
@@ -24,6 +25,8 @@ pro platehist
     qsovec[i] = total(plist[where(plist.mjd LE mjdvec[i])].n_qso)
    for i=0, nbin-1 do $
     starvec[i] = total(plist[where(plist.mjd LE mjdvec[i])].n_star)
+   for i=0, nbin-1 do $
+    skyvec[i] = total(plist[where(plist.mjd LE mjdvec[i])].n_sky)
    for i=0, nbin-1 do $
     unkvec[i] = total(plist[where(plist.mjd LE mjdvec[i])].n_unknown)
 
@@ -41,6 +44,7 @@ pro platehist
    djs_oplot, mjdvec, galvec, psym=10, color='red'
    djs_oplot, mjdvec, qsovec, psym=10, color='green'
    djs_oplot, mjdvec, starvec, psym=10, color='blue'
+   djs_oplot, mjdvec, skyvec, psym=10, color='magenta'
    djs_oplot, mjdvec, unkvec, psym=10, color='yellow'
 
    xyouts, mjdvec[nbin-1], totvec[nbin-1], $
@@ -54,6 +58,9 @@ pro platehist
     charsize=csize, align=0.5
    xyouts, mjdvec[nbin-1], starvec[nbin-1], $
     string(starvec[nbin-1], format='("Stars (",i6,")")'), $
+    charsize=csize, align=0.5
+   xyouts, mjdvec[nbin-1], skyvec[nbin-1], $
+    string(skyvec[nbin-1], format='("Sky (",i6,")")'), $
     charsize=csize, align=0.5
    xyouts, mjdvec[nbin-1], unkvec[nbin-1], $
     string(unkvec[nbin-1], format='("Unclassified (",i6,")")'), $
