@@ -32,7 +32,7 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius
 
    fitarcimage, flux, fluxivar, xpeak, ypeak, wset, aset=aset, $
      fibermask=fibermask, bestcorr=bestcorr, $
-     color=color
+     color=color, maxdev=2.0e-5
    if (NOT keyword_set(wset)) then return, 0
    traceset2xy, wset, xx, yy
 
