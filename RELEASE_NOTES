@@ -1,4 +1,7 @@
 
+pro/fluxfix/Makefile - Forget to add this Makefile, which is needed
+           to prevent the "make install" from crashing on an IRIX platform.
+
 -------------------------------------------------------------------------------
 v4_9_13 (Nov 24, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
 Built against specflat v1_4.
