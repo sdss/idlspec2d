@@ -103,6 +103,16 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    skyflux = obj[*,iskies]
    skyivar = objivar[*,iskies]
 
+   if keyword_set(pixelmask) then begin
+       goodflat = where((pixelmask[*,iskies] AND pixelmask_bits('LOWFLAT') ) EQ 0, ngoodflat)
+       if ngoodflat GT ncol then begin
+         skywave = skywave[goodflat] 
+         skyflux = skyflux[goodflat] 
+         skyivar = skyivar[goodflat] 
+       endif else splog,'WARNING: Too many sky pixelmask bits have LOWFLAT set'
+   endif
+       
+
    ;----------
    ; Sort sky points by wavelengths
 
