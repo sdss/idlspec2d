@@ -4,6 +4,12 @@
 # This routine is called by the cron daemon, as set up with "sos_start".
 # It syncs files from sdsshost to the local machine (i.e., sos.apo.nmsu.edu).
 #
+# Only sync the /astrolog/$MJD directories when there is a corresponding
+# /data/spectro/$MJD directory.  This is because the data directories are
+# periodically purged on sdsshost, whereas the astrolog directories are not.
+# For reducing data with SOS, we obviously only need the astrolog directories
+# that correspond to data that presently exists on disk.
+#
 # We need the executable code "rsync" in the default path
 # (e.g., as /usr/bin/rsync).
 #
