@@ -653,9 +653,11 @@ OBJID      4-element PHOTO ID of targetted object: run, re-run, column, ID
 OBJTYPE    Why this object was targetted
 PLUG_RA    Object RA
 PLUG_DEC   Object DEC
-CLASS      Spectro classification: GALAXY, QSO, STAR, SKY
+CLASS      Spectro classification: GALAXY, QSO, STAR, SKY;
+           versions prior to v4_7 will also use UNKNOWN; later versions set
+           the ZWARNING flag
 SUBCLASS   Spectro sub-classification; presently only used for STARs with the
-           catagories: O, B, A, F, K, M, L, Carbon_DQ, Carbon, WD, CV
+           catagories: O, B, A, F, K, M, L, Carbon_DQ, Carbon, WD, CV, sdM
 Z          Redshift
 Z_ERR      Redshift error; at present, not well determined
 RCHI2      Reduced chi^2 for best fit
@@ -665,8 +667,8 @@ TFILE      Template file in $IDLSPEC2D_DIR/templates
 TCOLUMN    Columns to use in template file (0-indexed); unused values set to -1
 NPOLY      Number of polynomial terms used in conjuction with TFILE
 THETA      Eigenvalue coefficients for each column in template file + each polynomial term
-SIGMA2     (Unused.)
-SIGMA2_ERR (Unused.)
+SIGMA2     (Placeholder.)
+SIGMA2_ERR (Placeholder.)
 WAVEMIN    Minimum observed wavelength for this object (Angstroms)
 WAVEMAX    Maximum observed wavelength for this object (Angstroms)
 WCOVERAGE  Amount of wavelength coverage in log-10(Angstroms)
@@ -676,6 +678,26 @@ SPEC1_I    (S/N)^2 at i=19.90 for spectrograph #1
 SPEC2_G    (S/N)^2 at g=20.20 for spectrograph #2
 SPEC2_R    (S/N)^2 at r=20.25 for spectrograph #2
 SPEC2_I    (S/N)^2 at i=19.90 for spectrograph #2
+</PRE>
+
+More recent reductions will contain these additional entries:
+<PRE>
+ZWARNING   A flag set for bad redshift fits in place of calling CLASS=UNKNOWN.
+           The following bits may be set:
+           0 = Sky fiber
+           1 = Too little wavelength coverage (WCOVERAGE < 0.18)
+           2 = Chi^2 is too close to chi^2 for the next best fit (within 0.01)
+           3 = Synthetic spectrum is negative (only set for stars and QSO's)
+           4 = Fraction of points above 5 sigma is too large (> 5%)
+SN_MEDIAN  Median S/N for all good pixels
+FRACNSIGMA Fraction of pixels deviant by more than N sigma, where N=[1,2,...10]
+COUNTS_SPECTRO  5-element array of total flux in each of the 5 PHOTO filters;
+                the units are such that this equals 1 at 0th magnitude;
+                convert to magnitudes with -2.5 * LOG_10(COUNTS_SPECTRO);
+                the u-band and z-band counts should not be used
+COUNTS_SYNTH    Same as COUNTS_SPECTRO, but measured using the best-fit
+                synthetic eigen-spectrum rather than the actual data points
+COUNTS_SKY      (Placeholder.)
 </PRE>
 
 <P>
