@@ -259,7 +259,7 @@ pro spplan, rawdir, astrolog=astrolog, flatdir=flatdir, mjd=mjd, $
                        AND FLAVOR[ifile] NE 'science', ct)
             if (ct GT 0) then qdone[ifile[ignore]] = 1
             if (ct GT 0) then $
-             splog, 'Ignore ' + strtrim(string(ct),3) $
+             splog, 'Ignore ' + strtrim(string(ct),2) $
               + ' frames with unusable flavor'
 ;            for i=0, ct-1 do $
 ;             splog, 'Ignore file ', shortname[ifile[ignore[i]]], $
@@ -273,7 +273,7 @@ pro spplan, rawdir, astrolog=astrolog, flatdir=flatdir, mjd=mjd, $
 ;             splog, 'Ignore file ', shortname[ifile[ignore[i]]], $
 ;              ' EXPTIME=', EXPTIME[ifile[ignore[i]]]
             if (ct GT 0) then $
-             splog, 'Ignore ' + strtrim(string(ct),3) $
+             splog, 'Ignore ' + strtrim(string(ct),2) $
               + ' science frames with EXPTIME < ', minexp
 
             while (min(qdone[ifile]) EQ 0) do begin
