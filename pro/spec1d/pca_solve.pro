@@ -123,7 +123,7 @@ endelse
    for ipix=0, nnew-1 do begin
       indx = where(newivar[ipix,*] NE 0)
       if (indx[0] NE -1) then $
-       synwvec[ipix] = mean(newivar[ipix,indx])
+       synwvec[ipix] = djs_mean(newivar[ipix,indx])
    endfor
 
    ;----------
