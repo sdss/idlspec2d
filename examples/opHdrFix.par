@@ -6,12 +6,15 @@ typedef struct {
 } OPHDRFIX;
 
 # Wrong exposure time in these headers for plate 198 on MJD 51433.
-
 ophdrfix sdR-??-00001142 EXPTIME  60
+
+# Dispose of these four short science exposures (60 sec) for
+# plate 198 on MJD 51433.  There were four 900 sec exposures
+# taken earlier that night.
+ophdrfix sdR-??-0000114[2-5] QUALITY   "'test'"
 
 # Complete the mapping name in these headers for plate 198 on MJD 51433.
 # It properly says plate 198, but doesn't give the full map name.
-
 ophdrfix sdR-??-0000113[7-9] NAME     "'0198-51433-01'"
 ophdrfix sdR-??-0000114[0-9] NAME     "'0198-51433-01'"
 ophdrfix sdR-??-0000115[0-2] NAME     "'0198-51433-01'"
@@ -79,8 +82,19 @@ ophdrfix sdR-??-0000145[2-9] NAME     "'0217-51455-01'"
 ophdrfix sdR-??-00001460 NAME     "'0217-51455-01'"
 
 # This exposure on MJD 51581 was a garbage 1-second exposure for plate 295.
+ophdrfix sdR-??-00002309 QUALITY   "'bad'"
 
-ophdrfix sdR-??-00002309 FLAVOR   "'unknown'"
+# These should be considered test data for plate 316 on MJD 51584.
+# All that were taken were some early diamond-pattern tests.
+# diamond-pattern tests with 10 sec exposures.
+ophdrfix sdR-??-0000236[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0000237[0-3] QUALITY   "'test'"
+
+# These should be considered test data for plate 316 on MJD 51609.
+# All that were taken were some early diamond-pattern tests.
+ophdrfix sdR-??-0000277[4-9] QUALITY   "'test'"
+ophdrfix sdR-??-0000278[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0000279[0-7] QUALITY   "'test'"
 
 # Wrong plate information in these headers for plate 318 on MJD 51629.
 
@@ -110,9 +124,9 @@ ophdrfix sdR-??-0000419[0-9] CARTID   9
 # and the 256 bit.  We've already put a kludge in SDSSPROC to add a large
 # error to these r2 exposures, but better to just declare them bad.
 # This only effects plate 356/51779.
-ophdrfix sdR-r2-0000609[8-9] FLAVOR   "'unknown'"
-ophdrfix sdR-r2-0000610[0-9] FLAVOR   "'unknown'"
-ophdrfix sdR-r2-0000611[0-2] FLAVOR   "'unknown'"
+ophdrfix sdR-r2-0000609[8-9] QUALITY   "'bad'"
+ophdrfix sdR-r2-0000610[0-9] QUALITY   "'bad'"
+ophdrfix sdR-r2-0000611[0-2] QUALITY   "'bad'"
 
 # The following information in the headers for plate 356 on MJD 51779
 # is incorrect:
@@ -153,6 +167,10 @@ ophdrfix sdR-??-0000624[6-9] DEC      0.04528804
 ophdrfix sdR-??-0000625[0-9] DEC      0.04528804
 ophdrfix sdR-??-00006260     DEC      0.04528804
 
+# These were some early diamond-point data taken on plate 391 on MJD 51782.
+# They should be ignored.
+ophdrfix sdR-??-0000625[2-5] QUALITY   "'test'"
+
 # The following information in the headers for plate 385 on MJD 51783
 # is incorrect:
 ophdrfix sdR-??-0000626[5-9] CARTID   7
@@ -172,7 +190,7 @@ ophdrfix sdR-??-0000627[3-9] DEC      0.01595267
 ophdrfix sdR-??-0000628[0-3] DEC      0.01595267
 
 # Observers say bad smear for plate 395 on MJD=51783.
-ophdrfix sdR-??-00006280 FLAVOR   "'unknown'"
+ophdrfix sdR-??-00006280 QUALITY   "'bad'"
 
 # The following information in the headers for plate 355 on MJD 51784
 # is incorrect:
@@ -188,9 +206,15 @@ ophdrfix sdR-??-0000630[0-1] DEC      57.49319
 ophdrfix sdR-??-0000630[8-9] CARTID   3
 ophdrfix sdR-??-0000631[0-4] CARTID   3
 
+# The following were test data for the bd17smear SOP procedure.
+# Plate 389 was mounted on MJD 51793, but we don't want to mix
+# these data on BD+17 with the actual science data on that plate.
+ophdrfix sdR-??-0000655[1-9] QUALITY   "'test'"
+ophdrfix sdR-??-0000656[0-1] QUALITY   "'test'"
+
 # The data on this image looks scrambled in a bad way on MJD 51811.
 # This would have been the smear exposure for plate 381.
-ophdrfix sdR-??-00006630 FLAVOR   "'unknown'"
+ophdrfix sdR-??-00006630 QUALITY   "'bad'"
 
 # Exposure #7112 (smear) for plate 420 on MJD 51871 has NaN values for
 # the following keywords.
@@ -206,27 +230,36 @@ ophdrfix sdR-??-00007112 ALT      71.520262
 
 # Shutters may have not opened on this science exposure for plate 435
 # on MJD 51882.
-ophdrfix sdR-??-00007376 FLAVOR   "'unknown'"
+ophdrfix sdR-??-00007376 QUALITY   "'bad'"
 
 # The following were test smears taken on plate 411 on MJD 51914.
 
-ophdrfix sdR-??-0000815[5-9] FLAVOR   "'unknown'"
+ophdrfix sdR-??-0000815[5-9] QUALITY   "'bad'"
 
 # The following exposure on plate 488 on MJD 51914 was declared bad
 # by the observers because guiding was not working.
 
-ophdrfix sdR-??-00008163 FLAVOR   "'unknown'"
+ophdrfix sdR-??-00008163 QUALITY   "'bad'"
 
 # The following exposure on plate 488 on MJD 51914 was declared bad
 # by the observers.
 
-ophdrfix sdR-??-00008173 FLAVOR   "'unknown'"
+ophdrfix sdR-??-00008173 QUALITY   "'bad'"
 
 # Wrong exposure time for this science exposure for plate 291 on MJD 51928.
 ophdrfix sdR-??-00008299 EXPTIME  900
 
 # Flat field was on in this science exposure for plate 413 on MJD 51929.
-ophdrfix sdR-??-00008323 FLAVOR   "'unknown'"
+ophdrfix sdR-??-00008323 QUALITY   "'bad'"
+
+# The night logs suggest ignoring these test data taken on
+# plate 492 on MJD  51944.  These were a 90 sec smear (whatever
+# that would be) and a 900 sec science exposure with poor S/N.
+ophdrfix sdR-??-0000858[8-9] QUALITY   "'test'"
+
+# These were test data taken during shake on MJD 51950,
+# with plate 492 mounted.
+ophdrfix sdR-??-0000863[3-9] QUALITY   "'test'"
 
 # Wrong plugmap indicated for plate 413 on MJD 51951.
 ophdrfix sdR-??-0000864[3-8] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0413-51942-01.par'"
@@ -249,8 +282,19 @@ ophdrfix sdR-??-0000882[0-4] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0547-5
 ophdrfix sdR-??-0000882[0-4] MAPID    5195403
 ophdrfix sdR-??-0000882[0-4] NAME     "'0547-51954-03'"
 
+# These were test data taken during shake on MJD 51980,
+# with plate 498 mounted.
+ophdrfix sdR-??-0000893[3-9] QUALITY   "'test'"
+ophdrfix sdR-??-0000894[0-8] QUALITY   "'test'"
+
 # Guider was still on in this smear exposure for plate 549 on MJD 51981.
-ophdrfix sdR-??-00008957 FLAVOR   "'unknown'"
+ophdrfix sdR-??-00008957 QUALITY   "'bad'"
+
+# The following exposures on plate 549 on MJD 51981 were short
+# exposures are biases while trying to fix a problem with SOP.
+ophdrfix sdR-??-0000896[1-9] QUALITY   "'bad'"
+ophdrfix sdR-??-0000897[0-9] QUALITY   "'bad'"
+ophdrfix sdR-??-00008980 QUALITY   "'bad'"
 
 # Wrong plugmap indicated for plate 542 on MJD 51984
 ophdrfix sdR-??-0000900[2-9] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0542-51984-02.par'"
@@ -295,20 +339,24 @@ ophdrfix sdR-??-0000926[3-6] MAPID    5198402
 ophdrfix sdR-??-0000926[3-6] NAME     "'0542-51984-02'"
 
 # Axis abort during smear for plate 500 on MJD 51994.
-ophdrfix sdR-??-00009296 FLAVOR   "'unknown'"
+ophdrfix sdR-??-00009296 QUALITY   "'bad'"
 
 # Wrong plugmap indicated for plate 503 on MJD 51994.
 ophdrfix sdR-??-0000930[0-7] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0503-51991-01.par'"
 ophdrfix sdR-??-0000930[0-7] MAPID    5199101
 ophdrfix sdR-??-0000930[0-7] NAME     "'0503-51991-01'"
 
+# Clouds came in and guide stars were lost for this 2nd exposure
+# on plate 588 on MJD 52028.  I'll discard that exposure.
+ophdrfix sdR-??-00009858 QUALITY   "'bad'"
+
 # First smear exposure accidentally taken with guider on for plate 583
 # on MJD 52055.
-ophdrfix sdR-??-00010048 FLAVOR   "'unknown'"
+ophdrfix sdR-??-00010048 QUALITY   "'bad'"
 
 # First smear exposure accidentally taken with guider on for plate 611
 # on MJD 52055.
-ophdrfix sdR-??-00010061 FLAVOR   "'unknown'"
+ophdrfix sdR-??-00010061 QUALITY   "'bad'"
 
 # The wrong MJD appears in these headers on MJD=52130.  Note that only 3
 # exposures (all biases) were taken this night.  The first 2 had this problem.
@@ -316,7 +364,7 @@ ophdrfix sdR-??-00010516 MJD   "52130"
 ophdrfix sdR-??-00010517 MJD   "52130"
 
 # This science exposure on plate 656 on MJD 52148 had no signal.
-ophdrfix sdR-??-00010751 FLAVOR   "'unknown'"
+ophdrfix sdR-??-00010751 QUALITY   "'bad'"
 
 # Telescope status information missing for the pre-flat on plate 655
 # on MJD 52162.
@@ -330,7 +378,7 @@ ophdrfix sdR-??-00010850  SPEC2 "'1 0 1 1 '"
 # The last science exposure for plate 644 on MJD 52173 has a
 # recorded exposure time of 1148 sec, but appears to be a dark or
 # bias frame.  No indications from the observer log what went wrong.
-ophdrfix sdR-??-00010965 FLAVOR   "'unknown'"
+ophdrfix sdR-??-00010965 QUALITY   "'bad'"
 
 # Telescope status information missing for the pre-arc on plate 676
 # on MJD 52178.
@@ -341,16 +389,42 @@ ophdrfix sdR-??-00011085  HGCD  "'1 1 1 1 '"
 ophdrfix sdR-??-00011085  SPEC1 "'1 0 1 1 '"
 ophdrfix sdR-??-00011085  SPEC2 "'1 0 1 1 '"
 
+# This first exposure for plate 681 on MJD 52198 was aborted by
+# the observers because they forgot to grabInst.  There's no useful
+# data in this 100 sec exposure.
+ophdrfix sdR-??-00011190 QUALITY   "'bad'"
+
+# There was an "axis halted" problem during the 3rd exposure
+# on plate 681 on MJD 52198.  I'll discard that exposure.
+ophdrfix sdR-??-00011192 QUALITY   "'bad'"
+
 # The flat-field lamps were accidentally turned on during this first
 # science exposure on plate 727 on MJD 52207.
-ophdrfix sdR-??-00011504 FLAVOR   "'unknown'"
+ophdrfix sdR-??-00011504 QUALITY   "'bad'"
 
-# These data taken on plate 724 on MJD 52240 were really just test data
-# (using plate 724 during twilight).
-ophdrfix sdR-??-0001197[6-9] FLAVOR   "'unknown'"
+# Reject this science exposure on plate 406 on MJD 52237, since the flat-field
+# screens were closed.
+ophdrfix sdR-??-00011906 QUALITY   "'bad'"
+
+# The observers lost guiding on the 3rd exposure
+# on plate 566 on MJD 52237.  S/N was zero!  Discard that exposure.
+ophdrfix sdR-??-00011922 QUALITY   "'bad'"
 
 # Wrong exposure time (2 sec instead of 1509 sec) for plate 757 on MJD 52238.
 ophdrfix sdR-??-00011952 EXPTIME   1509
+
+# These data taken on plate 724 on MJD 52240 were really just test data
+# (using plate 724 during twilight).
+ophdrfix sdR-??-0001197[6-9] QUALITY   "'test'"
+
+# These exposures for plate 758 on MJD 52251 were useless and
+# should be discarded.
+ophdrfix sdR-??-0001212[3-4] QUALITY   "'bad'"
+
+# Wrong RA,DEC in these headers for plate 758 on MJD 52251,
+# though this was an aborted exposure anyway with no useful signal.
+ophdrfix sdR-??-000012124 RA       121.32799
+ophdrfix sdR-??-000012124 DEC      37.801324
 
 # Wrong PLATEID in all headers for plate 568 on MJD 52254.
 ophdrfix sdR-??-0001221[4-6] PLATEID  568
@@ -375,112 +449,112 @@ ophdrfix sdR-??-00012653 QUALITY   "'bad'"
 # very high sky count rates and scattered light, for
 # some unknown reason.  The night log gives no clue.
 # I'll just discard these data.
-ophdrfix sdR-??-0001281[0-8] FLAVOR   "'unknown'"
+ophdrfix sdR-??-0001281[0-8] QUALITY   "'bad'"
 
 # This smear for plate 803 was taken through thick clouds
 # on MJD 52297.
-ophdrfix sdR-??-00012846 FLAVOR   "'unknown'"
+ophdrfix sdR-??-00012846 QUALITY   "'bad'"
 
 # These data for plate 827 were taken through thick clouds
 # on MJD 52297, though other exposures had reasonable S/N.
-ophdrfix sdR-??-0001285[2-4] FLAVOR   "'unknown'"
+ophdrfix sdR-??-0001285[2-4] QUALITY   "'bad'"
 
 # There were serious SOP problems at this point that made
 # these exposures bad for plate 827 on MJD 52312.
-ophdrfix sdR-??-0001296[5-8] FLAVOR   "'unknown'"
+ophdrfix sdR-??-0001296[5-8] QUALITY   "'bad'"
 
 # This data for plate 601 on MJD 52314 was taken at the end
 # of the night and is useless.
-ophdrfix sdR-??-00013036 FLAVOR   "'unknown'"
+ophdrfix sdR-??-00013036 QUALITY   "'bad'"
 
 # Spectrograph #2 was warming up at the beginning of plate 504
 # on MJD=52316.  Discard the pre-calibs and first science exposure
 # on spectro-2 for that plate.
-ophdrfix sdR-?2-0001306[6-8] FLAVOR   "'unknown'"
+ophdrfix sdR-?2-0001306[6-8] QUALITY   "'bad'"
 
 # The smear exposure had a TCC abort for exposure #13097 of
 # plate 601 on MJD 52316.  Only the first half of the smear
 # was taken (if that).  Unfortunately, this is the only
 # smear for this plate.
-ophdrfix sdR-??-00013096 FLAVOR   "'unknown'"
+ophdrfix sdR-??-00013096 QUALITY   "'bad'"
 
 # The smear exposure had a TCC abort for exposure #13111 of
 # plate 803 on MJD 52317.  Only the first half of the smear
 # was taken (if that).  Hopefully, a smear is being taken for
 # this plate on the following night.
-ophdrfix sdR-??-00013111 FLAVOR   "'unknown'"
+ophdrfix sdR-??-00013111 QUALITY   "'bad'"
 
 # The observers had problems acquiring guide stars on this only
 # exposure of plate 866 on MJD=52317.
-ophdrfix sdR-??-00013132 FLAVOR   "'unknown'"
+ophdrfix sdR-??-00013132 QUALITY   "'bad'"
 
 # These 3 exposures were test data taken before twilight on MJD 52318
 # (trying to get smear to fail, using plate 803).
-ophdrfix sdR-??-0001315[7-9] FLAVOR   "'unknown'"
+ophdrfix sdR-??-0001315[7-9] QUALITY   "'bad'"
 
 # These two exposures (science, science) for plate 776 on MJD 52319
 # had very poor S/N.
-ophdrfix sdR-??-0001318[1-2] FLAVOR   "'unknown'"
+ophdrfix sdR-??-0001318[1-2] QUALITY   "'bad'"
 
 # These two exposures (smear, science) for plate 860 on MJD 52319
 # had very poor S/N.
-ophdrfix sdR-??-00013200 FLAVOR   "'unknown'"
-ophdrfix sdR-??-00013202 FLAVOR   "'unknown'"
+ophdrfix sdR-??-00013200 QUALITY   "'bad'"
+ophdrfix sdR-??-00013202 QUALITY   "'bad'"
 
 # The first smear for plate 786 on MJD 52319 failed due
 # to a SOP/TCC bug.
-ophdrfix sdR-??-00013212 FLAVOR   "'unknown'"
+ophdrfix sdR-??-00013212 QUALITY   "'bad'"
 
 # This exposure on plate 864 on MJD 52320 had no signal.
 # All the logs say are "Done in 4 exposures (1st useless)."
-ophdrfix sdR-??-00013226 FLAVOR   "'unknown'"
+ophdrfix sdR-??-00013226 QUALITY   "'bad'"
 
 # These data on plate 810 on MJD 52321 were taken through
 # thick clouds, following one reasonable science exposure.
-ophdrfix sdR-??-0001331[6-7] FLAVOR   "'unknown'"
+ophdrfix sdR-??-0001331[6-7] QUALITY   "'bad'"
 
 # All data on plate 867 on MJD 52321 were taken through
 # thick clouds.
-ophdrfix sdR-??-0001332[0-1] FLAVOR   "'unknown'"
+ophdrfix sdR-??-0001332[0-1] QUALITY   "'bad'"
 
 # All data on MJD 52322 were through very thick clouds
 # (plates 810,865).
-ophdrfix sdR-??-0001332[6-9] FLAVOR   "'unknown'"
-ophdrfix sdR-??-0001333[0-3] FLAVOR   "'unknown'"
+ophdrfix sdR-??-0001332[6-9] QUALITY   "'bad'"
+ophdrfix sdR-??-0001333[0-3] QUALITY   "'bad'"
 
 # These two exposures (science) for plate 573 on MJD 52323
 # had very poor S/N, but follow one useful exposure on this plate.
-ophdrfix sdR-??-0001334[6-7] FLAVOR   "'unknown'"
+ophdrfix sdR-??-0001334[6-7] QUALITY   "'bad'"
 
 # These two exposures (science) for plate 788 on MJD 52324
 # had very poor S/N.
-ophdrfix sdR-??-0001335[2-3] FLAVOR   "'unknown'"
+ophdrfix sdR-??-0001335[2-3] QUALITY   "'bad'"
 
 # The logs indicate that there may have been a TCC axis halt
 # during this smear exposure on the star cluster plate 801
 # on MJD 52326/
-ophdrfix sdR-??-00013412 FLAVOR   "'unknown'"
+ophdrfix sdR-??-00013412 QUALITY   "'bad'"
 
 # These were test data taken during shake on MJD 52327 (49 exposures).
-ophdrfix sdR-??-0001343[8-9] FLAVOR   "'unknown'"
-ophdrfix sdR-??-0001344[0-9] FLAVOR   "'unknown'"
-ophdrfix sdR-??-0001345[0-9] FLAVOR   "'unknown'"
-ophdrfix sdR-??-0001346[0-9] FLAVOR   "'unknown'"
-ophdrfix sdR-??-0001347[0-9] FLAVOR   "'unknown'"
-ophdrfix sdR-??-0001348[0-6] FLAVOR   "'unknown'"
+ophdrfix sdR-??-0001343[8-9] QUALITY   "'test'"
+ophdrfix sdR-??-0001344[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0001345[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0001346[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0001347[0-9] QUALITY   "'test'"
+ophdrfix sdR-??-0001348[0-6] QUALITY   "'test'"
 
 # These were test data taken during shake on MJD 52334
-ophdrfix sdR-??-0001356[1-6] FLAVOR   "'unknown'"
+ophdrfix sdR-??-0001356[1-6] QUALITY   "'test'"
 
 # All these data on plate 574 on MJD 52336 are bad due to spectrograph
 # mechanicals problems.
 # (Note also that the exposure times are incorrect in these headers.)
-ophdrfix sdR-??-0001357[3-9] FLAVOR   "'unknown'"
+ophdrfix sdR-??-0001357[3-9] QUALITY   "'bad'"
 
 # All these data on plate 778 on MJD 52336 are bad due to spectrograph
 # mechanicals problems.
 # (Note also that the exposure times are incorrect in these headers.)
-ophdrfix sdR-??-0001358[0-9] FLAVOR   "'unknown'"
+ophdrfix sdR-??-0001358[0-9] QUALITY   "'bad'"
 
 # Wrong exposure time (0 sec instead of approx. 2460 sec) for plate 574
 # on MJD 52337.  This probably has something to do with the spectrograph
@@ -489,7 +563,7 @@ ophdrfix sdR-??-0001358[0-9] FLAVOR   "'unknown'"
 ophdrfix sdR-??-00013631 EXPTIME   2460
 
 # These are bad test data taken on MJD 52337 using plate 778.
-ophdrfix sdR-??-0001362[4-5] FLAVOR   "'unknown'"
+ophdrfix sdR-??-0001362[4-5] QUALITY   "'bad'"
 
 # Wrong exposure time in these headers for plate 778 on MJD 52337.
 # The observers were trying to pause and re-start exposures.
@@ -516,7 +590,7 @@ ophdrfix sdR-??-00013781 EXPTIME  1500
 
 # The flat-field petals were acting up during the pre-calibs
 # for plate 889 on MJD 52346
-ophdrfix sdR-??-00013806 FLAVOR   "'unknown'"
+ophdrfix sdR-??-00013806 QUALITY   "'bad'"
 
 # Wrong exposure time in these headers for plate 877 on MJD 52353.
 # (Reported to be 21765 and 23236 sec!)
@@ -552,7 +626,7 @@ ophdrfix sdR-??-00014199 EXPTIME  900
 
 # These two exposures on plate 607 on MJD 52368 were taken through thick
 # clouds and have very little signal (except in the sky!)
-ophdrfix sdR-??-0001421[8-9] FLAVOR   "'unknown'"
+ophdrfix sdR-??-0001421[8-9] QUALITY   "'bad'"
 
 # Wrong exposure time in these headers for plate 882 on MJD 52370.
 # (Reported to be 22066 sec!)
@@ -580,13 +654,13 @@ ophdrfix sdR-??-00014459 EXPTIME  1000
 
 # The telescope appears to have not moved properly during the
 # smear on plate 887 on MJD 52376.  This exposure has very little S/N.
-ophdrfix sdR-??-00014484 FLAVOR   "'unknown'"
+ophdrfix sdR-??-00014484 QUALITY   "'bad'"
 
 # Ignore this bad smear on plate 838 on MJD 52378
-ophdrfix sdR-??-00014537 FLAVOR   "'unknown'"
+ophdrfix sdR-??-00014537 QUALITY   "'bad'"
 
 # Ignore this bad smear on plate 795 on MJD 52378
-ophdrfix sdR-??-00014571 FLAVOR   "'unknown'"
+ophdrfix sdR-??-00014571 QUALITY   "'bad'"
 
 # Wrong exposure time in these headers for plate 816 on MJD 52379.
 # (Reported to be 2 sec!)
@@ -597,10 +671,10 @@ ophdrfix sdR-??-00014596 EXPTIME  900
 ophdrfix sdR-??-00014637 EXPTIME  800
 
 # Ignore this bad smear on plate 510 on MJD 52381
-ophdrfix sdR-??-00014638 FLAVOR   "'unknown'"
+ophdrfix sdR-??-00014638 QUALITY   "'bad'"
 
 # Ignore this bad smear on plate 886 on MJD 52381
-ophdrfix sdR-??-00014653 FLAVOR   "'unknown'"
+ophdrfix sdR-??-00014653 QUALITY   "'bad'"
 
 # Ignore these data through thick clouds for plate 818 on MJD 52383
 ophdrfix sdR-??-00014688 QUALITY   "'bad'"
