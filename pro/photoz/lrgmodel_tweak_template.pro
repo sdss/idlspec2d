@@ -47,6 +47,7 @@
 ; PROCEDURES CALLED:
 ;   lrgmodel_photoz()
 ;   mpfit()
+;   splog
 ;
 ; INTERNAL SUPPORT ROUTINES:
 ;  lrgmodel_tweak_fn()
@@ -102,17 +103,17 @@ pro lrgmodel_tweak_template, pflux1, pflux_ivar1, zz1, weights=weights, $
 
    ; Discard any objects where the baseline photo-z is discrepent by
    ; more than 0.10, and discard any low-redshift objects with z > 0.10.
-   pflux = pflux1
-   pflux_ivar = pflux_ivar1
-   zfit = lrgmodel_photoz(pflux, pflux_ivar, _EXTRA=KeywordsForPhotoz)
+;   pflux = pflux1
+;   pflux_ivar = pflux_ivar1
+;   zfit = lrgmodel_photoz(pflux, pflux_ivar, _EXTRA=KeywordsForPhotoz)
 ;   ibad = where(abs(zfit - zz) GT 0.10 OR zz LT 0.10, nbad)
 ; Only discard the low-redshift objects...
-   ibad = where(zz LT 0.10, nbad)
-   if (nbad GT 0) then begin
-      print, 'Discard ', nbad, ' objects with low and/or discrepent photo-z'
-      pflux[*,ibad] = 0
-      pflux_Ivar[*,ibad] = 0
-   endif
+;   ibad = where(zz LT 0.10, nbad)
+;   if (nbad GT 0) then begin
+;      print, 'Discard ', nbad, ' objects with low and/or discrepent photo-z'
+;      pflux[*,ibad] = 0
+;      pflux_Ivar[*,ibad] = 0
+;   endif
 
    ; Call MPFIT to iterate on the solution for the template
    parinfo = {value: 0.D, fixed: 0, limited: [0b,0b], limits: [0.d0,0.d0]}
@@ -129,10 +130,10 @@ pro lrgmodel_tweak_template, pflux1, pflux_ivar1, zz1, weights=weights, $
     maxiter=maxiter, ftol=ftol, gtol=gtol, xtol=xtol, $
     niter=niter, status=status)
 
-   print, 'STATUS = ', status
-   print, 'Best-fit AGEBURST = ', coeff[0]
-   print, 'Best-fit ZMETAL = ', coeff[1]
-   print, 'Errors = = ', perror
+   splog, 'STATUS = ', status
+   splog, 'Best-fit AGEBURST = ', coeff[0]
+   splog, 'Best-fit ZMETAL = ', coeff[1]
+   splog, 'Errors = = ', perror
 
    return
 end
