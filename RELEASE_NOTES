@@ -17,6 +17,8 @@ SPCOADD_FRAMES: set BADFLUXFACTOR only for extreme smear corrections=20x median
 TRACE320CRUDE:  Fix bug dependent on invvar being set.
             Small change to note number of goodrows in xmask, non-critical.
 
+aporsync_logs.sh: Re-order the files copied so that we get the sdReport
+            file first.
 sprobot_start: No longer reference $BATCH2DFILE,$BATCH1DFILE, which are
             no longer used.
 sprobot_start,sprobot.sh: Added optional $SPROBOT_RSH environment variable
