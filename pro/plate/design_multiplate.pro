@@ -274,14 +274,17 @@ print, 'Assigning real guide fiber number ', iguide+1
 
       addplug.holetype = 'OBJECT'
       if ((where(tag_names(stardata) EQ 'OBJTYPE'))[0] NE -1) then $
-       addplug.objtype = stardata[indx].objtype $
-      else $
-       addplug.objtype = 'SERENDIPITY_MANUAL'
+       addplug.objtype = stardata[indx].objtype
       if ((where(tag_names(stardata) EQ 'PRIORITY'))[0] NE -1) then $
        addplug.throughput = (stardata[indx].priority > 1L) < (2L^31-2) $
       else $
        addplug.throughput = long(randomu(24680, nadd) * 100) + 1
 ;      addplug.sectarget = 2L^24 ; This would be the serendipity flag
+
+      ; Call any objects serendipity if not called anything else...
+      for i=0, nadd-1 do $
+       if (strtrim(addplug[i].objtype) EQ '') then $
+        addplug[i].objtype = 'SERENDIPITY_MANUAL'
 
       allplug = [allplug, addplug]
 
@@ -556,7 +559,7 @@ print, 'Assigning real guide fiber number ', iguide+1
    ; Run the code makeFanuc, makeDrillPos, use_cs3.
    ;---------------------------------------------------------------------------
 
-   print, 'Now run "makeFanuc", "makeDrillPos" in the "plate" product'
+   print, 'Now run "makeFanuc", "makeDrillPos", "use_cs3" in the "plate" product'
    print, 'Then you are done!'
 
    return

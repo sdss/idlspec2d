@@ -1,4 +1,4 @@
-;
+; Design the special plate for the Praesepe star cluster.
 ; Cluster center is around RA=130.0 deg, DEC=19.6 deg (J2000)
 
 ;------------------------------------------------------------------------------
@@ -20,7 +20,7 @@ function read_praesepe1, filename
    result.ra = ra
    result.dec = dec
    result.mag = transpose( [[bmag], [bmag], [rmag], [rmag], [rmag]] )
-   result.flag = flag
+   result.objtype = 'SERENDIPITY_MANUAL'
 
    return, result
 end
@@ -50,6 +50,7 @@ pro design_praesepe
    guidemag = [10.5, 12.5]
    tilenums = [9901,9902,9903]
    platenums = [901,902,903]
+   matchdist = 2.0/3600. ; match distance in degrees
 
    ntile = n_elements(racen)
 
@@ -58,7 +59,7 @@ pro design_praesepe
    ; Discard duplicates.
 
    stardata = read_praesepeall()
-   junk = djs_angle_group(stardata.ra, stardata.dec, 5.0/3600., $
+   junk = djs_angle_group(stardata.ra, stardata.dec, matchdist, $
     gstart=gstart, gindx=gindx)
    stardata = stardata[gindx[gstart]]
 
@@ -73,8 +74,8 @@ pro design_praesepe
    ; For every Tycho star, find the match in the Eisenstein catalog.
    ; If there are objects not in Eisenstein, then add them.
 
-   ntot = djs_angle_match(tycdat.radeg, tycdat.dedeg, $
-    stardata.ra, stardata.dec, dtheta=5.0/3600., mindx=mindx, mdist=mdist)
+   junk = djs_angle_match(tycdat.radeg, tycdat.dedeg, $
+    stardata.ra, stardata.dec, dtheta=matchdist, mindx=mindx, mdist=mdist)
 
    iadd = where(mindx EQ -1, nadd)
    if (nadd GT 0) then begin
@@ -87,9 +88,29 @@ pro design_praesepe
       rmag = gmag
       imag = gmag
       zmag = gmag
+      tycadd.objtype = 'SERENDIPITY_MANUAL'
+      iphoto = where(tycdat[iadd].bmv GT -0.1 AND tycdat[iadd].bmv LT 0.1)
+      if (iphoto[0] NE -1) then begin
+         tycadd[iphoto].objtype = 'SPECTROPHOTO_STD'
+         tycadd[iphoto].sectarget = 32L
+      endif
       tycadd.mag = transpose( [[umag],[gmag],[rmag],[imag],[zmag]] )
       tycadd.priority = 3
       stardata = [stardata, tycadd]
+   endif
+
+   ;----------
+   ; Select objects that may be good spectro-photo standards.
+   ; Find stars with a match in the Tycho catalog with -0.1 < B-V < +0.1.
+
+   junk = djs_angle_match(tycdat.radeg, tycdat.dedeg, $
+    stardata.ra, stardata.dec, dtheta=matchdist, mindx=mindx, mdist=mdist)
+   indx1 = where(mindx NE -1)
+   indx2 = mindx[indx1]
+   iphoto = where(tycdat[indx1].bmv GT -0.1 AND tycdat[indx1].bmv LT 0.1)
+   if (iphoto[0] NE -1) then begin
+      stardata[indx2[iphoto]].objtype = 'SPECTROPHOTO_STD'
+      stardata[indx2[iphoto]].sectarget = 32L
    endif
 
    ;----------
