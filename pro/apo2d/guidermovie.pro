@@ -52,8 +52,14 @@
 ;------------------------------------------------------------------------------
 pro guidermovie, mjd=mjd, plate=plate, expnum=expnum, _EXTRA=KeywordsForATV
 
+   common gmovie, com_mjd, com_gfiles, com_datestring, com_timearray, $
+    com_plate, com_mjdplate, com_tai_first, com_tai_last
+
    quiet = !quiet
    !quiet = 1
+   if (NOT keyword_set(com_mjd)) then com_mjd = 0
+   if (NOT keyword_set(com_plate)) then com_plate = 0
+   if (NOT keyword_set(com_mjdplate)) then com_mjdplate = 0
 
    ;----------
    ; If MJD is not specified, then find the most recent MJD for output files
@@ -69,15 +75,65 @@ pro guidermovie, mjd=mjd, plate=plate, expnum=expnum, _EXTRA=KeywordsForATV
    endif
    mjdstr = string(mjd, format='(i5.5)')
 
-   ;----------
-   ; Get file list for guider images (g-zipped only)
+   if (com_mjd EQ mjd) then begin
+      ;----------
+      ; If the last call to this procedure was for the same MJD, then use
+      ; the results cached in these common variables.
 
-   gfiles = findfile( djs_filepath('gimg*fits.gz', root_dir=rawdata_dir, $
-    subdirectory=[string(mjd,format='(i5.5)'),'guider']), count=nfile )
-   if (nfile EQ 0) then begin
-      splog, 'No files found
-      return
-   endif
+      print, 'Using cached values for guider image header info'
+      mjd = com_mjd
+      gfiles = com_gfiles
+      datestring = com_datestring
+      timearray = com_timearray
+      nfile = n_elements(gfiles)
+   endif else begin
+      ;----------
+      ; Get file list for guider images (g-zipped only)
+
+      gfiles = findfile( djs_filepath('gimg*fits.gz', root_dir=rawdata_dir, $
+       subdirectory=[string(mjd,format='(i5.5)'),'guider']), count=nfile )
+      if (nfile EQ 0) then begin
+         splog, 'No files found
+         return
+      endif
+
+      ;----------
+      ; Read the headers for all the guider files
+
+      print, 'Reading guider image headers...'
+      monthname = ['','Jan','Feb','Mar','Apr','May','Jun','Jul', $
+       'Aug','Sep','Oct','Nov','Dec']
+      datestring = strarr(nfile)
+      timearray = dblarr(nfile)
+      for ifile=0, nfile-1 do begin
+         hdr = headfits(gfiles[ifile])
+
+         utdate = sxpar(hdr,'UTDATE')
+         ww = strsplit(utdate, ', ', /extract)
+         year = long(ww[3])
+         month = (where(ww[1] EQ monthname))[0] > 0
+         date = long(ww[2])
+
+         uttime = sxpar(hdr,'UTTIME')
+         ww = strsplit(uttime, ': ', /extract)
+         hr = long(ww[0])
+         min = long(ww[1])
+         sec = long(ww[2])
+
+         datestring[ifile] = string(year, month, date, hr, min, sec, $
+          format='(i4.4,"-",i2.2,"-",i2.2," ",i2.2,":",i2.2,":",i2.2," Z")')
+         jdcnv, year, month, date, hr + min/60. + sec/3600., thisjd
+         timearray[ifile] = (thisjd - 2400000.5D) * (24.D*3600.D)
+
+         print, format='("File ",i5," of ",i5,a1,$)', $
+          ifile+1, nfile, string(13b)
+      endfor
+
+      com_mjd = mjd
+      com_gfiles = gfiles
+      com_datestring = datestring
+      com_timearray = timearray
+   endelse
 
    ;----------
    ; Trim to only specified exposure numbers (and update NFILE variable)
@@ -97,38 +153,6 @@ pro guidermovie, mjd=mjd, plate=plate, expnum=expnum, _EXTRA=KeywordsForATV
    endif
 
    ;----------
-   ; Read the headers for all the guider files
-
-   print, 'Reading guider image headers...'
-   monthname = ['','Jan','Feb','Mar','Apr','May','Jun','Jul', $
-    'Aug','Sep','Oct','Nov','Dec']
-   datestring = strarr(nfile)
-   timearray = dblarr(nfile)
-   for ifile=0, nfile-1 do begin
-      hdr = headfits(gfiles[ifile])
-
-      utdate = sxpar(hdr,'UTDATE')
-      ww = strsplit(utdate, ', ', /extract)
-      year = long(ww[3])
-      month = (where(ww[1] EQ monthname))[0] > 0
-      date = long(ww[2])
-
-      uttime = sxpar(hdr,'UTTIME')
-      ww = strsplit(uttime, ': ', /extract)
-      hr = long(ww[0])
-      min = long(ww[1])
-      sec = long(ww[2])
-
-      datestring[ifile] = string(year, month, date, hr, min, sec, $
-       format='(i4.4,"-",i2.2,"-",i2.2," ",i2.2,":",i2.2,":",i2.2," Z")')
-      jdcnv, year, month, date, hr + min/60. + sec/3600., thisjd
-      timearray[ifile] = (thisjd - 2400000.5D) * (24.D*3600.D)
-
-      print, format='("File ",i5," of ",i5,a1,$)', $
-       ifile+1, nfile, string(13b)
-   endfor
-
-   ;----------
    ; Sort these files by date+time
 
    isort = sort(datestring)
@@ -143,46 +167,63 @@ pro guidermovie, mjd=mjd, plate=plate, expnum=expnum, _EXTRA=KeywordsForATV
 
    if (keyword_set(plate)) then begin
 
-      ;----------
-      ; Set input directory for sdR files
+      if (plate EQ com_plate AND mjd EQ com_mjdplate) then begin
+         ;----------
+         ; If the last call to this procedure was for the same PLATE and MJD,
+         ; then use the results cached in these common variables.
 
-      rawdata_dir = getenv('RAWDATA_DIR')
-      if (NOT keyword_set(rawdata_dir)) then $
-       rawdata_dir = '/data/spectro'
+         print, 'Using cached values for sdR header info'
+         tai_first = com_tai_first
+         tai_last = com_tai_last
+      endif else begin
+         ;----------
+         ; Set input directory for sdR files
 
-      ;----------
-      ; Find sdR files for b1 camera only for this MJD (g-zipped only!)
+         rawdata_dir = getenv('RAWDATA_DIR')
+         if (NOT keyword_set(rawdata_dir)) then $
+          rawdata_dir = '/data/spectro'
 
-      sdrname = findfile(filepath('sdR-b1-????????.fit.gz', $
-       root_dir=rawdata_dir, subdir=mjdstr), count=nsdr)
+         ;----------
+         ; Find sdR files for b1 camera only for this MJD (g-zipped only!)
 
-      if (nsdr EQ 0) then begin
-         print, 'No sdR files found for MJD=' + mjdstr
-         return
-      endif
+         sdrname = findfile(filepath('sdR-b1-????????.fit.gz', $
+          root_dir=rawdata_dir, subdir=mjdstr), count=nsdr)
 
-      print, 'Reading sdR image headers...'
-      for isdr=0, nsdr-1 do begin
-         qdone = fits_wait(sdrname[isdr], deltat=1, tmax=1, /header_only)
-         if (qdone) then begin
-            thishdr = sdsshead(sdrname[isdr])
-            thisplate = long(sxpar(thishdr,'PLATEID'))
-            thisflavor = strtrim(sxpar(thishdr,'FLAVOR'),2)
-            if (thisplate EQ plate AND (thisflavor EQ 'science' $
-             OR thisflavor EQ 'smear')) then begin
-               get_tai, thishdr, tai_beg, tai_mid, tai_end
-               if (NOT keyword_set(tai_first)) then begin
-                  tai_first = tai_beg
-                  tai_last = tai_end
-               endif else begin
-                  tai_first = tai_first < tai_beg
-                  tai_last = tai_last > tai_end
-               endelse
-            endif
+         if (nsdr EQ 0) then begin
+            print, 'No sdR files found for MJD=' + mjdstr
+            return
          endif
-         print, format='("File ",i5," of ",i5,a1,$)', $
-          isdr+1, nsdr, string(13b)
-      endfor
+
+         tai_first = 0
+         tai_last = 0
+         print, 'Reading sdR image headers...'
+         for isdr=0, nsdr-1 do begin
+            qdone = fits_wait(sdrname[isdr], deltat=1, tmax=1, /header_only)
+            if (qdone) then begin
+               thishdr = sdsshead(sdrname[isdr])
+               thisplate = long(sxpar(thishdr,'PLATEID'))
+               thisflavor = strtrim(sxpar(thishdr,'FLAVOR'),2)
+               if (thisplate EQ plate AND (thisflavor EQ 'science' $
+                OR thisflavor EQ 'smear')) then begin
+                  get_tai, thishdr, tai_beg, tai_mid, tai_end
+                  if (NOT keyword_set(tai_first)) then begin
+                     tai_first = tai_beg
+                     tai_last = tai_end
+                  endif else begin
+                     tai_first = tai_first < tai_beg
+                     tai_last = tai_last > tai_end
+                  endelse
+               endif
+            endif
+            print, format='("File ",i5," of ",i5,a1,$)', $
+             isdr+1, nsdr, string(13b)
+         endfor
+
+         com_plate = plate
+         com_mjdplate = mjd
+         com_tai_first = tai_first
+         com_tai_last = tai_last
+      endelse
 
       if (NOT keyword_set(tai_first)) then begin
          print, 'No science/smear exposures for this plate', plate
@@ -215,42 +256,45 @@ pro guidermovie, mjd=mjd, plate=plate, expnum=expnum, _EXTRA=KeywordsForATV
 
    while (strupcase(cc) NE 'Q') do begin
 
+print,'ZZ  ',cc
       if (cc EQ 'F') then begin
          ifile = ifile + 1
          if (ifile GE nfile) then begin
             ifile = nfile - 1
-            cc = 's'
+            cc = ' '
          endif
-         c1 = get_kbrd(0)
-         if (keyword_set(c1)) then cc = c1
       endif else if (cc EQ 'B') then begin
          ifile = ifile - 1
          if (ifile LT 0) then begin
             ifile = 0
-            cc = 's'
+            cc = ' '
          endif
-         c1 = get_kbrd(0)
-         if (keyword_set(c1)) then cc = c1
       endif else begin
          print, 'Press b=back one frame'
          print, '      f=forward one frame'
          print, '      B=loop backward'
          print, '      F=loop forward'
-         print, '      s=stop'
+         print, '      s=select frame index'
          print, '      q=quit (and enter interactive mode for this plot)'
-         cc = get_kbrd(1)
+         print, '      <any other key>=stop'
          case cc of
             'b': ifile = (ifile - 1) > 0
             'f': ifile = (ifile + 1) < (nfile - 1)
+            's': begin
+               read, ifile, prompt='Enter frame index number: '
+               ifile = (ifile > 0) < (nfile - 1)
+               cc = ' '
+               end
             else:
          endcase
+         cc = ' ' ; Clear this command (since it's not a looping command)
       endelse
 
       ; Only display this image if it is different from the last image displayed
       if (ifile NE lastfile) then begin
          img = mrdfits(gfiles[ifile], 0, /silent) + 32768.
 
-         splog, ifile, nfile, fileandpath(gfiles[ifile]), utstring, $
+         splog, ifile+1, nfile, fileandpath(gfiles[ifile]), utstring, $
           format='("File ",i4," of ",i4,": ",a,2x,a)'
 
          ; Dark-subtract
@@ -268,6 +312,17 @@ pro guidermovie, mjd=mjd, plate=plate, expnum=expnum, _EXTRA=KeywordsForATV
          lastfile = ifile
       endif else begin
          wait, 0.5 ; Don't sit around burning CPU cycles.
+      endelse
+
+      ;----------
+      ; If we're looping, then just read whatever is in the keyboard buffer,
+      ; otherwise sit and wait for a keystroke.
+
+      if (cc EQ 'F' OR cc EQ 'B') then begin
+         c1 = get_kbrd(0)
+         if (keyword_set(c1)) then cc = c1
+      endif else begin
+         cc = get_kbrd(1) ; Sit and wait for keystroke
       endelse
 
    endwhile
