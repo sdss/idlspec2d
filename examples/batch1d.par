@@ -23,17 +23,21 @@ hostconfig wire1.princeton.edu "" ssh
 hostconfig wire2.princeton.edu "" ssh
 hostconfig wire3.princeton.edu "" ssh
 hostconfig wire4.princeton.edu "" ssh
-hostconfig localhost "" ""
-hostconfig dusty.princeton.edu "" ssh
-hostconfig kaze.princeton.edu "" ssh
+hostconfig wire5.princeton.edu "" ssh
+hostconfig wire6.princeton.edu "" ssh
+#hostconfig localhost "" ""
+#hostconfig dusty.princeton.edu "" ssh
+#hostconfig kaze.princeton.edu "" ssh
 
 hostconfig wire1.princeton.edu "" ssh
 hostconfig wire2.princeton.edu "" ssh
 hostconfig wire3.princeton.edu "" ssh
 hostconfig wire4.princeton.edu "" ssh
-hostconfig localhost "" ""
-hostconfig dusty.princeton.edu "" ssh
-hostconfig kaze.princeton.edu "" ssh
+hostconfig wire5.princeton.edu "" ssh
+hostconfig wire6.princeton.edu "" ssh
+#hostconfig localhost "" ""
+#hostconfig dusty.princeton.edu "" ssh
+#hostconfig kaze.princeton.edu "" ssh
 
 #hostconfig coma.princeton.edu /u/schlegel/tmp/coma ssh1
 #hostconfig hydra.princeton.edu /u/schlegel/tmp/hydra ssh1
