@@ -69,6 +69,16 @@ if [ -z "$SPECTRO_DATA" ] ; then
   exit
 fi
 
+if [ -z "$SPROBOT_HOST" ] ; then
+  echo "SPROBOT_HOST must be set!"
+  exit
+fi
+
+if [ -z "$SPROBOT_LOCALDISKS" ] ; then
+  echo "SPROBOT_LOCALDISKS must be set!"
+  exit
+fi
+
 #------------------------------------------------------------------------------
 # Don't allow this to be run from the machine "sdsshost"!
 
@@ -123,6 +133,8 @@ echo "ASTROLOG_DIR=$ASTROLOG_DIR" >> $cronfile
 echo "SPECFLAT_DIR=$SPECFLAT_DIR" >> $cronfile
 echo "RAWDATA_DIR=$RAWDATA_DIR" >> $cronfile
 echo "SPECTRO_DATA=$SPECTRO_DATA" >> $cronfile
+echo "SPROBOT_HOST=$SPROBOT_HOST" >> $cronfile
+echo "SPROBOT_LOCALDISKS=$SPROBOT_LOCALDISKS" >> $cronfile
 echo "# This job will run at 4:00 am every day." >> $cronfile
 echo "0 4 * * * sprobotcopy.sh >> $SPRLOG 2>&1" >> $cronfile
 echo "# This job will run at 8:30 am every day." >> $cronfile

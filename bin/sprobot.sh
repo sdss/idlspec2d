@@ -1,12 +1,12 @@
 #! /bin/sh
 #------------------------------------------------------------------------------
-# Script to copy raw spectro data from "sdsshost.apo.nmsu.edu",
-# where the data is assumed to be in the directories
+# Script to copy raw spectro data from the machine $SPROBOT_HOST (currently
+# sos.apo.nmsu.edu), where the data is assumed to be in the directories
 #    /astrolog/$MJD
 #    /data/spectro/$MJD
 # The astrolog data is copied into the local directory
 #    $ASTROLOG_DIR/$MJD
-# and the image files are copied to the first disk in $localdisks
+# and the image files are copied to the first disk in $SPROBOT_LOCALDISKS
 # with more than 2.5 Gb free, with a pointer to this from
 #    $RAWDATA_DIR/$MJD -> $localdisks[i]/$MJD
 #
@@ -20,11 +20,12 @@
 
 astrologdir=$ASTROLOG_DIR
 toprawdir=$RAWDATA_DIR
-#localdisks='/peyton/scr/spectro0/data/rawdata /peyton/scr/spectro1/data/rawdata /peyton/scr/spectro2/data/rawdata /peyton/scr/spectro3/data/rawdata'
-localdisks='/peyton/scr/spectro3/data/rawdata /peyton/scr/spectro1/data/rawdata /peyton/scr/spectro0/data/rawdata /peyton/scr/spectro2/data/rawdata'
+localdisks=$SPROBOT_LOCALDISKS
+#localdisks='/peyton/scr/spectro3/data/rawdata /peyton/scr/spectro1/data/rawdata /peyton/scr/spectro0/data/rawdata /peyton/scr/spectro2/data/rawdata'
 topoutdir=$SPECTRO_DATA
+hostname=$SPROBOT_HOST
 #hostname=sdsshost.apo.nmsu.edu
-hostname=sos.apo.nmsu.edu
+#hostname=sos.apo.nmsu.edu
 
 #------------------------------------------------------------------------------
 # Test that certain environment variables are already set.
@@ -36,6 +37,16 @@ fi
 
 if [ -z "$RAWDATA_DIR" ] ; then
   echo "RAWDATA_DIR must be set!"
+  exit
+fi
+
+if [ -z "$SPROBOT_HOST" ] ; then
+  echo "SPROBOT_HOST must be set!"
+  exit
+fi
+
+if [ -z "$SPROBOT_LOCALDISKS" ] ; then
+  echo "SPROBOT_LOCALDISKS must be set!"
   exit
 fi
 
