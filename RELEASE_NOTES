@@ -7,6 +7,7 @@ PCA_SOLVE: Add NRETURN keyword for returning a different number of
 PCA_STAR: Major changes to read stellar classes and subclasses,
           then generate the 2-component PCA solution for all M stars
           (for example) and reconstruct types M1 through M9.
+SDSSPROC: Reverted to calls to specflat_version,speclog_version that work.
 SPBIASGEN: New routine for generating mean biases for a night.
 SPREDUCE1D, ZFIND, ZCOMPUTE, FIND_NMINIMA: Plotting and debugging
             tools added with the /DOPLOT, /DEBUG keywords.
