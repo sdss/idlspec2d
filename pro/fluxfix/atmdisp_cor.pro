@@ -5,7 +5,6 @@ function atmdisp_cor, wave, flux, plugtag, hdr, ngroff = ngroff, nrioff = nrioff
 
 npix = n_elements(flux[*,0])
 nfib = n_elements(flux[0,*])
-wave2d = rebin(wave, npix, nfib)
 std = where(strmatch(plugtag.objtype, '*R*STD*') eq 1)
 
 ;-------------------------------------------------------------------------------
@@ -24,16 +23,16 @@ atmdisp_file = filepath('atmdisp_vec_am' + airmass_fid[aindx] + 'see2.0.fit', $
 
 dispset = mrdfits(atmdisp_file, 1)
 ndisp = n_elements(dispset.coeff[0,*])
-traceset2xy, dispset, wave2d[*,0:ndisp-1], dispvec
-mag = -2.5 * alog10(filter_thru(dispvec, wave = wave, /toair)) 
+traceset2xy, dispset, wave[*,0:ndisp-1], dispvec
+mag = -2.5 * alog10(filter_thru(dispvec, wave = wave[*,0], /toair)) 
 groffsynth = mag[*,1] - mag[*,2]  
 
 ;-------------------------------------------------------------------------------
 ; Compute (g-r) offsets of spectro and photo
 ;-------------------------------------------------------------------------------
 
-flam2fnu = (wave*wave / 2.99792e18) # replicate(1,nfib)
-mag = -2.5 * alog10(filter_thru(flux * flam2fnu, wave = wave, /toair)) - 48.6 + 2.5*17.0
+flam2fnu = (wave*wave / 2.99792e18)
+mag = -2.5 * alog10(filter_thru(flux * flam2fnu, wave = wave[*,0], /toair)) - 48.6 + 2.5*17.0
 smag = transpose(mag[*,[1,2,3]]) 
 pmag = plugtag.mag[[1,2,3]]
 
@@ -100,7 +99,7 @@ for ii = 0, nfib - 1 do begin
      linterp, groffsynth, reform(dispset.coeff[jj,*], ndisp), zfit[ii], coeffi
      dispseti.coeff[jj] = coeffi
   endfor
-  traceset2xy, dispseti, wave, modeli
+  traceset2xy, dispseti, wave[*,ii], modeli
   model[*,ii] = modeli
 endfor
 
@@ -130,8 +129,8 @@ groff_sig = grcoef[2]
 ; correct the flux
 
 cflux = flux / model
-flam2fnu = (wave*wave / 2.99792e18) # replicate(1,nfib)
-mag = -2.5 * alog10(filter_thru(cflux * flam2fnu, wave = wave, /toair)) - 48.6 + 2.5*17.0
+flam2fnu = (wave*wave / 2.99792e18) 
+mag = -2.5 * alog10(filter_thru(cflux * flam2fnu, wave = wave[*,0], /toair)) - 48.6 + 2.5*17.0
 nsmag = transpose(mag[*,[1,2,3]]) 
       
 ngroff = (nsmag[0,*] - nsmag[1,*])  - (pmag[0,*] - pmag[1,*])
