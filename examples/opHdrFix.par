@@ -132,6 +132,20 @@ ophdrfix sdR-??-00007112 ALT      71.520262
 # on MJD 51882.
 ophdrfix sdR-??-00007376 FLAVOR   "'unknown'"
 
+# The following were test smears taken on plate 411 on MJD 51914.
+
+ophdrfix sdR-??-0000815[5-9] FLAVOR   "'unknown'"
+
+# The following exposure on plate 488 on MJD 51914 was declared bad
+# by the observers because guiding was not working.
+
+ophdrfix sdR-??-00008163 FLAVOR   "'unknown'"
+
+# The following exposure on plate 488 on MJD 51914 was declared bad
+# by the observers.
+
+ophdrfix sdR-??-00008173 FLAVOR   "'unknown'"
+
 # Wrong exposure time for this science exposure for plate 291 on MJD 51928.
 ophdrfix sdR-??-00008299 EXPTIME  900
 
