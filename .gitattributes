@@ -2,7 +2,6 @@
 /Makefile -text
 /README -text
 bin/Makefile -text
-bin/evilmake -text
 doc/Makefile -text
 etc/BG14.txt -text
 etc/FG3.txt -text
