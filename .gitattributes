@@ -86,7 +86,6 @@ pro/qaplot_scatlight.pro -text
 pro/qaplot_skydev.pro -text
 pro/qaplot_skyline.pro -text
 pro/qaplot_skysub.pro -text
-pro/qaskylines.pro -text
 pro/quickproc.pro -text
 pro/rdss_fits.pro -text
 pro/read2dout.pro -text
@@ -140,7 +139,6 @@ pro/spec2d/qaplot_scatlight.pro -text
 pro/spec2d/qaplot_skydev.pro -text
 pro/spec2d/qaplot_skyline.pro -text
 pro/spec2d/qaplot_skysub.pro -text
-pro/spec2d/qaskylines.pro -text
 pro/spec2d/quickproc.pro -text
 pro/spec2d/rdss_fits.pro -text
 pro/spec2d/read2dout.pro -text
