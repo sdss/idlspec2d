@@ -131,6 +131,9 @@ function trace_crude, fimage, invvar, xstart=xstart, ystart=ystart, $
       rderiv = imrow[1:nx-1] - imrow[0:nx-2]
       izero = where( rderiv[0:nx-3] GT 0 AND rderiv[1:nx-2] LE 0 $
        AND imrow[1:nx-2] GT mthresh)
+
+      if izero[0] EQ -1 then message, 'No peaks found'
+
       xstart = izero + 0.5 + rderiv[izero] / (rderiv[izero] - rderiv[izero+1])
    endif
 
