@@ -2,7 +2,7 @@
 #------------------------------------------------------------------------------
 # Script to copy raw spectro data from the machine $SPROBOT_HOST (currently
 # sos.apo.nmsu.edu), where the data is assumed to be in the directories
-#    /astrolog/$MJD
+#    /data/spectro/astrolog/$MJD
 #    /data/spectro/$MJD
 # The astrolog data is copied into the local directory
 #    $ASTROLOG_DIR/$MJD
@@ -110,9 +110,9 @@ for mjdstr in $remotedir ; do
    if [ -n "$localdir" ] ; then
       # Copy the astrolog files...
       echo "SPROBOT: Current time "`date` UID=$UID PPID=$PPID
-      echo SPROBOT: rsync "$hostname:/astrolog/$mjdstr" $astrologdir
+      echo SPROBOT: rsync "$hostname:/data/spectro/astrolog/$mjdstr" $astrologdir
       rsync -ar --rsh="$SPROBOT_RSH" \
-       "$hostname:/astrolog/$mjdstr" $astrologdir
+       "$hostname:/data/spectro/astrolog/$mjdstr" $astrologdir
 #       --rsync-path=/p/rsync/v2_4_3/rsync
 
       # Copy the raw FITS files... copy only files ending in ".fit.gz"
