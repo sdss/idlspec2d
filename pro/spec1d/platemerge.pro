@@ -273,7 +273,9 @@ pro platemerge, zfile, outroot=outroot, public=public
     'objc_type'  ,  '', $
     'primtarget' ,  0L, $
     'sectarget'  ,  0L, $
-    'objtype'    ,  '' )
+    'progname',     '', $
+    'specprimary',  0L  )
+;    'objtype'    ,  '' )
    sz2 = n_tags(adat, /length)
    splog, 'Size of one ASCII structure = ', sz2, ' bytes'
    splog, 'Number of objects = ', nout
