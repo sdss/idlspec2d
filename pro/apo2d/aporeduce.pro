@@ -44,7 +44,6 @@
 ;   apo_log2html
 ;   apo_plotsn
 ;   fits_wait()
-;   mwrfits
 ;   quickextract()
 ;   quicktrace()
 ;   quickwave()
