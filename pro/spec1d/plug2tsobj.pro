@@ -37,12 +37,13 @@
 ;   Read the plug-map for plate 306, fibers 1 to 10, then construct the
 ;   tsObj structure:
 ;   > readspec, 306, indgen(10)+1, plug=plug
-;   > tsobj = plug2tsobj(306,plug)
+;   > tsobj = plug2tsobj(306,plugmap=plug)
 ;
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
 ;   djs_diff_angle()
+;   fits_read
 ;   mrdfits
 ;   splog
 ;
@@ -99,7 +100,11 @@ function plug2tsobj, plateid, ra, dec, plugmap=plugmap, dmin=dmin
       return, 0
    endif
 
-   tstemp = mrdfits(filename, 1)
+   ; Make certain that the file exists and is valid
+   message = 0
+   fits_read, filename, junk, /no_abort, message=message
+   if (keyword_set(message)) then tstemp = 0 $ ; File is invalid FITS file
+    else tstemp = mrdfits(filename, 1)
    if (NOT keyword_set(tstemp)) then begin
       print, 'tsObj file is empty: ' + filename
       return, 0
