@@ -64,9 +64,11 @@
 ;                versions of the same (DJS).
 ;   01-Dec-1999  Added version stamping (DJS).
 ;   07-Dec-1999  Mask neighbors of pixels that saturated the A/D converter.
-;                Identify blead trails and mask from that row up. (DJS)
+;                Identify blead trails and mask from that row up (DJS).
 ;   10-Dec-1999  Test if the shutter was open during readout, and try
-;                to correct the light for that. (DJS)
+;                to correct the light for that (DJS).
+;   04-Feb-2000  Declare that the shutter was open if it is a >640 sec
+;                exposure taken before MJD=51570 (DJS).
 ;-
 ;------------------------------------------------------------------------------
 
@@ -266,28 +268,38 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    ;------
    ; Test to see if the shutter was open during readout if the exposure
    ; was longer than 640 seconds.
+
+   exptime = sxpar(hdr, 'EXPTIME')
+   mjd = sxpar(hdr, 'MJD')
+   flavor = sxpar(hdr, 'FLAVOR')
+   qshutter = 0
+
+   ; Toggle the variable QSHUTTER if the observation was taken before
+   ; MJD=51570 and this was not a bias or dark exposure.
+
+   if (exptime GT 640 AND (readimg OR readivar) $
+    AND mjd GT 0 AND mjd LT 51570 $
+    AND flavor NE 'bias' AND flavor NE 'dark') then qshutter = 1
+
    ; Look at the signal in the overscan rows (at the bottom of the CCD).
    ; Toggle the variable QSHUTTER if this appears to be true in any
    ; of the amplifiers.
 
-   exptime = sxpar(hdr, 'EXPTIME')
-   qshutter = 0
-   if (exptime GT 640 AND (readimg OR readivar)) then begin
-      nskip = 2  ; Ignore the first and last NSKIP rows of these overscan rows
-      for iamp=0, 3 do begin
-         if (qexist[iamp] EQ 1) then begin
-            biasreg = rawdata[sdatacol[iamp]:sdatacol[iamp]+ncol[iamp]-1, $
-                soverrow[iamp]+nskip:soverrow[iamp]+noverrow[iamp]-1-nskip]
-            biasvec = djs_median(biasreg, 2)
-            ; Count the number of "hot" overscan columns, hotter than 3-sigma
-            ; above the median
-;            junk = where(biasvec GT median(biasvec) + 3*djsig(biasvec), nhot)
-            junk = where(biasvec GT median(biasvec) + 4, nhot)
-            if (nhot GE 15) then qshutter = 1 ; Flag the shutter as being open
-            splog, 'Number of hot overscan columns for amp', iamp, ' = ', nhot
-         endif
-      endfor
-   endif
+;   if (exptime GT 640 AND (readimg OR readivar)) then begin
+;      nskip = 2  ; Ignore the first and last NSKIP rows of these overscan rows
+;      for iamp=0, 3 do begin
+;         if (qexist[iamp] EQ 1) then begin
+;            biasreg = rawdata[sdatacol[iamp]:sdatacol[iamp]+ncol[iamp]-1, $
+;                soverrow[iamp]+nskip:soverrow[iamp]+noverrow[iamp]-1-nskip]
+;            biasvec = djs_median(biasreg, 2)
+;            ; Count the number of "hot" overscan columns, hotter than 3-sigma
+;            ; above the median
+;            junk = where(biasvec GT median(biasvec) + 4, nhot)
+;            if (nhot GE 15) then qshutter = 1 ; Flag the shutter as being open
+;            splog, 'Number of hot overscan columns for amp', iamp, ' = ', nhot
+;         endif
+;      endfor
+;   endif
 
    ;------
    ; Construct IMAGE
@@ -338,7 +350,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    if (qshutter) then begin
       splog, 'WARNING: Correcting for open shutter during readout '
 
-      t1 = 900.0 ; Read time for entire frame
+      t1 = exptime ; Read time for entire frame
       t2 = 0.026976 ; Read time for one row of data (from Connie Rockosi)
 
       smearimg = 0 * image
