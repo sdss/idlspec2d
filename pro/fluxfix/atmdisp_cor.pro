@@ -52,7 +52,7 @@ ok = where(abs(groff - 0.05) lt 0.5 and $
            strmatch(plugtag.objtype, '*SKY*') ne 1, nok)
 
 ; Before plot 
-!P.MULTI = [0, 2, 2]
+!P.MULTI = [0, 2, 3]
 plot, xpos[ok], groff[ok], psym=3, xtitle = 'Plate X-position', title = title, $
       ytitle = '(g-r) [Spectro - Photo]', /xs, yr = [-0.2, 0.4], /nodata
 djs_oplot, xpos[ok], groff[ok], psym=6, symsize=0.2, color='blue'
@@ -91,9 +91,9 @@ djs_oplot, ypos[std], groff[std] - zfit[std], psym=6, symsize=0.3, $
 oplot, [-500, 500], [0, 0], thick=3
 djs_oplot, ypos[rej], groff[rej] - zfit[rej], psym=2, symsize=0.5, color='green'
 
-;----------------------------------------------------------------------------------
+;-------------------------------------------------------------------------------
 ; Translate (g-r) offsets into correction vectors
-;----------------------------------------------------------------------------------
+;-------------------------------------------------------------------------------
 
 zfit = zfit - median(zfit[std])
 model = flux * 0.0
@@ -114,7 +114,6 @@ endfor
 ;-------------------------------------------------------------------------------
 
 ymax = 50
-!P.MULTI = [0, 2, 1]
 
 plothist, rioff[ok], bin=0.01, xr=[-0.4, 0.4], yr = [0, ymax], $
     xtitle = '(g-r) model - photo', ytitle = 'Number of Spectra', title = title
@@ -162,20 +161,6 @@ xyouts, 0.0, ymax*0.95, 'Corrected', align=0.5, color=djs_icolor('red')
 
 ngroff_mean = grcoef[1]
 ngroff_sig = grcoef[2]
-
-;----------------------------------------------------------------------------------
-; Check correction as a function of plate xy
-
-;!P.MULTI = [0, 1, 2]
-;plot, xpos, zfit, psym=6, syms=0.2, /nodata, xtitle = 'Plate X-position', xr=[-300, 300], $
-;      ytitle = '(g-r) Correction Residual', /xs, yr = [-0.2, 0.2]
-;oplot, xpos, groff - ngroff - zfit, psym=6, symsize=0.2, color=!blue
-;oplot, [-500, 500], [0, 0], thick=3
-
-;plot, ypos, zfit, psym=6, syms=0.2, /nodata, xtitle = 'Plate Y-position', xr=[-300,300], $
-;      ytitle = '(g-r) Correction Residual', /xs, yr = [-0.2, 0.2]
-;oplot, ypos, groff - ngroff - zfit, psym=6, symsize=0.2, color=!blue
-;oplot, [-500, 500], [0, 0], thick=3
 
 !P.MULTI = 0
 
