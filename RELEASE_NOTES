@@ -1,4 +1,5 @@
 
+APOPLOT: Bug fix to prevent crash when specifying EXPNUM.
 SKYSUBTRACT: Merely clean out some commented-out code and update internal
            comments.  Avoid a possible crash condition in the case of
            all bad sky fibers.
