@@ -96,6 +96,7 @@ SPPLAN1D,SPPLAN_FINDRAWDATA:
         Replace calls to the obsolete function RSTRPOS()
         with STRPOS(/REVERSE_SEARCH).
 SPREDUCE1D: (Use the B-spline spectra for QSO-fitting).
+SSHIFT,SSHIFT2D: Remove these routines that are in the idlutils product.
 SYNTHSPEC,ZFIND: If the eigenspectrum file does not contain in image in HDU #0,
         then look for a B-spline in HDU #1 and assume that it describes
         a B-spline.  (This is what we're trying to use for QSOs now.)
