@@ -100,9 +100,13 @@ pro combine1fiber, inloglam, objflux, objivar, $
    if (NOT keyword_set(bkptbin)) then bkptbin = 1.2 * binsz
    if (NOT keyword_set(maxsep)) then maxsep = 2.0 * binsz
 
-   specnum = djs_laxisgen( size(inloglam,/dimens), iaxis=1)
+   ndim = size(inloglam, /n_dimen)
+   if (ndim EQ 1) then $
+    specnum = fltarr(n_elements(inloglam)) $ ; Set specnum=0 for all elements
+   else $
+    specnum = djs_laxisgen( size(inloglam,/dimens), iaxis=1)
 
-; ??? Return fullcombmask for modifying the masks in the original input files.
+   ; Use fullcombmask for modifying the pixel masks in the original input files.
    fullcombmask = bytarr(npix)
 
    newflux = fltarr(nfinalpix)
@@ -202,6 +206,7 @@ pro combine1fiber, inloglam, objflux, objivar, $
 
       for j=0, max(specnum) do begin
          these = where(specnum EQ j)
+
          if (these[0] NE -1) then begin
 
             inbetween = where(newloglam GE min(inloglam[these]) AND $
