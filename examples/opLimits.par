@@ -1,4 +1,4 @@
-# Limits to test for on-the-mountainuctions.
+# Limits to test for on-the-mountain reductions.
 # This file is used by the procedure APO_LOG2HTML.
 
 typedef struct {
