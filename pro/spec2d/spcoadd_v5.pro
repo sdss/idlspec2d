@@ -152,38 +152,21 @@ pro spcoadd_v5, spframes, outputname, $
       ; different between different files.
 
       splog, 'Reading file #', ifile, ': ', filenames[ifile]
-      tempflux = mrdfits(filenames[ifile], 0, hdr)
-      tempivar = mrdfits(filenames[ifile], 1)
-      temppixmask = mrdfits(filenames[ifile], 2)
-
-      tempwset = mrdfits(filenames[ifile], 3)
-      tempdispset = mrdfits(filenames[ifile], 4)
-      tempplug = mrdfits(filenames[ifile], 5, structyp='PLUGMAPOBJ')
-      if (NOT keyword_set(tempflux)) then $
-       message, 'Error reading file ' + filenames[ifile]
-      tempsky = mrdfits(filenames[ifile], 6)
+      spframe_read, filenames[ifile], objflux=tempflux, objivar=tempivar, $
+       mask=temppixmask, wset=tempwset, dispset=tempdispset, plugmap=tempplug, $
+       skyflux=tempsky, hdr=hdr, adderr=adderr
 
       if (ifile EQ 0) then $
        hdrarr = ptr_new(hdr) $
       else $
        hdrarr = [hdrarr, ptr_new(hdr)]
 
-      thismjd = sxpar(hdr, 'MJD')
-      if (NOT keyword_set(mjdlist)) then mjdlist = thismjd $
-       else mjdlist = [mjdlist, thismjd]
-
-      ;----------
-      ; Add an additional error term equal to ADDERR of the flux.
-
-      if (keyword_set(adderr)) then begin
-         gmask = tempivar NE 0 ; =1 for good points
-         tempivar = 1.0 / ( 1.0/(tempivar + (1-gmask)) $
-          + (adderr * (tempflux>0))^2 ) * gmask
-      endif
-
       ;----------
       ; Read header info
 
+      thismjd = sxpar(hdr, 'MJD')
+      if (NOT keyword_set(mjdlist)) then mjdlist = thismjd $
+       else mjdlist = [mjdlist, thismjd]
       cameras = strtrim(sxpar(hdr, 'CAMERAS'),2)
       expstr = string(sxpar(hdr, 'EXPOSURE'), format='(i8.8)')
 
@@ -327,16 +310,6 @@ pro spcoadd_v5, spframes, outputname, $
       return
    endif
 
-;stop
-;set_plot,'x'
-;ifib=295
-;colorv=['default','red','green','blue','magenta','yellow','cyan','default']
-;lam = 10^wave
-;indx = where(plugmap.fiberid EQ ifib)
-;splot, lam[*,indx[0]], flux[*,indx[0]], color=colorv[0]
-;for jnum=1, nfiles-1 do $
-; soplot, lam[*,indx[jnum]], flux[*,indx[jnum]], color=colorv[jnum]
-
    ;---------------------------------------------------------------------------
    ; Construct output data structures, including the wavelength scale
    ;---------------------------------------------------------------------------
@@ -438,6 +411,30 @@ pro spcoadd_v5, spframes, outputname, $
          finalandmask[*,ifiber] = pixelmask_bits('NODATA')
          finalormask[*,ifiber] = pixelmask_bits('NODATA')
       endelse
+   endfor
+
+   ;---------------------------------------------------------------------------
+   ; Write the corrected spCFrame files.
+   ; All the fluxes + their errors are calibrated.
+   ; The wavelengths + dispersions are converted from trace sets to images.
+   ; The pixel mask has the COMBINEREJ bit set.
+; The plug map should have the modified magnitudes !!!???
+   ;---------------------------------------------------------------------------
+
+   for ifile=0, nfiles-1 do begin
+      thisfile = fileandpath(filenames[ifile], path=thispath)
+      thisfile = djs_filepath(repstr(thisfile,'spFrame','spCFrame'), $
+       root_dir=thispath)
+      splog, 'Writing file #', ifile, ': ', thisfile
+      indx = where(filenum EQ ifile)
+; Change the units in the headers to be erg/sec !!!???
+      mwrfits, flux[*,indx], thisfile, *hdrarr[ifile], /create
+      mwrfits, fluxivar[*,indx], thisfile
+      mwrfits, pixelmask[*,indx], thisfile
+      mwrfits, wave[*,indx], thisfile
+      mwrfits, dispersion[*,indx], thisfile
+      mwrfits, plugmap[indx], thisfile
+      mwrfits, skyflux[*,indx], thisfile
    endfor
 
    ;----------
@@ -653,17 +650,6 @@ pro spcoadd_v5, spframes, outputname, $
 
    ; 7th HDU is the sky
    mwrfits, finalsky, fulloutname
-
-   ;---------------------------------------------------------------------------
-   ; Write the modified pixel masks to the input files
-   ;---------------------------------------------------------------------------
-
-; WRITE THE MODIFIED MASK FILES !!!???
-;   for ifile=0, nfiles-1 do begin
-;      splog, 'Modifying file #', ifile, ': ', filenames[ifile]
-;      indx = where(filenum EQ ifile)
-;      djs_modfits, filenames[ifile], pixelmask[*,indx], exten_no=2
-;   endfor
 
    return
 end
