@@ -12,7 +12,9 @@ SPREDUCE1D: Search for stars at velocities to +/- 1200 km/s (was 600 km/s).
             No longer identify objects as UNKNOWN, but rather set bits
               in a ZWARNING flag.
             Add outputs ZWARNING, SN_MEDIAN, FRACNSIGMA,
-              COUNTS_SPECTRO, COUNTS_SYNTH, COUNTS_SKY (not used yet).
+              COUNTS_SPECTRO, COUNTS_SYNTH, COUNTS_SKY (not used yet),
+              VDISP, VDISP_ERR.
+            Compute velocity dispersions using real-space method (VDISPFIT).
 TELLURIC_CORR: If a telluric star is deemded bad, then reject all of
             its FITFLUX pixels from the global fit.  Previously, we were
             only rejecting the pixels INDT, but still allowing bad continuum
@@ -21,6 +23,7 @@ YANNY_PAR (in idlutils): If several lines have the same keyword name,
             then return all of those values as an array.  This makes this
             routine backwards-compatable with Yanny files written previously
             with SPPLAN2D.
+ZFIND: Get rid of SIGMA2,SIGMA2_ERR and add VDISP,VDISP_ERR.
 
 New installation script "evilinstall" in the idlutils product.
 
