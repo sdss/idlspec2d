@@ -6,7 +6,8 @@
 ;   Routine for finding SDSS spectra that match a given RA, DEC.
 ;
 ; CALLING SEQUENCE:
-;   findspec, [ra, dec, infile=, outfile=, slist=, /duplicate, /silent ]
+;   findspec, [ra, dec, infile=, outfile=, searchrad=, slist=, $
+;    /duplicate, /silent ]
 ;
 ; INPUTS:
 ;
@@ -16,6 +17,7 @@
 ;   infile     - Input file with RA, DEC positions, one per line.
 ;                If set, then this over-rides values passed in RA,DEC.
 ;   outfile    - If set, then print matches to this file.
+;   searchrad  - Search radius in degrees; default to 3./3600 (3 arcsec).
 ;   duplicate  - If set, then return multiple matches where the same
 ;                object may be on several plates.  In this case, the
 ;                length of the output list can exceed the length of the
@@ -58,8 +60,8 @@
 ;   15-Feb-2001  Written by David Schlegel, Princeton.
 ;-
 ;------------------------------------------------------------------------------
-pro findspec, ra, dec, infile=infile, outfile=outfile, slist=slist,  $
- duplicate=duplicate, silent=silent
+pro findspec, ra, dec, infile=infile, outfile=outfile, searchrad=searchrad, $
+ slist=slist, duplicate=duplicate, silent=silent
 
    common com_findspec, plist, nlist, minsn
 
@@ -81,13 +83,16 @@ pro findspec, ra, dec, infile=infile, outfile=outfile, slist=slist,  $
       djs_readcol, infile, ra, dec, format='(D,D)'
    endif
 
+   if (NOT keyword_set(searchrad)) then searchrad = 3./3600.
+
    ;----------
    ; Call this routine recursively if RA,DEC are arrays
 
    nvec = n_elements(ra)
    if (nvec GT 1) then begin
       for i=0, nvec-1 do begin
-         findspec, ra[i], dec[i], slist=slist1, duplicate=duplicate, /silent
+         findspec, ra[i], dec[i], searchrad=searchrad, $
+          slist=slist1, duplicate=duplicate, /silent
          if (i EQ 0) then slist = slist1 $
           else slist = [slist, slist1]
       endfor
@@ -104,7 +109,8 @@ pro findspec, ra, dec, infile=infile, outfile=outfile, slist=slist,  $
     'mjd'     , 0L, $
     'fiberid' , 0L, $
     'ra'      , 0.d, $
-    'dec'     , 0.d )
+    'dec'     , 0.d, $
+    'matchrad', 0.0 )
    slist = replicate(slist, nlist)
 
    ;----------
@@ -118,12 +124,13 @@ pro findspec, ra, dec, infile=infile, outfile=outfile, slist=slist,  $
          if (keyword_set(plugmap)) then begin
             objdist = djs_diff_angle(ra, dec, plugmap.ra, plugmap.dec)
             mindist = min(objdist, imin)
-            if (mindist LT 3.0/3600.) then begin
+            if (mindist LT searchrad) then begin
                slist[iplate].plate = plist[iplate].plate
                slist[iplate].mjd = plist[iplate].mjd
                slist[iplate].fiberid = plugmap[imin].fiberid
                slist[iplate].ra = plugmap[imin].ra
                slist[iplate].dec = plugmap[imin].dec
+               slist[iplate].matchrad = mindist
             endif
          endif
       endif
