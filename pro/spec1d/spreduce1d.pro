@@ -77,8 +77,9 @@ plugmap = mrdfits(platefile,4)
 
 
 ; Trim to QSO's only...
-jj = where(chicclass EQ 'QSO')
-;jj = jj[0:9]
+;jj = where(chicclass EQ 'QSO')
+jj = where(chicclass EQ 'GALAXY')
+jj = jj[0:14] ; Trim to first few objects
 chicz = chicz[jj]
 chicclass = chicclass[jj]
 objflux = objflux[*,jj]
@@ -101,8 +102,12 @@ nobj = n_elements(jj)
    ; Assume that the wavelength binning is the same as for the objects
    ; in log-wavelength.
 
-templatefile = 'spTemplateE.dat' ; ???
 templatefile = 'spTemplateQSO.dat' ; ???
+zmin = 0
+zmax = 6000
+templatefile = ['spTemplateE.dat', 'spTemplateS.dat'] ; ???
+zmin = 0
+zmax = 2500
    ntemplate = n_elements(templatefile)
    for it=0, ntemplate-1 do begin
       tfile = filepath(templatefile[it], $
@@ -115,7 +120,6 @@ templatefile = 'spTemplateQSO.dat' ; ???
       ; If not, then re-bin to the same pixel bin size.
       if (abs((tdloglam-objdloglam)/objdloglam) GT 0.01) then begin
          ii = where(tivar GT 0)
-;ii = where(tivar GT 0 AND twave GT 2000)
          tloglam0 = alog10(twave[ii[0]])
          nnewbin = alog10(max(twave[ii]) / min(twave[ii])) / objdloglam
          newloglam = tloglam0 + lindgen(nnewbin) * objdloglam
@@ -136,14 +140,14 @@ temivar = temivar * 0 + 1.0
    ; If the number of spectral pixels is larger in either the objects
    ; or the templates, than increase the smaller's size to agree.
 
-   nptemp = (size(temflux))[0]
-   if (nptemp LT npix) then begin
-      temflux = [temflux, fltarr(npix-nptemp,ntemplate)]
-      temivar = [temivar, fltarr(npix-nptemp,ntemplate)]
-   endif else if (nptemp GT npix) then begin
-      objflux = [objflux, fltarr(nptemp-npix,nobj)]
-      objivar = [objivar, fltarr(nptemp-npix,nobj)]
-   endif
+   nptemp = (size(temflux,/dimens))[0]
+;   if (nptemp LT npix) then begin
+;      temflux = [temflux, fltarr(npix-nptemp,ntemplate)]
+;      temivar = [temivar, fltarr(npix-nptemp,ntemplate)]
+;   endif else if (nptemp GT npix) then begin
+;      objflux = [objflux, fltarr(nptemp-npix,nobj)]
+;      objivar = [objivar, fltarr(nptemp-npix,nobj)]
+;   endif
 
    ;----------
    ; Mask out the object spectra near the 5577 sky line
@@ -159,12 +163,23 @@ temivar = temivar * 0 + 1.0
    ; spectra and each template
 
    zoffset = (objloglam0 - temloglam0) / objdloglam
+zoffset = zoffset[0]
 
    ;----------
    ; Compute the redshifts and velocity dispersions
 
-   vres = veldisp(objflux, objivar, temflux, temivar, $
-    zoffset=zoffset)
+ xvec = findgen(nptemp)/nptemp
+; temflux = [ [temflux], [xvec^0], [xvec^1], [xvec^2], [xvec^3] ]
+ temflux = [ [temflux], [xvec^0], [xvec^1], [xvec^2] ]
+t0 = systime(1)
+   daveres = computez(objflux, objivar, temflux, temivar, zoffset=zoffset, $
+    chi2=chi2best, zmin=zmin, zmax=zmax)
+print,'TIME FOR COMPUTEZ = ', systime(1)-t0
+davez = 10.^(objdloglam * daveres) - 1.
+print,[transpose(chicz),transpose(davez)]
+
+;   vres = veldisp(objflux, objivar, temflux, temivar, $
+;    zoffset=zoffset)
 vres1 = vres ; backup copy
 
    ; Convert redshift (and error) from pixels to the conventional dimensionless
@@ -184,12 +199,27 @@ vres1 = vres ; backup copy
    ; Write the output file
 
 stop
-splot, chicz, vres.z,ps=4,symz=0.4
-soplot,[0,2],[0,2]
-splot, chicz, (vres.z-chicz)*3e5,ps=4,symz=0.4,yr=[-1,1]*500,xr=[-0.1,0.6]
-j=where( abs(vres.z-chicz)*3e5 LT 400 )
-print,djsig((vres.z-chicz)[j]*3e5)
-print,n_elements(j)/640.
+
+set_plot,'ps'
+device,file='qsoz-306a.ps'
+djs_plot, chicz, davez,ps=4,xr=[0,3],yr=[0,3], charsize=2, $
+ xtitle='Chicago-z',ytitle='z from \chi^2-min',title='QSOs on plate 306'
+oplot,[0,3],[0,3]
+device,/close
+set_plot,'x'
+
+set_plot,'ps'
+device,file='qsoz-306b.ps'
+djs_plot, chicz, ((davez-chicz)*3e5 > (-5800))<5800, $
+ ps=4,yr=[-1,1]*6000,xr=[0,3], charsize=2, $
+ xtitle='Chicago-z',ytitle='\Delta z from \chi^2-min',title='QSOs on plate 306'
+oplot,[0,3],[0,0]
+device,/close
+set_plot,'x'
+
+j=where( abs(davez-chicz)*3e5 LT 4000 )
+print,djsig((davez-chicz)[j]*3e5)
+print,n_elements(j)/float(nobj)
 
    mwrfits, result, outfile, /create
 
