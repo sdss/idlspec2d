@@ -307,3 +307,20 @@ ophdrfix sdR-??-0001346[0-9] FLAVOR   "'unknown'"
 ophdrfix sdR-??-0001347[0-9] FLAVOR   "'unknown'"
 ophdrfix sdR-??-0001348[0-6] FLAVOR   "'unknown'"
 
+# All these data on plate 574 on MJD 52336 are bad due to spectrograph
+# mechanicals problems.
+ophdrfix sdR-??-0001357[3-9] FLAVOR   "'unknown'"
+
+# All these data on plate 778 on MJD 52336 are bad due to spectrograph
+# mechanicals problems.
+ophdrfix sdR-??-0001358[0-9] FLAVOR   "'unknown'"
+
+# Wrong exposure time (0 sec instead of approx. 2460 sec) for plate 574
+# on MJD 52337.  This probably has something to do with the spectrograph
+# mechanicals problems opening and closing shutters on this night and
+# the previous night.
+ophdrfix sdR-??-00013631 EXPTIME   2460
+
+# These are bad test data taken on MJD 52337 using plate 778.
+ophdrfix sdR-??-0001362[4-5] FLAVOR   "'unknown'"
+
