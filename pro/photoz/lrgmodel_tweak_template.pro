@@ -6,8 +6,8 @@
 ;   Compute the corrections to the input LRG template used for LRG_PHOTOZ().
 ;
 ; CALLING SEQUENCE:
-;   lrgmodel_tweak_template, pflux, pflux_ivar, zz, $
-;    [ maxiter=, ageguess=, metalguess=, agerange=, metalrange=, coeff=, $
+;   lrgmodel_tweak_template, pflux, pflux_ivar, zz, [ weights=, $
+;    maxiter=, ageguess=, metalguess=, agerange=, metalrange=, coeff=, $
 ;     _EXTRA= ]
 ;
 ; INPUTS:
@@ -16,6 +16,8 @@
 ;   zz             - Spectroscopic redshifts [NOBJ]
 ;
 ; OPTIONAL INPUTS:
+;   weights        - Weights for each object in the minimization
+;                    (this is multiplied by the chi^2 of each point)
 ;   maxiter        - Maximum number of iterations; default to 40
 ;   ageguess       - Starting guess for AGEBURST; default to 2.5 Gyr
 ;   metalguess     - Starting guess for ZMETAL; default to Z=0.2
@@ -56,7 +58,8 @@ forward_function mpfit, lrgmodel_tweak_fn
 ; Return a vector of all the chi values
 function lrgmodel_tweak_fn, coeff
 
-   common com_lrgmodel_tweak_fluxes, pflux, pflux_ivar, zz, KeywordsForPhotoz
+   common com_lrgmodel_tweak_fluxes, pflux, pflux_ivar, zz, $
+    sqweights, KeywordsForPhotoz
 
    ; Compute the best-fit redshift for each object
    zfit = lrgmodel_photoz(pflux, pflux_ivar, $
@@ -65,15 +68,17 @@ function lrgmodel_tweak_fn, coeff
 
    ; Return the redshift errors as the "chi" values
    chivec = zfit - zz
+   if (keyword_set(sqweights)) then chivec = chivec * sqweights
 
    return, chivec
 end
 ;------------------------------------------------------------------------------
-pro lrgmodel_tweak_template, pflux1, pflux_ivar1, zz1, $
+pro lrgmodel_tweak_template, pflux1, pflux_ivar1, zz1, weights=weights, $
  maxiter=maxiter, ageguess=ageguess1, metalguess=metalguess1, $
  agerange=agerange1, metalrange=metalrange1, _EXTRA=EXTRA
 
-   common com_lrgmodel_tweak_fluxes, pflux, pflux_ivar, zz, KeywordsForPhotoz
+   common com_lrgmodel_tweak_fluxes, pflux, pflux_ivar, zz, $
+    sqweights, KeywordsForPhotoz
 
    ; Set defaults
    if (NOT keyword_set(maxiter)) then maxiter = 40
@@ -90,6 +95,7 @@ pro lrgmodel_tweak_template, pflux1, pflux_ivar1, zz1, $
 
    ; Set variables in common blocks
    zz = zz1
+   if (keyword_set(weights)) then sqweights = sqrt(weights)
 
    ; Discard any objects where the baseline photo-z is discrepent by
    ; more than 0.10, and discard any low-redshift objects with z > 0.10.
