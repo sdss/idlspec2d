@@ -63,6 +63,7 @@
 ;
 ; PROCEDURES CALLED:
 ;   find_nminima()
+;   splog
 ;
 ; INTERNAL SUPPORT ROUTINES:
 ;   create_zans()
@@ -136,7 +137,7 @@ function zcompute, objflux, objivar, starflux, starmask, nfind=nfind, $
           doplot=doplot, debug=debug)
          if (iobj EQ 0) then zans = zans1 $
           else zans = [[zans], [zans1]]
-         print, 'Object #', iobj, '  Elap time=', systime(1)-t0, $
+         splog, 'Object #', iobj, '  Elap time=', systime(1)-t0, $
           ' (sec)  z=', zans1[0].z, ' (pix)'
       endfor
       return, zans
