@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   qaplot_skyline, lwave, obj, objivar, objsub, objsubivar, plugsort, wset, $
-;    [fibermask=, dwave=, filename= ]
+;    [fibermask=, dwave=, title= ]
 ;
 ; INPUTS:
 ;   lwave      -
@@ -22,7 +22,7 @@
 ;   fibermask  - Fiber status bits, set nonzero for bad status [NFIBER]
 ;   dwave      - Half-width about LWAVE for fitting sky line;
 ;                default to 5.0 Ang
-;   filename   - File name to use for TITLE of plot
+;   titel      - File name to use for TITLE of plot
 ;
 ; OUTPUTS:
 ;
@@ -49,9 +49,9 @@
 ;------------------------------------------------------------------------------
 
 pro qaplot_skyline, lwave, obj, objivar, objsub, objsubivar, plugsort, wset, $
-   iskies, fibermask=fibermask, dwave=dwave, filename=filename
+   iskies, fibermask=fibermask, dwave=dwave, title=title
 
-   if (NOT keyword_set(filename)) then filename = ''
+   if (NOT keyword_set(title)) then title = ''
    if (NOT keyword_set(lwave)) then return
    if (NOT keyword_set(dwave)) then dwave = 5.0
 
@@ -121,7 +121,6 @@ pro qaplot_skyline, lwave, obj, objivar, objsub, objsubivar, plugsort, wset, $
 
    fibernum = indgen(nrow) + 1
    yrange = lmean+[-7,7]*lsig
-   title = string(format='(f7.1,a)',lwave,' Skyline for '+filename)
 
    plot, fibernum, lflux, psym=1, $
     xrange=[0,nrow], xstyle=1, yrange=yrange, $
