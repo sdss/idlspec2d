@@ -267,6 +267,11 @@ objmask = 0 ; Free memory
 ; DO WE NEED REJECTION HERE OF BAD POINTS OR BAD INPUT SPECTRA ???
    pcaflux = pca_solve(allflux, allivar, $
     niter=10, nkeep=1, usemask=usemask, eigenval=eigenval, acoeff=acoeff)
+   maxmask = max(usemask)
+
+   if (maxmask LE 3) then minuse = 1 $
+    else if (maxmask EQ 4) then minuse = 2 $
+    else minuse = 3
 
    ;----------
    ; Determine the reference (r-band) magnitude for the PCA spectrum.
@@ -290,7 +295,13 @@ objmask = 0 ; Free memory
 
       i2 = i1 + nnew[ifile] - 1
 
-      calibset = fluxfit(allloglam[i1:i2], pcaflux[i1:i2], $
+      ;----------
+      ; Find indices of good data points for this eigen-spectrum
+
+      indx = lindgen(i2-i1+1) + i1
+      indx = indx[ where(usemask[indx] GE minuse) ]
+
+      calibset = fluxfit(allloglam[indx], pcaflux[indx], $
        color=colors[ifile], refmag=refmag)
 
       if colors[ifile] EQ 'r' then rset = calibset
@@ -300,8 +311,8 @@ objmask = 0 ; Free memory
       ; Create header cards describing the fit range
 
       hdr = ['']
-      wavemin = 10.^min(allloglam[i1:i2])
-      wavemax = 10.^max(allloglam[i1:i2])
+      wavemin = 10.^min(allloglam[indx])
+      wavemax = 10.^max(allloglam[indx])
       sxaddpar, hdr, 'WAVEMIN', wavemin
       sxaddpar, hdr, 'WAVEMAX', wavemax
 
