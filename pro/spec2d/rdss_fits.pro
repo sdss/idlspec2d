@@ -57,17 +57,19 @@ function rdss_fits, filename, hdr, nofloat=nofloat, _EXTRA=KeywordsForReadfits
    if (qsimple GE 0 AND ct1 NE 0) then begin
 
       bitpix = sxpar(hdr, 'BITPIX')
-      sxdelpar, hdr, 'UNSIGNED' ; Remove UNSIGNED keyword
       sxdelpar, hdr, ' '        ; Remove blank header cards
 
       ; Convert from unsigned 16-bit integers to floats
       if (NOT keyword_set(nofloat)) then begin
-        print,'converting from U16...'
-        ineg = where(image LT 0)
-        image = temporary(image) + 0.0
-        image[ineg] = 2.0^bitpix + image[ineg]
-	return, image
-      endif else return, uint(image)
+         print, 'Converting from U16...'
+         sxaddpar, hdr, 'SIMPLE', 'T', 'FITS STANDARD'
+         sxdelpar, hdr, 'UNSIGNED' ; Remove UNSIGNED keyword
+         ineg = where(image LT 0)
+         image = temporary(image) + 0.0
+         image[ineg] = 2.0^bitpix + image[ineg]
+      endif else begin
+         image = temporary( uint(image) )
+      endelse
 
    endif
 
