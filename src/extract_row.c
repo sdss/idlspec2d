@@ -31,6 +31,7 @@ IDL_LONG extract_row
    float     * whoppingcen;
    IDL_LONG    iy;
    IDL_LONG    whoppingct;
+   float       whoppingsigma; 	        /* Whopping sigma width */
    IDL_LONG    squashprofile;
    IDL_LONG    retval = 1;
    IDL_LONG    bad;
@@ -43,8 +44,10 @@ IDL_LONG extract_row
    float       sigmal = 5.0; 	/* set limits of profile influence   */
    float       x2; 	/* Top Chebyshev x limit */
    float       x1; 	/* Lower Chebyshev x limit  */
-   float       wsigma = 25.0; 	/* Whopping sigma width */
-   IDL_LONG    wPoly; 	/* Whopping sigma width */
+   IDL_LONG    wPoly; 	/* Number of coefficients nPoly + whopping terms */
+   float       reject1, reject2;  /* profile area rejection thresholds */
+   IDL_LONG  * partialreject;   /* Mask set to 1 if trace meets reject1 */
+   IDL_LONG  * fullreject;      /* Mask set to 1 if trace meets reject2 */
 
    IDL_LONG    i,j,k,l;
    IDL_LONG    length;
@@ -70,10 +73,22 @@ IDL_LONG extract_row
    sigma  = (float *)argv[argct++];
 
    proftype = *((IDL_LONG *)argv[argct++]);
+
+   /*  Reject 1 and 2 are the two members of a float array  */
+   reject1 = ((float *)argv[argct])[0];
+   reject2 = ((float *)argv[argct++])[1];
+
+   /*  These are two arrays which are set if pixels are partially,
+          or fully rejected     */
+
+   partialreject = (IDL_LONG *)argv[argct++];
+   fullreject    = (IDL_LONG *)argv[argct++];
+
    calcCovar = *((IDL_LONG *)argv[argct++]);
    squashprofile = *((IDL_LONG *)argv[argct++]);
    whoppingcen = (float *)argv[argct++];
    whoppingct = *((IDL_LONG *)argv[argct++]);
+   whoppingsigma = *((float *)argv[argct++]);
    nCoeff = *((IDL_LONG *)argv[argct++]);
    ma     = *((IDL_LONG *)argv[argct++]);
    ans    = (float *)argv[argct++];
@@ -162,9 +177,10 @@ IDL_LONG extract_row
 /*
 //  Whopping profile has somewhere near 25 pixel sigma
 //	*/
-   fillWhopping(&apoly[nPoly], x, nx, whoppingct, whoppingcen, wsigma);
+   fillWhopping(&apoly[nPoly], x, nx, whoppingct, whoppingcen, whoppingsigma);
 
-   CheckRowFibers(aprofile, xmin, xmax, nTrace, nCoeff, ans, ia, invvar);
+   CheckRowFibers(aprofile, xmin, xmax, nTrace, nCoeff, ans, ia, invvar, 
+                    reject1, reject2, partialreject, fullreject);
 
 /* Subtract out fixed variables first */
 
@@ -697,7 +713,8 @@ void subtractPoly(float *y, IDL_LONG nx, IDL_LONG nPoly, float **apoly,
 }
            
 void CheckRowFibers(float **abig, IDL_LONG *xmin, IDL_LONG *xmax, 
-      IDL_LONG nTrace, IDL_LONG nCoeff, float *a, IDL_LONG *ia, float *invvar) 
+      IDL_LONG nTrace, IDL_LONG nCoeff, float *a, IDL_LONG *ia, float *invvar,
+      float reject1, float reject2, IDL_LONG *partial, IDL_LONG *full) 
 {
 
 	IDL_LONG i,j,k,l,m;
@@ -707,7 +724,8 @@ void CheckRowFibers(float **abig, IDL_LONG *xmin, IDL_LONG *xmax,
 	   total = 0.0;
 	   for (k=xmin[i],m=0; k<=xmax[i]; k++,m++)
 	      if (invvar[k] > 0.0) total += abig[i*nCoeff][m];
-	   if (total < 0.8) {
+	   if (total < reject1) {
+              partial[i] = 1;
               for(j=nCoeff-1,l=j+i*nCoeff;j>=1;j--,l--) 
 	         if (ia[l]) {
 	            ia[l] = 0;
@@ -716,7 +734,8 @@ void CheckRowFibers(float **abig, IDL_LONG *xmin, IDL_LONG *xmax,
                     (int) i, (int) j,total);   */
                     }
                  }
-	   if (total < 0.4) {
+	   if (total < reject2) {
+              full[i] = 1;
               j = 0;
               l=i*nCoeff;
 	      if (ia[l]) {

@@ -28,7 +28,8 @@ void subtractProfile(float *y, IDL_LONG nx, IDL_LONG *xmin,
 void subtractPoly(float *y, IDL_LONG nx, IDL_LONG nPoly, float **apoly,
         IDL_LONG *ia, float *a);
 void CheckRowFibers(float **abig, IDL_LONG *xmin, IDL_LONG *xmax, 
-      IDL_LONG nTrace, IDL_LONG nCoeff, float *a, IDL_LONG *ia, float *invvar);
+      IDL_LONG nTrace, IDL_LONG nCoeff, float *a, IDL_LONG *ia, float *invvar,
+      float reject1, float reject2, IDL_LONG *, IDL_LONG *);
 void CheckMultiRowFibers(float **abig, IDL_LONG *xmin, IDL_LONG *xmax,
       IDL_LONG nTrace, IDL_LONG nCoeff, float *a, IDL_LONG *ia, float *invvar,
       IDL_LONG nsingle, IDL_LONG multirow);
