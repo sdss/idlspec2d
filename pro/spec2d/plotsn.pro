@@ -6,7 +6,7 @@
 ;   Plot S/N and residuals in up to 3 bands
 ;
 ; CALLING SEQUENCE:
-;   plotsn, sn, plugmap, bands=bands, title=title
+;   plotsn, sn, plugmap, [ bands=, title=, plotfile= ]
 ;
 ; INPUTS:
 ;   sn         - 2d S/N array [nbands, nfibers]
@@ -15,6 +15,7 @@
 ; OPTIONAL KEYWORDS:
 ;   bands      - Label of each band 
 ;   title      - Add title to top of plot
+;   plotfile   - Optional plot file
 ;
 ; OUTPUTS:
 ;
@@ -33,9 +34,17 @@
 ;   15-Apr-2000  Written by S. Burles, FNAL
 ;-
 ;------------------------------------------------------------------------------
-pro plotsn, sn, plug, bands=bands, title=title
+pro plotsn, sn, plug, bands=bands, title=title, plotfile=plotfile
 
    if (NOT keyword_set(bands)) then bands=[1, 2, 3]
+
+   ;----------
+   ; Close plot file
+
+   if (keyword_set(plotfile)) then begin
+      set_plot, 'ps'
+      device, filename=plotfile, /color
+   endif
 
    bandnames = ["u'","g'","r'","i'","z'"]
    slopelabel = " * "+bandnames
@@ -106,7 +115,7 @@ pro plotsn, sn, plug, bands=bands, title=title
       djs_oplot, xfit, 10^poly(xfit, fiducialfits[*,bands[i]]), $
            color='blue', thick=5
       if (i EQ 0 AND keyword_set(title)) then $
-         xyouts, minmag+0.5, 110.0, title, charsize=2.0
+         xyouts, minmag+0.5, 110.0, title, charsize=1.2
 
       if (s1[0] NE -1) then djs_oplot, mag[s1], snc[s1] > 0.9, $
            ps=1, syms=0.7, color='red'
@@ -116,7 +125,7 @@ pro plotsn, sn, plug, bands=bands, title=title
            a, slopelabel[bands[i]])
 
       if (size(sigma, /tname) NE 'UNDEFINED') then $
-      xyouts, minmag+0.5, 2.0, string(format='(a,f5.3)','Deviation: ', sigma)
+      xyouts, minmag+0.5, 2.0, string(format='(a,f4.2)','Stdev=', sigma)
 
       djs_xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.6], $
          10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.94], $
@@ -171,5 +180,13 @@ pro plotsn, sn, plug, bands=bands, title=title
 
   !p.multi  = oldmulti
 
-return
+   ;----------
+   ; Close plot file
+
+   if (keyword_set(plotfile)) then begin
+      device, /close
+      set_plot, 'x'
+   endif
+
+   return
 end
