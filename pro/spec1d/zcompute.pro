@@ -1,0 +1,254 @@
+;+
+; NAME:
+;   zcompute
+;
+; PURPOSE:
+;   Compute relative redshift of object(s) vs. eigen-templates.
+;
+; CALLING SEQUENCE:
+;   zans = zcompute(objflux, objivar, starflux, [starmask, nfind=, $
+;    poffset=, pspace=, pmin=, pmax=, mindof=, width=, minsep= ]
+;
+; INPUTS:
+;   objflux    - Object fluxes [NPIXOBJ,NOBJ]
+;   objivar    - Object inverse variances [NPIXOBJ,NOBJ]
+;   starflux   - Eigen-template fluxes [NPIXSTAR,NTEMPLATE]
+;
+; OPTIONAL INPUTS:
+;   starmask   - Eigen-template mask; 0=bad, 1=good [NPIXSTAR]
+;   nfind      - Number of solutions to find per object; default to 1.
+;   poffset    - Offset between all objects and templates, in pixels.
+;                A value of 10 indicates that STARFLUX begins ten pixels
+;                after OBJFLUX, i.e. OBJFLUX[i+10] = STARFLUX[i] for the
+;                case when the relative redshift should be zero.  If the
+;                wavelength coverage of the templates is larger, then the
+;                value of ZOFFSET will always be negative.
+;   pspace     - The spacing in redshifts to consider; default to 1 [pixels].
+;   pmin       - The smallest redshift to consider [pixels].
+;   pmax       - The largest redshift to consider [pixels].
+;   mindof     - Minimum number of degrees of freedom for a valid fit.
+;   width      - Parameter for FIND_NPEAKS(); default to 3 * PSPACE.
+;   minsep     - Parameter for FIND_NPEAKS()
+;
+; OUTPUTS:
+;   zans       - Output structure [NOBJECT,NFIND] with the following elements:
+;                z : The relative redshift.
+;                z_err : Error in the redshift, based upon the local quadratic
+;                        fit to the chi^2 minimum. 
+;                chi2 : Fit value for the best (minimum) chi^2
+;                dof : Number of degrees of freedom, equal to the number of
+;                      pixels in common between the object and templates
+;                      minus the number of templates.
+;                theta : Mixing angles [NTEMPLATE].  These are computed at the
+;                        nearest integral redshift, e.g. at ROUND(ZOFFSET).
+;
+; COMMENTS:
+;   Fits are done to chi^2/DOF, not to chi^2.
+;
+; EXAMPLES:
+;
+; BUGS:
+;
+; DATA FILES:
+;   $IDLSPEC2D_DIR/etc/TEMPLATEFILES
+;
+; PROCEDURES CALLED:
+;   find_npeaks()
+;
+; INTERNAL SUPPORT ROUTINES:
+;   create_zans()
+;
+; REVISION HISTORY:
+;   10-Jul-2000  Written by D. Schlegel, Princeton
+;------------------------------------------------------------------------------
+function computechi2, objflux, sqivar, starflux, $
+ acoeff=acoeff, dof=dof, yfit=yfit
+
+   ndim = size(starflux, /n_dimen)
+   if (ndim EQ 1) then nstar = 1 $
+    else nstar = (size(starflux, /dimens))[1]
+
+   bvec = objflux * sqivar
+   mmatrix = starflux
+   for i=0L, nstar-1 do $
+    mmatrix[*,i] = mmatrix[*,i] * sqivar
+   mmatrixt = transpose( mmatrix )
+   mm = mmatrixt # mmatrix
+
+   ; Use SVD to invert the matrix
+;   mmi = invert(mm, /double)
+   if (nstar EQ 1) then begin
+      mmi = 1.0 / mm
+   endif else begin
+      svdc, mm, ww, uu, vv, /double
+      mmi = 0 * vv
+      for i=0L, nstar-1 do mmi[i,*] = vv[i,*] / ww[i]
+      mmi = mmi ## transpose(uu)
+   endelse
+
+   acoeff = mmi # (mmatrixt # bvec)
+   chi2 = total( (mmatrix # acoeff - bvec)^2 )
+
+   if (arg_present(yfit)) then $
+    yfit = acoeff ## starflux
+;    yfit = transpose(acoeff # mmatrixt) / sqivar
+   if (arg_present(dof)) then $
+    dof = total(sqivar NE 0) - nstar
+
+   return, chi2
+end
+
+;------------------------------------------------------------------------------
+; Create outuput structure
+function create_zans, nstar, nfind
+
+   zans1 = create_struct( $
+    name = 'ZANS'+strtrim(string(nstar),1), $
+    'z'     , 0.0, $
+    'z_err' , 0.0, $
+    'chi2'  , 0.0, $
+    'dof'   ,  0L, $
+    'theta' , fltarr(nstar) )
+
+   return, replicate(zans1, nfind)
+end
+
+;------------------------------------------------------------------------------
+function zcompute, objflux, objivar, starflux, starmask, nfind=nfind, $
+ poffset=poffset, pspace=pspace, pmin=pmin, pmax=pmax, $
+ mindof=mindof, width=width, minsep=minsep
+
+   if (NOT keyword_set(nfind)) then nfind = 1
+   if (NOT keyword_set(width)) then width = 3 * pspace
+
+   ;---------------------------------------------------------------------------
+   ; Check dimensions of object vectors
+
+   ndim = size(objflux, /n_dimen)
+   dims = size(objflux, /dimens)
+   npixobj = dims[0]
+   if (ndim EQ 1) then nobj = 1 $
+    else if (ndim EQ 2) then nobj = dims[1] $
+    else message, 'OBJFLUX is neither 1-D or 2-D'
+
+   if total(abs(size(objflux, /dimens)-size(objivar, /dimens))) NE 0 $
+    OR size(objflux, /n_dimen) NE size(objivar, /n_dimen) THEN  $
+    message, 'Dimensions of OBJFLUX and OBJIVAR do not match'
+
+   ;---------------------------------------------------------------------------
+   ; If multiple object vectors exist, then call this routine recursively.
+
+   if (nobj GT 1) then begin
+      t0 = systime(1)
+      for iobj=0L, nobj-1 do begin
+         zans1 = zcompute(objflux[*,iobj], objivar[*,iobj], $
+          starflux, starmask, nfind=nfind, $
+          poffset=poffset, pspace=pspace, pmin=pmin, pmax=pmax, $
+          mindof=mindof, width=width, minsep=minsep)
+         if (iobj EQ 0) then zans = zans1 $
+          else zans = [[zans], [zans1]]
+         print, 'Object #', iobj, '  Elap time=', systime(1)-t0, $
+          ' (sec)  z=', zans1[0].z, ' (pix)'
+      endfor
+      return, zans
+   endif
+
+   ;---------------------------------------------------------------------------
+
+   if (NOT keyword_set(mindof)) then mindof = 10
+   if (NOT keyword_set(width)) then width = 3
+   if (NOT keyword_set(minsep)) then minsep = 3
+
+   ndim = size(starflux, /n_dimen)
+   dims = size(starflux, /dimens)
+   npixstar = dims[0]
+   if (ndim EQ 1) then nstar = 1 $
+    else if (ndim EQ 2) then nstar = dims[1] $
+    else message, 'STARFLUX is neither 1-D or 2-D'
+
+   if (NOT keyword_set(starmask)) then begin
+      starmask = bytarr(npixstar) + 1
+   endif else begin
+      if (n_elements(starmask) NE npixstar) then $
+       message, 'Dimensions of STARFLUX and STARMASK do not match'
+   endelse
+
+   if (n_elements(poffset) EQ 0) then poffset = 0
+   if (n_elements(poffset) GT 1) then $
+    message, 'ZOFFSET must be a scalar'
+   pixoffset = round(poffset)
+
+   if (n_elements(pmin) EQ 0) then $
+    pmin = -2 * ((npixobj < npixstar) + 1) + pixoffset
+   if (n_elements(pmax) EQ 0) then $
+    pmax = pmin + 2 * ((npixobj < npixstar) - 1)
+   if (NOT keyword_set(pspace)) then pspace = 1
+
+   if (n_elements(pmin) GT 1) then $
+    message, 'ZMIN must be a scalar'
+   if (n_elements(pmax) GT 1) then $
+    message, 'ZMAX must be a scalar'
+   if (pmin GT pmax) then $
+    message, 'ZMAX must be greater than or equal to ZMIN'
+
+   nlag = ((pmax - pmin + 1) / pspace) > 1
+   lags = - lindgen(nlag) * pspace + pixoffset - long(pmin) ; must be integers
+
+   chi2arr = fltarr(nlag)
+   dofarr = fltarr(nlag)
+   thetaarr = fltarr(nstar,nlag)
+   zans = create_zans(nstar, nfind)
+
+   ;---------------------------------------------------------------------------
+
+   sqivar = sqrt(objivar)
+   objmask = objivar NE 0
+
+   for ilag=0L, nlag-1 do begin
+      j1 = lags[ilag] < (npixstar-1)
+      if (j1 LT 0) then i1 = -j1 $
+       else i1 = 0
+      j1 = j1 > 0
+      j2 = npixstar-1 < (npixobj+j1-i1-1)
+      i2 = i1 + j2 - j1
+      chi2arr[ilag] = computechi2( objflux[i1:i2], $
+       sqivar[i1:i2] * starmask[j1:j2], starflux[j1:j2,*], $
+       acoeff=acoeff, dof=dof)
+      dofarr[ilag] = dof
+      thetaarr[*,ilag] = acoeff
+
+      ; Burles counter of lag number...
+      print, format='("Lag ",i5," of ",i5,a1,$)', $
+       ilag, nlag, string(13b)
+   endfor
+
+   ;-----
+   ; Fit this chi2 minimum with a parabola
+
+   indx = where(dofarr GT mindof, ct)
+   if (ct GT width) then begin
+      xpeak1 = find_npeaks(-chi2arr[indx]/dofarr[indx], lags[indx], $
+       nfind=nfind, minsep=minsep, width=width, $
+       ypeak=ypeak1, xerr=xerr1, npeak=npeak)
+      zans[0:npeak-1].z = poffset - xpeak1
+      zans[0:npeak-1].z_err = xerr1
+      zans[0:npeak-1].chi2 = -ypeak1
+      for ipeak=0L, npeak-1 do begin
+         junk = min(abs(lags-xpeak1[ipeak]), ilag)
+         zans[ipeak].dof = dofarr[ilag]
+         zans[ipeak].theta = thetaarr[*,ilag]
+      endfor
+      zans[0:npeak-1].chi2 = zans[0:npeak-1].chi2 * zans[0:npeak-1].dof
+   endif else if (ct GT 1) then begin
+      zans[0].chi2 = min(-chi2arr[indx]/dofarr[indx], ilag)
+      zans[0].z = poffset - lags[ilag]
+      zans[0].z_err = 0
+      zans[0].dof = dofarr[ilag]
+      zans[0].chi2 = zans[0].chi2 * zans[0].dof
+      zans[0].theta = thetaarr[*,ilag]
+   endif
+
+stop
+   return, zans
+end
+;------------------------------------------------------------------------------
