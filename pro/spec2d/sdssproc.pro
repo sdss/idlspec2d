@@ -72,6 +72,7 @@
 ;   djs_filepath()
 ;   djs_iterstat
 ;   fileandpath()
+;   findopfile()
 ;   fits_wait()
 ;   headfits()
 ;   idlspec2d_version()
@@ -89,7 +90,6 @@
 ;   yanny_read
 ;
 ; INTERNAL SUPPORT ROUTINES:
-;   findopfile()
 ;   make_badcolumn_mask()
 ;
 ; DATA FILES:
@@ -125,55 +125,9 @@
 ;                since the counting got off by one on MJD=51882.
 ;-
 ;------------------------------------------------------------------------------
-function findopfile, expres, mjd, indir, abort_notfound=abort_notfound
-
-   files = findfile(filepath(expres, root_dir=indir), count=nfile)
-   if (nfile EQ 0) then begin
-      if (keyword_set(abort_notfound)) then $
-       message, 'Cannot find opFile '+expres $
-      else $
-       return, ''
-   endif
-
-   mjdlist = lonarr(nfile)
-   for i=0, nfile-1 do begin
-      thisfile = fileandpath(files[i])
-; Change below to select which file to use based upon the MJD in
-; the file name rather than the MJD in the header of a Yanny param file.
-;      if (strmid(thisfile, strpos(thisfile, '.')) EQ '.par') then begin
-;         ; Get the MJD from the header of the Yanny file
-;         yanny_read, files[i], hdr=hdr
-;         mjdlist[i] = long(yanny_par(hdr, 'mjd'))
-;      endif else begin
-         ; Get the MJD from the file name; use the 5 digits after
-         ; the first minus sign.  Prepend the '0' below to avoid triggering
-         ; an IDL "Type conversion error".
-         mjdlist[i] = long( '0'+strmid(thisfile, strpos(thisfile,'-')+1,5) )
-;      endelse
-   endfor
-
-   ; Sort the files by MJD in descending order
-   isort = reverse(sort(mjdlist))
-   mjdlist = mjdlist[isort]
-   files = files[isort]
-
-   ; Select the op file with the same MJD or the closest MJD preceding
-   ; this one.
-   ibest = (where(mjdlist LE mjd))[0]
-   if (ibest[0] EQ -1) then begin
-      splog, 'WARNING: No ' + expres + ' op files appear to have an MJD <= ' $
-       + strtrim(string(mjd),2)
-      ibest = 0
-   endif
-   selectfile = fileandpath(files[ibest])
-   splog, 'Selecting op file ' + selectfile
-
-   return, selectfile
-end
-;------------------------------------------------------------------------------
 ;  Create the bad column mask (1 for a masked pixel) with image size nc,nr
 ;  If the operation doesn't work just return 0 for no masked pixels
-;
+
 function make_badcolumn_mask, bcfile, camrow, camcol, nc=nc, nr=nr
 
    if NOT keyword_set(nc) then nc=2048L
@@ -188,14 +142,14 @@ function make_badcolumn_mask, bcfile, camrow, camcol, nc=nc, nr=nr
    bc = *pdata[0]
    yanny_free, pdata
 
-   bchere = where(bc.camrow EQ camrow AND bc.camcol EQ camcol, nbc)
+   ibc = where(bc.camrow EQ camrow AND bc.camcol EQ camcol, nbc)
    if NOT keyword_set(nbc) then begin
      splog,' Could not parse BC file contents or find corresponding camera' $
                +bcfile
      return, 0
    endif
 
-   bc = bc[ bchere ]
+   bc = bc[ibc]
    bcmask = bytarr(nc, nr)
 
    ; Mask out bad columns
@@ -458,14 +412,14 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    ; Find names of the configurations files
 
    config_dir = filepath('', $
-      root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='examples')
+    root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='examples')
 
    if (NOT keyword_set(configfile)) then $
-       configfile = findopfile('opConfig*par',mjd,config_dir,/abort_notfound)
+    configfile = findopfile('opConfig*par', mjd, config_dir, /abort_notfound)
    if (NOT keyword_set(ecalibfile)) then $
-       ecalibfile = findopfile('opECalib*par',mjd,config_dir,/abort_notfound)
+    ecalibfile = findopfile('opECalib*par', mjd, config_dir, /abort_notfound)
    if (NOT keyword_set(bcfile)) then $
-       bcfile = findopfile('opBC*par',mjd,config_dir,/abort_notfound)
+    bcfile = findopfile('opBC*par', mjd, config_dir, /abort_notfound)
 
    naxis1 = sxpar(hdr,'NAXIS1')
    naxis2 = sxpar(hdr,'NAXIS2')
@@ -569,8 +523,8 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    ; yanny_read, filepath(bcfile, root_dir=config_dir), pdata
    ;  bc = *pdata[0]
    ;  yanny_free, pdata
-   ;  bchere = where(bc.camrow EQ camrow AND bc.camcol EQ camcol, nbc)
-   ;  if (nbc GT 0) then bc = bc[ bchere ]
+   ;  ibc = where(bc.camrow EQ camrow AND bc.camcol EQ camcol, nbc)
+   ;  if (nbc GT 0) then bc = bc[ibc]
 
    ;------
    ; Test to see if the shutter was open during readout if the exposure
