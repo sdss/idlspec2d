@@ -446,6 +446,7 @@ pro spcoadd_v5, spframes, outputname, $
    invcorrimg = 1. / corrimg
    minicorrval = 0.05 / mean(corrimg)
    divideflat, finalflux, invvar=finalivar, invcorrimg, minval=minicorrval
+   divideflat, bestsky, invcorrimg, minval=minicorrval
    finalandmask = finalandmask $
     OR (invcorrimg LE minicorrval) * pixelmask_bits('BADFLUXFACTOR')
    finalormask = finalormask $
@@ -481,11 +482,15 @@ pro spcoadd_v5, spframes, outputname, $
       for i=0L, nthis-1 do begin
          thisflux1 = flux[*,indx[i]]
          thisivar1 = fluxivar[*,indx[i]]
+         thissky1 = skyflux[*,indx[i]]
          j = plugmap[indx[i]].fiberid - 1
          thisicorr = interpol(invcorrimg[*,j], finalwave, wave[*,indx[i]])
          divideflat, thisflux1, invvar=thisivar1, thisicorr, minval=minicorrval
          flux[*,indx[i]] = thisflux1
          fluxivar[*,indx[i]] = thisivar1
+
+         divideflat, thissky1, thisicorr, minval=minicorrval
+         skyflux[*,indx[i]] = thissky1
       endfor
 
       mwrfits, flux[*,indx], thisfile, hdr, /create
