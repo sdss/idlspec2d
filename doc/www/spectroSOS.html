@@ -26,6 +26,7 @@ In this document:
   <LI><A HREF="#version">Backing out to an older version</A>
   <LI><A HREF="#install">Installing a new version</A>
   <LI><A HREF="#howwork">How Son-of-Spectro Works</A>
+  <LI><A HREF="#headers">FITS header cards (and how to change them)</A>
   <LI><A HREF="#outputs">Son-of-Spectro Outputs</A>
   <UL>
      <LI><A HREF="#outputs_table">Tabluated values</A>
@@ -230,6 +231,118 @@ The most recent HTML file has a second copy as the file "logfile-current.html".
 This is the file pointed to by the
 <A HREF="http://sos.apo.nmsu.edu/logfile-current.html">
 SOS web page</A>.
+
+<H2><A NAME="headers">FITS header cards (and how to change them)</A></H2>
+
+<H4><A NAME="headers_required">Required FITS header cards</A></H4>
+
+<P>
+The following FITSheader cards are required to be correct for either
+Son-of-Spectro or Spectro-2D to reduce the data properly:
+<PRE>
+EXPOSURE= Exposure number.  We always override the value of this keyword
+          with the exposure number in the file name.
+CAMERAS = Camera name, e.g. "b1".  We always override the value of this keyword
+          with the exposure number in the file name.
+FLAVOR  = The flavor of the observation, which can be "bias", "dark",
+          "arc", "flat", and "science" or "target".  Files with other
+          flavors, such as "unknown", are not reduced.
+MJD     = MJD of observation, which must agree with the directory in which
+          the file resides, "/data/spectro/$MJD".
+PLATEID = The plate ID, which must match that in the NAME header card.
+NAME    = Plug name, e.g. "0328-52277-01" for plate 328, plugged on 52277
+          with a plugging ID of 01.  We assume that there is a plug-map
+          file at APO with the name "/astrolog/$MJD/plPlugMapM-$NAME.par".
+TAI-BEG = The TAI time for the beginning of the exposure, which is used
+          to compute the airmass and sky-brightness gradients for sky-
+          subtraction.
+EXPTIME = The exposure time, which is used along with TAI-BEG to compute
+          the airmass.  It is also used to determine whether the sky
+          brightness or scattered light is larger than tolerances.
+FFS     = Flat-field screen positions, which should be
+          "0 0 0 0 0 0 0 0" for science exposures (all petals open)
+          "1 1 1 1 1 1 1 1" for flat or arc exposures (all petals closed)
+FF      = Flat-field (quartz) lamp status, which should be
+          "0 0 0 0" for science or arc exposures (all off)
+          "1 1 1 1" for flat exposures (all on)
+NE      = Neon lamp status, which should be
+          "0 0 0 0" for science or flat exposures (all off)
+          "1 1 1 1" for arc exposures (all on)
+HGCD    = HgCd lamp status, which should be
+          "0 0 0 0" for science or flat exposures (all off)
+          "1 1 1 1" for arc exposures (all on)
+</PRE>
+
+<H4><A NAME="headers_informational">Informational FITS header cards</A></H4>
+
+<P>
+The following FITS header cards are informational.  We would very much
+appreciate the observers to correct errors in these keywords so that
+our book-keeping of survey progress is done properly:
+<PRE>
+TILEID  = Tile ID for this plate from the plug-map file
+RA      = Right ascension of telescope boresight (in degrees)
+DEC     = Declination of telescope boresight (in degrees)
+RADEG   = Right ascension of plate center for plug-map file (in degrees)
+DECDEG  = Declination of plate center for plug-map file (in degrees)
+</PRE>
+
+<H4><A NAME="headers_change">How to change FITS header cards</A></H4>
+
+<P>
+Incorrect FITS header cards for the raw spectro sdR files can be
+corrected by adding "ophdrfix" entries in the sdReport file
+"/astrolog/$MJD/sdReport-$MJD.par".
+This structure should have the following definition in the sdReport file:
+<PRE>
+   typedef struct {
+     char fileroot;    # Root of file name, without any ".fit" suffix
+     char keyword;     # Keyword name
+     char value;       # Keyword value (as a string)
+   } ophdrfix;
+</PRE>
+
+<P>
+Following are some examples of what should appear in the sdReport files
+in order to correct faulty headers.  (The typedef struct above must
+also be in the file.)
+<UL>
+<LI>
+Example 1: The exposure time is in the file sdR-b1-00001142.fit should be
+60 seconds:
+<PRE>
+   ophdrfix sdR-b1-00001142 EXPTIME  60
+</PRE>
+<LI>
+Example 2: Exposure number 1234 was bad, and should be given an 'unkown'
+flavor for all cameras:
+<PRE>
+   ophdrfix sdR-??-00001234 FLAVOR  "'unknown'"
+</PRE>
+<LI>
+Example 3: The mapping name for all cameras of exposures 1137-1139
+should be '0198-51433-01':
+<PRE>
+   ophdrfix sdR-??-0000113[7-9] NAME     "'0198-51433-01'"
+</PRE>
+<LI>
+Example 4: Telescope status information is missing for the pre-flat
+exposure 10850:
+<PRE>
+   ophdrfix sdR-??-00010850  FFS   "'1 1 1 1 1 1 1 1'"
+   ophdrfix sdR-??-00010850  FF    "'1 1 1 1 '"
+   ophdrfix sdR-??-00010850  NE    "'0 0 0 0 '"
+   ophdrfix sdR-??-00010850  HGCD  "'0 0 0 0 '"
+</PRE>
+</UL>
+
+<P>
+If you have edited the sdReport file and need to re-reduce an exposure,
+you can do so with the <A HREF="#rereduce">sos_redo</A> command.
+When Son-of-Spectro reads in the raw FITS files, it then patches the
+headers with the information in the ophdrfix entries of the sdReport file.
+But note that the one piece of information that cannot be patched this
+way is MJD, since we need the MJD in order to find the correct sdReport file!!
 
 <H2><A NAME="outputs">Son-of-Spectro Outputs</A></H2>
 
@@ -564,6 +677,10 @@ To re-reduce all exposures for the current night:
 To re-reduce only exposures for plate 666:
 <DL><DD><PRE>
   % ssh sos.apo.nmsu.edu sos_redo plate=666
+</PRE></DD></DL>
+To re-reduce only exposures number 12345:
+<DL><DD><PRE>
+  % ssh sos.apo.nmsu.edu sos_redo expnum=12345
 </PRE></DD></DL>
 
 <P>
