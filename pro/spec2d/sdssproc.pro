@@ -1,49 +1,61 @@
 ;+
-; Convert a raw SDSS spectroscopic image from unsigned 16-bit to float.
-; Also, do a quick-and-dirty overscan-subtraction
 ; NAME:
 ;   sdssproc
 ;
 ; PURPOSE:
-;   Read in Raw SDSS files, and process with opECalib and opConfig.fit
+;   Read in Raw SDSS files, and process with opECalib.par and opConfig.par
 ;
 ; CALLING SEQUENCE:
 ;   sdssproc, infile, [image, invvar, outfile=outfile, varfile=varfile, hdr=hdr,
-;     configfile=configfile, ccdfile=ccdfile]
+;     configfile=configfile, ecalibfile=ecalibfile]
 ;
 ; INPUTS:
 ;   infile     - Raw SDSS frame
-;
-; OUTPUTS:
-;   image      - Processed 2d image
-;   invvar     - associated Inverse Variance
 ;
 ; OPTIONAL KEYWORDS:
 ;   outfile    - Calibrated 2d frame, after processing
 ;   varfile    - Inverse Variance Frame after processing
 ;   hdr        - Header returned in memory
-;   configfile - "opConfig.fit" 
-;   ccdfile    - "opECalib.fit" 
+;   configfile - Default to "opConfig.par" 
+;   ecalibfile - Default to "opECalib.par" 
 ;
+; OUTPUTS:
+;   image      - Processed 2d image
+;   invvar     - associated Inverse Variance
 ;
+; COMMENTS:
+;
+; BUGS:
+;
+; PROCEDURES CALLED:
+;   rdss_fits()
+;   yanny_read
+;
+; REVISION HISTORY:
+;   13-May-1999  Written by Scott Burles & David Schlegel, Apache Point.
+;   08-Sep-1999  Modified to read Yanny param files instead of FITS
+;                versions of the same (DJS).
+;-
+;------------------------------------------------------------------------------
+
 pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
-    hdr=hdr, configfile=configfile, ccdfile=ccdfile 
+    hdr=hdr, configfile=configfile, ecalibfile=ecalibfile 
 
    if (N_params() LT 1) then begin
       print, 'Syntax - sdssproc, infile, [image, invvar, outfile=outfile, varfile=varfile, ' 
-      print, ' hdr=hdr, configfile=configfile, ccdfile=ccdfile]'
+      print, ' hdr=hdr, configfile=configfile, ecalibfile=ecalibfile]'
       return
    endif
-   if (NOT keyword_set(configfile)) then configfile = 'opConfig.fit'
-   if (NOT keyword_set(ccdfile)) then ccdfile = 'opECalib.fit'
+   if (NOT keyword_set(configfile)) then configfile = 'opConfig.par'
+   if (NOT keyword_set(ecalibfile)) then ecalibfile = 'opECalib.par'
    
-   junk = findfile(configfile,count=ct)
-   if (ct EQ 0) then $
+   junk = findfile(configfile, count=ct)
+   if (ct NE 1) then $
     message, 'No configuration file ' + string(configfile)
 
-   junk = findfile(ccdfile,count=ct)
-   if (ct EQ 0) then $
-    message, 'No ECalib file ' + string(ccdfile)
+   junk = findfile(ecalibfile, count=ct)
+   if (ct NE 1) then $
+    message, 'No ECalib file ' + string(ecalibfile)
 
    rawdata = rdss_fits(infile, hdr)
 
@@ -52,17 +64,19 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
 ;      message, 'Expecting 2128x2069, found '+string(cards[0])+','$
 ;               +string(cards[1])
 
+   ; Test that the name of this file is consistent with an SDSS
+   ; spectroscopic image.
    names = str_sep(infile,'/')
    camrow = long( strmid( names[N_elements(names) -1], 4,1 ))
    camcol = long( strmid( names[N_elements(names) -1], 5,1 ))
-
-   if (camrow NE 0) then message, 'not a spectroscopic image'
-   if (camcol LT 1 OR camcol GT 4) then message, 'not a spectroscopic image'
+   if (camrow NE 0) then message, 'Not a spectroscopic image'
+   if (camcol LT 1 OR camcol GT 4) then message, 'Not a spectroscopic image'
  
-;
-;	Read in opConfig.fit
-; 
-   config = mrdfits(configfile, 1, confighdr)
+
+   ; Read in opConfig.par file
+
+   yanny_read, configfile, pdata
+   config = *pdata[0]
    config = config[ where(config.camrow EQ camrow AND config.camcol EQ camcol) ]
 
    if (cards[0] NE config.ncols OR cards[1] NE config.nrows) then $
@@ -99,16 +113,13 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
     config.sccdcolsec2, config.sccdcolsec3]
 
    ; Read in ECalib File
-   calib = mrdfits(ccdfile, 1, ccdhdr)
-   calib = calib[ where(calib.camrow EQ camrow AND calib.camcol EQ camcol) ]
+   yanny_read, ecalibfile, pdata
+   ecalib = *pdata[0]
+   ecalib = ecalib[ where(ecalib.camrow EQ camrow AND ecalib.camcol EQ camcol) ]
 
-;   gain = [2.0,2.0,2.0,2.0]
-;
-;	Hard wiring Gain at 2 for now
-;
-   gain = [calib.gain0,calib.gain1,calib.gain2,calib.gain3]
-   readnoiseDN = [calib.readnoiseDN0,calib.readnoiseDN1,calib.readnoiseDN2, $
-    calib.readnoiseDN3]
+   gain = [ecalib.gain0, ecalib.gain1, ecalib.gain2, ecalib.gain3]
+   readnoiseDN = [ecalib.readnoiseDN0, ecalib.readnoiseDN1, $
+    ecalib.readnoiseDN2, ecalib.readnoiseDN3]
 
    ; Construct the final image
    igood = where(qexist)
@@ -148,7 +159,6 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
 		gain[iamp]*readnoiseDN[iamp]
       endif
    endfor
-
 
    if (keyword_set(outfile)) then $
     writefits, outfile, image, hdr
