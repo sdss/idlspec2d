@@ -509,8 +509,8 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
        copy_struct_inx, plugmap, plugmap, index_to=allindx
    endif
    if (q_needwave) then begin
-      allcoeff0 = allcoeff0[allindx]
-      allcoeff1 = allcoeff1[allindx]
+      allcoeff0[allindx] = allcoeff0[*] ; Must de-reference before assignment
+      allcoeff1[allindx] = allcoeff1[*] ; Must de-reference before assignment
    endif
    if (q_tsobj) then begin
       if (keyword_set(tsobj[0])) then $
