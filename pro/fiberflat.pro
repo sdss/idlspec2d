@@ -3,10 +3,11 @@
 ;   fiberflat
 ;
 ; PURPOSE:
+;   Construct the flat-field vectors from an extracted flat-field image.
 ;
 ; CALLING SEQUENCE:
 ;   fflat = fiberflat( flux, fluxivar, wset, [ fibermask=fibermask, $
-;    minval=, ncoeff=, pixspace=, /dospline, nord=, lower=, upper=, /dospline ] )
+;    minval=, ncoeff=, pixspace=, /dospline, nord=, lower=, upper=, /dospline ])
 ;
 ; INPUTS:
 ;   flux       - Array of extracted flux from a flat-field image [Nrow,Ntrace]
@@ -25,7 +26,7 @@
 ;                to splines (using PIXSPACE) rather than to a Legendre
 ;                polynomial (using NCOEFF).  This is **not** recommended.
 ;
-; PARAMTERS FOR SLATEC_SPLINEFIT:
+; PARAMETERS FOR SLATEC_SPLINEFIT:
 ;   nord
 ;   lower
 ;   upper
@@ -51,7 +52,9 @@
 ; PROCEDURES CALLED:
 ;   slatec_bvalu()
 ;   slatec_splinefit()
+;   superflat
 ;   traceset2xy
+;   xy2traceset
 ;
 ; REVISION HISTORY:
 ;   14-Oct-1999  Written by D. Schlegel, APO
@@ -79,71 +82,17 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
    if (ngood EQ 0) then $
     message, 'No good fibers according to FIBERMASK'
 
-;   ; If any flux points have zero or negative flux, set the weight to zero
-;   ibad = where(flux LE 0)
-;   if (ibad[0] NE -1) then fluxivar[ibad] = 0
-
+   ;-----
    ; Compute the wavelengths for all flat vectors from the trace set
+
    traceset2xy, wset, xx, loglam
 
-   ; Determine the range of wavelengths, [LOGMIN,LOGMAX] in common w/all fibers
-   if (loglam[1,0] GT loglam[0,0]) then begin ; Ascending wavelengths
-      logmin = max(loglam[0,igood])
-      logmax = min(loglam[ny-1,igood])
-   endif else begin ; Descending wavelengths
-      logmin = max(loglam[ny-1,igood])
-      logmax = min(loglam[0,igood])
-   endelse
+   ;-----
+   ; Construct the "superflat" vector
 
-   ; Find the approximate scalings between all fibers
-   ; Do this with a straight median value for all wavelengths in common
-   qq = loglam GE logmin AND loglam LE logmax
-   medval = fltarr(ntrace)
-   for i=0, ntrace-1 do $
-    medval[i] = median( flux[where(qq[*,i]),i] )
-   izero = where(medval LE 0)
-   if (izero[0] NE -1) then medval[izero] = 1.0
-
-   ; Create a version of flux (and fluxivar) that has all fibers
-   ; approximately scaled to have a median value of 1
-   scalef = fltarr(ny,ntrace)
-   scalefivar = fltarr(ny,ntrace)
-   for i=0, ntrace-1 do $
-    scalef[*,i] = flux[*,i] / medval[i]
-   for i=0, ntrace-1 do $
-    scalefivar[*,i] = fluxivar[*,i] * (medval[i])^2
-
-   ; Create a "superflat" spectrum, analogous to the "supersky"
-   splog, 'Creating superflat from ', ngood, ' fibers'
-   isort = sort(loglam[*,igood])
-   allwave = (loglam[*,igood])[isort]
-   allflux = (scalef[*,igood])[isort]
-   allivar = (scalefivar[*,igood])[isort]
-   indx = where(allflux GT minval)
-   if (indx[0] EQ -1) then $
-    message, 'No points above MINVAL'
-   afullbkpt = slatec_splinefit(allwave[indx], allflux[indx], acoeff, $
-    maxiter=maxiter, upper=upper, lower=lower, $
-    invvar=allivar[indx], nord=4, nbkpts=ny, mask=mask)
-
+   superflat, flux, fluxivar, wset, afullbkpt, acoeff, $
+    fibermask=fibermask, minval=minval, lower=lower, upper=upper, medval=medval
    fit2  = slatec_bvalu(loglam, afullbkpt, acoeff)
-
-   ;------
-   ; QA plot of superflat
-   ; Plot sampled every 1 Ang
-
-   wmin = fix(10^min(allwave))
-   wmax = ceil(10^max(allwave))
-   plot_lam = wmin + lindgen(wmax-wmin+1)
-   plot_fit  = slatec_bvalu(alog10(plot_lam), afullbkpt, acoeff)
- 
-   djs_plot, plot_lam, plot_fit, xrange=[wmin,wmax], xstyle=1, $
-    xtitle='\lambda [A]', ytitle='Normalized flux', $
-    title='Superflat for ???'
-
-   ; Overplot pixels masked from the fit
-   ii = where(mask EQ 0)
-   djs_oplot, 10^allwave[indx[ii]], allflux[indx[ii]], ps=3, color='red' 
 
    ;------
 
@@ -171,7 +120,9 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
 
          if (ct GT 0) then begin
 
-; Does the following work for either ascending or descending wavelengths???
+            ; The following should work for either ascending or descending
+            ; wavelengths since BKPT is always sorted ascending.
+
             istart = (where(bkpt GT min(loglam[indx,i])))[0]
             istart = (istart - 1) > 0
             iend = (where(bkpt GT max(loglam[indx,i])))[0]
@@ -225,24 +176,12 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
 
    if (igood[0] EQ -1) then message,'All flat fibers have been !!'
  
-   ; Divide fflat by a global median of all fibers
+   ; Divide fflat by a global median of all (good) fibers
    globalmed = median(medval[igood]) ; Global median for all vectors
    fflat = fflat / globalmed 
 
    junk = where(fflat LE 0, nz)
    splog, 'Number of fiberflat points LE 0 = ', nz
-
-; Take out radial dependence...???
-;   fibermed = djs_median(fflat,1)
-;   plot,fibermed,ps=1
-;   if (keyword_set(plugmap)) then begin
-;      ; Fitting out radial dependence
-;      r2 = (plugmap.xFocal^2 + plugmap.yFocal^2)*1.0e-6  ; units m^2
-;      plot,r2,fibermed,ps=1
-;      radialcoeff = polyfitw(r2,fibermed,fibermask,1,radialfit)
-;      for i=0,ntrace-1 do fflat[*,i] = fflat[*,i]/radialfit[i]
-;      splog, radialcoeff
-;   endif
 
    return, fflat
 end
