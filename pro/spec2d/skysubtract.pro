@@ -108,7 +108,7 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    endif
 
    if NOT keyword_set(tai) then airmass = replicate(1.0, nrow) $
-   else airmass = tai2airmass(plugsort.ra, plusort.dec, tai)
+    else airmass = tai2airmass(plugsort.ra, plugsort.dec, tai=tai)
 
    airmass_correction = replicate(1.0,ncol) # airmass
 
