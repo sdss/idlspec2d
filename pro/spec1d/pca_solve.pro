@@ -129,7 +129,7 @@ if (keyword_set(objloglam)) then begin ; ???
    ;----------
    ; Shift each spectra to z=0 and sample at the output wavelengths
 
-   for iobj=0, nobj-1 do begin
+   for iobj=0L, nobj-1 do begin
       indx = where(objloglam[*,iobj*qwavevec] GT 0)
 print,'OBJECT ',iobj
       combine1fiber, objloglam[indx,iobj*qwavevec]-logshift[iobj], $
@@ -150,7 +150,7 @@ endelse
    ; the low-S/N object pixels with the reconstructions.
 
    synwvec = fltarr(nnew) + 1 ; Set to 1 if no data for this wavelength
-   for ipix=0, nnew-1 do begin
+   for ipix=0L, nnew-1 do begin
       indx = where(newivar[ipix,*] NE 0)
       if (indx[0] NE -1) then $
        synwvec[ipix] = djs_mean(newivar[ipix,indx])
@@ -166,7 +166,7 @@ endelse
 ;   iuse = where(normflux GT 0.05 * median(normflux), nuse)
 ;   synflux = fltarr(nnew)
 ;   usemask = lonarr(nnew)
-;   for ipix=0, nnew-1 do begin
+;   for ipix=0L, nnew-1 do begin
 ;      ibad = where(newivar[ipix,iuse] EQ 0, nbad)
 ;      usemask[ipix] = nuse - nbad
 ;      if (nbad LT nuse) then begin
@@ -177,7 +177,7 @@ endelse
 ;      endelse
 ;   endfor
 ;
-;   for iobj=0, nobj-1 do begin
+;   for iobj=0L, nobj-1 do begin
 ;      ibad = where(newivar[*,iobj] EQ 0)
 ;      if (ibad[0] NE -1) then $
 ;       newflux[ibad,iobj] = synflux[ibad] * normflux[iobj]
@@ -223,12 +223,12 @@ endelse
       acoeff = fltarr(nkeep,nobj)
 
       t0=systime(1)
-      for ipiter=0, niter-1 do begin
+      for ipiter=0L, niter-1 do begin
          eigenval = 1 ; Set so that the PCOMP() routine returns this.
          coeff = 1 ; Set so that the PCOMP() routine returns this.
 
          totflux = fltarr(nobj)
-         for iobj=0, nobj-1 do $
+         for iobj=0L, nobj-1 do $
           totflux[iobj] = total(abs(filtflux[*,iobj] - filtflux[0,iobj]))
          igoodobj = where(totflux GT 0, ngoodobj)
          if (ngoodobj EQ nobj) then begin
@@ -246,11 +246,11 @@ endelse
          sqivar = sqrt(maskivar)
          bvec = filtflux * sqivar
          mmatrix = pres[0:nkeep-1,*]
-         for i=0, nkeep-1 do $
+         for i=0L, nkeep-1 do $
           mmatrix[i,*] = mmatrix[i,*] * sqivar
          mmatrixt = transpose(mmatrix)
 
-         for iobj=0, nobj-1 do begin
+         for iobj=0L, nobj-1 do begin
             junk = computechi2(newflux[*,iobj], sqivar[*,iobj], $
              transpose(pres[0:nkeep-1,*]), acoeff=theta)
             synflux = theta # pres[0:nkeep-1,*]
