@@ -6,14 +6,12 @@
 ;   Plot the histogram of bias values for all 4 cameras of a single exposure
 ;
 ; CALLING SEQUENCE:
-;   apo_plotbias, expnum, [root_dir=, plotfile= ]
+;   apo_plotbias, expnum, [ plotfile= ]
 ;
 ; INPUTS:
 ;   expnum     - Exposure number
 ;
 ; OPTIONAL INPUTS:
-;   root_dir   - Search directory for the raw FITS files;
-;                default to '/data/spectro/*'.
 ;   plotfile   - Plot file; if set, then send plot to this PostScript file
 ;                rather than to the default (X) display.
 ;
@@ -27,6 +25,9 @@
 ;
 ;   A fiducial line is drawn as a thick blue line.  This line approximates
 ;   what we expect to see for each camera.
+;
+;   If $RAWDATA_DIR is not set, then it is assumed to be
+;     /data/spectro
 ;
 ; EXAMPLES:
 ;
@@ -50,19 +51,21 @@
 ;   06-Dec-2000  Written by D. Schlegel, Princeton
 ;-
 ;------------------------------------------------------------------------------
-pro apo_plotbias, expnum, root_dir=root_dir, plotfile=plotfile
+pro apo_plotbias, expnum, plotfile=plotfile
 
    if (n_params() LT 1) then begin
-      print, 'Syntax - apoplotbias, expnum, [root_dir=, plotfile= ]'
+      print, 'Syntax - apoplotbias, expnum, [plotfile= ]'
       return
    endif
 
-;   if (NOT keyword_set(root_dir)) then root_dir = '/home/data/rawdata/*'
-   if (NOT keyword_set(root_dir)) then root_dir = '/data/spectro/*/'
+   rawdata_dir = getenv('RAWDATA_DIR')
+   if (NOT keyword_set(rawdata_dir)) then $
+    rawdata_dir = '/data/spectro'
 
    expstr = string(expnum, format='(i8.8)')
-   filename = 'sdR-*-' + expstr +  '.fit'
-   fullname = findfile( djs_filepath(filename, root_dir=root_dir), count=nfile)
+   filename = 'sdR-*-' + expstr +  '.fit*'
+   fullname = findfile( djs_filepath(filename, root_dir=rawdata_dir, $
+    subdirectory='*'), count=nfile)
 
    ;----------
    ; Read the MJD from the header of the first file
