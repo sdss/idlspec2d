@@ -43,7 +43,7 @@ IDL_LONG extract_row
    float       sigmal = 5.0; 	/* set limits of profile influence   */
    float       x2; 	/* Top Chebyshev x limit */
    float       x1; 	/* Lower Chebyshev x limit  */
-   float       wsigma = 50.0; 	/* Whopping sigma width */
+   float       wsigma = 25.0; 	/* Whopping sigma width */
    IDL_LONG    wPoly; 	/* Whopping sigma width */
 
    IDL_LONG    i,j,k,l;
@@ -160,7 +160,7 @@ IDL_LONG extract_row
    if (nPoly > 0) fillPoly(apoly, x, nx, nPoly, x1, x2);
 
 /*
-//  Whopping profile has somewhere near 50 pixel sigma
+//  Whopping profile has somewhere near 25 pixel sigma
 //	*/
    fillWhopping(&apoly[nPoly], x, nx, whoppingct, whoppingcen, wsigma);
 
@@ -823,17 +823,28 @@ void fillPoly(float **y, float *x, IDL_LONG nx, IDL_LONG nPoly,
            norm = (2.0 * x[i] - (x1 + x2))/(x2 - x1);
 
 /*	These next two lines make a step function to account for
-	uncertainties in the amplifier's gains matching */
+	uncertainties in the amplifier's gains matching 
 
 	   if (norm < 0.0) y[0][i] = 0.0; 
 	   else y[0][i] = 1.0; 
 
-/*	The rest of the params are just nPoly-1 chebyshev coefficients */
+	The rest of the params are just nPoly-1 chebyshev coefficients 
 
 	   chebyshevRow(norm, atemp, nPoly-1);
 	   for(j=1; j<nPoly; j++) {
 	     y[j][i] = atemp[j-1];
+           }   
+
+	     I don't think the step function is helping, it seems
+	     to be giving wrong answers when traces fall off one side */
+
+
+	   chebyshevRow(norm, atemp, nPoly);
+	   for(j=0; j<nPoly; j++) {
+	     y[j][i] = atemp[j];
            }
+
+
         }
 
 	free(atemp);
