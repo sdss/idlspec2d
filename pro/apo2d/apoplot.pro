@@ -6,7 +6,8 @@
 ;   Routine for plotting spectra from the Son-of-Spectro outputs at APO.
 ;
 ; CALLING SEQUENCE:
-;   apoplot, plate, [ fiberid, mjd=, nsmooth=, psfile=, _EXTRA= ]
+;   apoplot, plate, [ fiberid, mjd=, nsmooth=, psfile=, $
+;    /netimage, _EXTRA= ]
 ;
 ; INPUTS:
 ;   plate      - Plate number
@@ -23,6 +24,12 @@
 ;                you simply set this as a flag, e.g. with /PSFILE, then the
 ;                default file name is spec-pppp-mmmmm-fff.ps,
 ;                where pppp=plate number, mmmmm=MJD, fff=fiber ID.
+;   netimage   - If set, then launch a Netscape browser with the object
+;                image from Steve Kent's web site.  This only works if
+;                the trimmed tsObj files are available in the directory
+;                $SPECTRO_DATA/plates, and Netscape is running and has
+;                permissions at the site "http://sdsslnx.fnal.gov:8015".
+;                This is disabled if PSFILE is set.
 ;   _EXTRA     - Kewords for SPLOT, such as XRANGE, YRANGE, THICK.
 ;
 ; OUTPUTS:
@@ -96,7 +103,7 @@
 ;------------------------------------------------------------------------------
 pro apoplot1, plate, fiberid, mjd=mjd, nsmooth=nsmooth, $
  psfile=psfile, xrange=passxr, yrange=passyr, noerase=noerase, $
- _EXTRA=KeywordsForSplot
+ netimage=netimage, _EXTRA=KeywordsForSplot
 
    common com_apoplot, mjddir, PPBIAS, PPFLAT, PPARC, PPSCIENCE
 
@@ -298,6 +305,21 @@ pro apoplot1, plate, fiberid, mjd=mjd, nsmooth=nsmooth, $
         charsize=2.0, color=thiscolor
    endfor
 
+   if (keyword_set(netimage) AND NOT keyword_set(psfile)) then begin
+      readspec, plate, fiberid, mjd=mjd, tsobj=tsobj
+      if (keyword_set(tsobj)) then begin
+         netstring = 'http://sdsslnx.fnal.gov:8015/template/tsSingle.tml?run=' $
+          + strtrim(string(tsobj.run),2) $
+          + '&camcol=' + strtrim(string(tsobj.camcol),2) $
+          + '&field=' + strtrim(string(tsobj.field),2) $
+          + '&row=' + strtrim(string(long(tsobj.objc_rowc)),2) $
+          + '&col=' + strtrim(string(long(tsobj.objc_colc)),2)
+         spawn, '\netscape -remote "openURL(' + netstring + ')"'
+      endif else begin
+         print, 'WARNING: tsObj file not found for plate ', plate
+      endelse
+   endif
+
    return
 end
 
@@ -307,6 +329,13 @@ pro apoplot, plate, fiberid, mjd=mjd, nsmooth=nsmooth, $
  _EXTRA=KeywordsForSplot
 
    common com_apoplot, mjddir, PPBIAS, PPFLAT, PPARC, PPSCIENCE
+
+   if (n_params() LT 1) then begin
+      print, 'Syntax - apoplot, plate, [ fiberid, mjd=, nsmooth=, $'
+      print, '         psfile=, xrange=, yrange=, /noerase, $'
+      print, '         /netimage, _EXTRA=KeywordsForSplot'
+      return
+   endif
 
    if (n_elements(plate) NE 1) then $
     message, 'PLATE must be a scalar'
@@ -378,7 +407,8 @@ pro apoplot, plate, fiberid, mjd=mjd, nsmooth=nsmooth, $
 
       apoplot1, plate, fiberid[ifiber], mjd=mjd, $
        nsmooth=nsmooth, psfile=psfile, $
-       xrange=xrange, yrange=yrange, noerase=noerase, _EXTRA=KeywordsForSplot
+       xrange=xrange, yrange=yrange, noerase=noerase, netimage=netimage, $
+       _EXTRA=KeywordsForSplot
 
       if (keyword_set(psfile)) then begin
          if (NOT keyword_set(q_onefile) OR ifiber EQ nfiber-1) then dfpsclose
