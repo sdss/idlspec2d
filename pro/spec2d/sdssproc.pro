@@ -312,7 +312,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    ; by SPHDRFIX.  This is because for the early data, this keyword was
    ; arbitrarily set to 'unknown', 'bad', 'acceptable', or 'excellent'.
 
-   if (mjd LE 51813) then sxaddpar, 'QUALITY', 'excellent'
+   if (mjd LE 51813) then sxaddpar, hdr, 'QUALITY', 'excellent'
 
    ;-----------
    ; If the OBSCOMM keyword contains the words "dithered" or "focus",
