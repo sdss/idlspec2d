@@ -58,6 +58,7 @@ pro/extract_profile.pro -text
 pro/extract_row.pro -text
 pro/fchebyshev.pro -text
 pro/fiberflat.pro -text
+pro/fibermask_bits.pro -text
 pro/finalarcfit.pro -text
 pro/findobjects.pro -text
 pro/fit_skyset.pro -text
@@ -108,6 +109,7 @@ pro/spec2d/extract_profile.pro -text
 pro/spec2d/extract_row.pro -text
 pro/spec2d/fchebyshev.pro -text
 pro/spec2d/fiberflat.pro -text
+pro/spec2d/fibermask_bits.pro -text
 pro/spec2d/finalarcfit.pro -text
 pro/spec2d/findobjects.pro -text
 pro/spec2d/fit_skyset.pro -text
