@@ -88,7 +88,12 @@ function sp1d_struct
     'npoly'      ,  0L, $
     'theta'      , fltarr(10), $
     'vdisp'      , 0.0, $
-    'vdisp_err'  , 0.0  $
+    'vdisp_err'  , 0.0, $
+    'vdispz'     , 0.0, $
+    'vdispz_err' , 0.0, $
+    'vdispchi2'  , 0.0, $
+    'vdispnpix'  , 0.0, $
+    'vdispdof'   ,  0L  $
    )
 
    return, result
