@@ -193,11 +193,14 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    sxaddpar, hdr, 'UTILS_V', idlutils_version(), ' Version of idlutils'
  
    ; Read in opConfig.par file
+   ; Take the first entry for the configuration of each CCD in the event
+   ; that there are several.
 
    yanny_read, realconfig, pdata
    config = *pdata[0]
    yanny_free, pdata
-   config = config[ where(config.camrow EQ camrow AND config.camcol EQ camcol) ]
+   i = where(config.camrow EQ camrow AND config.camcol EQ camcol)
+   config = config[i[0]]
 
    if (naxis[0] NE config.ncols OR naxis[1] NE config.nrows) then $
       message, 'Config file dimensions do not match raw image'
