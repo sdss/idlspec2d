@@ -43,8 +43,21 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff
 
    if (NOT keyword_set(func)) then func = 'legendre'
 
-   nTrace = (size(xpos))[2]
-   ny = (size(xpos))[3]
+   ndim = size(xpos, /n_dim)
+   dims = size(xpos, /dim)
+
+   if (ndim EQ 1) then begin
+      ny = dims[0]
+      nTrace = 1
+   endif else if (ndim EQ 2) then begin
+      ny = dims[0]
+      nTrace = dims[1]
+   endif else begin
+      message, 'XPOS contains invalid number of dimensions'
+   endelse
+
+;   nTrace = (size(xpos))[2]
+;   ny = (size(xpos))[3]
 
    case func of
    'legendre': begin

@@ -40,8 +40,19 @@ pro traceset2xy, tset, xpos, ypos
 
    case tset.func of
    'legendre': begin
-      ncoeff = (size(tset.coeff))[1]
-      nTrace = (size(tset.coeff))[2]
+      ndim = size(tset.coeff, /n_dim)
+      dims = size(tset.coeff, /dim)
+
+      if (ndim EQ 1) then begin
+         ncoeff = dims[0]
+         nTrace = 1
+      endif else if (ndim EQ 2) then begin
+         ncoeff = dims[0]
+         nTrace = dims[1]
+      endif else begin
+         message, 'TSET.COEFF contains invalid number of dimensions'
+      endelse
+
       ny = long(tset.ymax - tset.ymin + 1)
 
       ymid = 0.5 * (tset.ymin + tset.ymax)
