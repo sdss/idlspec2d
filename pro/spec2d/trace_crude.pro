@@ -64,7 +64,7 @@ function trace_crude, fimage, invvar, xstart=xstart, ystart=ystart, $
    ; Need 1 parameter
    if (N_params() LT 1) then begin
       print, 'Syntax - xset = trace_crude( fimage, [ invvar, xstart=, ystart=, $'
-      print, ' radius=, nave=, nmed=, maxerr=, maxshift=, xerr= ] )'
+      print, ' radius=, nave=, nmed=, maxerr=, maxshifte=, maxshift0=, xerr= ] )'
       return, -1
    endif
 

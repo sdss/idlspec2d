@@ -13,7 +13,7 @@
 ;
 ; OPTIONAL INPUTS:
 ;   minsep     - Minimum separation between adjacent traces.  Smaller
-;                separations are regarded as bad traces.  Default to 3.5.
+;                separations are regarded as bad traces.  Default to 5.5.
 ;   ngrow      - Replace all pixels within MINSEP of its adjacent trace,
 ;                plus NGROW of its neighboring pixels.  Default to 20.
 ;   ycen       - Y centers corresponding to XCEN.
@@ -54,7 +54,7 @@ end
 ;------------------------------------------------------------------------------
 function trace_fix, xcen, minsep=minsep, ngrow=ngrow, ycen=ycen, xerr=xerr
 
-   if (NOT keyword_set(minsep)) then minsep = 3.5
+   if (NOT keyword_set(minsep)) then minsep = 5.5
    if (NOT keyword_set(ngrow)) then ngrow = 20
 
    xnew = xcen
