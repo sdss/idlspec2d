@@ -381,6 +381,7 @@ pro/spec2d/idlspec2d_version.pro -text
 pro/spec2d/locateskylines.pro -text
 pro/spec2d/locateskylines_test.pro -text
 pro/spec2d/logsheet.pro -text
+pro/spec2d/make_skyinvvar.pro -text
 pro/spec2d/makefile.old -text
 pro/spec2d/match_trace.pro -text
 pro/spec2d/mjd_match.pro -text
