@@ -6,7 +6,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   fflat = fiberflat( flux, fluxivar, wset, [ fibermask=fibermask, $
-;    minval=, ncoeff=, pixspace=, /dospline, nord=, lower=, upper= ] )
+;    minval=, ncoeff=, pixspace=, /dospline, nord=, lower=, upper=, /dospline ] )
 ;
 ; INPUTS:
 ;   flux       - Array of extracted flux from a flat-field image [Nrow,Ntrace]
