@@ -356,7 +356,7 @@ pro batch2d, platenums, topdir=topdir, $
          planfilecomb = fileandpath(planlist[iplate], path=pathcomb)
 
          ; Construct the name of the batch file
-         i = rstrpos(planfilecomb, '.', /reverse_search)
+         i = strpos(planfilecomb, '.', /reverse_search)
          if (i EQ -1) then i = strlen(planfilecomb)
          fullscriptfile[iplate] = $
           djs_filepath(strmid(planfilecomb,0,i)+'.batch', root_dir=pathcomb)
