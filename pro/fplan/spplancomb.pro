@@ -8,7 +8,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   spplancomb, [ topindir=, topoutdir=, mjd=, mjstart=, mjend=, $
-;    platenum=, platestart=, plateend=, /clobber, ncombine=ncombine ]
+;    platenum=, platestart=, plateend=, /clobber ]
 ;
 ; INPUTS:
 ;
@@ -18,16 +18,8 @@
 ;   topoutdir  - Top directory name for 2D outputs; default to the
 ;                same as TOPINDIR.
 ;   mjd        - Use data from these MJD's.
-;   mjstart    - Starting MJD.
-;   mjend      - Ending MJD.
-;   platenum   - Look for input data files in TOPINDIR/PLATENUM; default to
-;                search all subdirectories.  Note that this need not be
-;                integer-valued, but could be for example '0306_test'.
-;   platestart - Starting plate number.
-;   plateend   - Ending plate number.
 ;   clobber    - If set, then over-write conflicting plan files; default to
 ;                not over-write files.
-;   ncombine   - The best n exposures to combine
 ;
 ; OUTPUT:
 ;
@@ -54,13 +46,12 @@
 ;
 ; REVISION HISTORY:
 ;   04-Jul-2000  Written by David Schlegel, Princeton.
+;   14-Mar-2001  Just write planfile if it includes MJD
 ;-
 ;------------------------------------------------------------------------------
 
 pro spplancomb, topindir=topindir, topoutdir=topoutdir, $
- mjd=mjd, mjstart=mjstart, mjend=mjend, $
- platenum=platenum, platestart=platestart, plateend=plateend, $
- clobber=clobber, ncombine=ncombine
+ mjd=mjd, clobber=clobber
 
    ;----------
    ; Determine the top-level of the input and output directory tree
@@ -77,32 +68,13 @@ pro spplancomb, topindir=topindir, topoutdir=topoutdir, $
    splog, 'Setting top-level of input directory to ' + topindir
    splog, 'Setting top-level of output directory to ' + topoutdir
 
-   ;----------
-   ; Create a list of the plate directories (as strings)
-
-   platelist = get_mjd_dir(topindir, mjd=platenum, mjstart=platestart, $
-    mjend=plateend)
-
-   if platelist[0] NE '' then platelist = [platelist, '']
-
    camnames = ['b1', 'b2', 'r1', 'r2']
    ncam = N_elements(camnames)
 
-   ;---------------------------------------------------------------------------
-   ; Loop through each input plate directory
+   ;----------
+   ; Find all plan files
 
-   for iplate=0, N_elements(platelist)-1 do begin
-
-      platedir = platelist[iplate]
-
-      splog, ''
-      splog, 'Plate directory ', platedir
-
-      ;----------
-      ; Find all plan files
-
-      allplan = findfile(filepath('spPlan2d*.par', root_dir=topindir, $
-       subdirectory=platedir), count=nplan)
+   allplan = findfile(filepath('spPlan2d*.par', root_dir=topindir),count=nplan)
 
       ;----------
       ; Read all the plan files
@@ -144,6 +116,9 @@ pro spplancomb, topindir=topindir, topoutdir=topoutdir, $
             if (indx[0] NE -1) then spexp = allexp[indx] $
              else spexp = 0
 
+            if keyword_set(mjd) then $
+               if (where(mjd EQ spexp.mjd))[0] EQ -1 then spexp = 0
+
             if (keyword_set(spexp)) then begin
 
                ;----------
@@ -151,7 +126,6 @@ pro spplancomb, topindir=topindir, topoutdir=topoutdir, $
                ; and the suffix '.fit' with '.fits'
 
                newnames = spexp.name
-               sneach = fltarr(4, n_elements(spexp))
                for i=0, n_elements(newnames)-1 do begin
                   jj = strpos(newnames[i], '-')
 ;                  kk = strpos(newnames[i], '.', /reverse_search) ; IDL 5.3 com
@@ -159,36 +133,9 @@ pro spplancomb, topindir=topindir, topoutdir=topoutdir, $
                   if (jj NE -1 AND kk NE -1) then $
                    newnames[i] = 'spFrame' + strmid(newnames[i], jj, kk-jj) $
                     + '.fits'
-                   hh = headfits(newnames[i])
-                   if keyword_set(hh) then sneach[i] = sxpar(hh, 'FRAMESN2')
                endfor
                spexp.name = newnames
 
-               if keyword_set(ncombine) then begin
-                 sntotal = total(sneach,1)
-                 k = where(spexp.flavor EQ 'science', nsci) 
-                 if nsci GT ncombine then begin
-		   ss = k[reverse(sort(sntotal[k]))]
-                   ss = ss[0:ncombine-1]
-
-                   nonsci = where(spexp.flavor NE 'science') 
-                   if nonsci[0] NE -1 then tempexp  = spexp[[nonsci,ss]] $
-                   else tempexp  = spexp[ss]
-
-                   spexp = tempexp[sort(tempexp.name[0])]
-
-                   splog, 'WARNING: Only including ', string(ncombine), $
-                          '  Exposures out of ', string(nsci)
-
-                   splog, 'All exposures     ',sntotal[k]
-                   splog, 'Include exposures ',sntotal[ss]
-                   splog, 'Fraction  =       ', $
-                      total(sntotal[ss])/total(sntotal[k])
-
-                 endif
-               endif      
-
-  
                ;----------
                ; Determine names of output files
 
@@ -196,7 +143,7 @@ pro spplancomb, topindir=topindir, topoutdir=topoutdir, $
                platestr = string(pltid, format='(i04.4)')
                thismjd = max(spexp.mjd)
                mjdstr = string(thismjd, format='(i05.5)')
-               outdir = concat_dir(topoutdir, platedir)
+               outdir = concat_dir(topoutdir, '')
 
                planfile = 'spPlancomb-' + platestr + '-' + mjdstr + '.par'
                logfile = 'spDiagcomb-' + platestr + '-' + mjdstr + '.log'
@@ -250,8 +197,7 @@ pro spplancomb, topindir=topindir, topoutdir=topoutdir, $
             endif
 
          endfor ; End loop through plate plugging names
-      endif
-   endfor
+   endif
 
    return
 end

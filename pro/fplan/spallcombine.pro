@@ -6,14 +6,13 @@
 ;   This is a Fermi-only routine.
 ;
 ; CALLING SEQUENCE:
-;   spallcombine, mjd, [ topindir=, ncombine= ] 
+;   spallcombine, mjd, [ topindir ]
 ;
 ; INPUTS:
 ;  mjd
 ;
 ; OPTIONAL INPUTS:
 ;   topindir   - Where should I start?  (default: '.')
-;   ncombine   - How many exposures should be combined, the best N
 ;
 ; OUTPUT:
 ;
@@ -35,28 +34,32 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro spallcombine, mjd, topindir=topindir, ncombine=ncombine
+pro spallcombine, mjd, topindir=topindir
 
    if NOT keyword_set(topindir) then topindir='.'
-   if NOT keyword_set(ncombine) then ncombine=7
 
    cd, topindir, current=olddir
 
-   spplancomb, topindir=topindir, /clobber, ncombine=ncombine
+   spplancomb, topindir=topindir, mjd=mjd, /clobber
    planfile = findfile('spPlancomb*.par')
    if planfile[0] EQ '' then return
  
    nfile = n_elements(planfile)
+   mjdlist = lonarr(nfile)
+   
    for i = 0, nfile - 1 do begin
      yanny_read, planfile[i], pdata, hdr=hdr
-     hmm = where((*pdata[0]).mjd EQ mjd)
-     yanny_free, pdata
-
-     if hmm[0] NE -1 then begin
-       spcombine, planfile[i]
-       make2dmerge, planfile[i]  
+     if (size(pdata, /tname) NE 'INT') then begin
+       hmm = where((*pdata[0]).mjd EQ mjd)
+       if hmm[0] NE -1 then mjdlist[i] = (*pdata[0]).mjd
+       yanny_free, pdata
      endif
    endfor
+
+   thelatest = max(mjdlist, place=place)
+
+   spcombine, planfile[place]
+   make2dmerge, planfile[place]  
 
    cd, olddir
    return
