@@ -82,12 +82,12 @@ then "idlspec2d".  Installing in this order gets the dependencies right,
 since the UPS database needs to know that idlspec2d depends upon particular
 versions of those other products.  An install would then look something like:
 <DL><DD><PRE>
-  % UPS_FLAVOR=Linux+2.2 # Necessary if Fermi UPS cannot determine Linux flavor
-                         # but could also be "Linux" or "Linux+2".
-                         # At sos.apo, set to "Linux+2.2"
-                         # At plate-mapper.apo, set to "Linux+2"
-                         # At hoggpt.apo, set to "Linux+2"
-                         # At spectro.princeton, set to "Linux+2"
+  % UPS_PROD_FLAVOR=Linux+2.2 # Necessary if UPS cannot determine Linux flavor,
+                              # but could also be "Linux" or "Linux+2".
+                              # At sos.apo, set to "Linux+2.2"
+                              # At plate-mapper.apo, set to "Linux+2"
+                              # At hoggpt.apo, set to "Linux+2"
+                              # At spectro.princeton, set to "Linux+2"
   % evilinstall idlutils v4_9_5 ; setup idlutils
   % evilinstall specflat v1_3 ; setup specflat
   % evilinstall idlspec2d v4_9_5 ; setup idlspec2d
