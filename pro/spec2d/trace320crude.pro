@@ -50,6 +50,7 @@
 ;   fibermask  - (Modified.)
 ;
 ; COMMENTS:
+;   Without djs_maskinterp, hot columns skew traces 
 ;
 ; EXAMPLES:
 ;
@@ -61,9 +62,10 @@
 ;
 ; REVISION HISTORY:
 ;   13-Sep-1999  Written by David Schlegel, Princeton.
+;    8-Jul-2001  Added djs_maskinterp call
 ;-
 ;------------------------------------------------------------------------------
-function trace320crude, fimage, invvar, ystart=ystart, nmed=nmed, $
+function trace320crude, image, invvar, ystart=ystart, nmed=nmed, $
    xmask=xmask, radius=radius, yset=yset, maxerr=maxerr, maxshifte=maxshifte, $
    maxshift0=maxshift0, xerr=xerr, maxdev=maxdev, ngrow=ngrow, $
    fibermask=fibermask
@@ -73,6 +75,8 @@ function trace320crude, fimage, invvar, ystart=ystart, nmed=nmed, $
 
    ;----------
    ; Find the 320 X-centers in the row specified by YSTART
+
+   fimage = djs_maskinterp(image, (invvar LE 0), iaxis=0)
 
    ; XGOOD=1 for fibers that were actually found, 0 otherwise
    xstart = trace320cen(fimage, mthresh=mthresh, ystart=ystart, nmed=nmed, $
