@@ -1,3 +1,59 @@
+;+
+; NAME:
+;   telluric_corr
+;
+; PURPOSE:
+;   Use SPECTROPHOTO and REDDEN_STD's to fit telluric features
+;   between wavelengths 10^minw and 10^maxw
+;
+; CALLING SEQUENCE:
+;   telluric_factor = telluric_corr(flux, fluxivar, wset, plugsort, $
+;       contwave=contwave, contflux=contflux, contivar=contivar,    $
+;       telluricbkpt=telluricbkpt, telluriccoeff=telluriccoeff, $
+;       minw=minw, maxw=maxw, lower=lower, upper=upper, $
+;       ncontbkpts = ncontbkpts, fibermask=fibermask)
+;
+; INPUTS:
+;   flux         - sky-subtracted extracted spectra [nx,ntrace]
+;   fluxivar     - corresponding inverse variance [nx,ntrace]
+;   wset         - wavelength coefficients as a trace set
+;   plugsort     - plugmap entries
+;
+; OPTIONAL KEYWORDS:
+;   minw         - minimum wavelength to fit (Default 3.82)
+;   maxw         - maximum wavelength to fit (Default 3.92)
+;   ncontbkpts   - Number of bkpts to fit continuum in telluric region (5)
+;   lower        - lower rejection threshold for telluric fitting
+;   upper        - upper rejection threshold for telluric fitting
+;   fibermask    - use to reject possible standards which have spectral troubles
+;   
+; OUTPUTS:
+;   telluric_factor - Telluric correction for each pixel in flux array
+;
+; OPTIONAL OUTPUTS:
+;   contflux     - Normalized flux of stars used in telluric fitting
+;   contivar     - Corresponding inverse variance
+;   contwave     - Corresponding wavelengths  (log lambda)
+;   telluricbkpt - bkpts used in telluric absorption fit
+;   telluriccoeff- best fit b-spline coefficients for telluric absorption
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;
+; BUGS:
+;   There is still some low order residual from flux correction
+;     (I think due to telluric absorption), which is in turned
+;   removed by the telluric_correction.  Although there is not
+;   a clean break between the two steps, used together they seem
+;   to correct the spectra properly
+;
+; PROCEDURES CALLED:
+;
+; REVISION HISTORY:
+;   19-Oct-1999  Written by S. Burles, Chicago
+;-
+;------------------------------------------------------------------------------
 function telluric_corr,flux, fluxivar, wset, plugsort, $
         contwave=contwave, contflux=contflux, contivar=contivar,    $
         telluricbkpt=telluricbkpt, telluriccoeff=telluriccoeff, $
@@ -28,7 +84,7 @@ function telluric_corr,flux, fluxivar, wset, plugsort, $
                       (fibermask EQ 0), tellct)
 
 	if (tellct EQ 0) then begin
-            print, 'No telluric correction stars'
+            print, 'WARNING: No telluric correction stars'
 	    return, tellcorr
         endif
 
@@ -44,41 +100,51 @@ function telluric_corr,flux, fluxivar, wset, plugsort, $
 ;	Fit continuum to each telluric standard
 ;	
 
+        first = 1
 
         for i=0,tellct-1 do begin	
-	   inside = where(tellwave[*,i] GT minw AND tellwave[*,i] LT maxw,$
-                      ninside)
+	   possible = where(tellwave[*,i] GT minw AND tellwave[*,i] LT maxw, $
+                          npossible)
 
-	   ss = sort(tellwave[inside,i])
-	   tempwave = tellwave[inside[ss],i]
-	   tempflux = tellflux[inside[ss],i]
-	   tempivar = tellfluxivar[inside[ss],i]
+	   inside = where(tellwave[*,i] GT minw AND tellwave[*,i] LT maxw $
+                          AND tellfluxivar[*,i] GT 0.0, ninside)
 
-	   tellfeatures = 1 - (tempwave GT 3.855 AND tempwave LT 3.865 OR $
+	   if (ninside GT 0.7 * npossible) then begin
+
+	     tempwave = tellwave[inside,i]
+	     tempflux = tellflux[inside,i]
+	     tempivar = tellfluxivar[inside,i]
+
+	     tellfeatures = 1 - (tempwave GT 3.855 AND tempwave LT 3.865 OR $
 	                        tempwave GT 3.836 AND tempwave LT 3.842 OR $
 	                        tempwave GT 3.875 AND tempwave LT 3.89)
 
-           fullbkpt = slatec_splinefit(tempwave, median(tempflux,21), coeff, $
-              maxiter=10, lower=1.0, upper=5.0, mask=mask, $
-            invvar=tempivar*tellfeatures, nbkpts=ncontbkpts, rejper = 0.5)
+             fullbkpt = slatec_splinefit(tempwave, median(tempflux,21), coeff, $
+               maxiter=10, lower=1.0, upper=5.0, mask=mask, $
+               invvar=tempivar*tellfeatures, nbkpts=ncontbkpts, rejper = 0.5)
            
-	   continuum = slatec_bvalu(tempwave,fullbkpt,coeff)    
+	     continuum = slatec_bvalu(tempwave,fullbkpt,coeff)    
 	
-	   if (i GT 0) then begin 
-	     contwave = [contwave, tempwave]
-             contflux = [contflux, tempflux / continuum]
-             contivar = [contivar, tempivar * continuum^2]
-	     medivar = [medivar, fltarr(ninside) + $
+	     if (first NE 1) then begin 
+	       contwave = [contwave, tempwave]
+               contflux = [contflux, tempflux / continuum]
+               contivar = [contivar, tempivar * continuum^2]
+	       medivar = [medivar, fltarr(ninside) + $
                    median(tempivar * continuum^2)]
-	   endif else begin
-	     contwave = tempwave
-             contflux = tempflux / continuum
-             contivar = tempivar * continuum^2
-	     medivar = fltarr(ninside) + median(contivar)
-           endelse
-
+	     endif else begin
+               first = 0
+	       contwave = tempwave
+               contflux = tempflux / continuum
+               contivar = tempivar * continuum^2
+	       medivar = fltarr(ninside) + median(contivar)
+             endelse
+          endif
 	endfor
 
+        if (first EQ 1) then begin
+          splog,'WARNING: No telluric stars for this region'
+          return, tellcorr
+        endif
 ;
 ;	Scale the variances to give equal weight to each spectrum
 ;

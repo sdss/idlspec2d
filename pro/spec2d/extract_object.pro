@@ -109,25 +109,26 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
       endif 
 
       skymedian = djs_median(scrunch[iskies])
+      splog, 'Sky fiber median '+string(skymedian)
       if (skymedian GT 3000.0) then begin
-        splog, 'ABORT: Sky fibers are too bright '+string(skymedian)
+        splog, 'ABORT: Sky fibers are brighter than 3000 counts'
         return
       endif
           
       splog, '5% and 95% count levels ', scrunch[scrunch_sort[i5]], $
                                          scrunch[scrunch_sort[i95]]
 
-      if (scrunch[scrunch_sort[i5]] GT 5000.0) then begin
-         splog, 'ABORT: Fibers have '+ string(scrunch[scrunch_sort[i5]]) + $
-                ' at the 5% '
+;      if (scrunch[scrunch_sort[i5]] GT 5000.0) then begin
+;         splog, 'ABORT: Fibers have '+ string(scrunch[scrunch_sort[i5]]) + $
+;                ' at the 5% '
          ;
          ;	Here we just need to move to the next exposure, not return
          ;       completely.  This would argue for having a subroutine called
          ;       for each exposure, so a return would only skip the botched
          ;       exposure, and not all the rest
          ;
-	 return
-      endif
+;	 return
+;      endif
 
 
       if (whopct GT 20) then begin
@@ -174,6 +175,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
       centerterm = 2
       xnow = xtrace; Is this modified when extracting???
       sigmanow = xtrace*0.0 + sigma
+      maxshift = 1.0
 
       ; Kill or adjust first and last column ???
       ;invvar[0,*] = 0.0
@@ -210,9 +212,28 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
              transpose(fitans[lindgen(ntrace)*nterms + sigmaterm, *])
             centershift = $
              transpose(fitans[lindgen(ntrace)*nterms + centerterm, *])
-            tweaktrace, xnow, sigmanow, centershift, sigmashift
-         endif
 
+
+            splog, format='(a,3(f8.3))', 'Centershift ', min(centershift),  $
+                       median(centershift), max(centershift)
+
+            splog, format='(a,3(f8.3))', 'Sigmashift ', min(sigmashift),  $
+                       median(sigmashift), max(sigmashift)
+
+            if (max(abs(centershift)) GT maxshift OR $
+                max(abs(sigmashift)) GT maxshift/2.0) then begin
+              splog, 'ABORT: Shift terms are not well behaved!'
+              return
+            endif
+
+	    ;----------------------------------------------------
+            ;  This is essentially tweaktrace
+            ;
+            xnow = xnow - centershift * sigma
+            sigmanow = (sigmashift + 1.0) * sigmanow
+
+            ;tweaktrace, xnow, sigmanow, centershift, sigmashift
+         endif
       endfor
 
       qaplot_scatlight, scatfit, yrow, $
@@ -237,6 +258,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
        fluxivar, proftype=proftype, wfixed=wfixed, fitans=fitans, $
        highrej=highrej, lowrej=lowrej, npoly=0, whopping=whopping, $
        chisq=chisq, ymodel=ymodel2
+ 
 
       ;------
       ; QA chisq plot for fit calculated in extract image (make QAPLOT ???)
@@ -267,6 +289,11 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
   
       locateskylines, skylinefile, flux, fluxivar, $
          wset, xsky, ysky, skywaves, xset=xset
+
+      if (size(xset,/tname) EQ 'UNDEFINED') then begin
+         splog, 'ABORT: Cannot shift to sky lines...'
+         return
+      endif 
 
       ; ----------------------------------------
       ;  fitvacset performs shift to skylines and fit to vacuum wavelengths
