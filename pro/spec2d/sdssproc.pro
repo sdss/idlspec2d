@@ -543,8 +543,9 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    ecalib = ecalib[ where(ecalib.camrow EQ camrow AND ecalib.camcol EQ camcol) ]
 
    gain = [ecalib.gain0, ecalib.gain1, ecalib.gain2, ecalib.gain3]
-   readnoiseDN = [ecalib.readnoiseDN0, ecalib.readnoiseDN1, $
+   rnoise_expect = [ecalib.readnoiseDN0, ecalib.readnoiseDN1, $
     ecalib.readnoiseDN2, ecalib.readnoiseDN3]
+   rnoise_measure = fltarr(4)
    fullWellDN = [ecalib.fullWellDN0, ecalib.fullWellDN1, $
     ecalib.fullWellDN2, ecalib.fullWellDN3]
 
@@ -618,29 +619,79 @@ pro sdssproc, infile, image, invvar, indir=indir, $
                 sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] 
             endif
 
-            djs_iterstat, biasreg, sigrej=3.0, mean=biasval, sigma=readoutDN
+            ; Dispose of the first 5 rows of the bias when computing stats,
+            ; since those are the rows with transient effects (especially
+            ; in the right amplifier of r1).
+            ; (If we subtracted the pixel bias image first, we could
+            ; probably keep these first 5 rows.)
+            ; Also dispose of the first and last columns, since those
+            ; sometimes show transients.
+            bdimen = size(biasreg, /dimens)
+            biasreg = biasreg[1:bdimen[0]-2,5:bdimen[1]-1]
+
+            ; Compute statistics of the bias region that only reject
+            ; the 0.5% of smallest and largest values.  This will then
+            ; report a large standard deviation for very skew distributions,
+            ; whereas using DJS_ITERSTAT might just clip away those values.
+;            djs_iterstat, biasreg, sigrej=3.0, mean=biasval, sigma=readoutDN
+            isort = sort(biasreg)
+            nn = n_elements(biasreg)
+            ii = isort[long(0.005*nn) : long(0.995*nn)]
+            biasval = mean(biasreg[ii])
+            ; The factor of 1.04 below is to account for clipping the
+            ; lowest and highest 0.5% of all pixel values.
+            rnoise_measure[iamp] = 1.04 * stddev(biasreg[ii])
 
             if (NOT keyword_set(silent)) then begin
-               splog, 'Measured read-noise in DN for amp#', iamp, ' = ', readoutDN
+               splog, 'Measured read-noise in DN for amp#', iamp, ' = ', $
+                rnoise_measure[iamp]
                splog, 'Measured bias value in DN for amp#', iamp, ' = ', biasval
                splog, 'Applying gain for amp#', iamp, ' = ', gain[iamp]
             endif
 
+            ; Trigger warning message if measured read noise is > 1 ADU
+            ; larger than that expected from the op files.
+            if (rnoise_measure[iamp] GT rnoise_expect[iamp]+1.0) then $
+             splog, 'WARNING: Amp #', iamp, $
+              ' expected read noise = ', rnoise_expect[iamp], $
+              ', measured = ', rnoise_measure[iamp], ' DN', $
+              format='(a,i1,a,f5.2,a,f5.2,a)'
+
+            ; Trigger a warning message if the bias region has differences
+            ; between the 16th-percentile and 84th-percentile that are
+            ; either too small or too large compared to the expected noise,
+            ; or between the 2.3 and 97.7-percentile (e.g., 2-sigma),
+            ; or between the 0.15 and 99.85-percentile (e.g., 3-sigma).
+            for siglevel=1,3 do begin
+               ; The value of BIASDIFF should be 2*readnoise*siglevel.
+               fnormal = erf(sqrt(2.)/2.*siglevel) ; =0.682,0.954,0.997
+               biasdiff = biasreg[isort[long(nn*(0.5+0.5*fnormal))]] $
+                - biasreg[isort[long(nn*0.5*(1.-fnormal))]]
+               qbiaslo = biasdiff LT 2*siglevel*(0.9 * rnoise_expect[iamp] - 1)
+               qbiashi = biasdiff GT 2*siglevel*(1.1 * rnoise_expect[iamp] + 1)
+               if (qbiaslo OR qbiashi) then $
+                splog, 'WARNING: Amp #', iamp, ' bias region difference at ', $
+                 100.*fnormal, 'th-percentile = ', $
+                 biasdiff, ' DN, expected ', 2*siglevel*rnoise_expect[iamp], $
+                 format='(a,i1,a,f5.2,a,f5.1,a,f5.1)'
+            endfor
+
             ; Compute the standard deviation in the bias region again,
             ; but using a weaker 5-sigma clipping.  This is done solely
             ; for the purpose of identifying any electronics problems,
-            ; such as that on the left half of r2 on MJD 51779.
+            ; such as that on the left half of r2 for plate 356 on MJD 51779.
             ; Trigger a warning message if above 10 ADU.
+            ; --> This is now deprecated by the above tests.
 
-            djs_iterstat, biasreg, sigrej=5.0, sigma=testrms
-            if (NOT keyword_set(silent)) then begin
-               if (testrms LT 10.) then $
-                splog, 'Std. dev. in bias region for amp#', iamp, $
-                 ' = ', testrms, ' DN (5-sig clip)' $
-               else $
-                splog, 'WARNING: Std. dev. in bias region for amp#', iamp, $
-                 ' = ', testrms, ' DN (5-sig clip)'
-            endif
+;            djs_iterstat, biasreg, sigrej=5.0, sigma=testrms
+;            if (NOT keyword_set(silent)) then begin
+;               if (testrms LT 10.) then $
+;                splog, 'Std. dev. in bias region for amp#', iamp, $
+;                 ' = ', testrms, ' DN (5-sig clip)' $
+;               else $
+;                splog, 'WARNING: Std. dev. in bias region for amp#', iamp, $
+;                 ' = ', testrms, ' DN (5-sig clip)'
+;            endif
 
             ; Copy the data for this amplifier into the final image
             ; Subtract the bias (in DN), and then multiply by the gain
@@ -656,7 +707,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
             sxaddpar, hdr, 'GAIN'+string(iamp,format='(i1)'), $
              gain[iamp], ' Gain in electrons per ADU'
             sxaddpar, hdr, 'RDNOISE'+string(iamp,format='(i1)'), $
-             gain[iamp]*readnoiseDN[iamp], ' Readout noise in electrons'
+             gain[iamp]*rnoise_measure[iamp], ' Readout noise in electrons'
          endif
       endif
    endfor
@@ -737,7 +788,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
                         srow[iamp]:srow[iamp]+nrow[iamp]-1]) $
             else expr2 = 0
             ; Read noise term below
-            expr3 = (readnoiseDN[iamp]*gain[iamp])^2
+            expr3 = (rnoise_measure[iamp]*gain[iamp])^2
             ; Term below to limit best S/N to under 100
             expr4 = 1.e-4 * expr1^2
 
