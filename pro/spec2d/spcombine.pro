@@ -108,17 +108,17 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay
    ; Open log files for output
 
    if (keyword_set(logfile)) then begin
-      cpbackup, logfile
-      splog, filename=logfile
+      cpbackup, djs_filepath(logfile, root_dir=combinedir)
+      splog, filename=djs_filepath(logfile, root_dir=combinedir)
       splog, 'Log file ' + logfile + ' opened ' + systime()
       splog, 'IDL version: ' + string(!version,format='(99(a," "))')
       spawn, 'uname -a', uname
       splog, 'UNAME: ' + uname[0]
    endif
    if (keyword_set(plotfile) AND NOT keyword_set(xdisplay)) then begin
-      cpbackup, plotfile
+      cpbackup, djs_filepath(plotfile, root_dir=combinedir)
       set_plot, 'ps'
-      device, filename=plotfile, /color
+      device, filename=djs_filepath(plotfile, root_dir=combinedir), /color
       splog, 'Plot file ' + plotfile
    endif
    splog, 'Plan file ', thisplan
@@ -155,7 +155,8 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay
 
    objname = allseq.name[icams]
    for ifile=0, n_elements(objname)-1 do $
-    if ((findfile(objname[ifile]))[0] EQ '') then  objname[ifile] = ''
+    if ((findfile(djs_filepath(objname[ifile], $
+      root_dir=extractdir)))[0] EQ '') then  objname[ifile] = ''
 
    allseq.name[icams] = objname
 
@@ -172,7 +173,8 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay
 
    objname = (allseq.name[icams])[j]
 
-   spflux, objname, fcalibprefix, adderr=adderr
+   spflux, djs_filepath(objname, root_dir=extractdir), $
+      fcalibprefix, outdir=combinedir, adderr=adderr
 
    ;----------
    ; Close plot file - S/N plots are then put in the PLOTSNFILE file.
@@ -207,10 +209,14 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay
    ;----------
    ; Co-add the fluxed exposures
 
+   cd, combinedir, current=old_dir
+
    spcoadd_frames, djs_filepath(sciname, root_dir=extractdir), $
-    djs_filepath(combinefile, root_dir=combinedir), mjd=thismjd, $
+    combinefile, mjd=thismjd, $
     fcalibprefix=fcalibprefix, adderr=adderr, docams=docams, $
     plotsnfile=plotsnfile
+
+   cd, old_dir
 
    heap_gc   ; garbage collection
 
