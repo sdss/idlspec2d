@@ -88,6 +88,7 @@
 ;   djs_median()
 ;   djs_oplot
 ;   djs_plot
+;   get_mjd_dir()
 ;   soplot
 ;   splot
 ;   sdss_flagname()
@@ -345,7 +346,7 @@ pro apoplot, plate, fiberid, mjd=mjd, nsmooth=nsmooth, $
     spectrolog_dir = '/data/spectro/spectrologs'
 
    if (NOT keyword_set(mjd)) then begin
-      mjdlist = findfile(spectrolog_dir)
+      mjdlist = get_mjd_dir(spectrolog_dir)
       mjd = (reverse(mjdlist[sort(mjdlist)]))[0]
    endif
 
