@@ -209,7 +209,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
          ;---------------------------------------------------------------------
 
          sigma = 1.0 ; Initial guess for gaussian width
-         proftype = 1 ; Gaussian 
+;        proftype = 1 ; Gaussian 
+         proftype = 3 ; |x|^3
          splog, 'Extracting flat-field image with proftype', proftype
          highrej = 15
          lowrej = 15
@@ -299,18 +300,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
          ;----------
          ; Calculate possible shift between arc and flat
 
-         skiptrace = 20L
-         nrow = (size(xsol))[1]
-         nfiber = (size(xsol))[2]
-         ysample = lindgen(nrow) # replicate(1,nfiber - 2*skiptrace)
-         xsample = xsol[*,skiptrace:nfiber - skiptrace - 1]
-
          xcor = match_trace(arcimg, arcivar, xsol)
 
-;         bestlag = shift_trace(arcimg, xsample, ysample, $
-;          lagrange=1.0, lagstep=0.1)
-
-     
          bestlag = median(xcor-xsol) 
          if (abs(bestlag) GT 2.0) then begin
             qbadarc = 1
@@ -481,7 +472,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
          ;---------------------------------------------------------------------
 
          traceset2xy, widthset, xx, sigma2   ; sigma2 is real width
-         proftype = 1 ; Gaussian  
+;         proftype = 1 ; Gaussian  
+         proftype = 3 ; |x|^3
          highrej = 15
          lowrej = 15
          npoly = 5 ; Fit 10 terms to background, just get best model

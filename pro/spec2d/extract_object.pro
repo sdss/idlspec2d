@@ -198,7 +198,8 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    nrow = (size(image))[2]
    yrow = lindgen(nrow) 
    nfirst = n_elements(yrow)
-   proftype = 1 ; Gaussian 
+;   proftype = 1 ; Gaussian 
+   proftype = 3 ; |x|^3
 
    splog, 'Extracting frame '+objname+' with 3 step process'
 
@@ -236,9 +237,11 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 
    highrej = 8
    lowrej = 5
-   wfixed = [1,1]
+;   wfixed = [1,1]
+;   reject = [0.2,0.6,0.6]
+   wfixed = [1]
    nterms = n_elements(wfixed)
-   reject = [0.2,0.6,0.6]
+   reject = [0.2,0.2,0.2]
    npoly = 5 ; maybe more structure, lots of structure
 
 
@@ -364,11 +367,15 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ; Sky-subtract again, this time with dispset (PSF subtraction)
    ; 
 
+   nskypoly = 4L
    skystruct_psf = skysubtract(flux, fluxivar, plugsort, vacset, $
      skysubpsf, skysubpsfivar, iskies=iskies, pixelmask=pixelmask, $
-     fibermask=fibermask, upper=3.0, lower=3.0, dispset=dispset)
+     fibermask=fibermask, upper=3.0, lower=3.0, dispset=dispset, npoly=nskypoly)
 
    qaplot_skysub, flux, fluxivar, skysub, skysubivar, $
+    vacset, iskies, title=plottitle+objname
+
+   qaplot_skysub, flux, fluxivar, skysubpsf, skysubpsfivar, $
     vacset, iskies, title=plottitle+objname
 
    ;------------------
@@ -405,8 +412,15 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ;------------------------------------------
    ; Save the sky-subtracted flux values as is, and now modify flambda.
 
-   flambda = skysub
-   flambdaivar = skysubivar
+   if keyword_set(skystruct_psf) then begin
+     flambda = skysubpsf
+     flambdaivar = skysubivarpsf
+   endif else begin
+     flambda = skysub
+     flambdaivar = skysubivar
+     nskypoly = 1L
+   endelse
+   sxaddpar, objhdr, 'PSFSKY', nskypoly, ' Order of PSF skysubtraction'
 
    ;------------------------------------------
    ; Telluric correction called for 'red' side

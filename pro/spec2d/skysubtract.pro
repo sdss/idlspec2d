@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   skystruct = skysubtract(obj, objivar, plugsort, wset, objsub, objsubivar, $
 ;    [ iskies= , fibermask=, nord=, upper=, lower=, maxiter=, pixelmask=, $
-;    dispset=, /novariance, relchi2struct= ])
+;    dispset=, /novariance, relchi2struct=, npoly= ])
 ;
 ; INPUTS:
 ;   obj        - Image
@@ -24,6 +24,7 @@
 ;                structure.
 ;   novariance - Set keyword to prevent variance correction for sky residuals
 ;   relchi2struct- Structure containing information of chi^2 fitting
+;   npoly      - Polynomial order of 2d fit.
 ;
 ; PARAMETERS FOR SLATEC_SPLINEFIT (for supersky fit):
 ;   nord       -
@@ -69,7 +70,7 @@
 function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    iskies=iskies, fibermask=fibermask, nord=nord, upper=upper, $
    lower=lower, maxiter=maxiter, pixelmask=pixelmask, $
-   dispset=dispset, nsigmapoly=nsigmapoly, relchi2struct=relchi2struct, $
+   dispset=dispset, npoly=npoly, relchi2struct=relchi2struct, $
    novariance=novariance
 
    if (size(obj, /n_dimen) NE 2) then message, 'OBJIVAR is not 2-D'
@@ -136,27 +137,85 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
 
    bkpt = 0
 
-   if (NOT keyword_set(dispset)) then begin
-     sset = bspline_iterfit(skywave, skyflux, invvar=skyivar, $
+     firstset = bspline_iterfit(skywave, skyflux, invvar=skyivar, $
        nord=nord, upper=upper, lower=lower, maxiter=maxiter, $
        /eachgroup, everyn=2*nskies/3, bkpt=bkpt, yfit=skyfit)
 
-     fullfit = bspline_valu(wave, sset)
-     
-   endif else begin
+;-------------------------------------------------------------------------
+;
+;     This code has been added to slightly reduce the number of
+;     breakpoints, from 3100 to 2030 or so.  This also gives better
+;     behavior near the boundaries
+;
+;-------------------------------------------------------------------------
+
+     maxsky = max(skywave[where(skyivar GT 0)], min=minsky)
+     snsqrt = sqrt(skyfit * sqrt(skyivar))
+     good = where(skyivar GT 0)
+     snsqrt[good] = convol(snsqrt[good], gauss_kernel(2.0*nskies))
+
+     snsum = snsqrt
+     for i=1,n_elements(snsqrt)-1 do snsum[i] = snsum[i] + snsum[i-1]
+     nbkpt = n_elements(bkpt)
+     nbkpt = ncol
+     place = long(snsum/max(snsum)*nbkpt) < (nbkpt-2)
+     newbkpt = uniq(place)
+     bkpt = skywave[newbkpt]
+     bkpt[0] = minsky
+     nbkpt = n_elements(bkpt)
+     lowdiff = (bkpt[1]-bkpt[0])*10.0
+     highdiff = (bkpt[nbkpt-1]-bkpt[nbkpt-2])*10.0
+     fullbkpt= [ bkpt[0] - lowdiff, bkpt, max(bkpt)+highdiff]
+     for i=2,nord-1 do fullbkpt= [ fullbkpt[0] - lowdiff, fullbkpt, $
+                                  max(fullbkpt)+ highdiff]
+
+;------------------------------------------------------------------------
+ 
+     sset = bspline_iterfit(skywave, skyflux, invvar=skyivar, $
+       nord=nord, upper=upper, lower=lower, maxiter=maxiter, $
+       /eachgroup, fullbkpt=fullbkpt, yfit=skyfit2, outmask=outmask)
+ 
+     fullfit = bspline_valu(wave, sset) 
+
+   if keyword_set(dispset) then begin
+
+      if NOT keyword_set(npoly) then npoly=4L
 
       ; SIGMA is smooth fit to widths of arclines ???
       traceset2xy, dispset, pixnorm, sigma
       sigma = sigma - 1.0
       skysigma = (sigma[*,iskies])[isort]
 
-      sset = bspline_iterfit(skywave, skyflux, invvar=skyivar, $
-       nord=nord, upper=upper, lower=lower, maxiter=maxiter, x2=skysigma, $
-       npoly = nsigmapoly, /eachgroup, everyn=2*nskies/3, bkpt=bkpt, $
-       yfit=skyfit)
+;      sset = bspline_iterfit(skywave, skyflux, invvar=skyivar*outmask, $
+;       nord=nord, upper=upper, lower=lower, maxiter=maxiter, x2=skysigma, $
+;       npoly = npoly, /eachgroup, fullbkpt=fullbkpt, $
+;       yfit=skyfit4)
+;
+;      fullfit = bspline_valu(wave, sset, x2=sigma) 
 
-      fullfit = bspline_valu(wave, sset, x2=sigma) 
-   endelse
+      ssetorig = sset
+      fullx2 = replicate(1.0,ncol) # findgen(nrow)
+      x2     = (fullx2[*,iskies])[isort]
+
+      sset = bspline_iterfit(skywave, skyflux, invvar=skyivar*outmask, $
+       nord=nord, upper=upper, lower=lower, maxiter=maxiter, $
+       npoly = npoly, /eachgroup, fullbkpt=fullbkpt, $
+       yfit=skyfit3, x2=x2, xmin=0., xmax=nrow)
+
+      fullfit = bspline_valu(wave, sset, x2=fullx2) 
+
+;
+;      The commented out code below fits the residuals "flux-fit" to
+;       higher order polynomial terms.  Not used for now
+;
+;      sset4 = bspline_iterfit(skywave, skyflux-skyfit2, $
+;       invvar=skyivar*outmask, $
+;       nord=nord, upper=upper, lower=lower, maxiter=maxiter, $
+;       npoly = 4L, /eachgroup, fullbkpt=fullbkpt, $
+;       yfit=skyfit4, x2=x2, xmin=0., xmax=nrow, funcname='poly1')
+;
+;     fullfit4 = bspline_valu(wave, sset4, x2=replicate(1,ncol) # findgen(nrow)) 
+   endif
 
    ;----------
    ; Sky-subtract the entire image
