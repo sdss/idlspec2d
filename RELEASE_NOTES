@@ -39,6 +39,12 @@ READSPEC: Change how the internal procedure READSPEC1 works, such that
 SDSSPROC: Re-enable the call to 'speclog_version'.
 SKYSUBTRACT: Return the trace-set RELCHI2SET instead of RELCHI2STRUCT,
         for use by the EXTRACT_OBJECT code.
+SMOOTH_SUPERFLAT: Bug fix, whereby we could trigger a warning message when
+        the ends of the wavelength range did not have any good data points.
+        In such a case, the fits are meaningless, and any value could result.
+        This was triggering false warning messages on plate 1053/52468 in r2,
+        plate 1051/52468 on r2, etc.  This should now be fixed by setting
+        the internal variable RATIO=1 for bad points.
 SPFLUX_READ_KURUCZ: This function was pulled out of SPFLUX_V5.
 SPFLUX_V5: Pull out the SPFLUX_READ_KURUCZ() code as a separate function.
         Comment-out the median/mean rescaling factor in SPFLUX_MRATIO_FLATTEN(),
