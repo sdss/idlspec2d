@@ -183,6 +183,9 @@ EXPT_B1  = Total exposure time in b1 camera.
 EXPT_B2  = Total exposure time in b2 camera.
 EXPT_R1  = Total exposure time in r1 camera.
 EXPT_R2  = Total exposure time in r2 camera.
+SMEARUSE = Set to 'T' if the spectra were normalized to a smear exposure,
+           which is effectively a 1-minute exposure on a 5 x 7 arcsec
+           aperature.
 SN2_G1   = (S/N)^2 per pixel at g=20.2 on spectrograph #1.
 SN2_G2   = (S/N)^2 per pixel at g=20.2 on spectrograph #2.
 SN2_R1   = (S/N)^2 per pixel at r=20.25 on spectrograph #1.
@@ -195,10 +198,13 @@ N_STAR   = The number of objects Princeton-1D called a star.
 N_UNKNOWN= The number of objects Princeton-1D declared spectroscopically 
            unknown (a ZWARNING flag is set)
 N_SKY    = The number of sky fibers (almost always exactly 32)
-STATUS2D = Status of Spectro-2D pipeline; "Done" if done.
+STATUS2D = Status of Spectro-2D pipeline for reducing individual exposures;
+           "Done" if done.
+STATUSCOMBINE = Status of Spectro-2D pipeline for combining individual
+           exposures into the spPlate files; "Done" if done.
 STATUS1D = Status of Princeton-1D pipeline; "Done" if done.
 QSURVEY  = Status flag set to 1 for the best observation of any tile on the sky
-           that satifies the following: (S/N)^2 > 15 for G1,G2,I1,I2, and
+           that satifies the following: (S/N)^2 > 13.0 for G1,G2,I1,I2, and
            the target version cannot be "special" or "devel".
 PUBLIC   = Name of public data release; presently plates are either not public,
            or part of the early data release (EDR).
