@@ -136,7 +136,7 @@ pro platemerge, zfile, outfile=outfile, ascfile=ascfile, qsurvey=qsurvey
     'ra'         , 0.0d, $
     'dec'        , 0.0d, $
     'plate_sn2'  ,  0.0, $
-    'modelcounts', fltarr(5), $
+    'counts_model', fltarr(5), $
     'objc_type'  ,  '', $
     'primtarget' ,  0L, $
     'sectarget'  ,  0L )
