@@ -75,25 +75,24 @@ pro platesn, finalflux, finalivar, finalandmask, finalplugmap, loglam, $
    for ifib=0, nfiber-1 do begin
      sntemp = 0.0
      ig = where(finalivar[gwave,ifib] GT 0, nwave)
-     if = nwave GT filtsz then $
+     if (nwave GT filtsz) then $
        sntemp = djs_median(snimg[gwave[ig],ifib], $
                            width=filtsz, boundary='reflect')
      sng = djs_mean(sntemp)
 
      sntemp = 0.0
      ig = where(finalivar[rwave,ifib] GT 0, nwave)
-     if = nwave GT filtsz then $
+     if (nwave GT filtsz) then $
        sntemp = djs_median(snimg[rwave[ig],ifib], $
                            width=filtsz, boundary='reflect')
      snr = djs_mean(sntemp)
 
      sntemp = 0.0
      ig = where(finalivar[iwave,ifib] GT 0, nwave)
-     if = nwave GT filtsz then $
+     if (nwave GT filtsz) then $
        sntemp = djs_median(snimg[iwave[ig],ifib], $
                            width=filtsz, boundary='reflect')
      sni = djs_mean(sntemp)
-
 
      snvec[*,ifib] = [sng, snr, sni]
    endfor
