@@ -47,7 +47,7 @@ function select_flat, flatstruct, tai
    timediff = flatstruct[indx].tai - tai
 
    ; For now, selected the nearest good flat
-   junk = min(timediff, ii)
+   junk = min(abs(timediff), ii)
    ibest = indx[ii]
 
    return, flatstruct[ibest]
