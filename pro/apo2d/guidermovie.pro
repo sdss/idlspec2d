@@ -26,6 +26,8 @@
 ; COMMENTS:
 ;
 ; EXAMPLES:
+;   Display the horrendous guider images for plate 889 on MJD=52346:
+;     IDL> guidermovie, mjd=52346, plate=889
 ;
 ; BUGS:
 ;

@@ -92,8 +92,12 @@ pro guidermpeg, mjd=mjd, expnum=expnum
    ;----------
    ; Constuct the output byte array
 
-   bytarr = bytarr(320,240,nfile)
-   npix = 320L * 240L
+   xsize = 320L
+   ysize = 240L
+   bytarr = bytarr(xsize,ysize,nfile)
+   npix = xsize * ysize
+   xoff = 40
+   yoff = 16
 
    ;----------
    ; Loop through all images
@@ -108,8 +112,8 @@ pro guidermpeg, mjd=mjd, expnum=expnum
          img = img - res[0] - res[1] * dark
       endif
 
-      ; Trim image to 320x240
-      img = img[40:359,16:255]
+      ; Trim image to XSIZE,YSIZE
+      img = img[xoff:xoff+xsize-1,yoff:yoff+ysize-1]
 
       ; Rescale to a byte image
       isort = sort(img)
