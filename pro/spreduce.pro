@@ -347,9 +347,6 @@ for i=0,16 do oplot,fflat[*,i*19]
       ;------------------
       ; Tweak up the wavelength solution to agree with the sky lines.
 
-; DO NOT TWEAK THE SKY LINES ... ???
-; wset_tweak = wset
-
       locateskylines, skylinefile, flux, fluxivar, $
        wset, xsky, ysky, skywaves, lambda=skylambda
 
@@ -373,7 +370,7 @@ for i=0,16 do oplot,fflat[*,i*19]
       if (n_elements(vacsky) GT 3) then skycoeff = 3
 
       fit_skyset, xpeak, ypeak, vaclambda, xsky, ysky, vacsky, skycoeff, $
-        goodlines, wset_tweak, ymin=ymin, ymax=ymax, func=func
+        goodlines, wset, ymin=ymin, ymax=ymax, func=func
 
       locateskylines, skylinefile, flux, fluxivar, $
        wset, xsky, ysky, skywaves, lambda=vacsky
@@ -381,13 +378,13 @@ for i=0,16 do oplot,fflat[*,i*19]
       ;------------------
       ; Sky-subtract
 
-      skysubtract, flux, fluxivar, plugsort, wset_tweak, $ 
+      skysubtract, flux, fluxivar, plugsort, wset, $ 
        skysub, skysubivar
 
       ;------------------------------------------
       ; Flux calibrate to spectrophoto_std fibers
 
-      fluxfactor = fluxcorr(skysub, skysubivar, wset_tweak, plugsort, $
+      fluxfactor = fluxcorr(skysub, skysubivar, wset, plugsort, $
                              lower=1.5, upper=5)
 
       flux = skysub * fluxfactor
@@ -432,7 +429,7 @@ for i=0,16 do oplot,fflat[*,i*19]
       sxaddpar, objhdr, 'PROFTYPE', proftype, '1 is Gaussian'
       sxaddpar, objhdr, 'NFITPOLY', nparams, 'order of profile parameter fit'
 
-      writespectra, objhdr, plugsort, flux, fluxivar, wset_tweak, $
+      writespectra, objhdr, plugsort, flux, fluxivar, wset, $
        filebase=filebase
 
       heap_gc   ; Garbage collection for all lost pointers
