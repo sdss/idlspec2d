@@ -406,6 +406,15 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
       endelse
    endfor
 
+   ;----------
+   ; Clear memory
+
+   wave = 0
+   flux = 0
+   fluxivar = 0
+   temppixmask = 0
+   dispersion = 0
+
    ;---------------------------------------------------------------------------
    ; Generate S/N plots
    ;---------------------------------------------------------------------------
