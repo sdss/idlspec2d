@@ -132,6 +132,8 @@ pro batch2d, platenums, topdir=topdir, mjd=mjd, mjstart=mjstart, mjend=mjend, $
    cd, topdir
    if (NOT keyword_set(nice)) then nice = 10
 
+   splog, prelog='(2D)'
+
    ;----------
    ; Create symoblic link from current directory to raw data directory
 
@@ -273,29 +275,15 @@ pro batch2d, platenums, topdir=topdir, mjd=mjd, mjstart=mjstart, mjend=mjend, $
 
    ;----------
    ; Begin the batch jobs.
-   ; Force this to be sent to a bash shell so we know explicitly how
-   ; to set environment variables.  Otherwise, the shell is the same
-   ; as whatever IDL was launched with.
+   ; Force this to be sent to a bash shell.
    ; Set the environment variable $RAWDATA_DIR.
+   ; Redirect output to /dev/null; this redirection should be valid for
+   ;  either bash or csh shells.
 
+   setenv, 'RAWDATA_DIR=../rawdata'
+   setenv, 'SHELL=bash'
    nicestr = '/bin/nice -n ' + strtrim(string(nice),2)
-
-   ; The following forces bash-shell by piping to bash...
-;   command = 'echo '+fq+'(RAWDATA_DIR=../rawdata;' $
-;    + nicestr + ' idl ' + fullscriptfile + ')'+fq+' | bash'
-
-   ; The following forces bash-shell by piping to bash...
-   ; ... and send output to /dev/null
-   command = 'echo '+fq+'(RAWDATA_DIR=../rawdata;' $
-    + nicestr + ' idl ' + fullscriptfile + ')'+fq+' | bash >& /dev/null'
-
-   ; The following is for bash-shell...
-;   command = '(RAWDATA_DIR=../rawdata;' $
-;    + nicestr + ' idl ' + fullscriptfile + ')'
-
-   ; The following is for csh-shell...
-;   command = 'setenv RAWDATA_DIR ../rawdata;' $
-;    + nicestr + ' idl ' + fullscriptfile
+   command = nicestr + ' idl ' + fullscriptfile + ' >& /dev/null'
 
    batch, topdir, pinfile, poutfile, $
     hostconfig.protocol, hostconfig.remotehost, hostconfig.remotedir, $

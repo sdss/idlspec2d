@@ -55,10 +55,15 @@
 ;   17-Oct-2000  Written by D. Schlegel, Princeton
 ;-
 ;------------------------------------------------------------------------------
-pro batch_spawn, command, retval, _EXTRA=EXTRA
+pro batch_spawn, command, retval, pid=pid, unit=unit
 
    splog, command
-   spawn, command, retval, _EXTRA=EXTRA
+   if (arg_present(retval)) then $
+    spawn, command, retval, pid=pid $
+   else if (arg_present(unit)) then $
+    spawn, command, pid=pid, unit=unit $
+   else $
+    spawn, command, pid=pid
 
    return
 end
@@ -75,6 +80,7 @@ function create_program_list, localfile, outfile, command, $
     'OUTFILE', ptr_new(), $
     'COMMAND', '', $
     'PID', 0L, $
+    'UNIT', 0L, $
     'PRIORITY', 1L, $
     'STATUS', 'UNASSIGNED' )
 
@@ -146,17 +152,28 @@ function batch_if_done, remotehost, remotedir, protocol, pid
 
    sq = "'"
 
-   if (keyword_set(protocol)) then begin
-      prothost = protocol + ' ' + remotehost + ' '
-      batch_spawn, prothost + sq+' ps -p '+string(pid)+sq, retstring
-   endif else begin
-      batch_spawn, 'ps -p '+string(pid), retstring
-   endelse
+   ; Test whether a remote job is done...
+;   if (keyword_set(protocol)) then begin
+;      prothost = protocol + ' ' + remotehost + ' '
+;      batch_spawn, prothost + sq+' ps -p '+string(pid)+sq, retstring
+;   endif else begin
+;      batch_spawn, 'ps -p '+string(pid), retstring
+;   endelse
+
+   ; Test if the local parent job is done...
+   batch_spawn, 'ps -p '+string(pid), retstring
 
    ; If there is only one line in the return string, then this process
    ; was not found with the 'ps' command, so the job must be done.
-   if (n_elements(retstring) EQ 1) then retval = 'DONE' $
-    else retval = 'NOTDONE'
+   ; Or if the parent process was a <zombie> or <defunct>, then it must be done.
+   if (n_elements(retstring) EQ 1) then begin
+      retval = 'DONE'
+   endif else if ((strpos(retstring[1],'zombie'))[0] NE -1 $
+               OR (strpos(retstring[1],'defunct'))[0] NE -1) then begin
+      retval = 'DONE'
+   endif else begin
+      retval = 'NOTDONE'
+   endelse
 
    splog, 'Status of job on ' + remotehost + ' = ' + retval
 
@@ -212,7 +229,7 @@ pro batch_assign_job, ihost, iprog
 
       ; Launch the command in the background
       batch_spawn, prothost + sq+'cd '+hostlist[ihost].remotedir+'; ' $
-       +proglist[iprog].command + ' &'+sq, retstring
+       +proglist[iprog].command+sq, pid=thispid, unit=thisunit
 
    endif else begin
 
@@ -223,13 +240,15 @@ pro batch_assign_job, ihost, iprog
        + string(newdir[iuniq]+' ',format='(99a)')
 
       ; Launch the command in the background
-      batch_spawn, proglist[iprog].command + ' &', retstring
+      batch_spawn, proglist[iprog].command, pid=thispid, unit=thisunit
 
    endelse
 
-   ; Save the process ID number, which is the 2nd word of the return string
-   retwords = str_sep(retstring, ' ')
-   proglist[iprog].pid = long( retwords[1] )
+   ; Save the process ID number and the unit (LUN) number of the pipe
+   ; to this process.
+splog, "THISPID " ,thispid
+   proglist[iprog].pid = thispid
+   proglist[iprog].unit = thisunit
 
    hostlist[ihost].status = 'BUSY'
    hostlist[ihost].progname = proglist[iprog].progname
@@ -248,6 +267,10 @@ pro batch_finish_job, ihost, iprog
 
    splog, 'Finishing job ' + proglist[iprog].progname $
     + ' on host ' + hostlist[ihost].remotehost
+
+   ; The following will close the pipe to the parent process which is
+   ; now a <zombie> or <defunct>.
+   free_lun, proglist[iprog].unit
 
    cpstring = hostlist[ihost].cpstring
    prothost = hostlist[ihost].protocol + ' ' + hostlist[ihost].remotehost + ' '

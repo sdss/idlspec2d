@@ -10,6 +10,8 @@ pro batch1d, fullplatefile, topdir=topdir, nice=nice
    cd, topdir
    if (NOT keyword_set(nice)) then nice = 10
 
+   splog, prelog='(1D)'
+
    ;----------
    ; Create list of plate files
 
@@ -113,10 +115,15 @@ pro batch1d, fullplatefile, topdir=topdir, nice=nice
    yanny_free, pp
 
    ;----------
-   ; Begin the batch jobs
+   ; Begin the batch jobs.
+   ; Force this to be sent to a bash shell.
+   ; Redirect output to /dev/null; this redirection should be valid for
+   ;  either bash or csh shells.
 
+   setenv, 'SHELL=bash'
    nicestr = '/bin/nice -n ' + strtrim(string(nice),2)
-   command = nicestr + ' idl ' + fullscriptfile
+   command = nicestr + ' idl ' + fullscriptfile + ' >& /dev/null'
+
    batch, topdir, infile, outfile, $
     hostconfig.protocol, hostconfig.remotehost, hostconfig.remotedir, $
     command, priority=priority
