@@ -20,7 +20,8 @@
 ;   tai            - Number of seconds since Nov 17 1858; either JD or TAI
 ;                    must be specified.  Note this should probably either
 ;                    be type DOUBLE or LONG64.
-;   longitude      - Longitude of observatory; default to 105.820417 deg for APO
+;   longitude      - Longitude of observatory;
+;                    default to (360-105.820417) deg for APO
 ;   latitute       - Latitude of observatory; default to 32.780361 deg for APO
 ;   altitude       - Altitude of observatory; default to 2788 m for APO
 ;
@@ -51,24 +52,18 @@ function heliocentric, ra, dec, epoch, jd=jd, tai=tai, $
    if (NOT keyword_set(epoch)) then epoch = 2000.0
 
    ; Default to location of Apache Point Observatory
-   if (NOT keyword_set(longitude)) then longitude = 105.820417
+   if (NOT keyword_set(longitude)) then longitude = 360. - 105.820417
    if (NOT keyword_set(latitude)) then latitude = 32.780361
    if (NOT keyword_set(altitude)) then altitude = 2788.
 
    if (NOT keyword_set(jd)) then begin
       if (keyword_set(tai)) then begin
-         jd = 2400000.D + tai / (24.D*3600.D)
+         jd = 2400000.5D + tai / (24.D*3600.D)
       endif else begin
          message, 'Must specify either JD or TAI', /cont
          return, 0
       endelse
    endif
-
-   ; Set up common block for ZENPOS
-;   COMMON SITE, lat, lng, tzone
-;   lat = latitude
-;   lng = longitude
-;   tzone = 7 ; Not used!
 
    DRADEG = 180.d0 / !DPI
 
@@ -104,9 +99,7 @@ function heliocentric, ra, dec, epoch, jd=jd, tai=tai, $
        + altitude
    vc = 2.d0 * !DPI * (r / 1000.d0)  / (23.934469591229d0 * 3600.d0)
 
-   ; Compute the hour angle, HA
-;   zenpos, jd, zrarad, zdecrad ; returns RA,DEC of zenith in radians
-;   LST = zrarad * DRADEG
+   ; Compute the hour angle, HA, in degrees
    ct2lst, LST, longitude, junk, jd
    LST = 15. * LST ; convert from hours to degrees
    HA = LST - ra
