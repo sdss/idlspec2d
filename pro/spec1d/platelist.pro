@@ -273,9 +273,9 @@ pro platelist, infile, plist=plist, create=create, purge=purge
          endelse
 
          if (statusmissing EQ 0 AND statusrun EQ 0) then begin
-            plist[ifile].status2d = 'FAILED' $ ; Should have found spPlate file
+            plist[ifile].status2d = 'FAILED' ; Should have found spPlate file
          endif else if (statusrun EQ 0 AND statusdone EQ 0) then begin
-            plist[ifile].status2d = 'Pending' $ ; No log files created
+            plist[ifile].status2d = 'Pending' ; No log files created
          endif else begin
             if (keyword_set(purge)) then begin
                rmfile, planlist
@@ -284,7 +284,7 @@ pro platelist, infile, plist=plist, create=create, purge=purge
             endif else begin
                plist[ifile].status2d = 'RUNNING' ; Some log files created
             endelse
-         endif
+         endelse
 
       endelse
 
