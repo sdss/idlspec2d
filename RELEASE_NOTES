@@ -24,6 +24,10 @@ PLATELIST: Use FINDFILE() function to see if files exist before calling
         MRDFITS(); this should be a slight speed-improvement.
 PLATEMERGE: Add the fields CALIBFLUX,CALIBFLUX_IVAR which are explicitly
         copied over from the plug-map structures.
+QAPLOT_FCALIBVEC: Put plots for each spectrograph on its own page, and
+        put offsets between the plots for all objects, F stars, and QSOs
+        so that we can see the plots more easily.  Also, smooth the plots
+        a little bit after the median-filtering.
 READPLUGMAP: Fix bug when replacing unknown fluxes in the calibObj
         structure with old values in the plug-map file.
 READSPEC: Change how the internal procedure READSPEC1 works, such that
