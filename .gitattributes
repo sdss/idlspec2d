@@ -117,6 +117,7 @@ pro/spec2d/locateskylines_test.pro -text
 pro/spec2d/logsheet.pro -text
 pro/spec2d/makefile.old -text
 pro/spec2d/pixelmask_bits.pro -text
+pro/spec2d/plotsn.pro -text
 pro/spec2d/qaplot_arcline.pro -text
 pro/spec2d/qaplot_fflat.pro -text
 pro/spec2d/qaplot_scatlight.pro -text
