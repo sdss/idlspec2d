@@ -1,0 +1,399 @@
+
+<HTML>
+<HEAD>
+   <TITLE>Son-of-Spectro Documentation</TITLE>
+</HEAD>
+<BODY TEXT="#000000" LINK="#0000ff" VLINK="#800080" BGCOLOR="#eeeeee"
+ALINK="#FF0000">
+
+<CENTER><H1>Son-of-Spectro (SOS) Documentation</H1></CENTER>
+
+This document desribes the real-time reductions of spectroscopic data
+taken with the SDSS 2.5-m.  These reductions are robotically posted
+to the
+<A HREF="http://plate-mapper.apo.nmsu.edu:8020/apo2d/logfile-current.html">
+SOS web page</A> and archived at the
+<A HREF="http://www.astro.princeton.edu:81/sdss-speclog/INDEX.html">
+Princeton mailing list</A>.
+
+<P>
+In this document:
+<UL>
+  <LI><A HREF="#howwork">How Son-of-Spectro Works</A>
+  <LI><A HREF="#outputs">Son-of-Spectro Outputs</A>
+  <UL>
+     <LI><A HREF="#outputs_table">Tabluated values</A>
+     <LI><A HREF="#outputs_warning">WARNING and ABORT messages</A>
+     <LI><A HREF="#outputs_log">Log files</A>
+     <LI><A HREF="#outputs_figure">S/N figures</A>
+  </UL>
+  <LI><A HREF="#launch">How to Launch Son-of-Spectro</A>
+  <LI><A HREF="#version">Backing out to an older version</A>
+  <LI><A HREF="#trouble">Trouble-shooting Son-of-Spectro</A>
+</UL>
+
+<H2><A NAME="howwork">How Son-of-Spectro Works</A></H2>
+
+<P>
+Son-of-Spectro is a cron job that runs from the "observer" account
+on "plate-mapper.apo.nmsu.edu".  This cron job invokes rsync once
+every minute to copy raw spectro data from "sdsshost" to "plate-mapper",
+then launches a package of shell scripts and IDL commands to reduce
+the data one frame at a time.  It is part of the <B>idlspec2d</B> data product.
+
+<P>
+There are actually <B>two</B> rsync processes that run, one for the blue
+camera images and one for the red.  We did this so that both processors on the
+computer can be utilized.  All 4 cameras should be reduced for an exposure
+within a few minutes.
+
+<P>
+The raw data is copied into these directories on plate-mapper:
+<DL><DD><PRE>
+  /data/spectro/astrolog/$MJD  - Copy of the same from sdsshost
+  /data/spectro/$MJD           - Copy of /astrolog from sdsshost
+</PRE></DD></DL>
+
+<P>
+The data reduction is not the same as the full-up spectroscopic pipeline.
+A number of shortcuts are taken to speed up the reductions and make them
+very robust.  For example, boxcar extraction of the spectra is used instead
+of optimal extraction.
+
+<P>
+The reduced data will appear in the directory:
+<DL><DD><PRE>
+  /data/spectro/spectrologs/$MJD
+</PRE></DD></DL>
+Files like the following can be found in that directory:
+<DL><DD><PRE>
+  splog-b1-00006541.log              - Text history of exp #6541 reduction
+  tset-51795-0389-00006541-b1.fits   - Fiber traces (from flat exposure #6541)
+  wset-51795-0389-00006542-r1.fits   - Wavelength solution (from arc exp #6542)
+  fflat-51795-0389-00006542-b1.fits  - Flat-field vectors (w/ arc exp #6542)
+  sci-0389-b2-00006546.fits          - Science spectra for plate 389 (exp #6546)
+  logfile-51795.fits                 - Summary info for night in FITS format
+  logfile-51795.html                 - Summary info for night in HTML format
+  snplot-51795-0389.ps               - Signal-to-noise plot for nplate 389
+</PRE></DD></DL>
+If a particular frame does not get reduced and appear on the Son-of-Spectro
+web site, then you can look at its log file (splog*.log).  If the file
+does not end with the line "Finished at", then that exposure must have
+crashed.
+
+<P>
+The HTML files and S/N plots for the web page are copied into the directory:
+<DL><DD><PRE>
+  /data/spectro/spectrologs/html
+</PRE></DD></DL>
+The most recent HTML file has a second copy as the file "logfile-current.html".
+This is the file pointed to by the
+<A HREF="http://plate-mapper.apo.nmsu.edu:8020/apo2d/logfile-current.html">
+SOS web page</A>.
+
+<H2><A NAME="outputs">Son-of-Spectro Outputs</A></H2>
+
+<H4><A NAME="outputs_table">Tabulated values</A></H4>
+
+<P>
+Son-of-Spectro reduces four flavors of observations:
+bias/dark, flat, arc, & science/smear.  Select information is tabulated
+for each of these types of observation.  These values are tabulated in
+<B><FONT COLOR="#9F9F00">yellow</FONT></B>
+if they are going out of spec, and in
+<B><FONT COLOR="#FF0000">red</FONT></B>
+if they are very much out of spec.
+
+<P>
+The values reported are:
+<UL>
+<LI><B>BIAS/DARK PERCENTILE98</B> <BR>
+    The value in electrons of the 98-th percentile on the (overscan-corrected)
+    image.  For example, if this is 8, then 98% of the pixels are below 8
+    electrons.  Bad regions on the CCD and saturated pixels are excluded
+    from this evaluation.
+<LI><B>FLAT NGOODFIBER</B> <BR>
+    The number of illuminated fibers.  This should be 320 if all the
+    fibers are plugged and unbroken.
+<LI><B>FLAT XMIN (XMAX)</B> <BR>
+    The minimum (maximum) X position of the spectra on the CCD.  If this is
+    less than 0 (greater than 2047), then some of the spectra fall off the
+    left (right) side of the CCD.
+<LI><B>ARC WAVEMIN (WAVEMAX)</B> <BR>
+    The minimum (maximum) wavelength (in Angstroms) of any spectra on this CCD.
+    Because of the optical distortions, this is always for the central
+    fiber.  The edge fibers have less wavelength coverage.
+<LI><B>ARC BESTCORR</B> <BR>
+    The linear correlation coefficient between the arc spectra and a template
+    arc spectrum.  If they agree perfectly, then this is 1.  The value of
+    this correlation is typically 0.80.  If it drops too much lower, then
+    the arc spectra do not look as they should.  This could happen if some
+    of the arc lines are missing -- if, for example, the Hg lamps all failed.
+    If the correlation is less than 0.5 or so, then it's even possible that
+    the code has found the incorrect wavelength solution.
+<LI><B>ARC NLAMPS</B> <BR>
+    The number of arc lines used to generate the wavelength solution.
+    There are many more on the red CCD's because neon has many more lines
+    there.  If this drops to too few lines, then some of the lamps have not
+    turned on properly, have not warmed up, or have warmed up too much.
+<LI><B>SCIENCE/SMEAR SKY/SEC</B> <BR>
+    The median sky counts in electrons per pixel.
+    If this is too large, then there must be a light source near the
+    telescope, or the night sky (the moon) is bright, or the CCD's are
+    warming up and generating dark current.
+<LI><B>SCIENCE/SMEAR (S/N)^2</B> <BR>
+    The signal-to-noise squared for objects at the fiducial magnitude limit.
+    We choose (S/N)^2 because it is an additive quantity with additional
+    integration time.  When all the cameras reach a total (S/N)^2 of 15,
+    then all these entries turn from red to black, and
+    we can declare a plate done.  Exactly how this quantity is
+    measured is <A HREF="#outputs_figure">described below</A>.
+</UL>
+
+<P>
+The exact values of these yellow/red limits and further explanation can
+be found in the "idlspec2d" product in the file "examples/opLimits.par".
+
+<H4><A NAME="outputs_warning">WARNING and ABORT messages</A></H4>
+
+<P>
+There are a number of
+<B><FONT COLOR="#9F9F00">WARNING</FONT></B>
+and
+<B><FONT COLOR="#FF0000">ABORT</FONT></B>
+messages that can appear if the pipeline runs into trouble when processing
+a frame.  These messages appear at the bottom of each table.
+Each one-line message begins with the procedure name that encountered the
+trouble, the file name that it was working on, WARNING or ABORT,
+then a brief plain-text message.
+
+<P>
+The following messages may appear:
+<UL>
+<LI><B>Scattered light</B> <BR>
+    There was a high baseline count rate on the CCD, and appears even
+    between fibers.  This can most obviously occur if there are light
+    sources in the CCD (such as the LED's we had for some time), or
+    if the CCD's are warming up and generating dark current.
+    There can also be a scattered light contribution just from a very
+    bright sky, or if there are very bright objects on some fibers that
+    are scattering or bleeding light across the CCD.
+<LI><B>More than 10% of the image is rejected</B> <BR>
+    This is very bad.  This can probably only happen if most of the CCD
+    has saturated pixels.
+<LI><B>Best arc correlation</B> <BR>
+    The cross-correlation of the arc spectrum with the template arc spectrum
+    was bad.  This is also triggered as BESTCORR in the table (see above).
+<LI><B>Too few sky fibers to model sky-sub variance</B> - <BR>
+    There are not enough good sky fibers on the CCD.  This will only happen
+    if for some reason there were far fewer than the mandated 16 sky fibers
+    on a CCD, or most of those fibers just happened to be dead fibers.
+    You should never see this message.
+<LI><B>Big wavelength gap</B> <BR>
+    Some arc lines were not found in the arc spectra, and there is a large
+    gap in wavelength space without any lines.  This will produce a poor
+    wavelength solution.  More arcs should be taken until this message
+    does not appear.
+</UL>
+
+<H4><A NAME="outputs_log">Log files</A></H4>
+
+<P>
+If the reduction of an exposure is catastrophically bad, it may not
+appear at all in the Son-of-Spectro table.  However, there should still
+be a log file for this exposure on the plate-mapper computer:
+    <DL><DD><PRE>
+    /data/spectro/spectrologs/$MJD/splog-$CAMERA-$EXPOSURE.log
+    </PRE></DD></DL>
+Reading this file should tell you what failed.  The first and last lines
+of these files should contain "Started at" and "Finished at"
+followed by timestamps.
+
+<H4><A NAME="outputs_figure">S/N figures</A></H4>
+
+<P>
+A <B>median</B> signal-to-noise is computed for each object in the
+wavelength ranges [4000,5500] Angstroms (synthetic g-band)
+and [6910,8500] Angstroms (synthetic i-band).
+We plot these S/N values versus the PHOTO fiber magnitudes, which were
+measured in approximately a 3-arcsec diameter aperature (the same size
+as our fibers).  If everything is working perfectly, then our S/N values
+should correlate very well with these PHOTO magnitudes.
+
+<P>
+We determine whether a plate is "done" based upon the signal-to-noise
+of the fainter objects on the plate.  We do this by fitting a line to
+the (S/N)-vs.-magnitude plot in a specified wavelength range, then evaluating
+this fit at g=20.2 mag (blue CCDs), and i=19.9 mag (red CCDs).
+Approximately 10% of the main galaxy sample, 60% of the BRG's and 15% of
+the QSO's are fainter than g=20.2.  Very few objects (1, 1, and 5%) are
+fainter than i=19.9.
+
+<P>
+When the sky level is higher, we gain S/N more slowly at
+the fainter magnitudes where we are sky-limited rather than photon-limited.
+Without moon, we have typically found:
+<DL><DD><PRE>
+  log(S/N_g) = (zeropoint) - 0.31 * g
+  log(S/N_i) = (zeropoint) - 0.31 * i
+</PRE></DD></DL>
+With partial moon, the slope steepens to -0.34 or worse.
+
+<P>
+The fitting regions are denoted on the plot with vertical dotted lines.
+Arrows point to the evaluation of the fit on each of the 4 cameras, with
+the top panels corresponding to the blue CCD's (synthetic g-band) and
+the bottom panels corresponding to the red (synthetic r-band).
+The thick blue line on the figure is only a meaningless, fixed reference line.
+
+<P>
+The right-hand figures plot the residuals of each object from the fit.
+Symbol sizes on those right-hand plots indicate the magnitude of the
+deviation from the fit line.  Symbol color is the same on the left
+as on the right, so
+<B><FONT COLOR="#00FF00">green</FONT></B>
+objects have more flux and
+<B><FONT COLOR="#FF0000">red</FONT></B>
+ones less.
+If the scale of the telescope is wrong, then you will see a radial drop-off
+in flux (red points on the edge of the plate).
+If you are observing too far over in air mass, then typically you correct
+to first order with a scale change, but a quadropole is left in these
+residuals.
+If one spectrograph has problems, then this will show up as red points
+in half of one of these figures.
+
+<P>
+Note that the (S/N)^2 totals listed in the table and the figure might
+not exactly agree.  This is because the fitting to (S/N)-vs.-magnitude
+is done on individual frames for the table, but on the summed S/N over
+all frames for the figure.  The tabulated values are the ones we use
+to declare a plate done.
+
+<H2><A NAME="launch">How to Launch Son-of-Spectro</A></H2>
+
+<P>
+Son-of-Spectro is a cron job that runs from the "observer" account
+on "plate-mapper.apo.nmsu.edu".  It should always be running, and
+should even recover (as any cron job) if that machine is power-cycled.
+
+<P>
+Log into "plate-mapper" as user "observer".  Check if the cron job
+is running by typing:
+<DL><DD><PRE>
+  crontab -l
+</PRE></DD></DL>
+If it is <B>not</B> running, then you will see the response:
+<DL><DD><PRE>
+  no crontab for observer
+</PRE></DD></DL>
+If it <B>is</B> running, then you will see a bunch of lines of text
+beginning with:
+<DL><DD><PRE>
+  # DO NOT EDIT THIS FILE - edit the master and reinstall.
+</PRE></DD></DL>
+and followed by our crontab file.  This file is located in
+<DL><DD><PRE>
+  /p/idlspec2d/cvs/bin/cron.table
+</PRE></DD></DL>
+
+<P>
+The Son-of-Spectro cron job is started by typing:
+<DL><DD><PRE>
+  crontab /p/idlspec2d/cvs/bin/cron.table
+</PRE></DD></DL>
+It is stopped by typing:
+<DL><DD><PRE>
+  crontab -r
+</PRE></DD></DL>
+
+<P>
+These instructions are repeated in the "cron.table" file.
+
+<H2><A NAME="version">Backing out to an older version</A></H2>
+
+<P>
+You <B>cannot</B> change versions of Son-of-Spectro by doing a "ups declare"
+on plate-mapper.  This is because cron jobs don't talk to the UPS database.
+
+<P>
+The active version of the idlutils & idlspec2d code for Son-of-Spectro
+is pointed to by logical links from /p/idlutils/cvs & /p/idlspec2d/cvs.
+To back out to an older version, do the following:
+<OL>
+<LI> Stop the cron job:
+    <DL><DD><PRE>
+    crontab -r
+    </PRE></DD></DL>
+<LI> Change these links to the version that you want, for example v4_3_1:
+    <DL><DD><PRE>
+    ln -fs /p/idlutils/v4_3_1 /p/idlutils/cvs
+    ln -fs /p/idlspec2d/v4_3_1 /p/idlspec2d/cvs
+    </PRE></DD></DL>
+<LI> Start the cron job running again:
+    <DL><DD><PRE>
+    crontab /p/idlspec2d/cvs/bin/cron.table
+    </PRE></DD></DL>
+</OL>
+
+<H2><A NAME="trouble">Trouble-shooting Son-of-Spectro</A></H2>
+
+<P>
+The Son-of-Spectro (SOS) reduction robot has proven to be quite robust.
+However, if it appears to not be working one could check the following:
+<OL>
+<LI><B>Has a "loadCartridge" command been issued?</B><BR>
+    If this has not been done from SOP, then there is no PLATE entry
+    in the images.  This prevents SOS from reducing anything but bias
+    and dark frames.
+<LI><B>Is the cron job running?</B><BR>
+    Log into "observer@plate-mapper.apo.nmsu.edu", and issue a "crontab -l"
+    command.  This should list the 50-line cron table.
+    If not, then <A HREF="#launch">restart the cron job</A>.
+<LI><B>Is the data being copied over?</B><BR>
+    The raw data files should be copied from "sdsshost" to "plate-mapper"
+    in the /data/spectro/$MJD directory.  If it is not, then the rsync
+    command may not be working.  This <B>could</B> be due to a rogue
+    "aporsync" process sitting around.  Try:
+    <DL><DD><PRE>
+    ps ax | grep aporsync.sh | grep -v -e grep
+    </PRE></DD></DL>
+    to see if there are any such processes.  If you suspect this as the
+    problem, just kill that process.  It's a harmless thing to do, since
+    SOS will just start it up again within a minute.
+<LI><B>Are there old "lock" files sitting around?</B><BR>
+    SOS generates "lock" files to prevent multiple processes from changing
+    these files simultaneously.  If there is a "lock" file sitting around
+    that has been there for several minutes or more, then something is
+    wrong.  You should delete the file ending with ".lock".
+    <B>However</B>, this could result in a corrupted "logfile*.fits".
+<LI><B>Is the logfile corrupted?</B><BR>
+    This is probably the worst thing that could happen.  If the file
+    <DL><DD><PRE>
+    /data/spectro/spectrologs/$MJD/logfile-$MJD.fits
+    </PRE></DD></DL>
+    gets corrupted, then SOS will repeatedly crash.  One could just
+    delete this file, which would basically wipe out all the previous
+    reductions for that night from the web page.  Alternatively, one
+    could delete all the raw and reduced data for that night from
+    "plate-mapper":
+    <DL><DD><PRE>
+    rm -rf /data/spectro/spectrologs/$MJD
+    rm -rf /data/spectro/$MJD
+    </PRE></DD></DL>
+    That might sound extreme, but SOS will simply start re-copying
+    everything from "sdsshost" and re-build the reductions for the night.
+    Obviously, this could take a couple of hours if its already late
+    into the night.
+
+<p>This is from version $Name$ of procedures.<p>
+
+<HR>
+
+<ADDRESS> Maintained by
+<A HREF="mailto:schlegel@astro.princeton.edu">David Schlegel</A>
+and <A HREF="mailto:sburles@fnal.gov">Scott Burles</A>
+</ADDRESS>
+
+</BODY>
+</HTML>
