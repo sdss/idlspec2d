@@ -1,7 +1,7 @@
 ;------------------------------------------------------------------------------
 ; Read the Elodie eschelle spectra and pu on the SDSS pixelization.
 ;------------------------------------------------------------------------------
-function read_elodie, filename, loglam=newloglam
+function read_elodie, filename, loglam=newloglam, hdr=hdr
 
    if (NOT keyword_set(filename)) then begin
       print, 'Syntax: flux = read_elodie(filename, [loglam= ])'
