@@ -103,9 +103,9 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
       iskies = where(plugsort.objtype EQ 'SKY' AND plugsort.fiberid GT 0 AND $
                      (fibermask EQ 0), nskies)
 
-      if (nskies LE 1) then begin
-              splog, 'ABORT: Only '+ string(nskies) + ' sky fibers found' 
-              return
+      if (nskies LT 2) then begin
+          splog, 'ABORT: Only '+ string(nskies) + ' sky fibers found' 
+          return
       endif 
 
       skymedian = djs_median(scrunch[iskies])
@@ -122,12 +122,12 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 ;         splog, 'ABORT: Fibers have '+ string(scrunch[scrunch_sort[i5]]) + $
 ;                ' at the 5% '
          ;
-         ;	Here we just need to move to the next exposure, not return
+         ; Here we just need to move to the next exposure, not return
          ;       completely.  This would argue for having a subroutine called
          ;       for each exposure, so a return would only skip the botched
          ;       exposure, and not all the rest
          ;
-;	 return
+;        return
 ;      endif
 
 
@@ -233,7 +233,7 @@ endif
 
          if (i EQ 0) then begin 
             splog, 'Trace Tweaking: Step', i*3+3, '    (Sigma not tweaked)'
-	    ;----------------------------------------------------
+            ;----------------------------------------------------
             ;  This is essentially tweaktrace
             ;
             xnow = xnow - centershift * sigma
@@ -384,8 +384,8 @@ endif
             minw=3.94, maxw=3.97, lower=5.0, upper=5.0, ncontbkpts=5, $
             fibermask=fibermask)
 
-         psave = !p.multi
- 	 !p.multi = [0,1,3]
+      if (keyword_set(contwave1)) then begin
+         !p.multi = [0,1,3]
          djs_plot,10^contwave1,contflux1,ps=3,xr=10^[3.82,3.87],yr=[0.0,1.5], $
               ymargin=[2,4], charsize=1.6, xstyle=1, $ 
               xtitle='\lambda [A]', ytitle='Flux [electrons]', $
@@ -405,7 +405,8 @@ endif
          djs_oplot,10^contwave2,slatec_bvalu(contwave2,telluricbkpt2, $
                       telluriccoeff2),color='red'
 
- 	 !p.multi = psave
+         !p.multi = 0
+      endif
 
          telluricfactor = telluric1 * telluric2
          divideflat, flambda, flambdaivar, telluricfactor, minval=0.1
