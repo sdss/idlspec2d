@@ -82,6 +82,7 @@ pro/spec1d/fourier_quotient.pro -text
 pro/spec1d/ftest.pro -text
 pro/spec1d/fundamental_line.pro -text
 pro/spec1d/gauss_periodic.pro -text
+pro/spec1d/plug2tsobj.pro -text
 pro/spec1d/primfac.pro -text
 pro/spec1d/readspec.pro -text
 pro/spec1d/veldisp.pro -text
