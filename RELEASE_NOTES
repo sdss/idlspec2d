@@ -5,12 +5,18 @@ PLATEHIST: Select "good" plates based upon "platequality" field
            from PLATELIST.
 PLATELIST: Use manually-assigned platequality from "spPlateList.par"
            file when it exists.
+           Add fields N_TARGET_MAIN,N_TARGET_LRG,N_TARGET_QSO.
            Add fields SUCCESS_MAIN,SUCCESS_LRG,SUCCESS_QSO.
            Use STRUCT_PRINT to print all ASCII and HTML files.
+           Use APO_CHECKLIMITS() to check limits of tabulated values
+           and color-code them in the HTML files.
 PLATEMERGE: Use MWRFITS_CHUNKS to allow us to write bigger files
            (approximately up to your memory size).
+           Add PROGNAME,SPECPRIMARY to ASCII output.
+ZPLOT: Change "brg" names to "lrg".
 
 opLimits.par: Use the SKYPERSEC limit for either science or smear exposures.
+           Add limits for use by the PLATELIST procedure.
 spPlateList.par: Update to data through MJD 52413 (19 May 2002).
            Add PLATEQUALITY,QUALCOMMENTS to Yanny structure.
            Remove the following (bad) plates from public data releases:
