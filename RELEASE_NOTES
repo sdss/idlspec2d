@@ -1,4 +1,11 @@
 
+-------------------------------------------------------------------------------
+v4_9_7 (Apr 10, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
+Built against specflat v1_4.
+
+More development work for 2D and P-1D.
+Traceset routines moved from idlspec2d -> idlutils product.
+
 COMBINE1FIBER: Bug fix to get the NODATA bad pixel set in the ANDMASK
            where-ever it is set in the ORMASK.
 ELODIE_BEST: Add FITINDX keyword. Expand default fitting range to +/-1000 km/s.
@@ -20,7 +27,7 @@ PLATESN: For the roll call, output both the number of bad fibers for
 PLOTSPEC: Added /ORMASK, /ANDMASK keywords.  Plot text for the zwarning flags.
            Use /normal coordinates for plot labels, so they stay on
            the plot even when zoomming in and out.
-QUICKEXTRACT: Do not issue warning message for spatial widths onsmear exposures
+QUICKEXTRACT: Do not issue warning message for spatial widths on smear exposures
            since S/N can be so low.  This addresses PR #3511.
 READSPEC,SPEC_APPEND: Add the /ALIGN option for aligning all the spectra
            in wavelength.  Also, fix a bug whereby reading objects from
@@ -47,13 +54,19 @@ SKYSUBTRACT: Fix stupid bug where sky-fits are rejected if the mean
            Do not set BADSKYCHI mask bit when NOSKY is already set.
            Raise the threshhold for setting the BRIGHTSKY mask bit from
            1.25 * (median sky) to 2.0.
-SPCOADD_FRAMES: Average keywords XCHI2,SKYCHI2 in output header.
-           Add output keywords XCHI2MIN,XCHI2MAX,SCHI2MIN,SCHI2MAX.
+SPCALIB: Save "medwidth" from call to FITDISPERSION in the arcstruct.
+           Save "medwidth" from call to FITFLATWIDTH in the flatstruct.
+SPCOADD_FRAMES: Average keywords XCHI2,SKYCHI2,XSIGMA,WSIGMA in output header.
+           Add output keywords XCHI2MIN,XCHI2MAX,SCHI2MIN,SCHI2MAX,
+           XSIGMIN,XSIGMAX,WSIGMIN,WSIGMAX.
            Compute the fraction of bad pixels in total, and on each
            spectrograph.  Bad pixels are any with SKYMASK(INVVAR)=0,
            excluding those where the NODATA bit is set in the pixel mask.
            Then set the header keywords FBADPIX,FBADPIX1,FBADPIX2.
+SPREDUCE: Add XSIGMA,WSIGMA to output headers.
 SPREDUCE1D: Use SDSS_FLAGVAL() to set the zwarning mask bits.
+           Make consistent with changes to line names in "emlines.par" file
+           when setting the NEGATIVE_EMISSION mask bit.
            Call ELODIE_BEST() for stars, and append to spZbest output structure.
 TELLURIC_CORR: Center the plot title.
 ZTWEAK_STAR: New proc for getting the zero-point of the stellar
@@ -72,7 +85,7 @@ spChunkList.par: Remove verstarg from structure, and add progname.
 spEigenStar-52373.fits: New stellar eigentemplates based upon
            eigeninput_star.par.
 spMaskbits.par: Heavily modified file to include many more types of mask bits.
-sprobot_start: Set the environment variable "DISPLAY=:0.0" so that any
+sprobot_start: Set the environment variable "DISPLAY=" so that any
            IDL jobs launched from these scripts don't use any additional
            IDL licenses.
 
@@ -84,6 +97,26 @@ SXCOMBINEPAR: Add optional _EXTRA keywords to pass to SXADDPAR.
 
 goddard/Makefile: Remove tape_io from the subdir list, since this causes it to
             crash when building under IRIX+6.
+
+The following IDL routines were moved from the "idlspec2d" product:
+pro/trace/fchebyshev.pro
+          fchebyshev_split.pro
+          flegendre.pro
+          fpoly.pro
+          func_fit.pro
+          trace_crude.pro
+          trace_fweight.pro
+          trace_gweight.pro
+          traceset2pix.pro
+          traceset2xy.pro
+          xy2traceset.pro
+The following C code was moved from the "idlspec2d" product:
+src/trace/Makefile
+          evilmath.c
+          evilmath.h
+          trace_crude.c
+          trace_fweight.c
+          trace_gweight.c
 
 -------------------------------------------------------------------------------
 v4_9_6 (Mar 29, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
@@ -108,7 +141,7 @@ APOREDUCE: No longer do the test in the beginning of this procedure that
             When copying the HTML file to "logfile-current.html", add
             the line of Java-script that does the auto-refresh.
 BATCH1D,BATCH2D: Set the DISPLAY environment variable on remote machines
-            to always be ":0.0", so that only one IDL license on each
+            to always be "", so that only one IDL license on each
             remote machine.  Also, pipe the commands through the bash shell
             on the remote machine, which means the UPS environment must
             be set up in the .bashrc file on the remote machine.
