@@ -2,15 +2,18 @@
 ;   sciname        - Name of science and smear reduced images, for only
 ;                    one of the spectrographs.
 ;   fcalibprefix   - Prefix for flux-calibration files.
+;   outdir         - optional output directory, default is current directory
 ;   adderr         - Additional error to add to the formal errors, as a
 ;                    fraction of the flux.
 ;
 ; Might be more rational to pass this routine spec-1 then spec-2 files.
 ;------------------------------------------------------------------------------
-pro spflux, sciname, fcalibprefix, adderr=adderr
+pro spflux, sciname, fcalibprefix, outdir=outdir, adderr=adderr
 
 ; Do we want to set this more rationally, or different for science vs. smear???
    sn2cut = 0.1
+
+   if NOT keyword_set(outdir) then outdir=''
 
    ;----------
    ; Select the exposure number to use as the fiducial spectro-photo exposure.
@@ -153,7 +156,8 @@ if (NOT keyword_set(qabort)) then begin ; Do we abort on this spectrograph ???
 
          if (camid NE -1) then begin
            expstr = string(allexpnum[iexp], format='(i8.8)')
-           corrfile = 'spFluxcorr-' + expstr + '-' + camid + '.fits'
+           corrfile = djs_filepath('spFluxcorr-'+expstr+'-'+camid+'.fits', $
+              root_dir=outdir)
 
            if size(bluelist,/tname) EQ 'STRING' then $
               bluelist = [bluelist, bluefile] $
@@ -186,7 +190,8 @@ if (NOT keyword_set(qabort)) then begin ; Do we abort on this spectrograph ???
        fcalibfiles = fcalibprefix + ['-b2.fits','-r2.fits']
 
       myfluxcalib, [sciname[ibcalib], sciname[ircalib]], $
-       fcalibfiles, colors=['b','r'], adderr=adderr
+        djs_filepath(fcalibfiles, root_dir=outdir), $
+        colors=['b','r'], adderr=adderr
 
 endif ; End-if for whether we abort on this spectrograph ???
 
