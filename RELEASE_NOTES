@@ -9,7 +9,14 @@ FIND_NMINIMA: Replacement code for FIND_NPEAKS, for solving the chi^2
               minima for redshifts.  This routine will fit a quadratic
               if there are only 3 points, and a gaussian plus a constant
               if there are more than 3 points.
+              If there is an error in the fit, return an error code as a
+              negative integer in XERR.
 MJD_MATCH: New routine split out of SPPLAN1D.
+READSPEC: Minor change to prevent crashing if data for some objects
+          does not exist.  Specifically, if structures for some objects
+          (e.g., ZANS or TSOBJ) did not exist, this routine could crash.
+SPEC_APPEND: Minor change to prevent crashing if data for some objects
+             does not exist.  (This routine is used by READSPEC).
 SPPLAN1D: Now call MJD_MATCH().
 SPREDUCE1D: Change the width in velocity space for fitting the chi^2
             minima in the redshift-finding.  These widths can be broader
@@ -17,6 +24,10 @@ SPREDUCE1D: Change the width in velocity space for fitting the chi^2
             (The quadratic fits were not a good approximation when fitting
             more than a few points.)  Now always use at least 5 points.
 ZCOMPUTE: Replace call to FIND_NPEAKS() with FIND_NMINIMA().
+ZFIND: Do not modify any errors that are less than zero, since those
+       can be used as just warning flags from the fit.
+       Increase to search lags (as specified by PMIN,PMAX) according to
+       the values of both PWIDTH and WIDTH.
 ZFITMAX: Replace call to POLY_FIT with SVDFIT such that this routine
          behaves the same under either IDL 5.3 or 5.4.  It was the
          case that the errors were improperly computed using the re-
@@ -24,6 +35,9 @@ ZFITMAX: Replace call to POLY_FIT with SVDFIT such that this routine
 
 In idlutils, added MPFIT routines from Craig Markwardt.  These will
 be used for the redshift-finding code (specifically, FIND_NMINIMA).
+
+build_links (in idlutils): Do not build a link for any file if the link
+        name already exists.
 
 -------------------------------------------------------------------------------
 v4_8_2 (Aug 16, 2001 idlspec2d+idlutils)
