@@ -1,0 +1,116 @@
+Description of the files
+
+The information is pulled simply from the 2MASS files supplied to me
+by Jill Knapp.  The astrometry is directly from 2MASS; no proper
+motions have been applied.
+
+For objects NOT drawn from a membership list, only those 
+with an optical counterpart in the 2MASS catalog were considered.
+
+In most cases, I think that the priority should be 
+	bright stars + Hipparcos supplement
+	members
+	fainter stars
+
+However, NGC 1817 is the exception.  There the priority should be:
+	members
+	other stars (and not super-bright)
+
+-----------------------------------------------------------------------
+
+Praesepe:  We're missing a small band of data near RA=129.5.
+
+Plate center: RA=130, dec = 19.6
+
+Scott Burles found a membership list from Wang et al 1995.
+This gave 88 matches (1") to 2MASS at J>10.  File: praesepe.match
+
+I then took all stars with J<10 on the plate.  This gave 215 stars.  
+File: praesepe.j10
+
+I then took all stars with 10<J<13, downweighting by  
+(d<0.5?1:(d/0.5)**-2), where d is the distance from the plate center.
+This gave 531 more stars, but I forgot to remove the members, so there
+will be ~450 new stars.  File: praesepe.j13
+
+-----------------------------------------------------------------------
+
+Pleiades: We're missing a lot of data: the quadrant at ra<56.5 and dec>24,
+plus another patch at dec>24, 58<ra<58.6, plus a couple strips.
+I moved the plate center a bit to avoid these: ra = 57.0, dec = 23.7.
+
+Also, the brightest stars (V<5.5 or so) seem to be missing from 2MASS; 
+we'll have to add them in from Hipparcos.
+
+The Pleiades is big enough that the clustering on the plate won't be
+much of a problem.
+
+I take all stars with J<10.  This gave 255 stars.  File: pleiades.j10
+
+I then take all stars with J<14, downweighting by (J<11?1:0.15*(15-J))
+(not that this is not continuous at J=11, but I needed to downweight the
+fainter stars somewhat).  This gave 1113 stars.  File: pleiades.j14.
+
+I don't seem to have a membership catalog handy, but I think that the
+density of members is so high that we won't care.
+
+Note that the nebulousity may affect our sky subtraction!
+
+-----------------------------------------------------------------------
+
+N752:  We are missing data at RA>30 (and a small band at 27.8ish), so I 
+moved the plate center off the cluster center a bit.
+
+Plate center: ra = 29.25, dec = 37.68
+
+Scott Burles found a membership list from Daniel et al 1994.
+This gave 98 matches (1") to 2MASS at J>10.  File: n752.match
+
+I then took all stars with J<10 on the plate.  This gave 238 stars.  
+File: n752.j10
+
+I then took all stars with 10<J<14 that were not members, downweighting
+by  (d<0.5?1:(d/0.5)**-2) * (J<11?1:0.25*(15-J), where d is the distance
+from the cluster center (RA=29.45, dec=37.68, not the plate center).
+This gave 647 more stars.  File: n752.j14
+
+The priorities here should be j10, match, and finally j14.
+Also, the Hipparcos catalog will have some extra bright stars that 
+we didn't have 2Mass data for.  We should have room to add them.
+
+-----------------------------------------------------------------------
+
+N1817:  This cluster is closer to the galactic plane and further away, 
+hence the contamination by field stars is worse.  This leads to special
+instructions as regards priorities and bright limits!
+
+Fortunately, Scott Burles found a membership list from Balaguer-Nunnez 
+et al 1998.  I took objects whose P_field was less than 0.5.  Matching (1") 
+to 2MASS gave 478 stars, highly concentrated toward the center of the field.
+WE SHOULD GIVE THESE STARS HIGHEST PRIORITY.  File: n1817.match
+
+To fill out the plate, I took stars with 8 < J < 11, downweighting the
+fainter stars by the probability (J<9?1:0.25*(13-J)).  This gives 538
+stars (that weren't member matchs), which are not strongly clustered to the 
+center of the plate.  Chances are that most of these stars are not cluster 
+members, and moreover there is probably no room at the center of the plate 
+for any more objects.  File: n1817.j11
+
+Note that these stars are *not* as bright as for other clusters.  We 
+probably want a bright limit of about 8th mag.  There is no point in
+including brighter field stars if they simply require another pointing.
+
+There were no serious data gaps in this field.
+Plate center: RA = 78.03, dec = 16.70
+
+-----------------------------------------------------------------------
+
+M67: We have some data for this, but we've decided to observe the existing
+plate, number 321, rather than re-drill.
+
+We probably need some fresh observing instructions for this plate.
+
+-----------------------------------------------------------------------
+
+h/chi Persei: No 2MASS data available yet.  We haven't tried to solve the
+astrometry for Eva's UBVI photometry.
