@@ -40,10 +40,10 @@ function frame_flux_calib, wave, corvector, corvivar, avgcorvset, cormed, $
   hifmed = djs_median(hifvect, 2)
 
   ;--------------
-  ; Recombine high & low-frequencey parts (but only use high-f is S/N > 10)  
+  ; Recombine high & low-frequencey parts (but only use high-f is S/N > 12)  
 
   fcor = lowfmed * avgcorv[*,0]
-  if sig2noise gt 10 then fcor = fcor * hifmed
+  if sig2noise gt 12 then fcor = fcor * hifmed
 
   ;--------------
   ; Measure the variance between the fluxcalib vectors derived
@@ -101,7 +101,9 @@ function frame_flux_calib, wave, corvector, corvivar, avgcorvset, cormed, $
      ;bkpts = [min(wave), bkpts[ibk], max(wave)]
   ;endif else bkpts = avgcorvset.fullbkpt
 
-  bkpts = bspline_bkpts(wave, nord=4, nbkpts=50)
+  if keyword_set(final) then nbkpts = 100 else nbkpts = 50
+  bkpts = bspline_bkpts(wave, nord=4, nbkpts=nbkpts)
+
   calibset = bspline_iterfit(wave, fcor, bkpt = bkpts, $
              nord=4, upper=3, lower=3, maxrej=ceil(0.10*n_elements(fcor)))
 
