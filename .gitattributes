@@ -389,7 +389,6 @@ pro/spec2d/chunkinfo.pro -text
 pro/spec2d/combine1fiber.pro -text
 pro/spec2d/correct_dlam.pro -text
 pro/spec2d/divideflat.pro -text
-pro/spec2d/djs_fluxcorr.pro -text
 pro/spec2d/extract2.pro -text
 pro/spec2d/extract_boxcar.pro -text
 pro/spec2d/extract_image.pro -text
@@ -416,7 +415,6 @@ pro/spec2d/fitvacset.pro -text
 pro/spec2d/fitwithmx.pro -text
 pro/spec2d/flatinterp.pro -text
 pro/spec2d/flux_distortion.pro -text
-pro/spec2d/fluxcorr.pro -text
 pro/spec2d/fluxcorr_new.pro -text
 pro/spec2d/fluxfix.pro -text
 pro/spec2d/focalplane.pro -text
