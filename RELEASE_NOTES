@@ -37,9 +37,12 @@ PLOTSN: Re-write of the code that makes all the plots beyond the first
         page of S/N plots.  Compare the spectro-photometry to the CALIBFLUX
         entries in the plug-map structure if they exist.
 PLOTSPEC: Add the /SKY option for over-plotting the sky.
+        Add the /ALLEXP option for plotting the fluxes from all exposures,
+        rather than the co-added spectrum.
 PLUG2TSOBJ: Add /SILENT option.
 PLUGFILE_RELABEL: Relabel the OBJTYPE's for specified objects in all
         plPlugMapM files.
+READONESPEC: New proc for reading single exposure spectra (from spCFrame files).
 READPLUGMAP: Many changes to this code, which is now used by both SOS
         and by Spectro-2D.  Options /APOTAGS,/DEREDDEN are for the SOS code.
         Option /CALIBOBJ is for the Spectro-2D reductions, and re-calibrates
@@ -59,6 +62,12 @@ SPCOADD_FRAMES: Get rid of some unused lines of code.
         Get rid of returned synthetic mags + S/N values from PLATESN,
         since I've excised that code, and don't write the undocumented
         last two HDUs to the spPlate files.
+SPCOADD_FRAMES,SPCOADD_V5: For the EXPIDxx keywords in the output spPlate file,
+        start the numbering with EXPID01 (instead of 00) because that's more
+        like the FITS standard, and SXPAR('EXPID*') can then be used.
+        Also, drop the MJD from this identifying string, so that the first
+        11 characters can be used to directly determine the names of the
+        individual spFrame or spCFrame files.
 SPCOADD_V5: New code to replace SPCOADD_FRAMES for version 5 outputs.
         The sky vectors are now combined in some semi-rational way,
         and output as HDU #6.
@@ -72,6 +81,8 @@ SPFLUX_V5: New code to replace SPFLUX for version 5 outputs.  This computes
         and *after* the call to this routine.
 SPFLUXCORR_V5: New code to replace FLUXCORR_NEW.  This will be called
         by SPCOMBINE_V5.
+SPFRAME_READ: Routine for reading specified HDUs and fibers from either spFrame
+        or spCFrame files.
 SPREDUCE: Abort and return from this procedure if no good flats exist.
         Call READPLUGMAP() to read the plug-map file, and get the photometric
         calibrations from the calibObj files.
