@@ -80,6 +80,7 @@ pro/spec2d/sdssproc.pro -text
 pro/spec2d/skysubtract.pro -text
 pro/spec2d/sortplugmap.pro -text
 pro/spec2d/spflatten.pro -text
+pro/spec2d/spplan.pro -text
 pro/spec2d/spreduce.pro -text
 pro/spec2d/sshift.pro -text
 pro/spec2d/sshift2d.pro -text
@@ -99,6 +100,7 @@ pro/spec2d/writeapid.pro -text
 pro/spec2d/writespectra.pro -text
 pro/spec2d/xy2traceset.pro -text
 pro/spflatten.pro -text
+pro/spplan.pro -text
 pro/spreduce.pro -text
 pro/sshift.pro -text
 pro/sshift2d.pro -text
