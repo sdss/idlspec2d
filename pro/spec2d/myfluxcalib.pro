@@ -17,22 +17,11 @@ function resortplugmap, plugmap1, plugmap2
 end
 
 ;------------------------------------------------------------------------------
-function fluxfit, loglam, objflux, objivar, color=color, mags=mags
-
-   ;----------
-   ; Change inputs such that wavelengths are in ascending order.
-   ; Need to do this to avoid bug currently in the B-spline code ???
-
-   if (loglam[1] LT loglam[0]) then begin
-      loglam = reverse(loglam)
-      objflux = reverse(objflux)
-      objivar = reverse(objivar)
-   endif
+function fluxfit, loglam, objflux, objivar, color=color, refmag=refmag
 
    wave = 10^loglam
    logmin = min(loglam)
    logmax = max(loglam)
-   fitivar = objivar
 
    ;----------
    ; Read the spectrum of an F8 star
@@ -55,9 +44,10 @@ function fluxfit, loglam, objflux, objivar, color=color, mags=mags
     root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
    readcol, absfile, absmin, absmax
 
+   abmask = bytarr(n_elements(objflux)) + 1b
    for i=0, n_elements(absmin)-1 do begin
       ipix = where(wave GT absmin AND wave LT absmax)
-      if (ipix[0] NE -1) then fitivar[ipix] = 0
+      if (ipix[0] NE -1) then abmask[ipix] = 0
    endfor
 
    ;----------
@@ -78,12 +68,20 @@ function fluxfit, loglam, objflux, objivar, color=color, mags=mags
    ;----------
    ; Do the spline fit
 
-   sset = bspline_iterfit(loglam, fitflux, $
-    invvar=fitivar, nord=3, bkpt=allbkpts, upper=3, lower=3, $
-    maxrej=0.05*n_elements(objflux))
-;stop ; ???
-;splot,10^loglam,fitflux
-;soplot,10^loglam,bspline_valu(loglam,sset),color='red'
+   indx = where(abmask)
+   if (keyword_set(objivar)) then invvar = objivar[indx] $
+    else invvar = 0
+   sset = bspline_iterfit(loglam[indx], fitflux[indx], $
+    invvar=invvar, nord=4, bkpt=allbkpts, upper=3, lower=3, $
+    maxrej=ceil(0.05*n_elements(objflux)))
+
+   ;----------
+   ; QA plot
+
+   djs_plot, 10^loglam, fitflux, $
+    xtitle='\lambda [A]', ytitle='Flux', $
+    title='Spectro-Photo PCA for ' + color + '-band'
+   djs_oplot, 10^loglam, bspline_valu(loglam,sset), color='red'
 
    ;----------
    ; Scale the flux
@@ -102,7 +100,7 @@ function fluxfit, loglam, objflux, objivar, color=color, mags=mags
 ;       c is 3.0e18 Ang/s
 ;       lambda is in Ang
 
-   scalefac = 10.^((21.37 - mags[2]) / 2.5)
+   scalefac = 10.^((21.37 - refmag) / 2.5)
    sset.coeff = sset.coeff / scalefac
 
    return, sset
@@ -176,37 +174,34 @@ pro myfluxcalib, filename, calibfile, colors=colors, adderr=adderr, $
    endfor
 
    ;----------
-   ; Select a single flux-calibration star
-   ; It's index is IBEST in the first file, or
-   ;   where(plugindx[*,ifile] EQ ibest) in the other files.
+   ; Select all flux-calibration stars
 
-   indx = where(strtrim(plugmap.objtype) EQ 'SPECTROPHOTO_STD' AND goodmask)
-   if (indx[0] EQ -1) then begin
-      indx = where(strstrim(plugmap.objtype) EQ 'REDDEN_STD' AND goodmask)
-      if (indx[0] EQ -1) then $
-       message, 'No SPECTROPHOTO or REDDEN stars for flux calibration' $
-      else $
-       splog, 'WARNING: Must use REDDEN std instead of SPECTROPHOTO for fluxing'
-   endif
+   iphoto = where( ( strtrim(plugmap.objtype) EQ 'SPECTROPHOTO_STD' OR $
+    strtrim(plugmap.objtype) EQ 'REDDEN_STD') AND goodmask, nphoto)
 
-   bestscore = min(colorscore[indx], ibest)
-   ibest = indx[ibest]
-
-   splog, 'Spectrophoto star is fiberid = ', plugmap[ibest].fiberid, $
-    ' in file ', filename[0]
-   splog, 'Spectrophoto mag = ', plugmap[ibest].mag
-   splog, 'Spectrophoto score = ', bestscore
+   if (nphoto EQ 0) then $
+    message, 'No SPECTROPHOTO or REDDEN stars for flux calibration'
 
    ;----------
 
+   nnew = lonarr(nfile)
+
    for ifile=0, nfile-1 do begin
+
       ;----------
       ; Read in the flux, errors, and wavelengths
 
       objflux = mrdfits(filename[ifile],0)
       objivar = mrdfits(filename[ifile],1)
+      objmask = mrdfits(filename[ifile],2)
       wset = mrdfits(filename[ifile],3)
       traceset2xy, wset, 0, loglam
+
+      ;----------
+      ; Do not fit where the spectrum may be dominated by sky-sub residuals.
+
+      objivar = skymask(objivar, objmask)
+objmask = 0 ; Free memory
 
       ;----------
       ; Add an additional error term equal to ADDERR of the flux.
@@ -224,34 +219,91 @@ pro myfluxcalib, filename, calibfile, colors=colors, adderr=adderr, $
       correct_dlam, objflux, objivar, wset, dlam=dloglam
 
       ;----------
-      ; Do the actual fit
+      ; Re-bin the spectro-photo stars to the same wavelength mapping
 
-      jbest = (where(plugindx[*,ifile] EQ ibest))[0]
-      calibset = fluxfit(loglam[*,jbest], objflux[*,jbest], $
-       objivar[*,jbest], color=colors[ifile], mags=plugmap[ibest].mag)
+      newloglam = wavevector(min(loglam[*,indx]), max(loglam[*,indx]), $
+       binsz=dloglam)
+      nnew[ifile] = n_elements(newloglam)
+
+      newflux = fltarr(nnew[ifile],nphoto)
+      newivar = fltarr(nnew[ifile],nphoto)
+
+      for iobj=0, nphoto-1 do begin
+         combine1fiber, loglam[*,iphoto[iobj]], $
+          objflux[*,iphoto[iobj]], objivar[*,iphoto[iobj]], $
+          newloglam=newloglam, binsz=dloglam, newflux=flux1, newivar=ivar1
+         newflux[*,iobj] = flux1
+         newivar[*,iobj] = ivar1
+      endfor
+
+      newflux = djs_maskinterp(newflux, newivar EQ 0, iaxis=0, /const)
+
+      ;----------
+      ; Append the data from all files together
+
+      if (ifile EQ 0) then begin
+         allloglam = newloglam
+         allflux = newflux
+         allivar = newivar
+      endif else begin
+         allloglam = [allloglam, newloglam]
+         allflux = [allflux, newflux]
+         allivar = [allivar, newivar]
+      endelse
+
+   endfor
+
+   ;----------
+   ; Find the PCA solution for all files simultaneously
+
+; DO WE NEED REJECTION HERE OF BAD POINTS OR BAD INPUT SPECTRA ???
+   pcaflux = pca_solve(allflux, allivar, $
+    niter=10, nkeep=1, usemask=usemask, eigenval=eigenval, acoeff=acoeff)
+
+   ;----------
+   ; Determine the reference (r-band) magnitude for the PCA spectrum.
+   ; We get an estimate from each of the input spectro-photo spectra.
+   ; Then choose the median of these estimates.
+
+   refmag = plugmap[iphoto].mag[2] + 2.5 * alog10(acoeff)
+   splog, 'Estimates of spectro-photo PCA r-mag = ', refmag
+   refmag = median(refmag)
+
+   ;----------
+   ; Set up for QA plots
+
+   !p.multi = [0,1,nfile]
+
+   ;----------
+   ; Do the actual fits
+
+   i1 = 0
+   for ifile=0, nfile-1 do begin
+
+      i2 = i1 + nnew[ifile] - 1
+
+      calibset = fluxfit(allloglam[i1:i2], pcaflux[i1:i2], $
+       color=colors[ifile], refmag=refmag)
 
       if colors[ifile] EQ 'r' then rset = calibset
       if colors[ifile] EQ 'b' then bset = calibset
-
-;stop ; ???
-;set_plot,'x'
-;junk=bspline_valu(loglam[*,jbest], calibset)
-;splot,loglam[*,jbest],objflux[*,jbest]
-;splot, loglam[*,jbest], objflux[*,jbest]/junk
 
       ;----------
       ; Create header cards describing the fit range
 
       hdr = ['']
-      indx = where(objivar[*,jbest] NE 0)
-      wavemin = 10.^min(loglam[indx,jbest])
-      wavemax = 10.^max(loglam[indx,jbest])
+      wavemin = 10.^min(allloglam[i1:i2])
+      wavemax = 10.^max(allloglam[i1:i2])
       sxaddpar, hdr, 'WAVEMIN', wavemin
       sxaddpar, hdr, 'WAVEMAX', wavemax
 
       mwrfits, 0, calibfile[ifile], hdr, /create
       mwrfits, calibset, calibfile[ifile]
+
+      i1 = i2 + 1
    endfor
+
+   !p.multi = 0
 
    return
 end
