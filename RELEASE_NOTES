@@ -38,6 +38,10 @@ QAPLOT_FCALIBVEC: Put plots for each spectrograph on its own page, and
         put offsets between the plots for all objects, F stars, and QSOs
         so that we can see the plots more easily.  Also, smooth the plots
         a little bit after the median-filtering.
+QUICKEXTRACT: Remove the end of the warning message for "Whopping fiber"
+        which used to say "(may have adverse afffect on S/N)".  This was
+        being interpreted as chaning the S/N on the whole plate, when in
+        fact it usually just affects a few fibers.
 READPLUGMAP: Fix bug when replacing unknown fluxes in the calibObj
         structure with old values in the plug-map file.
 READSPEC: Change how the internal procedure READSPEC1 works, such that
