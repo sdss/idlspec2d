@@ -469,6 +469,7 @@ pro spfluxcorr_v5, objname, adderr=adderr, combinedir=combinedir, $
             npoly1 = 0
             if (ct GT 0) then begin
                lastchi2 = 0
+               lastnpoly = 0
                inparams = 0
                ; Loop through adding more polynomial terms up to MAXPOLY.
                ; Replace the fluxing vectors with the new ones as long
@@ -501,12 +502,13 @@ pro spfluxcorr_v5, objname, adderr=adderr, combinedir=combinedir, $
                      ymult[*,iobj,i2] = ymult1
                      yadd[*,iobj,i2] = yadd1
                      lastchi2 = thischi2
+                     lastnpoly = npoly1
                      inparams = thiscoeff
                   endif
                endwhile
             endif
             splog, 'Fiber #', 320*(spectroid[0]-1)+iobj+1, $
-             ' exposure #', explist[iexp], ' npoly=', npoly1
+             ' exposure #', explist[iexp], ' npoly=', lastnpoly
          endif
       endfor
 
