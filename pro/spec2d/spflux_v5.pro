@@ -869,7 +869,8 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
          endfor
          djs_xyouts, 0.9*xrange[0]+0.1*xrange[1], $
           yrange[0] + (j+1)*(yrange[1]-yrange[0])/(nfinal+1), $
-          'Fiber '+strtrim(iphoto[ifinal[j]],2), color=thiscolor
+          'Fiber '+strtrim(iphoto[ifinal[j]]+(spectroid[0]-1)*320,2), $
+          color=thiscolor
       endfor
    endfor
    !p.multi = 0
