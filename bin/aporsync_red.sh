@@ -4,6 +4,9 @@
 # This routine is called by the cron daemon, as set up with "sos_start".
 # It syncs files from sdsshost to the local machine (i.e., sos.apo.nmsu.edu).
 #
+# Note that the directory locations on sdsshost.apo is hardwired
+# as /data/spectro.
+#
 # We need the executable code "rsync" in the default path
 # (e.g., as /usr/bin/rsync).
 #

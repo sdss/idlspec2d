@@ -10,6 +10,9 @@
 # For reducing data with SOS, we obviously only need the astrolog directories
 # that correspond to data that presently exists on disk.
 #
+# Note that the directory locations on sdsshost.apo are hardwired
+# as /astrolog and /data/spectro.
+#
 # We need the executable code "rsync" in the default path
 # (e.g., as /usr/bin/rsync).
 #
