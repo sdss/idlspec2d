@@ -18,26 +18,19 @@ pro get_tai, hdr, tai_beg, tai_mid, tai_end
    tai_end = sxpar(hdr, 'TAI-END')
 
    if (tai_beg GT 4.0d9 AND tai_end GT 4.0d9 AND $
-          tai_end - tai_beg GE 0) then begin
-
-     tai_mid = (tai_end + tai_beg)/2.0
-     exptime_guess = tai_end - tai_beg
-     if exptime_guess GT exptime + 120 then $
-      splog, "Warning: difference is TAI_END and TAI_BEG is greater than 2 min"
-     return 
-   endif
-
-   tai_mid = 0
-   if tai LT 4.0d9 then return
-  
-   tai_end = tai - 60.0   ; average buffer for readout 
-   tai_beg = tai_end - exptime
-   tai_mid = (tai_beg + tai_end)/2.0
+    tai_end - tai_beg GE 0) then begin
+      tai_mid = (tai_end + tai_beg)/2.0
+      exptime_guess = tai_end - tai_beg
+      if (exptime_guess GT exptime + 120) then $
+       splog, "Warning: (TAI-END) - (TAI-BEG) > EXPTIME + 120 sec"
+   endif else if (tai GT 4.0d9) then begin
+      tai_end = tai - 60.0   ; average buffer for readout 
+      tai_beg = tai_end - exptime
+      tai_mid = (tai_beg + tai_end)/2.0
+   endif else begin
+      tai_mid = 0
+      splog, 'WARNING: TAI,TAI-BEG,TAI-END all appear to be invalid!'
+   endelse
 
    return
-end 
-
- 
-
-    
-  
+end
