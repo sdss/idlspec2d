@@ -105,7 +105,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    ;----------
    ; Find flavor, plate and MJD
 
-   hdr = headfits(fullname)
+   hdr = sdsshead(fullname)
 
    flavor = strtrim(sxpar(hdr, 'FLAVOR'),2)
 
@@ -113,11 +113,6 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    platestr = string(plate, format='(i4.4)')
    mjd = sxpar(hdr, 'MJD')
    mjdstr = strtrim(string(mjd),2)
-
-   ;----------
-   ; Fix up some header information from early data
-
-   if (flavor EQ 'target') then flavor = 'science'
 
    ;----------
    ; Determine names for the FITS and HTML output log files
@@ -145,9 +140,12 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    ; Determine if a flat or arc for this plate has already been reduced,
    ; and test if the plugmap file exists.
 
-   tsetfile = filepath('tset-'+platestr+'-'+filec+'.fits', root_dir=outdir)
-   wsetfile = filepath('wset-'+platestr+'-'+filec+'.fits', root_dir=outdir)
-   fflatfile = filepath('fflat-'+platestr+'-'+filec+'.fits', root_dir=outdir)
+   tsetfile = filepath('tset-'+mjdstr+'-'+platestr+'-'+filec+'.fits', $
+    root_dir=outdir)
+   wsetfile = filepath('wset-'+mjdstr+'-'+platestr+'-'+filec+'.fits', $
+    root_dir=outdir)
+   fflatfile = filepath('fflat-'+mjdstr+'-'+platestr+'-'+filec+'.fits', $
+    root_dir=outdir)
    splgfile = filepath('splog-'+filec+'-'+filee+'.log', root_dir=outdir)
 
    plugexist = keyword_set(fullplugfile)
@@ -239,7 +237,6 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
                               'WARNINGS', warnings, $
                               'ABORTS', aborts )
 
-;if (djs_lockfile(logfile) EQ 0) then stop ; ???
       while(djs_lockfile(logfile) EQ 0) do wait, 1
       mwrfits, rstruct, logfile
       djs_unlockfile, logfile
