@@ -69,6 +69,7 @@
 ;   lookforgzip()
 ;   rdss_fits()
 ;   readfits()
+;   sphdrfix
 ;   splog
 ;   sxaddpar
 ;   sxpar()
@@ -155,6 +156,11 @@ pro sdssproc, infile, image, invvar, indir=indir, $
     rawdata = rdss_fits(fullname, hdr, /nofloat) $
    else $
     hdr = headfits(fullname)
+
+   ;-----------
+   ; Fix the headers with any hand-edits that we have determined.
+
+   sphdrfix, infile, hdr
 
    ;-----------
    ; Determine which CCD from the file name itself, using either the
