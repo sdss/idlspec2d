@@ -277,6 +277,7 @@ pro batch2d, platenums, topdir=topdir, mjd=mjd, mjstart=mjstart, mjend=mjend, $
          openw, olun, fullscriptfile[iplate], /get_lun
          printf, olun, '; Auto-generated batch file '+systime()
          printf, olun, 'cd, ' + fq+pathcomb+fq
+         printf, olun, 'setenv, ' + fq+'RAWDATA_DIR=../rawdata'+fq
          for i=0, n_elements(planfile2d)-1 do $
           printf, olun, 'spreduce2d, ' + fq+planfile2d[i]+fq
          printf, olun, 'spcombine, ' + fq+planfilecomb+fq
