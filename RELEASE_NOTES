@@ -6,6 +6,7 @@ APOALL: Major updating of this calling script to conform with current
 APOREDUCE: No longer do the test in the beginning of this procedure that
             the FITS file should exist, since FITS_WAIT() will do that test
             and repeatably look for the file for several minutes.
+            Log the versions of IDL,idlspec2d,idlutils into the log file.
 BATCH1D,BATCH2D: Set the DISPLAY environment variable on remote machines
             to always be ":0.0", so that only one IDL license on each
             remote machine.  Also, pipe the commands through the bash shell
@@ -64,6 +65,7 @@ SPREDUCE1D: Simply overwrite any existing spZ files, rather than
             Call SPECLINEFIT from the end of the code, since it now fits
             emission lines for all types of objects (not just galaxies).
             Add another ZWARNING flag for QSOs with negative emission lines.
+SPREDUCE2D: Output the version of the specflat product at the start of the log.
 SDSSPROC: Add "WARNING" to the warning messages about invalid or
             missing BC files.
 SKYLINE_DISPERSION: Re-write to get the indexing correct.  The first version
