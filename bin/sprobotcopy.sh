@@ -26,7 +26,7 @@ echo "SPROBOTCOPY: Started at "`date`
 
 cd $topoutdir
 echo "platelist, outfile='platelist.txt'" | idl 2> /dev/null
-echo "platemerge" | idl 2> /dev/null
+# echo "platemerge" | idl 2> /dev/null
 
 #------------------------------------------------------------------------------
 # Copy plate summary list to HTML directory.
