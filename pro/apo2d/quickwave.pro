@@ -64,6 +64,7 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
       flat_flux = 0 ; clear memory
       flat_ivar = 0 ; clear memory
       mwrfits, fflat, fflatfile, /create
+      mwrfits, fibermask, fflatfile
       fflat = 0 ; clear memory
    endif
 
