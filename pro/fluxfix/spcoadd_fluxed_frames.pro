@@ -461,23 +461,37 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    dispersion = 0
 
    ;---------------------------------------------------------------------------
-   ; Check the final spectrophotometry of the standards against the models.
-   ; In particular, find wiggles near the dichroic and correct for them.
+   ; Remove residual spectrophotometry errors as a function of plate x/y position
    ;---------------------------------------------------------------------------
 
    splog, 'Correcting for spectrophotometry residuals'
 
-   ;hdr = *hdrarr[0]
-   ;platesn, finalflux, finalivar, finalandmask, finalplugtag, finalwave, $
-   ;  hdr=hdr, plotfile=djs_filepath(plotsnfile, root_dir=combinedir), $
-   ;  snvec=snvec, synthmag=synthmag
+   ; Use the header of the best image (the one the others get tied to in 
+   ; "frame_flux_tweak") to determine the airmass/seeing of the atmospheric
+   ; dispersion correction
+
+   hdr = *hdrarr[(where(expid eq best_exp))[0]]
 
    ; Do this separately for spectrographs 1 & 2
    for specnum = 1, 2 do begin
 
+     ispec = where(finalplugtag.spectrographid eq specnum, nspec)     
      sid_str = strtrim(specnum, 2) 
-     title_tag = 'Plate: ' + plate_str + ' MJD: ' + mjd_str + $
-                 ' Spec: ' + sid_str
+     title_tag = 'Plate: ' + plate_str + ' MJD: ' + mjd_str + ' Spec: ' + sid_str
+     
+     atmdisp_model = atmdisp_cor(finalwave[*,ispec], finalflux[*,ispec], $
+                     plugtag[ispec], hdr, title = title_tag)
+
+     tempflux = finalflux[*,ispec]
+     tempivar = finalivar[*,ispec]
+     divideflat, tempflux, invvar=tempivar, model, minval=0.3
+     finalflux[*,ispec] = tempflux
+     finalivar[*,ispec] = tempivar
+   
+   ;---------------------------------------------------------------------------
+   ; Check the final spectrophotometry of the standards against the models.
+   ; In particular, find wiggles near the dichroic and correct for them.
+   ;---------------------------------------------------------------------------
 
      ; Identify standards
      stdstarfile = djs_filepath('spStd-' + plate_str + '-' + mjd_str +  $
