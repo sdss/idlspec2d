@@ -54,6 +54,8 @@
 ;   08-Sep-1999  Modified to read Yanny param files instead of FITS
 ;                versions of the same (DJS).
 ;   01-Dec-1999  Added version stamping (DJS).
+;   07-Dec-1999  Mask neighbors of pixels that saturated the A/D converter.
+;                Identify blead trails and mask from that row up. (DJS)
 ;-
 ;------------------------------------------------------------------------------
 
@@ -242,7 +244,8 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    bchere = where(bc.camrow EQ camrow AND bc.camcol EQ camcol,nbc)
    if (nbc GT 0) then bc = bc[ bchere ]
 
-   ; Do image first
+   ;------
+   ; Construct IMAGE
 
    for iamp=0, 3 do begin
       if (qexist[iamp] EQ 1) then begin
@@ -257,11 +260,10 @@ pro sdssproc, infile, image, invvar, indir=indir, $
                sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] 
            endif
 
-	   biasval = median( biasreg )
+           biasval = median( biasreg )
            djs_iterstat, biasreg, sigma=readoutDN
 
-           splog, 'readout noise in DN for amp#', iamp, ' is ', readoutDN
-
+           splog, 'Measured read-noise in DN for amp#', iamp, ' = ', readoutDN
 
            ; Copy the data for this amplifier into the final image
            ; Now image is in electrons
@@ -280,6 +282,9 @@ pro sdssproc, infile, image, invvar, indir=indir, $
       endif
    endfor
 
+   ;------
+   ; Construct INVVAR
+
    if (readivar) then begin
       if ((size(invvar))[0] NE 2) then $
        invvar = fltarr(nc, nr) $
@@ -287,16 +292,26 @@ pro sdssproc, infile, image, invvar, indir=indir, $
        (size(invvar))[3] NE 4) then $
        invvar = fltarr(nc, nr) 
 
-      mask = bytarr(nc, nr)
+      ;------
+      ; SATMASK = Mask for saturated the detector, 0=bad
+      ; ADMASK = Mask for saturating the A/D converter (at 65535), 1=bad
+
+      satmask = bytarr(nc, nr)
+      admask = bytarr(nc, nr)
  
       for iamp=0, 3 do begin
          if (qexist[iamp] EQ 1) then begin
 
-         mask[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
+         satmask[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
                   srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
-           (rawdata[sdatacol[iamp]:sdatacol[iamp]+ncol[iamp]-1, $
+           rawdata[sdatacol[iamp]:sdatacol[iamp]+ncol[iamp]-1, $
                   sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] LT $
-                  fullWellDN[iamp])
+                  fullWellDN[iamp]
+
+         admask[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
+                  srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
+           rawdata[sdatacol[iamp]:sdatacol[iamp]+ncol[iamp]-1, $
+                  sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] EQ 65535
 
          invvar[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
                   srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
@@ -306,17 +321,47 @@ pro sdssproc, infile, image, invvar, indir=indir, $
          endif
       endfor
 
+      ;------
+      ; Look for blead trails and mask them.
+      ; At present, SATMASK is set to 0 for saturated pixels.  Look for any
+      ; column with >=11 saturated pixels in a row.
+
+      kern = transpose(fltarr(11) + 1.0)
+      mask1 = fix( convol(satmask+0.0, kern, /center, /edge_truncate) ) EQ 0
+         ; 1=bad
+      qblead = total(mask1, 2) GT 0 ; =1 for each column with a blead trail
+      iblead = where(qblead, nblead)
+      sxaddpar, hdr, 'NBLEAD', nblead, ' Number of columns with blead trails'
+      if (nblead GT 0) then begin
+         splog, 'Number of bleading columns = ', nblead
+         for i=0, nblead-1 do begin
+            icol = iblead[i] ; Column number for this blead trail
+            irow = (where(mask1[icol,*]))[0] ; First bad row in this column
+            satmask[icol,irow:nr-1] = 0
+         endfor
+      endif
+
+      ;------
+      ; Mask out bad columns
+
       if (nbc GT 0) then begin
          bcsc = (bc.dfcol0 > 0) < nc
          bcec = (bc.dfcol0 + bc.dfncol - 1 < nc) > bcsc
          bcsr = (bc.dfrow0 > 0) < nr
          bcer = (bc.dfrow0 + bc.dfnrow - 1 < nr) > bcsr
 
-         for i=0,nbc-1 do mask[bcsc[i]:bcec[i],bcsr[i]:bcer[i]] = 0
+         for i=0,nbc-1 do satmask[bcsc[i]:bcec[i],bcsr[i]:bcer[i]] = 0
       endif
 
-      ; For saturated pixels, set INVVAR=0
-      invvar = invvar * mask
+      ;------
+      ; Mask out pixels that saturated the A/D converter, plus mask
+      ; all neighbors within 1 pixel
+      ngrow = 1
+      width = 2*ngrow + 1
+      admask = smooth(admask * width^2, width) GT 0 ; 1=bad
+
+      ; For masked pixels, set INVVAR=0
+      invvar = invvar * satmask * (1-admask)
    endif
 
    ;---------------------------------------------------------------------------
