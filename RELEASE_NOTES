@@ -15,6 +15,7 @@ APOPLOT,PLOTSPEC: Change the http address for Kent's image server to
            its new location at http://sdssmosaic.fnal.gov:8015/.
 FLUXCORR_NEW:  Return all zeros in fluxcorr image if 
                   "WARNING: No spectrophoto with high S/N"
+           No longer required checking of "Bad" values for medium S/N.
 GET_TAI: A short proc to determine, beginning, mid-point, and ending
            timestamps for sdR exposures.  Uses TAI-BEG,TAI-END in header
            if they exist; otherwise compute from TAI and EXPTIME.
@@ -28,6 +29,8 @@ LINEBACKFIT: New generic proc for fitting emission lines + linear background
 SPADD_GUIDERINFO: New routine to compute seeing and average guider offsets
            from the guiderMon param file, and add those results to a FITS
            header.
+SPBIASGEN,SPFLATTEN2: Use an empty bad column file (opBC-empty.par) when
+           generating the 2D pixel flats and bias images.
 SPCOADD_FRAMES: Combine a whole bunch of header cards from the individual
            input exposure for the output exposure.  Specifically, this was
            to address PR 2174 to average the weather data.  The cards effected:
@@ -52,6 +55,8 @@ SPCOMBINE: Set default value of MINSN2 to 0.2 instead of 0.0.  This is a
 SPREDUCE1D: Set the ZWARNING=8 flag (synthetic spectrum is negative) only
            for stars, not for QSO's any more since we use several eigen-
            components to fit QSO's now, nor for CV stars for the same reason.
+TRACE320CRUDE: Threshold to set 'BADTRACE' is now 45% bad pixels, whereas
+           it used to be 20%.
 VDISPFIT: Option to return the best fit with YFIT keyword.
 
 aporsync_logs.sh : 
@@ -72,13 +77,15 @@ killdata.sh,mailhtml.sh: Spectrolog cleanup is now done +25 MJDs afterwards,
 sprobot.sh: Copy the guider image directory.  We mistakenly lost this copying
            when we went to explicitly copying only the sdR*.fit.gz files.
 sos.sh,startapo.sh: Forget to switch to UT time in a couple of instances.
-opBC.par,opBC-51813.par: New bad column masks, somewhat circular dependence
-           on pixflats.  Make opBC.par identical to opBC-51813.par, so that
-           the only different bad column masks are for the few nights from
+opBC-5000.par,opBC-51813.par: New bad column masks, somewhat circular dependence
+           on pixflats.  Make opBC-50000.par identical to opBC-51813.par, so
+           that the only different bad column masks are for the few nights from
            MJD=51809->51812 as stored in opBC-51809.par.
            For r2 (camcol=2), now mask all of columns 370-371 instead of parts.
            For r2 (camcol=2), add mask for column 1068.
            For r1 (camcol=4), mask only cols 1112-1115, not cols 1112-1117.
+opBC-empty.par: New file with no bad columns for use when generating the
+           2D pixel flats and bias images with SPFLATTEN2 and SPBIASGEN.
 
 In idlutils:
 DJS_REJECT  : Major bug in /groupbadpix option, should now work as intended
