@@ -43,6 +43,7 @@
 ;
 ;   Decide which plates constitute unique tiles with the required S/N,
 ;   then set QSURVEY=1.  Require (S/N)^2 > 15 for G1,I1,G2,I2.
+;   Also require that the target version is not "special" or "devel".
 ;
 ; EXAMPLES:
 ;
@@ -354,6 +355,7 @@ pro platelist, plist=plist, create=create
    ;----------
    ; Decide which plates constitute unique tiles with the required S/N,
    ; then set QSURVEY=1.
+   ; Also insist that the target version isn't "special" or "devel".
 
    ; First get the unique list of TILE
    isort = sort(plist.tile)
@@ -361,9 +363,13 @@ pro platelist, plist=plist, create=create
    tilelist = plist[isort].tile
 
    for itile=0, n_elements(tilelist)-1 do begin
-      indx = where(plist.tile EQ tilelist[itile])
-      snbest = max(snvec[indx], ibest)
-      if (snbest GE minsn2) then plist[indx[ibest]].qsurvey = 1
+      indx = where(plist.tile EQ tilelist[itile] $
+       AND strtrim(plist.verstarg,2) NE 'special' $
+       AND strtrim(plist.verstarg,2) NE 'devel')
+      if (indx[0] NE -1) then begin
+         snbest = max(snvec[indx], ibest)
+         if (snbest GE minsn2) then plist[indx[ibest]].qsurvey = 1
+      endif
    endfor
 
    ;---------------------------------------------------------------------------
