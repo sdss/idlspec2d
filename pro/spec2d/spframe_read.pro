@@ -1,3 +1,50 @@
+;+
+; NAME:
+;   spframe_read
+;
+; PURPOSE:
+;   Read data from an spFrame file.
+;
+; CALLING SEQUENCE:
+;   spframe_read, filename, [ indx, objflux=, objivar=, mask=, $
+;    wset=, loglam=, dispset=, dispimg=, plugmap=, skyflux=, hdr=, adderr= ]
+;
+; INPUTS:
+;   filename   - Input file name
+;
+; OPTIONAL INPUTS:
+;   indx       - Optional 0-indexed row numbers; default to all
+;   adderr     - Additional error to add to the formal errors, as a
+;                fraction of the flux; default to none
+;
+; OUTPUTS:
+;
+; OPTIONAL OUTPUTS:
+;   objflux    - Object flux
+;   objivar    - Object inverse variance (units of 1/OBJFLUX^2)
+;   mask       - Pixel bit mask
+;   wset       - Trace-set for wavelength solution
+;   loglam     - Wavelength image (vacuum log-10 Ang)
+;   dispset    - Trace-set for dispersion solution
+;   dispimg    - Dispersion image (per native pixel)
+;   skyflux    - Sky flux (same units as OBJFLUX)
+;   hdr        - FITS header for HDU#0
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;
+; BUGS:
+;
+; PROCEDURES CALLED:
+;   headfits()
+;   mrdfits()
+;   traceset2xy
+;   traceset_trim()
+;
+; REVISION HISTORY:
+;   05-Feb-2004  Written by D. Schlegel, Princeton
+;-
 ;------------------------------------------------------------------------------
 pro spframe_read, filename, indx, objflux=objflux, objivar=objivar, $
  mask=mask, wset=wset, loglam=loglam, dispset=dispset, dispimg=dispimg, $
