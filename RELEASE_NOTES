@@ -68,9 +68,12 @@ SDSSPROC: Re-enable the call to 'speclog_version'.
         (when r2 was randomly flipping bits on 22/23 Aug 2000), and
         the more recent PR #6143 (r2 electronics problems in Aug 2004).
 SKYSUBTRACT: Return the trace-set RELCHI2SET instead of RELCHI2STRUCT,
-        for use by the EXTRACT_OBJECT code.
+          for use by the EXTRACT_OBJECT code.
         Fix a bug, where the "airmass_correction" term was not squared
-        when applied to the sky variance (on line 285).
+          when applied to the sky variance (on line 285).
+        Apply a ratio of "number of sky pixels in a breakpoint bin" to the 
+          number of degrees of freedom in the fit to the correction to 
+          local chi^2.
 SMOOTH_SUPERFLAT: Bug fix, whereby we could trigger a warning message when
         the ends of the wavelength range did not have any good data points.
         In such a case, the fits are meaningless, and any value could result.
