@@ -29,6 +29,9 @@ KURUCZ_FITSFILE: New proc for generating a single FITS file from a list
 LRGMODEL_TRAIN: Calling script for training the Bruzual-Charlot models
         for photo-z's.
 PLATELIST: Get rid of the SMEARUSE entry, since it is now deprecated.
+        Include any public plates in the default output file; this is
+        because there are some DR1,DR2 plates that are called 'bad', but
+        we probably still want them in the full merge files.
 PLATESN: Remove the code that adds the spectro-photometry keywords to
         the output headers, since P-1D does this more carefully.
 PLOTSIGNAL: New routine for making diagnostic plots of the signal seen
