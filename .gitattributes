@@ -3,6 +3,7 @@
 bin/Makefile -text
 bin/aporsync.sh -text
 bin/cron.table -text
+bin/killdata.sh -text
 bin/mailhtml.sh -text
 bin/sos.sh -text
 bin/startapo.sh -text
