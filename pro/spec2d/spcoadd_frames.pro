@@ -460,8 +460,7 @@ pro spcoadd_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    hdr = *hdrarr[0]
 
    platesn, finalflux, finalivar, finalandmask, finalplugmap, finalwave, $
-     hdr=hdr, plotfile=djs_filepath(plotsnfile, root_dir=combinedir), $
-     snvec=snvec, synthmag=synthmag
+    hdr=hdr, plotfile=djs_filepath(plotsnfile, root_dir=combinedir)
 
    ;---------------------------------------------------------------------------
    ; Create the output header
@@ -652,12 +651,6 @@ pro spcoadd_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
 
    ; 6th HDU is plugmap
    mwrfits, finalplugmap, fulloutname
-
-   ; 7th HDU are S/N vectors for g,r,i
-   mwrfits, snvec, fulloutname
-
-   ; 8th HDU are synthetic magnitude vectors
-   mwrfits, synthmag, fulloutname
 
    ;---------------------------------------------------------------------------
    ; Write the modified pixel masks to the input files
