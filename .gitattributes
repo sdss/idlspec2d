@@ -2,6 +2,7 @@
 /Makefile -text
 /RELEASE_NOTES -text
 bin/Makefile -text
+bin/aporsync_alllog.sh -text
 bin/aporsync_blue.sh -text
 bin/aporsync_logs.sh -text
 bin/aporsync_red.sh -text

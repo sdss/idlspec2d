@@ -113,10 +113,12 @@ echo "SPECLOG_DIR=$SPECLOG_DIR" >> $cronfile
 echo "SPECTROLOG_DIR=$SPECTROLOG_DIR" >> $cronfile
 echo "# This job will run every minute." >> $cronfile
 echo "* * * * * sos.sh >> $SOSLOG 2>&1" >> $cronfile
-echo "# This job will run at 7:20 am every day." >> $cronfile
-echo "20 7 * * * mailhtml.sh >> $SOSLOG 2>&1" >> $cronfile
-echo "# This job will run at 7:25 am every day." >> $cronfile
-echo "25 7 * * * mv -f $SOSLOG $SOSLOG.old" >> $cronfile
+echo "# This job will run at 7:45 am every day." >> $cronfile
+echo "45 7 * * * aporsync_alllog.sh >> $SOSLOG 2>&1" >> $cronfile
+echo "# This job will run at 8:10 am every day." >> $cronfile
+echo "10 8 * * * mailhtml.sh >> $SOSLOG 2>&1" >> $cronfile
+echo "# This job will run at 8:15 am every day." >> $cronfile
+echo "15 8 * * * mv -f $SOSLOG $SOSLOG.old" >> $cronfile
 echo "# This job will run every 10 minutes to keep the disk automounter up." >> $cronfile
 echo "*/10 * * * * ls $IDLSPEC2D_DIR > /dev/null" >> $cronfile
 echo "# SOS END" >> $cronfile
