@@ -218,6 +218,8 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
       if (ibad[0] NE -1) then calibfac[ibad] = 0
 
       divideflat, tempflux, tempivar, calibfac, minval=0.05*mean(calibfac)
+      temppixmask = temppixmask $
+       OR (calibfac LE 0.05*mean(calibfac)) * pixelmask_bits('BADFLUXFACTOR')
 
       ;----------
       ; Apply flux-correction factor between spectro-photometric exposure
@@ -227,8 +229,11 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
       corrset = mrdfits('spFluxcorr-'+expstr+'-'+spectroid+'.fits', 1)
       traceset2xy, corrset, tempwave, corrimg
 
-      divideflat, tempflux, tempivar, 1.0/corrimg, $
-            minval=0.05*mean(1.0/corrimg)
+      invertcorr = 1.0 / corrimg
+      divideflat, tempflux, tempivar, invertcorr, $
+       minval=0.05*mean(invertcorr)
+      temppixmask = temppixmask $
+       OR (invertcorr LE 0.05*mean(invertcorr)) * pixelmask_bits('BADFLUXFACTOR')
 
       ;----------
       ; Apodize the errors
