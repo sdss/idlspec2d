@@ -18,14 +18,6 @@
 ;   sigma      - sigma of gaussian profile; default to 1.0 
 ;                  (scalar or [nFibers] or [nRow, nFibers])
 ;
-; OUTPUTS:
-;   flux       - Total extracted flux in each profile [nRowExtract, nFibers]
-;
-; OPTIONAL OUTPUTS:
-;   error      - Estimated total error in each profile [nRowExtract, nFibers]
-;   ymodel     - model best fit of row[nCol, nRow]
-;   fscat      - scattered light contribution in each fiber[nRow, nFibers]
-;
 ; OPTIONAL KEYWORDS:
 ;   yrow       - long array specifying which rows to extract, default is all
 ;   proftype   - currently, one can only use 1: Gaussian (scalar)
@@ -34,17 +26,22 @@
 ;                     [1, 1] fit gaussian + sigma correction
 ;                     [1, 0, 1] fit gaussian + center correction
 ;                     [1, 1, 1] fit gaussian + sigma and center corrections.   
-; 
 ;   sigmacor   - new estimates of sigma, must have second element of wfixed set
 ;   xcencor    - new estimates of xcen, must have third element of wfixed set
-;
 ;   mask       - byte mask: 1 is good and 0 is bad [nCol,nRow] 
-;	         mask can be passed as input, but will be modified as
-;                pixels are rejected
 ;   nPoly      - order of chebyshev scattered light background; default to 5
 ;   maxIter    - maximum number of profile fitting iterations; default to 10
 ;   highrej    - positive sigma deviation to be rejected (default 5.0)
 ;   lowrej     - negative sigma deviation to be rejected (default 5.0)
+;
+; OUTPUTS:
+;   flux       - Total extracted flux in each profile [nRowExtract, nFibers]
+;
+; OPTIONAL OUTPUTS:
+;   mask       - modified by setting the values of bad pixels to 0
+;   error      - Estimated total error in each profile [nRowExtract, nFibers]
+;   ymodel     - model best fit of row[nCol, nRow]
+;   fscat      - scattered light contribution in each fiber[nRow, nFibers]
 ;
 ; COMMENTS:
 ;
@@ -137,8 +134,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, error, yrow=yrow, $
           message, 'YROW has more elements than FIMAGE'
    endelse
 
-
-   if (NOT keyword_set(nPoly)) then nPoly = 5      ; order of background
+   if (N_elements(nPoly) EQ 0) then nPoly = 5      ; order of background
    if (NOT keyword_set(maxIter)) then maxIter = 10
    if (NOT keyword_set(highrej)) then highrej = 5.0
    if (NOT keyword_set(lowrej)) then lowrej = 5.0 
@@ -163,15 +159,14 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, error, yrow=yrow, $
       else if ((size(sigmacor))[1] NE nRowExtract) then $
          message, 'Number of cols in SIGAMCOR and YROW must be equal' $
       else if ((size(sigmacor))[2] NE nTrace) then $
-         message, 'Number of rows in SIGAMCOR and xcen must be equal'
-
-
+         message, 'Number of rows in SIGAMCOR and XCEN must be equal'
 
    nPoly = LONG(nPoly)
    ma = nPoly + nTrace*nCoeff
    maxIter = LONG(maxIter)
    proftype = LONG(proftype)
-		
+
+   ; Allocate memory for C routines
    p = fltarr(ma)         ; diagonal errors
    ans = fltarr(ma)       ; parameter values
    ymodelrow = fltarr(nx)
@@ -186,15 +181,13 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, error, yrow=yrow, $
    error = fltarr(nRowExtract, nTrace)
 
 ;
-;
 ;	Now loop over each row specified in YROW 
 ;	and extract with rejection with a call to extract_row
 ;       Check to see if keywords are set to fill optional arrays
 ;
-;
 
-   for iy=0,nRowExtract-1 do begin
-     cur = yrow(iy)
+   for iy=0, nRowExtract-1 do begin
+     cur = yrow[iy]
      xcencurrent = xcenuse[*,cur]
      sigmacur = sigma1[*, cur]
 ;
@@ -210,18 +203,17 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, error, yrow=yrow, $
       wfixed=wfixed, mask=mask[*,cur], diagonal=prow, nPoly=nPoly, $
       maxIter=maxIter, highrej=highrej, lowrej=lowrej, calcCovar=0)
 
-     
      if(proftype EQ 1) then begin
         print, format='($, ".",i4.4)',cur
 ;       print, 'Analyzing row', cur, '     With Gaussian Profile', wfixed
 
        fluxrow = ansrow[0,*]
-       errorrow = 1.0/prow(lTrace*nCoeff) ; best estimate we can do
+       errorrow = 1.0 / prow[lTrace*nCoeff] ; best estimate we can do
 					      ; without covariance matrix
 
        if(nCoeff GE 2) then begin 	      ; add in symmetric term if present
 	  widthrow = ansrow[1,*]
-          errorwidth = 1.0/prow(lTrace*nCoeff + 1)
+          errorwidth = 1.0 / prow[lTrace*nCoeff + 1]
           fluxrow = fluxrow + widthrow
 
 ;
@@ -235,23 +227,22 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, error, yrow=yrow, $
 ;
 	     safe = where(fluxrow GT 0.0, safecount)
              if (safecount GT 0) then begin
-                r = widthrow(safe)/fluxrow(safe)
-                rerror = sqrt((errorrow(safe)*r)^2 + errorwidth(safe)^2) / $
-                               fluxrow(safe) 
+                r = widthrow[safe]/fluxrow[safe]
+                rerror = sqrt((errorrow[safe]*r)^2 + errorwidth[safe]^2) / $
+                               fluxrow[safe]
 
 ;
 ;		Only take corrections significant at 2 sigma
 ;
 	        check = where(rerror LT 0.50 AND abs(r) LT 0.4, count)
                 if(count GT 0) then $
-	          sigmacur(safe(check)) = sigmacur(safe(check)) * $ 
-                   (r(check)+ 1.0)  
+	          sigmacur[safe[check]] = sigmacur[safe[check]] * $ 
+                   (r[check]+ 1.0)
              endif
              sigmacor[iy,*] = sigmacur
           endif
 
        endif
-
 
 ;
 ;	Estimate new centroids if specified
