@@ -223,6 +223,10 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
           'spFrame-'+string(format='(a1,i1,a,i8.8,a)',color,spectrographid, $
           '-',framenum,'.fits'), root_dir=outdir)
 
+         skyoutname = filepath( $
+          'spSky-'+string(format='(a1,i1,a,i8.8,a)',color,spectrographid, $
+          '-',framenum,'.fits'), root_dir=outdir)
+
          sxaddpar, objhdr, 'PLUGFILE', fileandpath(plugfilename)
          sxaddpar, objhdr, 'FLATFILE', fileandpath(bestflat.name)
          sxaddpar, objhdr, 'ARCFILE', fileandpath(bestarc.name)
@@ -237,7 +241,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
          extract_object, outname, objhdr, image, invvar, plugsort, wset, $
           xpeak, lambda, xsol, fflat, fibermask, color=color, $
           widthset=widthset, dispset=dispset, skylinefile=fullskyfile, $
-          plottitle=plottitle
+          plottitle=plottitle, skyoutname=skyoutname
 
          splog, 'Elapsed time = ', systime(1)-stimeobj, ' seconds', $
           format='(a,f6.0,a)' 

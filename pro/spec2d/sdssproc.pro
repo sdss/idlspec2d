@@ -134,7 +134,8 @@ pro sdssproc, infile, image, invvar, indir=indir, $
     OR arg_present(nsatrow) OR arg_present(fbadpix)
 
    fullname = djs_filepath(infile, root_dir=indir)
-   fullname = (findfile(fullname, count=ct))[0]
+   fullname = (lookforgzip(fullname, count=ct))[0]
+;   fullname = (findfile(fullname, count=ct))[0]
    if (ct NE 1) then $
     message, 'Cannot find image ' + infile
 
@@ -228,8 +229,9 @@ pro sdssproc, infile, image, invvar, indir=indir, $
           message, 'Unable to parse corresponding red file for '+infile
          redfile = infile
          strput, redfile, 'r2', i1
-         reddata = ptr_new( $
-          rdss_fits(djs_filepath(redfile, root_dir=indir), /nofloat) )
+         redfile = (lookforgzip(djs_filepath(redfile, $
+                         root_dir=indir),/nofloat))[0]
+         reddata = ptr_new( rdss_fits(redfile))
       endif else begin
          reddata = ptr_new(rawdata)
       endelse
@@ -273,13 +275,14 @@ pro sdssproc, infile, image, invvar, indir=indir, $
     AND (readimg OR readivar)) then begin
       if (camname EQ 'b2') then begin
 ;         i1 = strpos(infile,'b2',/reverse_search) ; IDL 5.3 command
-         i1 = rstrpos(infile,'b2') ; IDL 5.3 command
+         i1 = rstrpos(infile,'b2') ; IDL 5.2 command
          if (i1 EQ -1) then $
           message, 'Unable to parse corresponding red file for '+infile
          redfile = infile
          strput, redfile, 'r2', i1
-         reddata = ptr_new( $
-          rdss_fits(djs_filepath(redfile, root_dir=indir), /nofloat) )
+         redfile = (lookforgzip(djs_filepath(redfile, $
+                         root_dir=indir),/nofloat))[0]
+         reddata = ptr_new( rdss_fits(redfile) )
       endif else begin
          reddata = ptr_new(rawdata)
       endelse

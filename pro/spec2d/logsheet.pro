@@ -33,7 +33,7 @@ pro logsheet, dir, outfile=outfile
 
    if (NOT keyword_set(dir)) then dir = '.'
 
-   fullname = findfile(filepath('*.fit',root_dir=dir), count=nfile)
+   fullname = findfile(filepath('*.fit*',root_dir=dir), count=nfile)
 
    if (nfile EQ 0) then begin
       print, 'No files found.'
@@ -82,7 +82,7 @@ pro logsheet, dir, outfile=outfile
 
          printf, olun, DATEOBS, TAIHMS, shortname[i], $
           PLATEID, CAMERAS, EXPTIME, FLAVOR, $
-          format='(a10, " ", a11, " ", a19, i6, " ", a2, f9.2, " ", a15)'
+          format='(a10, " ", a11, " ", a22, i6, " ", a2, f9.2, " ", a15)'
       endfor
 
       ; Close output file

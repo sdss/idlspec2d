@@ -81,7 +81,7 @@ function filter_thru, flux, waveimg=waveimg, wset=wset, mask=mask, norm=norm
 
       filename = filepath(ffiles[ifile], $
        root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
-      readcol, filename, fwave, fthru
+      readcol, filename, fwave, fthru, /silent
 
       filtimg = 0.0 * flux
       if (size(waveimg))[0] EQ 1 then $

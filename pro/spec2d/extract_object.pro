@@ -121,7 +121,7 @@ end
 pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
  xarc, lambda, xtrace, fflat, fibermask, color=color, $
  widthset=widthset, dispset=dispset, skylinefile=skylinefile, $
- plottitle=plottitle
+ plottitle=plottitle, skyoutname=skyoutname
 
    objname = strtrim(sxpar(objhdr,'OBJFILE'),2) 
    flavor  = strtrim(sxpar(objhdr,'FLAVOR'),2) 
@@ -398,6 +398,13 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
        title=plottitle+objname
    endif
 
+   ;---------------------------------------------------------------------
+   ;  Output sky image
+   ;
+   if keyword_set(skyoutname) then $
+     if skyoutname NE '' then $
+        mwrfits, flux - skysub, skyoutname, /create
+
    ;------------------------------------------
    ; Save the sky-subtracted flux values as is, and now modify flambda.
 
@@ -484,7 +491,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    sncoeff = fitsn(mag, snvec, fitmag=fitmag)
    sn2 = 10^(2.0 * poly([snmag],sncoeff))
 
-   sxaddpar, objhdr, 'FRAMESN2', sn2
+   sxaddpar, objhdr, 'FRAMESN2', sn2[0]
 
    ;----------
    ; Write extracted, lambda-calibrated, sky-subtracted spectra to disk

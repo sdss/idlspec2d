@@ -237,7 +237,7 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
          10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.73], $
          string(format='("Spec2: ", f5.1)', snoise2[1])
 
-      splog, snlabel[bands[iband]], snoise2
+      splog, snlabel[bands[iband]], snoise2, format='(a20, 2(f10.3))'
 
       snplate[*,iband] = snoise2
 
