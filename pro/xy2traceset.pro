@@ -56,7 +56,7 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
    endif
 
    if (NOT keyword_set(func)) then func = 'legendre'
-   if (NOT keyword_set(sigma)) then sigrej = 1.0
+   if (NOT keyword_set(maxdev)) then maxdev = 1.0
 
    ndim = size(ypos, /n_dim)
    dims = size(ypos, /dim)
@@ -84,16 +84,14 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
         coeff   :    fltarr(ncoeff, nTrace) $
       }
 
-      if (size(xmin,/tname) NE 'UNDEFINED') then tset.xmin = xmin $
+      if (size(xmin, /tname) NE 'UNDEFINED') then tset.xmin = xmin $
        else tset.xmin = min(xpos)
-      if (size(xmax,/tname) NE 'UNDEFINED') then tset.xmax = xmax $
+      if (size(xmax, /tname) NE 'UNDEFINED') then tset.xmax = xmax $
        else tset.xmax = max(xpos)
       xmid = 0.5 * (tset.xmin + tset.xmax)
       xrange = tset.xmax - tset.xmin
 
       for i=0, nTrace-1 do begin
-;         res = svdfit(2.0*(xpos[*,i]-xmid)/xrange, ypos[*,i], ncoeff, $
-;          /double, /legendre, singular=singular)
 ;         res = svdfit(2.0*(xpos[*,i]-xmid)/xrange, ypos[*,i], ncoeff, $
 ;          /double, function_name=function_name, singular=singular)
 
@@ -102,7 +100,7 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
          totalreject = 0
          good = lonarr(nx) + 1
 
-         ; Rejection loop
+         ; Rejection iteration loop
 
          igood = lindgen(nx)
          ngood = nx
