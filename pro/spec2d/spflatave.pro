@@ -27,6 +27,7 @@
 ; COMMENTS:
 ;   The output file has two HDU's, the first being the average flat,
 ;   the second being the standard deviation at each pixel.
+;     --> Comment this out for the time being!!???
 ;
 ; EXAMPLES:
 ;
@@ -162,7 +163,7 @@ pro spflatave, mjd=mjd, mjstart=mjstart, mjend=mjend, mjout=mjout, $
 
          splog, 'Writing file ' + outfile
          writefits, outfile, aveimg, hdr
-         mwrfits, sigimg, outfile
+;         mwrfits, sigimg, outfile
 
       endif
 
