@@ -11,7 +11,8 @@
 ;    bkspace=, nord=, lower=, upper= ]
 ;
 ; INPUTS:
-;   flatname   - Name(s) of raw SDSS flat-field image(s)
+;   flatname   - Name(s) of raw SDSS flat-field image(s).
+;                Note that many flats from many nights can be combined.
 ;
 ; OPTIONAL INPUTS:
 ;   sigrej     - Sigma rejection level; default to 1, 1, 1.1, 1.3, 1.6 or 1.9
