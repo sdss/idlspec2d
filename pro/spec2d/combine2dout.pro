@@ -7,9 +7,9 @@
 ;
 ; CALLING SEQUENCE:
 ;   combine2dout, filenames, outputroot, spectrographid, $
-;    binsz, zeropoint, nord=nord, $
-;    fullspec=fullspec, fullwave=fullwave, wavemin=wavemin, $
-;    bkptbin=bkptbin, everyn=everyn, display=display, window=window
+;    binsz, zeropoint, nord=nord, wavemin=wavemin, $
+;    bkptbin=bkptbin, everyn=everyn, display=display, window=window, $
+;    individual=individual
 ;
 ; INPUTS:
 ;   filenames      - Name(s) of files written by SPREDUCE
@@ -22,11 +22,19 @@
 ;
 ; OPTIONAL KEYWORDS:
 ;
+;   display        - Show QA plot for each combined spectrum
+;   individual     - Append individual spectra in HDU's after combined spectra
+;
 ; OUTPUTS:
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
+;
+;	This routine also outputs original 2048 spectra with mask pixels
+;       replaced with their b-spline values.  Helpful for FFT
+;
+;
 ;
 ; EXAMPLES:
 ;
@@ -94,6 +102,7 @@ pro combine2dout, filenames, outputroot, spectrographid, $
 
    dims = size(flux, /dimens)
    npix  = dims[0]
+
    nfiber = dims[1]
    specnum = bytarr(npix)
    isred = (strpos(sxpar(hdr, 'CAMERAS'),'r') EQ 0)
@@ -129,6 +138,8 @@ pro combine2dout, filenames, outputroot, spectrographid, $
       traceset2xy, tempwset, pixnorm, tempwave
 
       npixhere = (size(tempflux, /dimens))[0]
+      if (npixhere NE npix) then print, 'trouble npix NE npixhere'
+
       nfiberhere = (size(tempflux, /dimens))[1]
 
       if (nfiberhere NE nfiber) then begin
@@ -217,7 +228,7 @@ pro combine2dout, filenames, outputroot, spectrographid, $
 
    sxaddpar, hdr, 'EXPTIME', exptime, 'total exposure time (seconds)'
    sxaddpar, hdr, 'COMBINE2', systime(), $
-    'COMBINE2DOUT finished', after='EXPTIME'
+    'COMBINE2DSCOTT finished', after='EXPTIME'
 
    scale = fltarr(nfiber)
    blueflux = fltarr(nfiber)
@@ -309,6 +320,21 @@ pro combine2dout, filenames, outputroot, spectrographid, $
           n_elements(mask), ' pixels'
 
          mask[ss] = mask
+
+         replace = where(mask EQ 0)
+
+;
+;	Here replace original flux values of masked pixels with b-spline
+;       evaluations
+;
+         if (replace[0] NE -1) then begin 
+           fullspec[replace] = slatec_bvalu(fullwave[replace],fullbkpt,coeff)
+
+           fullpixelmask[replace] = fullpixelmask[replace] OR $
+                                      pixelmask_bits('COMBINEREJ')
+         endif
+
+
 
          bestguess = fltarr(npix)
          inside = where(newwave GE bkptmin AND newwave LE bkptmax, numinside)
@@ -448,6 +474,18 @@ pro combine2dout, filenames, outputroot, spectrographid, $
       mwrfits, [[bestguess],[besterr]], outputfile, newhdr, /create
       ; 2nd HDU is pixelmask
       mwrfits, outputpixelmask, outputfile
+
+      ;----------------------------------------------------------------------
+      ;  For individual files,
+      ;      let's append wave, flux and err for each spectrum
+      ;
+
+      if (keyword_set(individual)) then begin
+        mwrfits, reform(fullwave,npixhere,nfiles), outputfile
+        mwrfits, reform(fullspec,npixhere,nfiles), outputfile
+        mwrfits, reform(fullivar,npixhere,nfiles), outputfile
+        mwrfits, reform(fullpixelmask,npixhere,nfiles), outputfile
+      endif            
 
       if (keyword_set(display)) then begin
          plot, 10^newwave, bestguess, /xstyle, yr=[-3,10]
