@@ -6,6 +6,8 @@ APOHEADER: Use SDSSHEAD() instead of HEADFITS() to read the headers, such
 LOGSHEET: Do not include both uncompressed and compressed files in a listing.
            Remove the INDIR option, and add MJD and CAMERA keywords.
 PLATEMERGE: Include logic for setting the SPECPRIMARY field in the outputs.
+PLOTSPEC: Some major re-organizing of the main routine to allow PLATE,MJD
+           to be passed as vectors.
 READSPEC: Fix the re-sorting of the ZLINE output structure, which is
            complicated by being a multi-dimensional structure.
 SPREDUCE1D: The output FRACNSIGLO was being computed completely wrong -- Fixed.
@@ -13,6 +15,10 @@ ZFIND: Bug fix for when NPOLY=0.
 
 aporsync_logs.sh: Include the "sdHdrFix*.par" files as the first ones
            to copy over from sdsshost.apo -> sos.apo.
+
+In idlutils:
+
+DJS_BATCH: Fix invalid return codes in a sub-proc.
 
 -------------------------------------------------------------------------------
 v4_9_9 (Apr 26, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
