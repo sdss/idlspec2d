@@ -501,7 +501,8 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
      stdinfo = mrdfits(stdstarfile, 1)
 
      ; Do this correction only if the S/N is good
-     ok = where(stdinfo.sn gt 20 and abs(stdinfo.v_off) lt 450, nok)
+     ok = where(stdinfo.sn gt 20 and abs(stdinfo.v_off) lt 450 and $
+                stdinfo.mag[2] gt 0, nok)
      if nok ge 3 then begin
        stdinfo = stdinfo[ok]
        isphoto = stdinfo.fiberid - 1
@@ -514,12 +515,12 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
                    stdinfo, corvivar = corvivar)
 
        ; Normalize the flux correction vectors to the center of guiding
-       ;normwave = where(10.0^finalwave gt 5300 and 10.0^finalwave lt 5700) 
+       ;normwave = where(10.0^finalwave gt 5600 and 10.0^finalwave lt 6900) 
        normwave = where(10.0^finalwave gt 4200 and 10.0^finalwave lt 5400) 
        cormed = fltarr(nok)
        for istd = 0, nok - 1 do $
          cormed[istd] = median(corvector[normwave, istd])
-       meanclip, cormed, cormean
+       djs_iterstat, cormed, mean=cormean
        corvector = corvector / (cormed ## replicate(1, nfinalpix)) * cormean
 
        ;--------------
@@ -528,9 +529,8 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
        ; this turns off the division of the corvectors by an average spectrum
        ; and uses blue+red backpoints for the bspline)
 
-       residset = frame_flux_calib(finalwave, corvector, corvivar, $
-                  0, cormed, title_tag, median(stdinfo.sn^2), $
-                  fsig = fsig, /final)
+       residset = frame_flux_calib(finalwave, corvector, corvivar, 0, $
+                  cormed, title_tag, median(stdinfo.sn), fsig = fsig, /final)
 
        splog, 'Spectrophotometry error for spectrograph ' + sid_str + $
          ' (from the standards): ' + string(fsig * 100, format = '(I4)') + ' %'
