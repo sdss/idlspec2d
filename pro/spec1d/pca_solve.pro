@@ -132,26 +132,28 @@ endelse
    ; flux level.  For wavelengths with no unmasked data in any spectrum,
    ; just average all the spectra for lack of anything better to do.
 
-   normflux = total(newflux,1) / nnew
-   iuse = where(normflux GT 0.05 * median(normflux), nuse)
-   synflux = fltarr(nnew)
-   usemask = lonarr(nnew)
-   for ipix=0, nnew-1 do begin
-      ibad = where(newivar[ipix,iuse] EQ 0, nbad)
-      usemask[ipix] = nuse - nbad
-      if (nbad LT nuse) then begin
-         synflux[ipix] = total( newflux[ipix,iuse] * newivar[ipix,iuse]) $
-          / total(newivar[ipix,iuse] * normflux[iuse])
-      endif else begin
-         synflux[ipix] = total( newflux[ipix,iuse] / normflux[iuse]) / nuse
-      endelse
-   endfor
+;   normflux = total(newflux,1) / nnew
+;   iuse = where(normflux GT 0.05 * median(normflux), nuse)
+;   synflux = fltarr(nnew)
+;   usemask = lonarr(nnew)
+;   for ipix=0, nnew-1 do begin
+;      ibad = where(newivar[ipix,iuse] EQ 0, nbad)
+;      usemask[ipix] = nuse - nbad
+;      if (nbad LT nuse) then begin
+;         synflux[ipix] = total( newflux[ipix,iuse] * newivar[ipix,iuse]) $
+;          / total(newivar[ipix,iuse] * normflux[iuse])
+;      endif else begin
+;         synflux[ipix] = total( newflux[ipix,iuse] / normflux[iuse]) / nuse
+;      endelse
+;   endfor
+;
+;   for iobj=0, nobj-1 do begin
+;      ibad = where(newivar[*,iobj] EQ 0)
+;      if (ibad[0] NE -1) then $
+;       newflux[ibad,iobj] = synflux[ibad] * normflux[iobj]
+;   endfor
 
-   for iobj=0, nobj-1 do begin
-      ibad = where(newivar[*,iobj] EQ 0)
-      if (ibad[0] NE -1) then $
-       newflux[ibad,iobj] = synflux[ibad] * normflux[iobj]
-   endfor
+   usemask = total(newivar NE 0, 2)
 
    ;----------
    ; If there is only 1 object spectrum, then all we can do is return it
