@@ -215,8 +215,11 @@ pro spreduce, flatname, arcname, objname, $
 
          xsol = *(bestflat.xsol)
          fflat = *(bestflat.fflat)
+         superflatset = *(bestflat.superflatset)
          widthset = *(bestflat.widthset)
          dispset = *(bestarc.dispset)
+         proftype = bestflat.proftype
+         
 
          qaplot_fflat, fflat, wset, $
           title=plottitle+'Fiber-Flats for '+bestflat.name
@@ -254,6 +257,7 @@ pro spreduce, flatname, arcname, objname, $
 
          extract_object, outname, objhdr, image, invvar, plugsort, wset, $
           xpeak, lambda, xsol, fflat, fibermask, color=color, $
+          proftype=proftype, superflatset=superflatset, $
           widthset=widthset, dispset=dispset, skylinefile=fullskyfile, $
           plottitle=plottitle, skyoutname=skyoutname
 
