@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   zfit = lrgmodel_photoz(pflux, pflux_ivar, [ /abcorrect, extinction=, $
-;    abfudge=, filterlist=, adderr=, z_err=, chi2= ] )
+;    abfudge=, ageburst=, zmetal=, filterlist=, adderr=, z_err=, chi2= ] )
 ;
 ; INPUTS:
 ;   pflux          - Object fluxes in the 5 SDSS filters [5,NOBJ]
@@ -20,6 +20,10 @@
 ;   abfudge        - Additional AB "fudge factors"; default to adding
 ;                    [0,0,0,0,0] mag to input magnitudes, where a positive
 ;                    value makes that flux fainter
+;   ageburst       - Age of the Universe at the single-burst; default
+;                    to value from previous call, or 2.5 Gyr
+;   zmetal         - Metallicity at the single-burst; default
+;                    to value from previous call, or [Fe/H] = 0.025 dex.
 ;   filterlist     - List of filter indices to use in fits; default to
 ;                    using all five filters [0,1,2,3,4]
 ;   adderr         - Fractional error to add in quadrature; default to 0.03
@@ -61,52 +65,62 @@
 ;------------------------------------------------------------------------------
 function lrgmodel_photoz, pflux, pflux_ivar, z_err=z_err, $
  abcorrect=abcorrect, extinction=extinction, abfudge=abfudge, $
+ ageburst=ageburst1, zmetal=zmetal1, $
  filterlist=filterlist, adderr=adderr, chi2=chi2
 
-   common com_lrgmodel_photoz, zarr, synflux
+   common com_lrgmodel_photoz, zarr, synflux, ageburst_save, zmetal_save
 
    if (n_elements(filterlist) EQ 0) then filterlist = lindgen(5)
    if (n_elements(adderr) EQ 0) then adderr = 0.03
-   if (n_elements(abfudge) EQ 0) then abfudge = [0,0.0,0,0,0]
+   if (n_elements(abfudge) EQ 0) then abfudge = [0,0,0,0,0]
+   if (n_elements(ageburst_save) EQ 0) then ageburst_save = 2.5
+   if (n_elements(zmetal_save) EQ 0) then zmetal_save = 0.025
+
+   if (keyword_set(ageburst1)) then ageburst = ageburst1 $
+    else ageburst = 2.5
+   if (keyword_set(zmetal1)) then zmetal = zmetal1 $
+    else zmetal = 0.016
 
    ;----------
-   ; Initialize the template "spectra".
+   ; Read the Bruzual-Charlot model spectra FITS files.
    ; This need only be done the first time this function is called,
    ; then cached for future calls.
 
    if (NOT keyword_set(zarr)) then begin
 
-      metals = 'z02' ; ???
-      eigenfile = [ $
-       'ssp_5Myr_'+metals+'.spec', $
-       'ssp_25Myr_'+metals+'.spec', $
-       'ssp_100Myr_'+metals+'.spec', $
-       'ssp_290Myr_'+metals+'.spec', $
-       'ssp_640Myr_'+metals+'.spec', $
-       'ssp_900Myr_'+metals+'.spec', $
-       'ssp_1.4Gyr_'+metals+'.spec', $
-       'ssp_2.5Gyr_'+metals+'.spec', $
-       'ssp_5Gyr_'+metals+'.spec', $
-       'ssp_11Gyr_'+metals+'.spec' ]
-      nfile = n_elements(eigenfile)
-
-      ; Age of each template in Gyr
-      ages = [0.005, 0.025, 0.100, 0.290, 0.640, 0.900, 1.4, 2.5, 5.0, 11.0]
+      metalstr = ['z008', 'z02', 'z05']
+      metalvec = [0.008, 0.02, 0.05]
+      agestr = [ '5Myr', '25Myr', '100Myr', '290Myr', '640Myr', '900Myr', $
+       '1.4Gyr', '2.5Gyr', '5Gyr', '11Gyr' ]
+      agevec = [0.005, 0.025, 0.100, 0.290, 0.640, 0.900, 1.4, 2.5, 5.0, 11.0]
 
       ; Read in an model LRG spectra, assuming the same wavelengths for all
+      nage = n_elements(agevec)
+      nmetal = n_elements(metalvec)
       eigendir = concat_dir(getenv('IDLSPEC2D_DIR'), 'templates')
-      for ifile=0L, nfile-1 do begin
-         readcol, djs_filepath(eigenfile[ifile], root_dir=eigendir), $
-          lambda1, flux1, comment='#', format='(F,F)'
-         if (ifile EQ 0) then begin
-            npix = n_elements(lambda1)
-            allwave = lambda1
-            allflux = fltarr(npix, nfile)
-         endif
-         ; Convert to f_nu
-         flambda2fnu = lambda1^2 / 2.99792d18
-         allflux[*,ifile] = flux1 * flambda2fnu
+      for iage=0, nage-1 do begin
+         for imetal=0, nmetal-1 do begin
+            eigenfile = 'ssp_' + agestr[iage] + '_' + metalstr[imetal] + '.spec'
+            readcol, djs_filepath(eigenfile, root_dir=eigendir), $
+             lambda1, flux1, comment='#', format='(F,F)'
+            if (iage EQ 0 AND imetal EQ 0) then begin
+               npix = n_elements(lambda1)
+               allwave = lambda1
+               allflux = fltarr(npix, nage, nmetal)
+            endif
+            ; Convert to f_nu
+            flambda2fnu = lambda1^2 / 2.99792d18
+            allflux[*,iage,imetal] = flux1 * flambda2fnu
+         endfor
       endfor
+
+   endif
+
+   ;----------
+   ; Initialize the colors for the templates as a function of redshift.
+
+   if (ageburst NE ageburst_save OR zmetal NE zmetal_save $
+    OR keyword_set(synarr) EQ 0) then begin
 
       numz = 101
       zarr = 0.01 * findgen(numz)
@@ -119,23 +133,26 @@ function lrgmodel_photoz, pflux, pflux_ivar, z_err=z_err, $
          ; Convert redshift to an age, using the WMAP cosmology,
          ; and say that these galaxies formed when the Universe
          ; was AGEBURST Gyr old
-ageburst = 2.5 ; in Gyr ???
          hubble0 = 71. * 3.1558e7 / 3.0856e19 * 1e9 ; units of Gyr^-1
          thisage = lookback(1000., 0.27, 0.73) / hubble0 $
           - lookback(zarr[iz], 0.27, 0.73) / hubble0 - ageburst
 
-         ; Linearly interpolate from the templates in log(age) vs. log(flux)
-         ; space.
-         j0 = (reverse(where(ages LT thisage)))[0]
-         if (j0 EQ nfile-1) then begin
-            thisflux = allflux[*,j0]
-         endif else begin
-            j1 = j0 + 1
-            wts = [alog10(ages[j1]/thisage), -alog10(ages[j0]/thisage)]
-            wts = wts / total(wts)
-            thisflux = 10.^( wts[0] * alog10(allflux[*,j0]) $
-             + wts[1] * alog10(allflux[*,j1]))
-         endelse
+         ; Linearly interpolate from the templates in log(age),log(zmetal),
+         ; vs. log(flux) space.
+         i0 = ((reverse(where(agevec LT thisage)))[0] > 0) < (nage-2)
+         j0 = ((reverse(where(metalvec LT zmetal)))[0] > 0) < (nmetal-2)
+         i1 = i0 + 1
+         j1 = j0 + 1
+         agewts = [alog10(agevec[i1]/thisage), -alog10(agevec[i0]/thisage)]
+         metwts = [alog10(metalvec[j1]/zmetal), -alog10(metalvec[j0]/zmetal)]
+         agewts = agewts / total(agewts)
+         metwts = metwts / total(metwts)
+
+         thisflux = 10.d0^( $
+          agewts[0] * metwts[0] * alog10(allflux[*,i0,j0]) $
+          + agewts[0] * metwts[1] * alog10(allflux[*,i0,j1]) $
+          + agewts[1] * metwts[0] * alog10(allflux[*,i1,j0]) $
+          + agewts[1] * metwts[1] * alog10(allflux[*,i1,j1]) )
 
          thiswave = allwave * (1 + zarr[iz])
 
