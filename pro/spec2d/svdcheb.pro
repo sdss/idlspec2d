@@ -1,4 +1,4 @@
-function fcheb,x,m
+function svdcheb,x,m
 ;+
 ; NAME:
 ;        F

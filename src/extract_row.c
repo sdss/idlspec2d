@@ -28,6 +28,7 @@ IDL_LONG extract_row
    float     * fscat;
 
    IDL_LONG    iy;
+   IDL_LONG    squashprofile;
    IDL_LONG    retval = 1;
 
    IDL_LONG    argct;
@@ -64,6 +65,7 @@ IDL_LONG extract_row
 
    proftype = *((IDL_LONG *)argv[argct++]);
    calcCovar = *((IDL_LONG *)argv[argct++]);
+   squashprofile = *((IDL_LONG *)argv[argct++]);
    nCoeff = *((IDL_LONG *)argv[argct++]);
    ma     = *((IDL_LONG *)argv[argct++]);
    ans    = (float *)argv[argct++];
@@ -110,11 +112,31 @@ IDL_LONG extract_row
    fillProfile(aprofile, x, xcen, xmin, xmax, sigma, nx, nCoeff, 
           nTrace, proftype);
 
+   if (squashprofile) {
+//     printf("Squashing Profile\n");
+     for(i=0; i<nTrace; i++)
+       for(l=xmin[i],k=0;l<=xmax[i];l++,k++) {
+	 aprofile[i][k] = aprofile[i*nCoeff][k]*ans[i*nCoeff];
+         for(j=1; j<nCoeff; j++) 
+           aprofile[i][k] +=aprofile[i*nCoeff+j][k]*ans[i*nCoeff+j];
+      }
+     for(i=0; i<nTrace; i++) {
+       ia[i] = 1;
+//       for(l=xmin[i],k=0;l<=xmax[i];l++,k++) 
+//           printf("%f, ", aprofile[i*nCoeff][k]);
+//	printf("\n");
+       }
+     nCoeff = 1;
+          
+   }
+
 //
 //	Room for polynomial profiles
 //
-   for(i=0; i<nPoly; i++)
+   for(i=0; i<nPoly; i++) {
       apoly[i] = (float *)malloc(nx * sizeof(float));
+      ia[i+nCoeff*nTrace] = ia[i+tTrace];
+   }
     
    x2 = (float) nx;
    x1 = 0.0;  
@@ -130,7 +152,7 @@ IDL_LONG extract_row
    for(i=0; i<nx; i++) ysub[i] = fimage[i];
 
 
-   if(mfit != ma) {
+   if(mfit != ma && !squashprofile) {
 /*      fprintf(stderr, "Subtracting fixed variables\n"); */
       subtractProfile(ysub, nx, xmin, xmax, nTrace, nCoeff, aprofile, ia, ans);
       subtractPoly(ysub, nx, nPoly, apoly, &ia[tTrace], &ans[tTrace]);
@@ -148,21 +170,21 @@ IDL_LONG extract_row
 //   printf("choldc Custom2 done\n");
 
    cholslRow(covar, ia, nTrace, nCoeff, nPoly, p, beta, ans); 
-//   printf("cholsl done\n");
+   //printf("cholsl done\n");
 
    if (calcCovar > 0) {
       cholslRowCovar(covar, ia, nTrace, nCoeff, nPoly, p); 
-//      printf("cholsl Covar done\n");
+      //printf("cholsl Covar done\n");
    }  
 //     else {
 //      printf("Skipping Covariance Calculation\n");
 //   }
-         
+
    for(i=0;i<nx;i++) ymod[i] = 0.0;
     
    /* scattered light first  */
 
-   for (j=tTrace,k=0;k<nPoly;j++,k++) {
+   for (j=nCoeff*nTrace,k=0;k<nPoly;j++,k++) {
       for(i=0; i < nx; i++) 
          ymod[i] += ans[j]*apoly[k][i];
     }
@@ -312,18 +334,80 @@ void ProfileDoubleGauss(float *x, IDL_LONG ndat, float **y, float xcen, IDL_LONG
 void ProfileAbs3WideGauss(float *x, IDL_LONG ndat, float **y, float xcen, 
                 IDL_LONG xmin, IDL_LONG xmax, float sigma, IDL_LONG nCoeff)
 { 
-	IDL_LONG i,j,k;
+	IDL_LONG nm,i,j,k,backup,place;
 	float base, mult;
 	float diff, diffabs, denom, frac;
         float sigma2, diff2, base2, denom2;
 	float sqbase;
-
+	
+	static float oldsigma=0.0;
+	static float model[100][4][31];
 
 //		Below is denominator fro x^3
 
 	denom = 1.0/(2.88450 * 0.89298 * sigma);
 	sigma2 = 2.0*sigma;
 	denom2 = 1.0/sqrt(6.2832 * sigma2 * sigma2);
+
+	if (sigma != oldsigma) {
+
+	   printf("Filling Arrays\n");
+	   oldsigma = sigma;
+//	   Fill static arrays
+	   for(nm=0;nm<100;nm++) {
+ 	     xcen = 15.0 + (float) nm/100.0;
+	     for (k=0; k<=30; k++) {
+	       for(j=0;j<4;j++)model[nm][j][k] = 0.0;
+	       for(frac = -0.4; frac <= 0.5; frac += 0.2)  {
+	     
+	         diff = (xcen - (float)k + frac)/sigma;
+                 diffabs = fabs(diff);
+	         base = exp(-diff*diff*diffabs/3.0)*denom;
+	         diff2 = (xcen - (float)k + frac)/sigma2;
+	         base2 = exp(-diff2*diff2/2.0)*denom2;
+
+
+                 model[nm][0][k] += base;
+	         model[nm][1][k] += base2;
+                 sqbase = diff*diff*diffabs*base;
+	         model[nm][2][k] += sqbase;
+	         model[nm][3][k] += diff*diffabs*base;
+
+                }
+	     for (j=0;j<4;j++) model[nm][j][k] /= 5.0;
+	   }
+	}
+      }
+
+	frac = xcen - (int)xcen;
+	nm = frac*100.0;
+        backup = (int)xcen - xmin;
+	for(j=0;j<nCoeff;j++) 
+	  for (i=xmin,k=0,place=15-backup; i<=xmax; i++,k++,place++) 
+	     {
+//             printf("%d %d %d %d %d %f\n", 
+//		i,j,k,place,nm,frac);
+             y[j][k] = model[nm][j][place];
+	     }
+	 
+}
+
+
+void ProfileAbs3HalfLorentz(float *x, IDL_LONG ndat, float **y, float xcen, 
+                IDL_LONG xmin, IDL_LONG xmax, float sigma, IDL_LONG nCoeff)
+{ 
+	IDL_LONG i,j,k;
+	float base, mult;
+	float diff, diffabs, denom, frac;
+        float fwhm2, diff2, base2, denom2;
+	float sqbase,total;
+
+
+//		Below is denominator fro x^3
+
+	denom = 1.0/(2.88450 * 0.89298 * sigma);
+	fwhm2 = 2.0*sigma;
+	denom2 = 3.1416/(2.0 * fwhm2);
 
 	for (i=xmin,k=0; i<=xmax; i++, k++) {
 	   for (j=0;j<nCoeff;j++) y[j][k] = 0.0;
@@ -332,25 +416,95 @@ void ProfileAbs3WideGauss(float *x, IDL_LONG ndat, float **y, float xcen,
 	        diff = (xcen - x[i] + frac)/sigma;
                 diffabs = fabs(diff);
 	        base = exp(-diff*diff*diffabs/3.0)*denom;
-	        diff2 = (xcen - x[i] + frac)/sigma2;
-	        base2 = exp(-diff2*diff2/2.0)*denom2;
-
+	        diff2 = 2.0*(xcen - x[i] + frac)/fwhm2;
+	        base2 = denom2/(diff2*diff2 + 1.0);
 
                 y[0][k] += base;
-	        if(nCoeff >1) y[1][k] += base2;
-	        if(nCoeff >2) {
+	        if(nCoeff >1 && diff2 < 0.0) y[1][k] += base2;
+	        if(nCoeff >2 && diff2 >= 0.0) y[2][k] += base2;
+	        if(nCoeff >3) {
                    sqbase = diff*diff*diffabs*base;
-	           y[2][k] += sqbase;
+	           y[3][k] += sqbase;
 
-	           if(nCoeff >3) y[3][k] += diff*diffabs*base;
+	           if(nCoeff >4) y[4][k] += diff*base;
 
-	           for (j=4,mult=diff;j<nCoeff;j++,mult *= diff)
+	           for (j=5,mult=diff;j<nCoeff;j++,mult *= diff)
 	              y[j][k] += mult*sqbase;
                    }
                 }
 	     for (j=0;j<nCoeff;j++) y[j][k] /= 5.0;
 	   }
 	}
+
+//
+//	This is just for debugging profiles
+//
+//	for (j=0;j<nCoeff;j++) { 
+//	  for (i=xmin,k=0,total=0.0; i<=xmax; i++, k++) 
+//	    if(i >= 0 && i < ndat && nCoeff > 0) {
+//	      total += y[j][k];
+//	    }
+ //         fprintf(stderr,"%d %f ",(int)j,total);
+//	}
+ //         fprintf(stderr,"\n");
+	 
+}
+
+
+void ProfileGaussHalfLorentz(float *x, IDL_LONG ndat, float **y, float xcen, 
+                IDL_LONG xmin, IDL_LONG xmax, float sigma, IDL_LONG nCoeff)
+{ 
+	IDL_LONG i,j,k;
+	float base, mult;
+	float diff, denom, frac;
+        float fwhm2, diff2, base2, denom2;
+	float sqbase,total;
+
+
+//		Below is denominator fro x^3
+
+	denom = 1.0/sqrt(6.2832 * sigma * sigma);
+	fwhm2 = 2.0*sigma;
+	denom2 = 5.0/(fwhm2 * 3.1416);
+
+	for (i=xmin,k=0; i<=xmax; i++, k++) {
+	   for (j=0;j<nCoeff;j++) y[j][k] = 0.0;
+	  if(i >= 0 && i < ndat && nCoeff > 0) {
+	     for(frac = -0.4; frac <= 0.5; frac += 0.2)  {
+	        diff = (xcen - x[i] + frac)/sigma;
+	        base = exp(-diff*diff/2.0)*denom;
+	        diff2 = 2.0*(xcen - x[i] + frac)/fwhm2;
+	        base2 = denom2/(diff2*diff2 + 1.0);
+
+                y[0][k] += base;
+	        if(nCoeff >1 && diff2 < 0.0) y[1][k] += base2;
+	        if(nCoeff >2 && diff2 >= 0.0) y[2][k] += base2;
+	        if(nCoeff >3) {
+                   sqbase = diff*diff*base;
+	           y[3][k] += sqbase;
+
+	           if(nCoeff >4) y[4][k] += diff*base;
+
+	           for (j=5,mult=diff;j<nCoeff;j++,mult *= diff)
+	              y[j][k] += mult*sqbase;
+                   }
+                }
+	     for (j=0;j<nCoeff;j++) y[j][k] /= 5.0;
+	   }
+	}
+
+//
+//	This is just for debugging profiles
+//
+//	for (j=0;j<nCoeff;j++) { 
+//	  for (i=xmin,k=0,total=0.0; i<=xmax; i++, k++) 
+//	    if(i >= 0 && i < ndat && nCoeff > 0) {
+//	      total += y[j][k];
+//	    }
+ //         fprintf(stderr,"%d %f ",(int)j,total);
+//	}
+ //         fprintf(stderr,"\n");
+	 
 }
 
 
@@ -467,6 +621,14 @@ void fillProfile(float **y, float *x, float *xcen, IDL_LONG *xmin,
                  ProfileAbs3WideGauss(x, nx, &y[j], xcen[i], xmin[i],xmax[i],
                       sigma[i], nCoeff);
                  }
+	      else if (proftype == 5)  {
+                 ProfileAbs3HalfLorentz(x, nx, &y[j], xcen[i], xmin[i],xmax[i],
+                      sigma[i], nCoeff);
+                 }
+	      else if (proftype == 6)  {
+                 ProfileGaussHalfLorentz(x, nx, &y[j], xcen[i], xmin[i],xmax[i],
+                      sigma[i], nCoeff);
+                 }
               else {
 	         fprintf(stderr,"Using Gaussian");
                  ProfileGauss(x, nx, &y[j], xcen[i], xmin[i], xmax[i], 
@@ -486,9 +648,18 @@ void fillPoly(float **y, float *x, IDL_LONG nx, IDL_LONG nPoly,
 
         for (i=0;i<nx;i++) {
            norm = (2.0 * x[i] - (x1 + x2))/(x2 - x1);
-	   chebyshevRow(norm, atemp, nPoly);
-	   for(j=0; j<nPoly; j++) {
-	     y[j][i] = atemp[j];
+
+/*	These next two lines make a step function to account for
+	uncertainties in the amplifier's gains matching */
+
+	   if (norm < 0.0) y[0][i] = 0.0; 
+	   else y[0][i] = 1.0; 
+
+/*	The rest of the params are just nPoly-1 chebyshev coefficients */
+
+	   chebyshevRow(norm, atemp, nPoly-1);
+	   for(j=1; j<nPoly; j++) {
+	     y[j][i] = atemp[j-1];
            }
         }
 

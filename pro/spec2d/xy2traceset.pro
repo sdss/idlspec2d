@@ -89,8 +89,11 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
       for i=0, nTrace-1 do begin
 ;         res = svdfit(2.0*(xpos[*,i]-xmid)/xrange, ypos[*,i], ncoeff, $
 ;          /double, /legendre, singular=singular)
-         res = svdfit(2.0*(xpos[*,i]-xmid)/xrange, ypos[*,i], ncoeff, $
-          /double, function_name=function_name, singular=singular)
+;         res = svdfit(2.0*(xpos[*,i]-xmid)/xrange, ypos[*,i], ncoeff, $
+;          /double, function_name=function_name, singular=singular)
+         res = func_fit(2.0*(xpos[*,i]-xmid)/xrange, ypos[*,i], ncoeff, $
+              function_name=function_name)
+
          tset.coeff[*,i] = res
          print, format='($, ".",i4.4,a5)',i,string([8b,8b,8b,8b,8b])
       endfor

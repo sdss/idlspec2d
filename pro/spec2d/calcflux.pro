@@ -1,10 +1,18 @@
 pro calcflux, ansrow, prow, fluxrow, finvrow, wfixed, proftype, lTrace,nCoeff, $
-            sigmacur, xcencur, corcalc 
+            sigmacur, xcencur, corcalc, squashprofile=squashprofile
 
-     if(proftype EQ 3 OR proftype EQ 4) then begin
+     if keyword_set(squashprofile) then begin
+       fluxrow = ansrow[lTrace]
+       finvrow = prow[lTrace]*prow[lTrace] 
+       return
+     endif
+
+     if(proftype GE 3) then begin
        fluxrow = ansrow[0,*]
        if(nCoeff GE 2) then fluxrow = fluxrow + ansrow[1,*]
        if(nCoeff GE 3) then fluxrow = fluxrow + ansrow[2,*]
+
+     if(proftype GE 5) then fluxrow = fluxrow + ansrow[3,*]
        
 ; best estimate we can do
        finvrow = prow[lTrace*nCoeff]*prow[lTrace*nCoeff] 

@@ -39,7 +39,7 @@
 ;------------------------------------------------------------------------------
 
 pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
-    hdr=hdr, configfile=configfile, ecalibfile=ecalibfile 
+    hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, satvalue=satvalue
 
    if (N_params() LT 1) then begin
       print, 'Syntax - sdssproc, infile, [image, invvar, outfile=outfile, varfile=varfile, ' 
@@ -48,6 +48,7 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
    endif
    if (NOT keyword_set(configfile)) then configfile = 'opConfig.par'
    if (NOT keyword_set(ecalibfile)) then ecalibfile = 'opECalib.par'
+   if (NOT keyword_set(satvalue)) then satvalue = 1.0e6
    
    junk = findfile(configfile, count=ct)
    if (ct NE 1) then begin
@@ -82,8 +83,11 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
    names = str_sep(infile,'/')
    camrow = long( strmid( names[N_elements(names) -1], 4,1 ))
    camcol = long( strmid( names[N_elements(names) -1], 5,1 ))
+
    if (camrow NE 0) then message, 'Not a spectroscopic image'
    if (camcol LT 1 OR camcol GT 4) then message, 'Not a spectroscopic image'
+   sxaddpar, hdr, 'CAMROW', camrow
+   sxaddpar, hdr, 'CAMCOL', camcol
  
 
    ; Read in opConfig.par file
@@ -181,6 +185,11 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
       sxaddpar, varhdr, 'LOOKHERE', 'INVERSE VARIANCE of ' + outfile
       writefits, varfile, invvar, varhdr
    endif
+
+;
+;	Take out saturated pixels
+;
+   invvar = invvar * (image LT satvalue)
 
    return
 end

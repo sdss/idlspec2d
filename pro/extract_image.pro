@@ -10,7 +10,7 @@
 ;              ymodel=ymodel, fscat=fscat,proftype = proftype,ansimage=ansimage,
 ;              wfixed=wfixed, sigmacor=sigmacor, xcencor=xcencor, mask=mask,
 ;              nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej,
-;              calcCovar=calcCovar])
+;              calcCovar=calcCovar, fitans=fitans])
 ;
 ; INPUTS:
 ;   fimage     - Image[nCol, nRow]
@@ -39,6 +39,7 @@
 ;   highrej    - positive sigma deviation to be rejected (default 10.0)
 ;   lowrej     - negative sigma deviation to be rejected (default 10.0)
 ;   calcCovar  - calculate Full covariance matrix
+;   fitans     - ratio of profiles to do in single profile fitting
 ;
 ; OUTPUTS:
 ;   flux       - Total extracted flux in each profile [nRowExtract, nFibers]
@@ -64,13 +65,13 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
                ymodel=ymodel, fscat=fscat,proftype=proftype,ansimage=ansimage, $
                wfixed=wfixed, sigmacor=sigmacor, xcencor=xcencor, mask=mask, $
                nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej, $
-	       calcCovar=calcCovar
+	       calcCovar=calcCovar, fitans=fitans
 
    ; Need 5 parameters
    if (N_params() LT 5) then begin
       print, 'Syntax - extract_image(fimage, invvar, xcen, sigma, flux, [finv,'
       print, ' yrow=yrow, ymodel=ymodel, fscat=fscat, proftype = proftype, '
-      print, ' ansimage = ansimage, calcCovar=calcCovar'
+      print, ' ansimage = ansimage, calcCovar=calcCovar, fitans=fitans'
       print, ' wfixed=wfixed, sigmacor=sigmacor, xcencor=xcencor, mask=mask, '
       print, ' nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej])'
       return
@@ -144,8 +145,8 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
 
    if (N_elements(nPoly) EQ 0) then nPoly = 5      ; order of background
    if (NOT keyword_set(maxIter)) then maxIter = 10
-   if (NOT keyword_set(highrej)) then highrej = 10.0
-   if (NOT keyword_set(lowrej)) then lowrej = 10.0 
+   if (NOT keyword_set(highrej)) then highrej = 15.0
+   if (NOT keyword_set(lowrej)) then lowrej = 20.0 
    if (NOT keyword_set(wfixed)) then wfixed = [1]  ; Zeroth order term
    if (NOT keyword_set(proftype)) then proftype = 1  ; Gaussian
    if (NOT keyword_set(ymodel)) then ymodel = fltarr(nx,ny) 
@@ -192,7 +193,10 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
 
    flux = fltarr(nRowExtract, nTrace)
    finv = fltarr(nRowExtract, nTrace)
+   inputans = fltarr(nCoeff, nTrace)
 
+   squashprofile = 0
+   if ARG_PRESENT(fitans) then squashprofile = 1
 ;
 ;	Now loop over each row specified in YROW 
 ;	and extract with rejection with a call to extract_row
@@ -213,10 +217,12 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
         message, 'XCEN is not sorted or not separated by greater than 3 pixels.'
 
      masktemp = mask[*,cur]
+     
+     if ARG_PRESENT(fitans) then inputans = fitans[*,*,cur]
      ansrow = extract_row(fimage[*,cur], invvar[*,cur], xcencurrent, $
       sigmacur, ymodel=ymodelrow, fscat=fscatrow, proftype=proftype, $
       wfixed=wfixed, mask=masktemp, diagonal=prow, nPoly=nPoly, $
-      oback=oback, niter=niter, $
+      oback=oback, niter=niter, squashprofile=squashprofile,inputans=inputans, $
       maxIter=maxIter, highrej=highrej, lowrej=lowrej, calcCovar=calcCovar)
 
      mask[*,cur] = masktemp
@@ -227,7 +233,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
      if(keyword_set(fscat)) then fscat[iy,*] = fscatrow
 
      calcflux, ansrow, prow, fluxrow, finvrow, wfixed, proftype, lTrace,nCoeff,$
-            sigmacur, xcencur, corcalc 
+            sigmacur, xcencur, corcalc,squashprofile=squashprofile
      flux[iy,*] = fluxrow 
      finv[iy,*] = finvrow
    endfor	  

@@ -9,10 +9,10 @@
 ;   ans = extract_row( fimage, invvar, xcen, sigma, [ymodel=ymodel,
 ;              fscat = fscat, proftype = proftype, wfixed = wfixed,
 ;              inputans=inputans, iback = iback, oback =oback, bfixarr=bfixarr,
-;              xvar = xvar, mask=mask,
+;              xvar = xvar, mask=mask, relative=relative,
 ;              diagonal=diagonal, fullcovar=fullcovar, wfixarr = wfixarr,
-;              nPoly=nPoly, maxIter=maxIter, highrej=highrej, 
-;              lowrej=lowrej, calcCovar=calcCovar])
+;              nPoly=nPoly, maxIter=maxIter, highrej=highrej, niter=niter,
+;              lowrej=lowrej, calcCovar=calcCovar, squashprofile=squashprofile])
 ;
 ; INPUTS:
 ;   fimage     - Image[nCol]
@@ -32,6 +32,7 @@
 ;                    profile parameters
 ;   xvar       - x values of fimage and invvar, default is findgen(nx) 
 ;   mask       - pixel mask of 1 is good and 0 is bad (nx) 
+;   relative   - use reduced chisq to scale rejection threshold
 ;   nPoly      - order of chebyshev scattered light background; default to 5
 ;   maxIter    - maximum number of profile fitting iterations; default to 10
 ;   highrej    - positive sigma deviation to be rejected (default 5.0)
@@ -79,6 +80,7 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
                    fscat = fscat, proftype = proftype, wfixed = wfixed, $
                    inputans=inputans, iback = iback, oback =oback, $
                    bfixarr = bfixarr, xvar=xvar, mask=mask, $
+		   relative=relative, squashprofile=squashprofile, $
                    diagonal=p, fullcovar=covar, wfixarr = wfixarr, $
                    nPoly=nPoly, maxIter=maxIter, highrej=highrej, $
                    lowrej=lowrej, calcCovar=calcCovar, niter=niter
@@ -88,7 +90,8 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
       print, 'Syntax - ans = extract_row( fimage, invvar, xcen, sigma, [ymodel=ymodel,'
       print, ' fscat = fscat, proftype = proftype, wfixed = wfixed,'
       print, ' inputans=inputans, iback = iback, oback =oback, bfixarr=bfixarr,'
-      print, ' xvar=xvar, mask=mask, '
+      print, ' xvar=xvar, mask=mask, relative=relative, '
+      print, ' squashprofile=squashprofile, '
       print, ' diagonal=diagonal, fullcovar=fullcovar, wfixarr = wfixarr,'
       print, ' nPoly=nPoly, maxIter=maxIter, highrej=highrej, '
       print, ' lowrej=lowrej, calcCovar=calcCovar, niter=niter])'
@@ -105,11 +108,13 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
 
    if (NOT keyword_set(nPoly)) then nPoly = 5
    if (NOT keyword_set(maxIter)) then maxIter = 10
-   if (NOT keyword_set(highrej)) then highrej = 5.0
-   if (NOT keyword_set(lowrej)) then lowrej = 5.0
+   if (NOT keyword_set(highrej)) then highrej = 15.0
+   if (NOT keyword_set(lowrej)) then lowrej = 20.0
    if (NOT keyword_set(wfixed)) then wfixed = [1]
    if (NOT keyword_set(calcCovar)) then calcCovar = 0
    if (NOT keyword_set(proftype)) then proftype = 1
+   relative = keyword_set(relative) 
+   squashprofile =keyword_set(squashprofile) 
 
    if (NOT keyword_set(xvar)) then xvar = findgen(nx) $
       else if (nx NE n_elements(xvar)) then $
@@ -140,6 +145,8 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
    maxIter = LONG(maxIter)
    proftype = LONG(proftype)
    calcCovar = LONG(calcCovar)
+   squashprofile = LONG(squashprofile)
+
 		
    ymodel = fltarr(nx)
    fscat = fltarr(nTrace)
@@ -147,7 +154,10 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
 
    if (NOT keyword_set(wfixarr)) then begin
       wfixarr = lonarr(ma) + 1 	       ; Fixed parameter array
-      for i=0,nCoeff-1 do wfixarr(lindgen(nTrace)*nCoeff+i) = wfixed[i]
+      i=0
+      wfixarr(lindgen(nTrace)*nCoeff+i) = wfixed[i] 
+      for i=1,nCoeff-1 do $
+	wfixarr(lindgen(nTrace)*nCoeff+i) = wfixed[i] * (1 - squashprofile)
       if (keyword_set(bfixarr)) then wfixarr(nTrace*nCoeff:ma-1) = bfixarr
    endif else if (ma NE n_elements(wfixarr)) then $
       message, 'Number of elements in FIMAGE and WFIXARR must be equal'
@@ -179,15 +189,15 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
 
       result = call_external(getenv('IDL_EVIL')+'libspec2d.so','extract_row',$
        nx, float(xvar), float(fimage), workinvvar, float(ymodel), nTrace, $
-       nPoly, float(xcen), float(sigma), proftype, calcCovar, nCoeff, ma, ans,$
-       long(wfixarr), p, fscat, covar)
+       nPoly, float(xcen), float(sigma), proftype, calcCovar, squashprofile, $
+       nCoeff, ma, ans, long(wfixarr), p, fscat, covar)
 
        diffs = (fimage - ymodel)*sqrt(workinvvar) 
        chisq = total(diffs*diffs)
-       reducedChi = chisq/(total(mask) - ma)
-       scaleError = sqrt(chisq/total(mask))
-;       scaleError = 1.0
-;       if (reducedChi GT 1.0) then scaleError = sqrt(reducedChi)
+	countthese = total(wfixarr)
+       reducedChi = chisq/(total(mask) - countthese)
+       scaleError = 1.0
+       if (relative) then scaleError = sqrt(chisq/total(mask))
 
        badhigh = where(diffs GT highrej*scaleError, badhighct)
        badlow = where(diffs LT -lowrej*scaleError, badlowct)
