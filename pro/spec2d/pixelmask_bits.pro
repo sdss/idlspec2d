@@ -26,38 +26,20 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
-;   yanny_free
-;   yanny_read
+;   sdss_flagval()
 ;
 ; DATA FILES:
-;   $IDLSPEC2D_DIR/etc/spMaskbits.par
 ;
 ; REVISION HISTORY:
 ;   23-Jan-2000 Written by S. Burles, Chicago
 ;   27-Jan-2000 Changed from signed int to signed long.
 ;   14-Jul-2000 Combine with FIBERMASK_BITS(), and use data file in /etc
 ;               subdirectory (DJS).
+;   02-Apr-2002 Now use the even more generalized call to SDSS_FLAGVAL().
 ;-
 ;------------------------------------------------------------------------------
 function pixelmask_bits, label
 
-   ; Declare a common block so that the mask names are remembered between calls.
-   common com_maskbits, maskbits
-
-   if (NOT keyword_set(maskbits)) then begin
-      maskfile = filepath('spMaskbits.par', $
-       root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
-      if (NOT keyword_set(maskfile)) then $
-       message, 'File with mask bits not found'
-      yanny_read, maskfile, pdat
-      maskbits = *pdat[0]
-      yanny_free, pdat
-   endif
-
-   imatch = where(strupcase(label) EQ strupcase(maskbits.label), ct)
-   if (ct NE 1) then $
-    message, 'Error matching bit name: ' + label
-
-   return, 2L^(maskbits[imatch[0]].bit)
+   return, sdss_flagval('SPPIXMASK', label)
 end
 ;------------------------------------------------------------------------------
