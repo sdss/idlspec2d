@@ -83,7 +83,8 @@ end
 pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
  sigma=sigma, sigerr=sigerr
 
-   common com_vdispfit, bigflux, bigloglam, bigmask, nsamp, bigsig, nbigpix, nsig
+   common com_vdispfit, bigflux, bigloglam, bigmask, nsamp, bigsig, $
+    nbigpix, nsig, dsig
 
    if (NOT keyword_set(objloglam) AND NOT keyword_set(hdr)) then $
     message, 'Must specify either OBJLOGLAM or HDR!'
@@ -133,8 +134,9 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
    if (NOT keyword_set(bigflux)) then begin
 
       nsamp = 10
-      nsig = 20
-      bigsig = findgen(nsig) * 25.0 ; in km/sec
+      nsig = 25
+      dsig = 25.0
+      bigsig = findgen(nsig) * dsig ; in km/sec
 
       ;----------
       ; Find the most recent template file matching EIGENFILE
