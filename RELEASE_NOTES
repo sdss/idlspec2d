@@ -31,6 +31,7 @@ WARN_DAYTIME: New proc to print a warning if an excellent-quality exposure
            taken with the Sun up.  For example, this is how the bad arc
            exposure got in to ruin plate 820/52405 (PR #3966).
 
+doc/www/spectroSOS.html: Add warning message for "Sun above horizon."
 examples/opHdrFix.par: Go through all the headers looking for flat, arc,
            or science exposures taken while the sun was up.  Discard them
            in this file, which takes care of all corrections through
