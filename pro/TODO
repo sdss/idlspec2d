@@ -1,4 +1,9 @@
 
+* Compare throughput from dome flats vs. that on bright sky lines.
+
+* Something wrong with arc line fitting: rows 140-150 messed up now,
+  and screwing up sky-subtraction everywhere
+
 * Sky-subtraction: Fix edge effects in inverse variance scaling
 
 * In flat-fields, be smarter with break points

@@ -11,12 +11,19 @@ end
 
 pro combine2dout, filenames, outputfile, bin, zeropoint, nord=nord, $
         ntrials=ntrials, fullspec=fullspec, fullerr=fullerr, $
-        fullwave=fullwave, output=output
+        fullwave=fullwave, output=output, dosky=dosky, wavemin = wavemin, $
+        bkptbin = bkptbin
 
-	if (NOT keyword_set(bin)) then bin = 0.0001d	
+;
+;	Set to 50 km/s for now to match 1d
+;	Better guess would be 69 km/s
+;
+	if (NOT keyword_set(bin)) then bin = (50.0/300000.0) / 2.30258
+
 	if (NOT keyword_set(zeropoint)) then zeropoint = 3.5d
 	if (NOT keyword_set(nord)) then nord = 4
 	if (NOT keyword_set(ntrials)) then ntrials = 25
+	if (NOT keyword_set(bkptbin)) then bkptbin = 0.0002
 
 ; filenames = findfile('s-2b-*050*')
 
@@ -27,6 +34,10 @@ pro combine2dout, filenames, outputfile, bin, zeropoint, nord=nord, $
 ;	read in first one
 ;
 	spec = read2dout(filenames[0], wave, hdr=hdr)
+
+	objtype = strtrim(sxpar(hdr, 'OBJTYPE'),2)
+	if(objtype EQ 'SKY' AND NOT keyword_set(dosky)) then return
+
 	fullspec = spec[*,0]
 	fullerr = spec[*,1]
 	fullwave = wave
@@ -63,25 +74,42 @@ pro combine2dout, filenames, outputfile, bin, zeropoint, nord=nord, $
 
 	scale = 1.0
 	if (minred LT maxblue) then begin
-          bluecross = where(bluered EQ 0 and fullwave GT minred)
-          redcross = where(bluered EQ 1 and fullwave LT maxblue)
-	  djs_iterstat, fullspec[bluecross], median=bluemed
-	  djs_iterstat, fullspec[redcross], median=redmed
-	  scale = bluemed/redmed
-	  print, 'COMBINE2DOUT: scaling red by', scale
-	  fullspec[redpix] = fullspec[redpix]*scale
-	  fullerr[redpix] = fullerr[redpix]*scale
+          bluecross = where(bluered EQ 0 and fullwave GT minred $ 
+                    AND fullerr GT 0.0)
+          redcross = where(bluered EQ 1 and fullwave LT maxblue $
+                    AND fullerr GT 0.0)
+	  if (redcross[0] NE -1 AND bluecross[0] NE -1) then begin 
+	    djs_iterstat, fullspec[bluecross], median=bluemed
+	    djs_iterstat, fullspec[redcross], median=redmed
+	    scale = bluemed/redmed
+
+	    if (scale LT 0.1 OR scale GT 10.0) then scale = 1.0
+	    print, 'COMBINE2DOUT: scaling red by', scale
+	    fullspec[redpix] = fullspec[redpix]*scale
+	    fullerr[redpix] = fullerr[redpix]*scale
+	  endif
 	endif
 
-	spotmin = fix((min(fullwave) - zeropoint)/bin) + 1
-	spotmax = fix((max(fullwave) - zeropoint)/bin) 
-	wavemin = spotmin * bin + zeropoint
-	wavemax = spotmax * bin + zeropoint
+	if (NOT keyword_set(wavemin)) then begin
+	  spotmin = fix((min(fullwave) - zeropoint)/bin) + 1
+	  spotmax = fix((max(fullwave) - zeropoint)/bin) 
+	  wavemin = spotmin * bin + zeropoint
+	  wavemax = spotmax * bin + zeropoint
+	  bkptmin = wavemin
+	  bkptmax = wavemax
+	endif else begin
+	  spotmin = 0
+	  spotmax = fix((max(fullwave) - wavemin)/bin) 
+	  wavemax = spotmax * bin + wavemin
+	  bkptmin = min(fullwave)
+	  bkptmax = wavemax
+	endelse
 
 	npix = spotmax - spotmin + 1
+	nbkpt = fix((bkptmax - bkptmin)/bkptbin) + 1
 
 	newwave = float(dindgen(npix)*bin + wavemin)
-	bkpt = float(dindgen(npix/2 + 1)*bin*2.0 + wavemin)
+	bkpt = float(dindgen(nbkpt)*bkptbin + bkptmin)
 	
 
 ;
@@ -89,8 +117,10 @@ pro combine2dout, filenames, outputfile, bin, zeropoint, nord=nord, $
 ;
 	fullivar = fullerr * 0.0
 	nonzero = where(fullerr GT 0.0)
-	if (nonzero[0] EQ -1) then $
-	   message, 'no good points, all have 0.0 or negative sigma'
+	if (nonzero[0] EQ -1) then begin
+	   print, 'no good points, all have 0.0 or negative sigma'
+	   return
+        endif
 
 	fullivar[nonzero] = 1.0/(fullerr[nonzero]^2)
 
@@ -99,11 +129,16 @@ pro combine2dout, filenames, outputfile, bin, zeropoint, nord=nord, $
 ;		
 
 	ss = sort(fullwave)
-	
+
 	fullbkpt = slatec_splinefit(fullwave[ss], $
               fullspec[ss], coeff, bkpt=bkpt, invvar=fullivar[ss])
 
-	bestguess = slatec_bvalu(newwave, fullbkpt, coeff)
+	bestguess = fltarr(npix)
+	inside = where(newwave GE bkptmin AND newwave LE bkptmax, numinside)
+	if (inside[0] EQ -1) then $
+           message, 'No wavelengths inside breakpoints'
+
+        bestguess[inside] = slatec_bvalu(newwave[inside], fullbkpt, coeff)
 
 ;
 ;	Below is very dirty Monte Carlo to estimate errors in b-spline
@@ -114,11 +149,11 @@ pro combine2dout, filenames, outputfile, bin, zeropoint, nord=nord, $
 	  tempspec = randomu(iseed,totalpix,/normal)*fullerr + fullspec
 	  fullbkpt = slatec_splinefit(fullwave[ss], tempspec[ss], $
                coeff, invvar=fullivar[ss], fullbkpt=fullbkpt)
-	  trials[i,*] = slatec_bvalu(newwave, fullbkpt, coeff)
+	  trials[i,inside] = slatec_bvalu(newwave[inside], fullbkpt, coeff)
 	endfor
 
 	besterr = bestguess*0.0
-	for i=0,npix-1 do besterr[i] = stddev(trials[*,i])
+	for i=0,numinside-1 do besterr[inside[i]] = stddev(trials[*,inside[i]])
 
 	output = [[newwave],[bestguess],[besterr]]
 
@@ -130,7 +165,7 @@ pro combine2dout, filenames, outputfile, bin, zeropoint, nord=nord, $
 	ncoeff = sxpar(newhdr, 'NWORDER')
 
 	sxaddpar,newhdr, 'NWORDER', 2, 'Linear-log10 coefficients'
-	sxaddpar,newhdr, 'WFITTYPE', 'LINEAR-LOG', $
+	sxaddpar,newhdr, 'WFITTYPE', 'LOG-LINEAR', $
             'Linear-log10 dispersion'
 	sxaddpar,newhdr, 'COEFF0', wavemin, $
             'center wavelength (log10) of first pixel'
@@ -139,8 +174,8 @@ pro combine2dout, filenames, outputfile, bin, zeropoint, nord=nord, $
         for i=2,ncoeff-1 do $
           sxdelpar,newhdr, 'COEFF'+strtrim(string(i),2)
 
-        sxdelpar,newhdr, 'PIXMIN'
-        sxdelpar,newhdr, 'PIXMAX'
+        sxaddpar,newhdr, 'PIXMIN', 0.000, 'Place holding'
+        sxaddpar,newhdr, 'PIXMAX', float(npix - 1), 'Place holding'
 
 	sxaddpar,newhdr, 'CREATORS', 'Burles & Schlegel (1999) IDLspec', $
                         AFTER='SDSS'

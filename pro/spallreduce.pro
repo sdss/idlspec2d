@@ -140,8 +140,7 @@ pro spallreduce, planfile=planfile
             expres = string(format='(a,i1,a,i3.3,a)', 's-', side, '*', i,'.fit')
             files = findfile(extractDir+expres)
 
-;            combine2dout, files, extractDir+outputfile, wavemin = alog10(3750.0)
-            combine2dout, files, extractDir+outputfile
+            combine2dout, files, extractDir+outputfile, wavemin = alog10(3750.0)
          endfor
       endfor
 

@@ -205,7 +205,7 @@ pro spplan, indir=indir, plugdir=plugdir, flatdir=flatdir, $
 
       endwhile
 
-      if (NOT keyword_set(flats)) then begin
+      if (NOT keyword_set(flats) AND keyword_set(oneseq)) then begin
          ; Test that a flat and an arc exist for any camera with a
          ; science exposure
          for icam=0, ncam-1 do begin
