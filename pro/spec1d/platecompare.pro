@@ -117,6 +117,11 @@ pro platecompare, plate, mjd=mjd, topdir=topdir, psfile=psfile
       endfor
    endelse
 
+   if (NOT keyword_set(zansall)) then begin
+      print, 'Data not found for plate ', platevec[0], ' MJD=', mjdvec[0]
+      return
+   endif
+
    ; Group duplicate objects together
    ngroup = djs_angle_group(zansall.plug_ra, zansall.plug_dec, 1./3600., $
     gstart=gstart, gcount=gcount, gindx=gindx)
