@@ -240,7 +240,7 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
    ;----------
    ; Re-do the super-sky fit using the variable PSF, if DISPSET is set.
 
-   if (keyword_set(dispset)) then begin
+   if (keyword_set(dispset) AND keyword_set(fullbkpt)) then begin
 
       if (NOT keyword_set(npoly)) then npoly = 4L
 
