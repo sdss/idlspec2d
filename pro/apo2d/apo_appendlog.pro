@@ -26,6 +26,7 @@
 ;
 ; PROCEDURES CALLED:
 ;   djs_lockfile()
+;   djs_modfits
 ;   djs_unlockfile
 ;   headfits()
 ;   idlspec2d_version()
@@ -82,6 +83,7 @@ pro apo_appendlog, logfile, rstruct
    endif else begin
       ; Modify to an existing FITS file
       pp = struct_append(pp, rstruct)
+      djs_modfits, logfile, pp, exten_no=thishdu
    endelse
 
    ;----------
