@@ -139,7 +139,7 @@ function corrlamps, a
 	bestlag = 0
 	model = sqrt(model)
 
-;	stop
+
         if (total(model) GT 0) then begin
 	  res = c_correlate(model,speccorr, lag)
 	  bestcorr = max(res,val)
@@ -179,6 +179,8 @@ function fullfit, spec, linelist, guess
 
 	return,final
 end
+
+
 
 
 ;------------------------------------------------------------------------------
