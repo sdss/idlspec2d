@@ -31,6 +31,7 @@
 ;                the trimmed tsObj files are available in the directory
 ;                $SPECTRO_DATA/plates, and Netscape is running and has
 ;                permissions at the site "http://sdsslnx.fnal.gov:8015".
+;                This is disabled if PSFILE is set.
 ;   _EXTRA     - Kewords for SPLOT, such as XRANGE, YRANGE, THICK.
 ;
 ; OUTPUTS:
@@ -211,7 +212,7 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
         charsize=csize, color=textcolor
    endif
 
-   if (keyword_set(netimage)) then begin
+   if (keyword_set(netimage) AND NOT keyword_set(psfile)) then begin
       readspec, plate, fiberid, mjd=mjd, tsobj=tsobj
       if (keyword_set(tsobj)) then begin
          netstring = 'http://sdsslnx.fnal.gov:8015/template/tsSingle.tml?run=' $
@@ -235,7 +236,7 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
 
    if (n_params() LT 1) then begin
       print, 'Syntax - plotspec, plate, [ fiberid, mjd=, znum=, nsmooth=, $'
-      print, '         psfile=, xrange=, yrange=, noerase=, $'
+      print, '         psfile=, xrange=, yrange=, /noerase, $'
       print, '         /netimage, _EXTRA=KeywordsForSplot'
       return
    endif
