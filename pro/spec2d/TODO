@@ -1,4 +1,11 @@
 
+* What the heck is CURANS in the routine XY2TRACESET?
+
+* Re-instate S/N plot, and include global S/N values in spPlate files.
+
+* The routine traceset2pix should also support 'fchebyshev_split',
+  as does func_fit().
+
 * Rename heliocentric -> barycentric?
 
 * Plate 306, fibers 172-175 now look worse than in July.

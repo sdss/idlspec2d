@@ -154,7 +154,7 @@ function trace320crude, fimage, invvar, ystart=ystart, nmed=nmed, $
    ; Replace XSET with a smooth trace-set
 
 ;   xy2traceset, yset, xset, tset, ncoeff=5, yfit=xnew, invvar=xmask, $
-;    maxdev=maxdev, /singlerej
+;    maxdev=maxdev, maxrej=1, /sticky
 ;   xset = xnew
 
    ;----------

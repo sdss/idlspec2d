@@ -182,14 +182,15 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
          ; Create spatial tracing from flat-field image
          ;------------------------------------------------------------------
 
-         splog, 'Tracing 320 fibers in ',  flatname[iflat]
+         splog, 'Tracing 320 fibers in ', flatname[iflat]
          xsol = trace320crude(flatimg, flativar, yset=ycen, maxdev=0.15, $
           fibermask=tmp_fibmask)
 
-         splog, 'Fitting traces in ',  flatname[iflat]
-         xy2traceset, ycen, xsol, tset, ncoeff=7, maxdev=0.1, $
-          totalreject=totalreject
+         splog, 'Fitting traces in ', flatname[iflat]
+         outmask = 0
+         xy2traceset, ycen, xsol, tset, ncoeff=7, maxdev=0.1, outmask=outmask
 
+         junk = where(outmask EQ 0, totalreject)
          if (totalreject GT 10000) then begin
             splog, 'Reject flat ' + flatname[iflat] + $
              ': ' + string(format='(i8)', totalreject) + ' rejected pixels'

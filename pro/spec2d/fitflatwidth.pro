@@ -33,6 +33,7 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   xy2traceset
 ;
 ; REVISION HISTORY:
 ;   1-Mar-2000  Written by S. Burles, FNAL

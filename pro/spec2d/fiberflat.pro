@@ -195,10 +195,11 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
       ;----------
       ; Replace each flat-field vector with a cubic fit to that vector
 
-      xmask = fluxivar GT 0 AND flux GT minval ; Mask bad pixels in the fit
+      inmask = fluxivar GT 0 AND flux GT minval ; Mask bad pixels in the fit
       xy2traceset, loglam, ratimg, fset, func='legendre', ncoeff=ncoeff, $
        ; invvar=rativar, $ ; Weight all points equally instead
-        maxiter=10, /singlerej, xmask=xmask, yfit=fflat
+       maxiter=100, maxrej=1, /sticky, $
+       inmask=inmask, outmask=xmask, yfit=fflat
 
       ;----------
       ; For flat vectors that are completely bad, replace with zeros.

@@ -6,63 +6,61 @@
 ;   Convert from an array of x,y positions to a trace set
 ;
 ; CALLING SEQUENCE:
-;   xy2traceset, xpos, ypos, tset, [ func=func, ncoeff=ncoeff, $
-;    xmin=xmin, xmax=xmax, maxdev=maxdev, maxsig=maxsig, maxiter=maxiter, $
-;    singlerej=singlerej, xmask=xmask, yfit=yfit, inputans=inputans, $
-;    invvar=invvar, _EXTRA=KeywordsForFunc ]
+;   xy2traceset, xpos, ypos, tset, [ invvar=, func=func, ncoeff=ncoeff, $
+;    xmin=xmin, xmax=xmax, maxiter=maxiter, $
+;    inmask=inmask, outmask=outmask, yfit=yfit, inputans=inputans, $
+;    _EXTRA=EXTRA ]
 ;
 ; INPUTS:
 ;   xpos       - X positions corresponding to YPOS as an [nx,Ntrace] array
 ;   ypos       - Y centers as an [nx,ntrace] array
 ;
 ; OPTIONAL KEYWORDS:
+;   invvar     - Inverse variance for weighted fits.
 ;   func       - Function for trace set; options are:
 ;                'legendre'
 ;                'chebyshev'
 ;                'chebyshev_split'
 ;                Default to 'legendre'
 ;   ncoeff     - Number of coefficients in fit; default to 3
-;   ncoeff     - Inverse variance for weighted func_fit
 ;   xmin       - Explicitly set XMIN for trace set rather than using minimum
 ;                in XPOS
 ;   xmax       - Explicitly set XMAX for trace set rather than using maximum
 ;                in XPOS
-;   maxdev     - Maximum deviation in the fit to YPOS; set to 0 for no reject;
-;                default to 0.
-;   maxsig     - Maximum deviation in the fit to YPOS in terms of the 1-sigma
-;                dispersion of the residuals; set to 0 for no reject;
-;                default to 0.
 ;   maxiter    - Maximum number of rejection iterations; set to 0 for no
-;                rejection; default to 10 if either MAXDEV or MAXSIG are set.
-;                Rejection iterations continues until convergence
-;                (actually, until the number of rejected pixels is unchanged).
-;   singlerej  - If set, then reject at most one deviant point per iteration,
-;                rejecting the worst one each time.  In this case, MAXITER
-;                represents the maximum number of points that can be rejected
-;                per trace.
+;                rejection; default to 10.
+;   inmask     - Mask set to 1 for good points and 0 for rejected points;
+;                same dimensions as XPOS, YPOS.  Points rejected by INMASK
+;                are always rejected from the fits (the rejection is "sticky"),
+;                and will also be marked as rejected in OUTMASK.
 ;   inputans   - ???
+;   EXTRA      - Keywords passed to either the function FUNC, or DJS_REJECT().
+;                Note that keywords like MAXREJ relate to each individual trace.
 ;
 ; OUTPUTS:
 ;   tset       - Structure containing trace set
 ;
 ; OPTIONAL OUTPUTS:
-;   xmask      - Mask set to 1 for good points and 0 for rejected points;
+;   outmask    - Mask set to 1 for good points and 0 for rejected points;
 ;                same dimensions as XPOS, YPOS.
 ;   yfit       - Fit values at each XPOS.
-;   totalreject- Total number of pixels rejected during xy2traceset
 ;
 ; COMMENTS:
+;   The fits are done to one trace at a time, where each trace is treated
+;   completely independently.
+;
 ;   Note that both MAXDEV and MAXSIG can be set for applying both rejection
 ;   schemes at once.
 ;
 ;   Additional keywords can be passed to the fitting functions with _EXTRA.
+;   By not setting any of these rejection keywords, no rejection is performed.
 ;
 ; EXAMPLES:
 ;
 ; BUGS:
-;   Should probably change default to no rejection.
 ;
 ; PROCEDURES CALLED:
+;   djs_reject()
 ;   fchebyshev()
 ;   fchebyshev_split()
 ;   flegendre()
@@ -71,29 +69,23 @@
 ; REVISION HISTORY:
 ;   19-May-1999  Written by David Schlegel, Princeton.
 ;   04-Aug-1999  Added chebyshev option (DJS).
+;   02-Sep-2000  Modify to use rejection schemes in DJS_REJECT() (DJS).
 ;-
 ;------------------------------------------------------------------------------
-pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
- xmin=xmin, xmax=xmax, maxdev=maxdev, maxsig=maxsig, maxiter=maxiter, $
- singlerej=singlerej, xmask=xmask, yfit=yfit, inputans=inputans, $
- invvar=invvar, totalreject=totalreject, _EXTRA=KeywordsForFunc
+pro xy2traceset, xpos, ypos, tset, invvar=invvar, func=func, ncoeff=ncoeff, $
+ xmin=xmin, xmax=xmax, maxiter=maxiter, $
+ inmask=inmask, outmask=outmask, yfit=yfit, inputans=inputans, $
+ _EXTRA=EXTRA
 
    ; Need 3 parameters
    if (N_params() LT 3) then begin
-      print, 'Syntax - xy2traceset, xpos, ypos, tset, [ func=, ncoeff=, $
-      print, ' xmin=, xmax=, maxdev=, maxsig=, maxiter=, /singlerej, yfit=, xmask= ]'
+      print, 'Syntax - xy2traceset, xpos, ypos, tset, [invvar=, func=, ncoeff=, $
+      print, ' xmin=, xmax=, maxiter=, inmask=, outmask=, yfit=, inputans=, _EXTRA= ]'
       return
    endif
 
    if (NOT keyword_set(func)) then func = 'legendre'
-   if (N_elements(maxdev) EQ 0) then maxdev = 0
-   if (N_elements(maxsig) EQ 0) then maxsig = 0
-   if (N_elements(maxiter) EQ 0) then begin
-      if (maxdev NE 0 or maxsig NE 0) then numiter = 10 $
-       else numiter = 0
-   endif else begin
-      numiter = maxiter
-   endelse
+   if (n_elements(maxiter) EQ 0) then maxiter = 10
 
    ndim = size(ypos, /n_dim)
    dims = size(ypos, /dim)
@@ -131,95 +123,61 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
    xmid = 0.5 * (tset.xmin + tset.xmax)
    xrange = tset.xmax - tset.xmin
 
-   xmask = bytarr(nx, ntrace)
+   outmask = bytarr(nx, ntrace)
 
    yfit = ypos*0.0
    if (NOT keyword_set(inputans)) then curans = fltarr(ncoeff)
 
-   totalreject = 0
-   ; Header for Schlegel counter
+   ; Header for Burles counter
    print, ''
    print, ' TRACE# NPOINTS NREJECT'
 
-   for itrace=0, ntrace-1 do begin
-;      res = svdfit(2.0*(xpos[*,i]-xmid)/xrange, ypos[*,itrace], ncoeff, $
-;       /double, function_name=function_name, singular=singular)
+   ;----------
+   ; Loop over each trace
 
-      xnorm = 2.0*(xpos[*,itrace]-xmid) / xrange ; X positions renormalized
-      nreject = 0
-      good = lonarr(nx) + 1
+   for itrace=0, ntrace-1 do begin
+
+      xnorm = 2.0 * (xpos[*,itrace] - xmid) / xrange ; X positions renormalized
 
       if (keyword_set(inputans)) then curans = inputans[*,itrace] 
+      if (keyword_set(inmask)) then curinmask = inmask[*,itrace]
 
+      ;----------
       ; Rejection iteration loop
 
       iiter = 0
-      ngood = nx
-      nglast = nx+1 ; Set to anything other than NGOOD for 1st iteration
-      while ( (iiter EQ 0 AND numiter EQ 0) $
-           OR (ngood NE nglast AND iiter LE numiter AND ngood GE 1) $
-       ) do begin
-
-         if (iiter EQ 0) then begin
-            qgood = bytarr(nx) + 1
-            igood = lindgen(nx)
-         endif else begin
-            nglast = ngood
-            if (keyword_set(singlerej)) then begin
-               ydiff = ycurfit[igood] - ypos[igood,itrace]
-               if (keyword_set(invvar)) then $
-                 invsig = sqrt(invvar[igood,itrace] > 0) $
-               else invsig = (fltarr(ngood) + 1.0)/ stddev(ydiff)
-               worstdiff = max(abs(ydiff), iworst)
-               if (keyword_set(maxdev) AND worstdiff GT maxdev) then $
-                  qgood[igood[iworst]] = 0 $
-               else begin
-                 worstsig = max(abs(ydiff)*invsig, iworst)
-                 if (keyword_set(maxsig) AND worstsig GT maxsig) then $
-                  qgood[igood[iworst]] = 0 
-               endelse
-            endif else begin
-               ydiff = ycurfit - ypos[*,itrace]
-               if (keyword_set(invvar)) then $
-                 invsig = sqrt(invvar[*,itrace] > 0) $
-               else invsig = (fltarr(nx) + 1.0)/ stddev(ydiff)
-               qgood = bytarr(nx) + 1
-               if (keyword_set(maxdev)) then $
-                qgood = qgood AND (abs(ydiff) LT maxdev)
-               if (keyword_set(maxsig)) then $
-                qgood = qgood AND (abs(ydiff)*invsig LT maxsig)
-            endelse
-            igood = where(qgood, ngood)
-         endelse
-
-         nreject = nx - ngood
+      qdone = 0
+      curoutmask = 0
+      while (NOT keyword_set(qdone) AND iiter LE maxiter) do begin
          if (keyword_set(invvar)) then $
-           tempivar  = invvar[*,itrace]*qgood $
-         else tempivar = qgood
+          tempivar = invvar[*,itrace] $
+         else $
+          tempivar = bytarr(nx) + 1
 
-         res = func_fit(xnorm, ypos[*,itrace], ncoeff, $
-          invvar=tempivar, $
+         if (iiter GT 0) then begin
+            qdone = djs_reject(ypos[*,itrace], ycurfit, $
+             inmask=curinmask, outmask=curoutmask, _EXTRA=EXTRA)
+            tempivar = tempivar * curoutmask
+         endif
+
+         res = func_fit(xnorm, ypos[*,itrace], ncoeff, invvar=tempivar, $
           function_name=function_name, yfit=ycurfit, inputans=curans, $
-          _EXTRA=KeywordsForFunc)
-
-;         if (func EQ 'legendre') then $
-;          ycurfit = flegendre(xnorm, ncoeff, _EXTRA=KeywordsForFunc) # res
+          _EXTRA=EXTRA)
 
          iiter = iiter + 1
       endwhile
   
       yfit[*,itrace] = ycurfit 
       tset.coeff[*,itrace] = res
-
-      xmask[*,itrace] = qgood
+      outmask[*,itrace] = curoutmask
 
       ; Burles counter of row number...
+      junk = where(curoutmask EQ 0, nreject)
       print, format='(i7,i8,i8,a1,$)', itrace, nx, nreject, string(13b)
-      totalreject = totalreject + nreject
    endfor
 
-   splog, 'Total rejected: ', totalreject
-   print, ''
+   junk = where(outmask EQ 0, nreject)
+   splog, 'Total rejected = ', nreject
 
    return
 end

@@ -250,8 +250,9 @@ maxdev = 3.0d-5
 
    nlamp = N_elements(lamps)
    xy2traceset, transpose(double(xnew)), lamps.loglam # (dblarr(nfiber)+1), $
-    wset, func=func, ncoeff=ncoeff, maxdev=maxdev, maxiter=nlamp, /singlerej, $
-    xmask=xmask, xmin=0, xmax=npix-1
+    wset, func=func, ncoeff=ncoeff, maxdev=maxdev, maxiter=nlamp, $
+    maxrej=1, outmask=xmask, /sticky, $
+    xmin=0, xmax=npix-1
 
    print, 'Pass 1 complete'
 
@@ -274,8 +275,9 @@ maxdev = 3.0d-5
    lamps = lamps[gind]
 
    xy2traceset, transpose(xnew), lamps.loglam # (dblarr(nfiber)+1), wset, $
-    func=func, ncoeff=ncoeff, maxdev=maxdev, maxiter=nlamp, /singlerej, $
-    xmask=xmask, xmin=0, xmax=npix-1
+    func=func, ncoeff=ncoeff, maxdev=maxdev, maxiter=nlamp, $
+    maxrej=1, outmask=xmask, /sticky, $
+    xmin=0, xmax=npix-1
    print, 'Pass 2 complete'
 
    ;---------------------------------------------------------------------------
@@ -290,7 +292,8 @@ wsave = wset
    ; a split in the baseline at the central fibers.
    for ic=1, ncoeff-1 do begin
       xy2traceset, dindgen(nfiber), transpose(wset.coeff[ic,*]), tmpset, $
-       func='chebyshev_split', ncoeff=8, maxsig=2.0, xmask=xmask, yfit=yfit
+       func='chebyshev_split', ncoeff=8, upper=2.0, lower=2.0, $
+       outmask=xmask, /sticky, yfit=yfit
       wset.coeff[ic,*] = yfit
 ; jj=where(xmask EQ 0)
 ; plot,transpose(wset.coeff[ic,*]),/yno
@@ -326,8 +329,9 @@ wsave = wset
    ; as before
 
    xy2traceset, transpose(xnew), lamps.loglam # (dblarr(nfiber)+1) - ypos, $
-    tset2, func=func, ncoeff=ncfit, maxdev=maxdev, maxiter=nlamp, /singlerej, $
-    xmask=xmask, xmin=0, xmax=npix-1
+    tset2, func=func, ncoeff=ncfit, maxdev=maxdev, maxiter=nlamp, $
+    maxrej=1, outmask=xmask, /sticky, $
+    xmin=0, xmax=npix-1
 
    ;-----
    ; Now replace WSET with the re-fit coefficients

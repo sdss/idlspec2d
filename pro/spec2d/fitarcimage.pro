@@ -279,8 +279,8 @@ maxdev = 1.0d-5
     else ytmp = lamps.loglam # (dblarr(nfiber)+1)
    xy2traceset, transpose(double(xcen)), ytmp, $
      wfirst, invvar=transpose(xmask), func=func, ncoeff=ncoeff, $
-     maxdev=maxdev, maxiter=nlamp, /singlerej, $
-     xmask=xfitmask, xmin=0, xmax=npix-1, yfit=yfit
+     maxdev=maxdev, maxiter=nlamp, maxrej=1, /sticky, $
+     outmask=xfitmask, /sticky, xmin=0, xmax=npix-1, yfit=yfit
 
    print, 'Pass 1 complete'
 
@@ -363,9 +363,9 @@ maxdev = 1.0d-5
    splog, 'Replacing all centroids in '+string(nreplace)+' fibers'
 
    if (fixthese[0] NE -1) then begin
-     xy2traceset, transpose(xcen[fixthese,*]),transpose(meandiff[fixthese,*]),$
-        diffset, ncoeff=2, invvar= transpose(xmask[fixthese,*]), yfit=diffit, $
-        maxdev = 0.1
+     xy2traceset, transpose(xcen[fixthese,*]), transpose(meandiff[fixthese,*]),$
+      diffset, ncoeff=2, invvar=transpose(xmask[fixthese,*]), yfit=diffit, $
+      maxdev=0.1
 
      ; Just replace masked centroids here, with linear fit above
 
@@ -392,8 +392,9 @@ maxdev = 1.0d-5
    if (nlamp EQ 1) then ytmp = transpose(lamps.loglam * (dblarr(nfiber)+1)) $
     else ytmp = lamps.loglam # (dblarr(nfiber)+1)
    xy2traceset, transpose(double(xcen)), ytmp, $
-     wset, func=func, ncoeff=ncoeff, $
-     maxiter=nlamp, /singlerej, xmin=0, xmax=npix-1, yfit=yfit
+    wset, func=func, ncoeff=ncoeff, $
+    maxiter=nlamp, maxrej=1, /sticky, $
+    xmin=0, xmax=npix-1, yfit=yfit
 
    print, 'Final arcfit complete'
 

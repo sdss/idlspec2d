@@ -40,11 +40,13 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   traceset2xy
+;   xy2traceset
 ;
 ; REVISION HISTORY:
 ;   ??-Oct-1999  Written by S. Burles, Chicago
 ;   25-Feb-2000  Modified to be more robust (yeah!)
-; 		   but requires exactly 320 fibers (boo)
+; 		   but requires exactly 320 fibers (boo) ???
 ;-
 ;------------------------------------------------------------------------------
 function fitansimage, ansimage, nparams, nfibers, npoly, yrow, $

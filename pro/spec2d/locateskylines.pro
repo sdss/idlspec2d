@@ -40,6 +40,7 @@
 ;   trace_gweight()
 ;   traceset2pix()
 ;   traceset2xy
+;   xy2traceset
 ;
 ; REVISION HISTORY:
 ;   15-Oct-1999  Written by S. Burles, D. Finkbeiner, & D. Schlegel, APO
@@ -135,7 +136,7 @@ pro locateskylines, skylinefile, fimage, ivar, wset, xarc, arcshift=arcshift, $
    invvar = 0.0 * xdiff
    for i=0, nskyline-1 do invvar[*,i] = aveinvvar[i]
    xy2traceset, transpose(mx), transpose(xdiff), shiftset, ncoeff=shiftcoeff, $
-     invvar=transpose(invvar), xmin=0, xmax=npix-1, maxiter=0
+    invvar=transpose(invvar), xmin=0, xmax=npix-1, maxiter=0
 
    ;---------------------------------------------------------------------------
    ; Compute shift for sky line positions.

@@ -183,7 +183,7 @@ function arcfit_iter, spec, loglam, intensity, $
 
    ; Convert to a trace set with XMIN=0, XMAX=NPIX-1
    xy2traceset, dindgen(npix)-lagbest, bestlambda, wset, ncoeff=ncoeff, $
-    xmin=0, xmax=npix-1, maxiter=0
+    xmin=0, xmax=npix-1, maxiter=1
 
    return, wset
 end

@@ -186,7 +186,7 @@ arcivar = 0
    traceset2xy, wset, xx, loglam
 
    xy2traceset, transpose(xsol), transpose(loglam), tmpset, $
-    func='legendre', ncoeff=5, xmin=0, xmax=nx-1, maxsig=2.0
+    func='legendre', ncoeff=5, xmin=0, xmax=nx-1, upper=2.0, lower=2.0
    xtmp = 0
    traceset2xy, tmpset, xtmp, waveimg
 
