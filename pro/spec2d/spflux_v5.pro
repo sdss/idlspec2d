@@ -1,9 +1,3 @@
-
-;   objname    - These must be spFrame file names all from either spectro-1
-;                or spectro-2, but not both!
-;   adderr     - Additional error to add to the formal errors, as a
-;                fraction of the flux; default to 0.03 (3 per cent).
-
 ;+
 ; NAME:
 ;   spflux_v5
@@ -15,11 +9,12 @@
 ;   spflux_v5, objname, [ adderr=, combinedir= ]
 ;
 ; INPUTS:
-;   objname    - File names (including path)
+;   objname    - File names (including path) for spFrame files, all from
+;                either spectro-1 or spectro-2, but not both!
 ;
 ; OPTIONAL INPUTS:
 ;   adderr     - Additional error to add to the formal errors, as a
-;                fraction of the flux; default to 0.03
+;                fraction of the flux; default to 0.03 (3 per cent)
 ;   combinedir - Directory for output files
 ;
 ; OUTPUTS:
