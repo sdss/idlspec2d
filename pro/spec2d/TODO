@@ -1,11 +1,24 @@
 
+* SPPLAN1D needs a fully-qualified TOPINDIR, but should be able to work
+  relative from current directory.
+
+* Add 3% to the errors in each spectrum for when combining high S/N data.
+
+* Let MYFLUXCORR work for different pluggings
+
+* Look for cosmics on raw frame as ratio of neighboring points.
+
+* Watch for the flux-calib factor going negative.
+  Mask out any wavelength regions without a calibration.
+
 * Looks like fibermask is no longer used in DIVIDEFLAT.
 
 * Let TRACESET2XY return a wave map of type double.
 
 * What the heck is CURANS in the routine XY2TRACESET?
 
-* Re-instate S/N plot, and include global S/N values in spPlate files.
+* Re-instate S/N plot, and include global S/N values in spPlate files,
+  evaluated at 20th mag or so just like in APO-2D.
 
 * The routine traceset2pix should also support 'fchebyshev_split',
   as does func_fit().

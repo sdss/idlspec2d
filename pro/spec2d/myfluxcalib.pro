@@ -1,6 +1,33 @@
+;------------------------------------------------------------------------------
+; Re-sort the 2nd plug-map to match that of the first file, so
+; that PLUGMAP2[INDX] = PLUGMAP1
+function resortplugmap, plugmap1, plugmap2
+
+   nfiber = n_elements(plugmap1)
+   indx = lonarr(nfiber)
+
+   for ifiber=0, nfiber-1 do begin
+      adist = djs_diff_angle(plugmap1.ra, plugmap1.dec, $
+       plugmap2[ifiber].ra, plugmap2[ifiber].dec, units='degrees')
+      indx[ifiber] = $
+       (where(adist LT 2./3600. AND strtrim(plugmap1.objtype,2) NE 'NA'))[0]
+   endfor
+
+   return, indx
+end
 
 ;------------------------------------------------------------------------------
 function fluxfit, loglam, objflux, objivar, color=color, mags=mags
+
+   ;----------
+   ; Change inputs such that wavelengths are in ascending order.
+   ; Need to do this to avoid bug currently in the B-spline code ???
+
+   if (loglam[1] LT loglam[0]) then begin
+      loglam = reverse(loglam)
+      objflux = reverse(objflux)
+      objivar = reverse(objivar)
+   endif
 
    wave = 10^loglam
    logmin = min(loglam)
@@ -75,11 +102,6 @@ function fluxfit, loglam, objflux, objivar, color=color, mags=mags
    scalefac = 10.^((21.37 - mags[2]) / 2.5)
    sset.coeff = sset.coeff / scalefac
 
-; ???
-;junk = bspline_valu(loglam, sset)
-;splot, 10^loglam, fitflux,xr=[5500,6500]  
-;soplot,10^loglam,junk*scalefac,color='red'
-;stop
    return, sset
 end
 
@@ -95,54 +117,19 @@ function qgoodfiber, fibermask
 end
 
 ;------------------------------------------------------------------------------
-pro myfluxcalib, bsciname, rsciname, bcalibset, rcalibset
+;   filename   - Name(s) of input file names, typically one blue and
+;                one red file.  The pluggings need not be the same,
+;                but there must be at least one good SPECTROPHOTO or
+;                REDDEN standard in common.
+;   calibfile  - Name(s) of output calibration files, one per FILENAME
+
+pro myfluxcalib, filename, calibfile, colors=colors, adderr=adderr
 
    dloglam = 1.0d-4 ; ???
 
-   ;----------
-   ; Read in the flux, errors, mask, wavelengths and plug-map
-
-;   bflux = mrdfits(bsciname,0)
-bflux = mrdfits(bsciname,0) * mrdfits(bsciname,6) ; ???
-;   bivar = mrdfits(bsciname,1)
-bivar = mrdfits(bsciname,1) * mrdfits(bsciname,6) ; ???
-   bmask = mrdfits(bsciname,2)
-   bwset = mrdfits(bsciname,3)
-   bplug = mrdfits(bsciname,5)
-   traceset2xy, bwset, junk, bloglam
-
-   rflux = mrdfits(rsciname,0)
-rflux = mrdfits(rsciname,0) * mrdfits(rsciname,6) ; ???
-;   rivar = mrdfits(rsciname,1)
-rivar = mrdfits(rsciname,1) * mrdfits(rsciname,6) ; ???
-   rmask = mrdfits(rsciname,2)
-   rwset = mrdfits(rsciname,3)
-   rplug = mrdfits(rsciname,5)
-   traceset2xy, rwset, junk, rloglam
-
-   ;----------
-   ; Make a map of the size of each pixel in delta-(log10-Angstroms),
-   ; and re-normalize the flux to ADU/(dloglam)
-
-   npix = (size(bflux,/dimens))[0]
-   dlogimg = [ bloglam[1,*] - bloglam[0,*], $
-    0.5 * (bloglam[2:npix-1,*] - bloglam[0:npix-3,*]), $
-    bloglam[npix-1,*] - bloglam[npix-2,*] ]
-   dlogimg = abs(dlogimg)
-   divideflat, bflux, bivar, (dlogimg/dloglam), minval=0
-
-   npix = (size(bflux,/dimens))[0]
-   dlogimg = [ rloglam[1,*] - rloglam[0,*], $
-    0.5 * (rloglam[2:npix-1,*] - rloglam[0:npix-3,*]), $
-    rloglam[npix-1,*] - rloglam[npix-2,*] ]
-   dlogimg = abs(dlogimg)
-   divideflat, rflux, rivar, (dlogimg/dloglam), minval=0
-
-   ;----------
-   ; Decide if a fiber is good
-
-   bgoodfiber = qgoodfiber(bmask[0,*])
-   rgoodfiber = qgoodfiber(rmask[0,*])
+   nfile = n_elements(filename)
+   if (n_elements(calibfile) NE nfile) then $
+    message, 'Dimensions of FILENAME and CALIBFILE do not agree'
 
    ;----------
    ; Assign scores to each object based upon its color relative
@@ -151,21 +138,47 @@ rivar = mrdfits(rsciname,1) * mrdfits(rsciname,6) ; ???
    bd17mag = [10.56, 9.64, 9.35, 9.25, 9.23]
    bd17color = bd17mag[0:3] - bd17mag[1:4]
 
-   colordiff = bplug.mag[0:3] - bplug.mag[1:4] 
-   for i=0, 3 do $
-    colordiff[i,*] = colordiff[i,*] - bd17color[i]
-   colordiff = sqrt(total(colordiff^2,1))
+   ;----------
+   ; Read the plug maps and masks and decide which star to use
 
-   colorscore = bplug.mag[2] + 40.0 * colordiff ; Lower score is better
+   for ifile=0, nfile-1 do begin
+      thismask = mrdfits(filename[ifile],2)
+      thisplug = mrdfits(filename[ifile],5)
+      goodfiber = qgoodfiber(thismask[0,*])
+
+      if (ifile EQ 0) then begin
+         ; Save the first plug-map for comparison to the others
+         plugmap = thisplug
+         plugindx = lindgen(n_elements(thisplug))
+
+         ; Save the first good-fiber mask
+         goodmask = goodfiber
+
+         ; Assign scores based upon colors and magnitudes
+         colordiff = thisplug.mag[0:3] - thisplug.mag[1:4] 
+         for i=0, 3 do $
+          colordiff[i,*] = colordiff[i,*] - bd17color[i]
+         colordiff = sqrt(total(colordiff^2,1))
+         colorscore = thisplug.mag[2] + 40.0 * colordiff ; Lower score is better
+      endif else begin
+         ; Re-sort the plug-map to match that of the first file
+         indx = resortplugmap(plugmap, thisplug)
+         plugindx = [ [plugindx], [indx] ]
+
+         ; Multiply this good-fiber mask with the others,
+         ; setting to zero if the object does not exist in this plugging.
+         goodmask = goodmask * goodfiber[indx>0] * (indx NE -1)
+      endelse
+   endfor
 
    ;----------
    ; Select a single flux-calibration star
+   ; It's index is IBEST in the first file, or
+   ;   where(plugindx[*,ifile] EQ ibest) in the other files.
 
-   indx = where(strtrim(bplug.objtype) EQ 'SPECTROPHOTO_STD' $
-    AND bgoodfiber AND rgoodfiber)
+   indx = where(strtrim(plugmap.objtype) EQ 'SPECTROPHOTO_STD' AND goodmask)
    if (indx[0] EQ -1) then begin
-      indx = where(strstrim(bplug.objtype) EQ 'REDDEN_STD' $
-       AND bgoodfiber AND rgoodfiber)
+      indx = where(strstrim(plugmap.objtype) EQ 'REDDEN_STD' AND goodmask)
       if (indx[0] EQ -1) then $
        message, 'No SPECTROPHOTO or REDDEN stars for flux calibration' $
       else $
@@ -175,15 +188,68 @@ rivar = mrdfits(rsciname,1) * mrdfits(rsciname,6) ; ???
    bestscore = min(colorscore[indx], ibest)
    ibest = indx[ibest]
 
-   splog, 'Spectrophoto star is fiberid = ', bplug[ibest].fiberid
-   splog, 'Spectrophoto mag = ', bplug[ibest].mag
+   splog, 'Spectrophoto star is fiberid = ', plugmap[ibest].fiberid, $
+    ' in file ', filename[0]
+   splog, 'Spectrophoto mag = ', plugmap[ibest].mag
    splog, 'Spectrophoto score = ', bestscore
 
-   ; Reverse sort the blue spectrum so that it's in ascending order ???
-   bcalibset = fluxfit(reverse(bloglam[*,ibest]), reverse(bflux[*,ibest]), $
-    reverse(bivar[*,ibest]), color='b', mags=bplug[ibest].mag)
-   rcalibset = fluxfit(rloglam[*,ibest], rflux[*,ibest], $
-    rivar[*,ibest], color='r', mags=rplug[ibest].mag)
+   ;----------
+
+   for ifile=0, nfile-1 do begin
+      ;----------
+      ; Read in the flux, errors, and wavelengths
+
+      objflux = mrdfits(filename[ifile],0)
+      objivar = mrdfits(filename[ifile],1)
+      wset = mrdfits(filename[ifile],3)
+      traceset2xy, wset, 0, loglam
+
+      ;----------
+      ; Add an additional error term equal to ADDERR of the flux.
+
+      if (keyword_set(adderr)) then begin
+         gmask = objivar NE 0 ; =1 for good points
+         objivar = 1.0 / ( 1.0/(objivar + (1-gmask)) $
+          + (adderr * (objflux>0))^2 ) * gmask
+      endif
+
+
+      ;----------
+      ; Make a map of the size of each pixel in delta-(log10-Angstroms),
+      ; and re-normalize the flux to ADU/(dloglam)
+
+      npix = (size(objflux,/dimens))[0]
+      dlogimg = [ loglam[1,*] - loglam[0,*], $
+       0.5 * (loglam[2:npix-1,*] - loglam[0:npix-3,*]), $
+       loglam[npix-1,*] - loglam[npix-2,*] ]
+      dlogimg = abs(dlogimg)
+      divideflat, objflux, objivar, (dlogimg/dloglam), minval=0
+
+      ;----------
+      ; Do the actual fit
+
+      jbest = (where(plugindx[*,ifile] EQ ibest))[0]
+      calibset = fluxfit(loglam[*,jbest], objflux[*,jbest], $
+       objivar[*,jbest], color=colors[ifile], mags=plugmap[ibest].mag)
+
+;stop ; ???
+;set_plot,'x'
+;junk=bspline_valu(loglam[*,jbest], calibset)
+;splot, loglam[*,jbest], junk
+
+      ;----------
+      ; Create header cards describing the fit range
+
+      hdr = ['']
+      indx = where(objivar[*,jbest] NE 0)
+      wavemin = 10.^min(loglam[indx,jbest])
+      wavemax = 10.^max(loglam[indx,jbest])
+      sxaddpar, hdr, 'WAVEMIN', wavemin
+      sxaddpar, hdr, 'WAVEMAX', wavemax
+
+      mwrfits, 0, calibfile[ifile], hdr, /create
+      mwrfits, calibset, calibfile[ifile]
+   endfor
 
    return
 end

@@ -87,6 +87,7 @@ pro spcombine, planfile, docams=docams, xdisplay=xdisplay
    combinedir = yanny_par(hdr, 'combinedir')
    logfile = yanny_par(hdr, 'logfile')
    plotfile = yanny_par(hdr, 'plotfile')
+   fcalibprefix = yanny_par(hdr, 'fcalibprefix')
    combinefile = yanny_par(hdr, 'combinefile')
 
    if (keyword_set(combinedir)) then $
@@ -117,6 +118,9 @@ pro spcombine, planfile, docams=docams, xdisplay=xdisplay
    camnames = ['b1', 'b2', 'r1', 'r2']
    ncam = N_elements(camnames)
 
+   ;----------
+   ; Select frames that match the cameras specified by DOCAM
+
    for ido=0, n_elements(docams)-1 do begin
       ii = (where(camnames EQ docams[ido], camct))[0]
       if (camct NE 1) then message, 'Non-unique camera ID: ' + docams[ido]
@@ -133,8 +137,17 @@ pro spcombine, planfile, docams=docams, xdisplay=xdisplay
    endif
    objname = objname[j]
 
+   ;----------
+   ; Compute the spectro-photometry
+
+   spflux, objname, fcalibprefix
+
+   ;----------
+   ; Co-add the fluxed exposures
+
    spcoadd_frames, djs_filepath(objname, root_dir=extractdir), $
-    djs_filepath(combinefile, root_dir=combinedir)
+    djs_filepath(combinefile, root_dir=combinedir), $
+    fcalibprefix=fcalibprefix
 
    heap_gc   ; garbage collection
 

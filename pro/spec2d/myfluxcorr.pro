@@ -1,93 +1,14 @@
 
 ;------------------------------------------------------------------------------
-; Compute the polynomial function to multiply by YDATA1 to get YDATA2.
-; ??? Need to iterate with the values of COEFF, and applying those to
-;     the errors in YDATA1.  Also, should iterate each fit and reject points.
-function myratiofit, xdata, ydata1, yivar1, ydata2, yivar2, ncoeff=ncoeff
+pro fluxrebin, filename, newloglam, newflux, newivar, adderr=adderr
 
-   ndata = n_elements(xdata)
-   acoeff = dblarr(ncoeff)
-   acoeff[0] = 1.0
-
-   ; Renormalize X to [-1,1]
-   xnorm = 2.0 * (xdata - min(xdata)) / (max(xdata) - min(xdata)) -1.0
-
-   ; Construct the matrix A, such that the first row is YDATA1,
-   ; the second row is YDATA1 * XNORM, the third is YDATA1 * XNORM^2
-   amatrix = fltarr(ndata,ncoeff)
-   for icoeff=0, ncoeff-1 do $
-    amatrix[*,icoeff] = ydata1 * xnorm^icoeff
-
-   invsig = sqrt(yivar1 + yivar2)
-
-   mmatrix = amatrix
-   for icoeff=0, ncoeff-1 do $
-    mmatrix[*,icoeff] = mmatrix[*,icoeff] * invsig
-   bvec = ydata2 * invsig
-
-   mmatrixt = transpose( mmatrix )
-   mm = mmatrixt # mmatrix
-
-   ; Use SVD to invert the matrix
-;   mmi = invert(mm, /double)
-   if (ncoeff EQ 1) then begin
-      mmi = 1.0 / mm
-   endif else begin
-      svdc, mm, ww, uu, vv, /double
-      mmi = 0 * vv
-      for i=0L, ncoeff-1 do mmi[i,*] = vv[i,*] / ww[i]
-      mmi = mmi ## transpose(uu)
-   endelse
-
-   acoeff = mmi # (mmatrixt # bvec)
-   yfit = fltarr(ndata) + acoeff[0]
-   for icoeff=1, ncoeff-1 do $
-    yfit = yfit + acoeff[icoeff] * xnorm^icoeff
-
-   return, yfit
-end
-
-;------------------------------------------------------------------------------
-; Mask the same low S/N points in both a smear image and a science image.
-; Low S/N points are those with a S/N less than 10% of the median S/N.
-; Mask the points be setting the inverse variance to zero.
-
-pro flux_mask_low_sn, smearflux, smearivar, sciflux, sciivar
-
-   nfiber = (size(smearflux,/dimens))[1]
-
-   for ifiber=0, nfiber-1 do begin
-      snvec1 = smearflux[*,ifiber] * sqrt(smearivar[*,ifiber])
-      snvec2 = sciflux[*,ifiber] * sqrt(sciivar[*,ifiber])
-      indx1 = where(snvec1 NE 0, ct1)
-      indx2 = where(snvec2 NE 0, ct2)
-      if (ct1 LT 100 OR ct2 LT 100) then begin
-         smearivar[*,ifiber] = 0
-         sciivar[*,ifiber] = 0
-      endif else begin
-         snmed1 = median( snvec1[indx1] )
-         snmed2 = median( snvec2[indx2] )
-         ibad = where(snvec1 LE 0.10 * snmed1 OR snvec2 LE 0.1 * snmed2)
-         if (ibad[0] NE -1) then begin
-            smearivar[ibad,ifiber] = 0
-            sciivar[ibad,ifiber] = 0
-         endif
-      endelse
-   endfor
-
-   return
-end
-
-;------------------------------------------------------------------------------
-pro fluxrebin, calibset, filename, newloglam, newflux, newivar
+; Should we actually spline fit for the re-binning???
 
    ;----------
    ; Read in the flux, errors, mask, wavelengths
 
-;   objflux = mrdfits(filename,0)
-objflux = mrdfits(filename,0) * mrdfits(filename,6) ; ???
-;   objivar = mrdfits(filename,1)
-objivar = mrdfits(filename,1) * mrdfits(filename,6) ; ???
+   objflux = mrdfits(filename,0)
+   objivar = mrdfits(filename,1)
    objmask = mrdfits(filename,2)
    wset = mrdfits(filename,3)
    traceset2xy, wset, junk, objloglam
@@ -95,6 +16,15 @@ objivar = mrdfits(filename,1) * mrdfits(filename,6) ; ???
    dims = size(objloglam, /dimens)
    npix = dims[0]
    nfiber = dims[1]
+
+   ;----------
+   ; Add an additional error term equal to ADDERR of the flux.
+
+   if (keyword_set(adderr)) then begin
+      gmask = objivar NE 0 ; =1 for good points
+      objivar = 1.0 / ( 1.0/(objivar + (1-gmask)) $
+       + (adderr * (objflux>0))^2 ) * gmask
+   endif
 
    ;----------
    ; Mask where the spectrum may be dominated by sky-subtraction
@@ -105,14 +35,6 @@ objivar = mrdfits(filename,1) * mrdfits(filename,6) ; ???
     skymask[*,ifiber] = smooth(float(skymask[*,ifiber]),5) GT 0
    ibad = where(skymask)
    if (ibad[0] NE -1) then objivar[ibad] = 0
-
-   ;----------
-   ; Apply the flux-calibration vector
-   ; In this case, don't trust points with a low calibration factor.
-
-; ???
-;   calibfac = bspline_valu(objloglam, calibset)
-;   divideflat, objflux, objivar, calibfac, minval=0.20*mean(calibfac)
 
    ;----------
    ; Make a map of the size of each pixel in delta-(log10-Angstroms),
@@ -155,8 +77,8 @@ objivar = mrdfits(filename,1) * mrdfits(filename,6) ; ???
 end
 
 ;------------------------------------------------------------------------------
-pro myfluxcorr, bsmearfile, rsmearfile, bcalibset, rcalibset, $ 
- bsciname, rsciname, corrfile
+pro myfluxcorr, bsmearfile, rsmearfile, bsciname, rsciname, corrfile, $
+ adderr=adderr
 
    ;----------
    ; Read the plug-map file (for identifying sky fibers)
@@ -174,17 +96,11 @@ pro myfluxcorr, bsmearfile, rsmearfile, bcalibset, rcalibset, $
    nnewpix = fix( (maxlog - minlog) / dloglam )
    newloglam = minlog + findgen(nnewpix) * dloglam
 
-   fluxrebin, bcalibset, bsmearfile, newloglam, bsmearflux, bsmearivar
-   fluxrebin, rcalibset, rsmearfile, newloglam, rsmearflux, rsmearivar
+   fluxrebin, bsmearfile, newloglam, bsmearflux, bsmearivar, adderr=adderr
+   fluxrebin, rsmearfile, newloglam, rsmearflux, rsmearivar, adderr=adderr
 
-   fluxrebin, bcalibset, bsciname, newloglam, bsciflux, bsciivar
-   fluxrebin, rcalibset, rsciname, newloglam, rsciflux, rsciivar
-
-   ;----------
-   ; Mask the lowest S/N points in both smear + science
-
-;   flux_mask_low_sn, bsmearflux, bsmearivar, bsciflux, bsciivar
-;   flux_mask_low_sn, rsmearflux, rsmearivar, rsciflux, rsciivar
+   fluxrebin, bsciname, newloglam, bsciflux, bsciivar, adderr=adderr
+   fluxrebin, rsciname, newloglam, rsciflux, rsciivar, adderr=adderr
 
    ;----------
    ; Add the blue + red flux images
@@ -202,8 +118,8 @@ ncoeff = 3 ; ???
    for ifiber=0, nfiber-1 do begin
       fitimg[*,ifiber] = $
        myratiofit(newloglam, $
-        ssciflux[*,ifiber], ssciivar[*,ifiber], $
         ssmearflux[*,ifiber], ssmearivar[*,ifiber], $
+        ssciflux[*,ifiber], ssciivar[*,ifiber], $
         ncoeff=ncoeff)
    endfor
 
@@ -222,21 +138,21 @@ ncoeff = 3 ; ???
 
    ;----------
    ; Which fits are considered bad?
-   ; Require the median S/N per pix for the science exposure to be > 1.0.
-   ; Require the median S/N per pix for the smear exposure to be > 0.5.
+   ; Require the median S/N per pix for the science exposure to be > 2.0.
+   ; Require the median S/N per pix for the smear exposure to be > 2.0.
    ; Require the fits for a fiber are never less than 0.2 * median.
    ; Require the fits for a fiber are never greater than 5 * median.
    ; Require the fiber isn't SKY.
 
-   ssmearsnmed = djs_median(ssmearflux * sqrt(ssmearivar), 1)
+   smearsnmed = djs_median(ssmearflux * sqrt(ssmearivar), 1)
 
    scisnmed = djs_median(ssciflux * sqrt(ssciivar), 1)
 
    medfit = median(fitimg)
    splog, 'Median flux-correction factor = ', medfit
 
-   qgood = scisnmed GT 1.0 $
-    AND ssmearsnmed GT 0.5 $
+   qgood = scisnmed GT 2.0 $
+    AND smearsnmed GT 2.0 $
     AND total(fitimg LT 0.20 * medfit, 1) EQ 0 $
     AND total(fitimg GT 5.0 * medfit, 1) EQ 0 $
     AND strtrim(plugmap.objtype,2) NE 'SKY'

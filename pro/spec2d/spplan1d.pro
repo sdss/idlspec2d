@@ -163,12 +163,13 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
                platestr = string(pltid, format='(i04.4)')
                thismjd = max(spexp.mjd)
                mjdstr = string(thismjd, format='(i05.5)')
-               outdir = concat_dir(topoutdir, platestr)
+               outdir = concat_dir(topoutdir, platedir)
 
                planfile = 'spPlan1d-' + platestr + '-' + mjdstr + '.par'
                logfile = 'spDiag1d-' + platestr + '-' + mjdstr + '.log'
                plotfile = 'spDiag1d-' + platestr + '-' + mjdstr + '.ps'
                combinefile = 'spPlate-' + platestr + '-' + mjdstr + '.fits'
+               fcalibprefix = 'spFluxcalib-' + platestr + '-' + mjdstr
                zfile = 'spZ-' + platestr + '-' + mjdstr + '.fits'
 
                ;----------
@@ -183,6 +184,8 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
                 + "'  # Text log file"]
                hdr = [hdr, "plotfile   '" + plotfile $
                 + "'  # PostScript log file"]
+               hdr = [hdr, "fcalibprefix '" + fcalibprefix $
+                + "'  # Prefix for flux-calibration files"]
                hdr = [hdr, "combinefile   '" + combinefile $
                 + "'  # Output combined spectra file"]
                hdr = [hdr, "zfile   '" + zfile $

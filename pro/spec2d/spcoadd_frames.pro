@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   spcoadd_frames, filenames, outputname, $
-;    binsz, zeropoint, [ nord=, wavemin=, $
+;    fcalibprefix=, [ binsz=, zeropoint=, nord=, wavemin=, $
 ;    bkptbin=, window=, maxsep= ]
 ;
 ; INPUTS:
@@ -15,10 +15,11 @@
 ;   outputname     - Output file name
 ;
 ; REQUIRED KEYWORDS:
+;   fcalibprefix   - Prefix for flux-calibration files.
 ;
 ; OPTIONAL KEYWORDS:
 ;   binsz          - Bin size (in log-10 wavelength) in output spectra;
-;                    default to 10d-4, which corresponds to 69.02977415 km/s.
+;                    default to 1d-4, which corresponds to 69.02977415 km/s.
 ;   zeropoint      - Log10(lambda) zero-point of the output spectra;
 ;                    the output wavelength bins are chosen such that
 ;                    one bin falls exactly on this value;
@@ -48,6 +49,10 @@
 ;
 ;   The input files (FILENAMES) have their pixelmasks modified by this routine.
 ;
+;   Flux-correction files are also read in, where they are assumed to
+;   have the name spFluxcorr-EEEEEEEE-S.fits, where EEEEEEEE is the exposure
+;   number and S is the spectrograph ID (1 or 2).
+;
 ; EXAMPLES:
 ;
 ; BUGS:
@@ -55,6 +60,7 @@
 ;
 ; PROCEDURES CALLED:
 ;   combine1fiber
+;   divideflat
 ;   djs_diff_angle()
 ;   idlspec2d_version()
 ;   modfits
@@ -64,6 +70,7 @@
 ;   sxaddpar
 ;   sxdelpar
 ;   sxpar()
+;   traceset2xy
 ;   writefits
 ;
 ; INTERNAL SUPPORT PROCEDURES:
@@ -85,8 +92,8 @@ function makelabel, hdr
 end
 
 ;------------------------------------------------------------------------------
-pro spcoadd_frames, filenames, outputname, $
- binsz, zeropoint, nord=nord, wavemin=wavemin, $
+pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
+ binsz=binsz, zeropoint=zeropoint, nord=nord, wavemin=wavemin, $
  bkptbin=bkptbin, window=window, maxsep=maxsep
 
    if (NOT keyword_set(binsz)) then binsz = 1.0d-4 $
@@ -131,6 +138,12 @@ pro spcoadd_frames, filenames, outputname, $
        message, 'Error reading file ' + filenames[ifile]
 
       ;----------
+      ; Read header info
+
+      cameras = strtrim(sxpar(hdr, 'CAMERAS'),2)
+      expstr = string(sxpar(hdr,'EXPOSURE'), format='(i8.8)')
+
+      ;----------
       ; Solve for wavelength and lambda-dispersion at each pixel in the image
 
       traceset2xy, tempwset, junk, tempwave
@@ -143,11 +156,37 @@ pro spcoadd_frames, filenames, outputname, $
       ;----------
       ; Determine if this is a blue or red spectrum
 
-      cameras = strtrim(sxpar(hdr, 'CAMERAS'),2)
-      icam = where(cameras EQ camnames)
-      if (icam[0] EQ -1) then $
+      icam = (where(cameras EQ camnames))[0]
+      if (icam EQ -1) then $
        message, 'Unknown camera ' + cameras
       exptimevec[icam] = exptimevec[icam] + sxpar(hdr, 'EXPTIME')
+
+      ;----------
+      ; Apply spectro-photometric calibration
+
+      fcalibfile = fcalibprefix + '-' + camnames[icam] + '.fits'
+      calibhdr = headfits(fcalibfile)
+      cwavemin = sxpar(calibhdr, 'WAVEMIN')
+      cwavemax = sxpar(calibhdr, 'WAVEMAX')
+      calibset = mrdfits(fcalibfile, 1)
+      calibfac = bspline_valu(tempwave, calibset)
+ 
+      ; Set to bad any pixels whose wavelength is outside the known
+      ; flux-calibration region.
+      ibad = where(tempwave LT alog10(cwavemin) OR tempwave GT alog10(cwavemax))
+      if (ibad[0] NE -1) then calibfac[ibad] = 0
+
+      divideflat, tempflux, tempivar, calibfac, minval=0.05*mean(calibfac)
+
+      ;----------
+      ; Apply flux-correction factor between spectro-photometric exposure
+      ; and this exposure.
+
+      spectroid = strmid(cameras,1,1)
+      corrset = mrdfits('spFluxcorr-'+expstr+'-'+spectroid+'.fits', 1)
+      traceset2xy, corrset, tempwave, corrimg
+
+      divideflat, tempflux, tempivar, 1.0/corrimg, minval=0.05*mean(1.0/corrimg)
 
       ;----------
       ; Apodize the errors
