@@ -102,6 +102,7 @@ pro/apo2d/quickboxcar.pro -text
 pro/apo2d/quickextract.pro -text
 pro/apo2d/quicktrace.pro -text
 pro/apo2d/quickwave.pro -text
+pro/apo2d/remove2redo.pro -text
 pro/fplan/Makefile -text
 pro/fplan/checksn.pro -text
 pro/fplan/make2dmerge.pro -text
