@@ -439,7 +439,7 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    ;----------
    ; Set the mask bit 'BRIGHTSKY' for any pixels where the sky
    ; level is more than the (sky-subtracted) object flux + 10 * error,
-   ; and where the sky is greater than 1.25 times a median sky.
+   ; and where the sky is greater than 2.0 times a median sky.
    ; Grow this mask by 1 neighboring pixel in each direction.
 
    if (keyword_set(pixelmask)) then begin
@@ -451,7 +451,7 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
 
       qbright = (objsubivar NE 0) $
        AND (fullfit GT objsub + 10.0 / sqrt(objsubivar + (objsubivar EQ 0))) $
-       AND (fullfit GT 1.25 * medsky)
+       AND (fullfit GT 2.0 * medsky)
       qbright = convol(qbright, [1,1,1], /center, /edge_truncate)
       ibright = where(qbright)
       if (ibright[0] NE -1) then $
