@@ -564,7 +564,7 @@ pro spcoadd_v5, spframes, outputname, $
     sxaddpar, hdr, string('EXPID',ifile+1, format='(a5,i2.2)'), label[ifile], $
      ' ID string for exposure '+strtrim(string(ifile),2), before='EXPTIME'
    if (keyword_set(bestexpnum)) then $
-    sxaddpar, hdr, 'BESTEXP', bestexpnum, beforee='EXPID01'
+    sxaddpar, hdr, 'BESTEXP', bestexpnum, before='EXPID01'
 
    sxaddpar, hdr, 'EXPTIME', min(exptimevec), $
     ' Minimum of exposure times for all cameras'
