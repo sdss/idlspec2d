@@ -138,22 +138,37 @@ tt = doframe('sdR-04-00001151.fit','sdR-04-00001148.fit',$
 objectnums = ['-00001136','-00001138']
 objectnums = ['-00001435','-00001437','-00001439'] ; skyflats
 objectnums = ['-00001459','-00001461','-00001463','-00001465'] ;plate 202
-objectnums = ['-00001442','-00001444','-00001446','-00001448'] ;plate 214
 flatnum = '-00001431'
 flatnum = '-00001473'
 arcnum = '-00001427'
 arcnum = '-00001467'
 flatnum = '-00001473'
 arcnum = '-00001467'
-plugMapFile = 'plPlugMapM-0214-51432-02.par'
 objectnums = ['-00001447']
 
+;Plate 214
+
 cam = '02'
+flatnum = '-00001452'
+flat = 'sdR-'+cam+flatnum+'.fit'
+arcnum = '-00001450'
+arc = 'sdR-'+cam+arcnum+'.fit'
+objectnums = ['-00001442','-00001444','-00001446','-00001448'] ;plate 214
+objects = 'sdR-'+cam+objectnums+'.fit'
+inputDir='/s1/data/SDSS/51441'
+outputDir = '/s1/data/SDSS/51441/out'
+plugMapDir = inputDir+'/logs'
+plugMapFile = 'plPlugMapM-0214-51432-02.par'
+tt = doaframe(flat,arc,objects,plugMapFile,inputDir=inputDir, $
+ outputDir=outputDir, plugMapDir=plugMapDir)
+
+; Plate 202
+cam = '03'
 flatnum = '-00001474'
 flat = 'sdR-'+cam+flatnum+'.fit'
 arcnum = '-00001468'
 arc = 'sdR-'+cam+arcnum+'.fit'
-objectnums = ['-00001460','-00001462','-00001464','-00001466'] ;plate 202
+objectnums = ['-00001460'] ;plate 202
 objects = 'sdR-'+cam+objectnums+'.fit'
 inputDir='/s1/data/SDSS/51441'
 outputDir = '/s1/data/SDSS/51441/out'
@@ -162,20 +177,61 @@ plugMapDir = inputDir+'/logs'
 tt = doaframe(flat,arc,objects,plugMapFile,inputDir=inputDir, $
  outputDir=outputDir, plugMapDir=plugMapDir)
 
+objectnums = ['-00001460','-00001462','-00001464','-00001466'] ;plate 202
 ;
 ;  Plate 198
 ;
 
-cam = '04'
-flatnum = '-00001145'
+cam = '01'
+flatnum = '-00001487'
 flat = 'sdR-'+cam+flatnum+'.fit'
-arcnum = '-00001147'
+arcnum = '-00001489'
 arc = 'sdR-'+cam+arcnum+'.fit'
-objectnums = ['-00001136','-00001138','-00001139','-00001140'] ;plate 198
+objectnums = ['-00001483','-00001485'];plate 204
 objects = 'sdR-'+cam+objectnums+'.fit'
-inputDir='.'
-outputDir = 'out'
-plugMapFile = 'plPlugMapM-0198-51433-01.par'
-tt = doaframe(flat,arc,objects,plugMapFile,outputDir=outputDir, thresh=40)
+inputDir='/data/spectro/51455'
+outputDir = '/ide_disk/51433/51455'
+plugMapDir = '/data/spectro/plugmap
+plugMapFile = 'plPlugMapM-0204-51440-01.par'
+tt = doaframe(flat,arc,objects,plugMapFile,inputDir=inputDir, $
+ outputDir=outputDir, plugMapDir=plugMapDir)
+ttred = doaframe(flat,arc,objects,plugMapFile,inputDir=inputDir, $
+ outputDir=outputDir, plugMapDir=plugMapDir)
+;
+;  Plate 217
+;
+cam = '03'
+flatnum = '-00001479'
+flat = 'sdR-'+cam+flatnum+'.fit'
+arcnum = '-00001483'
+arc = 'sdR-'+cam+arcnum+'.fit'
+objectnums = ['-00001471','-00001473','-00001475','-00001477'];plate 217
+objects = 'sdR-'+cam+objectnums+'.fit'
+inputDir='/data/spectro/51456'
+outputDir = '/ide_disk/51433/51456'
+plugMapDir = '/data/spectro/plugmap
+plugMapFile = 'plPlugMapM-0217-51455-01.par'
+tt = doaframe(flat,arc,objects,plugMapFile,inputDir=inputDir, $
+ outputDir=outputDir, plugMapDir=plugMapDir)
+ttred = doaframe(flat,arc,objects,plugMapFile,inputDir=inputDir, $
+ outputDir=outputDir, plugMapDir=plugMapDir)
 
+;
+;  Plate 191
+;
+cam = '01'
+flatnum = '-00001464'
+flat = 'sdR-'+cam+flatnum+'.fit'
+arcnum = '-00001462'
+arc = 'sdR-'+cam+arcnum+'.fit'
+objectnums = ['-00001450','-00001452','-00001454','-00001456','-00001458']
+objects = 'sdR-'+cam+objectnums+'.fit'
+inputDir = '/ide_disk/51433/51456'
+outputDir = '/ide_disk/51433/51456/out'
+plugMapDir = inputDir
+plugMapFile = 'plPlugMapM-0191-51454-01.par'
+tt = doaframe(flat,arc,objects,plugMapFile,inputDir=inputDir, $
+ outputDir=outputDir, plugMapDir=plugMapDir)
+ttred = doaframe(flat,arc,objects,plugMapFile,inputDir=inputDir, $
+ outputDir=outputDir, plugMapDir=plugMapDir)
 
