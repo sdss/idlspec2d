@@ -8,7 +8,12 @@ EXTRACT_OBJECT: Add "OPTCHI2" keyword to output header, recording the
            of the sky-subtraction.
 MYFLUXCALIB: Put the plate+MJD+camname in the plot titles.
 PIXELMASK_BITS: Now simply call the new function SDSS_FLAGVAL().
+PCA_SOLVE: Allow OBJLOGLAM to either be a vector or an array
+           (now passing only a vector from PCA_STAR).
 PCA_STAR: Now read the Yanny file "eigeninput_star.par", and use cz.
+           Clean up the code, always using the same wavelength mapping
+           for both input and output spectra -- this allows us to do
+           away with the internal procedure SPAPPEND.
 PLATELIST: Make consistent with changes to spChunklist.par.
 PLATESN: For the roll call, output both the number of bad fibers for
            fiber masks, and the fraction of bad pixels for pixel masks.
@@ -26,8 +31,6 @@ REDMONSTER,SKYSUBTRACT: Lower threshhold for flagging both the BADSKYCHI
 SDSS_FLAGNAME: Re-write to include many more types of mask bits
            from the file "spMaskbits.par".
 SDSS_FLAGVAL: New function, which is the inverse of SDSS_FLAGNAME().
-SPREDUCE1D: Use SDSS_FLAGVAL() to set the zwarning mask bits.
-           Call ELODIE_BEST() for stars, and append to spZbest output structure.
 SKYMASK: Remove the rejection of andmask/BRIGHTSKY, and add rejection for
            ormask/BADSKYCHI.  Now we reject based upon that and
            ormask/REDMONSTER.  For good plates, this will be rejecting fewer
@@ -44,6 +47,14 @@ SKYSUBTRACT: Fix stupid bug where sky-fits are rejected if the mean
            Do not set BADSKYCHI mask bit when NOSKY is already set.
            Raise the threshhold for setting the BRIGHTSKY mask bit from
            1.25 * (median sky) to 2.0.
+SPCOADD_FRAMES: Average keywords XCHI2,SKYCHI2 in output header.
+           Add output keywords XCHI2MIN,XCHI2MAX,SCHI2MIN,SCHI2MAX.
+           Compute the fraction of bad pixels in total, and on each
+           spectrograph.  Bad pixels are any with SKYMASK(INVVAR)=0,
+           excluding those where the NODATA bit is set in the pixel mask.
+           Then set the header keywords FBADPIX,FBADPIX1,FBADPIX2.
+SPREDUCE1D: Use SDSS_FLAGVAL() to set the zwarning mask bits.
+           Call ELODIE_BEST() for stars, and append to spZbest output structure.
 TELLURIC_CORR: Center the plot title.
 ZTWEAK_STAR: New proc for getting the zero-point of the stellar
            templates by matching to the Elodie spectra.
@@ -67,6 +78,8 @@ sprobot_start: Set the environment variable "DISPLAY=:0.0" so that any
 
 In idlutils:
 
+EX_MAX_PLOT: Added panel features.
+HOGG_USERSYM: New symbol-making routine.
 SXCOMBINEPAR: Add optional _EXTRA keywords to pass to SXADDPAR.
 
 goddard/Makefile: Remove tape_io from the subdir list, since this causes it to
