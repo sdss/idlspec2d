@@ -1,0 +1,60 @@
+# Limits to test for on-the-mountain reductions
+
+typedef struct {
+  char field[40];    # Field name
+  char camera[2];    # Camera name
+  float lovalue;     # Low value
+  float hivalue;     # High value
+} speclimit;
+
+speclimit XMIN b1 0 2048
+speclimit XMIN b2 0 2048
+speclimit XMIN r1 0 2048
+speclimit XMIN r2 0 2048
+
+speclimit XMAX b1 0 2048
+speclimit XMAX b2 0 2048
+speclimit XMAX r1 0 2048
+speclimit XMAX r2 0 2048
+
+speclimit NFIBER b1 635 640
+speclimit NFIBER b2 635 640
+speclimit NFIBER r1 635 640
+speclimit NFIBER r2 635 640
+
+speclimit WAVEMIN b1 0 3780
+speclimit WAVEMIN b2 0 3780
+speclimit WAVEMIN r1 0 5750
+speclimit WAVEMIN r2 0 5750
+
+speclimit WAVEMAX b1 6140 9999
+speclimit WAVEMAX b2 6140 9999
+speclimit WAVEMAX r1 9200 9999
+speclimit WAVEMAX r2 9200 9999
+
+speclimit BESTCORR b1 0.75 1.01
+speclimit BESTCORR b2 0.75 1.01
+speclimit BESTCORR r1 0.75 1.01
+speclimit BESTCORR r2 0.75 1.01
+
+speclimit NLAMPS b1 15 999
+speclimit NLAMPS b2 15 999
+speclimit NLAMPS r1 35 999
+speclimit NLAMPS r2 35 999
+
+speclimit SKYPERSEC b1 0 0.25
+speclimit SKYPERSEC b2 0 0.25
+speclimit SKYPERSEC r1 0 0.80
+speclimit SKYPERSEC r2 0 0.80
+
+speclimit SN2 b1 33 99999
+speclimit SN2 b2 33 99999
+speclimit SN2 r1 33 99999
+speclimit SN2 r2 33 99999
+
+speclimit TOTALSN2 b1 100 99999
+speclimit TOTALSN2 b2 100 99999
+speclimit TOTALSN2 r1 100 99999
+speclimit TOTALSN2 r2 100 99999
+speclimit TOTALSN2 ALL 100 99999
+

@@ -37,6 +37,7 @@ examples/opConfig.par -text
 examples/opECalib-51430.par -text
 examples/opECalib-51577.par -text
 examples/opECalib.par -text
+examples/opLimits.par -text
 include/Makefile -text
 include/evilmath.h -text
 include/export.h -text
