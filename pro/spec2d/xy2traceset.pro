@@ -149,29 +149,31 @@ pro xy2traceset, xpos, ypos, tset, invvar=invvar, func=func, ncoeff=ncoeff, $
 
       iiter = 0
       qdone = 0
-      curoutmask = 0
       ycurfit = 0
-      while (NOT keyword_set(qdone) AND iiter LE maxiter) do begin
-         if (keyword_set(invvar)) then $
-          tempivar = invvar[*,itrace] $
-         else $
-          tempivar = bytarr(nx) + 1
+      if (keyword_set(invvar)) then tempivar = invvar[*,itrace] $
+      else tempivar = bytarr(nx) + 1
+      curoutmask = tempivar GT 0
 
-         qdone = djs_reject(ypos[*,itrace], ycurfit, invvar=tempivar, $
-          inmask=curinmask, outmask=curoutmask, _EXTRA=EXTRA)
-         tempivar = tempivar * curoutmask
+      while (NOT keyword_set(qdone) AND iiter LE maxiter) do begin
 
          if keyword_set(inputfunc) then $
-           res = func_fit(xnorm, ypos[*,itrace], ncoeff, invvar=tempivar, $
-            function_name=function_name, yfit=ycurfit, inputans=curans, $
-            inputfunc=inputfunc[*,itrace], _EXTRA=EXTRA) $
-         else res = func_fit(xnorm, ypos[*,itrace], ncoeff, invvar=tempivar, $
+           res = func_fit(xnorm, ypos[*,itrace], ncoeff, $
+             invvar=tempivar*curoutmask, $
+             function_name=function_name, yfit=ycurfit, inputans=curans, $
+             inputfunc=inputfunc[*,itrace], _EXTRA=EXTRA) $
+         else res = func_fit(xnorm, ypos[*,itrace], ncoeff, $
+             invvar=tempivar*curoutmask, $
           function_name=function_name, yfit=ycurfit, inputans=curans, $
           _EXTRA=EXTRA)
 
+         curinmask = curoutmask
+
+         qdone = djs_reject(ypos[*,itrace], ycurfit, invvar=tempivar, $
+          inmask=curinmask, outmask=curoutmask, _EXTRA=EXTRA)
+
          iiter = iiter + 1
       endwhile
-  
+ 
       yfit[*,itrace] = ycurfit 
       tset.coeff[*,itrace] = res
       outmask[*,itrace] = curoutmask
