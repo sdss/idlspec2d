@@ -27,7 +27,7 @@
 ;
 ; COMMENTS:
 ;   Plot the ratio of the observed spectra divided by the best-fit
-;   model spectra as a function of obeserved wavelength.  Deviations
+;   model spectra as a function of observed wavelength.  Deviations
 ;   from unity are an empirical measure of the flux-calibration errors.
 ;
 ; EXAMPLES:
