@@ -257,13 +257,26 @@ andmask = 0 ; Free memory
    endfor
 
    ;----------
-   ; Insist that all low-confidence redshifts are identified as UNKNOWN
+   ; Re-classify some objects as UNKNOWN.  Do this for any non-SKY objects
+   ; where:
+   ; (1) The reduced chi^2 difference with the next best identification
+   ;     is very small.
+   ; (2) The classification is a QSO where the first eigen-component
+   ;     is negative.
+   ; (2) The classification is a STAR where the first eigen-component
+   ;     is negative.
 
    minrchi2diff = 0.01
 
+   qlowconf = bytarr(nobj)
+   qlowconf = qlowconf OR (res_all[0,*].rchi2diff LT minchi2diff)
+   qlowconf = qlowconf OR (strtrim(res_all[0,*].class) EQ 'STAR' $
+    AND res_all[0,*].theta[0] LT 0)
+   qlowconf = qlowconf OR (strtrim(res_all[0,*].class) EQ 'QSO' $
+    AND res_all[0,*].theta[0] LT 0)
+
    for iobj=0, nobj-1 do begin
-      if (res_all[0,iobj].rchi2diff LT minrchi2diff $
-       AND res_all[0,iobj].class NE 'SKY') then begin
+      if (qlowconf[0] EQ 0 AND res_all[0,iobj].class NE 'SKY') then begin
          if (nper GT 1) then $
           res_all[1:nper-1,iobj] = res_all[0:nper-2,iobj]
          rcopy = { class: 'UNKNOWN', $
