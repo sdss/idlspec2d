@@ -26,6 +26,11 @@
 ;   reduce all the biases/darks, then all the flats, then all the arcs,
 ;   and finally all of the science/smear frames.
 ;
+;   Look for the raw sdR files in $RAWDATA_DIR/$MJD, the plPlugMapM files
+;   in $ASTROLOG_DIR/$MJD, and put the outputs in $SPECTROLOG_DIR/$MJD.
+;   If that last environment variable is not set, then put the outputs
+;   in the same directory as the sdR files.
+;
 ; EXAMPLES:
 ;
 ; BUGS:
@@ -55,6 +60,12 @@ pro apoall, mjd=mjd, mjstart=mjstart, mjend=mjend, $
    if (NOT keyword_set(astrolog_dir)) then $
     message, 'ASTROLOG_DIR not set!'
 
+   spectrolog_dir = getenv('SPECTROLOG_DIR')
+   if (NOT keyword_set(spectrolog_dir)) then begin
+      splog, 'SPECTROLOG_DIR not set; putting outputs in input directories'
+      spectrolog_dir = rawdata_dir
+   endif
+
    ;----------
    ; Create a list of the MJD directories (as strings)
 
@@ -73,9 +84,16 @@ pro apoall, mjd=mjd, mjstart=mjstart, mjend=mjend, $
       mjddir = mjdlist[imjd]
       inputdir = filepath('', root_dir=rawdata_dir, subdirectory=mjddir)
       plugdir = filepath('', root_dir=astrolog_dir, subdirectory=mjddir)
+      outdir = filepath('', root_dir=spectrolog_dir, subdirectory=mjddir)
 
       splog, 'Data directory ', inputdir
       splog, 'Astrolog directory ', plugdir
+      splog, 'Output directory ', outdir
+
+      ;----------
+      ; Make certain that the output directory exists.
+
+      spawn, 'mkdir -p ' + outdir
 
       ;----------
       ; Find all raw FITS files in this directory
@@ -127,7 +145,7 @@ pro apoall, mjd=mjd, mjstart=mjstart, mjend=mjend, $
                    AND CAMERAS EQ camlist[icam])
             if (ii[0] NE -1) then $
              aporeduce, fileandpath(fullname[ii]), $
-              indir=inputdir, outdir=inputdir, $
+              indir=inputdir, outdir=outdir, $
               plugdir=plugdir, minexp=minexp, copydir=copydir
          endfor
          endfor
