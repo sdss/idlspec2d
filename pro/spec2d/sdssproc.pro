@@ -79,6 +79,11 @@
 ; INTERNAL SUPPORT ROUTINES:
 ;   findopfile()
 ;
+; DATA FILES:
+;   $IDLSPEC2D_DIR/examples/opConfig*par
+;   $IDLSPEC2D_DIR/examples/opECalib*par
+;   $IDLSPEC2D_DIR/examples/opBC*par
+;
 ; REVISION HISTORY:
 ;   13-May-1999  Written by Scott Burles & David Schlegel, Apache Point.
 ;   08-Sep-1999  Modified to read Yanny param files instead of FITS
