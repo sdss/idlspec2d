@@ -147,7 +147,7 @@ andmask = 0 ; Free memory
    splog, 'Locally re-fitting GALAXY redshifts'
    t0 = systime(1)
    res_gal = zrefind(objflux, objivar, hdr=hdr, $
-    pwidth=5, pspace=1, width=5, zold=res_gal)
+    pwidth=7, pspace=1, width=5, zold=res_gal)
    splog, 'CPU time to re-fit GALAXY redshifts = ', systime(1)-t0
 
    splog, 'Find velocity dispersions for galaxies'
@@ -155,8 +155,8 @@ andmask = 0 ; Free memory
    for ifind=0, nfind-1 do begin
       vdispfit, objflux, objivar, hdr=hdr, zobj=res_gal[ifind,*].z, $
        sigma=sigma, sigerr=sigerr
-      res_gal[ifind,*].vdisp = reform(sigma,1,nobj)
-      res_gal[ifind,*].vdisp_err = reform(sigerr,1,nobj)
+      res_gal[ifind,*].vdisp = reform([sigma],1,nobj)
+      res_gal[ifind,*].vdisp_err = reform([sigerr],1,nobj)
    endfor
    splog, 'CPU time to fit GALAXY velocity dispersions = ', systime(1)-t0
 
