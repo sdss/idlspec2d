@@ -218,7 +218,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    extract_image, image, invvar, xnow, sigma2, tempflux, tempfluxivar, $
     proftype=proftype, wfixed=wfixed, yrow=yrow, $
     highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
-    ansimage=ansimage, chisq=firstchisq, ymodel=ym, /relative
+    ansimage=ansimage, chisq=firstchisq, ymodel=ymodel, /relative
 
    ; (2) Calculate scattered light
 
@@ -231,7 +231,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 
    ; (3) Calculate halo image
    splog, 'Step 3: Calculate Halo Image'
-   smooth = smooth_halo(ym, wset)
+   smooth = smooth_halo(ymodel, wset)
 
    ;-----------------------------------------------------------------------
    ;  Now, subtract halo image and do final extraction with all rows
@@ -243,19 +243,18 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    lowrej = 5
 ;   wfixed = [1,1]
 ;   reject = [0.2,0.6,0.6]
-   wfixed = [1]
+   wfixed = [1] ; Fit to height only (fixed width + center)
    nterms = n_elements(wfixed)
    reject = [0.2,0.2,0.2]
    npoly = 5 ; maybe more structure, lots of structure
 
-
    extract_image, (image - smooth), invvar, xnow, sigma2, flux, fluxivar, $
     proftype=proftype, wfixed=wfixed, ansimage=ansimage, $
     highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
-    chisq=chisq, ymodel=ym, pixelmask=pixelmask, reject=reject, /relative
+    chisq=chisq, ymodel=ymodel, pixelmask=pixelmask, reject=reject, /relative
 
    ;----------------------------------------------------------------------
-   ; can we find cosmic rays by looking for outlandish ansimage ratios?
+   ; Can we find cosmic rays by looking for outlandish ansimage ratios???
    ;
    ; a = where(ansimage[lindgen(ntrace)*nterms, *] LT $
    ;           (-2*ansimage[lindgen(ntrace)*nterms+1, *])
