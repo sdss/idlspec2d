@@ -161,7 +161,9 @@ pro readspec1, plate, range, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
        else zfile = zfile[0]
 
       zall = mrdfits(zfile, 1)
-      zans = zall[ (where(zall.fiberid EQ range[0]+1))[0] ]
+      i = (where(zall.fiberid EQ range[0]+1))[0]
+      if (i NE -1) then zans = zall[i] $
+       else zans = zall[ (where(zall.fiberid EQ 0))[0] ]
    endif
 
    return

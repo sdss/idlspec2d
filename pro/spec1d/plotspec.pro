@@ -12,6 +12,7 @@ pro plotspec, plate, fiberid, mjd=mjd
    yrange = minmax(synflux)
    ymin = 1.2 * yrange[0] - 0.2 * yrange[1] < 0
    ymax = -0.2 * yrange[0] + 1.2 * yrange[1]
+   if (ymax EQ ymin) then ymax = ymin + 1
 
    title = 'Plate ' + strtrim(string(plate),2) $
     + '  Fiber ' + strtrim(string(fiberid),2) $
