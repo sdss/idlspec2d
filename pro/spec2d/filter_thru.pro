@@ -21,7 +21,7 @@
 ;   mask       - Linearly interpolate over pixels where MASK is nonzero.
 ;                [NX,NTRACE]
 ;   filter_prefix  - Use alternate prefix for filter curves to use
-;                    (allowed are sdss or doi) [sdss]
+;                    (allowed are sdss, doi, sdss_jun2001) [sdss_jun2001]
 ;   toair      - Convert the wavelengths to air from vacuum before computing
 ;
 ; OUTPUTS:
@@ -67,7 +67,7 @@ function filter_thru, flux, waveimg=waveimg, wset=wset, mask=mask, $
    if (N_elements(dims) EQ 1) then ntrace = 1 $
     else ntrace = dims[1]
 
-   if (NOT keyword_set(filter_prefix)) then filter_prefix='sdss'
+   if (NOT keyword_set(filter_prefix)) then filter_prefix='sdss_jun2001'
    ffiles = [filter_prefix+'_u_atm.dat', filter_prefix+'_g_atm.dat', $
              filter_prefix+'_r_atm.dat', filter_prefix+'_i_atm.dat', $
              filter_prefix+'_z_atm.dat']
