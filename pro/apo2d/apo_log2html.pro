@@ -48,10 +48,6 @@
 ;   apo_log_endplate()
 ;   apo_log_fields()
 ;
-;
-; DATA FILES:
-;   $IDLSPEC2D_DIR/examples/opLimits.par
-;
 ; REVISION HISTORY:
 ;   30-Apr-2000  Written by D. Schlegel, APO
 ;-
@@ -178,7 +174,8 @@ function apo_log_fields, pp, fields, printnames=printnames, formats=formats
        pp[igood[0]].camera, pp[igood[0]].exptime, /html) $
        + string(pp[igood[0]].exptime, format='(f8.1)')
       qualstring = apo_checklimits(pp[igood[0]].flavor, 'QUALITY', $
-       pp[igood[0]].camera, pp[igood[0]].quality, /html)
+       pp[igood[0]].camera, pp[igood[0]].quality, /html) $
+       + pp[igood[0]].quality
    endif else begin
       utstring = ''
       airtempstring = ''
