@@ -111,6 +111,8 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
     else airmass = tai2airmass(plugsort.ra, plugsort.dec, tai=tai)
 
    airmass_correction = replicate(1.0,ncol) # airmass
+   splog, 'Range of airmass correction = ', min(airmass_correction), $
+    max(airmass_correction)
 
    skywave = wave[*,iskies]
    skyflux = obj[*,iskies]
