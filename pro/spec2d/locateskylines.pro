@@ -52,7 +52,10 @@ pro locateskylines, skylinefile, fimage, ivar, wset, xarc, arcshift=arcshift, $
  xsky=xsky, skywaves=skywaves, skyshift=skyshift
 
    splog, 'Reading sky line file ', skylinefile
-   readcol, skylinefile, skywaves, /silent, form='d'
+   skywaves = 0
+   readcol, skylinefile, skywaves, /silent, form='D', numline=numline
+   if (NOT keyword_set(skywaves)) then $
+    message, 'Unable to read sky wavelengths from file ' + skylinefile
 
    dims = size(fimage, /dimens)
    npix = dims[0]
