@@ -1,4 +1,6 @@
 
+FINDSPEC: New routine for finding SDSS spectra that match a given RA, DEC.
+
 -------------------------------------------------------------------------------
 v4_6_2 (Feb 14, 2001)
 
