@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   xnew = trace_fweight( fimage, xcen, ycen, [radius=radius, xerr=xerr, 
-;                          invvar=invvar] )
+;    invvar=invvar] )
 ;
 ; INPUTS:
 ;   fimage     - Image
@@ -16,13 +16,15 @@
 ;
 ; OPTIONAL KEYWORDS:
 ;   radius     - Radius for centroiding; default to 3.0
-;   invvar     - Inverse variance of image
+;   invvar     - Inverse variance of image used only in computing errors XERR.
+;                If not set, then INVVAR=1 is used.
 ;
 ; OUTPUTS:
 ;   xnew       - New X centers
 ;
 ; OPTIONAL OUTPUTS:
-;   xerr       - Formal errors for XNEW
+;   xerr       - Formal errors for XNEW; set equal to 999.0 if there are any
+;                masked pixels in a centroiding region (e.g., if INVVAR=0)
 ;
 ; COMMENTS:
 ;
@@ -36,7 +38,7 @@
 ;-
 ;------------------------------------------------------------------------------
 function trace_fweight, fimage, xcen, ycen, radius=radius, xerr=xerr, $
-               invvar=invvar
+ invvar=invvar
 
    ; Need 3 parameters
    if (N_params() LT 3) then begin
@@ -50,14 +52,13 @@ function trace_fweight, fimage, xcen, ycen, radius=radius, xerr=xerr, $
    ny = (size(fimage))[2]
    ncen = N_elements(xcen)
    xnew = float(xcen)
-   xerr = fltarr(ncen)
+   xerr = 0.0 * xnew ; Allocate memory
 
-   if (NOT keyword_set(invvar)) then $
-       invvar = 1.0 / (abs(fimage) + 20.0)
+   if (NOT keyword_set(invvar)) then invvar = 0.0 * fimage + 1.0
 
    result = call_external(getenv('IDL_EVIL')+'libspec2d.so', 'trace_fweight', $
     nx, ny, float(fimage), float(invvar), $
-         float(radius), ncen, xnew, long(ycen), xerr)
+    float(radius), ncen, xnew, long(ycen), xerr)
 
    return, xnew
 end

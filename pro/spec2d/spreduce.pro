@@ -111,17 +111,6 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    plugmap = *pstruct[0]
 
    ;---------------------------------------------------------------------------
-   ; Read pixel-to-pixel flat-field
-   ;---------------------------------------------------------------------------
-
-   if (keyword_set(pixflatname)) then begin
-      fullname = findfile(pixflatname, count=ct)
-      if (ct EQ 0) then $
-       message, 'Cannot find pixflat image ' + pixflatname
-      pixflat = readfits(fullname[0])
-   endif
-
-   ;---------------------------------------------------------------------------
    ; Read flat-field image
    ;---------------------------------------------------------------------------
 
@@ -129,14 +118,9 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    fullname = findfile(fullpath, count=ct)
    if (ct NE 1) then $
     message, 'Cannot find flat image ' + flatname
-   sdssproc, fullname[0], flatimg, flativar, hdr=flathdr
+   sdssproc, fullname[0], flatimg, flativar, hdr=flathdr, $
+    pixflatname=pixflatname
  
-   ; Flat-field the flat image
-   if (keyword_set(pixflatname)) then begin
-    print, 'Dividing flat-field image by 2d flat'
-    flatimg = flatimg / pixflat
-   endif
-
    ;---------------------------------------------------------------------------
    ; Create spatial tracing from flat-field image
    ;---------------------------------------------------------------------------
@@ -180,14 +164,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    if (ct NE 1) then $
     message, 'Cannot find arc image ' + arcname
    sdssproc, fullname[0], arcimg, arcivar, hdr=archdr, $
-    spectrographid=spectrographid, color=color
-
-   ; Flat-field the arc image
-   if (keyword_set(pixflatname)) then begin
-      print, 'Dividing arclamp image by 2d flat'
-      arcimg = arcimg / pixflat
-      arcivar = arcivar * pixflat^2
-   endif
+    pixflatname=pixflatname, spectrographid=spectrographid, color=color
 
    ;---------------------------------------------------------------------------
    ; Extract the arc image
@@ -222,11 +199,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    print, 'Searching for wavelength solution with fitarcimage'
    fitarcimage, arc_flux, arc_fluxivar, color, lamplist, xpeak, ypeak, wset, $
     invset, ans=wavesolution, lambda=lambda, $
-    xdif_lfit=xdif_lfit, xdif_tset=xdif_tset, errcode=errcode
-
-   if (errcode NE 0) then begin
-      message, 'Fitarcimage failed'
-   endif 
+    xdif_lfit=xdif_lfit, xdif_tset=xdif_tset
 
    qaplot_arcline, xdif_tset, lambda, arcname
 
@@ -254,12 +227,7 @@ for i=0,16 do oplot,fflat[*,i*19]
       if (ct NE 1) then $
        message, 'Cannot find object image ' + objname[iobj]
       sdssproc, fullname[0], objimg, objivar, hdr=objhdr, $
-       spectrographid=spectrographid, color=color
-
-      if (keyword_set(pixflatname)) then begin
-         objimg = objimg / pixflat
-         objivar = objivar * pixflat^2
-      endif
+       pixflatname=pixflatname, spectrographid=spectrographid, color=color
 
       ;------------------
       ; Tweak up the spatial traces

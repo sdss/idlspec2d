@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   sdssproc, infile, [image, invvar, outfile=outfile, varfile=varfile, $
 ;    hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, $
-;    spectrographid=spectrographid, color=color ]
+;    pixflatname=pixflatname, spectrographid=spectrographid, color=color ]
 ;
 ; INPUTS:
 ;   infile     - Raw SDSS frame
@@ -19,6 +19,7 @@
 ;   hdr        - Header returned in memory
 ;   configfile - Default to "opConfig.par"
 ;   ecalibfile - Default to "opECalib.par"
+;   pixflatname- Name of pixel-to-pixel flat, produced with SPFLATTEN.
 ;
 ; OUTPUTS:
 ;   image      - Processed 2d image
@@ -43,7 +44,7 @@
 
 pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
  hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, $
- spectrographid=spectrographid, color=color
+ pixflatname=pixflatname, spectrographid=spectrographid, color=color
 
    if (N_params() LT 1) then begin
       print, 'Syntax - sdssproc, infile, [image, invvar, outfile=outfile, varfile=varfile, ' 
@@ -215,6 +216,24 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
 
    ; For saturated pixels, set INVVAR=0
    invvar = invvar * mask
+
+   ;---------------------------------------------------------------------------
+   ; Read pixel-to-pixel flat-field
+   ;---------------------------------------------------------------------------
+
+   if (keyword_set(pixflatname)) then begin
+      fullname = findfile(pixflatname, count=ct)
+      if (ct EQ 0) then $
+       message, 'Cannot find pixflat image ' + pixflatname
+      pixflat = readfits(fullname[0])
+
+      image = image / pixflat
+      invvar = invvar * pixflat^2
+   endif
+
+   ;---------------------------------------------------------------------------
+   ; Write output files
+   ;---------------------------------------------------------------------------
 
    if (keyword_set(outfile)) then $
     writefits, outfile, image, hdr

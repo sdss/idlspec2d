@@ -91,8 +91,8 @@ void recenter_fweight
          }
          *xerr = sqrt(sumsxsx);
       } else {
-         *xcen = -1.0;
-         *xerr = 0.0;
+         *xcen = xinit;
+         *xerr = 999.0;
       }
 
       free(convol);
