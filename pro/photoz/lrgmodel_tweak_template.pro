@@ -58,13 +58,15 @@ function lrgmodel_tweak_fn, coeff
 
    common com_lrgmodel_tweak_fluxes, pflux, pflux_ivar, zz, KeywordsForPhotoz
 
-   ; Compute the chi for each object
+   ; Compute the best-fit redshift for each object
    zfit = lrgmodel_photoz(pflux, pflux_ivar, $
     ageburst=coeff[0], zmetal=coeff[1], chi2=chi2, $
     _EXTRA=KeywordsForPhotoz)
-if (min(chi2) LT 0) then stop ; ???
 
-   return, sqrt(chi2)
+   ; Return the redshift errors as the "chi" values
+   chivec = zfit - zz
+
+   return, chivec
 end
 ;------------------------------------------------------------------------------
 pro lrgmodel_tweak_template, pflux1, pflux_ivar1, zz1, $
@@ -94,9 +96,9 @@ pro lrgmodel_tweak_template, pflux1, pflux_ivar1, zz1, $
    pflux = pflux1
    pflux_ivar = pflux_ivar1
    zfit = lrgmodel_photoz(pflux, pflux_ivar, _EXTRA=KeywordsForPhotoz)
-   ibad = where(abs(zfit - zz) GT 0.10 OR zz LT 0.10, nbad)
+;   ibad = where(abs(zfit - zz) GT 0.10 OR zz LT 0.10, nbad)
 ; Only discard the low-redshift objects...
-;   ibad = where(zz LT 0.10, nbad)
+   ibad = where(zz LT 0.10, nbad)
    if (nbad GT 0) then begin
       print, 'Discard ', nbad, ' objects with low and/or discrepent photo-z'
       pflux[*,ibad] = 0
