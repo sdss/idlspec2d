@@ -219,7 +219,6 @@ pro/science/lickindex/lickindices.pro -text
 pro/science/lickindex/one_indices.pro -text
 pro/science/lya/Makefile -text
 pro/science/lya/zqso_nolya.pro -text
-pro/science/match_tsobjtargets.pro -text
 pro/science/qso/Makefile -text
 pro/science/qso/README -text
 pro/science/qso/create_absstruct.pro -text
