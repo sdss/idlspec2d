@@ -61,6 +61,7 @@
 ;   djs_filepath()
 ;   fileandpath()
 ;   readfits()
+;   splog
 ;   sxpar()
 ;   zcompute()
 ;
@@ -129,7 +130,7 @@ function zfind, objflux, objivar, hdr=hdr, $
    if (ct EQ 0) then $
     message, 'Unable to find EIGENFILE matching '+eigenfile
    thisfile = allfiles[ (reverse(sort(allfiles)))[0] ]
-   splog, 'Selecting EIGENFILE=', thisfile
+   splog, 'Selecting EIGENFILE=' + thisfile
 
    ;----------
    ; Read the template file, and optionally trim to only those columns
