@@ -36,6 +36,8 @@ SPFLUX_V5: New code to replace SPFLUX for version 5 outputs.  This computes
         per-object flux-correction vectors that used to be handled
         (through a call to FLUCORR_NEW) must now be handled separately,
         and *after* the call to this routine.
+SPFLUXCORR_V5: New code to replace FLUXCORR_NEW.  This will be called
+        by SPCOMBINE_V5.
 
 etc/spChunkList.par: Add chunks 87-89.
 
