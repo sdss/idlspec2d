@@ -35,8 +35,8 @@ pro remove2redo, logfile=logfile, outdir=outdir, plate=plate
 
    if NOT keyword_set(outdir) then begin
      cd, '/data/spectro/spectrologs'
-     spawn, 'ls
-     dirs = findfile() + 0L
+     dirs = findfile() 
+     dirs = dirs[where(dirs GT '50000' AND dirs LT '90000')]
      cd, strtrim(string(max(dirs)),2) 
    endif else cd, outdir 
 
@@ -44,16 +44,17 @@ pro remove2redo, logfile=logfile, outdir=outdir, plate=plate
      logfile = findfile('logfile*fits')
      logfile = logfile[0]
    endif
-   
+
+   print, 'Working on ', logfile   
    for i=1,4 do begin
-     list = mrdfits(logfile, i)
+     list = mrdfits(logfile, i, /silent)
 
      if keyword_set(plate) then begin
        good = where(list.plate EQ plate)
        if good[0] EQ - 1 then list = 0 $
        else list = list[good]
      endif
- 
+
      if size(list, /tname) NE 'INT' then begin
        if NOT keyword_set(expnum) then begin
          expnum = list.expnum
@@ -69,11 +70,12 @@ pro remove2redo, logfile=logfile, outdir=outdir, plate=plate
 
    expmin = min(expnum + 0L)
    expmax = max(expnum + 0L)
-   nexp = expmax - expmin - 1
+   nexp = expmax - expmin 
    if nexp LE 0 then return
 
    cam = ['b1', 'b2', 'r1', 'r2']
    missing = ' '
+
 
    for i=expmin, expmax - 1 do begin 
      for icam = 0,3 do begin
@@ -93,6 +95,10 @@ pro remove2redo, logfile=logfile, outdir=outdir, plate=plate
    print, 'rm -f '+missing
    spawn, 'rm -f '+missing
 
+   print, ''
+   print, 'Successfully removed files, sos should get these on the next pass!'
+   print, ''
+   
    return
 end
 
