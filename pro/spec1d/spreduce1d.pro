@@ -108,11 +108,11 @@ andmask = 0 ; Free memory
 
    npoly = 3
    zmin = -0.01 ; -3000 km/sec
-   zmax = 0.5 ; Limit for now until template goes further into the UV ???
+   zmax = 0.60 ; Max z for a rest-frame template to 2300 Ang to cover 3700 Ang
    pspace = 2
    nfind = 5
 
-   eigenfile = 'spEigenGals.fits'
+   eigenfile = 'spEigenGal*.fits'
 
    splog, 'Compute GALAXY redshifts:', $
     ' ZMIN=', zmin, ' ZMAX=', zmax, ' PSPACE=', pspace
@@ -143,7 +143,7 @@ andmask = 0 ; Free memory
    pspace = 4
    nfind = 5
 
-   eigenfile = 'spEigenQSO.fits'
+   eigenfile = 'spEigenQSO*.fits'
 
    splog, 'Compute QSO redshifts:', $
     ' ZMIN=', zmin, ' ZMAX=', zmax, ' PSPACE=', pspace
@@ -173,7 +173,7 @@ andmask = 0 ; Free memory
    pspace = 1
    nfind = 1
 
-   eigenfile = 'spEigenStar.fits'
+   eigenfile = 'spEigenStar*.fits'
 
    eigendir = concat_dir(getenv('IDLSPEC2D_DIR'), 'templates')
    shdr = headfits( djs_filepath(eigenfile, root_dir=eigendir) )

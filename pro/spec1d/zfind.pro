@@ -19,7 +19,9 @@
 ;   hdr        - FITS header for objects, used for the following fields:
 ;                COEFF0, COEFF1, PLATEID, MJD.
 ;   eigenfile  - Input FITS file with an [NPIXSTAR,NSTAR] image with
-;                either templates or eigenspectra.
+;                either templates or eigenspectra.  If a wildcard appears
+;                in the file name, then the file that appears last in a sort
+;                is used.
 ;                The header keywords COEFF0, COEFF1 are used to specify
 ;                the wavelength mapping in log-10 Angstroms.
 ;
@@ -126,12 +128,21 @@ function zfind, objflux, objivar, hdr=hdr, fiberid=fiberid, $
    endif
 
    ;----------
+   ; Find the most recent template file matching EIGENFILE
+
+   allfiles = findfile(djs_filepath(eigenfile, root_dir=eigendir), count=ct)
+   if (ct EQ 0) then $
+    message, 'Unable to find EIGENFILE matching '+eigenfile
+   thisfile = allfiles[ (reverse(sort(allfiles)))[0] ]
+   splog, 'Selecting EIGENFILE=', thisfile
+
+   ;----------
    ; Read the template file, and optionally trim to only those columns
    ; specified by COLUMNS.
    ; Assume that the wavelength binning is the same as for the objects
    ; in log-wavelength.
 
-   starflux = readfits(djs_filepath(eigenfile, root_dir=eigendir), shdr)
+   starflux = readfits(thisfile, shdr)
    starloglam0 = sxpar(shdr, 'COEFF0')
    stardloglam0 = sxpar(shdr, 'COEFF1')
 

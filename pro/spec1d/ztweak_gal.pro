@@ -41,7 +41,7 @@
 ;------------------------------------------------------------------------------
 pro ztweak_gal, platefile, subsamp=subsamp
 
-   eigenfile = 'spEigenVstnd.fits'
+   eigenfile = 'spEigenVstnd*.fits'
    if (n_elements(eigendir) EQ 0) then $
     eigendir = concat_dir(getenv('IDLSPEC2D_DIR'), 'templates')
 
@@ -87,11 +87,20 @@ andmask = 0 ; Free memory
    objloglam = objloglam0 + lindgen(npix) * objdloglam
 
    ;----------
+   ; Find the most recent template file matching EIGENFILE
+
+   allfiles = findfile(djs_filepath(eigenfile, root_dir=eigendir), count=ct)
+   if (ct EQ 0) then $
+    message, 'Unable to find EIGENFILE matching '+eigenfile
+   thisfile = allfiles[ (reverse(sort(allfiles)))[0] ]
+   splog, 'Selecting EIGENFILE=', thisfile
+
+   ;----------
    ; Read the velocity standard template file.
    ; (Assume that the wavelength binning is the same as for the objects
    ; in log-wavelength.)
 
-   starflux = readfits(djs_filepath(eigenfile, root_dir=eigendir), shdr)
+   starflux = readfits(thisfile, shdr)
    starloglam0 = sxpar(shdr, 'COEFF0')
    stardloglam = sxpar(shdr, 'COEFF1')
    ndim = size(starflux, /n_dimen)
@@ -218,6 +227,11 @@ djs_readcol, '/home/schlegel/idlspec2d/templates/eigeninput_gal.dat', $
  plate, mjd, fiberid, zold, format='(L,L,L,F)'
 ii = fiberid-1
 splot,zold,(zstruct[ii].z-zold)*3e5,ps=4,syms=0.4
+openw, olun, 'eigeninput_gal.dat', /get_lun
+for j=0, n_elements(ii)-1 do $
+ printf, olun, plate[j], mjd[j], fiberid[j], zstruct[ii[j]].z, $
+  format='(i5, i7, i5, f12.6)'
+close, olun
 
    return
 end
