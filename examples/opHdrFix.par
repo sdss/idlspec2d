@@ -225,6 +225,9 @@ ophdrfix sdR-??-00010061 FLAVOR   "'unknown'"
 ophdrfix sdR-??-00010516 MJD   "52130"
 ophdrfix sdR-??-00010517 MJD   "52130"
 
+# This science exposure on plate 656 on MJD 52148 had no signal.
+ophdrfix sdR-??-00010751 FLAVOR   "'unknown'"
+
 # Telescope status information missing for the pre-flat on plate 655
 # on MJD 52162.
 ophdrfix sdR-??-00010850  FFS   "'1 1 1 1 1 1 1 1'"
@@ -267,6 +270,20 @@ ophdrfix sdR-??-0001246[8-9] NAME     "'0799-52277-01D'"
 ophdrfix sdR-??-0001247[0-0] NAME     "'0799-52277-01D'"
 ophdrfix sdR-??-0001247[1-3] NAME     "'0799-52277-01E'"
 ophdrfix sdR-??-0001247[4-4] NAME     "'0799-52277-01F'"
+
+# All science exposures for plate 803 on MJD 52296 have
+# very high sky count rates and scattered light, for
+# some unknown reason.  The night log gives no clue.
+# I'll just discard these data.
+ophdrfix sdR-??-0001281[0-8] FLAVOR   "'unknown'"
+
+# This smear for plate 803 was taken through thick clouds
+# on MJD 52297.
+ophdrfix sdR-??-00012846 FLAVOR   "'unknown'"
+
+# These data for plate 827 wer taken through thick clouds
+# on MJD 52297, though other exposures had reasonable S/N.
+ophdrfix sdR-??-0001285[2-4] FLAVOR   "'unknown'"
 
 # There were serious SOP problems at this point that made
 # these exposures bad for plate 827 on MJD 52312.
