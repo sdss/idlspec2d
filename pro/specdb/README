@@ -1,0 +1,57 @@
+
+yanny_read,'evil.par',a
+a=*a[0]
+a=a[100:104]
+;postgres_write,'junk1.dat',a
+mysql_write,'junk2.dat',a
+
+------------------------------------------------------------------------------
+
+yanny_read, 'plPlugMapM-0198-51433-01.par', pdata
+mysql_write, 'plPlugMapM-0198-51433-01.dat', *pdata[0], table='plug'
+yanny_free, pdata
+
+b = mrdfits('tsObj-51433-0198.fit',1)
+mysql_write, 'tsObj-51433-0198.dat', b, table='obj', modifiers='not null'
+
+a=*pdata[0]
+for i=0, n_elements(a)-1 do $
+ print, where(a[i].objid[0] EQ b.run AND a[i].objid[1] EQ b.rerun AND $
+  a[i].objid[2] EQ b.camcol AND a[i].objid[3] EQ b.field AND $
+  a[i].objid[4] EQ b.id)
+------------------------------------------------------------------------------
+
+/usr/local/mysql/bin/mysql -p evildb < plPlugMapM-0198-51433-01.dat.def
+/usr/local/mysql/bin/mysql -p evildb < tsObj-51433-0198.dat.def
+
+/usr/local/mysql/bin/mysql -p evildb
+
+select * where plug.objid_3 = 34;
+
+select plug.objid_3 from plug where plug.objid_3 = 314;
+
+select run,camcol,rerun,field,id from plug,obj where plug.objid_3 = 314
+ and plug.objid_0 = obj.run and plug.objid_3 = obj.field
+ and plug.objid_3 = 314;
+
+select
+ plug.objid_0,plug.objid_1,plug.objid_2,plug.objid_3,plug.objid_4,
+ run,rerun,camcol,field,id
+# into outfile '/home/schlegel/data/testdb/out'
+ from plug,obj
+ where plug.objid_0=obj.run and plug.objid_1=rerun
+ and plug.objid_2=camcol and plug.objid_3=obj.field and plug.objid_4=obj.id
+ and run=94 and camcol=6 and rerun=0 and id=116;
+
+select
+ plug.objid_0,plug.objid_1,plug.objid_2,plug.objid_3,plug.objid_4,
+ plug.primtarget,plug.fiberid
+# into outfile '/home/schlegel/data/testdb/out'
+ from plug,obj
+ where plug.objid_0=obj.run and plug.objid_1=rerun
+ and plug.objid_2=camcol and plug.objid_3=obj.field and plug.objid_4=obj.id
+ and plug.primtarget & 1;
+
+create index junk on obj (run,rerun,camcol,field,id);
+alter table obj drop index junk;
+
