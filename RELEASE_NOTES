@@ -53,6 +53,7 @@ SMOOTH_SUPERFLAT: Located the spurious WARNING, changed to Warning, and
             smooth_superflat warnings.
 SPBIASGEN: New routine for generating mean biases for a night.
 SPCALIB,SPFLATTEN2,SPREDUCE: Use /APPLYBIAS option in call to SDSSPROC.
+SPFLATGEN: Add optional keywords EXPNUM,EXPSTART,EXPEND.
 SPREDUCE1D, ZFIND, ZCOMPUTE, FIND_NMINIMA: Plotting and debugging
             tools added with the /DOPLOT, /DEBUG keywords.
 SPREDUCE1D: Change flag for small chi^2 difference to be triggered
