@@ -37,7 +37,7 @@
 ;
 ; PROCEDURES CALLED:
 ;   djs_filepath()
-;   sdssproc
+;   sdsshead()
 ;   spflatten2
 ;   splog
 ;   sxpar()
@@ -71,7 +71,7 @@ pro spflatgen, mjd=mjd, indir=indir, outdir=outdir
 
    print, 'Reading FITS headers...', format='(a,$)'
    for ifile=0, nfile-1 do begin
-      sdssproc, files[ifile], hdr=hdr
+      hdr = sdsshead(files[ifile])
       cameras[ifile] = strtrim(sxpar(hdr, 'CAMERAS'),2)
       obscomm[ifile] = strtrim(sxpar(hdr, 'OBSCOMM'),2)
       mjdarr[ifile] = sxpar(hdr, 'MJD')
