@@ -1,7 +1,9 @@
+; Return the smear fluxes de-redshifted and rebinned to log-linear.
 pro readsmear, thisplate, thismjd, fiberid, $
- smearflux=smearflux, smearivar=smearivar
+ smearloglam=smearloglam, smearflux=smearflux, smearivar=smearivar
 
    if (NOT keyword_set(fiberid)) then fiberid = lindgen(640) + 1
+smearloglam = 3.5d + lindgen(4500)*1.d-4 ; ???
 
    platestr = string(thisplate, format='(i4.4)')
    mjdstr = string(thismjd, format='(i5.5)')
@@ -9,7 +11,8 @@ pro readsmear, thisplate, thismjd, fiberid, $
    thisdir = concat_dir(getenv('SPECTRO_DATA'), platestr)
 
    ; Read the wavelength mapping + modelled flux
-   readspec, thisplate, thismjd, fiberid, loglam=loglam, synflux=synflux
+   readspec, thisplate, mjd=thismjd, fiberid, loglam=loglam, $
+    synflux=synflux, zans=zans
 
    ; Figure out the smear exposure number for this plate
    thisplan = 'spPlancomb-' + platemjd +'.par'
@@ -21,10 +24,17 @@ pro readsmear, thisplate, thismjd, fiberid, $
    smearnames = spexp[ii[0]].name ; Select the first smear if more than one.
    smearcam = strmid(smearnames, 8, 2)
 
+   ; Create the arrays in which we'll accumulate the smear spectra
+   nfiber = n_elements(fiberid)
+   accflux = fltarr(2048,2,nfiber)
+   accivar = fltarr(2048,2,nfiber)
+   accloglam = fltarr(2048,2,nfiber)
+   ioffset = 0
+
    for specid=0, 1 do begin
       findx = fiberid - 1 - 320*specid ; Index numbers in these files
-      ii = where(findx GE 0 AND findx LT 320, ct)
-      if (ct GT 0) then begin
+      ii = where(findx GE 0 AND findx LT 320, nfindx)
+      if (nfindx GT 0) then begin
          findx = findx[ii]
 
          if (specid EQ 0) then camnames = ['b1','r1'] $
@@ -37,12 +47,11 @@ pro readsmear, thisplate, thismjd, fiberid, $
 
             fmin = min(findx, max=fmax)
             range = [fmin,fmax]
-            thissmear = smearnames[ where(smearcam EQ camnames[icam]) ]
-            tempflux = mrdfits(filepath(thissmear, root_dir=thisdir), 0, $
-             range=range)
-            tempivar = mrdfits(filepath(thissmear, root_dir=thisdir), 1, $
-             range=range)
-            tempwset = mrdfits(filepath(thissmear, root_dir=thisdir), 3)
+            thissmear = smearnames[ (where(smearcam EQ camnames[icam]))[0] ]
+            thissmear = findfile(filepath(thissmear+'*', root_dir=thisdir))
+            tempflux = mrdfits(thissmear[0], 0, range=range)
+            tempivar = mrdfits(thissmear[0], 1, range=range)
+            tempwset = mrdfits(thissmear[0], 3)
             traceset2xy, tempwset, xx, temploglam
             tempflux = tempflux[*,findx-fmin]
             tempivar = tempivar[*,findx-fmin]
@@ -69,14 +78,37 @@ pro readsmear, thisplate, thismjd, fiberid, $
 
             divideflat, tempflux, invvar=tempivar, calibfac, $
              minval=0.05*mean(calibfac)
+
 ;            temppixmask = temppixmask $
 ;             OR (calibfac LE 0.05*mean(calibfac)) $
 ;             * pixelmask_bits('BADFLUXFACTOR')
 
-stop
+            ; Accumulate these flux values into our arrays
+            accflux[*,icam,ioffset:ioffset+nfindx-1] = tempflux
+            accivar[*,icam,ioffset:ioffset+nfindx-1] = tempivar
+            accloglam[*,icam,ioffset:ioffset+nfindx-1] = temploglam
          endfor ; End loop over camera b/r
+         ioffset = ioffset + nfindx
       endif
    endfor ; End loop over spectrograph 1/2
+
+   ;----------
+   ; Now rebin each spectrum to log-linear and de-redshifted
+
+   npix = n_elements(smearloglam)
+   smearflux = fltarr(npix,nfiber)
+   smearivar = fltarr(npix,nfiber)
+   dloglam = smearloglam[1] - smearloglam[0]
+
+   for ifiber=0, nfiber-1 do begin
+print,'OBJECT ',ifiber
+      combine1fiber, (accloglam[*,*,ifiber])[*] - alog10(1+zans[ifiber].z), $
+       (accflux[*,*,ifiber])[*], (accivar[*,*,ifiber])[*], $
+       newloglam=smearloglam, binsz=dloglam, newflux=flux1, newivar=ivar1
+      smearflux[*,ifiber] = flux1
+      smearivar[*,ifiber] = ivar1
+   endfor
+
 
 stop
    return
