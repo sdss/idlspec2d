@@ -24,6 +24,7 @@ sprobot.sh: Add more time stamps to the robot log file.
 
 In idlutils:
 RADEC_TO_FIELDS: Configurable option allfieldfile.
+SXPAR: Landsman fixed to handle CRVALn of different type properly
 src/spheregroup/chunks.c: Roundoff error problem fixed.
 eviltarball: Comment out the reference to sdsscvs.
 
