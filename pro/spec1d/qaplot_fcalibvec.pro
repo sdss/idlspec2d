@@ -81,9 +81,15 @@ end
 pro qaplot_fcalibvec, loglam, objflux, objivar, synflux, plugmap, zans, $
  plottitle=plottitle
 
+   ndim = size(objflux, /n_dimen)
    dims = size(objflux, /dimens)
-   nfiber = dims[0]
-   npix = dims[1]
+   if (ndim EQ 1) then begin
+      nfiber = 1
+      npix = dims[0]
+   endif else begin
+      nfiber = dims[0]
+      npix = dims[1]
+   endelse
    wave = 10^loglam
    xrange = minmax(wave) + [-100,100]
    csize = 1.5
