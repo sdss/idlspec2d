@@ -166,7 +166,7 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
       relwave = fltarr(nbin)
       relchi2 = fltarr(nbin)
       for ibin=0, nbin-1 do begin
-         ; Locate data points in this bin, exluding masked pixels
+         ; Locate data points in this bin, excluding masked pixels
          ii = where(skywave GE bkpt[ibin] AND skywave LT bkpt[ibin+1] $
           AND skyivar GT 0, nn)
 
