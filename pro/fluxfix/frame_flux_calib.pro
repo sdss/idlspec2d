@@ -1,7 +1,7 @@
 
 function frame_flux_calib, wave, corvector, corvivar, avgcorvset, cormed, $
-         framename, sig2noise, fsig = fsig, fcor = fcor, final = final, $
-         noplot = noplot
+         framename, fit_wiggles = fit_wiggles, fsig = fsig, fcor = fcor, $
+         final = final, noplot = noplot
 
   ;----------------
   ; Create 2d wave and flux calib vector average
@@ -40,10 +40,11 @@ function frame_flux_calib, wave, corvector, corvivar, avgcorvset, cormed, $
   hifmed = djs_median(hifvect, 2)
 
   ;--------------
-  ; Recombine high & low-frequencey parts (but only use high-f is S/N > 12)  
+  ; Recombine high & low-frequencey parts (but only use high-f if allowed  
+  ; by keyword)  
 
   fcor = lowfmed * avgcorv[*,0]
-  if sig2noise gt 12 then fcor = fcor * hifmed
+  if fit_wiggles then fcor = fcor * hifmed
 
   ;--------------
   ; Measure the variance between the fluxcalib vectors derived
@@ -69,18 +70,18 @@ function frame_flux_calib, wave, corvector, corvivar, avgcorvset, cormed, $
   ; Check if scale factor is ok, this time using more pixels than when
   ; "cormed" was computed 
 
-  frameresid = corvector * (1.0/fcor # cormed)
+  ;frameresid = corvector * (1.0/fcor # cormed)
 
-  if min(10.0^wave) lt 5000 then $
-      range = where(10.0^wave gt 5000 and 10.0^wave lt 6000) $
-  else range = where(10.0^wave gt 6000 and 10.0^wave lt 7000)
-  if keyword_set(final) then $
-    range = where(10.0^wave gt 5600 and 10.0^wave lt 6900)
+  ;if min(10.0^wave) lt 5000 then $
+  ;    range = where(10.0^wave gt 5000 and 10.0^wave lt 6000) $
+  ;else range = where(10.0^wave gt 6000 and 10.0^wave lt 7000)
+  ;if keyword_set(final) then $
+  ;  range = where(10.0^wave gt 5600 and 10.0^wave lt 6900)
 
-  zptadjust_factor = median(frameresid[range, *])
-  djs_iterstat, frameresid[range, *], mean=zptadjust_factor, sigrej=2.5
-  splog, 'Zeropoint adjustment: ', string(zptadjust_factor, format='(F7.3)')
-  fcor = fcor * zptadjust_factor
+  ;zptadjust_factor = median(frameresid[range, *])
+  ;djs_iterstat, frameresid[range, *], mean=zptadjust_factor, sigrej=2.5
+  ;splog, 'Zeropoint adjustment: ', string(zptadjust_factor, format='(F7.3)')
+  ;fcor = fcor * zptadjust_factor
   
   ;plot, 10.0^wave, fcor, xr=[3800, 9200], /xs, /nodata, yr=[0.6, 1.4]
   ;for i = 0, nstd - 1 do oplot, 10.0^wave, frameresid[*,i]
