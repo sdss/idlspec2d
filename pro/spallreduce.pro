@@ -55,7 +55,7 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
    ; for each such plan file.
    if (N_elements(planfile) GT 1) then begin
       for i=0, N_elements(planfile)-1 do $
-       spallreduce, planfile=planfile[i], docams=docams, $
+       spallreduce, planfile[i], docams=docams, $
         nocombine=nocombine, xdisplay=xdisplay
       return
    endif
