@@ -386,6 +386,13 @@ The values reported are:
     The minimum (maximum) X position of the spectra on the CCD.  If this is
     less than 0 (greater than 2047), then some of the spectra fall off the
     left (right) side of the CCD.
+<LI><B>FLAT XSIGMA</B> <BR>
+    The profiles in the spatial (X) dimension have a gaussian fit with
+    a width of this sigma.  The median of this width is taken independently in
+    each of 4 quadrants on a CCD, and the maximum of those 4 values reported.
+    If the spectrographs are in focus, then this value should be about 1.0 pix.
+    If it is larger, then the spectrographs may be out-of-focus, or the
+    slit-heads may not be properly latched.
 <LI><B>ARC WAVEMIN (WAVEMAX)</B> <BR>
     The minimum (maximum) wavelength (in Angstroms) of any spectra on this CCD.
     Because of the optical distortions, this is always for the central
@@ -403,6 +410,16 @@ The values reported are:
     There are many more on the red CCD's because neon has many more lines
     there.  If this drops to too few lines, then some of the lamps have not
     turned on properly, have not warmed up, or have warmed up too much.
+<LI><B>ARC DISPSIGMA</B> <BR>
+    The arc-line profiles in the wavelength (Y) dimension have a gaussian
+    fit with a width of this sigma.  The median of this width is taken
+    independently in each of 4 quadrants on a CCD, and the maximum of
+    those 4 values reported.
+    If the spectrographs are in focus, then this value should be about 1.0 pix.
+    If it is larger, then the spectrographs may be out-of-focus, or the
+    slit-heads may not be properly latched.
+    (One would expect that both XSIGMA and DISPSIGMA would go out-of-focus
+    at the same time.)
 <LI><B>SCIENCE/SMEAR SKY/SEC</B> <BR>
     The median sky counts in electrons per pixel.
     If this is too large, then there must be a light source near the
@@ -522,8 +539,18 @@ The following messages may appear:
     bright sky, or if there are super-bright objects on some fibers that
     are scattering or bleeding light across the CCD.
 <LI><B>Median spatial widths = ...</B> <BR>
-    The spatial widths of the fibers typically are gaussians with a
+    The spatial (X) widths of the fibers typically are gaussians with a
     sigma of 0.85 to 1.05 pixels.  If the sigma is larger than 1.10 pixels
+    in any of the 4 quadrants of a CCD (lower-left, lower-right, upper-left,
+    upper-right), then this warning is triggered.  It means
+    that either the spectrographs are out of focus, or the slit-heads are
+    not properly latched.  Note that these widths are computed for both
+    the flat and science exposures (but not for arcs -- we compute the
+    widths in the dispersion dimension for arcs).
+<LI><B>Median wavelength widths = ...</B> <BR>
+    The widths of the arc lines in the dispersion (Y) dimension typically
+    are gaussians with a sigma of 0.90 to 1.10 pixels.
+    If the sigma is larger than 1.20 pixels
     in any of the 4 quadrants of a CCD (lower-left, lower-right, upper-left,
     upper-right), then this warning is triggered.  It means
     that either the spectrographs are out of focus, or the slit-heads are
