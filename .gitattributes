@@ -78,7 +78,6 @@ pro/apo2d/quicktrace.pro -text
 pro/apo2d/quickwave.pro -text
 pro/fplan/checksn.pro -text
 pro/fplan/make2dmerge.pro -text
-pro/fplan/platesn.pro -text
 pro/fplan/spallreduce.pro -text
 pro/fplan/spmulti.pro -text
 pro/fplan/spplan.pro -text
