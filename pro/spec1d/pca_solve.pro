@@ -9,7 +9,7 @@
 ;   res = pca_solve( objflux, objivar, objloglam, [ zfit, $
 ;    wavemin=, wavemax=, newloglam=, $
 ;    maxiter=, niter=, nkeep=, nreturn=, eigenval=, acoeff=, outmask=, $
-;    usemask=, _EXTRA= ] )
+;    usemask=, /quiet, _EXTRA= ] )
 ;
 ; INPUTS:
 ;   objflux        - Object fluxes [NPIX,NSPEC]
