@@ -117,6 +117,8 @@ SLATEC_EFC (in idutils):  Call FILL_BSPLINE() instead of EFC2D().
 SPBIASAVE: New routine to average biases already generated with SPBIASGEN.
 SPPLAN2D: Change the default of MINEXP to 1 sec, so that special plates
             like the M67 plate (#321) will be reduced.
+            Make a plan file if either science or smear exposures exist
+            (before it required the existence of science exposures).
 SMOOTH_SUPERFLAT: Located the spurious WARNING, changed to Warning, and
             upped the threshold.  It was not the critical one of the two
             smooth_superflat warnings.
@@ -197,6 +199,11 @@ In idlutils:
 All Goddard libraries updated to the versions as of 3 January 2002 from
 the web site "http://idlastro.gsfc.nasa.gov/homepage.html".  It looks like
 the last time I did any updates was exactly two years ago, on 5 Jan 2000.
+The most notable update is to MRDFITS, which Wayne Landsman modified in
+Dec 2001 following suggestions from Finkbeiner & Schlegel.  It explicitly
+handles more data types (like UINTs, BITPIX=8, BITPIX=64) and deals with
+null strings when writing structures to FITS binary tables (w/out crashing,
+as it did before).
 The following procedures moved within the Goddard repository:
       astro/oploterr.pro (moved from /jhuapl)
 The following duplicate procedure was removed from the Goddard repository:
