@@ -103,12 +103,12 @@ function multisynthspec, zans, loglam=objloglam, hdr=hdr, eigendir=eigendir
       starflux = readfits(djs_filepath(alltfile[ifile], root_dir=eigendir), $
        shdr)
       starloglam0 = sxpar(shdr, 'COEFF0')
-      stardloglam0 = sxpar(shdr, 'COEFF1')
+      stardloglam = sxpar(shdr, 'COEFF1')
 
       ndim = size(starflux, /n_dimen)
       dims = size(starflux, /dimens)
       npixstar = dims[0]
-      starloglam = starloglam0 + dindgen(npixstar) * objdloglam
+      starloglam = starloglam0 + dindgen(npixstar) * stardloglam
       if (ndim EQ 1) then nstar = 1 $
        else nstar = dims[1]
 

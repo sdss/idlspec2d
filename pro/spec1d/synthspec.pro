@@ -98,7 +98,7 @@ function synthspec, zans, loglam=objloglam, hdr=hdr, eigendir=eigendir
 
    starflux = readfits(djs_filepath(tfile, root_dir=eigendir), shdr)
    starloglam0 = sxpar(shdr, 'COEFF0')
-   stardloglam0 = sxpar(shdr, 'COEFF1')
+   stardloglam = sxpar(shdr, 'COEFF1')
 
    ndim = size(starflux, /n_dimen)
    dims = size(starflux, /dimens)
@@ -123,7 +123,7 @@ function synthspec, zans, loglam=objloglam, hdr=hdr, eigendir=eigendir
    ;----------
    ; Apply redshift...
 
-   starloglam = starloglam0 + dindgen(npixstar) * objdloglam
+   starloglam = starloglam0 + dindgen(npixstar) * stardloglam
    combine1fiber, starloglam + alog10(1+zans.z), synflux, $
     newloglam=objloglam, newflux=newflux
 
