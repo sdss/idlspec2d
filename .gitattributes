@@ -151,6 +151,7 @@ pro/fplan/spmulti.pro -text
 pro/fplan/spplan.pro -text
 pro/fplan/spplancomb.pro -text
 pro/makefile.old -text
+pro/plate/Makefile -text
 pro/plate/README -text
 pro/plate/README.OBSERVE -text
 pro/plate/README.RUNPLATE -text
@@ -207,8 +208,10 @@ pro/science/lickindex/Makefile -text
 pro/science/lickindex/gauss_smooth_wave.pro -text
 pro/science/lickindex/lickindices.pro -text
 pro/science/lickindex/one_indices.pro -text
+pro/science/lya/Makefile -text
 pro/science/lya/zqso_nolya.pro -text
 pro/science/match_tsobjtargets.pro -text
+pro/science/qso/Makefile -text
 pro/science/qso/README -text
 pro/science/qso/create_absstruct.pro -text
 pro/science/qso/getqso.pro -text
@@ -449,6 +452,7 @@ pro/spec2d/tweaktrace.pro -text
 pro/spec2d/ushift.pro -text
 pro/spec2d/writeapid.pro -text
 pro/spec2d/xy2traceset.pro -text
+pro/specdb/Makefile -text
 pro/specdb/README -text
 pro/specdb/mysql_write.pro -text
 pro/specdb/postgres_write.pro -text
