@@ -188,6 +188,7 @@ pro platelist, infile, plist=plist, create=create
       if (size(hdr1, /tname) EQ 'STRING') then begin
 ;         plist[ifile].plate = sxpar(hdr1, 'PLATEID')
 ;         plist[ifile].mjd = sxpar(hdr1, 'MJD')
+         plist[ifile].mjdlist = sxpar(hdr1, 'MJDLIST')
          plist[ifile].tile = sxpar(hdr1, 'TILEID')
          plist[ifile].ra = sxpar(hdr1, 'RA')
          plist[ifile].dec = sxpar(hdr1, 'DEC')
