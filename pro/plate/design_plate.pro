@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   design_plate, stardata, [ racen=, deccen=, tilenum=, platenum=, $
-;    airtemp=, nstd=, nminsky=, nextra= ]
+;    airtemp=, nstd=, nminsky=, nextra=, ngtarg=, /southern ]
 ;
 ; INPUTS:
 ;   stardata   - Structure with data for each star; must contain the
@@ -32,6 +32,12 @@
 ;                the "fiberPlates" code in the PLATE product will either
 ;                crash or multiply-assign fibers to the same object unless
 ;                there are extra objects.  Default to 10.
+;   ngtarg     - Number of times to target a guide star for each guide
+;                star position; default to 1 (e.g., exactly 11 guide stars).
+;                Selecting more gives the PLATE code more options, and
+;                may prevent it from crashing in some cases.
+;   southern   - If set, then set the Southern target-selection bit
+;                in both PRIMTARGET and SECTARGET for all objects.
 ;
 ; OUTPUTS:
 ;
@@ -58,20 +64,21 @@
 ;     use_cs3 - Generates no files.  Simply reports fiber collisions.
 ;     makePlots - Generate plOverlay-$PLATE.ps
 ;
+;   When there is a problem, the "fiberPlates" script outputs error
+;   messages like:
+;     collision at 554 = {307 125 6 160 47} OBJECT with...
+;     collision at 565 = {307 125 2 168 4015} COHERENT_SKY with...
+;
 ; EXAMPLES:
 ;
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
 ;   concat_dir()
-;   cpbackup
 ;   current_mjd()
 ;   djs_diff_angle()
-;   djs_laxisgen()
-;   plate_rotate
-;   yanny_free
-;   yanny_par()
-;   yanny_read
+;   splog
+;   yanny_readone()
 ;   yanny_write
 ;
 ; INTERNAL SUPPORT ROUTINES:
@@ -109,11 +116,9 @@ function design_append, allplug, oneplug, nadd=nadd
 
    platescale = 217.7358 ; mm/degree
 
-   ; Add more space around either GUIDE fibers or SKY fibers.
-   ; The only reason that we need more space around SKY fibers is
-   ; because they can get assigned as COHERENT_SKY and get guide fiber #11.
-   if (strmatch(oneplug.holetype, 'GUIDE*')) then morespace = 7.5 $ ; in mm
-    else if (strmatch(oneplug.holetype,'*SKY*')) then morespace = 7.5 $ ; in mm
+   ; Add more space around GUIDE or SKY fibers.
+   if (strmatch(oneplug.holetype, 'GUIDE*')) then morespace = 7.0 $ ; in mm
+;    else if (strmatch(oneplug.holetype, '*SKY*')) then morespace = 7.0 $ ; in mm
     else morespace = 0.
 
    ;----------
@@ -146,7 +151,7 @@ function design_append, allplug, oneplug, nadd=nadd
 
    ;----------
    ; Discard objects within 7.0 mm of existing guide fibers.
-   ; (Pad this to 10 mm just to be extra careful, since the downstream PLATE
+   ; (Pad this to 9 mm just to be extra careful, since the downstream PLATE
    ; code is so stupid.)
 
    if (keyword_set(allplug)) then begin
@@ -155,7 +160,7 @@ function design_append, allplug, oneplug, nadd=nadd
          r2 = (allplug[iguide].xfocal - oneplug.xfocal)^2 $
               + (allplug[iguide].yfocal - oneplug.yfocal)^2
          mindist = min(sqrt(r2))
-         if (mindist LT 10.0+morespace) then return, allplug
+         if (mindist LT 9.0+morespace) then return, allplug
       endif
    endif
 
@@ -166,7 +171,7 @@ end
 ;------------------------------------------------------------------------------
 pro design_plate, stardata1, tilenums=tilenum, platenums=platenum, $
  racen=racen, deccen=deccen, airtemp=airtemp, nstd=nstd, nminsky=nminsky, $
- nextra=nextra
+ nextra=nextra, ngtarg=ngtarg, southern=southern
 
    if (NOT keyword_set(tilenum)) then tilenum = 1
    if (NOT keyword_set(platenum)) then platenum = tilenum
@@ -176,7 +181,8 @@ pro design_plate, stardata1, tilenums=tilenum, platenums=platenum, $
    if (NOT keyword_set(nstd)) then nstd = 8L
    if (NOT keyword_set(nminsky)) then nminsky = 32L
    if (n_elements(nextra) EQ 0) then nextra = 10L
-   ntot = 651L + nextra ; Number of guide + science fibers
+   if (NOT keyword_set(ngtarg)) then ngtarg = 1L
+   ntot = 640L + nextra ; Number of guide + science fibers
 
    plugmaptfile = 'plPlugMapT-' + string(tilenum,format='(i4.4)') + '.par'
    plugmappfile = 'plPlugMapP-' + string(platenum,format='(i4.4)') + '.par'
@@ -254,31 +260,34 @@ pro design_plate, stardata1, tilenums=tilenum, platenums=platenum, $
 
    for iguide=0, nguide-1 do begin
       ;----------
-      ; Assign the nearest available guide fiber
+      ; Assign the nearest available guide fiber(s) to this guide position.
 
       print, 'Assigning guide fiber number ', iguide+1
 
-      nadd1 = 0
-      while (nadd1 EQ 0) do begin
+      for itarg=0, ngtarg-1 do begin
          indx = where(strtrim(stardata.holetype,2) EQ 'GUIDE' $
           AND priority GT 0, ct)
-         if (ct EQ 0) then $
-          message, 'Ran out of guide stars!'
-         adiff = djs_diff_angle( $
-          gfiber[iguide].xprefer, gfiber[iguide].yprefer, $
-          stardata[indx].xfocal, stardata[indx].yfocal)
-         junk = min(adiff, ibest)
+         if (ct EQ 0 AND itarg EQ 0) then $
+          message, 'No guide stars for guide #', iguide
+         if (ct GT 0) then begin
+            adiff = djs_diff_angle( $
+             gfiber[iguide].xprefer, gfiber[iguide].yprefer, $
+             stardata[indx].xfocal, stardata[indx].yfocal)
 
-         addplug = blankplug
-         struct_assign, stardata[indx[ibest]], addplug
-         addplug.holetype = 'GUIDE'
-         addplug.objtype = 'NA'
-         addplug.sectarget = 64L
+            junk = min(adiff, ibest)
 
-         allplug = design_append(allplug, addplug, nadd=nadd1)
+            addplug = blankplug
+            struct_assign, stardata[indx[ibest]], addplug
+            addplug.holetype = 'GUIDE'
+            addplug.objtype = 'NA'
+            addplug.sectarget = 64L
 
-         priority[indx[ibest]] = 0 ; Don't try to target again
-      endwhile
+            allplug = design_append(allplug, addplug, nadd=nadd1)
+            ntot = ntot + nadd1
+
+            priority[indx[ibest]] = 0 ; Don't try to target again
+         endif
+      endfor
    endfor
 
    ;----------
@@ -351,6 +360,16 @@ pro design_plate, stardata1, tilenums=tilenum, platenums=platenum, $
    endwhile
 
    ;----------
+   ; If Southern plate, then set the Southern target-selection bit
+
+   if (keyword_set(southern)) then begin
+      indx = where(strmatch(allplug.holetype,'OBJECT*') $
+       OR strmatch(allplug.holetype,'COHERENT_SKY*'))
+      allplug[indx].primtarget = allplug[indx].primtarget OR 2L^31
+      allplug[indx].sectarget = allplug[indx].sectarget OR 2L^31
+   endif
+
+   ;----------
    ; Write the plPlugMapT file
 
    outhdr = ['completeTileVersion   v1_0', $
@@ -362,7 +381,7 @@ pro design_plate, stardata1, tilenums=tilenum, platenums=platenum, $
    allplug.yfocal = -999 ; These values will be computed by PLATE
    allplug.spectrographid = -999L ; These values will be computed by PLATE
    allplug.fiberid = -999L ; These values will be computed by PLATE
-   allplug.throughput = 0L ; These values will be computed by PLATE
+   allplug.throughput = 1L ; These values will be computed by PLATE
    yanny_write, plugmaptfile, ptr_new(allplug), hdr=outhdr, $
     enums=plugenum, structs=plugstruct
 
@@ -410,6 +429,9 @@ pro design_plate, stardata1, tilenums=tilenum, platenums=platenum, $
     'MJDDESIGN', current_mjd())
    yanny_write, 'plObs.par', ptr_new(plobs), hdr=plhdr, structs=plstructs
 
+   ;----------
+   ; Run the SDSS "PLATE" code
+
    print
    print, 'In the "plate" product run the following commands:"
    print, '   makePlates'
@@ -427,6 +449,20 @@ pro design_plate, stardata1, tilenums=tilenum, platenums=platenum, $
    spawn, setupplate +'; echo "makeDrillPos" | plate'
    spawn, setupplate +'; echo "use_cs3" | plate'
    spawn, setupplate +'; echo "makePlots -skipBrightCheck" | plate'
+
+   ;----------
+   ; Read the final plPlugMapP file
+
+   plugmap = yanny_readone(plugmappfile)
+   junk = where(strmatch(plugmap.holetype,'GUIDE*'), nguide)
+   junk = where(strmatch(plugmap.holetype,'COHERENT_SKY*'), ncoherent)
+   junk = where(strmatch(plugmap.holetype,'OBJECT*'), nobject)
+   junk = where(strmatch(plugmap.objtype,'SKY*'), nsky)
+
+   splog, 'Final NGUIDE = ', nguide
+   splog, 'Final NCOHERENT_SKY = ', ncoherent
+   splog, 'Final NSKY = ', nsky
+   splog, 'Final non-SKY objects = ', nobject - nsky
 
    return
 end
