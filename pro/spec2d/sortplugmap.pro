@@ -52,7 +52,7 @@ function sortplugmap, plugmap, spectrographid, fibermask=fibermask, $
     else if (n_elements(fibermask) NE nfibers) then $
      message, 'Number of elements in FIBERMASK do not match NFIBER' 
    
-   plugsort = replicate({plugmapobj}, nfibers)
+   plugsort = replicate(plugmap[0], nfibers)
    plugsort.holetype = 'OBJECT'
    plugsort.objtype = 'NA'
 
