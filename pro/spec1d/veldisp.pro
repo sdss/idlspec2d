@@ -15,7 +15,7 @@ end
 ;	Do we need to pass wavelengths here?  
 ;       Or do we do this before this proc?
 ;
-pro veldisp, objflux, objerr, star, starerr, bestz=bestz, bestsigma=bestsigma, lowcutoff=lowcutoff
+pro veldisp, objflux, objerr, star, starerr, result, lowcutoff=lowcutoff
        
    if N_params() LT 2 then begin
      print, 'syntax - veldisp, flux, err, star, starerr, lowcutoff=lowcutoff'
@@ -23,6 +23,20 @@ pro veldisp, objflux, objerr, star, starerr, bestz=bestz, bestsigma=bestsigma, l
    endif
 
    if (NOT keyword_set(lowcutoff)) then lowcutoff = 1.0/30.0
+
+
+
+   tempresult = { $
+       z                  : 0.0, $
+       z_err              : 0.0, $
+       sigma_cc           : 0.0, $
+       sigma_cc_err       : 0.0, $
+       sigma_quotient     : 0.0, $
+       sigma_quotient_err : 0.0, $
+       sigma_diff         : 0.0, $
+       sigma_diff_err     : 0.0 }
+
+
 
    ;  We want to loop over objects, and just take star FFT once.
    ;  Let's do stellar FFT first
@@ -54,8 +68,7 @@ pro veldisp, objflux, objerr, star, starerr, bestz=bestz, bestsigma=bestsigma, l
    else if (size(objflux))[0] EQ 2 then nobj = (size(objflux))[2] $
    else error, 'flux array is neither 1d or 2d'
 
-   bestsigma = fltarr(nobj)
-   bestz = fltarr(nobj)
+   result = replicate(tempresult, nobj)
 
    for iobj=0,nobj-1 do begin
 
@@ -66,6 +79,10 @@ pro veldisp, objflux, objerr, star, starerr, bestz=bestz, bestsigma=bestsigma, l
        tempflux = objflux[*,iobj]
        temperr = objerr[*,iobj]
      endelse
+
+;     window,0 
+;     plot, tempflux
+;     oplot, temperr, color=500
 
      npixflux = n_elements(tempflux)
      npixerr = n_elements(temperr)
@@ -158,7 +175,7 @@ pro veldisp, objflux, objerr, star, starerr, bestz=bestz, bestsigma=bestsigma, l
         endfor
 
         fitcen = velcen - 0.5 * parabola[1]/parabola[2]  - pad
-        bestz[iobj] = fitcen   ; this redshift is in pixels!
+        result[iobj].z = fitcen   ; this redshift is in pixels!
 
         twopiei = 2.0 * !Pi * complex(0.0,1.0)
         phase = exp( - twopiei * fftfreq * fitcen)
@@ -186,13 +203,14 @@ pro veldisp, objflux, objerr, star, starerr, bestz=bestz, bestsigma=bestsigma, l
 ;       We need a routine for each method.
 ;
 
-        chi2diff = fltarr(100)
-        chi2quotient = fltarr(100)
-        sigma = fltarr(100)
-        alpha = fltarr(100)
-        for i=0,99 do begin
+        nloop = 30
+        chi2diff = fltarr(nloop)
+        chi2quotient = fltarr(nloop)
+        sigma = fltarr(nloop)
+        alpha = fltarr(nloop)
+        for i=0,nloop-1 do begin
            
-          sigma[i] = i/10.0;  in pixels
+          sigma[i] = i/5.0;  in pixels
           broad = exp(-(fftfreq*sigma[i] * 2.0 * !Pi)^2/2.0)
 
           numer = fluxfft * conj(starshift) * broad
@@ -212,18 +230,24 @@ pro veldisp, objflux, objerr, star, starerr, bestz=bestz, bestsigma=bestsigma, l
  
 
       minchi2 = min(chi2diff,minplace)
-      bestsigma[iobj] = sigma[minplace] 
 
-      chip = poly_fit(sigma/10.0,chi2diff,10,/double)
-      lotsofsigma = findgen(1000)/100.0
-      chifit = poly(lotsofsigma/10.0,chip)
+
+      ; ------------------------------------------------------------------
+      ;  do fine grid to locate chi^2 minimum
+
+
+      y2 = spl_init(sigma, chi2diff)
+      lotsofsigma = findgen(6000)/1000.0
+      chifit = spl_interp(sigma, chi2diff, y2, lotsofsigma)
       minchifit = min(chifit,fitplace)
-     
-      bestsigma[iobj] = lotsofsigma[fitplace]
-      print,bestz[iobj], bestsigma[iobj], minchi2, alpha[minplace]
+      result[iobj].sigma_diff = lotsofsigma[fitplace]
 
-      plot,sigma,chi2diff,ps=1,/yno
-      oplot,lotsofsigma,chifit
+
+      print, iobj, result[iobj].z, result[iobj].z*0.000230259, $
+              result[iobj].sigma_diff, result[iobj].sigma_diff*70.0, minchi2, alpha[minplace]
+;      window,1 
+;      plot,sigma,chi2diff,ps=1,/yno
+;      oplot,lotsofsigma,chifit, color=500
      endelse
    endfor 
 
