@@ -176,7 +176,7 @@ pro spread_frames, spframes, window=window, binsz = binsz, $
           ; No match will be found for unmapped fibers so set mags to zero
           if match[0] ne -1 then begin
              tempplugtag[ifib].mag = tsobj[match].fibercounts 
-             tempplugtag[ifib].tsobjid = tsobjid[match]
+             tempplugtag[ifib].tsobjid = tsobjid[match,*]
           endif else begin
              splog, 'Fiber mags set to zero for unmapped fiber: ', $
                      tempplugtag[ifib].fiberid
