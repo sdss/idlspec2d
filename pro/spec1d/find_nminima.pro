@@ -51,7 +51,6 @@
 ;   djs_icolor()
 ;   djs_oplot
 ;   djs_plot
-;   djs_svdfit()
 ;   mpfitpeak
 ;   mpfitpeak_gauss
 ;   textoidl
@@ -104,6 +103,11 @@ function zfitmin, yarr, xarr, dofarr=dofarr, $
    junk = where(xarr GT xguess, nright)
    if (nleft EQ 0 OR nright EQ 0) then begin
       errcode = -1L
+   endif
+
+   ; Insist that not all the Y values are the same
+   if (min(yarr) EQ max(yarr)) then begin
+      errcode = -7L
    endif
 
    if (keyword_set(width)) then begin
@@ -179,27 +183,42 @@ function zfitmin, yarr, xarr, dofarr=dofarr, $
 
    endif else if (nthis EQ 3 AND errcode EQ 0) then begin
 
-      ndegree = 3
-      coeff = djs_svdfit(thisx-xguess, thisy, ndegree, $
-       yfit=yfit, covar=covar, sigma=corrsig, /double)
-      if (nthis LE ndegree) then $
-       yerror = 0 $
-      else $
-       yerror = sqrt(total( (thisy-yfit)^2 / (nthis - ndegree) ))
-      xbest = -0.5 * coeff[1] / coeff[2] + xguess
+      mmatrix = [[1d0,1d0,1d0], [thisx-xguess], [([thisx-xguess])^2]]
+      coeff = invert(mmatrix) # thisy
+      xbest = -coeff[1] / (2. * coeff[2]) + xguess
+      ymin = coeff[0] - (coeff[1])^2 / (4. * coeff[2])
 
       ; Compute the fit error of the minimum of the quadratic.
-      ; We rescale by the apparent errors in Y, which would be equivalent
-      ; to the call SVDFIT(WEIGHTS=REPLICATE(1.,N_ELEMENTS(INDX))/YERROR)
-      dx0_db = -0.5 / coeff[2]
-      dx0_dc = 0.5 * coeff[1] / (coeff[2])^2
-      xerr1 = sqrt( dx0_db^2 * covar[1,1] + dx0_dc^2 * covar[2,2] $
-       + 2 * dx0_db * dx0_dc * covar[1,2] ) * yerror
+      ; This is set to zero, since a quadratic goes exactly through the 3 pts.
+      xerr1 = 0
 
       ; Compute where chi^2 increases by 1
-      xerr2 = 1 / sqrt(coeff[2])
+      xerr2 = sqrt((coeff[1])^2 - 4.*coeff[2]*(coeff[0]-ymin-1.)) $
+       / (2.*coeff[2])
 
-      ybest = poly(xbest-xguess, coeff) / meandof
+      ybest = ymin / meandof
+
+;      ndegree = 3
+;      coeff = svdfit(thisx-xguess, thisy, ndegree, $
+;       yfit=yfit, covar=covar, sigma=corrsig, /double)
+;      if (nthis LE ndegree) then $
+;       yerror = 0 $
+;      else $
+;       yerror = sqrt(total( (thisy-yfit)^2 / (nthis - ndegree) ))
+;      xbest = -0.5 * coeff[1] / coeff[2] + xguess
+;
+;      ; Compute the fit error of the minimum of the quadratic.
+;      ; We rescale by the apparent errors in Y, which would be equivalent
+;      ; to the call SVDFIT(WEIGHTS=REPLICATE(1.,N_ELEMENTS(INDX))/YERROR)
+;      dx0_db = -0.5 / coeff[2]
+;      dx0_dc = 0.5 * coeff[1] / (coeff[2])^2
+;      xerr1 = sqrt( dx0_db^2 * covar[1,1] + dx0_dc^2 * covar[2,2] $
+;       + 2 * dx0_db * dx0_dc * covar[1,2] ) * yerror
+;
+;      ; Compute where chi^2 increases by 1
+;      xerr2 = 1 / sqrt(coeff[2])
+;
+;      ybest = poly(xbest-xguess, coeff) / meandof
 
       ; Insist that XBEST is a minimum (not a maximum)
       if (coeff[2] LT 0) then begin
