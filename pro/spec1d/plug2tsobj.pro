@@ -18,7 +18,7 @@
 ;   plugmap    - Plug map structure, which must contain RA, DEC.
 ;                This must be set if RA and DEC are not set.
 ;   dmin       - Minimum separation between input position and position
-;                of the closest match; default to 2.0 arcsec.
+;                of the closest match; default to 60.0 arcsec.
 ;
 ; OUTPUTS:
 ;   tsobj      - tsObj structure, sorted such that each entry corresponds
@@ -28,18 +28,19 @@
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
-;   The tsObj files are assumed to be in the directory $SPECTRO_DATA/plates.
-;   These files were constructed (by Fermi) to have only the objects for
-;   each plate.  But since plates can be re-plugged, we must re-sort these
+;   The calibObj files are assumed to be in the directory $SPECTRO_DATA/calibobj.
+;   These files were to have only the 640 objects for each plate.
+;   But since plates can be re-plugged, we must re-sort these
 ;   files to match the object ordering in the plug-map structure.
 ;
 ; EXAMPLES:
 ;   Read the plug-map for plate 306, fibers 1 to 10, then construct the
-;   tsObj structure:
+;   calibObj structure:
 ;   > readspec, 306, indgen(10)+1, plug=plug
 ;   > tsobj = plug2tsobj(306,plugmap=plug)
 ;
 ; BUGS:
+;   I should match objects based upon the MATCHRA,MATCHDEC in calibObj ???
 ;
 ; PROCEDURES CALLED:
 ;   djs_diff_angle()
@@ -63,7 +64,7 @@ function plug2tsobj, plateid, ra, dec, plugmap=plugmap, dmin=dmin
       dec = plugmap.dec
    endif
 
-   if (NOT keyword_set(dmin)) then dmin = 2.0
+   if (NOT keyword_set(dmin)) then dmin = 60.0
 
    ;----------
    ; If PLATEID is a vector, then sort by plate number and call this routine
@@ -90,13 +91,17 @@ function plug2tsobj, plateid, ra, dec, plugmap=plugmap, dmin=dmin
    endif
 
    platestr = strtrim(string(fix(plateid[0])),2)
-   filename = 'tsObj*-*' + platestr + '.fit*'
+;   filename = 'tsObj*-*' + platestr + '.fit*'
+   platestr = string(plateid[0],format='(i4.4)')
+   filename = 'calibPlateP-' + platestr + '.fits'
 
    ; Select the first matching file if there are several
+;   filename = (findfile(filepath(filename, root_dir=root_dir, $
+;    subdirectory='plates')))[0]
    filename = (findfile(filepath(filename, root_dir=root_dir, $
-    subdirectory='plates')))[0]
+    subdirectory='calibobj')))[0]
    if (NOT keyword_set(filename)) then begin
-      print, 'tsObj file not found for plate ' + platestr
+      print, 'WARNING: calibObj file not found for plate ' + platestr
       return, 0
    endif
 
@@ -106,7 +111,7 @@ function plug2tsobj, plateid, ra, dec, plugmap=plugmap, dmin=dmin
    if (keyword_set(message)) then tstemp = 0 $ ; File is invalid FITS file
     else tstemp = mrdfits(filename, 1)
    if (NOT keyword_set(tstemp)) then begin
-      print, 'tsObj file is empty: ' + filename
+      print, 'WARNING: calibObj file is empty: ' + filename
       return, 0
    endif
 
@@ -124,7 +129,7 @@ function plug2tsobj, plateid, ra, dec, plugmap=plugmap, dmin=dmin
          adist = djs_diff_angle(tstemp.ra, tstemp.dec, ra[iplug], dec[iplug])
          thismin = min(adist, imin)
          if (thismin GT dmin/3600.) then $
-          splog, 'WARNING: No matches to within ', dmin, ' arcsec at RA=', $
+          splog, 'Warning: No matches to within ', dmin, ' arcsec at RA=', $
            ra[iplug], ' DEC=', dec[iplug] $
          else $
           tsobj[iplug] = tstemp[imin]
