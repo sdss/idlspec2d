@@ -1,10 +1,13 @@
 
 MYFLUXCALIB: Put the plate+MJD+camname in the plot titles.
 PIXELMASK_BITS: Now simply call the new function SDSS_FLAGVAL().
+PCA_STAR: Now read the Yanny file "eigeninput_star.par", and use cz.
 PLATELIST: Make consistent with changes to spChunklist.par.
 PLOTSPEC: Added /ORMASK, /ANDMASK keywords.  Plot text for the zwarning flags.
            Use /normal coordinates for plot labels, so they stay on
            the plot even when zoomming in and out.
+QUICKEXTRACT: Do not issue warning message for spatial widths onsmear exposures
+           since S/N can be so low.  This addresses PR #3511.
 READSPEC,SPEC_APPEND: Add the /ALIGN option for aligning all the spectra
            in wavelength.  Also, fix a bug whereby reading objects from
            multiple could get mis-aligned if the OBJHDR keyword was specified
@@ -18,8 +21,11 @@ SKYSUBTRACT: Fix stupid bug where sky-fits are rejected if the mean
            cause all the b1 exposures on plate 283/51584 to get rejected
            (one of at least several such examples).
 TELLURIC_CORR: Center the plot title.
+ZTWEAK_STAR: New proc for getting the zero-point of the stellar
+           templates by matching to the Elodie spectra.
 
 eigeninput_star.par: Version of "eigeninput_star.dat" as a Yanny file.
+           Add more Carbon_DQ stars.  Use cz instead of z.
 spChunkList.par: Remove verstarg from structure, and add progname.
 spMaskbits.par: Heavily modified file to include many more types of mask bits.
 sprobot_start: Set the environment variable "DISPLAY=:0.0" so that any
