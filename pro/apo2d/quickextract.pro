@@ -172,7 +172,7 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    ; Check for whopping fibers in SOS reductions, 
    ; especially useful for flagging affected sky fibers
 
-   scrunch = djs_median(flux, 1) ; Find median counts/row in each fiber
+   scrunch = djs_median(flux * (fluxivar GT 0), 1) 
    whopping = find_whopping(scrunch, 10000.0, whopct)
    if (whopping[0] NE -1) then begin
      splog, 'WARNING: Whopping fiber(s) at ', whopping, $
