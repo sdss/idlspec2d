@@ -61,10 +61,9 @@ function smooth_halo2d, image, wset, kernel_size=kernel_size
       x = findgen(nr) # replicate(1,nr)
       r = sqrt(x^2 + transpose(x^2))
 
-      qBs = f[irow] / 2 / !Pi/ r0[irow] * exp(-r/r0[irow])/ (r > 1)
+      qBs = f[irow] / (1.0 - f[irow]) / 2.0 / !Pi/ r0[irow] * exp(-r/r0[irow])/ (r > 1)
    
-      Bs = [reverse(qbs[1:*,*]) , qbs]
-      Bs = transpose(Bs)
+      Bs = transpose([reverse(qbs[1:*,*]) , qbs])
       Bs = [reverse(Bs[1:*,*]), Bs] 
 
       inc = lindgen(2*nr-1) + irow - (nr-1)
