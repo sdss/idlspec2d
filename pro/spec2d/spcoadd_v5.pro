@@ -434,6 +434,10 @@ pro spcoadd_v5, spframes, outputname, $
    invcorrimg = 1. / corrimg
    minicorrval = 0.05 / mean(corrimg)
    divideflat, finalflux, invvar=finalivar, invcorrimg, minval=minicorrval
+   finalandmask = finalandmask $
+    OR (invcorrimg LE minicorrval) * pixelmask_bits('BADFLUXFACTOR')
+   finalormask = finalormask $
+    OR (invcorrimg LE minicorrval) * pixelmask_bits('BADFLUXFACTOR')
 
    ; Plot S/N and throughput **after** this distortion-correction.
    ; (This over-writes header cards written in the first call.)
