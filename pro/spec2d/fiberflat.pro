@@ -46,6 +46,9 @@
 ;   The parameters for SLATEC_SPLINEFIT are only used when generating the
 ;   "superflat".
 ;
+;   The 'BADFLAT' bit is set in FIBERMASK if the mean throughput for
+;   a fiber is less than 0.7 times the median of all good-fiber throughputs.
+;
 ; EXAMPLES:
 ;
 ; BUGS:
@@ -193,8 +196,9 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
    ;----------------------------------------------------------------
    ;  Set flatfield bit in FIBERMASK if needed
 
-   fmed = djs_median(fflat,1)
-   badflat = where(fmed LT 0.5 * djs_median(fmed))
+;   fmed = djs_median(fflat,1)
+;   badflat = where(fmed LT 0.7 * djs_median(fmed))
+;   badflat = where(medval LT 0.7 * globalmed)
 
    if (badflat[0] NE -1) then  $
      fibermask[badflat] = fibermask[badflat] OR fibermask_bits('BADFLAT')
