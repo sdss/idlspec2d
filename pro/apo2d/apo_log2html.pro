@@ -46,7 +46,9 @@
 ;   apo_log_endplate()
 ;   apo_log_fields()
 ;
-; REVISION HISTORY:
+;
+; DATA FILES:
+;   $IDLSPEC2D_DIR/examples/opLimits.par
 ;
 ; REVISION HISTORY:
 ;   30-Apr-2000  Written by D. Schlegel, APO
