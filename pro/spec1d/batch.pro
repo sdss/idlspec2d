@@ -20,6 +20,8 @@
 ;                output file contains this string; scalar or [NPROGRAM]
 ;
 ; OPTIONAL KEYWORDS:
+;   priority   - Priority for each job, where the jobs with the largest
+;                value are done first [NPROGRAM]
 ;   wtime      - Sleep time between checking status of all jobs; default to
 ;                600 seconds.
 ;
@@ -34,7 +36,12 @@
 ; PROCEDURES CALLED:
 ;
 ; INTERNAL SUPPORT ROUTINES:
+;   batch_spawn
 ;   create_program_list()
+;   create_host_list()
+;   batch_if_done()
+;   batch_assign_job
+;   batch_finish_job
 ;
 ; REVISION HISTORY:
 ;   17-Oct-2000  Written by D. Schlegel, Princeton
@@ -44,13 +51,12 @@ pro batch_spawn, command, retval
 
    splog, command
    spawn, command, retval
-; ???
-;retval = ''
 
    return
 end
 ;------------------------------------------------------------------------------
-function create_program_list, localfile, outfile, command, endstring
+function create_program_list, localfile, outfile, command, endstring, $
+ priority=priority
 
    nprog = n_elements(localfile[0,*])
 
@@ -60,7 +66,7 @@ function create_program_list, localfile, outfile, command, endstring
     'OUTFILE', ptr_new(), $
     'COMMAND', '', $
     'ENDSTRING', '', $
-    'PRIOIRTY', 1L, $
+    'PRIORITY', 1L, $
     'STATUS', 'NOTDONE' )
 
    proglist = replicate(ftemp, nprog)
@@ -73,6 +79,7 @@ function create_program_list, localfile, outfile, command, endstring
 
    proglist.command = command
    proglist.endstring = endstring
+   if (keyword_set(priority)) then proglist.priority = priority
 
    return, proglist
 end
@@ -87,6 +94,7 @@ function create_host_list, protocol, remotehost, remotedir
     'REMOTEHOST', '', $
     'REMOTEDIR', '', $
     'PROTOCOL', '', $
+    'CPSTRING', '', $
     'STATUS', 'IDLE' )
 
    hostlist = replicate(ftemp, nhost)
@@ -95,14 +103,28 @@ function create_host_list, protocol, remotehost, remotedir
    hostlist[*].remotedir = remotedir
    hostlist[*].protocol = protocol
 
+   for ihost=0, n_elements(hostlist)-1 do begin
+      case hostlist[ihost].protocol of
+         'ssh' : hostlist[ihost].cpstring = 'scp'
+         'ssh1': hostlist[ihost].cpstring = 'scp1'
+         'ssh2': hostlist[ihost].cpstring = 'scp2'
+         'rsh' : hostlist[ihost].cpstring = 'rcp'
+         else  :
+      endcase
+   endfor
+
    return, hostlist
 end
 
 ;------------------------------------------------------------------------------
 function batch_if_done, remotehost, remotedir, protocol, outfile0, endstring
 
-   if (keyword_set(remotehost)) then begin
-      batch_spawn, protocol + ' tail -1 ' + djs_filepath(outfile0, root_dir=remotedir)
+   sq = "'"
+
+   if (keyword_set(protocol)) then begin
+      prothost = protocol + ' ' + remotehost + ' '
+      batch_spawn, prothost + sq+' tail -1 ' $
+       + djs_filepath(outfile0, root_dir=remotedir)+sq, tailstring
    endif else begin
       batch_spawn, 'tail -1 ' + outfile0, tailstring
    endelse
@@ -120,21 +142,23 @@ pro batch_assign_job, ihost, iprog
 
    common com_batch, hostlist, proglist
 
+   sq = "'"
+
    if (hostlist[ihost].status NE 'IDLE') then $
     message, 'Host is not idle'
 
    splog, 'Assigning job ' + proglist[iprog].progname $
     + ' to host ' + hostlist[ihost].remotehost
 
-   if (hostlist[ihost].protocol EQ 'ssh') then cpstring = 'scp' $
-    else cpstring = 'rcp'
+   cpstring = hostlist[ihost].cpstring
    prothost = hostlist[ihost].protocol + ' ' + hostlist[ihost].remotehost + ' '
 
-   if (keyword_set(hostlist[ihost].remotehost)) then begin
+   if (keyword_set(hostlist[ihost].protocol)) then begin
 
       ; Create directories on remote machine for input files.
       ; Create one remote directory at a time, copying files over it it.
-      allinput = djs_filepath(*proglist[iprog].localfile, root_dir=hostlist[ihost].remotedir)
+      allinput = djs_filepath(*proglist[iprog].localfile, $
+       root_dir=hostlist[ihost].remotedir)
       junk = fileandpath(allinput, path=newdir)
 
       iuniq = uniq(newdir, sort(newdir))
@@ -156,7 +180,8 @@ pro batch_assign_job, ihost, iprog
       batch_spawn, prothost + 'mkdir -p ' + newdir
 
       ; Launch the command in the background
-      batch_spawn, prothost + proglist[iprog].command + ' &'
+      batch_spawn, prothost + sq+'cd '+hostlist[ihost].remotedir+'; ' $
+       +proglist[iprog].command + ' &'+sq
 
    endif else begin
 
@@ -166,7 +191,6 @@ pro batch_assign_job, ihost, iprog
       batch_spawn, 'mkdir -p ' + newdir
 
       ; Launch the command in the background
-stop
       batch_spawn, proglist[iprog].command + ' &'
 
    endelse
@@ -189,32 +213,47 @@ pro batch_finish_job, ihost, iprog
    splog, 'Finishing job ' + proglist[iprog].progname $
     + ' on host ' + hostlist[ihost].remotehost
 
-   if (hostlist[ihost].protocol EQ 'ssh') then cpstring = 'scp' $
-    else cpstring = 'rcp'
+   cpstring = hostlist[ihost].cpstring
    prothost = hostlist[ihost].protocol + ' ' + hostlist[ihost].remotehost + ' '
 
-   if (keyword_set(hostlist[ihost].remotehost)) then begin
+   if (keyword_set(hostlist[ihost].protocol)) then begin
 
-      alloutput = djs_filepath(proglist[iprog].outfile, root_dir=hostlist[ihost].remotedir)
+      alloutput = djs_filepath(*proglist[iprog].outfile, $
+       root_dir=hostlist[ihost].remotedir)
 
       ; Now create local directories for output files
-      junk = fileandpath(proglist[iprog].outfile, path=newdir)
+      junk = fileandpath(*proglist[iprog].outfile, path=newdir)
       newdir = string(alloutdir+' ',format='(99a )')
       batch_spawn, 'mkdir -p ' + newdir
 
       ; Create directories on local machine for output files.
       ; Create one local directory at a time, copying files over it it.
-      junk = fileandpath(proglist[iprog].outfile, path=newdir)
+      junk = fileandpath(*proglist[iprog].outfile, path=newdir)
 
       iuniq = uniq(newdir, sort(newdir))
-      for i=0, n_elements(iuniq) do begin
+      for i=0, n_elements(iuniq)-1 do begin
          newdir1 = newdir[iuniq[i]]
          indx = where(newdir EQ newdir1)
 
+         ; Create local directory
          batch_spawn, 'mkdir -p ' + newdir1
-         tmp1 = string(prothost+':'+alloutput[indx]+' ',format='(99a )')
+
+         ; Copy output files from remote machine to local
+         tmp1 = string(hostlist[ihost].remotehost+':' $
+          +alloutput[indx]+' ',format='(99a )')
          batch_spawn, cpstring + ' ' + tmp1 + ' ' + newdir1
+
       endfor
+
+      ; Remove remote output files
+      batch_spawn, prothost + ' rm -f ' $
+       + string(alloutput+' ',format='(99a )')
+
+      ; Remove remote input files
+      allinput = djs_filepath(*proglist[iprog].localfile, $
+       root_dir=hostlist[ihost].remotedir)
+      batch_spawn, prothost + ' rm -f ' $
+       + string(allinput+' ',format='(99a )')
 
    endif
 
@@ -227,7 +266,7 @@ end
 
 ;------------------------------------------------------------------------------
 pro batch, localfile, outfile, protocol, remotehost, remotedir, $
- command, endstring, wtime=wtime
+ command, endstring, priority=priority, wtime=wtime
 
    common com_batch, hostlist, proglist
 
@@ -236,7 +275,8 @@ pro batch, localfile, outfile, protocol, remotehost, remotedir, $
    ;----------
    ; Create a list of programs to execute (and their status)
 
-   proglist = create_program_list(localfile, outfile, command, endstring)
+   proglist = create_program_list(localfile, outfile, command, endstring, $ 
+    priority=priority)
    nprog = n_elements(proglist)
    splog, 'Number of batch programs = ', nprog
 
@@ -293,13 +333,15 @@ pro batch, localfile, outfile, protocol, remotehost, remotedir, $
       splog, 'Number of DONE jobs = ', ndone
 
       ;----------
-      ; Assign jobs
+      ; Assign jobs, doing the highest priority jobs first
 
       if (nidle GT 0 AND nunassign GT 0) then begin
          for j=0, nidle-1 do begin ; Loop over available hosts
-            k = (where(proglist.status EQ 'UNASSIGNED'))[0] ; Next program
-            if (k NE -1) then begin
-               batch_assign_job, iidle[j], k
+            k = (where(proglist.status EQ 'UNASSIGNED'))
+            if (k[0] NE -1) then begin
+               junk = max(proglist[k].priority, kmax)
+               kbest = k
+               batch_assign_job, iidle[j], k[kmax]
             endif
          endfor
       endif
@@ -313,4 +355,4 @@ pro batch, localfile, outfile, protocol, remotehost, remotedir, $
 
    return
 end
-
+;------------------------------------------------------------------------------
