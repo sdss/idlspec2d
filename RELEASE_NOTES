@@ -48,11 +48,13 @@ SDSSPROC: Re-enable the call to 'speclog_version'.
         whereby the DA has written invalid FITS header keywords.
         Use the measured read noise (rather than the value in the op file)
         for constructing the inverse variance image.
-        Add two more possible warning messages from testing the statistics
+        Add three more possible warning messages from testing the statistics
         of the bias region:
           "expected read noise = ..., measured = ... DN",
         and
-          "bias region difference at xxx-th-percentile =... DN".
+          "bias region difference at xxx-th-percentile =... DN",
+        and
+          "Amp #... way too many pixels (xxx%) below bias-5*sigma=... DN."
         This replaces the warning message:
           "Std. dev. in bias region for amp#... is ... DN (5-sig clip)".
         These tests should be more robustly sensitive to PR #2335
