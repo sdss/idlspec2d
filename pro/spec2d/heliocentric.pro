@@ -6,8 +6,8 @@
 ;   Compute correction term to add to velocities to convert to heliocentric.
 ;
 ; CALLING SEQUENCE:
-;   vhelio = heliocentric, ra, dec, [ epoch, jd=, tai=, $
-;    longitude=, latitude=, altitude= ]
+;   vcorr = heliocentric( ra, dec, [ epoch, jd=, tai=, $
+;    longitude=, latitude=, altitude= ] )
 ;
 ; INPUTS:
 ;   ra             - Right ascension [degrees]
@@ -26,7 +26,7 @@
 ;   altitude       - Altitude of observatory; default to 2788 m for APO
 ;
 ; OUTPUTS:
-;   vhelio         - Velocity correction term, in km/s, to add to measured
+;   vcorr          - Velocity correction term, in km/s, to add to measured
 ;                    radial velocity to convert it to the heliocentric frame.
 ;
 ; OPTIONAL OUTPUTS:
@@ -107,6 +107,6 @@ function heliocentric, ra, dec, epoch, jd=jd, tai=tai, $
    ; Project the velocity onto the line of sight to the star.
    vrotate = vc * cos(latrad) * cos(dec/DRADEG) * sin(HA/DRADEG)
 
-   return, (-vbarycen - vrotate)
+   return, (-vbarycen + vrotate)
 end
 
