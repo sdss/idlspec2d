@@ -61,6 +61,7 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
    inputdir = yanny_par(hdr, 'inputdir')
    plugdir = yanny_par(hdr, 'plugdir')
    flatdir = yanny_par(hdr, 'flatdir')
+   mjd     = yanny_par(hdr, 'MJD')
 
    ; Remove the MJD from INPUTDIR, PLUGDIR
    junk = fileandpath(inputdir, path=inputdir)
@@ -82,11 +83,18 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
      planfile = findfile('spPlancomb*.par')
      if planfile[0] EQ '' then return
 
+ 
      nfile = n_elements(planfile)
      for i = 0, nfile - 1 do begin
-       spcombine, planfile[i], adderr=0
-       platesn, planfile=planfile[i]
-       make2dmerge, planfile[i]
+       yanny_read, planfile[i], pdata, hdr=hdr
+       hmm = where((*pdata[0]).mjd EQ mjd)
+       yanny_free, pdata
+
+       if hmm[0] NE -1 then begin
+         spcombine, planfile[i], adderr=0
+         platesn, planfile=planfile[i]
+         make2dmerge, planfile[i]  
+       endif
      endfor
    endif
 
