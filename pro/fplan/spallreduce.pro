@@ -78,24 +78,8 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
    ;  Now coadd, and also produce stopgap 2dmerge directory
    ;
 
-   if NOT keyword_set(nocombine) then begin
-     spplancomb, topindir='.', /clobber
-     planfile = findfile('spPlancomb*.par')
-     if planfile[0] EQ '' then return
-
- 
-     nfile = n_elements(planfile)
-     for i = 0, nfile - 1 do begin
-       yanny_read, planfile[i], pdata, hdr=hdr
-       hmm = where((*pdata[0]).mjd EQ mjd)
-       yanny_free, pdata
-
-       if hmm[0] NE -1 then begin
-         spcombine, planfile[i]
-         make2dmerge, planfile[i]  
-       endif
-     endfor
-   endif
+   if keyword_set(nocombine) then return
+   spallcombine, mjd, topindir='.'
 
    return
 end
