@@ -89,7 +89,9 @@ function trace320crude, fimage, invvar, ystart=ystart, nmed=nmed, xgood=xgood, $
    xy2traceset, yset, xset, firstset, ncoeff=5, yfit=xx, invvar=xmask, $
                 maxdev=maxdev
 
-   ixgood = where(xgood AND xx[ystart,*] GT 0.0)
+   nx = (size(xset))[1]
+   quarterbad = (total(xmask,1) LT 3*nx/4)
+   ixgood = where(xgood AND NOT quarterbad)
    xstart[ixgood] = xx[ystart,ixgood]
 
    ; Compare the traces in each row to those in row YSTART.
@@ -104,7 +106,7 @@ function trace320crude, fimage, invvar, ystart=ystart, nmed=nmed, xgood=xgood, $
    ixgood = where(xgood)
 
    ; set fibermask bits
-   ixbad = where(xgood EQ 0)
+   ixbad = where(xgood EQ 0 OR quarterbad)
    if (ixbad[0] NE -1) then $
         fibermask[ixbad] = fibermask[ixbad] OR fibermask_bits('BADTRACE')
 
