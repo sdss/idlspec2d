@@ -81,7 +81,7 @@ pro spreduce1d, platefile, fiberid=fiberid, doplot=doplot, debug=debug
       platefile = platefile[0]
    endif else begin
       for i=0, nplate-1 do begin
-         spreduce1d, platefile[i], fiberid=fiberid
+         spreduce1d, platefile[i], fiberid=fiberid, doplot=doplot, debug=debug
       endfor
       return
    endelse
