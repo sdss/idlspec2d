@@ -6,6 +6,8 @@ FIND_NMINIMA: Remove use of DJS_SVDFIT (which didn't work on the Mac
            with an explicit solution of the quadratic equation.
            Add another error code (-7L) for the case where all of the Y
            values are identical, in which case the fit is impossible.
+GET_TAI: Add /SILENT option.
+SDSSPROC: Call the new proc WARN_DAYTIME.
 SPCALIB: The correct TSET structure was not always being written
            to the spFlat files (though those files aren't actually
            used for anything), nor the FIBERMASK array.
@@ -25,6 +27,10 @@ SPREDUCE: Major change to how the flat+arc calibrations are chosen.
            an arc taken during the afternoon (as happened for plate 820
            on MJD 52405, c.f., PR #3966) if it is not explicitly marked
            as a test exposure.
+WARN_DAYTIME: New proc to print a warning if an excellent-quality exposure
+           taken with the Sun up.  For example, this is how the bad arc
+           exposure got in to ruin plate 820/52405 (PR #3966).
+
 examples/opHdrFix.par: Go through all the headers looking for flat, arc,
            or science exposures taken while the sun was up.  Discard them
            in this file, which takes care of all corrections through
