@@ -1,20 +1,40 @@
 
-pro aporeduce, exposure, indir, outdir=outdir, plugmapfile=plugmapfile
+pro aporeduce, filename, indir, outdir=outdir, plugmapfile=plugmapfile
 
+     if (NOT keyword_set(indir)) then indir='./'
      if (NOT keyword_set(outdir)) then outdir=indir
 
-     expstr = string(exposure,format='(i8.8)')
-     files = findfile(filepath('sdR*'+expstr $
-                        +'.fit',root_dir=indir), count=nfiles)
+     if (size(filename,/tname) NE 'STRING') then begin
+        message, 'filename is not a string', /cont
+        return
+     endif
 
-     if (nfiles NE 4) then return
-     files = files[sort(files)]
+     filer = strmid(filename,0,3)  ; root 'sdR'
+     filec = strmid(filename,4,2)  ; camera number
+     filee = strmid(filename,7,8)  ; exposure number
 
      camnames = ['b1','b2','r1','r2']
 
+     cam = (where(filec EQ camnames))[0]
+
+     if (filer NE 'sdR' OR cam EQ -1) then begin
+        message, 'Cannot parse filename '+filename, /cont
+        return
+     endif
+
+     
+     file = findfile(filepath(filename,root_dir=indir), count=nfiles)
+
+     if (nfiles NE 1) then begin
+        message, 'Found '+string(nfiles)+' instead of 1', /cont
+        return
+     endif
+
+     file = file[0]
+
      ; find flavor, plate and MJD
 
-     hdr = headfits(files[0])
+     hdr = headfits(file)
 
      if (size(hdr,/tname) NE 'STRING') then return
 
@@ -29,40 +49,36 @@ pro aporeduce, exposure, indir, outdir=outdir, plugmapfile=plugmapfile
          plugmapfile = '/data/spectro/plugmap/plPlugMapM-'+$
              sxpar(hdr,'NAME')+'.par'
 
-     for icam=0, 3 do begin
-
-        flatname = filepath('tset-'+platestr+'-'+camnames[icam]+'.fits', $
+     flatname = filepath('tset-'+platestr+'-'+filec+'.fits', $
                              root_dir=outdir)
-        flatexist = findfile(flatname) NE ''
-        arcname = filepath('wset-'+platestr+'-'+camnames[icam]+'.fits', $
+     flatexist = findfile(flatname) NE ''
+     arcname = filepath('wset-'+platestr+'-'+filec+'.fits', $
                              root_dir=outdir)
-        arcexist = findfile(arcname) NE ''
+     arcexist = findfile(arcname) NE ''
 
-        case flavor of
-          'flat' : begin 
-                if (NOT flatexist) then $
-                   quicktrace, files[icam], flatname
-                end
+     case flavor of
+       'flat' : if (NOT flatexist[0]) then quicktrace, file, flatname
 
-          'arc'  : begin
-                if (flatexist AND (NOT arcexist)) then $
-                   quickwave, files[icam], arcname, flatname
-                end
+       'arc'  : if (flatexist[0] AND (NOT arcexist[0])) then $
+                   quickwave, file, arcname, flatname
 
-          'science': begin
-	        exptime = sxpar(hdr, 'EXPTIME')
-                outname = filepath('sci-'+platestr+'-'+camnames[icam]+$
-                             '-'+expstr+'.fits', root_dir=outdir)
+       'science': begin
+	  exptime = sxpar(hdr, 'EXPTIME')
+          outname = filepath('sci-'+platestr+'-'+filec+'-'+filee+'.fits',$
+                root_dir=outdir)
 
-                if (flatexist AND arcexist AND exptime GT 300) then begin
-                    quickextract, flatname, arcname, files[i], $
-                     outname, plugmapfile
-                endif
-                end
+          if (flatexist[0] AND arcexist[0] AND exptime GT 300) then $
+             quickextract, flatname, arcname, file, outname, plugmapfile
 
-           else : return
-        endcase
+          ; Now we should check to see if all 4 images have been reduced
+         
+          all4 = findfile(filepath('sci-'+platestr+'-??-'+filee+'.fits',$
+                root_dir=outdir))
+          if (n_elements(all4) EQ 4) then message, 'should check S/N', /cont
+             
+        end
 
-      endfor
+        else : return
+     endcase
 
 end
