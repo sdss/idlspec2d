@@ -1,4 +1,12 @@
 
+-------------------------------------------------------------------------------
+v4_9_13 (Nov 24, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
+Built against specflat v1_4.
+
+Support for Mac OS X platform.  New features + minor fixes for SOS.
+First check-in of Tremonti's flux-calibration code, though not integrated.
+Check-in of dust map code.  Re-write of YANNY_READ.
+
 APO_LOG2HTML: Default link to GIF plot, with another link to PostScript.
 APOPLOTARC: New proc for plotting arc spectra from the Son-of-Spectro outputs.
 APOPLOTSKY: New proc for plotting sky spectra from the Son-of-Spectro outputs.
@@ -56,7 +64,7 @@ UNDO_SMEAR: Create correction vectors for 1 plate which can be used to
            remove the the effects of "smear" from the spectra.
 ZEROPT_COR: Compute a zeropoint correction to the flux calibration.
 
-aporsync_alllog.sh: New shell script for copying all of the log files
+Eaporsync_alllog.sh: New shell script for copying all of the log files
            from sdsshost.apo:/astrolog/$MJD to the sos.apo machine.
            This will be done once per day at 7:45.  This rsync must
            follow symbolic links on sdsshost.apo, since it now looks
@@ -121,6 +129,8 @@ POLY_ITER: Change "LT" logic to "LE" to handle case where residual
            is 0 (e.g., a perfect fit)
 POPULATE_IMAGE: Fix possible crash condition under Mac OS X when IMAGE
            is 1-dimensional (and NY was not type LONG in the call to C-code).
+RADEC_GREATCIRLCE: New proc to solve for the great circle for a set
+           of RA,DEC positions at a set of times.
 SPLOT: Bug fix in the autoscale code (splot_autoscale_x) that crashed
            on Mac OS X.
 YANNY_READ: Make use of Hogg's procedure HOGG_STRSPLIT, which should be more
