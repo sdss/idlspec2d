@@ -157,7 +157,7 @@ pro xy2traceset, xpos, ypos, tset, invvar=invvar, func=func, ncoeff=ncoeff, $
          else $
           tempivar = bytarr(nx) + 1
 
-         qdone = djs_reject(ypos[*,itrace], ycurfit, $
+         qdone = djs_reject(ypos[*,itrace], ycurfit, invvar=tempivar, $
           inmask=curinmask, outmask=curoutmask, _EXTRA=EXTRA)
          tempivar = tempivar * curoutmask
 
