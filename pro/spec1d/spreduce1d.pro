@@ -193,24 +193,38 @@ andmask = 0 ; Free memory
    endfor
 
    ;----------
+   nper = (size(res_all,/dimens))[0]
+
+   ;----------
    ; Sort results for each object by ascending order in chi^2/DOF,
    ; but putting any results with zero degrees-of-freedom at the end.
 
+   minvdiff = 1000.0 ; km/s
+
    for iobj=0, nobj-1 do begin
       res1 = res_all[*,iobj]
-;      sortval = res1.chi2 / (res1.dof > 1)
-      sortval = (res1.chi2 + (res1.dof EQ 0) * max(res1.chi2)) $
-       / (res1.dof + (res1.dof EQ 0))
-      isort = sort(sortval)
-      for ii=0, n_elements(res1)-1 do begin
+
+      rchi2 = res1.chi2 / (res1.dof > 1)
+
+      isort = sort(rchi2 + (res1.dof EQ 0)*max(rchi2))
+      for ii=0, nper-1 do begin
          res_all[ii,iobj] = res1[isort[ii]]
+      endfor
+
+      ; Find the difference in reduced chi^2 between each result and the next
+      res1 = res_all[*,iobj]
+      rchi2 = res1.chi2 / (res1.dof > 1)
+      for ii=0, nper-2 do begin
+         inext = (where(res1[ii+1:nper-1].z - res1[ii].z GT minvdiff/3.e5 $
+          AND res1[ii+1:nper-1].dof GT 0))[0]
+         if (inext NE -1) then $
+          res_all[ii,iobj].rchi2diff = rchi2[ii+1+inext] - rchi2[ii]
       endfor
    endfor
 
    ;----------
    ; Insist that all SKY fibers are identified as SKY
 
-   nper = (size(res_all,/dimens))[0]
    for iobj=0, nobj-1 do begin
       if (strtrim(plugmap[iobj].objtype,2) EQ 'SKY') then begin
          if (nper GT 1) then $
@@ -227,9 +241,27 @@ andmask = 0 ; Free memory
       endif
    endfor
 
-   splog, 'Total time for SPREDUCE1D = ', systime(1)-stime0, ' seconds', $
-    format='(a,f6.0,a)'
-   splog, 'Successful completion of SPREDUCE1D at ', systime()
+   ;----------
+   ; Insist that all low-confidence redshifts are identified as UNKNOWN
+
+   minrchi2diff = 0.01
+
+   for iobj=0, nobj-1 do begin
+      if (res_all[0,iobj].rchi2diff LT minrchi2diff $
+       AND res_all[0,iobj].class NE 'SKY') then begin
+         if (nper GT 1) then $
+          res_all[1:nper-1,iobj] = res_all[0:nper-2,iobj]
+         rcopy = { plate: res_all[0,iobj].plate, $
+                   mjd: res_all[0,iobj].mjd, $
+                   fiberid: res_all[0,iobj].fiberid, $
+                   class: 'UNKNOWN', $
+                   subclass: ' ', $
+                   tfile: ' ' }
+         res1 = res_all[0,iobj]
+         struct_assign, rcopy, res1
+         res_all[0,iobj] = res1
+      endif
+   endfor
 
    ;----------
    ; Write the output files
@@ -242,6 +274,12 @@ andmask = 0 ; Free memory
    writefits, zbestfile, 0, hdr ; Retain the original header in the first HDU
    mwrfits, (res_all[0,*])[*], zbestfile
 
+   ;----------
+   ; Close log file
+
+   splog, 'Total time for SPREDUCE1D = ', systime(1)-stime0, ' seconds', $
+    format='(a,f6.0,a)'
+   splog, 'Successful completion of SPREDUCE1D at ', systime()
    splog, /close
 
    return
