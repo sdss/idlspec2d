@@ -72,16 +72,19 @@ pro apo_appendlog, logfile, rstruct
    pp = mrdfits(logfile, thishdu, hdr)
    if (NOT keyword_set(hdr)) then begin
       ; Create a new FITS file
+
+      ; Write HDU#0, which  is just a header with the version of the code.
+      mkhdr, newhdr, '', /extend
+      sxaddpar, newhdr, 'VERS2D', idlspec2d_version()
+      writefits, logfile, 0, newhdr
+
+      ; Write HDU numbers 1 through 4
       for ihdu=1, 4 do begin
          if (ihdu EQ thishdu) then $
-          mwrfits, rstruct, logfile, create=(ihdu EQ 1) $
+          mwrfits, rstruct, logfile $
          else $
-          mwrfits, dummy, logfile, create=(ihdu EQ 1)
+          mwrfits, dummy, logfile
       endfor
-      ; Write the version of the code into the first header
-      hdr = headfits(logfile)
-      sxaddpar, hdr, 'VERS2D', idlspec2d_version()
-      modfits, logfile, 0, hdr, exten_no=0
    endif else begin
       ; Modify to an existing FITS file
       pp = struct_append(pp, rstruct)
