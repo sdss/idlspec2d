@@ -9,16 +9,18 @@
 ;   synflux = synthspec(zans, [ loglam=, hdr=, eigendir= ])
 ;
 ; INPUTS:
-;   zans       - 
+;   zans       - Structure(s) with redshift-fit information (from SPREDUCE1D).
 ;
 ; OPTIONAL KEYWORDS:
-;   loglam     - Log-10 wavelengths at which to synthesize the spectrum.
+;   loglam     - Log-10 wavelengths at which to synthesize the spectrum;
+;                this can either be a single vector if all spectra have
+;                the same wavelength mapping, or an array of [NPIX,NOBJ].
 ;   hdr        - If specified, then use this header to construct LOGLAM.
 ;                Either LOGLAM or HDR must be specified.
 ;   eigendir   - Directory for EIGENFILE; default to $IDLSPEC2D/templates.
 ;
 ; OUTPUTS:
-;   synflux    - 
+;   synflux    - Synthetic spectra
 ;
 ; COMMENTS:
 ;
@@ -40,6 +42,26 @@
 ;   20-Aug-2000  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
 function synthspec, zans, loglam=objloglam, hdr=hdr, eigendir=eigendir
+
+   ;----------
+   ; If ZANS is an array, then call this routine recursively
+
+   nobj = n_elements(zans)
+   if (nobj GT 1) then begin
+      for iobj=0, nobj-1 do begin
+         ndim = size(objloglam, /n_dimen)
+         if (ndim EQ 1) then thisloglam = objloglam $
+          else if (ndim EQ 2) then thisloglam = objloglam[*,iobj]
+         newflux1 = synthspec(zans[iobj], loglam=thisloglam, hdr=hdr, $
+          eigendir=eigendir)
+         if (iobj EQ 0) then newflux = fltarr(n_elements(newflux1), nobj)
+         newflux[*,iobj] = newflux1
+      endfor
+      return, newflux
+   endif
+
+   ;----------
+   ; Get name of template file
 
    if (n_elements(eigendir) EQ 0) then $
     eigendir = concat_dir(getenv('IDLSPEC2D_DIR'), 'templates')
