@@ -155,8 +155,8 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay
 
    objname = allseq.name[icams]
    for ifile=0, n_elements(objname)-1 do $
-    if ((findfile(djs_filepath(objname[ifile], $
-      root_dir=extractdir)))[0] EQ '') then  objname[ifile] = ''
+    objname[ifile] = (lookforgzip(djs_filepath(objname[ifile], $
+      root_dir=extractdir)))[0]
 
    allseq.name[icams] = objname
 
