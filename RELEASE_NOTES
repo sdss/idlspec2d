@@ -73,6 +73,8 @@ examples/opHdrFix.par: Go through all the headers looking for flat, arc,
            MJD 52426 (1-Jun-03), after which the sdHdrFix-$MJD.par files
            are used.
 ups/idlspec2d.table: Add dependency on "speclog" product.
+ups/Makefile - Get rid of the confusing dependency on 
+               $(SDSSTOOLS_DIR)/bin/install_ups_table.
 
 -------------------------------------------------------------------------------
 v4_10_0 (Apr 8, 2003 idlspec2d running on IDL 5.3 - 5.5
