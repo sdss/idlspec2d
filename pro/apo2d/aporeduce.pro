@@ -51,6 +51,8 @@
 ;   apo_plotsn
 ;   djs_filepath()
 ;   fits_wait()
+;   idlspec2d_version()
+;   idlutils_version()
 ;   quickextract()
 ;   quicktrace()
 ;   quickwave()
@@ -140,8 +142,14 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
 
    splgfile = filepath('splog-'+filec+'-'+filee+'.log', root_dir=outdir)
    splog, filename=splgfile, prelog=filename
-   splog, 'Started at ', systime()
+   splog, 'Log file ' + splgfile + ' opened' + systime()
    t0 = systime(1)
+
+   splog, 'IDL version: ' + string(!version,format='(99(a," "))')
+   splog, 'DISPLAY=' + getenv('DISPLAY')
+
+   splog, 'idlspec2d version ' + idlspec2d_version()
+   splog, 'idlutils version ' + idlutils_version()
 
    ;----------
    ; Check disk space on both the input and the output disk.
