@@ -106,6 +106,7 @@
 ;   yanny_free
 ;   yanny_par()
 ;   yanny_read
+;   yanny_readone()
 ;
 ; INTERNAL SUPPORT ROUTINES:
 ;   platelist_write
@@ -321,9 +322,7 @@ pro platelist, infile, plist=plist, create=create, $
 
    publicfile = filepath('spPlateList.par', $
     root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
-   yanny_read, publicfile, pdata
-   publicdata = *pdata[0]
-   yanny_free, pdata
+   publicdata = yanny_readone(publicfile, 'SPPLATELIST')
 
    ;---------------------------------------------------------------------------
    ; Loop through all files
@@ -374,9 +373,8 @@ pro platelist, infile, plist=plist, create=create, $
       ; from its Yanny header.
       ; Also get the mapping name from the combine par file in case we were
       ; unable to get it from the spPlate file.
-      yanny_read, combparfile[ifile], pp, hdr=hdrcomb
-      plist[ifile].mapname = (*pp[0])[0].mapname
-      yanny_free, pp
+      plist[ifile].mapname = (yanny_readone(combparfile[ifile], 'SPEXP', $
+        hdr=hdrcomb))[0].mapname
 
       ;----------
       ; Find the state of the 2D reductions (not the combine step)
@@ -564,7 +562,10 @@ pro platelist, infile, plist=plist, create=create, $
       ; the position of that object in the cases where they disagree
       ; by more than 1.5 degrees.
 
-      plug = mrdfits(platefile[ifile], 5, /silent)
+      if (keyword_set(findfile(platefile[ifile]))) then $
+       plug = mrdfits(platefile[ifile], 5, /silent) $
+      else $
+       plug = 0
       if (keyword_set(plug)) then begin
          iobj = where(strtrim(plug.holetype,2) EQ 'OBJECT')
          junk = min( plug[iobj].xfocal^2 + plug[iobj].yfocal^2, imin)
@@ -585,7 +586,10 @@ pro platelist, infile, plist=plist, create=create, $
       ;----------
       ; Read Zbest file - get status of 1D
 
-      hdr2 = headfits(zbestfile[ifile], /silent, errmsg=errmsg)
+      if (keyword_set(zbestfile[ifile])) then $
+       hdr2 = headfits(zbestfile[ifile], /silent, errmsg=errmsg) $
+      else $
+       hdr2 = 0
       if (size(hdr2, /tname) EQ 'STRING') then begin
          zans = mrdfits(zbestfile[ifile], 1, /silent)
          plug = mrdfits(platefile[ifile], 5, /silent)
