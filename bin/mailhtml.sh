@@ -17,6 +17,7 @@ if [ -z "$SPECTROLOG_DIR" ] ; then
    echo "Abort: SPECTROLOG_DIR not set!"
    exit
 fi
+SOSLOG=$SPECTROLOG_DIR/sos.log
 
 ##
 #  First, send data offsite, and then create mail messages.
@@ -72,4 +73,12 @@ do
 done
 
 killdata.sh
+
+\mv $SOSLOG.6dayold $SOSLOG.7dayold
+\mv $SOSLOG.5dayold $SOSLOG.6dayold
+\mv $SOSLOG.4dayold $SOSLOG.5dayold
+\mv $SOSLOG.3dayold $SOSLOG.4dayold
+\mv $SOSLOG.2dayold $SOSLOG.3dayold
+\mv $SOSLOG.1dayold $SOSLOG.2dayold
+\mv $SOSLOG         $SOSLOG.1dayold
 
