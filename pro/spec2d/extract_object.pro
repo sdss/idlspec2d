@@ -68,6 +68,7 @@
 ;   extract_image
 ;   fibermask_bits()
 ;   calcscatimage()
+;   fitsn()
 ;   fitvacset()
 ;   fluxcorr()
 ;   heliocentric()
