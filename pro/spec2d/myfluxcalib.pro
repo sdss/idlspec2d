@@ -474,7 +474,7 @@ objmask = 0 ; Free memory
       ; w/out using any errors but allowing some rejection.
 
       plottitle = 'PLATE=' + platestr + ' MJD=' + mjdstr $
-       + ': Spectro-Photo PCA for ' + camname[ifile]
+       + ' Spectro-Photo PCA for ' + camname[ifile]
 
       calibset = fluxfit(allloglam[indx], pcaflux[indx], $
        color=colors[ifile], refmag=refmag, plottitle=plottitle)
