@@ -160,14 +160,16 @@ pro plotsn, sn, plug, bands=bands, title=title, plotfile=plotfile
 
       sn2 = fltarr(2)
       if (s1[0] NE -1) then begin
-         a1 = fitsn(mag[s1], snc[s1], minmag=snmag[bands[i]]-0.5, $
+         afit1 = fitsn(mag[s1], snc[s1], minmag=snmag[bands[i]]-0.5, $
                    maxmag=snmag[bands[i]]+0.5)
-         sn2[0] = 10^(2.0 * poly(snmag[bands[i]],a1)) 
+         if (keyword_set(afit1)) then $
+          sn2[0] = 10^(2.0 * poly(snmag[bands[i]],afit1)) 
       endif
       if (s2[0] NE -1) then begin
-         a2 = fitsn(mag[s2], snc[s2], minmag=snmag[bands[i]]-0.5, $
+         afit2 = fitsn(mag[s2], snc[s2], minmag=snmag[bands[i]]-0.5, $
                    maxmag=snmag[bands[i]]+0.5)
-         sn2[1] = 10^(2.0 * poly(snmag[bands[i]],a2)) 
+         if (keyword_set(afit2)) then $
+         sn2[1] = 10^(2.0 * poly(snmag[bands[i]],afit2)) 
       endif
 
       djs_oplot, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.50], $
