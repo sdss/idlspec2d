@@ -81,7 +81,8 @@
 ;-
 ;------------------------------------------------------------------------------
 pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
- psfile=psfile, xrange=passxr, yrange=passyr, _EXTRA=KeywordsForSplot
+ psfile=psfile, xrange=passxr, yrange=passyr, noerase=noerase, $
+ _EXTRA=KeywordsForSplot
 
    cspeed = 2.99792458e5
 
@@ -119,10 +120,10 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
    endif else begin
       yrange = minmax(synflux)
       if (yrange[0] EQ yrange[1]) then yrange = minmax(objflux)
-      yrange[0] = yrange[0] < 0 ; Include Y=0 in the plot
-      ymin = 1.2 * yrange[0] - 0.2 * yrange[1] < 0
+      ymin = (1.2 * yrange[0] - 0.2 * yrange[1]) < 0
       ymax = -0.2 * yrange[0] + 1.2 * yrange[1]
       if (ymax EQ ymin) then ymax = ymin + 1
+      yrange = [ymin, ymax]
    endelse
    if (keyword_set(passxr)) then xrange = passxr
 
@@ -137,10 +138,13 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
       djs_oplot, wave, objerr, color='red', _EXTRA=KeywordsForSplot
       djs_oplot, wave, synflux, color='blue', _EXTRA=KeywordsForSplot, lw=2
    endif else begin
-      splot, wave, objflux, xrange=xrange, yrange=yrange, $
-       xtitle='Wavelength [Ang]', $
-       ytitle=TeXtoIDL('Flux [10^{-17} erg/cm/s/Ang]'), $
-       title=title, charsize=csize, _EXTRA=KeywordsForSplot
+      if (NOT keyword_set(noerase)) then $
+       splot, wave, objflux, xrange=xrange, yrange=yrange, $
+        xtitle='Wavelength [Ang]', $
+        ytitle=TeXtoIDL('Flux [10^{-17} erg/cm/s/Ang]'), $
+        title=title, charsize=csize, _EXTRA=KeywordsForSplot $
+      else $
+       soplot, wave, objflux, _EXTRA=KeywordsForSplot
       soplot, wave, objerr, color='red', _EXTRA=KeywordsForSplot
       soplot, wave, synflux, color='blue', _EXTRA=KeywordsForSplot, lw=2
    endelse
@@ -203,7 +207,8 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
 end
 ;------------------------------------------------------------------------------
 pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
- psfile=psfile, xrange=xrange, yrange=yrange, _EXTRA=KeywordsForSplot
+ psfile=psfile, xrange=xrange, yrange=yrange, noerase=noerase, $
+ _EXTRA=KeywordsForSplot
 
    if (n_elements(plate) NE 1) then $
     message, 'PLATE must be a scalar'
@@ -253,7 +258,7 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
 
       plotspec1, plate, fiberid[ifiber], mjd=mjd, znum=znum, $
        nsmooth=nsmooth, psfile=psfile, $
-       xrange=xrange, yrange=yrange, _EXTRA=KeywordsForSplot
+       xrange=xrange, yrange=yrange, noerase=noerase, _EXTRA=KeywordsForSplot
 
       if (keyword_set(psfile)) then begin
          if (NOT keyword_set(q_onefile) OR ifiber EQ nfiber-1) then dfpsclose
