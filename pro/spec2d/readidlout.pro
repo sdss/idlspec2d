@@ -22,7 +22,7 @@ end
 
 pro readidlout, flux, sig=sig, wave=wave, expres=expres, plugmap=plugmap
 
-      if (NOT keyword_set(expres)) then expres = 'idl*fit'
+      if (NOT keyword_set(expres)) then expres = 'spMerge2d*fit'
 
       files = findfile(expres)
       if (files[0] EQ '') then begin

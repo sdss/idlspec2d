@@ -27,6 +27,7 @@
 ;
 ; BUGS:
 ;   Try to avoid using SPAWN.
+;   How do I just combine files? and not re-run spreduce?
 ;
 ; PROCEDURES CALLED:
 ;   combine2dout
@@ -45,7 +46,7 @@
 ;------------------------------------------------------------------------------
 
 pro spallreduce, planfile=planfile, docams=docams, $
- nocombine=nocombine, xdisplay=xdisplay
+ nocombine=nocombine, xdisplay=xdisplay, combineonly=combineonly
 
    if (NOT keyword_set(planfile)) then planfile = findfile('spPlan2d*.par')
 
@@ -138,6 +139,7 @@ pro spallreduce, planfile=planfile, docams=docams, $
         + strtrim(string(plateid),2)
       splog, 'Plug map file = ', plugfile
 
+    if (NOT keyword_set(combineonly)) then begin
       for ido=0, ndocam-1 do begin
 
          icam = (where(camnames EQ docams[ido], camct))[0]
@@ -225,6 +227,7 @@ pro spallreduce, planfile=planfile, docams=docams, $
 
          splog, camname=''
       endfor ; End loop for camera number
+     endif
 
       splog, 'Time to reduce all cameras = ', $
        systime(1)-stime1, ' seconds', format='(a,f6.0,a)'
@@ -247,7 +250,10 @@ pro spallreduce, planfile=planfile, docams=docams, $
 
             ; Now search for any extracted spectra on disk, overwriting
             ; FILES[i] with '' if a file does not exist.
-            files = 'spSpec2d-' + strmid(rawfiles, 4)
+            ; Add an 's' because we now output '.fits'
+
+            files = 'spSpec2d-' + strmid(rawfiles, 4)+'s'
+
             for i=0, nfile-1 do $
              files[i] = findfile(filepath(files[i], root_dir=extractDir))
             j = where(files NE '', nfile)
