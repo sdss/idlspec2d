@@ -221,19 +221,19 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       end
 
       'flat' : begin
-;         if (NOT flatexist AND plugexist) then $ ; Only reduce 1 flat/camera?
-         if (plugexist) then $
-          rstruct = quicktrace(fullname, tsetfile1, fullplugfile) $
-         else $
-          splog, 'Unable to reduce this flat exposure'
+         if (plugexist) then begin
+            rstruct = quicktrace(fullname, tsetfile1, fullplugfile)
+         endif else begin
+            splog, 'ABORT: Unable to reduce this flat exposure (need plug-map)'
+         endelse
       end
 
       'arc' : begin
-;         if (flatexist AND (NOT arcexist)) then $ ; Only reduce 1 arc/camera?
-         if (flatexist) then $
-          rstruct = quickwave(fullname, tsetfile_last, wsetfile1, fflatfile1) $
-          else $
-           splog, 'Unable to reduce this arc exposure'
+         if (flatexist) then begin
+            rstruct = quickwave(fullname, tsetfile_last, wsetfile1, fflatfile1)
+         endif else begin
+             splog, 'ABORT: Unable to reduce this arc exposure (need flat)'
+         endelse
       end
 
       'science': begin
@@ -241,11 +241,18 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
           outsci = filepath('sci-'+platestr+'-'+filec+'-'+filee+'.fits',$
                  root_dir=outdir)
 
-          if (flatexist AND arcexist AND exptime GT minexp) then $
-           rstruct = quickextract(tsetfile_last, wsetfile_last, fflatfile_last, $
-            fullname, outsci) $
-          else $
-           splog, 'Unable to reduce this science exposure'
+          if (flatexist AND arcexist AND exptime GT minexp) then begin
+             rstruct = quickextract(tsetfile_last, wsetfile_last, $
+              fflatfile_last, fullname, outsci)
+          endif else begin
+             if (NOT keyword_set(flatexist)) then $
+              splog, 'ABORT: Unable to reduce this science exposure (need flat)'
+             if (NOT keyword_set(arcexist)) then $
+              splog, 'ABORT: Unable to reduce this science exposure (need arc)'
+             if (exptime LE minexp) then $
+              splog, 'ABORT: Exposure time = ' + string(exptime) $
+               + ' < ' + string(minexp)
+          endelse
        end
 
        else : begin
@@ -260,7 +267,6 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    i = rstrpos(fullplugfile,'/')
    if (i[0] EQ -1) then shortplugfile = fullplugfile $
     else shortplugfile = strmid(fullplugfile,i+1)
-
 
    ;----------
    ; Find WARNINGs and ABORTs from splog file.  Recast them as string
@@ -315,7 +321,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
 
 ;   if (camnames[icam] EQ 'r2' AND keyword_set(rstruct)) then begin
 ; Instead, create the HTML file after any reduced frame.
-   if (keyword_set(rstruct)) then begin
+   if (keyword_set(rstruct) OR keyword_set(tstruct)) then begin
 
       if (myflavor EQ 'science') then begin
          plotfile = filepath('snplot-'+mjdstr+'-'+platestr+'.ps', $
