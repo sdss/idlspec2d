@@ -139,4 +139,6 @@ spchunklist     101 1960 1961 special   "SEGUE bright globular cluster"
 spchunklist     102 1962 1963 special   "SEGUE faint globular cluster"
 spchunklist     103 1964 1968 special   "Low-z + BCG + Deep LRG"
 spchunklist     100 1969 2037 main      ""
+spchunklist     104 2038 2057 special   "SEGUE bright"
+spchunklist     105 2058 2077 special   "SEGUE faint"
 
