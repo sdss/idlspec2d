@@ -23,6 +23,8 @@ BSPLINE_BKPTS: Integer roll-over bug fixed by DPF for more than 2^30
            does for DEIMOS).
 POLY_ITER: Change "LT" logic to "LE" to handle case where residual
            is 0 (e.g., a perfect fit)
+evilmake: Add "Darwin" (Mac OS X) as a possible platform.
+           This doesn't work yet for Blanton's spheregroup code or Fortran.
 
 -------------------------------------------------------------------------------
 v4_9_12 (Jun 26, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
