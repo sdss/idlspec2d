@@ -146,6 +146,7 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
 
    objname = allseq.name[icams]
 
+   ; If all file names are UNKNOWN, then abort.
    j = where(objname NE 'UNKNOWN')
    if (j[0] EQ -1) then begin
       splog, 'ABORT: All file names are UNKNOWN in plan file ' + thisplan
@@ -153,14 +154,17 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
       return
    endif
 
+   ; Replace all UNKNOWN file names with nulls.
    j = where(objname EQ 'UNKNOWN')
-   if j[0] NE -1 then (allseq.name[icams])[j] = ''
+   if (j[0] NE -1) then objname[j] = ''
 
-   objname = allseq.name[icams]
+   ; Replace all file names that do not exist on disk with nulls.
    for ifile=0, n_elements(objname)-1 do $
-    objname[ifile] = (lookforgzip(djs_filepath(objname[ifile], $
+    if (keyword_set(objname[ifile])) then $
+     objname[ifile] = (lookforgzip(djs_filepath(objname[ifile], $
       root_dir=extractdir)))[0]
 
+   ; Now all the file names in ALLSEQ.NAME should exist or be set to null.
    allseq.name[icams] = objname
 
    j = where(allseq.name[icams])
