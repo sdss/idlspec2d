@@ -107,7 +107,7 @@ andmask = 0 ; Free memory
 ;jj = jj[0:9] ; Trim to first few objects
 jj = lindgen(640)
 ;jj = lindgen(2)
-;jj = [28]
+;jj = [128,129]
 chicz = chicz[jj]
 chicclass = chicclass[jj]
 objflux = objflux[*,jj]
@@ -135,8 +135,8 @@ nobj=n_elements(jj)
 
    eigenfile = 'spEigenGals.fits'
 
-   splog, 'Compute GALAXY redshifts: ZMIN=', zmin, ' ZMAX=', zmax, $
-    ' PSPACE=', pspace
+   splog, 'Compute GALAXY redshifts:', $
+    ' ZMIN=', zmin, ' ZMAX=', zmax, ' PSPACE=', pspace
    t0 = systime(1)
    res_gal = zfind(objflux, objivar, hdr=hdr, fiberid=plugmap.fiberid, $
     eigenfile=eigenfile, npoly=npoly, zmin=zmin, zmax=zmax, pspace=pspace, $
@@ -166,8 +166,8 @@ nobj=n_elements(jj)
 
    eigenfile = 'spEigenQSO.fits'
 
-   splog, 'Compute QSO redshifts: ZMIN=', zmin, ' ZMAX=', zmax, $
-    ' PSPACE=', pspace
+   splog, 'Compute QSO redshifts:', $
+    ' ZMIN=', zmin, ' ZMAX=', zmax, ' PSPACE=', pspace
    t0 = systime(1)
    res_qso = zfind(objflux, objivar, hdr=hdr, fiberid=plugmap.fiberid, $
     eigenfile=eigenfile, npoly=npoly, zmin=zmin, zmax=zmax, pspace=pspace, $
@@ -201,8 +201,10 @@ nobj=n_elements(jj)
    nstar = sxpar(shdr, 'NAXIS2') > 1
 
    for istar=0, nstar-1 do begin
-      splog, 'Compute QSO redshifts: ZMIN=', zmin, ' ZMAX=', zmax, $
-       ' PSPACE=', pspace
+      subclass = sxpar(shdr, 'NAME'+strtrim(string(istar),2))
+
+      splog, 'Compute STAR (' + subclass + ') redshifts:', $
+       ' ZMIN=', zmin, ' ZMAX=', zmax, ' PSPACE=', pspace
       t0 = systime(1)
       res_star = zfind(objflux, objivar, hdr=hdr, fiberid=plugmap.fiberid, $
        eigenfile=eigenfile, columns=istar, npoly=npoly, $
@@ -211,17 +213,20 @@ nobj=n_elements(jj)
       splog, 'CPU time to compute STAR redshifts = ', systime(1)-t0
 
       res_star.class = 'STAR'
-      res_star.subclass = sxpar(shdr, 'NAME'+strtrim(string(istar),2))
+      res_star.subclass = subclass
 
       res_all = [res_all, res_star] ; Append results
    endfor
 
    ;----------
-   ; Sort results for each object by chi^2/DOF
+   ; Sort results for each object by ascending order in chi^2/DOF,
+   ; but putting any results with zero degrees-of-freedom at the end.
 
    for iobj=0, nobj-1 do begin
       res1 = res_all[*,iobj]
-      sortval = res1.chi2 / (res1.dof > 1)
+;      sortval = res1.chi2 / (res1.dof > 1)
+      sortval = (res1.chi2 + (res1.dof EQ 0) * max(res1.chi2)) $
+       / (res1.dof + (res1.dof EQ 0))
       isort = sort(sortval)
       for ii=0, n_elements(res1)-1 do begin
          res_all[ii,iobj] = res1[isort[ii]]
