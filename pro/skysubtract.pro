@@ -1,99 +1,95 @@
+pro skysubtract, obj, objivar, plugmap, wset, skysub, skysubivar, $
+            nbkpt=nbkpt, nord=nord, everyn=everyn, allwave=allwave, $
+	    allsky=allsky, allfit=allfit
 
-function skysubtract, tt, skyfinal, color=color
+	objsize = size(obj)
+	ndim = objsize[0]
 
-;
-;	small set is [xmin, xmax, coeffs] for wavelengths in log10
-;
+	if ndim NE 2 then message, 'obj is not 2d'
+	if (size(objivar))[0] NE 2 then message, 'objivar is not 2d'
 
-	if (NOT keyword_set(color)) then color='blue'
+	ncol = objsize[1]
+	nrow = objsize[2]
 
-	npix = (size(tt.flux))[1]
-	nTrace = (size(tt))[1]
+	if (size(plugmap))[1] NE nrow then $
+	   message, 'plugmap does not have same size as nrow'
 
-	skies = where (tt.plugmap.objtype EQ 'SKY')
-	if (skies[0] EQ -1) then $
-	  message, 'No objType SKY in plugmap'
+	if (size(wset.coeff))[2] NE nrow then $
+	   message, 'wset does not have same size as nrow'
 
+	traceset2xy,wset,pixnorm,wave
 	
-	skyfinal = fltarr(npix, nTrace)
-	pp = findgen(2048) 
+	;
+	; Find sky fibers
+	;
+  	
+	skies = where(plugmap.objtype EQ 'SKY', nskies)
+	if skies[0] EQ -1 then message, 'no sky fibers in plugmap'
 
-	skystruct = tt[skies]
-	nsky = (size(skystruct))[1]
+        allwave    =  (wave[*,skies])[*]
+        allsky     =  (obj[*,skies])[*]
+        allskyivar =  (objivar[*,skies])[*]
 
-	skyspline = fltarr(npix,nsky)
-	skyredjunk = fltarr(npix)
+;
+;	Sort sky points by wavelengths
+;
+        allwavesort = sort(allwave)
+	allwave    = allwave(allwavesort)
+	allsky     = allsky(allwavesort)
+	allskyivar = allskyivar(allwavesort)
+;
+;	find nice spline
+;
+        fullbkpt   = slatec_splinefit(allwave, allsky, coeff, $
+                     invvar=allskyivar, maxIter=maxIter, upper=upper, $
+                     lower=lower, nbkpts=3*ncol/2)
+        allfit  = slatec_bvalu(allwave, fullbkpt, coeff)
 
-	for i=0,nsky - 1 do $
-	    skyspline[*,i] = spl_init(pp,skystruct[i].flux)
+	skysub = obj - slatec_bvalu(wave, fullbkpt, coeff)
 
 
 ;
-;	Make a copy of tt
+;	Now attempt to model variance with residuals on sky
+;	This is difficult since variance has noise!
+;
+
+	diff = abs(allfit-allsky)*sqrt(allskyivar)
+
+	binsize = nskies
+	nn = ncol
+	diffr = reform(diff,binsize,nn)
+	rivar = reform(allskyivar,binsize,nn)
+	rwave = allwave(lindgen(nn)*nskies+nskies/2)
+	pos67 = 2*binsize/3
+	diff67 = fltarr(nn)
+	alphav = fltarr(nn)
+	for i=0,nn-1 do diff67[i] = (diffr[sort(diffr[*,i]),i])[pos67]
+	for i=0,nn-1 do alphav[i] = median(rivar[*,i])
+
+	alpha = diff67 - median(diff67,2*(nn/40) + 1)
+	
+	skysubivar = objivar	
+	good = where(alphav NE 0.0)
+	if good[0] NE -1 then begin
+	  deltav = fltarr(nn)
+	  deltav[good] = alpha[good]/alphav[good]
+
+
+;
+;	Spline unless we come up with something better
 ;	
+        fullbkpt   = slatec_splinefit(rwave, deltav, coeff, $
+                     maxIter=maxIter, upper=30, $
+                     lower=30, nbkpts=nn/2)
+	within = where(wave GE rwave[0] AND wave LE rwave[nn-1] $
+                         AND skysubivar NE 0.0)
 
-	ttsub = tt
+        deltaans = slatec_bvalu(wave[within], fullbkpt, coeff)
+	skysubivar[within] = 1.0/(1.0/skysubivar[within] + abs(deltaans))
 
-	for j=0,nTrace -1 do begin
-          print, format='($, ".",i4.4,a5)',j,string([8b,8b,8b,8b,8b])
+	endif
 
-	  smallset = tt[j].coeff
-	  smallsize = n_elements(smallset)
-          nparams = smallsize - 2
-	  xrange = smallset[1] - smallset[0]
-          pixarray = (2.0*findgen(npix)-total(smallset[0:1]))/xrange
-          waves = flegendre(pixarray, nparams) # smallset[2:*]
-
-;	rebin each sky with proper wavelength solution
-	  skyrebin = fltarr(npix,nsky)
-	  skymask = make_array(npix,nsky,/long,value=1)
-
-
-	  for i=0,nsky - 1 do begin
-	    wavemin = skystruct[i].icoeff[0]
-	    wavemax = skystruct[i].icoeff[1]
-	    wavecoeff = skystruct[i].icoeff[2:*]
-	    iparams = n_elements(wavecoeff)
-	    wavenorm = (2.0*waves - (wavemin+wavemax))/(wavemax-wavemin)
-	    pixFromWave = flegendre(wavenorm, iparams) # wavecoeff
-	    skyrebin[*,i] = $
-              spl_interp(pp,skystruct[i].flux,skyspline[*,i],pixFromWave)
-
-	    offtheedge = where(pixFromWave LT smallset[0] $
-                        OR pixFromWave GT smallset[1])
-	    if (offtheedge[0] NE -1) then skymask[offtheedge,i] = 0
-	  
-	  endfor
-
-	  for i=0,npix-1 do begin
-	    goodies = where(skymask[i,*])
-	    if (goodies[0] NE -1) then  begin
-	      skyfinal[i,j] = median(skyrebin[i,goodies])
-
-;
-;	This is a kluge to take out weird WIDE feature near 6500 Ang.
-;	We assume it's correlated with xFocal which may not be true
-;
-;	    if (color EQ 'rred') then begin
-;	      skytemp = skyrebin[i,goodies] - skyfinal[i,j]
-;
-;	LADFIT is an absolute deviation fit, and should be less subject to
-;	bad sky fibers, cosmic rays, or bad pixels
-;
-;	      ab = ladfit(skystruct[goodies].plugmap.xFocal,skytemp)
-;	      skyredjunk[i] = ab[0] + ab[1] * tt[j].plugmap.xFocal
-;	    endif else skyredjunk[i]=0.0
-	   endif
-	  endfor
-
-;	  skyfinal[*,j] = skyfinal[*,j] - skyredjunk
-
-	  ttsub[j].skysub = ttsub[j].flux - skyfinal[*,j]
-	  ttsub[j].sky = skyfinal[*,j]
-	endfor
+	return
+end
 	
-	return, ttsub
-	end	
-	  
-		
-
+             

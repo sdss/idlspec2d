@@ -138,6 +138,8 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
    gain = [ecalib.gain0, ecalib.gain1, ecalib.gain2, ecalib.gain3]
    readnoiseDN = [ecalib.readnoiseDN0, ecalib.readnoiseDN1, $
     ecalib.readnoiseDN2, ecalib.readnoiseDN3]
+   fullWellDN = [ecalib.fullWellDN0, ecalib.fullWellDN1, $
+    ecalib.fullWellDN2, ecalib.fullWellDN3]
 
    ; Construct the final image
    igood = where(qexist)
@@ -145,6 +147,7 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
    nc = max((scol+ncol)[igood])
    image = fltarr(nc, nr)
    invvar = fltarr(nc, nr)
+   mask = bytarr(nc, nr)
 
    for iamp=0, 3 do begin
       if (qexist[iamp] EQ 1) then begin
@@ -165,6 +168,12 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
                   srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
          rawdata[sdatacol[iamp]:sdatacol[iamp]+ncol[iamp]-1, $
                   sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] - biasval
+
+         mask[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
+                  srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
+           (rawdata[sdatacol[iamp]:sdatacol[iamp]+ncol[iamp]-1, $
+                  sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] LT $
+                  fullWellDN[iamp])
 
          invvar[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
                   srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
@@ -190,7 +199,7 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
    endif
 
    ; For saturated pixels, set INVVAR=0
-   invvar = invvar * (image LT satvalue)
+   invvar = invvar * mask
 
    return
 end
