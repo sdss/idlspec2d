@@ -246,7 +246,7 @@ pro apo_log2html, logfile, htmlfile
    ;----------
    ; Consruct the header of the output text
 
-   title1 = 'APO Spectro Logsheet MJD=' + mjdstr + ' Plate='
+   title1 = 'APO Spectro MJD=' + mjdstr + ' Plate='
    platelist = 'Plate='
    for iplate=0, nplates-1 do begin
       platestr = strtrim(string(allplates[iplate]),2)
@@ -270,7 +270,7 @@ pro apo_log2html, logfile, htmlfile
     '<TD WIDTH="33%" ALIGN="LEFT">Yesterday: ' $
     + '<A HREF='+prevfile+'>MJD='+prevmjd+'</A></TD>']
    textout = [textout, $
-    '<TD WIDTH="34%" ALIGN="CENTER"><B><FONT SIZE="+4">Spectro MJD '+mjdstr+'</FONT></B></TD>']
+    '<TD WIDTH="34%" ALIGN="CENTER"><B><FONT SIZE="+4">APO Spectro MJD '+mjdstr+'</FONT></B></TD>']
    textout = [textout, $
     '<TD WIDTH="33%" ALIGN="RIGHT">Tomorrow: ' $
     + '<A HREF='+nextfile+'>MJD='+nextmjd+'</A></TD></TR>']
