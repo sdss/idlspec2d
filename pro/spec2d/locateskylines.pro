@@ -1,4 +1,4 @@
-pro locateskylines, skylinefile, second, secondinvvar, invset, $
+pro locateskylines, skylinefile, fimage, invvar, invset, $
        xsky, ysky, skywaves
 
 	readcol,skylinefile,skywaves
@@ -9,7 +9,7 @@ pro locateskylines, skylinefile, second, secondinvvar, invset, $
 ;
 ;	Make xsky, ysky, pairs from skywaves
 ;
-	nrows = (size(second))[2]
+	nrows = (size(fimage))[2]
 	xnorm = (2.0*alog10(skywaves) - (invset.xmin + invset.xmax))/
 	          (invset.xmax - invset.xmin)
 
@@ -24,7 +24,7 @@ pro locateskylines, skylinefile, second, secondinvvar, invset, $
  
 	endfor	  
 
-	xsky =  trace_crude(second, secondinvvar, xstart=xstart, ystart=ysky) 
+	xsky =  trace_fweight(fimage, xstart, ysky, invvar=invvar) 
 
 	return
 end 

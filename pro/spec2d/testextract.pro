@@ -138,28 +138,44 @@ tt = doframe('sdR-04-00001151.fit','sdR-04-00001148.fit',$
 objectnums = ['-00001136','-00001138']
 objectnums = ['-00001435','-00001437','-00001439'] ; skyflats
 objectnums = ['-00001459','-00001461','-00001463','-00001465'] ;plate 202
-objectnums = ['-00001459','-00001461','-00001463','-00001465'] ;plate 202
+objectnums = ['-00001442','-00001444','-00001446','-00001448'] ;plate 214
 flatnum = '-00001431'
 flatnum = '-00001473'
 arcnum = '-00001427'
 arcnum = '-00001467'
 flatnum = '-00001473'
 arcnum = '-00001467'
-plugMapFile = 'plPlugMapM-0202-51434-01.par'
+plugMapFile = 'plPlugMapM-0214-51432-02.par'
 objectnums = ['-00001447']
 
-cam = '02'
-flatnum = '-00001452'
+cam = '04'
+flatnum = '-00001473'
 flat = 'sdR-'+cam+flatnum+'.fit'
-arcnum = '-00001450'
+arcnum = '-00001467'
 arc = 'sdR-'+cam+arcnum+'.fit'
-objectnums = ['-00001442','-00001444','-00001446','-00001448'] ;plate 214
+objectnums = ['-00001459','-00001461','-00001463','-00001465'] ;plate 202
 objects = 'sdR-'+cam+objectnums+'.fit'
 inputDir='/s1/data/SDSS/51441'
 outputDir = '/s1/data/SDSS/51441/out'
-plugMapFile = 'plPlugMapM-0214-51432-02.par'
+plugMapFile = 'plPlugMapM-0202-51434-01.par'
 plugMapDir = inputDir+'/logs'
 tt = doaframe(flat,arc,objects,plugMapFile,inputDir=inputDir, $
  outputDir=outputDir, plugMapDir=plugMapDir)
-save
-exit
+
+;
+;  Plate 198
+;
+
+cam = '04'
+flatnum = '-00001145'
+flat = 'sdR-'+cam+flatnum+'.fit'
+arcnum = '-00001147'
+arc = 'sdR-'+cam+arcnum+'.fit'
+objectnums = ['-00001136','-00001138','-00001139','-00001140'] ;plate 198
+objects = 'sdR-'+cam+objectnums+'.fit'
+inputDir='.'
+outputDir = 'out'
+plugMapFile = 'plPlugMapM-0198-51433-01.par'
+tt = doaframe(flat,arc,objects,plugMapFile,outputDir=outputDir)
+
+

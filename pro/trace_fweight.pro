@@ -6,7 +6,8 @@
 ;   Recenter a trace using flux-weighting centers.
 ;
 ; CALLING SEQUENCE:
-;   xnew = trace_fweight( fimage, xcen, ycen, [radius=radius, xerr=xerr] )
+;   xnew = trace_fweight( fimage, xcen, ycen, [radius=radius, xerr=xerr, 
+;                          invvar=invvar] )
 ;
 ; INPUTS:
 ;   fimage     - Image
@@ -15,6 +16,7 @@
 ;
 ; OPTIONAL KEYWORDS:
 ;   radius     - Radius for centroiding; default to 3.0
+;   invvar     - Inverse variance of image
 ;
 ; OUTPUTS:
 ;   xnew       - New X centers
@@ -33,12 +35,13 @@
 ;   24-Mar-1999  Written by David Schlegel, Princeton.
 ;-
 ;------------------------------------------------------------------------------
-function trace_fweight, fimage, xcen, ycen, radius=radius, xerr=xerr
+function trace_fweight, fimage, xcen, ycen, radius=radius, xerr=xerr, $
+               invvar=invvar
 
    ; Need 3 parameters
    if (N_params() LT 3) then begin
       print, 'Syntax - xnew = trace_fweight( fimage, xcen, ycen, [radius=radius, $'
-      print, ' xerr=xerr] )'
+      print, ' xerr=xerr, invvar=invvar] )'
       return, -1
    endif
    if (NOT keyword_set(radius)) then radius = 3.0
@@ -48,10 +51,12 @@ function trace_fweight, fimage, xcen, ycen, radius=radius, xerr=xerr
    ncen = N_elements(xcen)
    xnew = float(xcen)
    xerr = fltarr(ncen)
-   invtemp = 1.0 / (abs(fimage) + 20.0)
+
+   if (NOT keyword_set(invvar)) then $
+       invvar = 1.0 / (abs(fimage) + 20.0)
 
    result = call_external(getenv('IDL_EVIL')+'libspec2d.so', 'trace_fweight', $
-    nx, ny, float(fimage), float(invtemp), $
+    nx, ny, float(fimage), float(invvar), $
          float(radius), ncen, xnew, long(ycen), xerr)
 
    return, xnew
