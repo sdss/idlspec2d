@@ -1,0 +1,248 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Definitions
+%\pagestyle{empty}
+\documentclass[12pt,preprint]{aastex}
+%\documentstyle[emulateapj,danonecolfloat]{article}
+%\usepackage{emulateapj,danonecolfloat}
+\usepackage{rotating}
+
+%------------------------------------------------------------------------------
+% DEFINITIONS
+%------------------------------------------------------------------------------
+%
+% Equations:
+%
+\def\BE{\begin{equation}}
+\def\BEL#1{\begin{equation}\label{#1}}
+\def\EE{\end{equation}}
+%
+% Random stuff:
+%
+\newcommand{\etal}{{\it et al.}~}
+\newcommand{\LOGTEN}{{\log_{10}}}
+%
+% Units (math mode)
+%
+\newcommand{\Ang}{{\rm ~\AA}}
+\newcommand{\cm}{{\rm ~cm}}
+\newcommand{\dfdegree}{^\circ}
+\newcommand{\degree}{^\circ}
+\newcommand{\ergs}{{\rm ~erg~s}^{-1}}
+\newcommand{\ergscmang}{{\rm ~erg~s}^{-1}{\rm cm}^{-2}{\rm\AA}^{-1}}
+\newcommand{\ergcmHzsr}{{\rm ~erg~cm}^{-2}{\rm s}^{-1}
+            {\rm Hz}^{-1}{\rm sr}^{-1}}
+\newcommand{\Jy}{{\rm ~Jy}}
+\newcommand{\JypSr}{{\rm ~Jy~sr^{-1}}}
+\newcommand{\GHz}{{\rm ~GHz}}
+\newcommand{\Hz}{{\rm ~Hz}}
+\newcommand{\K}{{\rm ~K}}
+\newcommand{\kms}{{\rm ~km/s}}
+\newcommand{\MAG}{{\rm ~mag}}
+\newcommand{\microK}{\mu{\rm K}}
+\newcommand{\MJy}{{\rm ~MJy}}
+\newcommand{\mJy}{{\rm ~mJy}}
+\newcommand{\MJypSr}{{\rm ~MJy~sr^{-1}}}
+\newcommand{\nWpMMSr}{{\rm ~nW~m}^{-2}{\rm sr}^{-1}}
+\newcommand{\mK}{\rm ~mK}
+\newcommand{\mm}{{\rm ~mm}}
+\newcommand{\nMgy}{{\rm nMgy}}
+\newcommand{\pc}{{\rm ~pc}}
+\newcommand{\pix}{{\rm ~pix}}
+\newcommand{\s}{{\rm ~s}}
+
+%------------------------------------------------------------------------------
+% TITLE PAGE
+%------------------------------------------------------------------------------
+
+\begin{document}
+
+\title{The Sloan Digital Sky Survey Spectroscopic Reduction Pipeline}
+
+\author{
+S. Burles\altaffilmark{\ref{MIT}}
+and D. J. Schlegel\altaffilmark{\ref{Princeton}}
+}
+\altaffiltext{1}{Massachussetts Institute of Technology,
+Boston, MA ????? \label{MIT}}
+\altaffiltext{2}{Princeton University Observatory, Peyton Hall, Princeton,
+NJ 08544 \label{Princeton}}
+
+%------------------------------------------------------------------------------
+% ABSTRACT
+%------------------------------------------------------------------------------
+
+\begin{abstract}
+The Sloan Digital Sky Survey (SDSS) fiber-fed spectrographs have been used
+to obtain spectra for $600,000$ galaxies, QSOs and stars.
+We present the algorithms for reducing the raw data to
+wavelength-calibrated, flux-calibrated one-dimensional spectra.
+The wavelength calibration is shown to have an accuracy of $3 \kms$,
+and the broad-band spectrophotometry has an accuracy of better than $10\%$.
+
+%------------------------------------------------------------------------------
+% SUBJECT HEADINGS
+%------------------------------------------------------------------------------
+\emph{Subject headings: }
+???
+\end{abstract}
+
+%------------------------------------------------------------------------------
+% INTRODUCTION
+%------------------------------------------------------------------------------
+\section{INTRODUCTION}
+\label{sec_intro}
+The Sloan Digital Sky Survey (SDSS) is a 5-band photometric survey of
+approximately $10,000$ square degrees of the Northern sky and a concurrent
+redshift survey of up to a million galaxies and 100,000 quasars
+selected from the imaging survey \cite{york00}.  The primary 
+science goals of the project are to provide the data to investigate the
+large scale structure of the Universe and other extragalactic science.
+
+The data reduction and products described herein are very similar to
+those produced by the SDSS, with the most significant differences
+in our treatment of spectro-photometric calibrations.
+The data are released
+with this paper and may be accessed via the WWW.\footnote{Full details
+are at \texttt{http://spectro.princeton.edu}}
+Future data releases will also be accessible at this site. 
+
+%------------------------------------------------------------------------------
+%------------------------------------------------------------------------------
+\section{OPTIMAL EXTRACTION}
+\label{sec_extract}
+
+
+%------------------------------------------------------------------------------
+%------------------------------------------------------------------------------
+\section{FLUX CALIBRATION}
+\label{sec_fluxing}
+
+The SDSS spectra are presented as spectro-photometric quantitites,
+meaning that they have been converted to physical flux densities
+as seen above the Earth's atmosphere.
+There are many difficulties inherent in a fiber-fed spectrograph,
+especially one with such a large field of view.
+The problem is complicated by changes in the flat-field lamp spectra,
+the throughput through some of the optical elements, changing
+atmospheric transparency, and guiding errors.
+Despite these problems, the spectrophotometry is accurate to
+several percent on all wavelength scales.
+
+Flux-calibration for the two spectrographs are treated almost completely
+independently.  This is appropriate because the collimator optics
+and CCDs are different.  Only the telescope optics are in common, and the
+atmospheric extinction and guiding errors are continuous across a plate.
+In general, the 320 fibers for spectrograph \#1 are plugged for those
+objects south of the centerline of the field of view, and the 320 fibers
+for spectrograph \#2 are plugged for the north.
+
+The spectra are converted from raw counts (ADUs) to physical
+units ($\ergs$).
+
+$ 100 \ergscmang$
+
+A mean relative response between fibers has already been corrected
+using the quartz flat-field lamps (see Section ???).
+Because of this flat-fielding, the remaining conversion from ADUs
+to physical units should be identical for each spectrum on the 
+same CCD, except for small differences from different pixel scales
+and airmass.
+
+The SDSS spectrophotometry is based upon our understanding
+of F star subdwarfs.  These stars are the easiest main sequence
+stars to theoretically model because ...???
+For these reasons, we target 16 of these stars on each plate,
+typically 8 on each spectrograph.
+
+
+% See http://www.astro.princeton.edu:81/sdss-target/msg.725.html
+
+We select relatively bright F dwarfs as spectrophotometric 
+standards.  Ideally, we want the low-metallicity, halo stars in order 
+to have spectra that have few spectroscopic features.
+The F stars are chosen to satisfy the following color criteria:
+$$ 0.6 < u-g < 1.2 $$
+$$ 0.0 < g-r < 0.6 $$
+$$ g-r > 0.75 * (u-g) - 0.45 $$
+This selects stars that are on the blue edge of the main
+sequence in (u-g) color.  At high Galactic latitudes,
+??? stars per square degree fall in this color box.
+Targetting priority is given to
+those stars with colors closest to the following:
+$$ u-g = 0.80 $$
+$$ g-r = 0.30 $$
+$$ r-i = 0.10 $$
+This is meant to select those stars closest in color to BD +17 4708,
+which is computed to have a similar color (0.93, 0.28, 0.01, courtesy
+of David Hogg, priv. comm.).
+From these stars, we select 8 on each plate in the magnitude
+range $15.5 < g < 17.0$ (which we call SPECTROPHOTO_STD stars)
+and 8 in the magnitude range $17.0 < g < 18.5$ (which we call
+REDDEN_STD stars).
+These magnitude limits are chosen to avoid nearing saturation
+of the CCDs on the bright end, but to still ensure good S/N
+on the faint end.
+Assuming an absolute magnitude of 4.3 for these stars, this
+implies distances of $1.7 < d < 3.5$ kpc for the SPECTROPHOTO_STD
+stars and $3.5 < d < 6.9$ kpc for the REDDEN_STD stars.
+Note that the color-selection and magnitude cuts are done on
+``instrinsic'' magnitudes, meaning that we first apply corrections
+for SFD extinction.
+
+
+
+The stuff I'm calibrating to has been public for a while.  The original
+ref is Gray & Corbally, 1994, AJ 107, 742.  There are some updates in
+Gray, Graham, & Hoyt 2001, AJ, 121, 2159.  Gray's code SPECTRUM is
+available http://www.acs.appstate.edu/dept/physics/spectrum/spectrum.html
+You can't download the models -- you have to run them.  But I can send you
+the ones I've run if you like.  (They start out as text, then I convolve
+to SDSS resolution and make FITS files.)  Richard Gray was pretty nice
+about resonding to email too.
+
+
+
+%------------------------------------------------------------------------------
+% CONCLUSIONS
+%------------------------------------------------------------------------------
+%\section{SUMMARY}
+
+\newpage
+%------------------------------------------------------------------------------
+% REFERENCES
+%------------------------------------------------------------------------------
+
+\bibliographystyle{unsrt}
+\bibliography{gsrp}
+
+%\begin{thebibliography}{DUM}
+%
+%\bibitem[Schlegel, Finkbeiner \& Davis 1998 (SFD)]{sfd98} 
+%Schlegel, D. J., Finkbeiner, D. P., \& Davis M. 1998, \apj, 500, 525 (SFD)
+%
+%\bibitem[York et al. 2000]{york00}
+%York, D. G. \etal\ 2000, \aj, 120, 1579
+%
+%\end{thebibliography}
+\clearpage
+
+%------------------------------------------------------------------------------
+%------------------------------------------------------------------------------
+\appendix
+\section{B-SPLINES}
+\label{bsplines}
+
+What the heck is a B-spline?
+
+%------------------------------------------------------------------------------
+%------------------------------------------------------------------------------
+\appendix
+\section{DATA MODEL}
+\label{bsplines}
+
+What the heck is a B-spline?
+
+%------------------------------------------------------------------------------
+
+\end{document}
