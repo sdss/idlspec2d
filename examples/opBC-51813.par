@@ -42,6 +42,7 @@ bc "2 amp" 0 1 1762 2    1471 557  BADBLK BADCOL
 
 bc "2 amp" 0 2 0    2048 0    3    BADBLK BADCOL
 bc "2 amp" 0 2 246  1    363  1    BADBLK BADCOL
+bc "2 amp" 0 2 370  1    1800 248  BADBLK BADCOL   # Added 070901, from neighbor
 bc "2 amp" 0 2 371  1    578  1478 BADBLK BADCOL   # Added 040600
 bc "2 amp" 0 2 731  1    1540 508  BADBLK BADCOL   # Added 040600
 bc "2 amp" 0 2 1090 1    889  1159 BADBLK HOTCOL   # extended 040600
