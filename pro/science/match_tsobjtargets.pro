@@ -29,6 +29,7 @@ pro match_tsobjtargets,tsobjtargetsbase,ra,dec,run,rerun,camcol,field,id,tsobj,m
 maxrerun=1000l
 maxfield=2000l
 
+if (NOT keyword_set(tsobj)) then tsobj=lonarr(n_elements(ra)+1l)
 if (NOT keyword_set(matchlength)) then matchlength=1.d
 matchlength=matchlength/3600.
 
@@ -45,8 +46,8 @@ for i=0l, n_elements(indx)-1l do begin
     curr_rerun0=string(curr_rerun,format='(i0)')
     curr_camcol1=string(curr_camcol,format='(i1)')
     searchpath=tsobjtargetsbase+'/runs/'+curr_run5+'/'+ $
-                      curr_rerun0+'/tsObjTargets-'+curr_run5+'-'+ $
-                      curr_rerun0+'-'+curr_camcol1+'-*'
+      curr_rerun0+'/tsObjTargets-'+curr_run5+'-'+ $
+      curr_rerun0+'-'+curr_camcol1+'-*'
     splog,'searching '+searchpath
     filename=findfile(searchpath)
     if (filename[0] ne '') then begin
@@ -60,7 +61,7 @@ for i=0l, n_elements(indx)-1l do begin
                     spherematch,ra,dec,tmptsobj.ra,tmptsobj.dec,matchlength, $
                       match1,match2,distance12
                     if (match1[0] ne -1) then begin
-                        if (NOT keyword_set(tsobj)) then begin
+                        if (n_elements(tsobj) ne n_elements(ra)) then begin
                             dum={dummy, blah:0.}
                             outblank=tmptsobj[match2[0]]
                             struct_assign,dum,outblank
@@ -76,7 +77,7 @@ endfor
 
 ; Check if anything is unmatched
 moretodo=0l
-if(NOT keyword_set(tsobj)) then begin
+if(n_elements(tsobj) ne n_elements(ra)) then begin
     blankindx=lindgen(n_elements(ra))
     moretodo=1l
 endif else begin
@@ -119,7 +120,7 @@ if(moretodo gt 0l and keyword_set(tsobjbase)) then begin
                         spherematch,ra[blankindx],dec[blankindx],tmptsobj.ra, $
                           tmptsobj.dec,matchlength,match1,match2,distance12
                         if (match1[0] ne -1) then begin
-                            if (NOT keyword_set(tsobj)) then begin
+                            if (n_elements(tsobj) ne n_elements(ra)) then begin
                                 dum={dummy, blah:0.}
                                 outblank=tmptsobj[match2[0]]
                                 struct_assign,dum,outblank
