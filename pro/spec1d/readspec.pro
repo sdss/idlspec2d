@@ -226,7 +226,9 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
        else zfile = zfile[0]
 
       if (NOT keyword_set(znum)) then begin
-         zans = rspec_mrdfits(zfile, 1, rownums=rownums)
+         fits_open, zfile, zfcb
+         zans = rspec_mrdfits(zfcb, 1, rownums=rownums, silent=silent)
+         fits_close, zfcb
       endif else begin
          zhdr = headfits(zfile, exten=1)
          nper = sxpar(zhdr,'NAXIS2') / 640L
