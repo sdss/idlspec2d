@@ -71,7 +71,7 @@ pro apo_plotsn, logfile, plate, plugdir=plugdir, plotfile=plotfile
    ; Read the plug map file for all 640 fibers
 
    fullplugfile = filepath(plugfile, root_dir=plugdir)
-   plugmap = readplugmap(fullplugfile, /deredden)
+   plugmap = readplugmap(fullplugfile, /deredden, /apotags)
    plugsort = sortplugmap(plugmap, fibermask=fibermask)
 
    ;----------

@@ -80,7 +80,7 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
    ;----------
    ; Read in the plug map file, and sort it
 
-   plugmap = readplugmap(plugmapfile, /deredden)
+   plugmap = readplugmap(plugmapfile, /deredden, /apotags)
    plugsort = sortplugmap(plugmap, spectrographid, fibermask=fibermask)
 
    ;----------
