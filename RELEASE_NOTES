@@ -148,6 +148,24 @@ etc/spPlateList.par: Add 436 new plates, through MJD 53360 (Dec 21, 2004).
           778       52337 DR2 bad Bad spectrograph collimation
         List each plate in one and only one data release (the first time
         it is released).
+        The most recent list from Fermi (from March 15, 2005;
+        pointed to in sdss-archive/2439) misses the following plates
+        that I have in my list from earlier e-mails.  All of these are
+        repeats of other observations of the same plates:
+          293 51689  EDR
+          352 51694  EDR
+          360 51780  DR1
+          412 51931  EDR
+          476 52027  DR4
+          496 51973  DR4
+          525 52029  DR4
+          574 52347  DR4
+          574 52366  DR4
+          581 52353  DR4
+          641 52176  DR4
+          722 52206  DR4
+          903 52385  DR4
+          1296 52738  DR4
 examples/opECalib-51577.par: Update the gains based upon work by Eric Switzer
         and a more careful look at a recent set of identical flats taken
         on the night MJD 53114.  I've updated the numbers as follows for
