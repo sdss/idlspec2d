@@ -56,7 +56,6 @@ function fitvacset, xpeak, lambda, wset, arcshift, helio=helio
    splog, 'Converting wavelengths to vacuum'
    vaclambda = lambda
    airtovac, vaclambda
-   vacloglam = alog10(vaclambda)
 
    ;----------
    ; Apply heliocentric correction
@@ -64,6 +63,8 @@ function fitvacset, xpeak, lambda, wset, arcshift, helio=helio
    if (keyword_set(helio)) then begin
       vaclambda = vaclambda / (1 + helio/299792.458)
    endif
+
+   vacloglam = alog10(vaclambda)
 
    ;----------
    ; Re-fit the wavelength solution using LAMBDA converted to vacuum
