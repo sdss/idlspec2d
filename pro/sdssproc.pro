@@ -87,8 +87,22 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
    i = rstrpos(infile, '-')
    if (i[0] EQ -1 OR i-2 LT 0) then $
     message, 'Cannot determine CCD number from file name ' + infile
-   camcol = fix( strmid(infile, i-2, 2) )
 
+   camnames = ['b1', 'r2', 'b2', 'r1']
+   camnums = ['01', '02', '03', '04']
+
+
+;
+;	They've changed filenames again, this works both ways
+;
+
+   camplace = where(strmid(infile, i-2, 2) EQ camnames, camct)
+   if (camct NE 1) then $
+     camplace = where(strmid(infile, i-2, 2) EQ camnums, camct)
+   if (camct NE 1) then  message, 'do not know what camera this is'
+
+   camcol = camplace[0] + 1
+     
    cameras = strtrim( sxpar(hdr, 'CAMERAS'), 2 )
    case camcol of
      1: begin

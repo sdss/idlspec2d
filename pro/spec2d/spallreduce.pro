@@ -84,7 +84,7 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
       j = where(allseq.seqid EQ seqid[iseq])
       plateid = allseq[j[0]].plateid
 
-      plateDir = filepath(strtrim(string(plateid),2),root_dir=extractDir)
+      plateDir=filepath(strtrim(string(plateid),2)+'/2d_0',root_dir=extractDir)
 
     if (NOT keyword_set(combineonly)) then begin
 

@@ -1,4 +1,4 @@
-;+
+;begin+
 ; NAME:
 ;   spplan
 ;
@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   spplan, [ indir=indir, plugdir=plugdir, flatdir=flatdir, $
-;    mjd=mjd, planfile=planfile, /flats, /checkstats ]
+;    mjd=mjd, planfile=planfile, run=run, /flats, /checkstats ]
 ;
 ; INPUTS:
 ;
@@ -85,13 +85,29 @@ end
 ;------------------------------------------------------------------------------
 
 pro spplan, indir=indir, plugdir=plugdir, flatdir=flatdir, $
- mjd=mjd, planfile=planfile, flats=flats, checkstats=checkstats
+ mjd=mjd, planfile=planfile, flats=flats, checkstats=checkstats, $
+ run=run, root2d=root2d, combroot = combroot
 
    if (NOT keyword_set(indir)) then indir = '.'
-   if (NOT keyword_set(plugdir)) then plugdir = indir 
+   if (NOT keyword_set(root2d)) then begin 
+      if (strpos(indir, '*') EQ -1) then root2d = indir $
+       else root2d = '.'
+   endif 
+
+   if (NOT keyword_set(combroot)) then begin
+      if (strpos(indir, '*') EQ -1) then combroot = indir $
+       else combroot = '.'
+   endif 
+
+
    if (NOT keyword_set(flatdir)) then begin
       if (strpos(indir, '*') EQ -1) then flatdir = indir $
        else flatdir = '.'
+   endif 
+
+   if (NOT keyword_set(plugdir)) then begin
+      if (strpos(indir, '*') EQ -1) then plugdir = indir $
+       else plugdir = '.'
    endif 
 
    if (NOT keyword_set(planfile)) then begin
@@ -138,8 +154,12 @@ pro spplan, indir=indir, plugdir=plugdir, flatdir=flatdir, $
       CAMERAS[i] = strmid(shortname[i],4,2) ; Camera number from file name
 
 
-      goodcamera = where(CAMERAS[i] EQ camnums,ct)
-      if (ct NE 1) then message, 'Camera number is not in file name'
+      goodcamera = where(CAMERAS[i] EQ camnames,ct)
+      if (ct EQ 1) then CAMERAS[i] = camnums[goodcamera] $
+      else begin
+        goodcamera = where(CAMERAS[i] EQ camnums OR CAMERAS[i] EQ camnames,ct)
+        if (ct NE 1) then message, 'Camera number is not in file name'
+      endelse
 
       if (keyword_set(checkstats)) then $
         newflavor = checkflavor(image, flavor[i], camnames[goodcamera])
@@ -307,13 +327,16 @@ pro spplan, indir=indir, plugdir=plugdir, flatdir=flatdir, $
    ; Create keyword pairs for plan file
    hdr = ''
 
+
    if (NOT keyword_set(flats)) then begin
    hdr = [hdr, "configDir   'XXX'     # Directory for CCD calibration files"]
    hdr = [hdr, "ccdConfig   'XXX'     # File name for amplifier configuration"]
    hdr = [hdr, "ccdECalib   'XXX'     # File name for electronic calibrations"]
    hdr = [hdr, "ccdBC       'XXX'     # File name for bad pixels"]
    hdr = [hdr, "plugDir     '" + plugdir + "'  # Directory for plugmap files"]
-   hdr = [hdr, "extractDir  '" + indir + "'  # Directory for extracted spectra"]
+   hdr = [hdr, "extractDir  '" + root2d + "'  # Root dir for 2d spectra"]
+   hdr = [hdr, "combDir     '" + combroot + $
+                                          "'  # Root dir for combined spectra"]
    endif
 
    hdr = [hdr, "inputDir    '" + indir + "'  # Directory for raw images"]
