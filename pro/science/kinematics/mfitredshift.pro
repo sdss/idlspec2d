@@ -53,7 +53,7 @@
 ;   26-Jun-2000 (v 1.5) altered algorithm to set peak search boundary
 ;       at the half height of the peak, rather than zero.  This fixes
 ;       cases where there is a close double peak. 
-;-
+;   11-Jul-2000 Modified the lowerbound and upperbound by M. Bernardi  
 ;------------------------------------------------------------------------------
 ; This routine locates the 20 highest peaks, and measures
 ; the peak, center, and area of each.  xcen and peak
