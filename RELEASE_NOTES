@@ -29,7 +29,9 @@ PLATESN: New header keywords ROFFSET & RSIGMA store the offset and standard
            GIOFF and GISIGMA store the offset and scatter in the (g-i) color.
 
 PCA_SOLVE: Added /quiet keyword.
+PLATESN: Changed (g-i) to (g-r).
 PLOTSN: Fixed histogram scales, changed colors for histograms.
+        Changed (g-i) to (g-r).
 
 etc/atmdisp_vec_am1.1.see2.0.fit - Tremonti's atmos. dispersion corrrection?
 etc/atmdisp_vec_am1.2.see2.0.fit - Tremonti's atmos. dispersion corrrection?
@@ -38,7 +40,8 @@ etc/atmdisp_vec_am1.4.see2.0.fit - Tremonti's atmos. dispersion corrrection?
 etc/atmdisp_vec_am1.5.see2.0.fit - Tremonti's atmos. dispersion corrrection?
 etc/emlines.par: The [O_II] lines were updated from Peter van Hoof's web
            site at: http://www.pa.uky.edu/~peter/atomic/
-etc/kurucz_stds_v5.fit: Made with new SPECTRUM code.
+etc/kurucz_stds_v5.fit: Made with new SPECTRUM code.  Use white dwarf
+           correction to colors.
 etc/kurucz_model_fix.fit (removed)
 etc/kurucz_stds_interp.fit (removed)
 etc/spChunkList.par: Add chunks 28A, 71, 68A.
