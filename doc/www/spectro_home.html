@@ -507,8 +507,8 @@ output is stuffed into the TEXTURE[0] column.
 
 <P>
 Since standard FITS files are used, there are many ways to access these
-data.  Below are descriptions of specially-written IDL and SM code for
-looking at the data.  IRAF, TCL, and other tools could also be used.
+data.  Below are descriptions of specially-written IDL, SM, and IRAF code for
+looking at the data.
 If you write any such tools, it would be useful to make them available
 to the collaboration by posting them on this site.
 
@@ -706,36 +706,45 @@ on> specplot spPlate-0311-51665.fits[0][*,1],spPlate-0311-51665.fits[0][*,2]
         # stack and plot fibers 1 and 2 without overlapping
 </PRE>
 
-<P>
-If you are looking at early reductions, you may need to make a local copy of
-the spectral FITS file and delete the WCSDIM header keyword before using splot:
-<PRE>
-on> hedit my_spPlate-0311-51665.fits wcsdim del+ add- show+ update+ verify-
-</PRE>
-
 <H4><A NAME="irafphist">Pat Hall's IRAF SDSS Tasks</A></H4>
 
 <P>
 Pat Hall has written an IRAF package, PHIST, for displaying SDSS spectra.
-It does not yet have the functionality of the IDL or SM tools, but includes
-the following tasks:
+It does not have all the functionality of the IDL tools, but does have
+some complementary functions.  The task list is as follows:
 <PRE>
-lplots - overplot wavelengths of emission / absorption lines for given z
- sbqsx - sample task for converting SX .tbl output to formatted ASCII
-sbqsx2 - another task for converting SX .tbl output to formatted ASCII
- splat - interactively SPLOT a specific observation (plate+mjd+fiber) 
- splet - non-interactively SPECPLOT an observation and its error spectrum 
+ dec2seg - convert decimal coordinates to sexigesimal
+   doigi - run existing IGI script
+hexprint - convert a decimal number to hexadecimal
+  ionlte - calculate LTE ratios of MgI-III,AlI-IV,FeI-IV for given n_e,T ranges
+  lplots - overplot wavelengths of emission / absorption lines for given z
+ lplots2 - 2-panel lplots
+mkfitsobs - make coadded FITS and text spectrum
+   mkobs - make text spectrum from FITS spectrum
+   sbqgr - sample task for converting GR's SX .tbl output to formatted ASCII
+   sbqsx - sample task for converting SX .tbl output to formatted ASCII
+  sbqsx2 - another task for converting SX .tbl output to formatted ASCII
+ seg2dec - convert sexigesimal coordinates to decimal
+  spdata - get objid,mags,ra,dec,objtype from spectrum (plate,mjd,fiber)
+   splat - interactively SPLOT a specific observation (plate+mjd+fiber) 
+   splet - non-interactively SPECPLOT an observation and its error spectrum 
+unredden - deredden spectrum using SMC or LMC extinction curve
+   vcalc - calculate velocity offset in quasar rest frame
+   vplot - overplot wavelengths of emission / absorption lines in velocity space
+  vplots - multiple vplot
+   wcalc - calculate vacuum wavelength from air wavelength
+   zplot - plot spectrum in the rest frame at the specified z
 </PRE>
 
 Here's the README file on how to retrieve & install the package
-(at Princeton you can just read /u/pathall/IRAF/PHIST/phist.hlp):
+for version v.2 (December 2001):
 
 <PRE>
         PHIST -- Pat Hall's IRAF SDSS Tasks
 
-v.1     001206  Read "phist.hlp" ("phelp phist opt=sys" in IRAF) for an
+v.2     011207  Read "phist.hlp" ("phelp phist opt=sys" in IRAF) for an
         introduction.  Entire package available as a compressed tarfile
-        from <A HREF="http://astro.princeton.edu/~pathall/phist1.tar.gz">http://astro.princeton.edu/~pathall/phist1.tar.gz</A>
+        from <A HREF="http://astro.princeton.edu/~pathall/phist2.tar.gz">http://astro.princeton.edu/~pathall/phist2.tar.gz</A>
         To install, enter the proper pathnames in "phist.cl" and
         "phist.hd", load the IRAF "softools" package, and type
         "mkhelpdb root.hd helpdb.mip", deleting the old helpdb.mip
