@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   apoplot, plate, [ fiberid, mjd=, expnum=, nsmooth=, nmed=, psfile=, $
-;    /netimage, _EXTRA= ]
+;    /magsort, /netimage, _EXTRA= ]
 ;
 ; INPUTS:
 ;   plate      - Plate number
@@ -28,6 +28,8 @@
 ;                you simply set this as a flag, e.g. with /PSFILE, then the
 ;                default file name is spec-pppp-mmmmm-fff.ps,
 ;                where pppp=plate number, mmmmm=MJD, fff=fiber ID.
+;   magsort    - If set and FIBERID is not, then plot all fibers from
+;                the brightest object to the faintest.
 ;   netimage   - If set, then launch a Netscape browser with the object
 ;                image from Steve Kent's web site.  This only works if
 ;                Netscape is running and has permissions at the site
@@ -333,7 +335,7 @@ end
 ;------------------------------------------------------------------------------
 pro apoplot, plate, fiberid, mjd=mjd, expnum=expnum, nsmooth=nsmooth, $
  nmed=nmed, psfile=psfile, noerase=noerase, xrange=xrange, yrange=yrange, $
- _EXTRA=KeywordsForSplot
+ magsort=magsort, _EXTRA=KeywordsForSplot
 
    common com_apoplot, mjddir, PPBIAS, PPFLAT, PPARC, PPSCIENCE
 
@@ -388,7 +390,25 @@ pro apoplot, plate, fiberid, mjd=mjd, expnum=expnum, nsmooth=nsmooth, $
    ; (and then all 640 spectra are being plotted).
 
    if (NOT keyword_set(fiberid)) then begin
-      fiberid = lindgen(640)+1L
+      if (keyword_set(magsort) AND keyword_set(PPSCIENCE)) then begin
+         sindx1 = (where(PPSCIENCE.plate EQ plate $
+          AND (strmid(PPSCIENCE.camera,1,1) EQ '1')))[0]
+         sindx2 = (where(PPSCIENCE.plate EQ plate $
+          AND (strmid(PPSCIENCE.camera,1,1) EQ '2')))[0]
+         if (sindx2 EQ -1) then begin
+            fiberid = lindgen(320)+1
+            fibermag = PPSCIENCE[sindx1].fibermag
+         endif else if (sindx1 EQ -1) then begin
+            fiberid = lindgen(320)+321
+            fibermag = PPSCIENCE[sindx2].fibermag
+         endif else begin
+            fiberid = lindgen(640)
+            fibermag = [PPSCIENCE[sindx1].fibermag, PPSCIENCE[sindx2].fibermag]
+         endelse
+         fiberid = fiberid[ sort(fibermag) ]
+      endif
+      if (NOT keyword_set(fiberid)) then $
+       fiberid = lindgen(640)+1L
       if (keyword_set(psfile)) then begin
          q_onefile = 1
          psfilename = string(plate, mjd, $
