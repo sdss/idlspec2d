@@ -606,8 +606,6 @@ these trimmed calibObj files can be found at:
 <PRE>
   sdssdata.princeton.edu:/u/dss/spectro/calibobj
 </PRE>
-A technical point: the <A HREF="#targetflags">target flags</A>
-have been over-written with those found in the plPlugMapM files.
 
 <H4><A NAME="completesample">Summary Files: Selecting Complete Samples</A></H4>
 
@@ -735,6 +733,7 @@ by simply typing the following for C-shell:
 </PRE></DD></DL>
 or the following for Bourne-shell:
 <DL><DD><PRE>
+  export SHELL=/bin/bash
   export EUPS_FLAVOR=Linux
   source /u/dss/products/evilups/bin/setups.sh  # If you are using Bourne-shell
   setup idlspec2d
@@ -838,25 +837,19 @@ Problems and suggestions should be reported to Michael Strauss
 (<A HREF="mailto:strauss@astro.princeton.edu">strauss@astro.princeton.edu</A>).
 
 <P>
-You will need the latest version of SM (version SM2_4_8), which supports
-FITS extensions.  If you have a valid SM license, you or your system admin
-should be able to install this (see the bottom of
+You will need a version of SM  which supports FITS extensions
+(version SM2_4_8 or later).  If you have a valid SM license,
+you or your system admin should be able to install this (see the bottom of
 Michael's <A HREF="spectro_sm/README.spectro">README file</A>.
-At Princeton, the new version is available on either "tanuki" or "moonshine"
-by executing:
-<DL><DD><PRE>
-~rhl/sm/src/sm
-</PRE></DD></DL>
 
 <P>
 At Princeton, you could type the following to display plate 306 fiber 100,
 then overplot the best-fit template:
 <DL><DD><PRE>
-ssh moonshine
 setenv SPECTRO_DATA /u/dss/spectro
 setenv IDLSPEC2D_DIR /u/schlegel/idlspec2d
 cd ~strauss/spectro_sm/release
-~rhl/sm/src/sm
+sm
 dev x11
 input_new spectro.sm
 define idl 1
@@ -1189,7 +1182,8 @@ ZWARNING   A flag set for bad redshift fits in place of calling CLASS=UNKNOWN.
            The following bits may be set:
            0 = Sky fiber
            1 = Too little wavelength coverage (WCOVERAGE < 0.18)
-           2 = Chi^2 is too close to chi^2 for the next best fit (within 0.01)
+           2 = Chi^2 is too close to chi^2 for the next best fit (within 0.01
+               in the reduced chi^2)
            3 = Synthetic spectrum is negative (only set for stars and QSO's)
            4 = Fraction of points above 5 sigma is too large (> 5%)
            5 = Chi^2 minimum was at the edge of the redshift-fitting range,
