@@ -1,97 +1,73 @@
 ;+
 ; NAME:
-;   extract_row
+;   extract_image
 ;
 ; PURPOSE:
-;   Fit the fiber profiles and background in a single row with least squares
+;   Extract the fiber profile flux for an entire image
 ;
 ; CALLING SEQUENCE:
-;   ans = extract_row( fimage, invvar, xcen, sigma, [ymodel=ymodel,
-;              fscat = fscat, proftype = proftype, wfixed = wfixed,
-;              inputans=inputans, iback = iback, oback =oback, bfixarr=bfixarr,
-;              xvar = xvar, mask=mask,
-;              diagonal=diagonal, fullcovar=fullcovar, wfixarr = wfixarr,
-;              nPoly=nPoly, maxIter=maxIter, highrej=highrej, 
-;              lowrej=lowrej, calcCovar=calcCovar])
+;   extract_image(fimage, invvar, xcen, sigma, flux, [error,
+;              ymodel=ymodel, fscat=fscat, proftype = proftype, 
+;              wfixed=wfixed, sigmacor=sigmacor, xcencor=xcencor, mask=mask,
+;              nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej])
 ;
 ; INPUTS:
-;   fimage     - Image[nCol]
-;   invvar     - Inverse Variance[nCol]
-;   xcen       - Initial guesses for X centers[nFibers]
-;   sigma      - sigma of gaussian profile; default to 1.0 (scalar or [nFibers])
+;   fimage     - Image[nCol, nRow]
+;   invvar     - Inverse Variance[nCol, nRow]
+;   xcen       - Initial guesses for X centers[nRow, nFibers]
+;   sigma      - sigma of gaussian profile; default to 1.0 
+;                  (scalar or [nFibers] or [nRow, nFibers])
+;
+; OUTPUTS:
+;   flux       - Total extracted flux in each profile [nRow, nFibers]
+;
+; OPTIONAL OUTPUTS:
+;   error      - Estimated total error in each profile [nRow, nFibers]
+;   ymodel     - model best fit of row[nCol, nRow]
+;   fscat      - scattered light contribution in each fiber[nRow, nFibers]
 ;
 ; OPTIONAL KEYWORDS:
 ;   proftype   - currently, one can only use 1: Gaussian (scalar)
 ;   wfixed     - array of 1's and zero's which set which parameters are fixed.
-;   inputans   - 2d array of input answers [nCoeff, nFibers]
-;   iback      - 1d array of input background coeff 
-;                    (needed if fixed parameters are non-zero)
-;   bfixarr    - array of 1's and zero's which set which background 
-;                    parameters are fixed.
-;   wfixarr    - 1d integer array of 1's and zero's which specify fixed 
-;                    profile parameters
-;   xvar       - x values of fimage and invvar, default is findgen(nx) 
-;   mask       - pixel mask of 1 is good and 0 is bad (nx) 
+;                e.g. [1] just gaussian's with fixed width sigma
+;                     [1, 1] fit gaussian + sigma correction
+;                     [1, 0, 1] fit gaussian + center correction
+;                     [1, 1, 1] fit gaussian + sigma and center corrections.   
+; 
+;   sigmacor   - new estimates of sigma, must have second element of wfixed set
+;   xcencor    - new estimates of xcen, must have third element of wfixed set
+;
+;   mask       - byte mask: 1 is good and 0 is bad [nCol,nRow] 
+;	         mask can be passed as input, but will be modified as
+;                pixels are rejected
 ;   nPoly      - order of chebyshev scattered light background; default to 5
 ;   maxIter    - maximum number of profile fitting iterations; default to 10
 ;   highrej    - positive sigma deviation to be rejected (default 5.0)
 ;   lowrej     - negative sigma deviation to be rejected (default 5.0)
-;   calcCovar  - Calculate full covariance matrix (which is symmetric)
-;                  and fill lower triangle of fullcovar.
-;		   Default is 0, and should be left at 0
-;                  unless fullcovar is being analyzed, adds a factor of 2 or
-;		   3 to CPU time.
-;
-; OUTPUTS:
-;   ans        -  Extracted flux in each parameter [nCoeff, nFiber]
-;
-; OPTIONAL OUTPUTS:
-;   ymodel     - model best fit of row[nCol]
-;   fscat      - scattered light contribution in each fiber[nFibers]
-;   diagonal   - full 1d diagonal of covariance matrix 
-;		     (Currently, this is diagonal from cholesky decompostion,
-;                     which is 1/error(j) ).
-;   fullcovar  - full 2d covariance matrix
 ;
 ; COMMENTS:
-;
-;    Still need to do:
-;       limits on chebyshev polynomial are assumed to be 0.0 <--> nx
-;	these may need to be optional if only partial rows are being fit
-;
-;       Error codes need to be returned, currently no such codes are returned
-;
-;	
-;
-;	  
 ;
 ; EXAMPLES:
 ;
 ; PROCEDURES CALLED:
-;   Dynamic link to extract_row.c
+;    extract_row.pro
 ;
 ; REVISION HISTORY:
 ;    8-Aug-1999  Version 0.0 Scott Burles, Chicago 
 ;-
 ;------------------------------------------------------------------------------
-function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
-                   fscat = fscat, proftype = proftype, wfixed = wfixed, $
-                   inputans=inputans, iback = iback, oback =oback, $
-                   bfixarr = bfixarr, xvar=xvar, mask=mask, $
-                   diagonal=p, fullcovar=covar, wfixarr = wfixarr, $
-                   nPoly=nPoly, maxIter=maxIter, highrej=highrej, $
-                   lowrej=lowrej, calcCovar=calcCovar
+subroutine extract_row, fimage, invvar, xcen, sigma, flux, error, 
+               ymodel=ymodel, fscat=fscat, proftype = proftype, 
+               wfixed=wfixed, sigmacor=sigmacor, xcencor=xcencor, mask=mask,
+               nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej
 
-   ; Need 4 parameters
-   if (N_params() LT 4) then begin
-      print, 'Syntax - ans = extract_row( fimage, invvar, xcen, sigma, [ymodel=ymodel,'
-      print, ' fscat = fscat, proftype = proftype, wfixed = wfixed,'
-      print, ' inputans=inputans, iback = iback, oback =oback, bfixarr=bfixarr,'
-      print, ' xvar=xvar, mask=mask, '
-      print, ' diagonal=diagonal, fullcovar=fullcovar, wfixarr = wfixarr,'
-      print, ' nPoly=nPoly, maxIter=maxIter, highrej=highrej, '
-      print, ' lowrej=lowrej, calcCovar=calcCovar])'
-      return, -1
+   ; Need 5 parameters
+   if (N_params() LT 5) then begin
+      print, 'Syntax - extract_image(fimage, invvar, xcen, sigma, flux, [error,'
+      print, ' ymodel=ymodel, fscat=fscat, proftype = proftype, '
+      print, ' wfixed=wfixed, sigmacor=sigmacor, xcencor=xcencor, mask=mask, '
+      print, ' nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej])'
+      return
    endif
 
    nTrace = n_elements(xcen)
@@ -107,13 +83,10 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
    if (NOT keyword_set(highrej)) then highrej = 5.0
    if (NOT keyword_set(lowrej)) then lowrej = 5.0
    if (NOT keyword_set(wfixed)) then wfixed = [1]
-   if (NOT keyword_set(calcCovar)) then calcCovar = 0
 
-   if (NOT keyword_set(xvar)) then xvar = findgen(nx) $
-      else if (nx NE n_elements(xvar)) then $
-         message, 'Number of elements in FIMAGE and XVAR must be equal'
+   xvar = findgen(nx)
 
-   if (NOT keyword_set(mask)) then mask = bytarr(nx) + 1 $
+   if (NOT keyword_set(mask)) then mask = lonarr(nx) + 1 $
       else if (nx NE n_elements(mask)) then $
          message, 'Number of elements in FIMAGE and MASK must be equal'
 
@@ -178,7 +151,7 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
 
       result = call_external(getenv('IDL_EVIL')+'libspec2d.so','extract_row',$
        nx, float(xvar), float(fimage), float(invvar), float(ymodel), nTrace, $
-       nPoly, float(xcen), float(sigma), proftype, calcCovar, nCoeff, ma, ans,$
+       nPoly, float(xcen), float(sigma), proftype, calcCovar, nCoeff, ma, ans, $
        long(wfixarr), p, fscat, covar)
 
        diffs = (fimage - ymodel)*sqrt(workinvvar) 

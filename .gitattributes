@@ -7,6 +7,7 @@ include/evilmath.h -text
 include/export.h -text
 include/extract_row.h -text
 pro/extract_boxcar.pro -text
+pro/extract_image.pro -text
 pro/extract_profile.pro -text
 pro/extract_row.pro -text
 pro/fchebyshev.pro -text
@@ -16,6 +17,7 @@ pro/makefile -text
 pro/rdss_fits.pro -text
 pro/sdssproc.pro -text
 pro/spec2d/extract_boxcar.pro -text
+pro/spec2d/extract_image.pro -text
 pro/spec2d/extract_profile.pro -text
 pro/spec2d/extract_row.pro -text
 pro/spec2d/fchebyshev.pro -text
