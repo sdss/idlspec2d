@@ -20,7 +20,8 @@
 
 astrologdir=$SPECLOG_DIR
 toprawdir=$RAWDATA_DIR
-localdisks='/peyton/scr/spectro0/data/rawdata /peyton/scr/spectro1/data/rawdata /peyton/scr/spectro2/data/rawdata /peyton/scr/spectro3/data/rawdata'
+#localdisks='/peyton/scr/spectro0/data/rawdata /peyton/scr/spectro1/data/rawdata /peyton/scr/spectro2/data/rawdata /peyton/scr/spectro3/data/rawdata'
+localdisks='/peyton/scr/spectro1/data/rawdata /peyton/scr/spectro2/data/rawdata /peyton/scr/spectro3/data/rawdata'
 topoutdir=$SPECTRO_DATA
 hostname=sdsshost.apo.nmsu.edu
 
@@ -84,14 +85,21 @@ for mjdstr in $remotedir ; do
    # Proceed only if a good local directory exists to copy the data
 
    if [ -n "$localdir" ] ; then
+      # Copy the astrolog files...
       echo SPROBOT: rsync "$hostname:/astrolog/$mjdstr" $astrologdir
       rsync -ar --rsh="ssh -c arcfour" \
        --rsync-path=/p/rsync/v2_4_3/rsync \
        "$hostname:/astrolog/$mjdstr" $astrologdir
+
+      # Copy the raw FITS files...
       echo SPROBOT: rsync "$hostname:/data/spectro/$mjdstr/*" $localdir
       rsync -ar --rsh="ssh -c arcfour" \
        --rsync-path=/p/rsync/v2_4_3/rsync \
        "$hostname:/data/spectro/$mjdstr/*" $localdir
+
+      # Compress the raw FITS files w/gzip...
+#      echo SPROBOT: gzip $localdir/*.fit $localdir/*/*.fit
+#      gzip $localdir/*.fit $localdir/*/*.fit
 
       if [ -z "$mjdlist" ] ; then
          mjdlist=$mjdstr
@@ -139,7 +147,7 @@ then
    echo "SPROBOT: BATCH1D already running at "`date`
 else
    echo "SPROBOT: BATCH1D started at "`date`
-   sprobot1d.sh ",topdir='$topoutdir', nice=10" &
+   sprobot1d.sh ",topdir='$topoutdir', nice=19" &
 fi
 
 #------------------------------------------------------------------------------
@@ -151,7 +159,7 @@ then
    echo "SPROBOT: BATCH2D already running at "`date`
 else
    echo "SPROBOT: BATCH2D started at "`date`
-   sprobot2d.sh ",topdir='$topoutdir', nice=10" &
+   sprobot2d.sh ",topdir='$topoutdir', nice=19" &
 fi
 
 exit
