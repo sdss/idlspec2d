@@ -68,7 +68,7 @@
 ; REVISION HISTORY:
 ;   29-Oct-2000  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
-pro platelist, plist=plist, create=create
+pro platelist, infile, plist=plist, create=create
 
    minsn2 = 13.0
    fitsfile = djs_filepath('platelist.fits', root_dir=getenv('SPECTRO_DATA'))
@@ -111,13 +111,13 @@ pro platelist, plist=plist, create=create
     'mjd'      , 0L, $
     'ra'       , 0.0, $
     'dec'      , 0.0, $
-    'mapname'  , '', $
-    'vers2d'   , '', $
-    'verscomb' , '', $
-    'vers1d'   , '', $
-    'verstarg' , '', $
-    'chunkname', '', $
-    'mjdlist'  , '', $
+    'mapname'  , ' ', $
+    'vers2d'   , ' ', $
+    'verscomb' , ' ', $
+    'vers1d'   , ' ', $
+    'verstarg' , ' ', $
+    'chunkname', ' ', $
+    'mjdlist'  , ' ', $
     'sn2_g1'   , 0.0, $
     'sn2_r1'   , 0.0, $
     'sn2_i1'   , 0.0, $
