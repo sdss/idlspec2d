@@ -22,6 +22,10 @@ YANNY_PAR (in idlutils): If several lines have the same keyword name,
 
 New installation script "evilinstall" in the idlutils product.
 
+Add a line to the cron tables from "sos_start" and "sprobot_start" to
+keep the disk auto-mount points alive at Princeton (or anywhere using an
+amd daemon).
+
 -------------------------------------------------------------------------------
 v4_6_2 (Feb 14, 2001)
 
