@@ -307,8 +307,6 @@ objmask = 0 ; Free memory
 
    !p.multi = [0,1,nfile]
 
-stop
-
    ;----------
    ; Do the actual fits
 
