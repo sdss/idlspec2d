@@ -38,6 +38,7 @@ doc/www/platelist.txt -text
 doc/www/spectroSOS.html -text
 doc/www/spectro_apodisplay.html -text
 doc/www/spectro_home.html -text
+doc/www/spectro_inspect.html -text
 doc/www/zplot-brg.ps -text
 doc/www/zplot-log.ps -text
 doc/www/zplot-main.ps -text
