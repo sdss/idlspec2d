@@ -17,7 +17,7 @@
 ;   adderr     - Additional error to add to the formal errors, as a
 ;                fraction of the flux; default to 0.03 (3 per cent).
 ;   xdisplay   - Send plots to X display rather than to plot file
-;   minsn2     - Minimum S/N^2 to include science frame in coadd (default 1.0)
+;   minsn2     - Minimum S/N^2 to include science frame in coadd (default 0.0)
 ;
 ; OUTPUT:
 ;
@@ -51,7 +51,7 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
 
    if (NOT keyword_set(planfile)) then planfile = findfile('spPlancomb*.par')
    if (n_elements(adderr) EQ 0) then adderr = 0.03
-   if n_elements(minsn2) EQ 0 then minsn2 = 1.0
+   if (n_elements(minsn2) EQ 0) then minsn2 = 0.0
 
    ;----------
    ; If multiple plan files exist, then call this script recursively
@@ -188,15 +188,15 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
    ;----------
    ; Select only the science frames
 
-   science = where(allseq.flavor EQ 'science')
+   isci = where(allseq.flavor EQ 'science' OR allseq.flavor EQ 'smear')
 
-   if science[0] EQ -1 then begin 
+   if (isci[0] EQ -1) then begin 
       splog, 'No science frames in this plan ' + thisplan
       cd, origdir
       return
    endif
 
-   sciname = allseq[science].name[icams]
+   sciname = allseq[isci].name[icams]
    j = where(sciname)
 
    if j[0] EQ -1 then begin 
