@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   spflatten2, flatname, arcname, allflats, [ pixflat, sigrej=, maxiter=, $
 ;    oldflat=, outfile=, indir=, outdir=, tmpdir=, $
-;    pixspace=, nord=, lower=, upper=, /nodelete ]
+;    pixspace=, nord=, lower=, upper=, mincounts=, /nodelete ]
 ;
 ; INPUTS:
 ;   flatname   - Name of flat image for tracing arc
@@ -33,6 +33,9 @@
 ;                the flux variations of multiple fibers crossing a single
 ;                column, but it need not fit out the actual flat-field
 ;                variations.
+;   mincounts  - The summed model image must have a minimum of this many counts
+;                at each pixel, or the output flat is set to zero for that
+;                pixel; default to 100 counts.
 ;   nodelete   - If set, then do not delete temporary files.
 ;
 ; PARAMETERS FOR SLATEC_SPLINEFIT:
@@ -91,12 +94,14 @@
 pro spflatten2, flatname, arcname, allflats, pixflat, $
  sigrej=sigrej, maxiter=maxiter, $
  oldflat=oldflat, outfile=outfile, indir=indir, outdir=outdir, tmpdir=tmpdir, $
- pixspace=pixspace, nord=nord, lower=lower, upper=upper, nodelete=nodelete
+ pixspace=pixspace, nord=nord, lower=lower, upper=upper, mincounts=mincounts, $
+ nodelete=nodelete
 
    if (N_elements(pixspace) EQ 0) then pixspace = 50
    if (N_elements(nord) EQ 0) then nord = 4
    if (N_elements(lower) EQ 0) then lower = 2
    if (N_elements(upper) EQ 0) then upper = 2
+   if (NOT keyword_set(mincounts)) then mincounts = 100.
 
    nflat = N_elements(allflats)
    ngrow = 2
@@ -395,7 +400,8 @@ pixflatarr = 0
 
       endfor
 
-      pixflat = (flatimgsum > 1) / (ymodelsum > 1)
+      qgood = ymodelsum GE mincounts
+      pixflat = qgood * (flatimgsum > 0) / (ymodelsum + (1-qgood))
    endelse
 
    if (keyword_set(outfile)) then $
