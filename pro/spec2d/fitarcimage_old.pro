@@ -106,7 +106,7 @@ pro fitarcimage_old, arc, arcivar, xnew, ycen, wset, $
    nfiber = dims[1]
    if (total(dims NE size(arcivar, /dim))) then $
     message, 'ARC and ARCIVAR must have same dimensions'
-   if (NOT keyword_set(fibermask)) then fibermask = bytarr(nfiber) + 1
+   if (NOT keyword_set(fibermask)) then fibermask = bytarr(nfiber)
 
    if (NOT keyword_set(row)) then row = (nfiber-30)/2
    if (NOT keyword_set(nmed)) then nmed = 5
