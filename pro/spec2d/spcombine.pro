@@ -15,7 +15,7 @@
 ;                plan files matching 'spPlancomb*.par'
 ;   docams     - Cameras to combine; default to ['b1', 'b2', 'r1', 'r2']
 ;   adderr     - Additional error to add to the formal errors, as a
-;                fraction of the flux; default to 0.03 (3 per cent).
+;                fraction of the flux; default to 0.01 (1 per cent).
 ;   xdisplay   - Send plots to X display rather than to plot file
 ;
 ; OUTPUT:
@@ -47,7 +47,7 @@
 pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay
 
    if (NOT keyword_set(planfile)) then planfile = findfile('spPlancomb*.par')
-   if (n_elements(adderr) EQ 0) then adderr = 0.03
+   if (n_elements(adderr) EQ 0) then adderr = 0.01
 
    ;----------
    ; If multiple plan files exist, then call this script recursively
