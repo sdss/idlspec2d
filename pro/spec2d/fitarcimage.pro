@@ -32,7 +32,7 @@
 ;                default to (NFIBER-30)/2
 ;   nmed       - Number of rows around ROW to median filter for initial
 ;                wavelengths solution; default to 5
-;   masdev     - max deviation in log lambda to allow (default 1.2e-5=8 km/s)
+;   masdev     - max deviation in log lambda to allow (default 1.0e-5=7 km/s)
 ;   gauss      - Use gaussian profile fitting for final centroid fit
 ;
 ; OUTPUTS:
@@ -100,7 +100,7 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    endif
    if (NOT keyword_set(func)) then func = 'legendre'
    if (NOT keyword_set(ans)) then ans = 0
-   if NOT keyword_set(maxdev) then maxdev = 1.2d-5
+   if NOT keyword_set(maxdev) then maxdev = 1.0d-5
 
    t_begin = systime(1)
 
@@ -217,7 +217,6 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
      x1   = trace_gweight(arc, x1, ycen, sigma=1.0, invvar=arcivar, xerr=xerr) 
      xcen = trace_gweight(arc, x1, ycen, sigma=1.0, invvar=arcivar, xerr=xerr) 
    endif else begin  
-     x1   = trace_fweight(arc, x1, ycen, radius=2.0, invvar=arcivar, xerr=xerr)
      x1   = trace_fweight(arc, x1, ycen, radius=2.0, invvar=arcivar, xerr=xerr)
      xcen = trace_fweight(arc, x1, ycen, radius=2.0, invvar=arcivar, xerr=xerr)
    endelse
