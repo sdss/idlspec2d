@@ -17,7 +17,9 @@
 ;    spectro_data_dir -- directory path to original spPlate files
 ;    remove_smear     -- set to remove the smear correction from all fibers
 ;    zeropoint_cor    -- correct the flux zeropoint as well as the color
-;                          
+;    tsobj_dir        -- directory path to tsObj files.  Only needed if 
+;                        correcting zeropoints to Photo5.3 is desired
+;                      
 ; OUTPUTS:
 ;    All outputs are written to the current directory.  These include:
 ;    -- two FITS binary tables containing info about the standard stars called
@@ -50,11 +52,11 @@
 ;    calibration. 
 ;
 ;    The second correction which is applied is the flux correction itself.
-;    A flux calibration "correction vector" is derived independently for each of 
-;    the two spectrographs by ratioing the standard star spectra with stellar 
-;    atmosphere models of the appropriate spectral type.  Each half-plate
-;    is then multiplied by one correction vector (which is made from the 
-;    average of many stars).  This correction is necessary, because the 
+;    A flux calibration "correction vector" is derived independently for each  
+;    of the two spectrographs by ratioing the standard star spectra with 
+;    stellar atmosphere models of the appropriate spectral type.  Each 
+;    half-plate is then multiplied by one correction vector (which is made from
+;    the average of many stars).  This correction is necessary, because the 
 ;    standard stars observed are not all identical in type to BD+17 4708, as 
 ;    was first assumed.
 ;  
@@ -66,7 +68,14 @@
 ;    are sometimes slight offsets due to the manner in which the original 
 ;    Spectro2d flux calibration was done.  The median ratio of the
 ;    the r-band magnitudes synthesized from the spectra and the photo fiber
-;    mags in the plugmap is used to reset the zeropoint, if this is desired.
+;    mags is used to reset the zeropoint, if this is desired.  The photo 
+;    fibermags are taken from the plugmap by default. However, if the keyword
+;    "tsobj_dir" is set then a tsObj file is sought with a name matching the
+;    plate's mapname.  If a tsObj file is found, then the photo fibermags are
+;    taken from this file.  This allows the spectal flux calibration to be
+;    matched to Photo5.3 rather than the very old data in the plugmaps. The
+;    new photo fibermags are use in creating the spSN2d diagnostic plot, but 
+;    the original plugmap is preserved in the output spPlate file.
 ; 
 ;    The corrected spPlate file is written out in the current directory.  The
 ;    HDU's which are modified are the flux (HDU 0), the inverse variance
@@ -96,6 +105,7 @@
 ;    sxpar()
 ;    splog
 ;    undo_smear()
+;    zeropt_cor
 ;
 ; REVISION HISTORY:
 ;    28-Oct-2002  Written by C. Tremonti (JHU)
@@ -103,7 +113,8 @@
 ;-------------------------------------------------------------------------------
 
 pro spplate_correct, plate, mjd, spectro_data_dir = spectro_data_dir, $
-    remove_smear = remove_smear, zeropoint_cor = zeropoint_cor
+    remove_smear = remove_smear, zeropoint_cor = zeropoint_cor, $
+    tsobj_dir = tsobj_dir
 
   ;----------------------------------------------------------------------------
   ; Figure out file names and path
@@ -224,38 +235,18 @@ pro spplate_correct, plate, mjd, spectro_data_dir = spectro_data_dir, $
   ; Correct flux zero points if this is desired
   ;----------------------------------------------------------------------------
 
+  newplugmap = plugmap
+
   if keyword_set(zeropoint_cor) AND keyword_set(remove_smear) then begin
 
-    ;-------------------
-    ; Compute the flux in the spectra (in ergs/s/cm^2/Hz) at the effective 
-    ; wavelength of the r-filter
+    ; Compute the corrections
+    zeropt_cor, hdr, wave, newflux, newinvvar, plugmap, $
+                fcor1_zpt = fcor1_zpt, fcor2_zpt = fcor2_zpt, $
+                tsobj_dir = tsobj_dir, fibermags = fibermags
 
-    flambda2fnu = (wave*wave / 2.99792e18) # replicate(1,640)
-
-    fthru = filter_thru(newflux * flambda2fnu * 1e-17, waveimg=wave, $
-                        mask=(newinvvar LE 0), /toair)
-
-    r_spectro_fnu = fthru[*,2]   
-
-    ;------------------
-    ; Now compute the same from the photo fiber mag
-
-    r_photo_mag = plugmap.mag[2] + 0.015  ; transform to AB 
-    r_photo_fnu = 10.0^(-0.4 * (r_photo_mag + 48.6))
-
-    ;------------------
-    ; There ratio of the spectro and phot fluxes is used to set the zeropoint
-
+    ; Now apply them 
     ifib1 = indgen(320)
     ifib2 = ifib1 + 320
-
-    fcor1_zpt = median(r_photo_fnu[ifib1] / r_spectro_fnu[ifib1])
-    fcor2_zpt = median(r_photo_fnu[ifib2] / r_spectro_fnu[ifib2])
-
-    splog, 'Flux Zeropoint Correction to Spectrograph 1: ' + $
-           string(fcor1_zpt, format = '(F6.3)')
-    splog, 'Flux Zeropoint Correction to Spectrograph 2: ' + $
-           string(fcor2_zpt, format = '(F6.3)')
 
     newflux[*,ifib1] = newflux[*,ifib1] * fcor1_zpt 
     newflux[*,ifib2] = newflux[*,ifib2] * fcor2_zpt 
@@ -265,13 +256,19 @@ pro spplate_correct, plate, mjd, spectro_data_dir = spectro_data_dir, $
     
     sxaddpar, hdr, 'FLUXZPT', 'T', 'Flux Zeropoint Updated?'
 
+    ;---------------
+    ; Update the plugmap file with the new fiber mags just for the 
+    ; purposes of the spSN2d plot -- don't save this way
+
+    if keyword_set(fibermags) then newplugmap.mag = fibermags
+
   endif
 
   ;----------------------------------------------------------------------------
   ; Re-determine the synthetic magnitudes (and make a nice diagnostic plot)
   ;----------------------------------------------------------------------------
 
-   platesn, newflux, newinvvar, newandmask, plugmap, loglam, hdr=hdr, $
+   platesn, newflux, newinvvar, newandmask, newplugmap, loglam, hdr=hdr, $
             plotfile= 'spSN2d-' + platestr + '-' + mjdstr + '.ps', $
             synthmag=newsynthmag 
 
@@ -285,7 +282,7 @@ pro spplate_correct, plate, mjd, spectro_data_dir = spectro_data_dir, $
   sxaddpar, hdr, 'BUNIT', '1E-17 erg/cm^2/s/Ang', ' '
 
   ;----------------------------------------------------------------------------
-  ; Write the modified data back to file
+  ; Write the modified data back to file (but preserve original plugmap)
   ;----------------------------------------------------------------------------
 
   mwrfits, float(newflux), platename, hdr, /create
