@@ -165,6 +165,7 @@ pro/fluxfix/atmdisp_cor.pro -text
 pro/fluxfix/djs_sfit_iter.pro -text
 pro/fluxfix/frame_flux_calib.pro -text
 pro/fluxfix/frame_flux_tweak.pro -text
+pro/fluxfix/jeg_sphoto_coef.pro -text
 pro/fluxfix/kurucz_restore.pro -text
 pro/fluxfix/newspcombine.pro -text
 pro/fluxfix/pca_flux_standard.pro -text
