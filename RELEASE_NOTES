@@ -5,6 +5,8 @@ MYFLUXCALIB: Fix bug whereby the PCA spectrum could be negative.
 PCA_SOLVE: Forgot to return optional outputs OUTMASK, USEMASK in the case
            of only a single spectrum being passed.  This happened in the
            combining of plate 214 in MYFLUXCALIB, and crashed.
+SPREDUCE1D: The outputs ANYANDMASK,ANYORMASK were not being constructed
+            properly, and were simply wrong.  Should be fixed now.
 
 BSPLINE_BKPTS (in idlutils): Do not crash even in the case of very few
          data points.  But untested whether this actually does what we want
