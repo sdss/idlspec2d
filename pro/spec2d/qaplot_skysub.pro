@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   qaplot_skysub, obj, objivar, objsub, objsubivar, wset, $
-;    iskies, [filename= ]
+;    iskies, [title= ]
 ;
 ; INPUTS:
 ;   obj        - Image
@@ -18,7 +18,7 @@
 ;   iskies     - List of good sky fibers
 ;
 ; OPTIONAL KEYWORDS:
-;   filename   - File name to use for TITLE of plot
+;   title      - TITLE of plot
 ;
 ; OUTPUTS:
 ;
@@ -44,7 +44,7 @@
 ;------------------------------------------------------------------------------
 
 pro skyplot, skywave, skyflux, skyfluxsub, skyivar, xrange=xrange, $
- filename=filename
+ title=title
 
    ; Only plot if the wavelength range spans at least all of XRANGE
    if (10^min(skywave) LT xrange[0] AND 10^max(skywave) GT xrange[1]) then begin
@@ -60,13 +60,13 @@ pro skyplot, skywave, skyflux, skyfluxsub, skyivar, xrange=xrange, $
 
       djs_plot, xaxis, skyflux[ii], psym=3, xrange=xrange, $
        xtitle='\lambda [A]', ytitle='Flux [electrons]', $
-       title = 'Sky Fibers for '+filename
+       title=title+' Sky Fibers'
       djs_oploterr, xaxis, skyflux[ii], yerr=yerr
       djs_oplot, xaxis, skyflux[ii]-skyfluxsub[ii], color='red'
 
       djs_plot, xaxis, skyfluxsub[ii], psym=3, xrange=xrange, $
        xtitle='\lambda [A]', ytitle='Sky-Sub Flux [electrons]', $
-       title = 'Sky-subtracted Sky Fibers for '+filename
+       title=title+' Sky-subtracted Sky Fibers'
       djs_oploterr, xaxis, skyfluxsub[ii], yerr=yerr
       djs_oplot, xrange, [0,0], color='red'
 
@@ -79,9 +79,9 @@ end
 ;------------------------------------------------------------------------------
 
 pro qaplot_skysub, obj, objivar, objsub, objsubivar, wset, iskies, $
-      filename=filename
+ title=title
 
-   if (NOT keyword_set(filename)) then filename = ''
+   if (NOT keyword_set(title)) then title = ''
 
    dims = size(objsub, /dimens)
    ncol = dims[0]
@@ -112,7 +112,7 @@ pro qaplot_skysub, obj, objivar, objsub, objsubivar, wset, iskies, $
     djs_median( objsub[*,iskies]^2 * objivar[*,iskies], 1), $
     xrange=[1,nrow], xstyle=1, psym=2, charsize=1.5, $
     xtitle = 'Fiber number', ytitle='Median \chi^2', $
-    title='Sky Fibers for '+filename
+    title=title+' Sky Fibers'
    djs_oplot, iskies, $
     djs_median( objsub[*,iskies]^2 * objsubivar[*,iskies], 1), $
     psym=2, color='blue'
@@ -145,10 +145,10 @@ pro qaplot_skysub, obj, objivar, objsub, objsubivar, wset, iskies, $
    skyfluxsub = objsub[*,iskies]
    skyivar = objsubivar[*,iskies]
 
-   skyplot, skywave, skyflux, skyfluxsub, skyivar, filename=filename, $
+   skyplot, skywave, skyflux, skyfluxsub, skyivar, title=title, $
     xrange=[5570,5590]
 
-   skyplot, skywave, skyflux, skyfluxsub, skyivar, filename=filename, $
+   skyplot, skywave, skyflux, skyfluxsub, skyivar, title=title, $
     xrange=[8820,8900]
 
    ;---------------------------------------------------------------------------
@@ -185,8 +185,8 @@ pro qaplot_skysub, obj, objivar, objsub, objsubivar, wset, iskies, $
    for ipanel=0, npanel-1 do begin
 
       if (ipanel EQ 0) then $
-       title='Rescaled Errors for '+filename $
-       else title=''
+       title=title+' Rescaled Errors' $
+      else title=''
       xrange = xmin + [ipanel, ipanel+1] * (xmax-xmin) / float(npanel)
 
       xaxis = xrange[0] + dx * findgen( fix((xrange[1]-xrange[0]) / dx) )

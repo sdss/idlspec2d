@@ -14,7 +14,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   extract_object, outname, objhdr, image, invvar, plugsort, wset, $
-;                    xarc, lambda, xtrace, fflat, fibermask, color=color
+;    xarc, lambda, xtrace, fflat, fibermask, color=, [plottitle=]
 ;
 ; INPUTS:
 ;   outname    - Name of outputs fits file
@@ -33,6 +33,7 @@
 ;   color      - camera color (red or blue)
 ;
 ; OPTIONAL KEYWORDS:
+;   plottitle  - Prefix for titles in QA plots.
 ;
 ; OUTPUTS:
 ;   A fits file is output in outname, which contains
@@ -53,6 +54,7 @@
 ;
 ; PROCEDURES CALLED:
 ;   djs_median()
+;   djs_oplot
 ;   djs_plot
 ;   extract_boxcar()
 ;   extract_image
@@ -108,8 +110,8 @@ end
 
 ;------------------------------------------------------------------------------
 pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
-               xarc, lambda, xtrace, fflat, fibermask, color=color, $
-               widthset=widthset
+ xarc, lambda, xtrace, fflat, fibermask, color=color, plottitle=plottitle, $
+ widthset=widthset
 
       skylinefile = strtrim(sxpar(objhdr,'SKYLIST'),2) 
       objname = strtrim(sxpar(objhdr,'OBJFILE'),2) 
@@ -305,7 +307,8 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
       endelse
 
       qaplot_scatlight, scatfit, yrow, $
-       wset=wset, xcen=xtrace, fibermask=fibermask, filename=objname
+       wset=wset, xcen=xtrace, fibermask=fibermask, $
+       title=plottitle+'Scattered Light on '+objname
 
       ; (4) Second and final extraction
       splog, 'Object extraction: Step 3'
@@ -322,15 +325,16 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
 
       xaxis = indgen(N_elements(chisq)) + 1
       djs_plot, xaxis, chisq, $
-         xtitle='Row number',  ytitle = '\chi^2', $
-         title='Extraction chi^2 for '+objname
+       xrange=[xaxis[0],xaxis[1]], xstyle=1, $
+       xtitle='Row number',  ytitle = '\chi^2', $
+       title=plottitle+'Extraction chi^2 for '+objname
 
       djs_oplot, yrow, firstchisq[yrow], color='green', ps=4
 
-      xyouts, 100, 0.95*!y.crange[0]+0.05*!y.crange[1], $
-               'Black is final chisq extraction'
-      xyouts, 100, 0.92*!y.crange[0]+0.08*!y.crange[1], $
-               'Green is initial chisq extraction'
+      xyouts, 100, 0.05*!y.crange[0]+0.95*!y.crange[1], $
+               'BLACK = Final chisq extraction'
+      xyouts, 100, 0.08*!y.crange[0]+0.92*!y.crange[1], $
+               'GREEN = Initial chisq extraction'
 
       ;------------------
       ; Flat-field the extracted object fibers with the global flat
@@ -378,10 +382,10 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
       ; plot, skystruct.wave, skystruct.flux, ps=3
 
       qaplot_skysub, flux, fluxivar, skysub, skysubivar, $
-        vacset, iskies, filename=objname
+       vacset, iskies, title=plottitle+objname
 
       qaplot_skydev, flux, fluxivar, vacset, plugsort, color, $
-              filename = objname
+       filename=objname
 
       ; QA for 2 skylines in the blue
       if (color EQ 'blue') then begin
@@ -445,7 +449,7 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
             djs_plot, 10^contwave1, contflux1, ps=3, xr=10^[3.82,3.87], $
                  yr=[0.0,1.5], ymargin=[2,4], charsize=1.6, xstyle=1, $ 
                  xtitle='\lambda [A]', ytitle='Flux [electrons]', $
-                 title = 'Telluric correction for '+objname
+                 title=plottitle+'Telluric correction for '+objname
             djs_oplot,10^contwave1,slatec_bvalu(contwave1,telluricbkpt1, $
                       telluriccoeff1),color='red'
 

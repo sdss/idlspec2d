@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   qaplot_skydev, flux, fluxivar, vacset, plugsort, color, $
-;             [fibermask=, filename=]
+;    [fibermask=, title=]
 ;
 ; INPUTS:
 ;   flux       - Pre-skysubtracted flux array [Nrow, Ntrace]
@@ -18,7 +18,7 @@
 ;
 ; OPTIONAL KEYWORDS:
 ;   fibermask  - Fiber status bits, set nonzero for bad status [NFIBER]
-;   filename   - File name to use for TITLE of plot
+;   title      - TITLE of plot
 ;
 ; OUTPUTS:
 ;   Output plots only
@@ -45,11 +45,11 @@
 ;------------------------------------------------------------------------------
 
 pro qaplot_skydev, flux, fluxivar, vacset, plugsort, color, $
-         fibermask=fibermask, filename=filename
+ fibermask=fibermask, title=title
 
   if (N_params() LT 5) then begin
       print, 'Syntax - qaplot_skydev, flux, fluxivar, vacset, plugsort,$'
-      print, '         color, [fibermask=, filename= ]'
+      print, '         color, [fibermask=, title= ]'
       return
    endif
 
@@ -90,7 +90,7 @@ pro qaplot_skydev, flux, fluxivar, vacset, plugsort, color, $
         djs_plot, possible # (fltarr(nTrace) +1.0), veldiff, ps=3, $
              yr=[-40,40], xtitle='Wavelength of sky lines', $
              ytitle='Offsets from median (km/s)', $
-             title='Skyline positions for '+filename
+             title=title+' Skyline Positions'
 
         skies = where(plugsort.objtype EQ 'SKY',nskies)
 	if (skies[0] NE -1) then $

@@ -6,9 +6,9 @@
 ;   Extract calibration frames.
 ;
 ; CALLING SEQUENCE:
-;   spcalib, flatname, arcname, pixflatname=, fibermask=, $
-;    lampfile=, indir=, timesep=, ecalibfile=, $
-;    arcinfoname=, flatinfoname=, arcstruct, flatstruct
+;   spcalib, flatname, arcname, [pixflatname=, fibermask=, $
+;    lampfile=, indir=, timesep=, ecalibfile=, plottitle=, $
+;    arcinfoname=, flatinfoname=, arcstruct=, flatstruct=]
 ;
 ; INPUTS:
 ;   flatname   - Name(s) of flat-field SDSS image(s)
@@ -25,9 +25,12 @@
 ;                default to '.'
 ;   timesep    - Maximum time separation between flats and arcs to pair them;
 ;                set to zero to disable this test; default to 7200 sec.
-;   ecalibfile - opECalib file to pass to sdssproc
-;   arcinfoname-  File name (with path) to output arc extraction and fitting information
-;   flatinfoname- File name (with path) to output flat field extraction and fitting information
+;   ecalibfile - opECalib file to pass to SDSSPROC
+;   plottitle  - Prefix for titles in QA plots.
+;   arcinfoname- File name (with path) to output arc extraction and fitting
+;                information
+;   flatinfoname-File name (with path) to output flat field extraction and
+;                fitting information
 ;
 ; OUTPUTS:
 ;   arcstruct  - Structure array with extracted arc calibration information
@@ -105,7 +108,8 @@ end
 ;------------------------------------------------------------------------------
 
 pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
- lampfile=lampfile, indir=indir, timesep=timesep, ecalibfile=ecalibfile, $
+ lampfile=lampfile, indir=indir, timesep=timesep, $
+ ecalibfile=ecalibfile, plottitle=plottitle, $
  arcinfoname=arcinfoname, flatinfoname=flatinfoname, arcstruct, flatstruct
 
    if (NOT keyword_set(indir)) then indir = '.'
@@ -468,9 +472,10 @@ splog,'Arc fbadpix ', fbadpix ; ???
 
          ntrace = (size(flux, /dimens))[1]
 
-;         fflat = fiberflat(flux, fluxivar, wset, fibermask=tmp_fibmask)
+;         fflat = fiberflat(flux, fluxivar, wset, fibermask=tmp_fibmask, $
+;          plottitle=plottitle)
          fflat = fiberflat(flux, fluxivar, wset, fibermask=tmp_fibmask, $
-          /dospline)
+          /dospline, plottitle=plottitle)
 
          if (n_elements(fflat) EQ 1) then begin
             flatstruct[iflat].qbad  = 1

@@ -6,7 +6,7 @@
 ;   Generate QA plot for fiber-flats
 ;
 ; CALLING SEQUENCE:
-;   qaplot_fflat, fflat, wset, [ fibermask=, dx=, filename= ]
+;   qaplot_fflat, fflat, wset, [ fibermask=, dx=, title= ]
 ;
 ; INPUTS:
 ;   fflat      - Array of flat-field flat-field vectors for each fiber
@@ -17,7 +17,7 @@
 ; OPTIONAL KEYWORDS:
 ;   fibermask  - Fiber status bits, set nonzero for bad status [NFIBER]
 ;   dx         - Bin log-lambda by this number; default to 1.e-3 (about 10 pix)
-;   filename   - File name to use for TITLE of plot
+;   title      - TITLE of plot
 ;
 ; OUTPUTS:
 ;
@@ -39,10 +39,10 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro qaplot_fflat, fflat, wset, fibermask=fibermask, dx=dx, filename=filename
+pro qaplot_fflat, fflat, wset, fibermask=fibermask, dx=dx, title=title
 
    if (NOT keyword_set(dx)) then dx = 1.e-3
-   if (NOT keyword_set(filename)) then filename = ''
+   if (NOT keyword_set(title)) then title = ''
 
    ;----------
    ; Compute the wavelengths for all flat vectors from the trace set.
@@ -61,13 +61,8 @@ pro qaplot_fflat, fflat, wset, fibermask=fibermask, dx=dx, filename=filename
    nfiber = dims[1]
 
    ;----------
-   ; Strip any trailing ".fit" from the file name
-
-   i = rstrpos(filename, '.fit')
-   if (i GT 0) then trimname = strmid(filename, 0, i) $
-    else trimname = filename
-
    ; Divide the plotting range up into bins in LOGLAM separated by DX
+
    nbin = fix( (xrange[1]-xrange[0]) / dx ) + 1
    meanval = fltarr(nbin)
    botval = fltarr(nbin)
@@ -81,8 +76,8 @@ pro qaplot_fflat, fflat, wset, fibermask=fibermask, dx=dx, filename=filename
          fsort = fflat[j]
          fsort = fsort[sort(fsort)]
 
-         botval[ibin] = fsort[floor(0.01*ct)]
-         topval[ibin] = fsort[ceil(0.99*ct)]
+         botval[ibin] = fsort[ceil(0.01*ct)]
+         topval[ibin] = fsort[floor(0.99*ct)]
 
          meanval[ibin] = median([fflat[j]])
 
@@ -96,30 +91,27 @@ pro qaplot_fflat, fflat, wset, fibermask=fibermask, dx=dx, filename=filename
 
    ; Set up the plot
    xaxis = xrange[0] + (findgen(nbin)+0.5) * dx
-   djs_plot, xaxis, meanval, xrange=xrange, yrange=[-0.1,1.9], $
-    xstyle=1, ystyle=1, $
-    xtitle='log \lambda [A]', ytitle='Fiber-Flat', $
-    title='Fiber-Flats for  '+trimname
+   djs_plot, 10^xaxis, meanval, xrange=10^xrange, yrange=[-0.1,1.9], $
+    xstyle=1, ystyle=1, xtitle='\lambda [A]', ytitle='Fiber-Flat', $
+    title=title
 
    ; Overplot individual outlier points in green
    noutlier = N_elements(ioutlier) - 1
    if (noutlier GT 1) then begin ; The first outlier is a dummy set to [0]
       ioutlier = ioutlier[1:noutlier-1]
-      djs_oplot, loglam[ioutlier], fflat[ioutlier], ps=3, color='green'
+      djs_oplot, 10^loglam[ioutlier], fflat[ioutlier], ps=3, color='green'
    endif
 
    ; Overplot the mean flat-field vector, and the dispersion
-   errplot, xaxis, botval, topval
+   errplot, 10^xaxis, botval, topval
 
-   xyouts, xaxis[fix(nbin/20)], 1.8, $
-    'BLACK = Median value'
-   xyouts, xaxis[fix(nbin/20)], 1.7, $
-    'ENVELOPE = 1% to 99% range'
-   xyouts, xaxis[fix(nbin/20)], 1.6, $
-    'GREEN = Outlier points'
-   xyouts, xaxis[fix(nbin/20)], 1.5, $
+   xpos = 10^xaxis[fix(nbin/20)]
+   xyouts, xpos, 1.8, 'BLACK = Median value'
+   xyouts, xpos, 1.7, 'ENVELOPE = 1% to 99% range'
+   xyouts, xpos, 1.6, 'GREEN = Outlier points'
+   xyouts, xpos, 1.5, $
     'Min value =' + string(min(fflat[where(fflat NE 0)]),format='(f9.3)')
-   xyouts, xaxis[fix(nbin/20)], 1.4, $
+   xyouts, xpos, 1.4, $
     'Max value =' + string(max(fflat[where(fflat NE 0)]),format='(f9.3)')
    xyouts, 0.95, 0., systime(), /normal, align=1 ; , charsize=0.5
 

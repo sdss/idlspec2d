@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   superflat, flux, fluxivar, wset, fullbkpt, coeff, $
-;    [ fibermask=, minval=, lower=, upper=, medval= ]
+;    [ fibermask=, minval=, lower=, upper=, medval=, title= ]
 ;
 ; INPUTS:
 ;   flux       - Array of extracted flux from a flat-field image [Nrow,Ntrace]
@@ -18,6 +18,7 @@
 ;   fibermask  - Fiber status bits, set nonzero for bad status [NFIBER]
 ;   minval     - Minimum value to use in fits to flat-field vectors;
 ;                default to 0.
+;   title      - TITLE of plot
 ;
 ; PARAMETERS FOR SLATEC_SPLINEFIT:
 ;   lower      -
@@ -52,9 +53,11 @@
 ;------------------------------------------------------------------------------
 
 pro superflat, flux, fluxivar, wset, fullbkpt, coeff, $
- fibermask=fibermask, minval=minval, lower=lower, upper=upper, medval=medval
+ fibermask=fibermask, minval=minval, lower=lower, upper=upper, medval=medval, $
+ title=title
 
    if (NOT keyword_set(minval)) then minval = 0.0
+   if (NOT keyword_set(title)) then title = ''
 
    dims = size(flux, /dimens)
    ny = dims[0]
@@ -98,9 +101,9 @@ pro superflat, flux, fluxivar, wset, fullbkpt, coeff, $
       fracpts[i] = 1.0 - total(tmpmask)/N_elements(tmpmask)
       if (ntmp GT filtsz) then $
        medval[i] = djs_mean( $
-        median( tmpflux[ (filtsz-1)/2 : ntmp-(filtsz-1)/2 ], filtsz ) ) $
+        median([ tmpflux[ (filtsz-1)/2 : ntmp-(filtsz-1)/2 ], filtsz ) ]) $
       else $
-       medval[i] = median(tmpflux)
+       medval[i] = median([tmpflux])
    endfor
 
    ;------
@@ -108,7 +111,7 @@ pro superflat, flux, fluxivar, wset, fullbkpt, coeff, $
    ; have at least 95% good wavelength range as compared to the best fiber
    ; and whose counts are within 30% of the median (good) fiber throughput.
 
-   globalmed = median(medval[igood])
+   globalmed = median([medval[igood]])
    if (globalmed LT 0) then $
     message, 'Median flat-field vector is negative!'
    igood = where(fibermask EQ 0 AND fracpts GE 0.95*max(fracpts) $
@@ -157,12 +160,12 @@ pro superflat, flux, fluxivar, wset, fullbkpt, coeff, $
    plot_fit  = slatec_bvalu(alog10(plot_lam), fullbkpt, coeff)
    djs_plot, plot_lam, plot_fit, xrange=[wmin,wmax], xstyle=1, $
     xtitle='\lambda [A]', ytitle='Normalized flux', $
-    title='Superflat for ???'
+    title=title
 
    ; Overplot pixels masked from the fit
    ii = where(mask EQ 0)
-   if (ii[0] EQ -1) then splog, 'No pixels masked from fit, YIPPEE!!???' $
-   else djs_oplot, 10^allwave[indx[ii]], allflux[indx[ii]], ps=3, color='red'
+   if (ii[0] NE -1) then $
+    djs_oplot, 10^allwave[indx[ii]], allflux[indx[ii]], ps=3, color='red'
 
    return
 end

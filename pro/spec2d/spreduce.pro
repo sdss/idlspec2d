@@ -9,7 +9,7 @@
 ;   spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 ;    plugfile=plugfile, lampfile=lampfile, $
 ;    indir=indir, plugdir=plugdir, outdir=outdir, $
-;    ecalibfile=ecalibfile, summarystruct=summarystruct
+;    ecalibfile=ecalibfile, plottitle=plottitle, summarystruct=summarystruct
 ;
 ; INPUTS:
 ;   flatname   - Name(s) of flat-field SDSS image(s)
@@ -27,7 +27,9 @@
 ;                default to '.'
 ;   plugdir    - Input directory for PLUGFILE; default to '.'
 ;   outdir     - Directory for output files; default to '.'
-;   ecalibfile - opECalib.par file for spreduce
+;   ecalibfile - opECalib.par file for SDSSPROC
+;   plottitle  - Prefix for titles in QA plots.
+;   summarystruct - Good intentions ???
 ;
 ; OUTPUTS:
 ;
@@ -61,7 +63,7 @@
 pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
  plugfile=plugfile, lampfile=lampfile, $
  indir=indir, plugdir=plugdir, outdir=outdir, $
- ecalibfile=ecalibfile, summarystruct=summarystruct
+ ecalibfile=ecalibfile, plottitle=plottitle, summarystruct=summarystruct
 
    if (NOT keyword_set(indir)) then indir = '.'
    if (NOT keyword_set(plugdir)) then plugdir=indir
@@ -124,9 +126,10 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
    spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
     lampfile=lampfile, indir=indir, arcstruct, flatstruct, $
-    ecalibfile=ecalibfile, flatinfoname=flatinfoname, arcinfoname=arcinfoname
+    ecalibfile=ecalibfile, plottitle=plottitle, $
+    flatinfoname=flatinfoname, arcinfoname=arcinfoname
 
-   ;-----
+   ;----------
    ; Select the best arc
 
    bestarc = select_arc(arcstruct)
@@ -152,7 +155,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    wset =  *(bestarc.wset)
 
    qaplot_arcline, *(bestarc.xdif_tset), wset, lambda, $
-    filename=bestarc.name, color=color
+    color=color, title=plottitle+' Arcline Fit for '+bestarc.name
 
    ;---------------------------------------------------------------------------
    ; LOOP THROUGH OBJECT FRAMES
@@ -163,7 +166,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       stimeobj = systime(1)
       splog, prelog=objname[iobj]
 
-      ;------------------
+      ;----------
       ; Read object image
       ;   Minflat will mask all pixels with low 2d pixelflat values
  
@@ -171,8 +174,8 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       sdssproc, objname[iobj], image, invvar, indir=indir, hdr=objhdr, $
        pixflatname=pixflatname, spectrographid=spectrographid, color=color, $
        ecalibfile=ecalibfile, minflat = 0.2
-       
-      ;-----
+
+      ;----------
       ; Construct the best flat for this object from all of the reduced
       ; flat-field frames
 
@@ -189,9 +192,11 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       xsol = *(bestflat.xsol)
       fflat = *(bestflat.fflat)
       widthset = *(bestflat.widthset)
-      qaplot_fflat, fflat, wset, filename=bestflat.name
 
-      ;-----
+      qaplot_fflat, fflat, wset, $
+       title=plottitle+'Fiber-Flats for '+bestflat.name
+
+      ;----------
       ; Combine FIBERMASK bits from the plug-map file, best flat
       ; and best arc
 
@@ -200,8 +205,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
        OR (*(bestflat.fibermask) AND fibermask_bits('BADFLAT')) $
        OR (*(bestarc.fibermask) AND fibermask_bits('BADARC'))
 
-
-      ;-----
+      ;----------
       ; Determine output file name and modify the object header
 
       framenum = sxpar(objhdr, 'EXPOSURE')
@@ -221,7 +225,8 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       ; Extract the object frame
 
       extract_object, outname, objhdr, image, invvar, plugsort, wset, $
-       xpeak, lambda, xsol, fflat, fibermask, widthset=widthset, color=color
+       xpeak, lambda, xsol, fflat, fibermask, widthset=widthset, color=color, $
+       plottitle=plottitle
 
       splog, 'Elapsed time = ', systime(1)-stimeobj, ' seconds', $
        format='(a,f6.0,a)' 

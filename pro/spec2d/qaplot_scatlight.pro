@@ -6,8 +6,7 @@
 ;   Generate QA plots for scattered light
 ;
 ; CALLING SEQUENCE:
-;   qaplot_scatlight, scatfit, yrow, wset=, xcen=, [ fibermask=, $
-;    filename= ]
+;   qaplot_scatlight, scatfit, yrow, wset=, xcen=, [ fibermask=, title= ]
 ;
 ; INPUTS:
 ;   scatfit    - Scattered light image after fitting [NX,NY/8]
@@ -20,7 +19,7 @@
 ;
 ; OPTIONAL KEYWORDS:
 ;   fibermask  - Fiber status bits, set nonzero for bad status [NFIBER]
-;   filename   - File name to use for TITLE of plot
+;   title      - TITLE of plot
 ;
 ; OUTPUTS:
 ;
@@ -45,16 +44,16 @@
 ;------------------------------------------------------------------------------
 
 pro qaplot_scatlight, scatfit, yrow, wset=wset, xcen=xcen, $
-   fibermask=fibermask, filename=filename
+ fibermask=fibermask, title=title
 
    if (N_params() LT 2) then begin
       print, 'Syntax - qaplot_scatlight, scatfit, yrow, [ wset=, xcen=, $'
-      print, '         fibermask=, filename= ]'
+      print, '         fibermask=, title= ]'
       return
    endif
 
    if (NOT keyword_set(fibermask)) then fibermask = bytarr(nfiber) 
-   if (NOT keyword_set(filename)) then filename = ''
+   if (NOT keyword_set(title)) then title = ''
 
    scatmed = median(scatfit)
    scatmax = max(scatfit)
@@ -73,7 +72,7 @@ pro qaplot_scatlight, scatfit, yrow, wset=wset, xcen=xcen, $
    contour, (scatfit[*,yrow])[yrow,*], yrow, yrow, $
     /follow, nlevels = 10, /xstyle, /ystyle, $
     xtitle='X [pix]', ytitle='Y [pix]', $
-    title='Scattered light image for '+filename, c_charsize=1.5
+    title=title, c_charsize=1.5
 
    ;---------------------------------------------------------------------------
    ; Plot spectrum of scattered light
@@ -109,7 +108,7 @@ pro qaplot_scatlight, scatfit, yrow, wset=wset, xcen=xcen, $
    ; Plot - set Y limits according to MAXVAL
    djs_plot, binwave, maxval, /nodata, xrange=xrange, xstyle=1, $
     xtitle='\lambda [A]', ytitle='Brightness [electrons/pix]', $
-    title='Scattered Light Spectrum for '+filename
+    title=title
    djs_oploterr, binwave, (minval+maxval)/2.0, yerr=(maxval-minval)/2.0
    djs_oplot, binwave, medianval
    djs_oplot, binwave, meanval, color='red'

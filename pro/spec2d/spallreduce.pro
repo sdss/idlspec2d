@@ -55,8 +55,10 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
 
    if (NOT keyword_set(planfile)) then planfile = findfile('spPlan2d*.par')
 
+   ;----------
    ; If multiple plan files exist, then call this script recursively
    ; for each such plan file.
+
    if (N_elements(planfile) GT 1) then begin
       for i=0, N_elements(planfile)-1 do $
        spallreduce, planfile[i], docams=docams, $
@@ -70,7 +72,9 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
 
    yanny_read, planfile[0], pdata, hdr=hdr
 
+   ;----------
    ; Find the ONEEXP structure
+
    for i=0, N_elements(pdata)-1 do begin
       if (tag_names(*pdata[i], /structure_name) EQ 'PIXFLATS') then $
        pixflats = *pdata[i]
@@ -83,11 +87,13 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
    yanny_free, pdata
 
    if (N_elements(allseq) EQ 0) then begin
-     splog, 'ABORT: No ONEEXP structures in plan file ' + planfile
-     return
+      splog, 'ABORT: No ONEEXP structures in plan file ' + planfile
+      return
    endif
 
+   ;----------
    ; Find keywords from the header
+
    inputDir = yanny_par(hdr, 'inputDir')
    plugDir = yanny_par(hdr, 'plugDir')
    flatDir = yanny_par(hdr, 'flatDir')
@@ -103,7 +109,10 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
    spawn, 'mkdir -p '+extractDir
 
    stime0 = systime(1)
+
+   ;----------
    ; Open log files for output
+
    if (keyword_set(logfile)) then begin
       splog, filename=logfile, /append
       splog, 'Log file ', logfile, ' opened ', systime()
@@ -123,29 +132,36 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
    specnums = [1, 2, 1, 2] ; Spectrograph ID corresponding to CAMNAMES above
    ncam = N_elements(camnames)
 
+   ;----------
    ; Find all the sequence IDs
+
    seqid = allseq[ sort(allseq.seqid) ].seqid
    seqid = allseq[ uniq(allseq.seqid) ].seqid
 
    for iseq=0, N_elements(seqid)-1 do begin
 
+      ;----------
       ; Get the plate ID number from any (e.g., the first) exposure with
       ; this sequence ID number
+
       j = where(allseq.seqid EQ seqid[iseq])
       plateid = allseq[j[0]].plateid
+      platestr = string(plateid, format='(i4.4)')
 
       stime1 = systime(1)
-      splog, 'Begin plate ', strtrim(string(plateid),2), ' at ', systime()
+      splog, 'Begin plate ' + platestr + ' at ' + systime()
 
+      ;----------
       ; Find the corresponding plug map file
+
       j = where(allplug.seqid EQ seqid[iseq] $
             AND allplug.plateid EQ plateid )
-      if (j[0] NE -1) then plugfile = allplug[j[0]].name $
-      else begin
-        splog, 'ABORT: No plug map file for SEQID= ' $
-        + strtrim(string(seqid[iseq]),2) + ', PLATEID= ' $
-        + strtrim(string(plateid),2)
-        return
+      if (j[0] NE -1) then begin
+         plugfile = allplug[j[0]].name
+      endif else begin
+         splog, 'ABORT: No plug map file for SEQID= ' $
+          + strtrim(string(seqid[iseq]),2) + ', PLATEID= ' + platestr
+         return
       endelse
       splog, 'Plug map file = ', plugfile
 
@@ -155,7 +171,9 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
          splog, prelog=camnames[icam]
          if (camct NE 1) then message, 'Non-unique camera ID '
 
+         ;----------
          ; Find the corresponding pixel flat
+
          pixflatname = pixflats.name[icam]
          if (pixflatname EQ 'UNKNOWN') then $
           message, 'No pixel flat for CAMERA= ' + camnames[icam]
@@ -169,48 +187,53 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
             ; String array with all science exposures at this sequence + camera
             objname = allseq[j].name[icam]
 
-            ;------
+            ;-----------
             ; Select **all** flat exposures at this sequence + camera
 
             j = where(allseq.seqid EQ seqid[iseq] $
                   AND allseq.flavor EQ 'flat' $
                   AND allseq.name[icam] NE 'UNKNOWN', nflat )
-            if (nflat GT 0) then flatname = allseq[j].name[icam] $
-            else begin
-              splog, 'ABORT: No flat for SEQID= ' $
+            if (nflat GT 0) then begin
+               flatname = allseq[j].name[icam]
+            endif else begin
+               splog, 'ABORT: No flat for SEQID= ' $
                 + strtrim(string(seqid[iseq]),2) + ', PLATEID= ' $
-                + strtrim(string(plateid),2) + ', CAMERA= ' + camnames[icam]
-              return
+                + platestr + ', CAMERA= ' + camnames[icam]
+               return
             endelse
 
-            ;------
+            ;-----------
             ; Select **all** arc exposures at this sequence + camera
 
             j = where(allseq.seqid EQ seqid[iseq] $
                   AND allseq.flavor EQ 'arc' $
                   AND allseq.name[icam] NE 'UNKNOWN', narc )
-            if (narc GT 0) then arcname = allseq[j].name[icam] $
-            else begin
-              splog, 'ABORT: No arc for SEQID= ' $
+            if (narc GT 0) then begin
+               arcname = allseq[j].name[icam]
+            endif else begin
+               splog, 'ABORT: No arc for SEQID= ' $
                 + strtrim(string(seqid[iseq]),2) + ', PLATEID= ' $
-                + strtrim(string(plateid),2) + ', CAMERA= ' + camnames[icam]
-              return
+                + platestr + ', CAMERA= ' + camnames[icam]
+               return
             endelse
 
-            ;-----
+            ;----------
             ; Get full name of pixel flat
 
             pixflatname = filepath(pixflatname, root_dir=flatDir)
 
             stime2 = systime(1)
 
-            ;-----
+            ;----------
             ; Reduce this set of frames (all objects w/same plate + camera)
+
+            plottitle = 'MJD='+strtrim(string(mjd),2) $
+             + ' PLATE='+platestr + ': '
 
             spreduce, flatname, arcname, objname, $
              pixflatname=pixflatname, plugfile=plugfile, lampfile=lampfile, $
              indir=inputDir, plugdir=plugDir, outdir=extractDir, $
-             summarystruct=summarystruct
+             summarystruct=summarystruct, plottitle=plottitle
 
             splog, 'Time to reduce camera ', camnames[icam], ' = ', $
              systime(1)-stime2, ' seconds', format='(a,a,a,f6.0,a)'
@@ -224,7 +247,7 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
       splog, 'Time to reduce all cameras = ', $
        systime(1)-stime1, ' seconds', format='(a,f6.0,a)'
 
-      ;-----
+      ;----------
       ; Combine all red+blue exposures for a given sequence
 
       if (NOT keyword_set(nocombine)) then begin
@@ -257,11 +280,10 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
              + ' files for side ' + strtrim(string(side),2)
 
             if (nfile GT 0) then begin
-               outputroot = string('spMerge2d-',mjd,'-',plateid, $
-                format='(a,i5.5,a1,i4.4)')
-               individualroot  = string('spInd2d-',mjd,'-',plateid, $
-                format='(a,i5.5,a1,i4.4)')
-
+               outputroot = string('spMerge2d-',mjd,'-',platestr, $
+                format='(a,i5.5,a1,a4)')
+               individualroot  = string('spInd2d-',mjd,'-',platestr, $
+                format='(a,i5.5,a1,a4)')
 
                for i=0, nfile-1 do splog, 'Combine file ', files[i]
                combine2dout, files, filepath(outputroot, root_dir=combineDir), $
@@ -281,7 +303,9 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
     format='(a,f6.0,a)'
    splog, 'Successful completion of SPALLREDUCE at ', systime()
 
+   ;----------
    ; Close log files
+
    if (keyword_set(logfile)) then splog, /close
    if (keyword_set(plotfile) AND NOT keyword_set(xdisplay)) then begin
       device, /close

@@ -7,7 +7,8 @@
 ;
 ; CALLING SEQUENCE:
 ;   fflat = fiberflat( flux, fluxivar, wset, [ fibermask=fibermask, $
-;    minval=, ncoeff=, pixspace=, /dospline, nord=, lower=, upper=, /dospline ])
+;    minval=, ncoeff=, pixspace=, /dospline, nord=, lower=, upper=,
+;    /dospline, plottitle= ])
 ;
 ; INPUTS:
 ;   flux       - Array of extracted flux from a flat-field image [Nrow,Ntrace]
@@ -25,6 +26,7 @@
 ;   dospline   - If this keyword is set, then fit the flat-field vectors
 ;                to splines (using PIXSPACE) rather than to a Legendre
 ;                polynomial (using NCOEFF).  This is **not** recommended.
+;   plottitle  - Prefix for titles in QA plots.
 ;
 ; PARAMETERS FOR SLATEC_SPLINEFIT:
 ;   nord
@@ -71,8 +73,8 @@
 ;------------------------------------------------------------------------------
 
 function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
- minval=minval, ncoeff=ncoeff, pixspace=pixspace, dospline=dospline, $
- nord=nord, lower=lower, upper=upper
+ minval=minval, ncoeff=ncoeff, pixspace=pixspace, nord=nord, $
+ lower=lower, upper=upper, dospline=dospline, plottitle=plottitle
 
    dims = size(flux, /dimens)
    ny = dims[0]
@@ -102,7 +104,8 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
    ; Construct the "superflat" vector
 
    superflat, flux, fluxivar, wset, afullbkpt, acoeff, $
-    fibermask=fibermask, minval=minval, lower=lower, upper=upper, medval=medval
+    fibermask=fibermask, minval=minval, lower=lower, upper=upper, $
+    medval=medval, title=plottitle+' Superflat'
 
    if (n_elements(allfullbkpt) EQ 1) then begin
       splog, 'WARNING: Spline fit failed' 
@@ -221,7 +224,7 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
    ;----------
    ; Divide FFLAT by a global median of all (good) fibers
 
-   globalmed = median(medval[igood]) ; Global median for all vectors
+   globalmed = median([medval[igood]]) ; Global median for all vectors
    fflat = fflat / globalmed 
 
    junk = where(fflat LE 0, nz)

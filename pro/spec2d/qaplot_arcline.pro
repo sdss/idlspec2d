@@ -6,7 +6,7 @@
 ;   Generate QA plot for arcline fits
 ;
 ; CALLING SEQUENCE:
-;   qaplot_arcline, xdif, lambda, [color=, fibermask=, filename=]
+;   qaplot_arcline, xdif, lambda, [color=, fibermask=, title=]
 ;
 ; INPUTS:
 ;   xdif       - Deviations in arc line fits in pixels, array [NFIBER, NLAMP]
@@ -15,7 +15,7 @@
 ; OPTIONAL KEYWORDS:
 ;   color      - Specify 'blue' or 'red' to fix plotting limits
 ;   fibermask  - Fiber status bits, set nonzero for bad status [NFIBER]
-;   filename   - File name to use for TITLE of plot
+;   title      - TITLE of plot
 ;
 ; OUTPUTS:
 ;
@@ -40,9 +40,9 @@
 ;------------------------------------------------------------------------------
 
 pro qaplot_arcline, xdif, wset, lambda, color=color, fibermask=fibermask, $
- filename=filename
+ title=title
 
-   if (NOT keyword_set(filename)) then filename = ''
+   if (NOT keyword_set(title)) then title = ''
 
    dims = size(xdif, /dimens)
    nfiber = dims[0]
@@ -109,7 +109,7 @@ pro qaplot_arcline, xdif, wset, lambda, color=color, fibermask=fibermask, $
    djs_plot, [0], [0], /nodata, xrange=xrange, yrange=[-10,nfiber+10], $
     xstyle=1, ystyle=1, $
     xtitle='\lambda [A] + 500 * Deviation', ytitle='Fiber Number', $
-    title='Arcline Fit for '+filename
+    title=title
    fibernum = findgen(nfiber)+1
    for k=0, nlamp-1 do $
     djs_oplot, 500*xdif[igood,k]+lambda[k], fibernum[igood]
