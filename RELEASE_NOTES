@@ -1,8 +1,11 @@
+
 v4_9_2 (Feb ??, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
+Built against specflat v1_3.
 
+This tagged version is for running Spectro-2D.
+It also addresses some rsync bugs for Son-of-Spectro.
 
-SPADD_GUIDERINFO: Append seeing information in header from gudierMon.par
-GET_TAI : A short proc to determine, beginning, mid-point, and ending
+GET_TAI: A short proc to determine, beginning, mid-point, and ending
            timestamps for sdR exposures.  Uses TAI-BEG,TAI-END in header
            if they exist; otherwise compute from TAI and EXPTIME.
            This is now called from the following procs: EXTRACT_OBJECT,
@@ -10,12 +13,28 @@ GET_TAI : A short proc to determine, beginning, mid-point, and ending
            Note that version v4_9_1 would not reduce the early data since
            we had changed to using TAI-BEG, which did not exist for the
            early data.
+SPADD_GUIDERINFO: Append seeing information in header from gudierMon.par
+SPCOADD_FRAMES: Combine a whole bunch of header cards from the individual
+           input exposure for the output exposure.  Specifically, this was
+           to address PR 2174 to average the weather data.  The cards effected:
+           'AZ', 'ALT', 'TAI', 'WTIME', 'AIRTEMP', 'DEWPOINT',
+           'DEWDEP', 'DUSTA', 'DUSTB', 'DUSTC', 'DUSTD', 'GUSTS', 'HUMIDITY',
+           'HUMIDOUT', 'PRESSURE', 'WINDD', 'WINDS', 'TEMP01', 'TEMP02',
+           'TEMP03', 'TEMP04', 'HELIO_RV', 'SEEING20', 'SEEING50', 'SEEING80',
+           'RMSOFF20', 'RMSOFF50', 'RMSOFF80'
+           We also take the min of all 'TAI-BEG' cards, and the max of
+           all 'TAI-END' cards.
 
 killdata.sh,mailhtml.sh: Spectrolog cleanup is now done +25 MJDs afterwards,
            which will allow for sos_redo, apoplot and debugging to have
            a buffer.
 sprobot.sh: Copy the guider image directory.  We mistakenly lost this copying
            when we went to explicitly copying only the sdR*.fit.gz files.
+sos.sh,startapo.sh: Forget to switch to UT time in a couple of instances.
+
+In idlutils:
+SXCOMBINEPAR: New proc to combine values of specified header cards from
+           many FITS headers.  Used by SPCOADD_FRAMES.
 
 -------------------------------------------------------------------------------
 v4_9_1 (Jan 24, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
