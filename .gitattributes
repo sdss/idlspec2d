@@ -68,6 +68,11 @@ etc/regress1d_all.dat -text
 etc/regress1d_all.plates -text
 etc/sdss_g_atm.dat -text
 etc/sdss_i_atm.dat -text
+etc/sdss_jun2001_g_atm.dat -text
+etc/sdss_jun2001_i_atm.dat -text
+etc/sdss_jun2001_r_atm.dat -text
+etc/sdss_jun2001_u_atm.dat -text
+etc/sdss_jun2001_z_atm.dat -text
 etc/sdss_r_atm.dat -text
 etc/sdss_u_atm.dat -text
 etc/sdss_z_atm.dat -text
