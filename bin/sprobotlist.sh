@@ -13,7 +13,6 @@ echo "SPROBOTLIST: Started at "`date`
 cd $SPECTRO_DATA
 echo "platelist, /create" | idl
 echo "platemerge" | idl 2> /dev/null
-echo "platemerge, /qsurvey" | idl 2> /dev/null
 echo "platemerge, /public" | idl 2> /dev/null
 
 #------------------------------------------------------------------------------
