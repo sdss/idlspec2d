@@ -84,8 +84,13 @@ pro remove2redo, logfile=logfile, outdir=outdir, plate=plate
      endfor
    endfor
 
+   print, missing
    if missing EQ ' ' then return
 
+   mjd = strmid(logfile, 8, 5)
+   cd, '/data/spectro/'+mjd
+
+   print, 'rm -f '+missing
    spawn, 'rm -f '+missing
 
    return
