@@ -182,8 +182,16 @@ eigenobj  337  51997  604    0.000000  LT         T2         ""
 ##eigenobj 414  51901  528    0.000000  L          L         "Low signal"
 #------------------------------------------------------------------------------
 eigenobj  301  51641  223    0.000000  Carbon_DQ  Carbon_DQ  ""
+eigenobj  301  51942  231    0.000000  Carbon_DQ  Carbon_DQ  "(same object as above)"
 eigenobj  329  52056  578   -0.000010  Carbon_DQ  Carbon_DQ  ""
+eigenobj  381  51811   93    0.000877  Carbon_DQ  Carbon_DQ  ""
+eigenobj  460  51924  236    0.000277  Carbon_DQ  Carbon_DQ  ""
+eigenobj  636  52176  267    0.001237  Carbon_DQ  Carbon_DQ  ""
 eigenobj  721  52228  533   -0.000410  Carbon_DQ  Carbon_DQ  ""
+
+eigenobj  410  51816  352    0.003290  Carbon_DQ  Carbon_DQred ""
+eigenobj  707  52177  628    0.003217  Carbon_DQ  Carbon_DQred ""
+eigenobj  766  52247  475    0.003217  Carbon_DQ  Carbon_DQred ""
 #------------------------------------------------------------------------------
 eigenobj  301  51641  305    0.000000  Carbon     Carbon     ""
 #eigenobj 301  51942  308    0.000000  Carbon     Carbon     "(same object as above)"
