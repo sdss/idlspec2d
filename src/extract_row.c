@@ -57,6 +57,7 @@ IDL_LONG extract_row
    IDL_LONG    length;
    IDL_LONG    mfit;
    IDL_LONG    coeff;
+   IDL_LONG    nBand;
    IDL_LONG    tTrace;
    float     * ysub;
    float     * beta;
@@ -95,6 +96,7 @@ IDL_LONG extract_row
    whoppingct = *((IDL_LONG *)argv[argct++]);
    whoppingsigma = *((float *)argv[argct++]);
    nCoeff = *((IDL_LONG *)argv[argct++]);
+   nBand  = *((IDL_LONG *)argv[argct++]);
    ma     = *((IDL_LONG *)argv[argct++]);
    ans    = (float *)argv[argct++];
    ia     = (IDL_LONG *)argv[argct++];
@@ -112,7 +114,10 @@ IDL_LONG extract_row
    xmin = (IDL_LONG *)malloc(sizeof(IDL_LONG)*nTrace);
    xmax = (IDL_LONG *)malloc(sizeof(IDL_LONG)*nTrace);
 
-   findXLimits(xmin, xmax, x, xcen, nx, nTrace, sigma, sigmal);
+   if (proftype == 10) 
+      findXLimits(xmin, xmax, x, xcen, nx, nTrace, sigma, 6.0*sigmal);
+   else 
+      findXLimits(xmin, xmax, x, xcen, nx, nTrace, sigma, sigmal);
 
 /*
 //	ma = nCoeff*nTrace + nPoly
@@ -208,10 +213,10 @@ IDL_LONG extract_row
 
    for(i=0; i<ma; i++) beta[i] = 0.0;
    
-   fillCovar(ysub, invvar, nx, aprofile, apoly, nTrace, nCoeff, wPoly, 
-          beta, ia, covar, xmin, xmax);
+   fillCovar(ysub, invvar, nx, aprofile, apoly, nTrace, nCoeff, nBand, 
+          wPoly, beta, ia, covar, xmin, xmax);
 
-   bad = choldcRow(covar, ia, nTrace, nCoeff, wPoly, p); 
+   bad = choldcRow(covar, ia, nTrace, nCoeff, nBand, wPoly, p); 
 /*   printf("choldc Custom2 done\n");	*/
    if (bad < 0) {
 	for(j=0;j<ma;j++) {
@@ -220,11 +225,11 @@ IDL_LONG extract_row
         }
    } else {
 
-     cholslRow(covar, ia, nTrace, nCoeff, wPoly, p, beta, ans); 
+     cholslRow(covar, ia, nTrace, nCoeff, nBand, wPoly, p, beta, ans); 
 /*     printf("cholsl done\n");	*/
 
      if (calcCovar > 0) {
-        cholslRowCovar(covar, ia, nTrace, nCoeff, wPoly, p); 
+        cholslRowCovar(covar, ia, nTrace, nCoeff, nBand, wPoly, p); 
 /*     printf("cholsl Covar done\n");	*/
      }  
 /*     else {
@@ -272,6 +277,32 @@ IDL_LONG extract_row
    return retval;
 }
 
+void AddGaussWings(float *x, IDL_LONG ndat, float **y, float xcen, 
+                   IDL_LONG xmin, IDL_LONG xmax, float sigma, 
+                   IDL_LONG nCoeff, float contribution)
+{ 
+	IDL_LONG i,k;
+	float base;
+	float diff, denom;
+	float epow;
+	float sigmal = 10.0*sigma;
+
+	denom = 1.0/sqrt(6.2832 * sigmal * sigmal);
+
+	for (i=xmin,k=0; i<=xmax; i++, k++) {
+	  if(i >= 0 && i < ndat && nCoeff > 0) {
+	      diff = (xcen - x[i])/sigmal;
+              epow = 0.5*diff*diff;
+
+              if (epow < MAXEXP) base = exp(-epow) * denom;
+              else base = 0.0;
+
+              y[0][k] += base * contribution;
+              y[0][k] /= (1.0 + contribution);
+          }
+	}
+
+}
 void ProfileGauss(float *x, IDL_LONG ndat, float **y, float xcen, IDL_LONG xmin,
 		IDL_LONG xmax, float sigma, IDL_LONG nCoeff)
 { 
@@ -840,6 +871,12 @@ void fillProfile(float **y, float *x, float *xcen, IDL_LONG *xmin,
                  ProfileGaussHalfLorentz(x, nx, &y[j], xcen[i], xmin[i],xmax[i],
                       sigma[i], nCoeff);
                  }
+	      else if (proftype == 10)  {
+                 ProfileGauss(x, nx, &y[j], xcen[i], xmin[i],xmax[i],
+                      sigma[i], nCoeff);
+                 AddGaussWings(x, nx, &y[j], xcen[i], xmin[i],xmax[i],
+                      sigma[i], nCoeff, 0.025);
+                 }
               else {
 	         fprintf(stderr,"Using Gaussian");
                  ProfileGauss(x, nx, &y[j], xcen[i], xmin[i], xmax[i], 
@@ -906,18 +943,20 @@ void fillWhopping(float **y, float *x, IDL_LONG nx, IDL_LONG whoppingct,
 }
 
 void fillCovar(float *ysub, float *invvar, IDL_LONG nx, float **aprofile, 
-       float **apoly, IDL_LONG nTrace, IDL_LONG nCoeff, IDL_LONG nPoly, 
-       float *beta, IDL_LONG *ia, float **covar, IDL_LONG *xmin, IDL_LONG *xmax)
+       float **apoly, IDL_LONG nTrace, IDL_LONG nCoeff, IDL_LONG nBand, 
+       IDL_LONG nPoly, float *beta, IDL_LONG *ia, float **covar, 
+       IDL_LONG *xmin, IDL_LONG *xmax)
 { 
 
    IDL_LONG i,j,k,l,m,n;
    IDL_LONG tTrace = nCoeff*nTrace;
    IDL_LONG coeff;
    IDL_LONG mStop,jStop;
+   IDL_LONG skip,check;
 
 /* Fill Profile part of covar first  */
 
-  for (l=0,j=0,jStop = nCoeff,mStop=2*nCoeff;
+  for (l=0,j=0,jStop = nCoeff,mStop=(nBand+1)*nCoeff;
              l<nTrace;l++,mStop+=nCoeff,jStop+=nCoeff) {
     if(mStop > tTrace) mStop = tTrace;
     for (coeff=0; coeff < nCoeff; coeff++, j++)
@@ -941,9 +980,10 @@ void fillCovar(float *ysub, float *invvar, IDL_LONG nx, float **aprofile,
 
 /*	Overlap with next fiber */
 
-	 for (m=jStop; m<mStop; m++) 
+          for (m=jStop, skip=1; m<mStop; skip++) 
+            for (check=0;check<nCoeff;check++,m++)
             if (ia[m]) 
-               for (i=xmin[l+1],k=0;i<=xmax[l];i++,k++) 
+               for (i=xmin[l+skip],k=0;i<=xmax[l];i++,k++) 
                  covar[j][m] += aprofile[m][k] * 
                     aprofile[j][i-xmin[l]] * invvar[i];
       }
@@ -966,10 +1006,12 @@ void fillCovar(float *ysub, float *invvar, IDL_LONG nx, float **aprofile,
 
 /* cholslRow replaces lower triangle of a with sqrt(covar)  
 	And we only loop over enough to work on nCoeff parameters for
-	adjacent fibers   
+	adjacent fibers, check that, now looping over nBand elements
+  
    a is modified and cannot be used again for subsequent calls */
+
 void cholslRow(float **a, IDL_LONG *ia, IDL_LONG nTrace, IDL_LONG nCoeff, 
-         IDL_LONG nPoly, float *p, float *b, float *x) 
+         IDL_LONG nBand, IDL_LONG nPoly, float *p, float *b, float *x) 
 {
 	IDL_LONG i,j,k;
         IDL_LONG kStart;
@@ -978,7 +1020,7 @@ void cholslRow(float **a, IDL_LONG *ia, IDL_LONG nTrace, IDL_LONG nCoeff,
 	float sum;
 
 	for(j=0,i=0;j<nTrace;j++) {
-          kStart = i - 2*nCoeff;
+          kStart = i - (nBand + 1)*nCoeff;
           if (kStart < -1) kStart = -1;
           for(coeff=0;coeff<nCoeff;coeff++,i++)
              if (ia[i]) {
@@ -1005,7 +1047,7 @@ void cholslRow(float **a, IDL_LONG *ia, IDL_LONG nTrace, IDL_LONG nCoeff,
 	}
 
 	for (j=nTrace-1,i=tTrace-1,kStart=tTrace;j>=0;j--) {
-           if (j < nTrace-2) kStart -= nCoeff;
+           if (j < nTrace-(nBand+1)) kStart -= nCoeff;
            for(coeff=0;coeff<nCoeff;coeff++,i--)
            if (ia[i]) {
 	      for (sum=x[i],k=i+1; k<kStart; k++) 
@@ -1017,11 +1059,13 @@ void cholslRow(float **a, IDL_LONG *ia, IDL_LONG nTrace, IDL_LONG nCoeff,
         }
 }
 
+/*   !!!!!!   This routine needs to be tested to ensure nBand > 1 works  */
+
 void cholslRowCovar(float **a, IDL_LONG *ia, IDL_LONG nTrace, IDL_LONG nCoeff, 
-              IDL_LONG nPoly, float *p)
+              IDL_LONG nBand, IDL_LONG nPoly, float *p)
 {
 	IDL_LONG i,k;
-        IDL_LONG kStart = 2*nCoeff;
+        IDL_LONG kStart = (nBand+1)*nCoeff;
 	IDL_LONG tTrace=nTrace*nCoeff;
 	float sum;
 	float *x;
@@ -1067,7 +1111,7 @@ void cholslRowCovar(float **a, IDL_LONG *ia, IDL_LONG nTrace, IDL_LONG nCoeff,
 
 /*	Row requires nCoeff  parameters per Trace in upper triangle of covar */           
 int choldcRow(float **a, IDL_LONG *ia, IDL_LONG nTrace, IDL_LONG nCoeff, 
-                 IDL_LONG nPoly, float *p)
+                 IDL_LONG nBand, IDL_LONG nPoly, float *p)
 {
    IDL_LONG i,j,k,l;
    IDL_LONG coeff;
@@ -1076,9 +1120,9 @@ int choldcRow(float **a, IDL_LONG *ia, IDL_LONG nTrace, IDL_LONG nCoeff,
    IDL_LONG jStop;
    float sum;
 
-   for (l=0,i=0,jStop=2*nCoeff;l<nTrace;l++,jStop+=nCoeff) {
+   for (l=0,i=0,jStop=(nBand+1)*nCoeff;l<nTrace;l++,jStop+=nCoeff) {
       if (jStop > tTrace) jStop = tTrace;
-      kStart = i - 2*nCoeff;
+      kStart = i - (nBand+1)*nCoeff;
       if(kStart < -1) kStart = -1;
       for (coeff=0; coeff < nCoeff; coeff++, i++)
          if (ia[i]) {
