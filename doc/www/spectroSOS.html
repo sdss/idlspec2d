@@ -474,6 +474,14 @@ However, if it appears to not be working one could check the following:
     If any have been sitting around for several minutes or more,
     then something is wrong.  You should delete the file ending with ".lock".
     <B>However</B>, this could result in a corrupted "logfile*.fits".
+<LI><B>Is anything amiss with running the scripts?</B><BR>
+    Perhaps there is a communication problem between sdsshost and plate-mapper,
+    or a problem running the code on plate-mapper.  There is logging information
+    written once per minute into the file
+    <DL><DD><PRE>
+    /data/spectro/spectrologs/sos.log
+    </PRE></DD></DL>
+    which may indicate such problems.
 <LI><B>Is the logfile corrupted?</B><BR>
     This is probably the worst thing that could happen.  If the file
     <DL><DD><PRE>
