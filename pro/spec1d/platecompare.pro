@@ -108,7 +108,7 @@ pro platecompare, plate, mjd=mjd, topdir=topdir, psfile=psfile
       topsave = getenv('SPECTRO_DATA')
       for itop=0, n_elements(topdir)-1 do begin
          setenv, 'SPECTRO_DATA=' + topdir[itop]
-         readspec, platevec, mjd=mjdvec1, zans=zans1, plug=plug1
+         readspec, platevec, mjd=mjdvec, zans=zans1, plug=plug1
          zansall = struct_append(zansall, zans1)
          plugall = struct_append(plugall, plug1)
          if (itop EQ 0) then $
