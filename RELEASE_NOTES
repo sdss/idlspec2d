@@ -79,6 +79,8 @@ f8v.abs: Increase flux-calibrating mask around H-alpha by 50%, now
 opBC-51813.par: One extra bad column [370,1800:2047] on r2.
 
 BSPLINE_ACTION, INTRV (in idlutils): Bug fixes for 2-D spline fitting.
+     Include 'poly1' function in BSPLINE_ACTION(), and set the function
+     properly in BSPLINE_ITERFIT.
 BSPLINE_FIT, BSPLINE_ITERFIT (in idlutils):
      Remove MASK keyword, since it is too confusing with INMASK, OUTMASK
      already used in BSPLINE_ITERFIT().  It didn't look like it was
