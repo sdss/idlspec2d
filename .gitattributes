@@ -133,6 +133,7 @@ pro/apo2d/apofluxcalib.pro -text
 pro/apo2d/apoplot.pro -text
 pro/apo2d/aporeduce.pro -text
 pro/apo2d/atvrawspec.pro -text
+pro/apo2d/focushistory.pro -text
 pro/apo2d/plughistory.pro -text
 pro/apo2d/quickbias.pro -text
 pro/apo2d/quickboxcar.pro -text
