@@ -7,6 +7,7 @@ kurucz_file = filepath('kurucz_stds_v5.fit', $
 
 kflux = mrdfits(kurucz_file, 0, hdr, /silent)  ; flux
 kindx = mrdfits(kurucz_file, 1, /silent)
+kset = mrdfits(kurucz_file, 2, /silent)
 
 ;----------------
 ; Create Wavelength Array
@@ -19,11 +20,9 @@ kwave = 10.0^(lindgen(npix) * 1.0d-4 + crval)
 ;-----------------
 ; Apply a linear correction to fluxes derived from White Dwarf Spectra
 
-wd_b = 1.1288826  
-wd_m = -2.3724042e-05
-kfix = 1.0 / (wd_m * kwave + wd_b)  ; flux
+traceset2xy, kset, kwave, kfix
 for i = 0, nmod - 1 do begin
-  kflux[*,i] = kflux[*,i] * kfix
+  kflux[*,i] = kflux[*,i] / kfix
   fluxfnu = kflux[*,i] * kwave^2 / 2.99792e18
   fthru=filter_thru(fluxfnu, waveimg=kwave, $
                     filter_prefix = 'sdss_jun2001', /toair)
