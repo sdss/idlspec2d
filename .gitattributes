@@ -141,6 +141,7 @@ pro/spec2d/extract_profile.pro -text
 pro/spec2d/extract_row.pro -text
 pro/spec2d/extract_row_safe.pro -text
 pro/spec2d/fchebyshev.pro -text
+pro/spec2d/fchebyshev_split.pro -text
 pro/spec2d/fiberflat.pro -text
 pro/spec2d/fibermask_bits.pro -text
 pro/spec2d/filter_thru.pro -text

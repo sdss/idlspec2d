@@ -290,8 +290,7 @@ wsave = wset
    ; a split in the baseline at the central fibers.
    for ic=1, ncoeff-1 do begin
       xy2traceset, dindgen(nfiber), transpose(wset.coeff[ic,*]), tmpset, $
-       func='chebyshev', ncoeff=8, maxsig=2.0, xmask=xmask, yfit=yfit, $
-       /halfintwo
+       func='chebyshev_split', ncoeff=8, maxsig=2.0, xmask=xmask, yfit=yfit
       wset.coeff[ic,*] = yfit
 ; jj=where(xmask EQ 0)
 ; plot,transpose(wset.coeff[ic,*]),/yno

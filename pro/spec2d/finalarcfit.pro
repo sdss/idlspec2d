@@ -28,8 +28,8 @@ pro finalarcfit, x, loglam, wset, ncoeff, ic, nsetcoeff=nsetcoeff, $
    coeffmask = (fibermask EQ 0) # (fltarr(fitcoeff) + 1)
    xy2traceset, dindgen(nfiber) # (dblarr(fitcoeff) + 1.0), $
     transpose(wset.coeff[ic:ncoeff-1,*]), tmpset, $
-    invvar=coeffmask, func='chebyshev', $
-    ncoeff=nsetcoeff, maxsig=maxsig, yfit=yfitcoeff, /halfintwo
+    invvar=coeffmask, func='chebyshev_split', $
+    ncoeff=nsetcoeff, maxsig=maxsig, yfit=yfitcoeff
    wset.coeff[ic:ncoeff-1,*] = transpose(yfitcoeff)
 
    ; Fit the first ic coefficients, keep the others fixed

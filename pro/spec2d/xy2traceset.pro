@@ -9,7 +9,7 @@
 ;   xy2traceset, xpos, ypos, tset, [ func=func, ncoeff=ncoeff, $
 ;    xmin=xmin, xmax=xmax, maxdev=maxdev, maxsig=maxsig, maxiter=maxiter, $
 ;    singlerej=singlerej, xmask=xmask, yfit=yfit, inputans=inputans, $
-;    invvar=invvar, _EXTRA=KeywordsForFuncFit ]
+;    invvar=invvar, _EXTRA=KeywordsForFunc ]
 ;
 ; INPUTS:
 ;   xpos       - X positions corresponding to YPOS as an [nx,Ntrace] array
@@ -19,6 +19,7 @@
 ;   func       - Function for trace set; options are:
 ;                'legendre'
 ;                'chebyshev'
+;                'chebyshev_split'
 ;                Default to 'legendre'
 ;   ncoeff     - Number of coefficients in fit; default to 3
 ;   ncoeff     - Inverse variance for weighted func_fit
@@ -54,7 +55,7 @@
 ;   Note that both MAXDEV and MAXSIG can be set for applying both rejection
 ;   schemes at once.
 ;
-;   The HALFINTWO keyword can be passed to FCHEBYSHEV by this procedure.
+;   Additional keywords can be passed to the fitting functions with _EXTRA.
 ;
 ; EXAMPLES:
 ;
@@ -63,6 +64,7 @@
 ;
 ; PROCEDURES CALLED:
 ;   fchebyshev()
+;   fchebyshev_split()
 ;   flegendre()
 ;   func_fit()
 ;
@@ -74,7 +76,7 @@
 pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
  xmin=xmin, xmax=xmax, maxdev=maxdev, maxsig=maxsig, maxiter=maxiter, $
  singlerej=singlerej, xmask=xmask, yfit=yfit, inputans=inputans, $
- invvar=invvar, totalreject=totalreject, _EXTRA=KeywordsForFuncFit
+ invvar=invvar, totalreject=totalreject, _EXTRA=KeywordsForFunc
 
    ; Need 3 parameters
    if (N_params() LT 3) then begin
@@ -106,121 +108,118 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
       message, 'XPOS contains invalid number of dimensions'
    endelse
 
-   if (func EQ 'legendre' OR func EQ 'chebyshev') then begin
-      if (func EQ 'legendre') then function_name = 'flegendre'
-      if (func EQ 'chebyshev') then function_name = 'fchebyshev'
+   case func of
+     'legendre': function_name = 'flegendre'
+     'chebyshev': function_name = 'chebyshev'
+     'chebyshev_split': function_name = 'chebyshev_split'
+     else: message, 'Unknown function' + func
+   endcase
 
-      if (NOT keyword_set(ncoeff)) then ncoeff = 3
+   if (NOT keyword_set(ncoeff)) then ncoeff = 3
 
-      tset = $
-      { func    :    func              , $
-        xmin    :    0.0               , $
-        xmax    :    0.0               , $
-        coeff   :    dblarr(ncoeff, ntrace) $
-      }
+   tset = $
+   { func    :    func              , $
+     xmin    :    0.0               , $
+     xmax    :    0.0               , $
+     coeff   :    dblarr(ncoeff, ntrace) $
+   }
 
-      if (size(xmin, /tname) NE 'UNDEFINED') then tset.xmin = xmin $
-       else tset.xmin = min(xpos)
-      if (size(xmax, /tname) NE 'UNDEFINED') then tset.xmax = xmax $
-       else tset.xmax = max(xpos)
-      xmid = 0.5 * (tset.xmin + tset.xmax)
-      xrange = tset.xmax - tset.xmin
+   if (size(xmin, /tname) NE 'UNDEFINED') then tset.xmin = xmin $
+    else tset.xmin = min(xpos)
+   if (size(xmax, /tname) NE 'UNDEFINED') then tset.xmax = xmax $
+    else tset.xmax = max(xpos)
+   xmid = 0.5 * (tset.xmin + tset.xmax)
+   xrange = tset.xmax - tset.xmin
 
-      xmask = bytarr(nx, ntrace)
+   xmask = bytarr(nx, ntrace)
 
-      yfit = ypos*0.0
-      if (NOT keyword_set(inputans)) then curans = fltarr(ncoeff)
+   yfit = ypos*0.0
+   if (NOT keyword_set(inputans)) then curans = fltarr(ncoeff)
 
-      totalreject = 0
-      ; Header for Schlegel counter
-      print, ''
-      print, ' TRACE# NPOINTS NREJECT'
+   totalreject = 0
+   ; Header for Schlegel counter
+   print, ''
+   print, ' TRACE# NPOINTS NREJECT'
 
-      for itrace=0, ntrace-1 do begin
-;         res = svdfit(2.0*(xpos[*,i]-xmid)/xrange, ypos[*,itrace], ncoeff, $
-;          /double, function_name=function_name, singular=singular)
+   for itrace=0, ntrace-1 do begin
+;      res = svdfit(2.0*(xpos[*,i]-xmid)/xrange, ypos[*,itrace], ncoeff, $
+;       /double, function_name=function_name, singular=singular)
 
-         xnorm = 2.0*(xpos[*,itrace]-xmid) / xrange ; X positions renormalized
-         nreject = 0
-         good = lonarr(nx) + 1
+      xnorm = 2.0*(xpos[*,itrace]-xmid) / xrange ; X positions renormalized
+      nreject = 0
+      good = lonarr(nx) + 1
 
-         if (keyword_set(inputans)) then curans = inputans[*,itrace] 
+      if (keyword_set(inputans)) then curans = inputans[*,itrace] 
 
-         ; Rejection iteration loop
+      ; Rejection iteration loop
 
-         iiter = 0
-         ngood = nx
-         nglast = nx+1 ; Set to anything other than NGOOD for 1st iteration
-         while ( (iiter EQ 0 AND numiter EQ 0) $
-              OR (ngood NE nglast AND iiter LE numiter AND ngood GE 1) $
-          ) do begin
+      iiter = 0
+      ngood = nx
+      nglast = nx+1 ; Set to anything other than NGOOD for 1st iteration
+      while ( (iiter EQ 0 AND numiter EQ 0) $
+           OR (ngood NE nglast AND iiter LE numiter AND ngood GE 1) $
+       ) do begin
 
-            if (iiter EQ 0) then begin
-               qgood = bytarr(nx) + 1
-               igood = lindgen(nx)
-            endif else begin
-               nglast = ngood
-               if (keyword_set(singlerej)) then begin
-                  ydiff = ycurfit[igood] - ypos[igood,itrace]
-                  if (keyword_set(invvar)) then $
-                    invsig = sqrt(invvar[igood,itrace] > 0) $
-                  else invsig = (fltarr(ngood) + 1.0)/ stddev(ydiff)
-                  worstdiff = max(abs(ydiff), iworst)
-                  if (keyword_set(maxdev) AND worstdiff GT maxdev) then $
-                     qgood[igood[iworst]] = 0 $
-                  else begin
-                    worstsig = max(abs(ydiff)*invsig, iworst)
-                    if (keyword_set(maxsig) AND worstsig GT maxsig) then $
-                     qgood[igood[iworst]] = 0 
-                  endelse
-               endif else begin
-                  ydiff = ycurfit - ypos[*,itrace]
-                  if (keyword_set(invvar)) then $
-                    invsig = sqrt(invvar[*,itrace] > 0) $
-                  else invsig = (fltarr(nx) + 1.0)/ stddev(ydiff)
-                  qgood = bytarr(nx) + 1
-                  if (keyword_set(maxdev)) then $
-                   qgood = qgood AND (abs(ydiff) LT maxdev)
-                  if (keyword_set(maxsig)) then $
-                   qgood = qgood AND (abs(ydiff)*invsig LT maxsig)
+         if (iiter EQ 0) then begin
+            qgood = bytarr(nx) + 1
+            igood = lindgen(nx)
+         endif else begin
+            nglast = ngood
+            if (keyword_set(singlerej)) then begin
+               ydiff = ycurfit[igood] - ypos[igood,itrace]
+               if (keyword_set(invvar)) then $
+                 invsig = sqrt(invvar[igood,itrace] > 0) $
+               else invsig = (fltarr(ngood) + 1.0)/ stddev(ydiff)
+               worstdiff = max(abs(ydiff), iworst)
+               if (keyword_set(maxdev) AND worstdiff GT maxdev) then $
+                  qgood[igood[iworst]] = 0 $
+               else begin
+                 worstsig = max(abs(ydiff)*invsig, iworst)
+                 if (keyword_set(maxsig) AND worstsig GT maxsig) then $
+                  qgood[igood[iworst]] = 0 
                endelse
-               igood = where(qgood, ngood)
+            endif else begin
+               ydiff = ycurfit - ypos[*,itrace]
+               if (keyword_set(invvar)) then $
+                 invsig = sqrt(invvar[*,itrace] > 0) $
+               else invsig = (fltarr(nx) + 1.0)/ stddev(ydiff)
+               qgood = bytarr(nx) + 1
+               if (keyword_set(maxdev)) then $
+                qgood = qgood AND (abs(ydiff) LT maxdev)
+               if (keyword_set(maxsig)) then $
+                qgood = qgood AND (abs(ydiff)*invsig LT maxsig)
             endelse
+            igood = where(qgood, ngood)
+         endelse
 
-            nreject = nx - ngood
-            if (keyword_set(invvar)) then $
-              tempivar  = invvar[*,itrace]*qgood $
-            else tempivar = qgood
+         nreject = nx - ngood
+         if (keyword_set(invvar)) then $
+           tempivar  = invvar[*,itrace]*qgood $
+         else tempivar = qgood
 
-            res = func_fit(xnorm, ypos[*,itrace], ncoeff, $
-             invvar=tempivar, $
-             function_name=function_name, yfit=ycurfit, inputans=curans, $
-             _EXTRA=KeywordsForFuncFit)
+         res = func_fit(xnorm, ypos[*,itrace], ncoeff, $
+          invvar=tempivar, $
+          function_name=function_name, yfit=ycurfit, inputans=curans, $
+          _EXTRA=KeywordsForFunc)
 
-;            if (func EQ 'legendre') then $
-;             ycurfit = flegendre(xnorm, ncoeff) # res
-;            if (func EQ 'chebyshev') then $
-;             ycurfit = fchebyshev(xnorm, ncoeff, _EXTRA=KeywordsForFuncFit) # res
+;         if (func EQ 'legendre') then $
+;          ycurfit = flegendre(xnorm, ncoeff, _EXTRA=KeywordsForFunc) # res
 
-            iiter = iiter + 1
-         endwhile
+         iiter = iiter + 1
+      endwhile
   
-         yfit[*,itrace] = ycurfit 
-         tset.coeff[*,itrace] = res
+      yfit[*,itrace] = ycurfit 
+      tset.coeff[*,itrace] = res
 
-         xmask[*,itrace] = qgood
+      xmask[*,itrace] = qgood
 
-         ; Schlegel counter of row number...
-         print, format='(i7,i8,i8,a1,$)', itrace, nx, nreject, string(13b)
-         totalreject = totalreject + nreject
-      endfor
+      ; Burles counter of row number...
+      print, format='(i7,i8,i8,a1,$)', itrace, nx, nreject, string(13b)
+      totalreject = totalreject + nreject
+   endfor
 
-      splog, 'Total rejected: ', totalreject
-      print, ''
-
-   endif else begin
-      message, 'Unknown function' + func
-   endelse
+   splog, 'Total rejected: ', totalreject
+   print, ''
 
    return
 end

@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   res = function func_fit( x, y, ncoeff, [invvar=, function_name=, $
-;    /halfintwo, yfit=, ia=, inputans= ]
+;    yfit=, ia=, inputans=, _EXTRA= ]
 ;
 ; INPUTS:
 ;   x          - X values (independent variable)
@@ -20,10 +20,10 @@
 ;                'legendre'
 ;                'chebyshev'
 ;                Default to 'legendre'
-;   halfintwo  - Optional keyword for Chebyshev function, FCHEBYSHEV
 ;   ia         - Array specifying free (1) and fixed (0) variables [NCOEFF]
 ;   inputans   - If holding parameters fixed, set this array to those values
 ;                [NCOEFF]
+;   _EXTRA     - Optional keywords for fitting function
 ;
 ; OUTPUTS:
 ;   res        - Fit coefficients [NCOEFF]
@@ -49,11 +49,11 @@
 ;------------------------------------------------------------------------------
 
 function func_fit, x, y, ncoeff, invvar=invvar, function_name=function_name, $
- halfintwo=halfintwo, yfit=yfit, ia=ia, inputans=inputans
+ yfit=yfit, ia=ia, inputans=inputans, _EXTRA=KeywordsForFunc
 
    if (N_params() LT 3) then begin
       print,'function func_fit, x, y, ncoeff, [invvar=invvar, function_name=function_name' 
-      print,' halfintwo=halfintwo, yfit=yfit, ia=ia, inputans=inputans]'
+      print,' yfit=yfit, ia=ia, inputans=inputans]'
       return, 0
    endif
 
@@ -113,7 +113,9 @@ function func_fit, x, y, ncoeff, invvar=invvar, function_name=function_name, $
       if (function_name EQ 'flegendre') then $
        legarr = flegendre(x, ncfit)
       if (function_name EQ 'fchebyshev') then $
-       legarr = fchebyshev(x, ncfit, halfintwo=halfintwo)
+       legarr = fchebyshev(x, ncfit)
+      if (function_name EQ 'fchebyshev_split') then $
+       legarr = fchebyshev_split(x, ncfit)
 
       ; Subtract fixed terms first
      
