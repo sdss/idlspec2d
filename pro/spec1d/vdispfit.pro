@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   vdispfit, objflux, objivar, [ objloglam, hdr=, zobj=, npoly=, $
-;    eigenfile=, eigendir=, sigma=, sigerr=, yfit= ]
+;    eigenfile=, eigendir=, columns=, sigma=, sigerr=, yfit= ]
 ;
 ; INPUTS:
 ;   objflux    - Galaxy spectrum (spectra); array of [NPIX,NGALAXY].
@@ -27,6 +27,8 @@
 ;   eigenfile  - File name for eigenvectors; default to 'spEigenVdisp*.fits'
 ;   eigendir   - Directory name for EIGENFILE; default to
 ;                '$IDLSPEC2D_DIR/templates'
+;   columns    - Column numbers of the eigenspectra image to use in the
+;                PCA fit; default to all columns.
 ;
 ; OUTPUTS:
 ;
@@ -91,7 +93,8 @@ end
 
 ;------------------------------------------------------------------------------
 pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
- eigenfile=eigenfile, eigendir=eigendir, sigma=sigma, sigerr=sigerr, yfit=yfit
+ eigenfile=eigenfile, eigendir=eigendir, columns=columns, $
+ sigma=sigma, sigerr=sigerr, yfit=yfit
 
    common com_vdispfit, bigflux, bigloglam, bigmask, nsamp, bigsig, $
     nbigpix, nsig, dsig, nstar, lastfile
@@ -119,8 +122,9 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
          if (lamdims EQ 1) then thisloglam = objloglam $
           else if (lamdims EQ 2) then thisloglam = objloglam[*,iobj]
          vdispfit, objflux[*,iobj], objivar[*,iobj], thisloglam, hdr=hdr, $
-          zobj=zobj[iobj], npoly=npoly, sigma=sigma1, sigerr=sigerr1, $
-          yfit=yfit1
+          zobj=zobj[iobj], npoly=npoly, $
+          eigenfile=eigenfile, eigendir=eigendir, columns=columns, $
+          sigma=sigma1, sigerr=sigerr1, yfit=yfit1
          sigma[iobj] = sigma1
          sigerr[iobj] = sigerr1
          if (keyword_set(yfit)) then yfit[*,iobj] = yfit1
@@ -267,6 +271,14 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
     polyflux = poly_array(npixcomp,npoly)
 
    ;----------
+   ; Select which eigenvectors to use (default to all)
+
+   if (NOT keyword_set(columns)) then iuse = lindgen(nstar) $
+    else iuse = columns
+   if (keyword_set(npoly)) then $
+    iuse = [iuse, nstar+lindgen(npoly)]
+
+   ;----------
    ; Fit for chi^2 at each possible velocity dispersion
 
    chi2arr = fltarr(nsig)
@@ -276,7 +288,7 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
 
    acoeffarr = fltarr(nstar+npoly,nsig)
    for isig=0, nsig-1 do begin
-      eigenflux = bigflux[indxt,*,isig]
+      eigenflux = bigflux[indxt,iuse,isig]
       if (keyword_set(npoly)) then eigenflux = [[eigenflux], [polyflux]]
       chi2arr[isig] = computechi2(objsmall, sqivar, eigenflux, acoeff=acoeff)
       acoeffarr[*,isig] = acoeff
@@ -293,7 +305,7 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
 
    if (arg_present(yfit)) then begin
       junk = min(abs(bigsig - sigma), isig)
-      eigenflux = bigflux[indxt,*,isig]
+      eigenflux = bigflux[indxt,iuse,isig]
       if (keyword_set(npoly)) then eigenflux = [[eigenflux], [polyflux]]
       yfit = fltarr(npixobj)
       yfit[indxo] = acoeffarr[*,isig] ## eigenflux
