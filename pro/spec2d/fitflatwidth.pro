@@ -92,16 +92,15 @@ function fitflatwidth, flux, fluxivar, ansimage, fibermask, $
    endelse
 
    ;----------
-   ; Trigger warning messages if widths are too large.
+   ; Compute the widths in each of 4 quandrants on the CCD
 
-   medwidth = [ median(width[0:nrow/2-1,0:ntrace/2-1]), $
-                median(width[0:nrow/2-1,ntrace/2:ntrace-1]), $
-                median(width[nrow/2:nrow-1,0:ntrace/2-1]), $
-                median(width[nrow/2:nrow-1,ntrace/2:ntrace-1]) ]
-
-   splog, ((max(medwidth) GT 1.10) ? 'WARNING: ' : '') $
-    + 'Median spatial widths = ' $
-    + string(medwidth,format='(4f5.2)') + ' pix (LL LR UL UR)'
+;   medwidth = [ median(width[0:nrow/2-1,0:ntrace/2-1]), $
+;                median(width[0:nrow/2-1,ntrace/2:ntrace-1]), $
+;                median(width[nrow/2:nrow-1,0:ntrace/2-1]), $
+;                median(width[nrow/2:nrow-1,ntrace/2:ntrace-1]) ]
+;
+;   splog, 'Median spatial widths = ' $
+;    + string(medwidth,format='(4f5.2)') + ' pix (LL LR UL UR)'
 
    ;----------
    ; Perform median across bundles on good arclines only
@@ -126,6 +125,17 @@ function fitflatwidth, flux, fluxivar, ansimage, fibermask, $
 
    xy2traceset, findgen(nrow) # replicate(1,ntrace), $
     width_final, widthset, ncoeff=ncoeff, xmin=xmin, xmax=xmax
+
+   ;----------
+   ; Compute the widths in each of 4 quandrants on the CCD.
+
+   traceset2xy, widthset, xx, width_fit
+   medwidth = [ median(width_fit[0:npix/2-1,0:ntrace/2-1]), $
+                median(width_fit[0:npix/2-1,ntrace/2:ntrace-1]), $
+                median(width_fit[npix/2:npix-1,0:ntrace/2-1]), $
+                median(width_fit[npix/2:npix-1,ntrace/2:ntrace-1]) ]
+   splog, 'Median spatial widths = ' $
+    + string(medwidth,format='(4f5.2)') + ' pix (LL LR UL UR)'
 
    return, widthset
 end

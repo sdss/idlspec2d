@@ -141,19 +141,14 @@ function fitdispersion, arc_flux, arc_fluxivar, xcen_inp, $
     ncoeff=ncoeff, xmin=xmin, xmax=xmax
 
    ;----------
-   ; Trigger warning messages if widths are too large.
+   ; Compute the widths in each of 4 quandrants on the CCD.
 
-   ; Which lines are on the bottom/top of the CCD?
-;   ilo = where(xcen[0,*] LE 0.5*xmax) > 0
-;   ihi = where(xcen[0,*] GT 0.5*xmax) > 0
    traceset2xy, dispset, xx, width_fit
    medwidth = [ median(width_fit[0:npix/2-1,0:ntrace/2-1]), $
                 median(width_fit[0:npix/2-1,ntrace/2:ntrace-1]), $
                 median(width_fit[npix/2:npix-1,0:ntrace/2-1]), $
                 median(width_fit[npix/2:npix-1,ntrace/2:ntrace-1]) ]
-
-   splog, ((max(medwidth) GT 1.10) ? 'WARNING: ' : '') $
-    + 'Median wavelength widths = ' $
+   splog, 'Median wavelength widths = ' $
     + string(medwidth,format='(4f5.2)') + ' pix (LL LR UL UR)'
 
    return, dispset
