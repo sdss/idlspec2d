@@ -8,25 +8,31 @@
 ;
 ; CALLING SEQUENCE:
 ;   xdiff = fitmeanx(wset, lambda, xpos, aveinvvar, $
-;    nord=, maxdev=, mx=mx)
+;    nord=, maxdev=, minsdev=, inmask=, mx=)
 ;
 ; INPUTS:
-;   wset     - Initial wavelength solution
+;   wset     - Initial wavelength solution for all fibers
 ;   lambda   - Air wavelengths corresponding to XPOS (in log-10 Angstroms)
-;   xpos     - Centroid positoins of sky lines in object image
+;              [NLINE]
+;   xpos     - Centroid positoins of sky lines in object image [NFIBER,NLINE]
 ;
 ; OPTIONAL KEYWORDS:
 ;   nord     - Order of fit to delta x positions; default to 4
 ;   maxdev   - Max abs difference (in pix) to reject outlying sky line
 ;              positions; default to 0.4
+;   minsdev  - Minimum standard deviation for computing AVEINVVAR;
+;              default to 0.01 pix.
+;   inmask   - Input mask, set to 1 for good points, 0 for bad points
+;              [NFIBER,NLINE]
 ;
 ; OUTPUTS:
 ;   xdiff    - Smooth fit to difference between measured sky positions
-;              and those predicted from arc wavelength solution
+;              and those predicted from arc wavelength solution [NFIBER,NLINE]
 ;
 ; OPTIONAL OUTPUTS:
-;   aveinvvar- Weights in xpos, set to zero for rejected positions
+;   aveinvvar- Weights in xpos, set to zero for rejected positions [NLINE]
 ;   mx       - Sky line positions predicted from arc line solution
+;              [NFIBER,NLINE]
 ;
 ; COMMENTS:
 ;
@@ -40,10 +46,11 @@
 ;-
 ;------------------------------------------------------------------------------
 function fitmeanx, wset, lambda, xpos, aveinvvar, $
- nord=nord, maxdev=maxdev, mx=mx
+ nord=nord, maxdev=maxdev, minsdev=minsdev, inmask=inmask, mx=mx
 
    if (NOT keyword_set(nord)) then nord = 4
    if (NOT keyword_set(maxdev)) then maxdev = 0.4
+   if (NOT keyword_set(minsdev)) then minsdev = 0.01
 
    dims = size(xpos, /dim)
    nfiber = dims[0]
@@ -80,6 +87,8 @@ function fitmeanx, wset, lambda, xpos, aveinvvar, $
       ; Set MASK=1 for bad points
       djs_iterstat, res1, sigrej=4.0, maxiter=3, mask=mask
 
+      if (keyword_set(inmask)) then mask = mask AND inmask[*,i]
+
       ; Re-fit to RAWDIFF as a function of fiber number (rejecting outliers)
       igood = where(mask NE 0, ngood)
       if (ngood GT nord) then begin
@@ -97,7 +106,7 @@ function fitmeanx, wset, lambda, xpos, aveinvvar, $
       endelse
 
       if (sdev EQ 0.0) then aveinvvar[i] = 0 $
-       else aveinvvar[i] = 1.0 / sdev^2
+       else aveinvvar[i] = 1.0 / (sdev > minsdev)^2
       splog, 'In skyline number' ,i,' std-dev is ', sdev, ' pix'
    endfor
 
