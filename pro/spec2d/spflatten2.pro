@@ -56,6 +56,11 @@
 ;   Thus, if you are using ten 16 MB flat images,
 ;   that array will be 10*(16+4)=200 MB (in addition to a few other images).
 ;
+;   The header contains the number of files used in each camera (NEXP),
+;   and an identifier for each of those files (EXPID*).  Those identifiers
+;   contain the camera name, MJD, flat exposure number, and arc exposure
+;   number, all dash-separated.
+;
 ; EXAMPLES:
 ;
 ; BUGS:
@@ -81,6 +86,8 @@
 ;   repstr()
 ;   rmfile
 ;   sdssproc
+;   sxaddpar
+;   sxpar()
 ;   superflat()
 ;   trace320crude()
 ;   traceset2xy
@@ -235,7 +242,17 @@ arcivar = 0
 
       sdssproc, allflats[iflat], flatimg, flativar, indir=indir, hdr=flathdr, $
        /applybias
-      if (iflat EQ 0) then hdr0 = flathdr
+      if (iflat EQ 0) then begin
+         hdr0 = flathdr
+         sxaddpar, hdr0, 'NEXP', nflat, 'Number of exposures in this file', $
+          before='EXPTIME'
+      endif
+
+      sxaddpar, hdr0, string(iflat,format='("EXPID",i2.2)'), $
+       string( sxpar(flathdr,'CAMERAS'), sxpar(flathdr,'MJD'), $
+        sxpar(flathdr,'EXPOSURE'), sxpar(archdr,'EXPOSURE'), $
+        format='(a2,"-",i5.5,"-",i8.8,"-",i8.8)'), $
+        'ID string for exposure ' + strtrim(string(ifile),2), before='EXPTIME'
 
       ;----------------------
       ; Create spatial tracing from flat-field image

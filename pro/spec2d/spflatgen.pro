@@ -39,6 +39,11 @@
 ;   where MJD is the 5-digit modified Julian date, and CAMERA
 ;   is 'b1', 'b2', 'r1', and 'r2'.
 ;
+;   The header contains the number of files used in each camera (NEXP),
+;   and an identifier for each of those files (EXPID*).  Those identifiers
+;   contain the camera name, MJD, flat exposure number, and arc exposure 
+;   number, all dash-separated.
+;
 ; EXAMPLES:
 ;   The following nights look like they contain a flat sequence:
 ;     51686 51781 51809 51852 51893 51950 51978 52010 52038 52069

@@ -47,6 +47,10 @@
 ;   where MJD is the 5-digit modified Julian date, and CAMERA
 ;   is 'b1', 'b2', 'r1', and 'r2'.
 ;
+;   The header contains the number of files used in each camera (NEXP),
+;   and an identifier for each of those files (EXPID*).  Those identifiers
+;   contain the camera name, MJD, and exposure number, all dash-separated.
+;
 ; EXAMPLES:
 ;   The following nights probably contain a bias sequence:
 ;     51686 51781 51809 51852 51893 51950 51978 52010 52038 52069
@@ -65,6 +69,7 @@
 ;   sdsshead()
 ;   sdssproc
 ;   splog
+;   sxaddpar
 ;   sxpar()
 ;   writefits
 ;
@@ -97,9 +102,16 @@ pro spbiasgen1, files, outfile=outfile, outdir=outdir, $
          hdr0 = hdr
          imgarr = make_array(dimension=[size(thisimg,/dimens),nfile], /float)
          inmask = make_array(dimension=[size(thisimg,/dimens),nfile], /byte)
+         sxaddpar, hdr0, 'NEXP', nfile, 'Number of exposures in this file', $
+          before='EXPTIME'
       endif
       imgarr[*,*,ifile] = thisimg
       inmask[*,*,ifile] = thisivar LT 0
+
+      sxaddpar, hdr0, string(ifile,format='("EXPID",i2.2)'), $
+       string( sxpar(hdr,'CAMERAS'), sxpar(hdr,'MJD'), sxpar(hdr,'EXPOSURE'), $
+        format='(a2,"-",i5.5,"-",i8.8)'), $
+        'ID string for exposure ' + strtrim(string(ifile),2), before='EXPTIME'
    endfor
 
    mnimg = djs_avsigclip(imgarr, sigrej=sigrej, maxiter=maxiter, $
