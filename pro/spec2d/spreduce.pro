@@ -7,9 +7,8 @@
 ;
 ; CALLING SEQUENCE:
 ;   spreduce, flatname, arcname, objname, $
-;    plugfile=plugfile, lampfile=lampfile, $
-;    indir=indir, plugdir=plugdir, outdir=outdir, $
-;    ecalibfile=ecalibfile, plottitle=plottitle, summarystruct=summarystruct
+;    plugfile=, lampfile=, indir=, plugdir=, outdir=, $
+;    ecalibfile=, plottitle=, summarystruct=, /do_telluric
 ;
 ; INPUTS:
 ;   flatname   - Name(s) of flat-field SDSS image(s)
@@ -29,6 +28,7 @@
 ;   ecalibfile - opECalib.par file for SDSSPROC
 ;   plottitle  - Prefix for titles in QA plots.
 ;   summarystruct - Good intentions ???
+;   do_telluric- Passed to EXTRACT_OBJECT
 ;
 ; OUTPUTS:
 ;
@@ -70,7 +70,8 @@
 pro spreduce, flatname, arcname, objname, $
  plugfile=plugfile, lampfile=lampfile, $
  indir=indir, plugdir=plugdir, outdir=outdir, $
- ecalibfile=ecalibfile, plottitle=plottitle, summarystruct=summarystruct
+ ecalibfile=ecalibfile, plottitle=plottitle, summarystruct=summarystruct, $
+ do_telluric=do_telluric
 
    if (NOT keyword_set(indir)) then indir = '.'
    if (NOT keyword_set(plugdir)) then plugdir=indir
@@ -283,7 +284,7 @@ pro spreduce, flatname, arcname, objname, $
           xpeak, lambda, xsol, fflat, fibermask, color=color, $
           proftype=proftype, superflatset=superflatset, $
           widthset=widthset, dispset=dispset, skylinefile=fullskyfile, $
-          plottitle=plottitle
+          plottitle=plottitle, do_telluric=do_telluric
 
          splog, 'Elapsed time = ', systime(1)-stimeobj, ' seconds', $
           format='(a,f6.0,a)' 

@@ -7,7 +7,7 @@
 ;   to a plan file.
 ;
 ; CALLING SEQUENCE:
-;   spreduce2d, [ planfile, docams=, /xdisplay ]
+;   spreduce2d, [ planfile, docams=, /do_telluric, /xdisplay ]
 ;
 ; INPUTS:
 ;
@@ -15,6 +15,7 @@
 ;   planfile   - Name(s) of output plan file; default to reducing all
 ;                plan files matching 'spPlan2d*.par'
 ;   docams     - Cameras to reduce; default to ['b1', 'b2', 'r1', 'r2']
+;   do_telluric- Passed to EXTRACT_OBJECT
 ;   xdisplay   - Send plots to X display rather than to plot file
 ;
 ; OUTPUT:
@@ -50,7 +51,8 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro spreduce2d, planfile, docams=docams, xdisplay=xdisplay
+pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
+ xdisplay=xdisplay
 
    if (NOT keyword_set(planfile)) then planfile = findfile('spPlan2d*.par')
 
@@ -60,7 +62,8 @@ pro spreduce2d, planfile, docams=docams, xdisplay=xdisplay
 
    if (N_elements(planfile) GT 1) then begin
       for i=0, N_elements(planfile)-1 do $
-       spreduce2d, planfile[i], docams=docams, xdisplay=xdisplay
+       spreduce2d, planfile[i], docams=docams, do_telluric=do_telluric, $
+        xdisplay=xdisplay
       return
    endif
 
@@ -243,7 +246,8 @@ pro spreduce2d, planfile, docams=docams, xdisplay=xdisplay
                spreduce, flatname, arcname, objname, $
                 plugfile=plugfile, lampfile=lampfile, $
                 indir=inputdir, plugdir=plugdir, outdir=extractdir, $
-                summarystruct=summarystruct, plottitle=plottitle
+                summarystruct=summarystruct, plottitle=plottitle, $
+                do_telluric=do_telluric
             endif
 
             splog, 'Time to reduce camera ', camnames[icam], ' = ', $
