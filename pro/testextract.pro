@@ -148,5 +148,6 @@ plugMapFile = 'plPlugMapM-0214-51432-02.par'
 inputDir='/s1/data/SDSS/51441'
 outputDir = '/s1/data/SDSS/51441/out'
 plugMapDir = inputDir+'/logs'
-tt = doaframe(flat,arc,objects,plugMapFile,inputDir=inputDir, outputDir=outputDir, plugMapDir=plugMapDir)
+tt = doaframe(flat,arc,objects,plugMapFile,inputDir=inputDir, $
+ outputDir=outputDir, plugMapDir=plugMapDir)
 

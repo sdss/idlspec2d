@@ -2,6 +2,7 @@
 etc/intrinsic1.dat -text
 etc/lamphgcdne.dat -text
 etc/lamplist.dat -text
+etc/skylines.dat -text
 examples/README -text
 examples/opBC.par -text
 examples/opConfig.par -text
