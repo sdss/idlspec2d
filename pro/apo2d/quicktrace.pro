@@ -9,7 +9,7 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
    yanny_read, plugmapfile, pdata
    plugmap = *pdata[0]
    yanny_free, pdata
-   plugsort = sortplugmap(plugmap, spectrographid, fibermask)
+   plugsort = sortplugmap(plugmap, spectrographid, fibermask=fibermask)
 
    dims = size(flatimg, /dimens)
    ncol = dims[0]

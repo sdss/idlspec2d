@@ -111,10 +111,10 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    yanny_free, pstruct
 
    ;-------------------------------------------------------------------------
-   ; Plugsort will return mask of good (1) and bad (0) fibers too
+   ; Plugsort will also return a mask of unplugged fibers
    ;-------------------------------------------------------------------------
 
-   plugsort = sortplugmap(plugmap, spectrographid, fibermask)
+   plugsort = sortplugmap(plugmap, spectrographid, fibermask=fibermask)
  
    ;---------------------------------------------------------------------------
    ; REDUCE CALIBRATION FRAMES
