@@ -44,12 +44,16 @@
 ;   plist       - Output structure with information for each plate.
 ;
 ; COMMENTS:
-;   Three files are generated:
+;   The following files are generated:
 ;     $SPECTRO_DATA/platelist.fits
 ;     $SPECTRO_DATA/platelist.txt
 ;     $SPECTRO_DATA/platelist.html
-;     $SPECTRO_DATA/platequal.txt
-;     $SPECTRO_DATA/platequal.html
+;     $SPECTRO_DATA/platelist-mjdsort.txt
+;     $SPECTRO_DATA/platelist-mjdsort.html
+;     $SPECTRO_DATA/platequality.txt
+;     $SPECTRO_DATA/platequality.html
+;     $SPECTRO_DATA/platequality-mjdsort.txt
+;     $SPECTRO_DATA/platequalitymjdsort.html
 ;
 ;   If INFILE is a list of plan files, i.e.
 ;     spPlancomb-0306-51690.par
@@ -108,7 +112,7 @@
 ;   29-Oct-2000  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
 pro platelist_write, plist, trimtags=trimtags, alias=alias, $
- fileprefix=fileprefix, title=title
+ fileprefix=fileprefix, title=title, toptext=toptext
 
    ascfile = djs_filepath(fileprefix+'.txt', root_dir=getenv('SPECTRO_DATA'))
    htmlfile = djs_filepath(fileprefix+'.html', root_dir=getenv('SPECTRO_DATA'))
@@ -136,9 +140,8 @@ pro platelist_write, plist, trimtags=trimtags, alias=alias, $
    printf, lun, '<TITLE>' + title + '</TITLE>'
    printf, lun, '<H1>' + title + '</H1>'
    printf, lun, '<BODY>'
-   printf, lun, 'Last update ' + systime()
-   printf, lun, '<A HREF="' + fileandpath(ascfile) + '">ASCII version</A>'
-   printf, lun, '<A HREF="platelist.fits">FITS version</A>'
+   for i=0, n_elements(toptext)-1 do $
+    printf, lun, toptext[i]
    for iline=0, n_elements(tarray)-1 do $
     printf, lun, tarray[iline]
    printf, lun, '</BODY>'
@@ -720,10 +723,39 @@ pro platelist, infile, plist=plist, create=create, $
             ['STATUS1D'     , '1D'      ], $
             ['PLATEQUALITY' , 'QUALITY' ] ]
 
-    platelist_write, plist, trimtags=trimtags1, alias=alias, $
-    fileprefix='platelist', title='SDSS Spectroscopy Plates Observed List'
-    platelist_write, plist, trimtags=trimtags2, alias=alias, $
-    fileprefix='platequality', title='SDSS Spectroscopy Plate Quality List'
+   isort = sort(plist.mjd)
+
+   toptext = [ $
+    '<P> <A HREF="http://spectro.princeton.edu/">HOME</A>' $
+     + ' Last update ' + systime(), $
+    '<BR> Sorted by plate: <A HREF="platelist.html">HTML</A>' $
+      + ' <A HREF="platelist.txt">ASCII</A>', $
+    '<BR> Sorted by MJD: <A HREF="platelist-mjdsort.html">HTML</A>', $
+      + ' <A HREF="platelist-mjdsort.txt">ASCII</A>', $
+    '<BR><A HREF="platelist.fits">FITS version</A>' ]
+
+   platelist_write, plist, trimtags=trimtags1, alias=alias, $
+    fileprefix='platelist', toptext=toptext, $
+    title='SDSS Spectroscopy Plates Observed List'
+   platelist_write, plist[isort], trimtags=trimtags1, alias=alias, $
+    fileprefix='platelist-mjdsort', toptext=toptext, $
+    title='SDSS Spectroscopy Plates Observed List'
+
+   toptext = [ $
+    '<P> <A HREF="http://spectro.princeton.edu/">HOME</A>' $
+     + ' Last update ' + systime(), $
+    '<BR> Sorted by plate: <A HREF="platequality.html">HTML</A>' $
+      + ' <A HREF="platequality.txt">ASCII</A>', $
+    '<BR> Sorted by MJD: <A HREF="platequality-mjdsort.html">HTML</A>', $
+      + ' <A HREF="platequality-mjdsort.txt">ASCII</A>', $
+    '<BR><A HREF="platelist.fits">FITS version</A>' ]
+
+   platelist_write, plist, trimtags=trimtags2, alias=alias, $
+    fileprefix='platequality', toptext=toptext, $
+    title='SDSS Spectroscopy Plate Quality List'
+   platelist_write, plist[isort], trimtags=trimtags2, alias=alias, $
+    fileprefix='platequality-mjdsort', toptext=toptext, $
+    title='SDSS Spectroscopy Plate Quality List'
 
    ;----------
    ; Write the FITS binary table
