@@ -166,9 +166,13 @@ ormask = 0 ; Free memory
    ; Look for where the S/N is unreasonably large
 
    for iobj=0L, nobj-1 do begin
-      junk = where(objflux[*,iobj] * sqrt(objivar[*,iobj]) GT 200., ct)
+      junk = where(abs(objflux[*,iobj]) * sqrt(objivar[*,iobj]) GT 200., ct)
       if (ct GT 0) then $
        splog, 'WARNING: Fiber #', iobj+1, ' has ', ct, ' pixels with S/N > 200'
+
+      junk = where(objflux[*,iobj] * sqrt(objivar[*,iobj]) LT -10., ct)
+      if (ct GT 0) then $
+       splog, 'WARNING: Fiber #', iobj+1, ' has ', ct, ' pixels with Flux < -10*Noise'
    endfor
 
    ;----------
