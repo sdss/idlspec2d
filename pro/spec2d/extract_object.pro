@@ -108,7 +108,8 @@ end
 
 ;------------------------------------------------------------------------------
 pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
-               xarc, lambda, xtrace, fflat, fibermask, color=color
+               xarc, lambda, xtrace, fflat, fibermask, color=color, $
+               widthset=widthset
 
       skylinefile = strtrim(sxpar(objhdr,'SKYLIST'),2) 
       objname = strtrim(sxpar(objhdr,'OBJFILE'),2) 
@@ -240,43 +241,68 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
       endif
 
       xnow = xtrace + bestlag 
-      
-      ; (1) Extraction profiles in every 8th row
+     
 
-      splog, 'Object extraction: Step 1'
-      extract_image, image, invvar, xnow, sigma, tempflux, tempfluxivar, $
+      if (NOT keyword_set(widthset)) then begin 
+        ; (1) Extraction profiles in every 8th row
+
+        splog, 'Object extraction: Step 1'
+        extract_image, image, invvar, xnow, sigma, tempflux, tempfluxivar, $
           proftype=proftype, wfixed=wfixed, yrow=yrow, $
           highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
           ansimage=ansimage, chisq=firstchisq
 
-      ; (2) Refit ansimage to smooth profiles
+        ; (2) Refit ansimage to smooth profiles
 
-      splog, 'Answer Fitting: Step 2'
-      ntrace = (size(tempflux))[2]
-      itrace = lindgen(ntrace)*nterms
+        splog, 'Answer Fitting: Step 2'
+        ntrace = (size(tempflux))[2]
+        itrace = lindgen(ntrace)*nterms
 
-      ;---------------------------------------------------
-      ;   Fitansimage is now hard wired for 320 fibers!!!!
+        ;---------------------------------------------------
+        ;   Fitansimage is now hard wired for 320 fibers!!!!
 
-      fitans = fitansimage(ansimage, nterms, ntrace, npoly, yrow, $
+        fitans = fitansimage(ansimage, nterms, ntrace, npoly, yrow, $
             tempflux, fluxm = [1,1,0], scatfit=scatfit)
 
-      ; (3) Calculate new sigma and xtrace arrays
-      
-      sigmashift = transpose(fitans[lindgen(ntrace)*nterms + sigmaterm, *])
-      centershift= transpose(fitans[lindgen(ntrace)*nterms + centerterm, *])
+        fitans = fitans[0:nterms*ntrace-1,*]
 
-      splog, format='(a,3(f8.3))', 'Centershift ', min(centershift),  $
+
+        ; (3) Calculate new sigma and xtrace arrays
+      
+        sigmashift = transpose(fitans[lindgen(ntrace)*nterms + sigmaterm, *])
+        centershift= transpose(fitans[lindgen(ntrace)*nterms + centerterm, *])
+
+        splog, format='(a,3(f8.3))', 'Centershift ', min(centershift),  $
           median(centershift), max(centershift)
 
-      splog, format='(a,3(f8.3))', 'Sigmashift ', min(sigmashift),  $
+        splog, format='(a,3(f8.3))', 'Sigmashift ', min(sigmashift),  $
           median(sigmashift), max(sigmashift)
 
-      if (max(abs(centershift)) GT maxshift OR $
+        if (max(abs(centershift)) GT maxshift OR $
              max(abs(sigmashift)) GT maxshift/3.0) then begin
               splog, 'ABORT: Shift terms are not well behaved!'
               return
-      endif
+        endif
+     
+      endif else begin
+        traceset2xy,widthset,xx,yy
+        ntrace = (size(yy))[2]
+        nterms = 2
+        wfixed = [1,1]
+        fitans = fltarr(ntrace*nterms,nrow)
+        fitans[lindgen(ntrace)*nterms,*] = transpose(2-yy)
+        fitans[lindgen(ntrace)*nterms + sigmaterm,*] = transpose(yy-1)
+
+        splog, 'Object extraction: Step 1'
+        extract_image, image, invvar, xnow, sigma, tempflux, tempfluxivar, $
+          proftype=proftype, wfixed=wfixed, yrow=yrow, fitans=fitans, $
+          highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
+          ansimage=ansimage, chisq=firstchisq
+
+        splog, 'Step 2: Just find scattered light image'
+        junk = fitansimage(ansimage, 1, ntrace, npoly, yrow, $
+            tempflux, fluxm = [1], scatfit=scatfit)
+      endelse
 
       qaplot_scatlight, scatfit, yrow, $
        wset=wset, xcen=xtrace, fibermask=fibermask, filename=objname
@@ -284,40 +310,12 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
       ; (4) Second and final extraction
       splog, 'Object extraction: Step 3'
 
-      ; Using old sigma for now, which should be fine
-      ; Different sigmas require a new profile for each trace, so will
-      ; check timing in the future
-      ; subtract off fit to scattered light and don't allow polynomial terms
-
-;      extract_image, image-scatfit, invvar, xnow, sigma, flux, $
-;       fluxivar, proftype=proftype, wfixed=wfixed, $
-;       highrej=highrej, lowrej=lowrej, npoly=0, whopping=whopping, chisq=chisq
-
       highrej = 15
       lowrej = 15
-      fitans = fitans[0:nterms*ntrace-1,*]
-
-;      fitans_old = fitansimage_old(ansimage, nterms, ntrace, npoly, $
-;            nfirst, yrow, fluxm = [1,1,0], scatfit=scatfit)
-;
-;      fitans_old = fitans_old[0:nterms*ntrace-1,*]
-
       extract_image, image-scatfit, invvar, xnow, sigma, flux, $
        fluxivar, proftype=proftype, wfixed=wfixed, fitans=fitans, $
        highrej=highrej, lowrej=lowrej, npoly=0, whopping=whopping, $
        chisq=chisq, ymodel=ymodel2, pixelmask=pixelmask
-
-; Write out a non-sky-sub image???
-;rawname=outname
-;i=rstrpos(outname,'spSpec')
-;strput,rawname,'spRaw',i
-;mwrfits, flux, rawname, objhdr, /create
-;mwrfits, fluxivar, rawname
-;mwrfits, plugsort, rawname
-;mwrfits, wset, rawname
-;mwrfits, pixelmask, rawname
-;mwrfits, fibermask, rawname
-;save, filename=rawname+'.sav'
 
       ;------
       ; QA chisq plot for fit calculated in extract image (make QAPLOT ???)
