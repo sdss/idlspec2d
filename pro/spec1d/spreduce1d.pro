@@ -95,6 +95,7 @@ pro spreduce1d, platefile, fiberid=fiberid, doplot=doplot, debug=debug
 
    zallfile = 'spZall-' + platemjd + '.fits'
    zbestfile = 'spZbest-' + platemjd + '.fits'
+   zlinefile = 'spZline-' + platemjd + '.fits'
    if (NOT keyword_set(logfile)) then $
     logfile = 'spDiag1d-' + platemjd + '.log'
    plotfile = 'spDiag1d-' + platemjd + '.ps'
@@ -505,6 +506,36 @@ ormask = 0 ; Free memory
    res_all.counts_synth = counts_synth
 
    ;----------
+   ; Generate output headers for spZbest, spZall, spZline files.
+
+   splog, 'Writing output files'
+   sxaddpar, hdr, 'NAXIS', 0
+   sxdelpar, hdr, 'NAXIS1'
+   sxdelpar, hdr, 'NAXIS2'
+   sxaddpar, hdr, 'EXTEND', 'T', after='NAXIS'
+   sxaddpar, hdr, 'VERS1D', idlspec2d_version(), $
+    'Version of idlspec2d for 1D reduction', after='VERSCOMB'
+   spawn, 'uname -n', uname
+   sxaddpar, hdr, 'UNAME', uname[0]
+   ww = strsplit(uname[0], '.', /extract)
+   if (ww[1<(n_elements(ww)-1)] EQ 'fnal') then return
+
+   ;----------
+   ; Call the line-fitting code for this plate
+
+   splog, 'Call line-fitting code'
+
+; Should be equivalent ???
+;   speclinefit, platefile, fiberid=fiberid, $
+;    zhdr=hdr, zans=(res_all[0,*])[*], synflux=synflux, dispflux=dispflux, $
+;    zline=zline, doplot=doplot, debug=debug
+
+   speclinefit, fiberid=fiberid, $
+    hdr=hdr, objflux=objflux, objivar=objivar, $
+    zhdr=hdr, zans=(res_all[0,*])[*], synflux=synflux, dispflux=dispflux, $
+    outfile=zlinefile, zline=zline, doplot=doplot, debug=debug
+
+   ;----------
    ; Set ZWARNING flags.
 
    splog, 'Setting flags'
@@ -546,6 +577,21 @@ ormask = 0 ; Free memory
 
    res_all.zwarning = zwarning
 
+   ; Warning: For QSOs, if C_IV, CIII], or Mg_II are negative
+   ; and have at least a few pixels in the fit (DOF > 2).
+   for iobj=0, nobj-1 do begin
+      if (strtrim(plugmap[iobj].objtype,2) EQ 'QSO') then begin
+         indx = where(zline.fiberid EQ res_all[0,iobj].fiberid $
+          AND (zline.linename EQ 'C_IV' $
+            OR zline.linename EQ 'C_III]' $
+            OR zline.linename EQ 'Mg_II') )
+         qflag = total(zline[indx].linearea LT 0 $
+          AND zline[indx].linearea_err GT 0 $
+          AND zline[indx].linedof GT 2)
+         zwarning[*,iobj] = zwarning[*,iobj] OR 64L * qflag
+      endif
+   endfor
+
    ;----------
    ; Write the output files
 
@@ -561,14 +607,16 @@ ormask = 0 ; Free memory
    ww = strsplit(uname[0], '.', /extract)
    if (ww[1<(n_elements(ww)-1)] EQ 'fnal') then return
 
-   mwrfits, 0, zallfile, hdr, /create ; Retain the original header in first HDU
-   mwrfits, res_all, zallfile
-
    zans = (res_all[0,*])[*]
    mwrfits, 0, zbestfile, hdr, /create ; Retain the original header in first HDU
    mwrfits, zans, zbestfile
    mwrfits, synflux, zbestfile
    mwrfits, dispflux, zbestfile
+
+   sxaddpar, hdr, 'DIMS0', nper, ' Number of fits per objects'
+   sxaddpar, hdr, 'DIMS1', nobj, ' Number of objects'
+   mwrfits, 0, zallfile, hdr, /create ; Retain the original header in first HDU
+   mwrfits, res_all, zallfile
 
    if (keyword_set(debugfile)) then dfpsclose
 
@@ -594,11 +642,6 @@ ormask = 0 ; Free memory
     format='(a,f6.0,a)'
    splog, 'Successful completion of SPREDUCE1D at ', systime()
    if (keyword_set(logfile)) then splog, /close
-
-   ;----------
-   ; Call the line-fitting code for this plate
-
-   speclinefit, platefile, fiberid=fiberid, doplot=doplot, debug=debug
 
    return
 end
