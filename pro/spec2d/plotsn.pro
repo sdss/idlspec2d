@@ -113,8 +113,8 @@ pro plotsn1, plugc, synthmag, i1, i2, plottitle=plottitle, objtype=objtype
        charsize=csize
       if (i1[0] NE -1) then begin
          djs_oplot, plugc[i1].mag[2], yplot[i1], psym=psym, symsize=symsize
-         djs_iterstat, yplot[i1], mean=mn, sigma=sig
-         mntext = string(mn, format='(" Mean= ",f6.3)')
+         djs_iterstat, yplot[i1], median=mn, sigma=sig
+         mntext = string(mn, format='(" Median= ",f6.3)')
          devtext = string(sig, format='(" Stdev= ",f6.3)')
          xyouts, 0.5*xrange[0]+0.5*xrange[1], 0.40*yrange[0], charsize=csize, $
           mntext
@@ -131,8 +131,8 @@ pro plotsn1, plugc, synthmag, i1, i2, plottitle=plottitle, objtype=objtype
        charsize=csize
       if (i2[0] NE -1) then begin
          djs_oplot, plugc[i2].mag[2], yplot[i2], psym=psym, symsize=symsize
-         djs_iterstat, yplot[i2], mean=mn, sigma=sig
-         mntext = string(mn, format='(" Mean= ",f6.3)')
+         djs_iterstat, yplot[i2], median=mn, sigma=sig
+         mntext = string(mn, format='(" Median= ",f6.3)')
          devtext = string(sig, format='(" Stdev= ",f6.3)')
          xyouts, 0.5*xrange[0]+0.5*xrange[1], 0.40*yrange[0], charsize=csize, $
           mntext
