@@ -226,7 +226,6 @@ pro platesn, objflux, objivar, andmask, plugmap, loglam, $
          endif
       endfor
    endif
-stop
 
    return
 end
