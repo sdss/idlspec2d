@@ -21,6 +21,8 @@ REJECT_SCIENCE: New proc to reject science exposures if they are blatantly
                 doing this for arc + flat exposures.  This proc is called
                 by SPREDUCE, and will issue an "ABORT" log message if a
                 science frame is rejected.
+SDSSPROC: Add VERSLOG, VERSFLAT keywords to specify versions of the
+          products SPECLOG, SPECFLAT.
 SPCOADD_FRAMES: Include MJDLIST keyword in spPlate header, which will be
                 the list of all MJD's used in an SPCOMBINE.
 TELLURIC_CORR: Fixed horrible bug in using fibermask to reject bad fibers

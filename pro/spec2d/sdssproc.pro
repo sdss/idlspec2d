@@ -242,6 +242,14 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    sxaddpar, hdr, 'VERSUTIL', idlutils_version(), ' Version of idlutils'
    sxaddpar, hdr, 'VERSREAD', idlspec2d_version(), $
     ' Version of idlspec2d for pre-processing raw data', after='VERSUTIL'
+   spawn, 'speclog_version', verslog
+   if (NOT keyword_set(verslog)) then verslog = 'Unknown'
+   sxaddpar, hdr, 'VERSLOG', verslog, ' Version of SPECLOG product', $
+    after='VERSREAD'
+   spawn, 'specflat_version', versflat
+   if (NOT keyword_set(versflat)) then versflat = 'Unknown'
+   sxaddpar, hdr, 'VERSFLAT', versflat, ' Version of SPECFLAT product', $
+    after='VERSFLAT'
  
    ;-----------
    ; Rename 'target' -> 'science', and 'calibration' -> 'arc'
