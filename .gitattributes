@@ -31,6 +31,7 @@ bin/sprobotlist.sh -text
 bin/startapo.sh -text
 bin/zplot -text
 /branches -text
+doc/IR_scattering.txt -text
 doc/Makefile -text
 doc/mk_doc -text
 doc/paper/frames.jpg -text svneol=unset#unset
