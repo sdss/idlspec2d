@@ -1,4 +1,7 @@
 
+SKYSUBTRACT: Merely clean out some commented-out code and update internal
+           comments.  Avoid a possible crash condition in the case of
+           all bad sky fibers.
 In idlutils:
 
 HOGG_OPLOT_COVAR: New ellipse plotting routine.
