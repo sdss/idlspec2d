@@ -100,7 +100,8 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
       ;----------
       ; Read all the 2D plan files
       ; The string array PLANLIST keeps a list of the plan file that each
-      ; element of the ALLEXP structure came from.
+      ; element of the ALLEXP structure came from, and MJDLIST keeps the
+      ; list of each MJD
 
       allexp = 0
       planlist = 0
@@ -116,10 +117,12 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
                if (NOT keyword_set(allexp)) then begin
                   allexp = *pp[ii]
                   planlist = replicate(fileandpath(allplan[iplan]), nadd)
+                  mjdlist = replicate(thismjd, nadd)
                endif else begin
                   allexp = [allexp, *pp[ii]]
                   planlist = [planlist, $
                    replicate(fileandpath(allplan[iplan]), nadd)]
+                  mjdlist = [mjdlist, replicate(thismjd, nadd)]
                endelse
                if (NOT keyword_set(extractdir)) then $
                 extractdir = yanny_par(hdr, 'extractdir')
@@ -146,7 +149,26 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
             if (indx[0] NE -1) then spexp = allexp[indx] $
              else spexp = 0
 
+            ;----------
+            ; Decide if any of these MJD's are within the bounds
+            ; specified by MJD,MJSTART,MJEND.  If so, then set QMJD=1
+
+            qmjd = 1B
             if (keyword_set(spexp)) then begin
+               mjdlist1 = mjdlist[indx]
+               if (keyword_set(mjd)) then $
+                qmjd = qmjd AND ((where(mjdlist1 EQ mjd))[0] NE -1)
+               if (keyword_set(mjstart)) then $
+                qmjd = qmjd AND ((where(mjdlist1 GE mjstart))[0] NE -1)
+               if (keyword_set(mjend)) then $
+                qmjd = qmjd AND ((where(mjdlist1 LE mjend))[0] NE -1)
+
+               if (qmjd EQ 0) then $
+                splog, 'Skip MAP=', allmaps[imap], ' with MJD=', $
+                 mjdlist1[ uniq(mjdlist1, sort(mjdlist1)) ]
+            endif
+
+            if (keyword_set(spexp) AND qmjd) then begin
 
                ;----------
                ; Determine the 2D plan files that are relevant
