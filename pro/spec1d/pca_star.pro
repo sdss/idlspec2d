@@ -53,13 +53,14 @@ pro pca_star
    ;----------
    ; Read the input spectra
 
-   eigenfile = filepath('eigeninput_star.dat', $
+   filename = filepath('eigeninput_star.par', $
     root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='templates')
-   djs_readcol, eigenfile, skip=2, plate, mjd, fiber, zfit, $
-    starclass, starsubclass, $
-    format='(L,L,L,D,A,A)'
+   yanny_read, filename, pdat
+   slist = *pdat[0]
+   yanny_free, pdat
 
-   readspec, plate, fiber, mjd=mjd, flux=objflux, invvar=objivar, $
+   readspec, slist.plate, slist.fiberid, mjd=slist.mjd, $
+    flux=objflux, invvar=objivar, $
     andmask=andmask, ormask=ormask, plugmap=plugmap, loglam=objloglam
 
    ;----------
@@ -68,8 +69,9 @@ pro pca_star
    imissing = where(plugmap.fiberid EQ 0, nmissing)
    if (nmissing GT 0) then begin
       for i=0, nmissing-1 do $
-       print, 'Missing plate=', plate[imissing[i]], ' mjd=', mjd[imissing[i]], $
-        ' fiber=', fiber[imissing[i]]
+       print, 'Missing plate=', slist[imissing[i]].plate, $
+        ' mjd=', slist[imissing[i]].mjd, $
+        ' fiber=', slist[imissing[i]].fiberid
       message, string(nmissing) + ' missing object(s)'
    endif
 
@@ -91,8 +93,8 @@ ormask = 0 ; Free memory
    ;----------
    ; Find the list of unique star types
 
-   isort = sort(starclass)
-   classlist = starclass[isort[uniq(starclass[isort])]]
+   isort = sort(slist.class)
+   classlist = slist[isort[uniq(slist[isort].class)]].class
 
    ;----------
    ; LOOP OVER EACH STAR TYPE
@@ -102,8 +104,8 @@ ormask = 0 ; Free memory
       ;----------
       ; Find the subclasses for this stellar type
 
-      indx = where(starclass EQ classlist[iclass])
-      thesesubclass = starsubclass[indx]
+      indx = where(slist.class EQ classlist[iclass])
+      thesesubclass = slist[indx].subclass
       isort = sort(thesesubclass)
       subclasslist = thesesubclass[isort[uniq(thesesubclass[isort])]]
       nsubclass = n_elements(subclasslist)
@@ -115,7 +117,7 @@ ormask = 0 ; Free memory
       if (nsubclass EQ 1) then nkeep = 1 $
        else nkeep = 2
       pcaflux = pca_solve(objflux[*,indx], objivar[*,indx], objloglam[*,indx], $
-       zfit[indx], wavemin=wavemin, wavemax=wavemax, $
+       slist[indx].z, wavemin=wavemin, wavemax=wavemax, $
        niter=niter, nkeep=nkeep, newloglam=newloglam, $
        eigenval=eigenval, acoeff=acoeff)
 
@@ -174,7 +176,7 @@ ormask = 0 ; Free memory
          for j=0, n_elements(indx)-1 do $
           xyouts, thesesubclassnum[isort[j]], allratio[isort[j]], $
            align=0.0, orient=45, $
-           string(plate[indx[isort[j]]], fiber[indx[isort[j]]], $
+           string(slist[indx[isort[j]]].plate, slist[indx[isort[j]]].fiberid, $
            format='(i4,"-",i3)')
       endif
 
