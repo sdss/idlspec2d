@@ -118,11 +118,17 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    ; Wait for a file to be fully written to disk, and exit if that doesn't
    ; happen within 3 minutes.
 
+   spawn, 'ls -l '+fullname, lsstring
+   splog, 'DIRLIST '+lsstring
+
    if (fits_wait(fullname, deltat=10, tmax=180) EQ 0) then begin
       splog, 'File never fully written to disk: '+ fullname
       splog, /close
       return
    endif
+
+   spawn, 'ls -l '+fullname, lsstring
+   splog, 'DIRLIST '+lsstring
 
    ;----------
    ; Find flavor, plate and MJD
