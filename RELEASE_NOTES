@@ -2,9 +2,17 @@
 ELODIE_BEST: New function in development for finding best-fit Elodie spectrum.
 FITARCIMAGE: List the (0-indexed) fiber numbers that in which
             any or all arc centroids are fixed.
+LINEBACKFIT: Force the output sigmas to be non-negative (which also
+            prevents a bug later in the code that assumes this is true
+            when measuring the chi^2 of each line, as pointed out by
+            John Moustakes).
 PLATECOMPARE: Fix 1-character typo preventing selecting the MJD
             when using the TOPDIR keyword also.
+            Pass TOPDIR to READSPEC rather than explicitly resetting
+            the $SPECTRO_DATA environment variable.
+PLOTSPEC: Add optional TOPDIR keyword.
 READ_ELODIE: Optionally return the Elodie header in HDR.
+READSPEC: Add TOPDIR input keyword and ZLINE output keyword.
 SDSSPROC: Add "WARNING" to the warning messages about invalid or
             missing BC files.
 TRACE320CRUDE: Fix a bug just introduced in v4_9_5 that would cause
