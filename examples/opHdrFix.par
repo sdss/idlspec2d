@@ -99,6 +99,11 @@ ophdrfix sdR-??-00003226 EXPTIME  985
 ophdrfix sdR-??-00003576 MAPID    517701
 ophdrfix sdR-??-00003576 NAME     "'0235-51577-01'"
 
+# The following information in the headers for plate 351 on MJD 51695
+# is incorrect:
+ophdrfix sdR-??-0000418[5-9] CARTID   9
+ophdrfix sdR-??-0000419[0-9] CARTID   9
+
 # The night of MJD=51779 (22/23 Aug 2000) had horrible electronics problems.
 # See PR #2335 for some details.  The amplifier had random bits being
 # set wrong on the left amplifier of r2, in particular the 32 bit
@@ -109,8 +114,79 @@ ophdrfix sdR-r2-0000609[8-9] FLAVOR   "'unknown'"
 ophdrfix sdR-r2-0000610[0-9] FLAVOR   "'unknown'"
 ophdrfix sdR-r2-0000611[0-2] FLAVOR   "'unknown'"
 
+# The following information in the headers for plate 356 on MJD 51779
+# is incorrect:
+ophdrfix sdR-??-0000609[8-9] CARTID   3
+ophdrfix sdR-??-0000610[0-9] CARTID   3
+ophdrfix sdR-??-0000611[0-2] CARTID   3
+ophdrfix sdR-??-0000609[8-9] RA       262.4414
+ophdrfix sdR-??-0000610[0-9] RA       262.4414
+ophdrfix sdR-??-0000611[0-2] RA       262.4414
+ophdrfix sdR-??-0000609[8-9] DEC      58.80614
+ophdrfix sdR-??-0000610[0-9] DEC      58.80614
+ophdrfix sdR-??-0000611[0-2] DEC      58.80614
+
+# The following information in the headers for plate 351 on MJD 51780
+# is incorrect:
+ophdrfix sdR-??-0000617[8-9] CARTID   2
+ophdrfix sdR-??-0000618[0-9] CARTID   2
+ophdrfix sdR-??-0000617[8-9] RA       255.9522
+ophdrfix sdR-??-0000618[0-9] RA       255.9522
+ophdrfix sdR-??-0000617[8-9] DEC      61.61932
+ophdrfix sdR-??-0000618[0-9] DEC      61.61932
+
+# The following information in the headers for plate 360 on MJD 51780
+# is incorrect:
+ophdrfix sdR-??-0000619[0-9] CARTID   4
+ophdrfix sdR-??-0000619[0-9] RA       264.3484
+ophdrfix sdR-??-0000619[0-9] DEC      54.53896
+
+# The following information in the headers for plate 391 on MJD 51782
+# is incorrect:
+ophdrfix sdR-??-0000624[6-9] CARTID   6
+ophdrfix sdR-??-0000625[0-9] CARTID   6
+ophdrfix sdR-??-00006260     CARTID   6
+ophdrfix sdR-??-0000624[6-9] RA       6.996416
+ophdrfix sdR-??-0000625[0-9] RA       6.996416
+ophdrfix sdR-??-00006260     RA       6.996416
+ophdrfix sdR-??-0000624[6-9] DEC      0.04528804
+ophdrfix sdR-??-0000625[0-9] DEC      0.04528804
+ophdrfix sdR-??-00006260     DEC      0.04528804
+
+# The following information in the headers for plate 385 on MJD 51783
+# is incorrect:
+ophdrfix sdR-??-0000626[5-9] CARTID   7
+ophdrfix sdR-??-0000627[0-2] CARTID   7
+ophdrfix sdR-??-0000626[5-9] RA       355.3896
+ophdrfix sdR-??-0000627[0-2] RA       355.3896
+ophdrfix sdR-??-0000626[5-9] DEC      0.04444777
+ophdrfix sdR-??-0000627[0-2] DEC      0.04444777
+
+# The following information in the headers for plate 395 on MJD 51783
+# is incorrect:
+ophdrfix sdR-??-0000627[3-9] CARTID   9
+ophdrfix sdR-??-0000628[0-3] CARTID   9
+ophdrfix sdR-??-0000627[3-9] RA       14.60911
+ophdrfix sdR-??-0000628[0-3] RA       14.60911
+ophdrfix sdR-??-0000627[3-9] DEC      0.01595267
+ophdrfix sdR-??-0000628[0-3] DEC      0.01595267
+
 # Observers say bad smear for plate 395 on MJD=51783.
 ophdrfix sdR-??-00006280 FLAVOR   "'unknown'"
+
+# The following information in the headers for plate 355 on MJD 51784
+# is incorrect:
+ophdrfix sdR-??-00006299     CARTID   3
+ophdrfix sdR-??-0000630[0-1] CARTID   3
+ophdrfix sdR-??-00006299     RA       258.9371
+ophdrfix sdR-??-0000630[0-1] RA       258.9371
+ophdrfix sdR-??-00006299     DEC      57.49319
+ophdrfix sdR-??-0000630[0-1] DEC      57.49319
+
+# The following information in the headers for plate 355 on MJD 51788
+# is incorrect:
+ophdrfix sdR-??-0000630[8-9] CARTID   3
+ophdrfix sdR-??-0000631[0-4] CARTID   3
 
 # The data on this image looks scrambled in a bad way on MJD 51811.
 # This would have been the smear exposure for plate 381.
@@ -499,6 +575,10 @@ ophdrfix sdR-??-00014913 QUALITY   "'bad'"
 
 # This smear for plate 917 on MJD 52400 had very low S/N.
 ophdrfix sdR-??-00014923 QUALITY   "'bad'"
+
+# This smear+science exposure for plate 820 on MJD 52404 had very low S/N.
+ophdrfix sdR-??-00014967 QUALITY   "'bad'"
+ophdrfix sdR-??-00014968 QUALITY   "'bad'"
 
 # Wrong exposure time in these headers for plate 946 on MJD 52405.
 # (Reported to be 23536 sec!)
