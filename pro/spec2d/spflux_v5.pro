@@ -883,6 +883,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       mwrfits, calibimg, calibfile, hdr, /create
       mwrfits, calibset, calibfile
       mwrfits, kindx, calibfile
+      spawn, ['gzip','-f',calibfile], /noshell
    endfor
 
    return
