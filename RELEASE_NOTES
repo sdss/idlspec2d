@@ -2,6 +2,9 @@
 FLUX_STANDARD: Added empirical correction to SPECTRUM-Kurucz models.
            Then got rid of them!
 GET_TAI: Trigger a Warning if (TAI-END) - (TAI-BEG) < EXPTIME + 20 sec.
+PLOTSPEC: Fix trivial bug (had "EXTRA" instead of "_EXTRA") in passing
+           additional plotting keywords to plots.  Also, pass those
+           keywords along to the XYOUTS commands.
 READSPEC: Fix minor bug that would truncate the wavelength mapping
            when spectra are read from multiple plates and /ALIGN not used.
 SPPLATE_CORRECT: Fixed small bug so that it works with the smear left in.
