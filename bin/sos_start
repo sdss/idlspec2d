@@ -59,7 +59,7 @@ echo "* * * * * sos.sh >> $SOSLOG 2>&1" >> $cronfile
 echo "# This job will run at 7:20 am every day." >> $cronfile
 echo "20 7 * * * mailhtml.sh >> $SOSLOG 2>&1" >> $cronfile
 echo "# This job will run at 7:25 am every day." >> $cronfile
-echo "25 7 * * * \mv -f $SOSLOG $SOSLOG.old" >> $cronfile
+echo "25 7 * * * mv -f $SOSLOG $SOSLOG.old" >> $cronfile
 echo "# SOS END" >> $cronfile
 crontab $cronfile
 
