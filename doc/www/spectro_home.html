@@ -324,6 +324,7 @@ changed or added.  Note that you need "ssh" to work without asking for a
 pass-phrase for "rsync" to work as a cron job (see below) -- see your system
 admin if you need help with that.
 
+<!--
 <P>
 An older and more heterogeneous set of reductions are available on the
 fsgi03 machine.  These were not kept up to date at Fermi after February 2001
@@ -334,6 +335,7 @@ rsync -arv --rsh="ssh" \
  --rsync-path=/afs/fnal.gov/files/home/room2/schlegel/bin/rsync \
  fsgi03.fnal.gov:/usr/sdss/data04/schlegel/2d_v4 .
 </PRE></DD></DL>
+-->
 
 <P>
 Finally, you could set up a "cron" job to update your copy of the data on
@@ -342,7 +344,12 @@ a daily basis.  This would be done by creating a cron table file (call it
 <DL><DD><PRE>
 15 3 * * * /usr/bin/rsync -arv --rsh="ssh" alfred@sdssdata.princeton.edu:/u/dss/data/2d_v4_7 /my/directory
 </PRE></DD></DL>
-replacing "/my/directory" with your local data-directory name.
+replacing "/my/directory" with your local data-directory name.  The above
+line would copy all 80 Gb of outputs, whereas most people would only want
+the following files (25 Gb of data):
+<DL><DD><PRE>
+15 3 * * * /usr/bin/rsync -arv --rsh="ssh" --include "*/" --include "platelist*" --include "spAll*" --include "*spZ*.fits" --include "spPlate*.fits" --include "*.log" --include "*.ps" --exclude "*" alfred@sdssdata.princeton.edu:/u/dss/data/2d_v4_7 /my/directory
+</PRE></DD></DL>
 Then load this "cron" job by typing:
 <DL><DD><PRE>
 crontab cron.table
