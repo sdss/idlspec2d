@@ -45,7 +45,7 @@ function rline_matchpeaks, specstruct, pkstruct
    npix = n_elements(specstruct[0].loglam)
    xvec = findgen(npix)
 
-   dloglam = 3.0e-4 ; Search width of 3 pixels
+   dloglam = 4.0e-4 ; Sky+object line exclusion width of 4 pixels
 
    npeak = n_elements(pkstruct)
    for ipeak=0, npeak-1 do begin
