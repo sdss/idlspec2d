@@ -31,6 +31,8 @@
 ;   djs_unlockfile
 ;
 ; INTERNAL SUPPORT ROUTINES:
+;   apo_color2hex()
+;   apo_stringreplace()
 ;   apo_log_header()
 ;   apo_log_endfile()
 ;   apo_log_tableline()
@@ -43,6 +45,35 @@
 ; REVISION HISTORY:
 ;   30-Apr-2000  Written by D. Schlegel, APO
 ;-
+;------------------------------------------------------------------------------
+function apo_color2hex, colorname
+
+   case strupcase(strtrim(colorname,2)) of
+   'RED': hexname = '#FF0000'
+   'YELLOW': hexname = '#FFFF00'
+   endcase
+
+   return, hexname
+end
+
+;------------------------------------------------------------------------------
+; The following replaces only the first instance of STRING1 within TEXT
+; with STRING2.
+function apo_stringreplace, text, string1, string2
+
+   newtext = ''
+
+   i = strpos(text, string1)
+   j = strlen(string1)
+   k = strlen(text)
+   if (i[0] NE -1) then begin
+      if (i GT 0) then newtext = newtext + strmid(text,0,i)
+      newtext = newtext + string2
+      if (i+j LT k) then newtext = newtext + strmid(text,i+j,k-i-j)
+   endif
+
+   return, newtext
+end
 ;------------------------------------------------------------------------------
 function apo_checklimits, field, camera, value
 
@@ -61,12 +92,13 @@ function apo_checklimits, field, camera, value
       yanny_free, pdata
    endif
 
-   jj = where(slimits.field EQ field AND slimits.camera EQ camera)
-   if (jj[0] NE -1) then begin
-      if (value LT slimits[jj].lovalue $
-       OR value GT slimits[jj].hivalue) then $
-       markstring = '<B><FONT COLOR="#FF0000">'
-   endif
+   indx = where(slimits.field EQ field AND slimits.camera EQ camera, nlim)
+   for ilim=0, nlim-1 do begin
+      if (value GE slimits[indx[ilim]].lovalue $
+       AND value LE slimits[indx[ilim]].hivalue) then $
+       markstring = '<B><FONT COLOR="' $
+        + apo_color2hex(slimits[indx[ilim]].color) + '">'
+   endfor
 
    return, markstring
 end
@@ -78,7 +110,7 @@ function apo_log_header, title1, title2
 
    textout = '<HTML>'
    textout = [textout, '<HEAD><TITLE>' + title1 + '</TITLE></HEAD>']
-   textout = [textout, '<H2 ALIGN=CENTER>' + title2 + '</H2>']
+   textout = [textout, '<H1 ALIGN=CENTER>' + title2 + '</H1>']
    squote = "'"
    textout = [textout, $
     '<BODY ONLOAD="timerID=setTimeout('+squote+'location.reload(true)'+squote+',30000)">']
@@ -126,7 +158,7 @@ function apo_log_beginplate, platenum, mjd, camnames
    textout = [textout, '<TABLE BORDER=1 CELLPADDING=3>']
    textout = [textout, apo_log_tableline(ncams)]
    textout = [textout, $
-    '<CAPTION><B> PLATE ' + platestr + '</B>' $
+    '<CAPTION><FONT SIZE="+3"><B> PLATE ' + platestr + '</B></FONT>' $
     + ' - <A HREF="' + plotfile + '">S/N FIGURE</A>' + '</CAPTION>' ]
    nextline = rowsep + colsep
    for icam=0, ncams-1 do $
@@ -384,8 +416,15 @@ pro apo_log2html, logfile, htmlfile
       warnings = ''
       aborts = ''
       for j=0, n_elements(ii)-1 do begin
-         warnings = [warnings, strtrim((*pstruct[ii[j]]).warnings,2)]
-         aborts = [aborts, strtrim((*pstruct[ii[j]]).aborts,2)]
+         warning1 = strtrim((*pstruct[ii[j]]).warnings,2)
+         warning1 = apo_stringreplace(warning1, 'WARNING', $
+          '<B><FONT COLOR="' + apo_color2hex('YELLOW') + '">WARNING</FONT>')
+         warnings = [warnings, warning1]
+
+         abort1 = strtrim((*pstruct[ii[j]]).aborts,2)
+         abort1 = apo_stringreplace(abort1, 'ABORT', $
+          '<B><FONT COLOR="' + apo_color2hex('RED') + '">ABORT</FONT>')
+         aborts = [aborts, abort1]
       endfor
       j = where(warnings NE '')
       if (j[0] NE -1) then warnings = warnings[j] $
