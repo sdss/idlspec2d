@@ -6,12 +6,14 @@
 ;   Print the subset of interesting header keywords from the raw sdR files.
 ;
 ; CALLING SEQUENCE:
-;   apoheader, expnum
+;   apoheader, expnum, [ mjd= ]
 ;
 ; INPUTS:
 ;   expnum     - Exposure number
 ;
 ; OPTIONAL INPUTS:
+;   mjd        - Optionally specify the MJD for the subdirectory in which
+;                to search for the file.  This will greatly speed things up.
 ;
 ; OUTPUT:
 ;
@@ -36,7 +38,7 @@
 ;   24-Apr-2002  Written by D. Schlegel, Princeton
 ;-
 ;------------------------------------------------------------------------------
-pro apoheader, expnum
+pro apoheader, expnum, mjd=mjd
 
    if (n_params() LT 1 OR n_elements(expnum) NE 1) then begin
       print, 'Syntax - apoheader, expnum'
@@ -64,6 +66,11 @@ pro apoheader, expnum
    endif
 
    ;----------
+
+   if (keyword_set(mjd)) then subdir = strtrim(string(mjd),2) $
+    else subdir = '*'
+
+   ;----------
    ; Read the headers for the 4 files.
 
    camname = ['b1','r1','b2','r2']
@@ -73,7 +80,7 @@ pro apoheader, expnum
    for icam=0, ncam-1 do begin
       fileroot = string(camname[icam], expnum, format='("sdR-",a2,"-",i8.8)')
       filename[icam] = (findfile(filepath(fileroot+'.fit*', $
-       root_dir=rawdata_dir, subdir='*'), count=ct))[0]
+       root_dir=rawdata_dir, subdir=subdir), count=ct))[0]
       if (ct GT 0) then begin
          qdone = fits_wait(filename[icam], deltat=1, tmax=1, /header_only)
          if (qdone) then begin
