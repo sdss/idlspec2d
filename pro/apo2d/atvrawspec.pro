@@ -54,7 +54,6 @@ pro atvrawspec, filename, _EXTRA=KeywordsForATV
    endif
 
    badcolor = 'red'
-   sdssproc ; Call this to compile FINDOPFILE()
 
    hdr = headfits(filename)
    naxis1 = sxpar(hdr, 'NAXIS1')
