@@ -803,38 +803,50 @@ Below, I've listed the vacuum wavelength of some transitions:
 <H4><A NAME="problems_known">Known Problems</A></H4>
 
 <P>
-Here is a list of the most offensive known problems in Spectro-2D:
+Here is a list of the most offensive known problems in Spectro-2D as
+of version v4_5 (31 Jan 2000):
 <PRE>
 -------------------------------------------------------------------------------
 Failed plates:
 
-plate 390-51900 -- did I crash this by g-zipping its raw files at the same time?
-
-Plate 182-51703 crashed in 2D - arcs
-Plate 191-51454                        : has wrong MAPNAME - calls it plate 187?
-plate 192-51461 crashed combining - no valid spectro-photo smear or calib
-Plate 194-51462 crashed in 2D - arcs
-Plate 203-51456 crashed when combining ;   same as above??
-Plate 204-51455 crashed in 2D - arcs
-Plate 213-51578 crashed when combining
-plate 217 crashed when combining - FLUXCORR_NEW failures ; wrong plugmap ??
-Plate 218                        : has wrong MAPNAME
-plate 235-51462 crashed when combining... got a NaN... but first failed on b2 arcs
-                                 ; Fails because only b2 flat is saturated
-plate 283-51660 crashed when 2D combining - no spectro-photo calib
-plate 296-51578 crashed when 2D combining - no spectro-photo calib
+Plate 187-51454 has no good b2 arc, then fails in combining
+Plate 192-51461 has no good b2 arc, then fails in combining
+Plate 194-51462 has no good b2 arc, then fails in combining
+Plate 204-51455 has no good b1,b2,r2 arcs
+Plate 213-51578 has no good b2 arcs
+Plate 218-51641 has no good b2 arc, then fails in combining
+Plate 231-51455 has no good r1 arcs
+Plate 235-51462 fails because the only b2 arc is saturated
+Plate 283-51660 has no good b1,b2 arcs
+Plate 296-51578 has no good b2 arcs
 Plate 318 special plate needs edited plug-map files in order to run
-plate 420-51871 crashed because exp#7112 had NaNs in the header for RA,DEC
-          which crashed the HELIOCENTRIC proc
-plate 432-51884 has no sky fibers in plugmap?
-plate 434-51885 crashed when 2D combining
-plate 437-51876 seg fault reducing frame "sdR-b2-00007223.fit"
-plate 443-51873 - not enough exposures to combine?
+Plate 324-51616 only has one science exposure, so won't combine
+
 -------------------------------------------------------------------------------
 Plates that will never reduce:
 
-plate 324-51616 only has one science exposure, so won't combine
-plate 347-51693 crashed in 2D because the only science exposure was saturated.
+Plate 182-51703 crashed in 2D -- No sky fibers found; too many whopping fibers?
+    This a FFAST plate with 12th magnitude stars.  The one
+    exposure of 900 secs is saturated.  To top it off, the
+    plugmap file has no sky fibers allocated.
+Plate 191-51454 has no arcs
+Plate 284-51934 has no good arcs (flat-field screen was not closed for arcs)
+Plate 317-51589 has no flats or arcs
+Plate 347-51693 crashed in 2D because the only science exposure was saturated.
+
+-------------------------------------------------------------------------------
+Bad problems:
+
+Plate 202/51441 has lots of wrong z=4.3 qso's.
+Plate 260/51612 looks like funny fluxing in the blue at around 4000 Ang,
+                probably due to very low S/N
+Plate 354/51792 taken during moon.
+Plate 426/51882 has lots of wrong z=4.3 qso's.
+Plate 426/51882 has the Red Monster at 6400-6550 Ang in exp #7366-7367
+Fibers 375,376 have bad sky residuals on many plates, e.g.
+      on plates 360, 396, 418, 429, 437.  This appears to be a problem
+      with the pixel-masks.
+
 -------------------------------------------------------------------------------
 </PRE>
 
