@@ -13,6 +13,9 @@ maskbits  4 MANYBADCOLUMNS  # >10% pixels are bad columns
 maskbits  5 MANYREJECTED    # >10% pixels are rejected in extraction
 maskbits  6 LARGESHIFT      # Large spatial shift between flat and object pos'n
 maskbits  7 BADSKYFIBER     # Sky Fiber shows extreme residuals
+maskbits 10 SMEARIMAGE      # Smear available for red and blue cameras
+maskbits 11 SMEARHIGHSN     # S/N sufficient for full smear fit
+maskbits 12 SMEARMEDSN      # S/N only sufficient for scaled median fit
 
 # The following mask bits are for a pixel, set in PIXELMASK_BITS()
 maskbits 16 NEARBADPIXEL    # Bad pixel within 3 pixels of trace
