@@ -32,9 +32,9 @@ PLATESN: Remove the code that adds the spectro-photometry keywords to
         the output headers, since P-1D does this more carefully.
 PLOTSIGNAL: New routine for making diagnostic plots of the signal seen
         by the spectrographs, unlike most of our routines that show S/N.
-PLOTSN: Recent changes can make this routine crash if the photo and spectro
-        mags are grossly different.  Fix that (though the points will be
-        outside the plotting limits).
+PLOTSN: Re-write of the code that makes all the plots beyond the first
+        page of S/N plots.  Compare the spectro-photometry to the CALIBFLUX
+        entries in the plug-map structure if they exist.
 PLOTSPEC: Add the /SKY option for over-plotting the sky.
 PLUGFILE_RELABEL: Relabel the OBJTYPE's for specified objects in all
         plPlugMapM files.
