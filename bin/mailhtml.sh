@@ -55,9 +55,13 @@ do
 
 #     Kill almost everything in the log directory
 
-      rm -f $dir/*.fits
+      rm -f $dir/fflat*.fits
+      rm -f $dir/sci*.fits
+      rm -f $dir/tset*.fits
+      rm -f $dir/wset*.fits
       rm -f $dir/*.ps
-      rm -f $dir/logfile*.html
+#      rm -f $dir/logfile*.fits
+#      rm -f $dir/logfile*.html
    fi
 done
 
