@@ -1,7 +1,7 @@
 
 pro sphoto_calib, wave, flux, invvar, mask, plugtag, fcalfile, $
     stdstarfile, stype = stype, input_calibset = input_calibset, $
-    pca_calibset = pca_calibset
+    pca_calibset = pca_calibset, noplot = noplot
 
   ; Double check that all spcetra are from 1 camera + spectrograph
   camid = plugtag.camcolor + strtrim(plugtag.spectrographid, 2)
@@ -86,8 +86,8 @@ pro sphoto_calib, wave, flux, invvar, mask, plugtag, fcalfile, $
 
     stdinfo = stype_standard(newwave, avgflux, avginvar, plug1, $
               outfile = stdstarfile)
-  endif 
 
+  endif 
 
   ;----------------------------------------------------------------------------
   ; Read back standard star info and expand to match the full list of spectra
@@ -121,7 +121,7 @@ pro sphoto_calib, wave, flux, invvar, mask, plugtag, fcalfile, $
     nok = nok / nframes
   endif
   if nok lt 3 then begin
-    splog, 'WARNING:  NO good spectrophoto standards!!!'
+    splog, 'WARNING: Too few spectrophoto standards!!!'
     splog, 'Proceeding anyway!'
     ok = where(stdinfo_all.sn gt 0 and stdinfo_all.mag[2] gt 0, nok)
     nok = nok / nframes
@@ -170,7 +170,8 @@ pro sphoto_calib, wave, flux, invvar, mask, plugtag, fcalfile, $
  
     frame_calibset = frame_flux_calib(newwave, corvector[*,indx], $
       corvivar[*,indx], avgcalibset, cormed[indx], $
-      'Frame ' + camid + '-' + frames[iframe], medsn, fsig = fsig)
+      'Frame ' + camid + '-' + frames[iframe], medsn, fsig = fsig, $
+       noplot = noplot)
 
     ;--------------
     ; Create header cards describing the data range and write to FITS
