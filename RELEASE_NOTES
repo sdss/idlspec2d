@@ -31,21 +31,28 @@ PLOTSN: Changed auto-scaling of fitted magnitudes, when less than 20 objects
             are in the desired range.  Now the fitting range will expand to
             [10.0, snmag + 1.0].  So in case of g' [10.0, 21.2], this should
             work much better for the photo-z S/N estimates.
+QUICKBIAS: Remove message which preempts logging.  Instead, return a
+            set of precentiles that are all -9999, which shows up as ****
+            in the HTML file.
 REDMONSTER: Change the warning message to "Bad sky residuals...",
             and only send the message "Red Monster at..." if it
             is around 6400-6600 Ang, where we think the problem may
             be due to the hand-paddle LED.  This change is for the
             benefit of the observers (from Son-of-Spectro warnings).
             Also output the peak chi.
+REMOVE2TODO: Make more robust, and give more descriptive messages.
 SDSS_FLAGS: Add "SOUTHERN_SURVEY" flags for TARGET and TTARGET.
             Also, return a warning message for any bits that are set
             but whose meaning is unknown.  Previously, a wrong answer
             would just be given in that case.
 SDSSPROC: Reverted to calls to specflat_version,speclog_version that work.
+            New option /APPLYBIAS to bias-subtract.
+SPBIASAVE: New routine to average biases already generated with SPBIASGEN.
 SMOOTH_SUPERFLAT: Located the spurious WARNING, changed to Warning, and
             upped the threshold.  It was not the critical one of the two
             smooth_superflat warnings.
 SPBIASGEN: New routine for generating mean biases for a night.
+SPCALIB,SPFLATTEN2,SPREDUCE: Use /APPLYBIAS option in call to SDSSPROC.
 SPREDUCE1D, ZFIND, ZCOMPUTE, FIND_NMINIMA: Plotting and debugging
             tools added with the /DOPLOT, /DEBUG keywords.
 SPREDUCE1D: Change flag for small chi^2 difference to be triggered
@@ -86,6 +93,12 @@ opHdrFix.par: Correct some values for TILEID,RADEG,DECDEG for the early plates
 sos_redo: Don't allow this to be run from the machine sdsshost!
 sprobot_start: Copy the data over starting at 10am Princeton time,
             which will be after "mailhtml.sh" is run at APO (at 7:20 am).
+
+evilinstall (in idlutils): If $CVSROOT is not set, then set it either
+         by setting up the "sdsscvs" product or explicitly setting to the
+         Fermi CVS location.  This allows the option of installing from a
+         different repository (i.e., Princeton or NYU) by setting $CVSROOT
+         first.
 
 -------------------------------------------------------------------------------
 v4_8_4 (Aug 29, 2001 idlspec2d+idlutils)
