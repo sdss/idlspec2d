@@ -435,13 +435,15 @@ pro sdssproc, infile, image, invvar, indir=indir, $
                         srow[iamp]:srow[iamp]+nrow[iamp]-1]) + $
                       0.01 * abs(smearimg[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
                         srow[iamp]:srow[iamp]+nrow[iamp]-1])^2 + $
-                        (readnoiseDN[iamp]*gain[iamp])^2)
+                        (readnoiseDN[iamp]*gain[iamp])^2 + $
+                        1.0e-4)  ; floor to variance
             endif else begin
                invvar[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
                         srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
                  1.0/(abs(image[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
                         srow[iamp]:srow[iamp]+nrow[iamp]-1]) + $
-                        (readnoiseDN[iamp]*gain[iamp])^2)
+                        (readnoiseDN[iamp]*gain[iamp])^2 + $
+                        1.0e-4)  ; floor to variance
             endelse
 
          endif
