@@ -120,7 +120,7 @@ ZCOMPUTE_QSO: A version of ZCOMPUTE that is basically the same code, but
 
 doc/www/idlspec2d_reduce.html,spectro_home.html: The machine alias name
         sdssdata.princeton.edu should really be sdssdata.astro.princeton.edu
-etc/spChunkList.par: Add chunks 91 through 107, 99A, 100A.
+etc/spChunkList.par: Add chunks 91 through 107, 99A, 100A, 108, 109.
 etc/spPlateList.par: Add 436 new plates, through MJD 53360 (Dec 21, 2004).
         Add the DR4 public plates, consistent with sdss-archive/2374.
         (I posted some inconsistencies about these plate lists to
@@ -137,6 +137,8 @@ etc/spPlateList.par: Add 436 new plates, through MJD 53360 (Dec 21, 2004).
           770       52282 DR2 bad Bad spectrograph collimation
           775       52295 DR2 bad Bad spectrograph collimation
           778       52337 DR2 bad Bad spectrograph collimation
+        List each plate in one and only one data release (the first time
+        it is released).
 examples/opECalib-51577.par: Update the gains based upon work by Eric Switzer
         and a more careful look at a recent set of identical flats taken
         on the night MJD 53114.  I've updated the numbers as follows for
