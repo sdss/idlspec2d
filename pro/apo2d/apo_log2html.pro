@@ -268,12 +268,12 @@ pro apo_log2html, logfile, htmlfile
     '<TABLE CELLSPACING=0 CELLPADDING=0><TR>']
    textout = [textout, $
     '<TD WIDTH="33%" ALIGN="LEFT">Yesterday: ' $
-    + '<A HREF='+prevfile+'+>MJD='+prevmjd+'</A></TD>']
+    + '<A HREF='+prevfile+'>MJD='+prevmjd+'</A></TD>']
    textout = [textout, $
     '<TD WIDTH="34%" ALIGN="CENTER"><B><FONT SIZE="+4">Spectro MJD '+mjdstr+'</FONT></B></TD>']
    textout = [textout, $
     '<TD WIDTH="33%" ALIGN="RIGHT">Tomorrow: ' $
-    + '<A HREF='+nextfile+'+>MJD='+nextmjd+'</A></TD></TR>']
+    + '<A HREF='+nextfile'+>MJD='+nextmjd+'</A></TD></TR>']
    textout = [textout, $
     '<TR><TD></TD><TD WIDTH="100%" ALIGN="CENTER"><FONT SIZE="+4">'+platelist+'</FONT></TD><TD></TD></TR>']
    textout = [textout, $
