@@ -50,6 +50,9 @@
 ; PROCEDURES CALLED:
 ;   combine1fiber
 ;   computechi2()
+;   djs_mean()
+;   djs_reject()
+;   splog
 ;   wavevector()
 ;
 ; REVISION HISTORY:
@@ -178,12 +181,14 @@ endelse
 
    qdone = 0
    iiter = 0
-   ; Begin with all points good
-   outmask = make_array(dimension=size(newflux,/dimens), /byte) + 1B
+   ; Begin with all points good unless the inverse variance is zero.
+;   outmask = make_array(dimension=size(newflux,/dimens), /byte) + 1B
+   outmask = 0
+   inmask = newivar NE 0
 
    while ((qdone EQ 0) AND (iiter LE maxiter)) do begin
 
-      qdone = djs_reject(newflux, ymodel, outmask=outmask, $
+      qdone = djs_reject(newflux, ymodel, inmask=inmask, outmask=outmask, $
        invvar=newivar, _EXTRA=KeywordsForReject)
 
       ;----------
