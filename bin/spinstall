@@ -1,0 +1,78 @@
+#! /bin/bash
+#------------------------------------------------------------------------------
+# Script to install Spectro-2D (idlutils+idlspec2d).
+# Must hand-edit the version names below.
+#------------------------------------------------------------------------------
+
+IDLUTILS_VERS=v4_6_0
+IDLSPEC2D_VERS=v4_6_1
+
+hostname=`uname -n | awk 'BEGIN {FS="."} {print $1}'`
+if [ $hostname = "spectro" ] ; then
+   # Environment for Princeton machine spectro.princeton.edu
+   source /u/products/etc/sdssfue.sh
+   FLAVOR=Linux+2
+   PRODDIR=/u/products/$FLAVOR
+   setup sdsscvs
+   setup sdsstools v4_5a
+elif [ $hostname = "sdsshost" ] ; then
+   # Environment for Fermi machine sdsshost.apo.nmsu.edu
+   source /usr/local/etc/fermi.shrc
+   FLAVOR=IRIX+6
+   PRODDIR=/p
+   setup sdsscvs
+   setup sdsstools
+elif [ $hostname = "plate-mapper" ] ; then
+   # Environment for Fermi machine plate-mapper.apo.nmsu.edu
+   source /usr/local/etc/sdssfue.sh
+   FLAVOR=Linux+2
+   PRODDIR=/p
+   setup sdsscvs
+   setup sdsstools
+elif [ $hostname = "hoggpt" ] ; then
+   # Environment for Fermi machine hoggpt.apo.nmsu.edu
+   source /usr/local/etc/sdssfue.sh
+   FLAVOR=Linux+2
+   PRODDIR=/p
+else
+   echo "Unknown computer name: " $hostname
+   exit
+fi
+
+# Use the SDSS make command if the product sdsstools exists; otherwise
+# use the back-door evilmake command.
+if [ -z "$SETUP_SDSSTOOLS" ] ; then
+   MAKECOMMAND=evilmake
+else
+   MAKECOMMAND='sdssmake -idl -opt -debug'
+fi
+
+TEMPDIR=$HOME/tmp
+mkdir -p $TEMPDIR
+
+cd $TEMPDIR
+rm -rf idlutils
+cvs export -r $IDLUTILS_VERS idlutils
+setup -f $FLAVOR -r $TEMPDIR/idlutils \
+ -m $TEMPDIR/idlutils/ups/idlutils.table idlutils
+cd $TEMPDIR/idlutils
+$MAKECOMMAND
+IDLUTILS_DIR=$PRODDIR/idlutils/$IDLUTILS_VERS
+$MAKECOMMAND install
+ups declare -f $FLAVOR -m idlutils.table \
+ -r $PRODDIR/idlutils/$IDLUTILS_VERS -c idlutils $IDLUTILS_VERS
+
+cd $TEMPDIR
+rm -rf idlspec2d
+cvs export -r $IDLSPEC2D_VERS idlspec2d
+setup -f $FLAVOR -r $TEMPDIR/idlspec2d \
+ -m $TEMPDIR/idlspec2d/ups/idlspec2d.table idlspec2d
+cd $TEMPDIR/idlspec2d
+$MAKECOMMAND
+IDLSPEC2D_DIR=$PRODDIR/idlspec2d/$IDLSPEC2D_VERS
+$MAKECOMMAND install
+ups declare -f $FLAVOR -m idlspec2d.table \
+ -r $PRODDIR/idlspec2d/$IDLSPEC2D_VERS -c idlspec2d $IDLSPEC2D_VERS
+
+exit
+#------------------------------------------------------------------------------
