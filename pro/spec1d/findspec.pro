@@ -6,7 +6,7 @@
 ;   Routine for finding SDSS spectra that match a given RA, DEC.
 ;
 ; CALLING SEQUENCE:
-;   findspec, [ra, dec, infile=, outfile=, slist=, /silent ]
+;   findspec, [ra, dec, infile=, outfile=, slist=, /duplicate, /silent ]
 ;
 ; INPUTS:
 ;
@@ -16,6 +16,10 @@
 ;   infile     - Input file with RA, DEC positions, one per line.
 ;                If set, then this over-rides values passed in RA,DEC.
 ;   outfile    - If set, then print matches to this file.
+;   duplicate  - If set, then return multiple matches where the same
+;                object may be on several plates.  In this case, the
+;                length of the output list can exceed the length of the
+;                input list.
 ;   silent     - If set, then suppress printing outputs to the terminal.
 ;
 ; OUTPUTS:
@@ -24,6 +28,8 @@
 ;   slist      - Structure containing information for each match.
 ;
 ; COMMENTS:
+;   The search radius is set to within 1.55 degress of a plate center,
+;   then within 3 arcsec of an object.
 ;
 ; EXAMPLES:
 ;   Make a file "file.in" with the following two lines:
@@ -53,7 +59,7 @@
 ;-
 ;------------------------------------------------------------------------------
 pro findspec, ra, dec, infile=infile, outfile=outfile, slist=slist,  $
- silent=silent
+ duplicate=duplicate, silent=silent
 
    common com_findspec, plist, nlist, minsn
 
@@ -130,8 +136,12 @@ pro findspec, ra, dec, infile=infile, outfile=outfile, slist=slist,  $
       indx = 0
    endif
 
-   junk = max(minsn[indx], ibest)
-   slist = slist[indx[ibest]]
+   if (keyword_set(duplicate)) then begin
+      slist = slist[indx]
+   endif else begin
+      junk = max(minsn[indx], ibest)
+      slist = slist[indx[ibest]]
+   endelse
 
    if (NOT keyword_set(silent)) then struct_print, slist
    if (keyword_set(outfile)) then struct_print, slist, filename=outfile
