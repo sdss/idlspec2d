@@ -1,4 +1,7 @@
 
+eviltarball (in idlutils): New script to export a version of a code
+         and build a tar file for distribution.
+
 -------------------------------------------------------------------------------
 v4_8_3 (Aug 24, 2001 idlspec2d+idlutils)
 
