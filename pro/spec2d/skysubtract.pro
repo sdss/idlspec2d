@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   skystruct = skysubtract(obj, objivar, plugsort, wset, objsub, objsubivar, $
 ;    [iskies= , fibermask=, nord=, upper=, lower=, maxiter=, pixelmask=, $
-;      relchi2struct= ])
+;      novariance=, relchi2struct= ])
 ;
 ; INPUTS:
 ;   obj        - Image
@@ -20,6 +20,7 @@
 ;   fibermask  - Fiber status bits, set nonzero for bad status [NFIBER]
 ;   pixelmask  - Mask of 0 for good pixels [NPIX,NFIBER]
 ;   relchi2struct  - Structure containing information of chi^2 fitting
+;   novariance  - keyword to prevent variance correction for sky residuals
 ;
 ; PARAMETERS FOR SLATEC_SPLINEFIT (for supersky fit):
 ;   nord       -
@@ -65,7 +66,8 @@
 function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    iskies=iskies, fibermask=fibermask, nord=nord, upper=upper, $
    lower=lower, maxiter=maxiter, pixelmask=pixelmask, $
-   relchi2struct=relchi2struct
+   dispset=dispset, nsigmapoly=nsigmapoly, relchi2struct=relchi2struct, $
+   novariance=novariance
 
    if (size(obj, /n_dimen) NE 2) then message, 'OBJIVAR is not 2-D'
    if (size(objivar, /n_dimen) NE 2) then message, 'OBJIVAR is not 2-D'
@@ -112,15 +114,35 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    ; Use the EVERYN parameter to space the spline points according to
    ; the density of data points.
 
-   ; Return BKPT below for use later
-   fullbkpt = slatec_splinefit(skywave, skyflux, coeff, invvar=skyivar, $
-    nord=nord, upper=upper, lower=lower, maxiter=maxiter, $
-    /eachgroup, everyn=nskies, bkpt=bkpt)
+   if (NOT keyword_set(dispset)) then begin
+     fullbkpt = slatec_splinefit(skywave, skyflux, coeff, invvar=skyivar, $
+       nord=nord, upper=upper, lower=lower, maxiter=maxiter, $
+       /eachgroup, everyn=2*nskies/3, bkpt=bkpt)
 
+     fullfit = slatec_bvalu(wave, fullbkpt, coeff) 
+     skyfit  = slatec_bvalu(skywave, fullbkpt, coeff) 
+     
+   endif else begin
+
+     ;--------------------------------------------------------------
+     ;  sigma is smooth fit to widths of arclines
+     ;
+     traceset2xy, dispset, pixnorm, sigma
+     sigma = sigma - 1.0
+     skysigma = (sigma[*,iskies])[isort]
+
+     fullbkpt2 = slatec_splinefit(skywave, skyflux, coeff2, invvar=skyivar, $
+       nord=nord, upper=upper, lower=lower, maxiter=maxiter, x2 = skysigma, $
+       npoly = nsigmapoly, /eachgroup, everyn=2*nskies/3, bkpt=bkpt)
+
+     fullfit2 = bvalu2d(wave, sigma, fullbkpt2, coeff2) 
+     skyfit2  = bvalu2d(skywave, skysigma, fullbkpt2, coeff2) 
+   endelse
+
+  
    ;----------
    ; Sky-subtract the entire image
 
-   fullfit = slatec_bvalu(wave, fullbkpt, coeff) 
 ;   objsub = obj - fullfit * (objivar GT 0.0) ; No need to do this.
 
 
@@ -154,7 +176,7 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    ; This is difficult since variance has noise, so only do this if there
    ; are at least 3 sky fibers.
 
-   if (nskies GE 3) then begin
+   if (nskies GE 3 AND NOT keyword_set(novariance)) then begin
 
       skyfit = (fullfit[*,iskies])[isort]
 ;      skyfit  = slatec_bvalu(skywave, fullbkpt, coeff) ; Same thing, more clear
