@@ -1,12 +1,18 @@
 
 APO_LOG2HTML: Add columns for EXPTIME and AIRTEMP to web page tables.
 APOALL,APOREDUCE: Add the /no_diskcheck option.
+APOHEADER: New proc for the observers' to print the subset of interesting
+           header keywords from the raw sdR files.
 APOFIX: New proc for declaring exposures bad, or fixing other header files,
            by using sdHdrFix-$MJD.par files (a new file type).
 APOPLOT: Bug fix to prevent crash when specifying EXPNUM.
 APOREDUCE: Add CARTID,AIRTEMP,CCDTEMP to all output structures.
 EXTRACT_OBJECT: Mitigate possible crash condition if relchi2struct not set.
 PLATELIST: Add NGUIDE,FBADPIX,FBADPIX1,FBADPIX2 to structure.
+           No longer compute airmass from TAI, since TAI is now an average
+           time and may even correspond to the middle of the day if a plate
+           is observed over two nights.  Trust the average airmass in the
+           spPlate header.
 QAPLOT_SKYSUB: Don't crash even in the case of a single sky fiber
            (as for plate 218/51461).
 QUICKEXTRACT: Return the relchi2struct from SKYSUBTRACT, and put SKYCHI2
@@ -17,11 +23,18 @@ SKYSUBTRACT: Merely clean out some commented-out code and update internal
            on the bad data for plate 296/51578 on exposure b2-00002076.
            Insist that if we use "everyn" keyword for b-spline fits,
            that it's >=1.
+SPHEADERFIX: Use the new file "sdHdrFix-$MJD.par" that can be written
+           by the observers' at APO using APOFIX, rather than using the
+           same mechanism through the sdReport file (which was never used).
 
+opHdrFix.par: Declare exposures #14537,14571,14638,14653 bad, which were
+           previously declared bad in the sdReport files.  But we're no
+           longer using the sdReport files for reductions.
 opLimits.par: Impose limits on EXPTIME for bias,arc,flat,smear.
            Impose limits on (S/N)^2 for smear exposures.
 spChunkList.par: Add chunks 40-42.
 spPlateList.par: Update to include list of DR1 plates.
+spectroSOS.html: Document the new procs APOHEADER,APOFIX.
 
 In idlutils:
 
@@ -29,9 +42,12 @@ BSPLINE_FIT: The YFIT vector was not always being computed, depending upon
            how this routine completed.  Also, some Schlegelization of the code.
 DJS_MEDIAN: Allow ARRAY to be a vector, and pass DIMENSION=1; this is the
            degenerate case where a scalar is returned.
+FITSDIR,MRDFITS,MWRFITS,READFITS,SXADDPAR: Fink merged the latest bug fixes
+           from Goddard.
 FITS_READ: This Goddard routine seems to have had a bug introduced,
            whereby MESSAGE is not always set when reading a partially-written
-           FITS file.
+           FITS file.  I *think* this is fixed, but should see what Landsman
+           says about this change.
 FITS_WAIT: Add _EXTRA keyword for passing options to FITS_READ, such
            as /HEADER_ONLY or EXTEN=.
 HOGG_OPLOT_COVAR: New ellipse plotting routine.
@@ -43,6 +59,8 @@ YANNY_WRITE: Put quotes around empty strings.  Otherwise, this is not
 build_links: Over-write existing links, since that's what I'm usually doing.
 pstogif: Perl script for converting PostScript to GIF; copied from /usr/bin
            on sos.apo.
+export.h: Put a copy of this file in src/slatec and src/trace, though
+           perhaps we should really just have an /include subdirectory?
 
 -------------------------------------------------------------------------------
 v4_9_8 (Apr 12, 2002 idlspec2d only) running on IDL 5.3 - 5.5
