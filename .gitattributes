@@ -74,6 +74,11 @@ pro/apo2d/quickboxcar.pro -text
 pro/apo2d/quickextract.pro -text
 pro/apo2d/quicktrace.pro -text
 pro/apo2d/quickwave.pro -text
+pro/fplan/make2dmerge.pro -text
+pro/fplan/platesn.pro -text
+pro/fplan/spallreduce.pro -text
+pro/fplan/spplan.pro -text
+pro/fplan/spplancomb.pro -text
 pro/makefile.old -text
 pro/science/README -text
 pro/science/bandpassinfo.pro -text
