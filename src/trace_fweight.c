@@ -40,7 +40,7 @@ IDL_LONG trace_fweight
    /* Loop through each center value */
    for (icen=0; icen < ncen; icen ++) {
       recenter_fweight(nx, fimage[ycen[icen]], ferr[ycen[icen]], radius,
-       &xcen[icen], &xerr[icen]);
+       xcen[icen], &xcen[icen], &xerr[icen]);
    }
 
    /* Free temporary memory */
