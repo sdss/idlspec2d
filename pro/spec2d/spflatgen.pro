@@ -143,13 +143,16 @@ pro spflatgen, mjd=mjd, expnum=expnum, expstart=expstart, expend=expend, $
        AND obscomm EQ '{dithered flats-arc}', narc)
 
       ; Re-sort each list by exposure number
-      iflats = iflats[ sort(exposure[iflats]) ]
-      iarcs = iarcs[ sort(exposure[iarcs]) ]
+      if (nflat GT 0) then $
+       iflats = iflats[ sort(exposure[iflats]) ]
+      if (narc GT 0) then $
+       iarcs = iarcs[ sort(exposure[iarcs]) ]
 
       ; Trim the flats to only the list of contiguous flats,
       ; according to their exposure numbers
-      iflats = iflats[ where(exposure[iflats] - exposure[iflats[0]] $
-       - lindgen(nflat) EQ 0, nflat) ]
+      if (nflat GT 0) then $
+       iflats = iflats[ where(exposure[iflats] - exposure[iflats[0]] $
+        - lindgen(nflat) EQ 0, nflat) ]
 
       if (nflat GT 25) then begin
          splog, 'Too many flats (' + string(nbias) + ') to load into memory'
