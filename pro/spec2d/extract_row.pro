@@ -295,23 +295,29 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
       if (relative) then errscale = sqrt(chisq/total(mask))
 
       finished = 1
+      ; I'm changing the rejection algorithm
       if (NOT keyword_set(oldreject)) then begin
-         ; I'm changing rejection algorithm
-         indchi = diffs / (highrej*errscale)
-         neg = where(diffs LT 0)
-         if (neg[0] NE -1) then indchi[neg] = diffs[neg] / (-lowrej*errscale)
-         badcandidate = where(indchi GT 1.0, badct)
-         if (badct GT 0) then begin
-           finished = 0
-           ; find groups
-           padbad = [-2, badcandidate, nx + 2]
-           startgroup = where(padbad[1:badct] - padbad[0:badct-1] GT 1, ngrp)
-           endgroup = where(padbad[2:badct+1] - padbad[1:badct] GT 1)
-           for i=0, ngrp - 1 do begin
-             worstdiff = max(indchi[startgroup[i]:endgroup[i]],worst)
-             mask[badcandidate[worst+startgroup[i]]] = 0
-	   endfor
-           totalreject = totalreject + ngrp
+         
+         goodi = where(workinvvar GT 0)
+         if (goodi[0] NE -1) then begin 
+           indchi = diffs[goodi] / (highrej*errscale)
+           neg = where(indchi LT 0)
+           if (neg[0] NE -1) then $
+             indchi[neg] = -indchi[neg] * highrej / lowrej
+
+           badcandidate = where(indchi GT 1.0, badct)
+           if (badct GT 0) then begin
+             finished = 0
+             ; find groups
+             padbad = [-2, badcandidate, nx + 2]
+             startgroup = where(padbad[1:badct] - padbad[0:badct-1] GT 1, ngrp)
+             endgroup = where(padbad[2:badct+1] - padbad[1:badct] GT 1)
+             for i=0, ngrp - 1 do begin
+               worstdiff = max(indchi[startgroup[i]:endgroup[i]],worst)
+               mask[goodi[badcandidate[worst+startgroup[i]]]] = 0
+	     endfor
+             totalreject = totalreject + ngrp
+           endif
          endif
       endif else begin
         badhigh = where(diffs GT highrej*errscale, badhighct)
