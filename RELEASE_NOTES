@@ -1,11 +1,22 @@
 
 MYFLUXCALIB: Put the plate+MJD+camname in the plot titles.
+PIXELMASK_BITS: Now simply call the new function SDSS_FLAGVAL().
+PLATELIST: Make consistent with changes to spChunklist.par.
+PLOTSPEC: Added /ORMASK, /ANDMASK keywords.  Plot text for the zwarning flags.
+           Use /normal coordinates for plot labels, so they stay on
+           the plot even when zoomming in and out.
+SDSS_FLAGNAME: Re-write to include many more types of mask bits
+           from the file "spMaskbits.par".
+SDSS_FLAGVAL: New function, which is the inverse of SDSS_FLAGNAME().
+SPREDUCE1D: Use SDSS_FLAGVAL() to set the zwarning mask bits.
 SKYSUBTRACT: Fix stupid bug where sky-fits are rejected if the mean
            sky is negative, though that only happens rarely.  This did
            cause all the b1 exposures on plate 283/51584 to get rejected
            (one of at least several such examples).
 TELLURIC_CORR: Center the plot title.
 
+spChunkList.par: Remove verstarg from structure, and add progname.
+spMaskbits.par: Heavily modified file to include many more types of mask bits.
 sprobot_start: Set the environment variable "DISPLAY=:0.0" so that any
            IDL jobs launched from these scripts don't use any additional
            IDL licenses.
