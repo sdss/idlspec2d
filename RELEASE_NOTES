@@ -1,8 +1,13 @@
 
+EXTRACT_ROW: Be sure to pass "whoppingct" as type LONG to the C code.
+           If not, then it fails on the Mac OS X platform.
 FIND_NMINIMA: Fix tiny bug for optional plots.
 GUIDERMOVIE: The format for the date in the header of the guider images
            has changed.  This code should now comptabably read the old
            or new date format.
+LINEBACKFIT: Change how the error on equiv. width (LINEEW_ERR) is computed.
+           I believe it was incorrect before, and should simply be
+           computed from LINEAREA_ERR,LINECONTLEVEL_ERR.
 PLOTSPEC: Bug fix to allow one to specify the output file name with PSFILE=.
            Fix units on Y axis to /cm^2 instead of /cm.
 SDSSPROC: Fix silly bug trying to set QUALITY='excellent' when undefined.
