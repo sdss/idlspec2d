@@ -96,6 +96,12 @@ pro fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
 
    endif else begin
 
+   bfit = bwave # replicate(0,nfiber)
+   bmask = bwave # replicate(0,nfiber)
+   bsn = fltarr(nfiber) 
+   checkblue = 0
+
+   if bscifile[ifile] NE '' then begin
      bsciflux = mrdfits(bscifile[ifile],0)
      bsciivar = mrdfits(bscifile[ifile],1)
      bscimask = mrdfits(bscifile[ifile],2)
@@ -104,6 +110,19 @@ pro fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
 
      bfit = median_rebin(bsciflux, bsciivar, bsciloglam, brange, $
            mask=bmask)
+     bsn = djs_median(bsciflux * sqrt(bsciivar),1)
+     checkblue = 1
+
+   endif else $
+     splog, 'WARNING: no blue science frame for ', corrfile[ifile]
+       
+ 
+   rfit = rwave # replicate(0,nfiber)
+   rmask = rwave # replicate(0,nfiber)
+   rsn = fltarr(nfiber) 
+   checkred = 0
+
+   if rscifile[ifile] NE '' then begin
 
      rsciflux = mrdfits(rscifile[ifile],0)
      rsciivar = mrdfits(rscifile[ifile],1)
@@ -113,12 +132,16 @@ pro fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
 
      rfit = median_rebin(rsciflux, rsciivar, rsciloglam, rrange, $
            mask=rmask)
-     bsn = djs_median(bsciflux * sqrt(bsciivar),1)
      rsn = djs_median(rsciflux * sqrt(rsciivar),1)
-     scisnmed = transpose([[bsn],[rsn]])
+     checkred = 1
 
-     sciflux = [bfit,rfit]
-     sciivar = [bmask,rmask]
+   endif else $
+     splog, 'WARNING: no red science frame for ', corrfile[ifile]
+
+   scisnmed = transpose([[bsn],[rsn]])
+
+   sciflux = [bfit,rfit]
+   sciivar = [bmask,rmask]
 
      ;-------------------------------------------------------------
      ;   3 levels of S/N
@@ -126,8 +149,8 @@ pro fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
      ;    level 2:  Med  S/N, Scaled Spectrophoto solution
      ;    level 3:  Low  S/N, median spectrophoto solution
 
-     highsn = where(scisnmed[0,*] GT 2.5 $
-               AND  scisnmed[1,*] GT 5.0 $
+     highsn = where((scisnmed[0,*] GT 2.5 OR checkblue EQ 0) $
+               AND  (scisnmed[1,*] GT 5.0 OR checkred EQ 0) $
                AND  smearsnmed[0,*] GT 1.0 $
                AND  smearsnmed[1,*] GT 1.0)
 

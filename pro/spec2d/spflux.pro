@@ -93,9 +93,10 @@ pro spflux, sciname, fcalibprefix, adderr=adderr
          splog, 'ABORT: No valid blue+red exposure for spectro-photo smear'
          qabort = 1
       endif
-      splog, 'Select exposure ', exposure[ismear], ' for spectro-photo smear'
-
+ 
       smearexpnum = allexpnum[ismear]
+      splog, 'Select exposure ', smearexpnum, ' for spectro-photo smear'
+
       splog, 'Select smear image as exposure #', smearexpnum, $
        ' for spectro-', ispec
       ibsmear = (where(camcolor EQ 'b' AND long(camspecid) EQ ispec $
@@ -138,22 +139,32 @@ if (NOT keyword_set(qabort)) then begin ; Do we abort on this spectrograph ???
           AND exposure EQ allexpnum[iexp]))[0]
          ired = (where(camcolor EQ 'r' AND long(camspecid) EQ ispec $
           AND exposure EQ allexpnum[iexp]))[0]
-         if (iblue NE -1) then bluefile = sciname[iblue] $
-          else bluefile = ''
-         if (ired NE -1) then redfile = sciname[ired] $
-          else redfile = ''
 
-         if (iblue NE -1 AND ired NE -1) then begin
+         camid = -1
+         if (iblue NE -1) then begin
+           bluefile = sciname[iblue] 
+           camid = camspecid[iblue]
+         endif else bluefile = ''
+
+         if (ired NE -1) then begin
+           redfile = sciname[ired] 
+           camid = camspecid[ired]
+         endif else redfile = ''
+
+         if (camid NE -1) then begin
            expstr = string(allexpnum[iexp], format='(i8.8)')
-           corrfile = 'spFluxcorr-' + expstr + '-' + camspecid[iblue] + '.fits'
+           corrfile = 'spFluxcorr-' + expstr + '-' + camid + '.fits'
 
-           if keyword_set(bluelist) then bluelist = [bluelist, bluefile] $
+           if size(bluelist,/tname) EQ 'STRING' then $
+              bluelist = [bluelist, bluefile] $
            else bluelist = bluefile 
 
-           if keyword_set(redlist) then redlist = [redlist, redfile] $
+           if size(redlist,/tname) EQ 'STRING'  then $
+              redlist = [redlist, redfile] $
            else redlist = redfile 
 
-           if keyword_set(corrlist) then corrlist = [corrlist, corrfile] $
+           if size(corrlist,/tname) EQ 'STRING' then $
+              corrlist = [corrlist, corrfile] $
            else corrlist = corrfile 
          endif
 
