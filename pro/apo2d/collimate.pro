@@ -42,7 +42,7 @@
 ; EXAMPLES:
 ;   Solve for the focus of all 4 CCD's from exposures 10812+10813
 ;   on MJD 52161:
-;     IDL> collimate, 52161, indir='/data/spectro/52161'
+;     IDL> collimate, 10812, indir='/data/spectro/52161'
 ;
 ; BUGS:
 ;
