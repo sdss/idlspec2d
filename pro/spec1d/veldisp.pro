@@ -149,9 +149,9 @@ pro veldisp, objflux, objerr, objwave, starflux, starerr, starwave, result, klo_
             fluxfft, fluxfilt, fluxvar0, fluxvariancefft, fluxerr_pad, $
             keep=keep*10.^(fitcen/10000.)
           
-          fitredshift, fluxfilt, fluxerr_pad, starfilt, starerr_pad, $
-            nsearch=5, zfit=fitcen, z_err=fitcen_err, $
-            veldispfit=galsigma, veldisp_err=galsigma_err, doplot=doplot
+;          fitredshift, fluxfilt, fluxerr_pad, starfilt, starerr_pad, $
+;            nsearch=5, zfit=fitcen, z_err=fitcen_err, $
+;            veldispfit=galsigma, veldisp_err=galsigma_err, doplot=doplot
       ENDIF 
 
       result[iobj].z = 10.^(fitcen/10000)-1. ; dimensionless z
@@ -169,11 +169,11 @@ pro veldisp, objflux, objerr, objwave, starflux, starerr, starwave, result, klo_
 ; Should really store sigma squared, and allow negative values; error
 ; should reflect it - DPF ???
       if (galsigma GT starsigma AND starsigma GT 0.0) then begin
-         result[iobj].sigma_cc = galsigma^2 - starsigma^2
+         result[iobj].sigma2_cc = galsigma^2 - starsigma^2
 
 ; fix this
-         result[iobj].sigma_cc_err = sqrt((galsigma*galsigma_err)^2 + $
-          (starsigma*starsigma_err)^2)/result[iobj].sigma_cc
+         result[iobj].sigma2_cc_err = sqrt((galsigma*galsigma_err)^2 + $
+          (starsigma*starsigma_err)^2)/result[iobj].sigma2_cc
       endif
 
       twopiei = 2.0 * PI * complex(0.0,1.0)
@@ -194,8 +194,8 @@ pro veldisp, objflux, objerr, objwave, starflux, starerr, starwave, result, klo_
       bestalpha = -9999.0
 
       if (n_elements(answer) EQ 4) then begin
-         result[iobj].sigma_diff = answer[1]
-         result[iobj].sigma_diff_err = answer[2]
+         result[iobj].sigma2_diff = answer[1]
+         result[iobj].sigma2_diff_err = answer[2]
          bestalpha = answer[3]
       endif
 
@@ -208,20 +208,20 @@ pro veldisp, objflux, objerr, objwave, starflux, starerr, starwave, result, klo_
       ENDIF 
 
       if (n_elements(answerq) EQ 4) then begin
-         result[iobj].sigma_quotient = answerq[1]
-         result[iobj].sigma_quotient_err  = answerq[2]
+         result[iobj].sigma2_quotient = answerq[1]
+         result[iobj].sigma2_quotient_err  = answerq[2]
          bestalpha_q = answerq[3]
       endif
 
       IF NOT keyword_set(noquotient) THEN BEGIN
           r = result[iobj]
-          print, iobj, r.plate, r.fiber, r.z, r.z_err, r.sigma_cc, $
-            r.sigma_cc_err, r.sigma_quotient, r.sigma_quotient_err, $
+          print, iobj, r.plate, r.fiber, r.z, r.z_err, r.sigma2_cc, $
+            r.sigma2_cc_err, r.sigma2_quotient, r.sigma2_quotient_err, $
             format='(i4,i5,i4,f8.5," +/-",f8.5,2(f8.3," +-",f6.3))'
 
       ENDIF ELSE BEGIN 
           print, iobj, result[iobj].z, result[iobj].z_err,  $
-            result[iobj].sigma_cc, result[iobj].sigma_cc_err, $
+            result[iobj].sigma2_cc, result[iobj].sigma2_cc_err, $
             format='(i4,f9.3,3(f8.3))'
       ENDELSE 
 
