@@ -97,7 +97,8 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
 
    fullname = (findfile(filepath(filename, root_dir=indir), count=ct))[0]
    if (ct NE 1) then begin
-      splog, 'Found '+string(nfiles)+' instead of 1'
+      splog, 'Found '+string(ct)+' instead of 1'
+      print, fullname
       return
    endif
 
@@ -226,6 +227,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
          spawn, 'scp1 ' + htmlfile + ' ' + $
           filepath('logfile-current.html', root_dir=copydir)
          spawn, 'scp1 ' + plotfile + ' ' + copydir
+         spawn, 'scp1 ' + logfile  + ' ' + copydir
          splog, 'Done.'
       endif
    endif
