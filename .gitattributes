@@ -101,8 +101,6 @@ pro/spec1d/spec_append.pro -text
 pro/spec1d/spgo.pro -text
 pro/spec1d/spreduce1d.pro -text
 pro/spec1d/veldisp.pro -text
-pro/spec1d/veldisp_fft.pro -text
-pro/spec1d/veldisp_struc.pro -text
 pro/spec1d/wavelets.pro -text
 pro/spec2d/Makefile -text
 pro/spec2d/TODO -text
