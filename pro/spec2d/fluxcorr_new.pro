@@ -260,8 +260,8 @@ pro fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
 
          bad = where(djs_median(corrimage,1) GT 5.0*median(corrimage),nbad)
          if bad[0] NE -1 then begin
-           splog, 'WARNING: Large deviations in flux correction '
-           splog, 'WARNING: Replacing with median solution in fibers:', $
+           splog, 'Warning: Large deviations in flux correction '
+           splog, 'Warning: Replacing with median solution in fibers:', $
                 string(bad + 1)
            corrset.coeff[*,bad] = mediancoeff # replicate(1,nbad)
            fibersn[bad] = 3
