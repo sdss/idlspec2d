@@ -167,6 +167,7 @@ pro/spec1d/writespec.pro -text
 pro/spec1d/zcompute.pro -text
 pro/spec1d/zfind.pro -text
 pro/spec1d/zfitmax.pro -text
+pro/spec1d/zplot.pro -text
 pro/spec1d/zrefind.pro -text
 pro/spec1d/ztweak.pro -text
 pro/spec1d/ztweak2.pro -text
