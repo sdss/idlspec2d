@@ -32,6 +32,15 @@
 ;   is 'b1', 'b2', 'r1', and 'r2'.
 ;
 ; EXAMPLES:
+;   The following nights look like they contain a flat sequence:
+;     51686 51781 51809 51852 51893 51950 51978 52010 52038 52069
+;   Generate one of these sets of flats with:
+;     spflatgen, mjd=51781, outdir='.'
+;
+;   The initial set of pixel flats were generated using six of the
+;   flats taken on MJD=51441 from three different plates: exposure
+;   numbers 1351,1352,1362,1363,1372,1373 with exp #1350 as the
+;   fiducial flat and #1347 as the arc.
 ;
 ; BUGS:
 ;
