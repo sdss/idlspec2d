@@ -67,7 +67,7 @@ fi
 # Decide what the current version of idlspec2d is.
 
 # vers=`echo $SETUP_IDLSPEC2D | awk '{print $2}'`
-vers=`echo "print,idlspec2d_version()" | idl`
+vers=`echo "print,idlspec2d_version()" | idl 2> /dev/null`
 
 #------------------------------------------------------------------------------
 # Construct the cron file to be loaded.  Start with the existing cron file,
