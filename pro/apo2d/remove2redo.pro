@@ -151,6 +151,7 @@ pro remove2redo, mjd=mjd, plate=plate, expnum=expnum
    ; Lock the file to do this - otherwise we might read/write to a partially
    ; written file.
 
+   splog, 'Trying to lock the logfile  ' + logfile
    while(djs_lockfile(logfile) EQ 0) do wait, 1
 
    ;----------
@@ -161,7 +162,7 @@ pro remove2redo, mjd=mjd, plate=plate, expnum=expnum
    ; that plate have been succesfully reduced, and we will try re-reducing
    ; the others.
 
-   splog, 'Looking at logfile=' + logfile
+   splog, 'Reading the logfile ' + logfile
    for thishdu=1, 5 do begin
       rstruct = mrdfits(logfile, thishdu, /silent)
       nstruct = n_elements(rstruct)
@@ -171,8 +172,12 @@ pro remove2redo, mjd=mjd, plate=plate, expnum=expnum
          for i=0, nstruct-1 do $
           qkeep[i] = total(rstruct[i].expnum EQ expnum) EQ 0
          ikeep = where(qkeep, nkeep)
-         if (nkeep LT nstruct) then $
-          djs_modfits, logfile, rstruct[ikeep], exten_no=thishdu
+         if (nkeep LT nstruct) then begin
+            if (nkeep EQ 0) then $
+             djs_modfits, logfile, 0, exten_no=thishdu $
+            else $
+             djs_modfits, logfile, rstruct[ikeep], exten_no=thishdu
+         endif
       endif
 
       if (keyword_set(plate) AND keyword_set(rstruct)) then begin
@@ -191,7 +196,10 @@ pro remove2redo, mjd=mjd, plate=plate, expnum=expnum
             ikeep = where(qkeep, nkeep)
             if (nkeep LT nstruct) then begin
                splog, 'Removing ', nstruct-nkeep, ' warning and abort messages'
-               djs_modfits, logfile, rstruct[ikeep], exten_no=thishdu
+               if (nkeep EQ 0) then $
+                djs_modfits, logfile, 0, exten_no=thishdu $
+               else $
+                djs_modfits, logfile, rstruct[ikeep], exten_no=thishdu
             endif
          endelse
       endif
