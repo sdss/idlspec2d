@@ -280,6 +280,7 @@ pro/spec2d/read1spec.pro -text
 pro/spec2d/read2dout.pro -text
 pro/spec2d/readidlout.pro -text
 pro/spec2d/readplugmap.pro -text
+pro/spec2d/redmonster.pro -text
 pro/spec2d/reject_arc.pro -text
 pro/spec2d/reject_flat.pro -text
 pro/spec2d/sdsshead.pro -text

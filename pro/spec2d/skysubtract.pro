@@ -56,6 +56,7 @@
 ;   bspline_iterfit()
 ;   bspline_valu()
 ;   splog
+;   redmonster
 ;   traceset2xy
 ;
 ; REVISION HISTORY:
@@ -159,8 +160,6 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
 
 ;   objsub = obj - fullfit * (objivar GT 0.0) ; No need to do this.
    objsub = obj - fullfit
-
-   monster, wave[*,iskies], objsub[*,iskies]
 
    ;----------
    ; Fit to sky variance (not inverse variance)
@@ -292,6 +291,19 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    ; Reselect the values of SKYIVAR from OBJSUBIVAR
 ;   skyivar = (objsubivar[*,iskies])[*]
 ;   skyivar = skyivar[isort]
+
+   ;----------
+   ; Set the BADSKYCHI mask bit at any wavelength where the relative chi^2
+   ; for the sky fibers is greater than 4.
+   ; Also, look for the Red Monster (any bad region contiguous in wavelength)
+
+   if (keyword_set(relchi2)) then begin
+      if (keyword_set(pixelmask)) then $
+       pixelmask = pixelmask OR pixelmask_bits('BADSKYCHI') * (relchi2fit GT 4)
+
+;      monster, wave[*,iskies], objsub[*,iskies]
+      redmonster, relwave, relchi2, wave, pixelmask=pixelmask
+   endif
 
    ;----------
    ; If any pixels on the image are outside of the wavelength range
