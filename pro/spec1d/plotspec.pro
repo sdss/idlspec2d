@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   plotspec, plate, [ fiberid, mjd=, znum=, nsmooth=, /zline, /nosyn, /noerr, $
 ;    /sky, /ormask, /andmask, psfile=, /restframe, /netimage, $
-;    /zwarning, topdir=, _EXTRA= ]
+;    /zwarning, /allexp, topdir=, _EXTRA= ]
 ;
 ; INPUTS:
 ;   plate      - Plate number(s)
@@ -41,11 +41,13 @@
 ;   netimage   - If set, then launch a Netscape browser with the object
 ;                image from Steve Kent's web site.  This only works if
 ;                Netscape is running and has permissions at the site
-;                "http://sdssmosaic.fnal.gov:8015".
+;                "http://sdssmosaic.fnal.gov:8015". ???
 ;                This is disabled if PSFILE is set.
 ;   zwarning   - If set, then only select those non-sky fibers where the
 ;                ZWARNING flag has been set; can be used with or without
 ;                specifying fiber numbers with FIBERID.
+;   allexp     - If set, then plot all the individual exposure spectra,
+;                rather than the co-added spectrum.
 ;   topdir     - Top-level directory for data; default to the environment
 ;                variable $SPECTRO_DATA.
 ;   _EXTRA     - Kewords for SPLOT and XYOUTS, such as XRANGE, YRANGE, THICK.
@@ -159,7 +161,8 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
  zline=q_zline, nosyn=nosyn, noerr=noerr, sky=sky, $
   ormask=ormask, andmask=andmask, $
  psfile=psfile, xrange=passxr, yrange=passyr, noerase=noerase, $
- restframe=restframe, netimage=netimage, topdir=topdir, _EXTRA=KeywordsForSplot
+ restframe=restframe, netimage=netimage, allexp=allexp, $
+ topdir=topdir, _EXTRA=KeywordsForSplot
 
    cspeed = 2.99792458e5
    textcolor = 'green'
@@ -169,11 +172,17 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
 
    readspec, plate, fiberid, mjd=mjd, znum=znum, flux=objflux, $
     wave=wave, plug=plug, zans=zans, topdir=topdir, /silent
-   if (keyword_set(restframe)) then wave = wave / (1. + zans.z)
    if (NOT keyword_set(objflux)) then begin
       print, plate, mjd, fiberid, $
        format='("Spectrum not found for plate=", i4, " MJD=", i5, " fiber=", i3)'
       return
+   endif
+   if (keyword_set(allexp)) then $
+    readonespec, plate, fiberid, mjd=mjd, wave=allwave, flux=allflux, $
+     topdir=topdir, /silent
+   if (keyword_set(restframe)) then begin
+      wave = wave / (1. + zans.z)
+      if (keyword_set(allwave)) then allwave = allwave / (1. + zans.z)
    endif
    if (NOT keyword_set(noerr)) then $
     readspec, plate, fiberid, mjd=mjd, flerr=objerr, topdir=topdir, /silent
@@ -231,9 +240,13 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
    if (keyword_set(restframe)) then xtitle = 'Rest-Frame Wavelength [Ang]' $
     else xtitle = 'Observed Wavelength [Ang]'
    if (keyword_set(psfile)) then begin
-      djs_plot, wave, objflux, xrange=xrange, yrange=yrange, $
+      djs_plot, xrange, yrange, /nodata, xrange=xrange, yrange=yrange, $
        xtitle=xtitle, ytitle=TeXtoIDL('Flux [10^{-17} erg/s/cm^2/Ang]'), $
        title=title, charsize=csize, _EXTRA=KeywordsForSplot, /xstyle, /ystyle
+      if (keyword_set(allexp)) then $
+       djs_oplot, allwave, allflux, psym=3, _EXTRA=KeywordsForSplot $
+      else $
+       djs_oplot, wave, objflux, _EXTRA=KeywordsForSplot
       if (NOT keyword_set(noerr)) then $
        djs_oplot, wave, objerr, color='red', _EXTRA=KeywordsForSplot
       if (keyword_set(sky)) then $
@@ -242,9 +255,11 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
        djs_oplot, wave, synflux, color='blue', lw=2, _EXTRA=KeywordsForSplot
    endif else begin
       if (NOT keyword_set(noerase)) then $
-       splot, wave, objflux, xrange=xrange, yrange=yrange, $
+       splot, xrange, yrange, /nodata, xrange=xrange, yrange=yrange, $
         xtitle=xtitle, ytitle=TeXtoIDL('Flux [10^{-17} erg/cm/s/Ang]'), $
-        title=title, charsize=csize, _EXTRA=KeywordsForSplot $
+        title=title, charsize=csize, _EXTRA=KeywordsForSplot
+      if (keyword_set(allexp)) then $
+       soplot, allwave, allflux, psym=3, _EXTRA=KeywordsForSplot $
       else $
        soplot, wave, objflux, _EXTRA=KeywordsForSplot
       if (NOT keyword_set(noerr)) then $
@@ -375,8 +390,8 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
  zline=zline, nosyn=nosyn, noerr=noerr, sky=sky, $
  ormask=ormask, andmask=andmask, $
  psfile=psfile, xrange=xrange, yrange=yrange, noerase=noerase, $
- restframe=restframe, netimage=netimage, zwarning=zwarning, topdir=topdir, $
- _EXTRA=KeywordsForSplot
+ restframe=restframe, netimage=netimage, zwarning=zwarning, allspec=allspec, $
+ topdir=topdir, _EXTRA=KeywordsForSplot
 
    if (n_params() LT 1) then begin
       doc_library, 'plotspec'
@@ -527,7 +542,8 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
        znum=znum, nsmooth=nsmooth, zline=zline, nosyn=nosyn, noerr=noerr, $
        sky=sky, ormask=ormask, andmask=andmask, psfile=psfile, $
        xrange=xrange, yrange=yrange, noerase=noerase, netimage=netimage, $
-       restframe=restframe, topdir=topdir, _EXTRA=KeywordsForSplot
+       restframe=restframe, allexp=allexp, topdir=topdir, $
+       _EXTRA=KeywordsForSplot
 
       if (keyword_set(psfile)) then begin
          if (NOT keyword_set(q_onefile) OR ifiber EQ nfiber-1) then dfpsclose
