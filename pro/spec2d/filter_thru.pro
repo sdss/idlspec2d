@@ -122,12 +122,13 @@ function filter_thru, flux, waveimg=waveimg, wset=wset, mask=mask, $
 ;      else $
 ;       filtimg[*] = interpol(fthru, fwave, newwaveimg) 
       linterp, fwave, fthru, newwaveimg[*], filtimg
+      filtimg = filtimg * logdiff
+
       if (size(newwaveimg,/n_dimen) EQ 1) then $
        filtimg = filtimg # replicate(1,ntrace) $
       else $
        filtimg = reform(filtimg, size(flux,/dimens))
 
-      filtimg = filtimg * logdiff
 
       if (keyword_set(mask)) then $
        res[*,ifile] = total(flux_interp * filtimg, 1) $
@@ -136,9 +137,9 @@ function filter_thru, flux, waveimg=waveimg, wset=wset, mask=mask, $
 
       sumfilt = total(filtimg,1)
       res[*,ifile] = res[*,ifile] / (sumfilt + (sumfilt LE 0))
-
    endfor
 
    return, res
 end
+
 ;------------------------------------------------------------------------------
