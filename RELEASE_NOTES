@@ -194,6 +194,39 @@ sprobot.sh: Run the same version of the idlspec2d product as is set up
 
 In idlutils:
 
+All Goddard libraries updated to the versions as of 3 January 2002 from
+the web site "http://idlastro.gsfc.nasa.gov/homepage.html".  It looks like
+the last time I did any updates was exactly two years ago, on 5 Jan 2000.
+The following procedures moved within the Goddard repository:
+      astro/oploterr.pro (moved from /jhuapl)
+The following duplicate procedure was removed from the Goddard repository:
+      misc/ydn2md.pro (other copy is in /plot)
+All of the procedures in pro/tape_io have been removed from Goddard.
+The following procedures are new to the Goddard repository:
+      astro/cosmo_param.pro
+      astro/galage.pro
+      astro/lumdist.pro
+      astro/observatory.pro
+      astro/planet_coords.pro
+      astro/gal_uvw.pro
+      astro/calz_unred.pro
+      astro/jplephinterp.pro
+      astro/jplephread.pro
+      astro/tdb2tdt.pro
+      astro/jplephtest.pro
+      astro/lsf_rotate.pro
+      fits/fxmove.pro
+      idlphot/pixwt.pro
+      math/meanclip.pro
+      math/minf_parabol_d.pro
+      math/value_locate.pro
+      math/asinh.pro
+      misc/fstring.pro
+      misc/n_bytes.pro
+      misc/checksum32.pro
+      plot/vsym.pro
+Files in goddard/data and goddard/text have also been added+deleted+modified.
+
 BSPLINE_ITERFIT: Properly passing INMASK to allow for recouping lost data
            points.  Small cosmetic changes to work clearly with INMASK
            and OUTMASK.
