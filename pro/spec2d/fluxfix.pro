@@ -26,8 +26,9 @@ pro fluxfix
       corrset = mrdfits('spFluxcorr-'+expstr+'-'+spec+'.fits',1)
       traceset2xy, corrset, loglam, corrimg
 
-      divideflat, objflux, objivar, calibfac, minval=0.05*mean(calibfac)
-      divideflat, objflux, objivar, 1.0/corrimg, minval=0.05*mean(1.0/corrimg)
+      divideflat, objflux, invvar=objivar, calibfac, minval=0.05*mean(calibfac)
+      divideflat, objflux, invvar=objivar, 1.0/corrimg, $
+       minval=0.05*mean(1.0/corrimg)
 
       modfits, sciname[iname], objflux, exten_no=0
       modfits, sciname[iname], objivar, exten_no=1

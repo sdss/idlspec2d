@@ -319,7 +319,7 @@ objmask = 0 ; Free memory
         root_dir=combinedir), 1)
       traceset2xy, corrset, loglam, corrimg
 
-      divideflat, objflux, objivar, 1.0/corrimg, $
+      divideflat, objflux, invvar=objivar, 1.0/corrimg, $
        minval=0.1/median(corrimg)
 
       ;----------

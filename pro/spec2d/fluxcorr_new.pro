@@ -240,7 +240,7 @@ pro fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
 
          smearnormflux = smearflux  
          smearnormivar = smearivar
-         divideflat, smearnormflux, smearnormivar, medianimage 
+         divideflat, smearnormflux, invvar=smearnormivar, medianimage 
 
          if medsn[0] NE -1 then begin     
  

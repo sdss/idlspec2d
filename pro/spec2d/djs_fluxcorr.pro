@@ -55,7 +55,7 @@ pro fluxrebin, filename, newloglam, newflux, newivar, adderr=adderr
    dlogimg = abs(dlogimg)
 
    dloglam = newloglam[1] - newloglam[0]
-   divideflat, objflux, objivar, (dlogimg/dloglam), minval=0
+   divideflat, objflux, invvar=objivar, (dlogimg/dloglam), minval=0
 
    ;----------
    ; Linearly interpolate the data onto the new wavelengths

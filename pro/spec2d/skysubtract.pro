@@ -128,7 +128,7 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    skyflux = obj[*,iskies]
    skyivar = objivar[*,iskies]
 
-   divideflat, skyflux, skyivar, airmass_correction[*,iskies]
+   divideflat, skyflux, invvar=skyivar, airmass_correction[*,iskies]
 
    ;----------
    ; Mask any sky pixels where LOWFLAT or NEARBADPIXEL are set.

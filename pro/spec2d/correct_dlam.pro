@@ -49,9 +49,9 @@ pro correct_dlam, flux, fluxivar, wset, dlam=dlam, inverse=inverse
    dlogimg = abs(upper - lower)
 
    if keyword_set(inverse) then $
-      divideflat, flux, fluxivar, (dlam/dlogimg), minval=0 $
+    divideflat, flux, invvar=fluxivar, (dlam/dlogimg), minval=0 $
    else $
-      divideflat, flux, fluxivar, (dlogimg/dlam), minval=0
+    divideflat, flux, invvar=fluxivar, (dlogimg/dlam), minval=0
 
    return
 end

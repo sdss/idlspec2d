@@ -276,7 +276,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ;------------------
    ; Flat-field the extracted object fibers with the global flat
 
-   divideflat, flux, fluxivar, fflat
+   divideflat, flux, invvar=fluxivar, fflat
  
    pixelmask = pixelmask OR ((fflat LT 0.5) * pixelmask_bits('LOWFLAT'))
 
@@ -346,7 +346,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
      superfit = smooth_superflat(superflatset, airset, $
         plottitle=plottitle+'Smooth superflat for '+objname)
      if keyword_set(superfit) then begin
-       divideflat, flux, fluxivar, superfit 
+       divideflat, flux, invvar=fluxivar, superfit 
        sxaddpar, objhdr, 'SFLATTEN', 'T', ' Superflat has been applied'
      endif
    endif  
@@ -465,7 +465,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
        fibermask=fibermask, $
        plottitle=plottitle+'Telluric correction for '+objname)
 
-      divideflat, flambda, flambdaivar, telluricfactor, minval=0.1
+      divideflat, flambda, invvar=flambdaivar, telluricfactor, minval=0.1
 
    endif
 
@@ -477,7 +477,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 ;    color=color, lower=3.0, upper=3.0, fibermask=fibermask)
 ;
 ;   minfluxfactor = median(fluxfactor) * 0.01
-;   divideflat, flambda, flambdaivar, fluxfactor, minval=minfluxfactor
+;   divideflat, flambda, invvar=flambdaivar, fluxfactor, minval=minfluxfactor
 
    ;----------
    ; Interpolate over masked pixels, just for aesthetic purposes

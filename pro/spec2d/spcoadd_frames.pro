@@ -243,7 +243,7 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
       ibad = where(tempwave LT alog10(cwavemin) OR tempwave GT alog10(cwavemax))
       if (ibad[0] NE -1) then calibfac[ibad] = 0
 
-      divideflat, tempflux, tempivar, calibfac, minval=0.05*mean(calibfac)
+      divideflat, tempflux, invvar=tempivar, calibfac, minval=0.05*mean(calibfac)
       temppixmask = temppixmask $
        OR (calibfac LE 0.05*mean(calibfac)) * pixelmask_bits('BADFLUXFACTOR')
 
@@ -263,7 +263,7 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
 
       invertcorr = 1.0 / corrimg
       medcor = median(corrimg)
-      divideflat, tempflux, tempivar, invertcorr, minval=0.1/medcor
+      divideflat, tempflux, invvar=tempivar, invertcorr, minval=0.1/medcor
       temppixmask = temppixmask OR $
            (corrimg GE 10.0 * medcor) * pixelmask_bits('BADFLUXFACTOR')
 

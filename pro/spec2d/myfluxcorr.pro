@@ -31,7 +31,7 @@ pro myfluxcorr, bsmearfile, rsmearfile, bscifile, rscifile, corrfile, $
       if keyword_set(rset) then begin
           smearfluxcalib = [temporary(bsmearfluxcalib),$
                             temporary(rsmearfluxcalib)]
-          divideflat, smearflux, smearivar, smearfluxcalib, minval = 0.0001
+          divideflat, smearflux, invvar=smearivar, smearfluxcalib, minval=0.0001
       endif
 
       ;--------------------------------------------------------------------
@@ -115,7 +115,7 @@ pro myfluxcorr, bsmearfile, rsmearfile, bscifile, rscifile, corrfile, $
 
       if keyword_set(rset) then begin
           scifluxcalib = [temporary(bscifluxcalib),temporary(rscifluxcalib)]
-          divideflat, sciflux, sciivar, scifluxcalib, minval = 0.0001
+          divideflat, sciflux, invvar=sciivar, scifluxcalib, minval=0.0001
       endif
 
      
