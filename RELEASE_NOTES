@@ -3,6 +3,10 @@ Runnable version for P-1D.
 
 CREATE_LINESTRUCT(): Function broken out of LINEBACKFIT so that it
             can be called by SPECLINEFIT.
+LINEBACKFIT: Fix possible crash condition when computing LINENPIX if
+            the line width is unphysically narrow and no pixels fall
+            within the region of an emission line.
+PLOTSPEC: Optional /ZWARNING flag.  Report error if FIBERID out of range.
 READSPEC: Don't fail when asking for SYNFLUX, but the spZ file doesn't exist.
             (This prevented PLOTSPEC from plotting anything in that case.)
 SPCOADD_FRAMES: Remove the following keywords from the spPlate file:
@@ -15,6 +19,9 @@ SPECLINEFIT: Fixed dumb mistake on indexing that could crash.
             entries where we do not measure lines (currently, only
             measuring for GALAXY objects).
 
+mailhtml.sh: Grep for the "APO Spectro" from the HTML file to get the
+            subject line for mail; I had changed this HTML title string,
+            which then gave a missing subject line in the e-mail (PR #3200).
 opHdrFix.par: Declare bad aborted smears for plate 601 and 803.
             Declare bad exposure on plate 866.
             Don't include test data from MJD 52318.
