@@ -36,6 +36,7 @@ fi
 # data directory exists in /data/spectro/$MJD.
 # Only copy the following select set of files:
 #   Unplugged*.ps
+#   exposureLog*.par
 #   fiberScan*.par
 #   guiderMon*.par
 #   op*.par
