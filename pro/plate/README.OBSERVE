@@ -1,0 +1,219 @@
+
+Following is a summary of the special star cluster plates designed
+in Nov 2001.  Each plate has several pointings (tiles) associated
+with them, where each pointing is offset by ~0.2 degrees and has
+holes drilled for a different magnitude range of stars.  There are
+a total of 4 plates with 19 pointings (tiles).  The total number
+of tiled stars is 640 x 4 = 2560.
+
+Cluster   TILE PLATE  RA    DEC    rmag       Nobj  Guide fibers
+--------- ---- -----  ----- -----  ---------  ----  ------------
+Praesepe  9217  798   130.0 +19.6  12.0 15.5   266  3,5,8,10,11
+          9218  798B  129.8 +19.6   9.0 12.2   297  1,4,6
+          9219  798C  130.2 +19.6   5.9  9.2    69  2,7,9
+(HD84937) 9220  798D  146.9 +14.3   8.2          8  11
+--------- ---- -----  ----- -----  ---------  ----  ------------
+Pleiades  9221  799    57.0 +23.7  13.9 17.1   119  3,5,8,10,11
+          9222  799B   56.8 +23.7  11.1 14.1   190  1,6
+          9223  799C   56.6 +23.7   8.3 11.3   262  4,7
+          9224  799D   57.2 +23.7   5.5  8.5    51  2
+          9225  799E   57.4 +23.7   2.9  5.9    10  9
+(BD+21)   9226  799F   63.3 +23.1   9.1          8  11
+--------- ---- -----  ----- -----  ---------  ----  ------------
+N752      9227  800    29.2 +37.7  12.0 15.2   219  3,5,8,10,11
+          9228  800B   29.0 +37.7   9.0 12.2   349  1,4,6
+          9229  800C   29.4 +37.7   6.0  9.2    64  2,7,9
+(HD19445) 9230  800D   46.6 +26.9   7.9          8  11
+--------- ---- -----  ----- -----  ---------  ----  ------------
+N1817     9231  801    78.0 +16.7  15.2 18.2    16  3,5,8,10,11
+          9232  801B   77.8 +16.7  12.8 15.4   232  1,6
+          9233  801C   78.2 +16.7  10.4 13.0   309  4,7
+          9234  801D   78.4 +16.7   8.0 10.6    74  2,9
+(BD+21)   9235  801E   63.2 +23.0   9.1          9  11
+--------- ---- -----  ----- -----  ---------  ----  ------------
+
+The information is pulled simply from the 2MASS files supplied
+by Jill Knapp.  The astrometry is directly from 2MASS; no proper
+motions have been applied.  Some of these clusters are supplemented
+with Tycho stars that were not in Jill's files.  Those Tycho objects
+were put in epoch 1998 equinox J2000 to be roughly consistent with 2MASS.
+The epoch does not matter much as long as it's consistent.  Guide stars
+are drawn from the same lists in the magnitude range [10.5,12.5].
+
+For objects NOT drawn from a membership list, only those 
+with an optical counterpart in the 2MASS catalog were considered.
+
+In most cases, the priority is
+  * bright stars + Hipparcos supplement
+  * members
+  * fainter stars
+However, NGC 1817 is the exception.  There the priority is
+  * members
+  * other stars (and not super-bright)
+
+There are no explicit sky-fiber positions for any of these plates.  In
+each pointing, the objects that appear in that pointing will be called
+OBJECT/SERENDIPITY_MANUAL.  All other fibers (which are real objects
+in other pointings) will be called OBJECT/SKY and used for sky-subtraction.
+For all but the last pointing, those are the only type of objects.
+
+Some objects will appear on two pointings of the same plate, since I've
+intentionally chosen the magnitude ranges to slightly overlap.
+
+The last pointings will be used for spectro-photometry.  They have 9 or 10
+holes drilled directly north & south of guide fiber #11.  A smear of one
+of the five SDSS fundamental standard stars will obtain 9 spectra of that
+star. Those pointings only have the 10 OBJECT/SPECTROPHOTO_STD holes and
+630 OBJECT/SKY holes.
+
+We've approximated SDSS ugriz magnitudes for the Tycho stars with:
+    u = V - 0.024 + 2.317 * (B-V)  (Npts= 226)
+    g = V - 0.081 + 0.544 * (B-V)  (Npts= 184)
+    r = V + 0.140 - 0.477 * (B-V)  (Npts= 219)
+    i = V + 0.341 - 1.002 * (B-V)  (Npts= 198)
+    z = V + 0.509 - 1.360 * (B-V)  (Npts= 200)
+The above fits were done to the MT secondary standards (assuming
+that Tycho B+V are approximately Johnson.)
+
+The 2MASS catalogs list B+R magnitudes that are related to Tycho B+V
+magnitudes as follows:
+   B_Tycho = R_2MASS + 0.749 * (B-R)_2MASS + 0.033
+   V_Tycho = R_2MASS - 0.093 * (B-R)_2MASS - 0.003
+For those objects in 2MASS that only list JHK magnitudes, I transform with:
+   B_2MASS = J + 4.51 * (J-K) + 0.22
+   R_2MASS = J + 2.26 * (J-K) + 0.08
+   (B-R)_2MASS = 2.25 * (J-K) + 0.14
+
+The guide stars are chosen from the same input list of objects,
+but in the limited magnitude range of r=[10.5,12.5].  This is significantly
+brighter than the usual SDSS guide stars which are at about r=15 and
+don't give very good S/N on the guide camera.  Note that an object can
+be a guide star for one pointing and a science target on another pointing.
+The only guide fiber that is re-used on more than one pointing is #11,
+which is used for the last (spectrophotometric) pointing.
+
+The code that generated all the plugmap and associated files is in the
+"idlspec2d" product in the "pro/plate" directory.
+
+We will need some minor modifications of the fiber-mapper code at APO
+to deal with these plugmap files.  The observing code (SOP) hopefully
+will require no modification, and the on-the-mountain reductions (SOS)
+should also work fine.  Once the data are taken, Spectro-2D will need
+some more serious modifications to deal with it.
+
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+PRAESEPE
+
+Praesepe:  We're missing a small band of data near RA=129.5.
+
+Plate center: RA=130, dec = 19.6
+
+Scott Burles found a membership list from Wang et al 1995.
+This gave 88 matches (1") to 2MASS at J>10.
+File: praesepe.match
+
+I then took all stars with J<10 on the plate.  This gave 215 stars.  
+File: praesepe.j10
+
+I then took all stars with 10<J<13, downweighting by  
+(d<0.5?1:(d/0.5)**-2), where d is the distance from the plate center.
+This gave 531 more stars, but I forgot to remove the members, so there
+will be ~450 new stars.
+File: praesepe.j13
+
+-------------------------------------------------------------------------------
+PLEIADES
+
+We're missing a lot of data: the quadrant at ra<56.5 and dec>24,
+plus another patch at dec>24, 58<ra<58.6, plus a couple strips.
+I moved the plate center a bit to avoid these: ra = 57.0, dec = 23.7.
+
+Also, the brightest stars (V<5.5 or so) seem to be missing from 2MASS; 
+we'll have to add them in from Hipparcos.
+
+The Pleiades is big enough that the clustering on the plate won't be
+much of a problem.
+
+I take all stars with J<10.  This gave 255 stars.
+File: pleiades.j10
+
+I then take all stars with J<14, downweighting by (J<11?1:0.15*(15-J))
+(not that this is not continuous at J=11, but I needed to downweight the
+fainter stars somewhat).  This gave 1113 stars.
+File: pleiades.j14.
+
+I don't seem to have a membership catalog handy, but I think that the
+density of members is so high that we won't care.
+
+Note that the nebulousity may affect our sky subtraction!
+
+-------------------------------------------------------------------------------
+N752
+
+We are missing data at RA>30 (and a small band at 27.8ish), so I 
+moved the plate center off the cluster center a bit.
+
+Plate center: ra = 29.25, dec = 37.68
+
+Scott Burles found a membership list from Daniel et al 1994.
+This gave 98 matches (1") to 2MASS at J>10.
+File: n752.match
+
+I then took all stars with J<10 on the plate.  This gave 238 stars.  
+File: n752.j10
+
+I then took all stars with 10<J<14 that were not members, downweighting
+by  (d<0.5?1:(d/0.5)**-2) * (J<11?1:0.25*(15-J), where d is the distance
+from the cluster center (RA=29.45, dec=37.68, not the plate center).
+This gave 647 more stars.
+File: n752.j14
+
+The priorities here should be j10, match, and finally j14.
+Also, the Hipparcos catalog will have some extra bright stars that 
+we didn't have 2Mass data for.  We should have room to add them.
+
+-------------------------------------------------------------------------------
+N1817
+
+This cluster is closer to the galactic plane and further away, 
+hence the contamination by field stars is worse.  This leads to special
+instructions as regards priorities and bright limits!
+Don't include Tycho/Hipparcos stars.
+
+Fortunately, Scott Burles found a membership list from Balaguer-Nunnez 
+et al 1998.  I took objects whose P_field was less than 0.5.  Matching (1") 
+to 2MASS gave 478 stars, highly concentrated toward the center of the field.
+WE SHOULD GIVE THESE STARS HIGHEST PRIORITY.
+File: n1817.match
+
+To fill out the plate, I took stars with 8 < J < 11, downweighting the
+fainter stars by the probability (J<9?1:0.25*(13-J)).  This gives 538
+stars (that weren't member matchs), which are not strongly clustered to the 
+center of the plate.  Chances are that most of these stars are not cluster 
+members, and moreover there is probably no room at the center of the plate 
+for any more objects.
+File: n1817.j11
+
+Note that these stars are *not* as bright as for other clusters.  We 
+probably want a bright limit of about 8th mag.  There is no point in
+including brighter field stars if they simply require another pointing.
+
+There were no serious data gaps in this field.
+Plate center: RA = 78.03, dec = 16.70
+
+-------------------------------------------------------------------------------
+M67
+
+We have some data for this, but we've decided to observe the existing
+plate, number 321, rather than re-drill.
+
+We probably need some fresh observing instructions for this plate.
+
+-------------------------------------------------------------------------------
+h/chi Persei
+
+No 2MASS data available yet.  We haven't tried to solve the
+astrometry for Eva's UBVI photometry.
+-------------------------------------------------------------------------------
+
