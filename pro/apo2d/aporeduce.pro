@@ -193,6 +193,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
 
    logfile = filepath('logfile-' + mjdstr + '.fits', root_dir=outdir)
    htmlfile = filepath('logfile-' + mjdstr + '.html', root_dir=outdir)
+   currentfile = filepath('logfile-current.html', root_dir=outdir)
     
    ;----------
    ; Find the full name of the plugmap file
@@ -384,14 +385,23 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       apo_log2html, logfile, htmlfile
       splog, 'Done generating HTML file'
 
-;
-;	scp1 does not work on sos, let's switch to scp
-;
+      ; Generate a copy of the HTML file, 'logsheet-current.html',
+      ; that includes the Java script to auto-load the page every 60 seconds.
+
+      squote = "\'"
+      addstring = $
+       '<BODY ONLOAD=\"timerID=setTimeout(' $
+       +squote+'location.reload(true)'+squote+',60000)\">'
+      sedcommand = '"s/<\/HEAD>/<\/HEAD>'+addstring+'/g"'
+      setenv, 'SHELL=bash'
+      spawn, 'sed -e ' + sedcommand + ' ' + htmlfile + ' > ' + currentfile
+
+       ; scp1 does not work on sos.apo, let's switch to scp
+
       if (keyword_set(copydir)) then begin
          splog, 'Copying files to ', copydir
          spawn, 'scp ' + htmlfile + ' ' + copydir
-         spawn, 'scp ' + htmlfile + ' ' + $
-          filepath('logfile-current.html', root_dir=copydir)
+         spawn, 'scp ' + currentfile + ' ' + copydir
          spawn, 'scp ' + logfile  + ' ' + copydir
          if (keyword_set(plotfile)) then $
           spawn, 'scp ' + plotfile + ' ' + copydir
