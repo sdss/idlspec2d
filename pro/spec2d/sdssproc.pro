@@ -58,6 +58,7 @@
 ;   over A/D saturations (in ADMASK) before constructing SMEARIMG.
 ;
 ; PROCEDURES CALLED:
+;   djs_filepath()
 ;   djs_iterstat
 ;   fileandpath()
 ;   headfits()
@@ -83,6 +84,9 @@
 ;                to correct the light for that (DJS).
 ;   04-Feb-2000  Declare that the shutter was open if it is a >640 sec
 ;                exposure taken before MJD=51570 (DJS).
+;   26-Jul-2000  Added fix for "dropped pixel" problem for data on or after
+;                MJD=51688 (23 May 2000).  Should disable this code for later
+;                MJD's once this problem is fixed in the electronics.
 ;-
 ;------------------------------------------------------------------------------
 
@@ -123,8 +127,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    readivar = arg_present(invvar) OR keyword_set(varfile) $
     OR arg_present(nsatrow) OR arg_present(fbadpix)
 
-   if (keyword_set(indir)) then fullname = filepath(infile, root_dir=indir) $
-    else fullname = infile
+   fullname = djs_filepath(infile, root_dir=indir)
    fullname = (findfile(fullname, count=ct))[0]
    if (ct NE 1) then $
     message, 'Cannot find image ' + infile
@@ -134,7 +137,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    else $
     hdr = headfits(fullname)
 
-   ;------
+   ;-----------
    ; Determine which CCD from the file name itself, using either the
    ; numbering scheme (01,02,03,04) or naming scheme (b1,r2,b2,r1).
    ; Very bad form, but this information is not in the header since
@@ -200,7 +203,45 @@ pro sdssproc, infile, image, invvar, indir=indir, $
 
    if (NOT readimg AND NOT readivar) then return
 
-   ;------
+   ;-----------
+   ; Fix the "dropped pixel" problem in the electronics that appeared
+   ; on MJD=51688 (23 May 2000) for spectrograph-2.
+   ; Note that the bad rows need to be identified on the red frame,
+   ; so if we are reducing b2, we need to read in the image for r2
+   ; to identify the bad rows.
+   ; Reference e-mail discussion with JEG on 01-Jun-2000.
+
+   if ((mjd GE 51688) AND (camname EQ 'b2' OR camname EQ 'r2') $
+    AND (readimg OR readivar)) then begin
+      if (camname EQ 'b2') then begin
+         i1 = strpos(infile,'b2',/reverse_search)
+         if (i1 EQ -1) then $
+          message, 'Unable to parse corresponding red file for '+infile
+         redfile = infile
+         strput, redfile, 'r2', i1
+         reddata = ptr_new( $
+          rdss_fits(djs_filepath(redfile, root_dir=indir), /nofloat) )
+      endif else begin
+         reddata = ptr_new(rawdata)
+      endelse
+
+      ibad = where( (*reddata)[20,*] LT median((*reddata)[20,*]) - 100 $
+       AND (*reddata)[2107,*] GT median((*reddata)[2107,*]) + 100, nbad )
+
+      if (nbad GT 0) then begin
+         splog, 'Fixing ', nbad, ' dropped-pixel rows in raw image'
+         rawdata[1:1063,ibad] = rawdata[0:1062,ibad]
+         rawdata[20,ibad] = median( rawdata[20,ibad] )
+         rawdata[2108:2127,ibad] = rawdata[2107:2126,ibad]
+         rawdata[2107,ibad] = median( rawdata[2107,ibad] )
+      endif
+
+      if (camname EQ 'b2') then begin
+         reddata = 0  ; Free memory
+      endif
+   endif
+
+   ;-----------
    ; Find names of the configurations files
 
    pp = filepath('', root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='examples')
