@@ -6,7 +6,7 @@
 ;   Calling script for SPCOADD_FRAMES.
 ;
 ; CALLING SEQUENCE:
-;   spcombine, [ planfile, docams=, /xdisplay ]
+;   spcombine, [ planfile, docams=, adderr=, /xdisplay ]
 ;
 ; INPUTS:
 ;
