@@ -12,6 +12,7 @@ REDMONSTER: Change the warning message to "Bad sky residuals...",
             is around 6400-6600 Ang, where we think the problem may
             be due to the hand-paddle LED.  This change is for the
             benefit of the observers (from Son-of-Spectro warnings).
+            Also output the peak chi.
 SDSSPROC: Reverted to calls to specflat_version,speclog_version that work.
 SPBIASGEN: New routine for generating mean biases for a night.
 SPREDUCE1D, ZFIND, ZCOMPUTE, FIND_NMINIMA: Plotting and debugging
