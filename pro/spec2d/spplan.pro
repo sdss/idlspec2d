@@ -126,13 +126,19 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
 
    ; Create a list of the MJD directories (as strings)
    if (NOT keyword_set(mjd)) then begin
-      spawn, '\ls '+rawdir, mjdlist
+      spawn, '\ls -d '+rawdir+'/*', mjdlist
    endif else begin
       tmpstring = ''
       for i=0, N_elements(mjd)-1 do $
        tmpstring = tmpstring + ' ' + rawdir+'/'+strtrim(string(mjd[i]),2)
       spawn, '\ls -d '+tmpstring, mjdlist
    endelse
+
+   ; Strip leading directory names from MJDLIST
+   for imjd=0, N_elements(mjdlist)-1 do begin
+      i = rstrpos(mjdlist[imjd], '/') > 0
+      mjdlist[imjd] = strmid(mjdlist[imjd], i)
+   endfor
 
    camnames = ['b1', 'b2', 'r1', 'r2']
    ncam = N_elements(camnames)
