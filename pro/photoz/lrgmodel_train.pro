@@ -22,7 +22,7 @@
 ;   zrange         - Trim to objects in this redshift range; default [0.1,1.0].
 ;   dzweight       - Re-weight the galaxies such that all objects within each
 ;                    redshift interval DZWEIGHT share unit weight; default
-;                    to 0.01; set to 0 to disable this re-weighting.
+;                    to 0.02; set to 0 to disable this re-weighting.
 ;   absdev         - If set, then minimize the absolute value of the redshift
 ;                    deviations, rather than the more conventional square of
 ;                    those deviations.  This should be more robust.
@@ -68,79 +68,9 @@
 ;   mrdfits()
 ;   splog
 ;
-; INTERNAL SUPPORT ROUTINES:
-;   lrgmodel_read_spall()
-;   lrgmodel_append_twodf()
-;
 ; REVISION HISTORY:
 ;   18-Dec-2003  Written by D. Schlegel, Princeton
 ;-
-;------------------------------------------------------------------------------
-function lrgmodel_read_spall, public=public, regenerate=regenerate
-
-   if (size(public,/tname) EQ 'STRING') then pstring = '-'+public[0] $
-    else if (keyword_set(public)) then pstring = '-public' $
-    else pstring = ''
-   trimfile = 'spAll-photoz' + pstring + '.fits'
-
-   foo = findfile(trimfile, count=ct)
-   if (ct EQ 0 OR keyword_set(regenerate)) then begin
-
-      ; Read the spAll file
-      spfile = filepath('spAll'+pstring+'.fits', $
-       root_dir=getenv('SPECTRO_DATA'))
-      foo = findfile(spfile, count=ct)
-      if (ct EQ 0) then message, 'Failed to find file ' + spfile
-
-      columns = ['PROGNAME', 'PLATEQUALITY', 'PLATE', 'FIBERID', 'MJD', $
-       'CLASS', 'SPECPRIMARY', 'PRIMTARGET', 'Z', 'Z_ERR', 'ZWARNING', $
-       'MODELFLUX', 'MODELFLUX_IVAR', 'EXTINCTION']
-      spall = hogg_mrdfits(spfile, 1, columns=columns, $
-       nrowchunk=10000L)
-;       nrowchunk=10000L, range=[0,25000L]) ; ??? Test
-
-      ; Trim to LRGs
-      itrim = where( (strmatch(spall.platequality,'good*') $
-        OR strmatch(spall.platequality,'marginal*')) $
-       AND strmatch(spall.progname,'main*') $
-       AND strmatch(spall.class,'GALAXY*') $
-;       AND total(spall.modelflux_ivar GT 0,1) EQ 5 $ ; photom in all bands
-       AND total(spall.modelflux_ivar[1:3] GT 0,1) EQ 3 $ ; photom in 3 bands
-       AND (spall.primtarget AND (2L^5+2L^26)) NE 0 $ ; Targetted as LRG
-       AND spall.zwarning EQ 0 $
-       AND spall.specprimary EQ 1, ntrim) ; Best spectroscopic observations
-      spall = spall[itrim]
-
-      mwrfits, spall, trimfile, /create
-   endif
-
-   if (NOT keyword_set(spall)) then spall = mrdfits(trimfile, 1)
-   return, spall
-end
-;------------------------------------------------------------------------------
-function lrgmodel_append_twodf, spall, prefix
-
-   blankobj = spall[0]
-   struct_assign, {junk:0}, blankobj
-
-   tdf_dir = getenv('SDSS_2DF_DIR')
-   file1 = filepath('catalogue'+prefix+'.fits', root_dir=tdf_dir, subdir='data')
-   file2 = filepath('calibObj-'+prefix+'.fits', root_dir=tdf_dir, subdir='data')
-   dat1 = mrdfits(file1, 1)
-   dat2 = mrdfits(file2, 1)
-   ndat = n_elements(dat1)
-   if (n_elements(dat2) NE ndat OR NOT keyword_set(dat1)) then $
-    message, 'Problem reading the 2dF data files'
-
-   ; Trim to only good redshifts where we have matched photometry
-   itrim = where(dat1.z_final GT 0.01 AND dat2.modelflux[2] GT 0, ntrim)
-
-   moredat = replicate(blankobj, ntrim)
-   copy_struct, dat2[itrim], moredat
-   moredat.z = dat1[itrim].z_final
-
-   return, [spall, moredat]
-end
 ;------------------------------------------------------------------------------
 pro lrgmodel_train, public=public, regenerate=regenerate, $
  twodf=twodf, zrange=zrange, dzweight=dzweight, absdev=absdev, $
@@ -148,7 +78,7 @@ pro lrgmodel_train, public=public, regenerate=regenerate, $
 
    if (n_elements(twodf) EQ 0) then twodf = ['2003A', '2003B']
    if (n_elements(zrange) EQ 0) then zrange = [0.10, 0.60]
-   if (n_elements(dzweight) EQ 0) then dzweight = 0.01
+   if (n_elements(dzweight) EQ 0) then dzweight = 0.02
 
    splog, file='lrgmodel_train.log'
 
@@ -217,7 +147,7 @@ pro lrgmodel_train, public=public, regenerate=regenerate, $
       endfor
    endfor
 
-   splog, 'Initial guess AGE=', ageburst, ' ZMETAL=', metalguess
+   splog, 'Initial guess AGE=', ageguess, ' ZMETAL=', metalguess
 
    ;----------
    ; Now do the full minimization problem
