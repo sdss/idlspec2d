@@ -42,7 +42,7 @@
 ;     spDiag1d-0306-51690.log
 ;
 ;   Decide which plates constitute unique tiles with the required S/N,
-;   then set QSURVEY=1.  Require (S/N)^2 > 15 for G1,I1,G2,I2.
+;   then set QSURVEY=1.  Require (S/N)^2 > 13 for G1,I1,G2,I2.
 ;   Also require that the target version is not "special" or "devel".
 ;
 ; EXAMPLES:
@@ -70,7 +70,7 @@
 ;------------------------------------------------------------------------------
 pro platelist, plist=plist, create=create
 
-   minsn2 = 15.0
+   minsn2 = 13.0
    fitsfile = djs_filepath('platelist.fits', root_dir=getenv('SPECTRO_DATA'))
    ascfile = djs_filepath('platelist.txt', root_dir=getenv('SPECTRO_DATA'))
 
