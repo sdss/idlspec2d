@@ -105,10 +105,9 @@ pro platecompare, plate, mjd=mjd, topdir=topdir, psfile=psfile
    if (NOT keyword_set(topdir)) then begin
       readspec, platevec, mjd=mjdvec, zans=zansall, plug=plugall
    endif else begin
-      topsave = getenv('SPECTRO_DATA')
       for itop=0, n_elements(topdir)-1 do begin
-         setenv, 'SPECTRO_DATA=' + topdir[itop]
-         readspec, platevec, mjd=mjdvec, zans=zans1, plug=plug1
+         readspec, platevec, mjd=mjdvec, zans=zans1, plug=plug1, $
+          topdir=topdir[itop]
          zansall = struct_append(zansall, zans1)
          plugall = struct_append(plugall, plug1)
          if (itop EQ 0) then $
@@ -176,10 +175,11 @@ pro platecompare, plate, mjd=mjd, topdir=topdir, psfile=psfile
             if (thiszans[ii].zwarning NE 0) then $
              zstring = zstring + $
               '  ZWARNING=' + strtrim(string(thiszans[ii].zwarning),2)
-            if (keyword_set(topdir)) then $
-             setenv, 'SPECTRO_DATA=' + thistop[ii]
+            if (keyword_set(topdir)) then thistop1 = thistop[ii] $
+             else thistop1 = 0
             readspec, thiszans[ii].plate, thiszans[ii].fiberid, $
-             mjd=thiszans[ii].mjd, wave=wave, flux=objflux, synflux=synflux
+             mjd=thiszans[ii].mjd, wave=wave, flux=objflux, synflux=synflux, $
+             topdir=thistop1
             ytitle = 'F_\lambda'
             if (nsmooth GT 1) then begin
                objflux = smooth(objflux, nsmooth)
@@ -208,9 +208,6 @@ pro platecompare, plate, mjd=mjd, topdir=topdir, psfile=psfile
    endfor
 
    if (keyword_set(psfile)) then dfpsclose
-
-   if (keyword_set(topdir)) then $
-    setenv, 'SPECTRO_DATA=' + topsave
 
    return
 end
