@@ -430,7 +430,7 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
             minw=3.94, maxw=3.97, lower=5.0, upper=5.0, ncontbkpts=5, $
             fibermask=fibermask)
 
-         if (keyword_set(contwave1)) then begin
+         if (size(contwave1,/tname) NE 'UNDEFINED') then begin
             !p.multi = [0,1,3]
             djs_plot, 10^contwave1, contflux1, ps=3, xr=10^[3.82,3.87], $
                  yr=[0.0,1.5], ymargin=[2,4], charsize=1.6, xstyle=1, $ 
@@ -444,16 +444,18 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
                  xtitle='\lambda [A]', ytitle='Flux [electrons]'
             djs_oplot,10^contwave1,slatec_bvalu(contwave1,telluricbkpt1, $
                       telluriccoeff1),color='red'
+         endif
 
+         if (size(contwave2,/tname) NE 'UNDEFINED') then begin
             djs_plot,10^contwave2,contflux2,ps=3,yr=[0.0,1.5], $
                  ymargin=[4,2], charsize=1.6, xstyle=1, $ 
                  xtitle='\lambda [A]', ytitle='Flux [electrons]'
             djs_oplot,10^contwave2,slatec_bvalu(contwave2,telluricbkpt2, $
                       telluriccoeff2),color='red'
 
-            !p.multi = 0
          endif
 
+         !p.multi = 0
          telluricfactor = telluric1 * telluric2
          divideflat, flambda, flambdaivar, telluricfactor, minval=0.1
   
