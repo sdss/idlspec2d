@@ -136,7 +136,7 @@ which should return the path for <TT>idl</TT>.
 <DL><DD>
 <TT> setenv IDLUTILS_DIR $HOME/idlutils </TT><BR>
 <TT> setenv IDLSPEC2D_DIR $HOME/idlspec2d </TT><BR>
-<TT> setenv PATH $PATH:$IDLUTILS_DIR/bin </TT><BR>
+<TT> set path = ( $path {$IDLUTILS_DIR}/bin ) </TT><BR>
 <TT> cd $IDLUTILS_DIR </TT><BR>
 <TT> evilmake all </TT><BR>
 <TT> cd $IDLSPEC2D_DIR </TT><BR>
@@ -151,9 +151,9 @@ which should return the path for <TT>idl</TT>.
 <TT> setenv IDL_DEVICE X </TT><BR>
 <TT> setenv IDL_DIR /usr/local/rsi/idl_5.2 </TT><BR>
 <TT> setenv IDL_PATH         .:+$IDL_DIR/lib </TT><BR>
-<TT> setenv IDL_PATH         $IDL_PATH:+$IDLUTILS_DIR/goddard/pro </TT><BR>
-<TT> setenv IDL_PATH         $IDL_PATH:+$IDLUTILS_DIR/pro </TT><BR>
-<TT> setenv IDL_PATH         $IDL_PATH:+$IDLSPEC2D_DIR/pro </TT><BR>
+<TT> setenv IDL_PATH         {$IDL_PATH}:+{$IDLUTILS_DIR}/goddard/pro </TT><BR>
+<TT> setenv IDL_PATH         {$IDL_PATH}:+{$IDLUTILS_DIR}/pro </TT><BR>
+<TT> setenv IDL_PATH         {$IDL_PATH}:+{$IDLSPEC2D_DIR}/pro </TT><BR>
 
 </DL></DD>
 
