@@ -83,16 +83,26 @@ speclimit red flat NGOODFIBER r1 0 310
 speclimit red flat NGOODFIBER r2 0 310
 
 # Issue an error if the spatial widths are gaussians with sigma > 1.10 pix.
+# From the night MJD 52000, the spatial widths from flats were as follows:
+#   b1  0.91 - 0.99
+#   b2  0.82 - 0.88
+#   r1  0.83 - 0.86
+#   r2  0.91 - 1.01
+# From the night MJD 51780, the spatial widths from flats were as follows:
+#   b1  0.92 - 0.99
+#   b2  0.80 - 0.86
+#   r1  0.78 - 0.79
+#   r2  0.87 - 0.94
 
-speclimit red flat XSIGMA b1 1.05 1.10
-speclimit red flat XSIGMA b2 1.05 1.10
-speclimit red flat XSIGMA r1 1.05 1.10
-speclimit red flat XSIGMA r2 1.05 1.10
+speclimit yellow flat XSIGMA b1 1.05 9e9
+speclimit yellow flat XSIGMA b2 1.00 9e9
+speclimit yellow flat XSIGMA r1 1.00 9e9
+speclimit yellow flat XSIGMA r2 1.00 9e9
 
 speclimit red flat XSIGMA b1 1.10 9e9
-speclimit red flat XSIGMA b2 1.10 9e9
-speclimit red flat XSIGMA r1 1.10 9e9
-speclimit red flat XSIGMA r2 1.10 9e9
+speclimit red flat XSIGMA b2 1.05 9e9
+speclimit red flat XSIGMA r1 1.05 9e9
+speclimit red flat XSIGMA r2 1.05 9e9
 
 # The wavelength ranges should match closely to how we tuned the spectrographs
 # on MJD 51612 (8/9 March 2000).  Our best values were:
@@ -153,16 +163,21 @@ speclimit red arc NLAMPS r1 0 30
 speclimit red arc NLAMPS r2 0 30
 
 # Issue an error if the wavelength widths are gaussians with sigma > 1.20 pix.
+# From the night MJD 51780, the dispersion widths from arcs were as follows:
+#   b1  0.94 - 0.99
+#   b2  0.84 - 0.89
+#   r1  0.85 - 0.86
+#   r2  0.84 - 0.87
 
-speclimit red arc WSIGMA b1 1.05 1.10
-speclimit red arc WSIGMA b2 1.05 1.10
-speclimit red arc WSIGMA r1 1.05 1.10
-speclimit red arc WSIGMA r2 1.05 1.10
+speclimit yellow arc WSIGMA b1 1.05 9e9
+speclimit yellow arc WSIGMA b2 0.95 9e9
+speclimit yellow arc WSIGMA r1 0.95 9e9
+speclimit yellow arc WSIGMA r2 0.95 9e9
 
 speclimit red arc WSIGMA b1 1.10 9e9
-speclimit red arc WSIGMA b2 1.10 9e9
-speclimit red arc WSIGMA r1 1.10 9e9
-speclimit red arc WSIGMA r2 1.10 9e9
+speclimit red arc WSIGMA b2 1.00 9e9
+speclimit red arc WSIGMA r1 1.00 9e9
+speclimit red arc WSIGMA r2 1.00 9e9
 
 # The sky levels were 0.15 e-/pix and 0.30 e-/pix in the blue and
 # cameras on MJD 51612 (8/9 March 2000).  Report a warning (yellow)
