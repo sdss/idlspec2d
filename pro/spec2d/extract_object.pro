@@ -224,9 +224,8 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
 
       splog, 'Shifting traces by pixel shift of ', bestlag
 
-      if (abs(bestlag) GT 2.0) then begin
-        splog, 'ABORT: pixel shift is too large!'
-        return
+      if (abs(bestlag) GT 1.0) then begin
+        splog, 'WARNING: pixel shift is large!'
       endif
 
       xnow = xtrace + bestlag 
