@@ -7,13 +7,15 @@ APOREDUCE: Check how full the disks are for both the input files (sdR images),
             and the outputs.  Issue a warning message if either is >95% full.
 CREATE_LINESTRUCT(): Function broken out of LINEBACKFIT so that it
             can be called by SPECLINEFIT.
+EXTRACT_OBJECT: Added call to skyline_dispersion (for increasing the
+            instrumental response width to agree with the width of sky
+            lines), but correction is not implemented because the measurement
+            appears to be very noisy.
+FITDISPERSION: Mask regions not neighboring lines of interest.
+            Simplifies extraction of line widths.
 LINEBACKFIT: Fix possible crash condition when computing LINENPIX if
             the line width is unphysically narrow and no pixels fall
             within the region of an emission line.
-EXTRACT_OBJECT: Added call to skyline_dispersion, 
-              but correction is not implemented
-FITDISPERSION: Mask regions not neighboring lines of interest.  
-             Simplifies extraction of line widths.
 PLATECOMPARE: New TOPDIR optional keyword for comparing different
             reductions of the same data.
 PLOTSPEC: Optional /ZWARNING flag.  Report error if FIBERID out of range.
@@ -37,13 +39,26 @@ SDSSPROC:  Change to select which op file to use based upon the MJD in the
             Make the MJD selection of the op files a bit more clear.
             Issue a warning message if there is no op file with an MJD
             equal to or less than the image's MJD.
+SKYLINE_DISPERSION: Function similar to fitdispersion which measures
+            gaussian line widths of sky lines given arc line dispersion set
+            as initial guess.  Indices of sky fibers can be specified to
+            restrict width  measurements to these fibers only.
+            The measured widths and corrections are logged to the log file
+            with the following info:
+              xpos = X position on CCD
+              ngood = number of good measurements (<= number of sky fibers)
+              flux = flux of this sky line
+              arc = the dispersion width measured in the arc lines
+              min, max, median = a sample of the distribution of widths (in
+                                 pixels) for each skyline
+              med_diff = the median quadrature difference: width^2 - arc^2
+              stddev = the scatter in the quadrature difference for that line
 SPCOADD_FRAMES: Remove the following keywords from the spPlate file:
             PIXBIAS,FLATFILE,ARCFILE,OBJFILE.
             Issue a warning message if any object fibers have OBJTYPE=NA,
             which should be impossible, but the special plate 673 and
             possibly others had some such fibers.
             Add UNAME keyword which is the result of 'uname -n'.
-SKYLINE_DISPERSION:  New function to output skyline width measurements
 SPECLINEFIT: Fixed dumb mistake on indexing that could crash.
             Always create an NLINE x NOBJ output structure, with blank
             entries where we do not measure lines (currently, only
