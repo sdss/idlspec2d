@@ -19,6 +19,8 @@ LOCATESKYLINES: Change MAXSHIFT from 2.0 pixels to 3.5 pixels.  The worst-
 PLATELIST: Use PLUG_RA,PLUG_DEC to match duplicate observations of
            individual objects, rather than RA,DEC (which can be zeros
            if there was no match to the photometry).
+PLUG2TSOBJ: Small changes to allow reading of the (new) calibObj files.
+           For now, assume these files are in $SPECTRO_DATA/calibobj.
 SDSSPROC: Call the new proc WARN_DAYTIME.
 SPCALIB: The correct TSET structure was not always being written
            to the spFlat files (though those files aren't actually
