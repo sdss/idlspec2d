@@ -10,6 +10,7 @@ typedef struct {
 hostconfig photo1.astro.princeton.edu "" ssh
 hostconfig photo2.astro.princeton.edu "" ssh
 hostconfig photo3.astro.princeton.edu "" ssh
+hostconfig photo4.astro.princeton.edu "" ssh
 hostconfig photo5.astro.princeton.edu "" ssh
 hostconfig wire3.princeton.edu "" ssh
 hostconfig wire5.princeton.edu "" ssh
@@ -18,4 +19,5 @@ hostconfig wire8.princeton.edu "" ssh
 #hostconfig localhost "" ""
 #hostconfig dusty.princeton.edu "" ssh
 #hostconfig kaze.princeton.edu "" ssh
+#hostconfig gemini.princeton.edu "" ssh
 
