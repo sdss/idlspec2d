@@ -95,6 +95,9 @@ pro qaplot_fcalibvec, loglam, objflux, objivar, synflux, plugmap, zans, $
    xrange = minmax(wave) + [-100,100]
    csize = 1.5
 
+   pmulti = !p.multi
+   !p.multi = 0
+
    for specid=1, 2 do begin
       plot, xrange, [1,1], xrange=xrange, yrange=[0.80,1.80], $
        /xstyle, /ystyle, xtitle='Wavelength [Ang]', xticklen=1.0, $
@@ -108,7 +111,7 @@ pro qaplot_fcalibvec, loglam, objflux, objivar, synflux, plugmap, zans, $
        AND zans.zwarning EQ 0, nfiber)
       medvec = medfcalibvec(objflux, objivar, synflux, ifiber, minpts=1)
       djs_oplot, wave, medvec+0.20, color='blue'
-      djs_oplot, !x.crange, [1.20,1.20], color='blue'
+      djs_oplot, !x.crange, [1.20,1.20]
       djs_xyouts, xpos, 1.65, color='blue', charsize=csize, $
        string(nfiber, format='("QSOs (", i3, ")")')
 
@@ -141,12 +144,13 @@ pro qaplot_fcalibvec, loglam, objflux, objivar, synflux, plugmap, zans, $
            OR strtrim(plugmap.objtype,2) EQ 'REDDEN_STD') $
        AND zans.zwarning EQ 0, nfiber)
       medvec = medfcalibvec(objflux, objivar, synflux, ifiber)
-      djs_oplot, wave, medvec+0.20, color='red'
+      djs_oplot, wave, medvec+0.40
       djs_oplot, !x.crange, [1.40,1.40]
       djs_xyouts, xpos, 1.70, color='red', charsize=csize, $
        string(nfiber, format='("Spectro-photo + reddening stars (", i3, ")")')
-
    endfor
+
+   !p.multi = pmulti
 
    return
 end
