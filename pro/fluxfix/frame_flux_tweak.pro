@@ -109,7 +109,7 @@ end
 
 ;------------------------------------------------------------------------------
 pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
-    best_exp, plugtag, corrfile, diag = diag
+    best_exp, plugtag, corrfile, diag = diag, title = title
 
    expid = plugtag[uniq(plugtag.expid)].expid
    splog, 'Best Exposure =', best_exp
@@ -374,7 +374,9 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
       djs_plot, 10.0^wave, corrimage, /nodata, yr=[0.4, 1.6], $
                 xr=[min(10.0^wave)-100,max(10.0^wave)+100], $
                 /xstyle, /ystyle, xtitle='\lambda [\AA]', $
-                ytitle='Best Frame Flux / Science Frame Flux'
+                ytitle='Best Frame Flux / Science Frame Flux', $
+                title = 'Science: ' + expid[ifile] + ' Best: ' + best_exp 
+
 
       for iobj=0, npoly2 -1 do $
         djs_oplot, 10.0^wave[*,poly2[iobj]], corrimage[*,poly2[iobj]], $
