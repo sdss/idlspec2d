@@ -268,6 +268,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
     xtitle='Row number',  ytitle = '\chi^2', $
     title=plottitle+'Extraction chi^2 for '+objname
 
+   djs_oplot, !x.crange, [1,1]
    djs_oplot, yrow, firstchisq[yrow], color='green'
 
    xyouts, 100, 0.05*!y.crange[0]+0.95*!y.crange[1], $
@@ -343,8 +344,9 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ; Shift to skylines and fit to vacuum wavelengths
 
    vacset = fitvacset(xarc, lambda, wset, arcshift, helio=helio, airset=airset)
-   qaplot_skydev, flux, fluxivar, vacset, plugsort, color, $
-    title=plottitle+objname
+; No longer make the following QA plot ???
+;   qaplot_skydev, flux, fluxivar, vacset, plugsort, color, $
+;    title=plottitle+objname
    sxaddpar, objhdr, 'VACUUM', 'T', ' Wavelengths are in vacuum'
 
    ;------------------
@@ -412,10 +414,10 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    if (color EQ 'blue') then begin
       qaplot_skyline, 4359.5, flux, fluxivar, skysub, skysubivar, $
        plugsort, vacset, iskies, fibermask=fibermask, dwave=4.0, $
-       tai=tai_mid, title=plottitle+objname
+       tai=tai_mid, title=plottitle+objname+' Skyline Flux at 4359.5'
       qaplot_skyline, 5578.9, flux, fluxivar, skysub, skysubivar, $
        plugsort, vacset, iskies, fibermask=fibermask, dwave=5.0, $
-       tai=tai_mid, title=plottitle+objname
+       tai=tai_mid, title=plottitle+objname+' Skyline Flux at 5578.9'
    endif
 
    ;------------------
@@ -424,22 +426,22 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    if (color EQ 'red') then begin
       qaplot_skyline, 7343.0, flux, fluxivar, skysub, skysubivar, $
        plugsort, vacset, iskies, fibermask=fibermask, dwave=7.0, $
-       tai=tai_mid, title=plottitle+objname
+       tai=tai_mid, title=plottitle+objname+' Skyline Flux at 7343,0'
       qaplot_skyline, 8888.3, flux, fluxivar, skysub, skysubivar, $
        plugsort, vacset, iskies, fibermask=fibermask, dwave=7.0, $
-       tai=tai_mid, title=plottitle+objname
+       tai=tai_mid, title=plottitle+objname+' Skyline Flux at 8888.3'
    endif
 
    ;------------------------------------------
    ; Save the sky-subtracted flux values as is, and now modify flambda.
 
    if keyword_set(skystruct_psf) then begin
-     flambda = skysubpsf
-     flambdaivar = skysubpsfivar
+      flambda = skysubpsf
+      flambdaivar = skysubpsfivar
    endif else begin
-     flambda = skysub
-     flambdaivar = skysubivar
-     nskypoly = 1L
+      flambda = skysub
+      flambdaivar = skysubivar
+      nskypoly = 1L
    endelse
    skyimg = flux - flambda
    sxaddpar, objhdr, 'PSFSKY', nskypoly, ' Order of PSF skysubtraction'
