@@ -104,7 +104,7 @@
 pro plotspec_mask, wave, thismask, psfile=psfile, nolabel=nolabel, $
  _EXTRA=KeywordsForPlot
 
-   bitlabel = sdss_flagname('SPPIXMASK', 2UL^32-1)
+   bitlabel = sdss_flagname('SPPIXMASK', 2UL^32-1, /silent)
    bitnum = where(bitlabel NE '', nlabel)
    bitlabel = bitlabel[bitnum]
 
