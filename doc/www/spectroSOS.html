@@ -308,9 +308,16 @@ AIRTEMP = Temperature (deg C)
 
 <P>
 Incorrect FITS header cards for the raw spectro sdR files can be
-corrected by adding "ophdrfix" entries in the sdReport file
-"/astrolog/$MJD/sdReport-$MJD.par".
-This structure should have the following definition in the sdReport file:
+corrected by adding entries in the sdHdrFix file
+"/astrolog/$MJD/sdHdrFix-$MJD.par".  The interesting header cards
+from these files can be listed with the
+<A HREF="http://spectro.princeton.edu/idlspec2d_doc.html#APOHEADER">APOHEADER</A>
+procedure run from the IDL prompt on sos.apo.  The proc
+<A HREF="http://spectro.princeton.edu/idlspec2d_doc.html#APOFIX">APOFIX</A>
+can be used to add entries to the sdHdrFix file to denote edits.
+
+<P>
+This structure should have the following definition in the sdHdrFix file:
 <PRE>
    typedef struct {
      char fileroot;    # Root of file name, without any ".fit" suffix
@@ -320,7 +327,7 @@ This structure should have the following definition in the sdReport file:
 </PRE>
 
 <P>
-Following are some examples of what should appear in the sdReport files
+Following are some examples of what should appear in the sdHdrFix files
 in order to correct faulty headers.  (The typedef struct above must
 also be in the file.)
 <UL>
@@ -334,32 +341,32 @@ Example 1: The exposure time is in the file sdR-b1-00001142.fit should be
 Example 2: Exposure number 1234 was bad, and should be given an 'unkown'
 flavor for all cameras:
 <PRE>
-   ophdrfix sdR-??-00001234 FLAVOR  "'unknown'"
+   ophdrfix sdR-??-00001234 FLAVOR  "unknown"
 </PRE>
 <LI>
 Example 3: The mapping name for all cameras of exposures 1137-1139
 should be '0198-51433-01':
 <PRE>
-   ophdrfix sdR-??-0000113[7-9] NAME     "'0198-51433-01'"
+   ophdrfix sdR-??-0000113[7-9] NAME     "0198-51433-01"
 </PRE>
 <LI>
 Example 4: Telescope status information is missing for the pre-flat
 exposure 10850:
 <PRE>
-   ophdrfix sdR-??-00010850  FFS   "'1 1 1 1 1 1 1 1'"
-   ophdrfix sdR-??-00010850  FF    "'1 1 1 1 '"
-   ophdrfix sdR-??-00010850  NE    "'0 0 0 0 '"
-   ophdrfix sdR-??-00010850  HGCD  "'0 0 0 0 '"
+   ophdrfix sdR-??-00010850  FFS   "1 1 1 1 1 1 1 1"
+   ophdrfix sdR-??-00010850  FF    "1 1 1 1 "
+   ophdrfix sdR-??-00010850  NE    "0 0 0 0 "
+   ophdrfix sdR-??-00010850  HGCD  "0 0 0 0 "
 </PRE>
 </UL>
 
 <P>
-If you have edited the sdReport file and need to re-reduce an exposure,
+If you have edited the sdHdrFix file and need to re-reduce an exposure,
 you can do so with the <A HREF="#rereduce">sos_redo</A> command.
 When Son-of-Spectro reads in the raw FITS files, it then patches the
-headers with the information in the ophdrfix entries of the sdReport file.
+headers with the information in the ophdrfix entries of the sdHdrFix file.
 But note that the one piece of information that cannot be patched this
-way is MJD, since we need the MJD in order to find the correct sdReport file!!
+way is MJD, since we need the MJD in order to find the correct sdHdrFix file!!
 
 <H2><A NAME="outputs">Son-of-Spectro Outputs</A></H2>
 
@@ -462,11 +469,11 @@ bad sky-residuals.
 <P>
 The following messages may appear:
 <UL>
-<LI><B>Empty or invalid sdReport file</B> <BR>
-    The sdReport file (sdReport-$MJD.par) in sdsshost:/astrolog/$MJD
-    was either improperly copied to sos:/data/spectro/astrolog/$MJD,
-    or the file is not a valid Yanny parameter file.  This happened on
-    MJD=52311 when somehow the Yanny header was missing from this file.
+<LI><B>Error reading sdHdrFix file</B> <BR>
+    The sdHdrFix file (sdHdrFix-$MJD.par) in sos.apo:/data/spectro/astrolog/$MJD
+    exists but is not a valid Yanny parameter file.  This file is written
+    by the IDL procedure APOFIX if the observers' have run that proc
+    on sos.apo, but can also be edited by hand.
 <LI><B>Exposure number in header disagrees w/filename</B> <BR>
     This means that IOP/SOP is in a very confused state, and it
     is putting a different exposure number in the header (EXPOSURE
@@ -745,7 +752,7 @@ As of version v4_7_1, there is a mechanism to re-reduce exposures
 with "sos_redo".
 You may need to do this if a reduction failed, or the pre-calibs failed
 and SOS could not reduce the science exposures, or if you needed
-to edit the sdR header information by putting entries in the sdReport
+to edit the sdR header information by putting entries in the sdHdrFix
 file.
 
 <P>
