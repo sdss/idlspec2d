@@ -97,6 +97,11 @@ pro spreduce1d, platefile, fiberid=fiberid
 ;   dispmap = mrdfits(platefile,4)
    plugmap = mrdfits(platefile,5)
 
+   anyandmask = andmask[0,*]
+   anyormask = ormask[0,*]
+   for iobj=1, nobj-1 do anyandmask = anyandmask OR andmask[iobj,*]
+   for iobj=1, nobj-1 do anyormask = anyormask OR ormask[iobj,*]
+
    objivar = skymask(objivar, andmask, ormask)
 andmask = 0 ; Free memory
 ormask = 0 ; Free memory
@@ -112,6 +117,8 @@ ormask = 0 ; Free memory
        message, 'Invalid value for FIBERID: must be between 0 and '+string(nobj)
       objflux = objflux[*,fiberid-1]
       objivar = objivar[*,fiberid-1]
+      anyandmask = anyandmask[fiberid-1]
+      anyormask = anyormask[fiberid-1]
       plugmap = plugmap[fiberid-1]
       nobj = n_elements(fiberid)
    endif else begin
@@ -332,6 +339,8 @@ endif
             counts_spectro: fltarr(5), $
             counts_synth: fltarr(5), $
             counts_sky: fltarr(5), $
+            anyandmask: 0L, $
+            anyormask:  0L, $
             spec1_g:   sxpar(hdr, 'SPEC1_G'), $
             spec1_r:   sxpar(hdr, 'SPEC1_R'), $
             spec1_i:   sxpar(hdr, 'SPEC1_I'), $
@@ -348,6 +357,8 @@ endif
       res_all[*,iobj].wavemax = $
        10^(objloglam0 + (igood[(ngood-1)>0])*objdloglam) * (ngood NE 0)
       res_all[*,iobj].wcoverage = ngood * objdloglam
+      res_all[*,iobj].anyandmask = anyandmask[iobj]
+      res_all[*,iobj].anyormask = anyormask[iobj]
       if (ngood GT 0) then $
        res_all[*,iobj].sn_median = $
         median( sqrt(objivar[igood,iobj]) * objflux[igood,iobj])
