@@ -56,9 +56,7 @@
 ;   mrdfits()
 ;   mwrfits
 ;   pixelmask_bits()
-;   plug2tsobj()
 ;   rebin_spectrum()
-;   sdss_recalibrate
 ;   spframe_read
 ;   skymask()
 ;   splog
@@ -660,14 +658,6 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
    endif
 
    ;----------
-   ; Replace the magnitudes for the F stars with the PSF fluxes
-   ; from the calibObj files !!!???
-
-   tsobj = plug2tsobj(plateid[0], plugmap=plugmap)
-   sdss_recalibrate, tsobj
-   plugmap[iphoto].mag = 22.5 - 2.5 * alog10(tsobj[iphoto].psfflux)
-
-   ;----------
    ; Read the raw F-star spectra
 
    npix = 2048
@@ -741,13 +731,21 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
 
       ; Now integrate the apparent magnitude for this spectrum,
       ; The units of FTHRU are such that m = -2.5*alog10(FTHRU) + (48.6-2.5*17)
+      ; Note that these computed magnitudes, THISMAG, should be equivalent
+      ; to THISINDX.MAG in the case of no reddening.
       wavevec = 10.d0^tmploglam
       flambda2fnu = wavevec^2 / 2.99792e18
       fthru = filter_thru(tmpflux * flambda2fnu, waveimg=wavevec, /toair)
       thismag = -2.5 * alog10(fthru) - (48.6-2.5*17)
 
-;      scalefac = 10.^((thisindx.mag[2] - plugmap[iphoto[ip]].mag[2])/2.5) ; ???
-      scalefac = 10.^((thismag[2] - plugmap[iphoto[ip]].mag[2])/2.5)
+      ; Compute SCALEFAC = (plugmap flux) / (uncalibrated flux)
+      if (tag_exist(plugmap, 'CALIBFLUX')) then begin
+         scalefac = plugmap[iphoto[ip]].calibflux[2] $
+          / 10.^((22.5-thismag[2])/2.5)
+      endif else begin
+         splog, 'WARNING: No CALIBFLUX for zero-pointing the fluxes'
+         scalefac = 10.^((thismag[2] - plugmap[iphoto[ip]].mag[2])/2.5)
+      endelse
       thismodel = thismodel * scalefac
 
       modflux[*,*,ip] = thismodel
