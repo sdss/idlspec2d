@@ -70,6 +70,8 @@ bin/speclog_update: New bash script to update the "speclog" product for one
            or more MJDs from the astrolog directory.
 bin/sprobot_start: Put the environment variable $CVS_RSH into the cron file,
            for use by the "speclog_update" script.
+           No longer set $SPECLOG_DIR=$ASTROLOG_DIR, since now they
+           really are different.
 bin/sprobot.sh: After copying the astrolog files, call the "speclog_update"
            script to make a CVS-versioned copy from $ASTROLOG_DIR->$SPECLOG_DIR.
 doc/www/spectroSOS.html: Add warning message for "Sun above horizon."
