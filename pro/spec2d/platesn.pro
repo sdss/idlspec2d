@@ -61,7 +61,8 @@
 ;-
 ;------------------------------------------------------------------------------
 pro platesn, finalflux, finalivar, finalandmask, finalplugmap, loglam, $
- hdr=hdr, plotfile=plotfile, snvec=snvec, synthmag=synthmag, filtsz=filtsz
+ hdr=hdr, plotfile=plotfile, snvec=snvec, synthmag=synthmag, filtsz=filtsz, $
+ ebv_sfd = ebv_sfd
 
    if NOT keyword_set(filtsz) then filtsz=25
 
@@ -129,7 +130,7 @@ pro platesn, finalflux, finalivar, finalandmask, finalplugmap, loglam, $
     + '  MJD=' + strtrim(string(sxpar(hdr,'MJD')),2)
    plotsn, snvec, finalplugmap, plotfile=plotfile, plottitle=plottitle, $
     synthmag=synthmag, snplate=snplate, roffset = roffset, rsigma = rsigma, $
-    groffset = groffset, grsigma = grsigma
+    groffset = groffset, grsigma = grsigma, ebv_sfd = ebv_sfd
 
    ;----------
    ; Print roll call of bad fibers and bad pixels.
