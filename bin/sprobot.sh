@@ -21,7 +21,7 @@
 astrologdir=$ASTROLOG_DIR
 toprawdir=$RAWDATA_DIR
 #localdisks='/peyton/scr/spectro0/data/rawdata /peyton/scr/spectro1/data/rawdata /peyton/scr/spectro2/data/rawdata /peyton/scr/spectro3/data/rawdata'
-localdisks='/peyton/scr/spectro1/data/rawdata /peyton/scr/spectro2/data/rawdata /peyton/scr/spectro3/data/rawdata'
+localdisks='/peyton/scr/spectro3/data/rawdata /peyton/scr/spectro1/data/rawdata /peyton/scr/spectro0/data/rawdata /peyton/scr/spectro1/data/rawdata'
 topoutdir=$SPECTRO_DATA
 hostname=sdsshost.apo.nmsu.edu
 
