@@ -1,18 +1,7 @@
 
-v4_7_6 (Jun 9, 2001 idlspec2d only)
-
-DATA_RSYNC:   Bug fixes in SOS copy, and adaptation to sos.apo.nmsu.edu
-              (i.e. ps -elf does not work, and scp1 does not exist).
-
--------------------------------------------------------------------------------
-v4_7_5 (Jun 8, 2001 idlspec2d only)
-
-DATA_RSYNC:   SOS should now attempt to archive data with gzip and move offsite
-in the morning.
-
-sprobot_start: Remove "sprobotcopy" from the cron jobs, since copying
-               reduced data to Fermi always fails.
-               Set SPECLOG_DIR=$ASTROLOG_DIR for the Spectro-Robot.
+FITMEANX: Make robust to no good sky lines for tweaking wavelength solution.
+          In that case, the routine LOCATESKYLINES will return SKYSHIFT=0.
+LOCATESKYLINES: Test that the sky line file is successfully read.
 
 YANNY_READ (in idlutils): Try to make backwards-compatable with IDL 5.2
           by replacing calls to STRSPLIT() with calls to STR_SEP.
@@ -20,6 +9,26 @@ evilinstall (in idlutils): Add another option for location of sdssfue
           scripts (for the installation on sos.apo), and also set the
           CVS locations to the default at Fermi if not set up with
           "setup sdsscvs".
+
+-------------------------------------------------------------------------------
+v4_7_6 (Jun 9, 2001 idlspec2d only)
+
+data_rysnc.sh: Bug fixes in SOS copy, and adaptation to sos.apo.nmsu.edu
+               (i.e. ps -elf does not work, and scp1 does not exist).
+
+-------------------------------------------------------------------------------
+v4_7_5 (Jun 8, 2001 idlspec2d only)
+
+data_rsync.sh: SOS should now attempt to archive data with gzip and move
+               offsite in the morning.
+killdata.sh, mailhtml.sh, sos.sh, startapo.sh, APOREDUCE:
+               Adapted to work on sos.apo.nmsu.edu, and fixed file transfer
+               bugs.  For APOREDUCE, changed spawn of "scp1" to "scp", since
+               the former did not exist on the new machine sos.apo.
+
+sprobot_start: Remove "sprobotcopy" from the cron jobs, since copying
+               reduced data to Fermi always fails.
+               Set SPECLOG_DIR=$ASTROLOG_DIR for the Spectro-Robot.
 
 -------------------------------------------------------------------------------
 v4_7_4 (May 10, 2001 idlspec2d+idlutils)
