@@ -191,9 +191,9 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
       splog, 'WARNING: pixel shift is large!'
    endif
 
-   highrej = 5  ; just for first extraction steps
-   lowrej = 5  ; just for first extraction steps
-                ; We need to check npoly with new scattered light backgrounds
+   highrej = 10  ; just for first extraction steps
+   lowrej = 10   ; just for first extraction steps
+                 ; We need to check npoly with new scattered light backgrounds
    npoly = 8 ; maybe more structure, lots of structure
    nrow = (size(image))[2]
    yrow = lindgen(nrow) 
@@ -234,8 +234,8 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ; (4) Second and final extraction
    splog, 'Step 4: Final Object extraction'
 
-   highrej = 4
-   lowrej = 4
+   highrej = 8
+   lowrej = 5
    wfixed = [1,1]
    nterms = n_elements(wfixed)
    reject = [0.2,0.6,0.6]
@@ -364,9 +364,9 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ; Sky-subtract again, this time with dispset (PSF subtraction)
    ; 
 
-;   skystruct_psf = skysubtract(flux, fluxivar, plugsort, vacset, $
-;     skysubpsf, skysubpsfivar, iskies=iskies, pixelmask=pixelmask, $
-;     fibermask=fibermask, upper=3.0, lower=3.0, dispset=dispset)
+   skystruct_psf = skysubtract(flux, fluxivar, plugsort, vacset, $
+     skysubpsf, skysubpsfivar, iskies=iskies, pixelmask=pixelmask, $
+     fibermask=fibermask, upper=3.0, lower=3.0, dispset=dispset)
 
    qaplot_skysub, flux, fluxivar, skysub, skysubivar, $
     vacset, iskies, title=plottitle+objname
