@@ -20,7 +20,7 @@
 ;   mjd        - MJD number(s); if not set, then select the most recent
 ;                data for this plate (largest MJD).
 ;   znum       - If set, then return not the best-fit redshift, but the
-;                (ZUM+1)-th best-fit; e.g., set ZNUM=1 for second-best fit.
+;                ZNUM-th best-fit; e.g., set ZNUM=2 for second-best fit.
 ;   silent     - If set, then call MRDFITS with /SILENT.
 ;
 ; OUTPUTS:
@@ -235,7 +235,7 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
             zhdr = headfits(zfile, exten=1)
             nper = sxpar(zhdr,'NAXIS2') / 640L
             fits_open, zfile, zfcb
-            zans = rspec_mrdfits(zfcb, 1, rownums=rownums*nper+znum, $
+            zans = rspec_mrdfits(zfcb, 1, rownums=rownums*nper+znum-1, $
              silent=silent)
             fits_close, zfcb
          endelse
@@ -244,7 +244,8 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
 
    if (q_synflux) then begin
       if (NOT keyword_set(hdr)) then hdr = headfits(filename)
-      synflux = synthspec(zans, hdr=hdr)
+      if (keyword_set(zans)) then $
+       synflux = synthspec(zans, hdr=hdr)
    endif
 
    if (q_mjd) then begin
