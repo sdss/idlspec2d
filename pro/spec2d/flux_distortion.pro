@@ -317,7 +317,7 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
          ; First skip the left-side plot...
          plot, [0,1], [0,1], /nodata, xstyle=5, ystyle=5
          if (keyword_set(hdr) AND iplot EQ 0) then begin
-            platestr = string(sxpar(hdr,'PLATE'), format='(i4)')
+            platestr = string(sxpar(hdr,'PLATEID'), format='(i4)')
             mjdstr = string(sxpar(hdr,'MJD'), format='(i5)')
             xyouts, 1.0, 1.0, align=0.5, charsize=2, $
              'Flux Distortions PLATE=' + platestr + ' MJD=' + mjdstr
@@ -335,10 +335,10 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
          mvec = -2.5*alog10(cvec) * (sqrt(xx^2 + yy^2) LT 320.)
 
          maxdiff = max(abs(mvec))
-         if (maxdiff LT 0.125) then levels = 0.025*findgen(11) - 0.125 $
-          else if (maxdiff LT 0.25) then levels = 0.05*findgen(11) - 0.25 $
-          else if (maxdiff LT 0.50) then levels = 0.10*findgen(11) - 0.50 $
-          else levels = 0.20*findgen(11) - 1.0
+         if (maxdiff LT 0.10) then levels = 0.01*findgen(21) - 0.10 $
+          else if (maxdiff LT 0.25) then levels = 0.025*findgen(21) - 0.25 $
+          else if (maxdiff LT 0.50) then levels = 0.05*findgen(21) - 0.50 $
+          else levels = 0.10*findgen(21) - 1.0
          c_colors = (levels GE 0) * djs_icolor('blue') $
           + (levels LT 0) * djs_icolor('red')
          contour, mvec, xx[*,0], transpose(yy[0,*]), /follow, $
