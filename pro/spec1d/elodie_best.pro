@@ -17,7 +17,7 @@
 ;   hdr        - FITS header for objects, used to construct the wavelengths
 ;                from the following keywords: COEFF0, COEFF1.
 ;                Must be specified if OBJLOGLAM0,OBJDLOGLAM are not set.
-;   objloglam0 - Zero-pint of log-10(Angstrom) wavelength mapping ofOBJFLUX.
+;   objloglam0 - Zero-pint of log-10(Angstrom) wavelength mapping of OBJFLUX.
 ;   objdloglam - Wavelength spacing for OBJFLUX in log-10(Angstrom).
 ;   zmin       - Minimum redshift to consider; default to -0.002
 ;                (-600 km/sec).
