@@ -1,6 +1,10 @@
 
 EXTRACT_OBJECT, SKYSUBTRACT, SPCALIB: Implement 2D-splining for sky-
           subtraction, now set to do quadratic PSF fit.
+          Also, first attempt to put in airmass correction to the sky
+          brightness by dividing all the sky vectors by the airmass of
+          each fiber, then fitting for the supersky, then multiplying
+          back in the airmass terms.
 EXTRACT_OBJECT: Set the "NEARWHOPPER" mask bits only for fibers within 2
           fibers of a bright fiber, but not the bright fiber itself.
           For the bright fibers, add the bit "WHOPPER" (added to the

@@ -156,7 +156,7 @@ pro spflatten2, flatname, arcname, allflats, pixflat, $
    proftype = 3 ; ???
    highrej = 15
    lowrej = 15
-   npoly = 1 ; maybe more structure
+   npoly = 1
    wfixed = [1,1] ; Just fit the first gaussian term
 
    extract_image, arcimg, arcivar, xsol, sigma, flux, fluxivar, $
@@ -245,7 +245,7 @@ arcivar = 0
       proftype = 3 ;  exp^-|x|^3  really good for "in" focus red exposures
       highrej = 15
       lowrej = 15
-      npoly = 9  ; just fit flat background to each row
+      npoly = 9 ; Try fitting 9 polynomial background terms to each row
       wfixed = [1,1] ; Just fit the first gaussian term
 
       extract_image, flatimg, flativar * (1-maskimg), $
