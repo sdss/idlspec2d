@@ -1,10 +1,12 @@
-v4_7_0 (Mar 15, 2001)
+-------------------------------------------------------------------------------
+v4_7_0 (Mar 16, 2001)
 
 FLUXCORR_NEW: Replace deviant fluxcorr coefficients with the median
               Attempt to mask large positive deviations in inverse variance
               (PR #2040) 
-SPCOMBINE:    combinedir is now a keyword for spcoadd_frames
-              spflux and spcoadd_frames utilizes directory keywords as well
+SPCOMBINE:    combinedir is now a keyword for spcoadd_frames.
+              SPFLUX and SPCOADD_FRAMES utilize directory keywords as well.
+              Start by zeroing-out the 4 mask bits set by combining step.
 FIBERFLAT:     Simple check to exclude extrema  (PR #2123)
 COMBINE1FIBER: Replace the lines which errantly set NODATA with a check for the
                extrema wavelengths which have no signal. (PR #1939)
@@ -50,7 +52,7 @@ YANNY_PAR (in idlutils): If several lines have the same keyword name,
             with SPPLAN2D.
 ZFIND: Get rid of SIGMA2,SIGMA2_ERR and add VDISP,VDISP_ERR.
 
-Add new mask bits: BADSKYCHI, REDMONSTER.
+Add new mask bits: BADSKYCHI, REDMONSTER, SMEARIMAGE, SMEARHIGHSN, SMEARMEDSN.
 
 New installation script "evilinstall" in the idlutils product.
 
