@@ -23,11 +23,13 @@
 ;               reddening value for the entire plate as found in the
 ;               Yanny header of the plugmap file; this is done for the
 ;               on-the-mountain reductions.
-;   calibobj  - If set, then add a CALIBFLUX entry based upon the
-;               calibObj files.  For stellar objects, this contains the
+;   calibobj  - If set, then add a CALIBFLUX,CALIBFLUX_IVAR entries based upon
+;               the calibObj files.  For stellar objects, this contains the
 ;               PSF fluxes in nMgy.  For galaxies, it contains the fiber fluxes
 ;               multiplied by the median (PSF/fiber) flux ratio for stars.
 ;               The MAG fields are left unchanged.
+;               For objects with no calibObj entry, simply set these fields as:
+;                 CALIBFLUX = 22.5 - 2.5*alog10(MAG), CALIBFLUX_IVAR = 0.
 ;
 ; OUTPUTS:
 ;   plugmap   - Plugmap structure
@@ -84,12 +86,15 @@ function readplugmap, plugfile, plugdir=plugdir, $
    endif
 
    if (keyword_set(calibobj)) then begin
+      splog, 'Adding fields from calibObj file'
+      addtags = replicate(create_struct( $
+       'CALIBFLUX', fltarr(5), 'CALIBFLUX_IVAR', fltarr(5)), nplug)
+      plugmap = struct_addtags(plugmap, addtags)
+
       iobj = where(strmatch(plugmap.holetype,'OBJECT*'))
       tsobj = plug2tsobj(plateid, plugmap=plugmap[iobj])
+
       if (keyword_set(tsobj)) then begin
-         splog, 'Adding fields from calibObj file'
-         addtags = replicate(create_struct('CALIBFLUX', fltarr(5)), nplug)
-         plugmap = struct_addtags(plugmap, addtags)
 
          ; Assume that all objects not called a 'GALAXY' are stellar objects
          qexist = tsobj.psfflux[2] NE 0
@@ -99,6 +104,7 @@ function readplugmap, plugfile, plugdir=plugdir, $
          pratio = fltarr(5) + 1
          if (nstar GT 0) then begin
             plugmap[iobj[istar]].calibflux = tsobj[istar].psfflux
+            plugmap[iobj[istar]].calibflux_ivar = tsobj[istar].psfflux_ivar
             ; Compute the ratio of PSF/FIBER flux for stars in each filter,
             ; using only stars that are brighter than 30 nMgy (= 18.8 mag).
             ; If no such stars, then this ratio is set to unity.
@@ -109,19 +115,15 @@ function readplugmap, plugfile, plugdir=plugdir, $
                if (ct GT 0) then pratio[ifilt] = median([ v1[jj] / v2[jj] ])
             endfor
 
-            ; For any objects that do not have photometry from the calibObj
-            ; structure, simply translate the flux from the plugmap MAG values
-;            ibad = where(qexist EQ 0, nbad)
-;            if (nbad GT 0) then begin
-;               plugmap[iobj[ibad]].calibflux = $
-;                10.^((22.5 - plugmap[iobj[ibad]].mag) / 2.5)
-;            endif
          endif
          splog, 'PSF/fiber flux ratios = ', pratio
          if (ngal GT 0) then begin
-            for ifilt=0, 4 do $
-             plugmap[iobj[igal]].calibflux[ifilt] = $
-              tsobj[igal].fiberflux[ifilt] * pratio[ifilt]
+            for ifilt=0, 4 do begin
+               plugmap[iobj[igal]].calibflux[ifilt] = $
+                tsobj[igal].fiberflux[ifilt] * pratio[ifilt]
+               plugmap[iobj[igal]].calibflux_ivar[ifilt] = $
+                tsobj[igal].fiberflux_ivar[ifilt] / (pratio[ifilt])^2
+            endfor
          endif
 
          ; Reject any fluxes based upon suspect PHOTO measurements,
@@ -131,9 +133,21 @@ function readplugmap, plugfile, plugdir=plugdir, $
           OR sdss_flagval('OBJECT2','PSF_FLUX_INTERP')
          qgoodphot = (tsobj.flags2 AND badbits2) EQ 0
          plugmap[iobj].calibflux = plugmap[iobj].calibflux * qgoodphot
+         plugmap[iobj].calibflux_ivar = plugmap[iobj].calibflux_ivar * qgoodphot
       endif else begin
          splog, 'WARNING: No calibObj structure found for plate ', plateid
       endelse
+
+      ;----------
+      ; For any objects that do not have photometry from the calibObj
+      ; structure, simply translate the flux from the plugmap MAG values.
+
+      ibad = where(plugmap[iobj].calibflux EQ 0, nbad)
+      if (nbad GT 0) then begin
+         splog, 'Using plug-map fluxes for ', nbad, ' objects'
+         plugmap[iobj[ibad]].calibflux = $
+          10.^((22.5 - plugmap[iobj[ibad]].mag) / 2.5)
+      endif
    endif
 
    if (keyword_set(deredden)) then begin
