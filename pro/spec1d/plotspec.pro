@@ -71,7 +71,6 @@
 ; PROCEDURES CALLED:
 ;   djs_oplot
 ;   djs_plot
-;   djs_xyouts
 ;   readspec
 ;   soplot
 ;   splot
@@ -174,8 +173,8 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
        zstring = zstring + ' (fit #' + strtrim(string(znum),2) + ')'
 
       if (keyword_set(psfile)) then $
-       djs_xyouts, xpos, ypos, zans.class + ' ' + zans.subclass + zstring, $
-        charsize=csize, color=textcolor $
+       xyouts, xpos, ypos, zans.class + ' ' + zans.subclass + zstring, $
+        charsize=csize, color=djs_icolor(textcolor) $
       else $
        sxyouts, xpos, ypos, zans.class + ' ' + zans.subclass + zstring, $
         charsize=csize, color=textcolor
@@ -183,9 +182,9 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
       ypos = ypos + dypos
 
       if (keyword_set(psfile)) then $
-       djs_xyouts, xpos, ypos, $
+       xyouts, xpos, ypos, $
         TeXtoIDL('X^2_r =' + strtrim(string(zans.rchi2, format='(f6.2)'),2)), $
-        charsize=csize, color=textcolor $
+        charsize=csize, color=djs_icolor(textcolor) $
       else $
        sxyouts, xpos, ypos, $
         TeXtoIDL('X^2_r =' + strtrim(string(zans.rchi2, format='(f6.2)'),2)), $
@@ -195,8 +194,8 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
    if (keyword_set(primtarget)) then begin
       ypos = ypos + dypos
       if (keyword_set(psfile)) then $
-       djs_xyouts, xpos, ypos, 'PRIMTARGET = ' + primtarget, $
-        charsize=csize, color=textcolor $
+       xyouts, xpos, ypos, 'PRIMTARGET = ' + primtarget, $
+        charsize=csize, color=djs_icolor(textcolor) $
       else $
        sxyouts, xpos, ypos, 'PRIMTARGET = ' + primtarget, $
         charsize=csize, color=textcolor
@@ -206,7 +205,7 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
       ypos = ypos + dypos
       if (keyword_set(psfile)) then $
        xyouts, xpos, ypos, 'SECTARGET = ' + sectarget, $
-        charsize=csize, color=textcolor $
+        charsize=csize, color=djs_icolor(textcolor) $
       else $
        sxyouts, xpos, ypos, 'SECTARGET = ' + sectarget, $
         charsize=csize, color=textcolor
@@ -297,11 +296,16 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
          ifiber = ifiber + 1
       endif else begin
          if (ifiber LT nfiber-1) then begin
+            if (keyword_set(nsmooth)) then $ 
+             sstring = ' (currently=' + strtrim(string(nsmooth),2) + ')' $
+            else $
+             sstring = ''
+
             print, 'Press b=back one fiber'
             print, '      p=select new plate'
             print, '      f=select new fiber number'
             print, '      q=quit (and enter interactive mode for this plot)'
-            print, '      s=change boxcar smoothing'
+            print, '      s=change boxcar smoothing' + sstring
             print, '      x=change X plotting range'
             print, '      y=change Y plotting range'
             print, '      z=change which PCA-fit to overplot'
