@@ -918,7 +918,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       ; We re-fit the B-spline to exactly recover what we had before,
       ; just modulated by the lower-order polynomial FLATARR.
 
-      logmin = min(thisloglam[where(mrativar GT 0)], max=logmax)
+      logmin = min(thisloglam[where(thismrativar GT 0)], max=logmax)
       tmploglam = wavevector(logmin, logmax)
       flatarr_mean = 0 * tmploglam
       for i=0L, nfinal-1 do $
