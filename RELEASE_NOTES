@@ -1,8 +1,21 @@
 
+FLUX_DISTORTION: There was a bug in the way objects were being rejected
+        in the main iteration loop.  Basically, objects were being rejected,
+        but then had chi=0 in the next iteration, and then were put back
+        in the fits.  I now have a /nomask option in flux_distort_fn()
+        that allows me to compute chi even for rejected points.
+        Also, always start the fitting routine with tiny values for
+        the coefficients.  This is to prevent us from "walking away" from
+        the correction solution in the case where some initially bad points
+        effect the fit.
 PCA_SOLVE: Make loop variables long ints.
 PLATEMERGE: Add the fields CALIBFLUX,CALIBFLUX_IVAR which are explicitly
         copied over from the plug-map structures.
+READPLUGMAP: Fix bug when replacing unknown fluxes in the calibObj
+        structure with old values in the plug-map file.
 SDSSPROC: Re-enable the call to 'speclog_version'.
+SPCOADD_V5: Apply the flux-distortion image to the sky vectors, as well
+        as to OBJFLUX,OBJIVAR.
 
 etc/spChunkList.par: Add chunks 91-93.
 templates/wfEigen*.fits: Add WFCCD templates from Prochaska
