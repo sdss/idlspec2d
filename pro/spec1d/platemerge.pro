@@ -94,7 +94,8 @@ pro platemerge, zfile, outroot=outroot1, public=public
 
       indx = where(strtrim(plist.status1d,2) EQ 'Done' AND $
        (strtrim(plist.platequality,2) EQ 'good' $
-       OR strtrim(plist.platequality,2) EQ 'marginal'), ct)
+       OR strtrim(plist.platequality,2) EQ 'marginal' $
+       OR strtrim(plist.public,2) NE ''), ct)
       if (ct EQ 0) then return
       if (keyword_set(public)) then begin
          if (size(public,/tname) EQ 'STRING') then begin
