@@ -15,6 +15,10 @@ pro batch1d, fullplatefile, topdir=topdir, nice=nice
 
    if (NOT keyword_set(fullplatefile)) then $
     fullplatefile = findfile( filepath('spPlate-*.fits', root_dir='*') )
+   if (NOT keyword_set(fullplatefile)) then begin
+      splog, 'No plate files found'
+      return
+   endif
    platefile = fileandpath(fullplatefile, path=localpath)
    nplate = n_elements(platefile)
 

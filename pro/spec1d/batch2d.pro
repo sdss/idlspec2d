@@ -148,7 +148,10 @@ pro batch2d, platenums, topdir=topdir, mjd=mjd, mjstart=mjstart, mjend=mjend, $
 
    spawn, 'ls -d ' + string(platenums+' ', $
     format='(99(a," "))'), platedirs
-   if (NOT keyword_set(platedirs[0])) then return
+   if (NOT keyword_set(platedirs[0])) then begin
+      splog, 'No directories found'
+      return
+   endif
    ndir = n_elements(platedirs)
 
    ;----------
@@ -173,6 +176,10 @@ pro batch2d, platenums, topdir=topdir, mjd=mjd, mjstart=mjstart, mjend=mjend, $
    endfor
 
    nplate = n_elements(planlist)
+   if (nplate EQ 0) then begin
+      splog, 'No plan files found'
+      return
+   endif
 
    ;----------
    ; Create pointers for input and output files
@@ -241,7 +248,7 @@ pro batch2d, platenums, topdir=topdir, mjd=mjd, mjstart=mjstart, mjend=mjend, $
    iplate = where(pinfile NE ptr_new(), nplate)
    if (iplate[0] EQ -1) then begin
       splog, 'All plates have been reduced'
-      exit
+      return
    endif
 
    platelist = platelist[iplate]
