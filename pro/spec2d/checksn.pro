@@ -1,7 +1,7 @@
 pro checksn, flux, err, plug, wave, expres=expres, noplot=noplot, title=title
 
     if (keyword_set(expres)) then $
-      readidlout, flux, sig=err, plug=plug, wave=wave, expres=expres
+      readidlout, flux, sig=err, plug=plug, wave=wave, expres=expres, files=files
 
     w = 10^wave
 
@@ -145,12 +145,12 @@ pro checksn, flux, err, plug, wave, expres=expres, noplot=noplot, title=title
            ychars=2.0, xcharsize = 0.001, xr=[xmin,xmax], ymargin = [1,3], /xs, yr=[1,100], /ys
 
       djs_oplot, xfit, 10^poly(xfit, gfit)
-      djs_oplot, xfit, 10^poly(xfit, gfiducialfit), color='blue', thick=3
+      djs_oplot, xfit, 10^poly(xfit, gfiducialfit), color='blue', thick=5
 
       if (goodg1[0] NE -1) then djs_oplot, plug[nonsky[goodg1]].mag[1], allspec[nonsky[goodg1]].g, $
-           ps=1, syms=0.7, color='cyan'
+           ps=1, syms=0.7, color='red'
       if (goodg2[0] NE -1) then djs_oplot, plug[nonsky[goodg2]].mag[1], allspec[nonsky[goodg2]].g, $
-           ps=4, syms=0.7, color='red'
+           ps=4, syms=0.7
 
       xyouts, xmin+0.5, 3.0, string(format='(a,f5.2,f6.2,a)','log S/N = ', gfit, " * g'")
       xyouts, xmin+0.5, 2.0, string(format='(a,f5.3)','Deviation: ', gabsdev)
@@ -161,29 +161,28 @@ pro checksn, flux, err, plug, wave, expres=expres, noplot=noplot, title=title
                  10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.9], 'Spec 1', color=djs_icolor('red')
 
       djs_oplot, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.6], $
-                 10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.85], ps=4, syms=0.7, color='cyan'
+                 10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.85], ps=4, syms=0.7
       xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.62], $
-                 10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.84], 'Spec 2', color=djs_icolor('cyan')
+                 10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.84], 'Spec 2'
 
       minutes = (bin.gsn[6,*]/10.0)^2 * 60.0
       xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.8], $
            10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.9], string(format='(f5.1)', minutes[0]), $
            color=djs_icolor('red')
       xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.8], $
-           10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.84], string(format='(f5.1)', minutes[1]), $
-           color=djs_icolor('cyan')
+           10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.84], string(format='(f5.1)', minutes[1])
 
 
       plot, plug.mag[2], allspec.r, /nodata, /ylog, ytitle = 'S/N', $
            ychars=2.0, xcharsize = 0.001, xr=[xmin,xmax], ymargin = [1,0], /xs, yr=[1,100], /ys
 
       djs_oplot, xfit, 10^poly(xfit, rfit)
-      djs_oplot, xfit, 10^poly(xfit, rfiducialfit), color='blue', thick=3
+      djs_oplot, xfit, 10^poly(xfit, rfiducialfit), color='blue', thick=5
 
       if (goodr1[0] NE -1) then djs_oplot, plug[nonsky[goodr1]].mag[2], allspec[nonsky[goodr1]].r, $
            ps=1, syms=0.7, color='red'
       if (goodr2[0] NE -1) then djs_oplot, plug[nonsky[goodr2]].mag[2], allspec[nonsky[goodr2]].r, $
-           ps=4, syms=0.7, color='cyan'
+           ps=4, syms=0.7
 
       xyouts, xmin+0.5, 3.0, string(format='(a,f5.2,f6.2,a)','log S/N = ', rfit, " * r'")
       xyouts, xmin+0.5, 2.0, string(format='(a,f5.3)','Deviation: ', rabsdev)
@@ -192,19 +191,18 @@ pro checksn, flux, err, plug, wave, expres=expres, noplot=noplot, title=title
            10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.9], string(format='(f5.1)', minutes[0]), $
            color=djs_icolor('red')
       xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.8], $
-           10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.84], string(format='(f5.1)', minutes[1]), $
-           color=djs_icolor('cyan')
+           10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.84], string(format='(f5.1)', minutes[1]) 
 
       plot, plug.mag[3], allspec.i, /nodata, /ylog, xtitle = 'Fiber Magnitude', $
            ychars=2.0, xcharsize = 2.0, xr=[xmin,xmax], ymargin = [4,0], /xs, yr=[1,100], /ys
 
       djs_oplot, xfit, 10^poly(xfit, ifit)
-      djs_oplot, xfit, 10^poly(xfit, ifiducialfit), color='blue', thick=3
+      djs_oplot, xfit, 10^poly(xfit, ifiducialfit), color='blue', thick=5
 
       if (goodi1[0] NE -1) then djs_oplot, plug[nonsky[goodi1]].mag[3], allspec[nonsky[goodi1]].i, $
            ps=1, syms=0.7, color='red'
       if (goodi2[0] NE -1) then djs_oplot, plug[nonsky[goodi2]].mag[3], allspec[nonsky[goodi2]].i, $
-           ps=4, syms=0.7, color='cyan'
+           ps=4, syms=0.7
 
       xyouts, xmin+0.5, 3.0, string(format='(a,f5.2,f6.2,a)','log S/N = ', ifit, " * i'")
       xyouts, xmin+0.5, 2.0, string(format='(a,f5.3)','Deviation: ', iabsdev)
@@ -213,8 +211,7 @@ pro checksn, flux, err, plug, wave, expres=expres, noplot=noplot, title=title
            10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.9], string(format='(f5.1)', minutes[0]), $
            color=djs_icolor('red')
       xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.8], $
-           10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.84], string(format='(f5.1)', minutes[1]), $
-           color=djs_icolor('cyan')
+           10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.84], string(format='(f5.1)', minutes[1])
 
       s_plotdev, plug[nonsky[goodg]].xfocal, plug[nonsky[goodg]].yfocal, gdiff, 3.0, $
              ychars=2.0, xcharsize = 0.001, ymargin=[1,3]
@@ -231,6 +228,27 @@ pro checksn, flux, err, plug, wave, expres=expres, noplot=noplot, title=title
       !p.multi  = oldmulti
 
     endif
+
+    spectroid = (plug.fiberid - 1) / 320
+
+  for imag=0, nmag -1 do begin
+
+    for j=0,1 do begin
+
+	g = where(spectroid EQ j AND $
+                  plug.mag[1] GE magsmin[imag] AND plug.mag[1] LE magsmax[imag],ng)
+        if (ng GT 0) then bin.gsn[imag,j] = median([allspec[g].g])
+
+	r = where(spectroid EQ j AND $
+                  plug.mag[2] GE magsmin[imag] AND plug.mag[2] LE magsmax[imag],nr)
+        if (nr GT 0) then bin.rsn[imag,j] = median([allspec[r].r])
+
+	i = where(spectroid EQ j AND $
+                  plug.mag[3] GE magsmin[imag] AND plug.mag[3] LE magsmax[imag],ni)
+        if (ni GT 0) then bin.isn[imag,j] = median([allspec[i].i])
+
+      endfor
+    endfor
 
    print, "               S/N g'             S/N r'              S/N i'"
    print, " MAG          1      2           1      2            1      2"
@@ -262,6 +280,16 @@ pro checksn, flux, err, plug, wave, expres=expres, noplot=noplot, title=title
      else print, 'Fiber ', plug[bright[i]].fiberid, ' is near bright fiber ', plug[whop].fiberid 
 
     endfor
+
+
+    if (n_elements(files) GT 0) then begin
+      hdr = headfits(files[0])
+     print, sxpar(hdr,'PLATEID'), sxpar(hdr,'DATE-OBS'), $
+            sxpar(hdr,'MJD'), sxpar(hdr, 'TILEID'), $
+            sxpar(hdr,'RA'), sxpar(hdr,'DEC'), sxpar(hdr, 'EXPTIME'), $
+            format='(i4,a11, i6, i7, f10.4, f11.4, i8)'
+    endif
+
+
 return
 end
-
