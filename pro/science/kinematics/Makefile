@@ -11,7 +11,9 @@ all :;
 # Install things in their proper places in $(IDLSPEC2D_DIR)
 #
 install :
-	- cp * $(IDLSPEC2D_DIR)/pro/science/kinematics
+	- cp *.pro $(IDLSPEC2D_DIR)/pro/science/kinematics
+	- cp sp* $(IDLSPEC2D_DIR)/pro/science/kinematics
+	- cp Makefile $(IDLSPEC2D_DIR)/pro/science/kinematics
 
 clean :
 	- /bin/rm -f *~ core

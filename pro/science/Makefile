@@ -21,12 +21,12 @@ all :
 # Install things in their proper places in $(IDLSPEC2D_DIR)
 #
 install :
-	@ rm -rf $(IDLSPEC2D_DIR)/pro
-	@ mkdir $(IDLSPEC2D_DIR)/pro
+	@ rm -rf $(IDLSPEC2D_DIR)/pro/science
+	@ mkdir $(IDLSPEC2D_DIR)/pro/science
 	@ for f in $(SUBDIRS); do \
-		(mkdir $(IDLSPEC2D_DIR)/pro/$$f; cd $$f ; echo In $$f; $(MAKE) $(MFLAGS) install ); \
+		(mkdir $(IDLSPEC2D_DIR)/pro/science/$$f; cd $$f ; echo In $$f; $(MAKE) $(MFLAGS) install ); \
 	done
-        - cp *.pro $(IDLSPEC2D_DIR)/pro/science
+	- cp *.pro $(IDLSPEC2D_DIR)/pro/science
 	- cp Makefile $(IDLSPEC2D_DIR)/pro/science
 	- cp README $(IDLSPEC2D_DIR)/pro/science
 
