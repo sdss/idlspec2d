@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   findspec, [ra, dec, infile=, outfile=, searchrad=, slist=, $
-;    /duplicate, /silent ]
+;    /best, /silent ]
 ;
 ; INPUTS:
 ;
@@ -18,10 +18,12 @@
 ;                If set, then this over-rides values passed in RA,DEC.
 ;   outfile    - If set, then print matches to this file.
 ;   searchrad  - Search radius in degrees; default to 3./3600 (3 arcsec).
-;   duplicate  - If set, then return multiple matches where the same
-;                object may be on several plates.  In this case, the
-;                length of the output list can exceed the length of the
-;                input list.
+;   best       - If set, then return the best match for each location, where
+;                best is defined to be the closest object on the plate with
+;                the best S/N.
+;                This also forces the return of one structure element in SLIST
+;                per position, so that you get exactly a paired list between
+;                RA,DEC and SLIST.
 ;   silent     - If set, then suppress printing outputs to the terminal.
 ;
 ; OUTPUTS:
@@ -61,19 +63,19 @@
 ;-
 ;------------------------------------------------------------------------------
 pro findspec, ra, dec, infile=infile, outfile=outfile, searchrad=searchrad, $
- slist=slist, duplicate=duplicate, silent=silent
+ slist=slist, best=best, silent=silent
 
-   common com_findspec, plist, nlist, minsn
+   common com_findspec, plist, nlist, platesn
 
    if (NOT keyword_set(plist)) then begin
       platelist, plist=plist
       if (NOT keyword_set(plist)) then $
        message, 'Plate list (platelist.fits) not found in $SPECTRO_DATA'
       nlist = n_elements(plist)
-      minsn = fltarr(nlist)
+      platesn = fltarr(nlist)
       for i=0, nlist-1 do $
-      minsn[i] = min([ plist[i].sn2_g1, plist[i].sn2_g2, $
-       plist[i].sn2_i1, plist[i].sn2_i2 ])
+       platesn[i] = min([ plist[i].sn2_g1, plist[i].sn2_g2, $
+        plist[i].sn2_i1, plist[i].sn2_i2 ])
    endif
 
    ;----------
@@ -90,11 +92,12 @@ pro findspec, ra, dec, infile=infile, outfile=outfile, searchrad=searchrad, $
 
    nvec = n_elements(ra)
    if (nvec GT 1) then begin
+      slist = 0
       for i=0, nvec-1 do begin
          findspec, ra[i], dec[i], searchrad=searchrad, $
-          slist=slist1, duplicate=duplicate, /silent
-         if (i EQ 0) then slist = slist1 $
-          else slist = [slist, slist1]
+          slist=slist1, best=best, /silent
+         if (keyword_set(slist1)) then $
+          slist = keyword_set(slist) ? [slist, slist1] : slist1
       endfor
       if (NOT keyword_set(silent)) then struct_print, slist
       if (keyword_set(outfile)) then struct_print, slist, filename=outfile
@@ -104,33 +107,41 @@ pro findspec, ra, dec, infile=infile, outfile=outfile, searchrad=searchrad, $
    ;----------
    ; Create output structure
 
-   slist = create_struct(name='slist', $
+   blanklist = create_struct(name='slist', $
     'plate'   , 0L, $
     'mjd'     , 0L, $
     'fiberid' , 0L, $
     'ra'      , 0.d, $
     'dec'     , 0.d, $
     'matchrad', 0.0 )
-   slist = replicate(slist, nlist)
 
    ;----------
-   ; Loop through each possible plate, looking for nearest object
+   ; Loop through each possible plate, looking for any matches.
 
    adist = djs_diff_angle(ra, dec, plist.ra, plist.dec)
 
+   slist = 0
    for iplate=0, nlist-1 do begin
-      if (adist[iplate] LT 1.55) then begin
+      if (adist[iplate] LT 1.55 + searchrad) then begin
          readspec, plist[iplate].plate, mjd=plist[iplate].mjd, plugmap=plugmap
          if (keyword_set(plugmap)) then begin
             objdist = djs_diff_angle(ra, dec, plugmap.ra, plugmap.dec)
-            mindist = min(objdist, imin)
-            if (mindist LT searchrad) then begin
-               slist[iplate].plate = plist[iplate].plate
-               slist[iplate].mjd = plist[iplate].mjd
-               slist[iplate].fiberid = plugmap[imin].fiberid
-               slist[iplate].ra = plugmap[imin].ra
-               slist[iplate].dec = plugmap[imin].dec
-               slist[iplate].matchrad = mindist
+            ikeep = where(objdist LE searchrad, nkeep)
+            if (nkeep GT 0) then begin
+               slist1 = replicate(blanklist, nkeep)
+               slist1.plate = plist[iplate].plate
+               slist1.mjd = plist[iplate].mjd
+               slist1.fiberid = plugmap[ikeep].fiberid
+               slist1.ra = plugmap[ikeep].ra
+               slist1.dec = plugmap[ikeep].dec
+               slist1.matchrad = objdist[ikeep]
+               if (keyword_set(slist)) then begin
+                  slist = [slist, slist1]
+                  snval = [snval, platesn[iplate]]
+               endif else begin
+                  slist = slist1
+                  snval = platesn[iplate]
+               endelse
             endif
          endif
       endif
@@ -139,20 +150,19 @@ pro findspec, ra, dec, infile=infile, outfile=outfile, searchrad=searchrad, $
    ;----------
    ; Select the exposure on the plate with the best S/N
 
-   indx = where(slist.plate NE 0)
-   if (indx[0] EQ -1) then begin
-      slist = slist[0]
-      slist.ra = ra
-      slist.dec = dec
-      indx = 0
-   endif
-
-   if (keyword_set(duplicate)) then begin
+   if (keyword_set(best) AND n_elements(slist) GT 1) then begin
+      ; First trim to the plate with the best S/N
+      junk = max(snval, ibest)
+      indx = where(slist.plate EQ slist[ibest].plate AND slist.mjd EQ slist[ibest].mjd)
       slist = slist[indx]
-   endif else begin
-      junk = max(minsn[indx], ibest)
-      slist = slist[indx[ibest]]
-   endelse
+
+      ; Then trim to the closest object on that plate
+      if (n_elements(slist) GT 1) then begin
+         junk = min(slist.matchrad, ibest)
+         slist = slist[ibest]
+      endif
+   endif
+   if (keyword_set(best) AND NOT keyword_set(slist)) then slist = blanklist
 
    if (NOT keyword_set(silent)) then struct_print, slist
    if (keyword_set(outfile)) then struct_print, slist, filename=outfile
