@@ -156,7 +156,7 @@ pro veldisp, objflux, objerr, objwave, starflux, starerr, starwave, result, klo_
         fluxfft, fluxfilt, fluxvar0, fluxvariancefft,  $
         keep=[3500, 6100]*10.^(fitcen/10000.)
       
-      fitredshift, fluxfilt, objerr[*, iobj], starfilt, starerr, $
+      fitredshift, fluxfilt, fluxerr, starfilt, starerr, $
         nsearch=5, zfit=fitcen, z_err=fitcen_err, $
         veldispfit=galsigma, veldisp_err=galsigma_err, doplot=doplot
 
