@@ -213,7 +213,10 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
    ; Find the pixel numbers to use from the object and the templates
 
    ; Find the sub-pixel shifts in the object
-   subshift = round(((bigloglam[0]-restloglam[0]) / objdloglam MOD 1) * nsamp)
+;   subshift = round(((bigloglam[0]-restloglam[0]) / objdloglam MOD 1) * nsamp)
+   ; Bug fix since the IDL MOD function does the wrong thing for negatives.
+   subdum = (bigloglam[0]-restloglam[0]) / objdloglam
+   subshift = round((subdum-floor(subdum)) * nsamp)
    indx = subshift + nsamp * lindgen(nbigpix/nsamp)
 
    if (max(restloglam) LT min(bigloglam[indx]) $
