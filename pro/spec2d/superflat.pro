@@ -6,7 +6,7 @@
 ;   Create a "superflat" from an extracted flat-field image
 ;
 ; CALLING SEQUENCE:
-;   superflat, flux, fluxivar, wset, fullbkpt, coeff, $
+;   superflat, flux, fluxivar, wset, sset, $
 ;    [ fibermask=, minval=, lower=, upper=, medval=, title= ]
 ;
 ; INPUTS:
@@ -25,8 +25,7 @@
 ;   upper      -
 ;
 ; OUTPUTS:
-;   fullbkpt   - Breakpoints describing spline fit to superflat
-;   coeff      - Coefficients describing spline fit to superflat
+;   sset       - Structure describing spline fit to superflat
 ;
 ; OPTIONAL OUTPUTS:
 ;   medval     - Median value of each fiber [NFIBER]
@@ -52,7 +51,7 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro superflat, flux, fluxivar, wset, fullbkpt, coeff, $
+pro superflat, flux, fluxivar, wset, sset, $
  fibermask=fibermask, minval=minval, lower=lower, upper=upper, medval=medval, $
  title=title
 
@@ -145,9 +144,14 @@ pro superflat, flux, fluxivar, wset, fullbkpt, coeff, $
    indx = where(flux[*,igood] GT minval)
    if (indx[0] EQ -1) then $
     message, 'No points above MINVAL'
-   fullbkpt = slatec_splinefit(allwave[indx], allflux[indx], coeff, $
-    maxiter=maxiter, upper=upper, lower=lower, $
-    invvar=allivar[indx], nord=4, nbkpts=ny, mask=mask)
+
+   sset = bspline_iterfit(allwave[indx], allflux[indx], invvar=allivar[indx], $
+       nord=4, upper=upper, lower=lower, maxiter=maxiter, nbkpts=ny, $
+       outmask=mask, yfit=yfit)
+
+;   fullbkpt = slatec_splinefit(allwave[indx], allflux[indx], coeff, $
+;    maxiter=maxiter, upper=upper, lower=lower, $
+;    invvar=allivar[indx], nord=4, nbkpts=ny, mask=mask, bkpt=bkpt)
 
 ; Should move this plotting elsewhere ???
    ;------
@@ -157,7 +161,7 @@ pro superflat, flux, fluxivar, wset, fullbkpt, coeff, $
       wmin = fix(10^min(allwave))
       wmax = ceil(10^max(allwave))
       plot_lam = wmin + lindgen(wmax-wmin+1)
-      plot_fit  = slatec_bvalu(alog10(plot_lam), fullbkpt, coeff)
+      plot_fit  = bspline_valu(alog10(plot_lam), sset)
       djs_plot, plot_lam, plot_fit, xrange=[wmin,wmax], xstyle=1, $
        xtitle='\lambda [A]', ytitle='Normalized flux', $
        title=title

@@ -1,3 +1,12 @@
+* Replace slatec_splinefit and slatec_bvalu with their IDL counterparts 
+
+* Confirm proper dispset in combined spectra
+
+* Calculate synthetic g',r',i' in fluxed spectra and begin QA
+    for spectrophotometry
+
+* Do higher order shifting then "bestlag" as real flexure changes
+  scale as well.  in place: match_trace
 
 * Report non-gaussian errors in SDSSPROC from the overscan region.
   Search for other possible electronics problems.
@@ -14,6 +23,7 @@
   relative from current directory.
 
 * Add 3% to the errors in each spectrum for when combining high S/N data.
+   --- or add errors due to uncertainties in flat field/telluric corrections
 
 * Let MYFLUXCORR work for different pluggings
 
@@ -44,6 +54,9 @@
 
 * Dispersion width needs to be adjusted by measuring the width of bright
   sky lines (on sky fibers), and change units from pixels to log10-lambda.
+
+   --- Here we need Robust fitting of skyline, arcline widths 
+   --- we could just try to fit sky fibers to see how widths have changed
 
 * Horrible bug in plate 343, but evident in other plates:
   If throughput varies for some fibers (due to atmospheric refraction
@@ -79,8 +92,6 @@
 * Add keywords: INSTRUME ?
 
 * ATV bug displaying BYTE images, or NaN's
-
-* Reject masked or deviant sky fibers from the supersky (as done for superflat)
 
 * In SPALLREDUCE, don't send the name UNKNOWN to COMBINE2DOUT.
 
@@ -159,13 +170,15 @@
 * The b1 CCD has too much overscan subtracted on rows 0 and 1.
   Check all overscan regions in SDSSPROC.
 
-* Focal plane mapping
-
 * Output in header PSF information (spatial + wavelength) to final files.
 
 -------------------------------------------------------------------------------
 ;   These have been dealt with
 -------------------------------------------------------------------------------
+
+* Focal plane mapping
+
+* Reject masked or deviant sky fibers from the supersky (as done for superflat)
 
 * Plate 306, fibers 172-175 now look worse than in July.
 

@@ -49,7 +49,8 @@
 ;------------------------------------------------------------------------------
 
 function func_fit, x, y, ncoeff, invvar=invvar, function_name=function_name, $
- ia=ia, inputans=inputans, yfit=yfit, _EXTRA=KeywordsForFunc
+ ia=ia, inputans=inputans, yfit=yfit, inputfunc=inputfunc, $
+    _EXTRA=KeywordsForFunc
 
    if (N_params() LT 3) then begin
       print,'function func_fit, x, y, ncoeff, [invvar=invvar, function_name=function_name' 
@@ -116,6 +117,9 @@ function func_fit, x, y, ncoeff, invvar=invvar, function_name=function_name, $
        legarr = fchebyshev(x, ncfit)
       if (function_name EQ 'fchebyshev_split') then $
        legarr = fchebyshev_split(x, ncfit)
+
+      if keyword_set(inputfunc) then $
+        legarr = legarr * (inputfunc # replicate(1,ncfit))
 
       ; Subtract fixed terms first
      

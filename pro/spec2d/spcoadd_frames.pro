@@ -96,7 +96,8 @@ end
 ;------------------------------------------------------------------------------
 pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
  binsz=binsz, zeropoint=zeropoint, nord=nord, wavemin=wavemin, $
- bkptbin=bkptbin, window=window, maxsep=maxsep, adderr=adderr
+ bkptbin=bkptbin, window=window, maxsep=maxsep, adderr=adderr, $
+ snplot=snplot
 
    if (NOT keyword_set(binsz)) then binsz = 1.0d-4 $
     else binsz = double(binsz)
@@ -216,10 +217,8 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
 
       if (keyword_set(window)) then begin
          swin = window < npix
-         tempivar[0:swin-1] = $
-          tempivar[0:swin-1] * findgen(swin) / window
-         tempivar[npix-swin:npix-1] = $
-          tempivar[npix-swin:npix-1] * (swin-1-findgen(swin)) / window
+         hmm = lindgen(swin)
+         tempivar[hmm,*] = tempivar[hmm,*] * (hmm # replicate(1,nfib)) / swin
       endif
 
       ;----------
@@ -314,7 +313,12 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
    nfinalpix = spotmax - spotmin + 1
    finalwave = dindgen(nfinalpix) * binsz + wavemin
 
+   gwave = where(finalwave GT alog10(4000) AND finalwave LT alog10(5500))
+   rwave = where(finalwave GT alog10(5600) AND finalwave LT alog10(6900))
+   iwave = where(finalwave GT alog10(6910) AND finalwave LT alog10(8500))
+
    nfiber = max(plugmap.fiberid)
+
    finalflux = fltarr(nfinalpix, nfiber)
    finalivar = fltarr(nfinalpix, nfiber)
    finalandmask = lonarr(nfinalpix, nfiber)
@@ -364,6 +368,7 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
          finalandmask[*,ifiber] = bestandmask
          finalormask[*,ifiber] = bestormask
          finaldispersion[*,ifiber] = bestdispersion
+
 
          ; The following adds the COMBINEREJ bit to the input pixel masks
          pixelmask[*,indx] = temppixmask

@@ -66,7 +66,7 @@ function fitdispersion, arc_flux, arc_fluxivar, xcen, $
         ;
         extract_image, arc_flux, arc_fluxivar, xcentemp, sigma, $
           arclineflux, arclineivar, ansimage=ansimage, wfixed=[1,1], $
-          highrej=10, lowrej=10, relative=1
+          highrej=10, lowrej=10, relative=1, npoly=10
 
          
         ;

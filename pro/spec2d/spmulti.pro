@@ -40,8 +40,8 @@
 
 pro spmulti, mjd=mjd, extractDir=extractDir, mergeDir=mergeDir
 
-   if (NOT keyword_set(extractDir)) then extractDir = '2d/'
-   if (NOT keyword_set(mergeDir)) then mergeDir = '2dmerge/'
+   if (NOT keyword_set(extractDir)) then extractDir = ''
+   if (NOT keyword_set(mergeDir)) then mergeDir = ''
 
    stime0 = systime(1)
 

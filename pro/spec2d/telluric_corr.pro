@@ -56,8 +56,8 @@
 ;   djs_plot
 ;   fibermask_bits()
 ;   func_fit()
-;   slatec_bvalu()
-;   slatec_splinefit()
+;   bspline_valu()
+;   bspline_iterfit()
 ;   splog
 ;   traceset2xy
 ;
@@ -216,17 +216,12 @@ function telluric_corr,flux, fluxivar, wset, plugsort, $
                iend = (where(bkpt GT max(tellloglam[indc,itell])))[0]
                if (iend EQ -1) then iend = nbkpts-1
 
-               fullbkpt = slatec_splinefit(tellloglam[indc,itell], $
-                tellflux[indc,itell], coeff, invvar=tellivar[indc,itell], $
+               sset = bspline_iterfit(tellloglam[indc,itell], $
+                tellflux[indc,itell], invvar=tellivar[indc,itell], $
                 maxiter=10, upper=upper, lower=lower, $
                 nord=nord, bkpt=bkpt[istart:iend], rejper=0.10)
 
-               ; Evaluate spline fit to this fiber
-               if (N_elements(fullbkpt) GT 1) then begin
-                  continuum = slatec_bvalu(tellloglam[*,itell], fullbkpt, coeff)
-               endif else begin
-                  continuum = 0
-               endelse
+               continuum = bspline_valu(tellloglam[*,itell], sset)
 
             endif else begin
 
@@ -275,11 +270,11 @@ function telluric_corr,flux, fluxivar, wset, plugsort, $
    ;----------
    ; Now bspline the features in contflux
 
-   telluricbkpt = slatec_splinefit(fitloglam, fitflux, telluriccoeff, $
+   tellset = bspline_iterfit(fitloglam, fitflux, $
     nord=nord, maxiter=10, lower=lower, upper=upper, invvar=fitivar, $
     everyn=2*ntell, rejper=0.1)
 
-   tellcorr = slatec_bvalu(loglam, telluricbkpt, telluriccoeff)
+   tellcorr = bspline_valu(loglam, tellset)
 
    ;---------------------------------------------------------------------------
    ; QA PLOT
@@ -306,8 +301,7 @@ function telluric_corr,flux, fluxivar, wset, plugsort, $
              title=title
 
             ; Overplot the fit
-            tellplot = slatec_bvalu(fitloglam[indx], $
-             telluricbkpt, telluriccoeff)
+            tellplot = bspline_valu(fitloglam[indx], tellset)
             djs_oplot, 10^fitloglam[indx], tellplot
          endif
 

@@ -81,13 +81,14 @@ pro spflux, sciname, fcalibprefix, adderr=adderr
        fcalibfiles = fcalibprefix + ['-b2.fits','-r2.fits']
 
       myfluxcalib, [sciname[ibcalib], sciname[ircalib]], $
-       fcalibfiles, colors=['b','r'], adderr=adderr
+       fcalibfiles, colors=['b','r'], adderr=adderr, rset=rset, bset=bset
 
       ;----------
       ; Loop through each exposure and construct the flux-correction function
       ; for each fiber to make it agree with the specro-photo (smear) image.
       ; Make a correction file for each spectrograph, but that includes both
       ; blue and red.
+
 
       for iexp=0, nall-1 do begin
          iblue = (where(camcolor EQ 'b' AND long(camspecid) EQ ispec $
@@ -102,9 +103,19 @@ pro spflux, sciname, fcalibprefix, adderr=adderr
          expstr = string(allexpnum[iexp], format='(i8.8)')
          corrfile = 'spFluxcorr-' + expstr + '-' + camspecid[iblue] + '.fits'
 
-         myfluxcorr, sciname[ibcalib], sciname[ircalib], $
-          bluefile, redfile, corrfile, adderr=adderr
+         if keyword_set(bluelist) then bluelist = [bluelist, bluefile] $
+         else bluelist = bluefile 
+
+         if keyword_set(redlist) then redlist = [redlist, redfile] $
+         else redlist = redfile 
+
+         if keyword_set(corrlist) then corrlist = [corrlist, corrfile] $
+         else corrlist = corrfile 
+
       endfor
+
+         myfluxcorr, sciname[ibcalib], sciname[ircalib], $
+          bluelist, redlist, corrlist, adderr=adderr, rset=rset, bset=bset
 
    endfor
 

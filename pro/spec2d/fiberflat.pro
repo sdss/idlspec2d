@@ -62,8 +62,8 @@
 ;
 ; PROCEDURES CALLED:
 ;   fibermask_bits()
-;   slatec_bvalu()
-;   slatec_splinefit()
+;   bspline_valu()
+;   bspline_iterfit()
 ;   splog
 ;   superflat
 ;   traceset2xy
@@ -71,6 +71,7 @@
 ;
 ; REVISION HISTORY:
 ;   14-Oct-1999  Written by D. Schlegel, APO
+;    3-Oct-2000  Changed over to IDL bspline routines
 ;-
 ;------------------------------------------------------------------------------
 
@@ -106,7 +107,7 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
    ;----------
    ; Construct the "superflat" vector
 
-   superflat, flux, fluxivar, wset, afullbkpt, acoeff, $
+   superflat, flux, fluxivar, wset, sset, $
     fibermask=fibermask, minval=minval, lower=lower, upper=upper, $
     medval=medval, title=plottitle
 
@@ -115,7 +116,7 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
       return, -1
    endif
 
-   fit2  = slatec_bvalu(loglam, afullbkpt, acoeff)
+   fit2  = bspline_valu(loglam, sset)
 
    ;----------
 
@@ -140,7 +141,8 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
          ; Locate only unmasked points
 ;         indx = where(fluxivar[*,i] GT 0.0 AND flux[*,i] GT minval $
 ;          AND fit2[*,i] GT minval, ct)
-         indx = where(fluxivar[*,i] GT 0.0 AND flux[*,i] GT minval, ct)
+         indx = where(fluxivar[*,i] GT 0.0 AND flux[*,i] GT minval $
+                      AND fit2[*,i] GT 0.0, ct)
 
          if (ct GE 5) then begin ; Require at least 5 data points
 
@@ -152,28 +154,16 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
             iend = (where(bkpt GT max(loglam[indx,i])))[0]
             if (iend EQ -1) then iend = nbkpts-1
 
-            ratio = flux[indx,i] / fit2[indx,i]
-            ratioivar = fluxivar[indx,i] * fit2[indx,i]^2
+            ratio  = flux[indx,i] / fit2[indx,i]
+            ratioivar  = fluxivar[indx,i] * fit2[indx,i]^2
 
             ; Dispose of leading or trailing points with zero weight
-            fullbkpt = slatec_splinefit(loglam[indx,i], ratio, coeff, $
+
+            ratioset = bspline_iterfit(loglam[indx,i],ratio,invvar=ratioivar, $
              maxiter=maxiter, upper=upper, lower=lower, /eachgroup, $
-             invvar=ratioivar, nord=nord, bkpt=bkpt[istart:iend], mask=mask)
+             nord=nord, bkpt=bkpt[istart:iend])
 
-            ; Evaluate spline fit to this fiber
-            if (N_elements(fullbkpt) GT 1) then begin
-               fflat[*,i] = slatec_bvalu(loglam[*,i], fullbkpt, coeff)
-            endif else begin
-               fflat[*,i] = 0
-            endelse
-
-            ; Replace leading or trailing masked points with the first or last
-            ; unmasked value.
-            ; SLATEC_BVALU already does the check below
-            ;if (indx[0] NE 0) then $
-            ; fit1[0:indx[0]-1] = fit1[indx[0]]
-            ;if (indx[ct-1] NE ny-1) then $
-            ; fit1[indx[ct-1]+1:ny-1] = fit1[indx[ct-1]]
+            fflat[*,i] = bspline_valu(loglam[*,i], ratioset)
 
          endif else begin
 

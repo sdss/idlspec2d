@@ -28,18 +28,7 @@ function shift_trace, image, xcen, ycen, lagrange=lagrange, lagstep=lagstep, $
 	  finenlag = 20L*long(lagrange/lagstep) + 1
           finelagx = findgen(finenlag)*lagstep*0.1 - lagrange
 
-          ; --------------------------------------------
-          ;  This is just for fun
-          ;
-          maxt = fltarr(nfiber)
-          for i=0,nfiber -1 do begin
-            a = poly_fit(lagx, totalflux[i,*], 5)
-            peak = max(poly(finelagx, a), place)
-            maxt[i] = finelagx[place]
-          endfor
-
-          a = poly_fit(lagx, fulltotal, 5)
-          totalfit = poly(finelagx, a)
+          totalfit = spline(lagx, fulltotal, finelagx)
 	  peak = max(totalfit, place)
 
           if (place EQ 0) then begin

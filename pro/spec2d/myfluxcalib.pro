@@ -126,7 +126,8 @@ end
 ;                REDDEN standard in common.
 ;   calibfile  - Name(s) of output calibration files, one per FILENAME
 
-pro myfluxcalib, filename, calibfile, colors=colors, adderr=adderr
+pro myfluxcalib, filename, calibfile, colors=colors, adderr=adderr, $
+    rset=rset, bset=bset
 
    dloglam = 1.0d-4 ; ???
 
@@ -220,12 +221,7 @@ pro myfluxcalib, filename, calibfile, colors=colors, adderr=adderr
       ; Make a map of the size of each pixel in delta-(log10-Angstroms),
       ; and re-normalize the flux to ADU/(dloglam)
 
-      npix = (size(objflux,/dimens))[0]
-      dlogimg = [ loglam[1,*] - loglam[0,*], $
-       0.5 * (loglam[2:npix-1,*] - loglam[0:npix-3,*]), $
-       loglam[npix-1,*] - loglam[npix-2,*] ]
-      dlogimg = abs(dlogimg)
-      divideflat, objflux, objivar, (dlogimg/dloglam), minval=0
+      correct_dlam, objflux, objivar, wset, dlam=dloglam
 
       ;----------
       ; Do the actual fit
@@ -233,6 +229,9 @@ pro myfluxcalib, filename, calibfile, colors=colors, adderr=adderr
       jbest = (where(plugindx[*,ifile] EQ ibest))[0]
       calibset = fluxfit(loglam[*,jbest], objflux[*,jbest], $
        objivar[*,jbest], color=colors[ifile], mags=plugmap[ibest].mag)
+
+      if colors[ifile] EQ 'r' then rset = calibset
+      if colors[ifile] EQ 'b' then bset = calibset
 
 ;stop ; ???
 ;set_plot,'x'

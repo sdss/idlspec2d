@@ -74,7 +74,8 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
                wfixed=wfixed, mask=mask, pixelmask=pixelmask, reject=reject, $
                nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej, $
 	       fitans=fitans, whopping=whopping, oldreject=oldreject, $
-               relative=relative, chisq=chisq, wsigma=wsigma, nband=nband
+               relative=relative, chisq=chisq, wsigma=wsigma, nband=nband, $
+               pimage=pimage
 
    ; Need 5 parameters
    if (N_params() LT 5) then begin
@@ -186,6 +187,9 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
             ansimage = fltarr(oldma,nRowExtract)       ; parameter values
    endif
 
+   if (ARG_PRESENT(pimage)) then pimage = fltarr(oldma,nRowExtract)
+   
+
    ymodelrow = fltarr(nx)
    fscatrow = fltarr(nTrace)
    lTrace = lindgen(nTrace)
@@ -273,6 +277,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
      finv[iy,*] = finvrow
 
      if(ARG_PRESENT(ansimage)) then ansimage[*,iy] = ansrow[0:oldma-1]
+     if(ARG_PRESENT(pimage)) then pimage[*,iy] = prow[0:oldma-1]
 
      if(ARG_PRESENT(pixelmask)) then begin
 

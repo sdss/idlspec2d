@@ -1,149 +1,136 @@
-
-;------------------------------------------------------------------------------
-pro fluxrebin, filename, newloglam, newflux, newivar, adderr=adderr
-
-; Should we actually spline fit for the re-binning???
-
-   ;----------
-   ; Case where file does not exist
-
-   if (NOT keyword_set(filename)) then begin
-      newflux = 0
-      newivar = 0
-      return
-   endif
-
-   ;----------
-   ; Read in the flux, errors, mask, wavelengths
-
-   objflux = mrdfits(filename,0)
-   objivar = mrdfits(filename,1)
-   objmask = mrdfits(filename,2)
-   wset = mrdfits(filename,3)
-   traceset2xy, wset, 0, objloglam
-
-   dims = size(objloglam, /dimens)
-   npix = dims[0]
-   nfiber = dims[1]
-
-   ;----------
-   ; Add an additional error term equal to ADDERR of the flux.
-
-   if (keyword_set(adderr)) then begin
-      gmask = objivar NE 0 ; =1 for good points
-      objivar = 1.0 / ( 1.0/(objivar + (1-gmask)) $
-       + (adderr * (objflux>0))^2 ) * gmask
-   endif
-
-   ;----------
-   ; Mask where the spectrum may be dominated by sky-subtraction
-   ; residuals.  Grow that mask by 2 pixels in each direction.
-
-   skymask = (objmask AND pixelmask_bits('BRIGHTSKY')) NE 0
-   for ifiber=0L, nfiber-1 do $
-    skymask[*,ifiber] = smooth(float(skymask[*,ifiber]),5) GT 0
-   ibad = where(skymask)
-   if (ibad[0] NE -1) then objivar[ibad] = 0
-
-   ;----------
-   ; Make a map of the size of each pixel in delta-(log10-Angstroms),
-   ; and re-normalize the flux to ADU/(dloglam)
-
-   dlogimg = [ objloglam[1,*] - objloglam[0,*], $
-    0.5 * (objloglam[2:npix-1,*] - objloglam[0:npix-3,*]), $
-    objloglam[npix-1,*] - objloglam[npix-2,*] ]
-   dlogimg = abs(dlogimg)
-
-   dloglam = newloglam[1] - newloglam[0]
-   divideflat, objflux, objivar, (dlogimg/dloglam), minval=0
-
-   ;----------
-   ; Linearly interpolate the data onto the new wavelengths
-
-   nnewpix = n_elements(newloglam)
-   newflux = fltarr(nnewpix, nfiber)
-   newivar = fltarr(nnewpix, nfiber)
-   newmask = bytarr(nnewpix, nfiber)
-
-   for ifiber=0, nfiber-1 do begin
-      w0 = 3 * objloglam[0,ifiber] - 2 * objloglam[1,ifiber]
-      w1 = 2 * objloglam[0,ifiber] - 1 * objloglam[1,ifiber]
-      w2 = 2 * objloglam[npix-1,ifiber] - 1 * objloglam[npix-2,ifiber]
-      w3 = 3 * objloglam[npix-1,ifiber] - 2 * objloglam[npix-2,ifiber]
-      newflux[*,ifiber] = interpol([0,0,objflux[*,ifiber],0,0], $
-       [w0,w1,objloglam[*,ifiber],w2,w3], newloglam)
-      ; Beware that round-off could put the inverse variance less than zero.
-      newivar[*,ifiber] = interpol([0,0,objivar[*,ifiber],0,0], $
-       [w0,w1,objloglam[*,ifiber],w2,w3], newloglam) > 0
-      newmask[*,ifiber] = floor( $
-       interpol([0,0,float(objivar[*,ifiber] NE 0),0,0], $
-       [w0,w1,objloglam[*,ifiber],w2,w3], newloglam) )
-   endfor
-
-   newivar = newivar * newmask
-
-   return
-end
-
-;------------------------------------------------------------------------------
-pro myfluxcorr, bsmearfile, rsmearfile, bsciname, rsciname, corrfile, $
- adderr=adderr
+pro myfluxcorr, bsmearfile, rsmearfile, bscifile, rscifile, corrfile, $
+ adderr=adderr, rset=rset, bset=bset
 
    ;----------
    ; Read the plug-map file (for identifying sky fibers)
 
-   plugmap = mrdfits(bsmearfile,5)
+   bsmearflux = mrdfits(bsmearfile,0)
+   bsmearivar = mrdfits(bsmearfile,1)
+   bsmearmask = mrdfits(bsmearfile,2)
+   bsmearset  = mrdfits(bsmearfile,3)
+   plugmap    = mrdfits(bsmearfile,5)
+   traceset2xy, bsmearset, xx, bsmearloglam
+   correct_dlam, bsmearflux, bsmearivar, bsmearset, dlam=1.0e-4
+   if keyword_set(bset) then bsmearfluxcalib = bspline_valu(bsmearloglam, bset)
+   
+   rsmearflux = mrdfits(rsmearfile,0)
+   rsmearivar = mrdfits(rsmearfile,1)
+   rsmearmask = mrdfits(rsmearfile,2)
+   rsmearset  = mrdfits(rsmearfile,3)
+   traceset2xy, rsmearset, xx, rsmearloglam
+   correct_dlam, rsmearflux, rsmearivar, rsmearset, dlam=1.0e-4
+   if keyword_set(rset) then rsmearfluxcalib = bspline_valu(rsmearloglam, rset)
+ 
+   ;---------------------------------------------------------
+   ;  now put blue and red together
+   ;
+      smearwave = [temporary(bsmearloglam),temporary(rsmearloglam)]
+      smearflux = [temporary(bsmearflux),temporary(rsmearflux)]
+      smearivar = [temporary(bsmearivar),temporary(rsmearivar)]
 
-   ;----------
-   ; Re-bin all the spectra to the same, uniform log-lambda scale.
-   ; Consistently mask exactly the same pixels in the smear images
-   ; as in the science images.
+      if keyword_set(rset) then begin
+          smearfluxcalib = [temporary(bsmearfluxcalib),$
+                            temporary(rsmearfluxcalib)]
+          divideflat, smearflux, smearivar, smearfluxcalib, minval = 0.0001
+      endif
 
-   minlog = alog10(3700)
-   maxlog = alog10(9300)
-   dloglam = 1.0d-4
-   nnewpix = fix( (maxlog - minlog) / dloglam )
-   newloglam = minlog + findgen(nnewpix) * dloglam
+      ;--------------------------------------------------------------------
+      ;    bkpts from 3700 to 9300
+      ;
+      wavemin = alog10(3700.0)
+      wavemax = alog10(9300.0)
+      waverange = wavemax - wavemin
+      wavemid   = 0.5*(wavemin + wavemax)
+      bkpt = findgen(500)*8.0e-4 + alog10(3700.0)
+      ncoeff = 3 ; ???
 
-   fluxrebin, bsmearfile, newloglam, bsmearflux, bsmearivar, adderr=adderr
-   fluxrebin, rsmearfile, newloglam, rsmearflux, rsmearivar, adderr=adderr
+      nfiber = (size(smearwave,/dimens))[1]
 
-   fluxrebin, bsciname, newloglam, bsciflux, bsciivar, adderr=adderr
-   fluxrebin, rsciname, newloglam, rsciflux, rsciivar, adderr=adderr
+      smearset = ptrarr(nfiber)
 
-   ;----------
-   ; Add the blue + red flux images
+      for ifiber=0, nfiber-1 do begin
 
-   ssmearflux = bsmearflux * (bsmearivar NE 0) + rsmearflux * (rsmearivar NE 0)
-   ssmearivar = bsmearivar + rsmearivar
-   ssciflux = bsciflux * (bsciivar NE 0) + rsciflux * (rsciivar NE 0)
-   ssciivar = bsciivar + rsciivar
+      print, ifiber
 
-   ;----------
+      ; Schlegel counter of step number...
+      ; print, format='("Step ",i5," of ",i5,a1,$)', $
+      ;   ifiber, nfiber, string(13b)
 
-ncoeff = 3 ; ???
-   nfiber = (size(bsmearflux,/dimens))[1]
-   fitimg = dblarr(nnewpix,nfiber)
-   for ifiber=0, nfiber-1 do begin
-      fitimg[*,ifiber] = $
-       myratiofit(newloglam, $
-        ssmearflux[*,ifiber], ssmearivar[*,ifiber], $
-        ssciflux[*,ifiber], ssciivar[*,ifiber], $
-        ncoeff=ncoeff)
-   endfor
+        good = where(smearivar[*,ifiber] GT 0, ngood)
+        if ngood GT 10 then begin
+           inside = where(bkpt GT min(smearwave[good,ifiber]) AND $
+                          bkpt LT max(smearwave[good,ifiber]),ninside)
 
-   ;----------
-   ; Special case: If the science image and smear image is the same,
-   ; then force their ratio to be unity.
+           if ninside GT 1 then begin
+             outside = [inside[0]-1,inside,inside[ninside-1]+1]
 
-   if (bsmearfile EQ bsciname AND rsmearfile EQ rsciname) then begin
-      fitimg[*] = 1 ; Should already be true
-   endif
+             sset = bspline_iterfit(smearwave[*,ifiber], smearflux[*,ifiber], $
+               invvar=smearivar[*,ifiber], bkpt=bkpt[outside], lower=5, upper=5)
 
-   ;----------
-   ; Convert these fits into a trace set
+             smearset[ifiber] = ptr_new(sset)
+           endif
+        endif
+      endfor 
 
-   xy2traceset, newloglam # (bytarr(nfiber)+1), fitimg, corrset, ncoeff=ncoeff
+
+
+   nfiles = n_elements(corrfile)
+
+   for ifile = 0, nfiles - 1 do begin
+ 
+   if (bsmearfile EQ bscifile[ifile] AND $
+       rsmearfile EQ rscifile[ifile]) then begin
+      ;----------
+      ; Special case: If the science image and smear image is the same,
+      ; then force their ratio to be unity.
+
+      fitimg = smearwave*0.0 + 1.0
+      xy2traceset, smearwave, fitimg, corrset, ncoeff=ncoeff
+
+      corrset.coeff[0,*] = 1.0
+      corrset.coeff[1:*,*] = 0.0
+
+   endif else begin
+
+     bsciflux = mrdfits(bscifile[ifile],0)
+     bsciivar = mrdfits(bscifile[ifile],1)
+     bscimask = mrdfits(bscifile[ifile],2)
+     bsciset  = mrdfits(bscifile[ifile],3)
+     traceset2xy, bsciset, xx, bsciloglam
+     correct_dlam, bsciflux, bsciivar, bsciset, dlam=1.0e-4
+     if keyword_set(bset) then bscifluxcalib = bspline_valu(bsciloglam, bset)
+
+     rsciflux = mrdfits(rscifile[ifile],0)
+     rsciivar = mrdfits(rscifile[ifile],1)
+     rscimask = mrdfits(rscifile[ifile],2)
+     rsciset  = mrdfits(rscifile[ifile],3)
+     traceset2xy, rsciset, xx, rsciloglam
+     correct_dlam, rsciflux, rsciivar, rsciset, dlam=1.0e-4
+     if keyword_set(rset) then rscifluxcalib = bspline_valu(rsciloglam, rset)
+
+      sciwave = [temporary(bsciloglam),temporary(rsciloglam)]
+      sciflux = [temporary(bsciflux),temporary(rsciflux)] 
+      sciivar = [temporary(bsciivar),temporary(rsciivar)]
+
+      if keyword_set(rset) then begin
+          scifluxcalib = [temporary(bscifluxcalib),temporary(rscifluxcalib)]
+          divideflat, sciflux, sciivar, scifluxcalib, minval = 0.0001
+      endif
+
+     
+     smearfit = sciwave * 0.0
+
+     for ifiber=0,nfiber - 1 do $
+       smearfit[*,ifiber] = bspline_valu(sciwave[*,ifiber],*(smearset[ifiber])) 
+
+     ;----------
+     ; Convert these fits into a trace set
+
+     xy2traceset, sciwave, sciflux, corrset, $
+        invvar=sciivar, xmin=wavemin, xmax=wavemax, $
+        ncoeff=ncoeff, yfit=crazyimg, inputfunc=smearfit
+
+     traceset2xy, corrset, sciwave, fitimg
 
    ;----------
    ; Which fits are considered bad?
@@ -153,54 +140,43 @@ ncoeff = 3 ; ???
    ; Require the fits for a fiber are never greater than 5 * median.
    ; Require the fiber isn't SKY.
 
-   smearsnmed = djs_median(ssmearflux * sqrt(ssmearivar), 1)
+     scisnmed = djs_median(sciflux * sqrt(sciivar), 1)
 
-   scisnmed = djs_median(ssciflux * sqrt(ssciivar), 1)
+     medfit = median(fitimg)
+     splog, 'Median flux-correction factor = ', medfit
 
-   medfit = median(fitimg)
-   splog, 'Median flux-correction factor = ', medfit
+     qgood = scisnmed GT 2.0 $
+      AND total(fitimg LT 0.20 * medfit, 1) EQ 0 $
+      AND total(fitimg GT 5.0 * medfit, 1) EQ 0 $
+      AND strtrim(plugmap.objtype,2) NE 'SKY'
 
-   qgood = scisnmed GT 2.0 $
-    AND smearsnmed GT 2.0 $
-    AND total(fitimg LT 0.20 * medfit, 1) EQ 0 $
-    AND total(fitimg GT 5.0 * medfit, 1) EQ 0 $
-    AND strtrim(plugmap.objtype,2) NE 'SKY'
+     igood = where(qgood EQ 1, ngood)
+     splog, 'Total of', ngood, ' good flux-correction vectors'
+     if (igood[0] EQ -1) then $
+      message, 'Trouble in flux-correction fits'
 
-   igood = where(qgood EQ 1, ngood)
-   splog, 'Total of', ngood, ' good flux-correction vectors'
-
-   ;----------
-   ; Make a mean fit for the good fits
+     ;----------
+     ; Make a mean fit for the good fits
  
-   if (igood[0] EQ -1) then begin
-      splog, 'WARNING: Trouble in flux-correction fits'
-      meanfit = 0 * fitimg[*,0] + 1.0
-   endif else begin
-      meanfit = total(fitimg[*,igood],2) / ngood
+     meanfit = total(fitimg[*,igood],2) / ngood
+     meanwave = total(sciwave[*,igood],2) / ngood
+     xy2traceset, meanwave, meanfit, cset1, ncoeff=ncoeff
+
+     ;----------
+     ; Replace bad fits with the mean fit
+
+     ibad = where(qgood EQ 0, nbad)
+     splog, 'Replacing', nbad, ' bad flux-correction vectors'
+     if nbad GT 0 then $
+         corrset.coeff[*,ibad] = cset1.coeff # replicate(1,nbad)
+
    endelse
-   xy2traceset, newloglam, meanfit, cset1, ncoeff=ncoeff
 
-;stop ; ???
-;i=0
-;splot,ssmearflux[*,i]
-;soplot,ssciflux[*,i],color='red'
-;soplot,ssciflux[*,i]*fitimg[*,i],color='green'
+   mwrfits, corrset, corrfile[ifile], /create
 
-   ;----------
-   ; Replace bad fits with the mean fit
+   endfor
 
-   ibad = where(qgood EQ 0, nbad)
-   splog, 'Replacing', nbad, ' bad flux-correction vectors'
-   if (ibad[0] NE -1) then begin
-      for i=0, nbad-1 do $
-       corrset.coeff[*,ibad[i]] = cset1.coeff
-   endif
-
-   mwrfits, corrset, corrfile, /create
-
-;stop ; ???
-;   traceset2xy, corrset, binlogarr, fitimg2
-;   plothist, fitimg2, bin=0.01
-
+   ptr_free,smearset
+ 
    return
 end

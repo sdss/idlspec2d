@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   xy2traceset, xpos, ypos, tset, [ invvar=, func=func, ncoeff=ncoeff, $
-;    xmin=xmin, xmax=xmax, maxiter=maxiter, $
+;    xmin=xmin, xmax=xmax, maxiter=maxiter, inputfunc=inputfunc, $
 ;    inmask=inmask, outmask=outmask, yfit=yfit, inputans=inputans, $
 ;    _EXTRA=EXTRA ]
 ;
@@ -34,6 +34,8 @@
 ;                are always rejected from the fits (the rejection is "sticky"),
 ;                and will also be marked as rejected in OUTMASK.
 ;   inputans   - ???
+;   inputfunc  - An array which matches the size of ypos, which is multiplied
+;                  to the normal function before SVD decomposition
 ;   EXTRA      - Keywords passed to either the function FUNC, or DJS_REJECT().
 ;                Note that keywords like MAXREJ relate to each individual trace.
 ;
@@ -73,7 +75,7 @@
 ;-
 ;------------------------------------------------------------------------------
 pro xy2traceset, xpos, ypos, tset, invvar=invvar, func=func, ncoeff=ncoeff, $
- xmin=xmin, xmax=xmax, maxiter=maxiter, $
+ xmin=xmin, xmax=xmax, maxiter=maxiter, inputfunc=inputfunc, $
  inmask=inmask, outmask=outmask, yfit=yfit, inputans=inputans, $
  _EXTRA=EXTRA
 
@@ -159,7 +161,11 @@ pro xy2traceset, xpos, ypos, tset, invvar=invvar, func=func, ncoeff=ncoeff, $
           inmask=curinmask, outmask=curoutmask, _EXTRA=EXTRA)
          tempivar = tempivar * curoutmask
 
-         res = func_fit(xnorm, ypos[*,itrace], ncoeff, invvar=tempivar, $
+         if keyword_set(inputfunc) then $
+           res = func_fit(xnorm, ypos[*,itrace], ncoeff, invvar=tempivar, $
+            function_name=function_name, yfit=ycurfit, inputans=curans, $
+            inputfunc=inputfunc[*,itrace], _EXTRA=EXTRA) $
+         else res = func_fit(xnorm, ypos[*,itrace], ncoeff, invvar=tempivar, $
           function_name=function_name, yfit=ycurfit, inputans=curans, $
           _EXTRA=EXTRA)
 

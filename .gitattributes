@@ -154,10 +154,13 @@ pro/spec2d/TODO -text
 pro/spec2d/arcfit_guess.pro -text
 pro/spec2d/arcsky_fit.pro -text
 pro/spec2d/calcflux.pro -text
+pro/spec2d/calcscatimage.pro -text
 pro/spec2d/checkflavor.pro -text
 pro/spec2d/checksn.pro -text
 pro/spec2d/combine1fiber.pro -text
+pro/spec2d/correct_dlam.pro -text
 pro/spec2d/divideflat.pro -text
+pro/spec2d/djs_fluxcorr.pro -text
 pro/spec2d/extract2.pro -text
 pro/spec2d/extract_boxcar.pro -text
 pro/spec2d/extract_image.pro -text
@@ -197,10 +200,12 @@ pro/spec2d/locateskylines.pro -text
 pro/spec2d/locateskylines_test.pro -text
 pro/spec2d/logsheet.pro -text
 pro/spec2d/makefile.old -text
+pro/spec2d/match_trace.pro -text
 pro/spec2d/myfluxcalib.pro -text
 pro/spec2d/myfluxcorr.pro -text
 pro/spec2d/myratiofit.pro -text
 pro/spec2d/pixelmask_bits.pro -text
+pro/spec2d/platesn.pro -text
 pro/spec2d/plotsn.pro -text
 pro/spec2d/qaplot_arcline.pro -text
 pro/spec2d/qaplot_fflat.pro -text
@@ -219,6 +224,7 @@ pro/spec2d/select_arc.pro -text
 pro/spec2d/select_flat.pro -text
 pro/spec2d/shift_trace.pro -text
 pro/spec2d/skysubtract.pro -text
+pro/spec2d/smooth_halo.pro -text
 pro/spec2d/sortplugmap.pro -text
 pro/spec2d/spallflat.pro -text
 pro/spec2d/spallreduce.pro -text

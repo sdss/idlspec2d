@@ -49,25 +49,22 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
  xdisplay=xdisplay
 
    if (NOT keyword_set(planfile)) then planfile = findfile('spPlan2d*.par')
+   if (N_elements(planfile) NE 1) then $
+      message, 'Please just give me one plan file'
 
-   ;----------
-   ; If multiple plan files exist, then call this script recursively
-   ; for each such plan file.
-
-   if (N_elements(planfile) GT 1) then begin
-      for i=0, N_elements(planfile)-1 do begin
-        ;-------------------------------------------------------------
-        ;  First just do standard 2d reduction
-        ;
-        spreduce2d, planfile[i], docams=docams, xdisplay=xdisplay
+   ;-------------------------------------------------------------
+   ;  First just do standard 2d reduction
+   ;
+   spreduce2d, planfile[0], docams=docams, xdisplay=xdisplay
 
         
-        ;-------------------------------------------------------------
-        ;  Now coadd, and also produce stopgap 2dmerge directory
-        ;
-         
-       endfor
-      return
+   ;-------------------------------------------------------------
+   ;  Now coadd, and also produce stopgap 2dmerge directory
+   ;
+
+   if NOT keyword_set(nocombine) then begin
+     spplancomb, topindir='.'
+     spcombine
    endif
 
    return

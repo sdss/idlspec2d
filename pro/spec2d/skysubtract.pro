@@ -52,14 +52,14 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
-;   bvalu2d()
 ;   pixelmask_bits()
-;   slatec_splinefit()
-;   slatec_bvalue()
+;   bspline_iterfit()
+;   bspline_valu()
 ;
 ; REVISION HISTORY:
 ;   16-Sep-1999  Written by S. Burles, APO
 ;   30-Dec-1999  Modified by D. Schlegel, Princeton
+;    4-Oct-2000  Changed to bspline_iterfit 
 ;-
 ;------------------------------------------------------------------------------
 
@@ -114,13 +114,14 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    ; Use the EVERYN parameter to space the spline points according to
    ; the density of data points.
 
-   if (NOT keyword_set(dispset)) then begin
-     fullbkpt = slatec_splinefit(skywave, skyflux, coeff, invvar=skyivar, $
-       nord=nord, upper=upper, lower=lower, maxiter=maxiter, $
-       /eachgroup, everyn=2*nskies/3, bkpt=bkpt)
+      bkpt= 0
 
-     fullfit = slatec_bvalu(wave, fullbkpt, coeff) 
-     skyfit  = slatec_bvalu(skywave, fullbkpt, coeff) 
+   if (NOT keyword_set(dispset)) then begin
+     sset = bspline_iterfit(skywave, skyflux, invvar=skyivar, $
+       nord=nord, upper=upper, lower=lower, maxiter=maxiter, $
+       /eachgroup, everyn=2*nskies/3, bkpt=bkpt, yfit=skyfit)
+
+     fullfit = bspline_valu(wave, sset)
      
    endif else begin
 
@@ -129,12 +130,12 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
       sigma = sigma - 1.0
       skysigma = (sigma[*,iskies])[isort]
 
-      fullbkpt = slatec_splinefit(skywave, skyflux, coeff, invvar=skyivar, $
+      sset = bspline_iterfit(skywave, skyflux, invvar=skyivar, $
        nord=nord, upper=upper, lower=lower, maxiter=maxiter, x2=skysigma, $
-       npoly = nsigmapoly, /eachgroup, everyn=2*nskies/3, bkpt=bkpt)
+       npoly = nsigmapoly, /eachgroup, everyn=2*nskies/3, bkpt=bkpt, $
+       yfit=skyfit)
 
-      fullfit = bvalu2d(wave, sigma, fullbkpt, coeff) 
-      skyfit  = bvalu2d(skywave, skysigma, fullbkpt, coeff) 
+      fullfit = bspline_valu(wave, sset, x2=sigma) 
    endelse
 
 
@@ -150,10 +151,15 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    posvar = where(skyivar GT 0)
    if (posvar[0] NE -1) then begin
       skyvariance = 1.0 / skyivar[posvar]
-      skyvarbkpt = slatec_splinefit(skywave[posvar], skyvariance, skyvarcoeff, $
-       invvar=skyivar[posvar], nord=nord, upper=upper, lower=lower, $
-       maxiter=maxiter, /eachgroup, bkpt=bkpt)
-      skyvarfit = slatec_bvalu(wave, skyvarbkpt, skyvarcoeff)
+      skyvarset = bspline_iterfit(skywave[posvar], skyvariance, $
+        invvar=skyivar[posvar], nord=nord, upper=upper, lower=lower, $
+        maxiter=maxiter, /eachgroup, bkpt=bkpt)
+
+;      skyvarbkpt = slatec_splinefit(skywave[posvar], skyvariance, skyvarcoeff, $
+;       invvar=skyivar[posvar], nord=nord, upper=upper, lower=lower, $
+;       maxiter=maxiter, /eachgroup, bkpt=bkpt)
+      skyvarfit = bspline_valu(wave, skyvarset)
+
    endif
 
    ;----------
@@ -165,8 +171,8 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
     'WAVE', skywave, $
     'FLUX', skyflux, $
     'INVVAR', skyivar, $
-    'FULLBKPT', fullbkpt, $
-    'COEFFS', coeff)
+    'FULLBKPT', sset.fullbkpt, $
+    'COEFFS', sset.coeff)
 
    ;----------
    ; Now attempt to model variance with residuals on sky fibers.
@@ -215,16 +221,23 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
 
       ii = where(relwave NE 0, nbin)
       relwave = relwave[ii]
+      relchi2 = relchi2[ii]
  
       ;----------
       ; Spline fit RELCHI2, only for the benefit of getting a smooth function
       ; Also, force the fit to always be >= 1, such that we never reduce the
       ; formal errors.
 
-      fullbkpt = slatec_splinefit(relwave, relchi2, coeff, $
-       maxiter=maxiter, upper=30, lower=30, everyn=2, nord=3)
-      relchi2fit = slatec_bvalu(wave, fullbkpt, coeff)
-      relchi2fit = relchi2fit > 1 ; Never let drop below 1
+
+      relchi2set = bspline_iterfit(relwave, relchi2, nord=3, $
+        upper=30, lower=30, maxiter=maxiter, everyn=2)
+
+      relchi2fit = bspline_valu(wave, relchi2set) > 1
+
+;      fullbkpt = slatec_splinefit(relwave, relchi2, coeff, $
+;       maxiter=maxiter, upper=30, lower=30, everyn=2, nord=3)
+;      relchi2fit = slatec_bvalu(wave, fullbkpt, coeff)
+;      relchi2fit = relchi2fit > 1 ; Never let drop below 1
 
       splog, 'Median sky-residual chi2 = ', median(relchi2)
       splog, 'Max sky-residual chi2 = ', max(relchi2)
@@ -236,8 +249,8 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
       relchi2struct = create_struct( $
           'WAVE', relwave, $
           'CHI2', relchi2, $
-          'FULLBKPT', fullbkpt, $
-          'COEFF', coeff)
+          'FULLBKPT', relchi2set.fullbkpt, $
+          'COEFF', relchi2set.coeff)
 
    endif else begin
 

@@ -110,7 +110,7 @@ pro qaplot_skyline, lwave, obj, objivar, objsub, objsubivar, plugsort, wset, $
       splog, 'WARNING: No good fits to this sky feature at ', lwave
       return
    endif
-   djs_iterstat, lflux[iskies[ii]], mean=lmean, sigma=lsig
+   djs_iterstat, lflux[iskies[ii]], mean=lmean, sigma=lsig, sigrej=2.0 
    splog, format='(a,f7.1,a,f6.2,a)', 'Flux dispersion for skyline ', $
     lwave, ' = ', 100*lsig/lmean, ' %'
 

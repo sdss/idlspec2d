@@ -202,6 +202,8 @@ function fluxcorr, flux, fluxivar, wset, plugsort, color=color, $
 ;	Ready to spline spectro std
 ;	
 
+stop
+
 	fullbkpt = slatec_splinefit(spectrowave, spectroflux, coeff, $
             maxiter=10, lower=lower, upper=upper, nord=nord, $
             invvar=spectrofluxivar*mask, bkpt=bkpt, rejper=0.4)

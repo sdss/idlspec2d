@@ -65,7 +65,7 @@
 ;   extract_boxcar()
 ;   extract_image
 ;   fibermask_bits()
-;   fitansimage()
+;   calcscatimage()
 ;   fitvacset()
 ;   fluxcorr()
 ;   heliocentric()
@@ -155,10 +155,10 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 
    skymedian = djs_median(scrunch[iskies])
    splog, 'Sky fiber median '+string(skymedian)
-   if (skymedian GT 2000) then begin
-      splog, 'ABORT: Median sky flux is brighter than 2000 e-'
-      return
-   endif
+;   if (skymedian GT 2000) then begin
+;      splog, 'ABORT: Median sky flux is brighter than 2000 e-'
+;      return
+;   endif
 
    splog, '5% and 95% count levels ', scrunch[scrunch_sort[i5]], $
                                       scrunch[scrunch_sort[i95]]
@@ -193,136 +193,75 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ;  First we should attempt to shift trace to object flexure
    ;
 
-   maxshift = 2.0 ; ??? Need this for MJD=51579
-   dims = size(image,/dimens)
-   ncol = dims[0]
-   nrow = dims[1]
-   skiptrace = 20L
-   ysample = lindgen(nrow) # replicate(1, nfiber - 2*skiptrace)
-   xsample = xtrace[*,skiptrace:nfiber - skiptrace - 1]
-   bestlag = shift_trace(image, xsample, ysample, lagrange=1.0, lagstep=0.1)
+   xnow = match_trace(image, invvar, xtrace)
+   bestlag = median(xnow-xtrace)
 
-   splog, 'Shifting traces by pixel shift of ', bestlag
+   splog, 'Shifting traces by match_trace ', bestlag
 
    if (abs(bestlag) GT 1.0) then begin
       splog, 'WARNING: pixel shift is large!'
    endif
 
-   xnow = xtrace + bestlag
-
    highrej = 5  ; just for first extraction steps
    lowrej = 5  ; just for first extraction steps
                 ; We need to check npoly with new scattered light backgrounds
    npoly = 8 ; maybe more structure, lots of structure
-   skiprow = 8
-   yrow = lindgen(nrow/skiprow) * skiprow + skiprow/2
+   nrow = (size(image))[2]
+   yrow = lindgen(nrow) 
    nfirst = n_elements(yrow)
-
-   ;-----------------------------------------------------------------------
-   ;  The fork in the road:
-   ;    If we have widths from widthset, then just extract
-   ;    otherwise determine width from object and extract
-   ;-----------------------------------------------------------------------
+   proftype = 3 ; Gaussian + Cubic
 
    splog, 'Extracting frame '+objname+' with 3 step process'
 
-   if (NOT keyword_set(widthset)) then begin 
-     ;------------------
-     ; Extract the object image
+   traceset2xy, widthset, xx, sigma2
+   ntrace = (size(sigma2,/dimens))[1]
+   wfixed = [1,1]
+   nterms = n_elements(wfixed)
 
-     ; Use the "whopping" terms
-     ; We need to do 2 iteration extraction: 
-     ;        1) Fit profiles in a subset of rows
-     ;        2) Fit returned parameters with smooth functions
-     ;        3) Extract all 2048 rows with new profiles given by
-     ;              fitansimage
 
-     sigma = 1.0
-     proftype = 1 ; Gaussian
-     wfixed = [1,1,1] ; gaussian term + centroid and  sigma terms
-     nterms = 3
-     sigmaterm = 1
-     centerterm = 2
+   splog, 'Step 1: Initial Object extraction'
 
-     ; (1) Extraction profiles in every 8th row
-
-     splog, 'Object extraction: Step 1 (fit width)'
-     extract_image, image, invvar, xnow, sigma, tempflux, tempfluxivar, $
+   extract_image, image, invvar, xnow, sigma2, tempflux, tempfluxivar, $
        proftype=proftype, wfixed=wfixed, yrow=yrow, $
        highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
-       ansimage=ansimage, chisq=firstchisq
+       ansimage=ansimage, chisq=firstchisq, ymodel=ym
 
-     ntrace = (size(tempflux,/dimens))[1]
+     ; (2) Calculate scattered light
 
-     ; (2) Refit ansimage to smooth profiles
-
-
-     splog, 'Answer Fitting: Step 2'
-
-     ;---------------------------------------------------
-     ;   Fitansimage is now hard wired for 320 fibers!!!!???
-
-      fitans = fitansimage(ansimage, nterms, ntrace, npoly, yrow, $
-          tempflux, fluxm=[1,1,0], scatfit=scatfit)
-
-      fitans = fitans[0:nterms*ntrace-1,*]
-
-      ; (3) Calculate new sigma and xtrace arrays
-    
-      sigmashift = transpose(fitans[lindgen(ntrace)*nterms + sigmaterm, *])
-      centershift= transpose(fitans[lindgen(ntrace)*nterms + centerterm, *])
-
-      splog, format='(a,3(f8.3))', 'Centershift ', min(centershift),  $
-       median(centershift), max(centershift)
-
-      splog, format='(a,3(f8.3))', 'Sigmashift ', min(sigmashift),  $
-       median(sigmashift), max(sigmashift)
-
-      sigma2 = sigma * (1.0 + sigmashift)
-
-      if (max(abs(centershift)) GT maxshift OR $
-       max(abs(sigmashift)) GT maxshift/3.0) then begin
-         splog, 'ABORT: Shift terms are not well behaved!'
-         return
-      endif
-     
-   endif else begin
-
-     traceset2xy, widthset, xx, sigma2
-     ntrace = (size(sigma2,/dimens))[1]
-     wfixed = [1,1]
-     nterms = n_elements(wfixed)
-
-     splog, 'Object extraction: Step 1 (use width from arcs)'
-     extract_image, image, invvar, xnow, sigma2, tempflux, tempfluxivar, $
-      proftype=proftype, wfixed=wfixed, yrow=yrow, $
-      highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
-      ansimage=ansimage, chisq=firstchisq
-
-     splog, 'Step 2: Just find scattered light image'
-     junk = fitansimage(ansimage, nterms, ntrace, npoly, yrow, $
-      tempflux, fluxm=[1,1], scatfit=scatfit)
-   endelse
-
-   ;-----------------------------------------------------------------------
-   ;  Now, subtract scattered light and do final extraction with all rows
-   ;-----------------------------------------------------------------------
+   splog, 'Step 2: Just find scattered light image'
+   scatfit = calcscatimage(ansimage[ntrace*nterms:*,*], yrow)
 
    qaplot_scatlight, scatfit, yrow, $
     wset=wset, xcen=xtrace, fibermask=fibermask, $
     title=plottitle+'Scattered Light on '+objname
 
+   ; (3) Calculate halo image
+   splog, 'Step 3: Calculate Halo Image'
+   smooth = smooth_halo(ym, wset)
+
+   ;-----------------------------------------------------------------------
+   ;  Now, subtract halo image and do final extraction with all rows
+   ;-----------------------------------------------------------------------
    ; (4) Second and final extraction
-   splog, 'Object extraction: Step 3'
+   splog, 'Step 4: Final Object extraction'
 
-   highrej = 5
-   lowrej = 5
+   highrej = 4
+   lowrej = 4
+   wfixed = [1,1]
+   nterms = n_elements(wfixed)
 
-   extract_image, (image - scatfit), invvar, xnow, sigma2, flux, $
-    fluxivar, proftype=proftype, wfixed=wfixed, $
-    highrej=highrej, lowrej=lowrej, npoly=0, whopping=whopping, $
-    chisq=chisq, ymodel=ymodel2, pixelmask=pixelmask, $
-    reject= [0.1,0.5,0.8]
+
+   extract_image, (image - smooth), invvar, xnow, sigma2, flux, $
+    fluxivar, proftype=proftype, wfixed=wfixed, ansimage=ansimage, $
+    highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
+    chisq=chisq, ymodel=ym, pixelmask=pixelmask, reject=[0.2,0.8,0.8]
+
+
+   ;----------------------------------------------------------------------
+   ; can we find cosmic rays by looking for outlandish ansimage ratios?
+   ;
+   ; a = where(ansimage[lindgen(ntrace)*nterms, *] LT $
+   ;           (-2*ansimage[lindgen(ntrace)*nterms+1, *])
 
    ;------------------
    ; QA chisq plot for fit calculated in extract image (make QAPLOT ???)
@@ -333,7 +272,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
     xtitle='Row number',  ytitle = '\chi^2', $
     title=plottitle+'Extraction chi^2 for '+objname
 
-   djs_oplot, yrow, firstchisq[yrow], color='green', ps=4
+   djs_oplot, yrow, firstchisq[yrow], color='green'
 
    xyouts, 100, 0.05*!y.crange[0]+0.95*!y.crange[1], $
             'BLACK = Final chisq extraction'
@@ -406,13 +345,30 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
     fibermask=fibermask, upper=3.0, lower=3.0, $
     relchi2struct=relchi2struct)
 
+   ;-----------------------------------------------------------
+   ;  Bad sky fibers???
+   ;
+
+   badskyfiber = where(djs_median(skysub[*,iskies]^2 * $
+                skysubivar[*,iskies], 1) GT 2.0)               
+   if badskyfiber[0] NE -1 then begin
+       fibermask[iskies[badskyfiber]] = fibermask[iskies[badskyfiber]] OR $
+          fibermask_bits('BADSKYFIBER')
+       splog, 'WARNING: Calling Skysubtract again, masked skyfibers',$
+            string(iskies[badskyfiber])
+       skystruct = skysubtract(flux, fluxivar, plugsort, vacset, $
+          skysub, skysubivar, iskies=iskies, pixelmask=pixelmask, $
+          fibermask=fibermask, upper=3.0, lower=3.0, $
+          relchi2struct=relchi2struct)
+   endif
+ 
    ;
    ; Sky-subtract again, this time with dispset (PSF subtraction)
    ; 
 
-   ; skystruct_psf = skysubtract(flux, fluxivar, plugsort, vacset, $
-   ;  skysubpsf, skysubpsfivar, iskies=iskies, pixelmask=pixelmask, $
-   ;  fibermask=fibermask, upper=3.0, lower=3.0, dispset=dispset)
+;   skystruct_psf = skysubtract(flux, fluxivar, plugsort, vacset, $
+;     skysubpsf, skysubpsfivar, iskies=iskies, pixelmask=pixelmask, $
+;     fibermask=fibermask, upper=3.0, lower=3.0, dispset=dispset)
 
    qaplot_skysub, flux, fluxivar, skysub, skysubivar, $
     vacset, iskies, title=plottitle+objname
@@ -507,7 +463,6 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    if (keyword_set(osigma)) then $
     sxaddpar, objhdr, 'OSIGMA',  sigma, $
      'Original guess at spatial sigma in pix'
-   sxaddpar, objhdr, 'SKIPROW', skiprow, 'Extraction: Number of rows skipped in step 1'
    sxaddpar, objhdr, 'LOWREJ', lowrej, 'Extraction: low rejection'
    sxaddpar, objhdr, 'HIGHREJ', highrej, 'Extraction: high rejection'
    sxaddpar, objhdr, 'SCATPOLY', npoly, 'Extraction: Order of scattered light polynomial'

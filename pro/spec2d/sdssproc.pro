@@ -119,7 +119,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
  outfile=outfile, varfile=varfile, nsatrow=nsatrow, fbadpix=fbadpix, $
  hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, bcfile=bcfile, $
  pixflatname=pixflatname, spectrographid=spectrographid, color=color, $
- camname=camname, minflat=minflat
+ camname=camname, minflat=minflat, maxflat=maxflat
 
    if (N_params() LT 1) then begin
       print, 'Syntax - sdssproc, infile, [image, invvar, indir=, $'
@@ -668,7 +668,9 @@ bcmask = 0 ; clear memory
 
       if (readimg) then image = image / pixflat
       if (NOT keyword_set(minflat)) then minflat = 0.0
-      if (readivar) then invvar = invvar * pixflat^2 * (pixflat GT minflat)
+      if (NOT keyword_set(maxflat)) then maxflat = 1.0e10
+      if (readivar) then invvar = invvar * pixflat^2 * (pixflat GT minflat) $
+                                                     * (pixflat LT maxflat)
 pixflat = 0 ; clear memory
    endif
 

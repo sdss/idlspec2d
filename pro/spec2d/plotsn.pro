@@ -46,7 +46,7 @@
 ;-
 ;------------------------------------------------------------------------------
 pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
- plottitle=plottitle, plotfile=plotfile
+ plottitle=plottitle, plotfile=plotfile, snplate=snplate
 
    if (size(snvec,/n_dim) NE 2) then return
    if (NOT keyword_set(bands)) then bands=[1, 2, 3]
@@ -93,6 +93,8 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
                    [6.18, -0.28], $    ; r' fit
                    [6.05, -0.28], $    ; i' fit
                    [6.05, -0.28]]      ; z' fit
+
+   snplate = fltarr(2,nbands)
 
    ;---------------------------------------------------------------------------
    ; Loop over each band in the plot
@@ -232,6 +234,8 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
          string(format='("Spec2: ", f5.1)', snoise2[1])
 
       splog, snlabel[bands[iband]], snoise2
+
+      snplate[*,iband] = snoise2
 
       ;------------------------------------------------------------------------
       ; PLOT 2: Throughput deviations plotted on the focal plane

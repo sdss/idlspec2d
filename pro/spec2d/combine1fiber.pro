@@ -154,31 +154,43 @@ pro combine1fiber, inloglam, objflux, objivar, $
 if (n_elements(ss) LE 2) then begin
    bmask = bytarr(n_elements(ss)) ; All set to zero
 endif else begin
-         if (keyword_set(objivar)) then begin
-            fullbkpt = slatec_splinefit(inloglam[ss], objflux[ss], coeff, $
-             nord=nord, eachgroup=1, maxiter=20, upper=3.0, lower=3.0, $
-             bkspace=bkptbin, bkpt=bkpt, invvar=objivar[ss], mask=bmask, $
-             /silent)
-         endif else begin
-            fullbkpt = slatec_splinefit(inloglam[ss], objflux[ss], coeff, $
-             nord=nord, eachgroup=1, maxiter=20, upper=3.0, lower=3.0, $
-             bkspace=bkptbin, bkpt=bkpt, mask=bmask, $
-             /silent)
-         endelse
+;         if (keyword_set(objivar)) then begin
+;            fullbkpt = slatec_splinefit(inloglam[ss], objflux[ss], coeff, $
+;             nord=nord, eachgroup=1, maxiter=20, upper=3.0, lower=3.0, $
+;             bkspace=bkptbin, bkpt=bkpt, invvar=objivar[ss], mask=bmask, $
+;             /silent)
+;         endif else begin
+;            fullbkpt = slatec_splinefit(inloglam[ss], objflux[ss], coeff, $
+;             nord=nord, eachgroup=1, maxiter=20, upper=3.0, lower=3.0, $
+;             bkspace=bkptbin, bkpt=bkpt, mask=bmask, $
+;             /silent)
+;         endelse
+          if (keyword_set(objivar)) then $
+            sset = bspline_iterfit(inloglam[ss], objflux[ss], $
+              nord=nord, eachgroup=1, maxiter=20, upper=3.0, lower=3.0, $
+              bkspace=bkptbin, bkpt=bkpt, invvar=objivar[ss], outmask=bmask, $
+              /silent) $
+          else sset = bspline_iterfit(inloglam[ss], objflux[ss], $
+              nord=nord, eachgroup=1, maxiter=20, upper=3.0, lower=3.0, $
+              bkspace=bkptbin, bkpt=bkpt, outmask=bmask, $
+              /silent) 
+
+
+
 endelse
 
          inside = where(newloglam GE min(inloglam[ss])-EPS $
           AND newloglam LE max(inloglam[ss])+EPS, numinside)
 
 ; Another work-around for the Slatec code... re-check FULLBKPT for failure ???
-;         if (numinside EQ 0) then begin
-         if (numinside EQ 0 OR fullbkpt[0] EQ -1) then begin
+         if (numinside EQ 0) then begin
             splog,'WARNING: No wavelengths inside breakpoints'
-         endif else if (total(abs(coeff)) EQ 0.0) then begin
+         endif else if (total(abs(sset.coeff)) EQ 0.0) then begin
             splog,'WARNING: All B-spline coefficients have been set to zero!'
          endif else begin
 
-            newflux[inside] = slatec_bvalu(newloglam[inside], fullbkpt, coeff)
+            newflux[inside] = bspline_valu(newloglam[inside], sset)
+;            newflux[inside] = slatec_bvalu(newloglam[inside], fullbkpt, coeff)
 
             splog, 'Masked ', fix(total(1-bmask)), ' of', $
              n_elements(bmask), ' pixels'
@@ -266,7 +278,7 @@ endelse
          endif
       endfor
       splog, 'Medians:', string(format='(f7.2)', $
-       djs_median(objflux[these]))
+       djs_median(objflux,1))
 
    endelse
 

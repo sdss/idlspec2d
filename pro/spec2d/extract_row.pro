@@ -150,14 +150,14 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
 
    ; Here we want a three element array where both are between 0 and 1, and the
    ; first is larger than the second.  
-   ; The first threshold sets the minimum area required to perform single parameter
-   ; profile fitting
-   ; The second threshold is the minimum area required not to reject the pixel in the
-   ; final extracted spectrum.
+   ; The first threshold sets the minimum area required to perform 
+   ;    single parameter profile fitting
+   ; The second threshold is the minimum area required not to reject 
+   ;    the pixel in the final extracted spectrum.
    ; The third parameter is the area required
-   ; in the profile fit containing good pixels to do a full fit.
+   ;    in the profile fit containing good pixels to do a full fit.
 
-   if (n_elements(reject) NE 3) then reject = [0.2, 0.5, 0.8]
+   if (n_elements(reject) NE 3) then reject = [0.2, 0.4, 0.6]
 
    if (n_elements(pixelmask) NE ntrace $
     OR size(pixelmask,/tname) NE 'LONG') then $
