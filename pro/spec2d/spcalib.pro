@@ -221,22 +221,26 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
          ;---------------------------------------------------------------------
 
          sigma = 1.0 ; Initial guess for gaussian width
-         proftype = 1 ; Gaussian
+         proftype = 10 ; Gaussian + background
+         nband = 5
          splog, 'Extracting flat-field image ', proftype
          highrej = 5
          lowrej = 5
-         npoly = 8 ; Fit 8 terms to background
-         wfixed = [1,1] ; Fit the first gaussian term + gaussian width
+         npoly = 8  ; just fit flat background to each row
+         wfixed = [1,1] ; Just fit the first gaussian term
 
+         ; Step 1: Extract flat field with polynomial background for
+         ;           fitflatwidth 
+         
          splog, 'Extracting flat to obtain width and flux'
          extract_image, flatimg, flativar, xsol, sigma, flux, fluxivar, $
           proftype=proftype, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
-          npoly=npoly, relative=1, ansimage=ansimage, reject= [0.05,0.1,0.2]
+          npoly=npoly, relative=1, ansimage=ansimage, nband=nband
 
          widthset = fitflatwidth(flux, fluxivar, ansimage, tmp_fibmask, $
           ncoeff=5, sigma=sigma)
 
-         widthset.coeff = widthset.coeff * 1.05 ; correction from whopping ???
+;         widthset.coeff = widthset.coeff * 1.05 ; correction from whopping
 
          junk = where(flux GT 1.0e5, nbright)
          splog, 'Found ', nbright, ' bright pixels in extracted flat ', $
@@ -320,6 +324,7 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
         widthset = *(flatstruct[iflat].widthset)
         tmp_fibmask = *(flatstruct[iflat].fibermask)
 
+
          ;----------
          ; Calculate possible shift between arc and flat
 
@@ -356,7 +361,8 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
            extract_image, arcimg, arcivar, xsol + bestlag, sigma2, $
             flux, fluxivar, proftype=proftype, wfixed=wfixed, $
             highrej=highrej, lowrej=lowrej, npoly=npoly, relative=1, $
-            reject=[0.05,0.1,0.2]
+            nband = nband
+;            reject=[0.05,0.1,0.2]
 
            ;-------------------------------------------------------------------
            ; Compute correlation coefficient for this arc image
@@ -511,7 +517,8 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
          ;---------------------------------------------------------------------
 
          traceset2xy, widthset, xx, sigma2   ; sigma2 is real width
-         proftype = 1 ; Gaussian
+         proftype = 10 ; Gaussian
+         nband = 5  
          highrej = 5
          lowrej = 5
          npoly = 4 ; Fit 4 terms to background
@@ -519,7 +526,9 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
 
          extract_image, flatimg, flativar, xsol, sigma2, flux, fluxivar, $
           proftype=proftype, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
-          npoly=npoly, reject=[0.05,0.1,0.2], relative=1
+          npoly=npoly, relative=1, nband=nband
+
+;    reject=[0.05,0.1,0.2], 
 
          ;---------------------------------------------------------------------
          ; Compute fiber-to-fiber flat-field variations
