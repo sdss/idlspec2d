@@ -246,10 +246,12 @@ pro spcoadd_v5, spframes, outputname, $
       corrfile = djs_filepath(string(camnames[icam], expnum, $
        format='("spFluxcorr-", a2, "-", i8.8, ".fits")'), $
        root_dir=combinedir)
-      corrfile = (findfile(corrfile+'*'))[0]
+      thisfile = (findfile(corrfile+'*'))[0]
+      if (NOT keyword_set(thisfile)) then $
+       message,' Could not find flux-corr file ' + corrfile
 
-      aterm = mrdfits(corrfile, 0, corrhdr, /silent)
-      bterm = mrdfits(corrfile, 1)
+      aterm = mrdfits(thisfile, 0, corrhdr, /silent)
+      bterm = mrdfits(thisfile, 1)
       invertcorr = 1. / aterm
       minval = 0.05 * invertcorr
       divideflat, tempflux, invvar=tempivar, invertcorr, minval=minval
