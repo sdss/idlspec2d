@@ -66,7 +66,7 @@ function readplugmap, filename, deredden=deredden
     plugmap = struct_addtags(rawplug, replicate(tagstemplate, nplug))
 
     if keyword_set(deredden) then begin
-       splog, 'Applying reddening vector ', plugmap.redden_med 
+       splog, 'Applying reddening vector ', plugmap[0].redden_med 
        plugmap.mag = plugmap.mag - plugmap.redden_med 
     endif
      
