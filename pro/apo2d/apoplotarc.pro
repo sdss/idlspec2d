@@ -44,15 +44,15 @@
 ;     /data/spectro/spectrologs
 ;
 ; EXAMPLES:
-;   Plot the arc spectrum for exposure number 9425 taken in the most
+;   Plot the arc spectrum for exposure number 9437 taken in the most
 ;   recent night's data in the r1-camera, using the SPLOT plotting tool:
-;     IDL> apoplotarc, 9425
+;     IDL> apoplotarc, 9437
 ;   The mouse buttons will zoom in (left), recenter (center), or zoom out
 ;   (right).  The frame can be saved as a PostScript file by selecting
 ;   File->WriteEPS from the left-hand corner. 
 ;
 ;   Make the same plot, but change the Y limits and write a PostScript file:
-;     IDL> apoplotarc, 9425, yrange=[0,1000], /psfile
+;     IDL> apoplotarc, 9437, yrange=[0,1000], /psfile
 ;
 ; BUGS:
 ;
@@ -128,6 +128,11 @@ pro apoplotarc, expnum, camname=camname, mjd=mjd, everyn=everyn, $
 
    wset = mrdfits(thisfile, 1)
    flux = mrdfits(thisfile, 2)
+   if (NOT keyword_set(wset) OR NOT keyword_set(flux)) then begin
+      splog, 'Missing data in file ' + thisfile
+      !quiet = quiet
+      return
+   endif
 
    traceset2xy, wset, xx, loglam
 

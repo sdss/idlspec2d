@@ -123,6 +123,12 @@ pro apoplotsky, expnum, camname=camname, mjd=mjd, $
    sset = mrdfits(thisfile, 3)
    relchi2struct = mrdfits(thisfile, 4)
    objsub = mrdfits(thisfile)
+   if (NOT keyword_set(sset) OR NOT keyword_set(relchi2struct) $
+    OR NOT keyword_set(objsub)) then begin
+      splog, 'Missing data in file ' + thisfile
+      !quiet = quiet
+      return
+   endif
 
    ;----------
    ; Find the wset file, from which we'll read the wavelengths
@@ -137,6 +143,11 @@ pro apoplotsky, expnum, camname=camname, mjd=mjd, $
    endif
 
    wset = mrdfits(thisfile, 1)
+   if (NOT keyword_set(wset)) then begin
+      splog, 'Missing data in file ' + thisfile
+      !quiet = quiet
+      return
+   endif
    traceset2xy, wset, xx, loglam
 
    ;----------
@@ -154,6 +165,11 @@ pro apoplotsky, expnum, camname=camname, mjd=mjd, $
 
    plugsort = mrdfits(thisfile, 3)
    fibermask = mrdfits(thisfile, 4)
+   if (NOT keyword_set(plugsort) OR NOT keyword_set(fibermask)) then begin
+      splog, 'Missing data in file ' + thisfile
+      !quiet = quiet
+      return
+   endif
    iskies = where(strtrim(plugsort.objtype,2) EQ 'SKY' $
     AND (plugsort.fiberid GT 0) AND (fibermask EQ 0), nskies)
 
