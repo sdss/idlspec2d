@@ -181,8 +181,14 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ny = (size(fextract,/dim))[1] 
    pixelmask = lonarr(nx,ny)
 
+   badcheck = extract_boxcar((invvar LE 0), xtrace, radius=1.0)
+   badcolumns = where(total(badcheck GT 0,1) GT 0.1 * nx)
+
    if (badplace[0] NE -1) then pixelmask[badplace] = $
                 pixelmask[badplace] OR pixelmask_bits('NEARBADPIXEL')
+
+   if (badcolumns[0] NE -1) then fibermask[badcolumns] = $
+                fibermask[badcolumns] OR pixelmask_bits('MANYBADCOLUMNS')
 
    
    ;-----------------------------------------------------------------------
@@ -287,7 +293,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ; flatinterp interpolates over regions 
 
    smoothfflat = flatinterp(fflat, 0.5, nsmooth=15)
-   divideflat, flux, fluxivar, smoothfflat, fibermask=fibermask
+   divideflat, flux, fluxivar, smoothfflat
 
    lowflat = where(fflat LT 0.5)
    if (lowflat[0] NE -1) then pixelmask[lowflat] = $
@@ -296,7 +302,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ;------------------
    ; Look for pixels where scattered light is dominating
 
-   scatteredpix = where(extract_boxcar(scatfit, xnow, radius=2.0) GT flux)
+   scatteredpix = where(extract_boxcar(scatfit, xnow, radius=2.0) GT 2.0 * flux)
    if (scatteredpix[0] NE -1) then pixelmask[scatteredpix] = $
                  pixelmask[scatteredpix] + pixelmask_bits('SCATTEREDLIGHT')
 
