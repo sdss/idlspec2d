@@ -28,12 +28,13 @@ which should return the path for <TT>idl</TT>.
 <BR><BR>
 
 <LI> Install ``idlspec2d'', which will also install ``idlutils''.
-The following example is for installing version v1_0. <BR>
+The following example is for installing version v3b. <BR>
 
-<DL><DD>
-<TT> setup upd </TT><BR>
-<TT> upd install idlspec2d v1_0 -H Linux+2 "-c -f Linux+2" </TT><BR>
-</DD></DL>
+<DL><DD><PRE>
+setup upd
+upd install idlspec2d v3b \
+    -H Linux+2 "-c -f Linux+2"
+</PRE></DD></DL>
 
 </OL>
 
@@ -43,16 +44,15 @@ The following example is for installing version v1_0. <BR>
 
 The following instructions are for building a version of IDLSPEC2D from
 the current version of the code in the Fermilab CVS repository.
-This is not the recommended method of installation.
 
 <OL>
 
 <LI> ``<TT>idl</TT>'' should already be installed on the system.
 Try the following:<BR>
 
-<DL><DD>
-<TT> which idl </TT><BR>
-</DD></DL>
+<DL><DD><PRE>
+which idl
+</PRE></DD></DL>
 
 which should return the path for <TT>idl</TT>.
 
@@ -60,48 +60,108 @@ which should return the path for <TT>idl</TT>.
 
 <LI> Download the ``idlutils'' and ``idlspec2d'' packages. <BR>
 
-<DL><DD>
-<TT> cd </TT><BR>
-<TT> setup sdsscvs </TT><BR>
-<TT> cvs co idlutils </TT><BR>
-<TT> cvs co idlspec2d </TT><BR>
-</DD></DL>
+<DL><DD><PRE>
+cd
+setup sdsscvs
+cvs co idlutils
+cvs co idlspec2d
+</PRE></DD></DL>
 
 If these packages already exist, you may choose to update them instead: <BR>
 
-<DL><DD>
-<TT> cd ~/idlutils </TT><BR>
-<TT> cvs update -d </TT><BR>
-<TT> cd ~/idlspec2d </TT><BR>
-<TT> cvs update -d </TT><BR>
-</DD></DL>
+<DL><DD><PRE>
+cd ~/idlutils
+cvs update -d
+cd ~/idlspec2d
+cvs update -d
+</PRE></DD></DL>
 
 <BR>
 
 <LI> Log in as user ``products'' and declare the products:
 
-<DL><DD>
-<TT> su products </TT> (need the password for this)<BR>
-<TT> ups declare -f Linux+2 -m idlutils.table
-     -c -r $HOME/idlutils idlutils cvs </TT><BR>
-<TT> ups declare -f Linux+2 -m idlspec2d.table
-     -c -r $HOME/idlspec2d idlspec2d cvs </TT><BR>
-<TT> exit </TT> (log out as user ``products'')<BR>
-</DD></DL>
+<DL><DD><PRE>
+su products    (need the password for this)
+ups declare -f Linux+2 -m idlutils.table \
+    -c -r $HOME/idlutils idlutils cvs
+ups declare -f Linux+2 -m idlspec2d.table \
+    -c -r $HOME/idlspec2d idlspec2d cvs
+exit    (log out as user ``products'')
+</PRE></DD></DL>
+
+<LI> Build the ``idlutils'' and ``idlspec2d'' packages. <BR>
+
+<DL><DD><PRE>
+setup sdsstools
+setup idlutils
+setup idlspec2d
+cd ~/idlutils
+sdssmake -idl -opt -debug
+cd ~/idlspec2d
+sdssmake -idl -opt -debug
+</PRE></DD></DL>
+
+</OL>
+
+<BR>
+
+
+The following instructions are for building a tagged version of IDLSPEC2D from
+the Fermilab CVS repository.  In this example, we build version v3b.
+
+<OL>
+
+<LI> ``<TT>idl</TT>'' should already be installed on the system.
+Try the following:<BR>
+
+<DL><DD><PRE>
+which idl
+</PRE></DD></DL>
+
+which should return the path for <TT>idl</TT>.
+
+<BR><BR>
+
+<LI> Download the ``idlutils'' and ``idlspec2d'' packages, putting them
+in subdirectories named after the version. <BR>
+
+<DL><DD><PRE>
+setup sdsscvs
+mkdir $HOME/idlutils $HOME/idlspec2d
+setenv IDLVERS v3b
+cd $HOME/idlutils
+cvs co -r $IDLVERS -d $IDLVERS idlutils
+cd $HOME/idlspec2d
+cvs co -r $IDLVERS -d $IDLVERS idlspec2d
+</PRE></DD></DL>
+
+<BR>
+
+<LI> Log in as user ``products'' and declare this version of the code
+as current:
+
+<DL><DD><PRE>
+su products    (need the password for this)
+ups declare -f Linux+2 -m idlutils.table \
+    -c -r $HOME/idlutils/$IDLVERS idlutils $VERS
+ups declare -f Linux+2 -m idlspec2d.table \
+    -c -r $HOME/idlspec2d/$IDLVERS idlspec2d $VERS
+exit    (log out as user ``products'')
+</PRE></DD></DL>
 
 <BR>
 
 <LI> Build the ``idlutils'' and ``idlspec2d'' packages. <BR>
 
-<DL><DD>
-<TT> setup sdsstools </TT><BR>
-<TT> setup idlutils </TT><BR>
-<TT> setup idlspec2d </TT><BR>
-<TT> cd ~/idlutils </TT><BR>
-<TT> sdssmake -idl -opt -debug </TT><BR>
-<TT> cd ~/idlspec2d </TT><BR>
-<TT> sdssmake -idl -opt -debug </TT><BR>
-</DD></DL>
+<DL><DD><PRE>
+setup sdsstools
+setup idlutils
+setup idlspec2d
+cd $HOME/idlutils/$IDLVERS
+sdssmake -idl -opt -debug
+cd $HOME/idlspec2d/$IDLVERS
+sdssmake -idl -opt -debug
+</PRE></DD></DL>
 
 </OL>
 
@@ -119,9 +179,9 @@ This is not the recommended method of installation.
 <LI> ``<TT>idl</TT>'' should already be installed on the system.
 Try the following:<BR>
 
-<DL><DD>
-<TT> which idl </TT><BR>
-</DD></DL>
+<DL><DD><PRE>
+which idl
+</PRE></DD></DL>
 
 which should return the path for <TT>idl</TT>.
 
@@ -133,27 +193,28 @@ which should return the path for <TT>idl</TT>.
 
 <LI> Build everything using the utility <TT>$IDLUTILS_DIR/bin/evilmake</TT>:
 
-<DL><DD>
-<TT> setenv IDLUTILS_DIR $HOME/idlutils </TT><BR>
-<TT> setenv IDLSPEC2D_DIR $HOME/idlspec2d </TT><BR>
-<TT> set path = ( $path {$IDLUTILS_DIR}/bin ) </TT><BR>
-<TT> cd $IDLUTILS_DIR </TT><BR>
-<TT> evilmake all </TT><BR>
-<TT> cd $IDLSPEC2D_DIR </TT><BR>
-<TT> evilmake all </TT><BR>
-</DL></DD>
+<DL><DD><PRE>
+setenv IDLUTILS_DIR $HOME/idlutils
+setenv IDLSPEC2D_DIR $HOME/idlspec2d
+set path = ( $path {$IDLUTILS_DIR}/bin )
+cd $IDLUTILS_DIR
+evilmake all
+cd $IDLSPEC2D_DIR
+evilmake all
+</PRE></DD></DL>
 
 <BR>
 
 <LI> Then set the necessary environment variables:
 
-<DL><DD>
-<TT> setenv IDL_DEVICE X </TT><BR>
-<TT> setenv IDL_DIR /usr/local/rsi/idl_5.2 </TT><BR>
-<TT> setenv IDL_PATH         .:+$IDL_DIR/lib </TT><BR>
-<TT> setenv IDL_PATH         {$IDL_PATH}:+{$IDLUTILS_DIR}/goddard/pro </TT><BR>
-<TT> setenv IDL_PATH         {$IDL_PATH}:+{$IDLUTILS_DIR}/pro </TT><BR>
-<TT> setenv IDL_PATH         {$IDL_PATH}:+{$IDLSPEC2D_DIR}/pro </TT><BR>
+<DL><DD><PRE>
+setenv IDL_DEVICE X </TT><BR>
+setenv IDL_DIR /usr/local/rsi/idl_5.2
+setenv IDL_PATH .:+$IDL_DIR/lib
+setenv IDL_PATH {$IDL_PATH}:+{$IDLUTILS_DIR}/goddard/pro
+setenv IDL_PATH {$IDL_PATH}:+{$IDLUTILS_DIR}/pro
+setenv IDL_PATH {$IDL_PATH}:+{$IDLSPEC2D_DIR}/pro
+</PRE></DD></DL>
 
 </DL></DD>
 
