@@ -54,6 +54,9 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
    if (n_elements(adderr) EQ 0) then adderr = 0.03
    if (n_elements(minsn2) EQ 0) then minsn2 = 0.2
 
+   thismem = memory()
+   maxmem = 0
+
    ;----------
    ; If multiple plan files exist, then call this script recursively
    ; for each such plan file.
@@ -203,6 +206,11 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
    if (ct2 GT 0) then $
     spflux_v5, objname[i2], adderr=adderr, combinedir=combinedir
 
+   ; Track memory usage
+   thismem = memory()
+   maxmem = maxmem > thismem[3]
+   splog, 'Max mmeory usage = ', string(maxmem/1e6,format='(f7.1)'), ' MB'
+
    ;----------
    ; Compute the flux-correction vectors
 
@@ -212,6 +220,11 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
    if (ct2 GT 0) then $
     spfluxcorr_v5, objname[i2], adderr=adderr, combinedir=combinedir, $
      bestexpnum=expnum[0,ibest]
+
+   ; Track memory usage
+   thismem = memory()
+   maxmem = maxmem > thismem[3]
+   splog, 'Max mmeory usage = ', string(maxmem/1e6,format='(f7.1)'), ' MB'
 
    ;----------
    ; Close plot file - S/N plots are then put in the PLOTSNFILE file.
@@ -226,6 +239,11 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
     adderr=adderr, docams=docams, plotsnfile=plotsnfile
 
    heap_gc   ; garbage collection
+
+   ; Track memory usage
+   thismem = memory()
+   maxmem = maxmem > thismem[3]
+   splog, 'Max mmeory usage = ', string(maxmem/1e6,format='(f7.1)'), ' MB'
 
    splog, 'Total time for SPCOMBINE = ', systime(1)-stime0, ' seconds', $
     format='(a,f6.0,a)'
