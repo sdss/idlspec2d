@@ -111,8 +111,9 @@ pro guidermovie, mjd=mjd, plate=plate, expnum=expnum, _EXTRA=KeywordsForATV
          ; The old format for the date was, for ex, "Sun, Apr 1, 2001".
          ; The new format for the date is, for ex, "2002/07/08".
          utdate = sxpar(hdr,'UTDATE')
+         utdate = repstr(utdate, ',', ' ') ; Replace commas w/whitespace
          ww = strsplit(utdate, ', ', /extract)
-         if (n_elements(ww) EQ 3) then begin
+         if (n_elements(ww) GE 3) then begin
             year = long(ww[3])
             month = (where(ww[1] EQ monthname))[0] > 0
             date = long(ww[2])
