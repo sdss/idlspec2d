@@ -63,6 +63,7 @@
 ;   djs_filepath()
 ;   djs_iterstat
 ;   fileandpath()
+;   fits_wait()
 ;   headfits()
 ;   idlspec2d_version()
 ;   idlutils_version()
@@ -251,12 +252,19 @@ pro sdssproc, infile, image, invvar, indir=indir, $
          redfile = infile
          strput, redfile, 'r2', i1
          redfile = (lookforgzip(djs_filepath(redfile, root_dir=indir)))[0]
-         reddata = rdss_fits(redfile, /nofloat)
+
+         if (fits_wait(redfile, deltat=1, tmax=1)) then $
+          reddata = rdss_fits(redfile, /nofloat) $
+         else $
+          splog, 'Warning: Could not read corresponding red file ' + redfile
       endif else begin
          reddata = rawdata
       endelse
 
-      ibad = where( reddata[20,*] LT median(reddata[20,*]) - 100 , nbad )
+      if (keyword_set(reddata)) then $
+       ibad = where( reddata[20,*] LT median(reddata[20,*]) - 100 , nbad ) $
+      else $
+       nbad = 0
 
       if (nbad GT 0) then begin
          splog, 'WARNING: Fixing ', nbad, ' shifted rows (from electronics)'
@@ -269,9 +277,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
             nshift = $
              (reverse(where(rawdata[20:39,ibad[ii]] GT medval + 100)))[0]
 
-;
-;	  If nshift is -1, we will also zero the whole row
-;
+            ; If nshift is -1, we will also zero the whole row
 
             if (nshift GE 0 AND nshift LT 10 ) then begin
                 rawdata[0:1063-nshift,ibad[ii]] = rawdata[nshift:1063,ibad[ii]]
@@ -305,13 +311,20 @@ pro sdssproc, infile, image, invvar, indir=indir, $
          redfile = infile
          strput, redfile, 'r2', i1
          redfile = (lookforgzip(djs_filepath(redfile, root_dir=indir)))[0]
-         reddata = rdss_fits(redfile, /nofloat) 
+
+         if (fits_wait(redfile, deltat=1, tmax=1)) then $
+          reddata = rdss_fits(redfile, /nofloat) $
+         else $
+          splog, 'Warning: Could not read corresponding red file ' + redfile
       endif else begin
          reddata = rawdata
       endelse
 
-      ibad = where( reddata[20,*] LT median(reddata[20,*]) - 100 $
-       AND reddata[2107,*] GT median(reddata[2107,*]) + 100, nbad )
+      if (keyword_set(reddata)) then $
+       ibad = where( reddata[20,*] LT median(reddata[20,*]) - 100 $
+        AND reddata[2107,*] GT median(reddata[2107,*]) + 100, nbad ) $
+      else $
+       nbad = 0
 
       if (nbad GT 0) then begin
          splog, 'WARNING: Fixing ', nbad, ' dropped-pixel rows (from electronics)'
