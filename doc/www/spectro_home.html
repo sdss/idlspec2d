@@ -543,8 +543,8 @@ The following information is compiled for each object:
  <TR><TD> NSPECOBS     <TD> Number of spectroscopic observations of this object
  <TR><TD> ZANS         <TD> ZANS structure from <A HREF="#dm_spzbest">spZbest</A> file
                             with spectroscopic classifications (CLASS), redshifts (Z), etc.
- <TR><TD> TSOBJ        <TD> TSOBJ structure with all imaging and target-selection parameters
-                            (excluding the FIRST and ROSAT fields)
+ <TR><TD> calibObj     <TD> calibObj structure with all imaging parameters;
+                            fluxes are in units of nano-maggies, so MAG=22.5-2.5*log10(FLUX)
 </TABLE>
 
 <P>
