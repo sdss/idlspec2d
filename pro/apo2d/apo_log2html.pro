@@ -37,7 +37,6 @@
 ;   apo_log_beginplate()
 ;   apo_log_endplate()
 ;   apo_log_fields()
-;   apo_log_science()
 ;
 ; REVISION HISTORY:
 ;
@@ -141,7 +140,7 @@ function apo_log_endplate
 end
 
 ;------------------------------------------------------------------------------
-function apo_log_fields, pp, fields, formats=formats
+function apo_log_fields, pp, fields, printnames=printnames, formats=formats
 
    common com_apo_log, camnames
 
@@ -158,7 +157,8 @@ function apo_log_fields, pp, fields, formats=formats
 
    for ifield=0, n_elements(fields)-1 do begin
       itag = (where(fields[ifield] EQ tags))[0]
-      nextline = colsep + fields[ifield]
+      if (keyword_set(printnames)) then nextline = colsep + printnames[ifield] $
+       else nextline = colsep + fields[ifield]
       if (keyword_set(formats)) then format = formats[ifield]
       for icam=0, ncams-1 do begin
          value = ' '
@@ -306,7 +306,8 @@ pro apo_log2html, logfile, htmlfile
 
          for iexp=0, nexp-1 do begin
             textout = [ textout, $
-             apo_log_fields(pscience[*,iexp], 'SKYPERSEC', formats='(f8.2)') ]
+             apo_log_fields(pscience[*,iexp], 'SKYPERSEC', $
+              printnames='SKY/SEC', formats='(f8.2)') ]
          endfor
 
          ;----------
@@ -314,7 +315,8 @@ pro apo_log2html, logfile, htmlfile
 
          for iexp=0, nexp-1 do begin
             textout = [ textout, $
-             apo_log_fields(pscience[*,iexp], 'SN2', formats='(i6)') ]
+             apo_log_fields(pscience[*,iexp], 'SN2', $
+              printnames='(S/N)^2', formats='(i6)') ]
          endfor
 
          ;----------
@@ -337,13 +339,14 @@ pro apo_log2html, logfile, htmlfile
             endfor
          endfor
          ptotal[ncams-1] = ptr_new(rstruct) ; 'ALL' camera
-         (*ptotal[ncams-1]).totalsn2 = 1.0e-10 ; Set to non-zero so that this
-                                               ; field will be printed.
+         (*ptotal[ncams-1]).totalsn2 = 9999
          for icam=0, ncams-2 do $
           (*ptotal[ncams-1]).totalsn2 = min([ (*ptotal[ncams-1]).totalsn2, $
-           (*ptotal[icam]).totalsn2 ]) > 1.0e-10
+           (*ptotal[icam]).totalsn2 ]) > 1.0e-10 ; Set to non-zero so that this
+                                                 ; field will be printed.
          textout = [ textout, $
-          apo_log_fields(ptotal, 'TOTALSN2', formats='(i6)') ]
+          apo_log_fields(ptotal, 'TOTALSN2', $
+           printnames='TOTAL (S/N)^2', formats='(i6)') ]
 
       endif
 
