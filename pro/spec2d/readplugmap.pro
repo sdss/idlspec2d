@@ -99,21 +99,21 @@ function readplugmap, plugfile, plugdir=plugdir, $
          if (nstar GT 0) then begin
             plugmap[istar].calibflux = tsobj[istar].psfflux
             ; Compute the ratio of PSF/FIBER flux for stars in each filter,
-            ; using only stars that are brighter than 10 nMgy.
+            ; using only stars that are brighter than 30 nMgy (= 18.8 mag).
             ; If no such stars, then this ratio is set to unity.
             for ifilt=0, 4 do begin
                v1 = tsobj[istar].psfflux[ifilt]
                v2 = tsobj[istar].fiberflux[ifilt]
-               jj = where(v1 GT 10 AND v2 GT 10, ct)
+               jj = where(v1 GT 30 AND v2 GT 30, ct)
                if (ct GT 0) then pratio[ifilt] = median([ v1[jj] / v2[jj] ])
             endfor
 
             ; For any objects that do not have photometry from the calibObj
             ; structure, simply translate the flux from the plugmap MAG values
-            ibad = where(qexist EQ 0, nbad)
-            if (nbad GT 0) then begin
-               plugmap[ibad].calibflux = 10.^((22.5 - plugmap[ibad].mag) / 2.5)
-            endif
+;            ibad = where(qexist EQ 0, nbad)
+;            if (nbad GT 0) then begin
+;               plugmap[ibad].calibflux = 10.^((22.5 - plugmap[ibad].mag) / 2.5)
+;            endif
          endif
          splog, 'PSF/fiber flux ratios = ', pratio
          if (ngal GT 0) then begin
