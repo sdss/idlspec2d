@@ -65,6 +65,8 @@ pro platemerge, zfile, outroot=outroot, public=public
       outroot = djs_filepath(outroot, root_dir=getenv('SPECTRO_DATA'))
    endif
 
+   t1 = systime(1)
+
    ;----------
    ; Find the list of spZ files.
 
@@ -126,7 +128,7 @@ pro platemerge, zfile, outroot=outroot, public=public
 
       hdr = headfits(fullzfile[ifile])
       plate = sxpar(hdr, 'PLATEID')
-      zans = mrdfits(fullzfile[ifile], 1)
+      zans = mrdfits(fullzfile[ifile], 1, /silent)
       tsobj = plug2tsobj(plate, zans.plug_ra, zans.plug_dec)
       if (NOT keyword_set(tsobj)) then $
        splog, 'WARNING: No tsObj file found for plate ', plate
@@ -177,7 +179,7 @@ pro platemerge, zfile, outroot=outroot, public=public
       thisdat.smearuse = plist[ifile].smearuse
 
       ; Over-write PRIMTARGET+SECTARGET with those values from spPlate file.
-      plugmap = mrdfits(fullplatefile[ifile], 5)
+      plugmap = mrdfits(fullplatefile[ifile], 5, /silent)
       thisdat.primtarget = plugmap.primtarget
       thisdat.sectarget = plugmap.sectarget
 
@@ -191,18 +193,27 @@ pro platemerge, zfile, outroot=outroot, public=public
       outdat[indx] = thisdat
    endfor
 
+   splog, 'Time to read data = ', systime(1)-t1, ' sec'
+
    ;----------
    ; Set the SPECPRIMARY flag to 0 or 1
+
+   t2 = systime(1)
 
    outdat.specprimary = 1 ; Start as all objects set to primary
 
    ; Loop through each possible pairing of plates, paying attention
-   ; only to those within 3.1 deg of eachother on the sky.
+   ; only to those within 4.5 deg of eachother on the sky.
+   ; (This is a rather generous match distance; 3.0 deg should be enough
+   ; unless there is a mistake somewhere.)
+
    for ifile1=0, nfile-1 do begin
       for ifile2=ifile1+1, nfile-1 do begin
          adist = djs_diff_angle(plist[ifile1].ra, plist[ifile1].dec, $
           plist[ifile2].ra, plist[ifile2].dec)
-         if (adist LT 3.1) then begin
+         if (adist LT 4.5) then begin
+            print, 'Matching plate #', ifile1+1, ' and ', ifile2+1, $
+             ' (of ', nfile, ')'
             indx1 = ifile1 * 640L + lindgen(640)
             indx2 = ifile2 * 640L + lindgen(640)
             nn = djs_angle_match(outdat[indx1].ra, outdat[indx1].dec, $
@@ -248,6 +259,8 @@ pro platemerge, zfile, outroot=outroot, public=public
          endif
       endfor
    endfor
+
+   splog, 'Time to assign primaries = ', systime(1)-t2, ' sec'
 
    ;----------
    ; Write the output FITS file, in chunks of 20 plates
@@ -302,6 +315,8 @@ pro platemerge, zfile, outroot=outroot, public=public
 outdat = 0 ; Free memory ???
 
    struct_print, adat, filename=outroot+'.dat'
+
+   splog, 'Total time = ', systime(1)-t1, ' sec'
 
    return
 end
