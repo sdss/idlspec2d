@@ -41,6 +41,9 @@
 ;
 ;   Required header keywords: EXPTIME.
 ;
+;   The signal-to-noise is limited to never exceed 100, by adding 1.e-4
+;   times the flux to the variance term.
+;
 ; BUGS:
 ;   The open-shutter correction SMEARIMG will include smeared data from
 ;   any cosmic rays, which is wrong.  At the minimum, I could interpolate
@@ -114,11 +117,9 @@ pro sdssproc, infile, image, invvar, indir=indir, $
       return
    endif
 
-
    readimg = arg_present(image) OR keyword_set(outfile)
    readivar = arg_present(invvar) OR keyword_set(varfile) $
     OR arg_present(nsatrow) OR arg_present(fbadpix)
-
 
    if (keyword_set(indir)) then fullname = filepath(infile, root_dir=indir) $
     else fullname = infile
@@ -166,6 +167,8 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    if (ct NE 1) then $
     message, 'Cannot determine CCD number from file name ' + infile
 
+; Do not read the camera from the CAMERAS keyword, since this was often
+; wrong in the early days!
 ;   cameras = strtrim( sxpar(hdr, 'CAMERAS'), 2 )
    case camnames[indx[0]] of
     'b1': begin
@@ -173,13 +176,6 @@ pro sdssproc, infile, image, invvar, indir=indir, $
           color = 'blue'
           end
     'r2': begin
-;
-;;	r2 means red on spectrograph 2
-;;  and r1 means red on spectrograph 1
-;;  I don't think any red reductions have been working since this
-;;  was changed.
-;;
-;
           spectrographid = 2
           color = 'red'
           end
@@ -202,6 +198,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    sxaddpar, hdr, 'SPEC2D_V', idlspec2d_version(), ' Version of idlspec2d'
    sxaddpar, hdr, 'UTILS_V', idlutils_version(), ' Version of idlutils'
  
+   ;------
    ; Read in opConfig.par file
    ; Take the first entry for the configuration of each CCD in the event
    ; that there are several.
@@ -214,29 +211,36 @@ pro sdssproc, infile, image, invvar, indir=indir, $
 
    if (naxis[0] NE config.ncols OR naxis[1] NE config.nrows) then $
       splog, 'WARNING! Config file dimensions do not match raw image'
-   
 
    qexist = [config.amp0, config.amp1, config.amp2, config.amp3]
 
+   ;------
    ; Define the "overscan" regions
+
    sover = [config.soverscan0, config.soverscan1, config.soverscan2, $
     config.soverscan3]
    nover = [config.noverscan0, config.noverscan1, config.noverscan2, $
     config.noverscan3]
 
+   ;------
    ; Define the "mapped overscan" regions
+
    smapover = [config.smapoverscan0, config.smapoverscan1, $
     config.smapoverscan2, config.smapoverscan3]
    nmapover = [config.nmapoverscan0, config.nmapoverscan1, $
     config.nmapoverscan2, config.nmapoverscan3]
 
+   ;------
    ; Define the "overscan rows" (at the bottom of the CCD)
+
    soverrow = [config.soverscanrows0, config.soverscanrows1, $
     config.soverscanrows2, config.soverscanrows3]
    noverrow = [config.noverscanrows0, config.noverscanrows1, $
     config.noverscanrows2, config.noverscanrows3]
 
+   ;------
    ; Data position in the original image
+
    sdatarow = [config.sdatarow0, config.sdatarow1, $
     config.sdatarow2, config.sdatarow3]
    sdatacol = [config.sdatasec0, config.sdatasec1, config.sdatasec2, $
@@ -246,7 +250,9 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    ncol = [config.ndatasec0, config.ndatasec1, config.ndatasec2, $
     config.ndatasec3]
 
+   ;------
    ; Data position in the final (trimmed) image
+
    srow = [config.sccdrowsec0, config.sccdrowsec1, $
     config.sccdrowsec2, config.sccdrowsec3]
    scol = [config.sccdcolsec0, config.sccdcolsec1, $
@@ -257,9 +263,10 @@ pro sdssproc, infile, image, invvar, indir=indir, $
      sdatarow = sdatarow - 20
      noverrow = 1
    endif
-    
 
+   ;------
    ; Read in ECalib File
+
    yanny_read, filepath(ecalibfile, root_dir=pp), pdata
    ecalib = *pdata[0]
    yanny_free, pdata
@@ -271,7 +278,9 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    fullWellDN = [ecalib.fullWellDN0, ecalib.fullWellDN1, $
     ecalib.fullWellDN2, ecalib.fullWellDN3]
 
+   ;------
    ; Construct the final image
+
    igood = where(qexist)
    nr = max((srow+nrow)[igood])
    nc = max((scol+ncol)[igood])
@@ -422,29 +431,25 @@ pro sdssproc, infile, image, invvar, indir=indir, $
               rawdata[sdatacol[iamp]:sdatacol[iamp]+ncol[iamp]-1, $
                      sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] EQ 65535
 
-            if (qshutter) then begin
-               ; Add to the variance image from the open shutter
-               ; by adding 1% of that signal^2 to the variance.
-               ; This says that the uncertainty in this subtracted
-               ; quantity is about 10%.
-               invvar[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
-                        srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
-                 1.0/(abs(image[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
-                        srow[iamp]:srow[iamp]+nrow[iamp]-1]) + $
-                      abs(smearimg[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
-                        srow[iamp]:srow[iamp]+nrow[iamp]-1]) + $
-                      0.01 * abs(smearimg[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
-                        srow[iamp]:srow[iamp]+nrow[iamp]-1])^2 + $
-                        (readnoiseDN[iamp]*gain[iamp])^2) + $ 
-                          1.0e-4  ; floor to variance
-            endif else begin
-               invvar[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
-                        srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
-                 1.0/(abs(image[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
-                        srow[iamp]:srow[iamp]+nrow[iamp]-1]) + $
-                        (readnoiseDN[iamp]*gain[iamp])^2) + $
-                        1.0e-4  ; floor to variance
-            endelse
+            ; Flux term below
+            expr1 = abs(image[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
+                     srow[iamp]:srow[iamp]+nrow[iamp]-1])
+            ; Add to the variance image from the open shutter
+            ; by adding 1% of that signal^2 to the variance.
+            ; This says that the uncertainty in this subtracted
+            ; quantity is about 10%.
+            if (qshutter) then $
+               expr2 = abs(smearimg[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
+                        srow[iamp]:srow[iamp]+nrow[iamp]-1]) $
+            else expr2 = 0
+            ; Read noise term below
+            expr3 = (readnoiseDN[iamp]*gain[iamp])^2
+            ; Term below to limit best S/N to under 100
+            expr4 = 1.e-4 * expr1^2
+
+            invvar[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
+                     srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
+              1.0/(expr1 + expr2 + 0.01 * expr2^2 + expr3 + expr4)
 
          endif
       endfor
@@ -515,9 +520,9 @@ pro sdssproc, infile, image, invvar, indir=indir, $
          fbadpix = float(njunk) / (float(nc) * float(nr))
       endif
 
-satmask = 0
-admask = 0
-bcmask = 0
+satmask = 0 ; clear memory
+admask = 0 ; clear memory
+bcmask = 0 ; clear memory
    endif
 
    ;---------------------------------------------------------------------------
@@ -534,7 +539,7 @@ bcmask = 0
       if (readimg) then image = image / pixflat
       if (NOT keyword_set(minflat)) then minflat = 0.0
       if (readivar) then invvar = invvar * pixflat^2 * (pixflat GT minflat)
-pixflat = 0
+pixflat = 0 ; clear memory
    endif
 
    ;---------------------------------------------------------------------------
