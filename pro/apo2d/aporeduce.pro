@@ -111,7 +111,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    plate = sxpar(hdr, 'PLATEID')
    platestr = string(plate, format='(i4.4)')
    mjd = sxpar(hdr, 'MJD')
-   mjdstr = strtrim(string(mjd,2))
+   mjdstr = strtrim(string(mjd),2)
 
    ;----------
    ; Fix up some header information from early data
@@ -157,14 +157,16 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    rstruct = 0
    case flavor of
       'flat' : begin
-         if (NOT flatexist AND plugexist) then $
+;         if (NOT flatexist AND plugexist) then $
+         if (plugexist) then $
           rstruct = quicktrace(fullname, outflat, fullplugfile) $
          else $
           splog, 'Unable to reduce this flat exposure'
       end
 
       'arc' : begin
-         if (flatexist AND (NOT arcexist)) then $
+;         if (flatexist AND (NOT arcexist)) then $
+         if (flatexist) then $
           rstruct = quickwave(fullname, outflat, outarc) $
           else $
            splog, 'Unable to reduce this arc exposure'

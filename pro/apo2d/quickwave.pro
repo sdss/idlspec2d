@@ -26,7 +26,7 @@ function quickwave, arcname, flatname, outarc, radius=radius
 
    ; Only output file if a wavelength solution was found
    if (keyword_set(wset)) then begin
-      mwrfits, wset, outarc, /create
+      mwrfits, wset, outarc ;, /create
 
       traceset2xy, wset, xx, yy
       wavemin = 10^(min(yy))

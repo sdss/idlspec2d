@@ -109,7 +109,7 @@ function quickextract, flatname, arcname, sciname, outname, $
    ;----------
    ; Write out the extracted spectra
 
-   mwrfits, objsub, outname, /create
+   mwrfits, objsub, outname ;, /create
    mwrfits, ojbsubivar, outname
 ;   mwrfits, meansn, outname
 

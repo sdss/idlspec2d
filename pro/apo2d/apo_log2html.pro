@@ -250,30 +250,50 @@ pro apo_log2html, logfile, htmlfile
       textout = [textout, apo_log_beginplate(thisplate, mjd[0], camnames)]
 
       ;----------
-      ; Find the first (and presumably only) FLAVOR=flat for each camera
+      ; Find all flats and loop over each exposure number with any
 
-      pflats = replicate(ptr_new(), ncams)
-      for icam=0, ncams-1 do begin
-         ii = where(plate EQ thisplate AND flavor EQ 'flat' $
-                    AND camera EQ camnames[icam])
-         if (ii[0] NE -1) then pflats[icam] = pstruct[ii[0]]
-      endfor
-      fields = ['NGOODFIBER', 'XMIN', 'XMAX']
-      formats = ['(i4)', '(f7.1)', '(f7.1)']
-      textout = [ textout, apo_log_fields(pflats, fields, formats=formats) ]
+      ii = where(plate EQ thisplate AND flavor EQ 'flat')
+      if (ii[0] NE -1) then begin
+         allexp = expnum[ii[ uniq(expnum[ii], sort(expnum[ii])) ]]
+         nexp = n_elements(allexp)
+         pflats = replicate(ptr_new(), ncams)
+         for iexp=0, nexp-1 do begin
+            for icam=0, ncams-1 do begin
+               jj = where(plate EQ thisplate AND flavor EQ 'flat' $
+                AND camera EQ camnames[icam] AND expnum EQ allexp[iexp])
+               if (jj[0] NE -1) then pflats[icam] = pstruct[jj[0]]
+            endfor
+
+            ; Output table line for this one flat exposure
+            fields = ['NGOODFIBER', 'XMIN', 'XMAX']
+            formats = ['(i4)', '(f7.1)', '(f7.1)']
+            textout = [ textout, $
+             apo_log_fields(pflats, fields, formats=formats) ]
+
+         endfor
+      endif
 
       ;----------
-      ; Find the first (and presumably only) FLAVOR=arc for each camera
+      ; Find all arcs and loop over each exposure number with any
 
-      parcs = replicate(ptr_new(), ncams)
-      for icam=0, ncams-1 do begin
-         ii = where(plate EQ thisplate AND flavor EQ 'arc' $
-                    AND camera EQ camnames[icam])
-         if (ii[0] NE -1) then parcs[icam] = pstruct[ii[0]]
-      endfor
-      formats = ['(f7.1)', '(f7.1)', '(f4.2)', '(i)']
-      fields = ['WAVEMIN', 'WAVEMAX', 'BESTCORR', 'NLAMPS']
-      textout = [ textout, apo_log_fields(parcs, fields, formats=formats) ]
+      ii = where(plate EQ thisplate AND flavor EQ 'arc')
+      if (ii[0] NE -1) then begin
+         allexp = expnum[ii[ uniq(expnum[ii], sort(expnum[ii])) ]]
+         nexp = n_elements(allexp)
+         parcs = replicate(ptr_new(), ncams)
+         for iexp=0, nexp-1 do begin
+            for icam=0, ncams-1 do begin
+               jj = where(plate EQ thisplate AND flavor EQ 'arc' $
+                AND camera EQ camnames[icam] AND expnum EQ allexp[iexp])
+               if (jj[0] NE -1) then parcs[icam] = pstruct[jj[0]]
+            endfor
+
+            formats = ['(f7.1)', '(f7.1)', '(f4.2)', '(i)']
+            fields = ['WAVEMIN', 'WAVEMAX', 'BESTCORR', 'NLAMPS']
+            textout = [ textout, $
+             apo_log_fields(parcs, fields, formats=formats) ]
+         endfor
+      endif
 
       ;----------
       ; Find all science exposures and collect them into one structure
