@@ -115,6 +115,8 @@ SDSSPROC: Reverted to calls to specflat_version,speclog_version that work.
             fibers 17+18.
 SLATEC_EFC (in idutils):  Call FILL_BSPLINE() instead of EFC2D().
 SPBIASAVE: New routine to average biases already generated with SPBIASGEN.
+SPCOMBINE: Bug fix for dealing with missing spFrame files (as for plate
+            204/51455, where this proc would crash).
 SPPLAN2D: Change the default of MINEXP to 1 sec, so that special plates
             like the M67 plate (#321) will be reduced.
             Make a plan file if either science or smear exposures exist
