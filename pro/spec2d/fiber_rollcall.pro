@@ -54,8 +54,8 @@ pro fiber_rollcall, andmask, loglam
    camnames = ['b1','r1','b2','r2']
    camwave1 = [3500, 6000, 3500, 6000]
    camwave2 = [6000, 9500, 6000, 9500]
-   specidimg = bytarr(size=dims) + 1B
-   specidimg[*,nfiber/2:nfiber-1] = 2
+   specidimg = bytarr(dims) + 1B
+   specidimg[*,nfiber/2:nfiber-1] = 2B
 
    gwave = where(loglam GT alog10(4000) AND loglam LT alog10(5500))
    rwave = where(loglam GT alog10(5600) AND loglam LT alog10(6900))
