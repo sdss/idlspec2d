@@ -68,26 +68,39 @@ pro spflatgen, mjd=mjd, indir=indir, outdir=outdir
    cameras = strarr(nfile)
    obscomm = strarr(nfile)
    mjdarr = lonarr(nfile)
+   exposure = lonarr(nfile)
 
    print, 'Reading FITS headers...', format='(a,$)'
    for ifile=0, nfile-1 do begin
       sdssproc, files[ifile], hdr=hdr
-      cameras[ifile] = sxpar(hdr, 'CAMERAS')
-      obscomm[ifile] = sxpar(hdr, 'OBSCOMM')
+      cameras[ifile] = strtrim(sxpar(hdr, 'CAMERAS'),2)
+      obscomm[ifile] = strtrim(sxpar(hdr, 'OBSCOMM'),2)
       mjdarr[ifile] = sxpar(hdr, 'MJD')
+      exposure[ifile] = sxpar(hdr, 'EXPOSURE')
       print, '.', format='(a,$)'
    endfor
    print
 
    for icam=0, ncam-1 do begin
+      ; Select flats and arcs for this camera
       iflats = where(cameras EQ camnames[icam] $
-       AND obscomm EQ 'dithered flats-flat', nflat)
+       AND obscomm EQ '{dithered flats-flat}', nflat)
       iarcs = where(cameras EQ camnames[icam] $
-       AND obscomm EQ 'dithered flats-arc', narc)
+       AND obscomm EQ '{dithered flats-arc}', narc)
+
+      ; Re-sort each list by exposure number
+      iflats = iflats[ sort(exposure[iflats]) ]
+      iarcs = iarcs[ sort(exposure[iarcs]) ]
+
+      ; Trim the flats to only the list of contiguous flats,
+      ; according to their exposure numbers
+      iflats = iflats[ where(exposure[iflats] - exposure[iflats[0]] $
+       - lindgen(nflat) EQ 0, nflat) ]
+
       if (nflat EQ 7 AND narc GE 1) then begin
          pixflatname = 'pixflat-' + camnames[icam] $
           + '-' + string(mjdarr[iflats[0]],format='(i5.5)') + '.fits'
-         spflatten2, files[iflats[4]], files[iarcs[0]], files[iflats], $
+         spflatten2, files[iflats[3]], files[iarcs[0]], files[iflats], $
           pixflatname
       endif else begin
          splog, 'Expected 7 flats + some arcs, got ' $
