@@ -55,6 +55,7 @@ include/export.h -text
 include/extract_row.h -text
 lib/Makefile -text
 misc/Makefile -text
+misc/atomic.dat -text
 misc/brg.list -text
 misc/distort.blue -text
 misc/distort.red -text
