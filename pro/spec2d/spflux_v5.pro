@@ -36,8 +36,9 @@ function spflux_read_kurucz, loglam, dispimg, iselect=iselect1, $
       kdlog = 1.d-4 / subsamp
 
       ; Change units to erg/cm^2/s/Ang by dividing by the wavelength
-      for imodel=0L, nmodel-1 do $
-       krawflux[*,imodel] = krawflux[*,imodel] / waves
+; Or are we already in these units???
+;      for imodel=0L, nmodel-1 do $
+;       krawflux[*,imodel] = krawflux[*,imodel] / waves
 
       ; These models are sampled linearly in **air** wavelength.
       ; Re-map them to linear in (vacuum) log-wavelength.
