@@ -330,7 +330,9 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    endif
 
    if (keyword_set(tstruct) OR keyword_set(rstruct)) then begin
+      splog, 'Appending to FITS log file '+logfile
       apo_appendlog, logfile, rstruct, tstruct
+      splog, 'Done with append'
    endif
 
    ;----------
@@ -349,10 +351,12 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
           root_dir=outdir)
          splog, 'Generating S/N plot '+plotfile
          apo_plotsn, logfile, plate, plugdir=plugdir, plotfile=plotfile
+         splog, 'Done generating plot'
       endif
 
       splog, 'Generating HTML file '+htmlfile
       apo_log2html, logfile, htmlfile
+      splog, 'Done generating HTML file'
 
 ;
 ;	scp1 does not work on sos, let's switch to scp
