@@ -75,13 +75,60 @@
 ;   synthspec()
 ;
 ; INTERNAL SUPPORT ROUTINES:
+;   rspec_mrdfits()
 ;   readspec1
 ;
 ; REVISION HISTORY:
 ;   25-Jun-2000  Written by David Schlegel, Princeton.
 ;-
 ;------------------------------------------------------------------------------
-pro readspec1, plate, range, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
+function rspec_mrdfits, fcb, exten_no, rownums=rownums, _EXTRA=EXTRA
+
+   if (exten_no GT fcb.nextend) then return, 0
+
+   nrows = n_elements(rownums)
+   if (nrows EQ 1) then begin
+      nchunks = 1
+      row_start = rownums[0]
+      row_end = rownums[0]
+   endif else begin
+      rowdiff = rownums[1:nrows-1] - rownums[0:nrows-2]
+      i0 = where(rowdiff NE 1, nchunks)
+      nchunks = nchunks + 1
+      row_start = rownums[ [0, i0 + 1] ]
+      row_end = rownums[ [i0, nrows-1] ]
+   endelse
+
+   naxis1 = fcb.axis[0,exten_no]
+   naxis2 = fcb.axis[1,exten_no]
+   iadd = 0
+   for ichunk=0, nchunks-1 do begin
+      nadd = row_end[ichunk] - row_start[ichunk] + 1
+      if (exten_no EQ 0 OR fcb.xtension[exten_no] EQ 'IMAGE') then begin
+         fits_read, fcb, data1, exten_no=exten_no, $
+          first=naxis1*row_start[ichunk], $
+          last=naxis1*(row_end[ichunk]+1)-1, _EXTRA=EXTRA
+         if (ichunk EQ 0) then $
+          alldata = make_array(naxis1, nrows, size=size(data1))
+         alldata[*,iadd:iadd+nadd-1] = data1
+      endif else if (fcb.xtension[exten_no] EQ 'BINTABLE') then begin
+         data1 = mrdfits(fcb.filename, exten_no, $
+          range=[row_start[ichunk], row_end[ichunk]], _EXTRA=EXTRA)
+         if (ichunk EQ 0) then $
+          alldata = replicate(data1[0], nrows)
+         if (keyword_set(tag_names(data1,/structure_name))) then $
+          alldata[iadd:iadd+nadd-1] = data1 $ ; named structure
+         else $
+          copy_struct_inx, data1, alldata, index_to=iadd+lindgen(nadd)
+      endif
+      iadd = iadd + nadd
+   endfor
+
+   return, alldata
+end
+
+;------------------------------------------------------------------------------
+pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
  andmask=andmask, ormask=ormask, disp=disp, plugmap=plugmap, $
  loglam=loglam, wave=wave, tsobj=tsobj, zans=zans, synflux=synflux, $
  znum=znum, root_dir=root_dir, silent=silent
@@ -116,12 +163,14 @@ pro readspec1, plate, range, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       return
    end
 
+   fits_open, filename, fcb
+
    if (q_flux) then begin
-      flux = mrdfits(filename, 0, hdr, range=range, silent=silent)
+      flux = rspec_mrdfits(fcb, 0, rownums=rownums, silent=silent)
    endif
 
    if (q_invvar OR q_flerr) then begin
-      invvar = mrdfits(filename, 1, range=range, silent=silent)
+      invvar = rspec_mrdfits(fcb, 1, rownums=rownums, silent=silent)
       if (q_flerr) then begin
          i = where(invvar GT 0)
          flerr = 0 * invvar
@@ -130,19 +179,19 @@ pro readspec1, plate, range, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    endif
 
    if (q_andmask) then begin
-      andmask = mrdfits(filename, 2, range=range, silent=silent)
+      andmask = rspec_mrdfits(fcb, 2, rownums=rownums, silent=silent)
    endif
 
    if (q_ormask) then begin
-      ormask = mrdfits(filename, 3, range=range, silent=silent)
+      ormask = rspec_mrdfits(fcb, 3, rownums=rownums, silent=silent)
    endif
 
    if (q_disp) then begin
-      disp = mrdfits(filename, 4, range=range, silent=silent)
+      disp = rspec_mrdfits(fcb, 4, rownums=rownums, silent=silent)
    endif
 
    if (q_plugmap) then begin
-      plugmap = mrdfits(filename, 5, range=range, silent=silent, $
+      plugmap = rspec_mrdfits(fcb, 5, rownums=rownums, silent=silent, $
        structyp='PLUGMAPOBJ')
    endif
 
@@ -177,12 +226,13 @@ pro readspec1, plate, range, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
        else zfile = zfile[0]
 
       if (NOT keyword_set(znum)) then begin
-         zans = mrdfits(zfile, 1, range=range)
+         zans = rspec_mrdfits(zfile, 1, rownums=rownums)
       endif else begin
          zhdr = headfits(zfile, exten=1)
          nper = sxpar(zhdr,'NAXIS2') / 640L
-         zans = mrdfits(zfile, 1, range=[range[0]*nper,range[1]*nper+nper-1])
-         zans = zans[lindgen(range[1]-range[0]+1)*nper + znum]
+         fits_open, zfile, zfcb
+         zans = rspec_mrdfits(zfcb, 1, rownums=rownums*nper+znum, silent=silent)
+         fits_close, zfcb
       endelse
    endif
 
@@ -195,6 +245,8 @@ pro readspec1, plate, range, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       if (NOT keyword_set(hdr)) then hdr = headfits(filename)
       mjd = sxpar(hdr, 'MJD')
    endif
+
+   fits_close, fcb
 
    return
 end
@@ -286,13 +338,11 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
 
       indx = where(platevec EQ platenums[ifile] AND mjdvec EQ mjdnums[ifile])
       irow = fibervec[indx] - 1
-      i1 = min(irow)
-      i2 = max(irow)
 
       if (keyword_set(silent)) then print, '+', format='(A,$)'
 
       mjd1 = mjdnums[ifile]
-      readspec1, platenums[ifile], [i1,i2], mjd=mjd1, $
+      readspec1, platenums[ifile], irow, mjd=mjd1, $
        flux=flux1, flerr=flerr1, invvar=invvar1, andmask=andmask1, $
        ormask=ormask1, disp=disp1, plugmap=plugmap1, loglam=loglam1, $
        wave=wave1, tsobj=tsobj1, zans=zans1, synflux=synflux1, $
@@ -300,34 +350,34 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
 
       if (ifile EQ 0) then begin
          allindx = indx
-         if (q_flux) then flux = flux1[*,irow-i1]
-         if (q_flerr) then flerr = flerr1[*,irow-i1]
-         if (q_invvar) then invvar = invvar1[*,irow-i1]
-         if (q_andmask) then andmask = andmask1[*,irow-i1]
-         if (q_ormask) then ormask = ormask1[*,irow-i1]
-         if (q_disp) then disp = disp1[*,irow-i1]
-         if (q_plugmap) then plugmap = plugmap1[irow-i1]
-         if (q_loglam) then loglam = loglam1[*,irow-i1]
-         if (q_wave) then wave = wave1[*,irow-i1]
-         if (q_tsobj) then tsobj = tsobj1[irow-i1]
-         if (q_zans) then zans = zans1[irow-i1]
-         if (q_synflux) then synflux = synflux1[*,irow-i1]
-         if (q_mjd) then mjd = mjd1[irow-i1]
+         if (q_flux) then flux = flux1
+         if (q_flerr) then flerr = flerr1
+         if (q_invvar) then invvar = invvar1
+         if (q_andmask) then andmask = andmask1
+         if (q_ormask) then ormask = ormask1
+         if (q_disp) then disp = disp1
+         if (q_plugmap) then plugmap = plugmap1
+         if (q_loglam) then loglam = loglam1
+         if (q_wave) then wave = wave1
+         if (q_tsobj) then tsobj = tsobj1
+         if (q_zans) then zans = zans1
+         if (q_synflux) then synflux = synflux1
+         if (q_mjd) then mjd = mjd1
       endif else begin
          allindx = [allindx, indx]
-         if (q_flux) then spec_append, flux, flux1[*,irow-i1]
-         if (q_flerr) then spec_append, flerr, flerr1[*,irow-i1]
-         if (q_invvar) then spec_append, invvar, invvar1[*,irow-i1]
-         if (q_andmask) then spec_append, andmask, andmask1[*,irow-i1]
-         if (q_ormask) then spec_append, ormask, ormask1[*,irow-i1]
-         if (q_disp) then spec_append, disp, disp1[*,irow-i1]
-         if (q_plugmap) then plugmap = struct_append(plugmap, plugmap1[irow-i1])
-         if (q_loglam) then spec_append, loglam, loglam1[*,irow-i1]
-         if (q_wave) then spec_append, wave, wave1[*,irow-i1]
-         if (q_tsobj) then tsobj = struct_append(tsobj, tsobj1[irow-i1])
-         if (q_zans) then zans = struct_append(zans, zans1[irow-i1])
-         if (q_synflux) then spec_append, synflux, synflux1[*,irow-i1]
-         if (q_mjd) then mjd = [mjd, mjd1[irow-i1]]
+         if (q_flux) then spec_append, flux, flux1
+         if (q_flerr) then spec_append, flerr, flerr1
+         if (q_invvar) then spec_append, invvar, invvar1
+         if (q_andmask) then spec_append, andmask, andmask1
+         if (q_ormask) then spec_append, ormask, ormask1
+         if (q_disp) then spec_append, disp, disp1
+         if (q_plugmap) then plugmap = struct_append(plugmap, plugmap1)
+         if (q_loglam) then spec_append, loglam, loglam1
+         if (q_wave) then spec_append, wave, wave1
+         if (q_tsobj) then tsobj = struct_append(tsobj, tsobj1)
+         if (q_zans) then zans = struct_append(zans, zans1)
+         if (q_synflux) then spec_append, synflux, synflux1
+         if (q_mjd) then mjd = [mjd, mjd1]
       endelse
    endfor
 
