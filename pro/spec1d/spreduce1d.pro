@@ -35,6 +35,7 @@
 ;   $IDLSPEC2D_DIR/templates/TEMPLATEFILES
 ;
 ; PROCEDURES CALLED:
+;   filter_thru()
 ;   mrdfits()
 ;   mwrfits
 ;   splog
@@ -60,7 +61,7 @@ pro spreduce1d, platefile, fiberid=fiberid
 
    if (n_elements(platefile) GT 1) then begin
       for i=0, n_elements(platefile)-1 do begin
-         spreduce1d, platefile[i]
+         spreduce1d, platefile[i], fiberid=fiberid
       endfor
       return
    endif else begin
@@ -284,28 +285,35 @@ ormask = 0 ; Free memory
    wavevec = 10d^objloglam
    flambda2fnu = wavevec^2 / 2.99792e18
 
-   for iobj=0, nobj-1 do begin
+   fthru = filter_thru(objflux * rebin(flambda2fnu,npixobj,nobj), $
+    waveimg=wavevec, mask=(objivar EQ 0), /norm)
+   counts_spectro[*,0,*] = transpose(fthru) * 10^((48.6 - 2.5*17.)/2.5)
 
-      fthru = filter_thru(objflux[*,iobj] * flambda2fnu, waveimg=wavevec, $
-       mask=(objivar[*,iobj] EQ 0), /norm)
-      for i=0,4 do $
-       counts_spectro[i,*,iobj] = fthru[i] * 10^((48.6 - 2.5*17.)/2.5)
+   ; Loop in reverse order, so that we look at the best-fit spectra last,
+   ; and keep those spectra around for later.
 
-      for ii=0, nper-1 do begin
-; ??? Save time for now and only look at best fit, since synthspec is slow ???
-if (ii EQ 0) then begin
+; Save time for now and only look at best fit, since SYNTHSPEC and
+; FILTER_THRU are so slow ???
+;   for iper=nper-1, 0, -1 do begin
+   for iper=0, 0, -1 do begin
+      ; Copy this for all fits, since the measured magnitudes are the same
+      counts_spectro[*,iper,*] = counts_spectro[*,0,*]
+
+      synflux = synthspec(res_all[iper,*], loglam=objloglam)
+
+      for iobj=0, nobj-1 do begin
          goodmask = objivar[*,iobj] GT 0
-         synflux = synthspec(res_all[ii,iobj], loglam=objloglam)
-         chivec = abs(objflux[*,iobj] - synflux) * sqrt(objivar[*,iobj])
+         chivec = abs(objflux[*,iobj] - synflux[*,iobj]) * sqrt(objivar[*,iobj])
          for isig=0, nfsig-1 do $
-          fracnsigma[isig,ii,iobj] = $
+          fracnsigma[isig,iper,iobj] = $
            total((chivec GT isig+1) * goodmask) / (total(goodmask) > 1)
-
-         fthru = filter_thru(synflux * flambda2fnu, waveimg=wavevec, /norm)
-         counts_synth[*,ii,iobj] = fthru * 10^((48.6 - 2.5*17.)/2.5)
-endif
       endfor
+
+      fthru = filter_thru(synflux * rebin(flambda2fnu,npixobj,nobj), $
+       waveimg=wavevec, /norm)
+      counts_synth[*,iper,*] = transpose(fthru) * 10^((48.6 - 2.5*17.)/2.5)
    endfor
+
    splog, 'CPU time to generate chi^2 statistics = ', systime(1)-t0
 
    ;----------
@@ -414,6 +422,7 @@ endif
 
    mwrfits, 0, zbestfile, hdr, /create ; Retain the original header in first HDU
    mwrfits, (res_all[0,*])[*], zbestfile
+   mwrfits, synflux, zbestfile
 
    ;----------
    ; Close log file
