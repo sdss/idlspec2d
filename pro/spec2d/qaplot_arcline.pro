@@ -33,6 +33,7 @@
 ;   djs_oplot
 ;   djs_plot
 ;   errplot
+;   fibermask_bits()
 ;   traceset2xy
 ;   splog
 ;

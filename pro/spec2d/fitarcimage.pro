@@ -68,6 +68,7 @@
 ;   arcfit_guess()
 ;   djs_median
 ;   djsig()
+;   fibermask_bits()
 ;   trace_crude()
 ;   trace_fweight()
 ;   traceset2pix()

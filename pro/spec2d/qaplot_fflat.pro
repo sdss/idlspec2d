@@ -53,8 +53,8 @@ pro qaplot_fflat, fflat, wset, fibermask=fibermask, dx=dx, title=title
    xrange = [min(loglam), max(loglam)]
 
    if (keyword_set(fibermask)) then begin
-      indx = where(fibermask AND fibermask_bits('BADFLAT'))
-      if (indx[0] NE -1) then loglam[*,indx] = 0
+      ibad = where((fibermask AND fibermask_bits('BADFLAT')) NE 0)
+      if (ibad[0] NE -1) then loglam[*,ibad] = 0
    endif
 
    dims = size(fflat, /dimens)
