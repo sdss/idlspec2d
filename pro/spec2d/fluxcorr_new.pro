@@ -207,6 +207,7 @@ pro fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
 
        if spectrophoto[0] EQ -1 then begin
              splog, "WARNING: No spectrophoto with high S/N"
+             corrset.coeff = 0.0
        endif else begin
 
          spectrophoto = highsn[spectrophoto]
