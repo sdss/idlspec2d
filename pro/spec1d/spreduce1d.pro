@@ -624,7 +624,7 @@ ormask = 0 ; Free memory
    ; Do this by looking at the dispersion in the sky-fiber fluxes.
    ; We assign identical errors (in linear flux units) to all 640 fibers.
 
-   iskies = where(strtrim(plugmap[iobj].objtype,2) EQ 'SKY', nskies)
+   iskies = where(strtrim(plugmap.objtype,2) EQ 'SKY', nskies)
    if (nskies GT 1) then begin
       for ifilt=0, 4 do begin
          res_all.spectroflux_ivar[ifilt] = $
@@ -632,7 +632,9 @@ ormask = 0 ; Free memory
          res_all.spectrosynflux_ivar[ifilt] = $
           1. / stdev(res_all[0,iskies].spectrosynflux[ifilt])
       endfor
-   endif
+   endif else begin
+      splog, 'WARNING: Only ', nskies, ' sky fibers'
+   endelse
 
    ;----------
    ; Set ZWARNING flags.
