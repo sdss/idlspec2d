@@ -95,13 +95,23 @@ ormask = 0 ; Free memory
        eigenval=eigenval, acoeff=acoeff, usemask=usemask)
 
       ;----------
-      ; Set indeterminant fluxes to zero, e.g. values outside of the
-      ; wavelength range used in the fit.
+      ; Interpolate over bad flux values in the middle of a spectrum,
+      ; and set fluxes to zero at the blue+red ends of the spectrum.
 
-;      minuse = floor((nindx+1) / 2)
-      minuse = 1 ; ???
-      ibad = where(usemask LT minuse, nbad)
-      if (nbad GT 0) then pcaflux[ibad,*] = 0
+;      minuse = 1 ; ?
+      minuse = floor((nindx+1) / 3.)
+      qbad = usemask LT minuse
+
+      ; Interpolate over all bad pixels
+      for j=0, nkeep-1 do $
+       pcaflux[*,j] = djs_maskinterp(pcaflux[*,j], qbad EQ 1, /const)
+
+      ; Set bad pixels at the very start or end of the spectrum to zero instead
+      npix = n_elements(qbad)
+      if (qbad[0]) then $
+       pcaflux[0:(where(qbad EQ 0))[0]-1,*] = 0
+      if (qbad[npix-1]) then $
+       pcaflux[(reverse(where(qbad EQ 0)))[0]+1:npix-1,*] = 0
 
 ; The following would plot the 0th object and overplot the best-fit PCA
 ;ii=0
