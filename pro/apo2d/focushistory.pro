@@ -160,7 +160,7 @@ pro focushistory, mjdrange=mjdrange1
 
    xrange = minmax(plist.mjd) + [-30,30]
    yrange = [0.60,1.40]
-   mjd2datelist, min(plist.mjd)-20, max(plist.mjd)+20, step='year', $
+   mjd2datelist, min(plist.mjd), max(plist.mjd), step='year', $
     mjdlist=mjdlist, datelist=datelist
    nplot = n_elements(mjdlist) - 1
 
