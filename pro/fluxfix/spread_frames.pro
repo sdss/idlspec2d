@@ -35,9 +35,10 @@ pro spread_frames, spframes, window=window, binsz = binsz, $
    exptimevec = fltarr(ncam)
 
    plugtag_struct = {plateid: 0, mjd: 0, fiberid: 0, $
-                      ra: 0.0, dec: 0.0, mag: fltarr(5), $
-                      xfocal: 0.0, yfocal: 0.0, objtype: ' ', $
-                      camcolor: ' ', spectrographid: 0, expid: ' '}
+                     ra: 0.0, dec: 0.0, mag: fltarr(5), $
+                     xfocal: 0.0, yfocal: 0.0, objtype: ' ', $
+                     camcolor: ' ', spectrographid: 0, expid: ' ', $
+                     tsobjid: lonarr(5)}
 
    ;-----------------
    ; Read in tsObjfile -- assume target info in HDU#1, new info in HDU#2
@@ -162,7 +163,9 @@ pro spread_frames, spframes, window=window, binsz = binsz, $
       ; Match tsObj to plugmap and update plugtag structure with fibermags
       ; from the tsObj
 
-      if keyword_set(tsobjname) then begin 
+      if keyword_set(tsobjname) then begin
+        tsobjid = [tsobj.run, tsobj.rerun, tsobj.camcol, tsobj.field, tsobj.id] 
+
         for ifib = 0, nfib - 1 do begin
           adist = djs_diff_angle(tsobj.ra, tsobj.dec, $
                   tempplugtag[ifib].ra, tempplugtag[ifib].dec, $
@@ -172,6 +175,7 @@ pro spread_frames, spframes, window=window, binsz = binsz, $
           ; No match will be found for unmapped fibers so set mags to zero
           if match[0] ne -1 then begin
              tempplugtag[ifib].mag = tsobj[match].fibercounts 
+             tempplugtag[ifib].tsobjid = tsobjid[match]
           endif else begin
              splog, 'Fiber mags set to zero for unmapped fiber: ', $
                      tempplugtag[ifib].fiberid
