@@ -6,7 +6,7 @@
 ;   Routine to generate mean biases for a night.
 ;
 ; CALLING SEQUENCE:
-;   spbiasgen, [ mjd=, expnum=, expstart=, expend=, $
+;   spbiasgen, [ mjd=, expnum=, expstart=, expend=, timesep=, $
 ;    indir=, outdir=, docam=, sigrej=, maxiter= ]
 ;
 ; INPUTS:
@@ -16,6 +16,10 @@
 ;   expnum     - If set, then use these exposure numbers
 ;   expstart   - If set, then only use exposure numbers >= EXPSTART
 ;   expend     - If set, then only use exposure numbers >= EXPEND
+;   timesep    - Discard any bias that isn't within TIMESEP after another bias;
+;                default to 300 sec.  The time is obtained from TAI in the FITS
+;                header.  Note that this always discards the first bias in any
+;                sequence.
 ;   indir      - Look for input files in this directory; default to current
 ;                directory if neither MJD or INDIR are set.
 ;   outdir     - Output directory; default to same as INDIR.
@@ -107,8 +111,9 @@ pro spbiasgen1, files, outfile=outfile, outdir=outdir, $
 end
 ;------------------------------------------------------------------------------
 pro spbiasgen, mjd=mjd, expnum=expnum, expstart=expstart, expend=expend, $
- indir=indir, outdir=outdir, docam=docam
+ timesep=timesep, indir=indir, outdir=outdir, docam=docam
 
+   if (NOT keyword_set(timesep)) then timesep = 300
    if (keyword_set(docam)) then camnames = docam $
     else camnames = ['b1', 'b2', 'r1', 'r2']
    ncam = N_elements(camnames)
@@ -160,6 +165,7 @@ pro spbiasgen, mjd=mjd, expnum=expnum, expstart=expstart, expend=expend, $
    flavor = strarr(nfile)
    mjdarr = lonarr(nfile)
    exposure = lonarr(nfile)
+   taitime = dblarr(nfile)
 
    print, 'Reading FITS headers...', format='(a,$)'
    for ifile=0, nfile-1 do begin
@@ -168,6 +174,7 @@ pro spbiasgen, mjd=mjd, expnum=expnum, expstart=expstart, expend=expend, $
       flavor[ifile] = strtrim(sxpar(hdr, 'FLAVOR'),2)
       mjdarr[ifile] = sxpar(hdr, 'MJD')
       exposure[ifile] = sxpar(hdr, 'EXPOSURE')
+      taitime[ifile] = sxpar(hdr, 'TAI')
       print, '.', format='(a,$)'
    endfor
    print
@@ -177,13 +184,13 @@ pro spbiasgen, mjd=mjd, expnum=expnum, expstart=expstart, expend=expend, $
       ibias = where(cameras EQ camnames[icam] $
        AND strtrim(flavor,2) EQ 'bias', nbias)
 
-      ; Discard any bias that is not immediately preceded by
-      ; a bias.  That is, we don't include the first bias in
-      ; any sequence.
+      ; Discard any bias that isn't within TIMESEP seconds after
+      ; another bias (this always discards the first one in any sequence).
       jbias = ibias ; This is a copy of those indices, putting -1 for bad ones
       for i=0, nbias-1 do begin
-         junk = where(exposure[ibias[i]] EQ (exposure[ibias]+1), nmatch)
-         if (nmatch EQ 0) then jbias[i] = -1
+         junk = where(taitime[ibias[i]] GE taitime[ibias] $
+                  AND taitime[ibias[i]] LE taitime[ibias] + timesep, nmatch)
+         if (nmatch LE 1) then jbias[i] = -1 ; One match is the frame itself.
       endfor
       j = where(jbias NE -1, nbias)
       if (nbias GT 25) then begin
