@@ -180,3 +180,12 @@ spechdrfix sdR-??-00010048 FLAVOR   "'unknown'"
 # on MJD 52055.
 spechdrfix sdR-??-00010061 FLAVOR   "'unknown'"
 
+# Telescope status information missing for the pre-flat on plate 655
+# on MJD 52162.
+spechdrfix sdR-??-00010850  FFS   "'1 1 1 1 1 1 1 1'"
+spechdrfix sdR-??-00010850  FF    "'1 1 1 1 '"
+spechdrfix sdR-??-00010850  NE    "'0 0 0 0 '"
+spechdrfix sdR-??-00010850  HGCD  "'0 0 0 0 '"
+spechdrfix sdR-??-00010850  SPEC1 "'1 0 1 1 '"
+spechdrfix sdR-??-00010850  SPEC2 "'1 0 1 1 '"
+
