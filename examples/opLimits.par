@@ -72,10 +72,10 @@ speclimit red flat XMAX r2 2070 9e9
 # Issue a warning if 3 or more fibers are missing on either side of
 # the spectrograph, and an error if 10 or more.
 
-speclimit yellow flat NGOODFIBER b1 316 317
-speclimit yellow flat NGOODFIBER b2 316 317
-speclimit yellow flat NGOODFIBER r1 316 317
-speclimit yellow flat NGOODFIBER r2 316 317
+speclimit yellow flat NGOODFIBER b1 311 317
+speclimit yellow flat NGOODFIBER b2 311 317
+speclimit yellow flat NGOODFIBER r1 311 317
+speclimit yellow flat NGOODFIBER r2 311 317
 
 speclimit red flat NGOODFIBER b1 0 310
 speclimit red flat NGOODFIBER b2 0 310
