@@ -214,7 +214,6 @@ pro/spec2d/myfluxcalib.pro -text
 pro/spec2d/myfluxcorr.pro -text
 pro/spec2d/myratiofit.pro -text
 pro/spec2d/pixelmask_bits.pro -text
-pro/spec2d/platesn.pro -text
 pro/spec2d/plotsn.pro -text
 pro/spec2d/qaplot_arcline.pro -text
 pro/spec2d/qaplot_fflat.pro -text
@@ -263,7 +262,6 @@ pro/spec2d/traceset2pix.pro -text
 pro/spec2d/traceset2xy.pro -text
 pro/spec2d/tweaktrace.pro -text
 pro/spec2d/ushift.pro -text
-pro/spec2d/whopping_image.pro -text
 pro/spec2d/writeapid.pro -text
 pro/spec2d/xy2traceset.pro -text
 src/Makefile -text
