@@ -89,7 +89,6 @@ etc/sdss_u_atm.dat -text
 etc/sdss_z_atm.dat -text
 etc/skylines.dat -text
 etc/spChunkList.par -text
-etc/spMaskbits.par -text
 etc/spPlateList.par -text
 examples/Makefile -text
 examples/README -text
@@ -431,8 +430,6 @@ pro/spec2d/reject_arc.pro -text
 pro/spec2d/reject_flat.pro -text
 pro/spec2d/reject_science.pro -text
 pro/spec2d/sdreportmake.pro -text
-pro/spec2d/sdss_flagname.pro -text
-pro/spec2d/sdss_flagval.pro -text
 pro/spec2d/sdsshead.pro -text
 pro/spec2d/sdssproc.pro -text
 pro/spec2d/select_arc.pro -text
