@@ -12,9 +12,13 @@ APO_LOG2HTML,APOREDUCE: Switch from saving the Mountain standard time (MST)
 APO_LOG2HTML: Compare the exposure "flavor" when looking at the operational
            limits (in the "opLimits.par" file).  This allows us to
            differentiate between bias and dark levels (PR #2562).
+APOFLUXCALIB: Procedure for generating a canonical set of flux-calibration
+           vectors (including the superflat) for on-the-mountain plotting
+           of spectra using APOPLOT.
 APOREDUCE: Allow setting MINEXP to 0 sec.  Change default of MINEXP to 0 sec,
            so that any exposure with non-negative exposure time is reduced
            by Son-of-Spectro.
+APOPLOT: New proc for plotting spectra from the Son-of-Spectro outputs at APO.
 DANVB_CONVERT,DANVB_QSOLIST: Procs for generating a list of input
             QSO's from Dan van den Berk's EDR list "plateEDR.summ"
             for generating QSO eigenvectors.  The output file
@@ -112,6 +116,8 @@ eigeninput_star.dat: Many more M stars added for implementing changes
             to PCA_STAR.
 opHdrFix.par: Correct some values for TILEID,RADEG,DECDEG for the early plates
             187, 202 and 214.
+spFluxcalib-*.fits: A canonical set of flux-calibration vectors produced
+            by APOFLUXCALIB and used by APOPLOT.
 sos_redo: Don't allow this to be run from the machine sdsshost!
 sprobot_start: Copy the data over starting at 10am Princeton time,
             which will be after "mailhtml.sh" is run at APO (at 7:20 am).
