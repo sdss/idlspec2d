@@ -1,0 +1,92 @@
+
+typedef struct {
+  char fileroot;    # Root of file name, without any ".fit" suffix
+  char keyword;     # Keyword name
+  char value;       # Keyword value (as a string)
+} spechdrfix;
+
+# Wrong exposure time in these headers on MJD 51433
+
+spechdrfix sdR-??-00001142 EXPTIME  60
+
+# Wrong plate information in these headers on MJD 51455
+
+spechdrfix sdR-??-00001431 PLATEID  231
+spechdrfix sdR-??-00001431 TILEID   55
+spechdrfix sdR-??-00001431 MAPID    5145502
+spechdrfix sdR-??-00001431 NAME     "'0231-51455-01'"
+
+spechdrfix sdR-??-00001432 PLATEID  231
+spechdrfix sdR-??-00001432 TILEID   55
+spechdrfix sdR-??-00001432 MAPID    5145502
+spechdrfix sdR-??-00001432 NAME     "'0231-51455-01'"
+
+spechdrfix sdR-??-00001433 PLATEID  231
+spechdrfix sdR-??-00001433 TILEID   55
+spechdrfix sdR-??-00001433 MAPID    5145502
+spechdrfix sdR-??-00001433 NAME     "'0231-51455-01'"
+
+spechdrfix sdR-??-00001434 PLATEID  231
+spechdrfix sdR-??-00001434 TILEID   55
+spechdrfix sdR-??-00001434 MAPID    5145502
+spechdrfix sdR-??-00001434 NAME     "'0231-51455-01'"
+
+spechdrfix sdR-??-00001435 PLATEID  231
+spechdrfix sdR-??-00001435 TILEID   55
+spechdrfix sdR-??-00001435 MAPID    5145502
+spechdrfix sdR-??-00001435 NAME     "'0231-51455-01'"
+
+spechdrfix sdR-??-00001436 PLATEID  231
+spechdrfix sdR-??-00001436 TILEID   55
+spechdrfix sdR-??-00001436 MAPID    5145502
+spechdrfix sdR-??-00001436 NAME     "'0231-51455-01'"
+
+spechdrfix sdR-??-00001437 PLATEID  231
+spechdrfix sdR-??-00001437 TILEID   55
+spechdrfix sdR-??-00001437 MAPID    5145502
+spechdrfix sdR-??-00001437 NAME     "'0231-51455-01'"
+
+# Wrong plate information in these headers on MJD 51629
+
+spechdrfix sdR-??-00003210 PLATEID  318
+spechdrfix sdR-??-00003210 TILEID   124
+spechdrfix sdR-??-00003210 MAPID    5162601
+spechdrfix sdR-??-00003210 NAME     "'0318-51626-01'"
+spechdrfix sdR-??-00003210 PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0318-51626-01.par'"
+
+spechdrfix sdR-??-00003211 PLATEID  318
+spechdrfix sdR-??-00003211 TILEID   124
+spechdrfix sdR-??-00003211 MAPID    5162601
+spechdrfix sdR-??-00003211 NAME     "'0318-51626-01'"
+spechdrfix sdR-??-00003211 PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0318-51626-01.par'"
+
+spechdrfix sdR-??-00003212 PLATEID  318
+spechdrfix sdR-??-00003212 TILEID   124
+spechdrfix sdR-??-00003212 MAPID    5162601
+spechdrfix sdR-??-00003212 NAME     "'0318-51626-01'"
+spechdrfix sdR-??-00003212 PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0318-51626-01.par'"
+
+spechdrfix sdR-??-00003213 PLATEID  318
+spechdrfix sdR-??-00003213 TILEID   124
+spechdrfix sdR-??-00003213 MAPID    5162601
+spechdrfix sdR-??-00003213 NAME     "'0318-51626-01'"
+spechdrfix sdR-??-00003213 PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0318-51626-01.par'"
+
+# Wrong exposure time in these headers on MJD 51629
+
+spechdrfix sdR-??-00003225 EXPTIME  1148
+spechdrfix sdR-??-00003226 EXPTIME  985
+
+# Exposure #7112 (smear) on MJD 51871 has NaN values for the following keywords.
+# Copy those keywords from the previous exposure, which is close enough.
+
+spechdrfix sdR-??-00007112 TAI      4481669178.32
+spechdrfix sdR-??-00007112 RA       13.294940
+spechdrfix sdR-??-00007112 DEC      14.842955
+spechdrfix sdR-??-00007112 SPA      0.030
+spechdrfix sdR-??-00007112 IPA      347.308
+spechdrfix sdR-??-00007112 IPARATE  -0.0107
+spechdrfix sdR-??-00007112 AZ       345.32650
+spechdrfix sdR-??-00007112 ALT      71.520262
+
+
