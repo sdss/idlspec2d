@@ -117,6 +117,7 @@ pro platelist, plist=plist, create=create
     'vers1d'   , '', $
     'verstarg' , '', $
     'chunkname', '', $
+    'mjdlist'  , '', $
     'sn2_g1'   , 0.0, $
     'sn2_r1'   , 0.0, $
     'sn2_i1'   , 0.0, $
@@ -204,6 +205,8 @@ pro platelist, plist=plist, create=create
          planlist = yanny_par(hdrcomb, 'planfile2d') ; Assume we find this
          for iplan=0, n_elements(planlist)-1 do begin
             yanny_read, djs_filepath(planlist[iplan], root_dir=path), hdr=hdr2d
+            plist[ifile].mjdlist = strtrim(plist[ifile].mjdlist $
+             + ' ' + yanny_par(hdr2d, 'MJD'),2)
             thislogfile = djs_filepath(yanny_par(hdr2d, 'logfile'), root_dir=path)
             thislogfile = (findfile(thislogfile))[0]
             if (keyword_set(thislogfile)) then begin
