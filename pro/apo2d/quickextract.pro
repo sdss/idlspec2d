@@ -25,6 +25,8 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    plugsort = mrdfits(tsetfile,3)
    fibermask = mrdfits(tsetfile,4)
    fflat = mrdfits(fflatfile,0)
+   fflatmask = mrdfits(fflatfile,1)
+   fibermask = fibermask OR fflatmask
    wset = mrdfits(wsetfile,1)
    traceset2xy, wset, ytemp, logwave
 
@@ -48,6 +50,18 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    nterms=2
 
    traceset2xy, tset, ytemp, xcen
+
+;------------------------------------------------------------------------------
+;
+;	We can calculate median shift here without much trouble,
+;       just as done is spec2d
+;
+   xnew = match_trace(image, invvar, xcen)
+   bestlag = median(xnew-xcen)
+   splog, 'Shifting traces by match_trace ', bestlag
+   if (abs(bestlag) GT 0.1) then splog, 'WARNING: A Post-calib is required!'
+;
+;------------------------------------------------------------------------------
 
    extract_image, image, invvar, xcen, sigma, tempflux, tempfluxivar, $
           proftype=proftype, wfixed=wfixed, yrow=yrow, highrej=5, lowrej=5, $
