@@ -7,6 +7,12 @@ PCA_SOLVE, COMPUTECHI2: Make robust to one or all of the template spectra
 SPCOMBINE, SPCOADD_FRAMES: Optionally allow spFrame files to be g-zipped.
 READSPEC, SPREDUCE1D: Allow spPlate, spZ files to be g-zipped.
 
+Add new mask bit: NEARWHOPPER.  This effects the following routines:
+              EXTRACT_OBJECT, FLUXCORR_NEW, MYFLUXCALIB, TELLURIC_CORR.
+              These fibers are also implicitly ignored by sky-subtraction
+              because the sky-fiber selection implicitly assumes all fiber-
+              mask bits are fatal (in EXTRACT_OBJECT).
+
 -------------------------------------------------------------------------------
 v4_7_0 (Mar 16, 2001)
 

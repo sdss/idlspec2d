@@ -198,7 +198,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 
    
    ;-----------------------------------------------------------------------
-   ;  This is a kludge to fix first and last column
+   ;  This is a kludge to fix first and last column ???
    ;-----------------------------------------------------------------------
    image[0,*] = image[0,*]*0.7
    image[2047,*] = image[2047,*]*0.7
