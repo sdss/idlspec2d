@@ -740,6 +740,11 @@ The PRIMTARGET bit values are as follows (in hex and decimal):
   SERENDIP_RED      = 0x400000     = bit #22 =  4194304
   SERENDIP_DISTANT  = 0x800000     = bit #23 =  8388608
   SERENDIP_MANUAL   = 0x100000     = bit #24 = 16777216
+  QSO_MAG_OUTLIER   = 0x200000     = bit #25 = 33554432
+  GALAXY_RED_II     = 0x400000     = bit #26 = 67108864
+  ROSAT_E           = 0x800000     = bit #27 =134217728
+  STAR_PN           = 0x1000000    = bit #28 =268435456
+  QSO_REJECT        = 0x2000000    = bit #29 =536870912
 </PRE>
 
 <P>
@@ -758,8 +763,9 @@ The SECTARGET bit values are as follows (in hex and decimal):
 </PRE>
 
 <P>
-These flag values were copied from the "target" module file
-"common/arTargetType.h".
+These flag values were copied from the "target" module files
+"common/arTargetType.h" and "etc/diags.tcl".  (There doesn't actually
+appear to be any single file tracks all of these flags!)
 
 <H2><A NAME="vacuum">The Wavelengths Are in Vacuum!!??</A></H2>
 
