@@ -131,8 +131,8 @@ function fullfit, spec, linelist, guess
 	final = first
 
 	while (abs(bestlag) GT 5)  do begin
-	  guess0 = first[0]
-	  p0 = first[1:*]
+	  guess0 = final[0]
+	  p0 = final[1:*]
 	  scale = abs(p0)*0.1
 	  scale[0] = scale[0]*0.2
 	  final = lampfit(spec, linelist, guess0, transpose([[p0],[scale]]), $
@@ -199,9 +199,9 @@ pro fitarcimage, arc, side, linelist, xnew, ycen, tset, invset, $
 
           ans = fullfit(spec, linelist, guess)
 
-	  if (side EQ 'blue' AND bestcorr LT 0.8) then $
+	  if (side EQ 'blue' AND bestcorr LT 0.6) then $
             print, 'Initial wavelength solution looks suspicious'
-	  if (side EQ 'red' AND bestcorr LT 0.6) then $
+	  if (side EQ 'red' AND bestcorr LT 0.5) then $
             print, 'Initial wavelength solution looks suspicious'
 
 	endif
