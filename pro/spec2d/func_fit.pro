@@ -1,5 +1,6 @@
 
-function func_fit, x, y, ncoeff, function_name=function_name
+function func_fit, x, y, ncoeff, function_name=function_name, $
+        halfintwo=halfintwo
 
 	if (N_params() LT 3) then begin
 	  print,'function func_fit, x, y, ncoeff, function_name=function_name' 
@@ -12,9 +13,9 @@ function func_fit, x, y, ncoeff, function_name=function_name
  	      function_name = 'flegendre'
 
 	if(function_name EQ 'flegendre') then legarr = flegendre(x, ncoeff)
-	if(function_name EQ 'fchebyshev') then legarr = fchebyshev(x, ncoeff)
-
-	
+	if(function_name EQ 'fchebyshev') then $
+             legarr = fchebyshev(x, ncoeff, halfintwo=halfintwo)
+       
 	beta = transpose(y # legarr)
 
 	alpha = transpose(legarr)#legarr
