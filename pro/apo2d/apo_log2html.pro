@@ -125,7 +125,7 @@ function apo_log_beginplate, platenum, mjd, camnames, outdir=outdir
    nextline = rowsep + colsep
    for icam=0, ncams-1 do $
     nextline = nextline + colsep + camnames[icam]
-   nextline = nextline + colsep + 'UT'
+   nextline = nextline + colsep + 'EXPTIME' + colsep + 'AIRTEMP' + colsep + 'UT'
    textout = [textout, nextline]
 
    textout = [textout, apo_log_tableline(ncams)]
@@ -163,14 +163,23 @@ function apo_log_fields, pp, fields, printnames=printnames, formats=formats
       expstring = ''
    endelse
 
-   ; Print the UT time as long as TAI is set, which is alsways the
+   ; Print the UT time as long as TAI is set, which is always the
    ; case except for the TOTAL S/N^2 row.
+   ; Note that we always get EXPTIME,AIRTEMP,UT from the first camera listed
+   ; in the pp structure.
    if (pp[igood[0]].tai NE 0) then begin
       jd = 2400000.5D + pp[igood[0]].tai / (24.D*3600.D)
       caldat, jd, jd_month, jd_day, jd_year, jd_hr, jd_min, jd_sec
-      utstring = string(jd_hr, jd_min, format='(i2.2,":",i2.2,"Z")')
+      utstring = string(jd_hr, jd_min, format='(i2.2,":",i2.2," Z")')
+
+      airtempstring = string(pp[igood[0]].airtemp, format='(f6.1)')
+      exptimestring = apo_checklimits(pp[igood[0]].flavor, 'EXPTIME', $
+       pp[igood[0]].camera, pp[igood[0]].exptime, /html) $
+       + string(pp[igood[0]].exptime, format='(f8.1)')
    endif else begin
       utstring = ''
+      airtempstring = ''
+      exptimestring = ''
    endelse
 
    tags = tag_names(pp[igood[0]])
@@ -194,7 +203,8 @@ function apo_log_fields, pp, fields, printnames=printnames, formats=formats
 
       if (ifield EQ 0) then $
        textout = rowsep + strupcase(flavor) + '-' + expstring $
-        + nextline + utstring + colsep $
+        + nextline + exptimestring + colsep $
+        + airtempstring + colsep + utstring + colsep  $
       else $
        textout = [textout, rowsep + nextline]
    endfor
