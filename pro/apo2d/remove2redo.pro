@@ -100,7 +100,7 @@ pro remove2redo, mjd=mjd, plate=plate, expnum=expnum
    ; All those files are put in the array FULLNAME.
 
    if (keyword_set(plate)) then begin
-      filename = 'sdR-*-*.fit*'
+      filename = 'sdR-*-*.fit' ; Only look at ".fit" files, not ".fit.gz"
       fullname = findfile( djs_filepath(filename, root_dir=rawdata_dir, $
        subdirectory=mjdstr), count=nfile)
       if (nfile EQ 0) then begin
@@ -110,12 +110,17 @@ pro remove2redo, mjd=mjd, plate=plate, expnum=expnum
       endif
       qthisplate = bytarr(nfile)
       allexpnum = lonarr(nfile)
-      splog, 'Reading headers for all files in MJD=', mjd
+      splog, 'Reading headers for all ', nfile, ' files on MJD=', mjd
       for i=0, nfile-1 do begin
+         ; Print something since this might take a while to read all the
+         ; FITS headers...
+         print, format='(".",$)'
+
          hdr = sdsshead(fullname[i])
-         allexpnum[i] = sxpar(hdr, 'EXPNUM')
+         allexpnum[i] = sxpar(hdr, 'EXPOSURE')
          if (sxpar(hdr, 'PLATEID') EQ plate) then qthisplate[i] = 1B
       endfor
+
       ifile = where(qthisplate, nfile)
       if (nfile EQ 0) then begin
          splog, 'No sdR files for MJD=', mjd, ' PLATE=', plate
@@ -123,8 +128,9 @@ pro remove2redo, mjd=mjd, plate=plate, expnum=expnum
          return
       endif
       fullname = fullname[ifile]
+
       shortname = fileandpath(fullname)
-      qdone = bytarr(nfile)
+      qdone = bytarr(nfile) ; Start as all 0's
 
       ; Always mark the last exposure number as 'done', since SOS may
       ; still be trying to reduce it.
@@ -132,6 +138,7 @@ pro remove2redo, mjd=mjd, plate=plate, expnum=expnum
       if (idone[0] NE -1) then $
        qdone[idone] = 1B
    endif
+help,fullname,shortname,qdone,total(qdone)
 
    ;----------
    ; Lock the file to do this - otherwise we might read/write to a partially
@@ -147,7 +154,7 @@ pro remove2redo, mjd=mjd, plate=plate, expnum=expnum
    ; that plate have been succesfully reduced, and we will try re-reducing
    ; the others.
 
-   splog, 'Working on ', logfile   
+   splog, 'Looking at logfile=' + logfile
    for thishdu=1, 5 do begin
       rstruct = mrdfits(logfile, thishdu, /silent)
       nstruct = n_elements(rstruct)
@@ -163,7 +170,7 @@ pro remove2redo, mjd=mjd, plate=plate, expnum=expnum
 
       if (keyword_set(plate) AND keyword_set(rstruct)) then begin
          if (thishdu LE 4) then begin
-            ; Flat, arc, science, or smear -- note any file that's been
+            ; Bias, flat, arc, or science/smear -- note any file that's been
             ; successfully reduced.
             for i=0, nstruct-1 do $
              qdone = qdone OR (rstruct[i].filename EQ shortname)
