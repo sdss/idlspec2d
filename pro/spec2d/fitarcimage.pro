@@ -212,14 +212,20 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    splog, 'Iterating flux-weighted centers'
    x1 = trace_fweight(arc, xcrudefit, ycen)
    x1 = trace_fweight(arc, x1, ycen)
+   xmid = trace_fweight(arc, x1, ycen)
 
    if (keyword_set(gauss)) then begin
-     x1   = trace_gweight(arc, x1, ycen, sigma=1.0, invvar=arcivar, xerr=xerr) 
-     xcen = trace_gweight(arc, x1, ycen, sigma=1.0, invvar=arcivar, xerr=xerr) 
+     x2  = trace_gweight(arc, xmid, ycen, sigma=1.0, invvar=arcivar, xerr=xerr) 
+     x2  = trace_gweight(arc, x2, ycen, sigma=1.0, invvar=arcivar, xerr=xerr) 
+     xcen = trace_gweight(arc, x2, ycen, sigma=1.0, invvar=arcivar, xerr=xerr) 
    endif else begin  
-     x1   = trace_fweight(arc, x1, ycen, radius=2.0, invvar=arcivar, xerr=xerr)
-     xcen = trace_fweight(arc, x1, ycen, radius=2.0, invvar=arcivar, xerr=xerr)
+     x2  = trace_fweight(arc, xmid, ycen, radius=2.0, invvar=arcivar, xerr=xerr)
+     x2  = trace_fweight(arc, x2, ycen, radius=2.0, invvar=arcivar, xerr=xerr)
+     xcen = trace_fweight(arc, x2, ycen, radius=2.0, invvar=arcivar, xerr=xerr)
    endelse
+
+   ;  xdiff is used to determine whether a trace has converged
+   xdiff = xcen - xmid
 
    ;---------------------------------------------------------------------------
    ; Reject bad (i.e., saturated) lines
@@ -245,6 +251,13 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
       qgood[i] = fracbad LE 0.10
       if (qgood[i] EQ 0) then $
        splog, 'Discarding trace', i, ',   fraction bad', fracbad
+
+      djs_iterstat, xdiff[*,i], sigma=sigma
+      if sigma GT 0.2 then begin
+       qgood[i] = 0
+       splog, 'Discarding trace', i, ',   Did not converge', sigma
+      endif
+      
    endfor
 
    ; Trim linelist
