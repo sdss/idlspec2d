@@ -1,3 +1,4 @@
+; This used to be used by ZCOMPUTE, but is no longer.
 function find_npeaks, yflux, xvec, nfind=nfind, minsep=minsep, $
  width=width, ypeak=ypeak, xerr=xerr, npeak=npeak
 
