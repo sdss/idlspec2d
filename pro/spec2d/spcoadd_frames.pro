@@ -159,12 +159,10 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
       temppixmask = mrdfits(filenames[ifile], 2)
 
       ;  Zero out the following four mask bits
+      bitval  = pixelmask_bits('COMBINEREJ') + pixelmask_bits('SMEARIMAGE') + $
+                pixelmask_bits('SMEARHIGHSN') + pixelmask_bits('SMEARMEDSN')
       
-      temppixmask = temppixmask XOR $
-                    (pixelmask_bits('COMBINEREJ') + $
-                     pixelmask_bits('SMEARIMAGE') + $
-                     pixelmask_bits('SMEARHIGHSN') + $
-                     pixelmask_bits('SMEARMEDSN'))
+      temppixmask = temppixmask AND (NOT bitval) 
 
       tempwset = mrdfits(filenames[ifile], 3)
       tempdispset = mrdfits(filenames[ifile], 4)
@@ -245,8 +243,10 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
       traceset2xy, corrset, tempwave, corrimg
 
       thismask = mrdfits(corrfile, 2)
-      temppixmask = temppixmask OR replicate(1,npix) # thismask
+      if n_elements(thismask) EQ nfib then $
+        temppixmask = temppixmask OR replicate(1,npix) # thismask
 
+      invertcorr = 1.0 / corrimg
       medcor = median(corrimg)
       divideflat, tempflux, tempivar, invertcorr, minval=0.1/medcor
       temppixmask = temppixmask OR $
