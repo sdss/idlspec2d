@@ -1,5 +1,6 @@
 
 APO_LOG2HTML: Default link to GIF plot, with another link to PostScript.
+APOPLOTSKY: New proc for plotting sky spectra from the Son-of-Spectro outputs.
 APOREDUCE: Convert the PostScript plot to GIF format using "pstogif",
            which is in idlutils.
 EXTRACT_ROW: Be sure to pass "whoppingct" as type LONG to the C code.
@@ -24,6 +25,7 @@ PLATEMERGE: Search for overlaps in plates with a somewhat larger radius,
 PLOTSPEC: Bug fix to allow one to specify the output file name with PSFILE=.
            Fix units on Y axis to /cm^2 instead of /cm.
 QUICKEXTRACT: Change print statement for whopping fibers to one per line.
+           Write SSET,RELCHI2STRUCT to the output "sci-" file.
 READ_ELODIE: Use INTERPOL() instead of POPULATE_IMAGE for interpolating
            the high-resolution Elodie spectra onto the log-wavelength binning.
            I'm still uncertain as to the absolute units of the spectra.
@@ -33,6 +35,8 @@ SDSSPROC: Fix silly bug trying to set QUALITY='excellent' when undefined.
 SLITHISTORY: New proc to plot history of spectro slit-head positions
            based upon the (new) plSlitps files from the mapper.
 SOLVEFILTER: New proc to determine the 2.5-m filters from the spectra.
+SKYSUBTRACT: Optionally return SSET, which is the B-spline structure
+           for the supersky.  This will be used by APOPLOTSKY.
 SPCOADD_FRAMES: Change BUNIT header keywords in output files to have
            the comment '1E-17 erg/cm^2/s/Ang' instead of the incorrect
            comment '10E-17 erg/cm/s/Ang'.
@@ -43,7 +47,8 @@ aporsync_alllog.sh: New shell script for copying all of the log files
            This will be done once per day at 7:45.  This rsync must
            follow symbolic links on sdsshost.apo, since it now looks
            like quite a few of the files there are now symbolic links.
-           (That's crazy, but what's a guy to do?)
+           (That's crazy, but what's a guy to do?)  Copy the last 7 nights
+           of logs, whether or not there was spectroscopy.
 aporsync_logs.sh: The last line of the first rsync command was accidentally
            dropped in this last version - fix.  Also, only copy sdHdrFix file
            if it exists.  This addresses PR #3968.
@@ -63,6 +68,7 @@ sos_start,sprobot_start: If the environment variable PATH has more than 1020
 spEigenElodie.fits: Recreate with fixed READ_ELODIE().  New first eigenspectrum
            now looks like a normal stellar spectrum.
 sprobot_start: Fix tiny typo (extra quotation on line 141).
+           Start the main job at 10:30am instead of 10:00am.
 sprobot.sh: Change the name of the astrolog directory on sos.apo.nmsu.edu
            from /astrolog -> /data/spectro/astrolog (they changed it!)
 sprobot.sh,sprobot1d.sh,sprobot2d.sh,sprobotlist.sh:
@@ -105,6 +111,8 @@ YANNY_READ: Make use of Hogg's procedure HOGG_STRSPLIT, which should be more
            Add support for compressed files, with file names ending with
            either '.gz' or '.Z'.  This is somewhat complicated by the fact
            that we need to start by getting the number of lines in the file.
+           Return an errcode of 0 in the case of no file, which conforms
+           to the behaviour of previous versions of this code.
 YANNY_READONE: New proc; wrapper for YANNY_READ.
 YANNY_WRITE: Default to having the variable names in the typedef's in
            lower-case (not that it matters).
