@@ -39,6 +39,7 @@ In idlutils:
 BSPLINE_BKPTS: Integer roll-over bug fixed by DPF for more than 2^30
            data points (doesn't matter for SDSS pipelines, but it
            does for DEIMOS).
+DFPSPLOT: Added optional XSIZE keyword.
 DJS_BATCH: Add optional keyword SELECTHOST.  This will be used
            for the HoggPT processing of 2.5-m data.
            The inputs LOCALFILE,OUTFILE are now optional.
