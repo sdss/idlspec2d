@@ -134,9 +134,12 @@ pro fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
      if highsn[0] EQ -1 then return
 
      spectrophoto = where(strtrim(plugmap[highsn].objtype,2) EQ $
-                           'SPECTROPHOTO_STD')
+                           'SPECTROPHOTO_STD', nspectrophoto)
 
-     if spectrophoto[0] EQ -1 then return
+     if spectrophoto[0] EQ -1 then begin
+        splog, "ABORT: No spectrophoto with high S/N"
+        return
+     endif
 
      spectrophoto = highsn[spectrophoto]
 
@@ -158,7 +161,12 @@ pro fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
 
      medianset = highsnset
      finalset  = highsnset
-     mediancoeff = djs_median(highsnset.coeff[*,spectrophoto],2) 
+
+     if nspectrophoto EQ 1 then begin
+         mediancoeff = highsnset.coeff[*,spectrophoto] 
+         splog, "WARNING: Only 1 spectrophoto with high S/N"
+     endif else mediancoeff = djs_median(highsnset.coeff[*,spectrophoto],2) 
+
      medianset.coeff = mediancoeff # replicate(1,nfiber)
 
      traceset2xy, medianset, wave, medianimage
