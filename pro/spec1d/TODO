@@ -1,4 +1,6 @@
 
+* For PCA_VSTND, get rid of bad endpoints made with too little data.
+
 * For PCA_SOLVE, trim to desired wavelength range before solving.
 
 * For eigenspectra, save a 2nd HDU which is the remaining inverse-variance.
