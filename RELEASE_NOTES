@@ -1,4 +1,10 @@
 
+-------------------------------------------------------------------------------
+v4_9_10 (May 28, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
+Built against specflat v1_4.
+
+New version for Son-of-Spectro with more development work.
+
 APO_CHECKLIMITS,opLimits.par: Allow text limits in the opLimits.par file,
            and allow the use of wildcards for flavor,field,camera.
 APOFIX: Use QUALITY header keyword to declare exposures bad (as specified
@@ -36,6 +42,8 @@ PLATEMERGE: Include logic for setting the SPECPRIMARY field in the outputs.
 PLOTSPEC: Some major re-organizing of the main routine to allow PLATE,MJD
            to be passed as vectors.  Add optional ZHDR return value.
            Add /RESTFRAME option.
+QUICKEXTRACT: Add warning messages for "Median sky-residual chi2"
+           and "Max sky-residual chi2".
 QUICKTRACE,QUICKWAVE: Do not write the tsetfile or wsetfile if the
            quality of the exposure in not 'excellent' (and remove any
            such file for that exposure if it already exists).
@@ -57,8 +65,10 @@ aporsync_logs.sh: Include the "sdHdrFix*.par" files as the first ones
 data_rsync.sh,killdata.sh: Two minor fixes: (1) gives proper syntax to
            remove files in spectrolog directories, and (2) excludes
            uncompressed guider files from being rsync-ed to rawcopy.
+idlspec2d.table: Add optional dependency on "spinspect" product.
 pullspectra: New bash script for pulling SDSS spectra from Princeton
            to other institutions.
+opHdrFix.par: Update through MJD 52413 (May 2002 dark run).
 opLimits.par: Change exposure time limits to [599,1804] sec, in response
            to PR #3653.
 spectro_apodisplay.html: Include more links to spectro.princeton web site.
