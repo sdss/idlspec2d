@@ -230,7 +230,7 @@ these reductions on any Fermi machines.
 <P>
 At Princeton, the top-level directory for the reduced data is:
 <DL><DD><PRE>
-/u/dss/data/2d_v4_7
+/u/dss/spectro
 </PRE></DD></DL>
 Older reductions exist at:
 <DL><DD><PRE>
@@ -428,11 +428,11 @@ and photometric outputs (but not the actual images or spectra).
 This is a FITS binary table called "spAll.fits".
 At present, there are three versions of this file as follows:
 <OL>
-   <LI><B>spAll.fits</B> - All spectroscopic data taken to date (approximately 200,000 spectra).
+   <LI><B>spAll.fits</B> - All spectroscopic data taken to date (approximately 226,000 spectra).
    <LI><B>spAll-qsurvey.fits</B> - spAll trimmed to only those plates
        that comprise unique
        tiles with survey quality S/N (e.g., where QSURVEY=1 in the
-       <A HREF="#platelist">platelist file</A>).
+       <A HREF="#platelist">platelist file</A>)
    <LI><B>spAll-public.fits</B> - spAll trimmed to only those plates
        that should be in the Early Data Release (including repeat observations
        that are survey quality)
@@ -444,24 +444,30 @@ that one may wish to search on.  This file is "spAll*.dat", and is basically
 a stripped-down version of "spAll*.fits" for those FITS-challenged astronomers.
 
 <P>
-<B>HOWEVER</B>, I was unable to find the photometric outputs for all
-of these data.  In these cases, the photometric outputs are all set
-to zero -- though the spectroscopic outputs are still in these files.
-
-<P>
+These photometric outputs were assembled by Daniel Eisenstein and Mike Blanton.
 Where the PHOTO data does exist, they are selected from the tsObj files
 used to drill the plates, <B>not the most recent calibrations</B>.
-Most of these trimmed tsObj files can be found at:
+This is what Eisenstein & Blanton call their "skyVersion==0" outputs.
+
+<P>
+Note that some of the photometric outputs were never recovered!
+Of 226,560 reduced spectra, we are missing PHOTO data for 8581 spectra.
+Since plate 324, we are missing PHOTO data for 110 of 169,600 spectra.
+We are missing no PHOTO data for spectra in the Early Data Release.
+
+<P>
+If you have access to the Princeton computers,
+these trimmed tsObj files can be found at:
 <PRE>
-  fsgi03.fnal.gov:/usr/sdss/data01/imaging/plates/eisenste
+  sdssdata.princeton.edu:/u/dss/spectro/plates
 </PRE>
-If anyone has the Knowledge and Power to extract the more recent
-calibrations for the same objects, I will make that available.
 
 <P>
 Another technical point: the <A HREF="#targetflags">target flags</A>
 have been over-written with those found in the plPlugMapM files,
 since Eisenstein reports that they are incorrect in many of the tsObj files.
+Also, the distance between the spectroscopic target and the matched PHOTO
+output is stuffed into the TEXTURE[0] column.
 
 <H2><A NAME="display">Looking at the Data</A></H2>
 
