@@ -20,19 +20,23 @@ function sdss_flags, flagprefix
       { STRUCT_FLAG, 'ROSAT_B'             , 10 }, $
       { STRUCT_FLAG, 'ROSAT_C'             , 11 }, $
       { STRUCT_FLAG, 'ROSAT_D'             , 12 }, $
-      { STRUCT_FLAG, 'STBHB'               , 13 }, $
-      { STRUCT_FLAG, 'STCARBON'            , 14 }, $
-      { STRUCT_FLAG, 'STBROWN_DWARF'       , 15 }, $
-      { STRUCT_FLAG, 'STSUB_DWARF'         , 16 }, $
-      { STRUCT_FLAG, 'STCATY_VAR'          , 17 }, $
-      { STRUCT_FLAG, 'STRED_DWARF'         , 18 }, $
-      { STRUCT_FLAG, 'STWHITE_DWARF'       , 19 }, $
+      { STRUCT_FLAG, 'STAR_BHB'            , 13 }, $
+      { STRUCT_FLAG, 'STAR_CARBON'         , 14 }, $
+      { STRUCT_FLAG, 'STAR_BROWN_DWARF'    , 15 }, $
+      { STRUCT_FLAG, 'STAR_SUB_DWARF'      , 16 }, $
+      { STRUCT_FLAG, 'STAR_CATY_VAR'       , 17 }, $
+      { STRUCT_FLAG, 'STAR_RED_DWARF'      , 18 }, $
+      { STRUCT_FLAG, 'STAR_WHITE_DWARF'    , 19 }, $
       { STRUCT_FLAG, 'SERENDIP_BLUE'       , 20 }, $
       { STRUCT_FLAG, 'SERENDIP_FIRST'      , 21 }, $
       { STRUCT_FLAG, 'SERENDIP_RED'        , 22 }, $
       { STRUCT_FLAG, 'SERENDIP_DISTANT'    , 23 }, $
       { STRUCT_FLAG, 'SERENDIP_MANUAL'     , 24 }, $
-      { STRUCT_FLAG, 'QSO_FAINT'           , 25 }, $
+      { STRUCT_FLAG, 'QSO_MAG_OUTLIER'     , 25 }, $
+      { STRUCT_FLAG, 'GALAXY_RED_II'       , 26 }, $
+      { STRUCT_FLAG, 'ROSAT_E'             , 27 }, $
+      { STRUCT_FLAG, 'STAR_PN'             , 28 }, $
+      { STRUCT_FLAG, 'QSO_REJECT'          , 29 }, $
       { STRUCT_FLAG, 'SOUTHERN_SURVEY'     , 31 } ]
 
    endif else if (flagprefix EQ 'TTARGET') then begin
@@ -41,7 +45,7 @@ function sdss_flags, flagprefix
       { STRUCT_FLAG, 'LIGHT_TRAP'          ,  0 }, $
       { STRUCT_FLAG, 'REDDEN_STD'          ,  1 }, $
       { STRUCT_FLAG, 'TEST_TARGET'         ,  2 }, $
-      { STRUCT_FLAG, 'QA_TARGET'           ,  3 }, $
+      { STRUCT_FLAG, 'QA'                  ,  3 }, $
       { STRUCT_FLAG, 'SKY'                 ,  4 }, $
       { STRUCT_FLAG, 'SPECTROPHOTO_STD'    ,  5 }, $
       { STRUCT_FLAG, 'GUIDE_STAR'          ,  6 }, $
