@@ -52,7 +52,7 @@ speclimit WAVEMIN r1 0 5780
 speclimit WAVEMIN r2 0 5800
 
 speclimit WAVEMAX b1 6155 9999
-speclimit WAVEMAX b2 6176 9999
+speclimit WAVEMAX b2 6156 9999
 speclimit WAVEMAX r1 9215 9999
 speclimit WAVEMAX r2 9230 9999
 
