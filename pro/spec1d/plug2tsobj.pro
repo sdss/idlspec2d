@@ -6,7 +6,7 @@
 ;   Construct a tsObj structure that matches all entries in a plugmap structure
 ;
 ; CALLING SEQUENCE:
-;   tsobj = plug2tsobj(plateid, [ra, dec, plugmap= ])
+;   tsobj = plug2tsobj(plateid, [ra, dec, plugmap=, dmin= ])
 ;
 ; INPUTS:
 ;   plateid    - Plate number; this can be either a scalar, in which case
@@ -17,6 +17,8 @@
 ;   dec        - Array of declination (degrees)
 ;   plugmap    - Plug map structure, which must contain RA, DEC.
 ;                This must be set if RA and DEC are not set.
+;   dmin       - Minimum separation between input position and position
+;                of the closest match; default to 2.0 arcsec.
 ;
 ; OUTPUTS:
 ;   tsobj      - tsObj structure, sorted such that each entry corresponds
@@ -41,12 +43,13 @@
 ; PROCEDURES CALLED:
 ;   djs_diff_angle()
 ;   mrdfits
+;   splog
 ;
 ; REVISION HISTORY:
 ;   25-Jun-2000  Written by David Schlegel, Princeton.
 ;-
 ;------------------------------------------------------------------------------
-function plug2tsobj, plateid, ra, dec, plugmap=plugmap
+function plug2tsobj, plateid, ra, dec, plugmap=plugmap, dmin=dmin
 
    root_dir = getenv('SPECTRO_DATA')
    if (NOT keyword_set(root_dir)) then $
@@ -57,6 +60,8 @@ function plug2tsobj, plateid, ra, dec, plugmap=plugmap
       ra = plugmap.ra
       dec = plugmap.dec
    endif
+
+   if (NOT keyword_set(dmin)) then dmin = 2.0
 
    ;----------
    ; If PLATEID is a vector, then sort by plate number and call this routine
@@ -86,7 +91,8 @@ function plug2tsobj, plateid, ra, dec, plugmap=plugmap
    filename = 'tsObj-*-' + platestr + '.fit'
 
    ; Select the first matching file if there are several
-   filename = (findfile(filepath(filename, root_dir=root_dir, subdirectory='plates')))[0]
+   filename = (findfile(filepath(filename, root_dir=root_dir, $
+    subdirectory='plates')))[0]
    if (NOT keyword_set(filename)) then $
     message, 'tsObj file not found for plate ' + platestr
 
@@ -103,10 +109,12 @@ function plug2tsobj, plateid, ra, dec, plugmap=plugmap
       ; Assume that this object is non-existent if RA=DEC=0
       if (ra[iplug] NE 0 AND dec[iplug] NE 0) then begin
          adist = djs_diff_angle(tstemp.ra, tstemp.dec, ra[iplug], dec[iplug])
-         dmin = min(adist, imin)
-         if (dmin GT 1./3600) then $
-          message, 'No matches to within 1 arcsec'
-         tsobj[iplug] = tstemp[imin]
+         thismin = min(adist, imin)
+         if (thismin GT dmin/3600.) then $
+          splog, 'WARNING: No matches to within 1 arcsec at RA=', $
+           ra[iplug], ' DEC=', dec[iplug] $
+         else $
+          tsobj[iplug] = tstemp[imin]
       endif
    endfor
 
