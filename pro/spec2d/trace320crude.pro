@@ -75,9 +75,15 @@ function trace320crude, image, invvar, ystart=ystart, nmed=nmed, $
    if (NOT keyword_set(ngrow)) then ngrow = 5
 
    ;----------
-   ; Find the 320 X-centers in the row specified by YSTART
+   ; If INVVAR is set, then start by interpolating over bad pixels
 
-   fimage = djs_maskinterp(image, (invvar LE 0), iaxis=0)
+   if (keyword_set(invvar)) then $
+    fimage = djs_maskinterp(image, (invvar LE 0), iaxis=0) $
+   else $
+    fimage = image
+
+   ;----------
+   ; Find the 320 X-centers in the row specified by YSTART
 
    ; XGOOD=1 for fibers that were actually found, 0 otherwise
    xstart = trace320cen(fimage, mthresh=mthresh, ystart=ystart, nmed=nmed, $
