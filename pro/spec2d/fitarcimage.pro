@@ -85,7 +85,10 @@ function lampfit, spec, linelist, guess0, guesshi, width=width, lagwidth = lagwi
 	specsmooth = convol(spec,profile)
 	speccorr = fltarr(nsmooth)
 	start = lagwidth
-	speccorr[start:start+npix-1] = specsmooth
+;
+;	Cap strong lines at 1000 counts
+;
+	speccorr[start:start+npix-1] = (specsmooth < 1000.0)
 	lag = lindgen(2*lagwidth) - lagwidth
 	llag = lag
 
@@ -479,8 +482,8 @@ PRO fitarcimage, arc, arcinvvar, side, linelist, xnew, ycen, tset, invset, $
  	   dif=xnew[*,i]-mx
  	   dum=poly_fit(x,dif,nord,yfit)
            res1=yfit-dif
-	   good=abs(res1) lt 4*stdev(res1)
-	   good=abs(res1) lt 4*stdev(res1*good)
+	   good=abs(res1) lt 4*stddev(res1)
+	   good=abs(res1) lt 4*stddev(res1*good)
            kent=polyfitw(x,dif,good,nord,yfit)	  
 	   xnew[*,i] = mx+yfit
  	endfor

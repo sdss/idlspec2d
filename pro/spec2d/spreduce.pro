@@ -149,6 +149,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    ; Extract the flat-field image
    ;---------------------------------------------------------------------------
 
+   print, 'Extracting flat-field with simple gaussian'
    sigma = 1.0
    proftype = 1 ; Gaussian
    highrej = 20
@@ -187,6 +188,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    ; Extract the arc image
    ;---------------------------------------------------------------------------
 
+   print, 'Extracting arc-lamp with simple gaussian'
    sigma = 1.0
    proftype = 1 ; Gaussian
    highrej = 10
@@ -209,6 +211,8 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    ;---------------------------------------------------------------------------
    ; Compute wavelength calibration for arc lamp only
    ;---------------------------------------------------------------------------
+
+   print, 'Searching for wavelength solution with fitarcimage'
 
    fitarcimage, arc_flux, arc_fluxivar, color, lamplist, xpeak, ypeak, wset, $
     invset, ans=wavesolution, lambda=lambda, $
@@ -246,7 +250,6 @@ for i=0,16 do oplot,fflat[*,i*19]
       sdssproc, fullname[0], objimg, objivar, hdr=objhdr, $
        spectrographid=spectrographid, color=color
 
-      ; What about invvar???  Is below okay???
       if (keyword_set(pixflatname)) then begin
          objimg = objimg / pixflat
          objivar = objivar * pixflat^2
@@ -267,9 +270,9 @@ for i=0,16 do oplot,fflat[*,i*19]
       whopping = where(scrunch GT 10000.0, whopct)
       print, 'Number of bright fibers = ', whopct
 
-extract_image, objimg, objivar, xsol, sigma, obj_flux, obj_fluxivar, $
- proftype=proftype, wfixed=[1,1,1], $
- highrej=highrej, lowrej=lowrej, nPoly=nPoly, whopping=whopping
+;extract_image, objimg, objivar, xsol, sigma, obj_flux, obj_fluxivar, $
+; proftype=proftype, wfixed=[1,1,1], $
+; highrej=highrej, lowrej=lowrej, nPoly=nPoly, whopping=whopping
 
       ;------------------
       ; Extract the object image
@@ -280,6 +283,7 @@ extract_image, objimg, objivar, xsol, sigma, obj_flux, obj_fluxivar, $
       ;        3) Extract all 2048 rows with new profiles given by
       ;              fitansimage
 
+      print, 'Extracting frame '+objname[iobj]+' with 3 step process'
       nrow = (size(objimg))[2]
       ncol = (size(objimg))[1]
       skiprow = 8
@@ -288,26 +292,30 @@ extract_image, objimg, objivar, xsol, sigma, obj_flux, obj_fluxivar, $
 
 ; COMMENT OUT FOR NOW SINCE extract_image crashes on step 3 ???
       ; 1) First extraction
-;      print, 'Object extraction: Step 1'
-;      extract_image, objimg, objivar, xsol, sigma, obj_flux, obj_fluxivar, $
-;       proftype=proftype, wfixed=[1,1,1], yrow=yrow, $
-;       highrej=highrej, lowrej=lowrej, nPoly=nPoly, whopping=whopping, $
-;       ansimage=ansimage
+      print, 'Object extraction: Step 1'
+      extract_image, objimg, objivar, xsol, sigma, obj_flux, obj_fluxivar, $
+       proftype=proftype, wfixed=[1,1,1], yrow=yrow, $
+       highrej=highrej, lowrej=lowrej, nPoly=nPoly, whopping=whopping, $
+       ansimage=ansimage
 
       ; 2) Refit ansimage to smooth profiles
 
-;      print, 'Object extraction: Step 2'
-;      nparams = 3
-;      nTrace = (size(obj_flux))[2]
-;      fitans = fitansimage(ansimage, nparams, nTrace, nPoly, nfirst, yrow, $
-;       fluxm = [1,1,0])
+      print, 'Object extraction: Step 2'
+      nparams = 3
+      nTrace = (size(obj_flux))[2]
+      fitans = fitansimage(ansimage, nparams, nTrace, nPoly, nfirst, yrow, $
+       fluxm = [1,1,0])
+
+;
+;	shiftfit, fitans, nTrace, xsol, sigma, xsolout, sigmaout
+;      
 
       ; 3) Second and final extraction
-;      print, 'Object extraction: Step 3'
-;      extract_image, objimg, objivar, xsol, sigma, obj_flux, obj_fluxivar, $
-;       proftype=proftype, wfixed=[1,1,1], fitans=fitans, $
-;       highrej=highrej, lowrej=lowrej, nPoly=nPoly, whopping=whopping, $
-;       ymodel=ymodel2
+      print, 'Object extraction: Step 3'
+      extract_image, objimg, objivar, xsol, sigma, obj_flux, obj_fluxivar, $
+       proftype=proftype, wfixed=[1,1,1], fitans=fitans, $
+       highrej=highrej, lowrej=lowrej, nPoly=nPoly, whopping=whopping, $
+       ymodel=ymodel2
 
       ;------------------
       ; Flat-field the extracted object fibers with the global flat

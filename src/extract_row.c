@@ -84,7 +84,7 @@ IDL_LONG extract_row
    covar  = (float **)malloc(ma * sizeof(float *)); 
    for (iy=0; iy < ma; iy++) covar[iy] = (float *)argv[argct]+iy*ma;
 
-/*   fprintf(stderr, "Going to fit_row now\n");
+/*   fprintf(stderr, "Going to fit_row now\n");  */
 
 /*   for (i=0; i < nx; i++) 
       fprintf(stderr, "%d %f %f %f\n",(int) i,x[i],fimage[i],invvar[i]); */
@@ -123,15 +123,19 @@ IDL_LONG extract_row
           nTrace, proftype);
 
    if (squashprofile) {
-/*     printf("Squashing Profile\n"); */
-     for(i=0; i<nTrace; i++)
+/*     printf("Squashing Profile\n");  */
+     for(i=0; i<nTrace; i++) {
        for(l=xmin[i],k=0;l<=xmax[i];l++,k++) {
-	 aprofile[i][k] = aprofile[i*nCoeff][k]*ans[i*nCoeff];
-         for(j=1; j<nCoeff; j++) 
-           aprofile[i][k] +=aprofile[i*nCoeff+j][k]*ans[i*nCoeff+j];
+	 aprofile[i*nCoeff][k] *= ans[i*nCoeff];
+         for(j=1; j<nCoeff; j++) {
+           aprofile[i*nCoeff][k] += aprofile[i*nCoeff+j][k]*ans[i*nCoeff+j];
+	   }
       }
+      for(j=1; j<nCoeff; j++) free(aprofile[i*nCoeff+j]);
+     }
 
      for(i=0; i<nTrace; i++) {
+       aprofile[i] = aprofile[i*nCoeff];
        ia[i] = 1;
 /*       for(l=xmin[i],k=0;l<=xmax[i];l++,k++)  
 //           printf("%f, ", aprofile[i][k]);
@@ -186,7 +190,7 @@ IDL_LONG extract_row
    fillCovar(ysub, invvar, nx, aprofile, apoly, nTrace, nCoeff, wPoly, 
           beta, ia, covar, xmin, xmax);
 
-/*   printf("Fill Covar done \n");	*/
+/*   printf("Fill Covar done \n");	 */
 
    bad = choldcRow(covar, ia, nTrace, nCoeff, wPoly, p); 
 /*   printf("choldc Custom2 done\n");	*/
@@ -217,7 +221,7 @@ IDL_LONG extract_row
       for(i=0; i < nx; i++) 
          ymod[i] += ans[j]*apoly[k][i];
     }
-/*   printf("scattered light model done\n"); */
+/*   printf("scattered light model done\n");  */
 
    /* Use 0th term to estimate scattered light contribution  */
    for (j=0;j<nTrace;j++) 
@@ -228,11 +232,11 @@ IDL_LONG extract_row
       for (coeff=0; coeff<nCoeff; coeff++,l++)
          for (i=xmin[j], k=0; i <= xmax[j]; i++, k++) 
             ymod[i] += ans[l]*aprofile[l][k];
-/*   printf("model done\n"); */
+/*   printf("model done\n");  */
 
 
    /* Free temporary memory */
-   for(i=0; i<tTrace; i++) free(aprofile[i]);
+   for(i=0; i<nTrace; i++) free(aprofile[i]);
    for(i=0; i<wPoly; i++) free(apoly[i]);
 
    free(aprofile);
@@ -242,7 +246,7 @@ IDL_LONG extract_row
    free(xmin);
    free(xmax);
    free(covar);
-/*   printf("variables freed\n");  */
+/*   printf("variables freed\n");   */
 
    return retval;
 }

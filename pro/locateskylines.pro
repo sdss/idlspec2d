@@ -163,7 +163,7 @@ PRO locateskylines, skylinefile, fimage, ivar, $
 	flexcoeff=polyfitw(skywaves,mean,1./sigma^2,nord,yfit)
         oplot,skywaves,yfit,line=2
 
-	infostr=string('Dispersion:', stdev(mean-yfit)*1E3,' mpix', $
+	infostr=string('Dispersion:', stddev(mean-yfit)*1E3,' mpix', $
 	   format='(A,F7.1,A)')
 
 	plot, skywaves, mean-yfit, $
