@@ -203,6 +203,9 @@ pro mveldisp, objflux, objivar, objwave, starflux, starivar, starwave, $
 
    FOR istar=0, nstar-1 DO BEGIN 
 
+t1=systime(1)
+print,'BEGIN',systime(1)-t1
+
     meanstar=mean(starflux[*, istar]) 
     if (keyword_set(starnoise)) then begin $ &
         starflux[*, istar] = starflux[*, istar] + randomu(105,3918,/normal)*meanstar/starnoise
@@ -365,6 +368,8 @@ pro mveldisp, objflux, objivar, objwave, starflux, starivar, starwave, $
 ; Need to pick lower and upper limits to do comparison
 ; Let's try to compare from 80 pixels to 2.2 pixels
 
+print,'BEFORE newdiff  ',systime(1)-t1
+
       if (NOT keyword_set(nodiff)) then $
        answer = newdiff(fluxfft, starshift, fluxvar0, $
                 starvar0, testsigma=testsigma, deltachisq=1.0, $
@@ -372,6 +377,7 @@ pro mveldisp, objflux, objivar, objwave, starflux, starivar, starwave, $
 		broadarr=broadarr, doplot=doplot)
 
       bestalpha = -9999.0
+print,'END',systime(1)-t1
 
       if (n_elements(answer) EQ 4) then begin
          result[iobj].sigma_diff[istar] = answer[1]*70

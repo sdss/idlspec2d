@@ -69,7 +69,7 @@ end
 
 ;------------------------------------------------------------------------------
 function get_alpha, galvar0norm, starvar0norm, broad, galfftnorm, $
-        starfftnorm, maxiter=maxiter
+        starfftnorm, maxiter=maxiter, chi2=chi2
       alpha_old = 1
       num1 = float(galfftnorm*conj(starfftnorm)*broad)
       num2 = abs(starfftnorm*broad)^2   
@@ -80,7 +80,7 @@ function get_alpha, galvar0norm, starvar0norm, broad, galfftnorm, $
 ;	print,j,alpha
       endfor
 
-  return, alpha
+return, alpha
 end
 
 
@@ -111,10 +111,8 @@ function newdiff, galfft, starfft, galvar0, starvar0, $
 
    knums = fft_wavenums(N_elements(galfft))
 
-   inside = where(abs(knums) GT lowlimit AND $
-                  abs(knums) LT highlimit, ninside)
-
-   knumsinside = knums[inside]
+   inside = where(knums GT lowlimit AND $
+                  knums LT highlimit, ninside)
 
    if (inside[0] EQ -1) then begin
       print, 'No pixels in correct frequency range'
@@ -148,23 +146,14 @@ function newdiff, galfft, starfft, galvar0, starvar0, $
           ENDFOR     
    ENDIF 
 
-
-
-t1=systime(1)
-print,'BEGIN',systime(1)-t1
-
-
    for i=0,nloop-1 do begin
       broad = broadarr[*, i]
       alpha[i] = get_alpha(galvar0norm, starvar0norm, broad, $
         galfftnorm, starfftnorm, maxiter=4)
 
       denom = galvar0norm + starvar0norm*(alpha[i]*broad)^2
-      num1 = abs(galfftnorm-starfftnorm*(broad*alpha[i]))^2
-      chi2diff[i] = total(num1 / denom)
-;      plot,knumsinside, float(galfftnorm)
-;      oplot,knumsinside, float(starfftnorm*broad*alpha[i]),col=150
-
+      chi2diff[i] = total(abs(galfftnorm-starfftnorm*(broad*alpha[i]))^2 / $
+	                    denom)
    endfor
 
    deltachisq = 1./n_elements(inside)
@@ -176,8 +165,8 @@ print,'BEGIN',systime(1)-t1
    bestalpha = get_alpha(galvar0norm, starvar0norm, broad, $
      galfftnorm, starfftnorm, maxiter=4)
 
-;   plot,knumsinside, float(galfftnorm)
-;   oplot,knumsinside, float(starfftnorm*broad[inside]*bestalpha),col=1560
+;   plot,knums[inside], float(galfftnorm)
+;   oplot,knums[inside], float(starfftnorm*broad[inside]*bestalpha),col=1560
 print
 print,'BEST!!!'
 print,minsigma, minchi2
@@ -187,8 +176,6 @@ print,minsigma, minchi2
 ;   oplot, testsigma, alpha, ps=2
    minc = min(chi2diff, alphaplace)
    bestalpha =alpha[alphaplace]
-
-print,'END',systime(1)-t1
 
    return, [minchi2, minsigma, errsigma, bestalpha]
 end
