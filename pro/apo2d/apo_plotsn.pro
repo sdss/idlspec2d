@@ -75,17 +75,22 @@ pro apo_plotsn, logfile, plate, plugdir=plugdir, plotfile=plotfile
 
    ;----------
    ; Loop through reductions for all science frames, and add S/N
-   ; in quadrature, e.g. sum (S/N)^2
+   ; in quadrature, e.g. sum (S/N)^2.
+   ; Only add (S/N)^2 that is not flagged as anything bad in
+   ; the opLimits file (currently anything < 2.0 is bad).
 
    sn2array = fltarr(2, 640)
    for ii=0, n_elements(PPSCIENCE)-1 do begin
       meansn2 = PPSCIENCE[ii].sn2vector
-      case PPSCIENCE[ii].camera of
-         'b1': sn2array[0,0:319] =  sn2array[0,0:319] + meansn2
-         'b2': sn2array[0,320:639] =  sn2array[0,320:639] + meansn2
-         'r1': sn2array[1,0:319] =  sn2array[1,0:319] + meansn2
-         'r2': sn2array[1,320:639] =  sn2array[1,320:639] + meansn2
-      endcase
+      if (apo_checklimits('science', 'SN2', PPSCIENCE[ii].camera, $
+                          PPSCIENCE[ii].sn2) EQ '') then begin
+         case PPSCIENCE[ii].camera of
+            'b1': sn2array[0,0:319] =  sn2array[0,0:319] + meansn2
+            'b2': sn2array[0,320:639] =  sn2array[0,320:639] + meansn2
+            'r1': sn2array[1,0:319] =  sn2array[1,0:319] + meansn2
+            'r2': sn2array[1,320:639] =  sn2array[1,320:639] + meansn2
+         endcase
+      endif
    endfor
 
    ;----------

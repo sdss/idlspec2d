@@ -54,46 +54,6 @@
 ;   30-Apr-2000  Written by D. Schlegel, APO
 ;-
 ;------------------------------------------------------------------------------
-function apo_color2hex, colorname
-
-   case strupcase(strtrim(colorname,2)) of
-   'RED': hexname = '#FF0000'
-   'YELLOW': hexname = '#FFFF00'
-   endcase
-
-   return, hexname
-end
-
-;------------------------------------------------------------------------------
-function apo_checklimits, flavor, field, camera, value
-
-   common apo_limits, slimits
-
-   markstring = ''
-   if (NOT keyword_set(value)) then return, markstring
-
-   ; Read this Yanny file only the first time this routine is called,
-   ; then save the limits in a common block.
-   if (NOT keyword_set(slimits)) then begin
-      limitfile = filepath('opLimits.par', root_dir=getenv('IDLSPEC2D_DIR'), $
-       subdirectory='examples')
-      yanny_read, limitfile, pdata
-      slimits = *pdata[0]
-      yanny_free, pdata
-   endif
-
-   indx = where(slimits.field EQ field AND slimits.camera EQ camera, nlim)
-   for ilim=0, nlim-1 do begin
-      if (value GE slimits[indx[ilim]].lovalue $
-       AND value LE slimits[indx[ilim]].hivalue) then $
-       markstring = '<B><FONT COLOR="' $
-        + apo_color2hex(slimits[indx[ilim]].color) + '">'
-   endfor
-
-   return, markstring
-end
-
-;------------------------------------------------------------------------------
 function apo_log_header, title1, title2
 
    ; Include a Java script to auto-load this page every 60 seconds
@@ -479,9 +439,13 @@ pro apo_log2html, logfile, htmlfile
          for icam=0, ncams-1 do begin
             for iexp=0, nexp-1 do begin
                ; Only add if a 'science' exposure, not a 'smear',
-               ; and (S/N)^2 > 2.
+               ; and (S/N)^2 is not flagged as anything bad
+               ; in the opLimits file (currently anything < 2.0 is bad).
                if (pscience[icam,iexp].flavor EQ 'science' $
-                 AND pscience[icam,iexp].sn2 GE 2.0) then begin
+                 AND apo_checklimits('science', 'SN2', $
+                      ppscience[icam,iexp].camera, $
+                      pscience[icam,iexp].sn2) EQ '') then begin
+;                 AND pscience[icam,iexp].sn2 GE 2.0) then begin
                   ptotal[icam].totalsn2 = ptotal[icam].totalsn2 + $
                    pscience[icam,iexp].sn2
                endif
