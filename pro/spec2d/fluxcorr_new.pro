@@ -28,7 +28,7 @@ end
 pro fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
 
    splog, 'Smear image blue=', bsmearfile
-   splog, 'Smear image red=', bsmearfile
+   splog, 'Smear image red= ', rsmearfile
 
    ;----------
    ; Read the plug-map file (for identifying sky fibers)
