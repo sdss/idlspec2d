@@ -189,13 +189,6 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    endcase
 
    ;----------
-   ; Fix up some header information from early data
-
-   if (keyword_set(rstruct)) then begin
-      if (rstruct.camera NE filec) then rstruct.camera = filec
-   endif
-
-   ;----------
    ; Append to binary FITS log file a structure with info for this frame
    ; Lock the file to do this.
 

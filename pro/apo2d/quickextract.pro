@@ -15,8 +15,7 @@ function quickextract, flatname, arcname, sciname, outname, $
    ;----------
    ; Read in the raw science image
 
-   sdssproc, sciname, image, invvar, hdr=hdr, color=color
-   camname = strtrim(sxpar(hdr, 'CAMERAS'),2)
+   sdssproc, sciname, image, invvar, hdr=hdr, color=color, camname=camname
    exptime = sxpar(hdr, 'EXPTIME')
 
    ;----------

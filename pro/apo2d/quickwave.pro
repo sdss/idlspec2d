@@ -8,8 +8,7 @@ function quickwave, arcname, tsetfile, outarc, radius=radius
    ;----------
    ; Read in image
 
-   sdssproc, arcname, arcimg, hdr=hdr, color=color
-   camname = strtrim(sxpar(hdr, 'CAMERAS'),2)
+   sdssproc, arcname, arcimg, hdr=hdr, color=color, camname=camname
 
    ;----------
    ; Read in the reduced flat

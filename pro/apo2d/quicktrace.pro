@@ -5,8 +5,8 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
    ;----------
    ; Read in image
 
-   sdssproc, filename, flatimg, flativar, hdr=hdr, spectrographid=spectrographid
-   camname = strtrim(sxpar(hdr, 'CAMERAS'),2)
+   sdssproc, filename, flatimg, flativar, hdr=hdr, $
+    spectrographid=spectrographid, camname=camname
 
    ;----------
    ; Read in the plug map file, and sort it

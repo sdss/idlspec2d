@@ -207,6 +207,7 @@ pro apo_log2html, logfile, htmlfile
 
    ; Read in all the HDU's in the log file as structures
    pstruct = apo_readlog(logfile)
+   if (NOT keyword_set(pstruct)) then return
    nstruct = n_elements(pstruct)
 
    mjd = lonarr(nstruct)
