@@ -157,14 +157,6 @@ function avg_fluxvect, wave, corvector, sn, cvectok = cvectok
    plot, indgen(5), xr = [3800, 9000], /xs, yr = [0, 1.4]
    for i = 0, nok - 1 do oplot, wave, corvect_hif[*,i]
 
-   ;kmodel_fix = mrdfits(filepath('kurucz_model_fix.fit', $
-   ;             root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc'), 0, hdr)
-   ;crval = sxpar(hdr, 'CRVAL1')
-   ;kwave = 10.0^(lindgen(n_elements(kmodel_fix)) * 1d-4 + crval)
-
-   ;djs_oplot, kwave, 1.0 / kmodel_fix, color='purple', thick=3
-   ;wait, 2
-
    ;-----------------
    ; Call iterative rejection on hi-frequency correction vectors
 
@@ -214,6 +206,10 @@ function avg_fluxvect, wave, corvector, sn, cvectok = cvectok
 
      fcor_lowf = total(corvect_lowf * outmask_lowf * weight_lowf, 2) / $
                 total(weight_lowf * outmask_lowf, 2)
+; Needed?
+     bad = where(finite(fcor_lowf) ne 1)
+     if bad[0] ne -1 then fcor_lowf[bad] = 1
+
      fcor_lowf = djs_median(fcor_lowf, width = 50, boundary = 'reflect')
 
      iiter = iiter + 1
@@ -235,6 +231,10 @@ function avg_fluxvect, wave, corvector, sn, cvectok = cvectok
    fcor_hif = total(corvect_hif[*,cvectok] * $
               outmask_hif[*,cvectok] * weight_hif[*,cvectok], 2) / $
               total(weight_hif[*,cvectok] * outmask_hif[*,cvectok], 2)
+
+; Needed?
+     bad = where(finite(fcor_hif) ne 1)
+     if bad[0] ne -1 then fcor_hif[bad] = 1
 
    fcor_hif = djs_median(fcor_hif, width = 50, boundary = 'reflect')
 
@@ -276,28 +276,12 @@ pro flux_standard, loglam, stdflux, stdivar, stdmask, stdstarfile, $
    ;--------------
    ; Read in Kurucz model files
 
-   kurucz_file = filepath('kurucz_stds_interp.fit', $
-                 root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
+   kurucz_restore, kwave, kflux, kindx = kindx
 
-   kflux = mrdfits(kurucz_file, 0, hdr, /silent)  ; flux
-   kindx = mrdfits(kurucz_file, 2, /silent)  ; info about models
-
-   crval = sxpar(hdr, 'CRVAL1')
-   dloglam = 1d-4
-   kwave = 10.0^(lindgen(n_elements(kflux[*,0])) * dloglam + crval)
-
-   ;---------------
-   ; Apply wavelength dependent empirical correction to models
-
-   ;kmodel_fix = mrdfits(filepath('kurucz_model_fix.fit', $
-   ;             root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc'), 0)
-
-   ;kflux = kflux * rebin(kmodel_fix, n_elements(kflux[*,0]), $
-   ;                      n_elements(kflux[0,*]))
-
-   ;--------------
+   ;-------------
    ; Compute the offset of the models from the data in pixels 
 
+   dloglam = 1e-4
    model_offset = (loglam[0] - alog10(kwave[0])) / dloglam
    v_pix = alog10(stdstars.v_off / 3e5 + 1) / dloglam
    pixshift = round(model_offset - v_pix) 
@@ -374,7 +358,7 @@ pro flux_standard, loglam, stdflux, stdivar, stdmask, stdstarfile, $
 
    fcor = avg_fluxvect(wave, corvector[*,ok], stdstars[ok].sn, $
                        cvectok = cvectok)
-   
+
    ;--------------
    ; Recompute the mean without rejected fibers
 
