@@ -124,10 +124,11 @@ function spflux_read_kurucz, loglam, dispimg, iselect=iselect1, $
        kflux[*,imodel] = rebin_spectrum(krawflux[*,imodel], rawloglam, kloglam)
 
       ; The above rebinning conserves flux, so we are no longer in
-      ; units of erg/cm^2/s/Ang.  Multiply by one power of wavelength
-      ; to recover those units.
+      ; units of erg/cm^2/s/Ang.  Divide by one power of wavelength
+      ; to recover those units.  (The -4. is an arbitrary scaling.)
+; Check this ???
       for imodel=0L, nmodel-1 do $
-       kflux[*,imodel] = kflux[*,imodel] * 10.d0^(kloglam/4.)
+       kflux[*,imodel] = kflux[*,imodel] / 10.d0^(kloglam-4.)
 
       ; Convolve the Kurucz models with a boxcar response
       ; representing the size of the SDSS pixels.
@@ -729,11 +730,12 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
        iselect=thisindx.imodel)
 
       ; The returned models are redshifted, but not fluxed or
-      ; reddening-corrected.  Do that now...
-      extcurve = ext_odonnell(10.^loglam[*,*,ip], 3.1)
-      thismodel = thismodel * extcurve
-      extcurve = ext_odonnell(10.^tmploglam, 3.1)
-      tmpflux = tmpflux * 10.^(-extcurve * 3.1 * ebv[ip] / 2.5)
+      ; reddened.  Do that now...  we compare data vs. model reddened.
+; Check this ???
+      extcurve1 = ext_odonnell(10.^loglam[*,*,ip], 3.1)
+      thismodel = thismodel * 10.^(-extcurve1 * 3.1 * ebv[ip] / 2.5)
+      extcurve2 = ext_odonnell(10.^tmploglam, 3.1)
+      tmpflux = tmpflux * 10.^(-extcurve2 * 3.1 * ebv[ip] / 2.5)
 
       ; Now integrate the apparent magnitude for this spectrum,
       ; The units of FTHRU are such that m = -2.5*alog10(FTHRU) + (48.6-2.5*17)
