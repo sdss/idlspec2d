@@ -172,7 +172,7 @@ pro qaplot_skysub, obj, objivar, objsub, objsubivar, wset, iskies, $
    maxchi = max(relchi, imax)
    splog, 'Median sky-residual chi = ', median(relchi)
    splog, 'Max sky-residual chi = ', maxchi, ' at ', $
-    relwave[imax], 'Ang'
+    relwave[imax], ' Ang'
    if (maxchi GT 5.0) then $
     splog, 'WARNING: Max sky-residual chi = ', maxchi, ' at ', $
      relwave[imax], ' Ang'
