@@ -377,7 +377,7 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
       if (ngood GT 0) then begin
          colorvec = (sndiff[igood] GE 0) * djs_icolor('green') $
           + (sndiff[igood] LT 0) * djs_icolor('red')
-         symvec = (abs(sndiff[igood]) * 5 < 2) > 0.1
+         symvec = (abs(sndiff[igood]) * 5 < 2) > 0.2
          djs_oplot, plugc[igood].xfocal, plugc[igood].yfocal, $
           symsize=symvec, color=colorvec, psym=2
       endif
@@ -430,7 +430,7 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
           + (thisdiff GE 0) * djs_icolor('red')
          symvec = (abs(thisdiff) * 5 < 2) > 0.1
          djs_oplot, radius[igood], thisdiff, $
-          symsize=symvec, color=colorvec, psym=psym[igood]
+          symsize=0.5, color=colorvec, psym=psym[igood]
       endif
       oplot, [15], [0.5], psym=6
       oplot, [15], [0.4], psym=1
