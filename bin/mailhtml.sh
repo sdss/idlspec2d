@@ -12,8 +12,7 @@
 # S. Burles, APO, 4 May 2000
 #------------------------------------------------------------------------------
 
-logs=`find /data/spectro/spectrologs/5* -name "logfile*html" -print \ 
-          | grep -v current`
+logs=`find /data/spectro/spectrologs/5* -name "logfile*html" -print | grep -v current`
 
 #   This doesn't work below below the argument list gets too large
 # logs=`ls -d /data/spectro/spectrologs/5*/* \
@@ -37,17 +36,20 @@ do
     echo "!$filename<<EOT" >> $mailfile
     cat $thislog >> $mailfile
     echo "EOT" >> $mailfile
-    
-    sn=`ls $dir | grep snplot | grep ps`
+   
+    sn=`find $dir -name "snplot*ps" -print` 
+#    sn=`ls $dir | grep snplot | grep ps`
     for thissn in $sn
     do 
        echo $thissn
-       echo "!$thissn <<EOT" >> $mailfile
-       cat $dir/$thissn >> $mailfile
+       snname=`echo $thissn | sed -n 's/\/.*\///p'`
+       echo "!$snname <<EOT" >> $mailfile
+       cat $thissn >> $mailfile
        echo "EOT" >> $mailfile
     done 
 
-    mail -s "$subject" sdss-test@astro.princeton.edu < $mailfile
+    mail -s "$subject" sdss-speclog@astro.princeton.edu < $mailfile
+#    mail -s "$subject" sdss-test@astro.princeton.edu < $mailfile
 
 #
 #	Kill everything in the log directory, and then remove the directory.
