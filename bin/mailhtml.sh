@@ -15,8 +15,9 @@
 
 ##
 #  First, send data offsite, and then create mail messages.
-##
-data_rsync.sh
+##  (Don't do this now, everybody gets the data themselves)
+# data_rsync.sh
+#
 
 logs=`find /data/spectro/spectrologs/[56789]* -name "logfile*html" -print | grep -v current`
 

@@ -58,7 +58,7 @@ rsync -ar --rsh="ssh -c blowfish" \
       --log-format="/data/spectro/%f" \
       --exclude="*-b*" \
       --exclude="*-r*" \
-      "sdsshost:/data/spectro/[5-9]????" $rawdata_dir
+      "sdsshost:/data/spectro/[5-9]????" $rawdata_dir | startapo.sh
 
 echo "APORSYNC_LOGS: Finished at "`date` UID=$UID PPID=$PPID
 
