@@ -592,7 +592,7 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
        combinedir = combinedir, tsobjname = tsobjname, /noplot)
 
    endif else begin
-     smear_struct = {sci_sn: 0.0, smear_sn: 0.0, legendre_coeff: fltarr(4)}
+     smear_struct = {sci_sn: 0.0, smear_sn: 0.0, legendre_coeff: fltarr(3)}
      smear_hdu = make_array(dim=nfiber, value=smear_struct)
      splog, 'No smear exposures found!'
    endelse
