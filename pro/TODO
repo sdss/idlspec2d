@@ -1,4 +1,17 @@
 
+* Need to have better (or any) standard star SED prediction based
+    on u-g, g-r, r-i.
+
+       Look at: Stone, R. P. 1996, ApJS 107, 423, 
+                Gunn & Stryker 
+
+* Implement PSF variable sky subtraction
+
+* Implement Proper variance (and covariance) terms in combine2dout
+    -Larger problem of returning general covariance terms with
+     slatec_efc and slatec_bvalu.  Probably requires doing customized
+     B-spline fitting.  Also a change to deal with bkpts gracefully.
+
 * trace_crude gives a wrong xstart for fiber 172 in 
     plate 192:  Tracing 320 fibers in sdR-r1-00001602.fit
     The fiber overlaps with fiber 171, but is not set as a
@@ -19,6 +32,8 @@
 * Need to pass rejection information back from extract_row.c
     to add into pixelmask
 
+   ---> done, put in another parameter to return to extract_row.pro
+          also put in rejection thresholds as a two elements array
 
 * Try not to overwrite PostScript log file.
 
@@ -46,8 +61,11 @@
 
 * Do something fancier for overscan-correction?
   JEG points out that the b1 CCD has a terrible transient at the beginning.
+  also first and last columns in all cameras.
 
 * Track total exposure time in combined spectra
+  some attempt is made, if both red and blue spectra are used in combining,
+    total exposure time is exposure time of all / 2
 
 * For the calibration op*.par files, make versions based upon MJD in /examples
 

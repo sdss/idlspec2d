@@ -340,9 +340,11 @@ pro combine2dout, filenames, outputroot, spectrographid, $
                   result = interpol(fullivar[these] * mask[these], $
                    fullwave[these], newwave[inbetween])
 
-                  conservevariance = totalbefore / total(result)
-                  bestivar[inbetween] = bestivar[inbetween] + $
-                   result * conservevariance
+                  if (total(result) GT 0.0) then begin
+                    conservevariance = totalbefore / total(result)
+                    bestivar[inbetween] = bestivar[inbetween] + $
+                      result * conservevariance
+                  endif
 
                   lowside = fix((fullwave[these]-wavemin)/binsz)
                   highside = lowside + 1
