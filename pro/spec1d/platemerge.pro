@@ -6,7 +6,7 @@
 ;   Merge all Spectro-1D outputs with tsObj files.
 ;
 ; CALLING SEQUENCE:
-;   platemerge, [zfile, outroot=, /public]
+;   platemerge, [ zfile, outroot=, public= ]
 ;
 ; INPUTS:
 ;
@@ -16,7 +16,12 @@
 ;   outroot     - Root name for output files; default to '$SPECTRO_DATA/spAll';
 ;                 the files are then 'spAll.fits', 'spAll.dat', 'spAllLine.dat'.
 ;                 If /PUBLIC is set, then add '-public' to the root name.
-;   public      - If set, then limit to plates in platelist with PUBLIC != ''
+;                 If PUBLIC is set to a string, then add that string to the
+;                 root name.
+;   public      - If set with /PUBLIC, then limit to plates that have
+;                 any entry in the PUBLIC field of the plate list.
+;                 If set to a string, then select those plates that contain
+;                 the substring PUBLIC within their PUBLIC field.
 ;
 ; OUTPUTS:
 ;
@@ -66,7 +71,11 @@ pro platemerge, zfile, outroot=outroot1, public=public
       outroot = [outroot1, outroot1+'Line']
    endif else begin
       outroot = ['spAll','spAllLine']
-      if (keyword_set(public)) then outroot = outroot + '-public'
+      if (keyword_set(public)) then begin
+         if (size(public,/tname) EQ 'STRING') then $
+          outroot = outroot + '-' + public $
+          else outroot = outroot + '-public'
+      endif
       outroot = djs_filepath(outroot, root_dir=getenv('SPECTRO_DATA'))
    endelse
 
@@ -81,11 +90,17 @@ pro platemerge, zfile, outroot=outroot1, public=public
 
       indx = where(strtrim(plist.status1d,2) EQ 'Done' AND $
        (strtrim(plist.platequality,2) EQ 'good' $
-       OR strtrim(plist.platequality,2) EQ 'marginal'))
-      if (indx[0] EQ -1) then return
-      if (keyword_set(public)) then $
-       indx = indx[ where(strtrim(plist[indx].public)) ]
-      if (indx[0] EQ -1) then return
+       OR strtrim(plist.platequality,2) EQ 'marginal'), ct)
+      if (ct EQ 0) then return
+      if (keyword_set(public)) then begin
+         if (size(public,/tname) EQ 'STRING') then begin
+            itrim = where(strmatch(plist.public,'*'+public+'*'), ntrim)
+         endif else begin
+            itrim = where(strtrim(plist.public) NE '', ntrim)
+         endelse
+         if (ntrim EQ 0) then return
+         indx = indx[itrim]
+      endif
       plist = plist[indx]
 
       nfile = n_elements(plist)
