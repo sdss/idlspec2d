@@ -6,9 +6,6 @@
 # For ssh to work, you need the environment variables SSH_AUTH_SOCK
 # and SSH_AGENT_PID set.
 #
-# The batch files can be specified with the environment variables BATCH2DFILE
-# and BATCH1DFILE, or the default files will simply be used.
-#
 # Note that the same version of idlspec2d used to start this script is
 # used to reduce all the data (passed throught the UPSVERSION keyword
 # from the "sprobot.sh" script).  The only exception is if the current
@@ -124,12 +121,6 @@ if [ -n "$SSH_AUTH_SOCK" ] ; then
 fi
 if [ -n "$SSH_AGENT_PID" ] ; then
    echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> $cronfile
-fi
-if [ -n "$BATCH1DFILE" ] ; then
-   echo "BATCH1DFILE=$BATCH1DFILE" >> $cronfile
-fi
-if [ -n "$BATCH2DFILE" ] ; then
-   echo "BATCH2DFILE=$BATCH1DFILE" >> $cronfile
 fi
 echo "IDLSPEC2D_DIR=$IDLSPEC2D_DIR" >> $cronfile
 echo "IDLUTILS_DIR=$IDLUTILS_DIR" >> $cronfile
