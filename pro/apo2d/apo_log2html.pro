@@ -74,9 +74,16 @@ end
 ;------------------------------------------------------------------------------
 function apo_log_header, title
 
+   ; Include a Java script to auto-load this page every 30 seconds
+
    textout = '<HTML>'
+   textout = [textout, $
+'<SCRIPT LANGUAGE="JavaScript"> function reload(){ history.go(0) } </SCRIPT>']
    textout = [textout, '<HEAD><TITLE>' + title + '</TITLE></HEAD>']
    textout = [textout, '<H2 ALIGN=CENTER>' + title + '</H2>']
+   squote = "'"
+   textout = [textout, $
+    '<BODY ONLOAD="timerID=setTimeout('+squote+'reload()'+squote+',30000)">']
 
    return, textout
 end
@@ -84,7 +91,7 @@ end
 ;------------------------------------------------------------------------------
 function apo_log_endfile, title
 
-   textout = '</HTML>'
+   textout = '</BODY></HTML>'
 
    return, textout
 end
