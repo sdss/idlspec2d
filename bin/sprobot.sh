@@ -117,7 +117,7 @@ for mjdstr in $remotedir ; do
       # Copy the guider image directory...
       echo SPROBOT: rsync "$hostname:/data/spectro/$mjdstr/guider" $localdir
       rsync -ar --rsh="ssh -c arcfour" \
-       "$hostname:/data/spectro/$mjdstr/guider" $localdir
+       "$hostname:/data/spectro/$mjdstr/guider/*.fits.gz" $localdir/guider
 
       # Compress the raw FITS files w/gzip...
 #      echo SPROBOT: gzip $localdir/*.fit $localdir/*/*.fit
