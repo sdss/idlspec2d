@@ -144,8 +144,10 @@ function trace_crude, fimage, invvar, xstart=xstart, ystart=ystart, $
    ntrace = N_elements(xstart)
    xset = fltarr(ny, ntrace)
    xerr = fltarr(ny, ntrace)
-   result = call_external(getenv('IDLSPEC2D_DIR')+'/lib/libspec2d.so', $
-    'trace_crude', $
+
+   soname = filepath('libspec2d.so', $
+    root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='lib')
+   result = call_external(soname, 'trace_crude', $
     nx, ny, imgtemp, invtemp, float(radius), ntrace, float(xstart), ypass, $
     xset, xerr, float(maxerr), float(maxshift), float(maxshift0))
 

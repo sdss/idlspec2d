@@ -88,8 +88,10 @@ pro spflatten, flatname, pixflat, sigrej=sigrej, maxiter=maxiter, $
    endif
    if (NOT keyword_set(maxiter)) then maxiter = 2
 
-   tmpname1 = tmpdir+'/tmp.flatimg.'+strtrim(string(indgen(nflat)),2)+'.fits'
-   tmpname2 = tmpdir+'/tmp.ymodel.'+strtrim(string(indgen(nflat)),2)+'.fits'
+   tmpname1 = filepath('tmp.flatimg.'+strtrim(string(indgen(nflat)),2)+'.fits',$
+    root_dir=tmpdir)
+   tmpname2 = filepath('tmp.ymodel.'+strtrim(string(indgen(nflat)),2)+'.fits',$
+    root_dir=tmpdir)
 
    for iflat=0, nflat-1 do begin
 

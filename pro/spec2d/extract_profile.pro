@@ -130,20 +130,22 @@ function extract_profile, fimage, invvar, xcen, ycen, ferror=ferror, $
    if (min(ycen) LT 0 OR max(ycen) GT ny) then $
     message, 'YCEN contains values out of range'
 
-    fextract = fltarr(nTrace,nRowExtract)
-    ferror = fltarr(nTrace,nRowExtract)
-    fwidth = fltarr(nTrace,nRowExtract)
+   fextract = fltarr(nTrace,nRowExtract)
+   ferror = fltarr(nTrace,nRowExtract)
+   fwidth = fltarr(nTrace,nRowExtract)
 
-    ymod = fimage*0.0
-    fscattered = fimage*0.0
+   ymod = fimage*0.0
+   fscattered = fimage*0.0
 
-    result = call_external(getenv('IDLSPEC2D_DIR')+'/lib/libspec2d.so', $
-     'extract_profile',$
-     nx, ny, float(fimage), float(invvar), float (ymod), nTrace, $
-     LONG(nRowExtract), float(xcen), LONG(ycen), float(sigma), float(fextract),$
-     float(ferror), float(fscattered), float(fwidth),$
-     LONG(nPoly), LONG(maxIter), LONG(refit), float(highrej), float(lowrej), $
-     float(boxap))
+   soname = filepath('libspec2d.so', $
+    root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='lib')
+
+   result = call_external(soname, 'extract_profile',$
+    nx, ny, float(fimage), float(invvar), float (ymod), nTrace, $
+    LONG(nRowExtract), float(xcen), LONG(ycen), float(sigma), float(fextract),$
+    float(ferror), float(fscattered), float(fwidth),$
+    LONG(nPoly), LONG(maxIter), LONG(refit), float(highrej), float(lowrej), $
+    float(boxap))
     
 
    return, fextract

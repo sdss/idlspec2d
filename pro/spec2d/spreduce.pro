@@ -22,7 +22,7 @@
 ; OPTIONAL KEYWORDS:
 ;   pixflatname- Name of pixel-to-pixel flat, produced with SPFLATTEN.
 ;   lampfile   - Name of file describing arc lamp lines;
-;                default to the file 'lamphgcdne.dat' in the IDL path.
+;                default to the file 'lamphgcdne.dat' in $IDLSPEC2D_DIR/etc.
 ;   indir      - Input directory for FLATNAME, ARCNAME, OBJNAME;
 ;                default to '.'
 ;   plugdir    - Input directory for PLUGFILE; default to '.'
@@ -55,6 +55,9 @@
 ;   yanny_free
 ;   yanny_read
 ;
+; DATA FILES:
+;   $IDLSPEC2D_DIR/etc/skylines.dat
+;
 ; REVISION HISTORY:
 ;   12-Oct-1999  Written by D. Schlegel & S. Burles, APO
 ;-
@@ -79,7 +82,8 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       skyfilenames = (findfile(skylinefile, count=ct))[0]
       if (ct EQ 0) then message, 'No SKYLINEFILE found '+skylinefile
    endif else begin
-      skydefault = getenv('IDLSPEC2D_DIR') + '/etc/skylines.dat'
+      skydefault = filepath('skylines.dat', $
+       root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
       skyfilenames = (findfile(skydefault, count=ct))[0]
       if (skyfilenames EQ '') then message, 'No SKYLINEFILE found '+skydefault
    endelse

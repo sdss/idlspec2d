@@ -58,8 +58,9 @@ function trace_gweight, fimage, xcen, ycen, sigma=sigma, xerr=xerr, $
 ;    nx, ny, float(fimage), float(invvar), $
 ;    float(sigma), ncen, xnew, long(ycen), xerr)
 
-   result = call_external(getenv('IDLSPEC2D_DIR')+'/lib/libspec2d.so', $
-    'trace_gweight', $
+   soname = filepath('libspec2d.so', $
+    root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='lib')
+   result = call_external(soname, 'trace_gweight', $
     nx, ny, float(fimage), float(invvar), $
     float(sigma), ncen, xnew, long(ycen), xerr)
 

@@ -56,8 +56,9 @@ function trace_fweight, fimage, xcen, ycen, radius=radius, xerr=xerr, $
 
    if (NOT keyword_set(invvar)) then invvar = 0.0 * fimage + 1.0
 
-   result = call_external(getenv('IDLSPEC2D_DIR')+'/lib/libspec2d.so', $
-    'trace_fweight', $
+   soname = filepath('libspec2d.so', $
+    root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='lib')
+   result = call_external(soname, 'trace_fweight', $
     nx, ny, float(fimage), float(invvar), $
     float(radius), ncen, xnew, long(ycen), xerr)
 

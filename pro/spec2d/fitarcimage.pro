@@ -74,6 +74,9 @@
 ;   traceset2xy()
 ;   xy2traceset
 ;
+; DATA FILES:
+;   $IDLSPEC2D_DIR/etc/lamphgcdne.dat
+;
 ; REVISION HISTORY:
 ;   15-Oct-1999  Written by S. Burles, D. Finkbeiner, & D. Schlegel, APO.
 ;   09-Nov-1999  Major modifications by D. Schlegel, Ringberg.
@@ -129,7 +132,8 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
       lampfilename = (findfile(lampfile, count=ct))[0]
       if (ct EQ 0) then message, 'No LAMPFILE found '+lampfile
    endif else begin
-      lampdefault = getenv('IDLSPEC2D_DIR') + '/etc/lamphgcdne.dat'
+      lampdefault = filepath('lamphgcdne.dat', $
+       root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
       lampfilename = (findfile(lampdefault, count=ct))[0]
       if (NOT keyword_set(lampfilename)) then $
        message, 'No LAMPFILE found '+lampdefault

@@ -267,6 +267,9 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
    finished = 0
    totalreject = 0
 
+   soname = filepath('libspec2d.so', $
+    root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='lib')
+
    while(finished NE 1) do begin 
 
       workinvvar = FLOAT(invvar * mask)
@@ -279,8 +282,7 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
          ans[0:ntrace*ncoeff-1] = inputans
       endif
 
-      result = call_external(getenv('IDLSPEC2D_DIR')+'/lib/libspec2d.so', $
-       'extract_row',$
+      result = call_external(soname, 'extract_row',$
        nx, FLOAT(xvar), FLOAT(fimage), workinvvar, ymodel, ntrace, $
        LONG(npoly), FLOAT(xcen), FLOAT(sigma), LONG(proftype), $
        FLOAT(reject), partial, fullreject, qcovar, LONG(squashprofile), $

@@ -41,10 +41,10 @@
 ;   readfits()
 ;
 ; DATA FILES:
-;   $IDLSPEC2D/etc/flatmask-b1.fits.gz
-;   $IDLSPEC2D/etc/flatmask-b2.fits.gz
-;   $IDLSPEC2D/etc/flatmask-r1.fits.gz
-;   $IDLSPEC2D/etc/flatmask-r2.fits.gz
+;   $IDLSPEC2D_DIR/etc/flatmask-b1.fits.gz
+;   $IDLSPEC2D_DIR/etc/flatmask-b2.fits.gz
+;   $IDLSPEC2D_DIR/etc/flatmask-r1.fits.gz
+;   $IDLSPEC2D_DIR/etc/flatmask-r2.fits.gz
 ;
 ; REVISION HISTORY:
 ;   16-Dec-1999  Written by D. Schlegel, Princeton
@@ -103,7 +103,7 @@ function genflatmask, flatname, spectrographid=spectrographid, color=color, $
       rootname = 'flatmask-' + string(format='(a1,i1)',color,spectrographid) $
        + '.fits'
       masknamein = filepath(rootname+'.gz', $
-       root_dir=getenv('IDLSPEC2D_DIR') + '/etc')
+       root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
       masknameout = filepath(rootname, root_dir=tmpdir)
 
       ; Make sure that the mask file exists

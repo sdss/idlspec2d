@@ -155,7 +155,7 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
 
 
       ;!!!!!!!!!!!!!!!!!!!!!SMB 02/21/00
-      ;  Added 1 to index to store just MJD with no '/'
+      ;  Added 1 to index to store just MJD with no '/' ???
       ;
       mjdlist[imjd] = strmid(mjdlist[imjd], i+1)
    endfor
@@ -169,8 +169,8 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
    for imjd=0, N_elements(mjdlist)-1 do begin
 
       mjddir = mjdlist[imjd]
-      inputdir = rawdir+'/'+mjddir
-      plugdir = astrolog+'/'+mjddir
+      inputdir = filepath('', root_dir=rawdir, subdirectory=mjddir)
+      plugdir = filepath('', root_dir=astrolog, subdirectory=mjddir)
 
       splog, ''
       splog, 'Data directory ', inputdir
@@ -215,7 +215,7 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
          CAMERAS = strarr(nfile)
          for i=0, nfile-1 do begin
 
-            hdr = headfits(inputdir+'/'+fullname[i])
+            hdr = headfits(filepath(fullname[i], root_dir=inputdir)
 
             if (size(hdr,/tname) EQ 'STRING') then begin
               PLATEID[i] = long( sxpar(hdr, 'PLATEID') )

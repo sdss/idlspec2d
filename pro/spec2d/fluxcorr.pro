@@ -50,6 +50,12 @@
 ;
 ; PROCEDURES CALLED:
 ;
+; DATA FILES:
+;   $IDLSPEC2D_DIR/etc/f8vspline.dat
+;   $IDLSPEC2D_DIR/etc/f8v.abs
+;   $IDLSPEC2D_DIR/etc/blue.bkpts
+;   $IDLSPEC2D_DIR/etc/red.bkpts
+;
 ; REVISION HISTORY:
 ;   19-Oct-1999  Written by S. Burles, Chicago
 ;-
@@ -71,15 +77,17 @@ function fluxcorr, flux, fluxivar, wset, plugsort, color=color, $
 ;	We'll need a smoothly splined version of the intrinsic
 ;	f8 subdwarf.
 ;
-	if (keyword_set(spectrostd)) then $
-	  filename = findfile(spectrostd) $
-	else $
-	  filename = getenv('IDLSPEC2D_DIR') + '/etc/f8vspline.dat'
+        if (keyword_set(spectrostd)) then $
+         filename = spectrostd $
+        else $
+         filename = filepath('f8vspline.dat', $
+          root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
 
-	if (filename EQ '') then $
-             message, 'cannot fluxcorrect, no intrinsic spectrum'
+        filename = (findfile(filename))[0]
+        if (filename EQ '') then $
+         message, 'Cannot fluxcorrect, no intrinsic spectrum'
 
-	readcol, filename[0], f8wave, f8flux
+        readcol, filename[0], f8wave, f8flux
 
 ;
 ;	Now try to find the best spectrophoto_std on this CCD
@@ -123,13 +131,16 @@ function fluxcorr, flux, fluxivar, wset, plugsort, color=color, $
 ;	Mask out absorption line regions
 ;
 
-	filename = ''
-	if (keyword_set(absfile)) then $
-	  filename = findfile(absfile) $
+        filename = ''
+        if (keyword_set(absfile)) then $
+         filename = absfile $
         else $
-	  filename = getenv('IDLSPEC2D_DIR') + '/etc/f8v.abs'
-      
-        if (filename EQ '') then message, 'no F8V Abs file found'
+         filename = filepath('f8v.abs', $
+          root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
+
+        filename = (findfile(filename))[0]
+        if (filename EQ '') then $
+         message, 'No F8V Abs file found'
  
         readcol, filename, absmin, absmax
 
@@ -150,16 +161,18 @@ function fluxcorr, flux, fluxivar, wset, plugsort, color=color, $
 ;
 ;	Read in bkpt file, which should have best spacing
 ;	
-        filename = ''
-	if (keyword_set(bkptfile)) then $
-	  filename = findfile(bkptfile) $
-	else if (keyword_set(color)) then begin 
-          if (color EQ 'red') then $
-	    filename = getenv('IDLSPEC2D_DIR') + '/etc/red.bkpts'
+        if (keyword_set(bkptfile)) then $
+         filename = bkptfile $
+        else if (keyword_set(color)) then begin 
+           if (color EQ 'red') then $
+            filename = filepath('red.bkpts', $
+             root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
           if (color EQ 'blue') then $
-	    filename = getenv('IDLSPEC2D_DIR') + '/etc/blue.bkpts'
+           filename = filepath('blue.bkpts', $
+             root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
         endif
 
+        filename = (findfile(filename))[0]
 	if (filename EQ '') then message, 'FLUXCORR cannot find bkpt file'
 
 	readcol, filename, allbkpts

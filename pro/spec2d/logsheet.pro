@@ -12,7 +12,7 @@
 ; INPUTS:
 ;
 ; OPTIONAL INPUTS:
-;   dir        - Directory name; default to ''
+;   dir        - Directory name; default to '.'
 ;   outfile    - Output file
 ;
 ; OUTPUTS:
@@ -31,10 +31,9 @@
 ;------------------------------------------------------------------------------
 pro logsheet, dir, outfile=outfile
 
-   if (NOT keyword_set(dir)) then dir = '' $
-    else dir = dir + '/'
+   if (NOT keyword_set(dir)) then dir = '.'
 
-   fullname = findfile(dir+'*.fit', count=nfile)
+   fullname = findfile(filepath('*.fit',root_dir=dir), count=nfile)
 
    if (nfile EQ 0) then begin
       print, 'No files found.'

@@ -109,8 +109,10 @@ pro spflatten2, flatname, arcname, allflats, pixflat, $
    endif
    if (NOT keyword_set(maxiter)) then maxiter = 2
 
-   tmpname1 = tmpdir+'/tmp.flatimg.'+strtrim(string(indgen(nflat)),2)+'.fits'
-   tmpname2 = tmpdir+'/tmp.ymodel.'+strtrim(string(indgen(nflat)),2)+'.fits'
+   tmpname1 = filepath('tmp.flatimg.'+strtrim(string(indgen(nflat)),2)+'.fits',$
+    root_dir=tmpdir)
+   tmpname2 = filepath('tmp.ymodel.'+strtrim(string(indgen(nflat)),2)+'.fits',$
+    root_dir=tmpdir)
 
    ;---------------------------------------------------------------------------
    ; First find the wavelength solution

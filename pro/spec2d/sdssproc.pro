@@ -133,7 +133,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
 
    mjd = sxpar(hdr, 'MJD')
 
-   pp = getenv('IDLSPEC2D_DIR')+'/examples'
+   pp = filepath('', root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='examples')
 
    if (NOT keyword_set(configfile)) then $
        configfile = findopfile('opConfig*par',mjd,pp)
