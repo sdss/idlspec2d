@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   design_multiplate, stardata, [ tilenums=, platenums=, racen=, deccen=, $
-;    guidetiles= ]
+;    guidetiles=, apotemperature=apotemperature ]
 ;
 ; INPUTS:
 ;   stardata   - Structure with data for each star; must contain the
@@ -27,6 +27,7 @@
 ;   platenums  - Array of plate numbers; default to the same as TILENUMS.
 ;   guidetiles - Tile number for each of the 11 guide fibers.  There exist
 ;                default values for the cases 1,2,3 or 4 tiles.
+;   apotemperature - Design temperature for APO; default to 5 deg C.
 ;
 ; OUTPUTS:
 ;
@@ -45,6 +46,7 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   concat_dir()
 ;   cpbackup
 ;   djs_diff_angle()
 ;   djs_laxisgen()
@@ -52,6 +54,7 @@
 ;   yanny_free
 ;   yanny_par()
 ;   yanny_read
+;   yanny_write
 ;
 ; INTERNAL SUPPORT ROUTINES:
 ;   design_append()
@@ -83,7 +86,8 @@ function design_append, newplug, oneplug
 end
 ;------------------------------------------------------------------------------
 pro design_multiplate, stardata, tilenums=tilenums, platenums=platenums, $
- racen=racen, deccen=deccen, guidetiles=guidetiles
+ racen=racen, deccen=deccen, guidetiles=guidetiles, $
+ apotemperature=apotemperature
 
    if (NOT keyword_set(tilenums)) then begin
       tilenums = stardata.tilenum
@@ -131,15 +135,19 @@ pro design_multiplate, stardata, tilenums=tilenums, platenums=platenums, $
    if (NOT keyword_set(racen) OR NOT keyword_set(deccen)) then $
     message, 'RACEN,DECCEN must be specified'
 
+   if (N_elements(apotemperature) EQ 0) then $
+    apotemperature = 5.0
+
    plugmaptfile = 'plPlugMapT-' + string(tilenums,format='(i4.4)') + '.par'
    plugmappfile = 'plPlugMapP-' + string(platenums,format='(i4.4)') + '.par'
 
    fakemag = 25.0 ; Magnitudes for all fake objects
+   paramdir = concat_dir(getenv('IDLSPEC2D_DIR'), 'examples')
 
    ;----------
    ; Read a template plugmap structure
 
-   yanny_read, 'plPlugMapT-XXXX.par', pp, $
+   yanny_read, filepath('plPlugMapT-XXXX.par', root_dir=paramdir), pp, $
     hdr=plughdr, enums=plugenum, structs=plugstruct
    blankplug = *pp[0]
    yanny_free, pp
@@ -246,7 +254,7 @@ print, 'Assigning real guide fiber number ', iguide+1
 
          addplug.holetype = 'GUIDE'
          addplug.objtype = 'NA'
-;         addplug.fiberid = iguide + 1 ; ???
+;         addplug.fiberid = iguide + 1 ; The "fiberPlates" code will assign this
          addplug.sectarget = 64L
 
          if (NOT keyword_set(allplug)) then allplug = addplug $
@@ -258,7 +266,7 @@ print, 'Assigning real guide fiber number ', iguide+1
       ; For this pointing, add all objects.
 
       indx = where(stardata.tilenum EQ thistilenum $
-       AND (strtrim(stardata.holetype,2) EQ 'OBJECT', nadd)
+       AND strtrim(stardata.holetype,2) EQ 'OBJECT', nadd)
       if (nadd EQ 0) then $
        message, 'No objects found for this pointing'
       addplug = replicate(blankplug, nadd)
@@ -273,7 +281,7 @@ print, 'Assigning real guide fiber number ', iguide+1
        addplug.throughput = (stardata[indx].priority > 1L) < (2L^31-2) $
       else $
        addplug.throughput = long(randomu(24680, nadd) * 100) + 1
-      addplug.sectarget = 2L^24
+;      addplug.sectarget = 2L^24 ; This would be the serendipity flag
 
       allplug = [allplug, addplug]
 
@@ -379,15 +387,17 @@ print, 'Assigning real guide fiber number ', iguide+1
    ; RUN "makePlates" IN THE SDSS "PLATE" PRODUCT.
    ; The required inputs are the plPlugMapT-$TILE.par files,
    ; plus plPlan.par, plObs.par, plParam.par.
+   ; The fiberPlates code selects the guide stars and sky fibers from
+   ; those available, and renames COHERENT_SKY/NA objects to OBJECT/SKY.
+   ; It also generates the ALIGNMENT holes for each GUIDE fiber.
    ;---------------------------------------------------------------------------
 
    ;----------
    ; Create the file "plPlan.par" in the current directory.
 
-   paramdir = concat_dir(getenv('IDLSPEC2D_DIR'), 'examples')
    cd, current=thisdir
    cd, thisdir
-   plhdr = ''
+   plhdr = '# Created on ' + systime()
    plhdr = [plhdr, "parametersDir " + paramdir]
    plhdr = [plhdr, "parameters    " + "plParam.par"]
    plhdr = [plhdr, "plObsFile     " + "plObs.par"]
@@ -398,7 +408,7 @@ print, 'Assigning real guide fiber number ', iguide+1
    ;----------
    ; Create the file "plObs.par" in the current directory.
 
-   plhdr = ''
+   plhdr = '# Created on ' + systime()
    plhdr = [plhdr, "plateRun special"]
    plstructs = ["typedef struct {", $
                 "   int plateId;", $
@@ -407,7 +417,7 @@ print, 'Assigning real guide fiber number ', iguide+1
                 "   float haMin;", $
                 "   float haMax;", $
                 "   int mjdDesign", $
-                "} PLOBS;"
+                "} PLOBS;"]
    plobs = create_struct(name='PLOBS', $
     'PLATEID'  ,  0L, $
     'TILEID'   ,  0L, $
@@ -420,11 +430,11 @@ print, 'Assigning real guide fiber number ', iguide+1
    plobs.tileid = tilenums
    plobs.temp = apotemperature
    plobs.mjddesign = current_mjd()
-   yanny_write, 'plObs.par', plobs, hdr=plhdr, structs=plstructs
+   yanny_write, 'plObs.par', ptr_new(plobs), hdr=plhdr, structs=plstructs
 
-; ???
-print, 'Now run "makePlates" in the "plate" product'
-stop
+   print, 'Now run "makePlates" and "fiberPlates" in the "plate" product'
+   print, 'Then type ".cont" to continue.'
+   stop
 
    ;---------------------------------------------------------------------------
    ; RE-COMBINE THE PLUGMAP FILES
@@ -440,11 +450,13 @@ stop
        hdr=plughdr, enums=plugenum, structs=plugstruct
       hdrarr[itile] = ptr_new(plughdr)
       thisplate = yanny_par(plughdr, 'plateId')
-      (*pp[0]).fiberid = thisplate ; Store the plate number in FIBERID
+;      (*pp[0]).fiberid = thisplate ; Store the plate number in FIBERID
       if (itile EQ 0) then allplug = *pp[0] $
        else allplug = [allplug, *pp[0]]
       if (itile EQ 0) then platenums = thisplate $
        else platenums = [platenums, thisplate]
+      if (itile EQ 0) then platearr = replicate(thisplate, n_elements(*pp[0])) $
+       else platearr = [platearr, replicate(thisplate, n_elements(*pp[0]))]
       yanny_free, pp
    endfor
 
@@ -455,6 +467,18 @@ stop
    if (n_elements(iguide) NE 11) then $
     message, 'The number of guide fibers is wrong.'
    newplug = allplug[iguide]
+
+   ;----------
+   ; Find the alignment hole corresponding to each of these guide stars
+
+   for ii=0, 10 do begin
+      jj = where(allplug.holetype EQ 'ALIGNMENT' $
+       AND platearr EQ platearr[iguide[ii]] $
+       AND allplug.fiberid EQ allplug[iguide[ii]].fiberid, nj)
+      if (nj NE 1) then $
+       message, 'Wrong number of alignment holes'
+      newplug = [newplug, allplug[jj]]
+   endfor
 
    ;----------
    ; Select all real objects and then fake skies if we run out of real objects.
@@ -494,8 +518,8 @@ stop
       ; Objects that are actually on other tiles are renamed to sky fibers
       ; on this plate.
 
-      indx = where(modplug.holetype EQ 'OBJECT' $
-       AND modplug.fiberid NE thisplate)
+      indx = where(allplug.holetype EQ 'OBJECT' $
+       AND platearr NE thisplate)
       if (indx[0] NE -1) then begin
          modplug[indx].holetype = 'COHERENT_SKY'
          modplug[indx].objtype = 'NA'
@@ -510,7 +534,7 @@ stop
       ; center hole
 
       iqual = where(allplug.holetype EQ 'QUALITY' $
-       AND allplug.fiberid EQ thisplate, nqual)
+       AND platearr EQ thisplate, nqual)
       if (nqual NE 1) then $
       message, 'We expect 1 quality hole already (the center hole)'
       modplug = [modplug, allplug[iqual]]
@@ -526,21 +550,15 @@ stop
        hdr=*(hdrarr[itile]), enums=plugenum, structs=plugstruct
    endfor
 
-   ;----------
-; Also need to keep QUALITY and ALIGNMENT holes !!!???
-
    ;---------------------------------------------------------------------------
    ; CREATE THE DRILL FILES FROM THE 1ST PLATE.
    ; (Drill files from any of the plates would be identical.)
-   ; Run the code fiberPlates, makeFanuc, makeDrillPos, use_cs3.
-   ; The fiberPlates code selects the guide stars and sky fibers from
-   ; those available, and renames COHERENT_SKY/NA objects to OBJECT/SKY.
+   ; Run the code makeFanuc, makeDrillPos, use_cs3.
    ;---------------------------------------------------------------------------
 
-; ???
-print, 'Now run "fiberPlates" in the "plate" product'
-stop
+   print, 'Now run "makeFanuc", "makeDrillPos" in the "plate" product'
+   print, 'Then you are done!'
 
    return
 end
-
+;------------------------------------------------------------------------------

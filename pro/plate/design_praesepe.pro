@@ -5,7 +5,8 @@
 ;------------------------------------------------------------------------------
 function read_praesepe1, filename
 
-   readcol, filename, $
+   readcol, filepath(filename, $
+    root_dir=getenv('IDLSPEC2D_DIR'), subdirectory=['pro','plate']), $
     ra, dec, bmag, rmag, jmag, hmag, kmag, flag, $
     format='(D,D,F,F,F,F,F,L)'
 
@@ -47,7 +48,7 @@ pro design_praesepe
    magmin = [ 6.0, 10.0, 13.0]
    magmax = [10.2, 13.2, 16.5]
    guidemag = [10.5, 12.5]
-   tilenums = [9001,9002,9003]
+   tilenums = [9901,9902,9903]
    platenums = [901,902,903]
 
    ntile = n_elements(racen)
@@ -124,7 +125,7 @@ pro design_praesepe
 
    stardata = newdata
 
-stop
+;stop
 ;splot,stardata.ra,stardata.dec,ps=4,color='green'
 ;soplot,tycdat.radeg,tycdat.dedeg,ps=1,symsize=0.5
 
