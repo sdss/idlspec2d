@@ -31,6 +31,11 @@ LINEBACKFIT: New generic proc for fitting emission lines + linear background
            terms.
 PCA_ELODIE,READ_ELODIE(): New routines for reading the Elodie eschelle
            spectra and generating eigenvectors for velocity dispersion fits.
+REMOVE2REDO: Never consider the compressed (sdR*.fit.gz) files for removal,
+           since those are our archived copies of the raw data.  Only remove
+           the *.fit files.  That way, if the data gets removed from
+           sdsshost.apo and we run this proc, we don't delete all copies
+           of the data on sos.apo!
 SPADD_GUIDERINFO: New routine to compute seeing and average guider offsets
            from the guiderMon param file, and add those results to a FITS
            header.
