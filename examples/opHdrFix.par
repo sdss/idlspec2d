@@ -110,7 +110,6 @@ spechdrfix sdR-??-00006630 FLAVOR   "'unknown'"
 # the following keywords.
 # Copy those keywords from the previous exposure, which is close enough.
 
-spechdrfix sdR-??-00007112 TAI      4481669178.32
 spechdrfix sdR-??-00007112 RA       13.294940
 spechdrfix sdR-??-00007112 DEC      14.842955
 spechdrfix sdR-??-00007112 SPA      0.030
