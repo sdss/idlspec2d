@@ -6,8 +6,8 @@
 ;   Combine several spectra of the same object, or resample a single spectrum.
 ;
 ; CALLING SEQUENCE:
-;   combine1fiber, inloglam, objflux, [ objivar, finalmask=, indisp=, $
-;    newloglam=, newflux=, newivar=, andmask=, ormask=, newdisp=, $
+;   combine1fiber, inloglam, objflux, [ objivar, finalmask=, indisp=, skyflux=,$
+;    newloglam=, newflux=, newivar=, andmask=, ormask=, newdisp=, newsky=, $
 ;    nord=, binsz=, bkptbin=, maxsep=, _EXTRA=KeywordsForReject, /verbose ]
 ;
 ; INPUTS:
@@ -22,6 +22,7 @@
 ;   objivar        - Inverse variance [NPIX,NSPEC]
 ;   finalmask      - Pixel mask [NPIX,NSPEC]
 ;   indisp         - Dispersion values [NPIX,NSPEC]
+;   skyflux        - Sky flux vectors [NPIX,NSPEC]
 ;   binsz          - Bin separation for INLOGLAM; if not set, then default
 ;                    to INLOGLAM[1]-INLOGLAM[0].
 ;   nord           - Order of spline fit; default to 3.
@@ -50,6 +51,7 @@
 ;                    of the input spectra at this wavelength has that bit set
 ;                    (e.g., this is a logical OR) [NNEWPIX].
 ;   newdisp        - Resampled dispersion values [NNEWPIX].
+;   newsky         - Resampled sky flux [NNEWPIX].
 ;
 ; COMMENTS:
 ;   One can pass this routine a single spectrum to be fit by a spline and
@@ -78,9 +80,9 @@
 ;-
 ;------------------------------------------------------------------------------
 pro combine1fiber, inloglam, objflux, objivar, $
- finalmask=finalmask, indisp=indisp, $
+ finalmask=finalmask, indisp=indisp, skyflux=skyflux, $
  newloglam=newloglam, newflux=newflux, newivar=newivar, $
- andmask=andmask, ormask=ormask, newdisp=newdisp, $
+ andmask=andmask, ormask=ormask, newdisp=newdisp, newsky=newsky, $
  nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep, $
  _EXTRA=KeywordsForReject, verbose=verbose
 
@@ -129,10 +131,10 @@ pro combine1fiber, inloglam, objflux, objivar, $
    newflux = fltarr(nfinalpix)
    newmask = lonarr(nfinalpix)
    if (arg_present(newivar)) then newivar = fltarr(nfinalpix)
-   if (arg_present(newdisp)) then begin
-       newdisp = fltarr(nfinalpix)
-       newdispweight = fltarr(nfinalpix)
-   endif
+   if (arg_present(newdisp)) then newdisp = fltarr(nfinalpix)
+   if (arg_present(newsky)) then newsky = fltarr(nfinalpix)
+   if (arg_present(newdisp) OR arg_present(newsky)) then $
+    newdispweight = fltarr(nfinalpix)
 
    if (keyword_set(objivar)) then begin
       nonzero = where(objivar GT 0.0, ngood)
@@ -290,13 +292,17 @@ pro combine1fiber, inloglam, objflux, objivar, $
                   ormask[highside] = ormask[highside] OR finalmask[these]
                endif
 
-               if (arg_present(newdisp)) then begin
-                  ; Combine the dispersions in the dumbest way possible
-
-                  newdisp[inbetween] = newdisp[inbetween] + $
-                         interpol(indisp[these], inloglam[these], $
-                         newloglam[inbetween]) * result
+               ; Combine the dispersions + skies in the dumbest way possible
+               if (arg_present(newdisp) OR arg_present(newsky)) then begin
                   newdispweight[inbetween] = newdispweight[inbetween] + result
+                  if (arg_present(newdisp)) then $
+                   newdisp[inbetween] = newdisp[inbetween] + $
+                    interpol(indisp[these], inloglam[these], $
+                    newloglam[inbetween]) * result
+                  if (arg_present(newsky)) then $
+                   newsky[inbetween] = newsky[inbetween] + $
+                    interpol(skyflux[these], inloglam[these], $
+                    newloglam[inbetween]) * result
                endif
             endif
 
@@ -305,7 +311,9 @@ pro combine1fiber, inloglam, objflux, objivar, $
 
       if (arg_present(newdisp)) then $
        newdisp  = newdisp / (newdispweight + (newdispweight EQ 0))
-        
+      if (arg_present(newsky)) then $
+       newsky  = newsky / (newdispweight + (newdispweight EQ 0))
+
    endelse
 
    ;----------
