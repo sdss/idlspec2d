@@ -231,6 +231,7 @@ pro/spec1d/cosbell.pro -text
 pro/spec1d/danvb_convert.pro -text
 pro/spec1d/danvb_qsolist.pro -text
 pro/spec1d/diffplate.pro -text
+pro/spec1d/djs_svdfit.pro -text
 pro/spec1d/fft_apodize.pro -text
 pro/spec1d/fft_wavenums.pro -text
 pro/spec1d/fftpad.pro -text
