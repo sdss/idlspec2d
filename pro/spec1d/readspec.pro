@@ -242,7 +242,7 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    endif
 
    if (q_tsobj) then begin
-      tsobj = plug2tsobj(plate, plugmap=plugmap)
+      tsobj = plug2tsobj(plate, plugmap=plugmap, silent=silent)
    endif
 
    if (q_zans OR q_synflux OR q_zhdr) then begin
