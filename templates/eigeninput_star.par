@@ -1,226 +1,181 @@
 
 typedef struct {
-  int plate;        # Plate number
-  int mjd;          # Modified Julian date
-  int fiberid;
-  double cz;
-  char class[20];
-  char subclass[20];
-  char comments[80];
+ int plate;
+ int mjd;
+ int fiberid;
+ double cz;
+ char class[11];
+ char subclass[13];
+ char comments[38];
 } EIGENOBJ;
 
-# Rejects?
-#eigenobj  388  51793  242  1037.  OB         OB         "O/B transition; F7Vw??"
-#eigenobj  389  51795   41  -858.  OB         O          "O star, weak lines; F7Vw??"
-#eigenobj  430  51877   13  1037.  OB         B          "B weak lines??"
-#eigenobj  354  51792  184  -119.  OB         Blate      "F0IV"  
-#eigenobj  304  51609    5     0.  K          Klate      ""
-#eigenobj  304  51609  264     0.  K          Klate      ""
-#eigenobj  304  51609  273     0.  K          Klate      ""
-#eigenobj  304  51609  384     0.  K          Klate      ""
-
-# O stars
- eigenobj  582  52045  430   -47.  O          O          "O star"
- eigenobj  432  51884  391  -130.  O          O          "O8"
- eigenobj  301  51942  401  -233.  O          O          "O8"
- eigenobj  493  51957  203   -82.  O          O          "O8"
- eigenobj  523  52026  259   -22.  O          O          "O8"
- eigenobj  593  52026  265   -89.  O          O          "O8"
-
-# OB transition objects (both He I and He II lines seen)
- eigenobj  348  51671   43  -117.  OB         OB         "O9.5"
- eigenobj  351  51695  254  -355.  OB         OB         "O9.5"
- eigenobj  301  51942  431   -47.  OB         OB         "O9.5"
- eigenobj  417  51821  428    35.  OB         OB         "O9.5"
- eigenobj  489  51930  449   -19.  OB         OB         "O9.5"
- eigenobj  469  51913  349     7.  OB         OB         "B3Ve"
-
-# Late B (weak He I lines, plus strong Balmer lines)
- eigenobj  386  51788  495  -202.  B          B6         "B6V"
- eigenobj  307  51663  537    30.  B          B6         "B6Vnn"
- eigenobj  350  51691  366   -76.  B          B6         "B6Vnn"
- eigenobj  390  51900  115    21.  B          B6         "B6Vnn"
- eigenobj  434  51885  329    41.  B          B6         "B6Vnn"
- eigenobj  436  51883  261  -109.  B          B6         "B6Vnn"
- eigenobj  496  51988  612   -85.  B          B6         "B6Vnn"
- eigenobj  532  51993  265   -40.  B          B6         "B6Vnn"
- eigenobj  536  52024  505   -27.  B          B6         "B6Vnn"
- eigenobj  668  52162  290   -35.  B          B6         "B6Vnn"
- eigenobj  547  51959  101    53.  B          B6         "B6Vnn"
- eigenobj  550  51959  341    39.  B          B6         "B6Vnn"
- eigenobj  556  51991  270   -66.  B          B6         "B6Vnn"
- eigenobj  585  52027  281    50.  B          B6         "B6Vnn"
- eigenobj  413  51929  571   204.  B          B6         "B6Vnn"
- eigenobj  454  51908  592  -172.  B          B6         "B6Vnn"
- eigenobj  455  51909  421   187.  B          B6         "B6Vnn"
- eigenobj  532  51993  265   -40.  B          B6         "B6Vnn"
- eigenobj  534  51997  156    76.  B          B6         "B6Vnn"
-
- eigenobj  293  51994  504    37.  B          B9         "B8"
- eigenobj  542  51993   22   -42.  B          B9         "B9III"
- eigenobj  451  51908   26  -138.  B          B9         "B9III"
- eigenobj  313  51673  519   -32.  B          B9         "B9III"
- eigenobj  308  51662  436   -59.  B          B9         "B9III"
- eigenobj  355  51788  540   -83.  B          B9         "B9III"
- eigenobj  413  51929  389    -3.  B          B9         "B9III"
- eigenobj  413  51929  492    19.  B          B9         "B9III"
- eigenobj  417  51821  254    41.  B          B9         "B9III"
- eigenobj  451  51908   26  -138.  B          B9         "B9III"
- eigenobj  565  52225   53    52.  B          B9         "B9III"
-
+EIGENOBJ 582 52045 430 36.376709 O O "O star"
+EIGENOBJ 432 51884 391 -141.48784 O O O8
+EIGENOBJ 301 51942 401 -173.65799 O O O8
+EIGENOBJ 493 51957 203 -78.653550 O O O8
+EIGENOBJ 523 52026 259 -14.352594 O O O8
+EIGENOBJ 593 52026 265 -88.743553 O O O8
+EIGENOBJ 348 51671 43 -53.114275 OB OB O9.5
+EIGENOBJ 351 51695 254 -304.04865 OB OB O9.5
+EIGENOBJ 301 51942 431 -12.296623 OB OB O9.5
+EIGENOBJ 417 51821 428 3.0625162 OB OB O9.5
+EIGENOBJ 489 51930 449 -33.026315 OB OB O9.5
+EIGENOBJ 469 51913 349 -16.115746 OB OB B3Ve
+EIGENOBJ 386 51788 495 -223.79812 B B6 B6V
+EIGENOBJ 307 51663 537 29.365104 B B6 B6Vnn
+EIGENOBJ 350 51691 366 -89.996619 B B6 B6Vnn
+EIGENOBJ 390 51900 115 16.096598 B B6 B6Vnn
+EIGENOBJ 434 51885 329 36.107029 B B6 B6Vnn
+EIGENOBJ 436 51883 261 -127.19239 B B6 B6Vnn
+EIGENOBJ 496 51988 612 -97.354852 B B6 B6Vnn
+EIGENOBJ 532 51993 265 -48.766950 B B6 B6Vnn
+EIGENOBJ 536 52024 505 -39.254845 B B6 B6Vnn
+EIGENOBJ 668 52162 290 -48.988105 B B6 B6Vnn
+EIGENOBJ 547 51959 101 42.004232 B B6 B6Vnn
+EIGENOBJ 550 51959 341 24.091762 B B6 B6Vnn
+EIGENOBJ 556 51991 270 -94.850885 B B6 B6Vnn
+EIGENOBJ 585 52027 281 40.177538 B B6 B6Vnn
+EIGENOBJ 413 51929 571 173.16528 B B6 B6Vnn
+EIGENOBJ 454 51908 592 -175.50230 B B6 B6Vnn
+EIGENOBJ 455 51909 421 161.31103 B B6 B6Vnn
+EIGENOBJ 532 51993 265 -48.766950 B B6 B6Vnn
+EIGENOBJ 534 51997 156 58.318527 B B6 B6Vnn
+EIGENOBJ 293 51994 504 48.175453 B B9 B8
+EIGENOBJ 542 51993 22 -58.099723 B B9 B9III
+EIGENOBJ 451 51908 26 -139.53802 B B9 B9III
+EIGENOBJ 313 51673 519 49.268967 B B9 B9III
+EIGENOBJ 308 51662 436 -14.544286 B B9 B9III
+EIGENOBJ 355 51788 540 -84.066101 B B9 B9III
+EIGENOBJ 413 51929 389 -6.4783170 B B9 B9III
+EIGENOBJ 413 51929 492 21.329772 B B9 B9III
+EIGENOBJ 417 51821 254 37.006664 B B9 B9III
+EIGENOBJ 451 51908 26 -139.53802 B B9 B9III
+EIGENOBJ 565 52225 53 40.657912 B B9 B9III
+EIGENOBJ 591 52022 463 -58.352468 A A0p A0p...
+EIGENOBJ 665 52168 261 -70.189143 A A0p A0p...
+EIGENOBJ 301 51641 402 68.044742 A A0 A0V
+EIGENOBJ 413 51929 231 -43.566502 A A0 A0V
+EIGENOBJ 428 51883 150 -109.61116 A A0 A2
+EIGENOBJ 306 51690 595 -73.611580 FG F2 F2V
+EIGENOBJ 301 51641 615 -87.899050 FG F2 F2V
+EIGENOBJ 301 51641 209 -24.236224 FG F2 F2V
+EIGENOBJ 301 51641 59 11.935827 FG F5 F3V
+EIGENOBJ 306 51690 452 -109.32687 FG F5 F5
+EIGENOBJ 306 51690 217 -63.778020 FG F9 F8V
+EIGENOBJ 306 51690 285 1.2149962 FG F9 F8V
+EIGENOBJ 431 51877 114 38.245516 FG F9 F8V
+EIGENOBJ 432 51884 272 9.2266161 FG F9 F8V
+EIGENOBJ 306 51690 236 59.755527 FG F9 F9V
+EIGENOBJ 301 51641 449 -119.37162 FG F9 F9V
+EIGENOBJ 301 51641 61 37.710366 FG F9 F9V
+EIGENOBJ 306 51690 114 34.954570 FG G0 G0V
+EIGENOBJ 416 51811 8 4.5919430 FG G0 G0
+EIGENOBJ 434 51885 187 34.333046 FG G0 G0
+EIGENOBJ 306 51690 550 -51.269198 FG G2 G2V
+EIGENOBJ 306 51690 616 -35.513950 FG G2 G2V
+EIGENOBJ 301 51641 231 -27.031471 FG G2 G4V
+EIGENOBJ 405 51816 324 -75.475472 FG G5 G5
+EIGENOBJ 415 51810 319 57.475717 FG G5 G5
+EIGENOBJ 423 51821 432 39.549684 FG G5 G5
+EIGENOBJ 433 51873 261 41.098255 FG G5 G5
+EIGENOBJ 434 51885 90 7.8319936 K K1 K0p
+EIGENOBJ 434 51885 133 74.374529 K K1 K0III-IV
+EIGENOBJ 421 51821 439 -41.308522 K K1 K1IV
+EIGENOBJ 431 51877 638 36.460984 K K1 K1V
+EIGENOBJ 432 51884 439 -64.744753 K K1 K1V
+EIGENOBJ 432 51884 495 -19.012180 K K1 K1V
+EIGENOBJ 434 51885 12 -35.050549 K K1 K1V
+EIGENOBJ 424 51893 52 7.7308729 K K1 K2V
+EIGENOBJ 401 51788 620 -42.121567 K K3 K3V
+EIGENOBJ 405 51816 119 82.948624 K K3 K3V
+EIGENOBJ 405 51816 537 -22.329881 K K3 K3V
+EIGENOBJ 400 51820 504 -2.8023198 K K3 e
+EIGENOBJ 405 51816 139 4.9437541 K K3 e
+EIGENOBJ 402 51793 633 14.822026 K K5 K5V
+EIGENOBJ 405 51816 225 -15.395319 K K5 K5V
+EIGENOBJ 405 51816 373 8.9106134 K K5 K5V
+EIGENOBJ 405 51816 595 24.161286 K K5 K5V
+EIGENOBJ 406 51869 262 7.1094041 K K5 K5V
+EIGENOBJ 406 51869 417 51.622456 K K5 K5V
+EIGENOBJ 406 51869 441 18.182273 K K5 K5V
+EIGENOBJ 406 51869 452 -18.942667 K K5 K5V
+EIGENOBJ 406 51869 604 13.284121 K K5 K5V
+EIGENOBJ 400 51820 621 33.403920 K K7 K7V
+EIGENOBJ 400 51820 259 5.5272987 K K7 K7V
+EIGENOBJ 400 51820 494 26.504047 K K7 K7V
+EIGENOBJ 401 51788 467 29.626351 K K7 K7V
+EIGENOBJ 405 51816 450 13.711785 K K7 K7V
+EIGENOBJ 405 51816 528 -17.626108 K K7 K7V
+EIGENOBJ 384 51821 407 -1.4224927 M M1 M3V
+EIGENOBJ 402 51793 204 41.043479 M M1 M3V
+EIGENOBJ 404 51812 504 -2.1429527 M M2 M2V
+EIGENOBJ 367 51997 593 1.0885985 M M3 M2V
+EIGENOBJ 288 52000 536 -23.526349 M M4 M2V
+EIGENOBJ 289 51990 180 10.077719 M M5 M2V
+EIGENOBJ 384 51821 201 -16.699248 M M5 M2V
+EIGENOBJ 399 51817 525 -37.814098 M M6 M2V
+EIGENOBJ 408 51821 493 38.028505 M M6 M2V
+EIGENOBJ 310 51990 230 -9.9141220 M M7 M2V
+EIGENOBJ 402 51793 340 -1.4540917 M M7 B2:IIIps??
+EIGENOBJ 409 51871 614 75.931717 M M8 M2V
+EIGENOBJ 410 51877 341 68.952899 M M8 M2V
+EIGENOBJ 359 51821 621 -38.913615 M M8 B2:IIIps??
+EIGENOBJ 394 51876 524 -20.819541 sdM M0V M0V?
+EIGENOBJ 431 51877 157 -15.890349 sdM M0V M0V?
+EIGENOBJ 450 51908 473 2.2198603 sdM M0V M0V?
+EIGENOBJ 485 51909 145 -9.9520402 sdM M0V M0V?
+EIGENOBJ 494 51915 51 89.223941 sdM M0V M0V?
+EIGENOBJ 602 52072 194 66.070394 sdM M0V "Extreme subdwarf K; no TiO; M0V?"
+EIGENOBJ 439 51877 458 51.850011 sdM M0V "Somewhat extreme subK; some TiO; M0V?"
+EIGENOBJ 427 51900 19 -160.98951 sdM M2V "sdM; M2Vvar?"
+EIGENOBJ 622 52054 49 -184.14269 sdM M2V "sdK; M2Vvar?"
+EIGENOBJ 630 52050 476 -98.751088 sdM M2V "sdM; M2Vvar?"
 #------------------------------------------------------------------------------
- eigenobj  591  52022  463   -43.  A          A0p        "A0p..."
- eigenobj  665  52168  261   -21.  A          A0p        "A0p..."
- eigenobj  301  51641  402    -3.  A          A0         "A0V"
- eigenobj  413  51929  231    -7.  A          A0         "A0V"
- eigenobj  428  51883  150  -103.  A          A0         "A2"
-
+EIGENOBJ 285 51930 538 0. LT L0 ""
+EIGENOBJ 492 51955 382 0. LT L0 ""
+EIGENOBJ 275 51910 575 0. LT L1 ""
+EIGENOBJ 389 51795 621 0. LT L1 ""
+EIGENOBJ 346 51693 571 0. LT L2 ""
+EIGENOBJ 349 51699 207 0. LT L3 ""
+EIGENOBJ 415 51810 273 0. LT L4 ""
+EIGENOBJ 293 51689 220 0. LT L5 ""
+EIGENOBJ 293 51994 203 0. LT L5 "(same object as above)"
+EIGENOBJ 397 51794 323 0. LT L5.5 ""
+EIGENOBJ 443 51873 89 0. LT L9 ""
+EIGENOBJ 337 51997 604 0. LT T2 ""
 #------------------------------------------------------------------------------
- eigenobj  306  51690  595  -138.  FG         F2         "F2V"
- eigenobj  301  51641  615  -154.  FG         F2         "F2V"
- eigenobj  301  51641  209   -90.  FG         F2         "F2V"
- eigenobj  301  51641   59   -77.  FG         F5         "F3V"
- eigenobj  306  51690  452  -180.  FG         F5         "F5"
- eigenobj  306  51690  217   -91.  FG         F9         "F8V"
- eigenobj  306  51690  285   -24.  FG         F9         "F8V"
- eigenobj  431  51877  114    38.  FG         F9         "F8V"
- eigenobj  432  51884  272     8.  FG         F9         "F8V"
- eigenobj  306  51690  236    -4.  FG         F9         "F9V"
- eigenobj  301  51641  449  -188.  FG         F9         "F9V"
- eigenobj  301  51641   61   -30.  FG         F9         "F9V"
-
- eigenobj  306  51690  114   -35.  FG         G0         "G0V"
- eigenobj  416  51811    8     1.  FG         G0         "G0"
- eigenobj  434  51885  187    29.  FG         G0         "G0"
-
- eigenobj  306  51690  550  -120.  FG         G2         "G2V"
- eigenobj  306  51690  616  -105.  FG         G2         "G2V"
- eigenobj  301  51641  231   -95.  FG         G2         "G4V"
-
- eigenobj  405  51816  324   -77.  FG         G5         "G5"
- eigenobj  415  51810  319    53.  FG         G5         "G5"
- eigenobj  423  51821  432    39.  FG         G5         "G5"
- eigenobj  433  51873  261    34.  FG         G5         "G5"
+ eigenobj  301  51641  223    65.  CarbonWD   CarbonWD   ""
+ eigenobj  301  51942  231    65.  CarbonWD   CarbonWD   "(same object as above)"
+ eigenobj  329  52056  578    62.  CarbonWD   CarbonWD   ""
+ eigenobj  381  51811   93   328.  CarbonWD   CarbonWD   ""
+ eigenobj  460  51924  236   148.  CarbonWD   CarbonWD   ""
+ eigenobj  636  52176  267   436.  CarbonWD   CarbonWD   ""
+ eigenobj  721  52228  533   -58.  CarbonWD   CarbonWD   ""
 #------------------------------------------------------------------------------
-#eigenobj  404  51812  582   -53.  K          Kearly     "Need subclass ??"
-#eigenobj  409  51871  403    17.  K          Kearly     "Need subclass ??"
- eigenobj  434  51885   90     8.  K          K1         "K0p"
- eigenobj  434  51885  133    72.  K          K1         "K0III-IV"
- eigenobj  421  51821  439   -32.  K          K1         "K1IV"
- eigenobj  431  51877  638    40.  K          K1         "K1V"
- eigenobj  432  51884  439   -50.  K          K1         "K1V"
- eigenobj  432  51884  495    -2.  K          K1         "K1V"
- eigenobj  434  51885   12   -38.  K          K1         "K1V"
- eigenobj  424  51893   52    13.  K          K1         "K2V"
- eigenobj  401  51788  620   -37.  K          K3         "K3V"
- eigenobj  405  51816  119    80.  K          K3         "K3V"
- eigenobj  405  51816  537   -23.  K          K3         "K3V"
- eigenobj  400  51820  504     3.  K          K3  e      "K3V"
- eigenobj  405  51816  139     4.  K          K3  e      "K3V"
-
-#eigenobj  400  51820  518   -79.  K          Kmid       "Need subclass ??"
-#eigenobj  406  51869  187    34.  K          Kmid       "Need subclass ??"
-
- eigenobj  402  51793  633    17.  K          K5         "K5V"
- eigenobj  405  51816  225   -17.  K          K5         "K5V"
- eigenobj  405  51816  373     8.  K          K5         "K5V"
- eigenobj  405  51816  595    21.  K          K5         "K5V"
- eigenobj  406  51869  262     7.  K          K5         "K5V"
- eigenobj  406  51869  417    53.  K          K5         "K5V"
- eigenobj  406  51869  441    20.  K          K5         "K5V"
- eigenobj  406  51869  452   -18.  K          K5         "K5V"
- eigenobj  406  51869  604    15.  K          K5         "K5V"
-
- eigenobj  400  51820  621    37.  K          K7         "K7V"
- eigenobj  400  51820  259     6.  K          K7         "K7V"
- eigenobj  400  51820  494    28.  K          K7         "K7V"
- eigenobj  401  51788  467    29.  K          K7         "K7V"
- eigenobj  405  51816  450    12.  K          K7         "K7V"
- eigenobj  405  51816  528   -19.  K          K7         "K7V"
-#------------------------------------------------------------------------------
-#eigenobj  304  51609  485     0.  M ""
-#eigenobj  306  51690  139     0.  M ""
-#eigenobj  409  51871  460     0.  M          M3         "Is this one an outlier in PCA space?"
-
- eigenobj  384  51821  407     2.  M          M1         "M3V"
- eigenobj  402  51793  204    41.  M          M1         "M3V"
- eigenobj  404  51812  504     1.  M          M2         "M2V"
- eigenobj  367  51997  593     2.  M          M3         "M2V"
- eigenobj  288  52000  536  -159.  M          M4         "M2V"
- eigenobj  289  51990  180  -129.  M          M5         "M2V"
- eigenobj  384  51821  201   -11.  M          M5         "M2V"
- eigenobj  399  51817  525   -40.  M          M6         "M2V"
- eigenobj  408  51821  493    40.  M          M6         "M2V"
- eigenobj  310  51990  230   -57.  M          M7         "M2V"
- eigenobj  402  51793  340     7.  M          M7         "B2:IIIps??"
- eigenobj  409  51871  614    72.  M          M8         "M2V"
- eigenobj  410  51877  341    82.  M          M8         "M2V"
- eigenobj  359  51821  621   -40.  M          M8         "B2:IIIps??"
-#eigenobj  409  51871   70  -312.  M          M9         "??"
-#------------------------------------------------------------------------------
- eigenobj  394  51876  524     1.  sdM        M0V        "M0V?"
- eigenobj  431  51877  157   -15.  sdM        M0V        "M0V?"
- eigenobj  450  51908  473     6.  sdM        M0V        "M0V?"
- eigenobj  485  51909  145   -11.  sdM        M0V        "M0V?"
- eigenobj  494  51915   51    88.  sdM        M0V        "M0V?"
- eigenobj  602  52072  194    62.  sdM        M0V        "Extreme subdwarf K; no TiO; M0V?"
- eigenobj  439  51877  458    52.  sdM        M0V        "Somewhat extreme subK; some TiO; M0V?"
- eigenobj  427  51900   19  -168.  sdM        M2V        "sdM; M2Vvar?"
- eigenobj  622  52054   49  -182.  sdM        M2V        "sdK; M2Vvar?"
- eigenobj  630  52050  476   -94.  sdM        M2V        "sdM; M2Vvar?"
-#------------------------------------------------------------------------------
- eigenobj  285  51930  538     0.  LT         L0         ""
- eigenobj  492  51955  382     0.  LT         L0         ""
- eigenobj  275  51910  575     0.  LT         L1         ""
- eigenobj  389  51795  621     0.  LT         L1         ""
- eigenobj  346  51693  571     0.  LT         L2         ""
- eigenobj  349  51699  207     0.  LT         L3         ""
- eigenobj  415  51810  273     0.  LT         L4         ""
- eigenobj  293  51689  220     0.  LT         L5         ""
- eigenobj  293  51994  203     0.  LT         L5         "(same object as above)"
- eigenobj  397  51794  323     0.  LT         L5.5       ""
-#eigenobj  408  51821  334     0.  LT         L6.5       "Outlier in PCA?"
- eigenobj  443  51873   89     0.  LT         L9         ""
- eigenobj  337  51997  604     0.  LT         T2         ""
-#eigenobj  301  51641   97     0.  L          L         ""
-#eigenobj  301  51641  301     0.  L          L         ""
-#eigenobj  304  51609  288     0.  L          L         ""
-#eigenobj  308  51662  186     0.  L          L         ""
-#eigenobj  349  51699  207     0.  L          L         "Low signal"
-#eigenobj  414  51901  528     0.  L          L         "Low signal"
-#------------------------------------------------------------------------------
- eigenobj  301  51641  223     0.  CarbonWD   CarbonWD   ""
- eigenobj  301  51942  231     0.  CarbonWD   CarbonWD   "(same object as above)"
- eigenobj  329  52056  578    -3.  CarbonWD   CarbonWD   ""
- eigenobj  381  51811   93   263.  CarbonWD   CarbonWD   ""
- eigenobj  460  51924  236    83.  CarbonWD   CarbonWD   ""
- eigenobj  636  52176  267   371.  CarbonWD   CarbonWD   ""
- eigenobj  721  52228  533  -123.  CarbonWD   CarbonWD   ""
-#------------------------------------------------------------------------------
- eigenobj  301  51641  305     0.  Carbon     Carbon     ""
-#eigenobj  301  51942  308     0.  Carbon     Carbon     "(same object as above)"
- eigenobj  355  51788  579  -260.  Carbon     Carbon     ""
- eigenobj  355  51788  594  -276.  Carbon     Carbon     ""
- eigenobj  371  52078  202   -89.  Carbon     Carbon     ""
- eigenobj  433  51873  605    34.  Carbon     Carbon     ""
- eigenobj  441  51868   47    87.  Carbon     Carbon     ""
- eigenobj  453  51915  160   -42.  Carbon     Carbon     ""
- eigenobj  502  51957  216    45.  Carbon     Carbon     ""
- eigenobj  553  51999  128    64.  Carbon     Carbon     ""
- eigenobj  587  52026  618   -52.  Carbon     Carbon     ""
- eigenobj  594  52045  235    74.  Carbon     Carbon     ""
- eigenobj  608  52081  600    90.  Carbon     Carbon     ""
- eigenobj  618  52049  192    31.  Carbon     Carbon     ""
- eigenobj  696  52209  133    56.  Carbon     Carbon     ""
- eigenobj  696  52209  366   -67.  Carbon     Carbon     ""
- eigenobj  768  52281  539    28.  Carbon     Carbon     ""
-#eigenobj  531  52028    3    59.  Carbon     Carbon     ""
-#eigenobj  533  51994  415    34.  Carbon     Carbon     ""
-#eigenobj  538  52029  310    63.  Carbon     Carbon     ""
- eigenobj  659  52199  384  -121.  Carbon     Carbon_lines ""
- eigenobj  660  52177  612   -12.  Carbon     Carbon_lines ""
- eigenobj  697  52226  468    35.  Carbon     Carbon_lines ""
- eigenobj  782  52320  525  -177.  Carbon     Carbon_lines ""
+ eigenobj  301  51641  305    65.  Carbon     Carbon     ""
+#eigenobj  301  51942  308    65.  Carbon     Carbon     "(same object as above)"
+ eigenobj  355  51788  579  -195.  Carbon     Carbon     ""
+ eigenobj  355  51788  594  -211.  Carbon     Carbon     ""
+ eigenobj  371  52078  202   -24.  Carbon     Carbon     ""
+ eigenobj  433  51873  605    99.  Carbon     Carbon     ""
+ eigenobj  441  51868   47   152.  Carbon     Carbon     ""
+ eigenobj  453  51915  160    23.  Carbon     Carbon     ""
+ eigenobj  502  51957  216   110.  Carbon     Carbon     ""
+ eigenobj  553  51999  128   129.  Carbon     Carbon     ""
+ eigenobj  587  52026  618    13.  Carbon     Carbon     ""
+ eigenobj  594  52045  235   139.  Carbon     Carbon     ""
+ eigenobj  608  52081  600   155.  Carbon     Carbon     ""
+ eigenobj  618  52049  192    96.  Carbon     Carbon     ""
+ eigenobj  696  52209  133   121.  Carbon     Carbon     ""
+ eigenobj  696  52209  366    -2.  Carbon     Carbon     ""
+ eigenobj  768  52281  539    93.  Carbon     Carbon     ""
+#eigenobj  531  52028    3   124.  Carbon     Carbon     ""
+#eigenobj  533  51994  415    99.  Carbon     Carbon     ""
+#eigenobj  538  52029  310   128.  Carbon     Carbon     ""
+ eigenobj  659  52199  384   -56.  Carbon     Carbon_lines ""
+ eigenobj  660  52177  612    53.  Carbon     Carbon_lines ""
+ eigenobj  697  52226  468   100.  Carbon     Carbon_lines ""
+ eigenobj  782  52320  525  -112.  Carbon     Carbon_lines ""
 #------------------------------------------------------------------------------
  eigenobj  301  51641  322     0.  WD         WD         ""
  eigenobj  402  51793  523   -29.  WD         WD         ""
