@@ -1,4 +1,7 @@
 
+BATCH2D: Include 'smear' exposures when generating list of output files.
+            (Not doing this caused a crash for plates w/ only smears).
+
 In specflat:
 specflat.table: Added "Flavor=Linux"
 
