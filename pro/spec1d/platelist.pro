@@ -404,7 +404,7 @@ pro platelist, infile, plist=plist, create=create, $
       ;----------
       ; Read plate file - get status of Combine
 
-      hdr1 = headfits(platefile[ifile])
+      hdr1 = headfits(platefile[ifile], /silent, errmsg=errmsg)
       if (size(hdr1, /tname) EQ 'STRING') then begin
 ;         plist[ifile].plate = sxpar(hdr1, 'PLATEID')
 ;         plist[ifile].mjd = sxpar(hdr1, 'MJD')
@@ -547,7 +547,7 @@ pro platelist, infile, plist=plist, create=create, $
       ;----------
       ; Read Zbest file - get status of 1D
 
-      hdr2 = headfits(zbestfile[ifile])
+      hdr2 = headfits(zbestfile[ifile], /silent, errmsg=errmsg)
       if (size(hdr2, /tname) EQ 'STRING') then begin
          zans = mrdfits(zbestfile[ifile], 1, /silent)
          plug = mrdfits(platefile[ifile], 5, /silent)
