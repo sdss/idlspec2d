@@ -43,6 +43,11 @@
 ;   traceset2xy
 ;
 ; DATA FILES:
+;   $IDLSPEC2D_DIR/etc/sdss_jun2001_u_atm.dat
+;   $IDLSPEC2D_DIR/etc/sdss_jun2001_g_atm.dat
+;   $IDLSPEC2D_DIR/etc/sdss_jun2001_r_atm.dat
+;   $IDLSPEC2D_DIR/etc/sdss_jun2001_i_atm.dat
+;   $IDLSPEC2D_DIR/etc/sdss_jun2001_z_atm.dat
 ;   $IDLSPEC2D_DIR/etc/sdss_u_atm.dat
 ;   $IDLSPEC2D_DIR/etc/sdss_g_atm.dat
 ;   $IDLSPEC2D_DIR/etc/sdss_r_atm.dat
