@@ -563,7 +563,7 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
             print, '      x=change X plotting range'
             print, '      y=change Y plotting range'
             print, '      z=change which PCA-fit to overplot'
-            print, '      v=to launch viewer on this object'
+            print, '      v=to look at reconstructed frame'
             print, '      any other key=forward'
 
             cc = strupcase(get_kbrd(1))
@@ -571,7 +571,14 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
             case cc of
 ; Begin MB 06/17/02
             'V': begin
-                    spawn,'java -Xmx200m -classpath ~/Viewer.jar Viewer -query="plateid = '+strtrim(string(platelist[ifiber]),2)+' & fiberid = '+strtrim(string(fiberid[ifiber]),2)+'" -color.min=0. -color.max=40 -zoom=3 -size=300 &'
+                    readspec, platelist[ifiber], fiberid[ifiber], $
+                      mjd=mjdlist[ifiber], zans=zans
+                    fpframe=fpbin_to_frame(ra=zans.plug_ra, $
+                                           dec=zans.plug_dec, $
+                                           cutout=300, $
+                                           /calibrate, /register, /allid, $
+                                           rerun=137, hdr=hdr)
+                    atv, fpframe, head=hdr
                  end
 ; End MB 06/17/02
             'B': ifiber = (ifiber - 1) > 0
