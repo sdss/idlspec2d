@@ -1,6 +1,8 @@
 
 APO_LOG2HTML: Add columns for EXPTIME and AIRTEMP to web page tables.
 APOALL,APOREDUCE: Add the /no_diskcheck option.
+APOFIX: New proc for declaring exposures bad, or fixing other header files,
+           by using sdHdrFix-$MJD.par files (a new file type).
 APOPLOT: Bug fix to prevent crash when specifying EXPNUM.
 APOREDUCE: Add CARTID,AIRTEMP,CCDTEMP to all output structures.
 EXTRACT_OBJECT: Mitigate possible crash condition if relchi2struct not set.
