@@ -239,7 +239,7 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
       if (ngood GT 0) then begin
          colorvec = (diff[good] GE 0) * djs_icolor('green') $
           + (diff[good] LT 0) * djs_icolor('red')
-         symvec = (abs(diff[good]) < 1.0) * 3
+         symvec = abs(diff[good]) * 5 < 2
          djs_oplot, plugc[good].xfocal, plugc[good].yfocal, $
           symsize=symvec, color=colorvec, psym=2
       endif
