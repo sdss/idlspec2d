@@ -73,12 +73,10 @@
 ;   slatec_splinefit()
 ;   sdssproc
 ;   superflat
+;   trace320crude()
 ;   traceset2xy
 ;   writefits
 ;   xy2traceset
-;
-; INTERNAL SUPPORT ROUTINES:
-;   superflat
 ;
 ; REVISION HISTORY:
 ;   13-Oct-1999  Written by D. Schlegel, APO
