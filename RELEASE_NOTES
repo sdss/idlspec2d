@@ -25,6 +25,8 @@ APOREDUCE: Allow setting MINEXP to 0 sec.  Change default of MINEXP to 0 sec,
            so that any exposure with non-negative exposure time is reduced
            by Son-of-Spectro.
 APOPLOT: New proc for plotting spectra from the Son-of-Spectro outputs at APO.
+APOPLOT,LOGSHEET,PLOTSPEC: Set the !QUIET option for procedures where it is
+           annoying to see all the IDL messages.
 DANVB_CONVERT,DANVB_QSOLIST: Procs for generating a list of input
             QSO's from Dan van den Berk's EDR list "plateEDR.summ"
             for generating QSO eigenvectors.  The output file
@@ -50,6 +52,7 @@ PCA_SOLVE: Add NRETURN keyword for returning a different number of
 PCA_STAR: Major changes to read stellar classes and subclasses,
           then generate the 2-component PCA solution for all M stars
           (for example) and reconstruct types M1 through M9.
+PLATECOMPARE: Add /PSFILE option.
 PLATELIST: Add NEXP,EXPT_B1,EXPT_B2,EXPT_R1,EXPT_R2 to output structure.
 PLOTSN: Changed auto-scaling of fitted magnitudes, when less than 20 objects
             are in the desired range.  Now the fitting range will expand to
