@@ -64,7 +64,7 @@ function extract_boxcar, fimage, xcen, ycen, radius=radius
 ;    message, 'YCEN contains values out of range'
 
    fextract = float(0 * xcen)
-   soname = filepath('libspec2d.so', $
+   soname = filepath('libspec2d.'+idlutils_so_ext(), $
     root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='lib')
    result = call_external(soname, 'extract_boxcar', $
     nx, ny, float(fimage), float(radius), ncen, float(xcen), long(ycen), $

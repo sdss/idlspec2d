@@ -137,7 +137,7 @@ function extract_profile, fimage, invvar, xcen, ycen, ferror=ferror, $
    ymod = fimage*0.0
    fscattered = fimage*0.0
 
-   soname = filepath('libspec2d.so', $
+   soname = filepath('libspec2d.'+idlutils_so_ext(), $
     root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='lib')
 
    result = call_external(soname, 'extract_profile',$

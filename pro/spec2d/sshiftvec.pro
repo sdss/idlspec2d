@@ -70,7 +70,7 @@ function sshiftvec, fimage, shift, sincrad=sincrad, dampfac=dampfac, eps=eps
    if (nbad GT 0) then message, 'Shift too large'
 
    simage = float(0 * fimage)
-   soname = filepath('libspec2d.so', $
+   soname = filepath('libspec2d.'+idlutils_so_ext(), $
     root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='lib')
    result = call_external(soname, 'sshiftvec', $
     nx, ny, float(fimage), float(shiftvec), simage, $

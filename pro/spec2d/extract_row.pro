@@ -275,7 +275,7 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
    finished = 0
    totalreject = 0
 
-   soname = filepath('libspec2d.so', $
+   soname = filepath('libspec2d.'+idlutils_so_ext(), $
     root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='lib')
 
    while(finished NE 1) do begin 
