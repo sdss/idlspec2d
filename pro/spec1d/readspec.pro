@@ -56,6 +56,11 @@
 ;
 ; BUGS:
 ;
+; DATA FILES:
+;   $SPECTRO_DATA/$PLATE/spPlate-$PLATE-$MJD.fits
+;   $SPECTRO_DATA/$PLATE/spZbest-$PLATE-$MJD.fits
+;   $IDLSPEC2D_DIR/templates/TEMPLATEFILES
+;
 ; PROCEDURES CALLED:
 ;   copy_struct_inx
 ;   headfits()

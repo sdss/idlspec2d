@@ -3,7 +3,7 @@
 ;   plotspec
 ;
 ; PURPOSE:
-;   Plotting tool for a single fiber from Princeton Spectro-1D.
+;   Routine for plotting a single fiber from Princeton-1D spectro outputs
 ;
 ; CALLING SEQUENCE:
 ;   plotspec, plate, fiberid, [ mjd=, nsmooth= ]
@@ -23,15 +23,28 @@
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
+;   The data are read with READSPEC.  See the documentation for that
+;   routine to see how to set environment variables that describe where
+;   the data files are.
 ;
 ; EXAMPLES:
+;   Plot the spectrum of plate 401, fiber #100 using the SPLOT plotting tool:
+;     IDL> plotspec, 401, 100
+;
+;   The spectrum is shown in white, the errors in red (except masked points
+;   are set to zero), and the best-fit eigenspectrum in blue. The mouse
+;   buttons will zoom in (left), recenter (center), or zoom out (right).
+;   The frame can be saved as a PostScript file by selecting File->WriteEPS
+;   from the left-hand corner. 
+;
+;   Make the same plot, but boxcar-smooth the spectrum: 
+;     IDL> plotspec, 401, 100, nsmooth=10
+;
+;   Some plates are observed on multiple nights. To select one of the two
+;   observations of plate 306: 
+;     IDL> plotspec, 306, 20, mjd=51690
 ;
 ; BUGS:
-;
-; DATA FILES:
-;   $SPECTRO_DATA/$PLATE/spPlate-$PLATE-$MJD.fits
-;   $SPECTRO_DATA/$PLATE/spZbest-$PLATE-$MJD.fits
-;   $IDLSPEC2D_DIR/templates/TEMPLATEFILES
 ;
 ; PROCEDURES CALLED:
 ;   readspec
@@ -44,6 +57,7 @@
 ;
 ; REVISION HISTORY:
 ;   01-Sep-2000  Written by D. Schlegel, Princeton
+;-
 ;------------------------------------------------------------------------------
 pro plotspec, plate, fiberid, mjd=mjd, nsmooth=nsmooth
 
