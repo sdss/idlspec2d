@@ -32,13 +32,16 @@
 ;
 ; PROCEDURES CALLED:
 ;   djs_laxisgen()
+;   fchebyshev()
 ;   flegendre()
+;   fpoly()
 ;   traceset2xy
 ;   xy2traceset
 ;
 ; REVISION HISTORY:
 ;   09-Nov-1999  Written by David Schlegel, Ringberg.
 ;   01-Dec-2000  added silent keyword - D. Finkbeiner
+;   10-Jul-2001  added polynomial option
 ;-
 ;------------------------------------------------------------------------------
 function traceset2pix, tset, lambda, nicoeff=nicoeff, silent=silent
@@ -75,6 +78,7 @@ function traceset2pix, tset, lambda, nicoeff=nicoeff, silent=silent
       xy2traceset, ypos, xpos, invset, func=tset.func, ncoeff=nicoeff, $
        xmin=xmin, xmax=xmax, maxiter=0, silent=silent
       xvec = (2*lambda - xmin -xmax) / (xmax - xmin)
+      if (tset.func EQ 'poly') then legarr = fpoly(xvec, nicoeff)
       if (tset.func EQ 'legendre') then legarr = flegendre(xvec, nicoeff)
       if (tset.func EQ 'chebyshev') then legarr = fchebyshev(xvec, nicoeff)
       for itrace=0, ntrace-1 do $

@@ -18,6 +18,7 @@
 ; OPTIONAL KEYWORDS:
 ;   invvar     - Inverse variance for weighted fits.
 ;   func       - Function for trace set; options are:
+;                'poly'
 ;                'legendre'
 ;                'chebyshev'
 ;                'chebyshev_split'
@@ -67,6 +68,7 @@
 ;   fchebyshev()
 ;   fchebyshev_split()
 ;   flegendre()
+;   fpoly()
 ;   func_fit()
 ;
 ; REVISION HISTORY:
@@ -74,6 +76,7 @@
 ;   04-Aug-1999  Added chebyshev option (DJS).
 ;   02-Sep-2000  Modify to use rejection schemes in DJS_REJECT() (DJS).
 ;   07-Dec-2000  Added /silent keyword (DPF)
+;   10-Jul-2001  Add polynomial option
 ;-
 ;------------------------------------------------------------------------------
 pro xy2traceset, xpos, ypos, tset, invvar=invvar, func=func, ncoeff=ncoeff, $
@@ -105,6 +108,7 @@ pro xy2traceset, xpos, ypos, tset, invvar=invvar, func=func, ncoeff=ncoeff, $
    endelse
 
    case func of
+     'poly':     function_name = 'poly'
      'legendre': function_name = 'flegendre'
      'chebyshev': function_name = 'chebyshev'
      'chebyshev_split': function_name = 'chebyshev_split'

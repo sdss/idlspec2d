@@ -28,10 +28,12 @@
 ; PROCEDURES CALLED:
 ;   djs_laxisgen()
 ;   flegendre()
+;   fpoly()
 ;
 ; REVISION HISTORY:
 ;   19-May-1999  Written by David Schlegel, Princeton.
 ;   01-Dec-2000  Handle scalar xpos correctly - D. Finkbeiner
+;   10-Jul-2001  Added fpoly- S.Burles
 ;-
 ;------------------------------------------------------------------------------
 pro traceset2xy, tset, xpos, ypos
@@ -68,6 +70,7 @@ pro traceset2xy, tset, xpos, ypos
       ypos = xpos*0.0
       for iTrace=0, nTrace-1 do begin
          xvec = 2.0 * (xpos[*,iTrace]-xmid)/xrange
+         if (tset.func EQ 'poly') then legarr = fpoly(xvec, ncoeff)
          if (tset.func EQ 'legendre') then legarr = flegendre(xvec, ncoeff)
          if (tset.func EQ 'chebyshev') then legarr = fchebyshev(xvec, ncoeff)
          ypos[*,iTrace] = legarr # [tset.coeff[*,iTrace]]

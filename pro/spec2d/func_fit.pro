@@ -40,11 +40,13 @@
 ; PROCEDURES CALLED:
 ;   fchebyshev()
 ;   flegendre()
+;   fpoly()
 ;
 ; REVISION HISTORY:
-;   10-Sep-1999  Written by D. Finkbeiner, APO?
+;   10-Sep-1999  Written by S. Burles
 ;   16-Nov-1999  Modified by D. Schlegel to never fit more coefficients
 ;                than there are data points.
+;   10-Jul-2001  Added fpoly, S. Burles
 ;-
 ;------------------------------------------------------------------------------
 
@@ -110,6 +112,8 @@ function func_fit, x, y, ncoeff, invvar=invvar, function_name=function_name, $
 
       ; Do not fit more coefficients than there are data points
       ncfit = ncoeff < ngood
+
+      if (function_name EQ 'poly') then legarr = fpoly(x, ncfit)
 
       if (function_name EQ 'flegendre') then $
        legarr = flegendre(x, ncfit)
