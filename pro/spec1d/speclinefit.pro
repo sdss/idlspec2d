@@ -377,6 +377,15 @@ pro speclinefit, platefile, fiberid=fiberid, $
          endfor
       endif
 
+      ; Fill the output structures with default values
+      lfitall[*,iobj].linez_err = -1
+      lfitall[*,iobj].linesigma_err = -1
+      lfitall[*,iobj].linearea_err = -1
+      lfitall[*,iobj].linecontlevel_err = -1
+      lfitall[*,iobj].linechi2 = -1
+      lfitall[*,iobj].linename = linelist.name
+      lfitall[*,iobj].linewave = linelist.lambda
+
       ; Call the line-fitting engine.
       ; Restrict the fit to only those lines within the wavelength region
       ; at the guessed redshift (+/- 6000 km/sec).
@@ -401,14 +410,7 @@ pro speclinefit, platefile, fiberid=fiberid, $
 
          if (keyword_set(yfit)) then yfit[*,iobj] = yfit1
 
-         ; Fill the two output structures
-         lfitall[*,iobj].linename = linelist.name
-         lfitall[*,iobj].linewave = linelist.lambda
-         lfitall[*,iobj].linez_err = -1
-         lfitall[*,iobj].linesigma_err = -1
-         lfitall[*,iobj].linearea_err = -1
-         lfitall[*,iobj].linecontlevel_err = -1
-         lfitall[*,iobj].linechi2 = -1
+         ; Fill the output structures
          lfitall[iuse,iobj] = lfit1
       endif
 
