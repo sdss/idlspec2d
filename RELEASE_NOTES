@@ -28,10 +28,13 @@ BATCH1D,BATCH2D: Allow NICE to be set to zero.  Add UPSVERSION keyword to do
 BATCH2D: At the end of a batch job, spawn the following:
            spawn, 'rm -f spArc*.fits* spFlat*.fits* spSky*.fits*'
            in order to remove files that eat up too much disk space right now.
+COMBINE1FIBER: Use the /GROUPBADPIX keyword for rejection in B-spline fits.
 DANVB_CONVERT,DANVB_QSOLIST: Procs for generating a list of input
             QSO's from Dan van den Berk's EDR list "plateEDR.summ"
             for generating QSO eigenvectors.  The output file
             "eigeninput_qso.dat" is then used by PCA_QSO.
+DIVIDEFLAT: Make INVVAR an optional keyword instead of an input for DIVIDEFLAT.
+            Change the procedures that call this.
 FIND_NMINIMA: Retain each peak only if it is at least MINSEP from all
             previous peaks.
 FINDSPEC: Crash if the plate list file is missing w/ an informative message.
@@ -112,8 +115,16 @@ SMOOTH_SUPERFLAT: Located the spurious WARNING, changed to Warning, and
             smooth_superflat warnings.
 SPBIASGEN: New routine for generating mean biases for a night.
 SPCALIB,SPFLATTEN2,SPREDUCE: Use /APPLYBIAS option in call to SDSSPROC.
-SPCOADD  :  Convert dispersion vectors to log-lambda units (1.0d-4, PR 1870)
-SPCOMBINE:  Use threshold of FRAMESN2 > 1.0 to include in coadd (PR 1901)
+SPCOADD_FRAMES: Convert dispersion vectors to log-lambda units (1.0d-4, PR 1870)
+            When combining fibers, we used to use MAXITER=20.  Now use
+            MAXITER=50, MAXREJ=1.
+SPCOMBINE: New optional keyword MINSN2 to set the minimum S/N to include
+            in co-adding; default to 0.0 for the time being (see PR 1901).
+            Otherwise, special plates that have all bright objects will not
+            get combined (since the extrapolated S/N at 20th mag is so low).
+            Include 'smear' exposures as well as 'science' in the co-adds,
+            which should let us recover some spectra that are otherwise
+            saturated in 15 min exposures.
 SPFLATGEN: Add optional keywords EXPNUM,EXPSTART,EXPEND.
 SPREDUCE1D, ZFIND, ZCOMPUTE, FIND_NMINIMA: Plotting and debugging
             tools added with the /DOPLOT, /DEBUG keywords.
