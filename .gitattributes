@@ -32,6 +32,7 @@ examples/Makefile -text
 examples/README -text
 examples/opBC.par -text
 examples/opConfig.par -text
+examples/opECalib-51430.par -text
 examples/opECalib-51577.par -text
 examples/opECalib.par -text
 include/Makefile -text
