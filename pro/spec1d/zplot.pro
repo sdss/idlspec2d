@@ -120,9 +120,9 @@ pro zplot
    target_main = (plug.primtarget AND 2^6) NE 0 $
     OR (plug.primtarget AND 2^7) NE 0 $
     OR (plug.primtarget AND 2^8) NE 0
-   target_brg = (plug.primtarget AND 2^5) NE 0 $
+   target_lrg = (plug.primtarget AND 2^5) NE 0 $
     OR (plug.primtarget AND 2^26) NE 0
-   target_brg = target_brg AND (target_main EQ 0) ; Don't let an object be
+   target_lrg = target_lrg AND (target_main EQ 0) ; Don't let an object be
                                                   ; both in MAIN and BRG.
    target_qso = (plug.primtarget AND 2^0) NE 0 $
     OR (plug.primtarget AND 2^1) NE 0 $
@@ -130,8 +130,8 @@ pro zplot
     OR (plug.primtarget AND 2^3) NE 0 $
     OR (plug.primtarget AND 2^4) NE 0
 
-   imain = where(spec_gal AND target_brg EQ 0, nmain)
-   ibrg = where(spec_gal AND target_brg, nbrg)
+   imain = where(spec_gal AND target_lrg EQ 0, nmain)
+   ilrg = where(spec_gal AND target_lrg, nlrg)
    iqso = where(spec_qso, nqso)
 
    !x.margin = [4,4]
@@ -148,7 +148,7 @@ pro zplot
     xtickname=[' ',' '], ytickname=[' ',' '], $
     title=string(nmain, format='("EQUATORIAL STRIPE    (", i6, " galaxies)")')
    djs_oplot, xplot[imain], yplot[imain], ps=3
-   djs_oplot, xplot[ibrg], yplot[ibrg], ps=3, color='red'
+   djs_oplot, xplot[ilrg], yplot[ilrg], ps=3, color='red'
    djs_oplot, xplot[iqso], yplot[iqso], ps=3, color='blue'
    zplot_circle, [0.05, 0.10], ltheta=70
    zplot_circle, [0.15]
@@ -159,14 +159,14 @@ pro zplot
    ;----------
    ; Plot to z=0.60
 
-   dfpsplot, 'zplot-brg.ps', /color, /square
+   dfpsplot, 'zplot-lrg.ps', /color, /square
    zmax = 0.601
    plot, [0], [0], /nodata, xrange=[-zmax,zmax], yrange=[-zmax,zmax], $
     xstyle=1, ystyle=1, xticks=1, yticks=1, $
     xtickname=[' ',' '], ytickname=[' ',' '], $
-    title=string(nbrg, format='("EQUATORIAL STRIPE    (", i6, " LRGs)")')
+    title=string(nlrg, format='("EQUATORIAL STRIPE    (", i6, " LRGs)")')
    djs_oplot, xplot[imain], yplot[imain], ps=3
-   djs_oplot, xplot[ibrg], yplot[ibrg], ps=1, symsize=0.25, color='red'
+   djs_oplot, xplot[ilrg], yplot[ilrg], ps=1, symsize=0.25, color='red'
    djs_oplot, xplot[iqso], yplot[iqso], ps=3, symsize=0.25, color='blue'
    zplot_circle, [0.20, 0.40], ltheta=70
    zplot_circle, [0.60]
@@ -184,7 +184,7 @@ pro zplot
     xtickname=[' ',' '], ytickname=[' ',' '], $
     title=string(nqso, format='("EQUATORIAL STRIPE    (", i6, " QSOs)")')
    djs_oplot, xplot[imain], yplot[imain], ps=3
-   djs_oplot, xplot[ibrg], yplot[ibrg], ps=3, color='red'
+   djs_oplot, xplot[ilrg], yplot[ilrg], ps=3, color='red'
    djs_oplot, xplot[iqso], yplot[iqso], ps=1, $
     symsize=zans[iqso].z/8., color='blue'
    zplot_circle, [1,2,3,4], ltheta=70
@@ -208,9 +208,9 @@ pro zplot
     yrange=[-lzrange,lzrange], $
     xstyle=1, ystyle=1, xticks=1, yticks=1, $
     xtickname=[' ',' '], ytickname=[' ',' '], $
-    title=string(nmain+nbrg+nqso, format='("EQUATORIAL STRIPE    (", i6, " objects)")')
+    title=string(nmain+nlrg+nqso, format='("EQUATORIAL STRIPE    (", i6, " objects)")')
    djs_oplot, xplot[imain], yplot[imain], ps=3
-   djs_oplot, xplot[ibrg], yplot[ibrg], ps=3, color='red'
+   djs_oplot, xplot[ilrg], yplot[ilrg], ps=3, color='red'
    djs_oplot, xplot[iqso], yplot[iqso], ps=1, $
     symsize=zans[iqso].z/8., color='blue'
    zplot_circle, alog10([0.03,0.1,0.5,2])-logzmin, $
