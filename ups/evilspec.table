@@ -1,0 +1,32 @@
+File=Table
+Product=evilspec
+#*************************************************
+# Starting Group definition
+Group:
+Flavor=Linux+2
+Qualifiers=""
+
+Common:
+   Action=setup
+      proddir()
+      setupenv()
+      sourceRequired(${EVILSPEC_DIR}/ups/setup.${UPS_SHELL},UPS_ENV)
+End:
+# End Group definition
+#*************************************************
+
+#*************************************************
+# Starting Group definition
+Group:
+Flavor=Linux+2
+Qualifiers="build"
+
+Common:
+   Action=setup
+      proddir()
+      setupenv()
+      sourceRequired(${EVILSPEC_UPS}/ups/setup.${UPS_SHELL},UPS_ENV)
+End:
+# End Group definition
+#*************************************************
+
