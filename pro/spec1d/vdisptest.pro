@@ -1,24 +1,31 @@
 ; Tests for looking at the velocity dispersion fits for plate 406.
 ; Loop from the highest-S/N galaxies to the lowest.
-pro vdisptest, plate, mjd=mjd, doplot=doplot, debug=debug
+pro vdisptest, plate, fiberid, mjd=mjd, doplot=doplot, debug=debug, $
+ brightest=brightest, slowplot=slowplot
+
+   if (NOT keyword_set(plate)) then plate = 406
+   if (NOT keyword_set(fiberid)) then fiberid = 1 + lindgen(640)
+   if (n_elements(slowplot) EQ 0) then slowplot = 1
 
 eigenfile='spEigenElodie.fits'
 columns=lindgen(24)
-debug = 1
-doplot = 1
-brightsort = 1
-plate = 406
-mjd = 52238
-slowplot = 1
+
+;debug = 1
+;doplot = 1
+;brightsort = 1
+;plate = 406
+;mjd = 52238
+;slowplot = 1
 
    if (keyword_set(debug)) then doplot = 1
 
    stime0 = systime(1)
 
-   readspec, plate, mjd=mjd, flux=objflux, invvar=objivar, $
+   readspec, plate, fiberid, mjd=mjd, flux=objflux, invvar=objivar, $
     synflux=synflux, zans=zans
-   readspec, plate, mjd=mjd, 1, loglam=loglam ; same for every object
-   if (keyword_set(brightsort)) then begin
+   readspec, plate, mjd=mjd, fiberid[0], loglam=loglam ; same for every object
+
+   if (keyword_set(brightest)) then begin
       igal = where(strtrim(zans.class,2) EQ 'GALAXY' AND zans.zwarning EQ 0, $
        ngal)
       igal = igal[ reverse(sort(zans[igal].sn_median)) ] ; Sort by S/N
