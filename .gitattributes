@@ -1,4 +1,6 @@
 * text=auto !eol
+examples/README -text
+examples/opBC.par -text
 examples/opConfig.par -text
 examples/opECalib.par -text
 ups/evilspec.table -text
