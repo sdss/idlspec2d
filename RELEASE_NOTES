@@ -1,4 +1,8 @@
 
+v4_?_? (Nov ??, 2001 idlspec2d+idlutils) running on IDL 5.3 - 5.5
+v1_? of specflat
+
+Bug fixes to run on IDL 5.5.
 Changes to how the SOS robot launches the rsync jobs.
 Bias-subtraction now implemented (bias images in the "specflat" product).
 New set of templates for P-1D; QSO's now use 4 eigentemplates.
@@ -11,6 +15,7 @@ FIND_NMINIMA: Retain each peak only if it is at least MINSEP from all
             previous peaks.
 FINDSPEC: Crash if the plate list file is missing w/ an informative message.
             Do not crash if spPlate files missing for some plates.
+FITARCIMAGE: Bug fix to prevent IDL 5.5 from crashing.
 PCA_CVSTAR: New proc for generating eigen-spectra for CV stars.
 PCA_QSO: Major re-write now that we're trying to use the eigen-spectra
             from this routine for the redshift-finding code, rather
@@ -106,7 +111,7 @@ evilinstall (in idlutils): If $CVSROOT is not set, then set it either
          first.
 
 -------------------------------------------------------------------------------
-v4_8_4 (Aug 29, 2001 idlspec2d+idlutils)
+v4_8_4 (Aug 29, 2001 idlspec2d+idlutils) running on IDL 5.3 - 5.4
 
 Minor fix to 2D-combining code for running plates 214,340,270 which failed.
 
@@ -136,7 +141,7 @@ eviltarball (in idlutils): New script to export a version of a code
          and build a tar file for distribution.
 
 -------------------------------------------------------------------------------
-v4_8_3 (Aug 24, 2001 idlspec2d+idlutils)
+v4_8_3 (Aug 24, 2001 idlspec2d+idlutils) running on IDL 5.3 - 5.4
 
 Cut version for running P-1D, improving the redshift fits + errors.
 
@@ -195,7 +200,7 @@ build_links (in idlutils): Do not build a link for any file if the link
         name already exists.
 
 -------------------------------------------------------------------------------
-v4_8_2 (Aug 16, 2001 idlspec2d+idlutils)
+v4_8_2 (Aug 16, 2001 idlspec2d+idlutils) running on IDL 5.3 - 5.4
 
 Trivial changes for running this version at Fermi.
 
@@ -211,7 +216,7 @@ SPLOT (in idlutils): Minor bug fix to avoid plotting the axes twice.
 evilinstall (in idlutils): Syntax changes to work with bash on spectro.
 
 -------------------------------------------------------------------------------
-v4_8_1 (Aug 9, 2001 idlspec2d+idlutils)
+v4_8_1 (Aug 9, 2001 idlspec2d+idlutils) running on IDL 5.3 - 5.4
 v1_2 of specflat
 
 Cut version for re-running Spectro-2D on all data.
@@ -243,7 +248,7 @@ ATV (in idlutils): Handle unsupported CTYPE, CTYPE reversal gracefully;
 SPHEREMATCH (in idlutils): New code to match two lists of RA,DEC.
 
 -------------------------------------------------------------------------------
-v4_8_0 (Jul 17, 2001 idlspec2d+idlutils)
+v4_8_0 (Jul 17, 2001 idlspec2d+idlutils) running on IDL 5.3 - 5.4
 v1_1 of specflat
 
 First cut of v4_8 with many major changes.  Not yet tested for prime time.
