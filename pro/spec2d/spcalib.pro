@@ -49,6 +49,7 @@
 ;   fitarcimage
 ;   fitarcimage_old
 ;   sdssproc
+;   shift_trace()
 ;   splog
 ;   trace320crude()
 ;   traceset2xy
