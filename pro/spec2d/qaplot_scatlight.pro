@@ -84,7 +84,7 @@ pro qaplot_scatlight, scatimage, scatfit, wset=wset, xcen=xcen, $
 
    xnear = fix(xcen+0.5) ; Nearest pixels to XCEN
 
-   xrange = 10^[min(loglam), max(loglam)]
+   xrange = 10^[min(loglam), max(loglam)] + [-100,100] ; Pad by 100 Angstroms
 
    ;----------
    ; Divide the plotting range up into bins in wavelength spaced by DLAMBDA
