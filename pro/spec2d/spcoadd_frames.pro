@@ -97,7 +97,8 @@ end
 ;------------------------------------------------------------------------------
 pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
  binsz=binsz, zeropoint=zeropoint, nord=nord, wavemin=wavemin, $
- bkptbin=bkptbin, window=window, maxsep=maxsep, adderr=adderr
+ bkptbin=bkptbin, window=window, maxsep=maxsep, adderr=adderr, $
+ docams=camnames
 
    if (NOT keyword_set(binsz)) then binsz = 1.0d-4 $
     else binsz = double(binsz)
@@ -115,7 +116,7 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
 
    ;---------------------------------------------------------------------------
 
-   camnames = ['b1', 'b2', 'r1', 'r2']
+   if NOT keyword_set(camnames) then camnames = ['b1', 'b2', 'r1', 'r2']
    ncam = N_elements(camnames)
    exptimevec = fltarr(ncam)
 
@@ -204,7 +205,8 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
       corrset = mrdfits('spFluxcorr-'+expstr+'-'+spectroid+'.fits', 1)
       traceset2xy, corrset, tempwave, corrimg
 
-      divideflat, tempflux, tempivar, 1.0/corrimg, minval=0.05*mean(1.0/corrimg)
+      divideflat, tempflux, tempivar, 1.0/corrimg, $
+            minval=0.05*mean(1.0/corrimg)
 
       ;----------
       ; Apodize the errors
@@ -247,6 +249,12 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
       endelse
 
    endfor
+
+   tempflux = 0
+   tempivar = 0
+   tempwave = 0
+   tempdispersion = 0
+   temppixmask = 0
 
    ;----------
    ; Remove the COMBINEREJ bit from the input pixel masks, since this
@@ -356,12 +364,16 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
           nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep, $
           maxiter=20, upper=3.0, lower=3.0
 
+;plot, wave[*,indx], flux[*,indx], ps = 3
+;djs_oplot, finalwave, bestflux, color='red'
+;xyouts, 3.65, -10, string(ifiber)+string(format='(5(f8.2))', $
+;      plugmap[ifiber].mag)
+
          finalflux[*,ifiber] = bestflux
          finalivar[*,ifiber] = bestivar
          finalandmask[*,ifiber] = bestandmask
          finalormask[*,ifiber] = bestormask
          finaldispersion[*,ifiber] = bestdispersion
-
 
          ; The following adds the COMBINEREJ bit to the input pixel masks
          pixelmask[*,indx] = temppixmask
