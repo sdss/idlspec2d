@@ -46,8 +46,6 @@
 ;   fit_skyset
 ;   fitarcimage
 ;   fluxcorr()
-;   idlspec2d_version()
-;   idlutils_version() 
 ;   locateskylines
 ;   qaplot_arcline
 ;   qaskylines
@@ -522,8 +520,6 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       ;------
       ; Add everything we can think of to object header
 
-      sxaddpar, objhdr, 'VERS2D',   idlspec2d_version()
-      sxaddpar, objhdr, 'VERSUTIL', idlutils_version()
       sxaddpar, objhdr, 'PLUGMAPF', plugfilename
       sxaddpar, objhdr, 'FLATFILE', flatname[ibest]
       sxaddpar, objhdr, 'ARCFILE', arcname[ibest]
