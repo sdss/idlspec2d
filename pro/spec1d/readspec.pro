@@ -180,24 +180,26 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
 
    nrows = n_elements(rownums)
 
+   ; Set default return values
+   flux = fltarr(1,nrows)
+   flerr = fltarr(1,nrows)
+   invvar = fltarr(1,nrows)
+   andmask = lonarr(1,nrows)
+   ormask = lonarr(1,nrows)
+   disp = fltarr(1,nrows)
+   sky = fltarr(1,nrows)
+   plugmap = lonarr(nrows)
+   loglam = fltarr(1,nrows)
+   tsobj = lonarr(nrows)
+   zans = lonarr(nrows)
+   zline = lonarr(nrows)
+   synflux = fltarr(1,nrows)
+   lineflux = fltarr(1,nrows)
+   coeff0 = 0
+   coeff1 = 0
+   npix = 0
+
    if (NOT keyword_set(filename)) then begin
-      flux = fltarr(1,nrows)
-      flerr = fltarr(1,nrows)
-      invvar = fltarr(1,nrows)
-      andmask = lonarr(1,nrows)
-      ormask = lonarr(1,nrows)
-      disp = fltarr(1,nrows)
-      sky = fltarr(1,nrows)
-      plugmap = lonarr(nrows)
-      loglam = fltarr(1,nrows)
-      tsobj = lonarr(nrows)
-      zans = lonarr(nrows)
-      zline = lonarr(nrows)
-      synflux = fltarr(1,nrows)
-      lineflux = fltarr(1,nrows)
-      coeff0 = 0
-      coeff1 = 0
-      npix = 0
       return
    end
 
@@ -244,7 +246,8 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    endif
 
    if (q_tsobj) then begin
-      tsobj = plug2tsobj(plate, plugmap=plugmap, silent=silent)
+      tsobj1 = plug2tsobj(plate, plugmap=plugmap, silent=silent)
+      if (keyword_set(tsobj1)) then tsobj = tsobj1
    endif
 
    if (q_zans OR q_synflux OR q_zhdr) then begin
@@ -549,6 +552,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
          if (q_sky) then spec_append, sky, sky1, pixshift
          if (q_plugmap) then plugmap = struct_append(plugmap, [plugmap1])
          if (q_tsobj) then tsobj = struct_append(tsobj, [tsobj1])
+if (n_elements(tsobj) NE n_elements(allindx)) then stop ; ???
          if (q_zans) then zans = struct_append(zans, [zans1])
 ; The first two attempts below can fail if the ZLINE structure changes.
 ;         if (q_zline) then zline = struct_append(zline, [zline1])
