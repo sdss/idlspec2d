@@ -198,7 +198,7 @@ pro combine2dout, filenames, outputroot, spectrographid, $
    splog, 'Found '+string(redfiles)+' Red files'
    splog, 'Found '+string(bluefiles)+' Blue files'
    if (redfiles LT 2 OR bluefiles LT 2) then begin
-      splog, 'For the time being, I expect at least 2 of each red and blue to work'
+      splog, 'ABORT: For the time being, I expect at least 2 of each red and blue to combine'
       return
    endif
 
