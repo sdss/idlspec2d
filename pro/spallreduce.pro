@@ -7,7 +7,7 @@
 ;   of data according to a plan file.
 ;
 ; CALLING SEQUENCE:
-;   spallreduce, planfile=, [ docams=, /combineonly, xdisplay ]
+;   spallreduce, planfile=, [ docams=, /combineonly, /xdisplay ]
 ;
 ; INPUTS:
 ;
@@ -109,6 +109,8 @@ display = 0 ; Disable this plotting of hundreds of pages!! (???)
       device, filename=plotfile, /color
       splog, 'Plot file ', plotfile, ' opened ', systime()
    endif
+   splog, 'Plan file ', planfile
+   splog, 'DOCAMS = ', docams
 
    splog, 'idlspec2d version ' + idlspec2d_version()
    splog, 'idlutils version ' + idlutils_version()
