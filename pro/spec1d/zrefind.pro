@@ -61,14 +61,14 @@ function zrefind, objflux, objivar, hdr=hdr, $
 
    ;----------
    ; Find all eigen-spectra files being used
+   ; The ISELECT array will give indices for unique (and valid) sort strings.
 
    ntcol = n_elements(result[0].tcolumn)
    tcolstring = string(result.tcolumn, format='('+string(ntcol)+'i)')
    sortstring = result.tfile + tcolstring + string(result.npoly)
 
-   isort = sort(sortstring)
+   isort = ivalid[ sort(sortstring[ivalid]) ]
    iselect = isort[ uniq(sortstring[isort]) ]
-   iselect = iselect[ where(qvalid[iselect]) ]
 
    for ifile=0, n_elements(iselect)-1 do begin
 
