@@ -16,39 +16,78 @@ Note: Flux correction and Telluric correction have been moved (a long time ago).
 
 \subsection{Sky Subtraction}
 
-A global sky model is fit using all available fiber spectra assigned as 
-"SKY" by target selection.  These fibers are set on blank fields, and are 
-used to estimate the sky level as a function of wavelength and CCD position 
-in individual exposures.   Each plate is nominally assigned 32 of its 640 
-fibers as "SKY", with the focal plane positions chosen to allow half of the 
-sky fibers to reach each spectrograph: 1 fiber per bundle of 20 is assigned to 
-"SKY".
+Sky subtraction is performed on a frame by frame basis using the 
+"flattened" wavelength calibrated extractions.  The goal of sky subtraction
+is to estimate the expected background counts contributing to each of 
+the native 320x2048 pixels in each extracted frame.  A "supersky" model 
+at a fiducial airmass of 1 is constructed by performing iterative fits to
+the extracted spectra associated with blank sky positions (so-called
+"sky" fibers).   The following steps are taken in 3 sequential iterations
+in order to produce the sky-subtracted spectra:
 
-The sky subtraction is done after the data have been extracted from 
-two-dimensional counts per CCD pixel to one-dimensional "corrected" electron 
-counts as a function of vacuum heliocentric wavelengths and fiber number.
-The flat-field "correction" removes differences due to surface brightness 
-changes due to varying spectral dispersion in different fibers.
+\begin{enumerate}
 
-A single subroutine is called three consecutive times to arrive at the final 
-model description for the sky background.  The first call uses all available sky
-fibers that were not masked as an entire fiber (e.g. by the fibermask bits).
-If only one good skyfiber is found, the routine logs an "ABORT" and returns.
-A median count level is summarized for the selected sky spectra, and the 5% 
-and 95% levels are reported for each science exposure (on each camera).
-A single one-dimensional sky model is created by a b-spline fit to the airmass 
-corrected sky spectra (See appendix b-spline for a continued description).
-The airmass associated with the exposure mid-point (in time) is divided out 
-of each sky spectrum (and errors scaled accordingly).  The differential airmass
-across a single SDSS plate is the largest source of residuals after the dominant
-wavelength residuals.  Individual pixels are masked if they were divided by a 
-low flat field vector or a bad pixel was detected nearby (clarify?).
-The number of discarded pixels before sky modeling is logged.
+\item{Identify the "sky" fibers which have no bits flagged 
+in the fiber mask array.}
 
-The sky
+\item{Divide each sky spectrum by the airmass of the fiber position appropriate
+for the midpoint of the observation to produce respresentative sky spectra for 
+an airmass of 1.  The inverse variance is scaled accordingly.}
 
+\item{Group and sort the sky spectra as a function of wavelength.  This step
+transforms a 2-dimensional set of N_sky x 2048 pixels into a sorted 1-dimensional array.  Each pixel maintains its associated central wavelength and 
+inverse variance. }
 
+\item{Perform a single cubic b-spline fit as a function of wavelength.  
+The number of breakpoints (number of free parameters is 4 greater) is set 
+at 2048 on the red side and 1536 on the blue side.  The breakpoint spacing 
+is set automatically to maintain approximately constant S/N between breakpoint 
+positions. The b-spline fit itself is iterative, with upper and lower rejection thresholds set to mask bad or deviant pixels. }
 
+\item{The b-spline fit is evaluated at all 320x2048 wavelengths representing all
+spectral pixels in the frame.  The airmass correction is applied for each individual fiber, and the rescaled super-sky is subtracted from each spectrum.}
 
-     
+\item{Estimate the significance of the residuals in the sky fibers used for the
+fit in wavelength bins separated by breakpoints determined above.  for each bin
+where inverse the 67th percentile of $\chi^2$ is greater than 1, we rescale 
+all the inverse variance values down by the 67th percentile value of $\chi^$.
+The rescaling is actually done with a smooth interpolation as a function of 
+redshift with a constraint that the inverse variances cannot increase. }
+
+\end{enumerate}
+
+%The b-spline routines from the numerical fortran library: {\bf slatec}
+%were ported to IDL to be easily incorporated into the pipeline.
+
+The sequence followed in the determination of the sky subtracted spectrum
+and re-scaled errors is called 3 times successively.  After the 1st call,
+any sky fibers which have a median \chi^2 per pixel greater than 2 is 
+masked as a 'BADSKYFIBER' and the corresponding bit is set in the fibermask
+array.  If any fibers are masked, the sky subtraction is iterated a 2nd time.
+The sky subtraction routine is invoked for one final iteration, but with extra 
+freedom allowed in the fit.  The same freedom is allowed in wavelength, by
+keeping the same number of breakpoints, but a quadratic polynomial fit is
+allowed as a function of wavelength.  This triples the number of free 
+parameters in the linear least-squares fit, but the values are still 
+overconstrained due to the ample number of sky fibers.  The extra freedom
+in the model can accomodate variation in the PSF of sky features as a function 
+of position on the CCD.
+
+The sky subtraction method which utilizes the b-spline model takes advantage 
+of the inherent over-sampling in wavelength due to the large number of 
+sky fibers assigned per plate, without the requirement of resampling the 
+pixel value to a fixed linear wavelength scale.  The least squares fit
+is carried out for native spectral pixels where the errors are very nearly 
+uncorrelated and the fit is evaluated for all the native pixels (320x2048)  
+at the central wavelengths of the single spectral frames.
+    
+The accuracy of the SDSS spectral sky subtraction has been tested in recent
+scientific analyses using large numbers of background-limited spectra.   
+The distribution of flux residuals between spectral observations 
+on separate nights has been shown to be 6\%-9\% larger in width than expected
+from the reported errors (McDonald et al. 2004, Burgess \& Burles 2005).
+For combined observations of faint galaxies, the distribution of residuals 
+about the best model fit is well described by a gaussian with exponential
+tails (Bolton et al. 2004), where the magnitude of tails is greatly enhanced in
+the vicinity of strong sky emission lines.  
 
