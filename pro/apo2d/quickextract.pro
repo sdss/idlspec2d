@@ -40,7 +40,7 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    skiprow = 8
    yrow = lindgen(nrow/skiprow) * skiprow + skiprow/2
    nfirst = n_elements(yrow)
-   wfixed=[1,1]
+   wfixed = [1,1] ; Fit gaussian height + width
 
    sigma = 1.0
    proftype = 1 ; Gaussian
@@ -58,6 +58,17 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
             tempflux, fluxm = wfixed, scatfit=scatfit)
 
    scatflux = extract_boxcar(scatfit, xcen, radius=radius)
+
+   scatmed = median(scatfit)
+   scatmax = max(scatfit)
+   if (scatmed GT 20) then $
+     splog, 'WARNING: Scattered light median = ', scatmed, ' electrons' $
+    else $
+     splog, 'Scattered light median = ', scatmed, ' electrons'
+   if (scatmax GT 40) then $
+     splog, 'WARNING: Scattered light max = ', scatmax, ' electrons' $
+    else $
+     splog, 'Scattered light max =    ', scatmax, ' electrons'
 
    ;----------
    ; Boxcar extract - no scattered light correction!
