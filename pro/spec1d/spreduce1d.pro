@@ -40,6 +40,7 @@
 ;   sxaddpar
 ;   sxdelpar
 ;   sxpar()
+;   synthspec()
 ;   zfind()
 ;   zrefind()
 ;
@@ -92,6 +93,9 @@ pro spreduce1d, platefile, fiberid=fiberid
 
    objivar = skymask(objivar, andmask)
 andmask = 0 ; Free memory
+
+   objloglam0 = sxpar(hdr, 'COEFF0')
+   objdloglam = sxpar(hdr, 'COEFF1')
 
    ;----------
    ; Trim to specified fibers if FIBERID is set
@@ -241,51 +245,38 @@ andmask = 0 ; Free memory
    endfor
 
    ;----------
-   ; Insist that all SKY fibers are identified as SKY
+   ; Generate the synthetic spectra, and count the fraction of points
+   ; that deviate more than N sigma (where N goes from 1 to NFSIG).
+
+   nfsig = 10
+   fracnsigma = fltarr(nper,nobj,nfsig)
+   counts_spectro = fltarr(nper,nobj,5)
+   counts_synth = fltarr(nper,nobj,5)
+
+   objloglam = objloglam0 + lindgen(npixobj) * objdloglam
+   wavevec = 10d^objloglam
+   flambda2fnu = wavevec^2 / 2.99792e18
 
    for iobj=0, nobj-1 do begin
-      if (strtrim(plugmap[iobj].objtype,2) EQ 'SKY') then begin
-         if (nper GT 1) then $
-          res_all[1:nper-1,iobj] = res_all[0:nper-2,iobj]
-         rcopy = { class: 'SKY', $
-                   subclass: ' ', $
-                   tfile: ' ' }
-         res1 = res_all[0,iobj]
-         struct_assign, rcopy, res1
-         res_all[0,iobj] = res1
-      endif
-   endfor
+      for ii=0, nper-1 do begin
+         goodmask = objivar[*,iobj] GT 0
+         synflux = synthspec(res_all[ii,iobj], loglam=objloglam)
+         chivec = abs(objflux[*,iobj] - synflux) * sqrt(objivar)
+         for isig=0, nfsig-1 do $
+          fracnsigma[ii,iobj,isig] = $
+           total((chivec GT isig+1) * goodmask) / (total(goodmask) > 1)
 
-   ;----------
-   ; Re-classify some objects as UNKNOWN.  Do this for any non-SKY objects
-   ; where:
-   ; (1) The reduced chi^2 difference with the next best identification
-   ;     is very small.
-   ; (2) The classification is a QSO where the first eigen-component
-   ;     is negative.
-   ; (2) The classification is a STAR where the first eigen-component
-   ;     is negative.
+; ??? Save time for now...
+if (ii EQ 0) then begin
+         fthru = filter_thru(synflux * flambda2fnu, waveimg=wavevec, /norm)
+         counts_synth[ii,iobj,*] = fthru * 10^((48.6 - 2.5*17.)/2.5)
+endif
+      endfor
 
-   minrchi2diff = 0.01
-
-   qlowconf = bytarr(nobj)
-   qlowconf = qlowconf OR (res_all[0,*].rchi2diff LT minrchi2diff)
-   qlowconf = qlowconf OR (strtrim(res_all[0,*].class) EQ 'STAR' $
-    AND res_all[0,*].theta[0] LT 0)
-   qlowconf = qlowconf OR (strtrim(res_all[0,*].class) EQ 'QSO' $
-    AND res_all[0,*].theta[0] LT 0)
-
-   for iobj=0, nobj-1 do begin
-      if (qlowconf[0] EQ 0 AND res_all[0,iobj].class NE 'SKY') then begin
-         if (nper GT 1) then $
-          res_all[1:nper-1,iobj] = res_all[0:nper-2,iobj]
-         rcopy = { class: 'UNKNOWN', $
-                   subclass: ' ', $
-                   tfile: ' ' }
-         res1 = res_all[0,iobj]
-         struct_assign, rcopy, res1
-         res_all[0,iobj] = res1
-      endif
+      fthru = filter_thru(objflux[*,iobj] * flambda2fnu, waveimg=wavevec, $
+       mask=(objivar[*,iobj] EQ 0), /norm)
+      for i=0,4 do $
+       counts_spectro[*,iobj,i] = fthru[i] * 10^((48.6 - 2.5*17.)/2.5)
    endfor
 
    ;----------
@@ -313,6 +304,10 @@ andmask = 0 ; Free memory
    res1 = { wavemin:   0.0, $
             wavemax:   0.0, $
             wcoverage: 0.0, $
+            zwarning:  0L, $
+            fracnsigma: fltarr(nfsig), $
+            counts_spectro: fltarr(5), $
+            counts_synth: fltarr(5), $
             spec1_g:   sxpar(hdr, 'SPEC1_G'), $
             spec1_r:   sxpar(hdr, 'SPEC1_R'), $
             spec1_i:   sxpar(hdr, 'SPEC1_I'), $
@@ -322,8 +317,6 @@ andmask = 0 ; Free memory
    res_append = make_array(value=res1, dimension=size(res_all,/dimens))
    res_all = struct_addtags(res_all, res_append)
 
-   objloglam0 = sxpar(hdr, 'COEFF0')
-   objdloglam = sxpar(hdr, 'COEFF1')
    for iobj=0, nobj-1 do begin
       igood = where(objivar[*,iobj] NE 0, ngood)
       res_all[*,iobj].wavemin = $
@@ -332,6 +325,41 @@ andmask = 0 ; Free memory
        10^(objloglam0 + (igood[(ngood-1)>0])*objdloglam) * (ngood NE 0)
       res_all[*,iobj].wcoverage = ngood * objdloglam
    endfor
+
+   res_all.fracnsigma = fracnsigma
+   res_all.counts_spectro = counts_spectro
+   res_all.counts_synth = counts_synth
+
+   ;----------
+   ; Set ZWARNING flags.
+
+   zwarning = lonarr(nper,nobj)
+
+   ; Warning: Sky fiber.
+   for iobj=0, nobj-1 do begin
+      if (strtrim(plugmap[iobj].objtype,2) EQ 'SKY') then $
+       zwarning[*,iobj] = zwarning[*,iobj] OR 1L
+   endfor
+
+   ; Warning: too little wavelength coverage.
+   qflag = res_all.wcoverage LT 0.18
+   zwarning = zwarning OR 2L * qflag
+
+   ; Warning: delta-chi^2 is too small as compared to the next best ID.
+   minrchi2diff = 0.01
+   qflag = res_all.minrchi2 LT minrchi2diff
+   zwarning = zwarning OR 4L * qflag
+
+   ; Warning: synthetic spectrum is negative (for STAR or QSO).
+   qflag = (strtrim(res_all.class) EQ 'STAR' AND res_all.theta[0] LE 0) $
+    OR (strtrim(res_all.class) EQ 'QSO' AND res_all.theta[0] LE 0)
+   zwarning = zwarning OR 8L * qflag
+
+   ; Warning: Fraction of points above 5 sigma is too large (> 5%).
+   qflag = fracnsigma[0,*,4] GT 0.05
+   zwarning = zwarning OR 16L * qflag
+
+   res_all.zwarning = zwarning
 
    ;----------
    ; Write the output files

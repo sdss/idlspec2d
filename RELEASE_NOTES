@@ -1,6 +1,9 @@
 
 FINDSPEC: New routine for finding SDSS spectra that match a given RA, DEC.
 SPREDUCE1D: Search for stars at velocities to +/- 1200 km/s (was 600 km/s).
+            No longer identify objects as UNKNOWN, but rather set bits
+              in a ZWARNING flag.
+            Add outputs ZWARNING, FRACNSIGMA, COUNTS_SPECTRO, COUNTS_SYNTH.
 
 -------------------------------------------------------------------------------
 v4_6_2 (Feb 14, 2001)
