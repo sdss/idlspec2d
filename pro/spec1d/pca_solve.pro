@@ -1,7 +1,59 @@
+;+
+; NAME:
+;   pca_solve
+;
+; PURPOSE:
+;   Iteratively find PCA solution for noisy or gappy spectra.
+;
+; CALLING SEQUENCE:
+;   res = pca_solve( objflux, objivar, objloglam, [ zfit, $
+;    wavemin=, wavemax=, newloglam=, $
+;    niter=, nkeep=, eigenval=, usemask= ] )
+;
+; INPUTS:
+;   objflux        - Object fluxes [NPIX,NSPEC]
+;   objivar        - Object inverse variances [NPIX,NSPEC]
+;   objloglam      - Object wavelengths in log10(Angstroms) [NPIX,NSPEC]
+;
+; OPTIONAL INPUTS:
+;   zfit           - Redshifts of each input spectrum [NSPEC]; if set, then
+;                    each input spectrum is de-redshifted to z=0.
+;   wavemin        - Minimum wavelength to use in PCA solution, in Angstroms;
+;                    default to the minimum (de-redshifted) input wavelength.
+;   wavemax        - Maximum wavelength to use in PCA solution, in Angstroms
+;                    default to the minimum (de-redshifted) input wavelength.
+;   newloglam      - PCA wavelength sampling in log-10(Angstroms) [NNEWPIX]
+;   niter          - Number of PCA iterations; default to 10.
+;   nkeep          - Number of PCA components to keep in each iteration
+;                    and use in replacing noisy or missing data; default to 3.
+;
+; OUTPUTS:
+;   res            - PCA spectra in rest-frame [NNEWPIX,NKEEP]
+;
+; OPTIONAL OUTPUTS:
+;   newloglam      - PCA wavelength sampling in log-10(Angstroms) [NNEWPIX]
+;   eigenval       - Eigenvalue for each output eigenspectra [NKEEP]
+;   usemask        - Number of unmasked spectra used for each pixel, so these
+;                    are integers in the range 0 to NSPEC [NNEWPIX]
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;
+; BUGS:
+;
+; PROCEDURES CALLED:
+;   combine1fiber
+;   computechi2()
+;   wavevector()
+;
+; REVISION HISTORY:
+;   10-Oct-2000  Written by D. Schlegel, Princeton
+;-
 ;------------------------------------------------------------------------------
 function pca_solve, objflux, objivar, objloglam, zfit, $
- wavemin=wavemin, wavemax=wavemax, $
- niter=niter, nkeep=nkeep, newloglam=newloglam, eigenval=eigenval
+ wavemin=wavemin, wavemax=wavemax, newloglam=newloglam, $
+ niter=niter, nkeep=nkeep, eigenval=eigenval, usemask=usemask
 
    if (NOT keyword_set(niter)) then niter = 10
    if (NOT keyword_set(nkeep)) then nkeep = 3
@@ -11,29 +63,36 @@ function pca_solve, objflux, objivar, objloglam, zfit, $
    npix = dims[0]
    if (ndim EQ 1) then nobj = 1 $
     else nobj = dims[1]
-   objdloglam = objloglam[1] - objloglam[0]
 
    splog, 'Building PCA from ', nobj, ' object spectra'
 
    ;----------
    ; The redshift of each object in pixels would be LOGSHIFT/OBJDLOGLAM
 
-   logshift = alog10(1.d + zfit)
+   if (keyword_set(zfit)) then $
+    logshift = alog10(1.d + zfit) $
+   else $
+    logshift = fltarr(nobj)
 
    ;----------
    ; Determine the new wavelength mapping
 
-   logmin = min(objloglam) - max(logshift)
-   logmax = max(objloglam) - min(logshift)
-   if (keyword_set(wavemin)) then logmin = logmin > alog10(wavemin)
-   if (keyword_set(wavemax)) then logmax = logmax < alog10(wavemax)
-   newloglam = wavevector(logmin, logmax, binsz=objdloglam)
+   if (NOT keyword_set(newloglam)) then begin
+      objdloglam = abs(objloglam[1] - objloglam[0])
+      logmin = min(objloglam) - max(logshift)
+      logmax = max(objloglam) - min(logshift)
+      if (keyword_set(wavemin)) then logmin = logmin > alog10(wavemin)
+      if (keyword_set(wavemax)) then logmax = logmax < alog10(wavemax)
+      newloglam = wavevector(logmin, logmax, binsz=objdloglam)
+   endif else begin
+      objdloglam = abs(newloglam[1] - newloglam[0])
+   endelse
    nnew = n_elements(newloglam)
    newflux = fltarr(nnew,nobj)
    newivar = fltarr(nnew,nobj)
 
    ;----------
-   ; Shift each spectra to z=0
+   ; Shift each spectra to z=0 and sample at the output wavelengths
 
    for iobj=0, nobj-1 do begin
       indx = where(objloglam[*,iobj] GT 0)
@@ -65,8 +124,10 @@ print,'OBJECT ',iobj
    normflux = total(newflux,1) / nnew
    iuse = where(normflux GT 0.05 * median(normflux), nuse)
    synflux = fltarr(nnew)
+   usemask = lonarr(nnew)
    for ipix=0, nnew-1 do begin
       ibad = where(newivar[ipix,iuse] EQ 0, nbad)
+      usemask[ipix] = nuse - nbad
       if (nbad LT nuse) then begin
          synflux[ipix] = total( newflux[ipix,iuse] * newivar[ipix,iuse]) $
           / total(newivar[ipix,iuse] * normflux[iuse])
@@ -97,6 +158,7 @@ print,'OBJECT ',iobj
 
    t0=systime(1)
    for iiter=0, niter-1 do begin
+      eigenval = 1 ; Set so that the PCOMP() routine returns this.
       pres = pcomp(transpose(filtflux), coeff=coeff, eigenval=eigenval,/double)
 
       sqivar = sqrt(newivar)
@@ -116,8 +178,8 @@ print,'OBJECT ',iobj
 ;soplot,synflux,color='red'
       endfor
 
-writefits, 'test-'+strtrim(string(iiter),1)+'.fits', $
- float(transpose(pres[0:nkeep-1,*]))
+;writefits, 'test-'+strtrim(string(iiter),1)+'.fits', $
+; float(transpose(pres[0:nkeep-1,*]))
       splog, 'Elapsed time for iteration #', iiter, ' = ', systime(1)-t0
    endfor
 
