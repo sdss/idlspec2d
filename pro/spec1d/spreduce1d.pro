@@ -167,15 +167,28 @@ ormask = 0 ; Free memory
 
    ;----------
    ; Look for where the S/N is unreasonably large
+   ; or where flux is unphysically negative.
 
    for iobj=0L, nobj-1 do begin
       junk = where(abs(objflux[*,iobj]) * sqrt(objivar[*,iobj]) GT 200., ct)
       if (ct GT 0) then $
-       splog, 'WARNING: Fiber #', iobj+1, ' has ', ct, ' pixels with S/N > 200'
+       splog, 'WARNING: Fiber #', fiberid[iobj], $
+        ' has ', ct, ' pixels with S/N > 200'
 
-      junk = where(objflux[*,iobj] * sqrt(objivar[*,iobj]) LT -10., ct)
+      junk = where(objflux[*,iobj] * sqrt(objivar[*,iobj]) LE -10., ct)
       if (ct GT 0) then $
-       splog, 'WARNING: Fiber #', iobj+1, ' has ', ct, ' pixels with Flux < -10*Noise'
+       splog, 'WARNING: Fiber #', fiberid[iobj], $
+        ' has ', ct, ' pixels with Flux < -10*Noise'
+   endfor
+
+   ;----------
+   ; Mask out points that are unphysically negative (10-sigma negatives),
+   ; and mask the neighboring 2 pixels in each direction.
+
+   for iobj=0L, nobj-1 do begin
+      thismask = objflux[*,iobj] * sqrt(objivar[*,iobj]) LE -10.
+      thismask = smooth(float(thismask),5) GT 0
+      objivar = objivar * (1 - thismask)
    endfor
 
    ;----------
