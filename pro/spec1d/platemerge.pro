@@ -44,7 +44,7 @@
 ;   djs_diff_angle()
 ;   headfits()
 ;   mrdfits()
-;   mwrfits
+;   mwrfits_chunks
 ;   plug2tsobj()
 ;   platelist
 ;   struct_print
@@ -156,6 +156,10 @@ pro platemerge, zfile, outroot=outroot, public=public
           outdat1 = create_struct(outdat1, tags[ikeep[ii]], tmpout.(ikeep[ii]))
 
          struct_assign, {junk:0}, outdat1 ; Zero-out all elements
+         sz1 = n_tags(outdat1, /length)
+         splog, 'Size of one FITS structure = ', sz1, ' bytes'
+         splog, 'Number of objects = ', nout
+         splog, 'Total size of FITS structure = ', float(sz1)*nout/1.e6, ' Mbyte'
          outdat = replicate(outdat1, nout)
       endif
 
@@ -245,9 +249,9 @@ pro platemerge, zfile, outroot=outroot, public=public
    endfor
 
    ;----------
-   ; Write the output file
+   ; Write the output FITS file, in chunks of 20 plates
 
-   mwrfits, outdat, outroot+'.fits', /create
+   mwrfits_chunks, outdat, outroot+'.fits', /create, chunksize=640*20
 
    ;----------
    ; Create the structure for ASCII output
@@ -270,6 +274,10 @@ pro platemerge, zfile, outroot=outroot, public=public
     'primtarget' ,  0L, $
     'sectarget'  ,  0L, $
     'objtype'    ,  '' )
+   sz2 = n_tags(adat, /length)
+   splog, 'Size of one ASCII structure = ', sz2, ' bytes'
+   splog, 'Number of objects = ', nout
+   splog, 'Total size of ASCII structure = ', float(sz2)*nout/1.e6, ' Mbyte'
    adat = replicate(adat, nout)
    struct_assign, outdat, adat
 
@@ -282,7 +290,7 @@ pro platemerge, zfile, outroot=outroot, public=public
    objtypes = ['UNKNOWN', 'CR', 'DEFECT', 'GALAXY', 'GHOST', 'KNOWNOBJ', $
     'STAR', 'TRAIL', 'SKY']
    adat.objc_type = objtypes[outdat.objc_type]
-outdat = 0 ; Free memory
+outdat = 0 ; Free memory ???
 
    struct_print, adat, filename=outroot+'.dat'
 
