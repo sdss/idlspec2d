@@ -12,7 +12,8 @@
 ;   expnum     - Exposure number
 ;
 ; OPTIONAL INPUTS:
-;   card       - FITS header keyword to change.
+;   card       - FITS header keyword to change; this is case-insensitive,
+;                so that 'exposure' is the same as 'EXPOSURE'.
 ;   value      - New value for FITS header keyword.
 ;   camera     - Camera name in which to change values, e.g. 'b1', 'r1',
 ;                'b2' or 'r2'.  A '?' can be used as a wildcard, for example
@@ -29,10 +30,23 @@
 ; COMMENTS:
 ;
 ; EXAMPLES:
+;   Fix the exposure time for exposure #1234 to be 900 sec:
+;     IDL> apofix, 1234, 'exposure', 900
+;
+;   Fix the TAI time for exposure #1234 to be 4.443852968d+09
+;   (use the "d" notation for double-precision, even though it
+;   will appear in the sdHdrFix file with an "e"):
+;     IDL> apofix, 1234, 'TAI', 4.443852968d+09
+;
+;   Declare exposure #1234 as bad:
+;     IDL> apofix, 1234, /bad
+;   or equivalently:
+;     IDL> apofix, 1234, 'flavor', 'unknown'
 ;
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   fileandpath()
 ;   fits_wait
 ;   headfits()
 ;   struct_append
@@ -42,15 +56,6 @@
 ; REVISION HISTORY:
 ;   22-Apr-2002  Written by D. Schlegel, Princeton
 ;-
-;------------------------------------------------------------------------------
-;------------------------------------------------------------------------------
-; Option for /good, /bad (but not both), setting all needed keywords.
-; CARD,VALUE as arrays???
-; Report warning if not all 4 files (cameras) exist.
-;    Compare values in files to those requested, and add line to op file
-;    only if different.
-; Another proc that prints all required/optional header keywords.
-; Verify that inputs are scalars when they need to be.
 ;------------------------------------------------------------------------------
 pro apofix, expnum, card, newval, camera=camera, bad=bad
 
@@ -73,10 +78,9 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad
    endif
 
    if (apo_uname NE 'sos') then begin
-; ???
-;      print, 'This procedure can only be run on the machine sos.apo.nmsu.edu'
-;      !quiet = quiet
-;      return
+      print, 'This procedure can only be run on the machine sos.apo.nmsu.edu'
+      !quiet = quiet
+      return
    endif
 
    ;----------
@@ -103,7 +107,7 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad
    ; Sanity checks on EXPNUM, CAMERA, CARD, VALUE
 
    expnum = long(expnum)
-   if (expnum LE 0 OR expnum GT 99999999L) then begin
+   if (expnum LE 0 OR expnum GT 99999999L OR n_elements(expnum) NE 1) then begin
       print, 'EXPNUM must be a number between 1 and 99999999'
       !quiet = quiet
       return
@@ -114,6 +118,7 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad
    c2 = strmid(camera,1,1)
    if (size(camera, /tname) NE 'STRING' $
     OR strlen(camera) NE 2 $
+    OR n_elements(camera) NE 1 $
     OR (c1 NE '?' AND c1 NE 'b' AND c1 NE 'r') $
     OR (c2 NE '?' AND c2 NE '1' AND c2 NE '2') ) then begin
       print, 'CAMERA must be a 2-character string'
@@ -127,18 +132,26 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad
    endif
 
    if (size(card, /tname) NE 'STRING' $
+    OR n_elements(card) NE 1 $
     OR strlen(card) EQ 0 OR strlen(card) GT 8) then begin
       print, 'CARD must be a string of 1 to 8 characters'
       !quiet = quiet
       return
    endif
 
-   if (n_elements(newval) EQ 0) then begin
-      print, 'VALUE must be specified'
+   if (n_elements(newval) NE 1) then begin
+      print, 'VALUE must be specified (and a scalar)'
       !quiet = quiet
       return
    endif
-   strval = strtrim(string(newval),2)
+   if (size(newval, /tname) EQ 'DOUBLE') then format='(e17.10)' $
+    else format=''
+   strval = strtrim(string(newval,format=format),2)
+   if (strpos(strval,'"') NE -1 OR strpos(strval,"'") NE -1) then begin
+      print, 'VALUE cannot contain single or double-quotes'
+      !quiet = quiet
+      return
+   endif
 
    ;----------
    ; Test that sdR files exist that correspond to the exposure number
@@ -159,19 +172,14 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad
    ; Also, compare values in sdR headers to requested values.
 
    for ifile=0, nfile-1 do begin
-      print, 'Reading FITS header for ' + filename[ifile]
       qdone = fits_wait(filename[ifile], deltat=2, tmax=10, /header_only)
       if (qdone) then begin
          thishdr = headfits(filename[ifile])
          thismjd = sxpar(thishdr, 'MJD')
          oldval = sxpar(thishdr, card)
-; ???
-;         if (size(oldval, /tname) EQ 'STRING') then begin
-;            qdiff = strtrim(oldval,2) NE strval
-;         endif else begin
-;            qdiff = oldval NE newval
-;         endelse
-;print,oldval,newval,qdiff
+         print, strmid(fileandpath(filename[ifile]),0,15), strupcase(card), $
+          strtrim(string(oldval,format=format),2), strval, $
+          format='(a, 1x, a8, "=[", a, "] -> [", a, "]")'
       endif
    endfor
 
@@ -224,8 +232,12 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad
       djs_unlockfile, sdfixname
    endelse
 
+   ncorr = n_elements(*pdata[i])
    yanny_free, pdata
    !quiet = quiet
+
+   print, 'File ' + fileandpath(sdfixname) + ' contains ' $
+    + strtrim(string(ncorr),2) + ' declared changes.'
 
    return
 end
