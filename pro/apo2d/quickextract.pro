@@ -134,6 +134,11 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    if (bestlag LT -0.15 OR bestlag GT 0.15) then $
     splog, 'WARNING: Large flexure flat<->science (Post-calibs recommended!)'
 
+   ;----------
+   ; Do an optimal extraction for the purpose of measuring scattered
+   ; light terms, and for checking the spatial profile widths to see
+   ; that the spectrographs are indeed in focus.
+
    extract_image, image, invvar, xcen, sigma, tempflux, tempfluxivar, $
     proftype=proftype, wfixed=wfixed, yrow=yrow, highrej=5, lowrej=5, $
     npoly=npoly, ansimage=ansimage, relative=1
@@ -159,6 +164,13 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
       + ' (Warm CCD or twi?)' $
     else $
      splog, 'Scattered light max = ', scatmax, ' electrons'
+
+   ;----------
+   ; Check the spatial profile widths, and trigger warning messages
+   ; if the spectrographs appear out of focus.
+
+   widthset = fitflatwidth(tempflux, tempfluxivar, ansimage, fibermask, $
+    ncoeff=5, sigma=sigma)
 
    ;----------
    ; Boxcar extract - no scattered light correction!
