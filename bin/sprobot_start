@@ -3,6 +3,9 @@
 # Script to start Spectro-Robot (as a cron job).
 # Logging information is written to the file "$RAWDATA_DIR/sprobot.log".
 #
+# For ssh to work, you need the environment variables SSH_AUTH_SOCK
+# and SSH_AGENT_PID set.
+#
 # D. Schlegel, Princeton, 20 Dec 2000
 #------------------------------------------------------------------------------
 # If a second argument is give, such as "sprobot_start plate-mapper", or 
@@ -91,6 +94,8 @@ crontab -l | awk 'BEGIN{doprint = 1}{if ($2 == "SPROBOT" && $3 == "BEGIN") {dopr
 
 echo "# SPROBOT BEGIN "$vers >> $cronfile
 echo "PATH=$PATH" >> $cronfile
+echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> $cronfile
+echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> $cronfile
 echo "IDLSPEC2D_DIR=$IDLSPEC2D_DIR" >> $cronfile
 echo "IDLUTILS_DIR=$IDLUTILS_DIR" >> $cronfile
 echo "IDL_DIR=$IDL_DIR" >> $cronfile
@@ -101,8 +106,7 @@ echo "SPECTRO_DATA=$SPECTRO_DATA" >> $cronfile
 echo "# This job will run at 8:30 am every day." >> $cronfile
 #echo "30 8 * * * sprobot.sh >> $SPRLOG 2>&1" >> $cronfile
 # TEST !!!???
-echo "* * * * * sprobot.sh >> $SPRLOG 2>&1" >> $cronfile
-#echo "* * * * * sos.sh >> $SOSLOG 2>&1" >> $cronfile
+echo "44 20 * * * sprobot.sh >> $SPRLOG 2>&1" >> $cronfile
 echo "# SPROBOT END" >> $cronfile
 crontab $cronfile
 
