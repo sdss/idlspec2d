@@ -39,6 +39,8 @@
 ;   files did not properly describe the plug-map name.  In those cases,
 ;   look for the actual plug-map files in SPECLOG_DIR/MJD.
 ;
+;   Exclude all files where the QUALITY header keyword is not 'excellent'.
+;
 ; EXAMPLES:
 ;   Create the plan file(s) for reducing the data for MJD=51441, with that
 ;   top level directory set to '/u/schlegel/2d_test'
@@ -147,6 +149,13 @@ pro spplan2d, topoutdir=topoutdir, mjd=mjd, $
                FLAVOR[i] = strtrim(sxpar(hdr, 'FLAVOR'),2)
                CAMERAS[i] = strtrim(sxpar(hdr, 'CAMERAS'),2)
                MAPNAME[i] = strtrim(sxpar(hdr, 'NAME'),2)
+
+               ; Exclude all files where the QUALITY keyword is not 'excellent'.
+               if (strtrim(sxpar(hdr, 'QUALITY'),2) NE 'excellent') then begin
+                  splog, 'Warning: Non-excellent quality file ' $
+                   + fileandpath(fullname[i])
+                  FLAVOR[i] = 'unknown'
+               endif
 
                if (sxpar(hdr, 'MJD') NE thismjd) then $
                 splog, 'Warning: Wrong MJD in file '+fileandpath(fullname[i])
