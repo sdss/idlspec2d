@@ -1,6 +1,7 @@
 
 ;------------------------------------------------------------------------------
 ; Fit the minimum of YARR with a quadratic or gaussian.
+; Return value is the minimum value of chi^2/DOF.
 function zfitmin, yarr, xarr, dofarr=dofarr, $
  xguess=xguess, width=width, xerr=xerr, ypeak=ypeak, doplot=doplot
 
@@ -9,11 +10,12 @@ function zfitmin, yarr, xarr, dofarr=dofarr, $
    if (keyword_set(dofarr)) then ydof = yarr / (dofarr + (dofarr EQ 0)) $
     else ydof = yarr
    if (NOT keyword_set(xguess)) then begin
-      ypeak = max(ydof, imax)
-      xguess = xarr[imax]
+      junk = min(ydof, imin)
+      xguess = xarr[imin]
+      ypeak = ydof[imin]
    endif else begin
-      junk = min(abs(xarr - xguess), indx)
-      ypeak = ydof[indx[0]]
+      junk = min(abs(xarr - xguess), imin)
+      ypeak = ydof[imin]
    endelse
    if (NOT keyword_set(width)) then width = 1
 
@@ -23,19 +25,24 @@ function zfitmin, yarr, xarr, dofarr=dofarr, $
    ; Insist that there be at least 1 point to the left and right of XGUESS.
    junk = where(xarr LT xguess, nleft)
    junk = where(xarr GT xguess, nright)
-   if (nleft EQ 0 OR nright EQ 0) then $
-    return, xguess
+   if (nleft EQ 0 OR nright EQ 0) then begin
+      xerr = -1L
+      return, xguess
+   endif
 
    xleft = xguess - width
    xright = xguess + width
    indx = where(xarr GE xleft AND xarr LE xright, nthis)
-   if (nthis LT 3) then $
-    return, xguess
+   if (nthis LT 3) then begin
+      xerr = -2L
+      return, xguess
+   endif
 
    ; Sort by X, which is necessary for the MPFITPEAK routine.
    indx = indx[sort(xarr[indx])]
    thisx = xarr[indx]
-   thisy = ydof[indx] * mean(dofarr[indx])
+   meandof = mean(dofarr[indx])
+   thisy = ydof[indx] * meandof
 
    ;----------
    ; Case of exactly 3 points: Quadractic fit
@@ -59,11 +66,13 @@ function zfitmin, yarr, xarr, dofarr=dofarr, $
       ; Compute where chi^2 increases by 1
       xerr2 = 1 / sqrt(coeff[2])
 
-      ypeak = poly(xbest-xguess, coeff)
+      ypeak = poly(xbest-xguess, coeff) / meandof
 
       ; Insist that XBEST is a minimum (not a maximum)
-      if (coeff[2] LT 0) then $
-       return, xguess
+      if (coeff[2] LT 0) then begin
+         xerr = -3L
+         return, xguess
+      endif
 
    ;----------
    ; Case of more than 3 points: Gaussian fit
@@ -77,33 +86,41 @@ function zfitmin, yarr, xarr, dofarr=dofarr, $
 
       ; Compute the fit error of the minimum of the quadratic.
       ; We rescale by the apparent errors in Y.
-      xerr1 = coeff[1] * yerror
+      xerr1 = perror[1] * yerror
 
       ; Compute where chi^2 increases by 1.
       ; Insist that the gaussian fit spans a range of at least one
       ; in the Y-axis, such that we can compute the formal error
-      ; where chi^2 increases by 1.
-      if (coeff[0] LT -1.) then $
-       xerr2 = coeff[2] * sqrt(2. * alog(coeff[0]/(coeff[0]+1.))) $
-      else $
-       return, xguess
+      ; where chi^2 increases by 1.  The following also applies the
+      ; constraint that XBEST is a minimum (not a maximum).
+      if (coeff[0] LT -1.) then begin
+         xerr2 = coeff[2] * sqrt(2. * alog(coeff[0]/(coeff[0]+1.)))
+      endif else begin
+         xerr = -5L
+         return, xguess
+      endelse
 
       xbest = coeff[1] + xguess
       ypeak = coeff[0]
       for ic=3, nterms-1 do $
        ypeak = ypeak + coeff[ic] * coeff[1]^(ic-3)
+      ypeak = ypeak / meandof
 
-      ; Insist that XBEST is a minimum (not a maximum)
-      if (coeff[0] LT 0) then $
-       return, xguess
+;      ; Insist that XBEST is a minimum (not a maximum)
+;      if (coeff[0] LT 0) then begin
+;         xerr = -4L
+;         return, xguess
+;      endif
 
    endelse
 
    xbesterr = sqrt(xerr1^2 + xerr2^2)
 
    ; Insist that the minimum is in the fitting range, and not out of bounds
-   if (xbest LT xleft OR xbest GT xright) then $
-    return, xguess
+   if (xbest LT xleft OR xbest GT xright) then begin
+      xerr = -6L
+      return, xguess
+   endif
 
    if (keyword_set(doplot)) then begin
       djs_plot, thisx, thisy, /yno
@@ -150,12 +167,12 @@ function find_nminima, yflux, xvec, dofarr=dofarr, nfind=nfind, minsep=minsep, $
       ;----------
       ; Locate next minimum
 
-      junk = min(ycopy, imax)
+      junk = min(ycopy, imin)
 
       ;----------
       ; Centroid on this peak (local minimum)
 
-      xpeak1 = zfitmin(yflux, xvec, dofarr=dofarr, xguess=xvec[imax], $
+      xpeak1 = zfitmin(yflux, xvec, dofarr=dofarr, xguess=xvec[imin], $
        width=width, xerr=xerr1, ypeak=ypeak1)
 
       ;----------
@@ -175,11 +192,11 @@ function find_nminima, yflux, xvec, dofarr=dofarr, nfind=nfind, minsep=minsep, $
       ; Exclude from future peak-finding all points within MINSEP of this
       ; peak, up until the function is increasing again.
 
-      junk = min(abs(xvec - xvec[imax]), ixc)
-      ix1 = (reverse(where(isign*xvec LT (isign*xvec[imax] - minsep) $
+      junk = min(abs(xvec - xvec[imin]), ixc)
+      ix1 = (reverse(where(isign*xvec LT (isign*xvec[imin] - minsep) $
        AND shift(yderiv,1) GT 0)))[0]
       if (ix1 EQ -1) then ix1 = 0
-      ix2 = (where(isign*xvec GT (isign*xvec[imax] + minsep) AND yderiv LT 0))[0]
+      ix2 = (where(isign*xvec GT (isign*xvec[imin] + minsep) AND yderiv LT 0))[0]
       if (ix2 EQ -1) then ix2 = ndata-1
 
       ycopy[ix1:ix2] = ydone
