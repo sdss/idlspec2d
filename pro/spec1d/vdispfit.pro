@@ -111,7 +111,7 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
          sigerr[iobj] = sigerr1
       endfor
       return
-   endif
+   endif else zobj= zobj[0]
 
    ;----------
    ; Determine the wavelength mapping for the object spectra,
