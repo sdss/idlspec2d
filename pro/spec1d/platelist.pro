@@ -11,8 +11,9 @@
 ; INPUTS:
 ;
 ; OPTIONAL INPUTS:
-;   fullplatefile - Plate file(s) from spectro-2D; default to all files
-;                   matching '*/spPlate*.fits'
+;   infile      - Either a list of spPlancomb-*.par files, or a list of
+;                 spPlate*.fits files; default to all files matching
+;                 '*/spPlancomb-*.par'.
 ;   outfile     - If set, then write output to this file.
 ;
 ; OUTPUTS:
@@ -20,9 +21,14 @@
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
-;   Also look for the Spectro-1D files with names 'spZbest*.fits'.
-;   For example, if PLATEFILE='spPlate-0306-51690.fits', then look for
-;   the file ZBESTFILE = 'spZbest-0306-51690.fits'.
+;   If INFILE is a list of plan files, i.e.
+;     spPlancomb-0306-51690.par
+;   then look for the following files:
+;     spPlate-0306-51690.fits (as specified by 'combinefile' in the plan file)
+;     spZbest-0306-51690.fits
+;
+;   Otherwise, assume that INFILE is a list of FITS files (spPlate-*.fits),
+;   and look for the redshift files (spZbest-*.fits).
 ;
 ; EXAMPLES:
 ;
@@ -36,17 +42,16 @@
 ;   headfits()
 ;   mrdfits()
 ;   sxpar()
+;   yanny_par()
+;   yanny_read
 ;
 ; REVISION HISTORY:
 ;   29-Oct-2000  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
-pro platelist, fullplatefile, outfile=outfile
+pro platelist, infile, outfile=outfile
 
-   if (NOT keyword_set(fullplatefile)) then $
-    fullplatefile = findfile('*/spPlate*.fits', count=nfile) $
-   else $
-    nfile = n_elements(fullplatefile)
-   fullplatefile = fullplatefile[ sort(fullplatefile) ]
+   if (NOT keyword_set(infile)) then infile = '*/spPlancomb-*.par'
+   fullfile = findfile(infile, count=nfile)
    if (nfile EQ 0) then return
 
    ;----------
@@ -58,36 +63,57 @@ pro platelist, fullplatefile, outfile=outfile
     olun = -1L
 
    ;----------
-   ; Determine names of associated files
-
-   platefile = fileandpath(fullplatefile, path=path)
-   platemjd = strmid(fileandpath(platefile), 8, 10)
-   zbestfile = 'spZbest-' + platemjd + '.fits'
-
-   ;----------
    ; Loop through all files
 
-   printf, olun, 'PLATE  MJD   TILE RA    DEC   SN2_G1 SN2_I1 SN2_G2 SN2_I2 ' $
+   printf, olun, 'PLATE  MJD   RA    DEC   SN2_G1 SN2_I1 SN2_G2 SN2_I2 ' $
     + 'Ngal Nqso Nsta Nunk Nsky'
-   printf, olun, '-----  ----- ---- ----- ----- ------ ------ ------ ------ ' $
+   printf, olun, '-----  ----- ----- ----- ------ ------ ------ ------ ' $
     + '---- ---- ---- ---- ----'
 
    for ifile=0, nfile-1 do begin
-      fullzfile = djs_filepath(zbestfile[ifile], root_dir=path[ifile])
-      hdr1 = headfits(fullplatefile[ifile])
+
+      junk = fileandpath(fullfile[ifile], path=path)  ; Determine PATH
+
+      ;----------
+      ; Test if INFILE specifies Yanny param files for spPlancomb.
+
+      if (strmid(fullfile[ifile],strlen(fullfile[ifile])-4) EQ '.par') $
+       then begin
+         yanny_read, fullfile[ifile], hdr=hdrp
+         platefile = $
+          djs_filepath(yanny_par(hdrp, 'combinefile'), root_dir=path)
+      endif else begin
+         platefile = fullfile[ifile]
+      endelse
+
+      ;----------
+      ; Determine names of associated files
+
+      platemjd = strmid(fileandpath(platefile), 8, 10)
+      zbestfile = 'spZbest-' + platemjd + '.fits'
+
+      fullzfile = djs_filepath(zbestfile, root_dir=path)
+
+      hdr1 = headfits(platefile)
       hdr2 = headfits(fullzfile)
 
-      plate = sxpar(hdr1, 'PLATEID')
-      tile = sxpar(hdr1, 'TILEID')
-      mjd = sxpar(hdr1, 'MJD')
-      ra = sxpar(hdr1, 'RA')
-      dec = sxpar(hdr1, 'DEC')
-      snvec = [ sxpar(hdr1, 'SPEC1_G'), $
-                sxpar(hdr1, 'SPEC1_I'), $
-                sxpar(hdr1, 'SPEC2_G'), $
-                sxpar(hdr1, 'SPEC2_I') ]
-;      if (size(hdr2, /tname) EQ 'STRING') then qdone = 'DONE' $
-;       else qdone = 'N/A'
+      if (size(hdr1, /tname) EQ 'STRING') then begin
+         plate = sxpar(hdr1, 'PLATEID')
+         mjd = sxpar(hdr1, 'MJD')
+         ra = sxpar(hdr1, 'RA')
+         dec = sxpar(hdr1, 'DEC')
+         snvec = [ sxpar(hdr1, 'SPEC1_G'), $
+                   sxpar(hdr1, 'SPEC1_I'), $
+                   sxpar(hdr1, 'SPEC2_G'), $
+                   sxpar(hdr1, 'SPEC2_I') ]
+      endif else begin
+         plate = long( strmid(fileandpath(platefile), 8, 4) )
+         mjd = long( strmid(fileandpath(platefile), 13, 5) )
+         ra = 0
+         dec = 0
+         snvec = [0,0,0,0]
+      endelse
+
       if (size(hdr2, /tname) EQ 'STRING') then begin
          zans = mrdfits(fullzfile, 1, /silent)
          class = strtrim(zans.class,2)
@@ -100,8 +126,9 @@ pro platelist, fullplatefile, outfile=outfile
          nums = lonarr(5)
       endelse
 
-      printf, olun, plate, mjd, tile, ra, dec, snvec, nums, $
-       format='(i5,i7,i5,f6.1,f6.1,4f7.1,5i5)'
+      printf, olun, plate, mjd, ra, dec, snvec, nums, $
+       format='(i5,i7,f6.1,f6.1,4f7.1,5i5)'
+      flush, olun
 
    endfor
 
