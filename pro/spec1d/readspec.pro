@@ -108,7 +108,7 @@ pro readspec1, plate, range, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
     else mjdstr = string(mjd,format='(i5.5)')
 
    dirname = '/data/spectro/2d_3c/' + platestr + '/2dnew'
-   filename = 'spPlate-' + platestr + mjdstr + '.fits'
+   filename = 'spPlate-' + platestr + '-' + mjdstr + '.fits'
    filename = findfile(filepath(filename, root_dir=dirname), count=ct)
 
    if (ct GT 1) then begin
@@ -160,9 +160,15 @@ pro readspec1, plate, range, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    if (q_loglam OR q_wave) then begin
       if (NOT keyword_set(hdr)) then hdr = headfits(filename)
       naxis1 = sxpar(hdr, 'NAXIS1')
+      naxis2 = sxpar(hdr, 'NAXIS2')
       coeff0 = sxpar(hdr, 'COEFF0')
       coeff1 = sxpar(hdr, 'COEFF1')
       loglam = coeff0 + coeff1 * findgen(naxis1)
+      if (keyword_set(range)) then begin
+         loglam = rebin(loglam, naxis1, range[1]-range[0]+1)
+      endif else begin
+         loglam = rebin(loglam, naxis1, naxis2)
+      endelse
       if (q_wave) then wave = 10^loglam
    endif
 

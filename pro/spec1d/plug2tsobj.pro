@@ -78,7 +78,7 @@ function plug2tsobj, plateid, ra, dec, plugmap=plugmap
       return, tsobj
    endif
 
-   platestr = strtrim(string(fix(plateid)),2)
+   platestr = strtrim(string(fix(plateid[0])),2)
    dirname = '/data/spectro/plates'
    filename = 'tsObj-*-' + platestr + '.fit'
 
