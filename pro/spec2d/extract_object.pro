@@ -261,7 +261,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ;------------------
    ; QA chisq plot for fit calculated in extract image (make QAPLOT ???)
 
-   xaxis = indgen(N_elements(chisq)) + 1
+   xaxis = lindgen(n_elements(chisq)) + 1
    djs_plot, xaxis, chisq, $
     xrange=[0,N_elements(chisq)], xstyle=1, $
     xtitle='Row number',  ytitle = '\chi^2', $
@@ -370,7 +370,6 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
        sxaddpar, objhdr, 'SFLATTEN', 'T', ' Superflat has been applied'
      endif
    endif  
- 
 
    ;------------------
    ; Sky-subtract
@@ -378,8 +377,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    nbkpt = color EQ 'blue' ? 3*nx/4 : nx
    skystruct = skysubtract(flux, fluxivar, plugsort, vacset, $
     skysub, skysubivar, iskies=iskies, pixelmask=pixelmask, $
-    fibermask=fibermask, upper=3.0, lower=3.0, tai=tai_mid, $
-    relchi2struct=relchi2struct, nbkpt=nbkpt)
+    fibermask=fibermask, upper=3.0, lower=3.0, tai=tai_mid, nbkpt=nbkpt)
    if (NOT keyword_set(skystruct)) then return
 
    ;-----------------------------------------------------------
@@ -395,19 +393,18 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
             string(iskies[badskyfiber])
        skystruct = skysubtract(flux, fluxivar, plugsort, vacset, $
           skysub, skysubivar, iskies=iskies, pixelmask=pixelmask, $
-          fibermask=fibermask, upper=10.0, lower=10.0, tai=tai_mid, $
-          relchi2struct=relchi2struct, nbkpt=nbkpt)
+          fibermask=fibermask, upper=10.0, lower=10.0, tai=tai_mid, nbkpt=nbkpt)
    endif
- 
-   ;
+
+   ;----------
    ; Sky-subtract again, this time with dispset (PSF subtraction)
-   ; 
 
    nskypoly = 3L
    skystruct_psf = skysubtract(flux, fluxivar, plugsort, vacset, $
     skysubpsf, skysubpsfivar, iskies=iskies, pixelmask=pixelmask, $
     fibermask=fibermask, upper=10.0, lower=10.0, tai=tai_mid, $
-    dispset=dispset, npoly=nskypoly, nbkpt=nbkpt)
+    dispset=dispset, npoly=nskypoly, nbkpt=nbkpt, $
+    relchi2struct=relchi2struct)
 
    qaplot_skysub, flux, fluxivar, skysub, skysubivar, $
     vacset, iskies, title=plottitle+objname+' 1d Sky Subtraction'
@@ -415,7 +412,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    qaplot_skysub, flux, fluxivar, skysubpsf, skysubpsfivar, $
     vacset, iskies, title=plottitle+objname+' 2d Sky Subtraction'
 
-   ;------------------
+   ;----------
    ; QA for 2 skylines in the blue (specify vacuum wavelengths below)
 
    if (color EQ 'blue') then begin
@@ -427,7 +424,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
        tai=tai_mid, title=plottitle+objname+' Skyline Flux at 5578.9'
    endif
 
-   ;------------------
+   ;----------
    ; QA for 2 skylines in the red (specify vacuum wavelengths below)
 
    if (color EQ 'red') then begin
@@ -452,6 +449,8 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    endelse
    skyimg = flux - flambda
    sxaddpar, objhdr, 'PSFSKY', nskypoly, ' Order of PSF skysubtraction'
+   sxaddpar, objhdr, 'SKYCHI2', mean(relchi2struct.chi2), $
+    ' Mean chi^2 of sky-subtraction'
 
    ;------------------------------------------
    ; Telluric correction called for 'red' side
@@ -519,6 +518,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    sxaddpar, objhdr, 'SCATPOLY', npoly, ' Extraction: Order of scattered light polynomial'
    sxaddpar, objhdr, 'PROFTYPE', proftype, ' Extraction profile: 1=Gaussian'
    sxaddpar, objhdr, 'NFITPOLY', nterms, ' Extraction: Number of parameters in each profile'
+   sxaddpar, objhdr, 'OPTCHI2', mean(chisq), ' Extraction: Mean chi^2'
 
    snvec = djs_median(flambda*sqrt(flambdaivar),1)
    if color EQ 'blue' then begin
