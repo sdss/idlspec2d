@@ -23,6 +23,15 @@
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
+;   The SPECPRIMARY output element is used to select a unique set of
+;   objects in the case of duplicate observations.  Any objects observed
+;   multiple times will have SPECPRIMARY=1 for one instance only, and =0
+;   for all other instances.  The criteria (in order of importance) are
+;   as follows:
+;     1) Prefer PROGNAME='main' over any other program names
+;     2) Prefer PLATEQUALITY='good' over any other plate quality
+;     3) Prefer observations with ZWARNING=0
+;     4) Prefer the observation with the larger PLATESN2
 ;
 ; EXAMPLES:
 ;
@@ -32,6 +41,8 @@
 ;
 ; PROCEDURES CALLED:
 ;   copy_struct_inx
+;   djs_angle_match()
+;   djs_diff_angle()
 ;   headfits()
 ;   mrdfits()
 ;   mwrfits
@@ -44,6 +55,8 @@
 ;   30-Oct-2000  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
 pro platemerge, zfile, outroot=outroot, public=public
+
+   dtheta = 2.0 / 3600.
 
    if (NOT keyword_set(outroot)) then begin
       outroot = 'spAll'
@@ -123,7 +136,8 @@ pro platemerge, zfile, outroot=outroot, public=public
           'chunkname'   , ' ', $
           'platequality', ' ', $
           'platesn2'    , 0.0, $
-          'specprimary' ,  0L )
+          'smearuse'    , ' ', $
+          'specprimary' ,  0B )
          outdat = replicate(create_struct(pstuff, zans[0], tsobj0), nout)
          struct_assign, {junk:0}, outdat ; Zero-out all elements
       endif
@@ -138,6 +152,7 @@ pro platemerge, zfile, outroot=outroot, public=public
       outdat[indx].chunkname = plist[ifile].chunkname
       outdat[indx].platequality = plist[ifile].platequality
       outdat[indx].platesn2 = plist[ifile].platesn2
+      outdat[indx].smearuse = plist[ifile].smearuse
 
       ; Over-write PRIMTARGET+SECTARGET with those values from spPlate file.
       plugmap = mrdfits(fullplatefile[ifile], 5)
@@ -146,8 +161,66 @@ pro platemerge, zfile, outroot=outroot, public=public
 
       ; Over-write the MJD with that from the plate file name ???
       ; Early versions of 2D (such as v4_3_1) could have an inconsistent value.
-      thismjd = long( strmid(fileandpath(fullplatefile[ifile]), 13, 5) )
-      outdat[indx].mjd = thismjd
+;      thismjd = long( strmid(fileandpath(fullplatefile[ifile]), 13, 5) )
+;      outdat[indx].mjd = thismjd
+   endfor
+
+   ;----------
+   ; Set the SPECPRIMARY flag to 0 or 1
+
+   outdat.specprimary = 1 ; Start as all objects set to primary
+
+   ; Loop through each possible pairing of plates, paying attention
+   ; only to those within 3.1 deg of eachother on the sky.
+   for ifile1=0, nfile-1 do begin
+      for ifile2=ifile1+1, nfile-1 do begin
+         adist = djs_diff_angle(plist[ifile1].ra, plist[ifile1].dec, $
+          plist[ifile2].ra, plist[ifile2].dec)
+         if (adist LT 3.1) then begin
+            indx1 = ifile1 * 640L + lindgen(640)
+            indx2 = ifile2 * 640L + lindgen(640)
+            nn = djs_angle_match(outdat[indx1].ra, outdat[indx1].dec, $
+             outdat[indx2].ra, outdat[indx2].dec, dtheta=dtheta, $
+             mcount=mcount, mindx=mindx, mmax=1)
+            for i1=0, n_elements(indx1)-1 do begin
+               if (mcount[i1] GT 1) then $
+                message, 'More than 1 match found between two plates!'
+               if (mcount[i1] EQ 1) then begin
+                  ; Resolve a conflict between object indx1[i1]
+                  ; and indx2[mindx[i1]]
+                  ; 1) Prefer PROGNAME='main' over any other program names
+                  ; 2) Prefer PLATEQUALITY='good' over any other plate quality
+                  ; 3) Prefer observations with ZWARNING=0
+                  ; 4) Prefer the observation with the larger PLATESN2
+                  j1 = indx1[i1]
+                  j2 = indx2[mindx[i1]]
+                  if ((strmatch(outdat[j1].progname,'main*') EQ 1) $
+                   AND (strmatch(outdat[j2].progname,'main*') EQ 0)) then begin
+                     outdat[j2].specprimary = 0
+                  endif else if ((strmatch(outdat[j1].progname,'main*') EQ 0) $
+                   AND (strmatch(outdat[j2].progname,'main*') EQ 1)) then begin
+                     outdat[j1].specprimary = 0
+                  endif else if ((strmatch(outdat[j1].platequality,'good*') EQ 1) $
+                   AND (strmatch(outdat[j2].platequality,'good*') EQ 0)) then begin
+                     outdat[j2].specprimary = 0
+                  endif else if ((strmatch(outdat[j1].platequality,'good*') EQ 0) $
+                   AND (strmatch(outdat[j2].platequality,'good*') EQ 1)) then begin
+                     outdat[j1].specprimary = 0
+                  endif else if (outdat[j1].zwarning EQ 0 $
+                   AND outdat[j2].zwarning NE 0) then begin
+                     outdat[j2].specprimary = 0
+                  endif else if (outdat[j1].zwarning NE 0 $
+                   AND outdat[j2].zwarning EQ 0) then begin
+                     outdat[j1].specprimary = 0
+                  endif else if (outdat[j1].platesn2 GE outdat[j2].platesn2) then begin
+                     outdat[j2].specprimary = 0
+                  endif else begin
+                     outdat[j1].specprimary = 0
+                  endelse
+               endif
+            endfor
+         endif
+      endfor
    endfor
 
    ;----------
@@ -170,7 +243,7 @@ pro platemerge, zfile, outroot=outroot, public=public
     'rchi2'      , 0.0, $
     'ra'         , 0.0d, $
     'dec'        , 0.0d, $
-    'plate_sn2'  ,  0.0, $
+    'platesn2'   ,  0.0, $
     'counts_model', fltarr(5), $
     'objc_type'  ,  '', $
     'primtarget' ,  0L, $
@@ -178,9 +251,6 @@ pro platemerge, zfile, outroot=outroot, public=public
     'objtype'    ,  '' )
    adat = replicate(adat, nout)
    struct_assign, outdat, adat
-
-   adat.plate_sn2 = (outdat.spec1_g + outdat.spec1_i + outdat.spec2_g $
-    + outdat.spec2_i) / 4.0
 
    ii = where(strtrim(adat.class,2) EQ '')
    if (ii[0] NE -1) then adat[ii].class = '""'
