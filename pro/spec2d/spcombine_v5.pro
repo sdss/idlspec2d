@@ -209,7 +209,7 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
    ; Track memory usage
    thismem = memory()
    maxmem = maxmem > thismem[3]
-   splog, 'Max mmeory usage = ', string(maxmem/1e6,format='(f7.1)'), ' MB'
+   splog, 'Max memory usage = ', string(maxmem/1e6,format='(f7.1)'), ' MB'
 
    ;----------
    ; Compute the flux-correction vectors
@@ -224,7 +224,7 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
    ; Track memory usage
    thismem = memory()
    maxmem = maxmem > thismem[3]
-   splog, 'Max mmeory usage = ', string(maxmem/1e6,format='(f7.1)'), ' MB'
+   splog, 'Max memory usage = ', string(maxmem/1e6,format='(f7.1)'), ' MB'
 
    ;----------
    ; Close plot file - S/N plots are then put in the PLOTSNFILE file.
@@ -243,7 +243,7 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
    ; Track memory usage
    thismem = memory()
    maxmem = maxmem > thismem[3]
-   splog, 'Max mmeory usage = ', string(maxmem/1e6,format='(f7.1)'), ' MB'
+   splog, 'Max memory usage = ', string(maxmem/1e6,format='(f7.1)'), ' MB'
 
    splog, 'Total time for SPCOMBINE = ', systime(1)-stime0, ' seconds', $
     format='(a,f6.0,a)'
