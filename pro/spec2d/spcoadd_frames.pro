@@ -68,6 +68,7 @@
 ;   divideflat
 ;   djs_diff_angle()
 ;   idlspec2d_version()
+;   mkhdr
 ;   modfits
 ;   mrdfits()
 ;   pixelmask_bits()
@@ -428,11 +429,6 @@ pro spcoadd_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
           nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep, $
           maxiter=50, upper=3.0, lower=3.0, maxrej=1
 
-;plot, wave[*,indx], flux[*,indx], ps = 3
-;djs_oplot, finalwave, bestflux, color='red'
-;xyouts, 3.65, -10, string(ifiber)+string(format='(5(f8.2))', $
-;      plugmap[ifiber].mag)
-
          finalflux[*,ifiber] = bestflux
          finalivar[*,ifiber] = bestivar
          finalandmask[*,ifiber] = bestandmask
@@ -573,12 +569,41 @@ pro spcoadd_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    spawn, 'uname -n', uname
    sxaddpar, hdr, 'UNAME', uname[0]
 
-   ;-----------------------------------------
-   ;   Here we check for smear exposure used and place info in header
-   ;-----------------------------------------
+   ;----------
+   ; Check for smear exposure used and place info in header
+
    smearused = total((finalandmask AND pixelmask_bits('SMEARIMAGE')) NE 0) $
     GT 0 ? 'T' : 'F'
    sxaddpar, hdr, 'SMEARUSE', smearused, ' Smear image used?'
+
+   ;----------
+   ; Compute the fraction of bad pixels in total, and on each spectrograph.
+   ; Bad pixels are any with SKYMASK(INVVAR)=0, excluding those where
+   ; the NODATA bit is set in the pixel mask.
+
+   ifib1 = where(finalplugmap.spectrographid EQ 1, nfib1)
+   ifib2 = where(finalplugmap.spectrographid EQ 2, nfib2)
+   qbadpix = skymask(finalivar, finalandmask, finalormask) EQ 0 $
+    AND (finalandmask AND pixelmask_bits('NODATA')) EQ 0
+   if (nfib1 GT 0) then $
+    fbadpix1 = total(qbadpix[*,ifib1]) / (nfib1 * nfinalpix)
+   if (nfib2 GT 0) then $
+    fbadpix2 = total(qbadpix[*,ifib2]) / (nfib2 * nfinalpix)
+   if (nfib1 GT 0 AND nfib2 GT 0) then $
+    fbadpix = total(qbadpix[*,[ifib1,ifib2]]) / ((nfib1+nfib2) * nfinalpix) $
+   else if (nfib1 GT 0) then $
+    fbadpix = fbadpix1 $
+   else if (nfib2 GT 0) then $
+    fbadpix = fbadpix1 $
+   else $
+    fbadpix = 0
+
+   sxaddpar, hdr, 'FBADPIX', fbadpix, ' Fraction of bad pixels'
+   sxaddpar, hdr, 'FBADPIX1', fbadpix1, ' Fraction of bad pixels on spectro-1'
+   sxaddpar, hdr, 'FBADPIX2', fbadpix2, ' Fraction of bad pixels on spectro-2'
+
+   ;----------
+   ; Add keywords for IRAF-compatability
 
    add_iraf_keywords, hdr, wavemin, binsz
 
