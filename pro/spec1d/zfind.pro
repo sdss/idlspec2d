@@ -43,7 +43,8 @@
 ;   _EXTRA     - Keywords for ZCOMPUTE(), such as PSPACE, DOPLOT, DEBUG.
 ;
 ; OUTPUTS:
-;   result     - Structure with redshift-fit information.
+;   result     - Structure with redshift-fit information.  Structure
+;                elements are left blank if fewer than NFIND peaks are found.
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -180,11 +181,11 @@ function zfind, objflux, objivar, hdr=hdr, $
    ; value.  Do not modify any errors that are less than zero, since those
    ; can be used as just warning flags from the fit.
 
-   indx = where(zans.dof GT 0)
-   if (indx[0] NE -1) then $
+   indx = where(zans.dof GT 0, npeak)
+   if (npeak GT 0) then $
     zans[indx].z = 10.^(objdloglam * zans[indx].z) - 1.
    indx = where(zans.dof GT 0 and zans.z_err GT 0)
-   if (indx[0] NE -1) then $
+   if (npeak GT 0) then $
     zans[indx].z_err = $
      alog(10d) * objdloglam * zans[indx].z_err * (1 + zans[indx].z)
 
@@ -192,16 +193,18 @@ function zfind, objflux, objivar, hdr=hdr, $
    ; Copy into the output structure
 
    result = replicate(sp1d_struct(), nfind, nobj)
-   result.z = zans.z
-   result.z_err = zans.z_err
-   result.rchi2 = zans.chi2 / (zans.dof > 1)
-   result.dof = zans.dof
-   ntheta = n_elements(zans[0].theta)
-   result.theta[0:ntheta-1] = zans.theta
-   result.tfile = fileandpath(thisfile)
-   for icol=0, n_elements(columns)-1 do $
-    result.tcolumn[icol] = columns[icol]
-   result.npoly = npoly
+   if (npeak GT 0) then begin
+      result[indx].z = zans[indx].z
+      result[indx].z_err = zans[indx].z_err
+      result[indx].rchi2 = zans[indx].chi2 / (zans[indx].dof > 1)
+      result[indx].dof = zans[indx].dof
+      ntheta = n_elements(zans[0].theta)
+      result[indx].theta[0:ntheta-1] = zans[indx].theta
+      result[indx].tfile = fileandpath(thisfile)
+      for icol=0, n_elements(columns)-1 do $
+       result[indx].tcolumn[icol] = columns[icol]
+      result.npoly = npoly
+   endif
 
    return, result
 end
