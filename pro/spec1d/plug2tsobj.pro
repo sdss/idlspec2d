@@ -131,10 +131,15 @@ function plug2tsobj, plateid, ra, dec, plugmap=plugmap, dmin=dmin
          adist = djs_diff_angle(tstemp.ra, tstemp.dec, ra[iplug], dec[iplug])
          thismin = min(adist, imin)
          if (thismin GT dmin/3600.) then begin
-            if (strmatch(plugmap[iplug].objtype,'SKY*') EQ 0) then $
-             splog, 'Warning: Unmatched OBJTYPE=', $
-              strtrim(plugmap[iplug].objtype,2), $
-              ' at RA=', ra[iplug], ',DEC=', dec[iplug]
+            if (keyword_set(plugmap)) then begin
+               if (strmatch(plugmap[iplug].objtype,'SKY*') EQ 0) then $
+                splog, 'Warning: Unmatched OBJTYPE=' $
+                 + strtrim(plugmap[iplug].objtype,2) $
+                 + ' at RA=', ra[iplug], ',DEC=', dec[iplug]
+            endif else begin
+                splog, 'Warning: Unmatched ' $
+                 + ' at RA=', ra[iplug], ',DEC=', dec[iplug]
+            endelse
          endif else begin
             tsobj[iplug] = tstemp[imin]
          endelse
