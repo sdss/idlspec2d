@@ -44,7 +44,9 @@ pro traceset2xy, tset, xpos, ypos
       return
    endif
 
-   if (tset.func EQ 'legendre' OR tset.func EQ 'chebyshev') then begin
+   if (tset.func EQ 'legendre' OR $
+       tset.func EQ 'chebyshev' OR $
+       tset.func EQ 'poly') then begin
 
       ndim = size(tset.coeff, /n_dim)
       dims = size(tset.coeff, /dim)
