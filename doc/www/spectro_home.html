@@ -491,8 +491,10 @@ setup idlspec2d
 </PRE></DD></DL>
 
 <P>
-If you need to install the code yourself,
-you need two products: "idlutils", and "idlspec2d".  These will work
+If you need to install the code yourself, you need two products:
+"idlutils", and "idlspec2d".  If you wish to reduce the raw data
+from scratch, you will also need a third product called "specflat".
+These will work
 on any platform (Linux, SGI, Solaris, etc) as long as you also have
 an IDL license.  You must have "idl" in your path, and the IDL_PATH
 environment variable should already be set.  At Princeton, you would type:
@@ -506,22 +508,27 @@ alias idl $IDL_DIR/bin/idl
 You can download and set up these utilities in just a few minutes
 from a couple of tar files.  Click on the following files to download them:
 <UL>
-<LI><A HREF="idlutils-v4_7_4.tar">idlutils-v4_7_4.tar</A>
-<LI><A HREF="idlspec2d-v4_7_4.tar">idlspec2d-v4_7_4.tar</A>
+<LI><A HREF="idlutils-v4_8_1.tar">idlutils-v4_8_1.tar</A>
+<LI><A HREF="idlspec2d-v4_8_1.tar">idlspec2d-v4_8_1.tar</A>
+<LI><A HREF="specflat-v1_2.tar">specflat-v1_2.tar</A>
 </UL>
+This last tar file you will only need in the unlikely case that you
+are reducing the raw data.
 
 <P>
 If you've put these files in your home directory, then unpack and build
 them as follows:
 <DL><DD><PRE>
 tar xf idlutils*.tar
+tar xf specflat*.tar
 tar xf idlspec2d*.tar
 setenv IDLUTILS_DIR $HOME/idlutils
+setenv SPECFLAT_DIR $HOME/specflat
 setenv IDLSPEC2D_DIR $HOME/idlspec2d
 setenv IDL_PATH  +{$IDLUTILS_DIR}/goddard/pro:{$IDL_PATH}
 setenv IDL_PATH  +{$IDLUTILS_DIR}/pro:{$IDL_PATH}
 setenv IDL_PATH  +{$IDLSPEC2D_DIR}/pro:{$IDL_PATH}
-set path = ( $path {$IDLUTILS_DIR}/bin {$IDLSPEC2D_DIR}/bin )
+set path = ( $path {$IDLUTILS_DIR}/bin {$SPECFLAT_DIR}/bin {$IDLSPEC2D_DIR}/bin )
 cd $IDLUTILS_DIR
 evilmake all
 cd $IDLSPEC2D_DIR
