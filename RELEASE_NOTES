@@ -65,6 +65,8 @@ sprobot.sh: Add more time stamps to the robot log file.
             sed command no longer works the same.
 sprobot_start: Comment-out "spamdup" job in the cron file, since we don't
             seem to need that hack any more to keep the NSF-automounts alive.
+            Set $SPECLOG_DIR=$ASTROLOG_DIR for the purposes the the Spectro
+            robot.
 
 In idlutils:
 ASINH2: Better asinh (from Blanton for PROFINTERP procedure).
