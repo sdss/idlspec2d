@@ -1,4 +1,7 @@
 
+SDSSPROC: Add "WARNING" to the warning messages about invalid or
+            missing BC files.
+
 In specflat:
 specflat.table: Added "Flavor=Linux"
 
