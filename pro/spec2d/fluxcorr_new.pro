@@ -38,7 +38,7 @@ pro fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
    ;----------
    ; Read the plug-map file (for identifying sky fibers)
 
-   bsmearflux = mrdfits(bsmearfile,0)
+   bsmearflux = mrdfits(bsmearfile,0,bhdr)
    bsmearivar = mrdfits(bsmearfile,1)
    bsmearmask = mrdfits(bsmearfile,2)
    bsmearset  = mrdfits(bsmearfile,3)
@@ -56,7 +56,7 @@ pro fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
 
 
 
-   rsmearflux = mrdfits(rsmearfile,0)
+   rsmearflux = mrdfits(rsmearfile,0,rhdr)
    rsmearivar = mrdfits(rsmearfile,1)
    rsmearmask = mrdfits(rsmearfile,2)
    rsmearset  = mrdfits(rsmearfile,3)
@@ -82,6 +82,18 @@ pro fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
    smearflux = [bfit,rfit]
    smearivar = [bmask, rmask]
    nfiber = (size(smearflux,/dimens))[1]
+
+   ; --------------------------------------------------------
+   ;  Create basic smear mask
+   ;
+   smearmask = lonarr(nfiber) 
+   if (sxpar(bhdr, 'FLAVOR') EQ 'smear' AND $
+       sxpar(rhdr, 'FLAVOR') EQ 'smear') then $
+         smearmask = smearmask OR pixelmask_bits('SMEARIMAGE')
+
+   ;----------
+
+
    wave = [bwave,rwave] # replicate(1,nfiber)
 
    ncoeff = 3 ; ???
@@ -99,13 +111,18 @@ pro fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
       corrset.coeff[0,*] = 1.0
       corrset.coeff[1:*,*] = 0.0
 
-   ;----------
+      ;  if they are the same, set both high and med SN flagbits
+
+      thismask  = smearmask OR pixelmask_bits('SMEARHIGHSN')
+      thismask  = thismask  OR pixelmask_bits('SMEARMEDSN')
+
    ; Special case: If the science image and smear image is the same,
    ; then force their ratio to be unity.
 
      if (NOT (bsmearfile EQ bscifile[ifile] AND $
           rsmearfile EQ rscifile[ifile])) then begin
 
+       thismask  = smearmask 
        bfit = bwave # replicate(0,nfiber)
        bmask = bwave # replicate(0,nfiber)
        bsn = fltarr(nfiber) 
@@ -237,11 +254,18 @@ pro fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
            splog, 'WARNING: Replacing with median solution in fibers:', $
                 string(bad + 1)
            corrset[bad].coeff = mediancoeff
+           fibersn[bad] = 3
          endif
+         ; Set maskbits and append to end of corrfile
+         
+         thismask = thismask OR (fibersn LE 2) * pixelmask_bits('SMEARMEDSN')
+         thismask = thismask OR (fibersn EQ 1) * pixelmask_bits('SMEARHIGHSN')
+
        endelse
      endif
 
      mwrfits, corrset, corrfile[ifile], /create
+     mwrfits, thismask, corrfile[ifile]
 
    endfor
 
