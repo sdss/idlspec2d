@@ -296,18 +296,23 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
          if (ispecnum EQ 1) then sindx = s1 $
           else sindx = s2
 
-         igal = sindx[ where(qgal[sindx]) ]
-         istar = sindx[ where(qgal[sindx] EQ 0) ]
+         ii = where(gal[sindx], ngal)
+         if (ngal GT 0) then igal = sindx[ii]
+
+         ii = where(gal[sindx] EQ 0, nstar)
+         if (nstar GT 0) then istar = sindx[ii]
 
          djs_plot, [14,22], [14,22], xchars=xchars, ychars=ychars, $
           /xstyle, /ystyle, $
           xtitle='Fiber Magnitude', ytitle='Synthetic Magnitude', $
           title='(S/N)^2 for Spectro-' + string(ispecnum,format='(i1)')
 
-         djs_oplot, plugc[istar].mag[3], synthmag[2,iobj[istar]], $
-          psym=psym, symsize=symsize, color='blue'
-         djs_oplot, plugc[igal].mag[3], synthmag[2,iobj[igal]], $
-          psym=psym, symsize=symsize, color='red'
+         if (nstar GT 0) then $
+          djs_oplot, plugc[istar].mag[3], synthmag[2,iobj[istar]], $
+           psym=psym, symsize=symsize, color='blue'
+         if (ngal GT 0) then $
+          djs_oplot, plugc[igal].mag[3], synthmag[2,iobj[igal]], $
+           psym=psym, symsize=symsize, color='red'
 
          djs_oplot, [14.6], [21.1], psym=psym, symsize=symsize, color='blue'
          djs_oplot, [14.6], [20.6], psym=psym, symsize=symsize, color='red'
