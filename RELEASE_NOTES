@@ -56,6 +56,8 @@ ZFIND: If fewer than NFIND peaks are found, then return blank structures
 eigeninput_cvstar.dat: New file for PCA_CVSTAR.
 eigeninput_star.dat: Many more M stars added for implementing changes
             to PCA_STAR.
+opHdrFix.par: Correct some values for TILEID,RADEG,DECDEG for the early plates
+            187, 202 and 214.
 
 -------------------------------------------------------------------------------
 v4_8_4 (Aug 29, 2001 idlspec2d+idlutils)
@@ -152,7 +154,7 @@ v4_8_2 (Aug 16, 2001 idlspec2d+idlutils)
 Trivial changes for running this version at Fermi.
 
 SPALLREDUCE: SPECFLAT_DIR is not set now, if SPECFLAT product exists and 
-          is specified
+          is specified (this proc only used at Fermi).
 
 PLATECOMPARE: New proc for interactive comparison of descrepant redshifts.
 PLATELIST: Added /PURGE2D, /PURGE1D options.
