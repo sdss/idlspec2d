@@ -27,7 +27,6 @@
 ;                    Only use points where XVEC is within WIDTH of the
 ;                    the lowest-values point (which is used as the initial
 ;                    guess).
-
 ;
 ; OUTPUTS:
 ;   ypeak          - Fit value for either chi^2 or chi^2/DOF at the minima.
@@ -37,7 +36,7 @@
 ;   errcode        - Error codes for each minima; 0 for no errors in the fit.
 ;   npeak          - The number of peaks found, between [0,NFIND].
 ;   plottitle      - Title of plot (if /DOPLOT is set).
-;   doplot         - If set, then make plots.
+;   doplot         - If set, then make plots.  Discarded peaks are not plotted.
 ;
 ; COMMENTS:
 ;   This routine calls SVDFIT for fitting quadratics, or MPFIT for
@@ -70,11 +69,14 @@ forward_function mpfit, mpfitfun, mpfitpeak, mpfitpeak_gauss, $
 ;------------------------------------------------------------------------------
 ; Fit the minimum of YARR with a quadratic or gaussian.
 ; Return value is the minimum value of chi^2/DOF.
+; Set XPLOTFIT to 1 in order to return values in XPLOTFIT,YPLOTFIT,
+; XPLOTVAL,YPLOTVAL for plotting.
 
 function zfitmin, yarr, xarr, dofarr=dofarr, $
  xguess=xguess, width=width, xerr=xerr, ypeak=ypeak, errcode=errcode, $
- doplot=doplot, _EXTRA=KeywordsForPlot
+ xplotfit=xplotfit, yplotfit=yplotfit, xplotval=xplotval, yplotval=yplotval
 
+   if (keyword_set(xplotfit)) then doplot = 1
    npts = n_elements(yarr)
    if (NOT keyword_set(xarr)) then xarr = findgen(npts)
    if (keyword_set(dofarr)) then ydof = yarr / (dofarr + (dofarr EQ 0)) $
@@ -92,6 +94,8 @@ function zfitmin, yarr, xarr, dofarr=dofarr, $
    errcode = 0L
    xerr1 = 0.0
    xerr2 = 0.0
+   xplotfit = 0
+   yplotfit = 0
 
    ; Insist that there be at least 1 point to the left and right of XGUESS.
    junk = where(xarr LT xguess, nleft)
@@ -121,7 +125,9 @@ function zfitmin, yarr, xarr, dofarr=dofarr, $
    thisy = ydof[indx] * meandof
 
    if (keyword_set(doplot)) then begin
-      xplot = thisx[0] + findgen(101) * (thisx[nthis-1] - thisx[0]) / 100.
+      xplotfit = thisx[0] + findgen(101) * (thisx[nthis-1] - thisx[0]) / 100.
+      xplotval = thisx
+      yplotval = thisy / meandof
    endif
 
    ;----------
@@ -164,7 +170,7 @@ function zfitmin, yarr, xarr, dofarr=dofarr, $
       endif
 
       if (keyword_set(doplot)) then $
-       yplot = mpfitpeak_gauss(xplot - xguess, coeff)
+       yplotfit = mpfitpeak_gauss(xplotfit - xguess, coeff) / meandof
 
    ;----------
    ; Case of exactly 3 points: Quadractic fit
@@ -199,8 +205,10 @@ function zfitmin, yarr, xarr, dofarr=dofarr, $
       endif
 
       if (keyword_set(doplot)) then begin
-         yplot = coeff[0]
-         for ic=1, ndegree-1 do yplot = yplot + coeff[ic] * (thisx - xguess)^ic
+         yplotfit = coeff[0]
+         for ic=1, ndegree-1 do $
+          yplotfit = yplotfit + coeff[ic] * (xplotfit - xguess)^ic
+         yplotfit = yplotfit / meandof
       endif
 
    endif
@@ -219,21 +227,6 @@ function zfitmin, yarr, xarr, dofarr=dofarr, $
    endif else begin
       xbest = xguess
    endelse
-
-   if (keyword_set(doplot)) then begin
-      !x.ticks = 2
-      !x.tickv = [thisx[0], xbest, thisx[nthis-1]]
-      !x.tickname = [' ', strtrim(string(xbest),2), ' ']
-      djs_plot, [thisx], [thisy]/meandof, psym=-4, $
-       _EXTRA=KeywordsForPlot
-      if (errcode EQ 0) then color = 'green' $
-       else color='red'
-      if (keyword_set(yplot)) then $
-       djs_oplot, [xplot], [yplot]/meandof, color=color
-      djs_oplot, [xbest], [ypeak], psym=2, symsize=2, color=color
-      djs_oplot, [xbest,xbest]-xerr, !y.crange, linestyle=2, color=color
-      djs_oplot, [xbest,xbest]+xerr, !y.crange, linestyle=2, color=color
-   endif
 
    return, xbest
 end
@@ -285,7 +278,8 @@ function find_nminima, yflux, xvec, dofarr=dofarr, nfind=nfind, minsep=minsep, $
    ;----------
    ; Find up to NFIND peaks
 
-   for ifind=0, nfind-1 do begin
+   npeak = 0
+   while (npeak LT nfind) do begin
 
       ;----------
       ; Locate next minimum
@@ -295,20 +289,16 @@ function find_nminima, yflux, xvec, dofarr=dofarr, nfind=nfind, minsep=minsep, $
       ;----------
       ; Centroid on this peak (local minimum)
 
-      if ((keyword_set(doplot)) $
-       AND ifind GT 0) then begin
-         !y.tickname = replicate(' ',30)
-         !y.title = ''
-         !p.position[[0,2]] = !p.position[[0,2]] + dxplot
-      endif
-
+      if (keyword_set(doplot)) then xplotfit = 1
       xpeak1 = zfitmin(yflux, xvec, dofarr=dofarr, xguess=xvec[imin], $
-       width=width, xerr=xerr1, ypeak=ypeak1, errcode=errcode1, doplot=doplot)
+       width=width, xerr=xerr1, ypeak=ypeak1, errcode=errcode1, $
+       xplotfit=xplotfit, yplotfit=yplotfit, $
+       xplotval=xplotval, yplotval=yplotval)
 
       ;----------
       ; Save return values
 
-      if (ifind EQ 0) then begin
+      if (npeak EQ 0) then begin
          ; Always retain the first peak
          xpeak = xpeak1
          xerr = xerr1
@@ -323,9 +313,38 @@ function find_nminima, yflux, xvec, dofarr=dofarr, nfind=nfind, minsep=minsep, $
             errcode = [errcode, errcode1]
             ypeak = [ypeak, ypeak1]
          endif else begin
-            splog, 'Discarding peak #', ifind+1, ' of ', nfind
+            splog, 'Discarding peak #', npeak+1, ' of ', nfind
          endelse
       endelse
+
+      ; Increment NPEAK if a peak has been added
+      noldpeak = npeak
+      npeak = n_elements(xpeak)
+
+      ;----------
+      ; Make plot of this peak
+
+      if (keyword_set(doplot) AND npeak GT noldpeak) then begin
+         if (npeak GT 1) then begin
+            !y.tickname = replicate(' ',30)
+            !y.title = ''
+            !p.position[[0,2]] = !p.position[[0,2]] + dxplot
+         endif
+
+; ???
+         !x.ticks = 2
+         nthis = n_elements(xplotval)
+         !x.tickv = [xplotval[0], xpeak1, xplotval[nthis-1]]
+         !x.tickname = [' ', strtrim(string(xpeak1),2), ' ']
+         djs_plot, [xplotval], [yplotval], psym=4
+         if (errcode1 EQ 0) then color = 'green' $
+          else color='red'
+         if (keyword_set(yplotfit)) then $
+          djs_oplot, [xplotfit], [yplotfit], color=color
+         djs_oplot, [xpeak1], [ypeak1], psym=2, symsize=2, color=color
+         djs_oplot, [xpeak1,xpeak1]-xerr1, !y.crange, linestyle=2, color=color
+         djs_oplot, [xpeak1,xpeak1]+xerr1, !y.crange, linestyle=2, color=color
+      endif
 
       ;----------
       ; Exclude from future peak-finding all points within MINSEP of this
@@ -344,9 +363,9 @@ function find_nminima, yflux, xvec, dofarr=dofarr, nfind=nfind, minsep=minsep, $
       ; Test to see if we can find any more peaks
 
       junk = where(ycopy LT ydone, ct)
-      if (ct EQ 0) then ifind = nfind
+      if (ct EQ 0) then npeak = nfind
 
-   endfor
+   endwhile
 
    npeak = n_elements(xpeak)
 
