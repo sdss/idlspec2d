@@ -162,6 +162,11 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    print, 'Found ', numhighpixels, ' highpixels in extracted flatfield ', $
        flatname[iflat]
 
+   if (numhighpixels GT 1000) then begin
+     iarc = iarc + 1
+     iflat = iflat + 1
+   endif else begin
+
    ;---------------------------------------------------------------------------
    ; Compute fiber-to-fiber flat-field variations
    ;---------------------------------------------------------------------------
@@ -221,7 +226,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
        print, 'Trying the next arc ', arcname[iarc]
        print, '   and next flat ', flatname[iflat]
      endif else arcdone = 1
-     
+     endelse 
    endwhile
 
    if (arcdone NE 1) then $
@@ -377,7 +382,6 @@ for i=0,16 do oplot,fflat[*,i*19]
       print, 'now tweaking to sky lines'
       skycoeff = 2
       if(n_elements(vacsky) GT 3) then skycoeff = 3
-      if(n_elements(vacsky) GT 10) then skycoeff = 4
 
       fit_skyset, xpeak, ypeak, vaclambda, xsky, ysky, vacsky, skycoeff, $
         goodlines, wset_tweak, invset_tweak, ymin=ymin, ymax=ymax, func=func

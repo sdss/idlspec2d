@@ -38,7 +38,6 @@ function arcsky_fit, x, y, numarcs, arccoeff, skycoeff, $
 	res = svsol(u, w, v, beta, /double)
 
 	yfit = legarr # res
-
 	return, res
 end
 	

@@ -40,8 +40,12 @@
 pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
 
    if (NOT keyword_set(planfile)) then planfile = 'spPlan2d.par'
-   if (NOT keyword_set(docams)) then $
+
+   docomb = 0
+   if (NOT keyword_set(docams)) then begin
        docams = ['b1', 'r2', 'b2', 'r1'] ; do all cameras
+       docomb = 1
+   endif
    ndo = N_elements(docams)
 
    yanny_read, planfile, pdata, hdr=hdr
@@ -82,6 +86,7 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
    seqid = allseq[ sort(allseq.seqid) ].seqid
    seqid = allseq[ uniq(allseq.seqid) ].seqid
 
+   set_plot,'ps'
    for iseq=0, N_elements(seqid)-1 do begin
 
       ; Get the plate ID number from any (e.g., the first) exposure with
@@ -177,7 +182,7 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
     endif
       ; Combine all red+blue exposures for a given sequence
 
-      if (NOT keyword_set(docams)) then begin
+      if (docomb) then begin
 
 	spawn, 'mkdir -p '+combineDir	
 	startcombtime = systime(1)
@@ -204,6 +209,8 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
 
    endfor ; End loop for sequence number
 
+   device, /close
+   set_plot, 'x'
    return
 end
 ;------------------------------------------------------------------------------
