@@ -72,6 +72,7 @@ pro spreduce1d, platefile
 
    splog, filename=logfile
    splog, 'Log file ', logfile, ' opened ', systime()
+   splog, 'IDL version: ', string(!version,format='(99(a," "))')
    stime0 = systime(1)
 
    ;----------
