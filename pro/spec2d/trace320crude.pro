@@ -64,7 +64,7 @@
 ;-
 ;------------------------------------------------------------------------------
 function trace320crude, fimage, invvar, ystart=ystart, nmed=nmed, xgood=xgood, $
-   xmask=xmask, radius=radius, yset=yset, maxerr=maxerr, maxshifte=maxshift, $
+   xmask=xmask, radius=radius, yset=yset, maxerr=maxerr, maxshifte=maxshifte, $
    maxshift0=maxshift0, xerr=xerr, maxdev=maxdev, ngrow=ngrow, $
    fibermask=fibermask
 
