@@ -6,9 +6,9 @@
 ;   Combine several spectra of the same object, or resample a spectra.
 ;
 ; CALLING SEQUENCE:
-;   combine1fiber, inloglam, objflux, objivar, finalmask, indisp, $
-;    newloglam, newflux, newivar, andmask, ormask, newdisp, $
-;    nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep
+;   combine1fiber, inloglam, objflux, [ objivar, finalmask=, indisp=, $
+;    newloglam=, newflux=, newivar=, andmask=, ormask=, newdisp=, $
+;    nord=, binsz=, bkptbin=, maxsep= ]
 ;
 ; INPUTS:
 ;   inloglam       - Wavelengths in log10-Angstroms [NPIX,NSPEC]
@@ -278,8 +278,10 @@ pro combine1fiber, inloglam, objflux, objivar, $
 
       ibad = where(newivar EQ 0)
       if (ibad[0] NE -1) then begin
-         andmask[ibad] = andmask[ibad] AND pixelmask_bits('NODATA')
-         ormask[ibad] = ormask[ibad] AND pixelmask_bits('NODATA')
+         if (keyword_set(andmask)) then $
+          andmask[ibad] = andmask[ibad] AND pixelmask_bits('NODATA')
+         if (keyword_set(ormask)) then $
+          ormask[ibad] = ormask[ibad] AND pixelmask_bits('NODATA')
       endif
    endif
 
