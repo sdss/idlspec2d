@@ -25,6 +25,8 @@ SDSSPROC: Add VERSLOG, VERSFLAT keywords to specify versions of the
           products SPECLOG, SPECFLAT.
 SPCOADD_FRAMES: Include MJDLIST keyword in spPlate header, which will be
                 the list of all MJD's used in an SPCOMBINE.
+                Add BUNIT keyword for the flux, inverse variance, and
+                dispersion HDU's.
 TELLURIC_CORR: Fixed horrible bug in using fibermask to reject bad fibers
                (fixes PR #2162).  Also, when fitting the local continuum
                around a single telluric band for a single star with a

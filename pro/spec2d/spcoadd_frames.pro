@@ -498,6 +498,7 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
     ' SPCOADD finished', after='EXPTIME'
 
    sxaddpar, hdr, 'NWORDER', 2, ' Linear-log10 coefficients'
+   sxaddpar, hdr, 'NWORDER', 2, ' Linear-log10 coefficients'
    sxaddpar, hdr, 'WFITTYPE', 'LOG-LINEAR', ' Linear-log10 dispersion'
    sxaddpar, hdr, 'COEFF0', wavemin, $
     ' Central wavelength (log10) of first pixel'
@@ -527,9 +528,11 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
    fulloutname = djs_filepath(outputname, root_dir=combinedir)
 
    ; 1st HDU is flux
+   sxaddpar, hdr, 'BUNIT', '10E-17 erg/cm/s/Ang'
    mwrfits, finalflux, fulloutname, hdr, /create
 
    ; 2nd HDU is inverse variance
+   sxaddpar, hdrfloat, 'BUNIT', '1/(10E-17 erg/cm/s/Ang)^2'
    mwrfits, finalivar, fulloutname, hdrfloat
 
    ; 3rd HDU is AND-pixelmask
@@ -539,6 +542,7 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
    mwrfits, finalormask, fulloutname, hdrlong
 
    ; 5th HDU is dispersion map
+   sxaddpar, hdrfloat, 'BUNIT', 'pixels'
    mwrfits, finaldispersion, fulloutname, hdrfloat
 
    ; 6th HDU is plugmap
