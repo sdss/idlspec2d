@@ -405,23 +405,26 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
         legend, ['g', 'r', 'i'], color=djs_icolor(['blue', 'green', $
           'red']), linestyle=0, charthick=2, charsize = 0.7, thick=4
 
-        gfit = gaussfit(gxhist, gyhist, nterms=3, gcoef)
-        rfit = gaussfit(rxhist, ryhist, nterms=3, rcoef)
-        ifit = gaussfit(ixhist, iyhist, nterms=3, icoef)
+        djs_iterstat, goff[qobj], mean=goff_mean, sigma=goff_sig
+        djs_iterstat, roff[qobj], mean=roff_mean, sigma=roff_sig
+        djs_iterstat, ioff[qobj], mean=ioff_mean, sigma=ioff_sig
+;        gfit = gaussfit(gxhist, gyhist, nterms=3, gcoef)
+;        rfit = gaussfit(rxhist, ryhist, nterms=3, rcoef)
+;        ifit = gaussfit(ixhist, iyhist, nterms=3, icoef)
         oplot, [0, 0], [0,100], thick=4
 
         xyouts, 0.15, ymax*0.90, 'g offset = ' + $
-                string(gcoef[1], format='(F6.3)'), charsize = 0.7
+                string(goff_mean, format='(F6.3)'), charsize = 0.7
         xyouts, 0.15,  ymax*0.80, 'g sigma = ' + $
-                string(gcoef[2], format='(F6.3)'), charsize = 0.7
+                string(goff_sig, format='(F6.3)'), charsize = 0.7
         xyouts, 0.15, ymax*0.70, 'r offset = ' + $
-                string(rcoef[1], format='(F6.3)'), charsize = 0.7
+                string(roff_mean, format='(F6.3)'), charsize = 0.7
         xyouts, 0.15,  ymax*0.60, 'r sigma = ' + $
-                string(rcoef[2], format='(F6.3)'), charsize = 0.7
+                string(roff_sig, format='(F6.3)'), charsize = 0.7
         xyouts, 0.15,  ymax*0.50, 'i offset = ' + $
-                string(icoef[1], format='(F6.3)'), charsize = 0.7
+                string(ioff_mean, format='(F6.3)'), charsize = 0.7
         xyouts, 0.15,  ymax*0.40, 'i sigma = ' + $
-                string(icoef[2], format='(F6.3)'), charsize = 0.7
+                string(ioff_sig, format='(F6.3)'), charsize = 0.7
 
         if (ispecnum EQ 1 AND keyword_set(plottitle)) then $
           xyouts, 0.8, ymax * 1.03, plottitle, align=0.5, charsize=1.5
@@ -446,18 +449,20 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
         legend, ['(g-r)', '(r-i)'], color=djs_icolor(['green', 'red']), $
                linestyle=0, charthick=2, charsize = 0.7, thick=4
 
-        grfit = gaussfit(grxhist, gryhist, nterms=3, grcoef)
-        rifit = gaussfit(rixhist, riyhist, nterms=3, ricoef)
+        djs_iterstat, groff[qobj], mean=groff_mean, sigma=groff_sig
+        djs_iterstat, rioff[qobj], mean=rioff_mean, sigma=rioff_sig
+;        grfit = gaussfit(grxhist, gryhist, nterms=3, grcoef)
+;        rifit = gaussfit(rixhist, riyhist, nterms=3, ricoef)
         oplot, [0, 0], [0,100], thick=4
 
         xyouts, 0.10,  ymax*0.90, '(g-r) offset = ' + $
-                string(grcoef[1], format='(F6.3)'), charsize = 0.7
+                string(groff_mean, format='(F6.3)'), charsize = 0.7
         xyouts, 0.10,  ymax*0.80, '(g-r) sigma = ' + $
-                string(grcoef[2], format='(F6.3)'), charsize = 0.7
+                string(groff_sig, format='(F6.3)'), charsize = 0.7
         xyouts, 0.10,  ymax*0.70, '(r-i) offset = ' + $
-                string(ricoef[1], format='(F6.3)'), charsize = 0.7
+                string(rioff_mean, format='(F6.3)'), charsize = 0.7
         xyouts, 0.10,  ymax*0.60, '(r-i) sigma = ' + $
-                string(ricoef[2], format='(F6.3)'), charsize = 0.7
+                string(rioff_sig, format='(F6.3)'), charsize = 0.7
          
      endfor
    endif
