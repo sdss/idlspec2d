@@ -28,12 +28,7 @@
 ; EXAMPLES:
 ;
 ; BUGS:
-;   Try to avoid using SPAWN.
-;   How do I just combine files? and not re-run spreduce?
-;
-;   What happens when the gain has changed?
-;   We need to list opECalib.par in spPlan file.
-;   Use default opECalib if not found...
+;   This routine spawns the Unix command 'mkdir'.
 ;
 ; PROCEDURES CALLED:
 ;   cpbackup
