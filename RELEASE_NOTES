@@ -4,10 +4,13 @@ BSPLINE_ITERFIT (in idlutils): Modified to avoid crashing SPREDUCE1D.
    of the y-vector is zero.  (2) In the case where there are too few points to
    fit, still return a valid solution of all zeros.
 FINDSPEC: New routine for finding SDSS spectra that match a given RA, DEC.
+PLATELIST: Lower (S/N)^2 cutoff to 13 for all G,I bands (from 15 previously).
 SPREDUCE1D: Search for stars at velocities to +/- 1200 km/s (was 600 km/s).
             No longer identify objects as UNKNOWN, but rather set bits
               in a ZWARNING flag.
             Add outputs ZWARNING, FRACNSIGMA, COUNTS_SPECTRO, COUNTS_SYNTH.
+
+New installation script "evilinstall" in the idlutils product.
 
 -------------------------------------------------------------------------------
 v4_6_2 (Feb 14, 2001)
