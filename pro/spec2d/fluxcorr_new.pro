@@ -1,9 +1,9 @@
 ;+
 ; NAME:
-;   spcalib
+;   fluxcorr_new
 ;
 ; PURPOSE:
-;   Extract calibration frames.
+;   Compute the frame-by-frame relative scaling for each object on a plate.
 ;
 ; CALLING SEQUENCE:
 ;   fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
@@ -40,7 +40,6 @@
 ; EXAMPLES:
 ;
 ; BUGS:
-;
 ;  Blue wavelength region is hardwired: b1 = findgen(60)*4.0e-3 + 3.568
 ;  Red wavelength region is hardwired : r1 = findgen(54)*4.0e-3 + 3.756
 ;  Order of polynomial is hardwired:  3
