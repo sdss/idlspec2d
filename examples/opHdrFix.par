@@ -170,6 +170,9 @@ spechdrfix sdR-??-00007376 FLAVOR   "'unknown'"
 # Wrong exposure time in these headers on MJD 51928
 spechdrfix sdR-??-00008299 EXPTIME  900
 
-# Flat field was on in these headers on MJD 51929
+# Flat field was on in these exposures on MJD 51929
 spechdrfix sdR-??-00008323 FLAVOR   "'unknown'"
+
+# Guider was still on in this smear exposures on MJD 51981
+spechdrfix sdR-??-00008957 FLAVOR   "'unknown'"
 
