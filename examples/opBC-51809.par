@@ -80,4 +80,5 @@ bc "2 amp" 0 4 879  1    1167  881 BADBLK HOTCOL   # Added 040600
 bc "2 amp" 0 4 1893 1    1011 1037 BADBLK HOTCOL   # Added 040600
 bc "2 amp" 0 4 90   1    998  1050 BADBLK HOTCOL   # Added 040600
 bc "2 amp" 0 4 306  2    711  1337 BADBLK HOTCOL   # Added 040600
+bc "2 amp" 0 4 1009 14   0    2048 BADBLK BADCOL   # Bad col MJD=51809->51812
 
