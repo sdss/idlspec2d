@@ -85,6 +85,7 @@
 ;   $IDLSPEC2D_DIR/etc/spPlateList.par
 ;
 ; PROCEDURES CALLED:
+;   apo_checklimits()
 ;   chunkinfo()
 ;   copy_struct_inx
 ;   djs_filepath()
@@ -100,18 +101,55 @@
 ;   yanny_par()
 ;   yanny_read
 ;
+; INTERNAL SUPPORT ROUTINES:
+;   platelist_write
+;
 ; REVISION HISTORY:
 ;   29-Oct-2000  Written by D. Schlegel, Princeton
+;------------------------------------------------------------------------------
+pro platelist_write, plist, trimtags=trimtags, alias=alias, $
+ fileprefix=fileprefix, title=title
+
+   ascfile = djs_filepath(fileprefix+'.txt', root_dir=getenv('SPECTRO_DATA'))
+   htmlfile = djs_filepath(fileprefix+'.html', root_dir=getenv('SPECTRO_DATA'))
+
+   trimdat  = struct_trimtags(plist, select_tags=trimtags[0,*])
+   trimstring = struct_trimtags(plist, select_tags=trimtags[0,*], $
+    format=trimtags[1,*])
+   struct_print, trimstring, filename=ascfile, fdigit=3, alias=alias
+
+   for itag=0, n_tags(trimdat)-1 do begin
+      for iarr=0, n_elements(trimdat[0].(itag))-1 do begin
+         for irow=0, n_elements(trimdat)-1 do begin
+            markstring = apo_checklimits('SUMMARY', $
+             strupcase(trimtags[0,itag]), '', $
+             trimdat[irow].(itag)[iarr], /html)
+            trimstring[irow].(itag)[iarr] = markstring $
+             + trimstring[irow].(itag)[iarr]
+         endfor
+      endfor
+   endfor
+   struct_print, trimstring, /html, alias=alias, tarray=tarray
+   openw, lun, htmlfile, /get_lun
+   printf, lun, '<HTML>'
+   printf, lun, '<HEAD>'
+   printf, lun, '<TITLE>' + title + '</TITLE>'
+   printf, lun, '<H1>' + title + '</H1>'
+   printf, lun, '<BODY>'
+   printf, lun, '<A HREF="' + fileandpath(ascfile) + '">ASCII version</A>'
+   printf, lun, '<A HREF="platelist.fits">FITS version</A>'
+   for iline=0, n_elements(tarray)-1 do $
+    printf, lun, tarray[iline]
+   printf, lun, '</BODY>'
+   close, lun
+
+   return
+end
 ;------------------------------------------------------------------------------
 pro platelist, infile, plist=plist, create=create, $
  purge2d=purge2d, purge1d=purge1d, killpartial=killpartial
 
-   minsn2 = 13.0
    fitsfile = djs_filepath('platelist.fits', root_dir=getenv('SPECTRO_DATA'))
-   ascfile1 = djs_filepath('platelist.txt', root_dir=getenv('SPECTRO_DATA'))
-   htmlfile1 = djs_filepath('platelist.html', root_dir=getenv('SPECTRO_DATA'))
-   ascfile2 = djs_filepath('platequal.txt', root_dir=getenv('SPECTRO_DATA'))
-   htmlfile2 = djs_filepath('platequal.html', root_dir=getenv('SPECTRO_DATA'))
 
    ;----------
    ; If the /CREATE flag is not set, and the platelist file already exists
@@ -207,45 +245,45 @@ pro platelist, infile, plist=plist, create=create, $
     'n_star'   , 0L,  $
     'n_unknown', 0L,  $
     'n_sky'    , 0L, $
-    'success_main' , -1.0, $
-    'success_lrg' , -1.0, $
-    'success_qso' , -1.0, $
+    'success_main' , 0.0, $
+    'success_lrg' , 0.0, $
+    'success_qso' , 0.0, $
     'status2d' , 'Missing', $
     'statuscombine', 'Missing', $
     'status1d' , 'Missing', $
-    'public'  , '', $
-    'qualcomments'  , '' )
+    'public'  , ' ', $
+    'qualcomments'  , ' ' )
    trimtags1 = [ $
-    'plate'    , $
-    'mjd'      , $
-    'ra'       , $
-    'dec'      , $
-    'progname' , $
-    'chunkname', $
-    'platequality' , $
-    'platesn2' , $
-    'n_galaxy' , $
-    'n_qso'    , $
-    'n_star'   , $
-    'n_unknown', $
-    'n_sky'    , $
-    'public'   ]
+    ['plate'        ,   'i4'], $
+    ['mjd'          ,   'i5'], $
+    ['ra'           , 'f6.2'], $
+    ['dec'          , 'f6.2'], $
+    ['progname'     ,    'a'], $
+    ['chunkname'    ,    'a'], $
+    ['platequality' ,    'a'], $
+    ['platesn2'     , 'f5.1'], $
+    ['n_galaxy'     ,   'i3'], $
+    ['n_qso'        ,   'i3'], $
+    ['n_star'       ,   'i3'], $
+    ['n_unknown'    ,   'i3'], $
+    ['n_sky'        ,   'i3'], $
+    ['public'       ,    'a']  ]
    trimtags2 = [ $
-    'plate'    , $
-    'mjd'      , $
-    'sn2_g1'   , $
-    'sn2_i1'   , $
-    'sn2_g2'   , $
-    'sn2_i2'   , $
-    'fbadpix'  , $
-    'success_main' , $
-    'success_lrg'  , $
-    'success_qso'  , $
-    'status2d' , $
-    'statuscombine', $
-    'status1d' , $
-    'platequality' , $
-    'qualcomments'   ]
+    ['plate'        ,   'i4'], $
+    ['mjd'          ,   'i5'], $
+    ['sn2_g1'       , 'f5.1'], $
+    ['sn2_i1'       , 'f5.1'], $
+    ['sn2_g2'       , 'f5.1'], $
+    ['sn2_i2'       , 'f5.1'], $
+    ['fbadpix'      , 'f5.3'], $
+    ['success_main' , 'f5.1'], $
+    ['success_lrg'  , 'f5.1'], $
+    ['success_qso'  , 'f5.1'], $
+    ['status2d'     ,    'a'], $
+    ['statuscombine',    'a'], $
+    ['status1d'     ,    'a'], $
+    ['platequality' ,    'a'], $
+    ['qualcomments' ,    'a']  ]
    plist = replicate(plist, nfile)
 
    ;----------
@@ -651,7 +689,7 @@ pro platelist, infile, plist=plist, create=create, $
    endfor
 
    ;---------------------------------------------------------------------------
-   ; Write output files
+   ; Write ASCII + HTML output files
 
    alias = [['CHUNKNAME'    , 'CHUNK'   ], $
             ['PROGNAME'     , 'PROG'    ], $
@@ -666,17 +704,14 @@ pro platelist, infile, plist=plist, create=create, $
             ['SUCCESS_LRG'  , '%LRG'    ], $
             ['SUCCESS_QSO'  , '%QSO'    ], $
             ['STATUS2D'     , '2D'      ], $
-            ['STATUSCOMBINE', 'Comb'    ], $
+            ['STATUSCOMBINE', 'Combine' ], $
             ['STATUS1D'     , '1D'      ], $
             ['PLATEQUALITY' , 'QUALITY' ] ]
 
-   trimdat1 = struct_trimtags(plist, select_tags=trimtags1)
-   struct_print, trimdat1, filename=ascfile1, fdigit=3, alias=alias
-   struct_print, trimdat1, filename=htmlfile1, /html, fdigit=3, alias=alias
-
-   trimdat2 = struct_trimtags(plist, select_tags=trimtags2)
-   struct_print, trimdat2, filename=ascfile2, fdigit=3, alias=alias
-   struct_print, trimdat2, filename=htmlfile2, /html, fdigit=3, alias=alias
+    platelist_write, plist, trimtags=trimtags1, alias=alias, $
+    fileprefix='platelist', title='SDSS Spectroscopy Plates Observed List'
+    platelist_write, plist, trimtags=trimtags2, alias=alias, $
+    fileprefix='platequality', title='SDSS Spectroscopy Plate Quality List'
 
    ;----------
    ; Write the FITS binary table
