@@ -39,7 +39,7 @@
 ;   09-Nov-1999  Written by David Schlegel, Ringberg.
 ;-
 ;------------------------------------------------------------------------------
-function traceset2pix, tset, lambda, nicoeff=nicoeff
+function traceset2pix, tset, lambda, nicoeff=nicoeff, silent=silent
 
    ; Need 3 parameters
    if (N_params() LT 2) then begin
@@ -71,7 +71,7 @@ function traceset2pix, tset, lambda, nicoeff=nicoeff
       xmin = min(ypos)
       xmax = max(ypos)
       xy2traceset, ypos, xpos, invset, func=tset.func, ncoeff=nicoeff, $
-       xmin=xmin, xmax=xmax, maxiter=0
+       xmin=xmin, xmax=xmax, maxiter=0, silent=silent
       xvec = (2*lambda - xmin -xmax) / (xmax - xmin)
       if (tset.func EQ 'legendre') then legarr = flegendre(xvec, nicoeff)
       if (tset.func EQ 'chebyshev') then legarr = fchebyshev(xvec, nicoeff)
