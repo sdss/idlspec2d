@@ -324,7 +324,8 @@ pro platemerge, zfile, outroot=outroot1, public=public
        copy_struct_inx, tsobj, platedat $
       else $
        splog, 'WARNING: No tsObj file found for plate ', outdat[indx[0]].plate
-      copy_struct_inx, outdat, platedat, index_from=indx
+;      copy_struct_inx, outdat, platedat, index_from=indx
+      copy_struct_inx, outdat[indx], platedat
 
       mwrfits_chunks, platedat, outroot[0]+'.fits.tmp', $
        create=(ifile EQ 0), append=(ifile GT 0)
