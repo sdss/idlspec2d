@@ -49,6 +49,9 @@
 ;   The 'BADFLAT' bit is set in FIBERMASK if the mean throughput for
 ;   a fiber is less than 0.7 times the median of all good-fiber throughputs.
 ;
+;   In any given fiber, set FFLAT=0 wherever there are at least 5 contiguous
+;   bad pixels.
+;
 ; EXAMPLES:
 ;
 ; BUGS:
@@ -191,6 +194,18 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
         maxiter=10, /singlerej, xmask=xmask, yfit=fflat
 
    endelse
+
+   ; Set FFLAT=0 for any masked points as specified by FLUXIVAR.
+;   indx = where(fluxivar EQ 0)
+;   if (indx[0] NE -1) then fflat[indx] = 0
+
+   ; Set FFLAT=0 only when there are at least 5 bad pixels in a row. 
+   ; Smaller gaps should be OK with our spline-fitting across them.
+   sz = 5
+   for i=0, ntrace-1 do begin
+      indx = where(smooth( (smooth((fluxivar[*,i] NE 0)*sz, sz) EQ 0)*sz, sz ))
+      if (indx[0] NE -1) then fflat[indx,i] = 0
+   endfor
 
    ; Check to see if FIBERMASK has changed
    igood = where(fibermask EQ 0, ngood)
