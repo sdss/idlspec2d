@@ -371,7 +371,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
      endif
    endif  
 
-   ;------------------
+   ;----------
    ; Sky-subtract
 
    nbkpt = color EQ 'blue' ? 3*nx/4 : nx
@@ -380,37 +380,48 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
     fibermask=fibermask, upper=3.0, lower=3.0, tai=tai_mid, nbkpt=nbkpt)
    if (NOT keyword_set(skystruct)) then return
 
-   ;-----------------------------------------------------------
-   ;  Bad sky fibers???
-   ;
+   ;----------
+   ; If any of the sky-fibers are bad, then re-do sky-subtraction.
 
-   badskyfiber = where(djs_median(skysub[*,iskies]^2 * $
-                skysubivar[*,iskies], 1) GT 2.0)               
-   if badskyfiber[0] NE -1 then begin
-       fibermask[iskies[badskyfiber]] = fibermask[iskies[badskyfiber]] OR $
-          fibermask_bits('BADSKYFIBER')
-       splog, 'WARNING: Calling Skysubtract again, masked skyfibers',$
-            string(iskies[badskyfiber])
-       skystruct = skysubtract(flux, fluxivar, plugsort, vacset, $
-          skysub, skysubivar, iskies=iskies, pixelmask=pixelmask, $
-          fibermask=fibermask, upper=10.0, lower=10.0, tai=tai_mid, nbkpt=nbkpt)
+   ibadfib = where(djs_median(skysub[*,iskies]^2 * $
+    skysubivar[*,iskies], 1) GT 2.0)               
+   if (ibadfib[0] NE -1) then begin
+      fibermask[iskies[ibadfib]] = fibermask[iskies[ibadfib]] OR $
+       fibermask_bits('BADSKYFIBER')
+
+      splog, 'Calling skysubtract again; masked skyfibers',$
+       string(iskies[ibadfib])
+      skystruct = skysubtract(flux, fluxivar, plugsort, vacset, $
+       skysub, skysubivar, iskies=iskies, pixelmask=pixelmask, $
+       fibermask=fibermask, upper=10.0, lower=10.0, tai=tai_mid, nbkpt=nbkpt)
+      if (NOT keyword_set(skystruct)) then return
    endif
 
    ;----------
-   ; Sky-subtract again, this time with dispset (PSF subtraction)
-
-   nskypoly = 3L
-   skystruct_psf = skysubtract(flux, fluxivar, plugsort, vacset, $
-    skysubpsf, skysubpsfivar, iskies=iskies, pixelmask=pixelmask, $
-    fibermask=fibermask, upper=10.0, lower=10.0, tai=tai_mid, $
-    dispset=dispset, npoly=nskypoly, nbkpt=nbkpt, $
-    relchi2struct=relchi2struct)
+   ; QA plots for chi^2 from 1D sky-subtraction.
 
    qaplot_skysub, flux, fluxivar, skysub, skysubivar, $
-    vacset, iskies, title=plottitle+objname+' 1d Sky Subtraction'
+    vacset, iskies, title=plottitle+objname+' 1D Sky-subtraction'
 
-   qaplot_skysub, flux, fluxivar, skysubpsf, skysubpsfivar, $
-    vacset, iskies, title=plottitle+objname+' 2d Sky Subtraction'
+   ;----------
+   ; Sky-subtract one final time, this time with dispset (PSF subtraction)
+   ; (rejected sky fibers from above remain rejected).
+   ; Modify pixelmask in this call.
+
+   nskypoly = 3L
+   skystruct = skysubtract(flux, fluxivar, plugsort, vacset, $
+    skysub, skysubivar, iskies=iskies, pixelmask=pixelmask, $
+    fibermask=fibermask, upper=10.0, lower=10.0, tai=tai_mid, $
+    dispset=dispset, npoly=nskypoly, nbkpt=nbkpt, $
+    relchi2struct=relchi2struct, newmask=newmask)
+   pixelmask = newmask
+   if (NOT keyword_set(skystruct)) then return
+
+   ;----------
+   ; QA plots for chi^2 from 2D sky-subtraction.
+
+   qaplot_skysub, flux, fluxivar, skysub, skysubivar, $
+    vacset, iskies, title=plottitle+objname+' 2D Sky-subtraction'
 
    ;----------
    ; QA for 2 skylines in the blue (specify vacuum wavelengths below)
@@ -439,14 +450,8 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ;------------------------------------------
    ; Save the sky-subtracted flux values as is, and now modify flambda.
 
-   if keyword_set(skystruct_psf) then begin
-      flambda = skysubpsf
-      flambdaivar = skysubpsfivar
-   endif else begin
-      flambda = skysub
-      flambdaivar = skysubivar
-      nskypoly = 1L
-   endelse
+   flambda = skysub
+   flambdaivar = skysubivar
    skyimg = flux - flambda
    sxaddpar, objhdr, 'PSFSKY', nskypoly, ' Order of PSF skysubtraction'
    sxaddpar, objhdr, 'SKYCHI2', mean(relchi2struct.chi2), $
