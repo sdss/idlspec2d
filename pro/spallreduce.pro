@@ -144,6 +144,7 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams, $
       for ido=0, ndo-1 do begin
 
          icam = (where(camnames EQ docams[ido], camct))[0]
+         splog, camname=camnames[icam]
          if (camct NE 1) then message, 'Non-unique camera ID '
 
          ; Find the corresponding pixel flat
@@ -222,6 +223,7 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams, $
             heap_gc   ; garbage collection
          endif
 
+         splog, camname=''
       endfor ; End loop for camera number
 
    endif
