@@ -14,6 +14,7 @@ examples/opECalib.par -text
 include/evilmath.h -text
 include/export.h -text
 include/extract_row.h -text
+pro/TODO -text
 pro/arcsky_fit.pro -text
 pro/calcflux.pro -text
 pro/extract_boxcar.pro -text
@@ -21,6 +22,7 @@ pro/extract_image.pro -text
 pro/extract_profile.pro -text
 pro/extract_row.pro -text
 pro/fchebyshev.pro -text
+pro/fiberflat.pro -text
 pro/findobjects.pro -text
 pro/fitansimage.pro -text
 pro/fitarcimage.pro -text
@@ -33,6 +35,7 @@ pro/makefile -text
 pro/rdss_fits.pro -text
 pro/sdssproc.pro -text
 pro/skysubtract.pro -text
+pro/spec2d/TODO -text
 pro/spec2d/arcsky_fit.pro -text
 pro/spec2d/calcflux.pro -text
 pro/spec2d/extract_boxcar.pro -text
@@ -40,6 +43,7 @@ pro/spec2d/extract_image.pro -text
 pro/spec2d/extract_profile.pro -text
 pro/spec2d/extract_row.pro -text
 pro/spec2d/fchebyshev.pro -text
+pro/spec2d/fiberflat.pro -text
 pro/spec2d/findobjects.pro -text
 pro/spec2d/fitansimage.pro -text
 pro/spec2d/fitarcimage.pro -text

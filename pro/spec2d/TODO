@@ -1,0 +1,23 @@
+
+* Measure gain + read noise
+
+* Make bad pixel mask
+
+* Look at the bias frames
+
+* The b1 CCD has too much overscan subtracted on rows 0 and 1.
+  Check all overscan regions in SDSSPROC.
+
+* CR zapping.
+
+* Need some logic to make certain we're looking at a flat, arc, etc.
+
+* Need fiber-to-fiber flat-fielding, and flatten out any global variations,
+  such as low-response zones on the CCD.
+
+* Eschelle spectrum of sky for cross-correlating sky fibers to absolute
+  wavelengths.
+
+* Echelle spectrum of A,B bands for their removal.
+
+

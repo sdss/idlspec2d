@@ -16,7 +16,7 @@
 ;   objname    - Name of object SDSS image(s)
 ;
 ; OPTIONAL INPUT:
-;   pixflatname- Name of pixel-to-pixel flat, produced with SPFLAT.
+;   pixflatname- Name of pixel-to-pixel flat, produced with SPFLATTEN.
 ;
 ; REQUIRED KEYWORDS:
 ;   plugfile   - Name of plugmap file (Yanny parameter file)
@@ -38,7 +38,6 @@
 ; EXAMPLES:
 ;
 ; BUGS:
-;   The b1 CCD has too much overscan subtracted on rows 0 and 1.
 ;
 ; PROCEDURES CALLED:
 ;   djs_locate_file()
@@ -181,12 +180,15 @@ pro spreduce, flatname, arcname, objname, pixflatname, $
     else if (camcol EQ 4 OR camcol EQ 2) then color='red' $
     else message, 'No CAMCOL keyword in arc header'
 
-   fitarcimage, arc_flux, color, lamplist, xpeak, ypeak, wset, $
+   fitarcimage, arc_flux, arc_fluxivar, color, lamplist, xpeak, ypeak, wset, $
     invset, ans=wavesolution, lambda=lambda, goodlines=goodlines
 
    ;---------------------------------------------------------------------------
    ; Compute fiber-to-fiber flat-field variations
    ;---------------------------------------------------------------------------
+
+   fflat = fiberflat(flat_flux, wset)
+; Now do something with fiberflat !!!???
 
    ; Construct a vector for each fiber to take out global variations of
    ; the fibers relative to each other.  This needs the wavelength calibration.
@@ -269,7 +271,7 @@ stop
       ; counts are 10000 ADU per row.
 
       fextract = extract_boxcar(objimg, xsol, ycen)
-      scrunch = djs_median(fextract, 1)
+      scrunch = djs_median(fextract, 1) ; Find median counts/row in each fiber
       whopping = where(scrunch GT 10000.0, whopct)
       print, 'Number of bright fibers = ', whopct
 
