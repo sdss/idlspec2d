@@ -278,7 +278,7 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
       skyvarset = bspline_iterfit(skywave[posvar], skyvariance, $
         invvar=skyivar[posvar], nord=nord, upper=upper, lower=lower, $
         maxiter=maxiter, /eachgroup, bkpt=bkpt)
-      skyvarfit = bspline_valu(wave, skyvarset) * airmass_correction
+      skyvarfit = bspline_valu(wave, skyvarset) * airmass_correction^2
    endif
 
    ;----------
