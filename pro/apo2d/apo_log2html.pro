@@ -125,7 +125,8 @@ function apo_log_beginplate, platenum, mjd, camnames, outdir=outdir
    nextline = rowsep + colsep
    for icam=0, ncams-1 do $
     nextline = nextline + colsep + camnames[icam]
-   nextline = nextline + colsep + 'EXPTIME' + colsep + 'AIRTEMP' + colsep + 'UT'
+   nextline = nextline + colsep + 'EXPTIME' + colsep + 'AIRTEMP' $
+    + colsep + 'UT' + colsep + 'QUALITY'
    textout = [textout, nextline]
 
    textout = [textout, apo_log_tableline(ncams)]
@@ -176,10 +177,12 @@ function apo_log_fields, pp, fields, printnames=printnames, formats=formats
       exptimestring = apo_checklimits(pp[igood[0]].flavor, 'EXPTIME', $
        pp[igood[0]].camera, pp[igood[0]].exptime, /html) $
        + string(pp[igood[0]].exptime, format='(f8.1)')
+      qualstring = pp[igood[0]].quality
    endif else begin
       utstring = ''
       airtempstring = ''
       exptimestring = ''
+      qualstring = ''
    endelse
 
    tags = tag_names(pp[igood[0]])
@@ -204,7 +207,7 @@ function apo_log_fields, pp, fields, printnames=printnames, formats=formats
       if (ifield EQ 0) then $
        textout = rowsep + strupcase(flavor) + '-' + expstring $
         + nextline + exptimestring + colsep $
-        + airtempstring + colsep + utstring + colsep  $
+        + airtempstring + colsep + utstring + colsep + qualstring + colsep  $
       else $
        textout = [textout, rowsep + nextline]
    endfor
