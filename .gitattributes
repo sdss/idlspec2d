@@ -318,6 +318,7 @@ pro/spec1d/zrefind.pro -text
 pro/spec1d/ztweak.pro -text
 pro/spec1d/ztweak2.pro -text
 pro/spec1d/ztweak_gal.pro -text
+pro/spec1d/ztweak_star.pro -text
 pro/spec2d/Makefile -text
 pro/spec2d/TODO -text
 pro/spec2d/arcfit_guess.pro -text
