@@ -1,7 +1,14 @@
 
+EXTRACT_OBJECT, SKYSUBTRACT: Exit gracefully in the case of no good sky
+          fibers.  In that case, issue an "ABORT" log message, return
+          SKYSTRUCT=0 from SKYSUBTRACT, then do not write an spFrame file.
 FITMEANX: Make robust to no good sky lines for tweaking wavelength solution.
           In that case, the routine LOCATESKYLINES will return SKYSHIFT=0.
 LOCATESKYLINES: Test that the sky line file is successfully read.
+PLATELIST: Read MJDLIST keyword from the spPlate files, which will only exist
+           with future reductions.
+SPCOADD_FRAMES: Include MJDLIST keyword in spPlate header, which will be
+                the list of all MJD's used in an SPCOMBINE.
 
 YANNY_READ (in idlutils): Try to make backwards-compatable with IDL 5.2
           by replacing calls to STRSPLIT() with calls to STR_SEP.
