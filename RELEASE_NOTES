@@ -1,3 +1,8 @@
+
+SKYSUBTRACT: The "fix" in the previous version didn't properly check the
+             bad mask bits, and in fact could make things worse.  Now fixed.
+
+-------------------------------------------------------------------------------
 v4_6_0 (Feb 9, 2001)
 
 EXTRACT_OBJECT: Reverted to Gaussian Profile, more robust flat field 
