@@ -32,19 +32,48 @@ function quickextract, flatname, arcname, sciname, outname, $
    ;----------
    ; Extract and sky-subtract the science image
 
+
+   ; ----------------------------------------------------
+   ;  First let's try scattered light fit
+
+   nrow = (size(image))[2]
+   ncol = (size(image))[1]
+   skiprow = 8
+   yrow = lindgen(nrow/skiprow) * skiprow + skiprow/2
+   nfirst = n_elements(yrow)
+
+   sigma = 1.0
+   proftype = 1 ; Gaussian
+   npoly=8
+
+   traceset2xy, tset, ytemp, xcen
+
+
+   extract_image, image, invvar, xcen, sigma, tempflux, tempfluxivar, $
+          proftype=proftype, wfixed=[1], yrow=yrow, highrej=5, lowrej=5, $
+          npoly=npoly, ansimage=ansimage, relative=1
+
+   ntrace = (size(tempflux))[2]
+   junk = fitansimage(ansimage, 1, ntrace, npoly, yrow, $
+            tempflux, fluxm = [1], scatfit=scatfit)
+
+   scatflux = extract_boxcar(scatfit, xcen, radius=radius)
+
+
    ; Boxcar extract - no scattered light correction!
    flux = quickboxcar(image, invvar, tset=tset, fluxivar=fluxivar)
 
-;   traceset2xy, tset, ytemp, xcen
+   fluxsub = flux - scatflux
+
 ;   flux = extract_boxcar(image, xcen, radius=radius)
 ;   ; Estimate fluxivar
 ;   fluxivar = 1.0 / (abs(flux) + 10.0)
 
    ; Flat-field
-   divideflat, flux, fluxivar, fflat, fibermask=fibermask
+   divideflat, fluxsub, fluxivar, fflat, fibermask=fibermask
 
    ; Sky-subtract
-   skystruct = skysubtract(flux, fluxivar, plugsort, wset, $
+   skystruct = skysubtract(fluxsub, fluxivar, plugsort, wset, $
     objsub, objsubivar, iskies=iskies, fibermask=fibermask)
 
    ;----------
@@ -118,8 +147,8 @@ function quickextract, flatname, arcname, sciname, outname, $
    ; Write out the extracted spectra
 
    mwrfits, objsub, outname, /create
-   mwrfits, ojbsubivar, outname
-;   mwrfits, meansn, outname
+   mwrfits, objsubivar, outname
+   mwrfits, meansn, outname
 
    return, rstruct
 end
