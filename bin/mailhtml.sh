@@ -33,7 +33,7 @@ do
     echo '<A HREF="'$filename'">'$filename'</A>' >> $mailfile
     echo "" >> $mailfile
 
-    echo "!$filename<<EOT" >> $mailfile
+    echo '!'"$filename<<EOT" >> $mailfile
     cat $thislog | sed -e 's/<BODY.*>/<BODY>/' >> $mailfile
     echo "EOT" >> $mailfile
    
@@ -43,7 +43,7 @@ do
     do 
        echo $thissn
        snname=`echo $thissn | sed -n 's/\/.*\///p'`
-       echo "!$snname <<EOT" >> $mailfile
+       echo '!'"$snname <<EOT" >> $mailfile
        cat $thissn >> $mailfile
        echo "EOT" >> $mailfile
     done 
@@ -55,10 +55,9 @@ do
 #	Kill almost everything in the log directory
 #
 
-    rm -f $dir'/wset*.fits'
-    rm -f $dir'/tset*.fits'
-    rm -f $dir'/fflat*.fits'
-    rm -f $dir'/sci*.fits'
+    rm -f $dir/*.fits
+    rm -f $dir/*.ps
+    rm -f $dir/*.html
 
 done
 
