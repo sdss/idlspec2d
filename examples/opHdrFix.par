@@ -90,3 +90,8 @@ spechdrfix sdR-??-00007112 AZ       345.32650
 spechdrfix sdR-??-00007112 ALT      71.520262
 
 
+# Wrong exposure time in these headers on MJD 51828
+spechdrfix sdR-??-00008299 EXPTIME  900
+
+# Flat field was on in these headers on MJD 51829
+spechdrfix sdR-??-00008323 FLAVOR   "'unknown'"
