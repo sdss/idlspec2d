@@ -3,6 +3,7 @@
 /README -text
 bin/Makefile -text
 doc/Makefile -text
+doc/www/idlspec2d_install.html -text
 etc/BG14.txt -text
 etc/FG3.txt -text
 etc/Makefile -text

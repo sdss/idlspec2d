@@ -1,0 +1,174 @@
+<HTML>
+<HEAD><TITLE>SDSS IDLSPEC2D Installation</TITLE></HEAD>
+
+<BODY BGCOLOR="#000000"
+ TEXT="#FFFFFF" LINK="#FFF000" VLINK="#FFC000">
+
+<H1 ALIGN="center">SDSS IDLSPEC2D Installation</H1>
+
+<HR>
+
+<H2 ALIGN="left">Installing IDLSPEC2D w/UPD </H2>
+
+The following instructions are for installing IDLSPEC2D from
+the UPD repository at Fermilab.  This is the proper way to install
+a cut version of the code. <BR>
+
+<OL>
+
+<LI> ``<TT>idl</TT>'' should already be installed on the system.
+Try the following:<BR>
+
+<DL><DD>
+<TT> which idl </TT><BR>
+</DD></DL>
+
+which should return the path for <TT>idl</TT>.
+
+<BR><BR>
+
+<LI> Install ``idlspec2d'', which will also install ``idlutils''.
+The following example is for installing version v1_0. <BR>
+
+<DL><DD>
+<TT> setup upd </TT><BR>
+<TT> upd install idlspec2d v1_0 -H Linux+2 "-c -f Linux+2" </TT><BR>
+</DD></DL>
+
+</OL>
+
+<HR>
+
+<H2 ALIGN="left">Installing IDLSPEC2D w/SDSSTOOLS </H2>
+
+The following instructions are for building a version of IDLSPEC2D from
+the current version of the code in the Fermilab CVS repository.
+This is not the recommended method of installation.
+
+<OL>
+
+<LI> ``<TT>idl</TT>'' should already be installed on the system.
+Try the following:<BR>
+
+<DL><DD>
+<TT> which idl </TT><BR>
+</DD></DL>
+
+which should return the path for <TT>idl</TT>.
+
+<BR><BR>
+
+<LI> Download the ``idlutils'' and ``idlspec2d'' packages. <BR>
+
+<DL><DD>
+<TT> cd </TT><BR>
+<TT> setup sdsscvs </TT><BR>
+<TT> cvs co idlutils </TT><BR>
+<TT> cvs co idlspec2d </TT><BR>
+</DD></DL>
+
+If these packages already exist, you may choose to update them instead: <BR>
+
+<DL><DD>
+<TT> cd ~/idlutils </TT><BR>
+<TT> cvs update -d </TT><BR>
+<TT> cd ~/idlspec2d </TT><BR>
+<TT> cvs update -d </TT><BR>
+</DD></DL>
+
+<BR>
+
+<LI> Log in as user ``products'' and declare the products:
+
+<DL><DD>
+<TT> su products </TT> (need the password for this)<BR>
+<TT> ups declare -f Linux+2 -m idlutils.table
+     -c -r $HOME/idlutils idlutils cvs </TT><BR>
+<TT> ups declare -f Linux+2 -m idlspec2d.table
+     -c -r $HOME/idlspec2d idlspec2d cvs </TT><BR>
+<TT> exit </TT> (log out as user ``products'')<BR>
+</DD></DL>
+
+<BR>
+
+<LI> Build the ``idlutils'' and ``idlspec2d'' packages. <BR>
+
+<DL><DD>
+<TT> setup sdsstools </TT><BR>
+<TT> setup idlutils </TT><BR>
+<TT> setup idlspec2d </TT><BR>
+<TT> cd ~/idlutils </TT><BR>
+<TT> sdssmake -idl -opt -debug </TT><BR>
+<TT> cd ~/idlspec2d </TT><BR>
+<TT> sdssmake -idl -opt -debug </TT><BR>
+</DD></DL>
+
+</OL>
+
+
+<HR>
+
+<H2 ALIGN="left">Installing IDLSPEC2D w/out SDSSTOOLS </H2>
+
+The following instructions are for building a version of IDLSPEC2D without
+any other Fermi code (such as <TT>sdssmake</TT>).
+This is not the recommended method of installation.
+
+<OL>
+
+<LI> ``<TT>idl</TT>'' should already be installed on the system.
+Try the following:<BR>
+
+<DL><DD>
+<TT> which idl </TT><BR>
+</DD></DL>
+
+which should return the path for <TT>idl</TT>.
+
+<BR><BR>
+
+<LI> Download the ``idlutils'' and ``idlspec2d'' packages (as above). <BR>
+
+<BR>
+
+<LI> Build everything using the utility <TT>$IDLUTILS_DIR/bin/evilmake</TT>:
+
+<DL><DD>
+<TT> setenv IDLUTILS_DIR $HOME/idlutils </TT><BR>
+<TT> setenv IDLSPEC2D_DIR $HOME/idlspec2d </TT><BR>
+<TT> setenv PATH $PATH:$IDLUTILS_DIR/bin </TT><BR>
+<TT> cd $IDLUTILS_DIR </TT><BR>
+<TT> evilmake all </TT><BR>
+<TT> cd $IDLSPEC2D_DIR </TT><BR>
+<TT> evilmake all </TT><BR>
+</DL></DD>
+
+<BR>
+
+<LI> Then set the necessary environment variables:
+
+<DL><DD>
+<TT> setenv IDL_DEVICE X </TT><BR>
+<TT> setenv IDL_DIR /usr/local/rsi/idl_5.2 </TT><BR>
+<TT> setenv IDL_PATH         .:+$IDL_DIR/lib </TT><BR>
+<TT> setenv IDL_PATH         $IDL_PATH:+$IDLUTILS_DIR/goddard/pro </TT><BR>
+<TT> setenv IDL_PATH         $IDL_PATH:+$IDLUTILS_DIR/pro </TT><BR>
+<TT> setenv IDL_PATH         $IDL_PATH:+$IDLUTILS_DIR/pro </TT><BR>
+<TT> setenv IDL_PATH         $IDL_PATH:+$IDLSPEC2D_DIR/pro </TT><BR>
+
+</DL></DD>
+
+You may wish to add the above lines to your ``~/.cshrc'' file.
+
+</OL>
+
+<HR>
+
+<ADDRESS> Maintained by
+<A HREF="mailto:schlegel@astro.princeton.edu">David Schlegel</A>
+at Princeton University, Dept. of Astrophysics, Peyton Hall, Princeton NJ 08544
+</ADDRESS>
+
+</BODY>
+
+</HTML>
