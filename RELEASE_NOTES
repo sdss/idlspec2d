@@ -32,8 +32,11 @@ JEG_SPHOTO_COEF: Christy's spectrophotometry code using Jim Gunn's functional
         form to correct using the PHOTO magnitudes.
 KURUCZ_FITSFILE: New proc for generating a single FITS file from a list
         of ASCII-formatted Kurucz models.
+LINEBACKFIT: Consolodate some of the print statements from MPFIT onto 1 line.
 LRGMODEL_TRAIN: Calling script for training the Bruzual-Charlot models
         for photo-z's.
+PCA_GAL: Set the starting wavelength to 1850 Ang so that we can go to z=1.0;
+        it was 2300 Ang, which only let us fit out to z=0.6.
 PLATELIST: Get rid of the SMEARUSE entry, since it is now deprecated.
         Include any public plates in the default output file; this is
         because there are some DR1,DR2 plates that are called 'bad', but
@@ -57,6 +60,7 @@ READPLUGMAP: Many changes to this code, which is now used by both SOS
         and by Spectro-2D.  Options /APOTAGS,/DEREDDEN are for the SOS code.
         Option /CALIBOBJ is for the Spectro-2D reductions, and re-calibrates
         the photometry to the Princeton calibObj files.
+        Also read SFD_EBV (reddening values) with the /CALIBOBJ option.
 READSPEC: Add support for reading the sky (SKY=) from HDU #6 of the spPlate
         files.
         No longer name the returned plug-map structure, since we may be
@@ -113,10 +117,19 @@ SPREDUCE1D: Dispose of COUNTS_SPECTRO,COUNTS_SYNTH in favour of the fields
         Also compute SPECTROSKYFLUX,SPECTROFLUX_IVAR,SPECTROSYNFLUX_IVAR
         from the sky vectors, which are now in the new spPlate files.
         Log peak memory usage.
+        Fit galaxy redshifts out to z=1.0 (instead of 0.6).
+        Add the /verbose option to the zfind() function for the main loop
+        finding galaxy redshifts and QSO redshifts, since those are the two
+        loops where this code spends most of its time.
 SPREDUCE2D: Report peak memory usage.
 SPREDUCE,SPREDUCE2D: Pass the optional /DO_TELLURIC along to EXTRACT_IMAGE.
 UPDATE_PLATE_RELEASE: Code to mark the DR2 plates (for example) from
         the "etc/dr2spectro.par" file into "etc/spPlateList.par".
+VDISPFIT: Change the SPLOG of "Using previously cached..." to a simple
+        print statement so it doesn't go in the log files so many times.
+ZCOMPUTE: Do not be so verbose (printing a line to the log for every fit)
+        unless a /verbose keyword is set.  This is because the log files
+        were being dominated by this one line!
 
 etc/dr2spectro.par: List of DR2 plates from the web site
         "http://www.sdss.org/dr2/coverage/dr2spectro.par".
@@ -127,6 +140,11 @@ etc/sdss_*.dat: Remove these SDSS filter curves, which are now in the
 etc/skylines.par: Updates many of the sky lines to agree with the NIST 2.0
         database at "http://physics.nist.gov/cgi-bin/AtData/main_asd".
         The changes are very minor.  This does not update any of the OH lines.
+        Change the HgI 5460.74 wavelength to 5460.94 Ang; this is completely
+        ad hoc, simply because it *looks* like the line always ends up there
+        (c.f. PR #3259).  This may be the actual centroid of the line since
+        it is pressure-broadened in a funny way, but this should definitely
+        be checked (the PR will not be closed).
 include/export.h: Change to be consistent with the file by the same name
         in the idlutils product.  This has two minor changes for SGI 64-bit.
 templates/kurucz_stds_raw_v5.fits: FITS file with Kurucz templates
