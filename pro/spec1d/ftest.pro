@@ -94,32 +94,142 @@ END
 
 
 
-PRO ftest
+PRO ftest, result2
 
-  galfwhm = 3.5
+  galfwhm = 3.0
   templatefwhm = 2.5
 
   npix = 3918
-  iseed = !pi
+  iseed = !pi*2.
   raw = randomn(iseed, npix)
   ker = gausskernal(templatefwhm)
   smraw = convol(raw, ker, /edge_wrap)
 
-  template = smraw+randomn(iseed, npix)*0.1
+  template = smraw;+randomn(iseed, npix)*0.1
 
   ker = gausskernal(galfwhm)
   gal = shift(convol(raw, ker, /edge_wrap), 3)
-  gal = gal+randomn(iseed, npix)*0.2
- 
+
+  ngal = 250
+  gal=gal#(fltarr(ngal)+1)
+  FOR i=0, ngal-1 DO gal[*, i]=gal[*, i]+randomn(iseed, npix)*0.157
+
   templatesig = template*0.+1
   galsig = gal*0.+1
 
-  veldisp, gal, galsig, template, templatesig, result2, /doplot, sigmast=0.025
+  veldisp, gal, galsig, template, templatesig, result2, $
+    sigmast=0.025, /nodiff
   truedisp = sqrt(abs(galfwhm^2-templatefwhm^2))
-  print, 'True vel disp = ', truedisp/sqrt(8.*alog(2))
+  truesig2 = (truedisp/sqrt(8.*alog(2)))^2
+  print, 'True vel disp (sigma^2) = ', truesig2
 
+
+  bsig2 = result2.sigma_quotient  ; b^2 (b=vel dispers)
+  plothist, bsig2, bin=.010
+  oplot, truesig2*[1, 1], [0, 1e6], line=2
+  print, mean(bsig2)/truesig2
 
   return
 
+END
+
+
+
+PRO brg, result, z
+zap = 1
+  listpath = '~/idlspec2d/misc/'
+  readcol, listpath+'brg.list', num, plt, fiber, mjd, zchic
+;  w = where((plt GE  301) AND (plt LT 303))
+  w = where((plt GT 302) AND plt LT  306, ct)
+;  w = w[0:9] &  ct=n_elements(w)
+;  w = [88] & ct=1
+  plt = plt[w]
+  mjd = mjd[w]
+  fiber = fiber[w]
+  zchic = zchic[w]
+
+  readspec, 306, 250, flux=template,wave=wave,flerr=templatesig,plug=plug
+  readspec, plt, fiber, flux=galflux,wave=galwave,flerr=galsig,plug=galplug
+  bad = bytarr(ct)
+  FOR i=0, ct-1 DO BEGIN 
+      IF stdev(galflux[*, i]) EQ 0 THEN bad[i] = 1
+  ENDFOR 
+  w = where(bad EQ 0)
+  galflux = galflux[*, w]
+  galwave = galwave[*, w]
+  galsig  = galsig[*, w]
+  galplug = galplug[*, w]
+  plt = plt[w]
+  mjd = mjd[w]
+  fiber = fiber[w]
+  zchic = zchic[w]
+      
+
+  IF keyword_set(zap) THEN BEGIN 
+      
+      linemask = (galwave LT 5585) AND (galwave GE 5574)
+      galflux = djs_maskinterp(galflux, linemask, iaxis=0)
+      
+  ENDIF 
+
+
+  veldisp, galflux, galsig, galwave, template, templatesig, wave, result, $
+    sigmast=0.05, maxsig=6, /nodiff
+
+  z = 10.^(result.z/10000.)-1. 
+  sig = sqrt(result.sigma_quotient)
+  sig2err = (result.sigma_quotient_err)
+  mag = galplug.mag[2]
+  sigcc = result.sigma_cc
+
+  goodz = where(abs(z-zchic) LT 0.002, ct)
+  badz = where(abs(z-zchic) GT 0.002, ct)
+  print, 'Bad Fiber numbers: ', fiber[badz]
+stop
+  return
+
+END
+
+
+PRO ntest, noisenum, noisedenom
+
+  npix = 100000
+  iseed = !pi
+  x = double(randomn(iseed, npix))
+  y = double(randomn(iseed, npix))
+  x = (x-mean(x))/stdev(x)
+  y = (y-mean(y))/stdev(y)
+  r = sqrt(x^2+y^2)
+  plothist, r, bin=.01
+  print, mean(r)
+  print, stdev(r)
+  z = dcomplex(x, y)
+
+  znum = z*noisenum+complex(2, 2)
+  zden = z*noisedenom+complex(0, 1)
+  q = znum/shift(zden, 1)
+
+  print, mean(abs(q)), !pi/2
+  plothist, float(q^0.5),xr=[-1, 3],bin=.01
+  plothist, float(q^1.),xr=[-1, 3],bin=.01, /overplot, /line
+  print, 'mean(q), median(q): ', mean(float(q)), median(float(q))
+
+  print, 'mean(q^0.5)', mean(q^0.5), stdev(float(q^0.5))
+  print, 'exp(mean(alog(q))) ', exp(mean(alog(q))) 
+
+  res = fltarr(51)
+  x0 = findgen(51)/10.
+;  FOR i=0, 50 DO BEGIN 
+;      r = sqrt((x-x0[i])^2+y^2)
+;      print, mean(r)
+;      res[i] = mean(r)
+;  ENDFOR 
+
+  plot, x0, res^2-x0^2
+
+  model=exp(-(x0/1.25)^2/2.)*(!pi/2-1)+1
+  plot, x0, res^2-x0^2-model
+stop
+  return
 END
 
