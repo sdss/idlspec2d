@@ -63,7 +63,7 @@
 ;   reject_flat()
 ;   sdssproc
 ;   shift_trace()
-;   smooth_halo()
+;   smooth_halo2d()
 ;   splog
 ;   trace320crude()
 ;   traceset2xy
