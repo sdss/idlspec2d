@@ -141,19 +141,33 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    ; Boxcar extract - no scattered light correction!
 
    flux = quickboxcar(image, invvar, tset=tset, fluxivar=fluxivar)
-
    fluxsub = flux - scatflux
+   nfiber = (size(flux,/dimens))[1]
 
    ; Flat-field
    divideflat, fluxsub, fluxivar, fflat, fibermask=fibermask, /quiet
 
+   ;--------------------------------------------------------------------
+   ; Check for whopping fibers in SOS reductions, 
+   ; especially useful for flagging affected sky fibers
+
+   whopping = find_whopping(flux, 10000.0, whopct)
+   if (whopping[0] NE -1) then begin
+     splog, 'WARNING: Whopping fiber(s) at ', whopping, $
+            '  (may have adverse affect on S/N)'
+     wp = [whopping - 2 , whopping -1, whopping, whopping+1 , whopping+2]
+     wp = (wp > 0) < (nfiber - 1)
+     fibermask[wp] = fibermask[wp] OR pixelmask_bits('NEARWHOPPER')
+   endif
+   
    iskies = where(strtrim(plugsort.objtype,2) EQ 'SKY' $
       AND (plugsort.fiberid GT 0) AND (fibermask EQ 0), nskies)
 
    if nskies GT 10 then begin
       skylevel = djs_median(fluxsub[*,iskies], 1)
       outlier = (sort(skylevel))[[0,1,nskies-2,nskies-1]]
-      fibermask[outlier] = fibermask[outlier] OR fibermask_bits('BRIGHTSKY')
+      fibermask[iskies[outlier]] = fibermask[iskies[outlier]] $
+                                OR fibermask_bits('BRIGHTSKY')
    endif
 
 
@@ -189,7 +203,6 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    ;----------
    ; Compute average (but median-filtered) flux and signal-to-noise
 
-   nfiber = (size(flux,/dimens))[1]
    meanflux = fltarr(nfiber)
    meansn = fltarr(nfiber)
    for ifib=0, nfiber-1 do begin
