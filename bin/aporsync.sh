@@ -13,6 +13,8 @@
 # S. Burles, APO, 4 May 2000
 #------------------------------------------------------------------------------
 
+echo "APORSYNC FILES:"
+
 # This syncs /astrolog/[56789]???? from sdsshost to plate-mapper, excluding
 # the id* files.
 rsync -ar --rsh="ssh -c blowfish" \
