@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   readspec, plate, fiber, [mjd=, flux=, flerr=, invvar=, $
-;    andmask=, ormask=, plugmap=, loglam=, wave= ]
+;    andmask=, ormask=, plugmap=, loglam=, wave=, tsobj= ]
 ;
 ; INPUTS:
 ;   plate      - Plate number(s)
@@ -29,6 +29,7 @@
 ;   plugmap    - Plug-map entries [NFIBER]
 ;   loglam     - Log10-wavelength in log10-Angstroms [NPIXEL,NFIBER]
 ;   wave       - Wavelength in Angstroms [NPIXEL,NFIBER]
+;   tsobj      - tsObj-structure output [NFIBER]
 ;
 ; COMMENTS:
 ;   One can input PLATE and FIBER as vectors, in which case there must
@@ -44,6 +45,8 @@
 ; PROCEDURES CALLED:
 ;   headfits()
 ;   mrdfits
+;   plug2tsobj()
+;   struct_append()
 ;
 ; INTERNAL SUPPORT ROUTINES:
 ;   spec_append
@@ -94,10 +97,11 @@ end
 
 ;------------------------------------------------------------------------------
 pro readspec1, plate, range, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
- andmask=andmask, ormask=ormask, plugmap=plugmap, loglam=loglam, wave=wave
+ andmask=andmask, ormask=ormask, plugmap=plugmap, loglam=loglam, wave=wave, $
+ tsobj=tsobj
 
    common com_readspec, q_flux, q_flerr, q_invvar, q_andmask, q_ormask, $
-    q_plugmap, q_loglam, q_wave
+    q_plugmap, q_loglam, q_wave, q_tsobj
 
    platestr = string(plate,format='(i4.4)')
    if (NOT keyword_set(mjd)) then mjdstr = '*' $
@@ -123,6 +127,7 @@ pro readspec1, plate, range, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       plugmap = 0
       loglam = 0
       wave = 0
+      tsobj = 0
       return
    end
 
@@ -161,31 +166,37 @@ pro readspec1, plate, range, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       if (q_wave) then wave = 10^loglam
    endif
 
+   if (q_tsobj) then begin
+      tsobj = plug2tsobj(plate, plugmap=plugmap)
+   endif
+
    return
 end
 
 ;------------------------------------------------------------------------------
 pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
- andmask=andmask, ormask=ormask, plugmap=plugmap, loglam=loglam, wave=wave
+ andmask=andmask, ormask=ormask, plugmap=plugmap, loglam=loglam, wave=wave, $
+ tsobj=tsobj
 
    if (n_params() LT 1) then begin
-      print, 'Syntax: readspec, plate, fiber, [mjd=, flux=, flerr=, invvar=, $'
-      print, ' andmask=, ormask=, plugmap=, loglam=, wave= ] '
+      print, 'Syntax: readspec, plate, [ fiber, mjd=, flux=, flerr=, invvar=, $'
+      print, ' andmask=, ormask=, plugmap=, loglam=, wave=, tsobj= ] '
       return
    endif
 
    ; This common block specifies which keywords will be returned.
    common com_readspec, q_flux, q_flerr, q_invvar, q_andmask, q_ormask, $
-    q_plugmap, q_loglam, q_wave
+    q_plugmap, q_loglam, q_wave, q_tsobj
 
    q_flux = arg_present(flux)
    q_flerr = arg_present(flerr)
    q_invvar = arg_present(invvar)
    q_andmask = arg_present(andmask)
    q_ormask = arg_present(ormask)
-   q_plugmap = arg_present(plugmap)
+   q_plugmap = arg_present(plugmap) OR arg_present(tsobj)
    q_loglam = arg_present(loglam)
    q_wave = arg_present(wave)
+   q_tsobj = arg_present(tsobj)
 
    nplate = n_elements(plate)
    if (keyword_set(fiber)) then begin
@@ -215,6 +226,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
          plugmap1 = 0
          loglam1 = 0
          wave1 = 0
+         tsobj1 = 0
 
          if (fibervec[ifiber] EQ 0) then begin
             range = 0
@@ -225,7 +237,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
          readspec1, platevec[ifiber], range, mjd=mjdvec[ifiber], $
           flux=flux1, flerr=flerr1, invvar=invvar1, $
            andmask=andmask1, ormask=ormask1, plugmap=plugmap1, $
-           loglam=loglam1, wave=wave1
+           loglam=loglam1, wave=wave1, tsobj=tsobj1
          if (ifiber EQ 0) then begin
             if (q_flux) then flux = flux1
             if (q_flerr) then flerr = flerr1
@@ -235,24 +247,17 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
             if (q_plugmap) then plugmap = plugmap1
             if (q_loglam) then loglam = loglam1
             if (q_wave) then wave = wave1
+            if (q_tsobj) then tsobj = tsobj1
          endif else begin
             if (q_flux) then spec_append, flux, flux1
             if (q_flerr) then spec_append, flerr, flerr1
             if (q_invvar) then spec_append, invvar, invvar1
             if (q_andmask) then spec_append, andmask, andmask1
             if (q_ormask) then spec_append, ormask, ormask1
-            if (q_plugmap) then begin
-               if (keyword_set(plugmap)) then begin
-                  tmp_plug= plugmap[0]
-                  if (size(plugmap1,/tname) EQ 'STRUCT') then $
-                   struct_assign, plugmap1, tmp_plug $
-                  else $
-                   struct_assign, {junk:0}, tmp_plug
-                  plugmap = [plugmap, tmp_plug]
-               endif
-            endif
+            if (q_plugmap) then outstruct = struct_append(plugmap, plugmap1)
             if (q_loglam) then spec_append, loglam, loglam1
             if (q_wave) then spec_append, wave, wave1
+            if (q_tsobj) then tsobj = struct_append(tsobj, tsobj1)
          endelse
       endfor
    endif else begin
@@ -265,7 +270,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       readspec1, plate, range, mjd=mjd, $
        flux=flux, flerr=flerr, invvar=invvar, $
         andmask=andmask, ormask=ormask, plugmap=plugmap, $
-        loglam=loglam, wave=wave
+        loglam=loglam, wave=wave, tsobj=tsobj
    endelse
 
    return
