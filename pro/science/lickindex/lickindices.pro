@@ -32,9 +32,10 @@ function lickindices, samples, ver1Ddir, contype, test = test, list = list
          spec = mrdfits(ff,0,hdr)
 
          npix= (size(spec[*,0]))[1]
+	 wave=sxpar(hdr,'COEFF0')+ findgen(npix)*0.0001
 
-         one_indices, spec[*,0], spec[*,2], sample[good[i]].z_1D, contype, $
-                     abslines, abslineserr, sn
+         one_indices, spec[*,0], wave, spec[*,2], sample[good[i]].z_1D, $
+                     contype, abslines, abslineserr, sn
 
          sample[good[i]].lickindex=abslines
          sample[good[i]].lickindexerr=abslineserr

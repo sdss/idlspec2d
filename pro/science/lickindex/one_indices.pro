@@ -1,4 +1,4 @@
-Pro one_indices, galfluxbest, galsigbest, bestredshift, pp, absline, errabsline, snoise, m = m , q = q, galsmooth = galsmooth
+Pro one_indices, galfluxbest, galwavebest, galsigbest, bestredshift, pp, absline, errabsline, snoise, m = m , q = q, galsmooth = galsmooth
 
 ; pp=0  without continuum 
 ; pp=1  continuum obtained splining only the pseudo continuum regions
@@ -17,9 +17,7 @@ indr=alog10(contr)
 
 npix=(size(galfluxbest))[1]
 
-xx=3.57403 + findgen(npix)*0.0001
-
-x=xx-alog10(1+bestredshift)
+x=galwavebest-alog10(1+bestredshift)
 
 
 if (pp EQ 1 OR pp EQ 2) then begin
