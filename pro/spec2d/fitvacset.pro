@@ -40,7 +40,7 @@
 ;   20-Jan-2000  Written by S. Burles, Chicago
 ;-
 ;------------------------------------------------------------------------------
-function fitvacset, xpeak, lambda, wset, arcshift, helio=helio
+function fitvacset, xpeak, lambda, wset, arcshift, helio=helio, airset=airset
 
    xmin = wset.xmin
    xmax = wset.xmax
@@ -73,6 +73,12 @@ function fitvacset, xpeak, lambda, wset, arcshift, helio=helio
    xy2traceset, transpose(double(xpeak+arcshift)), $
     vacloglam # (dblarr(nfiber)+1), $
     vacset, ncoeff=ncoeff, xmin=xmin, xmax=xmax
+
+   if ARG_PRESENT(airset) then $
+     xy2traceset, transpose(double(xpeak+arcshift)), $ 
+                  alog10(lambda) # (dblarr(nfiber)+1), $
+                  airset, ncoeff=ncoeff, xmin=xmin, xmax=xmax
+
 
    return, vacset
 end
