@@ -78,9 +78,9 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad
    endif
 
    if (apo_uname NE 'sos') then begin
-      print, 'This procedure can only be run on the machine sos.apo.nmsu.edu'
-      !quiet = quiet
-      return
+;      print, 'This procedure can only be run on the machine sos.apo.nmsu.edu'
+;      !quiet = quiet
+;      return
    endif
 
    ;----------
@@ -209,13 +209,24 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad
    djs_unlockfile, sdfixname
 
    ;----------
+   ; Use an explicitly-defined structs such that the fTCL Yanny-readers
+   ; will still work.
+
+   structs = ['typedef struct {', $
+              '  char fileroot[20]; # Root of file name, without any ".fit" suffix', $
+              '  char keyword[9]; # Keyword name', $
+              '  char value[80]; # Keyword value (as a string)', $
+              '} OPHDRFIX;']
+
+   ;----------
    ; Append to the existing data structures in the sdHdrFix file,
    ; or create a new one if the file does not yet exist.
 
    if (NOT keyword_set(pdata)) then begin
       while (djs_lockfile(sdfixname) EQ 0) do wait, 2
-      yanny_write, sdfixname, ptr_new(fstruct)
+      yanny_write, sdfixname, ptr_new(fstruct), structs=structs
       djs_unlockfile, sdfixname
+      ncorr = 1
    endif else begin
       ; Append data to the relevant data structure.
       i = (where(stnames EQ tag_names(fstruct, /structure_name)))[0]
@@ -230,9 +241,9 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad
       yanny_write, sdfixname, pdata, hdr=hdr, enums=enums, structs=structs, $
        stnames=stnames
       djs_unlockfile, sdfixname
+      ncorr = n_elements(*pdata[i])
    endelse
 
-   ncorr = n_elements(*pdata[i])
    yanny_free, pdata
    !quiet = quiet
 
