@@ -76,7 +76,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
                ymodel=ymodel, fscat=fscat,proftype=proftype,ansimage=ansimage, $
                wfixed=wfixed, mask=mask, pixelmask=pixelmask, reject=reject, $
                nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej, $
-	       fitans=fitans, whopping=whopping, oldreject=oldreject, $
+               fitans=fitans, whopping=whopping, oldreject=oldreject, $
                relative=relative, chisq=chisq, wsigma=wsigma, nband=nband, $
                pimage=pimage
 
@@ -91,7 +91,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
    endif
 
 ;
-;	fimage should have [nCol,nRow]
+; fimage should have [nCol,nRow]
 ;
    fimagesize = size(fimage)
    if (fimagesize[0] NE 2) then message, 'FIMAGE must be 2 dimensional'
@@ -105,7 +105,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
    if (NOT keyword_set(wsigma)) then wsigma = 25.0
 
 ;
-;	Check dimensions
+; Check dimensions
 ;
 
    nx = fimagesize[1]
@@ -119,14 +119,14 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
     message, 'Number of cols in xcen must equal number of rows in FIMAGE'
 
 ;
-;	Xcen should have dimensions [nRows, nTrace]
+; Xcen should have dimensions [nRows, nTrace]
 ;
    nTrace = xcensize[2]
 
 ;
-;	For this procedure, we want to work with transposes:)
-;	That is [nTrace, nRow] since we work row by row.
-;	But all answers will be returned as [nRow, nTrace]
+; For this procedure, we want to work with transposes:)
+; That is [nTrace, nRow] since we work row by row.
+; But all answers will be returned as [nRow, nTrace]
 ;
 
 ;   xcenuse = transpose(xcen)
@@ -198,7 +198,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
    lTrace = lindgen(nTrace)
 
 ;
-;	Prepare Output arrays
+; Prepare Output arrays
 ;
     if ((size(flux))[0] NE 2) then flux = fltarr(nRowExtract, nTrace) $
      else if ((size(flux))[1] NE nRowExtract OR $
@@ -212,21 +212,21 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
 
    whoppingct = 0
    if(whopping[0] NE -1) then $
-	 whoppingct = n_elements(whopping)
+    whoppingct = n_elements(whopping)
 
    ma = nTrace*nCoeff + nPoly + whoppingct
 
    squashprofile = 0
    if ARG_PRESENT(fitans) then squashprofile = 1
 ;
-;	Now loop over each row specified in YROW 
-;	and extract with rejection with a call to extract_row
-;       Check to see if keywords are set to fill optional arrays
+; Now loop over each row specified in YROW 
+; and extract with rejection with a call to extract_row
+; Check to see if keywords are set to fill optional arrays
 ;
 
    ii = where(mask EQ 0, initiallyrejected)
 
-   print, ' ROW NITER CHI^2'
+   print, ' ROW NITER SIG(med) CHI^2'
    for iy=0, nRowExtract-1 do begin
      cur = yrow[iy]
 
@@ -239,7 +239,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
      whoppingct = 0
      if(whopping[0] NE -1) then begin
          whoppingcur = transpose(xcen[cur,whopping])
-	 whoppingct = n_elements(whopping)
+         whoppingct = n_elements(whopping)
      endif
      
      if ARG_PRESENT(fitans) then begin
@@ -251,7 +251,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
      contribution = 0.02 * (1.0 + 1.5*(cur/1200.0)^2)
      pixelmasktemp = 0
      ansrow = extract_row(fimage[*,cur], invvar[*,cur], $
-      xcen[cur,*],sigmacur,ymodel=ymodelrow, fscat=fscatrow, $
+      xcen[cur,*],sigmacur[*],ymodel=ymodelrow, fscat=fscatrow, $
       proftype=proftype, iback=iback, reject=reject, pixelmask=pixelmasktemp, $
       wfixed=wfixed, mask=masktemp, diagonal=prow, nPoly=nPoly, $
       niter=niter, squashprofile=squashprofile,inputans=inputans, $
@@ -309,8 +309,8 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
        endif
 
      endif
-     print, format='($, ".",i4.4,i4,f7.2,a16)',cur,niter, chisqrow, $
-          string([8b,8b,8b,8b,8b,8b,8b,8b,8b,8b,8b,8b,8b,8b,8b,8b])
+     print, cur, niter, djs_median(sigmacur), chisqrow, $
+      string(13b), format='($, ".",i4.4,i4,f8.2,f8.2,a1)'
    endfor
 
    if total(finite(chisq) EQ 0) GT 0 then $
