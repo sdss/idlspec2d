@@ -172,10 +172,10 @@ if [ ${vers:0:5} != NOCVS ] ; then upsversion=$vers ; fi
 # in the background.  The calls to the 2d and 1d scripts will exit if
 # those scripts are already running.
 
-   sprobot2d.sh ",topdir='$topoutdir', upsversion=\'$upsversion\', nice=19"
+   sprobot2d.sh ",topdir='$topoutdir', upsversion='$upsversion', nice=19"
    cd $SPECTRO_DATA
    echo "platelist, /create" | idl
-   sprobot1d.sh ",topdir='$topoutdir', upsversion=\'$IDLSPEC2D_VERSION\', nice=19" &
+   sprobot1d.sh ",topdir='$topoutdir', upsversion='$upsversion', nice=19" &
 
 #------------------------------------------------------------------------------
 # Start the batch processing for Spectro-1D if it's not already running.
