@@ -513,6 +513,11 @@ bad sky-residuals.
 <P>
 The following messages may appear:
 <UL>
+<LI><B>Sun above the horizon by ... deg for non-test exposure</B> <BR>
+    This is triggered for any exposure taken during the daytime not
+    marked as a test exposure.  This is to ensure that the observers
+    mark any afternoon calibration exposures as "test" so that they
+    don't get used later in the full reductions.
 <LI><B>Error reading sdHdrFix file</B> <BR>
     The sdHdrFix file (sdHdrFix-$MJD.par) in sos.apo:/data/spectro/astrolog/$MJD
     exists but is not a valid Yanny parameter file.  This file is written
