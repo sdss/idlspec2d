@@ -482,8 +482,8 @@ ormask = 0 ; Free memory
 
    ; Warning: Redshift-error warning flag set to -1, which means that
    ; the chi^2 minimum was at the edge of the redshift-fitting range.
-   qflag = res_all.z_err EQ -1
-   zwarning = zwarning OR 32L * qflag
+;   qflag = res_all.z_err EQ -1
+;   zwarning = zwarning OR 32L * qflag
 
    res_all.zwarning = zwarning
 
