@@ -37,6 +37,8 @@
 ; EXAMPLES:
 ;
 ; BUGS:
+;  I've now changed traceset2pix to use the forward trace set, but have
+;  not yet made any changes to this code.
 ;
 ; PROCEDURES CALLED:
 ;

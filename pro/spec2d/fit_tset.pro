@@ -51,6 +51,8 @@ pro fit_tset, xnew, ycen, lambda, goodlines, wset, invset, $
 	       use = where(goodlines[*,i] NE 0)
             endelse 
 
+; stop ??? CAN CRASH ON THE NEXT LINE SINCE SOME OF THE WAVNORM VALUES
+; ARE NaN 's 
 	    res = func_fit((wavnorm[i,use])[*], lambda[use], ncoeff, $
                function_name=function_name, yfit=yfit)
 ;	    res = svdfit((wavnorm[i,use])[*], lambda[use], ncoeff, $

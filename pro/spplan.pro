@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   spplan, [ indir=indir, plugdir=plugdir, flatdir=flatdir, $
-;    mjd=mjd, planfile=planfile, run=run, /flats, /checkstats ]
+;    mjd=mjd, planfile=planfile, /flats, /checkstats ]
 ;
 ; INPUTS:
 ;
@@ -22,7 +22,7 @@
 ;                unless FLATS is set, then default to 'spPlanFlat.par'
 ;   flats      - Set this keyword to plan the spPlanFlat file
 ;   checkstats - Set this keyword to read in full frame and do statistics
-;	         on the frames to verify flavor
+;                on the frames to verify flavor
 ;
 ; OUTPUT:
 ;
@@ -39,6 +39,7 @@
 ;
 ; BUGS:
 ;   Need to implement lampfile.
+;   Document use of ROOT2D, COMBROOT.
 ;
 ; PROCEDURES CALLED:
 ;   yanny_read
@@ -86,7 +87,7 @@ end
 
 pro spplan, indir=indir, plugdir=plugdir, flatdir=flatdir, $
  mjd=mjd, planfile=planfile, flats=flats, checkstats=checkstats, $
- run=run, root2d=root2d, combroot = combroot
+ root2d=root2d, combroot=combroot
 
    if (NOT keyword_set(run)) then run = 0
    if (NOT keyword_set(indir)) then indir = '.'
@@ -98,8 +99,7 @@ pro spplan, indir=indir, plugdir=plugdir, flatdir=flatdir, $
    if (NOT keyword_set(combroot)) then begin
       if (strpos(indir, '*') EQ -1) then combroot = indir $
        else combroot = '.'
-   endif 
-
+   endif
 
    if (NOT keyword_set(flatdir)) then begin
       if (strpos(indir, '*') EQ -1) then flatdir = indir $
@@ -120,7 +120,7 @@ pro spplan, indir=indir, plugdir=plugdir, flatdir=flatdir, $
    camnums = ['01', '02', '03', '04']
    ncam = N_elements(camnames)
 
-   fullname = findfile(filepath('*.fit',root_dir=indir), count=nfile)
+   fullname = findfile(filepath('*.fit', root_dir=indir), count=nfile)
 
    if (nfile EQ 0) then $
     message, 'No files found.'
@@ -164,7 +164,7 @@ pro spplan, indir=indir, plugdir=plugdir, flatdir=flatdir, $
 
       if (keyword_set(checkstats)) then $
         newflavor = checkflavor(image, flavor[i], camnames[goodcamera])
-	
+
       ; Rename 'target' as 'science'
       if (FLAVOR[i] EQ 'target') then FLAVOR[i] = 'science'
 
@@ -264,7 +264,7 @@ pro spplan, indir=indir, plugdir=plugdir, flatdir=flatdir, $
           platestr = string(pltid,format='(i04.4)') $
           else platestr = '0000'
          files = 'plPlugMapM-' + platestr + '*.par'
-         files = findfile(filepath(files,root_dir=plugdir), count=ct)
+         files = findfile(filepath(files, root_dir=plugdir), count=ct)
          if (ct GT 1) then begin
             print, 'Several plug map files found for plate number ' $
              + string(platenum)
@@ -301,10 +301,10 @@ pro spplan, indir=indir, plugdir=plugdir, flatdir=flatdir, $
       pixflats = spplan_create_pixflats()
       for icam=0, ncam-1 do begin
          files = 'pixflat-*-' + camnums[icam] + '.fits'
-         files = findfile(filepath(files,root_dir=flatdir), count=ct)
+         files = findfile(filepath(files, root_dir=flatdir), count=ct)
          if (ct EQ 0) then begin
            files = 'pixflat-*-' + camnames[icam] + '.fits'
-           files = findfile(filepath(files,root_dir=flatdir), count=ct)
+           files = findfile(filepath(files, root_dir=flatdir), count=ct)
          endif
          if (ct GT 1) then begin
             print, 'Several pixel flats found for CAMERA= ' + camnums[icam]
@@ -343,7 +343,6 @@ pro spplan, indir=indir, plugdir=plugdir, flatdir=flatdir, $
    hdr = [hdr, "inputDir    '" + indir + "'  # Directory for raw images"]
    hdr = [hdr, "flatDir     '" + flatdir + "'     # Directory for pixel flats"]
    hdr = [hdr, "MJD     " + string(mjd) + "  # Modified Julian Date"]
-   hdr = [hdr, "run         " + string(run) + "  # Modified Julian Date"]
 
    if (NOT keyword_set(flats)) then $
     yanny_write, planfile, [ptr_new(pixflats), ptr_new(allplug), ptr_new(allseq)], hdr=hdr $

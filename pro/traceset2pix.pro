@@ -3,20 +3,23 @@
 ;   traceset2pix
 ;
 ; PURPOSE:
-;   Use a traceset to convert lambda to pix
+;   Use a traceset to find the pixel numbers corresponding to a certain postion
 ;
 ; CALLING SEQUENCE:
-;   pix = traceset2pix(invset, lambda)
+;   pixpos = traceset2pix(tset, lambda, [nicoeff=nicoeff] )
 ;
 ; INPUTS:
-;   invset     - Structure containing trace set
-;   lambda     - wavelengths at which to evaluate
+;   tset       - Structure containing trace set
+;   lambda     - Wavelengths at which to find X pixel position
 ;
 ; OPTIONAL KEYWORDS:
+;   nicoeff    - Number of coefficients to use in inversion; default to using
+;                2 more coefficients than for the forward trace set
+;                (e.g., TSET.NCOEFF+2)
 ;
 ; OUTPUTS:
-;   xpos       - X positions corresponding to YPOS as an [nx,Ntrace] array
-;   ypos       - Y centers as an [nx,nTrace] array
+;   pixpos     - Pixel positions corresponding to LAMBDA as
+;                an [Nlambda,Ntrace] array
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -24,61 +27,61 @@
 ;
 ; EXAMPLES:
 ;
+; BUGS:
+;
 ; PROCEDURES CALLED:
 ;   djs_laxisgen()
 ;   flegendre()
+;   traceset2xy
+;   xy2traceset
 ;
 ; REVISION HISTORY:
-;   19-May-1999  Written by David Schlegel, Princeton.
-;   14-Oct-1999  D. Finkbeiner
+;   09-Nov-1999  Written by David Schlegel, Ringberg.
 ;-
 ;------------------------------------------------------------------------------
-function traceset2pix, invset, lambda
+function traceset2pix, tset, lambda, nicoeff=nicoeff
 
    ; Need 3 parameters
    if (N_params() LT 2) then begin
-      print, 'Syntax - traceset2xy, invset, xpos, ypos'
+      print, 'Syntax - pixpos = traceset2pix(tset, lambda, [nicoeff= ] )'
       return, -1
    endif
 
-   if (invset.func EQ 'legendre' OR invset.func EQ 'chebyshev') then begin
+   if (tset.func EQ 'legendre' OR tset.func EQ 'chebyshev') then begin
 
-      ndim = size(invset.coeff, /n_dim)
-      dims = size(invset.coeff, /dim)
+      ndim = size(tset.coeff, /n_dim)
+      dims = size(tset.coeff, /dim)
 
       if (ndim EQ 1) then begin
          ncoeff = dims[0]
-         nTrace = 1
+         ntrace = 1
       endif else if (ndim EQ 2) then begin
          ncoeff = dims[0]
-         nTrace = dims[1]
+         ntrace = dims[1]
       endif else begin
-         message, 'INVSET.COEFF contains invalid number of dimensions'
+         message, 'WSET.COEFF contains invalid number of dimensions'
       endelse
 
-      nx = long(invset.xmax - invset.xmin + 1)
+      nlambda = N_elements(lambda)
+      pixpos = fltarr(nlambda, ntrace)
+      if (NOT keyword_set(nicoeff)) then nicoeff = ncoeff + 2
 
-
-	nrows = 320
-        nlines = n_elements(lambda)
-	xnorm = (2.0d*lambda - (invset.xmin + invset.xmax))/ $
-	          (invset.xmax - invset.xmin)
-
-	ysky = dblarr(nrows,nlines)
-	pix = dblarr(nrows,nlines)
-	for i=0,nrows-1 do begin
-	  ysky[i,*] = float(i)
-	  if (invset.func EQ 'legendre') then $
-              pix[i,*] = flegendre(xnorm,ncoeff) # invset.coeff[*,i]
-	  if (invset.func EQ 'chebyshev') then $
-              pix[i,*] = fchebyshev(xnorm,ncoeff) # invset.coeff[*,i]
- 
-	endfor	  
+      ; Invert the trace set
+      traceset2xy, tset, xpos, ypos
+      xmin = min(ypos)
+      xmax = max(ypos)
+      xy2traceset, ypos, xpos, invset, func=tset.func, ncoeff=nicoeff, $
+       xmin=xmin, xmax=xmax, maxiter=0
+      xvec = (2*lambda - xmin -xmax) / (xmax - xmin)
+      if (tset.func EQ 'legendre') then legarr = flegendre(xvec, nicoeff)
+      if (tset.func EQ 'chebyshev') then legarr = fchebyshev(xvec, nicoeff)
+      for itrace=0, ntrace-1 do $
+       pixpos[*,itrace] = legarr # invset.coeff[*,itrace]
 
    endif else begin
       error, 'Unknown function' + func
    endelse
 
-   return, pix
+   return, pixpos
 end
 ;------------------------------------------------------------------------------
