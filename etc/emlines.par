@@ -1,5 +1,8 @@
 # This file used by SPECLINEFIT procedure for emission line fitting.
 
+# The [O_II] lines were updated from Peter van Hoof's web site at:
+#  http://www.pa.uky.edu/~peter/atomic/
+
 typedef struct {
   double lambda;      # Wavelength in air for >=2000 Ang, vacuum for < 2000 Ang
   char name[40];     # Name of line
@@ -17,8 +20,8 @@ typedef struct {
  emlineid  1640.42    "He_II 1640"   zemission  wemission  f1640  1
  emlineid  1908.734   "C_III] 1908"  zemission  wemission  f1908  1
  emlineid  2799.49    "Mg_II 2799"   zemission  wemission  f2799  1
- emlineid  3725.94    "[O_II] 3725"  zemission  wemission  f3725  1
- emlineid  3727.24    "[O_II] 3727"  zemission  wemission  f3727  1
+ emlineid  3726.032   "[O_II] 3725"  zemission  wemission  f3725  1 # 4So-2Do
+ emlineid  3728.815   "[O_II] 3727"  zemission  wemission  f3727  1 # 4So-2Do
  emlineid  4101.734   "H_delta"      zemission  w_balmer   f4101  1
  emlineid  4340.464   "H_gamma"      zemission  wemission  f4340  1
  emlineid  4363.209   "[O_III] 4363" zemission  wemission  f4363  1
