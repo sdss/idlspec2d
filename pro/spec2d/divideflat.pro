@@ -6,7 +6,8 @@
 ;   Divide an extracted image with a fiber-flat
 ;
 ; CALLING SEQUENCE:
-;   divideflat, flux, fluxivar, fflat, [ fibermask=fibermask, minval=minval ]
+;   divideflat, flux, fluxivar, fflat, [ fibermask=fibermask, minval=minval,
+;    /quiet ]
 ;
 ; INPUTS:
 ;   flux       - Array of extracted flux from a flat-field image [Nrow,Ntrace]
@@ -17,6 +18,7 @@
 ;   fibermask  - Fiber status bits, set nonzero for bad status [NFIBER]
 ;   minval     - Minimum value to consider good for flat-field;
 ;                default to 0.03.
+;   quiet      - don't print to splog?
 ;
 ; OUTPUTS:
 ;
@@ -39,7 +41,8 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro divideflat, flux, fluxivar, fflat, fibermask=fibermask, minval=minval
+pro divideflat, flux, fluxivar, fflat, fibermask=fibermask, minval=minval, $
+   quiet=quiet
 
    dims = size(flux, /dimens)
    npix = dims[0] 
@@ -77,13 +80,14 @@ pro divideflat, flux, fluxivar, fflat, fibermask=fibermask, minval=minval
             fluxivar[igood,itrace] = $
              fluxivar[igood,itrace] * fflat[igood,itrace]^2
          endif else begin
-            splog, 'No good flat field points in trace ', itrace
+            if keyword_set(quiet) EQ 0 then $
+              splog, 'No good flat field points in trace ', itrace
          endelse
 
          if (nbad GT 0) then begin
             flux[ibad,itrace] = 0.0
             fluxivar[ibad,itrace] = 0.0
-            if (nbad GT 200) then $
+            if (nbad GT 200 AND (keyword_set(quiet) EQ 0)) then $
              splog, 'WARNING: Reject ', nbad, ' low points in trace ', itrace
          endif
 
