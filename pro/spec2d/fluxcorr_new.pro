@@ -27,6 +27,9 @@ end
               
 pro fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
 
+   splog, 'Smear image blue=', bsmearfile
+   splog, 'Smear image red=', bsmearfile
+
    ;----------
    ; Read the plug-map file (for identifying sky fibers)
 
@@ -80,7 +83,10 @@ pro fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
 
    nfiles = n_elements(corrfile)
 
-   for ifile = 0, nfiles - 1 do begin
+   for ifile=0, nfiles-1 do begin
+
+      splog, 'Fluxing science image blue=', bscifile[ifile]
+      splog, 'Fluxing science image red=', rscifile[ifile]
  
       fitimg = smearflux*0.0 + 1.0
       xy2traceset, wave, fitimg, corrset, ncoeff=ncoeff
