@@ -195,6 +195,7 @@ pro platelist, infile, plist=plist, create=create, $
       ; Determine names of associated files
 
       comblogfile = repstr(combparfile, '.par', '.log')
+      comblogfile = repstr(comblogfile, 'spPlancomb', 'spDiagcomb')
       platemjd = strmid(fileandpath(platefile), 8, 10)
       zbestfile = 'spZbest-' + platemjd + '.fits'
 
