@@ -168,6 +168,7 @@ pro/fluxfix/plate_flux_recal.pro -text
 pro/fluxfix/rectify.pro -text
 pro/fluxfix/spcoadd_fluxed_frames.pro -text
 pro/fluxfix/sphoto_calib.pro -text
+pro/fluxfix/spmedian_rebin.pro -text
 pro/fluxfix/spplate_correct.pro -text
 pro/fluxfix/stype_standard.pro -text
 pro/fluxfix/undo_smear.pro -text
