@@ -196,6 +196,7 @@ pro/science/lickindex/Makefile -text
 pro/science/lickindex/gauss_smooth_wave.pro -text
 pro/science/lickindex/lickindices.pro -text
 pro/science/lickindex/one_indices.pro -text
+pro/science/match_tsobjtargets.pro -text
 pro/science/qso/README -text
 pro/science/qso/create_absstruct.pro -text
 pro/science/qso/getqso.pro -text
