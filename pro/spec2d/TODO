@@ -1,5 +1,9 @@
 
-* Add heliocentric correction, as done in version v3c.
+* Use DJS_FILEPATH() where appropriate.
+
+* Add /DEBUG keyword for writing out spArc and spFlat files.
+
+* Apply illumination correction, as done for the PT.
 
 * Look at plate 306, MJD 51637, fiber#295 (0-indexed 294).
   Appears that fluxing for b1 is bad redward of 6000 Ang.
