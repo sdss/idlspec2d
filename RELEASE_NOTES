@@ -1,5 +1,6 @@
 
-EXTRACT_OBJECT, SKYSUBTRACT, SPCALIB: Implement 2D-splining for sky-subtraction?
+EXTRACT_OBJECT, SKYSUBTRACT, SPCALIB: Implement 2D-splining for sky-
+          subtraction, now set to do quadratic PSF fit.
 EXTRACT_OBJECT: Set the "NEARWHOPPER" mask bits only for fibers within 2
           fibers of a bright fiber, but not the bright fiber itself.
           For the bright fibers, add the bit "WHOPPER" (added to the
@@ -16,6 +17,8 @@ FIBERFLAT: Update to call SUPERFLAT() as a function instead of a proc,
            though should not be functionally different yet.
 FITMEANX: Make robust to no good sky lines for tweaking wavelength solution.
           In that case, the routine LOCATESKYLINES will return SKYSHIFT=0.
+FPOLY, FUNC_FIT, TRACESET2PIX, TRACESET2XY, XY2TRACESET:
+             Added "poly" as one of the functions for trace sets.
 LOCATESKYLINES: Test that the sky line file is successfully read.
 MYFLUXCALIB: Fairly major changes: Do a pre-filtering of the spectra that
              go into the PCA-fitting of the flux-calibration vector, and
@@ -29,6 +32,8 @@ PCA_SOLVE: Construct the USEMASK from the output mask (OUTMASK) instead of
            the solution based upon USEMASK.
 PLATELIST: Read MJDLIST keyword from the spPlate files, which will only exist
            with future reductions.
+           Include a computation of the airmass in the FITS version of the
+           platelist file.
 PLATESN: Pass a plot title to PLOTSN.
 PLOTSN: For the 2nd page of plots with Synthesized mags. vs. PHOTO fiber mags.,
         make these residual plots.  Also, use plot titles.
