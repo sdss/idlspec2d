@@ -49,6 +49,7 @@
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
+;   Any stars labelled as possible binary or triple stars are ignored.
 ;
 ; EXAMPLES:
 ;
@@ -130,12 +131,10 @@ function elodie_best, objflux, objivar, $
    elodie_path = getenv('ELODIE_DIR')
    allfiles = findfile(filepath('00*', root_dir=elodie_path, $
     subdir='LL_ELODIE'), count=nstar)
-; Test ???
-;nstar=50
-;allfiles = allfiles[0:nstar-1]
+
    t0 = systime(1)
    starhdr = replicate(ptr_new(), nstar)
-   for istar=0, nstar-1 do begin
+   for istar=0L, nstar-1 do begin
       splog, 'Reading file ', istar+1, ' of ', nstar
       thisflux = read_elodie(allfiles[istar], loglam=starloglam, hdr=thishdr)
       if (NOT keyword_set(starflux)) then starflux = thisflux $
@@ -144,6 +143,25 @@ function elodie_best, objflux, objivar, $
    endfor
    npix = n_elements(starloglam)
    splog, 'Time to read all files = ', systime(1) - t0
+
+   ;----------
+   ; Trim to stars not labelled as binary or triple stars
+
+   qkeep = bytarr(nstar) + 1B
+   for istar=0L, nstar-1 do begin
+      q_vr = sxpar(*starhdr[istar],'Q_VR')
+      if (strmatch(q_vr,'*double*') $
+       OR strmatch(q_vr,'*triple*') $
+       OR strmatch(q_vr,'*binary*')) then begin
+         qkeep[istar] = 0
+         ptr_free, starhdr[istar]
+      endif
+   endfor
+   ikeep = where(qkeep, nstar)
+   if (nstar EQ 0) then $
+    message, 'All stars seem to be labelled as binaries or triples!'
+   starflux = starflux[*,ikeep]
+   starhdr = starhdr[ikeep]
 
    ;----------
    ; Trim wavelengths to those covered by the majority of the objects
@@ -205,6 +223,10 @@ function elodie_best, objflux, objivar, $
 
    splog, 'Total time for ELODIE_BEST = ', systime(1)-stime0, ' seconds', $
     format='(a,f6.0,a)'
+
+   ; Free memory
+   for istar=0L, nstar-1 do $
+    ptr_free, starhdr[istar]
 
 ; Test???
 ;plot,zans.z*3e5,res_best.elodie_z*3e5,ps=7
