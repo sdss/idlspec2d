@@ -86,6 +86,10 @@ examples/Makefile -text
 examples/README -text
 examples/batch1d.par -text
 examples/batch2d.par -text
+examples/g_codes_alignment.txt -text
+examples/g_codes_completion.txt -text
+examples/g_codes_lighttrap.txt -text
+examples/g_codes_object.txt -text
 examples/opBC-51809.par -text
 examples/opBC-51813.par -text
 examples/opBC.par -text
@@ -95,6 +99,7 @@ examples/opECalib-51577.par -text
 examples/opECalib.par -text
 examples/opHdrFix.par -text
 examples/opLimits.par -text
+examples/plParam.par -text
 include/Makefile -text
 include/evilmath.h -text
 include/export.h -text
