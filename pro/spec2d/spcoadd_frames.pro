@@ -266,9 +266,9 @@ pro spcoadd_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
 
       invertcorr = 1.0 / corrimg
       medcor = median(corrimg)
-      divideflat, tempflux, invvar=tempivar, invertcorr, minval=0.1/medcor
+      divideflat, tempflux, invvar=tempivar, invertcorr, minval=0.05/medcor
       temppixmask = temppixmask OR $
-           (corrimg GE 10.0 * medcor) * pixelmask_bits('BADFLUXFACTOR')
+           (corrimg GE 20.0 * medcor) * pixelmask_bits('BADFLUXFACTOR')
 
       ;----------
       ; Apodize the errors

@@ -323,7 +323,9 @@ pro fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
          corrset = finalset
          traceset2xy, corrset, wave, corrimage
 
-         bad = where(djs_median(corrimage,1) GT 5.0*median(corrimage),nbad)
+         totalsmearsn = total(smearsnmed,1)
+         bad = where(djs_median(corrimage,1) GT $
+              (4.0+totalsmearsn)*median(corrimage),nbad)
          if bad[0] NE -1 then begin
            splog, 'Warning: Large deviations in flux correction '
            splog, 'Warning: Replacing with median solution in fibers:', $
