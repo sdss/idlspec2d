@@ -43,7 +43,7 @@ do
   if [ "$good" -gt 0 ] 
     then
      echo STARTAPO: Processing $input at `date`
-     $IDL_DIR/bin/lmutil lmstat
+#     $IDL_DIR/bin/lmutil lmstat
      echo "aporeduce, '$filename',indir='$dir', outdir='$outdir', \
           plugdir='$astrolog', copydir='$copydir' " | nice idl >& $outdir/err.$filename
 #          plugdir='$astrolog', copydir='$copydir' " | nice idl >& /dev/null
