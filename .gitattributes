@@ -49,6 +49,7 @@ pro/apo2d/aporeduce.pro -text
 pro/apo2d/quicktrace.pro -text
 pro/apo2d/quickwave.pro -text
 pro/makefile.old -text
+pro/spec1d/MCsimul2.pro -text
 pro/spec1d/Makefile -text
 pro/spec1d/cosbell.pro -text
 pro/spec1d/fftpad.pro -text
