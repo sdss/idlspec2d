@@ -66,7 +66,7 @@ function rdss_fits, filename, hdr, nofloat=nofloat, _EXTRA=KeywordsForReadfits
          sxdelpar, hdr, 'UNSIGNED' ; Remove UNSIGNED keyword
          ineg = where(image LT 0)
          image = temporary(image) + 0.0
-         image[ineg] = 2.0^bitpix + image[ineg]
+         if (ineg[0] NE -1) then image[ineg] = 2.0^bitpix + image[ineg]
       endif else begin
          image = temporary( uint(image) )
       endelse

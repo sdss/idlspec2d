@@ -35,10 +35,10 @@
 ;   Use default opECalib if not found...
 ;
 ; PROCEDURES CALLED:
-;   combine2dout
 ;   cpbackup
 ;   idlspec2d_version()
 ;   idlutils_version()
+;   spcoadd_frames
 ;   splog
 ;   spreduce
 ;   yanny_free
@@ -285,15 +285,22 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
              + ' files for side ' + strtrim(string(side),2)
 
             if (nfile GT 0) then begin
-               outputroot = string('spMerge2d-',mjd,'-',platestr, $
-                format='(a,i5.5,a1,a4)')
                individualroot  = string('spInd2d-',mjd,'-',platestr, $
                 format='(a,i5.5,a1,a4)')
 
                for i=0, nfile-1 do splog, 'Combine file ', files[i]
-               combine2dout, files, filepath(outputroot, root_dir=combineDir), $
-                side, wavemin=alog10(3750.0d), window=100, $
-                individual=filepath(individualroot, root_dir=combineDir)
+
+;               outputroot = string('spMerge2d-',mjd,'-',platestr,'.fits', $
+;                format='(a,i5.5,a1,a4,a5)')
+;               combine2dout, files, filepath(outputroot, root_dir=combineDir), $
+;                side, wavemin=alog10(3750.0d), window=100, $
+;                individual=filepath(individualroot, root_dir=combineDir)
+
+               outputname = string('spMerge2d-',mjd,'-',platestr,'.fits', $
+                format='(a,i5.5,a1,a4,a5)')
+               spcoadd_frames, files, $
+                filepath(outputname, root_dir=combineDir), $
+                wavemin=alog10(3750.0d), window=100
             endif
 
          endfor
