@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   skystruct = skysubtract(objflux, objivar, plugsort, wset, objsub, objsubivar, $
 ;    [ iskies= , fibermask=, nord=, upper=, lower=, maxiter=, pixelmask=, $
-;    dispset=, /novariance, relchi2struct=, npoly=, tai=, newmask= ])
+;    dispset=, /novariance, relchi2struct=, npoly=, tai=, newmask=, sset= ])
 ;
 ; INPUTS:
 ;   objflux    - Image flux [NPIX,NFIBER]
@@ -48,6 +48,7 @@
 ; OPTIONAL OUTPUTS:
 ;   iskies     - Indices of good sky fibers
 ;   newmask    - Modified version of PIXELMASK,
+;   sset       - B-spline structure for supersky.
 ;
 ; COMMENTS:
 ;   Construct a "supersky" spectrum by spline-fitting the (good) sky fibers,
@@ -85,7 +86,7 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
    iskies=iskies, fibermask=fibermask, nord=nord, upper=upper, $
    lower=lower, maxiter=maxiter, pixelmask=pixelmask, thresh=thresh, $
    dispset=dispset, npoly=npoly, relchi2struct=relchi2struct, $
-   novariance=novariance, tai=tai, nbkpt=nbkpt, newmask=newmask
+   novariance=novariance, tai=tai, nbkpt=nbkpt, newmask=newmask, sset=sset
 
    if (size(objflux, /n_dimen) NE 2) then message, 'OBJFLUX is not 2-D'
    if (size(objivar, /n_dimen) NE 2) then message, 'OBJIVAR is not 2-D'
