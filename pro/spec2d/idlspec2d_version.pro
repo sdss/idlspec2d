@@ -14,7 +14,7 @@
 ;   vers       - Version name for the product idlspec2d
 ;
 ; COMMENTS:
-;   If this version is not tagged by CVS, then we return 'NOCVS: TOPLEVEL'
+;   If this version is not tagged by CVS, then we return 'NOCVS:TOPLEVEL'
 ;   where TOPLEVEL is the last directory in the environment variable
 ;   $IDLSPEC2D_DIR.  For example, if you are using a version of the code
 ;   in the directory '/u/schlegel/idlspec2d/v0_0', then this returns
