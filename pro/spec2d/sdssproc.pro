@@ -87,6 +87,8 @@
 ;   26-Jul-2000  Added fix for "dropped pixel" problem for data on or after
 ;                MJD=51688 (23 May 2000).  Should disable this code for later
 ;                MJD's once this problem is fixed in the electronics.
+;   26-Jul-2000  Added fix for more severe "shifted row" electronics problem
+;                for data taken on MJD=51578 to 51580 (3 to 5 Feb 2000).
 ;-
 ;------------------------------------------------------------------------------
 
@@ -204,6 +206,54 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    if (NOT readimg AND NOT readivar) then return
 
    ;-----------
+   ; Fix the shifted-row problem in the electronics that appeared
+   ; on MJD=51578 to 51580 (3-5 Feb 2000) for spectrograph-2.
+   ; Note that the bad rows need to be identified on the red frame,
+   ; so if we are reducing b2, we need to read in the image for r2
+   ; to identify the bad rows.
+
+   if ((mjd GE 51578 AND mjd LE 51580) $
+    AND (camname EQ 'b2' OR camname EQ 'r2') $
+    AND (readimg OR readivar)) then begin
+      if (camname EQ 'b2') then begin
+         i1 = strpos(infile,'b2',/reverse_search)
+         if (i1 EQ -1) then $
+          message, 'Unable to parse corresponding red file for '+infile
+         redfile = infile
+         strput, redfile, 'r2', i1
+         reddata = ptr_new( $
+          rdss_fits(djs_filepath(redfile, root_dir=indir), /nofloat) )
+      endif else begin
+         reddata = ptr_new(rawdata)
+      endelse
+
+      ibad = where( (*reddata)[20,*] LT median((*reddata)[20,*]) - 100 , nbad )
+
+      if (nbad GT 0) then begin
+         splog, 'WARNING: Fixing ', nbad, ' shifted rows (from electronics)'
+
+         ; For unrecoverable data, set KILLDATA=0
+         killdata = byte(0*rawdata) + 1b
+
+         medval = median(rawdata[22:39,*])
+         for ii=0, nbad-1 do begin
+            nshift = $
+             (reverse(where(rawdata[20:39,ibad[ii]] GT medval + 100)))[0]
+            if (nshift LT 10) then begin
+               rawdata[0:1063-nshift,ibad[ii]] = rawdata[nshift:1063,ibad[ii]]
+               killdata[1063-nshift+1:1063,ibad[ii]] = 0
+            endif else begin
+               killdata[*,ibad[ii]] = 0
+            endelse
+         endfor
+      endif
+
+      if (camname EQ 'b2') then begin
+         reddata = 0  ; Free memory
+      endif
+   endif
+
+   ;-----------
    ; Fix the "dropped pixel" problem in the electronics that appeared
    ; on MJD=51688 (23 May 2000) for spectrograph-2.
    ; Note that the bad rows need to be identified on the red frame,
@@ -211,7 +261,8 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    ; to identify the bad rows.
    ; Reference e-mail discussion with JEG on 01-Jun-2000.
 
-   if ((mjd GE 51688) AND (camname EQ 'b2' OR camname EQ 'r2') $
+   if ((mjd GE 51688) $
+    AND (camname EQ 'b2' OR camname EQ 'r2') $
     AND (readimg OR readivar)) then begin
       if (camname EQ 'b2') then begin
          i1 = strpos(infile,'b2',/reverse_search)
@@ -229,7 +280,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
        AND (*reddata)[2107,*] GT median((*reddata)[2107,*]) + 100, nbad )
 
       if (nbad GT 0) then begin
-         splog, 'Fixing ', nbad, ' dropped-pixel rows in raw image'
+         splog, 'WARNING: Fixing ', nbad, ' dropped-pixel rows (from electronics)'
          rawdata[1:1063,ibad] = rawdata[0:1062,ibad]
          rawdata[20,ibad] = median( rawdata[20,ibad] )
          rawdata[2108:2127,ibad] = rawdata[2107:2126,ibad]
@@ -510,6 +561,13 @@ pro sdssproc, infile, image, invvar, indir=indir, $
                      srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
               1.0/(expr1 + expr2 + 0.01 * expr2^2 + expr3 + expr4)
 
+            if (keyword_set(killdata)) then $
+             invvar[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
+                     srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
+              invvar[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
+                      srow[iamp]:srow[iamp]+nrow[iamp]-1] * $
+              killdata[sdatacol[iamp]:sdatacol[iamp]+ncol[iamp]-1, $
+                     sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1]
          endif
       endfor
 
