@@ -4,6 +4,7 @@ pro writespectra, objhdr, plugsort, flux, fluxivar, wset, $
 
    dims = size(flux, /dimens)
    ntrace = dims[1]
+   npix = dims[0]
    nparams = (size(wset.coeff,/dimens))[0]
    
    for i=0, ntrace-1 do begin
@@ -27,8 +28,8 @@ pro writespectra, objhdr, plugsort, flux, fluxivar, wset, $
                 plugsort[i].objid)
      sxaddpar, outhdr, 'MAG', string(format='(5(f8.3))', $
                 plugsort[i].mag)
-     sxaddpar, outhdr, 'RA', plugsort[i].ra
-     sxaddpar, outhdr, 'DEC', plugsort[i].dec
+     sxaddpar, outhdr, 'RAOBJ', plugsort[i].ra, 'RA (deg) of object'
+     sxaddpar, outhdr, 'DECOBJ', plugsort[i].dec, 'DEC (deg) of object'
      sxaddpar, outhdr, 'OBJTYPE', plugsort[i].objtype
      sxaddpar, outhdr, 'PRIMTARG', plugsort[i].primtarget
      sxaddpar, outhdr, 'SECTARGE', plugsort[i].sectarget
@@ -46,6 +47,11 @@ pro writespectra, objhdr, plugsort, flux, fluxivar, wset, $
      endfor
 
      outname = filebase + '-' + string(format = '(i3.3)', i+1) + '.fit'
+
+     sxaddpar, outhdr, 'BITPIX', -32
+     sxaddpar, outhdr, 'NAXIS', 2
+     sxaddpar, outhdr, 'NAXIS1', npix
+     sxaddpar, outhdr, 'NAXIS2', 2
      writefits, outname, [[outflux],[outerr]], outhdr
    endfor
 

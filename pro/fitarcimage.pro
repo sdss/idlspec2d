@@ -250,7 +250,7 @@ function fullfit, spec, linelist, guess
 end
 
 ;------------------------------------------------------------------------------
-pro fitarcimage, arc, arcinvvar, side, linelist, xnew, ycen, tset, invset, $
+function fitarcimage, arc, arcinvvar, side,linelist, xnew, ycen, tset, invset, $
  func=func, ncoeff=ncoeff, ans=ans, lambda=lambda, $
  thresh=thresh, row=row, $
  xdif_lfit=xdif_lfit, xdif_tset=xdif_tset
@@ -314,10 +314,10 @@ pro fitarcimage, arc, arcinvvar, side, linelist, xnew, ycen, tset, invset, $
       guess = double(guess)
       ans   = fullfit(double(spec), linelist, guess)
 
-      if (side EQ 'blue' AND bestcorr LT 0.6) then $
+      if (bestcorr LT 0.5) then begin
             print, 'Initial wavelength solution looks suspicious'
-      if (side EQ 'red' AND bestcorr LT 0.5) then $
-            print, 'Initial wavelength solution looks suspicious'
+	    return, 1
+      endif
 
     endif
 
@@ -426,9 +426,11 @@ pro fitarcimage, arc, arcinvvar, side, linelist, xnew, ycen, tset, invset, $
    if (possible NE 320) then $
     message, "can't figure out bundle test"
    testg = reform(goodlines, nlines, 20, 16)   
-   gind = where(total(total(testg EQ 0,2) GT 3,2) EQ 0)
-   if (gind[0] EQ -1) then $
-    message, 'FIT_TSET failed'
+   gind = where(total(total(testg EQ 0,2) GT 3,2) EQ 0, gindct)
+   if (gindct LT 5) then begin
+    print, 'FIT_TSET failed'
+    return, 2
+   endif
    goodlines = 0
 
    nline = n_elements(gind)    ; number of good lines
@@ -480,6 +482,6 @@ pro fitarcimage, arc, arcinvvar, side, linelist, xnew, ycen, tset, invset, $
    print,'> FITARCIMAGE: ',systime(1)-t_begin, ' seconds elapsed', $
     format='(A,F8.2,A)'
 
-   return
+   return, 0
 end
 ;------------------------------------------------------------------------------

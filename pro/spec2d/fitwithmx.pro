@@ -3,6 +3,9 @@ function fitwithmx, invset, lambda, xpos, nord=nord
 ;	lambda is log 10 wavelength
 ;	
         if (NOT keyword_set(nord)) then nord=4
+	ndim = (size(xpos))[0]
+	if (ndim NE 2) then $
+            message, 'xpos is not 2d' 
 	nfiber = (size(xpos))[1]
 	nline = (size(xpos))[2]
 

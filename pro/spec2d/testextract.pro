@@ -246,21 +246,19 @@ spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
 cam = '04'
 flatnum = '-00001464'
-flat = 'sdR-'+cam+flatnum+'.fit'
+flatname = 'sdR-'+cam+flatnum+'.fit'
 arcnum = '-00001462'
-arc = 'sdR-'+cam+arcnum+'.fit'
-;objectnums = ['-00001450','-00001452','-00001454','-00001456','-00001458']
-;objectnums = ['-00001450']
-objectnums = ['-00001458']
-objects = 'sdR-'+cam+objectnums+'.fit'
-inputDir = '/ide_disk/51433/51456'
-outputDir = '/ide_disk/51433/51456/out'
-plugMapDir = inputDir
-plugMapFile = 'plPlugMapM-0191-51454-01.par'
-tt = doaframe(flat,arc,objects,plugMapFile,inputDir=inputDir, $
- outputDir=outputDir, plugMapDir=plugMapDir)
-ttred = doaframe(flat,arc,objects,plugMapFile,inputDir=inputDir, $
- outputDir=outputDir, plugMapDir=plugMapDir)
+arcname = 'sdR-'+cam+arcnum+'.fit'
+objectnums = ['-00001450','-00001452','-00001454','-00001456','-00001458']
+objname = 'sdR-'+cam+objectnums+'.fit'
+indir='/home/scott/SDSS/51456'
+outdir= indir+'/191'
+plugdir= indir
+pixflatname = 'pixflat-'+cam+'.fits'
+plugfile= 'plPlugMapM-0191-51454-01.par'
+spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
+ plugfile=plugfile, lampfile=lampfile, $
+ indir=indir, plugdir=plugdir, outdir=outdir, qadir=qadir
 
 ; ====================================================================
 ;  Use spreduce now

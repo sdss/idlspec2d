@@ -108,7 +108,12 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
         color = 'red'
         end
      else: begin
-        message, 'Cannot determine CCD number from file name ' + infile
+        print, 'CAMERAS keyword not found, guessing b2'
+        spectrographid = 2
+        color = 'blue'
+        camcol = 3
+        sxaddpar, hdr, 'CAMERAS', 'b2       ', 'Guessed b2 by default'
+;        message, 'Cannot determine CCD number from file name ' + infile
         end
    endcase
    camrow = 0
@@ -120,6 +125,7 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
 
    yanny_read, realconfig, pdata
    config = *pdata[0]
+   ptr_free,pdata
    config = config[ where(config.camrow EQ camrow AND config.camcol EQ camcol) ]
 
    if (cards[0] NE config.ncols OR cards[1] NE config.nrows) then $
@@ -158,6 +164,7 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
    ; Read in ECalib File
    yanny_read, realecalib, pdata
    ecalib = *pdata[0]
+   ptr_free,pdata
    ecalib = ecalib[ where(ecalib.camrow EQ camrow AND ecalib.camcol EQ camcol) ]
 
    gain = [ecalib.gain0, ecalib.gain1, ecalib.gain2, ecalib.gain3]
@@ -243,6 +250,6 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
       sxaddpar, varhdr, 'LOOKHERE', 'INVERSE VARIANCE of ' + outfile
       writefits, varfile, invvar, varhdr
    endif
-
+ 
    return
 end

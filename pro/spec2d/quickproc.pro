@@ -1,31 +1,23 @@
 ;+
 ; NAME:
-;   sdssproc
+;   quickproc
 ;
 ; PURPOSE:
-;   Read in Raw SDSS files, and process with opECalib.par and opConfig.par
+;   Read in Raw SDSS files, and keep as UINT, process with opConfig.par
 ;
 ; CALLING SEQUENCE:
-;   sdssproc, infile, [image, invvar, outfile=outfile, varfile=varfile, $
-;    hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, $
-;    pixflatname=pixflatname, spectrographid=spectrographid, color=color ]
+;   image = quickproc(infile, hdr=hdr, configfile=configfile)
+;    
 ;
 ; INPUTS:
 ;   infile     - Raw SDSS frame
 ;
 ; OPTIONAL KEYWORDS:
-;   outfile    - Calibrated 2d frame, after processing
-;   varfile    - Inverse Variance Frame after processing
 ;   hdr        - Header returned in memory
 ;   configfile - Default to "opConfig.par"
-;   ecalibfile - Default to "opECalib.par"
-;   pixflatname- Name of pixel-to-pixel flat, produced with SPFLATTEN.
 ;
 ; OUTPUTS:
-;   image      - Processed 2d image
-;   invvar     - Associated inverse variance
-;   spectrographid - Return spectrograph ID (1 or 2)
-;   color      - Return spectrograph color ('red' or 'blue')
+;   image      - Processed 2d image (UINT) zero level 1000
 ;
 ; COMMENTS:
 ;
@@ -36,23 +28,17 @@
 ;   yanny_read
 ;
 ; REVISION HISTORY:
-;   13-May-1999  Written by Scott Burles & David Schlegel, Apache Point.
-;   08-Sep-1999  Modified to read Yanny param files instead of FITS
-;                versions of the same (DJS).
+;   10-Nov-1999  Written by Scott Burles, modified from sdssproc
 ;-
 ;------------------------------------------------------------------------------
 
-pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
- hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, $
- pixflatname=pixflatname, spectrographid=spectrographid, color=color
+function quickproc, infile, hdr=hdr, configfile=configfile
 
    if (N_params() LT 1) then begin
-      print, 'Syntax - sdssproc, infile, [image, invvar, outfile=outfile, varfile=varfile, ' 
-      print, ' hdr=hdr, configfile=configfile, ecalibfile=ecalibfile]'
-      return
+      print, 'Syntax - quickproc(infile, [hdr=hdr, configfile=configfile])'
+      return, -1
    endif
    if (NOT keyword_set(configfile)) then configfile = 'opConfig.par'
-   if (NOT keyword_set(ecalibfile)) then ecalibfile = 'opECalib.par'
 
    junk = findfile(configfile, count=ct)
    if (ct NE 1) then begin
@@ -64,17 +50,7 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
 
    realconfig = tempname[0]
 
-   tempname = findfile(ecalibfile, count=ct)
-   if (ct NE 1) then begin
-     pp = getenv('EVIL_PAR') 
-     tempname = findfile(filepath(ecalibfile, root_dir=pp), count=ct)
-   endif
-   if (ct NE 1) then $
-    message, 'No ECalib file ' + string(ecalibfile)
-
-   realecalib = tempname[0]
-
-   rawdata = rdss_fits(infile, hdr)
+   rawdata = rdss_fits(infile, hdr, /nofloat)
 
    cards = sxpar(hdr,'NAXIS*')
 ;   if (cards[0] NE 2128 OR cards[1] NE 2069) then $
@@ -161,25 +137,11 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
    scol = [config.sccdcolsec0, config.sccdcolsec1, $
     config.sccdcolsec2, config.sccdcolsec3]
 
-   ; Read in ECalib File
-   yanny_read, realecalib, pdata
-   ecalib = *pdata[0]
-   ptr_free,pdata
-   ecalib = ecalib[ where(ecalib.camrow EQ camrow AND ecalib.camcol EQ camcol) ]
-
-   gain = [ecalib.gain0, ecalib.gain1, ecalib.gain2, ecalib.gain3]
-   readnoiseDN = [ecalib.readnoiseDN0, ecalib.readnoiseDN1, $
-    ecalib.readnoiseDN2, ecalib.readnoiseDN3]
-   fullWellDN = [ecalib.fullWellDN0, ecalib.fullWellDN1, $
-    ecalib.fullWellDN2, ecalib.fullWellDN3]
-
    ; Construct the final image
    igood = where(qexist)
    nr = max((srow+nrow)[igood])
    nc = max((scol+ncol)[igood])
-   image = fltarr(nc, nr)
-   invvar = fltarr(nc, nr)
-   mask = bytarr(nc, nr)
+   image = uintarr(nc, nr)
 
    for iamp=0, 3 do begin
       if (qexist[iamp] EQ 1) then begin
@@ -187,12 +149,12 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
             ; Use the "overscan" region
             biasval = median( $
              rawdata[sover[iamp]:sover[iamp]+nover[iamp]-1, $
-             sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] )
+             sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] ) - 1000
          endif else if (nmapover[iamp] NE 0) then begin
             ; Use the "mapped overscan" region
             biasval = median( $
              rawdata[smapover[iamp]:smapover[iamp]+nmapover[iamp]-1, $
-             sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] )
+             sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] ) - 1000
          endif
 
          ; Copy the data for this amplifier into the final image
@@ -201,55 +163,10 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
          rawdata[sdatacol[iamp]:sdatacol[iamp]+ncol[iamp]-1, $
                   sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] - biasval
 
-         mask[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
-                  srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
-           (rawdata[sdatacol[iamp]:sdatacol[iamp]+ncol[iamp]-1, $
-                  sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] LT $
-                  fullWellDN[iamp])
-
-         invvar[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
-                  srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
-           1.0/(abs(image[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
-                  srow[iamp]:srow[iamp]+nrow[iamp]-1]) /gain[iamp] + $
-                  readnoiseDN[iamp]*readnoiseDN[iamp])
-
          ; Add to the header
          sxaddpar, hdr, 'BIAS'+string(iamp,format='(i1)'), biasval
-         sxaddpar, hdr, 'GAIN'+string(iamp,format='(i1)'), gain[iamp]
-         sxaddpar, hdr, 'RDNOISE'+string(iamp,format='(i1)'), $
-          gain[iamp]*readnoiseDN[iamp]
       endif
    endfor
 
-   ; For saturated pixels, set INVVAR=0
-   invvar = invvar * mask
-
-   ;---------------------------------------------------------------------------
-   ; Read pixel-to-pixel flat-field
-   ;---------------------------------------------------------------------------
-
-   if (keyword_set(pixflatname)) then begin
-      fullname = findfile(pixflatname, count=ct)
-      if (ct EQ 0) then $
-       message, 'Cannot find pixflat image ' + pixflatname
-      pixflat = readfits(fullname[0])
-
-      image = image / pixflat
-      invvar = invvar * pixflat^2
-   endif
-
-   ;---------------------------------------------------------------------------
-   ; Write output files
-   ;---------------------------------------------------------------------------
-
-   if (keyword_set(outfile)) then $
-    writefits, outfile, image, hdr
-
-   if (keyword_set(varfile)) then begin
-      varhdr = hdr
-      sxaddpar, varhdr, 'LOOKHERE', 'INVERSE VARIANCE of ' + outfile
-      writefits, varfile, invvar, varhdr
-   endif
- 
-   return
+   return, image
 end

@@ -7,20 +7,22 @@
 ;
 ; CALLING SEQUENCE:
 ;   spplan, [ indir=indir, plugdir=plugdir, flatdir=flatdir, $
-;    mjd=mjd, planfile=planfile, /flats ]
+;    mjd=mjd, planfile=planfile, /flats, /checkstats ]
 ;
 ; INPUTS:
 ;
 ; OPTIONAL INPUTS:
-;   indir      - Input directory to look for files; default to './'
+;   indir      - Input directory to look for files; default to '.'
 ;   plugdir    - Directory for plug map files; default to same as INDIR
 ;   flatdir    - Directory for pixel flat files; default to same as INDIR
-;                unless there are wildcards -- in that case, default to './'
+;                unless there are wildcards -- in that case, default to '.'
 ;   mjd        - Modified Julian date; default to the MJD listed in the
 ;                header of the first FITS file
 ;   planfile   - Name of output plan file; default to 'spPlan2d.par'
 ;                unless FLATS is set, then default to 'spPlanFlat.par'
 ;   flats      - Set this keyword to plan the spPlanFlat file
+;   checkstats - Set this keyword to read in full frame and do statistics
+;	         on the frames to verify flavor
 ;
 ; OUTPUT:
 ;
@@ -48,6 +50,7 @@
 ;
 ; REVISION HISTORY:
 ;   02-Nov-1999  Written by David Schlegel, Princeton.
+;   10-Nov-1999    SMB added checkstats to verify flavors
 ;-
 ;------------------------------------------------------------------------------
 
@@ -82,14 +85,14 @@ end
 ;------------------------------------------------------------------------------
 
 pro spplan, indir=indir, plugdir=plugdir, flatdir=flatdir, $
- mjd=mjd, planfile=planfile, flats=flats
+ mjd=mjd, planfile=planfile, flats=flats, checkstats=checkstats
 
-   if (NOT keyword_set(indir)) then indir = './'
-   if (NOT keyword_set(plugdir)) then plugdir = indir
+   if (NOT keyword_set(indir)) then indir = '.'
+   if (NOT keyword_set(plugdir)) then plugdir = indir 
    if (NOT keyword_set(flatdir)) then begin
       if (strpos(indir, '*') EQ -1) then flatdir = indir $
-       else flatdir = './'
-   endif
+       else flatdir = '.'
+   endif 
 
    if (NOT keyword_set(planfile)) then begin
       if (keyword_set(flats)) then planfile = 'spPlanFlat.par' $
@@ -100,7 +103,7 @@ pro spplan, indir=indir, plugdir=plugdir, flatdir=flatdir, $
    camnums = ['01', '02', '03', '04']
    ncam = N_elements(camnames)
 
-   fullname = findfile(indir+'*.fit', count=nfile)
+   fullname = findfile(filepath('*.fit',root_dir=indir), count=nfile)
 
    if (nfile EQ 0) then $
     message, 'No files found.'
@@ -124,13 +127,23 @@ pro spplan, indir=indir, plugdir=plugdir, flatdir=flatdir, $
    FLAVOR = strarr(nfile)
    CAMERAS = strarr(nfile)
    for i=0, nfile-1 do begin
-      hdr = headfits(fullname[i])
+      if (NOT keyword_set(checkstats)) then hdr = headfits(fullname[i]) $
+      else image = quickproc(fullname[i],hdr=hdr)
+
+
       PLATEID[i] = long( sxpar(hdr, 'PLATEID') )
       EXPTIME[i] = sxpar(hdr, 'EXPTIME')
       EXPOSURE[i] = long( sxpar(hdr, 'EXPOSURE') )
       FLAVOR[i] = strtrim(sxpar(hdr, 'FLAVOR'),2)
       CAMERAS[i] = strmid(shortname[i],4,2) ; Camera number from file name
 
+
+      goodcamera = where(CAMERAS[i] EQ camnums,ct)
+      if (ct NE 1) then message, 'Camera number is not in file name'
+
+      if (keyword_set(checkstats)) then $
+        newflavor = checkflavor(image, flavor[i], camnames[goodcamera])
+	
       ; Rename 'target' as 'science'
       if (FLAVOR[i] EQ 'target') then FLAVOR[i] = 'science'
 
@@ -230,7 +243,7 @@ pro spplan, indir=indir, plugdir=plugdir, flatdir=flatdir, $
           platestr = string(pltid,format='(i04.4)') $
           else platestr = '0000'
          files = 'plPlugMapM-' + platestr + '*.par'
-         files = findfile(plugdir+files, count=ct)
+         files = findfile(filepath(files,root_dir=plugdir), count=ct)
          if (ct GT 1) then begin
             print, 'Several plug map files found for plate number ' $
              + string(platenum)
@@ -267,7 +280,11 @@ pro spplan, indir=indir, plugdir=plugdir, flatdir=flatdir, $
       pixflats = spplan_create_pixflats()
       for icam=0, ncam-1 do begin
          files = 'pixflat-*-' + camnums[icam] + '.fits'
-         files = findfile(flatdir+files, count=ct)
+         files = findfile(filepath(files,root_dir=flatdir), count=ct)
+         if (ct EQ 0) then begin
+           files = 'pixflat-*-' + camnames[icam] + '.fits'
+           files = findfile(filepath(files,root_dir=flatdir), count=ct)
+         endif
          if (ct GT 1) then begin
             print, 'Several pixel flats found for CAMERA= ' + camnums[icam]
             print, 'Using file ', files[0]

@@ -52,8 +52,9 @@ pro fit_skyset, xarc, yarc, arclambda, xsky, ysky, skylambda, skycoeff, $
 	  while (done EQ 0) do begin
 	    
 	    use = where(goodlines[*,i] NE 0)
+	    ncurarc = long(total(goodlines[0:narclines-1,i]))
 
-	    res = arcsky_fit((wavnorm[i,use])[*], lambda[use], narclines, $
+	    res = arcsky_fit((wavnorm[i,use])[*], lambda[use], ncurarc, $
                ncoeff, skycoeff, function_name=function_name, yfit=yfit)
 	    diff = yfit - lambda[use]
 

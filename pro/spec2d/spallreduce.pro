@@ -7,7 +7,7 @@
 ;   of data according to a plan file.
 ;
 ; CALLING SEQUENCE:
-;   spallreduce, planfile=planfile
+;   spallreduce, planfile=planfile, combineonly=combineonly
 ;
 ; INPUTS:
 ;
@@ -37,7 +37,7 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro spallreduce, planfile=planfile
+pro spallreduce, planfile=planfile, combineonly=combineonly
 
    if (NOT keyword_set(planfile)) then planfile = 'spPlan2d.par'
 
@@ -52,6 +52,9 @@ pro spallreduce, planfile=planfile
       if (tag_names(*pdata[i], /structure_name) EQ 'ONEEXP') then $
        allseq = *pdata[i]
    endfor
+
+   ptr_free, pdata
+
    if (N_elements(allseq) EQ 0) then $
     message, 'No ONEEXP structures in plan file ' + planfile
 
@@ -76,6 +79,10 @@ pro spallreduce, planfile=planfile
       ; this sequence ID number
       j = where(allseq.seqid EQ seqid[iseq])
       plateid = allseq[j[0]].plateid
+
+      plateDir = filepath(strtrim(string(plateid),2),root_dir=extractDir)
+
+    if (NOT keyword_set(combineonly)) then begin
 
       ; Find the corresponding plug map file
       j = where(allplug.seqid EQ seqid[iseq] $
@@ -105,7 +112,11 @@ pro spallreduce, planfile=planfile
             j = where(allseq.seqid EQ seqid[iseq] $
                   AND allseq.flavor EQ 'flat' $
                   AND allseq.name[icam] NE 'UNKNOWN' )
-            if (j[0] NE -1) then flatname = allseq[j[0]].name[icam] $
+
+;
+;	Changed flats and arcs to take the list of names in extract_image
+;
+            if (j[0] NE -1) then tempflatspot = j $
              else message, 'No flat for SEQID= ' $
               + strtrim(string(seqid[iseq]),2) + ', PLATEID= ' $
               + strtrim(string(plateid),2) + ', CAMERA= ' + camnums[icam]
@@ -113,24 +124,43 @@ pro spallreduce, planfile=planfile
             ; Select the first arc exposure at this sequence + camera
             j = where(allseq.seqid EQ seqid[iseq] $
                   AND allseq.flavor EQ 'arc' $
-                  AND allseq.name[icam] NE 'UNKNOWN' )
-            if (j[0] NE -1) then arcname = allseq[j[0]].name[icam] $
+                  AND allseq.name[icam] NE 'UNKNOWN' , numarcs)
+            if (j[0] NE -1) then temparcspot = j $
              else message, 'No arc for SEQID= ' $
               + strtrim(string(seqid[iseq]),2) + ', PLATEID= ' $
               + strtrim(string(plateid),2) + ', CAMERA= ' + camnums[icam]
 
+
+	    spawn, 'mkdir '+plateDir	
+
+;
+;	Need to make sure we have a one-to-some match between
+;	arcs and flats 
+;	  step through arcs and pick flat with closest seqid number
+
+          newflatspot = temparcspot
+	  for i=0,numarcs-1 do begin
+	     mindist = min(abs(tempflatspot-temparcspot[i]),closestspot)
+             newflatspot[i] = tempflatspot[closestspot]
+	  endfor
+
+	  arcname = allseq[temparcspot].name[icam]
+	  flatname = allseq[newflatspot].name[icam]
+
             spreduce, flatname, arcname, objname, $
-             pixflatname=flatDir+pixflatname, $
+             pixflatname=filepath(pixflatname,root_dir=flatDir), $
              plugfile=plugfile, lampfile=lampfile, $
-             indir=inputDir, plugdir=plugDir, outdir=extractDir, $
-             qadir=extractDir
+             indir=inputDir, plugdir=plugDir, $
+             outdir=plateDir, qadir=plateDir
 
          endif
 
       endfor ; End loop for camera number
 
+    endif
       ; Combine all red+blue exposures for a given sequence
 
+	startcombtime = systime(1)
       for side = 1, 2 do begin
          for i=1, 320 do begin
 
@@ -138,11 +168,17 @@ pro spallreduce, planfile=planfile
              '-',plateid,'-',i,'.fit')
 
             expres = string(format='(a,i1,a,i3.3,a)', 's-', side, '*', i,'.fit')
-            files = findfile(extractDir+expres)
+            files = findfile(filepath(expres,root_dir=plateDir))
 
-            combine2dout, files, extractDir+outputfile, wavemin = alog10(3750.0)
+	    if (files[0] EQ '') then $
+               print, 'No files found for ', i, ' side ', side $
+            else $
+              combine2dout, files, filepath(outputfile,root_dir=plateDir), $
+               wavemin = alog10(3750.0)
          endfor
       endfor
+       print, 'Finished combining sequence', seqid[iseq], ' in', $
+             systime(1)-startcombine, ' seconds'
 
    endfor ; End loop for sequence number
 

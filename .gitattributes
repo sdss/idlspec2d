@@ -22,6 +22,7 @@ misc/uomoto.distortions -text
 pro/TODO -text
 pro/arcsky_fit.pro -text
 pro/calcflux.pro -text
+pro/checkflavor.pro -text
 pro/combine2dout.pro -text
 pro/extract_boxcar.pro -text
 pro/extract_image.pro -text
@@ -44,6 +45,7 @@ pro/locateskylines.pro -text
 pro/logsheet.pro -text
 pro/makefile -text
 pro/qaplot_arcline.pro -text
+pro/quickproc.pro -text
 pro/rdss_fits.pro -text
 pro/read2dout.pro -text
 pro/sdssproc.pro -text
@@ -54,6 +56,7 @@ pro/spallreduce.pro -text
 pro/spec2d/TODO -text
 pro/spec2d/arcsky_fit.pro -text
 pro/spec2d/calcflux.pro -text
+pro/spec2d/checkflavor.pro -text
 pro/spec2d/combine2dout.pro -text
 pro/spec2d/extract_boxcar.pro -text
 pro/spec2d/extract_image.pro -text
@@ -76,6 +79,7 @@ pro/spec2d/locateskylines.pro -text
 pro/spec2d/logsheet.pro -text
 pro/spec2d/makefile -text
 pro/spec2d/qaplot_arcline.pro -text
+pro/spec2d/quickproc.pro -text
 pro/spec2d/rdss_fits.pro -text
 pro/spec2d/read2dout.pro -text
 pro/spec2d/sdssproc.pro -text
@@ -90,6 +94,7 @@ pro/spec2d/sshift.pro -text
 pro/spec2d/sshift2d.pro -text
 pro/spec2d/sshiftvec.pro -text
 pro/spec2d/svdcheb.pro -text
+pro/spec2d/telluric_corr.pro -text
 pro/spec2d/testextract.pro -text
 pro/spec2d/trace320cen.pro -text
 pro/spec2d/trace320crude.pro -text
@@ -110,6 +115,7 @@ pro/sshift.pro -text
 pro/sshift2d.pro -text
 pro/sshiftvec.pro -text
 pro/svdcheb.pro -text
+pro/telluric_corr.pro -text
 pro/testextract.pro -text
 pro/trace320cen.pro -text
 pro/trace320crude.pro -text

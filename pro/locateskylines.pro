@@ -149,6 +149,7 @@ PRO locateskylines, skylinefile, fimage, ivar, $
         mean  = mean[gind]
         sigma = sigma[gind]
         xarc  = xarc[*,gind]
+        xsky  = xsky[*,gind]
 	ysky  = ysky[*,gind]
         skywaves=skywaves[gind]
       

@@ -1,6 +1,12 @@
 
 function read2dout, filename, wave, hdr=hdr
-	spectra = readfits(filename, hdr)	
+
+	!ERROR = 0
+	spectra = readfits(filename, hdr, /silent)	
+	if (!ERROR) then begin
+          print, 'error reading file ', filename
+          return, 0
+        endif
 	if (NOT ARG_PRESENT(wave)) then return, 0
 
 	npix = (size(spectra))[1]

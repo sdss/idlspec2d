@@ -39,7 +39,7 @@
 ;   13-May-1999  Written by David Schlegel, Princeton.
 ;-
 ;------------------------------------------------------------------------------
-function rdss_fits, filename, hdr, _EXTRA=KeywordsForReadfits
+function rdss_fits, filename, hdr, nofloat=nofloat, _EXTRA=KeywordsForReadfits
 
    ; Need at least 1 parameter
    if (N_params() LT 1) then begin
@@ -55,17 +55,19 @@ function rdss_fits, filename, hdr, _EXTRA=KeywordsForReadfits
    qsimple = strpos( (str_sep(hdr[0],'/'))[0], 'F', 8) ; GE 0 if SIMPLE=F
    result = sxpar(hdr, 'UNSIGNED', count=ct1)
    if (qsimple GE 0 AND ct1 NE 0) then begin
-print,'converting from U16...'
 
       bitpix = sxpar(hdr, 'BITPIX')
       sxdelpar, hdr, 'UNSIGNED' ; Remove UNSIGNED keyword
       sxdelpar, hdr, ' '        ; Remove blank header cards
 
       ; Convert from unsigned 16-bit integers to floats
-      ineg = where(image LT 0)
-      image = temporary(image) + 0.0
-      image[ineg] = 2.0^bitpix + image[ineg]
-ineg = 0
+      if (NOT keyword_set(nofloat)) then begin
+        print,'converting from U16...'
+        ineg = where(image LT 0)
+        image = temporary(image) + 0.0
+        image[ineg] = 2.0^bitpix + image[ineg]
+	return, image
+      endif else return, uint(image)
 
    endif
 

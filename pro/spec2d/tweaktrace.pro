@@ -1,17 +1,20 @@
 ;
 ;	Use fitans to tweak trace and sigma
 ;
-pro tweaktrace, xin, sigmain, centershift, sigmashift, $
-                xout, sigmaout
+pro tweaktrace, x, sigma, centershift, sigmashift
 
-	if (n_params() LT 4) then begin
-          print, 'Syntax - tweaktrace, xin, sigmain, centershift, sigmashift,'
-          print, '        xout, sigmaout'
-	  return
-	endif
+     if (n_params() LT 4) then begin
+       print, 'Syntax - tweaktrace, x, sigma, centershift, sigmashift,'
+       return
+     endif
+
+;     if (NOT keyword_set(maxshift)) then maxshift=1.0
 
 ;
 ;	For proftypes 1 and 2, the following represents first order shifts
 ;	
-	xout = centershift * sigmain + xin
-	sigmaout = (sigmashift + 1.0) * sigmain 
+     x = x - centershift * sigma 
+     sigma = (sigmashift + 1.0) * sigma 
+
+    return
+end

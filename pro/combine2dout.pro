@@ -12,7 +12,7 @@ end
 pro combine2dout, filenames, outputfile, bin, zeropoint, nord=nord, $
         ntrials=ntrials, fullspec=fullspec, fullerr=fullerr, $
         fullwave=fullwave, output=output, dosky=dosky, wavemin = wavemin, $
-        bkptbin = bkptbin
+        bkptbin = bkptbin, montecarlo=montecarlo
 
 ;
 ;	Set to 50 km/s for now to match 1d
@@ -41,8 +41,11 @@ pro combine2dout, filenames, outputfile, bin, zeropoint, nord=nord, $
 	fullspec = spec[*,0]
 	fullerr = spec[*,1]
 	fullwave = wave
-	bluered = bytarr(n_elements(wave)) + $
-             (strpos(sxpar(hdr,'cameras'),'r') EQ 0)
+	nwave = n_elements(wave)
+        medwidth =  (wave[2:*] - wave[0:*])/2.0
+        width = abs([wave[1] - wave[0],medwidth,wave[nwave-1] - wave[nwave-2]])
+	specnum = bytarr(nwave)
+	bluered = bytarr(nwave) + (strpos(sxpar(hdr,'cameras'),'r') EQ 0)
 
 	label =  makelabel(hdr)
 	exptime = sxpar(hdr,'EXPTIME')
@@ -52,8 +55,14 @@ pro combine2dout, filenames, outputfile, bin, zeropoint, nord=nord, $
 	  fullspec = [fullspec, spec[*,0]] 
 	  fullerr = [fullerr, spec[*,1]] 
 	  fullwave = [fullwave, wave] 
-	  bluered = [bluered, bytarr(n_elements(wave)) + $
-                (strpos(sxpar(hdr,'cameras'),'r') EQ 0)] 
+	  nwave = n_elements(wave)
+          medwidth =  (wave[2:*] - wave[0:*])/2.0
+          width = [width, abs([wave[1]-wave[0], medwidth, $
+               wave[nwave-1]-wave[nwave-2]])]
+	  specnum = [specnum, bytarr(nwave) + i]
+	  bluered = [bluered, bytarr(nwave) + $
+               (strpos(sxpar(hdr,'cameras'),'r') EQ 0)] 
+	
 	  label = [label, makelabel(hdr)]
 	  exptime = exptime + sxpar(hdr,'EXPTIME')
 	endfor
@@ -84,7 +93,8 @@ pro combine2dout, filenames, outputfile, bin, zeropoint, nord=nord, $
 	    scale = bluemed/redmed
 
 	    if (scale LT 0.1 OR scale GT 10.0) then scale = 1.0
-	    print, 'COMBINE2DOUT: scaling red by', scale
+	    print, 'COMBINE2DOUT ', outputfile, ': scaling red by', $
+                scale, bluemed/redmed
 	    fullspec[redpix] = fullspec[redpix]*scale
 	    fullerr[redpix] = fullerr[redpix]*scale
 	  endif
@@ -108,8 +118,8 @@ pro combine2dout, filenames, outputfile, bin, zeropoint, nord=nord, $
 	npix = spotmax - spotmin + 1
 	nbkpt = fix((bkptmax - bkptmin)/bkptbin) + 1
 
-	newwave = float(dindgen(npix)*bin + wavemin)
-	bkpt = float(dindgen(nbkpt)*bkptbin + bkptmin)
+	newwave = dindgen(npix)*bin + wavemin
+	bkpt = dindgen(nbkpt)*bkptbin + bkptmin
 	
 
 ;
@@ -129,16 +139,47 @@ pro combine2dout, filenames, outputfile, bin, zeropoint, nord=nord, $
 ;		
 
 	ss = sort(fullwave)
+	fullbkpt = slatec_splinefit(fullwave[ss], fullspec[ss], coeff, $
+              bkpt=float(bkpt), invvar=fullivar[ss], mask=mask, /silent)
 
-	fullbkpt = slatec_splinefit(fullwave[ss], $
-              fullspec[ss], coeff, bkpt=bkpt, invvar=fullivar[ss])
+	mask[ss] = mask
 
 	bestguess = fltarr(npix)
 	inside = where(newwave GE bkptmin AND newwave LE bkptmax, numinside)
 	if (inside[0] EQ -1) then $
            message, 'No wavelengths inside breakpoints'
 
-        bestguess[inside] = slatec_bvalu(newwave[inside], fullbkpt, coeff)
+	fwave = float(newwave[inside])
+        bestguess[inside] = slatec_bvalu(fwave,fullbkpt,coeff)
+
+      if (NOT keyword_set(montecarlo)) then begin
+;
+;	Instead of MonteCarlo, let's just guess error with invvar
+;	Let's use interpol, hope it's fast enough
+
+	bestivar = bestguess*0.0
+	besterr = bestivar
+
+	for i=0,nfiles-1 do begin
+	  these = where(specnum EQ i)
+	  if (these[0] NE -1) then begin
+	    inbetween = where(newwave GE min(fullwave[these]) AND $
+	                      newwave LE max(fullwave[these]))
+	    if (inbetween[0] NE -1) then begin
+
+	      result = interpol(fullivar[these] * mask[these] / width[these], $
+                      fullwave[these], newwave[inbetween])
+	
+	      bestivar[inbetween] = bestivar[inbetween] + result * bin 
+	    endif
+	  endif
+        endfor
+
+	nonzero = where(bestivar GT 0.0)
+	if (nonzero[0] NE -1) then $
+          besterr[nonzero] = 1.0/sqrt(bestivar[nonzero])
+
+      endif else begin
 
 ;
 ;	Below is very dirty Monte Carlo to estimate errors in b-spline
@@ -149,11 +190,13 @@ pro combine2dout, filenames, outputfile, bin, zeropoint, nord=nord, $
 	  tempspec = randomu(iseed,totalpix,/normal)*fullerr + fullspec
 	  fullbkpt = slatec_splinefit(fullwave[ss], tempspec[ss], $
                coeff, invvar=fullivar[ss], fullbkpt=fullbkpt)
-	  trials[i,inside] = slatec_bvalu(newwave[inside], fullbkpt, coeff)
+	  trials[i,inside] = slatec_bvalu(fwave, fullbkpt, coeff)
 	endfor
 
 	besterr = bestguess*0.0
 	for i=0,numinside-1 do besterr[inside[i]] = stddev(trials[*,inside[i]])
+
+      endelse
 
 	output = [[newwave],[bestguess],[besterr]]
 
@@ -196,6 +239,20 @@ pro combine2dout, filenames, outputfile, bin, zeropoint, nord=nord, $
 	sxaddpar, newhdr, 'EXPTIME', exptime, 'total exposure time (seconds)'
 	sxaddpar, newhdr, 'REDSCAL',scale,'Red scaling to match blue overlap', $
                 AFTER='EXPTIME'
+
+	sxaddpar, newhdr, 'COMBINE2', systime(), $
+                'COMBINE2DOUT finished', AFTER='EXPTIME'
+
+	sxaddpar, newhdr, 'NAXIS1', n_elements(bestguess)
+	sxaddpar, newhdr, 'WAT0_001', 'system=linear'
+	sxaddpar, newhdr, 'WAT1_001', $
+              'wtype=linear label=Wavelength units=Angstroms'
+	sxaddpar, newhdr, 'CRVAL1', wavemin, 'Iraf zero point'
+	sxaddpar, newhdr, 'CD1_1', bin, 'Iraf dispersion'
+	sxaddpar, newhdr, 'CRPIX1', 1, 'Iraf starting pixel'
+	sxaddpar, newhdr, 'CTYPE1', 'LINEAR   ' 
+	sxaddpar, newhdr, 'WCSDIM', 2
+	sxaddpar, newhdr, 'DC-FLAG', 1, 'Log-linear flag'
 
 	writefits, outputfile, [[bestguess],[besterr]], newhdr
 	return

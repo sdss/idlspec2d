@@ -1,16 +1,22 @@
 
-pro fluxcorr, flux, fluxivar, wset, plugsort, fluxfactor
+function fluxcorr, flux, fluxivar, wset, plugsort, $
+        spectrostd=spectrostd, bkptfile=bkptfile, lower=lower, upper=upper
 
+	if (NOT keyword_set(lower)) then lower = 2.5
+	if (NOT keyword_set(upper)) then upper = 10
 ;
 ;	We'll need a smoothly splined version of the intrinsic
 ;	f8 subdwarf.
 ;
-	filename = djs_locate_file('f8vspline.dat')
+	if (keyword_set(spectrostd)) then $
+	  filename = findfile(spectrostd) $
+	else $
+	  filename = djs_locate_file('f8vspline.dat')
 
 	if (filename EQ '') then $
-             message, 'cannot fluxcorrect, no intrinsic spectrum)
+             message, 'cannot fluxcorrect, no intrinsic spectrum'
 
-	readcol, filename, f8wave, f8flux
+	readcol, filename[0], f8wave, f8flux
 
 ;
 ;	Now try to find the best spectrophoto_std on this CCD
@@ -56,8 +62,10 @@ pro fluxcorr, flux, fluxivar, wset, plugsort, fluxfactor
 ;
 ;	Read in bkpt file, which should have best spacings
 ;	
-
-	filename = djs_locate_file('fluxcorr.bkpts')
+	if (keyword_set(bkptfile)) then $
+	  filename = findfile(bkptfile) $
+	else $
+	  filename = djs_locate_file('fluxcorr.bkpts')
 
 	if (filename EQ '') then begin
              print, 'FLUXCORR cannot find bkpt file, filling in here'
@@ -79,7 +87,8 @@ pro fluxcorr, flux, fluxivar, wset, plugsort, fluxfactor
 ;	
 
 	fullbkpt = slatec_splinefit(spectrowave, spectroflux, coeff, $
-            maxiter=10, low=2, upper=10, invvar=spectrofluxivar, bkpt=bkpt)
+            maxiter=10, lower=lower, upper=upper, $
+            invvar=spectrofluxivar, bkpt=bkpt)
 
 	intrinspl = spl_init(alog10(f8wave), f8flux)
 	fullf8v = spl_interp(alog10(f8wave), f8flux, intrinspl, wave) 
@@ -97,6 +106,6 @@ pro fluxcorr, flux, fluxivar, wset, plugsort, fluxfactor
 
 	fluxfactor = fullf8v / slatec_bvalu(wave, fullbkpt, coeff) * scaling
 
-	return
+	return, fluxfactor
 end
 
