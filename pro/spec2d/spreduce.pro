@@ -143,6 +143,12 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
     highrej=highrej, lowrej=lowrej, nPoly=nPoly, relative=1, ymodel=ymodel
 
    ;---------------------------------------------------------------------------
+   ; Compute fiber-to-fiber flat-field variations
+   ;---------------------------------------------------------------------------
+
+   fflat = fiberflat(flat_flux, flat_fluxivar)
+
+   ;---------------------------------------------------------------------------
    ; Read the arc
    ;---------------------------------------------------------------------------
 
@@ -174,10 +180,11 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
    ;------------------
    ; Flat-field the extracted arcs with the global flat
-   ; Hmmm.... Circular here, since we need a wavelength calibration before
-   ; making that flat
-;   arc_flux = arc_flux / fflat
-;   arc_fluxivar = arc_fluxivar * fflat^2
+   ; Hmmm.... would be circular if we need a wavelength calibration before
+   ; making that flat.  We don't at the moment.
+
+   arc_flux = arc_flux / fflat
+   arc_fluxivar = arc_fluxivar * fflat^2
 
    ;---------------------------------------------------------------------------
    ; Compute wavelength calibration for arc lamp only
@@ -199,12 +206,6 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    endif 
 
    qaplot_arcline, xdif_tset, lambda, arcname
-
-   ;---------------------------------------------------------------------------
-   ; Compute fiber-to-fiber flat-field variations
-   ;---------------------------------------------------------------------------
-
-   fflat = fiberflat(flat_flux, flat_fluxivar)
 
    ;---------------------------------------------------------------------------
    ; LOOP THROUGH OBJECT FRAMES

@@ -45,6 +45,7 @@
 ; EXAMPLES:
 ;
 ; BUGS:
+;   Not sure what to do if exactly 2 frames are passed.
 ;
 ; PROCEDURES CALLED:
 ;   djs_avsigclip()
@@ -138,33 +139,41 @@ print, 'Working on file ', fullname[0]
 
       ;----------------------
       ; Write FLATIMG and YMODEL to disk
-      writefits, tmpname1[iflat], flatimg
+      if (nflat GT 1) then begin
+         writefits, tmpname1[iflat], flatimg
+         writefits, tmpname2[iflat], ymodel
+      endif
 flatimg = 0
-      writefits, tmpname2[iflat], ymodel
 ymodel = 0
 
    endfor
 
-   ; Find deviant pixels in each pixflat
-   meanimg = djs_avsigclip(pixflatarr, 3, sigrej=sigrej, maxiter=maxiter, $
-    outmask=outmask)
+   if (nflat EQ 1) then begin
+
+      pixflat = temporary(pixflatarr)
+
+   endif else begin
+      ; Find deviant pixels in each pixflat
+      meanimg = djs_avsigclip(pixflatarr, 3, sigrej=sigrej, maxiter=maxiter, $
+       outmask=outmask)
 meanimg = 0
 pixflatarr = 0
-   outmask = temporary(1-outmask) ; Change to 0=bad, 1=good
+      outmask = temporary(1-outmask) ; Change to 0=bad, 1=good
 
-   flatimgsum = 0
-   ymodelsum = 0
-   for iflat=0, nflat-1 do begin
+      flatimgsum = 0
+      ymodelsum = 0
+      for iflat=0, nflat-1 do begin
 
-      flatimgsum = flatimgsum + outmask[*,*,iflat] * readfits(tmpname1[iflat])
-      ymodelsum = ymodelsum + outmask[*,*,iflat] * readfits(tmpname2[iflat])
+         flatimgsum = flatimgsum + outmask[*,*,iflat] * readfits(tmpname1[iflat])
+         ymodelsum = ymodelsum + outmask[*,*,iflat] * readfits(tmpname2[iflat])
 
-      rmfile, tmpname1[iflat]
-      rmfile, tmpname2[iflat]
+         rmfile, tmpname1[iflat]
+         rmfile, tmpname2[iflat]
 
-   endfor
+      endfor
 
-   pixflat = (flatimgsum > 1) / (ymodelsum > 1)
+      pixflat = (flatimgsum > 1) / (ymodelsum > 1)
+   endelse
 
    if (keyword_set(outfile)) then $
     writefits, outdir+outfile, pixflat
