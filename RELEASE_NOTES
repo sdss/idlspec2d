@@ -13,6 +13,8 @@ SPFLATAVE, SPFLATTEN2: Handle edge effects better.  In SPFLATTEN2, set
           fiber equal to zero.  Then, in SPFLATAVE, any edge pixels that are
           zero from all nights are set to unity.
 idlspec2d.table: Make an optional dependence upon the "specflat" product.
+sprobot.sh: Copy only the compressed ("sdR-*.fit.gz") files from
+            sos.apo.nmsu.edu, instead of the raw files from sdsshost.apo.
 
 evilinstall (in idlutils): Minor syntax changes to work with RH7.1 on spectro.
 ATV (in idlutils): Handle unsupported CTYPE, CTYPE reversal gracefully;
