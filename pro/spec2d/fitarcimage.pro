@@ -196,7 +196,7 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, $
 
    splog, 'Tracing', N_elements(lamps), ' arc lines'
    xcen = trace_crude(arc, yset=ycen, nave=1, nmed=1, xstart=xstart, $
-    ystart=row, maxshifte=0.3d, maxshift0=2.0d)
+    ystart=row, maxshifte=0.5d, maxshift0=2.0d)
 
    ; Iterate the flux-weighted centers
    ; In the last iteration, use the formal errors in the arc image
