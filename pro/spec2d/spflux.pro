@@ -22,6 +22,8 @@ pro spflux, sciname, fcalibprefix, adderr=adderr
 
    for i=0, nscience-1 do begin
       hdr = headfits(sciname[i])
+      if (size(hdr,/tname) NE 'STRING') then $
+        message, 'Header is not valid for '+sciname[i]
 
       exposure[i] = sxpar(hdr, 'EXPOSURE')
       flavor[i] = strtrim(sxpar(hdr, 'FLAVOR'),2)
@@ -123,17 +125,19 @@ pro spflux, sciname, fcalibprefix, adderr=adderr
          if (ired NE -1) then redfile = sciname[ired] $
           else redfile = ''
 
-         expstr = string(allexpnum[iexp], format='(i8.8)')
-         corrfile = 'spFluxcorr-' + expstr + '-' + camspecid[iblue] + '.fits'
+         if (iblue NE -1 AND ired NE -1) then begin
+           expstr = string(allexpnum[iexp], format='(i8.8)')
+           corrfile = 'spFluxcorr-' + expstr + '-' + camspecid[iblue] + '.fits'
 
-         if keyword_set(bluelist) then bluelist = [bluelist, bluefile] $
-         else bluelist = bluefile 
+           if keyword_set(bluelist) then bluelist = [bluelist, bluefile] $
+           else bluelist = bluefile 
 
-         if keyword_set(redlist) then redlist = [redlist, redfile] $
-         else redlist = redfile 
+           if keyword_set(redlist) then redlist = [redlist, redfile] $
+           else redlist = redfile 
 
-         if keyword_set(corrlist) then corrlist = [corrlist, corrfile] $
-         else corrlist = corrfile 
+           if keyword_set(corrlist) then corrlist = [corrlist, corrfile] $
+           else corrlist = corrfile 
+         endif
 
       endfor
 

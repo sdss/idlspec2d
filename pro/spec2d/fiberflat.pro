@@ -108,7 +108,7 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
    ; Construct the "superflat" vector
 
    superflat, flux, fluxivar, wset, sset, $
-    fibermask=fibermask, minval=minval, lower=lower, upper=upper, $
+    fibermask=fibermask, minval=minval, lower=3.0, upper=3.0, $
     medval=medval, title=plottitle
 
    if (n_elements(allfullbkpt) EQ 1) then begin

@@ -1,17 +1,22 @@
 
+***   BAD  FIBER  LIST   ********
+
+Plate  camera   fiber (0 indexed)      Problem
+0410     r1       90                   Ill constrained flat field applied
+
+* Look at plate 306, MJD 51637, fiber#295 (0-indexed 294).
+  Appears that fluxing for b1 is bad redward of 6000 Ang.
+
+
+----------------------------------------------------------------------------
+
 * Exclude low-S/N frames from co-addition of a plate?
 
 * Do halo correction before scattered-light correction?
 
-* Replace slatec_splinefit and slatec_bvalu with their IDL counterparts 
-
 * Confirm proper dispset in combined spectra
-
-* Calculate synthetic g',r',i' in fluxed spectra and begin QA
-    for spectrophotometry
-
-* Do higher order shifting then "bestlag" as real flexure changes
-  scale as well.  in place: match_trace
+     Currently using variance weighted dispersion, but this has scatter
+    
 
 * Report non-gaussian errors in SDSSPROC from the overscan region.
   Search for other possible electronics problems.
@@ -42,9 +47,6 @@
 * Let TRACESET2XY return a wave map of type double.
 
 * What the heck is CURANS in the routine XY2TRACESET?
-
-* Re-instate S/N plot, and include global S/N values in spPlate files,
-  evaluated at 20th mag or so just like in APO-2D.
 
 * The routine traceset2pix should also support 'fchebyshev_split',
   as does func_fit().
@@ -77,22 +79,13 @@
   spectrum has been constructed with only one input spectrum.  In those
   cases, we don't have information for CR rejection.
 
-* Improve mask bits for bright sky features.
-
 * Use DJS_FILEPATH() where appropriate.
 
 * Add /DEBUG keyword for writing out spArc and spFlat files.
 
-* Apply illumination correction, as done for the PT.
-
-* Look at plate 306, MJD 51637, fiber#295 (0-indexed 294).
-  Appears that fluxing for b1 is bad redward of 6000 Ang.
-
 * Remove WARNING, ABORT words from HTML file from APO2HTML.
 
 * Preserve header info in APOREDUCE.
-
-* Put back Scott's conservevariance terms in COMBINE2DOUT.
 
 * Add keywords: INSTRUME ?
 
@@ -104,6 +97,9 @@
   then for each object pick the flat-field with the most similar traces.
   We can do this cheaply by measuring the offset to just the first good flat,
   then use the known relative shifts to pick the best match.
+
+   Can easily use match_trace to solve the item above.
+
 
 * Add in error as a fraction of the whopping terms?
   Or at least set a pixelmask bit.
@@ -147,12 +143,6 @@
   JEG points out that the b1 CCD has a terrible transient at the beginning.
   also first and last columns in all cameras.
 
-* Track total exposure time in combined spectra
-  some attempt is made, if both red and blue spectra are used in combining,
-    total exposure time is exposure time of all / 2
-
-* Don't allow too many whopping terms.
-
 * Choose bkpts in combine2dout more carefully, bad behavior ensues
   with current choice (uniform bins).
 
@@ -180,6 +170,29 @@
 -------------------------------------------------------------------------------
 ;   These have been dealt with
 -------------------------------------------------------------------------------
+* Re-instate S/N plot, and include global S/N values in spPlate files,
+  evaluated at 20th mag or so just like in APO-2D.
+
+* Apply illumination correction, as done for the PT. 
+
+* Improve mask bits for bright sky features.
+
+* Track total exposure time in combined spectra
+  some attempt is made, if both red and blue spectra are used in combining,
+    total exposure time is exposure time of all / 2
+
+* Replace slatec_splinefit and slatec_bvalu with their IDL counterparts 
+
+* Put back Scott's conservevariance terms in COMBINE2DOUT.
+   --- taken care of by correct_dlam
+
+* Calculate synthetic g',r',i' in fluxed spectra and begin QA
+    for spectrophotometry
+
+* Do higher order shifting then "bestlag" as real flexure changes
+  scale as well.  in place: match_trace
+
+* Don't allow too many whopping terms.
 
 * Focal plane mapping
 
