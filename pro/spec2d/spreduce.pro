@@ -77,7 +77,7 @@ pro spreduce, flatname, arcname, objname, pixflatname, $
       if (tempname EQ '') then message, 'No LAMPFILE found '+lampdefault
    endelse
          
-   readcol, tempname[0], lampwave, lampinten, lampquality, format='f,f,a'
+   readcol, tempname[0], lampwave, lampinten, lampquality, format='d,f,a'
    lamplist = [[lampwave], [lampinten], [(lampquality EQ 'GOOD')]]
 
    ;---------------------------------------------------------------------------
@@ -130,6 +130,9 @@ pro spreduce, flatname, arcname, objname, pixflatname, $
    ;---------------------------------------------------------------------------
    ; Extract the flat-field image
    ;---------------------------------------------------------------------------
+
+;   pixflat = spflatten(flatname, indir=indir, xsol=xsol, ycen=ycen, $
+;         flat_flux=flat_flux)
 
    sigma = 1.0
    proftype = 1 ; Gaussian
@@ -240,7 +243,6 @@ pro spreduce, flatname, arcname, objname, pixflatname, $
 ;   median( flattemp[*,i]/(median(flattemp[*,i])*mm), 25) +i/200.
 ; dfpsclose
 
-stop
    ;---------------------------------------------------------------------------
    ; LOOP THROUGH OBJECT FRAMES
    ;---------------------------------------------------------------------------
@@ -257,8 +259,13 @@ stop
       sdssproc, fullname[0], objimg, objivar, hdr=objhdr
 
       ; Flat-field the object image
-      if (keyword_set(pixflatname)) then $
+;      objimg = objimg / pixflat
+
+      ; What about invvar?  Is below okay?
+      if (keyword_set(pixflatname)) then begin
        objimg = objimg / pixflat
+       objivar = objivar * pixflat * pixflat 
+      endif
 
       ;------------------
       ; Tweak up the spatial traces
@@ -278,10 +285,38 @@ stop
       ;------------------
       ; Extract the object image
       ; Use the "whopping" terms
+      ; We need to do 2 iteration extraction: 
+      ;        1) Fit profiles in a subset of rows
+      ;        2) Fit returned parameters with smooth functions
+      ;        3) Extract all 2048 rows with new profiles given by
+      ;              fitansimage
 
+      nrow = (size(objimg))[2]
+      ncol = (size(objimg))[1]
+      skiprow = 8
+      yrow = lindgen(nrow/skiprow)*skiprow + skiprow/2
+      nfirst = n_elements(yrow)
+
+      ; 1) First extraction
       extract_image, objimg, objivar, xsol, sigma, obj_flux, obj_fluxivar, $
-       proftype=proftype, wfixed=[1,1,1], $
-       highrej=highrej, lowrej=lowrej, nPoly=nPoly, whopping=whopping
+       proftype=proftype, wfixed=[1,1,1], yrow=yrow, $
+       highrej=highrej, lowrej=lowrej, nPoly=nPoly, whopping=whopping, $
+       ansimage=ansimage
+
+      ; 2) Refit ansimage to smooth profiles
+
+      nparams = 3
+      nTrace = (size(obj_flux))[2]
+      fitans = fitansimage(ansimage, nparams, nTrace, nPoly, nfirst, yrow, $
+             fluxm = [1,1,0])
+
+      ; 3) Second and final extraction
+      extract_image, objimg, objivar, xsol, sigma, obj_flux, obj_fluxivar, $
+       proftype=proftype, wfixed=[1,1,1], fitans=fitans, $
+       highrej=highrej, lowrej=lowrej, nPoly=nPoly, whopping=whopping, $
+       ymodel=ymodel2
+
+stop
 
       ;------------------
       ; Tweak up the wavelength solution to agree with the sky lines.
