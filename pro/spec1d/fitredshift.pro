@@ -50,6 +50,9 @@
 ;   25-Mar-2000  Written by S. Burles, FNAL
 ;   26-Jun-2000  D. Finkbeiner - modified to properly weight corr
 ;                                vector for variable overlap
+;   26-Jun-2000 (v 1.5) altered algorithm to set peak search boundary
+;       at the half height of the peak, rather than zero.  This fixes
+;       cases where there is a close double peak. 
 ;-
 ;------------------------------------------------------------------------------
 ; This routine locates the 20 highest peaks, and measures
@@ -108,14 +111,26 @@ pro fitredshift, fluxfft, fluxerr, starfft, starerr, $
  nsearch=nsearch, zmin=zmin, zfit=z, z_err=z_err, $
  veldispfit=veldisp, veldisp_err=veldisp_err, doplot=doplot
 
+; keyword defaults
    if (NOT keyword_set(nsearch)) then nsearch = 5
    if (NOT keyword_set(zmin)) then zmin = -60
+
+; returned value defaults
+   z = 0.
+   z_err = 999.
+   veldisp = 0.
+   veldisp_err = 999.
 
 ; check dimensions - ASSUME everything is already padded to 2^N
    IF stdev([n_elements(fluxfft), n_elements(fluxerr),  $
              n_elements(starfft), n_elements(starerr)]) NE 0 THEN BEGIN 
        help, fluxfft, fluxerr, starfft, starerr 
        message, 'dimensions do not match!'
+   ENDIF 
+
+   IF (stdev(fluxfft) EQ 0) OR (stdev(starfft) EQ 0) THEN BEGIN 
+       print, 'FITREDSHIFT:  FAILED - array full of zeros'
+       return
    ENDIF 
 
 
@@ -152,22 +167,22 @@ pro fitredshift, fluxfft, fluxerr, starfft, starerr, $
 
       findmaxarea, newcorr, velcen, peak, cen=cen, area=area, pks=pks
 
-      ; Let xtemp be centered about velcen for all corr values above 0.0
+      ; Let xtemp be centered about velcen for all newcorr values above 0.0
 
-      lowerbound = max(where(corr LT 0 AND x LT velcen))
-      upperbound = min(where(corr LT 0 AND x GT velcen))
+      lowerbound = max(where(newcorr LT peak/2 AND x LT velcen))
+      upperbound = min(where(newcorr LT peak/2 AND x GT velcen))
       xtemp = x[lowerbound:upperbound] - velcen
-      parabola = poly_fit(xtemp, corr[xtemp+velcen], 2, yfit)
+      parabola = poly_fit(xtemp, newcorr[xtemp+velcen], 2, yfit)
 
       if (parabola[2] GE 0.0) then begin
           print, 'peak is not well fit at ', velcen
-          corr[xtemp+velcen] = 0.0
-      endif else if (total(corr[xtemp+velcen]) LT 0.0) then begin
-          print, 'total corr is less than zero at ', velcen
-          corr[xtemp+velcen] = 0.0
+          newcorr[xtemp+velcen] = 0.0
+      endif else if (total(newcorr[xtemp+velcen]) LT 0.0) then begin
+          print, 'total newcorr is less than zero at ', velcen
+          newcorr[xtemp+velcen] = 0.0
       endif else if (total(yfit) LT 0.0) then begin
           print, 'total fit is less than zero at ', velcen
-          corr[xtemp+velcen] = 0.0
+          newcorr[xtemp+velcen] = 0.0
       endif else begin
           i = nsearch
           good = 1
@@ -189,7 +204,7 @@ pro fitredshift, fluxfft, fluxerr, starfft, starerr, $
 
    left = long(velcen + xcen - 1) - lindgen(100)
    right = long(velcen + xcen + 1) + lindgen(100)
-   asig = stddev(corr[left]-corr[right]) / sqrt(2.)
+   asig = stdev(newcorr[left]-newcorr[right]) / sqrt(2.)
 
    ; Here's my attempt to fit a gaussian to the correlation peak
    ; The main problem here is to decide where the baseline of the
@@ -197,8 +212,8 @@ pro fitredshift, fluxfft, fluxerr, starfft, starerr, $
    ; goes to zero.  Very troubling.
 
 ; new xtemp
-   lowerbound = max(where(corr LT 0 AND x LT velcen))-2
-   upperbound = min(where(corr LT 0 AND x GT velcen))+2
+   lowerbound = max(where(newcorr LT height/2 AND x LT velcen))-2
+   upperbound = min(where(newcorr LT height/2 AND x GT velcen))+2
    xtemp2 = x[lowerbound:upperbound] - velcen
 
 
@@ -209,17 +224,23 @@ pro fitredshift, fluxfft, fluxerr, starfft, starerr, $
    base = -height/3. ; empirical guess of gaussian baseline
 
    a = double([height, xcen, guesssig, base])
-;   gaussf = curvefit(xtemp,corr[xtemp+velcen] + height/3.0, weights, $
+;   gaussf = curvefit(xtemp,newcorr[xtemp+velcen] + height/3.0, weights, $
 ;    a+0D, gausserrors, function_name="GAUSS_FUNCT")
 ;   gaussf = gaussf - height/3.0
 
-   gaussf = curvefit(xtemp2,corr[xtemp2+velcen], weights, $
-    a, gausserrors, function_name="GAUSS_FUNCT")
+   gaussf = curvefit(xtemp2,newcorr[xtemp2+velcen], weights, $
+    a, gausserrors, function_name="GAUSS_FUNCT", iter=iter)
+
+   IF abs(a[1]) GT 3 THEN BEGIN 
+       message, 'curvefit failed to converge!!!', /info
+       print, 'Reverting to parabola solution'
+       
+   ENDIF 
 
 
    if (keyword_set(doplot)) then begin
       wset,0
-      djs_plot, x-velcen, corr, ps =10, xr=[-20,20], $
+      djs_plot, x-velcen, newcorr, ps =10, xr=[-20,20], $
        title='Best correlation peak w/fits (Green:gauss, Red: Parabola)'
       djs_oplot, xtemp, poly(xtemp, parabola), color='red'
       djs_oplot, xtemp2, gaussf, color='green'
