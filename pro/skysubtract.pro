@@ -48,6 +48,7 @@
 ;   djs_oplot
 ;   djs_oploterr
 ;   djs_plot
+;   pixelmask_bits()
 ;   slatec_splinefit()
 ;   slatec_bvalue()
 ;

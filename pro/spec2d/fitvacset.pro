@@ -1,4 +1,41 @@
-
+;+
+; NAME:
+;   fitvacset
+;
+; PURPOSE:
+;   Use measured positions of arc lines and shift coefficients
+;    passed through xset to produce a final vacuum wavelength solution 
+;
+; CALLING SEQUENCE:
+;   vacset = fitvacset(xpeak, lambda, wset, xset, ncoeff=ncoeff)
+;
+; INPUTS:
+;   xpeak  - Arc line centroids 
+;   lambda - Corresponding wavelengths
+;   wset   - Initial arc line solution coefficients
+;   xset   - Coefficients specifying shift to coefficients 
+;
+; OPTIONAL KEYWORDS:
+;   ncoeff - Number of coefficients to fit final wavelength solution (Default 5)
+;
+; OUTPUTS:
+;   vacset - output wavelength solution which includes shift to
+;                    sky lines and conversion to vacuum wavelengths
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;
+; PROCEDURES CALLED:
+;   traceset2xy
+;   xy2traceset
+;
+; REVISION HISTORY:
+;   20-Jan-2000  Written by S. Burles, Chicago
+;-
+;------------------------------------------------------------------------------
 function fitvacset, xpeak, lambda, wset, xset, ncoeff=ncoeff
 
       if (NOT keyword_set(ncoeff)) then ncoeff=5

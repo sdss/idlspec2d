@@ -50,8 +50,10 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   fibermask_bits()
 ;   slatec_bvalu()
 ;   slatec_splinefit()
+;   splog
 ;   superflat
 ;   traceset2xy
 ;   xy2traceset

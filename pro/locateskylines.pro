@@ -39,8 +39,8 @@
 ;  not yet made any changes to this code.
 ;
 ; PROCEDURES CALLED:
-;  fitmeanx         - internal routine for FITARCIMAGE
-;  trace_fweight()
+;  fitmeanx()         
+;  trace_gweight()
 ;  traceset2pix()
 ;
 ; REVISION HISTORY:

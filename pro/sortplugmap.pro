@@ -1,3 +1,38 @@
+;+
+; NAME:
+;   sortplugmap
+;
+; PURPOSE:
+;   Cull the nTrace plugmap entries which match the fibers in the
+;     current image
+;
+; CALLING SEQUENCE:
+;  plugsort = sortplugmap(plugmap, spectrographid, fibermask, nFibers=nFibers)
+;
+; INPUTS:
+;   plugmap         - The full Plug map structure read in from plPlugMapM
+;   spectrographid  - The spectrograph number
+;
+; OPTIONAL KEYWORDS:
+;   nFiebrs         - number of fibers to locate (default 320)
+;
+; OUTPUTS:
+;   plugsort        - culled plugmap structure matching current traces
+;
+; OPTIONAL OUTPUTS:
+;   fibermask       - returns an array of byte with bits set for unknown fibers
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;
+; PROCEDURES CALLED:
+;   fibermask_bits()
+;
+; REVISION HISTORY:
+;   19-Oct-1999  Written by S. Burles, Chicago
+;-
+;------------------------------------------------------------------------------
 function sortplugmap, plugmap, spectrographid, fibermask, nFibers=nFibers
 
    if (NOT keyword_set(nFibers)) then nFibers=320

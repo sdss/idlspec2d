@@ -1,6 +1,43 @@
+;+
+; NAME:
+;   fitmeanx
+;
+; PURPOSE:
+;   Use fitans to tweak trace and sigma
+;   This just perturbs the input values of xcen and sigma
+;
+; CALLING SEQUENCE:
+;   xdiff = fitmeanx(wset, lambda, xpos, xinvvar, $
+;                      nord=nord, maxdev=maxdev, mx=mx)
+;
+; INPUTS:
+;   wset     - Initial wavelength solution
+;   lambda   - air wavelengths corresponding to xpos
+;   xpos     - centroids of sky lines in object image
+;
+; OPTIONAL KEYWORDS:
+;   nord     - order of fit to delta x positions
+;   maxdev   - max abs difference to reject outlying sky line positions
+;
+; OUTPUTS:
+;   xdiff    - smooth fit to difference between measured sky positions
+;                and those predicted from arc wavelength solution
+;
+; OPTIONAL OUTPUTS:
+;   xinvvar  - weights in xpos (mask)
+;   mx       - sky line positions predicted from arc line solution
+;
+; COMMENTS:
+;    LAMBDA = log10-wavelength
+;
+; EXAMPLES:
+;
+; PROCEDURES CALLED:
+;
+; REVISION HISTORY:
+;   19-Oct-1999  Written by S. Burles, Chicago
+;-
 ;------------------------------------------------------------------------------
-; LAMBDA = log10-wavelength
-
 function fitmeanx, wset, lambda, xpos, xinvvar, nord=nord, maxdev=maxdev, mx=mx
 
    if (NOT keyword_set(nord)) then nord = 4

@@ -54,9 +54,11 @@
 ; EXAMPLES:
 ;
 ; PROCEDURES CALLED:
+;   fibermask_bits()
 ;   trace_crude
 ;   trace_gweight
 ;   trace320cen
+;   xy2traceset
 ;
 ; REVISION HISTORY:
 ;   13-Sep-1999  Written by David Schlegel, Princeton.
