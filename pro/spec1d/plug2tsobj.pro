@@ -34,7 +34,8 @@
 ;   But since plates can be re-plugged, we must re-sort these
 ;   files to match the object ordering in the plug-map structure.
 ;
-;   Print a warning message for non-matched objects only if they are not skies.
+;   Print a warning message for non-matched objects only if they are not skies,
+;   according to the PLUGMAP structure.
 ;
 ; EXAMPLES:
 ;   Read the plug-map for plate 306, fibers 1 to 10, then construct the
@@ -54,17 +55,18 @@
 ;   25-Jun-2000  Written by David Schlegel, Princeton.
 ;-
 ;------------------------------------------------------------------------------
-function plug2tsobj, plateid, ra, dec, plugmap=plugmap, dmin=dmin
+function plug2tsobj, plateid, ra1, dec1, plugmap=plugmap, dmin=dmin
 
    root_dir = getenv('SPECTRO_DATA')
    if (NOT keyword_set(root_dir)) then $
     message, 'Environment variable SPECTRO_DATA must be set!'
 
-   if (keyword_set(plugmap) $
-    AND (NOT keyword_set(ra) OR NOT keyword_set(dec))) then begin
-      ra = plugmap.ra
-      dec = plugmap.dec
+   if (keyword_set(plugmap)) then begin
+      if (n_elements(ra1) EQ 0) then ra = plugmap.ra
+      if (n_elements(dec1) EQ 0) then dec = plugmap.dec
    endif
+   if (n_elements(ra) EQ 0) then ra = ra1
+   if (n_elements(dec) EQ 0) then dec = dec1
 
    if (NOT keyword_set(dmin)) then dmin = 1.0
 
