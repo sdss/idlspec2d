@@ -235,7 +235,11 @@ pro batch2d, platenums, topdir=topdir, mjd=mjd, mjstart=mjstart, mjend=mjend, $
    ;----------
    ; Create list of plate directories
 
-   spawn, 'ls -d ' + string(platenums+' ', $
+   if (size(platenums,/tname) EQ 'INT' OR size(platenums,/tname) EQ 'LONG') $
+    then platestr = string(platenums,format='(i4.4)') $
+   else platestr = platenums
+
+   spawn, 'ls -d ' + string(platestr+' ', $
     format='(99(a," "))'), platedirs
    if (NOT keyword_set(platedirs[0])) then begin
       splog, 'No directories found'
