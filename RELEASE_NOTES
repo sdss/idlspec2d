@@ -11,6 +11,7 @@ FINDSPEC: Add the optional keyword SEARCHRAD.
 GUIDERMOVIE: The format for the date in the header of the guider images
            has changed.  This code should now comptabably read the old
            or new date format.
+HELIOCENTRIC: Moved to idlutils product.
 LINEBACKFIT: Change how the error on equiv. width (LINEEW_ERR) is computed.
            I believe it was incorrect before, and should simply be
            computed from LINEAREA_ERR,LINECONTLEVEL_ERR.
@@ -110,6 +111,7 @@ EXT_CCM,EXT_ODONNELL: Move these old dust-related routines here since
            they are general-purpose.  They were not previously in any
            repository.
 FITS_WAIT: Allow DELTAT,TMAX to be zero.
+HELIOCENTRIC: Moved from idlspec2d product, since this is of general use.
 HOGG_ITERLINFIT: General-purpose sigma-clipping linear fitting routine
            copied over from the hoggpt product.
 HOGG_STRSPLIT: New support proc for YANNY_READ.
@@ -135,6 +137,19 @@ YANNY_READ: Make use of Hogg's procedure HOGG_STRSPLIT, which should be more
 YANNY_READONE: New proc; wrapper for YANNY_READ.
 YANNY_WRITE: Default to having the variable names in the typedef's in
            lower-case (not that it matters).
+
+The pro/djsphot directory has been moved from the hoggpt product.
+This includes:
+
+DJS_NEFF
+DJS_PHOT
+DJS_PHOTCEN
+DJS_PHOTFRAC
+DJS_PHOTSKY
+FIND_SIMPLE
+QUICK_PHOTFRAC
+SQUAREPHOT
+
 evilmake: Add "Darwin" (Mac OS X) as a possible platform.
            Export F77=g77 for the platform.
            This doesn't work yet for Blanton's spheregroup code or Fortran.
