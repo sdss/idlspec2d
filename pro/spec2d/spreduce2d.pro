@@ -232,8 +232,7 @@ pro spreduce2d, planfile, docams=docams, xdisplay=xdisplay
             ; Reduce this set of frames (all objects w/same plate + camera)
 
             if (keyword_set(arcname) AND keyword_set(flatname)) then begin
-               plottitle = 'MJD='+strtrim(string(mjd),2) $
-                + ' PLATE='+platestr + ': '
+               plottitle = ' PLATE='+platestr + 'MJD='+strtrim(string(mjd),2)
 
                spreduce, flatname, arcname, objname, $
                 plugfile=plugfile, lampfile=lampfile, $
