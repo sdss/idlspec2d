@@ -52,7 +52,6 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius
       fflat = 0 ; clear memory
    endif
 
-stop
    ;----------
    ; Write out wavelength solution
 
