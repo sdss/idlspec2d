@@ -148,22 +148,27 @@ objectnums = ['-00001447']
 
 ;Plate 214  ; All sky fibers
 
-cam = '04'
-flatnum = '-00001429'
+cam = '02'
+;flatnum = '-00001429'
+flatnum = '-00001430'
 flat = 'sdR-'+cam+flatnum+'.fit'
-arcnum = '-00001427'  ; pre exp
+arcnum = '-00001428'  ; pre exp
 ;arcnum = '-00001449'  ; post exp
 arc = 'sdR-'+cam+arcnum+'.fit'
 ;objectnums = ['-00001442','-00001444','-00001446','-00001448'] ;plate 214
-;objectnums = ['-00001435'] ;plate 214
-objectnums = ['-00001449'] ;plate 214    - arc!
+;objectnums = ['-00001435'] ;plate 214  sky
+;objectnums = ['-00001447'] ;plate 214
+objectnums = ['-00001428'] ;plate 214    ; arc!!!
 objects = 'sdR-'+cam+objectnums+'.fit'
 inputDir = '/ide_disk/51433/51441'
 outputDir = '/ide_disk/51433/51441/out'
 plugMapDir = '/ide_disk/51433'
 plugMapFile = 'plPlugMapM-0214-51432-02.par'
-tt = doaframe(flat,arc,objects,plugMapFile,inputDir=inputDir, $
- outputDir=outputDir, plugMapDir=plugMapDir)
+;tt = doaframe(flat,arc,objects,plugMapFile,inputDir=inputDir, $
+; outputDir=outputDir, plugMapDir=plugMapDir)
+spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
+ plugfile=plugfile, lampfile=lampfile, $
+ indir=indir, plugdir=plugdir, outdir=outdir, qadir=qadir, qa=qa
 
 ; Plate 202
 cam = '03'
@@ -243,23 +248,33 @@ tt = doaframe(flat,arc,objects,plugMapFile,inputDir=inputDir, $
 ttred = doaframe(flat,arc,objects,plugMapFile,inputDir=inputDir, $
  outputDir=outputDir, plugMapDir=plugMapDir)
 
+; ====================================================================
+;  Use spreduce now
+; ====================================================================
 
-;--- Now using SPREDUCE ---
-;
-;  Plate 191 on MJD=51456
-;
-cam = '01'
-flatnum = '-00001464'
-flat = 'sdR-'+cam+flatnum+'.fit'
-arcnum = '-00001462'
-arc = 'sdR-'+cam+arcnum+'.fit'
-objectnums = ['-00001450','-00001452','-00001454','-00001456','-00001458']
-objects = 'sdR-'+cam+objectnums+'.fit'
-pixflatname = 'pixflat-51441-r1.fits'
-indir = '51456'
-outdir = 'out'
-plugdir = indir
-plugfile = 'plPlugMapM-0191-51454-01.par'
-spreduce, flat, arc, objects, plugfile=plugfile, $
- indir=indir, plugdir=plugdir, outdir=outdir, pixflatname=pixflatname
+;Plate 214  ; All sky fibers
+
+cam = '02'
+;flatnum = '-00001429'
+flatnum = '-00001430'
+flatname = 'sdR-'+cam+flatnum+'.fit'
+arcnum = '-00001428'  ; pre exp
+;arcnum = '-00001449'  ; post exp
+arcname = 'sdR-'+cam+arcnum+'.fit'
+;objectnums = ['-00001442','-00001444','-00001446','-00001448'] ;plate 214
+objectnums = ['-00001435'] ;plate 214  sky
+;objectnums = ['-00001447'] ;plate 214
+;objectnums = ['-00001428'] ;plate 214    ; arc!!!
+objname = 'sdR-'+cam+objectnums+'.fit'
+pixflatname='pixflat-51441-r2.fits'
+
+inDir = '/ide_disk/51433/51441'
+outDir = '/ide_disk/51433/51441/out'
+plugDir = '/ide_disk/51433'
+plugFile = 'plPlugMapM-0214-51432-02.par'
+;tt = doaframe(flat,arc,objects,plugMapFile,inputDir=inputDir, $
+; outputDir=outputDir, plugMapDir=plugMapDir)
+spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
+ plugfile=plugfile, lampfile=lampfile, $
+ indir=indir, plugdir=plugdir, outdir=outdir, qadir=qadir
 

@@ -259,12 +259,13 @@ PRO fitarcimage, arc, arcinvvar, side, linelist, xnew, ycen, tset, invset, $
 ;---------------------------------------------------------------------------
 
    errcode = -1
-   catch, Error_status
-   if Error_status NE 0 then begin 
-       message, string(' ---->  Unexpected error code ', Error_status),/cont
-       return
+   if keyword_set(debug) then begin 
+      catch, Error_status
+      if Error_status NE 0 then begin 
+          message, string(' ---->  Unexpected error code ', Error_status),/cont
+          return
+      endif 
    endif 
-
 
 ;---------------------------------------------------------------------------
 ; Preliminary stuff

@@ -65,6 +65,8 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    if (NOT keyword_set(outdir)) then outdir = './'
    if (NOT keyword_set(qadir)) then qadir = outdir
 
+   t_begin = systime(1)
+
    ;---------------------------------------------------------------------------
    ; Read LAMPLIST file for wavelength calibration
    ;---------------------------------------------------------------------------
@@ -80,6 +82,21 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
          
    readcol, tempname[0], lampwave, lampinten, lampquality, format='d,f,a'
    lamplist = [[lampwave], [lampinten], [(lampquality EQ 'GOOD')]]
+
+   ;---------------------------------------------------------------------------
+   ; Locate skyline file for sky wavelength calibration
+   ;---------------------------------------------------------------------------
+
+   if (keyword_set(skylinefile)) then begin
+      tempname = findfile(skylinefile, count=ct)
+      if (ct EQ 0) then message, 'No SKYLINEFILE found '+lampfile
+   endif else begin
+      skydefault = 'skylines.dat'
+      tempname = djs_locate_file(skydefault)
+      if (tempname EQ '') then message, 'No SKYLINEFILE found '+skydefault
+   endelse
+
+   skylinefile = tempname[0]
 
    ;---------------------------------------------------------------------------
    ; Read PLUGMAP file
@@ -213,6 +230,9 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
    for iobj=0, N_elements(objname)-1 do begin
 
+      print,'> SPREDUCE: ',systime(1)-t_begin, ' seconds so far', $
+	   format='(A,F8.2,A)'
+
       ;------------------
       ; Read object image
 
@@ -281,12 +301,13 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       ; Flat-field the extracted object fibers with the global flat
       obj_flux = obj_flux / fflat
       obj_fluxivar = obj_fluxivar * fflat^2
-stop
 
       ;------------------
       ; Tweak up the wavelength solution to agree with the sky lines.
 
-      ; ???
+      locateskylines, skylinefile, obj_flux, obj_fluxivar, $
+        wset, invset, wset_tweak, invset_tweak, $
+        xsky, ysky, skywaves
 
       ;------------------
       ; Sky-subtract
@@ -297,8 +318,13 @@ stop
       ; Write extracted, lambda-calibrated, sky-subtracted spectra to disk
 
       ; ???
+stop
 
    endfor
+
+   print,'> SPREDUCE: ',systime(1)-t_begin, ' seconds TOTAL', $
+	 format='(A,F8.2,A)'
+
 
 stop
 end
