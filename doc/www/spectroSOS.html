@@ -533,15 +533,29 @@ The following messages may appear:
     during the day that have not been marked as either "test" or "bad" data.
     If these are test data, be sure to mark them as such.  This is to prevent
     such data from being used later in the full reductions.
-<LI><B>Std. dev. in bias region for amp#... is ... DN (5-sig clip)</B> <BR>
+<LI><B>Amp #... expected read noise = ..., measured = ... DN</B> <BR>
     The number reported is the standard deviation in the bias region
     for either amplifier #2 (left side) or amplifier #3 (right side).
-    This calculation is done with a 5-sigma clipping.  We trigger this
-    warning if the value is ever larger than 10 DN.  This can happen
+    This calculation is done clipping the half-percent of lowest and
+    highest values.  We trigger this warning if the value is ever 1.0 DN
+    above the expected value.  This can happen
     if there are a huge number of cosmic rays (if you've been integrating
     for hours), or if there is an electronics problem.  This would pick
     up the problem seen on 22/23 Aug 2000 (MJD 51779) when the left amplifier
-    on r2 was randomly flipping bits (c.f., PR #2335).
+    on r2 was randomly flipping bits (c.f., PR #2335).  Or, the problems
+    seen in Aug 2004, when r2 was digitally mixing bits between the
+    left and right amplifiers.
+<LI><B>Amp #... bias region difference at xxx-th-percentile =... DN</B> <BR>
+    This measures another statistic of the bias region for either
+    amplifier #2 (left side) or amplifier #3 (right side).
+    This measures the difference between the 16th-percentile and
+    84th-percentile, which should be equal to twice the read noise
+    (e.g., 1-sigma).  This test is done at the 68.2-percentile (1 sigma),
+    95.4-percentile (2 sigma), and 99.7-percentile (3 sigma).
+    A warning is reported if this difference is either significantly too
+    small or too large, as compared to what gaussian statistics dictate.
+    This should catch the same sorts of electronics problems as listed
+    for the above warning message.
 <LI><B>Fixing shifted rows (from electronics)</B> <BR>
     This is very, very bad.  This is indicative of an electronics problem
     that we first saw on MJD=51578 to 51580 (3 to 5 Feb 2000).
