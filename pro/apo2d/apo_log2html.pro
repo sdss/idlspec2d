@@ -189,7 +189,7 @@ function apo_log_fields, pp, fields, printnames=printnames, formats=formats
    if (igood[0] EQ -1) then return, ''
 
    flavor = pp[igood[0]].flavor
-   expstring = strtrim(string( pp[igood[0]].expnum ),2)
+   expstring = string(pp[igood[0]].expnum, format='(i8.8)')
    jd = 2400000.5D + pp[igood[0]].tai / (24.D*3600.D)
    caldat, jd, jd_month, jd_day, jd_year, jd_hr, jd_min, jd_sec
    utstring = string(jd_hr, jd_sec, format='(i2.2,":",i2.2)')
@@ -298,8 +298,14 @@ pro apo_log2html, logfile, htmlfile
    endfor
    textout = apo_log_header(title1, title2)
    textout = [textout, $
-    '<P>IDLSPEC2D version ' + vers2d $
-    + '.  Last updated <B>'+systime()+'</B>.<P>']
+    '<P>IDLSPEC2D version ' + vers2d + ' (' $
+    + '<A HREF="http://sdsshost.apo.nmsu.edu/sdssProcedures/spectroSOS.html">(documentation</A>).']
+   if (!version.release LT '5.4') then $
+    textout = [textout, $
+     '<BR>This page last updated <B>'+systime()+' local time</B>.<P>'] $
+   else $
+    textout = [textout, $
+     '<BR>This page last updated <B>'+systime(/ut)+' UT</B>.<P>']
 
    ;---------------------------------------------------------------------------
    ; Loop over each plate
