@@ -26,8 +26,8 @@
 ;                so that any frame with a non-negative exposure time is
 ;                reduced.
 ;   copydir    - If set, then copy the output log files to this directory using
-;                "scp1" copy.  Make an additional copy of the HTML file
-;                called 'logsheet-current.html'.
+;                "scp" copy (not "scp1" any longer).  Make an additional copy
+;                of the HTML file called 'logsheet-current.html'.
 ;
 ; OUTPUT:
 ;
@@ -36,6 +36,9 @@
 ; COMMENTS:
 ;   After reducing any 'r2' frame, we re-generate the HTML file and optionally
 ;   copy it to the file specified by COPYDIR.
+;
+;   The copy of the file "logsheet-current.html" also has a line of Java-script
+;   added that does an auto-refresh every 60 seconds.
 ;
 ; EXAMPLES:
 ;
