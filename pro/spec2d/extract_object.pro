@@ -343,7 +343,8 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    superfit = 0
 
    if keyword_set(superflatset) AND keyword_set(airset) then begin
-     superfit = smooth_superflat(superflatset, airset)
+     superfit = smooth_superflat(superflatset, airset, $
+        plottitle=plottitle+'Smooth superflat for '+objname)
      if keyword_set(superfit) then begin
        divideflat, flux, fluxivar, superfit 
        sxaddpar, objhdr, 'SFLATTEN', 'T', ' Superflat has been applied'
@@ -389,10 +390,10 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
     dispset=dispset, npoly=nskypoly, nbkpt=nbkpt)
 
    qaplot_skysub, flux, fluxivar, skysub, skysubivar, $
-    vacset, iskies, title=plottitle+objname
+    vacset, iskies, title=plottitle+objname+' 1d Sky Subtraction'
 
    qaplot_skysub, flux, fluxivar, skysubpsf, skysubpsfivar, $
-    vacset, iskies, title=plottitle+objname
+    vacset, iskies, title=plottitle+objname+' 2d Sky Subtraction'
 
    ;------------------
    ; QA for 2 skylines in the blue (specify vacuum wavelengths below)

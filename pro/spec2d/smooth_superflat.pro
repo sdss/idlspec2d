@@ -34,7 +34,7 @@
 ;   27-Jul-2001  Written by S. Burles, FNAL
 ;-
 ;------------------------------------------------------------------------------
-function smooth_superflat, superflatset, airset
+function smooth_superflat, superflatset, airset, plottitle=plottitle
 
    if N_PARAMS() LT 2 then return, 0
 
@@ -54,10 +54,15 @@ function smooth_superflat, superflatset, airset
    ; fit again with fewer breakpoints, one every 4 pixels (8 half pixels)
    ;  and reject with impunity
 
-   smoothset = bspline_iterfit(sparselam, model, invvar=model*0 + 5.0e5, $
-                  everyn = 8, lower=3, upper=2, yfit=yfit, outmask=outmask)
+   invvar = (model > 0) * 2.0e5
+   smoothset = bspline_iterfit(sparselam, model, invvar=invvar, lower=3,upper=1.5,$
+           everyn=8, maxrej=2, niter=20, groupsize=50, yfit=yfit, outmask=outmask)
  
    bad = where(outmask EQ 0, nbad)
+
+   splog, 'Number of pixels rejected: '+strtrim(string(nbad),2)
+   if nbad GT 20 then $
+    splog, 'WARNING: possible Argon lines in Superflat!'
 
    ; if pixels were rejected (especially emission lines), then grow one pixel
    ; and refit.
@@ -67,11 +72,33 @@ function smooth_superflat, superflatset, airset
      inmask[bad - 1 > 0] = 0
      inmask[bad + 1 < (nsparse - 1)] = 0
      smoothset = bspline_iterfit(sparselam, model, invvar=inmask, $
-                        everyn = 8, yfit=yfit)
+                        everyn=8, yfit=yfit, outmask=outmask2)
    endif
 
    fullfit = bspline_valu(loglam, smoothset)
+   ratio = model/(yfit + (yfit EQ 0))
+   area = total(ratio-1)/sqrt(nsparse)
+   if total(ratio-1)/sqrt(nsparse) GT 0.01 then $
+     splog, 'WARNING: Possible Argon lines in superflat: ' + strtrim(string(area),2)
+   
+   ;
+   ; Let's attempt a QA plot here: 
+   ;
 
+   if keyword_set(plottitle) then begin
+     oldmulti = !p.multi
+     !p.multi =[0,1,2]
+     wave = 10^sparselam
+     xrange = [min(wave),max(wave)] - [1,-1] * (max(wave) - min(wave)) * 0.02
+
+     djs_plot, wave, model, title=plottitle, xchars=0.001,/xs,xrange=xrange
+     djs_oplot, wave, yfit, color='red'
+     djs_plot, wave, ratio, /yno,$
+        ymargin=[4,-4],/xs, xrange=xrange, xtitle='Wavelength (\AA)'
+     djs_oplot, wave, yfit-yfit+1
+     polyfill, [wave, reverse(wave)], [ratio, ratio*0+1], color=djs_icolor('red')
+   endif
+ 
    return, fullfit
 end
 
