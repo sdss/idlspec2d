@@ -124,6 +124,7 @@ pro/apo2d/apo_log2html.pro -text
 pro/apo2d/apo_plotbias.pro -text
 pro/apo2d/apo_plotsn.pro -text
 pro/apo2d/apoall.pro -text
+pro/apo2d/apofluxcalib.pro -text
 pro/apo2d/aporeduce.pro -text
 pro/apo2d/quickbias.pro -text
 pro/apo2d/quickboxcar.pro -text
