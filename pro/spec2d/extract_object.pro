@@ -322,8 +322,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
     fluxivar, proftype=proftype, wfixed=wfixed, $
     highrej=highrej, lowrej=lowrej, npoly=0, whopping=whopping, $
     chisq=chisq, ymodel=ymodel2, pixelmask=pixelmask, $
-    reject= [0.05,0.1,0.2]
-    
+    reject= [0.1,0.5,0.8]
 
    ;------------------
    ; QA chisq plot for fit calculated in extract image (make QAPLOT ???)
