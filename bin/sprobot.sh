@@ -23,7 +23,8 @@ toprawdir=$RAWDATA_DIR
 #localdisks='/peyton/scr/spectro0/data/rawdata /peyton/scr/spectro1/data/rawdata /peyton/scr/spectro2/data/rawdata /peyton/scr/spectro3/data/rawdata'
 localdisks='/peyton/scr/spectro3/data/rawdata /peyton/scr/spectro1/data/rawdata /peyton/scr/spectro0/data/rawdata /peyton/scr/spectro1/data/rawdata'
 topoutdir=$SPECTRO_DATA
-hostname=sdsshost.apo.nmsu.edu
+#hostname=sdsshost.apo.nmsu.edu
+hostname=sos.apo.nmsu.edu
 
 #------------------------------------------------------------------------------
 # Test that certain environment variables are already set.
@@ -91,11 +92,12 @@ for mjdstr in $remotedir ; do
        --rsync-path=/p/rsync/v2_4_3/rsync \
        "$hostname:/astrolog/$mjdstr" $astrologdir
 
-      # Copy the raw FITS files...
+      # Copy the raw FITS files... copy only files ending in ".fit.gz"
       echo SPROBOT: rsync "$hostname:/data/spectro/$mjdstr/*" $localdir
       rsync -ar --rsh="ssh -c arcfour" \
        --rsync-path=/p/rsync/v2_4_3/rsync \
-       "$hostname:/data/spectro/$mjdstr/*" $localdir
+       "$hostname:/data/spectro/$mjdstr/*.fit.gz" $localdir
+#       "$hostname:/data/spectro/$mjdstr/*" $localdir
 
       # Compress the raw FITS files w/gzip...
 #      echo SPROBOT: gzip $localdir/*.fit $localdir/*/*.fit
