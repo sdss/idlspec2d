@@ -122,6 +122,8 @@ aa = extract_row(image11361[*,row], var11361[*,row], xsol11511[row,*], 1.0, ymod
 
 doaframe, 'sdR-04-00001151.fit','sdR-04-00001148.fit',['sdR-04-00001136.fit'], 'plPlugMapM-0198-51433-01.par',outputDir='out'
 
+tt = doaframe('sdR-04-00001151.fit','sdR-04-00001148.fit',['sdR-04-00001136.fit'], 'plPlugMapM-0198-51433-01.par',outputDir='/ide_disk/51433/out', inputDir='/ide_disk/51433')
+
 
 plot,10^(poly(pixarray,ans)),spec,xr=[5800,7000]
 djs_oplot,linelist[*,0],linelist[*,1]/50,ps=1,color='red'

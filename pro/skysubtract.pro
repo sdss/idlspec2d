@@ -67,7 +67,8 @@ function skysubtract, tt, skyfinal
 	      skyfinal[i,j] = median(skyrebin[i,goodies])
 	  endfor
 
-	  ttsub[j].counts = ttsub[j].counts - skyfinal[*,j]
+	  ttsub[j].skysub = ttsub[j].counts - skyfinal[*,j]
+	  ttsub[j].sky = skyfinal[*,j]
 	endfor
 	
 	return, ttsub
