@@ -94,7 +94,7 @@ function arcfit_iter, spec, loglam, intensity, $
    speccorr = convol(speccorr, gausskern, /center, /edge_truncate) ; Smooth
    speccorr = sqrt(speccorr > 1) ; Weight by the square-root of the intensity
 
-   bestcorr = -1.0
+   bestcorr = -2.0
    bestcoeff = 0
    coeff_lo = aset.coeff - dcoeff * (nsteps-1)/(2.*nsteps)
    coeff_lo[0] = aset.coeff[0] ; Set this coefficient to its central value,
@@ -157,7 +157,14 @@ function arcfit_iter, spec, loglam, intensity, $
       model = convol(model, gausskern, /center, /edge_truncate)
       model = sqrt(model > 1) - 1 ; Weight by the square-root of the intensity
 
-      corrval = max( c_correlate(speccorr, model, lags), icorr)
+      ; Test for the cross-correlation being ill-defined...
+      if (stddev(speccorr) EQ 0 OR stddev(model) EQ 0) then begin
+         corrval = -1
+         icorr = 0
+      endif else begin
+         corrval = max( c_correlate(speccorr, model, lags), icorr)
+      endelse
+
       if (corrval GT bestcorr) then begin
          bestcorr = corrval
          bestlambda = loglambda
@@ -231,11 +238,6 @@ function arcfit_guess, spec, loglam, intensity, color=color, func=func, $
     wset, dcoeff, nsteps, nsmooth=4.0, dlag=1, bestcorr=bestcorr)
 
    splog, 'Initial wavelength fit = ', wset.coeff
-
-   if (color EQ 'blue' AND bestcorr LT 0.70) then $
-    splog, 'Initial wavelength solution looks suspicious'
-   if (color EQ 'red' AND bestcorr LT 0.70) then $
-    splog, 'Initial wavelength solution looks suspicious'
 
    return, wset
 end
