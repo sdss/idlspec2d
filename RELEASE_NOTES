@@ -4,6 +4,11 @@ COLLIMATE: Since the DJS_SVDFIT() function was removed in v4_10_1,
 LRG_PHOTOZ: New simple photo-z finder for LRGs using a single template.
 NEWSPCOMBINE: Christy's code: changed so that if one frame does not make
         the S/N cut then all 4 frames of that exposure are rejected.
+PLATEMERGE: Major re-write to use less memory.  All of the ZANS structures
+        are read into memory at once, but not all of the TSOBJ structures.
+        The output file are written one plate at a time, with the TSOBJ
+        structure for that plate read only when it is needed.
+        Functionally, the outputs are exactly identical.
 QUICKEXTRACT: The logic to trim away extra sky fibers when there are
         more than 20 appeared to be incorrect, and could trim away most
         or all sky fibers.  I fixed this, and also now choose 40 skies
