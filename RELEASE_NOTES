@@ -1,5 +1,8 @@
 
 
+FILTER_THRU: Add new Doi filter curves (CCD+atmosphere+telescope), and
+             add /TOAIR flag to convert from vacuum to air wavelengths.
+             (But not yet called by 2D or 1D).
 PCA_SOLVE, COMPUTECHI2: Make robust to one or all of the template spectra
               (e.g., the STARFLUX vectors) being identically zero.
               The routine PCA_SOLVE could crash w/out special-casing this
@@ -15,6 +18,8 @@ Add new mask bit: NEARWHOPPER.  This effects the following routines:
 
 Son-of-Spectro changes:
 New executable, "sos_redo" to re-run SOS on failed reductions.
+APO_APPENDLOG: Now overwrite entries in the file "logfile-$MJD.fits" if an
+              exposure is re-reduced (e.g., with "sos_redo").
 APO_LOG2HTML: Placed a lower limit of (S/N)^2 > 1.0 to count towards total
               in each camera
 QUICKEXTRACT: Change message about post-cabibs from "REQUIRED" to merely
@@ -23,7 +28,7 @@ QUICKEXTRACT: Change message about post-cabibs from "REQUIRED" to merely
 QUICKTRACE: Tweak test for putative Argon lines in flats to be a less
             sensitive trigger.
 REMOVE2REDO: (New proc) Checks for missing entries in logfile*fits and
-            removes corresponding raw data
+            removes corresponding raw data; called by script "sos_redo".
 The routine FIND_WHOPPING is moved out of EXTRACT_OBJECT so that it can
             be called by QUICKEXTRACT.
 Changed SOS signal-to-noise warning to a yellow warning below S/N=15/pix,
