@@ -158,7 +158,7 @@ pro locateskylines, skylinefile, fimage, ivar, wset, xarc, arcshift=arcshift, $
    splog, 'Dispersion in arc shift = ', sig, ' pix'
 
    maxshift = max(abs(arcshift))
-   if (maxshift GT 2.0) then begin
+   if (maxshift GT 3.5) then begin
       splog, 'WARNING: Maximum sky-line shift is ', maxshift, ' (DISABLING)'
       skyshift = 0
       arcshift = 0
