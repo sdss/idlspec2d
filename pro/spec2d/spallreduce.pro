@@ -64,7 +64,8 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
 
    if NOT keyword_set(nocombine) then begin
      spplancomb, topindir='.'
-     spcombine
+     planfile = findfile('spPlancomb*.par')
+     spcombine, planfile, adderr=0
    endif
 
    return
