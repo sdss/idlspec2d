@@ -56,6 +56,7 @@ pro myfluxcorr, bsmearfile, rsmearfile, bscifile, rscifile, corrfile, $
       ; print, format='("Step ",i5," of ",i5,a1,$)', $
       ;   ifiber, nfiber, string(13b)
 
+        sset = 0
         good = where(smearivar[*,ifiber] GT 0, ngood)
         if ngood GT 10 then begin
            inside = where(bkpt GT min(smearwave[good,ifiber]) AND $
@@ -67,9 +68,9 @@ pro myfluxcorr, bsmearfile, rsmearfile, bscifile, rscifile, corrfile, $
              sset = bspline_iterfit(smearwave[*,ifiber], smearflux[*,ifiber], $
                invvar=smearivar[*,ifiber], bkpt=bkpt[outside], lower=5, upper=5)
 
-             smearset[ifiber] = ptr_new(sset)
            endif
         endif
+        smearset[ifiber] = ptr_new(sset)
       endfor 
 
 
@@ -141,13 +142,12 @@ pro myfluxcorr, bsmearfile, rsmearfile, bscifile, rscifile, corrfile, $
    ; Require the fiber isn't SKY.
 
      scisnmed = djs_median(sciflux * sqrt(sciivar), 1)
+     smearsnmed = djs_median(smearflux * sqrt(smearivar), 1)
 
      medfit = median(fitimg)
      splog, 'Median flux-correction factor = ', medfit
 
-     qgood = scisnmed GT 2.0 $
-      AND total(fitimg LT 0.20 * medfit, 1) EQ 0 $
-      AND total(fitimg GT 5.0 * medfit, 1) EQ 0 $
+     qgood = scisnmed GT 3.0 $
       AND strtrim(plugmap.objtype,2) NE 'SKY'
 
      igood = where(qgood EQ 1, ngood)
