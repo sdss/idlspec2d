@@ -173,7 +173,9 @@ Selecting only those plates with QSURVEY=1 will yield non-duplicate
 observations of tiles on the sky that meet the survey requirements
 for signal-to-noise.  There still may be a few duplicate objects,
 as some objects are put on multiple tiles for "quality assurance".
-These duplicates can be identified with OBJTYPE="QA".
+These duplicates can be identified with OBJTYPE="QA".  That OBJTYPE
+column exists either in HDU #5 of the <A HREF="#datamodel">spPlate files</A>,
+or in a column by that name in the <A HREF="#summary">spAll summary files</A>.
 
 <H4><A NAME="get_version">What Version of the Code Was Used?</A></H4>
 
@@ -344,14 +346,16 @@ RA=2h, z=4.3, is due to bad reductions on plate 202.
 <P>
 I've attempted to generate one monstrous file with all the spectroscopic
 and photometric outputs.  This is a FITS binary table called "spAll.fits".
-At present, this file is trimmed to only those 150 or so plates that
+At present, there are two versions of this file.  One contains all of
+the spectroscopic data taken to date (approximately 150,000 spectra).
+The other ("spAll-qsurvey.fits") is trimmed to only those plates that
 comprise unique tiles with survey quality S/N (e.g., where QSURVEY=1 in the
 <A HREF="#platelist">platelist file</A>).
 
 <P>
 In addition, I've also made an ASCII file with the most relevant quantities
-that one may wish to search on.  This file is "spAll.dat", and is basically
-a stripped-down version of "spAll.fits" for those FITS-challenged astronomers.
+that one may wish to search on.  This file is "spAll*.dat", and is basically
+a stripped-down version of "spAll*.fits" for those FITS-challenged astronomers.
 
 <P>
 <B>HOWEVER</B>, I was unable to find the photometric outputs for all
