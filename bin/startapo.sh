@@ -14,7 +14,7 @@
 #
 # Wait for first file to finish complete copy
 #
-sleep 20
+sleep 5
 
 # Loop through each file name that has been passed.
 while read f
@@ -45,7 +45,7 @@ do
     then
      echo Processing ... $input 
      echo  "aporeduce, '$filename',indir='$dir', outdir='$outdir', \
-          plugdir='$astrolog', copydir='$copydir' " | idl
+          plugdir='$astrolog', copydir='$copydir' " | nice idl
   fi
 
 done
