@@ -1,10 +1,11 @@
-This is a first draft.  Comments + suggestions welcome.  -David and Scott
-
             ----------------------------------------------
             OBSERVING INSTRUCTIONS FOR STAR CLUSTER PLATES
             ----------------------------------------------
-                         First Draft
-                         5 Dec 2001
+                         2nd Draft
+                         7 Dec 2001
+
+This draft incorporates comments and corrections from the observers.
+It is checked into the "sdssTests" product.
 
 Each star cluster plate has several pointings (tiles) associated
 with it, where each pointing is offset by ~0.2 degrees and has
@@ -13,14 +14,16 @@ a total of 4 plates with 19 pointings (tiles).  For details of
 these plate designs, see:
   <A HREF="http://www.astro.princeton.edu:81/sdss-spectro/msg.766.html">sdss-spectro/766</A>
 
+Required Weather Conditions
+---------------------------
 These plates must be observed in good conditions: photometric, reasonable
 seeing, but the sky can be bright -- moon is OK.  They should also be
-observed near transit except for N752 which is too close to the zenith.
-Suggested starting observing times:
-  N752     LMST=3h   <-- This is 1 hr after transit
-  Pleiades      3h
-  N1817         4h30
-  Praesepe      8h
+observed near transit except for N752 which is too close to the zenith
+at DEC=+37.  Suggested starting observing times:
+  N752     LMST= 3h    MST ~10pm in Dec <-- This is 1 hr after transit
+  Pleiades       3h    MST ~10pm
+  N1817          4h30  MST ~11:30
+  Praesepe       8h    MST ~3am
 We expect it to take between 60 and 90 minutes to observe the full
 sequence for each of these plates once they are mounted.  If any
 pointings have to be skipped due to time contraints, do not skip
@@ -66,8 +69,8 @@ the first pointing just so we can get the offset, scale + rotation well.
 The guide fibers appropriate to that pointing should appear in the guide
 camera.  To be extra cautious, you could enable/disable the appropriate fibers:
 
-  SOP> enableFiber 3 5 8 10 11  <--- Does this have to be done 1 at a time??
-  SOP> disableFiber 1 2 4 6 7 9
+  SOP> enableFiber 3 5 8 10 11  <--- (Actually must be done 1 fiber at a time)
+  SOP> disableFiber 1 2 4 6 7 9  <--- (Actually do 1 fiber at a time)
   SOP> startGuider 1  <--- These are bright guide stars
 
 Then you will want to make sure you are guiding well on the field with
@@ -92,8 +95,8 @@ the fiber, turn off the guider, and issue another smear command.  For ex:
 
   SOP> loadCartridge plPlugMapM-0798-59999-01B.par
   SOP> gotoField
-  SOP> enableFiber 1 4 6
-  SOP> disableFiber 2 3 5 7 8 9 10 11
+  SOP> enableFiber 1 4 6  <--- (Actually do 1 fiber at a time)
+  SOP> disableFiber 2 3 5 7 8 9 10 11  <--- (Actually do 1 fiber at a time)
   SOP> startGuider 1  <--- These are bright guide stars
        ...
   SOP> stopGuider   <--- Turn off guider!!
@@ -122,8 +125,8 @@ so we expect some small offsets to find these stars:
 
   SOP> loadCartridge plPlugMapM-0798-59999-01D.par
   SOP> gotoField
-  SOP> enableFiber 11
-  SOP> disableFiber 1 2 3 4 5 6 7 8 9 10
+  SOP> enableFiber 11  <--- (Actually do 1 fiber at a time)
+  SOP> disableFiber 1 2 3 4 5 6 7 8 9 10  <--- (Actually do 1 fiber at a time)
   SOP> startGuider 1  <--- These is a bright star
        ...
   SOP> stopGuider   <--- Turn off guider!!
