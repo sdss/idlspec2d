@@ -24,6 +24,7 @@ fi
 
 # This syncs /astrolog/[5-9]???? from sdsshost to the local machine,
 # exluding the blue and guider files.
+# Many files might be passed to startapo.sh at once.
 rsync -ar --rsh="ssh -c blowfish" \
       --rsync-path=/p/rsync/v2_4_3/rsync \
       --log-format="/data/spectro/%f" \

@@ -1,7 +1,7 @@
 #! /bin/sh
 #------------------------------------------------------------------------------
 # The scripts "aporsync_blue.sh" and "aporsync_red.sh" call this script.
-# Try to parse 1 filename sent from stdin.
+# Try to parse 1 or many filename(s) sent from stdin.
 # The file should look something like 
 #    /data/spectro/51666/sdR-b1-00001234.fit
 # Break this up into path and simple filename.
