@@ -1,6 +1,6 @@
 
 function frame_flux_calib, wave, corvector, corvivar, avgcorvset, cormed, $
-         framename, sig2noise2, fsig = fsig, fcor = fcor, final = final, $
+         framename, sig2noise, fsig = fsig, fcor = fcor, final = final, $
          noplot = noplot
 
   ;----------------
@@ -40,23 +40,23 @@ function frame_flux_calib, wave, corvector, corvivar, avgcorvset, cormed, $
   hifmed = djs_median(hifvect, 2)
 
   ;--------------
-  ; Recombine high & low-frequencey parts (but only use high-f is S/N^2 > 16)  
+  ; Recombine high & low-frequencey parts (but only use high-f is S/N > 10)  
 
   fcor = lowfmed * avgcorv[*,0]
-  if sig2noise2 gt 16 then fcor = fcor * hifmed
+  if sig2noise gt 10 then fcor = fcor * hifmed
 
   ;--------------
   ; Measure the variance between the fluxcalib vectors derived
   ; for each of the standard stars -- this is an indicator of the
   ; spectrophotometric quality.
 
-  meanclip, corvector / rebin(fcor, npix, nstd), fmean, fsig, $
-    maxiter=5, clipsig=5
+  djs_iterstat, corvector / rebin(fcor, npix, nstd), mean=fmean, sigma=fsig, $
+    maxiter=5, sigrej=5
 
   ;---------------
   ; Restore to original scale
 
-  meanclip, cormed, scalefactor, cormedsig, maxiter=10, clipsig=2.5
+  djs_iterstat, cormed, mean=scalefactor, sigma=cormedsig, sigrej=2.5
 
   ;splog, 'Zeropoint of corvector: ', string(cormed, format='(F6.2)')
   splog, 'Average zeropoint & stdev: ' + $
@@ -76,7 +76,7 @@ function frame_flux_calib, wave, corvector, corvivar, avgcorvset, cormed, $
   else range = where(10.0^wave gt 6000 and 10.0^wave lt 7000)
 
   zptadjust_factor = median(frameresid[range, *])
-  meanclip, frameresid[range, *], zptadjust_factor, maxiter=10, clipsig=2.5
+  djs_iterstat, frameresid[range, *], mean=zptadjust_factor, sigrej=2.5
   splog, 'Zeropoint adjustment: ', string(zptadjust_factor, format='(F7.3)')
   fcor = fcor * zptadjust_factor
   
