@@ -1,4 +1,4 @@
-function fchebyshev,x,m
+function fchebyshev,x,m,halfintwo=halfintwo
 ;+
 ; NAME:
 ;        FCHEBYSHEV
@@ -8,7 +8,7 @@ function fchebyshev,x,m
 ;       Meant to be used as a supplied function to SVDFIT.
 ;
 ; CALLING SEQUENCE:
-;       result = FCHEBYSHEV( X, M)
+;       result = FCHEBYSHEV( X, M, /halfintwo)
 ;
 ; INPUTS:
 ;       X - the value of the independent variable, scalar or vector
@@ -44,10 +44,19 @@ function fchebyshev,x,m
  N = N_elements(x)
  size_x = size(x)
  leg = make_array(n, m, type = size_x[size_x[0]+1] > 4)    
- 
- leg[0,0] = replicate( 1., n)
- if m GE 2 then leg[0,1] = x
- for j=2,m-1 do begin
+
+ skip = 0
+ if keyword_set(halfintwo) then skip = 1
+
+ if skip then begin
+     leg[0,1] = replicate( 1., n)
+     leg[0,0] = leg[0,1] * (x GE 0.0)
+ endif else begin
+     leg[0,0] = replicate( 1., n)
+ endelse
+
+ if m GE 2+skip then leg[0,1+skip] = x
+ for j=2+skip,m-1 do begin
      leg[0,j] = 2.0 * x * leg[*,j-1] - leg[*,j-2] 
  endfor
 
