@@ -79,16 +79,14 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    ;---------------------------------------------------------------------------
 
    if (keyword_set(skylinefile)) then begin
-      skyfilenames = (findfile(skylinefile, count=ct))[0]
-      if (ct EQ 0) then message, 'No SKYLINEFILE found '+skylinefile
+      fullskyfile = (findfile(skylinefile, count=ct))[0]
    endif else begin
       skydefault = filepath('skylines.dat', $
        root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
-      skyfilenames = (findfile(skydefault, count=ct))[0]
-      if (skyfilenames EQ '') then message, 'No SKYLINEFILE found '+skydefault
+      fullskyfile = (findfile(skydefault, count=ct))[0]
    endelse
-
-   skylinefile = skyfilenames[0]
+   if (NOT keyword_set(fullskyfile)) then $
+    message, 'No SKYLINEFILE found '+skylinefile
 
    ;---------------------------------------------------------------------------
    ; Determine spectrograph ID and color from first object file
@@ -121,11 +119,11 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    ;---------------------------------------------------------------------------
 
    flatinfoname = filepath( $
-       'spFlatInfo-'+string(format='(a1,i1,a)',color,spectrographid, $
+       'spFlat-'+string(format='(a1,i1,a)',color,spectrographid, $
        '-'), root_dir=outdir)
 
    arcinfoname = filepath( $
-       'spArcInfo-'+string(format='(a1,i1,a)',color,spectrographid, $
+       'spArc-'+string(format='(a1,i1,a)',color,spectrographid, $
        '-'), root_dir=outdir)
 
    spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
@@ -156,7 +154,8 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
    lambda = *(bestarc.lambda)
    xpeak = *(bestarc.xpeak)
-   wset =  *(bestarc.wset)
+   wset = *(bestarc.wset)
+   dispset = *(bestarc.dispset)
 
    qaplot_arcline, *(bestarc.xdif_tset), wset, lambda, $
     color=color, title=plottitle+' Arcline Fit for '+bestarc.name
@@ -218,20 +217,21 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
           'spSpec2d-'+string(format='(a1,i1,a,i8.8,a)',color,spectrographid, $
           '-',framenum,'.fits'), root_dir=outdir)
 
-         sxaddpar, objhdr, 'PLUGMAPF', plugfilename
-         sxaddpar, objhdr, 'FLATFILE', bestflat.name
-         sxaddpar, objhdr, 'ARCFILE', bestarc.name
-         sxaddpar, objhdr, 'OBJFILE', objname[iobj]
-         sxaddpar, objhdr, 'LAMPLIST', lampfile
-         sxaddpar, objhdr, 'SKYLIST', skylinefile
-         sxaddpar, objhdr, 'PIXFLAT', pixflatname
+         sxaddpar, objhdr, 'PLUGFILE', fileandpath(plugfilename)
+         sxaddpar, objhdr, 'FLATFILE', fileandpath(bestflat.name)
+         sxaddpar, objhdr, 'ARCFILE', fileandpath(bestarc.name)
+         sxaddpar, objhdr, 'OBJFILE', fileandpath(objname[iobj])
+         sxaddpar, objhdr, 'LAMPLIST', fileandpath(lampfile)
+         sxaddpar, objhdr, 'SKYLIST', fileandpath(fullskyfile)
+         sxaddpar, objhdr, 'PIXFLAT', fileandpath(pixflatname)
 
          ;-----
          ; Extract the object frame
 
          extract_object, outname, objhdr, image, invvar, plugsort, wset, $
-          xpeak, lambda, xsol, fflat, fibermask, widthset=widthset, $
-          color=color, plottitle=plottitle
+          xpeak, lambda, xsol, fflat, fibermask, color=color, $
+          widthset=widthset, dispset=dispset, skylinefile=fullskyfile, $
+          plottitle=plottitle
 
          splog, 'Elapsed time = ', systime(1)-stimeobj, ' seconds', $
           format='(a,f6.0,a)' 
