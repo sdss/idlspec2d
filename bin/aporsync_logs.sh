@@ -37,6 +37,7 @@ fi
 # Only copy the following select set of files:
 #   sdReport*.par
 #   plPlugMap*.par
+#   plPlugMap*.log
 #   plSlitpos*.par
 #   guiderMon*.par
 #   exposureLog*.par
@@ -57,6 +58,7 @@ do
     --rsync-path=/p/rsync/v2_4_3/rsync \
     --include "sdReport*.par"    \
     --include "plPlugMap*.par"   \
+    --include "plPlugMap*.log"   \
     --include "plSlitpos*.par"   \
     --include "guiderMon*.par"   \
     --include "exposureLog*.par" \
