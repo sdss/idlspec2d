@@ -68,9 +68,6 @@ function sortplugmap, plugmap, spectrographid, fibermask=fibermask, $
    if (possible[0] EQ -1) then $
     message, 'No fibers found in plugmap!'
 
-   nmissing = nfibers - n_elements(possible)
-   splog, 'Number of missing fibers: ', nmissing
-   
    if (keyword_set(spectrographid)) then begin
       place = plugmap[possible].fiberid - (spectrographid-1)*nfibers - 1
    endif else begin
@@ -78,12 +75,39 @@ function sortplugmap, plugmap, spectrographid, fibermask=fibermask, $
    endelse
    plugsort[place] = plugmap[possible]
 
-   ;-------------------------------------------------
+   ;----------
    ; Set the appropriate fibermask bit if a fiber not found in plugmap file.
    ; Do this by first setting all bits to 1, then unsetting the good ones.
 
    fibermask = fibermask OR fibermask_bits('NOPLUG')
    fibermask[place] = fibermask[place] - fibermask_bits('NOPLUG')
+
+   ;----------
+   ; Fill in unplugged fibers with arbitrary entries, and assign
+   ; them a FIBERID.  For spectrograph #1, we assign the unplugged fibers
+   ; from the beginning of the plugmap, and for #2 from the end.
+   ; This should result in the unplugged objects being uniquely placed
+   ; on only one of the spectrographs.
+
+;   nmissing = nfibers - n_elements(possible)
+;   splog, 'Number of missing fibers: ', nmissing
+
+   imissing = where(plugsort.fiberid LE 0, nmissing)
+   splog, 'Number of missing fibers: ', nmissing
+   if (nmissing GT 0) then begin
+      ifill = where(plugmap.holetype EQ 'OBJECT' AND plugmap.fiberid LE 0, $
+       nfill)
+      if (keyword_set(spectrographid)) then begin
+         if (spectrographid EQ 1) then ifill = ifill[0:nmissing-1] $
+          else ifill = ifill[nfill-nmissing:nfill-1]
+      endif
+      plugsort[imissing] = plugmap[ifill]
+
+      if (keyword_set(spectrographid)) then $
+       plugsort[imissing].fiberid = imissing + 1 + nfibers*(spectrographid-1) $
+      else $
+       plugsort[imissing].fiberid = imissing + 1
+   endif
 
    return, plugsort
 end
