@@ -171,6 +171,7 @@ pro spplan, indir=indir, plugdir=plugdir, flatdir=flatdir, $
 
       ; Rename 'target' as 'science'
       if (FLAVOR[i] EQ 'target') then FLAVOR[i] = 'science'
+      if (FLAVOR[i] EQ 'calibration') then FLAVOR[i] = 'arc'
 
       ; Read the MJD from the header of the first file
       if (NOT keyword_set(mjd) AND i EQ 0) then mjd = sxpar(hdr, 'MJD')
@@ -271,9 +272,12 @@ pro spplan, indir=indir, plugdir=plugdir, flatdir=flatdir, $
          files = findfile(filepath(files, root_dir=plugdir), count=ct)
          if (ct GT 1) then begin
             print, 'Several plug map files found for plate number ' $
-             + string(platenum)
-            print, 'Using file ', files[0]
-            files = files[0]
+             + string(pltid)
+         ;
+         ; Use last one, because they should be ordered by MJD-rerun
+         ;
+            print, 'Using file ', files[ct-1]
+            files = files[ct-1]
             ct = 1
          endif
          if (ct EQ 1) then begin

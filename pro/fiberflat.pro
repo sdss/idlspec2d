@@ -167,7 +167,7 @@ function fiberflat, flux, fluxivar, wset, $
    igood = where(fibermask NE 0, ngood)
 
    ; Divide fflat by a global median of all fibers
-   globalmed = median(medval[*,igood]) ; Global median for all vectors
+   globalmed = median(medval[igood]) ; Global median for all vectors
    fflat = fflat / globalmed
 
    junk = where(fflat LE 0, nz)

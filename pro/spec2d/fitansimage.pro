@@ -51,7 +51,8 @@ function fitansimage, ansimage, nparams, nfibers, npoly, nrows, yrow, $
 	    smallans[i*nparams,*] = 1.0
 	  for j=1,nparams-1 do begin
 	    good = where(mask)
-	    fitthis[good,j+i*nparams] = ansimage[j+i*nparams,good]/flux[i,good]
+            if (good[0] NE -1) then $
+	      fitthis[good,j+i*nparams] = ansimage[j+i*nparams,good]/flux[i,good]
           endfor
        endfor
 
