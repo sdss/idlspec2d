@@ -265,7 +265,7 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    ; and set SKYSUBIVAR=0.
    ;
    ; Also, set the mask bit 'BRIGHTSKY' for any pixels where the sky
-   ; level is more than the (sky-subtracted) object flux + 5 * error.
+   ; level is more than the (sky-subtracted) object flux + 10 * error.
 
    ii = where(skyivar GT 0, ni) ; Note that SKYWAVE is already sorted
    iout = where(wave LT skywave[ii[0]] OR wave GT skywave[ii[ni-1]])
@@ -275,7 +275,7 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
       igood = where(objsubivar NE 0)
       if (igood[0] NE -1) then begin
          ibright = where( fullfit[igood] GT objsub[igood] $
-          + 5.0 / sqrt(objsubivar[igood]) )
+          + 10.0 / sqrt(objsubivar[igood]) )
          if (ibright[0] NE -1) then $
           pixelmask[igood[ibright]] = pixelmask[igood[ibright]] $
            OR pixelmask_bits('BRIGHTSKY')
