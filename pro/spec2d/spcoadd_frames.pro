@@ -382,6 +382,15 @@ pro spcoadd_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    struct_assign, {fiberid: 0L}, finalplugmap ; Zero out all elements in this
                                               ; FINALPLUGMAP structure.
 
+   ;----------
+   ; Issue a warning about any object fibers with OBJTYPE = 'NA', which
+   ; should be impossible, but the special plate 673 and possibly others
+   ; had some such fibers.
+
+   ibad = where(strtrim(plugmap.objtype,2) EQ 'NA', nbad)
+   if (nbad GT 0) then $
+    splog, 'WARNING: ', nbad, ' fibers have OBJTYPE=NA in the plug-map'
+
    ;---------------------------------------------------------------------------
    ; Combine each fiber, one at a time
    ;---------------------------------------------------------------------------
