@@ -40,20 +40,26 @@ IDL_LONG extract_boxcar
    /* Loop through each center value */
    for (icen=0; icen < ncen; icen ++) {
 
-      /* Only extract if the guess value is within the bounds of the image */
-      if (xcen[icen] > 0.0 && xcen[icen] < nx) {
+      /* Determine which column numbers over which to sum */
+      x1 = xcen[icen] - radius + 0.5;
+      x2 = xcen[icen] + radius + 0.5;
+      ix1 = floor(x1);
+      ix2 = floor(x2);
 
-         /* Determine which column numbers over which to sum */
-         x1 = xcen[icen] - radius + 0.5;
-         x2 = xcen[icen] + radius + 0.5;
-         ix1 = floor(x1);
-         ix2 = floor(x2);
+      /* Only extract if some of the pixels are within bounds of the image */
+      if (x1 < nx-1 && x2 > 0.0) {
 
          /* If either end of the window is out of bounds in the image, then
           * truncate that side of the extraction window at the image boundary.
           */
-         if (x1 < 0.0) x1 = 0.0;
-         if (x2 > nx) x2 = nx;
+         if (x1 < 0.0) {
+            x1 = 0.0;
+            ix1 = 0;
+         }
+         if (x2 > nx-1) {
+            x2 = nx-1;
+            ix2 = nx-1;
+         }
 
          /* Extract */
          fextract[icen] = 0.0;
@@ -61,7 +67,9 @@ IDL_LONG extract_boxcar
             /* Determine the weight of a boxcar window function for
              * this pixel.
              */
-            if (ix == ix1) {
+            if (ix == ix1 && ix == ix2) {
+               window = x2 - x1;
+            } else if (ix == ix1) {
                window = 1.0 + ix1 - x1;
             } else if (ix == ix2) {
                window = x2 - ix2;
