@@ -196,6 +196,7 @@ pro/spec2d/fitvacset.pro -text
 pro/spec2d/fitwithmx.pro -text
 pro/spec2d/flegendre.pro -text
 pro/spec2d/fluxcorr.pro -text
+pro/spec2d/fluxcorr_new.pro -text
 pro/spec2d/fluxfix.pro -text
 pro/spec2d/focalplane.pro -text
 pro/spec2d/func_fit.pro -text

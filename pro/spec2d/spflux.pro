@@ -90,6 +90,10 @@ pro spflux, sciname, fcalibprefix, adderr=adderr
       ; blue and red.
 
 
+      bluelist = 0
+      redlist = 0
+      corrlist = 0
+
       for iexp=0, nall-1 do begin
          iblue = (where(camcolor EQ 'b' AND long(camspecid) EQ ispec $
           AND exposure EQ allexpnum[iexp]))[0]
@@ -114,8 +118,11 @@ pro spflux, sciname, fcalibprefix, adderr=adderr
 
       endfor
 
-         myfluxcorr, sciname[ibcalib], sciname[ircalib], $
-          bluelist, redlist, corrlist, adderr=adderr, rset=rset, bset=bset
+;         myfluxcorr, sciname[ibcalib], sciname[ircalib], $
+;          bluelist, redlist, corrlist, adderr=adderr, rset=rset, bset=bset
+
+         fluxcorr_new, sciname[ibcalib], sciname[ircalib], $
+          bluelist, redlist, corrlist
 
    endfor
 
