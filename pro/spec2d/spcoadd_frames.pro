@@ -522,7 +522,7 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
    ;-----------------------------------------
    ;   Here we check for smear exposure used and place info in header
    ;-----------------------------------------
-   smearused = total((finalandmask AND pixelmask_bits('SMEARIMAGE')) NE 0) 
+   smearused = total((finalandmask AND pixelmask_bits('SMEARIMAGE')) NE 0) $
     GT 0 ? 'T' : 'F'
    sxaddpar, hdr, 'SMEARUSE', smearused, ' Smear image used?'
 
