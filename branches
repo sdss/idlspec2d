@@ -1,0 +1,17 @@
+This file is used to describe the branch structure of idlspec2d
+
+Fri Feb  6 12:09:54 EST 2004	RHL
+	cvs rtag -r v4_10_7 v4_11_0 idlspec2d
+	cvs rtag -r v4_11_0 -b v4_11 idlspec2d
+	cvs rtag RHL-create-v4_11 idlspec2d
+
+	cvs co -r v4_11 idlspec2d
+	(check which files Christy modified, and (if DLS modified them)
+	that the changes were in comments, or preceded a CAT checkin)
+
+	cp ~/idlspec2d-MAIN/pro/fluxfix/jeg_sphoto_coef.pro pro/fluxfix
+	cp ~/idlspec2d-MAIN/pro/fluxfix/spcoadd_fluxed_frames.pro pro/fluxfix
+	cp ~/idlspec2d-MAIN/pro/spec2d/plotsn.pro pro/spec2d
+	cp ~/idlspec2d-MAIN/pro/spec2d/platesn.pro pro/spec2d
+
+	cvs rtag -r v4_11 v4_11_1 idlspec2d
