@@ -9,8 +9,9 @@ pro pca_elodie
    ;----------
    ; Read all the Elodie spectra
 
-   elodie_path = getenv('ELODIE_PATH')
-   allfiles = findfile(filepath('00*', root_dir=elodie_path), count=nfile)
+   elodie_path = getenv('ELODIE_DIR')
+   allfiles = findfile(filepath('00*', root_dir=elodie_path, $
+    subdirectory='LL_ELODIE'), count=nfile)
    t0 = systime(1)
    for ifile=0, nfile-1 do begin
       splog, 'Reading file ', ifile+1, ' of ', nfile

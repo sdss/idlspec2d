@@ -109,11 +109,12 @@ function elodie_best, objflux, objivar, $
    ;----------
    ; Read all the Elodie spectra
 
-   elodie_path = getenv('ELODIE_PATH')
-   allfiles = findfile(filepath('00*', root_dir=elodie_path), count=nstar)
+   elodie_path = getenv('ELODIE_DIR')
+   allfiles = findfile(filepath('00*', root_dir=elodie_path, $
+    subdir='LL_ELODIE'), count=nstar)
 ; ???
-nstar=50
-allfiles = allfiles[0:nstar-1]
+;nstar=50
+;allfiles = allfiles[0:nstar-1]
    t0 = systime(1)
    starhdr = replicate(ptr_new(), nstar)
    for istar=0, nstar-1 do begin
