@@ -1,9 +1,9 @@
 ;+
 ; NAME:
-;   select_arc
+;   checksn
 ;
 ; PURPOSE:
-;   Select best arc from an arc structure produced with SPCALIB.
+;   Calculate S/N per fiber in 3 bangs (g,r,i) and output plot and text 
 ;
 ; CALLING SEQUENCE:
 ;   checksn, flux, err, plug, wave, expres=expres, noplot=noplot, title=title
@@ -94,9 +94,18 @@ pro checksn, flux, err, plug, wave, expres=expres, noplot=noplot, title=title
      endfor
 
     nplug = n_elements(plug)
+
+    gfit = fltarr(2)
+    rfit = fltarr(2)
+    ifit = fltarr(2)
+
     nonsky = where(strtrim(plug.objtype,2) NE 'SKY' AND $
                    strtrim(plug.objtype,2) NE 'NA', nnonsky)
     spectroid = (plug.fiberid - 1) / 320
+    gdiff = fltarr(nnonsky)
+    rdiff = fltarr(nnonsky)
+    idiff = fltarr(nnonsky)
+ 
 
     badg = where(allspec[nonsky].g LE 0.0)
     goodg = where(allspec[nonsky].g GT 0.0, ngoodg)
@@ -109,17 +118,29 @@ pro checksn, flux, err, plug, wave, expres=expres, noplot=noplot, title=title
     badr = where(allspec[nonsky].i LE 0.0)
     goodi = where(allspec[nonsky].i GT 0.0, ngoodi)
 
-    gfit = ladfit(plug[nonsky[goodg]].mag[1], alog10(allspec[nonsky[goodg]].g), absdev=gabsdev)
-    gdiff = alog10(allspec[nonsky[goodg]].g) - poly(plug[nonsky[goodg]].mag[1], gfit)
-    gstddev = stddev(gdiff)
+    if (ngoodg GT 0) then begin
+      gfit = ladfit(plug[nonsky[goodg]].mag[1], $
+               alog10(allspec[nonsky[goodg]].g), absdev=gabsdev)
+      gdiff[goodg] = alog10(allspec[nonsky[goodg]].g) - $
+                     poly(plug[nonsky[goodg]].mag[1], gfit)
+      gstddev = stddev(gdiff[goodg])
+    endif
 
-    rfit = ladfit(plug[nonsky[goodr]].mag[2], alog10(allspec[nonsky[goodr]].r), absdev=rabsdev)
-    rdiff = alog10(allspec[nonsky[goodr]].r) - poly(plug[nonsky[goodr]].mag[2], rfit)
-    rstddev = stddev(rdiff)
+    if (ngoodr GT 0) then begin
+      rfit = ladfit(plug[nonsky[goodr]].mag[2], $
+              alog10(allspec[nonsky[goodr]].r), absdev=rabsdev)
+      rdiff[goodr] = alog10(allspec[nonsky[goodr]].r) - $
+              poly(plug[nonsky[goodr]].mag[2], rfit)
+      rstddev = stddev(rdiff[goodr])
+    endif
 
-    ifit = ladfit(plug[nonsky[goodi]].mag[3], alog10(allspec[nonsky[goodi]].i), absdev=iabsdev)
-    idiff = alog10(allspec[nonsky[goodi]].i) - poly(plug[nonsky[goodi]].mag[3], ifit)
-    istddev = stddev(idiff)
+    if (ngoodi GT 0) then begin
+      ifit = ladfit(plug[nonsky[goodi]].mag[3], $
+           alog10(allspec[nonsky[goodi]].i), absdev=iabsdev)
+      idiff[goodi] = alog10(allspec[nonsky[goodi]].i) - $
+           poly(plug[nonsky[goodi]].mag[3], ifit)
+      istddev = stddev(idiff[goodi])
+    endif
     
 
       xmin = 15.0
@@ -192,6 +213,8 @@ pro checksn, flux, err, plug, wave, expres=expres, noplot=noplot, title=title
 
       xyouts, xmin+0.5, 3.0, string(format='(a,f5.2,f6.2,a)','log S/N = ', $
            gfit, " * g'")
+
+      if (size(gabsdev, /tname) NE 'UNDEFINED') then $
       xyouts, xmin+0.5, 2.0, string(format='(a,f5.3)','Deviation: ', gabsdev)
 
       djs_oplot, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.6], $
@@ -229,6 +252,7 @@ pro checksn, flux, err, plug, wave, expres=expres, noplot=noplot, title=title
 
       xyouts, xmin+0.5, 3.0, string(format='(a,f5.2,f6.2,a)','log S/N = ', $
         rfit, " * r'")
+      if (size(rabsdev, /tname) NE 'UNDEFINED') then $
       xyouts, xmin+0.5, 2.0, string(format='(a,f5.3)','Deviation: ', rabsdev)
       minutes = (bin.rsn[6,*]/10.0)^2 * 60.0
       xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.8], $
@@ -252,7 +276,9 @@ pro checksn, flux, err, plug, wave, expres=expres, noplot=noplot, title=title
 
       xyouts, xmin+0.5, 3.0, string(format='(a,f5.2,f6.2,a)','log S/N = ', $
         ifit, " * i'")
-      xyouts, xmin+0.5, 2.0, string(format='(a,f5.3)','Deviation: ', iabsdev)
+
+      if (size(iabsdev, /tname) NE 'UNDEFINED') then $
+        xyouts, xmin+0.5, 2.0, string(format='(a,f5.3)','Deviation: ', iabsdev)
       minutes = (bin.isn[5,*]/10.0)^2 * 52.0
       xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.8], $
            10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.9], $
@@ -261,19 +287,31 @@ pro checksn, flux, err, plug, wave, expres=expres, noplot=noplot, title=title
            10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.84], $
            string(format='(f5.1)', minutes[1])
 
-      s_plotdev, plug[nonsky[goodg]].xfocal, plug[nonsky[goodg]].yfocal, $
-           gdiff, 3.0, ychars=2.0, xcharsize = 0.001, ymargin=[1,3], cap=1.0
-      if (nglow GT 0) then djs_oplot, plug[nonsky[glow]].xfocal, $
+    if (ngoodg GT 0) then $
+        s_plotdev, plug[nonsky[goodg]].xfocal, plug[nonsky[goodg]].yfocal, $
+           gdiff[goodg], 3.0, ychars=2.0, xcharsize = 0.001, $
+           ymargin=[1,3], cap=1.0 $
+    else plot, plug.xfocal, plug.yfocal, ychars=2.0, xchars=0.001, $
+            ymargin=[1,3], /nodata
+    if (nglow GT 0) then djs_oplot, plug[nonsky[glow]].xfocal, $
            plug[nonsky[glow]].yfocal, ps=1
 
+    if (ngoodr GT 0) then $
       s_plotdev, plug[nonsky[goodr]].xfocal, plug[nonsky[goodr]].yfocal, $
-           rdiff, 3.0, ychars=2.0, xcharsize = 0.001, ymargin=[1,0], cap=1.0
-      if (nrlow GT 0) then djs_oplot, plug[nonsky[rlow]].xfocal, $
+           rdiff[goodr], 3.0, ychars=2.0, xcharsize = 0.001, $
+           ymargin=[1,0], cap=1.0 $
+    else plot, plug.xfocal, plug.yfocal, ychars=2.0, xchars=0.001, $
+            ymargin=[1,0], /nodata
+    if (nrlow GT 0) then djs_oplot, plug[nonsky[rlow]].xfocal, $
             plug[nonsky[rlow]].yfocal, ps=1
 
+    if (ngoodi GT 0) then $
       s_plotdev, plug[nonsky[goodi]].xfocal, plug[nonsky[goodi]].yfocal, $
-           idiff, 3.0, ychars=2.0, xcharsize = 2.0, ymargin=[4,0], cap=1.0
-      if (nilow GT 0) then djs_oplot, plug[nonsky[ilow]].xfocal, $
+           idiff[goodi], 3.0, ychars=2.0, xcharsize = 2.0, $
+           ymargin=[4,0], cap=1.0 $
+    else plot, plug.xfocal, plug.yfocal, ychars=2.0, xchars=2.0, $
+            ymargin=[4,0], /nodata
+    if (nilow GT 0) then djs_oplot, plug[nonsky[ilow]].xfocal, $
            plug[nonsky[ilow]].yfocal, ps=1
 
       !p.multi  = oldmulti
@@ -301,21 +339,21 @@ pro checksn, flux, err, plug, wave, expres=expres, noplot=noplot, title=title
       endfor
     endfor
 
-   print, "               S/N g'             S/N r'              S/N i'"
-   print, " MAG          1      2           1      2            1      2"
+   splog, "               S/N g'             S/N r'              S/N i'",/noname
+   splog, " MAG          1      2           1      2            1      2",/noname
 
-   print,transpose([[bin.mags], [bin.gsn], [bin.rsn], [bin.isn]]), $
-     format='(f5.2,3x,f8.3,f8.3,3x,f8.3,f8.3,3x,f8.3,f8.3)' 
+   splog,transpose([[bin.mags], [bin.gsn], [bin.rsn], [bin.isn]]), $
+     format='(f5.2,3x,f8.3,f8.3,3x,f8.3,f8.3,3x,f8.3,f8.3)' ,/noname
 
    nomap  = where(plug.fiberid EQ -1, nnomap)
-   print, 'Total number of Fibers read in: ', nplug
-   print, 'Number of Fibers NOT mapped: ', nnomap
-   print, 'Number of NON-SKY or NON-NA Fibers: ', nnonsky
-   print, 'Number of good fibers: ', ngoodg, ngoodr, ngoodi
-   print, 'Number of low  fibers: ', nglow, nrlow, nilow
+   splog, 'Total number of Fibers read in: ', nplug
+   splog, 'Number of Fibers NOT mapped: ', nnomap
+   splog, 'Number of NON-SKY or NON-NA Fibers: ', nnonsky
+   splog, 'Number of good fibers: ', ngoodg, ngoodr, ngoodi
+   splog, 'Number of low  fibers: ', nglow, nrlow, nilow
 
 
-   print, ' Possible bright fibers: '
+   splog, ' Possible bright fibers: '
    for i=0, nbright - 1 do begin
      nearby = -1
      if (plug[bright[i]].fiberid LE 320) then $
@@ -327,19 +365,19 @@ pro checksn, flux, err, plug, wave, expres=expres, noplot=noplot, title=title
 
      whop = where(plug[nearby].mag[2] LE 16, nwhop)
      if (nwhop EQ 0) then $
-       print, plug[nonsky[bright[i]]]  $
-     else print, 'Fiber ', plug[nonsky[bright[i]]].fiberid, $
-          ' is near bright fiber ', plug[whop].fiberid 
+       splog, plug[nonsky[bright[i]]],/noname $
+     else splog, 'Fiber ', plug[nonsky[bright[i]]].fiberid, $
+          ' is near bright fiber ', plug[whop].fiberid
 
     endfor
 
 
     if (n_elements(files) GT 0) then begin
       hdr = headfits(files[0])
-     print, sxpar(hdr,'PLATEID'), sxpar(hdr,'DATE-OBS'), $
+     splog, sxpar(hdr,'PLATEID'), sxpar(hdr,'DATE-OBS'), $
             sxpar(hdr,'MJD'), sxpar(hdr, 'TILEID'), $
             sxpar(hdr,'RA'), sxpar(hdr,'DEC'), sxpar(hdr, 'EXPTIME'), $
-            format='(i4,a11, i6, i7, f10.4, f11.4, i8)'
+            format='(i4,a11, i6, i7, f10.4, f11.4, i8)', /noname
     endif
 
 
