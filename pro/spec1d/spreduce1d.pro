@@ -68,10 +68,12 @@ pro spreduce1d, platefile, outfile
    ;----------
    ; Determine name of output file
 
+   platemjd = strmid(platefile, 8, 10)
+
    if (NOT keyword_set(outfile)) then $
-    outfile = 'spZ' + strmid(platefile,strpos(platefile,'spPlate')+7)
+    outfile = 'spZ-' + platemjd + '.fits'
    if (NOT keyword_set(logfile)) then $
-    logfile = 'spDiag1d' + strmid(platefile,strpos(platefile,'spPlate')+7)
+    logfile = 'spDiag1d-' + platemjd + '.log'
 
    splog, filename=logfile
    splog, 'Log file ', logfile, ' opened ', systime()
