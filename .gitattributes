@@ -45,6 +45,7 @@ misc/distort.blue -text
 misc/distort.red -text
 misc/uomoto.distortions -text
 pro/Makefile -text
+pro/apo2d/apo_log2html.pro -text
 pro/apo2d/aporeduce.pro -text
 pro/apo2d/quickextract.pro -text
 pro/apo2d/quicktrace.pro -text
