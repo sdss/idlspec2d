@@ -127,6 +127,12 @@ SPPLAN2D: Change the default of MINEXP to 1 sec, so that special plates
             like the M67 plate (#321) will be reduced.
             Make a plan file if either science or smear exposures exist
             (before it required the existence of science exposures).
+            Get the MJD from the directory name $RAWDATA_DIR/$MJD, not
+            from the header of the 1st file which may be wrong.  This
+            happened on MJD 52247, where there was a bias taken on MJD 52246
+            which messed up the plan file for plate 766 on MJD 52247.
+            But I will at least issue a warning in the proc if there is an
+            MJD that appears incorrect in one of the headers, as in this case.
 SMOOTH_SUPERFLAT: Located the spurious WARNING, changed to Warning, and
             upped the threshold.  It was not the critical one of the two
             smooth_superflat warnings.
