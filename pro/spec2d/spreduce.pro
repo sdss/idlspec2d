@@ -132,9 +132,6 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    ; Extract the flat-field image
    ;---------------------------------------------------------------------------
 
-;   pixflat = spflatten(flatname, indir=indir, xsol=xsol, ycen=ycen, $
-;         flat_flux=flat_flux)
-
    sigma = 1.0
    proftype = 1 ; Gaussian
    highrej = 20
@@ -194,22 +191,20 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
     else message, 'No CAMCOL keyword in arc header'
 
    fitarcimage, arc_flux, arc_fluxivar, color, lamplist, xpeak, ypeak, wset, $
-         invset, ans=wavesolution, lambda=lambda, $
-	 xdif_lfit=xdif_lfit, xdif_tset=xdif_tset, errcode=errcode
+    invset, ans=wavesolution, lambda=lambda, $
+    xdif_lfit=xdif_lfit, xdif_tset=xdif_tset, errcode=errcode
 
-   IF errcode NE 0 then begin
-	message, '> SPREDUCE:  Fitarcimage failed - abort'
+   if (errcode NE 0) then begin
+	message, 'Fitarcimage failed - abort'
    endif 
 
    qaplot_arcline, xdif_tset, lambda, arcname
-
-
 
    ;---------------------------------------------------------------------------
    ; Compute fiber-to-fiber flat-field variations
    ;---------------------------------------------------------------------------
 
-   fflat = fiberflat(flat_flux, wset)
+   fflat = fiberflat(flat_flux, flat_fluxivar)
 
    ;---------------------------------------------------------------------------
    ; LOOP THROUGH OBJECT FRAMES

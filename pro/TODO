@@ -1,7 +1,8 @@
 
-* Make QA plots
+* In flat-fields, be smarter with break points
+  Also, tune pix-to-pix flat with global flat to be high-pass / low-pass filter
 
-* Put obsolete routines in /pro/obsolete
+* Make QA plots
 
 * Carry header around + add header cards
 
@@ -10,7 +11,10 @@
 
 * Measure gain + read noise
 
-* Measure throughput!!
+* Somehow measure nonlinearity + saturation.
+  Maybe look at doublets with known line ratios?
+
+* Measure system throughput (Q.E.) !!
 
 * Make bad pixel mask
 

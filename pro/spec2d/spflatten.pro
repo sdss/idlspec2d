@@ -3,13 +3,15 @@
 ;   spflatten
 ;
 ; PURPOSE:
+;   Create pixel-to-pixel flat-field from a stack of SDSS spectral flats.
 ;
 ; CALLING SEQUENCE:
 ;   spflatten, flatname, [ pixflat, sigrej=, maxiter=, $
-;    outfile=, indir=, outdir=, tmpdir= ]
+;    outfile=, indir=, outdir=, tmpdir=, $
+;    bkspace=, nord=, lower=, upper= ]
 ;
 ; INPUTS:
-;   flatname   - Name of flat-field SDSS image(s)
+;   flatname   - Name(s) of raw SDSS flat-field image(s)
 ;
 ; OPTIONAL INPUTS:
 ;   sigrej     - Sigma rejection level; default to 1, 1, 1.1, 1.3, 1.6 or 1.9
@@ -20,6 +22,12 @@
 ;   indir      - Input directory for FLATNAME; default to './'
 ;   outdir     - Output directory for OUTFILE; default to './'
 ;   tmpdir     - Directory for temporary files; default to same as OUTDIR
+;
+; PARAMTERS FOR SLATEC_SPLINEFIT:
+;   bkspace
+;   nord
+;   lower
+;   upper
 ;
 ; OUTPUTS:
 ;
@@ -51,11 +59,17 @@
 ;------------------------------------------------------------------------------
 
 pro spflatten, flatname, pixflat, sigrej=sigrej, maxiter=maxiter, $
- outfile=outfile, indir=indir, outdir=outdir, tmpdir=tmpdir
+ outfile=outfile, indir=indir, outdir=outdir, tmpdir=tmpdir, $
+ bkspace=bkspace, nord=nord, lower=lower, upper=upper
 
    if (NOT keyword_set(indir)) then indir = './'
    if (NOT keyword_set(outdir)) then outdir = './'
    if (NOT keyword_set(tmpdir)) then tmpdir = outdir
+
+   if (N_elements(bkspace) EQ 0) then bkspace = 15
+   if (N_elements(nord) EQ 0) then nord = 4
+   if (N_elements(lower) EQ 0) then lower = 10
+   if (N_elements(upper) EQ 0) then upper = 10
 
    nflat = N_elements(flatname)
    ngrow = 2
@@ -91,16 +105,8 @@ pro spflatten, flatname, pixflat, sigrej=sigrej, maxiter=maxiter, $
 
       ;----------------------
       ; Create the array of preliminary flats
+
       if (iflat EQ 0) then pixflatarr = fltarr(nx,ny,nflat)
-
-      ;----------------------
-      ; Create spatial tracing from flat-field image
-
-;      xcen = trace320crude(flatimg, yset=ycen, maxdev=0.15)
-;      ntrace = (size(xcen, /dimens))[1]
-
-;      xy2traceset, ycen, xcen, tset, ncoeff=5, maxdev=0.1
-;      traceset2xy, tset, ycen, xsol
 
       ;----------------------
       ; Extract the flat-field image
@@ -112,18 +118,21 @@ pro spflatten, flatname, pixflat, sigrej=sigrej, maxiter=maxiter, $
       nPoly = 4
 
       ; Determine YMODEL image
-print, 'Begin extract ', fullname[0]
-;      extract_image, flatimg, flativar, xsol, sigma, flat_flux, flat_fluxivar, $
-;       proftype=proftype, wfixed=[1,1,1], $
-;       highrej=highrej, lowrej=lowrej, nPoly=nPoly, relative=1, $
-;       ymodel=ymodel
+print, 'Working on file ', fullname[0]
 
       ; There are still systematics in the result from EXTRACT_IMAGE,
       ; so instead fit down each column of the image (which is slowly
       ; varying) by just doing a median filter.
       ymodel = 0.0 * flatimg
-      for i=0, nx-1 do $
-       ymodel[i,*] = median(transpose(flatimg[i,*]), 25)
+      yaxis = findgen(ny)
+      for i=0, nx-1 do begin
+         print, format='($, ".",i4.4,a5)',i,string([8b,8b,8b,8b,8b])
+;         ymodel[i,*] = median(transpose(flatimg[i,*]), 25)
+         fullbkpt = slatec_splinefit(yaxis, flatimg[i,*], coeff, $
+          invvar=flativar[i,*], bkspace=bkspace, nord=nord, $
+          lower=lower, upper=upper, maxiter=3)
+         ymodel[i,*] = slatec_bvalu(yaxis, fullbkpt, coeff)
+      endfor
 
       pixflatarr[*,*,iflat] = (flatimg > 1) / (ymodel > 1)
 
