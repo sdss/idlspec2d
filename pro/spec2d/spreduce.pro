@@ -225,7 +225,9 @@ pro spreduce, flatname, arcname, objname, $
          widthset = *(bestflat.widthset)
          dispset = *(bestarc.dispset)
          proftype = bestflat.proftype
-         
+
+         sxaddpar, objhdr, 'XSIGMA', max(bestflat.medwidth)
+         sxaddpar, objhdr, 'WSIGMA', max(bestarc.medwidth)
 
          qaplot_fflat, fflat, wset, $
           title=plottitle+'Fiber-Flats for '+bestflat.name
