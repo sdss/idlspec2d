@@ -484,6 +484,10 @@ pro spcoadd_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    sxdelpar, hdr, ['SPEC1', 'SPEC2']
    sxdelpar, hdr, 'NBLEAD'
    sxdelpar, hdr, 'PIXFLAT'
+   sxdelpar, hdr, 'PIXBIAS'
+   sxdelpar, hdr, 'FLATFILE'
+   sxdelpar, hdr, 'ARCFILE'
+   sxdelpar, hdr, 'OBJFILE'
    sxdelpar, hdr, 'FRAMESN2'
 
    ;----------
