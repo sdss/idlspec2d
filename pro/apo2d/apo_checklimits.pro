@@ -20,11 +20,12 @@ function apo_checklimits, flavor, field, camera, value, html=html
             AND slimits.flavor EQ flavor, nlim)
    for ilim=0, nlim-1 do begin
       if (value GE slimits[indx[ilim]].lovalue $
-       AND value LE slimits[indx[ilim]].hivalue) then $
-       markstring = slimits[indx[ilim]].color
-       if (keyword_set(html)) then $
-        markstring = '<B><FONT COLOR="' $
-         + apo_color2hex(markstring) + '">'
+       AND value LE slimits[indx[ilim]].hivalue) then begin
+          markstring = slimits[indx[ilim]].color
+          if (keyword_set(html)) then $
+           markstring = '<B><FONT COLOR="' $
+            + apo_color2hex(markstring) + '">'
+      endif
    endfor
 
    return, markstring
