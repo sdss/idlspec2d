@@ -59,8 +59,8 @@ function skyline_dispersion, flux, fluxivar, xcen, iskies, dispset
         npix = (size(fluxivar,/dimen))[0]
         mask = long(fluxivar) * 0L
 
-        for offset = -10,12 do begin
-          xtemp = (long(xsky + offset) > 0) < npix - 1L
+        for offset = -12,12 do begin
+          xtemp = (long(xsky + offset) > 0) < (npix - 1L)
           mask[xtemp,ysky] = 1
         endfor
 

@@ -68,8 +68,8 @@ function fitdispersion, arc_flux, arc_fluxivar, xcen, origset = origset, $
         npix = (size(arc_fluxivar,/dimen))[0]
         mask = long(arc_fluxivar) * 0L
 
-        for offset = -12,13 do begin
-          xtemp = (long(xcentemp + offset) > 0) < npix - 1L
+        for offset = -12,12 do begin
+          xtemp = (long(xcentemp + offset) > 0) < (npix - 1L)
           mask[xtemp,ysky] = 1
         endfor
 
@@ -78,9 +78,8 @@ function fitdispersion, arc_flux, arc_fluxivar, xcen, origset = origset, $
         ;
         extract_image, arc_flux, arc_fluxivar*mask, xcentemp, sigma, $
           arclineflux, arclineivar, ansimage=ansimage, wfixed=[1,1], $
-          highrej=10, lowrej=10, relative=1, npoly=10
+          highrej=10, lowrej=10, relative=1, npoly=5
 
-         
         ;
         ;  Prepare width term
         ;  
