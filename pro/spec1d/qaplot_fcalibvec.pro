@@ -99,6 +99,8 @@ pro qaplot_fcalibvec, loglam, objflux, objivar, synflux, plugmap, zans, $
    !p.multi = 0
 
    for specid=1, 2 do begin
+
+      ; Set up plot
       plot, xrange, [1,1], xrange=xrange, yrange=[0.80,1.80], $
        /xstyle, /ystyle, xtitle='Wavelength [Ang]', xticklen=1.0, $
        ytitle='Observed/Model Flux + offset', title=plottitle, charsize=csize
@@ -106,6 +108,7 @@ pro qaplot_fcalibvec, loglam, objflux, objivar, synflux, plugmap, zans, $
       xyouts, xpos, 1.75, 'Spectrograph #' + string(specid,format='(i1)'), $
        charsize=csize
 
+      ; Plot residuals from QSOs
       ifiber = where(plugmap.spectrographid EQ specid $
        AND strtrim(zans.class,2) EQ 'QSO' $
        AND zans.zwarning EQ 0, nfiber)
@@ -115,6 +118,7 @@ pro qaplot_fcalibvec, loglam, objflux, objivar, synflux, plugmap, zans, $
       djs_xyouts, xpos, 1.65, color='blue', charsize=csize, $
        string(nfiber, format='("QSOs (", i3, ")")')
 
+      ; Plot residuals from all fibers
       ifiber = where(plugmap.spectrographid EQ specid $
        AND zans.zwarning EQ 0, nfiber)
       medvec = medfcalibvec(objflux, objivar, synflux, ifiber)
@@ -139,12 +143,13 @@ pro qaplot_fcalibvec, loglam, objflux, objivar, synflux, plugmap, zans, $
       if (mincorr LT 0.90 OR maxcorr GT 1.10) then $
        splog, 'WARNING: ' + outstring
 
+      ; Plot residuals from F stars
       ifiber = where(plugmap.spectrographid EQ specid $
        AND (strtrim(plugmap.objtype,2) EQ 'SPECTROPHOTO_STD' $
            OR strtrim(plugmap.objtype,2) EQ 'REDDEN_STD') $
        AND zans.zwarning EQ 0, nfiber)
       medvec = medfcalibvec(objflux, objivar, synflux, ifiber)
-      djs_oplot, wave, medvec+0.40
+      djs_oplot, wave, medvec+0.40, color='red'
       djs_oplot, !x.crange, [1.40,1.40]
       djs_xyouts, xpos, 1.70, color='red', charsize=csize, $
        string(nfiber, format='("Spectro-photo + reddening stars (", i3, ")")')
