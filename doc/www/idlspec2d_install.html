@@ -8,7 +8,13 @@ ALINK="#FF0000">
 
 <P>
 This document explains how to install the idlutils,idlspec2d,specflat products
-needed for reducing SDSS spectroscopic data.
+needed for reducing SDSS spectroscopic data.  The current (Feb 2002) versions
+of the code are:
+<DL><DD><PRE>
+  idlutils v4_9_2
+  specflat v1_3
+  idlspec2d v4_9_3
+</PRE></DD></DL>
 
 <P>
 In this document:
@@ -16,7 +22,7 @@ In this document:
   <LI><A HREF="#install_evil">CVS install w/UPS and evilinstall</A> -- recommended for SDSS re-installs
   <LI><A HREF="#install_ups">CVS install w/UPS</A> -- for SDSS installs
   <LI><A HREF="#install_cvs">CVS install w/out UPS</A> -- recommended for non-SDSS folks
-  <LI><A HREF="#install_tar">Installing from a tar file</A> -- for computer illiterates
+  <LI><A HREF="#install_tar">Installing from a tar file</A> -- for cvs illiterates
 </UL>
 
 <H2><A NAME="install_evil">CVS install w/UPS and evilinstall</A></H2>
@@ -76,9 +82,9 @@ then "idlspec2d".  Installing in this order gets the dependencies right,
 since the UPS database needs to know that idlspec2d depends upon particular
 versions of those other products.  An install would then look something like:
 <DL><DD><PRE>
-  % evilinstall idlutils v4_9_1
+  % evilinstall idlutils v4_9_2
   % evilinstall specflat v1_3
-  % evilinstall idlspec2d v4_9_1
+  % evilinstall idlspec2d v4_9_3
 </PRE></DD></DL>
 
 </OL>
@@ -148,9 +154,9 @@ users) or ~/.bashrc file (for Borne-shell users).
 To avoid typing mistakes, I start by defining environment variables
 for the version numbers:
 <DL><DD><PRE>
-  % IDLUTILS_VERS=v4_9_1
+  % IDLUTILS_VERS=v4_9_2
   % SPECFLAT_VERS=v1_3
-  % IDLSPEC2D_VERS=v4_9_1
+  % IDLSPEC2D_VERS=v4_9_3
 </PRE></DD></DL>
 
 <LI>
@@ -255,9 +261,9 @@ Put them into your home directory (for this example).
 To avoid typing mistakes, I start by defining environment variables
 for the version numbers:
 <DL><DD><PRE>
-  % IDLUTILS_VERS=v4_8_1
-  % SPECFLAT_VERS=v1_2
-  % IDLSPEC2D_VERS=v4_8_1
+  % IDLUTILS_VERS=v4_9_2
+  % SPECFLAT_VERS=v1_3
+  % IDLSPEC2D_VERS=v4_9_3
   % setup sdsscvs # Only needed on machines set up by Fermi
   % cd
   % cvs co -r $IDLUTILS_VERS idlutils
