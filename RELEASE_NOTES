@@ -109,7 +109,10 @@ ZCOMPUTE_QSO: A version of ZCOMPUTE that is basically the same code, but
         redshift.  Because there are multiplicative polynomials rather than
         additive polynomial terms, this may fail to find weak em-line QSOs.
 
+doc/www/idlspec2d_reduce.html,spectro_home.html: The machine alias name
+        sdssdata.princeton.edu should really be sdssdata.astro.princeton.edu
 etc/spChunkList.par: Add chunks 91 through 107, 99A, 100A.
+etc/spPlateList.par: Add 436 new plates, through MJD 53360 (Dec 21, 2004).
 examples/opECalib-51577.par: Update the gains based upon work by Eric Switzer
         and a more careful look at a recent set of identical flats taken
         on the night MJD 53114.  I've updated the numbers as follows for
