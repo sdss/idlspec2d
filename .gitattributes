@@ -48,6 +48,7 @@ include/export.h -text
 include/extract_row.h -text
 lib/Makefile -text
 misc/Makefile -text
+misc/brg.list -text
 misc/distort.blue -text
 misc/distort.red -text
 misc/plate306.mail -text
