@@ -89,14 +89,14 @@ for mjdstr in $remotedir ; do
       # Copy the astrolog files...
       echo SPROBOT: rsync "$hostname:/astrolog/$mjdstr" $astrologdir
       rsync -ar --rsh="ssh -c arcfour" \
-       --rsync-path=/p/rsync/v2_4_3/rsync \
        "$hostname:/astrolog/$mjdstr" $astrologdir
+#       --rsync-path=/p/rsync/v2_4_3/rsync
 
       # Copy the raw FITS files... copy only files ending in ".fit.gz"
       echo SPROBOT: rsync "$hostname:/data/spectro/$mjdstr/*" $localdir
       rsync -ar --rsh="ssh -c arcfour" \
-       --rsync-path=/p/rsync/v2_4_3/rsync \
        "$hostname:/data/spectro/$mjdstr/*.fit.gz" $localdir
+#       --rsync-path=/p/rsync/v2_4_3/rsync
 #       "$hostname:/data/spectro/$mjdstr/*" $localdir
 
       # Compress the raw FITS files w/gzip...
