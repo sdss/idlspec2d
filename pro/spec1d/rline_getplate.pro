@@ -1,39 +1,42 @@
 
-function rline_getplate, plate, primtarget=primtarget, noz=noz, rchi2=rchi2
+; PRIMTARGET - If set, then select only objects where at least one bit
+;              in its PRIMTARGET flag matches one bit in this parameter.
+; CLASS      - If set, then only select objects that match this classification,
+;              i.e. 'GALAXY'
+; MAXRCHI2   - If set, then only select objects whose reduced chi^2 is
+;              less than or equal to this value.
+;------------------------------------------------------------------------------
+function rline_getplate, plate, mjd=mjd, $
+ primtarget=primtarget, class=class, maxrchi2=maxrchi2
 
-     ; first get plugmap
+     ; First read the plug-map
 
-     readspec, [plate], plug=plug, zans=zans
+     readspec, plate, mjd=mjd, plug=plug, zans=zans
+     if (NOT keyword_set(plug)) then return, 0
+ 
+     ; Set MASK=1 for objects to return
 
-     if (size(plug,/tname) EQ 'INT') then return,0
-    
-     mask = lonarr(n_elements(plug)) 
-     if keyword_set(primtarget ) then $
-        mask = mask + ((plug.primtarget AND primtarget) NE 0)
+     mask = lonarr(n_elements(plug)) + 1
 
-     ; primtarget was not set
-     if total(mask) EQ 0 then mask = mask + 1
+     if (keyword_set(primtarget)) then $
+      mask = mask * (plug.primtarget NE 0) $
+       * ((plug.primtarget AND primtarget) NE 0)
 
-     if NOT keyword_set(noz) then begin
-        bad = where(zans.z EQ 0)
-        if bad[0] NE -1 then mask[bad] = 0
-     endif
+     if (keyword_set(class)) then $
+      mask = mask * (strtrim(zans.class,2) EQ class)
 
-     if keyword_set(rchi2) then begin
-        bad = where(zans.rchi2 GT rchi2)
-        if bad[0] NE -1 then mask[bad] = 0
-     endif
+     if (keyword_set(maxrchi2)) then $
+      mask = mask * (zans.rchi2 LE maxrchi2)
 
-     good = where(mask)
+     igood = where(mask)
+     if (igood[0] EQ -1) then return, 0
 
-     if good[0] EQ -1 then return, 0
-
-     readspec, zans[good].plate, zans[good].fiberid, $
-         flux=flux, invvar=finv, loglam=loglam, plug=plug, zans=zans
+     readspec, zans[igood].plate, zans[igood].fiberid, mjd=zans[igood].mjd, $
+      flux=flux, invvar=finv, loglam=loglam, plug=plug, zans=zans
 
      model = loglam * 0
      for i=0,n_elements(zans)-1 do $
-       model[*,i] = synthspec(zans[i], loglam=loglam[*,i]) 
+      model[*,i] = synthspec(zans[i], loglam=loglam[*,i])
 
      tt = { flux : flux[*,0],      $
             finv : finv[*,0],      $
@@ -42,14 +45,14 @@ function rline_getplate, plate, primtarget=primtarget, noz=noz, rchi2=rchi2
             plug : plug[0], $
             zans : zans[0] }
 
-     yy = replicate(tt, n_elements(zans))
-     yy.flux = temporary(flux)
-     yy.finv = temporary(finv)
-     yy.loglam = temporary(loglam)
-     yy.model  = temporary(model)
-     yy.plug   = temporary(plug)
-     yy.zans   = temporary(zans)
-    
-     return, yy
-end 
+     tt = replicate(tt, n_elements(zans))
+     tt.flux = temporary(flux)
+     tt.finv = temporary(finv)
+     tt.loglam = temporary(loglam)
+     tt.model  = temporary(model)
+     tt.plug   = temporary(plug)
+     tt.zans   = temporary(zans)
 
+     return, tt
+end 
+;------------------------------------------------------------------------------
