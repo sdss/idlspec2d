@@ -6,7 +6,7 @@ function create_linestruct, nline
 
    linestruct = create_struct( name='EMLINEFIT',   $
     'linename'          ,   ' ', $
-    'linewave'          ,   0.0, $
+    'linewave'          ,  0.0d, $
     'linez'             ,   0.0, $
     'linez_err'         ,   0.0, $
     'linesigma'         ,   0.0, $
