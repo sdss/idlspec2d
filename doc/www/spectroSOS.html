@@ -290,8 +290,9 @@ OBSCOMM = This keyword is used to identify the dithered flat sequence
           This keyword also identifies the Hartmann focus exposures, with
           the entries OBSCOMM="{focus, hartmann l}" or "{focus, hartmann r}".
           Science exposures all have OBSCOMM="science ".
-QUALITY = This should be "excellent", "test", or "bad".  Exposures are declared
-          "test" or "bad" using the <A HREF="http://spectro.princeton.edu/idlspec2d_doc.html#APOFIX">APOFIX</A> procedure.
+QUALITY = The observer-input quality for an exposure: "excellent", "test",
+          or "bad".  Exposures are declared "test" or "bad" using the
+          <A HREF="http://spectro.princeton.edu/idlspec2d_doc.html#APOFIX">APOFIX</A> procedure.
 </PRE>
 
 <H4><A NAME="headers_informational">Informational FITS header cards</A></H4>
@@ -459,6 +460,26 @@ The values reported are:
     then all these entries turn from red to black, and
     we can declare a plate done.  Exactly how this quantity is
     measured is <A HREF="#outputs_figure">described below</A>.
+<LI><B>EXPTIME</B> <BR>
+    The exposure time (EXPTIME) header keyword from the first camera
+    of this exposure to be reduced.  The assumption is that all 4 cameras
+    have the same EXPTIME.
+<LI><B>AIRTEMP</B> <BR>
+    The air temperature (AIRTEMP) header keyword from the first camera
+    of this exposure to be reduced.  The assumption is that all 4 cameras
+    have the same AIRTEMP.  We think this is the temperature from
+    the galileo weather station.
+<LI><B>UT</B> <BR>
+    The UT time computed from TAI in the header from the first camera
+    of this exposure to be reduced.
+<LI><B>QUALITY</B> <BR>
+    This is the observer-input quality for this exposure.
+    It can be set independently for each of the 4 cameras, but only one
+    camera value (the first reduced frame) is reported in this table.
+    The default value is "excellent" for everything except for dithered
+    flats or spectro focus frames which are "test".  The observers have
+    the option of declaring exposures "excellent", "test", or "bad"
+    using the <A HREF="http://spectro.princeton.edu/idlspec2d_doc.html#APOFIX">APOFIX</A> command.
 </UL>
 
 <P>
@@ -489,11 +510,13 @@ The following messages may appear:
 <LI><B>Error reading sdHdrFix file</B> <BR>
     The sdHdrFix file (sdHdrFix-$MJD.par) in sos.apo:/data/spectro/astrolog/$MJD
     exists but is not a valid Yanny parameter file.  This file is written
-    by the IDL procedure APOFIX if the observers' have run that proc
-    on sos.apo, but can also be edited by hand.
-    If the file is invalid, you should edit it to be valid, or delete it.
-    If the APOFIX command somehow generated an invalid file, then file
-    a PR against sospectro.
+    by the IDL procedure 
+    <A HREF="http://spectro.princeton.edu/idlspec2d_doc.html#APOFIX">APOFIX</A>
+    if the observers' have run that proc on sos.apo, but can also be edited
+    by hand.  If the file is invalid, you should edit it to be valid,
+    or delete it.  If the 
+    <A HREF="http://spectro.princeton.edu/idlspec2d_doc.html#APOFIX">APOFIX</A>
+    command somehow generated an invalid file, then file a PR against sospectro.
 <LI><B>Exposure number in header disagrees w/filename</B> <BR>
     This means that IOP/SOP is in a very confused state, and it
     is putting a different exposure number in the header (EXPOSURE
