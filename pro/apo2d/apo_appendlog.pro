@@ -26,10 +26,14 @@
 ;
 ; PROCEDURES CALLED:
 ;   djs_lockfile()
-;   djs_modfits
 ;   djs_unlockfile
-;   mrdfits
+;   headfits()
+;   idlspec2d_version()
+;   modfits
+;   mrdfits()
+;   mwrfits
 ;   splog
+;   sxaddpar
 ;   struct_append()
 ;
 ; REVISION HISTORY:
@@ -71,6 +75,10 @@ pro apo_appendlog, logfile, rstruct
          else $
           mwrfits, dummy, logfile, create=(ihdu EQ 1)
       endfor
+      ; Write the version of the code into the first header
+      hdr = headfits(logfile)
+      sxaddpar, hdr, 'VERS2D', idlspec2d_version()
+      modfits, logfile, 0, hdr, exten_no=0
    endif else begin
       ; Modify to an existing FITS file
       pp = struct_append(pp, rstruct)
