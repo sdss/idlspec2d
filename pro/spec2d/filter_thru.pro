@@ -122,7 +122,10 @@ function filter_thru, flux, waveimg=waveimg, wset=wset, mask=mask, $
 ;      else $
 ;       filtimg[*] = interpol(fthru, fwave, newwaveimg) 
       linterp, fwave, fthru, newwaveimg[*], filtimg
-      filtimg = reform(filtimg, size(flux,/dimens))
+      if (size(newwaveimg,/n_dimen) EQ 1) then $
+       filtimg = filtimg # replicate(1,ntrace) $
+      else $
+       filtimg = reform(filtimg, size(flux,/dimens))
 
       filtimg = filtimg * logdiff
 
