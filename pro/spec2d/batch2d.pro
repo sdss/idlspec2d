@@ -123,6 +123,7 @@ function batch2d_rawfiles, planfile, outfile=outfile
          'arc': otherfiles[*,i] = repstr(otherfiles[*,i], 'sdR', 'spArc')
          'flat': otherfiles[*,i] = repstr(otherfiles[*,i], 'sdR', 'spFlat')
          'science': otherfiles[*,i] = repstr(otherfiles[*,i], 'sdR', 'spSky')
+         'smear': otherfiles[*,i] = repstr(otherfiles[*,i], 'sdR', 'spSky')
       endcase
       otherfiles[*,i] = repstr(otherfiles[*,i], '.fit', '.fits')
    endfor
