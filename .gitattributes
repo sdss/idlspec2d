@@ -138,9 +138,7 @@ pro/science/spectra_sample.pro -text
 pro/spec1d/Makefile -text
 pro/spec1d/TODO -text
 pro/spec1d/bandpassfilter.pro -text
-pro/spec1d/batch.pro -text
 pro/spec1d/batch1d.pro -text
-pro/spec1d/batch2d.pro -text
 pro/spec1d/computechi2.pro -text
 pro/spec1d/cosbell.pro -text
 pro/spec1d/diffplate.pro -text
@@ -203,6 +201,7 @@ pro/spec2d/Makefile -text
 pro/spec2d/TODO -text
 pro/spec2d/arcfit_guess.pro -text
 pro/spec2d/arcsky_fit.pro -text
+pro/spec2d/batch2d.pro -text
 pro/spec2d/calcflux.pro -text
 pro/spec2d/calcscatimage.pro -text
 pro/spec2d/checkflavor.pro -text

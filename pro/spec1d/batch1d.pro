@@ -1,7 +1,47 @@
-; Run from within top level directory 2d_test
-; If using other machines in Peyton, set
-;   topdir='/peyton/scr/spectro0/data/2d_test'
-
+;+
+; NAME:
+;   batch1d
+;
+; PURPOSE:
+;   Batch process Spectro-1D reductions based upon existing 2D plate files.
+;
+; CALLING SEQUENCE:
+;   batch1d, [ fullplatefile, topdir=, nice= ]
+;
+; INPUTS:
+;
+; OPTIONAL INPUTS:
+;   fullplatefile - Plate files to reduce; default to all files matching
+;                   '*/spPlate*.fits' from the top-level directory.
+;   topdir     - Top directory for reductions; default to current directory.
+;   nice       - Unix nice-ness for spawned jobs; default to 10.
+;
+; OUTPUTS:
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;   If using machines in Peyton, set
+;     topdir='/peyton/scr/spectro0/data/2d_v4'
+;   A plate is considered not reduced if any of the "spPlate*.par" files
+;   do not have a corresponding "spDiag1d*.log" file.
+;
+; EXAMPLES:
+;
+; BUGS:
+;
+; PROCEDURES CALLED:
+;   djs_batch
+;   djs_filepath()
+;   fileandpath()
+;   splog
+;   yanny_free
+;   yanny_read
+;
+; REVISION HISTORY:
+;   17-Oct-2000  Written by D. Schlegel, Princeton
+;-
+;------------------------------------------------------------------------------
 pro batch1d, fullplatefile, topdir=topdir, nice=nice
 
    if (NOT keyword_set(topdir)) then begin
@@ -124,10 +164,10 @@ pro batch1d, fullplatefile, topdir=topdir, nice=nice
    nicestr = '/bin/nice -n ' + strtrim(string(nice),2)
    command = nicestr + ' idl ' + fullscriptfile + ' >& /dev/null'
 
-   batch, topdir, infile, outfile, $
+   djs_batch, topdir, infile, outfile, $
     hostconfig.protocol, hostconfig.remotehost, hostconfig.remotedir, $
     command, priority=priority
 
    return
 end
-
+;------------------------------------------------------------------------------

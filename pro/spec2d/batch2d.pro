@@ -1,7 +1,55 @@
-; If using other machines in Peyton, set
-;   topdir='/peyton/scr/spectro0/data/2d_test'
-; A plate is considered not reduced if any of the "spPlan2d*.par" files
-; do not have a corresponding "spDiag2d*.log" file.
+;+
+; NAME:
+;   batch2d
+;
+; PURPOSE:
+;   Batch process Spectro-2D reductions based upon already-built plan files.
+;
+; CALLING SEQUENCE:
+;   batch2d, [ platenums, topdir=, mjd=, mjstart=, mjend=, nice= ]
+;
+; INPUTS:
+;
+; OPTIONAL INPUTS:
+;   platenums  - Plate numbers to reduce.
+;   topdir     - Top directory for reductions; default to current directory.
+;   mjd        - MJD dates to reduce; default to all.
+;   mjstart    - Starting MJD dates to reduce.
+;   mjend      - Ending MJD dates to reduce.
+;   nice       - Unix nice-ness for spawned jobs; default to 10.
+;
+; OUTPUTS:
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;   If using machines in Peyton, set
+;     topdir='/peyton/scr/spectro0/data/2d_v4'
+;   A plate is considered not reduced if any of the "spPlan2d*.par" files
+;   do not have a corresponding "spDiag2d*.log" file.
+;
+; EXAMPLES:
+;
+; BUGS:
+;   Does not yet support MJD, MJSTART, MJEND ???
+;
+; PROCEDURES CALLED:
+;   djs_batch
+;   djs_filepath()
+;   fileandpath()
+;   splog
+;   yanny_free
+;   yanny_read
+;   yanny_par()
+;
+; INTERNAL SUPPORT ROUTINES:
+;   batch2d_nolog()
+;   batch2d_rawfiles()
+;   batch2d_combfiles()
+;
+; REVISION HISTORY:
+;   17-Oct-2000  Written by D. Schlegel, Princeton
+;-
 ;------------------------------------------------------------------------------
 ; For a list of files with names like 'path/spPlanXXX.par', 
 ; return the indexes of all that do **not** have a corresponding 
@@ -285,7 +333,7 @@ pro batch2d, platenums, topdir=topdir, mjd=mjd, mjstart=mjstart, mjend=mjend, $
    nicestr = '/bin/nice -n ' + strtrim(string(nice),2)
    command = nicestr + ' idl ' + fullscriptfile + ' >& /dev/null'
 
-   batch, topdir, pinfile, poutfile, $
+   djs_batch, topdir, pinfile, poutfile, $
     hostconfig.protocol, hostconfig.remotehost, hostconfig.remotedir, $
     command, priority=priority
 
