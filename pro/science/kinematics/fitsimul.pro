@@ -25,7 +25,7 @@ for i=nn0,nn do begin
   	
   bredshifts=0*findgen((size(b))[2])	
 
-  mveldisp, b, bsig, bwave, starflux[*,i], starsig[*,i], starwave[*,i], result, redshifts=bredshifts, czmin= czmin, czmax= czmax, klo_cut=0.016, khi_cut=0.23, maxsig=6
+  mveldisp, b, bsig, bwave, starflux[*,i], starsig[*,i], starwave[*,i], result, redshifts=bredshifts, czmin= czmin, czmax= czmax, klo_cut=0.016, khi_cut=0.23, maxsig=6,sigmastep=0.4
 
 
   teststruct = { ANSWER, templateno: 0L, sigma:0.0, sn:0.0, $
