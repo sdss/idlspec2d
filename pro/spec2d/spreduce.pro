@@ -126,6 +126,8 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
        'spArc-'+string(format='(a1,i1,a)',color,spectrographid, $
        '-'), root_dir=outdir)
 
+   heap_gc   ; Garbage collection for all lost pointers
+
    spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
     lampfile=lampfile, indir=indir, $
     ecalibfile=ecalibfile, plottitle=plottitle, $
@@ -187,6 +189,8 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       tai = sxpar(objhdr, 'TAI') + 0.5 * sxpar(objhdr, 'EXPTIME')
       bestflat = select_flat(flatstruct, tai)
       splog, 'Best flat = ', bestflat.name
+
+      sxaddpar, objhdr, 'FRAMESN2', 0.0
 
       if (NOT keyword_set(bestflat)) then begin
 
