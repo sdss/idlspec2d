@@ -446,12 +446,12 @@ pro apo_log2html, logfile, htmlfile
          ; Output SN2 for science exposures
 
          for iexp=0, nexp-1 do begin
-            if (pscience[icam,iexp].flavor EQ 'science') then $
+            if (pscience[0,iexp].flavor EQ 'science') then $
               textout = [ textout, $
                apo_log_fields(pscience[*,iexp], 'SN2', $
                 printnames='(S/N)^2', formats='(f7.1)') ]
 
-            if (pscience[icam,iexp].flavor EQ 'smear') then $
+            if (pscience[0,iexp].flavor EQ 'smear') then $
               textout = [ textout, $
                apo_log_fields(pscience[*,iexp], 'SN2', $
                 printnames='(S/N)^2', formats='(f7.2)') ]
