@@ -27,6 +27,8 @@
 ;   npoly      - Polynomial order of 2d fit.
 ;   tai        - TAI of plate exposure, if supplied a linear airmass correction
 ;                  is applied
+;   nbkpt      - Number of bkpts to use for full sky spectrum fit.
+;                This gives us the freedom to use less points for the blue side.
 ;
 ; PARAMETERS FOR SLATEC_SPLINEFIT (for supersky fit):
 ;   nord       -
@@ -78,7 +80,7 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    iskies=iskies, fibermask=fibermask, nord=nord, upper=upper, $
    lower=lower, maxiter=maxiter, pixelmask=pixelmask, $
    dispset=dispset, npoly=npoly, relchi2struct=relchi2struct, $
-   novariance=novariance, tai=tai
+   novariance=novariance, tai=tai, nbkpt=nbkpt
 
    if (size(obj, /n_dimen) NE 2) then message, 'OBJIVAR is not 2-D'
    if (size(objivar, /n_dimen) NE 2) then message, 'OBJIVAR is not 2-D'
@@ -86,6 +88,10 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    dims = size(obj, /dimens)
    ncol = dims[0]
    nrow = dims[1]
+
+   if NOT keyword_set(upper) then upper = 10.0
+   if NOT keyword_set(lower) then lower = 10.0
+   if NOT keyword_set(nbkpt) then nbkpt = ncol
 
    if (n_elements(fibermask) NE nrow) then fibermask = bytarr(nrow) 
 
@@ -172,11 +178,11 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
 
      snsum = snsqrt
      for i=1L,n_elements(snsqrt)-1 do snsum[i] = snsum[i] + snsum[i-1]
-     nbkpt = ncol
      place = long(snsum/max(snsum)*nbkpt) < (nbkpt-2)
      newbkpt = uniq(place)
      bkpt = skywave[newbkpt]
      bkpt[0] = minsky
+     bkpt[7:nbkpt-8] = (smooth(skywave[newbkpt],7))[7:nbkpt-8]
      nbkpt = n_elements(bkpt)
      lowdiff = (bkpt[1]-bkpt[0])*10.0
      highdiff = (bkpt[nbkpt-1]-bkpt[nbkpt-2])*10.0
@@ -187,7 +193,7 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
 ;------------------------------------------------------------------------
  
      sset = bspline_iterfit(skywave, skyflux, invvar=skyivar, $
-       nord=nord, upper=upper*5, lower=lower*5, maxiter=maxiter, $
+       nord=nord, upper=upper*1.5, lower=lower*1.5, maxiter=maxiter, $
        /eachgroup, fullbkpt=fullbkpt, yfit=skyfit2, outmask=outmask)
  
      fullfit = bspline_valu(wave, sset) 
@@ -207,7 +213,7 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
 ;       yfit=skyfit4)
 ;
 ;      fullfit = bspline_valu(wave, sset, x2=sigma) 
-
+;
       ssetorig = sset
       fullx2 = replicate(1.0,ncol) # findgen(nrow)
       x2     = (fullx2[*,iskies])[isort]
@@ -223,13 +229,17 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
 ;      The commented out code below fits the residuals "flux-fit" to
 ;       higher order polynomial terms.  Not used for now
 ;
-;      sset4 = bspline_iterfit(skywave, skyflux-skyfit2, $
-;       invvar=skyivar*outmask, $
+;       yfit=skyfit4, x2=x2, xmin=0., xmax=nrow, funcname='poly1', outmask=o)
+
+;      sset4 = bspline_iterfit(skywave, skyflux-skyfit2, invvar=skyivar*outmask, $
 ;       nord=nord, upper=upper, lower=lower, maxiter=maxiter, $
-;       npoly = 4L, /eachgroup, fullbkpt=fullbkpt, $
-;       yfit=skyfit4, x2=x2, xmin=0., xmax=nrow, funcname='poly1')
+;       npoly = npoly-1, /eachgroup, fullbkpt=fullbkpt, $
+;       yfit=skyfit4, x2=x2, funcname='poly1', outmask=o)
 ;
-;     fullfit4 = bspline_valu(wave, sset4, x2=replicate(1,ncol) # findgen(nrow)) 
+;     fullfit = bspline_valu(wave, sset4, x2=fullx2) + fullfit
+;       yfit=skyfit4, x2=skysigma, funcname='poly1',outmask=o)
+;
+;     fullfit = bspline_valu(wave, sset4, x2=sigma) + fullfit
    endif
 
    ;----------

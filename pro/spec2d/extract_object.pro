@@ -353,10 +353,11 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ;------------------
    ; Sky-subtract
 
+   nbkpt = color EQ 'blue' ? nx/2 : nx
    skystruct = skysubtract(flux, fluxivar, plugsort, vacset, $
     skysub, skysubivar, iskies=iskies, pixelmask=pixelmask, $
     fibermask=fibermask, upper=3.0, lower=3.0, tai=tai, $
-    relchi2struct=relchi2struct)
+    relchi2struct=relchi2struct, nbkpt=nbkpt)
    if (NOT keyword_set(skystruct)) then return
 
    ;-----------------------------------------------------------
@@ -372,8 +373,8 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
             string(iskies[badskyfiber])
        skystruct = skysubtract(flux, fluxivar, plugsort, vacset, $
           skysub, skysubivar, iskies=iskies, pixelmask=pixelmask, $
-          fibermask=fibermask, upper=3.0, lower=3.0, tai=tai, $
-          relchi2struct=relchi2struct)
+          fibermask=fibermask, upper=10.0, lower=10.0, tai=tai, $
+          relchi2struct=relchi2struct, nbkpt=nbkpt)
    endif
  
    ;
@@ -383,8 +384,8 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    nskypoly = 3L
    skystruct_psf = skysubtract(flux, fluxivar, plugsort, vacset, $
     skysubpsf, skysubpsfivar, iskies=iskies, pixelmask=pixelmask, $
-    fibermask=fibermask, upper=3.0, lower=3.0, tai=tai, $
-    dispset=dispset, npoly=nskypoly)
+    fibermask=fibermask, upper=10.0, lower=10.0, tai=tai, $
+    dispset=dispset, npoly=nskypoly, nbkpt=nbkpt)
 
    qaplot_skysub, flux, fluxivar, skysub, skysubivar, $
     vacset, iskies, title=plottitle+objname
