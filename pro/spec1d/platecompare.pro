@@ -25,6 +25,12 @@
 ;   Duplicate objects are found by matching positions to within 1 arcsec.
 ;
 ; EXAMPLES:
+;   Compare data from different pluggings of the same plate:
+;   IDL> platecompare, [406,406,406], mjd=[51817,51869,51876]
+;
+;   Compare date from two plates, 360 and 362, which are actually the
+;   same tile on the sky:
+;   IDL> platecompare, [360,360,362], mjd=[51780,51816,51999]
 ;
 ; BUGS:
 ;
@@ -47,15 +53,15 @@ pro platecompare, plate, mjd=mjd
       return
    endif
 
-;plate = [406, 406, 406]
-;mjd = [51817,51869,51876]
-
    if (keyword_set(mjd)) then begin
-      if (n_elements(mjd) NE n_elements(plate)) then begin
+      if (n_elements(plate) EQ 1) then begin
+         platevec = replicate(plate, n_elements(mjd))
+      endif else if (n_elements(mjd) NE n_elements(plate)) then begin
          print, 'Number of elements in PLATE and MJD do not agree.'
          return
-      endif
-      platevec = plate
+      endif else begin
+         platevec = plate
+      endelse
       mjdvec = mjd
    endif else begin
       for iplate=0, n_elements(plate)-1 do begin
