@@ -42,14 +42,17 @@
 ;
 ; REVISION HISTORY:
 ;   16-Oct-2000  Written by S. Burles, FNAL
+;   25-Feb-2002  Added radius keyword, radius=2 is much better when wings of
+;                     bright neighboring fibers affects centroiding
 ;-
 ;------------------------------------------------------------------------------
 function match_trace, image, invvar, xcen, xpoly=xpoly, ypoly=ypoly, $
-   first=first, maxiter=maxiter
+   first=first, maxiter=maxiter, radius=radius
 
   if NOT keyword_set(xpoly) then xpoly=3
   if NOT keyword_set(ypoly) then ypoly=3
   if NOT keyword_set(maxiter) then maxiter=10
+  if NOT keyword_set(radius) then radius=2
 
   nparam = xpoly*ypoly
 
@@ -58,24 +61,21 @@ function match_trace, image, invvar, xcen, xpoly=xpoly, ypoly=ypoly, $
 
   ycen = findgen(ny) # replicate(1,ntrace)
 
-  tmp_xpos = trace_fweight(image, xcen, ycen, invvar=invvar)
-  tmp_xpos = trace_fweight(image, tmp_xpos, ycen, invvar=invvar)
-  tmp_xpos = trace_fweight(image, tmp_xpos, ycen, invvar=invvar)
+  tmp_xpos = trace_fweight(image, xcen, ycen, invvar=invvar,radius=radius)
+  tmp_xpos = trace_fweight(image, tmp_xpos, ycen, invvar=invvar,radius=radius)
+  tmp_xpos = trace_fweight(image, tmp_xpos, ycen, invvar=invvar,radius=radius)
   first = trace_fweight(image, tmp_xpos, ycen, xerr=errfirst, $
-         invvar=invvar)
+         invvar=invvar,radius=radius)
+  diff = first - xcen 
 
   invvarfirst = ycen * 0.0
-  good = where(errfirst NE 999, ngood)
+  good = where(errfirst NE 999 AND abs(diff) LT radius, ngood)
   if ngood LT nparam*10 then begin
       splog, 'Can not recenter on new image'
       return, xcen
   endif
 
   invvarfirst[good] = 1.0/errfirst[good]^2  
-
-
-  diff = first - xcen 
-
 
 
 ;
@@ -102,6 +102,8 @@ function match_trace, image, invvar, xcen, xpoly=xpoly, ypoly=ypoly, $
   ivar = invvarfirst 
   shift = diff
 
+  sumbad = 0L
+
   for iiter=0, maxiter - 1 do begin
  
  
@@ -127,11 +129,14 @@ function match_trace, image, invvar, xcen, xpoly=xpoly, ypoly=ypoly, $
     ivar = ivar * outmask
 
     bbad = where(outmask EQ 0, nbad)
+    sumbad = sumbad + nbad
     splog, "Iteration: ",iiter, " Pixels Rejected: ", nbad, $
            " Finished? ", qdone, format='(a,i3,a,i6,a,i2)'
     if qdone EQ 1 then iiter = maxiter
   endfor
 
+  if sumbad GT 20000L then $
+    splog, 'Warning: Large number of pixels rejected! ', sumbad
 
   return,  xcen + shift
 end
