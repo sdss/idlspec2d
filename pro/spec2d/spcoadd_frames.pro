@@ -515,6 +515,16 @@ pro spcoadd_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    cardname = 'TAI-END'
    sxcombinepar, hdrarr, cardname, hdr, func='max'
 
+   ; Add the NGUIDE keywords for all headers of one flavor of CAMERAS
+   ; (e.g., for all the 'b1' exposures if the first frame is 'b1'.)
+   cardname = 'NGUIDE'
+   sxcombinepar, hdrarr[0], cardname, hdr, func='total'
+   cameras0 = sxpar(*(hdrarr[0]), 'CAMERAS')
+   for ihdr=1, n_elements(hdrarr)-1 do begin
+      if (sxpar(*(hdrarr[ihdr]), 'CAMERAS') EQ cameras0) then $
+       sxcombinepar, hdrarr[ihdr], cardname, hdr, func='total'
+   endfor
+
    ;----------
    ; Use the MJD passed as a keyword, which will typically be for the most
    ; observation, and be consistent with the output file names
