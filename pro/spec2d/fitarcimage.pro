@@ -248,7 +248,7 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    igood = where(qgood, ngood)
    splog, 'Number of good arc lines: ', ngood
    if (ngood LT 6) then begin
-      splog, 'ABORT: Number of arclines  = ', ngood
+      splog, 'WARNING: Reject arc. Number of arclines  = ', ngood
       wset = 0
       return
    endif else begin
@@ -303,7 +303,7 @@ maxdev = 1.0d-5
    testg = reform(testg, nlamp, 20, 16)
    gind = where(total(total(testg EQ 0,2) GT 3, 2) EQ 0, nlamp)
    if (nlamp LT 6) then begin
-      splog, 'ABORT: Number of arclines after bundle test = ', nlamp
+      splog, 'WARNING: Reject arc. Number of arclines after bundle test = ', nlamp
       wset = 0
       return
    endif else begin
@@ -333,7 +333,7 @@ maxdev = 1.0d-5
    for i=0, N_elements(logwdiff)-1 do begin
       if (logwdiff[i] GT 0.10) then begin
          ; Abort for gaps as large as [4000,5035] or [8000,10071] Angstroms.
-         splog, 'ABORT: Big wavelength gap from ', 10^logwlist[i], $
+         splog, 'WARNING: Reject arc. Big wavelength gap from ', 10^logwlist[i], $
           ' to ', 10^logwlist[i+1], ' Ang'
          wset = 0
          return
