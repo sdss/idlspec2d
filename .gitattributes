@@ -13,6 +13,7 @@ examples/opECalib.par -text
 include/evilmath.h -text
 include/export.h -text
 include/extract_row.h -text
+pro/arcsky_fit.pro -text
 pro/calcflux.pro -text
 pro/extract_boxcar.pro -text
 pro/extract_image.pro -text
@@ -24,10 +25,12 @@ pro/fitarcimage.pro -text
 pro/flegendre.pro -text
 pro/func_fit.pro -text
 pro/funccheb.pro -text
+pro/locateskylines.pro -text
 pro/makefile -text
 pro/rdss_fits.pro -text
 pro/sdssproc.pro -text
 pro/skysubtract.pro -text
+pro/spec2d/arcsky_fit.pro -text
 pro/spec2d/calcflux.pro -text
 pro/spec2d/extract_boxcar.pro -text
 pro/spec2d/extract_image.pro -text
@@ -39,6 +42,7 @@ pro/spec2d/fitarcimage.pro -text
 pro/spec2d/flegendre.pro -text
 pro/spec2d/func_fit.pro -text
 pro/spec2d/funccheb.pro -text
+pro/spec2d/locateskylines.pro -text
 pro/spec2d/makefile -text
 pro/spec2d/rdss_fits.pro -text
 pro/spec2d/sdssproc.pro -text
@@ -55,6 +59,7 @@ pro/spec2d/trace_fix.pro -text
 pro/spec2d/trace_fweight.pro -text
 pro/spec2d/traceset2xy.pro -text
 pro/spec2d/ushift.pro -text
+pro/spec2d/writeapid.pro -text
 pro/spec2d/writespectra.pro -text
 pro/spec2d/xy2traceset.pro -text
 pro/sshift.pro -text
@@ -69,6 +74,7 @@ pro/trace_fix.pro -text
 pro/trace_fweight.pro -text
 pro/traceset2xy.pro -text
 pro/ushift.pro -text
+pro/writeapid.pro -text
 pro/writespectra.pro -text
 pro/xy2traceset.pro -text
 src/evilmath.c -text

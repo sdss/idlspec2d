@@ -10,7 +10,7 @@
 ;              ymodel=ymodel, fscat=fscat,proftype = proftype,ansimage=ansimage,
 ;              wfixed=wfixed, sigmacor=sigmacor, xcencor=xcencor, mask=mask,
 ;              nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej,
-;              calcCovar=calcCovar, fitans=fitans, whopping=whopping])
+;              calcCovar=calcCovar, fitans=fitans, whopping=whopping,relative=relative])
 ;
 ; INPUTS:
 ;   fimage     - Image[nCol, nRow]
@@ -40,6 +40,7 @@
 ;   lowrej     - negative sigma deviation to be rejected (default 10.0)
 ;   calcCovar  - calculate Full covariance matrix
 ;   fitans     - ratio of profiles to do in single profile fitting
+;   relative   - Scale rejection thresholds by reduced chi-squared (default 0)
 ;   whopping   - traces which have WHOPPINGingly high counts, and need extra
 ;                background terms
 ;
@@ -67,13 +68,13 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
                ymodel=ymodel, fscat=fscat,proftype=proftype,ansimage=ansimage, $
                wfixed=wfixed, sigmacor=sigmacor, xcencor=xcencor, mask=mask, $
                nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej, $
-	       calcCovar=calcCovar, fitans=fitans, whopping=whopping
+	       calcCovar=calcCovar, fitans=fitans, whopping=whopping,relative=relative
 
    ; Need 5 parameters
    if (N_params() LT 5) then begin
       print, 'Syntax - extract_image(fimage, invvar, xcen, sigma, flux, [finv,'
       print, ' yrow=yrow, ymodel=ymodel, fscat=fscat, proftype = proftype, '
-      print, ' ansimage = ansimage, calcCovar=calcCovar, fitans=fitans'
+      print, ' ansimage = ansimage, calcCovar=calcCovar, fitans=fitans,relative=relative'
       print, ' wfixed=wfixed, sigmacor=sigmacor, xcencor=xcencor, mask=mask, '
       print, ' nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej])'
       return
@@ -154,6 +155,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
    if (NOT keyword_set(ymodel)) then ymodel = fltarr(nx,ny) 
    if (NOT keyword_set(calcCovar)) then calcCovar=0
    if (NOT keyword_set(whopping)) then whopping = -1
+   relative = keyword_set(relative)
 
    corcalc = lonarr(3)
    corcalc[0] = 1
@@ -232,7 +234,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
       wfixed=wfixed, mask=masktemp, diagonal=prow, nPoly=nPoly, $
       oback=oback, niter=niter, squashprofile=squashprofile,inputans=inputans, $
       maxIter=maxIter, highrej=highrej, lowrej=lowrej, calcCovar=calcCovar, $
-      whopping=whoppingcur)
+      whopping=whoppingcur, relative=relative)
 
      mask[*,cur] = masktemp
      ansimage[0:nTrace*nCoeff-1,iy] = ansrow

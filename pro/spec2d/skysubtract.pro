@@ -1,9 +1,11 @@
 
-function skysubtract, tt, skyfinal
+function skysubtract, tt, skyfinal, color=color
 
 ;
 ;	small set is [xmin, xmax, coeffs] for wavelengths in log10
 ;
+
+	if (NOT keyword_set(side)) then color='blue'
 
 	npix = (size(tt.flux))[1]
 	nTrace = (size(tt))[1]
@@ -20,6 +22,8 @@ function skysubtract, tt, skyfinal
 	nsky = (size(skystruct))[1]
 
 	skyspline = fltarr(npix,nsky)
+	skyredjunk = fltarr(npix)
+
 	for i=0,nsky - 1 do $
 	    skyspline[*,i] = spl_init(pp,skystruct[i].flux)
 
@@ -65,7 +69,24 @@ function skysubtract, tt, skyfinal
 	    goodies = where(skymask[i,*])
 	    if (goodies[0] NE -1) then  $
 	      skyfinal[i,j] = median(skyrebin[i,goodies])
+
+;
+;	This is a kluge to take out weird WIDE feature near 6500 Ang.
+;	We assume it's correlated with xFocal which may not be true
+;
+;	    if (color EQ 'red') then begin
+;	      skytemp = skyrebin[i,goodies] - skyfinal[i,j]
+;
+;	LADFIT is an absolute deviation fit, and should be less subject to
+;	bad sky fibers, cosmic rays, or bad pixels
+;
+;	      ab = ladfit(skystruct[goodies].plugmap.xFocal,skytemp)
+;	      skyredjunk[i] = ab[0] + ab[1] * tt[j].plugmap.xFocal
+;	      stop
+;	    endif else skyredjunk[i]=0.0
 	  endfor
+
+;	  skyfinal[*,j] = skyfinal[*,j] - skyredjunk
 
 	  ttsub[j].skysub = ttsub[j].flux - skyfinal[*,j]
 	  ttsub[j].sky = skyfinal[*,j]

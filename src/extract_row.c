@@ -32,6 +32,7 @@ IDL_LONG extract_row
    IDL_LONG    whoppingct;
    IDL_LONG    squashprofile;
    IDL_LONG    retval = 1;
+   IDL_LONG    bad;
 
    IDL_LONG    argct;
    IDL_LONG  * xmin;
@@ -178,20 +179,26 @@ IDL_LONG extract_row
 
 //   printf("Fill Covar done \n");
 
-   choldcRow(covar, ia, nTrace, nCoeff, wPoly, p); 
+   bad = choldcRow(covar, ia, nTrace, nCoeff, wPoly, p); 
 //   printf("choldc Custom2 done\n");
+   if (bad < 0) {
+	for(j=0;j<ma;j++) {
+	  p[j] = 0.0;
+	  ans[j] = 0.0;
+        }
+   } else {
 
-   cholslRow(covar, ia, nTrace, nCoeff, wPoly, p, beta, ans); 
-   //printf("cholsl done\n");
+     cholslRow(covar, ia, nTrace, nCoeff, wPoly, p, beta, ans); 
+     //printf("cholsl done\n");
 
-   if (calcCovar > 0) {
-      cholslRowCovar(covar, ia, nTrace, nCoeff, wPoly, p); 
-      //printf("cholsl Covar done\n");
-   }  
+     if (calcCovar > 0) {
+        cholslRowCovar(covar, ia, nTrace, nCoeff, wPoly, p); 
+        //printf("cholsl Covar done\n");
+     }  
 //     else {
 //      printf("Skipping Covariance Calculation\n");
 //   }
-
+   }
    for(i=0;i<nx;i++) ymod[i] = 0.0;
     
    /* scattered light first  */
@@ -604,7 +611,7 @@ void CheckRowFibers(float **abig, IDL_LONG *xmin, IDL_LONG *xmax,
 	   total = 0.0;
 	   for (k=xmin[i],m=0; k<=xmax[i]; k++,m++)
 	      if (invvar[k] > 0.0) total += abig[i*nCoeff][m];
-	         if (total < 0.5) {
+	         if (total < 0.8) {
                     for(j=nCoeff-1,l=j+i*nCoeff;j>=1;j--,l--) 
 	               if (ia[l]) {
 	                  ia[l] = 0;
@@ -613,7 +620,7 @@ void CheckRowFibers(float **abig, IDL_LONG *xmin, IDL_LONG *xmax,
                     (int) i, (int) j,total);   */
                     }
                  }
-	      if (total < 0.2) {
+	      if (total < 0.4) {
                  j = 0;
                  l=i*nCoeff;
 	            if (ia[l]) {

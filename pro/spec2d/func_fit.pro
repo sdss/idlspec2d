@@ -9,7 +9,7 @@ function func_fit, x, y, ncoeff, function_name=function_name
 
 	
 	if(NOT keyword_set(function_name)) then $
- 	      function_name = 'legendre'
+ 	      function_name = 'flegendre'
 
 	if(function_name EQ 'flegendre') then legarr = flegendre(x, ncoeff)
 	if(function_name EQ 'fchebyshev') then legarr = fchebyshev(x, ncoeff)

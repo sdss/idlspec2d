@@ -2,17 +2,17 @@
 pro writespectra, tt, hdr, filebase
 
 	ntrace = (size(tt))[1]
-	npix = (size(tt.counts))[1]
+	npix = (size(tt.skysub))[1]
 	
 	for i=0,ntrace -1 do begin
 	  thishdr = hdr
 	  name = filebase + string(format = '(i3.3)', i+1) + '.fit'
 
-	  flux = tt[i].counts
+	  flux = tt[i].skysub
 	  err = flux*0.0 - 1.0
-	  good = where(tt[i].invvar GT 0.0)
+	  good = where(tt[i].fluxinvvar GT 0.0)
 	  if (good[0] NE -1) then $
-            err(good) = 1.0/sqrt(tt[i].invvar[good])
+            err(good) = 1.0/sqrt(tt[i].fluxinvvar[good])
 
 	  sxaddpar, thishdr, 'OBJID', string(format='(5(i))', $
                 tt[i].plugmap.objid)
@@ -32,7 +32,7 @@ pro writespectra, tt, hdr, filebase
 
 	  nparams = n_elements(tt[i].coeff) - 2 
 	  sxaddpar, thishdr, 'NWORDER', nparams
-	  sxaddpar, thishdr, 'WFITTYPE', tt[i].func
+	  sxaddpar, thishdr, 'WFITTYPE', 'LOG-'+tt[i].func
 	  sxaddpar, thishdr, 'PIXMIN', tt[i].coeff[0]
 	  sxaddpar, thishdr, 'PIXMAX', tt[i].coeff[1]
 	  link = string(tt[i].coeff[0]) + string(tt[i].coeff[1])
