@@ -107,12 +107,12 @@ function kfluxratio, wave, objflux, objivar, kflux, fiber, $
 
    ;-------------
    ; Get zeropoint from phot fiber mag 
-   ; (assume reddening does not change the SED too much)
 
-   ebv_to_A_r = 2.6980 ; derived for F-star SED
-   model_rmag = fiber.model_mag[2] + (ebv_to_A_r * fiber.e_bv_sfd)
+   fluxfnu = red_kflux * wave^2 / 2.99792e18
+   fthru=filter_thru(fluxfnu, waveimg=wave, $
+                     filter_prefix = 'sdss_jun2001', /toair)
+   model_rmag = -2.5*alog10(fthru[2]) - 48.6
    scalefactor = 10.0^(-0.4 * (fiber.mag[2] - model_rmag))
-
    red_kflux = red_kflux * scalefactor / 1e-17
 
    ;-----------
@@ -121,101 +121,64 @@ function kfluxratio, wave, objflux, objivar, kflux, fiber, $
    fluxvect = objflux
    fluxvivar = objivar
    divideflat, fluxvect, invvar=fluxvivar,  red_kflux, minval = 0.1
-   
+    
    ;-----------
    ; Smooth the flux vector to reduce noise (do we need to smooth invar?)
 
-   fluxvect = djs_median(fluxvect, width = 100, boundary = 'reflect')
-   fluxvect = smooth(fluxvect, 30, /NAN)
+   fluxvect = djs_median(fluxvect, width = 75, boundary = 'reflect')
+   fluxvect = smooth(fluxvect, 25, /NAN)
 
    return, fluxvect
 end
 
 ;------------------------------------------------------------------------------
-pro pca_flux_standard, loglam, stdflux, stdivar, stdmask, stdstarfile, $
-    outname = outname, calibset = calibset, blue = blue, $
-    waveminmax = waveminmax, corvector = corvector, goodv = goodv, $
-    fcor = fcor, fsig = fsig, noplot = noplot
 
-   cspeed = 2.99792458e5
-
-   ;----------
-   ; Read info about f-star standards 
-   stdstars = mrdfits(stdstarfile, 1)
-
-   nstd = n_elements(stdstars)
-   if (nstd EQ 0) then $
-     splog, 'No SPECTROPHOTO or REDDEN stars for flux calibration'
-
-   ;-------------------
-   ; Mask out bad pixels and regions dominated by sky-sub residuals
-
-   stdivar = skymask(stdivar, stdmask)
-   stdflux = djs_maskinterp(stdflux, stdivar EQ 0, iaxis=0, /const)
+pro pca_flux_standard, loglam, stdflux, stdivar, stdinfo, $
+    corvector = corvector, corvivar = corvivar, cormed = cormed, $
+    fcor = fcor, fsig = fsig, bkpts = bkpts, calibset = calibset, $
+    noplot = noplot
 
    ;--------------
    ; Read in Kurucz model files
 
    kurucz_restore, kwave, kflux, kindx = kindx
-
-   ;----------------------
-   ; Trim to range of good pixels
  
-   wave = 10.0^loglam 
-   if not keyword_set(waveminmax) then waveminmax = [min(wave), max(wave)]
-   goodpix = where(wave GE waveminmax[0] AND wave LE waveminmax[1]) 
-   if goodpix[0] EQ -1 then $
-       splog, 'Bad wavelength range for spectrophotometric calibration'
-
-   npix = n_elements(goodpix)
-   wave = wave[goodpix]
-
    ;-----------------
    ; Compute the flux correction vector from the ratio of model/data
 
+   cspeed = 2.99792458e5
+   npix = n_elements(stdflux[*,0])
+   nstd = n_elements(stdflux[0,*])
+
    corvector = fltarr(npix, nstd)
    corvivar = fltarr(npix, nstd)
+   cormed = fltarr(nstd)
 
-   for iobj=0, nstd-1 do begin
-     model_index = (where(kindx.model eq stdstars[iobj].model))[0]
+   wave = 10.0^loglam 
+   medwave = djs_median(wave)
+   ; Wavelength range over which to compute normalization
+   norm_indx = where(wave gt medwave - 500 and wave lt medwave + 500)
 
-     linterp, kwave*(1 + stdstars[iobj].v_off/cspeed), kflux[*,model_index], $
+   for istd=0, nstd-1 do begin
+     model_index = (where(kindx.model eq stdinfo[istd].model))[0]
+
+     linterp, kwave*(1 + stdinfo[istd].v_off/cspeed), kflux[*,model_index], $
               wave, kfluxi
 
-     corvector[*,iobj] = kfluxratio(wave, stdflux[goodpix,iobj], $
-                         stdivar[goodpix,iobj], kfluxi, stdstars[iobj], $
-                         fluxvivar = fluxvivar)
-     corvivar[*, iobj] = fluxvivar
+     corvectori = kfluxratio(wave, stdflux[*,istd], $
+                  stdivar[*,istd], kfluxi, stdinfo[istd], $
+                  fluxvivar = corvivari)
 
+     ; Normalize by median
+     cormed[istd] = djs_median(corvectori[norm_indx])
+     corvector[*,istd] = corvectori / cormed[istd]
+     corvivar[*, istd] = corvivari * cormed[istd]^2 
    endfor
 
-   ;---------------------
-   ; Chose high S/N spectra (otherwise spectral typing is likely to be 
-   ; wrong).  The velocity cut (hopefully) eliminates galaxies and 
-   ; other things that accidentally get targeted
-   
-   ok = where(stdstars.sn gt 20 and abs(stdstars.v_off) lt 450, nok)
-
-   if nok lt 3 then begin
-     splog, 'WARNING:  Too few spectrophoto standards with good S/N'
-     splog, 'Proceeding anyway!'
-     ok = where(stdstars.sn gt 10 and abs(stdstars.v_off) lt 450, nok)
-   endif
-   if nok lt 3 then begin
-     splog, 'WARNING:  NO good spectrophoto standards!!!'
-     splog, 'Proceeding anyway!'
-     ok = where(stdstars.sn gt 0, nok)
-   endif else begin
-     splog, 'Using ' + string(nok, format = '(I2)') + ' spectrophoto standards'
-   endelse  
-
-   fcor = fltarr(npix)  
-   corsig = fltarr(npix)
-
    ;---------------
-   ; Now find the average vector, with iterative rejection 
+   ; Now find the average of the vectors with iterative rejection
 
-   pcaflux = pca_solve(corvector[*,ok], corvivar[*,ok], $
+   pcaflux = pca_solve(corvector, corvivar, $
              niter=30, nkeep=1, usemask=usemask, eigenval=eigenval, $
              acoeff=acoeff, maxiter=5, upper=5, lower=5, $
              maxrej=ceil(0.01*npix), groupsize=ceil(npix/5.))
@@ -225,80 +188,60 @@ pro pca_flux_standard, loglam, stdflux, stdivar, stdmask, stdstarfile, $
    ; if all the input spectra are positive-valued.)
    if (median(pcaflux[*,0]) LT 0) then begin
       pcaflux[*,0] = -pcaflux[*,0]
-      acoeff[*,0] = -acoeff[*,0]
+      acoeff[0,*] = -acoeff[0,*]
    endif
 
-   fcor = pcaflux / n_elements(ok)
+   fcor = pcaflux * median(acoeff) 
 
    ;--------------
    ; Measure the variance between the fluxcalib vectors derived 
    ; for each of the standard stars -- this is an indicator of the 
    ; spectrophotometric quality.
 
-   meanclip, corvector[*,ok] - rebin(fcor, npix,  nok), fmean, fsig, $
+   meanclip, corvector - rebin(fcor, npix,  nstd), fmean, fsig, $
              maxiter=3, clipsig=5
-   fsig = fsig / median(fcor)
 
    ;--------------
    ; Select break points for spline
 
-   logmin = min(loglam[goodpix])
-   logmax = max(loglam[goodpix])
-
-   if (min(wave) lt 5000) then bkptfile = filepath('blue.bkpts', $
+   minwave = min(wave)
+   maxwave = max(wave)
+   if (minwave lt 5000) then bkptfile = filepath('blue.bkpts', $
      root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc') $
    else bkptfile = filepath('red.bkpts', $
      root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
    readcol, bkptfile, bkpts, silent=1
-   bkpts = alog10(bkpts) ; Convert to log-10 Angstroms
 
-   ibk = where(bkpts GE logmin AND bkpts LE logmax, nbk)
+   ibk = where(bkpts GE minwave AND bkpts LE maxwave, nbk)
    if (nbk LT 4) then splog, 'Error selecting break points'
-   ;bkpts = [logmin, bkpts[ibk[1:nbk-2]], logmax]
-   bkpts = [logmin, bkpts[ibk], logmax]
+   bkpts = [minwave, bkpts[ibk], maxwave]
+   bkpts = alog10(bkpts) ; Convert to log-10 Angstroms
 
    ;--------------
    ; Do the spline fit
 
-   calibset = bspline_iterfit(loglam[goodpix], fcor, nord=4, bkpt=bkpts, $
+   calibset = bspline_iterfit(loglam, fcor, nord=4, bkpt=bkpts, $
               upper=3, lower=3, maxrej=ceil(0.05*n_elements(fcor)))
 
-   calibvector = bspline_valu(loglam[goodpix],calibset)
-
-   ;--------------
-   ; Create header cards describing the data range and write to FITS
-   ; The keyword 'SPHOTERR' holds the standard deviation of the
-   ; correction vectors for the individual stars -- this is a good measure
-   ; of the quality of the spectrophotometry
-
-   hdr = ['']
-   wavemin = 10.^min(loglam)
-   wavemax = 10.^max(loglam)
-   sxaddpar, hdr, 'WAVEMIN', wavemin
-   sxaddpar, hdr, 'WAVEMAX', wavemax
-   sxaddpar, hdr, 'SPHOTERR', fsig  
-
-   if keyword_set(outname) then $
-     mwrfits, calibset, outname, hdr, /create $
-   else outname = ''
+   calibvector = bspline_valu(loglam, calibset)
 
    ;----------
    ; QA plot
 
    if keyword_set(noplot) then return
 
-   djs_plot, [min(wave)-100,max(wave)+100], [0,1.1*max(corvector)], /nodata, $
+   djs_plot, [minwave-100,maxwave+100], [0,1.1*max(corvector)], /nodata, $
              /xstyle, /ystyle, xtitle='\lambda [A]', $
              ytitle='Counts / (10^{-17}erg/cm^{2}/s/A)', $
-             title = ' Spectrophoto Correction: ' + outname
+             title = 'Average Spectrophoto Correction'  
 
-   for i=0, nok - 1 do oplot, wave, corvector[*,ok[i]]
+   for istd=0, nstd - 1 do oplot, wave, corvector[*,istd] 
    djs_oplot, wave, fcor, color='green', thick=3
    djs_oplot, wave, calibvector, color='red', thick=3
    djs_oplot, 10^bkpts, bspline_valu(bkpts,calibset), psym=4, color='red'
  
-   xyouts, (max(wave) - min(wave))/2 + min(wave) - 500, 0.9*max(calibvector), $
-     'Standard star variation = ' + string(fsig * 100, format = '(I3)') + ' %' 
+   xyouts, mean(wave) - 500, [0.9*max(corvector)], $
+     'Standard star variation = ' + string(fsig * 100, format='(I3)') + ' %' 
 
    return
 
