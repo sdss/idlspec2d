@@ -72,6 +72,9 @@
 ;   telluric_corr
 ;   tweaktrace
 ;
+; INTERNAL SUPPORT ROUTINES:
+;   find_whopping()
+;
 ; REVISION HISTORY:
 ;   24-Jan-2000  Written by S. Burles, Chicago
 ;-
@@ -103,6 +106,7 @@ function find_whopping, boxcar, thresh, whopct
 
 end
 
+;------------------------------------------------------------------------------
 pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
                xarc, lambda, xtrace, fflat, fibermask, color=color
 
@@ -466,6 +470,11 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
          divideflat, flambda, flambdaivar, telluricfactor, minval=0.1
   
       endif
+
+      ;------
+      ; Interpolate over masked pixels, just for aesthetic purposes
+
+      bestguess = djs_maskinterp(flambda, flambdaivar EQ 0, /const)
 
       ;------
       ; Add keywords to object header
