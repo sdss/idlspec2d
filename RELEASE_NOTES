@@ -1,4 +1,6 @@
 
+PLATEMERGE: Add the fields CALIBFLUX,CALIBFLUX_IVAR which are explicitly
+        copied over from the plug-map structures.
 SDSSPROC: Re-enable the call to 'speclog_version'.
 
 -------------------------------------------------------------------------------
