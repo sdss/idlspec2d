@@ -327,7 +327,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
       splog, 'WARNING: Correcting for open shutter during readout'
 
       t1 = 900.0 ; Read time for entire frame
-      t2 = 57.0/2048. ; Read time for one row of data
+      t2 = 0.0268 ; Read time for one row of data (approx 55 sec for 2048)
 
       smearimg = 0 * image
       smearimg[*,0] = image[*,0]
