@@ -132,7 +132,7 @@ pro spcoadd_v5, spframes, outputname, $
    if (NOT keyword_set(combinedir)) then combinedir=''
 
    string1 = repstr(outputname,'spPlate','spFluxdistort')
-   string2 = repstr(string1,'.fits,'.ps')
+   string2 = repstr(string1,'.fits','.ps')
    distortfitsfile = djs_filepath(string1, root_dir=combinedir)
    distortpsfile = djs_filepath(string2, root_dir=combinedir)
 
