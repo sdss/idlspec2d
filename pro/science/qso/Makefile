@@ -12,8 +12,9 @@ all :;
 #
 install :
 	- cp *.pro $(IDLSPEC2D_DIR)/pro/science/qso
-	- cp sp* $(IDLSPEC2D_DIR)/pro/science/qso
+	- cp README $(IDLSPEC2D_DIR)/pro/science/qso
 	- cp Makefile $(IDLSPEC2D_DIR)/pro/science/qso
+	- cp mgII.lines $(IDLSPEC2D_DIR)/pro/science/qso
 
 clean :
 	- /bin/rm -f *~ core
