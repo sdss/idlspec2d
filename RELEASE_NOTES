@@ -1,6 +1,9 @@
 
 FLUX_STANDARD: Added empirical correction to SPECTRUM-Kurucz models.
+           Then got rid of them!
+SPPLATE_CORRECT: Fixed small bug so that it works with the smear left in.
 STYPE_STANDARD: Fixed error in smoothing box size.
+ZEROPT_COR: Added range checks to get rid of seg faults.
 
 pro/fluxfix/Makefile - Forget to add this Makefile, which is needed
            to prevent the "make install" from crashing on an IRIX platform.
