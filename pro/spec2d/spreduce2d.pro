@@ -104,6 +104,7 @@ pro spreduce2d, planfile, docams=docams, xdisplay=xdisplay
       cpbackup, logfile
       splog, filename=logfile
       splog, 'Log file ', logfile, ' opened ', systime()
+      splog, 'IDL version: ', string(!version,format='(99(a," "))')
    endif
    if (keyword_set(plotfile) AND NOT keyword_set(xdisplay)) then begin
       cpbackup, plotfile
