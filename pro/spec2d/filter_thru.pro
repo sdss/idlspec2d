@@ -115,11 +115,14 @@ function filter_thru, flux, waveimg=waveimg, wset=wset, mask=mask, $
        root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
       readcol, filename, fwave, fthru, /silent
 
-      filtimg = 0.0 * flux
-      if (size(newwaveimg,/n_dimen) EQ 1) then $
-       filtimg[*] = interpol(fthru, fwave, newwaveimg) # replicate(1,ntrace) $
-      else $
-       filtimg[*] = interpol(fthru, fwave, newwaveimg) 
+      ; Use the Goddard routine LINTERP instead of the IDL built-in INTERPOL.
+;      filtimg = 0.0 * flux
+;      if (size(newwaveimg,/n_dimen) EQ 1) then $
+;       filtimg[*] = interpol(fthru, fwave, newwaveimg) # replicate(1,ntrace) $
+;      else $
+;       filtimg[*] = interpol(fthru, fwave, newwaveimg) 
+      linterp, fwave, fthru, newwaveimg[*], filtimg
+      filtimg = reform(filtimg, size(flux,/dimens))
 
       filtimg = filtimg * logdiff
 
