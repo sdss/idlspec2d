@@ -54,6 +54,8 @@
 ;   Rename 'target' to 'science', and 'calibration' to 'arc' in the
 ;   header keyword FLAVOR.
 ;
+;   Determine the exposure number from the file name itself.
+;
 ; BUGS:
 ;   The open-shutter correction SMEARIMG will include smeared data from
 ;   any cosmic rays, which is wrong.  At the minimum, I could interpolate
@@ -109,6 +111,8 @@
 ;                in particular the 32 bit and 256 bit.
 ;   04-Nov-2000  Measure the bias values using DJS_ITERSTAT instead of MEDIAN,
 ;                since the median is always only an integer value.
+;   31-Jan-2001  Determine the exposure number from the file name itself,
+;                since the counting got off by one on MJD=51882.
 ;-
 ;------------------------------------------------------------------------------
 function findopfile, expres, mjd, indir
@@ -168,6 +172,17 @@ pro sdssproc, infile, image, invvar, indir=indir, $
     sphdrfix, infile, hdr
 
    ;-----------
+   ; Determine the exposure number from the file name itself.
+   ; Very bad form, but this information is sometimes wrong in the header.
+   ; In particular, the counting got off by 1 on MJD=51882.
+
+   i = rstrpos(infile, '-')
+   expnum = long( strmid(infile, i+1, 8) )
+   if (NOT keyword_set(expnum)) then $
+    message, 'Cannot determine exposure number from file name ' + infile
+   sxaddpar, hdr, 'EXPOSURE', expnum
+
+   ;-----------
    ; Determine which CCD from the file name itself, using either the
    ; numbering scheme (01,02,03,04) or naming scheme (b1,r2,b2,r1).
    ; Very bad form, but this information is not in the header since
@@ -180,6 +195,8 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    camnames = ['b1', 'r2', 'b2', 'r1']
    camnums = ['01', '02', '03', '04']
 
+   ; First try to match a camera name (e.g., 'b1'), then try to match
+   ; a camera number (e.g., '01').  If both fail, then abort.
    indx = where(strmid(infile, i-2, 2) EQ camnames, ct)
    if (ct NE 1) then $
      indx = where(strmid(infile, i-2, 2) EQ camnums, ct)
