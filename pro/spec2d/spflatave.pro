@@ -1,0 +1,141 @@
+;+
+; NAME:
+;   spflatave
+;
+; PURPOSE:
+;   Average together a set (or all!) pixel flats in the SPECFLAT directory.
+;
+; CALLING SEQUENCE:
+;   spflatave, [ mjd=, mjstart=, mjend=, mjout=, indir=, outdir= ]
+;
+; INPUTS:
+;
+; OPTIONAL INPUTS:
+;   mjd        - Valid MJD's for input pixel flats.
+;   mjstart    - Valid starting MJD for input pixel flats.
+;   mjend      - Valid ending MJD for input pixel flats.
+;   mjout      - MJD for name of output average pixel flat; default to 0.
+;   indir      - If INDIR not set, then look for files in $SPECFLAT_DIR/flats.
+;   outdir     - Output directory; default to same as INDIR.
+;
+; OUTPUTS:
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;   The output file has two HDU's, the first being the average flat,
+;   the second being the standard deviation at each pixel.
+;
+; EXAMPLES:
+;
+; BUGS:
+;
+; PROCEDURES CALLED:
+;   djs_filepath()
+;   djs_iterstat
+;   fileandpath()
+;   headfits()
+;   mrdfits()
+;   splog
+;   sxpar()
+;   writefits
+;
+; REVISION HISTORY:
+;   17-Jul-2001  Written by D. Schlegel, Princeton
+;-
+;------------------------------------------------------------------------------
+pro spflatave, mjd=mjd, mjstart=mjstart, mjend=mjend, mjout=mjout, $
+ indir=indir, outdir=outdir
+
+   if (NOT keyword_set(indir)) then $
+    indir = filepath('', root_dir=getenv('SPECFLAT_DIR'), subdirectory='flats')
+   if (NOT keyword_set(outdir)) then outdir = indir
+   if (NOT keyword_set(mjout)) then mjout = 0L
+
+   camnames = ['b1', 'b2', 'r1', 'r2']
+   ncam = N_elements(camnames)
+
+   for icam=0, ncam-1 do begin
+
+      ; Find all input pixel flats for this camera that match the
+      ; specified input MJD's.
+      files = findfile(djs_filepath('pixflat-*-'+camnames[icam]+'.fits', $
+       root_dir=indir), count=nfile)
+      if (nfile GT 0) then begin
+         thismjd = long(strmid(fileandpath(files),9,5))
+         qkeep = bytarr(nfile) + 1
+         if (keyword_set(mjstart)) then $
+          qkeep = qkeep AND (thismjd GE mjstart)
+         if (keyword_set(mjend)) then $
+          qkeep = qkeep AND (thismjd LE mjend)
+         if (keyword_set(mjd)) then $
+          for ifile=0, nfile-1 do $
+           qkeep[ifile] = qkeep[ifile] $
+            AND (total(thismjd[ifile] EQ long(mjd)) NE 0)
+         ikeep = where(qkeep, nfile)
+         if (nfile GT 0) then files = files[ikeep]
+      endif
+
+      splog, 'Found ' + string(nfile) + ' files for camera ' + camnames[icam]
+
+      if (nfile GT 0) then begin
+         ;----------
+         ; Read all the images into a single array
+
+         hdr = headfits(files[0])
+         naxis1 = sxpar(hdr,'NAXIS1')
+         naxis2 = sxpar(hdr,'NAXIS2')
+         npix = naxis1 * naxis2
+         pixflatarr = fltarr(naxis1, naxis2, nfile)
+         for ifile=0, nfile-1 do $
+          pixflatarr[*,*,ifile] = mrdfits(files[ifile])
+
+         ;----------
+         ; Generate a map of the sigma at each pixel (doing some rejection).
+         ; This is a horrible loop over each pixel, but shouldn't take more
+         ; than a few minutes.
+
+         if (nfile LE 2) then sigrej = 1.0 $ ; Irrelevant for only 1 or 2 flats
+          else if (nfile EQ 3) then sigrej = 1.1 $
+          else if (nfile EQ 4) then sigrej = 1.3 $
+          else if (nfile EQ 5) then sigrej = 1.6 $
+          else if (nfile EQ 6) then sigrej = 1.9 $
+          else sigrej = 2.0
+         maxiter = 2
+
+         aveimg = fltarr(naxis1, naxis2)
+         sigimg = fltarr(naxis1, naxis2)
+         for ipix=0L, npix-1 do begin
+            djs_iterstat, pixflatarr[lindgen(nfile)*npix+ipix], $
+             sigrej=sigrej, maxiter=maxiter, sigma=sigma1, mean=mean1
+            aveimg[ipix] = mean1
+            sigimg[ipix] = sigma1
+         endfor
+
+         ;----------
+         ; Reject pixels in the average flat where the dispersion between
+         ; the input flats was large
+
+;         maskimg = sigimg LT 0.05
+;         junk = where(maskimg EQ 0, nbad)
+;         splog, 'Reject ', nbad, ' pixels'
+;
+;         aveimg = aveimg * maskimg
+
+         ;----------
+         ; Write the output file
+
+         outfile = djs_filepath( string(mjout, camnames[icam], $
+          format='("pixflatave-",i5.5,"-",a2,".fits")'), root_dir=outdir)
+
+         splog, 'Writing file ' + outfile
+         writefits, outfile, aveimg, hdr
+         mwrfits, sigimg, outfile
+
+      endif
+
+   endfor
+
+   return
+end
+;------------------------------------------------------------------------------
