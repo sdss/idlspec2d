@@ -13,11 +13,16 @@ PLOTSPEC: Some major re-organizing of the main routine to allow PLATE,MJD
            to be passed as vectors.
 READSPEC: Fix the re-sorting of the ZLINE output structure, which is
            complicated by being a multi-dimensional structure.
+SPPLAN2D: Exclude all files where the QUALITY header keyword is not 'excellent'
+           (as per change requested by PR 3687).
 SPREDUCE1D: The output FRACNSIGLO was being computed completely wrong -- Fixed.
 ZFIND: Bug fix for when NPOLY=0.
 
 aporsync_logs.sh: Include the "sdHdrFix*.par" files as the first ones
            to copy over from sdsshost.apo -> sos.apo.
+data_rsync.sh,killdata.sh: Two minor fixes: (1) gives proper syntax to
+           remove files in spectrolog directories, and (2) excludes
+           uncompressed guider files from being rsync-ed to rawcopy.
 opLimits.par: Change exposure time limits to [599,1804] sec, in response
            to PR #3653.
 spectro_apodisplay.html: Include more links to spectro.princeton web site.
