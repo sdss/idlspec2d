@@ -249,7 +249,8 @@ function telluric_corr,flux, fluxivar, wset, plugsort, $
             fitflux[indt,itell] = tellflux[indt,itell] / continuum[indt]
             fitivar[indt,itell] = tellivar[indt,itell] * (continuum[indt])^2
          endif else begin
-            fitivar[indt,itell] = 0
+            if (indt[0] NE -1) then $
+             fitivar[indt,itell] = 0
          endelse
       endfor
 
