@@ -5,6 +5,8 @@ DANVB_CONVERT,DANVB_QSOLIST: Procs for generating a list of input
             "eigeninput_qso.dat" is then used by PCA_QSO.
 FIND_NMINIMA: Retain each peak only if it is at least MINSEP from all
             previous peaks.
+FINDSPEC: Crash if the plate list file is missing w/ an informative message.
+            Do not crash if spPlate files missing for some plates.
 PCA_CVSTAR: New proc for generating eigen-spectra for CV stars.
 PCA_QSO: Major re-write now that we're trying to use the eigen-spectra
             from this routine for the redshift-finding code, rather
