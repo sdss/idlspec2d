@@ -42,7 +42,7 @@ function apo_readlog, logfile, plate=plate, flavor=flavor, camera=camera
 
    ; Lock the file to do this - otherwise we might read a partially
    ; written file.
-   while(djs_lockfile(logfile, lun=html_lun) EQ 0) do wait, 1
+   while(djs_lockfile(logfile) EQ 0) do wait, 1
 
    ; Read in all the HDU's in the log file as structures.
    ; Only include plate numbers and flavors matching PLATE, FLAVOR, CAMERA
@@ -68,7 +68,7 @@ function apo_readlog, logfile, plate=plate, flavor=flavor, camera=camera
    nstruct = n_elements(pstruct)
 
    ; Now unlock the log file.
-   djs_unlockfile, logfile, lun=html_lun
+   djs_unlockfile, logfile
 
    return, pstruct
 end
