@@ -278,3 +278,7 @@ ophdrfix sdR-??-00013169 FLAVOR   "'unknown'"
 ophdrfix sdR-??-00013170 FLAVOR   "'unknown'"
 ophdrfix sdR-??-00013171 FLAVOR   "'unknown'"
 
+# These two exposures (science, smear) for plate 860 on MJD 52319
+# had very poor S/N.
+ophdrfix sdR-??-0001318[1-2] FLAVOR   "'unknown'"
+
