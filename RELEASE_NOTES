@@ -1,6 +1,8 @@
 
 Fixed DJS_BATCH to work properly on remote but cross-mounted CPU's.
 
+Fix the spike in memory usage at the end of SPCOMBINE.
+
 -------------------------------------------------------------------------------
 v4_5_0 (Jan 31, 2000)
 
