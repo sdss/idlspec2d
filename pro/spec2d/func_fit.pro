@@ -26,7 +26,7 @@
 ;                [NCOEFF]
 ;
 ; OUTPUTS:
-;   res        - Fit coefficients
+;   res        - Fit coefficients [NCOEFF]
 ;
 ; OPTIONAL OUTPUTS:
 ;   yfit       - Fit evaluated at the points X
@@ -64,7 +64,7 @@ function func_fit, x, y, ncoeff, invvar=invvar, function_name=function_name, $
 
    if (keyword_set(invvar)) then begin
       nw = N_elements(invvar)
-      if (nx NE nw) then message, 'Dimensions of X and W do not agree'
+      if (nx NE nw) then message, 'Dimensions of X and INVVAR do not agree'
    endif else begin
       invvar = intarr(nx) + 1
    endelse
@@ -108,7 +108,7 @@ function func_fit, x, y, ncoeff, invvar=invvar, function_name=function_name, $
    endif else begin
 
       ; Do not fit more coefficients than there are data points
-      ncfit = ncoeff < nx
+      ncfit = ncoeff < ngood
 
       if (function_name EQ 'flegendre') then $
        legarr = flegendre(x, ncfit)
@@ -145,11 +145,7 @@ function func_fit, x, y, ncoeff, invvar=invvar, function_name=function_name, $
 
       if (nfix GT 0) then res[fixed] = inputans[fixed]
 
-      if (ncfit LT ncoeff) then begin
-         yfit = [legarr # res[0:ncfit-1], fltarr(ncoeff-ncfit)]
-      endif else begin
-         yfit = legarr # res
-      endelse
+      yfit = legarr # res[0:ncfit-1]
 
    endelse
 
