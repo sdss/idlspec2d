@@ -259,7 +259,7 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
 
    splog, 'Total time for SPCOMBINE = ', systime(1)-stime0, ' seconds', $
     format='(a,f6.0,a)'
-   splog, 'Successful completion of SPCOMBINE at ', systime()
+   splog, 'Successful completion of SPCOMBINE at ' + systime()
 
    ;----------
    ; Close log files and change to original directory

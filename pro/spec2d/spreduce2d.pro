@@ -257,7 +257,7 @@ pro spreduce2d, planfile, docams=docams, xdisplay=xdisplay
 
    splog, 'Total time for SPREDUCE2D = ', systime(1)-stime0, ' seconds', $
     format='(a,f6.0,a)'
-   splog, 'Successful completion of SPREDUCE2D at ', systime()
+   splog, 'Successful completion of SPREDUCE2D at ' + systime()
 
    ;----------
    ; Close log files

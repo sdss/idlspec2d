@@ -717,7 +717,7 @@ ormask = 0 ; Free memory
 
    splog, 'Total time for SPREDUCE1D = ', systime(1)-stime0, ' seconds', $
     format='(a,f6.0,a)'
-   splog, 'Successful completion of SPREDUCE1D at ', systime()
+   splog, 'Successful completion of SPREDUCE1D at ' + systime()
    if (keyword_set(logfile)) then splog, /close
 
    return
