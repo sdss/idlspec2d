@@ -1,0 +1,69 @@
+#------------------------------------------------------------------------------
+# Instructions for installing idlutils,idlspec2d
+#
+# D. Schlegel, Princeton, 1 Dec 1999
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# Setting up idlutils,idlspec2d w/out sdsstools
+
+# First check-out the products to your home directory...
+
+cvs co idlutils
+cvs co idlspec2d
+
+# Then build everything...
+
+setenv IDLUTILS_DIR {$HOME}/idlutils
+setenv IDLSPEC2D_DIR {$HOME}/idlspec2d
+cd {$IDLUTILS_DIR}
+bin/evilmake all
+cd {$IDLSPEC2D_DIR}
+bin/evilmake all
+
+# Then set environment variables for IDL...
+
+#setenv IDL_DIR /usr/local/rsi/idl_5.2
+setenv IDL_PATH         .:+{$IDL_DIR}/lib
+setenv IDL_PATH         {$IDL_PATH}:+{$IDLUTILS_DIR}/goddard/pro
+setenv IDL_PATH         {$IDL_PATH}:+{$IDLUTILS_DIR}/pro
+setenv IDL_PATH         {$IDL_PATH}:+{$IDLUTILS_DIR}/pro
+setenv IDL_PATH         {$IDL_PATH}:+{$IDLSPEC2D_DIR}/pro
+
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# Setting up idlutils,idlspec2d w/ sdsstools
+
+# First check-out the products to your home directory...
+
+cvs co idlutils
+cvs co idlspec2d
+
+# As user "products", declare these products:
+
+ups declare -f Linux+2 -m idlutils.table -c -r {$HOME}/idlutils idlutils cvs
+ups declare -f Linux+2 -m idlspec2d.table -c -r {$HOME}/idlspec2d idlspec2d cvs
+
+# Then (not as user "products") build everything...
+
+setup sdsstools
+
+setup idlutils
+cd ~/idlutils
+sdssmake -idl
+
+setup idlspec2d
+cd ~/idlspec2d
+sdssmake -idl
+
+# At present, environment variables are not being set properly by "ups".
+# So set environment variables for IDL by hand...
+
+#setenv IDL_DIR /usr/local/rsi/idl_5.2
+setenv IDL_PATH         .:+{$IDL_DIR}/lib
+setenv IDL_PATH         {$IDL_PATH}:+{$IDLUTILS_DIR}/goddard/pro
+setenv IDL_PATH         {$IDL_PATH}:+{$IDLUTILS_DIR}/pro
+setenv IDL_PATH         {$IDL_PATH}:+{$IDLUTILS_DIR}/pro
+setenv IDL_PATH         {$IDL_PATH}:+{$IDLSPEC2D_DIR}/pro
+
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
