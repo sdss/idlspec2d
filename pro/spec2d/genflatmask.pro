@@ -103,7 +103,7 @@ function genflatmask, flatname, spectrographid=spectrographid, color=color, $
        + '.fits'
       masknamein = filepath(rootname+'.gz', $
        root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
-      masknameout = filepath(rootname, root_dir=tmpdir)
+;      masknameout = filepath(rootname, root_dir=tmpdir)
 
       ; Make sure that the mask file exists
 
@@ -116,7 +116,7 @@ function genflatmask, flatname, spectrographid=spectrographid, color=color, $
 ;      spawn, 'zcat ' + masknamein + ' > ' + masknameout
 ;      maskimg = readfits(masknameout)
 ;      rmfile, masknameout
-      maskimg = mrdfits(masknameout)
+      maskimg = mrdfits(masknamein)
 
    endelse
 
