@@ -87,7 +87,7 @@ REDMONSTER: Change the warning message to "Bad sky residuals...",
 REDMONSTERLIST: New procedure: List of number of galaxies and quasars per
             plate, the number of redshifts that differ from prior reductions,
             and the fraction of various 2D flags set.
-REMOVE2TODO: Make more robust, and give more descriptive messages.
+REMOVE2REDO: Make more robust, and give more descriptive messages.
             Another attempt to fix errors in remove2redo.  It might now
             work with plate argument: "sos_redo plate=665", but should
             definitely work with simple invocation: "sos_redo".
@@ -97,7 +97,9 @@ SDSS_FLAGS: Add "SOUTHERN_SURVEY" flags for TARGET and TTARGET.
             but whose meaning is unknown.  Previously, a wrong answer
             would just be given in that case.
 SDSSPROC: Reverted to calls to specflat_version,speclog_version that work.
-            New option /APPLYBIAS to bias-subtract.
+            New option /APPLYBIAS to bias-subtract.  This fixes PR #2595,
+            subtracting the bias-induced flux at 3800-4600 Ang flux (b1) in
+            fibers 17+18.
 SLATEC_EFC (in idutils):  Call FILL_BSPLINE() instead of EFC2D().
 SPBIASAVE: New routine to average biases already generated with SPBIASGEN.
 SPPLAN2D: Change the default of MINEXP to 1 sec, so that special plates
