@@ -69,17 +69,24 @@ chicclass=chicclass[ii]
 
    objflux = mrdfits(platefile,0,hdr)
    objivar = mrdfits(platefile,1)
-;   andmask = mrdfits(platefile,2)
+   andmask = mrdfits(platefile,2)
 ;   ormask = mrdfits(platefile,3)
 ;   dispmap = mrdfits(platefile,4)
    plugmap = mrdfits(platefile,5)
 plugmap = mrdfits(platefile,4)
 
+   ;----------
+   ; Do not fit where the spectrum may be dominated by sky-subtraction
+   ; residuals.
+
+   ibad = where(andmask AND pixelmask_bits('BRIGHTSKY'))
+andmask = 0 ; Free memory
+   if (ibad[0] NE -1) then objivar[ibad] = 0
 
 ; Trim to QSO's only...
 ;jj = where(chicclass EQ 'QSO')
 jj = where(chicclass EQ 'GALAXY')
-jj = jj[0:14] ; Trim to first few objects
+;jj = jj[0:4] ; Trim to first few objects
 chicz = chicz[jj]
 chicclass = chicclass[jj]
 objflux = objflux[*,jj]
@@ -98,6 +105,15 @@ nobj = n_elements(jj)
    objwave = 10^(objloglam0 + objdloglam * findgen(npix))
 
    ;----------
+   ; Look for where the S/N is unreasonably large
+
+   for iobj=0, nobj-1 do begin
+      junk = where(objflux[*,iobj] * sqrt(objivar[*,iobj]) GT 200., ct)
+      if (ct GT 0) then $
+       splog, 'WARNING: Fiber #', iobj+1, ' has ', ct, ' pixels with S/N > 200'
+   endfor
+
+   ;----------
    ; Read the template files
    ; Assume that the wavelength binning is the same as for the objects
    ; in log-wavelength.
@@ -107,7 +123,7 @@ zmin = 0
 zmax = 6000
 templatefile = ['spTemplateE.dat', 'spTemplateS.dat'] ; ???
 zmin = 0
-zmax = 2500
+zmax = 1000
    ntemplate = n_elements(templatefile)
    for it=0, ntemplate-1 do begin
       tfile = filepath(templatefile[it], $
@@ -173,9 +189,10 @@ zoffset = zoffset[0]
  temflux = [ [temflux], [xvec^0], [xvec^1], [xvec^2] ]
 t0 = systime(1)
    daveres = computez(objflux, objivar, temflux, temivar, zoffset=zoffset, $
-    chi2=chi2best, zmin=zmin, zmax=zmax)
+    zmin=zmin, zmax=zmax, nfind=5)
 print,'TIME FOR COMPUTEZ = ', systime(1)-t0
-davez = 10.^(objdloglam * daveres) - 1.
+davez = 10.^(objdloglam * daveres[*,0].z) - 1.
+allz = 10.^(objdloglam * daveres.z) - 1.
 print,[transpose(chicz),transpose(davez)]
 
 ;   vres = veldisp(objflux, objivar, temflux, temivar, $
@@ -217,8 +234,12 @@ oplot,[0,3],[0,0]
 device,/close
 set_plot,'x'
 
+djs_plot, chicz, ((davez-chicz)*3e5 > (-580))<580, $
+ ps=4,yr=[-1,1]*600,xr=[0,1], charsize=2
+j=where( abs(davez-chicz)*3e5 LT 400 )
+
 j=where( abs(davez-chicz)*3e5 LT 4000 )
-print,djsig((davez-chicz)[j]*3e5)
+print,mean((davez-chicz)[j]*3e5),djsig((davez-chicz)[j]*3e5)
 print,n_elements(j)/float(nobj)
 
    mwrfits, result, outfile, /create

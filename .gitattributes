@@ -99,6 +99,7 @@ pro/spec1d/gauss_periodic.pro -text
 pro/spec1d/lambda_match.pro -text
 pro/spec1d/make_regress1d.pro -text
 pro/spec1d/plug2tsobj.pro -text
+pro/spec1d/poly_array.pro -text
 pro/spec1d/primfac.pro -text
 pro/spec1d/readspec.pro -text
 pro/spec1d/reduce_plate.pro -text
@@ -107,6 +108,10 @@ pro/spec1d/spgo.pro -text
 pro/spec1d/spreduce1d.pro -text
 pro/spec1d/veldisp.pro -text
 pro/spec1d/wavelets.pro -text
+pro/spec1d/wavevector.pro -text
+pro/spec1d/zeigen.pro -text
+pro/spec1d/zfitmax.pro -text
+pro/spec1d/ztweak.pro -text
 pro/spec2d/Makefile -text
 pro/spec2d/TODO -text
 pro/spec2d/arcfit_guess.pro -text
