@@ -1,4 +1,8 @@
 
+* Looks like fibermask is no longer used in DIVIDEFLAT.
+
+* Let TRACESET2XY return a wave map of type double.
+
 * What the heck is CURANS in the routine XY2TRACESET?
 
 * Re-instate S/N plot, and include global S/N values in spPlate files.
@@ -8,12 +12,7 @@
 
 * Rename heliocentric -> barycentric?
 
-* Plate 306, fibers 172-175 now look worse than in July.
-
 * Warning if telluric correction is out of range (not between 0 and 1.5?)
-
-* Move iteration code from XY2TRACESET to FUNC_FIT(), letting it call itself
-  recursively.
 
 * Calling script for SPREDUCE2D, SPCOMBINE, SPREDUCE1D
 
@@ -143,6 +142,15 @@
 -------------------------------------------------------------------------------
 ;   These have been dealt with
 -------------------------------------------------------------------------------
+
+* Plate 306, fibers 172-175 now look worse than in July.
+
+  ---> Looks better now (6-Sep-00)
+
+* Move iteration code from XY2TRACESET to FUNC_FIT(), letting it call itself
+  recursively.
+
+  ---> Now use DJS_REJECT().
 
 * Looks like /halfintwo is no longer used in FUNC_FIT().
   Should probably just have a different function call than fchebyshev,

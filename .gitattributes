@@ -156,6 +156,7 @@ pro/spec2d/fitvacset.pro -text
 pro/spec2d/fitwithmx.pro -text
 pro/spec2d/flegendre.pro -text
 pro/spec2d/fluxcorr.pro -text
+pro/spec2d/fluxfix.pro -text
 pro/spec2d/func_fit.pro -text
 pro/spec2d/funccheb.pro -text
 pro/spec2d/gauss_smooth.pro -text
@@ -167,6 +168,8 @@ pro/spec2d/locateskylines.pro -text
 pro/spec2d/locateskylines_test.pro -text
 pro/spec2d/logsheet.pro -text
 pro/spec2d/makefile.old -text
+pro/spec2d/myfluxcalib.pro -text
+pro/spec2d/myfluxcorr.pro -text
 pro/spec2d/pixelmask_bits.pro -text
 pro/spec2d/plotsn.pro -text
 pro/spec2d/qaplot_arcline.pro -text
@@ -193,6 +196,7 @@ pro/spec2d/spcoadd_frames.pro -text
 pro/spec2d/spcombine.pro -text
 pro/spec2d/spflatten.pro -text
 pro/spec2d/spflatten2.pro -text
+pro/spec2d/spflux.pro -text
 pro/spec2d/spgain.pro -text
 pro/spec2d/splog.pro -text
 pro/spec2d/spmulti.pro -text
