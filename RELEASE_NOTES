@@ -11,6 +11,11 @@ SPREDUCE1D: Search for stars at velocities to +/- 1200 km/s (was 600 km/s).
             No longer identify objects as UNKNOWN, but rather set bits
               in a ZWARNING flag.
             Add outputs ZWARNING, FRACNSIGMA, COUNTS_SPECTRO, COUNTS_SYNTH.
+TELLURIC_CORR: If a telluric star is deemded bad, then reject all of
+            its FITFLUX pixels from the global fit.  Previously, we were
+            only rejecting the pixels INDT, but still allowing bad continuum
+            pixels into the fit.  This fixes PR #2028.
+
 
 New installation script "evilinstall" in the idlutils product.
 
