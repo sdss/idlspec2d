@@ -73,7 +73,8 @@
 function spplan_create_spexp, expnum, plateid, mjd, mapname, flavor, exptime, $
  filename, cameras, minexp=minexp
 
-   if (flavor NE 'flat' AND flavor NE 'arc' AND flavor NE 'science') then $
+   if (flavor NE 'flat' AND flavor NE 'arc' $
+    AND flavor NE 'science' AND flavor NE 'smear') then $
     return, 0
    if (keyword_set(minexp)) then begin
       if (flavor EQ 'science' AND exptime LT minexp) then $
