@@ -14,7 +14,7 @@
 ;   fullplatefile - Plate files to reduce; default to all files matching
 ;                   '*/spPlate*.fits' from the top-level directory.
 ;   topdir     - Top directory for reductions; default to current directory.
-;   nice       - Unix nice-ness for spawned jobs; default to 10.
+;   nice       - Unix nice-ness for spawned jobs; default to 19.
 ;
 ; OUTPUTS:
 ;
@@ -55,7 +55,7 @@ pro batch1d, fullplatefile, topdir=topdir, nice=nice
       cd, current=topdir
    endif
    cd, topdir
-   if (NOT keyword_set(nice)) then nice = 10
+   if (NOT keyword_set(nice)) then nice = 19
 
    splog, prelog='(1D)'
 
