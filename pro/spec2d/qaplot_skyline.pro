@@ -143,17 +143,19 @@ pro qaplot_skyline, lwave, obj, objivar, objsub, objsubivar, plugsort, wset, $
    djs_oplot, radius[iskies], lflux[iskies], psym=2, color='red'
    djs_oplot, !x.crange, [lmean,lmean], color='red'
 
-   airmass = tai2airmass(plugsort.ra, plugsort.dec, tai=tai)
-   if (min(airmass) LT 1.0 OR max(airmass) GT 3.0) then $
-    splog, 'WARNING: Airmass out of range: ' + $
-     string(minmax(airmass), format='(2(f6.2,x))')
+   if (keyword_set(tai)) then begin
+      airmass = tai2airmass(plugsort.ra, plugsort.dec, tai=tai)
+      if (min(airmass) LT 1.0 OR max(airmass) GT 3.0) then $
+       splog, 'WARNING: Airmass out of range: ' + $
+        string(minmax(airmass), format='(2(f6.2,x))')
    
-   plot, airmass, lflux, psym=1, $
-    yrange=yrange, $
-    xtitle='Airmass', $
-    ytitle=string('Flux at ', lwave, format="(a,f7.1)")
-   djs_oplot, airmass[iskies], lflux[iskies], psym=2, color='red'
-   djs_oplot, !x.crange, [lmean,lmean], color='red'
+      plot, airmass, lflux, psym=1, $
+       yrange=yrange, $
+       xtitle='Airmass', $
+       ytitle=string('Flux at ', lwave, format="(a,f7.1)")
+      djs_oplot, airmass[iskies], lflux[iskies], psym=2, color='red'
+      djs_oplot, !x.crange, [lmean,lmean], color='red'
+   endif
 
    !p.multi = 0
 
