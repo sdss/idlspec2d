@@ -204,8 +204,7 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    if (whopping[0] NE -1) then begin
       wstring = strcompress(string(whopping+1+(spectroid EQ '2')*320))
       for i=0, n_elements(wstring)-1 do $
-       splog, 'WARNING: Whopping fiber #'  + wstring[i] $
-        + ' (may have adverse affect on S/N)'
+       splog, 'WARNING: Whopping fiber #'  + wstring[i]
       wp = [whopping - 2 , whopping -1, whopping, whopping+1 , whopping+2]
       wp = (wp > 0) < (nfiber - 1)
       fibermask[wp] = fibermask[wp] OR pixelmask_bits('NEARWHOPPER')
