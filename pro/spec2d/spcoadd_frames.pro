@@ -417,7 +417,7 @@ pro spcoadd_frames, filenames, outputname, $
    finalivar = fltarr(nfinalpix, nfiber)
    finalandmask = lonarr(nfinalpix, nfiber)
    finalormask = lonarr(nfinalpix, nfiber)
-   finaldispersion = lonarr(nfinalpix, nfiber)
+   finaldispersion = fltarr(nfinalpix, nfiber)
    finalplugmap = replicate(plugmap[0], nfiber)
    struct_assign, {fiberid: 0L}, finalplugmap ; Zero out all elements in this
                                               ; FINALPLUGMAP structure.
