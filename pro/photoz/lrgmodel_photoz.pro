@@ -123,8 +123,8 @@ function lrgmodel_photoz, pflux, pflux_ivar, z_err=z_err, $
    if (ageburst NE ageburst_save OR zmetal NE zmetal_save $
     OR keyword_set(synflux) EQ 0) then begin
 
-      numz = 101
-      zarr = 0.01 * findgen(numz)
+      numz = 104
+      zarr = -0.03 + 0.01 * findgen(numz)
 
       synflux = dblarr(5,numz)
       for iz=0L, numz-1 do begin
@@ -136,7 +136,7 @@ function lrgmodel_photoz, pflux, pflux_ivar, z_err=z_err, $
          ; was AGEBURST Gyr old
          hubble0 = 71. * 3.1558e7 / 3.0856e19 * 1e9 ; units of Gyr^-1
          thisage = lookback(1000., 0.27, 0.73) / hubble0 $
-          - lookback(zarr[iz], 0.27, 0.73) / hubble0 - ageburst
+          - lookback((zarr[iz] > 0), 0.27, 0.73) / hubble0 - ageburst
 
          ; Linearly interpolate from the templates in log(age),log(zmetal),
          ; vs. log(flux) space.
