@@ -54,6 +54,9 @@ ZFIND: If fewer than NFIND peaks are found, then return blank structures
             fields (such as TFILE,TCOLUMN) were filled with information.
 
 aporsync.sh: Keep archiving guider images (gzipped).
+aporsync.sh: Only copy the following select set of files:
+             Unplugged*.ps, fiberScan*.par, guiderMon*.par, op*.par,
+             plPlugMap*.par, sdReport*.par
 aporsync.sh, sprobot.sh, sprobot1d.sh, sprobot2d.sh:
              Log the UID and PPID (parent process ID) to the file "sos.log",
              and record the timestamp both when this script is launched
