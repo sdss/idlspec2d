@@ -235,6 +235,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
 
    if (keyword_set(rstruct)) then begin
 
+      ;----------
       ; Find WARNINGs and ABORTs from splog file.  Recast them as string
       ; arrays that are not empty (e.g., ''), or MWRFITS will fail.
 
@@ -253,12 +254,21 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
          aborts = [' ']
       endelse
 
+      ;----------
+      ; Get the universal time (UT) from the header in the format '12:34',
+      ; then convert to Mountain standard time (MST)
+
+      ut = strmid(sxpar(hdr, 'TAIHMS'),0,5)
+      mst = string((long(strmid(ut,0,2))+18) MOD 24,format='(i2.2)' ) $
+       + strmid(ut,2,3)
+
       rstruct = create_struct('FILENAME', filename, $
                               'PLUGFILE', shortplugfile, $
                               'MJD', mjd, $
                               'PLATE', plate, $
                               'EXPNUM', filee, $
-                              'TIME', strmid(sxpar(hdr, 'TAIHMS'),0,5), $
+                              'EXPTIME', sxpar(hdr, 'EXPTIME'), $
+                              'MST', mst, $
                               rstruct, $
                               'WARNINGS', warnings, $
                               'ABORTS', aborts )
