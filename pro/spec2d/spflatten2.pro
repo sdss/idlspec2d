@@ -134,7 +134,7 @@ pro spflatten2, flatname, arcname, allflats, pixflat, $
    ; Create spatial tracing from flat-field image
 
    splog, 'Tracing 320 fibers in ',  flatname
-   xsol = trace320crude(flatimg, yset=ycen, maxdev=0.15)
+   xsol = trace320crude(flatimg, flativar, yset=ycen, maxdev=0.15)
 
    splog, 'Fitting traces in ',  flatname
    xy2traceset, ycen, xsol, tset, ncoeff=5, maxdev=0.1
@@ -230,7 +230,7 @@ arcivar = 0
       ;----------------------
       ; Create spatial tracing from flat-field image
 
-      xsol = trace320crude(flatimg, yset=ycen, maxdev=0.15)
+      xsol = trace320crude(flatimg, flativar, yset=ycen, maxdev=0.15)
 
       xy2traceset, ycen, xsol, tset, ncoeff=5, maxdev=0.1
       traceset2xy, tset, ycen, xsol
