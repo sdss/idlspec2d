@@ -384,6 +384,38 @@ The following messages may appear:
 <LI><B>More than 10% of the image is rejected</B> <BR>
     This is very bad.  This can probably only happen if most of the CCD
     has saturated pixels.
+<LI><B>Flat-field screens not closed</B> <BR>
+    The "FFS" keyword in the header indicates that at least one of the
+    flat-field petals was not closed.  When this happens, the flat or arc
+    is not reduced.
+<LI><B>Flat-field lamps not turned on</B> <BR>
+    The "FF" keyword in the header indicates that at least one of the four
+    flat-field lamps was not turned on.
+    When this happens, the flat is not reduced.
+<LI><B>Reject flat (or arc) ... % bad pixels</B> <BR>
+    This condition is triggered when more than 2% of the non-masked pixels
+    on the image are bad (saturated).
+    When this happens, the flat (or arc) is not reduced.
+<LI><B>Reject flat (or arc) ... saturated rows</B> <BR>
+    This condition is triggered when there are more than 100 saturated rows
+    on the image.
+    When this happens, the flat (or arc) is not reduced.
+<LI><B>Reject flat as too faint</B> <BR>
+    This condition is triggered when the 80-th percentile of the image
+    is less than 1000 electrons.
+    When this happens, the flat is not reduced.
+<LI><B>Arc lamps not turned on</B> <BR>
+    The "NE" and "HGCD" keywords in the header indicates that either the
+    neon or HgCd lamps are not fully turned on.
+    When this happens, the arc is not reduced.
+<LI><B>Best arc correlation = ...</B> <BR>
+    The cross-correlation of the arc spectrum with the template arc spectrum
+    was bad.  This is also triggered as BESTCORR in the table (see above).
+<LI><B>Big wavelength gap</B> <BR>
+    Some arc lines were not found in the arc spectra, and there is a large
+    gap in wavelength space without any lines.  This will produce a poor
+    wavelength solution.  More arcs should be taken until this message
+    does not appear.
 <LI><B>Scattered light</B> <BR>
     There was a high baseline count rate on the CCD, and appears even
     between fibers.  This can most obviously occur if there are light
@@ -392,19 +424,16 @@ The following messages may appear:
     There can also be a scattered light contribution just from a very
     bright sky, or if there are very bright objects on some fibers that
     are scattering or bleeding light across the CCD.
-<LI><B>Best arc correlation</B> <BR>
-    The cross-correlation of the arc spectrum with the template arc spectrum
-    was bad.  This is also triggered as BESTCORR in the table (see above).
-<LI><B>Big wavelength gap</B> <BR>
-    Some arc lines were not found in the arc spectra, and there is a large
-    gap in wavelength space without any lines.  This will produce a poor
-    wavelength solution.  More arcs should be taken until this message
-    does not appear.
-<LI><B>Too few sky fibers to model sky-sub variance</B> - <BR>
+<LI><B>Too few sky fibers to model sky-sub variance</B> <BR>
     There are not enough good sky fibers on the CCD.  This will only happen
     if for some reason there were far fewer than the mandated 16 sky fibers
     on a CCD, or most of those fibers just happened to be dead fibers.
     You should never see this message.
+<LI><B>Large flexure flat<->science</B> <BR>
+    There is a large shift (more than 0.1 pix) between the flat-field and
+    the science exposure, presumably from flexure in the spectrographs.
+    When this happens, another set of flat-fields (post-calibs) should
+    be taken.
 </UL>
 
 <H4><A NAME="outputs_log">Log files</A></H4>
