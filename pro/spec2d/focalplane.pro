@@ -86,6 +86,11 @@ end
 ;------------------------------------------------------------------------------
 pro focal1
 
+   !p.thick = 2
+   !x.thick = 2
+   !y.thick = 2
+   dfpsplot, 'focalplane.ps', /color
+
    filtsz = 21 ; Filter size for median filtering
    wrange = [4600., 5600.] ; Wavelength range to average flux
    minflux = 200 ; Minimum mean flux to use a fiber
@@ -135,10 +140,11 @@ pro focal1
 
    wsetfile1 = 'wset-51779-0174-00006114-b1.fits'
    wset1 = mrdfits(wsetfile1,1)
-   traceset2xy, wset1, 0, loglam1
+   xx = 0
+   traceset2xy, wset1, xx, loglam1
    wsetfile2 = 'wset-51779-0174-00006114-b2.fits'
    wset2 = mrdfits(wsetfile2,1)
-   traceset2xy, wset2, 0, loglam2
+   traceset2xy, wset2, xx, loglam2
    waves = 10.^[[loglam1], [loglam2]]
    wmask = waves GE wrange[0] AND waves LE wrange[1]
 
@@ -249,7 +255,7 @@ pro focal1
 print,djsig((xfit-xfocal)[igood]),djsig((yfit-yfocal)[igood])
 print,djsig( sqrt( ((xfit-xfocal)[igood])^2 + ((yfit-yfocal)[igood])^2 ) )
 
-stop
+wait, 5
    !p.multi = [0,2,2]
    yrange = [-1,1]
    psym = 1
@@ -268,5 +274,6 @@ stop
     psym=psym, symsize=symsize, yrange=yrange, $
     xtitle='Y focal [mm]', ytitle='\Delta Y [arcsec]'
 
-stop
+  dfpsclose
+
 end
