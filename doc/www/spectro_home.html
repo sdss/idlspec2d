@@ -599,7 +599,7 @@ by the LRG galaxy survey that have been spectroscopically confirmed
 as galaxies:
 <DL><DD><PRE>
 IDL> spall = mrdfits('spAll.fits',1)
-IDL> lrg = where(spall.specprimary EQ 1 $
+IDL> ilrg = where(spall.specprimary EQ 1 $
       AND strmatch(spall.progname,'main*') $
       AND (spall.primtarget AND 2L^5 + 2L^26) NE 0 $
       AND strmatch(spall.class,'GALAXY*') $
@@ -626,23 +626,23 @@ These same selections can be made from the ASCII version of the spAll
 summary files using the Unix "awk" command.
 To select the main sample of galaxies (the following must all be on one line):
 <DL><DD><PRE>
-% awk '{if (($22=1) && ($21="main" && (and($19,2^6+2^7+2^8) != 0)
-   && ($4="GALAXY" || $4=="QSO") && ($8=0)) {print $0}}' spAll.dat > galaxies.dat
+% awk '{if (($22==1) && ($21=="main") && (and($19,2^6+2^7+2^8) != 0)
+   && ($4=="GALAXY" || $4=="QSO") && ($8==0)) {print $0}}' spAll.dat > galaxies.dat
 </PRE></DD></DL>
 To select the LRG sample of galaxies (the following must all be on one line):
 <DL><DD><PRE>
-% awk '{if (($22=1) && ($21="main" && (and($19,2^5+2^26) != 0)
-   && ($4="GALAXY") && ($8=0)) {print $0}}' spAll.dat > lrgs.dat
+% awk '{if (($22==1) && ($21=="main") && (and($19,2^5+2^26) != 0)
+   && ($4=="GALAXY") && ($8==0)) {print $0}}' spAll.dat > lrgs.dat
 </PRE></DD></DL>
 To select the QSO sample (the following must all be on one line):
 <DL><DD><PRE>
-% awk '{if (($22=1) && ($21="main" && (and($19,2^0+2^1+2^2+2^3+2^4) != 0)
-   && ($4="QSO") && ($8=0)) {print $0}}' spAll.dat > qsos.dat
+% awk '{if (($22==1) && ($21=="main") && (and($19,2^0+2^1+2^2+2^3+2^4) != 0)
+   && ($4=="QSO") && ($8==0)) {print $0}}' spAll.dat > qsos.dat
 </PRE></DD></DL>
 
 <P>
 As of 31 May 2002, the above would select complete samples of
-185,899 galaxies, 22,114 LRGs, and 51,483 QSOs.
+185,899 galaxies, 51,417 LRGs, and 22,245 QSOs.
 
 <H2><A NAME="display">Looking at the Data</A></H2>
 
