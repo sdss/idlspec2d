@@ -100,8 +100,10 @@ pro platemerge, zfile, outfile=outfile, ascfile=ascfile, qsurvey=qsurvey
       if (NOT keyword_set(tsobj)) then $
        splog, 'WARNING: No tsObj file found for plate ', plate
 
-      if (ifile EQ 0) then begin
-         outdat = replicate( create_struct(zans[0], tsobj[0]), nout)
+      if (NOT keyword_set(outdat)) then begin
+         tsobj0 = plug2tsobj(475, 0, 0) ; Get template from plate 475 for tsObj
+         readspec, 475, 1, zans=zans0 ; Get template from plate 475 for zans
+         outdat = replicate( create_struct(zans0, tsobj0), nout)
          struct_assign, {junk:0}, outdat ; Zero-out all elements
       endif
 
