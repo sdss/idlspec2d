@@ -34,7 +34,7 @@
 ;
 ;   Output the following for each individual spectrum of each object:
 ;     log-Wave   : Log10(wavelength [Ang])
-;     Flux       : Flux in units of electrons (or photons)
+;     Flux       : Flux in units of flat-fielded electrons
 ;     InverseVar : Inverse variance for the above
 ;     Sky        ; Sky
 ;     Pixelmask  : Pixel mask
@@ -43,14 +43,21 @@
 ;     Calibfac   : Flux-calibration vector for this plate+spectrograph
 ;     Invercorr  : Flux-correction vector for this exposure relative
 ;                  to the flux-calibrated (smear) exposure
+;     Flatvec    : Flat-field vector, relative to a quartz lamp, combined
+;                  with the atmospheric telluric correction (in the red)
+;     Rnois      : Read noise in electrons (or photons)
 ;
 ;   The fluxes have already been divided by the fiber-to-fiber flats
 ;   (superfit) and the telluric-correction vector (telluricfactor).
-;   But aside from those factors of order 20%, the fluxes are in
-;   units of electrons (or photons).
+;   Convert the fluxes back to photon number as follows:
+;     Flux_photons = Flux * Flatvec
+;     Sky_photons = Sky * Flatvec
+;     InverseVar_photons = InverseVar / Flatvec^2
+;   The read noise portion (Rnois) is already in units of electrons,
+;   or equivalently photons.
 ;
 ;   Before combining multiple spectra, we re-normalize as follows:
-;     Flux = Flux / (Calibfac * Invercorr)
+;     Flux_ergs = Flux / (Calibfac * Invercorr)
 ;     InverseVar = InverseVar * (Calibfac * Invercorr)^2 * Window
 ;   where Window is a linear apodization of the first 100 pixels
 ;   of each spectrum (the blue/red overlap region, so the red side
@@ -73,6 +80,8 @@
 ;   readspec
 ;   sxpar()
 ;   traceset2xy
+;   yanny_free
+;   yanny_read()
 ;
 ; INTERNAL SUPPORT ROUTINES:
 ;   write_uros1
@@ -129,12 +138,15 @@ pro write_uros1, plate, fiber, mjd=mjd
       splog, 'Reading file #', ifile, ': ', framefile
       rownum = (fiber-1) MOD 320
       range = [rownum,rownum]
-      tempflux = mrdfits(framefile, 0, range=range)
+      tempflux = mrdfits(framefile, 0, temphdr, range=range)
       tempivar = mrdfits(framefile, 1, range=range)
       temppixmask = mrdfits(framefile, 2, range=range)
       wsetall = mrdfits(framefile, 3)
       dispsetall = mrdfits(framefile, 4, range=range)
       tempsky = mrdfits(framefile, 6, range=range)
+      tempflat = mrdfits(framefile, 7, range=range)
+      temptelluric = mrdfits(framefile, 8, range=range)
+      if (keyword_set(temptelluric)) then tempflat = tempflat * temptelluric
 
       ;----------
       ; Trim the wavelength + dispersion structures to only the requested object
@@ -205,19 +217,38 @@ pro write_uros1, plate, fiber, mjd=mjd
       invertcorr = invertcorr * (invertcorr GT minval)
 
       ;----------
+      ; Read the opECalib file to get the gain + read noise
+
+      config_dir = filepath('', $
+       root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='examples')
+      ecalibfile = findopfile('opECalib*par', sxpar(temphdr,'MJD'), $
+       config_dir, /abort_notfound)
+      yanny_read, filepath(ecalibfile, root_dir=config_dir), pdata
+      ecalib = *pdata[0]
+      yanny_free, pdata
+      jj = where(ecalib.camrow EQ sxpar(temphdr,'CAMROW') $
+       AND ecalib.camcol EQ sxpar(temphdr,'CAMCOL'))
+      ecalib = ecalib[jj[0]]
+      if (fiber LE 320) then begin
+         rdnoise = ecalib.readnoisedn2 * ecalib.gain2
+      endif else begin
+         rdnoise = ecalib.readnoisedn3 * ecalib.gain3
+      endelse
+
+      ;----------
       ; Write the output file
 
       splog, 'Writing file ', outfile
       openw, lun, outfile, /get_lun
       printf, lun, '#log-Wave Flux          InverseVar    Sky          ' $
-       + ' Pixelmask   Dispers   Calibfac  Invercorr'
+       + ' Pixelmask   Dispers   Calibfac  Invercorr Flatvec   Rnois'
       printf, lun, '#-------- ------------- ------------- -------------' $
-       + ' ----------- --------- --------- ---------'
+       + ' ----------- --------- --------- --------- --------- -----'
       for ipix=0, n_elements(tempflux)-1 do $
        printf, lun, tempwave[ipix], tempflux[ipix], tempivar[ipix], $
         tempsky[ipix], temppixmask[ipix], tempdispersion[ipix], $
-        calibfac[ipix], invertcorr[ipix], $
-        format='(1x,f8.6,1x,e13.6,1x,e13.6,1x,e13.6,1x,i11,1x,f9.4,1x,f9.4,1x,f9.4)'
+        calibfac[ipix], invertcorr[ipix], tempflat[ipix], rdnoise, $
+        format='(1x,f8.6,1x,e13.6,1x,e13.6,1x,e13.6,1x,i11,1x,f9.4,1x,f9.4,1x,f9.4,f9.4,f6.2)'
       close, lun
       free_lun, lun
    endfor
