@@ -30,6 +30,8 @@
 ;               The MAG fields are left unchanged.
 ;               For objects with no calibObj entry, simply set these fields as:
 ;                 CALIBFLUX = 22.5 - 2.5*alog10(MAG), CALIBFLUX_IVAR = 0.
+;               We apply the putative AB corrections to these fluxes
+;               (but not to the MAG values).
 ;
 ; OUTPUTS:
 ;   plugmap   - Plugmap structure
@@ -43,6 +45,8 @@
 ; EXAMPLES:
 ;
 ; BUGS:
+;   The AB corrections are hard-wired to be the same as in the photoop
+;   product as of 18 Feb 2004.
 ;
 ; PROCEDURES CALLED:
 ;   djs_filepath()
@@ -56,6 +60,10 @@
 ;------------------------------------------------------------------------------
 function readplugmap, plugfile, plugdir=plugdir, $
  apotags=apotags, deredden=deredden, calibobj=calibobj
+
+   ; The correction vector is here --- adjust this as necessary.
+   ; These are the same numbers as in SDSSFLUX2AB in the photoop product.
+   correction = [-0.042, 0.036, 0.015, 0.013, -0.002]
 
    thisfile = (findfile(djs_filepath(plugfile, root_dir=plugdir), $
     count=ct))[0]
@@ -160,6 +168,14 @@ function readplugmap, plugfile, plugdir=plugdir, $
          plugmap[iobj[ibad]].calibflux = $
           10.^((22.5 - plugmap[iobj[ibad]].mag) / 2.5)
       endif
+
+      ;----------
+      ; Apply AB corrections to the CALIBFLUX values (but not to MAG)
+
+      factor = exp(-correction/2.5 * alog(10))
+      for j=0,4 do plugmap.calibflux[j] = plugmap.calibflux[j] * factor
+      for j=0,4 do $
+       plugmap.calibflux_ivar[j] = plugmap.calibflux_ivar[j] / factor^2
    endif
 
    if (keyword_set(deredden)) then begin
