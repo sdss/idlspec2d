@@ -47,14 +47,16 @@
 ;   djs_maskinterp()
 ;   djs_median()
 ;   mrdfits()
+;   sxaddpar
+;   sxdelpar
+;   sxpar()
 ;   writefits
 ;
 ; INTERNAL SUPPORT PROCEDURES:
 ;   makelabel()
 ;
 ; REVISION HISTORY:
-;   ??-Sep-1999  Written by S. Burles
-;   02-Jan-2000  Modified by D. Schlegel from COMBINE2DOUT
+;   02-Jan-2000  Written by D. Schlegel; modified from COMBINE2DOUT
 ;-
 ;------------------------------------------------------------------------------
 
@@ -72,7 +74,7 @@ end
 ;------------------------------------------------------------------------------
 pro combine1fiber, specnum, $
  fullwave, fullspec, fullivar, fullpixelmask, fullfibermask, $
- finalwave, bestguess, besterr, outputpixelmask, $
+ finalwave, bestflux, bestivar, outputpixelmask, $
  nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep
 
    if (NOT keyword_set(nord)) then nord = 3
@@ -84,9 +86,8 @@ pro combine1fiber, specnum, $
    print, 'FULL fibermask ', fullfibermask
 
    nfinalpix = N_elements(finalwave)
-   bestguess = fltarr(nfinalpix)
-   bestivar = bestguess*0.0
-   besterr = bestivar
+   bestflux = fltarr(nfinalpix)
+   bestivar = bestflux*0.0
 
    nonzero = where(fullivar GT 0.0, ngood)
 
@@ -131,7 +132,7 @@ pro combine1fiber, specnum, $
              splog,'WARNING: All B-spline coefficients have been set to zero!'
          endif else begin         
 
-            bestguess[inside] = slatec_bvalu(finalwave[inside],fullbkpt,coeff)
+            bestflux[inside] = slatec_bvalu(finalwave[inside],fullbkpt,coeff)
 fwave = float(finalwave[inside])
 print,10^[min(fwave),max(fwave)]
 
@@ -206,27 +207,23 @@ print,10^[min(fwave),max(fwave)]
       andmask = andmask * (andmask NE -1)
 
       outputpixelmask = ormask OR ishft(andmask,16)
-      
-      nonzero = where(bestivar GT 0.0)
-      if (nonzero[0] NE -1) then $
-       besterr[nonzero] = 1.0 / sqrt(bestivar[nonzero])
 
    endelse
 
    ;----------
    ; Replace NaN's in combined spectra; this should really never happen
 
-   inff = where(finite(bestguess) EQ 0 OR finite(besterr) EQ 0)
+   inff = where(finite(bestflux) EQ 0 OR finite(bestivar) EQ 0)
    if (inff[0] NE -1) then begin
       splog, 'WARNING: NaNs in combined spectra ', N_elements(inff)
-      bestguess[inff] = 0.0
-      besterr[inff] = 0.0
+      bestflux[inff] = 0.0
+      bestivar[inff] = 0.0
    endif
 
    ;----------
    ; Interpolate over masked pixels, just for aesthetic purposes
 
-   bestguess = djs_maskinterp(bestguess, besterr EQ 0, /const)
+   bestflux = djs_maskinterp(bestflux, bestivar EQ 0, /const)
 
    return
 end
@@ -236,7 +233,7 @@ pro spcoadd_frames, filenames, outputname, $
  binsz, zeropoint, nord=nord, wavemin=wavemin, $
  bkptbin=bkptbin, window=window, maxsep=maxsep
 
-   ; Initial binning was 69 km/s per pixel (with a sigma of 1.0 pixel)
+   ; Initial binning was approx 69 km/s per pixel (with a sigma of 1.0 pixel)
    ; 69.02977415 km/s is log lambda 10^-4
 
    if (NOT keyword_set(binsz)) then binsz = 1.0d-4 $
@@ -396,7 +393,7 @@ pro spcoadd_frames, filenames, outputname, $
    finalwave = dindgen(nfinalpix) * binsz + wavemin
 
    finalflux = fltarr(nfinalpix, nfiber)
-   finalerr = fltarr(nfinalpix, nfiber)
+   finalivar = fltarr(nfinalpix, nfiber)
    finalpixelmask = fltarr(nfinalpix, nfiber)
 
    ;---------------------------------------------------------------------------
@@ -411,22 +408,20 @@ pro spcoadd_frames, filenames, outputname, $
          combine1fiber, specnum, $
           wave[*,ifiber], flux[*,ifiber], fluxivar[*,ifiber], $
           pixelmask[*,ifiber], fibermask[*,ifiber], $
-          finalwave, bestguess, besterr, outputpixelmask, $
+          finalwave, bestflux, bestivar, outputpixelmask, $
           nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep
 
-         finalflux[*,ifiber] = bestguess
-         finalerr[*,ifiber] = besterr
+         finalflux[*,ifiber] = bestflux
+         finalivar[*,ifiber] = bestivar
          finalpixelmask[*,ifiber] = outputpixelmask
       endif else begin
          splog, 'No plugmap entry'
-         finalpixelmask[*,ifiber] = -1L
+         finalpixelmask[*,ifiber] = -1L ; ???
       endelse
    endfor
 
    ;---------------------------------------------------------------------------
    ; Create the output header
-
-   sxaddpar, hdr, 'CREATORS', 'Burles & Schlegel (1999) IDLspec', after='SDSS'
 
    ncoeff = sxpar(hdr, 'NWORDER')
    for i=2, ncoeff-1 do sxdelpar, hdr, 'COEFF'+strtrim(string(i),2)
@@ -451,7 +446,7 @@ pro spcoadd_frames, filenames, outputname, $
     'Central wavelength (log10) of first pixel'
    sxaddpar, hdr, 'COEFF1', binsz, 'Log10 dispersion per pixel'
 
-   sxaddpar, hdr, 'NAXIS1', n_elements(bestguess)
+   sxaddpar, hdr, 'NAXIS1', n_elements(bestflux)
    sxaddpar, hdr, 'NAXIS2', 2
    sxaddpar, hdr, 'WAT0_001', 'system=linear'
    sxaddpar, hdr, 'WAT1_001', $
@@ -467,8 +462,8 @@ pro spcoadd_frames, filenames, outputname, $
    ; 1st HDU is flux
    mwrfits, finalflux, outputname, hdr, /create
 
-   ; 2nd HDU is error
-   mwrfits, finalerr, outputname
+   ; 2nd HDU is inverse variance
+   mwrfits, finalivar, outputname
 
    ; 3rd HDU is pixelmask
    mwrfits, finalpixelmask, outputname
