@@ -1,6 +1,6 @@
 Pro skyremove, objflux, objwave, lmin, lmax, ppp, kcor
 
-        pppold=n_elements(objflux)	
+        pppold=lindgen(n_elements(objflux))
         sky=where(10^objwave GT lmin AND 10^objwave LT lmax)
 	outsky=where((10^objwave GT lmin-1000 AND 10^objwave LT lmin) OR $
 	             (10^objwave GT lmax AND 10^objwave LT lmax+1000)) 
