@@ -769,6 +769,17 @@ However, if it appears to not be working one could check the following:
     If any have been sitting around for several minutes or more,
     then something is wrong.  You should delete the file ending with ".lock".
     <B>However</B>, this could result in a corrupted "logfile*.fits".
+<LI><B>Is the IDL license manager running?</B><BR>
+    You can issue the following command to check that the IDL license
+    manager is indeed running:
+    <DL><DD><PRE>
+    % $IDL_DIR/bin/lmstat -a
+    </PRE></DD></DL>
+    This should display the number of licenses available, and the current
+    number in use.  The server running on galileo.apo has 110 licenses,
+    each IDL session uses 6, so there can be at most 18 IDL sessions
+    running concurrently.  Note that Son-of-Spectro, the fiber mapper,
+    and HoggPT all use IDL licenses.
 <LI><B>Is anything amiss with running the scripts?</B><BR>
     Perhaps there is a communication problem between sdsshost.apo and sos.apo,
     or a problem running the code on sos.apo.  There is logging information
