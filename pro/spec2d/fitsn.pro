@@ -6,7 +6,7 @@
 ;   Perform a simple parameter fit to log S/N vs magnitude
 ;
 ; CALLING SEQUENCE:
-;   coeffs = fitsn(mag, snvec, [ /physical, sigrej=, maxiter=, $
+;   coeffs = fitsn(mag, snvec, [ sigrej=, maxiter=, $
 ;    fitmag=, sigma= ] )
 ;
 ; INPUTS:
@@ -14,7 +14,6 @@
 ;   snvec      - S/N vector for fibers
 ;
 ; OPTIONAL KEYWORDS:
-;   physical   - Set to fit with a model of background and throughput?
 ;   sigrej     - Sigma rejection threshold; default to 3
 ;   maxiter    - Maximum number of rejection iterations; default to 5
 ;   fitmag     - Magnitude range over which to fit (S/N) as function of mag;
@@ -31,7 +30,6 @@
 ; EXAMPLES:
 ;
 ; BUGS:
-;   physical model with flux and sky background is not implemented
 ;
 ; PROCEDURES CALLED:
 ;   djs_iterstat
@@ -41,7 +39,7 @@
 ;   15-Apr-2000  Written by S. Burles, FNAL
 ;-
 ;------------------------------------------------------------------------------
-function fitsn, mag, snvec, physical=physical, sigrej=sigrej, maxiter=maxiter, $
+function fitsn, mag, snvec, sigrej=sigrej, maxiter=maxiter, $
  fitmag=fitmag, sigma=sigma
 
     if (NOT keyword_set(sigrej)) then sigrej = 3
