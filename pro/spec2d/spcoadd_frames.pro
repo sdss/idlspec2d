@@ -199,12 +199,14 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
       traceset2xy, tempdispset, junk, tempdispersion
 
       ;----------
-      ; Here is the correct conversion from pixels to log-lambda dispersion
+      ; Here is the correct conversion from pixels to log-lambda dispersion.
+      ; We are converting from the dispersion in units of spFrame pixel sizes
+      ; to the dispersion in units of the new rebinned pixel size, which is
+      ; BINSZ in log-lambda units.
 
-      dlogimg = abs(upperwave - lowerwave)
-      tempdispersion = dlogimg/binsz * tempdispersion
-      upperwave = 0
-      lowerwave = 0
+      correct_dlam, tempdispersion, 0, tempwset, dlam=binsz, /inverse
+
+      ;----------
 
       dims = size(tempflux, /dimens)
       npix = dims[0]
