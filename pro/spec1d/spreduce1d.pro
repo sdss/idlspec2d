@@ -472,6 +472,9 @@ ormask = 0 ; Free memory
             fracnsigma: fltarr(nfsig), $
             fracnsighi: fltarr(nfsig), $
             fracnsiglo: fltarr(nfsig), $
+            spectroflux: fltarr(5), $
+            spectrosynthflux: fltarr(5), $
+            spectroskyflux: fltarr(5), $
             counts_spectro: fltarr(5), $
             counts_synth: fltarr(5), $
             counts_sky: fltarr(5), $
@@ -506,6 +509,11 @@ ormask = 0 ; Free memory
    res_all.fracnsiglo = fracnsiglo
    res_all.counts_spectro = counts_spectro
    res_all.counts_synth = counts_synth
+
+   ; Convert fluxes from maggies to nanomaggies.
+   res_all.spectroflux = 1e9 * res_all.counts_spectro
+   res_all.spectrosynthflux = 1e9 * res_all.counts_synth
+   res_all.spectroskyflux = 1e9 * res_all.counts_sky
 
    ;----------
    ; Generate output headers for spZbest, spZall, spZline files.
