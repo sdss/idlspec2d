@@ -50,6 +50,8 @@ do
 #
     echo "rm -rf $dir"
     rm -rf $dir
+
 done
 
+killdata.sh
 
