@@ -544,7 +544,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
 ; The first two attempts below can fail if the ZLINE structure changes.
 ;         if (q_zline) then zline = struct_append(zline, [zline1])
 ;         if (q_zline) then zline = [[zline], [zline1]]
-         if (q_zline) then zline = rspec_zline_append(zline1, zline1)
+         if (q_zline) then zline = rspec_zline_append(zline, zline1)
          if (q_synflux) then spec_append, synflux, synflux1, pixshift
          if (q_lineflux) then spec_append, lineflux, lineflux1, pixshift
          if (q_mjd) then mjd = [mjd, mjd1]
