@@ -53,6 +53,12 @@ PCA_STAR: Major changes to read stellar classes and subclasses,
           (for example) and reconstruct types M1 through M9.
 PLATECOMPARE: Add /PSFILE option.
 PLATELIST: Add NEXP,EXPT_B1,EXPT_B2,EXPT_R1,EXPT_R2 to output structure.
+          Now show the status of 2D and Combine separately, which will make it
+          obvious when this problem occurs. When it happens, Status2D
+          might still be "Running" even though StatusCombine is "Done".
+          That case would mean that one of the night's of 2D data
+          probably crashed, and we combined from whatever subset of data
+          did run through from other nights.  This addressed PR #2993.
 PLOTSN: Changed auto-scaling of fitted magnitudes, when less than 20 objects
             are in the desired range.  Now the fitting range will expand to
             [10.0, snmag + 1.0].  So in case of g' [10.0, 21.2], this should
