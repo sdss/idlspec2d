@@ -482,9 +482,10 @@ ormask = 0 ; Free memory
     OR res_all.rchi2diff LT minrchi2diff * res_all.rchi2
    zwarning = zwarning OR 4L * qflag
 
-   ; Warning: synthetic spectrum is negative (for STAR or QSO).
-   qflag = (strtrim(res_all.class) EQ 'STAR' AND res_all.theta[0] LE 0) $
-    OR (strtrim(res_all.class) EQ 'QSO' AND res_all.theta[0] LE 0)
+   ; Warning: synthetic spectrum is negative (for STAR only).
+   qflag = (strtrim(res_all.class) EQ 'STAR' $
+    AND strtrim(res_all.subclass) NE 'CV' $
+    AND res_all.theta[0] LE 0)
    zwarning = zwarning OR 8L * qflag
 
    ; Warning: Fraction of points above 5 sigma is too large (> 5%),
