@@ -1,4 +1,10 @@
 
+-------------------------------------------------------------------------------
+v4_9_11 (May 31, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
+Built against specflat v1_4.
+
+Fix "make install" bugs and crash condition for P-1D.
+
 LINEBACKFIT: Fix crash condition just introduced (testing for return
            status from MPFITFUN).
 LOGSHEET: Include UT time, NAME, CARTID, and QUALITY in outputs.
