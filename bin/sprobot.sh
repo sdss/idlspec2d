@@ -105,27 +105,30 @@ for mjdstr in $remotedir ; do
 done
 
 #------------------------------------------------------------------------------
-# If no new data or if $topoutdir is not defined, then exit.
-
-if [ -z "$mjdlist" ] ; then
-   exit
-fi
+# If $topoutdir is not defined, then exit.
 
 if [ -z "$topoutdir" ] ; then
    exit
 fi
 
+# The following would exit if no new data
+if [ -z "$mjdlist" ] ; then
+   exit
+fi
+
 #------------------------------------------------------------------------------
-# Build the plan files
+# Build the plan files if there is new data
 
 echo SPROBOT: MJDLIST=$mjdlist
 
-echo ""
-echo SPROBOT: "spplan2d, topoutdir='$topoutdir', mjd=["$mjdlist"]"
-echo "spplan2d, topoutdir='$topoutdir', mjd=["$mjdlist"]" | idl
-echo ""
-echo SPROBOT: "spplan1d, topindir='$topoutdir', mjd=["$mjdlist"]"
-echo "spplan1d, topindir='$topoutdir', mjd=["$mjdlist"]" | idl
+if [ -n "$mjdlist" ] ; then
+   echo ""
+   echo SPROBOT: "spplan2d, topoutdir='$topoutdir', mjd=["$mjdlist"]"
+   echo "spplan2d, topoutdir='$topoutdir', mjd=["$mjdlist"]" | idl
+   echo ""
+   echo SPROBOT: "spplan1d, topindir='$topoutdir', mjd=["$mjdlist"]"
+   echo "spplan1d, topindir='$topoutdir', mjd=["$mjdlist"]" | idl
+fi
 
 #------------------------------------------------------------------------------
 # Start the batch processing for Spectro-1D if it's not already running.
