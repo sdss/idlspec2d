@@ -163,23 +163,20 @@ pro combine1fiber, inloglam, objflux, objivar, $
 
          ss = isort[ig1[igrp] : ig2[igrp]]
          bkpt = 0
+         bmask = 0
 
-; Work-around for bug in Slatec code !!! (???)
-if (n_elements(ss) LE 2) then begin
-   bmask = bytarr(n_elements(ss)) ; All set to zero
-endif else begin
-; SINCE THE /EACHGROUP KEYWORD NO LONGER EXISTS, WHAT REJECTION DO WE WANT???
+       if (n_elements(ss) GT 2) then begin
           if (keyword_set(objivar)) then $
             sset = bspline_iterfit(inloglam[ss], objflux[ss], $
-              nord=nord, $
+              nord=nord, /groupbadpix, $
               bkspace=bkptbin, bkpt=bkpt, invvar=objivar[ss], outmask=bmask, $
               _EXTRA=KeywordsForReject, /silent) $
           else sset = bspline_iterfit(inloglam[ss], objflux[ss], $
-              nord=nord, $
+              nord=nord, /groupbadpix, $
               bkspace=bkptbin, bkpt=bkpt, outmask=bmask, $
               _EXTRA=KeywordsForReject, /silent)
 
-endelse
+       endif else bmask = bytarr(n_elements(ss)) ; All set to zero
 
          inside = where(newloglam GE min(inloglam[ss])-EPS $
           AND newloglam LE max(inloglam[ss])+EPS, numinside)

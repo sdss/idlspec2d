@@ -411,7 +411,7 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
           newloglam=finalwave, newflux=bestflux, newivar=bestivar, $
           andmask=bestandmask, ormask=bestormask, newdisp=bestdispersion, $
           nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep, $
-          maxiter=20, upper=3.0, lower=3.0
+          maxiter=50, upper=3.0, lower=3.0, maxrej=1
 
 ;plot, wave[*,indx], flux[*,indx], ps = 3
 ;djs_oplot, finalwave, bestflux, color='red'

@@ -215,7 +215,7 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
       framesn2 = fltarr(nsci)
 
       for i=0,nsci-1 do begin
-         checkhdr = hdrfits(sciname[i], /silent)
+         checkhdr = headfits(sciname[i])
          if size(checkhdr,/tname) NE 'INT' then framesn2[i] = 0 $
          else framesn2[i] = sxpar(checkhdr,'FRAMESN2')
       endfor
@@ -223,7 +223,7 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
       j = where(framesn2 GE minsn2)
       if j[0] NE -1 then begin 
         sciname = sciname[j] 
-        splog, 'Excluded ', fix(total(framesn2 LT minsn2), $
+        splog, 'Excluded ', fix(total(framesn2 LT minsn2)), $
              ' frames with SN^2 less than ', minsn2, format='(a,i4,a,f7.2)'
       endif else $
         splog, 'WARNING: All Frames would be rejected due to minimum S/N limit'
