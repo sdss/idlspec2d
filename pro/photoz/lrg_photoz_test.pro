@@ -26,7 +26,27 @@ pro lrg_photoz_test
     extinction=spall.extinction, /abcorrect, chi2=chi2)
    zdiff = zfit - spall.z
 
-   splot, spall.z, zfit, psym=3, $
+   azdiff = abs(zfit - spall.z)
+   print, " zMin zMax   Nobj  <z-zFit>   68%cf   90%cf   95%cf   99%cf"
+   for i=0, 13 do begin
+      if (i LT 13) then begin
+         zmin = 0.05 * i
+         zmax = 0.05 * (i+1)
+      endif else begin
+         zmin = 0.10
+         zmax = 0.60
+      endelse
+      indx = where(spall.z GT zmin AND spall.z LE zmax, ct)
+      isort = indx[sort(azdiff[indx])]
+      i68 = isort[0.68*ct]
+      i95 = isort[0.95*ct]
+      i99 = isort[0.99*ct]
+      print, zmin, zmax, ct, median(zdiff[indx]), $
+       azdiff[i68], azdiff[i95], azdiff[i99], $
+       format='(2f5.2,i7,f10.4,3f8.3)'
+   endfor
+
+   splot, spall.z, zfit, psym=3, yr=[0,0.6], $
     xtitle='Spectroscopic Z', ytitle='Photometric Z'
    soplot, [0,1], [0,1], color='red'
 stop

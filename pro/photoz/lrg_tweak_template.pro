@@ -32,6 +32,7 @@
 ;   that gives a better total chi^2 when computing photometric redshifts.
 ;   The form of the transformation is:
 ;      Flux = Flux * (1 + COEFF[0] * Wave + COEFF[1] * Wave^2)
+;             * (1 + COEFF[2] * z * Wave)
 ;
 ;   The fluxes should be AB fluxes, or SDSS 2.5-m natural system fluxes
 ;   if /ABCORRECT is set.
@@ -56,7 +57,7 @@
 forward_function mpfit, lrg_tweak_fn
 
 ;------------------------------------------------------------------------------
-pro lrg_tweak_template_read, coeff, retwave, retflux
+pro lrg_tweak_template_read, retwave, retflux
 
    common com_lrg_tweak_template_read, bigloglam, bigspecflux
 
@@ -90,7 +91,7 @@ pro lrg_tweak_template_read, coeff, retwave, retflux
    endif
 
    retwave = 10.d0^bigloglam
-   retflux = bigspecflux * (1.d0 + coeff[0] * retwave + coeff[1] * retwave^2)
+   retflux = bigspecflux
 
    return
 end
@@ -101,14 +102,16 @@ function lrg_tweak_fn, coeff
    common com_lrg_tweak_fluxes, pflux, pflux_isig, zz, filterlist
 
    ; Read the tweaked template
-   lrg_tweak_template_read, coeff, bigwave, bigspecflux
+   lrg_tweak_template_read, bigwave, bigspecflux
+   bigspecflux = bigspecflux $
+    * (1.d0 + coeff[0] * bigwave + coeff[1] * bigwave^2)
 
    ; Convert from f_lambda to f_nu
-   flambda2fnu = bigwave^2 / 2.99792e18
+   flambda2fnu = bigwave^2 / 2.99792d18
    bigspecflux = bigspecflux * flambda2fnu
 
-   ; Select a binning of 0.005 in redshift, and go out to redshift 0.6
-   numz = 125
+   ; Select a binning of 0.005 in redshift, and go out to redshift 0.65
+   numz = 131
    deltaz = 0.005
    zarr = deltaz * findgen(numz)
 
@@ -118,7 +121,9 @@ function lrg_tweak_fn, coeff
       print, format='("Z ",i5," of ",i5,a1,$)', $
         iz, numz, string(13b)
       thiswave = bigwave * (1 + zarr[iz])
-      synflux[*,iz] = filter_thru(bigspecflux, waveimg=thiswave, /toair)
+      synflux[*,iz] = filter_thru( $
+       bigspecflux * (1.d0 + coeff[2] * zarr[iz] * bigwave), $
+       waveimg=thiswave, /toair)
    endfor
    print
 
@@ -173,21 +178,23 @@ pro lrg_tweak_template, pflux1, pflux_ivar1, zz1, $
    ; Discard any objects where the baseline photo-z is discrepent by
    ; more than 0.15, and discard any low-redshift objects with z > 0.10.
    zfit = lrg_photoz(pflux, pflux_isig^2)
-   ibad = where(abs(zfit - zz) GT 0.15 OR zz GT 0.10, nbad)
+   ibad = where(abs(zfit - zz) GT 0.15 OR zz LT 0.10, nbad)
    if (nbad GT 0) then begin
-      print, 'Discard ', nbad, ' objects with discrepent photo-z'
+      print, 'Discard ', nbad, ' objects with low and/or discrepent photo-z'
       pflux[*,ibad] = 0
       pflux_isig[*,ibad] = 0
    endif
 
    ; Call MPFIT to iterate on the solution for the template
    parinfo = {value: 0.D, fixed: 0, limited: [0b,0b], limits: [0.d0,0.d0]}
-   parinfo = replicate(parinfo, 2)
-   parinfo.value = [4.d-5, 4.d-9]
-   ftol = 1d-14
-   gtol = 1d-14
+   parinfo = replicate(parinfo, 3)
+   parinfo.value = [6.d-5, 6.d-9, -6.d-5]
+   ftol = 1d-20
+   gtol = 1d-20
+   xtol = 1d-20
    coeff = mpfit('lrg_tweak_fn', parinfo=parinfo, perror=perror, $
-    maxiter=maxiter, ftol=ftol, gtol=gtol, niter=niter, status=status)
+    maxiter=maxiter, ftol=ftol, gtol=gtol, xtol=xtol, $
+    niter=niter, status=status)
 
    print, 'STATUS = ', status
    print, 'Best-fit coeffs = ', coeff

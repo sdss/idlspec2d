@@ -79,11 +79,6 @@ function lrg_photoz, pflux, pflux_ivar, z_err=z_err, $
       dloglam = sxpar(hdr, 'COEFF1')
       loglam = sxpar(hdr, 'COEFF0') + dindgen(sxpar(hdr, 'NAXIS1')) * dloglam
 
-      ; Fudge the slope of the template...
-;      specflux = specflux * (10.d0^loglam)^0.22
-      specflux = specflux $
-       * (1 + 3.488d-5 * 10^loglam + 4.015d-9 * 10^(2*loglam))
-
       ; Smooth the end of the spectra
       i1 = where(loglam LT alog10(3200), n1)
       i2 = where(loglam GT alog10(8800), n2)
@@ -98,13 +93,18 @@ function lrg_photoz, pflux, pflux_ivar, z_err=z_err, $
       ; to about 1584,12019 Ang.
       bigloglam = 3.2000d0 + dindgen(8800) * 1.d-4
       linterp, loglam, specflux, bigloglam, bigspecflux
+      bigwave = 10.d0^bigloglam
+
+      ; Fudge the slope of the template...
+;      bigspecflux = specflux * bigwave^0.22
+      coeff = [4d-5, 4d-9, -4d-5]
+      bigspecflux = bigspecflux $
+       * (1 + coeff[0] * bigwave + coeff[1] * bigwave^2)
 
       ; Convert from f_lambda to f_nu
-      bigwave = 10.d0^bigloglam
-      flambda2fnu = bigwave^2 / 2.99792e18
+      flambda2fnu = bigwave^2 / 2.99792d18
       bigspecflux = bigspecflux * flambda2fnu
 
-      ; Select a binning of 0.01 in redshift, and go out to redshift 1.
       numz = 101
       zarr = 0.01 * findgen(numz)
 
@@ -113,7 +113,9 @@ function lrg_photoz, pflux, pflux_ivar, z_err=z_err, $
          print, format='("Z ",i5," of ",i5,a1,$)', $
            iz, numz, string(13b)
          thiswave = 10.d0 ^ (bigloglam + alog10(1 + zarr[iz]))
-         synflux[*,iz] = filter_thru(bigspecflux, waveimg=thiswave, /toair)
+         synflux[*,iz] = filter_thru( $
+          bigspecflux * (1 + coeff[2] * zarr[iz] * bigwave), $
+          waveimg=thiswave, /toair)
       endfor
       print
    endif
