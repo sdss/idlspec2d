@@ -44,18 +44,22 @@ vers=`echo $SETUP_IDLSPEC2D | awk '{print $2}'`
 # then append more to it.
 
 cronfile=/tmp/$USER.sos.cron
+SOSLOG=/data/spectro/spectrologs/sos.log
 # Print the cron tab w/out the first 3 lines and w/out the SOS lines.
 crontab -l | awk 'BEGIN{doprint = 1}{if ($2 == "SOS" && $3 == "BEGIN") {doprint = 0}; if (NR > 3 && doprint == 1) {print $0}; if ($2 == "SOS" && $3 == "END") {doprint = 1} }' > $cronfile
 
 echo "# SOS BEGIN "$vers >> $cronfile
+echo "PATH=$PATH" >> $cronfile
 echo "IDLSPEC2D_DIR=$IDLSPEC2D_DIR" >> $cronfile
 echo "IDLUTILS_DIR=$IDLUTILS_DIR" >> $cronfile
 echo "IDL_DIR=$IDL_DIR" >> $cronfile
 echo "IDL_PATH=$IDL_PATH" >> $cronfile
 echo "# This job will run every minute." >> $cronfile
-echo "* * * * * sos.sh >/dev/null 2>&1" >> $cronfile
-echo "# This job will run at 7:30 am every day." >> $cronfile
-echo "30 7 * * * mailhtml.sh >/dev/null 2>&1" >> $cronfile
+echo "* * * * * sos.sh >> $SOSLOG 2>&1" >> $cronfile
+echo "# This job will run at 7:20 am every day." >> $cronfile
+echo "20 7 * * * mailhtml.sh >> $SOSLOG 2>&1" >> $cronfile
+echo "# This job will run at 7:25 am every day." >> $cronfile
+echo "25 7 * * * \mv -f $SOSLOG $SOSLOG.old" >> $cronfile
 echo "# SOS END" >> $cronfile
 crontab $cronfile
 
