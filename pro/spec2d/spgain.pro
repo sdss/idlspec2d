@@ -37,7 +37,7 @@
 ;   djs_iterstat
 ;   sdssproc
 ;
-;; REVISION HISTORY:
+; REVISION HISTORY:
 ;   21-Nov-1999  Written by D. Schlegel, Princeton.
 ;-
 ;------------------------------------------------------------------------------

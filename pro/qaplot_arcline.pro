@@ -49,11 +49,6 @@ pro qaplot_arcline, xdif, lambda, filename=filename, color=color
    nfiber = dims[0]
    nlamp = dims[1]
 
-   ; Strip any trailing ".fit" from the file name
-   i = rstrpos(filename, '.fit')
-   if (i GT 0) then trimname = strmid(filename, 0, i) $
-    else trimname = filename
-
    ; Determine the plot limits in wavelength
    if (color EQ 'blue') then begin
       xrange = [3800, 6400] 
@@ -70,7 +65,7 @@ pro qaplot_arcline, xdif, lambda, filename=filename, color=color
    djs_plot, [0], [0], /nodata, xrange=xrange, yrange=[-10,nfiber+10], $
     xstyle=1, ystyle=1, $
     xtitle='\lambda [A] + 500 * Deviation', ytitle='Fiber Number', $
-    title='Arcline Fit for  '+trimname
+    title='Arcline Fit for '+filename
    fibernum = findgen(nfiber)+1
    for k=1, nlamp-1 do $
     djs_oplot, 500*xdif[*,k]+lambda[k], fibernum

@@ -1,4 +1,20 @@
 
+* BUG: For arc 51441/sdR-b2-00001347.fit (plate 214), bizarre wavelength
+  solution!!  Were too many fibers rejected or something??
+  This then shows up as horrible sky-subtraction!!
+  Something must be broken in FITARCIMAGE or FINALARCFIT.
+
+* BUG: The ends of the spectra have poor flux-calibration.  This is most
+  obvious when one looks at the overlap of individual exposures.
+
+* Make plot in QAPLOT_FFLAT smaller in the PostScript.
+
+* Put the arc-fitting QA logs into the QAPLOT code.
+
+* Let SUPERFLAT discard deviant (but not necessarily bad) fibers.
+
+* Rationalize 01, 1b, b1 --> b1.
+
 * Looks like combining now fails if blue side is missing (21-Dec-99).
 
 * Do something fancier for overscan-correction?
@@ -18,9 +34,9 @@
 * Combine "superflat" code from SPFLATTEN2 and FIBERFLAT.
   The internal routine SPFLATTEN2/SUPERFLAT could be called by FIBERFLAT.
 
-* Plot the superflat vector as a QA plot
+----> Done (02-Jan-99)
 
-* Check in code to compute system throughput (filter passbands)
+* Plot the superflat vector as a QA plot
 
 * Have FIBERFLAT only do a very low-order correction now that the
   flat fields are so much better.
@@ -79,7 +95,7 @@
 * Somehow measure nonlinearity + saturation.
   Maybe look at doublets with known line ratios?
 
-* Measure system throughput (Q.E.) !!
+* Measure system throughput (Q.E.) for g,r,i !!
 
 * Look at the bias frames
 
@@ -89,9 +105,6 @@
 * CR zapping.
 
 * Need some logic to make certain we're looking at a flat, arc, etc.
-
-* Need fiber-to-fiber flat-fielding, and flatten out any global variations,
-  such as low-response zones on the CCD.
 
 * Characterize flexure 
 
@@ -183,11 +196,11 @@ Data Model:
 -------------------------------------------------------------------------------
 Unused routines:
 
-combineI
+combineI (old version of combine2dout?)
 extract2
 findobjects
 fit_tset
-fitwithmx
+fitwithmx (deprecated)
 funccheb
 gauss_smooth
 read2dout

@@ -24,7 +24,7 @@
 ;   outdir     - Output directory for OUTFILE; default to './'
 ;   tmpdir     - Directory for temporary files; default to same as OUTDIR
 ;
-; PARAMTERS FOR SLATEC_SPLINEFIT:
+; PARAMETERS FOR SLATEC_SPLINEFIT:
 ;   bkspace
 ;   nord
 ;   lower

@@ -49,7 +49,6 @@
 
 pro spallreduce, planfile=planfile, docams=docams, $
  combineonly=combineonly, xdisplay=xdisplay
-display = 0 ; Disable this plotting of hundreds of pages!! (???)
 
    if (NOT keyword_set(planfile)) then planfile = 'spPlan2d.par'
 
@@ -251,10 +250,9 @@ display = 0 ; Disable this plotting of hundreds of pages!! (???)
              + ' files for side ' + strtrim(string(side),2)
 
             if (nfile GT 0) then begin
-               for i=0, nfile-1 do $
-                splog, 'Combine file ', files[i]
+               for i=0, nfile-1 do splog, 'Combine file ', files[i]
                combine2dout, files, filepath(outputroot, root_dir=combineDir), $
-                wavemin=alog10(3750.0), display=display, window=100
+                wavemin=alog10(3750.0), window=100
             endif
 
       endfor

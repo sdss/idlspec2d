@@ -6,8 +6,7 @@
 ;   Generate QA plot for fiber-flats
 ;
 ; CALLING SEQUENCE:
-;   qaplot_fflat, fflat, wset, fibermask=fibermask, filename=filename, $
-;    plotsig=plotsig, dx=dx
+;   qaplot_fflat, fflat, wset, [ fibermask=, plotsig=, dx=, filename= ]
 ;
 ; INPUTS:
 ;   fflat      - Array of flat-field flat-field vectors for each fiber
@@ -17,11 +16,11 @@
 ;
 ; OPTIONAL KEYWORDS:
 ;   fibermask  - Mask of 0 for bad fibers and 1 for good fibers [NFIBER]
-;   filename   - File name to use for TITLE of plot
 ;   plotsig    - Plot error bars out to this many standard deviations of
 ;                the fiber flats at each wavelength; only plot individual
 ;                outliers that are beyond this many deviations; default to 2.0
 ;   dx         - Bin log-lambda by this number; default to 1.e-3 (about 10 pix)
+;   filename   - File name to use for TITLE of plot
 ;
 ; OUTPUTS:
 ;
@@ -42,12 +41,12 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro qaplot_fflat, fflat, wset, fibermask=fibermask, filename=filename, $
- plotsig=plotsig, dx=dx
+pro qaplot_fflat, fflat, wset, fibermask=fibermask, $
+ plotsig=plotsig, dx=dx, filename=filename
 
-   if (NOT keyword_set(filename)) then filename = ''
    if (NOT keyword_set(plotsig)) then plotsig = 2.0
    if (NOT keyword_set(dx)) then dx = 1.e-3
+   if (NOT keyword_set(filename)) then filename = ''
 
    ; Compute the wavelengths for all flat vectors from the trace set
    traceset2xy, wset, xx, loglam
