@@ -7,11 +7,11 @@ Qualifiers=""
 
 Common:
    Action=setup
-      setupOptional("-f ${UPS_PROD_FLAVOR} elodie")
-      setupOptional("-f ${UPS_PROD_FLAVOR} spinspect")
-      setupOptional("-f ${UPS_PROD_FLAVOR} specflat")
-      setupOptional("-f ${UPS_PROD_FLAVOR} speclog")
-      setupRequired("-f ${UPS_PROD_FLAVOR} idlutils")
+      setupOptional("elodie")
+      setupOptional("spinspect")
+      setupOptional("specflat")
+      setupOptional("speclog")
+      setupRequired("idlutils")
       proddir()
       setupenv()
       pathAppend(PATH, ${UPS_PROD_DIR}/bin)
