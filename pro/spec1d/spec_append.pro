@@ -18,7 +18,12 @@ pro spec_append, arg1, arg2, pixshift
 
    dims1 = size(arg1, /dimens)
    dims2 = size(arg2, /dimens)
-   itype = size(arg1, /type)
+   dims1 = dims1 > 1 ; Fix for new behaviour in IDL 5.4 and later.
+   dims2 = dims2 > 1 ; Fix for new behaviour in IDL 5.4 and later.
+
+   ; Promote the type of variable to the bigger (i.e., if one float
+   ; and one double, output type double).
+   itype = size(arg1[0]+arg2[0], /type)
 
    ;----------
    ; Decide how much to pre-padd each array based upon PIXSHIFT

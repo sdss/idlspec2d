@@ -182,6 +182,9 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       zline = 0
       synflux = 0
       lineflux = 0
+      coeff0 = 0
+      coeff1 = 0
+      npix = 0
       return
    end
 
@@ -529,6 +532,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    ; Construct the output wavelength solutions
 
    if (q_loglam OR q_wave) then begin
+      npixmax = npixmax > 1
       if (keyword_set(align)) then begin
          loglam = allcoeff0[0] + allcoeff1[0] * lindgen(npixmax)
       endif else begin
