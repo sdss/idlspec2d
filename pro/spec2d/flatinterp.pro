@@ -1,3 +1,4 @@
+; This was called by EXTRACT_OBJECT, but isn't used now.
 function flatinterp, fflat, minflat, nsmooth=nsmooth
 
      if NOT keyword_set(nsmooth) then nsmooth=15
