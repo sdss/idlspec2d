@@ -148,6 +148,7 @@ pro/spec1d/fft_wavenums.pro -text
 pro/spec1d/fftpad.pro -text
 pro/spec1d/find_npeaks.pro -text
 pro/spec1d/findchi2min.pro -text
+pro/spec1d/findew.pro -text
 pro/spec1d/findfiber.pro -text
 pro/spec1d/fitredshift.pro -text
 pro/spec1d/fixfits1d.pro -text
@@ -157,6 +158,7 @@ pro/spec1d/fourier_quotient.pro -text
 pro/spec1d/ftest.pro -text
 pro/spec1d/fundamental_line.pro -text
 pro/spec1d/gauss_periodic.pro -text
+pro/spec1d/getplate.pro -text
 pro/spec1d/lambda_match.pro -text
 pro/spec1d/make_regress1d.pro -text
 pro/spec1d/pca_gal.pro -text
