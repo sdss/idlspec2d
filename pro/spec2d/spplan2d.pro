@@ -25,7 +25,7 @@
 ; OUTPUT:
 ;
 ; COMMENTS:
-;   The environment variable RAWDATA_DIR must be set.
+;   The environment variables SPECLOG_DIR and RAWDATA_DIR must be set.
 ;
 ;   Look for the raw FITS data files in:
 ;     RAWDATA_DIR/MJD/sdR-cs-eeeeeeee.fit
