@@ -151,7 +151,7 @@ ormask = 0 ; Free memory
    t0 = systime(1)
    res_gal = zfind(objflux, objivar, hdr=hdr, $
     eigenfile=eigenfile, npoly=npoly, zmin=zmin, zmax=zmax, pspace=pspace, $
-    nfind=nfind, width=pspace*3)
+    nfind=nfind, width=5*pspace)
    splog, 'CPU time to compute GALAXY redshifts = ', systime(1)-t0
 
    splog, 'Locally re-fitting GALAXY redshifts'
@@ -192,7 +192,7 @@ ormask = 0 ; Free memory
    t0 = systime(1)
    res_qso = zfind(objflux, objivar, hdr=hdr, $
     eigenfile=eigenfile, npoly=npoly, zmin=zmin, zmax=zmax, pspace=pspace, $
-    nfind=nfind, width=pspace*5)
+    nfind=nfind, width=7*pspace)
    splog, 'CPU time to compute QSO redshifts = ', systime(1)-t0
 
    splog, 'Locally re-fitting QSO redshifts'
@@ -230,7 +230,7 @@ ormask = 0 ; Free memory
       res_star = zfind(objflux, objivar, hdr=hdr, $
        eigenfile=eigenfile, columns=istar, npoly=npoly, $
        zmin=zmin, zmax=zmax, pspace=1, $
-       nfind=nfind, width=pspace*3)
+       nfind=nfind, width=5*pspace)
       splog, 'CPU time to compute STAR redshifts = ', systime(1)-t0
 
       res_star.class = 'STAR'
