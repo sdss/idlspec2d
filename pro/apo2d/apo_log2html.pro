@@ -256,7 +256,8 @@ pro apo_log2html, logfile, htmlfile
    PPSCIENCE = mrdfits(logfile, 4)
    PPTEXT = mrdfits(logfile, 5)
    djs_unlockfile, logfile
-   if (NOT keyword_set(PPBIAS) AND NOT keyword_set(PPFLAT)) then begin
+   if (NOT keyword_set(PPBIAS) AND NOT keyword_set(PPFLAT) $
+    AND NOT keyword_set(PPTEXT)) then begin
       djs_unlockfile, htmlfile, lun=html_lun
       return
    endif
@@ -269,6 +270,10 @@ pro apo_log2html, logfile, htmlfile
    if (keyword_set(PPFLAT)) then begin
       allplates = [allplates, PPFLAT.plate]
       thismjd = PPFLAT[0].mjd
+   endif
+   if (keyword_set(PPTEXT)) then begin
+      allplates = [allplates, PPTEXT.plate]
+      thismjd = PPTEXT[0].mjd
    endif
    allplates = allplates[1:n_elements(allplates)-1]
    allplates = allplates[ uniq(allplates, sort(allplates)) ]
@@ -479,7 +484,7 @@ pro apo_log2html, logfile, htmlfile
       if (keyword_set(PPTEXT)) then ii = where(PPTEXT.plate EQ thisplate) $
        else ii = -1
       if (ii[0] NE -1) then begin
-         addtext = PPTEXT[ii].text
+         addtext = strtrim(PPTEXT[ii].text, 2) ; Remove leading+trailing spaces
          addtext = repstr(addtext, 'WARNING', $
           '<B><FONT COLOR="' + apo_color2hex('YELLOW') + '">WARNING</FONT></B>')
          addtext = repstr(addtext, 'ABORT', $
