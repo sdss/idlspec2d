@@ -2,6 +2,13 @@
 pro sphoto_calib, wave, flux, invvar, mask, fibertag, fcalfile, $
     stdstarfile, blue = blue
 
+  ; Double check that all spcetra are from 1 camera + spectrograph
+  camid = fibertag.camcolor + strtrim(fibertag.spectrographid, 2)
+  if n_elements(uniq(camid)) gt 1 then begin
+    splog, 'ABORT: Camera mismatch in spectrophotometric calibration!'
+    return
+  endif else camid = camid[0]
+
   ;-----------------------------------------
   ; Figure out frame, fiber, & pixel dimensions (wave -> [npix, nfib*nframe])
   ; For now, we assume we are only combining 1 plugmap
@@ -40,7 +47,7 @@ pro sphoto_calib, wave, flux, invvar, mask, fibertag, fcalfile, $
 
     ;-------------------
     ; Mask out bad pixels and regions dominated by sky-sub residuals
-    invvari = skymask(invvari, maski)
+    invvari = skymask(invvari, maski, ngrow =3)
     fluxi = djs_maskinterp(fluxi, (invvari EQ 0), iaxis=0, /const)
  
     newflux[*,ispec] = fluxi
@@ -131,8 +138,8 @@ pro sphoto_calib, wave, flux, invvar, mask, fibertag, fcalfile, $
     endif
    
     frame_calibset = frame_flux_calib(newwave, corvector[*,indx], $
-      corvivar[*,indx], avgcalibset, cormed[indx], bkpts, frames[iframe], $
-      fsig = fsig, blue = blue)
+      corvivar[*,indx], avgcalibset, cormed[indx], bkpts, $
+      camid + '-' + frames[iframe], fsig = fsig, blue = blue)
 
     ;--------------
     ; Create header cards describing the data range and write to FITS
