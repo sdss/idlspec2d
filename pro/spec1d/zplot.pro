@@ -109,9 +109,8 @@ pro zplot
    platelist, plist=plist
    ii = where(abs(plist.dec) LT 0.25 AND plist.qsurvey $
     AND strtrim(plist.status1d,2) EQ 'Done')
-   plate = plist[ii].plate
 
-   readspec, plate, plug=plug, zans=zans
+   readspec, plist[ii].plate, mjd=plist[ii].mjd, plug=plug, zans=zans
 
    xplot = zans.z * cos((plug.ra - ramid) / !radeg)
    yplot = zans.z * sin((plug.ra - ramid) / !radeg)
