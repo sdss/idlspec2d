@@ -1,5 +1,7 @@
 
 FIND_NMINIMA: Fix bug when plotting.
+LRGMODEL_TRAIN: Calling script for training the Bruzual-Charlot models
+        for photo-z's.
 SKYSUBTRACT: Fix possible crash condition, whereby the re-fit to the
         supersky is not done if the first fit failed and FULLBKPT does
         not exist (line 243).
