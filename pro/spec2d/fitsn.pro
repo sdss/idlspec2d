@@ -6,7 +6,8 @@
 ;   Perform a simple parameter to fit to log S/N vs magnitude
 ;
 ; CALLING SEQUENCE:
-;   coeffs = fitsn(mag, sn, /physical)
+;   coeffs = fitsn(mag, sn, /physical, sigrej=sigrej, maxiter=maxiter, $
+;                  maxmag=maxmag, minmag=minmag, sigma=sigma)
 ;
 ; INPUTS:
 ;   mag        - S/N vector for fibers
@@ -15,6 +16,7 @@
 ; OPTIONAL KEYWORDS:
 ;   physical   - fit with a model of background and throughput
 ;   sigrej     - sigma rejection threshold
+;   sigma      - standard deviation of residuals
 ;   maxiter    - Maximum number of iterations
 ;   minmag     - minimum magnitude limit to fit
 ;   maxmag     - maximum magnitude limit to fit
@@ -36,9 +38,8 @@
 ;   15-Apr-2000  Written by S. Burles, FNAL
 ;-
 ;------------------------------------------------------------------------------
-
 function fitsn, mag, sn, physical=physical, sigrej=sigrej, maxiter=maxiter, $
-    maxmag=maxmag, minmag=minmag
+    maxmag=maxmag, minmag=minmag, sigma=sigma
 
     if (NOT keyword_set(sigrej)) then sigrej = 5
     if (NOT keyword_set(maxiter)) then maxiter=5
@@ -59,8 +60,8 @@ function fitsn, mag, sn, physical=physical, sigrej=sigrej, maxiter=maxiter, $
       if (good[0] EQ -1) then return, -1
       a = polyfitw(mag, logsn, mask, 1, yfit)
       
-      diff = (logsn - yfit)[good]
-      djs_iterstat, diff, sigrej=sigrej, sigma=sigma, mask=smask
+      diff = logsn - yfit
+      djs_iterstat, diff[good], sigrej=sigrej, sigma=sigma, mask=smask
       treject = total(smask)
       if (treject EQ 0) then return,a $
       else begin
