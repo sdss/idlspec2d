@@ -772,20 +772,54 @@ The following header keywords are of interest: <BR>
 <PRE>
 PLATEID = Plate ID
 TILEID  = Tile ID
+MJD     = Modified Julian date for first night of observation
+MJDLIST = Modified Julian date for all nights of observation
 MAPID   = Fiber mapper ID
+CARTID  = Fiber cartridge used at the telescope
 NAME    = Name of target: Plate ID, MJD, Fiber mapper rerun
 COEFF0  = Central wavelength (log10-Angstroms) of first pixel
 COEFF1  = Wavelength range of each pixel (log-10 Angstroms)
-RADEG   = Right ascension of plate center (degrees)                     
-DECDEG  = Declination of plate center (degrees)                         
-EXPT_B1 = b1 camera exposure time (seconds)              
-EXPT_B2 = b2 camera exposure time (seconds)              
-EXPT_R1 = r1 camera exposure time (seconds)              
-EXPT_R2 = r2 camera exposure time (seconds)              
-EXPTIME = Minimum of exposure times for all cameras      
+CRVAL1  = (Same as COEFF0)
+CD1_1   = (Same as COEFF1)
+RADEG   = Right ascension of plate center (J2000 degrees)
+DECDEG  = Declination of plate center (J2000 degrees)
+AIRMASS = Airmass for mid-point of observation
+RA      = Right ascension of where the telescope thinks it is pointing
+DEC     = Declination of where the telescope thinks it is pointing
+AZ      = Azimuth of the telescope (degrees)
+ALT     = Altitude of the telescope (degrees)
+NEXP    = Total number of frames from all cameras used in the co-adding;
+          since there are 4 cameras, NEXP=12 would typically mean that there
+          were 3 exposures in each camera.
+EXPT_B1 = b1 camera exposure time (seconds)
+EXPT_B2 = b2 camera exposure time (seconds)
+EXPT_R1 = r1 camera exposure time (seconds)
+EXPT_R2 = r2 camera exposure time (seconds)
+EXPTIME = Minimum of exposure times for all cameras
+SMEARUSE = Set to 'T' if the spectra were normalized to a smear exposure,
+           which is effectively a 1-minute exposure on a 5 x 7 arcsec
+           aperature.
+SPEC1_G  = (S/N)^2 per pixel at g=20.2 on spectrograph #1.
+SPEC2_G  = (S/N)^2 per pixel at g=20.2 on spectrograph #2.
+SPEC1_R  = (S/N)^2 per pixel at r=20.25 on spectrograph #1.
+SPEC2_R  = (S/N)^2 per pixel at r=20.25 on spectrograph #2.
+SPEC1_I  = (S/N)^2 per pixel at i=19.9 on spectrograph #1.
+SPEC2_I  = (S/N)^2 per pixel at i=19.9 on spectrograph #2.
+TAI     = Number of seconds since Nov 17 1858 for mid-point of observation
+TAI-BEG = Number of seconds since Nov 17 1858 for beginning of observation
+TAI-END = Number of seconds since Nov 17 1858 for end of observation
+SEEING20= 20th-percentile of seeing during exposure (arcsec)
+SEEING50= 50th-percentile of seeing during exposure (arcsec)
+SEEING80= 20th-percentile of seeing during exposure (arcsec)
+RMSOFF20= 20th-percentile of RMS offset of guide fibers (arcsec)
+RMSOFF50= 20th-percentile of RMS offset of guide fibers (arcsec)
+RMSOFF80= 20th-percentile of RMS offset of guide fibers (arcsec)
+VERSIDL = Version of IDL
 VERS2D  = Version of idlspec2d for 2D reduction
 VERSCOMB= Version of idlspec2d for combining multiple spectra
+VERSFLAT= Version of specflat for spectroscopic flat-fields
 VERS1D  = Version of idlspec2d for 1D reduction
+HELIO_RV= Barycentric velocity correction (km/sec)
 </PRE>
 
 <P>
