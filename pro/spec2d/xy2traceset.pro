@@ -104,8 +104,8 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
 
          igood = lindgen(nx)
          ngood = nx
-         nglast = nx+1 ; Set to anything other than NGOOD for 1st iteration
-         while (ngood NE nglast) do begin
+         nglast = nx+1 ; Set to anything higher than NGOOD for 1st iteration
+         while (ngood LT nglast) do begin
             res = func_fit(xnorm[igood], ypos[igood,i], ncoeff, $
               function_name=function_name)
 
