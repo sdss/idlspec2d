@@ -103,7 +103,7 @@ pro apoall, rawdir, astrolog=astrolog, flatdir=flatdir, mjd=mjd, $
 
       ; Find all raw FITS files in this directory
       cd, inputdir, current=olddir
-      fullname = findfile('sdR*.fit', count=nfile)
+      fullname = findfile('sdR*.fit*', count=nfile)
       cd, olddir
 
       print, 'Number of FITS files found: ', nfile
