@@ -278,6 +278,9 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
       skyvarset = bspline_iterfit(skywave[posvar], skyvariance, $
         invvar=skyivar[posvar], nord=nord, upper=upper, lower=lower, $
         maxiter=maxiter, /eachgroup, bkpt=bkpt)
+;;
+;;  Should this be airmass_correction^2 in the next line, alright it should be
+;;
       skyvarfit = bspline_valu(wave, skyvarset) * airmass_correction^2
    endif
 
@@ -311,6 +314,7 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
 
       ; Bin according to the break points used in the supersky fit.
 
+      if (NOT keyword_set(npoly)) then npoly = 1L
       nbin = N_elements(bkpt) - 1
       relwave = fltarr(nbin)
       relchi2 = fltarr(nbin)
@@ -319,7 +323,7 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
          ii = where(skywave GE bkpt[ibin] AND skywave LT bkpt[ibin+1] $
           AND skyivar GT 0, nn)
 
-         if (nn GT 2) then begin
+         if (nn GT 2 AND nn GT (npoly+1)) then begin
             ; Find the mean wavelength for these points
             relwave[ibin] = total(skywave[ii]) / nn
 
@@ -330,8 +334,8 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
             ; The following evaluation looks at the 67th percentile of the
             ; points, which is much more robust.
             pos67 = ceil(2.*nn/3.) - 1
-            tmpchi2 = skychi2[ii]
-            relchi2[ibin] = tmpchi2[ (sort(tmpchi2))[pos67] ]
+            tmpchi2 = skychi2[ii] * (1.0*nn / (nn - npoly))
+            relchi2[ibin] = tmpchi2[ (sort(tmpchi2))[pos67] ] 
 
             ; Burles counter of bin number...
             print, format='("Bin ",i4," of ",i4,a1,$)', $
