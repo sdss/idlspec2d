@@ -23,6 +23,7 @@
 ;   synflux    - Synthetic spectra
 ;
 ; COMMENTS:
+;   The sub-pixel shifts are applied with the COMBINE1FIBER procedure.
 ;
 ; EXAMPLES:
 ;
