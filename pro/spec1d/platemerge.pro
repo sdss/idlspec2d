@@ -71,14 +71,15 @@ pro platemerge, zfile, outfile=outfile, ascfile=ascfile
       endif
 
       copy_struct_inx, zans, outdat, index_to=lindgen(640)+640*ifile
-      copy_struct_inx, tsobj, outdat, index_to=lindgen(640)+640*ifile
+      if (keyword_set(tsobj)) then $
+       copy_struct_inx, tsobj, outdat, index_to=lindgen(640)+640*ifile
 
    endfor
 
    ;----------
    ; Write the output file
 
-   mwrfits, outdat, outfile
+   mwrfits, outdat, outfile, /create
 
    ;----------
    ; Create the structure for ASCII output
@@ -94,12 +95,16 @@ pro platemerge, zfile, outfile=outfile, ascfile=ascfile
     'dof'        ,  0L, $
     'ra'         , 0.0d, $
     'dec'        , 0.0d, $
+    'plate_sn2'  ,  0.0, $
     'modelcounts', fltarr(5), $
     'objc_type'  ,  '', $
     'primtarget' ,  0L, $
     'sectarget'  ,  0L )
    adat = replicate(adat, nout)
    struct_assign, outdat, adat
+
+   adat.plate_sn2 = (outdat.spec1_g + outdat.spec1_i + outdat.spec2_g $
+    + outdat.spec2_i) / 4.0
 
    ii = where(strtrim(adat.class,2) EQ '')
    if (ii[0] NE -1) then adat[ii].class = '""'
