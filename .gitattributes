@@ -88,6 +88,7 @@ pro/science/kinematics/mveldisp.pro -text
 pro/science/kinematics/mveldisp_fft.pro -text
 pro/science/kinematics/mveldisp_stars.pro -text
 pro/science/kinematics/mveldisp_struc.pro -text
+pro/science/kinematics/newdiff.pro -text
 pro/science/kinematics/skyremove.pro -text
 pro/science/kinematics/template.pro -text
 pro/science/lickindex/gauss_smooth_wave.pro -text
