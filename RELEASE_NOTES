@@ -58,6 +58,10 @@ SPFLATTEN2: Major changes! Now call the 2-dimensional B-spline code when
             with this code for some combinations of NORD and NPOLY.  I have
             set NORD=3, NPOLY=4 which seems to be a combination that works.
             (A PR has been filed against idlutils.)
+            Subtract the scattered light image before dividing by the super-
+            flat evaluations -- w/out doing this, we had bad residuals where
+            the scattered light contribution was large compared to the signal
+            (particularly in the UV).
             Also, small changes to how directory names are parsed, and retain
             the header from the file ALLFLATS[0] for the output file.
 SUPERFLAT: Pass X2, NORD and NPOLY keywords to support fitting 2-dimensional
