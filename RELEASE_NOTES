@@ -5,12 +5,18 @@ Runnable version for P-1D.
 
 APOREDUCE: Check how full the disks are for both the input files (sdR images),
             and the outputs.  Issue a warning message if either is >95% full.
+ATVRAWSPEC: Display a 2D spectroscopic image with bad columns marked in red.
+            This is useful to see that all bad columns have been masked,
+            especially when looking at the 2D pixel flats.
 CREATE_LINESTRUCT(): Function broken out of LINEBACKFIT so that it
             can be called by SPECLINEFIT.
 EXTRACT_OBJECT: Added call to skyline_dispersion (for increasing the
             instrumental response width to agree with the width of sky
             lines), but correction is not implemented because the measurement
             appears to be very noisy.
+FINDOPFILE: Find the op file corresponding to a specified MJD.
+            This function is broken out of SDSSPROC so that it can
+            be used by other procs (like ATVRAWSPEC).
 FITDISPERSION: Mask regions not neighboring lines of interest.
             Simplifies extraction of line widths.
 LINEBACKFIT: Fix possible crash condition when computing LINENPIX if
@@ -45,6 +51,7 @@ SDSSPROC:  Change to select which op file to use based upon the MJD in the
             Make the MJD selection of the op files a bit more clear.
             Issue a warning message if there is no op file with an MJD
             equal to or less than the image's MJD.
+            The function FINDOPFILE is broken out into its own file.
 SKYLINE_DISPERSION: Function similar to fitdispersion which measures
             gaussian line widths of sky lines given arc line dispersion set
             as initial guess.  Indices of sky fibers can be specified to
@@ -59,6 +66,8 @@ SKYLINE_DISPERSION: Function similar to fitdispersion which measures
                                  pixels) for each skyline
               med_diff = the median quadrature difference: width^2 - arc^2
               stddev = the scatter in the quadrature difference for that line
+SPBIASAVE: New proc to average together a set (or all!) 2D pixel biases.
+            This proc is modelled on SPFLATAVE.
 SPCOADD_FRAMES: Remove the following keywords from the spPlate file:
             PIXBIAS,FLATFILE,ARCFILE,OBJFILE.
             Issue a warning message if any object fibers have OBJTYPE=NA,
@@ -69,6 +78,8 @@ SPECLINEFIT: Fixed dumb mistake on indexing that could crash.
             Always create an NLINE x NOBJ output structure, with blank
             entries where we do not measure lines (currently, only
             measuring for GALAXY objects).
+SPFLATAVE: Add comments to output header to track which files were used;
+            change default for input directory to current.
 SPREDUCE: No longer issue an abort message in this proc if the science
             exposure is declared bad, but issue those messages from within
             the REJECT_SCIENCE() function.
