@@ -122,6 +122,18 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    ; Wait for a file to be fully written to disk, and exit if that doesn't
    ; happen within 3 minutes.
 
+   spawn, 'df -k '+outdir, dfout
+   if size(dfout,/tname) EQ 'STRING' then begin
+     dfout_entry = dfout[n_elements(dfout)-1]
+     if dfout_entry NE '' then begin
+       perc  = str_sep(dfout_entry,'%')
+       percentfull = long(strmid(perc[0],rstrpos(perc[0],' ')))
+       if percentfull GT 95 then $
+         splog, 'WARNING: SOS Disk is almost full: ' + dfout
+     endif else splog, 'Warning: Could not check disk space'
+   endif else splog, 'Warning: Could not check disk space'
+
+
    spawn, 'ls -l '+fullname, lsstring
    splog, 'DIRLIST '+lsstring
 
