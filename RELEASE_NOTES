@@ -8,6 +8,8 @@ Built against specflat v1_3.
 
 Minor bug fixes for SOS.
 
+APO_LOG2HTML: Generate the HTML file name even if the FITS file has a path
+            in the name, as happens when being called from REMOVE2REDO.
 BATCH2D: Include 'smear' exposures when generating list of output files.
             (Not doing this caused a crash for plates w/ only smears).
 FLUXCORR_NEW: Provide a better test of valid smear correction, fixes PR #2478.
