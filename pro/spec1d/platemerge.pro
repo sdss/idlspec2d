@@ -33,6 +33,7 @@
 ;   headfits()
 ;   mrdfits()
 ;   mwrfits
+;   plug2tsobj()
 ;   struct_print
 ;   sxpar()
 ;
