@@ -63,6 +63,7 @@ pro spreduce2d, planfile, docams=docams, xdisplay=xdisplay
 
    thisplan = fileandpath(planfile[0], path=thispath)
    cd, thispath, current=origdir
+   if (NOT keyword_set(thispath)) then cd, origdir
 
    ;----------
    ; Find the SPEXP structure
