@@ -682,7 +682,7 @@ pro spcoadd_v5, spframes, outputname, $
    ;---------------------------------------------------------------------------
 
    ; First write the file with the flux distortion vectors
-   mwrfits, corrimg, distortfitsfile, hdrfloat, /create
+   mwrfits, corrimg, distortfitsfile, bighdr, /create
 
    fulloutname = djs_filepath(outputname, root_dir=combinedir)
 
