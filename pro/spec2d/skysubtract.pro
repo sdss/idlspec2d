@@ -154,10 +154,13 @@ pro skysubtract, obj, objivar, plugmap, wset, skysub, skysubivar, $
        else title=''
       xrange = xmin + [ipanel, ipanel+1] * (xmax-xmin) / float(npanel)
 
-      djs_plot, 10^allwave, diff<9.9, ps=3, $
-       xrange=xrange, yrange=[-0.5,7.5], xstyle=1, ystyle=1, $
-       xtitle='\lambda [A]', ytitle='\chi^2', title=title, charsize=2.0
-      djs_oplot, 10^rwave, diff67, color='red', ps=10
+;      djs_plot, 10^allwave, diff<9.9, ps=3, $
+;       xrange=xrange, yrange=[-0.5,7.5], xstyle=1, ystyle=1, $
+;       xtitle='\lambda [A]', ytitle='\chi^2', title=title, charsize=1.5
+;      djs_oplot, 10^rwave, diff67, color='red', ps=10
+      djs_plot, 10^allwave, diff67, ps=10, $
+       xrange=xrange, yrange=[0.0,8.0], xstyle=1, ystyle=1, $
+       xtitle='\lambda [A]', ytitle='\chi^2', title=title, charsize=1.5
 
       if (ipanel EQ 0) then $
        xyouts, 0.95*xrange[0] + 0.05*xrange[1], 6.0, $
