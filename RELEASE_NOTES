@@ -27,6 +27,10 @@ REDMONSTER: Change the warning message to "Bad sky residuals...",
             be due to the hand-paddle LED.  This change is for the
             benefit of the observers (from Son-of-Spectro warnings).
             Also output the peak chi.
+SDSS_FLAGS: Add "SOUTHERN_SURVEY" flags for TARGET and TTARGET.
+            Also, return a warning message for any bits that are set
+            but whose meaning is unknown.  Previously, a wrong answer
+            would just be given in that case.
 SDSSPROC: Reverted to calls to specflat_version,speclog_version that work.
 SPBIASGEN: New routine for generating mean biases for a night.
 SPREDUCE1D, ZFIND, ZCOMPUTE, FIND_NMINIMA: Plotting and debugging
