@@ -1,4 +1,7 @@
 
+# This info is meant to be listed on the following web site:
+#   http://www-sdss.fnal.gov:8000/~sdssdp/target/chunks.html
+
 typedef struct {
   char chunkname[20];   # Chunk name/number
   int  plate_start;     # First plate number in chunk
@@ -30,4 +33,6 @@ spchunklist 12 466 482 v2_13_4
 spchunklist 13 454 465 v2_13_1
 spchunklist 14 500 540 v2_13_4b
 spchunklist 15 541 561 v2_13_5
+spchunklist 16 562 581 v2_13_6
+spchunklist 17 582 595 v2_13_7
 
