@@ -2,6 +2,8 @@
 FIND_NMINIMA: Fix bug when plotting.
 GET_TAI: Report warning about exposures less than 2 minutes only
         for science or smear exposures.
+KURUCZ_FITSFILE: New proc for generating a single FITS file from a list
+        of ASCII-formatted Kurucz models.
 LRGMODEL_TRAIN: Calling script for training the Bruzual-Charlot models
         for photo-z's.
 PLOTSIGNAL: New routine for making diagnostic plots of the signal seen
