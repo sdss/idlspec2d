@@ -62,6 +62,7 @@ pro readidlout, flux, sig=sig, wave=wave, expres=expres, plugmap=plugmap
 
       flux = fltarr(max(npix),nfiles)
       if (ARG_PRESENT(sig)) then sig = fltarr(max(npix),nfiles)
+      if (ARG_PRESENT(wave)) then wave = fltarr(max(npix),nfiles)
       if (ARG_PRESENT(plugmap)) then $
          plugmap = replicate(shortplugmap,nfiles)
 
@@ -70,6 +71,10 @@ pro readidlout, flux, sig=sig, wave=wave, expres=expres, plugmap=plugmap
         data = readfits(files[i], hdr, /silent)
         flux[0:npix[i]-1,i] = data[*,0]
         if (ARG_PRESENT(sig)) then sig[0:npix[i]-1,i] = data[*,1]
+
+        if (ARG_PRESENT(wave)) then wave[*,i] = $
+             findgen(max(npix))*disp[1,i] + disp[0,i]
+
         if (ARG_PRESENT(plugmap)) then begin
             fillplugmap, shortplugmap, hdr
             plugmap[i] = shortplugmap
