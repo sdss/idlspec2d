@@ -111,6 +111,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    plate = sxpar(hdr, 'PLATEID')
    platestr = string(plate, format='(i4.4)')
    mjd = sxpar(hdr, 'MJD')
+   mjdstr = strtrim(string(mjd,2))
 
    ;----------
    ; Fix up some header information from early data
@@ -120,10 +121,8 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    ;----------
    ; Determine names for the FITS and HTML output log files
 
-   logfile = filepath('logfile-' + strtrim(string(mjd),2) + '.fits', $
-    root_dir=outdir)
-   htmlfile = filepath('logfile-' + strtrim(string(mjd),2) + '.html', $
-    root_dir=outdir)
+   logfile = filepath('logfile-' + mjdstr + '.fits', root_dir=outdir)
+   htmlfile = filepath('logfile-' + mjdstr + '.html', root_dir=outdir)
     
    ;----------
    ; Find the full name of the plugmap file
@@ -218,7 +217,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    if (camnames[icam] EQ 'r2' AND keyword_set(rstruct)) then begin
       wait, 10
 
-      plotfile = filepath('snplot-'+platestr+'.ps', root_dir=outdir)
+      plotfile = filepath('snplot-'+mjdstr+'-'+platestr+'.ps', root_dir=outdir)
       apo_plotsn, logfile, plate, plugfile=fullplugfile, plotfile=plotfile
 
       apo_log2html, logfile, htmlfile

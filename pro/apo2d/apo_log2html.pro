@@ -106,15 +106,16 @@ function apo_log_tableline, ncams
 end
 
 ;------------------------------------------------------------------------------
-function apo_log_beginplate, platenum, camnames
+function apo_log_beginplate, platenum, mjd, camnames
 
    rowsep = ' <TR> <TH> '
    colsep = ' <TH> '
 
    ncams = n_elements(camnames)
 
+   mjdstr = strtrim(string(mjd),2)
    platestr = string(platenum, format='(i4.4)')
-   plotfile = 'snplot-'+platestr+'.ps'
+   plotfile = 'snplot-'+mjdstr+'-'+platestr+'.ps'
 
    textout = ['<TABLE BORDER=1 CELLPADDING=3>']
    textout = [textout, apo_log_tableline(ncams)]
@@ -223,11 +224,12 @@ pro apo_log2html, logfile, htmlfile
 
    allplates = plate[ uniq(plate, sort(plate)) ]
    nplates = n_elements(allplates)
+   mjdstr = strtrim(string(mjd[0]),2)
 
    ;----------
    ; Consruct the header of the output text
 
-   title = 'APO SPECTRO LOGSHEET MJD=' + strtrim(string(mjd[0]),2) + ' PLATE='
+   title = 'APO SPECTRO LOGSHEET MJD=' + mjdstr + ' PLATE='
    for iplate=0, nplates-1 do begin
       title = title + strtrim(string(allplates[iplate]),2)
       if (iplate NE nplates-1) then title=title+','
@@ -245,7 +247,7 @@ pro apo_log2html, logfile, htmlfile
 
       thisplate = allplates[iplate]
 
-      textout = [textout, apo_log_beginplate(thisplate, camnames)]
+      textout = [textout, apo_log_beginplate(thisplate, mjd[0], camnames)]
 
       ;----------
       ; Find the first (and presumably only) FLAVOR=flat for each camera
