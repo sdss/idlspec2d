@@ -516,8 +516,12 @@ At present, there are two versions of this file as follows:
    <LI><B>spAll.fits</B> - All spectroscopic data taken to date
        from 'marginal' or 'good' plates
        (see PLATEQUALITY in the <A HREF="#platelist">platelist file</A>)
-   <LI><B>spAll-public.fits</B> - spAll trimmed to only those plates
-       that should be in the Early Data Release (EDR) or Data Release 1 (DR1)
+   <LI><B>spAll-EDR.fits</B> - spAll generated from only those plates
+       in the Early Data Release (EDR)
+   <LI><B>spAll-EDR.fits</B> - spAll generated from only those plates
+       in the Data Release 1 (DR1)
+   <LI><B>spAll-public.fits</B> - spAll generated from only those plates
+       in the Early Data Release (EDR) or Data Release 1 (DR1)
 </OL>
 Although these files are quite large, most FITS readers will allow
 you to read such files piece-wise.
@@ -534,6 +538,9 @@ The following information is compiled for each object:
  <TR><TD> PLATESN2     <TD> Signal-of-noise measure of the plate (the worst of the 4 cameras)
  <TR><TD> SMEARUSE     <TD> 'T' if a smear is used for spectrophotometry; 'F' otherwise
  <TR><TD> SPECPRIMARY  <TD> 1 for the best spectroscopic observation of each object, 0 otherwise
+ <TR><TD> SPECOBJ_ID   <TD> Unique ID for spectroscopic objects, starting with 1; objects at
+                            the same coordinates have the same ID, with only one being SPECPRIMARY
+ <TR><TD> NSPECOBS     <TD> Number of spectroscopic observations of this object
  <TR><TD> ZANS         <TD> ZANS structure from <A HREF="#dm_spzbest">spZbest</A> file
                             with spectroscopic classifications (CLASS), redshifts (Z), etc.
  <TR><TD> TSOBJ        <TD> TSOBJ structure with all imaging and target-selection parameters
@@ -551,33 +558,16 @@ with Unix commands such as "awk" that want to index based upon word number:
 (i.e., replacing "BROADLINE STARBURST" with "BROADLINE+STARBURST").
 
 <P>
-These photometric outputs were assembled by Mike Blanton and  Daniel Eisenstein.
-Where the PHOTO data does exist, they are selected from the tsObj files
-used to drill the plates, not necessarily the most recent calibrations.
-This is what Blanton & Eisenstein call their "skyVersion==0" outputs.
-
-<P>
-As of 1 July 2002, all of the imaging data has been recovered for
-the main survey plates.  The only exceptions are: plates 230-231
-(reddening plates), plate 321 (M67 velocity standards, not targetted
-from SDSS data anyway), and plate 797 (Yanny's faint F stars).
-See PR #3116 for details.
+These photometric outputs are from the Princeton PHOTO reductions.
 
 <P>
 If you have access to the Princeton computers,
-these trimmed tsObj files can be found at:
+these trimmed calibObj files can be found at:
 <PRE>
-  sdssdata.princeton.edu:/u/dss/spectro/plates
+  sdssdata.princeton.edu:/u/dss/spectro/calibobj
 </PRE>
-The original copies of these files are at NYU:
-<PRE>
-  alfred@hola.cosmo.fas.nyu.edu:/global/data/sdss/tsObjPlate
-</PRE>
-
-<P>
-Another technical point: the <A HREF="#targetflags">target flags</A>
-have been over-written with those found in the plPlugMapM files,
-since Eisenstein reports that they are incorrect in many of the tsObj files.
+A technical point: the <A HREF="#targetflags">target flags</A>
+have been over-written with those found in the plPlugMapM files.
 
 <H4><A NAME="completesample">Summary Files: Selecting Complete Samples</A></H4>
 
@@ -692,8 +682,8 @@ If you have someone maintaining survey code at your institution
 (i.e., at Princeton using a Linux box), you can set up the tools
 by simply typing:
 <DL><DD><PRE>
-  source /u/products/etc/sdssfue.csh  # If you are using C-shell
-  source /u/products/etc/sdssfue.sh   # If you are using Bourne-shell
+  source /u/dss/products/evilups/bin/setups.csh  # If you are using C-shell
+  source /u/dss/products/evilups/bin/setups.csh  # If you are using Bourne-shell
   setup idlspec2d
 </PRE></DD></DL>
 
