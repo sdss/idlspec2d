@@ -299,3 +299,11 @@ ophdrfix sdR-??-00013171 FLAVOR   "'unknown'"
 # had very poor S/N.
 ophdrfix sdR-??-0001318[1-2] FLAVOR   "'unknown'"
 
+# These were test data taken during shake on MJD 52327 (49 exposures).
+ophdrfix sdR-??-0001343[8-9] FLAVOR   "'unknown'"
+ophdrfix sdR-??-0001344[0-9] FLAVOR   "'unknown'"
+ophdrfix sdR-??-0001345[0-9] FLAVOR   "'unknown'"
+ophdrfix sdR-??-0001346[0-9] FLAVOR   "'unknown'"
+ophdrfix sdR-??-0001347[0-9] FLAVOR   "'unknown'"
+ophdrfix sdR-??-0001348[0-6] FLAVOR   "'unknown'"
+
