@@ -33,6 +33,9 @@ PLUG2TSOBJ: Small changes to allow reading of the (new) calibObj files.
            For now, assume these files are in $SPECTRO_DATA/calibobj.
            Print a warning message for non-matched objects only if they
            are not skies.
+READSPEC: Add internal function RSPEC_ZLINE_APPEND() for appending two
+           zline structures, even if they are different structures or
+           have different number of lines measured.
 SDSSPROC: Call the new proc WARN_DAYTIME.
 SPCALIB: The correct TSET structure was not always being written
            to the spFlat files (though those files aren't actually
