@@ -3,7 +3,7 @@
 ;   plotspec
 ;
 ; PURPOSE:
-;   Routine for plotting a single fiber from Princeton-1D spectro outputs
+;   Routine for plotting spectra from Princeton-1D spectro outputs.
 ;
 ; CALLING SEQUENCE:
 ;   plotspec, plate, [ fiberid, mjd=, znum=, nsmooth=, psfile=, $
@@ -119,7 +119,7 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
    primtarget = sdss_flagname('TARGET', plug.primtarget, /concat)
    sectarget = sdss_flagname('TTARGET', plug.sectarget, /concat)
 
-   csize = 2
+   csize = 1.75
    textcolor = 'green'
    if (keyword_set(passyr)) then begin
       yrange = passyr
