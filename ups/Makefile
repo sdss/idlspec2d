@@ -5,13 +5,10 @@
 
 SHELL = /bin/sh
 #
-default :
-	echo "Please invoke this makefile using sdssmake"
 all :;
 
 install :
-	$(SDSSTOOLS_DIR)/bin/install_ups_table idlspec2d.table \
-							$(IDLSPEC2D_DIR)/ups
+	- cp idlspec2d.table $(IDLSPEC2D_DIR)/ups
 	- cp Makefile $(IDLSPEC2D_DIR)/ups
 
 clean :
