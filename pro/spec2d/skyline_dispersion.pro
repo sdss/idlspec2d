@@ -64,9 +64,8 @@ function skyline_dispersion, flux, fluxivar, xcen, iskies, dispset
           mask[xtemp,ysky] = 1
         endfor
 
-	;
-        ; Extract sky lines  	
-        ;
+        ; Extract sky lines
+
         traceset2xy, dispset, transpose(xsky), sigma
         sigma=transpose(sigma)
 
@@ -83,20 +82,26 @@ function skyline_dispersion, flux, fluxivar, xcen, iskies, dispset
 
         finaldiff = fltarr(nline)
 
-        for i=0,nline-1 do begin
-          mask2 = transpose((skylineivar[*,i] GT 0) * (skylineflux[*,i] GT 0))
-          good = where(mask2,ngood)
+        for iline=0, nline-1 do begin
+          mask2 = transpose((skylineivar[*,iline] GT 0) $
+           * (skylineflux[*,iline] GT 0))
+          igood = where(mask2, ngood)
 
-          widthterm = ansimage[i*2+1,good]
-    	  width = (1 + widthterm/skylineflux[good,i])*sigma[good,i]
-          quadrature_difference = width^2 - sigma[good,i]^2
-          djs_iterstat, quadrature_difference, median=md, sigma=ss
+          if (ngood GT 0) then begin
+             widthterm = ansimage[iline*2+1,igood]
+             width = (1 + widthterm / skylineflux[igood,iline]) $
+              * sigma[igood,iline]
+             quad_diff = width^2 - sigma[igood,iline]^2
+             djs_iterstat, quad_diff, median=md, sigma=ss
 
-          splog, median(xsky[good,i]), ngood, median(skylineflux[good,i]), $
-              median(sigma[good,i]), min(width), max(width), median(width), $
-              md, ss, format='(f8.3, i4, i6, 6f7.3)'
+             splog, median(xsky[igood,iline]), ngood, $
+              median(skylineflux[igood,iline]), $
+               median(sigma[igood,iline]), $
+               min(width), max(width), median(width), $
+               md, ss, format='(f8.3, i4, i6, 6f7.3)'
 
-          finaldiff[i] = md
+             finaldiff[iline] = md
+           endif
         endfor
     
         diff25 = finaldiff[(sort(finaldiff))[nline/4]] > 0
