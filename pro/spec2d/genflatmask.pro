@@ -6,7 +6,7 @@
 ;   Read or generate a mask for pixels to ignore when generating flat-fields.
 ;
 ; CALLING SEQUENCE:
-;   maskimg = genflatmask( [ flatname, spectrographid=, color=, indir=, tmpdir= ] )
+;   maskimg = genflatmask( [ flatname, spectrographid=, color=, indir=, ] )
 ;
 ; OPTIONAL INPUTS:
 ;   flatname   - Name of flat-field image
@@ -17,8 +17,6 @@
 ;   color      - Spectrograph color ('red' or 'blue');
 ;                reqired if FLATNAME not set.
 ;   indir      - Input directory for FLATNAME; default to '.'
-;   tmpdir     - Temporary directory for uncompressing the mask image
-;                if FLATNAME is not specified; default to '.'
 ;
 ; OUTPUTS:
 ;   maskimg    - Mask image with 0=good, 1=bad
@@ -50,7 +48,7 @@
 ;-
 ;------------------------------------------------------------------------------
 function genflatmask, flatname, spectrographid=spectrographid, color=color, $
- indir=indir, tmpdir=tmpdir
+ indir=indir
 
    if (keyword_set(flatname)) then begin
 
@@ -94,7 +92,6 @@ function genflatmask, flatname, spectrographid=spectrographid, color=color, $
 
       if (NOT keyword_set(spectrographid) OR NOT keyword_set(color)) then $
        message, 'Must specify SPECTROGRAPHID and COLOR if FLATNAME not set'
-      if (NOT keyword_set(tmpdir)) then tmpdir = '.'
 
       ; Generate the name of the mask file in the IDLSPEC2D distribution,
       ; and the name of the temporary gunzip-ed version.

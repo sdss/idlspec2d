@@ -199,7 +199,7 @@ arcivar = 0
    ;---------------------------------------------------------------------------
 
    maskimg = genflatmask(oldflat, spectrographid=spectrographid, color=color, $
-    indir=indir, tmpdir=tmpdir)
+    indir=indir)
 
    ; If a column contains fewer than 5 good points, mask that entire column
    for i=0, nx-1 do begin
