@@ -16,8 +16,6 @@ columns=lindgen(24)
 ;mjd = 52238
 ;slowplot = 1
 
-   if (keyword_set(debug)) then doplot = 1
-
    stime0 = systime(1)
 
    readspec, plate, fiberid, mjd=mjd, flux=objflux, invvar=objivar, $
@@ -26,8 +24,11 @@ columns=lindgen(24)
 
    if (keyword_set(plotfile1)) then begin
       if (size(plotfile1,/tname) EQ 'STRING') then plotfile = plotfile1 $
-       else plotfile = string(plate, mjd, format='("vdisp-",i4.4,"-",i5.5,".ps")')
+       else plotfile = string(plate, mjd, $
+        format='("vdisp-",i4.4,"-",i5.5,".ps")')
+      dfpsplot, plotfile, /color
    endif
+   if (keyword_set(debug) OR keyword_set(plotfile)) then doplot=1
 
    if (keyword_set(brightest)) then begin
       igal = where(strtrim(zans.class,2) EQ 'GALAXY' AND zans.zwarning EQ 0, $
@@ -99,7 +100,7 @@ columns=lindgen(24)
          !p.multi = 0
          plothist, chivec1, bin=binsz, xrange=[-10,10], $
           xtitle=textoidl('\chi'), ytitle=textoidl('\chi Distribution'), $
-          title=plottitle
+          title=plottitle, charsize=csize
          plothist, chivec2, bin=binsz, /overplot, color=djs_icolor('blue')
          xplot = !x.crange[0] + findgen(101)*(!x.crange[1]-!x.crange[0])/100
          yplot = exp(-0.5*xplot^2) * npix * binsz / sqrt(2.*!pi)
@@ -156,6 +157,8 @@ columns=lindgen(24)
    splog, 'Total time = ', systime(1)-stime0, ' seconds', $
     format='(a,f6.0,a)'
 
+   if (keyword_set(plotfile)) then dfpsclose
 stop
+
    return
 end
