@@ -52,7 +52,7 @@ fi
 
 echo ""
 echo "-------------------------------------------------------------------------------"
-echo "SPROBOT: Started at "`date`
+echo "SPROBOT: Launched at "`date` UID=$UID PPID=$PPID
 
 #------------------------------------------------------------------------------
 # Find raw data directories on the machine $hostname, and loop through them
@@ -184,6 +184,10 @@ fi
 #   echo "SPROBOT: BATCH2D started at "`date`
 #   sprobot2d.sh ",topdir='$topoutdir', nice=19" &
 #fi
+
+#------------------------------------------------------------------------------
+
+echo "SPROBOT: Finished at "`date` UID=$UID PPID=$PPID
 
 exit
 #------------------------------------------------------------------------------

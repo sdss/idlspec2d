@@ -13,7 +13,7 @@
 # S. Burles, APO, 4 May 2000
 #------------------------------------------------------------------------------
 
-echo "APORSYNC: Launched at "`date`
+echo "APORSYNC: Launched at "`date` UID=$UID PPID=$PPID
 
 if [ -n "$RAWDATA_DIR" ]  
 then 
@@ -72,4 +72,6 @@ rsync -ar --rsh="ssh -c blowfish" \
       --rsync-path=/p/rsync/v2_4_3/rsync \
       --log-format="/data/spectro/%f" --exclude="*-b*" \
       "sdsshost:/data/spectro/[56789]????" $rawdata_dir | startapo.sh 
+
+echo "APORSYNC: Finished at "`date` UID=$UID PPID=$PPID
 

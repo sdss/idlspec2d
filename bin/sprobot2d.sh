@@ -16,12 +16,15 @@ if [ X"$n" != X"" -a "$n" -gt 2 ]; then
    echo "SPROBOT2D: BATCH2D already running at "`date`
    exit
 fi
+echo "SPROBOT2D: Launched at "`date` UID=$UID PPID=$PPID
 
 # Do not put this in the background, because we search for the "sprobot2d.sh"
 # process to determine if this is already running!
 
 echo SPROBOT2D: batch2d $1
 echo batch2d $1 | idl
+
+echo "SPROBOT2D: Finished at "`date` UID=$UID PPID=$PPID
 
 exit
 #------------------------------------------------------------------------------
