@@ -88,6 +88,8 @@ echo "# This job will run at 7:20 am every day." >> $cronfile
 echo "20 7 * * * mailhtml.sh >> $SOSLOG 2>&1" >> $cronfile
 echo "# This job will run at 7:25 am every day." >> $cronfile
 echo "25 7 * * * mv -f $SOSLOG $SOSLOG.old" >> $cronfile
+echo "# This job will run every 10 minutes to keep the disk automounter up." >> $cronfile
+echo "*/10 * * * * ls $IDLSPEC2D_DIR > /dev/null" >> $cronfile
 echo "# SOS END" >> $cronfile
 
 #------------------------------------------------------------------------------
