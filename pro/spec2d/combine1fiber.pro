@@ -170,7 +170,9 @@ endelse
          inside = where(newloglam GE min(inloglam[ss])-EPS $
           AND newloglam LE max(inloglam[ss])+EPS, numinside)
 
-         if (numinside EQ 0) then begin
+; Another work-around for the Slatec code... re-check FULLBKPT for failure ???
+;         if (numinside EQ 0) then begin
+         if (numinside EQ 0 OR fullbkpt[0] EQ -1) then begin
             splog,'WARNING: No wavelengths inside breakpoints'
          endif else if (total(abs(coeff)) EQ 0.0) then begin
             splog,'WARNING: All B-spline coefficients have been set to zero!'
