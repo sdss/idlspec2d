@@ -146,7 +146,7 @@ pro design_praesepe
 
    stardata = newdata
 
-;stop
+stop
 ;splot,stardata.ra,stardata.dec,ps=4,color='green'
 ;soplot,tycdat.radeg,tycdat.dedeg,ps=1,symsize=0.5
 

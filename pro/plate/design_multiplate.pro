@@ -67,11 +67,14 @@
 ; more potential object.  Return the existing list with the new object
 ; appended if there was no conflict.
 
-function design_append, newplug, oneplug
+function design_append, newplug, newplatearr, oneplug, oneplate
 
    platescale = 217.7358 ; mm/degree
 
-   if (NOT keyword_set(newplug)) then return, oneplug
+   if (NOT keyword_set(newplug)) then begin
+      newplatearr = oneplate
+      return, oneplug
+   endif
 
    ; Discard objects within 55 arcsec of existing objects.
    ; Do this based upon XFOCAL,YFOCAL positions.
@@ -82,6 +85,7 @@ function design_append, newplug, oneplug
    mindist = min(sqrt(r2))
    if (mindist LT platescale*55./3600.) then return, newplug
 
+   newplatearr = [newplatearr, oneplate]
    return, [newplug, oneplug]
 end
 ;------------------------------------------------------------------------------
@@ -222,7 +226,7 @@ pro design_multiplate, stardata, tilenums=tilenums, platenums=platenums, $
             ; Case where the guide fiber is on this pointing.
             ; Assign the nearest available guide fiber
 
-print, 'Assigning real guide fiber number ', iguide+1
+            print, 'Assigning real guide fiber number ', iguide+1
             indx = where(strtrim(stardata.holetype,2) EQ 'GUIDE')
             adiff = djs_diff_angle(guidera[iguide], guidedec[iguide], $
              stardata[indx].ra, stardata[indx].dec)
@@ -435,8 +439,11 @@ print, 'Assigning real guide fiber number ', iguide+1
    plobs.mjddesign = current_mjd()
    yanny_write, 'plObs.par', ptr_new(plobs), hdr=plhdr, structs=plstructs
 
-   print, 'Now run "makePlates" and "fiberPlates" in the "plate" product'
-   print, 'Then type ".cont" to continue.'
+   print
+   print, 'In the "plate" product run the following commands:"
+   print, '   makePlates'
+   print, '   fiberPlates -skipBrightCheck'
+   print, 'Then type ".cont" in IDL to continue.'
    stop
 
    ;---------------------------------------------------------------------------
@@ -470,6 +477,7 @@ print, 'Assigning real guide fiber number ', iguide+1
    if (n_elements(iguide) NE 11) then $
     message, 'The number of guide fibers is wrong.'
    newplug = allplug[iguide]
+   newplatearr = platearr[iguide]
 
    ;----------
    ; Find the alignment hole corresponding to each of these guide stars
@@ -481,6 +489,7 @@ print, 'Assigning real guide fiber number ', iguide+1
       if (nj NE 1) then $
        message, 'Wrong number of alignment holes'
       newplug = [newplug, allplug[jj]]
+      newplatearr = [newplatearr, platearr[jj]]
    endfor
 
    ;----------
@@ -495,7 +504,8 @@ print, 'Assigning real guide fiber number ', iguide+1
    for ii=0, nobj-1 do begin
       if (nadded LT 640) then begin
          nbefore = n_elements(newplug)
-         newplug = design_append(newplug, allplug[iobj[ii]])
+         newplug = design_append(newplug, newplatearr, $
+          allplug[iobj[ii]], platearr[iobj[ii]])
          if (n_elements(newplug) GT nbefore) then nadded = nadded + 1
        endif
    endfor
@@ -521,16 +531,37 @@ print, 'Assigning real guide fiber number ', iguide+1
       ; Objects that are actually on other tiles are renamed to sky fibers
       ; on this plate.
 
-      indx = where(allplug.holetype EQ 'OBJECT' $
-       AND platearr NE thisplate)
+;      iobj = where(allplug.holetype EQ 'OBJECT' $
+;       AND platearr NE thisplate)
+      iobj = where(modplug.holetype EQ 'OBJECT' $
+       AND newplatearr NE thisplate)
       if (indx[0] NE -1) then begin
-         modplug[indx].holetype = 'COHERENT_SKY'
-         modplug[indx].objtype = 'NA'
-         modplug[indx].primtarget = 0L
-         modplug[indx].sectarget = 16L
+         modplug[iobj].holetype = 'COHERENT_SKY'
+         modplug[iobj].objtype = 'NA'
+         modplug[iobj].primtarget = 0L
+         modplug[iobj].sectarget = 16L
       endif else begin
          message, 'No objects to use as guide fibers for plate '+string(thisplate)
       endelse
+
+      ;----------
+      ; Rotate the positions of fibers from other tiles to be where they
+      ; will actually be pointing on this tile.
+
+      for itile2=0, n_elements(platenums)-1 do begin
+         if (itile2 NE itile) then begin
+            indx = where(newplatearr EQ platenums[itile2])
+            if (indx[0] NE -1) then begin
+               print, 'Rotating ', n_elements(indx), ' objects from plate ', $
+                thisplate, ' to plate ', platenums[itile2]
+               plate_rotate, racen[itile], deccen[itile], $
+                racen[itile2], deccen[itile2], $
+                modplug[indx].ra, modplug[indx].dec, tmpra, tmpdec
+               modplug[indx].ra = tmpra
+               modplug[indx].dec = tmpdec
+            endif
+         endif
+      endfor
 
       ;----------
       ; Add the one quality hole which we already have, which is the
@@ -559,7 +590,11 @@ print, 'Assigning real guide fiber number ', iguide+1
    ; Run the code makeFanuc, makeDrillPos, use_cs3.
    ;---------------------------------------------------------------------------
 
-   print, 'Now run "makeFanuc", "makeDrillPos", "use_cs3" in the "plate" product'
+   print
+   print, 'In the "plate" product run the following commands:"
+   print, '   makeFanuc'
+   print, '   makeDrillPos'
+   print, '   use_cs3'
    print, 'Then you are done!'
 
    return
