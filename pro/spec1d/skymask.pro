@@ -32,7 +32,7 @@
 function skymask, objivar, objmask
 
    ndim = size(objivar, /n_dimen)
-   if (ndim EQ 0) then nobj = 1 $
+   if (ndim EQ 1) then nobj = 1 $
     else nobj = (size(objivar, /dimens))[1]
 
    ;----------
