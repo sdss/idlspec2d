@@ -7,7 +7,7 @@
 ;   of data according to a plan file.
 ;
 ; CALLING SEQUENCE:
-;   spallreduce, [ planfile, docams=, /nocombine, /xdisplay ]
+;   spallreduce, [ planfile, docams=, /nocombine, /xdisplay, /skipsn]
 ;
 ; INPUTS:
 ;
@@ -19,6 +19,7 @@
 ;                combine files.
 ;   nocombine  - Only run SPREDUCE, not COMBINE2DOUT.
 ;   xdisplay   - Send plots to X display rather than to plot file
+;   skipsn     - Do not call checksn routine 
 ;
 ; OUTPUT:
 ;
@@ -52,7 +53,7 @@
 ;------------------------------------------------------------------------------
 
 pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
- xdisplay=xdisplay
+ xdisplay=xdisplay, skipsn=skipsn
 
    if (NOT keyword_set(planfile)) then planfile = findfile('spPlan2d*.par')
 
@@ -102,6 +103,7 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
    combineDir = yanny_par(hdr, 'combineDir')
    logfile = yanny_par(hdr, 'logfile')
    plotfile = yanny_par(hdr, 'plotfile')
+   snfile = yanny_par(hdr, 'snfile')
 
    mjd = yanny_par(hdr, 'MJD')
    run = yanny_par(hdr, 'run')
@@ -255,6 +257,8 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
       ;----------
       ; Combine all red+blue exposures for a given sequence
 
+      outputname = string('spMerge2d-',mjd,'-',platestr,'.fits', $
+                format='(a,i5.5,a1,a4,a5)')
       if (NOT keyword_set(nocombine)) then begin
 
          spawn, 'mkdir -p '+combineDir
@@ -296,8 +300,6 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
 ;                side, wavemin=alog10(3750.0d), window=100, $
 ;                individual=filepath(individualroot, root_dir=combineDir)
 
-               outputname = string('spMerge2d-',mjd,'-',platestr,'.fits', $
-                format='(a,i5.5,a1,a4,a5)')
                spcoadd_frames, files, $
                 filepath(outputname, root_dir=combineDir), $
                 wavemin=alog10(3750.0d), window=100
@@ -318,11 +320,38 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
    ;----------
    ; Close log files
 
-   if (keyword_set(logfile)) then splog, /close
    if (keyword_set(plotfile) AND NOT keyword_set(xdisplay)) then begin
       device, /close
       set_plot, 'x'
    endif
+
+   if (NOT keyword_set(skipsn) AND keyword_set(combineDir)) then begin
+
+     if (NOT keyword_set(snfile) AND keyword_set(plotfile)) then begin
+       snfile = plotfile
+       strput, snfile, 'spSignal'
+     endif
+
+     cpbackup, snfile
+     set_plot, 'ps'
+     device, filename=snfile, /color, /inches, xs=8.0, ys=10.0, xoff=0.25, $
+                 yoff=0.4
+     splog, 'Plot file ', snfile, ' opened ', systime()
+
+     cd, combineDir, current=old_dir
+
+     expres=outputname
+     dot = strpos(outputname, '.')
+     strput, expres, '*', dot
+
+     checksn, expres=expres, title=outputname
+     device, /close
+     set_plot,'x'
+
+     cd, old_dir
+   endif  
+
+   if (keyword_set(logfile)) then splog, /close
 
    return
 end
