@@ -159,7 +159,12 @@ pro batch1d, fullplatefile, topdir=topdir, nice=nice
    if (NOT keyword_set(hostfile)) then $
     hostfile = filepath('batch1d.par', $
      root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='examples')
+   splog, 'Reading batch file ' + hostfile
    yanny_read, hostfile, pp
+   if (NOT keyword_set(pp)) then begin
+      splog, 'WARNING: Could not file batch file ' + hostfile
+      return
+   endif
    hostconfig = *pp[0]
    yanny_free, pp
 

@@ -94,6 +94,10 @@ function batch2d_rawfiles, planfile, outfile=outfile
    endif
 
    yanny_read, planfile, pp, hdr=hdr
+   if (NOT keyword_set(pp)) then begin
+      splog, 'WARNING: Could not find plan file ' + planfile
+      return, ''
+   endif
    extractdir = yanny_par(hdr, 'extractdir')
    thismjd = long(yanny_par(hdr, 'MJD'))
    logfile = yanny_par(hdr, 'logfile')
@@ -104,6 +108,10 @@ function batch2d_rawfiles, planfile, outfile=outfile
          expfiles = ((*pp[ii]).name)
       endif
    endfor
+   if (NOT keyword_set(expfiles)) then begin
+      splog, 'WARNING: Could not find any exposures in plan file ' + planfile
+      return, ''
+   endif
 
    ; Add a wildcard to the end of the raw FITS files so that we
    ; find compressed (.gz) files.
@@ -161,6 +169,10 @@ function batch2d_combfiles, planfile, outfile=outfile
    endif
 
    yanny_read, planfile, pp, hdr=hdr
+   if (NOT keyword_set(pp)) then begin
+      splog, 'WARNING: Could not find plan file ' + planfile
+      return, ''
+   endif
    extractdir = yanny_par(hdr, 'extractdir')
    combinedir = yanny_par(hdr, 'combinedir')
    logfile = yanny_par(hdr, 'logfile')
@@ -175,6 +187,10 @@ function batch2d_combfiles, planfile, outfile=outfile
          expnums = strmid((*pp[ii]).name[0], 11, 8)
       endif
    endfor
+   if (NOT keyword_set(expfiles)) then begin
+      splog, 'WARNING: Could not find any exposures in plan file ' + planfile
+      return, ''
+   endif
 
    fcorrprefix = 'spFluxcorr-' + expnums
 
@@ -344,7 +360,12 @@ pro batch2d, platenums, topdir=topdir, mjd=mjd, mjstart=mjstart, mjend=mjend, $
    if (NOT keyword_set(hostfile)) then $
     hostfile = filepath('batch2d.par', $
      root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='examples')
+   splog, 'Reading batch file ' + hostfile
    yanny_read, hostfile, pp
+   if (NOT keyword_set(pp)) then begin
+      splog, 'WARNING: Could not file batch file ' + hostfile
+      return
+   endif
    hostconfig = *pp[0]
    yanny_free, pp
 
