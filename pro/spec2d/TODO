@@ -1,4 +1,8 @@
 
+* When combining files, set an additional mask bit for when part of a
+  spectrum has been constructed with only one input spectrum.  In those
+  cases, we don't have information for CR rejection.
+
 * Improve mask bits for bright sky features.
 
 * Use DJS_FILEPATH() where appropriate.

@@ -39,15 +39,14 @@
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
-;   This routine also outputs original 2048 spectra with mask pixels
-;   replaced with their b-spline values. ??? NOPE - This code removed!!!
-;
 ;   This routine can combine data from multiple (different) plug maps.
 ;   Objects are matched based upon their positions agreeing to 2 arc sec.
 ;
 ;   All input files must have the same number of pixels per spectrum,
 ;   i.e. 2048 wavelength samplings, although those wavelengths can
 ;   be different.
+;
+;   The input files (FILENAMES) have their pixelmasks modified by this routine.
 ;
 ; EXAMPLES:
 ;
@@ -58,8 +57,10 @@
 ;   combine1fiber
 ;   djs_diff_angle()
 ;   idlspec2d_version()
+;   modfits
 ;   mrdfits()
 ;   pixelmask_bits()
+;   splog
 ;   sxaddpar
 ;   sxdelpar
 ;   sxpar()
@@ -119,6 +120,7 @@ pro spcoadd_frames, filenames, outputname, $
       ; Reading the plug-map structure will fail if its structure is
       ; different between different files.
 
+      splog, 'Reading file #', ifile, ': ', filenames[ifile]
       tempflux = mrdfits(filenames[ifile], 0, hdr)
       tempivar = mrdfits(filenames[ifile], 1)
       temppixmask = mrdfits(filenames[ifile], 2)
@@ -136,6 +138,7 @@ pro spcoadd_frames, filenames, outputname, $
 
       dims = size(tempflux, /dimens)
       npix = dims[0]
+      nfib = dims[1]
 
       ;----------
       ; Determine if this is a blue or red spectrum
@@ -169,6 +172,7 @@ pro spcoadd_frames, filenames, outputname, $
 
          camerasvec = cameras
          label = makelabel(hdr)
+         filenum = lonarr(nfib) + ifile
          plugmap = tempplug
       endif else begin
          ; Append as images...
@@ -181,10 +185,22 @@ pro spcoadd_frames, filenames, outputname, $
          ; Append as vectors...
          camerasvec = [camerasvec, cameras]
          label = [label, makelabel(hdr)]
+         filenum = [filenum, lonarr(nfib) + ifile]
          plugmap = [plugmap, tempplug]
       endelse
 
    endfor
+
+   ;----------
+   ; Remove the COMBINEREJ bit from the input pixel masks, since this
+   ; is the procedure that should set that bit.
+
+   bitval = pixelmask_bits('COMBINEREJ')
+   indx = where(pixelmask AND bitval)
+   if (indx[0] NE -1) then pixelmask[indx] = pixelmask[indx] - bitval
+
+   ;----------
+   ; Check how many exposures we have in each of the (4) cameras
 
    for icam=0, ncam-1 do begin
       junk = where(camerasvec EQ camnames[icam], nmatch)
@@ -274,16 +290,21 @@ pro spcoadd_frames, filenames, outputname, $
       endif
 
       if (indx[0] NE -1) then begin
+         temppixmask = pixelmask[*,indx]
          combine1fiber, wave[*,indx], flux[*,indx], fluxivar[*,indx], $
-          pixelmask[*,indx], dispersion[*,indx], $
-          finalwave, bestflux, bestivar, bestandmask, bestormask, $
-          bestdispersion, nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep
+          finalmask=temppixmask, indisp=dispersion[*,indx], $
+          newloglam=finalwave, newflux=bestflux, newivar=bestivar, $
+          andmask=bestandmask, ormask=bestormask, newdisp=bestdispersion, $
+          nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep
 
          finalflux[*,ifiber] = bestflux
          finalivar[*,ifiber] = bestivar
          finalandmask[*,ifiber] = bestandmask
          finalormask[*,ifiber] = bestormask
          finaldispersion[*,ifiber] = bestdispersion
+
+         ; The following adds the COMBINEREJ bit to the input pixel masks
+         pixelmask[*,indx] = temppixmask
       endif else begin
          splog, 'Fiber', ifiber+1, ' NO DATA'
          finalandmask[*,ifiber] = pixelmask_bits('NODATA')
@@ -342,7 +363,8 @@ pro spcoadd_frames, filenames, outputname, $
    sxaddpar, hdr, 'DC-FLAG', 1, 'Log-linear flag'
 
    ;---------------------------------------------------------------------------
-   ; Write output file
+   ; Write combined output file
+   ;---------------------------------------------------------------------------
 
    ; 1st HDU is flux
    mwrfits, finalflux, outputname, hdr, /create
@@ -361,6 +383,16 @@ pro spcoadd_frames, filenames, outputname, $
 
    ; 6th HDU is plugmap
    mwrfits, finalplugmap, outputname
+
+   ;---------------------------------------------------------------------------
+   ; Write the modified pixel masks to the input files
+   ;---------------------------------------------------------------------------
+
+   for ifile=0, nfiles-1 do begin
+      splog, 'Modifying file #', ifile, ': ', filenames[ifile]
+      indx = where(filenum EQ ifile)
+      modfits, filenames[ifile], pixelmask[*,indx], exten_no=2
+   endfor
 
    return
 end
