@@ -133,6 +133,9 @@ SPCOMBINE: New optional keyword MINSN2 to set the minimum S/N to include
             which should let us recover some spectra that are otherwise
             saturated in 15 min exposures.
 SPFLATGEN: Add optional keywords EXPNUM,EXPSTART,EXPEND.
+SPHDRFIX: Add support for editing raw frame (sdR-*) headers by putting
+            SPECHDRFIX entries in the sdReport-$MJD.par files, of the
+            same form as that used in the file "opHdrFix.par".
 SPREDUCE1D, ZFIND, ZCOMPUTE, FIND_NMINIMA: Plotting and debugging
             tools added with the /DOPLOT, /DEBUG keywords.
 SPREDUCE1D: Change flag for small chi^2 difference to be triggered
@@ -205,6 +208,8 @@ YANNY_READ: If there are too few words on a line for a structure entry,
            the back-slash as a continuation.  And one can still use
            the /QUICK option for lines with more than 1023 characters,
            but that option fails if continuation characters are used.
+           Add the STNAMES keyword to return the names of structures
+           for when /ANONYMOUS must be used.
 vector_avsigclip_mask: Fix a bug in the C code vector_avsigclip_mask
            that could potentially affect the IDL proc DJS_AVSIGCLIP
            in the case when a mask is used but all points are rejected.
