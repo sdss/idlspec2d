@@ -164,7 +164,7 @@ spechdrfix sdR-??-0000926[3-6] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0542
 spechdrfix sdR-??-0000926[3-6] MAPID    5198402
 spechdrfix sdR-??-0000926[3-6] NAME     "'0542-51984-02'"
 
-# Axis abort during smear.
+# Axis abort during smear for plate 500 on MJD 51994.
 spechdrfix sdR-??-00009296 FLAVOR   "'unknown'"
 
 # Wrong plugmap indicated for plate 503 on MJD 51994.
