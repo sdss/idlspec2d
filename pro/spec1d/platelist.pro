@@ -168,6 +168,18 @@ pro platelist, infile, plist=plist, create=create, $
     'rmsoff50' , 0.0, $
     'rmsoff80' , 0.0, $
     'airtemp'  , 0.0, $
+    'xsigma'   , 0.0, $
+    'xsigmin'  , 0.0, $
+    'xsigmax'  , 0.0, $
+    'wsigma'   , 0.0, $
+    'wsigmin'  , 0.0, $
+    'wsigmax'  , 0.0, $
+    'xchi2'    , 0.0, $
+    'xchi2min' , 0.0, $
+    'xchi2max' , 0.0, $
+    'skychi2'  , 0.0, $
+    'schi2min' , 0.0, $
+    'schi2max' , 0.0, $
     'n_galaxy' , 0L,  $
     'n_qso'    , 0L,  $
     'n_star'   , 0L,  $
@@ -321,6 +333,18 @@ pro platelist, infile, plist=plist, create=create, $
          plist[ifile].rmsoff50 = sxpar(hdr1, 'RMSOFF50')
          plist[ifile].rmsoff80 = sxpar(hdr1, 'RMSOFF80')
          plist[ifile].airtemp = sxpar(hdr1, 'AIRTEMP')
+         plist[ifile].xsigma = sxpar(hdr1, 'XSIGMA')
+         plist[ifile].xsigmin = sxpar(hdr1, 'XSIGMIN')
+         plist[ifile].xsigmax = sxpar(hdr1, 'XSIGMAX')
+         plist[ifile].wsigma = sxpar(hdr1, 'WSIGMA')
+         plist[ifile].wsigmin = sxpar(hdr1, 'WSIGMIN')
+         plist[ifile].wsigmax = sxpar(hdr1, 'WSIGMAX')
+         plist[ifile].xchi2 = sxpar(hdr1, 'XCHI2')
+         plist[ifile].xchi2min = sxpar(hdr1, 'XCHI2MIN')
+         plist[ifile].xchi2max = sxpar(hdr1, 'XCHI2MAX')
+         plist[ifile].skychi2 = sxpar(hdr1, 'SKYCHI2')
+         plist[ifile].schi2min = sxpar(hdr1, 'SCHI2MIN')
+         plist[ifile].schi2max = sxpar(hdr1, 'SCHI2MAX')
          plist[ifile].mapname = strtrim(sxpar(hdr1, 'NAME'))
          plist[ifile].vers2d = strtrim(sxpar(hdr1, 'VERS2D'))
          plist[ifile].verscomb = strtrim(sxpar(hdr1, 'VERSCOMB'))
