@@ -64,6 +64,8 @@
 pro plotspec, plate, fiberid, mjd=mjd, nsmooth=nsmooth, $
  _EXTRA=KeywordsForSplot
 
+   cspeed = 2.9979e5
+
    if (n_elements(plate) NE 1 OR n_elements(fiberid) NE 1) then $
     message, 'PLATE and FIBERID must be scalars'
 
@@ -110,8 +112,12 @@ pro plotspec, plate, fiberid, mjd=mjd, nsmooth=nsmooth, $
    ypos = !y.crange[1] + 1.5 * dypos
 
    if (keyword_set(zans)) then begin
-      sxyouts, xpos, ypos, zans.class + ' ' + zans.subclass $
-       + '  z=' + strtrim(string(zans.z),2), $
+      cz = zans.z * cspeed
+      if (cz LT 1000) then $
+        zstring = '  cz=' + string(cz,format='(f5.0)') + ' km/s' $
+       else $
+        zstring = '  z=' + string(zans.z,format='(f8.5)')
+      sxyouts, xpos, ypos, zans.class + ' ' + zans.subclass + zstring, $
        charsize=csize
 
       ypos = ypos + dypos
