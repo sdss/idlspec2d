@@ -803,11 +803,21 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       sxaddpar, hdr, 'WAVEMIN', 10.^logmin
       sxaddpar, hdr, 'WAVEMAX', 10.^logmax
 
+      ;----------
+      ; Generate the pixel map of the flux-calibration for this exposure+CCD
+
+      spframe_read, objname[ifile], loglam=loglam1
+      if (tag_exist(calibset,'NPOLY')) then x2 = airmass[*,ifile,*] $
+       else x2 = 0
+      calibimg = bspline_valu(loglam1, calibset, x2=x2)
+
+      ;----------
       ; Write the output file
+
       calibfile = djs_filepath(string(camname[ifile], expnum[ifile], $
        format='("spFluxcalib-", a2, "-", i8.8, ".fits")'), $
        root_dir=combinedir)
-      mwrfits, 0, calibfile, hdr, /create
+      mwrfits, calibimg, calibfile, hdr, /create
       mwrfits, calibset, calibfile
    endfor
 
