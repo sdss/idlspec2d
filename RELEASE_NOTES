@@ -8,6 +8,9 @@ APOREDUCE: Check how full the disks are for both the input files (sdR images),
 ATVRAWSPEC: Display a 2D spectroscopic image with bad columns marked in red.
             This is useful to see that all bad columns have been masked,
             especially when looking at the 2D pixel flats.
+BATCH1D,BATCH2D: Look for the parameter file batch1d.par,batch2d.par
+            in the TOPDIR directory rather than reading environment
+            variables $BATCH1DFILE,$BATCH2DFILE.
 CREATE_LINESTRUCT(): Function broken out of LINEBACKFIT so that it
             can be called by SPECLINEFIT.
 EXTRACT_OBJECT: Added call to skyline_dispersion (for increasing the
