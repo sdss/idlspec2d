@@ -150,6 +150,13 @@ pro sphdrfix, filename, hdr, do_lock=do_lock
    plugdir = concat_dir(speclog_dir, mjdstr)
 
    reportfile = filepath('sdHdrFix-'+mjdstr+'.par', root_dir=plugdir)
+
+   ; First see if the file (or the directory!) even exist at all.
+   ; Otherwise, if the directory does not exist, we'll get stuck in
+   ; an infinite loop.
+   junk = findfile(reportfile, count=ct)
+   if (ct EQ 0) then return
+
    if (keyword_set(do_lock)) then $
     while(djs_lockfile(reportfile) EQ 0) do wait, 1
    yanny_read, reportfile, pdata, stnames=stnames, /anonymous, errcode=errcode
