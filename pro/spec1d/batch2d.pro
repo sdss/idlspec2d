@@ -2,6 +2,27 @@
 ;   topdir='/peyton/scr/spectro0/data/2d_test'
 
 ;------------------------------------------------------------------------------
+; For a list of files with names like 'path/spPlanXXX.par', 
+; return the indexes of all that do **not** have a corresponding 
+; log file of the form 'path/spDiagXXX.log'.
+
+function batch2d_nolog, planfile
+
+   retindx = -1L
+   for ifile=0, n_elements(planfile)-1 do begin
+      thisfile = fileandpath(planfile[ifile], path=thispath)
+      kk = rstrpos(thisfile, '.')
+      logfile = 'spDiag' + strmid(thisfile, 6, kk-6) + '.log'
+      logfile = djs_filepath(logfile, root_dir=thispath)
+      if (NOT keyword_set(findfile(logfile))) then retindx = [retindx, ifile]
+   endfor
+
+   nfound = n_elements(retindx)-1
+   if (nfound EQ 0) then return, retindx $
+    else return, retindx[1:nfound]
+end
+
+;------------------------------------------------------------------------------
 function batch2d_rawfiles, planfile, outfile=outfile
 
    nplan = n_elements(planfile)
@@ -101,6 +122,7 @@ end
 
 ;------------------------------------------------------------------------------
 ; This doesn't yet check to see if things have already been run for some plates
+; !!!???
 pro batch2d, platenums, topdir=topdir, mjd=mjd, mjstart=mjstart, mjend=mjend, $
  nice=nice
 
@@ -168,40 +190,64 @@ pro batch2d, platenums, topdir=topdir, mjd=mjd, mjstart=mjstart, mjend=mjend, $
       yanny_read, planlist[iplate], hdr=hdr
       planfile2d = yanny_par(hdr, 'planfile2d')
 
-      ; Split the combine plan file name into a directory and file name
-      planfilecomb = fileandpath(planlist[iplate], path=pathcomb)
+      ; Find which of these plan files do **not** have log files already.
+      ; Presume those are the ones that need to be reduced.
+      junk = fileandpath(planlist[iplate], path=thispath)
+      ido2d = batch2d_nolog(djs_filepath(planfile2d, root_dir=thispath))
 
-      ; Construct the name of the batch file
-      i = rstrpos(planfilecomb, '.')
-      if (i EQ -1) then i = strlen(planfilecomb)
-      fullscriptfile[iplate] = djs_filepath(strmid(planfilecomb,0,i)+'.batch', $
-       root_dir=pathcomb)
+      if (ido2d[0] NE -1) then begin
+         ; Trim the list of 2D plan files to those not reduced yet.
+         planfile2d = planfile2d[ido2d]
 
-      ; Write the batch file
-      openw, olun, fullscriptfile[iplate], /get_lun
-      printf, olun, '; Auto-generated batch file '+systime()
-      printf, olun, 'cd, ' + fq+pathcomb+fq
-      for i=0, n_elements(planfile2d)-1 do $
-       printf, olun, 'spreduce2d, ' + fq+planfile2d[i]+fq
-      printf, olun, 'spcombine, ' + fq+planfilecomb+fq
-      printf, olun, 'exit'
-      close, olun
-      free_lun, olun
+         ; Split the combine plan file name into a directory and file name
+         planfilecomb = fileandpath(planlist[iplate], path=pathcomb)
 
-      ; List of input files
-      planfile2d = filepath(planfile2d, root_dir=pathcomb)
-      rawfiles = batch2d_rawfiles(planfile2d, outfile=outfile2d)
-      rawfiles = djs_filepath(rawfiles, root_dir='rawdata')
-      outfile2d = djs_filepath(outfile2d, root_dir=pathcomb)
-      junk = batch2d_combfiles(planlist[iplate], outfile=outfilecomb)
+         ; Construct the name of the batch file
+         i = rstrpos(planfilecomb, '.')
+         if (i EQ -1) then i = strlen(planfilecomb)
+         fullscriptfile[iplate] = $
+          djs_filepath(strmid(planfilecomb,0,i)+'.batch', root_dir=pathcomb)
 
-      pinfile[iplate] = ptr_new([ fullscriptfile[iplate], $
-       planlist[iplate], planfile2d, rawfiles ])
+         ; Write the batch file
+         openw, olun, fullscriptfile[iplate], /get_lun
+         printf, olun, '; Auto-generated batch file '+systime()
+         printf, olun, 'cd, ' + fq+pathcomb+fq
+         for i=0, n_elements(planfile2d)-1 do $
+          printf, olun, 'spreduce2d, ' + fq+planfile2d[i]+fq
+         printf, olun, 'spcombine, ' + fq+planfilecomb+fq
+         printf, olun, 'exit'
+         close, olun
+         free_lun, olun
 
-      ; List of output files
-      poutfile[iplate] = ptr_new([ outfile2d, outfilecomb ])
+         ; List of input files
+         planfile2d = filepath(planfile2d, root_dir=pathcomb)
+         rawfiles = batch2d_rawfiles(planfile2d, outfile=outfile2d)
+         rawfiles = djs_filepath(rawfiles, root_dir='rawdata')
+         outfile2d = djs_filepath(outfile2d, root_dir=pathcomb)
+         junk = batch2d_combfiles(planlist[iplate], outfile=outfilecomb)
+
+         pinfile[iplate] = ptr_new([ fullscriptfile[iplate], $
+          planlist[iplate], planfile2d, rawfiles ])
+
+         ; List of output files
+         poutfile[iplate] = ptr_new([ outfile2d, outfilecomb ])
+      endif
 
    endfor
+
+   ;----------
+   ; Trim the plate list to only those needing reductions.
+
+   iplate = where(pinfile NE ptr_new(), nplate)
+   if (iplate[0] EQ -1) then begin
+      splog, 'All plates have been reduced'
+      exit
+   endif
+
+   platelist = platelist[iplate]
+   pinfile = pinfile[iplate]
+   poutfile = poutfile[iplate]
+   fullscriptfile = fullscriptfile[iplate]
 
    ;----------
    ; Prioritize to do the most recent plates first
