@@ -1,4 +1,5 @@
 FLAVOR     1
+mjd        51813
 
 typedef enum { 
   DRKCUR,                 # low level dark current 
