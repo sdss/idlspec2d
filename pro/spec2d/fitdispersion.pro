@@ -39,7 +39,7 @@
 ;   1-Mar-2000  Written by S. Burles, FNAL
 ;-
 ;------------------------------------------------------------------------------
-function fitdispersion, arc_flux, arc_fluxivar, xcen, $
+function fitdispersion, arc_flux, arc_fluxivar, xcen, origset = origset, $
              sigma=sigma, ncoeff=ncoeff, xmin=xmin, xmax=xmax
 
         if (NOT keyword_set(sigma)) then sigma = 1.0
@@ -50,7 +50,7 @@ function fitdispersion, arc_flux, arc_fluxivar, xcen, $
         nline = (size(xcen,/dimen))[1]
         ntrace = (size(xcen,/dimen))[0]
 
-        if (ntrace NE 320 OR nline LT 10) then begin
+        if (ntrace NE 320 OR nline LT 3) then begin
             splog, 'WARNING: Could not find dispersion traceset'
             return, -1
         endif
@@ -58,13 +58,25 @@ function fitdispersion, arc_flux, arc_fluxivar, xcen, $
         ;
         ;	Put blue arcs in correct order for extraction
         ;
-        if (xcen[0,0] GT xcen[0,1]) then xcentemp = reverse(xcen,2) $
-         else xcentemp = xcen
+        ;  sort positions for extract_image
+
+        hmm = sort(xcen[0,*])
+        xcentemp = xcen[*,hmm]
+
+        ;  and make mask for extraction
+        ysky = lindgen(ntrace) # replicate(1,nline)
+        npix = (size(arc_fluxivar,/dimen))[0]
+        mask = long(arc_fluxivar) * 0L
+
+        for offset = -12,13 do begin
+          xtemp = (long(xcentemp + offset) > 0) < npix - 1L
+          mask[xtemp,ysky] = 1
+        endfor
 
 	;
         ; Extract arc lines  	
         ;
-        extract_image, arc_flux, arc_fluxivar, xcentemp, sigma, $
+        extract_image, arc_flux, arc_fluxivar*mask, xcentemp, sigma, $
           arclineflux, arclineivar, ansimage=ansimage, wfixed=[1,1], $
           highrej=10, lowrej=10, relative=1, npoly=10
 
@@ -74,16 +86,16 @@ function fitdispersion, arc_flux, arc_fluxivar, xcen, $
         ;  
 
 
-        mask = transpose((arclineivar GT 0) * (arclineflux GT 0))
+        maskflux = transpose((arclineivar GT 0) * (arclineflux GT 0))
 	
-        good = where(mask)
+        good = where(maskflux)
 	width = transpose(arclineflux * 0.0)
 
         widthterm = ansimage[lindgen(nline)*2+1,*]
 	width[good] = widthterm[good]/(transpose(arclineflux))[good]
 
 	width = reform(width,nline,20,16)
-	mask = reform(mask,nline,20,16)
+	maskflux = reform(maskflux,nline,20,16)
 
         width_bundle = fltarr(nline,16)
 
@@ -93,16 +105,15 @@ function fitdispersion, arc_flux, arc_fluxivar, xcen, $
 ;
         for i = 0, nline - 1 do begin
           for j = 0, 15 do begin
-             ss = where(mask[i,*,j])  
+             ss = where(maskflux[i,*,j])  
              if (ss[0] NE -1) then $
                width_bundle[i,j] = djs_median(width[i,ss,j]) 
           endfor
         endfor
 
-        expand_width = rebin(width_bundle,nline,320,/sample) + sigma
+        expand_width = (1.0 + rebin(width_bundle,nline,320,/sample))*sigma
 
         xy2traceset, transpose(xcentemp), expand_width, dispset, $
              ncoeff=ncoeff, xmin=xmin, xmax=xmax, yfit=yfit
-
         return, dispset
 end
