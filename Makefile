@@ -22,15 +22,20 @@ all :
 #
 install :
 	@echo "You should be sure to have updated before doing this."
-	@echo "You will be installing in \$$IDLSPEC2D_DIR=$$IDLSPEC2D_DIR"
 	@echo ""
-	@echo "I'll give you 5 seconds to think about it"
-	@echo sleep 5
-	@echo
 	@if [ "$(IDLSPEC2D_DIR)" = "" ]; then \
 		echo You have not specified a destination directory >&2; \
 		exit 1; \
 	fi 
+	@if [ -e $(IDLSPEC2D_DIR) ]; then \
+		echo The destination directory already exists >&2; \
+		exit 1; \
+	fi 
+	@echo ""
+	@echo "You will be installing in \$$IDLSPEC2D_DIR=$$IDLSPEC2D_DIR"
+	@echo "I'll give you 5 seconds to think about it"
+	@echo sleep 5
+	@echo ""
 	@ rm -rf $(IDLSPEC2D_DIR)
 	@ mkdir $(IDLSPEC2D_DIR)
 	@ for f in $(SUBDIRS); do \
