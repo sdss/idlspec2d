@@ -82,6 +82,7 @@
 ;   sxaddpar
 ;   sxpar()
 ;   telluric_corr
+;   traceset2xy
 ;   tweaktrace
 ;
 ; INTERNAL SUPPORT ROUTINES:
