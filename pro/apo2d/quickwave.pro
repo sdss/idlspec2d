@@ -1,7 +1,7 @@
-function quickwave, arcname, tsetfile, outarc, radius=radius
+function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius
 
    if (n_elements(arcname) NE 1) then return, 0
-   if (n_elements(outarc) NE 1) then return, 0
+   if (n_elements(wsetfile) NE 1) then return, 0
    if (n_elements(tsetfile) NE 1) then return, 0
    if (NOT keyword_set(radius)) then radius = 3.0
 
@@ -37,25 +37,26 @@ function quickwave, arcname, tsetfile, outarc, radius=radius
    traceset2xy, wset, xx, yy
 
    ;----------
-   ; Compute fiber-to-fiber flat-field variations, and append to the end of
-   ; the reduced flat file (HDU #5).  First see if we've already done this.
+   ; Compute fiber-to-fiber flat-field variations.
+   ; First see if we've already done this.
 
-   fflat = mrdfits(tsetfile,5)
-   if (NOT keyword_set(fflat)) then begin
+   fflatexist = keyword_set(findfile(fflatfile))
+   if (NOT fflatexist) then begin
       flat_flux = mrdfits(tsetfile,0)
       flat_ivar = mrdfits(tsetfile,1)
       fflat = fiberflat(flat_flux, flat_ivar, wset, fibermask=fibermask, $
        /dospline)
       flat_flux = 0 ; clear memory
       flat_ivar = 0 ; clear memory
-      mwrfits, fflat, tsetfile
+      mwrfits, fflatfile, tsetfile
       fflat = 0 ; clear memory
    endif
 
+stop
    ;----------
    ; Write out wavelength solution
 
-   mwrfits, wset, outarc ;, /create
+   mwrfits, wset, wsetfile ; Without /create, this appends to any existing file
 
    wavemin = 10^(min(yy))
    wavemax = 10^(max(yy))

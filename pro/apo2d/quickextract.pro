@@ -1,31 +1,31 @@
-function quickextract, flatname, arcname, sciname, outname, $
+function quickextract, tsetfile, wsetfile, rawfile, outsci, $
  radius=radius, filtsz=filtsz
 
    if (n_params() LT 4) then begin
-      print, 'Syntax - quickextract, flatname, arcname, sciname, outname'
+      print, 'Syntax - quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci'
       return, 0
    endif
 
-   if (n_elements(flatname) NE 1) then return, 0
-   if (n_elements(arcname) NE 1) then return, 0
-   if (n_elements(sciname) NE 1) then return, 0
+   if (n_elements(tsetfile) NE 1) then return, 0
+   if (n_elements(wsetfile) NE 1) then return, 0
+   if (n_elements(rawfile) NE 1) then return, 0
    if (NOT keyword_set(radius)) then radius = 3.0
    if (NOT keyword_set(filtsz)) then filtsz = 25
 
    ;----------
    ; Read in the raw science image
 
-   sdssproc, sciname, image, invvar, hdr=hdr, color=color, camname=camname
+   sdssproc, rawfile, image, invvar, hdr=hdr, color=color, camname=camname
    exptime = sxpar(hdr, 'EXPTIME')
 
    ;----------
    ; Read in the reduced data from the flat and arc
 
-   tset = mrdfits(flatname,2)
-   plugsort = mrdfits(flatname,3)
-   fibermask = mrdfits(flatname,4)
-   fflat = mrdfits(flatname,5)
-   wset = mrdfits(arcname,1)
+   tset = mrdfits(tsetfile,2)
+   plugsort = mrdfits(tsetfile,3)
+   fibermask = mrdfits(tsetfile,4)
+   fflat = mrdfits(fflatfile,1)
+   wset = mrdfits(wsetfile,1)
    traceset2xy, wset, ytemp, logwave
 
    ;----------
@@ -145,9 +145,9 @@ function quickextract, flatname, arcname, sciname, outname, $
    ;----------
    ; Write out the extracted spectra
 
-   mwrfits, objsub, outname, /create
-   mwrfits, objsubivar, outname
-   mwrfits, meansn, outname
+   mwrfits, objsub, outsci, /create
+   mwrfits, objsubivar, outsci
+   mwrfits, meansn, outsci
 
    return, rstruct
 end

@@ -146,6 +146,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
 
    tsetfile = filepath('tset-'+platestr+'-'+filec+'.fits', root_dir=outdir)
    wsetfile = filepath('wset-'+platestr+'-'+filec+'.fits', root_dir=outdir)
+   fflatfile = filepath('fflat-'+platestr+'-'+filec+'.fits', root_dir=outdir)
 
    plugexist = keyword_set(fullplugfile)
    flatexist = keyword_set( findfile(tsetfile) )
@@ -157,7 +158,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    rstruct = 0
    case flavor of
       'flat' : begin
-;         if (NOT flatexist AND plugexist) then $
+;         if (NOT flatexist AND plugexist) then $ ; Only reduce 1 flat/camera?
          if (plugexist) then $
           rstruct = quicktrace(fullname, tsetfile, fullplugfile) $
          else $
@@ -165,9 +166,9 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       end
 
       'arc' : begin
-;         if (flatexist AND (NOT arcexist)) then $
+;         if (flatexist AND (NOT arcexist)) then $ ; Only reduce 1 arc/camera?
          if (flatexist) then $
-          rstruct = quickwave(fullname, tsetfile, wsetfile) $
+          rstruct = quickwave(fullname, tsetfile, wsetfile, fflatfile) $
           else $
            splog, 'Unable to reduce this arc exposure'
       end
@@ -178,7 +179,8 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
                  root_dir=outdir)
 
           if (flatexist AND arcexist AND exptime GT minexp) then $
-           rstruct = quickextract(tsetfile, wsetfile, fullname, outsci) $
+           rstruct = quickextract(tsetfile, wsetfile, fflatfile, $
+            fullname, outsci) $
           else $
            splog, 'Unable to reduce this science exposure'
        end
