@@ -1,4 +1,5 @@
-function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius
+function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
+    doplot=doplot
 
    if (n_elements(arcname) NE 1) then return, 0
    if (n_elements(wsetfile) NE 1) then return, 0
@@ -31,8 +32,12 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius
    ; Now find the wavelength solution
 
    fitarcimage, flux, fluxivar, xpeak, ypeak, wset, aset=aset, $
-     fibermask=fibermask, bestcorr=bestcorr, $
-     color=color, maxdev=2.0e-5
+     fibermask=fibermask, bestcorr=bestcorr, lambda=lambda, $
+     color=color, maxdev=2.0e-5, xdif_tset=xdif_tset
+
+   if keyword_set(doplot) then qaplot_arcline, xdif_tset, wset, lambda, $
+     color=color, title=' Arcline Fit for '+arcname
+
    if (NOT keyword_set(wset)) then return, 0
    traceset2xy, wset, xx, yy
 
