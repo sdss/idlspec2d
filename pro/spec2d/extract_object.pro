@@ -385,26 +385,26 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
        vacset, iskies, title=plottitle+objname
 
       qaplot_skydev, flux, fluxivar, vacset, plugsort, color, $
-       filename=objname
+       title=plottitle+objname
 
       ; QA for 2 skylines in the blue
       if (color EQ 'blue') then begin
         qaplot_skyline, 4359.5, flux, fluxivar, skysub, skysubivar, $
          plugsort, vacset, iskies, fibermask=fibermask, dwave=4.0, $
-         filename=objname
+         title=plottitle+objname
         qaplot_skyline, 5578.9, flux, fluxivar, skysub, skysubivar, $
          plugsort, vacset, iskies, fibermask=fibermask, dwave=5.0, $
-         filename=objname
+         title=plottitle+objname
       endif
 
       ; QA for 2 skylines in the red
       if (color EQ 'red') then begin
         qaplot_skyline, 7343.0, flux, fluxivar, skysub, skysubivar, $
          plugsort, vacset, iskies, fibermask=fibermask, dwave=7.0, $
-         filename=objname
+         title=plottitle+objname
         qaplot_skyline, 8888.3, flux, fluxivar, skysub, skysubivar, $
          plugsort, vacset, iskies, fibermask=fibermask, dwave=7.0, $
-         filename=objname
+         title=plottitle+objname
       endif
 
       ;------------------------------------------
