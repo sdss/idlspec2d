@@ -7,7 +7,12 @@
 ;   4) pads with zeros up to TWICE the next higher value of 2^N
 ;   5) computes FFT
 
-PRO veldisp_fft, flux, err, npixbig, fluxfft, fluxfilt, fluxvar0, fluxvariancefft, wave=wave, keep=keep, klo_cut=klo_cut, khi_cut=khi_cut
+PRO veldisp_fft, flux_in, err_in, npixbig, fluxfft, fluxfilt, fluxvar0, fluxvariancefft, err, wave=wave, keep=keep, klo_cut=klo_cut, khi_cut=khi_cut
+
+; make copies to work on
+  flux = flux_in
+  err = err_in
+
 
   npixobj = n_elements(flux)
 ; interpolate over bad regions
@@ -31,9 +36,13 @@ PRO veldisp_fft, flux, err, npixbig, fluxfft, fluxfilt, fluxvar0, fluxvarianceff
   fft_apodize, flux, err
   
 ; pad
-  flux = [flux, fltarr(npixbig-npixobj)]
-  err = [err, fltarr(npixbig-npixobj)]
-  
+  npad = npixbig-npixobj
+  IF npad NE 0 THEN BEGIN 
+      flux = [flux, fltarr(npixbig-npixobj)]
+      err = [err, fltarr(npixbig-npixobj)]
+  ENDIF ELSE BEGIN 
+      print, 'VELDISP_FFT:  Warning: arrays already padded...'
+  ENDELSE 
 ; take FFT
   fluxfft = fft(flux) * npixbig
   fluxvariancefft = fft(err^2)  * npixbig
