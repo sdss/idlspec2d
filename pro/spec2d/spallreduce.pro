@@ -7,7 +7,7 @@
 ;   of data according to a plan file.
 ;
 ; CALLING SEQUENCE:
-;   spallreduce, planfile=, [ docams=, /nocombine, /xdisplay ]
+;   spallreduce, [ planfile, docams=, /nocombine, /xdisplay ]
 ;
 ; INPUTS:
 ;
@@ -15,7 +15,8 @@
 ;   planfile   - Name(s) of output plan file; default to reducing all
 ;                plan files matching 'spPlan2d*.par'
 ;   docams     - Cameras to reduce; default to ['b1', 'b2', 'r1', 'r2'];
-;                set to 0 or '' to disable running SPREDUCE.
+;                set to 0 or '' to disable running SPREDUCE and to only
+;                combine files.
 ;   nocombine  - Only run SPREDUCE, not COMBINE2DOUT.
 ;   xdisplay   - Send plots to X display rather than to plot file
 ;
@@ -45,8 +46,8 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro spallreduce, planfile=planfile, docams=docams, $
- nocombine=nocombine, xdisplay=xdisplay, combineonly=combineonly
+pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
+ xdisplay=xdisplay
 
    if (NOT keyword_set(planfile)) then planfile = findfile('spPlan2d*.par')
 
@@ -139,7 +140,6 @@ pro spallreduce, planfile=planfile, docams=docams, $
         + strtrim(string(plateid),2)
       splog, 'Plug map file = ', plugfile
 
-    if (NOT keyword_set(combineonly)) then begin
       for ido=0, ndocam-1 do begin
 
          icam = (where(camnames EQ docams[ido], camct))[0]
@@ -227,7 +227,6 @@ pro spallreduce, planfile=planfile, docams=docams, $
 
          splog, camname=''
       endfor ; End loop for camera number
-     endif
 
       splog, 'Time to reduce all cameras = ', $
        systime(1)-stime1, ' seconds', format='(a,f6.0,a)'

@@ -127,10 +127,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    if ((color EQ 'blue' AND bestarc.bestcorr LT 0.5) $
     OR (color EQ 'red'  AND bestarc.bestcorr LT 0.5) ) then begin
       splog, 'ABORT: Best arc correlation = ', bestarc.bestcorr
- 
-      ;  We want an return here don't we, instead of below
       return
-
    endif else $
     if ((color EQ 'blue' AND bestarc.bestcorr LT 0.7) $
     OR (color EQ 'red'  AND bestarc.bestcorr LT 0.7) ) then begin
