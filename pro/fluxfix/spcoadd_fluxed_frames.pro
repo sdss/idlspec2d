@@ -121,7 +121,8 @@ end
 pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
  mjd=mjd, binsz=binsz, zeropoint=zeropoint, nord=nord, wavemin=wavemin, $
  bkptbin=bkptbin, window=window, maxsep=maxsep, adderr=adderr, $
- docams=camnames, plotsnfile=plotsnfile, combinedir=combinedir
+ docams=camnames, plotsnfile=plotsnfile, combinedir=combinedir, $
+ tsobjname = tsobjname
 
    if (NOT keyword_set(binsz)) then binsz = 1.0d-4 $
     else binsz = double(binsz)
@@ -143,6 +144,18 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    ncam = N_elements(camnames)
    exptimevec = fltarr(ncam)
 
+   fibertag_struct = {plateid: 0, mjd: 0, fiberid: 0, $
+                      ra: 0.0, dec: 0.0, mag: fltarr(5), $
+                      xfocal: 0.0, yfocal: 0.0, objtype: ' ', $
+                      camcolor: ' ', spectrographid: 0, expid: ' '}
+
+   ;-----------------
+   ; Read in tsObjfile -- assume target info in HDU#1, new info in HDU#2
+   ; Is there a way to keep track of where the photo mags are from???
+   ; In tsObj header?
+  
+   if keyword_set(tsobjname) then tsobj = mrdfits(tsobjname, 2)
+    
    ;---------------------------------------------------------------------------
    ; Loop through each 2D output and read in the data
    ;---------------------------------------------------------------------------
@@ -241,6 +254,30 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
          indx = lindgen(swin)
          tempivar[indx,*] = tempivar[indx,*] * (indx # replicate(1,nfib)) / swin
       endif
+     
+      ;------------------------
+      ; Build structure like plugmap to carry all important tags
+
+      tempfibertag = make_array(dim = nfib, val = fibertag_struct)
+      struct_assign, tempplug, tempfibertag
+      tempfibertag.plateid = 0 ; FIX!!!
+      tempfibertag.mjd = 0 ; FIX!!!
+      tempfibertag.camcolor = strmid(cameras, 0, 1)
+      tempfibertag.expid = expstr
+
+      ;---------------
+      ; Match tsObj to plugmap and update fibertag structure with fibermags
+      ; from the tsObj
+
+      if keyword_set(tsobjname) then begin 
+        for ifib = 0, nfib - 1 do begin
+          adist = djs_diff_angle(tsobj.ra, tsobj.dec, $
+                  tempfibertag[ifib].ra, tempfibertag[ifib].dec, $
+                  units='degrees')
+          match = where(adist LT 2./3600)
+          tempfibertag[ifib].mag = tsobj[match].fibercounts
+        endfor
+      endif
 
       ;----------
       ; Concatenate data from all images
@@ -257,8 +294,8 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
          filenum = lonarr(nfib) + ifile
          plugmap = tempplug
          expid = expstr 
-         camexpidfib = strarr(nfib) + cameras + '-' + expstr 
          sn2 = framesn2
+         fibertag = tempfibertag
       endif else begin
          ; Append as images...
          flux = [[flux], [tempflux]]
@@ -273,8 +310,8 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
          filenum = [filenum, lonarr(nfib) + ifile]
          plugmap = [plugmap, tempplug]
          expid = [expid, expstr] 
-         camexpidfib = [camexpidfib, strarr(nfib) + cameras + '-' + expstr] 
          sn2 = [sn2, framesn2]
+         fibertag = [fibertag, tempfibertag]
       endelse
 
    endfor
@@ -313,9 +350,6 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
      camid = camnames[icam]
      camcol = strmid(camnames[icam], 0,1)
      specnum = strmid(camnames[icam], 1,1)
-
-     fibcolor = strmid(camexpidfib, 0, 1)
-     fibcam = strmid(camexpidfib, 0, 2)
      frames = expid[where(camerasvec eq camid)]
 
      ; Create output flux calibration file names
@@ -326,27 +360,30 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
 
      ;--------------------------------
      ; Use plugmap to find standard stars
-     ; For now assume all frames have the same plugmap!
 
-     isphoto = where((strtrim(plugmap.objtype) EQ 'SPECTROPHOTO_STD' OR $
-               strtrim(plugmap.objtype) EQ 'REDDEN_STD') AND $
-               (plugmap.spectrographid eq specnum) AND (fibcolor eq camcol))
+     isphoto = where((strtrim(fibertag.objtype) EQ 'SPECTROPHOTO_STD' OR $
+               strtrim(fibertag.objtype) EQ 'REDDEN_STD') AND $
+               (fibertag.spectrographid eq specnum) AND $
+               (fibertag.camcolor eq camcol))
 
      ;---------------------------------
      ; Compute spectral types and write flux calibration vectors
 
      sphoto_calib, wave[*,isphoto], flux[*,isphoto], fluxivar[*,isphoto], $
-                 pixelmask[*,isphoto], plugmap[isphoto], $
-                 camexpidfib[isphoto], fcalfiles, stdstarfile, $
-                 blue = (camcol eq 'b')
+                 pixelmask[*,isphoto], fibertag[isphoto], $
+                 fcalfiles, stdstarfile, blue = (camcol eq 'b')
 
      ;---------------------------------
      ; Apply sphoto calibration to all fibers in each frame
 
      for iframe = 0, n_elements(frames) - 1 do begin
 
-       indx = where(camexpidfib eq camid + '-' + frames[iframe])
-       calibset = mrdfits(fcalfiles[iframe], 1, calibhdr)
+       indx = where(fibertag.expid eq frames[iframe] AND $
+                    fibertag.camcolor eq camcol AND $ 
+                    fibertag.spectrographid eq specnum)
+
+       junk = mrdfits(fcalfiles[iframe], 0, calibhdr)
+       calibset = mrdfits(fcalfiles[iframe], 1)
        sphoto_err[where(camerasvec eq camid and expid eq frames[iframe])] $
                   = sxpar(calibhdr, 'SPHOTERR')
        cwavemin = sxpar(calibhdr, 'WAVEMIN')
@@ -362,12 +399,41 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
        tempflux = flux[*,indx]
        tempivar = fluxivar[*,indx]
        divideflat, tempflux, invvar=tempivar, calibfac, $
-                   minval=0.05*mean(calibfac)
+                   minval=0.005*mean(calibfac)
 
        flux[*,indx] = tempflux
        fluxivar[*,indx] = tempivar
        pixelmask[*,indx] = pixelmask[*,indx] $
          OR (calibfac LE 0.05*mean(calibfac)) * pixelmask_bits('BADFLUXFACTOR')
+     endfor
+   endfor
+
+   ;***********************************************************************
+   ; Check for offsets in dichroic region & adjust the blue frame to 
+   ; match the red
+   ;***********************************************************************
+
+   for specid = 1, 2 do begin
+     for iframe = 0, n_elements(frames) - 1 do begin
+        bindx = where(fibertag.expid eq frames[iframe] AND $
+                      fibertag.camcolor eq 'b' AND $
+                      fibertag.spectrographid eq specid)
+        rindx = where(fibertag.expid eq frames[iframe] AND $
+                      fibertag.camcolor eq 'r' AND $
+                      fibertag.spectrographid eq specid)
+
+        nspec = n_elements(bindx)
+        medfluxr = fltarr(nspec)
+        for ispec = 0, nspec - 1 do begin
+          boverlap = where(wave[*,bindx[ispec]] gt min(wave[*,rindx[ispec]]))
+          roverlap = where(wave[*,rindx[ispec]] lt max(wave[*,rindx[ispec]]))
+          medfluxr[ispec] = median(flux[roverlap,rindx[ispec]]) / $
+                            median(flux[boverlap,bindx[ispec]])
+        endfor
+        rb_dichroic_ratio = median(medfluxr)
+        flux[*,bindx] = flux[*,bindx] * rb_dichroic_ratio
+        splog, 'R/B dichroic ratio for ' + frames[iframe] + ': ' + $
+               rb_dichroic_ratio
      endfor
    endfor
 
@@ -380,11 +446,10 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    ; the smear exposure -- now using the best quality exposure) 
    ; This needs to be done in blue-red pairs!!!
 
-   camfib = strmid(camexpidfib, 0, 2)
-   iframe_b1 = where(camfib eq 'b1')
-   iframe_r1 = where(camfib eq 'r1')
-   iframe_b2 = where(camfib eq 'b2')
-   iframe_r2 = where(camfib eq 'r2')
+   iframe_b1 = where(fibertag.camcolor eq 'b' and fibertag.spectrographid eq 1)
+   iframe_r1 = where(fibertag.camcolor eq 'r' and fibertag.spectrographid eq 1)
+   iframe_b2 = where(fibertag.camcolor eq 'b' and fibertag.spectrographid eq 2)
+   iframe_r2 = where(fibertag.camcolor eq 'r' and fibertag.spectrographid eq 2)
 
    sn2_exp = sn2[where(camerasvec eq 'b1')] + sn2[where(camerasvec eq 'r1')] $
            + sn2[where(camerasvec eq 'b2')] + sn2[where(camerasvec eq 'r2')] 
@@ -398,24 +463,24 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    ; Pick the best exposure (want the same one for spec 1 & 2)
    maxval = max(sn2_exp/median(sn2_exp) + $
                 3 * sphoto_exp/median(sphoto_exp), iframe_best)
-
-   brexpid1 = strmid(camexpidfib[iframe_b1], 3, 50) + '-1'
-   brexpid2 = strmid(camexpidfib[iframe_b2], 3, 50) + '-2'
-
-   corrfiles1 = 'spFluxcorr-' + expid[where(camerasvec eq 'b1')] + '-1.fits'
-   corrfiles2 = 'spFluxcorr-' + expid[where(camerasvec eq 'b2')] + '-2.fits'
+   uniqexp = expid[where(camerasvec eq 'b1')]
+   best_exp = uniqexp[iframe_best]
+ 
+   corrfiles1 = 'spFluxcorr-' + uniqexp + '-1.fits'
+   corrfiles2 = 'spFluxcorr-' + uniqexp + '-2.fits'
 
    frame_flux_tweak, wave[*, iframe_b1], wave[*, iframe_r1], $
                    flux[*, iframe_b1], flux[*, iframe_r1], $
                    fluxivar[*, iframe_b1], fluxivar[*, iframe_r1], $
-                   iframe_best, plugmap[iframe_b1], brexpid1, corrfiles1
+                   best_exp, fibertag[iframe_b1], corrfiles1
   
    frame_flux_tweak, wave[*, iframe_b2], wave[*, iframe_r2], $
                    flux[*, iframe_b2], flux[*, iframe_r2], $
                    fluxivar[*, iframe_b2], fluxivar[*, iframe_r2], $
-                   iframe_best, plugmap[iframe_b2], brexpid2, corrfiles2
+                   best_exp, fibertag[iframe_b2], corrfiles2
   
    ; save the magnitude of this correction? -- goodness of spec photo?
+   ; COADD_QUALITY ==> sigma of poly1 coeff
 
    ;--------------------------------------
    ; Read back the corrections and apply
@@ -426,10 +491,12 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    for iexp = 0, n_elements(expid) - 1 do begin
      corrfile = 'spFluxcorr-' + expid[iexp] + '-' + $
                 strmid(camerasvec[iexp], 1, 1) + '.fits'
-   
      corrset = mrdfits(corrfile, 1)
 
-     indx = where(camexpidfib eq camerasvec[iexp] + '-' + expid[iexp])
+     indx = where(fibertag.expid eq expid[iexp] AND $
+                  fibertag.camcolor eq strmid(camerasvec[iexp], 0, 1) AND $ 
+                  fibertag.spectrographid eq strmid(camerasvec[iexp], 1, 1))
+
      traceset2xy, corrset, wave[*,indx], corrimg
 
 ;    thismask = mrdfits(corrfile, 2)
@@ -440,7 +507,7 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
      medcor = median(corrimg)
      tempflux = flux[*,indx]
      tempivar = fluxivar[*,indx]
-     divideflat, tempflux, invvar=tempivar, invertcorr, minval=0.05/medcor
+     divideflat, tempflux, invvar=tempivar, invertcorr, minval=0.005*medcor
 
 ;    temppixmask = temppixmask OR $
 ;         (corrimg GE 20.0 * medcor) * pixelmask_bits('BADFLUXFACTOR')
@@ -452,16 +519,6 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    stopprint
 
    ;***********************************************************************
-
-;stop
-;set_plot,'x'
-;ifib=295
-;colorv=['default','red','green','blue','magenta','yellow','cyan','default']
-;lam = 10^wave
-;indx = where(plugmap.fiberid EQ ifib)
-;splot, lam[*,indx[0]], flux[*,indx[0]], color=colorv[0]
-;for jnum=1, nfiles-1 do $
-; soplot, lam[*,indx[jnum]], flux[*,indx[jnum]], color=colorv[jnum]
 
    ;---------------------------------------------------------------------------
    ; Construct output data structures, including the wavelength scale
@@ -502,6 +559,9 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    struct_assign, {fiberid: 0L}, finalplugmap ; Zero out all elements in this
                                               ; FINALPLUGMAP structure.
 
+   finalfibertag = replicate(fibertag[0], nfiber)
+   struct_assign, {fiberid: 0L}, finalfibertag
+
    ;----------
    ; Issue a warning about any object fibers with OBJTYPE = 'NA', which
    ; should be impossible, but the special plate 673 and possibly others
@@ -525,6 +585,7 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
           plugmap[indx].mag, format = '(a, i4.3, a, a, f6.2, 5f6.2)'
 
          finalplugmap[ifiber] = plugmap[indx]
+         finalfibertag[ifiber] = fibertag[indx]
 
          ; Identify all objects within 2 arcsec of this position, and
          ; combine all these objects into a single spectrum.
@@ -547,7 +608,13 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
           nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep, $
           maxiter=50, upper=3.0, lower=3.0, maxrej=1
 
-         plot, 10.0^finalwave, bestflux
+         ; QA plot
+         plot, 10.0^finalwave, bestflux, xr=[3800, 9200], /xs
+         for ii = 0, n_elements(indx) - 1 do $
+           djs_oplot, 10.0^wave[*,indx[ii]], djs_median(flux[*,indx[ii]], $
+                      width=75, boundary='reflect'), color=!red
+
+   ;---------------------------------------------------------------------------
 
          finalflux[*,ifiber] = bestflux
          finalivar[*,ifiber] = bestivar
@@ -580,8 +647,11 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    ; Modify the 1st file's header to use for the combined plate header.
 
    hdr = *hdrarr[0]
+  
+   ; Use fibertag instead of the plugmap b/c this contains updated 
+   ; fibermags from the tsObj (if available)
 
-   platesn, finalflux, finalivar, finalandmask, finalplugmap, finalwave, $
+   platesn, finalflux, finalivar, finalandmask, finalfibertag, finalwave, $
      hdr=hdr, plotfile=djs_filepath(plotsnfile, root_dir=combinedir), $
      snvec=snvec, synthmag=synthmag
 
@@ -785,11 +855,11 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    ; Write the modified pixel masks to the input files
    ;---------------------------------------------------------------------------
 
-   for ifile=0, nfiles-1 do begin
-      splog, 'Modifying file #', ifile, ': ', filenames[ifile]
-      indx = where(filenum EQ ifile)
-      djs_modfits, filenames[ifile], pixelmask[*,indx], exten_no=2
-   endfor
+;   for ifile=0, nfiles-1 do begin
+;      splog, 'Modifying file #', ifile, ': ', filenames[ifile]
+;      indx = where(filenum EQ ifile)
+;      djs_modfits, filenames[ifile], pixelmask[*,indx], exten_no=2
+;   endfor
 
    return
 end
