@@ -250,7 +250,7 @@ STATUSCOMBINE = Status of Spectro-2D pipeline for combining individual
            exposures into the spPlate files; "Done" if done.
 STATUS1D = Status of Princeton-1D pipeline; "Done" if done.
 QSURVEY  = Status flag set to 1 for the best observation of any tile on the sky
-           that satifies the following: (S/N)^2 > 13.0 for G1,G2,I1,I2, and
+           that satisfies the following: (S/N)^2 > 13.0 for G1,G2,I1,I2, and
            the target version cannot be "special" or "devel".
 PUBLIC   = Name of public data release; presently plates are either not public,
            or part of the Early Data Release (EDR) or Data Release 1 (DR1).
@@ -536,7 +536,7 @@ The following information is compiled for each object:
  <TR><TD> SPECPRIMARY  <TD> 1 for the best spectroscopic observation of each object, 0 otherwise
  <TR><TD> ZANS         <TD> ZANS structure from <A HREF="#dm_spzbest">spZbest</A> file
                             with spectroscopic classifications (CLASS), redshifts (Z), etc.
- <TR><TD> TSOBJ        <TD> TSOBJ structure with all imaging and target-selection paramters
+ <TR><TD> TSOBJ        <TD> TSOBJ structure with all imaging and target-selection parameters
                             (excluding the FIRST and ROSAT fields)
 </TABLE>
 
@@ -1100,7 +1100,7 @@ CLASS      Spectro classification: GALAXY, QSO, STAR; reductions prior to
            version v4_7 will also use SKY and UNKNOWN; later versions set
            the ZWARNING flags
 SUBCLASS   Spectro sub-classification.  Galaxies and QSO's can be given
-             sub-classificatoins based upon their emission lines.
+             sub-classifications based upon their emission lines.
              This text includes the word "AGN" if:
                log10(OIII/Hbeta) > 0.7 - 1.2 * (log10(NII/Halpha) - 0.4)
              This text includes the word "STARFORMING" if:
@@ -1126,7 +1126,7 @@ DOF        Degrees of freedom for best fit
 RCHI2DIFF  Difference in reduced chi^2 of best solution to 2nd best solution
 TFILE      Template file in $IDLSPEC2D_DIR/templates
 TCOLUMN    Columns to use in template file (0-indexed); unused values set to -1
-NPOLY      Number of polynomial terms used in conjuction with TFILE
+NPOLY      Number of polynomial terms used in conjunction with TFILE
 THETA      Eigenvalue coefficients for each column in template file + each polynomial term
 VDISP      Velocity dispersion, only computed for galaxies (km/sec)
            and explicitly masking emission line regions
@@ -1151,6 +1151,9 @@ ZWARNING   A flag set for bad redshift fits in place of calling CLASS=UNKNOWN.
            4 = Fraction of points above 5 sigma is too large (> 5%)
            5 = Chi^2 minimum was at the edge of the redshift-fitting range,
                resulting in Z_ERR being set to -1
+           6 = Negative emission in a QSO line, triggered only in QSO spectra
+               iff C_IV, C_III, Mg_II, H_beta, or H_alpha has
+               LINEAREA + 3 * LINEAREA_ERR < 0
 SN_MEDIAN  Median S/N for all good pixels
 CHI68P     68-th percentile value of abs(chi) of the best-fit synthetic
            spectrum to the actual spectrum, which would be 1.0 for a good fit
