@@ -92,6 +92,9 @@ SPCOMBINE_V5: New code to replace SPCOMBINE for version 5 outputs.
         the spPlate files.  This is a fairly major change, in that the
         spectro-phometry is now explicitly tied to the plugmap-structure
         magnitudes and colors (at least in the mean).
+        We currently hard-wire the rejection of all smears, all exposures
+        with any CCDs with (S/N)^2 < 1, and any with (S/N)^2 less than 20% of
+        the best exposure.
 SPFLUX_V5: New code to replace SPFLUX for version 5 outputs.  This computes
         the spectro-photometry vectors on an exposure-by-exposure basis
         (though doing the fit on all exposures at once).  The low-order
