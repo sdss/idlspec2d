@@ -54,7 +54,8 @@
 
 function djs_sfit_iter, fval, xval, yval, degreex, degreey, $
    sqivar=sqivar, yfit=yfit, mask = mask, maxdev = maxdev, maxrej = maxrej, $
-   upper=upper, lower=lower, maxiter = maxiter, freeiter = freeiter, outmask = outmask
+   upper=upper, lower=lower, maxiter = maxiter, freeiter = freeiter, $
+   outmask = outmask
 
    npts = n_elements(fval)
    if (n_params() LT 5) then $
@@ -119,14 +120,14 @@ function djs_sfit_iter, fval, xval, yval, degreex, degreey, $
      endif 
 
      ; Do the rejection
-     qdone = djs_reject(bvec, zfit, outmask = outmask, maxdev = maxdev, $
+     qdone = djs_reject(bvec, zfit, inmask = inmask, outmask = outmask, maxdev = maxdev, $
              upper = upper, lower=lower, /sticky, maxrej = maxrej)
 
      bad = where(outmask ne 1, nbad)
      if nbad gt 0 then inmask[bad] = 0
      iiter = iiter + 1
    endwhile
-   print, 'Rejected Points: ', nbad
+   splog, 'Rejected Points from 2d fit: ', nbad
 
    if (arg_present(yfit)) then begin
      mmatrix = mmatrix / rebin(thisvec, npts, ncoeff)  ; remove weights
