@@ -161,7 +161,7 @@ pro sphdrfix, filename, hdr
 
       yanny_free, pdata
    endif else begin
-      splog, 'WARNING: Empty or invalid sdReport file '+reportfile
+      splog, 'WARNING: Empty or invalid sdReport file '+fileandpath(reportfile)
    endelse
 
    return
