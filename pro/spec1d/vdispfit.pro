@@ -277,6 +277,7 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
     else iuse = columns
    if (keyword_set(npoly)) then $
     iuse = [iuse, nstar+lindgen(npoly)]
+   nuse = n_elements(iuse)
 
    ;----------
    ; Fit for chi^2 at each possible velocity dispersion
@@ -286,7 +287,7 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
    objsmall = objflux[indxo]
    sqivar = sqrt( objivar[indxo] ) * bigmask[indxt]
 
-   acoeffarr = fltarr(nstar+npoly,nsig)
+   acoeffarr = fltarr(nuse,nsig)
    for isig=0, nsig-1 do begin
       eigenflux = bigflux[indxt,iuse,isig]
       if (keyword_set(npoly)) then eigenflux = [[eigenflux], [polyflux]]
