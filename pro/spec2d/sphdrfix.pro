@@ -53,6 +53,15 @@ pro sphdrfix, filename, hdr
    endif
 
    ;----------
+   ; This proc only works in IDL version 5.3 and later, because it
+   ; uses STRMATCH().
+
+   if (!version.release LT '5.3') then begin
+      splog, 'WARNING: Unable to fix headers with this version of IDL'
+      return
+   endif
+
+   ;----------
    ; Read this Yanny file only the first time this routine is called,
    ; then save the values in a common block.
 
