@@ -40,7 +40,7 @@ SPCOADD_V5: Apply the flux-distortion image to the sky vectors, as well
         as to OBJFLUX,OBJIVAR.
 ZTWEAK_STAR: Add optional keywords.
 
-etc/spChunkList.par: Add chunks 91-93.
+etc/spChunkList.par: Add chunks 91-94.
 templates/wfEigen*.fits: Add WFCCD templates from Prochaska
 
 -------------------------------------------------------------------------------
