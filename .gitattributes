@@ -165,7 +165,6 @@ pro/spec2d/traceset2xy.pro -text
 pro/spec2d/tweaktrace.pro -text
 pro/spec2d/ushift.pro -text
 pro/spec2d/writeapid.pro -text
-pro/spec2d/writespectra.pro -text
 pro/spec2d/xy2traceset.pro -text
 pro/spflatten.pro -text
 pro/spflatten2.pro -text
@@ -190,7 +189,6 @@ pro/traceset2xy.pro -text
 pro/tweaktrace.pro -text
 pro/ushift.pro -text
 pro/writeapid.pro -text
-pro/writespectra.pro -text
 pro/xy2traceset.pro -text
 src/Makefile -text
 src/evilmath.c -text

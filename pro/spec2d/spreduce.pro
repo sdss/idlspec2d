@@ -585,15 +585,6 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
          qaskylines, flambda, flambdaivar, vacset, plugsort
       endif
 
-      ;------------------
-      ; Write extracted, lambda-calibrated, sky-subtracted spectra to disk
-
-      framenum = sxpar(objhdr, 'EXPOSURE')
-  
-      filebase = filepath( $
-       'spSpec2d-'+string(format='(a1,i1,a,i8.8)',color,spectrographid, $
-       '-',framenum), root_dir=outdir)
-  
       ;------
       ; Add keywords to object header
 
@@ -613,8 +604,18 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       sxaddpar, objhdr, 'PROFTYPE', proftype, '1=Gaussian'
       sxaddpar, objhdr, 'NFITPOLY', nparams, 'Order of profile parameter fit'
 
-      writespectra, objhdr, flambda, flambdaivar, plugsort, vacset, $
-       filebase=filebase
+      ;------------------
+      ; Write extracted, lambda-calibrated, sky-subtracted spectra to disk
+  
+      framenum = sxpar(objhdr, 'EXPOSURE')
+      outname = filepath( $
+       'spSpec2d-'+string(format='(a1,i1,a,i8.8,a)',color,spectrographid, $
+       '-',framenum,'.fits'), root_dir=outdir)
+  
+      mwrfits, flambda, outname, objhdr, /create
+      mwrfits, flambdaivar, outname
+      mwrfits, plugsort, outname
+      mwrfits, vacset, outname
 
       heap_gc   ; Garbage collection for all lost pointers
 
