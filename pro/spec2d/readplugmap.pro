@@ -176,12 +176,15 @@ function readplugmap, plugfile, plugdir=plugdir, $
       ; For any objects that do not have photometry from the calibObj
       ; structure, simply translate the flux from the plugmap MAG values.
 
-      ibad = where(plugmap[iobj].calibflux EQ 0, nbad)
-      if (nbad GT 0) then begin
-         splog, 'Using plug-map fluxes for ', nbad, ' values'
-         plugmap[iobj[ibad]].calibflux = $
-          10.^((22.5 - plugmap[iobj[ibad]].mag) / 2.5)
-      endif
+      for ifilt=0, 4 do begin
+         ibad = where(plugmap[iobj].calibflux[ifilt] EQ 0, nbad)
+         if (nbad GT 0) then begin
+            splog, 'Using plug-map fluxes for ', nbad, $
+             ' values in filter ', ifilt
+            plugmap[iobj[ibad]].calibflux[ifilt] = $
+             10.^((22.5 - plugmap[iobj[ibad]].mag[ifilt]) / 2.5)
+         endif
+      endfor
 
       ;----------
       ; Apply AB corrections to the CALIBFLUX values (but not to MAG)
