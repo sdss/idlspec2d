@@ -34,7 +34,7 @@
 ;                column, but it need not fit out the actual flat-field
 ;                variations.
 ;
-; PARAMTERS FOR SLATEC_SPLINEFIT:
+; PARAMETERS FOR SLATEC_SPLINEFIT:
 ;   nord       - Default to 4
 ;   lower      - Default to 2
 ;   upper      - Default to 2
@@ -72,7 +72,10 @@
 ;   slatec_bvalu()
 ;   slatec_splinefit()
 ;   sdssproc
+;   superflat
+;   traceset2xy
 ;   writefits
+;   xy2traceset
 ;
 ; INTERNAL SUPPORT ROUTINES:
 ;   superflat
@@ -80,102 +83,6 @@
 ; REVISION HISTORY:
 ;   13-Oct-1999  Written by D. Schlegel, APO
 ;-
-;------------------------------------------------------------------------------
-; Construct "superflat" (bspline vector)
-; Return fullbkt, coeff
-
-pro superflat, flatimg, flativar, wset, fullbkpt, coeff, $
- lower=lower, upper=upper
-
-; ???
-   minval = 0.0
-
-   ;------
-   ; Create spatial tracing from flat-field image
-
-   xsol = trace320crude(flatimg, yset=ycen, maxdev=0.15)
-
-   xy2traceset, ycen, xsol, tset, ncoeff=5, maxdev=0.1
-   traceset2xy, tset, ycen, xsol
-
-; Pass FIBERMASK here ???
-   dims = size(xsol, /dimens)
-   ny = dims[0]
-   ntrace = dims[1]
-
-   if (N_elements(fibermask) NE ntrace) then fibermask = bytarr(ntrace) + 1
-   igood = where(fibermask NE 0, ngood)
-
-   ;------
-   ; Extract the flat-field vectors
-
-   sigma = 1.0
-   proftype = 1 ; Gaussian
-   highrej = 15
-   lowrej = 15
-   nPoly = 1  ; just fit flat background to each row
-   wfixed = [1,1] ; Just fit the first gaussian term
-
-   extract_image, flatimg, flativar, xsol, sigma, flux, fluxivar, $
-    proftype=proftype, wfixed=wfixed, $
-    highrej=highrej, lowrej=lowrej, nPoly=nPoly, relative=1
-
-   ;------
-   ; Determine LOGLAM from the wavelength solution
-
-   traceset2xy, wset, xx, loglam
-
-   ;------
-   ; Determine the range of wavelengths, [LOGMIN,LOGMAX] in common w/all fibers
-
-   if (loglam[1,0] GT loglam[0,0]) then begin ; Ascending wavelengths
-      logmin = max(loglam[0,igood])
-      logmax = min(loglam[ny-1,igood])
-   endif else begin ; Descending wavelengths
-      logmin = max(loglam[ny-1,igood])
-      logmax = min(loglam[0,igood])
-   endelse
-
-   ;------
-   ; Find the approximate scalings between all fibers
-   ; Do this with a straight median value for all wavelengths in common
-
-   qq = loglam GE logmin AND loglam LE logmax
-   medval = fltarr(ntrace)
-   for i=0, ntrace-1 do $
-    medval[i] = median( flux[where(qq[*,i]),i] )
-   izero = where(medval LE 0)
-   if (izero[0] NE -1) then medval[izero] = 1.0
-
-   ;------
-   ; Create a version of flux (and fluxivar) that has all fibers
-   ; approximately scaled to have a median value of 1
-
-   scalef = fltarr(ny,ntrace)
-   scalefivar = fltarr(ny,ntrace)
-   for i=0, ntrace-1 do $
-    scalef[*,i] = flux[*,i] / medval[i]
-   for i=0, ntrace-1 do $
-    scalefivar[*,i] = fluxivar[*,i] * (medval[i])^2
-
-   ;------
-   ; Create a "superflat" spectrum, analogous to the "supersky"
-
-   splog, 'Creating superflat from ', ngood, ' fibers'
-   isort = sort(loglam[*,igood])
-   allwave = (loglam[*,igood])[isort]
-   allflux = (scalef[*,igood])[isort]
-   allivar = (scalefivar[*,igood])[isort]
-   indx = where(allflux GT minval)
-   if (indx[0] EQ -1) then $
-    message, 'No points above MINVAL'
-   fullbkpt = slatec_splinefit(allwave[indx], allflux[indx], coeff, $
-    maxiter=maxiter, upper=upper, lower=lower, $
-    invvar=allivar[indx], nord=4, nbkpts=ny, mask=mask)
-
-   return
-end
-
 ;------------------------------------------------------------------------------
 pro spflatten2, flatname, arcname, allflats, pixflat, $
  sigrej=sigrej, maxiter=maxiter, $
@@ -247,12 +154,12 @@ pro spflatten2, flatname, arcname, allflats, pixflat, $
    proftype = 1 ; Gaussian
    highrej = 15
    lowrej = 15
-   nPoly = 1 ; maybe more structure
+   npoly = 1 ; maybe more structure
    wfixed = [1,1] ; Just fit the first gaussian term
 
    extract_image, arcimg, arcivar, xsol, sigma, flux, fluxivar, $
     proftype=proftype, wfixed=wfixed, $
-    highrej=highrej, lowrej=lowrej, nPoly=nPoly, relative=1
+    highrej=highrej, lowrej=lowrej, npoly=npoly, relative=1
 arcimg = 0
 arcivar = 0
 
@@ -319,11 +226,33 @@ arcivar = 0
       sdssproc, allflats[iflat], flatimg, flativar, indir=indir, hdr=flathdr
 
       ;----------------------
+      ; Create spatial tracing from flat-field image
+
+      xsol = trace320crude(flatimg, yset=ycen, maxdev=0.15)
+
+      xy2traceset, ycen, xsol, tset, ncoeff=5, maxdev=0.1
+      traceset2xy, tset, ycen, xsol
+
+      ;----------------------
+      ; Extract the flat-field vectors
+
+      sigma = 1.0
+      proftype = 1 ; Gaussian
+      highrej = 15
+      lowrej = 15
+      npoly = 1  ; just fit flat background to each row
+      wfixed = [1,1] ; Just fit the first gaussian term
+
+      extract_image, flatimg, flativar, xsol, sigma, flux, fluxivar, $
+       proftype=proftype, wfixed=wfixed, $
+       highrej=highrej, lowrej=lowrej, npoly=npoly, relative=1
+
+      ;----------------------
       ; Construct the "superflat" vector for this particular frame
 
-      superflat, flatimg, flativar, wset, afullbkpt, acoeff, $
-       lower=lower, upper=upper
-      fitimg  = slatec_bvalu(waveimg, afullbkpt, acoeff)
+      superflat, flux, fluxivar, wset, afullbkpt, acoeff, $
+       fibermask=fibermask, minval=0.0, lower=lower, upper=upper
+      fitimg = slatec_bvalu(waveimg, afullbkpt, acoeff)
 
       ;----------------------
       ; Divide by the superflat image
@@ -335,7 +264,7 @@ fitimg = 0
 ; Test extraction...
 ;extract_image, flatimg, flativar, xsol, sigma, tmpflux, tmpivar, $
 ; proftype=proftype, wfixed=wfixed, $
-; highrej=highrej, lowrej=lowrej, nPoly=nPoly, relative=1
+; highrej=highrej, lowrej=lowrej, npoly=npoly, relative=1
 ;splot, median(tmpflux[*,0], 11)
 ;for i=0,15 do soplot, median(tmpflux[*,i*15], 11)
 
@@ -368,8 +297,8 @@ fitimg = 0
          endif
 
          ;------
-         ; The following spline fit chooses breaks points even separated
-         ; in log-wavelength. ???
+         ; The following spline fit chooses breaks points evenly separated
+         ; in log-wavelength.
 
 ;         yaxis = waveimg[i,*]
 ;         fullbkpt = slatec_splinefit(yaxis[indx], flatimg[i,indx], coeff, $
@@ -377,7 +306,7 @@ fitimg = 0
 ;          lower=lower, upper=upper, maxiter=3)
 
          ;------
-         ; The following spline fit chooses breaks points even separated
+         ; The following spline fit chooses breaks points evenly separated
          ; in row number.
 
          yaxis = findgen(ny)
