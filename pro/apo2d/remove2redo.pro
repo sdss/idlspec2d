@@ -11,10 +11,8 @@
 ; INPUTS:
 ;
 ; OPTIONAL INPUTS:
-;   logfile    - FITS log file to which Son-of-Spectro results are ouput;
-;                default to the file 'logfile*fits' in the OUTDIR directory.
-;   outdir     - The spectrolog directory which should be checked; default
-;                to the largest MJD in /data/spectro/spectrologs/$MJD.
+;   logfile    - Fits file where apo results are stored 
+;   outdir     - The spectrolog directory which should be checked 
 ;   plate      - Specify a single plate if only those entries should be checked
 ;
 ; OUTPUT:
@@ -51,10 +49,13 @@ pro remove2redo, logfile=logfile, outdir=outdir, plate=plate
    for i=1,4 do begin
      list = mrdfits(logfile, i, /silent)
 
-     if keyword_set(plate) then begin
-       good = where(list.plate EQ plate)
-       if good[0] EQ - 1 then list = 0 $
-       else list = list[good]
+
+     if size(list, /tname) NE 'INT' then begin
+       if keyword_set(plate) then begin
+         good = where(list.plate EQ plate)
+         if good[0] EQ -1 then list = 0 $
+         else list = list[good]
+       endif
      endif
 
      if size(list, /tname) NE 'INT' then begin
@@ -68,15 +69,26 @@ pro remove2redo, logfile=logfile, outdir=outdir, plate=plate
      endif
    endfor
 
-   if NOT keyword_set(expnum) then return
+   if NOT keyword_set(expnum) then begin
+     print, ''
+     print, 'Did not find any exposures to redo!'
+     print, ''
+     return
+   endif
 
    expmin = min(expnum + 0L)
    expmax = max(expnum + 0L)
    nexp = expmax - expmin 
-   if nexp LE 0 then return
+   if nexp LE 0 then begin
+     print, ''
+     print, 'Did not find any exposures to redo!'
+     print, ''
+     return
+   endif
 
    cam = ['b1', 'b2', 'r1', 'r2']
    missing = ' '
+
 
    for i=expmin, expmax - 1 do begin 
      for icam = 0,3 do begin
@@ -102,4 +114,12 @@ pro remove2redo, logfile=logfile, outdir=outdir, plate=plate
    
    return
 end
-;------------------------------------------------------------------------------
+
+
+      
+         
+        
+   
+
+   
+
