@@ -246,9 +246,6 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
     aset=aset, xcen=xcen, $
     color=color, lampfile=lampfile, lambda=lambda, xdif_tset=xdif_tset
      
-   wsave = wset
-
-
    qaplot_arcline, xdif_tset, lambda, filename=arcname[ibest], color=color
 
    ;---------------------------------------------------------------------

@@ -121,7 +121,7 @@ print, 'Working on file ', fullname[0]
 
       ; There are still systematics in the result from EXTRACT_IMAGE,
       ; so instead fit down each column of the image (which is slowly
-      ; varying) by just doing a median filter.
+      ; varying) by just doing a median filter or spline fit.
       ymodel = 0.0 * flatimg
       yaxis = findgen(ny)
       for i=0, nx-1 do begin

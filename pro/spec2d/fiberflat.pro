@@ -41,6 +41,8 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   slatec_bvalu()
+;   slatec_splinefit()
 ;   traceset2xy
 ;
 ; REVISION HISTORY:
