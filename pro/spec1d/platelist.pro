@@ -563,6 +563,8 @@ pro platelist, infile, plist=plist, create=create, $
          iqso = where(strmatch(targets,'*QSO_HIZ *') $
           OR strmatch(targets,'*QSO_CAP *') $
           OR strmatch(targets,'*QSO_SKIRT *'), nqso)
+          OR strmatch(targets,'*QSO_FIRST_CAP *') $
+          OR strmatch(targets,'*QSO_FIRST_SKIRT *'), nqso)
          plist[ifile].n_target_main = nmain
          plist[ifile].n_target_lrg = nlrg
          plist[ifile].n_target_qso = nqso
