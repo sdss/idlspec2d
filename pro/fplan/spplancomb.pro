@@ -176,7 +176,6 @@ pro spplancomb, topindir=topindir, topoutdir=topoutdir, $
                mergefile   = $
                    '2dmerge/spMerge2d-' + mjdstr + '-' + platestr + '-' 
                fcalibprefix = 'spFluxcalib-' + platestr + '-' + mjdstr
-               zfile = 'spZ-' + platestr + '-' + mjdstr + '.fits'
                plotsnfile = 'spSN2d-' + platestr + '-' + mjdstr + '.ps'
                snfits = 'spSN2d-' + platestr + '-' + mjdstr + '.fits'
 

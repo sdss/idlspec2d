@@ -178,6 +178,8 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
                plotfile = 'spDiagcomb-' + platestr + '-' + mjdstr + '.ps'
                combinefile = 'spPlate-' + platestr + '-' + mjdstr + '.fits'
                fcalibprefix = 'spFluxcalib-' + platestr + '-' + mjdstr
+               plotsnfile = 'spSN2d-' + platestr + '-' + mjdstr + '.ps'
+               snfits = 'spSN2d-' + platestr + '-' + mjdstr + '.fits'
 
                ;----------
                ; Create keyword pairs for plan file
@@ -201,6 +203,8 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
                 + "'  # Output combined spectra file"]
                hdr = [hdr, "plotsnfile        '" + plotsnfile $
                 + "'  # Two page S/N and magnitude plot"]
+               hdr = [hdr, "snfile        '" + snfits $
+                + "'  # Small fits file with S/N numbers "]
 
                ;----------
                ; Write output file
