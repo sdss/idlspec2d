@@ -22,7 +22,7 @@
 ;   image      - Object image [nx,ny]
 ;   invvar     - Inverse Variance of object image [nx,ny]
 ;   plugsort   - Plugmap structure for [ntrace] spectra
-;   wset       - wavelength solution from arc line spectra
+;   wset       - Wavelength solution from arc line spectra
 ;   xarc       - centroids measured in arc line spectra
 ;   lambda     - air wavelengths corresponding to xarc
 ;   xtrace     - spatial traces from flat field
@@ -66,9 +66,10 @@
 ;   mwrfits
 ;   pixelmask_bits()
 ;   qaplot_scatlight
-;   qaplot_skyline
-;   qaplot_skysub
 ;   qaplot_skydev
+;   qaplot_skyline
+;   qaplot_skyshift
+;   qaplot_skysub
 ;   skysubtract
 ;   splog
 ;   telluric_corr
@@ -340,19 +341,24 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
       ;------------------
       ; Tweak up the wavelength solution to agree with the sky lines.
       ; xshet contains polynomial coefficients to shift arc to sky line frame.
-  
-      locateskylines, skylinefile, flux, fluxivar, $
-         wset, xsky, ysky, skywaves, xset=xset
 
-      if (size(xset,/tname) EQ 'UNDEFINED') then begin
-         splog, 'ABORT: Cannot shift to sky lines...'
-         return
-      endif 
+      locateskylines, skylinefile, flux, fluxivar, wset, $
+       xarc, arcshift=arcshift, $
+       xsky=xsky, skywaves=skywaves, skyshift=skyshift
+; ???
+;      locateskylines_test, skylinefile, flux, fluxivar, wset, $
+;       xarc, arcshift=arcshift, $
+;       xsky=xsky, skywaves=skywaves, skyshift=skyshift
+      qaplot_skyshift, wset, xsky, skywaves, skyshift, $
+       title=plottitle+'Sky Line Deviations for '+objname
+
+      if (NOT keyword_set(arcshift)) then $
+       splog, 'WARNING: Cannot shift to sky lines'
 
       ; ----------------------------------------
       ;  fitvacset performs shift to skylines and fit to vacuum wavelengths
-      
-      vacset = fitvacset(xarc, lambda, wset, xset, ncoeff=arccoeff)
+
+      vacset = fitvacset(xarc, lambda, wset, arcshift, ncoeff=arccoeff)
 
       sxaddpar, objhdr, 'VACUUM', 'WAVELENGTHS ARE IN VACUUM'
       sxaddpar, objhdr, 'AIR2VAC', systime()

@@ -1,21 +1,24 @@
 ;------------------------------------------------------------------------------
 ;+
 ; NAME:
-;   locateskylines
+;   locateskylines_test
 ;
 ; PURPOSE:
 ;   Compute shifts for arc lines used in wavelength calibration.
 ;
 ; CALLING SEQUENCE:
 ;   locateskylines, skylinefile, fimage, ivar, wset, xarc, arcshift=arcshift,
-;    [ xsky=, ysky=, skywaves=, skyshift= ]
+;    [ nord=, xsky=, ysky=, skywaves=, skyshift= ]
 ;
 ; INPUTS:
 ;   skylinefile - Name of skyline file (with air wavelengths in Angstroms)
 ;   fimage      - Flattened image containing skylines [NPIX,NFIBER]
 ;   ivar        - Inverse variance of FIMAGE
 ;   wset        - Wavelength solution traceset (pix -> lambda)
-;   xarc        - Arc line positions from arc frame [pix]
+;   xarc        - Arc line positions ???
+;
+; OPTIONAL INPUTS:
+;   nord     - Order of fit to delta x positions; default to 4
 ;
 ; OUTPUTS:
 ;   arcshift    - Shifts to apply to arc lines in pix [NROW,NTRACE]
@@ -27,7 +30,8 @@
 ;
 ; COMMENTS:
 ;   The wavelength as a function of fiber number is only allowed to
-;   vary quadratically.  The scale 
+;   vary quadratically.  The scale is only allowed to vary by the same
+;   factor for the entire image.
 ;
 ; EXAMPLES:
 ;
@@ -35,7 +39,6 @@
 ;
 ; PROCEDURES CALLED:
 ;   djs_iterstat
-;   fitmeanx()
 ;   trace_fweight()
 ;   trace_gweight()
 ;   traceset2pix()
@@ -47,15 +50,16 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro locateskylines, skylinefile, fimage, ivar, wset, xarc, arcshift=arcshift, $
+pro locateskylines_test, skylinefile, fimage, ivar, wset, xarc, arcshift=arcshift, $
  xsky=xsky, skywaves=skywaves, skyshift=skyshift
+
+   if (NOT keyword_set(nord)) then nord = 4
 
    splog, 'Reading sky line file ', skylinefile
    readcol, skylinefile, skywaves, /silent, form='d'
 
-   dims = size(fimage, /dimens)
-   npix = dims[0]
-   nfiber = dims[1]
+   npix = (size(fimage))[1]
+   nfiber = (size(fimage))[2]
    ncoeff = (size(wset.coeff))[1]
 
    ;---------------------------------------------------------------------------
@@ -111,41 +115,70 @@ pro locateskylines, skylinefile, fimage, ivar, wset, xarc, arcshift=arcshift, $
     xerr=gxerr) 
 
    ;---------------------------------------------------------------------------
+   ; Discard bad pixels
+   ;---------------------------------------------------------------------------
+
+   ;----------
+   ; Create mask of centroids with large errors.
+   ; Reject if errors from flux-weight-centroids or gaussian centroids
+   ; are large, or if these two methods disagree.
+
+maxerr = 0.05 ; ???
+   mask = gxerr LT maxerr AND gxerr LT maxerr AND abs(xsky-xskytmp) LT maxerr
+   igood = where(mask, ngood)
+   if (ngood LT 100) then begin
+      splog, 'WARNING: Too few good sky centroids for shifting wavelengths'
+      return
+   endif
+
+   ;----------
+   ; Determine how many of the sky lines have good S/N
+   ; in at least 50% of the fibers
+
+   junk = where( total(mask,1) GT 0.5 * nfiber, ngoodsn)
+
+   if (ngoodsn EQ 0) then begin
+      splog, 'WARNING: No sky lines with good S/N'
+      return
+   endif
+
+   ;---------------------------------------------------------------------------
    ; Fit the shifts
    ;---------------------------------------------------------------------------
 
-   lambda = alog10(skywaves)
-   xskyold = xsky
-   xdiff = fitmeanx(wset, lambda, xskyold, aveinvvar, mx=mx)
+   ;----------
+   ; First fit a quadratic shift, as a function of fiber number, to the
+   ; offsets
 
-   junk = where(aveinvvar GT 1./(0.2)^2, ngood)
-   if (ngood EQ 0) then begin
-      splog, 'WARNING: No good sky lines (with std-dev less than 0.2 pixels)'
-      return
-   endif else if (ngood LE 3) then begin
-      shiftcoeff = 1 ; Fit an offset for each fiber
+   fibernums = djs_laxisgen([nfiber,nskyline], iaxis=0)
+   res1 = polyfitw(float(fibernums[igood]), (xsky-xpredict)[igood], $
+    1./(gxerr[igood])^2, nord, xfit1)
+;splot, xpredict[igood], (xsky-xpredict)[igood],ps=3
+;soplot, xpredict[igood], xfit1, ps=3, color='red'
+
+   ;----------
+   ; Now fit for a scale change as a the d(scale)/d(x) on the CCD.
+   ; Only fit this if there are at least 3 sky lines with good S/N.
+
+   if (ngoodsn GE 3) then begin
+      res2 = polyfitw(float(xpredict[igood]), (xsky-xpredict)[igood]-xfit1, $
+       1./(gxerr[igood])^2, 1, xfit2)
+;soplot, xpredict[igood], (xsky-xpredict)[igood]-xfit1,ps=3,color='red'
+;soplot, xpredict[igood], xfit2
    endif else begin
-      shiftcoeff = 2 ; Fit an offset + scale factor for each fiber
+      res2 = 0
    endelse
-
-   splog, 'Fitting ', shiftcoeff, ' coefficients for wavelength shifts'
-
-   invvar = 0.0 * xdiff
-   for i=0, nskyline-1 do invvar[*,i] = aveinvvar[i]
-   xy2traceset, transpose(mx), transpose(xdiff), shiftset, ncoeff=shiftcoeff, $
-     invvar=transpose(invvar), xmin=0, xmax=npix-1, maxiter=0
 
    ;---------------------------------------------------------------------------
    ; Compute shift for sky line positions.
 
-   traceset2xy, shiftset, transpose(xsky), skyshift
-   skyshift = transpose(skyshift)
+   skyshift = poly(fibernums, res1) + poly(xpredict, res2) ; The sign ???
 
    ;---------------------------------------------------------------------------
    ; Compute shift for arc line positions.
 
-   traceset2xy, shiftset, transpose(xarc), arcshift
-   arcshift = transpose(arcshift)
+   arcfibnums = djs_laxisgen(size(xarc,/dimens), iaxis=1)
+   arcshift = poly(arcfibnums, res1) + poly(xarc, res2) ; The sign???
 
    splog, 'Median arc shift = ', median(arcshift), ' pix'
    djs_iterstat, arcshift, sigma=sig
