@@ -199,7 +199,7 @@ function zcompute, objflux, objivar, starflux, starmask, nfind=nfind, $
    endfor
 
    ;-----
-   ; Fit this chi2 minimum with a parabola
+   ; Fit this chi2/DOF minimum with a parabola
 
    indx = where(dofarr GT mindof, ct)
    if (ct GT width) then begin
@@ -215,13 +215,13 @@ function zcompute, objflux, objivar, starflux, starmask, nfind=nfind, $
          zans[ipeak].theta = thetaarr[*,ilag]
       endfor
       zans[0:npeak-1].chi2 = zans[0:npeak-1].chi2 * zans[0:npeak-1].dof
-   endif else if (ct GT 1) then begin
+   endif else if (ct GE 1) then begin
       zans[0].chi2 = min(-chi2arr[indx]/dofarr[indx], ilag)
-      zans[0].z = poffset - lags[ilag]
+      zans[0].z = poffset - lags[indx[ilag]]
       zans[0].z_err = 0
-      zans[0].dof = dofarr[ilag]
+      zans[0].dof = dofarr[indx[ilag]]
       zans[0].chi2 = zans[0].chi2 * zans[0].dof
-      zans[0].theta = thetaarr[*,ilag]
+      zans[0].theta = thetaarr[*,indx[ilag]]
    endif
 
    return, zans
