@@ -11,17 +11,18 @@ typedef struct {
 
 # Do not constrain the redshift, width, or flux level of Lyman-alpha
 # to agree with any other lines.
- emlineid  1215.67    "Ly_alpha"    zlya       wlya       f1215  1
+ emlineid  1215.67    "Ly_alpha"    z_lya      w_ly_a     f1215  1
+ emlineid  1240.81    "N_V"         zemission  w_n_v      f1240  1
  emlineid  1549.48    "C_IV"        zemission  wemission  f1549  1
  emlineid  1640.42    "He_II"       zemission  wemission  f1640  1
  emlineid  1908.734   "C_III]"      zemission  wemission  f1908  1
  emlineid  2799.49    "Mg_II"       zemission  wemission  f2799  1
  emlineid  3725.94    "[O_II]"      zemission  wemission  f3725  1
  emlineid  3727.24    "[O_II]"      zemission  wemission  f3727  1
- emlineid  4101.73    "H_delta"     zemission  wemission  f4101  1
- emlineid  4340.46    "H_gamma"     zemission  wemission  f4340  1
+ emlineid  4101.734   "H_delta"     zemission  wemission  f4101  1
+ emlineid  4340.464   "H_gamma"     zemission  wemission  f4340  1
  emlineid  4363.209   "[O_III]"     zemission  wemission  f4363  1
- emlineid  4861.3632  "H_beta"      zemission  wemission  f4861  1
+ emlineid  4861.325   "H_beta"      zemission  wemission  f4861  1
  emlineid  4958.911   "[O_III]"     zemission  wemission  f5007  1.0
  emlineid  5006.843   "[O_III]"     zemission  wemission  f5007  3.0
  emlineid  6300.304   "[O_I]"       zemission  wemission  f6300  1
