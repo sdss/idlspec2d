@@ -31,15 +31,35 @@ typedef struct {
 } BC;
 
 bc "2 amp" 0 1 0    2048 0    3    BADBLK BADCOL
+bc "2 amp" 0 1 105  1    361  1    BADBLK BADCOL
+bc "2 amp" 0 1 114  1    201  1    BADBLK BADCOL
+bc "2 amp" 0 1 134  1    1870 1    BADBLK BADCOL
+bc "2 amp" 0 1 186  1    1834 1    BADBLK BADCOL
+bc "2 amp" 0 1 1699 1    2027 1    BADBLK BADCOL
+
 bc "2 amp" 0 2 0    2048 0    3    BADBLK BADCOL
-bc "2 amp" 0 2 1090 1    890  100  BADBLK HOTCOL
+bc "2 amp" 0 2 246  1    363  1    BADBLK BADCOL
+bc "2 amp" 0 2 1090 1    889  10   BADBLK HOTCOL
 bc "2 amp" 0 2 1181 2    1170 280  BADBLK HOTCOL
+bc "2 amp" 0 2 1286 1    703  1    BADBLK BADCOL
 bc "2 amp" 0 2 1435 1    0    2048 BADBLK HOTCOL
+bc "2 amp" 0 2 1462 1    576  1    BADBLK BADCOL
+bc "2 amp" 0 2 1668 1    1141 1    BADBLK BADCOL
 bc "2 amp" 0 2 1762 2    980  200  BADBLK HOTCOL
+bc "2 amp" 0 2 2036 1    386  1    BADBLK BADCOL
+# bc "2 amp" 0 2 1090 1    889  100   BADBLK HOTCOL
+
+bc "2 amp" 0 3 173  1    306  1    BADBLK BADCOL
+bc "2 amp" 0 3 386  1    1578 1    BADBLK BADCOL
+bc "2 amp" 0 3 1427 1    134  2    BADBLK BADCOL
 bc "2 amp" 0 3 1272 2    1206 842  BADBLK BADCOL
+
+bc "2 amp" 0 4 178  1    1618 10   BADBLK HOTCOL
+bc "2 amp" 0 4 2011 1    915  10   BADBLK HOTCOL
 bc "2 amp" 0 4 1112 4    0    2048 BADBLK HOTCOL
 bc "2 amp" 0 4 1196 1    1380 668  BADBLK BADCOL
 bc "2 amp" 0 4 1201 1    0    2048 BADBLK HOTCOL
 bc "2 amp" 0 4 1585 2    0    2048 BADBLK HOTCOL
 bc "2 amp" 0 4 1709 1    0    2048 BADBLK HOTCOL
 bc "2 amp" 0 4 1942 1    0    2048 BADBLK HOTCOL
+
