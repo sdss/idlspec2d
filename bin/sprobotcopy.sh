@@ -14,8 +14,8 @@
 
 topoutdir=$SPECTRO_DATA
 #destdir=fsgi03.fnal.gov:mydata/2d_v4
-#destdir=sdssdp3.fnal.gov:/data/dp3.p/data/schlegel/2d_v4
-destdir=sdssdp6.fnal.gov:/data/dp3.p/data/schlegel/2d_v4_7
+#destdir=sdssdp6.fnal.gov:/data/dp3.p/data/schlegel/2d_v4
+destdir=sdssdp7.fnal.gov:/data/dp3.p/data/schlegel/2d_v4_7
 htmldir=spectro.princeton.edu:/peyton/home/spectro/httpd/html
 
 #------------------------------------------------------------------------------
