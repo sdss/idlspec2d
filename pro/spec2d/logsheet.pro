@@ -44,7 +44,9 @@ pro logsheet, dir, outfile=outfile
       if (keyword_set(outfile)) then begin
          get_lun, olun
          openw, olun, outfile
-      endif
+      endif else begin
+         olun = -1
+      endelse
 
       ; Remove the path from the file names
       shortname = strarr(nfile)
