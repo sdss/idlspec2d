@@ -48,6 +48,7 @@
 ;   djs_laxisgen()
 ;   plate_rotate
 ;   yanny_free
+;   yanny_par()
 ;   yanny_read
 ;
 ; INTERNAL SUPPORT ROUTINES:
@@ -98,6 +99,7 @@ pro design_multiplate, stardata, tilenums=tilenums, platenums=platenums, $
     message, 'Number of elements in RACEN,DECCEN must agree w/ number of tiles'
 
    if (NOT keyword_set(guidetiles)) then begin
+      ; First assign tile numbers like they are 1-indexed
       if (ntile EQ 1) then begin
          guidetiles = [1,1,1,1,1,1,1,1,1,1,1]
       endif else if (ntile EQ 2) then begin
@@ -118,6 +120,8 @@ pro design_multiplate, stardata, tilenums=tilenums, platenums=platenums, $
       endif else begin
          message, 'GUIDETILES must be specified if using more than 4 tiles'
       endelse
+      ; Now re-assigne the guide tile numbers to the actual tile numbers
+      guidetiles = tilenums[guidetiles-1]
    endif
    if (N_elements(guidetiles) NE 11) then $
     message, 'GUIDETILES must be an 11-element array'
@@ -215,7 +219,7 @@ print, 'Assigning real guide fiber number ', iguide+1
             junk = min(adiff, imin)
             addplug = blankplug
             struct_assign, stardata[indx[imin]], addplug
-            addplug.throughput = 2L^31 ; Maximum value
+            addplug.throughput = 2L^31-1 ; Maximum value
 
          endif else begin
 
@@ -261,7 +265,7 @@ print, 'Assigning real guide fiber number ', iguide+1
       addplug.holetype = 'OBJECT'
       addplug.objtype = 'SERENDIPITY_MANUAL'
       if ((where(tag_names(stardata) EQ 'PRIORITY'))[0] NE -1) then $
-       addplug.throughput = (stardata[indx].priority > 1L) < (2L^31-1) $
+       addplug.throughput = (stardata[indx].priority > 1L) < (2L^31-2) $
       else $
        addplug.throughput = long(randomu(24680, nadd) * 100) + 1
       addplug.sectarget = 2L^24
@@ -282,7 +286,7 @@ print, 'Assigning real guide fiber number ', iguide+1
       addplug.dec = griddec
 
       addplug.holetype = 'COHERENT_SKY'
-      addplug.objtype = 'SKY'
+      addplug.objtype = 'NA'
       addplug.sectarget = 16L
       addplug.throughput = 0L
       addplug.mag[*] = fakemag
@@ -386,11 +390,10 @@ stop
 
    hdrarr = replicate(ptr_new(), ntile)
    for itile=0, ntile-1 do begin
-;      yanny_read, plugmappfile[itile], pp, $
-      yanny_read, plugmaptfile[itile], pp, $ ; ???
+      yanny_read, plugmappfile[itile], pp, $
        hdr=plughdr, enums=plugenum, structs=plugstruct
       hdrarr[itile] = ptr_new(plughdr)
-      thisplate = sxpar(plughdr, 'plateId')
+      thisplate = yanny_par(plughdr, 'plateId')
       (*pp[0]).fiberid = thisplate ; Store the plate number in FIBERID
       if (itile EQ 0) then allplug = *pp[0] $
        else allplug = [allplug, *pp[0]]
@@ -415,19 +418,20 @@ stop
    iobj = where(allplug.holetype EQ 'OBJECT', nobj)
    isort = reverse(sort(allplug[iobj].throughput + randomu(2468,nobj)))
    iobj = iobj[isort]
+   nadded = 0
    for ii=0, nobj-1 do begin
-      design_append, newplug, allplug[iobj[ii]]
+      if (nadded LT 640) then begin
+         nbefore = n_elements(newplug)
+         newplug = design_append(newplug, allplug[iobj[ii]])
+         if (n_elements(newplug) GT nbefore) then nadded = nadded + 1
+       endif
    endfor
-
-   ;----------
-   ; Check that there are 11 guide fibers plus 640 objects
-
-   if (n_elements(newplug) LT 651) then $
-    message, 'Fewer than 651 non-conflicting guide + object positions'
-   newplug = newplug[0:650]
+   if (nadded LT 640) then $
+    message, 'Fewer than 640 objects'
 
    ;---------------------------------------------------------------------------
    ; WRITE THE MODIFIED PLUGMAPP FILES.
+   ; This combines objects from the different tiles.
    ; This overwrites files that already exist.
    ;---------------------------------------------------------------------------
 
@@ -441,13 +445,34 @@ stop
 
 
       ;----------
-      ; Objects that are actually on other tiles are renamed to SKY
+      ; Objects that are actually on other tiles are renamed to sky fibers
       ; on this plate.
 
-      indx = where(modplug.fiberid NE thisplate)
+      indx = where(modplug.holetype EQ 'OBJECT' $
+       AND modplug.fiberid NE thisplate)
       if (indx[0] NE -1) then begin
-         modplug[indx].objtype = 'SKY'
-      endif
+         modplug[indx].holetype = 'COHERENT_SKY'
+         modplug[indx].objtype = 'NA'
+         modplug[indx].primtarget = 0L
+         modplug[indx].sectarget = 16L
+      endif else begin
+         message, 'No objects to use as guide fibers for plate '+string(thisplate)
+      endelse
+
+      ;----------
+      ; Add the one quality hole which we already have, which is the
+      ; center hole
+
+      iqual = where(allplug.holetype EQ 'QUALITY' $
+       AND allplug.fiberid EQ thisplate, nqual)
+      if (nqual NE 1) then $
+      message, 'We expect 1 quality hole already (the center hole)'
+      modplug = [modplug, allplug[iqual]]
+
+      ; Must set the following to avoid PLATE from crashing!!
+      modplug.spectrographid = -9999
+      modplug.fiberid = -9999
+      modplug.throughput = -9999
 
       cpbackup, plugmappfile[itile]
 
@@ -462,6 +487,8 @@ stop
    ; CREATE THE DRILL FILES FROM THE 1ST PLATE.
    ; (Drill files from any of the plates would be identical.)
    ; Run the code fiberPlates, makeFanuc, makeDrillPos, use_cs3.
+   ; The fiberPlates code selects the guide stars and sky fibers from
+   ; those available, and renames COHERENT_SKY/NA objects to OBJECT/SKY.
    ;---------------------------------------------------------------------------
 
 ; ???
