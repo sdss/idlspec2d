@@ -41,13 +41,13 @@
 ;   The the correction vectors are parameterized in terms of magnitude
 ;   (i.e. log-flux) that are achromatic with x, y, x^2, y^2, x*y,
 ;   where those are linear coordinates XFOCAL,YFOCAL from the plug-map.
-;   There are also chromatic terms that scale as (5070/wavelength)^2,
+;   There are also chromatic terms that scale as 1-(5070/wavelength)^2,
 ;   sine that function gives an equal effect between 3900 and 5070 Ang
-;   as between 5070 ang 9000 Ang
+;   as between 5070 ang 9000 Ang.
 ;   There are also magnitude offsets as a function of spectrograph ID,
 ;   and a chromatic offset as a function of spectrograph ID.
 ;
-;   In detail, the formulae are as follows:
+;   In detail, the formulae is as follows (with 14 terms):
 ;     NEWFLUX = FLUX * [1 + a0*(SPECID EQ 1) + a1*(SPECID EQ 2)]
 ;               * exp{ a2*x + a3*y + a4*x*y + a5*x^2 + a6*y^2
 ;                + a7*x*LL + a8*y*LL 
@@ -200,10 +200,10 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
     AND fracgood GT 0.90
    if (total(qtrim AND qivar) GT 0.8*total(qtrim)) then begin
       splog, 'Trimming to ', 100*total(qtrim AND qivar)/total(qtrim), $
-       '% of objects w/known photom errors'
+       '% of objects w/known photom errors from calibObj'
       qtrim = qtrim * qivar
    endif else begin
-      splog,' No objects w/known photom errors'
+      splog,' No objects w/known photom errors from calibObj'
    endelse
    itrim = where(qtrim, ntrim)
    splog, 'Number of objects for fitting distortions = ', ntrim
