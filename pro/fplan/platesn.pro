@@ -7,8 +7,15 @@ pro platesn, platefile, snplot, planfile=planfile
    if keyword_set(planfile) then begin
       yanny_read, planfile, pdata, hdr=hdr
       platefile = yanny_par(hdr,'combinefile')
+      logfile = yanny_par(hdr,'logfile')
       snplot = yanny_par(hdr,'snplot')
       yanny_free, pdata
+   endif
+
+   if keyword_set(logfile) then splog, filename=logfile, /append
+   if (findfile(platefile))[0] EQ '' then begin
+      splog, 'ABORT: No spPlate file exists?!?'
+      return
    endif
 
    finalflux=mrdfits( platefile, 0, hdr, /silent)
@@ -49,6 +56,7 @@ pro platesn, platefile, snplot, planfile=planfile
    ;  Make S/N plot
    ;
  
+
    plotsn, snvec, finalplugmap, plotfile=snplot, plottitle=plottitle, $
       synthmag=synthetic_mags, snplate=snplate
 
@@ -74,6 +82,7 @@ pro platesn, platefile, snplot, planfile=planfile
      splog, label, rollcall[*,i], format='(a20,3(i9))'
    endfor
 
+   if keyword_set(logfile) then splog, /close
    ;---------------------------------------------------------------------------
    ;	!!! This is crazy, but I'm going to write out the S/N 
    ;    !!!   per plate in the hdr !!
