@@ -1,10 +1,11 @@
 
-function fluxcorr, flux, fluxivar, wset, plugsort, $
+function fluxcorr, flux, fluxivar, wset, plugsort, color=color, $
         spectrostd=spectrostd, bkptfile=bkptfile, lower=lower, upper=upper, $
         fibermask=fibermask
 
-	if (NOT keyword_set(lower)) then lower = 2.5
-	if (NOT keyword_set(upper)) then upper = 10
+        nord=3
+	if (NOT keyword_set(lower)) then lower = 5
+	if (NOT keyword_set(upper)) then upper = 5
 
         ncol = (size(flux))[1] 
         nrow = (size(flux))[2] 
@@ -66,12 +67,18 @@ function fluxcorr, flux, fluxivar, wset, plugsort, $
 ;
 ;	Mask out absorption line regions
 ;
-       
-        absreg = [[3.582, 3.5845],[3.5885, 3.591],[3.594, 3.596], $
-                  [3.597, 3.60],[3.605, 3.62],[3.63, 3.645],[3.684, 3.695], $
-                  [3.8165, 3.818],[3.836,3.840],[3.855,3.858], $
-                  [3.859,3.865],[3.88,3.887], [3.910,3.914], [3.918,3.921], $
-                  [3.951,3.955], [3.957,3.959]]
+
+	filename = ''
+	if (keyword_set(absfile)) then $
+	  filename = findfile(bkptfile) $
+        else $
+	  filename = getenv('IDLSPEC2D_DIR') + '/etc/f8v.abs'
+      
+        if (filename EQ '') then message, 'no F8V Abs file found'
+ 
+        readcol, filename, absmin, absmax
+
+	absreg = transpose([[absmin],[absmax]])
         nregions = (size(absreg))[2] 
 	for i=0,nregions - 1 do begin
           absline = where(spectrowave GT absreg[0,i] AND  $
@@ -86,29 +93,32 @@ function fluxcorr, flux, fluxivar, wset, plugsort, $
 	wmax = max(wave)
 
 ;
-;	Read in bkpt file, which should have best spacings
+;	Read in bkpt file, which should have best spacing
 ;	
+        filename = ''
 	if (keyword_set(bkptfile)) then $
 	  filename = findfile(bkptfile) $
-	else $
-	  filename = getenv('IDLSPEC2D_DIR') + '/etc/fluxcorr.bkpts'
+	else if (keyword_set(color)) then begin 
+          if (color EQ 'red') then $
+	    filename = getenv('IDLSPEC2D_DIR') + '/etc/red.bkpts'
+          if (color EQ 'blue') then $
+	    filename = getenv('IDLSPEC2D_DIR') + '/etc/blue.bkpts'
+        endif
 
-	if (filename EQ '') then begin
-             print, 'FLUXCORR cannot find bkpt file, filling in here'
-	     allbkpts = [ 3.57, 3.59, 3.61, 3.63, 3.64, 3.65, 3.66, 3.67, $
-                   3.68, 3.70, 3.71, 3.72, $
-                   3.73, 3.745, 3.755, 3.760, 3.763, 3.766, 3.769, 3.772, $
-                   3.775, 3.778, 3.782, 3.785, 3.788, $
-                   3.791, 3.793, 3.797, 3.800, 3.803, 3.806, 3.81, $
-                   3.813, 3.816, 3.82, 3.823, 3.826, 3.83, 3.834, 3.837, $
-                   3.840, 3.845, 3.85, 3.854, 3.858, 3.865, 3.87, 3.874, $
-                   3.878, 3.885, 3.89,$
-                   3.895, 3.90, 3.905, 3.91, 3.92, 3.93, 3.94, 3.95, 3.97]
-	endif else begin
-	  readcol, filename, allbkpts
-	endelse
+	if (filename EQ '') then message, 'FLUXCORR cannot find bkpt file'
 
-	thesebkpts = where(allbkpts GE wmin AND allbkpts LE wmax, numbkpts)	
+	readcol, filename, allbkpts
+
+        ; Switch to log10 wavelengths
+        allbkpts = alog10(allbkpts)
+
+        ; Add buffer to min and max wavelengths to select
+        ; breakpoints interior to extrema
+        ; 3.0e-3 in log10 is approx 30 pixels
+
+	thesebkpts = where(allbkpts GE wmin + 3.0e-3 $
+                       AND allbkpts LE wmax - 3.0e-3, numbkpts)	
+
 	if (numbkpts LT 4) then $
 	     message, 'FLUXCORR: bkpts are screwed up'
 
@@ -118,8 +128,9 @@ function fluxcorr, flux, fluxivar, wset, plugsort, $
 ;	Ready to spline spectro std
 ;	
 
+
 	fullbkpt = slatec_splinefit(spectrowave, spectroflux, coeff, $
-            maxiter=10, lower=lower, upper=upper, $
+            maxiter=10, lower=lower, upper=upper, nord=nord, $
             invvar=spectrofluxivar*mask, bkpt=bkpt, rejper=0.4)
 
 	intrinspl = spl_init(alog10(f8wave), f8flux)
@@ -130,14 +141,19 @@ function fluxcorr, flux, fluxivar, wset, plugsort, $
 ;	cheap scaling
 ;
 ;	at v=0, flux at 5556A is 956/3.42 photons/cm/A/s
-;	        = 9.72e-10 ergs/cm/s/A
+;	        = 9.72e-10 ergs/cm^2/s/A
 ;	scale to r', with 10^(-r'/2.5)
 ;	and return in units to 1e-17 ergs/cm/s/A
 ;	so factor in exponent is 10^((20.0 - r')/2.5)
 
 	scaling = 10^((20.0 - plugsort[spectrophoto[bestcolor]].mag[2])/2.5)
 
-	fluxfactor = fullf8v / slatec_bvalu(wave, fullbkpt, coeff) * scaling
+        fullfit = slatec_bvalu(wave, fullbkpt, coeff)
+
+	negs = where(fullfit LE 0.0, nnegs)
+	if (nnegs GT 0) then message, 'Flux factor has negative elements'
+
+	fluxfactor = fullfit / (fullf8v * scaling)
 
 	return, fluxfactor
 end

@@ -480,11 +480,14 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       ;------------------------------------------
       ; Flux calibrate to spectrophoto_std fibers
 
-      fluxfactor = fluxcorr(skysub, skysubivar, vacset, plugsort, $
-                             lower=1.5, upper=5, fibermask=fibermask)
+      fluxfactor = fluxcorr(skysub, skysubivar, vacset, plugsort, color=color, $
+                             lower=3.0, upper=3.0, fibermask=fibermask)
 
-      flux = skysub * fluxfactor
-      fluxivar = skysubivar / (fluxfactor^2)
+      flambda  = skysub 
+      flambdaivar = skysubivar 
+
+      minfluxfactor = median(fluxfactor)*0.01
+      divideflat, flambda, flambdaivar, fluxfactor, minval=minfluxfactor
 
       ;------------------------------------------
       ; Telluric correction called for 'red' side
@@ -502,10 +505,9 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
                  minw = 3.94, maxw=3.97, lower=5.0, upper=5.0)
        
          telluricfactor = telluric1 * telluric2
-         flux = flux / telluricfactor 
-         fluxivar = fluxivar * (telluricfactor^2)
+         divideflat, flambda, flambdaivar, telluricfactor, minval=0.1
 
-         qaskylines, flux, fluxivar, vacset, plugsort
+         qaskylines, flambda, flambdaivar, vacset, plugsort
       endif
 
       ;------------------
@@ -536,7 +538,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       sxaddpar, objhdr, 'PROFTYPE', proftype, '1 is Gaussian'
       sxaddpar, objhdr, 'NFITPOLY', nparams, 'order of profile parameter fit'
 
-      writespectra, objhdr, flux, fluxivar, plugsort, vacset, $
+      writespectra, objhdr, flambda, flambdaivar, plugsort, vacset, $
        filebase=filebase
 
       heap_gc   ; Garbage collection for all lost pointers

@@ -343,7 +343,6 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
 
           inff = where(finite(bestguess) EQ 0 OR finite(besterr) EQ 0)
           if (inff[0] NE -1) then begin
-            stop
             bestguess[inff] = 0.0
             besterr[inff] = 0.0
           endif

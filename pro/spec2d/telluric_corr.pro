@@ -50,6 +50,7 @@ function telluric_corr,flux, fluxivar, wset, plugsort, $
 	   tempivar = tellfluxivar[inside[ss],i]
 
 	   tellfeatures = 1 - (tempwave GT 3.855 AND tempwave LT 3.865 OR $
+	                        tempwave GT 3.836 AND tempwave LT 3.842 OR $
 	                        tempwave GT 3.875 AND tempwave LT 3.89)
 
            fullbkpt = slatec_splinefit(tempwave, median(tempflux,21), coeff, $
