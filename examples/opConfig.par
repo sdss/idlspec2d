@@ -6,6 +6,7 @@ typedef struct {
 
         int camRow;                # camRow mt=0 spec=0 dsc=9
         int camCol;                # camCol mt=0 spec=1234 dsc=9
+                                   # 1=b1, 2=r2, 3=b2, 4=r1
 
         int rowBinning;         # binning in y
         int colBinning;         # binning in x

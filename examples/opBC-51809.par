@@ -21,8 +21,8 @@ typedef enum {
 
 typedef struct {
   char program[40];		# program (1 amp or 2?)
-  int camRow;                  # 0 = spectrograph camera 
-  int camCol;                  # 1 = blue0, 2 = red0, 3 = blue1, 4= red1
+  int camRow;                  # 0=spectrograph camera  
+  int camCol;                  # 1=b1, 2=r2, 3=b2, 4=r1
   int dfcol0;                # starting column of this defect
   int dfncol;                # number of columns in this defect
   int dfrow0;
