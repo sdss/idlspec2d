@@ -29,6 +29,13 @@ READSPEC: Change how the internal procedure READSPEC1 works, such that
 SDSSPROC: Re-enable the call to 'speclog_version'.
 SPFLUX_READ_KURUCZ: This function was pulled out of SPFLUX_V5.
 SPFLUX_V5: Pull out the SPFLUX_READ_KURUCZ() code as a separate function.
+        Comment-out the median/mean rescaling factor in SPFLUX_MRATIO_FLATTEN(),
+        since I think that could potentially be mis-matched between the blue
+        and red sides.  For rejecting the F stars, start by rejecting any
+        stars with more than 20% bad points in any image.  (This fixes a
+        problem with plate 662/52147 where a bad star throws the fits.)
+        Rescale the per-fiber plots of the spectro-photo vectors using
+        the FLATARR such that they should all lie on top of one another.
 SPCOADD_V5: Apply the flux-distortion image to the sky vectors, as well
         as to OBJFLUX,OBJIVAR.
 
@@ -376,7 +383,7 @@ ups/idlspec2d.table: Get rid of all the $UPS_PROD_FLAVOR references for
            dependent products.
 
 -------------------------------------------------------------------------------
-v4_10_2
+v4_10_2-2003/8/13
 This is an untested version of the code with the files in some
 state between v4_10_1 and v4_10_6.  It was created retro-actively
 by RHL on 18 March 2004 to tag the code as is stood on 13 Aug 2003.

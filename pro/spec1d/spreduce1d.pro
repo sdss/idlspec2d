@@ -535,8 +535,6 @@ ormask = 0 ; Free memory
     ' Version of idlspec2d for 1D reduction', after='VERSCOMB'
    spawn, 'uname -n', uname
    sxaddpar, hdr, 'UNAME', uname[0]
-   ww = strsplit(uname[0], '.', /extract)
-   if (ww[1<(n_elements(ww)-1)] EQ 'fnal') then return
 
    ;----------
    ; Call the line-fitting code for this plate
@@ -725,8 +723,6 @@ ormask = 0 ; Free memory
     'Version of idlspec2d for 1D reduction', after='VERSCOMB'
    spawn, 'uname -n', uname
    sxaddpar, hdr, 'UNAME', uname[0]
-   ww = strsplit(uname[0], '.', /extract)
-   if (ww[1<(n_elements(ww)-1)] EQ 'fnal') then return
 
    zans = struct_addtags((res_all[0,*])[*], res_elodie)
    mwrfits, 0, zbestfile, hdr, /create ; Retain the original header in first HDU
