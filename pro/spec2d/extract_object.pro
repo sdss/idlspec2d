@@ -524,8 +524,8 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    mwrfits, plugsort, outname
 
 ; Save sky, fluxfactor, telluricfactor???
-;   mwrfits, fluxfactor, outname
-;   if (color EQ 'red') then mwrfits, telluricfactor, outname
+   mwrfits, fluxfactor, outname
+   if (color EQ 'red') then mwrfits, telluricfactor, outname
 
    return
 end
