@@ -52,7 +52,9 @@
 ;-
 ;------------------------------------------------------------------------------
 pro platesn, finalflux, finalivar, finalandmask, finalplugmap, loglam, $
- hdr=hdr, plotfile=plotfile, snvec=snvec, synthmag=synthmag
+ hdr=hdr, plotfile=plotfile, snvec=snvec, synthmag=synthmag, filtsz=filtsz
+
+   if NOT keyword_set(filtsz) then filtsz=25
 
    common com_maskbits, maskbits
 
@@ -65,9 +67,36 @@ pro platesn, finalflux, finalivar, finalandmask, finalplugmap, loglam, $
    iwave = where(loglam GT alog10(6910) AND loglam LT alog10(8500))
 
    snimg = finalflux * sqrt(finalivar)
-   snvec = [ transpose(djs_median(snimg[gwave,*],1)), $
-             transpose(djs_median(snimg[rwave,*],1)), $
-             transpose(djs_median(snimg[iwave,*],1))]
+   snvec = fltarr(3, nfiber)
+
+;  Do the same S/N calculation as in apo2d/quickextract.pro
+;  Horribly bulky, but what can we do?
+
+   for ifib=0, nfiber-1 do begin
+     sntemp = 0.0
+     ig = where(finalivar[gwave,ifib] GT 0, nwave)
+     if = nwave GT filtsz then $
+       sntemp = djs_median(snimg[gwave[ig],ifib], $
+                           width=filtsz, boundary='reflect')
+     sng = djs_mean(sntemp)
+
+     sntemp = 0.0
+     ig = where(finalivar[rwave,ifib] GT 0, nwave)
+     if = nwave GT filtsz then $
+       sntemp = djs_median(snimg[rwave[ig],ifib], $
+                           width=filtsz, boundary='reflect')
+     snr = djs_mean(sntemp)
+
+     sntemp = 0.0
+     ig = where(finalivar[iwave,ifib] GT 0, nwave)
+     if = nwave GT filtsz then $
+       sntemp = djs_median(snimg[iwave[ig],ifib], $
+                           width=filtsz, boundary='reflect')
+     sni = djs_mean(sntemp)
+
+
+     snvec[*,ifib] = [sng, snr, sni]
+   endfor
 
    ;--------------------------------------------------------------------
    ; Spectra are already in 10^-17 flambda
