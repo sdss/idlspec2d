@@ -115,7 +115,7 @@ pro batch1d, fullplatefile, topdir=topdir, nice=nice
    ;----------
    ; Begin the batch jobs
 
-   nicestr = 'nice -n ' + strtrim(string(nice),2) 
+   nicestr = '/bin/nice -n ' + strtrim(string(nice),2)
    command = nicestr + ' idl ' + fullscriptfile
    batch, topdir, infile, outfile, $
     hostconfig.protocol, hostconfig.remotehost, hostconfig.remotedir, $

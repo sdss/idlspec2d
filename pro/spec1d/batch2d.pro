@@ -272,11 +272,31 @@ pro batch2d, platenums, topdir=topdir, mjd=mjd, mjstart=mjstart, mjend=mjend, $
    yanny_free, pp
 
    ;----------
-   ; Begin the batch jobs
+   ; Begin the batch jobs.
+   ; Force this to be sent to a bash shell so we know explicitly how
+   ; to set environment variables.  Otherwise, the shell is the same
+   ; as whatever IDL was launched with.
+   ; Set the environment variable $RAWDATA_DIR.
 
-   nicestr = 'nice +' + strtrim(string(nice),2)
-   command = 'setenv RAWDATA_DIR ../rawdata;' $
-    + nicestr + ' idl ' + fullscriptfile
+   nicestr = '/bin/nice -n ' + strtrim(string(nice),2)
+
+   ; The following forces bash-shell by piping to bash...
+;   command = 'echo '+fq+'(RAWDATA_DIR=../rawdata;' $
+;    + nicestr + ' idl ' + fullscriptfile + ')'+fq+' | bash'
+
+   ; The following forces bash-shell by piping to bash...
+   ; ... and send output to /dev/null
+   command = 'echo '+fq+'(RAWDATA_DIR=../rawdata;' $
+    + nicestr + ' idl ' + fullscriptfile + ')'+fq+' | bash >& /dev/null'
+
+   ; The following is for bash-shell...
+;   command = '(RAWDATA_DIR=../rawdata;' $
+;    + nicestr + ' idl ' + fullscriptfile + ')'
+
+   ; The following is for csh-shell...
+;   command = 'setenv RAWDATA_DIR ../rawdata;' $
+;    + nicestr + ' idl ' + fullscriptfile
+
    batch, topdir, pinfile, poutfile, $
     hostconfig.protocol, hostconfig.remotehost, hostconfig.remotedir, $
     command, priority=priority
