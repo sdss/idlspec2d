@@ -52,7 +52,7 @@ PRO reduce_plate, platenum, first=first
   dum = findfile('/deep2/dfink', count=deepcount)
   IF (deepcount GT 0) THEN BEGIN   ; check if in Berkeley
       specpath = '/deepscr0/dfink/spectro/'
-      path = +string(specpath+platenum, format='(I4.4)')+'/'
+      path = specpath+string(platenum, format='(I4.4)')+'/'
       flist = findfile(path+'*.fits')
   ENDIF ELSE BEGIN 
       specpath = '/data/spectro/'
