@@ -498,8 +498,6 @@ pro/spec2d/spplan_create_spexp.pro -text
 pro/spec2d/spplan_findrawdata.pro -text
 pro/spec2d/spreduce.pro -text
 pro/spec2d/spreduce2d.pro -text
-pro/spec2d/sshift.pro -text
-pro/spec2d/sshift2d.pro -text
 pro/spec2d/sshiftvec.pro -text
 pro/spec2d/superflat.pro -text
 pro/spec2d/telluric_corr.pro -text
