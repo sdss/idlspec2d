@@ -153,6 +153,8 @@ pro/fplan/spallreduce.pro -text
 pro/fplan/spmulti.pro -text
 pro/fplan/spplan.pro -text
 pro/fplan/spplancomb.pro -text
+pro/inspect/inspectfiles.pro -text
+pro/inspect/inspectgen.pro -text
 pro/plate/Makefile -text
 pro/plate/README -text
 pro/plate/README.OBSERVE -text
