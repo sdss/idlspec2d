@@ -10,7 +10,7 @@
 ;
 ; S. Burles, 28 Jan 2002
 
-pro get_tai, hdr, tai_beg, tai_mid, tai_end
+pro get_tai, hdr, tai_beg, tai_mid, tai_end, silent=silent
 
    exptime = sxpar(hdr, 'EXPTIME')
    tai     = sxpar(hdr, 'TAI')
@@ -23,10 +23,10 @@ pro get_tai, hdr, tai_beg, tai_mid, tai_end
       exptime_guess = tai_end - tai_beg
       ; The following condition is possible if the exposure was paused for
       ; more than 2 minutes.
-      if (exptime_guess GT exptime + 120) then $
+      if (exptime_guess GT exptime + 120 AND NOT keyword_set(silent)) then $
        splog, "Warning: (TAI-END) - (TAI-BEG) > EXPTIME + 120 sec"
       ; The following should never happen.
-      if (exptime_guess LT exptime + 20) then $
+      if (exptime_guess LT exptime + 20 AND NOT keyword_set(silent)) then $
        splog, "Warning: (TAI-END) - (TAI-BEG) < EXPTIME + 20 sec"
    endif else if (tai GT 4.0d9) then begin
       tai_end = tai - 60.0   ; average buffer for readout 
@@ -34,7 +34,8 @@ pro get_tai, hdr, tai_beg, tai_mid, tai_end
       tai_mid = (tai_beg + tai_end)/2.0
    endif else begin
       tai_mid = 0
-      splog, 'WARNING: TAI,TAI-BEG,TAI-END all appear to be invalid!'
+      if (NOT keyword_set(silent)) then $
+       splog, 'WARNING: TAI,TAI-BEG,TAI-END all appear to be invalid!'
    endelse
 
    return
