@@ -9,6 +9,8 @@ FLUX_DISTORTION: There was a bug in the way objects were being rejected
         the correction solution in the case where some initially bad points
         effect the fit.
 PCA_SOLVE: Make loop variables long ints.
+PLATELIST: Use FINDFILE() function to see if files exist before calling
+        MRDFITS(); this should be a slight speed-improvement.
 PLATEMERGE: Add the fields CALIBFLUX,CALIBFLUX_IVAR which are explicitly
         copied over from the plug-map structures.
 READPLUGMAP: Fix bug when replacing unknown fluxes in the calibObj
