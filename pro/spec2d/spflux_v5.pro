@@ -772,9 +772,9 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
          ; Reject this star if we don't know its flux.
          if (plugmap[iphoto[ip]].calibflux[2] LE 0) then begin
             splog, 'Rejecting std star in fiber = ', $
-             iphoto + 1 + 320 * (spectroid[0] - 1), $
+             iphoto[ip] + 1 + 320 * (spectroid[0] - 1), $
              ' with unknown calibObj flux'
-            qfinal[iphoto] = 0
+            qfinal[iphoto[ip]] = 0
          endif
       endif else begin
          splog, 'WARNING: No CALIBFLUX for zero-pointing the fluxes'
