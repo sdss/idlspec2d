@@ -68,6 +68,8 @@ USNO_READZONE
 USNOB10_EXTRACT
 UV2LL
 
+Various "mangle" utilities added by M. Blanton in pro/mangle.
+
 evilmake: Turn on optimization for all platforms except IRIX.
            Previously, we tried to set -O3 on IRIX, which crashes
            builds on the machine sdsshost.apo.
