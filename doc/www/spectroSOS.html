@@ -560,6 +560,11 @@ The following messages may appear:
     if for some reason there were far fewer than the mandated 16 sky fibers
     on a CCD, or most of those fibers just happened to be dead fibers.
     You should never see this message.  If you do, the data is un-reducable.
+<LI><B>Airmass range = ...</B> <BR>
+    This warning is triggered if the airmass exceeds 2.5.  At such large
+    airmasses, the atmospheric refraction terms are getting large and the
+    sky background is bright.  The data is still usable, it's just not as
+    good as taking data at lower airmass.
 <LI><B>Large flexure flat<->science</B> <BR>
     There is a large shift (more than 0.15 pix) between the flat-field and
     the science exposure, presumably from flexure in the spectrographs.
