@@ -50,6 +50,7 @@
 pro focushistory, mjdrange=mjdrange1
 
    fthresh = 1.00 ; Threshhold for labeling out-of-focus plates
+   rescale = [0.88,1.00,0.98,1.00]
 
    ;----------
    ; Get the list of plates and trim to reduced plates
@@ -101,23 +102,48 @@ pro focushistory, mjdrange=mjdrange1
 
    plist = plist[sort(plist.mjd)] ; Sort by MJD
    nfile = n_elements(plist)
-   disparr = fltarr(4,nfile)
-   dispmax = fltarr(nfile)
+   wsigarr = fltarr(4,nfile)
+   wsigdev = fltarr(4,nfile)
+   wsigmin = fltarr(4,nfile)
+   wsigmax = fltarr(4,nfile)
+   wsigworst = fltarr(nfile)
 
    for ifile=0, nfile-1 do begin
 ;      print, 'Reading file ', ifile+1, ' of ', nfile, ': ', $
 ;       plist[ifile].plate, '/', plist[ifile].mjd
+      readspec, plist[ifile].plate, mjd=plist[ifile].mjd, 1, wave=wave
       readspec, plist[ifile].plate, mjd=plist[ifile].mjd, disp=dispimg
       dims = size(dispimg,/dimens)
-      ; Median dispersions for b1,r1,b2,r2
-      disparr[0,ifile] = 0.90 * median(dispimg[0:dims[0]/2-1,0:dims[1]/2-1])
-      disparr[1,ifile] = median(dispimg[dims[0]/2:dims[0]-1,0:dims[1]/2-1])
-      disparr[2,ifile] = median(dispimg[0:dims[0]/2-1,dims[1]/2-1:dims[1]-1])
-      disparr[3,ifile] = median(dispimg[dims[0]/2:dims[0]-1,dims[1]/2-1:dims[1]-1])
-      dispmax[ifile] = max(disparr[*,ifile])
+
+      indx1 = where(wave GT 4000 AND wave LT 5500)
+      indx2 = where(wave GT 6500 AND wave LT 9000)
+
+      ; Mean dispersions for b1,r1,b2,r2
+      i_b1 = where(dispimg[indx1,0:319] GT 0)
+      djs_iterstat, (dispimg[indx1,0:319])[i_b1], mean=mn_b1, sigma=sg_b1
+      min_b1 = min((dispimg[indx1,0:319])[i_b1], max=max_b1)
+
+      i_r1 = where(dispimg[indx2,0:319] GT 0)
+      djs_iterstat, (dispimg[indx2,0:319])[i_r1], mean=mn_r1, sigma=sg_r1
+      min_r1 = min((dispimg[indx2,0:319])[i_r1], max=max_r1)
+
+      i_b2 = where(dispimg[indx1,320:639] GT 0)
+      djs_iterstat, (dispimg[indx1,320:639])[i_b2], mean=mn_b2, sigma=sg_b2
+      min_b2 = min((dispimg[indx1,320:639])[i_b2], max=max_b2)
+
+      i_r2 = where(dispimg[indx2,320:639] GT 0)
+      djs_iterstat, (dispimg[indx2,320:639])[i_r2], mean=mn_r2, sigma=sg_r2
+      min_r2 = min((dispimg[indx2,320:639])[i_r2], max=max_r2)
+
+      wsigarr[*,ifile] = [mn_b1, mn_r1, mn_b2, mn_r2] * rescale
+      wsigdev[*,ifile] = [sg_b1, sg_r1, sg_b2, sg_r2] * rescale
+      wsigmin[*,ifile] = [min_b1, min_r1, min_b2, min_r2] * rescale
+      wsigmax[*,ifile] = [max_b1, max_r1, max_b2, max_r2] * rescale
+
+      wsigworst[ifile] = max(wsigarr[*,ifile])
 
       splog, plist[ifile].plate, plist[ifile].mjd, $
-       disparr[*,ifile], dispmax[ifile], plist[ifile].airtemp, $
+       wsigarr[*,ifile], wsigworst[ifile], plist[ifile].airtemp, $
        format='(i5,i7,5f7.2,f6.1)'
    endfor
 
@@ -133,7 +159,7 @@ pro focushistory, mjdrange=mjdrange1
    dfpsplot, plotfile, /color
 
    xrange = minmax(plist.mjd) + [-30,30]
-   yrange = [0.70,1.40]
+   yrange = [0.60,1.40]
    mjd2datelist, min(plist.mjd)-20, max(plist.mjd)+20, step='year', $
     mjdlist=mjdlist, datelist=datelist
    nplot = n_elements(mjdlist) - 1
@@ -151,7 +177,7 @@ pro focushistory, mjdrange=mjdrange1
        xtickformat='(i5)', $
        xtitle='MJD', ytitle='Worst Focus [pix]', $
        title='Focus History (Year=' + strmid(datelist[iplot],7)+')'
-      oplot, !x.crange, [0.9,0.9]
+      oplot, !x.crange, [0.85,0.85]
 
       mjd2datelist, mjdlist[iplot], mjdlist[iplot+1], step='month', $
        mjdlist=mjd1, datelist=date1
@@ -163,10 +189,10 @@ pro focushistory, mjdrange=mjdrange1
 
       indx = where(mjdplot GE mjdlist[iplot] AND mjdplot LE mjdlist[iplot+1])
       if (indx[0] NE -1) then begin
-         oplot, mjdplot[indx], dispmax[indx], psym=4
-         ibad = where(dispmax[indx] GT fthresh)
+         oplot, mjdplot[indx], wsigworst[indx], psym=4
+         ibad = where(wsigworst[indx] GT fthresh)
          if (ibad[0] NE -1) then $
-          xyouts, mjdplot[indx[ibad]], dispmax[indx[ibad]], $
+          xyouts, mjdplot[indx[ibad]], wsigworst[indx[ibad]], $
            ' '+strtrim(string(plist[indx[ibad]].plate),2)
       endif
    endfor
@@ -177,18 +203,18 @@ pro focushistory, mjdrange=mjdrange1
    binsz = 0.01
    camname = ['b1','r1','b2','r2']
    colorvec = ['blue','red','green','magenta']
-   plothist, [dispmax,dispmax], /nodata, $ ; Double count to get big Y limit
+   plothist, [wsigworst,wsigworst], /nodata, $ ; Double count to get big Y limit
     bin=binsz, xrange=[0.7,1.5], /xstyle, $
     xtitle='Focus [pix]', ytitle='Number of Plates', $
     title='Distribution of Focus Values'
    dy = 0.05 * (!y.crange[1] - !y.crange[0])
    yplot = !y.crange[1] - 2*dy
    for iccd=0, 3 do begin
-      plothist, disparr[iccd,*], bin=binsz, /overplot, $
+      plothist, wsigarr[iccd,*], bin=binsz, /overplot, $
        xrange=!x.crange, yrange=!y.crange, xstyle=5, ystyle=4, $
        color=djs_icolor(colorvec[iccd])
-      text = 'Camera='+camname[iccd]
-      if (iccd EQ 0) then text = text + ' (scaled by 0.9)'
+      text = 'Camera='+camname[iccd] + ' (scaled by ' $
+       + string(rescale[iccd], format='(f4.2)') + ')'
       xyouts, 1.10, yplot, text, color=djs_icolor(colorvec[iccd])
       yplot = yplot - dy
    endfor
@@ -198,7 +224,7 @@ pro focushistory, mjdrange=mjdrange1
 
    indx = where(plist.airtemp GT -20 AND plist.airtemp NE 0)
    if (indx[0] NE -1) then $
-    plot, [plist[indx].airtemp], [dispmax[indx]], /ynozero, psym=4, $
+    plot, [plist[indx].airtemp], [wsigworst[indx]], /ynozero, psym=4, $
      xtitle='Air Temperature [deg C]', ytitle='Worst Focus', $
      title='Focus vs. Temperature'
 
@@ -208,6 +234,7 @@ pro focushistory, mjdrange=mjdrange1
    dfpsclose
    !p.multi = 0
 
+stop
    return
 end
 ;------------------------------------------------------------------------------
