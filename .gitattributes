@@ -161,6 +161,7 @@ pro/fluxfix/flux_standard.pro -text
 pro/fluxfix/frame_flux_tweak.pro -text
 pro/fluxfix/kurucz_restore.pro -text
 pro/fluxfix/newspcombine.pro -text
+pro/fluxfix/pca_flux_standard.pro -text
 pro/fluxfix/plate_flux_recal.pro -text
 pro/fluxfix/spplate_correct.pro -text
 pro/fluxfix/stype_standard.pro -text
