@@ -50,6 +50,14 @@ POPULATE_IMAGE: Fix possible crash condition under Mac OS X when IMAGE
            is 1-dimensional (and NY was not type LONG in the call to C-code).
 SPLOT: Bug fix in the autoscale code (splot_autoscale_x) that crashed
            on Mac OS X.
+YANNY_READ: Make use of Hogg's procedure HOGG_STRSPLIT, which should be more
+           robust for parsing strings and speed things up.  Not yet thoroughly
+           tested.
+           Pre-allocate a large array of length MAXLEN for each structure.
+           This should save a huge amount of time when reading large files,
+           since we used to concatenate structures with a=[a,b] every time
+           a new line was read.
+YANNY_READONE: New proc; wrapper for YANNY_READ.
 evilmake: Add "Darwin" (Mac OS X) as a possible platform.
            Export F77=g77 for the platform.
            This doesn't work yet for Blanton's spheregroup code or Fortran.
