@@ -107,6 +107,7 @@ pro apoheader, expnum
     'QUALITY'  , $
 ; These are informational keywords...
     'TILEID'   , $
+    'CARTID'   , $
     'RA'       , $
     'DEC'      , $
     'RADEG'    , $
