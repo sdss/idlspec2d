@@ -163,8 +163,8 @@ Aside from PLATE, TILE and MJD, this list contains the following:
 RA       = Right ascension of plate center [J2000 degrees].
 DEC      = Declination of plate center [J2000 degrees].
 MAPNAME  = Mapping name for this plate; data with the same mapping name
-          are always combined into one plate file, even if taken on
-          different nights.
+           are always combined into one plate file, even if taken on
+           different nights.
 VERSLOG  = Version of SPECLOG product (spectroscopic log files).
 VERSFLAT = Version of SPECFLAT product (spectroscopic pixel flats).
 VERS2D   = Version of Spectro-2D code to reduce the individual frames.
@@ -172,6 +172,13 @@ VERSCOMB = Version of Spectro-2D code to combine frames into a plate file.
 VERS1D   = Version of Princeton-1D code to measure redshifts.
 VERSTARG = Version of Target code for selecting the objects on this plate.
 CHUNKNAME= The name of the Target and tiling run which produced this plate.
+NEXP     = Total number of frames from all cameras used in the co-adding;
+           since there are 4 cameras, NEXP=12 would typically mean that there
+           were 3 exposures in each camera.
+EXPT_B1  = Total exposure time in b1 camera.
+EXPT_B2  = Total exposure time in b2 camera.
+EXPT_R1  = Total exposure time in r1 camera.
+EXPT_R2  = Total exposure time in r2 camera.
 SN2_G1   = (S/N)^2 per pixel at g=20.2 on spectrograph #1.
 SN2_G2   = (S/N)^2 per pixel at g=20.2 on spectrograph #2.
 SN2_R1   = (S/N)^2 per pixel at r=20.25 on spectrograph #1.
