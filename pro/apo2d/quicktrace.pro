@@ -43,6 +43,7 @@
 ;
 ; REVISION HISTORY:
 ;   3-Apr-2000  Written by S. Burles & D. Schlegel, APO
+;  28-Feb-2002  Modified to do full tracing, speed difference is critical
 ;-
 ;------------------------------------------------------------------------------
 function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
@@ -73,6 +74,7 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
 
    ;----------
    ; Compute the trace set, but binning every NBIN rows for speed
+   ; This is not necessary any more, and it doesn't account for bad columns
 
    dims = size(flatimg, /dimens)
    ncol = dims[0]
@@ -86,14 +88,10 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
    nsmallrow = nrow / nbin
    smallimg = djs_median(reform(flatimg,ncol,nbin,nsmallrow),2)
 
-   xsol = trace320crude(smallimg, yset=ycen, maxshifte=1.40, $
+   xsol = trace320crude(flatimg, flativar, yset=ycen, maxdev=0.15, $
                         fibermask=fibermask)
    ngfiber = total(fibermask EQ 0)
-
-   xy2traceset, ycen*nbin + (nbin-1.0)/2.0, $
-    xsol, tset, ncoeff=5, maxdev=0.1, xmin=0, xmax=nrow-1
-
-   traceset2xy, tset, pixnorm, xfit
+   xy2traceset, ycen, xsol, tset, ncoeff=7, maxdev=0.1
 
    ;----------
    ; Boxcar extract
