@@ -622,6 +622,20 @@ pro sdssproc, infile, image, invvar, indir=indir, $
                splog, 'Applying gain for amp#', iamp, ' = ', gain[iamp]
             endif
 
+            ; Compute the standard deviation in the bias region again,
+            ; but using a weaker 5-sigma clipping.  This is done solely
+            ; for the purpose of identifying any electronics problems,
+            ; such as that on the left half of r2 on MJD 51779.
+            ; Trigger a warning message if above 10 ADU.
+
+            djs_iterstat, biasreg, sigrej=5.0, sigma=testrms
+            if (testrms LT 10.) then $
+             splog, 'Std. dev. in bias region for amp#', iamp, $
+              ' = ', testrms, ' DN (5-sig clip)' $
+            else $
+             splog, 'WARNING: Std. dev. in bias region for amp#', iamp, $
+              ' = ', testrms, ' DN (5-sig clip)'
+
             ; Copy the data for this amplifier into the final image
             ; Subtract the bias (in DN), and then multiply by the gain
             ; Now image is in electrons
