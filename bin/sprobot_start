@@ -51,6 +51,11 @@ if [ -z "$SPECLOG_DIR" ] ; then
   exit
 fi
 
+if [ -z "$SPECFLAT_DIR" ] ; then
+  echo "SPECFLAT_DIR must be set!"
+  exit
+fi
+
 if [ -z "$RAWDATA_DIR" ] ; then
   echo "RAWDATA_DIR must be set!"
   exit
@@ -101,12 +106,13 @@ echo "IDLUTILS_DIR=$IDLUTILS_DIR" >> $cronfile
 echo "IDL_DIR=$IDL_DIR" >> $cronfile
 echo "IDL_PATH=$IDL_PATH" >> $cronfile
 echo "SPECLOG_DIR=$SPECLOG_DIR" >> $cronfile
+echo "SPECFLAT_DIR=$SPECFLAT_DIR" >> $cronfile
 echo "RAWDATA_DIR=$RAWDATA_DIR" >> $cronfile
 echo "SPECTRO_DATA=$SPECTRO_DATA" >> $cronfile
 echo "# This job will run at 8:30 am every day." >> $cronfile
 #echo "30 8 * * * sprobot.sh >> $SPRLOG 2>&1" >> $cronfile
 # TEST !!!???
-echo "44 20 * * * sprobot.sh >> $SPRLOG 2>&1" >> $cronfile
+echo "50 21 * * * sprobot.sh >> $SPRLOG 2>&1" >> $cronfile
 echo "# SPROBOT END" >> $cronfile
 crontab $cronfile
 
