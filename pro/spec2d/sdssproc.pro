@@ -216,7 +216,8 @@ pro sdssproc, infile, image, invvar, indir=indir, $
     AND (camname EQ 'b2' OR camname EQ 'r2') $
     AND (readimg OR readivar)) then begin
       if (camname EQ 'b2') then begin
-         i1 = strpos(infile,'b2',/reverse_search)
+;         i1 = strpos(infile,'b2',/reverse_search) ; IDL 5.3 command
+         i1 = rstrpos(infile,'b2')
          if (i1 EQ -1) then $
           message, 'Unable to parse corresponding red file for '+infile
          redfile = infile
@@ -265,7 +266,8 @@ pro sdssproc, infile, image, invvar, indir=indir, $
     AND (camname EQ 'b2' OR camname EQ 'r2') $
     AND (readimg OR readivar)) then begin
       if (camname EQ 'b2') then begin
-         i1 = strpos(infile,'b2',/reverse_search)
+;         i1 = strpos(infile,'b2',/reverse_search) ; IDL 5.3 command
+         i1 = rstrpos(infile,'b2') ; IDL 5.3 command
          if (i1 EQ -1) then $
           message, 'Unable to parse corresponding red file for '+infile
          redfile = infile

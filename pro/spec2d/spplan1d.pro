@@ -148,7 +148,8 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
                newnames = spexp.name
                for i=0, n_elements(newnames)-1 do begin
                   jj = strpos(newnames[i], '-')
-                  kk = strpos(newnames[i], '.', /reverse_search)
+;                  kk = strpos(newnames[i], '.', /reverse_search) ; IDL 5.3 com
+                  kk = rstrpos(newnames[i], '.')
                   if (jj NE -1 AND kk NE -1) then $
                    newnames[i] = 'spFrame' + strmid(newnames[i], jj, kk-jj) $
                     + '.fits'
