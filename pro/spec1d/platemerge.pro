@@ -310,8 +310,8 @@ pro platemerge, zfile, outroot=outroot1, public=public
     'z_err'      , 0.0, $
     'zwarning'   ,  0L, $
     'rchi2'      , 0.0, $
-    'ra'         , 0.0d, $
-    'dec'        , 0.0d, $
+    'plug_ra'    , 0.0d, $
+    'plug_dec'   , 0.0d, $
     'platesn2'   ,  0.0, $
     'modelflux'  ,  fltarr(5), $
     'objc_type'  ,  '', $
