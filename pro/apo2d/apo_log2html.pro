@@ -146,8 +146,10 @@ function apo_log_beginplate, platenum, mjd, camnames, outdir=outdir
    plotfile = 'snplot-'+mjdstr+'-'+platestr4+'.ps'
 
    ; See if the plot file actually exists, and only then create a link to it.
-   junk = findfile( djs_filepath(plotfile, root_dir=outdir), count=plotct)
-   if (platenum LT 0) then plotct = 0
+;   junk = findfile( djs_filepath(plotfile, root_dir=outdir), count=plotct)
+;   if (platenum LT 0) then plotct = 0
+   ; Force the link to the plot file, whether it appears to exist or not...
+   plotct = 1
 
    textout = ['<A NAME="PLATE' + platestr + '">']
    textout = [textout, '<TABLE BORDER=1 CELLPADDING=3>']
