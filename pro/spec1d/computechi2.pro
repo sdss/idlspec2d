@@ -32,7 +32,7 @@ function computechi2, objflux, sqivar, starflux, $
    endelse
 
    acoeff = mmi # (mmatrixt # bvec)
-   chi2 = total( (mmatrix # acoeff - bvec)^2 )
+   chi2 = total( (mmatrix # acoeff - bvec)^2, /double )
 
    if (arg_present(yfit)) then $
     yfit = acoeff ## starflux
