@@ -89,6 +89,8 @@ spechdrfix sdR-??-00007112 IPARATE  -0.0107
 spechdrfix sdR-??-00007112 AZ       345.32650
 spechdrfix sdR-??-00007112 ALT      71.520262
 
+# Shutters may have not opened on this one
+spechdrfix sdR-??-00007376 FLAVOR   "'unknown'"
 
 # Wrong exposure time in these headers on MJD 51828
 spechdrfix sdR-??-00008299 EXPTIME  900
