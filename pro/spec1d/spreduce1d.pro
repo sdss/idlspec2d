@@ -75,10 +75,13 @@ pro spreduce1d, platefile, fiberid=fiberid
    if (NOT keyword_set(logfile)) then $
     logfile = 'spDiag1d-' + platemjd + '.log'
 
-   splog, filename=logfile
-   splog, 'Log file ', logfile, ' opened ', systime()
-   splog, 'IDL version: ', string(!version,format='(99(a," "))')
    stime0 = systime(1)
+
+   splog, filename=logfile
+   splog, 'Log file ' + logfile + ' opened ' + systime()
+   splog, 'IDL version: ' + string(!version,format='(99(a," "))')
+   spawn, 'uname -a', uname
+   splog, 'UNAME: ' + uname[0]
 
    ;----------
    ; Read the 2D output file
