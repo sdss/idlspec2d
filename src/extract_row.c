@@ -260,7 +260,7 @@ void ProfileGauss(float *x, IDL_LONG ndat, float **y, float xcen, IDL_LONG xmin,
 	float sqbase, xfake;
 	
 	static float oldsigma=0.0;
-	static float model[100][3][31];
+	static float model[1000][3][31];
 
 
 	denom = 1.0/sqrt(6.2832 * sigma * sigma);
@@ -270,11 +270,11 @@ void ProfileGauss(float *x, IDL_LONG ndat, float **y, float xcen, IDL_LONG xmin,
 	   printf("Filling Arrays\n");
 	   oldsigma = sigma;
 /*	   Fill static arrays	*/
-	   for(nm=0;nm<100;nm++) {
- 	     xfake = 15.0 + (float) nm/100.0;
+	   for(nm=0;nm<1000;nm++) {
+ 	     xfake = 15.0 + (float) nm/1000.0;
 	     for (k=0; k<=30; k++) {
 	       for(j=0;j<3;j++) model[nm][j][k] = 0.0;
-	       for(frac = -0.4; frac <= 0.5; frac += 0.2)  {
+	       for(frac = -0.48; frac <= 0.5; frac += 0.04)  {
 	     
 	         diff = (xfake - (float)k + frac)/sigma;
 	         base = exp(-diff*diff/2.0)*denom;
@@ -285,13 +285,13 @@ void ProfileGauss(float *x, IDL_LONG ndat, float **y, float xcen, IDL_LONG xmin,
 	         model[nm][2][k] += diff*base;
 
                 }
-	     for (j=0;j<3;j++) model[nm][j][k] /= 5.0;
+	     for (j=0;j<3;j++) model[nm][j][k] /= 25.0;
 	   }
 	}
       }
 
 	frac = xcen - (int)xcen;
-	nm = frac*100.0;
+	nm = frac*1000.0;
         backup = (int)xcen - xmin;
 	for(j=0;j<nCoeff;j++) 
 	  for (i=xmin,k=0,place=15-backup; i<=xmax; i++,k++,place++) 

@@ -20,6 +20,7 @@ OBJECTS = \
 	extract_row.o \
 	sshiftvec.o \
 	trace_crude.o \
+	trace_gweight.o \
 	trace_fweight.o
 
 all : $(LIB)/libspec2d.$(SO_EXT)

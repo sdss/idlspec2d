@@ -32,7 +32,7 @@ void recenter_fweight
    float    *  convol;
 
    /* Only recenter if the guess value is within the bounds of the image */
-   if (xinit > 0.0 && xinit < nx-1) {
+   if (xinit > radius - 0.5 && xinit < nx - 0.5 - radius) {
 
       /* Determine which pixel numbers over which to sum */
       x1 = xinit - radius + 0.5;
@@ -96,6 +96,9 @@ void recenter_fweight
       }
 
       free(convol);
+   } else {
+     *xcen = xinit;
+     *xerr = 999.0;
    }
 }
 

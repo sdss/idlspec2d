@@ -27,6 +27,7 @@ IDL_LONG trace_gweight
    float       mean, weight,meanvar;
    float       xtemp;
    long        ytemp;
+   long        bad;
 
 
    /* Allocate pointers from IDL */
@@ -48,20 +49,17 @@ IDL_LONG trace_gweight
 
    /* Loop through each center value */
    for (icen=0; icen < ncen; icen ++) {
-      if (xcen[icen] > 0.0 && xcen[icen] < nx - 1.0) {
-
-	   xtemp = xcen[icen];
-	   ytemp = ycen[icen];
-
-	   lower =  xtemp - 5.0*sigma;
-           if (lower < 0) lower = 0;
-           upper =  (long)(xtemp + 5.0*sigma) + 1;
-           if (upper > nx - 1) upper = nx - 1;
+      xtemp = xcen[icen];
+      ytemp = ycen[icen];
+      lower =  xtemp - 3.0*sigma;
+      upper =  (long)(xtemp + 3.0*sigma) + 1;
+      if (lower >= 0 && upper < nx) {
 
 	   mean = 0.0;
            weight = 0.0;
            fact = 0.0;
 	   meanvar = 0.0;
+           bad = 0;
 	   for (i = lower; i <= upper; i++) {
 
 /*  Integrate Gaussian Profile by summing up 5 parts  */
@@ -77,15 +75,15 @@ IDL_LONG trace_gweight
 	         mean += profile * fimage[ytemp][i] * i;
                  weight += profile * fimage[ytemp][i];
 	         meanvar += profile*profile * (i-xtemp) * (i-xtemp) / invvar[ytemp][i] ;
-	      }
+	      } else bad = 1;
 
 	   }
 
-	   if (weight > 0.0) {
+	   if (weight > 0.0 && bad != 1) {
                xcen[icen] = mean/weight;
                xerr[icen] = sqrt(meanvar)/weight;
            } else {
-               xerr[icen] = -1.0;
+               xerr[icen] = 999.0;
            }
       }
    }
