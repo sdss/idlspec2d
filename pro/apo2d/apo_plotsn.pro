@@ -37,8 +37,7 @@
 ;   plotsn
 ;   sortplugmap()
 ;   splog
-;   yanny_read
-;   yanny_free
+;   readplugmap()
 ;
 ; REVISION HISTORY:
 ;   02-May-2000  Written by D. Schlegel, APO
@@ -71,9 +70,7 @@ pro apo_plotsn, logfile, plate, plugdir=plugdir, plotfile=plotfile
    ; Read the plug map file for all 640 fibers
 
    fullplugfile = filepath(plugfile, root_dir=plugdir)
-   yanny_read, fullplugfile, pdata
-   plugmap = *pdata[0]
-   yanny_free, pdata
+   plugmap = readplugmap(fullplugfile, /deredden)
    plugsort = sortplugmap(plugmap, fibermask=fibermask)
 
    ;----------

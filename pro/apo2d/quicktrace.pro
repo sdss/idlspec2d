@@ -1,3 +1,48 @@
+;+
+; NAME:
+;   quicktrace
+;
+; PURPOSE:
+;   Trace and boxcar extract an SDSS flat field image
+;
+; CALLING SEQUENCE:
+;   rstruct = quicktrace (filename, tsetfile, plugmapfile, nbin=nbin)
+;
+; INPUTS:
+;   filename   - Flat field filename (Will not work with other flavors)
+;   tsetfile   - Name of fits file to store workings of quicktrace
+;   plugmapfile- Yanny parameter file with plugmap entries, moved into
+;                   tsetfile for use by other images.
+;
+; OPTIONAL INPUTS:
+;   nbin       - Binning of flat field to get quick tracing (default 8)
+;
+; OUTPUT:
+;   rstruct    - Results to be added html file upon completion
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;
+; BUGS:
+;
+; PROCEDURES CALLED:
+;   quickboxcar()
+;   mwrfits
+;   readplugmap()
+;   reject_flat()
+;   sdssproc
+;   sortplugmap()
+;   trace320crude
+;   traceset2xy
+;   xy2traceset
+;
+; REVISION HISTORY:
+;   3-Apr-2000  Written by S. Burles & D. Schlegel, APO
+;-
+;------------------------------------------------------------------------------
 function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
 
    if (NOT keyword_set(nbin)) then nbin=8
@@ -21,9 +66,7 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
    ;----------
    ; Read in the plug map file, and sort it
 
-   yanny_read, plugmapfile, pdata
-   plugmap = *pdata[0]
-   yanny_free, pdata
+   plugmap = readplugmap(plugmapfile, /deredden)
    plugsort = sortplugmap(plugmap, spectrographid, fibermask=fibermask)
 
    ;----------
