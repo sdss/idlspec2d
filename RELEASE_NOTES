@@ -48,6 +48,7 @@ DFPSPLOT: Added optional XSIZE keyword.
 DJS_BATCH: Add optional keyword SELECTHOST.  This will be used
            for the HoggPT processing of 2.5-m data.
            The inputs LOCALFILE,OUTFILE are now optional.
+DJS_SFIT: New proc for surface fitting to tabulated data with errors.
 FITS_WAIT: Allow DELTAT,TMAX to be zero.
 HOGG_ITERLINFIT: General-purpose sigma-clipping linear fitting routine
            copied over from the hoggpt product.
