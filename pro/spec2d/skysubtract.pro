@@ -301,15 +301,23 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    ;
    ; Also, set the mask bit 'BRIGHTSKY' for any pixels where the sky
    ; level is more than the (sky-subtracted) object flux + 10 * error,
-   ; and 1 neighboring pixel.
+   ; and where the sky is greater than 1.25 times a median sky.
+   ; Grow this mask by 1 neighboring pixel in each direction.
 
    ii = where(skyivar GT 0, ni) ; Note that SKYWAVE is already sorted
    iout = where(wave LT skywave[ii[0]] OR wave GT skywave[ii[ni-1]])
    if (iout[0] NE -1) then objsubivar[iout] = 0.0
 
    if (keyword_set(pixelmask)) then begin
+      ; Compute a median sky vector for each fiber
+      medsky = 0 * fullfit
+      for irow=0, nrow-1 do $
+       medsky[*,irow] = djs_median(fullfit[*,irow], width=99, $
+        boundary='reflect')
+
       qbright = (objsubivar NE 0) $
-       AND (fullfit GT objsub + 10.0 / sqrt(objsubivar + (objsubivar EQ 0)))
+       AND (fullfit GT objsub + 10.0 / sqrt(objsubivar + (objsubivar EQ 0))) $
+       AND (fullfit GT 1.25 * medsky)
       qbright = convol(qbright, [1,1,1], /center, /edge_truncate)
       ibright = where(qbright)
       if (ibright[0] NE -1) then $

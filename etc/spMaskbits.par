@@ -22,7 +22,8 @@ maskbits 19 PARTIALREJECT   # Some pixels rejected in extraction
 maskbits 20 SCATTEREDLIGHT  # Scattered light significant
 maskbits 21 CROSSTALK       # Cross-talk significant
 maskbits 22 NOSKY           # Sky level unknown at this wavelength (INVVAR=0)
-maskbits 23 BRIGHTSKY       # Sky level > flux + 10*(flux-error)
+maskbits 23 BRIGHTSKY       # Sky level > flux + 10*(flux_err)
+                            #   AND sky > 1.25 * median(sky,99 pixels)
 maskbits 24 NODATA          # No data available in combine B-spline (INVVAR=0)
 maskbits 25 COMBINEREJ      # Rejected in combine B-spline
 maskbits 26 BADFLUXFACTOR   # Low flux-calibration or flux-correction factor
