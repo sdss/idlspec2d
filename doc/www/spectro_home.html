@@ -223,9 +223,6 @@ EXPT_B1  = Total exposure time in b1 camera.
 EXPT_B2  = Total exposure time in b2 camera.
 EXPT_R1  = Total exposure time in r1 camera.
 EXPT_R2  = Total exposure time in r2 camera.
-SMEARUSE = Set to 'T' if the spectra were normalized to a smear exposure,
-           which is effectively a 1-minute exposure on a 5 x 7 arcsec
-           aperature.
 SN2_G1   = (S/N)^2 per pixel at g=20.2 on spectrograph #1.
 SN2_G2   = (S/N)^2 per pixel at g=20.2 on spectrograph #2.
 SN2_R1   = (S/N)^2 per pixel at r=20.25 on spectrograph #1.
@@ -576,7 +573,6 @@ The following information is compiled for each object:
                             all plates in the 'main' or 'southern' survey)
  <TR><TD> PLATEQUALITY <TD> Quality of plate from platelist file: 'bad', 'marginal', or 'good'
  <TR><TD> PLATESN2     <TD> Signal-of-noise measure of the plate (the worst of the 4 cameras)
- <TR><TD> SMEARUSE     <TD> 'T' if a smear is used for spectrophotometry; 'F' otherwise
  <TR><TD> SPECPRIMARY  <TD> 1 for the best spectroscopic observation of each object, 0 otherwise
  <TR><TD> SPECOBJ_ID   <TD> Unique ID for spectroscopic objects, starting with 1; objects at
                             the same coordinates have the same ID, with only one being SPECPRIMARY
@@ -1036,9 +1032,6 @@ EXPT_B2 = b2 camera exposure time (seconds)
 EXPT_R1 = r1 camera exposure time (seconds)
 EXPT_R2 = r2 camera exposure time (seconds)
 EXPTIME = Minimum of exposure times for all cameras
-SMEARUSE= Set to 'T' if the spectra were normalized to a smear exposure,
-          which is effectively a 1-minute exposure on a 5 x 7 arcsec
-          aperature.
 SPEC1_G = (S/N)^2 per pixel at g=20.2 on spectrograph #1.
 SPEC2_G = (S/N)^2 per pixel at g=20.2 on spectrograph #2.
 SPEC1_R = (S/N)^2 per pixel at r=20.25 on spectrograph #1.
@@ -1081,9 +1074,9 @@ The mask bits are set as follows: <BR>
  6 LARGESHIFT      Large spatial shift between flat and object pos'n
  7 BADSKYFIBER     Sky Fiber shows extreme residuals
  8 NEARWHOPPER     Within 2 fibers of a whopping fiber (inclusive)
-10 SMEARIMAGE      Smear available for red and blue cameras
-11 SMEARHIGHSN     S/N sufficient for full smear fit
-12 SMEARMEDSN      S/N only sufficient for scaled median fit
+10 SMEARIMAGE      Smear available for red and blue cameras (deprecated)
+11 SMEARHIGHSN     S/N sufficient for full smear fit (deprecated)
+12 SMEARMEDSN      S/N only sufficient for scaled median fit (deprecated)
 16 NEARBADPIXEL    Bad pixel within 3 pixels of trace
 17 LOWFLAT         Flat field less than 0.5
 18 FULLREJECT      Pixel fully rejected in extraction (INVVAR=0)
