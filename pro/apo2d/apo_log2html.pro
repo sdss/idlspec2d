@@ -50,7 +50,7 @@ function apo_color2hex, colorname
 
    case strupcase(strtrim(colorname,2)) of
    'RED': hexname = '#FF0000'
-   'YELLOW': hexname = '#FFFF00'
+   'YELLOW': hexname = '#9F9F00'
    endcase
 
    return, hexname
