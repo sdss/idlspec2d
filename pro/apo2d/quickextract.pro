@@ -190,6 +190,31 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
       outlier = (sort(skylevel))[[0,1,nskies-2,nskies-1]]
       fibermask[iskies[outlier]] = fibermask[iskies[outlier]] $
                                 OR fibermask_bits('BRIGHTSKY')
+      splog, 'Warning: Rejecting Bright Sky Fibers ', iskies[outlier]
+   endif
+
+   ;------------------------------------------------------------------------
+   ;  If too many sky fibers than only choose best one per each bundle
+   ;  Hardwired
+
+   iskies = where(strtrim(plugsort.objtype,2) EQ 'SKY' $
+      AND (plugsort.fiberid GT 0) AND (fibermask EQ 0), nskies)
+
+   nbundles = 16
+   nfibersperbundle = 20
+   if nskies GT 20 then begin
+     for i=0,nbundles-1 do begin
+       possible = where(iskies / nfibersperbundle EQ i, npossible)
+       if npossible GT 1 then begin
+         reject = where(possible NE npossible/2)
+         if reject[0] NE -1 then begin
+           reject = iskies[possible[reject]]
+           splog, 'Warning: Rejecting Sky Fibers ', reject
+           fibermask[reject] = fibermask[reject] $
+                                OR fibermask_bits('BADSKYFIBER')
+         endif
+       endif
+     endfor       
    endif
 
 
