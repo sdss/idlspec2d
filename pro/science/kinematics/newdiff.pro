@@ -46,6 +46,7 @@
 ;
 ; REVISION HISTORY:
 ;   25-Mar-2000  Written by S. Burles, FNAL
+;   2000-Sep-11  Considerable changes by the SWAT team
 ;-
 ;------------------------------------------------------------------------------
 function alpha_chisq, alpha, gal, star, galvar, starvar, br, minchi2
@@ -146,6 +147,7 @@ function newdiff, galfft, starfft, galvar0, starvar0, $
           ENDFOR     
    ENDIF 
 
+
    for i=0,nloop-1 do begin
       broad = broadarr[*, i]
       alpha[i] = get_alpha(galvar0norm, starvar0norm, broad, $
@@ -165,17 +167,10 @@ function newdiff, galfft, starfft, galvar0, starvar0, $
    bestalpha = get_alpha(galvar0norm, starvar0norm, broad, $
      galfftnorm, starfftnorm, maxiter=4)
 
-;   plot,knums[inside], float(galfftnorm)
-;   oplot,knums[inside], float(starfftnorm*broad[inside]*bestalpha),col=1560
-print
-print,'BEST!!!'
-print,minsigma, minchi2
-
-
-
 ;   oplot, testsigma, alpha, ps=2
    minc = min(chi2diff, alphaplace)
    bestalpha =alpha[alphaplace]
+
 
    return, [minchi2, minsigma, errsigma, bestalpha]
 end
