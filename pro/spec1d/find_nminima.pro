@@ -61,6 +61,7 @@
 ;  
 ; REVISION HISTORY:
 ;   22-Aug-2001  Written by D. Schlegel, Princeton 
+;   30-Jul-2002  Fixed bug - yrange passed twice to djs_plot
 ;-  
 ;------------------------------------------------------------------------------
 
@@ -384,7 +385,7 @@ function find_nminima, yflux, xvec, dofarr=dofarr, nfind=nfind, minsep=minsep, $
       yplot = yflux
       if (keyword_set(dofarr)) then yplot = yplot / dofarr
       djs_plot, xvec, yplot, yrange=yrange, psym=-4, /ynozero, $
-       xcharsize=xcsize, ycharsize=ycsize, yrange=yrange, $
+       xcharsize=xcsize, ycharsize=ycsize, $
        title=plottitle, xtitle=xtitle
       for ipeak=0, npeak-1 do begin
          if (errcode[ipeak] EQ 0) then color = 'green' $
