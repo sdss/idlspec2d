@@ -44,6 +44,18 @@ if [ -z "$IDL_PATH" ] ; then
   exit
 fi
 
+# Set defaults for RAWDATA_DIR and ASTROLOG_DIR appropriate for sos.apo
+
+if [ -z "$RAWDATA_DIR" ] ; then
+   RAWDATA_DIR=/data/spectro
+fi
+echo "Setting \$RAWDATA_DIR=$RAWDATA_DIR"
+
+if [ -z "$ASTROLOG_DIR" ] ; then
+   ASTROLOG_DIR=/data/spectro/astrolog
+fi
+echo "Setting \$ASTROLOG_DIR=$ASTROLOG_DIR"
+
 #------------------------------------------------------------------------------
 # Don't allow this to be run from the machine "sdsshost"!
 
@@ -82,6 +94,8 @@ echo "IDLSPEC2D_DIR=$IDLSPEC2D_DIR" >> $cronfile
 echo "IDLUTILS_DIR=$IDLUTILS_DIR" >> $cronfile
 echo "IDL_DIR=$IDL_DIR" >> $cronfile
 echo "IDL_PATH=$IDL_PATH" >> $cronfile
+echo "RAWDATA_DIR=$RAWDATA_DIR" >> $cronfile
+echo "SPECLOG_DIR=$ASTROLOG_DIR" >> $cronfile
 echo "# This job will run every minute." >> $cronfile
 echo "* * * * * sos.sh >> $SOSLOG 2>&1" >> $cronfile
 echo "# This job will run at 7:20 am every day." >> $cronfile
