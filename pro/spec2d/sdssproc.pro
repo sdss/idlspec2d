@@ -449,6 +449,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    ;---------------------------------------------------------------------------
 
    if (keyword_set(pixflatname) AND (readimg OR readivar)) then begin
+      splog, 'Correcting with pixel flat ' + pixflatname
       fullname = findfile(pixflatname, count=ct)
       if (ct EQ 0) then $
        message, 'Cannot find pixflat image ' + pixflatname
