@@ -114,8 +114,12 @@ pro combine1fiber, inloglam, objflux, objivar, $
    fullcombmask = bytarr(npix)
 
    newflux = fltarr(nfinalpix)
+   newmask = lonarr(nfinalpix)
    if (arg_present(newivar)) then newivar = fltarr(nfinalpix)
-   if (arg_present(newdisp)) then newdisp = fltarr(nfinalpix)
+   if (arg_present(newdisp)) then begin
+       newdisp = fltarr(nfinalpix)
+       newdispweight = fltarr(nfinalpix)
+   endif
 
    if (keyword_set(objivar)) then begin
       nonzero = where(objivar GT 0.0, ngood)
@@ -179,7 +183,10 @@ endelse
             splog,'WARNING: All B-spline coefficients have been set to zero!'
          endif else begin
 
-            newflux[inside] = bspline_valu(newloglam[inside], sset)
+            newflux[inside] = bspline_valu(newloglam[inside], sset, $
+                                   mask=bvalumask)
+            goodvalu = where(bvalumask)
+            if goodvalu[0] NE -1 then newmask[inside[goodvalu]] = 1
 
             splog, 'Masked ', fix(total(1-bmask)), ' of', $
              n_elements(bmask), ' pixels'
@@ -232,7 +239,7 @@ endelse
                   ; on that quantity.
 
                   result = interpol(objivar[these] * fullcombmask[these], $
-                   inloglam[these], newloglam[inbetween])
+                   inloglam[these], newloglam[inbetween]) 
 
                   ; Grow the fullcombmask below to reject any new sampling
                   ; containing even a partial masked pixel.
@@ -242,7 +249,9 @@ endelse
                   ibad = where(smask LT 1.0 - EPS)
                   if (ibad[0] NE -1) then result[ibad] = 0
 
-                  newivar[inbetween] = newivar[inbetween] + result
+                  newivar[inbetween] = newivar[inbetween] + $
+                                         result * newmask[inbetween]
+
                endif
 
                lowside = fix((inloglam[these]-newloglam[0])/binsz)
@@ -260,8 +269,11 @@ endelse
 
                if (arg_present(newdisp)) then begin
                   ; Combine the dispersions in the dumbest way possible
-                  newdisp[inbetween] = interpol(indisp[these], $
-                   inloglam[these], newloglam[inbetween])
+
+                  newdisp[inbetween] = newdisp[inbetween] + $
+                         interpol(indisp[these], inloglam[these], $
+                         newloglam[inbetween]) * result
+                  newdispweight[inbetween] = newdispweight[inbetween] + result
                endif
             endif
 
@@ -269,7 +281,21 @@ endelse
       endfor
 ;      splog, 'Medians:', djs_median(objflux,1)) ; ???
 
+      if (arg_present(newdisp)) then $
+            newdisp  = newdisp / (newdispweight + (newdispweight EQ 0))
+        
    endelse
+
+
+   ;-----------------------------------------------------------------------
+   ;  Grow regions where 3 or more pixels are rejected together
+   ;
+
+   badregion = where(smooth(newivar,3) EQ 0) 
+   if badregion[0] NE -1 then begin
+     newivar[(badregion - 2) > 0] = 0.0
+     newivar[(badregion + 2) < (nfinalpix - 1)] = 0.0
+   endif
 
    ;----------
    ; Replace NaN's in combined spectra; this should really never happen
