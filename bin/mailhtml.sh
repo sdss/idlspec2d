@@ -13,6 +13,11 @@
 # S. Burles, APO, 4 May 2000
 #------------------------------------------------------------------------------
 
+##
+#  First, send data offsite, and then create mail messages.
+##
+data_rsync.sh
+
 logs=`find /data/spectro/spectrologs/[56789]* -name "logfile*html" -print | grep -v current`
 
 #   This doesn't work below below the argument list gets too large

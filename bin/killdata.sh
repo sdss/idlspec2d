@@ -27,17 +27,17 @@ done
 
 #------------------------------------------------------------------------------
 # Now find all /astrolog directories which are missing
-
-data=`ls -d /astrolog/[56789]????`
-
-for dead in $data
-do
-    if  [ `ssh sdsshost ls -d $dead 2>/dev/null` ]   
-    then
-      echo KILLDATA: $dead still exists
-    else
-      echo KILLDATA: I should kill $dead
-      rm -rf $dead
-    fi
-done
-
+#
+#data=`ls -d /astrolog/[56789]????`
+#
+#for dead in $data
+#do
+#    if  [ `ssh sdsshost ls -d $dead 2>/dev/null` ]   
+#    then
+#      echo KILLDATA: $dead still exists
+#    else
+#      echo KILLDATA: I should kill $dead
+#      rm -rf $dead
+#    fi
+#done
+#

@@ -3,6 +3,7 @@
 /RELEASE_NOTES -text
 bin/Makefile -text
 bin/aporsync.sh -text
+bin/data_rsync.sh -text
 bin/killdata.sh -text
 bin/mailhtml.sh -text
 bin/make_room.sh -text

@@ -13,9 +13,16 @@
 
 if [ -n "$ASTROLOG_DIR" ]
 then 
-   speclog_dir=$ASTROLOG_DIR
+   astrolog_dir=$ASTROLOG_DIR
 else
-   speclog_dir='/data/spectro/astrolog'
+   astrolog_dir='/data/spectro/astrolog'
+fi
+
+if [ -n "$SPECTROLOG_DIR" ]
+then 
+   spectrolog_dir=$SPECTROLOG_DIR
+else
+   spectrolog_dir='/data/spectro/spectrolog'
 fi
 
 #
@@ -30,13 +37,11 @@ do
   input=$f
   dir=`echo $input | sed -n 's/\/[^\/]*$//p'`
   filename=`echo $input | sed -n 's/\/.*\///p'`
-  echo STARTAPO: Directory $dir
-  echo STARTAPO: Filename $filename
-  astrolog=`echo $dir | sed -n 's/\/data\/spectro/$speclog_dir/p'`
-  outdir=`echo $dir | sed -n 's/\/spectro/\/spectro\/spectrologs/p'`
+
+  echo STARTAPO: Directory $dir Filename $filename
+  outdir=$spectrolog_dir
   copydir=/data/spectro/spectrologs/html/
 
-# If we don't have the output directories, make them.
   if [ ! -d $outdir ] 
   then
     mkdir $outdir
@@ -49,12 +54,23 @@ do
   good=`expr "$filename" : 'sdR'`
   if [ "$good" -gt 0 ] 
     then
+     mjd=`echo $dir | sed -n 's/\/.*\///p'`
+     astrolog=$astrolog_dir/$mjd
      echo STARTAPO: Processing $input at `date`
 #     $IDL_DIR/bin/lmutil lmstat
      echo "aporeduce, '$filename',indir='$dir', outdir='$outdir', \
           plugdir='$astrolog', copydir='$copydir' " | nice idl >& $outdir/err.$filename
 #          plugdir='$astrolog', copydir='$copydir' " | nice idl >& /dev/null
   fi
+
+### GZIP in same location
+
+  good=`echo $filename | sed -n 's/fit//p'`
+  if [ $good ]
+  then 
+    gzip -c $input > $input.gz &
+  fi
+
 
 done
 
