@@ -83,9 +83,10 @@ function pca_solve, objflux, objivar, objloglam, zfit, $
 if (keyword_set(objloglam)) then begin ; ???
 
    if (NOT keyword_set(newloglam)) then begin
+      igood = where(objloglam NE 0)
       objdloglam = abs(objloglam[1] - objloglam[0])
-      logmin = min(objloglam) - max(logshift)
-      logmax = max(objloglam) - min(logshift)
+      logmin = min(objloglam[igood]) - max(logshift)
+      logmax = max(objloglam[igood]) - min(logshift)
       if (keyword_set(wavemin)) then logmin = logmin > alog10(wavemin)
       if (keyword_set(wavemax)) then logmax = logmax < alog10(wavemax)
       newloglam = wavevector(logmin, logmax, binsz=objdloglam)
@@ -153,7 +154,10 @@ endelse
 ;       newflux[ibad,iobj] = synflux[ibad] * normflux[iobj]
 ;   endfor
 
-   usemask = total(newivar NE 0, 2)
+   if (nobj EQ 1) then $
+    usemask = newivar NE 0 $
+   else $
+    usemask = total(newivar NE 0, 2)
 
    ;----------
    ; If there is only 1 object spectrum, then all we can do is return it
