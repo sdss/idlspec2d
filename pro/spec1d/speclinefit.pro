@@ -68,6 +68,9 @@
 ;   with a width of 0.030 in log-wavelength (300 pix) for QSOs, or a
 ;   linear term with a width of 0.005 (50 pix) for other types of objects.
 ;
+;   The initial guess for the dispersion is 2000 km/sec for QSO's
+;   (ZGUESS=0.0030), and 105 kms/sec for all other objects (ZGUESS=0.00015).
+;
 ; EXAMPLES:
 ;
 ; BUGS:
@@ -304,10 +307,13 @@ pro speclinefit, platefile, fiberid=fiberid, $
       ; for galaxies, or the synthetic spectrum for other types of objects.
       if (strtrim(zans[iobj].class,2) EQ 'GALAXY') then begin
          background = dispflux[*,iobj]
+         sigguess = 1.5d-4
       endif else if (strtrim(zans[iobj].class,2) EQ 'QSO') then begin
          background = 0
+         sigguess = 0.003d0
       endif else begin
          background = synflux[*,iobj]
+         sigguess = 1.5d-4
       endelse
 
       if (keyword_set(background)) then fitmask = background NE 0 $
@@ -371,29 +377,40 @@ pro speclinefit, platefile, fiberid=fiberid, $
          endfor
       endif
 
-      ; Call the line-fitting engine
-      lfit1 = linebackfit(linelist.lambda, objloglam, $
-       objflux[*,iobj], invvar=objivar[*,iobj] * fitmask, $
-       linename=linelist.name, $
-       zindex=linelist.zindex, windex=linelist.windex, $
-       findex=linelist.findex, fvalue=linelist.fvalue, zguess=zguess, $
-       background=background, yfit=yfit1, bfit=bfit, bterms=bterms)
+      ; Call the line-fitting engine.
+      ; Restrict the fit to only those lines within the wavelength region
+      ; at the guessed redshift (+/- 6000 km/sec).
+      ipix = where(fitmask)
+      if (ipix[0] NE -1) then begin
+         minwave = 10^min(objloglam[ipix])
+         maxwave = 10^max(objloglam[ipix])
+      endif else begin
+         minwave = 0
+         maxwave = 0
+      endelse
+      iuse = where(linelist.lambda GE minwave/1.02/(1+zguess) $
+       AND linelist.lambda LE maxwave*1.02/(1+zguess), nuse)
+      if (nuse GT 0) then begin
+         lfit1 = linebackfit(linelist[iuse].lambda, objloglam, $
+          objflux[*,iobj], invvar=objivar[*,iobj] * fitmask, $
+          linename=linelist[iuse].name, $
+          zindex=linelist[iuse].zindex, windex=linelist[iuse].windex, $
+          findex=linelist[iuse].findex, fvalue=linelist[iuse].fvalue, $
+          zguess=zguess, sigguess=sigguess, $
+          background=background, yfit=yfit1, bfit=bfit, bterms=bterms)
 
-      if (keyword_set(yfit)) then yfit[*,iobj] = yfit1
+         if (keyword_set(yfit)) then yfit[*,iobj] = yfit1
 
-      ; Special-case rejection -- set AREA,EW=0,AREA_ERR,EW_ERR=-2
-      ; if there are no data points within the line-fitting region.
-; ??? This is now in LINEBACKFIT
-;      ibad = where(lfit1.linenpix EQ 0)
-;      if (ibad[0] NE -1) then begin
-;         lfit1[ibad].linearea = 0
-;         lfit1[ibad].linearea_err = -2L
-;         lfit1[ibad].lineew = 0
-;         lfit1[ibad].lineew_err = -2L
-;      endif
-
-      ; Fill the two output structures
-      lfitall[*,iobj] = lfit1
+         ; Fill the two output structures
+         lfitall[*,iobj].linename = linelist.name
+         lfitall[*,iobj].linewave = linelist.lambda
+         lfitall[*,iobj].linez_err = -1
+         lfitall[*,iobj].linesigma_err = -1
+         lfitall[*,iobj].linearea_err = -1
+         lfitall[*,iobj].linecontlevel_err = -1
+         lfitall[*,iobj].linechi2 = -1
+         lfitall[iuse,iobj] = lfit1
+      endif
 
       splog, 'Object #', iobj, ' CPU time for line fitting = ', $
        systime(1)-t0
