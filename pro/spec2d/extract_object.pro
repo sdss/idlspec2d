@@ -442,72 +442,50 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
        title=plottitle+objname
    endif
 
-   ;------------------
-   ; Flux calibrate to spectrophoto_std fibers
+   ;------------------------------------------
+   ; Save the sky-subtracted flux values as is, and now modify flambda.
 
-   fluxfactor = fluxcorr(skysub, skysubivar, vacset, plugsort, $
-    color=color, lower=3.0, upper=3.0, fibermask=fibermask)
-
-   flambda  = skysub
+   flambda = skysub
    flambdaivar = skysubivar
-
-   minfluxfactor = median(fluxfactor) * 0.01
-   divideflat, flambda, flambdaivar, fluxfactor, minval=minfluxfactor
 
    ;------------------------------------------
    ; Telluric correction called for 'red' side
-   ;
-   ;  May want to move all of the telluric_corr and plotting into
-   ;  new procedure: telluric_fit,flambda, flambdaivar, vacset, plugsort 
 
    if (color EQ 'red')  then begin
 
-      ;-----------------------------------------------
-      ;  Split into two regions, A,B bands first
-      telluric1 = telluric_corr(flambda, flambdaivar, vacset, plugsort, $
-         contwave=contwave1, contflux=contflux1, contivar=contivar1, $
-         telluricbkpt=telluricbkpt1, telluriccoeff=telluriccoeff1, $
-         minw=3.82, maxw=3.92, lower=5.0, upper=5.0, ncontbkpts=10, $
-         fibermask=fibermask)
+      ; The following commented-out code essentially reproduces the
+      ; telluric-correction code implemented from Oct 99 to Aug 00.
+      ; However, if this is implemented, it should be done **after**
+      ; the flux-calibration step below.
+;      tellbands1 = { TELLBAND1, $
+;       twave1: 6607., twave2: 8318., $
+;       cwave1: 6607., cwave2: 8313. }
+;      tellbands2 = { TELLBAND1, $
+;       twave1: 8710., twave2: 9333., $
+;       cwave1: 8710., cwave2: 9333. }
+;      tellbands = [tellbands1, tellbands2]
+;
+;      ttt = telluric_corr(flambda, flambdaivar, vacset, plugsort, $
+;       fibermask=fibermask, tellbands=tellbands, pixspace=100, $
+;       upper=5, lower=5, /dospline, $
+;       plottitle=plottitle+'Telluric correction for '+objname)
 
-      ;-----------------------------------------------
-      ;  9100 Ang absorption next?
-      telluric2 = telluric_corr(flambda, flambdaivar, vacset, plugsort, $
-         contwave=contwave2, contflux=contflux2, contivar=contivar2,    $
-         telluricbkpt=telluricbkpt2, telluriccoeff=telluriccoeff2, $
-         minw=3.94, maxw=3.97, lower=5.0, upper=5.0, ncontbkpts=5, $
-            fibermask=fibermask)
+      telluricfactor = telluric_corr(flambda, flambdaivar, vacset, plugsort, $
+       fibermask=fibermask, $
+       plottitle=plottitle+'Telluric correction for '+objname)
 
-      if (size(contwave1,/tname) NE 'UNDEFINED') then begin
-         !p.multi = [0,1,3]
-         djs_plot, 10^contwave1, contflux1, ps=3, xr=10^[3.82,3.87], $
-              yr=[0.0,1.5], ymargin=[2,4], charsize=1.6, xstyle=1, $ 
-              xtitle='\lambda [A]', ytitle='Flux [electrons]', $
-              title=plottitle+'Telluric correction for '+objname
-         djs_oplot,10^contwave1,slatec_bvalu(contwave1,telluricbkpt1, $
-                   telluriccoeff1),color='red'
-
-         djs_plot, 10^contwave1, contflux1, ps=3, xr=10^[3.87,3.92], $
-              yr=[0.0,1.5], ymargin=[2,2], charsize=1.6, xstyle=1, $ 
-              xtitle='\lambda [A]', ytitle='Flux [electrons]'
-         djs_oplot,10^contwave1,slatec_bvalu(contwave1,telluricbkpt1, $
-                   telluriccoeff1),color='red'
-      endif
-
-      if (size(contwave2,/tname) NE 'UNDEFINED') then begin
-         djs_plot,10^contwave2,contflux2,ps=3,yr=[0.0,1.5], $
-              ymargin=[4,2], charsize=1.6, xstyle=1, $ 
-              xtitle='\lambda [A]', ytitle='Flux [electrons]'
-         djs_oplot,10^contwave2,slatec_bvalu(contwave2,telluricbkpt2, $
-                   telluriccoeff2),color='red'
-
-      endif
-
-      !p.multi = 0
-      telluricfactor = telluric1 * telluric2
       divideflat, flambda, flambdaivar, telluricfactor, minval=0.1
 
    endif
+
+   ;------------------
+   ; Flux calibrate to spectrophoto_std fibers
+
+   fluxfactor = fluxcorr(flambda, flambdaivar, vacset, plugsort, $
+    color=color, lower=3.0, upper=3.0, fibermask=fibermask)
+
+   minfluxfactor = median(fluxfactor) * 0.01
+   divideflat, flambda, flambdaivar, fluxfactor, minval=minfluxfactor
 
    ;----------
    ; Interpolate over masked pixels, just for aesthetic purposes
@@ -546,7 +524,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    mwrfits, dispset, outname
    mwrfits, plugsort, outname
 
-; Save sky, fluxfactor, telluric???
+; Save sky, fluxfactor, telluricfactor???
 ;   mwrfits, fluxfactor, outname
 ;   if (color EQ 'red') then mwrfits, telluricfactor, outname
 

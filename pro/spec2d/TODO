@@ -1,4 +1,11 @@
 
+* Move iteration code from XY2TRACESET to FUNC_FIT(), letting it call itself
+  recursively.
+
+* Looks like /halfintwo is no longer used in FUNC_FIT().
+  Should probably just have a different function call than fchebyshev,
+  like fchebyshev_split.
+
 * Calling script for SPREDUCE2D, SPCOMBINE, SPREDUCE1D
 
 * Is the 5460 sky line at the wrong wavelength?
@@ -297,6 +304,7 @@ Unused routines:
 combine2dout
 combineI (old version of combine2dout?)
 extract2
+finalarcfit
 findobjects
 fit_tset
 fitwithmx (deprecated)
