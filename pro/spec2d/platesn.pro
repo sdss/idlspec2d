@@ -122,6 +122,8 @@ pro platesn, finalflux, finalivar, finalandmask, finalplugmap, loglam, $
 
    ;----------
    ; Add the keywords SPEC1_G,SPEC1_R,... to the header.
+; Add median offset and RMS keywords to header ???
+; Move all these sxaddpar statements out of this routine?
 
    if (keyword_set(hdr)) then begin
       bands = ['G','R','I']

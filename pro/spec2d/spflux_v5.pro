@@ -560,9 +560,14 @@ function spflux_mratio_flatten, loglam1, mratio1, mrativar1, pres=pres
 
    ;--------
    ; Compute the straight weighted mean at each wavelength
+   ; (Avoid divide-by- zeros.)
 
-   denom = total(newivar, 2) ; avoid divide-by-zeros
-   meanratio = total(newratio * newivar, 2) / (denom + (denom EQ 0))
+   if (ndim EQ 1) then begin
+      meanratio = (newratio * newivar) / (newivar + (newivar EQ 0))
+   endif else begin
+      denom = total(newivar, 2)
+      meanratio = total(newratio * newivar, 2) / (denom + (denom EQ 0))
+   endelse
 
    qbadpix = meanratio LE 0
    ibadpix = where(qbadpix, nbadpix)
