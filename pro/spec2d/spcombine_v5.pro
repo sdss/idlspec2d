@@ -189,7 +189,7 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
    for iexp=0L, nexp-1 do $
     expscore[iexp] = min([score[*,iexp]])
    bestscore = max(expscore, ibest)
-   splog, 'Best exposure = ', expnum[ibest,0], ' score = ', bestscore
+   splog, 'Best exposure = ', expnum[0,ibest], ' score = ', bestscore
 
    ;----------
    ; Compute the spectro-photometry
