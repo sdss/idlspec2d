@@ -7,7 +7,7 @@
 # The astrolog data is copied into the local directory
 #    $SPECLOG_DIR/$MJD
 # and the image files are copied to the first disk in $localdisks
-# with more than 4 Gb free, with a pointer to this from
+# with more than 2.5 Gb free, with a pointer to this from
 #    $RAWDATA_DIR/$MJD -> $localdisks[i]/$MJD
 #
 # Once the data is copied over, build plan files under the directories
@@ -20,7 +20,7 @@
 
 astrologdir=$SPECLOG_DIR
 toprawdir=$RAWDATA_DIR
-localdisks='/peyton/scr/spectro0/data/rawdata /peyton/scr/spectro1/data/rawdata /peyton/scr/spectro2/data/rawdata'
+localdisks='/peyton/scr/spectro0/data/rawdata /peyton/scr/spectro1/data/rawdata /peyton/scr/spectro2/data/rawdata /peyton/scr/spectro3/data/rawdata'
 topoutdir=$SPECTRO_DATA
 hostname=sdsshost.apo.nmsu.edu
 
@@ -56,9 +56,9 @@ for mjdstr in $remotedir ; do
    if [ -z "$localdir" ] ; then
 
       #----------
-      # Find the first local disk with more than 4Gb free
+      # Find the first local disk with more than 2.5 Gb free
       for fdisk in $localdisks ; do
-         qgood=`df -m $fdisk | awk '{if (FNR==2 && $4>4000) {print 1}}'`
+         qgood=`df -m $fdisk | awk '{if (FNR==2 && $4>2500) {print 1}}'`
          if [ -n "$qgood" ] ; then
             if [ -z "$localdir" ] ; then
                localdir=$fdisk/$mjdstr
