@@ -47,6 +47,7 @@ function zrefind, objflux, objivar, hdr=hdr, $
    ; Copy results
 
    result = zold
+   nres = n_elements(result)
 
    if (size(zold,/n_dim) EQ 1) then nfind = 1 $
     else nfind = (size(zold,/dimens))[0]
@@ -64,8 +65,10 @@ function zrefind, objflux, objivar, hdr=hdr, $
    ; The ISELECT array will give indices for unique (and valid) sort strings.
 
    ntcol = n_elements(result[0].tcolumn)
-   tcolstring = string(result.tcolumn, format='('+string(ntcol)+'i)')
-   sortstring = result.tfile + tcolstring + string(result.npoly)
+   tcolstring = strarr(nres)
+   for ires=0, nres-1 do $
+    tcolstring = string(result[ires].tcolumn, format='('+string(ntcol)+'i)')
+   sortstring = result[*].tfile + tcolstring + string(result[*].npoly)
 
    isort = ivalid[ sort(sortstring[ivalid]) ]
    iselect = isort[ uniq(sortstring[isort]) ]
