@@ -255,7 +255,7 @@ pro spplan2d, topoutdir=topoutdir, mjd=mjd, $
                hdr = [hdr, "planfile2d  '" + planfile $
                 + "'  # Plan file for 2D spectral reductions"]
                hdr = [hdr, "extractdir ''" $
-                + "  # Directory for extracted spectra"]
+                + "  # Directory for spFrame files"]
                hdr = [hdr, "logfile    '" $
                 + logfile + "'  # Text log file"]
                hdr = [hdr, "plotfile   '" + plotfile $

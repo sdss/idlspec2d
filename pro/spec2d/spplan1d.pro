@@ -234,9 +234,9 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
                hdr = [hdr, "planfilecomb '" + planfile $
                 + "'  # Plan file for combining spectra"]
                hdr = [hdr, "extractdir '" + extractdir $
-                + "'  # Directory for extracted spectra"]
+                + "'  # Directory for spFrame files"]
                hdr = [hdr, "combinedir ''" $
-                + "  # Directory for combined spectra"]
+                + "  # Directory for spPlate files"]
                hdr = [hdr, "logfile    '" + logfile $
                 + "'  # Text log file"]
                hdr = [hdr, "plotfile   '" + plotfile $
