@@ -35,6 +35,9 @@ evilmake: Add "Darwin" (Mac OS X) as a possible platform.
            This doesn't work yet for Blanton's spheregroup code or Fortran.
 export.h: Update this file to agree with the IDL 5.5beta for Mac OS X.
            (There are actually 5 copies of this file in this product!)
+sprobot.sh: Comment-out the code that exits if there is no new data.
+           This way, we still launch BATCH2D,BATCH1D even if no new data
+           has been copied over from Apache Point.
 
 -------------------------------------------------------------------------------
 v4_9_12 (Jun 26, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
