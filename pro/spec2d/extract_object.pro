@@ -382,12 +382,13 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ; QA for 2 skylines in the blue (specify vacuum wavelengths below)
 
    if (color EQ 'blue') then begin
+      taitime = sxpar(objhdr, 'TAI')
       qaplot_skyline, 4359.5, flux, fluxivar, skysub, skysubivar, $
        plugsort, vacset, iskies, fibermask=fibermask, dwave=4.0, $
-       title=plottitle+objname
+       tai=taitime, title=plottitle+objname
       qaplot_skyline, 5578.9, flux, fluxivar, skysub, skysubivar, $
        plugsort, vacset, iskies, fibermask=fibermask, dwave=5.0, $
-       title=plottitle+objname
+       tai=taitime, title=plottitle+objname
    endif
 
    ;------------------

@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   qaplot_skyline, lwave, obj, objivar, objsub, objsubivar, plugsort, wset, $
-;    [fibermask=, dwave=, title= ]
+;    tai=, [fibermask=, dwave=, title= ]
 ;
 ; INPUTS:
 ;   lwave      -
@@ -17,6 +17,7 @@
 ;   objsubivar - Inverse variance for image after sky-subtraction
 ;   plugsort   - Plugmap structure trimmed to one element per fiber
 ;   wset       - Wavelength solution
+;   tai        - TAI time for computing airmass or elevation for each fiber
 ;
 ; OPTIONAL KEYWORDS:
 ;   fibermask  - Fiber status bits, set nonzero for bad status [NFIBER]
@@ -39,6 +40,7 @@
 ;   djs_median
 ;   djs_oplot
 ;   splog
+;   tai2airmass()
 ;   traceset2xy
 ;
 ; INTERNAL SUPPORT ROUTINES:
@@ -49,7 +51,7 @@
 ;------------------------------------------------------------------------------
 
 pro qaplot_skyline, lwave, obj, objivar, objsub, objsubivar, plugsort, wset, $
-   iskies, fibermask=fibermask, dwave=dwave, title=title
+ iskies, tai=tai, fibermask=fibermask, dwave=dwave, title=title
 
    if (NOT keyword_set(title)) then title = ''
    if (NOT keyword_set(lwave)) then return
@@ -117,7 +119,7 @@ pro qaplot_skyline, lwave, obj, objivar, objsub, objsubivar, plugsort, wset, $
    ;---------------------------------------------------------------------------
 
    ; Set multi-plot format
-   !p.multi = [0,1,2]
+   !p.multi = [0,1,3]
 
    fibernum = indgen(nrow) + 1
    yrange = lmean+[-7,7]*lsig
@@ -138,7 +140,19 @@ pro qaplot_skyline, lwave, obj, objivar, objsub, objsubivar, plugsort, wset, $
     yrange=yrange, $
     xtitle='Focal Distance [mm]', $
     ytitle=string('Flux at ', lwave, format="(a,f7.1)")
-   djs_oplot, fibernum[iskies], lflux[iskies], psym=2, color='red'
+   djs_oplot, radius[iskies], lflux[iskies], psym=2, color='red'
+   djs_oplot, !x.crange, [lmean,lmean], color='red'
+
+   airmass = tai2airmass(plugsort.ra, plugsort.dec, tai=tai)
+   if (min(airmass) LT 1.0 OR max(airmass) GT 3.0) then $
+    splog, 'WARNING: Airmass out of range: ' + $
+     string(minmax(airmass), format='(2(f6.2,x))')
+   
+   plot, airmass, lflux, psym=1, $
+    yrange=yrange, $
+    xtitle='Airmass', $
+    ytitle=string('Flux at ', lwave, format="(a,f7.1)")
+   djs_oplot, airmass[iskies], lflux[iskies], psym=2, color='red'
    djs_oplot, !x.crange, [lmean,lmean], color='red'
 
    !p.multi = 0
