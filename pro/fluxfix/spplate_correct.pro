@@ -151,9 +151,6 @@ pro spplate_correct, plate, mjd, spectro_data_dir = spectro_data_dir, $
   loglam = coeff0 + coeff1 * lindgen(npix)
   wave = 10.0^loglam
 
-  newflux = flux
-  newinvvar = invvar
-
   ;----------------------------------------------------------------------------
   ; Determine the corrections that need to be applied to remove the effects
   ; of "smear" if this is desired
@@ -205,7 +202,14 @@ pro spplate_correct, plate, mjd, spectro_data_dir = spectro_data_dir, $
 
     smearuse = sxpar(hdr, 'SMEARUSE', comment = comment)
     sxaddpar, hdr, 'SMEARUSE', 'F', comment
-  endif 
+  endif else begin
+
+    newflux = flux
+    newinvvar = invvar
+    newandmask = andmask
+    newormask = ormask
+
+  endelse
 
   ;----------------------------------------------------------------------------
   ; Determine the flux correction from the standard stars on each half-plate.
