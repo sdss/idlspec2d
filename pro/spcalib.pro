@@ -256,47 +256,68 @@ splog,'Arc fbadpix ', fbadpix ; ???
          qbadarc = 1
       endelse
 
-      if (NOT qbadarc) then begin
+      xsol = *(flatstruct[iflat].xsol)
+      tmp_fibmask = *(flatstruct[iflat].fibermask)
 
-         xsol = *(flatstruct[iflat].xsol)
-         tmp_fibmask = *(flatstruct[iflat].fibermask)
 
-         ;------------------------------------------------------------------
-         ; Extract the arc image
-         ;------------------------------------------------------------------
 
-         splog, 'Extracting arc image with simple gaussian'
-         sigma = 1.0
-         proftype = 1 ; Gaussian
-         highrej = 15
-         lowrej = 15
-         npoly = 1 ; maybe more structure
-         wfixed = [1,1] ; Just fit the first gaussian term
+;
+;	Calculate possible shift between arc and flat
+;
 
-         extract_image, arcimg, arcivar, xsol, sigma, flux, fluxivar, $
-          proftype=proftype, wfixed=wfixed, $
-          highrej=highrej, lowrej=lowrej, npoly=npoly, relative=1
+       skiptrace = 20L
+       nrow = (size(xsol))[1]
+       nfiber = (size(xsol))[2]
+       ysample = lindgen(nrow) # replicate(1,nfiber - 2*skiptrace)
+       xsample = xsol[*,skiptrace:nfiber - skiptrace - 1]
 
-         ;-------------------------------------------------------------------
-         ; Compute correlation coefficient for this arc image
-         ;-------------------------------------------------------------------
+       bestlag = shift_trace(arcimg, xsample, ysample, $
+              lagrange=1.0, lagstep=0.1)
 
-         splog, 'Searching for wavelength solution'
-         aset = 0
+       if (abs(bestlag) GT 2.0) then begin
+            qbadarc = 1
+            splog, 'Reject arc: pixel shift is larger than 2 pixels'
+       endif 
+
+       if (NOT qbadarc) then begin
+           splog, 'Shifting traces to fit arc by pixel shift of ', bestlag
+
+           ;------------------------------------------------------------------
+           ; Extract the arc image
+           ;------------------------------------------------------------------
+
+           splog, 'Extracting arc image with simple gaussian'
+           sigma = 1.0
+           proftype = 1 ; Gaussian
+           highrej = 15
+           lowrej = 15
+           npoly = 1 ; maybe more structure
+           wfixed = [1,1] ; Just fit the first gaussian term
+
+           extract_image, arcimg, arcivar, xsol + bestlag, $
+             sigma, flux, fluxivar, proftype=proftype, wfixed=wfixed, $
+             highrej=highrej, lowrej=lowrej, npoly=npoly, relative=1
+
+           ;-------------------------------------------------------------------
+           ; Compute correlation coefficient for this arc image
+           ;-------------------------------------------------------------------
+
+           splog, 'Searching for wavelength solution'
+           aset = 0
 ; FOR NOW, REVERT TO THE OLD CODE! ???
-         fitarcimage, flux, fluxivar, aset=aset, color=color, $
-          lampfile=lampfile, fibermask=tmp_fibmask, bestcorr=bestcorr
+          fitarcimage, flux, fluxivar, aset=aset, color=color, $
+            lampfile=lampfile, fibermask=tmp_fibmask, bestcorr=bestcorr
 ;         fitarcimage_old, flux, fluxivar, aset=aset, color=color, $
 ;          lampfile=lampfile, fibermask=tmp_fibmask, bestcorr=bestcorr
 
-         arcstruct[iarc].bestcorr = bestcorr
+          arcstruct[iarc].bestcorr = bestcorr
 
-         if ((color EQ 'blue' AND bestcorr LT 0.5) $
-          OR (color EQ 'red'  AND bestcorr LT 0.5) ) then begin
-            qbadarc = 1
-            splog, 'Reject arc ' + arcname[iarc] + $
-             ' with correlation = ' + string(format='(i4)', bestcorr)
-         endif
+          if ((color EQ 'blue' AND bestcorr LT 0.5) $
+            OR (color EQ 'red'  AND bestcorr LT 0.5) ) then begin
+              qbadarc = 1
+              splog, 'Reject arc ' + arcname[iarc] + $
+               ' with correlation = ' + string(format='(i4)', bestcorr)
+          endif
 
       endif
 

@@ -95,7 +95,6 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
    combineDir = yanny_par(hdr, 'combineDir')
    logfile = yanny_par(hdr, 'logfile')
    plotfile = yanny_par(hdr, 'plotfile')
-   ecalibfile = yanny_par(hdr, 'opECalib')
 
    mjd = yanny_par(hdr, 'MJD')
    run = yanny_par(hdr, 'run')
@@ -211,7 +210,7 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
             spreduce, flatname, arcname, objname, $
              pixflatname=pixflatname, plugfile=plugfile, lampfile=lampfile, $
              indir=inputDir, plugdir=plugDir, outdir=extractDir, $
-             ecalibfile=ecalibfile, summarystruct=summarystruct
+             summarystruct=summarystruct
 
             splog, 'Time to reduce camera ', camnames[icam], ' = ', $
              systime(1)-stime2, ' seconds', format='(a,a,a,f6.0,a)'

@@ -96,6 +96,7 @@ pro/readidlout.pro -text
 pro/sdssproc.pro -text
 pro/select_arc.pro -text
 pro/select_flat.pro -text
+pro/shift_trace.pro -text
 pro/skysubtract.pro -text
 pro/sortplugmap.pro -text
 pro/spallflat.pro -text
@@ -154,6 +155,7 @@ pro/spec2d/readidlout.pro -text
 pro/spec2d/sdssproc.pro -text
 pro/spec2d/select_arc.pro -text
 pro/spec2d/select_flat.pro -text
+pro/spec2d/shift_trace.pro -text
 pro/spec2d/skysubtract.pro -text
 pro/spec2d/sortplugmap.pro -text
 pro/spec2d/spallflat.pro -text

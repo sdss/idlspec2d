@@ -100,33 +100,6 @@ end
 
 ;------------------------------------------------------------------------------
 
-function findecalib, mjd, indir
-
-   cd, indir, current=olddir
-   files = findfile('opECalib*par')
-   nfiles = n_elements(files)
-   if (nfiles EQ 0) then begin
-     cd, olddir
-     return, ''
-   endif
-
-   mjdlist = lonarr(nfiles)
-   for i=0,nfiles-1 do begin
-     yanny_read, files[i], info, hdr=hdr
-     mjdlist[i] = yanny_par(hdr, 'mjd')
-     yanny_free, info
-   endfor 
-
-   diff = mjd - mjdlist 
-   score = min(diff  + 100000*(diff LT 0), bestmjd)
-
-   cd, olddir
-   return, files[bestmjd]
-      
-end
-
-;------------------------------------------------------------------------------
-
 pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
 
    if (NOT keyword_set(rawdir)) then begin
@@ -195,13 +168,9 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
       inputdir = rawdir+'/'+mjddir
       plugdir = astrolog+'/'+mjddir
 
-      ecalibfile = findecalib(long(mjddir), getenv('IDLSPEC2D_DIR')+'/examples')
-
       splog, ''
       splog, 'Data directory ', inputdir
       splog, 'Astrolog directory ', plugdir
-      splog, 'opECalib file ',  getenv('IDLSPEC2D_DIR')+'/examples/' + $
-                    ecalibfile
 
       ; Find all raw FITS files in this directory
 	cd, inputdir, current=olddir
@@ -465,7 +434,6 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
             hdr = [hdr, "combineDir  '2dmerge'  # Directory for combined spectra"]
             hdr = [hdr, "logfile     '" + logfile + "'  # Text log file"]
             hdr = [hdr, "plotfile    '" + plotfile + "'  # PostScript log file"]
-            hdr = [hdr, "opECalib    '" + ecalibfile + "'  # Best opECalib file for this MJD"]
 
             ; Only output plan file if some raw FITS data files exist
             if (keyword_set(oneseq)) then begin
