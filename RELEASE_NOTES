@@ -28,6 +28,7 @@ In idlutils:
 BSPLINE_BKPTS: Integer roll-over bug fixed by DPF for more than 2^30
            data points (doesn't matter for SDSS pipelines, but it
            does for DEIMOS).
+LOOKFORGZIP: Also look for ".Z" file if others not found.
 POLY_ITER: Change "LT" logic to "LE" to handle case where residual
            is 0 (e.g., a perfect fit)
 evilmake: Add "Darwin" (Mac OS X) as a possible platform.
