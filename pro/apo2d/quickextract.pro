@@ -183,9 +183,11 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    endif
 
 
+   get_tai, hdr, tai_beg, tai_mid, tai_end
+
    ; Sky-subtract
    skystruct = skysubtract(fluxsub, fluxivar, plugsort, wset, $
-    objsub, objsubivar, iskies=iskies, fibermask=fibermask)
+    objsub, objsubivar, iskies=iskies, fibermask=fibermask, tai=tai_mid)
 
    ;---------------------------------------------------------------------------
    ; Analyze spectra for the sky level and signal-to-noise
