@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   zfit = lrg_photoz(pflux, pflux_ivar, [ /abcorrect, extinction=, $
-;    filterlist=, z_err=, chi2= ] )
+;    filterlist=, adderr=, z_err=, chi2= ] )
 ;
 ; INPUTS:
 ;   pflux          - Object fluxes in the 5 SDSS filters [5,NOBJ]
@@ -19,6 +19,7 @@
 ;   extinction     - If set, then apply these extinction corrections [5,NOBJ]
 ;   filterlist     - List of filter indices to use in fits; default to
 ;                    using all five filters [0,1,2,3,4]
+;   adderr         - Fractional error to add in quadrature; default to 0.01
 ;
 ; OUTPUTS:
 ;   zfit           - Best-fit redshift [NOBJ]
@@ -38,11 +39,10 @@
 ;
 ; BUGS:
 ;   The LRG template is not quite correct.  I have modified the spectrum
-;   on large scales by multiplying by lambda^0.22, and extrapolating the
-;   two ends of the spectrum to be essentially flat in f_lambda.
-;   Even still, there is some curvature in the best-fit redshifts vs.
-;   spectroscopic redshifts.  The scatter appears to be 0.027 after
-;   outlier-rejection.
+;   on large scales by multiplying by an empirically-determined quadratic
+;   correction.  Also, I've extrapolated the two ends of the spectrum
+;   to be essentially flat in f_lambda.
+;   The 3-sigma-clipped scatter appears to be 0.023 at z>0.1.
 ;
 ; PROCEDURES CALLED:
 ;   computechi2()
@@ -57,12 +57,13 @@
 ;-
 ;------------------------------------------------------------------------------
 function lrg_photoz, pflux, pflux_ivar, z_err=z_err, $
- abcorrect=abcorrect, extinction=extinction, filterlist=filterlist, chi2=chi2
+ abcorrect=abcorrect, extinction=extinction, filterlist=filterlist, $
+ adderr=adderr, chi2=chi2
 
    common com_lrg_photoz, zarr, synflux
 
    if (n_elements(filterlist) EQ 0) then filterlist = lindgen(5)
-   mslope = 0.22 ; Fudge factor for slope of template spectrum
+   if (n_elements(adderr) EQ 0) then adderr = 0.01
 
    ;----------
    ; Initialize the template "spectra".
@@ -78,9 +79,10 @@ function lrg_photoz, pflux, pflux_ivar, z_err=z_err, $
       dloglam = sxpar(hdr, 'COEFF1')
       loglam = sxpar(hdr, 'COEFF0') + dindgen(sxpar(hdr, 'NAXIS1')) * dloglam
 
-      ; Fudge the slope of the template by multiplying by WAVE^MSLOPE
-      if (keyword_set(mslope)) then $
-       specflux = specflux * (10.^loglam)^mslope
+      ; Fudge the slope of the template...
+;      specflux = specflux * (10.d0^loglam)^0.22
+      specflux = specflux $
+       * (1 + 3.488d-5 * 10^loglam + 4.015d-9 * 10^(2*loglam))
 
       ; Smooth the end of the spectra
       i1 = where(loglam LT alog10(3200), n1)
@@ -164,6 +166,13 @@ function lrg_photoz, pflux, pflux_ivar, z_err=z_err, $
       if (nbad GT 0) then begin
          thisflux[ibad] = 0
          thisisig[ibad] = 0
+      endif
+
+      ; Add ADDERR in quadrature
+      igood = where(thisisig GT 0, ngood)
+      if (ngood GT 0) then begin
+         thisisig[igood] = sqrt( 1. / (1./thisisig[igood]^2 $
+          + (adderr*(thisflux[igood]>0))^2) )
       endif
 
       ; Loop over each redshift, and compute the chi^2
