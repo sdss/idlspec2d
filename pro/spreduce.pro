@@ -141,6 +141,9 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    xy2traceset, ycen, xcen, tset, ncoeff=5, maxdev=0.1
    traceset2xy, tset, ycen, xsol
 
+   xcen = 0
+   ycen = 0
+
    ;---------------------------------------------------------------------------
    ; Extract the flat-field image
    ;---------------------------------------------------------------------------
@@ -226,6 +229,8 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       xpeak, ypeak, wset, invset, lambda=lambda, $
       xdif_lfit=xdif_lfit, xdif_tset=xdif_tset)
 
+     arc_flux=0
+     arc_fluxivar=0
      if (arcstatus) then begin
        iarc = iarc + 1
        iflat = iflat + 1
@@ -269,17 +274,19 @@ for i=0,16 do oplot,fflat[*,i*19]
       sdssproc, objfile, objimg, objivar, hdr=objhdr, $
        pixflatname=pixflatname, spectrographid=spectrographid, color=color
 
+      plugsort = sortplugmap(plugmap, spectrographid)
+
       ;------------------
       ; Tweak up the spatial traces
-
-      ; ???
+      ; Currently doing this with 6 step extraction
 
       ;------------------
       ; Identify very bright objects
       ; Do a boxcar extraction, and look for fibers where the median
       ; counts are 10000 ADU per row.
 
-      fextract = extract_boxcar(objimg, xsol, ycen)
+      fextract = extract_boxcar(objimg, xsol)
+;      fextract = extract_boxcar(objimg, xsol, ycen)
       scrunch = djs_median(fextract, 1) ; Find median counts/row in each fiber
       whopping = where(scrunch GT 10000.0, whopct)
       print, 'Number of bright fibers = ', whopct
@@ -396,7 +403,6 @@ for i=0,16 do oplot,fflat[*,i*19]
       ;------------------
       ; Sky-subtract
 
-      plugsort = sortplugmap(plugmap, spectrographid)
 
       skysubtract, obj_flux, obj_fluxivar, plugsort, wset_tweak, $ 
        skysub, skysubivar
@@ -456,22 +462,24 @@ for i=0,16 do oplot,fflat[*,i*19]
        filebase=filebase
 
 ;
-;	Clear out variables for memory efficiency
+;	Clear out variables for memory efficiency, looks like this fragments
+;       memory instead
 ;
-     objimg = 0
-     objivar = 0
-     skysub = 0
-     skysubivar = 0
-     fluxout = 0
-     fluxoutivar = 0
-     fluxfactor = 0
-     telluricfactor = 0
-     wset_tweak = 0
-     invset_tweak = 0
-     xnow = 0
-     sigmanow = 0
-     ansimage = 0
-     fitans = 0
+;     objimg = 0
+;     objivar = 0
+;     skysub = 0
+;     skysubivar = 0
+;     fluxout = 0
+;     fluxoutivar = 0
+;     fluxfactor = 0
+;     telluricfactor = 0
+;     xnow = 0
+;     sigmanow = 0
+;     ansimage = 0
+;     fitans = 0
+;     centershift = 0
+;     sigmashift = 0
+;     fextract = 0
      
      heap_gc   ; Garbage collection for all lost pointers
    endfor

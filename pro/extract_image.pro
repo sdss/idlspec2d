@@ -116,22 +116,15 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
 ;	But all answers will be returned as [nRow, nTrace]
 ;
 
-   xcenuse = transpose(xcen)
+;   xcenuse = transpose(xcen)
   
    sigmasize = size(sigma)
 
-   if (sigmasize[0] EQ 0) then begin
-      sigma1 = xcenuse*0.0 + sigma
-   endif else if (sigmasize[0] EQ 1) then begin
-      if (sigmasize[1] EQ nTrace) then $ 
-         sigma1 = rebin(sigma,nTrace,ny) $
-      else if (sigmasize[1] EQ ny) then $
-         sigma1 = transpose(rebin(sigma,ny,nTrace)) $
-      else message, 'Number of elements in sigma does not equal nTrace nor nRow'
-   endif else if (sigmasize[0] EQ 2) then begin
+   if (sigmasize[0] EQ 0) then sigma1 = fltarr(nTrace) + sigma $
+   else if (sigmasize[0] EQ 1) then sigma1 = sigma $
+   else if (sigmasize[0] EQ 2) then begin
       if (sigmasize[1] NE ny OR sigmasize[2] NE nTrace) then $
          message, '2d sigma array must have same dimensions as XCEN'
-      sigma1 = transpose(sigma)
    endif else message, 'Sigma must be scalar, 1d, or 2d array'
 
    nRowExtract = ny          ; default first to total number of rows
@@ -151,13 +144,12 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
    if (NOT keyword_set(lowrej)) then lowrej = 20.0 
    if (NOT keyword_set(wfixed)) then wfixed = [1]  ; Zeroth order term
    if (NOT keyword_set(proftype)) then proftype = 1  ; Gaussian
-   if (NOT keyword_set(ymodel)) then ymodel = fltarr(nx,ny) 
    if (NOT keyword_set(calcCovar)) then calcCovar=0
    if (NOT keyword_set(whopping)) then whopping = -1
    relative = keyword_set(relative)
 
 
-   ymodel = fltarr(nx,ny) 
+   if (ARG_PRESENT(ymodel)) then ymodel = fltarr(nx,ny) 
 
    masksize = size(mask)
    if (NOT keyword_set(mask)) then mask = make_array(nx,ny, /byte, value=1) $
@@ -176,7 +168,8 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
    proftype = LONG(proftype)
 
    ; Allocate memory for C routines
-   ansimage = fltarr(ma,nRowExtract)       ; parameter values
+   if (ARG_PRESENT(ansimage)) then $
+            ansimage = fltarr(ma,nRowExtract)       ; parameter values
    ymodelrow = fltarr(nx)
    fscatrow = fltarr(nTrace)
    lTrace = lindgen(nTrace)
@@ -187,7 +180,6 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
 
    flux = fltarr(nRowExtract, nTrace)
    finv = fltarr(nRowExtract, nTrace)
-   inputans = fltarr(nCoeff, nTrace)
 
    whoppingct = 0
    if(whopping[0] NE -1) then $
@@ -209,24 +201,19 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
 
    for iy=0, nRowExtract-1 do begin
      cur = yrow[iy]
-     curend = yrow[iy]
      print, format='($, ".",i4.4,a5)',cur,string([8b,8b,8b,8b,8b])
-     xcencurrent = xcenuse[*,cur:curend]
-     sigmacur = sigma1[*, cur:curend]
-;
-;	Check that xcen is sorted in increasing order
-;	with separations of at 3 pixels.
-;	Already done in extract_row
 
-;     check = where(xcencurrent[0:nTrace-1] GE xcencurrent[1:nTrace-2] - 3,count)
-;     if (count GT 0) then $
-;        message, 'XCEN is not sorted or not separated by greater than 3 pixels.'
+;     xcencurrent = xcenuse[*,cur]
+ 
+     if (sigmasize[0] EQ 2) then  sigmacur = sigma[*, cur] $
+     else sigmacur = sigma1
+     
 
-     masktemp = mask[*,cur:curend]
+     masktemp = mask[*,cur]
 
      whoppingct = 0
      if(whopping[0] NE -1) then begin
-         whoppingcur = xcenuse[whopping,cur:curend] 
+         whoppingcur = transpose(xcen[cur,whopping])
 	 whoppingct = n_elements(whopping)
      endif
      
@@ -235,20 +222,22 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
           iback = fitans[nTrace*nCoeff:nTrace*nCoeff+nPoly-1,cur]
      endif
 
-     ansrow = extract_row(fimage[*,cur:curend], invvar[*,cur:curend], $
-      xcencurrent, sigmacur, ymodel=ymodelrow, fscat=fscatrow, $
+     ansrow = extract_row(fimage[*,cur], invvar[*,cur], $
+      xcen[cur,*], sigmacur, ymodel=ymodelrow, fscat=fscatrow, $
       proftype=proftype, iback=iback, $
       wfixed=wfixed, mask=masktemp, diagonal=prow, nPoly=nPoly, $
       oback=oback, niter=niter, squashprofile=squashprofile,inputans=inputans, $
       maxIter=maxIter, highrej=highrej, lowrej=lowrej, calcCovar=calcCovar, $
       whopping=whoppingcur, relative=relative, fullcovar=fullcovar)
 
-     mask[*,cur:curend] = masktemp
-     ansimage[0:nTrace*nCoeff-1,iy] = ansrow
-     ansimage[nTrace*nCoeff:nTrace*nCoeff+nPoly-1,iy] = oback
+     mask[*,cur] = masktemp
+     if(ARG_PRESENT(ansimage)) then begin 
+       ansimage[0:nTrace*nCoeff-1,iy] = ansrow
+       ansimage[nTrace*nCoeff:nTrace*nCoeff+nPoly-1,iy] = oback
+     endif
 
-     if(keyword_set(ymodel)) then ymodel[*,cur:curend] = ymodelrow
-     if(keyword_set(fscat)) then fscat[iy,*] = fscatrow
+     if(ARG_PRESENT(ymodel)) then ymodel[*,cur] = ymodelrow
+     if(ARG_PRESENT(fscat)) then fscat[iy,*] = fscatrow
 
      calcflux, ansrow, prow, fluxrow, finvrow, wfixed, proftype, lTrace,nCoeff,$
             squashprofile=squashprofile
@@ -259,6 +248,14 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
    ii = where(mask EQ 0, finallyrejected)
 
    print, 'I masked ', finallyrejected - initiallyrejected, ' pixels'
+
+   ;
+   ;	Clean up some memory 
+
+   if (NOT ARG_PRESENT(mask)) then mask = 0
+   fullcovar = 0
+   inputans = 0
+   iback = 0
 
    return
 end

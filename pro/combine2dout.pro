@@ -12,7 +12,7 @@ end
 pro combine2dout, filenames, outputfile, bin, zeropoint, nord=nord, $
         ntrials=ntrials, fullspec=fullspec, fullerr=fullerr, $
         fullwave=fullwave, output=output, dosky=dosky, wavemin = wavemin, $
-        bkptbin = bkptbin, montecarlo=montecarlo
+        bkptbin = bkptbin, montecarlo=montecarlo, display=display
 
 ;
 ;	Set to 50 km/s for now to match 1d
@@ -71,6 +71,7 @@ pro combine2dout, filenames, outputfile, bin, zeropoint, nord=nord, $
 	redpix = where(bluered, numred)
 	bluepix = where(bluered EQ 0, numblue)
 
+	scale = 1.0
 	if (numblue GT 0 AND numred GT 0) then begin
            exptime = exptime * 0.5
 
@@ -80,7 +81,6 @@ pro combine2dout, filenames, outputfile, bin, zeropoint, nord=nord, $
 	  maxblue = max(fullwave(where(bluered EQ 0)))
 	  minred = min(fullwave(where(bluered EQ 1)))
 
-	  scale = 1.0
 	  if (minred LT maxblue) then begin
             bluecross = where(bluered EQ 0 and fullwave GT minred $ 
                       AND fullerr GT 0.0)
@@ -256,6 +256,12 @@ pro combine2dout, filenames, outputfile, bin, zeropoint, nord=nord, $
 	sxaddpar, newhdr, 'DC-FLAG', 1, 'Log-linear flag'
 
 	writefits, outputfile, [[bestguess],[besterr]], newhdr
+
+        if (keyword_set(display)) then begin
+          djs_plot, 10^newwave, bestguess, /xstyle, /ystyle
+          djs_oplot, 10^newwave, besterr, color='red'
+        endif
+
 	return
 end
 	  

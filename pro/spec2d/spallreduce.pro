@@ -160,6 +160,7 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
              indir=inputDir, plugdir=plugDir, $
              outdir=plateDir, qadir=plateDir
 
+          heap_gc   ; garbage collection
          endif
 
       endfor ; End loop for camera number
@@ -185,7 +186,7 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
          endfor
       endfor
        print, 'Finished combining sequence', seqid[iseq], ' in', $
-             systime(1)-startcombine, ' seconds'
+             systime(1)-startcombtime, ' seconds'
 
    endfor ; End loop for sequence number
 

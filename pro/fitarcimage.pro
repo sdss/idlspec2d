@@ -309,7 +309,7 @@ function fitarcimage, arc, arcinvvar, side,linelist, xnew, ycen, tset, invset, $
 
       guess = 0
       if (side EQ 'blue') then guess = [3.68, -0.106, -0.005, 0.005]
-      if (side EQ 'red') then guess = [3.87, 0.10, -0.003, 0.003]   
+      if (side EQ 'red') then guess = [3.87, 0.10, -0.003, -0.001]   
 
       guess = double(guess)
       ans   = fullfit(double(spec), linelist, guess)
@@ -368,7 +368,7 @@ function fitarcimage, arc, arcinvvar, side,linelist, xnew, ycen, tset, invset, $
    ; but only 0.3 pixels while tracing
 
    xcen = trace_crude(arc, yset=ycen, nave=1, nmed=1, xstart=xstart, $
-    ystart=row, maxshifte=0.3d, maxshift0=2.0d)
+    ystart=row, maxshifte=0.3d, maxshift0=4.0d)
 
    ; Iterate the flux-weighted centers
    xnew = trace_fweight(arc, xcen, ycen)

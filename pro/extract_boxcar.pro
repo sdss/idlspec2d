@@ -34,12 +34,25 @@
 ;------------------------------------------------------------------------------
 function extract_boxcar, fimage, xcen, ycen, radius=radius
 
-   ; Need 3 parameters
-   if (N_params() LT 3) then begin
-      print, 'Syntax - fextract = extract_boxcar( fimage, xcen, ycen, [radius=radius] )'
+   ; Need 2 parameters
+   if (N_params() LT 2) then begin
+      print, 'Syntax - fextract = extract_boxcar( fimage, xcen, [ycen, radius=radius] )'
       return, -1
    endif
    if (NOT keyword_set(radius)) then radius = 3.0
+
+   if (NOT keyword_set(ycen)) then begin
+	ycen=xcen
+        ndim = (size(xcen))[0]
+        if (ndim EQ 1) then $
+          ycen = findgen(N_elements(xcen)) $
+        else if (ndim EQ 2) then begin
+          npix = (size(xcen))[1]
+          nTrace = (size(xcen))[2]
+	  for i=0,nTrace-1 do ycen[*,i] = findgen(npix)
+        endif else message, 'xcen is not 1 or 2 dimensional'
+   endif
+         
    if (N_elements(xcen) NE N_elements(ycen)) then $
     message, 'Number of elements in XCEN and YCEN must be equal'
 
