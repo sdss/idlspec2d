@@ -1,4 +1,4 @@
-Wavelength (nm)	Intensity
+Wavelength (nm)	Intensity  (1 mm of glass)
 1000.0	6.9000
 999.00	6.9000
 998.00	6.9000
