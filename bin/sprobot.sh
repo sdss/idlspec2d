@@ -151,7 +151,7 @@ for mjdstr in $remotedir ; do
          mjdlist=$mjdlist,$mjdstr
       fi
    else
-      echo "SPROBOT: All disks are full!!!"
+      echo "SPROBOT: WARNING: All disks are full!!!"
    fi
 
 done
