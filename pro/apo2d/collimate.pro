@@ -295,8 +295,9 @@ pro collimate, expnum1, expnum2, docams=docams, indir=indir, $
    splog, ' ', /no_stdout
    splog, 'Min offset = ' + minyoffstr + ' pix'
    splog, 'Max offset = ' + maxyoffstr + ' pix'
+   splog, 'RMS across CCD = ' + meanydevstr + ' pix'
    splog, ' ', /no_stdout
-   splog, 'Mean offset = ' + meanyoffstr + ' +/- ' + meanydevstr + ' pix'
+   splog, 'Mean offset = ' + meanyoffstr + ' pix'
    splog, ' ', /no_stdout
 
    ;----------
