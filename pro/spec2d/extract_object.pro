@@ -15,7 +15,8 @@
 ; CALLING SEQUENCE:
 ;   extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 ;    xarc, lambda, xtrace, fflat, fibermask, proftype=, color=, $
-;    [ widthset=, dispset=, skylinefile=, plottitle=, superflatset= ]
+;    [ widthset=, dispset=, skylinefile=, plottitle=, superflatset=, $
+;    /do_telluric ]
 ;
 ; INPUTS:
 ;   outname    - Name of outputs FITS file
@@ -41,6 +42,9 @@
 ;
 ; OPTIONAL KEYWORDS:
 ;   plottitle  - Prefix for titles in QA plots.
+;   do_telluric- If set, then perform telluric-corrections for the red CCDs;
+;                the default is to no longer do this, because the v5 code
+;                does this in the later flux-calibration steps
 ;
 ; OUTPUTS:
 ;   A fits file is output in outname, which contains
@@ -101,7 +105,7 @@
 pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
  xarc, lambda, xtrace, fflat, fibermask, color=color, proftype=proftype, $
  widthset=widthset, dispset=dispset, skylinefile=skylinefile, $
- plottitle=plottitle, superflatset=superflatset
+ plottitle=plottitle, superflatset=superflatset, do_telluric=do_telluric
 
    objname = strtrim(sxpar(objhdr,'OBJFILE'),2) 
    flavor  = strtrim(sxpar(objhdr,'FLAVOR'),2) 
@@ -461,42 +465,13 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ;------------------------------------------
    ; Telluric correction called for 'red' side
 
-   if (color EQ 'red')  then begin
-
-      ; The following commented-out code essentially reproduces the
-      ; telluric-correction code implemented from Oct 99 to Aug 00.
-      ; However, if this is implemented, it should be done **after**
-      ; the flux-calibration step below.
-;      tellbands1 = { TELLBAND1, $
-;       twave1: 6607., twave2: 8318., $
-;       cwave1: 6607., cwave2: 8313. }
-;      tellbands2 = { TELLBAND1, $
-;       twave1: 8710., twave2: 9333., $
-;       cwave1: 8710., cwave2: 9333. }
-;      tellbands = [tellbands1, tellbands2]
-;
-;      ttt = telluric_corr(flambda, flambdaivar, vacset, plugsort, $
-;       fibermask=fibermask, tellbands=tellbands, pixspace=100, $
-;       upper=5, lower=5, /dospline, $
-;       plottitle=plottitle+'Telluric correction for '+objname)
-
+   if (keyword_set(do_telluric) AND color EQ 'red')  then begin
       telluricfactor = telluric_corr(flambda, flambdaivar, vacset, plugsort, $
        fibermask=fibermask, $
        plottitle=plottitle+'Telluric correction for '+objname)
 
       divideflat, flambda, invvar=flambdaivar, telluricfactor, minval=0.1
-
    endif
-
-   ;------------------
-   ; Flux calibrate to spectrophoto_std fibers
-
-; Remove this code???
-;   fluxfactor = fluxcorr(flambda, flambdaivar, vacset, plugsort, $
-;    color=color, lower=3.0, upper=3.0, fibermask=fibermask)
-;
-;   minfluxfactor = median(fluxfactor) * 0.01
-;   divideflat, flambda, invvar=flambdaivar, fluxfactor, minval=minfluxfactor
 
    ;----------
    ; Interpolate over masked pixels, just for aesthetic purposes
@@ -560,7 +535,8 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    mwrfits, plugsort, outname
    mwrfits, skyimg, outname
    mwrfits, superfit, outname
-   mwrfits, telluricfactor, outname ; This array only exists for red frames.
+   if (keyword_set(do_telluric)) then $
+    mwrfits, telluricfactor, outname ; This array only exists for red frames.
 
    heap_gc
 
