@@ -157,6 +157,15 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
       tempflux = mrdfits(filenames[ifile], 0, hdr)
       tempivar = mrdfits(filenames[ifile], 1)
       temppixmask = mrdfits(filenames[ifile], 2)
+
+      ;  Zero out the following four mask bits
+      
+      temppixmask = temppixmask XOR $
+                    (pixelmask_bits('COMBINEREJ') + $
+                     pixelmask_bits('SMEARIMAGE') + $
+                     pixelmask_bits('SMEARHIGHSN') + $
+                     pixelmask_bits('SMEARMEDSN'))
+
       tempwset = mrdfits(filenames[ifile], 3)
       tempdispset = mrdfits(filenames[ifile], 4)
       tempplug = mrdfits(filenames[ifile], 5, structyp='PLUGMAPOBJ')
@@ -235,11 +244,13 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
       corrset = mrdfits(corrfile, 1)
       traceset2xy, corrset, tempwave, corrimg
 
-      invertcorr = 1.0 / corrimg
-      divideflat, tempflux, tempivar, invertcorr, $
-       minval=0.05*mean(invertcorr)
-      temppixmask = temppixmask $
-       OR (invertcorr LE 0.05*mean(invertcorr)) * pixelmask_bits('BADFLUXFACTOR')
+      thismask = mrdfits(corrfile, 2)
+      temppixmask = temppixmask OR replicate(1,npix) # thismask
+
+      medcor = median(corrimg)
+      divideflat, tempflux, tempivar, invertcorr, minval=0.1/medcor
+      temppixmask = temppixmask OR $
+           (corrimg GE 10.0 * medcor) * pixelmask_bits('BADFLUXFACTOR')
 
       ;----------
       ; Apodize the errors
@@ -288,14 +299,6 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
    tempwave = 0
    tempdispersion = 0
    temppixmask = 0
-
-   ;----------
-   ; Remove the COMBINEREJ bit from the input pixel masks, since this
-   ; is the procedure that should set that bit.
-
-   bitval = pixelmask_bits('COMBINEREJ')
-   indx = where(pixelmask AND bitval)
-   if (indx[0] NE -1) then pixelmask[indx] = pixelmask[indx] - bitval
 
    ;----------
    ; Check how many exposures we have in each of the (4) cameras
