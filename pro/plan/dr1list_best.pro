@@ -26,9 +26,6 @@
 ;
 ; PROCEDURES CALLED:
 ;   platelist
-;
-; INTERNAL SUPPORT PROCEDURES:
-;   daytime_test1
 ;   struct_print
 ;
 ; REVISION HISTORY:
