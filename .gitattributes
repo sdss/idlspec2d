@@ -53,6 +53,7 @@ etc/doi_i_atm.dat -text
 etc/doi_r_atm.dat -text
 etc/doi_u_atm.dat -text
 etc/doi_z_atm.dat -text
+etc/emlines.par -text
 etc/f8v.abs -text
 etc/f8vspline.dat -text
 etc/flatmask-b1.fits.gz -text svneol=unset#unset
