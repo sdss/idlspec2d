@@ -89,7 +89,7 @@ function filter_thru, flux, waveimg=waveimg, wset=wset, mask=mask, $
    ;----------
    ; Convert wavelengths from vacuum to air if necessary
 
-   if (keyword_set(ttoair)) then $
+   if (keyword_set(toair)) then $
     vactoair, newwaveimg
 
    logwave = alog10(newwaveimg)
