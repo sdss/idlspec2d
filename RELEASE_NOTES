@@ -7,6 +7,8 @@ It also addresses some rsync bugs for Son-of-Spectro.
 
 APO_CHECKLIMITS: Wasn't matching on flavor.  Fixed.
 APO_LOG2HTML: Mistakenly was listing times as hr:sec instead of hr:min!
+APOPLOT,PLOTSPEC: Change the http address for Kent's image server to
+           its new location at http://sdssmosaic.fnal.gov:8015/.
 FLUXCORR_NEW:  Return all zeros in fluxcorr image if 
                   "WARNING: No spectrophoto with high S/N"
 GET_TAI: A short proc to determine, beginning, mid-point, and ending
@@ -66,6 +68,8 @@ killdata.sh,mailhtml.sh: Spectrolog cleanup is now done +25 MJDs afterwards,
 sprobot.sh: Copy the guider image directory.  We mistakenly lost this copying
            when we went to explicitly copying only the sdR*.fit.gz files.
 sos.sh,startapo.sh: Forget to switch to UT time in a couple of instances.
+opBC.par,opBC-51813.par: New bad column masks, somewhat circular dependence
+           on pixflats.
 
 In idlutils:
 DJS_REJECT  : Major bug in /groupbadpix option, should now work as intended
