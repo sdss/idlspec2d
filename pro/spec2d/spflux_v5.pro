@@ -446,16 +446,17 @@ function spflux_mratio_flatten, loglam1, mratio1, mrativar1, pres=pres
    ; a median, to protect us against standard stars that have bad
    ; magnitudes from the imaging.
 
-   igoodpix = where(qbadpix EQ 0)
-   if (ndim EQ 1) then medratio = newratio $
-    else medratio = djs_median(newratio, 2)
-   rescale = median( medratio[igoodpix] / meanratio[igoodpix] )
-   if (rescale LE 0) then begin
-     splog, 'Warning: RESCALE = ', rescale
-   endif else begin
-      meanratio = rescale * meanratio
-      splog, 'Rescale factor median/mean = ', rescale
-   endelse
+; Comment-out ???
+;   igoodpix = where(qbadpix EQ 0)
+;   if (ndim EQ 1) then medratio = newratio $
+;    else medratio = djs_median(newratio, 2)
+;   rescale = median( medratio[igoodpix] / meanratio[igoodpix] )
+;   if (rescale LE 0) then begin
+;      splog, 'Warning: RESCALE = ', rescale
+;   endif else begin
+;      meanratio = rescale * meanratio
+;      splog, 'Rescale factor median/mean = ', rescale
+;   endelse
 
    ;--------
    ; Now for each object, compute the polynomial fit of it relative to the mean
@@ -646,7 +647,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
           / 10.^((22.5-thismag[2])/2.5)
          ; Reject this star if we don't know its flux.
          if (plugmap[iphoto[ip]].calibflux[2] LE 0) then begin
-            splog, 'Rejecting std star in fiber = ', $
+            splog, 'Warning: Rejecting std star in fiber = ', $
              iphoto[ip] + 1 + 320 * (spectroid[0] - 1), $
              ' with unknown calibObj flux'
             qfinal[ip] = 0
@@ -675,7 +676,29 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
    !p.multi = 0
 
    ;----------
-   ; Start with a rejection of any stars with a bad chi^2/DOF either
+   ; Reject any stars where more than 20% of the pixels marked are bad
+   ; in any observation.
+
+   fracgood = fltarr(nphoto)
+   for ip=0L, nphoto-1 do begin
+      for i=0L, nfile-1 do begin
+         markasbad = (qfinal[ip]) AND (mean(objivar[*,i,ip] GT 0) LT 0.80)
+         if (markasbad) then begin
+            splog, 'Warning: Rejecting std star in fiber = ', $
+             iphoto[ip] + 1 + 320 * (spectroid[0] - 1), $
+             ' with too many IVAR=0 pixels'
+            qfinal[ip] = 0B
+         endif
+      endfor
+   endfor
+   ifinal = where(qfinal,nfinal) ; This is the list of the good stars
+   if (nfinal EQ 0) then begin
+      splog, 'ABORT: No good fluxing stars!'
+      return
+   endif
+
+   ;----------
+   ; Reject any stars with a bad chi^2/DOF either
    ; in the full spectrum or in just the absorp. line regions.
    ; Do not reject more than half the stars.
 
@@ -812,7 +835,6 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
    ; Plot fluxing vectors and their polynomial offsets for individual stars
    ; in individual exposures.
 
-; ???
    mratfit = 0 * mratio
    mratfit[*,iblue,ifinal] = bspline_valu(loglam[*,iblue,ifinal], sset_b)
    if (tag_exist(sset_r,'NPOLY')) then $
@@ -825,7 +847,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
    explist = expnum[uniq(expnum, sort(expnum))]
    colorvec = ['default','red','green','blue','cyan','magenta','grey']
    xrange = 10^minmax(loglam[*,*,ifinal])
-   yrange = minmax(mratfit[*,*,ifinal] * flatarr[*,*,ifinal])
+   yrange = minmax(mratfit[*,*,ifinal])
    plottitle = 'PLATE=' + string(plateid[0], format='(i4.4)') $
     + ' MJD=' + string(maxmjd, format='(i5.5)')
    for iexp=0, n_elements(explist)-1 do begin
@@ -837,11 +859,13 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
          thiscolor = colorvec[j MOD n_elements(colorvec)]
          for k=0, kct-1 do begin
             djs_oplot, 10^loglam[*,kk[k],ifinal[j]], $
-             mratio[*,kk[k],ifinal[j]] * flatarr[*,kk[k],ifinal[j]], $
+;             mratio[*,kk[k],ifinal[j]] * flatarr[*,kk[k],ifinal[j]], $
+             mratio[*,kk[k],ifinal[j]], $
              psym=3, color=thiscolor
-            djs_oplot, 10^loglam[*,kk[k],ifinal[j]], $
-             mratfit[*,kk[k],ifinal[j]] * flatarr[*,kk[k],ifinal[j]], $
-             color=thiscolor
+;            djs_oplot, 10^loglam[*,kk[k],ifinal[j]], $
+;;             mratfit[*,kk[k],ifinal[j]] * flatarr[*,kk[k],ifinal[j]], $
+;             mratfit[*,kk[k],ifinal[j]], $
+;             color=thiscolor
          endfor
          djs_xyouts, 0.9*xrange[0]+0.1*xrange[1], $
           yrange[0] + (j+1)*(yrange[1]-yrange[0])/(nfinal+1), $
