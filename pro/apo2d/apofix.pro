@@ -6,7 +6,7 @@
 ;   Add line to sdHdrFix file to denote change in FITS header for sdR files.
 ;
 ; CALLING SEQUENCE:
-;   apofix, expnum, [ card, value, camera=, /bad, /notsos ]
+;   apofix, expnum, [ card, value, camera=, /bad, /test, /notsos ]
 ;
 ; INPUTS:
 ;   expnum     - Exposure number
@@ -20,8 +20,9 @@
 ;                '?2' to denote a change to both 'b2' and 'r2'.  Default to
 ;                '??' to denote a change to sdR files for all 4 cameras.
 ;   bad        - If set, then declare the specified exposure number to be bad.
-;                Do this by setting QUALITY='bad'.
-;                If set, then overwrite and values passed for CARD and VALUE.
+;                This is equivalent to setting QUALITY='bad'.
+;   test       - If set, then declare the specified exposure number to be test.
+;                This is equivalent to setting QUALITY='test'.
 ;   notsos     - This keyword can be set to run this proc on a machine
 ;                that is not named "sos".  This would only be done for
 ;                testing purposes.
@@ -68,6 +69,9 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   djs_lockfile()
+;   djs_modfits
+;   djs_unlockfile
 ;   fileandpath()
 ;   fits_wait
 ;   headfits()
@@ -79,7 +83,8 @@
 ;   22-Apr-2002  Written by D. Schlegel, Princeton
 ;-
 ;------------------------------------------------------------------------------
-pro apofix, expnum, card, newval, camera=camera, bad=bad, notsos=notsos
+pro apofix, expnum, card, newval, camera=camera, bad=bad, test=test, $
+ notsos=notsos
 
    common apofix_com, apo_uname
 
@@ -144,13 +149,27 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad, notsos=notsos
       return
    endif
 
+   if (keyword_set(bad) AND keyword_set(test)) then begin
+      print, 'Invalid to set both the /BAD and /TEST keywords. Ignoring!'
+      return
+   endif
+
    if (keyword_set(bad)) then begin
       if (keyword_set(card) OR keyword_set(value)) then begin
          print, 'Invalid to set the /BAD flag along with CARD or VALUE. Ignoring!'
          return
       endif
-      card = 'quality'
+      card = 'QUALITY'
       value = 'bad'
+   endif
+
+   if (keyword_set(test)) then begin
+      if (keyword_set(card) OR keyword_set(value)) then begin
+         print, 'Invalid to set the /TEST flag along with CARD or VALUE. Ignoring!'
+         return
+      endif
+      card = 'QUALITY'
+      value = 'test'
    endif
 
    if (size(card, /tname) NE 'STRING' $
@@ -279,7 +298,7 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad, notsos=notsos
       endif
       end
    'QUALITY': begin
-      possible = ['excellent','bad']
+      possible = ['excellent','test','bad']
       if (total(newval EQ possible) EQ 0) then begin
          print, 'Valid values = ', "'"+possible+"'"
          print, 'Invalid value for QUALITY. Ignoring!'
@@ -420,6 +439,50 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad, notsos=notsos
 
    print, 'File ' + fileandpath(sdfixname) + ' contains ' $
     + strtrim(string(ncorr),2) + ' declared changes.'
+
+   ;----------
+   ; If QUALITY keyword is changed, then edit the APO logfile.
+
+   if (strupcase(card) EQ 'QUALITY') then begin
+
+      spectrolog_dir = getenv('SPECTROLOG_DIR')
+      if (NOT keyword_set(spectrolog_dir)) then $
+       spectrolog_dir = '/data/spectro/spectrologs'
+
+      logfile = 'logfile-' + mjdstr + '.fits'
+      logfile = filepath(logfile, root_dir=mjddir)
+      if (NOT keyword_set(findfile(logfile))) then begin
+         splog, 'Unable to find logfile '+logfile
+         return
+      endif
+
+      splog, 'Trying to lock the logfile  ' + logfile
+      while(djs_lockfile(logfile) EQ 0) do wait, 1
+
+      ;----------
+      ; Loop through each HDU in the log file.
+
+      splog, 'Reading the logfile ' + logfile
+      for thishdu=1, 5 do begin
+         rstruct = mrdfits(logfile, thishdu, /silent)
+         nstruct = n_elements(rstruct) * (keyword_set(rstruct))
+
+         qchange = 0
+         for i=0, nstruct-1 do begin
+            if (expnum EQ rstruct[i].expnum $
+             AND strmatch(rstruct[i].camera,camname)) then begin
+               rstruct[i].quality = strval
+               qchange = 1
+            endif
+         endfor
+
+         if (qchange) then begin
+            djs_modfits, logfile, rstruct, exten_no=thishdu
+         endif
+      endfor
+
+      djs_unlockfile, logfile
+   endif
 
    return
 end
