@@ -170,11 +170,11 @@ endif else begin
             sset = bspline_iterfit(inloglam[ss], objflux[ss], $
               nord=nord, $
               bkspace=bkptbin, bkpt=bkpt, invvar=objivar[ss], outmask=bmask, $
-              _EXTRA=KeywordsForReject) $
+              _EXTRA=KeywordsForReject, /silent) $
           else sset = bspline_iterfit(inloglam[ss], objflux[ss], $
               nord=nord, $
               bkspace=bkptbin, bkpt=bkpt, outmask=bmask, $
-              _EXTRA=KeywordsForReject)
+              _EXTRA=KeywordsForReject, /silent)
 
 endelse
 
