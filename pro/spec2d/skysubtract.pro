@@ -98,7 +98,10 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    iskies = where(strtrim(plugsort.objtype, 2)  EQ 'SKY' $
     AND plugsort.fiberid GT 0 AND (fibermask EQ 0), nskies)
    splog, 'Number of sky fibers = ', nskies
-   if (nskies EQ 0) then message, 'No sky fibers in PLUGMAP'
+   if (nskies EQ 0) then begin
+      splog, 'ABORT: No unmasked sky fibers in PLUGMAP'
+      return, 0
+   endif
 
    skywave = wave[*,iskies]
    skyflux = obj[*,iskies]

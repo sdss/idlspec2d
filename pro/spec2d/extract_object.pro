@@ -335,6 +335,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
     skysub, skysubivar, iskies=iskies, pixelmask=pixelmask, $
     fibermask=fibermask, upper=3.0, lower=3.0, $
     relchi2struct=relchi2struct)
+   if (NOT keyword_set(skystruct)) then return
 
    ;-----------------------------------------------------------
    ;  Bad sky fibers???
