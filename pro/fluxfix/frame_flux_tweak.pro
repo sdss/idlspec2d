@@ -93,14 +93,8 @@
 ;   pixelmask_bits()
 ;   traceset2xy
 ;   xy2traceset
-;
+;   spmedian_rebin
 ; INTERNAL SUPPORT ROUTINES:
-;   median_rebin():  Used to rebin spectra in large wavelength blocks
-;                    passed in parameter range 
-;   rebin_exposure(): Used to rebin an entire frame (flux, ivar, mask, wave)
-;                     to lower resolution  
-;   smear_coeff(): Used to simplify the process of getting the correct
-;                  polynomial coefficients for various S/N conditions.
 ;
 ; REVISION HISTORY:
 ;   17-Oct-2000  Formerly fluxcorr_new -- written by S. Burles
@@ -124,6 +118,10 @@ function median_rebin, loglam, flux, ivar, color, mask=mask, sigrej=sigrej, $
    if color eq 'b' then begin
      w1 = findgen(60)*4.0e-3 + 3.568
      w2 = findgen(60)*4.0e-3 + w1[1]
+   endif
+   if color eq 'full' then begin
+     w1 = findgen(96)*4.0e-3 + 3.568
+     w2 = findgen(96)*4.0e-3 + w1[1]
    endif
    range = transpose([[w1],[w2]])
    outwave = djs_median(range,1)
@@ -178,10 +176,10 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
    ;----------
    ; Create red & blue smoothed best images
 
-   bfit = median_rebin(bloglam[*,indx], bflux[*,indx], bivar[*,indx], $
+   bfit = spmedian_rebin(bloglam[*,indx], bflux[*,indx], bivar[*,indx], $
           'b', outwave = bwave, mask = bmask, sn = bsn, quality = bquality)
 
-   rfit = median_rebin(rloglam[*,indx], rflux[*,indx], rivar[*,indx], $
+   rfit = spmedian_rebin(rloglam[*,indx], rflux[*,indx], rivar[*,indx], $
           'r', outwave = rwave, mask = rmask, sn = rsn, quality = rquality)
 
    ;---------------------------------------------------------
@@ -235,10 +233,10 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
 
 ; Need to figure out the best way to set mask bits!!!
 
-      bscifit = median_rebin(bloglam[*,indx], bflux[*,indx], bivar[*,indx], $
+      bscifit = spmedian_rebin(bloglam[*,indx], bflux[*,indx], bivar[*,indx], $
                 'b', mask = bscimask, sn = bscisn, quality = bsciquality)
 
-      rscifit = median_rebin(rloglam[*,indx], rflux[*,indx], rivar[*,indx], $
+      rscifit = spmedian_rebin(rloglam[*,indx], rflux[*,indx], rivar[*,indx], $
                 'r', mask = rscimask, sn = rscisn, quality = rsciquality)
        
       ;----------------
@@ -353,7 +351,7 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
       ;mwrfits, thismask, corrfile[ifile]
 
       ;------------
-      ; Plot smear correction vectors
+      ; Plot correction vectors
 
       if keyword_set(noplot) then continue
 
