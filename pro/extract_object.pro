@@ -217,69 +217,65 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
       ; My fitansimage is not going to work well without good profiles ???
       ; Using it to tweak up traces, and then performing free fit to object
 
-      for i = 0, 1 do begin
-      
-         ; (1) First extraction
+      ;  Using new shift_trace, pick xcen and ycen to sample image
 
-         splog, 'Object extraction: Step', i*3+1
-         extract_image, image, invvar, xnow, sigma, tempflux, tempfluxivar, $
+      skiptrace = 20L
+      ysample = lindgen(nrow) # replicate(1,nfiber - 2*skiptrace)
+      xsample = xtrace[*,skiptrace:nfiber - skiptrace - 1]
+     
+      bestlag = shift_trace(image, xsample, ysample, lagrange=1.0, lagstep=0.1)
+
+      splog, 'Shifting traces by pixel shift of ', bestlag
+
+      if (abs(bestlag) GT 2.0) then begin
+        splog, 'ABORT: pixel shift is too large!'
+        return
+      endif
+
+      xnow = xtrace + bestlag 
+      
+      ; (1) Extraction profiles in every 8th row
+
+      splog, 'Object extraction: Step 1'
+      extract_image, image, invvar, xnow, sigma, tempflux, tempfluxivar, $
           proftype=proftype, wfixed=wfixed, yrow=yrow, $
           highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
-          ansimage=ansimage
+          ansimage=ansimage, chisq=firstchisq
 
-; HORRIBLE HACK SINCE EXTRACT_IMAGE RETURNS SOME NaN's!!!???
-jj = where(finite(ansimage) EQ 0)
-if (jj[0] NE -1) then begin
-  ansimage[jj] = 0
-  splog,'WARNING: Fixing NaNs!!!', N_elements(jj)
-endif
+      ; (2) Refit ansimage to smooth profiles
 
-         ; (2) Refit ansimage to smooth profiles
+      splog, 'Answer Fitting: Step 2'
+      ntrace = (size(tempflux))[2]
+      itrace = lindgen(ntrace)*nterms
 
-         splog, 'Answer Fitting: Step', i*3+2
-         ntrace = (size(tempflux))[2]
-         itrace = lindgen(ntrace)*nterms
+      ;---------------------------------------------------
+      ;   Fitansimage is now hard wired for 320 fibers!!!!
 
-         ;---------------------------------------------------
-         ;   Fitansimage is now hard wired for 320 fibers!!!!
-
-         fitans = fitansimage(ansimage, nterms, ntrace, npoly, yrow, $
+      fitans = fitansimage(ansimage, nterms, ntrace, npoly, yrow, $
             tempflux, fluxm = [1,1,0], scatfit=scatfit)
 
-         ; (3) Calculate new sigma and xtrace arrays
+      ; (3) Calculate new sigma and xtrace arrays
       
-         sigmashift = transpose(fitans[lindgen(ntrace)*nterms + sigmaterm, *])
-         centershift= transpose(fitans[lindgen(ntrace)*nterms + centerterm, *])
+      sigmashift = transpose(fitans[lindgen(ntrace)*nterms + sigmaterm, *])
+      centershift= transpose(fitans[lindgen(ntrace)*nterms + centerterm, *])
 
-         splog, format='(a,3(f8.3))', 'Centershift ', min(centershift),  $
+      splog, format='(a,3(f8.3))', 'Centershift ', min(centershift),  $
           median(centershift), max(centershift)
 
-         splog, format='(a,3(f8.3))', 'Sigmashift ', min(sigmashift),  $
+      splog, format='(a,3(f8.3))', 'Sigmashift ', min(sigmashift),  $
           median(sigmashift), max(sigmashift)
 
-         if (max(abs(centershift)) GT maxshift OR $
+      if (max(abs(centershift)) GT maxshift OR $
              max(abs(sigmashift)) GT maxshift/3.0) then begin
               splog, 'ABORT: Shift terms are not well behaved!'
               return
-         endif
-
-         if (i EQ 0) then begin 
-            splog, 'Trace Tweaking: Step', i*3+3, '    (Sigma not tweaked)'
-            ;----------------------------------------------------
-            ;  This is essentially tweaktrace
-            ;
-            xnow = xnow - centershift * sigma
-            sigmanow = (sigmashift + 1.0) * sigmanow
-
-            ;tweaktrace, xnow, sigmanow, centershift, sigmashift
-         endif
-      endfor
+      endif
 
       qaplot_scatlight, scatfit, yrow, $
        wset=wset, xcen=xtrace, fibermask=fibermask, filename=objname
 
       ; (4) Second and final extraction
-      splog, 'Object extraction: Step 6'
+      splog, 'Object extraction: Step 3'
 
       ; Using old sigma for now, which should be fine
       ; Different sigmas require a new profile for each trace, so will
@@ -293,6 +289,12 @@ endif
       highrej = 15
       lowrej = 15
       fitans = fitans[0:nterms*ntrace-1,*]
+
+;      fitans_old = fitansimage_old(ansimage, nterms, ntrace, npoly, $
+;            nfirst, yrow, fluxm = [1,1,0], scatfit=scatfit)
+;
+;      fitans_old = fitans_old[0:nterms*ntrace-1,*]
+
       extract_image, image-scatfit, invvar, xnow, sigma, flux, $
        fluxivar, proftype=proftype, wfixed=wfixed, fitans=fitans, $
        highrej=highrej, lowrej=lowrej, npoly=0, whopping=whopping, $
@@ -317,6 +319,13 @@ endif
       djs_plot, xaxis, chisq, $
          xtitle='Row number',  ytitle = '\chi^2', $
          title='Extraction chi^2 for '+objname
+
+      djs_oplot, yrow, firstchisq[yrow], color='green', ps=4
+
+      xyouts, 100, 0.95*!y.crange[0]+0.05*!y.crange[1], $
+               'Black is final chisq extraction'
+      xyouts, 100, 0.92*!y.crange[0]+0.08*!y.crange[1], $
+               'Green is initial chisq extraction'
 
       ;------------------
       ; Flat-field the extracted object fibers with the global flat

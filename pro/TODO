@@ -2,6 +2,9 @@
 * Bug in fitans image, do not get smooth fits for centershift and
      sigmashift, what is going on?
 
+     --- Shifts were likely too large
+     --- Now fitansimage is cleaner, and hopefully more robust
+
 * Fiberflats can have wacky values (look at its plot)
 
 * Fiberflat plot doesn't indicate bad fibers.
@@ -16,6 +19,8 @@
 
        Look at: Stone, R. P. 1996, ApJS 107, 423, 
                 Gunn & Stryker 
+
+       BD17 is now assumed with AB_79 = 9.405
 
 * Implement PSF variable sky subtraction
 

@@ -100,6 +100,12 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
 
    superflat, flux, fluxivar, wset, afullbkpt, acoeff, $
     fibermask=fibermask, minval=minval, lower=lower, upper=upper, medval=medval
+
+   if (n_elements(allfullbkpt) EQ 1) then begin
+      splog, 'WARNING: Spline fit failed' 
+      return, -1
+   endif
+
    fit2  = slatec_bvalu(loglam, afullbkpt, acoeff)
 
    ;------
@@ -143,6 +149,11 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
             fullbkpt = slatec_splinefit(loglam[indx,i], ratio, coeff, $
              maxiter=maxiter, upper=upper, lower=lower, /eachgroup, $
              invvar=ratioivar, nord=nord, bkpt=bkpt[istart:iend], mask=mask)
+
+            if (n_elements(fullbkpt) EQ 1) then begin
+               splog, 'WARNING: Spline fit failed' 
+               return, -1
+            endif
 
             ; Evaluate spline fit to this fiber
             fflat[*,i] = slatec_bvalu(loglam[*,i], fullbkpt, coeff)
