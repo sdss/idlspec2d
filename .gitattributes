@@ -79,6 +79,7 @@ pro/idlspec2d_version.pro -text
 pro/locateskylines.pro -text
 pro/logsheet.pro -text
 pro/makefile.old -text
+pro/pixelmask_bits.pro -text
 pro/qaplot_arcline.pro -text
 pro/qaplot_fflat.pro -text
 pro/qaplot_scatlight.pro -text
@@ -131,6 +132,7 @@ pro/spec2d/idlspec2d_version.pro -text
 pro/spec2d/locateskylines.pro -text
 pro/spec2d/logsheet.pro -text
 pro/spec2d/makefile.old -text
+pro/spec2d/pixelmask_bits.pro -text
 pro/spec2d/qaplot_arcline.pro -text
 pro/spec2d/qaplot_fflat.pro -text
 pro/spec2d/qaplot_scatlight.pro -text
