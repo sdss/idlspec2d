@@ -114,10 +114,14 @@ function apo_log_beginplate, platenum, camnames
 
    ncams = n_elements(camnames)
 
+   platestr = string(platenum, format='(i4.4)')
+   plotfile = 'snplot-'+platestr+'.ps'
+
    textout = ['<TABLE BORDER=1 CELLPADDING=3>']
    textout = [textout, apo_log_tableline(ncams)]
    textout = [textout, $
-    '<CAPTION><H3> PLATE ' + strtrim(string(platenum),2) + '</H3></CAPTION>' ]
+    '<CAPTION><B> PLATE ' + strtrim(string(platenum),2) + '</B>' $
+    + ' - <A HREF="' + plotfile + '">S/N FIGURE</A>' + '</CAPTION>' ]
    nextline = rowsep + colsep
    for icam=0, ncams-1 do $
     nextline = nextline + colsep + camnames[icam]
