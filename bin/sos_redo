@@ -55,7 +55,7 @@ fi
 # (If it's already running, then I get 2 processes because the back-quoted
 # command launches another shell.)
 
-nrunning=`\ps -A | grep sos_redo | grep -v -e grep | wc -l`
+nrunning=`\ps -elf | grep sos_redo | grep -v -e grep | wc -l`
 if [ $nrunning -gt 2 ] ; then
   echo It appears as though sos_redo is already running.
   exit
