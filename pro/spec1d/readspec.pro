@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   readspec, plate, fiber, [mjd=, znum=, flux=, flerr=, invvar=, $
 ;    andmask=, ormask=, disp=, plugmap=, loglam=, wave=, tsobj=, $
-;    zans=, zline=, synflux=, topdir=, /silent ]
+;    zans=, zline=, synflux=, lineflux=, topdir=, /silent ]
 ;
 ; INPUTS:
 ;   plate      - Plate number(s)
@@ -43,6 +43,7 @@
 ;   zans       - Redshift output structure [NFIBER]
 ;   zline      - Line-fit output structure [NFIBER,NLINE]
 ;   synflux    - Best-fit synthetic eigen-spectrum [NPIXEL,NFIBER]
+;   lineflux   - Best-fit emission line fits + background terms  [NPIXEL,NFIBER]
 ;
 ; COMMENTS:
 ;   One can input PLATE and FIBER as vectors, in which case there must
@@ -140,11 +141,11 @@ end
 pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
  andmask=andmask, ormask=ormask, disp=disp, plugmap=plugmap, $
  loglam=loglam, wave=wave, tsobj=tsobj, zans=zans, zline=zline, $
- synflux=synflux, znum=znum, topdir=topdir, silent=silent
+ synflux=synflux, lineflux=lineflux, znum=znum, topdir=topdir, silent=silent
 
    common com_readspec, q_flux, q_flerr, q_invvar, q_andmask, q_ormask, $
     q_disp, q_plugmap, q_loglam, q_wave, q_tsobj, q_zans, q_zline, $
-    q_synflux, q_mjd
+    q_synflux, q_lineflux, q_mjd
 
    platestr = string(plate,format='(i4.4)')
    if (NOT keyword_set(mjd)) then mjdstr = '*' $
@@ -171,6 +172,7 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       zans = 0
       zline = 0
       synflux = 0
+      lineflux = 0
       return
    end
 
@@ -239,39 +241,14 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
             fits_close, zfcb
          endif else begin
             zhdr = headfits(zfile, exten=1)
-            nper = sxpar(zhdr,'NAXIS2') / 640L
+            nper = sxpar(zhdr, 'DIMS0')
+            if (nper EQ 0) then $
+             nper = sxpar(zhdr, 'NAXIS2') / 640L ; Assume 640 objects???
             fits_open, zfile, zfcb
             zans = rspec_mrdfits(zfcb, 1, rownums=rownums*nper+znum-1, $
              silent=silent)
             fits_close, zfcb
          endelse
-      endif
-   endif
-
-   if (q_zline) then begin
-      linefile = 'spZline-' + platestr + '-' + mjdstr + '.fits'
-
-      linefile = lookforgzip(filepath(linefile, root_dir=topdir, $
-       subdirectory=platestr), count=ct)
-      if (ct GT 1) then linefile = linefile[ (reverse(sort(linefile)))[0] ] $
-       else linefile = linefile[0]
-
-      if (keyword_set(linefile)) then begin
-         linehdr = headfits(linefile, exten=1)
-         nper = sxpar(linehdr,'NAXIS2') / 640L
-         nrows = n_elements(rownums)
-
-         fits_open, linefile, linefcb
-         allrows = reform( rebin(reform(rownums*nper,1,nrows), nper, nrows), $
-          nper*nrows ) $
-          + reform( rebin(lindgen(nper), nper, nrows), nper*nrows)
-         allrows = (rebin(reform(rownums*nper,1,nrows), nper, nrows))[*] $
-          + (rebin(lindgen(nper), nper, nrows))[*]
-         zline = rspec_mrdfits(linefcb, 1, $
-          rownums=allrows, silent=silent)
-         fits_close, linefcb
-
-         zline = reform(zline, nper, nrows)
       endif
    endif
 
@@ -288,6 +265,43 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       endelse
    endif
 
+   if (q_zline OR q_lineflux) then begin
+      linefile = 'spZline-' + platestr + '-' + mjdstr + '.fits'
+
+      linefile = lookforgzip(filepath(linefile, root_dir=topdir, $
+       subdirectory=platestr), count=ct)
+      if (ct GT 1) then linefile = linefile[ (reverse(sort(linefile)))[0] ] $
+       else linefile = linefile[0]
+   endif
+
+   if (q_zline AND keyword_set(linefile)) then begin
+      linehdr = headfits(linefile)
+      nlines = sxpar(linehdr, 'DIMS0')
+      if (nlines EQ 0) then $
+       nlines = sxpar(linehdr, 'NAXIS2') / 640L ; Assume 640 objects???
+
+      nrows = n_elements(rownums)
+
+      fits_open, linefile, linefcb
+      allrows = reform( rebin(reform(rownums*nlines,1,nrows), nlines, nrows), $
+       nlines*nrows ) $
+       + reform( rebin(lindgen(nlines), nlines, nrows), nlines*nrows)
+      allrows = (rebin(reform(rownums*nlines,1,nrows), nlines, nrows))[*] $
+       + (rebin(lindgen(nlines), nlines, nrows))[*]
+      zline = rspec_mrdfits(linefcb, 1, $
+       rownums=allrows, silent=silent)
+      fits_close, linefcb
+
+      zline = reform(zline, nlines, nrows)
+   endif
+
+   if (q_lineflux AND keyword_set(linefile)) then begin
+      ; Read the line fit flux from the Zline file
+      fits_open, linefile, linefcb
+      lineflux = rspec_mrdfits(linefcb, 2, rownums=rownums, silent=silent)
+      fits_close, linefcb
+   endif
+
    if (q_mjd) then begin
       if (NOT keyword_set(hdr)) then hdr = headfits(filename)
       mjd = sxpar(hdr, 'MJD')
@@ -302,19 +316,19 @@ end
 pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
  andmask=andmask, ormask=ormask, disp=disp, plugmap=plugmap, $
  loglam=loglam, wave=wave, tsobj=tsobj, zans=zans, zline=zline, $
- synflux=synflux, znum=znum, topdir=topdir, silent=silent
+ synflux=synflux, lineflux=lineflux, znum=znum, topdir=topdir, silent=silent
 
    if (n_params() LT 1) then begin
       print, 'Syntax: readspec, plate, [ fiber, mjd=, znum=, flux=, flerr=, invvar=, $'
       print, ' andmask=, ormask=, disp=, plugmap=, loglam=, wave=, tsobj=, $'
-      print, ' zans=, zline=, synflux=, topdir=, /silent ] '
+      print, ' zans=, zline=, synflux=, lineflux=, topdir=, /silent ] '
       return
    endif
 
    ; This common block specifies which keywords will be returned.
    common com_readspec, q_flux, q_flerr, q_invvar, q_andmask, q_ormask, $
     q_disp, q_plugmap, q_loglam, q_wave, q_tsobj, q_zans, q_zline, $
-    q_synflux, q_mjd
+    q_synflux, q_lineflux, q_mjd
 
    if (NOT keyword_set(topdir)) then begin
       topdir = getenv('SPECTRO_DATA')
@@ -335,6 +349,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    q_zans = arg_present(zans)
    q_zline = arg_present(zline)
    q_synflux = arg_present(synflux)
+   q_lineflux = arg_present(lineflux)
    q_mjd = arg_present(mjd) AND (keyword_set(mjd) EQ 0)
 
    nplate = n_elements(plate)
@@ -387,6 +402,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       zans1 = 0
       zline1 = 0
       synflux1 = 0
+      lineflux1 = 0
 
       indx = where(platevec EQ platenums[ifile] AND mjdvec EQ mjdnums[ifile])
       irow = fibervec[indx] - 1
@@ -398,7 +414,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
        flux=flux1, flerr=flerr1, invvar=invvar1, andmask=andmask1, $
        ormask=ormask1, disp=disp1, plugmap=plugmap1, loglam=loglam1, $
        wave=wave1, tsobj=tsobj1, zans=zans1, zline=zline1, $
-       synflux=synflux1, znum=znum, topdir=topdir, silent=silent
+       synflux=synflux1, lineflux=lineflux1, znum=znum, topdir=topdir, silent=silent
 
       if (ifile EQ 0) then begin
          allindx = indx
@@ -415,6 +431,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
          if (q_zans) then zans = zans1
          if (q_zline) then zline = zline1
          if (q_synflux) then synflux = synflux1
+         if (q_lineflux) then lineflux = lineflux1
          if (q_mjd) then mjd = mjd1
       endif else begin
          allindx = [allindx, indx]
@@ -430,9 +447,10 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
          if (q_tsobj) then tsobj = struct_append(tsobj, [tsobj1])
          if (q_zans) then zans = struct_append(zans, [zans1])
 ;         if (q_zline) then zline = struct_append(zline, [zline1])
-; ???
+; Below will not always work ???
          if (q_zline) then zline = [[zline], [zline1]]
          if (q_synflux) then spec_append, synflux, synflux1
+         if (q_lineflux) then spec_append, lineflux, lineflux1
          if (q_mjd) then mjd = [mjd, mjd1]
       endelse
    endfor
@@ -463,6 +481,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
        copy_struct_inx, zline, zline, index_to=allindx
    endif
    if (q_synflux) then synflux[*,[allindx]] = synflux[*]
+   if (q_lineflux) then lineflux[*,[allindx]] = lineflux[*]
    if (q_mjd) then mjd[allindx] = mjd[*]
 
    if (keyword_set(silent)) then print
