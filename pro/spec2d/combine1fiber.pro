@@ -148,6 +148,10 @@ pro combine1fiber, inloglam, objflux, objivar, $
          ss = isort[ig1[igrp] : ig2[igrp]]
          bkpt = 0
 
+; Work-around for bug in Slatec code !!! (???)
+if (n_elements(ss) LE 2) then begin
+   bmask = bytarr(n_elements(ss)) ; All set to zero
+endif else begin
          if (keyword_set(objivar)) then begin
             fullbkpt = slatec_splinefit(inloglam[ss], objflux[ss], coeff, $
              nord=nord, eachgroup=1, maxiter=20, upper=3.0, lower=3.0, $
@@ -159,6 +163,7 @@ pro combine1fiber, inloglam, objflux, objivar, $
              bkspace=bkptbin, bkpt=bkpt, mask=bmask, $
              /silent)
          endelse
+endelse
 
          inside = where(newloglam GE min(bkpt) $
           AND newloglam LE max(bkpt), numinside)
@@ -167,7 +172,7 @@ pro combine1fiber, inloglam, objflux, objivar, $
             splog,'WARNING: No wavelengths inside breakpoints'
          endif else if (total(abs(coeff)) EQ 0.0) then begin
             splog,'WARNING: All B-spline coefficients have been set to zero!'
-         endif else begin         
+         endif else begin
 
             newflux[inside] = slatec_bvalu(newloglam[inside], fullbkpt, coeff)
 
@@ -185,6 +190,9 @@ pro combine1fiber, inloglam, objflux, objivar, $
                ; of masked pixels with b-spline evaluations.
 ;               objflux[ss[ireplace]] = $
 ;                slatec_bvalu(inloglam[ss[ireplace]],fullbkpt,coeff)
+
+               ; Set the inverse variance of these pixels to zero.
+               objivar[ss[ireplace]] = 0.0
 
                if (keyword_set(finalmask)) then $
                 finalmask[ss[ireplace]] = finalmask[ss[ireplace]] OR $
