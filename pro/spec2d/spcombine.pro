@@ -15,7 +15,7 @@
 ;                plan files matching 'spPlancomb*.par'
 ;   docams     - Cameras to combine; default to ['b1', 'b2', 'r1', 'r2']
 ;   adderr     - Additional error to add to the formal errors, as a
-;                fraction of the flux; default to 0.01 (1 per cent).
+;                fraction of the flux; default to 0.03 (3 per cent).
 ;   xdisplay   - Send plots to X display rather than to plot file
 ;
 ; OUTPUT:
