@@ -1,4 +1,8 @@
 
+MYFLUXCALIB: Fix bug whereby the PCA spectrum could be negative.
+     (The routine PCA_SOLVE() can return a negative-valued spectrum even
+     if all the input spectra are positive-valued.)  This crashed plate 340.
+
 eviltarball (in idlutils): New script to export a version of a code
          and build a tar file for distribution.
 
