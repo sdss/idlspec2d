@@ -212,6 +212,7 @@ function spfluxcorr_solve, loglam, aflux, bflux, sqivar, mask=mask1, $
    ; Set default return values
    ymult = 0
    madd = 0
+   sigvec = 0 * aflux
 
    ; Construct the polynomial and additive vectors
    aarr = spfluxcorr_vectors(loglam, npoly)
