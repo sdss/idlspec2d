@@ -167,7 +167,6 @@ pro/spec2d/sshift2d.pro -text
 pro/spec2d/sshiftvec.pro -text
 pro/spec2d/superflat.pro -text
 pro/spec2d/telluric_corr.pro -text
-pro/spec2d/testextract.pro -text
 pro/spec2d/trace320cen.pro -text
 pro/spec2d/trace320crude.pro -text
 pro/spec2d/trace_crude.pro -text
@@ -191,7 +190,6 @@ pro/sshift2d.pro -text
 pro/sshiftvec.pro -text
 pro/superflat.pro -text
 pro/telluric_corr.pro -text
-pro/testextract.pro -text
 pro/trace320cen.pro -text
 pro/trace320crude.pro -text
 pro/trace_crude.pro -text
