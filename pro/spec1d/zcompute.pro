@@ -31,8 +31,8 @@
 ;   pmax       - The largest redshift to consider [pixels].
 ;                [Scalar or vector of size NOBJ]
 ;   mindof     - Minimum number of degrees of freedom for a valid fit.
-;   width      - Parameter for FIND_NPEAKS(); default to 3 * PSPACE.
-;   minsep     - Parameter for FIND_NPEAKS()
+;   width      - Parameter for FIND_NMINIMA(); default to 3 * PSPACE.
+;   minsep     - Parameter for FIND_NMINIMA()
 ;
 ; OUTPUTS:
 ;   zans       - Output structure [NOBJECT,NFIND] with the following elements:
@@ -181,11 +181,11 @@ function zcompute, objflux, objivar, starflux, starmask, nfind=nfind, $
    objmask = objivar NE 0
 
    for ilag=0L, nlag-1 do begin
-      j1 = lags[ilag] < (npixstar-1)
+      j1 = lags[ilag] < (npixstar-1L)
       if (j1 LT 0) then i1 = -j1 $
-       else i1 = 0
-      j1 = j1 > 0
-      j2 = npixstar-1 < (npixobj+j1-i1-1)
+       else i1 = 0L
+      j1 = j1 > 0L
+      j2 = npixstar-1 < (npixobj+j1-i1-1L)
       i2 = i1 + j2 - j1
       chi2arr[ilag] = computechi2( objflux[i1:i2], $
        sqivar[i1:i2] * starmask[j1:j2], starflux[j1:j2,*], $
@@ -199,7 +199,7 @@ function zcompute, objflux, objivar, starflux, starmask, nfind=nfind, $
    endfor
 
    ;-----
-   ; Fit this chi2/DOF minimum with a parabola
+   ; Fit this chi2/DOF minimum
 
    indx = where(dofarr GT mindof, ct)
    if (ct GT width) then begin
