@@ -41,6 +41,7 @@ pro pca_star
    wavemax = 0
    snmax = 100
    niter = 10
+   cspeed = 2.99792458d5
 
    get_juldate, jd
    mjdstr = string(long(jd-2400000L), format='(i5)')
@@ -117,7 +118,7 @@ ormask = 0 ; Free memory
       if (nsubclass EQ 1) then nkeep = 1 $
        else nkeep = 2
       pcaflux = pca_solve(objflux[*,indx], objivar[*,indx], objloglam[*,indx], $
-       slist[indx].z, wavemin=wavemin, wavemax=wavemax, $
+       slist[indx].cz/cspeed, wavemin=wavemin, wavemax=wavemax, $
        niter=niter, nkeep=nkeep, newloglam=newloglam, $
        eigenval=eigenval, acoeff=acoeff)
 
