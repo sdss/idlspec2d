@@ -92,8 +92,10 @@ pro apo_appendlog, logfile, rstruct, tstruct
       pp = mrdfits(logfile, thishdu)
 
       ; check to see if this entry exists, if so overwrite:
-      exists = where(pp.expnum EQ rstruct.expnum AND $
-                     pp.camera EQ rstruct.camera)
+      exists = -1
+      if keyword_set(pp) then $
+        exists = where(pp.expnum EQ rstruct.expnum AND $
+                       pp.camera EQ rstruct.camera)
 
       if exists[0] EQ -1 then pp = struct_append(pp, rstruct) $
       else pp[exists[0]] = rstruct
@@ -107,9 +109,12 @@ pro apo_appendlog, logfile, rstruct, tstruct
    if (keyword_set(tstruct)) then begin
       pp = mrdfits(logfile, 5)
 
-     ;-----------------------------------------------
-     ; check to see if this entry exists, if so overwrite:
-      exists = where(strtrim(pp.filename,2) NE strtrim(tstruct[0].filename,2))
+      ;-----------------------------------------------
+      ; check to see if this entry exists, if so overwrite:
+      exists = -1
+      if keyword_set(pp) then $
+        exists = where(strtrim(pp.filename,2) NE strtrim(tstruct[0].filename,2))
+
       if exists[0] NE -1 then begin
          pp = pp[exists] 
          pp = struct_append(pp, tstruct) 
