@@ -7,14 +7,15 @@
 ;   of data according to a plan file.
 ;
 ; CALLING SEQUENCE:
-;   spallreduce, planfile=, [ docams=, /combineonly, /xdisplay ]
+;   spallreduce, planfile=, [ docams=, /nocombine, /xdisplay ]
 ;
 ; INPUTS:
 ;
 ; OPTIONAL INPUTS:
 ;   planfile   - Name of output plan file; default to 'spPlan2d.par'
-;   docams     - Cameras to reduce; default to ['b1', 'r2', 'b2', 'r1']
-;   combineonly- Only run COMBINE2DOUT, and not SPREDUCE
+;   docams     - Cameras to reduce; default to ['b1', 'r2', 'b2', 'r1'];
+;                set to 0 to disable running SPREDUCE.
+;   nocombine  - Only run SPREDUCE, not COMBINE2DOUT.
 ;   xdisplay   - Send plots to X display rather than to plot file
 ;
 ; OUTPUT:
@@ -48,20 +49,13 @@
 ;------------------------------------------------------------------------------
 
 pro spallreduce, planfile=planfile, docams=docams, $
- combineonly=combineonly, xdisplay=xdisplay
+ nocombine=nocombine, xdisplay=xdisplay
 
    if (NOT keyword_set(planfile)) then planfile = 'spPlan2d.par'
 
-   docomb = 0
-   if (NOT keyword_set(docams)) then begin
-      docams = ['b1', 'r2', 'b2', 'r1'] ; do all cameras
-      docomb = 1
-   endif
-   ndocam = N_elements(docams)
-   if (keyword_set(combineonly)) then begin
-      docams = ''
-      ndocam = 0
-   endif
+   if (NOT keyword_set(docams)) then docams = ['b1', 'r2', 'b2', 'r1']
+   if (keyword_set(docams)) then ndocam = N_elements(docams) $
+    else ndocam = 0
 
    yanny_read, planfile, pdata, hdr=hdr
 
@@ -245,7 +239,7 @@ pro spallreduce, planfile=planfile, docams=docams, $
 
       ; Combine all red+blue exposures for a given sequence
 
-      if (docomb) then begin
+      if (NOT keyword_set(nocombine)) then begin
 
          spawn, 'mkdir -p '+combineDir
 
