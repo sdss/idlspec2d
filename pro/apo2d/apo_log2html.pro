@@ -150,12 +150,26 @@ function apo_log_fields, pp, fields, printnames=printnames, formats=formats
    if (igood[0] EQ -1) then return, ''
 
    flavor = pp[igood[0]].flavor
-   expstring = string(pp[igood[0]].expnum, format='(i8.8)')
-   jd = 2400000.5D + pp[igood[0]].tai / (24.D*3600.D)
-   caldat, jd, jd_month, jd_day, jd_year, jd_hr, jd_min, jd_sec
-   utstring = string(jd_hr, jd_sec, format='(i2.2,":",i2.2,"Z")')
-   tags = tag_names(pp[igood[0]])
 
+   ; Print the exposure number as long as EXPNUM is set, which is always
+   ; case except for the TOTAL S/N^2 row.
+   if (keyword_set(pp[igood[0]].expnum)) then begin
+      expstring = string(pp[igood[0]].expnum, format='(i8.8)')
+   endif else begin
+      expstring = ''
+   endelse
+
+   ; Print the UT time as long as TAI is set, which is alsways the
+   ; case except for the TOTAL S/N^2 row.
+   if (pp[igood[0]].tai NE 0) then begin
+      jd = 2400000.5D + pp[igood[0]].tai / (24.D*3600.D)
+      caldat, jd, jd_month, jd_day, jd_year, jd_hr, jd_min, jd_sec
+      utstring = string(jd_hr, jd_sec, format='(i2.2,":",i2.2,"Z")')
+   endif else begin
+      ustring = ''
+   endelse
+
+   tags = tag_names(pp[igood[0]])
    for ifield=0, n_elements(fields)-1 do begin
       itag = (where(fields[ifield] EQ tags))[0]
       if (keyword_set(printnames)) then nextline = colsep + printnames[ifield] $
