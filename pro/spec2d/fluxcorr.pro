@@ -194,11 +194,22 @@ function fluxcorr, flux, fluxivar, wset, plugsort, color=color, $
 
 ;	cheap scaling
 ;
-;	at v=0, flux at 5556A is 956 photons/cm/A/s
-;	        = 3.32e-10 ergs/cm^2/s/A
+;	at v=0, flux at 5556A is 956 photons/cm^2/A/s
+;	        = 3.52e-9 ergs/cm^2/s/A
 ;	scale to r', with 10^(-r'/2.5)
 ;	and return in units to 1e-17 ergs/cm/s/A
-;	so factor in exponent is 10^((21.34 - r')/2.5)
+;	so factor in exponent is 10^((21.37 - r')/2.5)
+;
+;	AB magnitude, the scaling this assumes
+;       the AB magnitude of BD+17 is 9.4 at 5560
+;
+;	we then use f_nu = 10^-0.4*(AB+48.6)
+;       and then f_lambda = f_nu * c / (lambda)^2
+;  
+;       c is 3.0e18 Ang/s
+;       lambda is in Ang
+;
+;
 ;
 ;	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ;	  What we really need is an accurate prediction of
@@ -210,7 +221,7 @@ function fluxcorr, flux, fluxivar, wset, plugsort, color=color, $
 ;
 
 
-	scaling = 10^((21.34 - plugsort[spectrophoto[bestcolor]].mag[2])/2.5)
+	scaling = 10^((21.37 - plugsort[spectrophoto[bestcolor]].mag[2])/2.5)
 
         fullfit = slatec_bvalu(wave, fullbkpt, coeff)
 
