@@ -238,8 +238,12 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    splog, 'Best flat = ', flatname[ibest]
    splog, 'Best arc = ', arcname[ibest]
 
-   if ((color EQ 'blue' AND bestcorr LT 0.5) $
-    OR (color EQ 'red'  AND bestcorr LT 0.7) ) then begin
+   if ((color EQ 'blue' AND bestcorr LT 0.7) $
+    OR (color EQ 'red'  AND bestcorr LT 0.8) ) then begin
+      splog, 'WARNING: Best arc correlation = ', bestcorr
+   endif else $
+    if ((color EQ 'blue' AND bestcorr LT 0.5) $
+    OR (color EQ 'red'  AND bestcorr LT 0.5) ) then begin
       splog, 'ABORT: Best arc correlation = ', bestcorr
       return
    endif
@@ -290,6 +294,8 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    ;---------------------------------------------------------------------------
 
    fflat = fiberflat(flat_flux, flat_fluxivar, wset, fibermask=fibermask)
+;   fflat = fiberflat(flat_flux, flat_fluxivar, wset, fibermask=fibermask, $
+;    /dospline)
 
    qaplot_fflat, fflat, wset, filename=flatname[ibest]
 
