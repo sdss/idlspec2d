@@ -8,7 +8,8 @@
 ; CALLING SEQUENCE:
 ;   spcoadd_v5, spframes, outputname, $
 ;    [ mjd=, binsz=, zeropoint=, nord=, wavemin=, $
-;    bkptbin=, window=, maxsep=, adderr=, plotsnfile=, combinedir= ]
+;    bkptbin=, window=, maxsep=, adderr=, plotsnfile=, $
+;    combinedir=, bestexpnum= ]
 ;
 ; INPUTS:
 ;   spframes       - Name(s) of files to combine (written by SPREDUCE)
@@ -35,6 +36,9 @@
 ;   adderr         - Additional error to add to the formal errors, as a
 ;                    fraction of the flux.
 ;   combinedir     - Optional output directory
+;   bestexpnum     - Exposure number for best exposure, to which all other
+;                    exposures are tied; this is only used in this procedure
+;                    for logging in the FITS header
 ;
 ; OUTPUTS:
 ;
@@ -92,7 +96,7 @@ function makelabel, hdr
    flat  =  strmid(sxpar(hdr, 'FLATFILE'),7,8)
    arc   =  strmid(sxpar(hdr, 'ARCFILE'),7,8)
 
-   label = string(camera, "-", expos, flat, arc, $
+   label = string(camera, expos, flat, arc, $
     format='(a2,"-",i8.8,"-",a8,"-",a8)')
 
    return, label
@@ -118,7 +122,8 @@ end
 pro spcoadd_v5, spframes, outputname, $
  mjd=mjd, binsz=binsz, zeropoint=zeropoint, nord=nord, wavemin=wavemin, $
  bkptbin=bkptbin, window=window, maxsep=maxsep, adderr=adderr, $
- docams=camnames, plotsnfile=plotsnfile, combinedir=combinedir
+ docams=camnames, plotsnfile=plotsnfile, combinedir=combinedir, $
+ bestexpnum=bestexpnum
 
    if (NOT keyword_set(binsz)) then binsz = 1.0d-4 $
     else binsz = double(binsz)
@@ -558,6 +563,8 @@ pro spcoadd_v5, spframes, outputname, $
    for ifile=0,nfiles-1 do $
     sxaddpar, hdr, string('EXPID',ifile+1, format='(a5,i2.2)'), label[ifile], $
      ' ID string for exposure '+strtrim(string(ifile),2), before='EXPTIME'
+   if (keyword_set(bestexpnum)) then $
+    sxaddpar, hdr, 'BESTEXP', bestexpnum, beforee='EXPID01'
 
    sxaddpar, hdr, 'EXPTIME', min(exptimevec), $
     ' Minimum of exposure times for all cameras'

@@ -94,7 +94,7 @@ function makelabel, hdr
    flat  =  strmid(sxpar(hdr, 'FLATFILE'),7,8)
    arc   =  strmid(sxpar(hdr, 'ARCFILE'),7,8)
 
-   label = string(camera, "-", expos, flat, arc, $
+   label = string(camera, expos, flat, arc, $
     format='(a2,"-",i8.8,"-",a8,"-",a8)')
 
    return, label
