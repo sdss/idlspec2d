@@ -25,7 +25,7 @@
 ;                integer-valued, but could be for example '51441_test'.
 ;   mjstart    - Starting MJD.
 ;   mjend      - Ending MJD.
-;   minexp     - Minimum exposure time for science frames; default to 300 sec.
+;   minexp     - Minimum exposure time for science frames; default to 0 sec.
 ;   copydir    - Copy the output log files to this directory; default to
 ;                the current directory.
 ;
@@ -76,7 +76,7 @@ pro apoall, rawdir, astrolog=astrolog, flatdir=flatdir, mjd=mjd, $
    if (NOT keyword_set(astrolog)) then $
     astrolog = strmid(rawdir, 0, rstrpos(rawdir,'/')+1) + 'astrolog'
    if (NOT keyword_set(flatdir)) then flatdir = 'pixflat'
-   if (NOT keyword_set(minexp)) then minexp = 300
+   if (n_elements(minexp) EQ 0) then minexp = 0
 
    ;  This trick expands directories
    cd, rawdir, current=olddir
