@@ -130,6 +130,10 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
       yfit = ypos*0.0
       if (NOT keyword_set(inputans)) then curans = fltarr(ncoeff)
 
+      ; Header for Schlegel counter
+      print, ''
+      print, ' TRACE# NPOINTS NREJECT'
+
       for itrace=0, ntrace-1 do begin
 ;         res = svdfit(2.0*(xpos[*,i]-xmid)/xrange, ypos[*,itrace], ncoeff, $
 ;          /double, function_name=function_name, singular=singular)
@@ -201,14 +205,14 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
   
          yfit[*,itrace] = ycurfit 
          tset.coeff[*,itrace] = res
-         if (nreject GT 0) then $
-          print, 'Rejected ', nreject, ' of ', nx, ' points on trace ', itrace
 
          xmask[*,itrace] = qgood
 
-         ; Burles counter of row number...
-         print, format='($, ".",i4.4,a5)', itrace, string([8b,8b,8b,8b,8b])
+         ; Schlegel counter of row number...
+         print, format='(i7,i8,i8,a1,$)', itrace, nx, nreject, string(13b)
       endfor
+
+      print, ''
 
    endif else begin
       message, 'Unknown function' + func
