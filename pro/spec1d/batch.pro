@@ -50,10 +50,10 @@
 ;   17-Oct-2000  Written by D. Schlegel, Princeton
 ;-
 ;------------------------------------------------------------------------------
-pro batch_spawn, command, retval
+pro batch_spawn, command, retval, _EXTRA=EXTRA
 
    splog, command
-   spawn, command, retval
+   spawn, command, retval, _EXTRA=EXTRA
 
    return
 end
@@ -194,9 +194,9 @@ pro batch_assign_job, ihost, iprog
       batch_spawn, prothost + 'mkdir -p ' $
        + string(newdir[iuniq]+' ',format='(99a)')
 
-      ; Launch the command in the background
+      ; Launch the command in the background, and pipe results to /dev/null
       batch_spawn, prothost + sq+'cd '+hostlist[ihost].remotedir+'; ' $
-       +proglist[iprog].command + ' &'+sq, retstring
+       +proglist[iprog].command + ' >& /dev/null &'+sq, retstring
 
    endif else begin
 
@@ -206,8 +206,8 @@ pro batch_assign_job, ihost, iprog
       batch_spawn, 'mkdir -p ' $
        + string(newdir[iuniq]+' ',format='(99a)')
 
-      ; Launch the command in the background
-      batch_spawn, proglist[iprog].command + ' &', retstring
+      ; Launch the command in the background, and pipe results to /dev/null
+      batch_spawn, proglist[iprog].command + ' >& /dev/null &', retstring
 
    endelse
 
@@ -367,6 +367,7 @@ pro batch, topdir, localfile, outfile, protocol, remotehost, remotedir, $
       ;----------
       ; Sleep
 
+      splog, 'Sleeping for ', wtime, ' seconds'
       if (ndone LT nprog) then wait, wtime
 
    endwhile
