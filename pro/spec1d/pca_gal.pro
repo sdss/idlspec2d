@@ -15,7 +15,7 @@ pro pca_gal
    ; Read the input spectra
 
    eigenfile = filepath('eigeninput_gal.dat', $
-    root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
+    root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='templates')
    readcol, eigenfile, skip=2, plate, mjd, fiber, zfit, format='(L,L,L,D)'
 ;readcol, eigenfile, skip=2, plate, mjd, fiber, zfit, format='(L,L,L,D)', $
 ; numline=20 ; ???

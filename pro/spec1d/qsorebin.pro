@@ -8,7 +8,7 @@ pro qsorebin
    ; in log-wavelength.
 
    tfile = filepath('qso.template', $
-    root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='misc')
+    root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='templates')
    djs_readcol, tfile, twave, tflux, terr, lq, uq, npt, $
     format='(D,F,F,F,F,L)'
    tloglam0 = alog10(twave[0])
@@ -31,8 +31,7 @@ pro qsorebin
 
    sxaddpar, hdr, 'COEFF0', newloglam[0]
    sxaddpar, hdr, 'COEFF1', objdloglam
-   mwrfits, newflux, $
-    '/home/schlegel/idlspec2d/etc/spEigenQSO.fits', hdr, /create
+   mwrfits, newflux, 'spEigenQSO.fits', hdr, /create
 
 stop
 end
