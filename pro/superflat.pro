@@ -38,6 +38,11 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   djs_maskinterp()
+;   djs_mean()
+;   djs_oplot
+;   djs_plot
+;   slatec_bvalu()
 ;   slatec_splinefit()
 ;   traceset2xy
 ;
@@ -89,7 +94,7 @@ pro superflat, flux, fluxivar, wset, fullbkpt, coeff, $
    for i=0, ntrace-1 do begin
       indx = where(qq[*,i], ntmp)
       tmpmask = fluxivar[indx,i] EQ 0
-      tmpflux = djs_linterp( flux[indx,i], tmpmask )
+      tmpflux = djs_maskinterp( flux[indx,i], tmpmask )
       fracpts[i] = 1.0 - total(tmpmask)/N_elements(tmpmask)
       if (ntmp GT filtsz) then $
        medval[i] = djs_mean( $
