@@ -407,6 +407,7 @@ pro/spec2d/smooth_superflat.pro -text
 pro/spec2d/sortplugmap.pro -text
 pro/spec2d/spadd_guiderinfo.pro -text
 pro/spec2d/spallflat.pro -text
+pro/spec2d/spbiasave.pro -text
 pro/spec2d/spbiasgen.pro -text
 pro/spec2d/spcalib.pro -text
 pro/spec2d/spcoadd_frames.pro -text
