@@ -6,12 +6,12 @@
 ;   Combine several reduced frames of the same objects
 ;
 ; CALLING SEQUENCE:
-;   spcoadd_frames, filenames, outputname, $
+;   spcoadd_frames, spframes, outputname, $
 ;    fcalibprefix=, [ mjd=, binsz=, zeropoint=, nord=, wavemin=, $
 ;    bkptbin=, window=, maxsep=, adderr=, plotsnfile=, combinedir= ]
 ;
 ; INPUTS:
-;   filenames      - Name(s) of files to combine (written by SPREDUCE)
+;   spframes       - Name(s) of files to combine (written by SPREDUCE)
 ;   outputname     - Output file name
 ;
 ; REQUIRED KEYWORDS:
@@ -116,7 +116,7 @@ pro add_iraf_keywords, hdr, wavemin, binsz
 end
 
 ;------------------------------------------------------------------------------
-pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
+pro spcoadd_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
  mjd=mjd, binsz=binsz, zeropoint=zeropoint, nord=nord, wavemin=wavemin, $
  bkptbin=bkptbin, window=window, maxsep=maxsep, adderr=adderr, $
  docams=camnames, plotsnfile=plotsnfile, combinedir=combinedir
@@ -131,10 +131,10 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
    ; Sort filenames such that this list contains first the blue then the red
 ; Why should this matter to sort them ???
 
-   nfiles = n_elements(filenames)
+   nfiles = n_elements(spframes)
    if (nfiles EQ 0) then return
 
-   filenames = filenames[sort(filenames)]
+   filenames = spframes[sort(spframes)]
 
    ;---------------------------------------------------------------------------
 
@@ -145,7 +145,6 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
    ;---------------------------------------------------------------------------
    ; Loop through each 2D output and read in the data
    ;---------------------------------------------------------------------------
-
    for ifile=0, nfiles-1 do begin
 
       ;----------
