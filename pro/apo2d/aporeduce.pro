@@ -24,8 +24,8 @@
 ;   plugdir    - Input directory for PLUGFILE; default to '.'
 ;   minexp     - Minimum exposure time for science frames; default to 61 sec
 ;   copydir    - If set, then copy the output log files to this directory using
-;                "scp1" copy.  Normally, one want to set this to
-;                'plate-mapper:/???'
+;                "scp1" copy.  Make an additional copy of the HTML file
+;                called 'logsheet-current.html'.
 ;
 ; OUTPUT:
 ;
@@ -207,7 +207,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    ; we re-generate the HTML file for all plates and the S/N plot for
    ; this plate.
    ; Optionally copy it to the directory specified by COPYDIR.
-   ;
+   ; Make an additional copy of the HTML file called 'logsheet-current.html'.
 
    if (camnames[icam] EQ 'r2' AND keyword_set(rstruct)) then begin
       wait, 10
@@ -221,6 +221,8 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
          splog
          splog, 'Copying files to ', copydir
          spawn, 'scp1 ' + htmlfile + ' ' + copydir
+         spawn, 'scp1 ' + htmlfile + ' ' + $
+          filepath('logsheet-current.html', root_dir=copydir)
          spawn, 'scp1 ' + plotfile + ' ' + copydir
          splog, 'Done.'
       endif
