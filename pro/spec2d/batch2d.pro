@@ -44,6 +44,7 @@
 ;   djs_batch
 ;   djs_filepath()
 ;   fileandpath()
+;   repstr()
 ;   splog
 ;   yanny_free
 ;   yanny_read
@@ -100,31 +101,44 @@ function batch2d_rawfiles, planfile, outfile=outfile
    for ii=0, n_elements(pp)-1 do begin
       sname = tag_names(*pp[ii], /structure_name)
       if (sname EQ 'SPEXP') then begin
-         expfiles = ((*pp[ii]).name)[*]
+         expfiles = ((*pp[ii]).name)
       endif
    endfor
 
    ; Add a wildcard to the end of the raw FITS files so that we
    ; find compressed (.gz) files.
    mjdstr = string(thismjd, format='(i05.5)')
-   infiles = djs_filepath(expfiles+'*', root_dir=mjdstr)
+   infiles = djs_filepath(expfiles[*]+'*', root_dir=mjdstr)
 
    ;----------
-   ; Replace the prefix 'sdR' with 'spFrame' in the science frames
-   ; and the suffix '.fit' with '.fits'
+   ; Replace the prefix 'sdR' with 'spSky' in the science frames,
+   ; with 'spArc' for the arc frames, and with 'spFlat' for the flat frames.
+   ; Also, force the suffix from '.fit' to '.fits'.
 
-   newnames = expfiles
-   for i=0, n_elements(newnames)-1 do begin
-      jj = strpos(newnames[i], '-')
-      kk = rstrpos(newnames[i], '.')
-      if (jj NE -1 AND kk NE -1) then $
-       newnames[i] = 'spFrame' + strmid(newnames[i], jj, kk-jj) $
-        + '.fits'
+   otherfiles = expfiles
+   if (size(otherfiles,/n_dimen) EQ 1) then nloop=1 $
+    else nloop = (size(otherfiles,/dimens))[1]
+   for i=0, nloop-1 do begin
+      case ((*pp[0]).flavor)[i] of
+         'arc': otherfiles[*,i] = repstr(otherfiles[*,i], 'sdR', 'spArc')
+         'flat': otherfiles[*,i] = repstr(otherfiles[*,i], 'sdR', 'spFlat')
+         'science': otherfiles[*,i] = repstr(otherfiles[*,i], 'sdR', 'spSky')
+      endcase
+      otherfiles[*,i] = repstr(otherfiles[*,i], '.fit', '.fits')
    endfor
+
+   ;----------
+   ; Now get the reduced frames.
+
+   i = where((*pp[0]).flavor EQ 'science')
+   framefiles = expfiles[*,i]
+   framefiles = repstr(framefiles[*,i], 'sdR', 'spFrame')
+   framefiles = repstr(framefiles[*,i], '.fit', '.fits')
 
    outfile = [ djs_filepath(logfile, root_dir=extractdir), $
                djs_filepath(plotfile, root_dir=extractdir), $
-               newnames ]
+               djs_filepath(framefiles[*], root_dir=extractdir), $
+               djs_filepath(otherfiles[*], root_dir=extractdir) ]
 
    yanny_free, pp
 
