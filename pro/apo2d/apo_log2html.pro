@@ -189,13 +189,13 @@ function apo_log_fields, pp, fields, printnames=printnames, formats=formats
    colsep = ' <TD ALIGN=RIGHT> '
 
    ncams = n_elements(pp)
-   igood = where(pp NE ptr_new())
+   igood = where(strtrim(pp.flavor,2) NE '')
    if (igood[0] EQ -1) then return, ''
 
-   flavor = (*pp[igood[0]]).flavor
-   expstring = strtrim(string( (*pp[igood[0]]).expnum ),2)
-   mststring = strtrim(string( (*pp[igood[0]]).mst ),2)
-   tags = tag_names(*pp[igood[0]])
+   flavor = pp[igood[0]].flavor
+   expstring = strtrim(string( pp[igood[0]].expnum ),2)
+   mststring = strtrim(string( pp[igood[0]].mst ),2)
+   tags = tag_names(pp[igood[0]])
 
    for ifield=0, n_elements(fields)-1 do begin
       itag = (where(fields[ifield] EQ tags))[0]
@@ -204,8 +204,8 @@ function apo_log_fields, pp, fields, printnames=printnames, formats=formats
       if (keyword_set(formats)) then format = formats[ifield]
       for icam=0, ncams-1 do begin
          value = ' '
-         if (keyword_set(pp[icam])) then begin
-            tmpval = (*pp[icam]).(itag)
+         if (keyword_set(pp[icam].flavor)) then begin
+            tmpval = pp[icam].(itag)
             if (keyword_set(tmpval)) then $
              value = string(tmpval, format=format)
             value = apo_checklimits(fields[ifield], camnames[icam], tmpval) $
@@ -248,26 +248,17 @@ pro apo_log2html, logfile, htmlfile
    while(djs_lockfile(htmlfile, lun=html_lun) EQ 0) do wait, 5
 
    ; Read in all the HDU's in the log file as structures
-   pstruct = apo_readlog(logfile)
-   if (NOT keyword_set(pstruct)) then return
-   nstruct = n_elements(pstruct)
+   PPFLAT = mrdfits(logfile, 1)
+   PPARC = mrdfits(logfile, 2)
+   PPSCIENCE = mrdfits(logfile, 3)
+   if (NOT keyword_set(PPFLAT)) then begin
+      djs_unlockfile, htmlfile, lun=html_lun
+      return
+   endif
 
-   mjd = lonarr(nstruct)
-   plate = lonarr(nstruct)
-   expnum = lonarr(nstruct)
-   flavor = strarr(nstruct)
-   camera = strarr(nstruct)
-   for ii=0, nstruct-1 do begin
-      mjd[ii] = (*pstruct[ii]).mjd
-      plate[ii] = (*pstruct[ii]).plate
-      expnum[ii] = (*pstruct[ii]).expnum
-      flavor[ii] = (*pstruct[ii]).flavor
-      camera[ii] = (*pstruct[ii]).camera
-   endfor
-
-   allplates = plate[ uniq(plate, sort(plate)) ]
+   allplates = PPFLAT[ uniq(PPFLAT.plate, sort(PPFLAT.plate)) ].plate
    nplates = n_elements(allplates)
-   mjdstr = strtrim(string(mjd[0]),2)
+   mjdstr = strtrim(string(PPFLAT[0].mjd),2)
 
    ;----------
    ; Consruct the header of the output text
@@ -296,22 +287,37 @@ pro apo_log2html, logfile, htmlfile
 
       thisplate = allplates[iplate]
 
-      textout = [textout, apo_log_beginplate(thisplate, mjd[0], camnames)]
+      textout = [textout, $
+       apo_log_beginplate(thisplate, PPFLAT[0].mjd, camnames)]
+
+      ;----------
+      ; Append all WARNINGs and ABORTs for this plate to the following
+
+      warnings = ''
+      aborts = ''
 
       ;----------
       ; Find all flats and loop over each exposure number with any
 
-      ii = where(plate EQ thisplate AND flavor EQ 'flat')
+      if (keyword_set(PPFLAT)) then ii = where(PPFLAT.plate EQ thisplate) $
+       else ii = -1
       if (ii[0] NE -1) then begin
-         allexp = expnum[ii[ uniq(expnum[ii], sort(expnum[ii])) ]]
+         warnings = [warnings, PPFLAT[ii].warnings]
+         aborts = [aborts, PPFLAT[ii].aborts]
+
+         allexp = PPFLAT.expnum
+         allexp = allexp[ii[ uniq(allexp, sort(allexp)) ]]
          nexp = n_elements(allexp)
-         pflats = replicate(ptr_new(), ncams)
+         oneflat = PPFLAT[0]
+         struct_assign, {junk:0}, oneflat ; Zero-out all elements
          for iexp=0, nexp-1 do begin
+            pflats = replicate(oneflat, ncams)
             for icam=0, ncams-1 do begin
-               jj = where(plate EQ thisplate AND flavor EQ 'flat' $
-                AND camera EQ camnames[icam] AND expnum EQ allexp[iexp])
-               if (jj[0] NE -1) then pflats[icam] = pstruct[jj[0]] $
-                else pflats[icam] = ptr_new()
+               jj = where(PPFLAT.plate EQ thisplate $
+                AND PPFLAT.camera EQ camnames[icam] $
+                AND PPFLAT.expnum EQ allexp[iexp])
+               if (jj[0] NE -1) then $
+                copy_struct_inx, PPFLAT[jj], pflats, index_to=icam
             endfor
 
             ; Output table line for this one flat exposure
@@ -326,17 +332,25 @@ pro apo_log2html, logfile, htmlfile
       ;----------
       ; Find all arcs and loop over each exposure number with any
 
-      ii = where(plate EQ thisplate AND flavor EQ 'arc')
+      if (keyword_set(PPARC)) then ii = where(PPARC.plate EQ thisplate) $
+       else ii = -1
       if (ii[0] NE -1) then begin
-         allexp = expnum[ii[ uniq(expnum[ii], sort(expnum[ii])) ]]
+         warnings = [warnings, PPARC[ii].warnings]
+         aborts = [aborts, PPARC[ii].aborts]
+
+         allexp = PPARC.expnum
+         allexp = allexp[ii[ uniq(allexp, sort(allexp)) ]]
          nexp = n_elements(allexp)
-         parcs = replicate(ptr_new(), ncams)
+         onearc = PPARC[0]
+         struct_assign, {junk:0}, onearc ; Zero-out all elements
          for iexp=0, nexp-1 do begin
+            parcs = replicate(onearc, ncams)
             for icam=0, ncams-1 do begin
-               jj = where(plate EQ thisplate AND flavor EQ 'arc' $
-                AND camera EQ camnames[icam] AND expnum EQ allexp[iexp])
-               if (jj[0] NE -1) then parcs[icam] = pstruct[jj[0]] $
-                else parcs[icam] = ptr_new()
+               jj = where(PPARC.plate EQ thisplate $
+                AND PPARC.camera EQ camnames[icam] $
+                AND PPARC.expnum EQ allexp[iexp])
+               if (jj[0] NE -1) then $
+                copy_struct_inx, PPARC[jj], parcs, index_to=icam
             endfor
 
             formats = ['(f7.1)', '(f7.1)', '(f4.2)', '(i)']
@@ -350,20 +364,26 @@ pro apo_log2html, logfile, htmlfile
       ; Find all science exposures and collect them into one structure
 
       ; Now find all unique science exposure numbers for this plate
-      ii = where(plate EQ thisplate $
-       AND (flavor EQ 'science' OR flavor EQ 'smear'))
+      if (keyword_set(PPSCIENCE)) then ii = where(PPSCIENCE.plate EQ thisplate) $
+       else ii = -1
       if (ii[0] NE -1) then begin
-         allexp = expnum[ii[ uniq(expnum[ii], sort(expnum[ii])) ]]
-         nexp = n_elements(allexp)
+         warnings = [warnings, PPSCIENCE[ii].warnings]
+         aborts = [aborts, PPSCIENCE[ii].aborts]
 
-         pscience = replicate(ptr_new(), ncams, nexp)
+         allexp = PPSCIENCE.expnum
+         allexp = allexp[ii[ uniq(allexp, sort(allexp)) ]]
+         nexp = n_elements(allexp)
+         onescience = PPSCIENCE[0]
+         struct_assign, {junk:0}, onescience ; Zero-out all elements
+         pscience = replicate(onescience, ncams, nexp)
          for iexp=0, nexp-1 do begin
             for icam=0, ncams-1 do begin
-               jj = where(plate EQ thisplate $
-                AND (flavor EQ 'science' OR flavor EQ 'smear') $
-                AND camera EQ camnames[icam] AND expnum EQ allexp[iexp])
-               if (jj[0] NE -1) then pscience[icam,iexp] = pstruct[jj[0]] $
-                else pscience[icam,iexp] = ptr_new()
+               jj = where(PPSCIENCE.plate EQ thisplate $
+                AND PPSCIENCE.camera EQ camnames[icam] $
+                AND PPSCIENCE.expnum EQ allexp[iexp])
+               if (jj[0] NE -1) then $
+                copy_struct_inx, PPSCIENCE[jj], pscience, $
+                 index_to=icam+iexp*ncams
             endfor
          endfor
 
@@ -392,16 +412,15 @@ pro apo_log2html, logfile, htmlfile
                                  'PLATE', 0L, $
                                  'EXPNUM', '', $
                                  'MST', '', $
-                                 'FLAVOR', '', $
+                                 'FLAVOR', 'TOTAL', $
                                  'CAMERA', '', $
                                  'TOTALSN2', 0.0 )
-         ptotal = replicate(ptr_new(), ncams)
+         ptotal = replicate(rstruct, ncams)
          for icam=0, ncams-1 do begin
-            ptotal[icam] = ptr_new(rstruct)
             for iexp=0, nexp-1 do begin
                if (keyword_set(pscience[icam,iexp])) then begin
-                  (*ptotal[icam]).totalsn2 = (*ptotal[icam]).totalsn2 + $
-                   (*pscience[icam,iexp]).sn2
+                  ptotal[icam].totalsn2 = ptotal[icam].totalsn2 + $
+                   pscience[icam,iexp].sn2
                endif
             endfor
          endfor
@@ -413,33 +432,23 @@ pro apo_log2html, logfile, htmlfile
       textout = [textout, apo_log_endplate()]
 
       ;----------
-      ; Append all WARNINGs and ABORTs for this plate
+      ; Print all WARNINGs and ABORTs for this plate
 
-      ii = where(plate EQ thisplate)
-      warnings = ''
-      aborts = ''
-      for j=0, n_elements(ii)-1 do begin
-         warning1 = strtrim((*pstruct[ii[j]]).warnings,2)
-         for k=0, n_elements(warning1)-1 do $
-          warning1[k] = apo_stringreplace(warning1[k], 'WARNING', $
-           '<B><FONT COLOR="' + apo_color2hex('YELLOW') + '">WARNING</FONT></B>')
-         warnings = [warnings, warning1]
+      for j=0, n_elements(warnings)-1 do $
+       warnings[j] = apo_stringreplace(warnings[j], 'WARNING', $
+        '<B><FONT COLOR="' + apo_color2hex('YELLOW') + '">WARNING</FONT></B>')
 
-         abort1 = strtrim((*pstruct[ii[j]]).aborts,2)
-         for k=0, n_elements(abort1)-1 do $
-          abort1[k] = apo_stringreplace(abort1[k], 'ABORT', $
-           '<B><FONT COLOR="' + apo_color2hex('RED') + '">ABORT</FONT></B>')
-         aborts = [aborts, abort1]
-      endfor
+      for j=0, n_elements(aborts)-1 do $
+       aborts[j] = apo_stringreplace(aborts[j], 'ABORT', $
+        '<B><FONT COLOR="' + apo_color2hex('RED') + '">ABORT</FONT></B>')
+
       j = where(warnings NE '')
-      if (j[0] NE -1) then warnings = warnings[j] $
-       else warnings = ''
-      j = where(aborts NE '')
-      if (j[0] NE -1) then aborts = aborts[j] $
-       else aborts = ''
+      if (j[0] NE -1) then $
+       textout = [textout, '<PRE>', warnings[j], '</PRE>']
 
-      textout = [textout, '<PRE>', warnings, '</PRE>']
-      textout = [textout, '<PRE>', aborts, '</PRE>']
+      j = where(aborts NE '')
+      if (j[0] NE -1) then $
+       textout = [textout, '<PRE>', aborts[j], '</PRE>']
    endfor
 
    textout = [textout, apo_log_endfile()]
@@ -449,11 +458,6 @@ pro apo_log2html, logfile, htmlfile
 
    ; Now unlock the HTML file.
    djs_unlockfile, htmlfile, lun=html_lun
-
-   ; Free pointers
-   for i=0, nstruct-1 do $
-    if (keyword_set(pstruct[i])) then ptr_free, pstruct[i]
-   heap_gc ; Just in case we missed some!
 
    return
 end

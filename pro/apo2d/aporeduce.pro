@@ -40,15 +40,15 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   apo_appendlog
 ;   apo_log2html
 ;   apo_plotsn
-;   djs_lockfile()
-;   djs_unlockfile
 ;   fits_wait()
 ;   mwrfits
 ;   quickextract()
 ;   quicktrace()
 ;   quickwave()
+;   splog
 ;
 ; REVISION HISTORY:
 ;   30-Apr-2000  Written by D. Schlegel & S. Burles, APO
@@ -276,6 +276,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       mst = string((long(strmid(ut,0,2))+17) MOD 24,format='(i2.2)' ) $
        + strmid(ut,2,3)
 
+      stname = 'APO_' + strupcase(myflavor)
       rstruct = create_struct('FILENAME', filename, $
                               'PLUGFILE', shortplugfile, $
                               'MJD', mjd, $
@@ -287,11 +288,10 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
                               'MST', mst, $
                               rstruct, $
                               'WARNINGS', warnings, $
-                              'ABORTS', aborts )
+                              'ABORTS', aborts, $
+                              name=stname )
 
-      while(djs_lockfile(logfile) EQ 0) do wait, 1
-      mwrfits, rstruct, logfile
-      djs_unlockfile, logfile
+      apo_appendlog, logfile, rstruct
    endif
 
    ;----------

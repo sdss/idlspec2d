@@ -70,9 +70,9 @@ misc/plate306.mail -text
 misc/uomoto.distortions -text
 pro/Makefile -text
 pro/apo2d/Makefile -text
+pro/apo2d/apo_appendlog.pro -text
 pro/apo2d/apo_log2html.pro -text
 pro/apo2d/apo_plotsn.pro -text
-pro/apo2d/apo_readlog.pro -text
 pro/apo2d/apoall.pro -text
 pro/apo2d/aporeduce.pro -text
 pro/apo2d/quickboxcar.pro -text

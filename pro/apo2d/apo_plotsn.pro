@@ -31,7 +31,6 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
-;   apo_readlog
 ;   djs_lockfile()
 ;   djs_unlockfile
 ;   plotsn
@@ -54,10 +53,13 @@ pro apo_plotsn, logfile, plate, plugdir=plugdir, plotfile=plotfile
    ;----------
    ; Read the science frames for this plate
 
-   pp = apo_readlog(logfile, plate=plate, flavor='science')
-   if (NOT keyword_set(pp)) then return
-   mjd = (*pp[0]).mjd
-   plugfile = (*pp[0]).plugfile
+   PPSCIENCE = mrdfits(logfile, 3)
+   if (NOT keyword_set(PPSCIENCE)) then return
+   ii = where(PPSCIENCE.plate EQ plate)
+   if (ii[0] EQ -1) then return
+   PPSCIENCE = PPSCIENCE[ii]
+   mjd = PPSCIENCE[0].mjd
+   plugfile = PPSCIENCE[0].plugfile
 
    ;----------
    ; Read the plug map file for all 640 fibers
@@ -73,9 +75,9 @@ pro apo_plotsn, logfile, plate, plugdir=plugdir, plotfile=plotfile
    ; in quadrature, e.g. sum (S/N)^2
 
    sn2array = fltarr(2, 640)
-   for ii=0, n_elements(pp)-1 do begin
-      meansn2 = (*pp[ii]).sn2vector
-      case (*pp[ii]).camera of
+   for ii=0, n_elements(PPSCIENCE)-1 do begin
+      meansn2 = PPSCIENCE[ii].sn2vector
+      case PPSCIENCE[ii].camera of
          'b1': sn2array[0,0:319] =  sn2array[0,0:319] + meansn2
          'b2': sn2array[0,320:639] =  sn2array[0,320:639] + meansn2
          'r1': sn2array[1,0:319] =  sn2array[1,0:319] + meansn2
@@ -100,3 +102,4 @@ pro apo_plotsn, logfile, plate, plugdir=plugdir, plotfile=plotfile
 
    return
 end
+;------------------------------------------------------------------------------
