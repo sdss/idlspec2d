@@ -136,9 +136,9 @@ pro platelist_write, plist, trimtags=trimtags, alias=alias, $
    printf, lun, '<TITLE>' + title + '</TITLE>'
    printf, lun, '<H1>' + title + '</H1>'
    printf, lun, '<BODY>'
+   printf, lun, 'Last update ' + systime()
    printf, lun, '<A HREF="' + fileandpath(ascfile) + '">ASCII version</A>'
    printf, lun, '<A HREF="platelist.fits">FITS version</A>'
-   printf, lun, 'Last update ' + systime()
    for iline=0, n_elements(tarray)-1 do $
     printf, lun, tarray[iline]
    printf, lun, '</BODY>'
