@@ -1,4 +1,10 @@
 
+-------------------------------------------------------------------------------
+v4_10_1 (Jun 18, 2003 idlspec2d running on IDL 5.3 - 5.5
+Built against specflat v1_5, elodie v1_0, idlutils v4_10_1.
+
+Builds spAll summary files using Princeton calibObj files.
+
 DJS_SVDFIT: This proc removed, since it was a temporary fix to
            be called for solving a singular matrix from FIND_NMINIMA.
 FIND_NMINIMA: Remove use of DJS_SVDFIT (which didn't work on the Mac
