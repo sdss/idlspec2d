@@ -1,4 +1,6 @@
 
+EXTRACT_OBJECT,SMOOTH_SUPERFLAT: Better working smooth_superflat (with a QA
+          plot).  Added "Area" to plot anything above 0.01 gives a warning.
 FILTER_THRU: Fix failure mode when only a 1-d WAVEIMG is passed.
 PLOTSPEC: Major re-write to allow flipping through many plots on a plate
           and change plotting parameters.  Or, send plots to PostScript files.
