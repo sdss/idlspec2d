@@ -296,7 +296,7 @@ ormask = 0 ; Free memory
 if (ii EQ 0) then begin
          goodmask = objivar[*,iobj] GT 0
          synflux = synthspec(res_all[ii,iobj], loglam=objloglam)
-         chivec = abs(objflux[*,iobj] - synflux) * sqrt(objivar)
+         chivec = abs(objflux[*,iobj] - synflux) * sqrt(objivar[*,iobj])
          for isig=0, nfsig-1 do $
           fracnsigma[isig,ii,iobj] = $
            total((chivec GT isig+1) * goodmask) / (total(goodmask) > 1)
