@@ -543,7 +543,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
          ; Logically, we want to make the assignment ZLINE[*,ALLINDX] = ZLINE
          nlines = (size(zline, /dimen))[0]
          index_to = make_array(size=size(zline), /long)
-         for iline=0, nlines-1 do index_to[iline,*] = allindx * nlines + iline
+         for iline=0L, nlines-1 do index_to[iline,*] = allindx * nlines + iline
          copy_struct_inx, zline, zline, index_to=index_to[*]
       endif
    endif
@@ -561,7 +561,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       endif else begin
          nobj = n_elements(allcoeff0)
          loglam = dblarr(npixmax,nobj)
-         for iobj=0, nobj-1 do $
+         for iobj=0L, nobj-1 do $
           loglam[*,iobj] = allcoeff0[iobj] + allcoeff1[iobj] * lindgen(npixmax)
       endelse
       if (q_wave AND q_loglam) then wave = 10^loglam $
