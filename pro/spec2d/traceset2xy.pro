@@ -14,8 +14,8 @@
 ; OPTIONAL KEYWORDS:
 ;
 ; OUTPUTS:
-;   xpos       - X centers as an [ny,nTrace] array
-;   ypos       - Y positions corresponding to XPOS as an [ny,Ntrace] array
+;   xpos       - X positions corresponding to YPOS as an [nx,Ntrace] array
+;   ypos       - Y centers as an [nx,nTrace] array
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -53,17 +53,17 @@ pro traceset2xy, tset, xpos, ypos
          message, 'TSET.COEFF contains invalid number of dimensions'
       endelse
 
-      ny = long(tset.ymax - tset.ymin + 1)
+      nx = long(tset.xmax - tset.xmin + 1)
 
-      ymid = 0.5 * (tset.ymin + tset.ymax)
-      yrange = tset.ymax - tset.ymin
-      ypos = djs_laxisgen([ny, nTrace], iaxis=0) + tset.ymin
+      xmid = 0.5 * (tset.xmin + tset.xmax)
+      xrange = tset.xmax - tset.xmin
+      xpos = djs_laxisgen([nx, nTrace], iaxis=0) + tset.xmin
 
-      xpos = fltarr(ny, nTrace)
-      yvec = 2.0 * findgen(ny)/(ny-1) - 1.0
-      legarr = flegendre(yvec, ncoeff)
+      ypos = fltarr(nx, nTrace)
+      xvec = 2.0 * findgen(nx)/(nx-1) - 1.0
+      legarr = flegendre(xvec, ncoeff)
       for iTrace=0, nTrace-1 do begin
-         xpos[*,iTrace] = legarr # tset.coeff[*,iTrace]
+         ypos[*,iTrace] = legarr # tset.coeff[*,iTrace]
       endfor
 
       end

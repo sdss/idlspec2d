@@ -9,8 +9,8 @@
 ;   xy2traceset, xpos, ypos, tset, [func=func, ncoeff=ncoeff]
 ;
 ; INPUTS:
-;   xpos       - X centers as an [ny,nTrace] array
-;   ypos       - Y positions corresponding to XPOS as an [ny,Ntrace] array
+;   xpos       - X positions corresponding to YPOS as an [nx,Ntrace] array
+;   ypos       - Y centers as an [nx,nTrace] array
 ;
 ; OPTIONAL KEYWORDS:
 ;   func       - Function for trace set; options are:
@@ -43,21 +43,18 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff
 
    if (NOT keyword_set(func)) then func = 'legendre'
 
-   ndim = size(xpos, /n_dim)
-   dims = size(xpos, /dim)
+   ndim = size(ypos, /n_dim)
+   dims = size(ypos, /dim)
 
    if (ndim EQ 1) then begin
-      ny = dims[0]
+      nx = dims[0]
       nTrace = 1
    endif else if (ndim EQ 2) then begin
-      ny = dims[0]
+      nx = dims[0]
       nTrace = dims[1]
    endif else begin
       message, 'XPOS contains invalid number of dimensions'
    endelse
-
-;   nTrace = (size(xpos))[2]
-;   ny = (size(xpos))[3]
 
    case func of
    'legendre': begin
@@ -65,20 +62,20 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff
 
       tset = $
       { func    :    'legendre'        , $
-        ymin    :    0.0               , $
-        ymax    :    0.0               , $
+        xmin    :    0.0               , $
+        xmax    :    0.0               , $
         coeff   :    fltarr(ncoeff, nTrace) $
       }
 
-      tset.ymin = min(ypos)
-      tset.ymax = max(ypos)
-      ymid = 0.5 * (tset.ymin + tset.ymax)
-      yrange = tset.ymax - tset.ymin
+      tset.xmin = min(xpos)
+      tset.xmax = max(xpos)
+      xmid = 0.5 * (tset.xmin + tset.xmax)
+      xrange = tset.xmax - tset.xmin
 
       for i=0, nTrace-1 do begin
-;         res = svdfit(2.0*(ypos[*,i]-ymid)/yrange, xpos[*,i], ncoeff, $
+;         res = svdfit(2.0*(xpos[*,i]-xmid)/xrange, ypos[*,i], ncoeff, $
 ;          /double, /legendre, singular=singular)
-         res = svdfit(2.0*(ypos[*,i]-ymid)/yrange, xpos[*,i], ncoeff, $
+         res = svdfit(2.0*(xpos[*,i]-xmid)/xrange, ypos[*,i], ncoeff, $
           /double, function_name='flegendre', singular=singular)
          tset.coeff[*,i] = res
       endfor
