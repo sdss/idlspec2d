@@ -64,6 +64,7 @@
 ;   headfits()
 ;   idlspec2d_version()
 ;   idlutils_version()
+;   lookforgzip()
 ;   rdss_fits()
 ;   readfits()
 ;   splog
@@ -72,6 +73,9 @@
 ;   writefits
 ;   yanny_free
 ;   yanny_read
+;
+; INTERNAL SUPPORT ROUTINES:
+;   findopfile()
 ;
 ; REVISION HISTORY:
 ;   13-May-1999  Written by Scott Burles & David Schlegel, Apache Point.
@@ -95,7 +99,6 @@
 ;                in particular the 32 bit and 256 bit.
 ;-
 ;------------------------------------------------------------------------------
-
 function findopfile, expres, mjd, indir
 
    files = findfile(filepath(expres, root_dir=indir), count=nfile)
