@@ -123,6 +123,14 @@ print,systime(1)-t0
 
 save,file='eigen.ss'
 stop
+
+indx = where(10^newloglam GT 3300 AND 10^newloglam LT 8800)
+sxaddpar, hdr, 'COEFF0', newloglam[indx[0]]
+sxaddpar, hdr, 'COEFF1', objdloglam
+mwrfits, transpose(pres[0:2,indx]), $
+ '/home/schlegel/idlspec2d/etc/spEigenGals.fits', hdr, /create
+
+
    return
 end
 ;------------------------------------------------------------------------------

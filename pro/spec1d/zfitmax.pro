@@ -24,7 +24,10 @@ function zfitmax, yarr, xarr, xguess=xguess, width=width, xerr=xerr, ypeak=ypeak
 
    xleft = xguess - width
    xright = xguess + width
-   indx = where(xarr GE xleft AND xarr LE xright)
+   indx = where(xarr GE xleft AND xarr LE xright, ct)
+   if (ct LT 3) then $
+    return, xguess
+
    coeff = poly_fit(xarr[indx]-xguess, yarr[indx], 2, yfit, junk, junk, corrm)
    xbest = -0.5 * coeff[1] / coeff[2] + xguess
    xerr = - 0.5 * sqrt(corrm[1,1]) / coeff[2] $
