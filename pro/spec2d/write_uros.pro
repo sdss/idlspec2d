@@ -34,8 +34,9 @@
 ;
 ;   Output the following for each individual spectrum of each object:
 ;     log-Wave   : Log10(wavelength [Ang])
-;     Flux       : Flux in units of 10^(-17) erg/cm/s/Ang
+;     Flux       : Flux in units of electrons (or photons)
 ;     InverseVar : Inverse variance for the above
+;     Sky        ; Sky
 ;     Pixelmask  : Pixel mask
 ;     Dispers    : Wavelength dispersion in the **native** pixel scale
 ;                  (e.g., relative to the local wavelength spacing)
@@ -43,12 +44,18 @@
 ;     Invercorr  : Flux-correction vector for this exposure relative
 ;                  to the flux-calibrated (smear) exposure
 ;
+;   The fluxes have already been divided by the fiber-to-fiber flats
+;   (superfit) and the telluric-correction vector (telluricfactor).
+;   But aside from those factors of order 20%, the fluxes are in
+;   units of electrons (or photons).
+;
 ;   Before combining multiple spectra, we re-normalize as follows:
 ;     Flux = Flux / (Calibfac * Invercorr)
 ;     InverseVar = InverseVar * (Calibfac * Invercorr)^2 * Window
 ;   where Window is a linear apodization of the first 100 pixels
 ;   of each spectrum (the blue/red overlap region, so the red side
 ;   of the blue camera, and the blue side of the red camera).
+;   Once the flux has been normalized, it is in units of 10^(-17) erg/cm/s/Ang
 ;
 ; EXAMPLES:
 ;
@@ -127,6 +134,7 @@ pro write_uros1, plate, fiber, mjd=mjd
       temppixmask = mrdfits(framefile, 2, range=range)
       wsetall = mrdfits(framefile, 3)
       dispsetall = mrdfits(framefile, 4, range=range)
+      tempsky = mrdfits(framefile, 6, range=range)
 
       ;----------
       ; Trim the wavelength + dispersion structures to only the requested object
@@ -201,15 +209,15 @@ pro write_uros1, plate, fiber, mjd=mjd
 
       splog, 'Writing file ', outfile
       openw, lun, outfile, /get_lun
-      printf, lun, '#log-Wave Flux          InverseVar   ' $
+      printf, lun, '#log-Wave Flux          InverseVar    Sky          ' $
        + ' Pixelmask   Dispers   Calibfac  Invercorr'
-      printf, lun, '#-------- ------------- -------------' $
+      printf, lun, '#-------- ------------- ------------- -------------' $
        + ' ----------- --------- --------- ---------'
       for ipix=0, n_elements(tempflux)-1 do $
        printf, lun, tempwave[ipix], tempflux[ipix], tempivar[ipix], $
-        temppixmask[ipix], tempdispersion[ipix], calibfac[ipix], $
-        invertcorr[ipix], $
-        format='(1x,f8.6,1x,e13.6,1x,e13.6,1x,i11,1x,f9.4,1x,f9.4,1x,f9.4)'
+        tempsky[ipix], temppixmask[ipix], tempdispersion[ipix], $
+        calibfac[ipix], invertcorr[ipix], $
+        format='(1x,f8.6,1x,e13.6,1x,e13.6,1x,e13.6,1x,i11,1x,f9.4,1x,f9.4,1x,f9.4)'
       close, lun
       free_lun, lun
    endfor
