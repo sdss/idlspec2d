@@ -9,6 +9,8 @@
 * BUG: The ends of the spectra have poor flux-calibration.  This is most
   obvious when one looks at the overlap of individual exposures.
 
+  --> Could this be due to scattered light errors near the edge of frames?
+
 * Make plot in QAPLOT_FFLAT smaller in the PostScript.
 
 * Put the arc-fitting QA logs into the QAPLOT code.
@@ -32,11 +34,6 @@
 * Discard flats that saturate in SPREDUCE or SPPLAN.
 
 ----> Done (17-Dec-99) in SPREDUCE, but maybe should implement in SPPLAN?
-
-* Combine "superflat" code from SPFLATTEN2 and FIBERFLAT.
-  The internal routine SPFLATTEN2/SUPERFLAT could be called by FIBERFLAT.
-
-----> Done (02-Jan-99)
 
 * Plot the superflat vector as a QA plot
 
@@ -89,8 +86,6 @@
 
 * In flat-fields, be smarter with break points
   Also, tune pix-to-pix flat with global flat to be high-pass / low-pass filter
-
-* Carry header around + add header cards
 
 * Measure gain + read noise
 

@@ -108,7 +108,7 @@ function arcfit_iter, spec, loglam, intensity, $
    nlag = fix(lagmax/dlag)
    lags = (indgen(nlag) - fix(nlag/2)) * dlag
    splog, 'Searching lags from ', min(lags), ' to ', max(lags), $
-    ' spaced ', dlag
+    ' spaced ', dlag, ' pixels', format='(a,i5,a,i5,a,i3,a)'
 
    ; Loop over all coefficients except the first one
    nsteptot = 1
@@ -223,21 +223,21 @@ function arcfit_guess, spec, loglam, intensity, color=color, func=func, $
    aset.coeff = acoeff
 
    ; First search only varies the first 3 coefficients
-   splog, 'Searching about coefficients ', aset.coeff
+   splog, 'Searching about coefficients = ', aset.coeff, format='(a,99f9.5)'
    nsteps = [1, 10, 5, 1]
    wset = arcfit_iter(spec, loglam, intensity, $
     aset, dcoeff, nsteps, nsmooth=6.0, dlag=2, bestcorr=bestcorr)
 
    ; Second search varies 4 coefficients, but narrows search window
    ; for the first two coefficients
-   splog, 'Searching about coefficients ', wset.coeff
+   splog, 'Searching about coefficients = ', wset.coeff, format='(a,99f9.5)'
    nsteps = [1, 5, 5, 5]
    dcoeff[0] = dcoeff[0] / 3. ; Narrow search on coefficient #0
    dcoeff[1] = dcoeff[1] / 3. ; Narrow search on coefficient #1
    wset = arcfit_iter(spec, loglam, intensity, $
     wset, dcoeff, nsteps, nsmooth=4.0, dlag=1, bestcorr=bestcorr)
 
-   splog, 'Initial wavelength fit = ', wset.coeff
+   splog, 'Initial wavelength fit = ', wset.coeff, format='(a,99f9.5)'
 
    return, wset
 end

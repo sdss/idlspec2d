@@ -45,6 +45,16 @@ pro qaplot_arcline, xdif, lambda, filename=filename, color=color
    nfiber = dims[0]
    nlamp = dims[1]
 
+   ; Compute offset + stddev for each line center
+
+   mnarr = fltarr(nlamp)
+   sgarr = fltarr(nlamp)
+   for k=0, nlamp-1 do begin 
+      djs_iterstat, xdif[*,k], mean=mn, sigma=sg
+      mnarr[k] = mn
+      sgarr[k] = sg
+   endfor
+
    ;---------------------------------------------------------------------------
    ; Print residuals in arc fits
 
@@ -60,8 +70,8 @@ pro qaplot_arcline, xdif, lambda, filename=filename, color=color
 
    for k=0, nlamp-1 do $
     splog, 'Arcline ',k,': lambda=',lambda[k], $
-     ' Ang, median dev=', median(xdif[*,k]), $
-     ' pix, sigma dev=', djsig(xdif[*,k]), ' pix', $
+     ' Ang, median dev=', mnarr[k], $
+     ' pix, sigma dev=', sgarr[k], ' pix', $
      format='(A,I3,A,F8.2,A,F7.3,A,F7.3,A)'
 
    ;---------------------------------------------------------------------------
@@ -69,6 +79,7 @@ pro qaplot_arcline, xdif, lambda, filename=filename, color=color
    !p.multi = [0,1,2]
 
    ; Determine the plot limits in wavelength
+
    if (color EQ 'blue') then begin
       xrange = [3800, 6400] 
    endif else if (color EQ 'red') then begin
@@ -86,25 +97,15 @@ pro qaplot_arcline, xdif, lambda, filename=filename, color=color
     xtitle='\lambda [A] + 500 * Deviation', ytitle='Fiber Number', $
     title='Arcline Fit for '+filename
    fibernum = findgen(nfiber)+1
-   for k=1, nlamp-1 do $
+   for k=0, nlamp-1 do $
     djs_oplot, 500*xdif[*,k]+lambda[k], fibernum
 
-   ; Compute offset + stddev for each line center
-   meandif = fltarr(nlamp)
-   sig = fltarr(nlamp)
-   for k=0,nlamp-1 do begin 
-      djs_iterstat, xdif[*,k], mean=mn
-      meandif[k] = mn
-      sig[k] = djsig(xdif[*,k])
-   endfor
-
    ; Make plot of deviations
-   ; Multiply by 1000 to convert to milli-pixels
 
-   djs_plot, lambda, meandif*1000, xrange=xrange, yrange=[-100,100], $
+   djs_plot, lambda, meandif, xrange=xrange, yrange=[-0.1,0.1], $
     xstyle=1, ystyle=1, $
-    xtitle='\lambda [A]', ytitle='Deviation [mPix]'
-   errplot, lambda, (meandif-sig)*1000, (meandif+sig)*1000
+    xtitle='\lambda [A]', ytitle='Deviation [pix]'
+   errplot, lambda, mnarr-sgarr, mnarr+sgarr
 
    xyouts, 0.95, 0., systime(), /normal, align=1 ; , charsize=0.5
 

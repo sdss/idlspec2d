@@ -80,7 +80,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    if (NOT keyword_set(plugdir)) then plugdir=indir
    if (NOT keyword_set(outdir)) then outdir = '.'
 
-   t_begin = systime(1)
+   stime0 = systime(1)
 
    ;---------------------------------------------------------------------------
    ; Locate skyline file for sky wavelength calibration
@@ -341,8 +341,6 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    for iobj=0, N_elements(objname)-1 do begin
 
       splog, camname=objname[iobj]
-      splog, 'Start time ',systime(1)-t_begin, ' seconds so far', $
-       format='(A,F8.2,A)'
 
       ;------------------
       ; Read object image
@@ -539,7 +537,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
       ; QA for 2 skylines in the blue
       qaplot_skyline, 4359.5, flux, fluxivar, skysub, skysubivar, $
-       plugsort, vacset, fibermask=fibermask, dwave=5.0, $
+       plugsort, vacset, fibermask=fibermask, dwave=3.0, $
        filename=objname[iobj]
       qaplot_skyline, 5578.9, flux, fluxivar, skysub, skysubivar, $
        plugsort, vacset, fibermask=fibermask, dwave=5.0, $
@@ -621,8 +619,8 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
    endfor
 
-   splog, 'End time ', systime(1)-t_begin, ' seconds TOTAL', $
-    format='(A,F8.2,A)', camname=''
+   splog, 'Elapsed time = ', systime(1)-stime0, ' seconds', $
+    format='(a,f6.0,a)', camname=''
 
    return
 end

@@ -57,7 +57,11 @@ pro spallreduce, planfile=planfile, docams=docams, $
       docams = ['b1', 'r2', 'b2', 'r1'] ; do all cameras
       docomb = 1
    endif
-   ndo = N_elements(docams)
+   ndocam = N_elements(docams)
+   if (keyword_set(combineonly)) then begin
+      docams = ''
+      ndocam = 0
+   endif
 
    yanny_read, planfile, pdata, hdr=hdr
 
@@ -97,7 +101,7 @@ pro spallreduce, planfile=planfile, docams=docams, $
 
    spawn, 'mkdir -p '+extractDir
 
-   verybegin = systime(1)
+   stime0 = systime(1)
    ; Open log files for output
    if (keyword_set(logfile)) then begin
       splog, filename=logfile, /append
@@ -128,14 +132,14 @@ pro spallreduce, planfile=planfile, docams=docams, $
       ; this sequence ID number
       j = where(allseq.seqid EQ seqid[iseq])
       plateid = allseq[j[0]].plateid
+
+      stime1 = systime(1)
       splog, 'Begin plate ', strtrim(string(plateid),2), ' at ', systime()
 
-      plateDir=filepath(strtrim(string(plateid),2)+'/2d_'+ $
-       run,root_dir=extractDir)
-      combineDir=filepath(strtrim(string(plateid),2)+'/comb_'+ $
-       run,root_dir=combDir)
-
-      if (NOT keyword_set(combineonly)) then begin
+      plateDir=filepath(strtrim(string(plateid),2)+'/2d_'+run, $
+       root_dir=extractDir)
+      combineDir=filepath(strtrim(string(plateid),2)+'/comb_'+run, $
+       root_dir=combDir)
 
       ; Find the corresponding plug map file
       j = where(allplug.seqid EQ seqid[iseq] $
@@ -144,8 +148,9 @@ pro spallreduce, planfile=planfile, docams=docams, $
        else message, 'No plug map file for SEQID= ' $
         + strtrim(string(seqid[iseq]),2) + ', PLATEID= ' $
         + strtrim(string(plateid),2)
+      splog, 'Plug map file = ', plugfile
 
-      for ido=0, ndo-1 do begin
+      for ido=0, ndocam-1 do begin
 
          icam = (where(camnames EQ docams[ido], camct))[0]
          splog, camname=camnames[icam]
@@ -220,9 +225,14 @@ pro spallreduce, planfile=planfile, docams=docams, $
 
             spawn, 'mkdir -p '+plateDir
 
+            stime2 = systime(1)
+
             spreduce, flatsortname, arcname, objname, $
              pixflatname=pixflatname, plugfile=plugfile, lampfile=lampfile, $
              indir=inputDir, plugdir=plugDir, outdir=plateDir
+
+            splog, 'Time to reduce camera ', camnames[icam], ' = ', $
+             systime(1)-stime2, ' seconds', format='(a,a,a,f6.0,a)'
 
             heap_gc   ; garbage collection
          endif
@@ -230,16 +240,18 @@ pro spallreduce, planfile=planfile, docams=docams, $
          splog, camname=''
       endfor ; End loop for camera number
 
-   endif
+      splog, 'Time to reduce all cameras = ', $
+       systime(1)-stime1, ' seconds', format='(a,f6.0,a)'
 
-   ; Combine all red+blue exposures for a given sequence
+      ; Combine all red+blue exposures for a given sequence
 
-   if (docomb) then begin
+      if (docomb) then begin
 
-      spawn, 'mkdir -p '+combineDir
-      startcombtime = systime(1)
+         spawn, 'mkdir -p '+combineDir
 
-      for side=1, 2 do begin
+         stime3 = systime(1)
+
+         for side=1, 2 do begin
 
             outputroot = 'idlout-'+string(format='(i1,a,i4.4,a)',side, $
              '-',plateid,'-')
@@ -255,16 +267,17 @@ pro spallreduce, planfile=planfile, docams=docams, $
                 wavemin=alog10(3750.0), window=100
             endif
 
-      endfor
+         endfor
 
-      splog, 'Finished combining sequence', seqid[iseq], ' in', $
-       systime(1)-startcombtime, ' seconds'
-   endif
+         splog, 'Time to combine sequence ', seqid[iseq], ' = ', $
+          systime(1)-stime3, ' seconds', format='(a,i5,a,f6.0,a)'
+      endif
 
    endfor ; End loop for sequence number
 
-   veryend = systime(1)
-   splog, 'Total time for elapsed ', veryend-verybegin,' seconds'
+   splog, 'Total time for SPALLREDUCE = ', systime(1)-stime0, ' seconds', $
+    format='(a,f6.0,a)'
+   splog, 'Successful completion of SPALLREDUCE at ', systime()
 
    ; Close log files
    if (keyword_set(logfile)) then splog, /close
