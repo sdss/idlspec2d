@@ -1,4 +1,11 @@
 
+EXTRACT_OBJECT: NEARBADPIXEL only if it is within 1 pixel of trace center
+                used to reject possibly bad sky pixels.
+FIBERFLAT: Fiber is flagged BADFLAT is more than 30% of pixels are masked.
+FLATINTERP: Take precaution with bad flatfield extending to edges.
+SPCALIB: Back to original flat field rejection levels matches object extraction.
+SKYSUBTRACT: Check for NEARBADPIXEL bit as well in pixelmask.
+
 Fixed DJS_BATCH to work properly on remote but cross-mounted CPU's.
 
 Fix the spike in memory usage at the end of SPCOMBINE.
@@ -19,6 +26,9 @@ More iterations added to the arc-line centroiding in FITARCIMAGE
 Son-of-Spectro now tests for the Red Monster (light at 6400-6550 Ang in
 science frames), and tests for argon lines in the flat-fields.  The Red
 Monster is presumably from the handpaddle being left plugged in.
+
+SPREDUCE1D: If an object is fit by a negative STAR or negative QSO, then
+            re-classify it as UNKNOWN.
 
 -------------------------------------------------------------------------------
 v4_4_0 (Jan 23, 2000)
