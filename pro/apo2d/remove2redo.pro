@@ -11,8 +11,10 @@
 ; INPUTS:
 ;
 ; OPTIONAL INPUTS:
-;   logfile    - Fits file where apo results are stored 
-;   outdir     - The spectrolog directory which should be checked 
+;   logfile    - FITS log file to which Son-of-Spectro results are ouput;
+;                default to the file 'logfile*fits' in the OUTDIR directory.
+;   outdir     - The spectrolog directory which should be checked; default
+;                to the largest MJD in /data/spectro/spectrologs/$MJD.
 ;   plate      - Specify a single plate if only those entries should be checked
 ;
 ; OUTPUT:
@@ -76,7 +78,6 @@ pro remove2redo, logfile=logfile, outdir=outdir, plate=plate
    cam = ['b1', 'b2', 'r1', 'r2']
    missing = ' '
 
-
    for i=expmin, expmax - 1 do begin 
      for icam = 0,3 do begin
        gotcha = where(cam[icam] EQ camera AND i EQ expnum + 0L)
@@ -101,12 +102,4 @@ pro remove2redo, logfile=logfile, outdir=outdir, plate=plate
    
    return
 end
-
-
-      
-         
-        
-   
-
-   
-
+;------------------------------------------------------------------------------
