@@ -134,8 +134,10 @@ SPCOMBINE: New optional keyword MINSN2 to set the minimum S/N to include
             saturated in 15 min exposures.
 SPFLATGEN: Add optional keywords EXPNUM,EXPSTART,EXPEND.
 SPHDRFIX: Add support for editing raw frame (sdR-*) headers by putting
-            SPECHDRFIX entries in the sdReport-$MJD.par files, of the
+            OPHDRFIX entries in the sdReport-$MJD.par files, of the
             same form as that used in the file "opHdrFix.par".
+            We've changed the structure name SPECHDRFIX to OPHDRFIX, since
+            we can use exactly the same thing for PT or 2.5-m data.
 SPREDUCE1D, ZFIND, ZCOMPUTE, FIND_NMINIMA: Plotting and debugging
             tools added with the /DOPLOT, /DEBUG keywords.
 SPREDUCE1D: Change flag for small chi^2 difference to be triggered
