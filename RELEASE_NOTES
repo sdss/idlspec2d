@@ -8,6 +8,10 @@ FLUX_DISTORTION: There was a bug in the way objects were being rejected
         the coefficients.  This is to prevent us from "walking away" from
         the correction solution in the case where some initially bad points
         effect the fit.
+        Add two more terms, which are quadratics in the wavelength parameter
+        (one for each spectrograph).  This takes out curvature in the spectra
+        which I otherwise couldn't fit out -- though if the AB zeropoints are
+        not correct, then these terms enforce consistency but are not correct.
 LRGMODEL_PHOTOZ: Optionally compute and return FITFLUX.
 PCA_SOLVE: Make loop variables long ints.
 PLATELIST: Use FINDFILE() function to see if files exist before calling
@@ -17,6 +21,8 @@ PLATEMERGE: Add the fields CALIBFLUX,CALIBFLUX_IVAR which are explicitly
 READPLUGMAP: Fix bug when replacing unknown fluxes in the calibObj
         structure with old values in the plug-map file.
 SDSSPROC: Re-enable the call to 'speclog_version'.
+SPFLUX_READ_KURUCZ: This function was pulled out of SPFLUX_V5.
+SPFLUX_V5: Pull out the SPFLUX_READ_KURUCZ() code as a separate function.
 SPCOADD_V5: Apply the flux-distortion image to the sky vectors, as well
         as to OBJFLUX,OBJIVAR.
 
