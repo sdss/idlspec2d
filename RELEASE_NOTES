@@ -61,6 +61,7 @@ In idlutils:
 BSPLINE_ITERFIT: Added /double to computation of INVVAR (line 107).
 DJS_BATCH: Fix invalid return codes in a sub-proc.
 NNLS: New non-negative least-squares fitting code from Hogg.
+POPULATE_IMAGE: Do not recast if image already float (speeds up 4x)
 
 diff.f,g1.f,g2.f,h12.f,idl_nnls.c,nnls.f: C+Fortran code for NNLS proc.
 
