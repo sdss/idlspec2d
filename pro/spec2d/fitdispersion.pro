@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   dispset = fitdispersion(arc_flux, arc_fluxivar, xcen, $
-             sigma=sigma, ncoeff=ncoeff, xmin=xmin, xmax=xmax)
+;             sigma=sigma, ncoeff=ncoeff, xmin=xmin, xmax=xmax)
 ;
 ; INPUTS:
 ;   arc_flux     - arc image extracted flux
