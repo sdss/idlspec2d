@@ -12,10 +12,10 @@ typedef struct {
 # Issue errors if the 98th percentile of the bias frames is larger than
 # the following values.
 
-speclimit red PERCENTILE98 b1 0 15
-speclimit red PERCENTILE98 b2 0 15
-speclimit red PERCENTILE98 r1 0 15
-speclimit red PERCENTILE98 r2 0 15
+speclimit red PERCENTILE98 b1 20 65536
+speclimit red PERCENTILE98 b2 20 65536
+speclimit red PERCENTILE98 r1 20 65536
+speclimit red PERCENTILE98 r2 20 65536
 
 # The locations of the fibers on the CCD's should match closely to how we
 # tuned the spectrographs on MJD 51612 (8/9 March 2000).
