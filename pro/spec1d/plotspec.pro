@@ -111,6 +111,7 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
    sectarget = sdss_flagname('TTARGET', plug.sectarget, /concat)
 
    csize = 2
+   textcolor = 'green'
    if (keyword_set(passyr)) then begin
       yrange = passyr
       ymin = yrange[0]
@@ -153,42 +154,48 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
         zstring = '  cz=' + string(cz,format='(f6.0)') + ' km/s' $
        else $
         zstring = '  z=' + string(zans.z,format='(f8.5)')
+      if (zans.zwarning NE 0) then $
+       zstring = zstring + '  ZWARNING=' + strtrim(string(zans.zwarning),2) + ''
       if (keyword_set(znum)) then $
        zstring = zstring + ' (fit #' + strtrim(string(znum),2) + ')'
 
       if (keyword_set(psfile)) then $
-       xyouts, xpos, ypos, zans.class + ' ' + zans.subclass + zstring, $
-        charsize=csize $
+       djs_xyouts, xpos, ypos, zans.class + ' ' + zans.subclass + zstring, $
+        charsize=csize, color=textcolor $
       else $
        sxyouts, xpos, ypos, zans.class + ' ' + zans.subclass + zstring, $
-        charsize=csize
+        charsize=csize, color=textcolor
 
       ypos = ypos + dypos
 
       if (keyword_set(psfile)) then $
-       xyouts, xpos, ypos, $
+       djs_xyouts, xpos, ypos, $
         TeXtoIDL('X^2_r =' + strtrim(string(zans.rchi2, format='(f6.2)'),2)), $
-        charsize=csize $
+        charsize=csize, color=textcolor $
       else $
        sxyouts, xpos, ypos, $
         TeXtoIDL('X^2_r =' + strtrim(string(zans.rchi2, format='(f6.2)'),2)), $
-        charsize=csize
+        charsize=csize, color=textcolor
    endif
 
    if (keyword_set(primtarget)) then begin
       ypos = ypos + dypos
       if (keyword_set(psfile)) then $
-       xyouts, xpos, ypos, 'PRIMTARGET = ' + primtarget, charsize=csize $
+       djs_xyouts, xpos, ypos, 'PRIMTARGET = ' + primtarget, $
+        charsize=csize, color=textcolor $
       else $
-       sxyouts, xpos, ypos, 'PRIMTARGET = ' + primtarget, charsize=csize
+       sxyouts, xpos, ypos, 'PRIMTARGET = ' + primtarget, $
+        charsize=csize, color=textcolor
    endif
 
    if (keyword_set(sectarget)) then begin
       ypos = ypos + dypos
       if (keyword_set(psfile)) then $
-       xyouts, xpos, ypos, 'SECTARGET = ' + sectarget, charsize=csize $
+       xyouts, xpos, ypos, 'SECTARGET = ' + sectarget, $
+        charsize=csize, color=textcolor $
       else $
-       sxyouts, xpos, ypos, 'SECTARGET = ' + sectarget, charsize=csize
+       sxyouts, xpos, ypos, 'SECTARGET = ' + sectarget, $
+        charsize=csize, color=textcolor
    endif
 
    return
