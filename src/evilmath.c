@@ -100,5 +100,12 @@ void recenter_fweight
      *xcen = xinit;
      *xerr = 999.0;
    }
+
+   /* Trap a centroid going out of bounds from the fitting region. */
+   /* This will only happen if there are negative flux values. */
+   if (*xcen > xinit + radius + 0.5 || *xcen < xinit - radius - 0.5) {
+     *xcen = xinit;
+     *xerr = 999.0;
+   }
 }
 
