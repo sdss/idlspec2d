@@ -21,20 +21,16 @@
 
 echo "APORSYNC_LOGS: Launched at "`date` UID=$UID PPID=$PPID
 
-if [ -n "$RAWDATA_DIR" ]  
-then 
-   rawdata_dir=$RAWDATA_DIR
-else
-   rawdata_dir='/data/spectro'
+if [ -z "$RAWDATA_DIR" ] ; then
+   echo "Abort: RAWDATA_DIR not set!"
+   exit
 fi
 
-if [ -n "$ASTROLOG_DIR" ]  
-then 
-   speclog_dir=$ASTROLOG_DIR
-else
-   speclog_dir='/data/spectro/astrolog'
+if [ -z "$ASTROLOG_DIR" ] ; then
+   echo "Abort: ASTROLOG_DIR not set!"
+   exit
 fi
-   
+
 # This syncs /astrolog/[5-9]???? from sdsshost to the local machine.
 # Only consider those MJD subdirectories /astrolog/$MJD where a corresponding
 # data directory exists in /data/spectro/$MJD.
@@ -59,7 +55,7 @@ do
     --include "plPlugMap*.par" --include "sdReport*.par" \
     --exclude="*" \
     --log-format="/astrolog/%f" \
-    sdsshost.apo.nmsu.edu:$dir $speclog_dir
+    sdsshost.apo.nmsu.edu:$dir $ASTROLOG_DIR
 done
 
 # This syncs /astrolog/[5-9]???? from sdsshost to the local machine,
@@ -71,7 +67,7 @@ rsync -ar --rsh="ssh -c blowfish" \
       --include "*/guider/*" \
       --include "*/gimg*" \
       --exclude="*" \
-      "sdsshost.apo.nmsu.edu:/data/spectro/[5-9]????" $rawdata_dir
+      "sdsshost.apo.nmsu.edu:/data/spectro/[5-9]????" $RAWDATA_DIR
 
 echo "APORSYNC_LOGS: Finished at "`date` UID=$UID PPID=$PPID
 

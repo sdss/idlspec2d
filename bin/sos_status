@@ -60,7 +60,7 @@ fi
 
 echo
 logdir=$SPECTROLOG_DIR
-if [ -n "$SPECTROLOG_DIR" ] ; then
+if [ -z "$SPECTROLOG_DIR" ] ; then
    echo "Abort: SPECTROLOG_DIR not set!"
    exit
 fi

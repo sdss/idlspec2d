@@ -1,43 +1,55 @@
 #! /bin/sh
 #------------------------------------------------------------------------------
-# This is a deadly script to blow away all MJDs in /astrolog and /data/spectro
-# which do not exist on host.  It is invoked from mailhtml, and called
-# every morning
+# This is a deadly script to blow away all local copies of raw data in
+# $RAWDATA_DIR/$MJD which no longer exist on sdsshost.apo.
+# It is invoked from mailhtml, and called every morning.
 #
 # S. Burles, APO, 4 May 2000
 #------------------------------------------------------------------------------
 
-data=`ls -d /data/spectro/[56789]????`
+if [ -z "$RAWDATA_DIR" ] ; then
+   echo "Abort: RAWDATA_DIR not set!"
+   exit
+fi
+
+if [ -z "$ASTROLOG_DIR" ] ; then
+   echo "Abort: ASTROLOG_DIR not set!"
+   exit
+fi
+
+datadirs=`ls -d $RAWDATA_DIR/[56789]????`
 
 #------------------------------------------------------------------------------
-# First find all /data/spectro directories which are missing
+# Find all data directories which exist locally but do not exist on
+# sdsshost.apo.  Those directories will also be deleted locally.
 
-for dead in $data
+for deaddir in $datadirs
 do
 
-    if  [ `ssh sdsshost ls -d $dead 2>/dev/null` ]   
+    if  [ `ssh sdsshost ls -d $deaddir 2>/dev/null` ]   
     then
-      echo KILLDATA: $dead still exists
+      echo KILLDATA: $deaddir still exists
     else
-      echo KILLDATA: I should kill $dead
-      rm -rf $dead
+      echo KILLDATA: I should kill $deaddir
+      rm -rf $deaddir
     fi
 
 done
 
 #------------------------------------------------------------------------------
-# Now find all /astrolog directories which are missing
+# Find all astrolog directories which exist locally but do not exist on
+# sdsshost.apo.  Those directories will also be deleted locally.
 #
-#data=`ls -d /astrolog/[56789]????`
+#datadirs=`ls -d $ASTROLOG_DIR/[56789]????`
 #
-#for dead in $data
+#for deaddir in $datadirs
 #do
-#    if  [ `ssh sdsshost ls -d $dead 2>/dev/null` ]   
+#    if  [ `ssh sdsshost ls -d $deaddir 2>/dev/null` ]   
 #    then
-#      echo KILLDATA: $dead still exists
+#      echo KILLDATA: $deaddir still exists
 #    else
-#      echo KILLDATA: I should kill $dead
-#      rm -rf $dead
+#      echo KILLDATA: I should kill $deaddir
+#      rm -rf $deaddir
 #    fi
 #done
-#
+

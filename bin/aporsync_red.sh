@@ -15,11 +15,9 @@
 
 echo "APORSYNC_RED: Launched at "`date` UID=$UID PPID=$PPID
 
-if [ -n "$RAWDATA_DIR" ]  
-then 
-   rawdata_dir=$RAWDATA_DIR
-else
-   rawdata_dir='/data/spectro'
+if [ -z "$RAWDATA_DIR" ] ; then
+   echo "Abort: RAWDATA_DIR not set!"
+   exit
 fi
 
 # This syncs /astrolog/[5-9]???? from sdsshost to the local machine,
@@ -30,7 +28,7 @@ rsync -ar --rsh="ssh -c blowfish" \
       --log-format="/data/spectro/%f" \
       --exclude="*-b*" \
       --exclude="*guider*" \
-      "sdsshost.apo.nmsu.edu:/data/spectro/[5-9]????" $rawdata_dir | startapo.sh 
+      "sdsshost.apo.nmsu.edu:/data/spectro/[5-9]????" $RAWDATA_DIR | startapo.sh 
 
 echo "APORSYNC_RED: Finished at "`date` UID=$UID PPID=$PPID
 

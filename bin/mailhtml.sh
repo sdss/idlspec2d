@@ -13,7 +13,7 @@
 # S. Burles, APO, 4 May 2000
 #------------------------------------------------------------------------------
 
-if [ -n "$SPECTROLOG_DIR" ] ; then
+if [ -z "$SPECTROLOG_DIR" ] ; then
    echo "Abort: SPECTROLOG_DIR not set!"
    exit
 fi

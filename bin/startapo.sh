@@ -12,12 +12,12 @@
 # S. Burles, APO, 4 May 2000
 #------------------------------------------------------------------------------
 
-if [ -n "$ASTROLOG_DIR" ] ; then
+if [ -z "$ASTROLOG_DIR" ] ; then
    echo "Abort: ASTROLOG_DIR not set!"
    exit
 fi
 
-if [ -n "$SPECTROLOG_DIR" ] ; then
+if [ -z "$SPECTROLOG_DIR" ] ; then
    echo "Abort: SPECTROLOG_DIR not set!"
    exit
 fi
