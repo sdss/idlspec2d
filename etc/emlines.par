@@ -1,3 +1,4 @@
+# This file used by SPECLINEFIT procedure for emission line fitting.
 
 typedef struct {
   double lambda;      # Wavelength in air
@@ -8,17 +9,23 @@ typedef struct {
   float fvalue;      # Relative scale factor for entries w/ same findex
 } emlineid;
 
- emlineid  2799.49    "MgII"       zemission  wemission  f2799  1
- emlineid  3725.94    "OII"        zemission  wemission  f3725  1
- emlineid  3727.24    "OII"        zemission  wemission  f3727  1
- emlineid  4101.73    "H_delta"    zemission  wemission  f4101  1
- emlineid  4340.46    "H_gamma"    zemission  wemission  f4340  1
- emlineid  4861.3632  "H_beta"     zemission  wemission  f4861  1
- emlineid  4958.911   "OIII"       zemission  wemission  f5007  1.0
- emlineid  5006.843   "OIII"       zemission  wemission  f5007  3.0
- emlineid  6548.05    "NII"        zemission  wemission  f6548  1
- emlineid  6562.801   "H_alpha"    zemission  wemission  f6563  1
- emlineid  6583.45    "NII"        zemission  wemission  f6583  1
- emlineid  6716.44    "SII"        zemission  wemission  f6716  1
- emlineid  6730.82    "SII"        zemission  wemission  f6730  1
+# emlineid  1549.48    "C_IV"        zemission  wemission  f1549  1
+# emlineid  1640.42    "He_II"       zemission  wemission  f1640  1
+# emlineid  1908.734   "C_III]"      zemission  wemission  f1908  1
+ emlineid  2799.49    "Mg_II"       zemission  wemission  f2799  1
+ emlineid  3725.94    "[O_II]"      zemission  wemission  f3725  1
+ emlineid  3727.24    "[O_II]"      zemission  wemission  f3727  1
+ emlineid  4101.73    "H_delta"     zemission  wemission  f4101  1
+ emlineid  4340.46    "H_gamma"     zemission  wemission  f4340  1
+ emlineid  4363.209   "[O_III]"     zemission  wemission  f4363  1
+ emlineid  4861.3632  "H_beta"      zemission  wemission  f4861  1
+ emlineid  4958.911   "[O_III]"     zemission  wemission  f5007  1.0
+ emlineid  5006.843   "[O_III]"     zemission  wemission  f5007  3.0
+ emlineid  6300.304   "[O_I]"       zemission  wemission  f6300  1
+ emlineid  6363.776   "[O_I]"       zemission  wemission  f6363  1
+ emlineid  6548.05    "[N_II]"      zemission  wemission  f6548  1
+ emlineid  6562.801   "H_alpha"     zemission  wemission  f6563  1
+ emlineid  6583.45    "[N_II]"      zemission  wemission  f6583  1
+ emlineid  6716.44    "[S_II]"      zemission  wemission  f6716  1
+ emlineid  6730.82    "[S_II]"      zemission  wemission  f6730  1
 
