@@ -1,12 +1,13 @@
 ; Tests for looking at the velocity dispersion fits for plate 406.
 ; Loop from the highest-S/N galaxies to the lowest.
 pro vdisptest, plate, fiberid, mjd=mjd, doplot=doplot, debug=debug, $
+ eigenfile=eigenfile, columns=columns, $
  brightest=brightest, slowplot=slowplot, plotfile=plotfile1
 
    if (NOT keyword_set(plate)) then plate = 406
    if (NOT keyword_set(fiberid)) then fiberid = 1 + lindgen(640)
-eigenfile='spEigenElodie.fits'
-columns=lindgen(24)
+   if (NOT keyword_set(eigenfile)) then eigenfile='spEigenElodie.fits'
+   if (NOT keyword_set(columns)) then columns=lindgen(24)
 
 ;   if (n_elements(slowplot) EQ 0) then slowplot = 1
 ;debug = 1

@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   readspec, plate, fiber, [mjd=, znum=, flux=, flerr=, invvar=, $
 ;    andmask=, ormask=, disp=, plugmap=, loglam=, wave=, tsobj=, $
-;    zans=, synflux=synflux, /silent ]
+;    zans=, synflux=, /silent ]
 ;
 ; INPUTS:
 ;   plate      - Plate number(s)
@@ -243,7 +243,7 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       endif
    endif
 
-   if (q_synflux) then begin
+   if (q_synflux AND keyword_set(zfile)) then begin
       ; Read the synthetic spectrum from the Zbest file if ZNUM is not set.
       if (NOT keyword_set(znum)) then begin
          fits_open, zfile, zfcb
