@@ -46,13 +46,16 @@
 ;   splog
 ;
 ; REVISION HISTORY:
+;   28-Jan-2003  Add E(B-V) keyword to allow for spectra which have 
+;                foreground reddening removed
 ;   20-Oct-2002  Plot range on synthmag vs fiber mag plot changed by C. Tremonti
 ;   15-Apr-2000  Written by S. Burles, FNAL
 ;-
 ;------------------------------------------------------------------------------
 pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
  plottitle=plottitle, plotfile=plotfile, synthmag=synthmag, snplate=snplate, $
- roffset = roffset, rsigma = rsigma, groffset = groffset, grsigma = grsigma
+ roffset = roffset, rsigma = rsigma, groffset = groffset, grsigma = grsigma, $
+ ebv_sfd = ebv_sfd
 
    if (size(snvec,/n_dim) NE 2) then return
    if (NOT keyword_set(bands)) then bands=[1, 2, 3]
@@ -281,6 +284,16 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
       groffset = fltarr(2)
       grsigma = fltarr(2)
 
+      if keyword_set(ebv_sfd) then ebvc = ebv_sfd[iobj] $
+      else ebvc = 0.0
+      r_ugriz = [5.155, 3.793, 2.751, 2.086, 1.479]  ; A_V = E(B-V) * R_V
+      gspectro = synthmag[0,iobj] 
+      gphoto = plugc.mag[1] - r_ugriz[1] * ebvc  ; Dereddened g fibermag
+      rspectro = synthmag[1,iobj]
+      rphoto = plugc.mag[2] - r_ugriz[2] * ebvc
+      ispectro = synthmag[2,iobj]
+      iphoto = plugc.mag[3] - r_ugriz[3] * ebvc
+
       for ispecnum=1, 2 do begin
          if (ispecnum EQ 1) then sindx = s1 $
           else sindx = s2
@@ -289,14 +302,11 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
           xrange=xrange, yrange=yrange, /xstyle, /ystyle, $
           xtitle='Fiber Magnitude', ytitle = 'Spectro Mag - Photo Fiber Mag'
 
-         djs_oplot, plugc[sindx].mag[1], $
-          synthmag[0,iobj[sindx]] - plugc[sindx].mag[1], $
+         djs_oplot, plugc[sindx].mag[1], gspectro[sindx] - gphoto[sindx], $
           psym=psym, symsize=symsize, color='blue'
-         djs_oplot, plugc[sindx].mag[2], $
-          synthmag[1,iobj[sindx]] - plugc[sindx].mag[2], $
+         djs_oplot, plugc[sindx].mag[2], rspectro[sindx] - rphoto[sindx], $
           psym=psym, symsize=symsize, color='green'
-         djs_oplot, plugc[sindx].mag[3], $
-          synthmag[2,iobj[sindx]] - plugc[sindx].mag[3], $
+         djs_oplot, plugc[sindx].mag[3], ispectro[sindx] - iphoto[sindx], $
           psym=psym, symsize=symsize, color='red'
 
          djs_oplot, [14.6], [1.6], psym=psym, symsize=symsize, color='blue'
@@ -316,18 +326,12 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
         ; Measure mean scatter of spectro mags -  photo mags  
         ; Record r-band and (g-i) color
 
-        gspectro = synthmag[0,iobj[sindx]]
-        gphoto = plugc[sindx].mag[1]
-        rspectro = synthmag[1,iobj[sindx]]
-        rphoto = plugc[sindx].mag[2]
-        ispectro = synthmag[2,iobj[sindx]]
-        iphoto = plugc[sindx].mag[3]
-
-        meanclip, rspectro - rphoto, rmean, rsig
+        meanclip, rspectro[sindx] - rphoto[sindx], rmean, rsig
         roffset[ispecnum - 1] = rmean
         rsigma[ispecnum - 1] = rsig
 
-        meanclip, (gspectro - rspectro) - (gphoto - rphoto), grmean, grsig
+        meanclip, (gspectro[sindx] - rspectro[sindx]) - $
+                  (gphoto[sindx] - rphoto[sindx]), grmean, grsig
         groffset[ispecnum - 1] = grmean
         grsigma[ispecnum - 1] = grsig
         
@@ -353,16 +357,13 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
           xtitle='Fiber Magnitude', ytitle='Spectro mag - Photo Fiber mag.'
 
          if (ngal GT 0) then $
-          djs_oplot, plugc[igal].mag[2], $
-           synthmag[1,iobj[igal]] - plugc[igal].mag[2], $
+          djs_oplot, plugc[igal].mag[2], rspectro[igal] - rphoto[igal], $
            psym=psym, symsize=symsize, color='red'
          if (nstar GT 0) then $
-          djs_oplot, plugc[istar].mag[2], $
-           synthmag[1,iobj[istar]] - plugc[istar].mag[2], $
+          djs_oplot, plugc[istar].mag[2], rspectro[istar] - rphoto[istar], $
            psym=psym, symsize=symsize, color='blue'
          if (nstd GT 0) then $
-          djs_oplot, plugc[istd].mag[2], $
-           synthmag[1,iobj[istd]] - plugc[istd].mag[2], $
+          djs_oplot, plugc[istd].mag[2], rspectro[istd] - rphoto[istd], $
            psym=psym, symsize=symsize, color='green'
 
 
@@ -379,9 +380,9 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
       ; Third plot -- histograms
       ;------------------------------------------------------------------------
 
-      goff = synthmag[0,iobj] - plugc.mag[1]
-      roff = synthmag[1,iobj] - plugc.mag[2]
-      ioff = synthmag[2,iobj] - plugc.mag[3]
+      goff = gspectro - gphoto
+      roff = rspectro - rphoto
+      ioff = ispectro - iphoto
       groff = goff - roff
       rioff = roff - ioff
 
