@@ -10,7 +10,8 @@
 ;              proftype=, wfixed=, inputans=, iback=, bfixarr=, xvar=,
 ;              mask=, relative=, diagonal=, fullcovar=, wfixarr=, npoly=,
 ;              maxiter=, lowrej=, highrej=, niter=, squashprofile=,
-;              whopping=, wsigma=, pixelmask=, reject=, reducedChi= ])
+;              whopping=, wsigma=, pixelmask=, reject=, reducedChi=,
+;              nBand=  ])
 ;
 ; INPUTS:
 ;   fimage     - Vector [nCol]
@@ -33,6 +34,7 @@
 ;   relative   - Set to use reduced chi-square to scale rejection threshold
 ;   squashprofile - ???
 ;   npoly      - Order of chebyshev scattered light background; default to 5
+;   nband      - Band-width of covariance matrix of fiber profiles: default 1
 ;   maxiter    - Maximum number of profile fitting iterations; default to 10
 ;   lowrej     - Negative sigma deviation to be rejected; default to 5
 ;   highrej    - Positive sigma deviation to be rejected; default to 5
@@ -121,7 +123,7 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
  wfixarr=wfixarr, npoly=npoly, maxiter=maxiter, $
  lowrej=lowrej, highrej=highrej, niter=niter, reducedChi=reducedChi, $
  whopping=whopping, wsigma=wsigma, pixelmask=pixelmask, reject=reject, $
- oldreject=oldreject
+ oldreject=oldreject, nband = nband
 
    ; Need 4 parameters
    if (N_params() LT 4) then $
@@ -135,7 +137,8 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
       sigma = xcen*0.0 + sigma1
    endif 
 
-   if (n_elements(npoly) EQ 0) then npoly = 5
+   if (n_elements(npoly) EQ 0) then npoly = 5L
+   if (NOT keyword_set(nband)) then nband = 1L
    if (NOT keyword_set(maxiter)) then maxiter = 10
    if (NOT keyword_set(highrej)) then highrej = 15.0
    if (NOT keyword_set(lowrej)) then lowrej = 20.0
@@ -287,12 +290,15 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
          ans[0:ntrace*ncoeff-1] = inputans
       endif
 
+      if (proftype EQ 10 AND nband LT 3) then $
+         message, 'Do we have enough band-width for proftype=10?'
+
       result = call_external(soname, 'extract_row',$
        nx, FLOAT(xvar), FLOAT(fimage), workinvvar, ymodel, ntrace, $
        LONG(npoly), FLOAT(xcen), FLOAT(sigma), LONG(proftype), $
        FLOAT(reject), partial, fullreject, qcovar, LONG(squashprofile), $
        FLOAT(whopping), whoppingct, FLOAT(wsigma), $
-       ncoeff, ma, ans, wfixarr, p, fscat, fullcovar)
+       ncoeff, LONG(nband), ma, ans, wfixarr, p, fscat, fullcovar)
 
       diffs = (fimage - ymodel) * sqrt(workinvvar) 
       chisq = total(diffs*diffs)
