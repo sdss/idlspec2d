@@ -13,7 +13,7 @@ of the code are:
 <DL><DD><PRE>
   idlutils v4_9_4
   specflat v1_3
-  idlspec2d v4_9_4
+  idlspec2d v4_9_5
 </PRE></DD></DL>
 
 <P>
@@ -82,11 +82,11 @@ then "idlspec2d".  Installing in this order gets the dependencies right,
 since the UPS database needs to know that idlspec2d depends upon particular
 versions of those other products.  An install would then look something like:
 <DL><DD><PRE>
-  % UPS_FLAVOR=Linux+2  # Necessary if Fermi UPS cannot determine Linux flavor
-                        # but could also be "Linux" or "Linux+2.2".
+  % UPS_FLAVOR=Linux+2.2 # Necessary if Fermi UPS cannot determine Linux flavor
+                         # but could also be "Linux" or "Linux+2".
   % evilinstall idlutils v4_9_4
   % evilinstall specflat v1_3
-  % evilinstall idlspec2d v4_9_4
+  % evilinstall idlspec2d v4_9_5
 </PRE></DD></DL>
 
 </OL>
@@ -158,7 +158,7 @@ for the version numbers:
 <DL><DD><PRE>
   % IDLUTILS_VERS=v4_9_4
   % SPECFLAT_VERS=v1_3
-  % IDLSPEC2D_VERS=v4_9_4
+  % IDLSPEC2D_VERS=v4_9_5
 </PRE></DD></DL>
 
 <LI>
@@ -265,7 +265,7 @@ for the version numbers:
 <DL><DD><PRE>
   % IDLUTILS_VERS=v4_9_4
   % SPECFLAT_VERS=v1_3
-  % IDLSPEC2D_VERS=v4_9_4
+  % IDLSPEC2D_VERS=v4_9_5
   % setup cvs # Only needed on machines set up by Fermi
   % cd
   % cvs co -r $IDLUTILS_VERS idlutils
