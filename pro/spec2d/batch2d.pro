@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   batch2d, [ platenums, topdir=, platestart=, plateend=, $
-;    mjd=, mjstart=, mjend=, nice= ]
+;    mjd=, mjstart=, mjend=, nice=, /clobber ]
 ;
 ; INPUTS:
 ;
@@ -22,6 +22,8 @@
 ;   mjstart    - Starting MJD dates to reduce.
 ;   mjend      - Ending MJD dates to reduce.
 ;   nice       - Unix nice-ness for spawned jobs; default to 19.
+;   clobber    - If set, then reduce all specified plates, overwriting
+;                any previous reductions.
 ;
 ; OUTPUTS:
 ;
@@ -219,7 +221,7 @@ end
 ;------------------------------------------------------------------------------
 pro batch2d, platenums, topdir=topdir, $
  platestart=platestart, plateend=plateend, $
- mjd=mjd, mjstart=mjstart, mjend=mjend, nice=nice
+ mjd=mjd, mjstart=mjstart, mjend=mjend, nice=nice, clobber=clobber
 
    if (NOT keyword_set(platenums)) then platenums = '*'
    if (NOT keyword_set(topdir)) then begin
@@ -308,8 +310,13 @@ pro batch2d, platenums, topdir=topdir, $
 
       ; Find which of these plan files do **not** have log files already.
       ; Presume those are the ones that need to be reduced.
+      ; The exception is if /CLOBBER is set -- in that case, we reduce
+      ; all specified plates, overwriting any previous reductions.
       junk = fileandpath(planlist[iplate], path=thispath)
-      ido2d = batch2d_nolog(djs_filepath(planfile2d, root_dir=thispath))
+      if (keyword_set(clobber)) then $
+       ido2d = lindgen(n_elements(planfile2d)) $
+      else $
+       ido2d = batch2d_nolog(djs_filepath(planfile2d, root_dir=thispath))
 
       if (ido2d[0] NE -1) then begin
          ; Trim the list of 2D plan files to those not reduced yet.

@@ -6,7 +6,7 @@
 ;   Batch process Spectro-1D reductions based upon existing 2D plate files.
 ;
 ; CALLING SEQUENCE:
-;   batch1d, [ fullplatefile, topdir=, nice= ]
+;   batch1d, [ fullplatefile, topdir=, nice=, /clobber ]
 ;
 ; INPUTS:
 ;
@@ -15,6 +15,8 @@
 ;                   '*/spPlate*.fits' from the top-level directory.
 ;   topdir     - Top directory for reductions; default to current directory.
 ;   nice       - Unix nice-ness for spawned jobs; default to 19.
+;   clobber    - If set, then reduce all specified plates, overwriting
+;                any previous reductions.
 ;
 ; OUTPUTS:
 ;
@@ -49,7 +51,7 @@
 ;   17-Oct-2000  Written by D. Schlegel, Princeton
 ;-
 ;------------------------------------------------------------------------------
-pro batch1d, fullplatefile, topdir=topdir, nice=nice
+pro batch1d, fullplatefile, topdir=topdir, nice=nice, clobber=clobber
 
    if (NOT keyword_set(topdir)) then begin
       cd, current=topdir
@@ -79,11 +81,11 @@ pro batch1d, fullplatefile, topdir=topdir, nice=nice
 
    diaglog = strarr(nplate)
    qdone = bytarr(nplate)
-;   endstring = 'Successful completion of SPREDUCE1D'
    for iplate=0, nplate-1 do begin
       diaglog[iplate] = $
        djs_filepath('spDiag1d-' + platemjd[iplate] + '.log', $
         root_dir=localpath[iplate])
+;      endstring = 'Successful completion of SPREDUCE1D'
 ;      spawn, 'tail -1 ' + diaglog[iplate], tailstring
 ;      qdone[iplate] = strpos(tailstring[0], endstring) NE -1
       qdone[iplate] = keyword_set(findfile(diaglog[iplate]))
@@ -92,6 +94,10 @@ pro batch1d, fullplatefile, topdir=topdir, nice=nice
       else $
        splog, 'File ' + platefile[iplate] + ' not reduced'
    endfor
+
+   ; If /CLOBBER is set, then reduce all plates, overwriting any
+   ; previous reductions.
+   if (keyword_set(clobber)) then qdone[*] = 0
 
    indx = where(qdone EQ 0, nplate)
    if (nplate EQ 0) then begin
