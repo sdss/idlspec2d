@@ -18,7 +18,7 @@
 ;   fibermask  - Fiber status bits, set nonzero for bad status [NFIBER]
 ;   minval     - Minimum value to use in fits to flat-field vectors;
 ;                default to 0.
-;   title      - TITLE of plot
+;   title      - TITLE of plot; if not set, then do not make this plot.
 ;
 ; PARAMETERS FOR SLATEC_SPLINEFIT:
 ;   lower      -
@@ -57,7 +57,6 @@ pro superflat, flux, fluxivar, wset, fullbkpt, coeff, $
  title=title
 
    if (NOT keyword_set(minval)) then minval = 0.0
-   if (NOT keyword_set(title)) then title = ''
 
    dims = size(flux, /dimens)
    ny = dims[0]
@@ -154,18 +153,20 @@ pro superflat, flux, fluxivar, wset, fullbkpt, coeff, $
    ;------
    ; QA plot of superflat   ; Plot sampled every 1 Ang
 
-   wmin = fix(10^min(allwave))
-   wmax = ceil(10^max(allwave))
-   plot_lam = wmin + lindgen(wmax-wmin+1)
-   plot_fit  = slatec_bvalu(alog10(plot_lam), fullbkpt, coeff)
-   djs_plot, plot_lam, plot_fit, xrange=[wmin,wmax], xstyle=1, $
-    xtitle='\lambda [A]', ytitle='Normalized flux', $
-    title=title
+   if (keyword_set(title)) then begin
+      wmin = fix(10^min(allwave))
+      wmax = ceil(10^max(allwave))
+      plot_lam = wmin + lindgen(wmax-wmin+1)
+      plot_fit  = slatec_bvalu(alog10(plot_lam), fullbkpt, coeff)
+      djs_plot, plot_lam, plot_fit, xrange=[wmin,wmax], xstyle=1, $
+       xtitle='\lambda [A]', ytitle='Normalized flux', $
+       title=title
 
-   ; Overplot pixels masked from the fit
-   ii = where(mask EQ 0)
-   if (ii[0] NE -1) then $
-    djs_oplot, 10^allwave[indx[ii]], allflux[indx[ii]], ps=3, color='red'
+      ; Overplot pixels masked from the fit
+      ii = where(mask EQ 0)
+      if (ii[0] NE -1) then $
+       djs_oplot, 10^allwave[indx[ii]], allflux[indx[ii]], ps=3, color='red'
+   endif
 
    return
 end

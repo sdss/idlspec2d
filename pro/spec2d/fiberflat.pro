@@ -25,8 +25,9 @@
 ;                spline fits to individual fibers; default to 10 pixels.
 ;   dospline   - If this keyword is set, then fit the flat-field vectors
 ;                to splines (using PIXSPACE) rather than to a Legendre
-;                polynomial (using NCOEFF).  This is **not** recommended.
-;   plottitle  - Prefix for titles in QA plots.
+;                polynomial (using NCOEFF).
+;                This is now what we use?
+;   plottitle  - Title for QA plot; if not set, then do not plot.
 ;
 ; PARAMETERS FOR SLATEC_SPLINEFIT:
 ;   nord
@@ -105,7 +106,7 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
 
    superflat, flux, fluxivar, wset, afullbkpt, acoeff, $
     fibermask=fibermask, minval=minval, lower=lower, upper=upper, $
-    medval=medval, title=plottitle+' Superflat'
+    medval=medval, title=plottitle
 
    if (n_elements(allfullbkpt) EQ 1) then begin
       splog, 'WARNING: Spline fit failed' 
