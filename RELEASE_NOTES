@@ -57,6 +57,10 @@ PLOTSN: Changed auto-scaling of fitted magnitudes, when less than 20 objects
             work much better for the photo-z S/N estimates.
 PLOTSPEC: New keyword option /NETIMAGE to plot corresponding PHOTO images
             in a Netscape window using Steve Kent's web tool.
+QAPLOT_SKYSUB: Don't be quite so severe with warning messages.  If a single
+            sky fiber has bad flux levels, report as a "Warning" instead
+            of a "WARNING".  Trigger the "WARNING" about "Max sky-residual
+            chi" at 5.0 instead of 4.0.
 QUICKBIAS: Remove message which preempts logging.  Instead, return a
             set of precentiles that are all -9999, which shows up as ****
             in the HTML file.
