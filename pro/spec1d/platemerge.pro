@@ -64,6 +64,8 @@ pro platemerge, zfile, outfile=outfile, ascfile=ascfile
       plate = sxpar(hdr, 'PLATEID')
       zans = mrdfits(fullzfile[ifile], 1)
       tsobj = plug2tsobj(plate, zans.plug_ra, zans.plug_dec)
+      if (NOT keyword_set(tsobj)) then $
+       splog, 'WARNING: No tsObj file found for plate ', plate
 
       if (ifile EQ 0) then begin
          outdat = replicate( create_struct(zans[0], tsobj[0]), nout)
