@@ -336,7 +336,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
          ; Burles counter of row number...
          print, format='($, ".",i4.4,a5)', i, string([8b,8b,8b,8b,8b])
 
-         smearimg[*,i] = total(image[*,0:i],2)
+         smearimg[*,i] = smearimg[*,i-1] + image[*,i]
       endfor
       smearimg = (t2/t1) * smearimg
       image = image - smearimg
