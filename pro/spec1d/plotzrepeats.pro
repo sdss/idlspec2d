@@ -58,13 +58,27 @@ pro plotzrepeats, plate, mjd
 
          vdiff = (zans[indx1[jj]].z - zans[indx2[jj]].z) * cspeed
          verr = sqrt(zans[indx1[jj]].z_err^2 + zans[indx2[jj]].z_err^2) $
-          * cspeed / sqrt(2.)
+          * cspeed
          chi = vdiff / verr
-         cmed = median(chi)
+         cmed = median(abs(chi))
+
+         print, classlist[iclass]
+         abschi = abs(chi)
+         chisort = abschi[sort(abschi)]
+         chi67 = chisort[fix(0.67*n_elements(chisort))]
+         print, 'Median(|chi|) = ', cmed
+         print, 'Median(verr) = ', median(verr)
+         print, '|Chi| at 67% = ', chi67
+
          plothist, chi, bin=0.20, xrange=[-8,8], /xstyle, $
           xtitle=textoidl('\chi = (z_1-z_2) / z_{err}'), $
           ytitle='Number', charsize=csize, $
           title=classlist[iclass]+' Redshift Errors from Repeats'
+
+         djs_xyouts, -7, 0.9*!y.crange[1], charsize=0.75*csize, $
+          'Median(cz_{err})=' + string(median(verr), format='(f6.1)') + ' km/s'
+         djs_xyouts, -7, 0.8*!y.crange[1], charsize=0.75*csize, $
+          '\chi at 67% =' + string(chi67, format='(f5.2)')
 
 ;         xplot = plug[indx1[jj]].sn_median
          xplot = plug[indx1[jj]].mag[2]
