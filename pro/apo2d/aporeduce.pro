@@ -75,7 +75,9 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
        plugfile=plugfile, plugdir=plugdir, minexp=minexp, $
        copydir=copydir
       return
-   endif
+   endif else begin
+      filename = filename[0] ; Convert from an array to a scalar.
+   endelse
 
    if (NOT keyword_set(indir)) then indir = './'
    if (NOT keyword_set(plugdir)) then plugdir = indir
