@@ -70,6 +70,8 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   dfpsclose
+;   dfpsplot
 ;   djs_oplot
 ;   djs_plot
 ;   readspec
