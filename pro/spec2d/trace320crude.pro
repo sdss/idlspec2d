@@ -55,10 +55,8 @@
 ;
 ; PROCEDURES CALLED:
 ;   fibermask_bits()
-;   trace_crude
-;   trace_gweight
-;   trace320cen
-;   xy2traceset
+;   trace_crude()
+;   trace320cen()
 ;
 ; REVISION HISTORY:
 ;   13-Sep-1999  Written by David Schlegel, Princeton.
@@ -72,32 +70,48 @@ function trace320crude, fimage, invvar, ystart=ystart, nmed=nmed, xgood=xgood, $
    if (NOT keyword_set(maxdev)) then maxdev = 1.0
    if (NOT keyword_set(ngrow)) then ngrow = 5
 
+   ;----------
    ; Find the 320 X-centers in the row specified by YSTART
+
    xstart = trace320cen(fimage, mthresh=mthresh, ystart=ystart, nmed=nmed, $
     xgood=xgood)
    ntrace = N_elements(xstart) ; Better be 320
    if (NOT keyword_set(fibermask)) then fibermask = bytarr(ntrace)
 
+   ;----------
    ; Trace those 320
-   xset = trace_crude( fimage, invvar, xstart=xstart, ystart=ystart, $
+
+   xset = trace_crude(fimage, invvar, xstart=xstart, ystart=ystart, $
     radius=radius, yset=yset, maxerr=maxerr, maxshifte=maxshifte, $
-    maxshift0=maxshift0, xerr=xerr )
+    maxshift0=maxshift0, xerr=xerr)
+   xmask = xerr LT 990  ; =1 for good centers, =0 for bad
 
-   ; Improve upon the centroids XSET by re-fitting each center using
-   ; a gaussian fit, then replacing XSET with a smooth trace-set.
+   ;----------
+   ; Re-fit the centroids.  Do this in case one of the XSTART positions
+   ; happenened to be bad.
 
-   xset = trace_gweight(fimage, xset, yset, sigma=1.0, invvar=invvar, xerr=xerr)
-   xmask = xerr LT 990
-   xy2traceset, yset, xset, firstset, ncoeff=5, yfit=xtemp, invvar=xmask, $
-    maxdev=maxdev, /singlerej
-   xset = xtemp
+;   xset = trace_fweight(fimage, xset, yset, radius=radius, invvar=invvar, $
+;    xerr=xerr)
+;;   xset = trace_gweight(fimage, xset, yset, sigma=1.0, invvar=invvar, $
+;;    xerr=xerr)
+;   xmask = xerr LT 990  ; =1 for good centers, =0 for bad
 
-   nx = (size(xset, /dimens))[0]
-   quarterbad = (total(xmask,1) LT 3*nx/4)
-   ixgood = where(xgood AND NOT quarterbad)
+   ;----------
+   ; Replace XSET with a smooth trace-set
 
-   xstart[ixgood] = xset[ystart,ixgood]
+;   xy2traceset, yset, xset, tset, ncoeff=5, yfit=xnew, invvar=xmask, $
+;    maxdev=maxdev, /singlerej
+;   xset = xnew
 
+   ;----------
+   ; Identify bad traces as those with more than 1/4 of their centroids bad
+
+;   nx = (size(xset, /dimens))[0]
+;   quarterbad = (total(xmask,1) LT 0.75 * nx)
+;   ixgood = where(xgood AND NOT quarterbad)
+;   xstart[ixgood] = xset[ystart,ixgood]
+
+   ;----------
    ; Compare the traces in each row to those in row YSTART.
    ; Our assumption is that those centers should be a polynomial mapping
    ; of the centers from row YSTART.  Centers that are deviant from this
@@ -106,35 +120,40 @@ function trace320crude, fimage, invvar, ystart=ystart, nmed=nmed, xgood=xgood, $
    ny = (size(fimage, /dimens))[1]
    ndegree = 4 ; Five terms
 
-   ; Loop to find all deviant centroids
-   ixgood = where(xgood)
+   ;----------
+   ; Loop to find all deviant centroids, and add these to the mask XMASK.
 
-   ; Set FIBERMASK bits
-   ixbad = where(xgood EQ 0 OR quarterbad)
-   if (ixbad[0] NE -1) then $
-    fibermask[ixbad] = fibermask[ixbad] OR fibermask_bits('BADTRACE')
+;   ; (And set FIBERMASK bits???)
+;   ixgood = where(xgood)
+;   ixbad = where(xgood EQ 0 OR quarterbad)
+;   if (ixbad[0] NE -1) then $
+;    fibermask[ixbad] = fibermask[ixbad] OR fibermask_bits('BADTRACE')
 
    for iy=0, ny-1 do begin
-      xcheck = xgood AND xmask[iy,*]
-      if (total(xcheck) GT ndegree + 1) then begin
+      xcheck = xgood AND xmask[iy,*] ; Test for good fiber & good centroid
+      if (total(xcheck) GT ndegree+1) then begin
         coeff = polyfitw(xstart, xset[iy,*], xcheck, ndegree, xfit)  
         xdiff = xfit - xset[iy,*]
-        ibad = where(abs(xdiff) GT maxdev, nbad)
-        xmask[iy, ixgood] = 1 ; First set all good traces in this row = 1
+        ibad = where(abs(xdiff) GT maxdev)
         if (ibad[0] NE -1) then xmask[iy,ibad] = 0
-      endif else  xmask[iy,*] = 0
-
+      endif else begin
+        xmask[iy,*] = 0 ; Too few good centroids in this row; mark all as bad
+      endelse
    endfor
 
-   ; Further smooth the bad centroids to NGROW adjacent rows
+   ;----------
+   ; Smooth the bad centroids to NGROW adjacent rows (of the same trace)
+
    for itrace=0, ntrace-1 do begin
       xmask[*,itrace] = smooth( xmask[*,itrace]+0.0, 2*ngrow+1) EQ 1
    endfor
 
+   ;----------
    ; Loop to fix deviant centroids
+
    for iy=0, ny-1 do begin
-      ixbad = where(xmask[iy,*] EQ 0,nbad)
-      if (nbad GT 0 AND nbad LT ntrace - ndegree) then begin
+      ixbad = where(xmask[iy,*] EQ 0, nbad)
+      if (nbad GT 0 AND nbad LT ntrace-ndegree) then begin
          ixgood = where(xmask[iy,*] EQ 1)
          coeff = polyfitw(xstart, xset[iy,*], xmask[iy,*], $
           ndegree, xfit)
