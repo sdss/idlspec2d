@@ -258,6 +258,7 @@ pro/spec1d/make_regress1d.pro -text
 pro/spec1d/matchplugmap.pro -text
 pro/spec1d/multisynthspec.pro -text
 pro/spec1d/pca_cvstar.pro -text
+pro/spec1d/pca_elodie.pro -text
 pro/spec1d/pca_gal.pro -text
 pro/spec1d/pca_lrgtest.pro -text
 pro/spec1d/pca_qso.pro -text
@@ -273,6 +274,7 @@ pro/spec1d/plug2tsobj.pro -text
 pro/spec1d/poly_array.pro -text
 pro/spec1d/primfac.pro -text
 pro/spec1d/qsorebin.pro -text
+pro/spec1d/read_elodie.pro -text
 pro/spec1d/readspec.pro -text
 pro/spec1d/redindices.pro -text
 pro/spec1d/redmonsterlist.pro -text
