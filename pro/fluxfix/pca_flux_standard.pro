@@ -141,8 +141,8 @@ pro pca_flux_standard, loglam, stdflux, stdivar, stdinfo, camid, $
    ; for each of the standard stars -- this is an indicator of the 
    ; spectrophotometric quality.
 
-   meanclip, corvector - rebin(fcor, npix,  nstd), fmean, fsig, $
-             maxiter=3, clipsig=5
+   djs_iterstat, corvector - rebin(fcor, npix,  nstd), mean=fmean, $
+     sigma=fsig, maxiter=3, sigrej=5
 
    ;--------------
    ; Select break points for spline
