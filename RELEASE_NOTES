@@ -125,6 +125,9 @@ opBC-5000.par,opBC-51813.par: New bad column masks, somewhat circular dependence
            For r1 (camcol=4), mask only cols 1112-1115, not cols 1112-1117.
 opBC-empty.par: New file with no bad columns for use when generating the
            2D pixel flats and bias images with SPFLATTEN2 and SPBIASGEN.
+opLimits.par: Bug introduced when I reformatted the TOTAL/TOTALSN2 entries
+           (done to address PR #2562 to differentiate between bias and
+           dark current levels).  This fix closes PR #3185.
 spEigenElodie.fits: First 70 eigen-components of the 700-ish Elodie spectra,
            generated at Sloan resolution using PCA_ELODIE.
 
