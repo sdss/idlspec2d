@@ -6,7 +6,8 @@
 ;   Compute the spectrograph collimation focus from Hartmann mask exposures.
 ;
 ; CALLING SEQUENCE:
-;   collimate, expnum1, [ expnum2, docams=, indir=, nregx=, nregy=, maxshift= ]
+;   collimate, expnum1, [ expnum2, docams=, indir=, nregx=, nregy=, $
+;    maxshift=, /nocheck ]
 ;
 ; INPUTS:
 ;   expnum1    - First exposure number of raw sdR file.
@@ -14,10 +15,17 @@
 ; OPTIONAL KEYWORDS:
 ;   expnum2    - Second exposure number; default to EXPNUM1+1.
 ;   docams     - Cameras to analyze; default to ['b1','b2','r1','r2'].
-;   indir      - Input directory for files; default to the current directory.
+;   indir      - Input directory for files; default to searching for
+;                files in $RAWDATA_DIR/*.  If $RAWDATA_DIR is not set,
+;                then it is assumed to be /data/spectro.
 ;   nregx      - Number of sub-regions in the X dimension; default to 8.
 ;   nregy      - Number of sub-regions in the Y dimension; default to 8.
 ;   maxshift   - Maximum pixel shift to search in both X and Y; default to 3.
+;   nocheck    - If set, then assume that the 1st exposure is Hartmann-l,
+;                and the 2nd exposure is Hartmann-r, rather than looking at
+;                the OBSCOMM header keyword.  This correct keywords are
+;                added by the SOP goSpecFocus command, but will not be if
+;                you simply move the collimator and shutters yourself.
 ;
 ; OUTPUTS:
 ;
@@ -37,12 +45,16 @@
 ;
 ;   The position of the Hartmann shutters is read from the OBSCOMM header
 ;   keywords.  It is expected to be '{focus, hartmann l}' for one exposure
-;   and '{focus, hartmann r}' for the other (in either order).
+;   and '{focus, hartmann r}' for the other (in either order).  It is assumed
+;   that the collimator position is identical for both exposures.
+;
+;   The sense of the pixel shifts reported is what one would have to shift
+;   the Hartmann-r exposure by in Y to agree with the Hartmann-l exposure.
 ;
 ; EXAMPLES:
 ;   Solve for the focus of all 4 CCD's from exposures 10812+10813
-;   on MJD 52161:
-;     IDL> collimate, 10812, indir='/data/spectro/52161'
+;   on MJD 52161 (assuming the files exist in /data/spectro/52161):
+;     IDL> collimate, 10812
 ;
 ; BUGS:
 ;
@@ -77,11 +89,11 @@ end
 
 ;------------------------------------------------------------------------------
 pro collimate, expnum1, expnum2, docams=docams, indir=indir, $
- nregx=nregx, nregy=nregy, maxshift=maxshift
+ nregx=nregx, nregy=nregy, maxshift=maxshift, nocheck=nocheck
 
    if (n_params() LT 1) then begin
       print, 'Syntax - collimate, expnum1, [ expnum2, docams=, indir=, $'
-      print, ' nregx=, nregy=, maxshift= ]'
+      print, ' nregx=, nregy=, maxshift=, /nocheck ]'
       return
    endif
 
@@ -94,7 +106,8 @@ pro collimate, expnum1, expnum2, docams=docams, indir=indir, $
    if (NOT keyword_set(nregx)) then nregx = 8
    if (NOT keyword_set(nregy)) then nregy = 8
 
-   ngrow = 2
+   ngrow = 2 ; Grow bad pixels by this number of pixels in every dimension
+   focustol = 0.15
 
    quiet = !quiet
    !quiet = 1
@@ -114,6 +127,12 @@ pro collimate, expnum1, expnum2, docams=docams, indir=indir, $
 
    ;----------
    ; Locate the input files (either compressed or un-compressed)
+
+   if (NOT keyword_set(indir)) then begin
+      indir = getenv('RAWDATA_DIR') + '/*'
+      if (NOT keyword_set(rawdata_dir)) then $
+       rawdata_dir = '/data/spectro/*'
+   endif
 
    filename1 = 'sdR-' + docams[0] + '-' + string(expnum1, format='(i8.8)') $
     + '.fit*'
@@ -143,16 +162,22 @@ pro collimate, expnum1, expnum2, docams=docams, indir=indir, $
       return
    endif
 
-   hartpos1 = collimate_obscomm(hdr1)
-   hartpos2 = collimate_obscomm(hdr2)
-   if (NOT keyword_set(hartpos1) OR NOT keyword_set(hartpos2)) then begin
-      print, 'OBSCOMM keywords in header do not indicate these are Hartmann exposures'
-      return
-   endif
-   if (hartpos1 EQ hartpos2) then begin
-      print,' OBSCOMM keywords in header indicate both exposures had same Hartmann position'
-      return
-   endif
+   if (keyword_set(nocheck)) then begin
+      hartpos1 = -1
+      hartpos2 = 1
+   endif else begin
+      hartpos1 = collimate_obscomm(hdr1)
+      hartpos2 = collimate_obscomm(hdr2)
+      if (NOT keyword_set(hartpos1) OR NOT keyword_set(hartpos2)) then begin
+         print, 'OBSCOMM keywords in header do not indicate these are Hartmann exposures'
+         return
+      endif
+      if (hartpos1 EQ hartpos2) then begin
+         print,' OBSCOMM keywords in header indicate both exposures had same Hartmann position'
+         return
+      endif
+   endelse
+
    camname = strtrim(sxpar(hdr1, 'CAMERAS'),2)
    mjd = sxpar(hdr1, 'MJD')
    mjdstr = string(mjd,format='(i5.5)')
@@ -185,8 +210,6 @@ pro collimate, expnum1, expnum2, docams=docams, indir=indir, $
 
    ;----------
    ; Loop over each possible sub-image
-
-   print, 'Computing focus values'
 
    xoffset = fltarr(nregx,nregy)
    yoffset = fltarr(nregx,nregy)
@@ -253,42 +276,54 @@ pro collimate, expnum1, expnum2, docams=docams, indir=indir, $
    maxyoffstr = string(maxyoff, format='(f5.2)')
 
    ;----------
-   ; Write info to the log file
+   ; Write info to the log file, and echo only some to the terminal
 
    splog, file=logfile
-   splog, 'FILE1 = ' + filename1
-   splog, 'FILE2 = ' + filename2
-   splog, 'MJD = ', mjdstr
-   splog, 'Camera = ', camname
-   splog, ' '
-   splog, 'IMAGE OF WAVELENGTH-OFFSETS'
-   splog, '(in the correct orientation that 0,0 is lower left)'
-   splog, ' '
+   splog, 'FILE1 = ' + filename1, /no_stdout
+   splog, 'FILE2 = ' + filename2, /no_stdout
+   splog, 'MJD = ', mjdstr, /no_stdout
+   splog, 'Camera = ', camname, /no_stdout
+   splog, ' ', /no_stdout
+   splog, 'IMAGE OF WAVELENGTH-OFFSETS', /no_stdout
+   splog, '(in the correct orientation that 0,0 is lower left)', /no_stdout
+   splog, ' ', /no_stdout
    for iregy=nregy-1, 0, -1 do begin
       format = '(' + string(nregx) + 'f6.2)'
-      splog, yoffset[*,iregy], format=format
+      splog, yoffset[*,iregy], format=format, /no_stdout
    endfor
-   splog, ' '
+   splog, ' ', /no_stdout
    splog, 'Min offset = ' + minyoffstr + ' pix'
    splog, 'Max offset = ' + maxyoffstr + ' pix'
-   splog, ' '
+   splog, ' ', /no_stdout
    splog, 'Mean offset = ' + meanyoffstr + ' +/- ' + meanydevstr + ' pix'
-   splog, ' '
+   splog, ' ', /no_stdout
 
    ;----------
    ; Output the predicted movements in order to collimate
 
    camcolor = strmid(camname,0,1)
    spectroid = strmid(camname,1,1)
+
+   tolstr = strtrim(string(focustol, format='(f6.2)'),2)
+   if (abs(meanyoff) LT focustol) then begin
+      splog, 'Camera ' + camname $
+       + ' appears to be IN-FOCUS (|mean| < ' + tolstr + ' pix)'
+   endif else begin
+      splog, 'Camera ' + camname $
+       + ' appears to be OUT-OF-FOCUS (|mean| > ' + tolstr + ' pix)'
+   endelse
+
    if (camcolor EQ 'r') then begin
-      val = -9150. * meanyoff
+      val = long( -9150. * meanyoff )
       splog, 'Predict (red) piston movement of ', val, $
        ' steps for spectro-' + spectroid
+      splog, '  Issue SOP command: "sp' + spectroid $
+       + '; mechPiston ' + strtrim(string(val),2) + '"'
    endif else if (camcolor EQ 'b') then begin
       val = -35.69 * meanyoff
-      splog, 'Predict blue camera ring movement of ', val, $
-       ' degrees for spectro-' + spectroid
-      splog, '(if red is already in focus)'
+      splog, 'Predict blue camera ring movement of ' $
+       + string(val, format='(f6.1)') + ' degrees for spectro-' + spectroid
+      splog, '  (if red is already in focus)'
    endif
 
    splog, /close
@@ -298,24 +333,27 @@ pro collimate, expnum1, expnum2, docams=docams, indir=indir, $
 
    dfpsplot, plotfile, /color, /square
 
-   xaxis = nx * (findgen(nregx) + 0.5) / nregx
-   yaxis = ny * (findgen(nregy) + 0.5) / nregy
+   ; Resample+smooth the image by a factor of 4 for the contour plot
+   yoffimg = min_curve_surf(yoffset, nx=nregx*4, ny=nregy*4)
+   xaxis = nx * (findgen(nregx*4) + 0.5) / (nregx*4)
+   yaxis = ny * (findgen(nregy*4) + 0.5) / (nregy*4)
+
    lspace = 0.1
    level0 = floor(min(yoffset) / lspace) * lspace
    nlevel = ceil((max(yoffset) - level0) / lspace) + 1
    levels = level0 + lindgen(nlevel) * lspace
    c_colors = (levels GE 0) * djs_icolor('blue') $
     + (levels LT 0) * djs_icolor('red')
-   contour, yoffset, xaxis, yaxis, /follow, levels=levels, $
-    c_colors=c_colors, c_charsize=2, /closed, $
+   contour, yoffimg, xaxis, yaxis, /follow, levels=levels, $
+    c_colors=c_colors, c_charsize=2, $
     xrange=[0,nx], yrange=[0,ny], /xstyle, /ystyle, $
     xtitle='X [pix]', ytitle='Y [pix]', title=title
    xyouts, 0.5*nx, 0.96*ny, align=0.5, $
-    'Mean offset = ' + meanyoffstr + ' pix'
+    'Mean offset = ' + meanyoffstr + ' pix', charsize=1.5
 
    dfpsclose
 
-   print
+   print, 'Log file        = ' + logfile
    print, 'PostScript file = ' + plotfile
 
    !quiet = quiet
