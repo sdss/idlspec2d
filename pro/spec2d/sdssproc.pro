@@ -672,6 +672,10 @@ bcmask = 0 ; clear memory
       if (readivar) then invvar = invvar * pixflat^2 * (pixflat GT minflat) $
                                                      * (pixflat LT maxflat)
 pixflat = 0 ; clear memory
+
+      ; add pixflatname to header since it has just been applied
+
+      sxaddpar, hdr, 'PIXFLAT', fileandpath(pixflatname)
    endif
 
    ;---------------------------------------------------------------------------
@@ -699,10 +703,10 @@ pixflat = 0 ; clear memory
       writefits, outfile, image, hdr
    endif
 
-   if (fullname[0] NE '') then sxaddpar, hdr, 'PIXFLAT', fullname[0]
    if keyword_set(bcfile) then sxaddpar, hdr, 'OPBC', bcfile
    if keyword_set(configfile) then sxaddpar, hdr, 'OPCONFIG', configfile
    if keyword_set(ecalibfile) then sxaddpar, hdr, 'OPECALIB', ecalibfile
+   sxdelpar, hdr, 'UNSIGNED'   
 
    if (readivar) then begin
       varhdr = hdr
