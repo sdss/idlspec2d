@@ -12,8 +12,12 @@
 # S. Burles, APO, 4 May 2000
 #------------------------------------------------------------------------------
 
-logs=`ls -d /data/spectro/spectrologs/5*/* \
-          | grep logfile | grep html | grep -v lock`
+logs=`find /data/spectro/spectrologs/5* -name "logfile*html" -print \ 
+          | grep -v current`
+
+#   This doesn't work below below the argument list gets too large
+# logs=`ls -d /data/spectro/spectrologs/5*/* \
+#          | grep logfile | grep html | grep -v lock`
 
 # The variable $thislog is the name of the HTML file with its full path.
 # The variable $filename has the path stripped off.
