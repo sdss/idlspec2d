@@ -126,7 +126,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    narc = N_elements(arcname)
 
    ibest = -1 ; Index number for best flat+arc pair
-   bestcorr = -1.0
+   bestcorr = -2.0 ; Any call to FITARCIMAGE returns values [-1,1]
    oldflatfile = ''
 
    for ifile=0, (nflat<narc)-1 do begin
@@ -151,7 +151,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
          ;   Reject if more than 1% of the pixels are marked as bad.
          ;   Reject if more than 10 rows are saturated.
 
-         fbadpix = N_elements(where(invvar EQ 0)) / N_elements(invvar)
+         fbadpix = float(N_elements(where(invvar EQ 0))) / N_elements(invvar)
 
          qbadflat = 0
          if (fbadpix GT 0.01) then qbadflat = 1
@@ -238,7 +238,8 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    splog, 'Best flat = ', flatname[ibest]
    splog, 'Best arc = ', arcname[ibest]
 
-   if (bestcorr LT 0.7) then begin
+   if ((color EQ 'blue' AND bestcorr LT 0.5) $
+    OR (color EQ 'red'  AND bestcorr LT 0.7) ) then begin
       splog, 'ABORT: Best arc correlation = ', bestcorr
       return
    endif
@@ -431,7 +432,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
          ; QA chisq plot for fit calculcated in extract image 
 
          xaxis = indgen(N_elements(chisq)) + 1
-         djs_plot, fibernum, chisq, $
+         djs_plot, xaxis, chisq, $
           xtitle='Row number',  ytitle = '\chi^2', $
           title='Extraction chi^2 for '+objname[iobj]
 
