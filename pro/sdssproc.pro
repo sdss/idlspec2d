@@ -16,8 +16,10 @@
 ;   outfile    - Calibrated 2d frame, after processing
 ;   varfile    - Inverse Variance Frame after processing
 ;   hdr        - Header returned in memory
-;   configfile - Default to "opConfig.par" 
-;   ecalibfile - Default to "opECalib.par" 
+;   configfile - Default to "opConfig.par"
+;   ecalibfile - Default to "opECalib.par"
+;   satvalue   - Saturation value; default to 1.0e6.
+;                For all pixels with values above this, set INVVAR=0.
 ;
 ; OUTPUTS:
 ;   image      - Processed 2d image
@@ -53,23 +55,22 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
    junk = findfile(configfile, count=ct)
    if (ct NE 1) then begin
      pp = getenv('EVIL_PAR') 
-     junk = findfile(filepath(configfile, root_dir=pp), count=ct)
+     tempname = findfile(filepath(configfile, root_dir=pp), count=ct)
    endif
    if (ct NE 1) then $
      message, 'No configuration file ' + string(configfile)
 
-   realconfig = junk[0]
+   realconfig = tempname[0]
 
-   junk = findfile(ecalibfile, count=ct)
+   tempname = findfile(ecalibfile, count=ct)
    if (ct NE 1) then begin
      pp = getenv('EVIL_PAR') 
-     junk = findfile(filepath(ecalibfile, root_dir=pp), count=ct)
+     tempname = findfile(filepath(ecalibfile, root_dir=pp), count=ct)
    endif
    if (ct NE 1) then $
     message, 'No ECalib file ' + string(ecalibfile)
 
-   realecalib = junk[0]
-
+   realecalib = tempname[0]
 
    rawdata = rdss_fits(infile, hdr)
 
@@ -147,33 +148,35 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
 
    for iamp=0, 3 do begin
       if (qexist[iamp] EQ 1) then begin
-         if (nover[iamp] NE 0) then begin ; Use the "overscan" region
+         if (nover[iamp] NE 0) then begin
+            ; Use the "overscan" region
             biasval = median( $
              rawdata[sover[iamp]:sover[iamp]+nover[iamp]-1, $
              sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] )
-         endif else if (nmapover[iamp] NE 0) then begin ; Use the "mapped overscan"
+         endif else if (nmapover[iamp] NE 0) then begin
+            ; Use the "mapped overscan" region
             biasval = median( $
              rawdata[smapover[iamp]:smapover[iamp]+nmapover[iamp]-1, $
              sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] )
          endif
 
          ; Copy the data for this amplifier into the final image
-          image[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
+         image[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
                   srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
-          rawdata[sdatacol[iamp]:sdatacol[iamp]+ncol[iamp]-1, $
+         rawdata[sdatacol[iamp]:sdatacol[iamp]+ncol[iamp]-1, $
                   sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] - biasval
 
          invvar[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
                   srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
            1.0/(abs(image[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
                   srow[iamp]:srow[iamp]+nrow[iamp]-1]) /gain[iamp] + $
-	          readnoiseDN[iamp]*readnoiseDN[iamp])
+                  readnoiseDN[iamp]*readnoiseDN[iamp])
 
          ; Add to the header
          sxaddpar, hdr, 'BIAS'+string(iamp,format='(i1)'), biasval
          sxaddpar, hdr, 'GAIN'+string(iamp,format='(i1)'), gain[iamp]
          sxaddpar, hdr, 'RDNOISE'+string(iamp,format='(i1)'), $
-		gain[iamp]*readnoiseDN[iamp]
+          gain[iamp]*readnoiseDN[iamp]
       endif
    endfor
 
@@ -186,9 +189,7 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
       writefits, varfile, invvar, varhdr
    endif
 
-;
-;	Take out saturated pixels
-;
+   ; For saturated pixels, set INVVAR=0
    invvar = invvar * (image LT satvalue)
 
    return
