@@ -21,6 +21,10 @@ APOREDUCE: Allow setting MINEXP to 0 sec.  Change default of MINEXP to 0 sec,
 APOPLOT: New proc for plotting spectra from the Son-of-Spectro outputs at APO.
 APOPLOT,LOGSHEET,PLOTSPEC: Set the !QUIET option for procedures where it is
            annoying to see all the IDL messages.
+BATCH1D,BATCH2D: Allow NICE to be set to zero.  Add UPSVERSION keyword to do
+           a "setup idlspec2d $UPSVERSION" on the remote machine before
+           executing the IDL job.  This allows you to batch jobs using a
+           version other than that which is declared current under UPS.
 DANVB_CONVERT,DANVB_QSOLIST: Procs for generating a list of input
             QSO's from Dan van den Berk's EDR list "plateEDR.summ"
             for generating QSO eigenvectors.  The output file
@@ -150,6 +154,13 @@ spFluxcalib-*.fits: A canonical set of flux-calibration vectors produced
 sos_redo: Don't allow this to be run from the machine sdsshost!
 sprobot_start: Copy the data over starting at 10am Princeton time,
             which will be after "mailhtml.sh" is run at APO (at 7:20 am).
+sprobot.sh: Run the same version of the idlspec2d product as is set up
+            for this script.  For example, even if v4_9 is declared current,
+            run v4_8 if that is what's set up when this script is run.
+            So, you should run "sprobot_start" from the version of the code
+            that you want to reduce the data.  The only exception is if the
+            current version is not a UPS version, but just NOCVS; in that
+            case, the version declared current on each remote host is used.
 
 In idlutils:
 
