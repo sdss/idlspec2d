@@ -7,8 +7,8 @@
 ;
 ; CALLING SEQUENCE:
 ;   skystruct = skysubtract(obj, objivar, plugsort, wset, objsub, objsubivar, $
-;    [iskies= , fibermask=, nord=, upper=, lower=, maxiter=, pixelmask=, $
-;      novariance=, relchi2struct= ])
+;    [ iskies= , fibermask=, nord=, upper=, lower=, maxiter=, pixelmask=, $
+;    dispset=, /novariance, relchi2struct= ])
 ;
 ; INPUTS:
 ;   obj        - Image
@@ -19,8 +19,11 @@
 ; OPTIONAL KEYWORDS:
 ;   fibermask  - Fiber status bits, set nonzero for bad status [NFIBER]
 ;   pixelmask  - Mask of 0 for good pixels [NPIX,NFIBER]
-;   relchi2struct  - Structure containing information of chi^2 fitting
-;   novariance  - keyword to prevent variance correction for sky residuals
+;   dispset    - Dispersion trace-set; if present, then solve for the
+;                super-sky vector using a variable PSF described by this
+;                structure.
+;   novariance - Set keyword to prevent variance correction for sky residuals
+;   relchi2struct- Structure containing information of chi^2 fitting
 ;
 ; PARAMETERS FOR SLATEC_SPLINEFIT (for supersky fit):
 ;   nord       -
@@ -49,6 +52,7 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   bvalu2d()
 ;   pixelmask_bits()
 ;   slatec_splinefit()
 ;   slatec_bvalue()

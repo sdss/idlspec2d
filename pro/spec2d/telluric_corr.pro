@@ -49,6 +49,7 @@
 ; EXAMPLES:
 ;
 ; BUGS:
+;   Other fainter telluric bands at [7178,7212], [8130,8206].
 ;
 ; PROCEDURES CALLED:
 ;   djs_oplot
