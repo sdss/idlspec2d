@@ -162,6 +162,10 @@ pro spreduce, flatname, arcname, objname, $
    ; of all the science integrations, and take its corresponding arc.
 
    bestflat = select_flat(flatstruct, tai_mid)
+   if (NOT keyword_set(bestflat)) then begin
+      splog, 'ABORT: No good flats (saturated?)'
+      return
+   endif
    splog, 'Best flat = ', bestflat.name
 
 ;   bestarc = select_arc(arcstruct)
