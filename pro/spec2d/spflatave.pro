@@ -14,7 +14,8 @@
 ;   mjd        - Valid MJD's for input pixel flats.
 ;   mjstart    - Valid starting MJD for input pixel flats.
 ;   mjend      - Valid ending MJD for input pixel flats.
-;   mjout      - MJD for name of output average pixel flat; default to 0.
+;   mjout      - MJD for name of output average pixel flat; default to 0,
+;                resulting in file names like 'pixflatave-00000-b1.fits'.
 ;   indir      - If INDIR not set, then look for files in $SPECFLAT_DIR/flats.
 ;   outdir     - Output directory; default to same as INDIR.
 ;   docam      - Camera names; default to all cameras: ['b1', 'b2', 'r1', 'r2']
