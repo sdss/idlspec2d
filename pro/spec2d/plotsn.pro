@@ -322,11 +322,11 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
 
          if (nstar GT 0) then $
           djs_oplot, plugc[istar].mag[3], $
-           synthmag[2,iobj[istar]] - plugc[istar].mag[3], $
+           synthmag[1,iobj[istar]] - plugc[istar].mag[2], $
            psym=psym, symsize=symsize, color='blue'
          if (ngal GT 0) then $
           djs_oplot, plugc[igal].mag[3], $
-           synthmag[2,iobj[igal]] - plugc[igal].mag[3], $
+           synthmag[1,iobj[igal]] - plugc[igal].mag[2], $
            psym=psym, symsize=symsize, color='red'
 
          djs_oplot, [14.6], [3.2], psym=psym, symsize=symsize, color='blue'
