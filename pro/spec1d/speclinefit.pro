@@ -243,10 +243,11 @@ ormask = 0 ; Free memory
 
             ; Now split them back up again, and append to the "background".
             ; Normalize the level to the median level in the object flux.
-            dflat = allflat[1:npixobj-1] - allflat[0:npixobj-2]
+            allflat = [0, allflat, 0]
+            dflat = allflat[1:npixobj+1] - allflat[0:npixobj]
             istart = where(dflat EQ 1, nflat)
-            iend = where(dflat EQ -1, nend)
-            if (nend LT nflat) then iend = [iend, npixobj-1]
+            iend = where(dflat EQ -1, nend) - 1
+
             for iflat=0, nflat-1 do begin
                thismask = lonarr(npixobj)
                thismask[istart[iflat]:iend[iflat]] = $
