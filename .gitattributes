@@ -11,6 +11,8 @@ doc/Makefile -text
 doc/mk_doc -text
 doc/www/.cvsignore -text
 doc/www/idlspec2d_install.html -text
+doc/www/idlspec2d_reduce.html -text
+doc/www/spectro_home.html -text
 etc/BG14.txt -text
 etc/FG3.txt -text
 etc/Makefile -text

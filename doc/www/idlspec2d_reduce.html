@@ -1,0 +1,157 @@
+<HTML>
+<HEAD><TITLE>Reducing Raw SDSS Specroscopic Data</TITLE></HEAD>
+
+<BODY>
+
+<H1 ALIGN="center">Reducing Raw SDSS Specroscopic Data</H1>
+
+These are the instructions for running the spectroscopic pipeline on
+the raw SDSS data.  You must first <A HREF="idlspec2d_install.html">install
+the IDL code</A>.
+
+<HR>
+
+<H2 ALIGN="left">The Directory Structure</H2>
+
+<P>
+The directory stucture for spectroscopic data is described by environment
+variables as follows:
+<DL><DD><PRE>
+   $RAWDATA_DIR/<I>mmmmm</I> - The raw image, "sdR-<I>cc-eeeeeeee</I>.fit"
+   $SPECLOG_DIR/<I>mmmmm</I> - The plug-map files, "plPlugMapM-<I>pppp-mmmmm-rr</I>.par"
+   $SPECFLAT_DIR      - The spectroscopic pixel flats, "pixflat-<I>mmmmm-cc</I>.fits"
+</PRE></DD></DL>
+where <I>mmmmm</I> refers to an MJD (such as 51690), <I>cc</I> refers
+to a camera name (such as b1 for blue-1), <I>pppp</I> refers to a plate
+number (such as 0306), <I>eeeeeeee</I> refers to an exposure number
+(such as 00003974), and <I>rr</I> refers to a fiber-mapper re-run number
+(such as 01).
+
+<P>
+At Princeton, these paths would be set as follows:
+<DL><DD><PRE>
+   setenv RAWDATA_DIR    /peyton/scr/spectro0/data/rawdata
+   setenv SPECLOG_DIR    /peyton/scr/spectro0/data/astrolog
+   setenv SPECFLAT_DIR   /peyton/scr/spectro0/data/pixflats
+</PRE></DD></DL>
+
+<P>
+To re-run a plate through the spectro pipeline, you need all of these files.
+And the three paths must be set appropriately.
+
+<H2 ALIGN="left">Obtaining the Raw Data</H2>
+
+<P>
+The raw data is available from Fermilab.  Much, but not all of it, is
+spinning on disk.  The rest is recoverable from their tape robot.
+
+<P>
+The raw images for a particular night ($MJD) can be found at:
+<DL><DD><PRE>
+   fsgi03.fnal.gov:/usr/sdss/data05/spectro/rawdata/$MJD/sdR*.fit
+</PRE></DD></DL>
+
+<P>
+The plug-map files for a particular night ($MJD) can be found at:
+<DL><DD><PRE>
+   fsgi03.fnal.gov:/usr/sdss/data05/spectro/astrolog/$MJD/plPlugMapM*.par
+</PRE></DD></DL>
+
+<P>
+A set of pixel flats can be found at:
+<DL><DD><PRE>
+   fsgi03.fnal.gov:/usr/sdss/data05/spectro/pixflats/pixflat-*.fits
+</PRE></DD></DL>
+
+
+<H2 ALIGN="left">Generating Plan Files</H2>
+
+<P>
+My convention is to put the reduced data in a directory separate from
+the data where the top-level directory is $SPECTRO_DATA.  At Princeton,
+this would be set to
+<DL><DD><PRE>
+   setenv SPECTRO_DATA     /u/dss/data/2d_v4
+</PRE></DD></DL>
+Each plate is put in its own subdirectory, so the reductions of plate 306
+would be in "/u/dss/data/2d_v4/0306".
+
+<P>
+Before running the spectro pipeline, you need to build plan files for
+each plate.  Create the output directory $SPECTRO_DATA.  From there,
+build the plan files...
+<DL><DD><PRE>
+   IDL> <A HREF="idlspec2d_doc.html#SPPLAN2D">spplan2d</A>
+   IDL> <A HREF="idlspec2d_doc.html#SPPLAN1D">spplan1d</A>
+</PRE></DD></DL>
+This could take an hour to build plan files for all the data taken to date.
+However, you can limit this to particular nights of data by setting
+keywords to these procedures (see the full documentation).
+
+<P>
+The spplan2d command builds the files "spPlan2d-<I>pppp-mmmmm</I>.par".
+There is one such file for each night a plate is observed.
+
+<P>
+The spplan1d command builds the files "spPlancomb-<I>pppp-mmmmm</I>.par".
+This file merges exposures from multiple nights of observations of the same
+plate <B>if</B> those observations were taken without re-plugging the plate.
+If the plate was re-plugged between nights, then a given fiber will correspond
+to different objects in each night, and those nights' data shouldn't be
+combined with "spcombine".
+
+<P>
+Note that these plan files are ASCII files (in something called a Yanny
+parameter format) which can be hand-edited.  That way, you can exclude
+particular exposures from a reduction by commenting-out lines with hash
+marks (#).
+
+<H2 ALIGN="left">Running from the IDL Prompt</H2>
+
+<P>
+It takes approximately 8 hours to run one plate through Spectro-2D on
+an 800 MHz Pentium, and another 10 hours to run Spectro-1D.
+
+<P>
+In each output plate directory, you can run the following three commands
+from the IDL prompt:
+<DL><DD><PRE>
+   IDL> <A HREF="idlspec2d_doc.html#SPREDUCE2D">spreduce2d</A>
+   IDL> <A HREF="idlspec2d_doc.html#SPCOMBINE">spcombine</A>
+   IDL> <A HREF="idlspec2d_doc.html#SPREDUCE1D">spreduce1d</A>
+</PRE></DD></DL>
+
+<P>
+The spreduce2d command reduces individual exposures to
+"spFrame-<I>cc-eeeeeeee</I>.fits" files.
+
+<P>
+The spcombine command combines those exposures into the reduced plate
+file, "spPlate-<I>pppp-mmmmm</I>.fits".
+
+<P>
+The spreduce1d command finds the redshifts, and generates the file
+"spZbest-<I>pppp-mmmmm</I>.fits".
+
+<P>
+A number of other supplementary files are also produced.  The history
+of the reductions are written to log files named "spDiag*.log", and
+some PostScript plots are written to "spDiag*.ps".
+
+<H2 ALIGN="left">Running in the Background</H2>
+
+For example, to reduce plate 306 from the command line,
+<DL><DD><PRE>
+echo "<A HREF="idlspec2d_doc.html#SPREDUCE2D">spreduce2d</A>, 'spPlan2d-0306-51690.par'" | idl >& /dev/null &
+</PRE></DD></DL>
+
+<HR>
+
+<ADDRESS> Maintained by
+<A HREF="mailto:schlegel@astro.princeton.edu">David Schlegel</A>
+at Princeton University, Dept. of Astrophysics, Peyton Hall, Princeton NJ 08544
+</ADDRESS>
+
+</BODY>
+
+</HTML>

@@ -1,0 +1,624 @@
+<HTML>
+<HEAD>
+<TITLE>SDSS Spectro Page</TITLE>
+</HEAD>
+
+<BODY>
+
+<BASE TARGET="_top">
+
+<BODY>
+
+<H1><CENTER>SDSS Spectra</CENTER></H1>
+
+This page should get SDSS Collaborators started using the spectra within
+minutes.  All you need is access to the Fermilab computer "fsgi03.fnal.gov"
+to retrieve the data.  If you have an IDL license, then you can quickly set
+up tools to view, query, and use these data.  Other tools will be posted
+here as they're made available.
+
+<P>
+In this document:
+<UL>
+  <LI><A HREF="#platelist">Which Plates Are Reduced?</A>
+  <LI><A HREF="#where">Where Is the Data and How Do I Get It?</A>
+  <LI><A HREF="#summary">What Is the Summary File?</A>
+  <LI><A HREF="#display">Looking at the Data</A>
+  <OL>
+     <LI><A HREF="#idlsetup">Setting Up IDL Tools</A>
+     <LI><A HREF="#idldisplay">Displaying the Spectra From IDL</A>
+     <LI><A HREF="#smdisplay">Displaying the Spectra From SM</A>
+  </OL>
+  <LI><A HREF="#special">"Special" Plates</A>
+  <LI><A HREF="#datamodel">What Is the Data Model?</A>
+  <LI><A HREF="#targetflags">What Are the Target Flags?</A>
+  <LI><A HREF="#vacuum">The Wavelengths Are in Vacuum!!??</A>
+</UL>
+
+<P>
+Related documents:
+<UL>
+  <LI><A HREF="idlspec2d_install.html">Installing idlspec2d the official way</A>
+  <LI><A HREF="idlspec2d_reduce.html">Reducing <B>raw</B> spectroscopic data</A>
+  <LI>Full documentation: <A HREF="idlspec2d_doc.html">idlspec2d</A>
+  <LI>Full documentation: <A HREF="idlutils_doc.html">idlutils</A>
+  <LI>Full documentation: <A HREF="goddard_doc.html">Goddard IDL utilities</A>
+</UL>
+
+<P>
+Related web sites:
+<UL>
+  <LI><A HREF="http://www.sdss.org/">Official SDSS Web Site</A>
+  <LI>The <A HREF="http://astro.Princeton.EDU/BBOOK/">"Black Book"</A>
+      and the
+      <A HREF="http://www.astro.princeton.edu/PBOOK/welcome.htm">
+      "Project Book"</A>
+  <LI><A HREF="http://www.astro.princeton.edu:81/">Princeton SDSS Web Site</A>
+      (restricted access)
+  <LI><A HREF="http://plate-mapper.apo.nmsu.edu:8020/topFrame.html">
+      Plate Inventory Database</A> (restricted access)
+</UL>
+
+<P>
+Related mailing lists (restricted access):
+<UL>
+  <LI>Spectroscopic pipeline
+      <A HREF="http://www.astro.princeton.edu:81/sdss-spectro/INDEX.html">
+      (sdss-spectro)</A>
+  <LI>Spectroscopic commissioning
+      <A HREF="http://www.astro.princeton.edu:81/sdss-spcommish/INDEX.html">
+      (sdss-spcommish)</A>
+  <LI>Hand-written observing logs (imaging + spectroscopy)
+      <A HREF="http://www.astro.princeton.edu:81/sdss-25mlog/INDEX.html">
+      (sdss-25mlog)</A>
+  <LI>Spectro auto-generated observing logs
+      <A HREF="http://www.astro.princeton.edu:81/sdss-speclog/INDEX.html">
+      (sdss-speclog)</A>
+</UL>
+
+<HR>
+
+<H2><A NAME="platelist">Which Plates Are Reduced?</A></H2>
+
+<P>
+The SDSS will observe approximately 2000 plates by the end of
+its 5 year survey.  Each plate is physically an aluminum disk 60 cm
+in diameter that subtends 3 degrees on the sky.
+640 fibers are plugged into each plate at the location of objects chosen from
+the photometric survey, allowing us to spectroscopically observe 640
+objects at time.  Typically, we integrate for 45 minutes on each plate.
+
+<P>
+Since plates are occasionally re-observed, the plate number plus the
+observation date uniquely identifies an observation.  We track the
+date with modified Julian date (MJD).  In these re-observations,
+the optical fibers may be plugged into different holes, so fiber #1 on
+plate 306 won't be the same on the MJD=51637 observation as on MJD=51690.
+
+<P>
+Therefore, PLATE + MJD + FIBERID uniquely determines a single observation
+of a single object.  The TILE number uniquely determines a position on the
+sky, and there are a few instances where two PLATEs are drilled for one TILE.
+
+<P>
+To date, we have observed over 100 plates.
+Recent reductions are available for the following 31 plates: <BR>
+<PRE>
+PLATE  MJD   TILE SN2_G1 SN2_I1 SN2_G2 SN2_I2 Ngal Nqso Nsta Nunk Nsky
+-----  ----- ---- ------ ------ ------ ------ ---- ---- ---- ---- ----
+  279  51602  109   19.3   14.6   18.6   15.5  520   39   38   11   32
+  300  51666   88   23.8   20.6   20.3   19.2  456   54   90    8   32
+  301  51641   87   19.9   21.9   20.7   20.3  429   65  109    5   32
+  302  51616   86    1.6    1.2    1.7    1.4  419   36   58   95   32
+  302  51688   86   23.8   21.4   24.7   23.3  486   52   67    4   31
+  303  51614   85   24.4   23.1   27.8   23.2  526   34   46    2   32
+  304  51609   84   19.1   16.8   23.3   21.0  457   34  114    4   31
+  305  51613   83   25.0   26.1   29.4   30.6  472   36   94    6   32
+  306  51637   82   30.8   29.5   29.7   30.9  506   45   54    3   32
+  306  51690   82   20.1   25.3   21.3   27.1  505   46   53    4   32
+  307  51663   81   23.0   22.2   21.1   22.0  458   44   97    9   32
+  308  51662   80   27.7   23.7   29.2   26.0  418   64  113   13   32
+  309  51666   79   21.6   14.4   21.3   15.0  432   58  104   14   32
+  310  51614   78   10.7   10.4   13.3   12.9  429   59  100   20   32
+  311  51665   77   22.4   20.2   22.4   19.4  528   29   47    4   32
+  312  51689   76   20.3   25.3   22.5   27.8  500   46   60    2   32
+  323  51615   96   37.2  162.7   51.2  141.1   38    2  568    0   32  STELLAR LOCUS
+  324  51637   97   20.6   18.8   21.3   30.2   14    5  588    1   32  STELLAR LOCUS
+  343  51692  146   25.0   27.5   22.8   21.2  442   43  111   12   32
+  354  51792  153   15.6   19.3   14.7   20.7  371   83  130   24   32
+  408  51821  197   25.8   24.0   25.6   24.8  376  123   85   24   32
+  411  51817  200   28.8   29.6   27.3   24.7  524   43   39    0   34
+  413  51821  202   24.2   23.0   19.7   21.4  451   56   94    7   32
+  415  51810  204   26.1   32.3   28.3   30.2  461   57   77   13   32
+  416  51811  205   28.8   30.3   26.1   28.0  435   91   72    9   33
+  417  51821  219   25.8   30.6   26.8   28.0  311   52   52   11  214
+  418  51817  218   27.9   40.3   32.3   33.2  431   95   72   10   32
+  421  51821  215   28.7   29.8   26.0   28.1  512   56   35    5   32
+  422  51811  214   27.9   24.3   27.9   27.0  533   34   31   10   32
+  423  51821  213   29.1   28.2   24.9   24.6  522   45   38    3   32
+  429  51818  209   58.7   52.9   51.0   48.5  524   43   38    3   32
+</PRE>
+
+All plates in this list have been reduced through Spectro-2D.
+Plates with values in the Ngal, ..., columns have been reduced
+through Princeton-1D.
+
+The values of SN2 give an estimate of the signal-to-noise (per pixel) of a plate
+at a fiducial magnitude.  The fiducials are set to g=20.2, r=20.25, i=19.9.
+The measurement is of the signal-to-noise squared, per pixel, for an object
+at that magnitude.  If all these values are > 15, then the plate is "good".
+Plate 310 is "not good".  The first observation of plate 302
+would be called "horrible".
+
+<PRE>
+Ngal = The number of objects Princeton-1D called a galaxy.
+Nqso = The number of objects Princeton-1D called a QSO.
+Nsta = The number of objects Princeton-1D called a star.
+Nunk = The number of objects Princeton-1D declared spectroscopically "unknown".
+Nsky = The number of sky fibers (almost always exactly 32)
+</PRE>
+
+<H2><A NAME="where">Where Is the Data and How Do I Get It?</A></H2>
+
+<P>
+At Princeton, the top-level directory for the reduced data is:
+<DL><DD><PRE>
+/u/dss/data/2d_v4
+</PRE></DD></DL>
+
+<P>
+At Fermi, the top-level directory for the reduced data is:
+<DL><DD><PRE>
+fsgi03.fnal.gov:/usr/sdss/data04/schlegel/2d_v4
+</PRE></DD></DL>
+
+<P>
+This is approximately 2 Gb of data, which can be copied from Fermi with:
+<DL><DD><PRE>
+scp -r fsgi03.fnal.gov:/usr/sdss/data04/schlegel/2d_v4
+</PRE></DD></DL>
+If you don't have permissions on this machine, contact your
+<A HREF="http://www-sdss.fnal.gov:8000/guru/gurulist.html">local data guru</A>
+or <A HREF="mailto:bclee@fnal.gov">Brian Lee at Fermi</A>.
+
+<P>
+Each plate has two files associated with it:
+<DL><DD><PRE>
+$SPECTRO_DATA/$PLATE/spPlate-$PLATE-$MJD.fits
+$SPECTRO_DATA/$PLATE/spZbest-$PLATE-$MJD.fits
+</PRE></DD></DL>
+where $SPECTRO_DATA refers to the top-level directory (2d_v4), and $PLATE
+refers to a subdirectory with the plate name (e.g., 0301).
+
+<H2><A NAME="special">"Special" Plates</A></H2>
+
+<P>There are a number of "special" plates, designed for commissioning
+either the hardware or target selection for the survey.  These plates are:
+<UL>
+<LI> <B>Plate 125-134, 160, 161 : Coma plates </B><BR>
+     See
+     <A HREF="http://ranger.phys.cmu.edu/users/merrelli/">
+     Aaron Merrelli's web page</A>.<BR>
+     These data were taken when the spectrographs were just being put
+     together.  Only one spectrograph was on the telescope (with 320 fibers),
+     and there was significant light contamination from LED's inside the
+     instrument.<BR>
+     Plate 133 was observed.
+<LI> <B>Plate 135-159 : Early data plates </B><BR>
+     These plates have the same caveats as for the Coma plate above.
+     Descriptions of these early data and how to obtain raw and reduced
+     spectra, can be found at:<BR>
+<A HREF="http://www-sdss.fnal.gov:8000/spectrodoc/doc/www/spectra/list.html">
+     http://www-sdss.fnal.gov:8000/spectrodoc/doc/www/spectra/list.html</A>
+<LI> <B>Plates 162-185 : FASST plates </B><BR>
+     These are test plates with astrometric stars.  Only engineering data
+     was taken with these plates.
+<LI> <B>Plate 231 : Reddening plate </B><BR>
+     This plate was observed in marginal conditions on MJD 51455.
+<LI> <B>Plate 320 : Faint QSO plate </B><BR>
+     See
+     <A HREF="http://www.astro.princeton.edu:81/sdss-spcommish/msg.206.html">
+     sdss-spcommish msg/206</A> <BR>
+     This plate has not been observed.
+<LI> <B>Plate 321 : M67 velocity standards</B><BR>
+     See
+     <A HREF="http://www.astro.princeton.edu:81/sdss-spcommish/msg.206.html">
+     sdss-spcommish msg/206</A> <BR>
+     This plate was observed and used to test the precision of measuring
+     velocities.
+<LI> <B>Plates 322-324 : Stellar locus plates</B><BR>
+     See
+     <A HREF="http://www.astro.princeton.edu:81/sdss-spcommish/msg.206.html">
+     sdss-spcommish msg/206</A> <BR>
+     The two fainter plates, 323 and 324, have been observed.
+</UL>
+
+<H2><A NAME="summary">What Is the Summary File?</A></H2>
+
+<P>
+I've attempted to generate one monstrous file with all the spectroscopic
+and photometric outputs.  This is a FITS binary table called "spAll.fits".
+
+<P>
+In addition, I've also made an ASCII file with the most relevant quantities
+that one may wish to search on.  This file is "spAll.dat", and is basically
+a stripped-down version of "spAll.fits" for the FITS-challenged.
+
+<P>
+<B>HOWEVER</B>, I was unable to find the photometric outputs for all
+of these data.  In these cases, the photometric outputs are all set
+to zero -- though the spectroscopic outputs are still in these files.
+
+<H2><A NAME="display">Looking at the Data</A></H2>
+
+<P>
+Since standard FITS files are used, there are many ways to access these
+data.  Below are descriptions of specially-written IDL and SM code for
+looking at the data.  IRAF, TCL, and other tools could also be used.
+If you write any such tools, it would be useful to make them available
+to the collaboration by posting them on this site.
+
+<P>
+The absolute simplest way to look at the data is to use SAOimage or XIMTOOL
+to display the plate images (spPlate*.fits), which will show you all 640
+spectra on a plate at once.
+
+<H2><A NAME="idlsetup">Setting Up IDL Tools</A></H2>
+
+<P>
+You need two products: "idlutils", and "idlspec2d".  These will work
+on any platform (Linux, SGI, Solaris, etc) as long as you also have
+an IDL license.  You must have "idl" in your path, and the IDL_PATH
+environment variable should already be set.  At Princeton, you would type:
+<DL><DD><PRE>
+setenv IDL_DIR  /usr/peyton/common/licensed/idl
+setenv IDL_PATH  .:+{$IDL_DIR}/lib
+alias idl $IDL_DIR/bin/idl
+</PRE></DD></DL>
+
+<P>
+You can download and set up these utilities in just a few minutes
+from a couple of tar files.  Click on the following files to download them:
+<UL>
+<LI><A HREF="idlutils-v4_1_2.tar">idlutils-v4_1_2.tar</A>
+<LI><A HREF="idlspec2d-v4_1_2.tar">idlspec2d-v4_1_2.tar</A>
+</UL>
+
+<P>
+If you've put these files in your home directory, then unpack and build
+them as follows:
+
+<DL><DD><PRE>
+tar xf idlutils*.tar
+tar xf idlspec2d*.tar
+setenv IDLUTILS_DIR $HOME/idlutils
+setenv IDLSPEC2D_DIR $HOME/idlspec2d
+setenv IDL_PATH  +{$IDLUTILS_DIR}/goddard/pro:{$IDL_PATH}
+setenv IDL_PATH  +{$IDLUTILS_DIR}/pro:{$IDL_PATH}
+setenv IDL_PATH  +{$IDLSPEC2D_DIR}/pro:{$IDL_PATH}
+set path = ( $path {$IDLUTILS_DIR}/bin )
+cd $IDLUTILS_DIR
+evilmake all
+cd $IDLSPEC2D_DIR
+evilmake all
+</PRE></DD></DL>
+
+<P>
+If you have someone maintaining survey code at your institution, you
+could have them install version v4_1_2 of these products, then set use
+the "setup" command.  At Princeton, if you are on a Linux box, you
+could simply type:
+<DL><DD><PRE>
+source /u/products/etc/sdssfue.csh
+setup idlutils v4_1_2
+setup idlspec2d v4_1_2
+</PRE></DD></DL>
+
+<P>
+Extensive documentation exists for the commands described below, in
+the file:
+<DL><DD><PRE>
+$IDLSPEC2D_DIR/doc/www/idlspec2d_doc.html
+</PRE></DD></DL>
+
+<H4><A NAME="idldisplay">Displaying the Spectra From IDL</A></H4>
+
+<P>
+First, set up the "idlutils" and "idlspec2d" software, as described above.
+
+<P>
+You need to set an environment variable that points to the top-level
+directory of the data.  At Princeton, this would be:
+<DL><DD><PRE>
+setenv SPECTRO_DATA /u/dss/data/2d_v4
+</PRE></DD></DL>
+
+<P>
+Start IDL with:
+<DL><DD><PRE>
+idl
+</PRE></DD></DL>
+
+<P>
+Then from within IDL, you can display individual spectra as following.
+To display plate 401, fiber 100:
+<DL><DD><PRE>
+IDL> <A HREF="idlspec2d_doc.html#PLOTSPEC">plotspec</A>, 401, 100
+</PRE></DD></DL>
+The spectrum is shown in white, the errors in red (except masked points
+are set to zero), and the best-fit eigenspectrum in blue.
+The mouse buttons will zoom in (left), recenter (center), or zoom out (right).
+The frame can be saved as a PostScript file by selecting File->WriteEPS
+from the left-hand corner.
+
+<P>
+Make the same plot, but boxcar-smooth the spectrum:
+<DL><DD><PRE>
+IDL> <A HREF="idlspec2d_doc.html#PLOTSPEC">plotspec</A>, 401, 100, nsmooth=10
+</PRE></DD></DL>
+
+<P>
+Some plates are observed on multiple nights.  To select one of the two
+observations of plate 306:
+<DL><DD><PRE>
+IDL> <A HREF="idlspec2d_doc.html#PLOTSPEC">plotspec</A>, 306, 20, mjd=51690
+</PRE></DD></DL>
+
+<P>
+You can write the spectrum to an ASCII file as follows:
+<DL><DD><PRE>
+IDL> <A HREF="idlspec2d_doc.html#WRITESPEC">writespec</A>, 401, 100
+</PRE></DD></DL>
+The default file name will be "spec-0401-51788-100.dat".  This can
+be changed by setting the FILENAME keyword:
+<DL><DD><PRE>
+IDL> <A HREF="idlspec2d_doc.html#WRITESPEC">writespec</A>, 401, 100, filename='junk.dat'
+</PRE></DD></DL>
+
+<P>
+Quitting IDL:
+<DL><DD><PRE>
+IDL> exit
+</PRE></DD></DL>
+
+<P>
+<B>For IDL pundits</B>, the general-purpose routine for reading the data
+is the <A HREF="idlspec2d_doc.html#READSPEC">READSPEC</A> procedure.
+
+<H4><A NAME="smdisplay">Displaying the Spectra From SM</A></H4>
+
+<P>
+The SM tools are still in development by Michael Strauss, Vijay Narayanan,
+and Robert Lupton.  Hopefully we can post this very shortly.
+
+<H2><A NAME="datamodel">What Is the Data Model?</A></H2>
+
+<P>
+The first FITS file (spPlate*.fits) contains the following: <BR>
+<PRE>
+HDU #0 = Flux in units of 10^(-17) erg/cm/s/Ang [FLOAT]
+HDU #1 = Inverse variance (1/sigma^2) for the above [FLOAT]
+HDU #2 = AND mask [32-bit INT]
+HDU #3 = OR mask [32-fit INT]
+HDU #4 = Wavelength dispersion in pixels [FLOAT]
+HDU #5 = Plug-map structure from plPlugMapM file [BINARY FITS TABLE]
+</PRE>
+
+The following header keywords are of interest: <BR>
+<PRE>
+PLATEID = Plate ID
+TILEID  = Tile ID
+MAPID   = Fiber mapper ID
+NAME    = Name of target: Plate ID, MJD, Fiber mapper rerun
+COEFF0  = Central wavelength (log10-Angstroms) of first pixel
+COEFF1  = Wavelength range of each pixel (log-10 Angstroms)
+RADEG   = Right ascension of plate center (degrees)                     
+DECDEG  = Declination of plate center (degrees)                         
+EXPT_B1 = b1 camera exposure time (seconds)              
+EXPT_B2 = b2 camera exposure time (seconds)              
+EXPT_R1 = r1 camera exposure time (seconds)              
+EXPT_R2 = r2 camera exposure time (seconds)              
+EXPTIME = Minimum of exposure times for all cameras      
+
+</PRE>
+
+<P>
+The second file (spZbest*.fits) is the Princeton-1D output file as a
+FITS binary table.  The columns are as follows: <BR>
+<PRE>
+PLATE      Plate number
+TILE       Tile number
+MJD        Modified Julian date of observation
+FIBERID    Fiber ID (1 to 640)
+OBJID      4-element PHOTO ID of targetted object: run, re-run, column, ID
+OBJTYPE    Why this object was targetted
+PLUG_RA    Object RA
+PLUG_DEC   Object DEC
+CLASS      Spectro classification: GALAXY, QSO, STAR, SKY
+SUBCLASS   Spectro sub-classification; presently only used for STARs with the
+           catagories: O, B, A, F, K, M, L, Carbon_DQ, Carbon, WD, CV
+Z          Redshift
+Z_ERR      Redshift error; at present, not well determined
+RCHI2      Reduced chi^2 for best fit
+DOF        Degrees of freedom for best fit
+RCHI2DIFF  Difference in reduced chi^2 of best solution to 2nd best solution
+TFILE      Template file in $IDLSPEC2D_DIR/templates
+TCOLUMN    Columns to use in template file (0-indexed); unused values set to -1
+NPOLY      Number of polynomial terms used in conjuction with TFILE
+THETA      Eigenvalue coefficients for each column in template file + each polynomial term
+SIGMA2     (Unused.)
+SIGMA2_ERR (Unused.)
+WAVEMIN    Minimum observed wavelength for this object (Angstroms)
+WAVEMAX    Maximum observed wavelength for this object (Angstroms)
+WCOVERAGE  Amount of wavelength coverage in log-10(Angstroms)
+SPEC1_G    (S/N)^2 at g=20.20 for spectrograph #1
+SPEC1_R    (S/N)^2 at r=20.25 for spectrograph #1
+SPEC1_I    (S/N)^2 at i=19.90 for spectrograph #1
+SPEC2_G    (S/N)^2 at g=20.20 for spectrograph #2
+SPEC2_R    (S/N)^2 at r=20.25 for spectrograph #2
+SPEC2_I    (S/N)^2 at i=19.90 for spectrograph #2
+</PRE>
+
+<P>
+There are two masks, an "AND" mask and an "OR" mask.  The spectra
+are constructed from 3 or more 15-minute observations, and the "AND" mask
+bits are set if that bit is set for each and every input observation.
+The "OR" mask bits are set if that bit is set for any of the observations.
+Usually, I only look at the "AND" mask.
+
+<P>
+The mask bits are set as follows: <BR>
+<PRE>
+ 0 NOPLUG          Fiber not listed in plugmap file
+ 1 BADTRACE        Bad trace from routine TRACE320CRUDE
+ 2 BADFLAT         Low counts in fiberflat
+ 3 BADARC          Bad arc solution
+ 4 MANYBADCOLUMNS  >10% pixels are bad columns
+ 5 MANYREJECTED    >10% pixels are rejected in extraction
+ 6 LARGESHIFT      Large spatial shift between flat and object pos'n
+16 NEARBADPIXEL    Bad pixel within 3 pixels of trace
+17 LOWFLAT         Flat field less than 0.5
+18 FULLREJECT      Pixel fully rejected in extraction (INVVAR=0)
+19 PARTIALREJECT   Some pixels rejected in extraction
+20 SCATTEREDLIGHT  Scattered light significant
+21 CROSSTALK       Cross-talk significant
+22 NOSKY           Sky level unknown at this wavelength (INVVAR=0)
+23 BRIGHTSKY       Sky level > flux + 10*(flux error)
+24 NODATA          No data available in combine B-spline (INVVAR=0)
+25 COMBINEREJ      Rejected in combine B-spline
+</PRE>
+
+When low numbered bits (<16) are set, those will be set for half
+of the spectra -- either the blue or red spectrograph.  The higher-numbered
+bits (>=16) are set for individual pixels.
+
+<P>
+<B>Which mask bits are important?</B>  The conditions that are considered
+very bad are already used to set the errors to infinity for the
+effected pixels (specifically, the inverse variance is set to zero).
+The most useful mask bit to look at is BRIGHTSKY, which indicates
+when the sky is so bright relative to the object that perhaps one
+shouldn't trust any of the object flux there.  Our reported errors
+are meant to include sky-subtraction errors, but there are instances
+(particularly around 5577) where these errors may be untrustworthy.
+
+<H2><A NAME="targetflags">What Are the Target Flags?</A></H2>
+
+<P>
+The target selection sets bits in two flags called PRIMTARGET and SECTARGET.
+An object can have multiple bits set.  For example, if the target selection
+code determined that an object was both a QSO_SKIRT and a STAR_WHITE_DWARF,
+then two bits will be set.  The value of PRIMTARGET in this example will
+be 2^4 + 2^19 = 524304.
+
+<P>
+Let's say you want to find all objects either targetted as a carbon star,
+or spectroscopically classified as one.  All this information is in the
+summary file "spAll.fits".  From IDL, one could search for these objects
+and print their PLATE, MJD, and FIBERID as follows:
+<DL><DD><PRE>
+IDL> a = mrdfits('spAll.fits',1) ; This file should be in your current directory
+IDL> i = where((a.primtarget AND 2L^14) NE 0)
+IDL> print,transpose([[a[i].plate],[a[i].mjd],[a[i].fiberid]])
+
+     [ Prints list of objects targetted as a Carbon star.]
+
+IDL> i = where(strmid(a.subclass,0,6) EQ 'Carbon')
+IDL> print,transpose([[a[i].plate],[a[i].mjd],[a[i].fiberid]])
+
+     [ Prints list of objects spectroscopically called a Carbon star.]
+</PRE></DD></DL>
+
+<P>
+The PRIMTARGET bit values are as follows (in hex and decimal):
+<PRE>
+  QSO_HIZ           = 0x1          = bit # 0 =        1
+  QSO_CAP           = 0x2          = bit # 1 =        2
+  QSO_SKIRT         = 0x4          = bit # 2 =        4
+  QSO_FIRST_CAP     = 0x8          = bit # 3 =        8
+  QSO_FIRST_SKIRT   = 0x10         = bit # 4 =       16
+  QSO_MAG_OUTLIER   = 0x2000000    = bit #25 = 33554432
+  QSO_REJECT        = 0x20000000   = bit #29 =536870912
+  GALAXY_RED        = 0x20         = bit # 5 =       32
+  GALAXY_RED_II     = 0x4000000    = bit #26 = 67108864
+  GALAXY            = 0x40         = bit # 6 =       64
+  GALAXY_BIG        = 0x80         = bit # 7 =      128
+  GALAXY_BRIGHT_CORE= 0x100        = bit # 8 =      256
+  ROSAT_A           = 0x200        = bit # 9 =      512
+  ROSAT_B           = 0x400        = bit #10 =     1024
+  ROSAT_C           = 0x800        = bit #11 =     2048
+  ROSAT_D           = 0x1000       = bit #12 =     4096
+  ROSAT_E           = 0x8000000    = bit #27 =134217728
+  STAR_BHB          = 0x2000       = bit #13 =     8192
+  STAR_CARBON       = 0x4000       = bit #14 =    16384
+  STAR_BROWN_DWARF  = 0x8000       = bit #15 =    32768
+  STAR_SUB_DWARF    = 0x10000      = bit #16 =    65536
+  STAR_CATY_VAR     = 0x20000      = bit #17 =   131072
+  STAR_RED_DWARF    = 0x40000      = bit #18 =   262144
+  STAR_WHITE_DWARF  = 0x80000      = bit #19 =   524288
+  STAR_PN           = 0x10000000   = bit #28 =268435456
+  SERENDIP_BLUE     = 0x100000     = bit #20 =  1048576
+  SERENDIP_FIRST    = 0x200000     = bit #21 =  2097152
+  SERENDIP_RED      = 0x400000     = bit #22 =  4194304
+  SERENDIP_DISTANT  = 0x800000     = bit #23 =  8388608
+  SERENDIP_MANUAL   = 0x100000     = bit #24 = 16777216
+</PRE>
+
+<P>
+The SECTARGET bit values are as follows (in hex and decimal):
+<PRE>
+  LIGHT_TRAP        = 0x1          = bit # 0 =        1
+  REDDEN_STD        = 0x2          = bit # 1 =        2
+  TEST_TARGET       = 0x4          = bit # 2 =        4
+  QA                = 0x8          = bit # 3 =        8
+  SKY               = 0x10         = bit # 4 =       16
+  SPECTROPHOTO_STD  = 0x20         = bit # 5 =       32
+  GUIDE_STAR        = 0x40         = bit # 6 =       64
+  BUNDLE_HOLE       = 0x80         = bit # 7 =      128
+  QUALITY_HOLE      = 0x100        = bit # 8 =      256
+  HOT_STD           = 0x200        = bit # 9 =      512
+</PRE>
+
+<P>
+These flag values were copied from the "target" module file
+"common/arTargetType.h".
+
+<H2><A NAME="vacuum">The Wavelengths Are in Vacuum!!??</A></H2>
+
+<P>
+Yes, the data are stored using <B>vacuum</B> wavelengths.  This makes sense
+for quasologists.  But most optical astronomers know the wavelengths of
+transitions as measured at S.T.P., which is how the CRC lists them for
+any transitions redward of 2000 Angstroms.
+
+<P>
+The IAU standard for conversion from air to vacuum wavelengths is given
+in Morton (1991, ApJS, 77, 119).  For vacuum wavelengths (VAC) in Angstroms,
+convert to air wavelength (AIR) via:<BR>
+<PRE>
+  AIR = VAC / (1.0 + 2.735182E-4 + 131.4182 / VAC^2 + 2.76249E8 / VAC^4)
+</PRE>
+
+<P>
+Below, I've listed the vacuum wavelength of some transitions:
+<PRE>
+ Air       Vacuum
+ --------  --------
+ 4861.363  4862.721  H-beta
+ 4958.911  4960.295  [O III]
+ 5006.843  5008.239  [O III]
+ 6548.05   6549.86   [N II]
+ 6562.801  6564.614  H-alpha
+ 6583.45   6585.27   [N II]
+ 6716.44   6718.29   [S II]
+ 6730.82   6732.68   [S II]
+</PRE>
+
+<HR>
+<A HREF="http://astro.princeton.edu/~schlegel/">David Schlegel</A>,
+<A HREF="mailto:schlegel@astro.princeton.edu">schlegel@astro.princeton.edu</A>
+</ADDRESS>
+
+</BODY>
+</HTML>
+
