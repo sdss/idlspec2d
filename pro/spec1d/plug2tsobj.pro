@@ -22,7 +22,8 @@
 ;
 ; OUTPUTS:
 ;   tsobj      - tsObj structure, sorted such that each entry corresponds
-;                to each entry in the PLUGMAP structure.
+;                to each entry in the PLUGMAP structure; return 0 if the
+;                tsObj file was not found on disk.
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -93,10 +94,17 @@ function plug2tsobj, plateid, ra, dec, plugmap=plugmap, dmin=dmin
    ; Select the first matching file if there are several
    filename = (findfile(filepath(filename, root_dir=root_dir, $
     subdirectory='plates')))[0]
-   if (NOT keyword_set(filename)) then $
-    message, 'tsObj file not found for plate ' + platestr
+   if (NOT keyword_set(filename)) then begin
+      print, 'tsObj file not found for plate ' + platestr
+      return, 0
+   endif
 
    tstemp = mrdfits(filename, 1)
+   if (NOT keyword_set(tstemp)) then begin
+      print, 'tsObj file is empty: ' + filename
+      return, 0
+   endif
+
    tsobj1 = tstemp[0]
    struct_assign, {junk:0}, tsobj1 ; Zero-out this new structure
    tsobj = replicate(tsobj1, n_elements(ra))
