@@ -178,7 +178,12 @@ pro platemerge, zfile, outroot=outroot1, public=public
       endif
 
       indx = (ifile * 640L) + lindgen(640)
-      copy_struct_inx, zans, outdat, index_to=indx
+
+      ; The following is very slow, so we do this differently...
+;      copy_struct_inx, zans, outdat, index_to=indx
+      tmpdat = outdat[indx]
+      copy_struct, zans, tmpdat
+      outdat[indx] = tmpdat
 
       ; Fill in the first columns of this output structure
       outdat[indx].progname = plist[ifile].progname
@@ -359,7 +364,7 @@ pro platemerge, zfile, outroot=outroot1, public=public
 
    ; Read the tags that we need from the FITS file
    outdat = hogg_mrdfits(outroot[0]+'.fits.tmp', 1, nrowchunk=10000L, $
-    select_tags=ascii_tags)
+    columns=ascii_tags)
    adat = replicate(adat1, n_elements(outdat))
    copy_struct, outdat, adat
 
