@@ -189,10 +189,6 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
      sdssproc, arcfilenames[0], arcimg, arcivar, hdr=archdr, $
       pixflatname=pixflatname, spectrographid=spectrographid, color=color
 
-     ;------------------------------------------------------------------------
-     ; Do stats here to make sure it's an arc
-
-
      
      ;--------------------------------------------------------------------------
      ; Extract the arc image
@@ -274,7 +270,7 @@ for i=0,16 do oplot,fflat[*,i*19]
       sdssproc, objfile, objimg, objivar, hdr=objhdr, $
        pixflatname=pixflatname, spectrographid=spectrographid, color=color
 
-      plugsort = sortplugmap(plugmap, spectrographid)
+      if (iobj EQ 0) then plugsort = sortplugmap(plugmap, spectrographid)
 
       ;------------------
       ; Tweak up the spatial traces
