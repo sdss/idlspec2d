@@ -8,6 +8,9 @@ SKYSUBTRACT: Check for NEARBADPIXEL bit as well in pixelmask.
 
 Fixed DJS_BATCH to work properly on remote but cross-mounted CPU's.
 
+Plan files (spPlancomb*.par) written by SPPLAN1D now puts all the "planfile2d"
+entries on the same line to be consistent with how YANNY_PAR() works now.
+
 Fix the spike in memory usage at the end of SPCOMBINE.
 
 -------------------------------------------------------------------------------
