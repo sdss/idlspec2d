@@ -42,8 +42,13 @@
 ;   wsigma     - Sigma width for exponential whopping profiles; default to 25
 ;   reject     - Three-element array setting partial and full rejection
 ;                thresholds for profiles; default [0.2, 0.5, 0.8].
-;                What does this mean???
-;                When this was hardwired, it was [0.4, ??, 0.8].
+;                When there is less than REJECT[2] of the area is left,
+;                  then drop fitting of all higher-order terms.
+;                When there is less than REJECT[1] of the area is left,
+;                  then the pixel is rejected (inverse variance is set to 0).
+;                When there is less than REJECT[0] of the area is left,
+;                  then assume that there's no fiber there, and don't fit
+;                  for that fiber at all.
 ;
 ; MODIFIED INPUTS (OPTIONAL):
 ;   wfixed     - Array to describe which parameters to fix in the profile;
