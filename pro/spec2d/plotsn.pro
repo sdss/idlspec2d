@@ -92,10 +92,10 @@ pro plotsn, sn, plug, bands=bands, title=title, plotfile=plotfile
 
       snc = sn[i,nonsky]
       mag = plugc.mag[bands[i]]
-      a = fitsn(mag, snc, sigma=sigma, minmag=minmag, maxmag=maxmag)
+      afit = fitsn(mag, snc, sigma=sigma, minmag=minmag, maxmag=maxmag)
 
       logsnc = alog10(snc > 0.01)
-      diff = logsnc - poly(mag, a)
+      diff = logsnc - poly(mag, afit)
 
       limit = 10^poly(mag, fiducialfits[*,bands[i]])
       low = where(snc LT limit AND mag LT maxmag, nlow)
@@ -123,7 +123,8 @@ pro plotsn, sn, plug, bands=bands, title=title, plotfile=plotfile
        xtitle=xtitle, ytitle='S/N in '+bandnames[bands[i]]+'-band', $
        xmargin=xmargin, ymargin=ymargin, /xstyle, yrange=[0.5,100], /ystyle
 
-      djs_oplot, xfit, 10^poly(xfit, a)
+      if (keyword_set(afit)) then $
+       djs_oplot, xfit, 10^poly(xfit, afit)
       djs_oplot, xfit, 10^poly(xfit, fiducialfits[*,bands[i]]), $
        color='blue', thick=5
       if (i EQ 0 AND keyword_set(title)) then $
@@ -146,10 +147,11 @@ pro plotsn, sn, plug, bands=bands, title=title, plotfile=plotfile
           snc[s2[lower]] > 0.6, ps=4, syms=0.7, color='red'
       endif
 
-      xyouts, minmag+0.5, 0.9, string(format='(a,f5.2,f6.2,a)', $
-       'log S/N = ', a, slopelabel[bands[i]])
+      if (keyword_set(afit)) then $
+       xyouts, minmag+0.5, 0.9, string(format='(a,f5.2,f6.2,a)', $
+        'log S/N = ', afit, slopelabel[bands[i]])
 
-      if (size(sigma, /tname) NE 'UNDEFINED') then $
+      if (keyword_set(sigma)) then $
        xyouts, minmag+0.5, 1.5, string(format='(a,f4.2)','Stdev=', sigma)
 
       djs_xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.3], $
