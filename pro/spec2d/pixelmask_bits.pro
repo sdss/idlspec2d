@@ -3,27 +3,27 @@
 ;   pixelmask_bits
 ;
 ; PURPOSE:
-;   Return an integer with a single bit set which matches bitlabel
+;   Return mask value corresponding to a mask condition for FIBERMASK.
 ;
 ; CALLING SEQUENCE:
-;   pixelmask_bits(bitlabel)
+;   mask = pixelmask_bits(bitlabel)
 ;
 ; INPUTS:
-;   bitlabel   - String to match to corresponding bit
+;   bitlabel   - String name specifying bit
 ;
 ; OUTPUTS:
-;   One integer with 1 bit set 
-;   returns 0 if no label is matched
+;   mask       - Integer set to 2^BIT, where BIT is the bit specified by
+;                BITLABEL, or set to 0 if no label is matched
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   pixelmask[i] = pixelmask_bits('FULLREJECT') 
+;   mask = pixelmask_bits('FULLREJECT') 
 ;
 ; BUGS:
-;   ?  We may want to return unsigned long instead
+;   ???  We may want to return unsigned long instead
 ;
 ; PROCEDURES CALLED:
 ;
@@ -40,15 +40,13 @@ function pixelmask_bits, bitlabel
                   'SCATTEREDLIGHT',   $  ; Scattered light significant
                   'CROSSTALK',$          ; Cross-talk significant
                   'SKYLEVEL']           ; Sky background is > 10*flux
-                    
 
      ss = strpos(pixelbits,strupcase(bitlabel))
-	
+
      match = where(ss NE -1, nmatch)
-     
-     if (nmatch NE 1) then return, 0b
+
+     if (nmatch NE 1) then return, 0
 
      return, 2^match[0]
 end
 
-	
