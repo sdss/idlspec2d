@@ -410,9 +410,9 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ; Sky-subtract again, this time with dispset (PSF subtraction)
    ; 
 
-   skystruct_psf = skysubtract(flux, fluxivar, plugsort, vacset, $
-    skysubpsf, skysubpsfivar, iskies=iskies, pixelmask=pixelmask, $
-    fibermask=fibermask, upper=3.0, lower=3.0, dispset=dispset)
+   ; skystruct_psf = skysubtract(flux, fluxivar, plugsort, vacset, $
+   ;  skysubpsf, skysubpsfivar, iskies=iskies, pixelmask=pixelmask, $
+   ;  fibermask=fibermask, upper=3.0, lower=3.0, dispset=dispset)
 
    qaplot_skysub, flux, fluxivar, skysub, skysubivar, $
     vacset, iskies, title=plottitle+objname

@@ -123,7 +123,7 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
  wfixarr=wfixarr, npoly=npoly, maxiter=maxiter, $
  lowrej=lowrej, highrej=highrej, niter=niter, reducedChi=reducedChi, $
  whopping=whopping, wsigma=wsigma, pixelmask=pixelmask, reject=reject, $
- oldreject=oldreject, nband = nband
+ oldreject=oldreject, nband = nband, contribution=contribution
 
    ; Need 4 parameters
    if (N_params() LT 4) then $
@@ -293,12 +293,15 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
       if (proftype EQ 10 AND nband LT 3) then $
          message, 'Do we have enough band-width for proftype=10?'
 
+      sigmal = 15.0
+
       result = call_external(soname, 'extract_row',$
        nx, FLOAT(xvar), FLOAT(fimage), workinvvar, ymodel, ntrace, $
        LONG(npoly), FLOAT(xcen), FLOAT(sigma), LONG(proftype), $
        FLOAT(reject), partial, fullreject, qcovar, LONG(squashprofile), $
        FLOAT(whopping), whoppingct, FLOAT(wsigma), $
-       ncoeff, LONG(nband), ma, ans, wfixarr, p, fscat, fullcovar)
+       ncoeff, LONG(nband), ma, ans, wfixarr, p, fscat, fullcovar, $
+       sigmal, contribution)
 
       diffs = (fimage - ymodel) * sqrt(workinvvar) 
       chisq = total(diffs*diffs)

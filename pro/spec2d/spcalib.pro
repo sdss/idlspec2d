@@ -225,12 +225,11 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
          ;---------------------------------------------------------------------
 
          sigma = 1.0 ; Initial guess for gaussian width
-         proftype = 10 ; Gaussian + background
-         nband = 5
+         proftype = 1 ; Gaussian + background
          splog, 'Extracting flat-field image ', proftype
-         highrej = 5
-         lowrej = 5
-         npoly = 8 ; Fit 8 terms to background
+         highrej = 15
+         lowrej = 15
+         npoly = 10 ; Fit 1 terms to background
          wfixed = [1,1] ; Fit the first gaussian term + gaussian width
 
          ; Step 1: Extract flat field with polynomial background for
@@ -239,10 +238,12 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
          splog, 'Extracting flat to obtain width and flux'
          extract_image, flatimg, flativar, xsol, sigma, flux, fluxivar, $
           proftype=proftype, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
-          npoly=npoly, relative=1, ansimage=ansimage, nband=nband
+          npoly=npoly, relative=1, $
+          ansimage=ansimage, ymodel=ym, nband=10
 
          widthset = fitflatwidth(flux, fluxivar, ansimage, tmp_fibmask, $
           ncoeff=5, sigma=sigma)
+
 
 ;         widthset.coeff = widthset.coeff * 1.05 ; correction from whopping???
 
@@ -360,7 +361,7 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
          highrej = 10
          lowrej = 10
          npoly = 1  ; just fit flat background to each row
-         wfixed = [1] ; Just fit the first gaussian term
+         wfixed = [1,1] ; Just fit the first gaussian term
 
          splog, 'Extracting arc'
          extract_image, arcimg, arcivar, xsol + bestlag, sigma2, $
@@ -521,16 +522,17 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
          ;---------------------------------------------------------------------
 
          traceset2xy, widthset, xx, sigma2   ; sigma2 is real width
-         proftype = 10 ; Gaussian + background
-         nband = 5  
+         proftype = 1 ; Gaussian + with 10 sigma gaussian
+         nband = 1  
          highrej = 5
          lowrej = 5
-         npoly = 4 ; Fit 4 terms to background
-         wfixed = [1] ; Just fit the first gaussian term
+         npoly = 10 ; Fit 10 terms to background
+         wfixed = [1,1] ; Just fit the first gaussian term
 
          extract_image, flatimg, flativar, xsol, sigma2, flux, fluxivar, $
           proftype=proftype, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
-          npoly=npoly, relative=1, nband=nband
+          npoly=npoly, relative=1,  $
+          nband=nband, ymodel=ym, ansimage=s2, chisq=chisq
 
          ;---------------------------------------------------------------------
          ; Compute fiber-to-fiber flat-field variations

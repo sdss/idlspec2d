@@ -241,6 +241,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
             iback = fitans[nTrace*nCoeff:nTrace*nCoeff+nPoly-1,cur]
      endif
 
+     contribution = 0.02 * (1.0 + 1.5*(cur/1200.0)^2)
      pixelmasktemp = 0
      ansrow = extract_row(fimage[*,cur], invvar[*,cur], $
       xcen[cur,*],sigmacur,ymodel=ymodelrow, fscat=fscatrow, $
@@ -249,7 +250,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
       niter=niter, squashprofile=squashprofile,inputans=inputans, $
       maxIter=maxIter, highrej=highrej, lowrej=lowrej, $
       whopping=whoppingcur, relative=relative, oldreject=oldreject, $
-      reducedChi=chisqrow, nband=nband)
+      reducedChi=chisqrow, nband=nband, contribution=contribution)
 
      mask[*,cur] = masktemp
 
