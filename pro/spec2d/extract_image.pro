@@ -10,7 +10,8 @@
 ;              ymodel=ymodel, fscat=fscat,proftype = proftype,ansimage=ansimage,
 ;              wfixed=wfixed, mask=mask, pixelmask=,  reject=, wsigma=, 
 ;              nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej,
-;              fitans=fitans, whopping=whopping,relative=relative])
+;              fitans=fitans, whopping=whopping,relative=relative, 
+;              nband=nband ])
 ;
 ; INPUTS:
 ;   fimage     - Image[nCol, nRow]
@@ -36,6 +37,7 @@
 ;   reject     - Array setting rejection threshholds; defaults are set
 ;                in EXTRACT_ROW().
 ;   nPoly      - order of chebyshev scattered light background; default to 4
+;   nband      - band-width of full covariance fiber profile matrix
 ;   maxIter    - maximum number of profile fitting iterations; default to 20
 ;   highrej    - positive sigma deviation to be rejected (default 10.0)
 ;   lowrej     - negative sigma deviation to be rejected (default 10.0)
@@ -63,14 +65,16 @@
 ;
 ; REVISION HISTORY:
 ;   08-Aug-1999  Version 0.0 Scott Burles, Chicago 
+;   22-Aug-2000  Added banded-matrix possibility 
+;                   Version 1.0 Scott Burles, FNAL
 ;-
 ;------------------------------------------------------------------------------
 pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
                ymodel=ymodel, fscat=fscat,proftype=proftype,ansimage=ansimage, $
                wfixed=wfixed, mask=mask, pixelmask=pixelmask, reject=reject, $
                nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej, $
-               fitans=fitans, whopping=whopping, oldreject=oldreject, $
-               relative=relative, chisq=chisq, wsigma=wsigma
+	       fitans=fitans, whopping=whopping, oldreject=oldreject, $
+               relative=relative, chisq=chisq, wsigma=wsigma, nband=nband
 
    ; Need 5 parameters
    if (N_params() LT 5) then begin
@@ -144,6 +148,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
    endelse
 
    if (N_elements(nPoly) EQ 0) then nPoly = 5      ; order of background
+   if (NOT keyword_set(nband)) then nband = 1L
    if (NOT keyword_set(maxIter)) then maxIter = 20
    if (NOT keyword_set(highrej)) then highrej = 15.0
    if (NOT keyword_set(lowrej)) then lowrej = 20.0 
@@ -244,7 +249,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
       niter=niter, squashprofile=squashprofile,inputans=inputans, $
       maxIter=maxIter, highrej=highrej, lowrej=lowrej, $
       whopping=whoppingcur, relative=relative, oldreject=oldreject, $
-      reducedChi=chisqrow)
+      reducedChi=chisqrow, nband=nband)
 
      mask[*,cur] = masktemp
 
