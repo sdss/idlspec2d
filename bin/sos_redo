@@ -8,6 +8,10 @@
 #   sos_redo plate=328
 # Example: Retry reductions for plate 328 on the remote machine "sos":
 #   sos_redo sos plate=328
+# Example: Retry reductions for plate 328 on MJD 51234:
+#   sos_redo plate=328 mjd=51234
+# (This last example will only work if the SOS reductions have not been
+# removed from disk, which is usually done by a cron job each morning.)
 #
 # This script will not run if it looks like it is already running.
 #
