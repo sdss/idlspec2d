@@ -8,14 +8,14 @@ pro rline_loop, plate=plate, mjd=mjd
    if (keyword_set(plate)) then begin
       nplate = n_elements(plate)
       if (NOT keyword_set(mjd)) then mjd = lonarr(nplate) ; zeros
-      plist = replicate(create_struct('plateid', 0L, 'mjd', 0L), nplate)
-      plist.plateid = plate
+      plist = replicate(create_struct('plate', 0L, 'mjd', 0L), nplate)
+      plist.plate = plate
       plist.mjd = mjd
    endif else begin
       ; If PLATE is not specified, then determine a list of good plates...
       platelist, plist=plist
       ii = where(plist.nums[0] GT 0 $
-;       AND plist.plateid GE 300 AND plist.plateid LE 349 $ ; ????
+;       AND plist.plate GE 300 AND plist.plate LE 349 $ ; ????
        AND plist.snvec[0] GT 15 AND plist.snvec[1] GT 15 $
        AND plist.snvec[2] GT 15 AND plist.snvec[3] GT 15)
       plist = plist[ii]
@@ -27,9 +27,9 @@ pro rline_loop, plate=plate, mjd=mjd
    nplate = n_elements(plist)
    for iplate=0, nplate-1 do begin
 
-      splog, 'WORKING ON PLATE ', plist[iplate].plateid, $
+      splog, 'WORKING ON PLATE ', plist[iplate].plate, $
        ' MJD ', plist[iplate].mjd
-      spec = rline_getplate(plist[iplate].plateid, mjd=plist[iplate].mjd, $
+      spec = rline_getplate(plist[iplate].plate, mjd=plist[iplate].mjd, $
        primtarget=primtarget, class='GALAXY', maxrchi2=2.0)
 
       if (keyword_set(spec)) then begin
