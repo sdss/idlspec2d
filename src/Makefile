@@ -16,7 +16,6 @@ LIB = $(IDLSPEC2D_DIR)/lib
 OBJECTS = \
 	evilmath.o \
 	extract_boxcar.o \
-	extract_profile.o \
 	extract_row.o \
 	sshiftvec.o \
 	trace_crude.o \
