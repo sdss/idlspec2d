@@ -146,18 +146,21 @@ flatnum = '-00001473'
 arcnum = '-00001467'
 objectnums = ['-00001447']
 
-;Plate 214
+;Plate 214  ; All sky fibers
 
-cam = '02'
-flatnum = '-00001452'
+cam = '04'
+flatnum = '-00001429'
 flat = 'sdR-'+cam+flatnum+'.fit'
-arcnum = '-00001450'
+arcnum = '-00001427'  ; pre exp
+;arcnum = '-00001449'  ; post exp
 arc = 'sdR-'+cam+arcnum+'.fit'
-objectnums = ['-00001442','-00001444','-00001446','-00001448'] ;plate 214
+;objectnums = ['-00001442','-00001444','-00001446','-00001448'] ;plate 214
+;objectnums = ['-00001435'] ;plate 214
+objectnums = ['-00001449'] ;plate 214    - arc!
 objects = 'sdR-'+cam+objectnums+'.fit'
-inputDir='/s1/data/SDSS/51441'
-outputDir = '/s1/data/SDSS/51441/out'
-plugMapDir = inputDir+'/logs'
+inputDir = '/ide_disk/51433/51441'
+outputDir = '/ide_disk/51433/51441/out'
+plugMapDir = '/ide_disk/51433'
 plugMapFile = 'plPlugMapM-0214-51432-02.par'
 tt = doaframe(flat,arc,objects,plugMapFile,inputDir=inputDir, $
  outputDir=outputDir, plugMapDir=plugMapDir)
@@ -219,12 +222,17 @@ ttred = doaframe(flat,arc,objects,plugMapFile,inputDir=inputDir, $
 ;
 ;  Plate 191
 ;
-cam = '01'
+; Spectro 1:  1-Blue 4-Red
+; Spectro 2:  3-Blue 2-Red
+
+cam = '04'
 flatnum = '-00001464'
 flat = 'sdR-'+cam+flatnum+'.fit'
 arcnum = '-00001462'
 arc = 'sdR-'+cam+arcnum+'.fit'
-objectnums = ['-00001450','-00001452','-00001454','-00001456','-00001458']
+;objectnums = ['-00001450','-00001452','-00001454','-00001456','-00001458']
+;objectnums = ['-00001450']
+objectnums = ['-00001458']
 objects = 'sdR-'+cam+objectnums+'.fit'
 inputDir = '/ide_disk/51433/51456'
 outputDir = '/ide_disk/51433/51456/out'
