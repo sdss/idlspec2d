@@ -1,4 +1,7 @@
 
+APOALL: Major updating of this calling script to conform with current
+            environment variables ASTROLOG_DIR, RAWDATA_DIR.  Also,
+            reduce bias,dark,smear exposures.
 APOREDUCE: No longer do the test in the beginning of this procedure that
             the FITS file should exist, since FITS_WAIT() will do that test
             and repeatably look for the file for several minutes.
@@ -27,6 +30,13 @@ PLATECOMPARE: Fix 1-character typo preventing selecting the MJD
 PLOTSPEC: Add options /ZLINE, /NOSYN, /NOERR, TOPDIR.
 QAPLOT_SKYLINE: Divide the skyline flux values by the airmass, since those
             lines basically scale with airmass.
+QUICKEXTRACT: Make call to FITFLATWIDTH, and trigger warning messages if
+            the spatial widths are too large, indicating that the spectrographs
+            may be out-of-focus (see PR #3462).
+QUICKTRACE: Call the optimal-extraction code EXTRACT_IMAGE for the sole
+            purpose of measuring the spatial profile widths, then use
+            FITFLATWIDTH to trigger any warning messages if the spectrographs
+            appear out of focus (PR #3462).
 READ_ELODIE: Optionally return the Elodie header in HDR.
 READSPEC: Add TOPDIR input keyword and ZLINE,LINEFLUX outputs.
             Use DIMS0 keyword in primary header of spZall,spZline files
@@ -64,6 +74,9 @@ opHdrFix.par: Declare data bad on MJD 52336-52337 due to spectrograph
             mechanicals problems, and other problems from 52312-52337.
 mailhtml.sh: Comment out the rm lines (as in 1.18) and leave to killdata.sh
 spChunkList.par: Add chunks 36-39.
+spectroSOS.html: New warning messages if the flats or science frames
+            appear out-of-focus according to their spatial profile widths
+            (will only appear in v4_9_6 and later).
 sprobot.sh: Add more time stamps to the robot log file.
             Change the ssh command that retrieves the MJD directory list
             from the remote machine -- it appears that something about the
