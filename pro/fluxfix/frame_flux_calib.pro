@@ -88,19 +88,20 @@ function frame_flux_calib, wave, corvector, corvivar, avgcorvset, cormed, $
   ;--------------
   ; Do the spline fit
 
-  if keyword_set(final) then begin
-     bbkptfile = filepath('blue.bkpts', $
-       root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
-     readcol, bbkptfile, bbkpts, silent=1
-     rbkptfile = filepath('red.bkpts', $
-       root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
-     readcol, rbkptfile, rbkpts, silent=1
-     bkpts = alog10([bbkpts, rbkpts]) ; Convert to log-10 Angstroms
-     ibk = where(bkpts GE min(wave) AND bkpts LE max(wave), nbk)
-     if (nbk LT 4) then splog, 'Error selecting break points'
-     bkpts = [min(wave), bkpts[ibk], max(wave)]
-  endif else bkpts = avgcorvset.fullbkpt
+  ;if keyword_set(final) then begin
+     ;bbkptfile = filepath('blue.bkpts', $
+     ;  root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
+     ;readcol, bbkptfile, bbkpts, silent=1
+     ;rbkptfile = filepath('red.bkpts', $
+     ;  root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
+     ;readcol, rbkptfile, rbkpts, silent=1
+     ;bkpts = alog10([bbkpts, rbkpts]) ; Convert to log-10 Angstroms
+     ;ibk = where(bkpts GE min(wave) AND bkpts LE max(wave), nbk)
+     ;if (nbk LT 4) then splog, 'Error selecting break points'
+     ;bkpts = [min(wave), bkpts[ibk], max(wave)]
+  ;endif else bkpts = avgcorvset.fullbkpt
 
+  bkpts = bspline_bkpts(wave, nord=4, nbkpts=50)
   calibset = bspline_iterfit(wave, fcor, bkpt = bkpts, $
              nord=4, upper=3, lower=3, maxrej=ceil(0.10*n_elements(fcor)))
 
