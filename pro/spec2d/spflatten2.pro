@@ -245,7 +245,7 @@ arcivar = 0
       proftype = 3 ; ???
       highrej = 15
       lowrej = 15
-      npoly = 1  ; just fit flat background to each row
+      npoly = 5  ; just fit flat background to each row
       wfixed = [1,1] ; Just fit the first gaussian term
 
       extract_image, flatimg, flativar * (1-maskimg), $
@@ -274,7 +274,8 @@ fitimg = fitimg > 0.02 ; ???
       nrow = dims[0]
       ntrace = dims[1]
       nterms = n_elements(wfixed)
-      scatfit = calcscatimage(ansimage[ntrace*nterms:*,*], yrow)
+      yfnorm = (2.0*findgen(nrow)-nrow)/nrow
+      scatfit = fchebyshev(x,npoly) # ansimage[ntrace*nterms:*,*]
 
       ;----------------------
       ; Subtract scattered light, then divide by the superflat image.
@@ -284,7 +285,7 @@ fitimg = fitimg > 0.02 ; ???
 
       flatimg = (flatimg - scatfit) / fitimg
       flativar = flativar * fitimg^2
-fitimg = 0
+      fitimg = 0
 
 ; Test extraction...
 ;extract_image, flatimg, flativar, xsol, sigma, tmpflux, tmpivar, $
