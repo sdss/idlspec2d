@@ -17,18 +17,21 @@
 ; REQUIRED KEYWORDS:
 ;
 ; OPTIONAL KEYWORDS:
-;   binsz          - Bin size (in log-10 wavelength) in output spectra
-;   zeropoint
+;   binsz          - Bin size (in log-10 wavelength) in output spectra;
+;                    default to 10d-4, which corresponds to 69.02977415 km/s.
 ;   zeropoint      - Log10(lambda) zero-point of the output spectra;
 ;                    the output wavelength bins are chosen such that
 ;                    one bin falls exactly on this value;
-;                    default to 3.5D, which corresponds to 3162.2777 Ang.
-;   nord           - ???
+;                    default to 3.5D, which corresponds to 3162.27766 Ang.
+;   nord           - Order for spline fit; default to 3 (cubic spline).
 ;   wavemin        - Log-10 wavelength of first pixel in output spectra;
 ;                    default to the nearest bin to the smallest wavelength
 ;                    of the input spectra.
 ;   bkptbin        - ???
-;   window         - ???
+;   window         - Window size for apodizing the errors of the spectrum
+;                    from each individual frame;
+;                    default to 100 pixels apodization on each end of the
+;                    spectra.
 ;   maxsep         - ???
 ;
 ; OUTPUTS:
@@ -37,22 +40,30 @@
 ;
 ; COMMENTS:
 ;   This routine also outputs original 2048 spectra with mask pixels
-;   replaced with their b-spline values.
+;   replaced with their b-spline values. ??? NOPE - This code removed!!!
+;
+;   This routine can combine data from multiple (different) plug maps.
+;   Objects are matched based upon their positions agreeing to 2 arc sec.
 ;
 ; EXAMPLES:
 ;
 ; BUGS:
+;   Should only apodize starting with the first/last good pixel of a spectrum.
 ;
 ; PROCEDURES CALLED:
+;   djs_diff_angle()
+;   djs_laxisgen()
 ;   djs_maskinterp()
 ;   djs_median()
 ;   mrdfits()
+;   pixelmask_bits()
 ;   sxaddpar
 ;   sxdelpar
 ;   sxpar()
 ;   writefits
 ;
 ; INTERNAL SUPPORT PROCEDURES:
+;   combine1fiber
 ;   makelabel()
 ;
 ; REVISION HISTORY:
@@ -72,18 +83,17 @@ function makelabel, hdr
 end
 
 ;------------------------------------------------------------------------------
-pro combine1fiber, specnum, $
- fullwave, fullspec, fullivar, fullpixelmask, fullfibermask, $
- finalwave, bestflux, bestivar, outputpixelmask, $
+pro combine1fiber, fullwave, fullspec, fullivar, fullpixelmask, $
+ finalwave, bestflux, bestivar, andmask, ormask, $
  nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep
 
    if (NOT keyword_set(nord)) then nord = 3
    if (NOT keyword_set(maxsep)) then maxsep = 2.0 * binsz
    if (NOT keyword_set(bkptbin)) then bkptbin = 1.2 * binsz
 
-   fullcombmask = bytarr(n_elements(fullspec))
+   specnum = djs_laxisgen( size(fullwave,/dimens), iaxis=1)
 
-   print, 'FULL fibermask ', fullfibermask
+   fullcombmask = bytarr(n_elements(fullspec))
 
    nfinalpix = N_elements(finalwave)
    bestflux = fltarr(nfinalpix)
@@ -94,7 +104,8 @@ pro combine1fiber, specnum, $
    if (ngood EQ 0) then begin
 
       splog, 'No good points'
-      outputpixelmask = - 1L
+      andmask = pixelmask_bits('NODATA')
+      ormask = pixelmask_bits('NODATA')
       return
 
    endif else begin
@@ -115,12 +126,12 @@ pro combine1fiber, specnum, $
 
       for igrp=0, nstart-1 do begin
          
-         ss = isort[ig1[igrp]: ig2[igrp]]    
+         ss = isort[ig1[igrp] : ig2[igrp]]
          bkpt = 0
 
          fullbkpt = slatec_splinefit(fullwave[ss], fullspec[ss], coeff, $
           nord=nord, eachgroup=1, maxiter=20, upper=3.0, lower=3.0, $
-          bkspace=bkptbin, bkpt=bkpt, invvar=fullivar[ss], mask=mask, /silent)
+          bkspace=bkptbin, bkpt=bkpt, invvar=fullivar[ss], mask=bmask, /silent)
 
          inside = where(finalwave GE min(bkpt) $
           AND finalwave LE max(bkpt), numinside)
@@ -136,32 +147,32 @@ pro combine1fiber, specnum, $
 fwave = float(finalwave[inside])
 print,10^[min(fwave),max(fwave)]
 
-            splog, 'Masked ', fix(total(1-mask)), ' of', $
-             n_elements(mask), ' pixels'
-
-            replace = where(mask EQ 0)
+            splog, 'Masked ', fix(total(1-bmask)), ' of', $
+             n_elements(bmask), ' pixels'
 
             ;-----------------------------------------------------------------
             ;  Here replace original flux values of masked pixels with b-spline
-            ;  evaluations ??? Not needed if INDIVIDUAL keyword gone???
+            ;  evaluations.
 
-            if (replace[0] NE -1) then begin 
-               fullspec[ss[replace]] = $
-                slatec_bvalu(fullwave[ss[replace]],fullbkpt,coeff)
+            ireplace = where(bmask EQ 0)
 
-               fullpixelmask[ss[replace]] = fullpixelmask[ss[replace]] OR $
+            if (ireplace[0] NE -1) then begin 
+               fullspec[ss[ireplace]] = $
+                slatec_bvalu(fullwave[ss[ireplace]],fullbkpt,coeff)
+
+               fullpixelmask[ss[ireplace]] = fullpixelmask[ss[ireplace]] OR $
                 pixelmask_bits('COMBINEREJ')
             endif
 
          endelse
-         fullcombmask[ss] = mask
+         fullcombmask[ss] = bmask
 
       endfor
 
       ;---------------------------------------------------------------------
       ; Also keep 2 spots for each file in case 2 pixels are touching finalwave
 
-      andmask = lonarr(nfinalpix) - 1L
+      andmask = lonarr(nfinalpix) - 1 ; Start with all bits set in AND-mask.
       ormask = lonarr(nfinalpix)
 
       for j=0, max(specnum) do begin
@@ -201,13 +212,6 @@ print,10^[min(fwave),max(fwave)]
       splog, 'Medians:', string(format='(f7.2)', $
        djs_median(fullspec[these]))
 
-      ;----------
-      ;  Replace -1's in andmask
-
-      andmask = andmask * (andmask NE -1)
-
-      outputpixelmask = ormask OR ishft(andmask,16)
-
    endelse
 
    ;----------
@@ -225,6 +229,20 @@ print,10^[min(fwave),max(fwave)]
 
    bestflux = djs_maskinterp(bestflux, bestivar EQ 0, /const)
 
+   ;----------
+   ; Set the NODATA mask bit wherever there is no good data
+
+   ibad = where(bestivar EQ 0)
+   if (ibad[0] NE -1) then begin
+      andmask[ibad] = andmask[ibad] AND pixelmask_bits('NODATA')
+      ormask[ibad] = ormask[ibad] AND pixelmask_bits('NODATA')
+   endif
+
+   ;----------
+   ; Replace values of -1 in the AND mask with 0's
+
+   andmask = andmask * (andmask NE -1)
+
    return
 end
 ;------------------------------------------------------------------------------
@@ -233,106 +251,94 @@ pro spcoadd_frames, filenames, outputname, $
  binsz, zeropoint, nord=nord, wavemin=wavemin, $
  bkptbin=bkptbin, window=window, maxsep=maxsep
 
-   ; Initial binning was approx 69 km/s per pixel (with a sigma of 1.0 pixel)
-   ; 69.02977415 km/s is log lambda 10^-4
-
    if (NOT keyword_set(binsz)) then binsz = 1.0d-4 $
     else binsz = double(binsz)
-
    if (NOT keyword_set(zeropoint)) then zeropoint = 3.5D
+   if (n_elements(window) EQ 0) then window = 100
 
    ;----------
    ; Sort filenames such that this list contains first the blue then the red
+; Why should this matter to sort them ???
+
+   nfiles = n_elements(filenames)
+   if (nfiles EQ 0) then return
 
    filenames = filenames[sort(filenames)]
-
-   nfiles = N_elements(filenames)
-   if (nfiles EQ 0) then return
 
    redfiles = 0
    bluefiles = 0
 
-   ;----------
-   ; Somewhere up here we should add a flag combination if gives a
-   ; positive intersection with fibermask... To reject single fibers. ???
-
    ;---------------------------------------------------------------------------
 
-   exptime = 0
+   camnames = ['b1', 'b2', 'r1', 'r2']
+   ncam = N_elements(camnames)
+   exptimevec = fltarr(ncam)
 
    ;---------------------------------------------------------------------------
    ; Loop through each 2D output and read in the data
+   ;---------------------------------------------------------------------------
 
    for ifile=0, nfiles-1 do begin
+
+      ;----------
+      ; Read in all data from this input file
+
       tempflux = mrdfits(filenames[ifile], 0, hdr)
       tempivar = mrdfits(filenames[ifile], 1)
       tempplug = mrdfits(filenames[ifile], 2)
       tempwset = mrdfits(filenames[ifile], 3)
+      temppixmask = mrdfits(filenames[ifile], 4)
+
+      ;----------
+      ; Solve for wavelength at each pixel in the image
 
       traceset2xy, tempwset, pixnorm, tempwave
 
       dims = size(tempflux, /dimens)
       npix = dims[0]
-      nfiber = dims[1]
 
-      if (keyword_set(nfibersave)) then begin
-         if (nfiber NE nfibersave) then begin
-            splog, 'ABORT: Different files have different number of fibers!'
-            return
-         endif
+      ;----------
+      ; Determine if this is a blue or red spectrum
+
+      cameras = sxpar(hdr, 'CAMERAS')
+      i = where(cameras EQ camnames)
+      if (i[0] EQ -1) then $
+       message, 'Unknown camera ' + cameras
+      exptimevec[i] = exptimevec[i] + sxpar(hdr, 'EXPTIME')
+
+      ;----------
+      ; Apodize the errors
+
+      if (keyword_set(window)) then begin
+         swin = window < npix
+         tempivar[0:swin-1] = $
+          tempivar[0:swin-1] * findgen(swin) / window
+         tempivar[npix-swin:npix-1] = $
+          tempivar[npix-swin:npix-1] * findgen(swin) / window
       endif
-      nfibersave = nfiber
 
       ;----------
-      ; Read in pixelmask
-
-      tt = mrdfits(filenames[ifile], 4)
-      if (keyword_set(pixelmask)) then pixelmask = [pixelmask, tt] $
-       else pixelmask = tt
-
-      ;----------
-      ; Read in fibermask
-
-      tt = mrdfits(filenames[ifile], 5)
-      if (keyword_set(fibermask)) then fibermask = [fibermask, transpose(tt)] $
-       else fibermask = transpose(tt)
-
-      if (keyword_set(window)) then $
-       tempivar[0:window] = tempivar[0:window] * findgen(window+1) / window
-
-      if (keyword_set(flux)) then flux = [flux, tempflux] $
-       else flux = tempflux
-
-      if (keyword_set(fluxivar)) then fluxivar = [fluxivar, tempivar] $
-       else fluxivar = tempivar
-
-      if (keyword_set(wave)) then wave = [wave, tempwave] $
-       else wave = tempwave
-
-      if (keyword_set(specnum)) then specnum = [specnum, bytarr(npix) + ifile] $
-       else specnum = bytarr(npix) + ifile
-
-      isred = (strpos(sxpar(hdr, 'CAMERAS'),'r') EQ 0)
-      if (keyword_set(bluered)) then bluered = [bluered, bytarr(npix) + isred] $
-       else bluered = bytarr(npix) + isred
-
-      if (isred) then redfiles = redfiles + 1 
-      if (strpos(sxpar(hdr, 'CAMERAS'),'b') EQ 0) then $
-                 bluefiles = bluefiles + 1 
-
-      if (NOT keyword_set(label)) then $
-       label = makelabel(hdr) $
-      else $
-       label = [label, makelabel(hdr)]
-
-      exptime = exptime + sxpar(hdr, 'EXPTIME')
-
-      ;----------
-      ; Read in the plug map (need to only do this once)
+      ; Concatenate data from all images
 
       if (ifile EQ 0) then begin
-         plugmap  = mrdfits(filenames[ifile], 2)
-      endif
+         flux = tempflux
+         fluxivar = tempivar
+         wave = tempwave
+         pixelmask = temppixmask
+
+         label = makelabel(hdr)
+         plugmap = tempplug
+      endif else begin
+         ; Append as images...
+         flux = [[flux], [tempflux]]
+         fluxivar = [[fluxivar], [tempivar]]
+         wave = [[wave], [tempwave]]
+         pixelmask = [[pixelmask], [temppixmask]]
+
+         ; Append as vectors...
+         label = [label, makelabel(hdr)]
+         plugmap = [plugmap, tempplug]
+      endelse
 
    endfor
 
@@ -360,21 +366,17 @@ pro spcoadd_frames, filenames, outputname, $
 ;  pixelmask[where(specnum EQ jnum),ifib], color=colorv[jnum]
 ;stop ; ???
 
+   ;---------------------------------------------------------------------------
+   ; Construct output data structures, including the wavelength scale
+   ;---------------------------------------------------------------------------
+
    totalpix = (size(flux, /dimens))[0]
-
-   redpix = where(bluered, numred)
-   bluepix = where(bluered EQ 0, numblue)
-   if (numblue GT 0 AND numred GT 0) then $
-    exptime = exptime * 0.5
-
-   blueflux = fltarr(nfiber)
-   redflux = fltarr(nfiber)
 
    nonzero = where(fluxivar GT 0.0)
    minfullwave = min(wave[nonzero])
    maxfullwave = max(wave[nonzero])
 
-   ; Get max and min from good pixels
+   ; Get max and min wavelength from good pixels
 
    if (NOT keyword_set(wavemin)) then begin
       spotmin = fix((minfullwave - zeropoint)/binsz) + 1
@@ -392,36 +394,62 @@ pro spcoadd_frames, filenames, outputname, $
    nfinalpix = spotmax - spotmin + 1
    finalwave = dindgen(nfinalpix) * binsz + wavemin
 
+   nfiber = max(plugmap.fiberid)
    finalflux = fltarr(nfinalpix, nfiber)
    finalivar = fltarr(nfinalpix, nfiber)
-   finalpixelmask = fltarr(nfinalpix, nfiber)
+   finalandmask = lonarr(nfinalpix, nfiber)
+   finalormask = lonarr(nfinalpix, nfiber)
+   finalplugmap = replicate(plugmap[0], nfiber)
 
    ;---------------------------------------------------------------------------
    ; Combine each fiber, one at a time
+   ;---------------------------------------------------------------------------
 
    for ifiber=0, nfiber-1 do begin
-      splog, plugmap[ifiber].fiberid, ' ', plugmap[ifiber].objtype, $
-       plugmap[ifiber].mag, $
-       format = '(i4.3, a, a, f6.2, f6.2, f6.2, f6.2, f6.2)'
 
-      if (strtrim(plugmap[ifiber].objtype,2) NE 'NA') then begin
-         combine1fiber, specnum, $
-          wave[*,ifiber], flux[*,ifiber], fluxivar[*,ifiber], $
-          pixelmask[*,ifiber], fibermask[*,ifiber], $
-          finalwave, bestflux, bestivar, outputpixelmask, $
+      ; Find the first occurance of fiber number IFIBER+1
+      indx = (where(plugmap.fiberid EQ ifiber+1))[0]
+
+      if (indx NE -1) then begin
+         splog, 'Fiber', ifiber+1, ' ', plugmap[indx].objtype, $
+          plugmap[indx].mag, format = '(i4.3, a, a, 5f6.2)'
+
+         finalplugmap[ifiber] = plugmap[indx]
+
+         ; Identify all objects within 2 arcsec of this position, and
+         ; combine all these objects into a single spectrum.
+         ; If all pluggings are identical, then this will always be
+         ; the same fiber ID.
+         ; Also, insist that the object type is not 'NA', which would
+         ; occur for unplugged fibers.
+
+         adist = djs_diff_angle(plugmap.ra, plugmap.dec, $
+          plugmap[indx].ra, plugmap[indx].dec, units='degrees')
+         indx = where(adist LT 2./3600. AND strtrim(plugmap.objtype,2) NE 'NA')
+      endif else begin
+         splog, 'Fiber', ifiber+1, ' NO DATA'
+      endelse
+
+      if (indx[0] NE -1) then begin
+         combine1fiber, wave[*,indx], flux[*,indx], fluxivar[*,indx], $
+          pixelmask[*,indx], $
+          finalwave, bestflux, bestivar, bestandmask, bestormask,, $
           nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep
 
          finalflux[*,ifiber] = bestflux
          finalivar[*,ifiber] = bestivar
-         finalpixelmask[*,ifiber] = outputpixelmask
+         finalandmask[*,ifiber] = bestandmask
+         finalormask[*,ifiber] = bestormask
       endif else begin
-         splog, 'No plugmap entry'
-         finalpixelmask[*,ifiber] = -1L ; ???
+         splog, 'No plugmap entry for fiber number ', ifiber+1
+         finalandmask[*,ifiber] = pixelmask_bits('NODATA')
+         finalormask[*,ifiber] = pixelmask_bits('NODATA')
       endelse
    endfor
 
    ;---------------------------------------------------------------------------
    ; Create the output header
+   ;---------------------------------------------------------------------------
 
    ncoeff = sxpar(hdr, 'NWORDER')
    for i=2, ncoeff-1 do sxdelpar, hdr, 'COEFF'+strtrim(string(i),2)
@@ -430,15 +458,20 @@ pro spcoadd_frames, filenames, outputname, $
 
    sxdelpar, hdr, 'EXPOSURE'
    sxdelpar, hdr, 'SEQID'
-   sxaddpar, hdr, 'NEXP', nfiles, $
-    'Number of exposures in this file', after='TELESCOP'
-   for i=0,nfiles-1 do $
-    sxaddpar, hdr, 'EXPID'+strtrim(string(i),2), label[i], $
-     'ID string for exposure '+strtrim(string(i),2), before='EXPTIME'
 
-   sxaddpar, hdr, 'EXPTIME', exptime, 'Total exposure time (seconds)'
-   sxaddpar, hdr, 'COMBINE2', systime(), $
-    'COMBINE2DOUT finished', after='EXPTIME'
+   sxaddpar, hdr, 'NEXP', nfiles, $
+    'Number of exposures in this file', before='EXPTIME'
+   for ifile=0,nfiles-1 do $
+    sxaddpar, hdr, 'EXPID'+strtrim(string(ifile),2), label[i], $
+     'ID string for exposure '+strtrim(string(ifile),2), before='EXPTIME'
+
+   sxaddpar, hdr, 'EXPTIME', min(exptimevec), $
+    'Minimum of exposure times for all cameras'
+   for icam=0, ncam-1 do $
+    sxaddpar, hdr, 'EXPTI_'+camnames[icam], exptimevec[icam], $
+     camnames[icam]+' camera exposure time (seconds)', before='EXPTIME'
+   sxaddpar, hdr, 'SPCOADD', systime(), $
+    'SPCOADD finished', after='EXPTIME'
 
    sxaddpar, hdr, 'NWORDER', 2, 'Linear-log10 coefficients'
    sxaddpar, hdr, 'WFITTYPE', 'LOG-LINEAR', 'Linear-log10 dispersion'
@@ -447,7 +480,11 @@ pro spcoadd_frames, filenames, outputname, $
    sxaddpar, hdr, 'COEFF1', binsz, 'Log10 dispersion per pixel'
 
    sxaddpar, hdr, 'NAXIS1', n_elements(bestflux)
-   sxaddpar, hdr, 'NAXIS2', 2
+   sxaddpar, hdr, 'NAXIS2', nfiber
+
+   ;----------
+   ; Add keywords for anyone dumb enough to use IRAF
+
    sxaddpar, hdr, 'WAT0_001', 'system=linear'
    sxaddpar, hdr, 'WAT1_001', $
     'wtype=linear label=Wavelength units=Angstroms'
@@ -455,18 +492,26 @@ pro spcoadd_frames, filenames, outputname, $
    sxaddpar, hdr, 'CD1_1', binsz, 'Iraf dispersion'
    sxaddpar, hdr, 'CRPIX1', 1, 'Iraf starting pixel'
    sxaddpar, hdr, 'CTYPE1', 'LINEAR'
-   sxaddpar, hdr, 'WCSDIM', 2
+   sxaddpar, hdr, 'WCSDIM', nfiber
    sxaddpar, hdr, 'DC-FLAG', 1, 'Log-linear flag'
 
    ;---------------------------------------------------------------------------
+   ; Write output file
+
    ; 1st HDU is flux
    mwrfits, finalflux, outputname, hdr, /create
 
    ; 2nd HDU is inverse variance
    mwrfits, finalivar, outputname
 
-   ; 3rd HDU is pixelmask
-   mwrfits, finalpixelmask, outputname
+   ; 3rd HDU is AND-pixelmask
+   mwrfits, finalandmask, outputname
+
+   ; 4th HDU is OR-pixelmask
+   mwrfits, finalormask, outputname
+
+   ; 5th HDU is plugmap
+   mwrfits, finalplugmap, outputname
 
    return
 end
