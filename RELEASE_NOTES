@@ -1,4 +1,6 @@
 
+evilinstall (in idlutils): Syntax changes to work with bash on spectro.
+
 -------------------------------------------------------------------------------
 v4_8_1 (Aug 9, 2001 idlspec2d+idlutils)
 v1_2 of specflat
