@@ -153,6 +153,7 @@ pro/spec2d/spflatten.pro -text
 pro/spec2d/spflatten2.pro -text
 pro/spec2d/spgain.pro -text
 pro/spec2d/splog.pro -text
+pro/spec2d/spmulti.pro -text
 pro/spec2d/spplan.pro -text
 pro/spec2d/spreduce.pro -text
 pro/spec2d/sshift.pro -text
