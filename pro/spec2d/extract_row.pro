@@ -172,8 +172,12 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
    ans = fltarr(ma)       ; parameter values
    p = fltarr(ma)         ; diagonal errors
 
+   ; Set the following variables before any possible RETURN
+
    nonzerovar = where(invvar GT 0.0, ngood)
    reducedChi = 0.0
+   niter = 0
+
    if (ngood EQ 0) then return, ans
 
    if (keyword_set(iback)) then begin
@@ -188,7 +192,6 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
    fullcovar = fltarr(ma,ma)
 
    finished = 0
-   niter = 0
    totalreject = 0
 
    while(finished NE 1) do begin 
@@ -251,13 +254,15 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
    pixelmask = pixelmask OR (pixelmask_bits('FULLREJECT') * fix(fullreject))
 
 ; HORRIBLE HACK SINCE EXTRACT_ROW RETURNS SOME NaN's!!!???
-;jj = where(finite(ans) EQ 0)
-;if (jj[0] NE -1) then ans[jj] = 0
+jj = where(finite(ans) EQ 0)
+if (jj[0] NE -1) then ans[jj] = 0
 ;if (jj[0] NE -1) then stop
-;jj = where(finite(ymodel) EQ 0)
-;if (jj[0] NE -1) then ymodel[jj] = 0
-;jj = where(finite(fscat) EQ 0)
-;if (jj[0] NE -1) then fscat[jj] = 0
+jj = where(finite(ymodel) EQ 0)
+if (jj[0] NE -1) then ymodel[jj] = 0
+;if (jj[0] NE -1) then stop
+jj = where(finite(fscat) EQ 0)
+if (jj[0] NE -1) then fscat[jj] = 0
+;if (jj[0] NE -1) then stop
 
    return, ans
 
