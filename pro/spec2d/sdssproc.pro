@@ -161,7 +161,14 @@ pro sdssproc, infile, image, invvar, indir=indir, $
           color = 'blue'
           end
     'r2': begin
-          spectrographid = 1
+;
+;;	r2 means red on spectrograph 2
+;;  and r1 means red on spectrograph 1
+;;  I don't think any red reductions have been working since this
+;;  was changed.
+;;
+;
+          spectrographid = 2
           color = 'red'
           end
     'b2': begin
@@ -169,7 +176,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
           color = 'blue'
           end
     'r1': begin
-          spectrographid = 2
+          spectrographid = 1
           color = 'red'
           end
    endcase

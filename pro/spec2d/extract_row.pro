@@ -6,14 +6,11 @@
 ;   Fit the fiber profiles and background in a single row with least squares
 ;
 ; CALLING SEQUENCE:
-;   ans = extract_row( fimage, invvar, xcen, sigma, [ymodel=ymodel,
-;              fscat = fscat, proftype = proftype, wfixed = wfixed,
-;              inputans=inputans, iback = iback, bfixarr=bfixarr,
-;              xvar = xvar, mask=mask, relative=relative,
-;              diagonal=diagonal, fullcovar=fullcovar, wfixarr = wfixarr,
-;              nPoly=nPoly, maxIter=maxIter, highrej=highrej, niter=niter,
-;              lowrej=lowrej, calcCovar=calcCovar, squashprofile=squashprofile,
-;              whopping=whopping])
+;   ans = extract_row( fimage, invvar, xcen, sigma, [ymodel=, fscat=, 
+;              proftype=, wfixed=, inputans=, iback=, bfixarr=, xvar=,
+;              mask=, relative=, diagonal=, fullcovar=, wfixarr=, nPoly=,
+;              maxIter=, highrej=, niter=, lowrej=, calcCovar=, squashprofile=,
+;              whopping=, wsigma=, pixelmask=, reject= ])
 ;
 ; INPUTS:
 ;   fimage     - Image[nCol]
@@ -34,7 +31,7 @@
 ;   wfixarr    - 1d integer array of 1's and zero's which specify fixed 
 ;                    profile parameters
 ;   xvar       - x values of fimage and invvar, default is findgen(nx) 
-;   mask       - pixel mask of 1 is good and 0 is bad (nx) 
+;   mask       - image mask: 1 is good and 0 is bad (nx) 
 ;   relative   - use reduced chisq to scale rejection threshold
 ;   nPoly      - order of chebyshev scattered light background; default to 5
 ;   maxIter    - maximum number of profile fitting iterations; default to 10
@@ -47,6 +44,11 @@
 ;		   3 to CPU time.
 ;   niter      - number of rejection iterations performed
 ;   whopping   - traces with extra high flux need extra terms
+;   wsigma     - sigma width of whopping profile (exponential, default 25)
+;   pixelmask  - bits set due to extraction rejection [nFiber]
+;   reject   - two elements array setting partial and full rejection thresholds 
+;                  for profiles  (default [0.8, 0.2])  
+;                    ---->used to be [0.8,0.4] when it was hardwired
 ;
 ; OUTPUTS:
 ;   ans        -  Extracted flux in each parameter [nCoeff, nFiber]
@@ -67,9 +69,6 @@
 ;
 ;       Error codes need to be returned, currently no such codes are returned
 ;
-;	
-;
-;	  
 ;
 ; EXAMPLES:
 ;
@@ -81,26 +80,20 @@
 ;-
 ;------------------------------------------------------------------------------
 function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
-                   fscat = fscat, proftype = proftype, wfixed = wfixed, $
-                   inputans=inputans, iback = iback, $
-                   bfixarr = bfixarr, xvar=xvar, mask=mask, $
-		   relative=relative, squashprofile=squashprofile, $
-                   diagonal=p, fullcovar=fullcovar, wfixarr = wfixarr, $
-                   nPoly=nPoly, maxIter=maxIter, highrej=highrej, $
-                   lowrej=lowrej, calcCovar=calcCovar, niter=niter, $
-                   whopping=whopping, reducedChi = reducedChi
+   fscat = fscat, proftype = proftype, wfixed = wfixed, inputans=inputans, $
+   iback = iback, bfixarr = bfixarr, xvar=xvar, mask=mask, relative=relative, $
+   squashprofile=squashprofile, diagonal=p, fullcovar=fullcovar, $
+   wfixarr = wfixarr, nPoly=nPoly, maxIter=maxIter, highrej=highrej, $ 
+   lowrej=lowrej, calcCovar=calcCovar, niter=niter, reducedChi = reducedChi, $
+   whopping=whopping, wsigma=wsigma, pixelmask=pixelmask, reject=reject
 
    ; Need 4 parameters
    if (N_params() LT 4) then begin
-      print, 'Syntax - ans = extract_row( fimage, invvar, xcen, sigma, [ymodel=ymodel,'
-      print, ' fscat = fscat, proftype = proftype, wfixed = wfixed,'
-      print, ' inputans=inputans, iback = iback, bfixarr=bfixarr,'
-      print, ' xvar=xvar, mask=mask, relative=relative, '
-      print, ' squashprofile=squashprofile, '
-      print, ' diagonal=diagonal, fullcovar=fullcovar, wfixarr = wfixarr,'
-      print, ' nPoly=nPoly, maxIter=maxIter, highrej=highrej, '
-      print, ' lowrej=lowrej, calcCovar=calcCovar, niter=niter,'
-      print, ' whopping=whopping])'
+      print, 'Syntax - ans = extract_row( fimage, invvar, xcen, sigma, [ymodel='
+      print, ' fscat=, proftype=, wfixed=, inputans=, iback=, bfixarr=,'
+      print, ' xvar=, mask=, relative=, squashprofile=, diagonal=diagonal,'
+      print, ' fullcovar=, wfixarr=, nPoly=, maxIter=, highrej=, lowrej=,'
+      print, ' calcCovar=, niter=, whopping=, wsigma=])'
       return, -1
    endif
 
@@ -119,6 +112,18 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
    if (NOT keyword_set(wfixed)) then wfixed = [1]
    if (NOT keyword_set(calcCovar)) then calcCovar = 0
    if (NOT keyword_set(proftype)) then proftype = 1
+
+   if (n_elements(reject) EQ 2) then begin
+     checkreject = sort([0.0,reject,1.0])
+     if (total(abs(checkreject - [0,2,1,3])) NE 0) then reject = [0.8,0.2] 
+   endif else reject = [0.8,0.2]
+
+   ;------------------------------------------------------------------------
+   ;   Pixelmask is an int array (I guess)
+   ;    
+   if (n_elements(pixelmask) NE nTrace OR size(pixelmask,/type) NE 2) then $
+         pixelmask = intarr(nTrace)
+
    relative = keyword_set(relative) 
    squashprofile =keyword_set(squashprofile) 
 
@@ -127,6 +132,8 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
       whopping = -1.0
    endif else if (whopping[0] LT 0.0) then whoppingct = 0 $
    else whoppingct = n_elements(whopping)
+
+   if (NOT keyword_set(wsigma)) then wsigma = 25.0
 
    if (NOT keyword_set(xvar)) then xvar = findgen(nx) $
       else if (nx NE n_elements(xvar)) then $
@@ -207,6 +214,8 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
    while(finished NE 1) do begin 
 
       workinvvar = float(invvar*mask)
+      partial = lonarr(nTrace)
+      fullreject = lonarr(nTrace)
 
      if keyword_set(inputans) then begin
        if (ma-nPoly-whoppingct NE n_elements(inputans)) then $
@@ -217,8 +226,8 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
       result = call_external(getenv('IDLSPEC2D_DIR')+'/lib/libspec2d.so', $
        'extract_row',$
        nx, float(xvar), float(fimage), workinvvar, float(ymodel), nTrace, $
-       nPoly, float(xcen), float(sigma), proftype, calcCovar, squashprofile, $
-       whopping, whoppingct, $
+       nPoly, float(xcen), float(sigma), proftype, float(reject), partial, $
+       fullreject, calcCovar, squashprofile, whopping, whoppingct, float(wsigma), $
        nCoeff, ma, ans, long(wfixarr), p, fscat, fullcovar)
 
        diffs = (fimage - ymodel)*sqrt(workinvvar) 
@@ -253,6 +262,12 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
        if (niter EQ maxIter) then finished = 1
 ;       print,format='($,i)', niter
    endwhile
+
+   ;----------------------------------------------------------------------------
+   ;  Sort out pixelmask
+
+   pixelmask = pixelmask OR (pixelmask_bits('PARTIALREJECT') * fix(partial))
+   pixelmask = pixelmask OR (pixelmask_bits('FULLREJECT') * fix(fullreject))
 
    return, ans
 

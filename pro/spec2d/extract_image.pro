@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   extract_image(fimage, invvar, xcen, sigma, flux, [finv, yrow=yrow,
 ;              ymodel=ymodel, fscat=fscat,proftype = proftype,ansimage=ansimage,
-;              wfixed=wfixed, mask=mask,
+;              wfixed=wfixed, mask=mask, pixelmask=,  reject=, wsigma=, 
 ;              nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej,
 ;              calcCovar=calcCovar, fitans=fitans, whopping=whopping,relative=relative])
 ;
@@ -32,6 +32,8 @@
 ;                     [1, 0, 1] fit gaussian + center correction
 ;                     [1, 1, 1] fit gaussian + sigma and center corrections.   
 ;   mask       - byte mask: 1 is good and 0 is bad [nCol,nRow] 
+;   pixelmask  - bits set due to extraction rejection [nRow,nFiber]
+;   reject     - two elements array setting partial and full rejection thresholds 
 ;   nPoly      - order of chebyshev scattered light background; default to 4
 ;   maxIter    - maximum number of profile fitting iterations; default to 20
 ;   highrej    - positive sigma deviation to be rejected (default 10.0)
@@ -41,6 +43,7 @@
 ;   relative   - Scale rejection thresholds by reduced chi-squared (default 0)
 ;   whopping   - traces which have WHOPPINGingly high counts, and need extra
 ;                background terms
+;   wsigma     - sigma width of whopping profile (exponential, default 25)
 ;
 ; OUTPUTS:
 ;   flux       - Total extracted flux in each profile [nRowExtract, nFibers]
@@ -64,17 +67,17 @@
 ;------------------------------------------------------------------------------
 pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
                ymodel=ymodel, fscat=fscat,proftype=proftype,ansimage=ansimage, $
-               wfixed=wfixed, mask=mask, $
+               wfixed=wfixed, mask=mask, pixelmask=pixelmask, reject=reject, $
                nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej, $
 	       calcCovar=calcCovar, fitans=fitans, whopping=whopping, $
-               relative=relative, chisq=chisq
+               relative=relative, chisq=chisq, wsigma=wsigma
 
    ; Need 5 parameters
    if (N_params() LT 5) then begin
       print, 'Syntax - extract_image(fimage, invvar, xcen, sigma, flux, [finv,'
       print, ' yrow=yrow, ymodel=ymodel, fscat=fscat, proftype = proftype, '
       print, ' ansimage = ansimage, calcCovar=calcCovar, fitans=fitans,relative=relative'
-      print, ' wfixed=wfixed, mask=mask, chisq=chisq, '
+      print, ' wfixed=wfixed, mask=mask, chisq=chisq, wsigma=wsigma'
       print, ' nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej])'
       return
    endif
@@ -90,6 +93,8 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
 
    xcensize = size(xcen)
    if (xcensize[0] NE 2) then message,'XCEN must be 2 dimensional [nRow,nTrace]'
+
+   if (NOT keyword_set(wsigma)) then wsigma = 25.0
 
 ;
 ;	Check dimensions
@@ -236,7 +241,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
 
      ansrow = extract_row(fimage[*,cur], invvar[*,cur], $
       xcen[cur,*], sigmacur, ymodel=ymodelrow, fscat=fscatrow, $
-      proftype=proftype, iback=iback, $
+      proftype=proftype, iback=iback, reject=reject, pixelmask = pixelmasktemp, $
       wfixed=wfixed, mask=masktemp, diagonal=prow, nPoly=nPoly, $
       niter=niter, squashprofile=squashprofile,inputans=inputans, $
       maxIter=maxIter, highrej=highrej, lowrej=lowrej, calcCovar=calcCovar, $
@@ -255,6 +260,34 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
      finv[iy,*] = finvrow
 
      if(ARG_PRESENT(ansimage)) then ansimage[*,iy] = ansrow[0:oldma-1]
+
+     if(ARG_PRESENT(pixelmask)) then begin
+
+       ;---------------------------------------------------
+       ; Take care of extraction bits first
+       ;
+       pixelmask[cur,*] = pixelmask[cur,*] OR pixelmasktemp
+
+
+       ;---------------------------------------------------
+       ; Now attempt a cross-talk flag for whopping terms
+       ;  do we need a flag for regular profiles, or just test the same??
+       ;
+       if (whoppingct GT 0) then begin
+
+         if (squashprofile) then wflux = ansrow[nTrace+nPoly:nTrace+nPoly+whoppingct-1]$
+         else wflux = ansrow[ma-whoppingct:ma-1]
+
+         for ww = 0,whoppingct - 1 do begin
+           guessdist = abs(xcen[cur,whopping[ww]] - xcen[cur,*])/wsigma
+           guessflux = exp(-guessdist) * (wflux[ww]/wsigma) * (guessdist LT 5.0)
+           crosstalk = (guessflux GT 0.5 * abs(fluxrow))
+           crosstalk[ww] = 0
+           pixelmask[cur,*] = pixelmask[cur,*] OR (pixelmask_bits('CROSSTALK') * crosstalk)
+         endfor
+       endif
+
+     endif
      print, format='($, ".",i4.4,i4,f7.2,a16)',cur,niter, chisqrow, $
           string([8b,8b,8b,8b,8b,8b,8b,8b,8b,8b,8b,8b,8b,8b,8b,8b])
    endfor	  

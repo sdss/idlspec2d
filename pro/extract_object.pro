@@ -142,8 +142,11 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 
       badcheck = extract_boxcar((invvar LE 0), xtrace, radius=2.5)
       badplace = where(badcheck GT 0)
- 
-      pixelmask = fix(fextract)*0
+
+      nx = (size(fextract,/dim))[0] 
+      ny = (size(fextract,/dim))[1] 
+      pixelmask = intarr(nx,ny)
+
       if (badplace[0] NE -1) then pixelmask[badplace] = $
                    pixelmask[badplace] OR pixelmask_bits('NEARBADPIXEL')
     
@@ -175,7 +178,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
       centerterm = 2
       xnow = xtrace; Is this modified when extracting???
       sigmanow = xtrace*0.0 + sigma
-      maxshift = 1.0
+      maxshift = 1.5
 
       ; Kill or adjust first and last column ???
       ;invvar[0,*] = 0.0
@@ -206,26 +209,23 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 
          ; (3) Calculate new sigma and xtrace arrays
       
-         if (i EQ 0) then begin 
-            splog, 'Trace Tweaking: Step', i*3+3, '    (Sigma not tweaked)'
-            sigmashift = $
-             transpose(fitans[lindgen(ntrace)*nterms + sigmaterm, *])
-            centershift = $
-             transpose(fitans[lindgen(ntrace)*nterms + centerterm, *])
+         sigmashift = transpose(fitans[lindgen(ntrace)*nterms + sigmaterm, *])
+         centershift= transpose(fitans[lindgen(ntrace)*nterms + centerterm, *])
 
+         splog, format='(a,3(f8.3))', 'Centershift ', min(centershift),  $
+          median(centershift), max(centershift)
 
-            splog, format='(a,3(f8.3))', 'Centershift ', min(centershift),  $
-                       median(centershift), max(centershift)
+         splog, format='(a,3(f8.3))', 'Sigmashift ', min(sigmashift),  $
+          median(sigmashift), max(sigmashift)
 
-            splog, format='(a,3(f8.3))', 'Sigmashift ', min(sigmashift),  $
-                       median(sigmashift), max(sigmashift)
-
-            if (max(abs(centershift)) GT maxshift OR $
-                max(abs(sigmashift)) GT maxshift/2.0) then begin
+         if (max(abs(centershift)) GT maxshift OR $
+             max(abs(sigmashift)) GT maxshift/3.0) then begin
               splog, 'ABORT: Shift terms are not well behaved!'
               return
-            endif
+         endif
 
+         if (i EQ 0) then begin 
+            splog, 'Trace Tweaking: Step', i*3+3, '    (Sigma not tweaked)'
 	    ;----------------------------------------------------
             ;  This is essentially tweaktrace
             ;
@@ -257,7 +257,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
       extract_image, image-scatfit, invvar, xnow, sigma, flux, $
        fluxivar, proftype=proftype, wfixed=wfixed, fitans=fitans, $
        highrej=highrej, lowrej=lowrej, npoly=0, whopping=whopping, $
-       chisq=chisq, ymodel=ymodel2
+       chisq=chisq, ymodel=ymodel2, pixelmask=pixelmask
  
 
       ;------
@@ -300,19 +300,22 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
       
       vacset = fitvacset(xarc, lambda, wset, xset, ncoeff=arccoeff)
 
-      sxaddpar, hdr, 'VACUUM', 'WAVELENGTHS ARE IN VACUUM'
-      sxaddpar, hdr, 'AIR2VAC', systime()
+      sxaddpar, objhdr, 'VACUUM', 'WAVELENGTHS ARE IN VACUUM'
+      sxaddpar, objhdr, 'AIR2VAC', systime()
 
 
       ;------------------
       ; Sky-subtract
 
-      skysubtract, flux, fluxivar, plugsort, vacset, $
+      skystruct = skysubtract(flux, fluxivar, plugsort, vacset, $
         skysub, skysubivar, iskies=iskies, pixelmask=pixelmask, $
-        fibermask=fibermask, upper=3.0, lower=3.0
+        fibermask=fibermask, upper=3.0, lower=3.0, $
+        relchi2struct=relchi2struct)
+
+      ; plot, skystruct.wave, skystruct.flux, ps=3
 
       qaplot_skysub, flux, fluxivar, skysub, skysubivar, $
-        plugsort, vacset, iskies, filename=objname
+        vacset, iskies, filename=objname
 
       qaplot_skydev, flux, fluxivar, vacset, plugsort, color, $
               filename = objname

@@ -110,8 +110,11 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    ; REDUCE CALIBRATION FRAMES
    ;---------------------------------------------------------------------------
 
+   stimecalib = systime(1)
    spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
     lampfile=lampfile, indir=indir, arcstruct, flatstruct
+   splog, 'Elapsed time for spcalib = ', systime(1)-stimecalib, ' seconds', $
+       format='(a,f6.0,a)' 
 
    ;-----
    ; Select the best arc
@@ -192,6 +195,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       tai = sxpar(objhdr, 'TAI') + 0.5 * sxpar(objhdr, 'EXPTIME')
       bestflat = select_flat(flatstruct, tai)
 
+      splog, 'Best flat = ', bestflat.name
       if (NOT keyword_set(bestflat)) then begin
          splog, 'ABORT: No good flats (saturated?)'
          return

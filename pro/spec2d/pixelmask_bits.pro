@@ -39,7 +39,8 @@ function pixelmask_bits, bitlabel
                   'PARTIALREJECT',  $    ; Some pixels rejected in extraction
                   'SCATTEREDLIGHT',   $  ; Scattered light significant
                   'CROSSTALK',$          ; Cross-talk significant
-                  'SKYLEVEL']           ; Sky background is > 10*flux
+                  'NOSKY',$              ; No sky subtraction
+                  'SKYLEVEL']            ; Sky background is > 10*flux
 
      ss = strpos(pixelbits,strupcase(bitlabel))
 

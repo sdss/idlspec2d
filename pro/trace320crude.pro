@@ -89,7 +89,7 @@ function trace320crude, fimage, invvar, ystart=ystart, nmed=nmed, xgood=xgood, $
    xset = trace_gweight(fimage, xset, yset, sigma=1.0, invvar=invvar, xerr=xerr)
    xmask = xerr LT 990
    xy2traceset, yset, xset, firstset, ncoeff=5, yfit=xtemp, invvar=xmask, $
-    maxdev=maxdev
+    maxdev=maxdev, /singlerej
    xset = xtemp
 
    nx = (size(xset, /dimens))[0]

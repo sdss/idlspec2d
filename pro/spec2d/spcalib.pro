@@ -335,6 +335,7 @@ splog,'Arc fbadpix ', fbadpix ; ???
       if (NOT flatstruct[iflat].qbad AND iarc NE -1) then begin
 
          wset = *(arcstruct[iarc].wset)
+         xsol = *(flatstruct[iflat].xsol)
 
          ;---------------------------------------------------------------------
          ; Read flat-field image (again)

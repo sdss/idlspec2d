@@ -93,6 +93,21 @@ pro combine2dout, filenames, outputroot, spectrographid, $
    isred = (strpos(sxpar(hdr, 'CAMERAS'),'r') EQ 0)
    bluered = bytarr(npix) + isred
 
+   ;-------------------------------------------------------------
+   ; Try to read in pixelmask
+
+   tt = mrdfits(filenames[0], 4)
+   if (size(tt,/n_elem) EQ 1) then pixelmask = intarr(npix,nfiber) $
+   else pixelmask = tt
+
+   ;-------------------------------------------------------------
+   ; Try to read in fibermask
+
+   tt = mrdfits(filenames[0], 5)
+   if (size(tt,/n_elem) EQ 1) then fibermask = transpose(bytarr(nfiber)) $
+   else fibermask = transpose(tt)
+
+
    if (isred) then redfiles = redfiles + 1 
    if (strpos(sxpar(hdr, 'CAMERAS'),'b') EQ 0) then bluefiles = bluefiles + 1 
 
@@ -107,7 +122,29 @@ pro combine2dout, filenames, outputroot, spectrographid, $
 
       traceset2xy, tempwset, pixnorm, tempwave
 
-      npix = (size(tempflux, /dimens))[0]
+      npixhere = (size(tempflux, /dimens))[0]
+      nfiberhere = (size(tempflux, /dimens))[1]
+
+      if (nfiberhere NE nfiber) then begin
+         splog, 'ABORT: Different files have different number of fibers??'
+         return
+      endif
+
+
+      ;-------------------------------------------------------------
+      ; Try to read in pixelmask
+
+      tt = mrdfits(filenames[i], 4)
+      if (size(tt,/n_elem) EQ 1) then pixelmask = [pixelmask, intarr(npix,nfiber)] $
+      else pixelmask = [pixelmask, tt]
+
+      ;-------------------------------------------------------------
+      ; Try to read in fibermask
+
+      tt = mrdfits(filenames[i], 5)
+      if (size(tt,/n_elem) EQ 1) then fibermask = [fibermask, transpose(bytarr(nfiber))] $
+      else fibermask = [fibermask, transpose(tt)]
+
 
       if (keyword_set(window)) then $
        tempivar[0:window] = tempivar[0:window] * findgen(window+1) / window

@@ -183,7 +183,6 @@ function fluxcorr, flux, fluxivar, wset, plugsort, color=color, $
 ;	Ready to spline spectro std
 ;	
 
-
 	fullbkpt = slatec_splinefit(spectrowave, spectroflux, coeff, $
             maxiter=10, lower=lower, upper=upper, nord=nord, $
             invvar=spectrofluxivar*mask, bkpt=bkpt, rejper=0.4)
@@ -217,7 +216,7 @@ function fluxcorr, flux, fluxivar, wset, plugsort, color=color, $
 
 	negs = where(fullfit LE 0.0, nnegs)
 	if (nnegs GT 0) then $
-	 splog, 'WARNING: Flux factor has negative elements!'
+	 splog, 'ABORT: Flux factor has negative elements!'
 
 	fluxfactor = fullfit / (fullf8v * scaling)
 

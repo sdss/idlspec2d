@@ -1,4 +1,9 @@
 
+* trace_crude gives a wrong xstart for fiber 172 in 
+    plate 192:  Tracing 320 fibers in sdR-r1-00001602.fit
+    The fiber overlaps with fiber 171, but is not set as a
+    bad fiber, so maybe this is why it is not fixed.
+
 * Change FIBERMASK not in FIBERFLAT, but in SUPERFLAT.
 
 * BUG: telluric_corr crashed on call to SLATEC_SPLINEFIT, because

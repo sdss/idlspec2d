@@ -6,7 +6,7 @@
 ;   Generate QA plots for sky-subtraction
 ;
 ; CALLING SEQUENCE:
-;   qaplot_skysub, obj, objivar, objsub, objsubivar, plugsort, wset, $
+;   qaplot_skysub, obj, objivar, objsub, objsubivar, wset, $
 ;    iskies, [filename= ]
 ;
 ; INPUTS:
@@ -14,7 +14,6 @@
 ;   objivar    - Inverse variance for OBJ
 ;   objsub     - Image after sky-subtraction
 ;   objsubivar - Inverse variance for image after sky-subtraction
-;   plugsort   - Plugmap structure trimmed to one element per fiber
 ;   wset       - Wavelength solution
 ;   iskies     - List of good sky fibers
 ;
@@ -79,7 +78,7 @@ end
 
 ;------------------------------------------------------------------------------
 
-pro qaplot_skysub, obj, objivar, objsub, objsubivar, plugsort, wset, iskies, $
+pro qaplot_skysub, obj, objivar, objsub, objsubivar, wset, iskies, $
       filename=filename
 
    if (NOT keyword_set(filename)) then filename = ''

@@ -6,8 +6,9 @@
 ;   Sky-subtract an image and modify the variance
 ;
 ; CALLING SEQUENCE:
-;   skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
-;    [iskies= , fibermask=, nord=, upper=, lower=, maxiter=, pixelmask= ]
+;   skystruct = skysubtract(obj, objivar, plugsort, wset, objsub, objsubivar, $
+;    [iskies= , fibermask=, nord=, upper=, lower=, maxiter=, pixelmask=, $
+;      relchi2struct= ])
 ;
 ; INPUTS:
 ;   obj        - Image
@@ -18,6 +19,7 @@
 ; OPTIONAL KEYWORDS:
 ;   fibermask  - Mask of 0 for good fibers and non-zero for bad fibers [NFIBER]
 ;   pixelmask  - Mask of 0 for good pixels [NPIX,NFIBER]
+;   relchi2struct  - Structure containing information of chi^2 fitting
 ;
 ; PARAMETERS FOR SLATEC_SPLINEFIT (for supersky fit):
 ;   nord       -
@@ -26,6 +28,8 @@
 ;   maxiter    -
 ;
 ; OUTPUTS:
+;   skystruct  - structure containing sorted sky wavelengths,flux,fluxivar
+;                      +  bkpts and coeffs from fitting
 ;   objsub     - Image (OBJ) after sky-subtraction
 ;   objsubivar - Inverse variance (OBJIVAR) after sky-subtraction
 ;
@@ -58,9 +62,10 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
+function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    iskies=iskies, fibermask=fibermask, nord=nord, upper=upper, $
-   lower=lower, maxiter=maxiter, pixelmask=pixelmask
+   lower=lower, maxiter=maxiter, pixelmask=pixelmask, $
+   relchi2struct=relchi2struct
 
    if (size(obj, /n_dimen) NE 2) then message, 'OBJIVAR is not 2-D'
    if (size(objivar, /n_dimen) NE 2) then message, 'OBJIVAR is not 2-D'
@@ -121,11 +126,19 @@ pro skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
 
    objsub = obj - fullfit
 
-   if (N_elements(pixelmask) EQ N_elements(obj)) then begin
-       badsky = where(fullfit GT 10.0 * abs(objsub))   ;?? Does this make sense
-       if (badsky[0] NE -1) then pixelmask[badsky] = $
-                             pixelmask[badsky] OR pixelmask_bits('SKYLEVEL')
-   endif
+
+
+   ;---------------------------------------------------------
+   ;  Store "super" sky information in a structure
+   ;  We can't name it, because it could change size each time
+
+   skystruct = create_struct( $
+    'ISKIES', iskies, $
+    'WAVE', skywave, $
+    'FLUX', skyflux, $
+    'INVVAR', skyivar, $
+    'FULLBKPT', fullbkpt, $
+    'COEFFS', coeff)
 
    ;----------
    ; Now attempt to model variance with residuals on sky fibers.
@@ -170,6 +183,8 @@ pro skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
       endfor
 
       ; Trim to only those bins where we set RELCHI2
+      ; ?? Do we need to trim relchi2 also, to have matching size arrays??
+
       ii = where(relwave NE 0, nbin)
       relwave = relwave[ii]
  
@@ -183,6 +198,16 @@ pro skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
 
       splog, 'Median sky-residual chi2 = ', median(relchi2)
       splog, 'Max sky-residual chi2 = ', max(relchi2)
+
+      ;---------------------------------------------------------
+      ;  Store Relative Chi2 information in a structure
+      ;  Add in other information we want to write to disk??
+      
+      relchi2struct = create_struct( $
+          'WAVE', relwave, $
+          'CHI2', relchi2, $
+          'FULLBKPT', fullbkpt, $
+          'COEFF', coeff)
 
    endif else begin
 
@@ -204,11 +229,21 @@ pro skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    ; If any pixels on the image are outside of the wavelength range
    ; covered by the "supersky", then the formal errors are infinite
    ; for those pixels after skysubtraction.  Set SKYSUBIVAR=0.
+   ; Do we want to set a bit in pixelmask if pixels have no sky??
 
    ii = where(skyivar GT 0, ni) ; Note that SKYWAVE is already sorted
    iout = where(wave LT skywave[ii[0]] OR wave GT skywave[ii[ni-1]])
    if (iout[0] NE -1) then objsubivar[iout] = 0.0
 
-   return
+   if (N_elements(pixelmask) EQ N_elements(obj)) then begin
+     badsky = where(fullfit GT 10.0 * abs(objsub))   ;?? Does this make sense
+     if (badsky[0] NE -1) then pixelmask[badsky] = $
+                             pixelmask[badsky] OR pixelmask_bits('SKYLEVEL')
+
+     if (iout[0] NE -1) then pixelmask[iout] = $
+                             pixelmask[iout] OR pixelmask_bits('NOSKY')
+   endif
+
+   return, skystruct
 end
 ;------------------------------------------------------------------------------
