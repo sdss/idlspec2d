@@ -13,6 +13,7 @@
 ;
 ; OPTIONAL KEYWORDS:
 ;   indir      - Input directory for INFILE
+;   do_lock    - Keyword passed to SDSSPROC
 ;
 ; OUTPUTS:
 ;   hdr        - Processed FITS header
@@ -29,9 +30,9 @@
 ;-
 ;------------------------------------------------------------------------------
 
-function sdsshead, infile, indir=indir
+function sdsshead, infile, indir=indir, do_lock=do_lock
 
-   sdssproc, infile, indir=indir, hdr=hdr
+   sdssproc, infile, indir=indir, hdr=hdr, do_lock=do_lock
 
    return, hdr
 end
