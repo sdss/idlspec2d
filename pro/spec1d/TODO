@@ -1,10 +1,9 @@
 
-* Write PLATELIST routine to list reduced plates.
-
 * Fix fudge bug fix in TWEAK_GAL code.  Also, apodize the ends of the input
   spectrum to minimize edge effects, or trim to points common to all test z's.
 
-* Output synthetic gri colors for each object.
+* Output synthetic ugriz colors for each object measured from the actual
+  spectrum and from the synthesized spectrum (allowing u+z to be measured).
 
 * Some z errors are negative!
 
@@ -15,6 +14,8 @@
 * Look at the e1/e0, e2,e0 values for the galaxies.
 
 --------------DONE-------------------------------------------------------------
+* Write PLATELIST routine to list reduced plates.
+
 * For PCA_VSTND, get rid of bad endpoints made with too little data.
 
 * Final correlation coeff should be computed with same wavelength-range
