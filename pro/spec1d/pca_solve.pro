@@ -6,9 +6,11 @@ function pca_solve, objflux, objivar, objloglam, zfit, $
    if (NOT keyword_set(niter)) then niter = 10
    if (NOT keyword_set(nkeep)) then nkeep = 3
 
+   ndim = size(objflux, /n_dimen)
    dims = size(objflux, /dimens)
    npix = dims[0]
-   nobj = dims[1]
+   if (ndim EQ 1) then nobj = 1 $
+    else nobj = dims[1]
    objdloglam = objloglam[1] - objloglam[0]
 
    splog, 'Building PCA from ', nobj, ' object spectra'
@@ -34,16 +36,18 @@ function pca_solve, objflux, objivar, objloglam, zfit, $
    ; Shift each spectra to z=0
 
    for iobj=0, nobj-1 do begin
+      indx = where(objloglam[*,iobj] GT 0)
 print,'OBJECT ',iobj
-      combine1fiber, objloglam[*,iobj]-logshift[iobj], $
-       objflux[*,iobj], objivar[*,iobj], $
+      combine1fiber, objloglam[indx,iobj]-logshift[iobj], $
+       objflux[indx,iobj], objivar[indx,iobj], $
        newloglam=newloglam, binsz=objdloglam, newflux=flux1, newivar=ivar1
       newflux[*,iobj] = flux1
       newivar[*,iobj] = ivar1
    endfor
 
    ;----------
-   ; Construct the synthetic weight vector
+   ; Construct the synthetic weight vector, to be used when replacing
+   ; the low-S/N object pixels with the reconstructions.
 
    synwvec = fltarr(nnew) + 1 ; Set to 1 if no data for this wavelength
    for ipix=0, nnew-1 do begin
@@ -54,22 +58,40 @@ print,'OBJECT ',iobj
 
    ;----------
    ; Compute a mean spectrum, and use this to replace masked pixels.
+   ; Use only the NUSE spectra with flux levels at least 5% of the median
+   ; flux level.  For wavelengths with no unmasked data in any spectrum,
+   ; just average all the spectra for lack of anything better to do.
 
    normflux = total(newflux,1) / nnew
+   iuse = where(normflux GT 0.05 * median(normflux), nuse)
    synflux = fltarr(nnew)
    for ipix=0, nnew-1 do begin
-      ibad = where(newivar[ipix,*] EQ 0, nbad)
-      if (nbad LT nobj) then begin
-         synflux[ipix] = total( newflux[ipix,*] * newivar[ipix,*] / normflux) $
-          / total(newivar[ipix,*])
-         if (nbad GT 0) then $
-          newflux[ipix,ibad] = synflux[ipix] * normflux[ibad]
+      ibad = where(newivar[ipix,iuse] EQ 0, nbad)
+      if (nbad LT nuse) then begin
+         synflux[ipix] = total( newflux[ipix,iuse] * newivar[ipix,iuse]) $
+          / total(newivar[ipix,iuse] * normflux[iuse])
       endif else begin
-         synflux[ipix] = total( newflux[ipix,*] / normflux) / nobj
+         synflux[ipix] = total( newflux[ipix,iuse] / normflux[iuse]) / nuse
       endelse
    endfor
 
+   for iobj=0, nobj-1 do begin
+      ibad = where(newivar[*,iobj] EQ 0)
+      if (ibad[0] NE -1) then $
+       newflux[ibad,iobj] = synflux[ibad] * normflux[iobj]
+   endfor
+
    ;----------
+   ; If there is only 1 object spectrum, then all we can do is return it
+   ; (after it has been re-binned).
+
+   if (nobj EQ 1) then begin
+      eigenval = 1.0
+      return, newflux
+   endif
+
+   ;----------
+   ; Iteratively do the PCA solution
 
    filtflux = newflux
 
@@ -94,8 +116,8 @@ print,'OBJECT ',iobj
 ;soplot,synflux,color='red'
       endfor
 
-mwrfits, float(transpose(pres[0:nkeep-1,*])), $
- 'test-'+strtrim(string(iiter),1)+'.fits'
+writefits, 'test-'+strtrim(string(iiter),1)+'.fits', $
+ float(transpose(pres[0:nkeep-1,*]))
       splog, 'Elapsed time for iteration #', iiter, ' = ', systime(1)-t0
    endfor
 
