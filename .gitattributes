@@ -230,7 +230,6 @@ pro/spec2d/skysubtract.pro -text
 pro/spec2d/smooth_halo.pro -text
 pro/spec2d/sortplugmap.pro -text
 pro/spec2d/spallflat.pro -text
-pro/spec2d/spallreduce.pro -text
 pro/spec2d/spcalib.pro -text
 pro/spec2d/spcoadd_frames.pro -text
 pro/spec2d/spcombine.pro -text
@@ -242,7 +241,6 @@ pro/spec2d/splog.pro -text
 pro/spec2d/spmulti.pro -text
 pro/spec2d/spplan1d.pro -text
 pro/spec2d/spplan2d.pro -text
-pro/spec2d/spplancomb.pro -text
 pro/spec2d/spreduce.pro -text
 pro/spec2d/spreduce2d.pro -text
 pro/spec2d/sshift.pro -text
