@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
-;    [iskies= , fibermask=, nord=, upper=, lower=, maxiter= ]
+;    [iskies= , fibermask=, nord=, upper=, lower=, maxiter=, pixelmask= ]
 ;
 ; INPUTS:
 ;   obj        - Image
@@ -16,7 +16,8 @@
 ;   wset       - Wavelength solution
 ;
 ; OPTIONAL KEYWORDS:
-;   fibermask  - Mask of 0 for bad fibers and 1 for good fibers [NFIBER]
+;   fibermask  - Mask of 0 for good fibers and non-zero for bad fibers [NFIBER]
+;   pixelmask  - Mask of 0 for good pixels [NPIX,NFIBER]
 ;
 ; PARAMETERS FOR SLATEC_SPLINEFIT (for supersky fit):
 ;   nord       -
@@ -58,7 +59,7 @@
 
 pro skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    iskies=iskies, fibermask=fibermask, nord=nord, upper=upper, $
-   lower=lower, maxiter=maxiter
+   lower=lower, maxiter=maxiter, pixelmask=pixelmask
 
    if (size(obj, /n_dimen) NE 2) then message, 'OBJIVAR is not 2-D'
    if (size(objivar, /n_dimen) NE 2) then message, 'OBJIVAR is not 2-D'
@@ -115,7 +116,15 @@ pro skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
 
    fullfit = slatec_bvalu(wave, fullbkpt, coeff) 
 ;   objsub = obj - fullfit * (objivar GT 0.0) ; No need to do this.
+
+
    objsub = obj - fullfit
+
+   if (N_elements(pixelmask) EQ N_elements(obj)) then begin
+       badsky = where(fullfit GT 10.0 * abs(objsub))   ;?? Does this make sense
+       if (badsky[0] NE -1) then pixelmask[badsky] = $
+                             pixelmask[badsky] OR pixelmask_bits('SKYLEVEL')
+   endif
 
    ;----------
    ; Now attempt to model variance with residuals on sky fibers.
