@@ -1,6 +1,5 @@
 * text=auto !eol
 /Makefile -text
-/README -text
 bin/Makefile -text
 doc/Makefile -text
 doc/mk_doc -text
