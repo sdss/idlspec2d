@@ -7,9 +7,12 @@ function computechi2, objflux, sqivar, starflux, $
     else nstar = (size(starflux, /dimens))[1]
 
    bvec = objflux * sqivar
-   mmatrix = starflux
-   for i=0L, nstar-1 do $
-    mmatrix[*,i] = mmatrix[*,i] * sqivar
+   mmatrix = starflux * (sqivar # replicate(1,nstar))
+
+;   ---------  the line above is about twice as fast --------------
+;   for i=0L, nstar-1 do $
+;     mmatrix[*,i] = mmatrix[*,i] * sqivar
+
    mmatrixt = transpose( mmatrix )
    mm = mmatrixt # mmatrix
 
