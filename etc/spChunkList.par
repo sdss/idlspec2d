@@ -145,4 +145,6 @@ spchunklist     106 2078 2078 special   "SEGUE NGC 2420 bright"
 spchunklist     107 2079 2079 special   "SEGUE NGC 2420 faint"
 spchunklist     99A 2080 2087 special   ""
 spchunklist    100A 2088 2113 special   ""
+spchunklist     109 2114 2146 main      ""
+spchunklist     108 8001 8009 special   "ET"
 
