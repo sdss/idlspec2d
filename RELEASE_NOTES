@@ -1,4 +1,11 @@
 
+In specflat:
+specflat.table: Added "Flavor=Linux"
+
+-------------------------------------------------------------------------------
+v4_9_4 (Feb 28, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
+Built against specflat v1_3.
+
 More development of 2D.
 Minor bug fixes for SOS.
 Runnable version for P-1D.
@@ -91,12 +98,16 @@ SPECLINEFIT: Fixed dumb mistake on indexing that could crash.
             measuring for GALAXY objects).
 SPFLATAVE: Add comments to output header to track which files were used;
             change default for input directory to current.
+SPFLATTEN2: Undo the last change of using the opBC-empty.par file, since
+            we do want to ignore bad columns when tracing fibers, etc.
 SPREDUCE: No longer issue an abort message in this proc if the science
             exposure is declared bad, but issue those messages from within
             the REJECT_SCIENCE() function.
 SPREDUCE1D: The warning message for S/N > 200 pixels has been fixed,
             and another warning added for any pixels w/ flux < -10 * noise
             (e.g., unphysically low values).
+            Mask out points that are unphysically negative (10-sigma negatives),
+            and mask the neighboring 2 pixels in each direction.
             Call new procedure QAPLOT_FCALIBVEC to measure flux-calib errors.
 TRACE320CRUDE: Add replacement code section for traces with
             bad columns near starting position.
@@ -130,9 +141,6 @@ spectroSOS.html: Update to reflect new warning messages.
 sprobot.sh: Bug fix where we were rsync-ing all of sos.apo:/data/spectro/$MJD
             on the line where we only wanted to get the guider directory!
 
-In specflat:
-specflat.table: Added "Flavor=Linux"
-
 In idlutils:
 New procedures in pro/coord for various SDSS coordinate transformations.
 Many of these were in the hoggpt product:
@@ -146,6 +154,7 @@ Many of these were in the hoggpt product:
   RADEC_TO_MUNU
   STRIPE_TO_ETA
   STRIPE_TO_INCL
+ATV: Add "R" and "C" features for overplotting rows and columns.
 COMDIS: Minor bug fix, making loop variable type long.
 GAUSS_KERNEL: sigma should have been sigma^2 (This proc is used
             by SKYSUBTRACT,SMOOTH_HALO,RLINE_FINDEW in idlspec2d).
