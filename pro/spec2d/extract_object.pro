@@ -430,7 +430,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
      flambdaivar = skysubivar
      nskypoly = 1L
    endelse
-   skyimg = flux = flambda
+   skyimg = flux - flambda
    sxaddpar, objhdr, 'PSFSKY', nskypoly, ' Order of PSF skysubtraction'
 
    ;------------------------------------------
