@@ -152,6 +152,8 @@ pro/apo2d/quicktrace.pro -text
 pro/apo2d/quickwave.pro -text
 pro/apo2d/remove2redo.pro -text
 pro/fluxfix/dr1_spplate_cor.pro -text
+pro/fluxfix/ext_ccm.pro -text
+pro/fluxfix/ext_odonnell.pro -text
 pro/fluxfix/flux_standard.pro -text
 pro/fluxfix/plate_flux_recal.pro -text
 pro/fluxfix/spplate_correct.pro -text
