@@ -10,6 +10,16 @@ SPPLAN2D: Exclude files where the plate number does not match that
            in the map name.  This happens, for ex, for exp #14970 on
            MJD 52405, which has the MAPNAME for plate 802 but a PLATEID
            of 9999.
+SPREDUCE: Major change to how the flat+arc calibrations are chosen.
+           Now choose the flat that is good and nearest in time to
+           the midpoint of all the science exposures.  Select the arc
+           that was used for that flat (regardless of whether it was
+           the best arc).  Previouly, we chose the flat that was nearest
+           in time to each exposure, and we chose the best arc regardless
+           of the time it was taken.  This had the potential to choose
+           an arc taken during the afternoon (as happened for plate 820
+           on MJD 52405, c.f., PR #3966) if it is not explicitly marked
+           as a test exposure.
 
 -------------------------------------------------------------------------------
 v4_10_0 (Apr 8, 2003 idlspec2d running on IDL 5.3 - 5.5
