@@ -97,8 +97,8 @@ pro spflatave, mjd=mjd, mjstart=mjstart, mjend=mjend, mjout=mjout, $
          ;----------
          ; Set the first and last column of every flat as bad.
 
-         pixflatarr[0,*,*] = 0
-         pixflatarr[naxis1-1,*,*] = 0
+;         pixflatarr[0,*,*] = 0
+;         pixflatarr[naxis1-1,*,*] = 0
 
          ;----------
          ; Generate a map of the sigma at each pixel (doing some rejection).

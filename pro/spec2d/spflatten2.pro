@@ -305,7 +305,10 @@ fitimg = fitimg > 0.02 ; ???
       ;----------------------
       ; Create the array of preliminary flats
 
-      if (iflat EQ 0) then pixflatarr = fltarr(nx,ny,nflat)
+      if (iflat EQ 0) then begin
+         pixflatarr = fltarr(nx,ny,nflat)
+         inmask = bytarr(nx,ny,nflat)
+      endif
 
       ;----------------------
       ; Determine YMODEL image
@@ -357,7 +360,20 @@ fitimg = fitimg > 0.02 ; ???
 
       endfor
 
-      pixflatarr[*,*,iflat] = (flatimg > 1) / (ymodel > 1)
+      ;----------------------
+      ; Set a pixel mask that is bad for YMODEL counts <= 1, or for pixels
+      ; more than 2 pixels to the left (right) of the first (last) fiber.
+
+      inmask[*,*,iflat] = ymodel GT 1 ; =1 for good
+      for iy=0, ny-1 do begin
+         x1 = long(xsol[iy,0]) - 3
+         x2 = long(xsol[iy,ntrace-1]) + 3
+         if (x1 GE 0) then inmask[0:x1,iy,iflat] = 0
+         if (x2 LE nx-1) then inmask[x2:nx-1,iy,iflat] = 0
+      endfor
+
+      pixflatarr[*,*,iflat] = (flatimg * inmask[*,*,iflat]) $
+       / (ymodel * inmask[*,*,iflat] + (inmask[*,*,iflat] EQ 0))
 
       ;----------------------
       ; Write FLATIMG and YMODEL to disk
@@ -376,8 +392,9 @@ ymodel = 0
 
    endif else begin
       ; Find deviant pixels in each pixflat
+      inmask = temporary(1b - inmask) ; Change to =0 for good
       meanimg = djs_avsigclip(pixflatarr, 3, sigrej=sigrej, maxiter=maxiter, $
-       outmask=outmask)
+       inmask=inmask, outmask=outmask)
 meanimg = 0
 pixflatarr = 0
 
