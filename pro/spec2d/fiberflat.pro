@@ -148,10 +148,12 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
 
             ; The following should work for either ascending or descending
             ; wavelengths since BKPT is always sorted ascending.
-
-            istart = (where(bkpt GT min(loglam[indx,i])))[0]
+ 
+            minlam = min(loglam[indx,i])
+            maxlam = max(loglam[indx,i])
+            istart = (where(bkpt GT minlam))[0]
             istart = (istart - 1) > 0
-            iend = (where(bkpt GT max(loglam[indx,i])))[0]
+            iend = (where(bkpt GT maxlam))[0]
             if (iend EQ -1) then iend = nbkpts-1
 
             ratio  = flux[indx,i] / fit2[indx,i]
@@ -163,7 +165,9 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
              maxiter=maxiter, upper=upper, lower=lower, /eachgroup, $
              nord=nord, bkpt=bkpt[istart:iend])
 
-            fflat[*,i] = bspline_valu(loglam[*,i], ratioset)
+            inside = where(loglam[*,i] GE minlam AND loglam[*,i] LE maxlam)
+            if inside[0] NE -1 then $
+              fflat[inside,i] = bspline_valu(loglam[inside,i], ratioset)
 
          endif else begin
 
