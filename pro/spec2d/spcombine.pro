@@ -168,12 +168,20 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay
    spflux, objname, fcalibprefix, adderr=adderr
 
    ;----------
-   ; Co-add the fluxed exposures
+   ; Close plot file - S/N plots are then put in the PLOTSNFILE file.
+
+   if (keyword_set(plotfile) AND NOT keyword_set(xdisplay)) then begin
+      device, /close
+      set_plot, 'x'
+   endif
+
+   ;----------
+   ; Select only the science frames
 
    science = where(allseq.flavor EQ 'science')
 
    if science[0] EQ -1 then begin 
-      splog, 'No Science Frames in this plan ' + thisplan
+      splog, 'No science frames in this plan ' + thisplan
       cd, origdir
       return
    endif
@@ -182,12 +190,15 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay
    j = where(sciname)
 
    if j[0] EQ -1 then begin 
-      splog, 'No Science Frames in this plan ' + thisplan
+      splog, 'No science frames in this plan ' + thisplan
       cd, origdir
       return
    endif
 
    sciname = sciname[j]
+
+   ;----------
+   ; Co-add the fluxed exposures
 
    spcoadd_frames, djs_filepath(sciname, root_dir=extractdir), $
     djs_filepath(combinefile, root_dir=combinedir), $
@@ -202,11 +213,6 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay
 
    ;----------
    ; Close log files
-
-   if (keyword_set(plotfile) AND NOT keyword_set(xdisplay)) then begin
-      device, /close
-      set_plot, 'x'
-   endif
 
    if (keyword_set(logfile)) then splog, /close
 
