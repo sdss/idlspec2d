@@ -115,6 +115,7 @@ pro platelist, infile, plist=plist, create=create
     'mjd'      , 0L, $
     'ra'       , 0.0, $
     'dec'      , 0.0, $
+    'tai'      , 0.0D, $
     'airmass'  , 0.0, $
     'mapname'  , ' ', $
     'vers2d'   , ' ', $
@@ -194,9 +195,9 @@ pro platelist, infile, plist=plist, create=create
          plist[ifile].tile = sxpar(hdr1, 'TILEID')
          plist[ifile].ra = sxpar(hdr1, 'RA')
          plist[ifile].dec = sxpar(hdr1, 'DEC')
-         taitime = sxpar(hdr1, 'TAI')
+         tai[ifile] = sxpar(hdr1, 'TAI')
          plist[ifile].airmass = tai2airmass(plist[ifile].ra, $
-          plist[ifile].dec, tai=taitime)
+          plist[ifile].dec, tai=plist[ifile].tai)
          plist[ifile].sn2_g1 = sxpar(hdr1, 'SPEC1_G')
          plist[ifile].sn2_r1 = sxpar(hdr1, 'SPEC1_R')
          plist[ifile].sn2_i1 = sxpar(hdr1, 'SPEC1_I')
@@ -303,6 +304,8 @@ pro platelist, infile, plist=plist, create=create
          junk = min( plug[iobj].xfocal^2 + plug[iobj].yfocal^2, imin)
          plist[ifile].ra = plug[iobj[imin]].ra
          plist[ifile].dec = plug[iobj[imin]].dec
+         plist[ifile].airmass = tai2airmass(plist[ifile].ra, $
+          plist[ifile].dec, tai=plist[ifile].tai)
       endif
 
       ;----------
