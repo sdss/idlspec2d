@@ -51,24 +51,20 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
 
    traceset2xy, tset, ytemp, xcen
 
-;------------------------------------------------------------------------------
-;
-;	We can calculate median shift here without much trouble,
-;       just as done is spec2d
-;
+   ;----------
+   ; Calculate the shift of the traces between the flat and science exposures
+
    xnew = match_trace(image, invvar, xcen)
    bestlag = median(xnew-xcen)
    minlag = min(xnew-xcen)
    maxlag = max(xnew-xcen)
    splog, 'Match_trace range: ', minlag, bestlag, maxlag
    if (minlag LT -0.1 OR maxlag GT 0.1) then $
-      splog, 'WARNING: A Post-calib is required!'
-;
-;------------------------------------------------------------------------------
+    splog, 'WARNING: Large flexure flat<->science (POST-CALIBRATIONS REQUIRED!)'
 
    extract_image, image, invvar, xcen, sigma, tempflux, tempfluxivar, $
-          proftype=proftype, wfixed=wfixed, yrow=yrow, highrej=5, lowrej=5, $
-          npoly=npoly, ansimage=ansimage, relative=1
+    proftype=proftype, wfixed=wfixed, yrow=yrow, highrej=5, lowrej=5, $
+    npoly=npoly, ansimage=ansimage, relative=1
 
    ntrace = (size(tempflux))[2]
    scatfit = calcscatimage(ansimage[ntrace*nterms:*,*], yrow)
