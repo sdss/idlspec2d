@@ -1,9 +1,12 @@
 
 APO_LOG2HTML: Change link from SOS web pages to new location at
            "http://sdsshost.apo.nmsu.edu/idlspec2d/spectroSOS.html".
+CATPLOT: New proc. Modified version of SPLOT by Tremonti for inspecting spectra.
 COLLIMATE: Clarify the output text to say "RMS across CCD", rather
            than implying this is a measurement error (with "+/-").
 LINEBACKFIT: Fix typo for setting default value for SIGGUESS.
+MAKE_SKYINVVAR: New proc. First attempt to reconstruct the sky background
+           with a v4 spPlate file.
 PLATEHIST: Select "good" plates based upon "platequality" field
            from PLATELIST.
 PLATELIST: Use manually-assigned platequality from "spPlateList.par"
@@ -48,6 +51,7 @@ MWRFITS_CHUNKS: New proc to write a FITS binary table in chunks
            (used by PLATEMERGE).
 STRUCT_PRINT: Add options TARRAY, /NO_HEAD, /HTML, FDIDIT, DDIGIT, ALIAS.
 STRUCT_TRIMTAGS: New procedure.
+SXASCII_READ: Fixes for sxascii_read, I think it might actually work?!
 
 evilinstall: One line change to do one more check for proper sdsstools.
 
