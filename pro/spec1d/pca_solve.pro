@@ -13,9 +13,9 @@
 ; INPUTS:
 ;   objflux        - Object fluxes [NPIX,NSPEC]
 ;   objivar        - Object inverse variances [NPIX,NSPEC]
-;   objloglam      - Object wavelengths in log10(Angstroms) [NPIX,NSPEC]
 ;
 ; OPTIONAL INPUTS:
+;   objloglam      - Object wavelengths in log10(Angstroms) [NPIX,NSPEC]
 ;   zfit           - Redshifts of each input spectrum [NSPEC]; if set, then
 ;                    each input spectrum is de-redshifted to z=0.
 ;   wavemin        - Minimum wavelength to use in PCA solution, in Angstroms;
@@ -77,6 +77,8 @@ function pca_solve, objflux, objivar, objloglam, zfit, $
    ;----------
    ; Determine the new wavelength mapping
 
+if (keyword_set(objloglam)) then begin ; ???
+
    if (NOT keyword_set(newloglam)) then begin
       objdloglam = abs(objloglam[1] - objloglam[0])
       logmin = min(objloglam) - max(logshift)
@@ -103,6 +105,12 @@ print,'OBJECT ',iobj
       newflux[*,iobj] = flux1
       newivar[*,iobj] = ivar1
    endfor
+
+endif else begin
+   newflux = objflux
+   newivar = objivar
+   nnew = (size(objflux,/dimens))[0]
+endelse
 
    ;----------
    ; Construct the synthetic weight vector, to be used when replacing

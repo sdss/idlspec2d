@@ -21,6 +21,12 @@ pro pca_vstnd
    readspec, plate, fiber, mjd=mjd, flux=objflux, invvar=objivar, $
     andmask=andmask, plugmap=plugmap, loglam=objloglam
 
+   ;----------
+   ; Do not fit where the spectrum may be dominated by sky-sub residuals.
+
+   objivar = skymask(objivar, andmask)
+andmask = 0 ; Free memory
+
    nobj = (size(objflux, /dimens))[1]
    objdloglam = objloglam[1] - objloglam[0]
 
@@ -28,17 +34,6 @@ pro pca_vstnd
       ifix = where(objflux^2 * objivar GT snmax^2)
       if (ifix[0] NE -1) then objivar[ifix] = (snmax/objflux[ifix])^2
    endif
-
-   ;----------
-   ; Do not fit where the spectrum may be dominated by sky-subtraction
-   ; residuals.  Grow that mask by 2 pixels in each direction.
-
-   skymask = (andmask AND pixelmask_bits('BRIGHTSKY')) NE 0
-   for iobj=0, nobj-1 do $
-    skymask[*,iobj] = smooth(float(skymask[*,iobj]),5) GT 0
-   ibad = where(skymask)
-andmask = 0 ; Free memory
-   if (ibad[0] NE -1) then objivar[ibad] = 0
 
    ;----------
 

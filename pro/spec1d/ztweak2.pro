@@ -56,20 +56,15 @@ platefile = 'spPlate-0321-51612-60sec.fits'
    andmask = mrdfits(platefile,2)
    plug = mrdfits(platefile,5)
 
+   ;----------
+   ; Do not fit where the spectrum may be dominated by sky-sub residuals.
+
+   objivar = skymask(objivar, andmask)
+andmask = 0 ; Free memory
+
 zstruct.z = plug.expl / 3.e5
 j = where(plug.expl NE -999 AND plug.expl NE 0)
 zstruct[j].class = 'STAR'
-
-   ;----------
-   ; Do not fit where the spectrum may be dominated by sky-subtraction
-   ; residuals.  Grow that mask by 2 pixels in each direction.
-
-   skymask = (andmask AND pixelmask_bits('BRIGHTSKY')) NE 0
-   for iobj=0, nobj-1 do $
-    skymask[*,iobj] = smooth(float(skymask[*,iobj]),5) GT 0
-   ibad = where(skymask)
-andmask = 0 ; Free memory
-   if (ibad[0] NE -1) then objivar[ibad] = 0
 
    ;----------
    ; Determine the wavelength mapping for the object spectra,

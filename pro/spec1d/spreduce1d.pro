@@ -85,16 +85,8 @@ pro spreduce1d, platefile, outfile
 ;   dispmap = mrdfits(platefile,4)
    plugmap = mrdfits(platefile,5)
 
-   ;----------
-   ; Do not fit where the spectrum may be dominated by sky-subtraction
-   ; residuals.  Grow that mask by 2 pixels in each direction.
-
-   skymask = (andmask AND pixelmask_bits('BRIGHTSKY')) NE 0
-   for iobj=0L, nobj-1 do $
-    skymask[*,iobj] = smooth(float(skymask[*,iobj]),5) GT 0
-   ibad = where(skymask)
+   objivar = skymask(objivar, andmask)
 andmask = 0 ; Free memory
-   if (ibad[0] NE -1) then objivar[ibad] = 0
 
    ;----------
    ; Look for where the S/N is unreasonably large

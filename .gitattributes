@@ -136,6 +136,7 @@ pro/spec1d/qsorebin.pro -text
 pro/spec1d/readspec.pro -text
 pro/spec1d/reduce_plate.pro -text
 pro/spec1d/sdss_flagname.pro -text
+pro/spec1d/skymask.pro -text
 pro/spec1d/spec_append.pro -text
 pro/spec1d/spreduce1d.pro -text
 pro/spec1d/ss.pro -text
