@@ -1,3 +1,18 @@
+;---------------
+; Run in directory with 15may99 data
+sdssproc,'sdR-01-00000384.fit',image,invvar
+;image = image[*,900:999]
+;invvar = invvar[*,900:999]
+xcen = trace_crude(image, yset=ycen, nmed=5, nave=21)
+
+ntrace = (size(xcen,/dim))[1]
+atv,image
+for i=0,ntrace-1 do atvplot,xcen[*,i],ycen[*,i]
+
+;xy2traceset,ycen,xcen,tset
+extract_image,image,invvar,xcen,1.2,flux,error
+;---------------
+
 sdssproc,'sdR-01-00000384.fit',image,invvar
  medbin, image, binim, 8
 xcen = trace_crude(binim, yset=ycen, ystart=10)

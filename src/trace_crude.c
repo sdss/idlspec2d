@@ -20,6 +20,7 @@ IDL_LONG trace_crude
    float    ** xerr;
    float    *  maxerr;
    float    *  maxshift;
+   float    *  maxshift0;
 
    IDL_LONG    iy;
    IDL_LONG    itrace;
@@ -50,6 +51,7 @@ IDL_LONG trace_crude
    }
    maxerr = ((float *)argv[10]);
    maxshift = ((float *)argv[11]);
+   maxshift0 = ((float *)argv[12]);
 
    /* Loop through each trace */
    for (itrace=0; itrace < ntrace; itrace ++) {
@@ -61,8 +63,8 @@ IDL_LONG trace_crude
        &xfit, &xfiterr);
       if (xfiterr < *maxerr && xfiterr != 0) {
          xshift = xfit - xinit;
-         xshift = max(xshift, -*maxshift);
-         xshift = min(xshift, *maxshift);
+         xshift = max(xshift, -*maxshift0);
+         xshift = min(xshift, *maxshift0);
       } else {
          xshift = 0.0;
       }

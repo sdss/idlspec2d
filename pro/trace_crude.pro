@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   xset = trace_crude( fimage, invvar, [xstart=, ystart=, radius=, yset=, $
-;    nave=, nmed=, maxerr=, maxshift=, xerr= ] )
+;    nave=, nmed=, maxerr=, maxshift=, maxshift0=, xerr= ] )
 ;
 ; INPUTS:
 ;   fimage     - Image
@@ -29,7 +29,9 @@
 ;   maxerr     - Maximum error in centroid allowed for valid recentering;
 ;                default to 0.2
 ;   maxshift   - Maximum shift in centroid allowed for valid recentering;
-;                default to 0.2
+;                default to 0.1
+;   maxshift0  - Maximum shift in centroid allowed for initial row;
+;                default to 0.5
 ;
 ; OUTPUTS:
 ;   xset       - X centers for all traces
@@ -55,7 +57,7 @@
 ;------------------------------------------------------------------------------
 function trace_crude, fimage, invvar, xstart=xstart, ystart=ystart, $
  radius=radius, yset=yset, nave=nave, nmed=nmed, maxerr=maxerr, $
- maxshift=maxshift, xerr=xerr
+ maxshift=maxshift, maxshift0=maxshift0, xerr=xerr
 
    ; Need 1 parameter
    if (N_params() LT 1) then begin
@@ -71,7 +73,8 @@ function trace_crude, fimage, invvar, xstart=xstart, ystart=ystart, $
    if (NOT keyword_set(nmed)) then nmed = 1
    if (NOT keyword_set(nave)) then nave = 5
    if (NOT keyword_set(maxerr)) then maxerr = 0.2
-   if (NOT keyword_set(maxshift)) then maxshift = 0.2
+   if (NOT keyword_set(maxshift)) then maxshift = 0.1
+   if (NOT keyword_set(maxshift0)) then maxshift0 = 0.5
 
    ; Make a copy of the image and error map
    imgtemp = float(fimage)
@@ -118,9 +121,13 @@ function trace_crude, fimage, invvar, xstart=xstart, ystart=ystart, $
       imrow = smooth(imrow,3)
 
       ; Find all local peaks that are also above 1.0 times the median
-      xstart = where( imrow[1:nx-2] GT imrow[0:nx-3] $
-                  AND imrow[1:nx-2] GT imrow[2:nx-1] $
-                  AND imrow[1:nx-2] GT 1.0*medval) + 1
+;      xstart = where( imrow[1:nx-2] GT imrow[0:nx-3] $
+;                  AND imrow[1:nx-2] GT imrow[2:nx-1] $
+;                  AND imrow[1:nx-2] GT 1.0*medval) + 1
+      rderiv = imrow[1:nx-1] - imrow[0:nx-2]
+      izero = where( rderiv[0:nx-3] GT 0 AND rderiv[1:nx-2] LE 0 $
+       AND imrow[1:nx-2] GT 1.0*medval)
+      xstart = izero + 0.5 + rderiv[izero] / (rderiv[izero] - rderiv[izero+1])
    endif
 
    if (N_elements(ystart) EQ 1) then $
@@ -135,7 +142,7 @@ function trace_crude, fimage, invvar, xstart=xstart, ystart=ystart, $
    xerr = fltarr(ny, ntrace)
    result = call_external(getenv('IDL_EVIL')+'libspec2d.so', 'trace_crude', $
     nx, ny, imgtemp, invtemp, float(radius), ntrace, float(xstart), ypass, $
-    xset, xerr, float(maxerr), float(maxshift))
+    xset, xerr, float(maxerr), float(maxshift), float(maxshift0))
 
    yset = djs_laxisgen([ny,nTrace], iaxis=0)
 
