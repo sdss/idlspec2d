@@ -31,6 +31,26 @@ function fluxfit, loglam, objflux, objivar, color=color, refmag=refmag
    readcol, f8file, f8wave, f8flux
 
    ;----------
+   ; Scale the flux
+;       at v=0, flux at 5556A is 956 photons/cm^2/A/s
+;               = 3.52e-9 ergs/cm^2/s/A
+;       scale to r', with 10^(-r'/2.5)
+;       and return in units to 1e-17 ergs/cm/s/A
+;       so factor in exponent is 10^((21.37 - r')/2.5)
+;
+;       AB magnitude, the scaling this assumes
+;       the AB magnitude of BD+17 is 9.4 at 5560
+;
+;       we then use f_nu = 10^-0.4*(AB+48.6)
+;       and then f_lambda = f_nu * c / (lambda)^2
+; 
+;       c is 3.0e18 Ang/s
+;       lambda is in Ang
+
+   scalefac = 10.^((21.37 - refmag) / 2.5)
+   f8flux = f8flux * scalefac
+
+   ;----------
    ; Divide the input spectrum by that of the F8 star
 
    intrinspl = spl_init(alog10(f8wave), f8flux)
@@ -45,10 +65,8 @@ function fluxfit, loglam, objflux, objivar, color=color, refmag=refmag
    readcol, absfile, absmin, absmax
 
    abmask = bytarr(n_elements(objflux)) + 1b
-   for i=0, n_elements(absmin)-1 do begin
-      ipix = where(wave GT absmin AND wave LT absmax)
-      if (ipix[0] NE -1) then abmask[ipix] = 0
-   endfor
+   for i=0, n_elements(absmin)-1 do $
+    abmask = abmask * (wave LT absmin[i] OR wave GT absmax[i])
 
    ;----------
    ; Select break points for spline
@@ -78,30 +96,20 @@ function fluxfit, loglam, objflux, objivar, color=color, refmag=refmag
    ;----------
    ; QA plot
 
-   djs_plot, 10^loglam, fitflux, $
-    xtitle='\lambda [A]', ytitle='Flux', $
+   yplot = bspline_valu(loglam,sset)
+   djs_plot, [min(wave)-100,max(wave)+100], [0,1.1*max(yplot)], /nodata, $
+    /xstyle, /ystyle, $
+    xtitle='\lambda [A]', ytitle='Counts / (10^{-17}erg/cm/s/Ang)', $
     title='Spectro-Photo PCA for ' + color + '-band'
-   djs_oplot, 10^loglam, bspline_valu(loglam,sset), color='red'
-
-   ;----------
-   ; Scale the flux
-;       at v=0, flux at 5556A is 956 photons/cm^2/A/s
-;               = 3.52e-9 ergs/cm^2/s/A
-;       scale to r', with 10^(-r'/2.5)
-;       and return in units to 1e-17 ergs/cm/s/A
-;       so factor in exponent is 10^((21.37 - r')/2.5)
-;
-;       AB magnitude, the scaling this assumes
-;       the AB magnitude of BD+17 is 9.4 at 5560
-;
-;       we then use f_nu = 10^-0.4*(AB+48.6)
-;       and then f_lambda = f_nu * c / (lambda)^2
-; 
-;       c is 3.0e18 Ang/s
-;       lambda is in Ang
-
-   scalefac = 10.^((21.37 - refmag) / 2.5)
-   sset.coeff = sset.coeff / scalefac
+   djs_oplot, 10^loglam, fitflux
+   ymid = total(0.5 * !y.crange)
+   for i=0, n_elements(absmin)-1 do begin
+      djs_oplot, [absmin[i],absmin[i]], !y.crange, linestyle=2, color='blue'
+      djs_oplot, [absmax[i],absmax[i]], !y.crange, linestyle=2, color='blue'
+      djs_oplot, [absmin[i],absmax[i]], [ymid,ymid], color='blue'
+   endfor
+   djs_oplot, wave, yplot, color='red'
+   djs_oplot, 10^allbkpts, bspline_valu(allbkpts,sset), psym=4, color='red'
 
    return, sset
 end
