@@ -16,9 +16,18 @@ if [ $# = 1 ] ; then
 fi
 
 #------------------------------------------------------------------------------
-# Test to see if the cron job is already loaded.  If so, then quit.
+# Don't allow this to be run from the machine "sdsshost"!
 
 echo
+
+if [ `uname -n` = "sdsshost" ] ; then
+  echo "You are not allowed to launch Son-of-Spectro from sdsshost!"
+  exit
+fi
+
+#------------------------------------------------------------------------------
+# Test to see if the cron job is already loaded.  If so, then quit.
+
 qrun=`crontab -l | awk 'BEGIN{begin = 0; end = 0}{if ($2 == "SOS" && $3 == "BEGIN") {begin = 1}; if ($2 == "SOS" && $3 == "END" && begin == 1) {end = 1}}END{if (begin == 1 && end == 1){print "1"} else {print "0"}}'`
 if [ $qrun = 1 ] ; then
   echo "The Son-of-Spectro cron job is already running."
