@@ -9,7 +9,8 @@
 ;   sdssproc, infile, [image, invvar, indir=, $
 ;    outfile=, varfile=, nsatrow=, fbadpix=, $
 ;    hdr=hdr, configfile=, ecalibfile=, bcfile=, $
-;    /applypixflat, minflat=, maxflat=, spectrographid=, color=, camname= ]
+;    /applybias, /applypixflat, minflat=, maxflat=, $
+;    spectrographid=, color=, camname= ]
 ;
 ; INPUTS:
 ;   infile     - Raw SDSS file name
@@ -21,10 +22,14 @@
 ;   nsatrow    - Number of saturated rows, assuming that a row is saturated
 ;                if at least 20 of its pixels are above saturation level
 ;   fbadpix    - Fraction of bad pixels, not including bad columns
-;   configfile - Default to "opConfig.par"
-;   ecalibfile - Default to "opECalib.par"
-;   bcfile     - Default to "opBC.par"
-;   applypixflat- Apply 2-D pixel-to-pixel flat
+;   configfile - Default to "opConfig*par", selecting the file with the
+;                appropriate MJD.
+;   ecalibfile - Default to "opECalib*par", selecting the file with the
+;                appropriate MJD.
+;   bcfile     - Default to "opBC*par", selecting the file with the
+;                appropriate MJD.
+;   applybias  - Apply 2-D bias image.
+;   applypixflat- Apply 2-D pixel-to-pixel flat (after subtracting bias).
 ;   minflat    - Minimum values allowed for pixflat; pixels with the
 ;                flat out of range are masked; default to 0.
 ;   maxflat    - Maximum values allowed for pixflat; pixels with the
@@ -91,6 +96,8 @@
 ;   $IDLSPEC2D_DIR/examples/opConfig*par
 ;   $IDLSPEC2D_DIR/examples/opECalib*par
 ;   $IDLSPEC2D_DIR/examples/opBC*par
+;   $SPECFLAT_DIR/biases/pixbias*.fits
+;   $SPECFLAT_DIR/flats/pixflat*.fits
 ;
 ; REVISION HISTORY:
 ;   13-May-1999  Written by Scott Burles & David Schlegel, Apache Point.
@@ -188,14 +195,16 @@ end
 pro sdssproc, infile, image, invvar, indir=indir, $
  outfile=outfile, varfile=varfile, nsatrow=nsatrow, fbadpix=fbadpix, $
  hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, bcfile=bcfile, $
- applypixflat=applypixflat, spectrographid=spectrographid, color=color, $
- camname=camname, minflat=minflat, maxflat=maxflat
+ applybias=applybias, applypixflat=applypixflat, $
+ minflat=minflat, maxflat=maxflat, $
+ spectrographid=spectrographid, color=color, camname=camname
 
    if (N_params() LT 1) then begin
       print, 'Syntax - sdssproc, infile, [image, invvar, indir=, $'
       print, ' outfile=, varfile=, nsatrow=, fbadpix=, $' 
       print, ' hdr=, configfile=, ecalibfile=, bcfile=, $'
-      print, ' /applypixflat, spectrographid=, color=, camname=, minflat= ]'
+      print, ' /applybias, /applypixflat, minflat=, maxflat=, $'
+      print, ' spectrographid=, color=, camname= ]'
       return
    endif
 
@@ -784,7 +793,33 @@ admask = 0 ; clear memory
    endif
 
    ;---------------------------------------------------------------------------
-   ; Read pixel-to-pixel flat-field
+   ; Correct image with bias image
+   ;---------------------------------------------------------------------------
+
+   if (keyword_set(applybias) AND readimg) then begin
+      pp = filepath('', root_dir=getenv('SPECFLAT_DIR'), subdirectory='biases')
+      ; First search for files "pixbiasave-*.fits", and if not found then
+      ; look for "pixbias-*.fits".
+      pixbiasname = findopfile('pixbiasave-*-'+camname+'.fits', mjd, pp)
+      if (NOT keyword_set(pixbiasname)) then $
+       pixbiasname = findopfile('pixbias-*-'+camname+'.fits', mjd, pp)
+
+      if (NOT keyword_set(pixbiasname)) then begin
+         splog, 'WARNING: Bias image not found for camera ' + camname
+      endif else begin
+         splog, 'Correcting with bias image ' + pixbiasname
+         pixbiasimg = mrdfits(djs_filepath(pixbiasname, root_dir=pp))
+
+         image = image - pixbiasimg
+pixbiasimg = 0 ; clear memory
+
+         ; Add pixbiasname to header since it has just been applied
+         sxaddpar, hdr, 'BIASIMG', pixbiasname
+      endelse
+   endif
+
+   ;---------------------------------------------------------------------------
+   ; Correct image with pixel-to-pixel flat-field
    ;---------------------------------------------------------------------------
 
    if (keyword_set(applypixflat) AND (readimg OR readivar)) then begin
@@ -794,25 +829,26 @@ admask = 0 ; clear memory
       pixflatname = findopfile('pixflatave-*-'+camname+'.fits', mjd, pp)
       if (NOT keyword_set(pixflatname)) then $
        pixflatname = findopfile('pixflat-*-'+camname+'.fits', mjd, pp)
-      if (NOT keyword_set(pixflatname)) then $
-       message, 'Pixel flat not found for camera ' + camname
-      splog, 'Correcting with pixel flat ' + pixflatname
 
-      pixflatimg = mrdfits(djs_filepath(pixflatname, root_dir=pp))
+      if (NOT keyword_set(pixflatname)) then begin
+         splog, 'WARNING: Pixel flat not found for camera ' + camname
+      endif else begin
+         splog, 'Correcting with pixel flat ' + pixflatname
 
-      if (readimg) then image = image / (pixflatimg + (pixflatimg LE 0))
-      if (NOT keyword_set(minflat)) then minflat = 0.0
-      if (NOT keyword_set(maxflat)) then maxflat = 1.0e10
-      if (readivar) then $
-       invvar = invvar * pixflatimg^2 * (pixflatimg GT minflat) $
-        * (pixflatimg LT maxflat)
+         pixflatimg = mrdfits(djs_filepath(pixflatname, root_dir=pp))
+
+         if (readimg) then image = image / (pixflatimg + (pixflatimg LE 0))
+         if (NOT keyword_set(minflat)) then minflat = 0.0
+         if (NOT keyword_set(maxflat)) then maxflat = 1.0e10
+         if (readivar) then $
+          invvar = invvar * pixflatimg^2 * (pixflatimg GT minflat) $
+           * (pixflatimg LT maxflat)
 pixflatimg = 0 ; clear memory
 
-      ; add pixflatname to header since it has just been applied
-
-      sxaddpar, hdr, 'PIXFLAT', pixflatname
+         ; Add pixflatname to header since it has just been applied
+         sxaddpar, hdr, 'PIXFLAT', pixflatname
+      endelse
    endif
-
 
    ;---------------------------------------------------------------------------
    ; Check for NaN's
