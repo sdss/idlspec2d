@@ -258,7 +258,7 @@ arcivar = 0
       x2 = xsol / 2048. ; CCD-X position ???
       asset = superflat(flux, fluxivar, wset, x2=x2, $
        fibermask=fibermask, minval=0.0, lower=lower, upper=upper, $
-       nord=3, npoly=4)
+       nord=4, npoly=3)
 flux = 0
 fluxivar = 0
       x2 = float(djs_laxisgen([nx,ny],iaxis=0)) / 2048. ; CCD-X position ???
