@@ -12,8 +12,11 @@ hostconfig photo2.astro.princeton.edu "" ssh
 hostconfig photo3.astro.princeton.edu "" ssh
 hostconfig photo4.astro.princeton.edu "" ssh
 hostconfig photo5.astro.princeton.edu "" ssh
+hostconfig photo6.astro.princeton.edu "" ssh
+hostconfig photo7.astro.princeton.edu "" ssh
 hostconfig wire3.princeton.edu "" ssh
 hostconfig wire5.princeton.edu "" ssh
+hostconfig wire6.princeton.edu "" ssh
 hostconfig wire7.princeton.edu "" ssh
 hostconfig wire8.princeton.edu "" ssh
 #hostconfig localhost "" ""

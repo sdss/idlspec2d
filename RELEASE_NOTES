@@ -25,6 +25,8 @@ PLATEMERGE: Create spAllLine files.  Allow PUBLIC to be a keyword specifying
 PLOTSPEC: Fix trivial bug (had "EXTRA" instead of "_EXTRA") in passing
            additional plotting keywords to plots.  Also, pass those
            keywords along to the XYOUTS commands.
+PLOTSN: The last plot was accidentally showing i-band residuals instead
+           of r-band.
 SPHDRFIX: Test if the opHdrFix file (or the directory!) even exist at all.
            Otherwise, if the directory does not exist, we'll get stuck in
            an infinite loop.
