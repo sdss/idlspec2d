@@ -1,0 +1,199 @@
+;+
+; NAME:
+;   lrg_tweak_template
+;
+; PURPOSE:
+;   Very simple photo-z finder for LRGs using a single template.
+;
+; CALLING SEQUENCE:
+;   lrg_tweak_template, pflux, pflux_ivar, zz, $
+;    [ /abcorrect, extinction=, filterlist=, maxiter=, coeff= ]
+;
+; INPUTS:
+;   pflux          - Object fluxes in the 5 SDSS filters [5,NOBJ]
+;   pflux_ivar     - Inverse variances for FLUX [5,NOBJ]
+;   zz             - Spectroscopic redshifts [NOBJ]
+;
+; OPTIONAL INPUTS:
+;   abcorrect      - If set, then convert the input fluxes from the 2.5-m
+;                    natural system to AB fluxes
+;   extinction     - If set, then apply these extinction corrections [5,NOBJ]
+;   filterlist     - List of filter indices to use in fits; default to
+;                    using all five filters [0,1,2,3,4]
+;   maxiter        - Maximum number of iterations; default to 40
+;
+; OUTPUTS:
+;   coeff          - Best-fit coefficients for tweaking input LRG template
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;   This routine computes the modifications to an input LRG spectrum
+;   that gives a better total chi^2 when computing photometric redshifts.
+;   The form of the transformation is:
+;      Flux = Flux * (1 + COEFF[0] * Wave + COEFF[1] * Wave^2)
+;
+;   The fluxes should be AB fluxes, or SDSS 2.5-m natural system fluxes
+;   if /ABCORRECT is set.
+;   The fluxes should already be extinction-corrected, unless
+;   the EXTINCTION keyword is passed.
+;
+; EXAMPLES:
+;
+; BUGS:
+;
+; PROCEDURES CALLED:
+;   computechi2()
+;   filter_thru()
+;   mrdfits()
+;   sdssflux2ab
+;   sxpar()
+;
+; REVISION HISTORY:
+;   21-Oct-2003  Written by D. Schlegel, Princeton
+;-
+;------------------------------------------------------------------------------
+forward_function mpfit, lrg_tweak_fn
+
+;------------------------------------------------------------------------------
+pro lrg_tweak_template_read, coeff, retwave, retflux
+
+   common com_lrg_tweak_template_read, bigloglam, bigspecflux
+
+   if (NOT keyword_set(bigloglam)) then begin
+      ;----------
+      ; Initialize the template "spectra".
+      ; This need only be done the first time this function is called,
+      ; then cached for future calls.
+
+      ; Read in an LRG spectrum
+      eigendir = concat_dir(getenv('IDLSPEC2D_DIR'), 'templates')
+      eigenfile = 'spLRG-52928.fits'
+      specflux = mrdfits(djs_filepath(eigenfile, root_dir=eigendir), 0, hdr)
+      dloglam = sxpar(hdr, 'COEFF1')
+      loglam = sxpar(hdr, 'COEFF0') + dindgen(sxpar(hdr, 'NAXIS1')) * dloglam
+
+      ; Smooth the end of the spectra
+      i1 = where(loglam LT alog10(3200), n1)
+      i2 = where(loglam GT alog10(8800), n2)
+      val1 = median(specflux[i1])
+      val2 = median(specflux[i2])
+      w1 = findgen(n1) / (n1-1)
+      w2 = (n2-findgen(n2)-1) / (n2-1)
+      specflux[i1] = val1 * (1-w1) + specflux[i1] * w1
+      specflux[i2] = val2 * (1-w2) + specflux[i2] * w2
+
+      ; Expand the wavelength coverage by extending the ends of the spectrum
+      ; to about 1584,12019 Ang.
+      bigloglam = 3.2000d0 + dindgen(8800) * 1.d-4
+      linterp, loglam, specflux, bigloglam, bigspecflux
+   endif
+
+   retwave = 10.d0^bigloglam
+   retflux = bigspecflux * (1.d0 + coeff[0] * retwave + coeff[1] * retwave^2)
+
+   return
+end
+;------------------------------------------------------------------------------
+; Return a vector of all the chi values
+function lrg_tweak_fn, coeff
+
+   common com_lrg_tweak_fluxes, pflux, pflux_isig, zz, filterlist
+
+   ; Read the tweaked template
+   lrg_tweak_template_read, coeff, bigwave, bigspecflux
+
+   ; Convert from f_lambda to f_nu
+   flambda2fnu = bigwave^2 / 2.99792e18
+   bigspecflux = bigspecflux * flambda2fnu
+
+   ; Select a binning of 0.005 in redshift, and go out to redshift 0.6
+   numz = 125
+   deltaz = 0.005
+   zarr = deltaz * findgen(numz)
+
+   ; Convolve the spectrum with the filters
+   synflux = dblarr(5,numz)
+   for iz=0L, numz-1 do begin
+      print, format='("Z ",i5," of ",i5,a1,$)', $
+        iz, numz, string(13b)
+      thiswave = bigwave * (1 + zarr[iz])
+      synflux[*,iz] = filter_thru(bigspecflux, waveimg=thiswave, /toair)
+   endfor
+   print
+
+   ; Compute the chi for each object
+   nobj = n_elements(pflux) / 5
+   chivec = dblarr(nobj)
+   for iobj=0L, nobj-1 do begin
+      iz = (round(zz[iobj] / deltaz) > 0) < (numz-1)
+      chivec[iobj] = computechi2(pflux[filterlist,iobj], $
+       pflux_isig[filterlist,iobj], synflux[filterlist,iz])
+   endfor
+
+   return, chivec
+end
+;------------------------------------------------------------------------------
+pro lrg_tweak_template, pflux1, pflux_ivar1, zz1, $
+ abcorrect=abcorrect, extinction=extinction, filterlist=filterlist1, $
+ maxiter=maxiter
+
+   common com_lrg_tweak_fluxes, pflux, pflux_isig, zz, filterlist
+
+   ; Set defaults
+   if (n_elements(filterlist1) NE 0) then filterlist = filterlist1 $
+    else filterlist = lindgen(5)
+   if (NOT keyword_set(maxiter)) then maxiter = 40
+
+   ; Set variables in common blocks
+   zz = zz1
+
+   ; Apply AB correction
+   if (keyword_set(abcorrect)) then begin
+      pflux = sdssflux2ab(pflux1)
+      pflux_isig = sqrt( sdssflux2ab(pflux_ivar1, /ivar) )
+   endif else begin
+      pflux = pflux1
+      pflux_isig = sqrt(pflux_ivar1)
+   endelse
+
+   ; Apply extinction corrections
+   if (keyword_set(extinction)) then begin
+      pflux = pflux * 10.^(0.4*extinction)
+      pflux_isig = pflux_isig / 10.^(0.4*extinction)
+   endif
+
+   ; Insist that we don't use any NaN values
+   ibad = where(finite(pflux) EQ 0 OR finite(pflux_isig) EQ 0, nbad)
+   if (nbad GT 0) then begin
+      pflux[ibad] = 0
+      pflux_isig[ibad] = 0
+   endif
+
+   ; Discard any objects where the baseline photo-z is discrepent by
+   ; more than 0.15, and discard any low-redshift objects with z > 0.10.
+   zfit = lrg_photoz(pflux, pflux_isig^2)
+   ibad = where(abs(zfit - zz) GT 0.15 OR zz GT 0.10, nbad)
+   if (nbad GT 0) then begin
+      print, 'Discard ', nbad, ' objects with discrepent photo-z'
+      pflux[*,ibad] = 0
+      pflux_isig[*,ibad] = 0
+   endif
+
+   ; Call MPFIT to iterate on the solution for the template
+   parinfo = {value: 0.D, fixed: 0, limited: [0b,0b], limits: [0.d0,0.d0]}
+   parinfo = replicate(parinfo, 2)
+   parinfo.value = [4.d-5, 4.d-9]
+   ftol = 1d-14
+   gtol = 1d-14
+   coeff = mpfit('lrg_tweak_fn', parinfo=parinfo, perror=perror, $
+    maxiter=maxiter, ftol=ftol, gtol=gtol, niter=niter, status=status)
+
+   print, 'STATUS = ', status
+   print, 'Best-fit coeffs = ', coeff
+   print, 'Errors = = ', perror
+
+stop
+   return
+end
+;------------------------------------------------------------------------------
