@@ -41,6 +41,7 @@ SPCOADD_FRAMES: Include MJDLIST keyword in spPlate header, which will be
                 the list of all MJD's used in an SPCOMBINE.
                 Add BUNIT keyword for the flux, inverse variance, and
                 dispersion HDU's.
+SPFLATGEN: Wrapper for SPFLATTEN2 for generating pixel-to-pixel flat-fields.
 SPFLATTEN2: Major changes! Now call the 2-dimensional B-spline code when
             generating the superflats.  However, there seem to be problems
             with this code for some combinations of NORD and NPOLY.  I have
