@@ -470,8 +470,8 @@ pro spcoadd_v5, spframes, outputname, $
          fluxivar[*,indx[i]] = thisivar1
       endfor
 
-      mwrfits, thisflux, thisfile, hdr, /create
-      mwrfits, thisivar, thisfile
+      mwrfits, flux[*,indx], thisfile, hdr, /create
+      mwrfits, fluxivar[*,indx], thisfile
       mwrfits, pixelmask[*,indx], thisfile
       mwrfits, wave[*,indx], thisfile
       mwrfits, dispersion[*,indx], thisfile
