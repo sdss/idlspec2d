@@ -153,17 +153,14 @@ pro readspec1, plate, range, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    endif
 
    if (q_zans) then begin
-      zfile = 'spZ-' + platestr + '-' + mjdstr + '.fits'
+      zfile = 'spZbest-' + platestr + '-' + mjdstr + '.fits'
       zfile = findfile(filepath(zfile, root_dir=root_dir, $
        subdirectory=platestr), count=ct)
 
       if (ct GT 1) then zfile = zfile[ (reverse(sort(zfile)))[0] ] $
        else zfile = zfile[0]
 
-      zall = mrdfits(zfile, 1)
-      i = (where(zall.fiberid EQ range[0]+1))[0]
-      if (i NE -1) then zans = zall[i] $
-       else zans = zall[ (where(zall.fiberid EQ 0))[0] ]
+      zans = mrdfits(zfile, 1, range=range)
    endif
 
    return
