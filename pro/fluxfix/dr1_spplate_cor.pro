@@ -7,7 +7,8 @@
 ;   Modify a list of spPlate files to improve the spectrophotometry 
 ;
 ; CALLING SEQUENCE:
-;   dr1_spplate_cor, dr1_platelist, logfile =, spectro_data_dir = 
+;   dr1_spplate_cor, dr1_platelist, logfile =, spectro_data_dir =, $
+;                    tsobj_dir =
 ;   
 ; INPUTS:
 ;   dr1_platelist    - Name of yanny parameter file listing the plate and mjd
@@ -18,9 +19,15 @@
 ;   spectro_data_dir - Directory path to original spPlate files.  If not set
 ;                      then it is assumed that the environment variable
 ;                      'SPECTRO_DATA' is set.
-;
+;   tsobj_dir        - Directory plate to tsObjfiles corresponding to the 
+;                      the spPlate files.  (Only needed if zeropoint correction
+;                      to newest Photo rerun is desired.)
 ; OUTPUTS:
 ;   A modified spPlate-$PLATE-$MJD.fits file is written to the current directory
+;
+; COMMENTS:
+;   This program is really just a wrapper. See "spplate_correct.pro' for 
+;   details.
 ;
 ; PROCEDURES CALLED:
 ;   splog
@@ -89,7 +96,8 @@ pro dr1_spplate_cor, platelist_par, logfile = logfile, $
     ; Modify the plate
 
     spplate_correct, plate[indx], mjd[indx], spectro_data_dir = $
-      spectro_data_dir, /remove_smear, /zeropoint_cor
+       spectro_data_dir, remove_smear = 1, zeropoint_cor = 1, $
+       tsobj_dir = tsobj_dir
 
   endfor
 
