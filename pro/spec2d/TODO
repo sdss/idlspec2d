@@ -1,18 +1,15 @@
 
+* Add in error as a fraction of the whopping terms?
+  Or at least set a pixelmask bit.
+
 * Bug in fitans image, do not get smooth fits for centershift and
      sigmashift, what is going on?
 
      --- Shifts were likely too large
      --- Now fitansimage is cleaner, and hopefully more robust
 
-* Fiberflats can have wacky values (look at its plot)
-
-* Fiberflat plot doesn't indicate bad fibers.
-
 * Don't create pointers for SPCALIB, or if I do, then be sure to discard them
   with arcstruct_destroy(), flatstruct_destroy().
-
-* Add pixelmask bits when 2d pixelflat has low counts (less than 0.5?)
 
 * Need to have better (or any) standard star SED prediction based
     on u-g, g-r, r-i.
@@ -31,18 +28,6 @@
 
 * Change FIBERMASK not in FIBERFLAT, but in SUPERFLAT.
 
-* BUG: trace320crude is failing for fiber 276 on plate 217: sdR-r2-00001459.fit
-    The xcen is off by > 1 pixel thr whole length of the fiber, and
-    flat field extraction is horrible, object extraction is bad as well.
-
-   ----> Put in fix, but not sure it's bulletproof
-
-* Need to pass rejection information back from extract_row.c
-    to add into pixelmask
-
-   ---> done, put in another parameter to return to extract_row.pro
-          also put in rejection thresholds as a two elements array
-
 * Try not to overwrite PostScript log file.
 
 * BUG: For arc 51441/sdR-b2-00001347.fit (plate 214), bizarre wavelength
@@ -57,11 +42,7 @@
 
   --> Could this be due to scattered light errors near the edge of frames?
 
-* Make plot in QAPLOT_FFLAT smaller in the PostScript.
-
 * Put the arc-fitting QA logs into the QAPLOT code.
-
-* Let SUPERFLAT discard deviant (but not necessarily bad) fibers.
 
 * Rationalize 01, 1b, b1 --> b1.
 
@@ -91,9 +72,6 @@
 
 * Don't allow too many whopping terms.
 
-* When constructing FFLAT in FIBERFLAT, mask out very low values
-  from the spline fits to avoid the large +/-/+ residuals.
-
 * Choose bkpts in combine2dout more carefully, bad behavior ensues
   with current choice (uniform bins).
 
@@ -102,24 +80,9 @@
 
 * Decide on vacuum or air wavelengths - document this!
 
-* Masked data has INVVAR=0, but then SIGMA=0 in the final outputs?
-  What does spectro1d do with that?
-
-* Let QUICKPROC be an option in SDSSPROC
-
 * QA plot for how well the telluric-removal is doing
 
-
-* Bug when writing out files:
-  % Type conversion error: Unable to convert given STRING to Integer.
-  % Detected at:  CHK_AND_UPD       206 
-    /home/schlegel/evilspec/goddard/pro/fits/mwrfits.pro
-
----->  Fixed, and sent mail to W. Landsman about this.
-
 * Special-case a combine routine for only 2 exposures that will reject CR's
-
-* Count dead fibers in trace_crude
 
 * Compare throughput from dome flats vs. throughput on bright sky lines.
 
@@ -139,12 +102,7 @@
 * The b1 CCD has too much overscan subtracted on rows 0 and 1.
   Check all overscan regions in SDSSPROC.
 
-* CR zapping.
-
 * Need some logic to make certain we're looking at a flat, arc, etc.
-
-* Binned mode
-   -- worked at one time
 
 * Focal plane mapping
 
@@ -153,6 +111,20 @@
 -------------------------------------------------------------------------------
 ;   These have been dealt with
 -------------------------------------------------------------------------------
+* Need to pass rejection information back from extract_row.c
+    to add into pixelmask
+
+   ---> done, put in another parameter to return to extract_row.pro
+          also put in rejection thresholds as a two elements array
+
+* BUG: trace320crude is failing for fiber 276 on plate 217: sdR-r2-00001459.fit
+    The xcen is off by > 1 pixel thr whole length of the fiber, and
+    flat field extraction is horrible, object extraction is bad as well.
+
+   ---> Should be fixed 03-Mar-00.
+
+* CR zapping ---> Current code seems to deal with this.
+
 * Problems with CCD electronics?  Bleads with low counts?
     -- This was the shutter open
 
