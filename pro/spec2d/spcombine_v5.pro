@@ -234,10 +234,13 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
    ;----------
    ; Co-add the fluxed exposures
 
-   ii = where(score GT 0)
-   spcoadd_v5, objname[ii], combinefile, mjd=thismjd, combinedir=combinedir, $
-    adderr=adderr, docams=docams, plotsnfile=plotsnfile, $
-    bestexpnum=expnum[0,ibest]
+   ii = where(score GT 0, ct)
+   if (ct GT 0) then $
+    spcoadd_v5, objname[ii], combinefile, mjd=thismjd, combinedir=combinedir, $
+     adderr=adderr, docams=docams, plotsnfile=plotsnfile, $
+     bestexpnum=expnum[0,ibest] $
+   else $
+    splog, 'ABORT: No exposures with SCORE > 0'
 
    heap_gc   ; garbage collection
 
