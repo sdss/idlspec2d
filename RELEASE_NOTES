@@ -43,6 +43,17 @@ SPCOADD_FRAMES: Change BUNIT header keywords in output files to have
            comment '10E-17 erg/cm/s/Ang'.
 WRITE_UROS: Add Flatvec,Rnois to output files.
 
+New procs from Tremonti in pro/fluxfix:
+
+DR1_SPPLATE_COR: Modify a list of spPlate files for improved spectrophotometry.
+FLUX_STANDARD: Solve the flux-calib vectors for a single camera+spectrograph.
+PLATE_FLUX_RECAL: Called by SPPLATE_CORRECT.
+SPPLATE_CORRECT: Correct the flux calibration of the spPlate files for DR1.
+STYPE_STANDARD: Spectral type the standard stars and save the result as
+           a FITS file. (This should probably be changed to return the result).
+UNDO_SMEAR: Create correction vectors for 1 plate which can be used to
+           remove the the effects of "smear" from the spectra.
+
 aporsync_alllog.sh: New shell script for copying all of the log files
            from sdsshost.apo:/astrolog/$MJD to the sos.apo machine.
            This will be done once per day at 7:45.  This rsync must
@@ -55,6 +66,7 @@ aporsync_logs.sh: The last line of the first rsync command was accidentally
            if it exists.  This addresses PR #3968.
            Also copy plSlitpos*.par,plPlugMap*.log files.
 export.h: Update this file to agree with the IDL 5.5beta for Mac OS X.
+Makefile: Support for new "fluxfix" subdirectory.
 opHdrFix.par: Fix the RA,DEC positions in the raw file headers to fix
            some remaining problems for PR #3009.  Specifically, the following
            plates were getting the wrong RA,DEC in the platelist files:
