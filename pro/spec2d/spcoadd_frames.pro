@@ -97,8 +97,7 @@ end
 ;------------------------------------------------------------------------------
 pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
  binsz=binsz, zeropoint=zeropoint, nord=nord, wavemin=wavemin, $
- bkptbin=bkptbin, window=window, maxsep=maxsep, adderr=adderr, $
- snplot=snplot
+ bkptbin=bkptbin, window=window, maxsep=maxsep, adderr=adderr
 
    if (NOT keyword_set(binsz)) then binsz = 1.0d-4 $
     else binsz = double(binsz)
@@ -209,11 +208,13 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
 
       ;----------
       ; Apodize the errors
+      ; Do this only for the dichroic overlap region, which are the first
+      ; rows in both the blue and red CCD's.
 
       if (keyword_set(window)) then begin
          swin = window < npix
-         hmm = lindgen(swin)
-         tempivar[hmm,*] = tempivar[hmm,*] * (hmm # replicate(1,nfib)) / swin
+         indx = lindgen(swin)
+         tempivar[indx,*] = tempivar[indx,*] * (indx # replicate(1,nfib)) / swin
       endif
 
       ;----------
@@ -307,10 +308,6 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
 
    nfinalpix = spotmax - spotmin + 1
    finalwave = dindgen(nfinalpix) * binsz + wavemin
-
-   gwave = where(finalwave GT alog10(4000) AND finalwave LT alog10(5500))
-   rwave = where(finalwave GT alog10(5600) AND finalwave LT alog10(6900))
-   iwave = where(finalwave GT alog10(6910) AND finalwave LT alog10(8500))
 
    nfiber = max(plugmap.fiberid)
 
