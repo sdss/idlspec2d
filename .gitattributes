@@ -29,6 +29,7 @@ etc/intrinsicF2.dat -text
 etc/lamphgcdne.dat -text
 etc/lamplist.dat -text
 etc/red.bkpts -text
+etc/regress1d_all.chicago -text
 etc/regress1d_all.dat -text
 etc/regress1d_all.plates -text
 etc/sdss_g_atm.dat -text
