@@ -1,6 +1,6 @@
 ;+
 ; NAME:
-;   spcoadd_frames
+;   platesn
 ;
 ; PURPOSE:
 ;   Generate S/N plots for an entire plate.
@@ -35,7 +35,11 @@
 ; COMMENTS:
 ;   Median fluxes are used in each band-pass to generate the synthesized
 ;   magnitudes.
-;
+;   
+;   Header keywords ROFFSET & RSIGMA store the offset and standard
+;   deviation of the r-band difference in the spectro and photo mags.  
+;   GIOFF and GISIGMA store the offset and scatter in the (g-i) color.
+;   
 ; EXAMPLES:
 ;
 ; BUGS:
@@ -53,6 +57,7 @@
 ;
 ; REVISION HISTORY:
 ;   06-Oct-2000  Written by S. Burles & D. Schlegel
+;   20-Oct-2002  C. Tremonti added header keywords to access spectrophotometry
 ;-
 ;------------------------------------------------------------------------------
 pro platesn, finalflux, finalivar, finalandmask, finalplugmap, loglam, $
@@ -123,7 +128,8 @@ pro platesn, finalflux, finalivar, finalandmask, finalplugmap, loglam, $
    plottitle = 'PLATE=' + strtrim(string(sxpar(hdr,'PLATEID')),2) $
     + '  MJD=' + strtrim(string(sxpar(hdr,'MJD')),2)
    plotsn, snvec, finalplugmap, plotfile=plotfile, plottitle=plottitle, $
-    synthmag=synthmag, snplate=snplate
+    synthmag=synthmag, snplate=snplate, roffset = roffset, rsigma = rsigma, $
+    gioffset = gioffset, gisigma = gisigma
 
    ;----------
    ; Print roll call of bad fibers and bad pixels.
@@ -196,6 +202,29 @@ pro platesn, finalflux, finalivar, finalandmask, finalplugmap, loglam, $
             sxaddpar, hdr, key1, snplate[ispec-1,bb], comment, before='LOWREJ'
          endfor
       endfor
+ 
+      ;-----------------
+      ; Add keywords describing the agreement of the syntmags and the
+      ; photo mags in the plugmap.  We use the mean value of the two
+      ; spectrographs
+
+      sxaddpar, hdr, 'ROFFSET1', roffset[0], $
+                'Mean r-band mag difference (spectro mag - photo mag)'
+      sxaddpar, hdr, 'RSIGMA1', rsigma[0], $
+             'Stddev of r-band mag difference (spectro mag - photo mag)'
+      sxaddpar, hdr, 'GIOFF1', gioffset[0], $
+                'Mean (g - i) color difference (spectro mag - photo mag)'
+      sxaddpar, hdr, 'GISIGMA1', gisigma[0], $
+                'Stddev of (g - i) color difference (spectro mag - photo mag)'
+      sxaddpar, hdr, 'ROFFSET2', roffset[1], $
+                'Mean r-band mag difference (spectro mag - photo mag)'
+      sxaddpar, hdr, 'RSIGMA2', rsigma[1], $
+             'Stddev of r-band mag difference (spectro mag - photo mag)'
+      sxaddpar, hdr, 'GIOFF2', gioffset[1], $
+                'Mean (g - i) color difference (spectro mag - photo mag)'
+      sxaddpar, hdr, 'GISIGMA2', gisigma[1], $
+                'Stddev of (g - i) color difference (spectro mag - photo mag)'
+
    endif
 
    return
