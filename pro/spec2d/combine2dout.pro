@@ -350,7 +350,6 @@ pro combine2dout, filenames, outputroot, spectrographid, $
 
            fullcombmask[ss] = mask
 
-           if (i EQ 173) then stop
          endfor
 
 
