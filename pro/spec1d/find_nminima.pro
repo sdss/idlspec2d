@@ -274,6 +274,7 @@ function find_nminima, yflux, xvec, dofarr=dofarr, nfind=nfind, minsep=minsep, $
        !y.title = textoidl('\chi^2/DOF') $
       else $
        !y.title = textoidl('\chi^2')
+      oldmulti = !p.multi
       !p.multi = [0,nfind+1,1]
       !p.charsize = 1.5
       !x.charsize = 1.5
@@ -399,6 +400,8 @@ function find_nminima, yflux, xvec, dofarr=dofarr, nfind=nfind, minsep=minsep, $
          print, 'Press any key...'
          cc = strupcase(get_kbrd(1))
       endif
+
+      !p.multi = oldmulti
    endif
 
    return, xpeak
