@@ -68,6 +68,7 @@
 ;   correct_dlam
 ;   divideflat
 ;   djs_diff_angle()
+;   fiber_rollcall
 ;   idlspec2d_version()
 ;   mkhdr
 ;   mrdfits()
@@ -465,6 +466,10 @@ pro spcoadd_v5, spframes, outputname, $
 
    platesn, finalflux, finalivar, finalandmask, finalplugmap, finalwave, $
     hdr=hdr, plotfile=djs_filepath(plotsnfile, root_dir=combinedir)
+
+   ; Print roll call of bad fibers and bad pixels.
+
+   fiber_rollcall, finalandmask, finalwave
 
    ;---------------------------------------------------------------------------
    ; Create the output header
