@@ -7,7 +7,8 @@
 ;
 ; CALLING SEQUENCE:
 ;   readspec, plate, fiber, [mjd=, flux=, flerr=, invvar=, $
-;    andmask=, ormask=, plugmap=, loglam=, wave=, tsobj=, root_dir=, /silent ]
+;    andmask=, ormask=, disp=, plugmap=, loglam=, wave=, tsobj=, $
+;    root_dir=, /silent ]
 ;
 ; INPUTS:
 ;   plate      - Plate number(s)
@@ -32,6 +33,7 @@
 ;   invvar     - Inverse variance [NPIXEL,NFIBER]
 ;   andmask    - AND-mask [NPIXEL,NFIBER]
 ;   ormask     - OR-mask [NPIXEL,NFIBER]
+;   disp       - Wavelength dispersion [NPIXEL,NFIBER]
 ;   plugmap    - Plug-map entries [NFIBER]
 ;   loglam     - Log10-wavelength in log10-Angstroms [NPIXEL,NFIBER]
 ;   wave       - Wavelength in Angstroms [NPIXEL,NFIBER]
@@ -65,11 +67,11 @@
 ;-
 ;------------------------------------------------------------------------------
 pro readspec1, plate, range, mjd=mjd, silent=silent, flux=flux, flerr=flerr, $
- invvar=invvar, andmask=andmask, ormask=ormask, plugmap=plugmap, $
+ invvar=invvar, andmask=andmask, ormask=ormask, disp=disp, plugmap=plugmap, $
  loglam=loglam, wave=wave, tsobj=tsobj, root_dir=root_dir
 
    common com_readspec, q_flux, q_flerr, q_invvar, q_andmask, q_ormask, $
-    q_plugmap, q_loglam, q_wave, q_tsobj
+    q_disp, q_plugmap, q_loglam, q_wave, q_tsobj
 
    platestr = string(plate,format='(i4.4)')
    if (NOT keyword_set(mjd)) then mjdstr = '*' $
@@ -92,6 +94,7 @@ pro readspec1, plate, range, mjd=mjd, silent=silent, flux=flux, flerr=flerr, $
       invvar = 0
       andmask = 0
       ormask = 0
+      disp = 0
       plugmap = 0
       loglam = 0
       wave = 0
@@ -120,8 +123,12 @@ pro readspec1, plate, range, mjd=mjd, silent=silent, flux=flux, flerr=flerr, $
       ormask = mrdfits(filename, 3, range=range, silent=silent)
    endif
 
+   if (q_disp) then begin
+      disp = mrdfits(filename, 4, range=range, silent=silent)
+   endif
+
    if (q_plugmap) then begin
-      plugmap = mrdfits(filename, 4, range=range, silent=silent, $
+      plugmap = mrdfits(filename, 5, range=range, silent=silent, $
        structyp='PLUGMAPOBJ')
    endif
 
@@ -149,18 +156,18 @@ end
 
 ;------------------------------------------------------------------------------
 pro readspec, plate, fiber, mjd=mjd, silent=silent, flux=flux, flerr=flerr, $
- invvar=invvar, andmask=andmask, ormask=ormask, plugmap=plugmap, $
+ invvar=invvar, andmask=andmask, ormask=ormask, disp=disp, plugmap=plugmap, $
  loglam=loglam, wave=wave, tsobj=tsobj, root_dir=root_dir
 
    if (n_params() LT 1) then begin
       print, 'Syntax: readspec, plate, [ fiber, mjd=, /silent, flux=, flerr=, invvar=, $'
-      print, ' andmask=, ormask=, plugmap=, loglam=, wave=, tsobj= ] '
+      print, ' andmask=, ormask=, disp=, plugmap=, loglam=, wave=, tsobj=, root_dir= ] '
       return
    endif
 
    ; This common block specifies which keywords will be returned.
    common com_readspec, q_flux, q_flerr, q_invvar, q_andmask, q_ormask, $
-    q_plugmap, q_loglam, q_wave, q_tsobj
+    q_disp, q_plugmap, q_loglam, q_wave, q_tsobj
 
    if (NOT keyword_set(root_dir)) then root_dir = '/data/spectro/2d_3c'
 
@@ -169,6 +176,7 @@ pro readspec, plate, fiber, mjd=mjd, silent=silent, flux=flux, flerr=flerr, $
    q_invvar = arg_present(invvar)
    q_andmask = arg_present(andmask)
    q_ormask = arg_present(ormask)
+   q_disp = arg_present(disp)
    q_plugmap = arg_present(plugmap) OR arg_present(tsobj)
    q_loglam = arg_present(loglam)
    q_wave = arg_present(wave)
@@ -205,6 +213,7 @@ pro readspec, plate, fiber, mjd=mjd, silent=silent, flux=flux, flerr=flerr, $
       invvar1 = 0
       andmask1 = 0
       ormask1 = 0
+      disp1 = 0
       plugmap1 = 0
       loglam1 = 0
       wave1 = 0
@@ -219,7 +228,7 @@ pro readspec, plate, fiber, mjd=mjd, silent=silent, flux=flux, flerr=flerr, $
 
       readspec1, platenums[ifile], [i1,i2], mjd=mjdnums[ifile], $
        silent=silent, flux=flux1, flerr=flerr1, invvar=invvar1, $
-        andmask=andmask1, ormask=ormask1, plugmap=plugmap1, $
+        andmask=andmask1, ormask=ormask1, disp=disp1, plugmap=plugmap1, $
         loglam=loglam1, wave=wave1, tsobj=tsobj1, root_dir=root_dir
 
       if (ifile EQ 0) then begin
@@ -229,6 +238,7 @@ pro readspec, plate, fiber, mjd=mjd, silent=silent, flux=flux, flerr=flerr, $
          if (q_invvar) then invvar = invvar1[*,irow-i1]
          if (q_andmask) then andmask = andmask1[*,irow-i1]
          if (q_ormask) then ormask = ormask1[*,irow-i1]
+         if (q_disp) then disp = disp1[*,irow-i1]
          if (q_plugmap) then plugmap = plugmap1[irow-i1]
          if (q_loglam) then loglam = loglam1[*,irow-i1]
          if (q_wave) then wave = wave1[*,irow-i1]
@@ -240,6 +250,7 @@ pro readspec, plate, fiber, mjd=mjd, silent=silent, flux=flux, flerr=flerr, $
          if (q_invvar) then spec_append, invvar, invvar1[*,irow-i1]
          if (q_andmask) then spec_append, andmask, andmask1[*,irow-i1]
          if (q_ormask) then spec_append, ormask, ormask1[*,irow-i1]
+         if (q_disp) then spec_append, disp, disp1[*,irow-i1]
          if (q_plugmap) then plugmap = struct_append(plugmap, plugmap1[irow-i1])
          if (q_loglam) then spec_append, loglam, loglam1[*,irow-i1]
          if (q_wave) then spec_append, wave, wave1[*,irow-i1]
@@ -253,6 +264,7 @@ pro readspec, plate, fiber, mjd=mjd, silent=silent, flux=flux, flerr=flerr, $
    if (q_invvar) then invvar[*,[allindx]] = invvar[*]
    if (q_andmask) then andmask[*,[allindx]] = andmask[*]
    if (q_ormask) then ormask[*,[allindx]] = ormask[*]
+   if (q_disp) then disp[*,[allindx]] = disp[*]
    if (q_plugmap) then begin
       if (keyword_set(plugmap[0])) then $
        copy_struct_inx, plugmap, plugmap, index_to=allindx
