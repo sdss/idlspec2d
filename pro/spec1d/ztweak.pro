@@ -104,13 +104,14 @@ andmask = 0 ; Free memory
    ;---------------------------------------------------------------------------
 
    for iobj=0, nobj-1 do begin
+print,'OBJECT ', iobj
 
       ;----------
       ; Construct a list of test redshifts near the initial redshift guess
 
       zinit = zstruct[iobj].z
-ntest = 100
-      ztest = zinit + (lindgen(ntest) - ntest/2) * 10. / 3.e5 ; space at 10 km/s
+ntest = 20
+      ztest = zinit + (lindgen(ntest) - ntest/2) * 20. / 3.e5 ; space at 20 km/s
       rchi2arr = fltarr(ntest)
 
       ;----------
@@ -164,7 +165,6 @@ linesig = 2.e-4 ; Set the width to sigma = 2pix = 140 km/s (FWHM = 323 km/s)
 
       bestval = min(rchi2arr, ibest)
       if (bestval NE 0) then zstruct[iobj].z = ztest[ibest]
-stop
 
    endfor
 stop
