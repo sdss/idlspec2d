@@ -43,6 +43,7 @@
 ;   fibermask_bits()
 ;   fileandpath()
 ;   find_whopping()
+;   fitflatwidth()
 ;   fitsn()
 ;   match_trace()
 ;   quickboxcar()
