@@ -121,7 +121,8 @@ pro locateskylines, skylinefile, fimage, ivar, wset, xarc, arcshift=arcshift, $
 
    lambda = alog10(skywaves)
    xskyold = xsky
-   xdiff = fitmeanx(wset, lambda, xskyold, aveinvvar, mx=mx)
+   xdiff = fitmeanx(wset, lambda, xskyold, aveinvvar, $
+    inmask=(gxerr LT 900.), mx=mx)
 
    junk = where(aveinvvar GT 1./(0.2)^2, ngood)
    if (ngood EQ 0) then begin
