@@ -187,6 +187,8 @@ pro/fplan/spplancomb.pro -text
 pro/inspect/Makefile -text
 pro/inspect/inspectfiles.pro -text
 pro/inspect/inspectgen.pro -text
+pro/photoz/lrg_photoz.pro -text
+pro/photoz/lrg_photoz_test.pro -text
 pro/plan/daytime_test.pro -text
 pro/plan/dr1list_best.pro -text
 pro/plan/find_unplugged.pro -text
