@@ -75,7 +75,6 @@ pro/kinematics/README -text
 pro/makefile.old -text
 pro/science/README -text
 pro/science/bandpassinfo.pro -text
-pro/science/for_dje.pro -text
 pro/science/k_correct.pro -text
 pro/spec1d/MCsimul2.pro -text
 pro/spec1d/Makefile -text
