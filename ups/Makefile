@@ -12,5 +12,7 @@ all :;
 install :
 	$(SDSSTOOLS_DIR)/bin/install_ups_table idlspec2d.table \
 							$(IDLSPEC2D_DIR)/ups
+	- cp Makefile $(IDLSPEC2D_DIR)/ups
+
 clean :
 	rm -f *~ core *.bak *.orig *.old .#* #*#

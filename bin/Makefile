@@ -5,11 +5,13 @@
 
 SHELL = /bin/sh
 #
-all :
+all :;
 #
 # Install things in their proper places in $(IDLSPEC2D_DIR)
 #
-install :;
+install :
+	- cp * $(IDLSPEC2D_DIR)/bin
+	- cp Makefile $(IDLSPEC2D_DIR)/bin
 
 clean :
 	- /bin/rm -f *~ core

@@ -16,6 +16,7 @@ install :
 	@ mkdir $(IDLSPEC2D_DIR)/doc/www
 	- cp *.txt $(IDLSPEC2D_DIR)/doc
 	- cp www/*.html $(IDLSPEC2D_DIR)/doc/www
+	- cp Makefile $(IDLSPEC2D_DIR)/doc
 
 clean :
 	- /bin/rm -f *~ core www/*~ www/core

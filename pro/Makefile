@@ -21,21 +21,14 @@ all :
 # Install things in their proper places in $(IDLSPEC2D_DIR)
 #
 install :
-	@echo "You should be sure to have updated before doing this."
-	@echo "You will be installing in \$$IDLSPEC2D_DIR=$$IDLSPEC2D_DIR"
-	@echo ""
-	@echo "I'll give you 5 seconds to think about it"
-	@echo sleep 5
-	@echo
-	@if [ "$(IDLSPEC2D_DIR)" = "" ]; then \
-		echo You have not specified a destination directory >&2; \
-		exit 1; \
-	fi 
-	@ rm -rf $(IDLSPEC2D_DIR)
-	@ mkdir $(IDLSPEC2D_DIR)
+	@ rm -rf $(IDLSPEC2D_DIR)/pro
+	@ mkdir $(IDLSPEC2D_DIR)/pro
 	@ for f in $(SUBDIRS); do \
-		(mkdir $(IDLSPEC2D_DIR)/$$f; cd $$f ; echo In $$f; $(MAKE) $(MFLAGS) install ); \
+		(mkdir $(IDLSPEC2D_DIR)/pro/$$f; cd $$f ; echo In $$f; $(MAKE) $(MFLAGS) install ); \
 	done
+	- cp Makefile $(IDLSPEC2D_DIR)/pro
+	- cp makefile.old $(IDLSPEC2D_DIR)/pro
+
 
 clean :
 	- /bin/rm -f *~ core

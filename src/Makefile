@@ -33,7 +33,9 @@ $(LIB)/libspec2d.$(SO_EXT): $(OBJECTS)
 #
 # Install things in their proper places in $(IDLSPEC2D_DIR)
 #
-install :;
+install :
+	- cp *.c $(IDLSPEC2D_DIR)/src
+	- cp Makefile $(IDLSPEC2D_DIR)/src
 
 clean :
 	- /bin/rm -f *~ core *.o so_locations
