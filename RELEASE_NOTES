@@ -80,6 +80,7 @@ SMOOTH_SUPERFLAT: Bug fix, whereby we could trigger a warning message when
         This was triggering false warning messages on plate 1053/52468 in r2,
         plate 1051/52468 on r2, etc.  This should now be fixed by setting
         the internal variable RATIO=1 for bad points.
+SPBIASGEN: Trivial bug fix to mask bad pixels.
 SPCOADD_V5: Apply the flux-distortion image to the sky vectors, as well
         as to OBJFLUX,OBJIVAR.
 SPFLUX_READ_KURUCZ: This function was pulled out of SPFLUX_V5.
