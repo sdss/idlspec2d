@@ -43,7 +43,7 @@
 ;                to -1, which means not to use any such terms.
 ;   wsigma     - Sigma width for exponential whopping profiles; default to 25
 ;   reject     - Three-element array setting partial and full rejection
-;                thresholds for profiles; default [0.2, 0.5, 0.8].
+;                thresholds for profiles; default [0.2, 0.6, 0.6].
 ;                When there is less than REJECT[2] of the area is left,
 ;                  then drop fitting of all higher-order terms.
 ;                When there is less than REJECT[1] of the area is left,
@@ -157,7 +157,7 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
    ; The third parameter is the area required
    ;    in the profile fit containing good pixels to do a full fit.
 
-   if (n_elements(reject) NE 3) then reject = [0.2, 0.4, 0.6]
+   if (n_elements(reject) NE 3) then reject = [0.2, 0.6, 0.6]
 
    if (n_elements(pixelmask) NE ntrace $
     OR size(pixelmask,/tname) NE 'LONG') then $
