@@ -54,7 +54,7 @@ for mjdstr in $remotedir ; do
    #----------
    # If the local directory does not exist, then create it
 
-   localdir=`ls -d $toprawdir/$mjdstr 2> /dev/null` | head -1
+   localdir=`ls -d $toprawdir/$mjdstr 2> /dev/null | head -1`
    if [ -z "$localdir" ] ; then
 
       #----------
