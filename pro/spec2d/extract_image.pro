@@ -6,7 +6,7 @@
 ;   Extract the fiber profile flux for an entire image
 ;
 ; CALLING SEQUENCE:
-;   extract_image(fimage, invvar, xcen, sigma, flux, [error, yrow=yrow,
+;   extract_image(fimage, invvar, xcen, sigma, flux, [finv, yrow=yrow,
 ;              ymodel=ymodel, fscat=fscat, proftype = proftype, 
 ;              wfixed=wfixed, sigmacor=sigmacor, xcencor=xcencor, mask=mask,
 ;              nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej])
@@ -39,7 +39,7 @@
 ;
 ; OPTIONAL OUTPUTS:
 ;   mask       - modified by setting the values of bad pixels to 0
-;   error      - Estimated total error in each profile [nRowExtract, nFibers]
+;   finv       - Estimated inverse variance each profile [nRowExtract, nFibers]
 ;   ymodel     - model best fit of row[nCol, nRow]
 ;   fscat      - scattered light contribution in each fiber[nRow, nFibers]
 ;
@@ -54,14 +54,14 @@
 ;    8-Aug-1999  Version 0.0 Scott Burles, Chicago 
 ;-
 ;------------------------------------------------------------------------------
-pro extract_image, fimage, invvar, xcen, sigma, flux, error, yrow=yrow, $
+pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
                ymodel=ymodel, fscat=fscat, proftype = proftype,  $
                wfixed=wfixed, sigmacor=sigmacor, xcencor=xcencor, mask=mask, $
                nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej 
 
    ; Need 5 parameters
    if (N_params() LT 5) then begin
-      print, 'Syntax - extract_image(fimage, invvar, xcen, sigma, flux, [error,'
+      print, 'Syntax - extract_image(fimage, invvar, xcen, sigma, flux, [finv,'
       print, ' yrow=yrow, ymodel=ymodel, fscat=fscat, proftype = proftype, '
       print, ' wfixed=wfixed, sigmacor=sigmacor, xcencor=xcencor, mask=mask, '
       print, ' nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej])'
@@ -153,13 +153,23 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, error, yrow=yrow, $
 
    nCoeff = n_elements(wfixed)       ;Number of parameters per fibers
 
-   if (keyword_set(sigmacor)) then $
-      if((size(sigmacor))[0] NE 2) then $
-         message, 'MASK is not 2 dimensional' $
+   if (n_elements(sigmacor) EQ 0) then $
+      sigmacor = fltarr(nRowExtract,nTrace) $
+   else if((size(sigmacor))[0] NE 2) then $
+        sigmacor = fltarr(nRowExtract,nTrace) $
       else if ((size(sigmacor))[1] NE nRowExtract) then $
-         message, 'Number of cols in SIGAMCOR and YROW must be equal' $
+        sigmacor = fltarr(nRowExtract,nTrace) $
       else if ((size(sigmacor))[2] NE nTrace) then $
-         message, 'Number of rows in SIGAMCOR and XCEN must be equal'
+        sigmacor = fltarr(nRowExtract,nTrace) 
+
+   if (n_elements(xcencor) EQ 0) then $
+      xcencor = fltarr(nRowExtract,nTrace) $
+   else if((size(xcencor))[0] NE 2) then $
+        xcencor = fltarr(nRowExtract,nTrace) $
+      else if ((size(xcencor))[1] NE nRowExtract) then $
+        xcencor = fltarr(nRowExtract,nTrace) $
+      else if ((size(xcencor))[2] NE nTrace) then $
+        xcencor = fltarr(nRowExtract,nTrace) 
 
    nPoly = LONG(nPoly)
    ma = nPoly + nTrace*nCoeff
@@ -178,7 +188,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, error, yrow=yrow, $
 ;
 
    flux = fltarr(nRowExtract, nTrace)
-   error = fltarr(nRowExtract, nTrace)
+   finv = fltarr(nRowExtract, nTrace)
 
 ;
 ;	Now loop over each row specified in YROW 
@@ -208,12 +218,12 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, error, yrow=yrow, $
 ;       print, 'Analyzing row', cur, '     With Gaussian Profile', wfixed
 
        fluxrow = ansrow[0,*]
-       errorrow = 1.0 / prow[lTrace*nCoeff] ; best estimate we can do
+       fluxinvvar = prow[lTrace*nCoeff]*prow[lTrace*nCoeff] ; best estimate we can do
 					      ; without covariance matrix
 
        if(nCoeff GE 2) then begin 	      ; add in symmetric term if present
 	  widthrow = ansrow[1,*]
-          errorwidth = 1.0 / prow[lTrace*nCoeff + 1]
+          widthinvvar = prow[lTrace*nCoeff + 1]*prow[lTrace*nCoeff + 1]
           fluxrow = fluxrow + widthrow
 
 ;
@@ -228,13 +238,18 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, error, yrow=yrow, $
 	     safe = where(fluxrow GT 0.0, safecount)
              if (safecount GT 0) then begin
                 r = widthrow[safe]/fluxrow[safe]
-                rerror = sqrt((errorrow[safe]*r)^2 + errorwidth[safe]^2) / $
-                               fluxrow[safe]
+                rinvvar = fluxrow[safe] * fluxrow[safe] * $
+                        fluxinvvar[safe]  * widthinvvar[safe]
+	        nz = where(rinvvar NE 0.0, nonzerocount)
+	 
+                if (nonzerocount GT 0) then $
+                  rinvvar[nz] = rinvvar[nz] / (r[nz]*r[nz] * $
+                     fluxinvvar[safe[nz]] + widthinvvar[safe[nz]])
 
 ;
 ;		Only take corrections significant at 2 sigma
 ;
-	        check = where(rerror LT 0.50 AND abs(r) LT 0.4, count)
+	        check = where(rinvvar GT 4.00 AND abs(r) LT 0.4, count)
                 if(count GT 0) then $
 	          sigmacur[safe[check]] = sigmacur[safe[check]] * $ 
                    (r[check]+ 1.0)
@@ -252,22 +267,28 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, error, yrow=yrow, $
 ;          print, 'Calculating XCENCOR...'
 
 	 centerrow = ansrow[2,*]
-         errorcent = 1.0/prow(lTrace*nCoeff + 2)
+         centinvvar = prow[lTrace*nCoeff + 2]*prow[lTrace*nCoeff + 2]
+
 ;
 ;	 Make a guess at an underestimated error
 ;
 	 safe = where(fluxrow GT 0.0, safecount)
          if (safecount GT 0) then begin
             r = centerrow(safe)/fluxrow(safe)
-            rerror = sqrt((errorrow(safe)*r)^2 + errorcent(safe)^2) / $
-                      fluxrow(safe) 
+            rinvvar = fluxrow[safe] * fluxrow[safe] * $
+                        fluxinvvar[safe]  * centinvvar[safe]
+            nz = where(rinvvar NE 0.0, nonzerocount)
+
+            if (nonzerocount GT 0) then $
+               rinvvar[nz] = rinvvar[nz] / (r[nz]*r[nz] * $
+                     fluxinvvar[safe[nz]] + centinvvar[safe[nz]])
 ;
 ;		Only take corrections significant at 2 sigma
 ;
-	    check = where(rerror LT 0.50 AND abs(r) LT 0.4, count)
+	    check = where(rinvvar GT 4.00 AND abs(r) LT 0.4, count)
+            xcencurrent = fltarr(nTrace)
             if(count GT 0) then $
-	       xcencurrent(safe(check)) = xcencurrent(safe(check)) + $ 
-                 r(check) * sigmacur(safe(check))
+	       xcencurrent(safe(check)) = r(check) * sigmacur(safe(check))
           endif
           xcencor[iy,*] = xcencurrent
        endif
@@ -277,7 +298,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, error, yrow=yrow, $
      if(keyword_set(fscat)) then fscat[iy,*] = fscatrow
 
      flux[iy,*] = fluxrow 
-     error[iy,*] = errorrow 
+     finv[iy,*] = fluxinvvar
    endfor	  
 
    return
