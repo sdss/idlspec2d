@@ -207,28 +207,60 @@ pro newspcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
    ;----------
    ; Separate science & smear frames
 
-   isci = where(allseq.flavor EQ 'science')
+   isci = where(allseq.flavor EQ 'science', nsci)
    ismear = where(allseq.flavor EQ 'smear')
 
    if (isci[0] EQ -1) then begin 
-      splog, 'No science frames in this plan ' + thisplan
+      splog, 'ABORT: No science frames in this plan ' + thisplan
       cd, origdir
       return
+   endif
+
+   ;----------
+   ; Check for Minimum S/N in science frame  -- NEW: require min S/N for 
+   ; all four frames of an exposure
+   
+   if keyword_set(minsn2) then begin
+      lowsn2 = fltarr(nsci)
+
+      for i=0,nsci-1 do begin
+         checkhdr1 = headfits(allseq[isci[i]].name[0])
+         checkhdr2 = headfits(allseq[isci[i]].name[1])
+         checkhdr3 = headfits(allseq[isci[i]].name[2])
+         checkhdr4 = headfits(allseq[isci[i]].name[3])
+         if size(checkhdr1,/tname) NE 'INT' then begin
+           lowsn2[i] = (sxpar(checkhdr1,'FRAMESN2') LT minsn2) + $
+                       (sxpar(checkhdr2, 'FRAMESN2') LT minsn2) + $
+                       (sxpar(checkhdr3, 'FRAMESN2') LT minsn2) + $
+                       (sxpar(checkhdr4, 'FRAMESN2') LT minsn2) 
+         endif
+      endfor
+
+      goodexp = where(lowsn2 eq 0, ngood)
+      if ngood lt nsci then begin 
+        splog, 'Excluded ', total(lowsn2), $
+             ' frames with SN^2 less than ', minsn2, format='(a,i4,a,f7.2)'
+      endif
+      if ngood eq 0 then begin
+        splog, 'ABORT: All Frames rejected due to minimum S/N limit'
+        cd, origdir
+        return
+      endif
+      isci = isci[goodexp] 
    endif
 
    sciname = allseq[isci].name[icams]
    j = where(sciname)
-
    if j[0] EQ -1 then begin 
-      splog, 'No science frames in this plan ' + thisplan
+      splog, 'ABORT: No science frames in this plan ' + thisplan
       cd, origdir
       return
    endif
-
    sciname = sciname[j]
 
   ;----------------------------
   ; Check for existance of smear frames
+
    if (ismear[0] EQ -1) then begin 
       splog, 'No smear frames in this plan ' + thisplan
       smearname = ''
@@ -242,32 +274,14 @@ pro newspcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
    endelse
 
    ;----------
-   ;  Check for Minimum S/N in science frame  
-   ;
-   if keyword_set(minsn2) then begin
-      nsci = n_elements(sciname)
-      framesn2 = fltarr(nsci)
-      mapname = strarr(nsci)
-
-      for i=0,nsci-1 do begin
-         checkhdr = headfits(sciname[i])
-         if size(checkhdr,/tname) NE 'INT' then begin
-           framesn2[i] = sxpar(checkhdr,'FRAMESN2')
-           mapname[i] = strtrim(sxpar(checkhdr, 'NAME'), 2) 
-         endif
-      endfor
-
-      j = where(framesn2 GE minsn2)
-      if j[0] NE -1 then begin 
-        sciname = sciname[j] 
-        splog, 'Excluded ', fix(total(framesn2 LT minsn2)), $
-             ' frames with SN^2 less than ', minsn2, format='(a,i4,a,f7.2)'
-      endif else $
-        splog, 'WARNING: All Frames would be rejected due to minimum S/N limit'
-   endif
-
-   ;----------
    ; Check that all files to be combined have the same plugmap
+
+   nsci = n_elements(sciname)
+   mapname = strarr(nsci)
+   for i = 0, nsci - 1 do begin
+     checkhdr = headfits(sciname)
+     mapname[i] = strtrim(sxpar(checkhdr, 'NAME'), 2) 
+   endfor
    diff = where(mapname ne mapname[0], ndiff)
    if ndiff gt 0 then begin
      splog, 'ABORT: Files have different plugmaps!!'
