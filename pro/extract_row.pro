@@ -25,19 +25,11 @@
 ;                  3: (exponential)^2.5
 ;                Default to 1.
 ;   wfixed     - Array to describe which parameters to fix in the profile;
-;                0=fixed, 1=float; default to [1]. ???
+;                0=fixed, 1=float; default to [1].
 ;                The number of parameters to fit per fiber is determined
 ;                this way; e.g. nCoeff = n_elements(wfixed), so the default
 ;                is to fit only 1 parameter per fiber.
-;   inputans   - 2D array of input answers [ncoeff,nFiber]
-;   iback      - 1D array of input background coeff 
-;                (needed if fixed parameters are non-zero)
-;   bfixarr    - array of 1's and zero's which set which background 
-;                parameters are fixed. ??? which is 1 or 0?
-;   wfixarr    - 1D integer array of 1's and zero's which specify fixed 
-;                profile parameters ??? what the fk???
-;   xvar       - X values of fimage and invvar; default is findgen(NX).
-;   mask       - Image mask: 1=good, 0=bad [NX]
+;                Note that WFIXED is used to build the array WFIXARR.
 ;   relative   - Set to use reduced chi-square to scale rejection threshold
 ;   squashprofile - ???
 ;   npoly      - Order of chebyshev scattered light background; default to 5
@@ -48,10 +40,28 @@
 ;                the exponentail tails of flux near bright fibers; default
 ;                to -1, which means not to use any such terms.
 ;   wsigma     - Sigma width for exponential whopping profiles; default to 25
-;   pixelmask  - Bits set due to extraction rejection [nFiber]
 ;   reject     - Two-element array setting partial and full rejection
 ;                thresholds for profiles; default [0.8, 0.2].
 ;                What does this mean???
+;
+; MODIFIED INPUTS (OPTIONAL):
+;   inputans   - 2D array of input answers [ncoeff,nFiber]
+;   iback      - 1D array of input background coeff 
+;                (needed if fixed parameters are non-zero)
+;   bfixarr    - 1D integer array to specify which terms of the background
+;                coefficients to fix; 0=fixed, 1=float.
+;   wfixarr    - 1D integer array to specify which parameters in the full fit
+;                to fix; 0=fixed, 1=float.
+;                The array is sorted as follows:
+;                   [ncoeff] values for fiber #0
+;                   [ncoeff] values for fiber #1
+;                   ...
+;                   [ncoeff] values for fiber #(nFiber-1)
+;                   [npoly] values for the background polynomial terms
+;                   [whoppingct] values for the whopping terms
+;   xvar       - X values of fimage and invvar; default is findgen(NX).
+;   mask       - Image mask: 1=good, 0=bad [NX]
+;   pixelmask  - Bits set for each fiber due to extraction rejection [nFiber]
 ;
 ; OUTPUTS:
 ;   ans        - Extracted flux in each parameter [ncoeff, nFiber]
@@ -66,7 +76,6 @@
 ;                only fill the lower triangle and set the rest to 0.
 ;                Computing this increases CPU time by a factor of 2 or 3.
 ;   niter      - Number of rejection iterations performed
-;   pixelmask  - (Modified.)
 ;
 ; COMMENTS:
 ;
@@ -117,11 +126,12 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
    if (NOT keyword_set(wsigma)) then wsigma = 25.0
 
    if (n_elements(reject) EQ 2) then begin
-     checkreject = sort([0.0,reject,1.0])
-     if (total(abs(checkreject - [0,2,1,3])) NE 0) then reject = [0.8,0.2] 
+      checkreject = sort([0.0,reject,1.0])
+      if (total(abs(checkreject - [0,2,1,3])) NE 0) then reject = [0.8,0.2] 
    endif else reject = [0.8,0.2]
 
-   if (n_elements(pixelmask) NE ntrace OR size(pixelmask,/type) NE 3) then $
+   if (n_elements(pixelmask) NE ntrace $
+    OR size(pixelmask,/tname) NE 'LONG') then $
     pixelmask = lonarr(ntrace)
 
    if (NOT keyword_set(whopping)) then whopping = -1
@@ -132,7 +142,7 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
     else if (nx NE n_elements(xvar)) then $
      message, 'Number of elements in FIMAGE and XVAR must be equal'
 
-   if (NOT keyword_set(mask)) then mask = make_array(nx, /byte, value=1) $
+   if (NOT keyword_set(mask)) then mask = bytarr(nx) + 1b $
     else if (nx NE n_elements(mask)) then $
      message, 'Number of elements in FIMAGE and MASK must be equal'
 
@@ -154,31 +164,72 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
 
    ymodel = fltarr(nx)
    fscat = fltarr(ntrace)
-   ma = npoly + ntrace*ncoeff + whoppingct
+   ma = ntrace*ncoeff + npoly + whoppingct
+
+   ;----------
+   ; Test which points are good
+
+   qgood = invvar GT 0.0 AND mask NE 0
+   igood = where(qgood, ngood)
+
+   ;----------
+   ; Set the following variables before any possible RETURN statement.
+
+   reducedChi = 0.0
+   niter = 0
+   ans = fltarr(ma)       ; parameter values
+   p = fltarr(ma)         ; diagonal errors
+
+   if (ngood EQ 0) then return, ans
+
+   ;----------
+   ; Build the fixed parameter array if it was not passed.
 
    if (NOT keyword_set(wfixarr)) then begin
-      wfixarr = lonarr(ma) + 1        ; Fixed parameter array
+      wfixarr = lonarr(ma) + 1
+
+      ; Set values for the (gaussian) profile terms
       i = 0
       wfixarr[lindgen(ntrace)*ncoeff+i] = wfixed[i] 
       for i=1, ncoeff-1 do $
        wfixarr[lindgen(ntrace)*ncoeff+i] = wfixed[i] * (1 - squashprofile)
+
+      ; Set values for the background polynomial terms
       if (keyword_set(bfixarr)) then $
        wfixarr[ntrace*ncoeff:ntrace*ncoeff + npoly - 1] = bfixarr
+
+      ; Disable fitting to any profiles out of the data range.
+      ; If there are more than one XCEN profile centers to the left of
+      ; the first good data point, then reject all but the first
+      ; out-of-range profile.  Do the same to the right side.
+
+;      ileft = where(xcen LT xvar[igood[0]], nleft)
+;      if (nleft GT 1) then $
+;       wfixarr[0:(nleft-1)*ncoeff-1] = 0
+      ; Instead, look for any XCEN more than 2 pix off
+      ileft = where(xcen LT xvar[igood[0]]-2.0, nleft)
+      if (nleft GT 0) then $
+       wfixarr[0:nleft*ncoeff-1] = 0
+
+;      iright = where(xcen GT xvar[igood[ngood-1]], nright)
+;      if (nright GT 1) then $
+;       wfixarr[(ntrace-nright+1)*ncoeff : ntrace*ncoeff-1] = 0
+      ; Instead, look for any XCEN more than 2 pix off
+      iright = where(xcen GT xvar[igood[ngood-1]]+2.0, nright)
+      if (nright GT 0) then $
+       wfixarr[(ntrace-nright)*ncoeff : ntrace*ncoeff-1] = 0
+
+      ; Don't fit to any centers where there are no good data points
+      ; within 2.0 pix
+      for i=0, ntrace-1 do begin
+         ii = where(abs(xvar[igood] - xcen[i]) LT 2.0, nn)
+         if (nn EQ 0) then $
+          wfixarr[i*ncoeff : i*ncoeff+ncoeff-1] = 0
+      endfor
    endif else begin
       if (ma NE n_elements(wfixarr)) then $
        message, 'Number of elements in FIMAGE and WFIXARR must be equal'
    endelse
-
-   ans = fltarr(ma)       ; parameter values
-   p = fltarr(ma)         ; diagonal errors
-
-   ; Set the following variables before any possible RETURN
-
-   nonzerovar = where(invvar GT 0.0, ngood)
-   reducedChi = 0.0
-   niter = 0
-
-   if (ngood EQ 0) then return, ans
 
    if (keyword_set(iback)) then begin
       if (npoly NE n_elements(iback)) then $
@@ -238,9 +289,9 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
 
       diffs = (fimage - ymodel) * sqrt(invvar) 
       if (finished EQ 0) then begin
-         igood = where(diffs GE -lowrej*errscale $
-          AND diffs LE highrej*errscale, goodct)
-         if (goodct GT 0) then mask[igood] = 1
+         ii = where(diffs GE -lowrej*errscale $
+          AND diffs LE highrej*errscale)
+         if (ii[0] NE -1) then mask[ii] = 1 ; These points still good
       endif
 
       niter = niter + 1
