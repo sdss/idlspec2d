@@ -268,6 +268,14 @@ ophdrfix sdR-??-0001247[0-0] NAME     "'0799-52277-01D'"
 ophdrfix sdR-??-0001247[1-3] NAME     "'0799-52277-01E'"
 ophdrfix sdR-??-0001247[4-4] NAME     "'0799-52277-01F'"
 
+# There were serious SOP problems at this point that made
+# these exposures bad for plate 827 on MJD 52312.
+ophdrfix sdR-??-0001296[5-8] FLAVOR   "'unknown'"
+
+# This data for plate 601 on MJD 52314 was taken at the end
+# of the night and is useless.
+ophdrfix sdR-??-00013036 FLAVOR   "'unknown'"
+
 # Spectrograph #2 was warming up at the beginning of plate 504
 # on MJD=52316.  Discard the pre-calibs and first science exposure
 # on spectro-2 for that plate.
@@ -290,14 +298,50 @@ ophdrfix sdR-??-00013111 FLAVOR   "'unknown'"
 ophdrfix sdR-??-00013132 FLAVOR   "'unknown'"
 
 # These 3 exposures were test data taken before twilight on MJD 52318
-# (trying to get smear to fail).
-ophdrfix sdR-??-00013169 FLAVOR   "'unknown'"
-ophdrfix sdR-??-00013170 FLAVOR   "'unknown'"
-ophdrfix sdR-??-00013171 FLAVOR   "'unknown'"
+# (trying to get smear to fail, using plate 803).
+ophdrfix sdR-??-0001315[7-9] FLAVOR   "'unknown'"
 
-# These two exposures (science, smear) for plate 860 on MJD 52319
+# These two exposures (science, science) for plate 776 on MJD 52319
 # had very poor S/N.
 ophdrfix sdR-??-0001318[1-2] FLAVOR   "'unknown'"
+
+# These two exposures (smear, science) for plate 860 on MJD 52319
+# had very poor S/N.
+ophdrfix sdR-??-00013200 FLAVOR   "'unknown'"
+ophdrfix sdR-??-00013202 FLAVOR   "'unknown'"
+
+# The first smear for plate 786 on MJD 52319 failed due
+# to a SOP/TCC bug.
+ophdrfix sdR-??-00013212 FLAVOR   "'unknown'"
+
+# This exposure on plate 864 on MJD 52320 had no signal.
+# All the logs say are "Done in 4 exposures (1st useless)."
+ophdrfix sdR-??-00013226 FLAVOR   "'unknown'"
+
+# These data on plate 810 on MJD 52321 were taken through
+# thick clouds, following one reasonable science exposure.
+ophdrfix sdR-??-0001331[6-7] FLAVOR   "'unknown'"
+
+# All data on plate 867 on MJD 52321 were taken through
+# thick clouds.
+ophdrfix sdR-??-0001332[0-1] FLAVOR   "'unknown'"
+
+# All data on MJD 52322 were through very thick clouds.
+ophdrfix sdR-??-0001332[6-9] FLAVOR   "'unknown'"
+ophdrfix sdR-??-0001333[0-3] FLAVOR   "'unknown'"
+
+# These two exposures (science) for plate 573 on MJD 52323
+# had very poor S/N, but follow one useful exposure on this plate.
+ophdrfix sdR-??-0001334[6-7] FLAVOR   "'unknown'"
+
+# These two exposures (science) for plate 788 on MJD 52324
+# had very poor S/N.
+ophdrfix sdR-??-0001335[2-3] FLAVOR   "'unknown'"
+
+# The logs indicate that there may have been a TCC axis halt
+# during this smear exposure on the star cluster plate 801
+# on MJD 52326/
+ophdrfix sdR-??-00013412 FLAVOR   "'unknown'"
 
 # These were test data taken during shake on MJD 52327 (49 exposures).
 ophdrfix sdR-??-0001343[8-9] FLAVOR   "'unknown'"
@@ -307,12 +351,17 @@ ophdrfix sdR-??-0001346[0-9] FLAVOR   "'unknown'"
 ophdrfix sdR-??-0001347[0-9] FLAVOR   "'unknown'"
 ophdrfix sdR-??-0001348[0-6] FLAVOR   "'unknown'"
 
+# These were test data taken during shake on MJD 52334
+ophdrfix sdR-??-0001356[1-6] FLAVOR   "'unknown'"
+
 # All these data on plate 574 on MJD 52336 are bad due to spectrograph
 # mechanicals problems.
+# (Note also that the exposure times are incorrect in these headers.)
 ophdrfix sdR-??-0001357[3-9] FLAVOR   "'unknown'"
 
 # All these data on plate 778 on MJD 52336 are bad due to spectrograph
 # mechanicals problems.
+# (Note also that the exposure times are incorrect in these headers.)
 ophdrfix sdR-??-0001358[0-9] FLAVOR   "'unknown'"
 
 # Wrong exposure time (0 sec instead of approx. 2460 sec) for plate 574
