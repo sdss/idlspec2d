@@ -50,6 +50,9 @@ lib/Makefile -text
 misc/Makefile -text
 misc/distort.blue -text
 misc/distort.red -text
+misc/plate306.mail -text
+misc/qso.template -text
+misc/qsolist.27plates -text
 misc/uomoto.distortions -text
 pro/Makefile -text
 pro/apo2d/apo_log2html.pro -text
