@@ -196,10 +196,10 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
             if (nflat GT 0) then begin
                flatname = allseq[j].name[icam]
             endif else begin
+               flatname = ''
                splog, 'ABORT: No flat for SEQID= ' $
                 + strtrim(string(seqid[iseq]),2) + ', PLATEID= ' $
                 + platestr + ', CAMERA= ' + camnames[icam]
-               return
             endelse
 
             ;-----------
@@ -211,10 +211,10 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
             if (narc GT 0) then begin
                arcname = allseq[j].name[icam]
             endif else begin
+               arcname = ''
                splog, 'ABORT: No arc for SEQID= ' $
                 + strtrim(string(seqid[iseq]),2) + ', PLATEID= ' $
                 + platestr + ', CAMERA= ' + camnames[icam]
-               return
             endelse
 
             ;----------
@@ -227,13 +227,15 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
             ;----------
             ; Reduce this set of frames (all objects w/same plate + camera)
 
-            plottitle = 'MJD='+strtrim(string(mjd),2) $
-             + ' PLATE='+platestr + ': '
+            if (keyword_set(arcname) AND keyword_set(flatname)) then begin
+               plottitle = 'MJD='+strtrim(string(mjd),2) $
+                + ' PLATE='+platestr + ': '
 
-            spreduce, flatname, arcname, objname, $
-             pixflatname=pixflatname, plugfile=plugfile, lampfile=lampfile, $
-             indir=inputDir, plugdir=plugDir, outdir=extractDir, $
-             summarystruct=summarystruct, plottitle=plottitle
+               spreduce, flatname, arcname, objname, $
+                pixflatname=pixflatname, plugfile=plugfile, lampfile=lampfile, $
+                indir=inputDir, plugdir=plugDir, outdir=extractDir, $
+                summarystruct=summarystruct, plottitle=plottitle
+            endif
 
             splog, 'Time to reduce camera ', camnames[icam], ' = ', $
              systime(1)-stime2, ' seconds', format='(a,a,a,f6.0,a)'
