@@ -1,9 +1,13 @@
 
-v4_9_6 (Mar ??, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
-Built against specflat v1_3??.
+-------------------------------------------------------------------------------
+v4_9_6 (Mar 29, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
+Built against specflat v1_4.
 
-Son-of-Spectro checks for spectrograph focus, changing its data format.
+Son-of-Spectro procs for spectrograph focus; changes in SOS data format.
+More development work for 2D and P-1D.
 
+APO_CHECKLIMITS: Default to returning the strings '','yellow',or 'red',
+            and only turn into an HTML color if /HTML is set.
 APO_LOG2HTML: Add FLAT/XSIGMA and ARC/DISPSIGMA to output tables.
             Remove the line of Java-script from the HTML file that
             does the auto-refresh (we'll only put that line in the
@@ -158,6 +162,7 @@ MJD2DATELIST: New proc to construct a list of MJDs and date strings
 RADEC_TO_FIELDS: Configurable option allfieldfile.
 SEEING_RADIAL: New proc.
 SERSIC_PARAMS: New proc.
+SPLOG: Add /NO_STDOUT keyword.
 SXPAR: Landsman fixed to handle CRVALn of different type properly
 YANNY_READ: If reading a Yanny file aborts, then log the file name,
             the line number of the failure, and the line itself.
@@ -167,6 +172,9 @@ eviltarball: Comment out the reference to sdsscvs.
 evilinstall: Use UPS_PROD_FLAVOR environment variable (not UPS_FLAVOR).
 
 In specflat:
+
+First set of global biases (pixbiasave-*.fits) from many nights of data.
+Pixel flats now based on more nights of data.
 specflat.table: Added "Flavor=Linux"
 
 -------------------------------------------------------------------------------
