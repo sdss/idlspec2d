@@ -17,7 +17,7 @@
 ; OPTIONAL KEYWORDS:
 ;   fibermask  - Mask of 0 for good fibers [NFIBER]
 ;   minval     - Minimum value to use in fits to flat-field vectors;
-;                default to 0.03.
+;                default to 0.
 ;
 ; PARAMETERS FOR SLATEC_SPLINEFIT:
 ;   lower      -
@@ -140,7 +140,7 @@ pro superflat, flux, fluxivar, wset, fullbkpt, coeff, $
    allwave = (loglam[*,igood])[isort]
    allflux = (scalef[*,igood])[isort]
    allivar = (scalefivar[*,igood])[isort]
-   indx = where(allflux GT minval)
+   indx = where(flux[*,igood] GT minval)
    if (indx[0] EQ -1) then $
     message, 'No points above MINVAL'
    fullbkpt = slatec_splinefit(allwave[indx], allflux[indx], coeff, $

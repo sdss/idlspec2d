@@ -17,7 +17,7 @@
 ; OPTIONAL KEYWORDS:
 ;   fibermask  - Mask of 0 for bad fibers and 1 for good fibers [NFIBER]
 ;   minval     - Minimum value to use in fits to flat-field vectors;
-;                default to 0.03.
+;                default to 3% of the median of FLUX.
 ;   ncoeff     - Number of coefficients used in constructing FFLAT;
 ;                default to 3 (cubic)
 ;   pixspace   - Approximate spacing in pixels for break points in the
@@ -79,7 +79,7 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
    ntrace = dims[1]
    fflat = fltarr(ny,ntrace)
 
-   if (NOT keyword_set(minval)) then minval = 0.03
+   if (NOT keyword_set(minval)) then minval = 0.03 * median(flux)
    if (N_elements(pixspace) EQ 0) then pixspace = 10
    if (N_elements(ncoeff) EQ 0) then ncoeff = 3
    if (N_elements(nord) EQ 0) then nord = 4
@@ -93,12 +93,12 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
      return, -1
    endif 
 
-   ;-----
+   ;----------
    ; Compute the wavelengths for all flat vectors from the trace set
 
    traceset2xy, wset, xx, loglam
 
-   ;-----
+   ;----------
    ; Construct the "superflat" vector
 
    superflat, flux, fluxivar, wset, afullbkpt, acoeff, $
@@ -111,7 +111,7 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
 
    fit2  = slatec_bvalu(loglam, afullbkpt, acoeff)
 
-   ;------
+   ;----------
 
    if (keyword_set(dospline)) then begin
 
@@ -132,10 +132,11 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
          ; Larger breakpoint separations and less hassles 
 
          ; Locate only unmasked points
-         indx = where(fluxivar[*,i] GT 0.0 AND flux[*,i] GT minval $
-          AND fit2[*,i] GT minval, ct)
+;         indx = where(fluxivar[*,i] GT 0.0 AND flux[*,i] GT minval $
+;          AND fit2[*,i] GT minval, ct)
+         indx = where(fluxivar[*,i] GT 0.0 AND flux[*,i] GT minval, ct)
 
-         if (ct GT 0) then begin
+         if (ct GE 5) then begin ; Require at least 5 data points
 
             ; The following should work for either ascending or descending
             ; wavelengths since BKPT is always sorted ascending.
@@ -153,26 +154,24 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
              maxiter=maxiter, upper=upper, lower=lower, /eachgroup, $
              invvar=ratioivar, nord=nord, bkpt=bkpt[istart:iend], mask=mask)
 
-            if (n_elements(fullbkpt) EQ 1) then begin
-               splog, 'WARNING: Spline fit failed' 
-               return, -1
-            endif
-
             ; Evaluate spline fit to this fiber
-            fflat[*,i] = slatec_bvalu(loglam[*,i], fullbkpt, coeff)
+            if (N_elements(fullbkpt) GT 1) then begin
+               fflat[*,i] = slatec_bvalu(loglam[*,i], fullbkpt, coeff)
+            endif else begin
+               fflat[*,i] = 0
+            endelse
 
             ; Replace leading or trailing masked points with the first or last
             ; unmasked value.
             ; SLATEC_BVALU already does the check below
-            ;if (indx[0] NE 0) then fit1[0:indx[0]-1] = fit1[indx[0]]
-            ;if (indx[ct-1] NE ny-1) then fit1[indx[ct-1]+1:ny-1] = fit1[indx[ct-1]]
+            ;if (indx[0] NE 0) then $
+            ; fit1[0:indx[0]-1] = fit1[indx[0]]
+            ;if (indx[ct-1] NE ny-1) then $
+            ; fit1[indx[ct-1]+1:ny-1] = fit1[indx[ct-1]]
 
          endif else begin
 
-            fflat[*,i] = 1.0
-
-            ; Set bit for errors in FFLAT
-            fibermask[i] = fibermask[i] OR fibermask_bits('BADFLAT')
+            fflat[*,i] = 0
 
          endelse
 
@@ -187,47 +186,53 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
       ratimg = flux / fit2
       rativar = fluxivar * fit2^2
 
+      ;----------
       ; Replace each flat-field vector with a cubic fit to that vector
-      xmask = fluxivar GT 0 ; Mask bad pixels in the fit
+
+      xmask = fluxivar GT 0 AND flux GT minval ; Mask bad pixels in the fit
       xy2traceset, loglam, ratimg, fset, func='legendre', ncoeff=ncoeff, $
        ; invvar=rativar, $ ; Weight all points equally instead
         maxiter=10, /singlerej, xmask=xmask, yfit=fflat
 
+      ;----------
+      ; For flat vectors that are completely bad, replace with zeros.
+
+      indx = where(total(xmask,1) EQ 0)
+      if (indx[0] NE -1) then fflat[*,indx] = 0
+
    endelse
 
-   ; Set FFLAT=0 for any masked points as specified by FLUXIVAR.
-;   indx = where(fluxivar EQ 0)
-;   if (indx[0] NE -1) then fflat[indx] = 0
-
+   ;----------
    ; Set FFLAT=0 only when there are at least 5 bad pixels in a row. 
    ; Smaller gaps should be OK with our spline-fitting across them.
+
    sz = 5
    for i=0, ntrace-1 do begin
       indx = where(smooth( (smooth((fluxivar[*,i] NE 0)*sz, sz) EQ 0)*sz, sz ))
       if (indx[0] NE -1) then fflat[indx,i] = 0
    endfor
 
-   ; Check to see if FIBERMASK has changed
-   igood = where(fibermask EQ 0, ngood)
+   ;----------
+   ; Check to see if there are fewer good fibers
 
+   igood = where(fibermask EQ 0 AND total(fflat,1) GT 0, ngood)
    if (ngood EQ 0) then message, 'All flat fibers have been rejected!'
  
-   ; Divide fflat by a global median of all (good) fibers
+   ;----------
+   ; Divide FFLAT by a global median of all (good) fibers
+
    globalmed = median(medval[igood]) ; Global median for all vectors
    fflat = fflat / globalmed 
 
    junk = where(fflat LE 0, nz)
    splog, 'Number of fiberflat points LE 0 = ', nz
 
-   ;----------------------------------------------------------------
+   ;----------
    ;  Set flatfield bit in FIBERMASK if needed
 
-;   fmed = djs_median(fflat,1)
-;   badflat = where(fmed LT 0.7 * djs_median(fmed))
-
-   badflat = where(medval LT 0.7 * globalmed)
-   if (badflat[0] NE -1) then $
-    fibermask[badflat] = fibermask[badflat] OR fibermask_bits('BADFLAT')
+   indx = where(medval LT 0.7 * globalmed)
+   if (indx[0] NE -1) then $
+    fibermask[indx] = fibermask[indx] OR fibermask_bits('BADFLAT')
 
    return, fflat
 end
