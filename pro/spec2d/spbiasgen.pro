@@ -54,7 +54,7 @@
 ; EXAMPLES:
 ;   The following nights probably contain a bias sequence:
 ;     51686 51781 51809 51852 51893 51950 51978 52010 52038 52069
-;     52245 52276 52305
+;     52245 52276 52305 52333
 ;   (Those are the nights with a pixel flat sequence.)  There are other
 ;   nights with many biases that may be useful, but may have been done
 ;   for other testing purposes:

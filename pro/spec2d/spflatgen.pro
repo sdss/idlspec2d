@@ -47,7 +47,7 @@
 ; EXAMPLES:
 ;   The following nights look like they contain a flat sequence:
 ;     51686 51781 51809 51852 51893 51950 51978 52010 52038 52069
-;     52161 62193 52216 52245 52276 52304
+;     52161 62193 52216 52245 52276 52304 52333
 ;   Generate one of these sets of flats with:
 ;     spflatgen, mjd=51781, outdir='.'
 ;
