@@ -1,5 +1,14 @@
 
+v4_7_2 (Apr 27, 2001)
+
+PLATELIST: Use the "spPlateList.par" file to determine which data are public.
+           Add a PUB column to denote if a plate is in a public data release.
+PLATEMERGE: Add the /PUBLIC option to trim only to public data.
+
+More updates to "opHdrFix.par" file.
 Makefile in /bin did not copy all executables when installing; now it does.
+Update the batch files to use the wire machines as a default.
+Update spectro home page to reflect v4_7 reductions.
 
 -------------------------------------------------------------------------------
 v4_7_1 (Apr 9, 2001)
