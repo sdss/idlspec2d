@@ -32,7 +32,7 @@
 ;                default to (NFIBER-30)/2
 ;   nmed       - Number of rows around ROW to median filter for initial
 ;                wavelengths solution; default to 5
-;   masdev     - max deviation in log lambda to allow (default 1.0e-5)
+;   masdev     - max deviation in log lambda to allow (default 1.2e-5=8 km/s)
 ;   gauss      - Use gaussian profile fitting for final centroid fit
 ;
 ; OUTPUTS:
@@ -100,7 +100,7 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    endif
    if (NOT keyword_set(func)) then func = 'legendre'
    if (NOT keyword_set(ans)) then ans = 0
-   if NOT keyword_set(maxdev) then maxdev = 1.0d-5
+   if NOT keyword_set(maxdev) then maxdev = 1.2d-5
 
    t_begin = systime(1)
 
@@ -213,10 +213,14 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    x1 = trace_fweight(arc, xcrudefit, ycen)
    x1 = trace_fweight(arc, x1, ycen)
 
-   if (keyword_set(gauss)) then $
-     xcen = trace_gweight(arc, x1, ycen, sigma=1.0, invvar=arcivar, xerr=xerr) $
-   else $  
+   if (keyword_set(gauss)) then begin
+     x1   = trace_gweight(arc, x1, ycen, sigma=1.0, invvar=arcivar, xerr=xerr) 
+     xcen = trace_gweight(arc, x1, ycen, sigma=1.0, invvar=arcivar, xerr=xerr) 
+   endif else begin  
+     x1   = trace_fweight(arc, x1, ycen, radius=2.0, invvar=arcivar, xerr=xerr)
+     x1   = trace_fweight(arc, x1, ycen, radius=2.0, invvar=arcivar, xerr=xerr)
      xcen = trace_fweight(arc, x1, ycen, radius=2.0, invvar=arcivar, xerr=xerr)
+   endelse
 
    ;---------------------------------------------------------------------------
    ; Reject bad (i.e., saturated) lines
@@ -302,6 +306,7 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
     message, 'Not 320 fibers -- Cannot figure out bundle test'
    testg = reform(testg, nlamp, 20, 16)
    gind = where(total(total(testg EQ 0,2) GT 3, 2) EQ 0, nlamp)
+   bind = where(total(total(testg EQ 0,2) GT 3, 2) NE 0)
    if (nlamp LT 6) then begin
       splog, 'WARNING: Reject arc. Number of arclines after bundle test = ', nlamp
       wset = 0
@@ -309,6 +314,13 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    endif else begin
       splog, 'Number of arclines after bundle test = ', nlamp
    endelse
+
+   if bind[0] NE -1 then begin
+       splog, ' # Lambda                   Bundles           ', /noname
+       for jj=0,n_elements(bind)-1 do $
+       splog, bind[jj], lamps[bind[jj]].lambda, (total(testg EQ 0,2))[bind[jj],*], $
+           format='(i2,f8.2,16i3)', /noname
+   endif
 
    xcen = xcen[*,gind]
    xmask = xmask[*,gind]

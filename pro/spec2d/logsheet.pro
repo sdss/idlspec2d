@@ -32,7 +32,7 @@
 ;------------------------------------------------------------------------------
 pro logsheet, dir, outfile=outfile
 
-   fullname = findfile(djs_filepath('sdR*.fit',root_dir=dir), count=nfile)
+   fullname = findfile(djs_filepath('sdR*.fit*',root_dir=dir), count=nfile)
 
    if (nfile EQ 0) then begin
       print, 'No files found.'
