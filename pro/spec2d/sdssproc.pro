@@ -243,6 +243,18 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    camcol = indx[0] + 1
    camrow = 0
 
+   if (!version.release LT '5.4') then $
+    spawn, 'speclog_version', verslog $
+   else $
+    spawn, 'speclog_version', verslog, errstring
+   if (NOT keyword_set(verslog)) then verslog = 'Unknown'
+
+   if (!version.release LT '5.4') then $
+    spawn, 'specflat_version', versflat $
+   else $
+    spawn, 'specflat_version', versflat, errstring
+   if (NOT keyword_set(versflat)) then versflat = 'Unknown'
+
    sxaddpar, hdr, 'CAMROW', camrow
    sxaddpar, hdr, 'CAMCOL', camcol
    sxaddpar, hdr, 'TELESCOP', 'SDSS 2.5-M', ' Sloan Digital Sky Survey'
@@ -251,14 +263,8 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    sxaddpar, hdr, 'VERSUTIL', idlutils_version(), ' Version of idlutils'
    sxaddpar, hdr, 'VERSREAD', idlspec2d_version(), $
     ' Version of idlspec2d for pre-processing raw data', after='VERSUTIL'
-   ; spawn, 'speclog_version', verslog, errstring
-   spawn, 'speclog_version', verslog
-   if (NOT keyword_set(verslog)) then verslog = 'Unknown'
    sxaddpar, hdr, 'VERSLOG', verslog[0], ' Version of SPECLOG product', $
     after='VERSREAD'
-   ; spawn, 'specflat_version', versflat, errstring
-   spawn, 'specflat_version', versflat
-   if (NOT keyword_set(versflat)) then versflat = 'Unknown'
    sxaddpar, hdr, 'VERSFLAT', versflat[0], ' Version of SPECFLAT product', $
     after='VERSFLAT'
  
