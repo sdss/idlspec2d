@@ -543,7 +543,7 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
    for ifile=0, nfiles-1 do begin
       splog, 'Modifying file #', ifile, ': ', filenames[ifile]
       indx = where(filenum EQ ifile)
-      modfits, filenames[ifile], pixelmask[*,indx], exten_no=2
+      djs_modfits, filenames[ifile], pixelmask[*,indx], exten_no=2
    endfor
 
    return
