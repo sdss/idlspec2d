@@ -7,27 +7,16 @@ typedef struct {
   char protocol[5];      # Protocol name, ssh or rsh
 } hostconfig;
 
-hostconfig wire1.princeton.edu "" ssh1
+hostconfig photo1.astro.princeton.edu "" ssh1
+#hostconfig wire1.princeton.edu "" ssh1
 hostconfig wire2.princeton.edu "" ssh1
 hostconfig wire3.princeton.edu "" ssh1
 hostconfig wire4.princeton.edu "" ssh1
 hostconfig wire5.princeton.edu "" ssh1
 hostconfig wire6.princeton.edu "" ssh1
 hostconfig wire7.princeton.edu "" ssh1
-#hostconfig wire8.princeton.edu "" ssh1
+hostconfig wire8.princeton.edu "" ssh1
 #hostconfig localhost "" ""
-#hostconfig dusty.princeton.edu "" ssh
-#hostconfig kaze.princeton.edu "" ssh
-
-hostconfig wire1.princeton.edu "" ssh1
-hostconfig wire2.princeton.edu "" ssh1
-hostconfig wire3.princeton.edu "" ssh1
-hostconfig wire4.princeton.edu "" ssh1
-hostconfig wire5.princeton.edu "" ssh1
-hostconfig wire6.princeton.edu "" ssh1
-hostconfig wire7.princeton.edu "" ssh1
-#hostconfig wire8.princeton.edu "" ssh1
-#hostconfig localhost "" ""
-#hostconfig dusty.princeton.edu "" ssh
-#hostconfig kaze.princeton.edu "" ssh
+#hostconfig dusty.princeton.edu "" ssh1
+#hostconfig kaze.princeton.edu "" ssh1
 
