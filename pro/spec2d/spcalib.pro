@@ -523,7 +523,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
          traceset2xy, widthset, xx, sigma2   ; sigma2 is real width
          highrej = 15
          lowrej = 15
-         npoly = 5 ; Fit 10 terms to background, just get best model
+         npoly = 5 ; Fit 5 terms to background, just get best model
          wfixed = [1,1] ; Fit gaussian plus both derivatives
 
          extract_image, flatimg, flativar, xsol, sigma2, flux, fluxivar, $
@@ -536,7 +536,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
 ;      effect
 ;----------------------------------------------------------------------------
 
-         flatimg = flatimg - smooth_halo(ym, wset)
+         flatimg = flatimg - 1.5*smooth_halo2d(ym, wset)
          ym = 0
 
 ;----------------------------------------------------------------------------
