@@ -8,12 +8,12 @@ ALINK="#FF0000">
 
 <P>
 This document explains how to install the idlutils,idlspec2d,specflat products
-needed for reducing SDSS spectroscopic data.  The current (Feb 2002) versions
+needed for reducing SDSS spectroscopic data.  The current (May 2002) versions
 of the code are:
 <DL><DD><PRE>
-  idlutils v4_9_5
-  specflat v1_3
-  idlspec2d v4_9_5
+  idlutils v4_9_11
+  specflat v1_4
+  idlspec2d v4_9_11
 </PRE></DD></DL>
 
 <P>
@@ -88,9 +88,9 @@ versions of those other products.  An install would then look something like:
                               # At plate-mapper.apo, set to "Linux+2"
                               # At hoggpt.apo, set to "Linux+2"
                               # At spectro.princeton, set to "Linux+2"
-  % evilinstall idlutils v4_9_5 ; setup idlutils
-  % evilinstall specflat v1_3 ; setup specflat
-  % evilinstall idlspec2d v4_9_5 ; setup idlspec2d
+  % evilinstall idlutils v4_9_11 ; setup idlutils
+  % evilinstall specflat v1_4 ; setup specflat
+  % evilinstall idlspec2d v4_9_11 ; setup idlspec2d
 </PRE></DD></DL>
 
 </OL>
@@ -160,9 +160,9 @@ users) or ~/.bashrc file (for Borne-shell users).
 To avoid typing mistakes, I start by defining environment variables
 for the version numbers:
 <DL><DD><PRE>
-  % IDLUTILS_VERS=v4_9_5
-  % SPECFLAT_VERS=v1_3
-  % IDLSPEC2D_VERS=v4_9_5
+  % IDLUTILS_VERS=v4_9_11
+  % SPECFLAT_VERS=v1_4
+  % IDLSPEC2D_VERS=v4_9_11
 </PRE></DD></DL>
 
 <LI>
@@ -267,9 +267,9 @@ Put them into your home directory (for this example).
 To avoid typing mistakes, I start by defining environment variables
 for the version numbers:
 <DL><DD><PRE>
-  % IDLUTILS_VERS=v4_9_5
-  % SPECFLAT_VERS=v1_3
-  % IDLSPEC2D_VERS=v4_9_5
+  % IDLUTILS_VERS=v4_9_11
+  % SPECFLAT_VERS=v1_4
+  % IDLSPEC2D_VERS=v4_9_11
   % setup cvs # Only needed on machines set up by Fermi
   % cd
   % cvs co -r $IDLUTILS_VERS idlutils
