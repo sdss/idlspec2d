@@ -1,6 +1,7 @@
 
 pro sphoto_calib, wave, flux, invvar, mask, fibertag, fcalfile, $
-    stdstarfile, blue = blue
+    stdstarfile, stype = stype, input_calibset = input_calibset, $
+    pca_calibset = pca_calibset
 
   ; Double check that all spcetra are from 1 camera + spectrograph
   camid = fibertag.camcolor + strtrim(fibertag.spectrographid, 2)
@@ -58,7 +59,7 @@ pro sphoto_calib, wave, flux, invvar, mask, fibertag, fcalfile, $
   ;-----------------------------------------
   ; If the frames are blue, spectral type the standards 
 
-  if keyword_set(blue) then begin
+  if keyword_set(stype) then begin
 
     ;-----------------------------------------
     ; Rectify spectra and combine frames for each fiber  
@@ -123,7 +124,20 @@ pro sphoto_calib, wave, flux, invvar, mask, fibertag, fcalfile, $
 
   pca_flux_standard, newwave, newflux[*,ok], newivar[*,ok], $
     stdinfo_all[ok], corvector = corvector, corvivar = corvivar, $
-    cormed = cormed, calibset = avgcalibset, bkpts = bkpts 
+    cormed = cormed, calibset = pca_calibset, bkpts = bkpts 
+
+  ; If desired, replace PCA average with normalized input calibset 
+  ; (This option is used for smears)
+  if keyword_set(input_calibset) then begin
+     input_calibfac = bspline_valu(newwave, input_calibset)
+     iwave = 10.0^newwave
+     norm_indx = where(iwave gt 5700 and iwave lt 6300 and $
+                       iwave lt max(iwave) - 200 and $
+                       iwave gt min(iwave) + 200)
+     input_calibfac = input_calibfac / djs_median(input_calibfac[norm_indx])
+     avgcalibset = bspline_iterfit(newwave, input_calibfac, $
+                   bkpt = input_calibset.fullbkpt, nord = 4)
+  endif else avgcalibset = pca_calibset
 
   ;-----------------------------------------
   ; Compute the spectrophoto calibration separately for each frame
@@ -136,10 +150,15 @@ pro sphoto_calib, wave, flux, invvar, mask, fibertag, fcalfile, $
       splog, 'ABORT: Fluxcalib file names do not match frame names' 
       return
     endif
-   
+
+    ; compute the median S/N of the sphot fibers in the frame
+    sn = newflux[*,ok[indx]] * sqrt(newivar[*,ok[indx]])
+    good = where(newivar[*,ok[indx]] ne 0) 
+    medsn = median(sn[good])
+ 
     frame_calibset = frame_flux_calib(newwave, corvector[*,indx], $
-      corvivar[*,indx], avgcalibset, cormed[indx], bkpts, $
-      camid + '-' + frames[iframe], fsig = fsig, blue = blue)
+      corvivar[*,indx], avgcalibset, cormed[indx], $
+      camid + '-' + frames[iframe], medsn, fsig = fsig)
 
     ;--------------
     ; Create header cards describing the data range and write to FITS
