@@ -120,12 +120,42 @@ of a single object.  The TILE number uniquely determines a position on the
 sky, and there are a few instances where two PLATEs are drilled for one TILE.
 
 <P>
-<A HREF="platelist.txt">This list of plates is auto-updated each day
-based upon which reductions have completed.</A>
+<A HREF="platelist.txt">This list of plates  (platelist.txt)
+is auto-updated each day based upon which reductions have completed.</A>
 To date, we have observed over 200 plates.
-Plates have been reduced with Spectro-2D if the SN2 columns are non-zero,
-and have been reduced through Princeton-1D if the Ngal, ..., columns
-are non-zero.
+This list comes from a FITS file (platelist.fits) which contains
+somewhat more information.
+
+<P>
+Aside from PLATE, TILE and MJD, this list contains the following:
+<PRE>
+RA       = Right ascension of plate center [J2000 degrees]
+DEC      = Declination of plate center [J2000 degrees]
+MAPNAME  = Mapping name for this plate; data with the same mapping name
+          are always combined into one plate file, even if taken on
+          different nights.
+VERS2D   = Version of Spectro-2D code to reduce the individual frames.
+VERSCOMB = Version of Spectro-2D code to combine frames into a plate file.
+VERS1D   = Version of Princeton-1D code to measure redshifts.
+VERSTARG = Version of Target code for selecting the objects on this plate.
+CHUNKNAME= The name of the Target and tiling run which produced this plate.
+SN2_G1   = (S/N)^2 per pixel at g=20.2 on spectrograph #1.
+SN2_G2   = (S/N)^2 per pixel at g=20.2 on spectrograph #2.
+SN2_R1   = (S/N)^2 per pixel at r=20.25 on spectrograph #1.
+SN2_R2   = (S/N)^2 per pixel at r=20.25 on spectrograph #2.
+SN2_I1   = (S/N)^2 per pixel at i=19.9 on spectrograph #1.
+SN2_I2   = (S/N)^2 per pixel at i=19.9 on spectrograph #2.
+N_GALAXY = The number of objects Princeton-1D called a galaxy.
+N_QSO    = The number of objects Princeton-1D called a QSO.
+N_STAR   = The number of objects Princeton-1D called a star.
+N_UNKNOWN= The number of objects Princeton-1D declared spectroscopically "unknown".
+N_SKY    = The number of sky fibers (almost always exactly 32)
+STATUS2D = Status of Spectro-2D pipeline; "Done" if done.
+STATUS1D = Status of Princeton-1D pipeline; "Done" if done.
+QSURVEY  = Status flag set to 1 for the best observation of any tile on the sky
+           that satifies the following: (S/N)^2 > 15 for G1,G2,I1,I2, and
+           the target version cannot be "special" or "devel".
+</PRE>
 
 <P>
 The values of SN2 give an estimate of the signal-to-noise (per pixel) of a plate
@@ -134,13 +164,11 @@ The measurement is of the signal-to-noise squared, per pixel, for an object
 at that magnitude.  If all these values are > 15, then the plate is "good".
 Plate 310 is "not good".  The first observation of plate 302
 would be called "horrible".
-<PRE>
-Ngal = The number of objects Princeton-1D called a galaxy.
-Nqso = The number of objects Princeton-1D called a QSO.
-Nsta = The number of objects Princeton-1D called a star.
-Nunk = The number of objects Princeton-1D declared spectroscopically "unknown".
-Nsky = The number of sky fibers (almost always exactly 32)
-</PRE>
+
+<P>
+Selecting only those plates with QSURVEY=1 will yield non-duplicate
+observations of tiles on the sky that meet the survey requirements
+for signal-to-noise.
 
 <H4><A NAME="get_version">What Version of the Code Was Used?</A></H4>
 
@@ -150,9 +178,9 @@ header keywords VERS2D, VERSCOMB, VERS1D as described in the
 <A HREF="#datamodel">data model</A>.
 
 <P>
-All these reductions were done using versions between v4_1_2 and v4_3_1.
-The differences between these versions are not significant.  We have not
-yet reduced the data with the most recent code (v4_5_0).
+All these reductions were done using versions between v4_1_2 and v4_6_0.
+The differences between these versions are not terribly significant.
+We have not yet reduced the data with the most recent code.
 
 <H4><A NAME="get_where">Where Is the Data?</A></H4>
 
@@ -169,7 +197,7 @@ fsgi03.fnal.gov:/usr/sdss/data04/schlegel/2d_v4
 </PRE></DD></DL>
 
 <P>
-This is approximately 8 Gb of data, which can be copied from Fermi with:
+This is approximately 14 Gb of data, which can be copied from Fermi with:
 <DL><DD><PRE>
 scp -r fsgi03.fnal.gov:/usr/sdss/data04/schlegel/2d_v4
 </PRE></DD></DL>
@@ -311,6 +339,9 @@ RA=2h, z=4.3, is due to bad reductions on plate 202.
 <P>
 I've attempted to generate one monstrous file with all the spectroscopic
 and photometric outputs.  This is a FITS binary table called "spAll.fits".
+At present, this file is trimmed to only those 150 or so plates that
+comprise unique tiles with survey quality S/N (e.g., where QSURVEY=1
+in the platelist file).
 
 <P>
 In addition, I've also made an ASCII file with the most relevant quantities
@@ -321,8 +352,6 @@ a stripped-down version of "spAll.fits" for the FITS-challenged.
 <B>HOWEVER</B>, I was unable to find the photometric outputs for all
 of these data.  In these cases, the photometric outputs are all set
 to zero -- though the spectroscopic outputs are still in these files.
-These data were unavailable for plates 231, 318, 323, 324, and plate
-numbers larger than 430.
 
 <P>
 Where the PHOTO data does exist, they are selected from the tsObj files
