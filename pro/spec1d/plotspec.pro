@@ -28,9 +28,8 @@
 ;                where pppp=plate number, mmmmm=MJD, fff=fiber ID.
 ;   netimage   - If set, then launch a Netscape browser with the object
 ;                image from Steve Kent's web site.  This only works if
-;                the trimmed tsObj files are available in the directory
-;                $SPECTRO_DATA/plates, and Netscape is running and has
-;                permissions at the site "http://sdsslnx.fnal.gov:8015".
+;                Netscape is running and has permissions at the site
+;                "http://sdsslnx.fnal.gov:8015".
 ;                This is disabled if PSFILE is set.
 ;   _EXTRA     - Kewords for SPLOT, such as XRANGE, YRANGE, THICK.
 ;
@@ -215,18 +214,14 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
    endif
 
    if (keyword_set(netimage) AND NOT keyword_set(psfile)) then begin
-      readspec, plate, fiberid, mjd=mjd, tsobj=tsobj
-      if (keyword_set(tsobj)) then begin
-         netstring = 'http://sdsslnx.fnal.gov:8015/template/tsSingle.tml?run=' $
-          + strtrim(string(tsobj.run),2) $
-          + '&camcol=' + strtrim(string(tsobj.camcol),2) $
-          + '&field=' + strtrim(string(tsobj.field),2) $
-          + '&row=' + strtrim(string(long(tsobj.objc_rowc)),2) $
-          + '&col=' + strtrim(string(long(tsobj.objc_colc)),2)
-         spawn, '\netscape -remote "openURL(' + netstring + ')"'
-      endif else begin
-         print, 'WARNING: tsObj file not found for plate ', plate
-      endelse
+      netstring = 'http://sdsslnx.fnal.gov:8015/template/tsSingle.tml?run=' $
+       + strtrim(string(plug.objid[0]),2) $
+       + '&camcol=' + strtrim(string(plug.objid[2]),2) $
+       + '&field=' + strtrim(string(plug.objid[3]),2) $
+       + '&ra=' + strtrim(string(plug.ra),2) $
+       + '&dec=' + strtrim(string(plug.dec),2)
+      spawn, '\netscape -remote "openURL(' + netstring + ')"'
+print,netstring
    endif
 
    return

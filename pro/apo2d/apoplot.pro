@@ -26,9 +26,8 @@
 ;                where pppp=plate number, mmmmm=MJD, fff=fiber ID.
 ;   netimage   - If set, then launch a Netscape browser with the object
 ;                image from Steve Kent's web site.  This only works if
-;                the trimmed tsObj files are available in the directory
-;                $SPECTRO_DATA/plates, and Netscape is running and has
-;                permissions at the site "http://sdsslnx.fnal.gov:8015".
+;                Netscape is running and has permissions at the site
+;                "http://sdsslnx.fnal.gov:8015".
 ;                This is disabled if PSFILE is set.
 ;   _EXTRA     - Kewords for SPLOT, such as XRANGE, YRANGE, THICK.
 ;
@@ -306,18 +305,13 @@ pro apoplot1, plate, fiberid, mjd=mjd, nsmooth=nsmooth, $
    endfor
 
    if (keyword_set(netimage) AND NOT keyword_set(psfile)) then begin
-      readspec, plate, fiberid, mjd=mjd, tsobj=tsobj
-      if (keyword_set(tsobj)) then begin
-         netstring = 'http://sdsslnx.fnal.gov:8015/template/tsSingle.tml?run=' $
-          + strtrim(string(tsobj.run),2) $
-          + '&camcol=' + strtrim(string(tsobj.camcol),2) $
-          + '&field=' + strtrim(string(tsobj.field),2) $
-          + '&row=' + strtrim(string(long(tsobj.objc_rowc)),2) $
-          + '&col=' + strtrim(string(long(tsobj.objc_colc)),2)
-         spawn, '\netscape -remote "openURL(' + netstring + ')"'
-      endif else begin
-         print, 'WARNING: tsObj file not found for plate ', plate
-      endelse
+      netstring = 'http://sdsslnx.fnal.gov:8015/template/tsSingle.tml?run=' $
+       + strtrim(string(plug.objid[0]),2) $
+       + '&camcol=' + strtrim(string(plug.objid[2]),2) $
+       + '&field=' + strtrim(string(plug.objid[3]),2) $
+       + '&ra=' + strtrim(string(plug.ra),2) $
+       + '&dec=' + strtrim(string(plug.dec),2)
+      spawn, '\netscape -remote "openURL(' + netstring + ')"'
    endif
 
    return
@@ -363,6 +357,11 @@ pro apoplot, plate, fiberid, mjd=mjd, nsmooth=nsmooth, $
 
    logfile = 'logfile-' + mjdstr + '.fits'
    logfile = filepath(logfile, root_dir=mjddir)
+   if (NOT keyword_set(findfile(logfile))) then begin
+      print, 'Unable to find logfile '+logfile
+      !quiet = quiet
+      return
+   endif
 
    ; Read in all the HDU's in the log file as structures
    PPBIAS = mrdfits(logfile, 1)
