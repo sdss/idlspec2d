@@ -109,7 +109,12 @@ pro spflatave, mjd=mjd, mjstart=mjstart, mjend=mjend, mjout=mjout, $
          aveimg = fltarr(naxis1, naxis2)
          sigimg = fltarr(naxis1, naxis2)
          for ipix=0L, npix-1 do begin
-            djs_iterstat, pixflatarr[lindgen(nfile)*npix+ipix], $
+            ; Only consider pixels with values > 0
+            ; The SPFLATTEN2 routine will have set values = 0 where there
+            ; were not enough counts to determine the flat-field value.
+            vals = pixflatarr[lindgen(nfile)*npix+ipix]
+            vals = vals[ where(vals GE 0) > 0 ]
+            djs_iterstat, vals, $
              sigrej=sigrej, maxiter=maxiter, sigma=sigma1, mean=mean1
             aveimg[ipix] = mean1
             sigimg[ipix] = sigma1
