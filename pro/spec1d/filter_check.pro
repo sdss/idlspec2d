@@ -90,9 +90,11 @@ waveimg=10d^loglam
 npixobj=n_elements(loglam)
 flambda2fnu = waveimg^2 / 2.99792e18
 fthru=filter_thru(flux*rebin(flambda2fnu, npixobj, nselect), waveimg=waveimg, $
-                  mask=(invvar eq 0), /norm, filter_prefix=filter_prefix)
+                  mask=(invvar eq 0), /norm, filter_prefix=filter_prefix, $
+                  /converttoair)
 synfthru=filter_thru(synflux*rebin(flambda2fnu, npixobj, nselect), $
-                     waveimg=waveimg, /norm, filter_prefix=filter_prefix)
+                     waveimg=waveimg, /norm, filter_prefix=filter_prefix, $
+                     /converttoair)
 
 spselect.counts_spectro=fthru
 spselect.counts_synth=synfthru
