@@ -31,6 +31,7 @@ TELLURIC_CORR: Fixed horrible bug in using fibermask to reject bad fibers
 
 YANNY_READ (in idlutils): Try to make backwards-compatable with IDL 5.2
           by replacing calls to STRSPLIT() with calls to STR_SEP.
+build_links (in idlutils): New script for building links between directories.
 evilinstall (in idlutils): Add another option for location of sdssfue
           scripts (for the installation on sos.apo), and also set the
           CVS locations to the default at Fermi if not set up with
