@@ -7,6 +7,11 @@ FITMEANX: Make robust to no good sky lines for tweaking wavelength solution.
 LOCATESKYLINES: Test that the sky line file is successfully read.
 PLATELIST: Read MJDLIST keyword from the spPlate files, which will only exist
            with future reductions.
+REJECT_SCIENCE: New proc to reject science exposures if they are blatantly
+                bad (typically, if they are saturated).  We have already been
+                doing this for arc + flat exposures.  This proc is called
+                by SPREDUCE, and will issue an "ABORT" log message if a
+                science frame is rejected.
 SPCOADD_FRAMES: Include MJDLIST keyword in spPlate header, which will be
                 the list of all MJD's used in an SPCOMBINE.
 
