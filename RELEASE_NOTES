@@ -12,7 +12,9 @@ APO_LOG2HTML,APOREDUCE: Switch from saving the Mountain standard time (MST)
 APO_LOG2HTML: Compare the exposure "flavor" when looking at the operational
            limits (in the "opLimits.par" file).  This allows us to
            differentiate between bias and dark levels (PR #2562).
-APOREDUCE: Allow setting MINEXP to 0 sec.
+APOREDUCE: Allow setting MINEXP to 0 sec.  Change default of MINEXP to 0 sec,
+           so that any exposure with non-negative exposure time is reduced
+           by Son-of-Spectro.
 DANVB_CONVERT,DANVB_QSOLIST: Procs for generating a list of input
             QSO's from Dan van den Berk's EDR list "plateEDR.summ"
             for generating QSO eigenvectors.  The output file
