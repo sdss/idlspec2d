@@ -59,6 +59,7 @@
 ;
 ; PROCEDURES CALLED:
 ;   djs_iterstat
+;   fileandpath()
 ;   headfits()
 ;   idlspec2d_version()
 ;   idlutils_version()
@@ -87,27 +88,20 @@
 
 function findopfile, expres, mjd, indir
 
-   cd, indir, current=olddir
-   files = findfile(expres)
-   nfiles = n_elements(files)
-   if (nfiles EQ 0) then begin
-     cd, olddir
-     message, 'ABORT: Cannot find opFile '+expres
-   endif
+   files = findfile(filepath(expres, root_dir=indir), count=nfile)
+   if (nfile EQ 0) then $
+    message, 'Cannot find opFile '+expres
 
-   mjdlist = lonarr(nfiles)
-   for i=0,nfiles-1 do begin
-     yanny_read, files[i], info, hdr=hdr
-     mjdlist[i] = yanny_par(hdr, 'mjd')
-     yanny_free, info
-   endfor 
+   mjdlist = lonarr(nfile)
+   for i=0,nfile-1 do begin
+      yanny_read, files[i], hdr=hdr
+      mjdlist[i] = yanny_par(hdr, 'mjd')
+   endfor
 
-   diff = mjd - mjdlist 
+   diff = mjd - mjdlist
    score = min(diff  + 10000000L*(diff LT 0), bestmjd)
 
-   cd, olddir
-   return, files[bestmjd]
-      
+   return, fileandpath(files[bestmjd])
 end
 
 ;------------------------------------------------------------------------------
