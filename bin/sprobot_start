@@ -94,6 +94,17 @@ if [ `echo $PATH | wc -c` -gt 1020 ] ; then
 fi
 
 #------------------------------------------------------------------------------
+# Insist that we have set up the cvs version of speclog.  This is because
+# these scripts automatically check in new files to that product.
+
+echo
+
+if [ "`speclog_version`" != "NOCVS: cvs" ] ; then
+  echo "The cvs version of speclog must be set up!"
+  exit
+fi
+
+#------------------------------------------------------------------------------
 # Don't allow this to be run from the machine "sdsshost"!
 
 echo
