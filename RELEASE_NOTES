@@ -1,6 +1,10 @@
 
+Minor changes to 2D for discarding some bad data.
+Minor bug fixes for SOS.
 Runnable version for P-1D.
 
+APOREDUCE: Check how full the disks are for both the input files (sdR images),
+            and the outputs.  Issue a warning message if either is >95% full.
 CREATE_LINESTRUCT(): Function broken out of LINEBACKFIT so that it
             can be called by SPECLINEFIT.
 LINEBACKFIT: Fix possible crash condition when computing LINENPIX if
@@ -16,6 +20,9 @@ REJECT_SCIENCE: Check in the header that all the flat-field screens are
             With this check, exposure #11504 of plate 727/52207 would
             have been automatically rejected for having the FF lamps
             turned on (see PR #3169).
+SPREDUCE: No longer issue an abort message in this proc if the science
+            exposure is declared bad, but issue those messages from within
+            the REJECT_SCIENCE() function.
 SDSS_FLAGNAME: Change some of the target names to agree with what's been
             changed in the target code in the past year or so.  Note that
             I had already updated the target names in spectro_home.html.
@@ -38,6 +45,7 @@ opHdrFix.par: Declare bad aborted smears for plate 601 and 803.
             Remove bad data for plate 727 on MJD 52207.
             Remove bad data for plate 724 on MJD 52240.
             Remove bad smear for plate 860 on MJD 52319.
+spectroSOS.html: Update to reflect new warning messages.
 
 -------------------------------------------------------------------------------
 v4_9_3 (Feb 12, 2002 idlspec2d only) running on IDL 5.3 - 5.5
