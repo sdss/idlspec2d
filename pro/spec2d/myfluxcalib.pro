@@ -82,7 +82,8 @@ end
 
 ;------------------------------------------------------------------------------
 ; Actually to the fit of the observed spectrum to that of an F8 star.
-function fluxfit, loglam, objflux, objivar, color=color, refmag=refmag
+function fluxfit, loglam, objflux, objivar, color=color, refmag=refmag, $
+ plottitle=plottitle
 
    wave = 10^loglam
    logmin = min(loglam)
@@ -181,7 +182,7 @@ function fluxfit, loglam, objflux, objivar, color=color, refmag=refmag
    djs_plot, [min(wave)-100,max(wave)+100], [0,1.1*max(yplot)], /nodata, $
     /xstyle, /ystyle, $
     xtitle='\lambda [A]', ytitle='Counts / (10^{-17}erg/cm/s/Ang)', $
-    title='Spectro-Photo PCA for ' + color + '-camera'
+    title=plottitle
    ymid = total(0.5 * !y.crange)
    for i=0, n_elements(absmin)-1 do begin
       djs_oplot, [absmin[i],absmin[i]], !y.crange, color='blue'
@@ -268,6 +269,7 @@ pro myfluxcalib, filename, calibfile, colors=colors, adderr=adderr
    ;----------
 
    nnew = lonarr(nfile)
+   camname = strarr(nfile)
 
    for ifile=0, nfile-1 do begin
 
@@ -285,6 +287,11 @@ pro myfluxcalib, filename, calibfile, colors=colors, adderr=adderr
 
       cameras = strtrim(sxpar(hdr, 'CAMERAS'),2)
       expstr = string(sxpar(hdr,'EXPOSURE'), format='(i8.8)')
+
+      ; The following info is just used for the plot title
+      platestr = string(sxpar(hdr,'PLATEID'), format='(i4.4)')
+      mjdstr = string(sxpar(hdr,'MJD'), format='(i5.5)')
+      camname[ifile] = sxpar(hdr,'CAMERAS')
 
       ;----------
       ; Do not fit where the spectrum may be dominated by sky-sub residuals.
@@ -465,8 +472,12 @@ objmask = 0 ; Free memory
 
       ; Compare this mean (PCA) spectrum to an F star spectrum,
       ; w/out using any errors but allowing some rejection.
+
+      plottitle = 'PLATE=' + platestr + ' MJD=' + mjdstr $
+       + ': Spectro-Photo PCA for ' + camname[ifile]
+
       calibset = fluxfit(allloglam[indx], pcaflux[indx], $
-       color=colors[ifile], refmag=refmag)
+       color=colors[ifile], refmag=refmag, plottitle=plottitle)
 
       ;----------
       ; Create header cards describing the fit range
