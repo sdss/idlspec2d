@@ -420,6 +420,14 @@ objmask = 0 ; Free memory
     maxiter=5, upper=5, lower=5, maxrej=ceil(0.01*npix), $
     groupsize=ceil(npix/5.))
 
+   ; Demand that the first eigenspectrum is positive-valued.
+   ; (The routine PCA_SOLVE() can return a negative-valued spectrum even
+   ; if all the input spectra are positive-valued.)
+   if (median(pcaflux[*,0]) LT 0) then begin
+      pcaflux[*,0] = -pcaflux[*,0]
+      acoeff[*,0] = -acoeff[*,0]
+   endif
+
    maxmask = max(usemask)
    if (maxmask LE 3) then minuse = 1 $
     else if (maxmask EQ 4) then minuse = 2 $
