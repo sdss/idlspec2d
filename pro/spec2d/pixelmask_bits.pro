@@ -41,7 +41,8 @@ function pixelmask_bits, bitlabel
                   'CROSSTALK',$          ; Cross-talk significant
                   'NOSKY',$              ; No sky subtraction
                   'SKYLEVEL',$           ; Sky background is > 10*flux
-                  'COMBINEDREJ']         ; Rejected in combine B-spline
+                  'NODATA',$             ; No data available in combine B-spline
+                  'COMBINEREJ']          ; Rejected in combine B-spline
 
      ss = strpos(pixelbits,strupcase(bitlabel))
 
