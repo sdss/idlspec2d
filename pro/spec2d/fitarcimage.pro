@@ -282,8 +282,11 @@ maxsig = 3.0
     message, 'Not 320 fibers -- Cannot figure out bundle test'
    testg = reform(xmask, nlamp, 20, 16)   
    gind = where(total(total(testg EQ 0,2) GT 3, 2) EQ 0, nlamp)
-   if (nlamp EQ 0) then $
-    message, 'No good arcs common to all fiber bundles'
+   if (nlamp LT 6) then begin
+      splog, 'ABORT: Only '+string(nlamp)+ ' good arclines found'
+      wset = 0
+      return
+   endif
 
    xcen = xcen[*,gind]
    xmask = xmask[*,gind]
@@ -329,8 +332,6 @@ maxsig = 3.0
             format='(A,I3,A,F8.2,A,F7.2,A,F7.2)'
 
    highones = where(lamps.lambda GT 8000., highct)
-   if (nlamp LT 6) then $
-     splog, 'WARNING: only '+string(nlamp)+ ' good arclines found'
 
    splog, 'Found ', nlamp, ' good arc lines'
    if (highct GT 0) then splog, '----', highct, ' are above 8000 A'
