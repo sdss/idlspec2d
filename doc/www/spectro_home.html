@@ -754,17 +754,21 @@ TILE       Tile number
 MJD        Modified Julian date of observation
 FIBERID    Fiber ID (1 to 640)
 OBJID      4-element PHOTO ID of targetted object: run, re-run, column, ID
-OBJTYPE    Why this object was targetted
-PLUG_RA    Object RA
-PLUG_DEC   Object DEC
-CLASS      Spectro classification: GALAXY, QSO, STAR, SKY;
-           versions prior to v4_7 will also use UNKNOWN; later versions set
-           the ZWARNING flag
+OBJTYPE    Why this object was targetted.  Note that if this field says QSO,
+           it could be the case that this object would have been targetted
+           as a GALAXY or any number of other categories as well.  The
+           PRIMTARGET and SECTARGET flags in the plug-map structure (in the
+           spPlate file) gives this full information.
+PLUG_RA    Object RA (drilled fiber position)
+PLUG_DEC   Object DEC (drilled fiber position)
+CLASS      Spectro classification: GALAXY, QSO, STAR; reductions prior to
+           version v4_7 will also use SKY and UNKNOWN; later versions set
+           the ZWARNING flags
 SUBCLASS   Spectro sub-classification; presently only used for STARs with the
            catagories: O, B, A, F, K, M, L, Carbon_DQ, Carbon, WD, CV, sdM
 Z          Redshift; if the ZWARNING flag is nonzero, then assume that this
            redshift is incorrect
-Z_ERR      Redshift error; at present, not well determined
+Z_ERR      Redshift error based upon fit to chi^2 minimum
 RCHI2      Reduced chi^2 for best fit
 DOF        Degrees of freedom for best fit
 RCHI2DIFF  Difference in reduced chi^2 of best solution to 2nd best solution
@@ -774,8 +778,8 @@ NPOLY      Number of polynomial terms used in conjuction with TFILE
 THETA      Eigenvalue coefficients for each column in template file + each polynomial term
 VDISP      Velocity dispersion, only computed for galaxies (km/sec)
 VDISP_ERR  Error in VDISP (km/sec)
-WAVEMIN    Minimum observed wavelength for this object (Angstroms)
-WAVEMAX    Maximum observed wavelength for this object (Angstroms)
+WAVEMIN    Minimum observed (vacuum) wavelength for this object (Angstroms)
+WAVEMAX    Maximum observed (vacuum) wavelength for this object (Angstroms)
 WCOVERAGE  Amount of wavelength coverage in log-10(Angstroms)
 ZWARNING   A flag set for bad redshift fits in place of calling CLASS=UNKNOWN.
            The following bits may be set:
@@ -785,7 +789,7 @@ ZWARNING   A flag set for bad redshift fits in place of calling CLASS=UNKNOWN.
            3 = Synthetic spectrum is negative (only set for stars and QSO's)
            4 = Fraction of points above 5 sigma is too large (> 5%)
            5 = Chi^2 minimum was at the edge of the redshift-fitting range,
-               resulting in Z_ERR being set to -1.
+               resulting in Z_ERR being set to -1
 SN_MEDIAN  Median S/N for all good pixels
 FRACNSIGMA Fraction of pixels deviant by more than N sigma, where N=[1,2,...10]
 COUNTS_SPECTRO  5-element array of total flux in each of the 5 PHOTO filters;
@@ -796,9 +800,9 @@ COUNTS_SYNTH    Same as COUNTS_SPECTRO, but measured using the best-fit
                 synthetic eigen-spectrum rather than the actual data points
 COUNTS_SKY      (Placeholder.)
 ANYANDMASK Mask bits which are set if any pixels for an object's ANDMASK
-           have that bit set.
+           have that bit set (these fields incorrect in current reductions)
 ANYORMASK  Mask bits which are set if any pixels for an object's ORMASK
-           have that bit set.
+           have that bit set (these fields incorrect in current reductions)
 SPEC1_G    (S/N)^2 at g=20.20 for spectrograph #1 (same value for 320 fibers)
 SPEC1_R    (S/N)^2 at r=20.25 for spectrograph #1 (same value for 320 fibers)
 SPEC1_I    (S/N)^2 at i=19.90 for spectrograph #1 (same value for 320 fibers)
@@ -990,49 +994,39 @@ Below, I've listed the vacuum wavelength of some transitions:
 
 <P>
 Here is a list of the most offensive known problems in Spectro-2D as
-of version v4_7_0 (19 March 2001):
+of version v4_8_3 (29 Aug 2001):
 <PRE>
 -------------------------------------------------------------------------------
 Failed plates:
 
-Plate 187-51454 has no good b2 arc, then fails in combining
-Plate 192-51461 has no good b2 arc, then fails in combining
-Plate 194-51462 has no good b2 arc, then fails in combining
-Plate 204-51455 has no good b1,b2,r2 arcs
-Plate 213-51578 has no good b2 arcs
-Plate 218-51641 has no good b2 arc, then fails in combining
-Plate 231-51455 has no good r1 arcs
-Plate 235-51462 fails because the only b2 arc is saturated
-Plate 283-51660 has no good b1,b2 arcs
-Plate 296-51578 has no good b2 arcs
-Plate 318 special plate needs edited plug-map files in order to run
-Plate 324-51616 only has one science exposure, so won't combine
-Plate 560-52045 only has one science exposure, so won't combine
-
--------------------------------------------------------------------------------
-Plates that will never reduce:
-
-Plate 182-51703 crashed in 2D -- No sky fibers found; too many whopping fibers?
-    This a FFAST plate with 12th magnitude stars.  The one
-    exposure of 900 secs is saturated.  To top it off, the
-    plugmap file has no sky fibers allocated.
-Plate 191-51454 has no arcs
-Plate 284-51934 has no good arcs (flat-field screen was not closed for arcs)
-Plate 317-51589 has no flats or arcs
-Plate 347-51694 has only 1 science exposure, which is saturated.
-Plate 347-51701 has only 1 science exposure, which is not enough to combine.
+Plate 0182/51703 is a FASTT plate with 12th mag stars which saturated the
+                 one exposure of 900 sec, and hhas no sky fibers in the
+                 plugmap file
+Plate 0204/51455 has no good b1,b2,r2 arcs
+Plate 0213/51578 has no good b2 arc
+Plate 0218/51461 has no good b2 arc
+Plate 0235/51462 has no good b2 arc (saturated)
+Plate 0283/51660 has no good b1,b2 arcs
+Plate 0284/51934 has no good arcs (flat-field screen was not closed for arcs);
+                 no plan file even built
+Plate 0296/51578 has no good b2 arc
+Plate 0317/51589 has no flats or arcs; no plan file even built
+Plate 0318 special plate needs edited plug-map files in order to run
+Plate 0324/51616 only has one science exposure, so won't combine
+Plate 0347/51701 has 1 saturated exposure on 51694, and 1 good one on 51701
+Plate 0560/52045 only has one science exposure, so will not combine
 
 -------------------------------------------------------------------------------
 Bad problems:
 
-Plate 202/51441 has some wrong z=4.3 qso's.
-Plate 260/51612 looks like funny fluxing in the blue at around 4000 Ang,
-                probably due to very low S/N
-Plate 354/51792 taken during moon.
-Plate 426/51882 has the Red Monster at 6400-6550 Ang in exp #7366-7367
-Fibers 375,376 have bad sky residuals on many plates, e.g.
-      on plates 360, 396, 418, 429, 437.  This appears to be a problem
-      with the pixel-masks.
+Plate 0187/51455 has no good b2 arc on the first night of data 51454
+Plate 0231/51456 has no good r1 arc on the first night of data 51455
+Plate 0202/51441 has the Red Monster light at 6400-6550 Ang, resulting
+                 in some wrong z=4.3 QSO's (fibers 601,639)
+Plate 0260/51612 looks like funny fluxing in the blue below 4000 Ang,
+                 probably due to very low S/N
+Plate 0354/51792 taken during moon
+Plate 0426/51882 has the Red Monster light at 6400-6550 Ang in exp #7366-7367
 
 -------------------------------------------------------------------------------
 </PRE>
