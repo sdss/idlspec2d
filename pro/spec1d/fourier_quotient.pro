@@ -47,17 +47,18 @@
 ;
 ; REVISION HISTORY:
 ;   25-Mar-2000  Written by S. Burles, FNAL
+;   27-Jun-2000  Completely rewritten - Finkbeiner & SWAT team
 ;-
 ;------------------------------------------------------------------------------
 function fourier_quotient, galfft, starfft, galvar0, starvar0, $
  testsigma2=testsigma2, lowlimit = lowlimit, highlimit=highlimit, $
  deltachisq=deltachisq, doplot=doplot, broadarr=broadarr
 
+; testsigma2 is trial velocity dispersion^2
+
    if (NOT keyword_set(lowlimit)) then lowlimit = 1.0/80.0
    if (NOT keyword_set(highlimit)) then highlimit = 1.0/5.
 
-   if (size(galfft, /tname) EQ 'DOUBLE') then PI = !dpi $
-    else PI = !pi
 
    knums = fft_wavenums(n_elements(galfft))
    inside = where(abs(knums) GT lowlimit AND $
@@ -69,20 +70,15 @@ function fourier_quotient, galfft, starfft, galvar0, starvar0, $
    endif
 
    if (n_elements(testsigma2) EQ 0) then testsigma2 = findgen(30)*0.2
+   
+   nloop = n_elements(testsigma2)
+   chi2 = fltarr(nloop)
+   sigma = fltarr(nloop)
+   alpha = fltarr(nloop)
 
-;       Tonry and Davis show a simple expression to maximize
-;       This is a slow minimizer, stepping through 30 sigmas to
-;       find best one.  This method is the fft difference method
-;       We need a routine for each method.
+   alphatry = findgen(21)*0.1 
 
-      nloop = n_elements(testsigma2)
-      chi2 = fltarr(nloop)
-      sigma = fltarr(nloop)
-      alpha = fltarr(nloop)
-
-      alphatry = findgen(21)*0.1 
-
-      q = galfft[inside]/starfft[inside]
+   q = galfft[inside]/starfft[inside]
 
 ; Reject outliers on q (they can be quite large and drive the fit)
       qs = exp(smooth(alog(q), 25, /edge))
@@ -99,6 +95,7 @@ qs = median(q, 75)
              starvar0 / float(starfft[inside]*conj(starfft[inside])) * $
              float(q)^2)
 
+; Define broadarr (array of broadening functions) if not already defined
       ones = 1.+fltarr(n_elements(q))
       IF NOT keyword_set(broadarr) THEN BEGIN 
           broadarr = dblarr(n_elements(inside), nloop)
@@ -114,36 +111,39 @@ qs = median(q, 75)
 
       ENDIF 
 
+      var = stdev(float(galfft[inside]))^2+stdev(float(starfft[inside]))
 
       for i=0,nloop-1 do begin
           broad = broadarr[*, i]
+          broad = broad/max(broad)
+
+          res = broad*starfft[inside]-galfft[inside]
+          chi2[i] = total(abs(res)^2)/n_elements(inside)/var
 
 ;          alpha[i] = total(float(q) * broad / var)/total(broad^2/var)
           alpha[i] = total(float(qs) * broad)/total(broad^2)
 
-;          qres = alog(float(qs/(alpha[i]*broad)))
-          qres = float(qs-alpha[i]*broad)
-
-;          qresbar = total(qres/sqrt(var))/total(1./sqrt(var))
-;          chi2[i] = total((qres-qresbar)^2/var)
-
-          chi2[i] = total(qres^2)
-
-;          plot, knums[inside], qs, ps=3, yr=[-1, 2]
-;          oplot, knums[inside], broad*alpha[i], ps=3
-;          print, testsigma[i], chi2[i]
       endfor
-plot, [1], [1], xr=[0, 1.5], yr=[-1, 5]
+
+; Now do loop of negatives
+
+; now plot
+
+      deltachisq = 1./n_elements(inside)
       findchi2min, testsigma2, chi2, minchi2, minsigma, errsigma, $
 	  deltachisq = deltachisq, doplot=doplot, npts= ninside
 
       bestalpha = (interpol(alpha, testsigma2, minsigma))[0]
       fsig= 1.d/(2.*!dpi)/sqrt(minsigma)
       broad = gauss_periodic(knums[inside], [1., 0., fsig], shft=1.)
+      res = broad*starfft[inside]-galfft[inside]
+
+      errsigma = errsigma*sqrt(minchi2)
 
       plot, knums[inside], qs, ps=3, yr=[-1, 2]
       oplot, knums[inside], broad*bestalpha, ps=3
-
+      plot, testsigma2, chi2, ps=-7, yr=[.5, 2.5]
+      oplot,[0,100],[1,1]*minchi2+deltachisq
 
       return, [minchi2, minsigma, errsigma, bestalpha]
 end 
