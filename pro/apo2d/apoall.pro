@@ -6,34 +6,25 @@
 ;   Run APOREDUCE on one or many nights of data.
 ;
 ; CALLING SEQUENCE:
-;   apoall, [ rawdir, astrolog=, flatdir=, mjd=, mjstart=, mjend=, $
-;    minexp=, copydir= ]
+;   apoall, [ mjd=, mjstart=, mjend=, minexp=, copydir= ]
 ;
 ; INPUTS:
 ;
 ; OPTIONAL INPUTS:
-;   rawdir     - Search for raw data files in RAWDIR/MJD/*.
-;                This should be an absolute file path, and we default to
-;                '/usr/sdss/data05/spectro/rawdata'.
-;   astrolog   - Search for plug-map files in ASTROLOG/MJD/*.
-;                This should be an absolute file path, and we default to
-;                '/usr/sdss/data05/spectro/astrolog'.
-;   flatdir    - Directory for pixel flat files.  For now, default
-;                to 'pixflat'.
 ;   mjd        - Look for raw data files in RAWDIR/MJD; default to '*' to
 ;                search all subdirectories.  Note that this need not be
 ;                integer-valued, but could be for example '51441_test'.
 ;   mjstart    - Starting MJD.
 ;   mjend      - Ending MJD.
 ;   minexp     - Minimum exposure time for science frames; default to 0 sec.
-;   copydir    - Copy the output log files to this directory; default to
-;                the current directory.
+;   copydir    - Copy the output log files to this directory; default to none.
 ;
 ; OUTPUT:
 ;
 ; COMMENTS:
 ;   The files are sorted before being sent to APOREDUCE.  For each plate,
-;   reduce the flats, arcs, and science frames in that order.
+;   reduce all the biases/darks, then all the flats, then all the arcs,
+;   and finally all of the science/smear frames.
 ;
 ; EXAMPLES:
 ;
@@ -41,72 +32,57 @@
 ;
 ; PROCEDURES CALLED:
 ;   aporeduce
+;   djs_filepath()
 ;   get_mjd_dir()
 ;   sdsshead()
 ;   sxpar()
-;
-; INTERNAL SUPPORT ROUTINES:
 ;
 ; REVISION HISTORY:
 ;   27-May-2000  Written by David Schlegel, Princeton.
 ;-
 ;------------------------------------------------------------------------------
-
-pro apoall, rawdir, astrolog=astrolog, flatdir=flatdir, mjd=mjd, $
- mjstart=mjstart, mjend=mjend, minexp=minexp, copydir=copydir
+pro apoall, mjd=mjd, mjstart=mjstart, mjend=mjend, $
+ minexp=minexp, copydir=copydir
 
    ;----------
    ; Set directory names RAWDIR, ASTROLOG, FLATDIR
 
-   if (NOT keyword_set(copydir)) then cd, current=copydir
+   rawdata_dir = getenv('RAWDATA_DIR')
+   if (NOT keyword_set(rawdata_dir)) then $
+    message, 'RAWDATA_DIR not set!'
 
-   if (NOT keyword_set(rawdir)) then begin
-      if ((findfile('/usr/sdss/data05/spectro/rawdata'))[0] NE '') then $
-       rawdir = '/usr/sdss/data05/spectro/rawdata' $
-      else if ((findfile('/home/schlegel/data/rawdata'))[0] NE '') then $
-       rawdir = '/scr0/data/rawdata' $
-      else if ((findfile('rawdata'))[0] NE '') then $
-       rawdir = './rawdata' $
-      else begin
-        print, 'Must specify RAWDIR'
-        return
-      endelse
-   endif
-
-   if (NOT keyword_set(astrolog)) then $
-    astrolog = strmid(rawdir, 0, rstrpos(rawdir,'/')+1) + 'astrolog'
-   if (NOT keyword_set(flatdir)) then flatdir = 'pixflat'
-   if (n_elements(minexp) EQ 0) then minexp = 0
-
-   ;  This trick expands directories
-   cd, rawdir, current=olddir
-   cd, olddir, current=rawdir
-   cd, astrolog, current=olddir
-   cd, olddir, current=astrolog
+   astrolog_dir = getenv('ASTROLOG_DIR')
+   if (NOT keyword_set(astrolog_dir)) then $
+    message, 'ASTROLOG_DIR not set!'
 
    ;----------
    ; Create a list of the MJD directories (as strings)
 
-   mjdlist = get_mjd_dir(rawdir, mjd=mjd, mjstart=mjstart, mjend=mjend)
+   mjdlist = get_mjd_dir(rawdata_dir, mjd=mjd, mjstart=mjstart, mjend=mjend)
+   if (NOT keyword_set(mjdlist)) then begin
+      splog, 'No matching MJD directories found'
+      return
+   endif
+   splog, 'Number of MJDs = ', n_elements(mjdlist)
 
    ;---------------------------------------------------------------------------
    ; Loop through each input directory
 
-   for imjd=0, N_elements(mjdlist)-1 do begin
+   for imjd=0, n_elements(mjdlist)-1 do begin
 
       mjddir = mjdlist[imjd]
-      inputdir = filepath('', root_dir=rawdir, subdirectory=mjddir)
-      plugdir = filepath('', root_dir=astrolog, subdirectory=mjddir)
+      inputdir = filepath('', root_dir=rawdata_dir, subdirectory=mjddir)
+      plugdir = filepath('', root_dir=astrolog_dir, subdirectory=mjddir)
 
-      print, 'Data directory ', inputdir
-      print, 'Astrolog directory ', plugdir
+      splog, 'Data directory ', inputdir
+      splog, 'Astrolog directory ', plugdir
 
+      ;----------
       ; Find all raw FITS files in this directory
-      cd, inputdir, current=olddir
-      fullname = findfile('sdR*.fit*', count=nfile)
-      cd, olddir
 
-      print, 'Number of FITS files found: ', nfile
+      fullname = findfile( djs_filepath('sdR*.fit*', root_dir=inputdir), $
+       count=nfile)
+      splog, 'Number of FITS files found: ', nfile
 
       if (nfile GT 0) then begin
 
@@ -116,17 +92,17 @@ pro apoall, rawdir, astrolog=astrolog, flatdir=flatdir, mjd=mjd, $
          PLATEID = lonarr(nfile)
          FLAVOR = strarr(nfile)
          CAMERAS = strarr(nfile)
-         for i=0, nfile-1 do begin
+         for ifile=0, nfile-1 do begin
             ; Print something since this might take a while to read all the
             ; FITS headers...
             print, format='(".",$)'
 
-            hdr = sdsshead(filepath(fullname[i], root_dir=inputdir))
+            hdr = sdsshead(fullname[ifile])
 
             if (size(hdr,/tname) EQ 'STRING') then begin
-               PLATEID[i] = long( sxpar(hdr, 'PLATEID') )
-               FLAVOR[i] = strtrim(sxpar(hdr, 'FLAVOR'),2)
-               CAMERAS[i] = strtrim(sxpar(hdr, 'CAMERAS'),2)
+               PLATEID[ifile] = long( sxpar(hdr, 'PLATEID') )
+               FLAVOR[ifile] = strtrim(sxpar(hdr, 'FLAVOR'),2)
+               CAMERAS[ifile] = strtrim(sxpar(hdr, 'CAMERAS'),2)
             endif
          endfor
 
@@ -140,20 +116,19 @@ pro apoall, rawdir, astrolog=astrolog, flatdir=flatdir, mjd=mjd, $
          ; Must reduce arcs after flats, science after arcs.
          ; Reduce r2 camera last, so that HTML file is created at the end.
 
-         flavlist = ['flat', 'arc', 'science']
+         flavlist = ['bias', 'dark', 'flat', 'arc', 'science', 'smear']
          camlist = ['b1', 'b2', 'r1', 'r2']
 
-         for iseq=0, n_elements(platenums)-1 do begin
+         for iplate=0, n_elements(platenums)-1 do begin
          for iflav=0, n_elements(flavlist)-1 do begin
          for icam=0, n_elements(camlist)-1 do begin
-
-            ii = where(PLATEID EQ platenums[iseq] $
+            ii = where(PLATEID EQ platenums[iplate] $
                    AND FLAVOR EQ flavlist[iflav] $
                    AND CAMERAS EQ camlist[icam])
             if (ii[0] NE -1) then $
-             aporeduce, fullname[ii], indir=inputdir, outdir=inputdir, $
+             aporeduce, fileandpath(fullname[ii]), $
+              indir=inputdir, outdir=inputdir, $
               plugdir=plugdir, minexp=minexp, copydir=copydir
-
          endfor
          endfor
          endfor
