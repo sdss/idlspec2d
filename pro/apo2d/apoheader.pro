@@ -26,7 +26,7 @@
 ; PROCEDURES CALLED:
 ;   fileandpath()
 ;   fits_wait
-;   headfits()
+;   sdsshead()
 ;   sxpar()
 ;
 ; REVISION HISTORY:
@@ -71,10 +71,11 @@ pro apoheader, expnum
       fileroot = string(camname[icam], expnum, format='("sdR-",a2,"-",i8.8)')
       filename[icam] = (findfile(filepath(fileroot+'.fit*', $
        root_dir=rawdata_dir, subdir='*'), count=ct))[0]
-      if (ct EQ 1) then begin
+      if (ct GT 0) then begin
          qdone = fits_wait(filename[icam], deltat=1, tmax=1, /header_only)
          if (qdone) then begin
-            thishdr = headfits(filename[icam])
+;            thishdr = headfits(filename[icam])
+            thishdr = sdsshead(filename[icam])
             sxaddpar, thishdr, '(END-BEG', $
              sxpar(thishdr,'TAI-END') - sxpar(thishdr,'TAI-BEG')
             phdr[icam] = ptr_new(thishdr)
