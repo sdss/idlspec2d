@@ -72,6 +72,12 @@ mjdlist=''
 
 # Remove the leading "/data/spectro" and the trailing "/" from the directory list.
 remotedir=`$SPROBOT_RSH $hostname ls -d /data/spectro/[56789]???? | sed 's/\/data\/spectro\///g'  | sed 's/\///g'`
+
+# Instead of looking for "/data/spectro/$MJD" to get an MJD list, look for
+# "/data/spectro/astrolog/$MJD".  This will get the log files for MJDs
+# where there are no spectroscopic data.
+remotedir=`$SPROBOT_RSH $hostname ls -d /data/spectro/astrolog/[56789]???? | sort | tail -7 | sed 's/\/data\/spectro\/astrolog\///g'  | sed 's/\///g'`
+
 for mjdstr in $remotedir ; do
 
    #----------
