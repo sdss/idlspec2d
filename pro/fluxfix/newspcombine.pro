@@ -179,12 +179,10 @@ pro newspcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
    objname = (allseq.name[icams])[j]
 
    ;----------
-   ; Select only the science frames
+   ; Separate science & smear frames
 
-   if (keyword_set(smearinclude)) then $
-    isci = where(allseq.flavor EQ 'science' OR allseq.flavor EQ 'smear') $
-   else $
-    isci = where(allseq.flavor EQ 'science')
+   isci = where(allseq.flavor EQ 'science')
+   ismear = where(allseq.flavor EQ 'smear')
 
    if (isci[0] EQ -1) then begin 
       splog, 'No science frames in this plan ' + thisplan
@@ -202,6 +200,20 @@ pro newspcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
    endif
 
    sciname = sciname[j]
+
+  ;----------------------------
+  ; Check for existance of smear frames
+   if (ismear[0] EQ -1) then begin 
+      splog, 'No smear frames in this plan ' + thisplan
+      smearname = ''
+   endif else begin
+     smearname = allseq[ismear].name[icams]
+     j = where(smearname) 
+     if j[0] EQ -1 then begin 
+       splog, 'No smear frames in this plan ' + thisplan
+       smearname = ''
+     endif else smearname = smearname[j] 
+   endelse
 
    ;----------
    ;  Check for Minimum S/N in science frame
@@ -254,7 +266,8 @@ pro newspcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
 
    spcoadd_fluxed_frames, sciname, combinefile, mjd=thismjd, $
     combinedir=combinedir, fcalibprefix=fcalibprefix, adderr=adderr, $
-    docams=docams, plotsnfile=plotsnfile, tsobjname = tsobjname
+    docams=docams, plotsnfile=plotsnfile, tsobjname = tsobjname, $
+    smearname = smearname
 
    ;----------
    ; Close plot file - S/N plots are then put in the PLOTSNFILE file.
