@@ -1,4 +1,8 @@
 
+LINEBACKFIT: Fix crash condition just introduced (testing for return
+           status from MPFITFUN).
+LOGSHEET: Include UT time, NAME, CARTID, and QUALITY in outputs.
+
 doc/Makefile: Remove invalid copy line.
 etc/Makefile: Change copy of "*" to "*.*" so the "make install" does
            not crash on IRIX+6 platforms.
@@ -7,9 +11,12 @@ pro/inspect/Makefile: Added this makefile.
 pro/science/qso/Makefile: Fix Makefile.
 templates/Makefile: Change copy of "*" to "*.*" so the "make install" does
            not crash on IRIX+6 platforms.
+spectroSOS.html: More comments on the QUALITY keyword.
 
 In idlutils:
 
+evilinstall: Use "awk" instead of "head -1c" so that this script will
+           run on an IRIX+6 platform.
 bin/Makefile: For the "make install", explicitly copy file names
            rather than just "*".  Using the wildcard tries to copy
            the CVS directory on an IRIX+6 platform, which then
