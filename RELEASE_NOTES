@@ -1,4 +1,29 @@
 
+In idlutils:
+
+HOGG_OPLOT_COVAR: New ellipse plotting routine.
+
+-------------------------------------------------------------------------------
+v4_9_8 (Apr 12, 2002 idlspec2d only) running on IDL 5.3 - 5.5
+Built against idlutils v4_9_7, specflat v1_4.
+
+Finish development work for 2D and P-1D before big reprocessing.
+
+EXTRACT_OBJECT: Clean up the calls to SKYSUBTRACT, and only modify
+           the pixelmask in the final call to SKYSUBTRACT (when we
+           do the 2-D sky-subtraction).
+PLOTSPEC: Bug fix to label emission lines with /ZLINE.
+REDMONSTER,SKYSUBTRACT: Change threshhold for flagging both the BADSKYCHI
+           and REDMONSTER mask bits to a relative chi^2 of 4.0, which is
+           what we have traditionally used (except in the last tagged version).
+SKYSUBTRACT: Do not modify the input PIXELMASK, but make a copy NEWMASK
+           which is modified and returned.  This allows several calls to
+           SKYSUBTRACT from EXTRACT_OBJECT, where only the last call
+           actually modifies this mask.
+SPREDUCE1D: Identify subclasses for galaxies and quasars based upon
+           emission lines.  Currently set the following possible subclasses:
+           AGN, STARFORMING, STARBURST, BROADLINE.
+
 sprobot_start: Fix trivial bug in setting DISPLAY environment variable.
 
 -------------------------------------------------------------------------------
