@@ -26,6 +26,11 @@ COMPUTECHI2: Do the chi^2 computation in double-precision.
 FILTER_THRU: Make silent in call to xy2traceset.
 FITSN: Changed call to the obsolete function POLYFITW, to the newer
         but worse POLY_FIT.
+        Apply a work-around to the apparent change in PHOTO fiber-mags,
+        as discussed in sdss-obs/4029 and PR #5642.  Shift the blue
+        and red fit magnitudes from:
+          [18.20,19.70] -> [18.33,19.83] in blue
+          [17.90,19.40] -> [18.06,19.56] in red
 LISTEXPTIME: New simple proc for listing all exposure times.
 PCA_SOLVE: Added /quiet keyword.
 PLATESN: New header keywords ROFFSET & RSIGMA store the offset and standard
@@ -39,6 +44,11 @@ PLOTSN: Fixed histogram scales, changed colors for histograms.
         <= 0 (but what would those be?).  Plotting ranges changed.
         A 3rd set of plots for histograms.
         (Revert this code back to v4_10_1 if need be.)
+QUICKEXTRACT: Apply a work-around to the apparent change in PHOTO fiber-mags,
+        as discussed in sdss-obs/4029 and PR #5642.  Shift the mags at
+        which to evaluate the S/N from:
+          mag=20.20 -> 20.33 in blue
+          mag=19.90 -> 20.06 in red
 
 etc/atmdisp_vec_am1.1.see2.0.fit - Tremonti's atmos. dispersion corrrection?
 etc/atmdisp_vec_am1.2.see2.0.fit - Tremonti's atmos. dispersion corrrection?
