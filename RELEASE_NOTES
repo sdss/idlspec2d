@@ -1,4 +1,12 @@
 
+BATCH2D: Enabled keywords PLATESTART,PLATEEND,MJD,MJSTART,MJEND.
+         Change the logical link to the raw data directory to be
+         topdir+'/rawdata' rather than simply '../rawdata'.
+         The latter would fail when outputs for some plates were
+         in other linked directories, and then '../rawdata' did not
+         resolve to anything.
+MJD_MATCH: New routine split out of SPPLAN1D.
+SPPLAN1D: Now call MJD_MATCH().
 ZFITMAX: Replace call to POLY_FIT with SVDFIT such that this routine
          behaves the same under either IDL 5.3 or 5.4.  It was the
          case that the errors were improperly computed using the re-
