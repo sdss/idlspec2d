@@ -1,10 +1,10 @@
 <HTML>
-<HEAD><TITLE>SDSS IDLSPEC2D Installation</TITLE></HEAD>
+<HEAD><TITLE>SDSS Spectro (idlspec2d) Installation</TITLE></HEAD>
 
 <BODY TEXT="#000000" LINK="#0000ff" VLINK="#800080" BGCOLOR="#eeeeee"
 ALINK="#FF0000">
 
-<CENTER><H1 ALIGN="center">SDSS IDLSPEC2D Installation</H1></CENTER>
+<CENTER><H1 ALIGN="center">SDSS Spectro (idlspec2d) Installation</H1></CENTER>
 
 <P>
 This document explains how to install the idlutils,idlspec2d,specflat products
@@ -13,27 +13,144 @@ needed for reducing SDSS spectroscopic data.
 <P>
 In this document:
 <UL>
-  <LI><A HREF="#install_ups">Installing w/UPS</A>
-  <LI><A HREF="#install_cvs">Installing w/out UPS</A>
-  <LI><A HREF="#install_tar">Installing from a tar file</A>
+  <LI><A HREF="#install_evil">CVS install w/UPS and evilinstall</A> -- recommended for SDSS re-installs
+  <LI><A HREF="#install_ups">CVS install w/UPS</A> -- for SDSS installs
+  <LI><A HREF="#install_cvs">CVS install w/out UPS</A> -- recommended for non-SDSS folks
+  <LI><A HREF="#install_tar">Installing from a tar file</A> -- for computer illiterates
 </UL>
 
-<H2><A NAME="install_ups">Installing w/UPS</A></H2>
+<H2><A NAME="install_evil">CVS install w/UPS and evilinstall</A></H2>
 
 <P>
-Check out tagged versions of "idlutils", "specflat" and "idlspec2d".
-These should be checked out to your home directory, then installed in the
-products directory (e.g., under /p).
+This is the short-cut to installing code using UPS.  It will cvs-export
+code, build it, install it, and declare it current.  If the code is already
+installed, then it simply declares it current.  You must already have
+some version of the idlutils product already installed for this to work.
 
 <OL>
+<LI>
+IDL must be installed on your system, and
+the environment variables IDL_DIR and IDL_PATH must already be set.
+
+<LI>
+You need "evilinstall" in your path, which is part of the "idlutils"
+product:
+<DL><DD><PRE>
+  % setup idlutils
+</PRE></DD></DL>
+If you do not already have a version of the idlutils product installed,
+then you must use one of the other installation options.
+
+<LI>
+You will need to be using an account that has write-permission in
+the products directory, which can be located in /p, /local/ups,
+or /u/products, among other places.
+You will also need to be in a local directory (such as $HOME) where
+you have write-permission.
+
+<LI>
+The code is in a world-readable Princeton CVS repository.
+To access this repository, you will first need to generate a ~/.cvspass
+file as follows:
+<DL><DD><PRE>
+  % cvs -d :pserver:anonymous@spectro.princeton.edu:/usr/local/cvsroot login
+</PRE></DD></DL>
+When the above asks for a password, just hit Enter.
+You will also need the environment variables CVS_RSH and CVSROOT set.
+If you are using C-shell:
+<DL><DD><PRE>
+  % setenv CVS_RSH ssh
+  % setenv CVSROOT :pserver:anonymous@spectro.princeton.edu:/usr/local/cvsroot
+</PRE></DD></DL>
+If you are using Borne-shell:
+<DL><DD><PRE>
+  % CVS_RSH=ssh
+  % CVSROOT=:pserver:anonymous@spectro.princeton.edu:/usr/local/cvsroot
+</PRE></DD></DL>
+The above definitions could be put in your ~/.cshrc file (for C-shell
+users) or ~/.bashrc file (for Borne-shell users).
+
+<LI>
+Now install the code, installing first "idlutils" and "specflat", and
+then "idlspec2d".  Installing in this order gets the dependencies right,
+since the UPS database needs to know that idlspec2d depends upon particular
+versions of those other products.  An install would then look something like:
+<DL><DD><PRE>
+  % evilinstall idlutils v4_9_1
+  % evilinstall specflat v1_3
+  % evilinstall idlspec2d v4_9_1
+</PRE></DD></DL>
+
+</OL>
+
+<P>
+That's it!  Note that "evilinstall" should work for any survey code,
+not just the Spectro products.
+
+
+<H2><A NAME="install_ups">CVS install w/UPS</A></H2>
+
+These steps are to check out tagged verions of
+the "specflat", "idlutils" and "idlspec2d" products using CVS.
+These should be checked out to your home directory (for the examples
+that follow), then installed in the products directory.
+I have assumed that your platform is Linux, but the "Linux+2.2"
+can be replaced with "IRIX+6" or "OSF1" as appropriate.
+
+<OL>
+<LI>
+For the example that follows, I have assumed you
+are using the Bourne-shell.  If you normally use C-shell, you can get
+the Bourne-shell prompt with:
+<DL><DD><PRE>
+  % bash
+</PRE></DD></DL>
+
+<LI>
+The Fermi UPS stuff must already be installed on your computers.
+Once this is done, you need to set the UPS environment variables.
+This can probably be done with one of the following commands:
+<DL><DD><PRE>
+  % source /u/products/etc/sdssfue.sh  # At Princeton
+  % source /usr/local/etc/sdssfue.sh   # At APO
+  % source /fnal/ups/etc/setups.sh     # At Fermi
+</PRE></DD></DL>
+
+<LI>
+IDL must be installed on your system, and
+the environment variables IDL_DIR and IDL_PATH must already be set.
+
+<LI>
+You will need to be using an account that has write-permission in
+the products directory, which can be located in /p, /local/ups,
+or /u/products, among other places.
+You will also need to be in a local directory (such as $HOME) where
+you have write-permission.
+
+<LI>
+The code is in a world-readable Princeton CVS repository.
+To access this repository, you will first need to generate a ~/.cvspass
+file as follows:
+<DL><DD><PRE>
+  % cvs -d :pserver:anonymous@spectro.princeton.edu:/usr/local/cvsroot login
+</PRE></DD></DL>
+When the above asks for a password, just hit Enter.
+You will also need the environment variables CVS_RSH and CVSROOT set.
+If you are using Borne-shell:
+<DL><DD><PRE>
+  % CVS_RSH=ssh
+  % CVSROOT=:pserver:anonymous@spectro.princeton.edu:/usr/local/cvsroot
+</PRE></DD></DL>
+The above definitions could be put in your ~/.cshrc file (for C-shell
+users) or ~/.bashrc file (for Borne-shell users).
 
 <LI>
 To avoid typing mistakes, I start by defining environment variables
 for the version numbers:
 <DL><DD><PRE>
-  % setenv IDLUTILS_VERS v4_8_1
-  % setenv SPECFLAT_VERS v1_2
-  % setenv IDLSPEC2D_VERS v4_8_1
+  % IDLUTILS_VERS=v4_9_1
+  % SPECFLAT_VERS=v1_3
+  % IDLSPEC2D_VERS=v4_9_1
 </PRE></DD></DL>
 
 <LI>
@@ -46,10 +163,10 @@ Install this version of "idlutils" and declare it current:
   % setup -r ~/idlutils idlutils
   % setup sdsstools # Only needed on machines set up by Fermi
   % sdssmake -idl -opt -debug
-  % setenv IDLUTILS_DIR /p/idlutils/$IDLUTILS_VERS
+  % IDLUTILS_DIR=$SDSSROOT/Linux+2.2/idlutils/$IDLUTILS_VERS
   % sdssmake install
-  % ups declare -f Linux+2 -m idlutils.table \
-    -r /p/idlutils/$IDLUTILS_VERS -c idlutils $IDLUTILS_VERS
+  % ups declare -f Linux+2.2 -m idlutils.table \
+    -r $SDSS_ROOT/Linux+2.2/idlutils/$IDLUTILS_VERS -c idlutils $IDLUTILS_VERS
 </PRE></DD></DL>
 
 <LI>
@@ -62,10 +179,10 @@ Install this version of "specflat" and declare it current:
   % setup -r ~/specflat specflat
   % setup sdsstools # Only needed on machines set up by Fermi
   % sdssmake -idl -opt -debug
-  % setenv SPECFLAT_DIR /p/specflat/$SPECFLAT_VERS
+  % SPECFLAT_DIR=$SDSS_ROOT/Linux+2.2/specflat/$SPECFLAT_VERS
   % sdssmake install
-  % ups declare -f Linux+2 -m specflat.table \
-    -r /p/specflat/$SPECFLAT_VERS -c specflat $SPECFLAT_VERS
+  % ups declare -f Linux+2.2 -m specflat.table \
+    -r $SDSS_ROOT/Linux+2.2/specflat/$SPECFLAT_VERS -c specflat $SPECFLAT_VERS
 </PRE></DD></DL>
 
 <LI>
@@ -78,20 +195,59 @@ versions of "idlutils" and "specflat", and declare it current:
   % setup -r ~/idlspec2d idlspec2d
   % setup idlutils $IDLUTILS_VERS  # This makes the dependency
   % sdssmake -idl -opt -debug
-  % setenv IDLSPEC2D_DIR /p/idlspec2d/$IDLSPEC2D_VERS
+  % IDLSPEC2D_DIR=$SDSS_ROOT/Linux+2.2/idlspec2d/$IDLSPEC2D_VERS
   % sdssmake install
-  % ups declare -f Linux+2 -m idlspec2d.table \
-    -r /p/idlspec2d/$IDLSPEC2D_VERS -c idlspec2d $IDLSPEC2D_VERS
+  % ups declare -f Linux+2.2 -m idlspec2d.table \
+    -r $SDSS_ROOT/Linux+2.2idlspec2d/$IDLSPEC2D_VERS -c idlspec2d $IDLSPEC2D_VERS
 </PRE></DD></DL>
 
 </OL>
 
-<H2><A NAME="install_cvs">Installing w/out UPS</A></H2>
+<H2><A NAME="install_cvs">CVS install w/out UPS</A></H2>
+
+These steps are to check out tagged verions of
+the "specflat", "idlutils" and "idlspec2d" products using CVS.
+The examples below check out and build the code into your home directory.
 
 <OL>
 <LI>
-IDL must already be installed on your system, and
+For the example that follows, I have assumed you
+are using the Bourne-shell.  If you normally use C-shell, you can get
+the Bourne-shell prompt with:
+<DL><DD><PRE>
+  % bash
+</PRE></DD></DL>
+
+<LI>
+The Fermi UPS stuff must already be installed on your computers.
+Once this is done, you need to set the UPS environment variables.
+This can probably be done with one of the following commands:
+<DL><DD><PRE>
+  % source /u/products/etc/sdssfue.sh  # At Princeton
+  % source /usr/local/etc/sdssfue.sh   # At APO
+  % source /fnal/ups/etc/setups.sh     # At Fermi
+</PRE></DD></DL>
+
+<LI>
+IDL must be installed on your system, and
 the environment variables IDL_DIR and IDL_PATH must already be set.
+
+<P>
+The code is in a world-readable Princeton CVS repository.
+To access this repository, you will first need to generate a ~/.cvspass
+file as follows:
+<DL><DD><PRE>
+  % cvs -d :pserver:anonymous@spectro.princeton.edu:/usr/local/cvsroot login
+</PRE></DD></DL>
+When the above asks for a password, just hit Enter.
+You will also need the environment variables CVS_RSH and CVSROOT set.
+If you are using Borne-shell:
+<DL><DD><PRE>
+  % CVS_RSH=ssh
+  % CVSROOT=:pserver:anonymous@spectro.princeton.edu:/usr/local/cvsroot
+</PRE></DD></DL>
+The above definitions could be put in your ~/.cshrc file (for C-shell
+users) or ~/.bashrc file (for Borne-shell users).
 
 <LI>
 Check out tagged versions of "idlutils", "specflat" and "idlspec2d".
@@ -99,9 +255,9 @@ Put them into your home directory (for this example).
 To avoid typing mistakes, I start by defining environment variables
 for the version numbers:
 <DL><DD><PRE>
-  % setenv IDLUTILS_VERS v4_8_1
-  % setenv SPECFLAT_VERS v1_2
-  % setenv IDLSPEC2D_VERS v4_8_1
+  % IDLUTILS_VERS=v4_8_1
+  % SPECFLAT_VERS=v1_2
+  % IDLSPEC2D_VERS=v4_8_1
   % setup sdsscvs # Only needed on machines set up by Fermi
   % cd
   % cvs co -r $IDLUTILS_VERS idlutils
@@ -110,17 +266,17 @@ for the version numbers:
 </PRE></DD></DL>
 
 <LI>
-Set the environment variables.  From a "csh" or "tcsh" shell:
+Set the environment variables.  From the Bourne-shell:
 <DL><DD><PRE>
-  % setenv IDLUTILS_DIR $HOME/idlutils
-  % setenv SPECFLAT_DIR $HOME/specflat
-  % setenv IDLSPEC2D_DIR $HOME/idlspec2d
-  % set path=( $IDLUTILS_DIR/bin $SPECFLAT_DIR/bin $IDLSPEC2D_DIR/bin $path )
-  % setenv IDL_PATH +{$IDLUTILS_DIR}/goddard/pro:{$IDL_PATH}
-  % setenv IDL_PATH +{$IDLUTILS_DIR}/pro:{$IDL_PATH}
-  % setenv IDL_PATH +{$IDLSPEC2D_DIR}/pro:{$IDL_PATH}
+  % IDLUTILS_DIR=$HOME/idlutils
+  % SPECFLAT_DIR=$HOME/specflat
+  % IDLSPEC2D_DIR=$HOME/idlspec2d
+  % PATH=$IDLUTILS_DIR/bin:$SPECFLAT_DIR/bin:$IDLSPEC2D_DIR/bin:$PATH
+  % IDL_PATH=+$IDLUTILS_DIR/goddard/pro:$IDL_PATH
+  % IDL_PATH=+$IDLUTILS_DIR/pro:$IDL_PATH
+  % IDL_PATH=+$IDLSPEC2D_DIR/pro:$IDL_PATH
 </PRE></DD></DL>
-You may wish to add the above lines to your ``~/.cshrc'' file.
+You may wish to add the above lines to your ~/.bashrc file.
 
 <LI>
 Build the code:
@@ -138,11 +294,19 @@ Build the code:
 
 <H2><A NAME="install_tar">Installing from a tar file</A></H2>
 
+These steps are to check out tagged verions of
+the "specflat", "idlutils" and "idlspec2d" products using CVS.
+The examples below check out and build the code into your home directory.
+
 <OL>
+<LI>
+IDL must be installed on your system, and
+the environment variables IDL_DIR and IDL_PATH must already be set.
 
 <LI>
-IDL must already be installed on your system, and
-the environment variables IDL_DIR and IDL_PATH must already be set.
+Grab the tar files from the web site:
+<A HREF="spectro.princeton.edu/#idlsetup">spectro.princeton.edu/#idlsetup</A>
+To download the tar files, press shift-(left-mouse) on the link to each file.
 
 <LI>
 Unpack the tar files for "idlutils", "specflat" and "idlspec2d":
@@ -153,8 +317,8 @@ Unpack the tar files for "idlutils", "specflat" and "idlspec2d":
 </PRE></DD></DL>
 
 <LI>
-Continue from <A HREF="#install_cvs">step 3</A> of the CVS-install
-instructions.
+Continue from <A HREF="#install_cvs">step 5</A> of the instructions
+for "Installing w/out UPS".
 
 </OL>
 
