@@ -50,11 +50,11 @@
 ;-
 ;------------------------------------------------------------------------------
 function fourier_quotient, galfft, starfft, galvar0, starvar0, $
- testsigma=testsigma, lowlimit = lowlimit, highlimit=highlimit, $
- deltachisq=deltachisq, doplot=doplot
+ testsigma2=testsigma2, lowlimit = lowlimit, highlimit=highlimit, $
+ deltachisq=deltachisq, doplot=doplot, broadarr=broadarr
 
    if (NOT keyword_set(lowlimit)) then lowlimit = 1.0/80.0
-   if (NOT keyword_set(highlimit)) then highlimit = 1.0/2.2
+   if (NOT keyword_set(highlimit)) then highlimit = 1.0/5.
 
    if (size(galfft, /tname) EQ 'DOUBLE') then PI = !dpi $
     else PI = !pi
@@ -68,51 +68,82 @@ function fourier_quotient, galfft, starfft, galvar0, starvar0, $
       return, -1
    endif
 
-   if (n_elements(testsigma) EQ 0) then testsigma = findgen(30)*0.2
+   if (n_elements(testsigma2) EQ 0) then testsigma2 = findgen(30)*0.2
 
 ;       Tonry and Davis show a simple expression to maximize
 ;       This is a slow minimizer, stepping through 30 sigmas to
 ;       find best one.  This method is the fft difference method
 ;       We need a routine for each method.
 
-      nloop = n_elements(testsigma)
+      nloop = n_elements(testsigma2)
       chi2 = fltarr(nloop)
       sigma = fltarr(nloop)
       alpha = fltarr(nloop)
 
       alphatry = findgen(21)*0.1 
 
-      q = float(galfft[inside]/starfft[inside])
+      q = galfft[inside]/starfft[inside]
+
+; Reject outliers on q (they can be quite large and drive the fit)
+      qs = exp(smooth(alog(q), 25, /edge))
+      dif = float(alog((q/qs)))
+      djs_iterstat, dif, sigma=qsig
+      wbad = where(abs(dif) GT qsig*5, ct)
+      IF ct GT 0 THEN q[wbad] = qs[wbad]
+
+; Now reevaluate smoothed q
+      qs = exp(smooth(alog(q), 9, /edge))
+qs = median(q, 75)
+
       var = (galvar0/ float(galfft[inside]*conj(galfft[inside])) + $
-              starvar0 / float(starfft[inside]*conj(starfft[inside])) * q^2)
+             starvar0 / float(starfft[inside]*conj(starfft[inside])) * $
+             float(q)^2)
+
+      ones = 1.+fltarr(n_elements(q))
+      IF NOT keyword_set(broadarr) THEN BEGIN 
+          broadarr = dblarr(n_elements(inside), nloop)
+          for i=0,nloop-1 do begin
+             IF testsigma2[i] EQ 0 THEN broad = ones ELSE BEGIN 
+                fsig = 1.d/(2.*!dpi)/sqrt(abs(testsigma2[i]))
+                broad = gauss_periodic(knums[inside], [1., 0., fsig], shft=1.)
+                IF testsigma2[i] LT 0 THEN broad = 1./broad
+             ENDELSE 
+             broadarr[*, i] = broad
+          ENDFOR     
+
+
+      ENDIF 
+
 
       for i=0,nloop-1 do begin
-          IF testsigma[i] EQ 0 THEN broad = 1. ELSE BEGIN 
-              fsig = 1.d/(2.*!dpi)/testsigma[i]
-              broad = gauss_periodic(knums[inside], [1., 0., fsig], shft=1.)
-          ENDELSE 
+          broad = broadarr[*, i]
 
-;        broad = exp(-(knums[inside]*testsigma[i] * 2.0 * PI)^2/2.0)
+;          alpha[i] = total(float(q) * broad / var)/total(broad^2/var)
+          alpha[i] = total(float(qs) * broad)/total(broad^2)
 
-          alpha[i] = total(q * broad / var)/total(broad^2/var)
-          qres = (q-alpha[i]*broad)
+;          qres = alog(float(qs/(alpha[i]*broad)))
+          qres = float(qs-alpha[i]*broad)
+
 ;          qresbar = total(qres/sqrt(var))/total(1./sqrt(var))
-          qresbar = 0
-          chi2[i] = total((qres-qresbar)^2/var)
+;          chi2[i] = total((qres-qresbar)^2/var)
 
+          chi2[i] = total(qres^2)
+
+;          plot, knums[inside], qs, ps=3, yr=[-1, 2]
+;          oplot, knums[inside], broad*alpha[i], ps=3
+;          print, testsigma[i], chi2[i]
       endfor
-
-      findchi2min, testsigma, chi2, minchi2, minsigma, errsigma, $
+plot, [1], [1], xr=[0, 1.5], yr=[-1, 5]
+      findchi2min, testsigma2, chi2, minchi2, minsigma, errsigma, $
 	  deltachisq = deltachisq, doplot=doplot, npts= ninside
 
-   ;   oplot, testsigma, alpha, ps=2
+      bestalpha = (interpol(alpha, testsigma2, minsigma))[0]
+      fsig= 1.d/(2.*!dpi)/sqrt(minsigma)
+      broad = gauss_periodic(knums[inside], [1., 0., fsig], shft=1.)
 
-;      minc = min(chi2, alphaplace)
-;      bestalpha =alpha[alphaplace]
-      bestalpha = interpol(alpha, testsigma, minsigma)
-;fsig= 1.d/(2.*!dpi)/minsigma
-;print,fsig
-    broad = gauss_periodic(knums[inside], [1., 0., fsig], shft=1.)
-;stop
+      plot, knums[inside], qs, ps=3, yr=[-1, 2]
+      oplot, knums[inside], broad*bestalpha, ps=3
+
+
       return, [minchi2, minsigma, errsigma, bestalpha]
 end 
