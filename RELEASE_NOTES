@@ -1,4 +1,7 @@
 
+-------------------------------------------------------------------------------
+v4_8_0 (Jul 13, 2001 idlspec2d+idlutils)
+
 EXTRACT_OBJECT, SKYSUBTRACT, SPCALIB: Implement 2D-splining for sky-
           subtraction, now set to do quadratic PSF fit.
           Also, first attempt to put in airmass correction to the sky
