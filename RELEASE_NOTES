@@ -19,6 +19,7 @@ sprobot,sprobot_start: Scripts now use the environment variables
           the raw data from, and which local disks to write to.
           These scripts are now generalized to the point where they can
           be run from anywhere by just setting up environment variables.
+spChunkList.par: Update chunk list for chunks 20,21 (up to plate 714).
 
 BSPLINE_BKPTS (in idlutils): Do not crash even in the case of very few
          data points.  But untested whether this actually does what we want
