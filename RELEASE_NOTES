@@ -137,6 +137,12 @@ YANNY_READ: Read lines up to 2047 characters long (instead of 1023)
             without resorting to the /QUICK option.
 YANNY_WRITE: Add STNAMES keyword if writing out Yanny files that were
             read with YANNY_READ(/ANONYMOUS).
+evilinstall: Now with all the messy confusion at Fermi, it is no longer
+            possible to auto-detect Linux flavors using the $SETUP_UPS
+            environment.  It is best to first set an environment variable, ie.:
+              UPS_FLAVOR=Linux+2
+            to over-ride the auto-detected flavor on Linux boxes, which now
+            always appears to come up as Linux+2.4, which no one actually uses.
 
 idlutils.table: Added "Flavor=Linux"
 
