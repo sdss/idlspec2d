@@ -298,14 +298,22 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
     xarc, arcshift=arcshift, $
     xsky=xsky, skywaves=skywaves, skyshift=skyshift
 
-   skydispset = skyline_dispersion(flux, fluxivar, xsky, iskies, dispset)
-   splog, 'Not applying skyline adjusted line widths'
-
    qaplot_skyshift, wset, xsky, skywaves, skyshift, $
     title=plottitle+'Sky Line Deviations for '+objname
 
    if (NOT keyword_set(arcshift)) then $
     splog, 'WARNING: Cannot shift to sky lines'
+
+   ;------------------
+   ; Fit for the widths of the sky lines (relative to those of the arcs)
+
+   ; The values in XSKY are noisy measurements, so replace them with
+   ; the predicted positions based upon the arc solution.
+   ; We should also apply the arcshift here, but I haven't yet ???
+
+   xsky = transpose(traceset2pix(wset, alog10(skywaves)))
+   skydispset = skyline_dispersion(flux, fluxivar, xsky, iskies, dispset)
+   splog, 'Not applying skyline adjusted line widths'
 
    ;------------------
    ; Apply heliocentric correction
