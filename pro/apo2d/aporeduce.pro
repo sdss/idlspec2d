@@ -38,6 +38,7 @@
 ; EXAMPLES:
 ;
 ; BUGS:
+;   scp1 does not exist on sos.apo.nmsu.edu, reverted to scp
 ;
 ; PROCEDURES CALLED:
 ;   apo_appendlog
@@ -333,14 +334,17 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       splog, 'Generating HTML file '+htmlfile
       apo_log2html, logfile, htmlfile
 
+;
+;	scp1 does not work on sos, let's switch to scp
+;
       if (keyword_set(copydir)) then begin
          splog, 'Copying files to ', copydir
-         spawn, 'scp1 ' + htmlfile + ' ' + copydir
-         spawn, 'scp1 ' + htmlfile + ' ' + $
+         spawn, 'scp ' + htmlfile + ' ' + copydir
+         spawn, 'scp ' + htmlfile + ' ' + $
           filepath('logfile-current.html', root_dir=copydir)
-         spawn, 'scp1 ' + logfile  + ' ' + copydir
+         spawn, 'scp ' + logfile  + ' ' + copydir
          if (keyword_set(plotfile)) then $
-          spawn, 'scp1 ' + plotfile + ' ' + copydir
+          spawn, 'scp ' + plotfile + ' ' + copydir
          splog, 'Done.'
       endif
    endif
