@@ -120,44 +120,53 @@ function fiberflat, flux, fluxivar, wset, $
    for i=0, ntrace-1 do begin
       print, format='($, ".",i4.4,a5)',i,string([8b,8b,8b,8b,8b])
 
+      ; Evaluate "superflat" spline fit at exactly the same wavelengths
+      ; Let's divide out superflat first to make fitting smoother
+      ; Larger breakpoint separations and less hassles 
+      fit2  = slatec_bvalu(loglam[*,i], afullbkpt, acoeff)
+
       ; Locate only unmasked points
-      indx = where(fluxivar[*,i] NE 0, ct)
+      indx = where(fluxivar[*,i] GT 0.0 AND fit2 GT 0.0, ct)
+
 
       if (ct GT 0) then begin
 
-         istart = (where(bkpt GT min(loglam[*,i])))[0]
+         istart = (where(bkpt GT min(loglam[indx,i])))[0]
          istart = (istart - 1) > 0
-         iend = (where(bkpt GT max(loglam[*,i])))[0]
+         iend = (where(bkpt GT max(loglam[indx,i])))[0]
          if (iend EQ -1) then iend = nbkpts-1
-
+         print,istart,iend
+     
+         ratio = flux[indx,i] / fit2[indx]
+         ratioivar = fluxivar[indx,i] * fit2[indx]^2
+       
          ; Dispose of leading or trailing points with zero weight
-         fullbkpt = slatec_splinefit(loglam[indx,i], flux[indx,i], coeff, $
+         fullbkpt = slatec_splinefit(loglam[indx,i], ratio, coeff, $
           maxiter=maxiter, upper=upper, lower=lower, $
-          invvar=fluxivar[indx,i], nord=4, bkpt=bkpt[istart:iend], mask=mask)
+          invvar=ratioivar, nord=nord, bkpt=bkpt[istart:iend], mask=mask)
 
          ; Evaluate spline fit to this fiber
-         fit1 = slatec_bvalu(loglam[*,i], fullbkpt, coeff)
+         fflat[*,i] = slatec_bvalu(loglam[*,i], fullbkpt, coeff)
 
          ; Replace leading or trailing masked points with the first or last
          ; unmasked value
-         if (indx[0] NE 0) then fit1[0:indx[0]-1] = fit1[indx[0]]
-         if (indx[ct-1] NE ny-1) then fit1[indx[ct-1]+1:ny-1] = fit1[indx[ct-1]]
-
-         ; Evaluate "superflat" spline fit at exactly the same wavelengths
-         fit2  = slatec_bvalu(loglam[*,i], afullbkpt, acoeff)
-
-         fflat[*,i] = fit1 / fit2
+         ; bvalu already does the check below
+         ;if (indx[0] NE 0) then fit1[0:indx[0]-1] = fit1[indx[0]]
+         ;if (indx[ct-1] NE ny-1) then fit1[indx[ct-1]+1:ny-1] = fit1[indx[ct-1]]
 
       endif else begin
 
          fflat[*,i] = 1.0
+         fibermask[i] = 0
 
       endelse
 
    endfor
 
-   ; Divide fflat by a global median of all fibers
+   ; Check to see if fibermask has changed
+   igood = where(fibermask NE 0, ngood)
 
+   ; Divide fflat by a global median of all fibers
    globalmed = median(medval[*,igood]) ; Global median for all vectors
    fflat = fflat / globalmed
 

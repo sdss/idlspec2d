@@ -52,7 +52,6 @@ pro skysubtract, obj, objivar, plugmap, wset, skysub, skysubivar, $
 	fullfit = slatec_bvalu(wave, fullbkpt, coeff) 
 	skysub = obj - fullfit * (objivar GT 0.0)
 
-        stop
         ; blue plot
 	if (min(wave) LT alog10(5600.0)) then begin
           plot, 10^allwave, allfit, ps=3, xr=[5570,5590], $
