@@ -669,6 +669,14 @@ ormask = 0 ; Free memory
       endif
    endfor
 
+   ; Warning: The fiber was marked as unplugged, which means it is
+   ; probably a broken fiber and only getting some sky photons
+   ; and no real object photons.
+   qflag = (anyandmask AND sdss_flagval('SPPIXMASK', 'NOPLUG')) NE 0
+   for iobj=0, nobj-1 do $
+    zwarning[*,iobj] = zwarning[*,iobj] $
+     OR (qflag[iobj] * sdss_flagval('ZWARNING', 'UNPLUGGED'))
+
    res_all.zwarning = zwarning
 
    ;----------
