@@ -146,7 +146,6 @@ pro sphdrfix, filename, hdr
    plugdir = concat_dir(speclog_dir, mjdstr)
 
    reportfile = filepath('sdReport-'+mjdstr+'.par', root_dir=plugdir)
-;   splog, 'Looking for header edits in sdReport file '+reportfile
    yanny_read, reportfile, pdata, stnames=stnames, /anonymous
 
    if (keyword_set(pdata)) then begin
@@ -161,7 +160,9 @@ pro sphdrfix, filename, hdr
        sphdrfix1, filename, hdr, hfix2
 
       yanny_free, pdata
-   endif
+   endif else begin
+      splog, 'WARNING: Empty or invalid sdReport file '+reportfile
+   endelse
 
    return
 end
