@@ -21,7 +21,7 @@
 ;   mjend      - Ending MJD.
 ;
 ; OUTPUT:
-;   mjdlist    - List of matching direcotries (string array).
+;   mjdlist    - List of matching directories (string array).
 ;
 ; COMMENTS:
 ;   Do not include in the output list any empty directories.
