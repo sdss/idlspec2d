@@ -40,11 +40,12 @@
 ;   12-Jul-1999  Added optional output YSET (DJS).
 ;-
 ;------------------------------------------------------------------------------
-function trace_crude, fimage, xstart, ystart, radius=radius, yset=yset
+function trace_crude, fimage, xstart, ystart=ystart, radius=radius, yset=yset, $
+	nave = nave, nmed=nmed
 
    ; Need 1 parameter
    if (N_params() LT 1) then begin
-      print, 'Syntax - xset = trace_crude( fimage, [xstart, ystart, radius=radius] )'
+      print, 'Syntax - xset = trace_crude( fimage, [xstart, ystart=ystart, radius=radius] )'
       return, -1
    endif
 
@@ -52,16 +53,17 @@ function trace_crude, fimage, xstart, ystart, radius=radius, yset=yset
    ny = (size(fimage))[2]
    if (NOT keyword_set(ystart)) then ystart = ny/2
    if (NOT keyword_set(radius)) then radius = 3.0
+   if (NOT keyword_set(nmed)) then nmed = 1
+   if (NOT keyword_set(nave)) then nave = 5
 
    ; Make a copy of the image
    ftemp = float(fimage)
 
    ; Median filter the entire image along columns by NMED rows
-   nmed = 15
+   if (nmed GT 1) then $   
    for ix=1, nx-1 do ftemp[ix,*] = median(transpose(ftemp[ix,*]), nmed)
 
    ; Boxcar-smooth the entire image along columns by NAVE rows
-   nave = 15
    for ix=1, nx-1 do ftemp[ix,*] = smooth(transpose(ftemp[ix,*]), nave)
 
    if (NOT keyword_set(xstart)) then begin

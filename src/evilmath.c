@@ -340,82 +340,102 @@ void FillABig2(float **abig, float *x, float *xcen, int *xmin, int *xmax,
 	And we only loop over enough to work on 2 parameters for
 	adjacent fibers   
    a is modified and cannot be used again for subsequent calls */
-void cholslCustom2(float **a, int nTrace, int nPoly, 
+void cholslCustom2(float **a, int *ia, int nTrace, int nPoly, 
 	                  float p[], float b[], float x[])
 {
 	int i,k;
 	float sum;
 
-	for(i=0;i<nTrace;i++) {
-	   sum = b[i];
+	for(i=0;i<nTrace;i++) 
+           if (ia[i]) {
+	      sum = b[i];
 	   
-	   for (sum=b[i],k=i-1;k>=0 && k>=i-3;k--) sum -= a[i][k]*x[k];
-	   x[i] = sum/p[i];
+	      for (sum=b[i],k=i-1;k>=0 && k>=i-3;k--) 
+                 if (ia[k])  sum -= a[i][k]*x[k];
+	      x[i] = sum/p[i];
 	}
-	for(i=nTrace;i<nTrace+nPoly;i++) {
-	   for (sum=b[i],k=i-1;k>=0;k--) sum -= a[i][k]*x[k];
-	   x[i] = sum/p[i];
+	for(i=nTrace;i<nTrace+nPoly;i++) 
+           if (ia[i]) {
+	      for (sum=b[i],k=i-1;k>=0;k--) 
+              if (ia[k])  sum -= a[i][k]*x[k];
+	      x[i] = sum/p[i];
 	}
 
 
-	for(i=nTrace + nPoly - 1;i>=nTrace;i--) {
-	   for (sum=x[i],k=i+1;k<nTrace+nPoly;k++) sum -= a[k][i]*x[k];
+	for(i=nTrace + nPoly - 1;i>=nTrace;i--) 
+           if (ia[i]) {
+	      for (sum=x[i],k=i+1;k<nTrace+nPoly;k++) 
+                 if (ia[k])  sum -= a[k][i]*x[k];
 	   x[i] = sum/p[i];
 	}
-	for(i=nTrace-1;i>=0;i--) {
-	   for (sum=x[i],k=i+1;k<nTrace && k<=i+3;k++) sum -= a[k][i]*x[k];
-	   for (k=nTrace;k<nTrace + nPoly;k++) sum -= a[k][i]*x[k];
+	for(i=nTrace-1;i>=0;i--) 
+           if (ia[i]) {
+	      for (sum=x[i],k=i+1;k<nTrace && k<=i+3;k++) 
+                 if (ia[k])  sum -= a[k][i]*x[k];
+	      for (k=nTrace;k<nTrace + nPoly;k++) 
+                 if (ia[k]) sum -= a[k][i]*x[k];
 	   x[i] = sum/p[i];
 	}
 
 }
 
-void cholslCustomCovar(float **a, int nTrace, int nPoly, float p[])
+void cholslCustomCovar(float **a, int *ia, int nTrace, int nPoly, float p[])
 {
 	int i,k;
 	float sum;
 	float *x;
 	int pl;
 	
-	for(pl=0;pl < nTrace+nPoly; pl++)  {
+	for(pl=0;pl < nTrace+nPoly; pl++)  
+           if (ia[pl]) {
 	 
-	   x = a[pl];
+	      x = a[pl];
 
-	   for(i=pl,sum=1.0;i<nTrace;i++,sum=0.0) {
-	      for (k=i-1;k>=pl && k>=i-3;k--) sum-=a[i][k]*x[k];
+	      for(i=pl,sum=1.0;i<nTrace;i++,sum=0.0) 
+                 if (ia[i]) {
+	         for (k=i-1;k>=pl && k>=i-3;k--) 
+                    if (ia[k]) sum-=a[i][k]*x[k];
+	         x[i] = sum/p[i];
+	      }
+	   for(;i<nTrace+nPoly;i++,sum=0.0) 
+              if (ia[i]) {
+                 for (k=i-1;k>=pl;k--) 
+                    if (ia[k]) sum -= a[i][k]*x[k];
 	      x[i] = sum/p[i];
 	   }
-	   for(;i<nTrace+nPoly;i++,sum=0.0) {
-	      for (k=i-1;k>=pl;k--) sum -= a[i][k]*x[k];
+
+	   for(i=nTrace+nPoly-1; i>=nTrace && i >= pl;i--) 
+              if (ia[i]) {
+                 sum = x[i];
+	         for (k=i+1;k<nTrace+nPoly;k++) 
+                    if (ia[k]) sum -= a[k][i]*x[k];
 	      x[i] = sum/p[i];
 	   }
-
-
-	   for(i=nTrace+nPoly-1; i>=nTrace && i >= pl;i--) {
-	      sum = x[i];
-	      for (k=i+1;k<nTrace+nPoly;k++) sum -= a[k][i]*x[k];
-	      x[i] = sum/p[i];
-	   }
-	   for(i=nTrace-1;i>=0 && i >= pl;i--) {
-	      sum = x[i];
-	      for (k=i+1;k<nTrace && k<=i+3;k++) sum -= a[k][i]*x[k];
-	      for (k=nTrace;k<nTrace + nPoly;k++) sum -= a[k][i]*x[k];
-	      x[i] = sum/p[i];
+	   for(i=nTrace-1;i>=0 && i >= pl;i--) 
+              if (ia[i]) {
+                 sum = x[i];
+	         for (k=i+1;k<nTrace && k<=i+3;k++) 
+                    if (ia[k]) sum -= a[k][i]*x[k];
+	         for (k=nTrace;k<nTrace + nPoly;k++) 
+                    if (ia[k]) sum -= a[k][i]*x[k];
+	         x[i] = sum/p[i];
 	   }
 	}
 
 }
 
 /*	Custom2 requires two (2) parameters per Trace in top left of covar */           
-int choldcCustom2(float **a, int nTrace, int nPoly, float p[])
+int choldcCustom2(float **a, int *ia, int nTrace, int nPoly, float p[])
 {
 	int i,j,k;
 	float sum;
 
-	for(i=0;i<nTrace;i++) {
-	    for(j=i; j<nTrace && j<i+4; j++) {
-               for(sum = a[i][j], k=i-1; k >= 0 && k >= i-3; k--) 
-                  sum -= a[i][k]*a[j][k];
+	for(i=0;i<nTrace;i++) 
+	   if(ia[i]) {
+	      for(j=i; j<nTrace && j<i+4; j++) 
+	         if(ia[j]) {
+                    for(sum = a[i][j], k=i-1; k >= 0 && k >= i-3; k--) 
+	               if(ia[k]) sum -= a[i][k]*a[j][k];
               
 	       if(i==j) {
 	         if (sum <= 0.0) {
@@ -423,7 +443,7 @@ int choldcCustom2(float **a, int nTrace, int nPoly, float p[])
                    sum = a[i][j];
 	           fprintf(stderr,"%f\n",sum);
                    for(k=i-1; k >= 0 && k >= i-3; k--) {
-                      sum -= a[i][k]*a[j][k];
+	              if(ia[k]) sum -= a[i][k]*a[j][k];
 	              fprintf(stderr,"%f %f %f\n",sum, a[i][k], a[j][k]);
 	           }
 	          return -i;
@@ -433,20 +453,24 @@ int choldcCustom2(float **a, int nTrace, int nPoly, float p[])
 	       } 
                else a[j][i] = sum/p[i];
 	    }
-	    for(j=nTrace; j<nTrace +nPoly; j++) {
-               for(sum = a[i][j], k=i-1; k >= 0 && k >= i-3; k--) 
-                  sum -= a[i][k]*a[j][k];
+	    for(j=nTrace; j<nTrace +nPoly; j++) 
+	       if(ia[j]) {
+                  for(sum = a[i][j], k=i-1; k >= 0 && k >= i-3; k--) 
+	             if(ia[k]) sum -= a[i][k]*a[j][k];
               
-               a[j][i] = sum/p[i];
+                  a[j][i] = sum/p[i];
 	    }
 
         }
-	for(i=nTrace;i<nTrace+nPoly;i++) {
-	    for(j=i;j<nTrace+nPoly;j++) {
-	      for (sum=a[i][j],k=i-1;k>=0;k--) sum -= a[i][k]*a[j][k];
-	      if(i==j) {
-	         if (sum <= 0.0) fprintf(stderr,"choldc failed\n");
-	         p[i] = sqrt(sum);
+	for(i=nTrace;i<nTrace+nPoly;i++) 
+	   if(ia[i]) {
+	   for(j=i;j<nTrace+nPoly;j++) 
+	      if(ia[j]) {
+	         for (sum=a[i][j],k=i-1;k>=0;k--) 
+	            if(ia[k]) sum -= a[i][k]*a[j][k];
+	         if(i==j) {
+	            if (sum <= 0.0) fprintf(stderr,"choldc failed\n");
+	            p[i] = sqrt(sum);
 	      } else a[j][i] = sum/p[i];
            }
         }
@@ -507,10 +531,10 @@ int fixedGauss2(float x[], float y[], float ymod[], float invvar[],float *xcen,
         for (j=0;j<dTrace;j++) if (ia[j]) mfitTrace++;
         for (j=dTrace;j<dTrace+nPoly;j++) if (ia[j]) mfitPoly++;
 
-//  zero out
+//  zero out entire covar matrix
 
-        for (j=0;j<mfit;j++) {
-                for (k=0;k<mfit;k++) covar[j][k]=0.0;
+        for (j=0;j<ma;j++) {
+                for (k=0;k<ma;k++) covar[j][k]=0.0;
                 beta[j]=0.0;
         }
 
@@ -534,25 +558,25 @@ int fixedGauss2(float x[], float y[], float ymod[], float invvar[],float *xcen,
    
 /* Fill dTrace x dTrace  of covar first  */
 
-  for (l=0,j=-1;l<nTrace;l++) 
+  for (l=0,j=0;l<nTrace;l++) 
     for (extra=0; extra < 2; extra++)
-      if (ia[2*l+extra]) {
-         j++;
+       j=2*l+extra;
+       if (ia[j]) {
          for (i=xmin[l];i<=xmax[l];i++) {
-            wt = abig[2*l+extra][i-xmin[l]] * invvar[i];
+            wt = abig[j][i-xmin[l]] * invvar[i];
             beta[j] += wt * ysub[i];
-            covar[j][j] += wt * abig[2*l+extra][i-xmin[l]];
+            covar[j][j] += wt * abig[j][i-xmin[l]];
 
 /*	Overlap with with chebyshev polynomial*/
 
-            for (k = mfit-1,m = dTrace+nPoly-1; m>=dTrace; m--) 
-                if(ia[m]) covar[j][k--] += wt*abig[m][i];
+            for (m = dTrace+nPoly-1; m>=dTrace; m--) 
+                if(ia[m]) covar[j][m] += wt*abig[m][i];
          }
 
 /*	Fill in symmetric pieces   */
 
-         for (k = mfit-1,m = dTrace+nPoly-1; m>=dTrace; m--) 
-                if(ia[m]) covar[k][j] = covar[j][k--];
+         for (m = dTrace+nPoly-1; m>=dTrace; m--) 
+                if(ia[m]) covar[m][j] = covar[j][m];
 	
 
 /*	Overlap with previous fiber  */
@@ -560,14 +584,14 @@ int fixedGauss2(float x[], float y[], float ymod[], float invvar[],float *xcen,
 	 if (j > 0) {
 	    k= j;
 	    for (extra2 = extra; extra2 > -2; extra2--) 
-              if (ia[2*l+extra2-1])  {
-	       k--;
+              k=2*l+extra2-1;
+              if (ia[k])  {
 	       lm = l - 1;
 	       if(extra2 > 0) lm = l;
 	       if(lm >= 0) {
                   for (i = xmin[l];i<=xmax[lm];i++) {
-                     wt = abig[2*l+extra][i-xmin[l]] * invvar[i];
-                     covar[j][k] += wt * abig[2*l+extra2-1][i-xmin[lm]];
+                     wt = abig[j][i-xmin[l]] * invvar[i];
+                     covar[j][k] += wt * abig[k][i-xmin[lm]];
 	          }
                   covar[k][j] = covar[j][k];
                }
@@ -592,13 +616,13 @@ int fixedGauss2(float x[], float y[], float ymod[], float invvar[],float *xcen,
       }
    printf("nPoly done\n");
    
-   choldcCustom2(covar, mfitTrace, mfitPoly, p); 
+   choldcCustom2(covar, ia, dTrace, nPoly, p); 
    printf("choldc Custom2 done\n");
 
-   cholslCustom2(covar, mfitTrace, mfitPoly, p, beta, a2); 
+   cholslCustom2(covar, ia, dTrace, nPoly, p, beta, a2); 
    printf("cholsl done\n");
 
-   cholslCustomCovar(covar, mfitTrace, mfitPoly, p); 
+   cholslCustomCovar(covar, ia, dTrace, nPoly, p); 
    printf("cholsl Covar done\n");
          
 //   printf("Gaussj done\n");
