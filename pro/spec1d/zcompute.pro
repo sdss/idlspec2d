@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   zans = zcompute(objflux, objivar, starflux, [starmask, nfind=, $
 ;    poffset=, pspace=, pmin=, pmax=, mindof=, width=, minsep=, $
-;    plottitle=, /doplot, /debug ]
+;    plottitle=, /doplot, /debug, /verbose ]
 ;
 ; INPUTS:
 ;   objflux    - Object fluxes [NPIXOBJ,NOBJ]
@@ -38,6 +38,7 @@
 ;   plottitle  - Title of plot (if /DOPLOT is set).
 ;   doplot     - If set, then make plots.
 ;   debug      - If set, then wait for keystroke after plot.
+;   verbose    - If set, then log using SPLOG instead of PRINT.
 ;
 ; OUTPUTS:
 ;   zans       - Output structure [NOBJECT,NFIND] with the following elements:
@@ -90,7 +91,7 @@ end
 function zcompute, objflux, objivar, starflux, starmask, nfind=nfind, $
  poffset=poffset, pspace=pspace, pmin=pmin, pmax=pmax, $
  mindof=mindof, width=width, minsep=minsep, $
- plottitle=plottitle, doplot=doplot1, debug=debug
+ plottitle=plottitle, doplot=doplot1, debug=debug, verbose=verbose
 
    if (NOT keyword_set(nfind)) then nfind = 1
    if (NOT keyword_set(pspace)) then pspace = 1
@@ -138,8 +139,12 @@ function zcompute, objflux, objivar, starflux, starmask, nfind=nfind, $
           doplot=doplot, debug=debug)
          if (iobj EQ 0) then zans = zans1 $
           else zans = [[zans], [zans1]]
-         splog, 'Object #', iobj, '  Elap time=', systime(1)-t0, $
-          ' (sec)  z=', zans1[0].z, ' (pix)'
+         if (keyword_set(verbose)) then $
+          splog, 'Object #', iobj, '  Elap time=', systime(1)-t0, $
+           ' (sec)  z=', zans1[0].z, ' (pix)' $
+         else $
+          print, 'Object #', iobj, '  Elap time=', systime(1)-t0, $
+           ' (sec)  z=', zans1[0].z, ' (pix)'
       endfor
       return, zans
    endif
