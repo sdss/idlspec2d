@@ -305,18 +305,18 @@ pro apo_log2html, logfile, htmlfile
          warnings = [warnings, PPFLAT[ii].warnings]
          aborts = [aborts, PPFLAT[ii].aborts]
 
-         allexp = PPFLAT.expnum
-         allexp = allexp[ii[ uniq(allexp, sort(allexp)) ]]
+         allexp = PPFLAT[ii].expnum
+         allexp = allexp[ uniq(allexp, sort(allexp)) ]
          nexp = n_elements(allexp)
          oneflat = PPFLAT[0]
          struct_assign, {junk:0}, oneflat ; Zero-out all elements
          for iexp=0, nexp-1 do begin
             pflats = replicate(oneflat, ncams)
             for icam=0, ncams-1 do begin
-               jj = where(PPFLAT.plate EQ thisplate $
+               jj = (where(PPFLAT.plate EQ thisplate $
                 AND PPFLAT.camera EQ camnames[icam] $
-                AND PPFLAT.expnum EQ allexp[iexp])
-               if (jj[0] NE -1) then $
+                AND PPFLAT.expnum EQ allexp[iexp]))[0]
+               if (jj NE -1) then $
                 copy_struct_inx, PPFLAT[jj], pflats, index_to=icam
             endfor
 
@@ -338,18 +338,18 @@ pro apo_log2html, logfile, htmlfile
          warnings = [warnings, PPARC[ii].warnings]
          aborts = [aborts, PPARC[ii].aborts]
 
-         allexp = PPARC.expnum
-         allexp = allexp[ii[ uniq(allexp, sort(allexp)) ]]
+         allexp = PPARC[ii].expnum
+         allexp = allexp[ uniq(allexp, sort(allexp)) ]
          nexp = n_elements(allexp)
          onearc = PPARC[0]
          struct_assign, {junk:0}, onearc ; Zero-out all elements
          for iexp=0, nexp-1 do begin
             parcs = replicate(onearc, ncams)
             for icam=0, ncams-1 do begin
-               jj = where(PPARC.plate EQ thisplate $
+               jj = (where(PPARC.plate EQ thisplate $
                 AND PPARC.camera EQ camnames[icam] $
-                AND PPARC.expnum EQ allexp[iexp])
-               if (jj[0] NE -1) then $
+                AND PPARC.expnum EQ allexp[iexp]))[0]
+               if (jj NE -1) then $
                 copy_struct_inx, PPARC[jj], parcs, index_to=icam
             endfor
 
@@ -370,18 +370,18 @@ pro apo_log2html, logfile, htmlfile
          warnings = [warnings, PPSCIENCE[ii].warnings]
          aborts = [aborts, PPSCIENCE[ii].aborts]
 
-         allexp = PPSCIENCE.expnum
-         allexp = allexp[ii[ uniq(allexp, sort(allexp)) ]]
+         allexp = PPSCIENCE[ii].expnum
+         allexp = allexp[ uniq(allexp, sort(allexp)) ]
          nexp = n_elements(allexp)
          onescience = PPSCIENCE[0]
          struct_assign, {junk:0}, onescience ; Zero-out all elements
          pscience = replicate(onescience, ncams, nexp)
          for iexp=0, nexp-1 do begin
             for icam=0, ncams-1 do begin
-               jj = where(PPSCIENCE.plate EQ thisplate $
+               jj = (where(PPSCIENCE.plate EQ thisplate $
                 AND PPSCIENCE.camera EQ camnames[icam] $
-                AND PPSCIENCE.expnum EQ allexp[iexp])
-               if (jj[0] NE -1) then $
+                AND PPSCIENCE.expnum EQ allexp[iexp]))[0]
+               if (jj NE -1) then $
                 copy_struct_inx, PPSCIENCE[jj], pscience, $
                  index_to=icam+iexp*ncams
             endfor
