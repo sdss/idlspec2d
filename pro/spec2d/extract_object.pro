@@ -146,8 +146,8 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 
       skymedian = djs_median(scrunch[iskies])
       splog, 'Sky fiber median '+string(skymedian)
-      if (skymedian GT 1000) then begin
-         splog, 'ABORT: Median sky flux is brighter than 1000 e-'
+      if (skymedian GT 2000) then begin
+         splog, 'ABORT: Median sky flux is brighter than 2000 e-'
          return
       endif
 
