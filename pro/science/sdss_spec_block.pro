@@ -6,26 +6,36 @@
 ; CALLING SEQUENCE:
 ;   sdss_spec_block
 ; INPUTS:
-;   plate - list of plates
-;   fiberid - list of fibers
-;   mjd - list of mjds
+;   plate - [N] list of plates
+;   fiberid - [N] list of fibers
+;   mjd - [N] list of mjds
 ; OPTIONAL INPUTS:
-; KEYWORDS:
-;   masksky     mask out sky line regions in all spectra (only do this if
-;                 the spectra span a wide redshift range)
+;   avloglam - [nl] wavelength grid
+;   vdisp - try to get everything to this velocity dispersion (in km/s)
+; OPTIONAL KEYWORDS:
+;   deextinct - apply corrections for galactic extinction
 ; OUTPUTS:
-;   avlum       on output, average spectrum (lambda L_lambda units)
+;   block_flux - [nl, N] list of fluxes (as output by readspec)
+;   block_ivar - [nl, N] list of inverse variances
+;   block_lamba - [nl] output wavelengths (angstroms)
 ; DEPENDENCIES:
 ;   idlutils
 ;   idlspec2d
 ; BUGS:
 ;   Input and output wavelength grids MUST be logarithmically spaced.
-;   User has to worry about units.
+;   ivar is unchanged when vdisp is used
+;   revision history wrong
+; COMMENTS:
+;   Units are in 10^{-17} ergs/cm^2/s/A 
+;   Bolometric flux is kept constant in deredshifting step
+;    (ie. lambda -> lambda/(1+z), flux -> flux*(1+z), ivar ->
+;    ivar/(1+z)^2)
 ; REVISION HISTORY:
 ;   2001-11-17  written - Hogg (NYU)
 ;-
 pro sdss_spec_block, plate, fiberid, mjd, block_flux=block_flux, $
-                     block_ivar=block_ivar, block_lambda=block_lambda
+                     block_ivar=block_ivar, block_lambda=block_lambda, $
+                     avloglam=avloglam, deextinct=deextinct, vdisp=vdisp
 
 masksky=1
 
@@ -41,14 +51,13 @@ startavlum= avlum
 ; group by plate and get all spectra
 platelist=plate[uniq(plate,sort(plate))]
 avlum= 0d
-isp=0L
 for iplate=0L, n_elements(platelist)-1L do begin
     splog,'iplate= '+string(iplate)
 
     plate_indx=where(plate eq platelist[iplate],plate_count)
     readspec, plate[plate_indx],fiberid[plate_indx],mjd=mjd[plate_indx], $
       flux=flux,flerr=flerr,invvar=invvar,andmask=andmask,ormask=ormask, $
-      loglam=loglam, zans=zans
+      loglam=loglam, zans=zans, tsobj=tsobj
     flux= double(flux)
     invvar= double(invvar)
     for i=0L,plate_count-1 do begin
@@ -57,18 +66,37 @@ for iplate=0L, n_elements(platelist)-1L do begin
 ; read spectrum and inverse variance
         if keyword_set(masksky) then $
           invvar[*,i]= skymask(invvar[*,i], andmask[*,i], ormask[*,i])
-        ;flux[*,i]= flux[*,i]*(10.0^loglam[*,i])
-        ;invvar[*,i]= invvar[*,i]/(10.0^loglam[*,i])
         
 ; shift wavelength scale to rest-frame
         restloglam= loglam[*,i]-alog10(1.d + zans[i].z)
 
+; de-extinct if desired
+        if(keyword_set(deextinct)) then begin
+            wave=10.^(loglam[*,i])
+            alam=ext_ccm(wave)
+            glactc, zans[i].plug_ra, zans[i].plug_dec, 2000., gl, gb, 1, /deg
+            ebv=dust_getval(gl, gb)
+            extvoebv=3.1
+            ext=ebv*alam*extvoebv
+            flux[*,i]=flux[*,i]*10.^(0.4*ext)
+        endif
+
 ; slam onto new grid (MUST BE LOGARITHMIC SPACING)
         lum=fltarr(n_elements(restloglam))
-        combine1fiber, restloglam,flux[*,i],invvar[*,i], $
-          newloglam=avloglam, newflux=tmp1, newivar=tmp2, maxiter=0
+        combine1fiber, restloglam,flux[*,i]*(1.+zans[i].z), $
+          invvar[*,i]/(1.+zans[i].z)^2, newloglam=avloglam, newflux=tmp1, $
+          newivar=tmp2, maxiter=0
         lum= double(tmp1)
         lum_ivar= double(tmp2)
+
+; smooth if desired
+        if(keyword_set(vdisp)) then begin
+            adddisp2=vdisp^2-zans[i].vdisp^2
+            if(adddisp2 gt 0.) then begin
+                sigma=sqrt(adddisp2)/(2.99792e+5*alog(10.))
+                lum=gauss_smooth(avloglam,lum,sigma,avloglam)
+            endif
+        endif
 
 ; increment vectors
         if(n_elements(block_flux) eq 0) then begin
@@ -77,10 +105,9 @@ for iplate=0L, n_elements(platelist)-1L do begin
             block_ivar=fltarr(nl,nspec)
             block_lambda=fltarr(nl)
         endif 
-        block_flux[*,isp]=lum
-        block_ivar[*,isp]=lum_ivar
+        block_flux[*,plate_indx[i]]=lum
+        block_ivar[*,plate_indx[i]]=lum_ivar
         block_lambda[*]=10.^(avloglam)
-        isp=isp+1L
     endfor
 endfor
     
