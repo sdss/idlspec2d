@@ -71,20 +71,20 @@ function fitmeanx, wset, lambda, xpos, aveinvvar, $
       res1 = yfit - rawdiff
 
       ; Find which points are most deviant from the fit
+      ; Set MASK=1 for bad points
       djs_iterstat, res1, sigrej=4.0, maxiter=3, mask=mask
 
       ; Re-fit to RAWDIFF as a function of fiber number (rejecting outliers)
       junk = polyfitw(xaxis, rawdiff, 1-mask, nord, yfit)
       xfit[*,i] = yfit
 
-      igood = where(mask EQ 1, ngood)
+      igood = where(mask EQ 0, ngood)
       if (ngood LE 1) then  sdev = 0.0 $
        else sdev = stddev((yfit-rawdiff)[igood])
       if (sdev EQ 0.0) then aveinvvar[i] = 0 $
        else  aveinvvar[i]  = 1.0 / sdev^2
 
       splog, 'In skyline number' ,i,' std-dev is ', sdev, ' pix'
-
    endfor
 
    return, xfit
