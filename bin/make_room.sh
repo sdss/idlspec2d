@@ -6,6 +6,16 @@
 # S. Burles, APO, 7 June 2001
 #------------------------------------------------------------------------------
 
+if [ -n "$RAWDATA_DIR" ]
+then
+   rawdata_dir=$RAWDATA_DIR
+fi
+
+if [ -n "$ASTROLOG_DIR" ]
+then 
+   speclog_dir=$ASTROLOG_DIR
+fi
+
 if [ $1 ]
 then 
   rawdata_dir=$1

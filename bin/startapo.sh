@@ -11,11 +11,12 @@
 # S. Burles, APO, 4 May 2000
 #------------------------------------------------------------------------------
 
-if [ ! $speclog_dir ] 
-then
+if [ -n "$ASTROLOG_DIR" ]
+then 
+   speclog_dir=$ASTROLOG_DIR
+else
    speclog_dir='/data/spectro/astrolog'
 fi
-
 
 #
 # Wait for first file to finish complete copy

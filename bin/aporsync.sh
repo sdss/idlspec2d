@@ -15,16 +15,19 @@
 
 echo "APORSYNC: Launched at "`date`
 
-if [ ! $rawdata_dir ]  
+if [ -n "$RAWDATA_DIR" ]  
 then 
+   rawdata_dir=$RAWDATA_DIR
+else
    rawdata_dir='/data/spectro'
 fi
 
-if [ ! $speclog_dir ]  
+if [ -n "$ASTROLOG_DIR" ]  
 then 
+   speclog_dir=$ASTROLOG_DIR
+else
    speclog_dir='/data/spectro/astrolog'
 fi
-
    
 
 # This syncs /astrolog/[56789]???? from sdsshost to plate-mapper, excluding
