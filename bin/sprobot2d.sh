@@ -13,8 +13,8 @@
 
 n=`\ps -elf | grep sprobot2d.sh | grep -v grep | wc -l`
 if [ X"$n" != X"" -a "$n" -gt 2 ]; then
-  echo "Already running sprobot2d.sh.  Exiting."
-  exit
+   echo "SPROBOT2D: BATCH2D already running at "`date`
+   exit
 fi
 
 # Do not put this in the background, because we search for the "sprobot2d.sh"

@@ -13,8 +13,8 @@
 
 n=`\ps -elf | grep sprobot1d.sh | grep -v grep | wc -l`
 if [ X"$n" != X"" -a "$n" -gt 2 ]; then
-  echo "Already running sprobot1d.sh.  Exiting."
-  exit
+   echo "SPROBOT1D: BATCH1D already running at "`date`
+   exit
 fi
 
 # Do not put this in the background, because we search for the "sprobot1d.sh"
