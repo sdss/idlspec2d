@@ -22,14 +22,16 @@
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
-; Decide if this flat is bad:
-;   Reject if more than 2% of the pixels are marked as bad.
-;   Reject if more than 100 rows are saturated.
-;   Reject if the 80-th percentile is less than 1000 electrons.
-;   Reject if the flat-field screens are not closed, which should appear
-;     as FFS = '1 1 1 1 1 1 1 1' in the header.
-;   Reject if the flat-field lamps are not turned on, which should appear
-;     as FF = '1 1 1 1' in the header.
+;   Decide if this flat is bad:
+;     Reject if more than 2% of the pixels are marked as bad.
+;     Reject if more than 100 rows are saturated.
+;     Reject if the 80-th percentile is less than 1000 electrons.
+;     Reject if the flat-field screens are not closed, which should appear
+;       as FFS = '1 1 1 1 1 1 1 1' in the header.
+;     Reject if the flat-field lamps are not turned on, which should appear
+;       as FF = '1 1 1 1' in the header.
+;
+;   Note that the FFS, FF, NE and HGCD keywords only appear at MJD >= 51629.
 ;
 ; EXAMPLES:
 ;
@@ -49,7 +51,8 @@ function reject_flat, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix
    if (keyword_set(hdr)) then begin
       ffs = sxpar(hdr, 'FFS')
       if (keyword_set(ffs)) then begin
-         if (strtrim(ffs) NE '1 1 1 1 1 1 1 1') then begin
+         ffs_sum = fix( total( fix( str_sep(ffs,' ') ) ) )
+         if (ffs_sum LT 8) then begin
             qbad = 1
             splog, 'WARNING: Reject flat: Flat-field screens not closed!'
          endif
@@ -57,7 +60,8 @@ function reject_flat, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix
 
       ff = sxpar(hdr, 'FF')
       if (keyword_set(ff)) then begin
-         if (strtrim(ff,2) NE '1 1 1 1') then begin
+         ff_sum = fix( total( fix( str_sep(ff,' ') ) ) )
+         if (ff_sum LT 4) then begin
             qbad = 1
             splog, 'WARNING: Reject flat: Flat-field lamps not turned on!'
          endif
