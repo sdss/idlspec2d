@@ -4,6 +4,15 @@ pro/fluxfix/Makefile - Forget to add this Makefile, which is needed
 
 In idlutils:
 
+Various astrometric routines have been moved from the hoggpt product
+into pro/astrom.  The USNO routines have been modified for reading
+the USNO-B1.0 catalog (as well as USNO-A1,USNO-A2).
+LL2UV
+USNO_CONE
+USNO_READ
+USNO_READZONE
+UV2LL
+
 evilmake: Turn on optimization for all platforms except IRIX.
            Previously, we tried to set -O3 on IRIX, which crashes
            builds on the machine sdsshost.apo.
