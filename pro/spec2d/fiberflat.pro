@@ -65,7 +65,7 @@
 ;   bspline_valu()
 ;   bspline_iterfit()
 ;   splog
-;   superflat
+;   superflat()
 ;   traceset2xy
 ;   xy2traceset
 ;
@@ -107,9 +107,9 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
    ;----------
    ; Construct the "superflat" vector
 
-   superflat, flux, fluxivar, wset, sset, $
+   sset = superflat(flux, fluxivar, wset, $
     fibermask=fibermask, minval=minval, lower=3.0, upper=3.0, $
-    medval=medval, title=plottitle
+    medval=medval, title=plottitle)
 
    if (n_elements(allfullbkpt) EQ 1) then begin
       splog, 'WARNING: Spline fit failed' 
