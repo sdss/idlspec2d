@@ -26,6 +26,8 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   yanny_free
+;   yanny_read
 ;
 ; DATA FILES:
 ;   $IDLSPEC2D_DIR/etc/spMaskbits.par
