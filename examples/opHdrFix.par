@@ -272,3 +272,9 @@ ophdrfix sdR-??-00013111 FLAVOR   "'unknown'"
 # exposure of plate 866 on MJD=52317.
 ophdrfix sdR-??-00013132 FLAVOR   "'unknown'"
 
+# These 3 exposures were test data taken before twilight on MJD 52318
+# (trying to get smear to fail).
+ophdrfix sdR-??-00013169 FLAVOR   "'unknown'"
+ophdrfix sdR-??-00013170 FLAVOR   "'unknown'"
+ophdrfix sdR-??-00013171 FLAVOR   "'unknown'"
+
