@@ -117,8 +117,8 @@ function apo_log_beginplate, platenum, mjd, camnames, outdir=outdir
    nextline = '<CAPTION><FONT SIZE="+2"><B> Plate ' + platestr + '</B></FONT>'
    if (plotct NE 0) then $
     nextline = nextline $
-     + ' - <A HREF="' + giffile + '">S/N FIGURE</A>' + '</CAPTION>' $
-     + ' (<A HREF="' + plotfile + '"PostScript</A>>'
+     + ' - <A HREF="' + giffile + '">S/N FIGURE</A>' $
+     + ' (<A HREF="' + plotfile + '">PostScript</A>)' + '</CAPTION>'
    textout = [textout, nextline]
    nextline = rowsep + colsep
    for icam=0, ncams-1 do $
