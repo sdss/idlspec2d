@@ -31,6 +31,9 @@
 ;     ZBESTFILE = 'spZbest-0306-51690.fits'
 ;     ZLINEFILE = 'spZline-0306-51690.fits'
 ;
+;   The output structure is always dimensioned [NLINE,NOBJ], with blank entries
+;   where nothing was measured.
+;
 ; EXAMPLES:
 ;
 ; BUGS:
@@ -41,9 +44,11 @@
 ;
 ; PROCEDURES CALLED:
 ;   cpbackup
+;   create_linestruct()
 ;   dfpsclose
 ;   dfpsplot
 ;   headfits()
+;   linebackfit()
 ;   mrdfits()
 ;   mwrfits
 ;   splog
@@ -194,11 +199,34 @@ ormask = 0 ; Free memory
    linelist.lambda = vaclambda
 
    ;----------
+   ; Create the output structure
+
+   lfitall = create_linestruct()
+   lfitall = replicate(lfitall, n_elements(linelist), nobj)
+
+   ;----------
+   ; Generate the additional tags to add to the output structure.
+   ; (The default values below are actually over-written by the values in ZANS).
+
+   res1 = { plate:    long(sxpar(zhdr, 'PLATEID')), $
+            tile:     long(sxpar(zhdr, 'TILEID')), $
+            mjd:      long(sxpar(zhdr, 'MJD')), $
+            fiberid:  0L        }
+   res_prepend = make_array(value=res1, dimension=size(lfitall,/dimens))
+
+   ;----------
    ; Loop through each object and do the line-fitting
 
    fiberlist = 0
 
    for iobj=0, nobj-1 do begin
+      ; If for any weird reason PLATE,TILE,MJD are different in the ZANS structure
+      ; than those values in the header, use the values from the ZANS structure.
+      res_prepend[*,iobj].plate = zans[iobj].plate
+      res_prepend[*,iobj].tile = zans[iobj].tile
+      res_prepend[*,iobj].mjd = zans[iobj].mjd
+      res_prepend[*,iobj].fiberid = zans[iobj].fiberid
+
       if (strtrim(zans[iobj].class,2) EQ 'GALAXY') then begin
          splog, 'Fitting object #', iobj+1
 
@@ -266,12 +294,8 @@ ormask = 0 ; Free memory
           findex=linelist.findex, fvalue=linelist.fvalue, zguess=zguess, $
           background=background, yfit=yfit1, bfit=bfit, bterms=bterms)
 
-         ; Store the list of fiber numbers to prepend to output structure
-         if (NOT keyword_set(fiberlist)) then $
-          fiberlist = replicate(zans[iobj].fiberid, n_elements(lfit1)) $
-         else $
-          fiberlist = [fiberlist, $
-           replicate(zans[iobj].fiberid, n_elements(lfit1))]
+         ; Fill the two output structures
+         lfitall[*,iobj] = lfit1
 
          splog, 'Object #', iobj+1, ' CPU time for line fitting = ', $
           systime(1)-t0
@@ -293,24 +317,12 @@ ormask = 0 ; Free memory
       endif else begin
          splog, 'Skipping object #', iobj+1
       endelse
-
-      if (NOT keyword_set(lfitall)) then lfitall = lfit1 $
-       else lfitall = [[lfitall], [lfit1]]
    endfor
 
    ;----------
-   ; Generate the additional tags to add to the output structure
+   ; Concatenate the two output structures into a single structure
 
-   if (keyword_set(fiberlist)) then begin
-      splog, 'Adding other fields to output structure'
-      res1 = { plate:    long(sxpar(zhdr, 'PLATEID')), $
-               tile:     long(sxpar(zhdr, 'TILEID')), $
-               mjd:      long(sxpar(zhdr, 'MJD')), $
-               fiberid:  0L        }
-      res_prepend = make_array(value=res1, dimension=size(lfitall,/dimens))
-      res_prepend[*].fiberid = fiberlist[*]
-      lfitall = struct_addtags(res_prepend, lfitall)
-   endif
+   lfitall = struct_addtags(res_prepend, lfitall)
 
    ;----------
    ; Write the output file
