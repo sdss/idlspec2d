@@ -143,6 +143,7 @@ qs = median(q, 75)
       broad = gauss_periodic(knums[inside], [1., 0., fsig], shft=1.)
       res = broad*starfft[inside]-galfft[inside]
 
+if NOT keyword_set(errsigma) then return, 0 ; ???
       errsigma = errsigma*sqrt(minchi2)
       
       IF keyword_set(doplot) THEN BEGIN 
