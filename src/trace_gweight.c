@@ -1,0 +1,99 @@
+#include <stdio.h>
+#include <math.h>
+#include <stdlib.h>
+#include "export.h"
+#include "evilmath.h"
+
+IDL_LONG trace_gweight
+  (int      argc,
+   void *   argv[])
+{
+   IDL_LONG    nx;
+   IDL_LONG    ny;
+   float    ** fimage;
+   float    ** invvar;
+   float       sigma;
+   IDL_LONG    ncen;
+   float    *  xcen;
+   IDL_LONG *  ycen;
+   float    *  xerr;
+
+   long        iy, i;
+   long        icen;
+   IDL_LONG    retval = 1;
+   long        lower, upper;
+   float       profile;
+   float       denom, sum, frac, fact;
+   float       mean, weight,meanvar;
+   float       xtemp;
+   long        ytemp;
+
+
+   /* Allocate pointers from IDL */
+   nx = *((IDL_LONG *)argv[0]);
+   ny = *((IDL_LONG *)argv[1]);
+   fimage = (float **)malloc(ny * sizeof(float *)); /* build pointers only */
+   invvar = (float **)malloc(ny * sizeof(float *)); /* build pointers only */
+   for (iy=0; iy < ny; iy++) {
+      fimage[iy] = (float *)argv[2] + iy*nx;
+      invvar[iy] = (float *)argv[3] + iy*nx;
+   }
+   sigma = *((float *)argv[4]);
+   ncen = *((IDL_LONG *)argv[5]);
+   xcen = ((float *)argv[6]);
+   ycen = ((IDL_LONG *)argv[7]);
+   xerr = ((float *)argv[8]);
+
+   denom = 1.0/sqrt(2.0*3.1416*sigma*sigma);
+
+   /* Loop through each center value */
+   for (icen=0; icen < ncen; icen ++) {
+      if (xcen[icen] > 0.0 && xcen[icen] < nx - 1.0) {
+
+	   xtemp = xcen[icen];
+	   ytemp = ycen[icen];
+
+	   lower =  xtemp - 5.0*sigma;
+           if (lower < 0) lower = 0;
+           upper =  (long)(xtemp + 5.0*sigma) + 1;
+           if (upper > nx - 1) upper = nx - 1;
+
+	   mean = 0.0;
+           weight = 0.0;
+           fact = 0.0;
+	   meanvar = 0.0;
+	   for (i = lower; i <= upper; i++) {
+
+/*  Integrate Gaussian Profile by summing up 5 parts  */
+	      if (invvar[ytemp][i] > 0.0) {
+	        for (sum=0.0,frac=-0.4;frac<0.5;frac += 0.2) {
+                     fact = (xtemp + frac - i)/sigma;
+                     sum += exp(-0.5 * fact * fact);
+                 }
+
+/*  Now add to top and bottom  */
+
+                 profile = 0.2 * sum * denom;
+	         mean += profile * fimage[ytemp][i] * i;
+                 weight += profile * fimage[ytemp][i];
+	         meanvar += profile*profile * (i-xtemp) * (i-xtemp) / invvar[ytemp][i] ;
+	      }
+
+	   }
+
+	   if (weight > 0.0) {
+               xcen[icen] = mean/weight;
+               xerr[icen] = sqrt(meanvar)/weight;
+           } else {
+               xerr[icen] = -1.0;
+           }
+      }
+   }
+
+   /* Free temporary memory */
+   free(fimage);
+   free(invvar);
+
+   return retval;
+}
+

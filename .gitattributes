@@ -200,5 +200,6 @@ src/extract_row.c -text
 src/sshiftvec.c -text
 src/trace_crude.c -text
 src/trace_fweight.c -text
+src/trace_gweight.c -text
 ups/Makefile -text
 ups/idlspec2d.table -text
