@@ -1,208 +1,202 @@
-pro skysubtract, obj, objivar, plugmap, wset, skysub, skysubivar, $
-            nbkpt=nbkpt, nord=nord, fibermask=fibermask, allwave=allwave, $
-	    allsky=allsky, allfit=allfit, upper=upper, lower=lower
-
-	objsize = size(obj)
-	ndim = objsize[0]
-
-	if ndim NE 2 then message, 'obj is not 2d'
-	if (size(objivar))[0] NE 2 then message, 'objivar is not 2d'
-
-	ncol = objsize[1]
-	nrow = objsize[2]
-
-        if (n_elements(fibermask) NE nrow) then $
-           fibermask = bytarr(nrow) + 1
-
-	if (size(plugmap))[1] NE nrow then $
-	   message, 'plugmap does not have same size as nrow'
-
-	if (size(wset.coeff))[2] NE nrow then $
-	   message, 'wset does not have same size as nrow'
-
-	traceset2xy,wset,pixnorm,wave
-	
-	;
-	; Find sky fibers
-	;
-  	
-	skies = where(plugmap.objtype EQ 'SKY' AND plugmap.fiberid GT 0 AND $
-                      fibermask, nskies)
-	if skies[0] EQ -1 then message, 'no sky fibers in plugmap'
-
-        allwave    =  (wave[*,skies])[*]
-        allsky     =  (obj[*,skies])[*]
-        allskyivar =  (objivar[*,skies])[*]
-
+;+
+; NAME:
+;   skysubtract
 ;
-;	Sort sky points by wavelengths
+; PURPOSE:
+;   Sky-subtract an image and modify the variance
 ;
-        allwavesort = sort(allwave)
-	allwave    = allwave(allwavesort)
-	allsky     = allsky(allwavesort)
-	allskyivar = allskyivar(allwavesort)
+; CALLING SEQUENCE:
+;   skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
+;    [fibermask=, nord=, upper=, lower=, maxiter= ]
 ;
-;	find nice spline
+; INPUTS:
+;   obj        - Image
+;   objivar    - Inverse variance for OBJ
+;   plugsort   - Plugmap structure trimmed to one element per fiber
+;   wset       - Wavelength solution
 ;
-        fullbkpt   = slatec_splinefit(allwave, allsky, coeff, $
-                     invvar=allskyivar, maxIter=maxIter, upper=upper, $
-                     lower=lower, eachgroup=1, everyn=nskies)
-        allfit  = slatec_bvalu(allwave, fullbkpt, coeff)
-
-	fullfit = slatec_bvalu(wave, fullbkpt, coeff) 
-	skysub = obj - fullfit * (objivar GT 0.0)
-
-
-        ; blue plot
-	if (min(wave) LT alog10(5600.0)) then begin
-          plot, 10^allwave, allfit, ps=3, xr=[5570,5590], $
-           title = 'Sky fibers'
-          oplot, 10^allwave, allsky, ps=1
-          djs_oplot, 10^allwave, allfit, color='red'
-          plot, 10^allwave, allsky-allfit, ps=1, xr=[5570,5590], $
-           title = 'Sky subtracted sky fibers ', yr=[-1000,1000]
-
-          plot, 10^allwave, allfit, ps=3, xr=[5570,5590], $
-           title = 'All fibers'
-          oplot, 10^wave, obj, ps=3 
-          djs_oplot, 10^allwave, allfit, color='red
-
+; OPTIONAL KEYWORDS:
+;   fibermask  - Mask of 0 for bad fibers and 1 for good fibers [NFIBER]
 ;
-;	Let's check flux in 5577
+; PARAMETERS FOR SLATEC_SPLINEFIT (for supersky fit):
+;   nord       -
+;   upper      -
+;   lower      -
+;   maxiter    -
 ;
-
-	  flux5577 = fltarr(nrow)
-	  for i=0,nrow-1 do begin
-	    inside = where(wave[*,i] GT alog10(5571) AND $
-	                    wave[*,i] LT alog10(5588) AND $
-                            objivar[*,i] GT 0.0, ninside) 
-	    if (ninside GT 6 AND fibermask[i]) then begin
-
-	      aa = [16000.0, 3.74655, 1.0e-4, 500.0]
+; OUTPUTS:
+;   objsub     - Image (OBJ) after sky-subtraction
+;   objsubivar - Inverse variance (OBJIVAR) after sky-subtraction
 ;
-;		Might need curvefit for bad pixels
-;	      bb = curvefit(wave[inside,i], obj[inside,i], $
-;                           objivar[inside,i],aa,function_name='gaussfunct')
-                           
-	      bb = gaussfit(wave[inside,i], obj[inside,i], aa, nterms=4, $
-                           estimates=[16000.0, 3.74655, 1.0e-4, 500.0])
-              flux5577[i] = total(bb-aa[3])
-            endif
-
-          endfor
-
-	  djs_iterstat,flux5577, median=fluxmed, sigma=fluxsigma
-          plot,flux5577,ps=1,yr=[fluxmed-3.0*fluxsigma,fluxmed+3.0*fluxsigma]
-
-	  r2 = plugmap.xFocal^2 + plugmap.yFocal^2
-	  plot, r2, flux5577, ps=1,$
-            yr=[fluxmed-3.0*fluxsigma,fluxmed+3.0*fluxsigma]
-
-        endif
-
-        ; red plot
-	if (max(wave) GT alog10(8800.0)) then begin
-          plot, 10^allwave, allsky, ps=3, xr=[8800,9000], $
-           title = 'Sky fibers'
-          djs_oplot, 10^allwave, allfit, color='red'
-          plot, 10^allwave, allsky-allfit, ps=3, xr=[8800,9000], $
-           title = 'Sky subtracted sky fibers '
-
-          plot, 10^wave, obj, ps=3, xr=[8800,9000], $
-           title = 'All fibers'
-          djs_oplot, 10^allwave, allfit, color='red'
-        endif
-
+; OPTIONAL OUTPUTS:
 ;
-;	Now attempt to model variance with residuals on sky
-;	This is difficult since variance has noise!
+; COMMENTS:
+;   Construct a "supersky" spectrum by spline-fitting the (good) sky fibers,
+;   resampling this at every wavelength in the extracted image, then
+;   subtracting.  We then measure the variance of the sky-subtracted sky
+;   fibers in terms of chi^2.  Wherever chi^2 > 1, we increase the variance
+;   of all fibers such that chi^2=1 in the sky fibers.
 ;
-
-	diff = abs(allfit-allsky)*sqrt(allskyivar)
-
-	binsize = nskies
-	nn = ncol
-	diffr = reform(diff,binsize,nn)
-	rivar = reform(allskyivar,binsize,nn)
-	rwave = allwave(lindgen(nn)*nskies+nskies/2)
-
+; EXAMPLES:
 ;
-;	Try plotting sky residuals as a function of wavelength
+; BUGS:
 ;
-	pos67 = 2*binsize/3
-	diff67 = fltarr(nn)
-	alphav = fltarr(nn)
-	for i=0,nn-1 do diff67[i] = (diffr[sort(diffr[*,i]),i])[pos67]
-	for i=0,nn-1 do alphav[i] = median(rivar[*,i])
-
-   splog, 'Median sky-residual chi2 = ', median(diff67)
-   splog, 'Max sky-residual chi2 = ', max(diff67)
-
-   ;---------------------------------------------------------------------------
-   ; Make plots
-   ; This should probably be moved to a QAPLOT file ???
-
-   ; Set multi-plot format
-   npanel = 3
-   pmulti = !p.multi
-   !p.multi = [0,1,npanel]
-
-   xmin = min(10^allwave)
-   xmax = max(10^allwave)
-
-   for ipanel=0, npanel-1 do begin
-
-      if (ipanel EQ 0) then $
-       title='Sky-Subtraction Residuals on Sky Fibers' $
-       else title=''
-      xrange = xmin + [ipanel, ipanel+1] * (xmax-xmin) / float(npanel)
-
-;      djs_plot, 10^allwave, diff<9.9, ps=3, $
-;       xrange=xrange, yrange=[-0.5,7.5], xstyle=1, ystyle=1, $
-;       xtitle='\lambda [A]', ytitle='\chi^2', title=title, charsize=1.5
-;      djs_oplot, 10^rwave, diff67, color='red', ps=10
-      djs_plot, 10^rwave, diff67, ps=10, $
-       xrange=xrange, yrange=[0.0,8.0], xstyle=1, ystyle=1, $
-       xtitle='\lambda [A]', ytitle='\chi^2', title=title, charsize=1.5
-
-      if (ipanel EQ 0) then $
-       xyouts, 0.95*xrange[0] + 0.05*xrange[1], 6.0, $
-        'Number of sky fibers = ' + strtrim(string(nskies),2), $
-        charsize=1.5
-
-   endfor
-
-   !p.multi= pmulti
-
-   ;---------------------------------------------------------------------------
-
-	alpha = diff67 - median(diff67,2*(nn/40) + 1)
-	
-	skysubivar = objivar	
-	good = where(alphav NE 0.0)
-	if good[0] NE -1 then begin
-	  deltav = fltarr(nn)
-	  deltav[good] = alpha[good]/alphav[good]
-
-
+; PROCEDURES CALLED:
+;   djs_iterstat
+;   djs_oplot
+;   djs_oploterr
+;   djs_plot
+;   slatec_splinefit()
+;   slatec_bvalue()
 ;
-;	Spline unless we come up with something better
-;	
-        fullbkpt   = slatec_splinefit(rwave, deltav, coeff, $
-                     maxIter=maxIter, upper=30, $
-                     lower=30, everyn=2)
-	within = where(wave GE rwave[0] AND wave LE rwave[nn-1] $
-                         AND skysubivar GT 0.0)
+; REVISION HISTORY:
+;   16-Sep-1999  Written by S. Burles, APO
+;   30-Dec-1999  Modified by D. Schlegel, Princeton
+;-
+;------------------------------------------------------------------------------
 
-        deltaans = slatec_bvalu(wave[within], fullbkpt, coeff)
-	skysubivar[within] = 1.0/(1.0/skysubivar[within] + abs(deltaans))
+pro skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
+ fibermask=fibermask, nord=nord, upper=upper, lower=lower, maxiter=maxiter
 
-        outside = where(wave LT min(allwave) OR wave GT max(allwave))
-        if (outside[0] NE -1) then skysubivar[outside] = 0.0
+   if (size(obj, /n_dimen) NE 2) then message, 'OBJIVAR is not 2-D'
+   if (size(objivar, /n_dimen) NE 2) then message, 'OBJIVAR is not 2-D'
 
-	endif
+   dims = size(obj, /dimens)
+   ncol = dims[0]
+   nrow = dims[1]
 
-	return
+   if (n_elements(fibermask) NE nrow) then fibermask = bytarr(nrow) + 1
+
+   if ((size(plugsort, /dimens))[0] NE nrow) then $
+    message, 'PLUGMAP does not have same size as nrow'
+
+   if ( (size(wset.coeff, /dimens))[1] NE nrow) then $
+    message, 'WSET does not have same size as nrow'
+
+   ;----------
+   ; Solve for wavelength of each pixel
+
+   traceset2xy, wset, pixnorm, wave
+
+   ;----------
+   ; Find sky fibers
+     
+   iskies = where(plugsort.objtype EQ 'SKY' AND plugsort.fiberid GT 0 AND $
+    fibermask, nskies)
+   splog, 'Number of sky fibers = ', nskies
+   if (nskies EQ 0) then message, 'No sky fibers in PLUGMAP'
+
+   skywave = wave[*,iskies]
+   skyflux = obj[*,iskies]
+   skyivar = objivar[*,iskies]
+
+   ;----------
+   ; Sort sky points by wavelengths
+
+   isort = sort(skywave)
+   skywave = skywave[isort]
+   skyflux = skyflux[isort]
+   skyivar = skyivar[isort]
+
+   ;----------
+   ; Compute "supersky" with a spline fit
+   ; Use the EVERYN parameter to space the spline points according to
+   ; the density of data points.
+
+   ; Return BKPT below for use later
+   fullbkpt = slatec_splinefit(skywave, skyflux, coeff, invvar=skyivar, $
+    nord=nord, upper=upper, lower=lower, maxiter=maxiter, $
+    /eachgroup, everyn=nskies, bkpt=bkpt)
+
+   ;----------
+   ; Sky-subtract the entire image
+
+   fullfit = slatec_bvalu(wave, fullbkpt, coeff) 
+;   objsub = obj - fullfit * (objivar GT 0.0) ; No need to do this.
+   objsub = obj - fullfit
+
+   ;----------
+   ; Now attempt to model variance with residuals on sky fibers.
+   ; This is difficult since variance has noise, so only do this if there
+   ; are at least 3 sky fibers.
+
+   if (nskies GE 3) then begin
+
+      skyfit = (fullfit[*,iskies])[isort]
+;      skyfit  = slatec_bvalu(skywave, fullbkpt, coeff) ; Same thing, more clear
+      skychi2 = (skyflux-skyfit)^2 * skyivar
+
+      ; Bin according to the break points used in the supersky fit.
+
+      nbin = N_elements(bkpt) - 1
+      relwave = fltarr(nbin)
+      relchi2 = fltarr(nbin)
+      for ibin=0, nbin-1 do begin
+         ; Locate data points in this bin, exluding masked pixels
+         ii = where(skywave GE bkpt[ibin] AND skywave LT bkpt[ibin+1] $
+          AND skyivar GT 0, nn)
+
+         if (nn GT 2) then begin
+            ; Find the mean wavelength for these points
+            relwave[ibin] = total(skywave[ii]) / nn
+
+            ; Find the mean relative chi^2, assuming gaussian statistics.
+            ; But this evaluation is wrecked by any outliers.
+;            relchi2[ibin] = total(skychi2[ii]) / (nn-1)
+
+            ; The following evaluation looks at the 67th percentile of the
+            ; points, which is much more robust.
+            pos67 = ceil(2.*nn/3.) - 1
+            tmpchi2 = skychi2[ii]
+            relchi2[ibin] = tmpchi2[ (sort(tmpchi2))[pos67] ]
+
+            ; Schlegel counter of bin number...
+            print, format='("Bin ",i4," of ",i4,a1,$)', $
+             ibin, nbin, string(13b)
+
+         endif
+      endfor
+
+      ; Trim to only those bins where we set RELCHI2
+      ii = where(relwave NE 0, nbin)
+      relwave = relwave[ii]
+ 
+      ; Spline fit RELCHI2, only for the benefit of getting a smooth function
+      ; Also, force the fit to always be >= 1, such that we never reduce the
+      ; formal errors.
+      fullbkpt = slatec_splinefit(relwave, relchi2, coeff, $
+       maxiter=maxiter, upper=30, lower=30, everyn=2, nord=3)
+      relchi2fit = slatec_bvalu(wave, fullbkpt, coeff)
+      relchi2fit = relchi2fit > 1 ; Never let drop below 1
+
+      splog, 'Median sky-residual chi2 = ', median(relchi2)
+      splog, 'Max sky-residual chi2 = ', max(relchi2)
+
+   endif else begin
+
+      splog, 'WARNING: Too few sky fibers to model sky-sub variance'
+      relchi2fit = 1
+
+   endelse
+
+   ;----------
+   ; Modify OBJSUBIVAR with the relative variance
+
+   objsubivar = objivar / relchi2fit
+
+   ; Reselect the values of SKYIVAR from OBJSUBIVAR
+;   skyivar = (objsubivar[*,iskies])[*]
+;   skyivar = skyivar[isort]
+
+   ;----------
+   ; If any pixels on the image are outside of the wavelength range
+   ; covered by the "supersky", then the formal errors are infinite
+   ; for those pixels after skysubtraction.  Set SKYSUBIVAR=0.
+
+   ii = where(skyivar GT 0, ni) ; Note that SKYWAVE is already sorted
+   iout = where(wave LT skywave[ii[0]] OR wave GT skywave[ii[ni-1]])
+   if (iout[0] NE -1) then objsubivar[iout] = 0.0
+
+   return
 end
-	
-             
+;------------------------------------------------------------------------------
