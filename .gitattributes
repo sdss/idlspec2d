@@ -230,6 +230,7 @@ pro/science/qso/mgII.lines -text
 pro/science/qso/mgii_pathlength.pro -text
 pro/science/qso/print_idsummary.pro -text
 pro/science/qso/propfrac.pro -text
+pro/science/qso/qso_continuum_fit.pro -text
 pro/science/qso/qso_createspec.pro -text
 pro/science/qso/qso_slowcont.pro -text
 pro/science/qso/qso_sortpeaks.pro -text

@@ -50,6 +50,9 @@ peak_list = rline_findpeaks(ew, ewinv, npeak=80, threshold=3.0)
 id_list   = qso_sortpeaks(peak_list, mgspec, linelist='mgII.lines')
 id_summarize, id_list, mgspec, summary=s
 print_idsummary,s
+ui = s[uniq(s.index)].index
+mgspec3 = mgspec[ui]
+save, mgspec, filename='~/QSO/Lens/plates_mgii.dat'
 
 nabs = mgii_pathlength(s, mgspec)
 propfrac, s.zabs, s.zqso, ldist=ldist, sdist=sdist

@@ -27,14 +27,23 @@ pro qso_slowcont, loglam, flux, invvar, range=range, model=model, mask=mask
     modelset = bspline_iterfit(loglam[inrange], flux[inrange], $
                   invvar=invvar[inrange], nord=4, yfit=yfit, $
                   maxiter=maxiter, upper=10.0, lower=3.0, /silent, $
-                  outmask=outmask, everyn=20, maxrej=1, grow=3, /groupbadpix)
+                  outmask=outmask, everyn=20, maxrej=1, grow=5, /groupbadpix)
 
     diff = (flux[inrange] - yfit) * sqrt(invvar[inrange])
     close = where(diff LT 10.0 AND diff GT -2.0)
     if close[0] NE -1 then outmask[close] = 1
 
     modelset = bspline_iterfit(loglam[inrange], flux[inrange], $
-                  invvar=invvar[inrange], nord=4, yfit=yfit, $
+                  invvar=invvar[inrange]*outmask, nord=4, yfit=yfit, $
+                  maxiter=maxiter, upper=5.0, lower=2.0, /silent, $
+                  outmask=outmask, everyn=15, maxrej=1, /groupbadpix, grow=3)
+
+    diff = (flux[inrange] - yfit) * sqrt(invvar[inrange])
+    close = where(diff LT 10.0 AND diff GT -2.0)
+    if close[0] NE -1 then outmask[close] = 1
+
+    modelset = bspline_iterfit(loglam[inrange], flux[inrange], $
+                  invvar=invvar[inrange]*outmask, nord=4, yfit=yfit, $
                   maxiter=maxiter, upper=5.0, lower=2.0, /silent, $
                   outmask=outmask, everyn=15, maxrej=1, /groupbadpix, grow=1)
 
