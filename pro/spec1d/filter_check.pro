@@ -4,102 +4,110 @@
 ;
 ; PURPOSE:
 ;   
-;   Gather spectra based on an input file of the form 
-;   created by platemerge (the spAll file). Calculate the 
-;   ugriz throughput for each object in the plates, possibly
-;   putting limits on target type, MJD, or signal-to-noise
-;   (essentially by requiring survey quality). 
+;   Fit for the filter curves by comparing photometry and spectrophotometry
 ;
 ; CALLING SEQUENCE:
-;   res = filter_check( spallfile, outfile, [mjdlimits= , primtarget=,
-;   filter_prefix=, mingisn2=])
+;   
+;   filter_check,spallfile,binboundsfile
 ;
 ; INPUTS:
-;   spallfile  - spAll.fit file as created by platemerge
-;   filter_prefix  - Use alternate prefix for filter curves to use
-;                    (allowed are sdss or doi) 
+;   spallfile      - spectro info
 ;
 ; OPTIONAL INPUTS:
 ;
+;   binboundsfile  - bin boundaries 
+;
 ; OPTIONAL KEYWORDS:
-;   mjdlimits  - Only look in a certain range of MJDs
-;   primtarget - Require a certain target type
-;   mingisn2 - Minimum plate SN^2 in g AND i
 ;
 ; OUTPUTS:
-;   outfile    - Fits file with all the spAll.fit info, but with
-;                synthetic ugriz replaced with the desired filter 
-;                curves
+;   binRfile   - file containing output stuff
 ;
 ; COMMENTS:
+;
+; BUGS:
 ;
 ; EXAMPLES:
 ;
 ; PROCEDURES CALLED:
-;   filter_thru()
 ;
 ; DATA FILES:
-;   $IDLSPEC2D_DIR/etc/sdss_u_atm.dat
-;   $IDLSPEC2D_DIR/etc/sdss_g_atm.dat
-;   $IDLSPEC2D_DIR/etc/sdss_r_atm.dat
-;   $IDLSPEC2D_DIR/etc/sdss_i_atm.dat
-;   $IDLSPEC2D_DIR/etc/sdss_z_atm.dat
-;   $IDLSPEC2D_DIR/etc/doi_u_atm.dat
-;   $IDLSPEC2D_DIR/etc/doi_g_atm.dat
-;   $IDLSPEC2D_DIR/etc/doi_r_atm.dat
-;   $IDLSPEC2D_DIR/etc/doi_i_atm.dat
-;   $IDLSPEC2D_DIR/etc/doi_z_atm.dat
 ;
 ; REVISION HISTORY:
-;   05-APr-2000  Written by M. Blanton, Fermilap
+;   05-APr-2000  Written by M. Blanton, Fermiland
 ;-
 ;------------------------------------------------------------------------------
-pro filter_check, spallfile, outfile, filter_prefix, mjdlimits=mjdlimits, $
-                  primtarget=primtarget, mingisn2=mingisn2
+pro filter_check, spselect, flux,invvar,loglam, binRbase, $ 
+binbounds=binbounds, nosubtract=nosubtract
 
-;--------
-; Read in the platemerge file 
-spall=mrdfits(spallfile,1)
-nall=(size(spall))[1]
+  ;--------
+  ; Solve in each band
+  nselect=n_elements(spselect)
+  for band=1, 3 do begin
 
-;--------
-; Select desired spectra
-select=intarr(nall)
-select[*]=1
-if(keyword_set(mjdlimits)) then $
-  select[where(spall.mjd lt mjdlimits[0] or spall.mjd gt mjdlimits[1]]=0
-if(keyword_set(primtarget)) then $
-  select[where((spall.primtarget and primtarget) eq 0)]=0
-if(keyword_set(mingisn2)) then $
-  select[where(spall.spec1_g lt mingisn2 or $
-               spall.spec2_g lt mingisn2 or $
-               spall.spec1_i lt mingisn2 or $
-               spall.spec2_i lt mingisn2 )]=0
-spselect=spall[where(select gt 0)]
-nselect=(size(spselect))[1]
+    ;--------
+    ; Create photocounts
+    photomags=spselect[*].psfCounts[band] $
+        +(spselect[*].fiberCounts[2]-spselect[*].psfCounts[2])
+    photocounts=10.^(-0.4*photomags)-spselect[*].counts_spectro*0.79
 
-;--------
-; Gather all of the spectra 
-readspec,spselect.plate,spselect.fiberid,mjd=spselect.mjd, $
-  flux=flux,flerr=flerr,invvar=invvar,loglam=loglam,synflux=synflux
+    ;--------
+    ; Read in bin boundaries, bin spectra if desired
+    if(keyword_set(binbounds)) then begin
+      ;filename=binboundsbase+'.'+strtrim(string(i),2)+'.dat'
+       ;openr,11,filename
+       ;readf,nbins
+       ;binbounds=lonarr(nbins+1)
+       ;readf,binbounds
+       ;close,11
+       nbins=n_elements(binbounds)-1
+       binflux=fltarr(nbins+1-keyword_set(nosubtract),nselect)
+       bin_spectra,flux,invvar,binbounds,binflux=binflux
+    endif else begin
+       if(keyword_set(nosubtract)) then return
+       nbins=0
+       binflux=fltarr(1,nselect)
+    endelse 
 
-;--------
-; Send the spectra and fluxes to the synthesizer;
-; an attempt to do here what is done in spreduce1d.pro
-waveimg=10d^loglam 
-npixobj=n_elements(loglam)
-flambda2fnu = waveimg^2 / 2.99792e18
-fthru=filter_thru(flux*rebin(flambda2fnu, npixobj, nselect), waveimg=waveimg, $
-                  mask=(invvar eq 0), /norm, filter_prefix=filter_prefix, $
-                  /converttoair)
-synfthru=filter_thru(synflux*rebin(flambda2fnu, npixobj, nselect), $
-                     waveimg=waveimg, /norm, filter_prefix=filter_prefix, $
-                     /converttoair)
+    ;--------
+    ; Flux convolved with bins
+    if(not keyword_set(nosubtract)) then $
+       binflux[nbins,*]=spselect[*].counts_spectro[band]
 
-spselect.counts_spectro=fthru
-spselect.counts_synth=synfthru
+    ;-------
+    ; Iterate
+    indx=lindgen(n_elements(spselect))
+    for iter=0, 1 do begin
 
-mwrfits,outfile,spselect
+      ;--------
+      ; Find solution 
+      filter_solve,binflux[*,indx],photocounts[indx],binR
+
+      ;-------
+      ; Sigma clip
+      resid=transpose(binflux##binR)-photocounts
+      rms=djsig(resid[indx])
+      help,rms
+      mean=djs_mean(resid[indx])
+      help,mean
+      indx=where((resid/rms)^2 lt 100.)
+
+    endfor
+    print, binR
+erase & plot, 10.0^(0.5*(loglam[binbounds[0:nbins-1]]+loglam[binbounds[1:nbins]])),binR,psym=10
+stop
+erase & plot, spselect.psfcounts[1]-spselect.psfcounts[2], resid, psym=1
+djs_oplot, photocounts[indx], resid[indx], psym=1, color='red'
+
+stop
+
+    ;--------
+    ; Output solution 
+    filename=binRbase+'.'+strtrim(string(band),2)+'.dat'
+    openw,11,filename
+    printf,11,binR
+    close,11
+
+  endfor 
 
 end
 ;------------------------------------------------------------------------------
