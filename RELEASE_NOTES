@@ -20,6 +20,7 @@ STYPE_STANDARD: More development by Christy.
 UNDO_SMEAR (removed)
 ZEROPT_COR (removed)
 
+COMPUTECHI2: Do the chi^2 computation in double-precision.
 FILTER_THRU: Make silent in call to xy2traceset.
 PLATESN: New header keywords ROFFSET & RSIGMA store the offset and standard
            deviation of the r-band difference in the spectro and photo mags.  
