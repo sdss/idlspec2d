@@ -69,6 +69,7 @@
 ;   djs_avsigclip()
 ;   djs_filepath()
 ;   fileandpath()
+;   get_tai
 ;   sdsshead()
 ;   sdssproc
 ;   splog
@@ -190,7 +191,7 @@ pro spbiasgen, mjd=mjd, expnum=expnum, expstart=expstart, expend=expend, $
       flavor[ifile] = strtrim(sxpar(hdr, 'FLAVOR'),2)
       mjdarr[ifile] = sxpar(hdr, 'MJD')
       exposure[ifile] = sxpar(hdr, 'EXPOSURE')
-      get_tai, objhdr, tai_beg, tai_mid, tai_end
+      get_tai, hdr, tai_beg, tai_mid, tai_end
       taitime[ifile] = tai_beg
       print, '.', format='(a,$)'
    endfor
