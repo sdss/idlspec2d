@@ -17,7 +17,7 @@ for i=0,ntrace-1 do atvplot,xnew[*,i],ycen[*,i], color='green'
 ;xy2traceset,ycen,xcen,tset
 
 ; Optimaal extraction
-extract_image,image,invvar,xnew,1.2,flux,error
+extract_image,image,invvar,xnew,1.2,flux,error,ymodel=ymodel
 ;---------------
 
 sdssproc,'sdR-01-00000384.fit',image,invvar
