@@ -108,7 +108,7 @@ pro qaplot_skyline, lwave, obj, objivar, objsub, objsubivar, plugsort, wset, $
    ; Compute the mean flux for this line in the sky fibers
    ii = where(lflux[iskies] GT 0)
    if (ii[0] EQ -1) then begin
-      print, 'No good fits to this sky feature'
+      splog, 'WARNING: No good fits to this sky feature at ', lwave
       return
    endif
    djs_iterstat, lflux[iskies[ii]], mean=lmean, sigma=lsig
