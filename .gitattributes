@@ -159,6 +159,7 @@ pro/apo2d/slithistory.pro -text
 pro/fluxfix/Makefile -text
 pro/fluxfix/dr1_spplate_cor.pro -text
 pro/fluxfix/flux_standard.pro -text
+pro/fluxfix/frame_flux_calib.pro -text
 pro/fluxfix/frame_flux_tweak.pro -text
 pro/fluxfix/kurucz_restore.pro -text
 pro/fluxfix/newspcombine.pro -text
