@@ -325,7 +325,7 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
 
       xaxis = indgen(N_elements(chisq)) + 1
       djs_plot, xaxis, chisq, $
-       xrange=[xaxis[0],xaxis[1]], xstyle=1, $
+       xrange=[0,N_elements(chisq)], xstyle=1, $
        xtitle='Row number',  ytitle = '\chi^2', $
        title=plottitle+'Extraction chi^2 for '+objname
 
