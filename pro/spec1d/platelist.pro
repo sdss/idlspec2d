@@ -92,6 +92,7 @@
 ;   apo_checklimits()
 ;   chunkinfo()
 ;   copy_struct_inx
+;   djs_diff_angle()
 ;   djs_filepath()
 ;   fileandpath()
 ;   headfits()
@@ -521,17 +522,27 @@ pro platelist, infile, plist=plist, create=create, $
       ; The RA,DEC in the header is sometimes wrong, so try to derive
       ; the field center from the plug-map information.  Choose the
       ; coordinates of the object closest to the center of the plate
-      ; as defined by XFOCAL=YFOCAL=0.
+      ; as defined by XFOCAL=YFOCAL=0.  Replace the plate center with
+      ; the position of that object in the cases where they disagree
+      ; by more than 1.5 degrees.
 
-;      plug = mrdfits(platefile[ifile], 5, /silent)
-;      if (keyword_set(plug)) then begin
-;         iobj = where(strtrim(plug.holetype,2) EQ 'OBJECT')
-;         junk = min( plug[iobj].xfocal^2 + plug[iobj].yfocal^2, imin)
-;         plist[ifile].ra = plug[iobj[imin]].ra
-;         plist[ifile].dec = plug[iobj[imin]].dec
-;         plist[ifile].airmass = tai2airmass(plist[ifile].ra, $
-;          plist[ifile].dec, tai=plist[ifile].tai)
-;      endif
+      plug = mrdfits(platefile[ifile], 5, /silent)
+      if (keyword_set(plug)) then begin
+         iobj = where(strtrim(plug.holetype,2) EQ 'OBJECT')
+         junk = min( plug[iobj].xfocal^2 + plug[iobj].yfocal^2, imin)
+         thisra = plug[iobj[imin]].ra
+         thisdec = plug[iobj[imin]].dec
+         adist = djs_diff_angle(plist[ifile].ra, plist[ifile].dec, $
+          thisra, thisdec)
+         if (adist GT 1.5) then begin
+            splog, 'WARNING: Replacing plate center for plate', $
+             plist[ifile].plate
+            plist[ifile].ra = thisra
+            plist[ifile].dec = thisdec
+            plist[ifile].airmass = tai2airmass(plist[ifile].ra, $
+             plist[ifile].dec, tai=plist[ifile].tai)
+         endif
+      endif
 
       ;----------
       ; Read Zbest file - get status of 1D
