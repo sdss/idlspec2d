@@ -554,7 +554,8 @@ pro platelist, infile, plist=plist, create=create, $
          nobj = n_elements(zans)
          targets = strarr(nobj)
          for iobj=0, nobj-1 do $
-          targets[iobj] = sdss_flagname('TARGET',plug[iobj].primtarget, /silent, /concat)+' '
+          targets[iobj] = sdss_flagname('TARGET',plug[iobj].primtarget, $
+           /silent, /concat)+' '
          imain = where(strmatch(targets,'*GALAXY *') $
           OR strmatch(targets,'*GALAXY_BIG *') $
           OR strmatch(targets,'*GALAXY_BRIGHT_CORE *'), nmain)
@@ -562,7 +563,7 @@ pro platelist, infile, plist=plist, create=create, $
           OR strmatch(targets,'*GALAXY_RED_II *'), nlrg)
          iqso = where(strmatch(targets,'*QSO_HIZ *') $
           OR strmatch(targets,'*QSO_CAP *') $
-          OR strmatch(targets,'*QSO_SKIRT *'), nqso)
+          OR strmatch(targets,'*QSO_SKIRT *') $
           OR strmatch(targets,'*QSO_FIRST_CAP *') $
           OR strmatch(targets,'*QSO_FIRST_SKIRT *'), nqso)
          plist[ifile].n_target_main = nmain
