@@ -3,7 +3,7 @@
 ;   spflatave
 ;
 ; PURPOSE:
-;   Average together a set (or all!) pixel flats in the SPECFLAT directory.
+;   Average together a set (or all!) 2D pixel flats.
 ;
 ; CALLING SEQUENCE:
 ;   spflatave, [ mjd=, mjstart=, mjend=, mjout=, indir=, outdir=, docam= ]

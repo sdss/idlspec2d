@@ -201,12 +201,12 @@ function make_badcolumn_mask, bcfile, camrow, camcol, nc=nc, nr=nr
    ; Mask out bad columns
 
    if (nbc GT 0) then begin
-     bcsc = (bc.dfcol0 > 0) < (nc-1)
-     bcec = (bc.dfcol0 + bc.dfncol - 1 < (nc-1)) > bcsc
-     bcsr = (bc.dfrow0 > 0) < (nr-1)
-     bcer = (bc.dfrow0 + bc.dfnrow - 1 < (nr-1)) > bcsr
+      bcsc = (bc.dfcol0 > 0) < (nc-1)
+      bcec = (bc.dfcol0 + bc.dfncol - 1 < (nc-1)) > bcsc
+      bcsr = (bc.dfrow0 > 0) < (nr-1)
+      bcer = (bc.dfrow0 + bc.dfnrow - 1 < (nr-1)) > bcsr
 
-     for i=0, nbc-1 do bcmask[bcsc[i]:bcec[i],bcsr[i]:bcer[i]] = 1
+      for i=0, nbc-1 do bcmask[bcsc[i]:bcec[i],bcsr[i]:bcer[i]] = 1
    endif
 
    return, bcmask
