@@ -6,7 +6,7 @@
 ;   Extract calibration frames.
 ;
 ; CALLING SEQUENCE:
-;   spcalib, flatname, arcname, [pixflatname=, fibermask=, $
+;   spcalib, flatname, arcname, fibermask=, $
 ;    lampfile=, indir=, timesep=, ecalibfile=, plottitle=, $
 ;    arcinfoname=, flatinfoname=, arcstruct=, flatstruct=]
 ;
@@ -15,7 +15,6 @@
 ;   arcname    - Name(s) of arc SDSS image(s)
 ;
 ; OPTIONAL KEYWORDS:
-;   pixflatname- Name of pixel-to-pixel flat, produced with SPFLATTEN.
 ;   fibermask  - Fiber status bits, set nonzero for bad status [NFIBER].
 ;                Note this is not modified, but modified copies appear
 ;                in the returned structures ARCSTRUCT and FLATSTRUCT.
@@ -114,7 +113,7 @@ function create_flatstruct, nflat
 end
 ;------------------------------------------------------------------------------
 
-pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
+pro spcalib, flatname, arcname, fibermask=fibermask, $
  lampfile=lampfile, indir=indir, timesep=timesep, $
  ecalibfile=ecalibfile, plottitle=plottitle, $
  arcinfoname=arcinfoname, flatinfoname=flatinfoname, $
@@ -150,7 +149,7 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
 
       splog, 'Reading flat ', flatname[iflat]
       sdssproc, flatname[iflat], flatimg, flativar, indir=indir, $
-       hdr=flathdr, pixflatname=pixflatname, nsatrow=nsatrow, fbadpix=fbadpix,$
+       hdr=flathdr, /applypixflat, nsatrow=nsatrow, fbadpix=fbadpix,$
        ecalibfile=ecalibfile, minflat = 0.5, maxflat=1.5
 
       ;-----
@@ -261,7 +260,7 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
 
       splog, 'Reading arc ', arcname[iarc]
       sdssproc, arcname[iarc], arcimg, arcivar, indir=indir, $
-       hdr=archdr, pixflatname=pixflatname, nsatrow=nsatrow, fbadpix=fbadpix, $
+       hdr=archdr, /applypixflat, nsatrow=nsatrow, fbadpix=fbadpix, $
        ecalibfile=ecalibfile, minflat = 0.5, maxflat=1.5
 
       splog, 'Fraction of bad pixels in arc = ', fbadpix
@@ -472,7 +471,7 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
          if (nflat GT 1) then begin
             splog, 'Reading flat ', flatname[iflat]
             sdssproc, flatname[iflat], flatimg, flativar, indir=indir, $
-             hdr=flathdr, pixflatname=pixflatname, ecalibfile=ecalibfile, $
+             hdr=flathdr, /applypixflat, ecalibfile=ecalibfile, $
              minflat = 0.5, maxflat=1.5
          endif
 

@@ -9,7 +9,7 @@
 ;   sdssproc, infile, [image, invvar, indir=, $
 ;    outfile=, varfile=, nsatrow=, fbadpix=, $
 ;    hdr=hdr, configfile=, ecalibfile=, bcfile=, $
-;    pixflatname=, minflat=, spectrographid=, color=, camname= ]
+;    /applypixflat, minflat=, spectrographid=, color=, camname= ]
 ;
 ; INPUTS:
 ;   infile     - Raw SDSS file name
@@ -24,7 +24,7 @@
 ;   configfile - Default to "opConfig.par"
 ;   ecalibfile - Default to "opECalib.par"
 ;   bcfile     - Default to "opBC.par"
-;   pixflatname- Name of pixel-to-pixel flat, produced with SPFLATTEN.
+;   applypixflat- Apply 2-D pixel-to-pixel flat
 ;   minflat    - Minimum values allowed for pixflat
 ;                   (lower values of pixflat are set to 0 invvar)
 ;
@@ -123,8 +123,15 @@ function findopfile, expres, mjd, indir
 
    mjdlist = lonarr(nfile)
    for i=0,nfile-1 do begin
-      yanny_read, files[i], hdr=hdr
-      mjdlist[i] = long(yanny_par(hdr, 'mjd'))
+      thisfile = fileandpath(files[i])
+      if (strmid(thisfile, strpos(thisfile, '.')) EQ '.par') then begin
+         ; Get the MJD from the header of the Yanny file
+         yanny_read, files[i], hdr=hdr
+         mjdlist[i] = long(yanny_par(hdr, 'mjd'))
+      endif else begin
+         ; Get the MJD from the file name; use the 5 digits after the first minus sign
+         mjdlist[i] = strmid(thisfile, strpos(thisfile,'-')+1,5)
+      endelse
    endfor
 
    diff = mjd - mjdlist
@@ -137,14 +144,14 @@ end
 pro sdssproc, infile, image, invvar, indir=indir, $
  outfile=outfile, varfile=varfile, nsatrow=nsatrow, fbadpix=fbadpix, $
  hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, bcfile=bcfile, $
- pixflatname=pixflatname, spectrographid=spectrographid, color=color, $
+ applypixflat=applypixflat, spectrographid=spectrographid, color=color, $
  camname=camname, minflat=minflat, maxflat=maxflat
 
    if (N_params() LT 1) then begin
       print, 'Syntax - sdssproc, infile, [image, invvar, indir=, $'
       print, ' outfile=, varfile=, nsatrow=, fbadpix=, $' 
       print, ' hdr=, configfile=, ecalibfile=, bcfile=, $'
-      print, ' pixflatname=, spectrographid=, color=, camname=, minflat= ]'
+      print, ' /applypixflat, spectrographid=, color=, camname=, minflat= ]'
       return
    endif
 
@@ -730,23 +737,23 @@ bcmask = 0 ; clear memory
    ; Read pixel-to-pixel flat-field
    ;---------------------------------------------------------------------------
 
-   if (keyword_set(pixflatname) AND (readimg OR readivar)) then begin
+   if (keyword_set(applypixflat) AND (readimg OR readivar)) then begin
+      pp = filepath('', root_dir=getenv('SPECFLAT_DIR'), subdirectory='flats')
+      pixflatname = findopfile('pixflat*'+camname+'.'+'fits', mjd, pp)
       splog, 'Correcting with pixel flat ' + pixflatname
-      fullname = findfile(pixflatname, count=ct)
-      if (ct EQ 0) then $
-       message, 'Cannot find pixflat image ' + pixflatname
-      pixflat = readfits(fullname[0])
 
-      if (readimg) then image = image / pixflat
+      pixflatimg = readfits(djs_filepath(pixflatname, root_dir=pp))
+
+      if (readimg) then image = image / pixflatimg
       if (NOT keyword_set(minflat)) then minflat = 0.0
       if (NOT keyword_set(maxflat)) then maxflat = 1.0e10
-      if (readivar) then invvar = invvar * pixflat^2 * (pixflat GT minflat) $
-                                                     * (pixflat LT maxflat)
+      if (readivar) then invvar = invvar * pixflatimg^2 * (pixflatimg GT minflat) $
+                                                     * (pixflatimg LT maxflat)
 pixflat = 0 ; clear memory
 
       ; add pixflatname to header since it has just been applied
 
-      sxaddpar, hdr, 'PIXFLAT', fileandpath(pixflatname)
+      sxaddpar, hdr, 'PIXFLAT', pixflatname
    endif
 
    ;---------------------------------------------------------------------------

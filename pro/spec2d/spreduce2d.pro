@@ -112,7 +112,6 @@ pro spreduce2d, planfile, docams=docams, xdisplay=xdisplay
 
    inputdir = concat_dir(rawdata_dir, mjdstr)
    plugdir = concat_dir(speclog_dir, mjdstr)
-   flatdir = specflat_dir
    extractdir = yanny_par(hdr, 'extractdir')
    logfile = yanny_par(hdr, 'logfile')
    plotfile = yanny_par(hdr, 'plotfile')
@@ -183,13 +182,6 @@ pro spreduce2d, planfile, docams=docams, xdisplay=xdisplay
          ;----------
          ; Find the corresponding pixel flat
 
-         pixflatname = 'pixflat-*-' + camnames[icam] + '.fits'
-         pixflatname = findfile( filepath(pixflatname, root_dir=flatdir) )
-         pixflatname = fileandpath(pixflatname)
-; For the time being, just take the first flat!!!???
-pixflatname = pixflatname[0]
-splog, 'Selecting pixel flat ' + pixflatname
-
          j = where(allseq.mapname EQ thismap $
                AND (allseq.flavor EQ 'science' OR allseq.flavor EQ 'smear') $
                AND allseq.name[icam] NE 'UNKNOWN' )
@@ -230,8 +222,6 @@ splog, 'Selecting pixel flat ' + pixflatname
             ;----------
             ; Get full name of pixel flat
 
-            pixflatname = filepath(pixflatname, root_dir=flatdir)
-
             stime2 = systime(1)
 
             ;----------
@@ -242,7 +232,7 @@ splog, 'Selecting pixel flat ' + pixflatname
                 + ' PLATE='+platestr + ': '
 
                spreduce, flatname, arcname, objname, $
-                pixflatname=pixflatname, plugfile=plugfile, lampfile=lampfile, $
+                plugfile=plugfile, lampfile=lampfile, $
                 indir=inputdir, plugdir=plugdir, outdir=extractdir, $
                 summarystruct=summarystruct, plottitle=plottitle
             endif

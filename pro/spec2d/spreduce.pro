@@ -6,7 +6,7 @@
 ;   Extract, wavelength-calibrate, and flatten SDSS spectral frame(s).
 ;
 ; CALLING SEQUENCE:
-;   spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
+;   spreduce, flatname, arcname, objname, $
 ;    plugfile=plugfile, lampfile=lampfile, $
 ;    indir=indir, plugdir=plugdir, outdir=outdir, $
 ;    ecalibfile=ecalibfile, plottitle=plottitle, summarystruct=summarystruct
@@ -20,7 +20,6 @@
 ;   plugfile   - Name of plugmap file (Yanny parameter file)
 ;
 ; OPTIONAL KEYWORDS:
-;   pixflatname- Name of pixel-to-pixel flat, produced with SPFLATTEN.
 ;   lampfile   - Name of file describing arc lamp lines;
 ;                default to the file 'lamphgcdne.dat' in $IDLSPEC2D_DIR/etc.
 ;   indir      - Input directory for FLATNAME, ARCNAME, OBJNAME;
@@ -67,7 +66,7 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
+pro spreduce, flatname, arcname, objname, $
  plugfile=plugfile, lampfile=lampfile, $
  indir=indir, plugdir=plugdir, outdir=outdir, $
  ecalibfile=ecalibfile, plottitle=plottitle, summarystruct=summarystruct
@@ -132,7 +131,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
    heap_gc   ; Garbage collection for all lost pointers
 
-   spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
+   spcalib, flatname, arcname, fibermask=fibermask, $
     lampfile=lampfile, indir=indir, $
     ecalibfile=ecalibfile, plottitle=plottitle, $
     flatinfoname=flatinfoname, arcinfoname=arcinfoname, $
@@ -182,7 +181,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
  
       splog, 'Reading object ', objname[iobj]
       sdssproc, objname[iobj], image, invvar, indir=indir, hdr=objhdr, $
-       pixflatname=pixflatname, spectrographid=spectrographid, color=color, $
+       /applypixflat, spectrographid=spectrographid, color=color, $
        ecalibfile=ecalibfile, minflat=0.5, maxflat=1.5, $
        nsatrow=nsatrow, fbadpix=fbadpix
 
@@ -249,7 +248,6 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
          sxaddpar, objhdr, 'OBJFILE', fileandpath(objname[iobj])
          sxaddpar, objhdr, 'LAMPLIST', fileandpath(lampfile)
          sxaddpar, objhdr, 'SKYLIST', fileandpath(fullskyfile)
-         sxaddpar, objhdr, 'PIXFLAT', fileandpath(pixflatname)
 
          ;-----
          ; Extract the object frame
