@@ -80,7 +80,7 @@ ZCOMPUTE_QSO: A version of ZCOMPUTE that is basically the same code, but
         redshift.  Because there are multiplicative polynomials rather than
         additive polynomial terms, this may fail to find weak em-line QSOs.
 
-etc/spChunkList.par: Add chunks 91-94.
+etc/spChunkList.par: Add chunks 91-94,94A-96.
 templates/eigeninput_star.par:
         Shift all of the normal stellar templates (O through M) to
         agree with the Elodie redshifts in the v5_0_0 reductions.
