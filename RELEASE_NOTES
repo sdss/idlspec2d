@@ -1,6 +1,11 @@
 
+FLUX_STANDARD: Added empirical correction to SPECTRUM-Kurucz models.
+STYPE_STANDARD: Fixed error in smoothing box size.
+
 pro/fluxfix/Makefile - Forget to add this Makefile, which is needed
            to prevent the "make install" from crashing on an IRIX platform.
+etc/kurucz_model_fix.fit - New file for empirical corrections to
+           SPECTRUM-Kurucz models, used by FLUX_STANDARD.
 
 In idlutils:
 
