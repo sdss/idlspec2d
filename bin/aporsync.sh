@@ -15,14 +15,14 @@
 /home/scott/rsync-2.4.3/rsync -ar --rsh="ssh -c arcfour" \
      --rsync-path=/p/rsync/v2_4_3/rsync --exclude="*id*" \
      --exclude="*log" \
-     --log-format="/astrolog/%f" "scott@sdsshost:/astrolog/5????" /astrolog/   
+     --log-format="/astrolog/%f" "sdsshost:/astrolog/5????" /astrolog/   
 
 # This syncs /astrolog/5???? from sdsshost to plate-mapper, excluding
 # the red and guider files.
 /home/scott/rsync-2.4.3/rsync -ar --rsh="ssh -c arcfour" \
       --rsync-path=/p/rsync/v2_4_3/rsync --exclude="*guider*" \
       --log-format="/data/spectro/%f" --exclude="*-r*" \
-      "scott@sdsshost:/data/spectro/5????" /data/spectro/ | startapo.sh &
+      "sdsshost:/data/spectro/5????" /data/spectro/ | startapo.sh &
 
 # This sleep is to try to keep the blue side copying over before the red
 # side.  We do this because APOREDUCE creates its summary files after the r2
@@ -34,5 +34,5 @@ sleep 10
 /home/scott/rsync-2.4.3/rsync -ar --rsh="ssh -c arcfour" \
       --rsync-path=/p/rsync/v2_4_3/rsync --exclude="*guider*" \
       --log-format="/data/spectro/%f" --exclude="*-b*" \
-      "scott@sdsshost:/data/spectro/5????" /data/spectro/ | startapo.sh 
+      "sdsshost:/data/spectro/5????" /data/spectro/ | startapo.sh 
 
