@@ -437,8 +437,11 @@ ophdrfix sdR-??-0001421[8-9] FLAVOR   "'unknown'"
 # smear on plate 887 on MJD 52376.  This exposure has very little S/N.
 ophdrfix sdR-??-00014484 FLAVOR   "'unknown'"
 
-# Ignore these focus checks on MJD 52580 (using plate 909)
-ophdrfix sdR-??-0001458[0-1] FLAVOR   "'unknown'"
+# Ignore this bad smear on plate 838 on MJD 52378
+ophdrfix sdR-??-00014537 FLAVOR   "'unknown'"
+
+# Ignore this bad smear on plate 795 on MJD 52378
+ophdrfix sdR-??-00014571 FLAVOR   "'unknown'"
 
 # Wrong exposure time in these headers for plate 816 on MJD 52379.
 # (Reported to be 2 sec!)
@@ -447,4 +450,10 @@ ophdrfix sdR-??-00014596 EXPTIME  900
 # Wrong exposure time in these headers for plate 510 on MJD 52381.
 # (Reported to be 23136 sec!)
 ophdrfix sdR-??-00014637 EXPTIME  800
+
+# Ignore this bad smear on plate 510 on MJD 52381
+ophdrfix sdR-??-00014638 FLAVOR   "'unknown'"
+
+# Ignore this bad smear on plate 886 on MJD 52381
+ophdrfix sdR-??-00014653 FLAVOR   "'unknown'"
 
