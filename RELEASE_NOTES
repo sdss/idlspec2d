@@ -24,7 +24,9 @@ MYFLUXCALIB: Make robust to degenerate case of only 1 input spectro-photo std.
 PLATELIST: Lower (S/N)^2 cutoff to 13 for all G,I bands (from 15 previously).
            If ZWARNING flag exists in 1D outputs, use that to determine
            number of UNKNOWN or SKY identifications.
+PLOTSPEC: Add ZNUM option (also new to READSPEC).
 READSPEC: Add option to generate the synthetic spectra.
+          Add ZNUM option to get fits other than the best fit.
 REDMONSTER: New routine for looking for Red Monster (large regions of
             bad sky residuals, which, for example happens when the hand-paddle
             light is on at the telescope).  Flag these pixels with the
