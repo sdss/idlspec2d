@@ -265,9 +265,6 @@ pro spcoadd_frames, filenames, outputname, $
 
    filenames = filenames[sort(filenames)]
 
-   redfiles = 0
-   bluefiles = 0
-
    ;---------------------------------------------------------------------------
 
    camnames = ['b1', 'b2', 'r1', 'r2']
@@ -281,11 +278,13 @@ pro spcoadd_frames, filenames, outputname, $
    for ifile=0, nfiles-1 do begin
 
       ;----------
-      ; Read in all data from this input file
+      ; Read in all data from this input file.
+      ; Reading the plug-map structure will fail if its structure is
+      ; different between different files.
 
       tempflux = mrdfits(filenames[ifile], 0, hdr)
       tempivar = mrdfits(filenames[ifile], 1)
-      tempplug = mrdfits(filenames[ifile], 2)
+      tempplug = mrdfits(filenames[ifile], 2, structyp='PLUGMAPOBJ')
       tempwset = mrdfits(filenames[ifile], 3)
       temppixmask = mrdfits(filenames[ifile], 4)
 
@@ -300,11 +299,11 @@ pro spcoadd_frames, filenames, outputname, $
       ;----------
       ; Determine if this is a blue or red spectrum
 
-      cameras = sxpar(hdr, 'CAMERAS')
-      i = where(cameras EQ camnames)
-      if (i[0] EQ -1) then $
+      cameras = strtrim(sxpar(hdr, 'CAMERAS'),2)
+      icam = where(cameras EQ camnames)
+      if (icam[0] EQ -1) then $
        message, 'Unknown camera ' + cameras
-      exptimevec[i] = exptimevec[i] + sxpar(hdr, 'EXPTIME')
+      exptimevec[icam] = exptimevec[icam] + sxpar(hdr, 'EXPTIME')
 
       ;----------
       ; Apodize the errors
@@ -314,7 +313,7 @@ pro spcoadd_frames, filenames, outputname, $
          tempivar[0:swin-1] = $
           tempivar[0:swin-1] * findgen(swin) / window
          tempivar[npix-swin:npix-1] = $
-          tempivar[npix-swin:npix-1] * findgen(swin) / window
+          tempivar[npix-swin:npix-1] * (swin-1-findgen(swin)) / window
       endif
 
       ;----------
@@ -326,6 +325,7 @@ pro spcoadd_frames, filenames, outputname, $
          wave = tempwave
          pixelmask = temppixmask
 
+         camerasvec = cameras
          label = makelabel(hdr)
          plugmap = tempplug
       endif else begin
@@ -336,16 +336,21 @@ pro spcoadd_frames, filenames, outputname, $
          pixelmask = [[pixelmask], [temppixmask]]
 
          ; Append as vectors...
+         camerasvec = [camerasvec, cameras]
          label = [label, makelabel(hdr)]
          plugmap = [plugmap, tempplug]
       endelse
 
    endfor
 
-   splog, 'Found '+string(redfiles)+' red files'
-   splog, 'Found '+string(bluefiles)+' blue files'
-   if (redfiles LT 2 OR bluefiles LT 2) then begin
-      splog, 'ABORT: For the time being, I expect at least 2 of each red and blue to combine'
+   for icam=0, ncam-1 do begin
+      junk = where(camerasvec EQ camnames[icam], nmatch)
+      splog, 'Files for camera ' + camnames[icam] + ':', nmatch
+      if (icam EQ 0) then nminfile = nmatch $
+       else nminfile = nminfile < nmatch
+   endfor
+   if (nminfile LT 2) then begin
+      splog, 'ABORT: At least 2 files needed for each camera'
       return
    endif
 
@@ -412,7 +417,7 @@ pro spcoadd_frames, filenames, outputname, $
 
       if (indx NE -1) then begin
          splog, 'Fiber', ifiber+1, ' ', plugmap[indx].objtype, $
-          plugmap[indx].mag, format = '(i4.3, a, a, 5f6.2)'
+          plugmap[indx].mag, format = '(a, i4.3, a, a, f6.2, 5f6.2)'
 
          finalplugmap[ifiber] = plugmap[indx]
 
@@ -426,14 +431,12 @@ pro spcoadd_frames, filenames, outputname, $
          adist = djs_diff_angle(plugmap.ra, plugmap.dec, $
           plugmap[indx].ra, plugmap[indx].dec, units='degrees')
          indx = where(adist LT 2./3600. AND strtrim(plugmap.objtype,2) NE 'NA')
-      endif else begin
-         splog, 'Fiber', ifiber+1, ' NO DATA'
-      endelse
+      endif
 
       if (indx[0] NE -1) then begin
          combine1fiber, wave[*,indx], flux[*,indx], fluxivar[*,indx], $
           pixelmask[*,indx], $
-          finalwave, bestflux, bestivar, bestandmask, bestormask,, $
+          finalwave, bestflux, bestivar, bestandmask, bestormask, $
           nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep
 
          finalflux[*,ifiber] = bestflux
@@ -441,7 +444,7 @@ pro spcoadd_frames, filenames, outputname, $
          finalandmask[*,ifiber] = bestandmask
          finalormask[*,ifiber] = bestormask
       endif else begin
-         splog, 'No plugmap entry for fiber number ', ifiber+1
+         splog, 'Fiber', ifiber+1, ' NO DATA'
          finalandmask[*,ifiber] = pixelmask_bits('NODATA')
          finalormask[*,ifiber] = pixelmask_bits('NODATA')
       endelse
@@ -462,16 +465,16 @@ pro spcoadd_frames, filenames, outputname, $
    sxaddpar, hdr, 'NEXP', nfiles, $
     'Number of exposures in this file', before='EXPTIME'
    for ifile=0,nfiles-1 do $
-    sxaddpar, hdr, 'EXPID'+strtrim(string(ifile),2), label[i], $
+    sxaddpar, hdr, 'EXPID'+strtrim(string(ifile),2), label[ifile], $
      'ID string for exposure '+strtrim(string(ifile),2), before='EXPTIME'
 
    sxaddpar, hdr, 'EXPTIME', min(exptimevec), $
-    'Minimum of exposure times for all cameras'
+    ' Minimum of exposure times for all cameras'
    for icam=0, ncam-1 do $
-    sxaddpar, hdr, 'EXPTI_'+camnames[icam], exptimevec[icam], $
-     camnames[icam]+' camera exposure time (seconds)', before='EXPTIME'
+    sxaddpar, hdr, 'EXPT_'+camnames[icam], exptimevec[icam], $
+     ' '+camnames[icam]+' camera exposure time (seconds)', before='EXPTIME'
    sxaddpar, hdr, 'SPCOADD', systime(), $
-    'SPCOADD finished', after='EXPTIME'
+    ' SPCOADD finished', after='EXPTIME'
 
    sxaddpar, hdr, 'NWORDER', 2, 'Linear-log10 coefficients'
    sxaddpar, hdr, 'WFITTYPE', 'LOG-LINEAR', 'Linear-log10 dispersion'
