@@ -27,6 +27,7 @@ pro/checkflavor.pro -text
 pro/combine2dout.pro -text
 pro/combineI.pro -text
 pro/divideflat.pro -text
+pro/extract2.pro -text
 pro/extract_boxcar.pro -text
 pro/extract_image.pro -text
 pro/extract_profile.pro -text
@@ -68,6 +69,7 @@ pro/spec2d/checkflavor.pro -text
 pro/spec2d/combine2dout.pro -text
 pro/spec2d/combineI.pro -text
 pro/spec2d/divideflat.pro -text
+pro/spec2d/extract2.pro -text
 pro/spec2d/extract_boxcar.pro -text
 pro/spec2d/extract_image.pro -text
 pro/spec2d/extract_profile.pro -text
