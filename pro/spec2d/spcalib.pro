@@ -166,12 +166,12 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
       if (fbadpix GT 0.01) then begin
          qbadflat = 1
          splog, 'Reject flat ' + flatname[iflat] + $
-          ' (' + string(format='(i3)', fix(fbadpix*100)) + '% bad pixels)'
+          ': ' + string(format='(i3)', fix(fbadpix*100)) + '% bad pixels'
       endif
       if (nsatrow GT 20) then begin
          qbadflat = 1
          splog, 'Reject flat ' + flatname[iflat] + $
-          ' (' + string(format='(i4)', nsatrow) + ' saturated rows)'
+          ': ' + string(format='(i4)', nsatrow) + ' saturated rows'
       endif
 
       if (NOT keyword_set(fibermask)) then tmp_fibmask = bytarr(320) $
@@ -188,12 +188,14 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
 
          splog, 'Fitting traces in ',  flatname[iflat]
          xy2traceset, ycen, xsol, tset, ncoeff=7, maxdev=0.1, $
-             totalreject=totalreject
+          totalreject=totalreject
 
          if (totalreject GT 10000) then begin
-           splog, 'WARNING: over 10000 pixels rejected!'
-           qbadflat = 1
+            splog, 'Reject flat ' + flatname[iflat] + $
+             ': ' + string(format='(i8)', totalreject) + ' rejected pixels'
+            qbadflat = 1
          endif
+
          traceset2xy, tset, ycen, xsol
          flatstruct[iflat].xsol = ptr_new(xsol)
          flatstruct[iflat].fibermask = ptr_new(tmp_fibmask)
@@ -210,7 +212,8 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
          sep = xsol[*,1:ntrace-1] - xsol[*,0:ntrace-2]
          tooclose = where(sep LT 3)
          if (tooclose[0] NE -1) then begin
-            splog, 'WARNING: Traces are not separated more than 3 pixels'
+            splog, 'Reject flat ' + flatname[iflat] + $
+             ': Traces not separated by more than 3 pixels'
             qbadflat = 1
          endif
       endif
@@ -226,8 +229,8 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
          splog, 'Extracting flat-field image ', proftype
          highrej = 5
          lowrej = 5
-         npoly = 8  ; just fit flat background to each row
-         wfixed = [1,1] ; Just fit the first gaussian term
+         npoly = 8 ; Fit 8 terms to background
+         wfixed = [1,1] ; Fit the first gaussian term + gaussian width
 
          ; Step 1: Extract flat field with polynomial background for
          ;           fitflatwidth 
@@ -240,7 +243,7 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
          widthset = fitflatwidth(flux, fluxivar, ansimage, tmp_fibmask, $
           ncoeff=5, sigma=sigma)
 
-;         widthset.coeff = widthset.coeff * 1.05 ; correction from whopping
+;         widthset.coeff = widthset.coeff * 1.05 ; correction from whopping???
 
          junk = where(flux GT 1.0e5, nbright)
          splog, 'Found ', nbright, ' bright pixels in extracted flat ', $
@@ -291,12 +294,12 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
       if (fbadpix GT 0.01) then begin
          qbadarc = 1
          splog, 'Reject arc ' + arcname[iarc] + $
-          ' (' + string(format='(i3)', fix(fbadpix*100)) + '% bad pixels)'
+          ': ' + string(format='(i3)', fix(fbadpix*100)) + '% bad pixels'
       endif
       if (nsatrow GT 100) then begin
          qbadarc = 1
          splog, 'Reject arc ' + arcname[iarc] + $
-          ' (' + string(format='(i4)', nsatrow) + ' saturated rows)'
+          ': ' + string(format='(i4)', nsatrow) + ' saturated rows'
       endif
 
       tai = sxpar(archdr, 'TAI')
@@ -320,10 +323,9 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
       endelse
 
       if (NOT qbadarc) then begin
-        xsol = *(flatstruct[iflat].xsol)
-        widthset = *(flatstruct[iflat].widthset)
-        tmp_fibmask = *(flatstruct[iflat].fibermask)
-
+         xsol = *(flatstruct[iflat].xsol)
+         widthset = *(flatstruct[iflat].widthset)
+         tmp_fibmask = *(flatstruct[iflat].fibermask)
 
          ;----------
          ; Calculate possible shift between arc and flat
@@ -340,47 +342,48 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
          if (abs(bestlag) GT 2.0) then begin
             qbadarc = 1
             splog, 'Reject arc: pixel shift is larger than 2 pixels'
+            splog, 'Reject arc ' + arcname[iarc] + $
+             ': Pixel shift = ', bestlag
          endif 
-       endif
+      endif
 
-       if (NOT qbadarc) then begin
-           splog, 'Shifting traces to fit arc by pixel shift of ', bestlag
+      if (NOT qbadarc) then begin
+         splog, 'Shifting traces to fit arc by pixel shift of ', bestlag
 
-           ;------------------------------------------------------------------
-           ; Extract the arc image
-           ;------------------------------------------------------------------
+         ;---------------------------------------------------------------------
+         ; Extract the arc image
+         ;---------------------------------------------------------------------
 
-           traceset2xy, widthset, xx, sigma2
+         traceset2xy, widthset, xx, sigma2
 
-           highrej = 10
-           lowrej = 10
-           npoly = 1  ; just fit flat background to each row
-           wfixed = [1] ; Just fit the first gaussian term
+         highrej = 10
+         lowrej = 10
+         npoly = 1  ; just fit flat background to each row
+         wfixed = [1] ; Just fit the first gaussian term
 
-           splog, 'Extracting arc'
-           extract_image, arcimg, arcivar, xsol + bestlag, sigma2, $
-            flux, fluxivar, proftype=proftype, wfixed=wfixed, $
-            highrej=highrej, lowrej=lowrej, npoly=npoly, relative=1, $
-            nband = nband
-;            reject=[0.05,0.1,0.2]
+         splog, 'Extracting arc'
+         extract_image, arcimg, arcivar, xsol + bestlag, sigma2, $
+          flux, fluxivar, proftype=proftype, wfixed=wfixed, $
+          highrej=highrej, lowrej=lowrej, npoly=npoly, relative=1, $
+          nband = nband
 
-           ;-------------------------------------------------------------------
-           ; Compute correlation coefficient for this arc image
-           ;-------------------------------------------------------------------
+         ;---------------------------------------------------------------------
+         ; Compute correlation coefficient for this arc image
+         ;---------------------------------------------------------------------
 
-           splog, 'Searching for wavelength solution'
-           aset = 0
-           fitarcimage, flux, fluxivar, aset=aset, color=color, $
-             lampfile=lampfile, fibermask=tmp_fibmask, bestcorr=bestcorr
+         splog, 'Searching for wavelength solution'
+         aset = 0
+         fitarcimage, flux, fluxivar, aset=aset, color=color, $
+          lampfile=lampfile, fibermask=tmp_fibmask, bestcorr=bestcorr
 
-           arcstruct[iarc].bestcorr = bestcorr
+         arcstruct[iarc].bestcorr = bestcorr
 
-           if ((color EQ 'blue' AND bestcorr LT 0.5) $
-            OR (color EQ 'red'  AND bestcorr LT 0.5) ) then begin
-               qbadarc = 1
-               splog, 'Reject arc ' + arcname[iarc] + $
-                ' with correlation = ' + string(format='(i4)', bestcorr)
-           endif
+         if ((color EQ 'blue' AND bestcorr LT 0.5) $
+          OR (color EQ 'red'  AND bestcorr LT 0.5) ) then begin
+            qbadarc = 1
+            splog, 'Reject arc ' + arcname[iarc] + $
+             ': correlation is only = ' + string(format='(i4)', bestcorr)
+         endif
       endif
 
       if (NOT qbadarc) then begin
@@ -517,7 +520,7 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
          ;---------------------------------------------------------------------
 
          traceset2xy, widthset, xx, sigma2   ; sigma2 is real width
-         proftype = 10 ; Gaussian
+         proftype = 10 ; Gaussian + background
          nband = 5  
          highrej = 5
          lowrej = 5
@@ -528,8 +531,6 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
           proftype=proftype, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
           npoly=npoly, relative=1, nband=nband
 
-;    reject=[0.05,0.1,0.2], 
-
          ;---------------------------------------------------------------------
          ; Compute fiber-to-fiber flat-field variations
          ;---------------------------------------------------------------------
@@ -539,8 +540,7 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
 
          if (n_elements(fflat) EQ 1) then begin
             flatstruct[iflat].qbad  = 1
-            splog, 'Reject flat ' + flatname[iflat] + $
-               ':  No good traces?!?'
+            splog, 'Reject flat ' + flatname[iflat] + ': No good traces'
          endif
 
          flatstruct[iflat].fflat = ptr_new(fflat)
