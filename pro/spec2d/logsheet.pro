@@ -4,7 +4,7 @@
 ;
 ; PURPOSE:
 ;   Make a summary of header keywords in a directory of raw SDSS spectro files.
-;   Only look at files matching "*.fit"
+;   Only look at files matching "sdR*.fit*"
 ;
 ; CALLING SEQUENCE:
 ;   logsheet, [dir, outfile=]
@@ -12,7 +12,7 @@
 ; INPUTS:
 ;
 ; OPTIONAL INPUTS:
-;   dir        - Directory name; default to '.'
+;   dir        - Directory name; default to current
 ;   outfile    - Output file
 ;
 ; OUTPUTS:
@@ -58,9 +58,9 @@ pro logsheet, dir, outfile=outfile
       shortname = shortname[isort]
 
       printf, olun, $
-       'DATEOBS    TAIHMS      FILENAME            PLATE CA EXPTIME  FLAVOR'
+       'DATEOBS    TAIHMS      FILENAME               PLATE CA EXPTIME  FLAVOR      '
       printf, olun, $
-       '---------- ----------- ------------------- ----- -- -------- ------'
+       '---------- ----------- ---------------------- ----- -- -------- ------------'
 
       for i=0, nfile-1 do begin
          hdr = sdsshead(fullname[i])
@@ -78,9 +78,10 @@ pro logsheet, dir, outfile=outfile
             lastplate = PLATEID
          endif
 
-         printf, olun, DATEOBS, TAIHMS, shortname[i], $
+         printf, olun, DATEOBS, TAIHMS, $
+          shortname[i]+string(' ',format='(a22)'), $ ; pad with spaces
           PLATEID, CAMERAS, EXPTIME, FLAVOR, $
-          format='(a10, " ", a11, " ", a22, i6, " ", a2, f9.2, " ", a15)'
+          format='(a10, " ", a11, " ", a22, i6, " ", a2, f9.2, " ", a12)'
       endfor
 
       ; Close output file
