@@ -112,18 +112,17 @@ pro sphoto_calib, wave, flux, invvar, mask, fibertag, fcalfile, $
   endelse
 
   ;-----------------------------------------
-  ; Compute the spectrophotometric calibration from all standards on all 
-  ; frames (for best results with PCA)
+  ; Compute the average spectrophotometric calibration from all frames 
 
   pca_flux_standard, newwave, newflux[*,ok], newivar[*,ok], $
     stdinfo_all[ok], corvector = corvector, corvivar = corvivar, $
-    cormed = cormed, calibset = calibset, bkpts = bkpts 
+    cormed = cormed, calibset = avgcalibset, bkpts = bkpts 
 
   ;-----------------------------------------
-  ; Now for each frame compute the spectrophotometric calibration
+  ; Compute the spectrophoto calibration separately for each frame
 
   for iframe = 0, nframes - 1 do begin
-    indx = where(fibertag[ok].expid eq frames[iframe])
+    indx = where(fibertag[ok].expid eq frames[iframe], nindx)
 
     ; check to be sure that fluxcalib output name matches frame ID 
     if not strmatch(fcalfile[iframe], '*' + frames[iframe] + '*') then begin
@@ -131,66 +130,9 @@ pro sphoto_calib, wave, flux, invvar, mask, fibertag, fcalfile, $
       return
     endif
    
-    thiswave = wave2d[*,indx]
-    avgcorv = bspline_valu(thiswave, calibset)
-    corvector_frame = corvector[*,indx]
-    corvivar_frame = corvivar[*,indx]
-    ;divideflat, corvector_frame, invvar=corvivar_frame, avgcorv, $
-    ;    minval=0.005*avgcorv
-        
-    ;pcaflux = pca_solve(corvector_frame, corvivar_frame, $
-    ;    niter=30, nkeep=1, nreturn = 1, acoeff=acoeff, $
-    ;    maxiter=5, upper=5, lower=5, $
-    ;    eigenval = eigenval, usemask = usemask, $
-    ;    maxrej=ceil(0.1*nnewpix), groupsize=ceil(nnewpix/5.))
-
-    ;fcor = pcaflux * median(acoeff)
-    
-
-     xy2traceset, thiswave[*], corvector_frame[*], polyset, $
-            invvar=corvivar_frame[*], ncoeff=3, inputfunc=avgcorv[*], $
-            lower = 2.5, upper = 2.5, maxiter = 15
-
-     traceset2xy, polyset, newwave, fcor
-
-;stop
-    ;--------------
-    ; Measure the variance between the fluxcalib vectors derived
-    ; for each of the standard stars -- this is an indicator of the
-    ; spectrophotometric quality.
-
-    meanclip, corvector_frame/avgcorv - rebin(fcor, nnewpix, nok), $
-              fmean, fsig, maxiter=3, clipsig=5
-
-    ;---------------
-    ; QA plot
-
-    djs_plot, 10.0^newwave, corvector_frame[*,0], /nodata, $
-           xtitle='\lambda [A]', $
-           ytitle='Counts / (10^{-17}erg/cm^{2}/s/A)', yr = [0.5, 1.5], $
-           title = ' Spectrophoto Correction: ' + frames[iframe] + '-' + $
-           fibertag[0].camcolor + strtrim(fibertag[0].spectrographid, 2)
-
-    for istd=0, nok - 1 do oplot, 10.0^newwave, corvector_frame[*,istd]/avgcorv
-    djs_oplot, 10.0^newwave, fcor, color='green', thick=3
-    xyouts, mean(10.0^newwave) - 500, 1.3, $
-    'Standard star variation = ' + string(fsig * 100, format='(I3)') + ' %'
-
-    ;---------------
-    ; Restore to original shape + scale
-    ;scalefactor = median(cormed[indx]) 
-    meanclip, cormed[indx], scalefactor, cormedsig, maxiter=10, clipsig=3
-    splog, 'Zeropoint of corvector: ', cormed[indx]
-    splog, 'Average zeropoint & stdev: ', scalefactor, cormedsig
-    fcor = fcor * scalefactor * avgcorv[*,0]
-    
-    ;--------------
-    ; Do the spline fit
-    frame_calibset = bspline_iterfit(newwave, fcor, nord=4, bkpt=bkpts, $
-             upper=3, lower=3, maxrej=ceil(0.10*n_elements(fcor)))
- 
-    calibfac = bspline_valu(newwave, frame_calibset)
-    djs_oplot, newwave, calibfac/avgcorv[*,0]/scalefactor, color='red', thick=3
+    frame_calibset = frame_flux_calib(newwave, corvector[*,indx], $
+      corvivar[*,indx], avgcalibset, cormed[indx], bkpts, frames[iframe], $
+      fsig = fsig, blue = blue)
 
     ;--------------
     ; Create header cards describing the data range and write to FITS
@@ -204,6 +146,7 @@ pro sphoto_calib, wave, flux, invvar, mask, fibertag, fcalfile, $
     sxaddpar, hdr, 'SPHOTERR', fsig
     mwrfits, 0, fcalfile[iframe], hdr, /create 
     mwrfits, frame_calibset, fcalfile[iframe]  
+
   endfor
 
 end
