@@ -9,6 +9,12 @@
 # The batch files can be specified with the environment variables BATCH2DFILE
 # and BATCH1DFILE, or the default files will simply be used.
 #
+# Note that the same version of idlspec2d used to start this script is
+# used to reduce all the data (passed throught the UPSVERSION keyword
+# from the "sprobot.sh" script).  The only exception is if the current
+# version is not a UPS version, but just NOCVS; in that case, the version
+# declared current on each remote host is used.
+#
 # D. Schlegel, Princeton, 20 Dec 2000
 #------------------------------------------------------------------------------
 # If a second argument is give, such as "sprobot_start plate-mapper", or 
@@ -139,8 +145,9 @@ echo "# This job will run at 4:00 am every day." >> $cronfile
 echo "0 4 * * * sprobotcopy.sh >> $SPRLOG 2>&1" >> $cronfile
 echo "# This job will run at 10:00 am every day (local time)." >> $cronfile
 echo "0 10 * * * sprobot.sh >> $SPRLOG 2>&1" >> $cronfile
-#echo "# This job will run at 45 minutes past each hour." >> $cronfile
-#echo "45 * * * * sprobot1d.sh >> $SPRLOG 2>&1" >> $cronfile
+# echo "# This job will run at 45 minutes past each hour." >> $cronfile
+# if [ ${vers:0:5} != NOCVS ] ; then upsversion=$vers ; fi
+# echo "45 * * * * sprobot1d.sh \",topdir=\'$SPECTRO_DATA\', upsversion=\`$upsversion\`, nice=19\" >> $SPRLOG 2>&1" >> $cronfile
 echo "# This job will run every 10 minutes to keep the disk automounter up." >> $cronfile
 echo "*/10 * * * * spamdup 2> /dev/null" >> $cronfile
 echo "# SPROBOT END" >> $cronfile

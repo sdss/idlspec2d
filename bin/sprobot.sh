@@ -12,7 +12,11 @@
 #
 # Once the data is copied over, build plan files under the directories
 #    $SPECTRO_DATA/$PLATE
-# then launch "batch2d" and "batch1d" to reduce them.
+# then launch "batch2d" and "batch1d" to reduce them.  Run the same version
+# of the idlspec2d product as is set up for this script.  For example, even
+# if v4_9 is declared current, run v4_8 if that is what's set up when this
+# script is run.  So, you should run "sprobot_start" from the version of
+# the code that you want to reduce the data.
 #
 # D. Schlegel, Princeton, 19 Dec 2000
 #------------------------------------------------------------------------------
@@ -152,14 +156,21 @@ if [ -n "$mjdlist" ] ; then
 fi
 
 #------------------------------------------------------------------------------
+# Decide what the current version of idlspec2d is, and run that version
+# if it is a UPS-declared version.
+
+vers=`echo "print,idlspec2d_version()" | idl 2> /dev/null`
+if [ ${vers:0:5} != NOCVS ] ; then upsversion=$vers ; fi
+
+#------------------------------------------------------------------------------
 # Batch process 2D first, wait for it to complete, then batch process 1D
 # in the background.  The calls to the 2d and 1d scripts will exit if
 # those scripts are already running.
 
-   sprobot2d.sh ",topdir='$topoutdir', nice=19"
+   sprobot2d.sh ",topdir='$topoutdir', upsversion=\'$upsversion\', nice=19"
    cd $SPECTRO_DATA
    echo "platelist, /create" | idl
-   sprobot1d.sh ",topdir='$topoutdir', nice=19" &
+   sprobot1d.sh ",topdir='$topoutdir', upsversion=\'$IDLSPEC2D_VERSION\', nice=19" &
 
 #------------------------------------------------------------------------------
 # Start the batch processing for Spectro-1D if it's not already running.
