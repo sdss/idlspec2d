@@ -52,6 +52,8 @@ etc/kurucz_stds_v5.fit: Made with new SPECTRUM code.  Use white dwarf
 etc/kurucz_model_fix.fit (removed)
 etc/kurucz_stds_interp.fit (removed)
 etc/spChunkList.par: Add chunks 28A, 71, 68A.
+ups/idlspec2d.table: Get rid of all the $UPS_PROD_FLAVOR references for 
+           dependent products.
 
 -------------------------------------------------------------------------------
 v4_10_1 (Jun 18, 2003 idlspec2d running on IDL 5.3 - 5.5
