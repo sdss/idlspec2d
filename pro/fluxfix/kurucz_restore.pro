@@ -18,7 +18,7 @@ crval = sxpar(hdr, 'CRVAL1')
 kwave = 10.0^(lindgen(npix) * 1.0d-4 + crval)
 
 ;-----------------
-; Apply a linear correction to fluxes derived from White Dwarf Spectra
+; Apply a correction derived from White Dwarf Spectra
 
 traceset2xy, kset, kwave, kfix
 for i = 0, nmod - 1 do begin
