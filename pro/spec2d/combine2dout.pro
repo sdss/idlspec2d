@@ -82,7 +82,7 @@ pro combine2dout, filenames, outputroot, spectrographid, $
 
    if (NOT keyword_set(zeropoint)) then zeropoint = 3.5d
    if (NOT keyword_set(nord)) then nord = 3
-   if (NOT keyword_set(bkptbin)) then bkptbin = binsz
+   if (NOT keyword_set(bkptbin)) then bkptbin = binsz*1.2
 
    if (NOT keyword_set(maxsep)) then maxsep = 2.0*binsz
 
