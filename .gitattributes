@@ -54,6 +54,7 @@ pro/divideflat.pro -text
 pro/extract2.pro -text
 pro/extract_boxcar.pro -text
 pro/extract_image.pro -text
+pro/extract_object.pro -text
 pro/extract_profile.pro -text
 pro/extract_row.pro -text
 pro/fchebyshev.pro -text
@@ -107,6 +108,7 @@ pro/spec2d/divideflat.pro -text
 pro/spec2d/extract2.pro -text
 pro/spec2d/extract_boxcar.pro -text
 pro/spec2d/extract_image.pro -text
+pro/spec2d/extract_object.pro -text
 pro/spec2d/extract_profile.pro -text
 pro/spec2d/extract_row.pro -text
 pro/spec2d/fchebyshev.pro -text
