@@ -14,7 +14,9 @@ ls $IDL_DIR > /dev/null
 # List each element of IDL_PATH, but need to strip any leading plus signs...
 ls `echo " "$IDL_PATH | sed 's/:/ /g' | sed 's/ +/ /g'` > /dev/null
 ls $SPECFLAT_DIR > /dev/null
-ls $RAWDATA_DIR > /dev/null
+# List one file in each raw data subdirectory, since there may be links
+# to different filesystems...
+ls $RAWDATA_DIR/*/frames.list > /dev/null
 ls $SPECTRO_DATA > /dev/null
 
 #------------------------------------------------------------------------------
