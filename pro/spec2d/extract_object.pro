@@ -326,6 +326,10 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    endif else begin
       splog, 'WARNING: Header info not present to compute heliocentric correction'
    endelse
+   if (size(tai, /tname) EQ 'INT' OR finite(tai) EQ 0) then begin
+      splog, 'WARNING: Header info not present to compute airmass correction to sky level'
+      tai = 0
+   endif
 
    ;------------------
    ; Shift to skylines and fit to vacuum wavelengths
@@ -342,7 +346,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 
    skystruct = skysubtract(flux, fluxivar, plugsort, vacset, $
     skysub, skysubivar, iskies=iskies, pixelmask=pixelmask, $
-    fibermask=fibermask, upper=3.0, lower=3.0, $
+    fibermask=fibermask, upper=3.0, lower=3.0, tai=tai, $
     relchi2struct=relchi2struct)
    if (NOT keyword_set(skystruct)) then return
 
