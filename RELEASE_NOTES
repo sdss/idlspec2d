@@ -6,6 +6,10 @@ FIND_NMINIMA: Remove use of DJS_SVDFIT (which didn't work on the Mac
            with an explicit solution of the quadratic equation.
            Add another error code (-7L) for the case where all of the Y
            values are identical, in which case the fit is impossible.
+FINDSPEC: Rationalize the calling sequence to be more consistent
+           with SDSS_FINDIMAGE.  Get rid of /DUPLICATE keyword, and
+           add /BEST keyword.  Allow matching multiple objects per plate
+           if the search radius is large.
 FITMEANX: Add MINSDEV and INMASK optional keywords.  Both these are
            used by LOCATESKYLINES to prevent the S/N of some lines getting
            infinitely large.  This happened for the r1+r2 exposures on
