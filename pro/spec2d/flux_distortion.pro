@@ -241,7 +241,6 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
 
    maxiter1 = 10
    maxiter2 = 50
-maxiter1 = 2 & maxiter2 = 4 ; ???
    sigrej = 5.
    maxrej = ceil(0.05 * ntrim) ; Do not reject more than 5% of remaining objects
    npar = 11
