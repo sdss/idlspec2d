@@ -149,7 +149,8 @@ pro platemerge, zfile, outroot=outroot1, public=public
       hdr = headfits(fullzfile[ifile])
       plate = sxpar(hdr, 'PLATEID')
       zans = mrdfits(fullzfile[ifile], 1, /silent)
-      tsobj = plug2tsobj(plate, zans.plug_ra, zans.plug_dec)
+      plugmap = mrdfits(fullplatefile[ifile], 5, /silent)
+      tsobj = plug2tsobj(plate, zans.plug_ra, zans.plug_dec, plugmap=plugmap)
       if (NOT keyword_set(tsobj)) then $
        splog, 'WARNING: No tsObj file found for plate ', plate
 
@@ -208,7 +209,6 @@ pro platemerge, zfile, outroot=outroot1, public=public
 
       ; Get PRIMTARGET+SECTARGET with those values from
       ; the plug-map structure in spPlate file.
-      plugmap = mrdfits(fullplatefile[ifile], 5, /silent)
       thisdat.primtarget = plugmap.primtarget
       thisdat.sectarget = plugmap.sectarget
 
@@ -294,6 +294,7 @@ pro platemerge, zfile, outroot=outroot1, public=public
    ;----------
    ; Write the output FITS file, in chunks of 20 plates
 
+   splog, 'Writing FITS file ' + outroot[0]+'.fits'
    mwrfits_chunks, outdat, outroot[0]+'.fits', /create, chunksize=640*20
 
    ;----------
@@ -343,6 +344,7 @@ pro platemerge, zfile, outroot=outroot1, public=public
    adat.objc_type = objtypes[outdat.objc_type]
 outdat = 0 ; Free memory
 
+   splog, 'Writing ASCII file ' + outroot[0]+'.dat'
    struct_print, adat, filename=outroot[0]+'.dat'
 
    ;----------
@@ -353,12 +355,14 @@ outdat = 0 ; Free memory
    fiberid = adat.fiberid
 adat = 0 ; Free memory
 
+   splog, 'Reading zline files'
    readspec, plate, mjd=mjd, fiberid, zline=linedat
    nobj = n_elements(plate)
    nper = n_elements(linedat) / nobj
    sxaddpar, linehdr, 'DIMS0', nper, ' Number of emission lines'
    sxaddpar, linehdr, 'DIMS1', nobj, ' Number of objects'
 
+   splog, 'Writing zline file ' + outroot[1]+'.fits'
    mwrfits, 0, outroot[1]+'.fits', linehdr, /create
    mwrfits_chunks, linedat, outroot[1]+'.fits', chunksize=640*nper*20
 
