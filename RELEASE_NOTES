@@ -44,7 +44,7 @@ TRACE320CRUDE: Fix a bug just introduced in v4_9_5 that would cause
 ZFIND: Make EIGENFILE an optional input, so that STARFLUX,STARLOGLAM0
             can be specified directly instead of passing a file name.
 
-emlines.dat: Add Ly_alpha, C_IV,He_II,C_III] for QSOs.
+emlines.dat: Add Ly_alpha,N_V,C_IV,He_II,C_III] for QSOs.
 opHdrFix.par: Declare data bad on MJD 52336-52337 due to spectrograph
             mechanicals problems, and other problems from 52312-52337.
 mailhtml.sh: Comment out the rm lines (as in 1.18) and leave to killdata.sh
@@ -53,6 +53,8 @@ sprobot.sh: Add more time stamps to the robot log file.
             Change the ssh command that retrieves the MJD directory list
             from the remote machine -- it appears that something about the
             sed command no longer works the same.
+sprobot_start: Comment-out "spamdup" job in the cron file, since we don't
+            seem to need that hack any more to keep the NSF-automounts alive.
 
 In idlutils:
 BSPLINE_ITERFIT: Always reset OUTMASK so that the input value does not matter.
