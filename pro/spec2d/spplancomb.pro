@@ -80,8 +80,8 @@ pro spplancomb, topindir=topindir, topoutdir=topoutdir, $
 
    platelist = get_mjd_dir(topindir, mjd=platenum, mjstart=platestart, $
     mjend=plateend)
- 
-   platelist = [platelist, '']
+
+   if platelist[0] NE '' then platelist = [platelist, '']
 
    camnames = ['b1', 'b2', 'r1', 'r2']
    ncam = N_elements(camnames)
