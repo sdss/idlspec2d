@@ -94,6 +94,7 @@
 ;
 ; INTERNAL SUPPORT ROUTINES:
 ;   rspec_mrdfits()
+;   rspec_zline_append()
 ;   readspec1
 ;
 ; REVISION HISTORY:
@@ -338,6 +339,39 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
 end
 
 ;------------------------------------------------------------------------------
+; Append two ZLINE structures, even if they are different structures
+; or have different number of lines measured.
+; If the structure definitions are different, use the definition from ZLINE1.
+; If the number of lines are different, use the larger line list, and set
+; those lines to all zeros in the shorter line list.
+
+function rspec_zline_append, zline1, zline2
+
+   ndim1 = size(zline1, /n_dimen)
+   ndim2 = size(zline2, /n_dimen)
+   dims1 = size(zline1, /dimens)
+   dims2 = size(zline2, /dimens)
+   if (ndim1 EQ 1) then nobj1 = 1L $
+    else nobj1 = dims1[1]
+   if (ndim2 EQ 1) then nobj2 = 1L $
+    else nobj2 = dims2[1]
+   nobjtot = nobj1 + nobj2
+   nline = dims1[0] > dims2[0]
+
+   blankline = zline1[0]
+   struct_assign, {junk:0}, blankline
+   zlinetot = replicate(blankline, nline, nobjtot)
+   copy_struct_inx, zline1, zlinetot, $
+    index_to=(lindgen(dims1[0]) # (lonarr(nobj1)+1) $
+    + (lonarr(dims1[0])+1) # (lindgen(nobj1)*nline))[*]
+   copy_struct_inx, zline2, zlinetot, $
+    index_to=(lindgen(dims2[0]) # (lonarr(nobj2)+1) $
+    + (lonarr(dims2[0])+1) # (lindgen(nobj2)*nline))[*] + nline*nobj1
+
+   return, zlinetot
+end
+
+;------------------------------------------------------------------------------
 pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
  andmask=andmask, ormask=ormask, disp=disp, plugmap=plugmap, $
  loglam=loglam, wave=wave, tsobj=tsobj, zans=zans, zline=zline, $
@@ -507,9 +541,10 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
          if (q_plugmap) then plugmap = struct_append(plugmap, [plugmap1])
          if (q_tsobj) then tsobj = struct_append(tsobj, [tsobj1])
          if (q_zans) then zans = struct_append(zans, [zans1])
+; The first two attempts below can fail if the ZLINE structure changes.
 ;         if (q_zline) then zline = struct_append(zline, [zline1])
-; Below will not always work ???
-         if (q_zline) then zline = [[zline], [zline1]]
+;         if (q_zline) then zline = [[zline], [zline1]]
+         if (q_zline) then zline = rspec_zline_append(zline1, zline1)
          if (q_synflux) then spec_append, synflux, synflux1, pixshift
          if (q_lineflux) then spec_append, lineflux, lineflux1, pixshift
          if (q_mjd) then mjd = [mjd, mjd1]
