@@ -239,7 +239,9 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
        else $
         zstring = '  z=' + string(zans.z,format='(f8.5)')
       if (zans.zwarning NE 0) then $
-       zstring = zstring + '  ZWARNING=' + strtrim(string(zans.zwarning),2) + ''
+;       zstring = zstring + '  ZWARNING=' + strtrim(string(zans.zwarning),2) + ''
+       zstring = zstring + ' (' $
+        + sdss_flagname('ZWARNING', zans.zwarning, /concat) + ')'
       if (keyword_set(znum)) then $
        zstring = zstring + ' (fit #' + strtrim(string(znum),2) + ')'
 
