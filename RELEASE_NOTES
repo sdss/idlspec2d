@@ -2,6 +2,14 @@
 -------------------------------------------------------------------------------
 v4_8_0 (Jul 17, 2001 idlspec2d+idlutils)
 
+SKYSUBTRACT: Increased rejection limit for 1d fit.  This should be more robust
+          anyway, and tighter rejection was masking out real PSF variations
+          which led to very big sky residuals in 2d fit
+FITVACSET :  keyword "airset" which return air wavelength solution with
+          no heliocentric correction (required to properly sample superflat
+          shifted to skyline frame)
+FIBERFLAT :  keyword superflatset to return normalized superflat fit
+DIVIDEFLAT:  removed all traces of fibermask 
 EXTRACT_OBJECT, SKYSUBTRACT, SPCALIB: Implement 2D-splining for sky-
           subtraction, now set to do quadratic PSF fit.
           Also, first attempt to put in airmass correction to the sky
