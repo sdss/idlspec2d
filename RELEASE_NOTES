@@ -11,10 +11,12 @@ LINEBACKFIT: Change how the error on equiv. width (LINEEW_ERR) is computed.
            computed from LINEAREA_ERR,LINECONTLEVEL_ERR.
 PLOTSPEC: Bug fix to allow one to specify the output file name with PSFILE=.
            Fix units on Y axis to /cm^2 instead of /cm.
+QUICKEXTRACT: Change print statement for whopping fibers to one per line.
 READ_ELODIE: Use INTERPOL() instead of POPULATE_IMAGE for interpolating
            the high-resolution Elodie spectra onto the log-wavelength binning.
            I'm still uncertain as to the absolute units of the spectra.
 READSPEC: Add PATH option, which can override TOPDIR.
+           Determine the MJD dynamically if set equal to 0.
 SDSSPROC: Fix silly bug trying to set QUALITY='excellent' when undefined.
 SOLVEFILTER: New proc to determine the 2.5-m filters from the spectra.
 SPCOADD_FRAMES: Change BUNIT header keywords in output files to have
@@ -22,6 +24,9 @@ SPCOADD_FRAMES: Change BUNIT header keywords in output files to have
            comment '10E-17 erg/cm/s/Ang'.
 WRITE_UROS: Add Flatvec,Rnois to output files.
 
+aporsync_logs.sh: The last line of the first rsync command was accidentally
+           dropped in this last version - fix.  Also, only copy sdHdrFix file
+           if it exists.  This addresses PR #3968.
 export.h: Update this file to agree with the IDL 5.5beta for Mac OS X.
 opHdrFix.par: Fix the RA,DEC positions in the raw file headers to fix
            some remaining problems for PR #3009.  Specifically, the following
