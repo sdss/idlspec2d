@@ -1,5 +1,8 @@
 
 PLATEMERGE: Include logic for setting the SPECPRIMARY field in the outputs.
+READSPEC: Fix the re-sorting of the ZLINE output structure, which is
+           complicated by being a multi-dimensional structure.
+SPREDUCE1D: The output FRACNSIGLO was being computed completely wrong -- Fixed.
 
 -------------------------------------------------------------------------------
 v4_9_9 (Apr 26, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
