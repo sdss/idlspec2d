@@ -1,4 +1,9 @@
 
+BATCH1D,BATCH2D: Set the DISPLAY environment variable on remote machines
+            to always be ":0.0", so that only one IDL license on each
+            remote machine.  Also, pipe the commands through the bash shell
+            on the remote machine, which means the UPS environment must
+            be set up in the .bashrc file on the remote machine.
 ELODIE_BEST: New function in development for finding best-fit Elodie spectrum.
 FITARCIMAGE: List the (0-indexed) fiber numbers that in which
             any or all arc centroids are fixed.
