@@ -592,9 +592,9 @@ ormask = 0 ; Free memory
    for iobj=0, nobj-1 do begin
       if (strtrim(res_all[0,iobj].class,2) EQ 'QSO') then begin
          indx = where(zline.fiberid EQ res_all[0,iobj].fiberid $
-          AND (zline.linename EQ 'C_IV' $
-            OR zline.linename EQ 'C_III]' $
-            OR zline.linename EQ 'Mg_II' $
+          AND (zline.linename EQ 'C_IV 1549' $
+            OR zline.linename EQ 'C_III] 1908' $
+            OR zline.linename EQ 'Mg_II 2799' $
             OR zline.linename EQ 'H_beta' $
             OR zline.linename EQ 'H_alpha') )
          if (indx[0] NE -1) then begin
