@@ -468,9 +468,10 @@ pro apo_log2html, logfile, htmlfile
          ptotal = replicate(rstruct, ncams)
          for icam=0, ncams-1 do begin
             for iexp=0, nexp-1 do begin
-               ; Only add if a 'science' exposure, not a 'smear'
+               ; Only add if a 'science' exposure, not a 'smear',
+               ; and (S/N)^2 > 2.
                if (pscience[icam,iexp].flavor EQ 'science' $
-                 AND pscience[icam,iexp].sn2 GE 1.0) then begin
+                 AND pscience[icam,iexp].sn2 GE 2.0) then begin
                   ptotal[icam].totalsn2 = ptotal[icam].totalsn2 + $
                    pscience[icam,iexp].sn2
                endif
