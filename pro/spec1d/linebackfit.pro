@@ -298,9 +298,7 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
        1./sqrt(invvar[igood]), parinfo=parinfo, $
        covar=covar, perror=perror, yfit=yfit1, functargs=functargs, $
        nfev=nfev, niter=niter, status=status, /quiet)
-      splog, 'MPFIT number of function evaluations=', nfev
-      splog, 'MPFIT number of iterations=', niter
-      splog, 'MPFIT exit status=', status
+      splog, 'MPFIT nfev=', nfev, ' niter=', niter, ' status=', status
       if (status EQ 5) then $
        splog, 'Warning: Maximum number of iterations reached: ', niter
       yfit[igood] = yfit1
