@@ -207,13 +207,13 @@ function arcfit_guess, spec, loglam, intensity, color=color, func=func, $
 ;      acoeff = [3.6846, -0.1060, -0.0042, 0.00012] ; Blue-1 (01)
 ;      acoeff = [3.7014, -0.1028, -0.0040, 0.00020] ; Blue-2 (03)
       acoeff = [3.6930, -0.1044, -0.0041, 0.00016]
-      dcoeff = [0.0300,  0.0040,  0.0003, 0.00010]
+      dcoeff = [0.0500,  0.0080,  0.0003, 0.00010]
    endif else if (color EQ 'red') then begin
 ;      acoeff = [ 3.8640, 0.1022, -0.0044, -0.00024] ; Red-1 (01)
 ;      acoeff = [ 3.8740, 0.0994, -0.0043, -0.00020] ; Red-2 (02)
 ;      acoeff = [ 3.8808, 0.0980, -0.0044, -0.00023] ; Another Red-2 (02)
       acoeff = [ 3.8700, 0.1008, -0.0044, -0.00022]
-      dcoeff = [ 0.0300, 0.0040,  0.0003,  0.00010]
+      dcoeff = [ 0.0500, 0.0080,  0.0003,  0.00010]
    endif
 
    nacoeff = N_elements(acoeff)
@@ -224,7 +224,7 @@ function arcfit_guess, spec, loglam, intensity, color=color, func=func, $
 
    ; First search only varies the first 3 coefficients
    splog, 'Searching about coefficients = ', aset.coeff, format='(a,99f9.5)'
-   nsteps = [1, 10, 5, 1]
+   nsteps = [1, 20, 5, 1]
    wset = arcfit_iter(spec, loglam, intensity, $
     aset, dcoeff, nsteps, nsmooth=6.0, dlag=2, bestcorr=bestcorr)
 
@@ -232,12 +232,13 @@ function arcfit_guess, spec, loglam, intensity, color=color, func=func, $
    ; for the first two coefficients
    splog, 'Searching about coefficients = ', wset.coeff, format='(a,99f9.5)'
    nsteps = [1, 5, 5, 5]
-   dcoeff[0] = dcoeff[0] / 3. ; Narrow search on coefficient #0
-   dcoeff[1] = dcoeff[1] / 3. ; Narrow search on coefficient #1
+   dcoeff[0] = dcoeff[0] / 5. ; Narrow search on coefficient #0
+   dcoeff[1] = dcoeff[1] / 6. ; Narrow search on coefficient #1
    wset = arcfit_iter(spec, loglam, intensity, $
     wset, dcoeff, nsteps, nsmooth=4.0, dlag=1, bestcorr=bestcorr)
 
    splog, 'Initial wavelength fit = ', wset.coeff, format='(a,99f9.5)'
+   splog, 'Initial correlation = ', bestcorr
 
    return, wset
 end
