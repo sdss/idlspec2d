@@ -45,7 +45,7 @@
 ;                If specified with ZGUESS, then ZMIN and ZMAX are ignored.
 ;   nfind      - Keyword for ZCOMPUTE().
 ;   width      - Keyword for ZCOMPUTE().
-;   _EXTRA     - Keywords for ZCOMPUTE(), such as PSPACE, DOPLOT, DEBUG.
+;   _EXTRA     - Keywords for ZCOMPUTE(), such as PSPACE, DOPLOT, DEBUG, VERBOSE
 ;
 ; OUTPUTS:
 ;   result     - Structure with redshift-fit information.  Structure
