@@ -28,6 +28,7 @@ PLOTSIGNAL: New routine for making diagnostic plots of the signal seen
 PLOTSN: Recent changes can make this routine crash if the photo and spectro
         mags are grossly different.  Fix that (though the points will be
         outside the plotting limits).
+PLOTSPEC: Add the /SKY option for over-plotting the sky.
 PLUGFILE_RELABEL: Relabel the OBJTYPE's for specified objects in all
         plPlugMapM files.
 READSPEC: Add support for reading the sky (SKY=) from HDU #6 of the spPlate
@@ -54,6 +55,7 @@ SPFLUXCORR_V5: New code to replace FLUXCORR_NEW.  This will be called
         by SPCOMBINE_V5.
 SPREDUCE: Abort and return from this procedure if no good flats exist.
 SPREDUCE2D: Report peak memory usage.
+SPREDUCE,SPREDUCE2D: Pass the optional /DO_TELLURIC along to EXTRACT_IMAGE.
 UPDATE_PLATE_RELEASE: Code to mark the DR2 plates (for example) from
         the "etc/dr2spectro.par" file into "etc/spPlateList.par".
 
