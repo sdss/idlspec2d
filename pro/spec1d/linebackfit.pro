@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   result = linebackfit(lambda, loglam, flux, invvar=, $
 ;    linename=, zindex=, windex=, findex=, fvalue=, $
-;    background=, zguess=, yfit=, bfit=, bterms= )
+;    background=, zguess=, sigguess=, yfit=, bfit=, bterms= )
 ;
 ; INPUTS:
 ;   lambda     - Rest-frame vacuum wavelength of lines to fit in Ang [NLINE]
@@ -35,7 +35,11 @@
 ;                rather we maintain the one-to-one correspondence of each
 ;                BACKGROUND pixel to each FLUX pixel.  The initial guess
 ;                for the scaling of each background vector is unity.
-;   zguess     - Initial guess for redshifts of all lines (scalar).
+;   zguess     - Initial guess for redshifts of all lines (scalar or vector
+;                with one entry per line); default to 0.
+;   sigguess   - Initial guess for sigmas of all lines in log-10 Angstroms
+;                (scalar or vector with one entry per line); default to 1.5d-4
+;                (105 km/sec).
 ;
 ; OUTPUTS:
 ;   result     - Output structure with result of line fits [NLINE].
@@ -135,7 +139,8 @@ end
 ;------------------------------------------------------------------------------
 function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
  zindex=zindex, windex=windex, findex=findex, fvalue=fvalue, $
- background=background, zguess=zguess, yfit=yfit, bfit=bfit, bterms=bterms
+ background=background, zguess=zguess1, sigguess=sigguess1, $
+ yfit=yfit, bfit=bfit, bterms=bterms
 
    cspeed = 2.99792458e5
 
@@ -158,6 +163,29 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
    if (NOT keyword_set(windex)) then windex = lindgen(nline)
    if (NOT keyword_set(findex)) then findex = lindgen(nline)
    if (NOT keyword_set(fvalue)) then fvalue = fltarr(nline) + 1.
+   if (keyword_set(zguess1)) then begin
+      if (n_elements(zguess1) EQ 1) then begin
+         zguess = replicate(zguess1[0], nline)
+      endif else if (n_elements(zguess1) EQ nline) then begin
+         zguess = zguess1
+      endif else begin
+         message, 'Wrong number of elements for ZGUESS'
+      endelse
+   endif else begin
+      zguess = replicate(0.d0, nline)
+   endelse
+   if (keyword_set(sigguess1)) then begin
+      if (n_elements(sigguess1) EQ 1) then begin
+         sigguess = replicate(sigguess1[0], nline)
+      endif else if (n_elements(sigguess1) EQ nline) then begin
+         sigguess = sigguess1
+      endif else begin
+         message, 'Wrong number of elements for SIGGUESS'
+      endelse
+   endif else begin
+      siguess = replicate(1.5d-4, nline)
+   endelse
+
    npix = n_elements(flux)
 
    ;----------
@@ -187,8 +215,8 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
 
    for iline=0, nline-1 do begin
       parinfo[0+iline*3].value = fvalue[iline]
-      parinfo[1+iline*3].value = alog10( lambda[iline] * (1. + zguess) )
-      parinfo[2+iline*3].value = 1.0d-4
+      parinfo[1+iline*3].value = alog10( lambda[iline] * (1. + zguess[iline]) )
+      parinfo[2+iline*3].value = sigguess[iline]
    endfor
 
    ; Set the initial guess for the scaling of each background vector to unity.
@@ -358,45 +386,52 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
    logmax = max(loglam)
    for iline=0, nline-1 do begin
       if (lfit[iline*3+1] LT logmin) then begin
+         ; Case where the line center is blueward of the entire spectrum.
          linestruct[iline].linecontlevel = bfit[0]
+         linestruct[iline].linecontlevel_err = -1L
       endif else if (lfit[iline*3+1] GT logmax) then begin
+         ; Case where the line center is redward of the entire spectrum.
          linestruct[iline].linecontlevel = bfit[npix-1]
+         linestruct[iline].linecontlevel_err = -1L
       endif else begin
          ; Select the nearest pixel for evaluating the background
          ; level at this line center.
          junk = min(abs(loglam - lfit[iline*3+1]), ipix)
          linestruct[iline].linecontlevel = bfit[ipix]
          linestruct[iline].linecontlevel_err = berr[ipix]
-
-         ; Find the pixels that are within +/- 3 sigma of the line center
-         ; Note that if the line is very (unphysically) narrow, it is
-         ; possible to have no lines within this domain.
-         indx = where( loglam GE lfit[iline*3+1] - 3 * lfit[iline*3+2] $
-                   AND loglam LE lfit[iline*3+1] + 3 * lfit[iline*3+2] )
-
-         if (indx[0] NE -1) then begin
-            linestruct[iline].linenpix = total(invvar[indx] GT 0)
-            linestruct[iline].linedof = $
-             linestruct[iline].linenpix - nfitterms[iline]
-
-            if (linestruct[iline].linedof GT 0) then begin
-               linestruct[iline].linechi2 = $
-                total( (flux[indx] - yfit[indx])^2 * invvar[indx] )
-            endif
-
-            ; Special-case rejection -- set AREA=0,AREA_ERR=-2
-            ; if there are no data points within the line-fitting region.
-            if (linestruct[iline].linenpix EQ 0) then begin
-               linestruct[iline].linearea = 0
-               linestruct[iline].linearea_err = -2L
-
-               ; Set these line-fit coefficients equal to zero for when
-               ; we re-evaluate YFIT.
-               lfit[iline*3+0] = 0
-            endif
-
-         endif
       endelse
+   endfor
+
+   ;----------
+   ; Find the pixels that are within +/- 3 sigma of the line center
+   ; Note that if the line is very (unphysically) narrow, it is
+   ; possible to have no lines within this domain.  Reject those fits.
+
+   for iline=0, nline-1 do begin
+      indx = where( loglam GE lfit[iline*3+1] - 3 * lfit[iline*3+2] $
+                AND loglam LE lfit[iline*3+1] + 3 * lfit[iline*3+2] )
+
+      if (indx[0] NE -1) then begin
+         linestruct[iline].linenpix = total(invvar[indx] GT 0)
+         linestruct[iline].linedof = $
+          linestruct[iline].linenpix - nfitterms[iline]
+
+         if (linestruct[iline].linedof GT 0) then begin
+            linestruct[iline].linechi2 = $
+             total( (flux[indx] - yfit[indx])^2 * invvar[indx] )
+         endif
+      endif
+
+      ; Special-case rejection -- set AREA=0,AREA_ERR=-2
+      ; if there are no data points within the line-fitting region.
+      if (linestruct[iline].linenpix EQ 0) then begin
+         linestruct[iline].linearea = 0
+         linestruct[iline].linearea_err = -2L
+
+         ; Set these line-fit coefficients equal to zero for when
+         ; we re-evaluate YFIT.
+         lfit[iline*3+0] = 0
+      endif
    endfor
 
    ;----------
