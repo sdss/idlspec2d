@@ -23,6 +23,7 @@ that contain positions, magnitudes, classification information, and redshifts.
 <P>
 In this document:
 <UL>
+  <LI><A HREF="#plots">Some Nifty Plots</A>
   <LI><A HREF="#get_data">Getting the Reduced Data</A>
   <OL>
      <LI><A HREF="#platelist">Which Plates Are Reduced?</A>
@@ -31,7 +32,6 @@ In this document:
      <LI><A HREF="#get_where">Where Is the Data?</A>
      <LI><A HREF="#get_rsync">How to Keep Your Data Up-to-Date</A>
   </OL>
-  <LI><A HREF="#plots">Some Nifty Plots</A>
   <LI><A HREF="#summary">What Is the Summary File?</A>
   <LI><A HREF="#display">Looking at the Data</A>
   <OL>
@@ -100,6 +100,26 @@ Related mailing lists (restricted access):
 </UL>
 
 <HR>
+
+<H2><A NAME="plots">Some Nifty Plots</A></H2>
+
+<P>
+Plot of <A HREF="platehist.ps">the cumulative number of survey-quality
+spectra.</A>
+
+<P>
+Here are some nifty plots of only those objects within 2 degrees of the
+equatorial plane:
+<OL>
+<LI><A HREF="zplot-main.ps">Pie diagram to z=0.15</A>
+<LI><A HREF="zplot-brg.ps">Pie diagram to z=0.6</A>
+<LI><A HREF="zplot-qso.ps">Pie diagram to z=5</A>
+<LI><A HREF="zplot-log.ps">Logarithmically-spaced pie diagram</A>
+</OL>
+(On a PostScript previewer, turn off State->Antialias.)
+The Milky Way is masked with dashed lines.  The MAIN galaxy sample are
+black points, the luminous red galaxies (LRGs) that are not in MAIN are red,
+and quasars are blue.
 
 <H2><A NAME="get_data">Getting the Reduced Data</A></H2>
 
@@ -170,7 +190,7 @@ PUBLIC   = Name of public data release; presently plates are either not public,
 The values of SN2 give an estimate of the signal-to-noise (per pixel) of a plate
 at a fiducial magnitude.  The fiducials are set to g=20.2, r=20.25, i=19.9.
 The measurement is of the signal-to-noise squared, per pixel, for an object
-at that magnitude.  If all these values are > 15, then the plate is "good".
+at that magnitude.  If all these values are > 13, then the plate is "good".
 Plate 310 is "not good".  The first observation of plate 302
 would be called "horrible".
 
@@ -375,22 +395,6 @@ either the hardware or target selection for the survey.  These plates are:
      sdss-spcommish msg/206</A> <BR>
      The two fainter plates, 323 and 324, have been observed.
 </UL>
-
-<H2><A NAME="plots">Some Nifty Plots</A></H2>
-
-<P>
-Here are some nifty plots of <B>only those objects within 2 degrees of the
-equatorial plane</B>:
-<OL>
-<LI><A HREF="zplot-main.ps">Pie diagram to z=0.15</A>
-<LI><A HREF="zplot-brg.ps">Pie diagram to z=0.6</A>
-<LI><A HREF="zplot-qso.ps">Pie diagram to z=5</A>
-<LI><A HREF="zplot-log.ps">Logarithmically-spaced pie diagram</A>
-</OL>
-(On a PostScript previewer, turn off State->Antialias.)
-The Milky Way is masked with dashed lines.  The MAIN galaxy sample are
-black points, the luminous red galaxies (LRGs) that are not in MAIN are red,
-and quasars are blue.
 
 <H2><A NAME="summary">What Is the Summary File?</A></H2>
 
