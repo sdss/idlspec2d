@@ -198,15 +198,15 @@ speclimit red science EXPTIME * 1805 9e9
 # if the sky levels are 2X higher, and an error (red) if they are
 # 4X higher.
 
-speclimit yellow science SKYPERSEC b1 0.30 9e9
-speclimit yellow science SKYPERSEC b2 0.30 9e9
-speclimit yellow science SKYPERSEC r1 0.60 9e9
-speclimit yellow science SKYPERSEC r2 0.60 9e9
+speclimit yellow * SKYPERSEC b1 0.30 9e9
+speclimit yellow * SKYPERSEC b2 0.30 9e9
+speclimit yellow * SKYPERSEC r1 0.60 9e9
+speclimit yellow * SKYPERSEC r2 0.60 9e9
 
-speclimit red science SKYPERSEC b1 0.60 9e9
-speclimit red science SKYPERSEC b2 0.60 9e9
-speclimit red science SKYPERSEC r1 1.20 9e9
-speclimit red science SKYPERSEC r2 1.20 9e9
+speclimit red * SKYPERSEC b1 0.60 9e9
+speclimit red * SKYPERSEC b2 0.60 9e9
+speclimit red * SKYPERSEC r1 1.20 9e9
+speclimit red * SKYPERSEC r2 1.20 9e9
 
 # For individual science exposures, only issue a warning (not an error)
 # for exposures with (S/N)^2 < 2.0
