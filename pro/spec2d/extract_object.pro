@@ -224,7 +224,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    extract_image, image, invvar, xnow, sigma2, tempflux, tempfluxivar, $
        proftype=proftype, wfixed=wfixed, yrow=yrow, $
        highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
-       ansimage=ansimage, chisq=firstchisq, ymodel=ym
+       ansimage=ansimage, chisq=firstchisq, ymodel=ym, /relative
 
      ; (2) Calculate scattered light
 
@@ -251,11 +251,11 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    nterms = n_elements(wfixed)
 
 
-   extract_image, (image - smooth), invvar, xnow, sigma2, flux, $
-    fluxivar, proftype=proftype, wfixed=wfixed, ansimage=ansimage, $
+   extract_image, (image - smooth), invvar, xnow, sigma2, flux, fluxivar, $
+    proftype=proftype, wfixed=wfixed, ansimage=ansimage, $
     highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
-    chisq=chisq, ymodel=ym, pixelmask=pixelmask, reject=[0.2,0.8,0.8]
-
+    chisq=chisq, ymodel=ym, pixelmask=pixelmask, reject=[0.2,0.8,0.8], $
+    /relative
 
    ;----------------------------------------------------------------------
    ; can we find cosmic rays by looking for outlandish ansimage ratios?
@@ -467,7 +467,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    sxaddpar, objhdr, 'HIGHREJ', highrej, 'Extraction: high rejection'
    sxaddpar, objhdr, 'SCATPOLY', npoly, 'Extraction: Order of scattered light polynomial'
    sxaddpar, objhdr, 'PROFTYPE', proftype, 'Extraction profile: 1=Gaussian'
-   sxaddpar, objhdr, 'NFITPOLY', nterms, 'Extraction: Order of profile parameter fit'
+   sxaddpar, objhdr, 'NFITPOLY', nterms, 'Extraction: Number of parameters in each profile'
 
    ;----------
    ; Write extracted, lambda-calibrated, sky-subtracted spectra to disk
