@@ -55,6 +55,10 @@ DFPSPLOT: Added optional XSIZE keyword.
 DJS_BATCH: Add optional keyword SELECTHOST.  This will be used
            for the HoggPT processing of 2.5-m data.
            The inputs LOCALFILE,OUTFILE are now optional.
+DJS_LOCKFILE,DJS_UNLOCKFILE: These routines had a small chance that
+           more than one process could lock a file at once.  This
+           small chance is now eliminated on Unix platforms running
+           IDL 5.4 or later by building a symbolic link as the lock file.
 DJS_SFIT: New proc for surface fitting to tabulated data with errors.
 FITS_WAIT: Allow DELTAT,TMAX to be zero.
 HOGG_ITERLINFIT: General-purpose sigma-clipping linear fitting routine
