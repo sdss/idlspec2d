@@ -19,6 +19,9 @@ Princeton mailing list</A>.
 <P>
 In this document:
 <UL>
+  <LI><A HREF="#launch">How to Launch Son-of-Spectro</A>
+  <LI><A HREF="#version">Backing out to an older version</A>
+  <LI><A HREF="#install">Installing a new version</A>
   <LI><A HREF="#howwork">How Son-of-Spectro Works</A>
   <LI><A HREF="#outputs">Son-of-Spectro Outputs</A>
   <UL>
@@ -27,10 +30,123 @@ In this document:
      <LI><A HREF="#outputs_log">Log files</A>
      <LI><A HREF="#outputs_figure">S/N figures</A>
   </UL>
-  <LI><A HREF="#launch">How to Launch Son-of-Spectro</A>
-  <LI><A HREF="#version">Backing out to an older version</A>
   <LI><A HREF="#trouble">Trouble-shooting Son-of-Spectro</A>
 </UL>
+
+<H2><A NAME="launch">How to Launch Son-of-Spectro</A></H2>
+
+<P>
+Son-of-Spectro is a cron job that runs from the "observer" account
+on "plate-mapper.apo.nmsu.edu".  It should always be running, and
+should even recover (as any cron job) if that machine is power-cycled.
+
+<P>
+Log into "plate-mapper" as user "observer".  Check if the SOS is running
+by typing:
+<DL><DD><PRE>
+  % sos_status
+</PRE></DD></DL>
+If it is <B>not</B> running, then you will see a response beginning with:
+<DL><DD><PRE>
+  The Son-of-Spectro cron job is NOT running for USER=observer MACHINE=plate-mapper.
+</PRE></DD></DL>
+If it <B>is</B> running, then you will see a response beginning with:
+<DL><DD><PRE>
+  The Son-of-Spectro cron job IS running for USER=observer MACHINE=plate-mapper.
+</PRE></DD></DL>
+This is then followed with some other information that may be useful
+for trouble-shooting.
+
+<P>
+To start up SOS, type:
+<DL><DD><PRE>
+  % sos_start
+</PRE></DD></DL>
+
+<P>
+To stop up SOS, type:
+<DL><DD><PRE>
+  % sos_stop
+</PRE></DD></DL>
+
+<P>
+All of these commands can also be run from a remote machine.
+A second argument should be the machine name with an optional user-name, i.e.:
+<DL><DD><PRE>
+  % sos_status plate-mapper
+  % sos_status observer@plate-mapper.apo.nmsu.edu
+</PRE></DD></DL>
+
+<H2><A NAME="version">Backing out to an older version</A></H2>
+
+<P>
+The following intructions only apply to versions of "idlspec2d" v4_3_1 and later.
+
+<P>
+You can run a different version of Son-of-Spectro by setting up
+the relevant version of idlspec2d before you launch it with "sos_start".
+This should be done from the "observer" account on "plate-mapper.apo.nmsu.edu".
+<DL><DD><PRE>
+  % sos_stop
+  % setup idlspec2d v4_3_1
+  % sos_start
+</PRE></DD></DL>
+If you type "sos_status", it should tell you which version is now running.
+
+<P>
+Note that Son-of-Spectro is actually general enough to be run from any
+account on any remote computer.  The only requirements are as following:
+<OL>
+<LI>The directory /data/spectro must exist on the remote machine,
+    and be write-able by the user.
+<LI>This user@machine must have permission to copy files with "ssh"
+    "from sdsshost.apo.nmsu.edu".  This must be set up to work without
+    typing a passphrase.
+</OL>
+
+<H2><A NAME="install">Installing a new version</A></H2>
+
+<P>
+The following intructions only apply to versions of "idlspec2d" v4_3_1 and later.
+
+<P>
+Check out a tagged version, such as v4_3_1, of both "idlutils" and "idlspec2d".
+To avoid typing mistakes, I start by defining two environment variables
+for the version numbers:
+<DL><DD><PRE>
+  % setenv IDLUTILS_VERS v4_3_1
+  % setenv IDLSPEC2D_VERS v4_3_1
+  % setup sdsscvs # Only needed on machines set up by Fermi
+  % cd /p/idlutils
+  % cvs co -d $IDLUTILS_VERS -r $IDLUTILS_VERS idlutils
+  % cd /p/idlspec2d
+  % cvs co -d $IDLSPEC2D_VERS -r $IDLSPEC2D_VERS idlspec2d
+</PRE></DD></DL>
+
+<P>
+Declare these versions (and optionally declare them as current with the "-c"
+flag):
+<DL><DD><PRE>
+  % ups declare -f Linux+2 -m idlutils.table \
+    -r /p/idlutils/$IDLUTILS_VERS -c idlutils $IDLUTILS_VERS
+  % ups declare -f Linux+2 -m idlspec2d.table \
+    -r /p/idlspec2d/$IDLSPEC2D_VERS -c idlspec2d $IDLSPEC2D_VERS
+</PRE></DD></DL>
+
+<P>
+Build the code:
+<DL><DD><PRE>
+  % setup idl  # Only needed for machines set up by Fermi
+  % setup idlutils $IDLUTILS_VERS
+  % setup idlspec2d $IDLSPEC2D_VERS
+  % cd $IDLUTILS_DIR
+  % evilmake all
+  % cd $IDLSPEC2D_DIR
+  % evilmake all
+</PRE></DD></DL>
+
+<P>
+Now you are ready to <A HREF="#launch">launch</A> this new version of the code.
 
 <H2><A NAME="howwork">How Son-of-Spectro Works</A></H2>
 
@@ -270,72 +386,6 @@ is done on individual frames for the table, but on the summed S/N over
 all frames for the figure.  The tabulated values are the ones we use
 to declare a plate done.
 
-<H2><A NAME="launch">How to Launch Son-of-Spectro</A></H2>
-
-<P>
-Son-of-Spectro is a cron job that runs from the "observer" account
-on "plate-mapper.apo.nmsu.edu".  It should always be running, and
-should even recover (as any cron job) if that machine is power-cycled.
-
-<P>
-Log into "plate-mapper" as user "observer".  Check if the cron job
-is running by typing:
-<DL><DD><PRE>
-  crontab -l
-</PRE></DD></DL>
-If it is <B>not</B> running, then you will see the response:
-<DL><DD><PRE>
-  no crontab for observer
-</PRE></DD></DL>
-If it <B>is</B> running, then you will see a bunch of lines of text
-beginning with:
-<DL><DD><PRE>
-  # DO NOT EDIT THIS FILE - edit the master and reinstall.
-</PRE></DD></DL>
-and followed by our crontab file.  This file is located in
-<DL><DD><PRE>
-  /p/idlspec2d/cvs/bin/cron.table
-</PRE></DD></DL>
-
-<P>
-The Son-of-Spectro cron job is started by typing:
-<DL><DD><PRE>
-  crontab /p/idlspec2d/cvs/bin/cron.table
-</PRE></DD></DL>
-It is stopped by typing:
-<DL><DD><PRE>
-  crontab -r
-</PRE></DD></DL>
-
-<P>
-These instructions are repeated in the "cron.table" file.
-
-<H2><A NAME="version">Backing out to an older version</A></H2>
-
-<P>
-You <B>cannot</B> change versions of Son-of-Spectro by doing a "ups declare"
-on plate-mapper.  This is because cron jobs don't talk to the UPS database.
-
-<P>
-The active version of the idlutils & idlspec2d code for Son-of-Spectro
-is pointed to by logical links from /p/idlutils/cvs & /p/idlspec2d/cvs.
-To back out to an older version, do the following:
-<OL>
-<LI> Stop the cron job:
-    <DL><DD><PRE>
-    crontab -r
-    </PRE></DD></DL>
-<LI> Change these links to the version that you want, for example v4_3_1:
-    <DL><DD><PRE>
-    ln -fs /p/idlutils/v4_3_1 /p/idlutils/cvs
-    ln -fs /p/idlspec2d/v4_3_1 /p/idlspec2d/cvs
-    </PRE></DD></DL>
-<LI> Start the cron job running again:
-    <DL><DD><PRE>
-    crontab /p/idlspec2d/cvs/bin/cron.table
-    </PRE></DD></DL>
-</OL>
-
 <H2><A NAME="trouble">Trouble-shooting Son-of-Spectro</A></H2>
 
 <P>
@@ -347,25 +397,23 @@ However, if it appears to not be working one could check the following:
     in the images.  This prevents SOS from reducing anything but bias
     and dark frames.
 <LI><B>Is the cron job running?</B><BR>
-    Log into "observer@plate-mapper.apo.nmsu.edu", and issue a "crontab -l"
-    command.  This should list the 50-line cron table.
+    Log into "observer@plate-mapper.apo.nmsu.edu", and issue a "sos_status"
+    command.  This should report that SOS is running.
     If not, then <A HREF="#launch">restart the cron job</A>.
 <LI><B>Is the data being copied over?</B><BR>
     The raw data files should be copied from "sdsshost" to "plate-mapper"
     in the /data/spectro/$MJD directory.  If it is not, then the rsync
     command may not be working.  This <B>could</B> be due to a rogue
-    "aporsync" process sitting around.  Try:
-    <DL><DD><PRE>
-    ps ax | grep aporsync.sh | grep -v -e grep
-    </PRE></DD></DL>
-    to see if there are any such processes.  If you suspect this as the
+    "aporsync" process sitting around.  The "sos_status" command will
+    report any such processes.  If you suspect this as the
     problem, just kill that process.  It's a harmless thing to do, since
     SOS will just start it up again within a minute.
 <LI><B>Are there old "lock" files sitting around?</B><BR>
     SOS generates "lock" files to prevent multiple processes from changing
-    these files simultaneously.  If there is a "lock" file sitting around
-    that has been there for several minutes or more, then something is
-    wrong.  You should delete the file ending with ".lock".
+    these files simultaneously.  The "sos_status" command will report
+    all "lock" files and their last modification times.
+    If any have been sitting around for several minutes or more,
+    then something is wrong.  You should delete the file ending with ".lock".
     <B>However</B>, this could result in a corrupted "logfile*.fits".
 <LI><B>Is the logfile corrupted?</B><BR>
     This is probably the worst thing that could happen.  If the file
@@ -376,10 +424,10 @@ However, if it appears to not be working one could check the following:
     delete this file, which would basically wipe out all the previous
     reductions for that night from the web page.  Alternatively, one
     could delete all the raw and reduced data for that night from
-    "plate-mapper":
+    "plate-mapper" (but not from sdss-host!!) :
     <DL><DD><PRE>
-    rm -rf /data/spectro/spectrologs/$MJD
-    rm -rf /data/spectro/$MJD
+    % rm -rf /data/spectro/spectrologs/$MJD
+    % rm -rf /data/spectro/$MJD
     </PRE></DD></DL>
     That might sound extreme, but SOS will simply start re-copying
     everything from "sdsshost" and re-build the reductions for the night.
