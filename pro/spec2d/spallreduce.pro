@@ -48,6 +48,8 @@
 pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams, $
         display=display
 
+display = 0 ; Disable this plotting of hundreds of pages!! (???)
+
    if (NOT keyword_set(planfile)) then planfile = 'spPlan2d.par'
 
    docomb = 0
