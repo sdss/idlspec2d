@@ -39,6 +39,7 @@
 ;   $IDLSPEC2D_DIR/templates/TEMPLATEFILES
 ;
 ; PROCEDURES CALLED:
+;   cpbackup
 ;   dfpsclose
 ;   dfpsplot
 ;   filter_thru()
@@ -97,11 +98,13 @@ pro spreduce1d, platefile, fiberid=fiberid, doplot=doplot, debug=debug
 
    if (keyword_set(doplot) AND NOT keyword_set(debug)) then begin
       plotfile = 'spDiag1d-' + platemjd + '.ps'
+      cpbackup, plotfile
       dfpsplot, plotfile, /color
    endif
 
    stime0 = systime(1)
 
+   cpbackup, logfile
    splog, filename=logfile
    splog, 'Log file ' + logfile + ' opened ' + systime()
    if (keyword_set(plotfile)) then $
