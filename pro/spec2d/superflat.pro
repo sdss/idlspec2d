@@ -38,12 +38,12 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   bspline_iterfit()
+;   bspline_valu()
 ;   djs_maskinterp()
 ;   djs_mean()
 ;   djs_oplot
 ;   djs_plot
-;   slatec_bvalu()
-;   slatec_splinefit()
 ;   traceset2xy
 ;
 ; REVISION HISTORY:

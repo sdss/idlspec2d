@@ -29,6 +29,7 @@
 ;
 ; PROCEDURES CALLED:
 ;   cpbackup
+;   djs_filepath()
 ;   idlspec2d_version()
 ;   idlutils_version()
 ;   spcoadd_frames
