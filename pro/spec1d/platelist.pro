@@ -215,7 +215,7 @@ pro platelist, infile, outfile=outfile, plist=plist
          endelse
 
          if (statusmissing EQ 0 AND statusrun EQ 0) then $
-          plist[ifile].status2d = 'Done?' $ ; Should have found spPlate file!?
+          plist[ifile].status2d = 'FAILED' $ ; Should have found spPlate file
          else if (statusrun EQ 0 AND statusdone EQ 0) then $
           plist[ifile].status2d = 'PENDING' $ ; No log files created
          else $
@@ -277,7 +277,7 @@ pro platelist, infile, outfile=outfile, plist=plist
             spawn, 'tail -1 '+thislogfile, lastline
             if (strmatch(lastline[0], '*Successful completion*')) then begin
                ; Case where this 1D log file completed
-               plist[ifile].status1d = 'Done?'
+               plist[ifile].status1d = 'FAILED'; Should have found spZbest file
             endif else begin
                ; Case where this 1D log file isn't completed
                plist[ifile].status1d = 'RUNNING'
@@ -352,9 +352,9 @@ pro platelist, infile, outfile=outfile, plist=plist
     olun = -1L
 
    printf, olun, 'PLATE  MJD   RA    DEC   SN2_G1 SN2_I1 SN2_G2 SN2_I2 ' $
-    + 'Ngal Nqso Nsta Nunk Nsky'
+    + 'Ngal Nqso Nsta Nunk Nsky Stat2D  Stat1D  Vers2D    Vers1D    ?'
    printf, olun, '-----  ----- ----- ----- ------ ------ ------ ------ ' $
-    + '---- ---- ---- ---- ----'
+    + '---- ---- ---- ---- ---- ------- ------- --------- --------- -'
 
    ;----------
    ; Loop through all files
@@ -365,7 +365,9 @@ pro platelist, infile, outfile=outfile, plist=plist
        plist[ifile].sn2_i1, plist[ifile].sn2_g2, plist[ifile].sn2_i2, $
        plist[ifile].n_galaxy, plist[ifile].n_qso, plist[ifile].n_star, $
        plist[ifile].n_unknown, plist[ifile].n_sky, $
-       format='(i5,i7,f6.1,f6.1,4f7.1,5i5)'
+       plist[ifile].status2d, plist[ifile].status1d, $
+       plist[ifile].vers2d, plist[ifile].vers1d, plist[ifile].qsurvey, $
+       format='(i5,i7,f6.1,f6.1,4f7.1,5i5,2(1x,a7),2(1x,a9),i2)'
    endfor
 
    ;----------
