@@ -99,6 +99,17 @@ function trace320crude, image, invvar, ystart=ystart, nmed=nmed, $
     maxshift0=maxshift0, xerr=xerr)
    xmask = xerr LT 990  ; =1 for good centers, =0 for bad
 
+   ;--------------------------------------------------------------------
+   ; started on near two or more bad columns? THEN set xgood[itrace] = 0
+
+   ncol = (size(invvar,/dimen))[0]
+   for itrace=0, ntrace-1 do begin
+     bottom = long(xstart[itrace]-radius) >0
+     top    = long(xstart[itrace]+radius) < ncol-1L
+     badcol = where(invvar[bottom:top, ystart] LE 0, ct)
+     if ct GT 0 then xgood[itrace] = 0
+   endfor
+
    ;----------
    ; Compare the traces in each row to those in row YSTART.
    ; Our assumption is that those centers should be a polynomial mapping
@@ -160,19 +171,80 @@ function trace320crude, image, invvar, ystart=ystart, nmed=nmed, $
    ; Perform a second centering iteration on the fibers initially rejected
    ; by TRACE320CEN.  Those fibers might not actually be bad, but might
    ; have just had bad pixels near YSTART.
+   ;
+   ;  The below procedure fails just as bad as the first one when mutliple
+   ;  bad columns exist.   And as far as I can tell, xgood is never set to 0.
+   ; 
+   ;  indx = where(xgood EQ 0, ct)
+   ;  for ii=0, ct-1 do begin
+   ;     itrace = indx[ii]
+   ; 
+   ;        tmp_xpos = trace_fweight(fimage, xset[*,itrace], yset[*,itrace], $
+   ;         radius=radius, xerr=tmp_xerr, invvar=invvar)
+   ; 
+   ;        xset[*,itrace] = tmp_xpos
+   ;      xerr[*,itrace] = tmp_xerr
+   ;     xmask[*,itrace] = tmp_xerr LT 990 ; =1 for good centers, =0 for bad
+   ;   endfor
 
-   indx = where(xgood EQ 0, ct)
+
+   ;----------------------------------------------------------------------
+   ;  Find good centroids and compare with upper and lower fibers if they
+   ;  
+
+   problemtraces = where(xgood EQ 0, ct)
+   nrow = (size(xset,/dimen))[1]
+   tracenum = lindgen(ntrace)
+   tmp_xpos = trace_fweight(fimage, xset, yset, $
+            radius=radius, xerr=tmp_xerr, invvar=invvar)
+
+   xorig = xset
+   badpix = total(tmp_xerr EQ 999,1) 
+
+   if ct GT 0 then $
+     splog, 'Warning: Fixing traces: ', fix(problemtraces)
    for ii=0, ct-1 do begin
-      itrace = indx[ii]
+      itrace = problemtraces[ii] 
 
-      tmp_xpos = trace_fweight(fimage, xset[*,itrace], yset[*,itrace], $
-       radius=radius, xerr=tmp_xerr, invvar=invvar)
+;
+;	Really simple minded loop to check for nearest 8 neighbors who might
+;        be suitable for substitution
+;
+      checktrace = -1
+      for icheck = itrace-4 > 0, (itrace+4) < (ntrace-1) do begin
+         if xgood[icheck] AND icheck NE itrace AND $
+               badpix[icheck] LT 100 then begin
+           if checktrace[0] EQ -1 then checktrace = icheck $
+           else checktrace = [checktrace, icheck]
+         endif
+      endfor
+      ncheck = n_elements(checktrace)
 
-      xset[*,itrace] = tmp_xpos
-      xerr[*,itrace] = tmp_xerr
-      xmask[*,itrace] = tmp_xerr LT 990 ; =1 for good centers, =0 for bad
-   endfor
+      if ncheck GE 2 then begin
+        clean = total(tmp_xerr[*,checktrace] EQ 999,2) EQ 0
+        meantrace = total(xset[*,checktrace],2)/ncheck 
 
+        goodrows = where(clean AND tmp_xerr[*,itrace] NE 999, ngoodrows)
+        if ngoodrows GE 100 then begin
+          xset_good = xset[goodrows,*]
+          offset = tmp_xpos[goodrows,itrace] # replicate(1,ncheck) - $
+                 xset_good[*,checktrace]
+          shift =  mean(djs_median(offset,1))
+          xset[*,itrace] = meantrace + shift
+        endif else begin
+           splog, 'Fiber ', fix(itrace), ' Only ', $
+             fix(ngoodrows), ' rows to adjust trace, skipping'
+             xmask[itrace,*] = 0
+        endelse
+
+      endif else begin
+           splog, 'Fiber ', fix(itrace), ' Only ', $
+             fix(ncheck), ' neighboring good fibers, skipping'
+           xmask[itrace,*] = 0
+      endelse
+
+    endfor
+ 
    ;----------
    ; Replace XSET with a smooth trace-set
 
