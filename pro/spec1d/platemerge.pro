@@ -318,7 +318,7 @@ pro platemerge, zfile, outroot=outroot1, public=public
       if (keyword_set(tsobj)) then $
        copy_struct_inx, tsobj, platedat $
       else $
-       splog, 'WARNING: No tsObj file found for plate ', oudat[indx[0]].plate
+       splog, 'WARNING: No tsObj file found for plate ', outdat[indx[0]].plate
       copy_struct_inx, outdat, platedat, index_from=indx
 
       mwrfits_chunks, platedat, outroot[0]+'.fits.tmp', $
