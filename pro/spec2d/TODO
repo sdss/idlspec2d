@@ -1,4 +1,21 @@
 
+* Calling script for SPREDUCE2D, SPCOMBINE, SPREDUCE1D
+
+* Is the 5460 sky line at the wrong wavelength?
+
+* Dispersion width needs to be adjusted by measuring the width of bright
+  sky lines (on sky fibers), and change units from pixels to log10-lambda.
+
+* Horrible bug in plate 343, but evident in other plates:
+  If throughput varies for some fibers (due to atmospheric refraction
+  in this case) relative to the standard star, then fluxing between
+  frames is horrible.  When combining multiple spectra of high S/N objects,
+  lots of random points get rejected, and the combined spectra looks horrible.
+
+* Modify SDSSPROC to read in the binned images.
+
+* For SPFLATTEN2, set any bad columns (from opBC file) to unity.
+
 * When combining files, set an additional mask bit for when part of a
   spectrum has been constructed with only one input spectrum.  In those
   cases, we don't have information for CR rejection.
@@ -22,12 +39,7 @@
 
 * Add keywords: INSTRUME ?
 
-* Use a proc SDSSHEAD in place of HEADFITS, which calls SDSSPROC to get
-  the header info correct (e.g., the CAMERA keyword).
-
 * ATV bug displaying BYTE images, or NaN's
-
-* Add HELIOCENTRIC code into current cvs.
 
 * Reject masked or deviant sky fibers from the supersky (as done for superflat)
 
@@ -67,8 +79,6 @@
 
 * Change FIBERMASK not in FIBERFLAT, but in SUPERFLAT.
 
-* Try not to overwrite PostScript log file.
-
 * BUG: For arc 51441/sdR-b2-00001347.fit (plate 214), bizarre wavelength
   solution!!  Were too many fibers rejected or something??
   This then shows up as horrible sky-subtraction!!
@@ -81,10 +91,6 @@
 
   --> Could this be due to scattered light errors near the edge of frames?
 
-* Put the arc-fitting QA logs into the QAPLOT code.
-
-* Rationalize 01, 1b, b1 --> b1.
-
 * Looks like combining now fails if blue side is missing (21-Dec-99).
 
 * Do something fancier for overscan-correction?
@@ -95,20 +101,6 @@
   some attempt is made, if both red and blue spectra are used in combining,
     total exposure time is exposure time of all / 2
 
-* For the calibration op*.par files, make versions based upon MJD in /examples
-    --- opECalib-51574.par  is up to date with latest gains.
-
-* Make bad pixel masks for "opBC.par" file.
-  Include bad pixels from pixflat.
-
-* Plot the superflat vector as a QA plot
-
-* Have FIBERFLAT only do a very low-order correction now that the
-  flat fields are so much better.
-
-----> Done (17-Dec-99).  Now only fit a cubic to each.
-      But I'm still not using FIBERMASK everywhere I should.
-
 * Don't allow too many whopping terms.
 
 * Choose bkpts in combine2dout more carefully, bad behavior ensues
@@ -117,15 +109,7 @@
 * Fit spline to each spectrum before full combine2dout spline to
    register each spectrum in scale (including red/blue merge)
 
-* Decide on vacuum or air wavelengths - document this!
-
-* QA plot for how well the telluric-removal is doing
-
 * Special-case a combine routine for only 2 exposures that will reject CR's
-
-* Compare throughput from dome flats vs. throughput on bright sky lines.
-
-----> Gaussians are fit to 5577 in each spectrum, after flat scaling
 
 * Sky-subtraction: Fix edge effects in inverse variance scaling
 
@@ -141,8 +125,6 @@
 * The b1 CCD has too much overscan subtracted on rows 0 and 1.
   Check all overscan regions in SDSSPROC.
 
-* Need some logic to make certain we're looking at a flat, arc, etc.
-
 * Focal plane mapping
 
 * Output in header PSF information (spatial + wavelength) to final files.
@@ -150,6 +132,40 @@
 -------------------------------------------------------------------------------
 ;   These have been dealt with
 -------------------------------------------------------------------------------
+
+* Use a proc SDSSHEAD in place of HEADFITS, which calls SDSSPROC to get
+  the header info correct (e.g., the CAMERA keyword).
+
+* Try not to overwrite PostScript log file.
+
+* Put the arc-fitting QA logs into the QAPLOT code.
+
+* Rationalize 01, 1b, b1 --> b1.
+
+* For the calibration op*.par files, make versions based upon MJD in /examples
+    --- opECalib-51574.par  is up to date with latest gains.
+
+* Make bad pixel masks for "opBC.par" file.
+  Include bad pixels from pixflat.
+
+* Have FIBERFLAT only do a very low-order correction now that the
+  flat fields are so much better.
+----> Done (17-Dec-99).  Now only fit a cubic to each.
+      But I'm still not using FIBERMASK everywhere I should.
+
+* Plot the superflat vector as a QA plot
+
+* Decide on vacuum or air wavelengths - document this!
+
+* QA plot for how well the telluric-removal is doing
+
+* Compare throughput from dome flats vs. throughput on bright sky lines.
+----> Gaussians are fit to 5577 in each spectrum, after flat scaling
+
+* Need some logic to make certain we're looking at a flat, arc, etc.
+
+* Add HELIOCENTRIC code into current cvs.
+
 * Need to pass rejection information back from extract_row.c
     to add into pixelmask
 
@@ -278,6 +294,7 @@ readidlout
 -------------------------------------------------------------------------------
 Unused routines:
 
+combine2dout
 combineI (old version of combine2dout?)
 extract2
 findobjects
@@ -286,6 +303,8 @@ fitwithmx (deprecated)
 funccheb
 gauss_smooth
 read2dout
+spallreduce
+spplan
 svdcheb
 trace_fix
 writeapid
