@@ -311,13 +311,19 @@ void ProfileGauss(float *x, IDL_LONG ndat, float **y, float xcen, IDL_LONG xmin,
 	}
       }
 
-	frac = xcen - (int)xcen;
+        if (xcen > 0.0) {
+	  frac = xcen - (int)xcen;
+          backup = (int)xcen - xmin;
+        } else {
+	  frac = (int)xcen - xcen;
+          backup = (int)xcen - xmin - 1;
+        }
+
 	nm = frac * NSUBSAMP;
-        backup = (int)xcen - xmin;
 	for(j=0;j<nCoeff;j++) 
 	  for (i=xmin,k=0,place=15-backup; i<=xmax; i++,k++,place++) 
 	     { 
-/*             printf("%d %d %d %d %d %f\n", 
+/*             if (xcen < 0.0) printf("%d %d %d %d %d %f\n", 
 		i,j,k,place,nm,frac);  */
              y[j][k] = model[nm][j][place];
 if (nm >= 2000) printf("VERY BAD!!!\n");
@@ -371,9 +377,15 @@ void ProfileAbs3(float *x, IDL_LONG ndat, float **y, float xcen,
 	}
       }
 
-	frac = xcen - (int)xcen;
+        if (xcen > 0.0) {
+	  frac = xcen - (int)xcen;
+          backup = (int)xcen - xmin;
+        } else {
+	  frac = (int)xcen - xcen;
+          backup = (int)xcen - xmin - 1;
+        }
+
 	nm = frac * NSUBSAMP;
-        backup = (int)xcen - xmin;
 	for(j=0;j<nCoeff;j++) 
 	  for (i=xmin,k=0,place=15-backup; i<=xmax; i++,k++,place++) 
 	     { 
@@ -440,9 +452,15 @@ void ProfileAbs25(float *x, IDL_LONG ndat, float **y, float xcen,
 	}
       }
 
-	frac = xcen - (int)xcen;
+        if (xcen > 0.0) {
+	  frac = xcen - (int)xcen;
+          backup = (int)xcen - xmin;
+        } else {
+	  frac = (int)xcen - xcen;
+          backup = (int)xcen - xmin - 1;
+        }
+
 	nm = frac * NSUBSAMP;
-        backup = (int)xcen - xmin;
 	for(j=0;j<nCoeff;j++) 
 	  for (i=xmin,k=0,place=15-backup; i<=xmax; i++,k++,place++) 
 	     { 
@@ -550,9 +568,15 @@ void ProfileAbs3WideGauss(float *x, IDL_LONG ndat, float **y, float xcen,
 	}
       }
 
-	frac = xcen - (int)xcen;
+        if (xcen > 0.0) {
+	  frac = xcen - (int)xcen;
+          backup = (int)xcen - xmin;
+        } else {
+	  frac = (int)xcen - xcen;
+          backup = (int)xcen - xmin - 1;
+        }
+
 	nm = frac * NSUBSAMP;
-        backup = (int)xcen - xmin;
 	for(j=0;j<nCoeff;j++) 
 	  for (i=xmin,k=0,place=15-backup; i<=xmax; i++,k++,place++) 
 	     {
@@ -710,8 +734,10 @@ void findXLimits(IDL_LONG *xmin, IDL_LONG *xmax, float *x, float *xcen,
       xmin[i] = place;
       xmax[i] = place2 - 1; 
 
+      if(xmax[i] == xmin[i])  xmax[i]--;
 /*      if(xmax[i] <= xmin[i]) 
-         fprintf(stderr," Fiber # %d has no influence %f \n", (int) i, diff); */
+         fprintf(stderr," Fiber # %d has no influence %f \n", (int) i, diff); 
+      fprintf(stderr," %d %f   %d %d \n", (int) i, xcen[i], xmin[i], xmax[i]);*/
 
       place = xmin[i];
    }     
@@ -755,25 +781,27 @@ void CheckRowFibers(float **abig, IDL_LONG *xmin, IDL_LONG *xmax,
 	   total = 0.0;
 	   for (k=xmin[i],m=0; k<=xmax[i]; k++,m++)
 	      if (invvar[k] > 0.0) total += abig[i*nCoeff][m];
-	   if (total < reject1) {
+	   if (total < reject1 || total > 1.01) {
               partial[i] = 1;
+              
               for(j=nCoeff-1,l=j+i*nCoeff;j>=1;j--,l--) 
 	         if (ia[l]) {
 	            ia[l] = 0;
 	            a[l] = 0.0;
-/*          fprintf(stderr,"Fiber %d, dropped term %d, total: %f\n", 
-                    (int) i, (int) j,total);   */
+/*          fprintf(stderr,"Fiber %d, dropped term %d, total: %f %f %d %d\n", 
+                    (int) i, (int) j,total, reject1, 
+                    (int) xmin[i], (int) xmax[i]);   */
                     }
                  }
-	   if (total < reject2) {
+	   if (total < reject2 || total > 1.01) {
               full[i] = 1;
               j = 0;
               l=i*nCoeff;
 	      if (ia[l]) {
 	         ia[l] = 0;
 	         a[l] = 0.0;
-/*          fprintf(stderr,"Fiber %d, dropped term %d, total: %f\n", 
-                   (int) i, (int) j,total);   */
+/*          fprintf(stderr,"Fiber %d, dropped term %d, total: %f %f\n", 
+                   (int) i, (int) j,total, reject2);   */
                     }
                }
 	}   
