@@ -215,6 +215,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    sxaddpar, hdr, 'CAMCOL', camcol
    sxaddpar, hdr, 'TELESCOP', 'SDSS 2.5-M', ' Sloan Digital Sky Survey'
    sxaddpar, hdr, 'AUTHOR', 'Scott Burles & David Schlegel'
+   sxaddpar, hdr, 'VERSIDL', !version.release, ' Version of IDL'
    sxaddpar, hdr, 'VERSUTIL', idlutils_version(), ' Version of idlutils'
    sxaddpar, hdr, 'VERSREAD', idlspec2d_version(), $
     ' Version of idlspec2d for pre-processing raw data', after='VERSUTIL'
