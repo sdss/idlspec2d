@@ -6,7 +6,7 @@
 ;
 ;   Performs all object extraction tasks
 ;      0) Locate bright fibers, and test image background
-;      1) 6 step Optimal extraction
+;      1) 3 step Optimal extraction
 ;      2) Tweak to sky lines
 ;      3) Sky subtraction
 ;      4) Flux calibration
@@ -95,12 +95,12 @@ function find_whopping, boxcar, thresh, whopct
     whopping = lonarr(topct)
     for i=0, topct -1 do begin
       mmax = max(boxcar[bottom[i]:top[i]], place)
-      whopping[i] = place
+      whopping[i] = candidates[place + bottom[i]]
     endfor
 
     whopct = topct
     return, whopping
-     
+
 end
 
 pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
@@ -189,7 +189,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
       ;        3) Extract all 2048 rows with new profiles given by
       ;              fitansimage
 
-      splog, 'Extracting frame '+objname+' with 6 step process'
+      splog, 'Extracting frame '+objname+' with 3 step process'
       nrow = (size(image))[2]
       ncol = (size(image))[1]
       skiprow = 8
@@ -200,6 +200,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
       proftype = 1 ; Gaussian
       highrej = 5  ; just for first extraction steps
       lowrej = 5  ; just for first extraction steps
+                   ; We need to check npoly with new scattered light backgrounds
       npoly = 8 ; maybe more structure, lots of structure
       wfixed = [1,1,1] ; gaussian term + centroid and  sigma terms
       nterms = 3
