@@ -266,31 +266,25 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
       corrset.coeff[1:*,sky] = 0.0
 
       ;---------------
-      ; Reject any bad corrections and replace with low S/N solution
-      ; solution.  Bad vectors are those with fit coefficients outside
-      ; of pre-set boundaries.  The boundaries on coeffs 1 & 2 increase 
-      ; with increasing spread in the coeff0 values -- this should help
-      ; to accomodate really bad plates.
+      ; Reject any bad corrections and replace with zeropoint shift only.
+      ; Bad vectors are those with fit coefficients deviant by > 5-sigma.   
+      ; Sigma is computed of the zero order coeff since this quantity is 
+      ; robustly measured and a good indicator of plate quality
 
       ; Normalize coefficients 
       coef0 = corrset.coeff[0,*]  
       coef1 = corrset.coeff[1,*] / coef0 
       coef2 = corrset.coeff[2,*] / coef0 
       coef3 = corrset.coeff[3,*] / coef0 
- 
-      meanclip, coef0, coef0mean, coef0sig, clipsig = 5
+
+      djs_iterstat, coef0, sigrej=5, mean=coef0mean, sigma=coef0sig 
       coef0 = coef0 / coef0mean
       coef0sig = (coef0sig / coef0mean) > 0.10
     
-      ; Adjust boundary values for plate quality
-      coef1bound = 3.5 * coef0sig  
-      coef2bound = 2.5 * coef0sig 
-      coef3bound = 2.5 * coef0sig 
-
-      isbad = coef0 LT  (1 - 5 * coef0sig) OR coef0 GT (1 + 5 * coef0sig) OR $
-              coef1 LT -coef1bound OR coef1 GT coef1bound OR $
-              coef2 LT -coef2bound OR coef2 GT coef2bound OR $
-              coef2 LT -coef3bound OR coef2 GT coef3bound
+      isbad = (coef0 LT  (1 - 5*coef0sig) OR coef0 GT (1 + 5*coef0sig)) OR $
+              (coef1 LT -5*coef0sig OR coef1 GT 5*coef0sig) OR $
+              (coef2 LT -5*coef0sig OR coef2 GT 5*coef0sig) OR $
+              (coef3 LT -5*coef0sig OR coef3 GT 5*coef0sig) 
 
       bad = where(isbad, nbad)
       if bad[0] NE -1 then begin
