@@ -6,8 +6,9 @@
 ;   Create a "superflat" from an extracted flat-field image
 ;
 ; CALLING SEQUENCE:
-;   superflat, flux, fluxivar, wset, sset, $
-;    [ fibermask=, minval=, lower=, upper=, medval=, title= ]
+;   sset = superflat(flux, fluxivar, wset, fullbkpt, coeff, $
+;    [ fibermask=, minval=, medval=, title=, $
+;    x2=, nord=, npoly=, upper=, lower= ])
 ;
 ; INPUTS:
 ;   flux       - Array of extracted flux from a flat-field image [Nrow,Ntrace]
@@ -20,12 +21,16 @@
 ;                default to 0.
 ;   title      - TITLE of plot; if not set, then do not make this plot.
 ;
-; PARAMETERS FOR SLATEC_SPLINEFIT:
+; OPTIONAL PARAMETERS FOR BSPLINE_ITERFIT:
+;   x2         - Orthogonal dependent variable for B-spline fit;
+;                this will typically be the X position on the CCD.
+;   nord       - Order of b-splines; default of 4 for cubic
+;   npoly      - Order of X2 polynomial fit; default to 0 for none
 ;   lower      -
 ;   upper      -
 ;
 ; OUTPUTS:
-;   sset       - Structure describing spline fit to superflat
+;   sset       - Output structure describing spline fit to superflat.
 ;
 ; OPTIONAL OUTPUTS:
 ;   medval     - Median value of each fiber [NFIBER]
@@ -38,24 +43,24 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
-;   bspline_iterfit()
-;   bspline_valu()
 ;   djs_maskinterp()
 ;   djs_mean()
 ;   djs_oplot
 ;   djs_plot
+;   bspline_valu()
+;   bspline_iterfit()
 ;   traceset2xy
 ;
 ; REVISION HISTORY:
 ;   02-Jan-2000  Excised code from SPFLATTEN2 (DJS).
 ;-
 ;------------------------------------------------------------------------------
-
-pro superflat, flux, fluxivar, wset, sset, $
- fibermask=fibermask, minval=minval, lower=lower, upper=upper, medval=medval, $
- title=title
+function superflat, flux, fluxivar, wset, x2=x2, $
+ fibermask=fibermask, minval=minval, medval=medval, title=title, $
+ nord=nord, npoly=npoly, upper=upper, lower=lower
 
    if (NOT keyword_set(minval)) then minval = 0.0
+   if (NOT keyword_set(nord)) then nord = 4
 
    dims = size(flux, /dimens)
    ny = dims[0]
@@ -141,17 +146,55 @@ pro superflat, flux, fluxivar, wset, sset, $
    allwave = (loglam[*,igood])[isort]
    allflux = (scalef[*,igood])[isort]
    allivar = (scalefivar[*,igood])[isort]
+   if (keyword_set(x2)) then allx2 = (x2[*,igood])[isort]
    indx = where(flux[*,igood] GT minval)
+   if (keyword_set(x2)) then thisx2 = allx2[indx]
    if (indx[0] EQ -1) then $
     message, 'No points above MINVAL'
 
-   sset = bspline_iterfit(allwave[indx], allflux[indx], invvar=allivar[indx], $
-       nord=4, upper=upper, lower=lower, maxiter=maxiter, nbkpts=ny, $
-       outmask=mask, yfit=yfit)
+; THE BELOW FAILS WITH NORD=4, SO MUST SET NORD=3!!!???
+; ALSO, ONLY WORKS WITH NPOLY=1,2 OR 4!!!???
+   sset = bspline_iterfit(allwave[indx], allflux[indx], $
+    invvar=allivar[indx], x2=thisx2, nord=nord, npoly=npoly, nbkpts=ny, $
+    maxiter=maxiter, upper=upper, lower=lower, mask=mask)
+;;--------------------
+; De-bugging tests...
+;stop
+;sset2 = sset ; 2D-fit
+;sset1 = bspline_iterfit(allwave[indx], allflux[indx], $
+; invvar=allivar[indx], nord=4, nbkpts=ny, $
+; maxiter=maxiter, upper=upper, lower=lower, mask=mask2)
+;ymodel1 = bspline_valu(allwave, sset1)
+;ymodel2 = bspline_valu(allwave, sset2, x2=allx2)
+;jj=indx[long(randomu(123,10000)*640000)] ; random sampling of points
+;jj=jj[sort(allwave[jj])]
+;rmap1 = allflux[jj] - ymodel1[jj]
+;rmap2 = allflux[jj] - ymodel2[jj]
+;splot,allwave[jj],rmap1,ps=3
+;splot,allwave[jj],rmap2,ps=3
+;;--------------------
+;jj=indx[long(randomu(123,10000)*640000)] ; random sampling of points
+;jj=jj[sort(allwave[jj])]
+;sset1 = bspline_iterfit(allwave[jj], allflux[jj], $
+; invvar=allivar[jj], nord=3, nbkpts=ny, $
+; maxiter=maxiter, upper=upper, lower=lower, mask=mask)
+;sset2 = bspline_iterfit(allwave[jj], allflux[jj], $
+; invvar=allivar[jj], x2=allx2[jj], nord=3, npoly=2, nbkpts=ny, $
+; maxiter=maxiter, upper=upper, lower=lower, mask=mask)
+;sset3 = bspline_iterfit(allwave[jj], allflux[jj], $
+; invvar=allivar[jj], x2=allx2[jj], nord=3, npoly=3, nbkpts=ny, $
+; maxiter=maxiter, upper=upper, lower=lower, mask=mask)
+;ymodel1 = bspline_valu(allwave, sset1)
+;ymodel2 = bspline_valu(allwave, sset2, x2=allx2)
+;ymodel3 = bspline_valu(allwave, sset2, x2=allx2)
+;rmap1 = allflux[jj] - ymodel1[jj]
+;rmap2 = allflux[jj] - ymodel2[jj]
+;rmap3 = allflux[jj] - ymodel3[jj]
+;splot,allwave[jj],rmap1,ps=3,yr=[-1,1]/10.
+;splot,allwave[jj],rmap2,ps=3,yr=[-1,1]/10.
+;splot,allwave[jj],rmap3,ps=3,yr=[-1,1]/10.
+;print,djsig(rmap1),djsig(rmap2),djsig(rmap3)
 
-;   fullbkpt = slatec_splinefit(allwave[indx], allflux[indx], coeff, $
-;    maxiter=maxiter, upper=upper, lower=lower, $
-;    invvar=allivar[indx], nord=4, nbkpts=ny, mask=mask, bkpt=bkpt)
 
 ; Should move this plotting elsewhere ???
    ;------
@@ -161,7 +204,8 @@ pro superflat, flux, fluxivar, wset, sset, $
       wmin = fix(10^min(allwave))
       wmax = ceil(10^max(allwave))
       plot_lam = wmin + lindgen(wmax-wmin+1)
-      plot_fit  = bspline_valu(alog10(plot_lam), sset)
+      plot_x2 = 0*plot_lam + median(allx2)
+      plot_fit  = bspline_valu(alog10(plot_lam), sset, x2=plot_x2)
       djs_plot, plot_lam, plot_fit, xrange=[wmin,wmax], xstyle=1, $
        xtitle='\lambda [A]', ytitle='Normalized flux', $
        title=title
@@ -172,7 +216,6 @@ pro superflat, flux, fluxivar, wset, sset, $
        djs_oplot, 10^allwave[indx[ii]], allflux[indx[ii]], ps=3, color='red'
    endif
 
-   return
+   return, sset
 end
-
 ;------------------------------------------------------------------------------
