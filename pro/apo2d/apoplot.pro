@@ -360,8 +360,9 @@ pro apoplot, plate, fiberid, mjd=mjd, expnum=expnum, nsmooth=nsmooth, $
     spectrolog_dir = '/data/spectro/spectrologs'
 
    if (NOT keyword_set(mjd)) then begin
-      mjdlist = get_mjd_dir(spectrolog_dir)
+      mjdlist = get_mjd_dir(spectrolog_dir, mjstart=1, mjend=99999, mjd='?????')
       mjd = (reverse(mjdlist[sort(mjdlist)]))[0]
+      splog, 'Selecting MJD=', mjd, ' (override this with MJD keyword)'
    endif
 
    ;----------
