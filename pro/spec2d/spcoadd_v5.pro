@@ -131,6 +131,11 @@ pro spcoadd_v5, spframes, outputname, $
    if (n_elements(window) EQ 0) then window = 100
    if (NOT keyword_set(combinedir)) then combinedir=''
 
+   string1 = repstr(outputname,'spPlate','spFluxdistort')
+   string2 = repstr(string1,'.fits,'.ps')
+   distortfitsfile = djs_filepath(string1, root_dir=combinedir)
+   distortpsfile = djs_filepath(string2, root_dir=combinedir)
+
    ;----------
    ; Sort filenames such that this list contains first the blue then the red
 ; Why should this matter to sort them ???
@@ -424,7 +429,7 @@ pro spcoadd_v5, spframes, outputname, $
 
    ; Compute the flux distortion image
    corrimg = flux_distortion(finalflux, finalivar, finalandmask, finalormask, $
-    plugmap=finalplugmap, loglam=finalwave)
+    plugmap=finalplugmap, loglam=finalwave, plotfile=distortpsfile, hdr=hdr)
 
    ; Plot S/N and throughput **before** this distortion-correction.
    splog, prelog='Initial'
@@ -677,9 +682,7 @@ pro spcoadd_v5, spframes, outputname, $
    ;---------------------------------------------------------------------------
 
    ; First write the file with the flux distortion vectors
-   distortfile = djs_filepath(repstr(outputname,'spPlate','spFluxdistort'), $
-    root_dir=combinedir)
-   mwrfits, corrimg, distortfile, hdr, /create
+   mwrfits, corrimg, distortfitsfile, hdr, /create
 
    fulloutname = djs_filepath(outputname, root_dir=combinedir)
 
