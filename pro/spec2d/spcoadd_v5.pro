@@ -584,9 +584,9 @@ pro spcoadd_v5, spframes, outputname, $
    ;----------
    ; Check for smear exposure used and place info in header
 
-   smearused = total((finalandmask AND pixelmask_bits('SMEARIMAGE')) NE 0) $
-    GT 0 ? 'T' : 'F'
-   sxaddpar, hdr, 'SMEARUSE', smearused, ' Smear image used?'
+;   smearused = total((finalandmask AND pixelmask_bits('SMEARIMAGE')) NE 0) $
+;    GT 0 ? 'T' : 'F'
+;   sxaddpar, hdr, 'SMEARUSE', smearused, ' Smear image used?'
 
    ;----------
    ; Compute the fraction of bad pixels in total, and on each spectrograph.
