@@ -140,8 +140,7 @@ pro sdreportmake, speclog_dir=speclog_dir, mjd=mjd, $
 
          outstruct = replicate(outstruct1, nfile)
 
-for i=0, 3 do begin ;???
-;         for i=0, nfile-1 do begin
+         for i=0, nfile-1 do begin
             hdr = sdsshead(fullname[i])
 
             if (size(hdr,/tname) EQ 'STRING') then begin
