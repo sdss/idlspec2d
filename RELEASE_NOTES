@@ -2,7 +2,15 @@
 MYFLUXCALIB: Fix bug whereby the PCA spectrum could be negative.
      (The routine PCA_SOLVE() can return a negative-valued spectrum even
      if all the input spectra are positive-valued.)  This crashed plate 340.
+PCA_SOLVE: Forgot to return optional outputs OUTMASK, USEMASK in the case
+           of only a single spectrum being passed.  This happened in the
+           combining of plate 214 in MYFLUXCALIB, and crashed.
 
+BSPLINE_BKPTS (in idlutils): Do not crash even in the case of very few
+         data points.  But untested whether this actually does what we want
+         in that case.
+BSPLINE_ITERFIT (in idlutils): Return cleanly in the case of no un-masked
+         data points.
 eviltarball (in idlutils): New script to export a version of a code
          and build a tar file for distribution.
 
