@@ -24,6 +24,7 @@ INSPECFILES,INSPECTGEN: New routines for generating prototype files
            for manual inspection.
 LOGSHEET: Do not include both uncompressed and compressed files in a listing.
            Remove the INDIR option, and add MJD and CAMERA keywords.
+PLATEHIST: Use call to MJD2DATELIST.
 PLATEMERGE: Include logic for setting the SPECPRIMARY field in the outputs.
            Speed this up by pre-generating the exact output structure,
            and use structure assignments rather than copy_struct_inx.
