@@ -402,7 +402,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
       ;------------------
       ; Flat-field the extracted object fibers with the global flat
-      divideflat, flux, fluxivar, fflat, fibermask
+      divideflat, flux, fluxivar, fflat, fibermask=fibermask
 
       ;------------------
       ; Tweak up the wavelength solution to agree with the sky lines.

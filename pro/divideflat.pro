@@ -51,7 +51,7 @@ pro divideflat, flux, fluxivar, fflat, fibermask=fibermask, minval=minval
    if (total(size(fluxivar,/dimens) NE dims) NE 0) then $
     message, 'FLUX and FLUXIVAR are not the same dimensions'
 
-   if (total(size(fflux,/dimens) NE dims) NE 0) then $
+   if (total(size(fflat,/dimens) NE dims) NE 0) then $
     message, 'FLUX and FFLAT are not the same dimensions'
 
    if ((size(fibermask))[1] NE ntrace) then $
@@ -59,12 +59,12 @@ pro divideflat, flux, fluxivar, fflat, fibermask=fibermask, minval=minval
     
    for itrace=0, ntrace-1 do begin
 
-      if (fibermask[i]) then begin ; GOOD FIBER
+      if (fibermask[itrace]) then begin ; GOOD FIBER
 
          ; Find where the flat field vector for this fiber is less than MINVAL
          qgood = fflat[*,itrace] GT minval
          igood = where(qgood, ngood)
-         ibad = where(NOT qgood, nbad)
+         ibad = where(qgood EQ 0, nbad)
 
          if (ngood GT 0) then begin
             ; Only divide good fflat pixels
@@ -77,8 +77,8 @@ pro divideflat, flux, fluxivar, fflat, fibermask=fibermask, minval=minval
          endelse
 
          if (nbad GT 0) then begin
-            flux[ibad,ifiber] = 0.0
-            fluxivar[ibad,ifiber] = 0.0
+            flux[ibad,itrace] = 0.0
+            fluxivar[ibad,itrace] = 0.0
             splog, 'Reject ', nbad, ' low points in trace ', itrace
          endif
 
