@@ -112,7 +112,23 @@ function fluxfit, loglam, objflux, objivar, color=color, refmag=refmag
    ;       c is 3.0e18 Ang/s
    ;       lambda is in Ang
 
-   scalefac = 10.^((21.37 - refmag) / 2.5)
+   oldzeropoint = 21.37
+
+   ; The original file f8v.dat gives 21.2985, with continuum only:
+   ; Absorption in r band only gives a 0.003 difference!  We will
+   ; ignore for the time being
+   ; 35.4771 = alog10(1.0e17 * 3.0e18)
+
+   fiducial_flux = filter_thru(f8flux * f8wave^2, waveimg=f8wave)
+   zeropoint = -(alog10(fiducial_flux[2]) - 35.4771)*2.5 - 48.6
+
+   if zeropoint LT 21.0 OR zero GT 21.5 then begin
+     splog, 'WARNING: has the flux calibration standard changed?'
+     splog, 'Please address, for now, resetting to old zero point'
+     zeropoint = oldzeropoint
+   endif 
+
+   scalefac = 10.^((zeropoint - refmag) / 2.5)
    f8flux = f8flux * scalefac
 
    ;----------
