@@ -257,8 +257,13 @@ ormask = 0 ; Free memory
 
    eigenfile = 'spEigenStar-*.fits'
 
+   ; Select the stars eigen-file here to detemine how many templates are in it
    eigendir = concat_dir(getenv('IDLSPEC2D_DIR'), 'templates')
-   shdr = headfits( djs_filepath(eigenfile, root_dir=eigendir) )
+   allfiles = findfile(djs_filepath(eigenfile, root_dir=eigendir), count=ct)
+   if (ct EQ 0) then $
+    message, 'Unable to find EIGENFILE matching '+eigenfile
+   eigenfile = fileandpath(allfiles[ (reverse(sort(allfiles)))[0] ])
+   shdr = headfits(djs_filepath(eigenfile, root_dir=eigendir))
    nstar = sxpar(shdr, 'NAXIS2') > 1
 
    for istar=0, nstar-1 do begin
