@@ -110,10 +110,10 @@ echo "SPECLOG_DIR=$SPECLOG_DIR" >> $cronfile
 echo "SPECFLAT_DIR=$SPECFLAT_DIR" >> $cronfile
 echo "RAWDATA_DIR=$RAWDATA_DIR" >> $cronfile
 echo "SPECTRO_DATA=$SPECTRO_DATA" >> $cronfile
+echo "# This job will run at 6:30 am every day." >> $cronfile
+echo "30 6 * * * sprobotcopy.sh >> $SPRLOG 2>&1" >> $cronfile
 echo "# This job will run at 8:30 am every day." >> $cronfile
-#echo "30 8 * * * sprobot.sh >> $SPRLOG 2>&1" >> $cronfile
-# TEST !!!???
-echo "48 15 * * * sprobot.sh >> $SPRLOG 2>&1" >> $cronfile
+echo "30 8 * * * sprobot.sh >> $SPRLOG 2>&1" >> $cronfile
 echo "# SPROBOT END" >> $cronfile
 crontab $cronfile
 

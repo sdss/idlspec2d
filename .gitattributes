@@ -15,6 +15,7 @@ bin/sprobot2d.sh -text
 bin/sprobot_start -text
 bin/sprobot_status -text
 bin/sprobot_stop -text
+bin/sprobotcopy.sh -text
 bin/startapo.sh -text
 doc/Makefile -text
 doc/mk_doc -text
