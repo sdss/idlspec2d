@@ -9,6 +9,10 @@ APOHEADER: Use SDSSHEAD() instead of HEADFITS() to read the headers, such
            Also fix so that this proc works if both a ".fit" and ".fit.gz"
            file exist on disk.
            Also list the QUALITY keyword.
+APOREDUCE: Add the following to the output structure: QUALITY,NAME,OBSCOMM
+           RADEG,DECDEG,AIRMASS.
+GET_MJD_DIR: Comment-out test that MJD directories contain files, since
+           that's so bloody slow.
 GUIDERMOVIE,GUIDERMPEG: New procs for looking at the spectroscopic guider
            images for a night.
 LOGSHEET: Do not include both uncompressed and compressed files in a listing.
@@ -42,6 +46,9 @@ In idlutils:
 
 BSPLINE_ITERFIT: Added /double to computation of INVVAR (line 107).
 DJS_BATCH: Fix invalid return codes in a sub-proc.
+NNLS: New non-negative least-squares fitting code from Hogg.
+
+diff.f,g1.f,g2.f,h12.f,idl_nnls.c,nnls.f: C+Fortran code for NNLS proc.
 
 -------------------------------------------------------------------------------
 v4_9_9 (Apr 26, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
