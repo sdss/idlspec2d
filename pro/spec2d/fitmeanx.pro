@@ -81,20 +81,23 @@ function fitmeanx, wset, lambda, xpos, aveinvvar, $
       djs_iterstat, res1, sigrej=4.0, maxiter=3, mask=mask
 
       ; Re-fit to RAWDIFF as a function of fiber number (rejecting outliers)
-      if (!version.release LT '5.4') then begin
-         junk = polyfitw(xaxis, rawdiff, mask, nord, yfit)
+      igood = where(mask NE 0, ngood)
+      if (ngood GT nord) then begin
+         if (!version.release LT '5.4') then begin
+            junk = polyfitw(xaxis, rawdiff, mask, nord, yfit)
+         endif else begin
+            junk = polyfitw(xaxis, rawdiff, mask, nord, yfit, /double)
+         endelse
+
+         xfit[*,i] = yfit
+         sdev = stddev((yfit-rawdiff)[igood])
       endif else begin
-         junk = polyfitw(xaxis, rawdiff, mask, nord, yfit, /double)
+         ; Case with too few points to fit
+         sdev = 0.0
       endelse
 
-      xfit[*,i] = yfit
-
-      igood = where(mask NE 0, ngood)
-      if (ngood LE 1) then  sdev = 0.0 $
-       else sdev = stddev((yfit-rawdiff)[igood])
       if (sdev EQ 0.0) then aveinvvar[i] = 0 $
-       else  aveinvvar[i]  = 1.0 / sdev^2
-
+       else aveinvvar[i] = 1.0 / sdev^2
       splog, 'In skyline number' ,i,' std-dev is ', sdev, ' pix'
    endfor
 
