@@ -811,7 +811,6 @@ admask = 0 ; clear memory
       if (readivar) then $
        invvar = invvar * pixflatimg^2 * (pixflatimg GT minflat) $
         * (pixflatimg LT maxflat)
-stop
 pixflatimg = 0 ; clear memory
 
       ; add pixflatname to header since it has just been applied
