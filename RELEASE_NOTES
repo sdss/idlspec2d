@@ -10,6 +10,10 @@ CREATE_LINESTRUCT(): Function broken out of LINEBACKFIT so that it
 LINEBACKFIT: Fix possible crash condition when computing LINENPIX if
             the line width is unphysically narrow and no pixels fall
             within the region of an emission line.
+EXTRACT_OBJECT: Added call to skyline_dispersion, 
+              but correction is not implemented
+FITDISPERSION: Mask regions not neighboring lines of interest.  
+             Simplifies extraction of line widths.
 PLATECOMPARE: New TOPDIR optional keyword for comparing different
             reductions of the same data.
 PLOTSPEC: Optional /ZWARNING flag.  Report error if FIBERID out of range.
@@ -39,6 +43,7 @@ SPCOADD_FRAMES: Remove the following keywords from the spPlate file:
             which should be impossible, but the special plate 673 and
             possibly others had some such fibers.
             Add UNAME keyword which is the result of 'uname -n'.
+SKYLINE_DISPERSION:  New function to output skyline width measurements
 SPECLINEFIT: Fixed dumb mistake on indexing that could crash.
             Always create an NLINE x NOBJ output structure, with blank
             entries where we do not measure lines (currently, only
