@@ -98,10 +98,12 @@ pro spreduce1d, platefile, fiberid=fiberid
 ;   dispmap = mrdfits(platefile,4)
    plugmap = mrdfits(platefile,5)
 
-   anyandmask = andmask[0,*]
-   anyormask = ormask[0,*]
-   for iobj=1, nobj-1 do anyandmask = anyandmask OR andmask[iobj,*]
-   for iobj=1, nobj-1 do anyormask = anyormask OR ormask[iobj,*]
+   anyandmask = transpose(andmask[0,*])
+   anyormask = transpose(ormask[0,*])
+   for ipix=1, npixobj-1 do $
+    anyandmask = anyandmask OR transpose(andmask[ipix,*])
+   for ipix=1, npixobj-1 do $
+    anyormask = anyormask OR transpose(ormask[ipix,*])
 
    objivar = skymask(objivar, andmask, ormask)
 andmask = 0 ; Free memory
