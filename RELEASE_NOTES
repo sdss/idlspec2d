@@ -1,4 +1,5 @@
 
+APO_LOG2HTML: Add FLAT/XSIGMA and ARC/DISPSIGMA to output tables.
 APOALL: Major updating of this calling script to conform with current
             environment variables ASTROLOG_DIR, RAWDATA_DIR.  Also,
             reduce bias,dark,smear exposures.
@@ -15,7 +16,12 @@ EXTRACT_OBJECT: Remove call to QAPLOT_SKYDEV, since that QA plot contains
             no more information than QAPLOT_SKYSHIFT.
 FITARCIMAGE: List the (0-indexed) fiber numbers that in which
             any or all arc centroids are fixed.
-FITFLATWIDTH: Add support for SIGMA being a scalar, vector, or array.
+FITDISPERSION: Re-organization of this code  Add support for SIGMA being
+            a scalar, vector, or array.  Optional MEDWIDTH output.
+            Output warning messages if out-of-focus.
+FITFLATWIDTH: Re-organization of this code  Add support for SIGMA being
+            a scalar, vector, or array.  Optional MEDWIDTH output.
+            Output warning messages if out-of-focus.
 LINEBACKFIT: Force the output sigmas to be non-negative (which also
             prevents a bug later in the code that assumes this is true
             when measuring the chi^2 of each line, as pointed out by
@@ -33,10 +39,15 @@ QAPLOT_SKYLINE: Divide the skyline flux values by the airmass, since those
 QUICKEXTRACT: Make call to FITFLATWIDTH, and trigger warning messages if
             the spatial widths are too large, indicating that the spectrographs
             may be out-of-focus (see PR #3462).
+            Add XSIGMA_QUADRANT,XSIGMA to output structure.
 QUICKTRACE: Call the optimal-extraction code EXTRACT_IMAGE for the sole
             purpose of measuring the spatial profile widths, then use
             FITFLATWIDTH to trigger any warning messages if the spectrographs
             appear out of focus (PR #3462).
+            Add XSIGMA_QUADRANT,XSIGMA to output structure.
+QUICKWAVE: Call to FITDISPERSION to trigger warnings in the spectrographs
+            look out-of-focus in the wavelength dimension.
+            Add DISPSIGMA_QUADRANT,DISPSIGMA to output structure.
 READ_ELODIE: Optionally return the Elodie header in HDR.
 READSPEC: Add TOPDIR input keyword and ZLINE,LINEFLUX outputs.
             Use DIMS0 keyword in primary header of spZall,spZline files
@@ -70,13 +81,22 @@ ZFIND: Make EIGENFILE an optional input, so that STARFLUX,STARLOGLAM0
             can be specified directly instead of passing a file name.
 
 emlines.dat: Add Ly_alpha,N_V,C_IV,He_II,C_III] for QSOs.
+            Let the widths for the Balmer series be independent from
+            those of other emission lines, but still constrain the Balmer
+            lines and other lines to have the same redshift.  One such
+            example where the Balmer lines have a different (narrower!)
+            width is 406/52238-362.
 opHdrFix.par: Declare data bad on MJD 52336-52337 due to spectrograph
             mechanicals problems, and other problems from 52312-52337.
+opLimits.par: Add error values for FLAT/XSIGMA and ARC/DISPSIGMA.
 mailhtml.sh: Comment out the rm lines (as in 1.18) and leave to killdata.sh
 spChunkList.par: Add chunks 36-39.
 spectroSOS.html: New warning messages if the flats or science frames
             appear out-of-focus according to their spatial profile widths
             (will only appear in v4_9_6 and later).
+            New warning messages if arcs appear out-of-focus according
+            to their dispersion profiles.
+            Add FLAT/XSIGMA and ARC/DISPSIGMA to output tables.
 sprobot.sh: Add more time stamps to the robot log file.
             Change the ssh command that retrieves the MJD directory list
             from the remote machine -- it appears that something about the
