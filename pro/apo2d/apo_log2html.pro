@@ -27,8 +27,14 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   copy_struct_inx
+;   djs_findfile()
 ;   djs_lockfile()
 ;   djs_unlockfile
+;   fileandpath()
+;   headfits()
+;   mrdfits
+;   sxpar()
 ;
 ; INTERNAL SUPPORT ROUTINES:
 ;   apo_color2hex()
@@ -143,7 +149,7 @@ function apo_log_tableline, ncams
 end
 
 ;------------------------------------------------------------------------------
-function apo_log_beginplate, platenum, mjd, camnames
+function apo_log_beginplate, platenum, mjd, camnames, outdir=outdir
 
    rowsep = ' <TR> <TH> '
    colsep = ' <TH> '
@@ -155,12 +161,18 @@ function apo_log_beginplate, platenum, mjd, camnames
    platestr4 = string(platenum, format='(i4.4)')
    plotfile = 'snplot-'+mjdstr+'-'+platestr4+'.ps'
 
+   ; See if the plot file actually exists, and only then create a link to it.
+   junk = findfile( djs_filepath(plotfile, root_dir=outdir), count=plotct)
+   if (platenum LT 0) then plotct = 0
+
    textout = ['<A NAME="PLATE' + platestr + '">']
    textout = [textout, '<TABLE BORDER=1 CELLPADDING=3>']
    textout = [textout, apo_log_tableline(ncams)]
-   textout = [textout, $
-    '<CAPTION><FONT SIZE="+3"><B> PLATE ' + platestr + '</B></FONT>' $
-    + ' - <A HREF="' + plotfile + '">S/N FIGURE</A>' + '</CAPTION>' ]
+   nextline = '<CAPTION><FONT SIZE="+3"><B> PLATE ' + platestr + '</B></FONT>'
+   if (plotct NE 0) then $
+    nextline = nextline $
+     + ' - <A HREF="' + plotfile + '">S/N FIGURE</A>' + '</CAPTION>'
+   textout = [textout, nextline]
    nextline = rowsep + colsep
    for icam=0, ncams-1 do $
     nextline = nextline + colsep + camnames[icam]
@@ -241,11 +253,16 @@ pro apo_log2html, logfile, htmlfile
       htmlfile = strmid(logfile, 0, ipos) + '.html'
    endif
 
+   junk = fileandpath(htmlfile, path=outdir)
    camnames = ['b1', 'r1', 'b2', 'r2']
    ncams = n_elements(camnames)
 
    ; Lock the file to do this.
    while(djs_lockfile(htmlfile, lun=html_lun) EQ 0) do wait, 5
+
+   ; Read the 0th header to get the version of the code
+   hdr = headfits(logfile)
+   vers2d = sxpar(hdr, 'VERS2D')
 
    ; Read in all the HDU's in the log file as structures
    PPBIAS = mrdfits(logfile, 1)
@@ -286,6 +303,9 @@ pro apo_log2html, logfile, htmlfile
       endif
    endfor
    textout = apo_log_header(title1, title2)
+   textout = [textout, $
+    '<P>IDLSPEC2D version ' + vers2d $
+    + '.  Last updated <B>'+systime()+'</B>.<P>']
 
    ;---------------------------------------------------------------------------
    ; Loop over each plate
@@ -299,7 +319,7 @@ pro apo_log2html, logfile, htmlfile
       thisplate = allplates[iplate]
 
       textout = [textout, $
-       apo_log_beginplate(thisplate, thismjd, camnames)]
+       apo_log_beginplate(thisplate, thismjd, camnames, outdir=outdir)]
 
       ;----------
       ; Append all WARNINGs and ABORTs for this plate to the following
