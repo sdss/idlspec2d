@@ -309,11 +309,13 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
 ;   if (camnames[icam] EQ 'r2' AND keyword_set(rstruct)) then begin
 ; Instead, create the HTML file after any reduced frame.
    if (keyword_set(rstruct)) then begin
-      wait, 10
 
-      plotfile = filepath('snplot-'+mjdstr+'-'+platestr+'.ps', root_dir=outdir)
-      splog, 'Generating S/N plot '+plotfile
-      apo_plotsn, logfile, plate, plugdir=plugdir, plotfile=plotfile
+      if (myflavor EQ 'science') then begin
+         plotfile = filepath('snplot-'+mjdstr+'-'+platestr+'.ps', $
+          root_dir=outdir)
+         splog, 'Generating S/N plot '+plotfile
+         apo_plotsn, logfile, plate, plugdir=plugdir, plotfile=plotfile
+      endif
 
       splog, 'Generating HTML file '+htmlfile
       apo_log2html, logfile, htmlfile
