@@ -290,7 +290,7 @@ andmask = 0 ; Free memory
    res_all = struct_addtags(res_prepend, res_all)
 
    for iobj=0, nobj-1 do begin
-      res_all[*,iobj].fiberid = fiberid
+      res_all[*,iobj].fiberid = fiberid[iobj]
       res_all[*,iobj].objid = plugmap[iobj].objid
       res_all[*,iobj].objtype = plugmap[iobj].objtype
       res_all[*,iobj].plug_ra = plugmap[iobj].ra
