@@ -4,6 +4,7 @@ COMBINE1FIBER: Add the skies by inputting SKYFLUX and outputting NEWSKY.
         dispersion pixel map.
 EXTRACT_OBJECT: Turn off telluric-corrections by default, which must now
         be enabled with the /DO_TELLURIC keyword.  Also, delete some old code.
+        Compress (with gzip) the output file.
 FIND_NMINIMA: Fix bug when plotting.
 GET_TAI: Report warning about exposures less than 2 minutes only
         for science or smear exposures.
@@ -21,6 +22,7 @@ READSPEC: Add support for reading the sky (SKY=) from HDU #6 of the spPlate
 SKYSUBTRACT: Fix possible crash condition, whereby the re-fit to the
         supersky is not done if the first fit failed and FULLBKPT does
         not exist (line 243).
+SPCALIB: Change the way we spawn the gzip command.
 SPCOADD_FRAMES: Get rid of some unused lines of code.
 SPCOADD_V5: New code to replace SPCOADD_FRAMES for version 5 outputs.
         The sky vectors are now combined in some semi-rational way,
