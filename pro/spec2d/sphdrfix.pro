@@ -19,8 +19,10 @@
 ;
 ; COMMENTS:
 ;   This routine implements "hand edits" of the raw FITS headers for
-;   SDSS spectroscopic images.  The list of edits to make are stored
-;   in a Yanny parameter file.
+;   SDSS spectroscopic images.  The list of edits to make can be stored
+;   in two possible Yanny parameter file, the static "opHdrFix.par" file
+;   in the IDLSPEC2D product, and in the "sdReport-$MJD.par" file for
+;   the relevant night.
 ;
 ;   This proc only works in IDL version 5.3 and later, because it
 ;   uses STRMATCH().
@@ -31,6 +33,8 @@
 ;   sphdrfix, filename, hdr
 ;
 ; BUGS:
+;   This will fail if the MJD needs hand-editing in the sdReport file,
+;   since we need the MJD to find the sdReport file in the first place!
 ;
 ; PROCEDURES CALLED:
 ;   fileandpath()
@@ -39,37 +43,20 @@
 ;   yanny_free
 ;   yanny_read
 ;
+; INTERNAL SUPPORT ROUTINES
+;   sphdrfix1
+;
 ; DATA FILES:
 ;   $IDLSPEC2D_DIR/examples/opHdrFix.par
+;   $SPECLOG_DIR/$MJD/sdReport-$MJD.par
 ;
 ; REVISION HISTORY:
 ;   29-Dec-2009  Written by D. Schlegel, Princeton
 ;-
 ;------------------------------------------------------------------------------
-pro sphdrfix, filename, hdr
+pro sphdrfix1, filename, hdr, hfixpar
 
-   common spec2d_hfixpar, hfixpar
-
-   if (n_params() LT 2) then begin
-      print, 'Syntax - sphdrfix, filename, hdr'
-      return
-   endif
-
-   ;----------
-   ; Read this Yanny file only the first time this routine is called,
-   ; then save the values in a common block.
-
-   if (NOT keyword_set(hfixpar)) then begin
-      parfile = filepath('opHdrFix.par', root_dir=getenv('IDLSPEC2D_DIR'), $
-       subdirectory='examples')
-      yanny_read, parfile, pdata
-      hfixpar = *pdata[0]
-      yanny_free, pdata
-   endif
    npar = n_elements(hfixpar)
-
-   if (NOT keyword_set(hfixpar)) then $
-    message, 'Parameter file not found!'
 
    ;----------
    ; Find any fixes that are relevant for this file
@@ -115,6 +102,65 @@ pro sphdrfix, filename, hdr
        + ' -> ' + string(thisvalue)
       sxaddpar, hdr, thiskey, thisvalue
    endfor
+
+   return
+end
+
+;------------------------------------------------------------------------------
+pro sphdrfix, filename, hdr
+
+   common spec2d_hfixpar, hfix1
+
+   if (n_params() LT 2) then begin
+      print, 'Syntax - sphdrfix, filename, hdr'
+      return
+   endif
+
+   ;----------
+   ; Read the "opHdrFix.par" Yanny file only the first time this routine
+   ; is called, then save the values in a common block.
+
+   if (NOT keyword_set(hfix1)) then begin
+      parfile = filepath('opHdrFix.par', root_dir=getenv('IDLSPEC2D_DIR'), $
+       subdirectory='examples')
+      yanny_read, parfile, pdata
+      hfix1 = *pdata[0]
+      yanny_free, pdata
+   endif
+
+   if (NOT keyword_set(hfix1)) then $
+    message, 'Parameter file opHdrfix.par not found!'
+
+   ; Apply header fixes from  the "opHdrFix.par" file.
+   sphdrfix1, filename, hdr, hfix1
+
+   ;----------
+   ; Read the sdReport file for this night to look for more possible header
+   ; changes from the APO observers.
+
+   speclog_dir = getenv('SPECLOG_DIR')
+   if (NOT keyword_set(speclog_dir)) then $
+    message, 'Must set environment variable SPECLOG_DIR'
+   mjd = sxpar(hdr, 'MJD')
+   mjdstr = string(mjd, format='(i05.5)')
+   plugdir = concat_dir(speclog_dir, mjdstr)
+
+   reportfile = filepath('sdReport-'+mjdstr+'.par', root_dir=plugdir)
+   yanny_read, reportfile, pdata, stnames=stnames, /anonymous
+
+   if (keyword_set(pdata)) then begin
+      ; Find the ONEEXP structure
+      for i=0, N_elements(pdata)-1 do $
+;       if (tag_names(*pdata[i], /structure_name) EQ 'SPECHDRFIX') then $
+       if (stnames[i] EQ 'SPECHDRFIX') then $
+        hfix2 = *pdata[i]
+
+      ; Apply header fixes from  the "sdReport-$MJD.par" file.
+      if (keyword_set(hfix2)) then $
+       sphdrfix1, filename, hdr, hfix2
+
+      yanny_free, pdata
+   endif
 
    return
 end
