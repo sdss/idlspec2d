@@ -63,7 +63,7 @@
 ;------------------------------------------------------------------------------
 pro veldisp, objflux, objerr, objwave, starflux, starerr, starwave, result, klo_cut=klo_cut, $
  khi_cut=khi_cut, maxsig=maxsig, sigmastep=sigmastep, doplot=doplot, $
- nodiff=nodiff, noquotient=noquotient, nobe=nobe
+ nodiff=nodiff, noquotient=noquotient, nobe=nobe, keep=keep
        
 ; set keyword defaults
    if (NOT keyword_set(klo_cut)) then klo_cut = 1.0/128.
@@ -129,10 +129,10 @@ pro veldisp, objflux, objerr, objwave, starflux, starerr, starwave, result, klo_
    ; Compute FFT for stellar template
 
    veldisp_fft, starflux, starerr, npixbig, starfft,  $
-     starfilt, starvar0, starvariancefft, $
-     klo_cut=klo_cut, khi_cut=khi_cut, wave=starwave, keep=[3500, 6100]
+     starfilt, starvar0, starvariancefft, starerr_pad, $
+     klo_cut=klo_cut, khi_cut=khi_cut, wave=starwave, keep=keep
 
-   fitredshift, starfilt, starerr, starfilt, starerr, $
+   fitredshift, starfilt, starerr_pad, starfilt, starerr_pad, $
       nsearch=5, zfit=starcen, z_err=starcen_err, $
       veldispfit=starsigma, veldisp_err=starsigma_err, doplot=doplot
 
@@ -144,23 +144,27 @@ pro veldisp, objflux, objerr, objwave, starflux, starerr, starwave, result, klo_
 
    FOR iobj=0, nobj-1 DO BEGIN 
 
+
       fluxerr = objerr[*, iobj]
       veldisp_fft, objflux[*,iobj], fluxerr, npixbig,  $
-        fluxfft, fluxfilt, fluxvar0, fluxvariancefft,  $
+        fluxfft, fluxfilt, fluxvar0, fluxvariancefft, fluxerr_pad,  $
         klo_cut=klo_cut, khi_cut=khi_cut
 
-      fitredshift, fluxfilt, fluxerr, starfilt, starerr, $
+      fitredshift, fluxfilt, fluxerr_pad, starfilt, starerr_pad, $
        nsearch=5, zfit=fitcen, z_err=fitcen_err, $
        veldispfit=galsigma, veldisp_err=galsigma_err, doplot=doplot
 
 ; 2nd try
-      veldisp_fft, objflux[*,iobj], objerr[*,iobj], npixbig,  $
-        fluxfft, fluxfilt, fluxvar0, fluxvariancefft,  $
-        keep=[3500, 6100]*10.^(fitcen/10000.)
-      
-      fitredshift, fluxfilt, fluxerr, starfilt, starerr, $
-        nsearch=5, zfit=fitcen, z_err=fitcen_err, $
-        veldispfit=galsigma, veldisp_err=galsigma_err, doplot=doplot
+
+      IF keyword_set(keep) THEN BEGIN 
+          veldisp_fft, objflux[*,iobj], fluxerr, npixbig,  $
+            fluxfft, fluxfilt, fluxvar0, fluxvariancefft, fluxerr_pad, $
+            keep=keep*10.^(fitcen/10000.)
+          
+          fitredshift, fluxfilt, fluxerr_pad, starfilt, starerr_pad, $
+            nsearch=5, zfit=fitcen, z_err=fitcen_err, $
+            veldispfit=galsigma, veldisp_err=galsigma_err, doplot=doplot
+      ENDIF 
 
       result[iobj].z = fitcen    ; This redshift is in pixels!
       result[iobj].z_err = fitcen_err
