@@ -1,4 +1,6 @@
 
+* Sky-subtraction: Fix edge effects in inverse variance scaling
+
 * In flat-fields, be smarter with break points
   Also, tune pix-to-pix flat with global flat to be high-pass / low-pass filter
 

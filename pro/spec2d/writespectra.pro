@@ -1,76 +1,55 @@
 
-pro writespectra, tt, hdr, filebase
+pro writespectra, objhdr, plugsort, flux, fluxivar, wset, $
+ filebase=filebase
 
-	ntrace = (size(tt))[1]
-	npix = (size(tt.skysub))[1]
-	
-	for i=0,ntrace -1 do begin
-	  thishdr = hdr
-	  name = filebase + string(format = '(i3.3)', i+1) + '.fit'
+   dims = size(flux, /dimens)
+   ntrace = dims[1]
+   
+   for i=0, ntrace-1 do begin
 
-	  flux = tt[i].skysub
-	  err = flux*0.0 - 1.0
-	  good = where(tt[i].fluxinvvar GT 0.0)
-	  if (good[0] NE -1) then $
-            err(good) = 1.0/sqrt(tt[i].fluxinvvar[good])
+     ; Copy flux and error for this object
+     outflux = flux[*,i]
+     outerr = 0*outflux - 1.0
+     good = where(fluxivar[*,i] GT 0.0)
+     if (good[0] NE -1) then $
+      outerr[good] = 1.0/sqrt(fluxivar[good,i])
 
-	  sxaddpar, thishdr, 'OBJID', string(format='(5(i))', $
-                tt[i].plugmap.objid)
-	  sxaddpar, thishdr, 'MAG', string(format='(5(f8.3))', $
-                tt[i].plugmap.mag)
-	  sxaddpar, thishdr, 'RA', tt[i].plugmap.ra
-	  sxaddpar, thishdr, 'DEC', tt[i].plugmap.dec
-	  sxaddpar, thishdr, 'OBJTYPE', tt[i].plugmap.objtype
-	  sxaddpar, thishdr, 'PRIMTARG', tt[i].plugmap.primtarget
-	  sxaddpar, thishdr, 'SECTARGE', tt[i].plugmap.sectarget
-	  sxaddpar, thishdr, 'FIBERID', tt[i].plugmap.fiberId
-	  
-;
-;	Wavelengths
-;
+     ; If this fiber is unplugged, then set the flux equal to zero
+     if (plugsort[i].fiberid LE 0) then begin
+        outflux = 0 * outflux
+        outerr = 0 * outerr - 1.0
+     endif
 
+     ; Modify the header
+     outhdr = objhdr
+     sxaddpar, outhdr, 'OBJID', string(format='(5(i))', $
+                plugsort[i].objid)
+     sxaddpar, outhdr, 'MAG', string(format='(5(f8.3))', $
+                plugsort[i].mag)
+     sxaddpar, outhdr, 'RA', plugsort[i].ra
+     sxaddpar, outhdr, 'DEC', plugsort[i].dec
+     sxaddpar, outhdr, 'OBJTYPE', plugsort[i].objtype
+     sxaddpar, outhdr, 'PRIMTARG', plugsort[i].primtarget
+     sxaddpar, outhdr, 'SECTARGE', plugsort[i].sectarget
+     sxaddpar, outhdr, 'FIBERID', plugsort[i].fiberId
 
-	  nparams = n_elements(tt[i].coeff) - 2 
-	  sxaddpar, thishdr, 'NWORDER', nparams
-	  sxaddpar, thishdr, 'WFITTYPE', 'LOG-'+tt[i].func
-	  sxaddpar, thishdr, 'PIXMIN', tt[i].coeff[0]
-	  sxaddpar, thishdr, 'PIXMAX', tt[i].coeff[1]
-	  link = string(tt[i].coeff[0]) + string(tt[i].coeff[1])
-	 
-	  for j=0,nparams-1 do begin
-	    keyw = 'COEFF'+string(format='(i1)',j) 
-	    sxaddpar, thishdr, keyw, tt[i].coeff[j+2]
-	    link = link + string(tt[i].coeff[j+2])
-	  endfor
+     ; Add wavelength cards...
+     nparams = (size(wset,/dimens))[0]
+     sxaddpar, outhdr, 'NWORDER', nparams
+     sxaddpar, outhdr, 'WFITTYPE', 'LOG-'+wset.func
+     sxaddpar, outhdr, 'PIXMIN', wset.xmin
+     sxaddpar, outhdr, 'PIXMAX', wset.xmax
 
-	
-	   
-	  sxaddpar, thishdr, 'WAT1_001', $
-               'wtype=multispec label=Wavelength units=Angstroms'
+     for j=0, nparams-1 do begin
+       keyw = 'COEFF'+string(format='(i1)',j) 
+       sxaddpar, outhdr, keyw, wset.coeff[j,i]
+     endfor
 
-	  link2 = $
-   'wtype=multispec spec1 = "'+string(format = '(i)', i+1)+' 1 1'+ $
-    string(tt[i].coeff[2])+string(tt[i].coeff[3]) + $
-     string(npix) + ' 0.0 0.0 0.0 0.5 0.0 2 ' + string(nparams) + link
+     outname = filebase + '-' + string(format = '(i3.3)', i+1) + '.fit'
+     writefits, outname, [[outflux],[outerr]], outhdr
+   endfor
 
-	  length = strlen(link2)
-	  place=0
-	  for j=0,length-1,60 do begin
-	    place = place + 1
-	    keyw = 'WAT2_'+string(format='(i3.3)',place) 
-	    if (j + 59 LT length) then $
-	      sxaddpar, thishdr, keyw, strmid(link2,j,60) $
-	    else  sxaddpar, thishdr, keyw, strmid(link2,j)
-	  endfor
-	    
-          sxaddpar, thishdr, 'WAXMAP01', '1 0 0 0 2 0 '
+   save, filename=filebase+'.ss', objhdr, flux, fluxivar, wset, plugsort
 
-	  writefits, name, [[flux],[err]], thishdr
-	endfor
-
-	return
+   return
 end
-	   
-
-	  
-	  

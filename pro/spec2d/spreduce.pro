@@ -71,7 +71,6 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    ; Read LAMPLIST file for wavelength calibration
    ;---------------------------------------------------------------------------
 
-	stop
    if (keyword_set(lampfile)) then begin
       tempname = findfile(lampfile, count=ct)
       if (ct EQ 0) then message, 'No LAMPFILE found '+lampfile
@@ -155,9 +154,10 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    highrej = 20
    lowrej = 25
    nPoly = 4
+   wfixed = [1] ; Just fit the first gaussian term
 
    extract_image, flatimg, flativar, xsol, sigma, flat_flux, flat_fluxivar, $
-    proftype=proftype, wfixed=[1,1,1], $
+    proftype=proftype, wfixed=wfixed, $
     highrej=highrej, lowrej=lowrej, nPoly=nPoly, relative=1, ymodel=ymodel
 
    ;---------------------------------------------------------------------------
@@ -174,7 +174,8 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    fullname = findfile(fullpath, count=ct)
    if (ct NE 1) then $
     message, 'Cannot find arc image ' + arcname
-   sdssproc, fullname[0], arcimg, arcivar, hdr=archdr
+   sdssproc, fullname[0], arcimg, arcivar, hdr=archdr, $
+    spectrographid=spectrographid, color=color
 
    ; Flat-field the arc image
    if (keyword_set(pixflatname)) then begin
@@ -191,9 +192,10 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    highrej = 10
    lowrej = 15
    nPoly = 4
+   wfixed = [1] ; Just fit the first gaussian term
 
    extract_image, arcimg, arcivar, xsol, sigma, arc_flux, arc_fluxivar, $
-    proftype=proftype, wfixed=[1,1,1], $
+    proftype=proftype, wfixed=wfixed, $
     highrej=highrej, lowrej=lowrej, nPoly=nPoly, relative=1
 
    ;------------------
@@ -207,13 +209,6 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    ;---------------------------------------------------------------------------
    ; Compute wavelength calibration for arc lamp only
    ;---------------------------------------------------------------------------
-
-   ; Decide if this is a red or blue spectrograph based upon CCDCOL
-   ; in the arc header, which was written to the header by SDSSPROC.
-   camcol = sxpar(archdr, 'CAMCOL')
-   if (camcol EQ 1 OR camcol EQ 3) then color='blue' $
-    else if (camcol EQ 4 OR camcol EQ 2) then color='red' $
-    else message, 'No CAMCOL keyword in arc header'
 
    fitarcimage, arc_flux, arc_fluxivar, color, lamplist, xpeak, ypeak, wset, $
     invset, ans=wavesolution, lambda=lambda, $
@@ -248,7 +243,8 @@ for i=0,16 do oplot,fflat[*,i*19]
       fullname = findfile(fullpath, count=ct)
       if (ct NE 1) then $
        message, 'Cannot find object image ' + objname[iobj]
-      sdssproc, fullname[0], objimg, objivar, hdr=objhdr
+      sdssproc, fullname[0], objimg, objivar, hdr=objhdr, $
+       spectrographid=spectrographid, color=color
 
       ; What about invvar???  Is below okay???
       if (keyword_set(pixflatname)) then begin
@@ -271,6 +267,10 @@ for i=0,16 do oplot,fflat[*,i*19]
       whopping = where(scrunch GT 10000.0, whopct)
       print, 'Number of bright fibers = ', whopct
 
+extract_image, objimg, objivar, xsol, sigma, obj_flux, obj_fluxivar, $
+ proftype=proftype, wfixed=[1,1,1], $
+ highrej=highrej, lowrej=lowrej, nPoly=nPoly, whopping=whopping
+
       ;------------------
       ; Extract the object image
       ; Use the "whopping" terms
@@ -286,24 +286,28 @@ for i=0,16 do oplot,fflat[*,i*19]
       yrow = lindgen(nrow/skiprow)*skiprow + skiprow/2
       nfirst = n_elements(yrow)
 
+; COMMENT OUT FOR NOW SINCE extract_image crashes on step 3 ???
       ; 1) First extraction
-      extract_image, objimg, objivar, xsol, sigma, obj_flux, obj_fluxivar, $
-       proftype=proftype, wfixed=[1,1,1], yrow=yrow, $
-       highrej=highrej, lowrej=lowrej, nPoly=nPoly, whopping=whopping, $
-       ansimage=ansimage
+;      print, 'Object extraction: Step 1'
+;      extract_image, objimg, objivar, xsol, sigma, obj_flux, obj_fluxivar, $
+;       proftype=proftype, wfixed=[1,1,1], yrow=yrow, $
+;       highrej=highrej, lowrej=lowrej, nPoly=nPoly, whopping=whopping, $
+;       ansimage=ansimage
 
       ; 2) Refit ansimage to smooth profiles
 
-      nparams = 3
-      nTrace = (size(obj_flux))[2]
-      fitans = fitansimage(ansimage, nparams, nTrace, nPoly, nfirst, yrow, $
-             fluxm = [1,1,0])
+;      print, 'Object extraction: Step 2'
+;      nparams = 3
+;      nTrace = (size(obj_flux))[2]
+;      fitans = fitansimage(ansimage, nparams, nTrace, nPoly, nfirst, yrow, $
+;       fluxm = [1,1,0])
 
       ; 3) Second and final extraction
-      extract_image, objimg, objivar, xsol, sigma, obj_flux, obj_fluxivar, $
-       proftype=proftype, wfixed=[1,1,1], fitans=fitans, $
-       highrej=highrej, lowrej=lowrej, nPoly=nPoly, whopping=whopping, $
-       ymodel=ymodel2
+;      print, 'Object extraction: Step 3'
+;      extract_image, objimg, objivar, xsol, sigma, obj_flux, obj_fluxivar, $
+;       proftype=proftype, wfixed=[1,1,1], fitans=fitans, $
+;       highrej=highrej, lowrej=lowrej, nPoly=nPoly, whopping=whopping, $
+;       ymodel=ymodel2
 
       ;------------------
       ; Flat-field the extracted object fibers with the global flat
@@ -320,30 +324,30 @@ for i=0,16 do oplot,fflat[*,i*19]
       ;------------------
       ; Sky-subtract
 
-      plugsort = sortplugmap(plugmap, camcol)
+      plugsort = sortplugmap(plugmap, spectrographid)
 
 ;      skysubtract, flat1, flat1ivar, plugsort, wset, skysub, skysubivar, $
 ;                     allwave=allwave, allsky=allsky, allfit=allskyfit
 
-      skysubtract, obj_flux, obj_fluxivar, plugsort, wset, $ 
-                     skysub, skysubivar
-
-
-	
-
-      ; ???
+      skysubtract, obj_flux, obj_fluxivar, plugsort, wset_tweak, $ 
+       skysub, skysubivar
 
       ;------------------
       ; Write extracted, lambda-calibrated, sky-subtracted spectra to disk
 
-      ; ???
-stop
+      framenum = sxpar(objhdr, 'EXPOSURE')
+
+      filebase = filepath( $
+       's-'+string(format='(i1,a1,a,i4.4)',spectrographid, $
+       color,'-',framenum), root_dir=outdir)
+
+      writespectra, objhdr, plugsort, skysub, skysubivar, wset_tweak, $
+       filebase=filebase
 
    endfor
 
-   print,'> SPREDUCE: ',systime(1)-t_begin, ' seconds TOTAL', $
+   print,'> SPREDUCE: ', systime(1)-t_begin, ' seconds TOTAL', $
     format='(A,F8.2,A)'
-
 
 stop
 end

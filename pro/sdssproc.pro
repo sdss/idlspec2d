@@ -18,12 +18,12 @@
 ;   hdr        - Header returned in memory
 ;   configfile - Default to "opConfig.par"
 ;   ecalibfile - Default to "opECalib.par"
-;   satvalue   - Saturation value; default to 1.0e6.
-;                For all pixels with values above this, set INVVAR=0.
 ;
 ; OUTPUTS:
 ;   image      - Processed 2d image
-;   invvar     - associated Inverse Variance
+;   invvar     - Associated inverse variance
+;   spectrographid - Return spectrograph ID (1 or 2)
+;   color      - Return spectrograph color ('red' or 'blue')
 ;
 ; COMMENTS:
 ;
@@ -41,7 +41,8 @@
 ;------------------------------------------------------------------------------
 
 pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
-    hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, satvalue=satvalue
+ hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, $
+ spectrographid=spectrographid, color=color
 
    if (N_params() LT 1) then begin
       print, 'Syntax - sdssproc, infile, [image, invvar, outfile=outfile, varfile=varfile, ' 
@@ -50,8 +51,7 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
    endif
    if (NOT keyword_set(configfile)) then configfile = 'opConfig.par'
    if (NOT keyword_set(ecalibfile)) then ecalibfile = 'opECalib.par'
-   if (NOT keyword_set(satvalue)) then satvalue = 1.0e6
-   
+
    junk = findfile(configfile, count=ct)
    if (ct NE 1) then begin
      pp = getenv('EVIL_PAR') 
@@ -79,18 +79,38 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
 ;      message, 'Expecting 2128x2069, found '+string(cards[0])+','$
 ;               +string(cards[1])
 
-   ; Test that the name of this file is consistent with an SDSS
-   ; spectroscopic image.
-   names = str_sep(infile,'/')
-   camrow = long( strmid( names[N_elements(names) -1], 4,1 ))
-   camcol = long( strmid( names[N_elements(names) -1], 5,1 ))
+   ; Determine which CCD from the CAMERAS header card
+   cameras = strtrim( sxpar(hdr, 'CAMERAS'), 2 )
+   case cameras of
+     'b1': begin
+        spectrographid = 1
+        color = 'blue'
+        camcol = 1
+         end
+     'r1': begin
+        spectrographid = 1
+        color = 'red'
+        camcol = 4
+         end
+     'b2': begin
+        spectrographid = 2
+        color = 'blue'
+        camcol = 3
+         end
+     'r2': begin
+        spectrographid = 2
+        color = 'red'
+        camcol = 2
+        end
+     else: begin
+        message, 'CAMERAS keyword not found'
+        end
+   endcase
+   camrow = 0
 
-   if (camrow NE 0) then message, 'Not a spectroscopic image'
-   if (camcol LT 1 OR camcol GT 4) then message, 'Not a spectroscopic image'
    sxaddpar, hdr, 'CAMROW', camrow
    sxaddpar, hdr, 'CAMCOL', camcol
  
-
    ; Read in opConfig.par file
 
    yanny_read, realconfig, pdata
@@ -189,6 +209,9 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
       endif
    endfor
 
+   ; For saturated pixels, set INVVAR=0
+   invvar = invvar * mask
+
    if (keyword_set(outfile)) then $
     writefits, outfile, image, hdr
 
@@ -197,9 +220,6 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
       sxaddpar, varhdr, 'LOOKHERE', 'INVERSE VARIANCE of ' + outfile
       writefits, varfile, invvar, varhdr
    endif
-
-   ; For saturated pixels, set INVVAR=0
-   invvar = invvar * mask
 
    return
 end

@@ -23,7 +23,7 @@ pro skysubtract, obj, objivar, plugmap, wset, skysub, skysubivar, $
 	; Find sky fibers
 	;
   	
-	skies = where(plugmap.objtype EQ 'SKY', nskies)
+	skies = where(plugmap.objtype EQ 'SKY' AND plugmap.fiberid GT 0, nskies)
 	if skies[0] EQ -1 then message, 'no sky fibers in plugmap'
 
         allwave    =  (wave[*,skies])[*]
