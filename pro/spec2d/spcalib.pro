@@ -483,9 +483,9 @@ splog,'Arc fbadpix ', fbadpix ; ???
          ntrace = (size(flux, /dimens))[1]
 
 ;         fflat = fiberflat(flux, fluxivar, wset, fibermask=tmp_fibmask, $
-;          plottitle=plottitle)
+;          plottitle=plottitle+' Superflat')
          fflat = fiberflat(flux, fluxivar, wset, fibermask=tmp_fibmask, $
-          /dospline, plottitle=plottitle)
+          /dospline, plottitle=plottitle+' Superflat')
 
          if (n_elements(fflat) EQ 1) then begin
             flatstruct[iflat].qbad  = 1
