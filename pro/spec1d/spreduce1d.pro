@@ -575,12 +575,10 @@ ormask = 0 ; Free memory
 ;   qflag = res_all.z_err EQ -1
 ;   zwarning = zwarning OR 32L * qflag
 
-   res_all.zwarning = zwarning
-
    ; Warning: For QSOs, if C_IV, CIII], Mg_II, H_beta or H_alpha are negative
    ; and have at least a few pixels in the fit (DOF > 2).
    for iobj=0, nobj-1 do begin
-      if (strtrim(plugmap[iobj].objtype,2) EQ 'QSO') then begin
+      if (strtrim(res_all[0,iobj].class,2) EQ 'QSO') then begin
          indx = where(zline.fiberid EQ res_all[0,iobj].fiberid $
           AND (zline.linename EQ 'C_IV' $
             OR zline.linename EQ 'C_III]' $
@@ -589,10 +587,12 @@ ormask = 0 ; Free memory
             OR zline.linename EQ 'H_alpha') )
          qflag = total(zline[indx].linearea LT 0 $
           AND zline[indx].linearea_err GT 0 $
-          AND zline[indx].linedof GT 2)
-         zwarning[*,iobj] = zwarning[*,iobj] OR 64L * qflag
+          AND zline[indx].linedof GT 2) NE 0
+         zwarning[0,iobj] = zwarning[0,iobj] OR 64L * qflag
       endif
    endfor
+
+   res_all.zwarning = zwarning
 
    ;----------
    ; Write the output files
