@@ -25,6 +25,7 @@ LINEBACKFIT: Fix possible crash condition when computing LINENPIX if
 PLATECOMPARE: New TOPDIR optional keyword for comparing different
             reductions of the same data.
 PLOTSPEC: Optional /ZWARNING flag.  Report error if FIBERID out of range.
+PLUGHISTORY: Plot the history of unplugged fibers based upon plPlugMapM files.
 QAPLOT_FCALIBVEC: Generate QA plot of apparent flux-calibration errors
             by comparing spectra to synthetic (e.g., best-fit) spectra.
             This proc is called at the end of SPREDUCE1D, and generates
