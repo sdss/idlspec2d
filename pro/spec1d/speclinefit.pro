@@ -233,8 +233,8 @@ pro speclinefit, platefile, fiberid=fiberid, $
 
    ; Now trim the arrays and structure to the specified fibers
    if (keyword_set(platefile)) then begin
-      if (min(fiberid) LT 0 OR max(fiberid) GT nobj) then $
-       message, 'Invalid value for FIBERID: must be between 0 and '+string(nobj)
+      if (min(fiblist) LT 1 OR max(fiblist) GT nobj) then $
+       message, 'Invalid value for FIBERID: must be between 1 and '+string(nobj)
       objflux = objflux[*,fiblist-1]
       objivar = objivar[*,fiblist-1]
    endif
