@@ -26,7 +26,9 @@
 ; EXAMPLES:
 ;
 ; BUGS:
-;   This routine spawns the Unix command 'mkdir'.
+;   We currently hard-wire the rejection of all smears, all exposures
+;   with any CCDs with (S/N)^2 < 1, and any with (S/N)^2 less than 20% of
+;   the best exposure.
 ;
 ; PROCEDURES CALLED:
 ;   cpbackup
@@ -183,8 +185,6 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
    for iexp=0L, nexp-1 do $
     score[*,iexp] = score[*,iexp] * (allseq[iexp].flavor NE 'smear')
 
-; WHAT ABOUT A MINIMUM S/N CUT, OR MINIMUM RELATIVE TO THE MAX !!!???
-
    ;----------
    ; Select the "best" exposure based upon the minimum score in all cameras
 
@@ -193,6 +193,19 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
     expscore[iexp] = min([score[*,iexp]])
    bestscore = max(expscore, ibest)
    splog, 'Best exposure = ', expnum[0,ibest], ' score = ', bestscore
+
+   ;----------
+   ; Discard exposures whose score is less than some fraction of the
+   ; best exposure, or whose score is less than some absolute value.
+   ; These numbers are hard-wired!!!???
+
+   ibad = where(expscore LT 1.0 OR expscore LT 0.20*bestscore, nbad)
+   if (nbad GT 0) then begin
+      for j=0, nbad-1 do splog, 'WARNING: Discarding ' $
+       + allseq[ibad[j]].flavor + ' exposure #', $
+       expnum[0,ibad[j]], ' with score=', expscore[ibad[j]]
+      score[*,ibad] = 0
+   endif
 
    ;----------
    ; Compute the spectro-photometry
