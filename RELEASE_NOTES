@@ -109,7 +109,7 @@ ZCOMPUTE_QSO: A version of ZCOMPUTE that is basically the same code, but
         redshift.  Because there are multiplicative polynomials rather than
         additive polynomial terms, this may fail to find weak em-line QSOs.
 
-etc/spChunkList.par: Add chunks 91 through 104.
+etc/spChunkList.par: Add chunks 91 through 107, 99A, 100A.
 examples/opECalib-51577.par: Update the gains based upon work by Eric Switzer
         and a more careful look at a recent set of identical flats taken
         on the night MJD 53114.  I've updated the numbers as follows for
