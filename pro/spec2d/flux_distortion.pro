@@ -45,7 +45,7 @@
 ;   (i.e. log-flux) that are achromatic with x, y, x^2, y^2, x*y,
 ;   where those are linear coordinates XFOCAL,YFOCAL from the plug-map.
 ;   There are also chromatic terms that scale as 1-(5070/wavelength)^2,
-;   sine that function gives an equal effect between 3900 and 5070 Ang
+;   since that function gives an equal effect between 3900 and 5070 Ang
 ;   as between 5070 ang 9000 Ang.
 ;   There are also magnitude offsets as a function of spectrograph ID,
 ;   and a chromatic offset as a function of spectrograph ID.
@@ -62,7 +62,7 @@
 ;
 ; BUGS:
 ;   At the moment, I've turned off the quadratic terms in the exponent
-;   that also have LL, such as exp(x^2*LL).
+;   that also have LL, such as exp(x^2*LL).  That leaves 11 terms being used.
 ;
 ; PROCEDURES CALLED:
 ;   airtovac
