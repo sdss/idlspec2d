@@ -107,7 +107,7 @@ pro spreduce2d, planfile, docams=docams, xdisplay=xdisplay
    ; Find keywords from the header
 
    mjd = yanny_par(hdr, 'MJD')
-   mjdstr = string(thismjd, format='(i05.5)')
+   mjdstr = string(mjd, format='(i05.5)')
 
    inputdir = concat_dir(rawdata_dir, mjdstr)
    plugdir = concat_dir(speclog_dir, mjdstr)
