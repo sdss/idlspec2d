@@ -16,10 +16,10 @@ spPlateList.par: Enlarge list of EDR plates to include multiple pluggings,
 
 Spectro-Robot scripts:
        Let the scripts "sprobot2d.sh" and "sprobot1d.sh" test whether they
-       are already running, and quit if they are.  Add another cron job
-       to "sprobot_start" to run the 1D robot every hour -- the idea is
-       to have 1D run quickly after 2D jobs finish.  Update the syntax
-       to "ps" commands as per RHL's suggestions.
+       are already running, and quit if they are.
+       Update the syntax to "ps" commands as per RHL's suggestions.
+       From sprobot.sh: Batch process 2D first, wait for it to complete,
+       then batch process 1D in the background.
 
 -------------------------------------------------------------------------------
 v4_7_3 (Apr 30, 2001 idlspec2d+idlutils)
