@@ -129,7 +129,7 @@ pro qaplot_skysub, obj, objivar, objsub, objsubivar, wset, iskies, $
    ibad = where(abs(medskyflux) GT 10, nbad)
    if (nbad GT 0) then begin
       for i=0, nbad-1 do $
-       splog, 'WARNING: Median sky-sub flux in sky fiber ', iskies[ibad[i]]+1, $
+       splog, 'Warning: Median sky-sub flux in sky fiber ', iskies[ibad[i]]+1, $
         ' = ', medskyflux[ibad[i]], ' electrons'
    endif
 
@@ -173,7 +173,7 @@ pro qaplot_skysub, obj, objivar, objsub, objsubivar, wset, iskies, $
    splog, 'Median sky-residual chi = ', median(relchi)
    splog, 'Max sky-residual chi = ', maxchi, ' at ', $
     relwave[imax], 'Ang'
-   if (maxchi GT 4.0) then $
+   if (maxchi GT 5.0) then $
     splog, 'WARNING: Max sky-residual chi = ', maxchi, ' at ', $
      relwave[imax], ' Ang'
 
