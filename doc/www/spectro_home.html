@@ -1048,13 +1048,22 @@ Plate 0560/52045 only has one science exposure, so will not combine
 <H4><A NAME="problems_dates">Dates and Plates to Remember</A></H4>
 
 <PRE>
-MJD -> 51569 (->25 Jan 2000): Prevented shutter open during readout.
-MJD -> 51605 (->2 Mar 2000): LED scattered light source identified
-                   and work-around implemented for data after this date.
+MJD -> 51569 (->25 Jan 2000): Shutter open during readout!
+                   Definitely compromises data for plates 187,188,190,191,
+                   192,194,198,202,203,217,231.
+MJD -> 51605 (->2 Mar 2000): Scattered light from internal LED's contaminate
+                   all these data.  After this date, we went through several
+                   work-arounds that basically eliminated the problem.
+                   Definitely compromises data for plates 187,188,190,191,
+                   192,194,198,202,203,214,217,231,265,266,269,283,295.
 MJD 51578 - 55580 (3-5 Feb 2000): Severe "shifted row" electronics problem.
                    This only effects plate 295/51580.
-MJD 51688 - ????? (22 May 2000): Electronics "dropped pixel" problem
-                   on spectro-2.
+MJD 51584,51585,51608,51614,51615,51629,51630: Raw images are the wrong size!
+                   Unsure what this actually does to the data.
+                   Potentially effects plates 266,267,279,281,282,283,295,303.
+MJD 51688 - 51703 (22 May 2000): Electronics "dropped pixel" problem
+                   on cameras b2,r2.  Potentially effects plates 312,338,339,
+                   343,344,346,348,349,351,353.
 MJD 51779 only (22 Aug 2000): Terrible electronics problem on r2.
                    This only effects plate 356/51779.
 MJD 51789 - today: (2 Sep 2000): Smear implemented for most plates, improving
