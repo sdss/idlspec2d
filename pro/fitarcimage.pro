@@ -281,8 +281,11 @@ maxdev = 1.0d-5
    xmask = xmask AND transpose(xfitmask)
 
    ;------------------------------------------------------------------------
-   ; Select good lines with the <3 per bundle test
+   ; Select good lines with the <=3 bad per bundle test
    ;------------------------------------------------------------------------
+
+   ; The following logic means that an arc line is rejected if any bundle
+   ; has more than 3 bad centers (not including bad fibers in FIBERMASK).
 
    badfibers = where(fibermask GT 0)
    testg = transpose(xmask)
@@ -293,7 +296,8 @@ maxdev = 1.0d-5
    testg = reform(testg, nlamp, 20, 16)
    gind = where(total(total(testg EQ 0,2) GT 3, 2) EQ 0, nlamp)
    if (nlamp LT 6) then begin
-      splog, 'ABORT: Only '+string(nlamp)+ ' good arclines found'
+      splog, 'ABORT: Only ' + string(nlamp) + $
+       ' good arclines found after bundle test'
       wset = 0
       return
    endif
