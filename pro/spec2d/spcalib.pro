@@ -184,12 +184,14 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
       ; Check to see if traces are separated by > 3 pixels
       ;
 
-      ntrace = (size(xsol, /dimens))[1]
-      sep = xsol[*,1:ntrace-1] - xsol[*,0:ntrace-2]
-      tooclose = where(sep LT 3)
-      if (tooclose[0] NE -1) then begin
-        splog, 'WARNING: Traces are not separated more than 3 pixels'
-        flatstruct[iflat].qbad = 1
+      if (qbadflat EQ 0) then begin 
+        ntrace = (size(xsol, /dimens))[1]
+        sep = xsol[*,1:ntrace-1] - xsol[*,0:ntrace-2]
+        tooclose = where(sep LT 3)
+        if (tooclose[0] NE -1) then begin
+          splog, 'WARNING: Traces are not separated more than 3 pixels'
+          flatstruct[iflat].qbad = 1
+        endif
       endif
 
    endfor
