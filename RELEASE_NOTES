@@ -66,6 +66,9 @@ SPECLINEFIT: Fixed dumb mistake on indexing that could crash.
 SPREDUCE: No longer issue an abort message in this proc if the science
             exposure is declared bad, but issue those messages from within
             the REJECT_SCIENCE() function.
+SPREDUCE1D: The warning message for S/N > 200 pixels has been fixed,
+            and another warning added for any pixels w/ flux < -10 * noise
+            (e.g., unphysically low values).
 
 mailhtml.sh: Grep for the "APO Spectro" from the HTML file to get the
             subject line for mail; I had changed this HTML title string,
