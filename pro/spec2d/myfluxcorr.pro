@@ -5,13 +5,22 @@ pro fluxrebin, filename, newloglam, newflux, newivar, adderr=adderr
 ; Should we actually spline fit for the re-binning???
 
    ;----------
+   ; Case where file does not exist
+
+   if (NOT keyword_set(filename)) then begin
+      newflux = 0
+      newivar = 0
+      return
+   endif
+
+   ;----------
    ; Read in the flux, errors, mask, wavelengths
 
    objflux = mrdfits(filename,0)
    objivar = mrdfits(filename,1)
    objmask = mrdfits(filename,2)
    wset = mrdfits(filename,3)
-   traceset2xy, wset, junk, objloglam
+   traceset2xy, wset, 0, objloglam
 
    dims = size(objloglam, /dimens)
    npix = dims[0]
