@@ -62,10 +62,10 @@ bc "2 amp" 0 4 879  1    1167 881  BADBLK HOTCOL   # Added 040600
 bc "2 amp" 0 4 934  1    600  1448 BADBLK HOTCOL   # Added 040600
 bc "2 amp" 0 4 1112 4    0    2048 BADBLK HOTCOL   # widen 040600, thin 010602
 bc "2 amp" 0 4 1196 1    1380 668  BADBLK BADCOL
-bc "2 amp" 0 4 1201 1    720  30   BADBLK HOTCOL   # widened 040600
+bc "2 amp" 0 4 1201 1    720  1328 BADBLK HOTCOL   # widened 040600, extended 031402
 bc "2 amp" 0 4 1379 1    598  1450 BADBLK HOTCOL   # Added 040600
 bc "2 amp" 0 4 1585 1    0    2048 BADBLK HOTCOL
-bc "2 amp" 0 4 1586 1    580  40   BADBLK HOTCOL   # Added 072001
+bc "2 amp" 0 4 1586 1    580  1468 BADBLK HOTCOL   # Added 072000, extended 031402
 bc "2 amp" 0 4 1709 1    0    2048 BADBLK HOTCOL
 bc "2 amp" 0 4 1893 1    1010 1038 BADBLK HOTCOL   # Added 040600
 bc "2 amp" 0 4 1942 1    0    2048 BADBLK HOTCOL
