@@ -340,11 +340,12 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ;  If present, reconstruct superflat and normalize
 
    sxaddpar, objhdr, 'SFLATTEN', 'F', ' Superflat has not been applied'
+   superfit = 0
 
    if keyword_set(superflatset) AND keyword_set(airset) then begin
-     fit2 = smooth_superflat(superflatset, airset)
-     if keyword_set(fit2) then begin
-       divideflat, flux, fluxivar, fit2 
+     superfit = smooth_superflat(superflatset, airset)
+     if keyword_set(superfit) then begin
+       divideflat, flux, fluxivar, superfit 
        sxaddpar, objhdr, 'SFLATTEN', 'T', ' Superflat has been applied'
      endif
    endif  
@@ -528,6 +529,12 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    mwrfits, vacset, outname
    mwrfits, dispset, outname
    mwrfits, plugsort, outname
+
+   ;-----------------
+   ;  Superfit is now required to convert between "counts" and
+   ;  "normalized counts" which is used for flambda
+
+   mwrfits, superfit, outname
 
    heap_gc
 
