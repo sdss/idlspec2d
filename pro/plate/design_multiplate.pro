@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   design_multiplate, stardata, [ tilenums=, platenums=, racen=, deccen=, $
-;    guidetiles=, apotemperature=apotemperature, /addfund ]
+;    guidetiles=, apotemperature=apotemperature, /addfund, /norename ]
 ;
 ; INPUTS:
 ;   stardata   - Structure with data for each star; must contain the
@@ -33,6 +33,10 @@
 ;                nearest of the 5 SDSS fundamental standard stars.
 ;                We try to place 10 of these holes, spaced by 1 arcmin, but
 ;                one can be knocked out by the guide-fiber alignment hole.
+;   norename   - The default is to rename the output plugMapP files to
+;                plate names like 800,800B,800C,... if the first plate
+;                number is 800.  Set this keyword to keep the names as
+;                they are passed in PLATENUMS.
 ;
 ; OUTPUTS:
 ;
@@ -98,7 +102,7 @@ end
 ;------------------------------------------------------------------------------
 pro design_multiplate, stardata, tilenums=tilenums, platenums=platenums, $
  racen=racen, deccen=deccen, guidetiles=guidetiles, $
- apotemperature=apotemperature, addfund=addfund
+ apotemperature=apotemperature, addfund=addfund, norename=norename
 
    if (NOT keyword_set(tilenums)) then begin
       tilenums = stardata.tilenum
@@ -164,9 +168,14 @@ pro design_multiplate, stardata, tilenums=tilenums, platenums=platenums, $
    fundpriority = maxpriority - 2 ; Priority for fundamental standards
    paramdir = concat_dir(getenv('IDLSPEC2D_DIR'), 'examples')
 
+   fundtilenum = max(tilenums) + 1
+   fundplatenum = max(platenums) + 1
+
    ;----------
    ; Set up the data for the fundamental standards, and apply the
    ; proper motion corrections from epoch 2000 to the current epoch.
+   ; These magnitudes are those in the file 'metaFC_bd17isonlyfund.fit'
+   ; checked into the "mtstds" product on 16 June 2000.
 
    pfund = $
    { name:         '',  $
@@ -174,14 +183,22 @@ pro design_multiplate, stardata, tilenums=tilenums, platenums=platenums, $
      dec:        0.0d,  $
      pm_ra:      0.0 ,  $
      pm_dec:     0.0 ,  $
-     vmag:       0.0  }
+     vmag:       0.0 ,  $
+     mag:        fltarr(5) }
    funddat = replicate(pfund, 5)
    funddat.name  = ['HD_19445','BD+21o607','HD_84937','BD+26o2606','BD+17o4708']
    funddat.ra    = [  47.10663,   63.64800, 147.23375,  222.25961,   332.87167 ]
    funddat.dec   = [  26.33094,   22.35119,  13.74426,   25.70750,    18.09139 ]
    funddat.pm_ra = [    -0.210,      0.425,     0.373,     -0.009,       0.512 ]
    funddat.pm_dec= [    -0.830,       9.22,    -0.774,     -0.346,       0.060 ]
-   funddat.vmag  = [      8.05,       10.0,      8.28,       9.72,        9.47 ]
+   funddat.vmag  = [      8.05,       10.0,      8.28,       9.72,        9.47]
+   funddat[1].mag = [10.289, 9.395, 9.114, 9.025, 9.017] ; BD+21 (V=10.0)
+   funddat[3].mag = [10.761, 9.891, 9.604, 9.503, 9.486] ; BD+26 (V=9.72)
+   funddat[4].mag = [10.560, 9.640, 9.350, 9.250, 9.230] ; BD+17 (V=9.47)
+   ; I don't have the SDSS magnitudes for two of these stars, so give them
+   ; the same colors as BD+17...
+   funddat[0].mag = funddat[4].mag + funddat[0].vmag - funddat[4].vmag
+   funddat[2].mag = funddat[4].mag + funddat[2].vmag - funddat[4].vmag
 
    thismjd = current_mjd()
    funddat.ra = funddat.ra $
@@ -475,10 +492,6 @@ addplug.sectarget = 32L
    ;---------------------------------------------------------------------------
 
    if (keyword_set(addfund)) then begin
-
-; ???
-fundtilenum = max(tilenums) + 1
-fundplatenum = max(platenums) + 1
       ntile = ntile + 1
       tilenums = [tilenums, fundtilenum]
       platenums = [platenums, fundplatenum]
@@ -527,7 +540,7 @@ fundplatenum = max(platenums) + 1
       addplug = replicate(blankplug, nadd)
       addplug.ra = funddat[ifund].ra
       addplug.dec = funddat[ifund].dec + decoffset
-      addplug.mag[*] = funddat[ifund].vmag ; Use same mag for all filters???
+      addplug.mag = funddat[ifund].mag
       addplug.throughput = fundpriority ; Very high priority for these holes
       addplug.holetype = 'OBJECT'
       addplug.objtype = 'SERENDIPITY_MANUAL' ; This will be changed later
@@ -686,6 +699,26 @@ fundplatenum = max(platenums) + 1
    endif
 
    ;---------------------------------------------------------------------------
+   ; CHANGE THE PLATE NAMES (unless /NORENAME is set)
+   ;---------------------------------------------------------------------------
+
+   if (NOT keyword_set(norename)) then begin
+      ; The first tile retains its name, the others get letters appended.
+      for itile=1, n_elements(platenums)-1 do begin
+         thisplatename = string(platenums[0],format='(i4.4)') $
+          + string(byte(65+itile))
+
+         ; Change the name of the output file
+         plugmappfile[itile] = 'plPlugMapP-' + thisplatename + '.par'
+
+         ; Change the "plateId" in the Yanny header
+; Actually don't change this, since it might break SOP!!
+;         junk = yanny_par(*(hdrarr[itile]), 'plateId', indx=indx)
+;         (*(hdrarr[itile]))[indx] = 'plateId ' + thisplatename
+      endfor
+   endif
+
+   ;---------------------------------------------------------------------------
    ; WRITE THE MODIFIED PLUGMAPP FILES.
    ; This combines objects from the different tiles.
    ; This overwrites files that already exist.
@@ -699,13 +732,10 @@ fundplatenum = max(platenums) + 1
       ;----------
       ; Keep only the guide fibers on this tile. ???
 
-
       ;----------
       ; Objects that are actually on other tiles are renamed to sky fibers
       ; on this plate.
 
-;      iobj = where(allplug.holetype EQ 'OBJECT' $
-;       AND platearr NE thisplate)
       iobj = where(modplug.holetype EQ 'OBJECT' $
        AND newplatearr NE thisplate)
       if (indx[0] NE -1) then begin
@@ -773,41 +803,20 @@ fundplatenum = max(platenums) + 1
    ; Run the code makeFanuc, makeDrillPos, use_cs3.
    ;---------------------------------------------------------------------------
 
+   ;----------
+   ; Modify the "plObs.par" file, so that we generate drill files only
+   ; from the first tile/plate.
+
+   yanny_read, 'plObs.par', plobs, hdr=plhdr, structs=plstructs
+   plobs = plobs[0]
+   yanny_write, 'plObs.par', ptr_new(plobs), hdr=plhdr, structs=plstructs
+
    print
    print, 'In the "plate" product run the following commands:"
    print, '   makeFanuc'
    print, '   makeDrillPos'
    print, '   use_cs3'
    print, 'Then you are done!'
-stop
-
-yanny_read,'plPlugMapP-0801.par',a & a=*a
-yanny_read,'plPlugMapP-0798.par',a & a=*a
-i=where(a.ra NE 0)
-k=where(strtrim(a.holetype) eq 'GUIDE')
-plot,a[i].ra,a[i].dec,/yno,ps=4
-djs_oplot,a[k].ra,a[k].dec,ps=1,color='red'
-plot,a[i].xfocal,a[i].yfocal,/yno,ps=4
-djs_oplot,a[k].xfocal,a[k].yfocal,ps=1,color='red'
-
-yanny_read,'plPlugMapP-0801.par.1',a & a=*a
-i=where(a.ra NE 0)
-plot,a[i].xfocal,a[i].yfocal,/yno,ps=4
-yanny_read,'plPlugMapP-0798.par.1',a & a=*a
-k=where(strtrim(a.holetype) eq 'GUIDE')
-djs_oplot,a[k].xfocal,a[k].yfocal,ps=1,color='red'
-
-
-yanny_read,'plPlugMapP-0798.par',a & a=*a
-yanny_read,'plPlugMapP-0800.par',b & b=*b
-i=where(a.ra NE 0)
-j=where(b.ra NE 0)
-plot,a[i].xfocal,a[i].yfocal,/yno,ps=4
-djs_oplot,b[j].xfocal,b[j].yfocal,ps=1,color='red'
-i=where(a.ra GT 1 AND a.ra LT 300)
-j=where(b.ra GT 1 AND b.ra LT 300)
-plot,a[i].ra,a[i].dec,/yno,ps=4
-djs_oplot,b[j].ra-0.2,b[j].dec,ps=1,color='red'
 
    return
 end

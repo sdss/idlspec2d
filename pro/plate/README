@@ -2,7 +2,8 @@ Description of the files
 
 The information is pulled simply from the 2MASS files supplied to me
 by Jill Knapp.  The astrometry is directly from 2MASS; no proper
-motions have been applied.
+motions have been applied.  We assume epoch 1998 for purposes of reading
+Tycho positions at the same epoch.
 
 For objects NOT drawn from a membership list, only those 
 with an optical counterpart in the 2MASS catalog were considered.
@@ -19,7 +20,7 @@ However, NGC 1817 is the exception.  There the priority should be:
 -----------------------------------------------------------------------
 PRAESEPE
 TILEID 9207 - 9209
-PLATEID 798 - 800
+PLATEID 798,798B,798C,(798D for spectrophoto)
 
 Praesepe:  We're missing a small band of data near RA=129.5.
 
@@ -39,7 +40,7 @@ will be ~450 new stars.  File: praesepe.j13
 -----------------------------------------------------------------------
 PLEIADES
 TILEID 9210 - 9214
-PLATEID 801 - 805
+PLATEID 799,799B,799C,799D,799E,(799F for spectrophoto)
 
 Pleiades: We're missing a lot of data: the quadrant at ra<56.5 and dec>24,
 plus another patch at dec>24, 58<ra<58.6, plus a couple strips.
@@ -65,7 +66,7 @@ Note that the nebulousity may affect our sky subtraction!
 -----------------------------------------------------------------------
 N752
 TILEID 9215 - 9217
-PLATEID 806 - 808
+PLATEID 800,800B,800C,(800D for spectrophoto)
 
 N752:  We are missing data at RA>30 (and a small band at 27.8ish), so I 
 moved the plate center off the cluster center a bit.
@@ -89,9 +90,8 @@ we didn't have 2Mass data for.  We should have room to add them.
 
 -----------------------------------------------------------------------
 N1817
-TILEID 9218 - 9220
-PLATEID 809 - 811
-
+TILEID 9218 - 9221
+PLATEID 801,801B,801C,801D,(801E for spectrophoto)
 
 N1817:  This cluster is closer to the galactic plane and further away, 
 hence the contamination by field stars is worse.  This leads to special

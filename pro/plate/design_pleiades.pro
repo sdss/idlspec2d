@@ -19,11 +19,13 @@ pro design_pleiades
    epoch = 1998.
    racen = [57.0d, 56.8d, 56.6d, 57.2d, 57.4d]
    deccen = [23.7d,  23.7d, 23.7d, 23.7d, 23.7d]
-   magmin = reverse([ 2.5,  5.5,  8.5, 11.5, 14.5])
-   magmax = reverse([ 5.7,  8.7, 11.7, 14.7, 17.7])
+   ; Full magnitude range is [3.0, 18.1], but only 6 stars brighter than r=5,
+   ; and 31 stars fainter than r=16, 12 fainter than r=17.
+   magmin = reverse([ 2.9,  5.5,  8.3, 11.1, 13.9])
+   magmax = reverse([ 5.9,  8.5, 11.3, 14.1, 17.1])
    guidemag = [10.5, 12.5]
    tilenums = [9210,9211,9212,9213,9214]
-   platenums = [801,802,803,804,805]
+   platenums = [801,1,2,3,4]
    matchdist = 2.0/3600. ; match distance in degrees
 
    ntile = n_elements(racen)
@@ -56,7 +58,7 @@ pro design_pleiades
       tycadd = design_starstruct(nadd)
       tycadd.ra = tycdat[iadd].radeg
       tycadd.dec = tycdat[iadd].dedeg
-      tycadd.mag = tyc_sdssmags(tycdat[iadd])
+      tycadd.mag = tyc_sdssmags(tycdat[iadd].bmv, tycdat[iadd].vmag)
       tycadd.objtype = 'SERENDIPITY_MANUAL'
       tycadd.priority = 3
       stardata = [stardata, tycadd]

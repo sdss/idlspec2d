@@ -25,7 +25,7 @@ pro design_n752
    magmax = reverse([ 9.2, 12.2, 15.2])
    guidemag = [10.5, 12.5]
    tilenums = [9215,9216,9217]
-   platenums = [806,807,808]
+   platenums = [800,1,2]
    matchdist = 2.0/3600. ; match distance in degrees
 
    ntile = n_elements(racen)
@@ -58,7 +58,7 @@ pro design_n752
       tycadd = design_starstruct(nadd)
       tycadd.ra = tycdat[iadd].radeg
       tycadd.dec = tycdat[iadd].dedeg
-      tycadd.mag = tyc_sdssmags(tycdat[iadd])
+      tycadd.mag = tyc_sdssmags(tycdat[iadd].bmv, tycdat[iadd].vmag)
       tycadd.objtype = 'SERENDIPITY_MANUAL'
       tycadd.priority = 3
       stardata = [stardata, tycadd]

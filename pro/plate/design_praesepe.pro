@@ -22,11 +22,12 @@ pro design_praesepe
    epoch = 1998.
    racen = [130.0d, 129.8d, 130.2d]
    deccen = [19.6d,  19.6d, 19.6d]
-   magmin = reverse([ 6.0, 10.0, 13.0])
-   magmax = reverse([10.2, 13.2, 16.5])
+   ; Full mag range is [6.0, 15.2], but only 2 objects fainter than r=15.2
+   magmin = reverse([ 5.9,  9.0, 12.0])
+   magmax = reverse([ 9.2, 12.2, 15.5])
    guidemag = [10.5, 12.5]
    tilenums = [9207,9208,9209]
-   platenums = [798,799,800]
+   platenums = [798,1,2]
    matchdist = 2.0/3600. ; match distance in degrees
 
    ntile = n_elements(racen)
@@ -59,7 +60,7 @@ pro design_praesepe
       tycadd = design_starstruct(nadd)
       tycadd.ra = tycdat[iadd].radeg
       tycadd.dec = tycdat[iadd].dedeg
-      tycadd.mag = tyc_sdssmags(tycdat[iadd])
+      tycadd.mag = tyc_sdssmags(tycdat[iadd].bmv, tycdat[iadd].vmag)
       tycadd.objtype = 'SERENDIPITY_MANUAL'
       tycadd.priority = 3
       stardata = [stardata, tycadd]
@@ -111,9 +112,6 @@ pro design_praesepe
    newdata = [newdata, addstar]
 
    stardata = newdata
-
-;splot,stardata.ra,stardata.dec,ps=4,color='green'
-;soplot,tycdat.radeg,tycdat.dedeg,ps=1,symsize=0.5
 
    design_multiplate, stardata, racen=racen, deccen=deccen, $
     tilenums=tilenumes, platenums=platenums, /addfund

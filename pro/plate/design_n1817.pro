@@ -17,13 +17,16 @@ end
 pro design_n1817
 
    epoch = 1998.
-   racen = [78.0d, 77.8d, 78.2d]
-   deccen = [16.7d,  16.7d, 16.7d]
-   magmin = reverse([ 6.0,  9.0, 12.0])
-   magmax = reverse([ 9.2, 12.2, 15.2])
+   racen = [78.0d, 77.8d, 78.2d, 78.4d]
+   deccen = [16.7d,  16.7d, 16.7d, 16.7d]
+   ; All magnitudes are in the range [8.2,18.1]
+;   magmin = reverse([ 8.0, 10.8, 13.6])
+;   magmax = reverse([11.0, 13.8, 16.6])
+   magmin = reverse([ 8.0, 10.4, 12.8, 15.2])
+   magmax = reverse([10.6, 13.0, 15.4, 18.2])
    guidemag = [10.5, 12.5]
-   tilenums = [9218,9219,9220]
-   platenums = [809,810,811]
+   tilenums = [9218,9219,9220,9221]
+   platenums = [801,1,2,3]
    matchdist = 2.0/3600. ; match distance in degrees
 
    ntile = n_elements(racen)
@@ -56,7 +59,7 @@ pro design_n1817
 ;      tycadd = design_starstruct(nadd)
 ;      tycadd.ra = tycdat[iadd].radeg
 ;      tycadd.dec = tycdat[iadd].dedeg
-;      tycadd.mag = tyc_sdssmags(tycdat[iadd])
+;      tycadd.mag = tyc_sdssmags(tycdat[iadd].bmv, tycdat[iadd].vmag)
 ;      tycadd.objtype = 'SERENDIPITY_MANUAL'
 ;      tycadd.priority = 3
 ;      stardata = [stardata, tycadd]
