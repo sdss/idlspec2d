@@ -1,4 +1,6 @@
 
+APO_CHECKLIMITS,opLimits.par: Allow text limits in the opLimits.par file,
+           and allow the use of wildcards for flavor,field,camera.
 APOFIX: Use QUALITY header keyword to declare exposures bad (as specified
            by PR #3687).  Enclose any string in single-quotes, so that
            the SPHDRFIX routine can desriminate between strings and numbers.
@@ -41,7 +43,7 @@ READSPEC: Fix the re-sorting of the ZLINE output structure, which is
            complicated by being a multi-dimensional structure.
 SDSSPROC: If the OBSCOMM keyword contains the words "dithered" or "focus",
            then assume this is test data (set QUALITY='test').
-SDSSPROC,SPHDRFIX: Add /do_lock option to lock the sdHdrFix files when
+SDSSHEAD,SDSSPROC,SPHDRFIX: Add /do_lock option to lock the sdHdrFix files when
            running Son-of-Spectro, which can dynamically alter those files.
 SPPLAN2D: Exclude all files where the QUALITY header keyword is not 'excellent'
            (as per change requested by PR 3687).
@@ -53,6 +55,8 @@ aporsync_logs.sh: Include the "sdHdrFix*.par" files as the first ones
 data_rsync.sh,killdata.sh: Two minor fixes: (1) gives proper syntax to
            remove files in spectrolog directories, and (2) excludes
            uncompressed guider files from being rsync-ed to rawcopy.
+pullspectra: New bash script for pulling SDSS spectra from Princeton
+           to other institutions.
 opLimits.par: Change exposure time limits to [599,1804] sec, in response
            to PR #3653.
 spectro_apodisplay.html: Include more links to spectro.princeton web site.
