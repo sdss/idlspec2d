@@ -1,8 +1,8 @@
-function quickwave, arcname, flatname, outarc, radius=radius
+function quickwave, arcname, tsetfile, outarc, radius=radius
 
    if (n_elements(arcname) NE 1) then return, 0
    if (n_elements(outarc) NE 1) then return, 0
-   if (n_elements(flatname) NE 1) then return, 0
+   if (n_elements(tsetfile) NE 1) then return, 0
    if (NOT keyword_set(radius)) then radius = 3.0
 
    ;----------
@@ -14,8 +14,8 @@ function quickwave, arcname, flatname, outarc, radius=radius
    ;----------
    ; Read in the reduced flat
 
-   tset = mrdfits(flatname,2)
-   fibermask = mrdfits(flatname,4)
+   tset = mrdfits(tsetfile,2)
+   fibermask = mrdfits(tsetfile,4)
    traceset2xy, tset, ycen, xcen 
 
    ;----------
@@ -41,15 +41,15 @@ function quickwave, arcname, flatname, outarc, radius=radius
    ; Compute fiber-to-fiber flat-field variations, and append to the end of
    ; the reduced flat file (HDU #5).  First see if we've already done this.
 
-   fflat = mrdfits(flatname,5)
+   fflat = mrdfits(tsetfile,5)
    if (NOT keyword_set(fflat)) then begin
-      flat_flux = mrdfits(flatname,0)
-      flat_ivar = mrdfits(flatname,1)
+      flat_flux = mrdfits(tsetfile,0)
+      flat_ivar = mrdfits(tsetfile,1)
       fflat = fiberflat(flat_flux, flat_ivar, wset, fibermask=fibermask, $
        /dospline)
       flat_flux = 0 ; clear memory
       flat_ivar = 0 ; clear memory
-      mwrfits, fflat, flatname
+      mwrfits, fflat, tsetfile
       fflat = 0 ; clear memory
    endif
 

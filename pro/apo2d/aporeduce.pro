@@ -144,12 +144,12 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    ; Determine if a flat or arc for this plate has already been reduced,
    ; and test if the plugmap file exists.
 
-   outflat = filepath('tset-'+platestr+'-'+filec+'.fits', root_dir=outdir)
-   outarc = filepath('wset-'+platestr+'-'+filec+'.fits', root_dir=outdir)
+   tsetfile = filepath('tset-'+platestr+'-'+filec+'.fits', root_dir=outdir)
+   wsetfile = filepath('wset-'+platestr+'-'+filec+'.fits', root_dir=outdir)
 
    plugexist = keyword_set(fullplugfile)
-   flatexist = keyword_set( findfile(outflat) )
-   arcexist = keyword_set( findfile(outarc) )
+   flatexist = keyword_set( findfile(tsetfile) )
+   arcexist = keyword_set( findfile(wsetfile) )
 
    ;----------
    ; Reduce file depending on its flavor: flat, arc, or science
@@ -159,7 +159,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       'flat' : begin
 ;         if (NOT flatexist AND plugexist) then $
          if (plugexist) then $
-          rstruct = quicktrace(fullname, outflat, fullplugfile) $
+          rstruct = quicktrace(fullname, tsetfile, fullplugfile) $
          else $
           splog, 'Unable to reduce this flat exposure'
       end
@@ -167,7 +167,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       'arc' : begin
 ;         if (flatexist AND (NOT arcexist)) then $
          if (flatexist) then $
-          rstruct = quickwave(fullname, outflat, outarc) $
+          rstruct = quickwave(fullname, tsetfile, wsetfile) $
           else $
            splog, 'Unable to reduce this arc exposure'
       end
@@ -178,7 +178,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
                  root_dir=outdir)
 
           if (flatexist AND arcexist AND exptime GT minexp) then $
-           rstruct = quickextract(outflat, outarc, fullname, outsci) $
+           rstruct = quickextract(tsetfile, wsetfile, fullname, outsci) $
           else $
            splog, 'Unable to reduce this science exposure'
        end
