@@ -55,6 +55,7 @@
 ; EXAMPLES:
 ;
 ; PROCEDURES CALLED:
+;   djs_maskinterp()
 ;   fibermask_bits()
 ;   trace_crude()
 ;   trace_fweight()
