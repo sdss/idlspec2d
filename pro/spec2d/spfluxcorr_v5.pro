@@ -493,6 +493,14 @@ pro spfluxcorr_v5, objname, adderr=adderr, combinedir=combinedir, $
    endfor
 
    ;----------
+   ; Force the sky fibers to have no correction (meaning values of unity)
+
+   if (nsky GT 0) then begin
+      ymult[*,isky,*] = 1
+      yadd[*,isky,*] = 0
+   endif
+
+   ;----------
    ; Write the output files
 
    for ifile=0L, nfile-1 do begin
