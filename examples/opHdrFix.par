@@ -48,12 +48,23 @@ spechdrfix sdR-??-0000137[0-3] DECDEG   0.159442
 spechdrfix sdR-??-0000138[8-9] NAME     "'0191-51454-01'"
 spechdrfix sdR-??-00001390 NAME     "'0191-51454-01'"
 
+# Wrong plate information in these headers for plate 187 on MJD 51454
+
+spechdrfix sdR-??-00001379     NAME     "'0187-51454-01'"
+spechdrfix sdR-??-0000138[0-7] NAME     "'0187-51454-01'"
+spechdrfix sdR-??-00001379     TILEID   26
+spechdrfix sdR-??-0000138[0-7] TILEID   26
+spechdrfix sdR-??-00001379     RADEG    356.671046
+spechdrfix sdR-??-0000138[0-7] RADEG    356.671046
+spechdrfix sdR-??-00001379     DECDEG   0.067442
+spechdrfix sdR-??-0000138[0-7] DECDEG   0.067442
+
 # Wrong plate information in these headers for plate 187 on MJD 51455
 
 spechdrfix sdR-??-0000140[4-6] NAME     "'0187-51454-01'"
 spechdrfix sdR-??-0000140[4-6] TILEID   26
-spechdrfix sdR-??-0000140[4-6] RACEN    356.671046
-spechdrfix sdR-??-0000140[4-6] DECCEN   0.067442
+spechdrfix sdR-??-0000140[4-6] RADEG    356.671046
+spechdrfix sdR-??-0000140[4-6] DECDEG   0.067442
 
 # Wrong plate information in these headers for plate 231 on MJD 51455
 
