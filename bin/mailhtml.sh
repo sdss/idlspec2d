@@ -9,6 +9,7 @@
 #    sdss-speclog.princeton.edu
 # This message is a 1-line text message that links to the HTML file, which in
 # turn links to any PostScript plots that were also in that same directory.
+#  **Now leave file removal tasks to killdata.sh 
 #
 # S. Burles, APO, 4 May 2000
 #------------------------------------------------------------------------------
@@ -60,14 +61,13 @@ do
       mail -s "$subject" sdss-speclog@astro.princeton.edu < $mailfile
 
 #     Kill almost everything in the log directory
-
-      rm -f $dir/fflat*.fits
-      rm -f $dir/sci*.fits
-      rm -f $dir/tset*.fits
-      rm -f $dir/wset*.fits
-      rm -f $dir/*.ps
+#      rm -f $dir/fflat*.fits
+#      rm -f $dir/sci*.fits
+#      rm -f $dir/tset*.fits
+#      rm -f $dir/wset*.fits
+#      rm -f $dir/*.ps
 #      rm -f $dir/logfile*.fits
-      rm -f $dir/logfile*.html
+#      rm -f $dir/logfile*.html
    fi
 done
 

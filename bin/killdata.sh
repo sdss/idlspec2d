@@ -3,8 +3,10 @@
 # This is a deadly script to blow away all local copies of raw data in
 # $RAWDATA_DIR/$MJD which no longer exist on sdsshost.apo.
 # It is invoked from mailhtml, and called every morning.
+# Also check spectrologs, and remove 1 month old files
 #
 # S. Burles, APO, 4 May 2000
+#                25 Jan 2002, Retain last 25 MJDs of spectrologs
 #------------------------------------------------------------------------------
 
 if [ -z "$RAWDATA_DIR" ] ; then
@@ -34,6 +36,20 @@ do
       rm -rf $deaddir
     fi
 
+done
+
+spectrologs=`ls -d /data/spectro/spectrologs/[56789]???? | sort -r | tail +25`
+
+for dir in $spectrologs
+do
+
+    introuble=`ls $dir/fflat*.fits $dir/sci*.fits $dir/tset*.fits $dir/wset*.fits $dir/*.ps $dir/logfile*.html 2>1`
+
+    if  [ $introuble ]
+    then
+      echo KILLDATA: cleaning up $dir
+      rm -f $introuble
+    fi
 done
 
 #------------------------------------------------------------------------------
