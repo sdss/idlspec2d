@@ -22,6 +22,9 @@
 ;   SDSS spectroscopic images.  The list of edits to make are stored
 ;   in a Yanny parameter file.
 ;
+;   This proc only works in IDL version 5.3 and later, because it
+;   uses STRMATCH().
+;
 ; EXAMPLES:
 ;   filename = 'sdR-b2-00003976.fit'
 ;   hdr = headfits(filename)
@@ -49,15 +52,6 @@ pro sphdrfix, filename, hdr
 
    if (n_params() LT 2) then begin
       print, 'Syntax - sphdrfix, filename, hdr'
-      return
-   endif
-
-   ;----------
-   ; This proc only works in IDL version 5.3 and later, because it
-   ; uses STRMATCH().
-
-   if (!version.release LT '5.3') then begin
-      splog, 'WARNING: Unable to fix headers with this version of IDL'
       return
    endif
 
@@ -103,7 +97,10 @@ pro sphdrfix, filename, hdr
       if (qstring) then begin
          ; Extract the first string between single quotes.
          thisvalue = strmid(thisvalue, strpos(thisvalue, "'") )
-         thisvalue = (strsplit(thisvalue, "'", /extract))[0]
+;         thisvalue = (strsplit(thisvalue, "'", /extract))[0]
+         squote = "'"
+         thisvalue = (strsplit(thisvalue, squote, extract=1))[0]
+;         thisvalue = (strsplit(thisvalue, "'"))[0]
       endif else begin
          ; This value is either a floating-point or integer value.
          ; Floating-point if contains any of the characters '.de'

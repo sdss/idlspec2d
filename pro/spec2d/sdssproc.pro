@@ -160,7 +160,10 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    ;-----------
    ; Fix the headers with any hand-edits that we have determined.
 
-   sphdrfix, infile, hdr
+   if (!version.release LT '5.3') then $
+    splog, 'WARNING: Unable to fix headers with this version of IDL' $
+   else $
+    sphdrfix, infile, hdr
 
    ;-----------
    ; Determine which CCD from the file name itself, using either the
