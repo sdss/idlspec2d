@@ -52,7 +52,10 @@ function zfitmin, yarr, xarr, dofarr=dofarr, $
       ndegree = 3
       coeff = svdfit(thisx-xguess, thisy, ndegree, $
        yfit=yfit, covar=covar, sigma=corrsig, /double)
-      yerror = sqrt(total( (thisy-yfit)^2 / (nthis - ndegree) ))
+      if (nthis LE ndegree) then $
+       yerror = 0 $
+      else $
+       yerror = sqrt(total( (thisy-yfit)^2 / (nthis - ndegree) ))
       xbest = -0.5 * coeff[1] / coeff[2] + xguess
 
       ; Compute the fit error of the minimum of the quadratic.
@@ -82,7 +85,10 @@ function zfitmin, yarr, xarr, dofarr=dofarr, $
       nterms = 4
       yfit = mpfitpeak(thisx-xguess, thisy, coeff, nterms=nterms, $
        /gaussian, /negative, perror=perror)
-      yerror = sqrt(total( (thisy-yfit)^2 / (nthis - nterms) ))
+      if (nthis LE nterms) then $
+       yerror = 0 $
+      else $
+       yerror = sqrt(total( (thisy-yfit)^2 / (nthis - nterms) ))
 
       ; Compute the fit error of the minimum of the quadratic.
       ; We rescale by the apparent errors in Y.
