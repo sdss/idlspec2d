@@ -5,7 +5,7 @@ typedef struct {
   char zindex[20];   # Entries w/ same zindex contrained to have same redshift
   char windex[20];   # Entries w/ same windex contrained to have same width
   char findex[20];   # Entries w/ same findex have contrained flux ratios
-  float fvalue;      # Relative cale factor for entries w/ same findex
+  float fvalue;      # Relative scale factor for entries w/ same findex
 } emlineid;
 
  emlineid  2799.49    "MgII"       zemission  wemission  f2799  1

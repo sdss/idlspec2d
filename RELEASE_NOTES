@@ -17,6 +17,8 @@ GET_TAI: A short proc to determine, beginning, mid-point, and ending
            Note that version v4_9_1 would not reduce the early data since
            we had changed to using TAI-BEG, which did not exist for the
            early data.
+LINEBACKFIT: New generic proc for fitting emission lines + linear background
+           terms.
 SPADD_GUIDERINFO: New routine to compute seeing and average guider offsets
            from the guiderMon param file, and add those results to a FITS
            header.
@@ -44,6 +46,7 @@ SPCOMBINE: Set default value of MINSN2 to 0.2 instead of 0.0.  This is a
 SPREDUCE1D: Set the ZWARNING=8 flag (synthetic spectrum is negative) only
            for stars, not for QSO's any more since we use several eigen-
            components to fit QSO's now, nor for CV stars for the same reason.
+VDISPFIT: Option to return the best fit with YFIT keyword.
 
 aporsync_logs.sh : 
            Changed the syntax to just copy these type of files in astrolog
