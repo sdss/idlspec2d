@@ -29,6 +29,9 @@
 ; PROCEDURES CALLED:
 ;   bspline_iterfit()
 ;   bspline_valu()
+;   djs_oplot
+;   djs_plot
+;   traceset2xy
 ;
 ; REVISION HISTORY:
 ;   27-Jul-2001  Written by S. Burles, FNAL
@@ -81,11 +84,10 @@ function smooth_superflat, superflatset, airset, plottitle=plottitle
    sarea = string(area, format='(f8.4)')
 
    if total(ratio-1)/sqrt(nsparse) GT 0.01 then $
-     splog, 'WARNING: Possible Argon lines in superflat: ' + sarea
+    splog, 'WARNING: Possible Argon lines in superflat, flux-fraction=' + sarea
    
-   ;
-   ; Let's attempt a QA plot here: 
-   ;
+   ;----------
+   ; Make a QA plot
 
    if keyword_set(plottitle) then begin
      oldmulti = !p.multi
@@ -95,17 +97,14 @@ function smooth_superflat, superflatset, airset, plottitle=plottitle
 
      djs_plot, wave, model, title=plottitle, xchars=0.001,/xs,xrange=xrange
      djs_oplot, wave, yfit, color='red'
-     djs_plot, wave, ratio, /yno,$
-        ymargin=[4,-4],/xs, xrange=xrange, xtitle='Wavelength (\AA)'
+     djs_plot, wave, ratio, /ynozero, $
+      ymargin=[4,-4], /xstyle, xrange=xrange, xtitle='Wavelength (\AA)'
      djs_oplot, wave, yfit-yfit+1
-     xyouts, [0.95], [0.5], 'Area= '+sarea+' ', $
-             alignment=1.0, /normal 
+     xyouts, [0.05], [0.5], 'Fraction of flux in emission lines= '+sarea+' ', $
+      alignment=1.0, /normal 
      !p.multi = oldmulti
    endif
  
    return, fullfit
 end
-
-
-   
-
+;------------------------------------------------------------------------------
