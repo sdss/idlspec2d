@@ -244,7 +244,7 @@ pro platelist, infile, plist=plist, create=create
          if (statusmissing EQ 0 AND statusrun EQ 0) then $
           plist[ifile].status2d = 'FAILED' $ ; Should have found spPlate file
          else if (statusrun EQ 0 AND statusdone EQ 0) then $
-          plist[ifile].status2d = 'PENDING' $ ; No log files created
+          plist[ifile].status2d = 'Pending' $ ; No log files created
          else $
           plist[ifile].status2d = 'RUNNING' ; Some log files created
 
@@ -318,7 +318,7 @@ pro platelist, infile, plist=plist, create=create
             endelse
          endif else begin
             ; Case where this 1D log file missing
-            plist[ifile].status1d = 'PENDING'
+            plist[ifile].status1d = 'Pending'
          endelse
       endelse
 
