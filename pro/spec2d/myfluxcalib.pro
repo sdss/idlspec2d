@@ -198,11 +198,17 @@ pro myfluxcalib, filename, calibfile, colors=colors, adderr=adderr
       ;----------
       ; Read in the flux, errors, and wavelengths
 
-      objflux = mrdfits(filename[ifile],0)
-      objivar = mrdfits(filename[ifile],1)
-      objmask = mrdfits(filename[ifile],2)
-      wset = mrdfits(filename[ifile],3)
+      objflux = mrdfits(filename[ifile], 0, hdr)
+      objivar = mrdfits(filename[ifile], 1)
+      objmask = mrdfits(filename[ifile], 2)
+      wset = mrdfits(filename[ifile], 3)
       traceset2xy, wset, 0, loglam
+
+      ;----------
+      ; Read header info
+
+      cameras = strtrim(sxpar(hdr, 'CAMERAS'),2)
+      expstr = string(sxpar(hdr,'EXPOSURE'), format='(i8.8)')
 
       ;----------
       ; Do not fit where the spectrum may be dominated by sky-sub residuals.
@@ -224,6 +230,17 @@ objmask = 0 ; Free memory
       ; and re-normalize the flux to ADU/(dloglam)
 
       correct_dlam, objflux, objivar, wset, dlam=dloglam
+
+      ;----------
+      ; Apply flux-correction factor between spectro-photometric exposure
+      ; and this exposure.
+
+      spectroid = strmid(cameras,1,1)
+      corrset = mrdfits('spFluxcorr-'+expstr+'-'+spectroid+'.fits', 1)
+      traceset2xy, corrset, loglam, corrimg
+
+      divideflat, objflux, objivar, 1.0/corrimg, $
+            minval=0.05*mean(1.0/corrimg)
 
       ;----------
       ; Re-bin the spectro-photo stars to the same wavelength mapping
