@@ -84,7 +84,8 @@ function readplugmap, plugfile, plugdir=plugdir, $
    endif
 
    if (keyword_set(calibobj)) then begin
-      tsobj = plug2tsobj(plateid, plugmap=plugmap)
+      iobj = where(strmatch(plugmap.holetype,'OBJECT*'))
+      tsobj = plug2tsobj(plateid, plugmap=plugmap[iobj])
       if (keyword_set(tsobj)) then begin
          splog, 'Adding fields from calibObj file'
          addtags = replicate(create_struct('CALIBFLUX', fltarr(5)), nplug)
@@ -92,12 +93,12 @@ function readplugmap, plugfile, plugdir=plugdir, $
 
          ; Assume that all objects not called a 'GALAXY' are stellar objects
          qexist = tsobj.psfflux[2] NE 0
-         qstar = strmatch(plugmap.objtype, 'GALAXY*') EQ 0
+         qstar = strmatch(plugmap[iobj].objtype, 'GALAXY*') EQ 0
          istar = where(qstar AND qexist, nstar)
          igal = where(qstar EQ 0 AND qexist, ngal)
          pratio = fltarr(5) + 1
          if (nstar GT 0) then begin
-            plugmap[istar].calibflux = tsobj[istar].psfflux
+            plugmap[iobj[istar]].calibflux = tsobj[istar].psfflux
             ; Compute the ratio of PSF/FIBER flux for stars in each filter,
             ; using only stars that are brighter than 30 nMgy (= 18.8 mag).
             ; If no such stars, then this ratio is set to unity.
@@ -112,15 +113,24 @@ function readplugmap, plugfile, plugdir=plugdir, $
             ; structure, simply translate the flux from the plugmap MAG values
 ;            ibad = where(qexist EQ 0, nbad)
 ;            if (nbad GT 0) then begin
-;               plugmap[ibad].calibflux = 10.^((22.5 - plugmap[ibad].mag) / 2.5)
+;               plugmap[iobj[ibad]].calibflux = $
+;                10.^((22.5 - plugmap[iobj[ibad]].mag) / 2.5)
 ;            endif
          endif
          splog, 'PSF/fiber flux ratios = ', pratio
          if (ngal GT 0) then begin
             for ifilt=0, 4 do $
-             plugmap[igal].calibflux[ifilt] = tsobj[igal].fiberflux[ifilt] $
-              * pratio[ifilt]
+             plugmap[iobj[igal]].calibflux[ifilt] = $
+              tsobj[igal].fiberflux[ifilt] * pratio[ifilt]
          endif
+
+         ; Reject any fluxes based upon suspect PHOTO measurements,
+         ; as indicated by the PHOTO flags.
+         badbits2 = sdss_flagval('OBJECT2','SATUR_CENTER') $
+          OR sdss_flagval('OBJECT2','INTERP_CENTER') $
+          OR sdss_flagval('OBJECT2','PSF_FLUX_INTERP')
+         qgoodphot = (tsobj.flags2 AND badbits2) EQ 0
+         plugmap[iobj].calibflux = plugmap[iobj].calibflux * qgoodphot
       endif else begin
          splog, 'WARNING: No calibObj structure found for plate ', plateid
       endelse
@@ -129,7 +139,7 @@ function readplugmap, plugfile, plugdir=plugdir, $
    if (keyword_set(deredden)) then begin
       splog, 'Applying reddening vector ', redden_med
       for ifilt=0, 4 do $
-       plugmap.mag[ifilt] = plugmap.mag[ifilt] - redden_med[ifilt]
+       plugmap[iobj].mag[ifilt] = plugmap[iobj].mag[ifilt] - redden_med[ifilt]
    endif
 
    return, plugmap
