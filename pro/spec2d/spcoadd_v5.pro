@@ -562,7 +562,7 @@ pro spcoadd_v5, spframes, outputname, $
     ' Number of exposures in this file', before='EXPTIME'
    for ifile=0,nfiles-1 do $
     sxaddpar, hdr, string('EXPID',ifile+1, format='(a5,i2.2)'), label[ifile], $
-     ' ID string for exposure '+strtrim(string(ifile),2), before='EXPTIME'
+     ' ID string for exposure '+strtrim(ifile+1,2), before='EXPTIME'
    if (keyword_set(bestexpnum)) then $
     sxaddpar, hdr, 'BESTEXP', bestexpnum, before='EXPID01'
 

@@ -557,7 +557,7 @@ pro spcoadd_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
     ' Number of exposures in this file', before='EXPTIME'
    for ifile=0,nfiles-1 do $
     sxaddpar, hdr, string('EXPID',ifile+1, format='(a5,i2.2)'), label[ifile], $
-     ' ID string for exposure '+strtrim(string(ifile),2), before='EXPTIME'
+     ' ID string for exposure '+strtrim(ifile+1,2), before='EXPTIME'
 
    sxaddpar, hdr, 'EXPTIME', min(exptimevec), $
     ' Minimum of exposure times for all cameras'
