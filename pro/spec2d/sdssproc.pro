@@ -204,11 +204,12 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    ;-----------
    ; Fix the headers with any hand-edits that we have determined.
 
-   if (!version.release LT '5.3') then $
-    if (NOT keyword_set(silent)) then $
-     splog, 'Warning: Unable to fix headers with this version of IDL' $
-   else $
-    sphdrfix, infile, hdr
+   if (!version.release LT '5.3') then begin
+      if (NOT keyword_set(silent)) then $
+       splog, 'Warning: Unable to fix headers with this version of IDL' $
+   endif else begin
+      sphdrfix, infile, hdr
+   endelse
 
    ;-----------
    ; Determine the exposure number from the file name itself.
