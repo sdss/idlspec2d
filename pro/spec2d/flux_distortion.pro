@@ -21,8 +21,8 @@
 ;
 ; OPTIONAL INPUTS:
 ;   minflux    - Minimum flux levels for objects to be used in the fit;
-;                default to 10 nMgy in all three (gri) bands, corresponding
-;                to 20th mag.
+;                default to 5 nMgy in all three (gri) bands, corresponding
+;                to 20.7-th mag.
 ;   minobj     - Minimum number of objects that have good fluxes in all
 ;                three gri-bands for computing the corrections; default to 50;
 ;                if fewer than this many, then CORRIMG is returned with all 1's
@@ -84,8 +84,8 @@ forward_function mpfit, flux_distort_fn
 ;------------------------------------------------------------------------------
 function flux_distort_corrvec, coeff, lwave2, thisplug
 
-   xx = thisplug.xfocal / 320.
-   yy = thisplug.yfocal / 320.
+   xx = thisplug.xfocal / 320.d0
+   yy = thisplug.yfocal / 320.d0
    specid = thisplug.spectrographid
    cvec = (1. + coeff[0] * (specid EQ 1) + coeff[1] * (specid EQ 2)) $
     * exp(coeff[2] * xx $
@@ -95,7 +95,7 @@ function flux_distort_corrvec, coeff, lwave2, thisplug
         + coeff[6] * yy^2 $
         + coeff[7] * xx * lwave2 $
         + coeff[8] * yy * lwave2 $
-        + coeff[9] * lwave2 * (specid EQ 1) $
+        + coeff[9] * lwave2 * (specid EQ 1) $ 
         + coeff[10] * lwave2 * (specid EQ 2) $
         + coeff[11] * xx*yy * lwave2 $
         + coeff[12] * xx^2 * lwave2 $
@@ -108,7 +108,7 @@ end
 function flux_distort_fn, coeff
 
    common com_flux_distort, trimflux, lwave2, fmask, calibflux, calibisig, $
-    trimplug
+    trimplug, outmask
 
    nobj = n_elements(trimplug)
    newflux = fltarr(nobj,3)
@@ -117,11 +117,13 @@ function flux_distort_fn, coeff
      newflux[i,j] = total(trimflux[*,i] * fmask[*,j] $
       * flux_distort_corrvec(coeff, lwave2, trimplug[i]), /double)
 
-   ; Re-caste from an array to a vector, since MPFIT needs a vector.
-;   retval = (newflux / calibflux)[*] - 1.
-   retval = ((newflux - calibflux) * calibisig)[*]
+;   retval = (newflux / calibflux) - 1.
+   retval = (newflux - calibflux) * calibisig
+   if (keyword_set(outmask)) then for j=0, 2 do $
+    retval[*,j] = retval[*,j] * outmask
 
-   return, retval
+   ; Re-caste from an array to a vector, since MPFIT needs a vector.
+   return, retval[*]
 end
 ;------------------------------------------------------------------------------
 function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
@@ -129,10 +131,10 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
  coeff=coeff
 
    common com_flux_distort, trimflux, lwave2, fmask, calibflux, calibisig, $
-    trimplug
+    trimplug, outmask
 
    if (NOT keyword_set(minobj)) then minobj = 50
-   if (NOT keyword_set(minflux)) then minflux = 10.
+   if (NOT keyword_set(minflux)) then minflux = 5.
 
    if (keyword_set(platefile)) then begin
       objflux = mrdfits(platefile,0,hdr)
@@ -150,7 +152,7 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
    thisivar = skymask(objivar, andmask, ormask)
 
    wavevec = 10d0^loglam
-   lam0 = 5070.
+   lam0 = 5070.d0
    lwave2 = 1. - (lam0/wavevec)^2 ; Basically normalized to [0.5,2.0]
 
    ;----------
@@ -234,14 +236,14 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
    ; Iterate the fit, rejecting outlier points.
 
    maxiter1 = 10
-   maxiter2 = 25
+   maxiter2 = 50
    sigrej = 5.
    maxrej = ceil(0.05 * ntrim) ; Do not reject more than 5% of remaining objects
    npar = 14
 
    parinfo = {value: 0.d0, fixed: 0, limited: [0b,0b], limits: [0.d0,0.d0]}
    parinfo = replicate(parinfo, npar)
-   parinfo.value = 1.e-2
+   parinfo.value = 1.d-3
    ftol = 1d-20
    gtol = 1d-20
    xtol = 1d-20
@@ -249,6 +251,7 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
    outmask = 0
    while (iiter LT maxiter1) do begin
       splog, 'Flux distortion fit iteration #', iiter
+      splog, 'Initial chi^2=', total((flux_distort_fn(parinfo.value*0))^2)
       coeff = mpfit('flux_distort_fn', parinfo=parinfo, $
        maxiter=maxiter2, ftol=ftol, gtol=gtol, xtol=xtol, $
        niter=niter, status=status, /quiet)
@@ -256,13 +259,14 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
 
       ; For each object, set CHIVEC equal to the worst value in the 3 filters
       chiarr = abs(reform(flux_distort_fn(coeff), ntrim, 3))
+      splog, 'Iteration #', iiter, ' chi^2=', total(chiarr^2)
       chivec = (chiarr[*,0] > chiarr[*,1]) > chiarr[*,2]
 
       ; Reject points w/out using the errors, but rather by simply compute
       ; the standard deviation of the results; this is the default behaviour
       ; for DJS_REJECT().
-;      if (djs_reject(chivec, 0*chivec, invvar=0*chivec+1, outmask=outmask, $
-      if (djs_reject(chivec, 0*chivec, outmask=outmask, $
+      if (djs_reject(chivec, 0*chivec, invvar=0*chivec+1, outmask=outmask, $
+;      if (djs_reject(chivec, 0*chivec, outmask=outmask, $
        lower=sigrej, upper=sigrej, maxrej=maxrej)) $
        then iiter = maxiter1 $
       else $
@@ -290,6 +294,7 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
       platesn, objflux*corrimg, objivar/corrimg^2, $
        andmask, plugmap, loglam, hdr=hdr, plotfile='test2.ps'
    endif
+stop
 
    return, corrimg
 end
