@@ -68,6 +68,7 @@ pro/apo2d/quickextract.pro -text
 pro/apo2d/quicktrace.pro -text
 pro/apo2d/quickwave.pro -text
 pro/makefile.old -text
+pro/science/README -text
 pro/spec1d/MCsimul2.pro -text
 pro/spec1d/Makefile -text
 pro/spec1d/bandpassfilter.pro -text
