@@ -6,7 +6,7 @@
 ;   Calling script for SPCOADD_FRAMES.
 ;
 ; CALLING SEQUENCE:
-;   spcombine, [ planfile, docams=, adderr=, /xdisplay, minsn=, /smearinclude ]
+;   spcombine, [ planfile, docams=, adderr=, /xdisplay, minsn2=, /smearinclude ]
 ;
 ; INPUTS:
 ;
@@ -224,8 +224,19 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
 
       for i=0,nsci-1 do begin
          checkhdr = headfits(sciname[i])
-         if size(checkhdr,/tname) NE 'INT' then $
+         if size(checkhdr,/tname) NE 'INT' then begin
            framesn2[i] = sxpar(checkhdr,'FRAMESN2')
+           cameras = strtrim(sxpar(checkhdr, 'CAMERAS'),2)
+           expstr = string(sxpar(checkhdr, 'EXPOSURE'), format='(i8.8)')
+           spectroid = strmid(cameras,1,1)
+           corrfile = djs_filepath('spFluxcorr-'+expstr+'-'+spectroid+'.fits', $
+                   root_dir=combinedir)
+           corrset = mrdfits(corrfile, 1, /silent)
+           if size(corrset, /tname) NE 'INT' then begin
+             traceset2xy, corrset, tempwave, corrimg
+             if total(corrimg) EQ 0 then framesn2[i] = 0.0
+           endif else framesn2[i] = 0.0
+         endif
       endfor
 
       j = where(framesn2 GE minsn2)
