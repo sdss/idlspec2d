@@ -450,12 +450,12 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
    ; Add new header cards
 
    sxaddpar, hdr, 'VERSCOMB', idlspec2d_version(), $
-    'Version of idlspec2d for combining multiple spectra', after='VERS2D'
+    ' Version of idlspec2d for combining multiple spectra', after='VERS2D'
    sxaddpar, hdr, 'NEXP', nfiles, $
-    'Number of exposures in this file', before='EXPTIME'
+    ' Number of exposures in this file', before='EXPTIME'
    for ifile=0,nfiles-1 do $
     sxaddpar, hdr, string('EXPID',ifile, format='(a5,i2.2)'), label[ifile], $
-     'ID string for exposure '+strtrim(string(ifile),2), before='EXPTIME'
+     ' ID string for exposure '+strtrim(string(ifile),2), before='EXPTIME'
 
    sxaddpar, hdr, 'EXPTIME', min(exptimevec), $
     ' Minimum of exposure times for all cameras'
@@ -465,15 +465,14 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
    sxaddpar, hdr, 'SPCOADD', systime(), $
     ' SPCOADD finished', after='EXPTIME'
 
-   sxaddpar, hdr, 'NWORDER', 2, 'Linear-log10 coefficients'
-   sxaddpar, hdr, 'WFITTYPE', 'LOG-LINEAR', 'Linear-log10 dispersion'
+   sxaddpar, hdr, 'NWORDER', 2, ' Linear-log10 coefficients'
+   sxaddpar, hdr, 'WFITTYPE', 'LOG-LINEAR', ' Linear-log10 dispersion'
    sxaddpar, hdr, 'COEFF0', wavemin, $
-    'Central wavelength (log10) of first pixel'
-   sxaddpar, hdr, 'COEFF1', binsz, 'Log10 dispersion per pixel'
+    ' Central wavelength (log10) of first pixel'
+   sxaddpar, hdr, 'COEFF1', binsz, ' Log10 dispersion per pixel'
 
    sxaddpar, hdr, 'NAXIS1', n_elements(bestflux)
    sxaddpar, hdr, 'NAXIS2', nfiber
-
 
    add_iraf_keywords, hdr, wavemin, binsz
 

@@ -476,16 +476,16 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ; Add keywords to object header
 
    sxaddpar, objhdr, 'VERS2D', idlspec2d_version(), $
-    'Version of idlspec2d for 2D reduction', after='VERSREAD'
+    ' Version of idlspec2d for 2D reduction', after='VERSREAD'
    if (keyword_set(osigma)) then $
     sxaddpar, objhdr, 'OSIGMA',  sigma, $
-     'Original guess at spatial sigma in pix'
-   sxaddpar, objhdr, 'PREJECT', reject[1], 'Profile area rejection threshold'
-   sxaddpar, objhdr, 'LOWREJ', lowrej, 'Extraction: low rejection'
-   sxaddpar, objhdr, 'HIGHREJ', highrej, 'Extraction: high rejection'
-   sxaddpar, objhdr, 'SCATPOLY', npoly, 'Extraction: Order of scattered light polynomial'
-   sxaddpar, objhdr, 'PROFTYPE', proftype, 'Extraction profile: 1=Gaussian'
-   sxaddpar, objhdr, 'NFITPOLY', nterms, 'Extraction: Number of parameters in each profile'
+     ' Original guess at spatial sigma in pix'
+   sxaddpar, objhdr, 'PREJECT', reject[1], ' Profile area rejection threshold'
+   sxaddpar, objhdr, 'LOWREJ', lowrej, ' Extraction: low rejection'
+   sxaddpar, objhdr, 'HIGHREJ', highrej, ' Extraction: high rejection'
+   sxaddpar, objhdr, 'SCATPOLY', npoly, ' Extraction: Order of scattered light polynomial'
+   sxaddpar, objhdr, 'PROFTYPE', proftype, ' Extraction profile: 1=Gaussian'
+   sxaddpar, objhdr, 'NFITPOLY', nterms, ' Extraction: Number of parameters in each profile'
 
    snvec = djs_median(flambda*sqrt(flambdaivar),1)
    if color EQ 'blue' then begin
