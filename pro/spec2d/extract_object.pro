@@ -137,8 +137,8 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
       splog, 'Median counts in all fibers = ', fullscrunch
       splog, 'Number of bright fibers = ', whopct
 
-      iskies = where(plugsort.objtype EQ 'SKY' AND plugsort.fiberid GT 0 AND $
-                     (fibermask EQ 0), nskies)
+      iskies = where(strtrim(plugsort.objtype,2) EQ 'SKY' $
+       AND plugsort.fiberid GT 0 AND (fibermask EQ 0), nskies)
 
       if (nskies LT 2) then begin
           splog, 'ABORT: Only '+ string(nskies) + ' sky fibers found' 

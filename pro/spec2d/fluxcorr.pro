@@ -93,11 +93,11 @@ function fluxcorr, flux, fluxivar, wset, plugsort, color=color, $
 ;	Now try to find the best spectrophoto_std on this CCD
 ;	
 	
-	spectrophoto = where(plugsort.objtype EQ 'SPECTROPHOTO_STD' $
+	spectrophoto = where(strtrim(plugsort.objtype,2) EQ 'SPECTROPHOTO_STD' $
                AND (fibermask EQ 0))
 	if (spectrophoto[0] EQ -1) then begin
 	  splog, 'WARNING: No spectrophoto stds on this side, trying reddening'
-	  spectrophoto = where(plugsort.objtype EQ 'REDDEN_STD' $
+	  spectrophoto = where(strtrim(plugsort.objtype,2) EQ 'REDDEN_STD' $
                AND (fibermask EQ 0))
 	  if (spectrophoto[0] EQ -1) then $
 	    message, 'FLUXCORR: can not find reddening standards either'

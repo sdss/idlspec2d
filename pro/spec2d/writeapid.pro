@@ -9,11 +9,11 @@ pro writeapid, plugmap, filename
 	   temp = plugmap[i]
 	   guess = 1
 	   descrip = ' gal'
-	   if (temp.objtype EQ 'SKY') then begin
+	   if (strtrim(temp.objtype,2) EQ 'SKY') then begin
 	      descrip = ' sky'
               guess = 0
            endif
-	   if (temp.objtype EQ 'SPECTROPHOTO_STD') then begin
+	   if (strtrim(temp.objtype,2) EQ 'SPECTROPHOTO_STD') then begin
               descrip = ' F'
               guess = 2
            endif
