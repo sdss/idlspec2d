@@ -279,11 +279,11 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
             if (keyword_set(psfile)) then $
              xyouts, linewave[iline], linepeak[iline], $
               '  '+zline[iline].linename, orient=90, $
-              charsize=0.75*csize, color=djs_icolor(linecolor), /normal $
+              charsize=0.75*csize, color=djs_icolor(linecolor) $
             else $
              sxyouts, linewave[iline], linepeak[iline], $
               '  '+zline[iline].linename, orient=90, $
-              charsize=0.75*csize, color=linecolor, /normal
+              charsize=0.75*csize, color=linecolor
          endif
       endfor
    endif
