@@ -12,13 +12,13 @@ end
 pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
         ntrials=ntrials, fullspec=fullspec, fullerr=fullerr, $
         fullwave=fullwave, output=output, dosky=dosky, wavemin = wavemin, $
-        bkptbin = bkptbin, everyn=everyn, display=display
+        bkptbin = bkptbin, everyn=everyn, display=display, window=window
 
 ;
 ;	Set to 50 km/s for now to match 1d
 ;	Better guess would be 69 km/s
 ;
-	if (NOT keyword_set(bin)) then bin = (50.0/300000.0) / 2.30258
+	if (NOT keyword_set(bin)) then bin = (70.0/300000.0) / 2.30258
 
 	if (NOT keyword_set(zeropoint)) then zeropoint = 3.5d
 	if (NOT keyword_set(nord)) then nord = 2
@@ -56,6 +56,10 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
 
           npix     = (size(tempflux))[1]
 	  flux     = [flux, tempflux]
+
+          if (keyword_set(window)) then $
+               tempivar[0:window] = tempivar[0:window]*findgen(window+1)/window
+
 	  fluxivar = [fluxivar, tempivar]
           wave     = [wave,tempwave]
           specnum = [specnum, bytarr(npix) + i]
@@ -71,6 +75,8 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
 
 	redpix = where(bluered, numred)
 	bluepix = where(bluered EQ 0, numblue)
+	if (numblue GT 0 AND numred GT 0) then $
+               exptime = exptime * 0.5
 ;
 ;	Fix up new header, any one should do to start with
 ;
@@ -98,8 +104,8 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
                'ID String for exposure '+strtrim(string(i),2), $
                 BEFORE='EXPTIME'
 
-	  sxaddpar, hdr, 'EXPTIME', exptime, 'total exposure time (seconds)'
-	  sxaddpar, hdr, 'COMBINE2', systime(), $
+	sxaddpar, hdr, 'EXPTIME', exptime, 'total exposure time (seconds)'
+	sxaddpar, hdr, 'COMBINE2', systime(), $
                 'COMBINE2DOUT finished', AFTER='EXPTIME'
 
         scale = fltarr(nfiber)
@@ -109,75 +115,90 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
         for i=0,nfiber - 1 do begin
  
 	  scale[i] = 1.0
-	  if (strtrim(plugmap[i].objtype,2) EQ 'SKY' AND $
-             NOT keyword_set(dosky)) then $
-                splog, ' skipping sky on fiber ', i $
-          else if (strtrim(plugmap[i].objtype,2) EQ 'NA') then $
-               splog, ' skipping bad fiber ', i $
-          else begin
-            splog, i, ' ', plugmap[i].objtype, plugmap[i].mag, $ 
-		      format = '(i4.3, a, a, f6.2, f6.2, f6.2, f6.2, f6.2)'
-            fullwave = wave[*,i] 
-            fullspec = flux[*,i] 
-            fullivar = fluxivar[*,i] 
+;	  if (strtrim(plugmap[i].objtype,2) EQ 'SKY' AND $
+;             NOT keyword_set(dosky)) then $
+;                splog, ' skipping sky on fiber ', i+1 $
+;          else if (strtrim(plugmap[i].objtype,2) EQ 'NA') then $
+;               splog, ' skipping bad fiber ', i+1 $
+;          else begin
 
-            outputfile = outputroot+string(format='(i3.3,a)',i+1)+'.fit'
+          splog, plugmap[i].fiberid, ' ', plugmap[i].objtype, plugmap[i].mag, $ 
+		      format = '(i4.3, a, a, f6.2, f6.2, f6.2, f6.2, f6.2)'
+          fullwave = wave[*,i] 
+          fullspec = flux[*,i] 
+          fullivar = fluxivar[*,i] 
+
+
+          outputfile = outputroot+string(format='(i3.3,a)',i+1)+'.fit'
+
+	  nonzero = where(fullivar GT 0.0)
+	  if (nonzero[0] EQ -1) then begin
+	    splog, 'no good points, all have 0.0 or negative sigma'
+            bestguess = [-1.0,-1.0]
+            besterr = [-1.0,-1.0]
+
+          endif else begin 
+               
+            minfullwave = min(fullwave[nonzero])
+            maxfullwave = max(fullwave[nonzero])
+
 ;
 ;	Use medians to merge red and blue here
 ;
-	    if (numblue GT 0 AND numred GT 0) then begin
-               exptime = exptime * 0.5
+;	    if (numblue GT 0 AND numred GT 0) then begin
+;	       maxblue = max(fullwave[where(bluered EQ 0)])
+;	       minred = min(fullwave[where(bluered EQ 1)])
+;
+;	       if (minred LT maxblue) then begin
+;                  bluecross = where(bluered EQ 0 and fullwave GT minred $ 
+;                      AND fullivar GT 0.0)
+;                  redcross = where(bluered EQ 1 and fullwave LT maxblue $
+;                      AND fullivar GT 0.0)
+;	          if (redcross[0] NE -1 AND bluecross[0] NE -1) then begin 
+;	             djs_iterstat, fullspec[bluecross], median=bluemed, $
+;                          sigma=bluesigma
+;	             djs_iterstat, fullspec[redcross], median=redmed, $
+;                          sigma=redsigma
+;
+;;	             scale[i] = bluemed/redmed
+;	             blueflux[i] = bluemed
+;                     redflux[i] = redmed
+;
+;		     if (bluemed - 0.5*bluesigma LE 0) then scale[i] = 1.0
+;		     if (redmed - 0.5*redsigma LE 0) then scale[i] = 1.0
+;
+;	             
+;	             splog, i+1, ' Blue:', bluemed, bluesigma, $
+;                      ' Red: ', redmed, redsigma,  ' scale: ', scale[i], $
+;		      format = '(i4.3, a, f6.2, f6.2, a, f6.2, f6.2, a, f6.2)'
+;	             fullspec[redpix] = fullspec[redpix]*scale[i]
+;	             fullivar[redpix] = fullivar[redpix]/(scale[i]^2)
+;	          endif
+;	       endif
+;
+;	   endif
 
-	       maxblue = max(fullwave[where(bluered EQ 0)])
-	       minred = min(fullwave[where(bluered EQ 1)])
-
-	       if (minred LT maxblue) then begin
-                  bluecross = where(bluered EQ 0 and fullwave GT minred $ 
-                      AND fullivar GT 0.0)
-                  redcross = where(bluered EQ 1 and fullwave LT maxblue $
-                      AND fullivar GT 0.0)
-	          if (redcross[0] NE -1 AND bluecross[0] NE -1) then begin 
-	             djs_iterstat, fullspec[bluecross], median=bluemed, $
-                          sigma=bluesigma
-	             djs_iterstat, fullspec[redcross], median=redmed, $
-                          sigma=redsigma
-
-	             scale[i] = bluemed/redmed
-	             blueflux[i] = bluemed
-                     redflux[i] = redmed
-
-		     if (bluemed - 0.5*bluesigma LE 0) then scale[i] = 1.0
-		     if (redmed - 0.5*redsigma LE 0) then scale[i] = 1.0
-
-	             
-	             splog, i, ' Blue:', bluemed, bluesigma, $
-                      ' Red: ', redmed, redsigma,  ' scale: ', scale[i], $
-		      format = '(i4.3, a, f6.2, f6.2, a, f6.2, f6.2, a, f6.2)'
-	             fullspec[redpix] = fullspec[redpix]*scale[i]
-	             fullivar[redpix] = fullivar[redpix]/(scale[i]^2)
-	          endif
-	       endif
-
-	   endif
-
+;
+;	get max and min from good pixels
+;
 
 	   if (NOT keyword_set(wavemin)) then begin
-	     spotmin = fix((min(fullwave) - zeropoint)/bin) + 1
-	     spotmax = fix((max(fullwave) - zeropoint)/bin) 
+	     spotmin = fix((minfullwave - zeropoint)/bin) + 1
+	     spotmax = fix((maxfullwave - zeropoint)/bin) 
 	     wavemin = spotmin * bin + zeropoint
 	     wavemax = spotmax * bin + zeropoint
 	     bkptmin = wavemin
 	     bkptmax = wavemax
 	   endif else begin
 	     spotmin = 0
-	     bkptmin = min(fullwave)
+	     bkptmin = minfullwave
 	     if (NOT keyword_set(wavemax)) then begin 
-	       spotmax = fix((max(fullwave) - wavemin)/bin) 
+	       spotmax = fix((maxfullwave - wavemin)/bin) 
                wavemax = spotmax * bin + wavemin
 	       bkptmax = wavemax
              endif else begin
 	       spotmax = fix((wavemax - wavemin)/bin)
-	       bkptmax = max(fullwave)
+	       bkptmax = maxfullwave
              endelse
 	   endelse
 
@@ -195,10 +216,6 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
 ;
 ;	Need to construct ivar for bspline
 ;
-	 nonzero = where(fullivar GT 0.0)
-	 if (nonzero[0] EQ -1) then begin
-	   splog, 'no good points, all have 0.0 or negative sigma'
-         endif else begin 
            
 
 ;
@@ -255,49 +272,70 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
 	   if (nonzero[0] NE -1) then $
              besterr[nonzero] = 1.0/sqrt(bestivar[nonzero])
 
-	   newhdr = hdr
-	   sxaddpar,newhdr, 'NWORDER', 2, 'Linear-log10 coefficients'
-	   sxaddpar,newhdr, 'WFITTYPE', 'LOG-LINEAR', $
-               'Linear-log10 dispersion'
-	   sxaddpar,newhdr, 'COEFF0', wavemin, $
-               'center wavelength (log10) of first pixel'
-	   sxaddpar,newhdr, 'COEFF1', bin, $
-               'log10 dispersion per pixel'
-	    sxaddpar, newhdr, 'REDSCAL',scale[i],$
-                'Red scaling to match blue overlap', AFTER='EXPTIME'
-
-	    sxaddpar, newhdr, 'NAXIS1', n_elements(bestguess)
-	    sxaddpar, newhdr, 'NAXIS2', 2
-	    sxaddpar, newhdr, 'WAT0_001', 'system=linear'
-	    sxaddpar, newhdr, 'WAT1_001', $
-              'wtype=linear label=Wavelength units=Angstroms'
-	    sxaddpar, newhdr, 'CRVAL1', wavemin, 'Iraf zero point'
-	    sxaddpar, newhdr, 'CD1_1', bin, 'Iraf dispersion'
-	    sxaddpar, newhdr, 'CRPIX1', 1, 'Iraf starting pixel'
-	    sxaddpar, newhdr, 'CTYPE1', 'LINEAR   ' 
-	    sxaddpar, newhdr, 'WCSDIM', 2
-	    sxaddpar, newhdr, 'DC-FLAG', 1, 'Log-linear flag'
-
-
- 	    output = [[newwave],[bestguess],[besterr]]
- 
-
-	    writefits, outputfile, [[bestguess],[besterr]], newhdr
-
-            if (keyword_set(display)) then begin
-              plot, 10^newwave, bestguess, /xstyle, yr=[-3,10]
-              djs_oplot, 10^newwave, besterr, color='red'
-            endif
+          plot, 10^fullwave, fullspec, ps=3, xr=[3700,4400]
+          oplot, 10^newwave, bestguess 
 
           endelse
-        endelse 
+	  newhdr = hdr
+
+          sxaddpar, newhdr, 'OBJID', string(format='(5(i))', $
+                  plugmap[i].objid)
+          sxaddpar, newhdr, 'MAG', string(format='(5(f8.3))', $
+                plugmap[i].mag)
+          sxaddpar, newhdr, 'RAOBJ', plugmap[i].ra, 'RA (deg) of object'
+          sxaddpar, newhdr, 'DECOBJ', plugmap[i].dec, 'DEC (deg) of object'
+          sxaddpar, newhdr, 'OBJTYPE', plugmap[i].objtype
+;
+;	Need to be more clever when multiple plugmap's are used
+; 	   This is true throughout this entire routine!
+;
+          sxaddpar, newhdr, 'XFOCAL', plugmap[i].xfocal
+          sxaddpar, newhdr, 'YFOCAL', plugmap[i].yfocal
+          sxaddpar, newhdr, 'SPECID', plugmap[i].spectrographId
+
+          sxaddpar, newhdr, 'PRIMTARG', plugmap[i].primtarget
+          sxaddpar, newhdr, 'SECTARGE', plugmap[i].sectarget
+          sxaddpar, newhdr, 'FIBERID', plugmap[i].fiberId
+
+	  sxaddpar,newhdr, 'NWORDER', 2, 'Linear-log10 coefficients'
+	  sxaddpar,newhdr, 'WFITTYPE', 'LOG-LINEAR', $
+               'Linear-log10 dispersion'
+	  sxaddpar,newhdr, 'COEFF0', wavemin, $
+               'center wavelength (log10) of first pixel'
+	  sxaddpar,newhdr, 'COEFF1', bin, $
+               'log10 dispersion per pixel'
+	  sxaddpar, newhdr, 'REDSCAL',scale[i],$
+                'Red scaling to match blue overlap', AFTER='EXPTIME'
+
+	  sxaddpar, newhdr, 'NAXIS1', n_elements(bestguess)
+	  sxaddpar, newhdr, 'NAXIS2', 2
+	  sxaddpar, newhdr, 'WAT0_001', 'system=linear'
+	  sxaddpar, newhdr, 'WAT1_001', $
+              'wtype=linear label=Wavelength units=Angstroms'
+	  sxaddpar, newhdr, 'CRVAL1', wavemin, 'Iraf zero point'
+	  sxaddpar, newhdr, 'CD1_1', bin, 'Iraf dispersion'
+	  sxaddpar, newhdr, 'CRPIX1', 1, 'Iraf starting pixel'
+	  sxaddpar, newhdr, 'CTYPE1', 'LINEAR   ' 
+	  sxaddpar, newhdr, 'WCSDIM', 2
+	  sxaddpar, newhdr, 'DC-FLAG', 1, 'Log-linear flag'
+
+
+          output = [[newwave],[bestguess],[besterr]]
+
+
+	  writefits, outputfile, [[bestguess],[besterr]], newhdr
+
+          if (keyword_set(display)) then begin
+              plot, 10^newwave, bestguess, /xstyle, yr=[-3,10]
+              djs_oplot, 10^newwave, besterr, color='red'
+          endif
+
+;        endelse 
       endfor
 
-;
-;	Should set up p.mutli here
-;
-      plot,blueflux,scale, ps=1, ytitle='Scale', xtitle='Blue end flux'
-      plot,scale,ps=10, ytitle='Scale', xtitle='Fiber #'
+;	plots for scaling, if we've done scaling
+;      plot,blueflux,scale, ps=1, ytitle='Scale', xtitle='Blue end flux'
+;      plot,scale,ps=10, ytitle='Scale', xtitle='Fiber #'
        
 
       return

@@ -29,10 +29,12 @@ function fluxcorr, flux, fluxivar, wset, plugsort, $
 ;	Now try to find the best spectrophoto_std on this CCD
 ;	
 	
-	spectrophoto = where(plugsort.objtype EQ 'SPECTROPHOTO_STD' AND fibermask)
+	spectrophoto = where(plugsort.objtype EQ 'SPECTROPHOTO_STD' $
+               AND fibermask)
 	if (spectrophoto[0] EQ -1) then begin
 	  print,'FLUXCORR: no spectrophoto stds on this side, trying reddening'
-	  spectrophoto = where(plugsort.objtype EQ 'REDDEN_STD')
+	  spectrophoto = where(plugsort.objtype EQ 'REDDEN_STD' $
+               AND fibermask)
 	  if (spectrophoto[0] EQ -1) then $
 	    message, 'FLUXCORR: can not find reddening standards either'
 	endif
@@ -51,7 +53,7 @@ function fluxcorr, flux, fluxivar, wset, plugsort, $
 	bd17big = (fltarr(nstds) + 1.0) ## bd17color	
 	colordiff = sqrt(total((spectrocolor - bd17big)^2,1))
 
-	score = min((plugsort[spectrophoto].mag)[2,*]+colordiff*10.0, bestcolor)
+	score = min((plugsort[spectrophoto].mag)[2,*]+colordiff*40.0, bestcolor)
 
 	spectroflux = flux[*,spectrophoto[bestcolor]]
 	spectrofluxivar = fluxivar[*,spectrophoto[bestcolor]]
@@ -66,7 +68,10 @@ function fluxcorr, flux, fluxivar, wset, plugsort, $
 ;
        
         absreg = [[3.582, 3.5845],[3.5885, 3.591],[3.594, 3.596], $
-                  [3.597, 3.60],[3.605, 3.62],[3.63, 3.645],[3.684, 3.688]]
+                  [3.597, 3.60],[3.605, 3.62],[3.63, 3.645],[3.684, 3.695], $
+                  [3.8165, 3.818],[3.836,3.840],[3.855,3.858], $
+                  [3.859,3.865],[3.88,3.887], [3.910,3.914], [3.918,3.921], $
+                  [3.951,3.955], [3.957,3.959]]
         nregions = (size(absreg))[2] 
 	for i=0,nregions - 1 do begin
           absline = where(spectrowave GT absreg[0,i] AND  $
@@ -90,9 +95,15 @@ function fluxcorr, flux, fluxivar, wset, plugsort, $
 
 	if (filename EQ '') then begin
              print, 'FLUXCORR cannot find bkpt file, filling in here'
-	     allbkpts = [ 3.7578, 3.768, 3.772, 3.782, 3.785, $
-                   3.79, 3.793, 3.797, 3.805, 3.81, 3.82, 3.83, 3.845, $
-                   3.87, 3.90, 3.93, 3.95, 3.97]
+	     allbkpts = [ 3.57, 3.59, 3.61, 3.63, 3.64, 3.65, 3.66, 3.67, $
+                   3.68, 3.70, 3.71, 3.72, $
+                   3.73, 3.745, 3.755, 3.760, 3.763, 3.766, 3.769, 3.772, $
+                   3.775, 3.778, 3.782, 3.785, 3.788, $
+                   3.791, 3.793, 3.797, 3.800, 3.803, 3.806, 3.81, $
+                   3.813, 3.816, 3.82, 3.823, 3.826, 3.83, 3.834, 3.837, $
+                   3.840, 3.845, 3.85, 3.854, 3.858, 3.865, 3.87, 3.874, $
+                   3.878, 3.885, 3.89,$
+                   3.895, 3.90, 3.905, 3.91, 3.92, 3.93, 3.94, 3.95, 3.97]
 	endif else begin
 	  readcol, filename, allbkpts
 	endelse
@@ -114,7 +125,8 @@ function fluxcorr, flux, fluxivar, wset, plugsort, $
 	intrinspl = spl_init(alog10(f8wave), f8flux)
 	fullf8v = spl_interp(alog10(f8wave), f8flux, intrinspl, wave) 
 
-	
+        spectrofit = slatec_bvalu(spectrowave, fullbkpt, coeff)
+
 ;	cheap scaling
 ;
 ;	at v=0, flux at 5556A is 956/3.42 photons/cm/A/s

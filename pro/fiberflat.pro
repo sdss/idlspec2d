@@ -117,13 +117,14 @@ function fiberflat, flux, fluxivar, wset, $
    bkpt = findgen(nbkpts) * (max(loglam) - min(loglam)) / (nbkpts-1) $
     + min(loglam)
 
+   fit2  = slatec_bvalu(loglam, afullbkpt, acoeff)
+
    for i=0, ntrace-1 do begin
       print, format='($, ".",i4.4,a5)',i,string([8b,8b,8b,8b,8b])
 
       ; Evaluate "superflat" spline fit at exactly the same wavelengths
       ; Let's divide out superflat first to make fitting smoother
       ; Larger breakpoint separations and less hassles 
-      fit2  = slatec_bvalu(loglam[*,i], afullbkpt, acoeff)
 
       ; Locate only unmasked points
       indx = where(fluxivar[*,i] GT 0.0 AND fit2 GT 0.0, ct)
@@ -135,8 +136,8 @@ function fiberflat, flux, fluxivar, wset, $
          iend = (where(bkpt GT max(loglam[indx,i])))[0]
          if (iend EQ -1) then iend = nbkpts-1
 
-         ratio = flux[indx,i] / fit2[indx]
-         ratioivar = fluxivar[indx,i] * fit2[indx]^2
+         ratio = flux[indx,i] / fit2[indx,i]
+         ratioivar = fluxivar[indx,i] * fit2[indx,i]^2
 
          ; Dispose of leading or trailing points with zero weight
          fullbkpt = slatec_splinefit(loglam[indx,i], ratio, coeff, $
@@ -168,7 +169,7 @@ function fiberflat, flux, fluxivar, wset, $
  
    ; Divide fflat by a global median of all fibers
    globalmed = median(medval[igood]) ; Global median for all vectors
-   fflat = fflat / globalmed
+   fflat = fflat / globalmed 
 
    junk = where(fflat LE 0, nz)
    splog, 'Number of fiberflat points LE 0 = ', nz

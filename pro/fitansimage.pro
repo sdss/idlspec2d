@@ -1,17 +1,17 @@
 ;
 ;	fitansimage takes the output from extract_image, and smooths
 ;          the corresponding parameters of nfibers and npoly with
-;	   functions of order nord and nordscat, respectively
+;	   functions of order nord 
 ;
 ;
 function fitansimage, ansimage, nparams, nfibers, npoly, nrows, yrow, $
-        fluxm=fluxm, nord=nord, nordscat=nordscat, $
+        fluxm=fluxm, nord=nord, nscatbkpts=nscatbkpts, $
         ymin=ymin, ymax=ymax, fullrows=fullrows, crossfit=crossfit,  $
         scatimage = scatimage, scatfit=scatfit, mingood = mingood
 
   if (N_params() LT 6) then begin
       print, 'Syntax - fitansimage(ansimage, nparams, nfibers, npoly, '
-      print, '  nrows, yrow, fluxm=fluxm, nord=nord, nordscat=nordscat, '
+      print, '  nrows, yrow, fluxm=fluxm, nord=nord, nscatbkpts=nscatbkpts, '
       print, '  ymin=ymin, ymax=ymax, fullrows=fullrows, crossfit=crossfit)'
       return, -1
    endif
@@ -21,7 +21,7 @@ function fitansimage, ansimage, nparams, nfibers, npoly, nrows, yrow, $
 	if(NOT keyword_set(fluxm)) then $
  			fluxm = make_array(nparams,/long,value=1)
 	if(NOT keyword_set(nord)) then nord=2	 ;quadratic
-	if(NOT keyword_set(nordscat)) then nordscat=9	 ;scattered light
+	if(NOT keyword_set(nscatbkpts)) then nscatbkpts=20 ;scattered light
 	if(NOT keyword_set(ymin)) then ymin=0.0	 
 	if(NOT keyword_set(ymax)) then ymax=2047.0	 
 	if(NOT keyword_set(fullrows)) then fullrows=2048	 
@@ -59,6 +59,7 @@ function fitansimage, ansimage, nparams, nfibers, npoly, nrows, yrow, $
        for iter=1,niter do begin 
          for i=0,nfibers-1 do begin
 	   for j=1,nparams-1 do begin
+	      mask = bytarr(nrows)+1
 ;
 ;		Iterate a few times to reject outliers
 ;
@@ -148,34 +149,43 @@ function fitansimage, ansimage, nparams, nfibers, npoly, nrows, yrow, $
 	;---------------------------------------------------
 	;	Now do background terms
 	;	First expand terms into nrows x nrows image
+        ;    Without the step function at halfway
 
 
 	scatimage = fltarr(fullrows,nrows)
 	scatfit = fltarr(fullrows,fullrows)
 
+        for i=0, nPoly-1 do begin
+            fullbkpt = slatec_splinefit(ynorm, ansimage[nfibers*nparams+i,*], $
+                     coeff, nbkpts = nscatbkpts)
+            fitans[nfibers*nparams+i,*] = slatec_bvalu(yfnorm, fullbkpt, coeff)
+        endfor
+
+        fullcheb = fchebyshev(yfnorm, nPoly)
+        for i=0,fullrows-1 do $
+	  scatfit[*,i] = fullcheb # fitans[nfibers*nparams:*,i]  
+
 	for i=0,nrows-1 do $
-	  scatimage[*,i] = fchebyshev(yfnorm, nPoly, halfintwo=1) $
+	  scatimage[*,i] = fchebyshev(yfnorm, nPoly) $
+;	  scatimage[*,i] = fchebyshev(yfnorm, nPoly, halfintwo=1) $
               # ansimage[nfibers*nparams:nfibers*nparams+npoly-1,i]  
 
-	for i=0,fullrows-1 do begin
-            fullbkpt = slatec_splinefit(ynorm, scatimage[i,*], coeff, $
-                     nbkpts = 20)
-;	    tt = poly_fit(ynorm, scatimage[i,*], nordscat, /double)
-;	    diff = scatimage[i,*] - poly(ynorm,tt)
-;	    good = where(abs(diff) LT 3*stddev(diff))
-;            print, n_elements(good)
-;	    tt2 = poly_fit(ynorm[good], scatimage[i,good], nordscat, /double)
-;	    scatfit[i,*] = poly(yfnorm,tt2)
-	    scatfit[i,*] = slatec_bvalu(yfnorm,fullbkpt,coeff)
-	endfor
+;	for i=0,fullrows-1 do begin
+;            fullbkpt = slatec_splinefit(ynorm, scatimage[i,*], coeff, $
+;                     nbkpts = 20)
+;	    scatfit[i,*] = slatec_bvalu(yfnorm,fullbkpt,coeff)
+;	endfor
 
 ;	return, [[[scatfit]],[[scatimage]]]
 
-	for i=0,fullrows-1 do begin
-	    fitans[nfibers*nparams:*,i] =  $
-               func_fit(yfnorm, scatfit[*,i], nPoly, $
-                 function_name='fchebyshev', halfintwo=1)
-	endfor
+;	for i=0,fullrows-1 do begin
+;	    fitans[nfibers*nparams:*,i] =  $
+;               func_fit(yfnorm, scatfit[*,i], nPoly, $
+;                 function_name='fchebyshev', yfit=ytemp)
+;                 function_name='fchebyshev', halfintwo=1, yfit=ytemp)
+;            scatfit[*,i] = ytemp
+;	endfor
+
 	return, fitans
 
 	end   

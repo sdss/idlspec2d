@@ -77,7 +77,7 @@ pro locateskylines, skylinefile, fimage, ivar, wset, $
    ; Discard lines that are out of bounds
    ;---------------------------------------------------------------------------
    good = total(((xarc LE 0) OR (xarc GE npix)),1) EQ 0 
-   gind = where(good)
+   gind = where(good,ngind)
    if (gind[0] EQ -1) then message, 'No sky lines!!!'
 
    ; trim list
@@ -86,9 +86,33 @@ pro locateskylines, skylinefile, fimage, ivar, wset, $
    skywaves = skywaves[gind]
 
    ; Iterate trace_fweight ???
-   xskytmp = trace_fweight(fimage, xarc, ysky, invvar=ivar) 
-   xskytmp = trace_fweight(fimage, xskytmp, ysky, invvar=ivar)  ; Good sky positions?? 
+   xskytmp = trace_fweight(fimage, xarc, ysky, invvar=ivar, radius=3.0) 
+   medianshift = median(xskytmp-xarc)
+   xskytmp = trace_fweight(fimage, xarc+medianshift, $
+                            ysky, invvar=ivar, radius=3.0) 
+   medianshift = median(xskytmp-xarc)
+   xskytmp = trace_fweight(fimage, xarc+medianshift, $
+                            ysky, invvar=ivar, radius=3.0) 
    xsky = trace_fweight(fimage, xskytmp, ysky, invvar=ivar, radius=2.0) 
+
+   ;
+   ; Fit gaussian's to sky lines
+   ;
+
+;   xgauss = xsky
+;   xgausserr = xsky*0.0
+;   xgausswidth = xsky*0.0
+;   pixels = lindgen(npix)
+;   for i=0,nfiber - 1 do begin
+;
+;     xgauss[i,*] = gaussians(pixels, fimage[*,i], ivar[*,i], xsky[i,*], $
+;           width=1.0, height=1000.0, $
+;           space=8, gausserr=gausserr, gausswidth=gausswidth)
+;     xgausserr[i,*] = gausserr
+;     xgausswidth[i,*] = gausswidth
+;
+;   endfor
+
 
    lambda = alog10(skywaves)
    xskyold = xsky

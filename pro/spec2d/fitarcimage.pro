@@ -79,7 +79,7 @@
 ;------------------------------------------------------------------------------
 
 pro fitarcimage, arc, arcivar, xnew, ycen, wset, $
- color=color, lampfile=lampfile, fibermask=fibermask, $
+ color=color, lampfile=lampfile, fibermask=fibermask, xcen=xcen, $
  func=func, aset=aset, ncoeff=ncoeff, lambda=lambda, thresh=thresh, $
  row=row, nmed=nmed, xdif_lfit=xdif_lfit, xdif_tset=xdif_tset, bestcorr=bestcorr
 
@@ -203,7 +203,8 @@ pro fitarcimage, arc, arcivar, xnew, ycen, wset, $
    splog, 'Iterating flux-weighted centers'
    xnew = trace_fweight(arc, xcen, ycen)
    xnew = trace_fweight(arc, xnew, ycen)
-   xnew = trace_fweight(arc, xnew, ycen, radius=2.0)
+   xnew = trace_fweight(arc, xnew, ycen, radius=2.0, xerr=xerr)
+   xcen = xnew
 
    ; Make use of the errors??? - Seems to just mess things up???
    ; Well... the reason for that is satured lines, which return infinite errors
@@ -243,6 +244,12 @@ pro fitarcimage, arc, arcivar, xnew, ycen, wset, $
    xnew = xnew[*,igood]
    ycen = ycen[*,igood]
    lamps = lamps[igood]
+   xerr = xerr[*,igood]
+
+   ;---------------------------------------------------------------------
+   ; Junk all centers with xerr = 999.0
+   ;
+   xweight = (xerr LT 990)
 
    ;---------------------------------------------------------------------------
    ; Do the first traceset fit
@@ -250,12 +257,13 @@ pro fitarcimage, arc, arcivar, xnew, ycen, wset, $
 
 ; ??? Let maxdev be a parameter; should be about 3.0d-5 = 20 km/s
 maxdev = 3.0d-5
-maxsig = 2.0
+maxsig = 3.0
 
    nlamp = N_elements(lamps)
    xy2traceset, transpose(double(xnew)), lamps.loglam # (dblarr(nfiber)+1), $
-    wset, func=func, ncoeff=ncoeff, maxdev=maxdev, maxiter=nlamp, /singlerej, $
-    xmask=xmask, xmin=0, xmax=npix-1
+     wset, invvar=transpose(xweight), func=func, ncoeff=ncoeff, $
+     maxdev=maxdev, maxiter=nlamp, /singlerej, $
+     xmask=xmask, xmin=0, xmax=npix-1
 
    print, 'Pass 1 complete'
 
@@ -267,20 +275,35 @@ maxsig = 2.0
    ; The following logic means that an arc line is rejected if any
    ; bundle has more than 3 bad centers.
 
+   ; do not count bad fibers in fibermask
+
+
+   badfibers = where(fibermask EQ 0)
+   if (badfibers[0] NE -1) then xmask[*,badfibers] = 1
+
    if (nfiber NE 320) then $
     message, 'Not 320 fibers -- Cannot figure out bundle test'
    testg = reform(xmask, nlamp, 20, 16)   
    gind = where(total(total(testg EQ 0,2) GT 3, 2) EQ 0, nlamp)
    if (nlamp EQ 0) then $
     message, 'No good arcs common to all fiber bundles'
+
+
+
    xnew = xnew[*,gind]
+   xweight = xweight[*,gind]
    ycen = ycen[*,gind]
    lamps = lamps[gind]
 
    fixabove = 2
 
-   finalarcfit, xnew, lamps.loglam, wset, ncoeff, fixabove, func=func, $
-              maxdev=maxdev, maxiter=nlamp, /singlerej, $
+   arcfibermask = fibermask
+   badfweight = where(xweight LE 0)
+   if (badfweight[0] NE -1) then arcfibermask[badfweight mod nfiber] = 0
+
+   finalarcfit, xnew, lamps.loglam, wset, ncoeff, fixabove, $
+              fibermask=arcfibermask, xweight=xweight, func=func, $
+              maxdev=maxdev/2.0, maxiter=nlamp, /singlerej, $
               nsetcoeff=8, maxsig=maxsig
 
    print, 'Final arcfit complete'

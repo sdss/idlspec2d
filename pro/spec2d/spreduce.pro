@@ -183,8 +183,8 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
          proftype = 1 ; Gaussian
          highrej = 15
          lowrej = 15
-         nPoly = 6 ; maybe more structure
-         wfixed = [1] ; Just fit the first gaussian term
+         nPoly = 1 ; maybe more structure
+         wfixed = [1,1] ; Just fit the first gaussian term
 
          extract_image, image, invvar, tmp_xsol, sigma, flux, fluxivar, $
           proftype=proftype, wfixed=wfixed, $
@@ -242,10 +242,11 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
    splog, 'Searching for wavelength solution'
    fitarcimage, arcimg, arcivar, xpeak, ypeak, wset, ncoeff=arccoeff, $
-    aset=aset, $
+    aset=aset, xcen=xcen, $
     color=color, lampfile=lampfile, lambda=lambda, xdif_tset=xdif_tset
      
    wsave = wset
+
 
    qaplot_arcline, xdif_tset, lambda, filename=arcname[ibest], color=color
 
@@ -264,10 +265,10 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    splog, 'Extracting flat-field image with simple gaussian'
    sigma = 1.0
    proftype = 1 ; Gaussian
-   highrej = 20
-   lowrej = 25
-   nPoly = 6
-   wfixed = [1] ; Just fit the first gaussian term
+   highrej = 15
+   lowrej = 15
+   nPoly = 1  ; just fit flat background to each row
+   wfixed = [1,1] ; Just fit the first gaussian term
 
    extract_image, image, invvar, xsol, sigma, flat_flux, flat_fluxivar, $
     proftype=proftype, wfixed=wfixed, $
@@ -333,15 +334,21 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
       sigma = 1.0
       proftype = 1 ; Gaussian
-      highrej = 15
-      lowrej = 15
-      nPoly = 6 ; maybe more structure
+      highrej = 5  ; just for first extraction steps
+      lowrej = 5  ; just for first extraction steps
+      nPoly = 16 ; maybe more structure, lots of structure
       wfixed = [1,1,1] ; gaussian term + centroid and  sigma terms
       nTerms = 3
       sigmaterm = 1
       centerterm = 2
       xnow = xsol
       sigmanow = xsol*0.0 + sigma
+
+      ;  Kill or adjust first and last column
+      ;invvar[0,*] = 0.0
+      ;invvar[2047,*] = 0.0
+      image[0,*] = image[0,*]*0.7
+      image[2047,*] = image[2047,*]*0.7
 
       ;
       ; My fitansimage is not going to work well without good profiles
@@ -363,7 +370,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
         nparams = 3
         nTrace = (size(tempflux))[2]
         fitans = fitansimage(ansimage, nparams, nTrace, nPoly, nfirst, yrow, $
-         fluxm = [1,1,0], crossfit=1-i, scatfit=scatfit, scatimage=scatimage)
+         fluxm = [1,1,0], crossfit=1, scatfit=scatfit, scatimage=scatimage)
 
         ; 3) Calculate new sigma and xsol arrays
       
@@ -389,14 +396,16 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
 ;      extract_image, image-scatfit, invvar, xnow, sigma, flux, $
 ;       fluxivar, proftype=proftype, wfixed=wfixed, $
-;       highrej=highrej, lowrej=lowrej, nPoly=0, whopping=whopping, chisq=chisq, $
+;       highrej=highrej, lowrej=lowrej, nPoly=0, whopping=whopping, chisq=chisq
 
 
+      highrej = 15
+      lowrej = 15
       fitans = fitans[0:nparams*nTrace-1,*]
       extract_image, image-scatfit, invvar, xnow, sigma, flux, $
        fluxivar, proftype=proftype, wfixed=wfixed, fitans=fitans, $
-       highrej=highrej, lowrej=lowrej, nPoly=0, whopping=whopping, chisq=chisq
-;       ymodel=ymodel2
+       highrej=highrej, lowrej=lowrej, nPoly=0, whopping=whopping,chisq=chisq, $
+       ymodel=ymodel2
 
       plot, chisq, ytitle = 'Chi^2', title=objname[iobj], xtitle='Row number'
 
@@ -451,7 +460,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       vacset = wset
       fixabove = 2
       finalarcfit, xpeak+xshift, vacloglam, vacset, arccoeff, fixabove, $
-             maxdev=0, maxiter=1, nsetcoeff=8, maxsig=2.0
+             fibermask=fibermask, maxdev=0, maxiter=1, nsetcoeff=8, maxsig=2.0
 
 
 ;      fit_skyset, xpeak, ypeak, vacloglam, xsky, ysky, vaclogsky, skycoeff, $
@@ -477,8 +486,18 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
       if (color EQ 'red')  then begin
 
-         telluricfactor = telluric_corr(flux, fluxivar, vacset, plugsort)
-         flux = flux / telluricfactor
+         ;-----------------------------------------------
+         ;  Split into two regions, A,B bands first
+         telluric1 = telluric_corr(flux, fluxivar, vacset, plugsort, $
+                 minw = 3.82, maxw=3.92, lower=5.0, upper=5.0, ncontbkpts=10)
+
+         ;-----------------------------------------------
+         ;  9100 Ang absorption next?
+         telluric2 = telluric_corr(flux, fluxivar, vacset, plugsort, $
+                 minw = 3.94, maxw=3.97, lower=5.0, upper=5.0)
+       
+         telluricfactor = telluric1 * telluric2
+         flux = flux / telluricfactor 
          fluxivar = fluxivar * (telluricfactor^2)
 
       endif

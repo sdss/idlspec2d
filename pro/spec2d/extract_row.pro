@@ -184,6 +184,7 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
 
    nonzerovar = where(invvar GT 0.0, ngood)
    reducedChi = 0.0
+   niter = 0
    if (ngood EQ 0) then return, ans
 
    if keyword_set(iback) then begin
@@ -242,6 +243,7 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
           finished = 0
        endif
 
+       diffs = (fimage - ymodel)*sqrt(invvar) 
        if (finished EQ 0) then begin
          good = where(diffs GE -lowrej*scaleError AND diffs LE highrej*scaleError, goodct)
          if (goodct GT 0) then mask[good] = 1

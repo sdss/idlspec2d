@@ -33,7 +33,7 @@
 ;                     [1, 1, 1] fit gaussian + sigma and center corrections.   
 ;   mask       - byte mask: 1 is good and 0 is bad [nCol,nRow] 
 ;   nPoly      - order of chebyshev scattered light background; default to 4
-;   maxIter    - maximum number of profile fitting iterations; default to 10
+;   maxIter    - maximum number of profile fitting iterations; default to 20
 ;   highrej    - positive sigma deviation to be rejected (default 10.0)
 ;   lowrej     - negative sigma deviation to be rejected (default 10.0)
 ;   calcCovar  - calculate Full covariance matrix
@@ -139,7 +139,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
    endelse
 
    if (N_elements(nPoly) EQ 0) then nPoly = 5      ; order of background
-   if (NOT keyword_set(maxIter)) then maxIter = 10
+   if (NOT keyword_set(maxIter)) then maxIter = 20
    if (NOT keyword_set(highrej)) then highrej = 15.0
    if (NOT keyword_set(lowrej)) then lowrej = 20.0 
    if (NOT keyword_set(wfixed)) then wfixed = [1]  ; Zeroth order term
@@ -214,7 +214,6 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
 
    for iy=0, nRowExtract-1 do begin
      cur = yrow[iy]
-     print, format='($, ".",i4.4,a5)',cur,string([8b,8b,8b,8b,8b])
 
      if (sigmasize[0] EQ 2) then  sigmacur = sigma[*, cur] $
      else sigmacur = sigma1
@@ -255,6 +254,8 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
      finv[iy,*] = finvrow
 
      if(ARG_PRESENT(ansimage)) then ansimage[*,iy] = ansrow[0:oldma-1]
+     print, format='($, ".",i4.4,i4,a9)',cur,niter, $
+          string([8b,8b,8b,8b,8b,8b,8b,8b,8b])
    endfor	  
 
    ii = where(mask EQ 0, finallyrejected)

@@ -46,7 +46,7 @@ pro skysubtract, obj, objivar, plugmap, wset, skysub, skysubivar, $
 ;
         fullbkpt   = slatec_splinefit(allwave, allsky, coeff, $
                      invvar=allskyivar, maxIter=maxIter, upper=upper, $
-                     lower=lower, everyn=nskies)
+                     lower=lower, eachgroup=1, everyn=nskies)
         allfit  = slatec_bvalu(allwave, fullbkpt, coeff)
 
 	fullfit = slatec_bvalu(wave, fullbkpt, coeff) 
@@ -103,13 +103,13 @@ pro skysubtract, obj, objivar, plugmap, wset, skysub, skysubivar, $
 	if (max(wave) GT alog10(8800.0)) then begin
           plot, 10^allwave, allsky, ps=3, xr=[8800,9000], $
            title = 'Sky fibers'
-          oplot, 10^allwave, allfit
+          djs_oplot, 10^allwave, allfit, color='red'
           plot, 10^allwave, allsky-allfit, ps=3, xr=[8800,9000], $
            title = 'Sky subtracted sky fibers '
 
           plot, 10^wave, obj, ps=3, xr=[8800,9000], $
            title = 'All fibers'
-          oplot, 10^allwave, allfit
+          djs_oplot, 10^allwave, allfit, color='red'
         endif
 
 ;
@@ -183,7 +183,7 @@ pro skysubtract, obj, objivar, plugmap, wset, skysub, skysubivar, $
 ;	
         fullbkpt   = slatec_splinefit(rwave, deltav, coeff, $
                      maxIter=maxIter, upper=30, $
-                     lower=30, nbkpts=nn/2)
+                     lower=30, everyn=2)
 	within = where(wave GE rwave[0] AND wave LE rwave[nn-1] $
                          AND skysubivar GT 0.0)
 

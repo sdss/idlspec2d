@@ -1,11 +1,18 @@
 pro finalarcfit, x, loglam, wset, ncoeff, ic, nsetcoeff=nsetcoeff, $
+         fibermask=fibermask, xweight=xweight, $
          maxsig=maxsig, plot=plot, _EXTRA = extra
+
+    if (n_elements(xweight) NE n_elements(x)) then $
+         xweight = byte(x*0.0) + 1
 
     nfiber = (size(x))[1]
     nlines = (size(x))[2]
+    if (n_elements(fibermask) NE nfiber) then $
+       fibermask = bytarr(nfiber) + 1
 
     lmatrix = loglam # (dblarr(nfiber)+1)
-    xy2traceset, transpose(x), lmatrix, wset, ncoeff=ncoeff, _EXTRA = extra, $
+    xy2traceset, transpose(x), lmatrix, wset, ncoeff=ncoeff, $
+       invvar=transpose(xweight), _EXTRA = extra, $
        yfit=yfit, xmin = wset.xmin, xmax=wset.xmax
 
     wsave = wset
@@ -15,9 +22,13 @@ pro finalarcfit, x, loglam, wset, ncoeff, ic, nsetcoeff=nsetcoeff, $
     ; with their fit value.  Fit a Chebyshev with 8 coefficients, and
     ; a split in the baseline at the central fibers.
 
+  
     fitcoeff = ncoeff - ic 
+
+    coeffmask = fibermask # (fltarr(fitcoeff) + 1)
     xy2traceset, dindgen(nfiber) # (dblarr(fitcoeff) + 1.0), $
-       transpose(wset.coeff[ic:ncoeff-1,*]), tmpset, func='chebyshev', $
+       transpose(wset.coeff[ic:ncoeff-1,*]), tmpset, $
+       invvar = coeffmask, func='chebyshev', $
        ncoeff=nsetcoeff, maxsig=maxsig, yfit=yfit, /halfintwo
     wset.coeff[ic:ncoeff-1,*] = transpose(yfit)
 
@@ -28,7 +39,8 @@ pro finalarcfit, x, loglam, wset, ncoeff, ic, nsetcoeff=nsetcoeff, $
      ia[0:ic-1] = 1
 
     xy2traceset, transpose(x), lmatrix, wset, xmin=wset.xmin, xmax=wset.xmax, $
-       ncoeff=ncoeff, yfit=yfit, inputans = wset.coeff, ia=ia, $
+       ncoeff=ncoeff, invvar=transpose(xweight), $
+       yfit=yfit, inputans = wset.coeff, ia=ia, $
        maxsig=2.0, _EXTRA = extra
 
     fibermed = fltarr(nfiber)

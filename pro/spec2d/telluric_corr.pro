@@ -1,9 +1,11 @@
 function telluric_corr,flux, fluxivar, wset, plugsort, $
-        minw=minw, maxw=maxw, bkspace=bkpace, lower=lower, upper=upper
+        minw=minw, maxw=maxw, bkspace=bkpace, lower=lower, upper=upper, $
+        ncontbkpts =  ncontbkpts
 
-	if (NOT keyword_set(minw)) then minw = 3.84
+	if (NOT keyword_set(minw)) then minw = 3.82
         if (NOT keyword_set(maxw)) then maxw = 3.92
-        if (NOT keyword_set(bkspace)) then bkspace = 0.0002
+        if (NOT keyword_set(bkspace)) then bkspace = 0.0001
+        if (NOT keyword_set(ncontbkpts)) then ncontbkpts = 5
 ;
 ;	Use SPECTROPHOTO_STD and REDDEN_STD to correct
 ;       telluric absorption
@@ -39,7 +41,8 @@ function telluric_corr,flux, fluxivar, wset, plugsort, $
 
 
         for i=0,tellct-1 do begin	
-	   inside = where(tellwave[*,i] GT minw AND tellwave[*,i] LT maxw)
+	   inside = where(tellwave[*,i] GT minw AND tellwave[*,i] LT maxw,$
+                      ninside)
 
 	   ss = sort(tellwave[inside,i])
 	   tempwave = tellwave[inside[ss],i]
@@ -50,8 +53,8 @@ function telluric_corr,flux, fluxivar, wset, plugsort, $
 	                        tempwave GT 3.875 AND tempwave LT 3.89)
 
            fullbkpt = slatec_splinefit(tempwave, median(tempflux,21), coeff, $
-              maxiter=10, lower=0.8, upper=5.0, mask=mask, $
-            invvar=tempivar*tellfeatures, nbkpts=5, rejper = 0.5)
+              maxiter=10, lower=1.0, upper=5.0, mask=mask, $
+            invvar=tempivar*tellfeatures, nbkpts=ncontbkpts, rejper = 0.5)
            
 	   continuum = slatec_bvalu(tempwave,fullbkpt,coeff)    
 	
@@ -59,13 +62,23 @@ function telluric_corr,flux, fluxivar, wset, plugsort, $
 	     contwave = [contwave, tempwave]
              contflux = [contflux, tempflux / continuum]
              contivar = [contivar, tempivar * continuum^2]
+	     medivar = [medivar, fltarr(ninside) + $
+                   median(tempivar * continuum^2)]
 	   endif else begin
 	     contwave = tempwave
              contflux = tempflux / continuum
              contivar = tempivar * continuum^2
+	     medivar = fltarr(ninside) + median(contivar)
            endelse
 
 	endfor
+
+;
+;	Scale the variances to give equal weight to each spectrum
+;
+	maxivar = max(medivar)
+	contivar = contivar/(medivar/maxivar)
+
 
 	ss = sort(contwave)
 	contwave = contwave[ss]
@@ -80,8 +93,8 @@ function telluric_corr,flux, fluxivar, wset, plugsort, $
             invvar=contivar, bkspace=bkspace)
 
 	  
-	 inside = where(wave GT 3.853 AND wave LT maxw)
-	 tellcorr[inside] = (slatec_bvalu(wave[inside], fullbkpt, coeff) < 1)
+	 inside = where(wave GT minw AND wave LT maxw)
+	 tellcorr[inside] = slatec_bvalu(wave[inside], fullbkpt, coeff)
 
 	return, tellcorr
 end
