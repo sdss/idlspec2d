@@ -14,6 +14,10 @@ REJECT_SCIENCE: New proc to reject science exposures if they are blatantly
                 science frame is rejected.
 SPCOADD_FRAMES: Include MJDLIST keyword in spPlate header, which will be
                 the list of all MJD's used in an SPCOMBINE.
+TELLURIC_CORR: Fixed horrible bug in using fibermask to reject bad fibers (fixes PR #2162).
+               Also, when fitting the local continuum around a single telluric band
+               for a single star with a polynomial, do the fit with weighted points
+               and iterated rejections using DJS_REJECT().
 
 YANNY_READ (in idlutils): Try to make backwards-compatable with IDL 5.2
           by replacing calls to STRSPLIT() with calls to STR_SEP.
