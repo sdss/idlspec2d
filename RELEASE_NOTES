@@ -1,6 +1,8 @@
 
 APO_LOG2HTML: Change link from SOS web pages to new location at
            "http://sdsshost.apo.nmsu.edu/idlspec2d/spectroSOS.html".
+           For the total S/N^2 on a plate, only include exposures
+           where quality='excellent', as per PR #3898.
 CATPLOT: New proc. Modified version of SPLOT by Tremonti for inspecting spectra.
 COLLIMATE: Clarify the output text to say "RMS across CCD", rather
            than implying this is a measurement error (with "+/-").
@@ -23,6 +25,8 @@ PLATEMERGE: Use MWRFITS_CHUNKS to allow us to write bigger files
            the words in the ASCII file rather than a space (so that awk will
            work).
 PLOTSPEC: Added option to use Blanton + Hogg's java viewer (Blanton).
+PLUG2TSOBJ: Slight change to find Blanton's files which are now named 
+           tsObjPlate-*.fits rather than tsObj-*.fit.
 SDSSPROC: If MJD <= 51813, then set QUALITY=excellent unless this is
            over-written by SPHDRFIX.  This is because for the early data,
            this keyword was arbitrarily set to 'unknown', 'bad',
@@ -33,6 +37,14 @@ WRITE_UROS: New proc to generate ASCII files of individual exposures
            on spectra for Uros Seljak
 ZPLOT: Change "brg" names to "lrg".
 
+aporsync_logs.sh: Add an rsync command to copy the "sdHdrFix*.par" file
+           from the sos.apo machine to sdsshost.apo.  Do *not* rsync
+           this file from sdsshost.apo -> sos.apo.
+mailhtml.sh: Make archival copies of the SOS log file (sos.log), naming
+           them sos.log.1dayold, sos.log.2dayold, ....
+make_room.sh: Simple script to remove old MJD data directories on sos.apo
+           in order to bring free space to above 5%.  Not called by any
+           other scripts -- could be dangerous!
 opLimits.par: Use the SKYPERSEC limit for either science or smear exposures.
            Add limits for use by the PLATELIST procedure.
 spPlateList.par: Update to data through MJD 52413 (19 May 2002).
@@ -41,6 +53,9 @@ spPlateList.par: Update to data through MJD 52413 (19 May 2002).
              266/51602 (Internal LEDs), 360/51780 (b1 CCD warmed up).
 sprobotlist.sh: Call the IDL commands ZPLOT and PLATEHIST each night
            from the Spectro-Robot.
+sprobot_start: Add a line to the cron job to run at 12:59 am that
+           copies the sprobot.log file to sprobot.log.1dayold and
+           sprobot.log.2dayold.
 
 In idlutils:
 
