@@ -95,6 +95,7 @@ RADEC_TO_FIELDS: Configurable option allfieldfile.
 SXPAR: Landsman fixed to handle CRVALn of different type properly
 YANNY_READ: If reading a Yanny file aborts, then log the file name,
             the line number of the failure, and the line itself.
+            Small speed improvement made in internal proc YANNY_READSTRING.
 src/spheregroup/chunks.c: Roundoff error problem fixed.
 eviltarball: Comment out the reference to sdsscvs.
 evilinstall: Use UPS_PROD_FLAVOR environment variable (not UPS_FLAVOR).
