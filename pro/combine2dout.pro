@@ -239,7 +239,7 @@ pro combine2dout, filenames, outputroot, spectrographid, $
       help, fullpixelmask
 
       outputfile = outputroot+'-' $
-       +string(format='(i3.3,a)',i+1+(spectrographid-1)*320)+'.fit'
+       +string(format='(i3.3,a)',i+1+(spectrographid-1)*320)+'.fits'
 
       bad = 0
       nonzero = where(fullivar GT 0.0)
