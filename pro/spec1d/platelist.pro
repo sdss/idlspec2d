@@ -724,7 +724,7 @@ pro platelist, infile, plist=plist, create=create, $
             ['STATUS1D'     , '1D'      ], $
             ['PLATEQUALITY' , 'QUALITY' ] ]
 
-   isort = sort(plist.mjd)
+   isort = reverse(sort(plist.mjd))
 
    toptext = [ $
     '<P> <A HREF="http://spectro.princeton.edu/">HOME</A>' $
