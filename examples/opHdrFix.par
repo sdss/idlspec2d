@@ -1,9 +1,9 @@
 
 typedef struct {
-  char fileroot;    # Root of file name, without any ".fit" suffix
-  char keyword;     # Keyword name
-  char value;       # Keyword value (as a string)
-} ophdrfix;
+  char fileroot[20];    # Root of file name, without any ".fit" suffix
+  char keyword[9];      # Keyword name
+  char value[80];       # Keyword value (as a string)
+} OPHDRFIX;
 
 # Wrong exposure time in these headers for plate 198 on MJD 51433.
 
