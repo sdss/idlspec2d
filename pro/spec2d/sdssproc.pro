@@ -229,9 +229,8 @@ pro sdssproc, infile, image, invvar, indir=indir, $
           message, 'Unable to parse corresponding red file for '+infile
          redfile = infile
          strput, redfile, 'r2', i1
-         redfile = (lookforgzip(djs_filepath(redfile, $
-                         root_dir=indir),/nofloat))[0]
-         reddata = ptr_new( rdss_fits(redfile))
+         redfile = (lookforgzip(djs_filepath(redfile, root_dir=indir)))[0]
+         reddata = ptr_new( rdss_fits(redfile, /nofloat))
       endif else begin
          reddata = ptr_new(rawdata)
       endelse
@@ -280,9 +279,8 @@ pro sdssproc, infile, image, invvar, indir=indir, $
           message, 'Unable to parse corresponding red file for '+infile
          redfile = infile
          strput, redfile, 'r2', i1
-         redfile = (lookforgzip(djs_filepath(redfile, $
-                         root_dir=indir),/nofloat))[0]
-         reddata = ptr_new( rdss_fits(redfile) )
+         redfile = (lookforgzip(djs_filepath(redfile, root_dir=indir)))[0]
+         reddata = ptr_new( rdss_fits(redfile, /nofloat) )
       endif else begin
          reddata = ptr_new(rawdata)
       endelse
