@@ -100,11 +100,13 @@ function reject_science, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix
    endif
 
    isort = sort(img)
-   percent80 = img[ isort[ 0.25 * n_elements(img) ] ]
-   if (percent80 GT 1000.) then begin
+   percentxx = img[ isort[ 0.25 * n_elements(img) ] ]
+   percentxx = median(img)
+   splog, 'Science 25-th-percentile = ' + string(percentxx)
+   if (percentxx GT 1000.) then begin
       qbad = 1
       splog, 'ABORT: Reject science as too bright: 25-th-percentile =' $
-       + string(percent80)
+       + string(percentxx)
    endif
 
    return, qbad
