@@ -15,8 +15,8 @@
 topoutdir=$SPECTRO_DATA
 #destdir=fsgi03.fnal.gov:mydata/2d_v4
 #destdir=sdssdp6.fnal.gov:/data/dp3.p/data/schlegel/2d_v4
-destdir=sdssdp7.fnal.gov:/data/dp3.p/data/schlegel/2d_v4_7
-htmldir=spectro.princeton.edu:/peyton/home/spectro/httpd/html
+#destdir=sdssdp7.fnal.gov:/data/dp3.p/data/schlegel/2d_v4_7
+#htmldir=spectro.princeton.edu:/peyton/home/spectro/httpd/html
 
 #------------------------------------------------------------------------------
 # Generate summary files.
@@ -26,15 +26,15 @@ echo "--------------------------------------------------------------------------
 echo "SPROBOTCOPY: Started at "`date`
 
 cd $topoutdir
-echo "platelist, /create" | idl 2> /dev/null
+echo "platelist, /create" | idl
 echo "platemerge" | idl 2> /dev/null
 echo "platemerge, /qsurvey" | idl 2> /dev/null
 echo "platemerge, /public" | idl 2> /dev/null
 
 #------------------------------------------------------------------------------
 # Copy plate summary list to HTML directory.
-
-scp platelist.* $htmldir
+#
+#scp platelist.* $htmldir
 
 #------------------------------------------------------------------------------
 # Copy to Fermi.

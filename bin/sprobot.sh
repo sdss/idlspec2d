@@ -144,6 +144,8 @@ fi
 # those scripts are already running.
 
    sprobot2d.sh ",topdir='$topoutdir', nice=19"
+   cd $SPECTRO_DATA
+   echo "platelist, /create" | idl
    sprobot1d.sh ",topdir='$topoutdir', nice=19" &
 
 #------------------------------------------------------------------------------
