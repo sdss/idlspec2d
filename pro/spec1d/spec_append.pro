@@ -13,8 +13,8 @@ pro spec_append, arg1, arg2
    endif
    if (n_elements(arg2) EQ 0) then return
 
-   dims1 = size(arg1, /dimens)
-   dims2 = size(arg2, /dimens)
+   dims1 = size([arg1], /dimens)
+   dims2 = size([arg2], /dimens)
    itype = size(arg1, /type)
 
    if (dims2[0] EQ dims1[0]) then begin
