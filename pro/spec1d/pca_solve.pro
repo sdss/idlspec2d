@@ -196,8 +196,21 @@ endelse
       for ipiter=0, niter-1 do begin
          eigenval = 1 ; Set so that the PCOMP() routine returns this.
          coeff = 1 ; Set so that the PCOMP() routine returns this.
-         pres = pcomp(transpose(filtflux), coeff=coeff, eigenval=eigenval, $
-          /double)
+
+         totflux = fltarr(nobj)
+         for iobj=0, nobj-1 do $
+          totflux[iobj] = total(abs(filtflux[*,iobj] - filtflux[0,iobj]))
+         igoodobj = where(totflux GT 0, ngoodobj)
+         if (ngoodobj EQ nobj) then begin
+            pres = pcomp(transpose(filtflux), eigenval=eigenval, /double)
+         endif else begin
+            tmp_pres = pcomp(transpose(filtflux[*,igoodobj]), $
+             eigenval=tmp_eigenval, /double)
+            pres = dblarr(nobj,nnew)
+            pres[igoodobj,*] = tmp_pres
+            eigenval = dblarr(1,nobj)
+            eigenval[0,igoodobj] = tmp_eigenval
+         endelse
 
          maskivar = newivar * outmask
          sqivar = sqrt(maskivar)

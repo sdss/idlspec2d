@@ -19,11 +19,15 @@ function computechi2, objflux, sqivar, starflux, $
    ; Use SVD to invert the matrix
 ;   mmi = invert(mm, /double)
    if (nstar EQ 1) then begin
-      mmi = 1.0 / mm
+      ; The last term below is to protect against divide-by-zero
+      ; in the degenerate case.
+      mmi = 1.0 / (mm + (mm EQ 0))
    endif else begin
       svdc, mm, ww, uu, vv, /double
       mmi = 0 * vv
-      for i=0L, nstar-1 do mmi[i,*] = vv[i,*] / ww[i]
+      ; The last term below is to protect against divide-by-zero
+      ; in the degenerate case.
+      for i=0L, nstar-1 do mmi[i,*] = vv[i,*] / (ww[i] + (ww[i] EQ 0))
       mmi = mmi ## transpose(uu)
    endelse
 
