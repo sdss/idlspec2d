@@ -168,13 +168,16 @@ ncoeff = 3 ; ???
 
    igood = where(qgood EQ 1, ngood)
    splog, 'Total of', ngood, ' good flux-correction vectors'
-   if (igood[0] EQ -1) then $
-    message, 'Trouble in flux-correction fits'
 
    ;----------
    ; Make a mean fit for the good fits
  
-   meanfit = total(fitimg[*,igood],2) / ngood
+   if (igood[0] EQ -1) then begin
+      splog, 'WARNING: Trouble in flux-correction fits'
+      meanfit = 0 * fitimg[*,0] + 1.0
+   endif else begin
+      meanfit = total(fitimg[*,igood],2) / ngood
+   endelse
    xy2traceset, newloglam, meanfit, cset1, ncoeff=ncoeff
 
 ;stop ; ???
