@@ -95,11 +95,12 @@ pro lrgmodel_tweak_template, pflux1, pflux_ivar1, zz1, weights=weights, $
    if (keyword_set(metalrange1)) then metalrange = metalrange1 $
     else metalrange = [0.008, 0.05]
    if (keyword_set(EXTRA)) then KeywordsForPhotoz = EXTRA $
-    else KeywordsForPhotoz = 0
+    else KeywordsForPhotoz = ''
 
    ; Set variables in common blocks
    zz = zz1
-   if (keyword_set(weights)) then sqweights = sqrt(weights)
+   if (keyword_set(weights)) then sqweights = sqrt(weights) $
+    else sqweights = 0
 
    ; Discard any objects where the baseline photo-z is discrepent by
    ; more than 0.10, and discard any low-redshift objects with z > 0.10.
@@ -116,11 +117,14 @@ pro lrgmodel_tweak_template, pflux1, pflux_ivar1, zz1, weights=weights, $
 ;   endif
 
    ; Call MPFIT to iterate on the solution for the template
-   parinfo = {value: 0.D, fixed: 0, limited: [0b,0b], limits: [0.d0,0.d0]}
+   parinfo = {value: 0.D, fixed: 0, limited: [0b,0b], $
+    limits: [0.d0,0.d0]}
    parinfo = replicate(parinfo, 2)
    parinfo.value = [ageguess, metalguess]
+;   parinfo.step = [0.01, 0.0005]
    parinfo[0].limited = [1b, 1b]
    parinfo[0].limits = agerange
+   parinfo[1].limited = [1b, 1b]
    parinfo[1].limits = metalrange
 
    ftol = 1d-20
