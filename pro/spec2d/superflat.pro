@@ -171,7 +171,7 @@ function superflat, flux, fluxivar, wset, x2=x2, $
 ;
    sset = bspline_iterfit(allwave[indx], allflux[indx], $
     invvar=allivar[indx], x2=thisx2, nord=nord, npoly=npoly, everyn=ngood, $
-    maxiter=maxiter, upper=upper, lower=lower, mask=mask)
+    maxiter=maxiter, upper=upper, lower=lower, outmask=mask)
 
 ;   generate model fit for full frame
 ;   yy = bspline_valu(loglam, sset, x2=x2)
