@@ -6,32 +6,38 @@
 ;   1-D reduction of spectra from 1 plate
 ;
 ; CALLING SEQUENCE:
-;   spreduce1d, platefile
+;   spreduce1d, platefile, [outfile]
 ;
 ; INPUTS:
-;   platefile  - Plate file from spectro-2D
+;   platefile  - Plate file(s) from spectro-2D; default to all files
+;                matching 'spPlate*.fits'
 ;
 ; OPTIONAL INPUTS:
+;   outfile    - Name of output file; default to a name derived from PLATEFILE.
+;                For example, if PLATEFILE='spPlate-0306-51690.fits', then
+;                OUTFILE='spZ-0306-51690.fits'.
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
-;   Presently, just writes a file 'z-'+PLATEFILE.
 ;
 ; EXAMPLES:
 ;
 ; BUGS:
 ;
 ; DATA FILES:
-;   $IDLSPEC2D_DIR/etc/TEMPLATEFILES
+;   $IDLSPEC2D_DIR/templates/TEMPLATEFILES
 ;
 ; PROCEDURES CALLED:
+;   mrdfits()
 ;   mwrfits
 ;   splog
 ;   sxpar()
+;   writefits
 ;   zfind()
+;   zrefind()
 ;
 ; INTERNAL SUPPORT ROUTINES:
 ;   sp1d_struct()
@@ -39,17 +45,38 @@
 ; REVISION HISTORY:
 ;   28-Jun-2000  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
-pro spreduce1d, platefile
+pro spreduce1d, platefile, outfile
 
-platefile = 'spPlate-0306-51690.fits'
-outfile = 'z-' + platefile
+   if (NOT keyword_set(platefile)) then platefile = findfile('spPlate*.fits')
 
+   ;----------
+   ; If multiple plate files exist, then call this script recursively
+   ; for each such plate file.
+
+   if (n_elements(platefile) GT 1) then begin
+      for i=0, n_elements(platefile)-1 do begin
+         if (keyword_set(outfile)) then $
+          spreduce1d, platefile[i], outfile[i] $
+         else $
+          spreduce1d, platefile[i]
+      endfor
+      return
+   endif
+
+   ;----------
+   ; Determine name of output file
+
+   if (NOT keyword_set(outfile)) then $
+    outfile = 'spZ' + strmid(platefile,strpos(platefile,'spPlate')+7)
+;    outfile = strmid(platefile,0,strpos(platefile,'.fits')) + '-z.fits'
 
 djs_readcol, '/home/schlegel/idlspec2d/etc/regress1d_all.dat', $
  chicplate, junk, chicfiberid, chicz, chicclass, format='(L,L,L,F,A)'
 ii=where(chicplate EQ 306)
 chicz=chicz[ii]
 chicclass=chicclass[ii]
+
+   stime0 = systime(1)
 
    ;----------
    ; Read the 2D output file
@@ -77,8 +104,9 @@ andmask = 0 ; Free memory
 ; Trim to QSO's only...
 ;jj = where(chicclass EQ 'QSO')
 ;jj = where(chicclass EQ 'GALAXY')
-;jj = jj[0:4] ; Trim to first few objects
-jj = lindgen(50)
+;jj = jj[0:9] ; Trim to first few objects
+;jj = lindgen(640)
+jj = lindgen(2)
 chicz = chicz[jj]
 chicclass = chicclass[jj]
 objflux = objflux[*,jj]
@@ -101,12 +129,10 @@ nobj=n_elements(jj)
    npoly = 3
    zmin = -0.01
    zmax = 0.6
-;zmax = 0.25 ; ???
    pspace = 2
    nfind = 5
 
-   eigenfile = filepath('spEigenGals.fits', $
-    root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
+   eigenfile = 'spEigenGals.fits'
 
    splog, 'Compute GALAXY redshifts: ZMIN=', zmin, ' ZMAX=', zmax, $
     ' PSPACE=', pspace
@@ -116,20 +142,26 @@ nobj=n_elements(jj)
     nfind=nfind, width=pspace*3)
    splog, 'CPU time to compute GALAXY redshifts = ', systime(1)-t0
 
+   splog, 'Locally re-fitting GALAXY redshifts'
+   t0 = systime(1)
+   res_gal = zrefind(objflux, objivar, hdr=hdr, $
+    pwidth=5, pspace=1, width=5, zold=res_gal)
+   splog, 'CPU time to re-fit GALAXY redshifts = ', systime(1)-t0
+
    res_gal.class = 'GALAXY'
+   res_gal.subclass = ' '
 
    ;----------
    ; Find QSO redshifts
 
    npoly = 3
    zmin = -0.01
-   zmax = 5.0
-;zmax = 2.2 ; ???
+   zmax = 3.75 ; Max range to use for now, with the template starting at
+               ; 800 Ang (rest), which corresponds to 3800 Ang at this z.
    pspace = 4
    nfind = 5
 
-   eigenfile = filepath('spEigenQSO.fits', $
-    root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
+   eigenfile = 'spEigenQSO.fits'
 
    splog, 'Compute QSO redshifts: ZMIN=', zmin, ' ZMAX=', zmax, $
     ' PSPACE=', pspace
@@ -139,7 +171,14 @@ nobj=n_elements(jj)
     nfind=nfind, width=pspace*3)
    splog, 'CPU time to compute QSO redshifts = ', systime(1)-t0
 
+   splog, 'Locally re-fitting QSO redshifts'
+   t0 = systime(1)
+   res_qso = zrefind(objflux, objivar, hdr=hdr, $
+    pwidth=11, pspace=1, width=11, zold=res_qso)
+   splog, 'CPU time to re-fit QSO redshifts = ', systime(1)-t0
+
    res_qso.class = 'QSO'
+   res_qso.subclass = ' '
 
    ;----------
    ; Append and sort results for each object by chi^2/DOF
@@ -155,16 +194,45 @@ nobj=n_elements(jj)
       endfor
    endfor
 
+   ;----------
+   ; Insist that all SKY fibers are identified as SKY
+
+   nper = (size(res_all,/dimens))[0]
+   for iobj=0, nobj-1 do begin
+      if (strtrim(plugmap[iobj].objtype,2) EQ 'SKY') then begin
+         if (nper GT 1) then $
+          res_all[1:nper-1,iobj] = res_all[0:nper-2,iobj]
+         rcopy = { plate: res_all[0,iobj].plate, $
+                   mjd: res_all[0,iobj].mjd, $
+                   fiberid: res_all[0,iobj].fiberid, $
+                   class: 'SKY', $
+                   subclass: ' ', $
+                   tfile: ' ' }
+         res1 = res_all[0,iobj]
+         struct_assign, rcopy, res1
+         res_all[0,iobj] = res1
+      endif
+   endfor
+
 print,[transpose(chicz),res_all[0,*].z]
 
 ;   vres = veldisp(objflux, objivar, starflux, starmask, $
 ;    zoffset=zoffset)
 
+
+   splog, 'Total time for SPREDUCE1D = ', systime(1)-stime0, ' seconds', $
+    format='(a,f6.0,a)'
+   splog, 'Successful completion of SPREDUCE1D at ', systime()
+
    ;----------
    ; Write the output file
 
-stop
+   sxaddpar, hdr, 'NAXIS', 0
+   writefits, outfile, 0, hdr ; Retain the original header in the first HDU
+   mwrfits, res_all, outfile
 
+stop
+davez=res_all[0,*].z
 set_plot,'ps'
 device,file='qsoz-306a.ps'
 djs_plot, chicz, davez,ps=4,xr=[0,3],yr=[0,3], charsize=2, $
@@ -190,8 +258,23 @@ j=where( abs(davez-chicz)*3e5 LT 4000 )
 print,mean((davez-chicz)[j]*3e5),djsig((davez-chicz)[j]*3e5)
 print,n_elements(j)/float(nobj)
 
-   mwrfits, result, outfile, /create
+res_all=mrdfits('spPlate-0306-51690-z.fits',1)
+res_all=reform(res_all,10,320)
+davez=transpose(res_all[0,*].z)
+k=where( abs(davez-chicz)*3e5 GT 4000 )
+print,[transpose(k),transpose(chicz[k]),transpose(davez[k])]
 
+chi2dof = res_all.chi2 / res_all.dof
+chidiff = chi2dof[1,*] - chi2dof[0,*]
+splot,chicz,chidiff,ps=4
+soplot,chicz[k],chidiff[k],ps=1,color='red'
+
+splot,chicz,chi2dof,ps=4
+soplot,chicz[k],chi2dof[k],ps=1,color='red'
+
+kdiff=k[where(chidiff[k] GT 2)] ; These are the objs where we really disagree
+
+objloglam=sxpar(hdr,'COEFF0')+findgen(3880)*sxpar(hdr,'COEFF1')
    return
 end
 ;------------------------------------------------------------------------------

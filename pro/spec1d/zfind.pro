@@ -8,8 +8,8 @@
 ;
 ; CALLING SEQUENCE:
 ;   result = zfind( objflux, objivar, hdr=hdr, fiberid=fiberid, $
-;    eigenfile=, [ columns=, npoly=, $
-;     zmin=, zmax=, pspace=, nfind=, width= ]
+;    eigenfile=, [eigendir=, columns=, npoly=, $
+;     zmin=, zmax=, zguess=, pwidth=, pspace=, nfind=, width= ]
 ;
 ; INPUTS:
 ;   objflux    - Object fluxes [NPIXOBJ,NOBJ]
@@ -18,19 +18,26 @@
 ; REQUIRED KEYWORDS:
 ;   hdr        - FITS header for objects, used for the following fields:
 ;                COEFF0, COEFF1, PLATEID, MJD.
-;   fiberid    - Integer fiber ID number for each object.
 ;   eigenfile  - Input FITS file with an [NPIXSTAR,NSTAR] image with
 ;                either templates or eigenspectra.
 ;                The header keywords COEFF0, COEFF1 are used to specify
 ;                the wavelength mapping in log-10 Angstroms.
 ;
 ; OPTIONAL KEYWORDS:
+;   eigendir   - Directory for EIGENFILE; default to $IDLSPEC2D/templates.
+;   fiberid    - Integer fiber ID number for each object (copy to output
+;                structure).
 ;   columns    - Column numbers of the eigenspectra image to use in the
 ;                PCA fit; default to all columns.
 ;   npoly      - Number of polynomial terms to append to eigenspectra;
 ;                default to none.
 ;   zmin       - Minimum redshift to consider; default to no lower bound.
 ;   zmax       - Maximum redshift to consider; default to no upper bound.
+;   zguess     - Initial guess for redshift; search for a solution about
+;                this value.  If specified with PWIDTH, then ZMIN and ZMAX
+;                are ignoreed.
+;   pwidth     - Search width in pixels about the intial guess redshift ZGUESS.
+;                If specified with ZGUESS, then ZMIN and ZMAX are ignored.
 ;   pspace     - Keyword for ZCOMPUTE().
 ;   nfind      - Keyword for ZCOMPUTE().
 ;   width      - Keyword for ZCOMPUTE().
@@ -41,14 +48,20 @@
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
+;   One can specify a search domain for the redshift with ZMIN and ZMAX, or
+;   with ZGUESS and PWIDTH.  If none of those parameters are set, then all
+;   possible redshifts that overlap the object and star (template) are tested.
 ;
 ; EXAMPLES:
 ;
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
-;   zcompute()
+;   concat_dir()
+;   djs_filepath()
+;   readfits()
 ;   sxpar()
+;   zcompute()
 ;
 ; INTERNAL SUPPORT ROUTINES:
 ;   sp1d_struct()
@@ -71,7 +84,7 @@ function sp1d_struct
     'dof'        ,  0L, $
     'wcoverage'  , 0.0, $
     'tfile'      ,  '', $
-    'tcolumn'    ,  0L, $
+    'tcolumn'    , lonarr(10) - 1L, $
     'npoly'      ,  0L, $
     'theta'      , fltarr(10), $
     'sigma2'     , 0.0, $
@@ -83,8 +96,12 @@ end
 
 ;------------------------------------------------------------------------------
 function zfind, objflux, objivar, hdr=hdr, fiberid=fiberid, $
- eigenfile=eigenfile, columns=columns, npoly=npoly, $
- zmin=zmin, zmax=zmax, pspace=pspace, nfind=nfind, width=width
+ eigenfile=eigenfile, eigendir=eigendir, columns=columns, npoly=npoly, $
+ zmin=zmin, zmax=zmax, zguess=zguess, pwidth=pwidth, $
+ pspace=pspace, nfind=nfind, width=width
+
+   if (n_elements(eigendir) EQ 0) then $
+    eigendir = concat_dir(getenv('IDLSPEC2D_DIR'), 'templates')
 
    ndim = size(objflux, /n_dimen)
    if (ndim EQ 1) then nobj = 1 $
@@ -103,19 +120,32 @@ function zfind, objflux, objivar, hdr=hdr, fiberid=fiberid, $
    if (n_elements(zmax) NE 0) then $
     pmax = ceil( alog10(1.0 + zmax) / objdloglam )
 
+   if (n_elements(zguess) GT 0 AND keyword_set(pwidth)) then begin
+      pmin = floor( alog10(1.0 + zguess) / objdloglam - 0.5 * pwidth )
+      pmax = floor( alog10(1.0 + zguess) / objdloglam + 0.5 * pwidth )
+   endif
+
    ;----------
    ; Read the template file, and optionally trim to only those columns
    ; specified by COLUMNS.
    ; Assume that the wavelength binning is the same as for the objects
    ; in log-wavelength.
 
-   starflux = readfits(eigenfile, shdr)
+   starflux = readfits(djs_filepath(eigenfile, root_dir=eigendir), shdr)
    starloglam0 = sxpar(shdr, 'COEFF0')
    stardloglam0 = sxpar(shdr, 'COEFF1')
-   npixstar = (size(starflux, /dimens))[0]
 
-   if (keyword_set(columns)) then $
-    starflux = starflux[*,columns]
+   ndim = size(starflux, /n_dimen)
+   dims = size(starflux, /dimens)
+   npixstar = dims[0]
+   if (ndim EQ 1) then nstar = 1 $
+    else nstar = dims[1]
+
+   if (keyword_set(columns)) then begin
+      starflux = starflux[*,columns]
+   endif else begin
+      columns = lindgen(nstar)
+   endelse
 
    ;----------
    ; Add more eigen-templates that represent polynomial terms.
@@ -152,8 +182,9 @@ function zfind, objflux, objivar, hdr=hdr, fiberid=fiberid, $
    result = replicate(sp1d_struct(), nfind, nobj)
    result.plate = sxpar(hdr, 'PLATEID')
    result.mjd = sxpar(hdr, 'MJD')
-   for iobj=0, nobj-1 do $
-    result[*,iobj].fiberid = fiberid[iobj]
+   if (keyword_set(fiberid)) then $
+    for iobj=0, nobj-1 do $
+     result[*,iobj].fiberid = fiberid[iobj]
    result.z = zans.z
    result.z_err = zans.z_err
    result.chi2 = zans.chi2
@@ -162,8 +193,8 @@ function zfind, objflux, objivar, hdr=hdr, fiberid=fiberid, $
    result.theta[0:ntheta-1] = zans.theta
    for iobj=0, nobj-1 do $
     result[*,iobj].wcoverage = wcoverage[iobj]
-   result.tfile = tfile
-   result.tcolumn = columns[0]
+   result.tfile = eigenfile
+   result.tcolumn[0:n_elements(columns)-1] = columns
    result.npoly = npoly
 
    return, result

@@ -115,6 +115,7 @@ pro/spec1d/wavevector.pro -text
 pro/spec1d/zcompute.pro -text
 pro/spec1d/zfind.pro -text
 pro/spec1d/zfitmax.pro -text
+pro/spec1d/zrefind.pro -text
 pro/spec1d/ztweak.pro -text
 pro/spec1d/ztweak2.pro -text
 pro/spec2d/Makefile -text

@@ -23,9 +23,13 @@
 ;                case when the relative redshift should be zero.  If the
 ;                wavelength coverage of the templates is larger, then the
 ;                value of ZOFFSET will always be negative.
-;   pspace     - The spacing in redshifts to consider; default to 1 [pixels].
+;                [Scalar or vector of size NOBJ]
+;   pspace     - The spacing in redshifts to consider; default to 1 [pixels];
+;                [Scalar or vector of size NOBJ]
 ;   pmin       - The smallest redshift to consider [pixels].
+;                [Scalar or vector of size NOBJ]
 ;   pmax       - The largest redshift to consider [pixels].
+;                [Scalar or vector of size NOBJ]
 ;   mindof     - Minimum number of degrees of freedom for a valid fit.
 ;   width      - Parameter for FIND_NPEAKS(); default to 3 * PSPACE.
 ;   minsep     - Parameter for FIND_NPEAKS()
@@ -54,6 +58,7 @@
 ;
 ; PROCEDURES CALLED:
 ;   find_npeaks()
+;   splog
 ;
 ; INTERNAL SUPPORT ROUTINES:
 ;   create_zans()
@@ -103,13 +108,22 @@ function zcompute, objflux, objivar, starflux, starmask, nfind=nfind, $
    if (nobj GT 1) then begin
       t0 = systime(1)
       for iobj=0L, nobj-1 do begin
+         if (n_elements(poffset) EQ 1) then poffset1 = poffset $
+          else poffset1 = poffset[iobj]
+         if (n_elements(pspace) EQ 1) then pspace1 = pspace $
+          else pspace1 = pspace[iobj]
+         if (n_elements(pmin) EQ 1) then pmin1 = pmin $
+          else pmin1 = pmin[iobj]
+         if (n_elements(pmax) EQ 1) then pmax1 = pmax $
+          else pmax1 = pmax[iobj]
+
          zans1 = zcompute(objflux[*,iobj], objivar[*,iobj], $
           starflux, starmask, nfind=nfind, $
-          poffset=poffset, pspace=pspace, pmin=pmin, pmax=pmax, $
+          poffset=poffset1, pspace=pspace1, pmin=pmin1, pmax=pmax1, $
           mindof=mindof, width=width, minsep=minsep)
          if (iobj EQ 0) then zans = zans1 $
           else zans = [[zans], [zans1]]
-         print, 'Object #', iobj, '  Elap time=', systime(1)-t0, $
+         splog, 'Object #', iobj, '  Elap time=', systime(1)-t0, $
           ' (sec)  z=', zans1[0].z, ' (pix)'
       endfor
       return, zans
