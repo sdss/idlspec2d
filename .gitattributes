@@ -102,6 +102,7 @@ pro/spec2d/sortplugmap.pro -text
 pro/spec2d/spallflat.pro -text
 pro/spec2d/spallreduce.pro -text
 pro/spec2d/spflatten.pro -text
+pro/spec2d/spgain.pro -text
 pro/spec2d/splog.pro -text
 pro/spec2d/spplan.pro -text
 pro/spec2d/spreduce.pro -text
@@ -124,6 +125,7 @@ pro/spec2d/writeapid.pro -text
 pro/spec2d/writespectra.pro -text
 pro/spec2d/xy2traceset.pro -text
 pro/spflatten.pro -text
+pro/spgain.pro -text
 pro/splog.pro -text
 pro/spplan.pro -text
 pro/spreduce.pro -text
