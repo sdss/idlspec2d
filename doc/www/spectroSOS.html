@@ -11,7 +11,10 @@ ALINK="#FF0000">
 This document desribes the real-time reductions of spectroscopic data
 taken with the SDSS 2.5-m.  These reductions are robotically posted
 to the
+<A HREF="http://sos.apo.nmsu.edu/logfile-current.html">
+<!--
 <A HREF="http://hoggpt.apo.nmsu.edu/sos/logfile-current.html">
+-->
 SOS web page</A> and archived at the
 <A HREF="http://www.astro.princeton.edu:81/sdss-speclog/INDEX.html">
 Princeton mailing list</A>.
@@ -43,22 +46,24 @@ In this document:
 
 <P>
 Son-of-Spectro is a cron job that runs from the "observer" account
-on "hoggpt.apo.nmsu.edu".  It should always be running, and
+on "sos.apo.nmsu.edu".  It should always be running, and
 should even recover (as any cron job) if that machine is power-cycled.
+It has been run previously on the machines "hoggpt.apo" and
+"plate-mapper.apo".
 
 <P>
-Log into "hoggpt" as user "observer".  Check if the SOS is running
+Log into "sos.apo" as user "observer".  Check if the SOS is running
 by typing:
 <DL><DD><PRE>
   % sos_status
 </PRE></DD></DL>
 If it is <B>not</B> running, then you will see a response beginning with:
 <DL><DD><PRE>
-  The Son-of-Spectro cron job is NOT running for USER=observer MACHINE=hoggpt.
+  The Son-of-Spectro cron job is NOT running for USER=observer MACHINE=sos.
 </PRE></DD></DL>
 If it <B>is</B> running, then you will see a response beginning with:
 <DL><DD><PRE>
-  The Son-of-Spectro cron job IS running for USER=observer MACHINE=hoggpt.
+  The Son-of-Spectro cron job IS running for USER=observer MACHINE=sos.
 </PRE></DD></DL>
 This is then followed with some other information that may be useful
 for trouble-shooting.
@@ -79,25 +84,32 @@ To stop up SOS, type:
 All of these commands can also be run from a remote machine.
 A second argument should be the machine name with an optional user-name, i.e.:
 <DL><DD><PRE>
-  % sos_status hoggpt
-  % sos_status observer@hoggpt.apo.nmsu.edu
+  % sos_status sos
+  % sos_status observer@sos.apo.nmsu.edu
 </PRE></DD></DL>
 
 <P>
-Note that the following directories should exist on hoggpt and be
+Note that the following directories should exist on sos.apo and be
 write-able by the observer account:
 <DL><DD><PRE>
-  /astrolog
   /data/spectro
+  /data/spectro/astrolog
   /data/spectro/spectrologs
   /data/spectro/spectrologs/html
 </PRE></DD></DL>
 
 <P>
-Note that the following links should exist on hoggpt:
+Note that the following link should exist if running on sos.apo:
+<DL><DD><PRE>
+  ln -s /usr/local/www/data /data/spectro/spectrologs/html
+</PRE></DD></DL>
+Note that the following link should exist if running on hoggpt.apo:
+<DL><DD><PRE>
+  ln -s /data/spectro/spectrologs/html /usrdevel/skent/inventory/www/apo2d
+</PRE></DD></DL>
+Note that the following link should exist if running on plate-mapper.apo:
 <DL><DD><PRE>
   ln -s /data/spectro/spectrologs/html /home/skent/inventory/www/apo2d
-  ln -s /data/spectro/spectrologs/html /usrdevel/skent/inventory/www/apo2d
 </PRE></DD></DL>
 
 <H2><A NAME="version">Backing out to an older version</A></H2>
@@ -108,7 +120,7 @@ The following intructions only apply to versions of "idlspec2d" v4_3_1 and later
 <P>
 You can run a different version of Son-of-Spectro by setting up
 the relevant version of idlspec2d before you launch it with "sos_start".
-This should be done from the "observer" account on "hoggpt.apo.nmsu.edu".
+This should be done from the "observer" account on "sos.apo.nmsu.edu".
 <DL><DD><PRE>
   % sos_stop
   % setup idlspec2d v4_3_1
@@ -273,8 +285,8 @@ Now you are ready to <A HREF="#launch">launch</A> the code.
 
 <P>
 Son-of-Spectro is a cron job that runs from the "observer" account
-on "hoggpt.apo.nmsu.edu".  This cron job invokes rsync once
-every minute to copy raw spectro data from "sdsshost" to "hoggpt",
+on "sos.apo.nmsu.edu".  This cron job invokes rsync once
+every minute to copy raw spectro data from "sdsshost" to "sos.apo",
 then launches a package of shell scripts and IDL commands to reduce
 the data one frame at a time.  It is part of the <B>idlspec2d</B> data product.
 
@@ -285,7 +297,7 @@ computer can be utilized.  All 4 cameras should be reduced for an exposure
 within a few minutes.
 
 <P>
-The raw data is copied into these directories on hoggpt:
+The raw data is copied into these directories on sos.apo:
 <DL><DD><PRE>
   /data/spectro/astrolog/$MJD  - Copy of the same from sdsshost
   /data/spectro/$MJD           - Copy of /astrolog from sdsshost
@@ -325,7 +337,7 @@ The HTML files and S/N plots for the web page are copied into the directory:
 </PRE></DD></DL>
 The most recent HTML file has a second copy as the file "logfile-current.html".
 This is the file pointed to by the
-<A HREF="http://hoggpt.apo.nmsu.edu/sos/logfile-current.html">
+<A HREF="http://sos.apo.nmsu.edu/logfile-current.html">
 SOS web page</A>.
 
 <H2><A NAME="outputs">Son-of-Spectro Outputs</A></H2>
@@ -500,7 +512,7 @@ The following messages may appear:
 <P>
 If the reduction of an exposure is catastrophically bad, it may not
 appear at all in the Son-of-Spectro table.  However, there should still
-be a log file for this exposure on the hoggpt computer:
+be a log file for this exposure on the sos.apo computer:
     <DL><DD><PRE>
     /data/spectro/spectrologs/$MJD/splog-$CAMERA-$EXPOSURE.log
     </PRE></DD></DL>
@@ -580,11 +592,11 @@ However, if it appears to not be working one could check the following:
     in the images.  This prevents SOS from reducing anything but bias
     and dark frames.
 <LI><B>Is the cron job running?</B><BR>
-    Log into "observer@hoggpt.apo.nmsu.edu", and issue a "sos_status"
+    Log into "observer@sos.apo.nmsu.edu", and issue a "sos_status"
     command.  This should report that SOS is running.
     If not, then <A HREF="#launch">restart the cron job</A>.
 <LI><B>Is the data being copied over?</B><BR>
-    The raw data files should be copied from "sdsshost" to "hoggpt"
+    The raw data files should be copied from "sdsshost" to "sos.apo"
     in the /data/spectro/$MJD directory.  If it is not, then the disk
     may be full!  Or, the rsync command may not be working.
     This <B>could</B> be due to a rogue
@@ -600,8 +612,8 @@ However, if it appears to not be working one could check the following:
     then something is wrong.  You should delete the file ending with ".lock".
     <B>However</B>, this could result in a corrupted "logfile*.fits".
 <LI><B>Is anything amiss with running the scripts?</B><BR>
-    Perhaps there is a communication problem between sdsshost and hoggpt,
-    or a problem running the code on hoggpt.  There is logging information
+    Perhaps there is a communication problem between sdsshost.apo and sos.apo,
+    or a problem running the code on sos.apo.  There is logging information
     written once per minute into the file
     <DL><DD><PRE>
     /data/spectro/spectrologs/sos.log
@@ -616,7 +628,7 @@ However, if it appears to not be working one could check the following:
     delete this file, which would basically wipe out all the previous
     reductions for that night from the web page.  Alternatively, one
     could delete all the raw and reduced data for that night from
-    "hoggpt" (but not from sdsshost!!) :
+    "sos.apo" (but not from sdsshost!!) :
     <DL><DD><PRE>
     % rm -rf /data/spectro/spectrologs/$MJD
     % rm -rf /data/spectro/$MJD
@@ -637,11 +649,11 @@ and SOS could not reduce the science exposures.
 <P>
 To re-reduce all exposures for the current night:
 <DL><DD><PRE>
-  % ssh hoggpt sos_redo
+  % ssh sos.apo.nmsu.edu sos_redo
 </PRE></DD></DL>
 To re-reduce only exposures for plate 666:
 <DL><DD><PRE>
-  % ssh hoggpt sos_redo plate=666
+  % ssh sos.apo.nmsu.edu sos_redo plate=666
 </PRE></DD></DL>
 
 <P>
