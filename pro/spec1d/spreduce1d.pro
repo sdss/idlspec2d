@@ -428,7 +428,8 @@ ormask = 0 ; Free memory
 
    ; Warning: delta-chi^2 is too small as compared to the next best ID.
    minrchi2diff = 0.01
-   qflag = res_all.rchi2diff LT minrchi2diff
+   qflag = res_all.rchi2diff LT minrchi2diff $
+    OR res_all.rchi2diff LT minrchi2diff * res_all.rchi2
    zwarning = zwarning OR 4L * qflag
 
    ; Warning: synthetic spectrum is negative (for STAR or QSO).
