@@ -21,6 +21,9 @@ spectroSOS.html: More comments on the QUALITY keyword.
 
 In idlutils:
 
+MJD2DATELIST: Make MJEND optional, so that this can convert one date
+           into a string.
+
 evilinstall: Use "awk" instead of "head -1c" so that this script will
            run on an IRIX+6 platform.
 bin/Makefile: For the "make install", explicitly copy file names
