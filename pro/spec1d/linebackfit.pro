@@ -84,6 +84,8 @@
 ;   If a line was dropped from the fit (for example, no points to fit),
 ;   then set the LINEAREA to 0 and the LINEAREA_ERR to -1L.
 ;
+;   Also, if LINENPIX=0 for a line, then remove that line from the fit.
+;
 ; EXAMPLES:
 ;
 ; BUGS:
@@ -272,6 +274,7 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
        splog, 'Warning: Maximum number of iterations reached: ', niter
       yfit[igood] = yfit1
    endif else begin
+      splog, 'No points to fit'
       nparam = 3 * nline + nback
       lfit = fltarr(nparam)
       perror = fltarr(nparam)
@@ -345,55 +348,83 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
       for ipix=0, npix-1 do $
        berr[ipix] = sqrt( (transpose(background[ipix,*]) $
         # bcovar # transpose(background[ipix,*])) )
-
-      logmin = min(loglam)
-      logmax = max(loglam)
-      for iline=0, nline-1 do begin
-         if (lfit[iline*3+1] LT logmin) then begin
-            linestruct[iline].linecontlevel = bfit[0]
-         endif else if (lfit[iline*3+1] GT logmax) then begin
-            linestruct[iline].linecontlevel = bfit[npix-1]
-         endif else begin
-            ; Select the nearest pixel for evaluating the background
-            ; level at this line center.
-            junk = min(abs(loglam - lfit[iline*3+1]), ipix)
-            linestruct[iline].linecontlevel = bfit[ipix]
-            linestruct[iline].linecontlevel_err = berr[ipix]
-
-            ; Find the pixels that are within +/- 3 sigma of the line center
-            ; Note that if the line is very (unphysically) narrow, it is
-            ; possible to have no lines within this domain.
-            indx = where( loglam GE lfit[iline*3+1] - 3 * lfit[iline*3+2] $
-                      AND loglam LE lfit[iline*3+1] + 3 * lfit[iline*3+2] )
-
-            if (indx[0] NE -1) then begin
-               linestruct[iline].linenpix = total(invvar[indx] GT 0)
-               linestruct[iline].linedof = $
-                linestruct[iline].linenpix - nfitterms[iline]
-
-               if (linestruct[iline].linedof GT 0) then begin
-                  linestruct[iline].linechi2 = $
-                   total( (flux[indx] - yfit[indx])^2 * invvar[indx] )
-               endif
-            endif
-         endelse
-      endfor
-
    endelse
+
+   ;----------
+   ; For each line, determine the background level at the line center
+   ; and the number of pixels and chi^2 of each line fit.
+
+   logmin = min(loglam)
+   logmax = max(loglam)
+   for iline=0, nline-1 do begin
+      if (lfit[iline*3+1] LT logmin) then begin
+         linestruct[iline].linecontlevel = bfit[0]
+      endif else if (lfit[iline*3+1] GT logmax) then begin
+         linestruct[iline].linecontlevel = bfit[npix-1]
+      endif else begin
+         ; Select the nearest pixel for evaluating the background
+         ; level at this line center.
+         junk = min(abs(loglam - lfit[iline*3+1]), ipix)
+         linestruct[iline].linecontlevel = bfit[ipix]
+         linestruct[iline].linecontlevel_err = berr[ipix]
+
+         ; Find the pixels that are within +/- 3 sigma of the line center
+         ; Note that if the line is very (unphysically) narrow, it is
+         ; possible to have no lines within this domain.
+         indx = where( loglam GE lfit[iline*3+1] - 3 * lfit[iline*3+2] $
+                   AND loglam LE lfit[iline*3+1] + 3 * lfit[iline*3+2] )
+
+         if (indx[0] NE -1) then begin
+            linestruct[iline].linenpix = total(invvar[indx] GT 0)
+            linestruct[iline].linedof = $
+             linestruct[iline].linenpix - nfitterms[iline]
+
+            if (linestruct[iline].linedof GT 0) then begin
+               linestruct[iline].linechi2 = $
+                total( (flux[indx] - yfit[indx])^2 * invvar[indx] )
+            endif
+
+            ; Special-case rejection -- set AREA=0,AREA_ERR=-2
+            ; if there are no data points within the line-fitting region.
+            if (linestruct[iline].linenpix EQ 0) then begin
+               linestruct[iline].linearea = 0
+               linestruct[iline].linearea_err = -2L
+
+               ; Set these line-fit coefficients equal to zero for when
+               ; we re-evaluate YFIT.
+               lfit[iline*3+0] = 0
+            endif
+
+         endif
+      endelse
+   endfor
 
    ;----------
    ; Construct the line equivalent widths
 
    for iline=0, nline-1 do begin
-      if (linestruct[iline].linecontlevel GT 0) then begin
+      if (linestruct[iline].linenpix LE 0) then begin
+         linestruct[iline].lineew_err = -2L
+      endif else if (linestruct[iline].linecontlevel LE 0) then begin
+         linestruct[iline].lineew_err = -1L
+      endif else begin
          linestruct[iline].lineew = linestruct[iline].linearea $
           / linestruct[iline].linecontlevel
          ; The following is a crude approximation of the EW error
          linestruct[iline].lineew_err = linestruct[iline].linearea_err $
           + linestruct[iline].linecontlevel_err $
           * linestruct[iline].linesigma * 3
-      endif
+      endelse
    endfor
+
+   ;----------
+   ; Re-evaluate such that we get the functional fit at the rejected
+   ; wavelengths too.  This also re-evaluates the fit for lines that
+   ; have been rejected and removed due to no valid data points within
+   ; the line-fitting region.
+
+   if (arg_present(yfit)) then $
+    yfit = manygauss(lindgen(npix), lfit, _EXTRA=functargs)
 
    return, linestruct
 end
