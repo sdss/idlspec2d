@@ -12,7 +12,7 @@
 ;
 ; OPTIONAL INPUTS:
 ;   topdir     - Search for MJD directories under this top level directory.
-;   mjd        - Look for raw data files in RAWDIR/MJD; default to all
+;   mjd        - Look for raw data files in TOPINDIR/MJD; default to all
 ;                subdirectories.  Note that this need not be integer-valued,
 ;                but could be for example '51441_test'.  Wildcards are allowed,
 ;                e.g. '514*'.
