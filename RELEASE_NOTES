@@ -9,6 +9,12 @@ PCA_SOLVE, COMPUTECHI2: Make robust to one or all of the template spectra
               due to an apparent bug in the built-in routine PCOMP().
 SPCOMBINE, SPCOADD_FRAMES: Optionally allow spFrame files to be g-zipped.
 READSPEC, SPREDUCE1D: Allow spPlate, spZ files to be g-zipped.
+READSPEC: Major changes to speed up the code when reading a sparse number
+          of fibers per plate.  It used to read all the fibers between the
+          smallest and largest fiber number.  Now it divides up the requested
+          fibers into contiguous chunks, and reads in only those chunks.
+          (The plate file is still only opened once, and the header is only
+          read once.)
 
 Add new mask bit: NEARWHOPPER.  This effects the following routines:
               EXTRACT_OBJECT, FLUXCORR_NEW, MYFLUXCALIB, TELLURIC_CORR.
@@ -20,7 +26,7 @@ Son-of-Spectro changes:
 New executable, "sos_redo" to re-run SOS on failed reductions.
 APO_APPENDLOG: Now overwrite entries in the file "logfile-$MJD.fits" if an
               exposure is re-reduced (e.g., with "sos_redo").
-APO_LOG2HTML: Placed a lower limit of (S/N)^2 > 1.0 to count towards total
+APO_LOG2HTML: Placed a lower limit of (S/N)^2 > 2.0 to count towards total
               in each camera
 QUICKEXTRACT: Change message about post-cabibs from "REQUIRED" to merely
               "recommended."
