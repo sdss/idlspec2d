@@ -66,19 +66,20 @@
 ;   djs_diff_angle()
 ;   idlspec2d_version()
 ;   mkhdr
-;   modfits
 ;   mrdfits()
+;   mwrfits
 ;   pixelmask_bits()
 ;   platesn
 ;   splog
+;   spframe_read
 ;   sxaddpar
 ;   sxdelpar
 ;   sxpar()
 ;   traceset2xy
-;   writefits
 ;
 ; INTERNAL SUPPORT PROCEDURES:
 ;   makelabel()
+;   add_iraf_keywords
 ;
 ; REVISION HISTORY:
 ;   02-Jan-2000  Written by D. Schlegel; modified from COMBINE2DOUT
@@ -416,7 +417,7 @@ pro spcoadd_v5, spframes, outputname, $
    ;---------------------------------------------------------------------------
    ; Write the corrected spCFrame files.
    ; All the fluxes + their errors are calibrated.
-   ; The wavelengths + dispersions are converted from trace sets to images.
+   ; The wavelengths + dispersions are converted from trace sets to 2D images.
    ; The pixel mask has the COMBINEREJ bit set.
 ; The plug map should have the modified magnitudes !!!???
    ;---------------------------------------------------------------------------
@@ -427,8 +428,11 @@ pro spcoadd_v5, spframes, outputname, $
        root_dir=thispath)
       splog, 'Writing file #', ifile, ': ', thisfile
       indx = where(filenum EQ ifile)
-; Change the units in the headers to be erg/sec !!!???
-      mwrfits, flux[*,indx], thisfile, *hdrarr[ifile], /create
+
+      hdr = *hdrarr[ifile]
+      sxaddpar, hdr, 'BUNIT', '1E-17 erg/cm^2/s/Ang'
+
+      mwrfits, flux[*,indx], thisfile, hdr, /create
       mwrfits, fluxivar[*,indx], thisfile
       mwrfits, pixelmask[*,indx], thisfile
       mwrfits, wave[*,indx], thisfile
@@ -456,7 +460,7 @@ pro spcoadd_v5, spframes, outputname, $
    hdr = *hdrarr[0]
 
    platesn, finalflux, finalivar, finalandmask, finalplugmap, finalwave, $
-     hdr=hdr, plotfile=djs_filepath(plotsnfile, root_dir=combinedir)
+    hdr=hdr, plotfile=djs_filepath(plotsnfile, root_dir=combinedir)
 
    ;---------------------------------------------------------------------------
    ; Create the output header
