@@ -9,6 +9,9 @@ Plate  camera   fiber (0 indexed)      Problem
 
 
 ----------------------------------------------------------------------------
+* The telluric regions #5 and #6 accidentally overlap in TELLURIC_CORR.
+  Fix it!!
+
 * Do we need to try to sky-subtract the arcs to make the centering more
   robust?  Also, check the value of MAXDEV, which Scott set to 2.0e-5
   from SOS reductions (passed there from QUICKWAVE).
