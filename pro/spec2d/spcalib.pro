@@ -58,7 +58,6 @@
 ;   splog
 ;   trace320crude()
 ;   traceset2xy
-;   whopping_image()
 ;   xy2traceset
 ;
 ; INTERNAL SUPPORT ROUTINES:
@@ -102,8 +101,6 @@ function create_flatstruct, nflat
     'IARC', -1, $
     'FIBERMASK', ptr_new(), $
     'XSOL', ptr_new(), $
-    'FLUX', ptr_new(), $
-    'FLUXIVAR', ptr_new(), $
     'WIDTHSET', ptr_new(), $
     'FFLAT', ptr_new() )
 
@@ -233,10 +230,11 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
          splog, 'Extracting flat to obtain width and flux'
          extract_image, flatimg, flativar, xsol, sigma, flux, fluxivar, $
           proftype=proftype, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
-          npoly=npoly, relative=1, ansimage=ansimage, ymodel=ym
+          npoly=npoly, relative=1, ansimage=ansimage
 
          widthset = fitflatwidth(flux, fluxivar, ansimage, tmp_fibmask, $
           ncoeff=5, sigma=sigma)
+         ansimage = 0
 
          junk = where(flux GT 1.0e5, nbright)
          splog, 'Found ', nbright, ' bright pixels in extracted flat ', $
@@ -244,8 +242,6 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
 
          flatstruct[iflat].fibermask = ptr_new(tmp_fibmask)
          flatstruct[iflat].widthset = ptr_new(widthset)
-         flatstruct[iflat].flux     = ptr_new(flux)
-         flatstruct[iflat].fluxivar = ptr_new(fluxivar)
 
       endif
 
@@ -510,35 +506,37 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
          npoly = 20 ; Fit 20 terms to background
          wfixed = [1,1] ; Fit gaussian plus both derivatives
 
-         extract_image, flatimg, flativar, xsol, sigma2, $
-          tempflux, tempfluxivar, $
+         extract_image, flatimg, flativar, xsol, sigma2, flux, fluxivar, $
           proftype=proftype, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
-          npoly=npoly, relative=1, ymodel=ym, ansimage=s2, chisq=fchisq
+          npoly=npoly, relative=1, ymodel=ym, chisq=fchisq
 
 ;-----------------------------------------------------------------------------
 ;    Another attempt to remove halo, but proftype has **MUCH** bigger
 ;      effect
 ;----------------------------------------------------------------------------
 
-         smooth = smooth_halo(ym, wset)
-         flatcorr = flatimg - smooth 
+         flatimg = flatimg - smooth_halo(ym, wset)
+         ym = 0
 
 ;----------------------------------------------------------------------------
-;  Extract flat field for a third time, why? who knows?  This time extracting
-;  via flatcorr
+;  Extract flat field for a third time.  This time extracting
+;  with NIR and optical scattered light removed 
 ;----------------------------------------------------------------------------
 
-         npoly = 5  ;???
-         extract_image, flatcorr, flativar, xsol, sigma2, flux, fluxivar, $
+         npoly = 5  
+         extract_image, flatimg, flativar, xsol, sigma2, flux, fluxivar, $
           proftype=proftype, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
-          npoly=npoly, relative=1, ymodel=ym, ansimage=s2, chisq=schisq
+          npoly=npoly, relative=1, chisq=schisq
           
          splog, 'First  extraction chi^2 ', minmax(fchisq)
          splog, 'Second extraction chi^2 ', minmax(schisq)
 
          ;---------------------------------------------------------------------
          ; Compute fiber-to-fiber flat-field variations
-         ;----------------------------e----------------------------------------
+         ;---------------------------------------------------------------------
+
+         sigma2 = 0
+         xsol = 0
 
          fflat = fiberflat(flux, fluxivar, wset, fibermask=tmp_fib5mask, $
           /dospline, plottitle=plottitle+' Superflat', pixspace=5)
@@ -550,6 +548,7 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
 
          flatstruct[iflat].fflat = ptr_new(fflat)
          flatstruct[iflat].fibermask = ptr_new(tmp_fibmask)
+         
 
          ;------------------------------------------------------------------
          ; Write information on flat field processing
