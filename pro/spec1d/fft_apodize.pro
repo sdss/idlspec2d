@@ -8,7 +8,7 @@ pro fft_apodize, flux, fluxerr
    npix = N_elements(flux)
 
    if (keyword_set(fluxerr)) then begin
-      igood = where(fluxerr GE 0, ngood)
+      igood = where(fluxerr GT 0, ngood)
       if (ngood LE 2) then return
       i1 = igood[0]
       i2 = igood[ngood-1]
