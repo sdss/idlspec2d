@@ -191,9 +191,9 @@ function smear_compare, smearname, finalwave, sciflux, sciivar, $
       yr=[0, 2.5], /ys, xtitle = 'Wavelength', ytitle = 'Smear / Science', $
       title = 'Smear Correction Vectors for Point Sources', /nodata
     for iobj = 0, nptsrc - 1 do $
-      djs_oplot, linwave, smear_ratio[*,ptsrc[iobj]], nsum=20, color='green'
+      djs_oplot, linwave, smear_ratio[*,ptsrc[iobj]], nsum=10, color='green'
     for iobj = 0, nqso - 1 do $
-      djs_oplot, linwave, smear_ratio[*,qso[iobj]], nsum=20, color='blue'
+      djs_oplot, linwave, smear_ratio[*,qso[iobj]], nsum=10, color='blue'
     djs_oplot, [2000, 10000], [1, 1], thick= 4
     legend, ['Quasars', 'Other Point Sources'], $
             color=djs_icolor(['blue', 'green']), psym=[0,0]

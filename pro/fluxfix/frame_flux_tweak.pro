@@ -381,14 +381,14 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
 
       for iobj=0, nlowpts -1 do $
         djs_oplot, 10.0^wave[*,lowpts[iobj]], corrimage[*,lowpts[iobj]], $
-                   color='blue', nsum=20
+                   color='blue', nsum=10
       for iobj=0, nhipts -1 do $
         djs_oplot, 10.0^wave[*,hipts[iobj]], corrimage[*,hipts[iobj]], $
-                   color='green', nsum=20
+                   color='green', nsum=10
 
       for iobj=0, nstd -1 do $
         djs_oplot, 10.0^wave[*,std[iobj]], corrimage[*,std[iobj]], $
-                   color='red', nsum=20, thick=2
+                   color='red', nsum=10, thick=2
 
       djs_xyouts, 0.18, 0.95, 'High S/N Sources', color = 'green', /norm
       djs_xyouts, 0.18, 0.91, 'Low S/N Sources', color = 'blue', /norm
