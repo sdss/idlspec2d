@@ -192,6 +192,7 @@ pro/spec1d/skymask.pro -text
 pro/spec1d/spec_append.pro -text
 pro/spec1d/spreduce1d.pro -text
 pro/spec1d/synthspec.pro -text
+pro/spec1d/vdispfit.pro -text
 pro/spec1d/veldisp.pro -text
 pro/spec1d/wavelets.pro -text
 pro/spec1d/wavevector.pro -text
