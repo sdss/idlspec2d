@@ -4,6 +4,10 @@ APOFIX: Use QUALITY header keyword to declare exposures bad (as specified
            the SPHDRFIX routine can desriminate between strings and numbers.
            Add lots of explicit checks for valid values for each keyword,
            and only allow the modification of a small list of keywords.
+           Also add /test option.  If the QUALITY card is edited, then
+           go through the logfile (logsheet-$MJD.fits) and explicitly
+           change the QUALITY fields in those FITS tables (but don't
+           regenerate the HTML table?).
 APOHEADER: Use SDSSHEAD() instead of HEADFITS() to read the headers, such
            that this printout includes any observer edits to the headers.
            Also fix so that this proc works if both a ".fit" and ".fit.gz"
@@ -11,6 +15,7 @@ APOHEADER: Use SDSSHEAD() instead of HEADFITS() to read the headers, such
            Also list the QUALITY keyword.
 APOREDUCE: Add the following to the output structure: QUALITY,NAME,OBSCOMM
            RADEG,DECDEG,AIRMASS.
+APO_LOG2HTML: Add QUALITY column to output table.
 GET_MJD_DIR: Comment-out test that MJD directories contain files, since
            that's so bloody slow.
 GUIDERMOVIE,GUIDERMPEG: New procs for looking at the spectroscopic guider
@@ -23,8 +28,13 @@ PLATEMERGE: Include logic for setting the SPECPRIMARY field in the outputs.
            Exclude some tags from the output structure, spec. ROSAT*,FIRST*.
 PLOTSPEC: Some major re-organizing of the main routine to allow PLATE,MJD
            to be passed as vectors.
+QUICKTRACE,QUICKWAVE: Do not write the tsetfile or wsetfile if the
+           quality of the exposure in not 'excellent' (and remove any
+           such file for that exposure if it already exists).
 READSPEC: Fix the re-sorting of the ZLINE output structure, which is
            complicated by being a multi-dimensional structure.
+SDSSPROC: If the OBSCOMM keyword contains the words "dithered" or "focus",
+           then assume this is test data (set QUALITY='test').
 SPPLAN2D: Exclude all files where the QUALITY header keyword is not 'excellent'
            (as per change requested by PR 3687).
 SPREDUCE1D: The output FRACNSIGLO was being computed completely wrong -- Fixed.
