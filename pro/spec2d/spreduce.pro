@@ -127,9 +127,10 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
        '-'), root_dir=outdir)
 
    spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
-    lampfile=lampfile, indir=indir, arcstruct, flatstruct, $
+    lampfile=lampfile, indir=indir, $
     ecalibfile=ecalibfile, plottitle=plottitle, $
-    flatinfoname=flatinfoname, arcinfoname=arcinfoname
+    flatinfoname=flatinfoname, arcinfoname=arcinfoname, $
+    arcstruct=arcstruct, flatstruct=flatstruct
 
    ;----------
    ; Select the best arc

@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   fflat = fiberflat( flux, fluxivar, wset, [ fibermask=fibermask, $
 ;    minval=, ncoeff=, pixspace=, /dospline, nord=, lower=, upper=,
-;    /dospline, plottitle= ])
+;    /dospline, /nonorm, plottitle= ])
 ;
 ; INPUTS:
 ;   flux       - Array of extracted flux from a flat-field image [Nrow,Ntrace]
@@ -28,7 +28,7 @@
 ;                polynomial (using NCOEFF).
 ;                This is now what we use?
 ;   plottitle  - Title for QA plot; if not set, then do not plot.
-;   smoothflat - ???
+;   nonorm     - Do not normalize the fluxes in FFLAT by the super-flat.
 ;
 ; PARAMETERS FOR SLATEC_SPLINEFIT:
 ;   nord
@@ -77,7 +77,7 @@
 function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
  minval=minval, ncoeff=ncoeff, pixspace=pixspace, nord=nord, $
  lower=lower, upper=upper, dospline=dospline, plottitle=plottitle, $
- smoothflat=smoothflat
+ nonorm=nonorm
 
    dims = size(flux, /dimens)
    ny = dims[0]
@@ -183,8 +183,6 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
 
       endfor
 
-      if keyword_set(smoothflat) then return, fflat*fit2
-
    endif else begin
 
       ;------------------------------------------------------------------------
@@ -245,6 +243,7 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
    if (indx[0] NE -1) then $
     fibermask[indx] = fibermask[indx] OR fibermask_bits('BADFLAT')
 
-   return, fflat
+   if (keyword_set(nonorm)) then return, fflat * fit2 $
+    else return, fflat
 end
 ;------------------------------------------------------------------------------

@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   spcalib, flatname, arcname, [pixflatname=, fibermask=, $
-;    lampfile=, indir=, timesep=, ecalibfile=, plottitle=, $
+;    lampfile=, indir=, timesep=, ecalibfile=, plottitle=, /dowhop, $
 ;    arcinfoname=, flatinfoname=, arcstruct=, flatstruct=]
 ;
 ; INPUTS:
@@ -27,6 +27,8 @@
 ;                set to zero to disable this test; default to 7200 sec.
 ;   ecalibfile - opECalib file to pass to SDSSPROC
 ;   plottitle  - Prefix for titles in QA plots.
+;   dowhop     - If set, then fit and subtract a whopping image from the
+;                flat-fields before doing the final extraction of them.
 ;   arcinfoname- File name (with path) to output arc extraction and fitting
 ;                information
 ;   flatinfoname-File name (with path) to output flat field extraction and
@@ -45,10 +47,10 @@
 ; EXAMPLES:
 ;
 ; BUGS:
-;   I have hardwired a contribution of 1.0% from whopping term in flat field
-;         contribution = 1.0   ; percent flux in whopping term
+;   When the /DOWHOP flag is set, Scott has hardwired a contributions of 1%
+;   from the whopping term in the flat fields.
 ;
-;   maybe whopping image sigma should scale with widthset??
+;   Maybe whopping image sigma should scale with widthset?
 ;
 ; PROCEDURES CALLED:
 ;   extract_image
@@ -56,11 +58,13 @@
 ;   fitarcimage
 ;   fitarcimage_old
 ;   fitdispersion
+;   fitflatwidth()
 ;   sdssproc
 ;   shift_trace()
 ;   splog
 ;   trace320crude()
 ;   traceset2xy
+;   whopping_image()
 ;   xy2traceset
 ;
 ; INTERNAL SUPPORT ROUTINES:
@@ -116,17 +120,12 @@ end
 
 pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
  lampfile=lampfile, indir=indir, timesep=timesep, $
- ecalibfile=ecalibfile, plottitle=plottitle, $
- arcinfoname=arcinfoname, flatinfoname=flatinfoname, arcstruct, flatstruct
+ ecalibfile=ecalibfile, plottitle=plottitle, dowhop=dowhop, $
+ arcinfoname=arcinfoname, flatinfoname=flatinfoname, $
+ arcstruct=arcstruct, flatstruct=flatstruct
 
    if (NOT keyword_set(indir)) then indir = '.'
    if (NOT keyword_set(timesep)) then timesep = 7200
-
-   ; !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   ;  This is basically hardwired
-
-   contribution = 1.0   ; percent flux in whopping term
-
 
    stime1 = systime(1)
 
@@ -203,52 +202,46 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
          flatstruct[iflat].qbad = 1
       endelse
 
-
-      ;---------------------------------------------------------
-      ; Check to see if traces are separated by > 3 pixels
-      ;
+      ;----------
+      ; Verify that traces are separated by > 3 pixels
 
       if (qbadflat EQ 0) then begin 
-        ntrace = (size(xsol, /dimens))[1]
-        sep = xsol[*,1:ntrace-1] - xsol[*,0:ntrace-2]
-        tooclose = where(sep LT 3)
-        if (tooclose[0] NE -1) then begin
-          splog, 'WARNING: Traces are not separated more than 3 pixels'
-          qbadflat = 1
-        endif
+         ntrace = (size(xsol, /dimens))[1]
+         sep = xsol[*,1:ntrace-1] - xsol[*,0:ntrace-2]
+         tooclose = where(sep LT 3)
+         if (tooclose[0] NE -1) then begin
+            splog, 'WARNING: Traces are not separated more than 3 pixels'
+            qbadflat = 1
+         endif
       endif
-
    
       if (NOT qbadflat) then begin 
-     ;---------------------------------------------------------------------
-     ; Extract the flat-field image to obtain width and flux
-     ;---------------------------------------------------------------------
+         ;---------------------------------------------------------------------
+         ; Extract the flat-field image to obtain width and flux
+         ;---------------------------------------------------------------------
 
-         sigma = 1.0
-         proftype = 1
+         sigma = 1.0 ; Initial guess for gaussian width
+         proftype = 1 ; Gaussian
          splog, 'Extracting flat-field image ', proftype
          highrej = 5
          lowrej = 5
-         npoly = 8  ; just fit flat background to each row
-         wfixed = [1,1] ; Just fit the first gaussian term
+         npoly = 8 ; Fit 8 terms to background
+         wfixed = [1,1] ; Fit the first gaussian term + gaussian width
 
-
-         ; Step 1: Extract flat field with polynomial background for
-         ;           fitflatwidth 
-         
+         splog, 'Extracting flat to obtain width and flux'
          extract_image, flatimg, flativar, xsol, sigma, flux, fluxivar, $
           proftype=proftype, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
           npoly=npoly, relative=1, ansimage=ansimage, reject= [0.05,0.1,0.2]
 
          widthset = fitflatwidth(flux, fluxivar, ansimage, tmp_fibmask, $
-               ncoeff=5, sigma=sigma)
+          ncoeff=5, sigma=sigma)
 
-         widthset.coeff = widthset.coeff * 1.05 ; correction from whopping
+         widthset.coeff = widthset.coeff * 1.05 ; correction from whopping ???
 
          junk = where(flux GT 1.0e5, nbright)
          splog, 'Found ', nbright, ' bright pixels in extracted flat ', $
           flatname[iflat], format='(a,i7,a,a)'
-        
+
          flatstruct[iflat].fibermask = ptr_new(tmp_fibmask)
          flatstruct[iflat].widthset = ptr_new(widthset)
          flatstruct[iflat].flux     = ptr_new(flux)
@@ -283,9 +276,9 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
        hdr=archdr, pixflatname=pixflatname, nsatrow=nsatrow, fbadpix=fbadpix, $
        ecalibfile=ecalibfile
 
-splog,'Arc fbadpix ', fbadpix ; ???
+      splog, 'Fraction of bad pixels in arc = ', fbadpix
 
-      ;-----
+      ;----------
       ; Decide if this arc is bad:
       ;   Reject if more than 1% of the pixels are marked as bad.
       ;   Reject if more than 100 rows are saturated.
@@ -304,7 +297,7 @@ splog,'Arc fbadpix ', fbadpix ; ???
 
       tai = sxpar(archdr, 'TAI')
 
-      ;-----
+      ;----------
       ; Identify the nearest flat-field for this arc, which must be
       ; within TIMESEP seconds and be a good flat.
 
@@ -327,10 +320,8 @@ splog,'Arc fbadpix ', fbadpix ; ???
         widthset = *(flatstruct[iflat].widthset)
         tmp_fibmask = *(flatstruct[iflat].fibermask)
 
-
-;
-;	Calculate possible shift between arc and flat
-;
+         ;----------
+         ; Calculate possible shift between arc and flat
 
          skiptrace = 20L
          nrow = (size(xsol))[1]
@@ -339,7 +330,7 @@ splog,'Arc fbadpix ', fbadpix ; ???
          xsample = xsol[*,skiptrace:nfiber - skiptrace - 1]
 
          bestlag = shift_trace(arcimg, xsample, ysample, $
-              lagrange=1.0, lagstep=0.1)
+          lagrange=1.0, lagstep=0.1)
 
          if (abs(bestlag) GT 2.0) then begin
             qbadarc = 1
@@ -354,17 +345,18 @@ splog,'Arc fbadpix ', fbadpix ; ???
            ; Extract the arc image
            ;------------------------------------------------------------------
 
-           traceset2xy,widthset,xx,sigma2
+           traceset2xy, widthset, xx, sigma2
 
            highrej = 10
            lowrej = 10
            npoly = 1  ; just fit flat background to each row
            wfixed = [1] ; Just fit the first gaussian term
 
+           splog, 'Extracting arc'
            extract_image, arcimg, arcivar, xsol + bestlag, sigma2, $
-             flux, fluxivar, proftype=proftype, wfixed=wfixed, $
-             highrej=highrej, lowrej=lowrej, npoly=npoly, relative=1, $
-             reject=[0.05,0.1,0.2]
+            flux, fluxivar, proftype=proftype, wfixed=wfixed, $
+            highrej=highrej, lowrej=lowrej, npoly=npoly, relative=1, $
+            reject=[0.05,0.1,0.2]
 
            ;-------------------------------------------------------------------
            ; Compute correlation coefficient for this arc image
@@ -378,12 +370,11 @@ splog,'Arc fbadpix ', fbadpix ; ???
            arcstruct[iarc].bestcorr = bestcorr
 
            if ((color EQ 'blue' AND bestcorr LT 0.5) $
-             OR (color EQ 'red'  AND bestcorr LT 0.5) ) then begin
+            OR (color EQ 'red'  AND bestcorr LT 0.5) ) then begin
                qbadarc = 1
                splog, 'Reject arc ' + arcname[iarc] + $
                 ' with correlation = ' + string(format='(i4)', bestcorr)
            endif
-
       endif
 
       if (NOT qbadarc) then begin
@@ -419,7 +410,6 @@ splog,'Arc fbadpix ', fbadpix ; ???
 
             ;------------------------------------------------------------------
             ; Write information on arc lamp processing
-            ;
 
             if (keyword_set(arcinfoname)) then begin
 
@@ -463,7 +453,7 @@ splog,'Arc fbadpix ', fbadpix ; ???
       splog, iflat+1, nflat, $
        format='("Create fiberflats for flat #",I3," of",I3)'
 
-      ;-----
+      ;----------
       ; Identify the nearest arc for each flat-field, which must be
       ; within TIMESEP seconds and be good.
 
@@ -492,21 +482,9 @@ splog,'Arc fbadpix ', fbadpix ; ???
          tmp_fibmask = *(flatstruct[iflat].fibermask)
 
          ;---------------------------------------------------------------------
-         ; whopping term contamination, and re-extract flat field
+         ; Read flat-field image (again)
          ;---------------------------------------------------------------------
 
-         sflat = fiberflat(*(flatstruct[iflat].flux), $
-                           *(flatstruct[iflat].fluxivar), $
-                           wset, fibermask=tmp_fibmask, /dospline, /smoothflat)
-
-          ;
-          ;  maybe whopping image sigma should scale with widthset??
-          ;
-         ws    = whopping_image(sflat, xsol, sigma=10.0, /lorentz)
-
-         ; -------------------------------------------------------------------
-         ;  Now re-extract with ws taken out of flatimg
-         ; -------------------------------------------------------------------
          ; If there is only 1 flat image, then it's still in memory
          if (nflat GT 1) then begin
             splog, 'Reading flat ', flatname[iflat]
@@ -514,16 +492,32 @@ splog,'Arc fbadpix ', fbadpix ; ???
              hdr=flathdr, pixflatname=pixflatname, ecalibfile=ecalibfile
          endif
 
-         newflat = flatimg - ws * contribution
+         ;---------------------------------------------------------------------
+         ; Measure and subtract whopping term contamination
+         ;---------------------------------------------------------------------
 
-         traceset2xy,widthset,xx,sigma2   ; sigma2 is real width
-         proftype = 1
+         if (keyword_set(dowhop)) then begin
+            sflat = fiberflat(*(flatstruct[iflat].flux), $
+             *(flatstruct[iflat].fluxivar), $
+             wset, fibermask=tmp_fibmask, /dospline, /nonorm)
+
+            whopimg = whopping_image(sflat, xsol, sigma=10.0, /lorentz)
+
+            flatimg = flatimg - whopimg
+         endif
+
+         ;---------------------------------------------------------------------
+         ; Extract the flat-field image
+         ;---------------------------------------------------------------------
+
+         traceset2xy, widthset, xx, sigma2   ; sigma2 is real width
+         proftype = 1 ; Gaussian
          highrej = 5
          lowrej = 5
-         npoly = 4  ; just fit flat background to each row
+         npoly = 4 ; Fit 4 terms to background
          wfixed = [1] ; Just fit the first gaussian term
 
-         extract_image, newflat, flativar, xsol, sigma2, flux, fluxivar, $
+         extract_image, flatimg, flativar, xsol, sigma2, flux, fluxivar, $
           proftype=proftype, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
           npoly=npoly, reject=[0.05,0.1,0.2], relative=1
 
@@ -540,7 +534,6 @@ splog,'Arc fbadpix ', fbadpix ; ???
                ':  No good traces?!?'
          endif
 
-
          flatstruct[iflat].fflat = ptr_new(fflat)
          flatstruct[iflat].fibermask = ptr_new(tmp_fibmask)
 
@@ -549,16 +542,16 @@ splog,'Arc fbadpix ', fbadpix ; ???
 
          if (keyword_set(flatinfoname)) then begin
 
-           sxaddpar, flathdr, 'NBRIGHT', nbright, $
-               'Number of bright pixels (>10^5) in extracted flat-field'
+            sxaddpar, flathdr, 'NBRIGHT', nbright, $
+             'Number of bright pixels (>10^5) in extracted flat-field'
 
-           flatinfofile = string(format='(a,i8.8,a)',flatinfoname, $
-                 sxpar(flathdr, 'EXPOSURE'), '.fits')
+            flatinfofile = string(format='(a,i8.8,a)',flatinfoname, $
+             sxpar(flathdr, 'EXPOSURE'), '.fits')
 
-           mwrfits, fflat, flatinfofile, flathdr, /create
-           mwrfits, tset, flatinfofile
-           mwrfits, fibermask, flatinfofile
-           mwrfits, widthset, flatinfofile
+            mwrfits, fflat, flatinfofile, flathdr, /create
+            mwrfits, tset, flatinfofile
+            mwrfits, fibermask, flatinfofile
+            mwrfits, widthset, flatinfofile
          endif
 
       endif
