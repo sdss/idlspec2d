@@ -37,7 +37,7 @@ do
 
     if [ ! -f $mailfile ]
     then 
-      subject=`grep LOGSHEET $thislog | grep TITLE | sed -n 's/<.[A-Z]*>//pg'`
+      subject=`grep "APO Spectro" $thislog | grep TITLE | sed -n 's/<.[A-Z]*>//pg'`
       echo $subject
       echo "" > $mailfile
       echo '<A HREF="'$filename'">'$filename'</A>' >> $mailfile
