@@ -2,14 +2,26 @@ v4_9_2 (Feb ??, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
 
 
 SPADD_GUIDERINFO: Append seeing information in header from gudierMon.par
-GET_TAI : A short proc to estimate, beginning, mid-point, and ending
-           timestamps for sdR exposures.
+GET_TAI : A short proc to determine, beginning, mid-point, and ending
+           timestamps for sdR exposures.  Uses TAI-BEG,TAI-END in header
+           if they exist; otherwise compute from TAI and EXPTIME.
+           This is now called from the following procs: EXTRACT_OBJECT,
+           SDREPORTMAKE, SPADD_GUIDERINFO, SPBIASGEN, SPCALIB.
+           Note that version v4_9_1 would not reduce the early data since
+           we had changed to using TAI-BEG, which did not exist for the
+           early data.
+
+killdata.sh,mailhtml.sh: Spectrolog cleanup is now done +25 MJDs afterwards,
+           which will allow for sos_redo, apoplot and debugging to have
+           a buffer.
+sprobot.sh: Copy the guider image directory.  We mistakenly lost this copying
+           when we went to explicitly copying only the sdR*.fit.gz files.
 
 -------------------------------------------------------------------------------
 v4_9_1 (Jan 24, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
 Built against specflat v1_3.
 
-This tagged version is for running Son-of-Spectro.
+This tagged version is for running Son-of-Spectro; not viable for Spectro-2D.
 Bug fixes to run on IDL 5.5.
 Changes to how the SOS robot launches the rsync jobs and fix other SOS bugs.
 Bias-subtraction now implemented (bias images in the "specflat" product).
