@@ -6,9 +6,9 @@
 ;   Extract, wavelength-calibrate, and flatten SDSS spectral frame(s).
 ;
 ; CALLING SEQUENCE:
-;   spreduce, flatname, arcname, objname, pixflatname=, $
+;   spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 ;    plugfile=plugfile, lampfile=lampfile, $
-;    indir=indir, plugdir=plugdir, outdir=outdir
+;    indir=indir, plugdir=plugdir, outdir=outdir, qadir=qadir, qa=qa
 ;
 ; INPUTS:
 ;   flatname   - Name of flat-field SDSS image
@@ -26,6 +26,8 @@
 ;                default to './'
 ;   plugdir    - Input directory for PLUGFILE; default to './'
 ;   outdir     - Directory for output files; default to './'
+;   qadir      - Directory for QA files; default to './'
+;   qa         - QA (quality assurance flag) 
 ;
 ; OUTPUTS:
 ;
@@ -56,11 +58,12 @@
 
 pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
  plugfile=plugfile, lampfile=lampfile, $
- indir=indir, plugdir=plugdir, outdir=outdir
+ indir=indir, plugdir=plugdir, outdir=outdir, qadir=qadir, qa=qa
 
    if (NOT keyword_set(indir)) then indir = './'
    if (NOT keyword_set(plugdir)) then plugdir=indir
    if (NOT keyword_set(outdir)) then outdir = './'
+   if (NOT keyword_set(qadir)) then outdir = './'
 
    ;---------------------------------------------------------------------------
    ; Read LAMPLIST file for wavelength calibration
