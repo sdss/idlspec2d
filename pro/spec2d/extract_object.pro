@@ -223,7 +223,6 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
     ansimage=ansimage, chisq=firstchisq, ymodel=ymodel, /relative
 
    ; (2) Calculate scattered light
-
    splog, 'Step 2: Find scattered light image'
    scatfit = calcscatimage(ansimage[ntrace*nterms:*,*], yrow)
 
@@ -233,7 +232,20 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 
    ; (3) Calculate halo image
    splog, 'Step 3: Calculate Halo Image'
-   smooth = smooth_halo(ymodel, wset)
+   smooth2 = 1.5 * smooth_halo2d(ymodel - scatfit, wset)
+
+   ; (4) Re-extract with no halo image
+   splog, 'Step 4: Extracting with halos removed
+   image_sub = image - smooth2
+
+   extract_image, image_sub, invvar, xnow, sigma2, tempflux, tempfluxivar, $
+    proftype=proftype, wfixed=wfixed, yrow=yrow, $
+    highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
+    ansimage=ansimage2, chisq=firstchisq, ymodel=ymodel, /relative
+
+   ; (5) Calculate scattered light
+   splog, 'Step 5: Find scattered light image again'
+   scatfit2 = calcscatimage(ansimage2[ntrace*nterms:*,*], yrow)
 
    ;-----------------------------------------------------------------------
    ;  Now, subtract halo image and do final extraction with all rows
@@ -248,9 +260,9 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    wfixed = [1] ; Fit to height only (fixed width + center)
    nterms = n_elements(wfixed)
    reject = [0.2,0.2,0.2]
-   npoly = 5 ; maybe more structure, lots of structure
+   npoly = 0 ; maybe more structure, lots of structure
 
-   extract_image, (image - smooth), invvar, xnow, sigma2, flux, fluxivar, $
+   extract_image, (image_sub - scatfit2), invvar, xnow,sigma2, flux,fluxivar,$
     proftype=proftype, wfixed=wfixed, ansimage=ansimage, $
     highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
     chisq=chisq, ymodel=ymodel, pixelmask=pixelmask, reject=reject, /relative

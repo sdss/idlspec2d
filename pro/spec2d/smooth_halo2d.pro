@@ -33,7 +33,8 @@
 ;   traceset2xy
 ;
 ; REVISION HISTORY:
-;   29-Sep-2000  Written by S. Burles, FNAL
+;   29-Sep-2000  Original Written by S. Burles, FNAL
+;    3-Feb-2005  Finally attempted 2-d convolution, not too slow...
 ;-
 ;------------------------------------------------------------------------------
 function smooth_halo2d, image, wset, kernel_size=kernel_size
