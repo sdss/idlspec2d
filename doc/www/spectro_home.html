@@ -308,7 +308,7 @@ header keywords VERS2D, VERSCOMB, VERS1D as described in the
 
 <P>
 All these reductions were done using versions of the code tagged v4_9_8
-(or later), which represents a homogeneous set of reductions.
+through v4_10_6, which represents a fairly homogeneous set of reductions.
 
 <H4><A NAME="get_public">Copying the Princeton Reductions of the Public Data</A></H4>
 
@@ -555,7 +555,7 @@ At present, there are four versions of this file as follows:
        (see PLATEQUALITY in the <A HREF="#platelist">platelist file</A>)
    <LI><B>spAll-EDR.fits</B> - spAll generated from only those plates
        in the Early Data Release (EDR)
-   <LI><B>spAll-EDR.fits</B> - spAll generated from only those plates
+   <LI><B>spAll-DR1.fits</B> - spAll generated from only those plates
        in the Data Release 1 (DR1)
    <LI><B>spAll-public.fits</B> - spAll generated from only those plates
        in the Early Data Release (EDR) or Data Release 1 (DR1)
@@ -746,7 +746,7 @@ See the instructions for installing this code at:
 Included are the instructions for <A HREF="http://spectro.princeton.edu/idlspec2d_install.html#install_tar">installing from a tar file</A>.
 The tar files are available at:
   <A HREF="http://spectro.princeton.edu/tarballs">http://spectro.princeton.edu/tarballs</A>.
-The code will work on any platform (Linux, SGI, Solaris, etc) as long as
+The code will work on any platform (Linux, SGI, Solaris, Mac OS, etc) as long as
 you also have an IDL license.
 
 <P>
@@ -817,8 +817,11 @@ IDL> exit
 </PRE></DD></DL>
 
 <P>
-<B>For IDL pundits</B>, the general-purpose routine for reading the data
-is the <A HREF="idlspec2d_doc.html#READSPEC">READSPEC</A> procedure.
+<B>For IDL pundits</B>, the general-purpose routine for reading the
+the coadded spectra is
+<A HREF="idlspec2d_doc.html#READSPEC">READSPEC</A>,
+or <A HREF="idlspec2d_doc.html#SPFRAME_READ">SPFRAME_READ</A> for reading
+the spectra from a single exposure.
 
 <H4><A NAME="smdisplay">Displaying the Spectra From SM</A></H4>
 
@@ -931,7 +934,7 @@ Intermediate outputs:
 <LI><A HREF="#dm_spdiag2dps">spDiag2d-<I>pppp</I>-<I>mmmmm</I>.ps</A>
 </UL>
 
-Final spectra:
+Final, co-added spectra:
 <UL>
 <LI><A HREF="#dm_spplate">spPlate-<I>pppp</I>-<I>mmmmm</I>.fits</A>
 <LI><A HREF="#dm_spdiagcomblog">spDiagcomb-<I>pppp</I>-<I>mmmmm</I>.log</A>
@@ -955,7 +958,7 @@ a single exposure.  In general, each object has several blue exposures
 and several red exposures.  These spectra are still in the native
 wavelength mapping, which is neither linear in wavelength nor log-wavelength.
 However, the spectra are flux-calibrated, and deviant pixels are rejected
-in the pixel mask (from a comparison with the other exposures).
+in the pixel mask (from the comparison with the other exposures).
 
 <P>
 The spCFrame file contains the following:<BR>
@@ -1038,6 +1041,18 @@ SPEC1_R = (S/N)^2 per pixel at r=20.25 on spectrograph #1
 SPEC2_R = (S/N)^2 per pixel at r=20.25 on spectrograph #2
 SPEC1_I = (S/N)^2 per pixel at i=19.9 on spectrograph #1
 SPEC2_I = (S/N)^2 per pixel at i=19.9 on spectrograph #2
+GOFFSTD = Median spectrophotometry minus photo mag for standard stars in g-band
+ROFFSTD = Median spectrophotometry minus photo mag for standard stars in r-band
+IOFFSTD = Median spectrophotometry minus photo mag for standard stars in i-band
+GOFFRMS = RMS of spectrophotometry minus photo mag for standard stars in g-band
+ROFFRMS = RMS of spectrophotometry minus photo mag for standard stars in r-band
+IOFFRMS = RMS of spectrophotometry minus photo mag for standard stars in i-band
+GOFFGAL = Median spectrophotometry minus photo mag for "main" galaxies in g-band
+ROFFGAL = Median spectrophotometry minus photo mag for "main" galaxies in r-band
+IOFFGAL = Median spectrophotometry minus photo mag for "main" galaxies in i-band
+GOFFGAL = RMS of spectrophotometry minus photo mag for "main" galaxies in g-band
+ROFFGAL = RMS of spectrophotometry minus photo mag for "main" galaxies in r-band
+IOFFGAL = RMS of spectrophotometry minus photo mag for "main" galaxies in i-band
 BESTEXP = Exposure number for the "best" exposure (all 4 cameras)
 EXPIDxx = Identifier for the each invididual exposure+CCD used in this combine,
           for ex. 'b1-00006853-00006857-00006858' refers to the b1 CCD,
@@ -1337,7 +1352,7 @@ constrained to be 1:3.
 <P>
 This file is a FITS binary table identical in form to the spZbest file,
 but with all the fits ever done to each object.  This includes 5
-possible galaxy redshifts, 5 possible Q redshifts, and 1 for each
+possible galaxy redshifts, 5 possible QSO redshifts, and 1 for each
 of many types of stars.  They are rank-sorted for each object,
 letting you go through and keep asking "but what's the next best fit?".
 This is what the IDL procedure
@@ -1346,7 +1361,7 @@ uses when the ZNUM keyword is specified.
 For example, ZNUM=2 will over-plot the 2nd-best fit eigenspectrum.
 
 <P>
-For the v4_9_8 reductions, NAXIS2=33280 in HDU#1
+For the v4_9_8 through v5_0_0 reductions, NAXIS2=33280 in HDU#1
 for the spZall files, meaning there are fits for 33280/640 = 52
 sets of eigentemplates per object.  Most of those are single-eigenspectra
 stars.
