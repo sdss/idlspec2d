@@ -61,54 +61,11 @@
 ;   sdsshead()
 ;   sxpar()
 ;   yanny_write
-;
-; INTERNAL SUPPORT ROUTINES:
-;   spplan_create_exp
-;   spplan_create_plug
-;   spplan_create_pixflats
+;   spplan_create_spexp
 ;
 ; REVISION HISTORY:
 ;   02-Nov-1999  Written by David Schlegel, Princeton.
 ;-
-;------------------------------------------------------------------------------
-
-function spplan_create_spexp, expnum, plateid, mjd, mapname, flavor, exptime, $
- filename, cameras, minexp=minexp
-
-   if (flavor NE 'flat' AND flavor NE 'arc' $
-    AND flavor NE 'science' AND flavor NE 'smear') then $
-    return, 0
-   if (keyword_set(minexp)) then begin
-      if (flavor EQ 'science' AND exptime LT minexp) then $
-       return, 0 
-   endif
-
-   badname = 'UNKNOWN'
-   camnames = ['b1', 'b2', 'r1', 'r2']
-   ncam = N_elements(camnames)
-
-   spexp = {spexp, $
-    plateid : long(plateid), $
-    mjd     : long(mjd), $
-    mapname : string(mapname), $
-    flavor  : string(flavor), $
-    exptime : float(exptime), $
-    name    : strarr(ncam) }
-
-   for icam=0, ncam-1 do begin
-      ii = where(cameras EQ camnames[icam], ct)
-      if (ct GT 1) then $
-       message, 'Multiple files with EXPOSURE=' + string(expnum) $
-        + ' CAMERAS=' + camnames[icam]
-      if (ct EQ 1) then $
-       spexp.name[icam] = filename[ii[0]] $
-      else $
-       spexp.name[icam] = badname
-   endfor
-
-   return, spexp
-end
-
 ;------------------------------------------------------------------------------
 
 pro spplan, topindir=topindir, topoutdir=topoutdir, mjd=mjd, $
@@ -160,8 +117,7 @@ pro spplan, topindir=topindir, topoutdir=topoutdir, mjd=mjd, $
       splog, 'Astrolog directory ', plugdir
 
       ; Find all raw FITS files in this directory
-      fullname = findfile(filepath('sdR*.fit', root_dir=inputdir), count=nfile)
-
+      fullname = spplan_findrawdata(inputdir, nfile)
       splog, 'Number of FITS files found: ', nfile
 
       if (nfile GT 0) then begin
