@@ -471,7 +471,7 @@ The following messages may appear:
     When this happens, the arc is not reduced.
 <LI><B>Best arc correlation = ...</B> <BR>
     The cross-correlation of the arc spectrum with the template arc spectrum
-    was bad.  This is also triggered as BESTCORR in the table (see above).
+    was bad.  This problem also triggers BESTCORR as bad in the table (see above).
 <LI><B>Big wavelength gap</B> <BR>
     Some arc lines were not found in the arc spectra, and there is a large
     gap in wavelength space without any lines.  This will produce a poor
@@ -483,13 +483,13 @@ The following messages may appear:
     sources in the CCD (such as the LED's we had for some time), or
     if the CCD's are warming up and generating dark current.
     There can also be a scattered light contribution just from a very
-    bright sky, or if there are very bright objects on some fibers that
+    bright sky, or if there are super-bright objects on some fibers that
     are scattering or bleeding light across the CCD.
 <LI><B>Too few sky fibers to model sky-sub variance</B> <BR>
     There are not enough good sky fibers on the CCD.  This will only happen
     if for some reason there were far fewer than the mandated 16 sky fibers
     on a CCD, or most of those fibers just happened to be dead fibers.
-    You should never see this message.
+    You should never see this message.  If you do, the data is un-reducable.
 <LI><B>Large flexure flat<->science</B> <BR>
     There is a large shift (more than 0.15 pix) between the flat-field and
     the science exposure, presumably from flexure in the spectrographs.
@@ -499,14 +499,19 @@ The following messages may appear:
     from one night for science exposures on another.)
 <LI><B>Bad sky residuals at ....</B> <BR>
     There is very poor sky-subtraction of the sky fibers at these wavelengths.
-    This means that, somehow, there is excess light that varies across the
-    plate.  This could be due to a light source near the telescope, or
-    possibly a bright, non-uniform sky.
+    This means that, somehow, there is excess light down the fibers that
+    varies across the plate.  This could be due to a light source near the
+    telescope, or possibly a bright, non-uniform sky.  The threshhold is
+    set at chi=2.  Note that other, horrendous problems (like a warm CCD)
+    could also trigger this.
 <LI><B>Red Monster at ....</B> <BR>
     This warning is triggered if we see bad sky residuals (above) that
     is specifically in the wavelength range of about 6400-6600 Ang.
-    We think when this happens the handpaddle is still plugged in,
+    We think this happens when the handpaddle is still plugged in,
     in which case the observers should unplug it immediately.
+    The treshhold is set at chi=2, and the worst that we have ever seen
+    is at about the level chi=6  The last we definitively saw this was on
+    plate 426 on 3/4 Dec 2000 (MJD 51882).
 </UL>
 
 <H4><A NAME="outputs_log">Log files</A></H4>
