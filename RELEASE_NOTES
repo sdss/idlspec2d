@@ -1,4 +1,7 @@
 
+-------------------------------------------------------------------------------
+v4_7_4 (May 10, 2001 idlspec2d+idlutils)
+
 COPY_STRUCT, COPY_STRUCT_INX (in idlutils):
           These routines didn't work properly for structures with more
           than 32768 elements, because of using only 2-byte integers.
@@ -12,7 +15,7 @@ ZPLOT: Include MJD in call to READSPEC.
 spPlateList.par: Enlarge list of EDR plates to include multiple pluggings,
        and other plates that should have been in the list according to van
        den Berk's mail to sdss-spectro/665 on 2 May 2001.  The list now
-       includes 137 plates, many of which are repeat observations.
+       includes 136 plates, many of which are repeat observations.
 
 Spectro-Robot scripts:
        Let the scripts "sprobot2d.sh" and "sprobot1d.sh" test whether they
