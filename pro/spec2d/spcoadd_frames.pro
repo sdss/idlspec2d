@@ -635,11 +635,11 @@ pro spcoadd_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    fulloutname = djs_filepath(outputname, root_dir=combinedir)
 
    ; 1st HDU is flux
-   sxaddpar, hdr, 'BUNIT', '10E-17 erg/cm/s/Ang'
+   sxaddpar, hdr, 'BUNIT', '1E-17 erg/cm^2/s/Ang'
    mwrfits, finalflux, fulloutname, hdr, /create
 
    ; 2nd HDU is inverse variance
-   sxaddpar, hdrfloat, 'BUNIT', '1/(10E-17 erg/cm/s/Ang)^2'
+   sxaddpar, hdrfloat, 'BUNIT', '1/(1E-17 erg/cm^2/s/Ang)^2'
    mwrfits, finalivar, fulloutname, hdrfloat
 
    ; 3rd HDU is AND-pixelmask
