@@ -22,6 +22,8 @@ PCA_STAR: Now read the Yanny file "eigeninput_star.par", and use cz.
            for both input and output spectra -- this allows us to do
            away with the internal procedure SPAPPEND.
 PLATELIST: Make consistent with changes to spChunklist.par.
+           Add the elements: WSIG(MA,MIN,MAX), XSIG(MA,MIN,MAX),
+           XCHI2(,MIN,MAX),SKYCHI2,SCHI2(MIN,MAX).
 PLATESN: For the roll call, output both the number of bad fibers for
            fiber masks, and the fraction of bad pixels for pixel masks.
 PLOTSPEC: Added /ORMASK, /ANDMASK keywords.  Plot text for the zwarning flags.
