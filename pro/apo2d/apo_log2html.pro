@@ -449,10 +449,8 @@ pro apo_log2html, logfile, htmlfile
             if (pscience[0,iexp].flavor EQ 'science') then $
               textout = [ textout, $
                apo_log_fields(pscience[*,iexp], 'SN2', $
-                printnames='(S/N)^2', formats='(f7.1)') ]
-
-            if (pscience[0,iexp].flavor EQ 'smear') then $
-              textout = [ textout, $
+                printnames='(S/N)^2', formats='(f7.1)') ] $
+            else textout = [ textout, $
                apo_log_fields(pscience[*,iexp], 'SN2', $
                 printnames='(S/N)^2', formats='(f7.2)') ]
          endfor
