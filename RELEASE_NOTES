@@ -1,5 +1,6 @@
 
 FINDSPEC: New routine for finding SDSS spectra that match a given RA, DEC.
+SPREDUCE1D: Search for stars at velocities to +/- 1200 km/s (was 600 km/s).
 
 -------------------------------------------------------------------------------
 v4_6_2 (Feb 14, 2001)
