@@ -137,16 +137,16 @@ function func_fit, x, y, ncoeff, invvar=invvar, function_name=function_name, $
       endelse
 
       extra2 = finalarr * ((fltarr(nparams) + 1) ## (invvar > 0))
-      beta = transpose( (ysub * (invvar > 0)) # finalarr)
       alpha = transpose(finalarr) # extra2
 
       ; Don't send just one parameter to SVD fit
 
       if (nparams GT 1) then begin
+         beta = transpose( (ysub * (invvar > 0)) # finalarr)
          svdc, alpha, w, u, v, /double
          res[nonfix] = svsol(u, w, v, beta, /double)
       endif else begin
-         res[0] = beta / alpha
+         res[0] = total(ysub * invvar * finalarr) / alpha
       endelse
 
       if (nfix GT 0) then res[fixed] = inputans[fixed]
