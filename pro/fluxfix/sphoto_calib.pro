@@ -69,7 +69,7 @@ pro sphoto_calib, wave, flux, invvar, mask, plugtag, fcalfile, $
 
     for ifib = 0, nfibers - 1 do begin
       indx = where(plugtag.fiberid eq fibers[ifib])
-      plug1[ifib] = plugtag[indx[1]]
+      plug1[ifib] = plugtag[indx[0]]
       flux1fib = rectify(newflux[*,indx], newivar[*,indx], nivar = invar1fib)
 
       combine1fiber, wave2d[*,indx], flux1fib, invar1fib, $
