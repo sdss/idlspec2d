@@ -12,7 +12,7 @@
 ; INPUTS:
 ;
 ; OPTIONAL INPUTS:
-;   platenums  - Plate numbers to reduce.
+;   platenums  - Plate numbers to reduce; default to '*'
 ;   topdir     - Top directory for reductions; default to current directory.
 ;   platestart - Starting plate number.
 ;   plateend   - Ending plate number.
