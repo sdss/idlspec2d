@@ -46,6 +46,18 @@ READSPEC: Change how the internal procedure READSPEC1 works, such that
 SDSSPROC: Re-enable the call to 'speclog_version'.
         Add call to FITS_PURGE_NANS in order to address PR #6032, 6084,
         whereby the DA has written invalid FITS header keywords.
+        Use the measured read noise (rather than the value in the op file)
+        for constructing the inverse variance image.
+        Add two more possible warning messages from testing the statistics
+        of the bias region:
+          "expected read noise = ..., measured = ... DN",
+        and
+          "bias region difference at xxx-th-percentile =... DN".
+        This replaces the warning message:
+          "Std. dev. in bias region for amp#... is ... DN (5-sig clip)".
+        These tests should be more robustly sensitive to PR #2335
+        (when r2 was randomly flipping bits on 22/23 Aug 2000), and
+        the more recent PR #6143 (r2 electronics problems in Aug 2004).
 SKYSUBTRACT: Return the trace-set RELCHI2SET instead of RELCHI2STRUCT,
         for use by the EXTRACT_OBJECT code.
 SMOOTH_SUPERFLAT: Bug fix, whereby we could trigger a warning message when
