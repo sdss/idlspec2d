@@ -20,6 +20,9 @@
 ; COMMENTS:
 ;
 ; EXAMPLES:
+;   Print out all FITS header keywords of interest for exposure # 14728
+;   (assuming that exposure is still on disk somewhere under $RAWDATA_DIR):
+;     IDL> apoheader, 14728
 ;
 ; BUGS:
 ;
