@@ -19,6 +19,7 @@ function lrgmodel_read_spall, public=public, regenerate=regenerate
        'RUN', 'RERUN', 'CAMCOL', 'FIELD', 'ID', 'COLC', $
        'CLASS', 'SPECPRIMARY', 'PRIMTARGET', $
        'Z', 'Z_ERR', 'ZWARNING', $
+       'PETROFLUX', 'PSFFLUX', 'DEVFLUX', 'PETROR50', 'R_DEV', $
        'MODELFLUX', 'MODELFLUX_IVAR', 'EXTINCTION']
       spall = hogg_mrdfits(spfile, 1, columns=columns, $
        nrowchunk=10000L)
