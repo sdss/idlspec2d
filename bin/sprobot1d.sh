@@ -4,7 +4,7 @@
 #
 # This script takes one argument, which contains the command-line arguments
 # for the BATCH1D procedure.  For example:
-#   sprobot1d.sh ",topdir='/home/data/2d_v4', nice=10"
+#   sprobot1d.sh ",topdir='/u/dss/spectro',upsvers='v4_10_0', nice=19"
 #
 # D. Schlegel, Princeton, 19 Dec 2000
 #------------------------------------------------------------------------------
