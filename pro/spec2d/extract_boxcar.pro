@@ -47,10 +47,8 @@ function extract_boxcar, fimage, xcen, ycen, radius=radius
    ny = (size(fimage))[2]
    ncen = N_elements(xcen)
 
-;   if (min(xcen) LT 0 OR max(xcen) GT nx) then $
-;    message, 'XCEN contains values out of range'
-   if (min(ycen) LT 0 OR max(ycen) GT ny) then $
-    message, 'YCEN contains values out of range'
+;   if (min(ycen) LT 0 OR max(ycen) GT ny-y) then $
+;    message, 'YCEN contains values out of range'
 
    fextract = float(0 * xcen)
    result = call_external(getenv('IDL_EVIL')+'libspec2d.so', 'extract_boxcar', $
