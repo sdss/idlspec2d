@@ -1,7 +1,7 @@
 
 function frame_flux_calib, wave, corvector, corvivar, avgcorvset, cormed, $
          bkpts, framename, fsig = fsig, fcor = fcor, noplot = noplot, $
-         blue = blue
+         blue = blue 
 
   ;----------------
   ; Create 2d wave and flux calib vector average
@@ -21,7 +21,7 @@ function frame_flux_calib, wave, corvector, corvivar, avgcorvset, cormed, $
   divideflat, residcorv, invvar=residivar, avgcorv, $
     minval=0.001*median(avgcorv)
   xy2traceset, wave2d, residcorv, polyset, invvar=residivar, $
-    ncoeff=3, lower = 2.5, upper = 2.5, maxiter = 15
+    ncoeff=4, lower = 2.5, upper = 2.5, maxiter = 15
 
   ;----------------
   ; Create an average low-frequency vector
@@ -46,33 +46,40 @@ function frame_flux_calib, wave, corvector, corvivar, avgcorvset, cormed, $
   ; for each of the standard stars -- this is an indicator of the
   ; spectrophotometric quality.
 
-  meanclip, corvector - rebin(fcor, npix, nstd), fmean, fsig, $
-    maxiter=3, clipsig=5
+  meanclip, corvector / rebin(fcor, npix, nstd), fmean, fsig, $
+    maxiter=5, clipsig=5
 
   ;---------------
   ; Restore to original scale
 
-  meanclip, cormed, scalefactor, cormedsig, maxiter=10, clipsig=3
+  meanclip, cormed, scalefactor, cormedsig, maxiter=10, clipsig=2.5
 
-  splog, 'Zeropoint of corvector: ', string(cormed, format='(F6.2)')
+  ;splog, 'Zeropoint of corvector: ', string(cormed, format='(F6.2)')
   splog, 'Average zeropoint & stdev: ' + $
     string(scalefactor, format='(F6.2)') + ' +/- ' + $
-    string(cormedsig, format='(F7.2)')
+    string(cormedsig, format='(F5.2)')
 
   fcor = fcor * scalefactor 
 
   ;----------------
-  ; Original "cormed" (median of corvector) is measured where the sphoto
-  ; correction vectors are relatively flat, but to optimize the match between
-  ; the blue and red want to take the median near the dichroic
+  ; Check if scale factor is ok, this time using more pixels than when
+  ; "cormed" was computed 
 
   frameresid = corvector * (1.0/fcor # cormed)
 
   if keyword_set(blue) then $
       range = where(10.0^wave gt 5000 and 10.0^wave lt 6000) $
   else range = where(10.0^wave gt 6000 and 10.0^wave lt 7000)
- 
-  fcor = fcor * median(frameresid[range, *])
+
+  zptadjust_factor = median(frameresid[range, *])
+  meanclip, frameresid[range, *], zptadjust_factor, maxiter=10, clipsig=2.5
+  splog, 'Zeropoint adjustment: ', string(zptadjust_factor, format='(F7.3)')
+  fcor = fcor * zptadjust_factor
+  
+ ; plot, 10.0^wave, fcor, xr=[3800, 9200], /xs, /nodata, yr=[0.6, 1.4]
+ ; for i = 0, nstd - 1 do oplot, 10.0^wave, frameresid[*,i]
+ ; djs_oplot, [3000, 10000], [1, 1], color='blue'
+ ; djs_oplot, [3000, 10000], [zptadjust_factor, zptadjust_factor], color='red'
 
   ;--------------
   ; Do the spline fit
@@ -102,7 +109,7 @@ function frame_flux_calib, wave, corvector, corvivar, avgcorvset, cormed, $
   djs_oplot, 10.0^wave, calibfac/avgcorv[*,0]/scalefactor, color='green', $
      thick=3
  
-  xyouts, mean(wave) - 500, 1.3, 'Sigma = ' + $
+  xyouts, mean(10.0^wave) - 500, 1.3, 'Sigma = ' + $
     string(fsig * 100, format='(I3)') + '%'
   !P.MULTI = 0
   
