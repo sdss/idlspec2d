@@ -35,8 +35,8 @@
 ;
 ; COMMENTS:
 ;   The list of hosts and protocols should be in the Yanny parameter file
-;   specified by the environment variable BATCH2DFILE, or the default file
-;   "$IDLSPEC2D_DIR/examples/batch2d.par" is used.
+;   specified in the file TOPDIR/batch2d.par if it exists, or the default
+;   file "$IDLSPEC2D_DIR/examples/batch2d.par" is used.
 ;
 ;   If using machines in Peyton, set
 ;     topdir='/peyton/scr/spectro0/data/2d_v4'
@@ -389,9 +389,12 @@ pro batch2d, platenums, topdir=topdir, $
    priority[isort] = reverse(lindgen(nplate)) + 1
 
    ;----------
-   ; Determine which computers to use for these reductions
+   ; Determine which computers to use for these reductions.
+   ; Use TOPDIR/batch2d.par if it exists, otherwise
+   ; use "$IDLSPEC2D/examples/batch2d.par".
 
-   hostfile = getenv('BATCH2DFILE')
+   hostfile = djs_filepath('batch2d.par', root_dir=topdir)
+   hostfile = (findfile(hostfile))[0]
    if (NOT keyword_set(hostfile)) then $
     hostfile = filepath('batch2d.par', $
      root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='examples')
