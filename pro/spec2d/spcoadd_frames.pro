@@ -45,6 +45,10 @@
 ;   This routine can combine data from multiple (different) plug maps.
 ;   Objects are matched based upon their positions agreeing to 2 arc sec.
 ;
+;   All input files must have the same number of pixels per spectrum,
+;   i.e. 2048 wavelength samplings, although those wavelengths can
+;   be different.
+;
 ; EXAMPLES:
 ;
 ; BUGS:
@@ -84,9 +88,11 @@ function makelabel, hdr
 end
 
 ;------------------------------------------------------------------------------
-pro combine1fiber, fullwave, fullspec, fullivar, fullpixelmask, $
- finalwave, bestflux, bestivar, andmask, ormask, $
+pro combine1fiber, fullwave, fullspec, fullivar, fullpixelmask, fulldisp, $
+ finalwave, bestflux, bestivar, andmask, ormask, bestdisp, $
  nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep
+
+; ??? Return fullcombmask for modifying the masks in the original input files.
 
    if (NOT keyword_set(nord)) then nord = 3
    if (NOT keyword_set(maxsep)) then maxsep = 2.0 * binsz
@@ -99,6 +105,7 @@ pro combine1fiber, fullwave, fullspec, fullivar, fullpixelmask, $
    nfinalpix = N_elements(finalwave)
    bestflux = fltarr(nfinalpix)
    bestivar = bestflux*0.0
+   bestdisp = bestflux*0.0
 
    nonzero = where(fullivar GT 0.0, ngood)
 
@@ -126,7 +133,7 @@ pro combine1fiber, fullwave, fullspec, fullivar, fullpixelmask, $
        message, 'ABORT: Grouping tricks did not work!'
 
       for igrp=0, nstart-1 do begin
-         
+
          ss = isort[ig1[igrp] : ig2[igrp]]
          bkpt = 0
 
@@ -137,11 +144,10 @@ pro combine1fiber, fullwave, fullspec, fullivar, fullpixelmask, $
          inside = where(finalwave GE min(bkpt) $
           AND finalwave LE max(bkpt), numinside)
 
-         if (total(abs(coeff)) EQ 0.0 OR numinside EQ 0) then begin
-            if (numinside EQ 0) then $
-             splog,'WARNING: No wavelengths inside breakpoints'
-            if (total(abs(coeff)) EQ 0.0) then $
-             splog,'WARNING: All B-spline coefficients have been set to zero!'
+         if (numinside EQ 0) then begin
+            splog,'WARNING: No wavelengths inside breakpoints'
+         endif else if (total(abs(coeff)) EQ 0.0) then begin
+            splog,'WARNING: All B-spline coefficients have been set to zero!'
          endif else begin         
 
             bestflux[inside] = slatec_bvalu(finalwave[inside],fullbkpt,coeff)
@@ -171,7 +177,7 @@ print,10^[min(fwave),max(fwave)]
       endfor
 
       ;---------------------------------------------------------------------
-      ; Also keep 2 spots for each file in case 2 pixels are touching finalwave
+      ; Combine inverse variance and pixel masks.
 
       andmask = lonarr(nfinalpix) - 1 ; Start with all bits set in AND-mask.
       ormask = lonarr(nfinalpix)
@@ -206,6 +212,12 @@ print,10^[min(fwave),max(fwave)]
                andmask[highside] = andmask[highside] AND fullpixelmask[these]
                ormask[lowside]   = ormask[lowside] OR fullpixelmask[these]
                ormask[highside]  = ormask[highside] OR fullpixelmask[these]
+
+               ; Combine the dispersions in the dumbest way possible
+
+               bestdisp[inbetween] = interpol(fulldisp[these], $
+                fullwave[these], finalwave[inbetween])
+
             endif
 
          endif
@@ -285,14 +297,18 @@ pro spcoadd_frames, filenames, outputname, $
 
       tempflux = mrdfits(filenames[ifile], 0, hdr)
       tempivar = mrdfits(filenames[ifile], 1)
-      tempplug = mrdfits(filenames[ifile], 2, structyp='PLUGMAPOBJ')
+      temppixmask = mrdfits(filenames[ifile], 2)
       tempwset = mrdfits(filenames[ifile], 3)
-      temppixmask = mrdfits(filenames[ifile], 4)
+      tempdispset = mrdfits(filenames[ifile], 4)
+      tempplug = mrdfits(filenames[ifile], 5, structyp='PLUGMAPOBJ')
+      if (NOT keyword_set(tempflux)) then $
+       message, 'Error reading file ' + filenames[ifile]
 
       ;----------
-      ; Solve for wavelength at each pixel in the image
+      ; Solve for wavelength and lambda-dispersion at each pixel in the image
 
-      traceset2xy, tempwset, pixnorm, tempwave
+      traceset2xy, tempwset, junk, tempwave
+      traceset2xy, tempdispset, junk, tempdispersion
 
       dims = size(tempflux, /dimens)
       npix = dims[0]
@@ -324,6 +340,7 @@ pro spcoadd_frames, filenames, outputname, $
          flux = tempflux
          fluxivar = tempivar
          wave = tempwave
+         dispersion = tempdispersion
          pixelmask = temppixmask
 
          camerasvec = cameras
@@ -334,6 +351,7 @@ pro spcoadd_frames, filenames, outputname, $
          flux = [[flux], [tempflux]]
          fluxivar = [[fluxivar], [tempivar]]
          wave = [[wave], [tempwave]]
+         dispersion = [[dispersion], [tempdispersion]]
          pixelmask = [[pixelmask], [temppixmask]]
 
          ; Append as vectors...
@@ -350,6 +368,7 @@ pro spcoadd_frames, filenames, outputname, $
       if (icam EQ 0) then nminfile = nmatch $
        else nminfile = nminfile < nmatch
    endfor
+; ??? Should make this routine robust to fewer files!!!
    if (nminfile LT 2) then begin
       splog, 'ABORT: At least 2 files needed for each camera'
       return
@@ -398,6 +417,7 @@ pro spcoadd_frames, filenames, outputname, $
    finalivar = fltarr(nfinalpix, nfiber)
    finalandmask = lonarr(nfinalpix, nfiber)
    finalormask = lonarr(nfinalpix, nfiber)
+   finaldispersion = lonarr(nfinalpix, nfiber)
    finalplugmap = replicate(plugmap[0], nfiber)
    struct_assign, {fiberid: 0L}, finalplugmap ; Zero out all elements in this
                                               ; FINALPLUGMAP structure.
@@ -431,14 +451,15 @@ pro spcoadd_frames, filenames, outputname, $
 
       if (indx[0] NE -1) then begin
          combine1fiber, wave[*,indx], flux[*,indx], fluxivar[*,indx], $
-          pixelmask[*,indx], $
+          pixelmask[*,indx], dispersion[*,indx], $
           finalwave, bestflux, bestivar, bestandmask, bestormask, $
-          nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep
+          bestdispersion, nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep
 
          finalflux[*,ifiber] = bestflux
          finalivar[*,ifiber] = bestivar
          finalandmask[*,ifiber] = bestandmask
          finalormask[*,ifiber] = bestormask
+         finaldispersion[*,ifiber] = bestdispersion
       endif else begin
          splog, 'Fiber', ifiber+1, ' NO DATA'
          finalandmask[*,ifiber] = pixelmask_bits('NODATA')
@@ -511,7 +532,10 @@ pro spcoadd_frames, filenames, outputname, $
    ; 4th HDU is OR-pixelmask
    mwrfits, finalormask, outputname
 
-   ; 5th HDU is plugmap
+   ; 5th HDU is dispersion map
+   mwrfits, finaldispersion, outputname
+
+   ; 6th HDU is plugmap
    mwrfits, finalplugmap, outputname
 
    return
