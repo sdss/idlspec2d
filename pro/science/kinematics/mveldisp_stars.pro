@@ -11,7 +11,7 @@ imax1=n_elements(goodmain)-1
 for i=imin1,imax1 do begin & $
 print,'object',i, sample[goodmain[i]].plate, sample[goodmain[i]].mjd, $
 sample[goodmain[i]].fiberid & $
-mveldisp, galflux[*,goodmain[i]],galsig[*,goodmain[i]],galwave[*,goodmain[i]],starflux[*,*], starsig[*,*], starwave[*,*], result, redshifts=sample[goodmain[i]].z,czmin=czmin, czmax= czmax, klo_cut=0.016, khi_cut=0.23, maxsig=6 & $
+mveldisp, galflux[*,goodmain[i]],galsig[*,goodmain[i]],galwave[*,goodmain[i]],starflux[*,*], starsig[*,*], starwave[*,*], result, redshifts=sample[goodmain[i]].z,czmin=czmin, czmax= czmax, klo_cut=0.016, khi_cut=0.23, maxsig=6,sigmastep=0.4,/noquot  & $
 
 if (size(fullresult,/tname) EQ 'STRUCT') then begin & $
 fullresult = [fullresult, result] & $
