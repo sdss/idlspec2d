@@ -116,7 +116,7 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
  wfixarr=wfixarr, npoly=npoly, maxiter=maxiter, $
  lowrej=lowrej, highrej=highrej, niter=niter, reducedChi=reducedChi, $
  whopping=whopping, wsigma=wsigma, pixelmask=pixelmask, reject=reject, $
- ojdreject=oldreject
+ oldreject=oldreject
 
    ; Need 4 parameters
    if (N_params() LT 4) then $
