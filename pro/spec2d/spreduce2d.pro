@@ -128,9 +128,6 @@ pro spreduce2d, planfile, docams=docams, xdisplay=xdisplay
       cpbackup, logfile
       splog, filename=logfile
       splog, 'Log file ' + logfile + ' opened ' + systime()
-      splog, 'IDL version: ' + string(!version,format='(99(a," "))')
-      spawn, 'uname -a', uname
-      splog, 'UNAME: ' + uname[0]
    endif
    if (keyword_set(plotfile) AND NOT keyword_set(xdisplay)) then begin
       cpbackup, plotfile
@@ -138,11 +135,16 @@ pro spreduce2d, planfile, docams=docams, xdisplay=xdisplay
       device, filename=plotfile, /color
       splog, 'Plot file ' + plotfile
    endif
-   splog, 'Plan file ' + thisplan
-   splog, 'DOCAMS = ', docams
+   splog, 'IDL version: ' + string(!version,format='(99(a," "))')
+   spawn, 'uname -a', uname
+   splog, 'UNAME: ' + uname[0]
+   splog, 'DISPLAY=' + getenv('DISPLAY')
 
    splog, 'idlspec2d version ' + idlspec2d_version()
    splog, 'idlutils version ' + idlutils_version()
+
+   splog, 'Plan file ' + thisplan
+   splog, 'DOCAMS = ', docams
 
    camnames = ['b1', 'b2', 'r1', 'r2']
    ncam = N_elements(camnames)

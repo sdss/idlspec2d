@@ -107,15 +107,19 @@ pro spreduce1d, platefile, fiberid=fiberid, doplot=doplot, debug=debug
 
    stime0 = systime(1)
 
-   cpbackup, logfile
-   splog, filename=logfile
-   splog, 'Log file ' + logfile + ' opened ' + systime()
-   splog, 'Plot file ' + plotfile
+   if (keyword_set(logfile)) then begin
+      cpbackup, logfile
+      splog, filename=logfile
+      splog, 'Log file ' + logfile + ' opened ' + systime()
+   endif
+   if (keyword_set(plotfile)) then $
+    splog, 'Plot file ' + plotfile
    if (keyword_set(debugfile)) then $
     splog, 'Debug plot file ' + debugfile
    splog, 'IDL version: ' + string(!version,format='(99(a," "))')
    spawn, 'uname -a', uname
    splog, 'UNAME: ' + uname[0]
+   splog, 'DISPLAY=' + getenv('DISPLAY')
 
    splog, 'idlspec2d version ' + idlspec2d_version()
    splog, 'idlutils version ' + idlutils_version()
@@ -571,15 +575,17 @@ ormask = 0 ; Free memory
    ;----------
    ; Generate final QA plots
 
-   cpbackup, plotfile
-   dfpsplot, plotfile, /color
+   if (keyword_set(plotfile)) then begin
+      cpbackup, plotfile
+      dfpsplot, plotfile, /color
+   endif
 
    plottitle = string(zans[0].plate, zans[0].mjd, $
     format='("Flux-Calibration Errors Plate=", i4, " MJD=", i5)')
    qaplot_fcalibvec, objloglam, objflux, objivar, synflux, plugmap, zans, $
     plottitle=plottitle
 
-   dfpsclose
+   if (keyword_set(plotfile)) then dfpsclose
 
    ;----------
    ; Close log file
@@ -587,7 +593,7 @@ ormask = 0 ; Free memory
    splog, 'Total time for SPREDUCE1D = ', systime(1)-stime0, ' seconds', $
     format='(a,f6.0,a)'
    splog, 'Successful completion of SPREDUCE1D at ', systime()
-   splog, /close
+   if (keyword_set(logfile)) then splog, /close
 
    ;----------
    ; Call the line-fitting code for this plate
