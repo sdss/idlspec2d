@@ -1116,6 +1116,12 @@ shouldn't trust any of the object flux there.  Our reported errors
 are meant to include sky-subtraction errors, but there are instances
 (particularly around 5577) where these errors may be untrustworthy.
 
+<P>
+<B>Dispersion and sky</B>  The dispersion per pixel and the sky flux
+are computed at each pixel by re-weighting the individual spectra
+at each pixel according to their formal errors.  This re-weighting
+is only approximate.
+
 <H4><A NAME="dm_spdiagcomblog">spDiagcomb-<I>pppp</I>-<I>mmmmm</I>.log</A></H4>
 
 The log file from running SPCOMBINE for one plate (possibly combining
