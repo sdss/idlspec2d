@@ -86,6 +86,7 @@ pro/spec1d/plug2tsobj.pro -text
 pro/spec1d/primfac.pro -text
 pro/spec1d/readspec.pro -text
 pro/spec1d/veldisp.pro -text
+pro/spec1d/veldisp_fft.pro -text
 pro/spec1d/wavelets.pro -text
 pro/spec2d/Makefile -text
 pro/spec2d/TODO -text
