@@ -3,7 +3,7 @@
 ;   combine1fiber
 ;
 ; PURPOSE:
-;   Combine several spectra of the same object, or resample a spectra.
+;   Combine several spectra of the same object, or resample a single spectrum.
 ;
 ; CALLING SEQUENCE:
 ;   combine1fiber, inloglam, objflux, [ objivar, finalmask=, indisp=, $
@@ -16,14 +16,14 @@
 ;
 ; REQUIRED KEYWORDS:
 ;   newloglam      - Wavelengths for output evaluation, also in log10-Angstroms
-;                    [NPIX,NSPEC]
+;                    [NNEWPIX]
 ;
 ; OPTIONAL INPUTS:
 ;   objivar        - Inverse variance [NPIX,NSPEC]
 ;   finalmask      - Pixel mask [NPIX,NSPEC]
 ;   indisp         - Dispersion values [NPIX,NSPEC]
 ;   binsz          - Bin separation for INLOGLAM; if not set, then default
-;                    to INLOGLAM[1]-INLOGLAM[0]. [NPIX,NSPEC]
+;                    to INLOGLAM[1]-INLOGLAM[0].
 ;   nord           - Order of spline fit; default to 3.
 ;   bkptbin        - Break point binning; default to 1.2 * BINSZ.
 ;   maxsep         - Maximum separation between input wavelengths.  The spline
@@ -41,15 +41,15 @@
 ;                    been rejected.
 ;   objivar        - Modified from itts input by setting to zero wherever
 ;                    the COMBINEREJ bit has been set in FINALMASK.
-;   newflux        - Resampled flux.
-;   newivar        - Resampled inverse variance.
+;   newflux        - Resampled flux [NNEWPIX].
+;   newivar        - Resampled inverse variance [NNEWPIX].
 ;   andmask        - Resampled mask. For each mask bit, set that bit only if
 ;                    every input spectrum at this wavelength has that bit set
-;                    (e.g., this is a logical AND).
+;                    (e.g., this is a logical AND) [NNEWPIX].
 ;   ormask         - Resampled mask. For each mask bit, set that bit if any
 ;                    of the input spectra at this wavelength has that bit set
-;                    (e.g., this is a logical OR).
-;   newdisp        - Resampled dispersion values.
+;                    (e.g., this is a logical OR) [NNEWPIX].
+;   newdisp        - Resampled dispersion values [NNEWPIX].
 ;
 ; COMMENTS:
 ;   One can pass this routine a single spectrum to be fit by a spline and
