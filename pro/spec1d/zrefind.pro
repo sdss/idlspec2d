@@ -39,7 +39,7 @@
 ;   17-Aug-2000  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
 function zrefind, objflux, objivar, hdr=hdr, $
- pwidth=pwidth, pspace=pspace, width=width, zold=zold
+ pwidth=pwidth, pspace=pspace, width=width, zold=zold, _EXTRA=EXTRA
 
    if (NOT keyword_set(pwidth)) then pwidth = 5
 
@@ -89,7 +89,7 @@ function zrefind, objflux, objivar, hdr=hdr, $
       res1 = zfind(objflux[*,iobj], objivar[*,iobj], hdr=hdr, $
        eigenfile=result[i0].tfile, columns=result[i0].tcolumn[0:ncol-1], $
        npoly=result[i0].npoly, zguess=result[indx].z, $
-       pwidth=pwidth, pspace=pspace, nfind=1, width=width)
+       pwidth=pwidth, pspace=pspace, nfind=1, width=width, _EXTRA=EXTRA)
 
       ; Copy the results into the output structure
       result[indx].z = res1[*].z

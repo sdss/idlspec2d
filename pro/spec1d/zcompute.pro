@@ -7,7 +7,8 @@
 ;
 ; CALLING SEQUENCE:
 ;   zans = zcompute(objflux, objivar, starflux, [starmask, nfind=, $
-;    poffset=, pspace=, pmin=, pmax=, mindof=, width=, minsep= ]
+;    poffset=, pspace=, pmin=, pmax=, mindof=, width=, minsep=, $
+;    plottitle=, /doplot, /debug ]
 ;
 ; INPUTS:
 ;   objflux    - Object fluxes [NPIXOBJ,NOBJ]
@@ -30,9 +31,13 @@
 ;                [Scalar or vector of size NOBJ]
 ;   pmax       - The largest redshift to consider [pixels].
 ;                [Scalar or vector of size NOBJ]
-;   mindof     - Minimum number of degrees of freedom for a valid fit.
+;   mindof     - Minimum number of degrees of freedom for a valid fit;
+;                default to 10.
 ;   width      - Parameter for FIND_NMINIMA(); default to 3 * PSPACE.
-;   minsep     - Parameter for FIND_NMINIMA()
+;   minsep     - Parameter for FIND_NMINIMA(); default to the same as WIDTH.
+;   plottitle  - ???
+;   doplot     - ???
+;   debug      - ???
 ;
 ; OUTPUTS:
 ;   zans       - Output structure [NOBJECT,NFIND] with the following elements:
@@ -83,11 +88,17 @@ end
 ;------------------------------------------------------------------------------
 function zcompute, objflux, objivar, starflux, starmask, nfind=nfind, $
  poffset=poffset, pspace=pspace, pmin=pmin, pmax=pmax, $
- mindof=mindof, width=width, minsep=minsep
+ mindof=mindof, width=width, minsep=minsep, $
+ plottitle=plottitle, doplot=doplot1, debug=debug
 
    if (NOT keyword_set(nfind)) then nfind = 1
    if (NOT keyword_set(pspace)) then pspace = 1
    if (NOT keyword_set(width)) then width = 3 * pspace
+   if (NOT keyword_set(plottitle)) then plottitle = ''
+
+   ; Plot if either /DOPLOT or /DEBUG is set.
+   if (keyword_set(doplot1)) then doplot = doplot1
+   if (keyword_set(debug)) then doplot = 1
 
    ;---------------------------------------------------------------------------
    ; Check dimensions of object vectors
@@ -121,7 +132,9 @@ function zcompute, objflux, objivar, starflux, starmask, nfind=nfind, $
          zans1 = zcompute(objflux[*,iobj], objivar[*,iobj], $
           starflux, starmask, nfind=nfind, $
           poffset=poffset1, pspace=pspace1, pmin=pmin1, pmax=pmax1, $
-          mindof=mindof, width=width, minsep=minsep)
+          mindof=mindof, width=width, minsep=minsep, $
+          plottitle=plottitle+ ' -- Object #'+strtrim(string(iobj+1),2), $
+          doplot=doplot, debug=debug)
          if (iobj EQ 0) then zans = zans1 $
           else zans = [[zans], [zans1]]
          splog, 'Object #', iobj, '  Elap time=', systime(1)-t0, $
@@ -133,8 +146,8 @@ function zcompute, objflux, objivar, starflux, starmask, nfind=nfind, $
    ;---------------------------------------------------------------------------
 
    if (NOT keyword_set(mindof)) then mindof = 10
-   if (NOT keyword_set(width)) then width = 3
-   if (NOT keyword_set(minsep)) then minsep = 3
+   if (NOT keyword_set(width)) then width = 3 * pspace
+   if (NOT keyword_set(minsep)) then minsep = width
 
    ndim = size(starflux, /n_dimen)
    dims = size(starflux, /dimens)
@@ -209,9 +222,11 @@ function zcompute, objflux, objivar, starflux, starmask, nfind=nfind, $
 ;      zans[0:npeak-1].chi2 = -ypeak1
       xpeak1 = find_nminima(chi2arr[indx], lags[indx], $
        dofarr=dofarr[indx], nfind=nfind, minsep=minsep, width=width, $
-       ypeak=ypeak1, xerr=xerr1, npeak=npeak)
+       ypeak=ypeak1, xerr=xerr1, npeak=npeak, errcode=errcode, $
+       plottitle=plottitle, doplot=doplot)
       zans[0:npeak-1].z = poffset - xpeak1
-      zans[0:npeak-1].z_err = xerr1
+      ; Set Z_ERR equal to the error-code if it is non-zero
+      zans[0:npeak-1].z_err = xerr1 * (errcode EQ 0) + errcode
       zans[0:npeak-1].chi2 = ypeak1
       for ipeak=0L, npeak-1 do begin
          junk = min(abs(lags-xpeak1[ipeak]), ilag)
@@ -219,6 +234,13 @@ function zcompute, objflux, objivar, starflux, starmask, nfind=nfind, $
          zans[ipeak].theta = thetaarr[*,ilag]
       endfor
       zans[0:npeak-1].chi2 = zans[0:npeak-1].chi2 * zans[0:npeak-1].dof
+
+      ; Wait for a keystroke...
+      if (keyword_set(debug)) then begin
+         print, 'Press any key...'
+         cc = strupcase(get_kbrd(1))
+      endif
+
    endif else if (ct GE 1) then begin
       zans[0].chi2 = -min(-chi2arr[indx]/dofarr[indx], ilag)
       zans[0].z = poffset - lags[indx[ilag]]

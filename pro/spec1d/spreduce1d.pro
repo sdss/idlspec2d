@@ -6,7 +6,7 @@
 ;   1-D reduction of spectra from 1 plate
 ;
 ; CALLING SEQUENCE:
-;   spreduce1d, [ platefile, fiberid= ]
+;   spreduce1d, [ platefile, fiberid=, /doplot, /debug ]
 ;
 ; INPUTS:
 ;
@@ -16,6 +16,10 @@
 ;   fiberid    - If specified, then only reduce these fiber numbers;
 ;                this must be a vector with unique values between 1 and
 ;                the number of rows in the plate file (typically 640).
+;   doplot     - If set, then generate plots.  Send plots to a PostScript
+;                file unless /DEBUG is set.
+;   debug      - If set, then send plots to the X display and wait for
+;                a keystroke after each plot; setting /DEBUG forces /DOPLOT.
 ;
 ; OUTPUTS:
 ;
@@ -35,6 +39,8 @@
 ;   $IDLSPEC2D_DIR/templates/TEMPLATEFILES
 ;
 ; PROCEDURES CALLED:
+;   dfpsclose
+;   dfpsplot
 ;   filter_thru()
 ;   mrdfits()
 ;   mwrfits
@@ -51,21 +57,32 @@
 ; REVISION HISTORY:
 ;   28-Jun-2000  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
-pro spreduce1d, platefile, fiberid=fiberid
+pro spreduce1d, platefile, fiberid=fiberid, doplot=doplot, debug=debug
 
-   if (NOT keyword_set(platefile)) then platefile = findfile('spPlate*.fits*')
+   if (NOT keyword_set(platefile)) then begin
+      platefile = findfile('spPlate*.fits*', count=nplate)
+   endif else begin
+      if (size(platefile,/tname) NE 'STRING') then $
+       message, 'PLATEFILE must be a file name'
+      if (keyword_set(platefile)) then nplate = n_elements(platefile) $
+       else nplate = 0
+   endelse
+   if (keyword_set(debug)) then doplot = 1
 
    ;----------
    ; If multiple plate files exist, then call this script recursively
    ; for each such plate file.
 
-   if (n_elements(platefile) GT 1) then begin
-      for i=0, n_elements(platefile)-1 do begin
+   if (nplate EQ 0) then begin
+      splog, 'No plate files specified or found'
+      return
+   endif else if (nplate EQ 1) then begin
+      platefile = platefile[0]
+   endif else begin
+      for i=0, nplate-1 do begin
          spreduce1d, platefile[i], fiberid=fiberid
       endfor
       return
-   endif else begin
-      platefile = platefile[0]
    endelse
 
    ;----------
@@ -78,10 +95,17 @@ pro spreduce1d, platefile, fiberid=fiberid
    if (NOT keyword_set(logfile)) then $
     logfile = 'spDiag1d-' + platemjd + '.log'
 
+   if (keyword_set(doplot) AND NOT keyword_set(debug)) then begin
+      plotfile = 'spDiag1d-' + platemjd + '.ps'
+      dfpsplot, plotfile, /color
+   endif
+
    stime0 = systime(1)
 
    splog, filename=logfile
    splog, 'Log file ' + logfile + ' opened ' + systime()
+   if (keyword_set(plotfile)) then $
+    splog, 'Plot file ' + plotfile
    splog, 'IDL version: ' + string(!version,format='(99(a," "))')
    spawn, 'uname -a', uname
    splog, 'UNAME: ' + uname[0]
@@ -90,6 +114,8 @@ pro spreduce1d, platefile, fiberid=fiberid
    ; Read the 2D output file
 
    objflux = mrdfits(platefile,0,hdr)
+   if (NOT keyword_set(hdr)) then $
+    message, 'Plate file not valid: ' + platefile
    npixobj = sxpar(hdr, 'NAXIS1')
    nobj = sxpar(hdr, 'NAXIS2')
    objivar = mrdfits(platefile,1)
@@ -145,6 +171,7 @@ ormask = 0 ; Free memory
    zmax = 0.60 ; Max z for a rest-frame template to 2300 Ang to cover 3700 Ang
    pspace = 2
    nfind = 5
+   plottitle = 'Galaxy Redshift'
 
    eigenfile = 'spEigenGal*.fits'
 
@@ -153,13 +180,15 @@ ormask = 0 ; Free memory
    t0 = systime(1)
    res_gal = zfind(objflux, objivar, hdr=hdr, $
     eigenfile=eigenfile, npoly=npoly, zmin=zmin, zmax=zmax, pspace=pspace, $
-    nfind=nfind, width=5*pspace)
+    nfind=nfind, width=5*pspace, $
+    plottitle=plottitle, doplot=doplot, debug=debug)
    splog, 'CPU time to compute GALAXY redshifts = ', systime(1)-t0
 
    splog, 'Locally re-fitting GALAXY redshifts'
    t0 = systime(1)
    res_gal = zrefind(objflux, objivar, hdr=hdr, $
-    pwidth=5, pspace=1, width=5, zold=res_gal)
+    pwidth=5, pspace=1, width=5, zold=res_gal, $
+    plottitle=plottitle, doplot=doplot, debug=debug)
    splog, 'CPU time to re-fit GALAXY redshifts = ', systime(1)-t0
 
    splog, 'Find velocity dispersions for galaxies'
@@ -186,6 +215,7 @@ ormask = 0 ; Free memory
                ; 525 Ang (rest), which corresponds to 3700 Ang at this z.
    pspace = 4
    nfind = 5
+   plottitle = 'QSO Redshift'
 
    eigenfile = 'spEigenQSO*.fits'
 
@@ -194,13 +224,15 @@ ormask = 0 ; Free memory
    t0 = systime(1)
    res_qso = zfind(objflux, objivar, hdr=hdr, $
     eigenfile=eigenfile, npoly=npoly, zmin=zmin, zmax=zmax, pspace=pspace, $
-    nfind=nfind, width=7*pspace)
+    nfind=nfind, width=7*pspace, $
+    plottitle=plottitle, doplot=doplot, debug=debug)
    splog, 'CPU time to compute QSO redshifts = ', systime(1)-t0
 
    splog, 'Locally re-fitting QSO redshifts'
    t0 = systime(1)
    res_qso = zrefind(objflux, objivar, hdr=hdr, $
-    pwidth=11, pspace=1, width=11, zold=res_qso)
+    pwidth=11, pspace=1, width=11, zold=res_qso, $
+    plottitle=plottitle, doplot=doplot, debug=debug)
    splog, 'CPU time to re-fit QSO redshifts = ', systime(1)-t0
 
    res_qso.class = 'QSO'
@@ -224,15 +256,16 @@ ormask = 0 ; Free memory
    nstar = sxpar(shdr, 'NAXIS2') > 1
 
    for istar=0, nstar-1 do begin
-      subclass = sxpar(shdr, 'NAME'+strtrim(string(istar),2))
+      subclass = strtrim( sxpar(shdr, 'NAME'+strtrim(string(istar),2)), 2)
+      plottitle = subclass + '-Star Redshift'
 
       splog, 'Compute STAR (' + subclass + ') redshifts:', $
        ' ZMIN=', zmin, ' ZMAX=', zmax, ' PSPACE=', pspace
       t0 = systime(1)
       res_star = zfind(objflux, objivar, hdr=hdr, $
        eigenfile=eigenfile, columns=istar, npoly=npoly, $
-       zmin=zmin, zmax=zmax, pspace=1, $
-       nfind=nfind, width=5*pspace)
+       zmin=zmin, zmax=zmax, pspace=1, nfind=nfind, width=5*pspace, $
+       plottitle=plottitle, doplot=doplot, debug=debug)
       splog, 'CPU time to compute STAR redshifts = ', systime(1)-t0
 
       res_star.class = 'STAR'
@@ -433,6 +466,8 @@ ormask = 0 ; Free memory
 
    ;----------
    ; Close log file
+
+   if (keyword_set(plotfile)) then dfpsclose
 
    splog, 'Total time for SPREDUCE1D = ', systime(1)-stime0, ' seconds', $
     format='(a,f6.0,a)'

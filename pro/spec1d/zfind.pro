@@ -9,7 +9,7 @@
 ; CALLING SEQUENCE:
 ;   result = zfind( objflux, objivar, hdr=hdr, $
 ;    eigenfile=, [eigendir=, columns=, npoly=, $
-;     zmin=, zmax=, zguess=, pwidth=, pspace=, nfind=, width= ]
+;     zmin=, zmax=, zguess=, pwidth=, nfind=, width=, _EXTRA= ]
 ;
 ; INPUTS:
 ;   objflux    - Object fluxes [NPIXOBJ,NOBJ]
@@ -38,9 +38,9 @@
 ;                are ignoreed.
 ;   pwidth     - Search width in pixels about the intial guess redshift ZGUESS.
 ;                If specified with ZGUESS, then ZMIN and ZMAX are ignored.
-;   pspace     - Keyword for ZCOMPUTE().
 ;   nfind      - Keyword for ZCOMPUTE().
 ;   width      - Keyword for ZCOMPUTE().
+;   _EXTRA     - Keywords for ZCOMPUTE(), such as PSPACE, DOPLOT, DEBUG.
 ;
 ; OUTPUTS:
 ;   result     - Structure with redshift-fit information.
@@ -97,7 +97,7 @@ end
 function zfind, objflux, objivar, hdr=hdr, $
  eigenfile=eigenfile, eigendir=eigendir, columns=columns, npoly=npoly, $
  zmin=zmin, zmax=zmax, zguess=zguess, pwidth=pwidth, $
- pspace=pspace, nfind=nfind, width=width
+ nfind=nfind, width=width, _EXTRA=EXTRA
 
    if (n_elements(eigendir) EQ 0) then $
     eigendir = concat_dir(getenv('IDLSPEC2D_DIR'), 'templates')
@@ -119,8 +119,10 @@ function zfind, objflux, objivar, hdr=hdr, $
     pmax = ceil( alog10(1.0 + zmax) / objdloglam )
 
    if (n_elements(zguess) GT 0 AND keyword_set(pwidth)) then begin
-      pmin = floor( alog10(1.0 + zguess) / objdloglam - 0.5 * (pwidth+1+width) )
-      pmax = floor( alog10(1.0 + zguess) / objdloglam + 0.5 * (pwidth+1+width) )
+      if (keyword_set(width)) then width1 = width $
+       else width1 = pwidth
+      pmin = floor( alog10(1.0 + zguess) / objdloglam - 0.5 * (pwidth+1+width1) )
+      pmax = floor( alog10(1.0 + zguess) / objdloglam + 0.5 * (pwidth+1+width1) )
    endif
 
    ;----------
@@ -170,7 +172,8 @@ function zfind, objflux, objivar, hdr=hdr, $
    ; Compute the redshifts
 
    zans = zcompute(objflux, objivar, starflux, poffset=poffset, $
-    pmin=pmin, pmax=pmax, pspace=pspace, nfind=nfind, width=width)
+    pmin=pmin, pmax=pmax, nfind=nfind, width=width, $
+    plottitle=plottitle, _EXTRA=EXTRA)
 
    ;----------
    ; Convert redshift (and error) from pixels to the conventional dimensionless
