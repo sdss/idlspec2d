@@ -6,22 +6,23 @@
 ;   1-D reduction of spectra from 1 plate
 ;
 ; CALLING SEQUENCE:
-;   spreduce1d, platefile, [outfile]
+;   spreduce1d, [platefile]
 ;
 ; INPUTS:
-;   platefile  - Plate file(s) from spectro-2D; default to all files
-;                matching 'spPlate*.fits'
 ;
 ; OPTIONAL INPUTS:
-;   outfile    - Name of output file; default to a name derived from PLATEFILE.
-;                For example, if PLATEFILE='spPlate-0306-51690.fits', then
-;                OUTFILE='spZ-0306-51690.fits'.
+;   platefile  - Plate file(s) from spectro-2D; default to all files
+;                matching 'spPlate*.fits'
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
+;   Names of output files are derived from PLATEFILE.
+;   For example, if PLATEFILE='spPlate-0306-51690.fits', then
+;     ZALLFILE = 'spZall-0306-51690.fits'
+;     ZBESTFILE = 'spZbest-0306-51690.fits'
 ;
 ; EXAMPLES:
 ;
@@ -39,13 +40,10 @@
 ;   zfind()
 ;   zrefind()
 ;
-; INTERNAL SUPPORT ROUTINES:
-;   sp1d_struct()
-;
 ; REVISION HISTORY:
 ;   28-Jun-2000  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
-pro spreduce1d, platefile, outfile
+pro spreduce1d, platefile
 
    if (NOT keyword_set(platefile)) then platefile = findfile('spPlate*.fits')
 
@@ -55,10 +53,7 @@ pro spreduce1d, platefile, outfile
 
    if (n_elements(platefile) GT 1) then begin
       for i=0, n_elements(platefile)-1 do begin
-         if (keyword_set(outfile)) then $
-          spreduce1d, platefile[i], outfile[i] $
-         else $
-          spreduce1d, platefile[i]
+         spreduce1d, platefile[i]
       endfor
       return
    endif else begin
@@ -66,12 +61,12 @@ pro spreduce1d, platefile, outfile
    endelse
 
    ;----------
-   ; Determine name of output file
+   ; Determine names of output files
 
    platemjd = strmid(platefile, 8, 10)
 
-   if (NOT keyword_set(outfile)) then $
-    outfile = 'spZ-' + platemjd + '.fits'
+   zallfile = 'spZall-' + platemjd + '.fits'
+   zbestfile = 'spZbest-' + platemjd + '.fits'
    if (NOT keyword_set(logfile)) then $
     logfile = 'spDiag1d-' + platemjd + '.log'
 
@@ -237,11 +232,15 @@ andmask = 0 ; Free memory
    splog, 'Successful completion of SPREDUCE1D at ', systime()
 
    ;----------
-   ; Write the output file
+   ; Write the output files
 
    sxaddpar, hdr, 'NAXIS', 0
-   writefits, outfile, 0, hdr ; Retain the original header in the first HDU
-   mwrfits, res_all, outfile
+
+   writefits, zallfile, 0, hdr ; Retain the original header in the first HDU
+   mwrfits, res_all, zallfile
+
+   writefits, zbestfile, 0, hdr ; Retain the original header in the first HDU
+   mwrfits, (res_all[0,*])[*], zbestfile
 
    splog, /close
 
