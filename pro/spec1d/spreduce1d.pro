@@ -113,6 +113,9 @@ pro spreduce1d, platefile, fiberid=fiberid, doplot=doplot, debug=debug
    spawn, 'uname -a', uname
    splog, 'UNAME: ' + uname[0]
 
+   splog, 'idlspec2d version ' + idlspec2d_version()
+   splog, 'idlutils version ' + idlutils_version()
+
    ;----------
    ; Read the 2D output file
 
@@ -214,8 +217,8 @@ ormask = 0 ; Free memory
 
    npoly = 3
    zmin = 0.0033 ; +1000 km/sec
-   zmax = 6.00 ; Max range to use for now, with the template starting at
-               ; 525 Ang (rest), which corresponds to 3700 Ang at this z.
+   zmax = 7.00 ; Max range to use for now, with the template starting at
+               ; 460 Ang (rest), which corresponds to 3680 Ang at this z.
    pspace = 4
    nfind = 5
    plottitle = 'QSO Redshift'
@@ -281,8 +284,8 @@ ormask = 0 ; Free memory
    ; Find CV STAR redshifts
 
    npoly = 3
-   zmin = -0.004 ; -1200 km/sec
-   zmax = 0.004 ; +1200 km/sec
+   zmin = -0.0033 ; -1000 km/sec
+   zmax = 0.0033 ; +1000 km/sec
    pspace = 1
    nfind = 1
 
