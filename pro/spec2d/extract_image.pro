@@ -14,11 +14,12 @@
 ;              nband=nband ])
 ;
 ; INPUTS:
-;   fimage     - Image[nCol, nRow]
-;   invvar     - Inverse Variance[nCol, nRow]
-;   xcen       - Initial guesses for X centers[nRow, nFibers]
-;   sigma      - sigma of gaussian profile; default to 1.0 
-;                  (scalar or [nFibers] or [nRow, nFibers])
+;   fimage     - Image [NCOL,NROW]
+;   invvar     - Inverse variance [NCOL,NROW]
+;   xcen       - Initial guesses for X centers [NROW,NFIBER]
+;   sigma      - Input sigma of gaussian profile; default to 1.0 pixels.
+;                This can be a scalar, an [NFIBER] vector, or
+;                an [NROW,NFIBER] array.
 ;
 ; OPTIONAL KEYWORDS:
 ;   yrow       - long array specifying which rows to extract, default is all
@@ -32,8 +33,8 @@
 ;                     [1, 1] fit gaussian + sigma correction
 ;                     [1, 0, 1] fit gaussian + center correction
 ;                     [1, 1, 1] fit gaussian + sigma and center corrections.   
-;   mask       - byte mask: 1 is good and 0 is bad [nCol,nRow] 
-;   pixelmask  - bits set due to extraction rejection [nRow,nFiber]
+;   mask       - byte mask: 1 is good and 0 is bad [NCOL,NROW] 
+;   pixelmask  - bits set due to extraction rejection [NROW,NFIBER]
 ;   reject     - Array setting rejection threshholds; defaults are set
 ;                in EXTRACT_ROW().
 ;   nPoly      - order of chebyshev scattered light background; default to 4
@@ -48,25 +49,27 @@
 ;   wsigma     - sigma width of whopping profile (exponential, default 25)
 ;
 ; OUTPUTS:
-;   flux       - Total extracted flux in each profile [nRowExtract, nFibers]
+;   flux       - Total extracted flux in each profile [nRowExtract,NFIBER]
 ;
 ; OPTIONAL OUTPUTS:
-;   mask       - modified by setting the values of bad pixels to 0
-;   finv       - Estimated inverse variance each profile [nRowExtract, nFibers]
-;   ymodel     - model best fit of row[nCol, nRow]
-;   fscat      - scattered light contribution in each fiber[nRow, nFibers]
+;   mask       - Modified by setting the values of bad pixels to 0
+;   finv       - Estimated inverse variance each profile [nRowExtract,NFIBER]
+;   ymodel     - Model best fit of row [NCOL,NROW]
+;   fscat      - Scattered light contribution in each fiber [NROW,NFIBER]
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
 ;
 ; PROCEDURES CALLED:
+;   calcflux
 ;   extract_row()
+;   pixelmask_bits()
+;   splog
 ;
 ; REVISION HISTORY:
-;   08-Aug-1999  Version 0.0 Scott Burles, Chicago 
+;   08-Aug-1999  Written by Scott Burles, Chicago 
 ;   22-Aug-2000  Added banded-matrix possibility 
-;                   Version 1.0 Scott Burles, FNAL
 ;-
 ;------------------------------------------------------------------------------
 pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $

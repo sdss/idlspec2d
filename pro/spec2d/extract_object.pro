@@ -210,7 +210,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 
    traceset2xy, widthset, xx, sigma2
    ntrace = (size(sigma2,/dimens))[1]
-   wfixed = [1,1]
+   wfixed = [1,1] ; Fit gaussian height + width (fixed center position)
    nterms = n_elements(wfixed)
 
    splog, 'Step 1: Initial Object extraction'

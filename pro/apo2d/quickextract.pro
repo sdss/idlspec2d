@@ -3,8 +3,8 @@
 ;   quickextract
 ;
 ; PURPOSE:
-;   Extraction with quick scattered light and sky subtraction.
-;   S/N is estimated and output for html generation.
+;   Science frame extraction with scattered light removal and sky subtraction.
+;   S/N is estimated and output for HTML generation.
 ;
 ; CALLING SEQUENCE:
 ;   rstruct = quickextract(tsetfile, wsetfile, fflatfile, rawfile, outsci, $
@@ -19,7 +19,8 @@
 ;
 ; OPTIONAL INPUTS:
 ;   radius     - Radius for boxcar extraction (default 3)
-;   filtsz     - Median filter size to apply before average S/N is calculated.
+;   filtsz     - Median filter size to apply before average S/N is calculated;
+;                default to 25 pixels.
 ;
 ; OUTPUT:
 ;   rstruct    - Results to be added html file upon completion
@@ -113,7 +114,7 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    skiprow = 8
    yrow = lindgen(nrow/skiprow) * skiprow + skiprow/2
    nfirst = n_elements(yrow)
-   wfixed = [1,1] ; Fit gaussian height + width
+   wfixed = [1,1] ; Fit gaussian height + width (fixed center position)
 
    sigma = 1.0
    proftype = 1 ; Gaussian
