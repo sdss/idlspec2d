@@ -80,6 +80,12 @@ idlspec2d.table: Added "Flavor=Linux"
 mailhtml.sh: Grep for the "APO Spectro" from the HTML file to get the
             subject line for mail; I had changed this HTML title string,
             which then gave a missing subject line in the e-mail (PR #3200).
+opBC-50000.par,opBC-51809.par,opBC-51813.par: Add a small trap on r2
+            at 1168,1339; extend the b1 badcols 1762-1673 to the top of
+            the CCD by 10 more rows; extend the r2 badcol 1585 to the top
+            of the CCD by 908 more rows.  Re-order some of the entries
+            for clarity.  Make opBC-51809 identical to the others except
+            for the 4 additional entries on b1 and 1 additional on r1.
 opConfig-50000.par,opECalib-50000.par: Renamed copies of opConfig.par
             and opECalib.par with an MJD in their names.
 opHdrFix.par: Declare bad aborted smears for plate 601 and 803.
