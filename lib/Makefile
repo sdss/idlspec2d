@@ -14,5 +14,5 @@ install :
 	- cp *.so $(IDLSPEC2D_DIR)/lib
 	- cp Makefile $(IDLSPEC2D_DIR)/lib
 clean :
-	- /bin/rm -f *~ core *.so
+	- /bin/rm -f *~ core *.so *.a *.dylib
 
