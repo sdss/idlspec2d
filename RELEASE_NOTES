@@ -1,3 +1,7 @@
+v4_8_2 (Aug 16, 2001 idlspec2d)
+
+SPALLREDUCE: SPECFLAT_DIR is not set now, if SPECFLAT product exists and 
+          is specified
 
 PLATECOMPARE: New proc for interactive comparison of descrepant redshifts.
 PLATELIST: Added /PURGE2D, /PURGE1D options.
