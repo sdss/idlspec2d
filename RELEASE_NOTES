@@ -127,6 +127,12 @@ COMDIS: Minor bug fix, making loop variable type long.
 GAUSS_KERNEL: sigma should have been sigma^2 (This proc is used
             by SKYSUBTRACT,SMOOTH_HALO,RLINE_FINDEW in idlspec2d).
 SPHEREMATCH,chunks.c: Bug fix for wrap.
+YANNY_DIFF: New proc to compare two Yanny files, optionally copying values
+            from one to another.
+YANNY_READ: Read lines up to 2047 characters long (instead of 1023)
+            without resorting to the /QUICK option.
+YANNY_WRITE: Add STNAMES keyword if writing out Yanny files that were
+            read with YANNY_READ(/ANONYMOUS).
 
 idlutils.table: Added "Flavor=Linux"
 
