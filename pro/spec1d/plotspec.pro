@@ -523,10 +523,17 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
             print, '      x=change X plotting range'
             print, '      y=change Y plotting range'
             print, '      z=change which PCA-fit to overplot'
+            print, '      v=to launch viewer on this object'
             print, '      any other key=forward'
 
             cc = strupcase(get_kbrd(1))
+            print,cc
             case cc of
+; Begin MB 06/17/02
+            'V': begin
+                    spawn,'java -Xmx200m -classpath ~/Viewer.jar Viewer -query="plateid = '+strtrim(string(platelist[ifiber]),2)+' & fiberid = '+strtrim(string(fiberid[ifiber]),2)+'" -color.min=0. -color.max=40 -zoom=3 -size=300 &'
+                 end
+; End MB 06/17/02
             'B': ifiber = (ifiber - 1) > 0
             'P': begin
                     read, plate, mjd, prompt='Enter new plate and MJD (enter 0 for unknown MJD): '
