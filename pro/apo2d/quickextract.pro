@@ -54,9 +54,7 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
           npoly=npoly, ansimage=ansimage, relative=1
 
    ntrace = (size(tempflux))[2]
-   junk = fitansimage(ansimage, nterms, ntrace, npoly, yrow, $
-            tempflux, fluxm = wfixed, scatfit=scatfit)
-
+   scatfit = calcscatimage(ansimage[ntrace*nterms:*,*], yrow)
    scatflux = extract_boxcar(scatfit, xcen, radius=radius)
 
    scatmed = median(scatfit)
