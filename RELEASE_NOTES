@@ -19,6 +19,11 @@ LINEBACKFIT: Fix possible crash condition when computing LINENPIX if
 PLATECOMPARE: New TOPDIR optional keyword for comparing different
             reductions of the same data.
 PLOTSPEC: Optional /ZWARNING flag.  Report error if FIBERID out of range.
+QAPLOT_FCALIBVEC: Generate QA plot of apparent flux-calibration errors
+            by comparing spectra to synthetic (e.g., best-fit) spectra.
+            This proc is called at the end of SPREDUCE1D, and generates
+            figures and warning messages if the min/max apparent fluxing
+            errors are large (more than 10% anywhere).
 QUICKEXTRACT: Call REJECT_SCIENCE() to decide if a science exposure is bad
             due to lamps being turned on, too many saturated pixels, etc.
             If number of sky fibers > 20, then select one good sky fiber
@@ -69,7 +74,9 @@ SPREDUCE: No longer issue an abort message in this proc if the science
 SPREDUCE1D: The warning message for S/N > 200 pixels has been fixed,
             and another warning added for any pixels w/ flux < -10 * noise
             (e.g., unphysically low values).
+            Call new procedure QAPLOT_FCALIBVEC to measure flux-calib errors.
 
+idlspec2d.table: Added "Flavor=Linux"
 mailhtml.sh: Grep for the "APO Spectro" from the HTML file to get the
             subject line for mail; I had changed this HTML title string,
             which then gave a missing subject line in the e-mail (PR #3200).
@@ -102,6 +109,8 @@ COMDIS: Minor bug fix, making loop variable type long.
 GAUSS_KERNEL: sigma should have been sigma^2 (This proc is used
             by SKYSUBTRACT,SMOOTH_HALO,RLINE_FINDEW in idlspec2d).
 SPHEREMATCH,chunks.c: Bug fix for wrap.
+
+idlutils.table: Added "Flavor=Linux"
 
 -------------------------------------------------------------------------------
 v4_9_3 (Feb 12, 2002 idlspec2d only) running on IDL 5.3 - 5.5
