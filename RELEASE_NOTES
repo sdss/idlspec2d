@@ -1,4 +1,10 @@
 
+EXTRACT_OBJECT: Write as HDU #8 an image of the relative chi^2, or an
+        image of all 1's if no such structure was ever made in the SKYSUBTRACT
+        code.  Note that these values are not truncated to be >=1, as they
+        are when we re-scale the sky errors.
+        If there is a telluric image (which we've deprecated for the v5 code),
+        then it is now in HDU #9.
 FLUX_DISTORTION: There was a bug in the way objects were being rejected
         in the main iteration loop.  Basically, objects were being rejected,
         but then had chi=0 in the next iteration, and then were put back
@@ -27,6 +33,8 @@ READSPEC: Change how the internal procedure READSPEC1 works, such that
         the desired behaviour.  For ex, requesting a non-existent plate
         will now return 640-element arrays of zeros.
 SDSSPROC: Re-enable the call to 'speclog_version'.
+SKYSUBTRACT: Return the trace-set RELCHI2SET instead of RELCHI2STRUCT,
+        for use by the EXTRACT_OBJECT code.
 SPFLUX_READ_KURUCZ: This function was pulled out of SPFLUX_V5.
 SPFLUX_V5: Pull out the SPFLUX_READ_KURUCZ() code as a separate function.
         Comment-out the median/mean rescaling factor in SPFLUX_MRATIO_FLATTEN(),
