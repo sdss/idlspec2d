@@ -127,6 +127,7 @@ echo "IDLUTILS_DIR=$IDLUTILS_DIR" >> $cronfile
 echo "IDL_DIR=$IDL_DIR" >> $cronfile
 echo "IDL_PATH=$IDL_PATH" >> $cronfile
 echo "ASTROLOG_DIR=$ASTROLOG_DIR" >> $cronfile
+echo "SPECLOG_DIR=$ASTROLOG_DIR" >> $cronfile
 echo "SPECFLAT_DIR=$SPECFLAT_DIR" >> $cronfile
 echo "RAWDATA_DIR=$RAWDATA_DIR" >> $cronfile
 echo "SPECTRO_DATA=$SPECTRO_DATA" >> $cronfile
