@@ -107,7 +107,7 @@ pro platesn, finalflux, finalivar, finalandmask, finalplugmap, loglam, $
    flambda2fnu = (waveimg*waveimg / 2.99792e18) # replicate(1,nfiber)
 
    filter = transpose(filter_thru(finalflux*flambda2fnu, waveimg=waveimg, $
-    mask=(finalivar LE 0), /norm))
+    mask=(finalivar LE 0)))
 
    synthmag = fltarr(3,nfiber)
    posfilter = where(filter[1:3,*] GT 0)
