@@ -35,7 +35,10 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
-;   s_plotdev
+;   djs_arrow
+;   djs_icolor()
+;   djs_oplot
+;   djs_plot
 ;
 ; REVISION HISTORY:
 ;   15-Apr-2000  Written by S. Burles, FNAL
@@ -179,7 +182,6 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
          afit1 = fitsn(mag[s1], snc[s1], fitmag=myfitmag)
          if (keyword_set(afit1)) then begin
             snoise2[0] = 10^(2.0 * poly(snmag[bands[iband]],afit1)) 
-;            djs_oplot, myfitmag, 10^poly(myfitmag,afit1), thick=2
             yloc = 10^poly(xloc,afit1)
             djs_arrow, xloc, 20, xloc, yloc, /data
          endif
@@ -188,7 +190,6 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
          afit2 = fitsn(mag[s2], snc[s2], fitmag=myfitmag)
          if (keyword_set(afit2)) then begin
             snoise2[1] = 10^(2.0 * poly(snmag[bands[iband]],afit2)) 
-;            djs_oplot, myfitmag, 10^poly(myfitmag,afit2), thick=2
             yloc = 10^poly(xloc,afit2)
             djs_arrow, xloc, 20, xloc, yloc, /data
          endif
