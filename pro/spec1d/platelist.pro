@@ -117,6 +117,7 @@ pro platelist, infile, plist=plist, create=create
     'dec'      , 0.0, $
     'tai'      , 0.0D, $
     'airmass'  , 0.0, $
+    'exptime'  , 0.0, $
     'mapname'  , ' ', $
     'vers2d'   , ' ', $
     'verscomb' , ' ', $
@@ -198,6 +199,7 @@ pro platelist, infile, plist=plist, create=create
          plist[ifile].tai = sxpar(hdr1, 'TAI')
          plist[ifile].airmass = tai2airmass(plist[ifile].ra, $
           plist[ifile].dec, tai=plist[ifile].tai)
+         plist[ifile].exptime = sxpar(hdr1, 'EXPTIME')
          plist[ifile].sn2_g1 = sxpar(hdr1, 'SPEC1_G')
          plist[ifile].sn2_r1 = sxpar(hdr1, 'SPEC1_R')
          plist[ifile].sn2_i1 = sxpar(hdr1, 'SPEC1_I')
