@@ -671,23 +671,30 @@ However, if it appears to not be working one could check the following:
 <H2><A NAME="rereduce">Re-Reducing (Failed) Exposures</A></H2>
 
 <P>
-As of version v4_7_1, there is a mechanism to re-reduce exposures.
+As of version v4_7_1, there is a mechanism to re-reduce exposures
+with "sos_redo".
 You may need to do this if a reduction failed, or the pre-calibs failed
-and SOS could not reduce the science exposures.
+and SOS could not reduce the science exposures, or if you needed
+to edit the sdR header information by putting entries in the sdReport
+file.
 
 <P>
-To re-reduce all exposures for the current night:
-<DL><DD><PRE>
-  % ssh sos.apo.nmsu.edu sos_redo
-</PRE></DD></DL>
-To re-reduce only exposures for plate 666:
-<DL><DD><PRE>
-  % ssh sos.apo.nmsu.edu sos_redo plate=666
-</PRE></DD></DL>
-To re-reduce only exposures number 12345:
+It is fastest to only re-reduce a specific exposure number.
+To force a re-reduction of exposure number 12345 on all 4 cameras
+(whether it has already been reduced or not) use the EXPNUM option:
 <DL><DD><PRE>
   % ssh sos.apo.nmsu.edu sos_redo expnum=12345
 </PRE></DD></DL>
+If you want to find and reduce only failed reductions for a plate
+use the PLATE option.  This may take several more minutes because
+all of the FITS headers for the night are parsed.
+To re-reduce only missing exposures for plate 666:
+<DL><DD><PRE>
+  % ssh sos.apo.nmsu.edu sos_redo plate=666
+</PRE></DD></DL>
+The last exposure taken is not re-reduced unless explicitly told to
+with the EXPNUM option.  Currently, either EXPNUM or PLATE must be
+specified.
 
 <P>
 Note that science exposures for a plate cannot be reduced until both
