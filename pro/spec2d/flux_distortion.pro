@@ -129,6 +129,8 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
       andmask = mrdfits(platefile,2)
       ormask = mrdfits(platefile,3)
       plugmap = mrdfits(platefile,5)
+      loglam = sxpar(hdr, 'COEFF0') $
+       + dindgen(sxpar(hdr, 'NAXIS1')) * sxpar(hdr, 'COEFF1')
    endif
 
    dims = size(objflux, /dimens)
@@ -171,6 +173,7 @@ if (tag_exist(plugmap,'CALIBFLUX_IVAR') EQ 0) then $; ???
     AND plugmap.calibflux[2] GT 1 $
     AND plugmap.calibflux[3] GT 1 $
     AND fracgood GT 0.90, ntrim)
+   splog, 'Number of objects for fitting distortions = ', ntrim
    if (ntrim LT minobj) then begin
       splog, 'WARNING: Too few objects for fitting flux distortions ', ntrim
       return, 0 * objflux + 1
