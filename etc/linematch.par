@@ -4,7 +4,7 @@
 
 typedef struct {
   char type[10];   # Type of line: SKY     , SKY
-  float lambda;    # Wavelength in air
+  double lambda;    # Wavelength in air
   char name[40];   # Name of line
 } lineid;
 
