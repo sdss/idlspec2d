@@ -81,6 +81,11 @@ ZCOMPUTE_QSO: A version of ZCOMPUTE that is basically the same code, but
         additive polynomial terms, this may fail to find weak em-line QSOs.
 
 etc/spChunkList.par: Add chunks 91-94.
+templates/eigeninput_star.par:
+        Shift all of the normal stellar templates (O through M) to
+        agree with the Elodie redshifts in the v5_0_0 reductions.
+        Shift the CarbonWD and Carbon star templates by +65 km/sec.
+        No change to the WD or WDmagnetic velocities (out of ignorance).
 templates/spBsplineQSO-53115.fits: Fist attempt at a B-spline composite
         for QSO spectra as a fn. of redshift (made by Burles).
 templates/wfEigen*.fits: Add WFCCD templates from Prochaska
