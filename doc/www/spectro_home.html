@@ -20,9 +20,10 @@ here as they're made available.
 <P>
 In this document:
 <UL>
-  <LI><A HREF="#platelist">Which Plates Are Reduced?</A>
-  <LI><A HREF="#where">Getting the Reduced Data</A>
+  <LI><A HREF="#get_data">Getting the Reduced Data</A>
   <OL>
+     <LI><A HREF="#platelist">Which Plates Are Reduced?</A>
+     <LI><A HREF="#get_version">What Version of the Code Was Used?</A>
      <LI><A HREF="#get_where">Where Is the Data?</A>
      <LI><A HREF="#get_rsync">How to Keep Your Data Up-to-Date</A>
   </OL>
@@ -85,7 +86,9 @@ Related mailing lists (restricted access):
 
 <HR>
 
-<H2><A NAME="platelist">Which Plates Are Reduced?</A></H2>
+<H2><A NAME="get_data">Getting the Reduced Data</A></H2>
+
+<H4><A NAME="platelist">Which Plates Are Reduced?</A></H4>
 
 <P>
 The SDSS will observe approximately 2000 plates by the end of
@@ -282,9 +285,19 @@ Nunk = The number of objects Princeton-1D declared spectroscopically "unknown".
 Nsky = The number of sky fibers (almost always exactly 32)
 </PRE>
 
-<H2><A NAME="get_data">Getting the Reduced Data</A></H2>
+<H4><A NAME="get_version">What Version of the Code Was Used?</A></H4>
 
-<H3><A NAME="get_where">Where Is the Data?</A></H3>
+<P>
+The version of the code used in the reductions is specified in the
+header keywords VERS2D, VERSCOMB, VERS1D as described in the
+<A HREF="#datamodel">data model</A>.
+
+<P>
+All these reductions were done using versions between v4_1_2 and v4_3_1.
+The differences between these versions are not significant.  Mostly, changes
+were made to improve robustness and allow us to reduce more marginal data.
+
+<H4><A NAME="get_where">Where Is the Data?</A></H4>
 
 <P>
 At Princeton, the top-level directory for the reduced data is:
@@ -317,7 +330,7 @@ $SPECTRO_DATA/$PLATE/spZall-$PLATE-$MJD.fits
 where $SPECTRO_DATA refers to the top-level directory (2d_v4), and $PLATE
 refers to a subdirectory with the plate name (e.g., 0301).
 
-<H3><A NAME="get_rsync">How to Keep Your Data Up-to-Date</A></H3>
+<H4><A NAME="get_rsync">How to Keep Your Data Up-to-Date</A></H4>
 
 <P>
 A number of plates have failed in these reductions.  Mostly, these are
@@ -340,14 +353,14 @@ Finally, you could set up a "cron" job to update your copy of the data on
 a daily basis.  This would be done by creating a cron table file (call it
 "cron.table" in this example):
 <DL><DD><PRE>
-0 5 * * 0 /usr/bin/rsync -arv --rsh="ssh" fsgi03.fnal.gov:/usr/sdss/data04/schlegel/2d_v4 /my/directory
+15 5 * * * /usr/bin/rsync -arv --rsh="ssh" fsgi03.fnal.gov:/usr/sdss/data04/schlegel/2d_v4 /my/directory
 </PRE></DD></DL>
 replacing "/my/directory" with your local data-directory name.
 Then load this "cron" job by typing:
 <DL><DD><PRE>
 crontab cron.table
 </PRE></DD></DL>
-This will update your copy of the data at 5:00am every morning.
+This example will update your copy of the data at 5:15am every morning.
 To stop this updating, unload the cron table with:
 <DL><DD><PRE>
 crontab -r
@@ -399,7 +412,8 @@ either the hardware or target selection for the survey.  These plates are:
 <H2><A NAME="plots">Some Nifty Plots</A></H2>
 
 <P>
-Here are some nifty plots:
+Here are some nifty plots of <B>only those galaxies within 2 degrees of the
+equatorial plane</B>:
 <OL>
 <LI><A HREF="zplot-main.ps">Pie diagram to z=0.15</A>
 <LI><A HREF="zplot-brg.ps">Pie diagram to z=0.6</A>
@@ -444,7 +458,7 @@ The absolute simplest way to look at the data is to use SAOimage or XIMTOOL
 to display the plate images (spPlate*.fits), which will show you all 640
 spectra on a plate at once.
 
-<H2><A NAME="idlsetup">Setting Up IDL Tools</A></H2>
+<H4><A NAME="idlsetup">Setting Up IDL Tools</A></H4>
 
 <P>
 You need two products: "idlutils", and "idlspec2d".  These will work
@@ -486,13 +500,13 @@ evilmake all
 
 <P>
 If you have someone maintaining survey code at your institution, you
-could have them install version v4_1_2 of these products, then set use
+could have them install version v4_3_1 of these products, then set use
 the "setup" command.  At Princeton, if you are on a Linux box, you
 could simply type:
 <DL><DD><PRE>
 source /u/products/etc/sdssfue.csh
-setup idlutils v4_1_2
-setup idlspec2d v4_1_2
+setup idlutils v4_3_1
+setup idlspec2d v4_3_1
 </PRE></DD></DL>
 
 <P>
@@ -666,7 +680,9 @@ EXPT_B2 = b2 camera exposure time (seconds)
 EXPT_R1 = r1 camera exposure time (seconds)              
 EXPT_R2 = r2 camera exposure time (seconds)              
 EXPTIME = Minimum of exposure times for all cameras      
-
+VERS2D  = Version of idlspec2d for 2D reduction
+VERSCOMB= Version of idlspec2d for combining multiple spectra
+VERS1D  = Version of idlspec2d for 1D reduction
 </PRE>
 
 <P>
@@ -866,7 +882,8 @@ Below, I've listed the vacuum wavelength of some transitions:
 <P>
 Problems can be reported via the bug database at:
 <DL><DD><PRE>
-http://www.astro.princeton.edu:81/cgi-bin/gnatsweb.pl
+<A HREF="http://www.astro.princeton.edu:81/cgi-bin/gnatsweb.pl">
+http://www.astro.princeton.edu:81/cgi-bin/gnatsweb.pl</A>
 </PRE></DD></DL>
 File bugs about the extracted spectra against the category "idlspec2d",
 and about the redshifts or template-fitting against "idlspec1d".
