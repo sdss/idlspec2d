@@ -18,6 +18,7 @@ SPREDUCE2D: Print the version of "speclog".
 
 bin/sprobot_start: Insist that the cvs version of speclog be set up
         for running this robot.
+doc/www/idlspec2d_install.html: Change instructions to installing with EvilUPS.
 etc/spChunkList.par: Add chunks 80-84.
 pro/Makefile: Add photoz directory
 templates/spLRG-52928.fits: LRG templates for LRG_PHOTOZ function.
