@@ -39,6 +39,7 @@
 ;   qbadarc
 ;   mrdfits()
 ;   mwrfits
+;   reject_arc()
 ;   sdssproc
 ;   traceset2xy
 ;
