@@ -394,3 +394,7 @@ ophdrfix sdR-??-0001362[4-5] FLAVOR   "'unknown'"
 # Wrong exposure time in these headers for plate 876 on MJD 52343.
 ophdrfix sdR-??-00013781 EXPTIME  1500
 
+# The flat-field petals were acting up during the pre-calibs
+# for plate 889 on MJD 52346
+ophdrfix sdR-??-00013806 FLAVOR   "'unknown'"
+
