@@ -68,6 +68,7 @@
 ; PROCEDURES CALLED:
 ;   bspline_iterfit()
 ;   bspline_valu()
+;   calcscatimage()
 ;   djs_avsigclip()
 ;   djs_filepath()
 ;   extract_image
@@ -276,7 +277,10 @@ fitimg = fitimg > 0.02 ; ???
       scatfit = calcscatimage(ansimage[ntrace*nterms:*,*], yrow)
 
       ;----------------------
-      ; Subtract scattered light, then divide by the superflat image
+      ; Subtract scattered light, then divide by the superflat image.
+      ; Then we're left with an image that should show a flat response
+      ; if every pixel were the equally sensitive, except we'll still
+      ; see the 320 fiber profiles.
 
       flatimg = (flatimg - scatfit) / fitimg
       flativar = flativar * fitimg^2
