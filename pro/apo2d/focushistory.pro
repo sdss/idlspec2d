@@ -61,7 +61,7 @@ pro focushistory, mjdrange=mjdrange1
       return
    endif
 
-   idone = where(strtrim(plist.status1d,2) EQ 'Done')
+   idone = where(strtrim(plist.statuscombine,2) EQ 'Done')
    if (idone[0] EQ -1) then begin
       print, 'No reduced plates found'
       return
