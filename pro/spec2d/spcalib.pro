@@ -53,6 +53,7 @@
 ;   fitarcimage_old
 ;   fitdispersion
 ;   fitflatwidth()
+;   reject_flat()
 ;   sdssproc
 ;   shift_trace()
 ;   splog
@@ -150,21 +151,9 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
        ecalibfile=ecalibfile, minflat = 0.5, maxflat=1.5
 
       ;-----
-      ; Decide if this flat is bad:
-      ;   Reject if more than 2% of the pixels are marked as bad.
-      ;   Reject if more than 40 rows are saturated.
+      ; Decide if this flat is bad
 
-      qbadflat = 0
-      if (fbadpix GT 0.02) then begin
-         qbadflat = 1
-         splog, 'Reject flat ' + flatname[iflat] + $
-          ': ' + string(format='(i3)', fix(fbadpix*100)) + '% bad pixels'
-      endif
-      if (nsatrow GT 100) then begin
-         qbadflat = 1
-         splog, 'Reject flat ' + flatname[iflat] + $
-          ': ' + string(format='(i4)', nsatrow) + ' saturated rows'
-      endif
+      qbadflat = reject_flat(flatimg, flathdr, nsatrow=nsatrow, fbadpix=fbadpix)
 
       if (NOT keyword_set(fibermask)) then tmp_fibmask = bytarr(320) $
        else tmp_fibmask = fibermask
@@ -275,27 +264,15 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
       splog, 'Fraction of bad pixels in arc = ', fbadpix
 
       ;----------
-      ; Decide if this arc is bad:
-      ;   Reject if more than 2% of the pixels are marked as bad.
-      ;   Reject if more than 100 rows are saturated.
+      ; Decide if this arc is bad
 
-      qbadarc = 0
-      if (fbadpix GT 0.02) then begin
-         qbadarc = 1
-         splog, 'Reject arc ' + arcname[iarc] + $
-          ': ' + string(format='(i3)', fix(fbadpix*100)) + '% bad pixels'
-      endif
-      if (nsatrow GT 100) then begin
-         qbadarc = 1
-         splog, 'Reject arc ' + arcname[iarc] + $
-          ': ' + string(format='(i4)', nsatrow) + ' saturated rows'
-      endif
-
-      tai = sxpar(archdr, 'TAI')
+      qbadarc = reject_arc(arcimg, archdr, nsatrow=nsatrow, fbadpix=fbadpix)
 
       ;----------
       ; Identify the nearest flat-field for this arc, which must be
       ; within TIMESEP seconds and be a good flat.
+
+      tai = sxpar(archdr, 'TAI')
 
       iflat = -1
       igood = where(flatstruct.qbad EQ 0)
