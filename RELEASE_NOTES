@@ -169,7 +169,8 @@ PCA_STAR: Major changes to read stellar classes and subclasses,
           then generate the 2-component PCA solution for all M stars
           (for example) and reconstruct types M1 through M9.
 PLATECOMPARE: Add /PSFILE option.
-PLATELIST: Add NEXP,EXPT_B1,EXPT_B2,EXPT_R1,EXPT_R2,SMEARUSE to output struct.
+PLATELIST: Add NEXP,EXPT_B1,EXPT_B2,EXPT_R1,EXPT_R2,SMEARUSE,TAI_BEG,TAI_END,
+          SEEING*,RMSOFF*,AIRTEMP,CARTID to output struct.
           Now show the status of 2D and Combine separately, which will make it
           obvious when this problem occurs. When it happens, Status2D
           might still be "Running" even though StatusCombine is "Done".
