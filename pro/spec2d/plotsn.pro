@@ -71,7 +71,8 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
    slopelabel = " * "+bandnames
    snlabel = '(S/N)^2 @ '+bandnames+' ='+string(snmag,format='(f7.2)')
 
-   iobj = where(strtrim(plug.objtype,2) NE 'SKY', nobj)
+   iobj = where(strtrim(plug.objtype,2) NE 'SKY' and $
+                plug.mag[2] gt 0, nobj)
    if (nobj LT 3) then return
 
    ; The following variables are defined only for non-SKY objects...
@@ -429,7 +430,8 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
       for ispecnum=1, 2 do begin
          qobj = where(strmatch(plugc.objtype, '*SKY*')  ne 1 and $
                       plugc.spectrographid eq ispecnum and $
-                      abs(goff) lt 1 and abs(roff) lt 1 and abs(ioff) lt 1)
+                      abs(goff) lt 1 and abs(roff) lt 1 and abs(ioff) lt 1 $
+                      and plugc.mag[2] gt 0)
 
         plothist, groff[qobj], xr=[-0.6, 0.6], bin=0.02, yr = [0,ymax], $
            xtitle = 'Color Difference (Spectro - Photo)', $
