@@ -78,7 +78,7 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    fluxsub = flux - scatflux
 
    ; Flat-field
-   divideflat, fluxsub, fluxivar, fflat, fibermask=fibermask
+   divideflat, fluxsub, fluxivar, fflat, fibermask=fibermask, /quiet
 
    ; Sky-subtract
    skystruct = skysubtract(fluxsub, fluxivar, plugsort, wset, $
