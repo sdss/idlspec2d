@@ -612,7 +612,7 @@ The following messages may appear:
     The treshhold is set at reduced chi=2, and the worst that we have ever seen
     is at about the level chi=6.  The last time we definitively saw this was on
     plate 426 on 3/4 Dec 2000 (MJD 51882).
-<LI><B>SOS disk is ...% full</B> <BR>
+<LI><A NAME="diskfull"><B>SOS disk is ...% full</B></A> <BR>
     The specified disk on sos.apo is more than 95% full.  This could be
     either the disk used to copy the raw sdR images from sdsshost.apo,
     or the disk used for SOS outputs (/data/spectro/spectrologs/$MJD).
@@ -713,7 +713,8 @@ However, if it appears to not be working one could check the following:
 <LI><B>Is the data being copied over?</B><BR>
     The raw data files should be copied from "sdsshost" to "sos.apo"
     in the /data/spectro/$MJD directory.  If it is not, then the disk
-    may be full!  Or, the rsync command may not be working.
+    may be full (see <A HREF="#diskfull">SOS disk is full</A> warning message).
+    Or, the rsync command may not be working.
     This <B>could</B> be due to a rogue
     "aporsync" process sitting around.  The "sos_status" command will
     report any such processes.  If you suspect this as the
@@ -761,12 +762,11 @@ However, if it appears to not be working one could check the following:
 <H2><A NAME="rereduce">Re-Reducing (Failed) Exposures</A></H2>
 
 <P>
-As of version v4_7_1, there is a mechanism to re-reduce exposures
-with "sos_redo".
+There is a mechanism to re-reduce exposures with "sos_redo".
 You may need to do this if a reduction failed, or the pre-calibs failed
 and SOS could not reduce the science exposures, or if you needed
 to edit the sdR header information by putting entries in the sdHdrFix
-file.
+file (see <A HREF="http://spectro.princeton.edu/idlspec2d_doc.html#APOFIX">APOFIX</A>).
 
 <P>
 It is fastest to only re-reduce a specific exposure number.
