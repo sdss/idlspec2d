@@ -28,6 +28,7 @@
 ;
 ; PROCEDURES CALLED:
 ;   copy_struct_inx
+;   djs_filepath()
 ;   djs_findfile()
 ;   djs_lockfile()
 ;   djs_unlockfile
@@ -209,9 +210,11 @@ pro apo_log2html, logfile, htmlfile
       print, 'Syntax: apo_log2html, logfile, [ htmlfile ]'
       return
    endif else if (n_params() EQ 1) then begin
-      ipos = rstrpos(logfile, '.fits')
-      if (ipos EQ -1) then ipos = strlen(logfile)
-      htmlfile = strmid(logfile, 0, ipos) + '.html'
+      thisfile = fileandpath(logfile, path=thispath)
+      ipos = rstrpos(thisfile, '.fits')
+      if (ipos EQ -1) then ipos = strlen(thisfile)
+      htmlfile = djs_filepath(strmid(thisfile, 0, ipos) + '.html', $
+       root_dir=thispath)
    endif
 
    junk = fileandpath(htmlfile, path=outdir)
