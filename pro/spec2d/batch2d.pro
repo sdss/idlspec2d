@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   batch2d, [ platenums, topdir=, platestart=, plateend=, $
-;    mjd=, mjstart=, mjend=, nice=, /clobber ]
+;    mjd=, mjstart=, mjend=, upsversion=, nice=, /clobber ]
 ;
 ; INPUTS:
 ;
@@ -21,6 +21,10 @@
 ;                reduce data from all nights needed for that combined plate+MJD.
 ;   mjstart    - Starting MJD dates to reduce.
 ;   mjend      - Ending MJD dates to reduce.
+;   upsversion - If set, then do a "setup idlspec2d $UPSVERSION" on the
+;                remote machine before executing the IDL job.  This allows
+;                you to batch jobs using a version other than that which
+;                is declared current under UPS.
 ;   nice       - Unix nice-ness for spawned jobs; default to 19.
 ;   clobber    - If set, then reduce all specified plates, overwriting
 ;                any previous reductions.
@@ -221,14 +225,15 @@ end
 ;------------------------------------------------------------------------------
 pro batch2d, platenums, topdir=topdir, $
  platestart=platestart, plateend=plateend, $
- mjd=mjd, mjstart=mjstart, mjend=mjend, nice=nice, clobber=clobber
+ mjd=mjd, mjstart=mjstart, mjend=mjend, $
+ upsversion=upsversion, nice=nice, clobber=clobber
 
    if (NOT keyword_set(platenums)) then platenums = '*'
    if (NOT keyword_set(topdir)) then begin
       cd, current=topdir
    endif
    cd, topdir
-   if (NOT keyword_set(nice)) then nice = 19
+   if (n_elements(nice) EQ 0) then nice = 19
 
    splog, prelog='(2D)'
 
@@ -341,6 +346,7 @@ pro batch2d, platenums, topdir=topdir, $
          for i=0, n_elements(planfile2d)-1 do $
           printf, olun, 'spreduce2d, ' + fq+planfile2d[i]+fq
          printf, olun, 'spcombine, ' + fq+planfilecomb+fq
+         printf, olun, 'spawn, '+fq+'rm -f spArc*.fits spFlat*.fits spSky*.fits'+fq
          printf, olun, 'exit'
          close, olun
          free_lun, olun
@@ -407,8 +413,12 @@ pro batch2d, platenums, topdir=topdir, $
 
    setenv, 'RAWDATA_DIR=../rawdata'
    setenv, 'SHELL=bash'
-   nicestr = '/bin/nice -n ' + strtrim(string(nice),2)
-   command = nicestr + ' idl ' + fullscriptfile + ' >& /dev/null'
+   precommand = ''
+   if (keyword_set(upsversion)) then $
+    precommand = precommand + 'setup idlspec2d ' + upsversion + '; '
+   if (keyword_set(nice)) then $
+    precommand = precommand + '/bin/nice -n ' + strtrim(string(nice),2)
+   command = precommand + ' idl ' + fullscriptfile + ' >& /dev/null'
 
    djs_batch, topdir, pinfile, poutfile, $
     hostconfig.protocol, hostconfig.remotehost, hostconfig.remotedir, $

@@ -6,7 +6,7 @@
 ;   Batch process Spectro-1D reductions based upon existing 2D plate files.
 ;
 ; CALLING SEQUENCE:
-;   batch1d, [ fullplatefile, topdir=, nice=, /clobber ]
+;   batch1d, [ fullplatefile, topdir=, upsversion=, nice=, /clobber ]
 ;
 ; INPUTS:
 ;
@@ -14,6 +14,10 @@
 ;   fullplatefile - Plate files to reduce; default to all files matching
 ;                   '*/spPlate*.fits' from the top-level directory.
 ;   topdir     - Top directory for reductions; default to current directory.
+;   upsversion - If set, then do a "setup idlspec2d $UPSVERSION" on the 
+;                remote machine before executing the IDL job.  This allows
+;                you to batch jobs using a version other than that which
+;                is declared current under UPS.
 ;   nice       - Unix nice-ness for spawned jobs; default to 19.
 ;   clobber    - If set, then reduce all specified plates, overwriting
 ;                any previous reductions.
@@ -51,13 +55,14 @@
 ;   17-Oct-2000  Written by D. Schlegel, Princeton
 ;-
 ;------------------------------------------------------------------------------
-pro batch1d, fullplatefile, topdir=topdir, nice=nice, clobber=clobber
+pro batch1d, fullplatefile, topdir=topdir, upsversion=upsversion, $
+ nice=nice, clobber=clobber
 
    if (NOT keyword_set(topdir)) then begin
       cd, current=topdir
    endif
    cd, topdir
-   if (NOT keyword_set(nice)) then nice = 19
+   if (n_elements(nice) EQ 0) then nice = 19
 
    splog, prelog='(1D)'
 
@@ -181,8 +186,12 @@ pro batch1d, fullplatefile, topdir=topdir, nice=nice, clobber=clobber
    ;  either bash or csh shells.
 
    setenv, 'SHELL=bash'
-   nicestr = '/bin/nice -n ' + strtrim(string(nice),2)
-   command = nicestr + ' idl ' + fullscriptfile + ' >& /dev/null'
+   precommand = ''
+   if (keyword_set(upsversion)) then $
+    precommand = precommand + 'setup idlspec2d ' + upsversion + '; '
+   if (keyword_set(nice)) then $
+    precommand = precommand + '/bin/nice -n ' + strtrim(string(nice),2)
+   command = precommand + ' idl ' + fullscriptfile + ' >& /dev/null'
 
    djs_batch, topdir, infile, outfile, $
     hostconfig.protocol, hostconfig.remotehost, hostconfig.remotedir, $
