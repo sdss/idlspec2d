@@ -6,7 +6,7 @@
 ;   Determine wavelength calibration from arclines
 ;
 ; CALLING SEQUENCE:
-;   fitarcimage, arc, arcivar, xnew, ycen, wset, $
+;   fitarcimage, arc, arcivar, xcen, ycen, wset, $
 ;    [ color=color, lampfile=lampfile, fibermask=fibermask, $
 ;    func=func, aset=aset, ncoeff=ncoeff, lambda=lambda, $
 ;    thresh=thresh, row=row, nmed=nmed, $
@@ -34,7 +34,7 @@
 ;                wavelengths solution; default to 5
 ;
 ; OUTPUTS:
-;   xnew       - pixel position of lines [nfiber, nlambda]
+;   xcen       - pixel position of lines [nfiber, nlambda]
 ;   ycen       - fiber number [nfiber, nlambda]
 ;   wset       - traceset (pix -> lambda)
 ;
@@ -78,8 +78,8 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro fitarcimage, arc, arcivar, xnew, ycen, wset, $
- color=color, lampfile=lampfile, fibermask=fibermask, xcen=xcen, $
+pro fitarcimage, arc, arcivar, xcen, ycen, wset, $
+ color=color, lampfile=lampfile, fibermask=fibermask, $
  func=func, aset=aset, ncoeff=ncoeff, lambda=lambda, thresh=thresh, $
  row=row, nmed=nmed, xdif_lfit=xdif_lfit, xdif_tset=xdif_tset, bestcorr=bestcorr
 
@@ -189,7 +189,7 @@ pro fitarcimage, arc, arcivar, xnew, ycen, wset, $
    lamps = lamps[itrim]
 
    ;---------------------------------------------------------------------------
-   ; Trace
+   ; Trace arc lines on the 2D image
    ;---------------------------------------------------------------------------
 
    ; Allow for a shift of up to 2 pixels in the initial centers,
@@ -200,15 +200,12 @@ pro fitarcimage, arc, arcivar, xnew, ycen, wset, $
     ystart=row, maxshifte=0.3d, maxshift0=2.0d)
 
    ; Iterate the flux-weighted centers
-   splog, 'Iterating flux-weighted centers'
-   xnew = trace_fweight(arc, xcen, ycen)
-   xnew = trace_fweight(arc, xnew, ycen)
-   xnew = trace_fweight(arc, xnew, ycen, radius=2.0, invvar=arcivar, xerr=xerr)
-   xcen = xnew
+   ; In the last iteration, use the formal errors in the arc image
 
-   ; Make use of the errors??? - Seems to just mess things up???
-   ; Well... the reason for that is satured lines, which return infinite errors
-;   xnew = trace_fweight(arc, xcen, ycen, invvar=arcivar, xerr=xerr)
+   splog, 'Iterating flux-weighted centers'
+   xcen = trace_fweight(arc, xcen, ycen)
+   xcen = trace_fweight(arc, xcen, ycen)
+   xcen = trace_fweight(arc, xcen, ycen, radius=2.0, invvar=arcivar, xerr=xerr)
 
    ;---------------------------------------------------------------------------
    ; Reject bad (i.e., saturated) lines
@@ -224,7 +221,7 @@ pro fitarcimage, arc, arcivar, xnew, ycen, wset, $
    qgood = bytarr(nmatch)
 
    for i=0, nmatch-1 do begin
-      xpix = round(xnew[*,i]) ; Nearest X position (wavelength) in all traces
+      xpix = round(xcen[*,i]) ; Nearest X position (wavelength) in all traces
       mivar = fltarr(ngfiber) + 1
       for ix=-1, 1 do begin
          mivar = mivar * arcivar[ (((xpix+ix)>0)<(npix-1))[igfiber], igfiber ]
@@ -237,19 +234,22 @@ pro fitarcimage, arc, arcivar, xnew, ycen, wset, $
    endfor
 
    ; Trim linelist
+
    igood = where(qgood, ngood)
    splog, 'Number of good arc lines: ', ngood
    if (ngood EQ 0) then $
     message, 'No good arc lines'
-   xnew = xnew[*,igood]
+   xcen = xcen[*,igood]
    ycen = ycen[*,igood]
    lamps = lamps[igood]
    xerr = xerr[*,igood]
 
    ;---------------------------------------------------------------------
-   ; Junk all centers with xerr = 999.0
-   ;
-   xweight = (xerr LT 990)
+   ; Mask all bad centers
+
+   ; Mask all centers with xerr = 999.0 (from trace_fweight)
+
+   xmask = (xerr LT 990)
 
    ;---------------------------------------------------------------------------
    ; Do the first traceset fit
@@ -260,8 +260,8 @@ maxdev = 3.0d-5
 maxsig = 3.0
 
    nlamp = N_elements(lamps)
-   xy2traceset, transpose(double(xnew)), lamps.loglam # (dblarr(nfiber)+1), $
-     wset, invvar=transpose(xweight), func=func, ncoeff=ncoeff, $
+   xy2traceset, transpose(double(xcen)), lamps.loglam # (dblarr(nfiber)+1), $
+     wset, invvar=transpose(xmask), func=func, ncoeff=ncoeff, $
      maxdev=maxdev, maxiter=nlamp, /singlerej, $
      xmask=xmask, xmin=0, xmax=npix-1, yfit=yfit
 
@@ -272,11 +272,8 @@ maxsig = 3.0
    ;---------------------------------------------------------------------------
 
    ; Keep only "good" lines.
-   ; The following logic means that an arc line is rejected if any
-   ; bundle has more than 3 bad centers.
-
-   ; do not count bad fibers in fibermask
-
+   ; The following logic means that an arc line is rejected if any bundle
+   ; has more than 3 bad centers (not including bad fibers in FIBERMASK).
 
    badfibers = where(fibermask EQ 0)
    if (badfibers[0] NE -1) then xmask[*,badfibers] = 1
@@ -288,27 +285,25 @@ maxsig = 3.0
    if (nlamp EQ 0) then $
     message, 'No good arcs common to all fiber bundles'
 
-
-
-   xnew = xnew[*,gind]
-   xweight = xweight[*,gind]
+   xcen = xcen[*,gind]
+   xmask = xmask[*,gind]
    ycen = ycen[*,gind]
    lamps = lamps[gind]
 
-   fixabove = 2
+   fixabove = 2 ; What the hell is this ???
 
    arcfibermask = fibermask
-   badfweight = where(xweight LE 0)
+   badfweight = where(xmask LE 0)
    if (badfweight[0] NE -1) then arcfibermask[badfweight mod nfiber] = 0
 
-   finalarcfit, xnew, lamps.loglam, wset, ncoeff, fixabove, $
-              fibermask=arcfibermask, xweight=xweight, func=func, $
+   finalarcfit, xcen, lamps.loglam, wset, ncoeff, fixabove, $
+              fibermask=arcfibermask, xweight=xmask, func=func, $
               maxdev=maxdev/2.0, maxiter=nlamp, /singlerej, $
               nsetcoeff=8, maxsig=maxsig
 
    print, 'Final arcfit complete'
 
-   xmeasured = xnew
+   xmeasured = xcen
 
    ;---------------------------------------------------------------------------
    ; Quality Assurance
@@ -320,7 +315,7 @@ maxsig = 3.0
 
    xdif_tset = (xmeasured-tset_pix)  ; difference between measured line 
                                      ;  positions and fit positions
-   xdif_lfit = (xmeasured-xnew)      ; dif between measured line positions
+   xdif_lfit = (xmeasured-xcen)      ; dif between measured line positions
                                      ;  and best fit for each line
 
    splog, '', /noname
@@ -348,7 +343,7 @@ maxsig = 3.0
    ; Replace the "measured" arc line positions (XNEW) with the fit positions
    ; Do this so that the sky-line fitting will use those fit positions for
    ; the arc lines
-   xnew = tset_pix
+   xcen = tset_pix
 
    return
 end
