@@ -15,10 +15,16 @@ these plate designs, see:
 
 These plates must be observed in good conditions: photometric, reasonable
 seeing, but the sky can be bright -- moon is OK.  They should also be
-observed near transit.  We expect it to take between 60 and 90 minutes
-to observe the full sequence for each of these plates once they are
-mounted.  If any pointings have to be skipped due to time contraints,
-do not skip the last (spectro-photometric) pointing.
+observed near transit except for N752 which is too close to the zenith.
+Suggested starting observing times:
+  N752     LMST=3h   <-- This is 1 hr after transit
+  Pleiades      3h
+  N1817         4h30
+  Praesepe      8h
+We expect it to take between 60 and 90 minutes to observe the full
+sequence for each of these plates once they are mounted.  If any
+pointings have to be skipped due to time contraints, do not skip
+the last (spectro-photometric) pointing.
 
 
 Plugging + Mapping
@@ -77,7 +83,8 @@ is in the table below.  For ex, for the 1st Praesepe pointing:
   SOP> stopGuider   <--- Turn off guider!!
   SOP> smear 2.5 3.0 240 -nswath 1 -nogcam  <--- Take 3 such exposures!
 
-Always take 3 exposures for each pointing.
+Always take 3 exposures for each pointing.  Smear should always return
+you to the start position, which can be checked on the guider.
 
 For the next pointing, you will need to load the next plug-map, go to
 the field, guide for a short while if the stars aren't in the center of
@@ -123,7 +130,8 @@ so we expect some small offsets to find these stars:
   SOP> stickyOffsets
   SOP> decSmear 5.5 1.0  <--- Take 3 such exposures!
 
-Again, take 3 such exposures.
+Again, always take 3 such exposures.  Smear should always return
+you to the start position, which can be checked on the guider.
 
 Observing: Post-Calibrations
 ----------------------------
@@ -146,6 +154,15 @@ the smears by 2.5 arc sec in order to approximate an aperature that
 is wider than the fiber:
 
   SOP> decSmear 5.5 1.0 -nswath 3
+
+Is the Data Good?
+-----------------
+My advise would be to look at the extracted spectra on the sos.apo
+machine.  These are the files
+  /data/spectro/spectrologs/$MJD/sci-$PLATE-$CAMERA-$EXPNUM.fits
+You can look at them with the ATV command on sos.apo, as described at:
+  http://sdsshost.apo.nmsu.edu/sdssProcedures/spectro_apodisplay.html#display_idl
+
 
 Cluster   PLAT  RA    DEC    rmag  Guide fibers  T_max   smear command
 --------- ----  ----- -----  ----  ------------  ------  ---------------------------
