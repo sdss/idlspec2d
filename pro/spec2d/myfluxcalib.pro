@@ -236,11 +236,15 @@ objmask = 0 ; Free memory
       ; and this exposure.
 
       spectroid = strmid(cameras,1,1)
-      corrset = mrdfits('spFluxcorr-'+expstr+'-'+spectroid+'.fits', 1)
+      cc = fileandpath(calibfile[ifile], path=combinedir)
+ 
+      corrset = mrdfits($
+        djs_filepath('spFluxcorr-'+expstr+'-'+spectroid+'.fits', $
+         root_dir=combinedir), 1)
       traceset2xy, corrset, loglam, corrimg
 
       divideflat, objflux, objivar, 1.0/corrimg, $
-            minval=0.05/median(corrimg)
+            minval=0.1/median(corrimg)
 
       ;----------
       ; Re-bin the spectro-photo stars to the same wavelength mapping
