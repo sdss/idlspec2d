@@ -1,4 +1,8 @@
 
+* Reject masked or deviant sky fibers from the supersky (as done for superflat)
+
+* In SPALLREDUCE, don't send the name UNKNOWN to COMBINE2DOUT.
+
 * Measure relative shifts between all the flat-field traces in SPCALIB,
   then for each object pick the flat-field with the most similar traces.
   We can do this cheaply by measuring the offset to just the first good flat,
