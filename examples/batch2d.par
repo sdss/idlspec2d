@@ -20,9 +20,9 @@ typedef struct {
 } hostconfig;
 
 hostconfig localhost "" ""
-hostconfig localhost "" ""
-hostconfig coma.princeton.edu "" ssh1
-hostconfig hydra.princeton.edu "" ssh1
+#hostconfig localhost "" ""
+#hostconfig coma.princeton.edu "" ssh1
+#hostconfig hydra.princeton.edu "" ssh1
 #hostconfig diomedes.princeton.edu "" ssh1
 #hostconfig tantalus.princeton.edu "" ssh1
 #hostconfig lepus.princeton.edu "" ssh1
