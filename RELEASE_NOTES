@@ -26,6 +26,11 @@ SPREDUCE: No longer issue an abort message in this proc if the science
 SDSS_FLAGNAME: Change some of the target names to agree with what's been
             changed in the target code in the past year or so.  Note that
             I had already updated the target names in spectro_home.html.
+SDSSPROC:  Change to select which op file to use based upon the MJD in the
+            file name rather than the MJD in the header of a Yanny param file.
+            Make the MJD selection of the op files a bit more clear.
+            Issue a warning message if there is no op file with an MJD
+            equal to or less than the image's MJD.
 SPCOADD_FRAMES: Remove the following keywords from the spPlate file:
             PIXBIAS,FLATFILE,ARCFILE,OBJFILE.
             Issue a warning message if any object fibers have OBJTYPE=NA,
@@ -39,9 +44,13 @@ SPECLINEFIT: Fixed dumb mistake on indexing that could crash.
 mailhtml.sh: Grep for the "APO Spectro" from the HTML file to get the
             subject line for mail; I had changed this HTML title string,
             which then gave a missing subject line in the e-mail (PR #3200).
+opConfig-50000.par,opECalib-50000.par: Renamed copies of opConfig.par
+            and opECalib.par with an MJD in their names.
 opHdrFix.par: Declare bad aborted smears for plate 601 and 803.
             Declare bad exposure on plate 866.
             Don't include test data from MJD 52318.
+            Declare all r2 exposures on MJD 51779 bad due to electronics
+              problems (PR #2335), only effecting plate 356.
             Remove bad data for plate 727 on MJD 52207.
             Remove bad data for plate 724 on MJD 52240.
             Remove bad smear for plate 860 on MJD 52319.
