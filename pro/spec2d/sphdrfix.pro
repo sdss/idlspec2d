@@ -146,13 +146,14 @@ pro sphdrfix, filename, hdr
    plugdir = concat_dir(speclog_dir, mjdstr)
 
    reportfile = filepath('sdReport-'+mjdstr+'.par', root_dir=plugdir)
+;   splog, 'Looking for header edits in sdReport file '+reportfile
    yanny_read, reportfile, pdata, stnames=stnames, /anonymous
 
    if (keyword_set(pdata)) then begin
       ; Find the ONEEXP structure
       for i=0, N_elements(pdata)-1 do $
-;       if (tag_names(*pdata[i], /structure_name) EQ 'SPECHDRFIX') then $
-       if (stnames[i] EQ 'SPECHDRFIX') then $
+;       if (tag_names(*pdata[i], /structure_name) EQ 'OPHDRFIX') then $
+       if (stnames[i] EQ 'OPHDRFIX') then $
         hfix2 = *pdata[i]
 
       ; Apply header fixes from  the "sdReport-$MJD.par" file.
