@@ -282,7 +282,7 @@ function vdispfit, objflux, objivar, objloglam, $
    ;----------
    ; Create the output structure
 
-   vdans = create_vdans(nstar)
+   vdans = create_vdans(nstar+npoly)
 
    ;----------
    ; Find the pixel numbers to use from the object and the templates
@@ -298,7 +298,7 @@ function vdispfit, objflux, objivar, objloglam, $
     OR min(restloglam) GT max(bigloglam[indx])) then begin
 ;      splog, 'No wavelength overlap with template'
       vdans.vdisp = 0.0
-      vdans.vdisp_err = 9999.
+      vdans.vdisp_err = -4L
       yfit = fltarr(npixobj)
       return, vdans
    endif
