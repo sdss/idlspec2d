@@ -9,6 +9,8 @@ PLOTSIGNAL: New routine for making diagnostic plots of the signal seen
 SKYSUBTRACT: Fix possible crash condition, whereby the re-fit to the
         supersky is not done if the first fit failed and FULLBKPT does
         not exist (line 243).
+SPCOADD_FRAMES: Get rid of some unused lines of code.
+SPCOMBINE: Pass all arguments if this proc is called recursively.
 
 etc/spChunkList.par: Add chunks 87-89.
 
