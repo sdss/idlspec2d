@@ -106,7 +106,25 @@ pro qaplot_skyline, lwave, obj, objivar, objsub, objsubivar, plugsort, wset, $
 ;   endif
 ;endfor
 
+   ;----------
+   ; Solve for the airmass, and divide the fluxes by AIRMASS
+
+   if (keyword_set(tai)) then $
+    airmass = tai2airmass(plugsort.ra, plugsort.dec, tai=tai) $
+   else $
+    airmass = 0
+
+   if (min(airmass) LT 1.0 OR max(airmass) GT 3.0) then begin
+      splog, 'WARNING: Airmass out of range: ' + $
+       string(minmax(airmass), format='(2(f6.2,x))')
+      airmass = 1
+   endif
+
+   lflux = lflux / airmass
+
+   ;----------
    ; Compute the mean flux for this line in the sky fibers
+
    ii = where(lflux[iskies] GT 0)
    if (ii[0] EQ -1) then begin
       splog, 'WARNING: No good fits to this sky feature at ', lwave
@@ -123,12 +141,11 @@ pro qaplot_skyline, lwave, obj, objivar, objsub, objsubivar, plugsort, wset, $
 
    fibernum = indgen(nrow) + 1
    yrange = lmean+[-7,7]*lsig
+   ytitle = string(lwave, format='("Flux (",f6.1,")/Airmass")')
 
    plot, fibernum, lflux, psym=1, $
     xrange=[0,nrow], xstyle=1, yrange=yrange, $
-    xtitle='Fiber number', $
-    ytitle=string('Flux at ', lwave, format="(a,f7.1)"), $
-    title=title
+    xtitle='Fiber number', ytitle=ytitle, title=title
    djs_oplot, fibernum[iskies], lflux[iskies], psym=2, color='red'
    djs_oplot, [0,nrow], [lmean,lmean], color='red'
    xyouts, 20, 0.80*!y.crange[0]+0.20*!y.crange[1], 'RED = sky fiber'
@@ -138,21 +155,13 @@ pro qaplot_skyline, lwave, obj, objivar, objsub, objsubivar, plugsort, wset, $
    radius = sqrt(plugsort.xfocal^2 + plugsort.yfocal^2)
    plot, radius, lflux, psym=1, $
     yrange=yrange, $
-    xtitle='Focal Distance [mm]', $
-    ytitle=string('Flux at ', lwave, format="(a,f7.1)")
+    xtitle='Focal Distance [mm]', ytitle=ytitle
    djs_oplot, radius[iskies], lflux[iskies], psym=2, color='red'
    djs_oplot, !x.crange, [lmean,lmean], color='red'
 
    if (keyword_set(tai)) then begin
-      airmass = tai2airmass(plugsort.ra, plugsort.dec, tai=tai)
-      if (min(airmass) LT 1.0 OR max(airmass) GT 3.0) then $
-       splog, 'WARNING: Airmass out of range: ' + $
-        string(minmax(airmass), format='(2(f6.2,x))')
-   
-      plot, airmass, lflux, psym=1, $
-       yrange=yrange, $
-       xtitle='Airmass', $
-       ytitle=string('Flux at ', lwave, format="(a,f7.1)")
+      plot, airmass, lflux, psym=1, yrange=yrange, $
+       xtitle='Airmass', ytitle=ytitle
       djs_oplot, airmass[iskies], lflux[iskies], psym=2, color='red'
       djs_oplot, !x.crange, [lmean,lmean], color='red'
    endif
