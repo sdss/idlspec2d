@@ -191,7 +191,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       splog, 'Best flat = ', bestflat.name
 
       sxaddpar, objhdr, 'FRAMESN2', 0.0
-      sxaddpar, objhdr, 'CARTID', yanny_par(hdrplug, 'cartridgeId'), $
+      sxaddpar, objhdr, 'CARTID', long(yanny_par(hdrplug, 'cartridgeId')), $
              'Cartridge used in this plugging', after='TILEID'
 
       if (NOT keyword_set(bestflat)) then begin
