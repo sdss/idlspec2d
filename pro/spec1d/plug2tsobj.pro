@@ -89,7 +89,7 @@ function plug2tsobj, plateid, ra, dec, plugmap=plugmap, dmin=dmin
    endif
 
    platestr = strtrim(string(fix(plateid[0])),2)
-   filename = 'tsObj-*-' + platestr + '.fit'
+   filename = 'tsObj-*' + platestr + '.fit'
 
    ; Select the first matching file if there are several
    filename = (findfile(filepath(filename, root_dir=root_dir, $
