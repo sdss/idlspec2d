@@ -31,6 +31,9 @@ PLATELIST: Use FINDFILE() function to see if files exist before calling
         MRDFITS(); this should be a slight speed-improvement.
 PLATEMERGE: Add the fields CALIBFLUX,CALIBFLUX_IVAR which are explicitly
         copied over from the plug-map structures.
+        Get rid of the ZFILE option in place of the PLATE,MJD options.
+        Make robust to the spZLine structures being different for
+        different plates, for ex. if different code versions were used.
 QAPLOT_FCALIBVEC: Put plots for each spectrograph on its own page, and
         put offsets between the plots for all objects, F stars, and QSOs
         so that we can see the plots more easily.  Also, smooth the plots
