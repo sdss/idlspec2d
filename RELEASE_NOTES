@@ -1,4 +1,11 @@
 
+-------------------------------------------------------------------------------
+v4_9_3 (Feb 12, 2002 idlspec2d only) running on IDL 5.3 - 5.5
+Built against idlutils v4_9_2, specflat v1_3.
+
+Trivial fix to Makefiles for install.
+
+-------------------------------------------------------------------------------
 v4_9_2 (Feb 12, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
 Built against specflat v1_3.
 
