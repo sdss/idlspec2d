@@ -27,13 +27,18 @@ In this document:
   <LI><A HREF="#plots">Some Nifty Plots</A>
   <LI><A HREF="#get_data">Getting the Reduced Data</A>
   <OL>
-     <LI><A HREF="#platelist">Which Plates Are Reduced?</A> (<A HREF="platelist.txt">platelist.txt</A>)
+     <LI><A HREF="#platelist">Which Plates Are Reduced?</A>
+         (<A HREF="platelist.html">Plate List</A>)
+         (<A HREF="platequality.html">Plate Quality List</A>)
      <LI><A HREF="#duplicates">Avoiding Duplicate Objects</A>
      <LI><A HREF="#get_version">What Version of the Code Was Used?</A>
      <LI><A HREF="#get_where">Where Is the Data?</A>
      <LI><A HREF="#get_rsync">How to Keep Your Data Up-to-Date</A>
   </OL>
-  <LI><A HREF="#summary">What Is the Summary File?</A>
+  <LI><A HREF="#summary">Summary Files</A>
+  <OL>
+     <LI><A HREF="#completesample">Selecting Complete Samples</A>
+  </OL>
   <LI><A HREF="#display">Looking at the Data</A>
   <OL>
      <LI><A HREF="#idlsetup">Setting Up IDL Tools</A>
@@ -53,30 +58,42 @@ In this document:
      <LI><A HREF="#problems_dates">Dates and Plates to Remember</A>
      <LI><A HREF="#problems_report">How to Report Problems</A>
   </OL>
+  <LI><A HREF="#acknowledgements">Acknowledgements</A>
 </UL>
 
 <P>
 Related documents:
 <UL>
-  <LI><A HREF="idlspec2d_install.html">Installing the Spectro-2D + Princeton-1D</A> <-- Publicly available code
+  <LI><A HREF="idlspec2d_install.html">Installing Spectro-2D + Princeton-1D</A> <-- Publicly available code
   <LI><A HREF="spectro_inspect.html">Manual Inspection of Spectra</A>
   <LI><A HREF="idlspec2d_reduce.html">Reducing <B>raw</B> spectroscopic data</A>
-  <LI>Full documentation: <A HREF="idlspec2d_doc.html">idlspec2d</A>
-  <LI>Full documentation: <A HREF="idlutils_doc.html">idlutils</A>
-  <LI>Full documentation: <A HREF="goddard_doc.html">Goddard IDL utilities</A>
+  <LI>Full documentation: <A HREF="idlspec2d_doc.html">idlspec2d</A>,
+      <A HREF="idlutils_doc.html">idlutils</A>,
+      <A HREF="goddard_doc.html">Goddard IDL utilities</A>
 </UL>
 
 <P>
-Related web sites:
+Science web sites:
 <UL>
+  <LI><A HREF="http://www.astro.washington.edu/anderson/sdss/serendip/odd_spectra.html">Scott Anderson's Odd Spectrum Page</A>
+  <LI><A HREF="http://physics.nyu.edu/~mb144/lss/">
+      Mike Blanton's LSS Sample</A>
+  <LI><A HREF="http://wassup.physics.nyu.edu/">
+      SDSS @ NYU</A>
+</UL>
+
+<P>
+Technical web sites:
+<UL>
+<!--
   <LI><A HREF="http://www.sdss.org/">Official SDSS Web Site</A>
+-->
   <LI>The <A HREF="http://astro.Princeton.EDU/BBOOK/">"Black Book"</A>
       and the
       <A HREF="http://www.astro.princeton.edu/PBOOK/welcome.htm">
       "Project Book"</A>
   <LI><A HREF="http://www.astro.princeton.edu:81/">Princeton SDSS Web Site</A>
       (restricted access)
-  <LI><A HREF="http://www.astro.washington.edu/anderson/sdss/serendip/odd_spectra.html">Scott Anderson's Odd Spectrum Page</A>
   <LI><A HREF="http://plate-mapper.apo.nmsu.edu:8020/topFrame.html">
       Plate Inventory Database</A> (restricted access)
   <LI><A HREF="http://www-sdss.fnal.gov:8000/~sdssdp/target/chunks.html">
@@ -87,12 +104,10 @@ Related web sites:
   <LI><A HREF="http://sdss.fnal.gov:8000/qwg/spectra/specids.html">
       Van den Berk's manual classifications for EDR</A> (restricted access)
 -->
-  <LI><A HREF="http://physics.nyu.edu/~mb144/lss/">
-      Mike Blanton's LSS Sample</A>
 </UL>
 
 <P>
-Related mailing lists (restricted access):
+Technical mailing lists (restricted access):
 <UL>
   <LI>Spectroscopic pipeline
       <A HREF="http://www.astro.princeton.edu:81/sdss-spectro/INDEX.html">
@@ -123,14 +138,15 @@ Here are some nifty plots of only those objects within 2 degrees of the
 equatorial plane:
 <OL>
 <LI><A HREF="zplot-main.ps">Pie diagram to z=0.15</A>
-<LI><A HREF="zplot-brg.ps">Pie diagram to z=0.6</A>
+<LI><A HREF="zplot-lrg.ps">Pie diagram to z=0.6</A>
 <LI><A HREF="zplot-qso.ps">Pie diagram to z=5</A>
 <LI><A HREF="zplot-log.ps">Logarithmically-spaced pie diagram</A>
 </OL>
 (On a PostScript previewer, turn off State->Antialias.)
 The Milky Way is masked with dashed lines.  The MAIN galaxy sample are
 black points, the luminous red galaxies (LRGs) that are not in MAIN are red,
-and quasars are blue.
+and quasars are blue.  Specifically, these plots are made with all
+good plates whose centers are within 0.25 deg of the plane.
 
 <H2><A NAME="get_data">Getting the Reduced Data</A></H2>
 
@@ -157,11 +173,20 @@ of a single object.  The TILE number uniquely determines a position on the
 sky, and there are a few instances where two PLATEs are drilled for one TILE.
 
 <P>
-<A HREF="platelist.txt">This list of plates  (platelist.txt)
-is auto-updated each day based upon which reductions have completed.</A>
-To date (Feb 2002), we have observed over 500 plates.
-This list comes from a FITS file (<A HREF="platelist.fits">platelist.fits</A>)
-which contains considerably more information than the ASCII list.
+This list of plates is auto-updated each day based upon which reductions
+have completed.  It is available in the following formats:
+<UL>
+<LI><A HREF="platelist.fits">platelist.fits</A> - Binary FITS table with
+    complete information per plate
+<LI><A HREF="platelist.html">platelist.html</A>,
+    <A HREF="platelist.txt">platelist.txt</A>
+    - Plates Observed List
+<LI><A HREF="platequality.html">platelist.html</A>,
+    <A HREF="platequality.txt">platelist.txt</A>
+     - Plate Quality List
+</UL>
+As of 31 May 2002, we have observed 621 "good" plates and 22
+"marginal" plates for a total of 643 * 640 = 411,520 spectra.
 
 <P>
 Aside from PLATE, TILE and MJD, this list contains the following:
@@ -202,9 +227,12 @@ N_STAR   = The number of objects Princeton-1D called a star.
 N_UNKNOWN= The number of objects Princeton-1D declared spectroscopically 
            unknown (a ZWARNING flag is set)
 N_SKY    = The number of sky fibers (almost always exactly 32)
-SUCCESS_MAIN = Percentage success rate for objects targetted as "main" galaxies.
-SUCCESS_LRG  = Percentage success rate for objects targetted as LRG galaxies.
-SUCCESS_QSO  = Percentage success rate for objects targetted as QSOs.
+SUCCESS_MAIN = Percentage success rate for objects targetted as "main" galaxies
+           and spectroscopically classified as either "GALAXY" or "QSO".
+SUCCESS_LRG  = Percentage success rate for objects targetted as LRG galaxies
+           and spectroscopically classified as "GALAXY".
+SUCCESS_QSO  = Percentage success rate for objects targetted as QSOs
+           and spectroscopically classified as "QSO".
 STATUS2D = Status of Spectro-2D pipeline for reducing individual exposures;
            "Done" if done.
 STATUSCOMBINE = Status of Spectro-2D pipeline for combining individual
@@ -214,16 +242,16 @@ QSURVEY  = Status flag set to 1 for the best observation of any tile on the sky
            that satifies the following: (S/N)^2 > 13.0 for G1,G2,I1,I2, and
            the target version cannot be "special" or "devel".
 PUBLIC   = Name of public data release; presently plates are either not public,
-           or part of the early data release (EDR).
+           or part of the Early Data Release (EDR) or Data Release 1 (DR1).
 </PRE>
 
 <P>
 The values of SN2 give an estimate of the signal-to-noise (per pixel) of a plate
 at a fiducial magnitude.  The fiducials are set to g=20.2, r=20.25, i=19.9.
 The measurement is of the signal-to-noise squared, per pixel, for an object
-at that magnitude.  If all these values are > 13, then the plate is "good".
-Plate 310 is "not good".  The first observation of plate 302
-would be called "horrible".
+at that magnitude.
+All these values must be > 13 for a plate to be "marginal".
+All these values must be > 15 for a plate to be "good".
 
 <H4><A NAME="duplicates">Avoiding Duplicate Objects</A></H4>
 
@@ -262,8 +290,8 @@ header keywords VERS2D, VERSCOMB, VERS1D as described in the
 <A HREF="#datamodel">data model</A>.
 
 <P>
-All these reductions were done using versions of the code tagged v4_8_4,
-which represents a homogeneous set of reductions.
+All these reductions were done using versions of the code tagged v4_9_8
+(or later), which represents a homogeneous set of reductions.
 
 <H4><A NAME="get_where">Where Is the Data?</A></H4>
 
@@ -462,7 +490,7 @@ either the hardware or target selection for the survey.  These plates are:
      This plate was designed by Jon Loveday.
 </UL>
 
-<H2><A NAME="summary">What Is the Summary File?</A></H2>
+<H2><A NAME="summary">Summary Files</A></H2>
 
 <P>
 We generated one monstrous file with all the spectroscopic
@@ -487,9 +515,9 @@ The following information is compiled for each object:
  <TR><TD> CHUNKNAME    <TD> Targetting chunk name (this is a numeric value for
                             all plates in the 'main' or 'southern' survey)
  <TR><TD> PLATEQUALITY <TD> Quality of plate from platelist file: 'bad', 'marginal', or 'good'
- <TR><TD> PLATESN2     <TD> Signal-of-noise measure of the plate
+ <TR><TD> PLATESN2     <TD> Signal-of-noise measure of the plate (the worst of the 4 cameras)
  <TR><TD> SMEARUSE     <TD> 'T' if a smear is used for spectrophotometry; 'F' otherwise
- <TR><TD> SPECPRIMARY  <TD> 1 for the best spectroscopic observation of each object
+ <TR><TD> SPECPRIMARY  <TD> 1 for the best spectroscopic observation of each object, 0 otherwise
  <TR><TD> ZANS         <TD> ZANS structure from <A HREF="#dm_spzbest">spZbest</A> file
                             with spectroscopic classifications, redshifts, etc.
  <TR><TD> TSOBJ        <TD> TSOBJ structure with all imaging and target-selection paramters
@@ -498,7 +526,7 @@ The following information is compiled for each object:
 
 <P>
 In addition, we've also made ASCII files with the most relevant quantities
-that one may wish to search on.  This file is "spAll*.dat", and is basically
+that one may wish to search on.  These files are "spAll*.dat", and are basically
 a stripped-down version of "spAll*.fits" for those FITS-challenged astronomers.
 
 <P>
@@ -509,9 +537,14 @@ This is what Eisenstein & Blanton call their "skyVersion==0" outputs.
 
 <P>
 Note that some of the photometric outputs were never recovered!
+We are missing some or all of the imaging data for plates 230, 231,
+321-324, 342-348, 364, 440, 607-623, 797, and all plates >835.
+This works out to 14% of the objects.
+<!--
 Of 226,560 reduced spectra, we are missing PHOTO data for 8581 spectra.
 Since plate 324, we are missing PHOTO data for 110 of 169,600 spectra.
 We are missing no PHOTO data for spectra in the Early Data Release.
+-->
 
 <P>
 If you have access to the Princeton computers,
@@ -526,6 +559,53 @@ have been over-written with those found in the plPlugMapM files,
 since Eisenstein reports that they are incorrect in many of the tsObj files.
 Also, the distance between the spectroscopic target and the matched PHOTO
 output is stuffed into the TEXTURE[0] column.
+
+<H4><A NAME="completesample">Summary Files: Selecting Complete Samples</A></H4>
+
+<P>
+The summary files make it convenient to select complete samples.
+There are three complete samples that one can generate from the SDSS spectra:
+the "main" galaxy sample, the Luminous Red galaxy sample (LRGs), and QSOs.
+For complete samples, one should only use those plates that are for
+the PROGNAME="main" survey (not "southern", "photoz", etc.) and the
+primary observations of each object (SPECPRIMARY=1).
+
+<P>
+The following bit of IDL code will select all objects targetted by
+the main galaxy survey that have been spectroscopically confirmed
+as galaxies or QSOs:
+<DL><DD><PRE>
+IDL> spall = mrdfits('spAll.fits',1)
+IDL> imain = where(spall.specprimary EQ 1 $
+      AND strmatch(spall.progname,'main*') $
+      AND (spall.primtarget AND 2L^6 + 2L^7 + 2L^8) NE 0 $
+      AND (strmatch(spall.class,'GALAXY*') OR strmatch(spall.class,'QSO*')) $
+      AND spall.zwarning EQ 0)
+</PRE></DD></DL>
+The following bit of IDL code will select all objects targetted by
+the LRG galaxy survey that have been spectroscopically confirmed
+as galaxies:
+<DL><DD><PRE>
+IDL> spall = mrdfits('spAll.fits',1)
+IDL> lrg = where(spall.specprimary EQ 1 $
+      AND strmatch(spall.progname,'main*') $
+      AND (spall.primtarget AND 2L^5 + 2L^26) NE 0 $
+      AND (strmatch(spall.class,'GALAXY*') OR strmatch(spall.class,'QSO*')) $
+      AND spall.zwarning EQ 0)
+</PRE></DD></DL>
+The following bit of IDL code will select all objects targetted by
+the QSO survey that have been spectroscopically confirmed
+as QSOs:
+<DL><DD><PRE>
+IDL> spall = mrdfits('spAll.fits',1)
+IDL> iqso = where(spall.specprimary EQ 1 $
+      AND strmatch(spall.progname,'main*') $
+      AND (spall.primtarget AND 2L^0 + 2L^1 + 2L^2) NE 0 $
+      AND strmatch(spall.class,'QSO*') $
+      AND spall.zwarning EQ 0)
+</PRE></DD></DL>
+As of 31 May 2002, the above would select complete samples of
+185,899 galaxies, 22,114 LRGs, and 51,483 QSOs.
 
 <H2><A NAME="display">Looking at the Data</A></H2>
 
@@ -1221,7 +1301,7 @@ of each 15-minute exposure (using TAI-BEG + 0.5 * EXPTIME from the header).
 
 <P>
 Here is a list of the most offensive known problems in Spectro-2D as
-of version v4_8_4 (29 Aug 2001):
+of version v4_9_11 (31 May 2002):
 <PRE>
 Plate 0187/51455 has no good b2 arc on the first night of data 51454.
                  This plate has severe scattered light problems.  The r2 camera
@@ -1324,6 +1404,27 @@ Before filing a problem report (PR), first look at the
 <A HREF="#problems_known">Known Problems</A> section above and
 search the bug database to make sure no one else has already reported
 the problem.
+
+<HR>
+
+<H4><A NAME="acknowledgements">Acknowledgements</A></H4>
+
+<p>Funding for the creation and distribution of the SDSS Archive has
+been provided by the Alfred P. Sloan Foundation, the Participating
+Institutions, the National Aeronautics and Space Administration, the
+National Science Foundation, the U.S. Department of Energy, the Japanese
+Monbukagakusho, and the Max Planck Society.  The SDSS Web site is
+<A HREF="http://www.sdss.org/">http://www.sdss.org/</a>.
+</p>
+
+<p>The SDSS is managed by the Astrophysical Research Consortium (ARC) for the
+Participating Institutions.  The Participating Institutions are The University of Chicago,
+Fermilab, the Institute for Advanced Study, the Japan Participation
+Group, The Johns Hopkins University, Los Alamos National Laboratory,
+the Max-Planck-Institute for
+Astronomy (MPIA), the Max-Planck-Institute for Astrophysics (MPA), New
+Mexico State University, Princeton University, the United States Naval
+Observatory, and the University of Washington.</p>
 
 <HR>
 <A HREF="http://astro.princeton.edu/~schlegel/">David Schlegel</A>,
