@@ -12,6 +12,7 @@ Qualifiers=""
 Common:
    Action=setup
       setupOptional("-f ${UPS_PROD_FLAVOR} elodie")
+      setupOptional("-f ${UPS_PROD_FLAVOR} spinspect")
       setupOptional("-f ${UPS_PROD_FLAVOR} specflat")
       setupRequired("-f ${UPS_PROD_FLAVOR} idlutils")
       proddir()
