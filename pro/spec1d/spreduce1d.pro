@@ -42,6 +42,7 @@
 ;   cpbackup
 ;   dfpsclose
 ;   dfpsplot
+;   elodie_best()
 ;   filter_thru()
 ;   mrdfits()
 ;   mwrfits
@@ -49,6 +50,7 @@
 ;   splog
 ;   skymask()
 ;   speclinefit
+;   struct_addtags()
 ;   sxaddpar
 ;   sxdelpar
 ;   sxpar()
@@ -351,7 +353,7 @@ ormask = 0 ; Free memory
    ; but putting any results with zero degrees-of-freedom at the end.
 
    minvdiff = 1000.0 ; km/s
-   cspeed = 2.9979e5
+   cspeed = 2.99792458e5
 
    for iobj=0, nobj-1 do begin
       res1 = res_all[*,iobj]
@@ -535,6 +537,17 @@ ormask = 0 ; Free memory
     outfile=zlinefile, zline=zline, doplot=doplot, debug=debug
 
    ;----------
+   ; Find the best-fit Elodie star for all objects classified as stars
+
+   splog, 'Fitting to Elodie spectra'
+   t0 = systime(1)
+
+   fitindx = where(strtrim(res_all[0,*].class,2) EQ 'STAR')
+   res_elodie = elodie_best(objflux, objivar, hdr=hdr, fitindx=fitindx)
+
+   splog, 'CPU time to fit to Elodie = ', systime(1)-t0
+
+   ;----------
    ; Set ZWARNING flags.
 
    splog, 'Setting flags'
@@ -611,7 +624,7 @@ ormask = 0 ; Free memory
    ww = strsplit(uname[0], '.', /extract)
    if (ww[1<(n_elements(ww)-1)] EQ 'fnal') then return
 
-   zans = (res_all[0,*])[*]
+   zans = struct_addtags((res_all[0,*])[*], res_elodie)
    mwrfits, 0, zbestfile, hdr, /create ; Retain the original header in first HDU
    mwrfits, zans, zbestfile
    mwrfits, synflux, zbestfile
