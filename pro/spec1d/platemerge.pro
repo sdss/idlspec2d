@@ -94,9 +94,9 @@ pro platemerge, zfile, outroot=outroot1, public=public
       if (ct EQ 0) then return
       if (keyword_set(public)) then begin
          if (size(public,/tname) EQ 'STRING') then begin
-            itrim = where(strmatch(plist.public,'*'+public+'*'), ntrim)
+            itrim = where(strmatch(plist[indx].public,'*'+public+'*'), ntrim)
          endif else begin
-            itrim = where(strtrim(plist.public) NE '', ntrim)
+            itrim = where(strtrim(plist[indx].public) NE '', ntrim)
          endelse
          if (ntrim EQ 0) then return
          indx = indx[itrim]
