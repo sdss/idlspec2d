@@ -25,15 +25,15 @@ fi
 data=`ls -d $rawdata_dir/[56789]???? | tail -n 1`
 
 offsite=schlegel@spectro.princeton.edu
-
 target_data=`ssh ''$offsite'' echo '$RAWCOPY_DIR'`
 target_log=`ssh ''$offsite'' echo '$ASTROCOPY_DIR'`
 
 fermi=sburles@fsgi03.fnal.gov
-fermi_data=`ssh ''$fermi'' echo '$RAWCOPY_DIR'`
-fermi_log=`ssh ''$fermi'' echo '$ASTROCOPY_DIR'`
+fermi_data=`ssh -a -x -v ''$fermi'' echo '$RAWCOPY_DIR'`
+fermi_log=`ssh -a -x -v ''$fermi'' echo '$ASTROCOPY_DIR'`
 
 echo $target_data $target_log
+echo Fermi: $fermi $fermi_data $fermi_log
 #------------------------------------------------------------------------------
 # First find all /data/spectro directories which are missing
 
@@ -47,8 +47,9 @@ do
 
 #
 #   First move to rawcopy locally...	
+#   Exclude plain .fit files, assuming that .gz versions exist
 #
-    rsync -arv --include="*/" --include="*.gz" --exclude="*" $dir $rdir
+    rsync -arv --exclude="*.fit" $dir $rdir
 
 
 #######################################################
@@ -62,7 +63,7 @@ do
 #
 #	Second round, just to be sure everything transferred
 #
-    rsync -arv --include="*/" --include="*.gz" --exclude="*" $dir $rdir
+    rsync -arv --exclude="*.fit" $dir $rdir
 
     rsync -arv --rsh="ssh -c blowfish" $rdir/$mjd $offsite:$target_data
 
@@ -71,7 +72,9 @@ do
     #############################################################
     #########  Now ready to move to other offsites ##############
 
-    if [ ! `ssh ''$fermi'' ls -d ''$fermi_data''/''$mjd'' 2>/dev/null` ]
+    exist=`ssh ''$fermi'' ls -d ''$fermi_data''/''$mjd'' 2>/dev/null`
+    echo $exist
+    if [ ! $exist ]
     then
       scp -rv $offsite:$target_data/$mjd $fermi:$fermi_data/
       scp -rv $offsite:$target_log/$mjd  $fermi:$fermi_log/

@@ -5,7 +5,9 @@
 # S. Burles, APO, 4 May 2000
 #------------------------------------------------------------------------------
 
-if \ps -elf | grep aporsync.sh  | grep -v -e grep
+# ps has also changed on sos.apo.nmsu.edu
+
+if \ps -A | grep aporsync.sh  | grep -v -e grep
 then
   echo "APORSYNC: Already running at "`date`
   exit

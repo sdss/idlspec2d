@@ -22,7 +22,7 @@ if [ -n "$SPECTROLOG_DIR" ]
 then 
    spectrolog_dir=$SPECTROLOG_DIR
 else
-   spectrolog_dir='/data/spectro/spectrolog'
+   spectrolog_dir='/data/spectro/spectrologs'
 fi
 
 #
@@ -39,13 +39,8 @@ do
   filename=`echo $input | sed -n 's/\/.*\///p'`
 
   echo STARTAPO: Directory $dir Filename $filename
-  outdir=$spectrolog_dir
   copydir=/data/spectro/spectrologs/html/
 
-  if [ ! -d $outdir ] 
-  then
-    mkdir $outdir
-  fi
   if [ ! -d $copydir ] 
   then
     mkdir $copydir
@@ -56,6 +51,13 @@ do
     then
      mjd=`echo $dir | sed -n 's/\/.*\///p'`
      astrolog=$astrolog_dir/$mjd
+     outdir=$spectrolog_dir/$mjd
+
+     if [ ! -d $outdir ] 
+     then
+       mkdir $outdir
+     fi
+
      echo STARTAPO: Processing $input at `date`
 #     $IDL_DIR/bin/lmutil lmstat
      echo "aporeduce, '$filename',indir='$dir', outdir='$outdir', \
