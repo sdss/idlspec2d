@@ -95,7 +95,7 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
    cspeed = 2.99792458e5
 
    readspec, plate, fiberid, mjd=mjd, znum=znum, flux=objflux, flerr=objerr, $
-    loglam=loglam, plug=plug, zans=zans, synflux=synflux
+    loglam=loglam, plug=plug, zans=zans, synflux=synflux, /silent
    if (NOT keyword_set(objflux)) then begin
       print, 'Plate not found!!'
       return
@@ -243,7 +243,7 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
 
    if (n_elements(plate) NE 1) then $
     message, 'PLATE must be a scalar'
-   if (NOT keyword_set(mjd)) then readspec, plate, mjd=mjd
+   if (NOT keyword_set(mjd)) then readspec, plate, mjd=mjd, /silent
    if (NOT keyword_set(mjd)) then begin
       print, 'Plate not found!!'
       !quiet = quiet
@@ -318,7 +318,8 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
             'B': ifiber = (ifiber - 1) > 0
             'P': begin
                     read, plate, mjd, prompt='Enter new plate and MJD (enter 0 for unknown MJD): '
-                    if (NOT keyword_set(mjd)) then readspec, plate, mjd=mjd
+                    if (NOT keyword_set(mjd)) then $
+                     readspec, plate, mjd=mjd, /silent
                     if (NOT keyword_set(mjd)) then begin
                        print, 'Plate not found!!'
                        !quiet = quiet

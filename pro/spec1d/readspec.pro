@@ -354,7 +354,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       indx = where(platevec EQ platenums[ifile] AND mjdvec EQ mjdnums[ifile])
       irow = fibervec[indx] - 1
 
-      if (keyword_set(silent)) then print, '+', format='(A,$)'
+;      if (keyword_set(silent)) then print, '+', format='(A,$)'
 
       mjd1 = mjdnums[ifile]
       readspec1, platenums[ifile], irow, mjd=mjd1, $
