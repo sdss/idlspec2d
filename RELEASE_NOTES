@@ -57,12 +57,15 @@ sprobot_start: Comment-out "spamdup" job in the cron file, since we don't
             seem to need that hack any more to keep the NSF-automounts alive.
 
 In idlutils:
+ASINH2: Better asinh (from Blanton for PROFINTERP procedure).
 BSPLINE_ITERFIT: Always reset OUTMASK so that the input value does not matter.
             Set YFIT to all zeros in the case that the fit fails.
+PROFINTERP: Bug fixes, and use ASINH2.
 RADEC_TO_FIELDS: Configurable option allfieldfile.
 SXPAR: Landsman fixed to handle CRVALn of different type properly
 src/spheregroup/chunks.c: Roundoff error problem fixed.
 eviltarball: Comment out the reference to sdsscvs.
+evilinstall: Use UPS_PROD_FLAVOR environment variable (not UPS_FLAVOR).
 
 In specflat:
 specflat.table: Added "Flavor=Linux"
