@@ -1,7 +1,15 @@
 
 COLLIMATE: Since the DJS_SVDFIT() function was removed in v4_10_1,
         explicitly compute the chi^2 minimum with a matrix inversion.
+FIND_NMINIMA: If the fit value of YPEAK is less than zero, then change
+        it to zero.  This code is always used for chi^2 minimization,
+        and a negative value for the chi^2 would not make sense.
 LRG_PHOTOZ: New simple photo-z finder for LRGs using a single template.
+LRG_PHOTOZ_TEMPLATE: Code to tweak the photo-z template used by LRG_PHOTOZ().
+LRG_PHOTOZ_TEST: Code to test the photo-z's.
+LRGMODEL_PHOTOZ: Photo-z finder using Bruzual-Charlot elliptical galaxy models.
+LRGMODEL_TWEAK_TEMPLATE: Code to tweak the Bruzual-Charlot model parameters
+        used for the templates in LRGMODEL_PHOTOZ().
 NEWSPCOMBINE: Christy's code: changed so that if one frame does not make
         the S/N cut then all 4 frames of that exposure are rejected.
 PLATELINKS: Call SPAWN with the /noshell option to greatly increase

@@ -6,8 +6,9 @@ pro lrg_photoz_test
    ; Read the spAll file
    spfile = filepath('spAll.fits', root_dir=getenv('SPECTRO_DATA'))
    columns = ['PROGNAME', 'PLATEQUALITY', 'PLATE', 'FIBERID', 'MJD', $
+    'RUN', 'RERUN', 'CAMCOL', 'FIELD', 'ID', $
     'CLASS', 'SPECPRIMARY', 'PRIMTARGET', 'Z', 'Z_ERR', 'ZWARNING', $
-    'MODELFLUX', 'MODELFLUX_IVAR', 'EXTINCTION']
+    'MODELFLUX', 'MODELFLUX_IVAR', 'EXTINCTION','NMGYPERCOUNT','COLC']
    spall = hogg_mrdfits(spfile, 1, columns=columns, $
     nrowchunk=10000L) ;, range=[100000,200000])
 
@@ -52,7 +53,7 @@ pro lrg_photoz_test
    splot, spall.z, zfit, psym=3, yr=[0,0.6], $
     xtitle='Spectroscopic Z', ytitle='Photometric Z'
    soplot, [0,1], [0,1], color='red'
-stop
+save
 
    return
 end
