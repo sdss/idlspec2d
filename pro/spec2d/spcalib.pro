@@ -515,7 +515,7 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
          sigma2 = 0
          xsol = 0
 
-         fflat = fiberflat(flux, fluxivar, wset, fibermask=tmp_fib5mask, $
+         fflat = fiberflat(flux, fluxivar, wset, fibermask=tmp_fibmask, $
           /dospline, plottitle=plottitle+' Superflat', pixspace=5)
 
          if (n_elements(fflat) EQ 1) then begin
