@@ -104,4 +104,7 @@ spchunklist      70 1394 1409 main      ""
 spchunklist     28A 1410 1413 main      ""
 spchunklist      71 1414 1425 main      ""
 spchunklist     68A 1426 1467 main      ""
+spchunklist      72 1468 1472 special   "F stars near M31"
+spchunklist      73 1473 1529 special   "Merged Southern program"
+spchunklist      74 1530 1566 special   "Low-z + BCG + Deep LRG"
 
