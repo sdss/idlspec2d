@@ -74,7 +74,6 @@
 ;   fibermask_bits()
 ;   fitsn()
 ;   fitvacset()
-;   fluxcorr()
 ;   get_tai
 ;   heliocentric()
 ;   locateskylines

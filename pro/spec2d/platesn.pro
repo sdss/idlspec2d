@@ -196,7 +196,7 @@ pro platesn, objflux, objivar, andmask, plugmap, loglam, $
          endelse
          if (indx[0] NE -1) then begin
             sxaddpar, hdr, 'N'+tstring, n_elements(indx), $
-             ' Number of '+tname, before='LOWREJ'
+             ' Number of (good) '+tname, before='LOWREJ'
             for iband=1, 3 do begin
                djs_iterstat, synthmag[iband,indx] - thismag[iband,indx], $
                 median=med1, sigma=sig1
