@@ -28,8 +28,8 @@ KURUCZ_FITSFILE: New proc for generating a single FITS file from a list
 LRGMODEL_TRAIN: Calling script for training the Bruzual-Charlot models
         for photo-z's.
 PLATELIST: Get rid of the SMEARUSE entry, since it is now deprecated.
-PLATESN,PLOTSN: Added E(B-V) keyword to handle spectra which have
-        been corrected for foreground dereddening.
+PLATESN: Remove the code that adds the spectro-photometry keywords to
+        the output headers, since P-1D does this more carefully.
 PLOTSIGNAL: New routine for making diagnostic plots of the signal seen
         by the spectrographs, unlike most of our routines that show S/N.
 PLOTSN: Recent changes can make this routine crash if the photo and spectro
@@ -51,6 +51,9 @@ SPCALIB: Change the way we spawn the gzip command.
 SPCOADD_FLUXED_FRAMES: Christy's code that now de-reddens the spectra;
         definitely do not use!
 SPCOADD_FRAMES: Get rid of some unused lines of code.
+        Get rid of returned synthetic mags + S/N values from PLATESN,
+        since I've excised that code, and don't write the undocumented
+        last two HDUs to the spPlate files.
 SPCOADD_V5: New code to replace SPCOADD_FRAMES for version 5 outputs.
         The sky vectors are now combined in some semi-rational way,
         and output as HDU #6.
@@ -71,6 +74,7 @@ SPREDUCE1D: Dispose of COUNTS_SPECTRO,COUNTS_SYNTH in favour of the fields
         SPECTROFLUX,SPECTROSYNFLUX which are in nano-maggies (1e9 larger).
         Also compute SPECTROSKYFLUX,SPECTROFLUX_IVAR,SPECTROSYNFLUX_IVAR
         from the sky vectors, which are now in the new spPlate files.
+        Log peak memory usage.
 SPREDUCE2D: Report peak memory usage.
 SPREDUCE,SPREDUCE2D: Pass the optional /DO_TELLURIC along to EXTRACT_IMAGE.
 UPDATE_PLATE_RELEASE: Code to mark the DR2 plates (for example) from
