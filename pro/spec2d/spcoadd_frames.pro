@@ -329,19 +329,19 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
    ; Get max and min wavelength from good pixels
 
    if (NOT keyword_set(wavemin)) then begin
-      spotmin = fix((minfullwave - zeropoint)/binsz) + 1
-      spotmax = fix((maxfullwave - zeropoint)/binsz)
+      spotmin = long((minfullwave - zeropoint)/binsz) + 1L
+      spotmax = long((maxfullwave - zeropoint)/binsz)
       wavemin = spotmin * binsz + zeropoint
       wavemax = spotmax * binsz + zeropoint
    endif else begin
-      spotmin = 0
+      spotmin = 0L
       if (NOT keyword_set(wavemax)) then begin
-        spotmax = fix((maxfullwave - wavemin)/binsz)
+        spotmax = long((maxfullwave - wavemin)/binsz)
         wavemax = spotmax * binsz + wavemin
-      endif else spotmax = fix((wavemax - wavemin)/binsz)
+      endif else spotmax = long((wavemax - wavemin)/binsz)
    endelse
 
-   nfinalpix = spotmax - spotmin + 1
+   nfinalpix = spotmax - spotmin + 1L
    finalwave = dindgen(nfinalpix) * binsz + wavemin
 
    nfiber = max(plugmap.fiberid)
