@@ -20,7 +20,6 @@ function batch2d_rawfiles, planfile, outfile=outfile
    thismjd = yanny_par(hdr, 'MJD')
    logfile = yanny_par(hdr, 'logfile')
    plotfile = yanny_par(hdr, 'plotfile')
-   plotsnfile = yanny_par(hdr, 'plotsnfile')
    for ii=0, n_elements(pp)-1 do begin
       sname = tag_names(*pp[ii], /structure_name)
       if (sname EQ 'SPEXP') then begin
@@ -46,7 +45,6 @@ function batch2d_rawfiles, planfile, outfile=outfile
 
    outfile = [ djs_filepath(logfile, root_dir=extractdir), $
                djs_filepath(plotfile, root_dir=extractdir), $
-               djs_filepath(plotsnfile, root_dir=extractdir), $
                newnames ]
 
    yanny_free, pp
@@ -73,6 +71,7 @@ function batch2d_combfiles, planfile, outfile=outfile
    combinedir = yanny_par(hdr, 'combinedir')
    logfile = yanny_par(hdr, 'logfile')
    plotfile = yanny_par(hdr, 'plotfile')
+   plotsnfile = yanny_par(hdr, 'plotsnfile')
    fcalibprefix = yanny_par(hdr, 'fcalibprefix')
    combinefile = yanny_par(hdr, 'combinefile')
    for ii=0, n_elements(pp)-1 do begin
@@ -90,6 +89,7 @@ function batch2d_combfiles, planfile, outfile=outfile
    junk = fileandpath(planfile, path=thisdir)
    outfile = [ djs_filepath(logfile, root_dir=thisdir), $
                djs_filepath(plotfile, root_dir=thisdir), $
+               djs_filepath(plotsnfile, root_dir=thisdir), $
                djs_filepath(fcalibprefix+'-*.fits', root_dir=thisdir), $
                djs_filepath(fcorrprefix+'-*.fits', root_dir=thisdir), $
                djs_filepath(combinefile, root_dir=thisdir) ]
@@ -131,8 +131,6 @@ pro batch2d, platenums, topdir=topdir, mjd=mjd, mjstart=mjstart, mjend=mjend
    ; In each plate directory, find all 'spPlancomb*.par' files
 
    for idir=0, ndir-1 do begin
-;      planfile2 = findfile( $
-;       djs_filepath('spPlan2d*.par', root_dir=platedirs[idir]), count=nfile2)
       planfile = findfile( $
        djs_filepath('spPlancomb*.par', root_dir=platedirs[idir]), count=nfile)
 
@@ -142,10 +140,10 @@ pro batch2d, platenums, topdir=topdir, mjd=mjd, mjstart=mjstart, mjend=mjend
 ; GET ONLY THE MJD's THAT WE WANT ???
          if (keyword_set(platelist)) then begin
             platelist = [platelist, platedirs[idir]]
-            planlist = [planlist, planfile]
+            planlist = [planlist, planfile[ifile]]
          endif else begin
             platelist = platedirs[idir]
-            planlist = planfile
+            planlist = planfile[ifile]
          endelse
       endfor
    endfor
@@ -167,9 +165,6 @@ pro batch2d, platenums, topdir=topdir, mjd=mjd, mjstart=mjstart, mjend=mjend
       ; Find all relevant 2D plan files
       yanny_read, planlist[iplate], hdr=hdr
       planfile2d = yanny_par(hdr, 'planfile2d')
-
-; MAKE LINK TO /rawdata ???
-; PARSE RAW FILE NAMES TO INPUT FILE LIST ???
 
       ; Split the combine plan file name into a directory and file name
       planfilecomb = fileandpath(planlist[iplate], path=pathcomb)
