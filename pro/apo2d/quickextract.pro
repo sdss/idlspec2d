@@ -24,7 +24,7 @@ function quickextract, tsetfile, wsetfile, rawfile, outsci, $
    tset = mrdfits(tsetfile,2)
    plugsort = mrdfits(tsetfile,3)
    fibermask = mrdfits(tsetfile,4)
-   fflat = mrdfits(fflatfile,1)
+   fflat = mrdfits(fflatfile,0)
    wset = mrdfits(wsetfile,1)
    traceset2xy, wset, ytemp, logwave
 
