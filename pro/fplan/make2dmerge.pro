@@ -67,6 +67,8 @@ pro make2dmerge, planfile
      if keyword_set(mags) then m=mags[*,i]
 
      sxaddpar, thishdr, 'NGOOD', ngood, 'Number of Good Pixels'
+     sxaddpar, thishdr, 'PIXMIN', 0.0, 'Place Holding'
+     sxaddpar, thishdr, 'PIXMAX', 2047.0, 'Place Holding'
      sxaddpar, thishdr, 'SN_G',  sn[0], "Median S/N ratio in g'"
      sxaddpar, thishdr, 'MAG_G',  m[0], "Synthetic magnitude in g'"
      sxaddpar, thishdr, 'SN_R',  sn[1], "Median S/N ratio in r'"
@@ -78,12 +80,13 @@ pro make2dmerge, planfile
      sxaddpar, thishdr, 'NAXIS2', 3
 
      ; 1st HDU is flux, error, and dispersion
-     mwrfits, [[flux[*,i]],[err], [dispersion[*,i]]], fibername, thishdr, $
-        /create
+     mwrfits, [[flux[*,i]],[err]], fibername, thishdr, /create
 
      ; 2nd HDU are pixelmasks
      mwrfits, [[andmask[*,i]],[ormask[*,i]]], fibername
     
+     ; 3rd HDU are pixelmasks
+     mwrfits, dispersion[*,i], fibername
      
    endfor
 
