@@ -22,11 +22,11 @@ function quickextract, flatname, arcname, sciname, outname, $
    ;----------
    ; Read in the reduced data from the flat and arc
 
-   tset = mrdfits(flatname,1)
-   plugsort = mrdfits(flatname,2)
-   fibermask = mrdfits(flatname,3)
+   tset = mrdfits(flatname,2)
+   plugsort = mrdfits(flatname,3)
+   fibermask = mrdfits(flatname,4)
+   fflat = mrdfits(flatname,5)
    wset = mrdfits(arcname,1)
-
    traceset2xy, wset, ytemp, logwave
 
    ;----------
@@ -39,6 +39,9 @@ function quickextract, flatname, arcname, sciname, outname, $
 ;   flux = extract_boxcar(image, xcen, radius=radius)
 ;   ; Estimate fluxivar
 ;   fluxivar = 1.0 / (abs(flux) + 10.0)
+
+   ; Flat-field
+   divideflat, flux, fluxivar, fflat, fibermask=fibermask
 
    ; Sky-subtract
    skystruct = skysubtract(flux, fluxivar, plugsort, wset, $
