@@ -168,7 +168,15 @@ pro spread_frames, spframes, window=window, binsz = binsz, $
                   tempfibertag[ifib].ra, tempfibertag[ifib].dec, $
                   units='degrees')
           match = where(adist LT 2./3600)
-          tempfibertag[ifib].mag = tsobj[match].fibercounts
+
+          ; No match will be found for unmapped fibers so set mags to zero
+          if match[0] ne -1 then begin
+             tempfibertag[ifib].mag = tsobj[match].fibercounts 
+          endif else begin
+             splog, 'Fiber mags set to zero for unmapped fiber: ', $
+                     tempfibertag[ifib].fiberid
+             tempfibertag[ifib].mag = [0,0,0,0,0]
+          endelse
         endfor
       endif
 
