@@ -1,4 +1,6 @@
 
+BATCH1D,BATCH2D: Added /CLOBBER option to reduce all specified plates,
+         over-writing any previous reductions.
 BATCH2D: Enabled keywords PLATESTART,PLATEEND,MJD,MJSTART,MJEND.
          Change the logical link to the raw data directory to be
          topdir+'/rawdata' rather than simply '../rawdata'.
