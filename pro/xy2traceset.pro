@@ -9,7 +9,7 @@
 ;   xy2traceset, xpos, ypos, tset, [ func=func, ncoeff=ncoeff, $
 ;    xmin=xmin, xmax=xmax, maxdev=maxdev, maxsig=maxsig, maxiter=maxiter, $
 ;    singlerej=singlerej, xmask=xmask, yfit=yfit, inputans=inputans, $
-;    _EXTRA=extra ]
+;    invvar=invvar, _EXTRA=extra ]
 ;
 ; INPUTS:
 ;   xpos       - X positions corresponding to YPOS as an [nx,Ntrace] array
@@ -21,6 +21,7 @@
 ;                'chebyshev'
 ;                Default to 'legendre'
 ;   ncoeff     - Number of coefficients in fit; default to 3
+;   ncoeff     - Inverse variance for weighted func_fit
 ;   xmin       - Explicitly set XMIN for trace set rather than using minimum
 ;                in XPOS
 ;   xmax       - Explicitly set XMAX for trace set rather than using maximum
@@ -70,7 +71,8 @@
 ;------------------------------------------------------------------------------
 pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
  xmin=xmin, xmax=xmax, maxdev=maxdev, maxsig=maxsig, maxiter=maxiter, $
- singlerej=singlerej, xmask=xmask, yfit=yfit, inputans=inputans, _EXTRA=extra
+ singlerej=singlerej, xmask=xmask, yfit=yfit, inputans=inputans, $
+ invvar=invvar, _EXTRA=extra
 
    ; Need 3 parameters
    if (N_params() LT 3) then begin
@@ -153,27 +155,38 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
                nglast = ngood
                if (keyword_set(singlerej)) then begin
                   ydiff = ycurfit[igood] - ypos[igood,itrace]
-                  ysig = stddev(ydiff)
+                  if (keyword_set(invvar)) then $
+                    invsig = sqrt(invvar[igood,itrace] > 0) $
+                  else invsig = (fltarr(ngood) + 1.0)/ stddev(ydiff)
                   worstdiff = max(abs(ydiff), iworst)
-                  if ( (keyword_set(maxdev) AND worstdiff GT maxdev) $
-                    OR (keyword_set(maxsig) AND worstdiff GT maxsig*ysig) ) $
-                   then begin
-                     qgood[igood[iworst]] = 0
-                  endif
+                  if (keyword_set(maxdev) AND worstdiff GT maxdev) then $
+                     qgood[igood[iworst]] = 0 $
+                  else begin
+                    worstsig = max(abs(ydiff)*invsig, iworst)
+                    if (keyword_set(maxsig) AND worstsig GT maxsig) then $
+                     qgood[igood[iworst]] = 0 
+                  endelse
                endif else begin
                   ydiff = ycurfit - ypos[*,itrace]
-                  ysig = stddev(ydiff)
+                  if (keyword_set(invvar)) then $
+                    invsig = sqrt(invvar[*,itrace] > 0) $
+                  else invsig = (fltarr(nx) + 1.0)/ stddev(ydiff)
                   qgood = bytarr(nx) + 1
                   if (keyword_set(maxdev)) then $
                    qgood = qgood AND (abs(ydiff) LT maxdev)
                   if (keyword_set(maxsig)) then $
-                   qgood = qgood AND (abs(ydiff) LT maxsig*ysig)
+                   qgood = qgood AND (abs(ydiff)*invsig LT maxsig)
                endelse
                igood = where(qgood, ngood)
             endelse
 
             nreject = nx - ngood
-            res = func_fit(xnorm, ypos[*,itrace], ncoeff, invvar=qgood, $
+            if (keyword_set(invvar)) then $
+              tempivar  = invvar[*,itrace]*qgood $
+            else tempivar = qgood
+
+            res = func_fit(xnorm, ypos[*,itrace], ncoeff, $
+             invvar=tempivar, $
              function_name=function_name, yfit=ycurfit, inputans=curans, $
              _EXTRA=extra)
 

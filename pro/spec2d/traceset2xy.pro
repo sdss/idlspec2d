@@ -58,13 +58,15 @@ pro traceset2xy, tset, xpos, ypos
 
       xmid = 0.5 * (tset.xmin + tset.xmax)
       xrange = tset.xmax - tset.xmin
-      xpos = djs_laxisgen([nx, nTrace], iaxis=0) + tset.xmin
 
-      ypos = fltarr(nx, nTrace)
-      xvec = 2.0 * findgen(nx)/(nx-1) - 1.0
-      if (tset.func EQ 'legendre') then legarr = flegendre(xvec, ncoeff)
-      if (tset.func EQ 'chebyshev') then legarr = fchebyshev(xvec, ncoeff)
+      if (NOT keyword_set(xpos)) then $
+        xpos = djs_laxisgen([nx, nTrace], iaxis=0) + tset.xmin
+
+      ypos = xpos*0.0
       for iTrace=0, nTrace-1 do begin
+         xvec = 2.0 * (xpos[*,iTrace]-xmid)/xrange
+         if (tset.func EQ 'legendre') then legarr = flegendre(xvec, ncoeff)
+         if (tset.func EQ 'chebyshev') then legarr = fchebyshev(xvec, ncoeff)
          ypos[*,iTrace] = legarr # tset.coeff[*,iTrace]
       endfor
 

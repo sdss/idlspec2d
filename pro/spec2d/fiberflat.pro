@@ -6,7 +6,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   fflat = fiberflat( flat_flux, flat_fluxivar, $
-;    [ fibermask, bkspace=, nord=, lower=, upper= ] )
+;    [ fibermask, plugmap=, bkspace=, nord=, lower=, upper= ] )
 ;
 ; INPUTS:
 ;   flat_flux  - Array of extracted flux from a flat-field image [Nrow,Ntrace]
@@ -41,7 +41,7 @@
 ;-
 ;------------------------------------------------------------------------------
 
-function fiberflat, flat_flux, flat_fluxivar, fibermask, $
+function fiberflat, flat_flux, flat_fluxivar, fibermask, plugmap=plugmap, $
  bkspace=bkspace, nord=nord, lower=lower, upper=upper
 
    dims = size(flat_flux, /dimens)
@@ -76,6 +76,23 @@ function fiberflat, flat_flux, flat_fluxivar, fibermask, $
    ; Divide FFLAT by a global average of all fibers
    flatmean = total(fflat # fibermask)/(total(fibermask)*ny)
    fflat = fflat / flatmean
+
+   fibermed = djs_median(fflat,1)
+
+   plot,fibermed,ps=1
+   if (keyword_set(plugmap)) then begin
+   ;
+   ; fitting out radial dependence
+    
+      r2 = (plugmap.xFocal^2 + plugmap.yFocal^2)*1.0e-6  ; units m^2
+      plot,r2,fibermed,ps=1
+     
+      radialcoeff = polyfitw(r2,fibermed,fibermask,1,radialfit)
+
+      for i=0,ntrace-1 do fflat[*,i] = fflat[*,i]/radialfit[i]
+
+      splog, radialcoeff
+    endif
 
    return, fflat
 end

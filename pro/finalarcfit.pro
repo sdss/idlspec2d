@@ -28,7 +28,8 @@ pro finalarcfit, x, loglam, wset, ncoeff, ic, nsetcoeff=nsetcoeff, $
      ia[0:ic-1] = 1
 
     xy2traceset, transpose(x), lmatrix, wset, xmin=wset.xmin, xmax=wset.xmax, $
-       ncoeff=ncoeff, yfit=yfit, inputans = wset.coeff, ia=ia, _EXTRA = extra
+       ncoeff=ncoeff, yfit=yfit, inputans = wset.coeff, ia=ia, $
+       maxsig=2.0, _EXTRA = extra
 
     fibermed = fltarr(nfiber)
     fibererr = fltarr(nfiber)

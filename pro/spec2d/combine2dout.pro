@@ -48,10 +48,10 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
 	exptime = sxpar(hdr,'EXPTIME')
 
 	for i=1,nfiles - 1 do begin
-          tempflux = mrdfits(filenames[0], 0, hdr)
-	  tempivar = mrdfits(filenames[0], 1)
-	  tempplug = mrdfits(filenames[0], 2)
-	  tempwset = mrdfits(filenames[0], 3)
+          tempflux = mrdfits(filenames[i], 0, hdr)
+	  tempivar = mrdfits(filenames[i], 1)
+	  tempplug = mrdfits(filenames[i], 2)
+	  tempwset = mrdfits(filenames[i], 3)
           traceset2xy, tempwset, pixnorm, tempwave
 
           npix     = (size(tempflux))[1]
@@ -102,14 +102,20 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
 	  sxaddpar, hdr, 'COMBINE2', systime(), $
                 'COMBINE2DOUT finished', AFTER='EXPTIME'
 
+        scale = fltarr(nfiber)
+        blueflux = fltarr(nfiber)
+        redflux = fltarr(nfiber)
+
         for i=0,nfiber - 1 do begin
-  
-	  if (plugmap[i].objtype EQ 'SKY' AND NOT keyword_set(dosky)) then $
-               splog, ' skipping sky on fiber ', i $
-          else if (plugmap[i].objtype EQ 'NA') then $
+ 
+	  scale[i] = 1.0
+	  if (strtrim(plugmap[i].objtype,2) EQ 'SKY' AND $
+             NOT keyword_set(dosky)) then $
+                splog, ' skipping sky on fiber ', i $
+          else if (strtrim(plugmap[i].objtype,2) EQ 'NA') then $
                splog, ' skipping bad fiber ', i $
           else begin
-           
+            splog, plugmap[i].objtype, plugmap[i].mag 
           fullwave = wave[*,i] 
           fullspec = flux[*,i] 
           fullivar = fluxivar[*,i] 
@@ -118,7 +124,6 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
 ;
 ;	Use medians to merge red and blue here
 ;
-	    scale = 1.0
 	    if (numblue GT 0 AND numred GT 0) then begin
                exptime = exptime * 0.5
 
@@ -127,18 +132,27 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
 
 	       if (minred LT maxblue) then begin
                   bluecross = where(bluered EQ 0 and fullwave GT minred $ 
-                      AND fullerr GT 0.0)
+                      AND fullivar GT 0.0)
                   redcross = where(bluered EQ 1 and fullwave LT maxblue $
-                      AND fullerr GT 0.0)
+                      AND fullivar GT 0.0)
 	          if (redcross[0] NE -1 AND bluecross[0] NE -1) then begin 
-	             djs_iterstat, fullspec[bluecross], median=bluemed
-	             djs_iterstat, fullspec[redcross], median=redmed
-	             scale = bluemed/redmed
+	             djs_iterstat, fullspec[bluecross], median=bluemed, $
+                          sigma=bluesigma
+	             djs_iterstat, fullspec[redcross], median=redmed, $
+                          sigma=redsigma
 
-	             if (scale LT 0.1 OR scale GT 10.0) then scale = 1.0
-	             splog, outputfile, ': scaling red by', scale, bluemed/redmed
-	             fullspec[redpix] = fullspec[redpix]*scale
-	             fullivar[redpix] = fullivar[redpix]/(scale^2)
+	             scale[i] = bluemed/redmed
+	             blueflux[i] = bluemed
+                     redflux[i] = redmed
+
+		     if (bluemed - 0.5*bluesigma LE 0) then scale[i] = 1.0
+		     if (redmed - 0.5*redsigma LE 0) then scale[i] = 1.0
+
+	             
+	             splog, i, ' Blue:', bluemed, bluesigma, $
+                               'Red: ', redmed, redsigma,  'scale: ', scale[i]
+	             fullspec[redpix] = fullspec[redpix]*scale[i]
+	             fullivar[redpix] = fullivar[redpix]/(scale[i]^2)
 	          endif
 	       endif
 
@@ -177,22 +191,20 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
 ;
 ;	Need to construct ivar for bspline
 ;
-	   nonzero = where(fullivar GT 0.0)
-	   if (nonzero[0] EQ -1) then begin
-	      print, 'no good points, all have 0.0 or negative sigma'
-	      return
-           endif
+	 nonzero = where(fullivar GT 0.0)
+	 if (nonzero[0] EQ -1) then begin
+	   splog, 'no good points, all have 0.0 or negative sigma'
+         endif else begin 
+           
 
 ;
 ;	Using newwave as breakpoints
 ;		
 
-	   stop
 	   ss = sort(fullwave)
 	   fullbkpt = slatec_splinefit(fullwave[ss], fullspec[ss], coeff, $
               bkpt=bkpt, everyn=everyn, invvar=fullivar[ss], mask=mask, /silent)
 
-	   stop
 	   mask[ss] = mask
 
 	   bestguess = fltarr(npix)
@@ -206,8 +218,8 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
 	   bestivar = bestguess*0.0
 	   besterr = bestivar
 
-	   for i=0,nfiles-1 do begin
-	     these = where(specnum EQ i)
+	   for j=0,nfiles-1 do begin
+	     these = where(specnum EQ j)
 	     if (these[0] NE -1) then begin
 	       inbetween = where(newwave GE min(fullwave[these]) AND $
 	                         newwave LE max(fullwave[these]))
@@ -238,8 +250,8 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
                'center wavelength (log10) of first pixel'
 	   sxaddpar,newhdr, 'COEFF1', bin, $
                'log10 dispersion per pixel'
-	    sxaddpar, newhdr, 'REDSCAL',scale,'Red scaling to match blue overlap', $
-                AFTER='EXPTIME'
+	    sxaddpar, newhdr, 'REDSCAL',scale[i],$
+                'Red scaling to match blue overlap', AFTER='EXPTIME'
 
 	    sxaddpar, newhdr, 'NAXIS1', n_elements(bestguess)
 	    sxaddpar, newhdr, 'NAXIS2', 2
@@ -257,14 +269,22 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
  	    output = [[newwave],[bestguess],[besterr]]
  
 
-	  writefits, outputfile, [[bestguess],[besterr]], newhdr
+	    writefits, outputfile, [[bestguess],[besterr]], newhdr
 
-          if (keyword_set(display)) then begin
-            djs_plot, 10^newwave, bestguess, /xstyle, /ystyle
-            djs_oplot, 10^newwave, besterr, color='red'
-          endif
+            if (keyword_set(display)) then begin
+              djs_plot, 10^newwave, bestguess, /xstyle, /ystyle
+              djs_oplot, 10^newwave, besterr, color='red'
+            endif
+          endelse
         endelse 
       endfor
+
+;
+;	Should set up p.mutli here
+;
+      plot,blueflux,scale, ps=1, ytitle='Scale', xtitle='Blue end flux'
+      plot,scale,ps=10, ytitle='Scale', xtitle='Fiber #'
+       
 
       return
 end

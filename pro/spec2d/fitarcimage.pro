@@ -282,84 +282,9 @@ maxsig = 2.0
               maxdev=maxdev, maxiter=nlamp, /singlerej, $
               nsetcoeff=8, maxsig=2.0
 
-;   xy2traceset, transpose(xnew), lamps.loglam # (dblarr(nfiber)+1), wset, $
-;    func=func, ncoeff=ncoeff, maxdev=maxdev, maxiter=nlamp, /singlerej, $
-;    xmask=xmask, xmin=0, xmax=npix-1
-;   print, 'Pass 2 complete'
-
-   ;---------------------------------------------------------------------------
-   ; Do the third traceset fit
-   ;---------------------------------------------------------------------------
-
-;  wsave = wset
-
-   ;------
-   ; Fit and replace all the coefficients numbered 1 through NCOEFF-1
-   ; with their fit value.  Fit a Chebyshev with 8 coefficients, and
-   ; a split in the baseline at the central fibers.
-;   for ic=1, ncoeff-1 do begin
-;      xy2traceset, dindgen(nfiber), transpose(wset.coeff[ic,*]), tmpset, $
-;       func='chebyshev', ncoeff=8, maxsig=2.0, xmask=xmask, yfit=yfit, $
-;       /halfintwo
-;      wset.coeff[ic,*] = yfit
-; jj=where(xmask EQ 0)
-; plot,transpose(wset.coeff[ic,*]),/yno
-; djs_oplot,yfit,color='green'
-; djs_oplot,jj,(transpose(wset.coeff[ic,*]))[jj],color='red',ps=1
-;   endfor
-
-   ;------
-   ; Re-fit the 0th coefficient for each fiber, e.g. the 0-pt shift term
-   ; THIS CODE SHOULD BE SPAWNED OFF TO A ROUTINE FUNC_EVAL() ???
-
-;   ifit = [0,1] ; List of the coefficients to fit for each fiber
-;  ifix = indgen(ncoeff-2) + 2 ; List of coefficients to keep fixed
-;  ncfit = N_elements(ifit)
-;  tset = wset
-;  tset.coeff[ifit,*] = 0
-;  dims = size(tset.coeff, /dim)
-;  ncoeff = dims[0]
-;  nTrace = dims[1]
-;  xmid = 0.5 * (tset.xmin + tset.xmax)
-;  xrange = tset.xmax - tset.xmin
-;  xpos = transpose(xnew)
-;  ypos = fltarr(nlamp, ntrace)
-;  for i=0, ntrace-1 do begin
-;     xvec = 2.0 * xpos[*,i]/(npix-1) - 1.0
-;     if (tset.func EQ 'legendre') then legarr = flegendre(xvec, ncoeff)
-;     if (tset.func EQ 'chebyshev') then legarr = fchebyshev(xvec, ncoeff)
-;     ypos[*,i] = legarr # tset.coeff[*,i]
-;  endfor
-
-   ;-----
-   ; Fit the first NCFIT coefficients to the residuals, with same rejection
-   ; as before
-
-;  xy2traceset, transpose(xnew), lamps.loglam # (dblarr(nfiber)+1) - ypos, $
-;   tset2, func=func, ncoeff=ncfit, maxdev=maxdev, maxiter=nlamp, /singlerej, $
-;   xmask=xmask, xmin=0, xmax=npix-1
-
-   ;-----
-   ; Now replace WSET with the re-fit coefficients
-
-;  wset.coeff[ifit,*] = tset2.coeff
-;  wset.coeff[ifix,*] = tset.coeff[ifix,*]
-
-   ;-----
-   ; Comment out this FITMEANX code...
+   print, 'Final arcfit complete'
 
    xmeasured = xnew
-
-;   ; Fit arc lines subtracting out scatter term
-;   xnew = fitmeanx(wset, lamps.loglam, xmeasured)
-;
-;   ; In this final fit, do no rejection
-;
-;   xy2traceset, transpose(xnew), lamps.loglam # (dblarr(nfiber)+1), wset, $
-;    func=func, ncoeff=ncoeff, maxiter=0, $
-;    xmin=0, xmax=npix-1
-
-   print, 'Pass 3 complete'
 
    ;---------------------------------------------------------------------------
    ; Quality Assurance

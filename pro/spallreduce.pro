@@ -234,6 +234,8 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
             expres = string(format='(a,i1,a)', 's-', side, '*.fit')
             files = findfile(filepath(expres,root_dir=plateDir))
 
+	    splog, files
+
             if (files[0] EQ '') then $
              splog, 'No files found for side ', side $
             else $

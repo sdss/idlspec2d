@@ -12,10 +12,10 @@ pro calcflux, ansrow, prow, fluxrow, finvrow, wfixed, proftype, lTrace,nCoeff, $
      if(proftype GE 1) then begin
        fluxrow = ansrow[iTrace]
        if(nCoeff GE 2) then fluxrow = fluxrow + ansrow[iTrace+1]
-       if(proftype GE 3 AND nCoeff GE 3) then $
+       if(proftype GE 4 AND nCoeff GE 3) then $
           fluxrow = fluxrow + ansrow[iTrace+2]
 
-     if(proftype GE 5) then fluxrow = fluxrow + ansrow[iTrace+3]
+     if(proftype GE 6) then fluxrow = fluxrow + ansrow[iTrace+3]
        
 ; best estimate we can do
        finvrow = prow[iTrace]*prow[iTrace] 

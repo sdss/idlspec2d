@@ -169,11 +169,11 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       nPoly = 6
       wfixed = [1] ; Just fit the first gaussian term
 
-      extract_image, image, invvar, tmp_xsol, sigma, flux, fluxivar, $
+      extract_image, image, invvar, tmp_xsol, sigma, flat_flux, flat_fluxivar, $
        proftype=proftype, wfixed=wfixed, $
        highrej=highrej, lowrej=lowrej, nPoly=nPoly, relative=1
 
-      highpixels = where(flux GT 1.0e5, numhighpixels)
+      highpixels = where(flat_flux GT 1.0e5, numhighpixels)
 
       splog, 'Found ', numhighpixels, ' highpixels in extracted flat ', $
        flatname[ifile]
@@ -182,7 +182,11 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       ; Compute fiber-to-fiber flat-field variations
       ;------------------------------------------------------------------------
 
-      tmp_fflat = fiberflat(flux, fluxivar, fibermask)
+      tmp_fflat = fiberflat(flat_flux, flat_fluxivar, fibermask)
+
+;
+;	This is to correct for radial position
+;      tmp_fflat = fiberflat(flat_flux, flat_fluxivar,fibermask,plugmap=plugmap)
 
    endif ; Checking if flat file is the same as last one
       ;------------------------------------------------------------------------
@@ -200,7 +204,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       splog, 'Extracting arc image with simple gaussian'
       sigma = 1.0
       proftype = 1 ; Gaussian
-      highrej = 10
+      highrej = 15
       lowrej = 15
       nPoly = 6 ; maybe more structure
       wfixed = [1] ; Just fit the first gaussian term
@@ -324,7 +328,7 @@ for i=0,16 do oplot,fflat[*,i*19]
 
       sigma = 1.0
       proftype = 1 ; Gaussian
-      highrej = 10
+      highrej = 15
       lowrej = 15
       nPoly = 6 ; maybe more structure
       wfixed = [1,1,1] ; gaussian term + centroid and  sigma terms
@@ -389,7 +393,7 @@ for i=0,16 do oplot,fflat[*,i*19]
 ;       highrej=highrej, lowrej=lowrej, nPoly=0, whopping=whopping, chisq=chisq
 ;       ymodel=ymodel2
 
-      plot, chisq
+      plot, chisq, ytitle = 'Chi^2', title=objname[iobj]
 
       ;------------------
       ; Flat-field the extracted object fibers with the global flat
@@ -400,7 +404,7 @@ for i=0,16 do oplot,fflat[*,i*19]
       ; xshift contains polynomial coefficients to shift arc to sky lines.
 
       locateskylines, skylinefile, flux, fluxivar, $
-       wset, xsky, ysky, skywaves, xcoeff=xcoeff
+       wset, xsky, ysky, skywaves, xset=xset
 
       ;------------------
       ; First convert lambda, and skywaves to log10 vacuum
@@ -424,10 +428,12 @@ for i=0,16 do oplot,fflat[*,i*19]
       ;
 
 
+;
+;	This procedure produces numerical steps at 10^-6, 1 km/s
+;
     
-      xshift = double(xpeak) 
-      wold = wset
-      for i=0,nTrace - 1 do xshift[i,*] =  poly(xpeak[i,*],xcoeff[i,*])
+      traceset2xy, xset, transpose(xpeak), xshift
+      xshift = transpose(xshift)
 
        plot, xpeak, xshift, ps=3 
 

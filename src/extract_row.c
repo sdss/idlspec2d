@@ -357,6 +357,70 @@ void ProfileAbs3(float *x, IDL_LONG ndat, float **y, float xcen,
 	 
 }
 
+void ProfileAbs25(float *x, IDL_LONG ndat, float **y, float xcen, 
+                IDL_LONG xmin, IDL_LONG xmax, float sigma, IDL_LONG nCoeff)
+{ 
+	IDL_LONG nm,i,j,k,backup,place;
+	float base;
+	float diff, diffabs, denom2, frac;
+	float denom3;
+	float sqbase, xfake;
+	
+	static float oldsigma=0.0;
+	static float model[100][3][31];
+
+/*		Below is denominator for x^3	*/
+
+	denom3 = 1.0/(2.88450 * 0.89298 * sigma);
+	denom2 = 1.0/sqrt(6.2832 * sigma * sigma);
+
+	if (sigma != oldsigma) {
+
+	   printf("Filling Arrays\n");
+	   oldsigma = sigma;
+/*	   Fill static arrays	*/
+	   for(nm=0;nm<100;nm++) {
+ 	     xfake = 15.0 + (float) nm/100.0;
+	     for (k=0; k<=30; k++) {
+	       for(j=0;j<3;j++) model[nm][j][k] = 0.0;
+	       for(frac = -0.4; frac <= 0.5; frac += 0.2)  {
+	     
+	         diff = (xfake - (float)k + frac)/sigma;
+                 diffabs = fabs(diff);
+	         base = exp(-diff*diff*diffabs/3.0)*denom3;
+
+/*	Add in ^3 term first  */
+                 model[nm][0][k] += base;
+                 sqbase = diff*diff*diffabs*base;
+	         model[nm][1][k] += sqbase;
+	         model[nm][2][k] += diff*diffabs*base;
+
+/*	Add in ^2 term next  */
+	         base = exp(-diff*diff/2.0)*denom2;
+                 model[nm][0][k] += base;
+                 sqbase = diff*diff*base;
+	         model[nm][1][k] += sqbase;
+	         model[nm][2][k] += diff*base;
+                }
+/*	Divide by 10 instead of 5 to get area 1.0  */
+	     for (j=0;j<3;j++) model[nm][j][k] /= 10.0;
+	   }
+	}
+      }
+
+	frac = xcen - (int)xcen;
+	nm = frac*100.0;
+        backup = (int)xcen - xmin;
+	for(j=0;j<nCoeff;j++) 
+	  for (i=xmin,k=0,place=15-backup; i<=xmax; i++,k++,place++) 
+	     { 
+/*             printf("%d %d %d %d %d %f\n", 
+		i,j,k,place,nm,frac);	*/
+             y[j][k] = model[nm][j][place];
+	     }
+	 
+}
+
 void ProfileDoubleGauss(float *x, IDL_LONG ndat, float **y, float xcen, IDL_LONG xmin,
 		IDL_LONG xmax, float sigma, IDL_LONG nCoeff)
 { 
@@ -718,18 +782,22 @@ void fillProfile(float **y, float *x, float *xcen, IDL_LONG *xmin,
                       sigma[i], nCoeff);
                  }
 	      else if (proftype == 3)  {
-                 ProfileDoubleGauss(x, nx, &y[j], xcen[i], xmin[i],xmax[i],
+                 ProfileAbs25(x, nx, &y[j], xcen[i], xmin[i],xmax[i],
                       sigma[i], nCoeff);
                  }
 	      else if (proftype == 4)  {
-                 ProfileAbs3WideGauss(x, nx, &y[j], xcen[i], xmin[i],xmax[i],
+                 ProfileDoubleGauss(x, nx, &y[j], xcen[i], xmin[i],xmax[i],
                       sigma[i], nCoeff);
                  }
 	      else if (proftype == 5)  {
-                 ProfileAbs3HalfLorentz(x, nx, &y[j], xcen[i], xmin[i],xmax[i],
+                 ProfileAbs3WideGauss(x, nx, &y[j], xcen[i], xmin[i],xmax[i],
                       sigma[i], nCoeff);
                  }
 	      else if (proftype == 6)  {
+                 ProfileAbs3HalfLorentz(x, nx, &y[j], xcen[i], xmin[i],xmax[i],
+                      sigma[i], nCoeff);
+                 }
+	      else if (proftype == 7)  {
                  ProfileGaussHalfLorentz(x, nx, &y[j], xcen[i], xmin[i],xmax[i],
                       sigma[i], nCoeff);
                  }

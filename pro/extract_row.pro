@@ -22,7 +22,9 @@
 ;   sigma      - sigma of gaussian profile; default to 1.0 (scalar or [nFibers])
 ;
 ; OPTIONAL KEYWORDS:
-;   proftype   - currently, one can only use 1: Gaussian (scalar)
+;   proftype   - one can use 1: Gaussian (scalar)
+;                            2: exponential ^3
+;			     3: exponential ^2.5
 ;   wfixed     - array of 1's and zero's which set which parameters are fixed.
 ;   inputans   - 2d array of input answers [nCoeff, nFibers]
 ;   iback      - 1d array of input background coeff 

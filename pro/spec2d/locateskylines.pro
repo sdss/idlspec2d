@@ -8,7 +8,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   locateskylines, skylinefile, fimage, ivar, wset, xsky, ysky, skywaves, $
-;    lambda=lambda, xcoeff=xcoeff
+;    lambda=lambda, xset=xset
 ;
 ; INPUTS:
 ;   skylinefile - filename of skyline file
@@ -50,7 +50,7 @@
 ;------------------------------------------------------------------------------
 
 pro locateskylines, skylinefile, fimage, ivar, wset, $
- xsky, ysky, skywaves, lambda=lambda, xcoeff=xcoeff
+ xsky, ysky, skywaves, lambda=lambda, xset=xset
   
 
    if (keyword_set(lambda)) then begin 
@@ -93,22 +93,17 @@ pro locateskylines, skylinefile, fimage, ivar, wset, $
    xskyold = xsky
    xdiff = fitmeanx(wset, alog10(skywaves), xskyold, aveinvvar, mx = mx )
 
-   good = where(aveinvvar[0,*] GT 1.0, ngood)
+   good = where(aveinvvar[0,*] GT 25.0, ngood)
    if (good[0] EQ -1) then begin
      splog, 'No good sky lines (with residuals less than 0.2 pixels'
      return
    endif
 
-   shiftcoeff = 1
-   if (ngood GT 10) then shiftcoeff = 2
-   xcoeff = dblarr(nfiber,shiftcoeff+1)
-   for i=0,nfiber - 1 do  $
-     xcoeff[i,*] = polyfitw(mx[i,good],xdiff[i,good], aveinvvar[i,good], $
-                 shiftcoeff)
-   
-   xsky = xsky[*,good] 
-   skywaves = skywaves[good]
+   shiftcoeff = 2
+   if (ngood GT 10) then shiftcoeff = 3
 
+   xy2traceset, transpose(mx), transpose(xdiff), xset, ncoeff=shiftcoeff, $
+     invvar=transpose(aveinvvar), xmin=0, xmax=npix-1
       
    return
 
