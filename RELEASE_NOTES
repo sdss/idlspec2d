@@ -15,7 +15,10 @@ TELLURIC_CORR: If a telluric star is deemded bad, then reject all of
             its FITFLUX pixels from the global fit.  Previously, we were
             only rejecting the pixels INDT, but still allowing bad continuum
             pixels into the fit.  This fixes PR #2028.
-
+YANNY_PAR (in idlutils): If several lines have the same keyword name,
+            then return all of those values as an array.  This makes this
+            routine backwards-compatable with Yanny files written previously
+            with SPPLAN2D.
 
 New installation script "evilinstall" in the idlutils product.
 
