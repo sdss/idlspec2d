@@ -9,8 +9,9 @@
 ; SIGVEC = the returned sigma per pixel, even for masked pixels
 ;          which were excluded from the fit
 ; The additive term should be **per camera** !!!???
-function spfluxcorr_solve, loglam, aflux, aivar, bflux, bivar, mask=mask1, $
- sigvec=sigvec, npoly=npoly, nback=nback, ymult=ymult, yadd=yadd
+function spfluxcorr_solve, loglam, aflux, bflux, sqivar, mask=mask1, $
+ sigvec=sigvec, npoly=npoly, nback=nback, ymult=ymult, yadd=yadd, $
+ debug=debug
 
    if (NOT keyword_set(npoly)) then npoly = 3
    if (n_elements(nback) EQ 0) then nback = 1
@@ -35,10 +36,7 @@ function spfluxcorr_solve, loglam, aflux, aivar, bflux, bivar, mask=mask1, $
    endif
 
    ; Compute the errors to use as the quadrature sum
-   indx = where(aivar GT 0 AND bivar GT 0, ct)
-   if (ct LT nterm) then return, 0
-   sqivar = dblarr(npix)
-   sqivar[indx] = 1. / sqrt(1./aivar[indx] + 1./bivar[indx])
+   if (total(sqivar GT 0 AND mask GT 0) LT nterm) then return, 0
 
    ; Construct the empty matrices
    mmatrix = dblarr(npix+nterm, nterm)
@@ -93,10 +91,18 @@ print,acoeff
    yfit = ymult * aflux[*] + yadd
    sigvec = (yfit - bflux[*]) * sqivar
 
-splot,10^loglam,djs_median(bflux[0:2047],7,boundary='reflect')
-soplot,10^loglam,djs_median(bflux[2048:4095],7,boundary='reflect')
-soplot,10^loglam,djs_median(yfit[0:2047],7,boundary='reflect'),color='red'
-soplot,10^loglam,djs_median(yfit[2048:4095],7,boundary='reflect'),color='red'
+if (keyword_set(debug)) then begin ; ???
+set_plot,'x'
+splot,10^loglam[0:2047],djs_median(bflux[0:2047], $
+ width=7,boundary='reflect'),xr=[3800,9200]
+soplot,10^loglam[2048:4095],djs_median(bflux[2048:4095], $
+ width=7,boundary='reflect')
+soplot,10^loglam[0:2048],djs_median(yfit[0:2047], $
+ width=7,boundary='reflect'),color='red'
+soplot,10^loglam[2048:4095],djs_median(yfit[2048:4095], $
+ width=7,boundary='reflect'),color='red'
+cc = strupcase(get_kbrd(1))
+endif
 
    return, yfit
 end
@@ -203,13 +209,18 @@ pro spfluxcorr_v5, objname, adderr=adderr, combinedir=combinedir, $
    ;----------
    ; Loop over each object, solving for the correction vectors
 
-   ymult = fltarr(npix,nobj,nfile)
+   ymult = fltarr(npix,nobj,nfile) + 1.
    yadd = fltarr(npix,nobj,nfile)
 
+maxiter1 = 2 ; ???
+maxiter2 = 5 ; ???
+sigrej = 2.5 ; ???
    i1 = [ibest_b,ibest_r]
    for iobj=0L, nobj-1 do begin
       outmask = 0
-maxiter1 = 2 ; ???
+
+      ; This first iteration loop allows generous fitting parameters,
+      ; and is primarily to reject outlier points.
       for iiter=0, maxiter1 do begin
 splog,'Object', iobj, ' iter ', iiter
          ; Loop over exposures
@@ -224,23 +235,69 @@ splog,'Object', iobj, ' iter ', iiter
                i2 = [i_b,i_r]
                if (keyword_set(outmask)) then qgood = outmask $
                 else qgood = 1
+               invsig = 0 * allivar[*,iobj,i1]
+               indx = where(allivar[*,iobj,i2] GT 0 $
+                AND allivar[*,iobj,i1] GT 0, ct)
+               if (ct GT 0) then $
+                invsig[indx] = 1. / sqrt(1./(allivar[*,iobj,i1])[indx] $
+                 + 1./(allivar[*,iobj,i2])[indx])
                yfit1 = spfluxcorr_solve( loglam[*,iobj,*], $
-                allflux[*,iobj,i2], allivar[*,iobj,i2], $
-                allflux[*,iobj,i1], allivar[*,iobj,i1], mask=qgood, $
+                allflux[*,iobj,i2], allflux[*,iobj,i1], invsig, $
+                mask=qgood, npoly=3, nback=2, $
                 sigvec=sigvec1, ymult=ymult1, yadd=yadd1 )
                sigvec = sigvec > sigvec1
             endelse
-         endfor
-sigrej = 2.5 ; ???
+
+            if (keyword_set(ymult1)) then begin
+               ymult[*,iobj,i2] = ymult1
+               yadd[*,iobj,i2] = yadd1
+            endif
+         endfor ; End loop over exposures
+
          if (djs_reject(sigvec, 0, outmask=outmask, $
           lower=sigrej, upper=sigrej)) $
           then iiter = maxiter1
       endfor
 
-      if (keyword_set(ymult1)) then begin
-         ymult[*,iobj,i2] = ymult1
-         yadd[*,iobj,i2] = yadd1
-      endif
+      ; This second iteration loop rescales the errors.
+      ; No more pixels will be rejected in this loop.
+      for iiter=0, maxiter2 do begin
+splog,'Object', iobj, ' iter2 ', iiter
+         ; Loop over exposures
+         for iexp=0L, nexp-1 do begin
+            if (explist[iexp] EQ bestexpnum) then begin
+               ymult1 = 0
+               yadd1 = 0
+            endif else begin
+               i_b = where(camcolor EQ 'b' AND expnum EQ explist[iexp], ct1)
+               i_r = where(camcolor EQ 'r' AND expnum EQ explist[iexp], ct2)
+               i2 = [i_b,i_r]
+               igood = where(allivar[*,iobj,i2] GT 0 $
+                AND allivar[*,iobj,i1] GT 0 $
+                AND ymult[*,iobj,i2] NE 0 $
+                AND outmask GT 0, ct)
+               ; The errors are bounded not to get any larger, or
+               ; smaller by more than a factor of 20 ???
+               mfac = ((ymult[*,iobj,i2])[igood] > 0.05) < 1
+               invsig = 0 * allivar[*,iobj,i1]
+               if (ct GT 0) then $
+                invsig[igood] = 1. / sqrt( 1./(allivar[*,iobj,i1])[igood] $
+                 + mfac^2 / ((allivar[*,iobj,i2])[igood] ))
+               yfit1 = spfluxcorr_solve( loglam[*,iobj,*], $
+                allflux[*,iobj,i2], allflux[*,iobj,i1], invsig, $
+                mask=qgood, npoly=3, nback=1, $
+                sigvec=sigvec1, ymult=ymult1, yadd=yadd1, $
+                debug=(iiter EQ maxiter2) )
+               sigvec = sigvec > sigvec1
+            endelse
+
+            if (keyword_set(ymult1)) then begin
+               ymult[*,iobj,i2] = ymult1
+               yadd[*,iobj,i2] = yadd1
+            endif
+         endfor
+      endfor
+
    endfor
 
    ;----------
@@ -252,7 +309,7 @@ sigrej = 2.5 ; ???
        root_dir=combinedir)
       mwrfits, ymult[*,*,ifile], corrfile, /create
       mwrfits, yadd[*,*,ifile], corrfile
-      spawn, ['gzip','-f',calibfile], /noshell
+      spawn, ['gzip','-f',corrfile], /noshell
    endfor
 
    return
