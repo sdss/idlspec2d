@@ -4,6 +4,117 @@
 ;   adderr     - Additional error to add to the formal errors, as a
 ;                fraction of the flux; default to 0.03 (3 per cent).
 ;------------------------------------------------------------------------------
+forward_function mpfit, fcorr_chi_fn
+
+;------------------------------------------------------------------------------
+; Return a single chi value
+function fcorr_chi_fn, acoeff
+
+   common com_fcorr_chi, npoly, nback, loglam, aflux, bflux, $
+    aivar, bivar, aarr, barr
+
+   ymult = acoeff[0] * aarr[*,0]
+   for i=1, npoly-1 do ymult = ymult + acoeff[i] * aarr[*,i]
+
+   ; The errors are rescaled at every function evaluation.
+   qgood = aivar GT 0 AND bivar GT 0 AND ymult NE 0
+   totivar = qgood / ( 1./(aivar + (1-qgood)) + ymult^2/(bivar + (1-qgood)) )
+
+   chivec2 = (bflux - ymult * aflux)^2 * totivar
+
+   return, sqrt(chivec2)
+end
+
+;------------------------------------------------------------------------------
+function spfluxcorr_solve2, allloglam, allflux1, allflux2, allivar1, allivar2, $
+ npoly=npoly1, nback=nback1, ymult=ymult, yadd=yadd, $
+ debug=debug
+
+   common com_fcorr_chi, npoly, nback, loglam, aflux, bflux, $
+    aivar, bivar, aarr, barr
+
+   ; Pass arrays in the common block
+   npoly = npoly1
+   nback = nback1
+   loglam = allloglam
+   aflux = allflux1
+   bflux = allflux2
+   aivar = allivar1
+   bivar = allivar2
+
+   ; Construct the polynomial and additive vectors
+   npix = n_elements(loglam)
+   nterm = npoly + nback
+   minlog = min(loglam, max=maxlog)
+   xvector = (loglam[*] - minlog) / (maxlog - minlog)
+   aarr = dblarr(npix, npoly)
+   for ipoly=0, npoly-1 do aarr[*,ipoly] = xvector^ipoly
+   if (nback GT 0) then begin
+      barr = dblarr(npix, nback)
+      for iback=0, nback-1 do barr[*,iback] = xvector^ipoly
+   endif
+
+   ; Call MPFIT to iterate on the solution for the template
+   parinfo1 = {value: 0.D, fixed: 0, limited: [0b,0b], limits: [0.d0,0.d0], $
+    tied: ''}
+   parinfo = replicate(parinfo1, npoly+nback)
+   parinfo[0].value = 1.D
+   if (npoly GT 1) then parinfo[1:npoly-1].value = 1.D-6
+   if (nback GT 0) then parinfo[npoly:npoly+nback-1].value = 1.D-6
+   ftol = 1d-20
+   gtol = 1d-20
+   xtol = 1d-20
+
+limits = [0.1, 10] ; ???
+   ; Add constraints that the multiplicative term must be in the
+   ; bounds set by LIMITS, at least at the end points.
+   xmin = min(xvector)
+   xmax = max(xvector)
+   if (npoly EQ 1) then begin
+      parinfo[0].limits = limits
+   endif else if (npoly EQ 2) then begin
+      tiepar = replicate(parinfo1, 2)
+      tiepar[0].tied = 'P(0) + ' + string(xmin) + ' * P(1)'
+      tiepar[1].tied = 'P(0) + ' + string(xmax) + ' * P(1)'
+      tiepar[0].limits = limits
+      tiepar[1].limits = limits
+      parinfo = [parinfo, tiepar]
+   endif else if (npoly EQ 3) then begin
+      tiepar[0].tied = 'P(0) + ' + string(xmin) + ' * P(1) + ' $
+       + string(xmin^2) + ' * P(2) * P(2)'
+      tiepar[1].tied = 'P(0) + ' + string(xmax) + ' * P(1) + ' $
+       + string(xmax^2) + ' * P(2) * P(2)'
+      tiepar[0].limits = limits
+      tiepar[1].limits = limits
+      parinfo = [parinfo, tiepar]
+   endif
+
+   acoeff = mpfit('fcorr_chi_fn', parinfo=parinfo, perror=perror, $
+    maxiter=maxiter, ftol=ftol, gtol=gtol, xtol=xtol, $
+    niter=niter, status=status, /quiet)
+
+;   print, 'STATUS = ', status
+   print, 'Best-fit coeffs = ', acoeff
+;   print, 'Errors = = ', perror
+
+   ymult = acoeff[0] * aarr[*,0]
+   for i=1, npoly-1 do ymult = ymult + acoeff[i] * aarr[*,i]
+yadd = 0 ; ???
+
+   yfit = ymult * aflux[*] + yadd
+if (keyword_set(debug)) then begin ; ???
+set_plot,'x'
+splot,10^loglam[0:2047],smooth(bflux[0:2047], 9), xr=[3800,9200]
+soplot,10^loglam[2048:4095],smooth(bflux[2048:4095], 9)
+soplot,10^loglam[0:2048],smooth(yfit[0:2047], 9), color='red'
+soplot,10^loglam[2048:4095],smooth(yfit[2048:4095], 9), color='red'
+cc = strupcase(get_kbrd(1))
+endif
+
+   return, yfit
+end
+
+;------------------------------------------------------------------------------
 ; Fit for BFLUX = polynomial * AFLUX + background.
 ; The errors are the simple quadrature sum from AIVAR and BIAVAR.
 ; SIGVEC = the returned sigma per pixel, even for masked pixels
@@ -36,7 +147,7 @@ function spfluxcorr_solve, loglam, aflux, bflux, sqivar, mask=mask1, $
    endif
 
    ; Compute the errors to use as the quadrature sum
-   if (total(sqivar GT 0 AND mask GT 0) LT nterm) then return, 0
+   if (total(sqivar*mask GT 0) LT nterm) then return, 0
 
    ; Construct the empty matrices
    mmatrix = dblarr(npix+nterm, nterm)
@@ -186,6 +297,7 @@ pro spfluxcorr_v5, objname, adderr=adderr, combinedir=combinedir, $
          allivar[*,*,ifile] = objivar1
       endif else begin
          for iobj=0L, nobj-1 do begin
+print,'zzz',iobj
             ; We have to call COMBINE1FIBER with ascending wavelengths...
             if (loglam1[0,iobj] GT loglam[1,iobj]) then begin
                combine1fiber, reverse(loglam1[*,iobj]), $
@@ -212,8 +324,7 @@ pro spfluxcorr_v5, objname, adderr=adderr, combinedir=combinedir, $
    ymult = fltarr(npix,nobj,nfile) + 1.
    yadd = fltarr(npix,nobj,nfile)
 
-maxiter1 = 2 ; ???
-maxiter2 = 5 ; ???
+maxiter1 = 5 ; ???
 sigrej = 2.5 ; ???
    i1 = [ibest_b,ibest_r]
    for iobj=0L, nobj-1 do begin
@@ -221,11 +332,12 @@ sigrej = 2.5 ; ???
 
       ; This first iteration loop allows generous fitting parameters,
       ; and is primarily to reject outlier points.
-      for iiter=0, maxiter1 do begin
+      iiter = 0L
+      while (iiter LT maxiter1) do begin
 splog,'Object', iobj, ' iter ', iiter
          ; Loop over exposures
+         sigvec = 0 * allflux[*,iobj,i1]
          for iexp=0L, nexp-1 do begin
-            sigvec = 0 * allflux[*,iobj,i1]
             if (explist[iexp] EQ bestexpnum) then begin
                ymult1 = 0
                yadd1 = 0
@@ -245,7 +357,7 @@ splog,'Object', iobj, ' iter ', iiter
                 allflux[*,iobj,i2], allflux[*,iobj,i1], invsig, $
                 mask=qgood, npoly=3, nback=2, $
                 sigvec=sigvec1, ymult=ymult1, yadd=yadd1 )
-               sigvec = sigvec > sigvec1
+               sigvec = sigvec > abs(sigvec1)
             endelse
 
             if (keyword_set(ymult1)) then begin
@@ -254,48 +366,55 @@ splog,'Object', iobj, ' iter ', iiter
             endif
          endfor ; End loop over exposures
 
-         if (djs_reject(sigvec, 0, outmask=outmask, $
+         if (djs_reject(sigvec, 0*sigvec, invvar=0*sigvec+1, outmask=outmask, $
           lower=sigrej, upper=sigrej)) $
-          then iiter = maxiter1
-      endfor
+          then iiter = maxiter1 $
+         else $
+          iiter = iiter + 1
+      endwhile
 
-      ; This second iteration loop rescales the errors.
+      ; This second iteration rescales the errors.
       ; No more pixels will be rejected in this loop.
-      for iiter=0, maxiter2 do begin
-splog,'Object', iobj, ' iter2 ', iiter
-         ; Loop over exposures
-         for iexp=0L, nexp-1 do begin
-            if (explist[iexp] EQ bestexpnum) then begin
-               ymult1 = 0
-               yadd1 = 0
-            endif else begin
-               i_b = where(camcolor EQ 'b' AND expnum EQ explist[iexp], ct1)
-               i_r = where(camcolor EQ 'r' AND expnum EQ explist[iexp], ct2)
-               i2 = [i_b,i_r]
-               igood = where(allivar[*,iobj,i2] GT 0 $
-                AND allivar[*,iobj,i1] GT 0 $
-                AND ymult[*,iobj,i2] NE 0 $
-                AND outmask GT 0, ct)
+splog,'Object', iobj
+      ; Loop over exposures
+      for iexp=0L, nexp-1 do begin
+         if (explist[iexp] EQ bestexpnum) then begin
+            ymult1 = 0
+            yadd1 = 0
+         endif else begin
+; We want to add more parameters as long as chi^2 is significantly improved???
+            i_b = where(camcolor EQ 'b' AND expnum EQ explist[iexp], ct1)
+            i_r = where(camcolor EQ 'r' AND expnum EQ explist[iexp], ct2)
+            i2 = [i_b,i_r]
+            qgood =allivar[*,iobj,i2] GT 0 $
+             AND allivar[*,iobj,i1] GT 0 $
+             AND outmask GT 0
+            igood = where(qgood, ct)
+            if (ct GT 0) then $
+             yfit1 = spfluxcorr_solve2(loglam[*,iobj,*], $
+              allflux[*,iobj,i2], allflux[*,iobj,i1], $
+              allivar[*,iobj,i2], allivar[*,iobj,i1] * qgood, $
+              npoly=2, nback=0, ymult=ymult1, yadd=yadd1)
+;              npoly=2, nback=0, ymult=ymult1, yadd=yadd1, /debug) ; ???
                ; The errors are bounded not to get any larger, or
                ; smaller by more than a factor of 20 ???
-               mfac = ((ymult[*,iobj,i2])[igood] > 0.05) < 1
-               invsig = 0 * allivar[*,iobj,i1]
-               if (ct GT 0) then $
-                invsig[igood] = 1. / sqrt( 1./(allivar[*,iobj,i1])[igood] $
-                 + mfac^2 / ((allivar[*,iobj,i2])[igood] ))
-               yfit1 = spfluxcorr_solve( loglam[*,iobj,*], $
-                allflux[*,iobj,i2], allflux[*,iobj,i1], invsig, $
-                mask=qgood, npoly=3, nback=1, $
-                sigvec=sigvec1, ymult=ymult1, yadd=yadd1, $
-                debug=(iiter EQ maxiter2) )
-               sigvec = sigvec > sigvec1
-            endelse
+;            mfac = ((ymult[*,iobj,i2])[igood] > 0.05) < 1
+;            invsig = 0 * allivar[*,iobj,i1]
+;            if (ct GT 0) then $
+;             invsig[igood] = 1. / sqrt( 1./(allivar[*,iobj,i1])[igood] $
+;              + mfac^2 / ((allivar[*,iobj,i2])[igood] ))
+;            yfit1 = spfluxcorr_solve( loglam[*,iobj,*], $
+;             allflux[*,iobj,i2], allflux[*,iobj,i1], invsig, $
+;             mask=qgood, npoly=3, nback=1, $
+;             sigvec=sigvec1, ymult=ymult1, yadd=yadd1, $
+;             debug=(iiter EQ maxiter2) )
+;            sigvec = sigvec > sigvec1
+         endelse
 
-            if (keyword_set(ymult1)) then begin
-               ymult[*,iobj,i2] = ymult1
-               yadd[*,iobj,i2] = yadd1
-            endif
-         endfor
+         if (keyword_set(ymult1)) then begin
+            ymult[*,iobj,i2] = ymult1
+            yadd[*,iobj,i2] = yadd1
+         endif
       endfor
 
    endfor
