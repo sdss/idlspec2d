@@ -1,4 +1,5 @@
 
+PLATECOMPARE: New proc for interactive comparison of descrepant redshifts.
 PLATELIST: Added /PURGE2D, /PURGE1D options.
 PLOTSPEC: Added /NOERASE keyword.  Minor fix to Y plotting range.
 
