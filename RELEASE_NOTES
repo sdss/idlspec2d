@@ -43,6 +43,7 @@ DFPSPLOT: Added optional XSIZE keyword.
 DJS_BATCH: Add optional keyword SELECTHOST.  This will be used
            for the HoggPT processing of 2.5-m data.
            The inputs LOCALFILE,OUTFILE are now optional.
+HOGG_STRSPLIT: New support proc for YANNY_READ.
 LOOKFORGZIP: Also look for ".Z" file if others not found.
 POLY_ITER: Change "LT" logic to "LE" to handle case where residual
            is 0 (e.g., a perfect fit)
