@@ -115,8 +115,8 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
 
    if (keyword_set(zans)) then begin
       cz = zans.z * cspeed
-      if (cz LT 1000) then $
-        zstring = '  cz=' + string(cz,format='(f5.0)') + ' km/s' $
+      if (abs(cz) LT 3000) then $
+        zstring = '  cz=' + string(cz,format='(f6.0)') + ' km/s' $
        else $
         zstring = '  z=' + string(zans.z,format='(f8.5)')
       if (keyword_set(znum)) then $
