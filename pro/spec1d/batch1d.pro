@@ -9,6 +9,33 @@ pro batch1d, fullplatefile
    nplate = n_elements(platefile)
 
    ;----------
+   ; Find which programs are already done by looking at the log files
+
+   platemjd = strmid(platefile, 8, 10)
+   diaglog = localpath + '/spDiag1d-' + platemjd + '.log'
+
+   qdone = lonarr(nplate)
+   endstring = 'Successful completion of SPREDUCE1D'
+   for iplate=0, nplate-1 do begin
+      spawn, 'tail -1 ' + diaglog[iplate], tailstring
+      qdone[iplate] = strpos(tailstring[0], endstring) NE -1
+      if (qdone[iplate]) then $
+       print, 'File ' + platefile[iplate] + ' already reduced'
+   endfor
+
+   indx = where(qdone EQ 0, nplate)
+   if (nplate EQ 0) then begin
+      print, 'All plates have been reduced already'
+      return
+   endif
+
+   fullplatefile = fullplatefile[indx]
+   platefile = platefile[indx]
+   localpath = localpath[indx]
+   platemjd = platemjd[indx]
+   diaglog = diaglog[indx]
+
+   ;----------
    ; Generate the IDL script files
 
    fq = "'"
@@ -35,10 +62,8 @@ pro batch1d, fullplatefile
    ;----------
    ; Create list of expected output files
 
-   platemjd = strmid(platefile, 8, 10)
    zallfile = localpath + '/spZall-' + platemjd + '.fits'
    zbestfile = localpath + '/spZbest-' + platemjd + '.fits'
-   diaglog = localpath + '/spDiag1d-' + platemjd + '.log'
    diagps = localpath + '/spDiag1d-' + platemjd + '.ps'
    outfile = transpose( [ [diaglog], [diagps], [zallfile], [zbestfile] ] )
 
@@ -61,12 +86,10 @@ pro batch1d, fullplatefile
    ;----------
    ; Begin the batch jobs
 
-   endstring = 'Successful completion of SPREDUCE1D'
-   sq = "\'"
-   command = 'nice + 19 idl ' + fullscriptfile
+   command = 'nice +19 idl ' + fullscriptfile
    batch, infile, outfile, $
     hostconfig.protocol, hostconfig.remotehost, hostconfig.remotedir, $
-    command, endstring, priority=priority
+    command, priority=priority
 
    return
 end

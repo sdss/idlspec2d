@@ -16,8 +16,6 @@
 ;   remotehost - List of remote hosts [NHOST]
 ;   remotedir  - List of remote directories; scalar or [NHOST]
 ;   command    - Command to execute to begin a job; scalar or [NPROGAM]
-;   endstring  - A job is considered done when the last line of the first
-;                output file contains this string; scalar or [NPROGRAM]
 ;
 ; OPTIONAL KEYWORDS:
 ;   priority   - Priority for each job, where the jobs with the largest
@@ -55,7 +53,7 @@ pro batch_spawn, command, retval
    return
 end
 ;------------------------------------------------------------------------------
-function create_program_list, localfile, outfile, command, endstring, $
+function create_program_list, localfile, outfile, command, $
  priority=priority
 
    nprog = n_elements(localfile[0,*])
@@ -65,9 +63,9 @@ function create_program_list, localfile, outfile, command, endstring, $
     'LOCALFILE', ptr_new(), $
     'OUTFILE', ptr_new(), $
     'COMMAND', '', $
-    'ENDSTRING', '', $
+    'PID', 0L, $
     'PRIORITY', 1L, $
-    'STATUS', 'NOTDONE' )
+    'STATUS', 'UNASSIGNED' )
 
    proglist = replicate(ftemp, nprog)
 
@@ -78,7 +76,6 @@ function create_program_list, localfile, outfile, command, endstring, $
    endfor
 
    proglist.command = command
-   proglist.endstring = endstring
    if (keyword_set(priority)) then proglist.priority = priority
 
    return, proglist
@@ -117,22 +114,23 @@ function create_host_list, protocol, remotehost, remotedir
 end
 
 ;------------------------------------------------------------------------------
-function batch_if_done, remotehost, remotedir, protocol, outfile0, endstring
+function batch_if_done, remotehost, remotedir, protocol, pid
 
    sq = "'"
 
    if (keyword_set(protocol)) then begin
       prothost = protocol + ' ' + remotehost + ' '
-      batch_spawn, prothost + sq+' tail -1 ' $
-       + djs_filepath(outfile0, root_dir=remotedir)+sq, tailstring
+      batch_spawn, prothost + sq+' ps -p '+string(pid)+sq, retstring
    endif else begin
-      batch_spawn, 'tail -1 ' + outfile0, tailstring
+      batch_spawn, 'ps -p '+string(pid), retstring
    endelse
 
-   if (strpos(tailstring[0], endstring) NE -1) then retval = 'DONE' $
+   ; If there is only one line in the return string, then this process
+   ; was not found with the 'ps' command, so the job must be done.
+   if (n_elements(retstring) EQ 1) then retval = 'DONE' $
     else retval = 'NOTDONE'
 
-   splog, 'Status of ' + outfile0 + ' = ' + retval
+   splog, 'Status of job on ' + remotehost + ' = ' + retval
 
    return, retval
 end
@@ -181,7 +179,7 @@ pro batch_assign_job, ihost, iprog
 
       ; Launch the command in the background
       batch_spawn, prothost + sq+'cd '+hostlist[ihost].remotedir+'; ' $
-       +proglist[iprog].command + ' &'+sq
+       +proglist[iprog].command + ' &'+sq, retstring
 
    endif else begin
 
@@ -191,9 +189,12 @@ pro batch_assign_job, ihost, iprog
       batch_spawn, 'mkdir -p ' + newdir
 
       ; Launch the command in the background
-      batch_spawn, proglist[iprog].command + ' &'
+      batch_spawn, proglist[iprog].command + ' &', retstring
 
    endelse
+
+   ; Save the process ID number, which is the 2nd word of the return string
+   proglist[iprog].pid = long( (str_sep(retstring,' '))[1] )
 
    hostlist[ihost].status = 'BUSY'
    hostlist[ihost].progname = proglist[iprog].progname
@@ -223,7 +224,7 @@ pro batch_finish_job, ihost, iprog
 
       ; Now create local directories for output files
       junk = fileandpath(*proglist[iprog].outfile, path=newdir)
-      newdir = string(alloutdir+' ',format='(99a )')
+      newdir = string(newdir+' ',format='(99a )')
       batch_spawn, 'mkdir -p ' + newdir
 
       ; Create directories on local machine for output files.
@@ -260,13 +261,14 @@ pro batch_finish_job, ihost, iprog
    hostlist[ihost].status = 'IDLE'
    hostlist[ihost].progname = ''
    proglist[iprog].status = 'DONE'
+   proglist[iprog].pid = 0L
 
    return
 end
 
 ;------------------------------------------------------------------------------
 pro batch, localfile, outfile, protocol, remotehost, remotedir, $
- command, endstring, priority=priority, wtime=wtime
+ command, priority=priority, wtime=wtime
 
    common com_batch, hostlist, proglist
 
@@ -275,7 +277,7 @@ pro batch, localfile, outfile, protocol, remotehost, remotedir, $
    ;----------
    ; Create a list of programs to execute (and their status)
 
-   proglist = create_program_list(localfile, outfile, command, endstring, $ 
+   proglist = create_program_list(localfile, outfile, command, $ 
     priority=priority)
    nprog = n_elements(proglist)
    splog, 'Number of batch programs = ', nprog
@@ -290,12 +292,12 @@ pro batch, localfile, outfile, protocol, remotehost, remotedir, $
    ;----------
    ; Find which programs are already done by looking at local files
 
-   for iprog=0, nprog-1 do begin
-      qdone = batch_if_done('', '', '', (*proglist[iprog].outfile)[0], $
-       proglist[iprog].endstring)
-      if (qdone EQ 'DONE') then proglist[iprog].status = 'DONE' $
-       else proglist[iprog].status = 'UNASSIGNED'
-   endfor
+;   for iprog=0, nprog-1 do begin
+;      qdone = batch_if_done('', '', '', (*proglist[iprog].outfile)[0], $
+;       proglist[iprog].endstring)
+;      if (qdone EQ 'DONE') then proglist[iprog].status = 'DONE' $
+;       else proglist[iprog].status = 'UNASSIGNED'
+;   endfor
 
    ;---------------------------------------------------------------------------
    ; MAIN LOOP
@@ -314,7 +316,7 @@ pro batch, localfile, outfile, protocol, remotehost, remotedir, $
              message, 'No or multiple program names for this host'
             qdone = batch_if_done(hostlist[ihost].remotehost, $
              hostlist[ihost].remotedir, hostlist[ihost].protocol, $
-             (*proglist[j].outfile)[0], proglist[j].endstring)
+             proglist[j].pid)
             if (qdone EQ 'DONE') then $
              batch_finish_job, ihost, j
          endif
@@ -349,9 +351,11 @@ pro batch, localfile, outfile, protocol, remotehost, remotedir, $
       ;----------
       ; Sleep
 
-      wait, wtime
+      if (ndone LT nprog) then wait, wtime
 
    endwhile
+
+   print, 'All jobs have completed.'
 
    return
 end
