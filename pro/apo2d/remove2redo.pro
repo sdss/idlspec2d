@@ -39,6 +39,8 @@
 ; EXAMPLES:
 ;
 ; BUGS:
+;   Currently, either EXPNUM or PLATE must be specified.  Probably nothing
+;   happens if neither is set.
 ;
 ; PROCEDURES CALLED:
 ;   djs_filename()
