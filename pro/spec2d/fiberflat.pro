@@ -230,7 +230,7 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
    ;----------
    ;  Set flatfield bit in FIBERMASK if needed
 
-   indx = where(medval LT 0.7 * globalmed)
+   indx = where(medval LT 0.7 * globalmed OR total(fflat GT 0,1) LT 0.7*ny)
    if (indx[0] NE -1) then $
     fibermask[indx] = fibermask[indx] OR fibermask_bits('BADFLAT')
 
