@@ -21,7 +21,12 @@ here as they're made available.
 In this document:
 <UL>
   <LI><A HREF="#platelist">Which Plates Are Reduced?</A>
-  <LI><A HREF="#where">Where Is the Data and How Do I Get It?</A>
+  <LI><A HREF="#where">Getting the Reduced Data</A>
+  <OL>
+     <LI><A HREF="#get_where">Where Is the Data?</A>
+     <LI><A HREF="#get_rsync">How to Keep Your Data Up-to-Date</A>
+  </OL>
+  <LI><A HREF="#plots">Some Nifty Plots</A>
   <LI><A HREF="#summary">What Is the Summary File?</A>
   <LI><A HREF="#display">Looking at the Data</A>
   <OL>
@@ -34,6 +39,7 @@ In this document:
   <LI><A HREF="#datamodel">What Is the Data Model?</A>
   <LI><A HREF="#targetflags">What Are the Target Flags?</A>
   <LI><A HREF="#vacuum">The Wavelengths Are in Vacuum!!??</A>
+  <LI><A HREF="#problems">Reporting Problems</A>
 </UL>
 
 <P>
@@ -102,55 +108,172 @@ of a single object.  The TILE number uniquely determines a position on the
 sky, and there are a few instances where two PLATEs are drilled for one TILE.
 
 <P>
-To date, we have observed over 100 plates.
-Recent reductions are available for the following 31 plates: <BR>
+To date, we have observed over 140 plates.
+Recent reductions are available for the following plates: <BR>
 <PRE>
-PLATE  MJD   TILE SN2_G1 SN2_I1 SN2_G2 SN2_I2 Ngal Nqso Nsta Nunk Nsky
------  ----- ---- ------ ------ ------ ------ ---- ---- ---- ---- ----
-  279  51602  109   19.3   14.6   18.6   15.5  520   39   38   11   32
-  300  51666   88   23.8   20.6   20.3   19.2  456   54   90    8   32
-  301  51641   87   19.9   21.9   20.7   20.3  429   65  109    5   32
-  302  51616   86    1.6    1.2    1.7    1.4  419   36   58   95   32
-  302  51688   86   23.8   21.4   24.7   23.3  486   52   67    4   31
-  303  51614   85   24.4   23.1   27.8   23.2  526   34   46    2   32
-  304  51609   84   19.1   16.8   23.3   21.0  457   34  114    4   31
-  305  51613   83   25.0   26.1   29.4   30.6  472   36   94    6   32
-  306  51637   82   30.8   29.5   29.7   30.9  506   45   54    3   32
-  306  51690   82   20.1   25.3   21.3   27.1  505   46   53    4   32
-  307  51663   81   23.0   22.2   21.1   22.0  458   44   97    9   32
-  308  51662   80   27.7   23.7   29.2   26.0  418   64  113   13   32
-  309  51666   79   21.6   14.4   21.3   15.0  432   58  104   14   32
-  310  51614   78   10.7   10.4   13.3   12.9  429   59  100   20   32
-  311  51665   77   22.4   20.2   22.4   19.4  528   29   47    4   32
-  312  51689   76   20.3   25.3   22.5   27.8  500   46   60    2   32
-  323  51615   96   37.2  162.7   51.2  141.1   38    2  568    0   32  STELLAR LOCUS
-  324  51637   97   20.6   18.8   21.3   30.2   14    5  588    1   32  STELLAR LOCUS
-  343  51692  146   25.0   27.5   22.8   21.2  442   43  111   12   32
-  354  51792  153   15.6   19.3   14.7   20.7  371   83  130   24   32
-  408  51821  197   25.8   24.0   25.6   24.8  376  123   85   24   32
-  411  51817  200   28.8   29.6   27.3   24.7  524   43   39    0   34
-  413  51821  202   24.2   23.0   19.7   21.4  451   56   94    7   32
-  415  51810  204   26.1   32.3   28.3   30.2  461   57   77   13   32
-  416  51811  205   28.8   30.3   26.1   28.0  435   91   72    9   33
-  417  51821  219   25.8   30.6   26.8   28.0  311   52   52   11  214
-  418  51817  218   27.9   40.3   32.3   33.2  431   95   72   10   32
-  421  51821  215   28.7   29.8   26.0   28.1  512   56   35    5   32
-  422  51811  214   27.9   24.3   27.9   27.0  533   34   31   10   32
-  423  51821  213   29.1   28.2   24.9   24.6  522   45   38    3   32
-  429  51818  209   58.7   52.9   51.0   48.5  524   43   38    3   32
+PLATE  MJD   RA    DEC   SN2_G1 SN2_I1 SN2_G2 SN2_I2 Ngal Nqso Nsta Nunk Nsky
+-----  ----- ----- ----- ------ ------ ------ ------ ---- ---- ---- ---- ----
+  188  51457 358.8   0.0   22.1   14.8   11.1   13.2  402   61   74   53   50
+  190  51457   2.6   0.0   25.1   16.3   13.4    9.0  431   56   54   49   50
+  198  51433  21.4   0.1    8.4    5.6   14.1   16.3  442   34   56   58   50
+  202  51441  30.2   0.2    6.0    5.1    7.8    3.2  412   64   43   71   50
+  231  51455  60.0  -0.0   23.8   10.8   19.3   13.1   66   43  172  319   40
+  260  51612  65.2   0.1    4.0    3.9    4.4    2.6  329   22   63  194   32
+  265  51602  80.1  -0.0   23.6   12.3    9.9    6.9  370   31  151   56   32
+  266  51602 145.9   0.1   27.1   20.2   18.3   11.9  492   38   57   21   32
+  266  51615 145.9   0.1   32.6   33.3   33.2   34.4  504   44   54    6   32
+  267  51608 147.7  -0.0   23.5   22.7   30.9   24.5  535   23   37   13   32
+  268  51633 149.1   0.1   32.2   26.7   33.8   29.1  542   20   46    0   32
+  269  51581 150.6   0.0   17.3   16.8   15.1   10.6  499   34   63   12   32
+  271  51879 154.3   0.0   12.4    8.5   11.7    7.7  504   45   42   17   32
+  271  51879 154.3   0.0   27.1   23.9   29.0   22.0  510   45   45    8   32
+  279  51602 168.9  -0.0   19.3   14.6   18.6   15.5  520   39   38   11   32
+  280  51612 170.4   0.2   40.1   37.2   42.8   38.6  534   24   41    9   32
+  281  51614 171.9   0.1   31.3   25.2   39.5   37.3  472   40   80   16   32
+  282  51629 173.8  -0.1   11.6   17.9   18.7   16.1  392   58  118   40   32
+  282  51658 173.8  -0.1   33.7   30.7   40.6   31.2  418   63  121    6   32
+  283  51584 176.0  -0.0   12.1    9.5    8.1    4.7  451   52   66   39   32
+  284  51662 178.0  -0.1   14.2   13.9   13.4   11.6  510   47   43    8   32
+  285  51663 179.6  -0.0   15.0   11.6   14.5   16.3  515   28   52   13   32
+  291  51660 190.7  -0.0   19.1   16.0   16.0   18.3  525   30   43   10   32
+  292  51609 192.6  -0.0   21.2   18.6   23.4   18.4  469   56   75    8   32
+  293  51689 194.5   0.0   21.5   25.9   19.3   24.1  429   74   94   11   32
+  295  51580 198.1  -0.0    2.4    2.0    1.4    0.8  426   25   41  116   32
+  295  51581 198.1  -0.0   10.5    6.0   18.2   10.5  494   35   35   44   32
+  297  51663 201.6  -0.0   15.0   17.9   18.0   18.4  526   29   45    8   32
+  298  51662 203.5  -0.0   14.3    8.6   14.5   12.5  452   48   95   13   32
+  299  51671 205.4   0.0   32.2   27.3   28.0   26.7  471   39   89    9   32
+  300  51666 207.2  -0.0   23.8   20.6   20.3   19.2  456   54   90    8   32
+  301  51641 209.6  -0.1   19.9   21.9   20.7   20.3  429   65  109    5   32
+  302  51616 211.7  -0.0    1.6    1.2    1.7    1.4  419   36   58   95   32
+  302  51688 211.7  -0.0   23.8   21.4   24.7   23.3  486   52   67    4   31
+  303  51614 213.4   0.1   24.4   23.1   27.8   23.2  526   34   46    2   32
+  304  51609 214.5  -0.0   19.1   16.8   23.3   21.0  457   34  114    4   31
+  305  51613 216.3   0.0   25.0   26.1   29.4   30.6  472   36   94    6   32
+  306  51637 217.9  -0.1   30.8   29.5   29.7   30.9  506   45   54    3   32
+  306  51690 217.9  -0.1   20.1   25.3   21.3   27.1  505   46   53    4   32
+  307  51663 219.7   0.1   23.0   22.2   21.1   22.0  458   44   97    9   32
+  308  51662 221.6  -0.1   27.7   23.7   29.2   26.0  418   64  113   13   32
+  309  51666 223.6   0.0   21.6   14.4   21.3   15.0  432   58  104   14   32
+  310  51614 225.9   0.0   10.7   10.4   13.3   12.9  429   59  100   20   32
+  311  51665 227.3   0.0   22.4   20.2   22.4   19.4  528   29   47    4   32
+  312  51689 229.1   0.0   20.3   25.3   22.5   27.8  500   46   60    2   32
+  313  51673 230.9  -0.0   22.6   22.8   22.1   19.2  489   40   69   10   32
+  314  51641 232.7   0.0   16.1   17.8   21.3   17.0  530   27   47    4   32
+  315  51663 234.6  -0.0   18.8   15.9   18.6   22.1  504   42   49   13   32
+  318  51579 132.8  11.8    0.0    0.0    0.0    0.0   29  284  198   97   32
+  318  51614 132.8  11.8    0.0    0.0    0.0    0.0   89  329   22  168   32
+  318  51629 132.8  11.8    0.0    0.0    0.0    0.0  237   46  226   99   32
+  323  51615 183.0  -0.0   37.2  162.7   51.2  141.1   38    2  568    0   32  STELLAR LOCUS
+  324  51637 183.0  -0.0   20.6   18.8   21.3   30.2   14    5  588    1   32  STELLAR LOCUS
+  338  51694 194.5  -2.3   23.2   23.9   21.8   24.2  490   40   66   11   33
+  339  51692 196.3  -2.6   25.4   26.8   24.1   19.8  466   45   84   13   32
+  340  51691 198.1  -2.2   22.6   23.9   19.1   20.9  441   42  114   11   32
+  341  51690 200.1  -2.4   25.3   23.4   21.2   25.6  480   41   76   10   33
+  342  51691 236.9   0.1   20.6   19.9   25.6   29.0  422   45  126   14   33
+  343  51692 239.0  -0.1   25.0   27.5   22.8   21.2  442   43  111   12   32
+  344  51693 240.6   0.1   17.7   22.4   20.8   22.1  429   31  118   29   33
+  345  51673 242.4  -0.1   20.8   22.8   21.9   27.2  455   39   96   17   33
+  346  51693 244.4   0.0   19.0   23.2   21.8   24.5  407   42  141   17   33
+  348  51671 248.7   0.0   28.6   23.7   26.0   28.3  374   25  204    5   32
+  348  51696 248.7   0.0   19.8   32.6   17.1   28.2  367   25  211    5   32
+  349  51692 254.1  63.7   48.4   56.2   44.7   54.3  434   38  119   16   33
+  351  51695 256.0  61.6   18.9   23.1   20.0   21.1  455   50   81   22   32
+  351  51780 121.0  30.0   22.1   23.1   16.9   17.4  455   50   82   21   32
+  352  51694 260.0  63.0   21.1   22.8   26.4   27.2  441   42  119    6   32
+  352  51789 260.0  63.0   24.4   24.3   21.6   22.3  442   39  120    7   32
+  353  51696 257.5  59.6   36.5   38.0   35.5   38.4  475   47   76   10   32
+  354  51792 261.3  60.9   15.6   19.3   14.7   20.7  371   83  130   24   32
+  355  51784 121.0  30.0   28.2   28.7   22.9   25.5  467   40   89   12   32
+  356  51779 121.0  30.0   18.9   20.0   14.2    4.7  387   77  122   22   32
+  357  51812 260.2  55.4   35.2   36.0   26.1   30.3  384   57  150   17   32
+  358  51818 263.4  56.7   26.5   27.6   26.2   27.6  424   75   98   11   32
+  359  51820 261.3  53.3   11.3   13.4   10.7   13.7  318   72  123   43   84
+  360  51780 121.0  30.0   19.9   22.0   12.4   17.2  405   82  108   12   33
+  360  51816 264.3  54.5   20.7   21.5   19.8   20.1  408   82  107   10   33
+  373  51788 331.8  -0.0   25.2   28.5   21.5   20.5  413   47  138   10   32
+  374  51791 333.7  -0.0   18.9   16.0   19.2   16.2  439   48  105   16   32
+  379  51789 343.4   0.0   18.6   17.2   17.9   15.5  513   35   51    9   32
+  380  51792 345.3   0.0   26.9   18.6   24.6   18.0  422   65  108   11   34
+  381  51811 347.4  -0.0   28.1   27.4   27.1   26.2  388  109   99   10   34
+  382  51816 349.3   0.0   26.6   22.1   20.3   20.7  392   97  108   11   32
+  383  51818 351.2   0.1   28.8   22.6   28.8   25.7  450   63   89    5   33
+  384  51821 353.3  -0.0   25.4   25.8   26.4   26.2  497   41   62    8   32
+  385  51783 121.0  30.0   28.8   31.8   27.8   28.5  449   65   86    8   32
+  385  51873 355.4   0.0   52.1   34.9   43.4   33.4  451   65   86    6   32
+  386  51788 357.6   0.1   16.4   21.2   24.3   19.8  421   70  103   14   32
+  387  51791 359.8   0.0   35.3   25.6   30.0   26.5  507   43   49    9   32
+  388  51793   1.8  -0.0   18.4   17.2   18.4   16.3  515   38   48    7   32
+  389  51794   3.6  -0.0   25.7   36.6   26.5   33.5  507   47   49    4   33
+  390  51816   5.2  -0.0   22.3   20.1   23.8   21.5  517   36   46    9   32
+  390  51885   5.2  -0.0    7.6   14.9   10.2   19.1  452   23   40   93   32
+  391  51782 121.0  30.0   18.4   22.2   20.6   22.1  524   29   49    6   32
+  392  51793   8.9  -0.0   26.5   27.1   25.7   30.7  499   46   58    5   32
+  393  51794  10.8   0.0   23.8   25.5   24.2   24.6  507   45   46   10   32
+  394  51812  12.7  -0.0   39.1   28.4   40.7   31.2  509   42   47   10   32
+  395  51783 121.0  30.0   21.2   18.6   21.1   23.6  520   37   41    7   35
+  396  51816  16.5  -0.0   30.4   30.7   24.2   26.0  525   38   42    3   32
+  397  51794  18.3   0.0   28.7   31.3   27.0   35.4  522   41   44    1   32
+  398  51789  19.8   0.0   25.9   30.3   33.8   28.3  525   38   40    4   33
+  399  51817  21.7   0.0   28.5   32.8   25.8   32.6  527   32   45    4   32
+  400  51820  23.6   0.1   24.7   26.1   23.3   22.7  512   48   45    3   32
+  401  51788  25.8  -0.0   23.3   20.0   24.9   23.8  501   45   51   11   32
+  402  51793  27.9   0.0   27.9   29.3   27.7   30.7  530   38   36    4   32
+  403  51871  29.8   0.0   24.8   21.7   26.2   24.2  503   46   44   13   34
+  404  51812  31.6  -0.0   25.5   24.5   26.1   20.9  526   27   50    4   33
+  404  51877  31.6  -0.0   25.0   26.5   20.5   18.0  524   28   52    3   33
+  405  51816  33.7  -0.0   20.0   24.3   23.2   22.6  463   51   76   18   32
+  406  51817  35.9   0.1   30.7   32.5   30.2   29.4  436   73   91    7   33
+  407  51820  37.8  -0.1   30.2   26.9   26.1   24.7  438   62   95   12   33
+  408  51821  39.8   0.0   25.8   24.0   25.6   24.8  376  123   85   24   32
+  410  51811  43.9  -0.0   20.2   21.0   20.9   20.6  395   98   98   17   32
+  411  51817  45.8  -0.0   28.8   29.6   27.3   24.7  524   43   39    0   34
+  413  51821  49.7   0.0   24.2   23.0   19.7   21.4  451   56   94    7   32
+  414  51868  51.6  -0.0    6.1    6.1    5.4    4.2  433   54   70   50   33
+  414  51885  51.6  -0.0    7.0   10.0    6.7   15.0  412   46   61   88   33
+  415  51810  53.5   0.0   26.1   32.3   28.3   30.2  461   57   77   13   32
+  415  51879  53.5   0.0   25.3   28.1   24.4   21.8  463   57   76   12   32
+  416  51811  55.5   0.0   28.8   30.3   26.1   28.0  435   91   72    9   33
+  416  51885  55.5   0.0    8.0   23.4    8.1   19.3  392   52   59  104   33
+  417  51821   7.5  15.0   25.8   30.6   26.8   28.0  311   52   52   11  214
+  418  51817   9.4  15.0   27.9   40.3   32.3   33.2  431   95   72   10   32
+  419  51810  11.3  14.9   26.6   27.9   29.6   24.3  415   95   84   14   32
+  419  51868  11.3  14.9   39.0   28.9   37.0   25.1  417   95   83   13   32
+  419  51879  11.3  14.9   39.5   32.0   41.1   29.4  416   98   83   11   32
+  421  51821  15.2  14.8   28.7   29.8   26.0   28.1  512   56   35    5   32
+  422  51811  17.2  14.7   27.9   24.3   27.9   27.0  533   34   31   10   32
+  422  51878  17.2  14.7   30.2   23.7   30.0   24.4  532   34   38    4   32
+  423  51821  19.0  14.6   29.1   28.2   24.9   24.6  522   45   38    3   32
+  426  51879  24.7  14.1    5.3    4.4    5.3    4.3  381   74   78   75   32
+  426  51879  24.7  14.1   28.8   18.1   39.5   14.1    0    0    0    0    0
+  429  51818  26.7  14.0   58.7   52.9   51.0   48.5  524   43   38    3   32
+  430  51877  28.7  13.8   24.0   24.8   21.8   20.1  515   47   38    8   32
+  431  51877 113.5  37.8   30.3   30.6   34.4   29.5  355   79  159   15   32
+  433  51873 116.6  38.2   39.2   37.1   43.2   26.5  389   61  148    9   33
+  435  51879 118.6  40.4   15.2   14.3   19.1   13.1  345  107  139   17   32
+  435  51879 118.6  40.4   27.4   23.7   46.8   32.5    0    0    0    0    0
+  436  51883 119.1  44.9   33.2   34.2   35.8   27.5    0    0    0    0    0
+  438  51884 121.3  47.1   36.8   31.2   40.4   26.8  477   53   71    7   32
+  439  51877 122.6  44.8   29.8   28.9   32.2   27.3  398   57  148    5   32
+  440  51885 123.4  49.1   41.2   30.3   38.1   35.7  504   46   51    7   32
+  441  51868 124.9  46.7   23.1   26.1   29.8   23.1  455   51   94    8   32
+  442  51882 125.7  51.0   22.0   19.8   19.4   16.9    0    0    0    0    0
+  445  51873 129.5  50.5   26.2   30.4   33.0   26.5  515   51   36    6   32
+  447  51877 132.0  52.1   35.4   28.7   32.9   25.6  506   60   37    5   32
 </PRE>
 
+<P>
 All plates in this list have been reduced through Spectro-2D.
 Plates with values in the Ngal, ..., columns have been reduced
 through Princeton-1D.
 
+<P>
 The values of SN2 give an estimate of the signal-to-noise (per pixel) of a plate
 at a fiducial magnitude.  The fiducials are set to g=20.2, r=20.25, i=19.9.
 The measurement is of the signal-to-noise squared, per pixel, for an object
 at that magnitude.  If all these values are > 15, then the plate is "good".
 Plate 310 is "not good".  The first observation of plate 302
 would be called "horrible".
-
 <PRE>
 Ngal = The number of objects Princeton-1D called a galaxy.
 Nqso = The number of objects Princeton-1D called a QSO.
@@ -159,7 +282,9 @@ Nunk = The number of objects Princeton-1D declared spectroscopically "unknown".
 Nsky = The number of sky fibers (almost always exactly 32)
 </PRE>
 
-<H2><A NAME="where">Where Is the Data and How Do I Get It?</A></H2>
+<H2><A NAME="get_data">Getting the Reduced Data</A></H2>
+
+<H3><A NAME="get_where">Where Is the Data?</A></H3>
 
 <P>
 At Princeton, the top-level directory for the reduced data is:
@@ -174,7 +299,7 @@ fsgi03.fnal.gov:/usr/sdss/data04/schlegel/2d_v4
 </PRE></DD></DL>
 
 <P>
-This is approximately 2 Gb of data, which can be copied from Fermi with:
+This is approximately 8 Gb of data, which can be copied from Fermi with:
 <DL><DD><PRE>
 scp -r fsgi03.fnal.gov:/usr/sdss/data04/schlegel/2d_v4
 </PRE></DD></DL>
@@ -183,13 +308,50 @@ If you don't have permissions on this machine, contact your
 or <A HREF="mailto:bclee@fnal.gov">Brian Lee at Fermi</A>.
 
 <P>
-Each plate has two files associated with it:
+Each plate has three files associated with it:
 <DL><DD><PRE>
 $SPECTRO_DATA/$PLATE/spPlate-$PLATE-$MJD.fits
 $SPECTRO_DATA/$PLATE/spZbest-$PLATE-$MJD.fits
+$SPECTRO_DATA/$PLATE/spZall-$PLATE-$MJD.fits
 </PRE></DD></DL>
 where $SPECTRO_DATA refers to the top-level directory (2d_v4), and $PLATE
 refers to a subdirectory with the plate name (e.g., 0301).
+
+<H3><A NAME="get_rsync">How to Keep Your Data Up-to-Date</A></H3>
+
+<P>
+A number of plates have failed in these reductions.  Mostly, these are
+the early data.  As we fix problems and reduce these plates, they will
+be added to the above Fermi directory.
+
+<P>
+An efficient way to keep your copy of these reductions current is to use
+the Unix "rsync" command:
+<DL><DD><PRE>
+rsync -arv --rsh="ssh" fsgi03.fnal.gov:/usr/sdss/data04/schlegel/2d_v4 .
+</PRE></DD></DL>
+You can use this to copy the data to your own computer in the first place.
+If you run it again, it will copy any files that have been changed or added.
+Note that you need "ssh" to work without asking for a pass-phrase for "rsync"
+to work -- see your system admin if you need help with that.
+
+<P>
+Finally, you could set up a "cron" job to update your copy of the data on
+a daily basis.  This would be done by creating a cron table file (call it
+"cron.table" in this example):
+<DL><DD><PRE>
+0 5 * * 0 /usr/bin/rsync -arv --rsh="ssh" fsgi03.fnal.gov:/usr/sdss/data04/schlegel/2d_v4 /my/directory
+</PRE></DD></DL>
+replacing "/my/directory" with your local data-directory name.
+Then load this "cron" job by typing:
+<DL><DD><PRE>
+crontab cron.table
+</PRE></DD></DL>
+This will update your copy of the data at 5:00am every morning.
+To stop this updating, unload the cron table with:
+<DL><DD><PRE>
+crontab -r
+</PRE></DD></DL>
 
 <H2><A NAME="special">"Special" Plates</A></H2>
 
@@ -234,6 +396,22 @@ either the hardware or target selection for the survey.  These plates are:
      The two fainter plates, 323 and 324, have been observed.
 </UL>
 
+<H2><A NAME="plots">Some Nifty Plots</A></H2>
+
+<P>
+Here are some nifty plots:
+<OL>
+<LI><A HREF="zplot-main.ps">Pie diagram to z=0.15</A>
+<LI><A HREF="zplot-brg.ps">Pie diagram to z=0.6</A>
+<LI><A HREF="zplot-qso.ps">Pie diagram to z=5</A>
+<LI><A HREF="zplot-log.ps">Logarithmically-spaced pie diagram</A>
+</OL>
+(On a PostScript previewer, turn off State->Antialias.)
+The Milky Way is masked with dashed lines.  The MAIN galaxy sample are
+black points, the bright red galaxies (BRGs) that are not in MAIN are red,
+and quasars are blue.  Note that the apparent cluster of quasars at
+RA=2h, z=4.3, is due to bad reductions on plate 202.
+
 <H2><A NAME="summary">What Is the Summary File?</A></H2>
 
 <P>
@@ -249,6 +427,8 @@ a stripped-down version of "spAll.fits" for the FITS-challenged.
 <B>HOWEVER</B>, I was unable to find the photometric outputs for all
 of these data.  In these cases, the photometric outputs are all set
 to zero -- though the spectroscopic outputs are still in these files.
+These data were unavailable for plates 231, 318, 323, 324, and plate
+numbers larger than 430.
 
 <H2><A NAME="display">Looking at the Data</A></H2>
 
@@ -281,8 +461,8 @@ alias idl $IDL_DIR/bin/idl
 You can download and set up these utilities in just a few minutes
 from a couple of tar files.  Click on the following files to download them:
 <UL>
-<LI><A HREF="idlutils-v4_1_2.tar">idlutils-v4_1_2.tar</A>
-<LI><A HREF="idlspec2d-v4_1_2.tar">idlspec2d-v4_1_2.tar</A>
+<LI><A HREF="idlutils-v4_3_1.tar">idlutils-v4_3_1.tar</A>
+<LI><A HREF="idlspec2d-v4_3_1.tar">idlspec2d-v4_3_1.tar</A>
 </UL>
 
 <P>
@@ -389,10 +569,50 @@ is the <A HREF="idlspec2d_doc.html#READSPEC">READSPEC</A> procedure.
 <H4><A NAME="smdisplay">Displaying the Spectra From SM</A></H4>
 
 <P>
-The SM tools are still in development by Michael Strauss, Vijay Narayanan,
-and Robert Lupton.  Hopefully we can post this very shortly.
+The SM tools were written by Michael Strauss, Vijay Narayanan, and Robert
+Lupton.
+<UL>
+<LI> <A HREF="spectro_sm/README.spectro">Click here for their README file.</A>
+<LI> <A HREF="spectro_sm.tar">Click here for their tar file.</A>
+</UL>
+Problems and suggestions should be reported to Michael Strauss
+(<A HREF="mailto:strauss@astro.princeton.edu">strauss@astro.princeton.edu</A>).
+
+<P>
+You will need the latest version of SM (version SM2_4_8), which supports
+FITS extensions.  If you have a valid SM license, you or your system admin
+should be able to install this (see the bottom of
+Michael's <A HREF="spectro_sm/README.spectro">README file</A>.
+At Princeton, the new version is available on either "tanuki" or "moonshine"
+by executing:
+<DL><DD><PRE>
+~rhl/sm/src/sm
+</PRE></DD></DL>
+
+<P>
+At Princeton, you could type the following to display plate 306 fiber 100,
+then overplot the best-fit template:
+<DL><DD><PRE>
+ssh tanuki
+setenv IDLSPECDIR /u/dss/data/2d_v4
+setenv TEMPLATEDIR /u/schlegel/idlspec2d/templates
+setenv PLATELIST platelist
+setenv TSOBJLIST tsObjlist  # Optional for PHOTO params
+setenv TSOBJDIR /peyton/scr/ginka0/vijay/sdss_spectra/tsObj  # Optional for PHOTO params
+cd ~strauss/spectro_sm/release
+~rhl/sm/src/sm
+dev x11
+input_new spectro.sm
+define idl 1
+plotspec 306 100
+   t
+</PRE></DD></DL>
 
 <H4><A NAME="irafdisplay">Displaying the Spectra From IRAF</A></H4>
+
+<P>
+Described below is the most basic method of plotting the spectra from IRAF.
+Better tools will be posted on this page as they are available.
 
 <P>
 Use the splot task in the noao.onedspec package.  For example:
@@ -414,10 +634,7 @@ on> specplot spPlate-0311-51665.fits[0][*,1],spPlate-0311-51665.fits[0][*,2]
 <P>
 If you are looking at early reductions, you may need to make a local copy of
 the spectral FITS file and delete the WCSDIM header keyword before using splot:
-
 <PRE>
-on> !cp spPlate-0311-51665.fits /my/directory/my_spPlate-0311-51665.fits
-on> cd /my/directory
 on> hedit my_spPlate-0311-51665.fits wcsdim del+ add- show+ update+ verify-
 </PRE>
 
@@ -643,6 +860,17 @@ Below, I've listed the vacuum wavelength of some transitions:
  6716.44   6718.29   [S II]
  6730.82   6732.68   [S II]
 </PRE>
+
+<H2><A NAME="problems">Reporting Problems</A></H2>
+
+<P>
+Problems can be reported via the bug database at:
+<DL><DD><PRE>
+http://www.astro.princeton.edu:81/cgi-bin/gnatsweb.pl
+</PRE></DD></DL>
+File bugs about the extracted spectra against the category "idlspec2d",
+and about the redshifts or template-fitting against "idlspec1d".
+
 
 <HR>
 <A HREF="http://astro.princeton.edu/~schlegel/">David Schlegel</A>,
