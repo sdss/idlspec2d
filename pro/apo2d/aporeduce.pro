@@ -59,7 +59,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    endif
 
    if (size(filename, /tname) NE 'STRING') then begin
-      message, 'FILENAME is not a string', /cont
+      splog, 'FILENAME is not a string'
       return
    endif
 
@@ -89,13 +89,13 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    icam = (where(filec EQ camnames))[0]
 
    if (filer NE 'sdR' OR icam EQ -1) then begin
-      message, 'Cannot parse FILENAME '+filename, /cont
+      splog, 'Cannot parse FILENAME '+filename
       return
    endif
 
    fullname = (findfile(filepath(filename, root_dir=indir), count=ct))[0]
    if (ct NE 1) then begin
-      message, 'Found '+string(nfiles)+' instead of 1', /cont
+      splog, 'Found '+string(nfiles)+' instead of 1'
       return
    endif
 
@@ -103,8 +103,6 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    ; Find flavor, plate and MJD
 
    hdr = headfits(fullname)
-
-   if (size(hdr,/tname) NE 'STRING') then return
 
    flavor = strtrim(sxpar(hdr, 'FLAVOR'),2)
 
@@ -159,12 +157,16 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    case flavor of
       'flat' : begin
          if (NOT flatexist AND plugexist) then $
-          rstruct = quicktrace(fullname, outflat, fullplugfile)
+          rstruct = quicktrace(fullname, outflat, fullplugfile) $
+         else $
+          splog, 'Unable to reduce this flat exposure'
       end
 
       'arc' : begin
          if (flatexist AND (NOT arcexist)) then $
-          rstruct = quickwave(fullname, outflat, outarc)
+          rstruct = quickwave(fullname, outflat, outarc) $
+          else $
+           splog, 'Unable to reduce this arc exposure'
       end
 
       'science': begin
@@ -173,7 +175,9 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
                  root_dir=outdir)
 
           if (flatexist AND arcexist AND exptime GT minexp) then $
-           rstruct = quickextract(outflat, outarc, fullname, outsci)
+           rstruct = quickextract(outflat, outarc, fullname, outsci) $
+          else $
+           splog, 'Unable to reduce this science exposure'
        end
 
        else : begin
@@ -203,18 +207,19 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    endif
 
    ;----------
-   ; After reducing any 'r2' frame, we re-generate the HTML file and optionally
-   ; copy it to the file specified by COPYDIR.
+   ; After being passed any 'r2' frame, whether or not it was reduced,
+   ; we re-generate the HTML file and optionally copy it to the directory
+   ; specified by COPYDIR.
 
    if (camnames[icam] EQ 'r2') then begin
-      wait, 15
+      wait, 10
       apo_log2html, logfile, htmlfile
 
       if (keyword_set(copydir)) then begin
-         print
-         print, 'Copying files to ', copydir
+         splog
+         splog, 'Copying files to ', copydir
          spawn, 'scp1 ' + htmlfile + ' ' + copydir
-         print, 'Done.'
+         splog, 'Done.'
       endif
    endif
 

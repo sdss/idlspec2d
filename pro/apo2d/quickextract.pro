@@ -1,6 +1,7 @@
-function quickextract, flatname, arcname, sciname, outname, radius=radius
+function quickextract, flatname, arcname, sciname, outname, $
+ radius=radius, filtsz=filtsz
 
-   if (N_PARAMS() LT 4) then begin
+   if (n_params() LT 4) then begin
       print, 'Syntax - quickextract, flatname, arcname, sciname, outname'
       return, 0
    endif
@@ -9,11 +10,17 @@ function quickextract, flatname, arcname, sciname, outname, radius=radius
    if (n_elements(arcname) NE 1) then return, 0
    if (n_elements(sciname) NE 1) then return, 0
    if (NOT keyword_set(radius)) then radius = 3.0
+   if (NOT keyword_set(filtsz)) then filtsz = 25
 
-   ; Read in image
+   ;----------
+   ; Read in the raw science image
+
    sdssproc, sciname, image, hdr=hdr, color=color
    camname = strtrim(sxpar(hdr, 'CAMERAS'),2)
    exptime = sxpar(hdr, 'EXPTIME')
+
+   ;----------
+   ; Read in the reduced data from the flat and arc
 
    tset = mrdfits(flatname,1)
    plugsort = mrdfits(flatname,2)
@@ -23,45 +30,66 @@ function quickextract, flatname, arcname, sciname, outname, radius=radius
    traceset2xy, tset, ytemp, xcen
    traceset2xy, wset, ytemp, logwave
 
-   ; Boxcar extract
+   ;----------
+   ; Extract and sky-subtract the science image
+
+   ; Boxcar extract - no scattered light correction!
    flux = extract_boxcar(image, xcen, radius=radius)
 
    ; Estimate fluxivar
    fluxivar = 1.0 / (abs(flux) + 10.0)
 
-   mwrfits, flux, outname, /create
-   mwrfits, fluxivar, outname
+   ; Sky-subtract
+   skystruct = skysubtract(flux, fluxivar, plugsort, wset, $
+    objsub, objsubivar, iskies=iskies, fibermask=fibermask)
+
+   ;----------
+   ; Write out the extracted spectra
+
+   mwrfits, objsub, outname, /create
+   mwrfits, ojbsubivar, outname
+
+   ;----------
+   ; Analyze spectra for the sky level and signal-to-noise
 
    ; Select wavelength range to analyze
    if (strmid(color,0,1) EQ 'b') then wrange = [4000,5500] $
     else wrange = [6910,8500]
 
    ; Find which fibers are sky fibers + object fibers
-   isky = where(strtrim(plugsort.objtype,2) EQ 'SKY' $
-    AND plugsort.fiberid GT 0)
+;   iskies = where(strtrim(plugsort.objtype,2) EQ 'SKY' $
+;    AND plugsort.fiberid GT 0)
    iobj = where(strtrim(plugsort.objtype,2) NE 'SKY' $
     AND plugsort.fiberid GT 0)
 
+   ; Compute average (but median-filtered) flux and signal-to-noise
    nfiber = (size(flux,/dimens))[1]
-   medflux = fltarr(nfiber)
-   medivar = fltarr(nfiber)
+   meanflux = fltarr(nfiber)
+   meansn = fltarr(nfiber)
    for ifib=0, nfiber-1 do begin
+      ; Select unmasked pixels in the wavelength range for this fiber
       iwave = where(logwave[*,ifib] GT alog10(wrange[0]) $
-                AND logwave[*,ifib] LT alog10(wrange[1]) )
-      medflux[ifib] = median( flux[iwave,ifib] )
-      medivar[ifib] = median( fluxivar[iwave,ifib] )
+                AND logwave[*,ifib] LT alog10(wrange[1]) $
+                AND objsubivar[*,ifib] GT 0, nwave)
+      if (nwave GT 0) then begin
+         meanfluxvec = djs_median( flux[iwave,ifib], width=filtsz<nwave )
+         meansnvec = djs_median( objsub[iwave,ifib] $
+                  * sqrt(objsubivar[iwave,ifib]), width=filtsz<nwave )
+         meanflux[ifib] = djs_mean(meanfluxvec)
+         meansn[ifib] = djs_mean(meansnvec)
+      endif
    endfor
 
-   if (isky[0] NE -1) then begin
-      tmpw = logwave[*,isky]
-      tmpf = flux[*,isky]
-      skylevel = djs_mean( medflux[isky] ) / (exptime > 1)
+   ; Compute median of the sky fibers
+   if (iskies[0] NE -1) then begin
+      skylevel = median( meanflux[iskies] )
+      if (exptime GT 0) then skylevel = skylevel / exptime
    endif else begin
       skylevel = 0
    endelse
 
    if (iobj[0] NE -1) then begin
-      snoise =  djs_mean( (medflux[iobj]) * sqrt(medivar[iobj]) )
+      snoise =  djs_mean( meansn[iobj] )
    endif else begin
       snoise = 0
    endelse
@@ -70,7 +98,6 @@ function quickextract, flatname, arcname, sciname, outname, radius=radius
                            'CAMERA', camname, $
                            'SKYPERSEC', skylevel, $
                            'SN2', snoise^2 )
-
    return, rstruct
 end
 

@@ -24,6 +24,7 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
 
       xsol = trace320crude(smallimg, yset=ycen, maxshifte=1.40, $
                            fibermask=fibermask)
+      ngfiber = total(fibermask EQ 0)
 
       xy2traceset, ycen*nbin + (nbin-1.0)/2.0, $
        xsol, tset, ncoeff=5, maxdev=0.1, xmin=0, xmax=nrow-1
@@ -40,6 +41,7 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
       xmax = max(yy)
       rstruct = create_struct('FLAVOR', 'flat', $
                               'CAMERA', camname, $
+                              'NGOODFIBER', ngfiber, $
                               'XMIN', xmin, $
                               'XMAX', xmax )
    endelse

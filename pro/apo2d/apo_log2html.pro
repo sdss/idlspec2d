@@ -45,11 +45,39 @@
 ;   30-Apr-2000  Written by D. Schlegel, APO
 ;-
 ;------------------------------------------------------------------------------
+function apo_checklimits, field, camera, value
+
+   common apo_limits, slimits
+
+   markstring = ''
+   if (NOT keyword_set(value)) then return, markstring
+
+   ; Read this Yanny file only the first time this routine is called,
+   ; then save the limits in a common block.
+   if (NOT keyword_set(slimits)) then begin
+      limitfile = filepath('opLimits.par', root_dir=getenv('IDLSPEC2D_DIR'), $
+       subdirectory='examples')
+      yanny_read, limitfile, pdata
+      slimits = *pdata[0]
+      yanny_free, pdata
+   endif
+
+   jj = where(slimits.field EQ field AND slimits.camera EQ camera)
+   if (jj[0] NE -1) then begin
+      if (value LT slimits[jj].lovalue $
+       OR value GT slimits[jj].hivalue) then $
+       markstring = '<B><FONT COLOR="#FF0000">'
+   endif
+
+   return, markstring
+end
+
+;------------------------------------------------------------------------------
 function apo_log_header, title
 
    textout = '<HTML>'
    textout = [textout, '<HEAD><TITLE>' + title + '</TITLE></HEAD>']
-   textout = [textout, '<H1 ALIGN="center">' + title + '</H1>']
+   textout = [textout, '<H2 ALIGN=CENTER>' + title + '</H2>']
 
    return, textout
 end
@@ -86,14 +114,13 @@ function apo_log_beginplate, platenum, camnames
 
    ncams = n_elements(camnames)
 
-   textout = ['<TABLE BORDER=1>']
+   textout = ['<TABLE BORDER=1 CELLPADDING=3>']
    textout = [textout, apo_log_tableline(ncams)]
    textout = [textout, $
-    '<CAPTION><B> PLATE ' + strtrim(string(platenum),2) + '</B></CAPTION>' ]
+    '<CAPTION><H3> PLATE ' + strtrim(string(platenum),2) + '</H3></CAPTION>' ]
    nextline = rowsep + colsep
    for icam=0, ncams-1 do $
     nextline = nextline + colsep + camnames[icam]
-   nextline = nextline + colsep + 'ALL'
    textout = [textout, nextline]
 
    textout = [textout, apo_log_tableline(ncams)]
@@ -110,97 +137,53 @@ function apo_log_endplate
 end
 
 ;------------------------------------------------------------------------------
-function apo_log_fields, pp, fields
+function apo_log_fields, pp, fields, formats=formats
+
+   common com_apo_log, camnames
 
    rowsep = ' <TR> <TH> '
-   colsep = ' <TD> '
+   colsep = ' <TD ALIGN=RIGHT> '
 
    ncams = n_elements(pp)
-   igood = where(keyword_set(pp))
+   igood = where(pp NE ptr_new())
    if (igood[0] EQ -1) then return, ''
 
    flavor = (*pp[igood[0]]).flavor
+   expstring = strtrim(string( (*pp[igood[0]]).expnum ),2)
    tags = tag_names(*pp[igood[0]])
 
    for ifield=0, n_elements(fields)-1 do begin
       itag = (where(fields[ifield] EQ tags))[0]
       nextline = colsep + fields[ifield]
+      if (keyword_set(formats)) then format = formats[ifield]
       for icam=0, ncams-1 do begin
-         if (keyword_set(pp[icam])) then value = (*pp[icam]).(itag) $
-          else value = ' '
-         nextline = nextline + colsep + string(value)
+         value = ' '
+         if (keyword_set(pp[icam])) then begin
+            tmpval = (*pp[icam]).(itag)
+            if (keyword_set(tmpval)) then $
+             value = string(tmpval, format=format)
+            value = apo_checklimits(fields[ifield], camnames[icam], tmpval) $
+             + value
+         endif
+         nextline = nextline + colsep + value
       endfor
       nextline = nextline + colsep
 
-      if (ifield EQ 0) then textout = rowsep + strupcase(flavor) + nextline $
-       else textout = [textout, rowsep + nextline]
+      if (ifield EQ 0) then $
+       textout = rowsep + strupcase(flavor) + '-' + expstring + nextline $
+      else $
+       textout = [textout, rowsep + nextline]
    endfor
 
    textout = [textout, apo_log_tableline(ncams)]
-
-   return, textout
-end
-
-;------------------------------------------------------------------------------
-function apo_log_science, pp, fieldname, total=total
-
-   rowsep = ' <TR> <TH> '
-   colsep = ' <TD> '
-
-   ndim = size(pp, /n_dimen)
-   dims = size(pp, /dimens)
-   ncams = dims[0]
-   if (ndim EQ 1) then nexp = 1 $
-    else nexp = dims[1]
-
-   igood = where(keyword_set(pp))
-   if (igood[0] EQ -1) then return, ''
-
-   flavor = (*pp[igood[0]]).flavor
-   tags = tag_names(*pp[igood[0]])
-
-   totals = fltarr(ncams)
-
-   for iexp=0, nexp-1 do begin
-      ; Get the exposure number
-      igood = where(keyword_set(pp[*,iexp]))
-      if (igood[0] NE -1) then expnum = (*pp[igood[0],iexp]).expnum $
-       else expnum = 0
-
-      itag = (where(fieldname EQ tags))[0]
-      nextline = strupcase(flavor) + '-' $
-       + strtrim(string(long(expnum)),2) $
-       + colsep + fieldname
-      for icam=0, ncams-1 do begin
-         if (keyword_set(pp[icam,iexp])) then value = (*pp[icam,iexp]).(itag) $
-          else value = ''
-         nextline = nextline + colsep + string(value)
-         totals[icam] = totals[icam] + float(value)
-      endfor
-      nextline = nextline + colsep
-
-      if (iexp EQ 0) then textout = rowsep + nextline $
-       else textout = [textout, rowsep + nextline]
-   endfor
-
-   textout = [textout, apo_log_tableline(ncams)]
-
-   if (keyword_set(total)) then begin
-      nextline = strupcase(flavor) + '-TOTAL' $
-       + colsep + fieldname
-      for icam=0, ncams-1 do $
-       nextline = nextline + colsep + string(totals[icam])
-      nextline = nextline + colsep + string(min(totals))
-      textout = [textout, rowsep + nextline]
-
-      textout = [textout, apo_log_tableline(ncams)]
-   endif
 
    return, textout
 end
 
 ;------------------------------------------------------------------------------
 pro apo_log2html, logfile, htmlfile
+
+   common com_apo_log, camnames
 
    if (n_params() EQ 0) then begin
       print, 'Syntax: apo_log2html, logfile, [ htmlfile ]'
@@ -211,7 +194,7 @@ pro apo_log2html, logfile, htmlfile
       htmlfile = strmid(logfile, 0, ipos) + '.html'
    endif
 
-   camnames = ['b1', 'r1', 'b2', 'r2']
+   camnames = ['b1', 'r1', 'b2', 'r2', 'ALL']
    ncams = n_elements(camnames)
 
    ; Lock the file to do this.
@@ -279,8 +262,9 @@ pro apo_log2html, logfile, htmlfile
                     AND camera EQ camnames[icam])
          if (ii[0] NE -1) then pflats[icam] = pstruct[ii[0]]
       endfor
-      fields = ['XMIN', 'XMAX']
-      textout = [ textout, apo_log_fields(pflats, fields) ]
+      fields = ['NGOODFIBER', 'XMIN', 'XMAX']
+      formats = ['(i4)', '(f7.1)', '(f7.1)']
+      textout = [ textout, apo_log_fields(pflats, fields, formats=formats) ]
 
       ;----------
       ; Find the first (and presumably only) FLAVOR=arc for each camera
@@ -291,27 +275,73 @@ pro apo_log2html, logfile, htmlfile
                     AND camera EQ camnames[icam])
          if (ii[0] NE -1) then parcs[icam] = pstruct[ii[0]]
       endfor
+      formats = ['(f7.1)', '(f7.1)', '(f4.2)', '(i)']
       fields = ['WAVEMIN', 'WAVEMAX', 'BESTCORR', 'NLAMPS']
-      textout = [ textout, apo_log_fields(parcs, fields) ]
+      textout = [ textout, apo_log_fields(parcs, fields, formats=formats) ]
 
       ;----------
-      ; Find all science exposures
+      ; Find all science exposures and collect them into one structure
 
       ; Now find all unique science exposure numbers for this plate
       ii = where(plate EQ thisplate AND flavor EQ 'science')
-      allexp = expnum[ii[ uniq(expnum[ii], sort(expnum[ii])) ]]
-      nexp = n_elements(allexp)
+      if (ii[0] NE -1) then begin
+         allexp = expnum[ii[ uniq(expnum[ii], sort(expnum[ii])) ]]
+         nexp = n_elements(allexp)
 
-      pscience = replicate(ptr_new(), ncams, nexp)
-      for icam=0, ncams-1 do begin
+         pscience = replicate(ptr_new(), ncams, nexp)
          for iexp=0, nexp-1 do begin
-            ii = where(plate EQ thisplate AND flavor EQ 'science' $
-                       AND camera EQ camnames[icam] AND expnum EQ allexp[iexp])
-            if (ii[0] NE -1) then pscience[icam, iexp] = pstruct[ii[0]]
+            for icam=0, ncams-1 do begin
+               jj = where(plate EQ thisplate AND flavor EQ 'science' $
+                AND camera EQ camnames[icam] AND expnum EQ allexp[iexp])
+               if (jj[0] NE -1) then pscience[icam,iexp] = pstruct[jj[0]]
+            endfor
          endfor
-      endfor
-      textout = [ textout, apo_log_science(pscience, 'SKYPERSEC') ]
-      textout = [ textout, apo_log_science(pscience, 'SN2', /total) ]
+
+         ;----------
+         ; Output SKYPERSEC for science exposures
+
+         for iexp=0, nexp-1 do begin
+            textout = [ textout, $
+             apo_log_fields(pscience[*,iexp], 'SKYPERSEC', formats='(f8.2)') ]
+         endfor
+
+         ;----------
+         ; Output SN2 for science exposures
+
+         for iexp=0, nexp-1 do begin
+            textout = [ textout, $
+             apo_log_fields(pscience[*,iexp], 'SN2', formats='(i6)') ]
+         endfor
+
+         ;----------
+         ; Output TOTAL-SN2
+
+         rstruct = create_struct('MJD', 0L, $
+                                 'PLATE', 0L, $
+                                 'EXPNUM', '', $
+                                 'FLAVOR', '', $
+                                 'CAMERA', '', $
+                                 'TOTALSN2', 0.0 )
+         ptotal = replicate(ptr_new(), ncams)
+         for icam=0, ncams-2 do begin
+            ptotal[icam] = ptr_new(rstruct)
+            for iexp=0, nexp-1 do begin
+               if (keyword_set(pscience[icam,iexp])) then begin
+                  (*ptotal[icam]).totalsn2 = (*ptotal[icam]).totalsn2 + $
+                   (*pscience[icam,iexp]).sn2
+               endif
+            endfor
+         endfor
+         ptotal[ncams-1] = ptr_new(rstruct) ; 'ALL' camera
+         (*ptotal[ncams-1]).totalsn2 = 1.0e-10 ; Set to non-zero so that this
+                                               ; field will be printed.
+         for icam=0, ncams-2 do $
+          (*ptotal[ncams-1]).totalsn2 = min([ (*ptotal[ncams-1]).totalsn2, $
+           (*ptotal[icam]).totalsn2 ]) > 1.0e-10
+         textout = [ textout, $
+          apo_log_fields(ptotal, 'TOTALSN2', formats='(i6)') ]
+
+      endif
 
       textout = [textout, apo_log_endplate()]
    endfor
