@@ -197,6 +197,9 @@ pro spreduce, flatname, arcname, objname, $
 
       ; Set tai_mid equal to the time half-way through the exposure
       get_tai, objhdr, tai_beg, tai_mid, tai_end
+      ; In case TAI-BEG,TAI-END were missing from the header, add them in.
+      sxaddpar, objhdr, 'TAI-BEG', tai_beg
+      sxaddpar, objhdr, 'TAI-END', tai_end
 
       bestflat = select_flat(flatstruct, tai_mid)
       splog, 'Best flat = ', bestflat.name
