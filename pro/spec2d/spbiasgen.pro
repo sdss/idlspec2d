@@ -27,7 +27,7 @@
 ;   sigrej     - Sigma rejection level; default to 1, 1, 1.1, 1.3, 1.6 or 1.9
 ;                for 1,2,3,4,5 or 6 flats.  For more then 6 flats, default
 ;                to 2.0.
-;   maxiter    - Number of rejection iterations; default to 2.
+;   maxiter    - Number of rejection iterations; default to 3.
 ;
 ; OUTPUTS:
 ;
