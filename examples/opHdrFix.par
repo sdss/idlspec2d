@@ -256,6 +256,18 @@ ophdrfix sdR-??-0001247[4-4] NAME     "'0799-52277-01F'"
 # on spectro-2 for that plate.
 ophdrfix sdR-?2-0001306[6-8] FLAVOR   "'unknown'"
 
+# The smear exposure had a TCC abort for exposure #13097 of
+# plate 601 on MJD 52316.  Only the first half of the smear
+# was taken (if that).  Unfortunately, this is the only
+# smear for this plate.
+ophdrfix sdR-??-00013096 FLAVOR   "'unknown'"
+
+# The smear exposure had a TCC abort for exposure #13111 of
+# plate 803 on MJD 52317.  Only the first half of the smear
+# was taken (if that).  Hopefully, a smear is being taken for
+# this plate on the following night.
+ophdrfix sdR-??-00013111 FLAVOR   "'unknown'"
+
 # The observers had problems acquiring guide stars on this only
 # exposure of plate 866 on MJD=52317.
 ophdrfix sdR-??-00013132 FLAVOR   "'unknown'"
