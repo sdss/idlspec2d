@@ -57,7 +57,7 @@
 ;   $IDLSPEC2D_DIR/etc/TEMPLATEFILES
 ;
 ; PROCEDURES CALLED:
-;   find_npeaks()
+;   find_nminima()
 ;   splog
 ;
 ; INTERNAL SUPPORT ROUTINES:
@@ -203,12 +203,16 @@ function zcompute, objflux, objivar, starflux, starmask, nfind=nfind, $
 
    indx = where(dofarr GT mindof, ct)
    if (ct GT width) then begin
-      xpeak1 = find_npeaks(-chi2arr[indx]/dofarr[indx], lags[indx], $
-       nfind=nfind, minsep=minsep, width=width, $
+;      xpeak1 = find_npeaks(-chi2arr[indx]/dofarr[indx], lags[indx], $
+;       nfind=nfind, minsep=minsep, width=width, $
+;       ypeak=ypeak1, xerr=xerr1, npeak=npeak)
+;      zans[0:npeak-1].chi2 = -ypeak1
+      xpeak1 = find_nminima(chi2arr[indx], lags[indx], $
+       dofarr=dofarr[indx], nfind=nfind, minsep=minsep, width=width, $
        ypeak=ypeak1, xerr=xerr1, npeak=npeak)
       zans[0:npeak-1].z = poffset - xpeak1
       zans[0:npeak-1].z_err = xerr1
-      zans[0:npeak-1].chi2 = -ypeak1
+      zans[0:npeak-1].chi2 = ypeak1
       for ipeak=0L, npeak-1 do begin
          junk = min(abs(lags-xpeak1[ipeak]), ilag)
          zans[ipeak].dof = dofarr[ilag]
