@@ -23,6 +23,7 @@ bin/sprobot_status -text
 bin/sprobot_stop -text
 bin/sprobotcopy.sh -text
 bin/startapo.sh -text
+bin/zplot -text
 doc/Makefile -text
 doc/mk_doc -text
 doc/paper/frames.jpg -text svneol=unset#unset
