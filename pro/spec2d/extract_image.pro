@@ -6,7 +6,7 @@
 ;   Extract the fiber profile flux for an entire image
 ;
 ; CALLING SEQUENCE:
-;   extract_image(fimage, invvar, xcen, sigma, flux, [error,
+;   extract_image(fimage, invvar, xcen, sigma, flux, [error, yrow=yrow,
 ;              ymodel=ymodel, fscat=fscat, proftype = proftype, 
 ;              wfixed=wfixed, sigmacor=sigmacor, xcencor=xcencor, mask=mask,
 ;              nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej])
@@ -19,14 +19,15 @@
 ;                  (scalar or [nFibers] or [nRow, nFibers])
 ;
 ; OUTPUTS:
-;   flux       - Total extracted flux in each profile [nRow, nFibers]
+;   flux       - Total extracted flux in each profile [nRowExtract, nFibers]
 ;
 ; OPTIONAL OUTPUTS:
-;   error      - Estimated total error in each profile [nRow, nFibers]
+;   error      - Estimated total error in each profile [nRowExtract, nFibers]
 ;   ymodel     - model best fit of row[nCol, nRow]
 ;   fscat      - scattered light contribution in each fiber[nRow, nFibers]
 ;
 ; OPTIONAL KEYWORDS:
+;   yrow       - long array specifying which rows to extract, default is all
 ;   proftype   - currently, one can only use 1: Gaussian (scalar)
 ;   wfixed     - array of 1's and zero's which set which parameters are fixed.
 ;                e.g. [1] just gaussian's with fixed width sigma
@@ -56,131 +57,238 @@
 ;    8-Aug-1999  Version 0.0 Scott Burles, Chicago 
 ;-
 ;------------------------------------------------------------------------------
-subroutine extract_row, fimage, invvar, xcen, sigma, flux, error, 
-               ymodel=ymodel, fscat=fscat, proftype = proftype, 
-               wfixed=wfixed, sigmacor=sigmacor, xcencor=xcencor, mask=mask,
-               nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej
+pro extract_image, fimage, invvar, xcen, sigma, flux, error, yrow=yrow, $
+               ymodel=ymodel, fscat=fscat, proftype = proftype,  $
+               wfixed=wfixed, sigmacor=sigmacor, xcencor=xcencor, mask=mask, $
+               nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej 
 
    ; Need 5 parameters
    if (N_params() LT 5) then begin
       print, 'Syntax - extract_image(fimage, invvar, xcen, sigma, flux, [error,'
-      print, ' ymodel=ymodel, fscat=fscat, proftype = proftype, '
+      print, ' yrow=yrow, ymodel=ymodel, fscat=fscat, proftype = proftype, '
       print, ' wfixed=wfixed, sigmacor=sigmacor, xcencor=xcencor, mask=mask, '
       print, ' nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej])'
       return
    endif
 
-   nTrace = n_elements(xcen)
-   nx = n_elements(fimage)
+;
+;	fimage should have [nCol,nRow]
+;
+   fimagesize = size(fimage)
+   if (fimagesize[0] NE 2) then message, 'FIMAGE must be 2 dimensional'
 
-   if (n_elements(sigma) NE nTrace) then begin
-    sigma1 = sigma[0]
-    sigma = xcen*0.0 + sigma1
-   endif 
+   invvarsize = size(invvar)
+   if (invvarsize[0] NE 2) then message, 'INVVAR must be 2 dimensional'
 
-   if (NOT keyword_set(nPoly)) then nPoly = 5
+   xcensize = size(xcen)
+   if (xcensize[0] NE 2) then message,'XCEN must be 2 dimensional [nRow,nTrace]'
+
+;
+;	Check dimensions
+;
+
+   nx = fimagesize[1]
+   if (invvarsize[1] NE nx) then $
+    message, 'Number of cols in FIMAGE and INVVAR must be equal'
+
+   ny = fimagesize[2]
+   if (invvarsize[2] NE ny) then $
+    message, 'Number of rows in FIMAGE and INVVAR must be equal'
+   if (xcensize[1] NE ny) then $
+    message, 'Number of cols in xcen must equal number of rows in FIMAGE'
+
+;
+;	Xcen should have dimensions [nRows, nTrace]
+;
+   nTrace = xcensize[2]
+
+;
+;	For this procedure, we want to work with transposes:)
+;	That is [nTrace, nRow] since we work row by row.
+;	But all answers will be returned as [nRow, nTrace]
+;
+
+   xcenuse = transpose(xcen)
+  
+   sigmasize = size(sigma)
+
+   if (sigmasize[0] EQ 0) then begin
+      sigma1 = xcenuse*0.0 + sigma
+   endif else if (sigmasize[0] EQ 1) then begin
+      if (sigmasize[1] EQ nTrace) then $ 
+         sigma1 = rebin(sigma,nTrace,ny) $
+      else if (sigmasize[1] EQ ny) then $
+         sigma1 = transpose(rebin(sigma,ny,nTrace)) $
+      else message, 'Number of elements in sigma does not equal nTrace nor nRow'
+   endif else if (sigmasize[0] EQ 2) then begin
+      if (sigmasize[1] NE ny OR sigmasize[2] NE nTrace) then $
+         message, '2d sigma array must have same dimensions as XCEN'
+      sigma1 = transpose(sigma)
+   endif else message, 'Sigma must be scalar, 1d, or 2d array'
+
+   nRowExtract = ny          ; default first to total number of rows
+   if (NOT keyword_set(yrow)) then yrow = lindgen(ny) $
+   else begin
+       nRowExtract = n_elements(yrow)
+       check = where(yrow LT 0 OR yrow GE ny, count)
+       if (count GT 0) then $
+          message, 'YROW has elements which do not correspond to rows in FIMAGE'
+       if (nRowExtract GT ny) then $
+          message, 'YROW has more elements than FIMAGE'
+   endelse
+
+
+   if (NOT keyword_set(nPoly)) then nPoly = 5      ; order of background
    if (NOT keyword_set(maxIter)) then maxIter = 10
    if (NOT keyword_set(highrej)) then highrej = 5.0
-   if (NOT keyword_set(lowrej)) then lowrej = 5.0
-   if (NOT keyword_set(wfixed)) then wfixed = [1]
+   if (NOT keyword_set(lowrej)) then lowrej = 5.0 
+   if (NOT keyword_set(wfixed)) then wfixed = [1]  ; Zeroth order term
+   if (NOT keyword_set(proftype)) then proftype = 1  ; Gaussian
+   if (NOT keyword_set(ymodel)) then ymodel = fltarr(nx,ny) 
 
-   xvar = findgen(nx)
-
-   if (NOT keyword_set(mask)) then mask = lonarr(nx) + 1 $
-      else if (nx NE n_elements(mask)) then $
-         message, 'Number of elements in FIMAGE and MASK must be equal'
+   masksize = size(mask)
+   if (NOT keyword_set(mask)) then mask = make_array(nx,ny, /byte, value=1) $
+      else if (masksize[0] NE 2) then $
+         message, 'MASK is not 2 dimensional' $
+      else if (masksize[1] NE nx) then $
+         message, 'Number of cols in FIMAGE and MASK must be equal' $
+      else if (masksize[2] NE ny) then $
+         message, 'Number of rows in FIMAGE and MASK must be equal'
 
    nCoeff = n_elements(wfixed)       ;Number of parameters per fibers
-   proftype = 1                      ;Gaussian
 
-   if (nx NE N_elements(invvar)) then $
-    message, 'Number of elements in FIMAGE and INVVAR must be equal'
+   if (keyword_set(sigmacor)) then $
+      if((size(sigmacor))[0] NE 2) then $
+         message, 'MASK is not 2 dimensional' $
+      else if ((size(sigmacor))[1] NE nRowExtract) then $
+         message, 'Number of cols in SIGAMCOR and YROW must be equal' $
+      else if ((size(sigmacor))[2] NE nTrace) then $
+         message, 'Number of rows in SIGAMCOR and xcen must be equal'
 
-;
-;	Check that xcen is sorted in increasing order
-;	with separations of at 3 pixels.
-;
-   check = where(xcen[0:nTrace-1] GE xcen[1:nTrace-2] - 3,count)
-
-   if (count GT 0) then $
-      message, 'XCEN is not sorted or not separated by greater than 3 pixels.'
 
 
    nPoly = LONG(nPoly)
    ma = nPoly + nTrace*nCoeff
    maxIter = LONG(maxIter)
    proftype = LONG(proftype)
-   calcCovar = LONG(calcCovar)
 		
    p = fltarr(ma)         ; diagonal errors
-   ymodel = fltarr(nx)
-   fscat = fltarr(nTrace)
-
-
-   if (NOT keyword_set(wfixarr)) then begin
-      wfixarr = lonarr(ma) + 1 	       ; Fixed parameter array
-      for i=0,nCoeff-1 do wfixarr(lindgen(nTrace)*nCoeff+i) = wfixed[i]
-      if (keyword_set(bfixarr)) then wfixarr(nTrace*nCoeff:ma-1) = bfixarr
-   endif else if (ma NE n_elements(wfixarr)) then $
-      message, 'Number of elements in FIMAGE and WFIXARR must be equal'
-
    ans = fltarr(ma)       ; parameter values
+   ymodelrow = fltarr(nx)
+   fscatrow = fltarr(nTrace)
+   lTrace = lindgen(nTrace)
 
-   if (keyword_set(iback)) then begin
-      if (nPoly NE n_elements(iback)) then $
-         message, 'Number of elements in IBACK is not equal to nPoly'
-      ans(nTrace*nCoeff:ma-1) = iback 
-   endif
+;
+;	Prepare Output arrays
+;
 
-   if (keyword_set(inputans)) then begin
-      if (nTrace*nCoeff NE n_elements(inputans)) then $
-         message, 'Number of elements in INPUTANS is not equal to nTrace*nCoeff'
-      ans(0:nTrace*nCoeff-1) = inputans
-   endif
+   flux = fltarr(nRowExtract, nTrace)
+   error = fltarr(nRowExtract, nTrace)
 
-   p = fltarr(ma)         ; diagonal errors
-   covar = fltarr(ma,ma)  ; full covariance matrix
+;
+;
+;	Now loop over each row specified in YROW 
+;	and extract with rejection with a call to extract_row
+;       Check to see if keywords are set to fill optional arrays
+;
+;
 
-   finished = 0
-   niter = 0
-   totalreject = 0
+   for iy=0,nRowExtract-1 do begin
+     cur = yrow(iy)
+     xcencurrent = xcenuse[*,cur]
+     sigmacur = sigma1[*, cur]
+;
+;	Check that xcen is sorted in increasing order
+;	with separations of at 3 pixels.
+;
+     check = where(xcencurrent[0:nTrace-1] GE xcencurrent[1:nTrace-2] - 3,count)
+     if (count GT 0) then $
+        message, 'XCEN is not sorted or not separated by greater than 3 pixels.'
 
-   while(finished NE 1) do begin 
+     ansrow = extract_row(fimage[*,cur], invvar[*,cur], xcencurrent, $
+      sigmacur, ymodel=ymodelrow, fscat=fscatrow, proftype=proftype, $
+      wfixed=wfixed, mask=mask[*,cur], diagonal=prow, nPoly=nPoly, $
+      maxIter=maxIter, highrej=highrej, lowrej=lowrej, calcCovar=0)
 
-      workinvvar = invvar*mask
+     
+     if(proftype EQ 1) then begin
+        print, format='($, ".",i4.4)',cur
+;       print, 'Analyzing row', cur, '     With Gaussian Profile', wfixed
 
-      result = call_external(getenv('IDL_EVIL')+'libspec2d.so','extract_row',$
-       nx, float(xvar), float(fimage), float(invvar), float(ymodel), nTrace, $
-       nPoly, float(xcen), float(sigma), proftype, calcCovar, nCoeff, ma, ans, $
-       long(wfixarr), p, fscat, covar)
+       fluxrow = ansrow[0,*]
+       errorrow = 1.0/prow(lTrace*nCoeff) ; best estimate we can do
+					      ; without covariance matrix
 
-       diffs = (fimage - ymodel)*sqrt(workinvvar) 
-       chisq = total(diffs*diffs)
-       reducedChi = chisq/(total(mask) - ma)
-       scaleError = 1.0
-       if (reducedChi GT 1.0) then scaleError = sqrt(reducedChi)
+       if(nCoeff GE 2) then begin 	      ; add in symmetric term if present
+	  widthrow = ansrow[1,*]
+          errorwidth = 1.0/prow(lTrace*nCoeff + 1)
+          fluxrow = fluxrow + widthrow
 
-       badhigh = where(diffs GT highrej*scaleError, badhighct)
-       badlow = where(diffs LT -lowrej*scaleError, badlowct)
+;
+;	Estimate new widths if specified
+;
+          if(wfixed[1] GT 0 AND keyword_set(sigmacor)) then begin 
+;             print, 'Calculating SIGMACOR...'
 
-       finished = 1
-       if(badhighct GT 0) then begin
-          mask(badhigh) = 0
-          totalreject = totalreject + badhighct
-          finished = 0
-       endif 
-       if(badlowct GT 0) then begin
-          mask(badlow) = 0
-          totalreject = totalreject + badlowct
-          finished = 0
+;
+;	 Make a guess at an underestimated error
+;
+	     safe = where(fluxrow GT 0.0, safecount)
+             if (safecount GT 0) then begin
+                r = widthrow(safe)/fluxrow(safe)
+                rerror = sqrt((errorrow(safe)*r)^2 + errorwidth(safe)^2) / $
+                               fluxrow(safe) 
+
+;
+;		Only take corrections significant at 2 sigma
+;
+	        check = where(rerror LT 0.50 AND abs(r) LT 0.4, count)
+                if(count GT 0) then $
+	          sigmacur(safe(check)) = sigmacur(safe(check)) * $ 
+                   (r(check)+ 1.0)  
+             endif
+             sigmacor[iy,*] = sigmacur
+          endif
+
        endif
 
-       niter = niter + 1
-       if (niter EQ maxIter) then finished = 1
 
-   endwhile
+;
+;	Estimate new centroids if specified
+;
+       if(nCoeff GE 3) then  $ ; calculate asymmetric term if present
+       if(wfixed[2] GT 0 AND keyword_set(xcencor)) then begin 
+;          print, 'Calculating XCENCOR...'
 
-   oback = ans[ma-nPoly:ma-1]
-   return, reform(ans[0:nTrace*nCoeff-1],nCoeff,nTrace)
+	 centerrow = ansrow[2,*]
+         errorcent = 1.0/prow(lTrace*nCoeff + 2)
+;
+;	 Make a guess at an underestimated error
+;
+	 safe = where(fluxrow GT 0.0, safecount)
+         if (safecount GT 0) then begin
+            r = centerrow(safe)/fluxrow(safe)
+            rerror = sqrt((errorrow(safe)*r)^2 + errorcent(safe)^2) / $
+                      fluxrow(safe) 
+;
+;		Only take corrections significant at 2 sigma
+;
+	    check = where(rerror LT 0.50 AND abs(r) LT 0.4, count)
+            if(count GT 0) then $
+	       xcencurrent(safe(check)) = xcencurrent(safe(check)) + $ 
+                 r(check) * sigmacur(safe(check))
+          endif
+          xcencor[iy,*] = xcencurrent
+       endif
+     endif
+
+     if(keyword_set(ymodel)) then ymodel[*,cur] = ymodelrow
+     if(keyword_set(fscat)) then fscat[iy,*] = fscatrow
+
+     flux[iy,*] = fluxrow 
+     error[iy,*] = errorrow 
+   endfor	  
+
+   return
 end
 ;------------------------------------------------------------------------------

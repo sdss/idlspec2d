@@ -113,7 +113,7 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
       else if (nx NE n_elements(xvar)) then $
          message, 'Number of elements in FIMAGE and XVAR must be equal'
 
-   if (NOT keyword_set(mask)) then mask = bytarr(nx) + 1 $
+   if (NOT keyword_set(mask)) then mask = make_array(nx, /byte, value=1) $
       else if (nx NE n_elements(mask)) then $
          message, 'Number of elements in FIMAGE and MASK must be equal'
 
@@ -139,7 +139,6 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
    proftype = LONG(proftype)
    calcCovar = LONG(calcCovar)
 		
-   p = fltarr(ma)         ; diagonal errors
    ymodel = fltarr(nx)
    fscat = fltarr(nTrace)
 
@@ -174,18 +173,19 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
 
    while(finished NE 1) do begin 
 
-      workinvvar = invvar*mask
+      workinvvar = float(invvar*mask)
 
       result = call_external(getenv('IDL_EVIL')+'libspec2d.so','extract_row',$
-       nx, float(xvar), float(fimage), float(invvar), float(ymodel), nTrace, $
+       nx, float(xvar), float(fimage), workinvvar, float(ymodel), nTrace, $
        nPoly, float(xcen), float(sigma), proftype, calcCovar, nCoeff, ma, ans,$
        long(wfixarr), p, fscat, covar)
 
        diffs = (fimage - ymodel)*sqrt(workinvvar) 
        chisq = total(diffs*diffs)
        reducedChi = chisq/(total(mask) - ma)
-       scaleError = 1.0
-       if (reducedChi GT 1.0) then scaleError = sqrt(reducedChi)
+       scaleError = sqrt(chisq/total(mask))
+;       scaleError = 1.0
+;       if (reducedChi GT 1.0) then scaleError = sqrt(reducedChi)
 
        badhigh = where(diffs GT highrej*scaleError, badhighct)
        badlow = where(diffs LT -lowrej*scaleError, badlowct)
@@ -204,7 +204,7 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
 
        niter = niter + 1
        if (niter EQ maxIter) then finished = 1
-
+;       print,format='($,i)', niter
    endwhile
 
    oback = ans[ma-nPoly:ma-1]
