@@ -12,12 +12,14 @@ APO_LOG2HTML,APOREDUCE: Switch from saving the Mountain standard time (MST)
 APO_LOG2HTML: Compare the exposure "flavor" when looking at the operational
            limits (in the "opLimits.par" file).  This allows us to
            differentiate between bias and dark levels (PR #2562).
+APO_PLOTBIAS: Remove ROOT_DIR keyword, but look at $RAWDATA_DIR environ
+           variable instead.  Look for uncompressed or compressed raw files.
 APOFLUXCALIB: Procedure for generating a canonical set of flux-calibration
            vectors (including the superflat) for on-the-mountain plotting
            of spectra using APOPLOT.
-APOREDUCE: Allow setting MINEXP to 0 sec.  Change default of MINEXP to 0 sec,
-           so that any exposure with non-negative exposure time is reduced
-           by Son-of-Spectro.
+APOALL,APOREDUCE: Allow setting MINEXP to 0 sec.  Change default of MINEXP
+           to 0 sec, so that any exposure with non-negative exposure time
+           is reduced by Son-of-Spectro.
 APOPLOT: New proc for plotting spectra from the Son-of-Spectro outputs at APO.
 APOPLOT,LOGSHEET,PLOTSPEC: Set the !QUIET option for procedures where it is
            annoying to see all the IDL messages.
@@ -106,6 +108,8 @@ REMOVE2REDO: Make more robust, and give more descriptive messages.
             Another attempt to fix errors in remove2redo.  It might now
             work with plate argument: "sos_redo plate=665", but should
             definitely work with simple invocation: "sos_redo".
+            --> Now a re-write of this, allowing either PLATE or EXPNUM
+                keywords (but not both) as of 8 Jan 2002.
 RLINE_FINDPEAKS: Updated to demand minimum separation, and commented.
 SDSS_FLAGS: Add "SOUTHERN_SURVEY" flags for TARGET and TTARGET.
             Also, return a warning message for any bits that are set
@@ -189,6 +193,8 @@ opHdrFix.par: Correct some values for TILEID,RADEG,DECDEG for the early plates
 spFluxcalib-*.fits: A canonical set of flux-calibration vectors produced
             by APOFLUXCALIB and used by APOPLOT.
 sos_redo: Don't allow this to be run from the machine sdsshost!
+            --> Now a re-write of this, allowing either PLATE or EXPNUM
+                keywords (but not both) as of 8 Jan 2002.
 sprobot_start: Copy the data over starting at 10am Princeton time,
             which will be after "mailhtml.sh" is run at APO (at 7:20 am).
 sprobot.sh: Run the same version of the idlspec2d product as is set up
