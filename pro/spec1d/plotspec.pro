@@ -10,12 +10,13 @@
 ;    /ormask, /andmask, psfile=, /netimage, /zwarning, topdir=, _EXTRA= ]
 ;
 ; INPUTS:
-;   plate      - Plate number
+;   plate      - Plate number(s)
 ;
 ; OPTIONAL INPUTS:
-;   fiberid    - Fiber number(s); if not set, then plot all fibers for plate.
-;   mjd        - MJD number; if not set, then select the most recent
-;                data for this plate (largest MJD).
+;   fiberid    - Fiber number(s); if not set, then plot all fibers for
+;                each plate specified.
+;   mjd        - MJD number(s); if not set, then select the most recent
+;                data for each plate (largest MJD).
 ;   znum       - If set, then return not the best-fit redshift, but the
 ;                ZUM-th best-fit; e.g., set ZNUM=2 for second-best fit.
 ;   nsmooth    - If set, then boxcar smooth both the object and synthetic
@@ -29,8 +30,10 @@
 ;                to the SPLOT interactive widget.  The PostScript file name
 ;                can be set explicitly, e.g. with PSFILE='test.ps'.  Or if
 ;                you simply set this as a flag, e.g. with /PSFILE, then the
-;                default file name is spec-pppp-mmmmm-fff.ps,
+;                default file name is "spec-pppp-mmmmm-fff.ps",
 ;                where pppp=plate number, mmmmm=MJD, fff=fiber ID.
+;                If FIBERID is specified, then put all plots in a single file
+;                named "spec-pppp-mmmmm.ps".
 ;   netimage   - If set, then launch a Netscape browser with the object
 ;                image from Steve Kent's web site.  This only works if
 ;                Netscape is running and has permissions at the site
@@ -76,6 +79,15 @@
 ;   Plot all the spectra from plate 401 to a single PostScript file:
 ;     IDL> plotspec, 401, /psfile
 ;
+;   Plot all the spectra from plate 401 to 640 individual PostScript files:
+;     IDL> plotspec, 401, lindgen(640)+1, /psfile
+;
+;   Plot a list of 3 objects, each with its own plate, MJD, and fiberid:
+;     IDL> plate = [400,400,401]
+;     IDL> mjd = [51820,51820,51788]
+;     IDL> fiberid = [10,11,20]
+;     IDL> plotspec, plate, mjd=mjd, fiberid
+;
 ; BUGS:
 ;   If the user interactively rescales in Y, then the labels for ORMASK
 ;   and ANDMASK are no longer lined up vertically with the bit mask plot.
@@ -83,8 +95,10 @@
 ; PROCEDURES CALLED:
 ;   dfpsclose
 ;   dfpsplot
+;   djs_icolor()
 ;   djs_oplot
 ;   djs_plot
+;   djs_xyouts
 ;   readspec
 ;   soplot
 ;   splot
@@ -151,7 +165,8 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
    readspec, plate, fiberid, mjd=mjd, znum=znum, flux=objflux, $
     wave=wave, plug=plug, zans=zans, topdir=topdir, /silent
    if (NOT keyword_set(objflux)) then begin
-      print, 'Plate not found!!'
+      print, plate, mjd, fiberid, $
+       format='("Spectrum not found for plate=", i4, " MJD=", i5, " fiber=", i3)'
       return
    endif
    if (NOT keyword_set(noerr)) then $
@@ -348,26 +363,84 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
    quiet = !quiet
    !quiet = 1
 
-   if (n_elements(plate) NE 1) then $
-    message, 'PLATE must be a scalar'
-   if (NOT keyword_set(mjd)) then readspec, plate, mjd=mjd, topdir=topdir, $
-    /silent
+   ;----------
+   ; If MJD is not set, then find the MJD for each plate
+
+   nplate = n_elements(plate)
    if (NOT keyword_set(mjd)) then begin
-      print, 'Plate not found!!'
-      !quiet = quiet
-      return
-   endif
+      mjd = lonarr(nplate)
+      for iplate=0, nplate-1 do begin
+         mjd1 = 0
+         readspec, plate[iplate], mjd=mjd1, topdir=topdir, /silent
+         if (NOT keyword_set(mjd1)) then begin
+            print, 'No MJD found for plate ', plate[iplate]
+            !quiet = quiet
+            return
+         endif
+         mjd[iplate] = mjd1
+      endfor
+   endif else begin
+      if (n_elements(mjd) NE nplate) then begin
+         print, 'Number of elements in PLATE and MJD do not agree'
+         !quiet = quiet
+         return
+      endif
+   endelse
    
    ;----------
+   ; If /ZWARNING is set, then find the flagged fibers to plot.
+
+   if (keyword_set(zwarning)) then begin
+      if (keyword_set(fiberid)) then begin
+         print, 'FIBERID and /ZWARNING cannot both be set.'
+         !quiet = quiet
+         return
+      endif
+
+      for iplate=0, nplate-1 do begin
+         readspec, plate[iplate], mjd=mjd[iplate], $
+          topdir=topdir, /silent, zans=zans
+         if (NOT keyword_set(zans)) then begin
+            print, 'No spZ file found for selecting ZWARNING flags'
+            !quiet = quiet
+            return
+         endif
+         indx = where((zans.zwarning AND 1) EQ 0 AND zans.zwarning NE 0, nthis)
+         if (nthis GT 0) then begin
+            if (NOT keyword_set(fiberid)) then begin
+               platelist = replicate(plate[iplate], nthis)
+               mjdlist = replicate(mjd[iplate], nthis)
+               fiberid = zans[indx].fiberid
+            endif else begin
+               platelist = [platelist, replicate(plate[iplate], nthis)]
+               mjdlist = [mjdlist, replicate(mjd[iplate], nthis)]
+               fiberid = [fiberid, zans[indx].fiberid]
+            endelse
+         endif
+      endfor
+      if (NOT keyword_set(fiberid)) then begin
+         print, 'No non-sky fibers with ZWARNING flag set'
+         !quiet = quiet
+         return
+      endif
+      nfiber = n_elements(fiberid)
+      print, 'Selecting ', nfiber, ' non-sky fibers with ZWARNING flag set'
+   endif
+
+   ;----------
+   ; Set FIBERID to [1,...,640] (for each plate) if not set.
+   ;
    ; If writing to a PostScript file, then all plots are in the same file
    ; either if PSFILE is that file name, or if FIBERID is not specified
    ; (and then all 640 spectra are being plotted).
 
    if (NOT keyword_set(fiberid)) then begin
-      fiberid = lindgen(640)+1L
+      fiberid = reform((lindgen(640L)+1L) # replicate(1L,nplate), 640L*nplate)
+      platelist = reform(replicate(1L,640L) # plate, 640L*nplate)
+      mjdlist = reform(replicate(1L,640L) # mjd, 640L*nplate)
       if (keyword_set(psfile)) then begin
          q_onefile = 1
-         psfilename = string(plate, mjd, $
+         psfilename = string(plate[0], mjd[0], $
           format='("spec-",i4.4,"-",i5.5,".ps")')
       endif
    endif
@@ -377,27 +450,31 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
       return
    endif
 
-   if (keyword_set(zwarning)) then begin
-      readspec, plate, fiberid, mjd=mjd, topdir=topdir, /silent, zans=zans
-      if (NOT keyword_set(zans)) then begin
-         print, 'No spZ file found for selecting ZWARNING flags'
-         return
-      endif else begin
-         indx = where((zans.zwarning AND 1) EQ 0 AND zans.zwarning NE 0, nfiber)
-         if (nfiber EQ 0) then begin
-            print, 'No non-sky fibers with ZWARNING flag set'
-            return
-         endif else begin
-            print, 'Selecting ', nfiber, ' non-sky fibers with ZWARNING flag set'
-            fiberid = fiberid[indx]
-         endelse
-      endelse
-   endif
+   ;----------
+   ; If FIBERID is specified, and writing to a PostScript file,
+   ; then open only one PS file for all plots.
 
    nfiber = n_elements(fiberid)
    if (size(psfile,/tname) EQ 'STRING' AND nfiber GT 1) then begin
       psfilename = psfile
       q_onefile = 1
+   endif
+
+   ;----------
+   ; If /ZWARNING is not set, then construct the PLATELIST,MJDLIST.
+
+   if (n_elements(platelist) EQ 0) then begin
+      if (nplate EQ 1) then begin
+         platelist = replicate(plate, nfiber)
+         mjdlist = replicate(mjd, nfiber)
+      endif else begin
+         platelist = plate
+         mjdlist = mjd
+      endelse
+   endif else if (n_elements(platelist) NE n_elements(fiberid)) then begin
+      print, 'Number of elements in PLATE and FIBERID do not agree.'
+      !quiet = quiet
+      return
    endif
 
    ;----------
@@ -411,16 +488,16 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
 
       if (keyword_set(psfile)) then begin
          if (NOT keyword_set(q_onefile)) then $
-          psfilename = string(plate, mjd, fiberid[ifiber], $
-           format='("spec-",i4.4,"-",i5.5,"-",i3.3,".ps")')
+          psfilename = string(platelist[ifiber], mjdlist[ifiber], $
+           fiberid[ifiber], format='("spec-",i4.4,"-",i5.5,"-",i3.3,".ps")')
 
          if (NOT keyword_set(q_onefile) OR ifiber EQ 0) then begin
             dfpsplot, psfilename, /color, /square
          endif
       endif
 
-      plotspec1, plate, fiberid[ifiber], mjd=mjd, znum=znum, $
-       nsmooth=nsmooth, zline=zline, nosyn=nosyn, noerr=noerr, $
+      plotspec1, platelist[ifiber], fiberid[ifiber], mjd=mjdlist[ifiber], $
+       znum=znum, nsmooth=nsmooth, zline=zline, nosyn=nosyn, noerr=noerr, $
        ormask=ormask, andmask=andmask, psfile=psfile, $
        xrange=xrange, yrange=yrange, noerase=noerase, netimage=netimage, $
        topdir=topdir, _EXTRA=KeywordsForSplot
@@ -453,10 +530,12 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
                     if (NOT keyword_set(mjd)) then $
                      readspec, plate, mjd=mjd, topdir=topdir, /silent
                     if (NOT keyword_set(mjd)) then begin
-                       print, 'Plate not found!!'
+                       print, 'MJD not found for plate ', plate
                        !quiet = quiet
                        return
                     endif
+                    platelist = replicate(plate,640)
+                    mjdlist = replicate(mjd,640)
                  end
             'F': begin
                     read, newfiber, prompt='Enter new fiber number: '
