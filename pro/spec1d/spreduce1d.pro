@@ -626,8 +626,12 @@ ormask = 0 ; Free memory
 
    iskies = where(strtrim(plugmap[iobj].objtype,2) EQ 'SKY', nskies)
    if (nskies GT 1) then begin
-      res_all.spectroflux_ivar = 1. / stdev(res_all[0,iskies].spectroflux)
-      res_all.spectrosynflux_ivar = 1. / stdev(res_all[0,iskies].spectrosynflux)
+      for ifilt=0, 4 do begin
+         res_all.spectroflux_ivar[ifilt] = $
+          1. / stdev(res_all[0,iskies].spectroflux[ifilt])
+         res_all.spectrosynflux_ivar[ifilt] = $
+          1. / stdev(res_all[0,iskies].spectrosynflux[ifilt])
+      endfor
    endif
 
    ;----------
