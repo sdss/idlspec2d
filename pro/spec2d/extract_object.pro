@@ -81,6 +81,7 @@
 ;   qaplot_skyline
 ;   qaplot_skyshift
 ;   qaplot_skysub
+;   skyline_dispersion()
 ;   skysubtract
 ;   spadd_guiderinfo
 ;   splog
@@ -296,6 +297,9 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    locateskylines, skylinefile, flux, fluxivar, wset, $
     xarc, arcshift=arcshift, $
     xsky=xsky, skywaves=skywaves, skyshift=skyshift
+
+   skydispset = skyline_dispersion(flux, fluxivar, xsky, iskies, dispset)
+   splog, 'Not applying skyline adjusted line widths'
 
    qaplot_skyshift, wset, xsky, skywaves, skyshift, $
     title=plottitle+'Sky Line Deviations for '+objname
