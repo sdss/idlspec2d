@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   xy2traceset, xpos, ypos, tset, [ invvar=, func=func, ncoeff=ncoeff, $
-;    xmin=xmin, xmax=xmax, maxiter=maxiter, $
+;    xmin=xmin, xmax=xmax, maxiter=maxiter, inputfunc=inputfunc, $
 ;    inmask=inmask, outmask=outmask, yfit=yfit, inputans=inputans, $
 ;    _EXTRA=EXTRA ]
 ;
@@ -34,6 +34,9 @@
 ;                are always rejected from the fits (the rejection is "sticky"),
 ;                and will also be marked as rejected in OUTMASK.
 ;   inputans   - ???
+;   inputfunc  - An array which matches the size of ypos, which is multiplied
+;                  to the normal function before SVD decomposition
+;   silent     - Set to suppress print and splog outputs
 ;   EXTRA      - Keywords passed to either the function FUNC, or DJS_REJECT().
 ;                Note that keywords like MAXREJ relate to each individual trace.
 ;
@@ -70,10 +73,11 @@
 ;   19-May-1999  Written by David Schlegel, Princeton.
 ;   04-Aug-1999  Added chebyshev option (DJS).
 ;   02-Sep-2000  Modify to use rejection schemes in DJS_REJECT() (DJS).
+;   07-Dec-2000  Added /silent keyword (DPF)
 ;-
 ;------------------------------------------------------------------------------
 pro xy2traceset, xpos, ypos, tset, invvar=invvar, func=func, ncoeff=ncoeff, $
- xmin=xmin, xmax=xmax, maxiter=maxiter, $
+ xmin=xmin, xmax=xmax, maxiter=maxiter, inputfunc=inputfunc, $
  inmask=inmask, outmask=outmask, yfit=yfit, inputans=inputans, $
  silent=silent, _EXTRA=EXTRA
 
@@ -147,33 +151,39 @@ pro xy2traceset, xpos, ypos, tset, invvar=invvar, func=func, ncoeff=ncoeff, $
 
       iiter = 0
       qdone = 0
-      curoutmask = 0
       ycurfit = 0
+      if (keyword_set(invvar)) then tempivar = invvar[*,itrace] $
+      else tempivar = bytarr(nx) + 1
+      curoutmask = tempivar GT 0
+
       while (NOT keyword_set(qdone) AND iiter LE maxiter) do begin
-         if (keyword_set(invvar)) then $
-          tempivar = invvar[*,itrace] $
-         else $
-          tempivar = bytarr(nx) + 1
 
-         qdone = djs_reject(ypos[*,itrace], ycurfit, $
-          inmask=curinmask, outmask=curoutmask, _EXTRA=EXTRA)
-         tempivar = tempivar * curoutmask
-
-         res = func_fit(xnorm, ypos[*,itrace], ncoeff, invvar=tempivar, $
+         if keyword_set(inputfunc) then $
+           res = func_fit(xnorm, ypos[*,itrace], ncoeff, $
+             invvar=tempivar*curoutmask, $
+             function_name=function_name, yfit=ycurfit, inputans=curans, $
+             inputfunc=inputfunc[*,itrace], _EXTRA=EXTRA) $
+         else res = func_fit(xnorm, ypos[*,itrace], ncoeff, $
+             invvar=tempivar*curoutmask, $
           function_name=function_name, yfit=ycurfit, inputans=curans, $
           _EXTRA=EXTRA)
 
+         curinmask = curoutmask
+
+         qdone = djs_reject(ypos[*,itrace], ycurfit, invvar=tempivar, $
+          inmask=curinmask, outmask=curoutmask, _EXTRA=EXTRA)
+
          iiter = iiter + 1
       endwhile
-  
+ 
       yfit[*,itrace] = ycurfit 
       tset.coeff[*,itrace] = res
       outmask[*,itrace] = curoutmask
 
       ; Burles counter of row number...
       junk = where(curoutmask EQ 0, nreject)
-      if not keyword_set(silent) then print, format='(i7,i8,i8,a1,$)', $
-        itrace, nx, nreject, string(13b)
+      if not keyword_set(silent) then $
+        print, format='(i7,i8,i8,a1,$)', itrace, nx, nreject, string(13b)
    endfor
 
    junk = where(outmask EQ 0, nreject)
