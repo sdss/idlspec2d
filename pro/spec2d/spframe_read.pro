@@ -3,7 +3,7 @@
 ;   spframe_read
 ;
 ; PURPOSE:
-;   Read data from an spFrame file.
+;   Read data from either an spFrame or spCFrame file.
 ;
 ; CALLING SEQUENCE:
 ;   spframe_read, filename, [ indx, objflux=, objivar=, mask=, $
@@ -31,12 +31,27 @@
 ;   hdr        - FITS header for HDU#0
 ;
 ; COMMENTS:
+;   The spFrame and spCFrame files contain nearly identical HDUs,
+;   except for HDU #3 and #4 which are trace-sets in spFrame, and
+;   more easily-interpreted 2-dimensional images in spCFrame:
+;
+;            spFrame   spCFrame
+;   HDU #0:  Flux      Flux
+;   HDU #1:  Invvar    Invvar
+;   HDU #2:  mask      mask
+;   HDU #3:  wset      loglam
+;   HDU #4:  dispset   dispimg
+;   HDU #5:  plugmap   plugmap
+;   HDU #6:  sky       sky
+;   HDU #7:  flatfit
+;   HDU #8:  telluric (deprecated)
 ;
 ; EXAMPLES:
 ;
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   fileandpath()
 ;   headfits()
 ;   lookforgzip()
 ;   mrdfits()
@@ -56,14 +71,21 @@ pro spframe_read, filename, indx, objflux=objflux, objivar=objivar, $
    if (NOT keyword_set(filename)) then $
     message, 'Must specify FILENAME'
 
+   ; Is this a flux-caliibrated frame file?
+   qcframe = strmatch(fileandpath(filename),'spCFrame*')
+   if (qcframe AND (arg_present(wset) OR arg_present(dispset))) then $
+    message, 'Cannot request WSET or DISPSET from a spCFrame file'
+
    thisfile = lookforgzip(filename[0])
 
    if (arg_present(hdr)) then hdr = headfits(thisfile[0])
+
    if (arg_present(objflux) $
     OR (arg_present(objivar) AND keyword_set(adderr))) then begin
       objflux = mrdfits(thisfile[0], 0, /silent)
       if (qtrim) then objflux = objflux[*,indx]
    endif
+
    if (arg_present(objivar)) then begin
       objivar = mrdfits(thisfile[0], 1, /silent)
       if (qtrim) then objivar = objivar[*,indx]
@@ -73,26 +95,45 @@ pro spframe_read, filename, indx, objflux=objflux, objivar=objivar, $
           + (adderr * (objflux>0))^2 ) * gmask
       endif
    endif
+
    if (arg_present(mask)) then begin
       mask = mrdfits(thisfile[0], 2, /silent)
       if (qtrim) then mask = mask[*,indx]
    endif
-   if (arg_present(wset) OR arg_present(loglam)) then begin
-      wset = mrdfits(thisfile[0], 3, /silent)
-      if (qtrim) then wset = traceset_trim(wset, indx)
-      if (arg_present(loglam)) then traceset2xy, wset, xtmp, loglam
-      xtmp = 0
-   endif
-   if (arg_present(dispset) OR arg_present(dispimg)) then begin
-      dispset = mrdfits(thisfile[0], 4, /silent)
-      if (qtrim) then dispset = traceset_trim(dispset, indx)
-      if (arg_present(dispimg)) then traceset2xy, dispset, xtmp, dispimg
-      xtmp = 0
-   endif
+
+   if (qcframe) then begin
+      if (arg_present(loglam)) then begin
+         loglam = mrdfits(thisfile[0], 3, /silent)
+         if (qtrim) then loglam = loglam[*,indx]
+      endif
+   endif else begin
+      if (arg_present(wset) OR arg_present(loglam)) then begin
+         wset = mrdfits(thisfile[0], 3, /silent)
+         if (qtrim) then wset = traceset_trim(wset, indx)
+         if (arg_present(loglam)) then traceset2xy, wset, xtmp, loglam
+         xtmp = 0
+      endif
+   endelse
+
+   if (qcframe) then begin
+      if (arg_present(dispimg)) then begin
+         dispimg = mrdfits(thisfile[0], 4, /silent)
+         if (qtrim) then dispimg = dispimg[*,indx]
+      endif
+   endif else begin
+      if (arg_present(dispset) OR arg_present(dispimg)) then begin
+         dispset = mrdfits(thisfile[0], 4, /silent)
+         if (qtrim) then dispset = traceset_trim(dispset, indx)
+         if (arg_present(dispimg)) then traceset2xy, dispset, xtmp, dispimg
+         xtmp = 0
+      endif
+   endelse
+
    if (arg_present(plugmap)) then begin
       plugmap = mrdfits(thisfile[0], 5, structyp='PLUGMAPOBJ', /silent)
       if (qtrim) then plugmap = plugmap[indx]
    endif
+
    if (arg_present(skyflux)) then begin
       skyflux = mrdfits(thisfile[0], 6, /silent)
       if (qtrim) then skyflux = skyflux[*,indx]
