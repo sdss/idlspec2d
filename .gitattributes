@@ -339,6 +339,7 @@ templates/spEigenGal-51838.fits -text svneol=unset#unset
 templates/spEigenGal-51846.fits -text svneol=unset#unset
 templates/spEigenQSO.fits -text
 templates/spEigenStar-51845.fits -text svneol=unset#unset
+templates/spEigenVdisp.fits -text svneol=unset#unset
 templates/spEigenVstnd.fits -text svneol=unset#unset
 ups/Makefile -text
 ups/idlspec2d.table -text
