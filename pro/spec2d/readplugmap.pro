@@ -173,9 +173,9 @@ function readplugmap, plugfile, plugdir=plugdir, $
       ; Apply AB corrections to the CALIBFLUX values (but not to MAG)
 
       factor = exp(-correction/2.5 * alog(10))
-      for j=0,4 do plugmap.calibflux[j] = plugmap.calibflux[j] * factor
+      for j=0,4 do plugmap.calibflux[j] = plugmap.calibflux[j] * factor[j]
       for j=0,4 do $
-       plugmap.calibflux_ivar[j] = plugmap.calibflux_ivar[j] / factor^2
+       plugmap.calibflux_ivar[j] = plugmap.calibflux_ivar[j] / factor[j]^2
    endif
 
    if (keyword_set(deredden)) then begin
