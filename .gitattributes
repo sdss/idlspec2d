@@ -206,6 +206,7 @@ pro/plan/listexptime.pro -text
 pro/plan/platecen_test.pro -text
 pro/plan/plugfile_unmapped.pro -text
 pro/plan/smeartimes.pro -text
+pro/plan/update_plate_release.pro -text
 pro/plan/update_platelist.pro -text
 pro/plate/Makefile -text
 pro/plate/README -text
