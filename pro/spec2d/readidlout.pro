@@ -22,14 +22,14 @@ end
 
 pro readidlout, flux, sig=sig, wave=wave, expres=expres, plugmap=plugmap
 
-      if (NOT keyword_set(expres)) then expres = 'spMerge2d*fits'
+      if (size(expres,/tname) EQ 'UNDEFINED') then expres = 'spMerge2d*fits'
 
       files = findfile(expres)
       if (files[0] EQ '') then begin
         print, 'no files found'
         return
       endif
-
+ 
       if (ARG_PRESENT(plugmap)) then begin
          shortplugmap =  { $
            OBJID         :  intarr(5), $
@@ -69,8 +69,12 @@ pro readidlout, flux, sig=sig, wave=wave, expres=expres, plugmap=plugmap
 
       for i=0,nfiles - 1 do begin
         data = readfits(files[i], hdr, /silent)
+       
         flux[0:npix[i]-1,i] = data[*,0]
-        if (ARG_PRESENT(sig)) then sig[0:npix[i]-1,i] = data[*,1]
+        if (ARG_PRESENT(sig)) then begin
+           if ((size(data))[2] EQ 4) then sig[0:npix[i]-1,i] = data[*,2] $
+           else sig[0:npix[i]-1,i] = data[*,1]
+        endif
 
         if (ARG_PRESENT(wave)) then wave[*,i] = $
              findgen(max(npix))*disp[1,i] + disp[0,i]
