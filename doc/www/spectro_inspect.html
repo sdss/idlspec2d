@@ -140,6 +140,7 @@ The rules for these Yanny files are as follows:
   be in quotes even if a single word.)
 <LI> Strings should not contain either single- or double-quotes within
   the string.
+<LI> Non-quoted whitespace is ignored.
 <LI> Lines can be very long, or can be continued with a backslash, even
   within a quoted string.
 </OL>
@@ -220,9 +221,21 @@ against the idlspec2d product for problems in the spectra,
 or against specBS for problems in the classifications, redshifts,
 or other measured quantities.
 
-<H2><A NAME="example">Example File</A></H2>
+<H2><A NAME="example">Example Files</A></H2>
 
-Example beginnings of a file below.
+<P>
+For plate 400/51820, I edited the following 5 lines
+in the file "spInspect-0400-51820-schlegel.par":
+<PRE>
+SPECINSPECT 400 51820 21 UNKNOWN BROADLINE 1.44154 schlegel "QSO" "" 1.44154 "PR 3797"
+SPECINSPECT 400 51820 193 UNKNOWN BROADLINE 0.997749 schlegel "QSO" "" 0.997749 "PR 3797"
+SPECINSPECT 400 51820 512 UNKNOWN BROADLINE 0.399743 schlegel "QSO" "" 0.399743 "PR 3797"
+SPECINSPECT 400 51820 632 UNKNOWN BROADLINE 1.49835 schlegel "QSO" "" 1.49835 "PR 3797"
+SPECINSPECT 400 51820 640 UNKNOWN "" 0.442294 schlegel "GALAXY" "" 0.442294 "Badskysub; PR 3399"
+</PRE>
+
+Below is the beginnings of a fake example file, with entries for
+superpositions, etc:
 
 <PRE>
 plate 400
