@@ -125,13 +125,14 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
       sigma = sigma - 1.0
       skysigma = (sigma[*,iskies])[isort]
 
-      fullbkpt2 = slatec_splinefit(skywave, skyflux, coeff2, invvar=skyivar, $
+      fullbkpt = slatec_splinefit(skywave, skyflux, coeff, invvar=skyivar, $
        nord=nord, upper=upper, lower=lower, maxiter=maxiter, x2=skysigma, $
        npoly = nsigmapoly, /eachgroup, everyn=2*nskies/3, bkpt=bkpt)
 
-      fullfit2 = bvalu2d(wave, sigma, fullbkpt2, coeff2) 
-      skyfit2  = bvalu2d(skywave, skysigma, fullbkpt2, coeff2) 
+      fullfit = bvalu2d(wave, sigma, fullbkpt, coeff) 
+      skyfit  = bvalu2d(skywave, skysigma, fullbkpt, coeff) 
    endelse
+
 
    ;----------
    ; Sky-subtract the entire image
