@@ -203,6 +203,9 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
     keyword_set( findfile(tsetfile_last) )
    arcexist = keyword_set(wsetfile_last) AND $
     keyword_set( findfile(wsetfile_last) )
+   splog, 'PLUGEXIST = ', plugexist
+   splog, 'FLATEXIST = ', flatexist
+   splog, 'ARCEXIST = ', arcexist
 
    ;----------
    ; Reduce file depending on its flavor: bias/dark, flat, arc, or science/smear
