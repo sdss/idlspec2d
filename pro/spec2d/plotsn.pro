@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   plotsn, snvec, plugmap, [ bands=, plotmag=, fitmag=, plottitle=, $
-;    plotfile=, synthmag=, snplate=, ebv_sfd= ]
+;    plotfile=, synthmag=, snplate= ]
 ;
 ; INPUTS:
 ;   snvec      - S/N array [nbands, nfibers]
@@ -21,9 +21,9 @@
 ;                extend the range to include FITMAG if necessary.
 ;   plottitle  - Title for top of plot
 ;   plotfile   - Optional plot file
-;   synthmag   - Vector of synthetic magnitudes
-;   ebv_sfd    - If passed, then use these E(B-V) values to de-redden
-;                (make brighter) the magnitudes from the plug-map file.
+;   synthmag   - Vector of synthetic magnitudes dimensionsed [3,640]
+;                and containing only gri mags; if set, then make more than
+;                the first page of plots
 ;
 ; OUTPUTS:
 ;
@@ -55,10 +55,102 @@
 ;   15-Apr-2000  Written by S. Burles, FNAL
 ;-
 ;------------------------------------------------------------------------------
+pro plotsn1, plugc, synthmag, i1, i2, plottitle=plottitle, objtype=objtype
+
+   pmulti = !p.multi
+   ymargin = !y.margin
+   yomargin = !y.omargin
+
+   !p.multi = [0,2,5]
+   !y.margin = [1,0]
+   !y.omargin = [5,3]
+   symsize = 0.5
+   psym = 1
+   csize = 1.0
+   xrange = [14.,24.]
+   yrange = [-0.6,0.6]
+
+   gmagdiff = synthmag[0,*] - plugc.mag[1]
+   rmagdiff = synthmag[1,*] - plugc.mag[2]
+   imagdiff = synthmag[2,*] - plugc.mag[3]
+
+   for ipanel=0, 4 do begin
+      case ipanel of
+      0: begin
+         yplot = gmagdiff
+         ytext = 'g-mag'
+         end
+      1: begin
+         yplot = rmagdiff
+         ytext = 'r-mag'
+         end
+      2: begin
+         yplot = imagdiff
+         ytext = 'i-mag'
+         end
+      3: begin
+         yplot = gmagdiff - rmagdiff
+         ytext = '(g-r) color'
+         end
+      4: begin
+         yplot = rmagdiff - imagdiff
+         ytext = '(r-i) color'
+         end
+      endcase
+
+      if (ipanel EQ 0) then thistitle = plottitle+'  '+objtype $
+       else thistitle = ''
+      if (ipanel EQ 4) then xtitle = 'PHOTO Magnitude (r)' $
+       else xtitle = ''
+      if (ipanel EQ 4) then xtickname = '' $
+       else xtickname = strarr(20)+' '
+
+      plot, xrange, [0,0], $
+       xrange=xrange, yrange=yrange, /xstyle, /ystyle, $
+       xtitle=xtitle, ytitle='(Spectro - PHOTO) mag', $
+       title=thistitle, charsize=1.5*csize, xtickname=xtickname
+      xyouts, xrange[0]+1, 0.75*yrange[1], 'Spectro-1: '+ytext, $
+       charsize=csize
+      if (i1[0] NE -1) then begin
+         djs_oplot, plugc[i1].mag[2], yplot[i1], psym=psym, symsize=symsize
+         djs_iterstat, yplot[i1], mean=mn, sigma=sig
+         mntext = string(mn, format='(" Mean= ",f6.3)')
+         devtext = string(sig, format='(" Stdev= ",f6.3)')
+         xyouts, 0.5*xrange[0]+0.5*xrange[1], 0.40*yrange[0], charsize=csize, $
+          mntext
+         xyouts, 0.5*xrange[0]+0.5*xrange[1], 0.70*yrange[0], charsize=csize, $
+          devtext
+         splog, 'Spectro-1: ' + objtype + ' ' + ytext + mntext + devtext
+      endif
+
+      plot, xrange, [0,0], $
+       xrange=xrange, yrange=yrange, /xstyle, /ystyle, $
+       xtitle=xtitle, ytitle='(Spectro - PHOTO) mag', $
+       title=thistitle, charsize=1.5*csize, xtickname=xtickname
+      xyouts, xrange[0]+1, 0.75*yrange[1], 'Spectro-2: '+ytext, $
+       charsize=csize
+      if (i2[0] NE -1) then begin
+         djs_oplot, plugc[i2].mag[2], yplot[i2], psym=psym, symsize=symsize
+         djs_iterstat, yplot[i2], mean=mn, sigma=sig
+         mntext = string(mn, format='(" Mean= ",f6.3)')
+         devtext = string(sig, format='(" Stdev= ",f6.3)')
+         xyouts, 0.5*xrange[0]+0.5*xrange[1], 0.40*yrange[0], charsize=csize, $
+          mntext
+         xyouts, 0.5*xrange[0]+0.5*xrange[1], 0.70*yrange[0], charsize=csize, $
+          devtext
+         splog, 'Spectro-2: ' + objtype + ' ' + ytext + mntext + devtext
+      endif
+   endfor
+
+   !p.multi = pmulti
+   !y.margin = ymargin
+   !y.omargin = yomargin
+
+   return
+end
+;------------------------------------------------------------------------------
 pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
- plottitle=plottitle, plotfile=plotfile, synthmag=synthmag, snplate=snplate, $
- roffset = roffset, rsigma = rsigma, groffset = groffset, grsigma = grsigma, $
- ebv_sfd = ebv_sfd
+ plottitle=plottitle, plotfile=plotfile, synthmag=synthmag, snplate=snplate
 
    if (size(snvec,/n_dim) NE 2) then return
    if (NOT keyword_set(bands)) then bands=[1, 2, 3]
@@ -73,23 +165,31 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
    if ((size(snvec,/dimen))[0] NE nbands) then return
    if ((size(snvec,/dimen))[1] NE nfibers) then return
 
-   bandnames = ["u","g","r","i","z"]
+   bandnames = ['u','g','r','i','z']
    slopelabel = " * "+bandnames
    snlabel = '(S/N)^2 @ '+bandnames+' ='+string(snmag,format='(f7.2)')
 
-   iobj = where(strtrim(plug.objtype,2) NE 'SKY' and $
-                plug.mag[2] gt 0, nobj)
-   if (nobj LT 3) then return
-
-   ; The following variables are defined only for non-SKY objects...
-   plugc = plug[iobj]
-   s1 = where(plugc.spectrographid EQ 1)
-   s2 = where(plugc.spectrographid EQ 2)
+   ; Use the CALIBFLUX magnitudes instead of MAG, if they exist
+   ; from the call to READPLUGMAP() that generated this structure.
+   ; Any very small fluxes have MAG=0 so that they are ignored in the plots.
+   plugc = plug
    if (tag_exist(plugc,'CALIBFLUX')) then begin
       minflux = 0.1
       plugc.mag = (22.5 - 2.5*alog10(plugc.calibflux > minflux)) $
        * (plugc.calibflux GT minflux)
    endif
+
+   nobj = n_elements(plugc)
+   qgood = strtrim(plugc.objtype,2) NE 'SKY' AND plugc.mag[2] GT 0
+   igood = where(qgood, ngood)
+   if (ngood LT 3) then begin
+      splog, 'Warning: Too few non-sky objects to plot'
+      return
+   endif
+
+   ; The following variables are defined only for non-SKY objects...
+   s1 = where(plugc.spectrographid EQ 1 AND qgood)
+   s2 = where(plugc.spectrographid EQ 2 AND qgood)
 
    ;----------
    ; Open plot file
@@ -120,22 +220,21 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
    for iband=0, nbands-1 do begin
 
       ;------------------------------------------------------------------------
-      ; PLOT 1: (S/N) vs. magnitude
+      ; 1st PAGE PLOT 1: (S/N) vs. magnitude
       ;------------------------------------------------------------------------
 
       ;----------
       ; Select the data points: S/N and magnitude for all objects that
       ; are not SKY fibers.
 
-      snc = snvec[iband,iobj]
       mag = plugc.mag[bands[iband]]
 
       ;----------
       ; Fit the data as S/N vs. mag
 
-      afit = fitsn(mag, snc, sigma=sigma, colorband=bandnames[bands[iband]], $
-       fitmag=fitmag)
-      logsnc = alog10(snc > 0.01)
+      afit = fitsn(mag[igood], snvec[iband,igood], sigma=sigma, $
+       colorband=bandnames[bands[iband]], fitmag=fitmag)
+      logsnc = alog10(snvec[iband,*] > 0.01)
       diff = logsnc - poly(mag, afit) ; Residuals from this fit
 
       ;----------
@@ -160,7 +259,7 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
       ychars = 1.0
       symsize = 0.65
 
-      plot, mag, snc, /nodata, /ylog, $
+      plot, mag[igood], snvec[iband,igood], /nodata, /ylog, $
        xchars=xchars, ychars=ychars, xrange=plotmag, $
        xtitle=xtitle, ytitle='S/N in '+bandnames[bands[iband]]+'-band', $
        xmargin=xmargin, ymargin=ymargin, /xstyle, yrange=[0.5,100], /ystyle
@@ -184,10 +283,10 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
       psymvec = (plugc.spectrographid EQ 1) * 7 $
        + (plugc.spectrographid EQ 2) * 6 
       colorvec = replicate('red', nobj)
-      ipos = where(diff GE 0)
+      ipos = where(diff[igood] GE 0)
       if (ipos[0] NE -1) then colorvec[ipos] = 'green'
-      djs_oplot, mag, snc > 0.6, psym=psymvec, symsize=symsize, $
-       color=colorvec
+      djs_oplot, mag[igood], snvec[iband,igood] > 0.6, $
+       psym=psymvec, symsize=symsize, color=colorvec
 
       ; Now overplot the fit line
       if (keyword_set(afit)) then $
@@ -204,7 +303,7 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
       snoise2 = fltarr(2)
       xloc = snmag[bands[iband]]
       if (s1[0] NE -1) then begin
-         afit1 = fitsn(mag[s1], snc[s1], fitmag=myfitmag, $
+         afit1 = fitsn(mag[s1], snvec[iband,s1], fitmag=myfitmag, $
           colorband=bandnames[bands[iband]])
          if (keyword_set(afit1)) then begin
             snoise2[0] = 10^(2.0 * poly(snmag[bands[iband]],afit1)) 
@@ -213,7 +312,7 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
          endif
       endif
       if (s2[0] NE -1) then begin
-         afit2 = fitsn(mag[s2], snc[s2], fitmag=myfitmag, $
+         afit2 = fitsn(mag[s2], snvec[iband,s2], fitmag=myfitmag, $
           colorband=bandnames[bands[iband]])
          if (keyword_set(afit2)) then begin
             snoise2[1] = 10^(2.0 * poly(snmag[bands[iband]],afit2)) 
@@ -260,216 +359,43 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
       snplate[*,iband] = snoise2
 
       ;------------------------------------------------------------------------
-      ; PLOT 2: Throughput deviations plotted on the focal plane
+      ; 1st PAGE PLOT 2: Throughput deviations plotted on the focal plane
       ;------------------------------------------------------------------------
-
-      good = where(snc GT 0.0 AND mag GE plotmag[0] $
-       AND mag LE plotmag[1], ngood)
 
       plot, [0], [0], /nodata, xchars=xchars, ychars=ychars, $
        xtitle='X [mm]', ytitle='Y [mm]', $
        xrange=[-320,320], yrange=[-320,320], xstyle=1, ystyle=1, $
        xmargin=xmargin, ymargin=ymargin
       if (ngood GT 0) then begin
-         colorvec = (diff[good] GE 0) * djs_icolor('green') $
-          + (diff[good] LT 0) * djs_icolor('red')
-         symvec = abs(diff[good]) * 5 < 2
-         djs_oplot, plugc[good].xfocal, plugc[good].yfocal, $
+         colorvec = (diff[igood] GE 0) * djs_icolor('green') $
+          + (diff[igood] LT 0) * djs_icolor('red')
+         symvec = abs(diff[igood]) * 5 < 2
+         djs_oplot, plugc[igood].xfocal, plugc[igood].yfocal, $
           symsize=symvec, color=colorvec, psym=2
       endif
 
    endfor
 
-   if (keyword_set(synthmag)) then begin
-      !p.multi = [0,2,2]
-      symsize = 0.35
-      psym = 4
-      xrange = [14.,24.]
-      yrange = [-2.,2.]
+   ;------------------------------------------------------------------------
+   ; Plots of spectro mags vs. PHOTO mags
+   ;------------------------------------------------------------------------
 
-      roffset = fltarr(2)
-      rsigma = fltarr(2)
-      groffset = fltarr(2)
-      grsigma = fltarr(2)
+   if (NOT keyword_set(synthmag)) then return
 
-      if keyword_set(ebv_sfd) then ebvc = ebv_sfd[iobj] $
-      else ebvc = 0.0
-      r_ugriz = [5.155, 3.793, 2.751, 2.086, 1.479]  ; A_V = E(B-V) * R_V
-      gspectro = synthmag[0,iobj] 
-      gphoto = plugc.mag[1] - r_ugriz[1] * ebvc  ; Dereddened g fibermag
-      rspectro = synthmag[1,iobj]
-      rphoto = plugc.mag[2] - r_ugriz[2] * ebvc
-      ispectro = synthmag[2,iobj]
-      iphoto = plugc.mag[3] - r_ugriz[3] * ebvc
+   qstd = strmatch(plugc.objtype, '*STD*') 
+   i1 = where(plugc.spectrographid EQ 1 AND qstd AND plugc.mag[2] NE 0)
+   i2 = where(plugc.spectrographid EQ 2 AND qstd AND plugc.mag[2] NE 0)
+   plotsn1, plugc, synthmag, i1, i2, plottitle=plottitle, objtype='Std-stars'
 
-      for ispecnum=1, 2 do begin
-         if (ispecnum EQ 1) then sindx = s1 $
-          else sindx = s2
+   qgal = strmatch(plugc.objtype, 'GALAXY*')
+   i1 = where(plugc.spectrographid EQ 1 AND qgal AND plugc.mag[2] NE 0)
+   i2 = where(plugc.spectrographid EQ 2 AND qgal AND plugc.mag[2] NE 0)
+   plotsn1, plugc, synthmag, i1, i2, plottitle=plottitle, objtype='Galaxies'
 
-         djs_plot, xrange, [0,0], xchars=xchars, ychars=ychars, $
-          xrange=xrange, yrange=yrange, /xstyle, /ystyle, $
-          xtitle='Fiber Magnitude', ytitle = 'Spectro Mag - Photo Fiber Mag'
-
-         djs_oplot, plugc[sindx].mag[1], gspectro[sindx] - gphoto[sindx], $
-          psym=psym, symsize=symsize, color='blue'
-         djs_oplot, plugc[sindx].mag[2], rspectro[sindx] - rphoto[sindx], $
-          psym=psym, symsize=symsize, color='green'
-         djs_oplot, plugc[sindx].mag[3], ispectro[sindx] - iphoto[sindx], $
-          psym=psym, symsize=symsize, color='red'
-
-         djs_oplot, [14.6], [1.6], psym=psym, symsize=symsize, color='blue'
-         djs_oplot, [14.6], [1.4], psym=psym, symsize=symsize, color='green'
-         djs_oplot, [14.6], [1.2], psym=psym, symsize=symsize, color='red'
-         djs_xyouts, 14.6, 1.8, 'Spectro-' + string(ispecnum,format='(i1)')
-         djs_xyouts, 15.0, 1.6, 'g-filter'
-         djs_xyouts, 15.0, 1.4, 'r-filter'
-         djs_xyouts, 15.0, 1.2, 'i-filter'
-
-         if (ispecnum EQ 1 AND keyword_set(plottitle)) then $
-          xyouts, 1.1*xrange[1] - 0.1*xrange[0], $
-           1.03*yrange[1] - 0.03*yrange[0], $
-           plottitle, align=0.5, charsize=1.5
-
-        ;---------------------
-        ; Measure mean scatter of spectro mags -  photo mags  
-        ; Record r-band and (g-i) color
-
-        meanclip, rspectro[sindx] - rphoto[sindx], rmean, rsig
-        roffset[ispecnum - 1] = rmean
-        rsigma[ispecnum - 1] = rsig
-
-        meanclip, (gspectro[sindx] - rspectro[sindx]) - $
-                  (gphoto[sindx] - rphoto[sindx]), grmean, grsig
-        groffset[ispecnum - 1] = grmean
-        grsigma[ispecnum - 1] = grsig
-        
-      endfor
-
-      qstd = strmatch(plugc.objtype, '*STD*') 
-      qgal = strtrim(plugc.objtype,2) EQ 'GALAXY'
-      for ispecnum=1, 2 do begin
-         if (ispecnum EQ 1) then sindx = s1 $
-          else sindx = s2
-
-         ii = where(qgal[sindx], ngal)
-         if (ngal GT 0) then igal = sindx[ii]
-
-         ii = where(qgal[sindx] EQ 0, nstar)
-         if (nstar GT 0) then istar = sindx[ii]
-
-         ii = where(qstd[sindx], nstd)
-         if (nstd GT 0) then istd = sindx[ii]
-
-         djs_plot, xrange, [0,0], xchars=xchars, ychars=ychars, $
-          xrange=xrange, yrange=yrange, /xstyle, /ystyle, $
-          xtitle='Fiber Magnitude', ytitle='Spectro mag - Photo Fiber mag.'
-
-         if (ngal GT 0) then $
-          djs_oplot, plugc[igal].mag[2], rspectro[igal] - rphoto[igal], $
-           psym=psym, symsize=symsize, color='red'
-         if (nstar GT 0) then $
-          djs_oplot, plugc[istar].mag[2], rspectro[istar] - rphoto[istar], $
-           psym=psym, symsize=symsize, color='blue'
-         if (nstd GT 0) then $
-          djs_oplot, plugc[istd].mag[2], rspectro[istd] - rphoto[istd], $
-           psym=psym, symsize=2*symsize, color='green'
-
-         djs_oplot, [14.6], [1.6], psym=psym, symsize=symsize, color='blue'
-         djs_oplot, [14.6], [1.4], psym=psym, symsize=symsize, color='red'
-         djs_oplot, [14.6], [1.2], psym=psym, symsize=2*symsize, color='green'
-         djs_xyouts, 14.6, 1.8, 'Spectro-' + string(ispecnum,format='(i1)')
-         djs_xyouts, 15.0, 1.6, 'Stellar objects (r-filter)'
-         djs_xyouts, 15.0, 1.4, 'Galaxies (r-filter)'
-         djs_xyouts, 15.0, 1.2, 'Standard Stars (r-filter)'
-      endfor
-
-      ;------------------------------------------------------------------------
-      ; Third plot -- histograms
-      ;------------------------------------------------------------------------
-
-      goff = gspectro - gphoto
-      roff = rspectro - rphoto
-      ioff = ispectro - iphoto
-      groff = goff - roff
-      rioff = roff - ioff
-
-      for ispecnum=1, 2 do begin
-         qobj = where(plugc.spectrographid eq ispecnum)
-
-         ymax = 100 
-         plothist, roff[qobj], xr=[-0.6, 0.6], yr =[0, ymax], bin=0.02, $
-           xtitle = 'Spectro Mag - Photo Fiber Mag', $
-           ytitle = 'Number of Spectra', /xs, charthick=2, thick=3
-;           xticklen=1, yticklen=1, xgrids=1, ygrids=1 
-
-         xrange = [-1,1]
-         plothist, goff[qobj], gxhist, gyhist, bin=0.02, $
-          color=djs_icolor('blue'), /over, thick=4, xrange=xrange, /xstyle
-         plothist, roff[qobj], rxhist, ryhist, bin=0.02, $
-          color=djs_icolor('green'), /over, thick=4, xrange=xrange, /xstyle
-         plothist, ioff[qobj], ixhist, iyhist, bin=0.02, $
-          color=djs_icolor('red'), /over, thick=4, xrange=xrange, /xstyle
-
-        legend, ['g', 'r', 'i'], color=djs_icolor(['blue', 'green', $
-          'red']), linestyle=0, charthick=2, charsize = 0.7, thick=4
-
-        djs_iterstat, goff[qobj], mean=goff_mean, sigma=goff_sig
-        djs_iterstat, roff[qobj], mean=roff_mean, sigma=roff_sig
-        djs_iterstat, ioff[qobj], mean=ioff_mean, sigma=ioff_sig
-        oplot, [0, 0], [0,100], thick=4
-
-        xyouts, 0.15, ymax*0.90, 'g offset = ' + $
-                string(goff_mean, format='(F6.3)'), charsize = 0.7
-        xyouts, 0.15,  ymax*0.80, 'g sigma = ' + $
-                string(goff_sig, format='(F6.3)'), charsize = 0.7
-        xyouts, 0.15, ymax*0.70, 'r offset = ' + $
-                string(roff_mean, format='(F6.3)'), charsize = 0.7
-        xyouts, 0.15,  ymax*0.60, 'r sigma = ' + $
-                string(roff_sig, format='(F6.3)'), charsize = 0.7
-        xyouts, 0.15,  ymax*0.50, 'i offset = ' + $
-                string(ioff_mean, format='(F6.3)'), charsize = 0.7
-        xyouts, 0.15,  ymax*0.40, 'i sigma = ' + $
-                string(ioff_sig, format='(F6.3)'), charsize = 0.7
-
-        if (ispecnum EQ 1 AND keyword_set(plottitle)) then $
-          xyouts, 0.8, ymax * 1.03, plottitle, align=0.5, charsize=1.5
-      endfor
-
-      for ispecnum=1, 2 do begin
-         qobj = where(strmatch(plugc.objtype, 'SKY*') NE 1 $
-          AND plugc.spectrographid EQ ispecnum $
-          AND plugc.mag[2] GT 0)
-
-        plothist, groff[qobj], xr=[-0.6, 0.6], bin=0.02, yr = [0,ymax], $
-         xtitle = 'Color Difference (Spectro - Photo)', $
-         ytitle = 'Number of Spectra', /xs, charthick=2, thick=3
-;           xticklen=1, yticklen=1, xgrids=1, ygrids=1
-
-        plothist, groff[qobj], grxhist, gryhist, bin=0.02, $
-                  color=djs_icolor('green'), /over, thick=4
-        plothist, rioff[qobj], rixhist, riyhist, bin=0.02, $
-                  color=djs_icolor('red'), /over, thick=4
-
-        legend, ['(g-r)', '(r-i)'], color=djs_icolor(['green', 'red']), $
-               linestyle=0, charthick=2, charsize = 0.7, thick=4
-
-        djs_iterstat, groff[qobj], mean=groff_mean, sigma=groff_sig
-        djs_iterstat, rioff[qobj], mean=rioff_mean, sigma=rioff_sig
-        oplot, [0, 0], [0,100], thick=4
-
-        xyouts, 0.10,  ymax*0.90, '(g-r) offset = ' + $
-                string(groff_mean, format='(F6.3)'), charsize = 0.7
-        xyouts, 0.10,  ymax*0.80, '(g-r) sigma = ' + $
-                string(groff_sig, format='(F6.3)'), charsize = 0.7
-        xyouts, 0.10,  ymax*0.70, '(r-i) offset = ' + $
-                string(rioff_mean, format='(F6.3)'), charsize = 0.7
-        xyouts, 0.10,  ymax*0.60, '(r-i) sigma = ' + $
-                string(rioff_sig, format='(F6.3)'), charsize = 0.7
-         
-     endfor
-   endif
-
-   !p.multi  = oldmulti
+   qstellar = qgal EQ 0
+   i1 = where(plugc.spectrographid EQ 1 AND qstellar AND plugc.mag[2] NE 0)
+   i2 = where(plugc.spectrographid EQ 2 AND qstellar AND plugc.mag[2] NE 0)
+   plotsn1, plugc, synthmag, i1, i2, plottitle=plottitle, objtype='Stars+QSOs'
 
    ;----------
    ; Close plot file
