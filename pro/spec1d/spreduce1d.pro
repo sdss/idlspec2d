@@ -269,7 +269,7 @@ andmask = 0 ; Free memory
    minrchi2diff = 0.01
 
    qlowconf = bytarr(nobj)
-   qlowconf = qlowconf OR (res_all[0,*].rchi2diff LT minchi2diff)
+   qlowconf = qlowconf OR (res_all[0,*].rchi2diff LT minrchi2diff)
    qlowconf = qlowconf OR (strtrim(res_all[0,*].class) EQ 'STAR' $
     AND res_all[0,*].theta[0] LT 0)
    qlowconf = qlowconf OR (strtrim(res_all[0,*].class) EQ 'QSO' $
