@@ -14,7 +14,8 @@
 ;   platefile  - Plate file(s) from spectro-2D; default to all files
 ;                matching 'spPlate*.fits'
 ;   fiberid    - If specified, then only reduce these fiber numbers;
-;                this must be a vector with unique values between 1 and 640.
+;                this must be a vector with unique values between 1 and
+;                the number of rows in the plate file (typically 640).
 ;
 ; OUTPUTS:
 ;
@@ -101,6 +102,8 @@ andmask = 0 ; Free memory
    ; Trim to specified fibers if FIBERID is set
 
    if (keyword_set(fiberid)) then begin
+      if (min(fiberid) LT 0 OR max(fiberid) GT nobj) then $
+       message, 'Invalid value for FIBERID: must be between 0 and '+string(nobj)
       objflux = objflux[*,fiberid-1]
       objivar = objivar[*,fiberid-1]
       plugmap = plugmap[fiberid-1]
@@ -249,34 +252,35 @@ andmask = 0 ; Free memory
    ; that deviate more than N sigma (where N goes from 1 to NFSIG).
 
    nfsig = 10
-   fracnsigma = fltarr(nper,nobj,nfsig)
-   counts_spectro = fltarr(nper,nobj,5)
-   counts_synth = fltarr(nper,nobj,5)
+   fracnsigma = fltarr(nfsig,nper,nobj)
+   counts_spectro = fltarr(5,nper,nobj)
+   counts_synth = fltarr(5,nper,nobj)
 
    objloglam = objloglam0 + lindgen(npixobj) * objdloglam
    wavevec = 10d^objloglam
    flambda2fnu = wavevec^2 / 2.99792e18
 
    for iobj=0, nobj-1 do begin
+
+      fthru = filter_thru(objflux[*,iobj] * flambda2fnu, waveimg=wavevec, $
+       mask=(objivar[*,iobj] EQ 0), /norm)
+      for i=0,4 do $
+       counts_spectro[i,*,iobj] = fthru[i] * 10^((48.6 - 2.5*17.)/2.5)
+
       for ii=0, nper-1 do begin
          goodmask = objivar[*,iobj] GT 0
          synflux = synthspec(res_all[ii,iobj], loglam=objloglam)
          chivec = abs(objflux[*,iobj] - synflux) * sqrt(objivar)
          for isig=0, nfsig-1 do $
-          fracnsigma[ii,iobj,isig] = $
+          fracnsigma[isig,ii,iobj] = $
            total((chivec GT isig+1) * goodmask) / (total(goodmask) > 1)
 
 ; ??? Save time for now...
 if (ii EQ 0) then begin
          fthru = filter_thru(synflux * flambda2fnu, waveimg=wavevec, /norm)
-         counts_synth[ii,iobj,*] = fthru * 10^((48.6 - 2.5*17.)/2.5)
+         counts_synth[*,ii,iobj] = fthru * 10^((48.6 - 2.5*17.)/2.5)
 endif
       endfor
-
-      fthru = filter_thru(objflux[*,iobj] * flambda2fnu, waveimg=wavevec, $
-       mask=(objivar[*,iobj] EQ 0), /norm)
-      for i=0,4 do $
-       counts_spectro[*,iobj,i] = fthru[i] * 10^((48.6 - 2.5*17.)/2.5)
    endfor
 
    ;----------
@@ -347,7 +351,7 @@ endif
 
    ; Warning: delta-chi^2 is too small as compared to the next best ID.
    minrchi2diff = 0.01
-   qflag = res_all.minrchi2 LT minrchi2diff
+   qflag = res_all.rchi2diff LT minrchi2diff
    zwarning = zwarning OR 4L * qflag
 
    ; Warning: synthetic spectrum is negative (for STAR or QSO).
@@ -356,7 +360,7 @@ endif
    zwarning = zwarning OR 8L * qflag
 
    ; Warning: Fraction of points above 5 sigma is too large (> 5%).
-   qflag = fracnsigma[0,*,4] GT 0.05
+   qflag = fracnsigma[4,*,*] GT 0.05
    zwarning = zwarning OR 16L * qflag
 
    res_all.zwarning = zwarning
