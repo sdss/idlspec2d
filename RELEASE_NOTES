@@ -141,6 +141,8 @@ SPCALIB,SPFLATTEN2,SPREDUCE: Use /APPLYBIAS option in call to SDSSPROC.
 SPCOADD_FRAMES: Convert dispersion vectors to log-lambda units (1.0d-4, PR 1870)
             When combining fibers, we used to use MAXITER=20.  Now use
             MAXITER=50, MAXREJ=1.
+            Bug fix for SMEARUSE keyword in header, which was incorrectly
+            always set to 'F'.
 SPCOMBINE: New optional keyword MINSN2 to set the minimum S/N to include
             in co-adding; default to 0.0 for the time being (see PR 1901).
             Otherwise, special plates that have all bright objects will not
