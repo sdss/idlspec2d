@@ -317,228 +317,243 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       splog, 'Median counts in all fibers = ', fullscrunch
       splog, 'Number of bright fibers = ', whopct
 
-      ;------------------
-      ; Extract the object image
-      ; Use the "whopping" terms
-      ; We need to do 2 iteration extraction: 
-      ;        1) Fit profiles in a subset of rows
-      ;        2) Fit returned parameters with smooth functions
-      ;        3) Extract all 2048 rows with new profiles given by
-      ;              fitansimage
+      if (whopct GT 20) then $
+         splog, 'Too many whopping fibers (> 20), skipping...' $
+      else begin
 
-      splog, 'Extracting frame '+objname[iobj]+' with 6 step process'
-      nrow = (size(image))[2]
-      ncol = (size(image))[1]
-      skiprow = 8
-      yrow = lindgen(nrow/skiprow) * skiprow + skiprow/2
-      nfirst = n_elements(yrow)
+        ;------------------
+        ; Extract the object image
+        ; Use the "whopping" terms
+        ; We need to do 2 iteration extraction: 
+        ;        1) Fit profiles in a subset of rows
+        ;        2) Fit returned parameters with smooth functions
+        ;        3) Extract all 2048 rows with new profiles given by
+        ;              fitansimage
 
-      sigma = 1.0
-      proftype = 1 ; Gaussian
-      highrej = 5  ; just for first extraction steps
-      lowrej = 5  ; just for first extraction steps
-      nPoly = 16 ; maybe more structure, lots of structure
-      wfixed = [1,1,1] ; gaussian term + centroid and  sigma terms
-      nTerms = 3
-      sigmaterm = 1
-      centerterm = 2
-      xnow = xsol
-      sigmanow = xsol*0.0 + sigma
+        splog, 'Extracting frame '+objname[iobj]+' with 6 step process'
+        nrow = (size(image))[2]
+        ncol = (size(image))[1]
+        skiprow = 8
+        yrow = lindgen(nrow/skiprow) * skiprow + skiprow/2
+        nfirst = n_elements(yrow)
+  
+        sigma = 1.0
+        proftype = 1 ; Gaussian
+        highrej = 5  ; just for first extraction steps
+        lowrej = 5  ; just for first extraction steps
+        nPoly = 16 ; maybe more structure, lots of structure
+        wfixed = [1,1,1] ; gaussian term + centroid and  sigma terms
+        nTerms = 3
+        sigmaterm = 1
+        centerterm = 2
+        xnow = xsol
+        sigmanow = xsol*0.0 + sigma
 
-      ;  Kill or adjust first and last column
-      ;invvar[0,*] = 0.0
-      ;invvar[2047,*] = 0.0
-      image[0,*] = image[0,*]*0.7
-      image[2047,*] = image[2047,*]*0.7
+        ;  Kill or adjust first and last column
+        ;invvar[0,*] = 0.0
+        ;invvar[2047,*] = 0.0
+        image[0,*] = image[0,*]*0.7
+        image[2047,*] = image[2047,*]*0.7
 
-      ;
-      ; My fitansimage is not going to work well without good profiles
-      ; Using it to tweak up traces, and then performing free fit to
-      ; object
-      ;
-      for i = 0, 1 do begin
+        ;
+        ; My fitansimage is not going to work well without good profiles
+        ; Using it to tweak up traces, and then performing free fit to
+        ; object
+        ;
+
+
+        for i = 0, 1 do begin
       
-        ; 1) First extraction
-        splog, 'Object extraction: Step', i*3+1
-        extract_image, image, invvar, xnow, sigma, tempflux, tempfluxivar, $
-         proftype=proftype, wfixed=wfixed, yrow=yrow, $
-         highrej=highrej, lowrej=lowrej, nPoly=nPoly, whopping=whopping, $
-         ansimage=ansimage
+          ; 1) First extraction
+          splog, 'Object extraction: Step', i*3+1
+          extract_image, image, invvar, xnow, sigma, tempflux, tempfluxivar, $
+           proftype=proftype, wfixed=wfixed, yrow=yrow, $
+           highrej=highrej, lowrej=lowrej, nPoly=nPoly, whopping=whopping, $
+           ansimage=ansimage
 
-        ; 2) Refit ansimage to smooth profiles
+          ; 2) Refit ansimage to smooth profiles
 
-        splog, 'Answer Fitting: Step', i*3+2
-        nparams = 3
-        nTrace = (size(tempflux))[2]
-        fitans = fitansimage(ansimage, nparams, nTrace, nPoly, nfirst, yrow, $
-         fluxm = [1,1,0], crossfit=1, scatfit=scatfit, scatimage=scatimage)
+          splog, 'Answer Fitting: Step', i*3+2
+          nparams = 3
+          nTrace = (size(tempflux))[2]
+          fitans = fitansimage(ansimage, nparams, nTrace, nPoly, nfirst, yrow, $
+           fluxm = [1,1,0], crossfit=1, scatfit=scatfit, scatimage=scatimage)
 
-        ; 3) Calculate new sigma and xsol arrays
+          ; 3) Calculate new sigma and xsol arrays
       
-        if (i EQ 0) then begin 
+          if (i EQ 0) then begin 
            splog, 'Trace Tweaking: Step', i*3+3, '    (Sigma not tweaked)'
            sigmashift = transpose(fitans[lindgen(nTrace)*nTerms + sigmaterm, *])
            centershift = $
             transpose(fitans[lindgen(nTrace)*nTerms + centerterm, *])
            tweaktrace, xnow, sigmanow, centershift, sigmashift
-        endif
-      endfor
+          endif
+        endfor
 
-;      splog, 'Skipping steps 4 and 5'
-      splog, 'Scattered light: median ', median(scatfit), ' electrons'
+        splog, 'Scattered light: median ', median(scatfit), ' electrons'
 
-      ; 4) Second and final extraction
-      splog, 'Object extraction: Step 6'
+        ; 4) Second and final extraction
+        splog, 'Object extraction: Step 6'
 
-      ; Using old sigma for now, which should be fine
-      ; Different sigmas require a new profile for each trace, so will
-      ; check timing in the future
-      ; subtract off fit to scattered light and don't allow any polynomial terms
+        ; Using old sigma for now, which should be fine
+        ; Different sigmas require a new profile for each trace, so will
+        ; check timing in the future
+        ; subtract off fit to scattered light and don't allow polynomial terms
 
 ;      extract_image, image-scatfit, invvar, xnow, sigma, flux, $
 ;       fluxivar, proftype=proftype, wfixed=wfixed, $
 ;       highrej=highrej, lowrej=lowrej, nPoly=0, whopping=whopping, chisq=chisq
 
 
-      highrej = 15
-      lowrej = 15
-      fitans = fitans[0:nparams*nTrace-1,*]
-      extract_image, image-scatfit, invvar, xnow, sigma, flux, $
-       fluxivar, proftype=proftype, wfixed=wfixed, fitans=fitans, $
-       highrej=highrej, lowrej=lowrej, nPoly=0, whopping=whopping,chisq=chisq, $
-       ymodel=ymodel2
+        highrej = 15
+        lowrej = 15
+        fitans = fitans[0:nparams*nTrace-1,*]
+        extract_image, image-scatfit, invvar, xnow, sigma, flux, $
+         fluxivar, proftype=proftype, wfixed=wfixed, fitans=fitans, $
+         highrej=highrej, lowrej=lowrej, nPoly=0, whopping=whopping, $
+         chisq=chisq, ymodel=ymodel2
+;
+;	contour plot of scattered light
+;
+	contour, scatfit, /follow, nlevels = 10, /xstyle, /ystyle, $
+           title='Scattered light fit for '+objname[iobj], c_charsize=1.5
+;
+;	chisq plot for fit calculcated in extract image 
+;
+        plot, chisq, ytitle = 'Chi^2', title=objname[iobj], xtitle='Row number'
 
-      plot, chisq, ytitle = 'Chi^2', title=objname[iobj], xtitle='Row number'
+        ;------------------
+        ; Flat-field the extracted object fibers with the global flat
+        divideflat, flux, fluxivar, fflat, fibermask=fibermask
 
-      ;------------------
-      ; Flat-field the extracted object fibers with the global flat
-      divideflat, flux, fluxivar, fflat, fibermask=fibermask
+        ;------------------
+        ; Tweak up the wavelength solution to agree with the sky lines.
+        ; xshift contains polynomial coefficients to shift arc to sky lines.
+  
+        locateskylines, skylinefile, flux, fluxivar, $
+           wset, xsky, ysky, skywaves, xset=xset
 
-      ;------------------
-      ; Tweak up the wavelength solution to agree with the sky lines.
-      ; xshift contains polynomial coefficients to shift arc to sky lines.
+        ;------------------
+        ; First convert lambda, and skywaves to log10 vacuum
 
-      locateskylines, skylinefile, flux, fluxivar, $
-       wset, xsky, ysky, skywaves, xset=xset
+        splog, 'Converting wavelengths to vacuum'
+        vaclambda = lambda
+        airtovac, vaclambda
+        vacloglam = alog10(vaclambda)
 
-      ;------------------
-      ; First convert lambda, and skywaves to log10 vacuum
+        vacsky = skywaves
+        airtovac, vacsky
+        vaclogsky = alog10(vacsky)
 
-      splog, 'Converting wavelengths to vacuum'
-      vaclambda = lambda
-      airtovac, vaclambda
-      vacloglam = alog10(vaclambda)
+        sxaddpar, hdr, 'VACUUM', 'WAVELENGTHS ARE IN VACUUM'
+        sxaddpar, hdr, 'AIR2VAC', systime()
 
-      vacsky = skywaves
-      airtovac, vacsky
-      vaclogsky = alog10(vacsky)
+        splog, 'Tweaking to sky lines'
 
-      sxaddpar, hdr, 'VACUUM', 'WAVELENGTHS ARE IN VACUUM'
-      sxaddpar, hdr, 'AIR2VAC', systime()
-
-      splog, 'Tweaking to sky lines'
-
-      ;
-      ; Fit to arc lines with sky shifts included
-      ;
+        ;
+        ; Fit to arc lines with sky shifts included
+        ;
 
 
-      ;
-      ; This procedure produces numerical steps at 10^-6, 1 km/s
-      ;
-   
-      xshift = xpeak * 0.0
+        ;
+        ; This procedure produces numerical steps at 10^-6, 1 km/s
+        ;
+     
+        xshift = xpeak * 0.0
 
-      if (size(xset,/tname) NE 'UNDEFINED') then begin
-        traceset2xy, xset, transpose(xpeak), xshift
-        xshift = transpose(xshift)
-      endif else splog, 'Sky lines are TOO NOISY!! No shifting!!'
-
-      plot, xpeak, xshift, ps=3, xtitle='Arc line position', $
-          ytitle = 'Offset to Sky line', $
-          title = 'Offset sky lines positions - arc line positions (in pix)'
-
-      vacset = wset
-      fixabove = 2
-      finalarcfit, xpeak+xshift, vacloglam, vacset, arccoeff, fixabove, $
-             fibermask=fibermask, maxdev=0, maxiter=1, nsetcoeff=8, maxsig=2.0
+        if (size(xset,/tname) NE 'UNDEFINED') then begin
+          traceset2xy, xset, transpose(xpeak), xshift
+          xshift = transpose(xshift)
+        endif else splog, 'Sky lines are TOO NOISY!! No shifting!!'
+  
+        plot, xpeak, xshift, ps=3, xtitle='Arc line position', $
+            ytitle = 'Offset to Sky line', $
+            title = 'Offset sky lines positions - arc line positions (in pix)'
+  
+        vacset = wset
+        fixabove = 2
+        finalarcfit, xpeak+xshift, vacloglam, vacset, arccoeff, fixabove, $
+               fibermask=fibermask, maxdev=0, maxiter=1, nsetcoeff=8, maxsig=2.0
 
 
 ;      fit_skyset, xpeak, ypeak, vacloglam, xsky, ysky, vaclogsky, skycoeff, $
 ;        goodlines, wset, ymin=ymin, ymax=ymax, func=func
 
       
-      ;------------------
-      ; Sky-subtract
+        ;------------------
+        ; Sky-subtract
+  
+        skysubtract, flux, fluxivar, plugsort, vacset, $ 
+         skysub, skysubivar, fibermask=fibermask, upper=3.0, lower=3.0
+    
+        ;------------------------------------------
+        ; Flux calibrate to spectrophoto_std fibers
+  
+        fluxfactor = fluxcorr(skysub, skysubivar, vacset, plugsort, $
+                   color=color, lower=3.0, upper=3.0, fibermask=fibermask)
+    
+        flambda  = skysub 
+        flambdaivar = skysubivar 
+  
+        minfluxfactor = median(fluxfactor)*0.01
+        divideflat, flambda, flambdaivar, fluxfactor, minval=minfluxfactor
 
-      skysubtract, flux, fluxivar, plugsort, vacset, $ 
-       skysub, skysubivar, fibermask=fibermask, upper=3.0, lower=3.0
+        ;------------------------------------------
+        ; Telluric correction called for 'red' side
+  
+        if (color EQ 'red')  then begin
 
-      ;------------------------------------------
-      ; Flux calibrate to spectrophoto_std fibers
-
-      fluxfactor = fluxcorr(skysub, skysubivar, vacset, plugsort, color=color, $
-                             lower=3.0, upper=3.0, fibermask=fibermask)
-
-      flambda  = skysub 
-      flambdaivar = skysubivar 
-
-      minfluxfactor = median(fluxfactor)*0.01
-      divideflat, flambda, flambdaivar, fluxfactor, minval=minfluxfactor
-
-      ;------------------------------------------
-      ; Telluric correction called for 'red' side
-
-      if (color EQ 'red')  then begin
-
-         ;-----------------------------------------------
-         ;  Split into two regions, A,B bands first
-         telluric1 = telluric_corr(flambda, flambdaivar, vacset, plugsort, $
-                 minw = 3.82, maxw=3.92, lower=5.0, upper=5.0, ncontbkpts=10)
-
-         ;-----------------------------------------------
-         ;  9100 Ang absorption next?
-         telluric2 = telluric_corr(flambda, flambdaivar, vacset, plugsort, $
-                 minw = 3.94, maxw=3.97, lower=5.0, upper=5.0)
+           ;-----------------------------------------------
+           ;  Split into two regions, A,B bands first
+           telluric1 = telluric_corr(flambda, flambdaivar, vacset, plugsort, $
+                   minw = 3.82, maxw=3.92, lower=5.0, upper=5.0, ncontbkpts=10)
+  
+           ;-----------------------------------------------
+           ;  9100 Ang absorption next?
+           telluric2 = telluric_corr(flambda, flambdaivar, vacset, plugsort, $
+                   minw = 3.94, maxw=3.97, lower=5.0, upper=5.0)
        
-         telluricfactor = telluric1 * telluric2
-         divideflat, flambda, flambdaivar, telluricfactor, minval=0.1
+           telluricfactor = telluric1 * telluric2
+           divideflat, flambda, flambdaivar, telluricfactor, minval=0.1
+  
+           qaskylines, flambda, flambdaivar, vacset, plugsort
+        endif
 
-         qaskylines, flambda, flambdaivar, vacset, plugsort
-      endif
+        ;------------------
+        ; Write extracted, lambda-calibrated, sky-subtracted spectra to disk
 
-      ;------------------
-      ; Write extracted, lambda-calibrated, sky-subtracted spectra to disk
+        framenum = sxpar(objhdr, 'EXPOSURE')
+  
+        filebase = filepath( $
+         's-'+string(format='(i1,a1,a,i4.4)',spectrographid, $
+         color,'-',framenum), root_dir=outdir)
+  
+        ;------
+        ; Add everything we can think of to object header
 
-      framenum = sxpar(objhdr, 'EXPOSURE')
-
-      filebase = filepath( $
-       's-'+string(format='(i1,a1,a,i4.4)',spectrographid, $
-       color,'-',framenum), root_dir=outdir)
-
-      ;------
-      ; Add everything we can think of to object header
-
-      sxaddpar, objhdr, 'PLUGMAPF', plugfilename
-      sxaddpar, objhdr, 'FLATFILE', flatname[ibest]
-      sxaddpar, objhdr, 'ARCFILE', arcname[ibest]
-      sxaddpar, objhdr, 'OBJFILE', objname[iobj]
-      sxaddpar, objhdr, 'LAMPLIST', lampfile
-      sxaddpar, objhdr, 'SKYLIST', skylinefile
-      sxaddpar, objhdr, 'PIXFLAT', pixflatname
-      sxaddpar, objhdr, 'OSIGMA',  sigma, $
+        sxaddpar, objhdr, 'PLUGMAPF', plugfilename
+        sxaddpar, objhdr, 'FLATFILE', flatname[ibest]
+        sxaddpar, objhdr, 'ARCFILE', arcname[ibest]
+        sxaddpar, objhdr, 'OBJFILE', objname[iobj]
+        sxaddpar, objhdr, 'LAMPLIST', lampfile
+        sxaddpar, objhdr, 'SKYLIST', skylinefile
+        sxaddpar, objhdr, 'PIXFLAT', pixflatname
+        sxaddpar, objhdr, 'OSIGMA',  sigma, $
            'Original guess at sigma of spatial profiles'
-      sxaddpar, objhdr, 'SKIPROW', skiprow, 'Number of rows skipped in step 1'
-      sxaddpar, objhdr, 'LOWREJ', lowrej, 'Extraction, low rejection'
-      sxaddpar, objhdr, 'HIGHREJ', highrej, 'Extraction, high rejection'
-      sxaddpar, objhdr, 'SCATPOLY', nPoly, 'Order of scattered light poly'
-      sxaddpar, objhdr, 'PROFTYPE', proftype, '1 is Gaussian'
-      sxaddpar, objhdr, 'NFITPOLY', nparams, 'order of profile parameter fit'
+        sxaddpar, objhdr, 'SKIPROW', skiprow, 'Number of rows skipped in step 1'
+        sxaddpar, objhdr, 'LOWREJ', lowrej, 'Extraction, low rejection'
+        sxaddpar, objhdr, 'HIGHREJ', highrej, 'Extraction, high rejection'
+        sxaddpar, objhdr, 'SCATPOLY', nPoly, 'Order of scattered light poly'
+        sxaddpar, objhdr, 'PROFTYPE', proftype, '1 is Gaussian'
+        sxaddpar, objhdr, 'NFITPOLY', nparams, 'order of profile parameter fit'
 
-      writespectra, objhdr, flambda, flambdaivar, plugsort, vacset, $
-       filebase=filebase
+        writespectra, objhdr, flambda, flambdaivar, plugsort, vacset, $
+         filebase=filebase
 
-      heap_gc   ; Garbage collection for all lost pointers
+        heap_gc   ; Garbage collection for all lost pointers
+
+      endelse
+
    endfor
 
    splog, 'End time ', systime(1)-t_begin, ' seconds TOTAL', $

@@ -212,6 +212,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
 
    ii = where(mask EQ 0, initiallyrejected)
 
+   print, ' ROW NITER CHI^2'
    for iy=0, nRowExtract-1 do begin
      cur = yrow[iy]
 
@@ -254,8 +255,8 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
      finv[iy,*] = finvrow
 
      if(ARG_PRESENT(ansimage)) then ansimage[*,iy] = ansrow[0:oldma-1]
-     print, format='($, ".",i4.4,i4,a9)',cur,niter, $
-          string([8b,8b,8b,8b,8b,8b,8b,8b,8b])
+     print, format='($, ".",i4.4,i4,f7.2,a16)',cur,niter, chisqrow, $
+          string([8b,8b,8b,8b,8b,8b,8b,8b,8b,8b,8b,8b,8b,8b,8b,8b])
    endfor	  
 
    ii = where(mask EQ 0, finallyrejected)
