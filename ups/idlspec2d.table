@@ -9,7 +9,7 @@ Qualifiers=""
 
 Common:
    Action=setup
-      setupRequired("-f ${UPS_PROD_FLAVOR} idlutils")
+#      setupRequired("-f ${UPS_PROD_FLAVOR} idlutils")
       proddir()
       setupenv()
       envPrepend(IDL_PATH, +${UPS_PROD_DIR}/pro)
