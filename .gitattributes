@@ -92,9 +92,10 @@ examples/g_codes_alignment.txt -text
 examples/g_codes_completion.txt -text
 examples/g_codes_lighttrap.txt -text
 examples/g_codes_object.txt -text
+examples/opBC-50000.par -text
 examples/opBC-51809.par -text
 examples/opBC-51813.par -text
-examples/opBC.par -text
+examples/opBC-empty.par -text
 examples/opConfig.par -text
 examples/opECalib-51430.par -text
 examples/opECalib-51577.par -text

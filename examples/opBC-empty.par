@@ -1,0 +1,33 @@
+FLAVOR     1
+mjd        0
+
+typedef enum { 
+  DRKCUR,                 # low level dark current 
+  BLKCOL,                    # blocked column - fix with flatfield 
+  BADBLK,                    # badly blocked col - just fill in 
+  DEPCOL,                    # Depressed column 
+  TGPAIR,                    # Transfer gate trap column pair 
+  HOTCOL,                    # Hot column - bad dark current 
+  CTECOL,                    # Bad charge transfer efficiency 
+  INTRMD                     # Intermittent dark column 
+} DFTYPE;
+
+typedef enum { 
+  BADCOL,                 # Interpolate over column 
+  ADDCOL,                    # Additive correction - fix with debias vector 
+  FILCOL                     # Fill in column 
+} DFACTION;
+
+
+typedef struct {
+  char program[40];		# program (1 amp or 2?)
+  int camRow;                  # 0=spectrograph camera 
+  int camCol;                  # 1=b1, 2=r2, 3=b2, 4=r1
+  int dfcol0;                # starting column of this defect
+  int dfncol;                # number of columns in this defect
+  int dfrow0;
+  int dfnrow;
+  DFTYPE dftype;             # defect type
+  DFACTION dfaction;         # repair action for defect
+} BC;
+
