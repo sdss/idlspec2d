@@ -427,8 +427,10 @@ pro spcoadd_v5, spframes, outputname, $
     plugmap=finalplugmap, loglam=finalwave)
 
    ; Plot S/N and throughput **before** this distortion-correction.
+   splog, prelog='Initial'
    platesn, finalflux, finalivar, finalandmask, finalplugmap, finalwave, $
     hdr=hdr, plotfile=djs_filepath(plotsnfile+'.orig', root_dir=combinedir)
+   splog, prelog=''
 
    ; Apply this flux-distortion to the final, co-added fluxes.
    invcorrimg = 1. / corrimg
@@ -441,8 +443,10 @@ pro spcoadd_v5, spframes, outputname, $
 
    ; Plot S/N and throughput **after** this distortion-correction.
    ; (This over-writes header cards written in the first call.)
+   splog, prelog='Final'
    platesn, finalflux, finalivar, finalandmask, finalplugmap, finalwave, $
     hdr=hdr, plotfile=djs_filepath(plotsnfile, root_dir=combinedir)
+   splog, prelog=''
 
    ;---------------------------------------------------------------------------
    ; Write the corrected spCFrame files.
