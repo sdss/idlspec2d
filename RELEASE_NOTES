@@ -5,7 +5,7 @@ SDSSPROC: Add "WARNING" to the warning messages about invalid or
             missing BC files.
 
 opHdrFix.par: Declare data bad on MJD 52336-52337 due to spectrograph
-            mechanicals problems.
+            mechanicals problems, and other problems from 52312-52337.
 
 In idlutils:
 eviltarball: Comment out the reference to sdsscvs.

@@ -326,7 +326,8 @@ ophdrfix sdR-??-0001331[6-7] FLAVOR   "'unknown'"
 # thick clouds.
 ophdrfix sdR-??-0001332[0-1] FLAVOR   "'unknown'"
 
-# All data on MJD 52322 were through very thick clouds.
+# All data on MJD 52322 were through very thick clouds
+# (plates 810,865).
 ophdrfix sdR-??-0001332[6-9] FLAVOR   "'unknown'"
 ophdrfix sdR-??-0001333[0-3] FLAVOR   "'unknown'"
 
