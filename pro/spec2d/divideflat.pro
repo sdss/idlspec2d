@@ -83,7 +83,8 @@ pro divideflat, flux, fluxivar, fflat, fibermask=fibermask, minval=minval
          if (nbad GT 0) then begin
             flux[ibad,itrace] = 0.0
             fluxivar[ibad,itrace] = 0.0
-            splog, 'Reject ', nbad, ' low points in trace ', itrace
+            if (nbad GT 20) then $
+             splog, 'Reject ', nbad, ' low points in trace ', itrace
          endif
 
       endif else begin ; BAD FIBER
