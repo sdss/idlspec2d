@@ -1,14 +1,12 @@
 
+* Rename heliocentric -> barycentric?
+
 * Plate 306, fibers 172-175 now look worse than in July.
 
 * Warning if telluric correction is out of range (not between 0 and 1.5?)
 
 * Move iteration code from XY2TRACESET to FUNC_FIT(), letting it call itself
   recursively.
-
-* Looks like /halfintwo is no longer used in FUNC_FIT().
-  Should probably just have a different function call than fchebyshev,
-  like fchebyshev_split.
 
 * Calling script for SPREDUCE2D, SPCOMBINE, SPREDUCE1D
 
@@ -83,11 +81,6 @@
 
 * Implement PSF variable sky subtraction
 
-* trace_crude gives a wrong xstart for fiber 172 in 
-    plate 192:  Tracing 320 fibers in sdR-r1-00001602.fit
-    The fiber overlaps with fiber 171, but is not set as a
-    bad fiber, so maybe this is why it is not fixed.
-
 * Change FIBERMASK not in FIBERFLAT, but in SUPERFLAT.
 
 * BUG: For arc 51441/sdR-b2-00001347.fit (plate 214), bizarre wavelength
@@ -143,6 +136,15 @@
 -------------------------------------------------------------------------------
 ;   These have been dealt with
 -------------------------------------------------------------------------------
+
+* Looks like /halfintwo is no longer used in FUNC_FIT().
+  Should probably just have a different function call than fchebyshev,
+  like fchebyshev_split.
+
+* trace_crude gives a wrong xstart for fiber 172 in 
+    plate 192:  Tracing 320 fibers in sdR-r1-00001602.fit
+    The fiber overlaps with fiber 171, but is not set as a
+    bad fiber, so maybe this is why it is not fixed.
 
 * Use a proc SDSSHEAD in place of HEADFITS, which calls SDSSPROC to get
   the header info correct (e.g., the CAMERA keyword).
@@ -305,8 +307,6 @@ readidlout
 -------------------------------------------------------------------------------
 Unused routines:
 
-combine2dout
-combineI (old version of combine2dout?)
 extract2
 finalarcfit
 findobjects

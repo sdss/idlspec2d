@@ -64,7 +64,7 @@ pro qaplot_scatlight, scatfit, yrow, wset=wset, xcen=xcen, $
    if (scatmax GT 40) then $
      splog, 'WARNING: Scattered light max = ', scatmax, ' electrons' $
     else $
-     splog, 'Scattered light max =    ', scatmax, ' electrons'
+     splog, 'Scattered light max = ', scatmax, ' electrons'
 
    ;---------------------------------------------------------------------------
    ; Plot contour image of scattered light
