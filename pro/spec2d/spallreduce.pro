@@ -36,6 +36,7 @@
 ;
 ; PROCEDURES CALLED:
 ;   combine2dout
+;   cpbackup
 ;   idlspec2d_version()
 ;   idlutils_version()
 ;   splog
@@ -114,10 +115,12 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
    ; Open log files for output
 
    if (keyword_set(logfile)) then begin
-      splog, filename=logfile, /append
+      cpbackup, logfile
+      splog, filename=logfile
       splog, 'Log file ', logfile, ' opened ', systime()
    endif
    if (keyword_set(plotfile) AND NOT keyword_set(xdisplay)) then begin
+      cpbackup, plotfile
       set_plot, 'ps'
       device, filename=plotfile, /color
       splog, 'Plot file ', plotfile, ' opened ', systime()
