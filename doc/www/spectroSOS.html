@@ -160,9 +160,17 @@ product:
 
 <P>
 You will need to be using an account that has write-permission in
-the products (/p) directory, such as "observer" or "products".
+the products (/p) directory, such as "observer".
 You will also need to be in a local directory (such as $HOME) where
 you have write-permission.
+
+<P>
+Versions of the code after v4_8_4 are in the Princeton CVS repository:
+The observer account at APO has access to this repository.
+<DL><DD><PRE>
+  % setenv CVSROOT alfred@spectro.princeton.edu:/home/spectro/cvs
+  % setenv CVS_RSH ssh
+</PRE></DD></DL>
 
 <P>
 Now install the code, installing first "idlutils" then "idlspec2d" to get
@@ -192,11 +200,18 @@ for the version numbers:
   % setenv IDLSPEC2D_VERS v4_3_1
 </PRE></DD></DL>
 
+<P>
+Versions of the code after v4_8_4 are in the Princeton CVS repository.
+The observer account at APO has access to this repository.
+<DL><DD><PRE>
+  % setenv CVSROOT alfred@spectro.princeton.edu:/home/spectro/cvs
+  % setenv CVS_RSH ssh
+</PRE></DD></DL>
+
 <LI>
 Install this version of "idlutils" and declare it current:
 <DL><DD><PRE>
-  % setup sdsscvs # Only needed on machines set up by Fermi
-  % setup sdsstools # (if you didn't setup sdsscvs)
+  % setup sdsstools # (if using sdssmake instead of evilmake)
   % cd
   % cvs export -r $IDLUTILS_VERS idlutils
   % cd ~/idlutils
@@ -213,8 +228,7 @@ Install this version of "idlutils" and declare it current:
 Install this version of "idlspec2d" with a dependency on the above
 version of "idlutils", and declare it current:
 <DL><DD><PRE>
-  % setup sdsscvs # Only needed on machines set up by Fermi
-  % setup sdsstools # (if you didn't setup sdsscvs)
+  % setup sdsstools # (if using sdssmake instead of evilmake)
   % cd
   % cvs export -r $IDLSPEC2D_VERS idlspec2d
   % cd ~/idlspec2d
@@ -240,6 +254,14 @@ Now you are ready to <A HREF="#launch">launch</A> this new version of the code.
 IDL must already be installed on your system, and
 the environment variables IDL_DIR and IDL_PATH must already be set.
 
+Versions of the code after v4_8_4 are in the Princeton CVS repository:
+The observer account at APO has access to this repository.
+<DL><DD><PRE>
+  % setenv CVSROOT alfred@spectro.princeton.edu:/home/spectro/cvs
+  % setenv CVS_RSH ssh
+</PRE></DD></DL>
+
+<P>
 <LI>
 Check out a tagged version, such as v4_3_1, of both "idlutils" and "idlspec2d",
 into your home directory (for this example).
@@ -248,7 +270,6 @@ for the version numbers:
 <DL><DD><PRE>
   % setenv IDLUTILS_VERS v4_3_1
   % setenv IDLSPEC2D_VERS v4_3_1
-  % setup sdsscvs # Only needed on machines set up by Fermi
   % cd
   % cvs co -r $IDLUTILS_VERS idlutils
   % cvs co -r $IDLSPEC2D_VERS idlspec2d
