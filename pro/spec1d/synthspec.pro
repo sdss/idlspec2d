@@ -6,7 +6,7 @@
 ;   Construct synthetic spectrum from eigen-templates.
 ;
 ; CALLING SEQUENCE:
-;   synflux = synthspec(zans, [ loglam=, hdr=, eigndir= ])
+;   synflux = synthspec(zans, [ loglam=, hdr=, eigendir= ])
 ;
 ; INPUTS:
 ;   zans       - 
