@@ -48,6 +48,8 @@ SMOOTH_SUPERFLAT: Bug fix, whereby we could trigger a warning message when
         This was triggering false warning messages on plate 1053/52468 in r2,
         plate 1051/52468 on r2, etc.  This should now be fixed by setting
         the internal variable RATIO=1 for bad points.
+SPCOADD_V5: Apply the flux-distortion image to the sky vectors, as well
+        as to OBJFLUX,OBJIVAR.
 SPFLUX_READ_KURUCZ: This function was pulled out of SPFLUX_V5.
 SPFLUX_V5: Pull out the SPFLUX_READ_KURUCZ() code as a separate function.
         Comment-out the median/mean rescaling factor in SPFLUX_MRATIO_FLATTEN(),
@@ -68,8 +70,8 @@ SPFLUXCORR_V5: Return chi instead of sqrt(chi2) from the function FCORR_CHI_FN.
         when there is no improvement to chi^2.  This is because one could
         imaging that going from 1->2 terms is very little improvment, but
         then 2->3 is substantial improvment.
-SPCOADD_V5: Apply the flux-distortion image to the sky vectors, as well
-        as to OBJFLUX,OBJIVAR.
+SPGAIN: Revamp this code, trying to measure the gain from a set of flats
+        taken on MJD 53114 for this purpose.
 SPREDUCE1D: (Use the B-spline spectra for QSO-fitting).
 SYNTHSPEC,ZFIND: If the eigenspectrum file does not contain in image in HDU #0,
         then look for a B-spline in HDU #1 and assume that it describes
