@@ -42,6 +42,7 @@ function apo_readlog, logfile, plate=plate, flavor=flavor, camera=camera
    ; Only include plate numbers and flavors matching PLATE, FLAVOR, CAMERA
    ; if those keywords are specified.
 
+   pstruct = 0
    ihdu = 1
    pp = 1
    while (keyword_set(pp)) do begin

@@ -54,6 +54,7 @@ pro apo_plotsn, logfile, plate, plugfile=plugfile, plotfile=plotfile
    ; Read the science frames for this plate
 
    pp = apo_readlog(logfile, plate=plate, flavor='science')
+   if (NOT keyword_set(pp)) then return
    mjd = (*pp[0]).mjd
 
    ;----------
