@@ -91,7 +91,7 @@ objs = extract_boxcar.o extract_profile.o extract_row.o \
 
 libspec2d.$(SO_EXT): $(objs)
 	$(LD) $(X_LD_FLAGS) -o ../lib/libspec2d.$(SO_EXT) $(objs)
-	nm -s ../lib/libspec2d.$(SO_EXT)
+#	nm -s ../lib/libspec2d.$(SO_EXT)
 
 tidy :
 	rm -f *.o

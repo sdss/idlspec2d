@@ -47,8 +47,6 @@ void fillAnswers(float *a, int *ia, float **covar, int nTrace, int nPoly,
 	     if (sigmanew[i] > 0.0 && sigmaerr[i] > 0.0) 
 	        if (sigmaerr[i] / sigmanew[i] < 0.05)  {
                    change++;	
-//	           printf("%d Changing width of fiber %d %f -> %f \n", 
-//	           change, i, sigma[i], sigmanew[i]);
 	           sigma[i] = sigmanew[i];
 	        }
 	     }
@@ -95,7 +93,6 @@ int fit_row(float *x, float *y, float *invvar, float *ymod, int nx,
 
         xmin = (int *)malloc(nTrace * sizeof(int));
         xmax = (int *)malloc(nTrace * sizeof(int));
-//        abig = (float **)malloc(totalp * sizeof(float *));
         covar = matrix_nr(totalp,totalp);
         abig = matrix_nr(totalp,20);
 
@@ -103,8 +100,6 @@ int fit_row(float *x, float *y, float *invvar, float *ymod, int nx,
 	for(i=0;i<nTrace;i++) fwidth[i] = sigma[i];
 	for(i=0;i<totalp;i++) ia[i] = 1;
 
-//	for(i=0;i<nx;i++) 
-//          fprintf(stderr, "%f %f %f %f\n", x[i], y[i], ymod[i], invvar[i]);
 
 
         diffchi = 10.0;

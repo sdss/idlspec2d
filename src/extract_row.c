@@ -40,11 +40,11 @@ IDL_LONG extract_row
    IDL_LONG  * xmax;
    float    ** aprofile;
    float    ** apoly;
-   float       sigmal = 5.0; 	// set limits of profile influence  
-   float       x2; 	// Top Chebyshev x limit
-   float       x1; 	// Lower Chebyshev x limit 
-   float       wsigma = 50.0; 	// Whopping sigma width
-   IDL_LONG    wPoly; 	// Whopping sigma width
+   float       sigmal = 5.0; 	/* set limits of profile influence   */
+   float       x2; 	/* Top Chebyshev x limit */
+   float       x1; 	/* Lower Chebyshev x limit  */
+   float       wsigma = 50.0; 	/* Whopping sigma width */
+   IDL_LONG    wPoly; 	/* Whopping sigma width */
 
    IDL_LONG    i,j,k,l;
    IDL_LONG    length;
@@ -84,19 +84,19 @@ IDL_LONG extract_row
    covar  = (float **)malloc(ma * sizeof(float *)); 
    for (iy=0; iy < ma; iy++) covar[iy] = (float *)argv[argct]+iy*ma;
 
-//   fprintf(stderr, "Going to fit_row now\n");
+/*   fprintf(stderr, "Going to fit_row now\n");
 
-//   for (i=0; i < nx; i++) 
-//      fprintf(stderr, "%d %f %f %f\n",(int) i,x[i],fimage[i],invvar[i]);
+/*   for (i=0; i < nx; i++) 
+      fprintf(stderr, "%d %f %f %f\n",(int) i,x[i],fimage[i],invvar[i]); */
 
    xmin = (IDL_LONG *)malloc(sizeof(IDL_LONG)*nTrace);
    xmax = (IDL_LONG *)malloc(sizeof(IDL_LONG)*nTrace);
 
    findXLimits(xmin, xmax, x, xcen, nx, nTrace, sigma, sigmal);
 
-//
+/*
 //	ma = nCoeff*nTrace + nPoly
-//
+//	*/
 
    wPoly = nPoly + whoppingct;
    tTrace = nCoeff*nTrace;
@@ -108,9 +108,10 @@ IDL_LONG extract_row
    aprofile = (float **)malloc(tTrace * sizeof(float *));
    apoly = (float **)malloc(wPoly * sizeof(float *));
 
-//
+/*
 //	Room for fiber profiles
-//
+//	*/
+
    for(i=0, k=0; i<nTrace; i++)
       for(j=0; j<nCoeff; j++, k++) {
          length = xmax[i] - xmin[i] + 1;
@@ -122,7 +123,7 @@ IDL_LONG extract_row
           nTrace, proftype);
 
    if (squashprofile) {
-//     printf("Squashing Profile\n");
+/*     printf("Squashing Profile\n"); */
      for(i=0; i<nTrace; i++)
        for(l=xmin[i],k=0;l<=xmax[i];l++,k++) {
 	 aprofile[i][k] = aprofile[i*nCoeff][k]*ans[i*nCoeff];
@@ -132,31 +133,31 @@ IDL_LONG extract_row
 
      for(i=0; i<nTrace; i++) {
        ia[i] = 1;
-//       for(l=xmin[i],k=0;l<=xmax[i];l++,k++) 
+/*       for(l=xmin[i],k=0;l<=xmax[i];l++,k++)  
 //           printf("%f, ", aprofile[i][k]);
-//	printf("\n%d",i+1);
+//	printf("\n%d",i+1); */
        }
      nCoeff = 1;
           
    }
 
-//
+/*
 //	Room for polynomial profiles
-//
+//	*/
+
    for(i=0; i<wPoly; i++) {
       apoly[i] = (float *)malloc(nx * sizeof(float));
       ia[i+nCoeff*nTrace] = ia[i+tTrace];
       ans[i+nCoeff*nTrace] = ans[i+tTrace];
-//      printf("%d %d %f\n",i,ia[i+nCoeff*nTrace],ans[i+nCoeff*nTrace]);
    }
     
    x2 = (float) (nx-1);
    x1 = 0.0;  
    fillPoly(apoly, x, nx, nPoly, x1, x2);
 
-//
+/*
 //  Whopping profile has somewhere near 50 pixel sigma
-//
+//	*/
    fillWhopping(&apoly[nPoly], x, nx, whoppingct, whoppingcen, wsigma);
 
    CheckRowFibers(aprofile, xmin, xmax, nTrace, nCoeff, ans, ia, invvar);
@@ -185,10 +186,10 @@ IDL_LONG extract_row
    fillCovar(ysub, invvar, nx, aprofile, apoly, nTrace, nCoeff, wPoly, 
           beta, ia, covar, xmin, xmax);
 
-//   printf("Fill Covar done \n");
+/*   printf("Fill Covar done \n");	*/
 
    bad = choldcRow(covar, ia, nTrace, nCoeff, wPoly, p); 
-//   printf("choldc Custom2 done\n");
+/*   printf("choldc Custom2 done\n");	*/
    if (bad < 0) {
 	for(j=0;j<ma;j++) {
 	  p[j] = 0.0;
@@ -197,15 +198,15 @@ IDL_LONG extract_row
    } else {
 
      cholslRow(covar, ia, nTrace, nCoeff, wPoly, p, beta, ans); 
-     //printf("cholsl done\n");
+/*     printf("cholsl done\n");	*/
 
      if (calcCovar > 0) {
         cholslRowCovar(covar, ia, nTrace, nCoeff, wPoly, p); 
-        //printf("cholsl Covar done\n");
+/*     printf("cholsl Covar done\n");	*/
      }  
-//     else {
+/*     else {
 //      printf("Skipping Covariance Calculation\n");
-//   }
+//   }	*/
    }
 
    for(i=0;i<nx;i++) ymod[i] = 0.0;
@@ -216,7 +217,7 @@ IDL_LONG extract_row
       for(i=0; i < nx; i++) 
          ymod[i] += ans[j]*apoly[k][i];
     }
-//   printf("scattered light model done\n");
+/*   printf("scattered light model done\n"); */
 
    /* Use 0th term to estimate scattered light contribution  */
    for (j=0;j<nTrace;j++) 
@@ -227,7 +228,7 @@ IDL_LONG extract_row
       for (coeff=0; coeff<nCoeff; coeff++,l++)
          for (i=xmin[j], k=0; i <= xmax[j]; i++, k++) 
             ymod[i] += ans[l]*aprofile[l][k];
-//   printf("model done\n");
+/*   printf("model done\n"); */
 
 
    /* Free temporary memory */
@@ -241,7 +242,7 @@ IDL_LONG extract_row
    free(xmin);
    free(xmax);
    free(covar);
-//   printf("variables freed\n");
+/*   printf("variables freed\n");  */
 
    return retval;
 }
@@ -264,7 +265,7 @@ void ProfileGauss(float *x, IDL_LONG ndat, float **y, float xcen, IDL_LONG xmin,
 
 	   printf("Filling Arrays\n");
 	   oldsigma = sigma;
-//	   Fill static arrays
+/*	   Fill static arrays	*/
 	   for(nm=0;nm<100;nm++) {
  	     xfake = 15.0 + (float) nm/100.0;
 	     for (k=0; k<=30; k++) {
@@ -291,8 +292,8 @@ void ProfileGauss(float *x, IDL_LONG ndat, float **y, float xcen, IDL_LONG xmin,
 	for(j=0;j<nCoeff;j++) 
 	  for (i=xmin,k=0,place=15-backup; i<=xmax; i++,k++,place++) 
 	     { 
-//             printf("%d %d %d %d %d %f\n", 
-//		i,j,k,place,nm,frac);
+/*             printf("%d %d %d %d %d %f\n", 
+		i,j,k,place,nm,frac);  */
              y[j][k] = model[nm][j][place];
 	     }
 	 
@@ -309,7 +310,7 @@ void ProfileAbs3(float *x, IDL_LONG ndat, float **y, float xcen,
 	static float oldsigma=0.0;
 	static float model[100][3][31];
 
-//		Below is denominator fro x^3
+/*		Below is denominator for x^3	*/
 
 	denom = 1.0/(2.88450 * 0.89298 * sigma);
 
@@ -317,7 +318,7 @@ void ProfileAbs3(float *x, IDL_LONG ndat, float **y, float xcen,
 
 	   printf("Filling Arrays\n");
 	   oldsigma = sigma;
-//	   Fill static arrays
+/*	   Fill static arrays	*/
 	   for(nm=0;nm<100;nm++) {
  	     xfake = 15.0 + (float) nm/100.0;
 	     for (k=0; k<=30; k++) {
@@ -345,8 +346,8 @@ void ProfileAbs3(float *x, IDL_LONG ndat, float **y, float xcen,
 	for(j=0;j<nCoeff;j++) 
 	  for (i=xmin,k=0,place=15-backup; i<=xmax; i++,k++,place++) 
 	     { 
-//             printf("%d %d %d %d %d %f\n", 
-//		i,j,k,place,nm,frac);
+/*             printf("%d %d %d %d %d %f\n", 
+		i,j,k,place,nm,frac);	*/
              y[j][k] = model[nm][j][place];
 	     }
 	 
@@ -404,7 +405,7 @@ void ProfileAbs3WideGauss(float *x, IDL_LONG ndat, float **y, float xcen,
 	static float oldsigma=0.0;
 	static float model[100][4][31];
 
-//		Below is denominator fro x^3
+/*		Below is denominator for x^3	*/
 
 	denom = 1.0/(2.88450 * 0.89298 * sigma);
 	sigma2 = 2.0*sigma;
@@ -414,7 +415,7 @@ void ProfileAbs3WideGauss(float *x, IDL_LONG ndat, float **y, float xcen,
 
 	   printf("Filling Arrays\n");
 	   oldsigma = sigma;
-//	   Fill static arrays
+/*	   Fill static arrays	*/
 	   for(nm=0;nm<100;nm++) {
  	     xfake = 15.0 + (float) nm/100.0;
 	     for (k=0; k<=30; k++) {
@@ -446,8 +447,8 @@ void ProfileAbs3WideGauss(float *x, IDL_LONG ndat, float **y, float xcen,
 	for(j=0;j<nCoeff;j++) 
 	  for (i=xmin,k=0,place=15-backup; i<=xmax; i++,k++,place++) 
 	     {
-//             printf("%d %d %d %d %d %f\n", 
-//		i,j,k,place,nm,frac);
+/*             printf("%d %d %d %d %d %f\n", 
+		i,j,k,place,nm,frac);	*/
              y[j][k] = model[nm][j][place];
 	     }
 	 
@@ -462,10 +463,10 @@ void ProfileAbs3HalfLorentz(float *x, IDL_LONG ndat, float **y, float xcen,
 	float diff, diffabs, denom, frac;
         float fwhm2, diff2, base2, denom2;
 	float sqbase;
-//        float total;
+/*        float total; 	*/
 
 
-//		Below is denominator fro x^3
+/*		Below is denominator for x^3	*/
 
 	denom = 1.0/(2.88450 * 0.89298 * sigma);
 	fwhm2 = 2.0*sigma;
@@ -498,7 +499,7 @@ void ProfileAbs3HalfLorentz(float *x, IDL_LONG ndat, float **y, float xcen,
 	   }
 	}
 
-//
+/*
 //	This is just for debugging profiles
 //
 //	for (j=0;j<nCoeff;j++) { 
@@ -508,7 +509,7 @@ void ProfileAbs3HalfLorentz(float *x, IDL_LONG ndat, float **y, float xcen,
 //	    }
  //         fprintf(stderr,"%d %f ",(int)j,total);
 //	}
- //         fprintf(stderr,"\n");
+ //         fprintf(stderr,"\n");	*/
 	 
 }
 
@@ -521,10 +522,10 @@ void ProfileGaussHalfLorentz(float *x, IDL_LONG ndat, float **y, float xcen,
 	float diff, denom, frac;
         float fwhm2, diff2, base2, denom2;
 	float sqbase;
-//        float total;
+/*        float total;	*/
 
 
-//		Below is denominator fro x^3
+/*		Below is denominator fro x^3	*/
 
 	denom = 1.0/sqrt(6.2832 * sigma * sigma);
 	fwhm2 = 2.0*sigma;
@@ -556,7 +557,7 @@ void ProfileGaussHalfLorentz(float *x, IDL_LONG ndat, float **y, float xcen,
 	   }
 	}
 
-//
+/*
 //	This is just for debugging profiles
 //
 //	for (j=0;j<nCoeff;j++) { 
@@ -566,7 +567,7 @@ void ProfileGaussHalfLorentz(float *x, IDL_LONG ndat, float **y, float xcen,
 //	    }
  //         fprintf(stderr,"%d %f ",(int)j,total);
 //	}
- //         fprintf(stderr,"\n");
+ //         fprintf(stderr,"\n");	*/
 	 
 }
 
@@ -574,9 +575,9 @@ void ProfileGaussHalfLorentz(float *x, IDL_LONG ndat, float **y, float xcen,
 void findXLimits(IDL_LONG *xmin, IDL_LONG *xmax, float *x, float *xcen, 
                IDL_LONG nx, IDL_LONG nTrace, float *sigma, float sigmal)
 {
-//
+/*
 //        Find max and min of profile influence
-//
+//	*/
    IDL_LONG i, place, place2;
    float diff;
 
@@ -836,7 +837,7 @@ void fillCovar(float *ysub, float *invvar, IDL_LONG nx, float **aprofile,
                   covar[j][m] += apoly[k][i] * apoly[l][i] * invvar[i];
       }
 	
-//   printf("nPoly done\n");
+/*   printf("nPoly done\n");	*/
 }
 
 /* cholslRow replaces lower triangle of a with sqrt(covar)  

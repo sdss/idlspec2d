@@ -124,9 +124,9 @@ void Profile(float *x, int ndat, float *y, float xcen, int xmin,
 
 	denom = 1.0/sqrt(6.2832 * sigma * sigma);
 
-//		Below is denominator fro x^3
+/*		Below is denominator fro x^3	 */
 
-//	denom = 1.0/0.89298 * sigma * 2.0;
+/*	denom = 1.0/0.89298 * sigma * 2.0;	 */
 
 	for (i=xmin,k=0; i<=xmax; i++, k++) {
 	  y[k] = 0.0;
@@ -139,7 +139,7 @@ void Profile(float *x, int ndat, float *y, float xcen, int xmin,
 	        y[k] += exp(-diff*diff/2.0)*denom;
 						
 
-//	        y[k] += exp(-diff*diff*diff)*denom;
+/*	        y[k] += exp(-diff*diff*diff)*denom;	*/
 
                 }
 	     y[k] /= 5.0;
@@ -155,9 +155,9 @@ void Profilex2(float *x, int ndat, float *y, float xcen, int xmin,
 
 	denom = 1.0/sqrt(6.2832 * sigma * sigma);
 
-//		Below is denominator fro x^3
+/*		Below is denominator for x^3	*/
 
-//	denom = 1.0/0.89298 * sigma * 2.0;
+/*	denom = 1.0/0.89298 * sigma * 2.0;	*/
 
 	for (i=xmin,k=0; i<=xmax; i++, k++) {
 	  y[k] = 0.0;
@@ -170,7 +170,7 @@ void Profilex2(float *x, int ndat, float *y, float xcen, int xmin,
 	        y[k] += diff*diff*exp(-diff*diff/2.0)*denom;
 						
 
-//	        y[k] += exp(-diff*diff*diff)*denom;
+/*	        y[k] += exp(-diff*diff*diff)*denom;	*/
 
                 }
 	     y[k] /= 5.0;
@@ -182,9 +182,9 @@ void Profilex2(float *x, int ndat, float *y, float xcen, int xmin,
 void FillXs(int *xmin, int *xmax,float *x,float *xcen, int ndat, int nTrace,
 		float diff)
 {
-//
+/*
 //        Find max and min of profile influence
-//
+//	*/
    int current, place;
 
    current = 0;
@@ -214,9 +214,9 @@ void FillXs(int *xmin, int *xmax,float *x,float *xcen, int ndat, int nTrace,
 void FillXs2(int *xmin, int *xmax,float *x,float *xcen, int ndat, int nTrace,
 		float* sigma, float **abig)
 {
-//
+/*
 //        Find max and min of profile influence
-//
+//	*/
    int current, place, place2;
    float diff;
 
