@@ -513,11 +513,6 @@ bad sky-residuals.
 <P>
 The following messages may appear:
 <UL>
-<LI><B>Sun above the horizon by ... deg for non-test exposure</B> <BR>
-    This is triggered for any exposure taken during the daytime not
-    marked as a test exposure.  This is to ensure that the observers
-    mark any afternoon calibration exposures as "test" so that they
-    don't get used later in the full reductions.
 <LI><B>Error reading sdHdrFix file</B> <BR>
     The sdHdrFix file (sdHdrFix-$MJD.par) in sos.apo:/data/spectro/astrolog/$MJD
     exists but is not a valid Yanny parameter file.  This file is written
@@ -536,7 +531,17 @@ The following messages may appear:
 <LI><B>Sun above the horizon by ... deg for non-test exposure</B> <BR>
     This warning message is to trap flat, arc, or science exposures taken
     during the day that have not been marked as either "test" or "bad" data.
-    If these are test data, be sure to mark them as such.
+    If these are test data, be sure to mark them as such.  This is to prevent
+    such data from being used later in the full reductions.
+<LI><B>Std. dev. in bias region for amp#... is ... DN (5-sig clip)</B> <BR>
+    The number reported is the standard deviation in the bias region
+    for either amplifier #2 (left side) or amplifier #3 (right side).
+    This calculation is done with a 5-sigma clipping.  We trigger this
+    warning if the value is ever larger than 10 DN.  This can happen
+    if there are a huge number of cosmic rays (if you've been integrating
+    for hours), or if there is an electronics problem.  This would pick
+    up the problem seen on 22/23 Aug 2000 (MJD 51779) when the left amplifier
+    on r2 was randomly flipping bits (c.f., PR #2335).
 <LI><B>Fixing shifted rows (from electronics)</B> <BR>
     This is very, very bad.  This is indicative of an electronics problem
     that we first saw on MJD=51578 to 51580 (3 to 5 Feb 2000).
