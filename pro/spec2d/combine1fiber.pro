@@ -60,6 +60,8 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   bspline_valu()
+;   bspline_iterfit()
 ;   djs_laxisgen()
 ;   djs_maskinterp()
 ;   djs_median()
