@@ -150,25 +150,27 @@ function smear_compare, smearname, finalwave, sciflux, sciivar, $
   sci_medflux = spmedian_rebin(wave2d, sciflux, sciivar, 'full', $
                 sn = sci_sn, mask = sci_mask, quality = sci_quality) 
 
-  ; Create structure to hold poly coeff & fill with zeros  
+  ; Fit with 4th order Legendre polynomial  
   medwave2d = float(medwave) # replicate(1, nfiber)
-  fitimg = float(smear_medflux)*0.0 + 1.0
-  xy2traceset, medwave2d, fitimg, smearset, ncoeff=3, /silent
-  smearset.coeff[*] = 0.0
 
-  ; Only do fitting if science & smear have reasonable S/N 
-  ok = where(sci_sn GT 3.0 AND smear_sn GT 1.0 $
-             AND sci_quality EQ 0 AND smear_quality EQ 0, nok)
+  xy2traceset, medwave2d, smear_medflux, smearset, invvar=smear_mask, $
+    ncoeff=4, inputfunc=sci_medflux, lower=3, upper=3
 
-  xy2traceset, medwave2d[*,ok], float(smear_medflux[*,ok]), polyset, $
-    invvar=smear_mask[*,ok], ncoeff=3, inputfunc=sci_medflux[*,ok], $
-    lower = 3, upper = 3
-  smearset.coeff[*,ok] = polyset.coeff
+  ; Save as binary table with science & smear S/N ratios
+  smear_struct = {sci_sn: 0.0, smear_sn: 0.0, legendre_coeff: fltarr(4)}
 
+  smear_hdu = make_array(dim=nfiber, value=smear_struct)
+  smear_hdu.legendre_coeff = smearset.coeff
+  smear_hdu.sci_sn = sci_sn
+  smear_hdu.smear_sn = smear_sn
+ 
   ;---------------------------------------------------------------------------
   ; QA plot
   ;---------------------------------------------------------------------------
 
+  ; Only use where science & smear have reasonable S/N 
+  ok = sci_sn GT 3.0 AND smear_sn GT 1.0 AND $
+       sci_quality EQ 0 AND smear_quality EQ 0
   traceset2xy, smearset, wave2d, smear_ratio
 
   ;!P.MULTI = [0, 1, 2]
@@ -180,10 +182,8 @@ function smear_compare, smearname, finalwave, sciflux, sciivar, $
   ;endfor
   ;!P.MULTI = 0
   
-  ptsrc = where(strmatch(finalplugtag.objtype, '*GALAXY*') ne 1 and $
-                smearset.coeff[0,*] ne 0.0, nptsrc)
-  qso = where(strmatch(finalplugtag.objtype, '*QSO*') eq 1 and $
-                smearset.coeff[0,*] ne 0.0, nqso)
+  ptsrc = where(strmatch(finalplugtag.objtype, '*GALAXY*') ne 1 and ok, nptsrc)
+  qso = where(strmatch(finalplugtag.objtype, '*QSO*') eq 1 and ok, nqso)
 
   linwave=10.0^finalwave
   if not keyword_set(noplot) then begin
@@ -199,13 +199,9 @@ function smear_compare, smearname, finalwave, sciflux, sciivar, $
             color=djs_icolor(['blue', 'green']), psym=[0,0]
   endif
 
-  lowsn = where(smearset.coeff[0,*] eq 0.0, nlowsn)
-  splog, 'Number of fibers with S/N too low to measure smear correction: ', $
-          nlowsn
-  
   splog, 'Median smear correction for point sources: ' +  $
           string(djs_median(smear_ratio[*,ptsrc]), format = '(F6.2)')
 
-  return, smearset
+  return, smear_hdu
   
 end
