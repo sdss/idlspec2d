@@ -95,7 +95,7 @@ function fitflatwidth, flux, fluxivar, ansimage, fibermask, $
                 median(width[0:nrow/2-1,ntrace/2:ntrace-1]), $
                 median(width[nrow/2:nrow-1,0:ntrace/2-1]), $
                 median(width[nrow/2:nrow-1,ntrace/2:ntrace-1]) ]
-   splog, ((max(medwidth) GT 1.2) ? 'WARNING: ' : '') $
+   splog, ((max(medwidth) GT 1.10) ? 'WARNING: ' : '') $
     + 'Median spatial widths = ' $
     + string(medwidth,format='(4f5.2)') + ' pix (LL LR UL UR)'
 
