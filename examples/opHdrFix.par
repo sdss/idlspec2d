@@ -5,35 +5,35 @@ typedef struct {
   char value;       # Keyword value (as a string)
 } spechdrfix;
 
-# Wrong exposure time in these headers on MJD 51433.
+# Wrong exposure time in these headers for plate 198 on MJD 51433.
 
 spechdrfix sdR-??-00001142 EXPTIME  60
 
-# Complete the mapping name in these headers on MJD 51433 for plate 198.
+# Complete the mapping name in these headers for plate 198 on MJD 51433.
 # It properly says plate 198, but doesn't give the full map name.
 
 spechdrfix sdR-??-0000113[7-9] NAME     "'0198-51433-01'"
 spechdrfix sdR-??-0000114[0-9] NAME     "'0198-51433-01'"
 spechdrfix sdR-??-0000115[0-2] NAME     "'0198-51433-01'"
 
-# Wrong mapping name in these headers on MJD 51441 for plate 214.
+# Wrong mapping name in these headers for plate 214 on MJD 51441.
 
 spechdrfix sdR-??-0000134[7-9] NAME     "'0214-51432-02'"
 spechdrfix sdR-??-0000135[0-9] NAME     "'0214-51432-02'"
 spechdrfix sdR-??-0000136[0-1] NAME     "'0214-51432-02'"
 
-# Wrong mapping name in these headers on MJD 51441 for plate 202.
+# Wrong mapping name in these headers for plate 202 on MJD 51441.
 
 spechdrfix sdR-??-0000136[2-9] NAME     "'0202-51434-01'"
 spechdrfix sdR-??-0000137[0-3] NAME     "'0202-51434-01'"
 
-# Wrong mapping name in these headers on MJD 51454 for plate 191.
+# Wrong mapping name in these headers for plate 191 on MJD 51454.
 # This doesn't actually matter, since there are no arcs for this plate anyway!
 
 spechdrfix sdR-??-0000138[8-9] NAME     "'0191-51454-01'"
 spechdrfix sdR-??-00001390 NAME     "'0191-51454-01'"
 
-# Wrong plate information in these headers on MJD 51455
+# Wrong plate information in these headers for plate 231 on MJD 51455
 
 spechdrfix sdR-??-0000140[4-6] NAME     "'0187-51454-01'"
 
@@ -42,7 +42,7 @@ spechdrfix sdR-??-0000143[1-7] TILEID   55
 spechdrfix sdR-??-0000143[1-7] MAPID    5145502
 spechdrfix sdR-??-0000143[1-7] NAME     "'0231-51455-01'"
 
-# Wrong plate information in these headers on MJD 51456.
+# Wrong plate information in these headers for plate 217 on MJD 51456.
 
 spechdrfix sdR-??-0000145[2-9] NAME     "'0217-51455-01'"
 spechdrfix sdR-??-00001460 NAME     "'0217-51455-01'"
@@ -51,7 +51,7 @@ spechdrfix sdR-??-00001460 NAME     "'0217-51455-01'"
 
 spechdrfix sdR-??-00002309 FLAVOR   "'unknown'"
 
-# Wrong plate information in these headers on MJD 51629.
+# Wrong plate information in these headers for plate 318 on MJD 51629.
 
 spechdrfix sdR-??-0000321[0-3] PLATEID  318
 spechdrfix sdR-??-0000321[0-3] TILEID   124
@@ -59,23 +59,24 @@ spechdrfix sdR-??-0000321[0-3] MAPID    5162601
 spechdrfix sdR-??-0000321[0-3] NAME     "'0318-51626-01'"
 spechdrfix sdR-??-0000321[0-3] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0318-51626-01.par'"
 
-# Wrong exposure time in these headers on MJD 51629.
+# Wrong exposure time in these headers for plate 282 on MJD 51629.
 
 spechdrfix sdR-??-00003225 EXPTIME  1148
 spechdrfix sdR-??-00003226 EXPTIME  985
 
-#  A single incorrect plugmap on plate 235, unsure why only one?
+#  A single incorrect plugmap for plate 235 on MJD=51665, unsure why only one?
 spechdrfix sdR-??-00003576 MAPID    517701
 spechdrfix sdR-??-00003576 NAME     "'0235-51577-01'"
 
-# Observers say bad smear
+# Observers say bad smear for plate 395 on MJD=51783.
 spechdrfix sdR-??-00006280 FLAVOR   "'unknown'"
 
 # The data on this image looks scrambled in a bad way on MJD 51811.
 # This would have been the smear exposure for plate 381.
 spechdrfix sdR-??-00006630 FLAVOR   "'unknown'"
 
-# Exposure #7112 (smear) on MJD 51871 has NaN values for the following keywords.
+# Exposure #7112 (smear) for plate 420 on MJD 51871 has NaN values for
+# the following keywords.
 # Copy those keywords from the previous exposure, which is close enough.
 
 spechdrfix sdR-??-00007112 TAI      4481669178.32
@@ -87,13 +88,14 @@ spechdrfix sdR-??-00007112 IPARATE  -0.0107
 spechdrfix sdR-??-00007112 AZ       345.32650
 spechdrfix sdR-??-00007112 ALT      71.520262
 
-# Shutters may have not opened on this exposure on MJD 51900.
+# Shutters may have not opened on this science exposure for plate 435
+# on MJD 51882.
 spechdrfix sdR-??-00007376 FLAVOR   "'unknown'"
 
-# Wrong exposure time in these headers on MJD 51928.
+# Wrong exposure time for this science exposure for plate 291 on MJD 51928.
 spechdrfix sdR-??-00008299 EXPTIME  900
 
-# Flat field was on in these exposures on MJD 51929.
+# Flat field was on in this science exposure for plate 413 on MJD 51929.
 spechdrfix sdR-??-00008323 FLAVOR   "'unknown'"
 
 # Wrong plugmap indicated for plate 413 on MJD 51951.
@@ -117,7 +119,7 @@ spechdrfix sdR-??-0000882[0-4] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0547
 spechdrfix sdR-??-0000882[0-4] MAPID    5195403
 spechdrfix sdR-??-0000882[0-4] NAME     "'0547-51954-03'"
 
-# Guider was still on in this smear exposures on MJD 51981.
+# Guider was still on in this smear exposure for plate 549 on MJD 51981.
 spechdrfix sdR-??-00008957 FLAVOR   "'unknown'"
 
 # Wrong plugmap indicated for plate 542 on MJD 51984
@@ -136,7 +138,7 @@ spechdrfix sdR-??-0000902[0-2] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0279
 spechdrfix sdR-??-0000902[0-2] MAPID    5197702
 spechdrfix sdR-??-0000902[0-2] NAME     "'0279-51977-02'"
 
-# Wrong reported time although exposure looked "fine".
+# Wrong reported time although exposure looked "fine" (plate 296 on MJD=51894).
 spechdrfix sdR-??-00009027 EXPTIME  900
 
 # Wrong plugmap indicated for plate 542 on MJD 51985.
