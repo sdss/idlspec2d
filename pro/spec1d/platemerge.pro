@@ -157,7 +157,9 @@ pro platemerge, zfile, outroot=outroot1, public=public
     'sectarget'   ,  0L, $
     'specprimary' ,  0B, $
     'specobj_id'  ,  0L, $
-    'nspecobs'    ,  0  )
+    'nspecobs'    ,  0, $
+    'calibflux'   , fltarr(5), $
+    'calibflux_ivar', fltarr(5) )
 
    ;----------
    ; Loop through each file
@@ -195,6 +197,12 @@ pro platemerge, zfile, outroot=outroot1, public=public
       ; the plug-map structure in spPlate file.
       outdat[indx].primtarget = plugmap.primtarget
       outdat[indx].sectarget = plugmap.sectarget
+
+      ; Read the following from the plug-map if those tags exist
+      if (tag_exist(plugmap,'CALIBFLUX')) then $
+       outdat[indx].calibflux = plugmap.calibflux
+      if (tag_exist(plugmap,'CALIBFLUX_IVAR')) then $
+       outdat[indx].calibflux_ivar = plugmap.calibflux_ivar
    endfor
 
    splog, 'Time to read data = ', systime(1)-t1, ' sec'
