@@ -235,6 +235,7 @@ pro/spec2d/fitmeanx.pro -text
 pro/spec2d/fitsn.pro -text
 pro/spec2d/fitvacset.pro -text
 pro/spec2d/fitwithmx.pro -text
+pro/spec2d/flatinterp.pro -text
 pro/spec2d/flegendre.pro -text
 pro/spec2d/fluxcorr.pro -text
 pro/spec2d/fluxcorr_new.pro -text

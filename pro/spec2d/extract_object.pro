@@ -283,8 +283,11 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 
    ;------------------
    ; Flat-field the extracted object fibers with the global flat
+   ; 
+   ; flatinterp interpolates over regions 
 
-   divideflat, flux, fluxivar, fflat, fibermask=fibermask
+   smoothfflat = flatinterp(fflat, 0.5, nsmooth=15)
+   divideflat, flux, fluxivar, smoothfflat, fibermask=fibermask
 
    lowflat = where(fflat LT 0.5)
    if (lowflat[0] NE -1) then pixelmask[lowflat] = $
