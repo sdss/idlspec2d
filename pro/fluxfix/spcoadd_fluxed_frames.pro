@@ -609,10 +609,10 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
           maxiter=50, upper=3.0, lower=3.0, maxrej=1
 
          ; QA plot
-         plot, 10.0^finalwave, bestflux, xr=[3800, 9200], /xs
-         for ii = 0, n_elements(indx) - 1 do $
-           djs_oplot, 10.0^wave[*,indx[ii]], djs_median(flux[*,indx[ii]], $
-                      width=75, boundary='reflect'), color=!red
+         ;plot, 10.0^finalwave, bestflux, xr=[3800, 9200], /xs
+         ;for ii = 0, n_elements(indx) - 1 do $
+         ;  djs_oplot, 10.0^wave[*,indx[ii]], djs_median(flux[*,indx[ii]], $
+         ;             width=75, boundary='reflect'), color=!red
 
    ;---------------------------------------------------------------------------
 
