@@ -79,7 +79,9 @@ function smooth_superflat, superflatset, airset, plottitle=plottitle
    endif
 
    fullfit = bspline_valu(loglam, smoothset)
-   ratio = model/(yfit + (yfit EQ 0))
+   ratio = model/(yfit + (yfit LE 0))
+   ibad = where(yfit LE 0 OR inmask EQ 0, nbad)
+   if (nbad GT 0) then ratio[ibad] = 1.
    area = total(ratio-1)/sqrt(nsparse)
    sarea = string(area, format='(f8.4)')
 
