@@ -41,6 +41,9 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   djs_oplot
+;   djs_plot
+;   djs_maskinterp()
 ;   mrdfits()
 ;   writefits
 ;
@@ -159,8 +162,10 @@ pro combine2dout, filenames, outputroot, spectrographid, $
       ; Try to read in fibermask
 
       tt = mrdfits(filenames[i], 5)
-      if (size(tt,/n_elem) EQ 1) then fibermask = [fibermask, transpose(bytarr(nfiber))] $
-      else fibermask = [fibermask, transpose(tt)]
+      if (size(tt,/n_elem) EQ 1) then $
+       fibermask = [fibermask, transpose(bytarr(nfiber))] $
+      else $
+       fibermask = [fibermask, transpose(tt)]
 
       if (keyword_set(window)) then $
        tempivar[0:window] = tempivar[0:window] * findgen(window+1) / window
@@ -463,11 +468,18 @@ pro combine2dout, filenames, outputroot, spectrographid, $
          besterr = fltarr(npix)
       endif
 
+      ; Replace NaN's in combined spectra; this should really never happen
+
       inff = where(finite(bestguess) EQ 0 OR finite(besterr) EQ 0)
       if (inff[0] NE -1) then begin
+         splog, 'WARNING: NaNs in combined spectra ', N_elements(inff)
          bestguess[inff] = 0.0
          besterr[inff] = 0.0
       endif
+
+      ; Interpolate over masked pixels, just for aesthetic purposes
+
+      bestguess = djs_maskinterp(bestguess, besterr EQ 0, /const)
 
       ; 1st HDU is flux and error
       mwrfits, [[bestguess],[besterr]], outputfile, newhdr, /create
