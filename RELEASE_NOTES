@@ -68,9 +68,19 @@ SPFLUXCORR_V5: Return chi instead of sqrt(chi2) from the function FCORR_CHI_FN.
         then 2->3 is substantial improvment.
 SPCOADD_V5: Apply the flux-distortion image to the sky vectors, as well
         as to OBJFLUX,OBJIVAR.
+SPREDUCE1D: (Use the B-spline spectra for QSO-fitting).
+SYNTHSPEC,ZFIND: If the eigenspectrum file does not contain in image in HDU #0,
+        then look for a B-spline in HDU #1 and assume that it describes
+        a B-spline.  (This is what we're trying to use for QSOs now.)
 ZTWEAK_STAR: Add optional keywords.
+ZCOMPUTE_QSO: A version of ZCOMPUTE that is basically the same code, but
+        using a B-spline composite spectrum that must be evaluated at each
+        redshift.  Because there are multiplicative polynomials rather than
+        additive polynomial terms, this may fail to find weak em-line QSOs.
 
 etc/spChunkList.par: Add chunks 91-94.
+templates/spBsplineQSO-53115.fits: Fist attempt at a B-spline composite
+        for QSO spectra as a fn. of redshift (made by Burles).
 templates/wfEigen*.fits: Add WFCCD templates from Prochaska
 
 -------------------------------------------------------------------------------
