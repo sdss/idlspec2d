@@ -7,6 +7,12 @@ WRITE_UROS: Add Flatvec,Rnois to output files.
 
 sprobot_start: Fix tiny typo (extra quotation on line 141).
 
+In idlutils:
+
+BSPLINE_BKPTS: Integer roll-over bug fixed by DPF for more than 2^30
+           data points (doesn't matter for SDSS pipelines, but it
+           does for DEIMOS).
+
 -------------------------------------------------------------------------------
 v4_9_12 (Jun 26, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
 Built against specflat v1_4.
