@@ -52,6 +52,11 @@ etc/BG14.txt -text
 etc/FG3.txt -text
 etc/Makefile -text
 etc/altbg14.txt -text
+etc/atmdisp_vec_am1.1see2.0.fit -text
+etc/atmdisp_vec_am1.2see2.0.fit -text
+etc/atmdisp_vec_am1.3see2.0.fit -text
+etc/atmdisp_vec_am1.4see2.0.fit -text
+etc/atmdisp_vec_am1.5see2.0.fit -text
 etc/blue.bkpts -text
 etc/brg.08.gk.01 -text
 etc/doi_g_atm.dat -text
