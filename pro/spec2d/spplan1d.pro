@@ -41,6 +41,7 @@
 ;   fileandpath()
 ;   get_mjd_dir()
 ;   idlspec2d_version()
+;   mjd_match()
 ;   splog
 ;   sdsshead()
 ;   sxpar()
@@ -53,7 +54,6 @@
 ;   04-Jul-2000  Written by David Schlegel, Princeton.
 ;-
 ;------------------------------------------------------------------------------
-
 pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
  mjd=mjd, mjstart=mjstart, mjend=mjend, $
  platenum=platenum, platestart=platestart, plateend=plateend, $
@@ -156,23 +156,7 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
             qmjd = 1B
             if (keyword_set(spexp)) then begin
                mjdlist1 = mjdlist[indx]
-
-               ; If MJD keyword set, then QMJD=1 only if any of the
-               ; elements of MJDLIST1 agree with those in MJD.
-               if (keyword_set(mjd)) then $
-                qmjd = qmjd AND ((where( $
-                 mjdlist1 # (lonarr(n_elements(mjd))+1) - $
-                 (lonarr(n_elements(mjdlist1))+1) # mjd EQ 0))[0] NE -1)
-
-               ; If MJSTART keyword set, then QMJD=1 only if any of the
-               ; elements of MJDLIST1 is >= MJSTART.
-               if (keyword_set(mjstart)) then $
-                qmjd = qmjd AND ((where(mjdlist1 GE mjstart))[0] NE -1)
-
-               ; If MJEND keyword set, then QMJD=1 only if any of the
-               ; elements of MJDLIST1 is <= MJEND.
-               if (keyword_set(mjend)) then $
-                qmjd = qmjd AND ((where(mjdlist1 LE mjend))[0] NE -1)
+               qmjd = mjd_match(mjdlist1, mjd=mjd, mjstart=mjstart, mjend=mjend)
 
                if (qmjd EQ 0) then $
                 splog, 'Skip MAP=', allmaps[imap], ' with MJD=', $
