@@ -17,7 +17,7 @@
 ;    xarc, lambda, xtrace, fflat, fibermask, color=, [plottitle=]
 ;
 ; INPUTS:
-;   outname    - Name of outputs fits file
+;   outname    - Name of outputs FITS file
 ;   objhdr     - Header cards from object image
 ;   image      - Object image [nx,ny]
 ;   invvar     - Inverse Variance of object image [nx,ny]
@@ -146,26 +146,13 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 
       skymedian = djs_median(scrunch[iskies])
       splog, 'Sky fiber median '+string(skymedian)
-      if (skymedian GT 3000.0) then begin
-        splog, 'ABORT: Sky fibers are brighter than 3000 counts'
-        return
+      if (skymedian GT 1000) then begin
+         splog, 'ABORT: Median sky flux is brighter than 1000 e-'
+         return
       endif
-          
+
       splog, '5% and 95% count levels ', scrunch[scrunch_sort[i5]], $
                                          scrunch[scrunch_sort[i95]]
-
-;      if (scrunch[scrunch_sort[i5]] GT 5000.0) then begin
-;         splog, 'ABORT: Fibers have '+ string(scrunch[scrunch_sort[i5]]) + $
-;                ' at the 5% '
-         ;
-         ; Here we just need to move to the next exposure, not return
-         ;       completely.  This would argue for having a subroutine called
-         ;       for each exposure, so a return would only skip the botched
-         ;       exposure, and not all the rest
-         ;
-;        return
-;      endif
-
 
       if (whopct GT 20) then begin
          splog, 'WARNING: Disable whopping terms ' + objname
