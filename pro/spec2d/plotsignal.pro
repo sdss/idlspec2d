@@ -130,12 +130,16 @@ pro plotsignal, plate, expnum, camname=camname, addsky=addsky
          traceset2xy, wset, junk, loglam
          waveimg = 10d^loglam
 
-         ; Read the spFluxcalib file
+         ; Read the spFluxcalib file -- if not found, then use a default
          fcalibfile = string(plate, mjd, camname[icam], $
           format='("spFluxcalib-",i4.4,"-",i5.5,"-",a2,".fits*")')
          fcalibfile = (findfile(filepath(fcalibfile, root_dir=topdir, $
           subdir=platestr)))[0]
-         if (NOT keyword_set(fcalibfile)) then message, 'File not found!!'
+         if (NOT keyword_set(fcalibfile)) then begin
+            splog, 'Flux-calib file not found -- using defaults'
+            fcalibfile = filepath('spFluxcalib-'+camname[icam]+'.fits', $
+             root_dir=getenv('IDLSPEC2D_DIR'), subdir='examples')
+         endif
 
          ; Compute the spectro-photometric calibration
          calibset = mrdfits(fcalibfile, 1, /silent)
