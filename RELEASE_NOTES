@@ -32,6 +32,7 @@ SPECLINEFIT: Major re-organization of this procedure, allowing one to either
             from SPREDUCE1D).  Now fit to emission lines for all object
             types, not just galaxies.
 SPPLAN2D,SPPLAN1D: Add more informational messages.
+SPPLAN2D: If $SPECLOG_DIR is not set, then use $ASTROLOG_DIR.
 SPREDUCE1D: Simply overwrite any existing spZ files, rather than
             using cpbackup to save old ones.
             Call SPECLINEFIT from the end of the code, since it now fits
