@@ -59,9 +59,11 @@ rsync -ar --rsh="ssh -c blowfish" \
       --log-format="/data/spectro/%f" --exclude="*-r*" \
       "sdsshost:/data/spectro/[56789]????" $rawdata_dir | startapo.sh &
 
-# This sleep is to try to keep the blue side copying over before the red
-# side.  We do this because APOREDUCE creates its summary files after the r2
-# CCD is reduced, and assumes that all other CCD's have been reduced by then.
+# Historically, we have had a sleep statement here to keep the blue side
+# copying over before the red side.  It used to be that APOREDUCE created
+# its summary files after the r2 CCD is reduced, and assumed that all other
+# CCD's have been reduced by then.  This is no longer true -- we create the
+# summary file after each file is reduced.
 sleep 1
 
 # This syncs /astrolog/[56789]???? from sdsshost to plate-mapper, excluding
