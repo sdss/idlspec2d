@@ -242,10 +242,10 @@ arcivar = 0
       ; when computing the supersky vector.
 
       sigma = 1.0
-      proftype = 3 ; ???
+      proftype = 3 ;  exp^-|x|^3  really good for "in" focus red exposures
       highrej = 15
       lowrej = 15
-      npoly = 5  ; just fit flat background to each row
+      npoly = 9  ; just fit flat background to each row
       wfixed = [1,1] ; Just fit the first gaussian term
 
       extract_image, flatimg, flativar * (1-maskimg), $
@@ -275,7 +275,7 @@ fitimg = fitimg > 0.02 ; ???
       ntrace = dims[1]
       nterms = n_elements(wfixed)
       yfnorm = (2.0*findgen(nrow)-nrow)/nrow
-      scatfit = fchebyshev(x,npoly) # ansimage[ntrace*nterms:*,*]
+      scatfit = fchebyshev(yfnorm,npoly) # ansimage[ntrace*nterms:*,*]
 
       ;----------------------
       ; Subtract scattered light, then divide by the superflat image.
