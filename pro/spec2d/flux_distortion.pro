@@ -59,21 +59,19 @@
 ;
 ; BUGS:
 ;
-; DATA FILES:
-;
 ; PROCEDURES CALLED:
-;   mpfit()
-;   splog
-;
-; INTERNAL SUPPORT ROUTINES:
 ;   airtovac
 ;   djs_maskinterp()
 ;   djs_reject()
 ;   flux_distort_corrvec()
 ;   flux_distort_fn()
 ;   linterp
+;   mpfit
 ;   platesn
 ;   readcol
+;   splog
+;
+; INTERNAL SUPPORT ROUTINES:
 ;
 ; REVISION HISTORY:
 ;   17-Feb-2004  Written by D. Schlegel, Princeton
@@ -82,8 +80,10 @@
 forward_function mpfit, flux_distort_fn
 
 ;------------------------------------------------------------------------------
-function flux_distort_corrvec, coeff, lwave2, thisplug
+function flux_distort_corrvec, coeff, wavevec, thisplug
 
+   lam0 = 5070.d0
+   lwave2 = 1. - (lam0/wavevec)^2 ; Basically normalized to [0.5,2.0]
    xx = thisplug.xfocal / 320.d0
    yy = thisplug.yfocal / 320.d0
    specid = thisplug.spectrographid
@@ -107,7 +107,7 @@ end
 ; Return a vector of all chi values.
 function flux_distort_fn, coeff
 
-   common com_flux_distort, trimflux, lwave2, fmask, calibflux, calibisig, $
+   common com_flux_distort, trimflux, wavevec, fmask, calibflux, calibisig, $
     trimplug, outmask
 
    nobj = n_elements(trimplug)
@@ -115,7 +115,7 @@ function flux_distort_fn, coeff
    for i=0L, nobj-1 do $
     for j=0, 2 do $
      newflux[i,j] = total(trimflux[*,i] * fmask[*,j] $
-      * flux_distort_corrvec(coeff, lwave2, trimplug[i]), /double)
+      * flux_distort_corrvec(coeff, wavevec, trimplug[i]), /double)
 
 ;   retval = (newflux / calibflux) - 1.
    retval = (newflux - calibflux) * calibisig
@@ -130,7 +130,7 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
  loglam=loglam, minflux=minflux, minobj=minobj, platefile=platefile, $
  coeff=coeff
 
-   common com_flux_distort, trimflux, lwave2, fmask, calibflux, calibisig, $
+   common com_flux_distort, trimflux, wavevec, fmask, calibflux, calibisig, $
     trimplug, outmask
 
    if (NOT keyword_set(minobj)) then minobj = 50
@@ -152,8 +152,6 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
    thisivar = skymask(objivar, andmask, ormask)
 
    wavevec = 10d0^loglam
-   lam0 = 5070.d0
-   lwave2 = 1. - (lam0/wavevec)^2 ; Basically normalized to [0.5,2.0]
 
    ;----------
    ; Read the three filter curves of interest
@@ -282,7 +280,7 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
 
    corrimg = fltarr(npixobj, nobj)
    for i=0L, nobj-1 do $
-    corrimg[*,i] = flux_distort_corrvec(coeff, lwave2, plugmap[i])
+    corrimg[*,i] = flux_distort_corrvec(coeff, wavevec, plugmap[i])
 
    minval = min(corrimg, max=maxval)
    sigval = stdev(corrimg)
@@ -294,7 +292,6 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
       platesn, objflux*corrimg, objivar/corrimg^2, $
        andmask, plugmap, loglam, hdr=hdr, plotfile='test2.ps'
    endif
-stop
 
    return, corrimg
 end
