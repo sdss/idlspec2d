@@ -53,6 +53,7 @@ pro/spec1d/Makefile -text
 pro/spec1d/cosbell.pro -text
 pro/spec1d/fftpad.pro -text
 pro/spec1d/findfiber.pro -text
+pro/spec1d/fitsimul.pro -text
 pro/spec1d/veldisp.pro -text
 pro/spec1d/wavelets.pro -text
 pro/spec2d/Makefile -text
