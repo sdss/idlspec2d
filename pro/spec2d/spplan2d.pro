@@ -158,6 +158,15 @@ pro spplan2d, topoutdir=topoutdir, mjd=mjd, $
                   FLAVOR[i] = 'unknown'
                endif
 
+               ; Exclude files where the plate number does not match that
+               ; in the map name
+               if (string(PLATEID[i],format='(i4.4)') NE strmid(MAPNAME[i],0,4)) $
+                then begin
+                  splog, 'Warning: Plate number inconsistent with map name ' $
+                   + fileandpath(fullname[i])
+                  FLAVOR[i] = 'unknown'
+               endif
+
                if (sxpar(hdr, 'MJD') NE thismjd) then $
                 splog, 'Warning: Wrong MJD in file '+fileandpath(fullname[i])
 
