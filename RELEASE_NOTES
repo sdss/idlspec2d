@@ -59,11 +59,12 @@ sprobot_start: Add a line to the cron job to run at 12:59 am that
 
 In idlutils:
 
+FLOATCOMPRESS: Handle Infs and NaNs.
+MWRFITS_CHUNKS: New proc to write a FITS binary table in chunks
+           (used by PLATEMERGE).
 REPSTR: Change loop indices to type long, which was necessary to the
            call from PLATEMERGE.  We should be sure that this gets
            into Landsman's code version.
-MWRFITS_CHUNKS: New proc to write a FITS binary table in chunks
-           (used by PLATEMERGE).
 STRUCT_PRINT: Add options TARRAY, /NO_HEAD, /HTML, FDIDIT, DDIGIT, ALIAS.
 STRUCT_TRIMTAGS: New procedure.
 SXASCII_READ: Fixes for sxascii_read, I think it might actually work?!
