@@ -537,6 +537,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    mwrfits, superfit, outname
    if (keyword_set(do_telluric)) then $
     mwrfits, telluricfactor, outname ; This array only exists for red frames.
+   spawn, ['gzip', '-f', outname], /noshell
 
    heap_gc
 
