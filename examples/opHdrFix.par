@@ -226,3 +226,6 @@ spechdrfix sdR-??-00011085  SPEC2 "'1 0 1 1 '"
 # Wrong exposure time (2 sec instead of 1509 sec) for plate 757 on MJD 52238.
 spechdrfix sdR-??-00011952 EXPTIME   1509
 
+# Wrong PLATEID in all headers for plate 568 on MJD 52254.
+spechdrfix sdR-??-0001221[4-6] PLATEID  568
+
