@@ -1,25 +1,32 @@
 
-FLUXCALIB_RESID
-FLUX_STANDARD
+DR1_SPPLATE_COR (removed)
+FLUXCALIB_RESID (removed)
+FLUX_STANDARD (removed)
 FRAME_FLUX_CALIB
 FRAME_FLUX_TWEAK
 KURUCZ_RESTORE
 NEWSPCOMBINE,
 PCA_FLUX_STANDARD
+PLATE_FLUX_RECAL (removed)
 RECTIFY
 SMEAR_COMPARE
 SPCOADD_FLUXED_FRAMES
+SPDATA2MODEL_RATIO
 SPHOTO_CALIB
 SPMEDIAN_REBIN
+SPPLATE_CORRECT (removed)
 SPREAD_FRAMES
 STYPE_STANDARD: More development by Christy.
+UNDO_SMEAR (removed)
+ZEROPT_COR (removed)
 
 FILTER_THRU: Make silent in call to xy2traceset.
 PLATESN: New header keywords ROFFSET & RSIGMA store the offset and standard
            deviation of the r-band difference in the spectro and photo mags.  
            GIOFF and GISIGMA store the offset and scatter in the (g-i) color.
 
-PLOTSN: Fixed histogram scales.
+PCA_SOLVE: Added /quiet keyword.
+PLOTSN: Fixed histogram scales, changed colors for histograms.
 
 etc/emlines.par: The [O_II] lines were updated from Peter van Hoof's web
            site at: http://www.pa.uky.edu/~peter/atomic/
