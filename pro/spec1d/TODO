@@ -1,4 +1,6 @@
 
+* For PCA_SOLVE, trim to desired wavelength range before solving.
+
 * For eigenspectra, save a 2nd HDU which is the remaining inverse-variance.
 
 * Final correlation coeff should be computed with same wavelength-range
