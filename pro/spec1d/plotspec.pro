@@ -7,8 +7,8 @@
 ;
 ; CALLING SEQUENCE:
 ;   plotspec, plate, [ fiberid, mjd=, znum=, nsmooth=, /zline, /nosyn, /noerr, $
-;    /ormask, /andmask, psfile=, /restframe, /netimage, /zwarning, topdir=, $
-;    _EXTRA= ]
+;    /sky, /ormask, /andmask, psfile=, /restframe, /netimage, $
+;    /zwarning, topdir=, _EXTRA= ]
 ;
 ; INPUTS:
 ;   plate      - Plate number(s)
@@ -23,8 +23,9 @@
 ;   nsmooth    - If set, then boxcar smooth both the object and synthetic
 ;                spectra with a width equal to NSMOOTH.
 ;   zline      - If set, then overplot the emission line fits.
-;   nosyn      - If set, then do not overplot the synthetic fit spectrum.
-;   noerr      - If set, then do not overplot the error vector.
+;   nosyn      - If set, then do not overplot the synthetic fit spectrum (blue).
+;   noerr      - If set, then do not overplot the error vector (red).
+;   sky        - If set, then overplot the sky spectrum (green).
 ;   ormask     - If set, then plot the OR-mask bits in yellow crosses.
 ;   andmask    - If set, then plot the AND-mask bits in red squares.
 ;   psfile     - If set, then send plot to a PostScript file instead of
@@ -155,7 +156,8 @@ pro plotspec_mask, wave, thismask, psfile=psfile, nolabel=nolabel, $
 end
 ;------------------------------------------------------------------------------
 pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
- zline=q_zline, nosyn=nosyn, noerr=noerr, ormask=ormask, andmask=andmask, $
+ zline=q_zline, nosyn=nosyn, noerr=noerr, sky=sky, $
+  ormask=ormask, andmask=andmask, $
  psfile=psfile, xrange=passxr, yrange=passyr, noerase=noerase, $
  restframe=restframe, netimage=netimage, topdir=topdir, _EXTRA=KeywordsForSplot
 
@@ -178,6 +180,8 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
    if (NOT keyword_set(nosyn)) then $
     readspec, plate, fiberid, mjd=mjd, znum=znum, synflux=synflux, $
      topdir=topdir, /silent
+   if (keyword_set(sky)) then $
+    readspec, plate, fiberid, mjd=mjd, sky=sky, topdir=topdir, /silent
    if (keyword_set(ormask)) then $
     readspec, plate, fiberid, mjd=mjd, ormask=ormask, topdir=topdir, /silent
    if (keyword_set(andmask)) then $
@@ -232,6 +236,8 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
        title=title, charsize=csize, _EXTRA=KeywordsForSplot, /xstyle, /ystyle
       if (NOT keyword_set(noerr)) then $
        djs_oplot, wave, objerr, color='red', _EXTRA=KeywordsForSplot
+      if (keyword_set(sky)) then $
+       djs_oplot, wave, sky, color='green', lw=2, _EXTRA=KeywordsForSplot
       if (keyword_set(synflux)) then $
        djs_oplot, wave, synflux, color='blue', lw=2, _EXTRA=KeywordsForSplot
    endif else begin
@@ -243,6 +249,8 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
        soplot, wave, objflux, _EXTRA=KeywordsForSplot
       if (NOT keyword_set(noerr)) then $
        soplot, wave, objerr, color='red', _EXTRA=KeywordsForSplot
+      if (keyword_set(sky)) then $
+       soplot, wave, sky, color='green', lw=2, _EXTRA=KeywordsForSplot
       if (keyword_set(synflux)) then $
        soplot, wave, synflux, color='blue', lw=2, _EXTRA=KeywordsForSplot
    endelse
@@ -364,7 +372,8 @@ print,netstring
 end
 ;------------------------------------------------------------------------------
 pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
- zline=zline, nosyn=nosyn, noerr=noerr, ormask=ormask, andmask=andmask, $
+ zline=zline, nosyn=nosyn, noerr=noerr, sky=sky, $
+ ormask=ormask, andmask=andmask, $
  psfile=psfile, xrange=xrange, yrange=yrange, noerase=noerase, $
  restframe=restframe, netimage=netimage, zwarning=zwarning, topdir=topdir, $
  _EXTRA=KeywordsForSplot
@@ -516,7 +525,7 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
 
       plotspec1, platelist[ifiber], fiberid[ifiber], mjd=mjdlist[ifiber], $
        znum=znum, nsmooth=nsmooth, zline=zline, nosyn=nosyn, noerr=noerr, $
-       ormask=ormask, andmask=andmask, psfile=psfile, $
+       sky=sky, ormask=ormask, andmask=andmask, psfile=psfile, $
        xrange=xrange, yrange=yrange, noerase=noerase, netimage=netimage, $
        restframe=restframe, topdir=topdir, _EXTRA=KeywordsForSplot
 
