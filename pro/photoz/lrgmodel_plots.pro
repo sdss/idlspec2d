@@ -6,7 +6,8 @@
 ;   Generate goodness-of-fit plots from the LRG model photo-z fits.
 ;
 ; CALLING SEQUENCE:
-;   lrgmodel_plots, [ suffix, public=, /recalibrate, /colorcut, _EXTRA= ]
+;   lrgmodel_plots, [ suffix, public=, /recalibrate, /colorcut, $
+;    subsamp=, _EXTRA= ]
 ;
 ; INPUTS:
 ;
@@ -16,6 +17,7 @@
 ;                    to LRGMODEL_READ_SPALL()
 ;   recalibrate    - Recalibrate the photometry using SDSS_RECALIBRATE
 ;   colorcut       - If set, then make Nikhil's color-cuts on the 2dF data
+;   subsamp        - Subsample the spAll galaxies by this factor; default to 4
 ;   _EXTRA         - Additional keywords to pass to LRGMODEL_PHOTOZ(),
 ;
 ; OUTPUTS:
@@ -49,15 +51,21 @@
 ;-
 ;------------------------------------------------------------------------------
 pro lrgmodel_plots, suffix, public=public, recalibrate=recalibrate, $
- colorcut=colorcut, _EXTRA=KeywordsForPhotoz
+ colorcut=colorcut, subsamp=subsamp, _EXTRA=KeywordsForPhotoz
 
    if (NOT keyword_set(suffix)) then suffix = ''
+   if (NOT keyword_set(subsamp)) then subsamp = 4
    csize = 2.0
 
    ;----------
    ; Read the data files
 
    spall = lrgmodel_read_spall(public=public)
+   if (subsamp GT 1) then begin
+      indx = lindgen(floor(float(n_elements(spall))/subsamp)) * subsamp
+      spall = spall[indx]
+   endif
+
 ;spall = spall[0:10000] ; Test ???
    nsdss = n_elements(spall)
    spall = lrgmodel_append_twodf(spall,'2003A',colorcut=colorcut, nadd=nadd1)
