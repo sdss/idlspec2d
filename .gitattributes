@@ -222,6 +222,7 @@ pro/science/lya/zqso_nolya.pro -text
 pro/science/qso/Makefile -text
 pro/science/qso/README -text
 pro/science/qso/create_absstruct.pro -text
+pro/science/qso/fitfineconst.pro -text
 pro/science/qso/getqso.pro -text
 pro/science/qso/id_summarize.pro -text
 pro/science/qso/look_mgii.pro -text
