@@ -1,6 +1,10 @@
 
 BATCH2D: Include 'smear' exposures when generating list of output files.
             (Not doing this caused a crash for plates w/ only smears).
+QUICKTRACE: Reverted to doing full trace for flats.  Time saving by only 
+           tracing part of the flat image introduces a risk not worth the gain.
+TRACE320CRUDE:  Fix bug dependent on invvar being set.
+               Small change to note number of goodrows in xmask, non-critical
 
 In specflat:
 specflat.table: Added "Flavor=Linux"
