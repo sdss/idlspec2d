@@ -58,6 +58,7 @@
 ;   pixelmask_bits()
 ;   plug2tsobj()
 ;   rebin_spectrum()
+;   sdss_recalibrate
 ;   spframe_read
 ;   skymask()
 ;   splog
@@ -399,7 +400,8 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1
    ; Compute the chi^2 just around the stellar absorp. lines
    ; for the best-fit model star
 
-   linesqivar = sqivar * spflux_masklines(loglam, hwidth=12e-4, /stellar)
+   mlines = spflux_masklines(loglam, hwidth=12e-4, /stellar)
+   linesqivar = sqivar * mlines
    linechi2 = 0.
    for ispec=0L, nspec-1 do begin
       thismodel = spflux_medianfilt(loglam, modflux[*,ispec,ibest], $
@@ -410,11 +412,26 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1
    linedof = total(linesqivar NE 0)
    splog, 'Best-fit line chi2/DOF = ', linechi2/(linedof>1)
 
+   ;----------
+   ; Compute the median S/N for all the spectra of this object,
+   ; and for those data just near the absorp. lines
+
+   sn_median = median(objflux * sqrt(objivar))
+   indx = where(mlines, ct)
+   if (ct GT 1) then $
+    linesn_median = median(objflux[indx] * sqrt(objivar[indx])) $
+   else $
+    linesn_median = 0.
+   splog, 'Full median S/N = ', sn_median
+   splog, 'Line median S/N = ', linesn_median
+
    kindx1 = create_struct(kindx[ibest], $
     'IMODEL', ibest, $
     'Z', zpeak, $
+    'SN_MEDIAN', sn_median, $
     'CHI2', minchi2, $
     'DOF', dof, $
+    'LINESN_MEDIAN', linesn_median, $
     'LINECHI2', linechi2, $
     'LINEDOF', linedof)
 
@@ -642,6 +659,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
    plateid = sxpar(hdr, 'PLATEID')
    thismjd = sxpar(hdr, 'MJD')
    tsobj = plug2tsobj(plateid, plugmap=plugmap)
+   sdss_recalibrate, tsobj
    plugmap[iphoto].mag = 22.5 - 2.5 * alog10(tsobj[iphoto].psfflux)
 
    ;----------
@@ -691,6 +709,9 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
    !p.multi = [0,2,3]
    modflux = 0 * objflux
    for ip=0L, nphoto-1 do begin
+      thisfiber = iphoto[ip] + 1 + 320 * (spectroid[0] - 1)
+      splog, prelog='Fiber '+string(thisfiber,format='(I3)')
+
       ; Find the best-fit model -- evaluated for each exposure [NPIX,NEXP]
       thismodel = spflux_bestmodel(loglam[*,*,ip], objflux[*,*,ip], $
        objivar[*,*,ip], dispimg[*,*,ip], kindx=thisindx)
@@ -731,7 +752,8 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       copy_struct_inx, thisindx, kindx, index_to=ip
       kindx[ip].plate = plateid
       kindx[ip].mjd = thismjd
-      kindx[ip].fiberid = iphoto[ip] + 1 + 320 * (spectroid[0] - 1)
+      kindx[ip].fiberid = thisfiber
+      splog, prelog=''
    endfor
    !p.multi = 0
 
@@ -748,10 +770,25 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
     > (kindx.linechi2 / (kindx.linedof>1))
    chi2list = chi2list + 100 * (kindx.linedof LT 10) ; Bad if < 10 pixels
    while (max(chi2list) GT chi2limit AND total(qfinal) GT nphoto/2.) do begin
-      junk = max(chi2list, iworst)
-      splog, 'Rejecting std star in fiber = ', iphoto[iworst] $
-       + 320 * strmatch(camname[0],'*2') + 1
+      chi2max = max(chi2list, iworst)
+      splog, 'Rejecting std star in fiber = ', $
+       iphoto[iworst] + 1 + 320 * (spectroid[0] - 1), $
+       ' with chi2=', chi2max
       chi2list[iworst] = 0
+      qfinal[iworst] = 0B
+   endwhile
+
+   ; Reject any stars with a very low S/N in the absorp. line regions.
+   ; Do not reject more than half the stars.
+   snlimit = 2.0 ; ???
+   ; Do not reject any stars that are already rejected above...
+   snlist = kindx.linesn_median + (snlimit+1) * (qfinal EQ 0)
+   while (min(snlist) LT snlimit AND total(qfinal) GT nphoto/2.) do begin
+      snmin = min(snlist, iworst)
+      splog, 'Rejecting std star in fiber = ', $
+       iphoto[iworst] + 1 + 320 * (spectroid[0] - 1), $
+       ' with median line S/N=', snmin
+      snlist[iworst] = snlimit + 1
       qfinal[iworst] = 0B
    endwhile
 
@@ -833,8 +870,9 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
              nphoto, ' std stars'
             qdone = 1B
          endif else begin
-            splog, 'Rejecting std star in fiber = ', iphoto[ifinal[iworst]] $
-             + 320 * strmatch(camname[0],'*2') + 1
+            splog, 'Rejecting std star in fiber = ', $
+             iphoto[ifinal[iworst]] + 1 + 320 * (spectroid[0] - 1), $
+             ' with fracgood=', minfrac
             qfinal[ifinal[iworst]] = 0B
          endelse
       endif else begin
