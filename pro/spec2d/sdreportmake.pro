@@ -80,7 +80,7 @@ pro sdreportmake, speclog_dir=speclog_dir, mjd=mjd, $
     'MJD'       , 0.d, $
     'RA'        , 0.d, $
     'DEC'       , 0.d, $
-    'CAMERAS'   ,  '                   ', $
+    'CAMERA'    ,  '                   ', $
     'TARGETNAME',  '                   ', $
     'TAIHMS'    ,  '                   ' )
 
@@ -162,7 +162,7 @@ pro sdreportmake, speclog_dir=speclog_dir, mjd=mjd, $
                outstruct[i].mjd = tai / (24.D*3600.D) ; Fractional value!
                outstruct[i].ra = sxpar(hdr, 'RA')
                outstruct[i].dec = sxpar(hdr, 'DEC')
-               outstruct[i].cameras = strtrim(sxpar(hdr, 'CAMERAS'),2)
+               outstruct[i].camera = strtrim(sxpar(hdr, 'CAMERAS'),2)
                outstruct[i].targetname = strtrim(sxpar(hdr, 'NAME'),2)
                outstruct[i].taihms = strtrim(sxpar(hdr, 'TAIHMS'),2)
 
