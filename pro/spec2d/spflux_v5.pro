@@ -131,35 +131,43 @@ end
 ;------------------------------------------------------------------------------
 ; Create a mask of 1's and 0's, where wavelenths that should not be used
 ; for fluxing (like near stellar features) are masked.
+; 1 = not near lines, 0 = near lines
+; HWIDTH = half width in log-wavelength for masking
 
-function spflux_masklines, loglam
+function spflux_masklines, loglam, hwidth=hwidth
+
+   if (NOT keyword_set(hwidth)) then $
+    hwidth = 5.7e-4 ; Default is to mask +/- 5.7 pix = 400 km/sec
 
    rejwave = [ $
-    [3830.0 + [-8,8]] , $  ; ? (H-7 is at 3835 Ang)
-    [3889.0 + [-8,8]] , $  ; H-6
-    [3933.7 + [-8,8]] , $  ; Ca_k
-    [3968.5 + [-8,8]] , $  ; Ca_H (and H-5 at 3970. Ang)
-    [4101.7 + [-8,8]] , $  ; H-delta
-    [[4290., 4320.]]  , $  ; G-band
-    [4340.5 + [-8,8]] , $  ; H-gamma
-    [4861.3 + [-10,10]] , $  ; H-beta
-    [5893.0 + [-12,12]] , $  ; Mg
-    [6562.8 + [-12,12]] , $ ; H-alpha
-    [8500.8 + [-14,14]] , $ ; ?
-    [8544.6 + [-14,14]] , $ ; ?
-    [8665.0 + [-14,14]] , $ ; ?
-    [8753.3 + [-14,14]] , $ ; ?
-    [8866.1 + [-14,14]] , $ ; ?
-    [9017.5 + [-14,14]] , $ ; ?
-    [9232.0 + [-14,14]] ]   ; ?
+    3830.0 , $ ; ? (H-7 is at 3835 Ang)
+    3889.0 , $ ; H-6
+    3933.7 , $ ; Ca_k
+    3968.5 , $ ; Ca_H (and H-5 at 3970. Ang)
+    4101.7 , $ ; H-delta
+    4300.  , $ ; G-band
+    4305.  , $ ; G-band
+    4310.  , $ ; more G-band
+    4340.5 , $ ; H-gamma
+    4861.3 , $ ; H-beta
+    5893.0 , $ ; Mg
+    6562.8 , $ ; H-alpha
+    8500.8 , $
+    8544.6 , $
+    8665.0 , $
+    8753.3 , $
+    8866.1 , $
+    9017.5 , $
+    9232.0 ]
+
    airtovac, rejwave
    nreject = n_elements(rejwave) / 2
 
    ; Mask =1 for good points, =0 for bad points
    mask = bytarr(size(loglam,/dimens)) + 1B
    for i=0L, nreject-1 do begin
-      mask = mask AND (loglam LT alog10(rejwave[0,i]) $
-       OR loglam GT alog10(rejwave[1,i]))
+      mask = mask AND (loglam LT alog10(rejwave[i])-hwidth $
+       OR loglam GT alog10(rejwave[i])+hwidth)
    endfor
 
    return, mask
@@ -374,20 +382,23 @@ end
 
 ;------------------------------------------------------------------------------
 function spflux_bspline, loglam, mratio, mrativar, outmask=outmask, $
- _EXTRA=KeywordsForBkpts
+ everyn=everyn
 
    isort = sort(loglam)
-   nord = 3 ; ???
+   nord = 4 ; ???
 
-   ; The following generates break points spaced every Nth good value
+   ; Choose the break points using the EVERYN option, but masking
+   ; out more pixels near stellar features just when selecting them.
+   mask1 = spflux_masklines(loglam, hwidth=10e-4)
+   ii = where(mrativar[isort] GT 0 AND mask1[isort] EQ 1)
    bkpt = 0
-   fullbkpts = bspline_bkpts(loglam[isort], nord=4, _EXTRA=KeywordsForBkpts, $
-    bkpt=bkpt, /silent)
+   fullbkpt = bspline_bkpts(loglam[isort[ii]], everyn=everyn, $
+    bkpt=bkpt, nord=nord)
 
    outmask = 0
    sset = bspline_iterfit(loglam[isort], mratio[isort], $
-    invvar=mrativar[isort], nord=nord, bkpt=bkpt, lower=3, upper=3, $
-    maxrej=ceil(0.05*n_elements(indx)), outmask=outmask)
+    invvar=mrativar[isort], lower=3, upper=3, fullbkpt=fullbkpt, $
+    maxrej=ceil(0.05*n_elements(indx)), outmask=outmask, nord=nord)
 
    return, sset
 end
@@ -642,9 +653,8 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       ; Do the B-spline fits
 
       everyn = nblue * nfinal * 5
-      ii = where(mrativar[*,iblue,ifinal] GT 0)
-      sset_b = spflux_bspline((loglam[*,iblue,ifinal])[ii], $
-       (mratio[*,iblue,ifinal])[ii], (mrativar[*,iblue,ifinal])[ii], $
+      sset_b = spflux_bspline(loglam[*,iblue,ifinal], $
+       mratio[*,iblue,ifinal], mrativar[*,iblue,ifinal], $
        everyn=everyn, outmask=mask_b)
 ;set_plot,'x'
 ;foo=bspline_valu(loglam[*,iblue,ifinal],sset_b)
@@ -653,9 +663,8 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
 ;soplot,10^(loglam[*,iblue,ifinal])[ii],foo[ii]
 
       everyn = nred * nfinal * 1.5
-      ii = where(mrativar[*,ired,ifinal] GT 0)
-      sset_r = spflux_bspline((loglam[*,ired,ifinal])[ii], $
-       (mratio[*,ired,ifinal])[ii], (mrativar[*,ired,ifinal])[ii], $
+      sset_r = spflux_bspline(loglam[*,ired,ifinal], $
+       mratio[*,ired,ifinal], mrativar[*,ired,ifinal], $
        everyn=everyn, outmask=mask_r)
 ;set_plot,'x'
 ;jj=where(mrativar[*,ired,ifinal] GT 0)
@@ -742,14 +751,6 @@ if (min(tmpflux) LT 0 OR max(tmpflux) GT 1000) then stop ; ???
       spflux_plotcalib, tmploglam, tmpflux/flatarr_mean, $
        thisloglam, thismratio, thismrativar, logrange=(logmin+[1,2]*logrange/2.)
       !p.multi = 0
-
-      xrange = [10.^logmin, 10.^logmax]
-      djs_plot, 10.^tmploglam, tmpflux/flatarr_mean, $
-       xrange=xrange, /xsytle, /nodata, $
-       xtitle='Wavelength [Ang]', ytitle='Counts/(10^{-17}erg/cm^2/s/Ang'
-      for j=0, nfinal-1 do $
-       djs_oplot, 10.^thisloglam[*,0,j], thismratio[*,0,j], psym=3
-      djs_oplot, 10.^tmploglam, tmpflux/flatarr_mean, color='red'
 
       ;----------
       ; Create header cards describing the fit range
