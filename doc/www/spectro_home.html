@@ -213,8 +213,9 @@ rsync -arv --rsh="ssh" \
 You can use this to copy the data to your own computer in the first place.
 If you run it again, it will copy any files that have been changed or added.
 Note that you need "ssh" to work without asking for a pass-phrase for "rsync"
-to work -- see your system admin if you need help with that.  You also need
-to specify my version of "rsync" on the fsgi03 machine as done above.
+to work as a cron job (see below) -- see your system admin if you need help
+with that.  You also need to specify my version of "rsync" on the fsgi03
+machine as done above.
 
 <P>
 Finally, you could set up a "cron" job to update your copy of the data on
