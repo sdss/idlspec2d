@@ -186,7 +186,7 @@ function apo_log_fields, pp, fields, printnames=printnames, formats=formats
             if (keyword_set(tmpval)) then $
              value = string(tmpval, format=format)
             value = apo_checklimits(flavor, fields[ifield], $
-             camnames[icam], tmpval) + value
+             camnames[icam], tmpval, /html) + value
          endif
          nextline = nextline + colsep + value
       endfor
