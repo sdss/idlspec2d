@@ -110,7 +110,7 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    maxlag = max(xnew-xcen)
    splog, 'Match_trace range: ', minlag, bestlag, maxlag
    if (bestlag LT -0.1 OR bestlag GT 0.1) then $
-    splog, 'WARNING: Large flexure flat<->science (POST-CALIBRATIONS REQUIRED!)'
+    splog, 'WARNING: Large flexure flat<->science (Post-calibs recommended!)'
 
    extract_image, image, invvar, xcen, sigma, tempflux, tempfluxivar, $
     proftype=proftype, wfixed=wfixed, yrow=yrow, highrej=5, lowrej=5, $
