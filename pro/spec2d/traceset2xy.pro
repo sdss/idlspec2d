@@ -31,7 +31,7 @@
 ;
 ; REVISION HISTORY:
 ;   19-May-1999  Written by David Schlegel, Princeton.
-;   01-Dec-2000  Handle scaler xpos correctly - D. Finkbeiner
+;   01-Dec-2000  Handle scalar xpos correctly - D. Finkbeiner
 ;-
 ;------------------------------------------------------------------------------
 pro traceset2xy, tset, xpos, ypos

@@ -16,6 +16,7 @@
 ;   nicoeff    - Number of coefficients to use in inversion; default to using
 ;                2 more coefficients than for the forward trace set
 ;                (e.g., TSET.NCOEFF+2)
+;   silent     - suppress messages to stdout
 ;
 ; OUTPUTS:
 ;   pixpos     - Pixel positions corresponding to LAMBDA as
@@ -37,6 +38,7 @@
 ;
 ; REVISION HISTORY:
 ;   09-Nov-1999  Written by David Schlegel, Ringberg.
+;   01-Dec-2000  added silent keyword - D. Finkbeiner
 ;-
 ;------------------------------------------------------------------------------
 function traceset2pix, tset, lambda, nicoeff=nicoeff, silent=silent
