@@ -6,7 +6,7 @@
 ;
 ;   Performs all object extraction tasks
 ;      0) Locate bright fibers, and test image background
-;      1) 3 step Optimal extraction
+;      1) 4 Step Optimal extraction
 ;      2) Tweak to sky lines
 ;      3) Sky subtraction
 ;      4) Flux calibration
@@ -112,7 +112,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ; Do a boxcar extraction, and look for fibers where the median
    ; counts are 10000 ADU per row.
 
-   fextract = extract_boxcar(image, xtrace)
+   fextract = extract_boxcar(image*(invvar GT 0), xtrace)
    scrunch = djs_median(fextract, 1) ; Find median counts/row in each fiber
    whopping = find_whopping(scrunch, 10000.0, whopct)
    scrunch_sort = sort(scrunch)
@@ -206,7 +206,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    yrow = lindgen(nrow) 
    nfirst = n_elements(yrow)
 
-   splog, 'Extracting frame '+objname+' with 3 step process'
+   splog, 'Extracting frame '+objname+' with 4 step process'
 
    traceset2xy, widthset, xx, sigma2
    ntrace = (size(sigma2,/dimens))[1]
@@ -222,7 +222,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 
    ; (2) Calculate scattered light
 
-   splog, 'Step 2: Just find scattered light image'
+   splog, 'Step 2: Find scattered light image'
    scatfit = calcscatimage(ansimage[ntrace*nterms:*,*], yrow)
 
    qaplot_scatlight, scatfit, yrow, $
