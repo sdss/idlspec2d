@@ -120,9 +120,11 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    if NOT keyword_set(tai) then airmass = replicate(1.0, nrow) $
     else airmass = float(tai2airmass(plugsort.ra, plugsort.dec, tai=tai))
 
+   minairmass = min(airmass, max=maxairmass)
+   splog, (maxairmass GT 2.5) ? 'WARNING: ' : '', $
+    'Airmass range = ', minairmass, maxairmass
+
    airmass_correction = replicate(1.0,ncol) # airmass
-   splog, 'Range of airmass correction = ', min(airmass_correction), $
-    max(airmass_correction)
 
    skywave = wave[*,iskies]
    skyflux = obj[*,iskies]
