@@ -446,7 +446,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
                mwrfits, *arcstruct[iarc].wset, arcinfofile
                mwrfits, *arcstruct[iarc].fibermask, arcinfofile 
                mwrfits, *arcstruct[iarc].dispset, arcinfofile 
-               spawn, 'gzip -f ' + arcinfofile
+               spawn, ['gzip', '-f', arcinfofile], /noshell
             endif
 
          endelse
@@ -588,7 +588,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
             mwrfits, *flatstruct[iflat].fibermask, flatinfofile
             mwrfits, *flatstruct[iflat].widthset, flatinfofile
             mwrfits, *flatstruct[iflat].superflatset, flatinfofile
-            spawn, 'gzip -f ' + flatinfofile
+            spawn, ['gzip', '-f', flatinfofile], /noshell
          endif
 
       endif
