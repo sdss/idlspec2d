@@ -89,6 +89,10 @@
 ;                MJD's once this problem is fixed in the electronics.
 ;   26-Jul-2000  Added fix for more severe "shifted row" electronics problem
 ;                for data taken on MJD=51578 to 51580 (3 to 5 Feb 2000).
+;   26-Aug-2000  Horrible kludge for this night MJD=51779 (22/23 Aug 2000).
+;                Add a noise term of 100 ADU to the left amplifier of r2.
+;                That amplifier had random bits being set incorrectly,
+;                in particular the 32 bit and 256 bit.
 ;-
 ;------------------------------------------------------------------------------
 
@@ -191,7 +195,9 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    sxaddpar, hdr, 'VERSREAD', idlspec2d_version(), $
     ' Version of idlspec2d for pre-processing raw data', after='VERSUTIL'
  
+   ;-----------
    ; Rename 'target' -> 'science', and 'calibration' -> 'arc'
+
    mjd = sxpar(hdr, 'MJD')
    flavor = strtrim(sxpar(hdr, 'FLAVOR'),2)
    if (flavor EQ 'target') then flavor = 'science'
@@ -558,6 +564,11 @@ pro sdssproc, infile, image, invvar, indir=indir, $
             expr3 = (readnoiseDN[iamp]*gain[iamp])^2
             ; Term below to limit best S/N to under 100
             expr4 = 1.e-4 * expr1^2
+
+            ; Horrible kludge for this night MJD=51779 (22/23 Aug 2000).
+            ; Add a noise term of 100 ADU to the left amplifier of r2
+            if (mjd EQ 51779 AND camname EQ 'r2' AND iamp EQ 2) then $
+             expr4 = expr4 + 100.^2
 
             invvar[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
                      srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
