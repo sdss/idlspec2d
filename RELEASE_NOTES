@@ -25,6 +25,11 @@ SPREDUCE: Major change to how the flat+arc calibrations are chosen.
            an arc taken during the afternoon (as happened for plate 820
            on MJD 52405, c.f., PR #3966) if it is not explicitly marked
            as a test exposure.
+examples/opHdrFix.par: Go through all the headers looking for flat, arc,
+           or science exposures taken while the sun was up.  Discard them
+           in this file, which takes care of all corrections through
+           MJD 52426 (1-Jun-03), after which the sdHdrFix-$MJD.par files
+           are used.
 ups/idlspec2d.table: Add dependency on "speclog" product.
 
 -------------------------------------------------------------------------------
