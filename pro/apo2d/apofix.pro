@@ -6,7 +6,7 @@
 ;   Add line to sdHdrFix file to denote change in FITS header for sdR files.
 ;
 ; CALLING SEQUENCE:
-;   apofix, expnum, [ card, value, camera=, /bad ]
+;   apofix, expnum, [ card, value, camera=, /bad, /notsos ]
 ;
 ; INPUTS:
 ;   expnum     - Exposure number
@@ -22,12 +22,26 @@
 ;   bad        - If set, then declare the specified exposure number to be bad.
 ;                Do this by setting QUALITY='bad'.
 ;                If set, then overwrite and values passed for CARD and VALUE.
+;   notsos     - This keyword can be set to run this proc on a machine
+;                that is not named "sos".  This would only be done for
+;                testing purposes.
 ;
 ; OUTPUT:
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
+;   Only the following keywords can be modified with this procedure:
+;     CAMERAS, FLAVOR, PLATEID, NAME, EXPTIME, TAI-BEG, TAI-END, TAI,
+;     FFS, FF, NE, HGCD, OBSCOMM, QUALITY
+;   The AIRMASS is not read from the header, but computed from RADEG,DECDEG
+;   and the TAI-BEG,TAI-END keywords.
+;   Refer to the Son-of-Spectro documentation for the specifics of
+;   valid values for each keyword.
+;
+;   Note that string values must be enclosed in single- or double-quotes.
+;   Note that double-precision numbers must be written with "d" notation,
+;   for example 3.14d7 instead of 3.14e7.
 ;
 ; EXAMPLES:
 ;   Fix the exposure time for exposure #1234 to be 900 sec:
@@ -43,6 +57,14 @@
 ;   or equivalently:
 ;     IDL> apofix, 1234, 'quality', 'bad'
 ;
+;   Only declare the 'b1' camera bad for exposure number 1234:
+;     IDL> apofix, 1234, /bad, camera='b1'
+;
+;   The wrong NAME is in the header, which is necessary to identify
+;   the proper plug-map file.  If the correct plug-map file
+;   is plPlugMapM-0328-52277-01, then edit as follows:
+;     IDL> apofix, 1234, 'name', '0328-52277-01'
+;
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
@@ -57,16 +79,15 @@
 ;   22-Apr-2002  Written by D. Schlegel, Princeton
 ;-
 ;------------------------------------------------------------------------------
-pro apofix, expnum, card, newval, camera=camera, bad=bad
+pro apofix, expnum, card, newval, camera=camera, bad=bad, notsos=notsos
 
    common apofix_com, apo_uname
 
    if (n_params() LT 1) then begin
-      print, 'Syntax - apofix, expnum, [ card, value, camera= ]'
+      doc_library, 'apofix'
       return
    end
 
-   quiet = !quiet
    !quiet = 1
 
    ;----------
@@ -77,9 +98,8 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad
       apo_uname = (strsplit(uname_string[0], '.', /extract))[0]
    endif
 
-   if (apo_uname NE 'sos') then begin
+   if (apo_uname NE 'sos' AND NOT keyword_set(notsos)) then begin
       print, 'This procedure can only be run on the machine sos.apo.nmsu.edu'
-      !quiet = quiet
       return
    endif
 
@@ -109,7 +129,6 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad
    expnum = long(expnum)
    if (expnum LE 0 OR expnum GT 99999999L OR n_elements(expnum) NE 1) then begin
       print, 'EXPNUM must be a number between 1 and 99999999'
-      !quiet = quiet
       return
    endif
 
@@ -122,11 +141,14 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad
     OR (c1 NE '?' AND c1 NE 'b' AND c1 NE 'r') $
     OR (c2 NE '?' AND c2 NE '1' AND c2 NE '2') ) then begin
       print, 'CAMERA must be a 2-character string'
-      !quiet = quiet
       return
    endif
 
    if (keyword_set(bad)) then begin
+      if (keyword_set(card) OR keyword_set(value)) then begin
+         print, 'Invalid to set the /BAD flag along with CARD or VALUE. Ignoring!'
+         return
+      endif
       card = 'quality'
       value = 'bad'
    endif
@@ -135,13 +157,11 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad
     OR n_elements(card) NE 1 $
     OR strlen(card) EQ 0 OR strlen(card) GT 8) then begin
       print, 'CARD must be a string of 1 to 8 characters'
-      !quiet = quiet
       return
    endif
 
    if (n_elements(newval) NE 1) then begin
       print, 'VALUE must be specified (and a scalar)'
-      !quiet = quiet
       return
    endif
    if (size(newval, /tname) EQ 'DOUBLE') then format='(e17.10)' $
@@ -149,9 +169,164 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad
    strval = strtrim(string(newval,format=format),2)
    if (strpos(strval,'"') NE -1 OR strpos(strval,"'") NE -1) then begin
       print, 'VALUE cannot contain single or double-quotes'
-      !quiet = quiet
       return
    endif
+   ; Enclose any string in single-quotes, so that the SPHDRFIX routine
+   ; can desriminate between strings and numbers.
+   if (size(newval, /tname) EQ 'STRING') then strval = "'" + strval + "'"
+
+   ;----------
+   ; Explicitly test the values for each possible keyword name.
+   ; This is a different test for each keyword.
+
+   qstring = size(newval, /tname) EQ 'STRING'
+   case strupcase(card) of
+   'EXPOSURE': begin
+      print, 'The EXPOSURE number is always set to that in the file name. Ignoring!'
+      return
+      end
+   'CAMERAS': begin
+      possible = ['b1','b2','r1','r2']
+      if (total(newval EQ possible) EQ 0) then begin
+         print, 'Valid values = ', "'"+possible+"'"
+         print, 'Invalid value for CAMERAS. Ignoring!'
+         return
+      endif
+      end
+   'FLAVOR': begin
+      if (newval EQ 'unknown') then begin
+         print, 'Please set QUALITY to bad instead of setting FLAVOR=unknown. Ignoring!'
+         return
+      endif
+      possible = ['bias','dark','flat','arc','science','smear']
+      if (total(newval EQ possible) EQ 0) then begin
+         print, 'Valid values = ', "'"+possible+"'"
+         print, 'Invalid value for CAMERAS. Ignoring!'
+         return
+      endif
+      end
+   'MJD': begin
+      print, 'Not possible to change MJD. This is simply big trouble. Ignoring!'
+      return
+      end
+   'PLATEID': begin
+      if (long(newval) LE 0 OR long(newval) GT 9999) then begin
+         print, 'PLATEID must be between 1 and 9999. Quitting!'
+         return
+      endif
+      end
+   'NAME': begin
+      if (strmatch(newval,'[0-9][0-9][0-9][0-9]-[5-9][0-9][0-9][0-9][0-9]-[0-9][0-9]')) then begin
+         print, 'NAME must be of the form "????-?????-??" [all digits]. Ignoring!'
+         return
+      endif
+      end
+   'EXPTIME': begin
+      if (long(newval) LT 0 OR long(newval) GT 3600 OR qstring) then begin
+         print, 'Valid exposure times must be between 0 and 3600 sec. Ignoring!'
+         return
+      endif
+      end
+   'TAI-BEG': begin
+      if (double(newval) LT 4d9 OR double(newval) GT 6d9) then begin
+         print, 'Valid times are between 4d9 and 6d9. Ignoring!'
+         return
+      endif
+      end
+   'TAI-END': begin
+      if (double(newval) LT 4d9 OR double(newval) GT 6d9) then begin
+         print, 'Valid times are between 4d9 and 6d9. Ignoring!'
+         return
+      endif
+      end
+   'TAI': begin
+      if (double(newval) LT 4d9 OR double(newval) GT 6d9) then begin
+         print, 'Valid times are between 4d9 and 6d9. Ignoring!'
+         return
+      endif
+      end
+   'FFS': begin
+      if (strmatch(newval,'[01] [01] [01] [01] [01] [01] [01] [01]')) then begin
+         print, 'FFS must be of the form "? ? ? ? ? ? ? ?" [all 0 or 1]. Ignoring!'
+         return
+      endif
+      end
+   'FF': begin
+      if (strmatch(newval,'[01] [01] [01] [01]')) then begin
+         print, 'FF must be of the form "? ? ? ?" [all 0 or 1]. Ignoring!'
+         return
+      endif
+      end
+   'NE': begin
+      if (strmatch(newval,'[01] [01] [01] [01]')) then begin
+         print, 'NE must be of the form "? ? ? ?" [all 0 or 1]. Ignoring!'
+         return
+      endif
+      end
+   'HGCD': begin
+      if (strmatch(newval,'[01] [01] [01] [01]')) then begin
+         print, 'HGCD must be of the form "? ? ? ?" [all 0 or 1]. Ignoring!'
+         return
+      endif
+      end
+   'OBSCOMM': begin
+      possible = ['{dithered flats-flat}', '{dithered flats-arc}', $
+       '{focus, hartmann l}', '{focus, hartmann r}']
+      if (total(newval EQ possible) EQ 0) then begin
+         print, 'Valid values = ', "'"+possible+"'"
+         print, 'Invalid value for OBSCOMM. Ignoring!'
+         return
+      endif
+      end
+   'QUALITY': begin
+      possible = ['excellent','bad']
+      if (total(newval EQ possible) EQ 0) then begin
+         print, 'Valid values = ', "'"+possible+"'"
+         print, 'Invalid value for QUALITY. Ignoring!'
+         return
+      endif
+      end
+   'TILEID': begin
+      if (long(newval) LE 0 OR long(newval) GT 9999) then begin
+         print, 'TILEID must be between 1 and 9999. Quitting!'
+         return
+      endif
+      end
+   'RA': begin
+      if (double(newval) LT 0d OR double(newval) GT 360d OR qstring) then begin
+         print, 'Valid RA are between 0d and 360d. Ignoring!'
+         return
+      endif
+      end
+   'DEC': begin
+      if (double(newval) LT -90d OR double(newval) GT 90d OR qstring) then begin
+         print, 'Valid DEC are between -90d and 90d. Ignoring!'
+         return
+      endif
+      end
+   'RADEG': begin
+      if (double(newval) LT 0d OR double(newval) GT 360d OR qstring) then begin
+         print, 'Valid RADEG are between 0d and 360d. Ignoring!'
+         return
+      endif
+      end
+   'DECDEG': begin
+      if (double(newval) LT -90d OR double(newval) GT 90d OR qstring) then begin
+         print, 'Valid DECDEG are between -90d and 90d. Ignoring!'
+         return
+      endif
+      end
+   'AIRTEMP': begin
+      if (float(newval) LT -40 OR double(newval) GT 40 OR qstring) then begin
+         print, 'Valid AIRTEMP are between -40 and 40. Ignoring!'
+         return
+      endif
+      end
+   else: begin
+      print, 'This keyword is not of interest. Ignoring!'
+      return
+      end
+   endcase
 
    ;----------
    ; Test that sdR files exist that correspond to the exposure number
@@ -163,7 +338,6 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad
     root_dir=rawdata_dir, subdir='*'), count=nfile)
    if (nfile EQ 0) then begin
       print, 'File=' + fileroot + '.fit not found in dir=' + rawdata_dir
-      !quiet = quiet
       return
    endif
 
@@ -195,7 +369,6 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad
 
    if (NOT keyword_set(thismjd)) then begin
       print, 'MJD could not be determined from the FITS headers'
-      !quiet = quiet
       return
    endif
 
@@ -232,7 +405,6 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad
       i = (where(stnames EQ tag_names(fstruct, /structure_name)))[0]
       if (i[0] EQ -1) then begin
          print, 'The file ' + sdfixname + ' appears to be invalid'
-         !quiet = quiet
          return
       endif
       pdata[i] = ptr_new(struct_append(*pdata[i], fstruct))
@@ -245,7 +417,6 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad
    endelse
 
    yanny_free, pdata
-   !quiet = quiet
 
    print, 'File ' + fileandpath(sdfixname) + ' contains ' $
     + strtrim(string(ncorr),2) + ' declared changes.'
