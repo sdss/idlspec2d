@@ -5,6 +5,9 @@
 #include "export.h"
 #include "extract_row.h"
  
+#define MAXEXP 10.0
+#define NSUBSAMP 1000
+
 IDL_LONG extract_row
   (int      argc,
    void *   argv[])
@@ -274,10 +277,10 @@ void ProfileGauss(float *x, IDL_LONG ndat, float **y, float xcen, IDL_LONG xmin,
 	float base;
 	float diff, denom, frac;
 	float sqbase, xfake;
+	float epow;
 	
 	static float oldsigma=0.0;
-	static float model[1000][3][31];
-
+	static float model[NSUBSAMP][3][31];
 
 	denom = 1.0/sqrt(6.2832 * sigma * sigma);
 
@@ -286,14 +289,16 @@ void ProfileGauss(float *x, IDL_LONG ndat, float **y, float xcen, IDL_LONG xmin,
 	   printf("Filling Arrays\n");
 	   oldsigma = sigma;
 /*	   Fill static arrays	*/
-	   for(nm=0;nm<1000;nm++) {
- 	     xfake = 15.0 + (float) nm/1000.0;
+	   for(nm=0; nm<NSUBSAMP; nm++) {
+ 	     xfake = 15.0 + ((float)nm) / NSUBSAMP;
 	     for (k=0; k<=30; k++) {
 	       for(j=0;j<3;j++) model[nm][j][k] = 0.0;
 	       for(frac = -0.48; frac <= 0.5; frac += 0.04)  {
 	     
 	         diff = (xfake - (float)k + frac)/sigma;
-	         base = exp(-diff*diff/2.0)*denom;
+                 epow = diff*diff/2.0;
+                 if (epow < MAXEXP) base = exp(-epow) * denom;
+                  else base = 0.0;
 
                  model[nm][0][k] += base;
                  sqbase = diff*diff*base;
@@ -301,13 +306,13 @@ void ProfileGauss(float *x, IDL_LONG ndat, float **y, float xcen, IDL_LONG xmin,
 	         model[nm][2][k] += diff*base;
 
                 }
-	     for (j=0;j<3;j++) model[nm][j][k] /= 25.0;
+	     for (j=0;j<3;j++) model[nm][j][k] /= 25.0; /* What is this ??? */
 	   }
 	}
       }
 
 	frac = xcen - (int)xcen;
-	nm = frac*1000.0;
+	nm = frac * NSUBSAMP;
         backup = (int)xcen - xmin;
 	for(j=0;j<nCoeff;j++) 
 	  for (i=xmin,k=0,place=15-backup; i<=xmax; i++,k++,place++) 
@@ -315,6 +320,9 @@ void ProfileGauss(float *x, IDL_LONG ndat, float **y, float xcen, IDL_LONG xmin,
 /*             printf("%d %d %d %d %d %f\n", 
 		i,j,k,place,nm,frac);  */
              y[j][k] = model[nm][j][place];
+if (nm >= 2000) printf("VERY BAD!!!\n");
+if (place >= 31) printf("VERY BAD!!!\n");
+if (j >= 3) printf("VERY BAD!!!\n");
 	     }
 	 
 }
@@ -326,9 +334,10 @@ void ProfileAbs3(float *x, IDL_LONG ndat, float **y, float xcen,
 	float base;
 	float diff, diffabs, denom, frac;
 	float sqbase, xfake;
+	float epow;
 	
 	static float oldsigma=0.0;
-	static float model[100][3][31];
+	static float model[NSUBSAMP][3][31];
 
 /*		Below is denominator for x^3	*/
 
@@ -339,15 +348,17 @@ void ProfileAbs3(float *x, IDL_LONG ndat, float **y, float xcen,
 	   printf("Filling Arrays\n");
 	   oldsigma = sigma;
 /*	   Fill static arrays	*/
-	   for(nm=0;nm<100;nm++) {
- 	     xfake = 15.0 + (float) nm/100.0;
+	   for(nm=0; nm<NSUBSAMP; nm++) {
+ 	     xfake = 15.0 + ((float)nm) / NSUBSAMP;
 	     for (k=0; k<=30; k++) {
 	       for(j=0;j<3;j++) model[nm][j][k] = 0.0;
 	       for(frac = -0.4; frac <= 0.5; frac += 0.2)  {
 	     
 	         diff = (xfake - (float)k + frac)/sigma;
                  diffabs = fabs(diff);
-	         base = exp(-diff*diff*diffabs/3.0)*denom;
+                 epow = diff*diff*diffabs/3.0;
+                 if (epow < MAXEXP) base = exp(-epow) * denom;
+                  else base = 0.0;
 
                  model[nm][0][k] += base;
                  sqbase = diff*diff*diffabs*base;
@@ -361,7 +372,7 @@ void ProfileAbs3(float *x, IDL_LONG ndat, float **y, float xcen,
       }
 
 	frac = xcen - (int)xcen;
-	nm = frac*100.0;
+	nm = frac * NSUBSAMP;
         backup = (int)xcen - xmin;
 	for(j=0;j<nCoeff;j++) 
 	  for (i=xmin,k=0,place=15-backup; i<=xmax; i++,k++,place++) 
@@ -381,9 +392,10 @@ void ProfileAbs25(float *x, IDL_LONG ndat, float **y, float xcen,
 	float diff, diffabs, denom2, frac;
 	float denom3;
 	float sqbase, xfake;
-	
+	float epow;
+
 	static float oldsigma=0.0;
-	static float model[100][3][31];
+	static float model[NSUBSAMP][3][31];
 
 /*		Below is denominator for x^3	*/
 
@@ -395,15 +407,17 @@ void ProfileAbs25(float *x, IDL_LONG ndat, float **y, float xcen,
 	   printf("Filling Arrays\n");
 	   oldsigma = sigma;
 /*	   Fill static arrays	*/
-	   for(nm=0;nm<100;nm++) {
- 	     xfake = 15.0 + (float) nm/100.0;
+	   for(nm=0; nm<NSUBSAMP; nm++) {
+ 	     xfake = 15.0 + ((float)nm) / NSUBSAMP;
 	     for (k=0; k<=30; k++) {
 	       for(j=0;j<3;j++) model[nm][j][k] = 0.0;
 	       for(frac = -0.4; frac <= 0.5; frac += 0.2)  {
 	     
 	         diff = (xfake - (float)k + frac)/sigma;
-                 diffabs = fabs(diff);
-	         base = exp(-diff*diff*diffabs/3.0)*denom3;
+		 diffabs = fabs(diff);
+	         epow = diff*diff*diffabs/3.0;
+                 if (epow < MAXEXP) base = exp(-epow) * denom3;
+                  else base = 0.0;
 
 /*	Add in ^3 term first  */
                  model[nm][0][k] += 1.5*base;
@@ -412,7 +426,9 @@ void ProfileAbs25(float *x, IDL_LONG ndat, float **y, float xcen,
 	         model[nm][2][k] += 1.5*diff*diffabs*base;
 
 /*	Add in ^2 term next  */
-	         base = exp(-diff*diff/2.0)*denom2;
+                 epow = diff*diff/2.0;
+                 if (epow < MAXEXP) base = exp(-epow) * denom2;
+                  else base = 0.0;
                  model[nm][0][k] += 0.5*base;
                  sqbase = diff*diff*base;
 	         model[nm][1][k] += 0.5*sqbase;
@@ -425,7 +441,7 @@ void ProfileAbs25(float *x, IDL_LONG ndat, float **y, float xcen,
       }
 
 	frac = xcen - (int)xcen;
-	nm = frac*100.0;
+	nm = frac * NSUBSAMP;
         backup = (int)xcen - xmin;
 	for(j=0;j<nCoeff;j++) 
 	  for (i=xmin,k=0,place=15-backup; i<=xmax; i++,k++,place++) 
@@ -445,11 +461,11 @@ void ProfileDoubleGauss(float *x, IDL_LONG ndat, float **y, float xcen, IDL_LONG
 	float diff, denom, frac;
         float sigma2, diff2, base2, denom2;
 	float sqbase;
+	float epow;
 
 	sigma2 = 2.0*sigma;
 	denom = 1.0/sqrt(6.2832 * sigma * sigma);
 	denom2 = 1.0/sqrt(6.2832 * sigma2 * sigma2);
-
 
 	for (i=xmin,k=0; i<=xmax; i++, k++) {
 	   for (j=0;j<nCoeff;j++) y[j][k] = 0.0;
@@ -457,8 +473,12 @@ void ProfileDoubleGauss(float *x, IDL_LONG ndat, float **y, float xcen, IDL_LONG
 	     for(frac = -0.4; frac <= 0.5; frac += 0.2)  {
 	        diff = (xcen - x[i] + frac)/sigma;
 	        diff2 = (xcen - x[i] + frac)/sigma2;
-	        base = exp(-diff*diff/2.0)*denom;
-	        base2 = exp(-diff2*diff2/2.0)*denom2;
+                epow = diff*diff/2.0;
+                if (epow < MAXEXP) base = exp(-epow) * denom;
+                 else base = 0.0;
+                epow = diff2*diff2/2.0;
+                if (epow < MAXEXP) base2 = exp(-epow) * denom2;
+                 else base2 = 0.0;
 
                 y[0][k] += base;
 	        if(nCoeff >1) y[1][k] += base2;
@@ -485,9 +505,10 @@ void ProfileAbs3WideGauss(float *x, IDL_LONG ndat, float **y, float xcen,
 	float diff, diffabs, denom, frac;
         float sigma2, diff2, base2, denom2;
 	float sqbase;
+	float epow;
 	
 	static float oldsigma=0.0;
-	static float model[100][4][31];
+	static float model[NSUBSAMP][4][31];
 
 /*		Below is denominator for x^3	*/
 
@@ -500,18 +521,22 @@ void ProfileAbs3WideGauss(float *x, IDL_LONG ndat, float **y, float xcen,
 	   printf("Filling Arrays\n");
 	   oldsigma = sigma;
 /*	   Fill static arrays	*/
-	   for(nm=0;nm<100;nm++) {
- 	     xfake = 15.0 + (float) nm/100.0;
+	   for(nm=0; nm<NSUBSAMP; nm++) {
+ 	     xfake = 15.0 + ((float)nm) / NSUBSAMP;
 	     for (k=0; k<=30; k++) {
 	       for(j=0;j<4;j++)model[nm][j][k] = 0.0;
 	       for(frac = -0.4; frac <= 0.5; frac += 0.2)  {
 	     
 	         diff = (xfake - (float)k + frac)/sigma;
-                 diffabs = fabs(diff);
-	         base = exp(-diff*diff*diffabs/3.0)*denom;
-	         diff2 = (xfake - (float)k + frac)/sigma2;
-	         base2 = exp(-diff2*diff2/2.0)*denom2;
+		 diffabs = fabs(diff);
+		 epow = diff*diff*diffabs/3.0;
+                 if (epow < MAXEXP) base = exp(-epow) * denom;
+                  else base = 0.0;
 
+	         diff2 = (xfake - (float)k + frac)/sigma2;
+	         epow = diff2*diff2/2.0;
+                 if (epow < MAXEXP) base2 = exp(-epow) * denom2;
+                  else base2 = 0.0;
 
                  model[nm][0][k] += base;
 	         model[nm][1][k] += base2;
@@ -526,7 +551,7 @@ void ProfileAbs3WideGauss(float *x, IDL_LONG ndat, float **y, float xcen,
       }
 
 	frac = xcen - (int)xcen;
-	nm = frac*100.0;
+	nm = frac * NSUBSAMP;
         backup = (int)xcen - xmin;
 	for(j=0;j<nCoeff;j++) 
 	  for (i=xmin,k=0,place=15-backup; i<=xmax; i++,k++,place++) 
@@ -547,6 +572,7 @@ void ProfileAbs3HalfLorentz(float *x, IDL_LONG ndat, float **y, float xcen,
 	float diff, diffabs, denom, frac;
         float fwhm2, diff2, base2, denom2;
 	float sqbase;
+	float epow;
 /*        float total; 	*/
 
 
@@ -557,12 +583,14 @@ void ProfileAbs3HalfLorentz(float *x, IDL_LONG ndat, float **y, float xcen,
 	denom2 = 3.1416/(2.0 * fwhm2);
 
 	for (i=xmin,k=0; i<=xmax; i++, k++) {
-	   for (j=0;j<nCoeff;j++) y[j][k] = 0.0;
+	  for (j=0;j<nCoeff;j++) y[j][k] = 0.0;
 	  if(i >= 0 && i < ndat && nCoeff > 0) {
 	     for(frac = -0.4; frac <= 0.5; frac += 0.2)  {
 	        diff = (xcen - x[i] + frac)/sigma;
-                diffabs = fabs(diff);
-	        base = exp(-diff*diff*diffabs/3.0)*denom;
+		diffabs = fabs(diff);
+	        epow = diff*diff*diffabs/3.0;
+                if (epow < MAXEXP) base = exp(-epow) * denom;
+                 else base = 0.0;
 	        diff2 = 2.0*(xcen - x[i] + frac)/fwhm2;
 	        base2 = denom2/(diff2*diff2 + 1.0);
 
@@ -606,6 +634,7 @@ void ProfileGaussHalfLorentz(float *x, IDL_LONG ndat, float **y, float xcen,
 	float diff, denom, frac;
         float fwhm2, diff2, base2, denom2;
 	float sqbase;
+	float epow;
 /*        float total;	*/
 
 
@@ -620,7 +649,9 @@ void ProfileGaussHalfLorentz(float *x, IDL_LONG ndat, float **y, float xcen,
 	  if(i >= 0 && i < ndat && nCoeff > 0) {
 	     for(frac = -0.4; frac <= 0.5; frac += 0.2)  {
 	        diff = (xcen - x[i] + frac)/sigma;
-	        base = exp(-diff*diff/2.0)*denom;
+		epow = diff*diff/2.0;
+		if (epow < MAXEXP) base = exp(-epow) * denom;
+                 else base = 0.0;
 	        diff2 = 2.0*(xcen - x[i] + frac)/fwhm2;
 	        base2 = denom2/(diff2*diff2 + 1.0);
 
@@ -878,9 +909,10 @@ void fillWhopping(float **y, float *x, IDL_LONG nx, IDL_LONG whoppingct,
         for (j=0;j<whoppingct;j++) {
           for (i=0;i<nx;i++) {
 	     diff = fabs(whoppingcen[j] - x[i])/sigma;
-	     y[j][i] = 0.5*exp(-diff)/sigma;
-             }
+	     if (diff < MAXEXP) y[j][i] = 0.5*exp(-diff)/sigma;
+	      else y[j][i] = 0.0;
           }
+        }
 
 }
 
@@ -1127,3 +1159,5 @@ void chebyshevRow(float x, float *coeff, IDL_LONG nCoeff)
       return;
 }
 
+#undef MAXEXP
+#undef NSUBSAMP
