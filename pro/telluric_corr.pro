@@ -3,7 +3,7 @@ function telluric_corr,flux, fluxivar, wset, plugsort, $
 
 	if (NOT keyword_set(minw)) then minw = 3.84
         if (NOT keyword_set(maxw)) then maxw = 3.92
-        if (NOT keyword_set(bkspace)) then bkspace = 0.0001
+        if (NOT keyword_set(bkspace)) then bkspace = 0.0002
 ;
 ;	Use SPECTROPHOTO_STD and REDDEN_STD to correct
 ;       telluric absorption

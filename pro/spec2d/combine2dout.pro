@@ -71,33 +71,34 @@ pro combine2dout, filenames, outputfile, bin, zeropoint, nord=nord, $
 	redpix = where(bluered, numred)
 	bluepix = where(bluered EQ 0, numblue)
 
-	if (numblue GT 0 AND numred GT 0) then exptime = exptime * 0.5
-
-	
+	if (numblue GT 0 AND numred GT 0) then begin
+           exptime = exptime * 0.5
 
 ;
 ;	Use medians to merge red and blue here
 ;
-	maxblue = max(fullwave(where(bluered EQ 0)))
-	minred = min(fullwave(where(bluered EQ 1)))
+	  maxblue = max(fullwave(where(bluered EQ 0)))
+	  minred = min(fullwave(where(bluered EQ 1)))
 
-	scale = 1.0
-	if (minred LT maxblue) then begin
-          bluecross = where(bluered EQ 0 and fullwave GT minred $ 
-                    AND fullerr GT 0.0)
-          redcross = where(bluered EQ 1 and fullwave LT maxblue $
-                    AND fullerr GT 0.0)
-	  if (redcross[0] NE -1 AND bluecross[0] NE -1) then begin 
-	    djs_iterstat, fullspec[bluecross], median=bluemed
-	    djs_iterstat, fullspec[redcross], median=redmed
-	    scale = bluemed/redmed
+	  scale = 1.0
+	  if (minred LT maxblue) then begin
+            bluecross = where(bluered EQ 0 and fullwave GT minred $ 
+                      AND fullerr GT 0.0)
+            redcross = where(bluered EQ 1 and fullwave LT maxblue $
+                      AND fullerr GT 0.0)
+	    if (redcross[0] NE -1 AND bluecross[0] NE -1) then begin 
+	      djs_iterstat, fullspec[bluecross], median=bluemed
+	      djs_iterstat, fullspec[redcross], median=redmed
+	      scale = bluemed/redmed
 
-	    if (scale LT 0.1 OR scale GT 10.0) then scale = 1.0
-	    print, 'COMBINE2DOUT ', outputfile, ': scaling red by', $
+	      if (scale LT 0.1 OR scale GT 10.0) then scale = 1.0
+	      print, 'COMBINE2DOUT ', outputfile, ': scaling red by', $
                 scale, bluemed/redmed
-	    fullspec[redpix] = fullspec[redpix]*scale
-	    fullerr[redpix] = fullerr[redpix]*scale
+	      fullspec[redpix] = fullspec[redpix]*scale
+	      fullerr[redpix] = fullerr[redpix]*scale
+	    endif
 	  endif
+
 	endif
 
 	if (NOT keyword_set(wavemin)) then begin

@@ -178,9 +178,10 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
    nr = max((srow+nrow)[igood])
    nc = max((scol+ncol)[igood])
    image = fltarr(nc, nr)
-   invvar = fltarr(nc, nr)
-   mask = bytarr(nc, nr)
 
+;
+;	Do image first
+;
    for iamp=0, 3 do begin
       if (qexist[iamp] EQ 1) then begin
          if (nover[iamp] NE 0) then begin
@@ -201,6 +202,21 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
          rawdata[sdatacol[iamp]:sdatacol[iamp]+ncol[iamp]-1, $
                   sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] - biasval
 
+         ; Add to the header
+         sxaddpar, hdr, 'BIAS'+string(iamp,format='(i1)'), biasval
+         sxaddpar, hdr, 'GAIN'+string(iamp,format='(i1)'), gain[iamp]
+         sxaddpar, hdr, 'RDNOISE'+string(iamp,format='(i1)'), $
+          gain[iamp]*readnoiseDN[iamp]
+      endif
+   endfor
+
+   if (ARG_PRESENT(invvar)) then begin
+     invvar = fltarr(nc, nr)
+     mask = bytarr(nc, nr)
+ 
+     for iamp=0, 3 do begin
+       if (qexist[iamp] EQ 1) then begin
+
          mask[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
                   srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
            (rawdata[sdatacol[iamp]:sdatacol[iamp]+ncol[iamp]-1, $
@@ -212,17 +228,13 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
            1.0/(abs(image[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
                   srow[iamp]:srow[iamp]+nrow[iamp]-1]) /gain[iamp] + $
                   readnoiseDN[iamp]*readnoiseDN[iamp])
+       endif
+     endfor
 
-         ; Add to the header
-         sxaddpar, hdr, 'BIAS'+string(iamp,format='(i1)'), biasval
-         sxaddpar, hdr, 'GAIN'+string(iamp,format='(i1)'), gain[iamp]
-         sxaddpar, hdr, 'RDNOISE'+string(iamp,format='(i1)'), $
-          gain[iamp]*readnoiseDN[iamp]
-      endif
-   endfor
 
-   ; For saturated pixels, set INVVAR=0
-   invvar = invvar * mask
+     ; For saturated pixels, set INVVAR=0
+     invvar = invvar * mask
+   endif
 
    ;---------------------------------------------------------------------------
    ; Read pixel-to-pixel flat-field
@@ -235,7 +247,7 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
       pixflat = readfits(fullname[0])
 
       image = image / pixflat
-      invvar = invvar * pixflat^2
+      if (ARG_PRESENT(invvar)) then invvar = invvar * pixflat^2
    endif
 
    ;---------------------------------------------------------------------------
@@ -245,9 +257,9 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
    if (keyword_set(outfile)) then $
     writefits, outfile, image, hdr
 
-   if (keyword_set(varfile)) then begin
+   if (keyword_set(varfile) AND ARG_PRESENT(invvar)) then begin
       varhdr = hdr
-      sxaddpar, varhdr, 'LOOKHERE', 'INVERSE VARIANCE of ' + outfile
+      sxaddpar, varhdr, 'VARFILE', 'INVERSE VARIANCE of ' + outfile
       writefits, varfile, invvar, varhdr
    endif
  

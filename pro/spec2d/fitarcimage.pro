@@ -309,7 +309,7 @@ function fitarcimage, arc, arcinvvar, side,linelist, xnew, ycen, tset, invset, $
 
       guess = 0
       if (side EQ 'blue') then guess = [3.68, -0.106, -0.005, 0.005]
-      if (side EQ 'red') then guess = [3.87, 0.10, -0.003]   
+      if (side EQ 'red') then guess = [3.87, 0.10, -0.003, 0.003]   
 
       guess = double(guess)
       ans   = fullfit(double(spec), linelist, guess)

@@ -7,7 +7,7 @@
 ;   of data according to a plan file.
 ;
 ; CALLING SEQUENCE:
-;   spallreduce, planfile=planfile, combineonly=combineonly
+;   spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
 ;
 ; INPUTS:
 ;
@@ -37,9 +37,12 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro spallreduce, planfile=planfile, combineonly=combineonly
+pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
 
    if (NOT keyword_set(planfile)) then planfile = 'spPlan2d.par'
+   if (NOT keyword_set(docams)) then $
+       docams = ['b1', 'r2', 'b2', 'r1'] ; do all cameras
+   ndo = N_elements(docams)
 
    yanny_read, planfile, pdata, hdr=hdr
 
@@ -65,6 +68,7 @@ pro spallreduce, planfile=planfile, combineonly=combineonly
    flatDir = yanny_par(hdr, 'flatDir')
    mjd = yanny_par(hdr, 'MJD')
 
+  
    camnames = ['b1', 'r2', 'b2', 'r1']
    camnums = ['01', '02', '03', '04']
    ncam = N_elements(camnames)
@@ -92,7 +96,10 @@ pro spallreduce, planfile=planfile, combineonly=combineonly
         + strtrim(string(seqid[iseq]),2) + ', PLATEID= ' $
         + strtrim(string(plateid),2)
 
-      for icam=0, ncam-1 do begin
+      for ido=0, ndo-1 do begin
+
+         icam = where(camnames EQ docams[ido], camct)
+         if (camct NE 1) then message, 'Non-unique camera id'
 
          ; Find the corresponding pixel flat
          pixflatname = pixflats.name[icam]

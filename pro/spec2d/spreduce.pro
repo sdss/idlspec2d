@@ -305,8 +305,7 @@ for i=0,16 do oplot,fflat[*,i*19]
       yrow = lindgen(nrow/skiprow)*skiprow + skiprow/2
       nfirst = n_elements(yrow)
 
-      osigma = 1.0
-      sigma = xsol*0.0 + osigma
+      sigma = 1.0
       proftype = 1 ; Gaussian
       highrej = 10
       lowrej = 15
@@ -316,7 +315,7 @@ for i=0,16 do oplot,fflat[*,i*19]
       sigmaterm = 1
       centerterm = 2
       xnow = xsol
-      sigmanow = sigma
+      sigmanow = xsol*0.0 + sigma
 
       for i = 0, 1 do begin
       
@@ -418,7 +417,7 @@ for i=0,16 do oplot,fflat[*,i*19]
 
       if (color EQ 'red')  then begin
 
-        telluricfactor = telluric_corr(fluxout, fluxoutivar, plugsort)
+        telluricfactor = telluric_corr(fluxout, fluxoutivar, wset, plugsort)
 	fluxout = fluxout / telluricfactor
 	fluxoutivar = fluxoutivar * (telluricfactor^2)
 
@@ -443,7 +442,7 @@ for i=0,16 do oplot,fflat[*,i*19]
 	sxaddpar, objhdr, 'LAMPLIST',  lampfilenames[0]
 	sxaddpar, objhdr, 'SKYLIST',  skylinefile
 	sxaddpar, objhdr, 'PIXFLAT',  pixflatname
-	sxaddpar, objhdr, 'OSIGMA',  osigma, $
+	sxaddpar, objhdr, 'OSIGMA',  sigma, $
             'Original guess at sigma of spatial profiles'
 	sxaddpar, objhdr, 'SKIPROW', skiprow, 'Number of rows skipped in step 1'
 	sxaddpar, objhdr, 'LOWREJ', lowrej, 'Extraction, low rejection'
@@ -457,7 +456,7 @@ for i=0,16 do oplot,fflat[*,i*19]
        filebase=filebase
 
 ;
-;	Clear out variables for memory considerations
+;	Clear out variables for memory efficiency
 ;
      objimg = 0
      objivar = 0
@@ -469,8 +468,8 @@ for i=0,16 do oplot,fflat[*,i*19]
      telluricfactor = 0
      wset_tweak = 0
      invset_tweak = 0
-     sigma = 0
      xnow = 0
+     sigmanow = 0
      ansimage = 0
      fitans = 0
      
