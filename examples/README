@@ -1,21 +1,7 @@
-
 Parameter files
+---------------
+opConfig*.par           CCD dimensions: data, bias, overscan regions.
+opBC*.par               Bad pixel file.
+opECalib*.par           CCD electronics: gain, readout, fullwell and linearity
+                        Linearity values are not used.
 
-opConfig.par            CCD dimensions:  data, bias, overscan sections
-opConfig.fit		fits version, no change
-
-opECalib.par		CCD electronics: gain, readout, fullwell and linearity
-opECalib-51574.par      updated to include changes in red CCD gains
-
-opECalib.short.par 	abbreviated version of opECalib, no linearity
-opECalib.fit            fits version of opECalib.short  
-
-tsPlugMap-0133-51338.par Mapping of fibers 0-319 for plate 133
-tsPlugMap-0135-51338.par Mapping of fibers 0-319 for plate 135
-tsPlugMap-0136-51338.par Mapping of fibers 0-319 for plate 136
-
-tsPlugMap-0133-51338.fit fits files of above typedef enum's removed
-tsPlugMap-0135-51338.fit
-tsPlugMap-0136-51338.fit
-
-opBC.par                 in theory, bad pixel file, but empty now 
