@@ -1,5 +1,6 @@
 
 BATCH2D: Call SPCOMBINE_V5 instead of SPCOMBINE.
+        Update the list of output files to correspond to the new v5 outputs.
 COMBINE1FIBER: Add the skies by inputting SKYFLUX and outputting NEWSKY.
         The skies are combined in the same simplistic manner as the
         dispersion pixel map.
@@ -8,6 +9,9 @@ EXTRACT_OBJECT: Turn off telluric-corrections by default, which must now
         be enabled with the /DO_TELLURIC keyword.  Also, delete some old code.
         Compress (with gzip) the output file.
 FIND_NMINIMA: Fix bug when plotting.
+FSTARS_PLOT: New code to make color-color plots of spectro-photometric stars
+        as compared to the stellar locus and BD+17.  This code actually dates
+        back to Sep 2002, but was never checked in.
 GET_TAI: Report warning about exposures less than 2 minutes only
         for science or smear exposures.
 JEG_SPHOTO_COEF: Christy's spectrophotometry code using Jim Gunn's functional
