@@ -57,14 +57,18 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    scatfit = calcscatimage(ansimage[ntrace*nterms:*,*], yrow)
    scatflux = extract_boxcar(scatfit, xcen, radius=radius)
 
+   if (strmid(color,0,1) EQ 'b') then scatlimit = 20 $
+    else scatlimit = 30
+
    scatmed = median(scatfit)
    scatmax = max(scatfit)
-   if (scatmed GT 20) then $
+
+   if (scatmed GT scatlimit) then $
      splog, 'WARNING: Scattered light median = ', scatmed, ' electrons' $
       + ' (WARM CCD OR TWILIGHT?)' $
     else $
      splog, 'Scattered light median = ', scatmed, ' electrons'
-   if (scatmax GT 40) then $
+   if (scatmax GT 2*scatlimit) then $
      splog, 'WARNING: Scattered light max = ', scatmax, ' electrons' $
       + ' (WARM CCD OR TWILIGHT?)' $
     else $
