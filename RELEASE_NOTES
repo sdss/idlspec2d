@@ -3,8 +3,8 @@ In specflat:
 specflat.table: Added "Flavor=Linux"
 
 -------------------------------------------------------------------------------
-v4_9_5 (Mar 1, 2002 idlspec2d only) running on IDL 5.3 - 5.5
-Built against idlutils v4_9_4, specflat v1_3.
+v4_9_5 (Mar 1, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
+Built against specflat v1_3.
 
 Minor bug fixes for SOS.
 
@@ -13,12 +13,17 @@ BATCH2D: Include 'smear' exposures when generating list of output files.
 FLUXCORR_NEW: Provide a better test of valid smear correction, fixes PR #2478.
 QUICKTRACE: Reverted to doing full trace for flats.  Time saving by only 
             tracing part of the flat image introduces a risk not worth the gain.
+REMOVE2REDO: Fix possible crash condition, and change calling sequence to
+            DJS_MODFITS in the case that an HDU should become empty.
+            If files have been removed, then update the HTML file so that the
+            files to be re-reduced are removed from the web page until then.
 SPCOADD_FRAMES: set BADFLUXFACTOR only for extreme smear corrections=20x median 
 TRACE320CRUDE:  Fix bug dependent on invvar being set.
             Small change to note number of goodrows in xmask, non-critical.
 
 aporsync_logs.sh: Re-order the files copied so that we get the sdReport
             file first.
+opLimits.par: Change the good limits for bias counts from [0,20] to [0,15].
 sprobot_start: No longer reference $BATCH2DFILE,$BATCH1DFILE, which are
             no longer used.
 sprobot_start,sprobot.sh: Added optional $SPROBOT_RSH environment variable
@@ -27,6 +32,9 @@ sprobotcopy.sh: Deleted.
 sprobotlist.sh: Trimmed version of "sprobotcopy.sh", which only creates
             the plate list and summary files once per day.
 
+In idlutils:
+DJS_MODFITS: Added /DELETE_DATA keyword, which is functionality needed
+            for sos_redo (the REMOVE2REDO procedure).
 -------------------------------------------------------------------------------
 v4_9_4 (Feb 28, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
 Built against specflat v1_3.
