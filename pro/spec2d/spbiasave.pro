@@ -119,7 +119,7 @@ pro spbiasave, mjd=mjd, mjstart=mjstart, mjend=mjend, mjout=mjout, $
             aveimg[ipix] = mean1
             sigimg[ipix] = sigma1
          endfor
-t
+
          ;----------
          ; Reject pixels in the average bias where the dispersion between
          ; the input biases was large
