@@ -48,5 +48,5 @@ IDL_PATH=+/usr/local/rsi/idl/lib:+/usr/local/rsi/idl/examples:+/p/idlutils/cvs/g
 * * * * * sos.sh >/dev/null 2>&1
 
 # This job will run at 7am every day.
-0 7 * * * mailhtml.sh >/dev/null 2>&1
+30 7 * * * mailhtml.sh >/dev/null 2>&1
 
