@@ -58,6 +58,8 @@ REJECT_SCIENCE: New proc to reject science exposures if they are blatantly
                 science frame is rejected.
 SDSSPROC: Add VERSLOG, VERSFLAT keywords to specify versions of the
           products SPECLOG, SPECFLAT.
+          First search for files "pixflatave-*.fits", and if not found then
+          look for "pixflat-*.fits".
 SDSSPROC, SPCALIB, SPREDUCE, SPREDUCE2D: No longer pass the name of the pixel
           flat between all these files.  Instead, just let SDSSPROC find the
           correct one in the "specflat" product, in $SPECLOG_DIR/flats.
