@@ -145,14 +145,11 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
       logsnc = alog10(snc > 0.01)
       diff = logsnc - poly(mag, afit) ; Residuals from this fit
 
-      if (keyword_set(afit)) then $
-       djs_oplot, plotmag, 10^poly(plotmag, afit)
-
       ;----------
       ; Plot the data points, (S/N) vs. magnitude.
       ; Color code green for positive residuals, red for negative.
       ; Use different symbols for each spectrograph.
-      ; Plot these last so that they fall on top of all the lines.
+      ; Plot these first so that the lines are visibly plotted on top.
 
       psymvec = (spectroid EQ 0) * 7 + (spectroid EQ 1) * 6 
       colorvec = replicate('red', nobj)
@@ -160,6 +157,10 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
       if (ipos[0] NE -1) then colorvec[ipos] = 'green'
       djs_oplot, mag, snc > 0.6, psym=psymvec, symsize=symsize, $
        color=colorvec
+
+      ; Now overplot the fit line
+      if (keyword_set(afit)) then $
+       djs_oplot, plotmag, 10^poly(plotmag, afit)
 
       ;----------
       ; Plot a fit to the data in the range specified by FITMAG,
