@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   plotspec, plate, [ fiberid, mjd=, znum=, nsmooth=, /zline, /nosyn, /noerr, $
-;    psfile=, /netimage, /zwarning, topdir=, _EXTRA= ]
+;    /ormask, /andmask, psfile=, /netimage, /zwarning, topdir=, _EXTRA= ]
 ;
 ; INPUTS:
 ;   plate      - Plate number
@@ -23,6 +23,8 @@
 ;   zline      - If set, then overplot the emission line fits.
 ;   nosyn      - If set, then do not overplot the synthetic fit spectrum.
 ;   noerr      - If set, then do not overplot the error vector.
+;   ormask     - If set, then plot the OR-mask bits in yellow crosses.
+;   andmask    - If set, then plot the AND-mask bits in red squares.
 ;   psfile     - If set, then send plot to a PostScript file instead of
 ;                to the SPLOT interactive widget.  The PostScript file name
 ;                can be set explicitly, e.g. with PSFILE='test.ps'.  Or if
@@ -75,6 +77,8 @@
 ;     IDL> plotspec, 401, /psfile
 ;
 ; BUGS:
+;   If the user interactively rescales in Y, then the labels for ORMASK
+;   and ANDMASK are no longer lined up vertically with the bit mask plot.
 ;
 ; PROCEDURES CALLED:
 ;   dfpsclose
@@ -90,18 +94,59 @@
 ;   textoidl()
 ;
 ; INTERNAL SUPPORT ROUTINES:
+;   plotspec_mask
 ;   plotspec1
 ;
 ; REVISION HISTORY:
 ;   01-Sep-2000  Written by D. Schlegel, Princeton
 ;-
 ;------------------------------------------------------------------------------
+pro plotspec_mask, wave, thismask, psfile=psfile, nolabel=nolabel, $
+ _EXTRA=KeywordsForPlot
+
+   bitlabel = sdss_flagname('SPPIXMASK', 2UL^32-1)
+   bitnum = where(bitlabel NE '', nlabel)
+   bitlabel = bitlabel[bitnum]
+
+   for ilabel=0, nlabel-1 do begin
+      ypos = ( (ilabel+1) * !y.crange[1] + (nlabel-ilabel) * !y.crange[0] ) $
+       / (nlabel+1)
+      ynorm = ( (ilabel+0.8) * !y.window[1] + (nlabel-ilabel) * !y.window[0] ) $
+       / float(nlabel+1)
+      ipix = where((thismask AND 2L^bitnum[ilabel]) NE 0, npix)
+      if (npix GT 0) then begin
+         if (keyword_set(psfile)) then begin
+            djs_oplot, [wave[ipix]], [replicate(ypos,npix)], $
+             _EXTRA=KeywordsForPlot
+         endif else begin
+            soplot, [wave[ipix]], [replicate(ypos,npix)], $
+             _EXTRA=KeywordsForPlot
+         endelse
+      endif
+      if (NOT keyword_set(nolabel)) then begin
+         if (keyword_set(psfile)) then begin
+            djs_xyouts, !x.window[1], ynorm, bitlabel[ilabel]+' ', $
+             charsize=1.4, align=1.0, _EXTRA=KeywordsForPlot, /normal
+         endif else begin
+            sxyouts, !x.window[1], ynorm, bitlabel[ilabel]+' ', $
+             charsize=1.4, align=1.0, _EXTRA=KeywordsForPlot, /normal
+         endelse
+      endif
+   endfor
+
+   return
+end
+;------------------------------------------------------------------------------
 pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
- zline=q_zline, nosyn=nosyn, noerr=noerr, $
+ zline=q_zline, nosyn=nosyn, noerr=noerr, ormask=ormask, andmask=andmask, $
  psfile=psfile, xrange=passxr, yrange=passyr, noerase=noerase, $
  netimage=netimage, topdir=topdir, EXTRA=KeywordsForSplot
 
    cspeed = 2.99792458e5
+   textcolor = 'green'
+   linecolor = 'magenta'
+   orcolor = 'yellow'
+   andcolor = 'red'
 
    readspec, plate, fiberid, mjd=mjd, znum=znum, flux=objflux, $
     wave=wave, plug=plug, zans=zans, topdir=topdir, /silent
@@ -114,6 +159,10 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
    if (NOT keyword_set(nosyn)) then $
     readspec, plate, fiberid, mjd=mjd, znum=znum, synflux=synflux, $
      topdir=topdir, /silent
+   if (keyword_set(ormask)) then $
+    readspec, plate, fiberid, mjd=mjd, ormask=ormask, topdir=topdir, /silent
+   if (keyword_set(andmask)) then $
+    readspec, plate, fiberid, mjd=mjd, andmask=andmask, topdir=topdir, /silent
    if (keyword_set(zans) AND keyword_set(q_zline)) then $
     readspec, plate, fiberid, mjd=mjd, zline=zline, lineflux=lineflux, $
      topdir=topdir, /silent
@@ -132,7 +181,6 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
    sectarget = sdss_flagname('TTARGET', plug.sectarget, /concat)
 
    csize = 1.75
-   textcolor = 'green'
    if (keyword_set(passyr)) then begin
       yrange = passyr
       ymin = yrange[0]
@@ -149,7 +197,10 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
       if (ymax EQ ymin) then ymax = ymin + 1
       yrange = [ymin, ymax]
    endelse
-   if (keyword_set(passxr)) then xrange = passxr
+   if (keyword_set(passxr)) then xrange = passxr $
+    else xrange = minmax(wave)
+   if (keyword_set(ormask) OR keyword_set(andmask)) then $
+    xrange[1] = 1.15 * xrange[1] - 0.15 * xrange[0]
 
    title = 'Plate ' + strtrim(string(plate),2) $
     + '  Fiber ' + strtrim(string(fiberid),2) $
@@ -177,9 +228,9 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
        soplot, wave, synflux, color='blue', _EXTRA=KeywordsForSplot, lw=2
    endelse
 
-   xpos = 0.9 * !x.crange[0] + 0.1 * !x.crange[1]
-   dypos = 0.05 * (!y.crange[0] - !y.crange[1])
-   ypos = !y.crange[1] + 1.5 * dypos
+   xpos = 0.9 * !x.window[0] + 0.1 * !x.window[1]
+   dypos = 0.05 * (!y.window[0] - !y.window[1])
+   ypos = !y.window[1] + 1.5 * dypos
 
    if (keyword_set(zans)) then begin
       cz = zans.z * cspeed
@@ -194,25 +245,24 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
 
       if (keyword_set(psfile)) then $
        xyouts, xpos, ypos, zans.class + ' ' + zans.subclass + zstring, $
-        charsize=csize, color=djs_icolor(textcolor) $
+        charsize=csize, color=djs_icolor(textcolor), /normal $
       else $
        sxyouts, xpos, ypos, zans.class + ' ' + zans.subclass + zstring, $
-        charsize=csize, color=textcolor
+        charsize=csize, color=textcolor, /normal
 
       ypos = ypos + dypos
 
       if (keyword_set(psfile)) then $
        xyouts, xpos, ypos, $
         TeXtoIDL('X^2_r =' + strtrim(string(zans.rchi2, format='(f6.2)'),2)), $
-        charsize=csize, color=djs_icolor(textcolor) $
+        charsize=csize, color=djs_icolor(textcolor), /normal $
       else $
        sxyouts, xpos, ypos, $
         TeXtoIDL('X^2_r =' + strtrim(string(zans.rchi2, format='(f6.2)'),2)), $
-        charsize=csize, color=textcolor
+        charsize=csize, color=textcolor, /normal
    endif
 
    if (keyword_set(lineflux)) then begin
-      linecolor = 'magenta'
       if (keyword_set(psfile)) then $
        djs_oplot, wave, lineflux, color=linecolor, _EXTRA=KeywordsForSplot, lw=2 $
       else $
@@ -227,33 +277,43 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
             if (keyword_set(psfile)) then $
              xyouts, linewave[iline], linepeak[iline], $
               '  '+zline[iline].linename, orient=90, $
-              charsize=0.75*csize, color=djs_icolor(linecolor) $
+              charsize=0.75*csize, color=djs_icolor(linecolor), /normal $
             else $
              sxyouts, linewave[iline], linepeak[iline], $
               '  '+zline[iline].linename, orient=90, $
-              charsize=0.75*csize, color=linecolor
+              charsize=0.75*csize, color=linecolor, /normal
          endif
       endfor
+   endif
+
+   if (keyword_set(ormask)) then begin
+      plotspec_mask, wave, ormask, psfile=psfile, $
+       psym=1, symsize=0.6, color=orcolor, nolabel=keyword_set(andmask)
+   endif
+
+   if (keyword_set(andmask)) then begin
+      plotspec_mask, wave, andmask, psfile=psfile, $
+       psym=6, symsize=0.6, color=andcolor
    endif
 
    if (keyword_set(primtarget)) then begin
       ypos = ypos + dypos
       if (keyword_set(psfile)) then $
        xyouts, xpos, ypos, 'PRIMTARGET = ' + primtarget, $
-        charsize=csize, color=djs_icolor(textcolor) $
+        charsize=csize, color=djs_icolor(textcolor), /normal $
       else $
        sxyouts, xpos, ypos, 'PRIMTARGET = ' + primtarget, $
-        charsize=csize, color=textcolor
+        charsize=csize, color=textcolor, /normal
    endif
 
    if (keyword_set(sectarget)) then begin
       ypos = ypos + dypos
       if (keyword_set(psfile)) then $
        xyouts, xpos, ypos, 'SECTARGET = ' + sectarget, $
-        charsize=csize, color=djs_icolor(textcolor) $
+        charsize=csize, color=djs_icolor(textcolor), /normal $
       else $
        sxyouts, xpos, ypos, 'SECTARGET = ' + sectarget, $
-        charsize=csize, color=textcolor
+        charsize=csize, color=textcolor, /normal
    endif
 
    if (keyword_set(netimage) AND NOT keyword_set(psfile)) then begin
@@ -271,13 +331,14 @@ print,netstring
 end
 ;------------------------------------------------------------------------------
 pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
- zline=zline, nosyn=nosyn, noerr=noerr, $
+ zline=zline, nosyn=nosyn, noerr=noerr, ormask=ormask, andmask=andmask, $
  psfile=psfile, xrange=xrange, yrange=yrange, noerase=noerase, $
  netimage=netimage, zwarning=zwarning, topdir=topdir, _EXTRA=KeywordsForSplot
 
    if (n_params() LT 1) then begin
       print, 'Syntax - plotspec, plate, [ fiberid, mjd=, znum=, nsmooth=, $'
-      print, '         /zline, /nosyn, /noerr, psfile=, xrange=, yrange=, /noerase, $'
+      print, '         /zline, /nosyn, /noerr, /ormask, /andmask, $'
+      print, '         psfile=, xrange=, yrange=, /noerase, $'
       print, '         /netimage, /zwarning, _EXTRA=KeywordsForSplot'
       return
    endif
@@ -357,7 +418,8 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
       endif
 
       plotspec1, plate, fiberid[ifiber], mjd=mjd, znum=znum, $
-       nsmooth=nsmooth, zline=zline, nosyn=nosyn, noerr=noerr, psfile=psfile, $
+       nsmooth=nsmooth, zline=zline, nosyn=nosyn, noerr=noerr, $
+       ormask=ormask, andmask=andmask, psfile=psfile, $
        xrange=xrange, yrange=yrange, noerase=noerase, netimage=netimage, $
        topdir=topdir, _EXTRA=KeywordsForSplot
 
