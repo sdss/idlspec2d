@@ -72,6 +72,8 @@ TRACE320CRUDE: Added call to DJS_MASKINTERP() in the beginning to prevent
                not use the errors at all).
 zplot: Quick-and-dirty script for finding and plotting a spectrum (at Princeton)
        w/out setting up any path variables or SDSS products.
+f8v.abs: Increase flux-calibrating mask around H-alpha by 50%, now
+         masking +/- 1500 km/s (+/- 32.8 Ang).
 
 BSPLINE_ACTION, INTRV (in idlutils): Bug fixes for 2-D spline fitting.
 BSPLINE_FIT, BSPLINE_ITERFIT (in idlutils):

@@ -12,7 +12,7 @@
    4260     4360     # ??
    4327.2   4356.2   # H-gamma at 4341.69 [vac Ang] +- 14.5 (1000 km/s)
    4846.5   4878.9   # H-beta at 4862.69 [vac Ang] +- 16.2 (1000 km/s)
-   6542.7   6586.5   # H-alpha at 6564.61 [vac Ang] +- 21.9 (1000 km/s)
+   6531.8   6597.4   # H-alpha at 6564.61 [vac Ang] +- 32.8 (1500 km/s)
 #  6850     6960     # Telluric region (removed already by TELLURIC_CORR)
 #  7161     7211     # Telluric region (removed already by TELLURIC_CORR)
 #  7228     7328     # Telluric region (removed already by TELLURIC_CORR)
