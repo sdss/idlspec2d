@@ -214,7 +214,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
          framenum = sxpar(objhdr, 'EXPOSURE')
          outname = filepath( $
-          'spSpec2d-'+string(format='(a1,i1,a,i8.8,a)',color,spectrographid, $
+          'spFrame-'+string(format='(a1,i1,a,i8.8,a)',color,spectrographid, $
           '-',framenum,'.fits'), root_dir=outdir)
 
          sxaddpar, objhdr, 'PLUGFILE', fileandpath(plugfilename)

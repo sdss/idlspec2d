@@ -142,7 +142,7 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
             if (keyword_set(spexp)) then begin
 
                ;----------
-               ; Replace the prefix 'sdR' with 'spSpec2d' in the science frames
+               ; Replace the prefix 'sdR' with 'spFrame' in the science frames
                ; and the suffix '.fit' with '.fits'
 
                newnames = spexp.name
@@ -150,7 +150,7 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
                   jj = strpos(newnames[i], '-')
                   kk = strpos(newnames[i], '.', /reverse_search)
                   if (jj NE -1 AND kk NE -1) then $
-                   newnames[i] = 'spSpec2d' + strmid(newnames[i], jj, kk-jj) $
+                   newnames[i] = 'spFrame' + strmid(newnames[i], jj, kk-jj) $
                     + '.fits'
                endfor
                spexp.name = newnames
