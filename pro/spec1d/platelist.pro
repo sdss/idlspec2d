@@ -67,9 +67,9 @@ pro platelist, fullplatefile, outfile=outfile
    ;----------
    ; Loop through all files
 
-   printf, olun, 'PLATE  MJD   TILE SN2_G1 SN2_I1 SN2_G2 SN2_I2 ' $
+   printf, olun, 'PLATE  MJD   TILE RA    DEC   SN2_G1 SN2_I1 SN2_G2 SN2_I2 ' $
     + 'Ngal Nqso Nsta Nunk Nsky'
-   printf, olun, '-----  ----- ---- ------ ------ ------ ------ ' $
+   printf, olun, '-----  ----- ---- ----- ----- ------ ------ ------ ------ ' $
     + '---- ---- ---- ---- ----'
 
    for ifile=0, nfile-1 do begin
@@ -80,6 +80,8 @@ pro platelist, fullplatefile, outfile=outfile
       plate = sxpar(hdr1, 'PLATEID')
       tile = sxpar(hdr1, 'TILEID')
       mjd = sxpar(hdr1, 'MJD')
+      ra = sxpar(hdr1, 'RA')
+      dec = sxpar(hdr1, 'DEC')
       snvec = [ sxpar(hdr1, 'SPEC1_G'), $
                 sxpar(hdr1, 'SPEC1_I'), $
                 sxpar(hdr1, 'SPEC2_G'), $
@@ -98,8 +100,8 @@ pro platelist, fullplatefile, outfile=outfile
          nums = lonarr(5)
       endelse
 
-      printf, olun, plate, mjd, tile, snvec, nums, $
-       format='(i5,i7,i5,4f7.1,5i5)'
+      printf, olun, plate, mjd, tile, ra, dec, snvec, nums, $
+       format='(i5,i7,i5,f6.1,f6.1,4f7.1,5i5)'
 
    endfor
 
