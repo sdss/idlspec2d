@@ -251,11 +251,11 @@ pro sdssproc, infile, image, invvar, indir=indir, $
     ' Version of idlspec2d for pre-processing raw data', after='VERSUTIL'
    spawn, 'speclog_version', verslog, errstring
    if (NOT keyword_set(verslog)) then verslog = 'Unknown'
-   sxaddpar, hdr, 'VERSLOG', verslog, ' Version of SPECLOG product', $
+   sxaddpar, hdr, 'VERSLOG', verslog[0], ' Version of SPECLOG product', $
     after='VERSREAD'
    spawn, 'specflat_version', versflat, errstring
    if (NOT keyword_set(versflat)) then versflat = 'Unknown'
-   sxaddpar, hdr, 'VERSFLAT', versflat, ' Version of SPECFLAT product', $
+   sxaddpar, hdr, 'VERSFLAT', versflat[0], ' Version of SPECFLAT product', $
     after='VERSFLAT'
  
    ;-----------
