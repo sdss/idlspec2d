@@ -6,16 +6,19 @@
 ;   Merge all Spectro-1D outputs with tsObj files.
 ;
 ; CALLING SEQUENCE:
-;   platemerge, [zfile, outfile=, ascfile=, /qsurvey]
+;   platemerge, [zfile, outroot=, /qsurvey, /public]
 ;
 ; INPUTS:
 ;
 ; OPTIONAL INPUTS:
 ;   zfile       - Redshift file(s) from spectro-1D; default to all files
 ;                 specified by the PLATELIST routine.
-;   outfile     - Output FITS file name; default to '$SPECTRO_DATA/spAll.fits'
-;   ascfile     - Output ASCII file name; default to '$SPECTR_DATA/spAll.dat'
+;   outroot     - Root name for output files; default to '$SPECTRO_DATA/spAll';
+;                 the files are then 'spAll.fits' and 'spAll.dat'.
+;                 If /QSURVEY is set, then add '-qsurvey' to the root name.
+;                 If /PUBLIC is set, then add '-public' to the root name.
 ;   qsurvey     - If set, then limit to plates in platelist with QSURVEY=1.
+;   public      - If set, then limit to plates in platelist with PUBLIC != ''
 ;
 ; OUTPUTS:
 ;
@@ -42,12 +45,14 @@
 ; REVISION HISTORY:
 ;   30-Oct-2000  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
-pro platemerge, zfile, outfile=outfile, ascfile=ascfile, qsurvey=qsurvey
+pro platemerge, zfile, outroot=outroot, qsurvey=qsurvey, public=public
 
-   if (NOT keyword_set(outfile)) then $
-    outfile = djs_filepath('spAll.fits', root_dir=getenv('SPECTRO_DATA'))
-   if (NOT keyword_set(ascfile)) then $
-    ascfile = djs_filepath('spAll.dat', root_dir=getenv('SPECTRO_DATA'))
+   if (NOT keyword_set(outroot)) then begin
+      outroot = 'spAll'
+      if (keyword_set(qsurvey)) then outroot = outroot + '-qsurvey'
+      if (keyword_set(public)) then outroot = outroot + '-public'
+      outroot = djs_filepath(outroot, root_dir=getenv('SPECTRO_DATA'))
+   endif
 
    ;----------
    ; Find the list of spZ files.
@@ -55,13 +60,17 @@ pro platemerge, zfile, outfile=outfile, ascfile=ascfile, qsurvey=qsurvey
    if (NOT keyword_set(zfile)) then begin
       platelist, plist=plist
       if (NOT keyword_set(plist)) then return
-      if (keyword_set(qsurvey)) then begin
-         indx = where(plist.qsurvey AND strtrim(plist.status1d,2) EQ 'Done')
-      endif else begin
-         indx = where(strtrim(plist.status1d,2) EQ 'Done')
-      endelse
+
+      indx = where(strtrim(plist.status1d,2) EQ 'Done')
+      if (indx[0] EQ -1) then return
+      if (keyword_set(qsurvey)) then $
+       indx = indx[ where(plist[indx].qsurvey) ]
+      if (indx[0] EQ -1) then return
+      if (keyword_set(public)) then $
+       indx = indx[ where(strtrim(plist[indx].public)) ]
       if (indx[0] EQ -1) then return
       plist = plist[indx]
+
       nfile = n_elements(plist)
       fullzfile = strarr(nfile)
       fullzfile = 'spZbest-' + string(plist.plate, format='(i4.4)') $
@@ -136,7 +145,7 @@ pro platemerge, zfile, outfile=outfile, ascfile=ascfile, qsurvey=qsurvey
    ;----------
    ; Write the output file
 
-   mwrfits, outdat, outfile, /create
+   mwrfits, outdat, outroot+'.fits', /create
 
    ;----------
    ; Create the structure for ASCII output
@@ -176,7 +185,7 @@ pro platemerge, zfile, outfile=outfile, ascfile=ascfile, qsurvey=qsurvey
    adat.objc_type = objtypes[outdat.objc_type]
 outdat = 0 ; Free memory
 
-   struct_print, adat, filename=ascfile
+   struct_print, adat, filename=outroot+'.dat'
 
    return
 end
