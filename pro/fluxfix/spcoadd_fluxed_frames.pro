@@ -120,7 +120,7 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
  mjd=mjd, binsz=binsz, zeropoint=zeropoint, nord=nord, wavemin=wavemin, $
  bkptbin=bkptbin, window=window, maxsep=maxsep, adderr=adderr, $
  docams=camnames, plotsnfile=plotsnfile, combinedir=combinedir, $
- tsobjname = tsobjname, smearname = smearname
+ tsobjname = tsobjname, smearname = smearname, best_exposure = best_exposure
 
    ;---------------------------------------------------------------------------
 
@@ -254,12 +254,12 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
        tempflux = flux[*,indx]
        tempivar = fluxivar[*,indx]
        divideflat, tempflux, invvar=tempivar, calibfac, $
-                   minval=0.005*mean(calibfac)
+                   minval=0.005*median(calibfac)
 
        flux[*,indx] = tempflux
        fluxivar[*,indx] = tempivar
-       pixelmask[*,indx] = pixelmask[*,indx] $
-         OR (calibfac LE 0.005*mean(calibfac)) * pixelmask_bits('BADFLUXFACTOR')
+       pixelmask[*,indx] = pixelmask[*,indx] OR (calibfac LE $
+         0.005*median(calibfac)) * pixelmask_bits('BADFLUXFACTOR')
      endfor
    endfor
 
@@ -278,22 +278,25 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    ; Determine which exposure is best from the S/N and spectrophotometry errors
   
    ; add up the S/N^2 of the 4 frames per exposure (b1, b2, r1, r2)
-   sn2_exp = sn2[where(camerasvec eq 'b1')] + sn2[where(camerasvec eq 'r1')] $
-           + sn2[where(camerasvec eq 'b2')] + sn2[where(camerasvec eq 'r2')] 
+   sn_exp = sqrt(sn2[where(camerasvec eq 'b1')] + $
+                 sn2[where(camerasvec eq 'r1')]  + $
+                 sn2[where(camerasvec eq 'b2')] + $
+                 sn2[where(camerasvec eq 'r2')]) 
 
    ; add up the spectrophotometry errors for the 4 frames per exposure
-   sphoto_sn2 = (1 / sphoto_err)^2
-   sphoto_exp = sphoto_err[where(camerasvec eq 'b1')] + $
-                sphoto_err[where(camerasvec eq 'r1')] + $
-                sphoto_err[where(camerasvec eq 'b2')] + $
-                sphoto_err[where(camerasvec eq 'r2')] 
+   sphoto_qual = (1 / sphoto_err)^2
+   sphoto_exp = sqrt(sphoto_qual[where(camerasvec eq 'b1')] + $
+                     sphoto_qual[where(camerasvec eq 'r1')] + $
+                     sphoto_qual[where(camerasvec eq 'b2')] + $
+                     sphoto_qual[where(camerasvec eq 'r2')])
 
    ; Pick the best exposure (want the same one for spec 1 & 2)
-   maxval = max(sn2_exp/median(sn2_exp) + $
+   ; (Alternatively this could be passed as a parameter)
+   maxval = max(sn_exp/median(sn_exp) + $
                 sphoto_exp/median(sphoto_exp), iframe_best)
    uniqexp = expid[where(camerasvec eq 'b1')]
-   best_exp = uniqexp[iframe_best]
-   splog, 'Best Exposure is: ' + best_exp
+   if not keyword_set(best_exposure) then best_exposure = uniqexp[iframe_best]
+   splog, 'Best Exposure is: ' + best_exposure
 
    ;------------------
    ; Compute the exposure-to-exposure corrections (1/fiber)
@@ -304,12 +307,12 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    frame_flux_tweak, wave[*, iframe_b1], wave[*, iframe_r1], $
                    flux[*, iframe_b1], flux[*, iframe_r1], $
                    fluxivar[*, iframe_b1], fluxivar[*, iframe_r1], $
-                   best_exp, plugtag[iframe_b1], corrfiles1
+                   best_exposure, plugtag[iframe_b1], corrfiles1
   
    frame_flux_tweak, wave[*, iframe_b2], wave[*, iframe_r2], $
                    flux[*, iframe_b2], flux[*, iframe_r2], $
                    fluxivar[*, iframe_b2], fluxivar[*, iframe_r2], $
-                   best_exp, plugtag[iframe_b2], corrfiles2
+                   best_exposure, plugtag[iframe_b2], corrfiles2
   
    ; save the magnitude of this correction? -- goodness of spec photo?
    ; COADD_QUALITY ==> sigma of poly1 coeff
@@ -329,18 +332,18 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
 
      traceset2xy, corrset, wave[*,indx], corrimg
 
-     ; Don't let the flux correction be more than a factor of 5!!
+     ; Don't let the flux correction be more than a factor of 10!!
      invertcorr = 1.0 / corrimg
      tempflux = flux[*,indx]
      tempivar = fluxivar[*,indx]
-     divideflat, tempflux, invvar=tempivar, invertcorr, minval=0.2
+     divideflat, tempflux, invvar=tempivar, invertcorr, minval=0.1
 
      flux[*,indx] = tempflux
      fluxivar[*,indx] = tempivar
      pixelmask[*,indx] = pixelmask[*,indx] OR $
-                         (corrimg GE 4) * pixelmask_bits('BADFLUXFACTOR')
+                         (corrimg GE 10) * pixelmask_bits('BADFLUXFACTOR')
      pixelmask[*,indx] = pixelmask[*,indx] OR $
-                         (corrimg LE 0.25) * pixelmask_bits('BADFLUXFACTOR')
+                         (corrimg LE 0.1) * pixelmask_bits('BADFLUXFACTOR')
 
    endfor
 
@@ -461,6 +464,18 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    dispersion = 0
 
    ;---------------------------------------------------------------------------
+   ; Add some new tags to the plugmap to track the tsObj info used
+   ;---------------------------------------------------------------------------
+   
+   newplug_struct = create_struct(finalplugmap[0], 'tsobjid', lonarr(5), $
+     'tsobj_mag', fltarr(5))
+   newplug = make_array(val=newplug_struct, dim=nfiber)
+   struct_assign, finalplugmap, newplug
+   newplug.tsobjid = finalplugtag.tsobjid
+   newplug.tsobj_mag = finalplugtag.mag
+   finalplugmap = newplug
+
+   ;---------------------------------------------------------------------------
    ; Remove residual spectrophotometry errors as a function of plate 
    ; x/y position
    ;---------------------------------------------------------------------------
@@ -471,8 +486,10 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    ; "frame_flux_tweak") to determine the airmass/seeing of the atmospheric
    ; dispersion correction
 
-   hdr = *hdrarr[(where(expid eq best_exp))[0]]
+   hdr = *hdrarr[(where(expid eq best_exposure))[0]]
    surfgr_sig = fltarr(2)
+   modelgr_sig = fltarr(2)
+   modelgr_off = fltarr(2)
 
    ; Do this separately for spectrographs 1 & 2
    for specnum = 1, 2 do begin
@@ -488,7 +505,7 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
      surfgr_sig[specnum - 1] = xysig
      tempflux = finalflux[*,ispec]
      tempivar = finalivar[*,ispec]
-     divideflat, tempflux, invvar=tempivar, atmdisp_model, minval=0.3
+     divideflat, tempflux, invvar=tempivar, atmdisp_model, minval=0.2
      finalflux[*,ispec] = tempflux
      finalivar[*,ispec] = tempivar
    
@@ -501,6 +518,13 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
      stdstarfile = djs_filepath('spStd-' + plate_str + '-' + mjd_str +  $
                     '-' + sid_str + '.fits', root_dir=combinedir)
      stdinfo = mrdfits(stdstarfile, 1)
+
+     ; Measure the difference in (g-r) color of the reddened models & photo
+     gr_obs = stdinfo.mag[1] - stdinfo.mag[2]
+     gr_mod = stdinfo.red_model_mag[1] - stdinfo.red_model_mag[2]
+     djs_iterstat, gr_mod - gr_obs, sigrej = 5, sigma=grsig, mean=groff
+     modelgr_sig[specnum - 1] = grsig 
+     modelgr_off[specnum - 1] = groff
 
      ; Do this correction only if the S/N is good
      ok = where(stdinfo.sn gt 20 and abs(stdinfo.v_off) lt 450 and $
@@ -564,8 +588,8 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    if keyword_set(smearname) then begin
 
      smear_hdu = smear_compare(smearname, finalwave, finalflux, finalivar, $
-       best_exp, plate_str, mjd_str, camnames = camnames, adderr=adderr, $
-       combinedir = combinedir, tsobjname = tsobjname)
+       best_exposure, plate_str, mjd_str, camnames = camnames, adderr=adderr, $
+       combinedir = combinedir, tsobjname = tsobjname, /noplot)
 
    endif else begin
      smear_struct = {sci_sn: 0.0, smear_sn: 0.0, legendre_coeff: fltarr(4)}
@@ -739,9 +763,22 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    ; A big # indicates that lots of 'tilt' had to be taken out by the 
    ; atmdisp_cor procedure
     sxaddpar, hdr, 'XYGRSIG1', surfgr_sig[0], $
-              'Sigma of (g-r) offsets as fcn of plate x/y'
+              ' Sigma of (g-r) offsets as a fcn of plate x/y'
     sxaddpar, hdr, 'XYGRSIG2', surfgr_sig[1], $
-              'Sigma of (g-r) offsets as fcn of plate x/y'
+              ' Sigma of (g-r) offsets as a fcn of plate x/y'
+
+    ;------------
+    ; Keywords describing the difference in (g-r) of the reddened models 
+    ; and the photometry
+    sxaddpar, hdr, 'MPGRSIG1', modelgr_sig[0], $
+              ' Sigma of (g-r)_model - (g-r)_photo Spec 1'
+    sxaddpar, hdr, 'MPGRSIG2', modelgr_sig[1], $
+              ' Sigma of (g-r)_model - (g-r)_photo Spec 2'
+
+    sxaddpar, hdr, 'MPGROFF1', modelgr_off[0], $
+              ' Mean of (g-r)_model - (g-r)_photo of Spec 1'
+    sxaddpar, hdr, 'MPGROFF2', modelgr_off[1], $
+              ' Mean of (g-r)_model - (g-r)_photo of Spec 2'
 
    ;----------
    ; Compute the fraction of bad pixels in total, and on each spectrograph.
@@ -786,34 +823,34 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
 
    fulloutname = djs_filepath(outputname, root_dir=combinedir)
 
-   ; 1st HDU is flux
+   ; 0st HDU is flux
    sxaddpar, hdr, 'BUNIT', '1E-17 erg/cm^2/s/Ang'
    mwrfits, finalflux, fulloutname, hdr, /create
 
-   ; 2nd HDU is inverse variance
+   ; 1nd HDU is inverse variance
    sxaddpar, hdrfloat, 'BUNIT', '1/(1E-17 erg/cm^2/s/Ang)^2'
    mwrfits, finalivar, fulloutname, hdrfloat
 
-   ; 3rd HDU is AND-pixelmask
+   ; 2rd HDU is AND-pixelmask
    mwrfits, finalandmask, fulloutname, hdrlong
 
-   ; 4th HDU is OR-pixelmask
+   ; 3th HDU is OR-pixelmask
    mwrfits, finalormask, fulloutname, hdrlong
 
-   ; 5th HDU is dispersion map
+   ; 4th HDU is dispersion map
    sxaddpar, hdrfloat, 'BUNIT', 'pixels'
    mwrfits, finaldispersion, fulloutname, hdrfloat
 
-   ; 6th HDU is plugmap
+   ; 5th HDU is plugmap
    mwrfits, finalplugmap, fulloutname
 
-   ; 7th HDU are S/N vectors for g,r,i
+   ; 6th HDU are S/N vectors for g,r,i
    mwrfits, snvec, fulloutname
 
-   ; 8th HDU are synthetic magnitude vectors
+   ; 7th HDU are synthetic magnitude vectors
    mwrfits, synthmag, fulloutname
 
-   ; 9th HDU are the legendre coefficients of the smear correction vectors
+   ; 8th HDU are the legendre coefficients of the smear correction vectors
    ; (a binary table)
    mwrfits, smear_hdu, fulloutname
 
