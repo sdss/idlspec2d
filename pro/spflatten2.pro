@@ -373,7 +373,7 @@ fitimg = 0
 
 ;         yaxis = waveimg[i,*]
 ;         fullbkpt = slatec_splinefit(yaxis[indx], flatimg[i,indx], coeff, $
-;          invvar=flativar[i,*], bkpt=bkpt, nord=nord, $
+;          invvar=flativar[i,indx], bkpt=bkpt, nord=nord, $
 ;          lower=lower, upper=upper, maxiter=3)
 
          ;------
@@ -383,7 +383,7 @@ fitimg = 0
          yaxis = findgen(ny)
 
          fullbkpt = slatec_splinefit(yaxis[indx], flatimg[i,indx], coeff, $
-          invvar=flativar[i,*], bkspace=pixspace, nord=nord, $
+          invvar=flativar[i,indx], bkspace=pixspace, nord=nord, $
           lower=4, upper=4, maxiter=3)
          ymodel[i,*] = slatec_bvalu(yaxis, fullbkpt, coeff)
 
