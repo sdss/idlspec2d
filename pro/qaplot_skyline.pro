@@ -49,7 +49,7 @@
 ;------------------------------------------------------------------------------
 
 pro qaplot_skyline, lwave, obj, objivar, objsub, objsubivar, plugsort, wset, $
- fibermask=fibermask, dwave=dwave, filename=filename
+   iskies, fibermask=fibermask, dwave=dwave, filename=filename
 
    if (NOT keyword_set(filename)) then filename = ''
    if (NOT keyword_set(lwave)) then return
@@ -59,7 +59,7 @@ pro qaplot_skyline, lwave, obj, objivar, objsub, objsubivar, plugsort, wset, $
    ncol = dims[0]
    nrow = dims[1]
 
-   if (n_elements(fibermask) NE nrow) then fibermask = bytarr(nrow) + 1
+   if (n_elements(fibermask) NE nrow) then fibermask = bytarr(nrow) 
 
    ;----------
    ; Solve for wavelength of each pixel 
@@ -69,8 +69,7 @@ pro qaplot_skyline, lwave, obj, objivar, objsub, objsubivar, plugsort, wset, $
    ;----------
    ; Find sky fibers
 
-   iskies = where(plugsort.objtype EQ 'SKY' AND plugsort.fiberid GT 0 AND $
-    fibermask, nskies)
+   nskies = n_elements(iskies)
    if (nskies EQ 0) then begin
       splog, 'No sky fibers!'
       return
@@ -83,7 +82,7 @@ pro qaplot_skyline, lwave, obj, objivar, objsub, objsubivar, plugsort, wset, $
    for i=0, nrow-1 do begin
       ipix = where( abs(10^wave[*,i]-lwave) LT dwave $
               AND objivar[*,i] GT 0, npix)
-      if (npix GT 6 AND fibermask[i]) then begin
+      if (npix GT 6 AND (fibermask[i] EQ 0)) then begin
 
          estimates = [16000.0, alog10(lwave), 1.0e-4, 500.0]
 

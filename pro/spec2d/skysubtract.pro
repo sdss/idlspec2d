@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
-;    [fibermask=, nord=, upper=, lower=, maxiter= ]
+;    [iskies= , fibermask=, nord=, upper=, lower=, maxiter= ]
 ;
 ; INPUTS:
 ;   obj        - Image
@@ -29,6 +29,7 @@
 ;   objsubivar - Inverse variance (OBJIVAR) after sky-subtraction
 ;
 ; OPTIONAL OUTPUTS:
+;   iskies=    - array of good sky fibers
 ;
 ; COMMENTS:
 ;   Construct a "supersky" spectrum by spline-fitting the (good) sky fibers,
@@ -56,7 +57,8 @@
 ;------------------------------------------------------------------------------
 
 pro skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
- fibermask=fibermask, nord=nord, upper=upper, lower=lower, maxiter=maxiter
+   iskies=iskies, fibermask=fibermask, nord=nord, upper=upper, $
+   lower=lower, maxiter=maxiter
 
    if (size(obj, /n_dimen) NE 2) then message, 'OBJIVAR is not 2-D'
    if (size(objivar, /n_dimen) NE 2) then message, 'OBJIVAR is not 2-D'
@@ -65,7 +67,7 @@ pro skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    ncol = dims[0]
    nrow = dims[1]
 
-   if (n_elements(fibermask) NE nrow) then fibermask = bytarr(nrow) + 1
+   if (n_elements(fibermask) NE nrow) then fibermask = bytarr(nrow) 
 
    if ((size(plugsort, /dimens))[0] NE nrow) then $
     message, 'PLUGMAP does not have same size as nrow'
@@ -82,7 +84,7 @@ pro skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    ; Find sky fibers
      
    iskies = where(plugsort.objtype EQ 'SKY' AND plugsort.fiberid GT 0 AND $
-    fibermask, nskies)
+     (fibermask EQ 0), nskies)
    splog, 'Number of sky fibers = ', nskies
    if (nskies EQ 0) then message, 'No sky fibers in PLUGMAP'
 

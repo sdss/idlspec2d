@@ -86,14 +86,15 @@ pro locateskylines, skylinefile, fimage, ivar, wset, $
    skywaves = skywaves[gind]
 
    ; Iterate trace_fweight ???
-   xskytmp = trace_fweight(fimage, xarc, ysky, invvar=ivar, radius=3.0) 
+   xskytmp = trace_fweight(fimage, xarc, ysky,invvar=ivar,xerr=xerr,radius=3.0) 
    medianshift = median(xskytmp-xarc)
    xskytmp = trace_fweight(fimage, xarc+medianshift, $
                             ysky, invvar=ivar, radius=3.0) 
    medianshift = median(xskytmp-xarc)
    xskytmp = trace_fweight(fimage, xarc+medianshift, $
                             ysky, invvar=ivar, radius=3.0) 
-   xsky = trace_fweight(fimage, xskytmp, ysky, invvar=ivar, radius=2.0) 
+;   xsky = trace_fweight(fimage, xskytmp, ysky, invvar=ivar, radius=2.0) 
+   xsky = trace_gweight(fimage, xskytmp, ysky, invvar=ivar, sigma=1.0) 
 
    ;
    ; Fit gaussian's to sky lines
@@ -129,7 +130,7 @@ pro locateskylines, skylinefile, fimage, ivar, wset, $
 
    xy2traceset, transpose(mx), transpose(xdiff), xset, ncoeff=shiftcoeff, $
      invvar=transpose(aveinvvar), xmin=0, xmax=npix-1
-      
+     
    return
 
 end

@@ -18,8 +18,17 @@ function sortplugmap, plugmap, spectrographid, fibermask, nFibers=nFibers
    
    place = plugmap[possible].fiberId - (spectrographid-1)*nFibers - 1
    plugsort[place] = plugmap[possible]
-   fibermask = bytarr(nFibers)
-   fibermask[place] = 1
+
+   ;-------------------------------------------------
+   ;  Fibermask is set to 1 if not found in plugmap file
+
+   fibermask = bytarr(nFibers) OR fibermask_bits('NOPLUG')
+ 
+   ;-------------------------------------------------
+   ;  Reset the good plugmap entries to zero, 
+   ;  Maybe not the best way to do this
+
+   fibermask[place] = 0    
 
    return, plugsort
 end

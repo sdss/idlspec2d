@@ -54,7 +54,7 @@
 ;   qaplot_scatlight
 ;   qaplot_skyline
 ;   qaplot_skysub
-;   qaskylines
+;   qaplot_skydev
 ;   readcol
 ;   readfits()
 ;   sdssproc
@@ -62,6 +62,7 @@
 ;   splog
 ;   telluric_corr
 ;   tweaktrace
+;   trace320crude
 ;   traceset2xy
 ;   writespectra
 ;   xy2traceset
@@ -176,7 +177,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
             ;------------------------------------------------------------------
 
             splog, 'Tracing 320 fibers in ',  flatname[ifile]
-            tmp_xsol = trace320crude(image, yset=ycen, maxdev=0.15)
+            tmp_xsol = trace320crude(image, invvar, yset=ycen, maxdev=0.15)
 
             splog, 'Fitting traces in ',  flatname[ifile]
             xy2traceset, ycen, tmp_xsol, tset, ncoeff=5, maxdev=0.1
@@ -230,11 +231,11 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
             splog, 'Searching for wavelength solution'
             tmp_aset = 0
-; FOR NOW, REVERT TO THE OLD CODE! ???
-;            fitarcimage, flux, fluxivar, aset=tmp_aset, $
-;             color=color, lampfile=lampfile, bestcorr=corr
-            fitarcimage_old, flux, fluxivar, aset=tmp_aset, $
+            fitarcimage, flux, fluxivar, aset=tmp_aset, $
              color=color, lampfile=lampfile, bestcorr=corr
+; FOR NOW, REVERT TO THE OLD CODE! ???
+;            fitarcimage_old, flux, fluxivar, aset=tmp_aset, $
+;             color=color, lampfile=lampfile, bestcorr=corr
 
             ;-----
             ; Determine if this is the best flat+arc pair
@@ -279,16 +280,16 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    ; Compute wavelength calibration for arc lamp only
    ;---------------------------------------------------------------------------
 
-   arccoeff = 5
+   arccoeff = 6
 
    splog, 'Searching for wavelength solution'
+   fitarcimage, arcimg, arcivar, xpeak, ypeak, wset, ncoeff=arccoeff, $
+    aset=aset, fibermask=fibermask, wfirst=wfirst, $
+    color=color, lampfile=lampfile, lambda=lambda, xdif_tset=xdif_tset
 ; FOR NOW, REVERT TO THE OLD CODE! ???
-;   fitarcimage, arcimg, arcivar, xpeak, ypeak, wset, ncoeff=arccoeff, $
+;   fitarcimage_old, arcimg, arcivar, xpeak, ypeak, wsetold, ncoeff=arccoeff, $
 ;    aset=aset, $
 ;    color=color, lampfile=lampfile, lambda=lambda, xdif_tset=xdif_tset
-   fitarcimage_old, arcimg, arcivar, xpeak, ypeak, wset, ncoeff=arccoeff, $
-    aset=aset, $
-    color=color, lampfile=lampfile, lambda=lambda, xdif_tset=xdif_tset
 
    if (NOT keyword_set(wset)) then begin
       splog, 'ABORT: Wavelength solution failed'
@@ -316,6 +317,10 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    lowrej = 15
    npoly = 1  ; just fit flat background to each row
    wfixed = [1,1] ; Just fit the first gaussian term
+
+      ; --->Kill<--- or adjust first and last column ???
+      invvar[0,*] = 0.0
+      invvar[2047,*] = 0.0
 
    extract_image, image, invvar, xsol, sigma, flat_flux, flat_fluxivar, $
     proftype=proftype, wfixed=wfixed, $
@@ -373,6 +378,17 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
          whopct = 0
       endif
 
+      ;------------------------------------------------------------
+      ;  Check for bad pixels within 3 pixels of trace
+
+      badcheck = extract_boxcar((invvar LE 0), xsol, radius=2.5)
+      badplace = where(badcheck GT 0)
+ 
+      pixelmask = fix(fextract)*0
+      if (badplace[0] NE -1) then pixelmask[badplace] = $
+                   pixelmask[badplace] OR pixelmask_bits('NEARBADPIXEL')
+    
+
       ;------------------
       ; Extract the object image
       ; Use the "whopping" terms
@@ -393,7 +409,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       proftype = 1 ; Gaussian
       highrej = 5  ; just for first extraction steps
       lowrej = 5  ; just for first extraction steps
-      npoly = 16 ; maybe more structure, lots of structure
+      npoly = 8 ; maybe more structure, lots of structure
       wfixed = [1,1,1] ; gaussian term + centroid and  sigma terms
       nterms = 3
       sigmaterm = 1
@@ -441,8 +457,8 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
       endfor
 
-      qaplot_scatlight, scatimage, scatfit, wset=wset, xcen=xsol, $
-       fibermask=fibermask, filename=objname[iobj]
+      qaplot_scatlight, scatfit, yrow, $
+       wset=wset, xcen=xsol, fibermask=fibermask, filename=objname[iobj]
 
       ; (4) Second and final extraction
       splog, 'Object extraction: Step 6'
@@ -465,92 +481,69 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
        chisq=chisq, ymodel=ymodel2
 
       ;------
-      ; QA chisq plot for fit calculcated in extract image (make QAPLOT ???)
+      ; QA chisq plot for fit calculated in extract image (make QAPLOT ???)
 
       xaxis = indgen(N_elements(chisq)) + 1
       djs_plot, xaxis, chisq, $
-       xtitle='Row number',  ytitle = '\chi^2', $
-       title='Extraction chi^2 for '+objname[iobj]
+         xtitle='Row number',  ytitle = '\chi^2', $
+         title='Extraction chi^2 for '+objname[iobj]
 
       ;------------------
       ; Flat-field the extracted object fibers with the global flat
       divideflat, flux, fluxivar, fflat, fibermask=fibermask
 
+      lowflat = where(fflat LT 0.5)
+      if (lowflat[0] NE -1) then pixelmask[lowflat] = $
+                   pixelmask[lowflat] OR pixelmask_bits('LOWFLAT')
+
       ;------------------
       ; Tweak up the wavelength solution to agree with the sky lines.
-      ; xshift contains polynomial coefficients to shift arc to sky lines.
+      ; xshet contains polynomial coefficients to shift arc to sky line frame.
   
       locateskylines, skylinefile, flux, fluxivar, $
-       wset, xsky, ysky, skywaves, xset=xset
+         wset, xsky, ysky, skywaves, xset=xset
 
-      ;------------------
-      ; First convert lambda, and skywaves to log10 vacuum
-
-      splog, 'Converting wavelengths to vacuum'
-      vaclambda = lambda
-      airtovac, vaclambda
-      vacloglam = alog10(vaclambda)
-
-      vacsky = skywaves
-      airtovac, vacsky
-      vaclogsky = alog10(vacsky)
+      ; ----------------------------------------
+      ;  fitvacset performs shift to skylines and fit to vacuum wavelengths
+      
+      vacset = fitvacset(xpeak, lambda, wset, xset, ncoeff=arccoeff)
 
       sxaddpar, hdr, 'VACUUM', 'WAVELENGTHS ARE IN VACUUM'
       sxaddpar, hdr, 'AIR2VAC', systime()
 
-      splog, 'Tweaking to sky lines'
-
-      ;------------------
-      ; Fit to arc lines with sky shifts included
-
-      ; This procedure produces numerical steps at 10^-6, 1 km/s
-
-      xshift = xpeak * 0.0
-
-      if (size(xset,/tname) NE 'UNDEFINED') then begin
-         traceset2xy, xset, transpose(xpeak), xshift
-         xshift = transpose(xshift)
-      endif else begin
-         splog, 'WARNING: Sky lines are too noisy! No shifting!'
-      endelse
-
-      ; Move this QA plot elsewhere ???
-      plot, xpeak, xshift, ps=3, xtitle='Arc line position', /ynozero, $
-       ytitle = 'Offset to Sky Line [pix]', $
-       title = 'Offset to Sky Lines From Wavelength-Solution'
-
-      vacset = wset
-      fixabove = 2
-      finalarcfit, xpeak+xshift, vacloglam, vacset, arccoeff, fixabove, $
-       fibermask=fibermask, maxdev=0, maxiter=1, nsetcoeff=8, maxsig=2.0
-
-;      fit_skyset, xpeak, ypeak, vacloglam, xsky, ysky, vaclogsky, skycoeff, $
-;        goodlines, wset, ymin=ymin, ymax=ymax, func=func
 
       ;------------------
       ; Sky-subtract
 
       skysubtract, flux, fluxivar, plugsort, vacset, $
-       skysub, skysubivar, fibermask=fibermask, upper=3.0, lower=3.0
+        skysub, skysubivar, iskies=iskies, $
+        fibermask=fibermask, upper=3.0, lower=3.0
 
       qaplot_skysub, flux, fluxivar, skysub, skysubivar, $
-       plugsort, vacset, fibermask=fibermask, filename=objname[iobj]
+        plugsort, vacset, iskies, filename=objname[iobj]
+
+      qaplot_skydev, flux, fluxivar, vacset, plugsort, color, $
+              filename = objname[iobj]
 
       ; QA for 2 skylines in the blue
-      qaplot_skyline, 4359.5, flux, fluxivar, skysub, skysubivar, $
-       plugsort, vacset, fibermask=fibermask, dwave=3.0, $
-       filename=objname[iobj]
-      qaplot_skyline, 5578.9, flux, fluxivar, skysub, skysubivar, $
-       plugsort, vacset, fibermask=fibermask, dwave=5.0, $
-       filename=objname[iobj]
+      if (color EQ 'blue') then begin
+        qaplot_skyline, 4359.5, flux, fluxivar, skysub, skysubivar, $
+         plugsort, vacset, iskies, fibermask=fibermask, dwave=4.0, $
+         filename=objname[iobj]
+        qaplot_skyline, 5578.9, flux, fluxivar, skysub, skysubivar, $
+         plugsort, vacset, iskies, fibermask=fibermask, dwave=5.0, $
+         filename=objname[iobj]
+      endif
 
       ; QA for 2 skylines in the red
-      qaplot_skyline, 7343.0, flux, fluxivar, skysub, skysubivar, $
-       plugsort, vacset, fibermask=fibermask, dwave=5.0, $
-       filename=objname[iobj]
-      qaplot_skyline, 8888.3, flux, fluxivar, skysub, skysubivar, $
-       plugsort, vacset, fibermask=fibermask, dwave=5.0, $
-       filename=objname[iobj]
+      if (color EQ 'red') then begin
+        qaplot_skyline, 7343.0, flux, fluxivar, skysub, skysubivar, $
+         plugsort, vacset, iskies, fibermask=fibermask, dwave=7.0, $
+         filename=objname[iobj]
+        qaplot_skyline, 8888.3, flux, fluxivar, skysub, skysubivar, $
+         plugsort, vacset, iskies, fibermask=fibermask, dwave=7.0, $
+         filename=objname[iobj]
+      endif
 
       ;------------------------------------------
       ; Flux calibrate to spectrophoto_std fibers
@@ -566,23 +559,55 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
       ;------------------------------------------
       ; Telluric correction called for 'red' side
-  
+      ;
+      ;  May want to move all of the telluric_corr and plotting into
+      ;  new procedure: telluric_fit,flambda, flambdaivar, vacset, plugsort 
+
+ 
       if (color EQ 'red')  then begin
 
          ;-----------------------------------------------
          ;  Split into two regions, A,B bands first
          telluric1 = telluric_corr(flambda, flambdaivar, vacset, plugsort, $
-          minw=3.82, maxw=3.92, lower=5.0, upper=5.0, ncontbkpts=10)
+            contwave=contwave1, contflux=contflux1, contivar=contivar1, $
+            telluricbkpt=telluricbkpt1, telluriccoeff=telluriccoeff1, $
+            minw=3.82, maxw=3.92, lower=5.0, upper=5.0, ncontbkpts=10, $
+            fibermask=fibermask)
   
          ;-----------------------------------------------
          ;  9100 Ang absorption next?
          telluric2 = telluric_corr(flambda, flambdaivar, vacset, plugsort, $
-          minw=3.94, maxw=3.97, lower=5.0, upper=5.0)
+            contwave=contwave2, contflux=contflux2, contivar=contivar2,    $
+            telluricbkpt=telluricbkpt2, telluriccoeff=telluriccoeff2, $
+            minw=3.94, maxw=3.97, lower=5.0, upper=5.0, ncontbkpts=5, $
+            fibermask=fibermask)
+
+         psave = !p.multi
+ 	 !p.multi = [0,1,3]
+         djs_plot,10^contwave1,contflux1,ps=3,xr=10^[3.82,3.87],yr=[0.0,1.5], $
+              ymargin=[2,4], charsize=1.6, xstyle=1, $ 
+              xtitle='\lambda [A]', ytitle='Flux [electrons]', $
+              title = 'Telluric correction for '+objname[iobj]
+         djs_oplot,10^contwave1,slatec_bvalu(contwave1,telluricbkpt1, $
+                      telluriccoeff1),color='red'
+
+         djs_plot,10^contwave1,contflux1,ps=3,xr=10^[3.87,3.92],yr=[0.0,1.5], $
+              ymargin=[2,2], charsize=1.6, xstyle=1, $ 
+              xtitle='\lambda [A]', ytitle='Flux [electrons]'
+         djs_oplot,10^contwave1,slatec_bvalu(contwave1,telluricbkpt1, $
+                      telluriccoeff1),color='red'
+
+         djs_plot,10^contwave2,contflux2,ps=3,yr=[0.0,1.5], $
+              ymargin=[4,2], charsize=1.6, xstyle=1, $ 
+              xtitle='\lambda [A]', ytitle='Flux [electrons]'
+         djs_oplot,10^contwave2,slatec_bvalu(contwave2,telluricbkpt2, $
+                      telluriccoeff2),color='red'
+
+ 	 !p.multi = psave
 
          telluricfactor = telluric1 * telluric2
          divideflat, flambda, flambdaivar, telluricfactor, minval=0.1
   
-         qaskylines, flambda, flambdaivar, vacset, plugsort
       endif
 
       ;------
@@ -616,6 +641,8 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       mwrfits, flambdaivar, outname
       mwrfits, plugsort, outname
       mwrfits, vacset, outname
+      mwrfits, pixelmask, outname
+      mwrfits, fibermask, outname
 
       heap_gc   ; Garbage collection for all lost pointers
 

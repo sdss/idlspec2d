@@ -342,7 +342,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
       ny = (size(image,/dimens))[1]
       for i=1, ny-1 do begin
          ; Burles counter of row number...
-         print, format='($, ".",i4.4,a5)', i, string([8b,8b,8b,8b,8b])
+         ;print, format='($, ".",i4.4,a5)', i, string([8b,8b,8b,8b,8b])
 
          smearimg[*,i] = smearimg[*,i-1] + image[*,i]
       endfor

@@ -10,7 +10,7 @@ function fluxcorr, flux, fluxivar, wset, plugsort, color=color, $
         ncol = (size(flux))[1] 
         nrow = (size(flux))[2] 
         if (n_elements(fibermask) NE nrow) then $
-           fibermask = bytarr(nrow) + 1
+           fibermask = bytarr(nrow) 
 
 ;
 ;	We'll need a smoothly splined version of the intrinsic
@@ -31,11 +31,11 @@ function fluxcorr, flux, fluxivar, wset, plugsort, color=color, $
 ;	
 	
 	spectrophoto = where(plugsort.objtype EQ 'SPECTROPHOTO_STD' $
-               AND fibermask)
+               AND (fibermask EQ 0))
 	if (spectrophoto[0] EQ -1) then begin
 	  splog, 'WARNING: No spectrophoto stds on this side, trying reddening'
 	  spectrophoto = where(plugsort.objtype EQ 'REDDEN_STD' $
-               AND fibermask)
+               AND (fibermask EQ 0))
 	  if (spectrophoto[0] EQ -1) then $
 	    message, 'FLUXCORR: can not find reddening standards either'
 	endif

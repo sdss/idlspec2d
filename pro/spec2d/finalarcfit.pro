@@ -1,20 +1,20 @@
 ;------------------------------------------------------------------------------
 pro finalarcfit, x, loglam, wset, ncoeff, ic, nsetcoeff=nsetcoeff, $
- fibermask=fibermask, xweight=xweight, $
+ fibermask=fibermask, xweight=xweight, yfit=yfit, $
  maxsig=maxsig, plot=plot, _EXTRA=extra
 
    dims = size(x, /dimens)
    nfiber = dims[0]
    nlines = dims[1]
    if (n_elements(fibermask) NE nfiber) then $
-    fibermask = bytarr(nfiber) + 1
+    fibermask = bytarr(nfiber) 
    if (n_elements(xweight) NE n_elements(x)) then $
     xweight = bytarr(nfiber,nlines) + 1
 
    lmatrix = loglam # (dblarr(nfiber)+1)
    xy2traceset, transpose(x), lmatrix, wset, ncoeff=ncoeff, $
     invvar=transpose(xweight), _EXTRA=extra, $
-    yfit=yfit, xmin=wset.xmin, xmax=wset.xmax
+    yfit=yfitfirst, xmin=wset.xmin, xmax=wset.xmax
 
    wsave = wset
 
@@ -25,12 +25,12 @@ pro finalarcfit, x, loglam, wset, ncoeff, ic, nsetcoeff=nsetcoeff, $
   
    fitcoeff = ncoeff - ic 
 
-   coeffmask = fibermask # (fltarr(fitcoeff) + 1)
+   coeffmask = (fibermask EQ 0) # (fltarr(fitcoeff) + 1)
    xy2traceset, dindgen(nfiber) # (dblarr(fitcoeff) + 1.0), $
     transpose(wset.coeff[ic:ncoeff-1,*]), tmpset, $
     invvar=coeffmask, func='chebyshev', $
-    ncoeff=nsetcoeff, maxsig=maxsig, yfit=yfit, /halfintwo
-   wset.coeff[ic:ncoeff-1,*] = transpose(yfit)
+    ncoeff=nsetcoeff, maxsig=maxsig, yfit=yfitcoeff, /halfintwo
+   wset.coeff[ic:ncoeff-1,*] = transpose(yfitcoeff)
 
    ; Fit the first ic coefficients, keep the others fixed
 

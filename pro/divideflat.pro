@@ -46,7 +46,7 @@ pro divideflat, flux, fluxivar, fflat, fibermask=fibermask, minval=minval
    ntrace = dims[1] 
 
    if (NOT keyword_set(minval)) then minval = 0.03
-   if (NOT keyword_set(fibermask)) then fibermask = bytarr(ntrace) + 1
+   if (NOT keyword_set(fibermask)) then fibermask = bytarr(ntrace) 
 
    if (total(size(fluxivar,/dimens) NE dims) NE 0) then $
     message, 'FLUX and FLUXIVAR are not the same dimensions'
@@ -59,7 +59,11 @@ pro divideflat, flux, fluxivar, fflat, fibermask=fibermask, minval=minval
     
    for itrace=0, ntrace-1 do begin
 
-      if (fibermask[itrace]) then begin ; GOOD FIBER
+
+      ;  Do we really need to reject bad fibers here, does it hurt
+      ;  to divide them out anyway??
+
+;      if (fibermask[itrace] EQ 0) then begin ; GOOD FIBER
 
          ; Find where the flat field vector for this fiber is less than MINVAL
          qgood = fflat[*,itrace] GT minval
@@ -82,12 +86,12 @@ pro divideflat, flux, fluxivar, fflat, fibermask=fibermask, minval=minval
             splog, 'Reject ', nbad, ' low points in trace ', itrace
          endif
 
-      endif else begin ; BAD FIBER
-
-         flux[*,itrace] = 0.0
-         fluxivar[*,itrace] = 0.0
-
-      endelse
+;      endif else begin ; BAD FIBER
+;
+;         flux[*,itrace] = 0.0
+;         fluxivar[*,itrace] = 0.0
+;
+;      endelse
 
     endfor
 end

@@ -6,10 +6,10 @@
 ;   Determine wavelength calibration from arclines
 ;
 ; CALLING SEQUENCE:
-;   fitarcimage, arc, arcivar, xcen, ycen, wset, $
-;    [ color=color, lampfile=lampfile, fibermask=fibermask, $
+;   fitarcimage, arc, arcivar, xcen, ycen, wset, [wfirst=, $
+;    color=color, lampfile=lampfile, fibermask=fibermask, $
 ;    func=func, aset=aset, ncoeff=ncoeff, lambda=lambda, $
-;    thresh=thresh, row=row, nmed=nmed, $
+;    thresh=thresh, row=row, nmed=nmed, /gauss, $
 ;    xdif_tset=xdif_tset, bestcorr=bestcorr ]
 ;
 ; INPUTS:
@@ -32,6 +32,7 @@
 ;                default to (NFIBER-30)/2
 ;   nmed       - Number of rows around ROW to median filter for initial
 ;                wavelengths solution; default to 5
+;   gauss      - Use gaussian profile fitting for final centroid fit
 ;
 ; OUTPUTS:
 ;   xcen       - pixel position of lines [nfiber, nlambda]
@@ -44,6 +45,7 @@
 ;   fibermask  - (Modified)
 ;   xdif_tset  - Fit residual of lamp lines to fit positions [pixels]
 ;   bestcorr   - Correlation coefficient with simulated arc spectrum
+;   wfirst     - traceset from first iteration on arc fits
 ;
 ; COMMENTS:
 ;   Return from routine after computing BESTCORR if XCEN, YCEN and WSET
@@ -74,13 +76,15 @@
 ; REVISION HISTORY:
 ;   15-Oct-1999  Written by S. Burles, D. Finkbeiner, & D. Schlegel, APO.
 ;   09-Nov-1999  Major modifications by D. Schlegel, Ringberg.
+;   20-Jan-2000  Gone back to very simple procedure: replacement (S. Burles)
 ;-
 ;------------------------------------------------------------------------------
 
-pro fitarcimage, arc, arcivar, xcen, ycen, wset, $
+pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
  color=color, lampfile=lampfile, fibermask=fibermask, $
  func=func, aset=aset, ncoeff=ncoeff, lambda=lambda, thresh=thresh, $
- row=row, nmed=nmed, xdif_tset=xdif_tset, bestcorr=bestcorr
+ row=row, nmed=nmed, xdif_tset=xdif_tset, bestcorr=bestcorr, $
+ gauss=gauss
 
    ;---------------------------------------------------------------------------
    ; Preliminary stuff
@@ -103,7 +107,7 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, $
    nfiber = dims[1]
    if (total(dims NE size(arcivar, /dim))) then $
     message, 'ARC and ARCIVAR must have same dimensions'
-   if (NOT keyword_set(fibermask)) then fibermask = bytarr(nfiber) + 1
+   if (NOT keyword_set(fibermask)) then fibermask = bytarr(nfiber)
 
    if (NOT keyword_set(row)) then row = (nfiber-30)/2
    if (NOT keyword_set(nmed)) then nmed = 5
@@ -152,7 +156,7 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, $
       ; by taking the median value at each wavelength.
       ; Find the NMED fibers nearest to ROW that are not masked.
 
-      ii = where(fibermask, ngfiber)
+      ii = where(fibermask EQ 0, ngfiber)
       if (ngfiber EQ 0) then $
        message, 'No unmasked fibers according to FIBERMASK'
       ii = ii[ sort(abs(ii-row)) ]
@@ -198,13 +202,22 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, $
    xcen = trace_crude(arc, yset=ycen, nave=1, nmed=1, xstart=xstart, $
     ystart=row, maxshifte=0.5d, maxshift0=2.0d)
 
+   ; Now fit traceset to trace_crude, this will "interpolate" or bad fibers
+   ; as well as extend trace off CCD if need be.
+
+   xy2traceset, ycen, xcen, crudeset, yfit=xcrudefit
+
    ; Iterate the flux-weighted centers
    ; In the last iteration, use the formal errors in the arc image
 
    splog, 'Iterating flux-weighted centers'
-   xcen = trace_fweight(arc, xcen, ycen)
-   xcen = trace_fweight(arc, xcen, ycen)
-   xcen = trace_fweight(arc, xcen, ycen, radius=2.0, invvar=arcivar, xerr=xerr)
+   x1 = trace_fweight(arc, xcrudefit, ycen)
+   x1 = trace_fweight(arc, x1, ycen)
+
+   if (keyword_set(gauss)) then $
+     xcen = trace_gweight(arc, x1, ycen, sigma=1.0, invvar=arcivar, xerr=xerr) $
+   else $  
+     xcen = trace_fweight(arc, x1, ycen, radius=2.0, invvar=arcivar, xerr=xerr)
 
    ;---------------------------------------------------------------------------
    ; Reject bad (i.e., saturated) lines
@@ -216,7 +229,7 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, $
    ; show up as bad.
 
    nmatch = N_elements(xstart) ; Number of lamp lines traced
-   igfiber = where(fibermask, ngfiber) ; Number of good fibers
+   igfiber = where(fibermask EQ 0, ngfiber) ; Number of good fibers
    qgood = bytarr(nmatch)
 
    for i=0, nmatch-1 do begin
@@ -255,31 +268,30 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, $
    ;---------------------------------------------------------------------------
 
 ; ??? Let maxdev be a parameter; should be about 3.0d-5 = 20 km/s
-maxdev = 3.0d-5
+maxdev = 1.0d-5
 maxsig = 3.0
 
    nlamp = N_elements(lamps)
    xy2traceset, transpose(double(xcen)), lamps.loglam # (dblarr(nfiber)+1), $
-     wset, invvar=transpose(xmask), func=func, ncoeff=ncoeff, $
+     wfirst, invvar=transpose(xmask), func=func, ncoeff=ncoeff, $
      maxdev=maxdev, maxiter=nlamp, /singlerej, $
-     xmask=xmask, xmin=0, xmax=npix-1, yfit=yfit
+     xmask=xfitmask, xmin=0, xmax=npix-1, yfit=yfit
 
    print, 'Pass 1 complete'
 
-   ;---------------------------------------------------------------------------
-   ; Do the second traceset fit
-   ;---------------------------------------------------------------------------
+   xmask = xmask AND transpose(xfitmask)
 
-   ; Keep only "good" lines.
-   ; The following logic means that an arc line is rejected if any bundle
-   ; has more than 3 bad centers (not including bad fibers in FIBERMASK).
+   ;------------------------------------------------------------------------
+   ; Select good lines with the <3 per bundle test
+   ;------------------------------------------------------------------------
 
-   badfibers = where(fibermask EQ 0)
-   if (badfibers[0] NE -1) then xmask[*,badfibers] = 1
+   badfibers = where(fibermask GT 0)
+   testg = transpose(xmask)
+   if (badfibers[0] NE -1) then testg[*,badfibers] = 1
 
    if (nfiber NE 320) then $
     message, 'Not 320 fibers -- Cannot figure out bundle test'
-   testg = reform(xmask, nlamp, 20, 16)   
+   testg = reform(testg, nlamp, 20, 16)
    gind = where(total(total(testg EQ 0,2) GT 3, 2) EQ 0, nlamp)
    if (nlamp LT 6) then begin
       splog, 'ABORT: Only '+string(nlamp)+ ' good arclines found'
@@ -292,16 +304,56 @@ maxsig = 3.0
    ycen = ycen[*,gind]
    lamps = lamps[gind]
 
-   fixabove = 2 ; What the hell is this ???
 
-   arcfibermask = fibermask
-   badfweight = where(xmask LE 0)
-   if (badfweight[0] NE -1) then arcfibermask[badfweight mod nfiber] = 0
+   ;---------------------------------------------------------------------------
+   ;  Now look to replace pixels masked 
+   ;---------------------------------------------------------------------------
 
-   finalarcfit, xcen, lamps.loglam, wset, ncoeff, fixabove, $
-              fibermask=arcfibermask, xweight=xmask, func=func, $
-              maxdev=maxdev/2.0, maxiter=nlamp, /singlerej, $
-              nsetcoeff=8, maxsig=maxsig
+   ;--------------------------------------------------------------------
+   ;  If more than half the lines are masked, than don't use shift
+
+   xy2traceset, ycen, xcen, meanset, yfit=meanfit, invvar=xmask
+
+   meandiff = xcen - meanfit
+   badcount = total(xmask EQ 0, 2)
+   maxbad = nlamp/4
+
+   fixthese = where(badcount GT 0 AND badcount LT maxbad, nfix)
+
+   splog, 'Fixing centroids in '+string(nfix)+' fibers'
+   replacethese = where(badcount GE maxbad, nreplace) 
+   splog, 'Replacing all centroids in '+string(nreplace)+' fibers'
+
+   if (fixthese[0] NE -1) then begin
+     xy2traceset, transpose(xcen[fixthese,*]),transpose(meandiff[fixthese,*]),$
+        diffset, ncoeff=2, invvar= transpose(xmask[fixthese,*]), yfit=diffit, $
+        maxdev = 0.1
+
+     ; Just replace masked centroids here, with linear fit above
+
+     badmask = where(xmask[fixthese,*] EQ 0)
+     xcentemp = xcen[fixthese,*]
+     xcentemp[badmask] = $
+             (meanfit[fixthese,*])[badmask] + (transpose(diffit))[badmask]
+     xcen[fixthese,*] = xcentemp
+
+   endif
+
+   if (replacethese[0] NE -1) then begin
+     fibermask[replacethese] = fibermask[replacethese] OR $
+            fibermask_bits('BADARC')
+
+     ; Replace the entire fiber with fit, definitely biases wavelength
+     xcen[replacethese,*] = meanfit[replacethese,*]
+   endif
+
+   ;--------------------------------------------------------------------------
+   ;  Now do final traceset fit
+   ;--------------------------------------------------------------------------
+
+   xy2traceset, transpose(double(xcen)), lamps.loglam # (dblarr(nfiber)+1), $
+     wset, func=func, ncoeff=ncoeff, $
+     maxiter=nlamp, /singlerej, xmin=0, xmax=npix-1, yfit=yfit
 
    print, 'Final arcfit complete'
 

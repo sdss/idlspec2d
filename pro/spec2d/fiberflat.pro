@@ -76,9 +76,9 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
    if (N_elements(nord) EQ 0) then nord = 4
    if (N_elements(lower) EQ 0) then lower = 10.0
    if (N_elements(upper) EQ 0) then upper = 10.0
-   if (N_elements(fibermask) NE ntrace) then fibermask = bytarr(ntrace) + 1
+   if (N_elements(fibermask) NE ntrace) then fibermask = bytarr(ntrace)
 
-   igood = where(fibermask NE 0, ngood)
+   igood = where(fibermask EQ 0, ngood)
    if (ngood EQ 0) then $
     message, 'No good fibers according to FIBERMASK'
 
@@ -106,6 +106,8 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
       nbkpts = fix(ny / pixspace) + 2
       bkpt = findgen(nbkpts) * (max(loglam) - min(loglam)) / (nbkpts-1) $
        + min(loglam)
+
+      badflatbit = fibermask_bits('BADFLAT')
 
       for i=0, ntrace-1 do begin
          print, format='($, ".",i4.4,a5)',i,string([8b,8b,8b,8b,8b])
@@ -148,7 +150,10 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
          endif else begin
 
             fflat[*,i] = 1.0
-            fibermask[i] = 0
+;
+;	Bit 3 is set for errors in fiberflat
+;
+            fibermask[i] = fibermask[i] OR badflatbit
 
          endelse
 
@@ -182,6 +187,16 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
 
    junk = where(fflat LE 0, nz)
    splog, 'Number of fiberflat points LE 0 = ', nz
+
+   ;----------------------------------------------------------------
+   ;  Set flatfield bit in fibermask if needed
+   ;
+   fmed = djs_median(fflat,1)
+   badflat = where(fmed LT 0.5 * djs_median(fmed))
+
+   if (badflat[0] NE -1) then  $
+     fibermask[badflat] = fibermask[badflat] OR fibermask_bits('BADFLAT')
+
 
    return, fflat
 end

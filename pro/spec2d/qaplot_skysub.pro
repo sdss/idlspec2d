@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   qaplot_skysub, obj, objivar, objsub, objsubivar, plugsort, wset, $
-;    [fibermask=, filename= ]
+;    iskies, [filename= ]
 ;
 ; INPUTS:
 ;   obj        - Image
@@ -16,9 +16,9 @@
 ;   objsubivar - Inverse variance for image after sky-subtraction
 ;   plugsort   - Plugmap structure trimmed to one element per fiber
 ;   wset       - Wavelength solution
+;   iskies     - List of good sky fibers
 ;
 ; OPTIONAL KEYWORDS:
-;   fibermask  - Mask of 0 for bad fibers and 1 for good fibers [NFIBER]
 ;   filename   - File name to use for TITLE of plot
 ;
 ; OUTPUTS:
@@ -79,16 +79,14 @@ end
 
 ;------------------------------------------------------------------------------
 
-pro qaplot_skysub, obj, objivar, objsub, objsubivar, plugsort, wset, $
- fibermask=fibermask, filename=filename
+pro qaplot_skysub, obj, objivar, objsub, objsubivar, plugsort, wset, iskies, $
+      filename=filename
 
    if (NOT keyword_set(filename)) then filename = ''
 
    dims = size(objsub, /dimens)
    ncol = dims[0]
    nrow = dims[1]
-
-   if (n_elements(fibermask) NE nrow) then fibermask = bytarr(nrow) + 1
 
    ;----------
    ; Solve for wavelength of each pixel 
@@ -98,8 +96,8 @@ pro qaplot_skysub, obj, objivar, objsub, objsubivar, plugsort, wset, $
    ;----------
    ; Find sky fibers
 
-   iskies = where(plugsort.objtype EQ 'SKY' AND plugsort.fiberid GT 0 AND $
-    fibermask, nskies)
+   nskies = n_elements(iskies)
+
    if (nskies EQ 0) then begin
       splog, 'No sky fibers!'
       return

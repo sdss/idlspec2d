@@ -54,8 +54,8 @@ pro superflat, flux, fluxivar, wset, fullbkpt, coeff, $
    ny = dims[0]
    ntrace = dims[1]
 
-   if (N_elements(fibermask) NE ntrace) then fibermask = bytarr(ntrace) + 1
-   igood = where(fibermask NE 0, ngood)
+   if (N_elements(fibermask) NE ntrace) then fibermask = bytarr(ntrace) 
+   igood = where(fibermask EQ 0, ngood)
 
    ;------
    ; Determine LOGLAM from the wavelength solution

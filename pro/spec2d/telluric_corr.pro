@@ -1,11 +1,15 @@
 function telluric_corr,flux, fluxivar, wset, plugsort, $
-        minw=minw, maxw=maxw, bkspace=bkpace, lower=lower, upper=upper, $
-        ncontbkpts =  ncontbkpts
+        contwave=contwave, contflux=contflux, contivar=contivar,    $
+        telluricbkpt=telluricbkpt, telluriccoeff=telluriccoeff, $
+        minw=minw, maxw=maxw, lower=lower, upper=upper, $
+        ncontbkpts = ncontbkpts, fibermask=fibermask
 
 	if (NOT keyword_set(minw)) then minw = 3.82
         if (NOT keyword_set(maxw)) then maxw = 3.92
-        if (NOT keyword_set(bkspace)) then bkspace = 0.0001
         if (NOT keyword_set(ncontbkpts)) then ncontbkpts = 5
+
+        nfiber = (size(plugsort))[1]
+        if (NOT keyword_set(fibermask)) then fibermask = bytarr(nfiber)
 ;
 ;	Use SPECTROPHOTO_STD and REDDEN_STD to correct
 ;       telluric absorption
@@ -19,8 +23,9 @@ function telluric_corr,flux, fluxivar, wset, plugsort, $
 
 	tellcorr = fltarr(npix,ntrace) + 1.0
 
-	tell = where(plugsort.objtype EQ 'SPECTROPHOTO_STD' OR $
-                     plugsort.objtype EQ 'REDDEN_STD', tellct)
+	itell = where((strtrim(plugsort.objtype,2) EQ 'SPECTROPHOTO_STD' OR $
+                       strtrim(plugsort.objtype,2) EQ 'REDDEN_STD') AND $
+                      (fibermask EQ 0), tellct)
 
 	if (tellct EQ 0) then begin
             print, 'No telluric correction stars'
@@ -32,9 +37,9 @@ function telluric_corr,flux, fluxivar, wset, plugsort, $
 ;
         traceset2xy, wset, pixnorm, wave
 
-	tellwave = wave[*,tell]
-	tellflux = flux[*,tell]
-	tellfluxivar = fluxivar[*,tell]
+	tellwave = wave[*,itell]
+	tellflux = flux[*,itell]
+	tellfluxivar = fluxivar[*,itell]
 ;
 ;	Fit continuum to each telluric standard
 ;	
@@ -89,13 +94,14 @@ function telluric_corr,flux, fluxivar, wset, plugsort, $
 ;	Now bspline the features in contflux
 ;
 
-         fullbkpt = slatec_splinefit(contwave, contflux, coeff, $
+         telluricbkpt = slatec_splinefit(contwave, contflux, telluriccoeff, $
             maxiter=10, lower=lower, upper=upper, $
-            invvar=contivar, bkspace=bkspace)
+            invvar=contivar, everyn=2*tellct)
 
 	  
 	 inside = where(wave GT minw AND wave LT maxw)
-	 tellcorr[inside] = slatec_bvalu(wave[inside], fullbkpt, coeff)
+	 tellcorr[inside] = slatec_bvalu(wave[inside], $
+                                telluricbkpt, telluriccoeff)
 
 	return, tellcorr
 end

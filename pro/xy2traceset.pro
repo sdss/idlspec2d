@@ -130,6 +130,7 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
       yfit = ypos*0.0
       if (NOT keyword_set(inputans)) then curans = fltarr(ncoeff)
 
+      totalreject = 0
       ; Header for Schlegel counter
       print, ''
       print, ' TRACE# NPOINTS NREJECT'
@@ -210,8 +211,10 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
 
          ; Schlegel counter of row number...
          print, format='(i7,i8,i8,a1,$)', itrace, nx, nreject, string(13b)
+         totalreject = totalreject + nreject
       endfor
 
+      splog, 'Total rejected: ', totalreject
       print, ''
 
    endif else begin
