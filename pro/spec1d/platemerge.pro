@@ -116,6 +116,11 @@ pro platemerge, zfile, outfile=outfile, ascfile=ascfile, qsurvey=qsurvey
       plugmap = mrdfits(fullplatefile[ifile], 5)
       outdat[indx].primtarget = plugmap.primtarget
       outdat[indx].sectarget = plugmap.sectarget
+
+      ; Over-write the MJD with that from the plate file name ???
+      ; Early versions of 2D (such as v4_3_1) could have an inconsistent value.
+      thismjd = long( strmid(fileandpath(fullplatefile[ifile]), 13, 5) )
+      outdat[indx].mjd = thismjd
    endfor
 
    ;----------
