@@ -34,7 +34,7 @@ echo "platemerge, /public" | idl 2> /dev/null
 #------------------------------------------------------------------------------
 # Copy plate summary list to HTML directory.
 
-scp platelist.txt $htmldir
+scp platelist.* $htmldir
 
 #------------------------------------------------------------------------------
 # Copy to Fermi.
