@@ -55,6 +55,7 @@ etc/sdss_r_atm.dat -text
 etc/sdss_u_atm.dat -text
 etc/sdss_z_atm.dat -text
 etc/skylines.dat -text
+etc/spChunkList.par -text
 etc/spMaskbits.par -text
 etc/spTemplateE.dat -text
 etc/spTemplateQSO.dat -text

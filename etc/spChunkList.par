@@ -1,0 +1,33 @@
+
+typedef struct {
+  char chunkname[20];   # Chunk name/number
+  int  plate_start;     # First plate number in chunk
+  int  plate_end;       # Last plate number in chunk
+  char verstarg[20];    # Version of target code
+} spchunklist;
+
+spchunklist 1 135 159 devel
+spchunklist 1 160 185 devel # Not in any chunk list
+spchunklist 2 186 228 v1_11
+spchunklist special 229 231 special # These are special plates for Reddening
+spchunklist 2 232 238 devel # Not in any chunk list
+spchunklist 3 239 265 devel
+spchunklist 4 266 315 v2_2
+spchunklist special 318 324 special # These are special plates
+spchunklist 4 361 361 v2_2
+spchunklist 4 363 363 v2_2
+spchunklist 5 326 341 v2_5
+spchunklist 6 342 348 v2_5
+spchunklist 6 364 364 v2_5
+spchunklist 7 349 360 v2_5
+spchunklist 7 362 362 v2_5
+spchunklist 7 365 370 v2_5
+spchunklist 8 371 416 v2_7
+spchunklist 9 417 430 v2_9
+spchunklist 10 431 453 v2_11
+spchunklist 11 483 499 v2_13_4
+spchunklist 12 466 482 v2_13_4
+spchunklist 13 454 465 v2_13_1
+spchunklist 14 500 540 v2_13_4b
+spchunklist 15 541 561 v2_13_5
+
