@@ -15,6 +15,9 @@ READ_ELODIE: Use INTERPOL() instead of POPULATE_IMAGE for interpolating
            the high-resolution Elodie spectra onto the log-wavelength binning.
            I'm still uncertain as to the absolute units of the spectra.
 SDSSPROC: Fix silly bug trying to set QUALITY='excellent' when undefined.
+SPCOADD_FRAMES: Change BUNIT header keywords in output files to have
+           the comment '1E-17 erg/cm^2/s/Ang' instead of the incorrect
+           comment '10E-17 erg/cm/s/Ang'.
 WRITE_UROS: Add Flatvec,Rnois to output files.
 
 export.h: Update this file to agree with the IDL 5.5beta for Mac OS X.
