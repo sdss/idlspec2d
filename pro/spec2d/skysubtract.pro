@@ -104,7 +104,9 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    skyivar = objivar[*,iskies]
 
    if keyword_set(pixelmask) then begin
-       goodflat = where((pixelmask[*,iskies] AND pixelmask_bits('LOWFLAT') ) EQ 0, ngoodflat)
+     goodflat = where((pixelmask[*,iskies] AND pixelmask_bits('LOWFLAT')) EQ 0 $
+              OR (pixelmask[*,iskies] AND pixelmask_bits('NEARBADPIXEL')) EQ 0,$
+                ngoodflat)
        if ngoodflat GT ncol then begin
          skywave = skywave[goodflat] 
          skyflux = skyflux[goodflat] 
