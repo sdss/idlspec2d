@@ -7,12 +7,12 @@ mjd = [51637, 51690]
 ;mjd = [51616,51688]
 
    readspec, platenum, mjd=mjd[0], flux=flux1, flerr=flerr1, wave=wave1, $
-    plugmap=plug1, root_dir='/home/data/2d_test'
+    plugmap=plug1
 ;flux1=flux1[2000:3800,*]
 ;flerr1=flerr1[2000:3800,*]
 
    readspec, platenum, mjd=mjd[1], flux=flux2, flerr=flerr2, wave=wave2, $
-    plugmap=plug2, root_dir='/home/data/2d_test'
+    plugmap=plug2
 ;flux2=flux2[2000:3800,*]
 ;flerr2=flerr2[2000:3800,*]
 
