@@ -40,7 +40,7 @@ pro spframe_read, filename, indx, objflux=objflux, objivar=objivar, $
       xtmp = 0
    endif
    if (arg_present(plugmap)) then begin
-      plugmap = mrdfits(filename[0], 5, /silent)
+      plugmap = mrdfits(filename[0], 5, structyp='PLUGMAPOBJ', /silent)
       if (qtrim) then plugmap = plugmap[indx]
    endif
    if (arg_present(skyflux)) then begin
