@@ -6,12 +6,12 @@
 ;   Extract the fiber profile flux for an entire image
 ;
 ; CALLING SEQUENCE:
-;   extract_image(fimage, invvar, xcen, sigma, flux, [finv, yrow=yrow,
-;              ymodel=ymodel, fscat=fscat,proftype = proftype,ansimage=ansimage,
-;              wfixed=wfixed, mask=mask, pixelmask=,  reject=, wsigma=, 
-;              nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej,
-;              fitans=fitans, whopping=whopping,relative=relative, 
-;              nband=nband ])
+;   extract_image(fimage, invvar, xcen, sigma, flux, [finv, yrow=,
+;              ymodel=, fscat=, proftype=, ansimage=,
+;              wfixed=, mask=mask, pixelmask=,  reject=, wsigma=, 
+;              nPoly=, maxIter=, highrej=, lowrej=,
+;              fitans=, whopping=, /relative, 
+;              nband= ])
 ;
 ; INPUTS:
 ;   fimage     - Image [NCOL,NROW]
@@ -22,12 +22,11 @@
 ;                an [NROW,NFIBER] array.
 ;
 ; OPTIONAL KEYWORDS:
-;   yrow       - long array specifying which rows to extract, default is all
+;   yrow       - List of row numbers (0-indexed) to extract; default to all.
 ;   proftype   - currently, one can only use 1: Gaussian (scalar)
 ;              - or                          2: Exp Cubic
 ;              - or                          3: Double Gaussian
 ;              - or              4: Exp Cubic with doublewide Gaussian
-;   ansimage   - return the coefficients of fit for each row [nCoeff,nRow]
 ;   wfixed     - array of 1's and zero's which set which parameters are fixed.
 ;                e.g. [1] just gaussian's with fixed width sigma
 ;                     [1, 1] fit gaussian + sigma correction
@@ -38,7 +37,8 @@
 ;   reject     - Array setting rejection threshholds; defaults are set
 ;                in EXTRACT_ROW().
 ;   nPoly      - order of chebyshev scattered light background; default to 4
-;   nband      - band-width of full covariance fiber profile matrix
+;   nband      - band-width of full covariance fiber profile matrix;
+;                default to 1.
 ;   maxIter    - maximum number of profile fitting iterations; default to 20
 ;   highrej    - positive sigma deviation to be rejected (default 10.0)
 ;   lowrej     - negative sigma deviation to be rejected (default 10.0)
@@ -47,15 +47,19 @@
 ;   whopping   - traces which have WHOPPINGingly high counts, and need extra
 ;                background terms
 ;   wsigma     - sigma width of whopping profile (exponential, default 25)
+;   oldreject  - ???
 ;
 ; OUTPUTS:
 ;   flux       - Total extracted flux in each profile [nRowExtract,NFIBER]
 ;
 ; OPTIONAL OUTPUTS:
+;   ansimage   - Coefficients of fit for each row [nCoeff,nRow]
 ;   mask       - Modified by setting the values of bad pixels to 0
 ;   finv       - Estimated inverse variance each profile [nRowExtract,NFIBER]
 ;   ymodel     - Model best fit of row [NCOL,NROW]
 ;   fscat      - Scattered light contribution in each fiber [NROW,NFIBER]
+;   pimage     - ???
+;   chisq      - Chi^2 of each row [NROW]
 ;
 ; COMMENTS:
 ;
