@@ -71,7 +71,7 @@
 ;------------------------------------------------------------------------------
 
 function spplan_create_exp, seqid, plateid, flavor
-   badname = 'UNKNOWN            ' ; Make same length as other file names
+   badname = 'UNKNOWN'
    oneexp = {oneexp, seqid: 0L, plateid: 0L, flavor: '', $
     name: [badname, badname, badname, badname] }
    oneexp.seqid = seqid
