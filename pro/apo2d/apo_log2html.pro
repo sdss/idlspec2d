@@ -273,7 +273,7 @@ pro apo_log2html, logfile, htmlfile
     '<TD WIDTH="34%" ALIGN="CENTER"><B><FONT SIZE="+4">Spectro MJD '+mjdstr+'</FONT></B></TD>']
    textout = [textout, $
     '<TD WIDTH="33%" ALIGN="RIGHT">Tomorrow: ' $
-    + '<A HREF='+nextfile'+>MJD='+nextmjd+'</A></TD></TR>']
+    + '<A HREF='+nextfile+'>MJD='+nextmjd+'</A></TD></TR>']
    textout = [textout, $
     '<TR><TD></TD><TD WIDTH="100%" ALIGN="CENTER"><FONT SIZE="+4">'+platelist+'</FONT></TD><TD></TD></TR>']
    textout = [textout, $
