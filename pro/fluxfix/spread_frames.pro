@@ -18,7 +18,7 @@ end
 pro spread_frames, spframes, window=window, binsz = binsz, $
     adderr=adderr, camnames=camnames, tsobjname = tsobjname, $
     flux = flux, ivar = ivar, wave = wave, dispersion = dispersion, $
-    pixelmask = pixelmask, plugmap = plugmap, fibertag = fibertag, $
+    pixelmask = pixelmask, plugmap = plugmap, plugtag = plugtag, $
     camerasvec = camerasvec, label = label, filenum = filenum,  $
     expid = expid, sn2 = sn2, exptimevec = exptimevec, mjdlist = mjdlist, $
     hdrarr = hdrarr
@@ -34,7 +34,7 @@ pro spread_frames, spframes, window=window, binsz = binsz, $
    ncam = N_elements(camnames)
    exptimevec = fltarr(ncam)
 
-   fibertag_struct = {plateid: 0, mjd: 0, fiberid: 0, $
+   plugtag_struct = {plateid: 0, mjd: 0, fiberid: 0, $
                       ra: 0.0, dec: 0.0, mag: fltarr(5), $
                       xfocal: 0.0, yfocal: 0.0, objtype: ' ', $
                       camcolor: ' ', spectrographid: 0, expid: ' '}
@@ -149,33 +149,33 @@ pro spread_frames, spframes, window=window, binsz = binsz, $
       ;------------------------
       ; Build structure like plugmap to carry all important tags
 
-      tempfibertag = make_array(dim = nfib, val = fibertag_struct)
-      struct_assign, tempplug, tempfibertag
-      tempfibertag.plateid = 0  ; Fill in later!
-      tempfibertag.mjd = 0  ; Fill in later!
-      tempfibertag[*].camcolor = strmid(cameras, 0, 1)
-      tempfibertag.expid = expstr
+      tempplugtag = make_array(dim = nfib, val = plugtag_struct)
+      struct_assign, tempplug, tempplugtag
+      tempplugtag.plateid = 0  ; Fill in later!
+      tempplugtag.mjd = 0  ; Fill in later!
+      tempplugtag[*].camcolor = strmid(cameras, 0, 1)
+      tempplugtag.expid = expstr
       ; spectrograph ID (1/2) is reset b/c it is -1 for unmapped fiberse
-      tempfibertag[*].spectrographid = strmid(cameras, 1, 1)
+      tempplugtag[*].spectrographid = strmid(cameras, 1, 1)
 
       ;---------------
-      ; Match tsObj to plugmap and update fibertag structure with fibermags
+      ; Match tsObj to plugmap and update plugtag structure with fibermags
       ; from the tsObj
 
       if keyword_set(tsobjname) then begin 
         for ifib = 0, nfib - 1 do begin
           adist = djs_diff_angle(tsobj.ra, tsobj.dec, $
-                  tempfibertag[ifib].ra, tempfibertag[ifib].dec, $
+                  tempplugtag[ifib].ra, tempplugtag[ifib].dec, $
                   units='degrees')
           match = where(adist LT 2./3600)
 
           ; No match will be found for unmapped fibers so set mags to zero
           if match[0] ne -1 then begin
-             tempfibertag[ifib].mag = tsobj[match].fibercounts 
+             tempplugtag[ifib].mag = tsobj[match].fibercounts 
           endif else begin
              splog, 'Fiber mags set to zero for unmapped fiber: ', $
-                     tempfibertag[ifib].fiberid
-             tempfibertag[ifib].mag = [0,0,0,0,0]
+                     tempplugtag[ifib].fiberid
+             tempplugtag[ifib].mag = [0,0,0,0,0]
           endelse
         endfor
       endif
@@ -196,7 +196,7 @@ pro spread_frames, spframes, window=window, binsz = binsz, $
          plugmap = tempplug
          expid = expstr 
          sn2 = framesn2
-         fibertag = tempfibertag
+         plugtag = tempplugtag
       endif else begin
          ; Append as images...
          flux = [[flux], [tempflux]]
@@ -212,7 +212,7 @@ pro spread_frames, spframes, window=window, binsz = binsz, $
          plugmap = [plugmap, tempplug]
          expid = [expid, expstr] 
          sn2 = [sn2, framesn2]
-         fibertag = [fibertag, tempfibertag]
+         plugtag = [plugtag, tempplugtag]
       endelse
    endfor
 
