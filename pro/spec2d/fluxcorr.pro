@@ -52,6 +52,20 @@ function fluxcorr, flux, fluxivar, wset, plugsort, $
 	traceset2xy, wset, pixnorm, wave
 	spectrowave = wave[*,spectrophoto[bestcolor]]
 
+	mask = spectrowave*0.0 + 1.0
+
+;
+;	Mask out absorption line regions
+;
+       
+        absreg = [[3.582, 3.5845],[3.5885, 3.591],[3.594, 3.596], $
+                  [3.597, 3.60],[3.605, 3.62],[3.63, 3.645],[3.684, 3.688]]
+        nregions = (size(absreg))[2] 
+	for i=0,nregions - 1 do begin
+          absline = where(spectrowave GT absreg[0,i] AND  $
+                           spectrowave LT absreg[1,i])
+          if (absline[0] NE -1) then  mask[absline] = 0
+        endfor 
 ;
 ;	Now find limits of wmin, wmax
 ;
@@ -88,7 +102,7 @@ function fluxcorr, flux, fluxivar, wset, plugsort, $
 
 	fullbkpt = slatec_splinefit(spectrowave, spectroflux, coeff, $
             maxiter=10, lower=lower, upper=upper, $
-            invvar=spectrofluxivar, bkpt=bkpt)
+            invvar=spectrofluxivar*mask, bkpt=bkpt, rejper=0.4)
 
 	intrinspl = spl_init(alog10(f8wave), f8flux)
 	fullf8v = spl_interp(alog10(f8wave), f8flux, intrinspl, wave) 

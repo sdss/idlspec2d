@@ -72,13 +72,13 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
    plugDir = yanny_par(hdr, 'plugDir')
    extractDir = yanny_par(hdr, 'extractDir')
    combDir = yanny_par(hdr, 'combDir')
-   if (combDir EQ '') then combDir=extractDir
+   if (combDir EQ '-1') then combDir=extractDir
 
    inputDir = yanny_par(hdr, 'inputDir')
    flatDir = yanny_par(hdr, 'flatDir')
    mjd = yanny_par(hdr, 'MJD')
    run = strtrim(yanny_par(hdr, 'run'),2)
-   if (run EQ '') then run = '0'
+   if (run EQ '-1') then run = '0'
 
    camnames = ['b1', 'r2', 'b2', 'r1']
    camnums = ['01', '02', '03', '04']
