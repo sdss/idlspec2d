@@ -407,7 +407,7 @@ pro platelist, infile, plist=plist, create=create, $
       qkeep[indx[imax]] = 1
    endfor
 
-   ; Don't discard any whre MAPNAME isn't set
+   ; Don't discard any where MAPNAME isn't set
    indx = where(strtrim(plist.mapname) EQ '')
    if (indx[0] NE -1) then qkeep[indx] = 1
 
