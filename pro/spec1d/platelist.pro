@@ -146,7 +146,7 @@ pro platelist, infile, plist=plist, create=create, $
     'vers2d'   , ' ', $
     'verscomb' , ' ', $
     'vers1d'   , ' ', $
-    'verstarg' , ' ', $
+    'progname' , ' ', $
     'chunkname', ' ', $
     'mjdlist'  , ' ', $
     'nexp'     , 0L,  $
@@ -373,7 +373,7 @@ pro platelist, infile, plist=plist, create=create, $
 
       cinfo = chunkinfo(plist[ifile].plate)
       plist[ifile].chunkname = cinfo.chunkname
-      plist[ifile].verstarg = cinfo.verstarg
+      plist[ifile].progname = cinfo.progname
 
       ;----------
       ; Determine which public data release has this plate+MJD
@@ -515,8 +515,7 @@ pro platelist, infile, plist=plist, create=create, $
 
    for itile=0, n_elements(tilelist)-1 do begin
       indx = where(plist.tile EQ tilelist[itile] $
-       AND strtrim(plist.verstarg,2) NE 'special' $
-       AND strtrim(plist.verstarg,2) NE 'devel')
+       AND strtrim(plist.progname,2) EQ 'main')
       if (indx[0] NE -1) then begin
          snbest = max(snvec[indx], ibest)
          if (snbest GE minsn2) then plist[indx[ibest]].qsurvey = 1
