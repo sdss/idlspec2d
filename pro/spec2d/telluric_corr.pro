@@ -83,6 +83,8 @@ function telluric_corr,flux, fluxivar, wset, plugsort, $
                        strtrim(plugsort.objtype,2) EQ 'REDDEN_STD') AND $
                       (fibermask EQ 0), tellct)
 
+        splog, 'Number of possible telluric standards = ', tellct
+
 	if (tellct EQ 0) then begin
             print, 'WARNING: No telluric correction stars'
 	    return, tellcorr
@@ -102,7 +104,7 @@ function telluric_corr,flux, fluxivar, wset, plugsort, $
 
         first = 1
 
-        for i=0,tellct-1 do begin	
+        for i=0,tellct-1 do begin
 	   possible = where(tellwave[*,i] GT minw AND tellwave[*,i] LT maxw, $
                           npossible)
 

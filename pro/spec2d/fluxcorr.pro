@@ -103,21 +103,27 @@ function fluxcorr, flux, fluxivar, wset, plugsort, color=color, $
 	    message, 'FLUXCORR: can not find reddening standards either'
 	endif
 
-	nstds = n_elements(spectrophoto)	
+	nstds = n_elements(spectrophoto)
+        splog, 'Number of possible spectrophoto standards = ', nstds
 
 ;	Now with list of spectrophoto, return best choice by color
 ;	difference with BD+17 4708:
 
-	bd17mag = [10.56, 9.64, 9.35, 9.25, 9.23]	
+	bd17mag = [10.56, 9.64, 9.35, 9.25, 9.23]
 	bd17color = bd17mag[0:3]-bd17mag[1:4]
-	
+
 	spectrocolor = (plugsort[spectrophoto].mag)[0:3,*] - $
 	                   (plugsort[spectrophoto].mag)[1:4,*] 
 
-	bd17big = (fltarr(nstds) + 1.0) ## bd17color	
+	bd17big = (fltarr(nstds) + 1.0) ## bd17color
 	colordiff = sqrt(total((spectrocolor - bd17big)^2,1))
 
 	score = min((plugsort[spectrophoto].mag)[2,*]+colordiff*40.0, bestcolor)
+	splog, 'Spectrophoto star is fiberid = ', $
+         plugsort[spectrophoto[bestcolor]].fiberid
+	splog, 'Spectrophoto mag = ', $
+         plugsort[spectrophoto[bestcolor]].mag
+	splog, 'Spectrophoto score = ', score
 
 	spectroflux = flux[*,spectrophoto[bestcolor]]
 	spectrofluxivar = fluxivar[*,spectrophoto[bestcolor]]
