@@ -26,6 +26,10 @@
 ;                Default to 1.
 ;   inputans   - Input fit, excluding background and whopping terms
 ;                [ncoeff*nFiber]
+;                The array is sorted as follows:
+;                  [ncoeff] values for fiber #0
+;                   ...
+;                  [ncoeff] values for fiber #(nFiber-1)
 ;   relative   - Set to use reduced chi-square to scale rejection threshold
 ;   squashprofile - ???
 ;   npoly      - Order of chebyshev scattered light background; default to 5
@@ -56,28 +60,34 @@
 ;   wfixarr    - 1D integer array to specify which parameters in the full fit
 ;                to fix; 0=fixed, 1=float.
 ;                The array is sorted as follows:
-;                   [ncoeff] values for fiber #0
-;                   [ncoeff] values for fiber #1
+;                  [ncoeff] values for fiber #0
 ;                   ...
-;                   [ncoeff] values for fiber #(nFiber-1)
-;                   [npoly] values for the background polynomial terms
-;                   [whoppingct] values for the whopping terms
+;                  [ncoeff] values for fiber #(nFiber-1)
+;                  [npoly] values for the background polynomial terms
+;                  [whoppingct] values for the whopping terms
 ;   xvar       - X values of fimage and invvar; default is findgen(NX).
 ;   mask       - Image mask: 1=good, 0=bad [NX]
 ;   pixelmask  - Bits set for each fiber due to extraction rejection [nFiber]
 ;
 ; OUTPUTS:
 ;   ans        - Output fit [ncoeff*nFiber+npoly+whoppingct]
+;                The array is sorted as follows:
+;                  [nFiber] values for coefficient #0
+;                   ...
+;                  [nFiber] values for coefficient #(nCoeff-1)
+;                  [npoly] values for the background polynomial terms
+;                  [whoppingct] values for the whopping terms
+;                Note this array is **not** sorted as INPUTANS or WFIXARR!
 ;
 ; OPTIONAL OUTPUTS:
 ;   ymodel     - Evaluation of best fit [nCol]
 ;   fscat      - Scattered light contribution in each fiber [nFiber]
 ;   diagonal   - 1D diagonal of covariance matrix.  Currently, this is
-;                the diagonal from the cholesky decompostion, which is
-;                1/error[j].
+;                the diagonal from the Cholesky decompostion, which is
+;                1/error[j].  [ncoeff*nFiber+npoly+whoppingct]
 ;   fullcovar  - 2D covariance matrix.  This is a symmetric matrix, and we
-;                only fill the lower triangle and set the rest to 0.
-;                Computing this increases CPU time by a factor of 2 or 3.
+;                only fill the lower triangle.  Computing this increases CPU
+;                time by a factor of 2 or 3.
 ;   niter      - Number of rejection iterations performed
 ;   reducedChi - Reduced chi ???
 ;
@@ -211,25 +221,25 @@ function extract_row1, fimage, invvar, xcen, sigma, ymodel=ymodel, $
 ;      if (nleft GT 1) then $
 ;       wfixarr[0:(nleft-1)*ncoeff-1] = 0
       ; Instead, look for any XCEN more than 2 pix off
-      ileft = where(xcen LT xvar[igood[0]]-2.0, nleft)
-      if (nleft GT 0) then $
-       wfixarr[0:nleft*ncoeff-1] = 0
+;      ileft = where(xcen LT xvar[igood[0]]-2.0, nleft)
+;      if (nleft GT 0) then $
+;       wfixarr[0:nleft*ncoeff-1] = 0
 
 ;      iright = where(xcen GT xvar[igood[ngood-1]], nright)
 ;      if (nright GT 1) then $
 ;       wfixarr[(ntrace-nright+1)*ncoeff : ntrace*ncoeff-1] = 0
       ; Instead, look for any XCEN more than 2 pix off
-      iright = where(xcen GT xvar[igood[ngood-1]]+2.0, nright)
-      if (nright GT 0) then $
-       wfixarr[(ntrace-nright)*ncoeff : ntrace*ncoeff-1] = 0
+;      iright = where(xcen GT xvar[igood[ngood-1]]+2.0, nright)
+;      if (nright GT 0) then $
+;       wfixarr[(ntrace-nright)*ncoeff : ntrace*ncoeff-1] = 0
 
       ; Don't fit to any centers where there are no good data points
       ; within 2.0 pix
-      for i=0, ntrace-1 do begin
-         ii = where(abs(xvar[igood] - xcen[i]) LT 2.0, nn)
-         if (nn EQ 0) then $
-          wfixarr[i*ncoeff : i*ncoeff+ncoeff-1] = 0
-      endfor
+;      for i=0, ntrace-1 do begin
+;         ii = where(abs(xvar[igood] - xcen[i]) LT 2.0, nn)
+;         if (nn EQ 0) then $
+;          wfixarr[i*ncoeff : i*ncoeff+ncoeff-1] = 0
+;      endfor
    endif else begin
       if (ma NE n_elements(wfixarr)) then $
        message, 'Number of elements in FIMAGE and WFIXARR must be equal'
@@ -418,11 +428,19 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
       tmp_wfixarr = 0
    endelse
 
+   tmp_pixelmask = lonarr(nuse)
+   tmp_pixelmask = pixelmask[iuse]
+
+   if (N_elements(sigma) GT 1) then tmp_sigma = sigma[iuse] $
+    else tmp_sigma = sigma
+
 ymodel = 0 ; ???
-   tmp_ans = extract_row1( fimage, invvar, xcen[iuse], sigma, ymodel=ymodel, $
+   tmp_ans = extract_row1( fimage, invvar, xcen[iuse], tmp_sigma, $
+    ymodel=ymodel, $
     fscat=tmp_fscat, wfixed=wfixed, inputans=tmp_inputans, xvar=xvar, $
     mask=mask, diagonal=tmp_p, wfixarr=tmp_wfixarr, npoly=npoly, $
-    whopping=whopping, reducedChi=reducedChi, _EXTRA=extra)
+    whopping=whopping, pixelmask=tmp_pixelmask, reducedChi=reducedChi, $
+    _EXTRA=extra)
 
    ; Set WFIXARR for unused fibers equal to zero
    wfixarr = lonarr(ma) + 0
@@ -442,7 +460,9 @@ ymodel = 0 ; ???
    ; Set ANS for unused fibers equal to zero
    ans = fltarr(ma)
    for i=0, ncoeff-1 do $
-    ans[iuse*ncoeff+i] = tmp_ans[lindgen(nuse)*ncoeff+i]
+    ans[iuse+i*nuse] = tmp_ans[lindgen(nuse)+i*nuse]
+
+   pixelmask[iuse] = tmp_pixelmask
 
    nextra = npoly + whoppingct
    if (nextra GT 0) then begin
