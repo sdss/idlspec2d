@@ -1,6 +1,8 @@
 
 APO_LOG2HTML: Change link from SOS web pages to new location at
            "http://sdsshost.apo.nmsu.edu/idlspec2d/spectroSOS.html".
+COLLIMATE: Clarify the output text to say "RMS across CCD", rather
+           than implying this is a measurement error (with "+/-").
 LINEBACKFIT: Fix typo for setting default value for SIGGUESS.
 PLATEHIST: Select "good" plates based upon "platequality" field
            from PLATELIST.
