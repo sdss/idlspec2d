@@ -100,7 +100,7 @@ function rspec_mrdfits, fcb, exten_no, rownums=rownums, _EXTRA=EXTRA
    endelse
 
    naxis1 = fcb.axis[0,exten_no]
-   naxis2 = fcb.axis[1,exten_no]
+;   naxis2 = fcb.axis[1,exten_no]
    iadd = 0
    for ichunk=0, nchunks-1 do begin
       nadd = row_end[ichunk] - row_start[ichunk] + 1
@@ -198,15 +198,11 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    if (q_loglam OR q_wave) then begin
       if (NOT keyword_set(hdr)) then hdr = headfits(filename)
       naxis1 = sxpar(hdr, 'NAXIS1')
-      naxis2 = sxpar(hdr, 'NAXIS2')
+;      naxis2 = sxpar(hdr, 'NAXIS2')
       coeff0 = sxpar(hdr, 'COEFF0')
       coeff1 = sxpar(hdr, 'COEFF1')
       loglam = coeff0 + coeff1 * findgen(naxis1)
-      if (keyword_set(range)) then begin
-         loglam = rebin(loglam, naxis1, range[1]-range[0]+1)
-      endif else begin
-         loglam = rebin(loglam, naxis1, naxis2)
-      endelse
+      loglam = rebin(loglam, naxis1, n_elements(rownums))
       if (q_wave) then wave = 10^loglam
    endif
 
