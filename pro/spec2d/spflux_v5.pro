@@ -81,7 +81,7 @@ function spflux_read_kurucz, loglam, dispimg, iselect=iselect1, $
       gridlam = kloglam ; Keep the same wavelength mapping
       gridflux = fltarr(npix, nres, nmodel)
       for ires=0L, nres-1 do begin
-print,ires,nres ; ???
+         print, ires, nres
          kern = exp(-0.5 * (findgen(nkpix*2+1) - nkpix)^2 $
           / (gridsig[ires]*subsamp)^2)
          kern = kern / total(kern)
@@ -131,44 +131,54 @@ end
 ;------------------------------------------------------------------------------
 ; Create a mask of 1's and 0's, where wavelenths that should not be used
 ; for fluxing (like near stellar features) are masked.
-; 1 = not near lines, 0 = near lines
-; HWIDTH = half width in log-wavelength for masking
+; 0 = not near lines, 1 = near lines
+; HWIDTH = half width in log-wavelength for masking stellar lines
 
-function spflux_masklines, loglam, hwidth=hwidth
+function spflux_masklines, loglam, hwidth=hwidth, stellar=stellar, $
+ telluric=telluric
 
    if (NOT keyword_set(hwidth)) then $
     hwidth = 5.7e-4 ; Default is to mask +/- 5.7 pix = 400 km/sec
 
-   rejwave = [ $
-    3830.0 , $ ; ? (H-7 is at 3835 Ang)
-    3889.0 , $ ; H-6
-    3933.7 , $ ; Ca_k
-    3968.5 , $ ; Ca_H (and H-5 at 3970. Ang)
-    4101.7 , $ ; H-delta
-    4300.  , $ ; G-band
-    4305.  , $ ; G-band
-    4310.  , $ ; more G-band
-    4340.5 , $ ; H-gamma
-    4861.3 , $ ; H-beta
-    5893.0 , $ ; Mg
-    6562.8 , $ ; H-alpha
-    8500.8 , $
-    8544.6 , $
-    8665.0 , $
-    8753.3 , $
-    8866.1 , $
-    9017.5 , $
-    9232.0 ]
+   mask = bytarr(size(loglam,/dimens))
 
-   airtovac, rejwave
-   nreject = n_elements(rejwave) / 2
+   if (keyword_set(stellar)) then begin
+      starwave = [ $
+       3830.0 , $ ; ? (H-7 is at 3835 Ang)
+       3889.0 , $ ; H-6
+       3933.7 , $ ; Ca_k
+       3968.5 , $ ; Ca_H (and H-5 at 3970. Ang)
+       4101.7 , $ ; H-delta
+       4300.  , $ ; G-band
+       4305.  , $ ; G-band
+       4310.  , $ ; more G-band
+       4340.5 , $ ; H-gamma
+       4861.3 , $ ; H-beta
+       5893.0 , $ ; Mg
+       6562.8 , $ ; H-alpha
+       8500.8 , $
+       8544.6 , $
+       8665.0 , $
+       8753.3 , $
+       8866.1 , $
+       9017.5 , $
+       9232.0 ]
+      airtovac, starwave
 
-   ; Mask =1 for good points, =0 for bad points
-   mask = bytarr(size(loglam,/dimens)) + 1B
-   for i=0L, nreject-1 do begin
-      mask = mask AND (loglam LT alog10(rejwave[i])-hwidth $
-       OR loglam GT alog10(rejwave[i])+hwidth)
-   endfor
+      for i=0L, n_elements(starwave)-1 do begin
+         mask = mask OR (loglam GT alog10(starwave[i])-hwidth $
+          AND loglam LT alog10(starwave[i])+hwidth)
+      endfor
+   endif
+
+   if (keyword_set(telluric)) then begin
+      tellwave1 = [6850., 7150., 7560., 8105., 8930.]
+      tellwave2 = [6960., 7350., 7720., 8240., 9030.]
+      for i=0L, n_elements(tellwave1)-1 do begin
+         mask = mask OR (loglam GT alog10(tellwave1[i]) $
+          AND loglam LT alog10(tellwave2[i]))
+      endfor
+   endif
 
    return, mask
 end
@@ -176,7 +186,7 @@ end
 ; Divide the spectrum by a median-filtered spectrum.
 ; The median-filtered version is computed ignoring stellar absorp. features.
 
-function spflux_medianfilt, loglam, objflux, objivar, mask=mask, width=width, $
+function spflux_medianfilt, loglam, objflux, objivar, width=width, $
  newivar=newivar, _EXTRA=KeywordsForMedian
 
    ndim = size(objflux, /n_dimen)
@@ -192,8 +202,9 @@ function spflux_medianfilt, loglam, objflux, objivar, mask=mask, width=width, $
    if (arg_present(objivar)) then newivar = 0 * objivar
    for ispec=0L, nspec-1 do begin
 
-      ; Mask =1 for good points, =0 for bad points
-      qgood = spflux_masklines(loglam[*,ispec])
+      ; For the median-filter, ignore points near stellar absorp. features,
+      ; but keep points near telluric bands.
+      qgood = 1 - spflux_masklines(loglam[*,ispec], /stellar)
 
       ; Median-filter, but skipping masked points
       igood = where(qgood, ngood)
@@ -225,15 +236,21 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1
 
    ndim = size(objflux, /n_dimen)
    dims = size(objflux, /dimens)
+   npix = dims[0]
    if (ndim EQ 1) then nspec = 1 $
     else nspec = dims[1]
 
    ;----------
    ; Median-filter the object fluxes
 
-   medflux = spflux_medianfilt(loglam, objflux, objivar, mask=(objivar NE 0), $
+   medflux = spflux_medianfilt(loglam, objflux, objivar, $
     width=filtsz, /reflect, newivar=medivar)
    sqivar = sqrt(medivar)
+
+   ;----------
+   ; Mask out the telluric bands
+
+   sqivar = sqivar * (1 - spflux_masklines(loglam, /telluric))
 
    ;----------
    ; Load the Kurucz models into memory
@@ -241,7 +258,6 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1
    junk = spflux_read_kurucz(kindx=kindx)
    nmodel = n_elements(kindx)
 
-; NEED TO MASK OUT 5577, TELLURIC BANDS, etc !!!???
    ;----------
    ; Fit the redshift just by using a canonical model
 
@@ -303,13 +319,18 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1
 
    ;----------
    ; Plot the filtered object spectrum, overplotting the best-fit Kurucz model
-   ; Only plot the first spectrum -- this assumes it is the blue CCD ???
+
+   ; Select the observation to plot that has the highest S/N,
+   ; and one that goes blueward of 4000 Ang.
+   snvec = total(objflux * sqrt(objivar), 1) $
+    * (10.^loglam[0,*] LT 4000 OR 10.^loglam[npix-1,*] LT 4000)
+   junk = max(snvec, iplot)
 
    csize = 0.75
    djs_plot, [3840., 4120.], [0.0, 1.4], /xstyle, /ystyle, /nodata, $
     xtitle='Wavelength [Ang]', ytitle='Normalized Flux'
-   djs_oplot, 10^loglam[*,0], medflux[*,0]
-   djs_oplot, 10^loglam[*,0], medmodel[*,0], color='red'
+   djs_oplot, 10^loglam[*,iplot], medflux[*,iplot]
+   djs_oplot, 10^loglam[*,iplot], medmodel[*,iplot], color='red'
    xyouts, 3860, 0.2, kindx1.model, charsize=csize
    djs_xyouts, 4000, 0.2, $
     string(minchi2/dof, format='("\chi^2/DOF=",f5.2)'), charsize=csize
@@ -317,13 +338,6 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1
     zpeak*cspeed, $
     format='("Fe/H=", f4.1, "  T_{eff}=", f6.0, "  g=", f3.1, "  cz=",f5.0)'), $
     charsize=csize
-
-;set_plot,'x' ; ???
-;imodel = ibest & ispec = 0
-;medmodel = spflux_medianfilt(loglam, modflux[*,*,imodel], $
-; width=filtsz, /reflect)
-;foo=computechi2(medflux[*,ispec],sqivar[*,ispec],medmodel[*,ispec],yfit=yfit)
-;stop
 
    return, bestflux
 end
@@ -382,23 +396,31 @@ end
 
 ;------------------------------------------------------------------------------
 function spflux_bspline, loglam, mratio, mrativar, outmask=outmask, $
- everyn=everyn
+ everyn=everyn, airmass=airmass
 
    isort = sort(loglam)
    nord = 4 ; ???
 
    ; Choose the break points using the EVERYN option, but masking
    ; out more pixels near stellar features just when selecting them.
-   mask1 = spflux_masklines(loglam, hwidth=10e-4)
+   mask1 = 1 - spflux_masklines(loglam, hwidth=10e-4, /stellar)
    ii = where(mrativar[isort] GT 0 AND mask1[isort] EQ 1)
    bkpt = 0
    fullbkpt = bspline_bkpts(loglam[isort[ii]], everyn=everyn, $
     bkpt=bkpt, nord=nord)
 
-   outmask = 0
+   outmask1 = 0
+   if (keyword_set(airmass)) then begin
+      x2 = airmass[isort]
+   endif
    sset = bspline_iterfit(loglam[isort], mratio[isort], $
     invvar=mrativar[isort], lower=3, upper=3, fullbkpt=fullbkpt, $
-    maxrej=ceil(0.05*n_elements(indx)), outmask=outmask, nord=nord)
+    maxrej=ceil(0.05*n_elements(indx)), outmask=outmask1, nord=nord, $
+    x2=x2, npoly=2*keyword_set(airmass))
+   if (arg_present(outmask)) then begin
+      outmask = bytarr(size(loglam,/dimens))
+      outmask[isort] = outmask1
+   endif
 
    return, sset
 end
@@ -467,15 +489,16 @@ function spflux_mratio_flatten, loglam1, mratio1, mrativar1, pres=pres
 end
 
 ;------------------------------------------------------------------------------
-pro spflux_plotcalib, fitloglam, fitflux, mratiologlam, mratioflux, $
- mrativar, logrange=logrange
+pro spflux_plotcalib, mratiologlam, mratioflux, mrativar, $
+ fitloglam, fitflux, fitflux2, logrange=logrange
 
    xrange = 10.^logrange
    ii = where(fitloglam GE logrange[0] AND fitloglam LE logrange[1])
-   yrange = [0, 1.1*max(fitflux[ii])]
+   yrange = [min(fitflux[ii])>0.04*median(fitflux[ii])/1.1, $
+    max(fitflux[ii])*1.1]
    nfinal = (size(mratioflux, /dimens))[2]
 
-   djs_plot, xrange, yrange, /xstyle, /ystyle, /nodata, $
+   djs_plot, xrange, yrange, /xstyle, /ystyle, /nodata, /ylog, $
     xtitle='Wavelength [Ang]', ytitle='Counts/(10^{-17}erg/cm^2/s/Ang'
    for k=0, nfinal-1 do begin
       jj = where(mratiologlam[*,0,k] GE logrange[0] $
@@ -484,7 +507,9 @@ pro spflux_plotcalib, fitloglam, fitflux, mratiologlam, mratioflux, $
       if (ct GT 1) then $
        djs_oplot, 10.^mratiologlam[jj,0,k], mratioflux[jj,0,k], psym=3
    endfor
-   djs_oplot, 10.^fitloglam[ii], fitflux[ii], color='red'
+   djs_oplot, 10.^fitloglam[ii], fitflux[ii], color='green'
+   if (total(fitflux2) GT 0) then $
+    djs_oplot, 10.^fitloglam[ii], fitflux2[ii], color='red'
 
    return
 end
@@ -494,7 +519,6 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
 
    if (n_elements(adderr) EQ 0) then adderr = 0.03
    nfile = n_elements(objname)
-   nkeep = 1 ; ???
 
    ;----------
    ; Get the list of spectrograph ID and camera names
@@ -536,10 +560,17 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
    objflux = fltarr(npix, nfile, nphoto)
    objivar = fltarr(npix, nfile, nphoto)
    dispimg = fltarr(npix, nfile, nphoto)
+   airmass = fltarr(npix, nfile, 320)
    for ifile=0L, nfile-1 do begin
       spframe_read, objname[ifile], iphoto, wset=wset1, loglam=loglam1, $
        objflux=objflux1, objivar=objivar1, dispimg=dispimg1, $
-       mask=mask1, adderr=adderr
+       mask=mask1, hdr=hdr1, adderr=adderr
+
+      ; Compute the airmass for every pixel of every object
+      ; (every pixel is the same, of course)
+      tai = sxpar(hdr1, 'TAI')
+      for j=0, 319 do $
+       airmass[*,ifile,j] = tai2airmass(plugmap[j].ra, plugmap[j].dec, tai=tai)
 
       ; Make a map of the size of each pixel in delta-(log10-Angstroms).
       ; Re-normalize the flux to ADU/(dloglam).
@@ -586,22 +617,13 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       thismag = -2.5 * alog10(fthru) - (48.6-2.5*17)
 
       thismodel = thismodel $
-;       * 10.^((thisindx.mag[2] - plugmap[iphoto[ip]].mag[2])/2.5)
+;       * 10.^((thisindx.mag[2] - plugmap[iphoto[ip]].mag[2])/2.5) ; ???
        * 10.^((thismag[2] - plugmap[iphoto[ip]].mag[2])/2.5)
 
       modflux[*,*,ip] = thismodel
       if (ip EQ 0) then kindx = replicate(thisindx, nphoto)
       kindx[ip] = thisindx
 
-;set_plot,'x' ; ???
-;ii = where(loglam[*,*,ip] GT alog10(3700.) $
-; AND loglam[*,*,ip] LT alog10(4150),ct)
-;if (ct GT 0) then begin
-; splot,10^(loglam[*,*,ip])[ii], $
-;  (objflux[*,*,ip])[ii]/(median(objflux[*,*,ip]))[ii], ps=3
-; soplot,10^(loglam[*,*,ip])[ii], $
-;  (modflux[*,*,ip])[ii]/(median(modflux[*,*,ip]))[ii],color='red', ps=3
-;endif
    endfor
    !p.multi = 0
 
@@ -619,7 +641,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
    ; Iterate, rejecting entire stars if they are terrible fits.
 
    qdone = 0L
-   while (NOT qdone) do begin
+   while (qdone EQ 0) do begin
       ifinal = where(qfinal,nfinal) ; This is the list of the good stars
 
       ;----------
@@ -629,7 +651,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       mrativar = objivar * modflux^2
 
       ; Ignore regions around the stellar features
-      mrativar = mrativar * spflux_masklines(loglam)
+      mrativar = mrativar * (1 - spflux_masklines(loglam, /stellar))
 
       ;----------
       ; For each camera (blue or red), divide-out a low-order polynomial from
@@ -650,36 +672,37 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       mrativar[*,ired,ifinal] = mrativar[*,ired,ifinal] * flatarr_r^2
 
       ;----------
-      ; Do the B-spline fits
+      ; Do the B-spline fits for the blue CCDs.
 
       everyn = nblue * nfinal * 5
       sset_b = spflux_bspline(loglam[*,iblue,ifinal], $
        mratio[*,iblue,ifinal], mrativar[*,iblue,ifinal], $
        everyn=everyn, outmask=mask_b)
-;set_plot,'x'
-;foo=bspline_valu(loglam[*,iblue,ifinal],sset_b)
-;splot,10^loglam[*,iblue,ifinal],mratio[*,iblue,ifinal],ps=3,yr=[0,20]
-;ii=sort(loglam[*,iblue,ifinal])
-;soplot,10^(loglam[*,iblue,ifinal])[ii],foo[ii]
+
+      ;----------
+      ; Do the B-spline fits for the red CCDs.
+      ; Fit a 2-dimension B-spline using the airmass as the 2nd dimension,
+      ; but only if the airmass spans at least 0.10 and there are at
+      ; least 3 good stars.
 
       everyn = nred * nfinal * 1.5
+      if (max(airmass) - min(airmass) GT 0.10 AND nfinal GE 3) then begin ; ???
+         ; Get an airmass value for every *pixel* being fit
+         thisair = airmass[*,ired,iphoto[ifinal]]
+      endif else begin
+         thisair = 0
+      endelse
       sset_r = spflux_bspline(loglam[*,ired,ifinal], $
        mratio[*,ired,ifinal], mrativar[*,ired,ifinal], $
-       everyn=everyn, outmask=mask_r)
-;set_plot,'x'
-;jj=where(mrativar[*,ired,ifinal] GT 0)
-;splot,10^(loglam[*,ired,ifinal])[jj],(mratio[*,ired,ifinal])[jj],ps=3,yr=[0,15]
-;foo=bspline_valu(loglam[*,ired,ifinal],sset_r)
-;ii=sort(loglam[*,ired,ifinal])
-;soplot,10^(loglam[*,ired,ifinal])[ii],foo[ii],color='red'
+       everyn=everyn, outmask=mask_r, airmass=thisair)
 
       ;----------
       ; Find which star has the most pixels rejected, and reject
       ; that star if it's bad enough
 
-      fracgood_b = total(mask_b,nkeep) / (size(mask_b,/dimens))[0]
-      fracgood_r = total(mask_r,nkeep) / (size(mask_r,/dimens))[0]
-      fracgood = 0.5 * (fracgood_b + fracgood_r)
+      fracgood = fltarr(nfinal)
+      for k=0L, nfinal-1 do $
+       fracgood[k] = 0.5 * (mean(mask_b[*,*,k]) + mean(mask_r[*,*,k]))
       minfrac = min(fracgood, iworst)
       if (minfrac LT 0.80) then begin
          if (nfinal LE nphoto/2.) then begin
@@ -689,7 +712,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
          endif else begin
             splog, 'Rejecting std star in fiber = ', iphoto[ifinal[iworst]] $
              + 320 * strmatch(camname[0],'*2') + 1
-            ifinal[iworst] = 0B
+            qfinal[ifinal[iworst]] = 0B
          endelse
       endif else begin
          qdone = 1B ; No other stars to reject
@@ -719,12 +742,19 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
          thisflatarr = flatarr_r[*,ii,ifinal]
          thispres = pres_r[*,ii,ifinal]
       endif
+
       thismratio = mratio[*,ifile,ifinal]
       thismrativar = mrativar[*,ifile,ifinal]
+      if (tag_exist(thisset,'NPOLY')) then $
+       x2 = airmass[ifile,iphoto[ifinal]] $
+      else $
+       x2 = 0
 
       ; Evaluate the B-spline for the stars at their measured wavelengths
       ; in this exposure, then modulated by the mean FLATARR
-      ; for the stars in this exposure
+      ; for the stars in this exposure.
+      ; We re-fit the B-spline to exactly recover what we had before,
+      ; just modulated by the lower-order polynomial FLATARR.
 
       logmin = min(thisloglam[where(mrativar GT 0)], max=logmax)
       tmploglam = wavevector(logmin, logmax)
@@ -732,13 +762,23 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       for i=0L, nfinal-1 do $
        flatarr_mean = flatarr_mean $
         + poly(tmploglam, thispres[*,0,i]) / nfinal
-      tmpflux = bspline_valu(tmploglam, thisset) * flatarr_mean
-      sset_tmp = bspline_iterfit(tmploglam, tmpflux, oldset=thisset, maxiter=0)
-;set_plot,'x'
-;foo=bspline_valu(thisloglam, sset_tmp)
-;splot,10^thisloglam,tmpflux,ps=3,yr=[0,20]
-;soplot,10^(thisloglam)[ii],foo[ii]
-if (min(tmpflux) LT 0 OR max(tmpflux) GT 1000) then stop ; ???
+      if (keyword_set(x2)) then begin
+         x2_min = min(airmass[*,ifile,iphoto[ifinal]], max=x2_max)
+         splog, 'Exposure ', objname[ifile], $
+          'spans airmass range ', x2_min, x2_max
+         tmpflux1 = bspline_valu(tmploglam, thisset, x2=x2_min+0*tmploglam) $
+          * flatarr_mean
+         tmpflux2 = bspline_valu(tmploglam, thisset, x2=x2_max+0*tmploglam) $
+          * flatarr_mean
+         calibset = bspline_iterfit([tmploglam,tmploglam], $
+          [tmpflux1,tmpflux2], oldset=thisset, maxiter=0, $
+          x2=[0*tmploglam+x2_min,0*tmploglam+x2_max])
+      endif else begin
+         tmpflux1 = bspline_valu(tmploglam, thisset) * flatarr_mean
+         calibset = bspline_iterfit(tmploglam, tmpflux1, oldset=thisset, $
+          maxiter=0)
+         tmpflux2 = 0
+      endelse
 
       ;----------
       ; Make plots of the spectro-photometry data for this exposure only,
@@ -746,10 +786,14 @@ if (min(tmpflux) LT 0 OR max(tmpflux) GT 1000) then stop ; ???
 
       !p.multi = [0,1,2]
       logrange = logmax - logmin
-      spflux_plotcalib, tmploglam, tmpflux/flatarr_mean, $
-       thisloglam, thismratio, thismrativar, logrange=(logmin+[0,1]*logrange/2.)
-      spflux_plotcalib, tmploglam, tmpflux/flatarr_mean, $
-       thisloglam, thismratio, thismrativar, logrange=(logmin+[1,2]*logrange/2.)
+      spflux_plotcalib, $
+       thisloglam, thismratio, thismrativar, $
+       tmploglam, tmpflux1/flatarr_mean, tmpflux2/flatarr_mean, $
+       logrange=(logmin+[0,1]*logrange/2.)
+      spflux_plotcalib, $
+       thisloglam, thismratio, thismrativar, $
+       tmploglam, tmpflux1/flatarr_mean, tmpflux2/flatarr_mean, $
+       logrange=(logmin+[1,2]*logrange/2.)
       !p.multi = 0
 
       ;----------
