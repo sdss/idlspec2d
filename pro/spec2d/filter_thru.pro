@@ -93,7 +93,10 @@ function filter_thru, flux, waveimg=waveimg, wset=wset, mask=mask, norm=norm
       else $
        res[*,ifile] = total(flux * filtimg, 1)
 
-      if (keyword_set(norm)) then res[*,ifile] = res[*,ifile]/total(filtimg,1)
+      if (keyword_set(norm)) then begin
+         sumfilt = total(filtimg,1)
+         res[*,ifile] = res[*,ifile] / (sumfilt + (sumfilt LE 0))
+      endif
 
    endfor
 
