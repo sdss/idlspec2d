@@ -13,7 +13,7 @@
 ;
 ; INPUTS:
 ;   skylinefile - filename of skyline file
-;   fimage      - flattened image containing skylines (2k x 2k)
+;   fimage      - flattened image containing skylines (npix x nfiber)
 ;   ivar        - inverse variance of fimage
 ;   tset_arc    - traceset from arclines (lambda -> pix)
 ;   invset      - inverse arc traceset (lambda -> pix)
@@ -141,7 +141,7 @@ PRO locateskylines, skylinefile, fimage, ivar, $
 	oplot,skywaves,mean2,line=1
 
 ; Reject outliers with "drop dead" requirements
-	good = (abs(mean) LT 3) AND (abs(sigma) LT 0.2)
+	good = (abs(mean) LT 3) AND (abs(sigma) LT 1.0)
 	gind = where(good, nline)	
         if gind[0] eq -1 then message, 'No sky lines!!!'
 	print,nline, ' good lines - ',fix(total(good EQ 0)), ' rejected'
@@ -175,8 +175,11 @@ PRO locateskylines, skylinefile, fimage, ivar, $
 	print, infostr
 	
 
-stop
+print, 'do nothing'
 
+        tset_tweak   = tset_arc
+        invset_tweak = invset
+return
 
 	traceset2xy, tset_arc, xpos, ypos
 
