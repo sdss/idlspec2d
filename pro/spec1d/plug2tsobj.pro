@@ -18,7 +18,8 @@
 ;   plugmap    - Plug map structure, which must contain RA, DEC.
 ;                This must be set if RA and DEC are not set.
 ;   dmin       - Minimum separation between input position and position
-;                of the closest match; default to 60.0 arcsec.
+;                of the closest match using MATCHRA,MATCHDEC in the calibObj
+;                files; default to 1.0 arcsec.
 ;
 ; OUTPUTS:
 ;   tsobj      - tsObj structure, sorted such that each entry corresponds
@@ -42,7 +43,6 @@
 ;   > tsobj = plug2tsobj(306,plugmap=plug)
 ;
 ; BUGS:
-;   I should match objects based upon the MATCHRA,MATCHDEC in calibObj ???
 ;
 ; PROCEDURES CALLED:
 ;   djs_diff_angle()
@@ -66,7 +66,7 @@ function plug2tsobj, plateid, ra, dec, plugmap=plugmap, dmin=dmin
       dec = plugmap.dec
    endif
 
-   if (NOT keyword_set(dmin)) then dmin = 60.0
+   if (NOT keyword_set(dmin)) then dmin = 1.0
 
    ;----------
    ; If PLATEID is a vector, then sort by plate number and call this routine
@@ -128,7 +128,8 @@ function plug2tsobj, plateid, ra, dec, plugmap=plugmap, dmin=dmin
    for iplug=0, n_elements(ra)-1 do begin
       ; Assume that this object is non-existent if RA=DEC=0
       if (ra[iplug] NE 0 AND dec[iplug] NE 0) then begin
-         adist = djs_diff_angle(tstemp.ra, tstemp.dec, ra[iplug], dec[iplug])
+         adist = djs_diff_angle(tstemp.matchra, tstemp.matchdec, $
+          ra[iplug], dec[iplug])
          thismin = min(adist, imin)
          if (thismin GT dmin/3600.) then begin
             if (keyword_set(plugmap)) then begin
