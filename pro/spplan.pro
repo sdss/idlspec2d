@@ -138,14 +138,16 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
        message, 'Must specify RAWDIR'
    endif
 
-   ;  This trick expands directory
-   cd, rawdir, current=olddir
-   cd, olddir, current=rawdir
-
    if (NOT keyword_set(astrolog)) then $
     astrolog = strmid(rawdir, 0, rstrpos(rawdir,'/')+1) + 'astrolog'
    if (NOT keyword_set(flatdir)) then flatdir = 'pixflat'
    if (NOT keyword_set(minexp)) then minexp = 300
+
+   ;  This trick expands directories
+   cd, rawdir, current=olddir
+   cd, olddir, current=rawdir
+   cd, astrolog, current=olddir
+   cd, olddir, current=astrolog
 
    ;----------
    ; Determine the top-level of the output directory tree, and quit if
@@ -169,7 +171,12 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
    ; Strip leading directory names from MJDLIST
    for imjd=0, N_elements(mjdlist)-1 do begin
       i = rstrpos(mjdlist[imjd], '/') > 0
-      mjdlist[imjd] = strmid(mjdlist[imjd], i)
+
+
+      ;!!!!!!!!!!!!!!!!!!!!!SMB 02/21/00
+      ;  Added 1 to index to store just MJD with no '/'
+      ;
+      mjdlist[imjd] = strmid(mjdlist[imjd], i+1)
    endfor
 
    camnames = ['b1', 'b2', 'r1', 'r2']
@@ -184,7 +191,7 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
       inputdir = rawdir+'/'+mjddir
       plugdir = astrolog+'/'+mjddir
 
-      ecalibfile = findecalib(fix(mjddir), getenv('IDLSPEC2D_DIR')+'/examples')
+      ecalibfile = findecalib(long(mjddir), getenv('IDLSPEC2D_DIR')+'/examples')
 
       splog, ''
       splog, 'Data directory ', inputdir
@@ -196,6 +203,7 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
 	cd, inputdir, current=olddir
       fullname = findfile('sdR*.fit', count=nfile)
 	cd, olddir
+
       splog, 'Number of FITS files found: ', nfile
 
       if (nfile GT 0) then begin
@@ -403,8 +411,19 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
             ; Determine names of output files
 
             outdir = topdir + '/' + platestr
-            if (strmid(flatdir,0,1) EQ '/') then fullflatdir = flatdir $
-             else fullflatdir = '../../' + flatdir
+
+            ;  This trick expands directories
+            cd, flatdir, current=olddir
+            cd, olddir, current=fullflatdir
+
+;	!!!!!!!!!!!!!!!!!!!!!!!  SMB 02/21/99 !!!!!!!!!!!!!!!!!!!!!!!
+;            I'm not sure what two lines below are used for??
+;
+;
+;            if (strmid(flatdir,0,1) EQ '/') then fullflatdir = flatdir $
+;             else fullflatdir = '../../' + flatdir
+ 
+ 
             planfile = string( 'spPlan2d-', thismjd, '-', pltid, '.par', $
              format='(a,i5.5,a,i4.4,a)' )
             logfile = string( 'spDiag2d-', thismjd, '-', pltid, '.log', $
@@ -430,11 +449,14 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
             if (keyword_set(oneseq)) then begin
                spawn, 'mkdir -p '+outdir
                fullplanfile = filepath(planfile, root_dir=outdir)
-               if (keyword_set(findfile(fullplanfile))) then $
-                message, 'Output plan file already exists: '+planfile
-               splog, 'Writing plan file ', fullplanfile
-               yanny_write, fullplanfile, [ptr_new(pixflats), $
-                ptr_new(oneplug), ptr_new(oneseq)], hdr=hdr
+               if (keyword_set(findfile(fullplanfile))) then begin
+                 splog, 'WARNING: Output plan file already exists: '+planfile
+                 splog, '-----> Remove by hand if you want a new plan file!!!'
+               endif else begin
+                 splog, 'Writing plan file ', fullplanfile
+                 yanny_write, fullplanfile, [ptr_new(pixflats), $
+                  ptr_new(oneplug), ptr_new(oneseq)], hdr=hdr
+               endelse
             endif
 
          endfor ; End loop through sequence number (one plate)

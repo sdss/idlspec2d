@@ -114,9 +114,17 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    ; REDUCE CALIBRATION FRAMES
    ;---------------------------------------------------------------------------
 
+   flatinfoname = filepath( $
+       'spFlatInfo-'+string(format='(a1,i1,a)',color,spectrographid, $
+       '-'), root_dir=outdir)
+
+   arcinfoname = filepath( $
+       'spArcInfo-'+string(format='(a1,i1,a)',color,spectrographid, $
+       '-'), root_dir=outdir)
+
    spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
     lampfile=lampfile, indir=indir, arcstruct, flatstruct, $
-    ecalibfile=ecalibfile
+    ecalibfile=ecalibfile, flatinfoname=flatinfoname, arcinfoname=arcinfoname
 
    ;-----
    ; Select the best arc
@@ -145,33 +153,6 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
    qaplot_arcline, *(bestarc.xdif_tset), lambda, $
     filename=bestarc.name, color=color
-
-   ;------------------------------------------------------------------
-   ; Write information on flat field processing
-
-;   flatframenum = sxpar(flathdr, 'EXPOSURE')
-;   flatinfoname = filepath( $
-;       'spFlatInfo-'+string(format='(a1,i1,a,i8.8,a)',color,spectrographid, $
-;       '-',flatframenum,'.fits'), root_dir=outdir)
-;
-;   mwrfits, fflat, flatinfoname, flathdr, /create
-;   mwrfits, tset, flatinfoname
-;   mwrfits, plugsort, flatinfoname
-;   mwrfits, fibermask, flatinfoname
-
-   ;------------------------------------------------------------------
-   ; Write information on arc image processing
-
-;   arcframenum = sxpar(archdr, 'EXPOSURE')
-;   arcinfoname = filepath( $
-;       'spArcInfo-'+string(format='(a1,i1,a,i8.8,a)',color,spectrographid, $
-;       '-',arcframenum,'.fits'), root_dir=outdir)
-;
-;   mwrfits, arcimg, arcinfoname, archdr, /create
-;   mwrfits, [transpose(lambda), xpeak], arcinfoname
-;   mwrfits, wset, arcinfoname
-;   mwrfits, plugsort, arcinfoname
-;   mwrfits, fibermask, arcinfoname
 
    ;---------------------------------------------------------------------------
    ; LOOP THROUGH OBJECT FRAMES

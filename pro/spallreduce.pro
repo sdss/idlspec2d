@@ -249,10 +249,14 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
             if (nfile GT 0) then begin
                outputroot = string('spMerge2d-',mjd,'-',plateid, $
                 format='(a,i5.5,a1,i4.4)')
+               individualroot  = string('spInd2d-',mjd,'-',plateid, $
+                format='(a,i5.5,a1,i4.4)')
+
 
                for i=0, nfile-1 do splog, 'Combine file ', files[i]
                combine2dout, files, filepath(outputroot, root_dir=combineDir), $
-                side, wavemin=alog10(3750.0), window=100, /individual
+                side, wavemin=alog10(3750.0), window=100, $
+                individual=filepath(individualroot, root_dir=combineDir)
             endif
 
          endfor

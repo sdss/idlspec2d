@@ -66,7 +66,11 @@ pro splog, noname=noname, camname=camname, $
 
    ; Determine the name of the calling routine
    help, calls=calls
+
    fname = (str_sep(calls[1], ' '))[0] + ': '
+
+   ; Add spaces for depth of routine
+   for i=0,n_elements(calls)-4 do fname = ' ' + fname 
 
    nv = N_params()
    if (nv GT 0 OR keyword_set(extra)) then begin

@@ -7,7 +7,8 @@
 ;
 ; CALLING SEQUENCE:
 ;   spcalib, flatname, arcname, pixflatname=, fibermask=, $
-;    lampfile=, indir=, timesep=, ecalibfile=, arcstruct, flatstruct
+;    lampfile=, indir=, timesep=, ecalibfile=, $
+;    arcinfoname=, flatinfoname=, arcstruct, flatstruct
 ;
 ; INPUTS:
 ;   flatname   - Name(s) of flat-field SDSS image(s)
@@ -25,6 +26,8 @@
 ;   timesep    - Maximum time separation between flats and arcs to pair them;
 ;                set to zero to disable this test; default to 7200 sec.
 ;   ecalibfile - opECalib file to pass to sdssproc
+;   arcinfoname-  File name (with path) to output arc extraction and fitting information
+;   flatinfoname- File name (with path) to output flat field extraction and fitting information
 ;
 ; OUTPUTS:
 ;   arcstruct  - Structure array with extracted arc calibration information
@@ -64,6 +67,7 @@ function create_arcstruct, narc
    ftemp = create_struct( name='ARC_STRUCT', $
     'NAME', '', $
     'TAI', 0D, $
+    'TSEP', 0D, $
     'QBAD', 0B, $
     'IFLAT', -1, $
     'BESTCORR', 0.0, $
@@ -84,6 +88,7 @@ function create_flatstruct, nflat
    ftemp = create_struct( name='FLAT_STRUCT', $
     'NAME', '', $
     'TAI', 0D, $
+    'TSEP', 0D, $
     'QBAD', 0, $
     'IARC', -1, $
     'FIBERMASK', ptr_new(), $
@@ -98,7 +103,7 @@ end
 
 pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
  lampfile=lampfile, indir=indir, timesep=timesep, ecalibfile=ecalibfile, $
- arcstruct, flatstruct
+ arcinfoname=arcinfoname, flatinfoname=flatinfoname, arcstruct, flatstruct
 
    if (NOT keyword_set(indir)) then indir = '.'
    if (NOT keyword_set(timesep)) then timesep = 7200
@@ -310,6 +315,27 @@ splog,'Arc fbadpix ', fbadpix ; ???
             arcstruct[iarc].xpeak = ptr_new(xpeak)
             arcstruct[iarc].xdif_tset = ptr_new(xdif_tset)
             arcstruct[iarc].fibermask = ptr_new(tmp_fibmask) 
+
+            ;------------------------------------------------------------------
+            ; Write information on arc lamp processing
+            ;
+
+            if (keyword_set(arcinfoname)) then begin
+
+              sxaddpar, archdr, 'FBADPIX', fbadpix, $
+                  'Fraction of bad pixels in raw image'
+              sxaddpar, archdr, 'BESTCORR', bestcorr, $
+                  'Best Correlation coefficient'
+
+              arcinfofile = string(format='(a,i8.8,a)',arcinfoname, $
+                 sxpar(archdr, 'EXPOSURE'), '.fits')
+
+              mwrfits, flux, arcinfofile, archdr, /create
+              mwrfits, [transpose(lambda), xpeak], arcinfofile
+              mwrfits, wset, arcinfofile
+              mwrfits, fibermask, arcinfofile 
+            endif
+
          endelse
 
 ;         qaplot_arcline, xdif_tset, lambda, filename=arcname[iarc], color=color
@@ -318,6 +344,7 @@ splog,'Arc fbadpix ', fbadpix ; ???
 
       arcstruct[iarc].name = arcname[iarc]
       arcstruct[iarc].tai = tai
+      arcstruct[iarc].tsep = tsep
       arcstruct[iarc].iflat = iflat
       arcstruct[iarc].qbad = qbadarc
 
@@ -349,6 +376,7 @@ splog,'Arc fbadpix ', fbadpix ; ???
        splog, 'Flat ' + flatname[iflat] + ' paired with no arc'
 
       flatstruct[iflat].iarc = iarc
+      flatstruct[iflat].tsep = tsep
 
       if (NOT flatstruct[iflat].qbad AND iarc NE -1) then begin
 
@@ -402,6 +430,22 @@ splog,'Arc fbadpix ', fbadpix ; ???
 
          flatstruct[iflat].fflat = ptr_new(fflat)
          flatstruct[iflat].fibermask = ptr_new(tmp_fibmask)
+
+         ;------------------------------------------------------------------
+         ; Write information on flat field processing
+
+         if (keyword_set(flatinfoname)) then begin
+
+           sxaddpar, flathdr, 'NBRIGHT', nbright, $
+               'Number of bright pixels (>10^5) in extracted flat-field'
+
+           flatinfofile = string(format='(a,i8.8,a)',flatinfoname, $
+                 sxpar(flathdr, 'EXPOSURE'), '.fits')
+
+           mwrfits, fflat, flatinfofile, flathdr, /create
+           mwrfits, tset, flatinfofile
+           mwrfits, fibermask, flatinfofile
+         endif
 
       endif
 

@@ -480,10 +480,14 @@ pro combine2dout, filenames, outputroot, spectrographid, $
       ;
 
       if (keyword_set(individual)) then begin
-        mwrfits, reform(fullwave,npixhere,nfiles), outputfile
-        mwrfits, reform(fullspec,npixhere,nfiles), outputfile
-        mwrfits, reform(fullivar,npixhere,nfiles), outputfile
-        mwrfits, reform(fullpixelmask,npixhere,nfiles), outputfile
+        individualfile = individual+'-' $
+           +string(format='(i3.3,a)',i+1+(spectrographid-1)*320)+'.fits'
+
+        mwrfits, reform(fullwave,npixhere,nfiles), individualfile, $
+                  newhdr, /create
+        mwrfits, reform(fullspec,npixhere,nfiles), individualfile
+        mwrfits, reform(fullivar,npixhere,nfiles), individualfile
+        mwrfits, reform(fullpixelmask,npixhere,nfiles), individualfile
       endif            
 
       if (keyword_set(display)) then begin
