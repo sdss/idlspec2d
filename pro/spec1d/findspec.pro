@@ -65,6 +65,8 @@ pro findspec, ra, dec, infile=infile, outfile=outfile, slist=slist,  $
 
    if (NOT keyword_set(plist)) then begin
       platelist, plist=plist
+      if (NOT keyword_set(plist)) then $
+       message, 'Plate list (platelist.fits) not found in $SPECTRO_DATA'
       nlist = n_elements(plist)
       minsn = fltarr(nlist)
       for i=0, nlist-1 do $
@@ -113,14 +115,16 @@ pro findspec, ra, dec, infile=infile, outfile=outfile, slist=slist,  $
    for iplate=0, nlist-1 do begin
       if (adist[iplate] LT 1.55) then begin
          readspec, plist[iplate].plate, mjd=plist[iplate].mjd, plugmap=plugmap
-         objdist = djs_diff_angle(ra, dec, plugmap.ra, plugmap.dec)
-         mindist = min(objdist, imin)
-         if (mindist LT 3.0/3600.) then begin
-            slist[iplate].plate = plist[iplate].plate
-            slist[iplate].mjd = plist[iplate].mjd
-            slist[iplate].fiberid = plugmap[imin].fiberid
-            slist[iplate].ra = plugmap[imin].ra
-            slist[iplate].dec = plugmap[imin].dec
+         if (keyword_set(plugmap)) then begin
+            objdist = djs_diff_angle(ra, dec, plugmap.ra, plugmap.dec)
+            mindist = min(objdist, imin)
+            if (mindist LT 3.0/3600.) then begin
+               slist[iplate].plate = plist[iplate].plate
+               slist[iplate].mjd = plist[iplate].mjd
+               slist[iplate].fiberid = plugmap[imin].fiberid
+               slist[iplate].ra = plugmap[imin].ra
+               slist[iplate].dec = plugmap[imin].dec
+            endif
          endif
       endif
    endfor
