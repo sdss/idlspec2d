@@ -39,7 +39,7 @@ In this document:
          (<A HREF="platequality.html">Plate Quality List</A>)
      <LI><A HREF="#duplicates">Avoiding Duplicate Objects</A>
      <LI><A HREF="#get_version">What Version of the Code Was Used?</A>
-     <LI><A HREF="#get_where">Where Is the Data?</A>
+     <LI><A HREF="#get_where">Copying the Data from Princeton (alfred account)</A>
      <LI><A HREF="#get_rsync">How to Keep Your Data Up-to-Date</A>
   </OL>
   <LI><A HREF="#summary">Summary Files</A>
@@ -309,7 +309,7 @@ header keywords VERS2D, VERSCOMB, VERS1D as described in the
 All these reductions were done using versions of the code tagged v4_9_8
 (or later), which represents a homogeneous set of reductions.
 
-<H4><A NAME="get_where">Where Is the Data?</A></H4>
+<H4><A NAME="get_where">Copying the Data from Princeton (alfred account)</A></H4>
 
 <P>
 The spectroscopic data is reduced at Princeton, typically within 12 hours
@@ -1080,8 +1080,8 @@ OBJTYPE    Why this object was targetted.  Note that if this field says QSO,
            as a GALAXY or any number of other categories as well.  The
            PRIMTARGET and SECTARGET flags in the plug-map structure (in the
            spPlate file) gives this full information.
-PLUG_RA    Object RA (drilled fiber position)
-PLUG_DEC   Object DEC (drilled fiber position)
+PLUG_RA    Object RA (drilled fiber position) [J2000 degrees].
+PLUG_DEC   Object DEC (drilled fiber position) [J2000 degrees].
 CLASS      Spectro classification: GALAXY, QSO, STAR; reductions prior to
            version v4_7 will also use SKY and UNKNOWN; later versions set
            the ZWARNING flags
