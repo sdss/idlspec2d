@@ -24,6 +24,8 @@ SPREDUCE2D: Print the version of "speclog".
 bin/sprobot_start: Insist that the cvs version of speclog be set up
         for running this robot.
 doc/www/idlspec2d_install.html: Change instructions to installing with EvilUPS.
+doc/www/spectro_home.html: Include instructions to download EDR and DR1
+        using wget.
 etc/spChunkList.par: Add chunks 80-84, 85-86.
 pro/Makefile: Add photoz directory
 templates/spLRG-52928.fits: LRG templates for LRG_PHOTOZ function.
