@@ -5,6 +5,10 @@ sprobot_start: Remove "sprobotcopy" from the cron jobs, since copying
 
 YANNY_READ (in idlutils): Try to make backwards-compatable with IDL 5.2
           by replacing calls to STRSPLIT() with calls to STR_SEP.
+evilinstall (in idlutils): Add another option for location of sdssfue
+          scripts (for the installation on sos.apo), and also set the
+          CVS locations to the default at Fermi if not set up with
+          "setup sdsscvs".
 
 -------------------------------------------------------------------------------
 v4_7_4 (May 10, 2001 idlspec2d+idlutils)
