@@ -91,6 +91,7 @@ function create_arcstruct, narc
     'IFLAT', -1, $
     'BESTCORR', 0.0, $
     'NMATCH', 0L, $
+    'MEDWIDTH', fltarr(4), $
     'LAMBDA', ptr_new(), $
     'XPEAK', ptr_new(), $
     'XDIF_TSET', ptr_new(), $
@@ -112,6 +113,7 @@ function create_flatstruct, nflat
     'QBAD', 0, $
     'IARC', -1, $
     'PROFTYPE', 0, $
+    'MEDWIDTH', fltarr(4), $
     'FIBERMASK', ptr_new(), $
     'XSOL', ptr_new(), $
     'WIDTHSET', ptr_new(), $
@@ -237,7 +239,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
           chisq=chisq1
 
          widthset1 = fitflatwidth(flux, fluxivar, ansimage, tmp_fibmask, $
-          ncoeff=5, sigma=sigma)
+          ncoeff=5, sigma=sigma, medwidth=xsigarr)
          ansimage = 0
 
          splog, 'Extracting flat with exponential cubic (proftype 3)'
@@ -247,7 +249,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
           chisq=chisq3
 
          widthset3 = fitflatwidth(flux, fluxivar, ansimage, tmp_fibmask, $
-          ncoeff=5, sigma=sigma)
+          ncoeff=5, sigma=sigma, medwidth=medwidth)
          ansimage = 0
 
          ; I would prefer to use x^3, so weight by 0.8
@@ -272,6 +274,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
          flatstruct[iflat].proftype  = proftype
          flatstruct[iflat].fibermask = ptr_new(tmp_fibmask)
          flatstruct[iflat].widthset = ptr_new(widthset)
+         flatstruct[iflat].medwidth  = xsigarr
 
       endif
 
@@ -411,7 +414,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
 
             nfitcoeff = color EQ 'red' ? 4 : 3
             dispset = fitdispersion(flux, fluxivar, xpeak, $
-             sigma=1.0, ncoeff=nfitcoeff, xmin=0.0, xmax=2047.0)
+             sigma=1.0, ncoeff=nfitcoeff, xmin=0.0, xmax=2047.0, $
+             medwidth=wsigarr)
 
             arcstruct[iarc].dispset = ptr_new(dispset)
             arcstruct[iarc].wset = ptr_new(wset)
@@ -421,6 +425,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
             arcstruct[iarc].xpeak = ptr_new(xpeak)
             arcstruct[iarc].xdif_tset = ptr_new(xdif_tset)
             arcstruct[iarc].fibermask = ptr_new(tmp_fibmask) 
+            arcstruct[iarc].medwidth = wsigarr
 
             ;------------------------------------------------------------------
             ; Write information on arc lamp processing
