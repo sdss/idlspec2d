@@ -58,6 +58,7 @@ function design_read2mass, filename
    tycvmag = rmag - 0.093 * (bmag - rmag) - 0.003
    result.mag = tyc_sdssmags(tycbmag-tycvmag, tycvmag)
    result.objtype = 'SERENDIPITY_MANUAL'
+   result.primtarget = 2L^24
 
    return, result
 end
