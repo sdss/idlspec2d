@@ -232,7 +232,7 @@ pro batch2d, platenums, topdir=topdir, mjd=mjd, mjstart=mjstart, mjend=mjend, $
    ;----------
    ; Remove symbolic link to raw data
 
-   spawn, 'rm -f rawdata'
+;   spawn, 'rm -f rawdata' ; But this could break another batch process!
 
    return
 end
