@@ -15,6 +15,7 @@ ZFIND: Make EIGENFILE an optional input, so that STARFLUX,STARLOGLAM0
 
 opHdrFix.par: Declare data bad on MJD 52336-52337 due to spectrograph
             mechanicals problems, and other problems from 52312-52337.
+mailhtml.sh: Comment out the rm lines (as in 1.18) and leave to killdata.sh
 sprobot.sh: Add more time stamps to the robot log file.
             Change the ssh command that retrieves the MJD directory list
             from the remote machine -- it appears that something about the
