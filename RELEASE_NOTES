@@ -20,6 +20,12 @@ PLATEMERGE: Add the fields CALIBFLUX,CALIBFLUX_IVAR which are explicitly
         copied over from the plug-map structures.
 READPLUGMAP: Fix bug when replacing unknown fluxes in the calibObj
         structure with old values in the plug-map file.
+READSPEC: Change how the internal procedure READSPEC1 works, such that
+        arrays of zeros are returned if data is missing.  This allows us
+        to return a good one-to-one list of objects from an input list
+        of plate,mjd,fiberid.  However, I'm not positive that this is always
+        the desired behaviour.  For ex, requesting a non-existent plate
+        will now return 640-element arrays of zeros.
 SDSSPROC: Re-enable the call to 'speclog_version'.
 SPFLUX_READ_KURUCZ: This function was pulled out of SPFLUX_V5.
 SPFLUX_V5: Pull out the SPFLUX_READ_KURUCZ() code as a separate function.
