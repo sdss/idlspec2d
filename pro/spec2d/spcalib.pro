@@ -21,7 +21,7 @@
 ;   indir      - Input directory for FLATNAME, ARCNAME, OBJNAME;
 ;                default to '.'
 ;   timesep    - Maximum time separation between flats and arcs to pair them;
-;                default to 3600 sec.
+;                default to 7200 sec.
 ;
 ; OUTPUTS:
 ;   arcstruct  - Structure array with extracted arc calibration information
@@ -96,7 +96,7 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
  lampfile=lampfile, indir=indir, timesep=timesep, arcstruct, flatstruct
 
    if (NOT keyword_set(indir)) then indir = '.'
-   if (NOT keyword_set(timesep)) then timesep = 3600
+   if (NOT keyword_set(timesep)) then timesep = 7200
 
    ;---------------------------------------------------------------------------
    ; Determine spectrograph ID and color from first flat file
