@@ -138,6 +138,7 @@ pro/apo2d/apofix.pro -text
 pro/apo2d/apofluxcalib.pro -text
 pro/apo2d/apoheader.pro -text
 pro/apo2d/apoplot.pro -text
+pro/apo2d/apoplotarc.pro -text
 pro/apo2d/apoplotsky.pro -text
 pro/apo2d/aporeduce.pro -text
 pro/apo2d/atvrawspec.pro -text
