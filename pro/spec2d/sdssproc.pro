@@ -3,13 +3,13 @@
 ;   sdssproc
 ;
 ; PURPOSE:
-;   Read in Raw SDSS files, and process with opECalib.par and opConfig.par
+;   Read in Raw SDSS files, and process with opConfig, opECalib, opBC par files.
 ;
 ; CALLING SEQUENCE:
-;   sdssproc, infile, [image, invvar, indir=indir, $
-;    outfile=outfile, varfile=varfile, nsatrow=nsatrow, $
-;    hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, bcfile=bcfile, $
-;    pixflatname=pixflatname, spectrographid=spectrographid, color=color ]
+;   sdssproc, infile, [image, invvar, indir=, $
+;    outfile=, varfile=, nsatrow=, fbadpix=, $
+;    hdr=hdr, configfile=, ecalibfile=, bcfile=, $
+;    pixflatname=, spectrographid=, color= ]
 ;
 ; INPUTS:
 ;   infile     - Raw SDSS file name
@@ -19,7 +19,8 @@
 ;   outfile    - Calibrated 2d frame, after processing
 ;   varfile    - Inverse variance frame after processing
 ;   nsatrow    - Number of saturated rows, assuming that a row is saturated
-;                if at least 20 of its pixels are above saturation level.
+;                if at least 20 of its pixels are above saturation level
+;   fbadpix    - Fraction of bad pixels, not including bad columns
 ;   hdr        - Header returned in memory
 ;   configfile - Default to "opConfig.par"
 ;   ecalibfile - Default to "opECalib.par"
@@ -35,6 +36,8 @@
 ; COMMENTS:
 ;   Only the header is read from the image if IMAGE, INVVAR, OUTFILE and
 ;   VARFILE are all not set.
+;
+;   Required header keywords: EXPTIME.
 ;
 ; BUGS:
 ;   The open-shutter correction SMEARIMG will include smeared data from
@@ -68,14 +71,15 @@
 ;------------------------------------------------------------------------------
 
 pro sdssproc, infile, image, invvar, indir=indir, $
- outfile=outfile, varfile=varfile, nsatrow=nsatrow, $
+ outfile=outfile, varfile=varfile, nsatrow=nsatrow, fbadpix=fbadpix, $
  hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, bcfile=bcfile, $
  pixflatname=pixflatname, spectrographid=spectrographid, color=color
 
    if (N_params() LT 1) then begin
-      print, 'Syntax - sdssproc, infile, [image, invvar, indir=indir, $'
-      print, ' outfile=outfile, varfile=varfile, nsatrow=nsatrow, $' 
-      print, ' hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, bcfile=bcfile]'
+      print, 'Syntax - sdssproc, infile, [image, invvar, indir=, $'
+      print, ' outfile=, varfile=, nsatrow=, fbadpix=, $' 
+      print, ' hdr=, configfile=, ecalibfile=, bcfile=, $'
+      print, ' pixflatname=, spectrographid=, color= ]'
       return
    endif
    if (NOT keyword_set(configfile)) then configfile = 'opConfig.par'
@@ -84,7 +88,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
 
    readimg = arg_present(image) OR keyword_set(outfile)
    readivar = arg_present(invvar) OR keyword_set(varfile) $
-    OR arg_present(nsatrow)
+    OR arg_present(nsatrow) OR arg_present(fbadpix)
 
    pp = getenv('IDLSPEC2D_DIR')+'/examples'
 
@@ -115,9 +119,9 @@ pro sdssproc, infile, image, invvar, indir=indir, $
 
    realbc = tempname[0]
 
-   if (keyword_set(indir)) then inpath = filepath(infile, root_dir=indir) $
-    else inpath = infile
-   fullname = (findfile(inpath, count=ct))[0]
+   if (keyword_set(indir)) then fullname = filepath(infile, root_dir=indir) $
+    else fullname = infile
+   fullname = (findfile(fullname, count=ct))[0]
    if (ct NE 1) then $
     message, 'Cannot find image ' + infile
 
@@ -126,14 +130,17 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    else $
     hdr = headfits(fullname)
 
-   cards = sxpar(hdr,'NAXIS*')
-;   if (cards[0] NE 2128 OR cards[1] NE 2069) then $
-;      message, 'Expecting 2128x2069, found '+string(cards[0])+','$
-;               +string(cards[1])
+   naxis = sxpar(hdr,'NAXIS*')
+   if (naxis[0] NE 2128 OR naxis[1] NE 2069) then $
+    splog, 'WARNING: Expecting 2128x2069, found '+string(naxis[0])+'x'$
+     +string(naxis[1])
 
-   ; Determine which CCD from the file name itself!
-   ; Very bad form, but this information is not in the header.
-   ; The CAMERAS keyword is sometimes for the wrong camera.
+   ;------
+   ; Determine which CCD from the file name itself, using either the
+   ; numbering scheme (01,02,03,04) or naming scheme (b1,r2,b2,r1).
+   ; Very bad form, but this information is not in the header since
+   ; the CAMERAS keyword is sometimes wrong.
+
    i = rstrpos(infile, '-')
    if (i[0] EQ -1 OR i-2 LT 0) then $
     message, 'Cannot determine CCD number from file name ' + infile
@@ -141,42 +148,32 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    camnames = ['b1', 'r2', 'b2', 'r1']
    camnums = ['01', '02', '03', '04']
 
-   ; They've changed filenames again, this works both ways
+   indx = where(strmid(infile, i-2, 2) EQ camnames, ct)
+   if (ct NE 1) then $
+     indx = where(strmid(infile, i-2, 2) EQ camnums, ct)
+   if (ct NE 1) then $
+    message, 'Cannot determine CCD number from file name ' + infile
 
-   camplace = where(strmid(infile, i-2, 2) EQ camnames, camct)
-   if (camct NE 1) then $
-     camplace = where(strmid(infile, i-2, 2) EQ camnums, camct)
-   if (camct NE 1) then  message, 'do not know what camera this is'
-
-   camcol = camplace[0] + 1
-     
-   cameras = strtrim( sxpar(hdr, 'CAMERAS'), 2 )
-   case camcol of
-     1: begin
-        spectrographid = 1
-        color = 'blue'
-         end
-     4: begin
-        spectrographid = 1
-        color = 'red'
-         end
-     3: begin
-        spectrographid = 2
-        color = 'blue'
-         end
-     2: begin
-        spectrographid = 2
-        color = 'red'
-        end
-     else: begin
-        print, 'CAMERAS keyword not found, guessing b2'
-        spectrographid = 2
-        color = 'blue'
-        camcol = 3
-        sxaddpar, hdr, 'CAMERAS', 'b2       ', ' Guessed b2 by default'
-;        message, 'Cannot determine CCD number from file name ' + infile
-        end
+;   cameras = strtrim( sxpar(hdr, 'CAMERAS'), 2 )
+   case camnames[indx[0]] of
+    'b1': begin
+          spectrographid = 1
+          color = 'blue'
+          end
+    'r2': begin
+          spectrographid = 1
+          color = 'red'
+          end
+    'b2': begin
+          spectrographid = 2
+          color = 'blue'
+          end
+    'r1': begin
+          spectrographid = 2
+          color = 'red'
+          end
    endcase
+   camcol = indx[0] + 1
    camrow = 0
 
    sxaddpar, hdr, 'CAMROW', camrow
@@ -193,7 +190,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    yanny_free, pdata
    config = config[ where(config.camrow EQ camrow AND config.camcol EQ camcol) ]
 
-   if (cards[0] NE config.ncols OR cards[1] NE config.nrows) then $
+   if (naxis[0] NE config.ncols OR naxis[1] NE config.nrows) then $
       message, 'Config file dimensions do not match raw image'
 
    qexist = [config.amp0, config.amp1, config.amp2, config.amp3]
@@ -256,7 +253,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    bc = *pdata[0]
    yanny_free, pdata
    
-   bchere = where(bc.camrow EQ camrow AND bc.camcol EQ camcol,nbc)
+   bchere = where(bc.camrow EQ camrow AND bc.camcol EQ camcol, nbc)
    if (nbc GT 0) then bc = bc[ bchere ]
 
    ;------
@@ -366,9 +363,11 @@ pro sdssproc, infile, image, invvar, indir=indir, $
       ;------
       ; SATMASK = Mask for saturated the detector, 0=bad
       ; ADMASK = Mask for saturating the A/D converter (at 65535), 1=bad
+      ; BCMASK = Mask for bad columns, 1=bad
 
       satmask = bytarr(nc, nr)
       admask = bytarr(nc, nr)
+      bcmask = bytarr(nc, nr)
  
       for iamp=0, 3 do begin
          if (qexist[iamp] EQ 1) then begin
@@ -443,6 +442,14 @@ pro sdssproc, infile, image, invvar, indir=indir, $
       endif
 
       ;------
+      ; Mask out pixels that saturated the A/D converter, plus mask
+      ; all neighbors within 1 pixel
+
+      ngrow = 1
+      width = 2*ngrow + 1
+      admask = smooth(admask * width^2, width) GT 0 ; 1=bad
+
+      ;------
       ; Mask out bad columns
 
       if (nbc GT 0) then begin
@@ -451,18 +458,25 @@ pro sdssproc, infile, image, invvar, indir=indir, $
          bcsr = (bc.dfrow0 > 0) < nr
          bcer = (bc.dfrow0 + bc.dfnrow - 1 < nr) > bcsr
 
-         for i=0,nbc-1 do satmask[bcsc[i]:bcec[i],bcsr[i]:bcer[i]] = 0
+         for i=0, nbc-1 do bcmask[bcsc[i]:bcec[i],bcsr[i]:bcer[i]] = 1
       endif
 
       ;------
-      ; Mask out pixels that saturated the A/D converter, plus mask
-      ; all neighbors within 1 pixel
-      ngrow = 1
-      width = 2*ngrow + 1
-      admask = smooth(admask * width^2, width) GT 0 ; 1=bad
-
       ; For masked pixels, set INVVAR=0
-      invvar = invvar * satmask * (1-admask)
+
+      invvar = invvar * satmask * (1-admask) * (1-bcmask)
+
+      ;------
+      ; Count the fraction of bad pixels, not including bad columns
+
+      if (arg_present(fbadpix)) then begin
+         junk = where((satmask EQ 0 OR admask EQ 1) AND (bcmask EQ 0), njunk)
+         fbadpix = float(njunk) / (float(nc) * float(nr))
+      endif
+
+satmask = 0
+admask = 0
+bcmask = 0
    endif
 
    ;---------------------------------------------------------------------------
@@ -478,6 +492,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
 
       if (readimg) then image = image / pixflat
       if (readivar) then invvar = invvar * pixflat^2
+pixflat = 0
    endif
 
    ;---------------------------------------------------------------------------
