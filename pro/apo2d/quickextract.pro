@@ -138,12 +138,12 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
 
    if (scatmed GT scatlimit) then $
      splog, 'WARNING: Scattered light median = ', scatmed, ' electrons' $
-      + ' (Warm CCD OR twi?)' $
+      + ' (Warm CCD or twi?)' $
     else $
      splog, 'Scattered light median = ', scatmed, ' electrons'
    if (scatmax GT 2*scatlimit) then $
      splog, 'WARNING: Scattered light max = ', scatmax, ' electrons' $
-      + ' (Warm CCD OR twi?)' $
+      + ' (Warm CCD or twi?)' $
     else $
      splog, 'Scattered light max = ', scatmax, ' electrons'
 
