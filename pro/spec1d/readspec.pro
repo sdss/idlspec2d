@@ -378,11 +378,11 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
          if (q_andmask) then spec_append, andmask, andmask1
          if (q_ormask) then spec_append, ormask, ormask1
          if (q_disp) then spec_append, disp, disp1
-         if (q_plugmap) then plugmap = struct_append(plugmap, plugmap1)
+         if (q_plugmap) then plugmap = struct_append(plugmap, [plugmap1])
          if (q_loglam) then spec_append, loglam, loglam1
          if (q_wave) then spec_append, wave, wave1
-         if (q_tsobj) then tsobj = struct_append(tsobj, tsobj1)
-         if (q_zans) then zans = struct_append(zans, zans1)
+         if (q_tsobj) then tsobj = struct_append(tsobj, [tsobj1])
+         if (q_zans) then zans = struct_append(zans, [zans1])
          if (q_synflux) then spec_append, synflux, synflux1
          if (q_mjd) then mjd = [mjd, mjd1]
       endelse
