@@ -147,7 +147,8 @@ pro platemerge, zfile, outfile=outfile, ascfile=ascfile, qsurvey=qsurvey
     'counts_model', fltarr(5), $
     'objc_type'  ,  '', $
     'primtarget' ,  0L, $
-    'sectarget'  ,  0L )
+    'sectarget'  ,  0L, $
+    'objtype'    ,  '' )
    adat = replicate(adat, nout)
    struct_assign, outdat, adat
 
