@@ -143,7 +143,7 @@ echo "0 10 * * * sprobot.sh >> $SPRLOG 2>&1" >> $cronfile
 # if [ ${vers:0:5} != NOCVS ] ; then upsversion=$vers ; fi
 # echo "45 * * * * sprobot1d.sh \",topdir=\'$SPECTRO_DATA\', upsversion=\`$upsversion\`, nice=19\" >> $SPRLOG 2>&1" >> $cronfile
 echo "# This job will run every 10 minutes to keep the disk automounter up." >> $cronfile
-echo "*/10 * * * * spamdup 2> /dev/null" >> $cronfile
+# echo "*/10 * * * * spamdup 2> /dev/null" >> $cronfile
 echo "# SPROBOT END" >> $cronfile
 
 #------------------------------------------------------------------------------
