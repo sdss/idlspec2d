@@ -177,6 +177,7 @@ pro/spec1d/reduce_plate.pro -text
 pro/spec1d/rline_findew.pro -text
 pro/spec1d/rline_findpeaks.pro -text
 pro/spec1d/rline_getplate.pro -text
+pro/spec1d/rline_loop.pro -text
 pro/spec1d/rline_matchpeaks.pro -text
 pro/spec1d/sdss_flagname.pro -text
 pro/spec1d/skymask.pro -text

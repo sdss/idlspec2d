@@ -1,0 +1,66 @@
+pro rline_loop, plate=plate, mjd=mjd
+
+   primtarget = 32 ; BRG's
+
+   ;----------
+   ; Get a list of plates
+
+   if (keyword_set(plate)) then begin
+      nplate = n_elements(plate)
+      if (NOT keyword_set(mjd)) then mjd = lonarr(nplate) ; zeros
+      plist = replicate(create_struct('plateid', 0L, 'mjd', 0L), nplate)
+      plist.plateid = plate
+      plist.mjd = mjd
+   endif else begin
+      ; If PLATE is not specified, then determine a list of good plates...
+      platelist, plist=plist
+      ii = where(plist.nums[0] GT 0 $
+       AND plist.plateid GE 300 AND plist.plateid LE 349 $ ; ????
+       AND plist.snvec[0] GT 15 AND plist.snvec[1] GT 15 $
+       AND plist.snvec[2] GT 15 AND plist.snvec[3] GT 15)
+      plist = plist[ii]
+   endelse
+
+   ;----------
+   ; Loop through each plate
+
+   nplate = n_elements(plist)
+   for iplate=0, nplate-1 do begin
+
+      splog, 'WORKING ON PLATE ', plist[iplate].plateid, $
+       ' MJD ', plist[iplate].mjd
+      spec = rline_getplate(plist[iplate].plateid, mjd=plist[iplate].mjd, $
+       primtarget=primtarget, class='GALAXY', maxrchi2=2.0)
+
+      if (keyword_set(spec)) then begin
+         rline_findew, spec,  ew, ewinv, fopt, finv
+         pks = rline_findpeaks(ew, ewinv)
+
+         ; Convert the peak position from pixel to log-wavelength
+         npix = n_elements(spec[0].loglam)
+         xvec = findgen(npix)
+         linterp, xvec, spec[0].loglam, pks.x, xloglam
+
+         if (keyword_set(pks)) then begin
+            lines = rline_matchpeaks(spec, pks)
+            for ipk=0, n_elements(lines)-1 do $
+             allpks = struct_append( allpks, $
+              create_struct('zans', spec[pks[ipk].fiber].zans, $
+                            'plug', spec[pks[ipk].fiber].plug, $
+                            pks[ipk], $
+                            'xloglam', xloglam[ipk], $
+                            lines[ipk]) )
+
+         endif
+      endif
+   endfor
+
+save,file='rline.ss'
+stop
+
+j = where(allpks.lambda EQ 0 AND allpks.xloglam LT alog10(7500))
+splot,10^allpks.xloglam,allpks.sn,ps=3
+soplot,10^allpks[j].xloglam,allpks[j].sn,ps=3,color='red'
+k = j[where(allpks[j].sn GT 20)]
+
+end
