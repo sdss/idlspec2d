@@ -6,6 +6,10 @@ COMBINE1FIBER: Add the skies by inputting SKYFLUX and outputting NEWSKY.
         The skies are combined in the same simplistic manner as the
         dispersion pixel map.
         Make loop variables type long.
+        In this case of no good points, set the NODATA bit everywhere.
+        Also, if NOPLUG is set in the first input bit-mask, assume it
+        should be set everywhere in the output bit masks.  No other mask bits
+        are set in this case of no data.  This should address PR #3690.
 EXTRACT_OBJECT: Turn off telluric-corrections by default, which must now
         be enabled with the /DO_TELLURIC keyword.  Also, delete some old code.
         Compress (with gzip) the output file.
