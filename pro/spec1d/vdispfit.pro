@@ -200,7 +200,7 @@ function vdispfit, objflux, objivar, objloglam, $
       splog, 'Computing grid of dispersion templates from ' + thisfile
 
       nsamp = 10
-      nsig = 25
+      nsig = 35
       dsig = 25.0
       bigsig = findgen(nsig) * dsig ; in km/sec
 
