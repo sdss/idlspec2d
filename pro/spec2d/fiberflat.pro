@@ -5,8 +5,8 @@
 ; PURPOSE:
 ;
 ; CALLING SEQUENCE:
-;   fflat = fiberflat( flux, fluxivar, wset, $
-;    [ fibermask=fibermask, minval=, pixspace=, nord=, lower=, upper= ] )
+;   fflat = fiberflat( flux, fluxivar, wset, [ fibermask=fibermask, $
+;    minval=, ncoeff=, pixspace=, /dospline, nord=, lower=, upper= ] )
 ;
 ; INPUTS:
 ;   flux       - Array of extracted flux from a flat-field image [Nrow,Ntrace]
@@ -17,8 +17,13 @@
 ;   fibermask  - Mask of 0 for bad fibers and 1 for good fibers [NFIBER]
 ;   minval     - Minimum value to use in fits to flat-field vectors;
 ;                default to 0.03.
+;   ncoeff     - Number of coefficients used in constructing FFLAT;
+;                default to 3 (cubic)
 ;   pixspace   - Approximate spacing in pixels for break points in the
-;                spline fits to individual fibers; default to 10 pixels
+;                spline fits to individual fibers; default to 10 pixels.
+;   dospline   - If this keyword is set, then fit the flat-field vectors
+;                to splines (using PIXSPACE) rather than to a Legendre
+;                polynomial (using NCOEFF).  This is **not** recommended.
 ;
 ; PARAMTERS FOR SLATEC_SPLINEFIT:
 ;   nord
@@ -36,6 +41,9 @@
 ;   The user should first "flat-field" the input array to take out
 ;   pixel-to-pixel variations.
 ;
+;   The parameters for SLATEC_SPLINEFIT are only used when generating the
+;   "superflat".
+;
 ; EXAMPLES:
 ;
 ; BUGS:
@@ -51,7 +59,8 @@
 ;------------------------------------------------------------------------------
 
 function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
- minval=minval, pixspace=pixspace, nord=nord, lower=lower, upper=upper
+ minval=minval, ncoeff=ncoeff, pixspace=pixspace, dospline=dospline, $
+ nord=nord, lower=lower, upper=upper
 
    dims = size(flux, /dimens)
    ny = dims[0]
@@ -60,6 +69,7 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
 
    if (NOT keyword_set(minval)) then minval = 0.03
    if (N_elements(pixspace) EQ 0) then pixspace = 10
+   if (N_elements(ncoeff) EQ 0) then ncoeff = 3
    if (N_elements(nord) EQ 0) then nord = 4
    if (N_elements(lower) EQ 0) then lower = 10.0
    if (N_elements(upper) EQ 0) then upper = 10.0
@@ -118,60 +128,97 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
 
    fit2  = slatec_bvalu(loglam, afullbkpt, acoeff)
 
-; Plot ???
-;ii=where(mask EQ 0)
-;splot,10^allwave,allflux,ps=3
-;soplot,10^loglam,fit2,ps=3,color='green'
-;soplot,10^allwave[indx[ii]],allflux[indx[ii]],ps=3,color='red' 
+   ;------
+   ; QA plot of superflat
+   ; Plot sampled every 1 Ang
 
-   ; Always select the same break points in log-wavelength for all fibers
-   nbkpts = fix(ny / pixspace) + 2
-   bkpt = findgen(nbkpts) * (max(loglam) - min(loglam)) / (nbkpts-1) $
-    + min(loglam)
+   wmin = fix(10^min(allwave))
+   wmax = ceil(10^max(allwave))
+   plot_lam = wmin + lindgen(wmax-wmin+1)
+   plot_fit  = slatec_bvalu(alog10(plot_lam), afullbkpt, acoeff)
+ 
+   djs_plot, plot_lam, plot_fit, xrange=[wmin,wmax], xstyle=1, $
+    xtitle='\lambda [A]', ytitle='Normalized flux', $
+    title='Superflat for ???'
 
-   for i=0, ntrace-1 do begin
-      print, format='($, ".",i4.4,a5)',i,string([8b,8b,8b,8b,8b])
+   ; Overplot pixels masked from the fit
+   ii = where(mask EQ 0)
+   djs_oplot, 10^allwave[indx[ii]], allflux[indx[ii]], ps=3, color='red' 
 
-      ; Evaluate "superflat" spline fit at exactly the same wavelengths
-      ; Let's divide out superflat first to make fitting smoother
-      ; Larger breakpoint separations and less hassles 
+   ;------
 
-      ; Locate only unmasked points
-      indx = where(fluxivar[*,i] GT 0.0 AND flux[*,i] GT minval $
-       AND fit2 GT minval, ct)
+   if (keyword_set(dospline)) then begin
 
-      if (ct GT 0) then begin
+      ;------------------------------------------------------------------------
+      ; SPLINE FIT TO FFLAT VECTORS
+      ;------------------------------------------------------------------------
 
-         istart = (where(bkpt GT min(loglam[indx,i])))[0]
-         istart = (istart - 1) > 0
-         iend = (where(bkpt GT max(loglam[indx,i])))[0]
-         if (iend EQ -1) then iend = nbkpts-1
+      ; Always select the same break points in log-wavelength for all fibers
+      nbkpts = fix(ny / pixspace) + 2
+      bkpt = findgen(nbkpts) * (max(loglam) - min(loglam)) / (nbkpts-1) $
+       + min(loglam)
 
-         ratio = flux[indx,i] / fit2[indx,i]
-         ratioivar = fluxivar[indx,i] * fit2[indx,i]^2
+      for i=0, ntrace-1 do begin
+         print, format='($, ".",i4.4,a5)',i,string([8b,8b,8b,8b,8b])
 
-         ; Dispose of leading or trailing points with zero weight
-         fullbkpt = slatec_splinefit(loglam[indx,i], ratio, coeff, $
-          maxiter=maxiter, upper=upper, lower=lower, /eachgroup, $
-          invvar=ratioivar, nord=nord, bkpt=bkpt[istart:iend], mask=mask)
+         ; Evaluate "superflat" spline fit at exactly the same wavelengths
+         ; Let's divide out superflat first to make fitting smoother
+         ; Larger breakpoint separations and less hassles 
 
-         ; Evaluate spline fit to this fiber
-         fflat[*,i] = slatec_bvalu(loglam[*,i], fullbkpt, coeff)
+         ; Locate only unmasked points
+         indx = where(fluxivar[*,i] GT 0.0 AND flux[*,i] GT minval $
+          AND fit2 GT minval, ct)
 
-         ; Replace leading or trailing masked points with the first or last
-         ; unmasked value
-         ; bvalu already does the check below
-         ;if (indx[0] NE 0) then fit1[0:indx[0]-1] = fit1[indx[0]]
-         ;if (indx[ct-1] NE ny-1) then fit1[indx[ct-1]+1:ny-1] = fit1[indx[ct-1]]
+         if (ct GT 0) then begin
 
-      endif else begin
+; Does the following work for either ascending or descending wavelengths???
+            istart = (where(bkpt GT min(loglam[indx,i])))[0]
+            istart = (istart - 1) > 0
+            iend = (where(bkpt GT max(loglam[indx,i])))[0]
+            if (iend EQ -1) then iend = nbkpts-1
 
-         fflat[*,i] = 1.0
-         fibermask[i] = 0
+            ratio = flux[indx,i] / fit2[indx,i]
+            ratioivar = fluxivar[indx,i] * fit2[indx,i]^2
 
-      endelse
+            ; Dispose of leading or trailing points with zero weight
+            fullbkpt = slatec_splinefit(loglam[indx,i], ratio, coeff, $
+             maxiter=maxiter, upper=upper, lower=lower, /eachgroup, $
+             invvar=ratioivar, nord=nord, bkpt=bkpt[istart:iend], mask=mask)
 
-   endfor
+            ; Evaluate spline fit to this fiber
+            fflat[*,i] = slatec_bvalu(loglam[*,i], fullbkpt, coeff)
+
+            ; Replace leading or trailing masked points with the first or last
+            ; unmasked value
+            ; bvalu already does the check below
+            ;if (indx[0] NE 0) then fit1[0:indx[0]-1] = fit1[indx[0]]
+            ;if (indx[ct-1] NE ny-1) then fit1[indx[ct-1]+1:ny-1] = fit1[indx[ct-1]]
+
+         endif else begin
+
+            fflat[*,i] = 1.0
+            fibermask[i] = 0
+
+         endelse
+
+      endfor
+
+   endif else begin
+
+      ;------------------------------------------------------------------------
+      ; LEGENDRE FIT TO FFLAT VECTORS
+      ;------------------------------------------------------------------------
+
+      ratimg = flux / fit2
+      rativar = fluxivar * fit2^2
+
+      ; Replace each flat-field vector with a cubic fit to that vector
+      xmask = fluxivar GT 0 ; Mask bad pixels in the fit
+      xy2traceset, loglam, ratimg, fset, func='legendre', ncoeff=ncoeff, $
+       ; invvar=rativar, $ ; Weight all points equally instead
+        maxiter=10, /singlerej, xmask=xmask, yfit=fflat
+
+   endelse
 
    ; Check to see if fibermask has changed
    igood = where(fibermask NE 0, ngood)
