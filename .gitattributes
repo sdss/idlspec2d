@@ -7,6 +7,7 @@ include/evilmath.h -text
 include/export.h -text
 pro/extract_boxcar.pro -text
 pro/extract_profile.pro -text
+pro/extract_row.pro -text
 pro/fchebyshev.pro -text
 pro/flegendre.pro -text
 pro/funccheb.pro -text
@@ -15,6 +16,7 @@ pro/rdss_fits.pro -text
 pro/sdssproc.pro -text
 pro/spec2d/extract_boxcar.pro -text
 pro/spec2d/extract_profile.pro -text
+pro/spec2d/extract_row.pro -text
 pro/spec2d/fchebyshev.pro -text
 pro/spec2d/flegendre.pro -text
 pro/spec2d/funccheb.pro -text
@@ -40,6 +42,7 @@ pro/xy2traceset.pro -text
 src/evilmath.c -text
 src/extract_boxcar.c -text
 src/extract_profile.c -text
+src/extract_row.c -text
 src/sshiftvec.c -text
 src/trace_crude.c -text
 src/trace_fweight.c -text
