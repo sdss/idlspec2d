@@ -50,6 +50,7 @@ pro/locateskylines.pro -text
 pro/logsheet.pro -text
 pro/makefile -text
 pro/qaplot_arcline.pro -text
+pro/qaplot_fflat.pro -text
 pro/quickproc.pro -text
 pro/rdss_fits.pro -text
 pro/read2dout.pro -text
@@ -90,6 +91,7 @@ pro/spec2d/locateskylines.pro -text
 pro/spec2d/logsheet.pro -text
 pro/spec2d/makefile -text
 pro/spec2d/qaplot_arcline.pro -text
+pro/spec2d/qaplot_fflat.pro -text
 pro/spec2d/quickproc.pro -text
 pro/spec2d/rdss_fits.pro -text
 pro/spec2d/read2dout.pro -text
