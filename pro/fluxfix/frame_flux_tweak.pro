@@ -200,7 +200,6 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
    ;  Create basic mask
     
    bestmask = lonarr(nfiber)
-   bestmask = bestmask OR pixelmask_bits('SMEARIMAGE')
 
    ;----------
    ; Loop through the science images
@@ -227,7 +226,7 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
       ; force their ratio to be unity.
       if (expid[ifile] EQ best_exp) then begin
         mwrfits, corrset, corrfile[ifile], /create
-        mwrfits, thismask, corrfile[ifile]
+      ; mwrfits, thismask, corrfile[ifile]
         continue
       endif 
 
@@ -267,7 +266,7 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
 
       poly2 = where(scisnmed[0,*] GT 1.0 AND scisnmed[1,*] GT 2.0  $
                AND  bestsnmed[0,*] GT 1.0 AND bestsnmed[1,*] GT 2.0 $
-               AND fiber_coeff NE 3, npoly2) 
+               AND  qsci EQ 0 AND qbest EQ 0 AND fiber_coeff NE 3, npoly2) 
       if poly2[0] NE -1 then fiber_coeff[poly2] = 2
 
       poly1 = where(fiber_coeff eq 1, npoly1)
@@ -344,14 +343,14 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
       ;---------------
       ; Set maskbits and append to end of corrfile
          
-      ;thismask = thismask OR (fibersn LE 2) * pixelmask_bits('SMEARMEDSN')
-      ;thismask = thismask OR (fibersn EQ 1) * pixelmask_bits('SMEARHIGHSN')
+      ;thismask = thismask OR (fibersn EQ 2) * pixelmask_bits('SMEARMEDSN')
+      ;thismask = thismask OR (fibersn EQ 3) * pixelmask_bits('SMEARHIGHSN')
 
       ;------------
       ; Write out as FITS
 
       mwrfits, corrset, corrfile[ifile], /create
-      mwrfits, thismask, corrfile[ifile]
+      ;mwrfits, thismask, corrfile[ifile]
 
       ;------------
       ; Plot smear correction vectors
@@ -360,6 +359,7 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
 
       traceset2xy, corrset, wave, corrimage
 
+      !P.MULTI = [0, 1, 2]
       std = where(strmatch(fibertag[indx].objtype, '*_STD*'), nstd)
       for ii = 0, nstd - 1 do begin
         istd = std[ii]
@@ -369,6 +369,7 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
                syms=0.5, thick=3
         djs_oplot, 10.0^wave[*,istd], corrimage[*,istd], color='red', thick=3
       endfor
+      !P.MULTI = 0
 
       djs_plot, 10.0^wave, corrimage, /nodata, yr=[0.5, 1.5], $
                 xr=[min(10.0^wave)-100,max(10.0^wave)+100], $
@@ -396,6 +397,5 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
       djs_xyouts, 0.18, 0.87, 'Standard Stars', color = 'red', /norm
 
    endfor
-
    return
 end
