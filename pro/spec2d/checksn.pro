@@ -57,9 +57,22 @@ pro checksn, flux, err, plug, wave, expres=expres, noplot=noplot, title=title
     nplug = n_elements(plug)
     nonsky = where(strtrim(plug.objtype,2) NE 'SKY' AND $
                    strtrim(plug.objtype,2) NE 'NA', nnonsky)
+    spectroid = (plug.fiberid - 1) / 320
+
+    badg = where(allspec[nonsky].g LE 0.0)
     goodg = where(allspec[nonsky].g GT 0.0, ngoodg)
+    goodg1 = where(allspec[nonsky].g GT 0.0 AND spectroid[nonsky] EQ 0)
+    goodg2 = where(allspec[nonsky].g GT 0.0 AND spectroid[nonsky] EQ 1)
+
+    badi = where(allspec[nonsky].r LE 0.0)
     goodr = where(allspec[nonsky].r GT 0.0, ngoodr)
+    goodr1 = where(allspec[nonsky].r GT 0.0 AND spectroid[nonsky] EQ 0)
+    goodr2 = where(allspec[nonsky].r GT 0.0 AND spectroid[nonsky] EQ 1)
+
+    badr = where(allspec[nonsky].i LE 0.0)
     goodi = where(allspec[nonsky].i GT 0.0, ngoodi)
+    goodi1 = where(allspec[nonsky].i GT 0.0 AND spectroid[nonsky] EQ 0)
+    goodi2 = where(allspec[nonsky].i GT 0.0 AND spectroid[nonsky] EQ 1)
 
     gfit = ladfit(plug[nonsky[goodg]].mag[1], alog10(allspec[nonsky[goodg]].g), absdev=gabsdev)
     gdiff = alog10(allspec[nonsky[goodg]].g) - poly(plug[nonsky[goodg]].mag[1], gfit)
@@ -83,7 +96,7 @@ pro checksn, flux, err, plug, wave, expres=expres, noplot=noplot, title=title
       glow = where(allspec[nonsky].g LT glimit $
          AND plug[nonsky].mag[1] LT xmax, nglow)
 
-      rfiducialfit = [6.22, -0.28]
+      rfiducialfit = [6.18, -0.28]
       rlimit = 10^poly(plug[nonsky].mag[2], rfiducialfit)
       rlow = where(allspec[nonsky].r LT rlimit $
          AND plug[nonsky].mag[2] LT xmax, nrlow)
@@ -95,69 +108,129 @@ pro checksn, flux, err, plug, wave, expres=expres, noplot=noplot, title=title
 
       bright = where(gdiff GT 0.2 AND rdiff GT 0.2 AND idiff GT 0.2, nbright)
 
+      magsmin = [16.00, 16.5, 17.0, 17.5, 18., 18.5, 19., 19.5, 20.0, 20.5]
+
+      magsmax = magsmin + 0.5
+
+      nmag = n_elements(magsmin)
+      bin = { mags: 0.5*(magsmin + magsmax), gsn: fltarr(nmag,2), $
+             rsn: fltarr(nmag,2), isn: fltarr(nmag,2)}
+
+
+      for imag=0, nmag -1 do begin
+
+        for j=0,1 do begin
+
+          g = where(spectroid EQ j AND $
+                    plug.mag[1] GE magsmin[imag] AND plug.mag[1] LE magsmax[imag],ng)
+          if (ng GT 0) then bin.gsn[imag,j] = median([allspec[g].g $
+                 * 10^(-gfit[1] * (plug[g].mag[1]-bin.mags[imag]))])
+
+  	  r = where(spectroid EQ j AND $
+                  plug.mag[2] GE magsmin[imag] AND plug.mag[2] LE magsmax[imag],nr)
+          if (nr GT 0) then bin.rsn[imag,j] = median([allspec[r].r $
+                 * 10^(-rfit[1] * (plug[r].mag[2]-bin.mags[imag]))])
+
+	  i = where(spectroid EQ j AND $
+                  plug.mag[3] GE magsmin[imag] AND plug.mag[3] LE magsmax[imag],ni)
+          if (ni GT 0) then bin.isn[imag,j] = median([allspec[i].i $
+                 * 10^(-ifit[1] * (plug[i].mag[3]-bin.mags[imag]))])
+        endfor
+      endfor
+
     if (NOT keyword_set(noplot)) then begin
       oldmulti = !p.multi  
       !p.multi = [0,2,3,0,1]
-      plot, plug[nonsky[goodg]].mag[1], allspec[nonsky[goodg]].g, ps=1, /ylog, $
-           ychars=2.0, xcharsize = 0.001, xr=[xmin,xmax], ymargin = [1,3], /xs, yr=[1,100], /ys, $
-           title=title
-      djs_oplot, xfit, 10^poly(xfit, gfit), color='red'
+      plot, plug.mag[1], allspec.g, /nodata, /ylog, title=title, $
+           ychars=2.0, xcharsize = 0.001, xr=[xmin,xmax], ymargin = [1,3], /xs, yr=[1,100], /ys
+
+      djs_oplot, xfit, 10^poly(xfit, gfit)
       djs_oplot, xfit, 10^poly(xfit, gfiducialfit), color='blue', thick=3
+
+      if (goodg1[0] NE -1) then djs_oplot, plug[nonsky[goodg1]].mag[1], allspec[nonsky[goodg1]].g, $
+           ps=1, syms=0.7, color='cyan'
+      if (goodg2[0] NE -1) then djs_oplot, plug[nonsky[goodg2]].mag[1], allspec[nonsky[goodg2]].g, $
+           ps=4, syms=0.7, color='red'
+
       xyouts, xmin+0.5, 3.0, string(format='(a,f5.2,f6.2,a)','log S/N = ', gfit, " * g'")
       xyouts, xmin+0.5, 2.0, string(format='(a,f5.3)','Deviation: ', gabsdev)
 
+      djs_oplot, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.6], $
+                 10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.91], ps=1, syms=0.7, color='red'
+      xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.62], $
+                 10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.9], 'Spec 1', color=djs_icolor('red')
 
-      plot, plug[nonsky[goodr]].mag[2], allspec[nonsky[goodr]].r, ps=1, /ylog, $
+      djs_oplot, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.6], $
+                 10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.85], ps=4, syms=0.7, color='cyan'
+      xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.62], $
+                 10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.84], 'Spec 2', color=djs_icolor('cyan')
+
+      minutes = (bin.gsn[6,*]/10.0)^2 * 60.0
+      xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.8], $
+           10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.9], string(format='(f5.1)', minutes[0]), $
+           color=djs_icolor('red')
+      xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.8], $
+           10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.84], string(format='(f5.1)', minutes[1]), $
+           color=djs_icolor('cyan')
+
+
+      plot, plug.mag[2], allspec.r, /nodata, /ylog, ytitle = 'S/N', $
            ychars=2.0, xcharsize = 0.001, xr=[xmin,xmax], ymargin = [1,0], /xs, yr=[1,100], /ys
-      djs_oplot, xfit, 10^poly(xfit, rfit), color='red'
+
+      djs_oplot, xfit, 10^poly(xfit, rfit)
       djs_oplot, xfit, 10^poly(xfit, rfiducialfit), color='blue', thick=3
+
+      if (goodr1[0] NE -1) then djs_oplot, plug[nonsky[goodr1]].mag[2], allspec[nonsky[goodr1]].r, $
+           ps=1, syms=0.7, color='red'
+      if (goodr2[0] NE -1) then djs_oplot, plug[nonsky[goodr2]].mag[2], allspec[nonsky[goodr2]].r, $
+           ps=4, syms=0.7, color='cyan'
+
       xyouts, xmin+0.5, 3.0, string(format='(a,f5.2,f6.2,a)','log S/N = ', rfit, " * r'")
       xyouts, xmin+0.5, 2.0, string(format='(a,f5.3)','Deviation: ', rabsdev)
+      minutes = (bin.rsn[6,*]/10.0)^2 * 60.0
+      xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.8], $
+           10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.9], string(format='(f5.1)', minutes[0]), $
+           color=djs_icolor('red')
+      xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.8], $
+           10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.84], string(format='(f5.1)', minutes[1]), $
+           color=djs_icolor('cyan')
 
-      plot, plug[nonsky[goodi]].mag[3], allspec[nonsky[goodi]].i, ps=1, /ylog, $
-           xchars=2.0, ychars=2.0, xr=[xmin,xmax], ymargin = [4,0], /xs, yr=[1,100], /ys
-      djs_oplot, xfit, 10^poly(xfit, ifit), color='red'
+      plot, plug.mag[3], allspec.i, /nodata, /ylog, xtitle = 'Fiber Magnitude', $
+           ychars=2.0, xcharsize = 2.0, xr=[xmin,xmax], ymargin = [4,0], /xs, yr=[1,100], /ys
+
+      djs_oplot, xfit, 10^poly(xfit, ifit)
       djs_oplot, xfit, 10^poly(xfit, ifiducialfit), color='blue', thick=3
+
+      if (goodi1[0] NE -1) then djs_oplot, plug[nonsky[goodi1]].mag[3], allspec[nonsky[goodi1]].i, $
+           ps=1, syms=0.7, color='red'
+      if (goodi2[0] NE -1) then djs_oplot, plug[nonsky[goodi2]].mag[3], allspec[nonsky[goodi2]].i, $
+           ps=4, syms=0.7, color='cyan'
+
       xyouts, xmin+0.5, 3.0, string(format='(a,f5.2,f6.2,a)','log S/N = ', ifit, " * i'")
       xyouts, xmin+0.5, 2.0, string(format='(a,f5.3)','Deviation: ', iabsdev)
+      minutes = (bin.isn[5,*]/10.0)^2 * 52.0
+      xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.8], $
+           10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.9], string(format='(f5.1)', minutes[0]), $
+           color=djs_icolor('red')
+      xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.8], $
+           10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.84], string(format='(f5.1)', minutes[1]), $
+           color=djs_icolor('cyan')
 
       s_plotdev, plug[nonsky[goodg]].xfocal, plug[nonsky[goodg]].yfocal, gdiff, 3.0, $
              ychars=2.0, xcharsize = 0.001, ymargin=[1,3]
+      if (nglow GT 0) then djs_oplot, plug[nonsky[glow]].xfocal, plug[nonsky[glow]].yfocal, ps=1
+
       s_plotdev, plug[nonsky[goodr]].xfocal, plug[nonsky[goodr]].yfocal, rdiff, 3.0, $
              ychars=2.0, xcharsize = 0.001, ymargin=[1,0]
+      if (nrlow GT 0) then djs_oplot, plug[nonsky[rlow]].xfocal, plug[nonsky[rlow]].yfocal, ps=1
+
       s_plotdev, plug[nonsky[goodi]].xfocal, plug[nonsky[goodi]].yfocal, idiff, 3.0, $
              ychars=2.0, xcharsize = 2.0, ymargin=[4,0]
+      if (nilow GT 0) then djs_oplot, plug[nonsky[ilow]].xfocal, plug[nonsky[ilow]].yfocal, ps=1
+
       !p.multi  = oldmulti
 
     endif
-    magsmin = [16.00, 16.5, 17.0, 17.5, 18., 18.5, 19., 19.5, 20.0, 20.5]
-
-    magsmax = magsmin + 0.5
-
-    nmag = n_elements(magsmin)
-    bin = { mags: 0.5*(magsmin + magsmax), gsn: fltarr(nmag,2), $
-             rsn: fltarr(nmag,2), isn: fltarr(nmag,2)}
-
-    spectroid = (plug.fiberid - 1) / 320
-
-  for imag=0, nmag -1 do begin
-
-    for j=0,1 do begin
-
-	g = where(spectroid EQ j AND $
-                  plug.mag[1] GE magsmin[imag] AND plug.mag[1] LE magsmax[imag],ng)
-        if (ng GT 0) then bin.gsn[imag,j] = median([allspec[g].g])
-
-	r = where(spectroid EQ j AND $
-                  plug.mag[2] GE magsmin[imag] AND plug.mag[2] LE magsmax[imag],nr)
-        if (nr GT 0) then bin.rsn[imag,j] = median([allspec[r].r])
-
-	i = where(spectroid EQ j AND $
-                  plug.mag[3] GE magsmin[imag] AND plug.mag[3] LE magsmax[imag],ni)
-        if (ni GT 0) then bin.isn[imag,j] = median([allspec[i].i])
-
-      endfor
-    endfor
 
    print, "               S/N g'             S/N r'              S/N i'"
    print, " MAG          1      2           1      2            1      2"
