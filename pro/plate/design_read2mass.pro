@@ -3,16 +3,16 @@
 ;
 ; The 2MASS magnitudes are roughly related to the (Johnson?) B+R magnitudes
 ; as follows:
-;   B = J + 4.51 * (J-K) + 0.22
-;   R = J + 2.26 * (J-K) + 0.08
-;   (B-R) = 2.25 * (J-K) + 0.14
+;   B_2MASS = J + 4.51 * (J-K) + 0.22
+;   R_2MASS = J + 2.26 * (J-K) + 0.08
+;   (B-R)_2MASS = 2.25 * (J-K) + 0.14
 ; with a standard deviation of 0.65 mag in B, and 0.40 mag in R. This
 ; extrapolation would be much, much worse for late-type stars not in Tycho.
 ; The 2MASS documentation says R-band is from USNO-A.
 ;
 ; Transform to Tycho B+V magnitudes with:
-;   B_Tycho = R + 0.749 * (B-R) + 0.033
-;   V_Tycho = R - 0.093 * (B-R) - 0.003
+;   B_Tycho = R_2MASS + 0.749 * (B-R)_2MASS + 0.033
+;   V_Tycho = R_2MASS - 0.093 * (B-R)_2MASS - 0.003
 ; The above is a *very* good fit for most stars (<2% scatter), possibly
 ; indicating that these 2MASS B+R and Tycho B+V magnitudes are actually
 ; from the same source.

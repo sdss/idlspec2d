@@ -24,8 +24,8 @@ pro design_pleiades
    magmin = reverse([ 2.9,  5.5,  8.3, 11.1, 13.9])
    magmax = reverse([ 5.9,  8.5, 11.3, 14.1, 17.1])
    guidemag = [10.5, 12.5]
-   tilenums = [9210,9211,9212,9213,9214]
-   platenums = [801,1,2,3,4]
+   tilenums = [9211,9212,9213,9214,9215]
+   platenums = [799,1,2,3,4]
    matchdist = 2.0/3600. ; match distance in degrees
 
    ntile = n_elements(racen)

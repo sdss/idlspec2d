@@ -33,6 +33,7 @@
 ;                nearest of the 5 SDSS fundamental standard stars.
 ;                We try to place 10 of these holes, spaced by 1 arcmin, but
 ;                one can be knocked out by the guide-fiber alignment hole.
+;                This tile is given the TILEID=max(TILEID)+1, PLATEID=0.
 ;   norename   - The default is to rename the output plugMapP files to
 ;                plate names like 800,800B,800C,... if the first plate
 ;                number is 800.  Set this keyword to keep the names as
@@ -168,14 +169,19 @@ pro design_multiplate, stardata, tilenums=tilenums, platenums=platenums, $
    fundpriority = maxpriority - 2 ; Priority for fundamental standards
    paramdir = concat_dir(getenv('IDLSPEC2D_DIR'), 'examples')
 
-   fundtilenum = max(tilenums) + 1
-   fundplatenum = max(platenums) + 1
+   if (keyword_set(addfund)) then begin
+      if ((where(tilenums EQ 0))[0] NE -1) then $
+       message, 'PLATEID of 0 is reserved for the fundamental star tile'
+      fundplatenum = 0
+      fundtilenum = max(tilenums) + 1
+   endif
 
    ;----------
    ; Set up the data for the fundamental standards, and apply the
    ; proper motion corrections from epoch 2000 to the current epoch.
-   ; These magnitudes are those in the file 'metaFC_bd17isonlyfund.fit'
+   ; The BD magnitudes are those in the file 'metaFC_bd17isonlyfund.fit'
    ; checked into the "mtstds" product on 16 June 2000.
+   ; The HD magnitudes are from Fukugita et al (1996) AJ 111, 1748.
 
    pfund = $
    { name:         '',  $
@@ -192,13 +198,11 @@ pro design_multiplate, stardata, tilenums=tilenums, platenums=platenums, $
    funddat.pm_ra = [    -0.210,      0.425,     0.373,     -0.009,       0.512 ]
    funddat.pm_dec= [    -0.830,       9.22,    -0.774,     -0.346,       0.060 ]
    funddat.vmag  = [      8.05,       10.0,      8.28,       9.72,        9.47]
+   funddat[0].mag = [ 9.08 , 8.23 , 7.92 , 7.82,  7.79 ] ; HD_19445
    funddat[1].mag = [10.289, 9.395, 9.114, 9.025, 9.017] ; BD+21 (V=10.0)
+   funddat[2].mag = [ 9.32 , 8.46 , 8.23 , 8.16,  8.16 ] ; HD_84937
    funddat[3].mag = [10.761, 9.891, 9.604, 9.503, 9.486] ; BD+26 (V=9.72)
    funddat[4].mag = [10.560, 9.640, 9.350, 9.250, 9.230] ; BD+17 (V=9.47)
-   ; I don't have the SDSS magnitudes for two of these stars, so give them
-   ; the same colors as BD+17...
-   funddat[0].mag = funddat[4].mag + funddat[0].vmag - funddat[4].vmag
-   funddat[2].mag = funddat[4].mag + funddat[2].vmag - funddat[4].vmag
 
    thismjd = current_mjd()
    funddat.ra = funddat.ra $
@@ -328,8 +332,14 @@ pro design_multiplate, stardata, tilenums=tilenums, platenums=platenums, $
 
          addplug.holetype = 'GUIDE'
          addplug.objtype = 'NA'
-         addplug.fiberid = iguide + 1 ; The "fiberPlates" code will assign this
          addplug.sectarget = 64L
+
+         ; The "fiberPlates" code will overwrite the FIBERID.  I don't
+         ; want it to change them, like decide that guide fiber #11 is
+         ; really better as #1.  So store the FIBERID that I want in
+         ; PRIMTARGET, then re-assign it later.
+         addplug.fiberid = iguide + 1
+         addplug.primtarget = iguide + 1
 
          if (NOT keyword_set(allplug)) then allplug = addplug $
           else allplug = [allplug, addplug]
@@ -356,16 +366,19 @@ pro design_multiplate, stardata, tilenums=tilenums, platenums=platenums, $
 ;      addplug.sectarget = 2L^24 ; This would be the serendipity flag
 
       ; Call any objects serendipity if not called anything else...
-      for i=0, nadd-1 do $
-       if (strtrim(addplug[i].objtype) EQ '') then $
-        addplug[i].objtype = 'SERENDIPITY_MANUAL'
+      for i=0, nadd-1 do begin
+         if (strtrim(addplug[i].objtype) EQ '') then begin
+            addplug[i].objtype = 'SERENDIPITY_MANUAL'
+            addplug[i].primtarget = 2L^24
+         endif
+      endfor
 
       allplug = [allplug, addplug]
 
       ;----------
-      ; For this pointing, add 800 fake skies randomly distributed.
+      ; For this pointing, add 1500 fake skies randomly distributed.
 
-      nadd = 800
+      nadd = 1500
       dphi = 3.0 * randomu(2345, nadd) - 1.5
       dtheta = 3.0 * randomu(3456, nadd) - 1.5
       plate_rotate, 0.0, 0.0, thisracen, thisdeccen, $
@@ -654,16 +667,25 @@ addplug.sectarget = 32L
    newplug = allplug[iguide]
    newplatearr = platearr[iguide]
 
+   ; I've stored the correct FIBERID's in the PRIMTARGET field...
+   correctid = newplug.primtarget
+   newplug.fiberid = correctid
+   newplug.primtarget = 0
+
    ;----------
    ; Find the alignment hole corresponding to each of these guide stars
 
    for ii=0, 10 do begin
+      ; The line below matches based upon PLATE and FIBERID, though that
+      ; FIBERID isn't neccessarily the correct one; we force it to be correct.
       jj = where(allplug.holetype EQ 'ALIGNMENT' $
        AND platearr EQ platearr[iguide[ii]] $
        AND allplug.fiberid EQ allplug[iguide[ii]].fiberid, nj)
       if (nj NE 1) then $
        message, 'Wrong number of alignment holes'
-      newplug = [newplug, allplug[jj]]
+      addplug = allplug[jj]
+      addplug.fiberid = correctid[ii] ; Force the correct FIBERID
+      newplug = [newplug, addplug]
       newplatearr = [newplatearr, platearr[jj]]
    endfor
 
@@ -689,14 +711,36 @@ addplug.sectarget = 32L
 
    ;----------
    ; If the /ADDFUND flag is set, then recast those fundamental standard holes
-   ; as such
+   ; as such.  Call them SPECTROPHOTO_STD, and give them all the ra,dec
+   ; of the star.  This last thing may be a bit confusing, because then
+   ; the xfocal,yfocal positions are inconsistent with ra,dec.  But whatever
+   ; data we get through these holes (using a smear) will be of that star.
 
 ;   indx = where(newplug.throughput EQ fundpriority, nindx)
    indx = where(newplatearr EQ fundplatenum, nindx) ; Should be same as above
    if (nindx GT 0) then begin
       print, 'Renaming ', nindx, ' fundamental standard holes'
       newplug[indx].objtype = 'SPECTROPHOTO_STD'
+;      newplug[indx].ra = funddat[ifund].ra
+;      newplug[indx].dec = funddat[ifund].dec
    endif
+
+   ;---------------------------------------------------------------------------
+   ; DELETE INTERMEDIATE FILES
+   ;---------------------------------------------------------------------------
+
+   ;----------
+   ; Delete the existing plPlugMapP,plOverlay,plFanuc,plMeas,plDrillPos files
+
+   print, 'Removing old plPlugMapP,plOverlay,plFanuc,plMeas,plDrillPos files'
+   for itile=0, n_elements(platenums)-1 do begin
+      spawn, '\rm -f ' + plugmappfile[itile]
+      platestr = string(platenums[itile],format='(i4.4)')
+      spawn, '\rm -f ' + 'plOverlay-'+platestr+'.ps'
+      spawn, '\rm -f ' + 'plFanuc-'+platestr+'.ps'
+      spawn, '\rm -f ' + 'plMeas-'+platestr+'.ps'
+      spawn, '\rm -f ' + 'plDrillPos-'+platestr+'.ps'
+   endfor
 
    ;---------------------------------------------------------------------------
    ; CHANGE THE PLATE NAMES (unless /NORENAME is set)
@@ -705,8 +749,8 @@ addplug.sectarget = 32L
    if (NOT keyword_set(norename)) then begin
       ; The first tile retains its name, the others get letters appended.
       for itile=1, n_elements(platenums)-1 do begin
-         thisplatename = string(platenums[0],format='(i4.4)') $
-          + string(byte(65+itile))
+         pointingname = string(byte(65+itile))
+         thisplatename = string(platenums[0],format='(i4.4)') + pointingname
 
          ; Change the name of the output file
          plugmappfile[itile] = 'plPlugMapP-' + thisplatename + '.par'
@@ -715,6 +759,9 @@ addplug.sectarget = 32L
 ; Actually don't change this, since it might break SOP!!
 ;         junk = yanny_par(*(hdrarr[itile]), 'plateId', indx=indx)
 ;         (*(hdrarr[itile]))[indx] = 'plateId ' + thisplatename
+
+         ; Add a Yanny keyword "pointing" that is A,B,C,...
+         *(hdrarr[itile]) = [*(hdrarr[itile]), 'pointing ' + pointingname]
       endfor
    endif
 
@@ -728,6 +775,9 @@ addplug.sectarget = 32L
 
       thisplate = platenums[itile]
       modplug = newplug
+      junk = where(modplug.holetype EQ 'OBJECT' $
+       AND newplatearr EQ thisplate, ct)
+      print, 'Number of objects on plate ', thisplate, ' = ', ct
 
       ;----------
       ; Keep only the guide fibers on this tile. ???
@@ -786,12 +836,16 @@ addplug.sectarget = 32L
       message, 'We expect 1 quality hole already (the center hole)'
       modplug = [modplug, allplug[iqual]]
 
-      ; Must set the following to avoid PLATE from crashing!!
+      ; Must set the following to avoid "fiberPlates" from crashing!!
       modplug.spectrographid = -9999
-      modplug.fiberid = -9999
       modplug.throughput = -9999
 
-      cpbackup, plugmappfile[itile]
+      ; Must set the following to avoid "makePlots" from crashing!!
+      iobj = where(modplug.holetype EQ 'OBJECT')
+      if (n_elements(iobj) NE 640) then $
+       message, 'Fewer than 640 OBJECT positions on this plate!'
+      isort = sort(modplug[iobj].yfocal)
+      modplug[iobj[isort]].fiberid = -lindgen(640) - 1
 
       yanny_write, plugmappfile[itile], ptr_new(modplug), $
        hdr=*(hdrarr[itile]), enums=plugenum, structs=plugstruct
@@ -808,14 +862,15 @@ addplug.sectarget = 32L
    ; from the first tile/plate.
 
    yanny_read, 'plObs.par', plobs, hdr=plhdr, structs=plstructs
-   plobs = plobs[0]
+   plobs = (*plobs)[0]
    yanny_write, 'plObs.par', ptr_new(plobs), hdr=plhdr, structs=plstructs
 
    print
    print, 'In the "plate" product run the following commands:"
    print, '   makeFanuc'
    print, '   makeDrillPos'
-   print, '   use_cs3'
+   print, '   use_cs3  <-- This erroneously complains about some collisions'
+   print, '   makePlots -skipBrightCheck  <-- Still fails as of 28-Nov-01'
    print, 'Then you are done!'
 
    return
