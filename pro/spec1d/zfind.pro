@@ -117,6 +117,7 @@ function zfind, objflux, objivar, hdr=hdr, $
    ndim = size(objflux, /n_dimen)
    if (ndim EQ 1) then nobj = 1 $
     else nobj = (size(objflux, /dimens))[1]
+   npixobj = (size(objflux))[1]
 
    ;----------
    ; Determine the wavelength mapping for the object spectra,
@@ -155,12 +156,18 @@ function zfind, objflux, objivar, hdr=hdr, $
       ; Assume that the wavelength binning is the same as for the objects
       ; in log-wavelength.
 
-      starflux = readfits(thisfile, shdr)
-      starloglam0 = sxpar(shdr, 'COEFF0')
-      stardloglam0 = sxpar(shdr, 'COEFF1')
+      starflux = readfits(thisfile, shdr,/silent)
+      if n_elements(starflux) LE 1 then begin
+        splog, 'Looking for a bspline structure ', thisfile
+        bspline_set = mrdfits(thisfile, 1, shdr, /silent) 
+      endif else begin
+        starloglam0 = sxpar(shdr, 'COEFF0')
+        stardloglam0 = sxpar(shdr, 'COEFF1')
+      endelse
    endif
 
-   if (NOT keyword_set(starflux) AND NOT keyword_set(starloglam0)) then begin
+   if (NOT keyword_set(bspline_set) AND NOT keyword_set(starflux) AND $
+                                        NOT keyword_set(starloglam0)) then begin
       message, 'Either EIGENFILE or STARFLUX,STARLOGLAM0 must be set'
    endif
 
@@ -171,34 +178,56 @@ function zfind, objflux, objivar, hdr=hdr, $
    ndim = size(starflux, /n_dimen)
    dims = size(starflux, /dimens)
    npixstar = dims[0]
-   if (ndim EQ 1) then nstar = 1 $
-    else nstar = dims[1]
+   if (ndim EQ 0) then nstar = 0 $
+   else if (ndim EQ 1) then nstar = 1 $
+   else nstar = dims[1]
 
-   if (n_elements(columns) NE 0) then begin
-      starflux = starflux[*,columns]
-   endif else begin
-      columns = lindgen(nstar)
-   endelse
+   if keyword_set(nstar) then begin 
+     if (n_elements(columns) NE 0) then begin
+        starflux = starflux[*,columns]
+     endif else begin
+        columns = lindgen(nstar)
+     endelse
 
-   ;----------
-   ; Add more eigen-templates that represent polynomial terms.
+     ;----------
+     ; Add more eigen-templates that represent polynomial terms.
 
-   if (keyword_set(npoly)) then $
-    starflux = [ [starflux], [poly_array(npixstar,npoly)] ]
+     if (keyword_set(npoly)) then $
+      starflux = [ [starflux], [poly_array(npixstar,npoly)] ]
+   endif else if (keyword_set(npoly)) then $
+      starflux = poly_array(npixobj,npoly) $
+   else $
+     message, 'starflux is utterly empty'
+
+       
 
    ;----------
    ; Compute the redshift difference between the first pixel of the object
    ; spectra and the template.
 
-   poffset = (objloglam0 - starloglam0) / objdloglam
+   poffset = 0
+   if keyword_set(starloglam0) then poffset = (objloglam0 - starloglam0) / objdloglam
 
    ;----------
    ; Compute the redshifts
 
-   zans = zcompute(objflux, objivar, starflux, poffset=poffset, $
-    pmin=pmin, pmax=pmax, nfind=nfind, width=width, $
-    plottitle=plottitle, _EXTRA=EXTRA)
+   if keyword_set(bspline_set) then begin
+      ; call the QSO composite fit with multiplicative polynomials
 
+      starset = bspline_set
+      starset.xmin = (starset.xmin - objloglam0) / objdloglam
+      starset.xmax = (starset.xmax - objloglam0) / objdloglam
+      starset.fullbkpt = (starset.fullbkpt - objloglam0) / objdloglam
+
+      zans = zcompute_qso(objflux, objivar, starset, starflux, poffset=poffset, $
+        pmin=pmin, pmax=pmax, nfind=nfind, width=width, $
+        plottitle=plottitle, _EXTRA=EXTRA)
+     zans.tcolumn[0:npoly-1]  = 1
+    endif else begin
+      zans = zcompute(objflux, objivar, starflux, poffset=poffset, $
+        pmin=pmin, pmax=pmax, nfind=nfind, width=width, $
+        plottitle=plottitle, _EXTRA=EXTRA)
+    endelse
    ;----------
    ; Convert redshift (and error) from pixels to the conventional dimensionless
    ; value.  Do not modify any errors that are less than zero, since those

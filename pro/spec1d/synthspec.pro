@@ -97,7 +97,17 @@ function synthspec, zans, loglam=objloglam, hdr=hdr, eigendir=eigendir
    ; Assume that the wavelength binning is the same as for the objects
    ; in log-wavelength.
 
-   starflux = readfits(djs_filepath(tfile, root_dir=eigendir), shdr)
+   starflux = readfits(djs_filepath(tfile, root_dir=eigendir), shdr, /silent)
+   if n_elements(starflux) LE 1 then begin
+     polyflux = poly_array(naxis1,zans.npoly) # zans.theta[0:zans.npoly-1]
+     bspline_set = mrdfits(djs_filepath(tfile, root_dir=eigendir), 1, shdr, /silent)
+     rloglam = objloglam - alog10(1+zans.z)
+   
+     newflux = bspline_valu(rloglam, bspline_set, x2=objloglam) * polyflux
+     return, newflux
+   endif   
+     
+
    starloglam0 = sxpar(shdr, 'COEFF0')
    stardloglam = sxpar(shdr, 'COEFF1')
 

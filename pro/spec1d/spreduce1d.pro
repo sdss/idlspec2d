@@ -261,6 +261,8 @@ ormask = 0 ; Free memory
    plottitle = 'QSO Redshift'
 
    eigenfile = 'spEigenQSO-*.fits'
+;   zmax = 6.50 ; Max range to use for now, with the template starting at
+;   eigenfile = 'spBsplineQSO-*.fits'
 
    splog, 'Compute QSO redshifts:', $
     ' ZMIN=', zmin, ' ZMAX=', zmax, ' PSPACE=', pspace
