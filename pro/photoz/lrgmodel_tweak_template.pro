@@ -7,8 +7,8 @@
 ;
 ; CALLING SEQUENCE:
 ;   lrgmodel_tweak_template, pflux, pflux_ivar, zz, [ weights=, $
-;    maxiter=, ageguess=, metalguess=, agerange=, metalrange=, coeff=, $
-;     _EXTRA= ]
+;    maxiter=, ageguess=, metalguess=, agerange=, metalrange=, /absdev, $
+;     coeff=, _EXTRA= ]
 ;
 ; INPUTS:
 ;   pflux          - Object fluxes in the 5 SDSS filters [5,NOBJ]
@@ -25,6 +25,9 @@
 ;                    to [0.0, 6.0] Gyr
 ;   metalrange     - Range of possible values for ZMETAL; default
 ;                    to [0.008, 0.05]
+;   absdev         - If set, then minimize the absolute value of the redshift
+;                    deviations, rather than the more conventional square of
+;                    those deviations.  This should be more robust.
 ;   _EXTRA         - Keywords for LRGMODEL_PHOTOZ(), such as ABCORRECT,
 ;                    EXTINCTION, ABFUDGE, ADDERR, FILTERLIST
 ;
@@ -63,7 +66,7 @@ forward_function mpfit, lrgmodel_tweak_fn
 function lrgmodel_tweak_fn, coeff
 
    common com_lrgmodel_tweak_fluxes, pflux, pflux_ivar, zz, $
-    sqweights, KeywordsForPhotoz
+    sqweights, absdev, KeywordsForPhotoz
 
    ; Compute the best-fit redshift for each object
    zfit = lrgmodel_photoz(pflux, pflux_ivar, $
@@ -73,16 +76,18 @@ function lrgmodel_tweak_fn, coeff
    ; Return the redshift errors as the "chi" values
    chivec = (zfit - zz) / 0.01 ; This is an arbitrary normalization
    if (keyword_set(sqweights)) then chivec = chivec * sqweights
+   if (keyword_set(absdev)) then chivec = sqrt(abs(chivec))
 
    return, chivec
 end
 ;------------------------------------------------------------------------------
 pro lrgmodel_tweak_template, pflux1, pflux_ivar1, zz1, weights=weights, $
  maxiter=maxiter, ageguess=ageguess1, metalguess=metalguess1, $
- agerange=agerange1, metalrange=metalrange1, _EXTRA=EXTRA
+ agerange=agerange1, metalrange=metalrange1, absdev=absdev1, $
+ coeff=coeff, _EXTRA=EXTRA
 
    common com_lrgmodel_tweak_fluxes, pflux, pflux_ivar, zz, $
-    sqweights, KeywordsForPhotoz
+    sqweights, absdev, KeywordsForPhotoz
 
    ; Set defaults
    if (NOT keyword_set(maxiter)) then maxiter = 40
@@ -94,6 +99,8 @@ pro lrgmodel_tweak_template, pflux1, pflux_ivar1, zz1, weights=weights, $
     else agerange = [0.0, 6.0]
    if (keyword_set(metalrange1)) then metalrange = metalrange1 $
     else metalrange = [0.008, 0.05]
+   if (keyword_set(absdev1)) then absdev = absdev1 $
+    else absdev = 0
    if (keyword_set(EXTRA)) then KeywordsForPhotoz = EXTRA $
     else KeywordsForPhotoz = ''
 
@@ -127,9 +134,9 @@ pro lrgmodel_tweak_template, pflux1, pflux_ivar1, zz1, weights=weights, $
    parinfo[1].limited = [1b, 1b]
    parinfo[1].limits = metalrange
 
-   ftol = 1d-20
-   gtol = 1d-20
-   xtol = 1d-20
+;   ftol = 1d-20
+;   gtol = 1d-20
+;   xtol = 1d-20
    coeff = mpfit('lrgmodel_tweak_fn', parinfo=parinfo, perror=perror, $
     maxiter=maxiter, ftol=ftol, gtol=gtol, xtol=xtol, $
     niter=niter, status=status)

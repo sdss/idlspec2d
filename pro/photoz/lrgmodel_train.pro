@@ -8,7 +8,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   lrgmodel_train, [ public=, /regenerate, twodf=, zrange=, dzweight=, $
-;    _EXTRA=]
+;    /absdev, _EXTRA=]
 ;
 ; INPUTS:
 ;
@@ -23,6 +23,9 @@
 ;   dzweight       - Re-weight the galaxies such that all objects within each
 ;                    redshift interval DZWEIGHT share unit weight; default
 ;                    to 0.01; set to 0 to disable this re-weighting.
+;   absdev         - If set, then minimize the absolute value of the redshift
+;                    deviations, rather than the more conventional square of
+;                    those deviations.  This should be more robust.
 ;   _EXTRA         - Keywords for LRGMODEL_PHOTOZ(), such as ABCORRECT,
 ;                    EXTINCTION, ABFUDGE, ADDERR, FILTERLIST.
 ;
@@ -94,7 +97,7 @@ function lrgmodel_read_spall, public=public, regenerate=regenerate
        'MODELFLUX', 'MODELFLUX_IVAR', 'EXTINCTION']
       spall = hogg_mrdfits(spfile, 1, columns=columns, $
        nrowchunk=10000L)
-;       nrowchunk=10000L, range=[0,10000L]) ; ??? Test
+;       nrowchunk=10000L, range=[0,25000L]) ; ??? Test
 
       ; Trim to LRGs
       itrim = where( (strmatch(spall.platequality,'good*') $
@@ -140,7 +143,7 @@ function lrgmodel_append_twodf, spall, prefix
 end
 ;------------------------------------------------------------------------------
 pro lrgmodel_train, public=public, regenerate=regenerate, $
- twodf=twodf, zrange=zrange, dzweight=dzweight, $
+ twodf=twodf, zrange=zrange, dzweight=dzweight, absdev=absdev, $
  _EXTRA=KeywordsForPhotoz
 
    if (n_elements(twodf) EQ 0) then twodf = ['2003A', '2003B']
@@ -188,7 +191,7 @@ pro lrgmodel_train, public=public, regenerate=regenerate, $
    ; in order to get a good starting point
 
    ageburst = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0]
-   zmetal = [0.008, 0.014, 0.02, 0.03, 0.04]
+   zmetal = [0.008, 0.014, 0.02, 0.025, 0.03, 0.04]
 ;ageburst = 4.0 ; Test ???
 ;zmetal = 0.03 ; Test ???
 
@@ -202,7 +205,8 @@ pro lrgmodel_train, public=public, regenerate=regenerate, $
           _EXTRA=KeywordsForPhotoz)
          chivec = (zfit - spall.z) / 0.01 ; This is an arbitrary normalization
          if (keyword_set(weights)) then chivec = chivec * sqrt(weights)
-         thischi2 = total(chivec^2)
+         if (keyword_set(absdev)) then thischi2 = total(abs(chivec)) $
+          else thischi2 = total(chivec^2)
          splog, 'For AGE=', ageburst[iage], ' ZMETAL=', zmetal[imetal], $
           ' chi2=', thischi2
          if (chi2best EQ 0 OR thischi2 LT chi2best) then begin
@@ -220,7 +224,7 @@ pro lrgmodel_train, public=public, regenerate=regenerate, $
 
    lrgmodel_tweak_template, spall.modelflux, spall.modelflux_ivar, $
     spall.z, weights=weights, $
-    ageguess=ageguess, metalguess=metalguess, $
+    ageguess=ageguess, metalguess=metalguess, absdev=absdev, $
     coeff=coeff, _EXTRA=KeywordsForPhotoz
 
    splog, 'Best guess = ', coeff
