@@ -92,6 +92,7 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    if NOT keyword_set(upper) then upper = 10.0
    if NOT keyword_set(lower) then lower = 10.0
    if NOT keyword_set(nbkpt) then nbkpt = ncol
+   thresh = 3.0
 
    if (n_elements(fibermask) NE nrow) then fibermask = bytarr(nrow) 
 
@@ -396,9 +397,9 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
 
    if (keyword_set(relchi2)) then begin
       if (keyword_set(pixelmask)) then $
-       pixelmask = pixelmask OR pixelmask_bits('BADSKYCHI') * (relchi2fit GT 4)
+       pixelmask = pixelmask OR pixelmask_bits('BADSKYCHI') $
+        * (relchi2fit GT thresh)
 
-;      monster, wave[*,iskies], objsub[*,iskies]
       redmonster, relwave, relchi2, wave, pixelmask=pixelmask
    endif
 
