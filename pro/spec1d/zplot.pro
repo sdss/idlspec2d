@@ -98,23 +98,26 @@ pro zplot
    ramid = 0.0
 
    ; Exclude plates 202,260,326
-   plate = [265,266,267,268,269,270,271,274,275,276,277,278,279, $
-    280,281,282,283,284,285,291,292,293,297,298,299, $
-    300,301,302,303,304,305,306,307,308,309, $
-    310,311,312,313,314,315, $
-    338,339,340,341,342,343,344,345,346,348, $
-    373,374,379,380,381,382,383,384,385,386,387, $
-    388,389,390,391,392,393,394,395,396,397,398,399, $
-    400,401,402,403,404,405,406,407,408,409,410,411,412,413,414,415,416]
+;   plate = [265,266,267,268,269,270,271,274,275,276,277,278,279, $
+;    280,281,282,283,284,285,291,292,293,297,298,299, $
+;    300,301,302,303,304,305,306,307,308,309, $
+;    310,311,312,313,314,315, $
+;    338,339,340,341,342,343,344,345,346,348, $
+;    373,374,379,380,381,382,383,384,385,386,387, $
+;    388,389,390,391,392,393,394,395,396,397,398,399, $
+;    400,401,402,403,404,405,406,407,408,409,410,411,412,413,414,415,416]
+   platelist, plist=plist
+   ii = where(abs(plist.dec) LT 0.25 AND plist.qsurvey $
+    AND strtrim(plist.status1d,2) EQ 'Done')
+   plate = plist[ii].plate
 
    readspec, plate, plug=plug, zans=zans
-   indx = where(strtrim(zans.class,2) EQ 'GALAXY')
 
    xplot = zans.z * cos((plug.ra - ramid) / !radeg)
    yplot = zans.z * sin((plug.ra - ramid) / !radeg)
 
-   spec_gal = strtrim(zans.class,2) EQ 'GALAXY'
-   spec_qso = strtrim(zans.class,2) EQ 'QSO'
+   spec_gal = strtrim(zans.class,2) EQ 'GALAXY' AND zans.zwarning EQ 0
+   spec_qso = strtrim(zans.class,2) EQ 'QSO' AND zans.zwarning EQ 0
    target_main = (plug.primtarget AND 2^6) NE 0 $
     OR (plug.primtarget AND 2^7) NE 0 $
     OR (plug.primtarget AND 2^8) NE 0
