@@ -1,5 +1,11 @@
 function gaussprofile, width, halfsize
 
+;
+;	This routine just makes a kernel with a simple
+;	gaussian shape.   I can easily believe this can be
+;	done in easier.
+;
+
         if (NOT keyword_set(width)) then return, 0
         if (NOT keyword_set(halfsize)) then halfsize = long(4 * width)
 
@@ -26,6 +32,11 @@ end
 
 
 function lampfit, spec, linelist, guess0, guesshi, width=width, lagwidth = lagwidth, lag=lag, ftol=ftol
+;
+;	Lampfit sets up data for amoeba with gaussian profile
+;	At exit it resets guess coefficients by correcting
+;	for best lag
+;
 	common lampstuff, start, loglamlist, intensity, speccorr
 	common lagstuff, llag, bestlag, bestcorr, zeroterm
 	common pixstuff, pixarray, profile, middle
@@ -82,6 +93,13 @@ function lampfit, spec, linelist, guess0, guesshi, width=width, lagwidth = lagwi
 end	
 
 function corrlamps, a
+;
+;	
+;	Corrlamps is the raw function called by amoeba which calculates
+;	the best cross_correlation and returns the corresponding maximum
+;	value of the cross correlation.  Construction of a new model
+;	spectrum is done using the coefficients in (a).	
+;
 
 	common lampstuff, start, loglamlist, intensity, speccorr
 	common lagstuff, lag, bestlag, bestcorr, zeroterm
@@ -118,6 +136,11 @@ function corrlamps, a
 end
 
 function fullfit, spec, linelist, guess
+;
+;	Fullfit performs multiple (at least 2) iterations of lampfit
+;	One might think of this as a first coarse iterations,
+;	ans subsequent fine iterations.
+;
 	common lagstuff, lag, bestlag, bestcorr, zeroterm
 
 	guess0 = guess[0]
@@ -145,6 +168,12 @@ end
 pro fitarcimage, arc, side, linelist, xnew, ycen, tset, invset, $
                   func=func, ncoeff=ncoeff, ans=ans, lambda=lambda, $
                   thresh=thresh, row=row, goodlines=goodlines
+;
+;	Fit arc image is the highest level routine in this file.
+;	It traces the arc line peaks found in arc.  Threshold
+;	should be set to find just significant peaks.
+;
+;
 
    common lagstuff, lag, bestlag, bestcorr, zeroterm
 
@@ -169,6 +198,7 @@ pro fitarcimage, arc, side, linelist, xnew, ycen, tset, invset, $
    endif
 ;
 ;	First trace
+;	one might want to change nave and nmed for first pass
 ;
 
 	xcen = trace_crude(arc, yset=ycen, nave=1, nmed=1, thresh = thresh, $
@@ -179,16 +209,29 @@ pro fitarcimage, arc, side, linelist, xnew, ycen, tset, invset, $
 	if(bad[0] NE -1) then xnew[bad] = xcen[bad]
 
 
+;
+;	Somewhere here you might want to fit gaussians to get better
+;	centroids, but you might want to wait until after the first
+;	round of polynomial fitting.
+;
 	
 ;
 ;	Now find wavelength solution
 ;
 
 	spec = arc[*,row]
+
+;
+;	One can try to implement the median below for robustness
+;
 ;	spec = djs_median(arc[*,row-1:row+1],2)
 
 	if (ans[0] EQ 0) then begin
 
+;
+;	guess is needed to give fullfit (and lampfit) and initial starting
+;	point for wavelength solutions.
+;
 	  guess = 0
 	  if (side EQ 'blue') then guess = [3.68, -0.106, -0.005, 0.005]	
 	  if (side EQ 'red') then guess = [3.87, 0.10, -0.003]	
@@ -206,6 +249,10 @@ pro fitarcimage, arc, side, linelist, xnew, ycen, tset, invset, $
 
 	endif
 
+;
+;	This next section attempts to identify "GOOD" lines in linelist
+;	with the traces stored in (xnew, ycen)
+;
 	wnorm = 2.0*xnew/(npix-1) - 1.0
 	wpeak = poly(wnorm, ans)		
 	
@@ -304,11 +351,17 @@ pro fitarcimage, arc, side, linelist, xnew, ycen, tset, invset, $
           if (func EQ 'legendre') then yy = flegendre(pixarray,ncoeff) # res
           if (func EQ 'chebyshev') then yy = fchebyshev(pixarray,ncoeff) # res
 
+;
+;	Fit to the 2048 pixels with the wavelengths as the dependent variable.
+;
           yynorm = 2.0*(yy-ymid)/yrange
           invset.coeff[*,i] = func_fit(yynorm, xx, icoeff, $
               function_name=function_name)
 
-	
+
+;
+;	My silly row output
+;	
           print, format='($, ".",i4.4,a5)',i,string([8b,8b,8b,8b,8b])
 	endfor	
 
