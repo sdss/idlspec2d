@@ -59,12 +59,14 @@
 function apo_log_header, title1
 
    ; Include a Java script to auto-load this page every 60 seconds
+   ; --> No.  Disable this now.  A copy of the file is made from APOREDUCE
+   ; that includes this Java script.
 
    textout = '<HTML>'
    textout = [textout, '<HEAD><TITLE>' + title1 + '</TITLE></HEAD>']
    squote = "'"
-   textout = [textout, $
-    '<BODY ONLOAD="timerID=setTimeout('+squote+'location.reload(true)'+squote+',60000)">']
+;   textout = [textout, $
+;    '<BODY ONLOAD="timerID=setTimeout('+squote+'location.reload(true)'+squote+',60000)">']
 
    return, textout
 end
