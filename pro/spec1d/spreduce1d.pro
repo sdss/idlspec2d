@@ -327,6 +327,8 @@ andmask = 0 ; Free memory
    sxdelpar, hdr, 'NAXIS1'
    sxdelpar, hdr, 'NAXIS2'
    sxaddpar, hdr, 'EXTEND', 'T', after='NAXIS'
+   sxaddpar, hdr, 'VERS1D', idlspec2d_version(), $
+    'Version of idlspec2d for 1D reduction', after='VERSCOMB'
 
    mwrfits, 0, zallfile, hdr, /create ; Retain the original header in first HDU
    mwrfits, res_all, zallfile
