@@ -102,10 +102,11 @@ function get_mjd_dir, topdir, mjd=mjd, mjstart=mjstart, mjend=mjend
 
       ; Remove any directories that do not contain any files (or that are
       ; not directories at all).
-      if (keyword_set(mjdonly[imjd])) then begin
-         junk = findfile(filepath('', root_dir=mjdlist[imjd]), count=ct)
-         if (ct EQ 0) then mjdonly[imjd] = ''
-      endif
+      ; Comment-out this test, since it's so slow.
+;      if (keyword_set(mjdonly[imjd])) then begin
+;         junk = findfile(filepath('', root_dir=mjdlist[imjd]), count=ct)
+;         if (ct EQ 0) then mjdonly[imjd] = ''
+;      endif
    endfor
 
    ii = where(mjdonly NE '', ct)
