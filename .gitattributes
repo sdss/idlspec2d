@@ -397,6 +397,7 @@ pro/spec2d/myfluxcorr.pro -text
 pro/spec2d/myratiofit.pro -text
 pro/spec2d/pixelmask_bits.pro -text
 pro/spec2d/platesn.pro -text
+pro/spec2d/plotsky.pro -text
 pro/spec2d/plotsn.pro -text
 pro/spec2d/qaplot_arcline.pro -text
 pro/spec2d/qaplot_fflat.pro -text
