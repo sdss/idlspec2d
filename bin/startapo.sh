@@ -5,25 +5,24 @@
 # The file should look something like 
 #    /data/spectro/51666/sdR-b1-00001234.fit
 # Break this up into path and simple filename.
-# Guess astrolog directory, replacing "/data/spectro" with "/astrolog".
-# Send all this to the IDL routine APOREDUCE.
+# Send the file name and astrolog directory to the IDL routine APOREDUCE.
+# Finally, make a g-zipped copy of the input file, leaving the uncompressed
+#  file there too.
 #
 # S. Burles, APO, 4 May 2000
 #------------------------------------------------------------------------------
 
-if [ -n "$ASTROLOG_DIR" ]
-then 
-   astrolog_dir=$ASTROLOG_DIR
-else
-   astrolog_dir='/data/spectro/astrolog'
+if [ -n "$ASTROLOG_DIR" ] ; then
+   echo "Abort: ASTROLOG_DIR not set!"
+   exit
 fi
 
-if [ -n "$SPECTROLOG_DIR" ]
-then 
-   spectrolog_dir=$SPECTROLOG_DIR
-else
-   spectrolog_dir='/data/spectro/spectrologs'
+if [ -n "$SPECTROLOG_DIR" ] ; then
+   echo "Abort: SPECTROLOG_DIR not set!"
+   exit
 fi
+
+copydir=$SPECTROLOG_DIR/html
 
 #
 # Wait for first file to finish complete copy
@@ -39,7 +38,6 @@ do
   filename=`echo $input | sed -n 's/\/.*\///p'`
 
   echo STARTAPO: Directory $dir Filename $filename
-  copydir=/data/spectro/spectrologs/html/
 
   if [ ! -d $copydir ] 
   then
@@ -50,8 +48,8 @@ do
   if [ "$good" -gt 0 ] 
     then
      mjd=`echo $dir | sed -n 's/\/.*\///p'`
-     astrolog=$astrolog_dir/$mjd
-     outdir=$spectrolog_dir/$mjd
+     astrolog=$ASTROLOG_DIR/$mjd
+     outdir=$SPECTROLOG_DIR/$mjd
 
      if [ ! -d $outdir ] 
      then
@@ -65,15 +63,14 @@ do
 #          plugdir='$astrolog', copydir='$copydir' " | nice idl >& /dev/null
   fi
 
-### GZIP in same location
-
+  # If the file ends in exactly ".fit", then compress it with gzip,
+  # and leave the uncompressed file there too.
   good=`echo $filename | sed -n 's/fit//p'`
   if [ $good ]
   then 
     gzip -c $input > $input.gz &
     chmod 664 $input.gz
   fi
-
 
 done
 

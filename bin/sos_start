@@ -16,12 +16,6 @@ if [ $# = 1 ] ; then
 fi
 
 #------------------------------------------------------------------------------
-# Set file names used internally in this script.
-
-cronfile=/tmp/$USER.sos.cron
-SOSLOG=/data/spectro/spectrologs/sos.log
-
-#------------------------------------------------------------------------------
 # Test that certain environment variables are already set.
 
 if [ -z "$IDLSPEC2D_DIR" ] ; then
@@ -55,6 +49,17 @@ if [ -z "$ASTROLOG_DIR" ] ; then
    ASTROLOG_DIR=/data/spectro/astrolog
 fi
 echo "Setting \$ASTROLOG_DIR=$ASTROLOG_DIR"
+
+if [ -z "$SPECTROLOG_DIR" ] ; then
+   SPECTROLOG_DIR=/data/spectro/spectrologs
+fi
+echo "Setting \$SPECTROLOG_DIR=$SPECTROLOG_DIR"
+
+#------------------------------------------------------------------------------
+# Set file names used internally in this script.
+
+cronfile=/tmp/$USER.sos.cron
+SOSLOG=$SPECTROLOG_DIR/sos.log
 
 #------------------------------------------------------------------------------
 # Don't allow this to be run from the machine "sdsshost"!
@@ -96,6 +101,7 @@ echo "IDL_DIR=$IDL_DIR" >> $cronfile
 echo "IDL_PATH=$IDL_PATH" >> $cronfile
 echo "RAWDATA_DIR=$RAWDATA_DIR" >> $cronfile
 echo "SPECLOG_DIR=$ASTROLOG_DIR" >> $cronfile
+echo "SPECTROLOG_DIR=$SPECTROLOG_DIR" >> $cronfile
 echo "# This job will run every minute." >> $cronfile
 echo "* * * * * sos.sh >> $SOSLOG 2>&1" >> $cronfile
 echo "# This job will run at 7:20 am every day." >> $cronfile

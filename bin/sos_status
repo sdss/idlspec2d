@@ -55,11 +55,16 @@ fi
 
 
 #------------------------------------------------------------------------------
-# Make sure the /data/spectro/spectrologs directory exists.
+# Make sure the spectrologs directory exists.
 # Look for any lock files.
 
 echo
-logdir=/data/spectro/spectrologs
+logdir=$SPECTROLOG_DIR
+if [ -n "$SPECTROLOG_DIR" ] ; then
+   echo "Abort: SPECTROLOG_DIR not set!"
+   exit
+fi
+
 if [ -e $logdir ] ; then
   files=`find $logdir -name "*.lock"`
   if [ -n "$files" ] ; then

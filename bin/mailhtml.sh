@@ -3,7 +3,7 @@
 # This is a cron job that should run once per day from
 # plate-mapper.apo.nmsu.edu, currently at 7:20 am.
 #
-# Look for all MJD directories, "/data/spectro/spectrologs/[56789]*".
+# Look for all MJD directories, "$SPECTROLOG_DIR/[56789]*".
 # Loop through each such directory.  If a file "logfile*html" exists, then
 # construct a message to send to the SDSS mailing list at:
 #    sdss-speclog.princeton.edu
@@ -13,17 +13,17 @@
 # S. Burles, APO, 4 May 2000
 #------------------------------------------------------------------------------
 
+if [ -n "$SPECTROLOG_DIR" ] ; then
+   echo "Abort: SPECTROLOG_DIR not set!"
+   exit
+fi
+
 ##
 #  First, send data offsite, and then create mail messages.
 ##  (Don't do this now, everybody gets the data themselves)
 # data_rsync.sh
-#
 
-logs=`find /data/spectro/spectrologs/[56789]* -name "logfile*html" -print | grep -v current`
-
-#   This doesn't work below below the argument list gets too large
-# logs=`ls -d /data/spectro/spectrologs/[56789]*/* \
-#          | grep logfile | grep html | grep -v lock`
+logs=`find $SPECTROLOG_DIR/[56789]* -name "logfile*html" -print | grep -v current`
 
 # The variable $thislog is the name of the HTML file with its full path.
 # The variable $filename has the path stripped off.
