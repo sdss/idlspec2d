@@ -16,6 +16,8 @@ QUICKEXTRACT: The logic to trim away extra sky fibers when there are
 SDSSPROC: Don't print bias noise level if /silent is set.
 SPREDUCE2D: Print the version of "speclog".
 
+bin/sprobot_start: Insist that the cvs version of speclog be set up
+        for running this robot.
 etc/spChunkList.par: Add chunks 80-84.
 pro/Makefile: Add photoz directory
 templates/spLRG-52928.fits: LRG templates for LRG_PHOTOZ function.
