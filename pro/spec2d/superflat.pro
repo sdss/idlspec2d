@@ -154,9 +154,28 @@ function superflat, flux, fluxivar, wset, x2=x2, $
 
 ; THE BELOW FAILS WITH NORD=4, SO MUST SET NORD=3!!!???
 ; ALSO, ONLY WORKS WITH NPOLY=1,2 OR 4!!!???
+;   sset = bspline_iterfit(allwave[indx], allflux[indx], $
+;    invvar=allivar[indx], x2=thisx2, nord=nord, npoly=npoly, nbkpts=ny, $
+;    maxiter=maxiter, upper=upper, lower=lower, mask=mask)
+
+;
+;  David:  It's better to use "everyn=" instead or "nbkpts="
+;          Due to the sparse sampling near the ends of wavelength range
+;           you have effectively a higher bkpt density and this can give
+;           too much freedom to very few data points.  
+;          everyn places a breakpoint at every Nth good data point.
+;          For the example below everyn=ngood gives about 2040 fullbkpts
+;           instead of 2052 with nbkpts=ny
+;          We use everyn= in skysubtraction as well, just because there
+;           is always one or two fibers extending much further than the rest.
+;
    sset = bspline_iterfit(allwave[indx], allflux[indx], $
-    invvar=allivar[indx], x2=thisx2, nord=nord, npoly=npoly, nbkpts=ny, $
+    invvar=allivar[indx], x2=thisx2, nord=nord, npoly=npoly, everyn=ngood, $
     maxiter=maxiter, upper=upper, lower=lower, mask=mask)
+
+;   generate model fit for full frame
+;   yy = bspline_valu(loglam, sset, x2=x2)
+
 ;;--------------------
 ; De-bugging tests...
 ;stop
