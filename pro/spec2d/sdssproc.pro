@@ -629,12 +629,14 @@ pro sdssproc, infile, image, invvar, indir=indir, $
             ; Trigger a warning message if above 10 ADU.
 
             djs_iterstat, biasreg, sigrej=5.0, sigma=testrms
-            if (testrms LT 10.) then $
-             splog, 'Std. dev. in bias region for amp#', iamp, $
-              ' = ', testrms, ' DN (5-sig clip)' $
-            else $
-             splog, 'WARNING: Std. dev. in bias region for amp#', iamp, $
-              ' = ', testrms, ' DN (5-sig clip)'
+            if (NOT keyword_set(silent)) then begin
+               if (testrms LT 10.) then $
+                splog, 'Std. dev. in bias region for amp#', iamp, $
+                 ' = ', testrms, ' DN (5-sig clip)' $
+               else $
+                splog, 'WARNING: Std. dev. in bias region for amp#', iamp, $
+                 ' = ', testrms, ' DN (5-sig clip)'
+            endif
 
             ; Copy the data for this amplifier into the final image
             ; Subtract the bias (in DN), and then multiply by the gain
