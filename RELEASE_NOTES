@@ -55,6 +55,8 @@ TELLURIC_CORR: Fixed horrible bug in using fibermask to reject bad fibers
                around a single telluric band for a single star with a
                polynomial, do the fit with weighted points and iterated
                rejections using DJS_REJECT().
+zplot: Quick-and-dirty script for finding and plotting a spectrum (at Princeton)
+       w/out setting up any path variables or SDSS products.
 
 DJS_REJECT (in idlutils): Add the GROUPDIM keyword, and allow GROUPDIM,
           MAXREJ and GROUPSIZE to be vectors for several limits in the
