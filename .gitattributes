@@ -164,7 +164,6 @@ pro/spec2d/arcsky_fit.pro -text
 pro/spec2d/calcflux.pro -text
 pro/spec2d/calcscatimage.pro -text
 pro/spec2d/checkflavor.pro -text
-pro/spec2d/checksn.pro -text
 pro/spec2d/combine1fiber.pro -text
 pro/spec2d/correct_dlam.pro -text
 pro/spec2d/divideflat.pro -text
@@ -243,7 +242,6 @@ pro/spec2d/spflatten2.pro -text
 pro/spec2d/spflux.pro -text
 pro/spec2d/spgain.pro -text
 pro/spec2d/splog.pro -text
-pro/spec2d/spmulti.pro -text
 pro/spec2d/spplan1d.pro -text
 pro/spec2d/spplan2d.pro -text
 pro/spec2d/spreduce.pro -text
