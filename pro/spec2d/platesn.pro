@@ -128,7 +128,7 @@ pro platesn, finalflux, finalivar, finalandmask, finalplugmap, loglam, $
    plottitle = 'PLATE=' + strtrim(string(sxpar(hdr,'PLATEID')),2) $
     + '  MJD=' + strtrim(string(sxpar(hdr,'MJD')),2)
    plotsn, snvec, finalplugmap, plotfile=plotfile, plottitle=plottitle, $
-    synthmag=synthmag
+    synthmag=synthmag, snplate=snplate
 
    ;----------
    ; Print roll call of bad fibers and bad pixels.
