@@ -43,6 +43,7 @@
 ;   happens if neither is set.
 ;
 ; PROCEDURES CALLED:
+;   apo_log2html
 ;   djs_filename()
 ;   djs_lockfile()
 ;   djs_modfits
@@ -174,7 +175,7 @@ pro remove2redo, mjd=mjd, plate=plate, expnum=expnum
          ikeep = where(qkeep, nkeep)
          if (nkeep LT nstruct) then begin
             if (nkeep EQ 0) then $
-             djs_modfits, logfile, 0, exten_no=thishdu $
+             djs_modfits, logfile, 0, exten_no=thishdu, /delete_data $
             else $
              djs_modfits, logfile, rstruct[ikeep], exten_no=thishdu
          endif
@@ -188,7 +189,7 @@ pro remove2redo, mjd=mjd, plate=plate, expnum=expnum
              qdone = qdone OR (rstruct[i].filename EQ shortname)
          endif else begin
             ; Warning or aborts -- remove any for files that haven't been
-            ; successfullyl reduced and that we'll re-reduce.
+            ; successfully reduced and that we'll re-reduce.
             qkeep = bytarr(nstruct)
             for i=0, nstruct-1 do $
              qkeep[i] = total(rstruct[i].filename EQ shortname $
@@ -197,7 +198,7 @@ pro remove2redo, mjd=mjd, plate=plate, expnum=expnum
             if (nkeep LT nstruct) then begin
                splog, 'Removing ', nstruct-nkeep, ' warning and abort messages'
                if (nkeep EQ 0) then $
-                djs_modfits, logfile, 0, exten_no=thishdu $
+                djs_modfits, logfile, 0, exten_no=thishdu, /delete_data $
                else $
                 djs_modfits, logfile, rstruct[ikeep], exten_no=thishdu
             endif
@@ -232,16 +233,18 @@ pro remove2redo, mjd=mjd, plate=plate, expnum=expnum
       if (iredo[0] NE -1) then redofiles = fullname[iredo]
    endif
 
-   if (NOT keyword_set(redofiles)) then begin
-      splog, 'No files to re-reduce'
-      !quiet = quiet
-      return
-   endif
-
    for iredo=0, n_elements(redofiles)-1 do begin
-      splog, 'Re-reduce file ' + redofiles[iredo]
+      splog, 'Marking file to re-reduce: ' + redofiles[iredo]
       spawn, 'rm -f ' + redofiles[iredo]
    endfor
+
+   if (NOT keyword_set(redofiles)) then begin
+      splog, 'No files to re-reduce'
+   endif else begin
+      ; Update the HTML file so that the files to be re-reduced
+      ; are removed from the web page until then.
+      apo_log2html, logfile
+   endelse
 
    !quiet = quiet
    return
