@@ -107,4 +107,7 @@ spchunklist     68A 1426 1467 main      ""
 spchunklist      72 1468 1472 special   "F stars near M31"
 spchunklist      73 1473 1529 special   "Merged Southern program"
 spchunklist      74 1530 1566 special   "Low-z + BCG + Deep LRG"
+# The following two chunks are in the reverse order than you'd expect
+spchunklist      76 1567-1581 main      ""
+spchunklist      75 1582 1596 main      ""
 
