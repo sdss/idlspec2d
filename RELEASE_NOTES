@@ -13,6 +13,8 @@ PLATECOMPARE: Fix 1-character typo preventing selecting the MJD
 PLOTSPEC: Add optional TOPDIR keyword.
 READ_ELODIE: Optionally return the Elodie header in HDR.
 READSPEC: Add TOPDIR input keyword and ZLINE output keyword.
+SPREDUCE1D: Simply overwrite any existing spZ files, rather than
+            using cpbackup to save old ones.
 SDSSPROC: Add "WARNING" to the warning messages about invalid or
             missing BC files.
 SKYLINE_DISPERSION: Avoid a crash condition.
