@@ -93,6 +93,7 @@ function trace320crude, fimage, invvar, ystart=ystart, nmed=nmed, xgood=xgood, $
    nx = (size(xset, /dimens))[0]
    quarterbad = (total(xmask,1) LT 3*nx/4)
    ixgood = where(xgood AND NOT quarterbad)
+
    xstart[ixgood] = xset[ystart,ixgood]
 
    ; Compare the traces in each row to those in row YSTART.
@@ -112,13 +113,15 @@ function trace320crude, fimage, invvar, ystart=ystart, nmed=nmed, xgood=xgood, $
     fibermask[ixbad] = fibermask[ixbad] OR fibermask_bits('BADTRACE')
 
    for iy=0, ny-1 do begin
-      coeff = polyfitw(xstart, xset[iy,*], xgood AND xmask[iy,*], ndegree, xfit) 
-      xdiff = xfit - xset[iy,*]
-      ibad = where(abs(xdiff) GT maxdev)
-      xmask[iy, ixgood] = 1 ; First set all good traces in this row = 1
-      if (ibad[0] NE -1) then begin
-         xmask[iy,ibad] = 0
-      endif
+      xcheck = xgood AND xmask[iy,*]
+      if (total(xcheck) GT ndegree + 1) then begin
+        coeff = polyfitw(xstart, xset[iy,*], xcheck, ndegree, xfit)  
+        xdiff = xfit - xset[iy,*]
+        ibad = where(abs(xdiff) GT maxdev, nbad)
+        xmask[iy, ixgood] = 1 ; First set all good traces in this row = 1
+        if (ibad[0] NE -1) then xmask[iy,ibad] = 0
+      endif else  xmask[iy,*] = 0
+
    endfor
 
    ; Further smooth the bad centroids to NGROW adjacent rows
@@ -128,8 +131,8 @@ function trace320crude, fimage, invvar, ystart=ystart, nmed=nmed, xgood=xgood, $
 
    ; Loop to fix deviant centroids
    for iy=0, ny-1 do begin
-      ixbad = where(xmask[iy,*] EQ 0)
-      if (ixbad[0] NE -1) then begin
+      ixbad = where(xmask[iy,*] EQ 0,nbad)
+      if (nbad GT 0 AND nbad LT ntrace - ndegree) then begin
          ixgood = where(xmask[iy,*] EQ 1)
          coeff = polyfitw(xstart, xset[iy,*], xmask[iy,*], $
           ndegree, xfit)
