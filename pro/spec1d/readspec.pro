@@ -109,7 +109,7 @@ pro readspec1, plate, range, mjd=mjd, silent=silent, flux=flux, flerr=flerr, $
    if (NOT keyword_set(mjd)) then mjdstr = '*' $
     else mjdstr = string(mjd,format='(i5.5)')
 
-   dirname = '/data/spectro/2d_3c/' + platestr + '/2dnew'
+   dirname = '/data/spectro/2d_3c/' + platestr
    filename = 'spPlate-' + platestr + '-' + mjdstr + '.fits'
    filename = findfile(filepath(filename, root_dir=dirname), count=ct)
 
