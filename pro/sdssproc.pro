@@ -102,11 +102,11 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
    calib = mrdfits(ccdfile, 1, ccdhdr)
    calib = calib[ where(calib.camrow EQ camrow AND calib.camcol EQ camcol) ]
 
-   gain = [2.0,2.0,2.0,2.0]
+;   gain = [2.0,2.0,2.0,2.0]
 ;
 ;	Hard wiring Gain at 2 for now
 ;
-;   gain = [calib.gain0,calib.gain1,calib.gain2,calib.gain3]
+   gain = [calib.gain0,calib.gain1,calib.gain2,calib.gain3]
    readnoiseDN = [calib.readnoiseDN0,calib.readnoiseDN1,calib.readnoiseDN2, $
     calib.readnoiseDN3]
 
