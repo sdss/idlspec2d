@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   zfit = lrg_photoz(pflux, pflux_ivar, [ /abcorrect, extinction=, $
-;    filterlist=, adderr=, z_err=, chi2= ] )
+;    abfudge=, filterlist=, adderr=, z_err=, chi2= ] )
 ;
 ; INPUTS:
 ;   pflux          - Object fluxes in the 5 SDSS filters [5,NOBJ]
@@ -17,9 +17,12 @@
 ;   abcorrect      - If set, then convert the input fluxes from the 2.5-m
 ;                    natural system to AB fluxes
 ;   extinction     - If set, then apply these extinction corrections [5,NOBJ]
+;   abfudge        - Additional AB "fudge factors"; default to adding
+;                    [0,-0.03,0,0,0] mag to input magnitudes, where a positive
+;                    value makes that flux fainter
 ;   filterlist     - List of filter indices to use in fits; default to
 ;                    using all five filters [0,1,2,3,4]
-;   adderr         - Fractional error to add in quadrature; default to 0.01
+;   adderr         - Fractional error to add in quadrature; default to 0.03
 ;
 ; OUTPUTS:
 ;   zfit           - Best-fit redshift [NOBJ]
@@ -57,19 +60,21 @@
 ;-
 ;------------------------------------------------------------------------------
 function lrg_photoz, pflux, pflux_ivar, z_err=z_err, $
- abcorrect=abcorrect, extinction=extinction, filterlist=filterlist, $
- adderr=adderr, chi2=chi2
+ abcorrect=abcorrect, extinction=extinction, abfudge=abfudge, $
+ filterlist=filterlist, adderr=adderr, chi2=chi2
 
    common com_lrg_photoz, zarr, synflux
 
    if (n_elements(filterlist) EQ 0) then filterlist = lindgen(5)
-   if (n_elements(adderr) EQ 0) then adderr = 0.01
+   if (n_elements(adderr) EQ 0) then adderr = 0.03
+   if (n_elements(abfudge) EQ 0) then abfudge = [0,-0.03,0,0,0]
 
    ;----------
    ; Initialize the template "spectra".
    ; This need only be done the first time this function is called,
    ; then cached for future calls.
 
+   coeff = [0.2414d0, -2.836d-5]
    if (NOT keyword_set(zarr)) then begin
 
       ; Read in an LRG spectrum
@@ -78,6 +83,7 @@ function lrg_photoz, pflux, pflux_ivar, z_err=z_err, $
       specflux = mrdfits(djs_filepath(eigenfile, root_dir=eigendir), 0, hdr)
       dloglam = sxpar(hdr, 'COEFF1')
       loglam = sxpar(hdr, 'COEFF0') + dindgen(sxpar(hdr, 'NAXIS1')) * dloglam
+      specflux = specflux * 10.d0^(loglam*coeff[0])
 
       ; Smooth the end of the spectra
       i1 = where(loglam LT alog10(3200), n1)
@@ -97,9 +103,11 @@ function lrg_photoz, pflux, pflux_ivar, z_err=z_err, $
 
       ; Fudge the slope of the template...
 ;      bigspecflux = specflux * bigwave^0.22
-      coeff = [4d-5, 4d-9, -4d-5]
-      bigspecflux = bigspecflux $
-       * (1 + coeff[0] * bigwave + coeff[1] * bigwave^2)
+;      coeff = [4d-5, 4d-9, -4d-5]
+;      bigspecflux = bigspecflux $
+;       * (1 + coeff[0] * bigwave + coeff[1] * bigwave^2)
+;      coeff = [0.2211d0, -1.972d-5]
+;      bigspecflux = bigspecflux * bigwave^coeff[0]
 
       ; Convert from f_lambda to f_nu
       flambda2fnu = bigwave^2 / 2.99792d18
@@ -114,7 +122,8 @@ function lrg_photoz, pflux, pflux_ivar, z_err=z_err, $
            iz, numz, string(13b)
          thiswave = 10.d0 ^ (bigloglam + alog10(1 + zarr[iz]))
          synflux[*,iz] = filter_thru( $
-          bigspecflux * (1 + coeff[2] * zarr[iz] * bigwave), $
+;          bigspecflux * (1 + coeff[2] * zarr[iz] * bigwave), $
+          bigspecflux * (1 + coeff[1] * zarr[iz] * bigwave), $
           waveimg=thiswave, /toair)
       endfor
       print
@@ -156,6 +165,12 @@ function lrg_photoz, pflux, pflux_ivar, z_err=z_err, $
          thisflux = pflux[*,iobj]
          thisisig = sqrt(pflux_ivar[*,iobj])
       endelse
+
+      ; Apply additional fudge terms to AB corrections
+      if (keyword_set(abfudge)) then begin
+         thisflux = thisflux * 10.d0^(-abfudge/2.5)
+         thisisig = thisisig / 10.d0^(-abfudge/2.5)
+      endif
 
       ; Apply extinction corrections
       if (keyword_set(extinction)) then begin
