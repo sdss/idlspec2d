@@ -464,6 +464,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    if (keyword_set(osigma)) then $
     sxaddpar, objhdr, 'OSIGMA',  sigma, $
      'Original guess at spatial sigma in pix'
+   sxaddpar, objhdr, 'PREJECT', reject[1], 'Profile area rejection threshold'
    sxaddpar, objhdr, 'LOWREJ', lowrej, 'Extraction: low rejection'
    sxaddpar, objhdr, 'HIGHREJ', highrej, 'Extraction: high rejection'
    sxaddpar, objhdr, 'SCATPOLY', npoly, 'Extraction: Order of scattered light polynomial'
