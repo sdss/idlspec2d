@@ -45,7 +45,6 @@
 pro qaplot_fflat, fflat, wset, fibermask=fibermask, filename=filename, $
  plotsig=plotsig, dx=dx
 
-   if (NOT keyword_set(fibermask)) then fibermask = bytarr(nfiber) + 1
    if (NOT keyword_set(filename)) then filename = ''
    if (NOT keyword_set(plotsig)) then plotsig = 2.0
    if (NOT keyword_set(dx)) then dx = 1.e-3
@@ -56,6 +55,7 @@ pro qaplot_fflat, fflat, wset, fibermask=fibermask, filename=filename, $
    dims = size(fflat, /dimens)
    ny = dims[0]
    nfiber = dims[1]
+   if (NOT keyword_set(fibermask)) then fibermask = bytarr(nfiber) + 1
 
    ; Strip any trailing ".fit" from the file name
    i = rstrpos(filename, '.fit')
