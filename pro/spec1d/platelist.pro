@@ -48,7 +48,7 @@
 ; REVISION HISTORY:
 ;   29-Oct-2000  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
-pro platelistnew, infile, outfile=outfile, plist=plist
+pro platelist, infile, outfile=outfile, plist=plist
 
    if (NOT keyword_set(infile)) then $
     infile = djs_filepath('spPlancomb-*.par', $
