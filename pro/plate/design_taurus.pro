@@ -215,9 +215,8 @@ pro design_taurus, designnum
       design_plate, alldata, racen=racen[iplate], deccen=deccen[iplate], $
        tilenum=tileid[iplate], platenum=plateid[iplate], $
        nstd=32, nminsky=nminsky, nextra=50
-      print, 'Press a key to continue...'
-      junk = get_kbrd(1)
-stop
+;      print, 'Press a key to continue...'
+;      junk = get_kbrd(1)
 
    endfor
 

@@ -108,7 +108,12 @@ function design_append, allplug, oneplug, nadd=nadd
    nadd = 0L
 
    platescale = 217.7358 ; mm/degree
-   if (strtrim(oneplug.holetype) EQ 'GUIDE') then morespace = 7.5 $ ; in mm
+
+   ; Add more space around either GUIDE fibers or SKY fibers.
+   ; The only reason that we need more space around SKY fibers is
+   ; because they can get assigned as COHERENT_SKY and get guide fiber #11.
+   if (strmatch(oneplug.holetype, 'GUIDE*')) then morespace = 7.5 $ ; in mm
+    else if (strmatch(oneplug.holetype,'*SKY*')) then morespace = 7.5 $ ; in mm
     else morespace = 0.
 
    ;----------
@@ -357,7 +362,7 @@ pro design_plate, stardata1, tilenums=tilenum, platenums=platenum, $
    allplug.yfocal = -999 ; These values will be computed by PLATE
    allplug.spectrographid = -999L ; These values will be computed by PLATE
    allplug.fiberid = -999L ; These values will be computed by PLATE
-   allplug.throughput = 1L ; These values will be computed by PLATE
+   allplug.throughput = 0L ; These values will be computed by PLATE
    yanny_write, plugmaptfile, ptr_new(allplug), hdr=outhdr, $
     enums=plugenum, structs=plugstruct
 
@@ -413,7 +418,15 @@ pro design_plate, stardata1, tilenums=tilenum, platenums=platenum, $
    print, '   makeDrillPos'
    print, '   use_cs3'
    print, '   makePlots -skipBrightCheck'
-   print, 'Then you are done!'
+   print
+;   setupplate = 'setup plate'
+   setupplate = 'setup -r /u/schlegel/plate plate' ; ???
+   spawn, setupplate +'; echo "makePlates" | plate'
+   spawn, setupplate +'; echo "fiberPlates -skipBrightCheck" | plate'
+   spawn, setupplate +'; echo "makeFanuc" | plate'
+   spawn, setupplate +'; echo "makeDrillPos" | plate'
+   spawn, setupplate +'; echo "use_cs3" | plate'
+   spawn, setupplate +'; echo "makePlots -skipBrightCheck" | plate'
 
    return
 end
