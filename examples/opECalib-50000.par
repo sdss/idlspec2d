@@ -22,7 +22,7 @@
 #given instrument.
 #
 #Contents
-mjd            51259            # MJD day number when this file was created.
+mjd            50000            # MJD day number when this file was created.
                                 # This should be unique over the collection
                                 # of all configuration files for a given
                                 # camera.
