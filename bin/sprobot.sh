@@ -139,28 +139,36 @@ if [ -n "$mjdlist" ] ; then
 fi
 
 #------------------------------------------------------------------------------
+# Batch process 2D first, wait for it to complete, then batch process 1D
+# in the background.  The calls to the 2d and 1d scripts will exit if
+# those scripts are already running.
+
+   sprobot2d.sh ",topdir='$topoutdir', nice=19"
+   sprobot1d.sh ",topdir='$topoutdir', nice=19" &
+
+#------------------------------------------------------------------------------
 # Start the batch processing for Spectro-1D if it's not already running.
 # Put this parent process in the background so this script will continue.
 
-if \ps -elf | grep sprobot1d.sh  | grep -v -e grep
-then
-   echo "SPROBOT: BATCH1D already running at "`date`
-else
-   echo "SPROBOT: BATCH1D started at "`date`
-   sprobot1d.sh ",topdir='$topoutdir', nice=19" &
-fi
+#if \ps -elf | grep sprobot1d.sh  | grep -v -e grep
+#then
+#   echo "SPROBOT: BATCH1D already running at "`date`
+#else
+#   echo "SPROBOT: BATCH1D started at "`date`
+#   sprobot1d.sh ",topdir='$topoutdir', nice=19" &
+#fi
 
 #------------------------------------------------------------------------------
 # Start the batch processing for Spectro-2D if it's not already running.
 # Put this parent process in the background so this script will continue.
 
-if \ps -elf | grep sprobot2d.sh  | grep -v -e grep
-then
-   echo "SPROBOT: BATCH2D already running at "`date`
-else
-   echo "SPROBOT: BATCH2D started at "`date`
-   sprobot2d.sh ",topdir='$topoutdir', nice=19" &
-fi
+#if \ps -elf | grep sprobot2d.sh  | grep -v -e grep
+#then
+#   echo "SPROBOT: BATCH2D already running at "`date`
+#else
+#   echo "SPROBOT: BATCH2D started at "`date`
+#   sprobot2d.sh ",topdir='$topoutdir', nice=19" &
+#fi
 
 exit
 #------------------------------------------------------------------------------
