@@ -12,7 +12,7 @@ end
 pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
         ntrials=ntrials, fullspec=fullspec, fullerr=fullerr, $
         fullwave=fullwave, output=output, dosky=dosky, wavemin = wavemin, $
-        bkptbin = bkptbin, montecarlo=montecarlo, display=display
+        bkptbin = bkptbin, everyn=everyn, display=display
 
 ;
 ;	Set to 50 km/s for now to match 1d
@@ -168,7 +168,10 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
 	   nbkpt = fix((bkptmax - bkptmin)/bkptbin) + 1
 
 	   newwave = dindgen(npix)*bin + wavemin
-	   bkpt = dindgen(nbkpt)*bkptbin + bkptmin
+
+         if (keyword_set(everyn)) then $
+           everyn = nfiles/2 + 1 $
+         else bkpt = dindgen(nbkpt)*bkptbin + bkptmin
 	
 
 ;
@@ -186,7 +189,7 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
 
 	   ss = sort(fullwave)
 	   fullbkpt = slatec_splinefit(fullwave[ss], fullspec[ss], coeff, $
-              bkpt=float(bkpt), invvar=fullivar[ss], mask=mask, /silent)
+              bkpt=bkpt, everyn=everyn, invvar=fullivar[ss], mask=mask, /silent)
 
 	   stop
 	   mask[ss] = mask

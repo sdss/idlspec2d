@@ -8,7 +8,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   locateskylines, skylinefile, fimage, ivar, wset, xsky, ysky, skywaves, $
-;    lambda=lambda, xshift=xshift
+;    lambda=lambda, xcoeff=xcoeff
 ;
 ; INPUTS:
 ;   skylinefile - filename of skyline file
@@ -50,7 +50,7 @@
 ;------------------------------------------------------------------------------
 
 pro locateskylines, skylinefile, fimage, ivar, wset, $
- xsky, ysky, skywaves, lambda=lambda, xshift=xshift 
+ xsky, ysky, skywaves, lambda=lambda, xcoeff=xcoeff
   
 
    if (keyword_set(lambda)) then begin 
@@ -101,9 +101,10 @@ pro locateskylines, skylinefile, fimage, ivar, wset, $
 
    shiftcoeff = 1
    if (ngood GT 10) then shiftcoeff = 2
-   xshift = dblarr(nfiber,shiftcoeff+1)
+   xcoeff = dblarr(nfiber,shiftcoeff+1)
    for i=0,nfiber - 1 do  $
-     xshift[i,*] = polyfitw(mx[i,good],xdiff[i,good], aveinvvar[i,good], shiftcoeff)
+     xcoeff[i,*] = polyfitw(mx[i,good],xdiff[i,good], aveinvvar[i,good], $
+                 shiftcoeff)
    
    xsky = xsky[*,good] 
    skywaves = skywaves[good]

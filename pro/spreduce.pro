@@ -143,8 +143,10 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       ; Create spatial tracing from flat-field image
       ;------------------------------------------------------------------------
 
+      splog, 'Tracing 320 fibers in ',  flatname[ifile]
       tmp_xsol = trace320crude(image, yset=ycen, maxdev=0.15)
 
+      splog, 'Fitting traces in ',  flatname[ifile]
       xy2traceset, ycen, tmp_xsol, tset, ncoeff=5, maxdev=0.1
       traceset2xy, tset, ycen, tmp_xsol
 
@@ -211,7 +213,8 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       ;-------------------------------------------------------------------------
 
       splog, 'Searching for wavelength solution'
-      fitarcimage, flux, fluxivar, $
+      tmp_aset = 0
+      fitarcimage, flux, fluxivar, aset=tmp_aset, $
        color=color, lampfile=lampfile, bestcorr=corr
 
       ;-----
@@ -225,6 +228,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
          arcivar = fluxivar
          xsol = tmp_xsol
          fflat = tmp_fflat
+         aset = tmp_aset
       endif
 
    endfor
@@ -250,6 +254,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
    splog, 'Searching for wavelength solution'
    fitarcimage, arcimg, arcivar, xpeak, ypeak, wset, ncoeff=arccoeff, $
+    aset=aset, $
     color=color, lampfile=lampfile, lambda=lambda, xdif_tset=xdif_tset
      
    wsave = wset
@@ -355,6 +360,7 @@ for i=0,16 do oplot,fflat[*,i*19]
       endfor
 
       splog, 'Skipping steps 4 and 5'
+      splog, 'Scattered light: median ', median(scatfit), ' electrons'
 
       ; 4) Second and final extraction
       splog, 'Object extraction: Step 6'
@@ -362,7 +368,7 @@ for i=0,16 do oplot,fflat[*,i*19]
       ; Using old sigma for now, which should be fine
       ; Different sigmas require a new profile for each trace, so will
       ; check timing in the future
-      ;  subtract off fit to scattered light and don't allow any polynomial terms
+      ; subtract off fit to scattered light and don't allow any polynomial terms
 
       extract_image, image-scatfit, invvar, xnow, sigma, flux, $
        fluxivar, proftype=proftype, wfixed=wfixed, $
@@ -386,7 +392,7 @@ for i=0,16 do oplot,fflat[*,i*19]
       ; xshift contains polynomial coefficients to shift arc to sky lines.
 
       locateskylines, skylinefile, flux, fluxivar, $
-       wset, xsky, ysky, skywaves, xshift=xshift
+       wset, xsky, ysky, skywaves, xcoeff=xcoeff
 
       ;------------------
       ; First convert lambda, and skywaves to log10 vacuum
@@ -408,17 +414,20 @@ for i=0,16 do oplot,fflat[*,i*19]
       ;
       ;	Fit to arc lines with sky shifts included
       ;
-    
-      xarc = double(xpeak) 
-      wold = wset
-      for i=0,nTrace - 1 do $
-       xarc[i,*] = xpeak[i,*] + poly(xpeak[i,*],xshift[i,*])
 
-       xy2traceset, transpose(xarc), vacloglam # (dblarr(nTrace)+1), wset, $
-          ncoeff=arccoeff, maxdev=0, maxiter=0,  xmin=0, xmax=2047
- 
-      wset.coeff[2:*,*] = wold.coeff[2:*,*]
-       
+
+    
+      xshift = double(xpeak) 
+      wold = wset
+      for i=0,nTrace - 1 do xshift[i,*] =  poly(xpeak[i,*],xcoeff[i,*])
+
+       plot, xpeak, xshift, ps=3 
+
+      vacset = wset
+      fixabove = 2
+      finalarcfit, xpeak+xshift, vacloglam, vacset, arccoeff, fixabove, $
+             maxdev=0, maxiter=1, nsetcoeff=8, maxsig=2.0
+
 
 ;      fit_skyset, xpeak, ypeak, vacloglam, xsky, ysky, vaclogsky, skycoeff, $
 ;        goodlines, wset, ymin=ymin, ymax=ymax, func=func
@@ -426,13 +435,13 @@ for i=0,16 do oplot,fflat[*,i*19]
       ;------------------
       ; Sky-subtract
 
-      skysubtract, flux, fluxivar, plugsort, wset, $ 
+      skysubtract, flux, fluxivar, plugsort, vacset, $ 
        skysub, skysubivar, fibermask=fibermask
 
       ;------------------------------------------
       ; Flux calibrate to spectrophoto_std fibers
 
-      fluxfactor = fluxcorr(skysub, skysubivar, wset, plugsort, $
+      fluxfactor = fluxcorr(skysub, skysubivar, vacset, plugsort, $
                              lower=1.5, upper=5, fibermask=fibermask)
 
       flux = skysub * fluxfactor
@@ -443,7 +452,7 @@ for i=0,16 do oplot,fflat[*,i*19]
 
       if (color EQ 'red')  then begin
 
-         telluricfactor = telluric_corr(flux, fluxivar, wset, plugsort)
+         telluricfactor = telluric_corr(flux, fluxivar, vacset, plugsort)
          flux = flux / telluricfactor
          fluxivar = fluxivar * (telluricfactor^2)
 
@@ -477,7 +486,7 @@ for i=0,16 do oplot,fflat[*,i*19]
       sxaddpar, objhdr, 'PROFTYPE', proftype, '1 is Gaussian'
       sxaddpar, objhdr, 'NFITPOLY', nparams, 'order of profile parameter fit'
 
-      writespectra, objhdr, flux, fluxivar, plugsort, wset, $
+      writespectra, objhdr, flux, fluxivar, plugsort, vacset, $
        filebase=filebase
 
       heap_gc   ; Garbage collection for all lost pointers

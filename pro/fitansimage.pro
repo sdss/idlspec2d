@@ -7,7 +7,7 @@
 function fitansimage, ansimage, nparams, nfibers, npoly, nrows, yrow, $
         fluxm=fluxm, nord=nord, nordscat=nordscat, $
         ymin=ymin, ymax=ymax, fullrows=fullrows, crossfit=crossfit,  $
-        scatimage = scatimage, scatfit=scatfit
+        scatimage = scatimage, scatfit=scatfit, mingood = mingood
 
   if (N_params() LT 6) then begin
       print, 'Syntax - fitansimage(ansimage, nparams, nfibers, npoly, '
@@ -29,6 +29,8 @@ function fitansimage, ansimage, nparams, nfibers, npoly, nrows, yrow, $
 	else niter = 1
 
 	flux = fltarr(nfibers,nrows)
+
+        if (NOT keyword_set(mingood)) then mingood = nrows/3
 
 	ynorm = (2.0*yrow-(ymax+ymin))/(ymax-ymin)
 	yfnorm = (2.0*findgen(fullrows)-(ymax+ymin))/(ymax-ymin) 
@@ -61,18 +63,23 @@ function fitansimage, ansimage, nparams, nfibers, npoly, nrows, yrow, $
 ;
 	      done = 0
 	      while (done EQ 0) do begin
-	        good = where(mask)
-	        tt = polyfitw(ynorm[good], fitthis[good,j+i*nparams], $
+	        good = where(mask,ngood)
+                if (ngood LT mingood) then done = 1 $
+                else begin
+	          tt = polyfitw(ynorm[good], fitthis[good,j+i*nparams], $
                     (flux[i,good] > 0), nord, yfit)
-                diff = fitthis[good,j+i*nparams] - yfit
-	        worst = max(abs(diff),place)
-;	        print, i, worst, place, 4*stddev(diff)
-	        if (worst LT 4*stddev(diff)) then done = 1 $
-                else mask[good[place]] = 0
+                  diff = fitthis[good,j+i*nparams] - yfit
+	          worst = max(abs(diff),place)
+;	          print, i, worst, place, 4*stddev(diff)
+	          if (worst LE 4*stddev(diff)) then done = 1 $
+                  else mask[good[place]] = 0
+                endelse
 	      endwhile
 
-	      smallans[j+i*nparams,*] = poly(ynorm,tt)
-	      fitans[j+i*nparams,*] = poly(yfnorm,tt)
+              if (ngood GE mingood) then begin
+	        smallans[j+i*nparams,*] = poly(ynorm,tt)
+	        fitans[j+i*nparams,*] = poly(yfnorm,tt)
+              endif
 	    endfor
 	  endfor
 
@@ -96,20 +103,24 @@ function fitansimage, ansimage, nparams, nfibers, npoly, nrows, yrow, $
 	      mask = (smallflux[*,i] GT 0.0)
 	      done = 0
 	      while (done EQ 0) do begin
-	        good = where(mask)
-                if (total(mask) LT 10) then $ 
-	          splog, 'Only ', total(mask), ' points left in ', i, j
-	        these = iTrace[good] + j
-	        tt = polyfitw(iFiber[good], smallans[these,i], $
+	        good = where(mask,ngood)
+                if (ngood LT nfibers/3) then begin
+                      done = 1 
+                      splog, 'only a unmasked fibers in row ',i
+                endif else begin
+	          these = iTrace[good] + j
+	          tt = polyfitw(iFiber[good], smallans[these,i], $
                     (smallflux[good,i] > 0), nord, yfit)
-                diff = (smallans[these,i] - yfit)*(smallflux[good,i] > 0)
-	        worst = max(abs(diff),place)
-;	        print, i, worst, place, 4*stddev(diff)
-	        if (worst LT 4*stddev(diff)) then done = 1 $
-                else mask[good[place]] = 0
+                  diff = (smallans[these,i] - yfit)*(smallflux[good,i] > 0)
+	          worst = max(abs(diff),place)
+;	          print, i, worst, place, 4*stddev(diff)
+	          if (worst LE 4*stddev(diff)) then done = 1 $
+                  else mask[good[place]] = 0
+                endelse
 	      endwhile
 
-	     fitthis[i,iTrace+j] = poly(iFiber,tt)
+              if (ngood GE nfibers/3) then $
+	         fitthis[i,iTrace+j] = poly(iFiber,tt)
 
 ;             fullbkpt = slatec_splinefit(iFiber, smallans[iTrace+j,i], $
 ;                coeff, nbkpt = 5, invvar=(smallflux[good,i] > 0))

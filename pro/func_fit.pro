@@ -110,7 +110,7 @@ function func_fit, x, y, ncoeff, invvar=invvar, function_name=function_name, $
       if (nfix GT 0) then begin
          yfix = legarr # (inputans * (1 - goodia)) 
          ysub = y - yfix
-         finalarr = legarr[nonfix,*]
+         finalarr = legarr[*, nonfix]
       endif else begin
          finalarr = legarr
          ysub = y
@@ -129,9 +129,9 @@ function func_fit, x, y, ncoeff, invvar=invvar, function_name=function_name, $
         res[0] = beta / alpha
       endelse
 
-      if (nfix GT 0) then res[fix] = inputans[fix]
+      if (nfix GT 0) then res[fixed] = inputans[fixed]
 
-      yfit = finalarr # res + yfix
+      yfit = legarr # res 
 
    endelse
 

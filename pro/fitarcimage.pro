@@ -163,6 +163,8 @@ pro fitarcimage, arc, arcivar, xnew, ycen, wset, $
       wset = arcfit_guess( spec, lamps.loglam, lamps.intensity, color=color, $
        bestcorr=bestcorr )
 
+      aset = wset
+
       splog, 'Best correlation = ', bestcorr
 
    endif else begin
@@ -199,6 +201,8 @@ pro fitarcimage, arc, arcivar, xnew, ycen, wset, $
    ; Iterate the flux-weighted centers
    splog, 'Iterating flux-weighted centers'
    xnew = trace_fweight(arc, xcen, ycen)
+   xnew = trace_fweight(arc, xnew, ycen)
+   xnew = trace_fweight(arc, xnew, ycen, radius=2.0)
 
    ; Make use of the errors??? - Seems to just mess things up???
    ; Well... the reason for that is satured lines, which return infinite errors
@@ -245,6 +249,7 @@ pro fitarcimage, arc, arcivar, xnew, ycen, wset, $
 
 ; ??? Let maxdev be a parameter; should be about 3.0d-5 = 20 km/s
 maxdev = 3.0d-5
+maxsig = 2.0
 
    nlamp = N_elements(lamps)
    xy2traceset, transpose(double(xnew)), lamps.loglam # (dblarr(nfiber)+1), $
@@ -271,68 +276,74 @@ maxdev = 3.0d-5
    ycen = ycen[*,gind]
    lamps = lamps[gind]
 
-   xy2traceset, transpose(xnew), lamps.loglam # (dblarr(nfiber)+1), wset, $
-    func=func, ncoeff=ncoeff, maxdev=maxdev, maxiter=nlamp, /singlerej, $
-    xmask=xmask, xmin=0, xmax=npix-1
-   print, 'Pass 2 complete'
+   fixabove = 2
+
+   finalarcfit, xnew, lamps.loglam, wset, ncoeff, fixabove, func=func, $
+              maxdev=maxdev, maxiter=nlamp, /singlerej, $
+              nsetcoeff=8, maxsig=2.0
+
+;   xy2traceset, transpose(xnew), lamps.loglam # (dblarr(nfiber)+1), wset, $
+;    func=func, ncoeff=ncoeff, maxdev=maxdev, maxiter=nlamp, /singlerej, $
+;    xmask=xmask, xmin=0, xmax=npix-1
+;   print, 'Pass 2 complete'
 
    ;---------------------------------------------------------------------------
    ; Do the third traceset fit
    ;---------------------------------------------------------------------------
 
-wsave = wset
+;  wsave = wset
 
    ;------
    ; Fit and replace all the coefficients numbered 1 through NCOEFF-1
    ; with their fit value.  Fit a Chebyshev with 8 coefficients, and
    ; a split in the baseline at the central fibers.
-   for ic=1, ncoeff-1 do begin
-      xy2traceset, dindgen(nfiber), transpose(wset.coeff[ic,*]), tmpset, $
-       func='chebyshev', ncoeff=8, maxsig=2.0, xmask=xmask, yfit=yfit, $
-       /halfintwo
-      wset.coeff[ic,*] = yfit
+;   for ic=1, ncoeff-1 do begin
+;      xy2traceset, dindgen(nfiber), transpose(wset.coeff[ic,*]), tmpset, $
+;       func='chebyshev', ncoeff=8, maxsig=2.0, xmask=xmask, yfit=yfit, $
+;       /halfintwo
+;      wset.coeff[ic,*] = yfit
 ; jj=where(xmask EQ 0)
 ; plot,transpose(wset.coeff[ic,*]),/yno
 ; djs_oplot,yfit,color='green'
 ; djs_oplot,jj,(transpose(wset.coeff[ic,*]))[jj],color='red',ps=1
-   endfor
+;   endfor
 
    ;------
    ; Re-fit the 0th coefficient for each fiber, e.g. the 0-pt shift term
    ; THIS CODE SHOULD BE SPAWNED OFF TO A ROUTINE FUNC_EVAL() ???
 
-   ifit = [0,1] ; List of the coefficients to fit for each fiber
-   ifix = indgen(ncoeff-2) + 2 ; List of coefficients to keep fixed
-   ncfit = N_elements(ifit)
-   tset = wset
-   tset.coeff[ifit,*] = 0
-   dims = size(tset.coeff, /dim)
-   ncoeff = dims[0]
-   nTrace = dims[1]
-   xmid = 0.5 * (tset.xmin + tset.xmax)
-   xrange = tset.xmax - tset.xmin
-   xpos = transpose(xnew)
-   ypos = fltarr(nlamp, ntrace)
-   for i=0, ntrace-1 do begin
-      xvec = 2.0 * xpos[*,i]/(npix-1) - 1.0
-      if (tset.func EQ 'legendre') then legarr = flegendre(xvec, ncoeff)
-      if (tset.func EQ 'chebyshev') then legarr = fchebyshev(xvec, ncoeff)
-      ypos[*,i] = legarr # tset.coeff[*,i]
-   endfor
+;   ifit = [0,1] ; List of the coefficients to fit for each fiber
+;  ifix = indgen(ncoeff-2) + 2 ; List of coefficients to keep fixed
+;  ncfit = N_elements(ifit)
+;  tset = wset
+;  tset.coeff[ifit,*] = 0
+;  dims = size(tset.coeff, /dim)
+;  ncoeff = dims[0]
+;  nTrace = dims[1]
+;  xmid = 0.5 * (tset.xmin + tset.xmax)
+;  xrange = tset.xmax - tset.xmin
+;  xpos = transpose(xnew)
+;  ypos = fltarr(nlamp, ntrace)
+;  for i=0, ntrace-1 do begin
+;     xvec = 2.0 * xpos[*,i]/(npix-1) - 1.0
+;     if (tset.func EQ 'legendre') then legarr = flegendre(xvec, ncoeff)
+;     if (tset.func EQ 'chebyshev') then legarr = fchebyshev(xvec, ncoeff)
+;     ypos[*,i] = legarr # tset.coeff[*,i]
+;  endfor
 
    ;-----
    ; Fit the first NCFIT coefficients to the residuals, with same rejection
    ; as before
 
-   xy2traceset, transpose(xnew), lamps.loglam # (dblarr(nfiber)+1) - ypos, $
-    tset2, func=func, ncoeff=ncfit, maxdev=maxdev, maxiter=nlamp, /singlerej, $
-    xmask=xmask, xmin=0, xmax=npix-1
+;  xy2traceset, transpose(xnew), lamps.loglam # (dblarr(nfiber)+1) - ypos, $
+;   tset2, func=func, ncoeff=ncfit, maxdev=maxdev, maxiter=nlamp, /singlerej, $
+;   xmask=xmask, xmin=0, xmax=npix-1
 
    ;-----
    ; Now replace WSET with the re-fit coefficients
 
-   wset.coeff[ifit,*] = tset2.coeff
-   wset.coeff[ifix,*] = tset.coeff[ifix,*]
+;  wset.coeff[ifit,*] = tset2.coeff
+;  wset.coeff[ifix,*] = tset.coeff[ifix,*]
 
    ;-----
    ; Comment out this FITMEANX code...
@@ -369,8 +380,8 @@ wsave = wset
    splog, format='(71("-"))'
    for k=0, nlamp-1 do $
       splog,'Arcline',k,':  lambda =',lamps[k].lambda, $
-            '    sig_lfit =', djsig(1e3*xdif_lfit[k,*]), $
-            '    sig_tset =', djsig(1e3*xdif_tset[k,*]), $
+            '    median_tset =', median(1e3*xdif_tset[*,k]), $
+            '    sig_tset =', djsig(1e3*xdif_tset[*,k]), $
             format='(A,I3,A,F8.2,A,F7.2,A,F7.2)'
 
    highones = where(lamps.lambda GT 8000., highct)
@@ -389,7 +400,6 @@ wsave = wset
    ; Do this so that the sky-line fitting will use those fit positions for
    ; the arc lines
    xnew = tset_pix
-
    return
 end
 ;------------------------------------------------------------------------------

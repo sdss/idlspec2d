@@ -8,7 +8,8 @@
 ; CALLING SEQUENCE:
 ;   xy2traceset, xpos, ypos, tset, [ func=func, ncoeff=ncoeff, $
 ;    xmin=xmin, xmax=xmax, maxdev=maxdev, maxsig=maxsig, maxiter=maxiter, $
-;    singlerej=singlerej, xmask=xmask, yfit=yfit, _EXTRA=extra ]
+;    singlerej=singlerej, xmask=xmask, yfit=yfit, inputans=inputans, $
+;    _EXTRA=extra ]
 ;
 ; INPUTS:
 ;   xpos       - X positions corresponding to YPOS as an [nx,Ntrace] array
@@ -69,7 +70,7 @@
 ;------------------------------------------------------------------------------
 pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
  xmin=xmin, xmax=xmax, maxdev=maxdev, maxsig=maxsig, maxiter=maxiter, $
- singlerej=singlerej, xmask=xmask, yfit=yfit, _EXTRA=extra
+ singlerej=singlerej, xmask=xmask, yfit=yfit, inputans=inputans, _EXTRA=extra
 
    ; Need 3 parameters
    if (N_params() LT 3) then begin
@@ -123,6 +124,9 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
 
       xmask = bytarr(nx, ntrace)
 
+      yfit = ypos*0.0
+      if (NOT keyword_set(inputans)) then curans = fltarr(ncoeff)
+
       for itrace=0, ntrace-1 do begin
 ;         res = svdfit(2.0*(xpos[*,i]-xmid)/xrange, ypos[*,itrace], ncoeff, $
 ;          /double, function_name=function_name, singular=singular)
@@ -130,6 +134,8 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
          xnorm = 2.0*(xpos[*,itrace]-xmid) / xrange ; X positions renormalized
          nreject = 0
          good = lonarr(nx) + 1
+
+	 if (keyword_set(inputans)) then curans = inputans[*,itrace] 
 
          ; Rejection iteration loop
 
@@ -146,7 +152,7 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
             endif else begin
                nglast = ngood
                if (keyword_set(singlerej)) then begin
-                  ydiff = yfit[igood] - ypos[igood,itrace]
+                  ydiff = ycurfit[igood] - ypos[igood,itrace]
                   ysig = stddev(ydiff)
                   worstdiff = max(abs(ydiff), iworst)
                   if ( (keyword_set(maxdev) AND worstdiff GT maxdev) $
@@ -155,7 +161,7 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
                      qgood[igood[iworst]] = 0
                   endif
                endif else begin
-                  ydiff = yfit - ypos[*,itrace]
+                  ydiff = ycurfit - ypos[*,itrace]
                   ysig = stddev(ydiff)
                   qgood = bytarr(nx) + 1
                   if (keyword_set(maxdev)) then $
@@ -167,18 +173,19 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
             endelse
 
             nreject = nx - ngood
-
             res = func_fit(xnorm, ypos[*,itrace], ncoeff, invvar=qgood, $
-             function_name=function_name, yfit=yfit, _EXTRA=extra)
+             function_name=function_name, yfit=ycurfit, inputans=curans, $
+             _EXTRA=extra)
 
-            if (func EQ 'legendre') then $
-             yfit = flegendre(xnorm, ncoeff) # res
-            if (func EQ 'chebyshev') then $
-             yfit = fchebyshev(xnorm, ncoeff, _EXTRA=extra) # res
+;            if (func EQ 'legendre') then $
+;             ycurfit = flegendre(xnorm, ncoeff) # res
+;            if (func EQ 'chebyshev') then $
+;             ycurfit = fchebyshev(xnorm, ncoeff, _EXTRA=extra) # res
 
             iiter = iiter + 1
          endwhile
-   
+  
+         yfit[*,itrace] = ycurfit 
          tset.coeff[*,itrace] = res
          if (nreject GT 0) then $
           print, 'Rejected ', nreject, ' of ', nx, ' points on trace ', itrace

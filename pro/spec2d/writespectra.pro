@@ -6,7 +6,7 @@ pro writespectra, objhdr, flux, fluxivar, plugsort, wset, $
 
     
      outname = filebase + '.fit'
-     mwrfits, flux, outname, objhdr
+     mwrfits, flux, outname, objhdr, /create
 
 ;
 ;	I'm writing out inverse variance now
@@ -71,7 +71,7 @@ pro writespectra, objhdr, flux, fluxivar, plugsort, wset, $
      endfor
    endelse
 
-   save, filename=filebase+'.ss', objhdr, flux, fluxivar, wset, plugsort
+;   save, filename=filebase+'.ss', objhdr, flux, fluxivar, wset, plugsort
 
    return
 end
