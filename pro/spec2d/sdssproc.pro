@@ -54,7 +54,7 @@
 ;   The returned image is in electrons, not ADU.
 ;
 ;   The signal-to-noise is limited to never exceed 100, by adding 1.e-4
-;   times the flux to the variance term.
+;   times the flux squared to the variance term.
 ;
 ;   Change the CAMERAS keyword to the camera as specified by the file name.
 ;
@@ -125,11 +125,15 @@
 ;                since the counting got off by one on MJD=51882.
 ;-
 ;------------------------------------------------------------------------------
-function findopfile, expres, mjd, indir
+function findopfile, expres, mjd, indir, abort_notfound=abort_notfound
 
    files = findfile(filepath(expres, root_dir=indir), count=nfile)
-   if (nfile EQ 0) then $
-    message, 'Cannot find opFile '+expres
+   if (nfile EQ 0) then begin
+      if (keyword_set(abort_notfound)) then $
+       message, 'Cannot find opFile '+expres $
+      else $
+       return, ''
+   endif
 
    mjdlist = lonarr(nfile)
    for i=0,nfile-1 do begin
@@ -439,11 +443,11 @@ pro sdssproc, infile, image, invvar, indir=indir, $
       root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='examples')
 
    if (NOT keyword_set(configfile)) then $
-       configfile = findopfile('opConfig*par',mjd,config_dir)
+       configfile = findopfile('opConfig*par',mjd,config_dir,/abort_notfound)
    if (NOT keyword_set(ecalibfile)) then $
-       ecalibfile = findopfile('opECalib*par',mjd,config_dir)
+       ecalibfile = findopfile('opECalib*par',mjd,config_dir,/abort_notfound)
    if (NOT keyword_set(bcfile)) then $
-       bcfile = findopfile('opBC*par',mjd,config_dir)
+       bcfile = findopfile('opBC*par',mjd,config_dir,/abort_notfound)
 
    naxis1 = sxpar(hdr,'NAXIS1')
    naxis2 = sxpar(hdr,'NAXIS2')
@@ -808,7 +812,7 @@ admask = 0 ; clear memory
 pixbiasimg = 0 ; clear memory
 
          ; Add pixbiasname to header since it has just been applied
-         sxaddpar, hdr, 'BIASIMG', pixbiasname
+         sxaddpar, hdr, 'PIXBIAS', pixbiasname
       endelse
    endif
 
