@@ -1,6 +1,10 @@
 
 Following is a summary of the special star cluster plates designed
-in Nov 2001.  There are a total of 4 plates with 19 pointings (tiles).
+in Nov 2001.  Each plate has several pointings (tiles) associated
+with them, where each pointing is offset by ~0.2 degrees and has
+holes drilled for a different magnitude range of stars.  There are
+a total of 4 plates with 19 pointings (tiles).  The total number
+of tiled stars is 640 x 4 = 2560.
 
 Cluster   TILE PLATE  RA    DEC    rmag       Nobj  Guide fibers
 --------- ---- -----  ----- -----  ---------  ----  ------------
@@ -22,13 +26,13 @@ N752      9227  800    29.2 +37.7  12.0 15.2   218  3,5,8,10,11
 (HD19445) 9230  800D   46.6 +26.9   7.9         10  11
 --------- ---- -----  ----- -----  ---------  ----  ------------
 N1817     9231  801    78.0 +16.7  15.2 18.2    16  3,5,8,10,11
-          9232  801B   77.8 +16.7  12.8 15.4   230  1,6
-          9233  801C   78.2 +16.7  10.4 13.0   312  4,7
-          9234  801D   78.4 +16.7   8.0 10.6    73  2,9
+          9232  801B   77.8 +16.7  12.8 15.4   232  1,6
+          9233  801C   78.2 +16.7  10.4 13.0   309  4,7
+          9234  801D   78.4 +16.7   8.0 10.6    74  2,9
 (BD+21)   9235  801E   63.2 +23.0   9.1          9  11
 --------- ---- -----  ----- -----  ---------  ----  ------------
 
-The information is pulled simply from the 2MASS files supplied to me
+The information is pulled simply from the 2MASS files supplied
 by Jill Knapp.  The astrometry is directly from 2MASS; no proper
 motions have been applied.  Some of these clusters are supplemented
 with Tycho stars that were not in Jill's files.  Those Tycho objects
@@ -39,23 +43,28 @@ are drawn from the same lists in the magnitude range [10.5,12.5].
 For objects NOT drawn from a membership list, only those 
 with an optical counterpart in the 2MASS catalog were considered.
 
-In most cases, I think that the priority should be 
-	bright stars + Hipparcos supplement
-	members
-	fainter stars
-However, NGC 1817 is the exception.  There the priority should be:
-	members
-	other stars (and not super-bright)
+In most cases, the priority is
+  * bright stars + Hipparcos supplement
+  * members
+  * fainter stars
+However, NGC 1817 is the exception.  There the priority is
+  * members
+  * other stars (and not super-bright)
 
-There are no explicit sky positions for any of these plates.  In each
-pointing, the objects that appear in that pointing will be called
+There are no explicit sky-fiber positions for any of these plates.  In
+each pointing, the objects that appear in that pointing will be called
 OBJECT/SERENDIPITY_MANUAL.  All other fibers (which are real objects
 in other pointings) will be called OBJECT/SKY and used for sky-subtraction.
 For all but the last pointing, those are the only type of objects.
 
+Some objects will appear on two pointings of the same plate, since I've
+intentionally chosen the magnitude ranges to slightly overlap.
+
 The last pointings will be used for spectro-photometry.  They have 9 or 10
-holes drilled directly north & south of guide fiber #11.  Those pointings
-only have OBJECT/SPECTROPHOTO_STD and OBJECT/SKY types.
+holes drilled directly north & south of guide fiber #11.  A smear of one
+of the five SDSS fundamental standard stars will obtain 9 spectra of that
+star. Those pointings only have the 10 OBJECT/SPECTROPHOTO_STD holes and
+630 OBJECT/SKY holes.
 
 We've approximated SDSS ugriz magnitudes for the Tycho stars with:
     u = V - 0.024 + 2.317 * (B-V)  (Npts= 226)
@@ -75,6 +84,22 @@ For those objects in 2MASS that only list JHK magnitudes, I transform with:
    R_2MASS = J + 2.26 * (J-K) + 0.08
    (B-R)_2MASS = 2.25 * (J-K) + 0.14
 
+The guide stars are chosen from the same input list of objects,
+but in the limited magnitude range of r=[10.5,12.5].  This is significantly
+brighter than the usual SDSS guide stars which are at about r=15 and
+don't give very good S/N on the guide camera.  Note that an object can
+be a guide star for one pointing and a science target on another pointing.
+The only guide fiber that is re-used on more than one pointing is #11,
+which is used for the last (spectrophotometric) pointing.
+
+The code that generated all the plugmap and associated files is in the
+"idlspec2d" product in the "pro/plate" directory.
+
+We will need some minor modifications of the fiber-mapper code at APO
+to deal with these plugmap files.  The observing code (SOP) hopefully
+will require no modification, and the on-the-mountain reductions (SOS)
+should also work fine.  Once the data are taken, Spectro-2D will need
+some more serious modifications to deal with it.
 
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
