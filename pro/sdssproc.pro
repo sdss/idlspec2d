@@ -35,6 +35,9 @@
 ;   VARFILE are all not set.
 ;
 ; BUGS:
+;   The open-shutter correction SMEARIMG will include smeared data from
+;   any cosmic rays, which is wrong.  At the minimum, I could interpolate
+;   over A/D saturations (in ADMASK) before constructing SMEARIMG.
 ;
 ; PROCEDURES CALLED:
 ;   djs_iterstat
@@ -56,6 +59,8 @@
 ;   01-Dec-1999  Added version stamping (DJS).
 ;   07-Dec-1999  Mask neighbors of pixels that saturated the A/D converter.
 ;                Identify blead trails and mask from that row up. (DJS)
+;   10-Dec-1999  Test if the shutter was open during readout, and try
+;                to correct the light for that. (DJS)
 ;-
 ;------------------------------------------------------------------------------
 
@@ -201,6 +206,12 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    nmapover = [config.nmapoverscan0, config.nmapoverscan1, $
     config.nmapoverscan2, config.nmapoverscan3]
 
+   ; Define the "overscan rows" (at the bottom of the CCD)
+   soverrow = [config.soverscanrows0, config.soverscanrows1, $
+    config.soverscanrows2, config.soverscanrows3]
+   noverrow = [config.noverscanrows0, config.noverscanrows1, $
+    config.noverscanrows2, config.noverscanrows3]
+
    ; Data position in the original image
    sdatarow = [config.sdatarow0, config.sdatarow1, $
     config.sdatarow2, config.sdatarow3]
@@ -245,42 +256,94 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    if (nbc GT 0) then bc = bc[ bchere ]
 
    ;------
+   ; Test to see if the shutter was open during readout.
+   ; Look at the signal in the overscan rows (at the bottom of the CCD).
+   ; Toggle the variable QSHUTTER if this appears to be true in any
+   ; of the amplifiers.
+
+   qshutter = 0
+   if (readimg OR readivar) then begin
+      nskip = 2  ; Ignore the first and last NSKIP rows of these overscan rows
+      for iamp=0, 3 do begin
+         if (qexist[iamp] EQ 1) then begin
+            biasreg = rawdata[sdatacol[iamp]:sdatacol[iamp]+ncol[iamp]-1, $
+                soverrow[iamp]+nskip:soverrow[iamp]+noverrow[iamp]-1-nskip]
+            biasvec = djs_median(biasreg, 2)
+            ; Count the number of "hot" overscan columns, hotter than 3-sigma
+            ; above the median
+            junk = where(biasvec GT median(biasvec) + 3*djsig(biasvec), nhot)
+            if (nhot GE 10) then qshutter = 1 ; Flag the shutter as being open
+         endif
+      endfor
+   endif
+
+   ;------
    ; Construct IMAGE
 
    for iamp=0, 3 do begin
       if (qexist[iamp] EQ 1) then begin
          if (readimg OR readivar) then begin
-           if (nover[iamp] NE 0) then begin
-              ; Use the "overscan" region
-              biasreg = rawdata[sover[iamp]:sover[iamp]+nover[iamp]-1, $
-                  sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1]
-           endif else if (nmapover[iamp] NE 0) then begin
-              ; Use the "mapped overscan" region
-              biasreg = rawdata[smapover[iamp]:smapover[iamp]+nmapover[iamp]-1, $
-               sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] 
-           endif
+            if (nover[iamp] NE 0) then begin
+               ; Use the "overscan" region
+               biasreg = rawdata[sover[iamp]:sover[iamp]+nover[iamp]-1, $
+                   sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1]
+            endif else if (nmapover[iamp] NE 0) then begin
+               ; Use the "mapped overscan" region
+               biasreg = rawdata[smapover[iamp]:smapover[iamp]+nmapover[iamp]-1, $
+                sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] 
+            endif
 
-           biasval = median( biasreg )
-           djs_iterstat, biasreg, sigma=readoutDN
+            biasval = median( biasreg )
+            djs_iterstat, biasreg, sigma=readoutDN
 
-           splog, 'Measured read-noise in DN for amp#', iamp, ' = ', readoutDN
+            splog, 'Measured read-noise in DN for amp#', iamp, ' = ', readoutDN
 
-           ; Copy the data for this amplifier into the final image
-           ; Now image is in electrons
+            ; Copy the data for this amplifier into the final image
+            ; Subtract the bias (in DN), and then multiply by the gain
+            ; Now image is in electrons
 
-           image[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
-                  srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
-            (rawdata[sdatacol[iamp]:sdatacol[iamp]+ncol[iamp]-1, $
-                  sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] - biasval) * gain[iamp]
+            image[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
+                   srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
+             (rawdata[sdatacol[iamp]:sdatacol[iamp]+ncol[iamp]-1, $
+                   sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] - biasval) $
+             * gain[iamp]
 
-         ; Add to the header
-         sxaddpar, hdr, 'GAIN'+string(iamp,format='(i1)'), $
-          gain[iamp], ' Gain in electrons per ADU'
-         sxaddpar, hdr, 'RDNOISE'+string(iamp,format='(i1)'), $
-          gain[iamp]*readnoiseDN[iamp], ' Readout noise in electrons'
-        endif
+            ; Add to the header
+            sxaddpar, hdr, 'GAIN'+string(iamp,format='(i1)'), $
+             gain[iamp], ' Gain in electrons per ADU'
+            sxaddpar, hdr, 'RDNOISE'+string(iamp,format='(i1)'), $
+             gain[iamp]*readnoiseDN[iamp], ' Readout noise in electrons'
+         endif
       endif
    endfor
+
+   ;------
+   ; If the shutter was open during readout, try to correct for that.
+   ; Construct an image of the smeared light on the CCD during readout.
+   ; Note that we work from IMAGE, which already has the bias removed
+   ; and is multiplied by the gain.
+
+   if (qshutter) then begin
+      splog, 'WARNING: Correcting for open shutter during readout'
+
+      t1 = 900.0 ; Read time for entire frame
+      t2 = 57.0/2048. ; Read time for one row of data
+
+      smearimg = 0 * image
+      smearimg[*,0] = image[*,0]
+      ny = (size(image,/dimens))[1]
+      for i=1, ny-1 do begin
+         ; Burles counter of row number...
+         print, format='($, ".",i4.4,a5)', i, string([8b,8b,8b,8b,8b])
+
+         smearimg[*,i] = total(image[*,0:i],2)
+      endfor
+      smearimg = (t2/t1) * smearimg
+      image = image - smearimg
+
+      splog, 'Median value of open-shutter contamination = ', median(smearimg)
+      splog, 'Max value of open-shutter contamination = ', max(smearimg)
+   endif
 
    ;------
    ; Construct INVVAR
@@ -302,22 +365,39 @@ pro sdssproc, infile, image, invvar, indir=indir, $
       for iamp=0, 3 do begin
          if (qexist[iamp] EQ 1) then begin
 
-         satmask[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
-                  srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
-           rawdata[sdatacol[iamp]:sdatacol[iamp]+ncol[iamp]-1, $
-                  sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] LT $
-                  fullWellDN[iamp]
+            satmask[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
+                     srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
+              rawdata[sdatacol[iamp]:sdatacol[iamp]+ncol[iamp]-1, $
+                     sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] LT $
+                     fullWellDN[iamp]
 
-         admask[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
-                  srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
-           rawdata[sdatacol[iamp]:sdatacol[iamp]+ncol[iamp]-1, $
-                  sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] EQ 65535
+            admask[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
+                     srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
+              rawdata[sdatacol[iamp]:sdatacol[iamp]+ncol[iamp]-1, $
+                     sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] EQ 65535
 
-         invvar[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
-                  srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
-           1.0/(abs(image[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
-                  srow[iamp]:srow[iamp]+nrow[iamp]-1]) + $
-                  (readnoiseDN[iamp]*gain[iamp])^2)
+            if (qshutter) then begin
+               ; Add to the variance image from the open shutter
+               ; by adding 1% of that signal^2 to the variance.
+               ; This says that the uncertainty in this subtracted
+               ; quantity is about 10%.
+               invvar[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
+                        srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
+                 1.0/(abs(image[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
+                        srow[iamp]:srow[iamp]+nrow[iamp]-1]) + $
+                      abs(smearimg[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
+                        srow[iamp]:srow[iamp]+nrow[iamp]-1]) + $
+                      0.01 * abs(smearimg[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
+                        srow[iamp]:srow[iamp]+nrow[iamp]-1])^2 + $
+                        (readnoiseDN[iamp]*gain[iamp])^2)
+            endif else begin
+               invvar[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
+                        srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
+                 1.0/(abs(image[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
+                        srow[iamp]:srow[iamp]+nrow[iamp]-1]) + $
+                        (readnoiseDN[iamp]*gain[iamp])^2)
+            endelse
+
          endif
       endfor
 
