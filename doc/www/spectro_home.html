@@ -196,19 +196,27 @@ We have not yet re-reduced the data with the most recent code.
 <P>
 At Princeton, the top-level directory for the reduced data is:
 <DL><DD><PRE>
+/u/dss/data/2d_v4_7
+</PRE></DD></DL>
+Older reductions exist at:
+<DL><DD><PRE>
 /u/dss/data/2d_v4
 </PRE></DD></DL>
 
 <P>
 At Fermi, the top-level directory for the reduced data is:
 <DL><DD><PRE>
+sdssdp3.fnal.gov:/data/dp3.p/data/schlegel/2d_v4_7
+</PRE></DD></DL>
+Older reductions exist at:
+<DL><DD><PRE>
 fsgi03.fnal.gov:/usr/sdss/data04/schlegel/2d_v4
 </PRE></DD></DL>
 
 <P>
-This is approximately 14 Gb of data, which can be copied from Fermi with:
+This is approximately 20 Gb of data, which can be copied from Fermi with:
 <DL><DD><PRE>
-scp -r fsgi03.fnal.gov:/usr/sdss/data04/schlegel/2d_v4
+scp -r sdssdp3.fnal.gov:/data/dp3.p/data/schlegel/2d_v4_7 .
 </PRE></DD></DL>
 If you don't have permissions on this machine, contact your
 <A HREF="http://www-sdss.fnal.gov:8000/guru/gurulist.html">local data guru</A>
@@ -221,7 +229,7 @@ $SPECTRO_DATA/$PLATE/spPlate-$PLATE-$MJD.fits
 $SPECTRO_DATA/$PLATE/spZbest-$PLATE-$MJD.fits
 $SPECTRO_DATA/$PLATE/spZall-$PLATE-$MJD.fits
 </PRE></DD></DL>
-where $SPECTRO_DATA refers to the top-level directory (2d_v4), and $PLATE
+where $SPECTRO_DATA refers to the top-level directory (2d_v4_7), and $PLATE
 refers to a subdirectory with the plate name (e.g., 0301).
 
 <H4><A NAME="get_rsync">How to Keep Your Data Up-to-Date</A></H4>
@@ -243,23 +251,33 @@ be added to the above Fermi directory.
 An efficient way to keep your copy of these reductions current is to use
 the Unix "rsync" command:
 <DL><DD><PRE>
+rsync -arv --rsh="ssh" sdssdp6.fnal.gov:/data/dp3.p/data/schlegel/2d_v4_7 .
+</PRE></DD></DL>
+You can use this to copy the data to your own computer in the first place.
+Note that you must go through the machine "sdssdp6" even though the data
+sits on a disk on "sdssdp3", since the "rsync" command only exists on the
+one machine.  If you run "rsync" again, it will copy any files that have been
+changed or added.  Note that you need "ssh" to work without asking for a
+pass-phrase for "rsync" to work as a cron job (see below) -- see your system
+admin if you need help with that.
+
+<P>
+An older and more heterogeneous set of reductions are available on the
+fsgi03 machine.  These were not kept up to date at Fermi after February 2001
+due to problems with the fsgi03 machine.  You can copy over those reductions
+by specifying my version of "rsync" on the remote machine:
+<DL><DD><PRE>
 rsync -arv --rsh="ssh" \
  --rsync-path=/afs/fnal.gov/files/home/room2/schlegel/bin/rsync \
  fsgi03.fnal.gov:/usr/sdss/data04/schlegel/2d_v4 .
 </PRE></DD></DL>
-You can use this to copy the data to your own computer in the first place.
-If you run it again, it will copy any files that have been changed or added.
-Note that you need "ssh" to work without asking for a pass-phrase for "rsync"
-to work as a cron job (see below) -- see your system admin if you need help
-with that.  You also need to specify my version of "rsync" on the fsgi03
-machine as done above.
 
 <P>
 Finally, you could set up a "cron" job to update your copy of the data on
 a daily basis.  This would be done by creating a cron table file (call it
 "cron.table" in this example):
 <DL><DD><PRE>
-15 5 * * * /usr/bin/rsync -arv --rsh="ssh" fsgi03.fnal.gov:/usr/sdss/data04/schlegel/2d_v4 /my/directory
+15 5 * * * /usr/bin/rsync -arv --rsh="ssh" sdssdp6.fnal.gov:/data/dp3.p/data/schlegel/2d_v4_7 /my/directory
 </PRE></DD></DL>
 replacing "/my/directory" with your local data-directory name.
 Then load this "cron" job by typing:
@@ -459,7 +477,7 @@ First, set up the "idlutils" and "idlspec2d" software, as described above.
 You need to set an environment variable that points to the top-level
 directory of the data.  At Princeton, this would be:
 <DL><DD><PRE>
-setenv SPECTRO_DATA /u/dss/data/2d_v4
+setenv SPECTRO_DATA /u/dss/data/2d_v4_7
 </PRE></DD></DL>
 
 <P>
@@ -542,7 +560,7 @@ At Princeton, you could type the following to display plate 306 fiber 100,
 then overplot the best-fit template:
 <DL><DD><PRE>
 ssh moonshine
-setenv SPECTRO_DATA /u/dss/data/2d_v4
+setenv SPECTRO_DATA /u/dss/data/2d_v4_7
 setenv IDLSPEC2D_DIR /u/schlegel/idlspec2d
 cd ~strauss/spectro_sm/release
 ~rhl/sm/src/sm
@@ -684,16 +702,6 @@ VDISP_ERR  Error in VDISP (km/sec)
 WAVEMIN    Minimum observed wavelength for this object (Angstroms)
 WAVEMAX    Maximum observed wavelength for this object (Angstroms)
 WCOVERAGE  Amount of wavelength coverage in log-10(Angstroms)
-SPEC1_G    (S/N)^2 at g=20.20 for spectrograph #1
-SPEC1_R    (S/N)^2 at r=20.25 for spectrograph #1
-SPEC1_I    (S/N)^2 at i=19.90 for spectrograph #1
-SPEC2_G    (S/N)^2 at g=20.20 for spectrograph #2
-SPEC2_R    (S/N)^2 at r=20.25 for spectrograph #2
-SPEC2_I    (S/N)^2 at i=19.90 for spectrograph #2
-</PRE>
-
-More recent reductions will contain these additional entries:
-<PRE>
 ZWARNING   A flag set for bad redshift fits in place of calling CLASS=UNKNOWN.
            The following bits may be set:
            0 = Sky fiber
@@ -701,10 +709,6 @@ ZWARNING   A flag set for bad redshift fits in place of calling CLASS=UNKNOWN.
            2 = Chi^2 is too close to chi^2 for the next best fit (within 0.01)
            3 = Synthetic spectrum is negative (only set for stars and QSO's)
            4 = Fraction of points above 5 sigma is too large (> 5%)
-ANYANDMASK Mask bits which are set if any pixels for an object's ANDMASK
-           have that bit set.
-ANYORMASK  Mask bits which are set if any pixels for an object's ORMASK
-           have that bit set.
 SN_MEDIAN  Median S/N for all good pixels
 FRACNSIGMA Fraction of pixels deviant by more than N sigma, where N=[1,2,...10]
 COUNTS_SPECTRO  5-element array of total flux in each of the 5 PHOTO filters;
@@ -714,6 +718,16 @@ COUNTS_SPECTRO  5-element array of total flux in each of the 5 PHOTO filters;
 COUNTS_SYNTH    Same as COUNTS_SPECTRO, but measured using the best-fit
                 synthetic eigen-spectrum rather than the actual data points
 COUNTS_SKY      (Placeholder.)
+ANYANDMASK Mask bits which are set if any pixels for an object's ANDMASK
+           have that bit set.
+ANYORMASK  Mask bits which are set if any pixels for an object's ORMASK
+           have that bit set.
+SPEC1_G    (S/N)^2 at g=20.20 for spectrograph #1 (same value for 320 fibers)
+SPEC1_R    (S/N)^2 at r=20.25 for spectrograph #1 (same value for 320 fibers)
+SPEC1_I    (S/N)^2 at i=19.90 for spectrograph #1 (same value for 320 fibers)
+SPEC2_G    (S/N)^2 at g=20.20 for spectrograph #2 (same value for 320 fibers)
+SPEC2_R    (S/N)^2 at r=20.25 for spectrograph #2 (same value for 320 fibers)
+SPEC2_I    (S/N)^2 at i=19.90 for spectrograph #2 (same value for 320 fibers)
 </PRE>
 
 <P>
