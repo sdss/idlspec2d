@@ -34,11 +34,14 @@
 ;   cpbackup
 ;   dfpsclose
 ;   dfpsplot
+;   headfits
 ;   idlspec2d_version()
 ;   idlutils_version()
 ;   spcoadd_frames
-;   spflux
+;   spflux_v5
+;   spfluxcorr_v5
 ;   splog
+;   sxpar()
 ;   yanny_free
 ;   yanny_par()
 ;   yanny_read
