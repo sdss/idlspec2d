@@ -16,10 +16,15 @@ PLOTSIGNAL: New routine for making diagnostic plots of the signal seen
 PLOTSN: Recent changes can make this routine crash if the photo and spectro
         mags are grossly different.  Fix that (though the points will be
         outside the plotting limits).
+READSPEC: Add support for reading the sky (SKY=) from HDU #6 of the spPlate
+        files.
 SKYSUBTRACT: Fix possible crash condition, whereby the re-fit to the
         supersky is not done if the first fit failed and FULLBKPT does
         not exist (line 243).
 SPCOADD_FRAMES: Get rid of some unused lines of code.
+SPCOADD_V5: New code to replace SPCOADD_FRAMES for version 5 outputs.
+        The sky vectors are now combined in some semi-rational way,
+        and output as HDU #6.
 SPCOMBINE: Pass all arguments if this proc is called recursively.
 SPCOMBINE_V5: New code to replace SPCOMBINE for version 5 outputs.
 SPFLUX_V5: New code to replace SPFLUX for version 5 outputs.  This computes
