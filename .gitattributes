@@ -8,12 +8,15 @@ etc/BG14.txt -text
 etc/FG3.txt -text
 etc/Makefile -text
 etc/altbg14.txt -text
+etc/blue.bkpts -text
+etc/f8v.abs -text
 etc/f8vspline.dat -text
 etc/fluxcorr.bkpts -text
 etc/intrinsic1.dat -text
 etc/intrinsicF2.dat -text
 etc/lamphgcdne.dat -text
 etc/lamplist.dat -text
+etc/red.bkpts -text
 etc/skylines.dat -text
 examples/Makefile -text
 examples/README -text
