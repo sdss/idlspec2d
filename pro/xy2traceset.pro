@@ -123,7 +123,7 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
          ngood = nx
          nglast = nx+1 ; Set to anything other than NGOOD for 1st iteration
          while ( (iiter EQ 0 AND maxiter EQ 0) $
-              OR (ngood NE nglast AND iiter LE maxiter AND ngood GT 1) $
+              OR (ngood NE nglast AND iiter LE maxiter AND ngood GE 1) $
           ) do begin
 
             if (iiter EQ 0) then begin
@@ -145,9 +145,7 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
 
             nreject = nx - ngood
 
-            ; Do not fit more coefficients than there are points
-            ncfit = ncoeff < ngood
-            res = func_fit(xnorm[igood], ypos[igood,itrace], ncfit, $
+            res = func_fit(xnorm[igood], ypos[igood,itrace], ncoeff, $
              function_name=function_name)
 
             if (func EQ 'legendre') then $
@@ -158,8 +156,7 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
             iiter = iiter + 1
          endwhile
    
-         tset.coeff[*,itrace] = 0
-         tset.coeff[0:ncfit-1,itrace] = res
+         tset.coeff[*,itrace] = res
          if (nreject GT 0) then $
           print, 'Rejected ', nreject, ' of ', nx, ' points on trace ', itrace
 

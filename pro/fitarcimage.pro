@@ -50,17 +50,17 @@
 ;   TRACESET2PIX maybe returns the transpose of what is natural?
 ;   Check QA stuff at end.
 ;   When constructing MX, exclude any fibers with bad (e.g., saturated) pixels.
+;   Need to tag dead fibers - esp. for sky-subtraction.
 ;
 ; INTERNAL PROCEDURES:
 ;   tset_struc()
 ;   fullfit()
-;   fitmx()
+;   fitmeanx()
 ;
 ; PROCEDURES CALLED:
 ;   djs_median
 ;   djsig()
 ;   fit_tset
-;   fitwithmx()
 ;   trace_crude()
 ;   trace_fweight()
 ;   traceset2pix()
@@ -102,17 +102,22 @@ function fullfit, spec, linelist, aset, dcoeff, nsteps, bestcorr=bestcorr
 
    ncoeff = N_elements(aset.coeff)
 
-   nsmooth = 5
+   nsmooth = 5 ; sigma in pixels for Gaussian-smoothing kernal
    nsz = 4*fix(nsmooth) + 1 ; kernal size (odd)
    gausskern = exp( -( ((nsz-1)/2 - findgen(nsz))^2 ) / nsmooth^2 )
    gausskern = gausskern / total(gausskern)
 
-   ; Clip, pad, and smooth input spectrum
-; NOTE THAT THIS MEDIAN-FILTERING CLIPS DATA WITHIN 50 PIXELS OF THE EDGE !???
+   npad = fix((npix+1)/2) ; Padding on left and right of spectra before
+                          ; cross-correlating
+
+   ; Pad, subtract baseline (with median filter), and smooth input spectrum
+   ; Also, take the square-root of the intensity.
    speccorr = spec
-   speccorr = speccorr - median(speccorr,101) > 1
-   speccorr = [speccorr, fltarr(npix)+1]
-   speccorr = convol(speccorr, gausskern, /center, /edge_truncate)
+   medval1 = median(spec[0:50<npix-1]) ; Median value of left of spectrum
+   medval2 = median(spec[npix-50>0:npix-1]) ; Median value of right of spectrum
+   speccorr = [fltarr(npad)+medval1, speccorr, fltarr(npad)+medval2] ; Pad
+   speccorr = speccorr - median(speccorr, 101<npix) > 1 ; Median-filter
+   speccorr = convol(speccorr, gausskern, /center, /edge_truncate) ; Smooth
    speccorr = sqrt(speccorr > 1) ; Weight by the square-root of the intensity
 
    bestcorr = -1.0
@@ -144,32 +149,34 @@ print, 'nlag', nlag
 
       ; Construct the simulated arc spectrum
       traceset2xy, tempset, xtemp, loglambda
-      model = fltarr(2*npix)
+      model = fltarr(npix+2*npad)
 
       if (loglambda[1] GT loglambda[0]) then begin ; Ascending wavelengths
          for iline=0, nline-1 do begin
             qless = (logline[iline] LT loglambda)
-            iloc = (where(qless))[0]
+            iloc = (where(qless))[0] - 1
             if (iloc GE 1 AND iloc LE npix-2) then begin
                dx = logline[iline] - loglambda[iloc]
                dpix = loglambda[iloc+1] - loglambda[iloc]
-               model[iloc:iloc+1] = model[iloc:iloc+1] $
-                + intensity[iline] * [1-dx, dx] / dpix
+               model[npad+iloc:npad+iloc+1] = model[npad+iloc:npad+iloc+1] $
+                + intensity[iline] * [1-dx/dpix, dx/dpix]
             endif
          endfor
       endif else begin ; Descending wavelengths
          for iline=0, nline-1 do begin
             qless = (logline[iline] GT loglambda)
-            iloc = (where(qless))[0]
+            iloc = (where(qless))[0] - 1
             if (iloc GE 1 AND iloc LE npix-2) then begin
                dx = loglambda[iloc] - logline[iline]
                dpix = loglambda[iloc] - loglambda[iloc+1]
-               model[iloc:iloc+1] = model[iloc:iloc+1] $
-                + intensity[iline] * [1-dx, dx] / dpix
+               model[npad+iloc:npad+iloc+1] = model[npad+iloc:npad+iloc+1] $
+                + intensity[iline] * [1-dx/dpix, dx/dpix]
             endif
          endfor
       endelse
 
+      ; Smooth the model spectrum.
+      ; Also, take the square-root of the intensity.
       model = convol(model, gausskern, /center, /edge_truncate)
       model = sqrt(model > 1) - 1 ; Weight by the square-root of the intensity
 
@@ -179,9 +186,9 @@ print, 'nlag', nlag
          bestlambda = loglambda
          lagbest = lags[icorr]
 ; PLOT ???
-;splot,speccorr,xr=[0,2048]
-;soplot,shift(model,-lagbest)*mean(speccorr)/mean(model),color='red'
-;print,bestcorr,lagbest,tempset.coeff
+splot,speccorr,xr=[npad,npix+npad]
+soplot,shift(model,-lagbest)*mean(speccorr)/mean(model),color='red'
+print,bestcorr,lagbest,tempset.coeff
       endif
 
    endfor
@@ -201,7 +208,7 @@ end
 ;------------------------------------------------------------------------------
 ; LAMBDA = log10-wavelength
 
-function fitmx, wset, lambda, xpos, nord=nord
+function fitmeanx, wset, lambda, xpos, nord=nord
 
    if (NOT keyword_set(nord)) then nord = 4
    dims = size(xpos, /dim)
@@ -289,7 +296,7 @@ pro fitarcimage, arc, arcinvvar, color, linelist, xnew, ycen, wset, $
       ; Extract one spectrum from the 5 spectra around fiber number ROW
       ; by taking the median value at each wavelength
 
-      spec = djs_median(arc[*,row-2:row+2], 2) ; ???
+      spec = djs_median(arc[*,row-2:row+2], 2)
 
       ; Give fullfit initial starting point for wavelength solutions.
 
@@ -297,13 +304,15 @@ pro fitarcimage, arc, arcinvvar, color, linelist, xnew, ycen, wset, $
 ;         acoeff = [3.6846, -0.1060, -0.0042, 0.00012] ; Blue-1 (01)
 ;         acoeff = [3.7014, -0.1028, -0.0040, 0.00020] ; Blue-2 (03)
          acoeff = [3.6930, -0.1044, -0.0041, 0.00016]
-         dcoeff = [0.0200,  0.0040,  0.0003, 0.00010]
+         dcoeff = [0.0300,  0.0040,  0.0003, 0.00010]
          nsteps = [1, 10, 5, 5]
       endif else if (color EQ 'red') then begin
-         ; For red-1 (04) or red-2 (02)
-         acoeff = [ 3.8640, 0.1022, -0.0044, -0.00024]
-         dcoeff = [ 0.0100, 0.0020,  0.0003,  0.00010]
-         nsteps = [1, 5, 5, 5]
+;         acoeff = [ 3.8640, 0.1022, -0.0044, -0.00024] ; Red-1 (01)
+;         acoeff = [ 3.8740, 0.0994, -0.0043, -0.00020] ; Red-2 (02)
+;         acoeff = [ 3.8808, 0.0980, -0.0044, -0.00023] ; Another Red-2 (02)
+         acoeff = [ 3.8700, 0.1008, -0.0044, -0.00022]
+         dcoeff = [ 0.0300, 0.0040,  0.0003,  0.00010]
+         nsteps = [1, 10, 5, 5]
       endif
 
       nacoeff = N_elements(acoeff)
@@ -313,6 +322,8 @@ pro fitarcimage, arc, arcinvvar, color, linelist, xnew, ycen, wset, $
       aset.coeff = acoeff
       wset = fullfit(spec, linelist, aset, dcoeff, nsteps, $
        bestcorr=bestcorr)
+
+      print, 'Initial wavelength fit = ', wset.coeff
 
       if (color EQ 'blue' AND bestcorr LT 0.70) then $
        print, 'Initial wavelength solution looks suspicious'
@@ -439,7 +450,7 @@ maxdev = 3.0d-5
 
    ; Fit arc lines subtracting out scatter term
    xmeasured = xnew
-   xnew = fitmx(wset, lambda, xmeasured)
+   xnew = fitmeanx(wset, lambda, xmeasured)
 
    ; In this final fit, do no rejection
 

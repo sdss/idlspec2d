@@ -336,6 +336,9 @@ for i=0,16 do oplot,fflat[*,i*19]
 ; DO NOT TWEAK THE SKY LINES ... ???
 wset_tweak = wset
 
+;      locateskylines, skylinefile, obj_flux, obj_fluxivar, $
+;       wset, invset, xsky, ysky, skywaves, lambda=skylambda
+
       ;
       ; First convert lambda, and skywaves to log10 vacuum
       ;
