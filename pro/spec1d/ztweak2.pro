@@ -54,13 +54,15 @@ platefile = 'spPlate-0321-51612-60sec.fits'
    nobj = sxpar(hdr, 'NAXIS2')
    objivar = mrdfits(platefile,1)
    andmask = mrdfits(platefile,2)
+   ormask = mrdfits(platefile,3)
    plug = mrdfits(platefile,5)
 
    ;----------
    ; Do not fit where the spectrum may be dominated by sky-sub residuals.
 
-   objivar = skymask(objivar, andmask)
+   objivar = skymask(objivar, andmask, ormask)
 andmask = 0 ; Free memory
+ormask = 0 ; Free memory
 
 zstruct.z = plug.expl / 3.e5
 j = where(plug.expl NE -999 AND plug.expl NE 0)

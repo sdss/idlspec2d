@@ -38,6 +38,7 @@
 ;   mrdfits()
 ;   mwrfits
 ;   splog
+;   skymask()
 ;   sxaddpar
 ;   sxdelpar
 ;   sxpar()
@@ -92,12 +93,13 @@ pro spreduce1d, platefile, fiberid=fiberid
    nobj = sxpar(hdr, 'NAXIS2')
    objivar = mrdfits(platefile,1)
    andmask = mrdfits(platefile,2)
-;   ormask = mrdfits(platefile,3)
+   ormask = mrdfits(platefile,3)
 ;   dispmap = mrdfits(platefile,4)
    plugmap = mrdfits(platefile,5)
 
-   objivar = skymask(objivar, andmask)
+   objivar = skymask(objivar, andmask, ormask)
 andmask = 0 ; Free memory
+ormask = 0 ; Free memory
 
    objloglam0 = sxpar(hdr, 'COEFF0')
    objdloglam = sxpar(hdr, 'COEFF1')

@@ -20,13 +20,14 @@ pro pca_gal
    djs_readcol, eigenfile, skip=2, plate, mjd, fiber, zfit, format='(L,L,L,D)'
 
    readspec, plate, fiber, mjd=mjd, flux=objflux, invvar=objivar, $
-    andmask=andmask, plugmap=plugmap, loglam=objloglam
+    andmask=andmask, ormask=ormask, plugmap=plugmap, loglam=objloglam
 
    ;----------
    ; Do not fit where the spectrum may be dominated by sky-sub residuals.
 
-   objivar = skymask(objivar, andmask)
+   objivar = skymask(objivar, andmask, ormask)
 andmask = 0 ; Free memory
+ormask = 0 ; Free memory
 
    nobj = (size(objflux, /dimens))[1]
    objdloglam = objloglam[1] - objloglam[0]

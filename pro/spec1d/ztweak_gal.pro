@@ -71,12 +71,14 @@ chicclass=chicclass[ii]
    nobj = sxpar(hdr, 'NAXIS2')
    objivar = mrdfits(platefile,1)
    andmask = mrdfits(platefile,2)
+   ormask = mrdfits(platefile,3)
 
    ;----------
    ; Do not fit where the spectrum may be dominated by sky-sub residuals.
 
-   objivar = skymask(objivar, andmask)
+   objivar = skymask(objivar, andmask, ormask)
 andmask = 0 ; Free memory
+ormask = 0 ; Free memory
 
    ;----------
    ; Determine the wavelength mapping for the object spectra,
