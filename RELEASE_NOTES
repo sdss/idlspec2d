@@ -67,6 +67,8 @@ sprobot_start: Set the environment variable "DISPLAY=:0.0" so that any
 
 In idlutils:
 
+SXCOMBINEPAR: Add optional _EXTRA keywords to pass to SXADDPAR.
+
 goddard/Makefile: Remove tape_io from the subdir list, since this causes it to
             crash when building under IRIX+6.
 
