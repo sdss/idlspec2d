@@ -281,10 +281,12 @@ NE      = Neon lamp status, which should be
 HGCD    = HgCd lamp status, which should be
           "0 0 0 0" for science or flat exposures (all off)
           "1 1 1 1" for arc exposures (all on)
-OBSCOMM = This keyword is used only to identify the dithered flat sequence
+OBSCOMM = This keyword is used to identify the dithered flat sequence
           taken in the Monthly Checkout with the "specFlats" script in SOP.
           The flats in this sequence must have OBSCOMM="{dithered flats-flat}".
           The arcs in this sequence must have OBSCOMM="{dithered flats-arc}".
+          This keyword also identifies the Hartmann focus exposures, with
+          the entries OBSCOMM="{{focus, hartmann l}" or "{focus, hartmann r}".
 </PRE>
 
 <H4><A NAME="headers_informational">Informational FITS header cards</A></H4>
