@@ -1,3 +1,49 @@
+;+
+; NAME:
+;   match_trace
+;
+; PURPOSE:
+;   Tweak flat field trace to match object trace
+;    with a 2d continuous surface fit to low order
+;
+; CALLING SEQUENCE:
+;   xnow = match_trace(image, invvar, xtrace, [xpoly=, ypoly=, $
+;       first=, maxiter= ])
+;
+; INPUTS:
+;   image      - two-dimensional object image
+;   invvar     - associated inverse variance image
+;   xtrace     - array of best fit flat-field traces [nrow, nfiber]
+;
+; OPTIONAL KEYWORDS:
+;   xpoly      - Order of chebyshev polynomial in first dimension (default 3)
+;   ypoly      - Order of chebyshev polynomial in second dimension (default 3)
+;   first      - Final fweight centroids of object image
+;   maxiter    - Maximum number of rejection iterations for 2d surface fit (default 10)
+;
+; OUTPUTS:
+;   xnow       - Best fit trace positions when tweaked to match image
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;   xnow = match_trace(image, invvar, xtrace)
+;   bestlag = median(xnow-xtrace)
+;   splog, 'Shifting traces by match_trace ', bestlag
+;
+; BUGS:
+;
+; PROCEDURES CALLED:
+;   djs_reject()
+;   fchebyshev()
+;   trace_fweight()
+;
+; REVISION HISTORY:
+;   16-Oct-2000  Written by S. Burles, FNAL
+;-
+;------------------------------------------------------------------------------
 function match_trace, image, invvar, xcen, xpoly=xpoly, ypoly=ypoly, $
    first=first, maxiter=maxiter
 
@@ -81,7 +127,8 @@ function match_trace, image, invvar, xcen, xpoly=xpoly, ypoly=ypoly, $
     ivar = ivar * outmask
 
     bbad = where(outmask EQ 0, nbad)
-    print, iiter, nbad, qdone
+    splog, "Iteration: ",iiter, " Pixels Rejected: ", nbad, $
+           " Finished? ", qdone, format='(a,i3,a,i6,a,i2)'
     if qdone EQ 1 then iiter = maxiter
   endfor
 
