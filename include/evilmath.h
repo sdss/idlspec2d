@@ -5,6 +5,7 @@
 void recenter_fweight
   (IDL_LONG    nx,
    float    *  imrow,
+   float    *  imerr,
    float       radius,
    float    *  xcen,
    float    *  xerr);

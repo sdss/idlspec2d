@@ -6,14 +6,16 @@
 ;   Create a crude trace set given one position (eg, a center) in each trace.
 ;
 ; CALLING SEQUENCE:
-;   xset = trace_crude( fimage, [xstart, ystart=, radius=, yset=, nav=, nmed=] )
+;   xset = trace_crude( fimage, ferr, [xstart=, ystart=, radius=, yset=, $
+;    nave=, nmed=, xerr= ] )
 ;
 ; INPUTS:
 ;   fimage     - Image
+;
+; OPTIONAL INPUTS:
+;   ferr       - Error image
 ;   xstart     - Initial guesses for X centers (one for each trace).
 ;                If not set, then this code searches for all peaks at YSTART.
-;
-; OPTIONAL KEYWORDS:
 ;   ystart     - Y positions corresponding to "xstart" (expected as integers).
 ;                There are three options for this parameter:
 ;                (1) One element of YSTART for each value of XSTART,
@@ -30,6 +32,7 @@
 ;
 ; OPTIONAL OUTPUTS:
 ;   yset       - Y centers for all traces
+;   xerr       - Errors for XSET
 ;
 ; COMMENTS:
 ;
@@ -37,19 +40,22 @@
 ;
 ; PROCEDURES CALLED:
 ;   djs_laxisgen()
+;
 ;   Dynamic link to trace_crude.c
 ;
 ; REVISION HISTORY:
 ;   14-May-1999  Written by David Schlegel, Princeton.
 ;   12-Jul-1999  Added optional output YSET (DJS).
+;   06-Aug-1999  Added optional outpust XERR (DJS).
 ;-
 ;------------------------------------------------------------------------------
-function trace_crude, fimage, xstart, ystart=ystart, radius=radius, yset=yset, $
- nave=nave, nmed=nmed
+function trace_crude, fimage, ferr, xstart=xstart, ystart=ystart, $
+ radius=radius, yset=yset, nave=nave, nmed=nmed
 
    ; Need 1 parameter
    if (N_params() LT 1) then begin
-      print, 'Syntax - xset = trace_crude( fimage, [xstart, ystart=, radius=radius, nave=, nmed= ] )'
+      print, 'Syntax - xset = trace_crude( fimage, [ ferr, xstart=, ystart=, $'
+      print, ' radius=, nave=, nmed= ] )'
       return, -1
    endif
 
@@ -60,16 +66,25 @@ function trace_crude, fimage, xstart, ystart=ystart, radius=radius, yset=yset, $
    if (NOT keyword_set(nmed)) then nmed = 1
    if (NOT keyword_set(nave)) then nave = 5
 
-   ; Make a copy of the image
-   ftemp = float(fimage)
+   ; Make a copy of the image and error map
+   imgtemp = float(fimage)
+   if (keyword_set(ferr)) then begin
+      errtemp = float(ferr)
+   endif else begin
+      errtemp = sqrt(fimage > 1)
+   endelse
 
    ; Median filter the entire image along columns by NMED rows
    if (nmed GT 1) then $   
-    for ix=1, nx-1 do ftemp[ix,*] = median(transpose(ftemp[ix,*]), nmed)
+    for ix=1, nx-1 do imgtemp[ix,*] = median(transpose(imgtemp[ix,*]), nmed)
 
    ; Boxcar-smooth the entire image along columns by NAVE rows
-   if (nave GT 1) then $   
-    for ix=1, nx-1 do ftemp[ix,*] = smooth(transpose(ftemp[ix,*]), nave)
+   if (nave GT 1) then begin
+      kernal = transpose(intarr(nave) + 1.0/nave)
+      imgtemp = convol(imgtemp, kernal, /edge_truncate)
+      ; Average the variances
+      errtemp = sqrt( convol(errtemp^2, kernal, /edge_truncate) / nave )
+   endif
 
    if (NOT keyword_set(xstart)) then begin
       ; Automatically find peaks for XSTART
@@ -77,7 +92,7 @@ function trace_crude, fimage, xstart, ystart=ystart, radius=radius, yset=yset, $
       ; Extract NAVE rows from the image at YSTART
       nave = 1
       imrow = $
-       ftemp[*,long(ystart[0]-0.5*(nave-1)):long(ystart[0]+0.5*(nave-1))]
+       imgtemp[*,long(ystart[0]-0.5*(nave-1)):long(ystart[0]+0.5*(nave-1))]
       imrow = rebin(imrow, nx, 1)
 
       ; Boxcar smooth in both X and Y
@@ -99,9 +114,10 @@ function trace_crude, fimage, xstart, ystart=ystart, radius=radius, yset=yset, $
 
    ntrace = N_elements(xstart)
    xset = fltarr(ny, ntrace)
+   xerr = fltarr(ny, ntrace)
    result = call_external(getenv('IDL_EVIL')+'libspec2d.so', 'trace_crude', $
-    nx, ny, ftemp, float(radius), ntrace, float(xstart), ypass, $
-    xset)
+    nx, ny, imgtemp, errtemp, float(radius), ntrace, float(xstart), ypass, $
+    xset, xerr)
 
    yset = djs_laxisgen([ny,nTrace], iaxis=0)
 

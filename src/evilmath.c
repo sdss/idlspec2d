@@ -11,6 +11,7 @@
 void recenter_fweight
   (IDL_LONG    nx,
    float    *  imrow,
+   float    *  imerr,
    float       radius,
    float    *  xcen,
    float    *  xerr)
@@ -22,12 +23,13 @@ void recenter_fweight
    float       x2;
    float       sumfx;
    float       sumf;
-   float       window;
+   float       sumss;
+   float    *  window;
 
    /* Only recenter if the guess value is within the bounds of the image */
    if (*xcen > 0.0 && *xcen < nx) {
 
-      /* Determine which column numbers over which to sum */
+      /* Determine which pixel numbers over which to sum */
       x1 = *xcen - radius + 0.5;
       x2 = *xcen + radius + 0.5;
       ix1 = floor(x1);
@@ -45,24 +47,31 @@ void recenter_fweight
          x2 = nx;
          ix2 = nx - 1;
       }
+      nsum = ix2 - ix1 + 1;
 
-      /* Compute the flux-weighted center. */
-      sumfx = 0.0;
-      sumf = 0.0;
+      window = (float *) malloc(sizeof(float) *nsum);
       for (ix=ix1; ix <= ix2; ix++) {
          /* Determine the weight of a boxcar window function for this
           * pixel.  Note that the values of "window" will sum to 2*radius
           * unless the edge of the image is reached.
           */
          if (ix == ix1) {
-            window = 1.0 + ix1 - x1;
+            window[ix-ix1] = 1.0 + ix1 - x1;
          } else if (ix == ix2) {
-            window = x2 - ix2;
+            window[ix-ix1] = x2 - ix2;
          } else {
-            window = 1.0;
+            window[ix-ix1] = 1.0;
          }
-         sumfx += window * imrow[ix] * (ix - *xcen);
-         sumf += window * imrow[ix];
+      }
+
+      /* Compute the flux-weighted center. */
+      sumfx = 0.0;
+      sumf = 0.0;
+      sumss = 0.0;
+      for (ix=ix1; ix <= ix2; ix++) {
+         sumfx += window[ix-ix1] * imrow[ix] * (ix - *xcen);
+         sumf += window[ix-ix1] * imrow[ix];
+         sumss += window[ix-ix1] * imerr[ix] * imerr[ix];
       }
 
       if (sumf > 0.0) {
@@ -72,6 +81,8 @@ void recenter_fweight
          *xcen = -1.0;
          *xerr = 0.0;
       }
+
+      free(window);
    }
 }
 
