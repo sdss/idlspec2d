@@ -214,8 +214,8 @@ pro zplot
    djs_oplot, xplot[iqso], yplot[iqso], ps=1, $
     symsize=zans[iqso].z/8., color='blue'
    zplot_circle, alog10([0.03,0.1,0.5,2])-logzmin, $
-    label=['0.03', '0.1','0.5','2'], ltheta=45
-   zplot_circle, alog10(5)-logzmin, label='5', ltheta=45
+    label=['0.03', '0.1','0.5','2'], ltheta=70
+   zplot_circle, alog10(5)-logzmin, label='5', ltheta=70
    zplot_exclude_galaxy, ramid=ramid
    zplot_label, ramid=ramid
    dfpsclose
