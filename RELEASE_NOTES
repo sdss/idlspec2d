@@ -7,6 +7,10 @@ It also addresses some rsync bugs for Son-of-Spectro.
 
 APO_CHECKLIMITS: Wasn't matching on flavor.  Fixed.
 APO_LOG2HTML: Mistakenly was listing times as hr:sec instead of hr:min!
+           Remove the first word from each warning or abort message line
+           (which is the name of the IDL proc that generated the message,
+           and confuses the observers; we sill have the proc name in the
+           original FITS file from which the HTML is generated).
 APOPLOT,PLOTSPEC: Change the http address for Kent's image server to
            its new location at http://sdssmosaic.fnal.gov:8015/.
 FLUXCORR_NEW:  Return all zeros in fluxcorr image if 
