@@ -249,10 +249,11 @@ pro spplan2d, topoutdir=topoutdir, mjd=mjd, $
                ; Create keyword pairs for plan file
 
                hdr = ''
-               hdr = [hdr, "planfile2d  '" + planfile $
-                + "'  # Plan file for 2D spectral reductions"]
+               hdr = [hdr, "plateid  " + platestr + "  # Plate number"]
                hdr = [hdr, "MJD     " + mjdstr $
                 + "  # Modified Julian Date"]
+               hdr = [hdr, "planfile2d  '" + planfile $
+                + "'  # Plan file for 2D spectral reductions"]
                hdr = [hdr, "extractdir ''" $
                 + "  # Directory for extracted spectra"]
                hdr = [hdr, "logfile    '" $

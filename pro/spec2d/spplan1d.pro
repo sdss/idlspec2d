@@ -189,6 +189,9 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
                ; Create keyword pairs for plan file
 
                hdr = ''
+               hdr = [hdr, "plateid  " + platestr + "  # Plate number"]
+               hdr = [hdr, "MJD      " + mjdstr $
+                + "  # Modified Julian Date for most recent observation"]
                hdr = [hdr, "planfile2d  '" + planlist1 $
                 + "'  # Plan file for 2D spectral reductions"]
                hdr = [hdr, "planfilecomb '" + planfile $
