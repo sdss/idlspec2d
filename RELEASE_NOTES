@@ -23,6 +23,7 @@ DUST_SDSSFILTER: New proc to integrate the extinction curve over
            a selection of representative source function and the SDSS filters.
 DUST_INTFILTER: New proc to integrate the extinction curve over a
            given source function + filter curve.
+GSC_READ_TABLE: New proc to read one table from the Guide Star Catalog.
 HOGG_SCATTERPLOT: New proc to plot greyscale scatterplot with contours.
 STRUCT_PRINT: If /NO_HEAD is set, do not increase the width of a column
            to occomodate the column name.  New FORMATCODES option.
@@ -42,6 +43,7 @@ UV2LL
 evilmake: Turn on optimization for all platforms except IRIX.
            Previously, we tried to set -O3 on IRIX, which crashes
            builds on the machine sdsshost.apo.
+src/spheregroup/chunks.c - Minor bug fixed.
 
 -------------------------------------------------------------------------------
 v4_9_13 (Nov 24, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
@@ -208,7 +210,7 @@ SQUAREPHOT
 These SFD dust routines have been moved here:
 BH_RDFORT
 DJS_PLANCK
-DUST_GETVAL
+DUST_GETVAL - And modified to read I12, I25, I60 maps also.
 FAC_TEMP2FLUX
 FAC_FLUX2TEMP
 PLANCKCORR
