@@ -307,7 +307,8 @@ function spflux_medianfilt, loglam, objflux, objivar, width=width, $
    return, medflux
 end
 ;------------------------------------------------------------------------------
-function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1
+function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1, $
+ plottitle=plottitle
 
    filtsz = 99 ; ???
    cspeed = 2.99792458e5
@@ -450,7 +451,8 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1
 
    csize = 0.85
    djs_plot, [3840., 4120.], [0.0, 1.4], /xstyle, /ystyle, /nodata, $
-    xtitle='Wavelength [Ang]', ytitle='Normalized Flux'
+    xtitle='Wavelength [Ang]', ytitle='Normalized Flux', $
+    title=plottitle
    if (iplot[0] NE -1) then begin
       djs_oplot, 10^loglam[*,iplot], medflux[*,iplot]
       djs_oplot, 10^loglam[*,iplot], medmodel[*,iplot], color='red'
@@ -629,15 +631,20 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
    ;----------
    ; Get the list of spectrograph ID and camera names
 
+   plateid = lonarr(nfile)
+   mjd = lonarr(nfile)
    camname = strarr(nfile)
    expnum = lonarr(nfile)
    spectroid = lonarr(nfile)
    for ifile=0, nfile-1 do begin
       spframe_read, objname[ifile], hdr=hdr
+      plateid[ifile] = strtrim(sxpar(hdr, 'PLATEID'),2)
+      mjd[ifile] = strtrim(sxpar(hdr, 'MJD'),2)
       camname[ifile] = strtrim(sxpar(hdr, 'CAMERAS'),2)
       spectroid[ifile] = strmid(camname[ifile],1,1)
       expnum[ifile] = sxpar(hdr, 'EXPOSURE')
    endfor
+   maxmjd = max(mjd)
 
    ;----------
    ; Figure out which objects are F stars.
@@ -656,9 +663,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
    ; Replace the magnitudes for the F stars with the PSF fluxes
    ; from the calibObj files !!!???
 
-   plateid = sxpar(hdr, 'PLATEID')
-   thismjd = sxpar(hdr, 'MJD')
-   tsobj = plug2tsobj(plateid, plugmap=plugmap)
+   tsobj = plug2tsobj(plateid[0], plugmap=plugmap)
    sdss_recalibrate, tsobj
    plugmap[iphoto].mag = 22.5 - 2.5 * alog10(tsobj[iphoto].psfflux)
 
@@ -712,9 +717,14 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       thisfiber = iphoto[ip] + 1 + 320 * (spectroid[0] - 1)
       splog, prelog='Fiber '+string(thisfiber,format='(I3)')
 
+      plottitle = 'PLATE=' + string(plateid[0], format='(i4.4)') $
+       + ' MJD=' + string(maxmjd, format='(i5.5)') $
+       + ' Spectro-Photo Star' $
+       + ' Fiber ' + strtrim(thisfiber,2)
+
       ; Find the best-fit model -- evaluated for each exposure [NPIX,NEXP]
       thismodel = spflux_bestmodel(loglam[*,*,ip], objflux[*,*,ip], $
-       objivar[*,*,ip], dispimg[*,*,ip], kindx=thisindx)
+       objivar[*,*,ip], dispimg[*,*,ip], kindx=thisindx, plottitle=plottitle)
 
       ; Also evaluate this model over a big wavelength range [3006,10960] Ang.
       tmploglam = 3.4780d0 + lindgen(5620) * 1.d-4
@@ -750,8 +760,8 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
        'MODELFLUX', fltarr(npix)), $
        nphoto)
       copy_struct_inx, thisindx, kindx, index_to=ip
-      kindx[ip].plate = plateid
-      kindx[ip].mjd = thismjd
+      kindx[ip].plate = plateid[0]
+      kindx[ip].mjd = maxmjd
       kindx[ip].fiberid = thisfiber
       splog, prelog=''
    endfor
@@ -947,10 +957,10 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       ; overplotting the global fit to all exposures in red.
 
       ; The following info is just used for the plot title
-      platestr = string(sxpar(hdr1,'PLATEID'), format='(i4.4)')
-      mjdstr = string(sxpar(hdr1,'MJD'), format='(i5.5)')
-      plottitle = 'PLATE=' + platestr + ' MJD=' + mjdstr $
-       + ' Spectro-Photo Calibration for ' + camname[ifile]
+      plottitle = 'PLATE=' + string(plateid[ifile], format='(i4.4)') $
+       + ' MJD=' + string(mjd[ifile], format='(i5.5)') $
+       + ' Spectro-Photo Calib for ' + camname[ifile] + '-' $
+       + string(expnum[ifile], format='(i8.8)')
 
       !p.multi = [0,1,2]
       logrange = logmax - logmin
