@@ -31,13 +31,12 @@
 ;
 ;   Mask values =0 for good pixels, =1 for bad.
 ;
-;   This routine spawns the Unix command 'zcat'.
-;
 ; EXAMPLES:
 ;
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   mrdfits()
 ;   readfits()
 ;
 ; DATA FILES:
@@ -114,9 +113,10 @@ function genflatmask, flatname, spectrographid=spectrographid, color=color, $
 
       ; Gunzip the mask file, read it, and dispose of the file
 
-      spawn, 'zcat ' + masknamein + ' > ' + masknameout
-      maskimg = readfits(masknameout)
-      rmfile, masknameout
+;      spawn, 'zcat ' + masknamein + ' > ' + masknameout
+;      maskimg = readfits(masknameout)
+;      rmfile, masknameout
+      maskimg = mrdfits(masknameout)
 
    endelse
 
