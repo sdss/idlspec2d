@@ -9,7 +9,7 @@
 ;   sdssproc, infile, [image, invvar, indir=, $
 ;    outfile=, varfile=, nsatrow=, fbadpix=, $
 ;    hdr=hdr, configfile=, ecalibfile=, bcfile=, $
-;    /applypixflat, minflat=, spectrographid=, color=, camname= ]
+;    /applypixflat, minflat=, maxflat=, spectrographid=, color=, camname= ]
 ;
 ; INPUTS:
 ;   infile     - Raw SDSS file name
@@ -25,8 +25,10 @@
 ;   ecalibfile - Default to "opECalib.par"
 ;   bcfile     - Default to "opBC.par"
 ;   applypixflat- Apply 2-D pixel-to-pixel flat
-;   minflat    - Minimum values allowed for pixflat
-;                   (lower values of pixflat are set to 0 invvar)
+;   minflat    - Minimum values allowed for pixflat; pixels with the
+;                flat out of range are masked; default to 0.
+;   maxflat    - Maximum values allowed for pixflat; pixels with the
+;                flat out of range are masked; default to 1e10.
 ;
 ; OUTPUTS:
 ;
@@ -747,9 +749,10 @@ bcmask = 0 ; clear memory
       if (readimg) then image = image / pixflatimg
       if (NOT keyword_set(minflat)) then minflat = 0.0
       if (NOT keyword_set(maxflat)) then maxflat = 1.0e10
-      if (readivar) then invvar = invvar * pixflatimg^2 * (pixflatimg GT minflat) $
-                                                     * (pixflatimg LT maxflat)
-pixflat = 0 ; clear memory
+      if (readivar) then $
+       invvar = invvar * pixflatimg^2 * (pixflatimg GT minflat) $
+        * (pixflatimg LT maxflat)
+pixflatimg = 0 ; clear memory
 
       ; add pixflatname to header since it has just been applied
 
