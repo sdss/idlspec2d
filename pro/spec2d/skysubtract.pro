@@ -57,11 +57,12 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
-;   pixelmask_bits()
 ;   bspline_iterfit()
 ;   bspline_valu()
-;   splog
+;   gauss_kernel()
+;   pixelmask_bits()
 ;   redmonster
+;   splog
 ;   tai2airmass()
 ;   traceset2xy
 ;
@@ -181,32 +182,48 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    gkern = gauss_kernel(2.0*nskies)
 
    if (npos GT n_elements(gkern) AND nbkpt GE 16) then begin
-      snsqrt[ipos] = convol(snsqrt[ipos], gauss_kernel(2.0*nskies))
 
+      ;----------
+      ; Construct a vector with the summed (and smoothed) S/N
+
+      snsqrt[ipos] = convol(snsqrt[ipos], gkern)
       snsum = snsqrt
       for i=1L, n_elements(snsqrt)-1 do snsum[i] = snsum[i] + snsum[i-1]
-      place = long(snsum/max(snsum)*nbkpt) < (nbkpt-2)
-      newbkpt = uniq(place)
-      bkpt = skywave[newbkpt]
-      bkpt[0] = minwave
-      bkpt[7:nbkpt-8] = (smooth(skywave[newbkpt],7))[7:nbkpt-8]
 
-      ; Why the factor of 10 below ???
+      ;----------
+      ; Select break points with the same amount of S/N between each.
+      ; We select specific, tabulated wavelengths, but then smooth the
+      ; ones that we select to prevent digitization problems.
+
+      iplace = long(snsum/max(snsum)*nbkpt) < (nbkpt-2)
+      iplace = uniq(iplace)
+      bkpt = skywave[iplace]
+      bkpt[0] = minwave
       newnbk = n_elements(bkpt)
+      i1 = 2*nord - 1
+      i2 = newnbk - 2*nord
+      width = 7 < (i2-i1+1)
+      if (i1 LT newnbk AND i2 GT 0 AND width GT 1) then $
+       bkpt[i1:i2] = (smooth(bkpt,width))[i1:i2]
+
+      ;----------
+      ; Pad with (NORD-1) break points far to the left, and that
+      ; many far to the right.  The factor of 10 in spacing is arbitrary!
+
       lowdiff = (bkpt[1] - bkpt[0]) * 10.0
       highdiff = (bkpt[newnbk-1] - bkpt[newnbk-2]) * 10.0
-      fullbkpt = [ bkpt[0] - lowdiff, bkpt, max(bkpt)+highdiff ]
-      for i=2, nord-1 do $
-       fullbkpt= [ fullbkpt[0] - lowdiff, fullbkpt, max(fullbkpt)+ highdiff ]
+      fullbkpt = [ bkpt[0] - lowdiff*(reverse(lindgen(nord-1))+1), bkpt, $
+       bkpt[newnbk-1] + highdiff*(lindgen(nord-1)+1) ]
+
+      ;----------
+      ; Re-do the fit with the new break points.
+ 
+      sset = bspline_iterfit(skywave, skyflux, invvar=skyivar, $
+       nord=nord, upper=upper*1.5, lower=lower*1.5, maxiter=maxiter, $
+       /eachgroup, fullbkpt=fullbkpt, yfit=skyfit2, outmask=outmask)
+ 
    endif
 
-   ;----------
-   ; Re-do the fit with the new break points.
- 
-   sset = bspline_iterfit(skywave, skyflux, invvar=skyivar, $
-    nord=nord, upper=upper*1.5, lower=lower*1.5, maxiter=maxiter, $
-    /eachgroup, fullbkpt=fullbkpt, yfit=skyfit2, outmask=outmask)
- 
    fullfit = bspline_valu(wave, sset) 
 
    if (keyword_set(dispset)) then begin
