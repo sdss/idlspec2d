@@ -74,6 +74,8 @@ function frame_flux_calib, wave, corvector, corvivar, avgcorvset, cormed, $
   if min(10.0^wave) lt 5000 then $
       range = where(10.0^wave gt 5000 and 10.0^wave lt 6000) $
   else range = where(10.0^wave gt 6000 and 10.0^wave lt 7000)
+  if keyword_set(final) then $
+    range = where(10.0^wave gt 5600 and 10.0^wave lt 6900)
 
   zptadjust_factor = median(frameresid[range, *])
   djs_iterstat, frameresid[range, *], mean=zptadjust_factor, sigrej=2.5
