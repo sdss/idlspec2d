@@ -71,6 +71,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    ; Read LAMPLIST file for wavelength calibration
    ;---------------------------------------------------------------------------
 
+	stop
    if (keyword_set(lampfile)) then begin
       tempname = findfile(lampfile, count=ct)
       if (ct EQ 0) then message, 'No LAMPFILE found '+lampfile
@@ -318,6 +319,17 @@ for i=0,16 do oplot,fflat[*,i*19]
 
       ;------------------
       ; Sky-subtract
+
+      plugsort = sortplugmap(plugmap, camcol)
+
+;      skysubtract, flat1, flat1ivar, plugsort, wset, skysub, skysubivar, $
+;                     allwave=allwave, allsky=allsky, allfit=allskyfit
+
+      skysubtract, obj_flux, obj_fluxivar, plugsort, wset, $ 
+                     skysub, skysubivar
+
+
+	
 
       ; ???
 
