@@ -73,10 +73,10 @@ function get_alpha, galvar0norm, starvar0norm, inside, broad, galfftnorm, $
       alpha_old = 1
       for j=0,maxiter-1 do begin 
         denom  = galvar0norm + starvar0norm*(alpha_old*broad[inside])^2
-        alpha  = total(abs(galfftnorm)/denom)/ $
-                      total(abs(starfftnorm)*broad[inside]/denom)
+     alpha  = total(float(galfftnorm*conj(starfftnorm)*broad[inside])/denom)/ $
+                      total(abs(starfftnorm*broad[inside])^2/denom)
         alpha_old = alpha
-	print,j,alpha
+;	print,j,alpha
       endfor
 
   return, alpha
@@ -122,17 +122,18 @@ function newdiff, galfft, starfft, galvar0, starvar0, $
    starvar0norm = starvar0/starnorm^2
 
    for i=0,nloop-1 do begin
-      broad = exp(-(knums*testsigma[i] * 2.0 * PI)^2/2.0)
+      fsig = 1.d/(2.*!dpi)/testsigma[i]
+      broad = gauss_periodic(knums, [1., 0., fsig], shft=1.)
+;      broad = exp(-(knums*testsigma[i] * 2.0 * PI)^2/2.0)
       alpha[i] = get_alpha(galvar0norm, starvar0norm, inside, broad, $
-        galfftnorm, starfftnorm, maxiter=6)
+        galfftnorm, starfftnorm, maxiter=4)
 
       denom = galvar0norm + starvar0norm*(alpha[i]*broad[inside])^2
-      chi2diff[i] = total(float(galfftnorm- $
+      chi2diff[i] = total(abs(galfftnorm- $
          starfftnorm*broad[inside]*alpha[i])^2 / denom)
-      plot,knumsinside, float(galfftnorm)
-      oplot,knumsinside, float(starfftnorm*broad[inside]*alpha[i]),col=150
- print,testsigma[i],chi2diff[i]
-stop
+;      plot,knumsinside, float(galfftnorm)
+;      oplot,knumsinside, float(starfftnorm*broad[inside]*alpha[i]),col=150
+
    endfor
 
    deltachisq = 1./n_elements(inside)
@@ -144,13 +145,13 @@ stop
    bestalpha = get_alpha(galvar0norm, starvar0norm, inside, broad, $
      galfftnorm, starfftnorm, maxiter=4)
 
-   plot,knumsinside, float(galfftnorm)
-   oplot,knumsinside, float(starfftnorm*broad[inside]*bestalpha),col=1560
+;   plot,knumsinside, float(galfftnorm)
+;   oplot,knumsinside, float(starfftnorm*broad[inside]*bestalpha),col=1560
 print
 print,'BEST!!!'
 print,minsigma, minchi2
 
-stop
+
 
 ;   oplot, testsigma, alpha, ps=2
    minc = min(chi2diff, alphaplace)
