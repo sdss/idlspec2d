@@ -1,5 +1,9 @@
 
 ELODIE_BEST: Add FITINDX keyword. Expand default fitting range to +/-1000 km/s.
+EXTRACT_OBJECT: Add "OPTCHI2" keyword to output header, recording the
+           mean chi^2 of the optimal extraction.
+           Add "SKYCHI2" keyword to output header, recording the mean chi^2
+           of the sky-subtraction.
 MYFLUXCALIB: Put the plate+MJD+camname in the plot titles.
 PIXELMASK_BITS: Now simply call the new function SDSS_FLAGVAL().
 PCA_STAR: Now read the Yanny file "eigeninput_star.par", and use cz.
@@ -15,21 +19,27 @@ READSPEC,SPEC_APPEND: Add the /ALIGN option for aligning all the spectra
            (this bug was just introduced in the last version).
 REDMONSTER,SKYSUBTRACT: Lower threshhold for flagging both the BADSKYCHI
            and REDMONSTER mask bits from a relative chi^2 of 4.0 to 3.0.
+SDSS_FLAGNAME: Re-write to include many more types of mask bits
+           from the file "spMaskbits.par".
+SDSS_FLAGVAL: New function, which is the inverse of SDSS_FLAGNAME().
+SPREDUCE1D: Use SDSS_FLAGVAL() to set the zwarning mask bits.
+           Call ELODIE_BEST() for stars, and append to spZbest output structure.
 SKYMASK: Remove the rejection of andmask/BRIGHTSKY, and add rejection for
            ormask/BADSKYCHI.  Now we reject based upon that and
            ormask/REDMONSTER.  For good plates, this will be rejecting fewer
            points.  For the recent horrible data (like plate 889/52346),
            many more points are rejected since the sky chi^2 are so horrible.
            This change will need some real testing.
-SDSS_FLAGNAME: Re-write to include many more types of mask bits
-           from the file "spMaskbits.par".
-SDSS_FLAGVAL: New function, which is the inverse of SDSS_FLAGNAME().
-SPREDUCE1D: Use SDSS_FLAGVAL() to set the zwarning mask bits.
-           Call ELODIE_BEST() for stars, and append to spZbest output structure.
 SKYSUBTRACT: Fix stupid bug where sky-fits are rejected if the mean
            sky is negative, though that only happens rarely.  This did
            cause all the b1 exposures on plate 283/51584 to get rejected
            (one of at least several such examples).
+           Fix another rare indexing bug triggered on plate 318/51580-r2,
+           and clean up the code that re-selected the sky break points
+           based upon the S/N as a function of wavelength.
+           Do not set BADSKYCHI mask bit when NOSKY is already set.
+           Raise the threshhold for setting the BRIGHTSKY mask bit from
+           1.25 * (median sky) to 2.0.
 TELLURIC_CORR: Center the plot title.
 ZTWEAK_STAR: New proc for getting the zero-point of the stellar
            templates by matching to the Elodie spectra.
@@ -40,7 +50,12 @@ eigeninput_star.par: Version of "eigeninput_star.dat" as a Yanny file.
            to agree with Elodie (hopefully the fit from 4100-6800 Ang
            is good enough for this), and tweak the redshifts of those
            stars also (using ZTWEAK_STAR).
+emlines.par: Couple the N_II emission line ratios at 1:3.
+           Append the wavelength to the LINENAME structure element for clarity
+           in the output files.
 spChunkList.par: Remove verstarg from structure, and add progname.
+spEigenStar-52373.fits: New stellar eigentemplates based upon
+           eigeninput_star.par.
 spMaskbits.par: Heavily modified file to include many more types of mask bits.
 sprobot_start: Set the environment variable "DISPLAY=:0.0" so that any
            IDL jobs launched from these scripts don't use any additional
