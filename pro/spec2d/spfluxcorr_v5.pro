@@ -95,9 +95,9 @@ function fcorr_chi_fn, acoeff
    vmult = (ymult > 1e-4) * (ymult LE 1) + sqrt(ymult) * (ymult GT 1)
    totivar = qgood / ( 1./(aivar + (1-qgood)) + vmult^2/(bivar + (1-qgood)) )
 
-   chivec2 = (bflux - yfit)^2 * totivar
+   chivec = (bflux - yfit) * sqrt(totivar)
 
-   return, sqrt(chivec2)
+   return, chivec
 end
 
 ;------------------------------------------------------------------------------
@@ -117,7 +117,7 @@ function spfluxcorr_vectors, loglam, npoly
 end
 ;------------------------------------------------------------------------------
 function spfluxcorr_solve2, loglam1, allflux1, allflux2, allivar1, allivar2, $
- npoly=npoly1, nback=nback1, ymult=ymult, yadd=yadd, $
+ npoly=npoly1, nback=nback1, inparams=inparams, ymult=ymult, yadd=yadd, $
  totchi2=totchi2, debug=debug
 
    common com_fcorr_chi, npoly, nback, loglam, aflux, bflux, $
@@ -139,9 +139,13 @@ function spfluxcorr_solve2, loglam1, allflux1, allflux2, allivar1, allivar2, $
    parinfo1 = {value: 0.D, fixed: 0, limited: [0b,0b], limits: [0.d0,0.d0], $
     tied: ''}
    parinfo = replicate(parinfo1, npoly+nback)
-   parinfo[0].value = 1.D
-   if (npoly GT 1) then parinfo[1:npoly-1].value = 1.D-6
-   if (nback GT 0) then parinfo[npoly:npoly+nback-1].value = 1.D-6
+   if (keyword_set(inparams)) then begin
+      parinfo[0:n_elements(inparams)-1].value = inparams
+   endif else begin
+      parinfo[0].value = 1.D
+      if (npoly GT 1) then parinfo[1:npoly-1].value = 1.D-6
+      if (nback GT 0) then parinfo[npoly:npoly+nback-1].value = 1.D-6
+   endelse
    ftol = 1d-20
    gtol = 1d-20
    xtol = 1d-20
@@ -201,7 +205,7 @@ end
 ;          which were excluded from the fit
 ; The additive term should be **per camera** ?
 function spfluxcorr_solve, loglam, aflux, bflux, sqivar, mask=mask1, $
- sigvec=sigvec, npoly=npoly, nback=nback, ymult=ymult, yadd=yadd
+ sigvec=sigvec, npoly=npoly, nback=nback, ymult=ymult, yadd=yadd, acoeff=acoeff
 
    if (NOT keyword_set(npoly)) then npoly = 3
    if (n_elements(nback) EQ 0) then nback = 1
@@ -464,26 +468,41 @@ pro spfluxcorr_v5, objname, adderr=adderr, combinedir=combinedir, $
             igood = where(qgood, ct)
             npoly1 = 0
             if (ct GT 0) then begin
-               qcont = 1B
                lastchi2 = 0
-               ; Add more polynomial terms to the fit as long as
-               ; the vectors are still good (no crazy values), and
+               inparams = 0
+               ; Loop through adding more polynomial terms up to MAXPOLY.
+               ; Replace the fluxing vectors with the new ones as long
+               ; as the new ones are still good (no crazy values), and
                ; the chi^2 is significantly improved (by at least 5).
-               while (qcont AND npoly1 LT maxpoly) do begin
+               while (npoly1 LT maxpoly) do begin
                   npoly1 = npoly1 + 1
+
+                  ; Do a 1st pass re-fitting without scaling the errors.
+                  invsig = 0 * allivar[*,iobj,i1]
+                  indx = where(allivar[*,iobj,i2] GT 0 $
+                   AND allivar[*,iobj,i1] GT 0, ct)
+                  if (ct GT 0) then $
+                   invsig[indx] = 1. / sqrt(1./(allivar[*,iobj,i1])[indx] $
+                    + 1./(allivar[*,iobj,i2])[indx])
+                  foo = spfluxcorr_solve( loglam[*,iobj,*], $
+                   allflux[*,iobj,i2], allflux[*,iobj,i1], invsig, $
+                   mask=qgood, npoly=npoly1, nback=0, $
+                   sigvec=sigvec1, ymult=ymult1, yadd=yadd1, acoeff=inparams)
+
+                  ; Now fit using the non-linear code that rescales the errors.
                   thiscoeff = spfluxcorr_solve2(loglam[*,iobj,*], $
                    allflux[*,iobj,i2], allflux[*,iobj,i1], $
                    allivar[*,iobj,i2], allivar[*,iobj,i1] * qgood, $
-                   npoly=npoly1, nback=nback, ymult=ymult1, yadd=yadd1, $
-                   totchi2=thischi2)
+                   npoly=npoly1, nback=nback, inparams=inparams, $
+                   ymult=ymult1, yadd=yadd1, totchi2=thischi2)
+
                   if (fcorr_goodvector(ymult1) $
                    AND (npoly1 EQ 1 OR lastchi2-thischi2 GT 5.)) then begin
                      ymult[*,iobj,i2] = ymult1
                      yadd[*,iobj,i2] = yadd1
                      lastchi2 = thischi2
-                  endif else begin
-                     qcont = 0B
-                  endelse
+                     inparams = thiscoeff
+                  endif
                endwhile
             endif
             splog, 'Fiber #', 320*(spectroid[0]-1)+iobj+1, $
