@@ -1151,12 +1151,17 @@ FRACNSIGMA Fraction of pixels deviant by more than N sigma, where N=[1,2,...10]
 FRACNSIGHI Fraction of pixels high by more than N sigma, where N=[1,2,...10]
 FRACNSIGLO Fraction of pixels low by more than N sigma, where N=[1,2,...10]
            (incorrectly computed for versions of the code before v4_9_10)
-COUNTS_SPECTRO  5-element array of total flux in each of the 5 PHOTO filters;
-                the units are such that this equals 1 at 0th magnitude;
-                convert to magnitudes with -2.5 * LOG_10(COUNTS_SPECTRO);
-                the u-band and z-band counts should not be used
-COUNTS_SYNTH    Same as COUNTS_SPECTRO, but measured using the best-fit
+SPECTROFLUX 5-element array of total flux in each of the 5 PHOTO filters;
+            the units are nanomaggies, which is 1 at 22.5 magnitude;
+            convert to magnitudes with 22.5 - 2.5 * LOG_10(SPECTROFLUX);
+            the u-band and z-band counts should not be used
+SPECTROSYNTHFLUX: Same as SPECTROFLUX, but measured using the best-fit
                 synthetic eigen-spectrum rather than the actual data points
+SPECTROSKYFLUX: (Placeholder.)
+COUNTS_SPECTRO  Same as SPECTROFLUX, but in units of maggies instead of
+                nanomaggies, and are equal to 1 at 0th magnitude
+COUNTS_SYNTH    Same as SPECTROSYNFLUX, but in units of maggies instead of
+                nanomaggies, and are equal to 1 at 0th magnitude
 COUNTS_SKY      (Placeholder.)
 ANYANDMASK Mask bits which are set if any pixels for an object's ANDMASK
            have that bit set (these fields incorrect in current reductions)

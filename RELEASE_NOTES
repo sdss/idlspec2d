@@ -50,6 +50,9 @@ QUICKEXTRACT: Apply a work-around to the apparent change in PHOTO fiber-mags,
           mag=20.20 -> 20.33 in blue
           mag=19.90 -> 20.06 in red
 SPREDUCE1D: Add the "UNPLUGGED" value to the ZWARNING flag.
+        Add the fields SPECTROFLUX,SPECTROSYNTHFLUX,SPECTROSKYFLUX
+        which are the same as the COUNTS* fields but in nanomaggies
+        instead of maggies, which are the same units as our imaging outputs.
 
 etc/atmdisp_vec_am1.1.see2.0.fit - Tremonti's atmos. dispersion corrrection?
 etc/atmdisp_vec_am1.2.see2.0.fit - Tremonti's atmos. dispersion corrrection?
