@@ -171,7 +171,7 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    ; if the spectrographs appear out of focus.
 
    widthset = fitflatwidth(tempflux, tempfluxivar, ansimage, fibermask, $
-    ncoeff=5, sigma=sigma)
+    ncoeff=5, sigma=sigma, medwidth=medwidth)
 
    ;----------
    ; Boxcar extract - no scattered light correction!
@@ -308,6 +308,8 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
 
    rstruct = create_struct('SCIFILE', fileandpath(outsci), $
                            'SKYPERSEC', skylevel, $
+                           'XSIGMA_QUADRANT', medwidth, $
+                           'XSIGMA', max(medwidth), $
                            'FIBERMAG', plugsort.mag[icolor], $
                            'SN2VECTOR', meansn^2, $
                            'SN2', snoise2 )

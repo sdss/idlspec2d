@@ -104,7 +104,7 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
    ;----------
    ; Optimal-extraction of a sparse number of rows simply to measure the
    ; profile widths, and trigger warnings if the spectrographs look
-   ; out-of-focus.
+   ; out-of-focus in the spatial dimension.
 
    traceset2xy, tset, rownums, xcen
    yrow = lindgen(long(nrow/nbin)) * nbin
@@ -115,7 +115,7 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
     highrej=5, lowrej=5, npoly=10, ansimage=ansimage, relative=1
 
    widthset = fitflatwidth(tempflux, tempfluxivar, ansimage, fibermask, $
-    ncoeff=5, sigma=sigma)
+    ncoeff=5, sigma=sigma, medwidth=medwidth)
 
    ;----------
    ; Look for Argon lines (or any other emission lines) in the flat-fields,
@@ -152,7 +152,9 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
    rstruct = create_struct('TSETFILE', fileandpath(tsetfile), $
                            'NGOODFIBER', ngfiber, $
                            'XMIN', xmin, $
-                           'XMAX', xmax )
+                           'XMAX', xmax, $
+                           'XSIGMA_QUADRANT', medwidth, $
+                           'XSIGMA', max(medwidth) )
 
    return, rstruct
 end
