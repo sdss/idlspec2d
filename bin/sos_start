@@ -4,6 +4,10 @@
 #
 # D. Schlegel, Princeton, 11 Dec 2000
 #------------------------------------------------------------------------------
+# Set file names.
+
+cronfile=/tmp/$USER.sos.cron
+SOSLOG=/data/spectro/spectrologs/sos.log
 
 #------------------------------------------------------------------------------
 # If a second argument is give, such as "sos_start plate-mapper", or 
@@ -66,8 +70,6 @@ vers=`echo $SETUP_IDLSPEC2D | awk '{print $2}'`
 # Construct the cron file to be loaded.  Start with the existing cron file,
 # then append more to it.
 
-cronfile=/tmp/$USER.sos.cron
-SOSLOG=/data/spectro/spectrologs/sos.log
 # Print the cron tab w/out the first 3 lines and w/out the SOS lines.
 crontab -l | awk 'BEGIN{doprint = 1}{if ($2 == "SOS" && $3 == "BEGIN") {doprint = 0}; if (NR > 3 && doprint == 1) {print $0}; if ($2 == "SOS" && $3 == "END") {doprint = 1} }' > $cronfile
 
