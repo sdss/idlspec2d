@@ -16,6 +16,29 @@ if [ $# = 1 ] ; then
 fi
 
 #------------------------------------------------------------------------------
+# Test that certain environment variables are already set.
+
+if [ -z "$IDLSPEC2D_DIR" ] ; then
+  echo "IDLSPEC2D_DIR must be set!"
+  exit
+fi
+
+if [ -z "$IDLUTILS_DIR" ] ; then
+  echo "IDLUTILS_DIR must be set!"
+  exit
+fi
+
+if [ -z "$IDL_DIR" ] ; then
+  echo "IDL_DIR must be set!"
+  exit
+fi
+
+if [ -z "$IDL_PATH" ] ; then
+  echo "IDL_PATH must be set!"
+  exit
+fi
+
+#------------------------------------------------------------------------------
 # Don't allow this to be run from the machine "sdsshost"!
 
 echo
