@@ -188,6 +188,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
       xsol = *(bestflat.xsol)
       fflat = *(bestflat.fflat)
+      widthset = *(bestflat.widthset)
       qaplot_fflat, fflat, wset, filename=bestflat.name
 
       ;-----
@@ -220,7 +221,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       ; Extract the object frame
 
       extract_object, outname, objhdr, image, invvar, plugsort, wset, $
-       xpeak, lambda, xsol, fflat, fibermask, color=color
+       xpeak, lambda, xsol, fflat, fibermask, widthset=widthset, color=color
 
       splog, 'Elapsed time = ', systime(1)-stimeobj, ' seconds', $
        format='(a,f6.0,a)' 
