@@ -122,7 +122,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    if (ct NE 1) then $
     message, 'Cannot find flat image ' + flatname
 
-   print, 'Reading in flat ', flatfilenames[0]
+   splog, 'Reading in flat ', flatfilenames[0]
    sdssproc, flatfilenames[0], image, invvar, hdr=flathdr, $
     pixflatname=pixflatname
  
@@ -139,7 +139,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    ; Extract the flat-field image
    ;---------------------------------------------------------------------------
 
-   print, 'Extracting flat-field with simple gaussian'
+   splog, 'Extracting flat-field with simple gaussian'
    sigma = 1.0
    proftype = 1 ; Gaussian
    highrej = 20
@@ -153,7 +153,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
    highpixels = where(flux GT 1.0e5, numhighpixels)
 
-   print, 'Found ', numhighpixels, ' highpixels in extracted flat ', $
+   splog, 'Found ', numhighpixels, ' highpixels in extracted flat ', $
     flatname
 
    ;---------------------------------------------------------------------------
@@ -171,7 +171,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    if (ct NE 1) then $
     message, 'Cannot find arc image ' + arcname
 
-   print, 'Reading in arc ', arcfilenames[0]
+   splog, 'Reading in arc ', arcfilenames[0]
    sdssproc, arcfilenames[0], image, invvar, hdr=archdr, $
     pixflatname=pixflatname, spectrographid=spectrographid, color=color
 
@@ -180,7 +180,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
   ; Extract the arc image
   ;--------------------------------------------------------------------------
 
-  print, 'Extracting arc-lamp with simple gaussian'
+  splog, 'Extracting arc-lamp with simple gaussian'
   sigma = 1.0
   proftype = 1 ; Gaussian
   highrej = 10
@@ -204,7 +204,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
   ; Compute wavelength calibration for arc lamp only
   ;-------------------------------------------------------------------------
 
-   print, 'Searching for wavelength solution with fitarcimage'
+   splog, 'Searching for wavelength solution with fitarcimage'
    fitarcimage, flux, fluxivar, color, lamplist, $
     xpeak, ypeak, wset, lambda=lambda, $
     xdif_lfit=xdif_lfit, xdif_tset=xdif_tset
@@ -224,7 +224,7 @@ for i=0,16 do oplot,fflat[*,i*19]
 
    for iobj=0, N_elements(objname)-1 do begin
 
-      print,'> SPREDUCE: ',systime(1)-t_begin, ' seconds so far', $
+      splog, 'Timing: ',systime(1)-t_begin, ' seconds so far', $
        format='(A,F8.2,A)'
 
       ;------------------
@@ -236,7 +236,7 @@ for i=0,16 do oplot,fflat[*,i*19]
        message, 'Cannot find object image ' + objname[iobj]
 
       objfile = objfilenames[0]
-      print, 'Reading in object ', objfile
+      splog, 'Reading in object ', objfile
       sdssproc, objfile, image, invvar, hdr=objhdr, $
        pixflatname=pixflatname, spectrographid=spectrographid, color=color
 
@@ -255,7 +255,7 @@ for i=0,16 do oplot,fflat[*,i*19]
 ;      fextract = extract_boxcar(image, xsol, ycen)
       scrunch = djs_median(fextract, 1) ; Find median counts/row in each fiber
       whopping = where(scrunch GT 10000.0, whopct)
-      print, 'Number of bright fibers = ', whopct
+      splog, 'Number of bright fibers = ', whopct
 
       ;------------------
       ; Extract the object image
@@ -266,7 +266,7 @@ for i=0,16 do oplot,fflat[*,i*19]
       ;        3) Extract all 2048 rows with new profiles given by
       ;              fitansimage
 
-      print, 'Extracting frame '+objname[iobj]+' with 6 step process'
+      splog, 'Extracting frame '+objname[iobj]+' with 6 step process'
       nrow = (size(image))[2]
       ncol = (size(image))[1]
       skiprow = 8
@@ -288,7 +288,7 @@ for i=0,16 do oplot,fflat[*,i*19]
       for i = 0, 1 do begin
       
         ; 1) First extraction
-        print, 'Object extraction: Step', i*3+1
+        splog, 'Object extraction: Step', i*3+1
         extract_image, image, invvar, xnow, sigma, tempflux, tempfluxivar, $
          proftype=proftype, wfixed=wfixed, yrow=yrow, $
          highrej=highrej, lowrej=lowrej, nPoly=nPoly, whopping=whopping, $
@@ -296,7 +296,7 @@ for i=0,16 do oplot,fflat[*,i*19]
 
         ; 2) Refit ansimage to smooth profiles
 
-        print, 'Answer Fitting: Step', i*3+2
+        splog, 'Answer Fitting: Step', i*3+2
         nparams = 3
         nTrace = (size(flux))[2]
         fitans = fitansimage(ansimage, nparams, nTrace, nPoly, nfirst, yrow, $
@@ -305,7 +305,7 @@ for i=0,16 do oplot,fflat[*,i*19]
         ; 3) Calculate new sigma and xsol arrays
       
         if (i EQ 0) then begin 
-           print, 'Trace Tweaking: Step', i*3+3, '    (Sigma not tweaked)'
+           splog, 'Trace Tweaking: Step', i*3+3, '    (Sigma not tweaked)'
            sigmashift = transpose(fitans[lindgen(nTrace)*nTerms + sigmaterm, *])
            centershift = $
               transpose(fitans[lindgen(nTrace)*nTerms + centerterm, *])
@@ -314,7 +314,7 @@ for i=0,16 do oplot,fflat[*,i*19]
       endfor
 
       ; 4) Second and final extraction
-      print, 'Object extraction: Step 6'
+      splog, 'Object extraction: Step 6'
 
       ; Using old sigma for now, which should be fine
       ; Different sigmas require a new profile for each trace, so will
@@ -342,7 +342,7 @@ wset_tweak = wset
       ;
       ; First convert lambda, and skywaves to log10 vacuum
       ;
-;      print, 'Converting wavelengths to vacuum'
+;      splog, 'Converting wavelengths to vacuum'
 ;      vaclambda = 10^lambda
 ;      airtovac, vaclambda
 ;      vaclambda = alog10(vaclambda)
@@ -354,7 +354,7 @@ wset_tweak = wset
 ;      sxaddpar, hdr, 'VACUUM', 'WAVELENGTHS ARE IN VACUUM'
 ;      sxaddpar, hdr, 'AIR2VAC', systime()
 ;
-;      print, 'now tweaking to sky lines'
+;      splog, 'Tweaking to sky lines'
 ;      skycoeff = 2
 ;      if(n_elements(vacsky) GT 3) then skycoeff = 3
 ;
@@ -435,7 +435,7 @@ wset_tweak = wset
       heap_gc   ; Garbage collection for all lost pointers
    endfor
 
-   print,'> SPREDUCE: ', systime(1)-t_begin, ' seconds TOTAL', $
+   splog,'Timing: ', systime(1)-t_begin, ' seconds TOTAL', $
     format='(A,F8.2,A)'
 
 end

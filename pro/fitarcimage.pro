@@ -186,9 +186,9 @@ print, 'nlag', nlag
          bestlambda = loglambda
          lagbest = lags[icorr]
 ; PLOT ???
-splot,speccorr,xr=[npad,npix+npad]
-soplot,shift(model,-lagbest)*mean(speccorr)/mean(model),color='red'
-print,bestcorr,lagbest,tempset.coeff
+;splot,speccorr,xr=[npad,npix+npad]
+;soplot,shift(model,-lagbest)*mean(speccorr)/mean(model),color='red'
+;print,bestcorr,lagbest,tempset.coeff
       endif
 
    endfor
@@ -323,14 +323,18 @@ pro fitarcimage, arc, arcinvvar, color, linelist, xnew, ycen, wset, $
       wset = fullfit(spec, linelist, aset, dcoeff, nsteps, $
        bestcorr=bestcorr)
 
-      print, 'Initial wavelength fit = ', wset.coeff
+      splog, 'Initial wavelength fit = ', wset.coeff
 
       if (color EQ 'blue' AND bestcorr LT 0.70) then $
-       print, 'Initial wavelength solution looks suspicious'
+       splog, 'Initial wavelength solution looks suspicious'
       if (color EQ 'red' AND bestcorr LT 0.70) then $
-       print, 'Initial wavelength solution looks suspicious'
+       splog, 'Initial wavelength solution looks suspicious'
 
-   endif
+   endif else begin
+
+      wset = aset
+
+   endelse
 
    ; Select which lines from the line list to trace and use in the final fits
 
@@ -359,10 +363,12 @@ pro fitarcimage, arc, arcinvvar, color, linelist, xnew, ycen, wset, $
    ; Allow for a shift of up to 2 pixels in the initial centers,
    ; but only 0.3 pixels while tracing
 
+   splog, 'Tracing', N_elements(xstart), ' arc lines'
    xcen = trace_crude(arc, yset=ycen, nave=1, nmed=1, xstart=xstart, $
     ystart=row, maxshifte=0.3d, maxshift0=2.0d)
 
    ; Iterate the flux-weighted centers
+   splog, 'Iterating flux-weighted centers'
    xnew = trace_fweight(arc, xcen, ycen)
 
    ; Make use of the errors??? - Seems to just mess things up???
@@ -391,11 +397,11 @@ pro fitarcimage, arc, arcinvvar, color, linelist, xnew, ycen, wset, $
       fracbad = float(nbad) / nfiber
       qbad[i] = fracbad GT 0.10
       if (qbad[i]) then $
-       print, 'Discarding trace', i, ',   fraction bad', fracbad
+       splog, 'Discarding trace', i, ',   fraction bad', fracbad
    endfor
 
    igood = where(qbad EQ 0, ngood)
-   print, 'Number of good arc lines: ', ngood
+   splog, 'Number of good arc lines: ', ngood
    if (ngood EQ 0) then $
     message, 'No good arc lines'
 
@@ -417,7 +423,7 @@ maxdev = 3.0d-5
     func=func, ncoeff=ncoeff, maxdev=maxdev, maxiter=nlambda, /singlerej, $
     xmask=xmask, xmin=0, xmax=npix-1
 
-   print,'Pass 1 complete'
+   print, 'Pass 1 complete'
 
    ;---------------------------------------------------------------------------
    ; Do the second traceset fit
@@ -473,12 +479,12 @@ maxdev = 3.0d-5
    xdif_lfit = (xmeasured-xnew)      ; dif between measured line positions
                                      ;  and best fit for each line
 
-   print
-   print, 'Arcline fit summary'
-   print, 'All sigma values are in millipixels'
-   print, format='(71("-"))'
+   splog, '', /noname
+   splog, 'Arcline fit summary'
+   splog, 'All sigma values are in millipixels'
+   splog, format='(71("-"))'
    for k=0, nlambda-1 do $
-      print,'Arcline',k,':  lambda =',10.^lambda[k], $
+      splog,'Arcline',k,':  lambda =',10.^lambda[k], $
             '    sig_lfit =', djsig(1e3*xdif_lfit[k,*]), $
             '    sig_tset =', djsig(1e3*xdif_tset[k,*]), $
             format='(A,I3,A,F8.2,A,F7.2,A,F7.2)'
@@ -487,9 +493,9 @@ maxdev = 3.0d-5
    if (nlambda LT 6) then $
      message, 'WARNING: only '+string(nlambda)+ ' good arclines found',/cont
 
-   print, 'Found ', nlambda, ' good arc lines'
-   if (highct GT 0) then print, '----', highct, ' are above 8000 A'
-   print,'> FITARCIMAGE: ',systime(1)-t_begin, ' seconds elapsed', $
+   splog, 'Found ', nlambda, ' good arc lines'
+   if (highct GT 0) then splog, '----', highct, ' are above 8000 A'
+   splog,'Time ',systime(1)-t_begin, ' seconds elapsed', $
     format='(A,F8.2,A)'
 
    return

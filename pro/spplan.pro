@@ -1,4 +1,4 @@
-;begin+
+;+
 ; NAME:
 ;   spplan
 ;
@@ -31,11 +31,11 @@
 ; EXAMPLES:
 ;   Create the plan file "spPlanFlat.par" for making pixel flats by looking
 ;   for all flats in all subdirectories beginning with "514*" :
-;     spplan, indir='514*/', /flats
+;     spplan, indir='514*', /flats
 ;
 ;   Create the plan file "spPlan2d.par" for reducing one night of data
-;   in the directory "51441/" :
-;     spplan, indir='51441/'
+;   in the directory "51441" :
+;     spplan, indir='51441'
 ;
 ; BUGS:
 ;   Need to implement lampfile.
@@ -115,6 +115,10 @@ pro spplan, indir=indir, plugdir=plugdir, flatdir=flatdir, $
       if (keyword_set(flats)) then planfile = 'spPlanFlat.par' $
        else planfile = 'spPlan2d.par'
    endif
+
+   planpref = (str_sep(planfile,'.'))[0]
+   logfile = planpref + '.log'
+   plotfile = planpref + '.ps'
 
    camnames = ['b1', 'r2', 'b2', 'r1']
    camnums = ['01', '02', '03', '04']
@@ -343,6 +347,9 @@ pro spplan, indir=indir, plugdir=plugdir, flatdir=flatdir, $
    hdr = [hdr, "inputDir    '" + indir + "'  # Directory for raw images"]
    hdr = [hdr, "flatDir     '" + flatdir + "'     # Directory for pixel flats"]
    hdr = [hdr, "MJD     " + string(mjd) + "  # Modified Julian Date"]
+   hdr = [hdr, "run     " + string(run) + "  # Spectro run number"]
+   hdr = [hdr, "logfile     '" + logfile + "'  # Text log file"]
+   hdr = [hdr, "plotfile    '" + plotfile + "'  # PostScript log file"]
 
    if (NOT keyword_set(flats)) then $
     yanny_write, planfile, [ptr_new(pixflats), ptr_new(allplug), ptr_new(allseq)], hdr=hdr $

@@ -72,13 +72,33 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
    plugDir = yanny_par(hdr, 'plugDir')
    extractDir = yanny_par(hdr, 'extractDir')
    combDir = yanny_par(hdr, 'combDir')
-   if (combDir EQ '-1') then combDir=extractDir
+   if (NOT keyword_set(combDir)) then combDir=extractDir
 
    inputDir = yanny_par(hdr, 'inputDir')
    flatDir = yanny_par(hdr, 'flatDir')
    mjd = yanny_par(hdr, 'MJD')
-   run = strtrim(yanny_par(hdr, 'run'),2)
-   if (run EQ '-1') then run = '0'
+   run = yanny_par(hdr, 'run')
+   run = strtrim(string(run), 2)
+
+   logfile = yanny_par(hdr, 'logfile')
+   if (keyword_set(logfile)) then $
+    logfile = filepath(logfile, root_dir=extractDir)
+   plotfile = yanny_par(hdr, 'plotfile')
+   if (keyword_set(plotfile)) then $
+    plotfile = filepath(plotfile, root_dir=extractDir)
+
+   spawn, 'mkdir -p '+extractDir
+
+   ; Open log files for output
+   if (keyword_set(logfile)) then begin
+      splog, filename=logfile, /append
+      splog, 'Log file ', logfile, ' opened ', systime()
+   endif
+   if (keyword_set(plotfile)) then begin
+      set_plot, 'ps'
+      device, filename=plotfile, /color
+      splog, 'Plot file ', plotfile, ' opened ', systime()
+   endif
 
    camnames = ['b1', 'r2', 'b2', 'r1']
    camnums = ['01', '02', '03', '04']
@@ -88,7 +108,6 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
    seqid = allseq[ sort(allseq.seqid) ].seqid
    seqid = allseq[ uniq(allseq.seqid) ].seqid
 
-;   set_plot, 'ps'
    for iseq=0, N_elements(seqid)-1 do begin
 
       ; Get the plate ID number from any (e.g., the first) exposure with
@@ -113,7 +132,7 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
 
       for ido=0, ndo-1 do begin
 
-         icam = where(camnames EQ docams[ido], camct)
+         icam = (where(camnames EQ docams[ido], camct))[0]
          if (camct NE 1) then message, 'Non-unique camera ID '
 
          ; Find the corresponding pixel flat
@@ -181,20 +200,25 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
             files = findfile(filepath(expres,root_dir=plateDir))
 
             if (files[0] EQ '') then $
-             print, 'No files found for ', i, ' side ', side $
+             splog, 'No files found for ', i, ' side ', side $
             else $
              combine2dout, files, filepath(outputfile, root_dir=combineDir), $
               wavemin = alog10(3750.0)
          endfor
       endfor
-      print, 'Finished combining sequence', seqid[iseq], ' in', $
+      splog, 'Finished combining sequence', seqid[iseq], ' in', $
        systime(1)-startcombtime, ' seconds'
    endif
 
    endfor ; End loop for sequence number
 
-;   device, /close
-;   set_plot, 'X'
+   ; Close log files
+   if (keyword_set(logfile)) then splog, /close
+   if (keyword_set(plotfile)) then begin
+      device, /close
+      set_plot, ''
+   endif
+
    return
 end
 ;------------------------------------------------------------------------------
