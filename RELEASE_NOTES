@@ -1,4 +1,6 @@
 
+SPBIASGEN: New routine for generating mean biases for a night.
+
 -------------------------------------------------------------------------------
 v4_8_4 (Aug 29, 2001 idlspec2d+idlutils)
 
