@@ -220,14 +220,14 @@ function zfind, objflux, objivar, hdr=hdr, $
       starset.fullbkpt = (starset.fullbkpt - objloglam0) / objdloglam
 
       zans = zcompute_qso(objflux, objivar, starset, starflux, poffset=poffset, $
-        pmin=pmin, pmax=pmax, nfind=nfind, width=width, $
-        plottitle=plottitle, _EXTRA=EXTRA)
-     zans.tcolumn[0:npoly-1]  = 1
-    endif else begin
+       pmin=pmin, pmax=pmax, nfind=nfind, width=width, $
+       plottitle=plottitle, _EXTRA=EXTRA)
+   endif else begin
       zans = zcompute(objflux, objivar, starflux, poffset=poffset, $
-        pmin=pmin, pmax=pmax, nfind=nfind, width=width, $
-        plottitle=plottitle, _EXTRA=EXTRA)
-    endelse
+       pmin=pmin, pmax=pmax, nfind=nfind, width=width, $
+       plottitle=plottitle, _EXTRA=EXTRA)
+   endelse
+
    ;----------
    ; Convert redshift (and error) from pixels to the conventional dimensionless
    ; value.  Do not modify any errors that are less than zero, since those
