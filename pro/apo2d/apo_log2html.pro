@@ -132,6 +132,7 @@ function apo_log_beginplate, platenum, mjd, camnames
    nextline = rowsep + colsep
    for icam=0, ncams-1 do $
     nextline = nextline + colsep + camnames[icam]
+   nextline = nextline + colsep + 'MST'
    textout = [textout, nextline]
 
    textout = [textout, apo_log_tableline(ncams)]
@@ -161,6 +162,7 @@ function apo_log_fields, pp, fields, printnames=printnames, formats=formats
 
    flavor = (*pp[igood[0]]).flavor
    expstring = strtrim(string( (*pp[igood[0]]).expnum ),2)
+   mststring = strtrim(string( (*pp[igood[0]]).mst ),2)
    tags = tag_names(*pp[igood[0]])
 
    for ifield=0, n_elements(fields)-1 do begin
@@ -182,7 +184,8 @@ function apo_log_fields, pp, fields, printnames=printnames, formats=formats
       nextline = nextline + colsep
 
       if (ifield EQ 0) then $
-       textout = rowsep + strupcase(flavor) + '-' + expstring + nextline $
+       textout = rowsep + strupcase(flavor) + '-' + expstring $
+        + nextline + mststring + colsep $
       else $
        textout = [textout, rowsep + nextline]
    endfor
@@ -206,7 +209,7 @@ pro apo_log2html, logfile, htmlfile
       htmlfile = strmid(logfile, 0, ipos) + '.html'
    endif
 
-   camnames = ['b1', 'r1', 'b2', 'r2', 'ALL']
+   camnames = ['b1', 'r1', 'b2', 'r2']
    ncams = n_elements(camnames)
 
    ; Lock the file to do this.
@@ -348,11 +351,12 @@ pro apo_log2html, logfile, htmlfile
          rstruct = create_struct('MJD', 0L, $
                                  'PLATE', 0L, $
                                  'EXPNUM', '', $
+                                 'MST', '', $
                                  'FLAVOR', '', $
                                  'CAMERA', '', $
                                  'TOTALSN2', 0.0 )
          ptotal = replicate(ptr_new(), ncams)
-         for icam=0, ncams-2 do begin
+         for icam=0, ncams-1 do begin
             ptotal[icam] = ptr_new(rstruct)
             for iexp=0, nexp-1 do begin
                if (keyword_set(pscience[icam,iexp])) then begin
@@ -361,12 +365,6 @@ pro apo_log2html, logfile, htmlfile
                endif
             endfor
          endfor
-         ptotal[ncams-1] = ptr_new(rstruct) ; 'ALL' camera
-         (*ptotal[ncams-1]).totalsn2 = 9999
-         for icam=0, ncams-2 do $
-          (*ptotal[ncams-1]).totalsn2 = min([ (*ptotal[ncams-1]).totalsn2, $
-           (*ptotal[icam]).totalsn2 ]) > 1.0e-10 ; Set to non-zero so that this
-                                                 ; field will be printed.
          textout = [ textout, $
           apo_log_fields(ptotal, 'TOTALSN2', $
            printnames='TOTAL (S/N)^2', formats='(f6.0)') ]
