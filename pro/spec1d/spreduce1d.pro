@@ -286,7 +286,7 @@ ormask = 0 ; Free memory
    flambda2fnu = wavevec^2 / 2.99792e18
 
    fthru = filter_thru(objflux * rebin(flambda2fnu,npixobj,nobj), $
-    waveimg=wavevec, mask=(objivar EQ 0), /norm)
+    waveimg=wavevec, mask=(objivar EQ 0))
    counts_spectro[*,0,*] = transpose(fthru) * 10^((48.6 - 2.5*17.)/2.5)
 
    ; Loop in reverse order, so that we look at the best-fit spectra last,
@@ -310,7 +310,7 @@ ormask = 0 ; Free memory
       endfor
 
       fthru = filter_thru(synflux * rebin(flambda2fnu,npixobj,nobj), $
-       waveimg=wavevec, /norm)
+       waveimg=wavevec)
       counts_synth[*,iper,*] = transpose(fthru) * 10^((48.6 - 2.5*17.)/2.5)
    endfor
 

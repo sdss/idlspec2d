@@ -160,8 +160,8 @@ pro filter_select, spallfile, outbase, filter_prefix, mjdlimits=mjdlimits, $
   waveimg=10d^loglam 
   flambda2fnu = 1.e+6 * waveimg^2 / (3631.*2.99792e18)
   flux=flux*rebin(flambda2fnu, nloglam, nselect)
-  fthru=filter_thru(flux, waveimg=waveimg, mask=(invvar eq 0), /norm, $
-                    filter_prefix=filter_prefix, /toair)
+  fthru=filter_thru(flux, waveimg=waveimg, mask=(invvar eq 0), $
+   filter_prefix=filter_prefix, /toair)
        
   for band=0, 4 do begin 
     spselect[*].counts_spectro[band]=fthru[*,band]
