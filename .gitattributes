@@ -2,6 +2,7 @@
 /Makefile -text
 bin/Makefile -text
 bin/aporsync.sh -text
+bin/hostcopy.sh -text
 bin/killdata.sh -text
 bin/mailhtml.sh -text
 bin/sos.sh -text
