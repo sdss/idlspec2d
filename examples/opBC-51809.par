@@ -31,55 +31,48 @@ typedef struct {
   DFACTION dfaction;         # repair action for defect
 } BC;
 
-bc "2 amp" 0 1 0    2048 0    3    BADBLK BADCOL
-bc "2 amp" 0 1 105  1    361  1    BADBLK BADCOL
-bc "2 amp" 0 1 114  1    201  1    BADBLK BADCOL
-bc "2 amp" 0 1 134  1    1870 1    BADBLK BADCOL
-bc "2 amp" 0 1 186  1    1834 1    BADBLK BADCOL
+bc "2 amp" 0 1 0    2048 0    3    BADBLK BADCOL   # ???
+bc "2 amp" 0 1 1754 2    1386 662  BADBLK BADCOL
+bc "2 amp" 0 1 1762 2    1471 577  BADBLK BADCOL   # extended 022602
 bc "2 amp" 0 1 1006 1    0    2048 BADBLK BADCOL   # Bad col MJD=51809->51812
 bc "2 amp" 0 1 1008 1    0    2048 BADBLK BADCOL   # Bad col MJD=51809->51812
 bc "2 amp" 0 1 1013 1    0    2048 BADBLK BADCOL   # Bad col MJD=51809->51812
 bc "2 amp" 0 1 1015 1    0    2048 BADBLK BADCOL   # Bad col MJD=51809->51812
-bc "2 amp" 0 1 1699 1    2027 1    BADBLK BADCOL
-bc "2 amp" 0 1 1754 2    1386 662  BADBLK BADCOL
-bc "2 amp" 0 1 1762 2    1471 557  BADBLK BADCOL
 
-bc "2 amp" 0 2 0    2048 0    3    BADBLK BADCOL
-bc "2 amp" 0 2 246  1    363  1    BADBLK BADCOL
-bc "2 amp" 0 2 371  1    578  1478 BADBLK BADCOL   # Added 040600
-bc "2 amp" 0 2 731  1    1540 508  BADBLK BADCOL   # Added 040600
-bc "2 amp" 0 2 1090 1    889  1159 BADBLK HOTCOL   # extended 040600
-bc "2 amp" 0 2 1181 2    1170 878  BADBLK HOTCOL   # extended 040600
-bc "2 amp" 0 2 1286 1    703  1    BADBLK BADCOL
-bc "2 amp" 0 2 1435 1    0    2048 BADBLK HOTCOL
+bc "2 amp" 0 2 0    2048 0    3    BADBLK BADCOL   # ???
+bc "2 amp" 0 2 370  2    0    2048 BADBLK BADCOL   # Full two columns, 010502
+bc "2 amp" 0 2 731  1    1538 510  BADBLK BADCOL   # Added 040600
+bc "2 amp" 0 2 1068 1    1400 648  BADBLK HOTCOL   # Added 010502 ???
+bc "2 amp" 0 2 1090 1    885  1163 BADBLK HOTCOL   # extended 040600
+bc "2 amp" 0 2 1181 2    1169 879  BADBLK HOTCOL   # extended 040600
+bc "2 amp" 0 2 1435 1    0    2048 BADBLK HOTCOL   # Trap at 1435,509 ???
 bc "2 amp" 0 2 1462 1    573  1475 BADBLK BADCOL   # extended 040600
+bc "2 amp" 0 2 1585 1    540  1508 BADBLK BADCOL   # Added 072001; extend 022602
+bc "2 amp" 0 2 1667 3    1140 3    BADBLK BADCOL   # Added 022602
 bc "2 amp" 0 2 1668 1    1138 910  BADBLK BADCOL   # extended 040600
 bc "2 amp" 0 2 1762 2    980  1068 BADBLK HOTCOL   # extended 040600
 bc "2 amp" 0 2 2036 1    382  1666 BADBLK BADCOL   # extended 040600
-bc "2 amp" 0 2 1090 1    889  1159 BADBLK HOTCOL   # Put back in, not sure
-                                                   # if whole col is bad.
 
-bc "2 amp" 0 3 173  1    306  1    BADBLK BADCOL
-bc "2 amp" 0 3 386  1    1576 472  BADBLK BADCOL   # extended 040600
-bc "2 amp" 0 3 1427 1    134  1    BADBLK BADCOL
-bc "2 amp" 0 3 1272 2    1206 842  BADBLK BADCOL
 bc "2 amp" 0 3 341  1    78   70   BADBLK BADCOL   # Badcol in pixflats
+bc "2 amp" 0 3 386  1    1576 472  BADBLK BADCOL   # extended 040600
+bc "2 amp" 0 3 1272 2    1206 842  BADBLK BADCOL
 
+bc "2 amp" 0 4 90   1    995  1053 BADBLK HOTCOL   # Added 040600
 bc "2 amp" 0 4 178  1    1615 433  BADBLK HOTCOL   # extended 040600
-bc "2 amp" 0 4 2011 1    912  1136 BADBLK HOTCOL   # extended 040600
-bc "2 amp" 0 4 1111 6    0    2048 BADBLK HOTCOL   # widened 040600
-bc "2 amp" 0 4 1196 1    1380 668  BADBLK BADCOL
-bc "2 amp" 0 4 1201 3    0    2048 BADBLK HOTCOL   # widened 040600
-bc "2 amp" 0 4 1585 2    0    2048 BADBLK HOTCOL
-bc "2 amp" 0 4 1709 1    0    2048 BADBLK HOTCOL
-bc "2 amp" 0 4 1942 1    0    2048 BADBLK HOTCOL
+bc "2 amp" 0 4 306  2    711  1337 BADBLK HOTCOL   # Added 040600
 bc "2 amp" 0 4 642  1    0    2048 BADBLK HOTCOL   # Added 040600
 bc "2 amp" 0 4 674  1    700  1348 BADBLK HOTCOL   # Added 040600
-bc "2 amp" 0 4 934  1    605  1443 BADBLK HOTCOL   # Added 040600
-bc "2 amp" 0 4 1379 1    603  1445 BADBLK HOTCOL   # Added 040600
-bc "2 amp" 0 4 879  1    1167  881 BADBLK HOTCOL   # Added 040600
-bc "2 amp" 0 4 1893 1    1011 1037 BADBLK HOTCOL   # Added 040600
-bc "2 amp" 0 4 90   1    998  1050 BADBLK HOTCOL   # Added 040600
-bc "2 amp" 0 4 306  2    711  1337 BADBLK HOTCOL   # Added 040600
+bc "2 amp" 0 4 879  1    1167 881  BADBLK HOTCOL   # Added 040600
+bc "2 amp" 0 4 934  1    600  1448 BADBLK HOTCOL   # Added 040600
+bc "2 amp" 0 4 1112 4    0    2048 BADBLK HOTCOL   # widen 040600, thin 010602
+bc "2 amp" 0 4 1196 1    1380 668  BADBLK BADCOL
+bc "2 amp" 0 4 1201 1    720  30   BADBLK HOTCOL   # widened 040600
+bc "2 amp" 0 4 1379 1    598  1450 BADBLK HOTCOL   # Added 040600
+bc "2 amp" 0 4 1585 1    0    2048 BADBLK HOTCOL
+bc "2 amp" 0 4 1586 1    580  40   BADBLK HOTCOL   # Added 072001
+bc "2 amp" 0 4 1709 1    0    2048 BADBLK HOTCOL
+bc "2 amp" 0 4 1893 1    1010 1038 BADBLK HOTCOL   # Added 040600
+bc "2 amp" 0 4 1942 1    0    2048 BADBLK HOTCOL
+bc "2 amp" 0 4 2011 1    906  1142 BADBLK HOTCOL   # extended 040600
 bc "2 amp" 0 4 1009 14   0    2048 BADBLK BADCOL   # Bad col MJD=51809->51812
 
