@@ -141,4 +141,8 @@ spchunklist     103 1964 1968 special   "Low-z + BCG + Deep LRG"
 spchunklist     100 1969 2037 main      ""
 spchunklist     104 2038 2057 special   "SEGUE bright"
 spchunklist     105 2058 2077 special   "SEGUE faint"
+spchunklist     106 2078 2078 special   "SEGUE NGC 2420 bright"
+spchunklist     107 2079 2079 special   "SEGUE NGC 2420 faint"
+spchunklist     99A 2080 2087 special   ""
+spchunklist    100A 2088 2113 special   ""
 
