@@ -15,7 +15,7 @@
 ;   rawdir     - Search for raw data files in RAWDIR/MJD/*.
 ;                This should be an absolute file path, and we default to
 ;                '/usr/sdss/data05/spectro/rawdata'.
-;   astrolog   - Search for plug-map files in PLUGDIR/MJD/*.
+;   astrolog   - Search for plug-map files in ASTROLOG/MJD/*.
 ;                This should be an absolute file path, and we default to
 ;                '/usr/sdss/data05/spectro/astrolog'.
 ;   flatdir    - Directory for pixel flat files.  For now, default
@@ -64,7 +64,7 @@ pro apoall, rawdir, astrolog=astrolog, flatdir=flatdir, mjd=mjd, $
       if ((findfile('/usr/sdss/data05/spectro/rawdata'))[0] NE '') then $
        rawdir = '/usr/sdss/data05/spectro/rawdata' $
       else if ((findfile('/home/schlegel/data/rawdata'))[0] NE '') then $
-       rawdir = '/home/schlegel/data/rawdata' $
+       rawdir = '/scr0/data/rawdata' $
       else if ((findfile('rawdata'))[0] NE '') then $
        rawdir = './rawdata' $
       else begin
