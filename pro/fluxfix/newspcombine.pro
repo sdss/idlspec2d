@@ -49,7 +49,7 @@
 ;-
 ;------------------------------------------------------------------------------
 pro newspcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
-   minsn2=minsn2, smearinclude=smearinclude
+   minsn2=minsn2 
 
    if (NOT keyword_set(planfile)) then planfile = findfile('spPlancomb*.par')
    if (n_elements(adderr) EQ 0) then adderr = 0.03
@@ -209,14 +209,13 @@ pro newspcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
    if keyword_set(minsn2) then begin
       nsci = n_elements(sciname)
       framesn2 = fltarr(nsci)
+      mapname = strarr(nsci)
 
       for i=0,nsci-1 do begin
          checkhdr = headfits(sciname[i])
          if size(checkhdr,/tname) NE 'INT' then begin
            framesn2[i] = sxpar(checkhdr,'FRAMESN2')
-           cameras = strtrim(sxpar(checkhdr, 'CAMERAS'),2)
-           expstr = string(sxpar(checkhdr, 'EXPOSURE'), format='(i8.8)')
-           spectroid = strmid(cameras,1,1)
+           mapname[i] = strtrim(sxpar(checkhdr, 'NAME'), 2) 
          endif
       endfor
 
@@ -230,11 +229,32 @@ pro newspcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
    endif
 
    ;----------
+   ; Check that all files to be combined have the same plugmap
+   diff = where(mapname ne mapname[0], ndiff)
+   if ndiff gt 0 then begin
+     splog, 'ABORT: Files have different plugmaps!!'
+      cd, origdir
+      return
+   endif
+  
+   ;----------
+   ; Check for the presence of a new tsObj file
+
+   tsobjname = djs_filepath('tsObj-' + mapname[0] + '.fit', $
+               root_dir = extractdir)
+   if file_test(tsobjname) then begin
+      splog, 'Using fibermags from tsObj-' + mapname[0] 
+   endif else begin
+      splog, 'No new tsObj found ... using fibermags from plugmap'
+      tsobjname = ''
+   endelse 
+
+   ;----------
    ; Co-add the fluxed exposures
 
    spcoadd_fluxed_frames, sciname, combinefile, mjd=thismjd, $
     combinedir=combinedir, fcalibprefix=fcalibprefix, adderr=adderr, $
-    docams=docams, plotsnfile=plotsnfile
+    docams=docams, plotsnfile=plotsnfile, tsobjname = tsobjname
 
    ;----------
    ; Close plot file - S/N plots are then put in the PLOTSNFILE file.
