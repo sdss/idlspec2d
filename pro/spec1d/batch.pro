@@ -6,7 +6,8 @@
 ;   Batch
 ;
 ; CALLING SEQUENCE:
-;   batch,
+;   batch, topdir, localfile, outfile, protocol, remotehost, remotedir, $
+;    command, [ priority=, wtime= ]
 ;
 ; INPUTS:
 ;   topdir     - Local top-level directory for input and output files.
@@ -15,6 +16,10 @@
 ;   localfile  - Array of pointers to input files on local machine [NPROGRAM]
 ;   outfile    - Array of pointers to output files created on remote machine
 ;                and copied to local machine upon completion [NPROGRAM]
+;   protocol   - List of protocols for remote hosts.  Valid values are:
+;                'ssh', 'ssh1', 'ssh2', 'rsh', or ''.  One must set to
+;                no protocol ('') if the remote host name is 'localhost'.
+;                Otherwise, one must always set a protocol.
 ;   remotehost - List of remote hosts [NHOST]
 ;   remotedir  - List of remote directories; scalar or [NHOST]
 ;   command    - Command to execute to begin a job; scalar or [NPROGAM]
@@ -106,7 +111,18 @@ function create_host_list, protocol, remotehost, remotedir, topdir
    hostlist[*].remotedir = remotedir
    hostlist[*].protocol = protocol
 
-   for ihost=0, n_elements(hostlist)-1 do begin
+   for ihost=0, nhost-1 do begin
+      if (hostlist[ihost].remotehost EQ 'localhost') then begin
+         if (keyword_set(hostlist[ihost].protocol)) then $
+          message, 'It is invalid to specify a protocol for host=localhost'
+      endif else begin
+         if (NOT keyword_set(hostlist[ihost].protocol)) then $
+          message, 'Protocol needed for remote host ' $
+           + hostlist[ihost].remotehost
+      endelse
+   endfor
+
+   for ihost=0, nhost-1 do begin
       if (keyword_set(hostlist[ihost].remotedir)) then begin
          case hostlist[ihost].protocol of
             'ssh' : hostlist[ihost].cpstring = 'scp'
