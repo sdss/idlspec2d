@@ -119,6 +119,7 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
    endif else begin
       yrange = minmax(synflux)
       if (yrange[0] EQ yrange[1]) then yrange = minmax(objflux)
+      yrange[0] = yrange[0] < 0 ; Include Y=0 in the plot
       ymin = 1.2 * yrange[0] - 0.2 * yrange[1] < 0
       ymax = -0.2 * yrange[0] + 1.2 * yrange[1]
       if (ymax EQ ymin) then ymax = ymin + 1
