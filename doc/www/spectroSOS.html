@@ -430,9 +430,14 @@ and
 <B><FONT COLOR="#FF0000">ABORT</FONT></B>
 messages that can appear if the pipeline runs into trouble when processing
 a frame.  These messages appear at the bottom of each table.
-Each one-line message begins with the procedure name that encountered the
-trouble, the file name that it was working on, WARNING or ABORT,
+Each one-line message begins with the relevant file name, WARNING or ABORT,
 then a brief plain-text message.
+
+<P>
+Note that a single problem may cascade into a large number of warning
+messages.  For example, an out-of-focus spectrograph will first produce
+the "Median spatial widths" message, probably followed by warnings about
+bad sky-residuals.
 
 <P>
 The following messages may appear:
@@ -516,6 +521,13 @@ The following messages may appear:
     There can also be a scattered light contribution just from a very
     bright sky, or if there are super-bright objects on some fibers that
     are scattering or bleeding light across the CCD.
+<LI><B>Median spatial widths = ...</B> <BR>
+    The spatial widths of the fibers typically are gaussians with a
+    sigma of 0.85 to 1.05 pixels.  If the sigma is larger than 1.10 pixels
+    in any of the 4 quadrants of a CCD (lower-left, lower-right, upper-left,
+    upper-right), then this warning is triggered.  It means
+    that either the spectrographs are out of focus, or the slit-heads are
+    not properly latched.
 <LI><B>Too few sky fibers to model sky-sub variance</B> <BR>
     There are not enough good sky fibers on the CCD.  This will only happen
     if for some reason there were far fewer than the mandated 16 sky fibers
@@ -542,15 +554,16 @@ The following messages may appear:
     This means that, somehow, there is excess light down the fibers that
     varies across the plate.  This could be due to a light source near the
     telescope, or possibly a bright, non-uniform sky.  The threshhold is
-    set at chi=2.  Note that other, horrendous problems (like a warm CCD)
-    could also trigger this.
+    set at chi=2.  Note that other, horrendous problems (like a warm CCD,
+    scattered light, or out-of-focus spectrographs) could also trigger this.
+    In that case, there should be relevant warning messages preceding this one.
 <LI><B>Red Monster at ....</B> <BR>
     This warning is triggered if we see bad sky residuals (above) that
     is specifically in the wavelength range of about 6400-6600 Ang.
     We think this happens when the handpaddle is still plugged in,
     in which case the observers should unplug it immediately.
     The treshhold is set at chi=2, and the worst that we have ever seen
-    is at about the level chi=6  The last we definitively saw this was on
+    is at about the level chi=6  The last time we definitively saw this was on
     plate 426 on 3/4 Dec 2000 (MJD 51882).
 <LI><B>SOS disk is ...% full</B> <BR>
     The specified disk on sos.apo is more than 95% full.  This could be
