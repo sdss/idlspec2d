@@ -15,6 +15,8 @@
 ;                then select all 'main' survey plates with QSURVEY=1
 ;                in the plate list file (which are required to be unique
 ;                tiles with good quality observations)
+;   nkeep      - Number of PCA templates to keep (and to use for
+;                noisy data replacement); default to 2.
 ;   zrange     - 2-element array with redshift range for fitting; if not set,
 ;                then call this routine iteratively with redshift ranges
 ;                starting at [0,0.05] and extending to [0.45,0.50], spaced
@@ -56,11 +58,14 @@
 pro pca_lrgtest, platenums, nkeep=nkeep, zrange=zrange
 
    if (NOT keyword_set(zrange)) then begin
-      for z1=0.0, 0.45, 0.05 do begin
+      for z1=0.0, 0.46, 0.05 do begin
          pca_lrgtest, platenums, nkeep=nkeep, zrange=[z1,z1+0.05]
       endfor
       return
    endif
+
+   ;----------
+   ; Set defaults
 
    wavemin = 2500.
    wavemax = 9200.
@@ -68,14 +73,16 @@ pro pca_lrgtest, platenums, nkeep=nkeep, zrange=zrange
    niter = 10
    if (NOT keyword_set(nkeep)) then nkeep = 2
    minuse = 5
+   outfile = string(long(zrange[0]*100), long(zrange[1]*100), $
+    format='("spLRG_", i3.3, "_", i3.3, ".fits")')
+
+   ;----------
+   ; Get the list of plates if not specified
 
    if (NOT keyword_set(platenums)) then begin
       platelist, plist=plist
       platenums = plist[ where(plist.qsurvey) ].plate
    endif
-
-   outfile = string(long(zrange[0]*100), long(zrange[1]*100), $
-    format='("spLRG_", i3.3, "_", i3.3, ".fits")')
 
    ;----------
    ; Read the input spectra.
@@ -151,7 +158,8 @@ ormask = 0 ; Free memory
    for i=0, n_elements(eigenval)-1 do $
     sxaddpar, hdr, 'EIGEN'+strtrim(string(i),1), eigenval[i]
    for i=0, n_elements(platenums)-1 do $
-    sxaddhist, 'Plate '+string(platenums[i]), hdr
+    sxaddhist, 'Plate ' + strtrim(platenums[i],2) + ' with ' $
+     + strtrim(long(total(zans.plate EQ platenums[i])),2) + ' galaxies', hdr
 
    mwrfits, pcaflux, outfile, hdr, /create
 
