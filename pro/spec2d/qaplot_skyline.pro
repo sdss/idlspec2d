@@ -19,7 +19,7 @@
 ;   wset       - Wavelength solution
 ;
 ; OPTIONAL KEYWORDS:
-;   fibermask  - Mask of 0 for bad fibers and 1 for good fibers [NFIBER]
+;   fibermask  - Fiber status bits, set nonzero for bad status [NFIBER]
 ;   dwave      - Half-width about LWAVE for fitting sky line;
 ;                default to 5.0 Ang
 ;   filename   - File name to use for TITLE of plot

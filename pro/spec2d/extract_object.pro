@@ -27,7 +27,7 @@
 ;   lambda     - air wavelengths corresponding to xarc
 ;   xtrace     - spatial traces from flat field
 ;   fflat      - 1d flat field vectors
-;   fibermask  - information bits on fiber status
+;   fibermask  - Fiber status bits, set nonzero for bad status [NFIBER]
 ;
 ; REQUIRED KEYWORDS:
 ;   color      - camera color (red or blue)

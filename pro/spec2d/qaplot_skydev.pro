@@ -17,7 +17,7 @@
 ;   color      - string specifying 'red' or 'blue' spectra
 ;
 ; OPTIONAL KEYWORDS:
-;   fibermask  - Mask of 0 for bad fibers and 1 for good fibers [NFIBER]
+;   fibermask  - Fiber status bits, set nonzero for bad status [NFIBER]
 ;   filename   - File name to use for TITLE of plot
 ;
 ; OUTPUTS:

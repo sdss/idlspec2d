@@ -14,7 +14,7 @@
 ;   fflat      - Array of flat-field flat-field vectors [Nrow,Ntrace]
 ;
 ; OPTIONAL KEYWORDS:
-;   fibermask  - Mask of 0 for bad fibers and 1 for good fibers [NFIBER]
+;   fibermask  - Fiber status bits, set nonzero for bad status [NFIBER]
 ;   minval     - Minimum value to consider good for flat-field;
 ;                default to 0.03.
 ;

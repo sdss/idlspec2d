@@ -15,7 +15,7 @@
 ;   wset       - Wavelength solution
 ;
 ; OPTIONAL KEYWORDS:
-;   fibermask  - Mask of 0 for good fibers [NFIBER]
+;   fibermask  - Fiber status bits, set nonzero for bad status [NFIBER]
 ;   minval     - Minimum value to use in fits to flat-field vectors;
 ;                default to 0.
 ;

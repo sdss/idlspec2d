@@ -16,7 +16,7 @@
 ;
 ; OPTIONAL KEYWORDS:
 ;   pixflatname- Name of pixel-to-pixel flat, produced with SPFLATTEN.
-;   fibermask  - Mask [NFIBER]
+;   fibermask  - Fiber status bits, set nonzero for bad status [NFIBER].
 ;                Note this is not modified, but modified copies appear
 ;                in the returned structures ARCSTRUCT and FLATSTRUCT.
 ;   lampfile   - Name of file describing arc lamp lines;

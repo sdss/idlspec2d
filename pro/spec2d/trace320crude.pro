@@ -37,7 +37,7 @@
 ;   ngrow      - For each trace, replace all centroids within NGROW rows
 ;                of a bad centroid with the predicted centroid locations.
 ;                Default to 5.
-;   fibermask  - Mask [NFIBER]
+;   fibermask  - Fiber status bits, set nonzero for bad status [NFIBER]
 ;
 ; OUTPUTS:
 ;   xset       - X centers for all traces

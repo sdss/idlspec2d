@@ -17,7 +17,7 @@
 ;   wset       - Wavelength solution
 ;
 ; OPTIONAL KEYWORDS:
-;   fibermask  - Mask of 0 for good fibers and non-zero for bad fibers [NFIBER]
+;   fibermask  - Fiber status bits, set nonzero for bad status [NFIBER]
 ;   pixelmask  - Mask of 0 for good pixels [NPIX,NFIBER]
 ;   relchi2struct  - Structure containing information of chi^2 fitting
 ;

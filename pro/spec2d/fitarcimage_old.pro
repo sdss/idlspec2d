@@ -20,7 +20,7 @@
 ;   color      - 'red' or 'blue'; not required if ANS is set
 ;   lampfile   - Name of file describing arc lamp lines;
 ;                default to the file 'lamphgcdne.dat' in the IDL path.
-;   fibermask  - Mask of 0 for bad fibers and 1 for good fibers [NFIBER]
+;   fibermask  - Fiber status bits, set nonzero for bad status [NFIBER]
 ;   func       - Name of fitting function; default to 'legendre'
 ;   aset       - Trace set for initial wavelength solution in row number ROW.
 ;   ncoeff     - Number of coefficients in fits.  This may be different than

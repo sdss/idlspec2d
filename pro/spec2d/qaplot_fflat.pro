@@ -15,7 +15,7 @@
 ;   wset       - Wavelength solution
 ;
 ; OPTIONAL KEYWORDS:
-;   fibermask  - Mask of 0 for bad fibers and 1 for good fibers [NFIBER]
+;   fibermask  - Fiber status bits, set nonzero for bad status [NFIBER]
 ;   plotsig    - Plot error bars out to this many standard deviations of
 ;                the fiber flats at each wavelength; only plot individual
 ;                outliers that are beyond this many deviations; default to 2.0
