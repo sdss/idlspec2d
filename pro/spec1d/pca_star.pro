@@ -1,3 +1,4 @@
+; Generate both an output FITS file and a PostScript plot.
 ;------------------------------------------------------------------------------
 pro spappend, newloglam, pcaflux, fullloglam, fullflux
 
@@ -40,22 +41,37 @@ pro pca_star
    wavemax = 0
    snmax = 100
    niter = 10
-   nkeep = 1
 
    get_juldate, jd
    mjdstr = string(long(jd-2400000L), format='(i5)')
    outfile = 'spEigenStar-' + mjdstr + '.fits'
+   plotfile = 'spEigenStar-' + mjdstr + '.ps'
+
+   dfpsplot, plotfile, /color
+   colorvec = ['default', 'red', 'green', 'blue']
 
    ;----------
    ; Read the input spectra
 
    eigenfile = filepath('eigeninput_star.dat', $
     root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='templates')
-   djs_readcol, eigenfile, skip=2, plate, mjd, fiber, zfit, subclass, $
-    format='(L,L,L,D,A)'
+   djs_readcol, eigenfile, skip=2, plate, mjd, fiber, zfit, $
+    starclass, starsubclass, $
+    format='(L,L,L,D,A,A)'
 
    readspec, plate, fiber, mjd=mjd, flux=objflux, invvar=objivar, $
     andmask=andmask, ormask=ormask, plugmap=plugmap, loglam=objloglam
+
+   ;----------
+   ; Insist that all of the requested spectra exist
+
+   imissing = where(plugmap.fiberid EQ 0, nmissing)
+   if (nmissing GT 0) then begin
+      for i=0, nmissing-1 do $
+       print, 'Missing plate=', plate[imissing[i]], ' mjd=', mjd[imissing[i]], $
+        ' fiber=', fiber[imissing[i]]
+      message, string(nmissing) + ' missing object(s)'
+   endif
 
    ;----------
    ; Do not fit where the spectrum may be dominated by sky-sub residuals.
@@ -75,24 +91,88 @@ ormask = 0 ; Free memory
    ;----------
    ; Find the list of unique star types
 
-   isort = sort(subclass)
-   classlist = subclass[isort[uniq(subclass[isort])]]
+   isort = sort(starclass)
+   classlist = starclass[isort[uniq(starclass[isort])]]
 
    ;----------
    ; LOOP OVER EACH STAR TYPE
 
    for iclass=0, n_elements(classlist)-1 do begin
 
-      indx = where(subclass EQ classlist[iclass])
+      ;----------
+      ; Find the subclasses for this stellar type
 
+      indx = where(starclass EQ classlist[iclass])
+      thesesubclass = starsubclass[indx]
+      isort = sort(thesesubclass)
+      subclasslist = thesesubclass[isort[uniq(thesesubclass[isort])]]
+      nsubclass = n_elements(subclasslist)
+
+      ;----------
+      ; Solve for 2 eigencomponents if we have specified subclasses
+      ; for this stellar type.
+
+      if (nsubclass EQ 1) then nkeep = 1 $
+       else nkeep = 2
       pcaflux = pca_solve(objflux[*,indx], objivar[*,indx], objloglam[*,indx], $
        zfit[indx], wavemin=wavemin, wavemax=wavemax, $
-       niter=niter, nkeep=nkeep, newloglam=newloglam, eigenval=eigenval)
+       niter=niter, nkeep=nkeep, newloglam=newloglam, $
+       eigenval=eigenval, acoeff=acoeff)
 
-      ; Normalize each stellar spectrum to a mean of 1.0
-      pcaflux = pcaflux / mean(pcaflux)
+; The following would plot the 0th object and overplot the best-fit PCA
+;ii=0
+;splot,10^newloglam,objflux[*,indx[ii]]
+;junk=pcaflux[*,0] * (acoeff[0,ii])[0] + pcaflux[*,1] * (acoeff[1,ii])[0]
+;soplot,10^newloglam,junk,color='red'
 
-      spappend, newloglam, pcaflux, fullloglam, fullflux
+      ;----------
+      ; Re-normalize the first eigenspectrum to a mean of 1
+      norm = mean(pcaflux[*,0])
+      pcaflux = pcaflux / norm
+      acoeff = acoeff * norm
+
+      ;----------
+      ; Now loop through each stellar subclass and reconstruct
+      ; an eigenspectrum for that subclass
+
+      for isub=0, nsubclass-1 do begin
+         ii = where(thesesubclass EQ subclasslist[isub])
+         if (nkeep EQ 1) then begin
+            thisflux = pcaflux
+         endif else begin
+            aratio = acoeff[1,ii] / acoeff[0,ii]
+            thisratio = median(aratio, /even)
+            thisflux = pcaflux[*,0] + thisratio * pcaflux[*,1]
+         endelse
+         spappend, newloglam, thisflux, fullloglam, fullflux
+         if (NOT keyword_set(namearr)) then namearr = subclasslist[isub] $
+          else namearr = [namearr, subclasslist[isub]]
+
+         if (isub EQ 0) then $
+          djs_plot, 10^newloglam, thisflux, color=colorvec[0], $
+           xtitle='Wavelength [Ang]', ytitle='Flux [arbitrary units]', $
+           title='STAR '+classlist[iclass]+': Eigenspectra Reconstructions' $
+         else $
+          djs_oplot, 10^newloglam, thisflux, $
+           color=colorvec[isub MOD n_elements(colorvec)]
+         nnew = n_elements(newloglam)
+         xyouts, 10^newloglam[nnew-1], thisflux[nnew-1], $
+          subclasslist[isub], align=-0.5, $
+          color=djs_icolor(colorvec[isub MOD n_elements(colorvec)])
+      endfor
+
+      if (nkeep GT 1) then begin
+         allratio = transpose(acoeff[1,*] / acoeff[0,*])
+         subnums = fix( strmid(thesesubclass,1,1) )
+         isort = sort(subnums)
+         djs_plot, subnums[isort], allratio[isort], ps=-4, $
+          xtitle='Subclass', ytitle='Eigenvalue Ratio (a_1/a_0)', $
+          title='STAR '+classlist[iclass]+': Eigenvalue Ratios'
+         for j=0, n_elements(indx)-1 do $
+          xyouts, subnums[isort[j]], allratio[isort[j]], align=0.0, orient=45, $
+           string(plate[indx[isort[j]]], fiber[indx[isort[j]]], $
+           format='(i4,"-",i3)')
+      endif
 
    endfor
 
@@ -104,13 +184,15 @@ ormask = 0 ; Free memory
    sxaddpar, hdr, 'COEFF1', objdloglam
    ; Add a space to the name below, so that 'F' appears as a string and
    ; not as a logical.
-   for iclass=0, n_elements(classlist)-1 do $
-    sxaddpar, hdr, 'NAME'+strtrim(string(iclass),2), classlist[iclass]+' '
+   for i=0, n_elements(namearr)-1 do $
+    sxaddpar, hdr, 'NAME'+strtrim(string(i),2), namearr[i]+' '
 
    ;----------
    ; Write output file
 
    mwrfits, float(fullflux), outfile, hdr, /create
+
+   dfpsclose
 
    return
 end
