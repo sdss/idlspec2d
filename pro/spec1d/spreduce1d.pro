@@ -312,9 +312,11 @@ endif
             wavemax:   0.0, $
             wcoverage: 0.0, $
             zwarning:  0L, $
+            sn_median: 0.0, $
             fracnsigma: fltarr(nfsig), $
             counts_spectro: fltarr(5), $
             counts_synth: fltarr(5), $
+            counts_sky: fltarr(5), $
             spec1_g:   sxpar(hdr, 'SPEC1_G'), $
             spec1_r:   sxpar(hdr, 'SPEC1_R'), $
             spec1_i:   sxpar(hdr, 'SPEC1_I'), $
@@ -331,6 +333,9 @@ endif
       res_all[*,iobj].wavemax = $
        10^(objloglam0 + (igood[(ngood-1)>0])*objdloglam) * (ngood NE 0)
       res_all[*,iobj].wcoverage = ngood * objdloglam
+      if (ngood GT 0) then $
+       res_all[*,iobj].sn_median = $
+        median( sqrt(objivar[igood,iobj]) * objflux[igood,iobj])
    endfor
 
    res_all.fracnsigma = fracnsigma
