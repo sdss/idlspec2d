@@ -22,9 +22,16 @@ BATCH1D,BATCH2D: Set the DISPLAY environment variable on remote machines
             remote machine.  Also, pipe the commands through the bash shell
             on the remote machine, which means the UPS environment must
             be set up in the .bashrc file on the remote machine.
+COLLIMATE: New proc for collimating the spectrographs.
+CREATE_LINESTRUCT: Make the LINEWAVE element double-precision.
 ELODIE_BEST: New function in development for finding best-fit Elodie spectrum.
+EXTRACT_IMAGE: The values in XSKY are noisy measurements, so replace them with
+            the predicted positions based upon the arc solution when making
+            the call to SKYLINE_DISPERSION() -- otherwise, it can crash
+            because the positions may not even be properly sorted!
 EXTRACT_OBJECT: Remove call to QAPLOT_SKYDEV, since that QA plot contains
             no more information than QAPLOT_SKYSHIFT.
+FINDOPFILE: Add /silent option.
 FITARCIMAGE: List the (0-indexed) fiber numbers that in which
             any or all arc centroids are fixed.
 FITDISPERSION: Re-organization of this code  Add support for SIGMA being
@@ -43,6 +50,8 @@ LINEBACKFIT: Force the output sigmas to be non-negative (which also
             Remove any lines where LINENPIX=0 by setting its AREA,EW to zero
             and their errors to negative error codes, and remove from YFIT.
             Evaluate YFIT even at points not included in the fit (if INVVAR=0).
+            Add SIGGUESS option, and allow SIGGUESS and ZGUESS to be either
+            scalars or vectors (one per line fit).
 PLATECOMPARE: Fix 1-character typo preventing selecting the MJD
             when using the TOPDIR keyword also.
             Pass TOPDIR to READSPEC rather than explicitly resetting
@@ -67,6 +76,8 @@ READSPEC: Add TOPDIR input keyword and ZLINE,LINEFLUX outputs.
             Use DIMS0 keyword in primary header of spZall,spZline files
             if it exists to determine the dimensions of [NPER,NOBJECT]
             multi-dimensional arrays.
+            Option to return OBJHDR.
+SDSSPROC: Add /silent option.
 SKYSUBTRACT: Trigger a warning if the airmass exceeds 2.5 (note this proc
             is also called by SoS).
 SPADD_GUIDERINFO: Fix crash condition when very little guiding info
@@ -76,6 +87,10 @@ SPECLINEFIT: Major re-organization of this procedure, allowing one to either
             pass a plate file name, or all the input arrays (as is now done
             from SPREDUCE1D).  Now fit to emission lines for all object
             types, not just galaxies.
+            Pass only those lines within the wavelength range of the spectrum
+            (+/- 6000 km/sec) to the line-fitting engine.  This saves CPU
+            time that would otherwise be spent determining that these lines
+            cannot be fit.
 SPPLAN2D,SPPLAN1D: Add more informational messages.
 SPPLAN2D: If $SPECLOG_DIR is not set, then use $ASTROLOG_DIR.
 SPREDUCE1D: Simply overwrite any existing spZ files, rather than
@@ -106,8 +121,9 @@ emlines.dat: Add Ly_alpha,N_V,C_IV,He_II,C_III] for QSOs.
             lines and other lines to have the same redshift.  One such
             example where the Balmer lines have a different (narrower!)
             width is 406/52238-362.
-opBC-50000.par,opBC-51813.par: Extended two bad columns in r1 to the top
-            of the CCD.
+idlspec2d.table: Added optional dependence upon "elodie" product.
+opBC-50000.par,opBC-51809.par,opBC-51813.par: Extended two bad columns
+            in r1 to the top of the CCD (cols 1201+1586).
 opHdrFix.par: Declare data bad on MJD 52336-52337 due to spectrograph
             mechanicals problems, and other problems from 52312-52337.
 opLimits.par: Add error values for FLAT/XSIGMA and ARC/DISPSIGMA.
@@ -132,11 +148,16 @@ In idlutils:
 ASINH2: Better asinh (from Blanton for PROFINTERP procedure).
 BSPLINE_ITERFIT: Always reset OUTMASK so that the input value does not matter.
             Set YFIT to all zeros in the case that the fit fails.
+EX_MAX_PLOT: Moved from /math to /plot.
+FAST_FIT_SERSIC: New proc.
 FIT_SERSIC,PROFINTERP,SERSIC: Bug fixes, and use ASINH2.
+HOGG_INTERVAL: New proc.
+MAGGIES2LUPS: New proc.
 MJD2DATELIST: New proc to construct a list of MJDs and date strings
             spanning a range of MJDs (useful for plot limits).
 RADEC_TO_FIELDS: Configurable option allfieldfile.
 SEEING_RADIAL: New proc.
+SERSIC_PARAMS: New proc.
 SXPAR: Landsman fixed to handle CRVALn of different type properly
 YANNY_READ: If reading a Yanny file aborts, then log the file name,
             the line number of the failure, and the line itself.
