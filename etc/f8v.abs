@@ -1,19 +1,22 @@
-#	Wavelength pairs (in Ang) of regions to mask when spline fitting
-#       spectra of spectrophoto standards (F8V)  
-#
-      3819.44      3841.49
-      3877.04      3899.42
-      3926.45      3944.57
-      3953.67      3981.07
-      4027.17      4168.69
-      4265.80      4415.70
-      4830.59      4954.50
-      6553.90      6576.58
-      6854.88      6918.31
-      7161.43      7211.08
-      7227.70      7328.25
-      7585.78      7709.04
-      8128.31      8203.52
-      8279.42      8336.81
-      8933.05      9015.71
-      9057.33      9099.13
+# Wavelength pairs (in Ang) of regions to mask when spline fitting
+# spectra of spectrophoto standards (F8V).
+
+   3765.4   3778.0   # H (2->11) at 3771.7 [vac Ang] +- 6.3 (500 km/s)
+   3792.7   3805.3   # H (2->10) at 3799.0 [vac Ang] +- 6.3 (500 km/s)
+   3823.7   3849.3   # H (2->9) at 3836.47 [vac Ang] +- 12.8 (1000 km/s)
+   3877.2   3903.2   # H (2->8) at 3890.15 [vac Ang] +- 13.0 (1000 km/s)
+   3924.0   3948.0   # Ca at 3934.8 [vac Ang]
+   3958.0   3984.4   # H-epsilon at 3971.20 [vac Ang] +- 13.2 (1000 km/s)
+                     # and Ca at 3969.6 [vac Ang]
+   4089.2   4116.6   # H-delta at 4102.90 [vac Ang] +- 13.7 (1000 km/s)
+   4260     4360     # ??
+   4327.2   4356.2   # H-gamma at 4341.69 [vac Ang] +- 14.5 (1000 km/s)
+   4846.5   4878.9   # H-beta at 4862.69 [vac Ang] +- 16.2 (1000 km/s)
+   6542.7   6586.5   # H-alpha at 6564.61 [vac Ang] +- 21.9 (1000 km/s)
+#  6850     6960     # Telluric region (removed already by TELLURIC_CORR)
+#  7161     7211     # Telluric region (removed already by TELLURIC_CORR)
+#  7228     7328     # Telluric region (removed already by TELLURIC_CORR)
+#  7560     7720     # Telluric region (removed already by TELLURIC_CORR)
+#  8128     8204     # Telluric region (removed already by TELLURIC_CORR)
+   8935     9040     # Telluric region - not removed right now by TELLURIC_CORR
+
