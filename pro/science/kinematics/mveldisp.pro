@@ -59,13 +59,14 @@
 ;   25-Mar-2000  Written by S. Burles, FNAL
 ;   29-Mar-2000  Modified by D. Finkbeiner & D. Schlegel, APO
 ;   25-Jun-2000  Cleaned up and commented by D. Finkbeiner, APO
+;   2000-Sep-11  Worked-over by the SWAT team
 ;-
 ;------------------------------------------------------------------------------
 pro mveldisp, objflux, objivar, objwave, starflux, starivar, starwave, $
  result, redshifts= redshifts, czmin=czmin, czmax=czmax, klo_cut=klo_cut, $
  khi_cut=khi_cut, maxsig=maxsig, sigmastep=sigmastep, doplot=doplot, $
- nodiff=nodiff, noquotient=noquotient, nobe=nobe, keep=keep, starnoise=starnoise, continuum=continuum
-       
+ nodiff=nodiff, noquotient=noquotient, nobe=nobe, keep=keep, $
+ starnoise=starnoise, continuum=continuum
 
 ; set keyword defaults
    if (NOT keyword_set(klo_cut)) then klo_cut = 1.0/128.
@@ -126,14 +127,14 @@ pro mveldisp, objflux, objivar, objwave, starflux, starivar, starwave, $
    ; Pad to larger (or equal) 2^N, and then doubled for isolated b.c.
 
 
-;;;;;
+;;;;; <- Mariangela's idea of a comment
 
    print, ' nobj nstar  Deltaredshift    veldisp_cc veldisp_q_d veldisp_q  veldisp_d  redshift'
 
 
      khi_cut_inp=khi_cut
 
-   FOR iobj=0, nobj-1 DO BEGIN 
+   FOR iobj=0, nobj-1 DO BEGIN
 
 
     if (keyword_set(continuum)) then begin
@@ -167,6 +168,7 @@ pro mveldisp, objflux, objivar, objwave, starflux, starivar, starwave, $
         xp=objwave[*,iobj]
         xpp=xp-alog10(1+redshifts[iobj])
         ppp=where(10^xpp GT czmin AND 10^xpp LT czmax)
+; cut off last 300 km/s
         czmaxgal=max(10^xpp[ppp]) - 300
         czmingal=min(10^xpp[ppp])
         if (redshifts[iobj] GT 0.16) then begin
@@ -175,7 +177,7 @@ pro mveldisp, objflux, objivar, objwave, starflux, starivar, starwave, $
 	endif 
         ppp1=where(10^xpp GT czmingal AND 10^xpp LT czmaxgal)
 
-
+; remove sky lines
         skyremove, objflux[ppp1, iobj], xp[ppp1], $
                    5570, 5590, ppp2, kcor
         ppp1=ppp1[ppp2]
@@ -272,12 +274,11 @@ pro mveldisp, objflux, objivar, objwave, starflux, starivar, starwave, $
    npixstar = (size(fluxstar))[1]
    npixbig = 2L^(fix(alog(npixstar > npixobj)/alog(2) + 1.9999))
 
-
         khi_cut = khi_cut_inp
 
 	mveldisp_fft, fluxobj, fluxivar, npixbig,  $
-        fluxfft, fluxfilt, fluxvar0, fluxvariancefft, fluxivar_pad,  $
-        khicut, klo_cut=klo_cut, khi_cut=khi_cut
+          fluxfft, fluxfilt, fluxvar0, fluxvariancefft, fluxivar_pad,  $
+          khicut, klo_cut=klo_cut, khi_cut=khi_cut
 
         khi_cut=khicut
 
@@ -287,8 +288,8 @@ pro mveldisp, objflux, objivar, objwave, starflux, starivar, starwave, $
      khigh, klo_cut=klo_cut, khi_cut=khi_cut, wave=starwave
 
    mfitredshift, starfilt, starivar_pad, starfilt, starivar_pad, $
-      nsearch=5, zfit=starcen, z_err=starcen_err, $
-      veldispfit=starsigma, veldisp_err=starsigma_err, doplot=doplot
+     nsearch=5, zfit=starcen, z_err=starcen_err, $
+     veldispfit=starsigma, veldisp_err=starsigma_err, doplot=doplot
 
    ;---------------------------------------------------------------------------
    ; LOOP OVER OBJECT SPECTRA
@@ -303,8 +304,8 @@ pro mveldisp, objflux, objivar, objwave, starflux, starivar, starwave, $
 
 
 	mveldisp_fft, fluxobj, fluxivar, npixbig,  $
-        fluxfft, fluxfilt, fluxvar0, fluxvariancefft, fluxivar_pad,  $
-        khigh, klo_cut=klo_cut, khi_cut=khi_cut
+          fluxfft, fluxfilt, fluxvar0, fluxvariancefft, fluxivar_pad,  $
+          khigh, klo_cut=klo_cut, khi_cut=khi_cut
 	
       mfitredshift, fluxfilt, fluxivar_pad, starfilt, starivar_pad, $
         nsearch=5, zfit=fitcen, z_err=fitcen_err, $
@@ -345,8 +346,8 @@ pro mveldisp, objflux, objivar, objwave, starflux, starivar, starwave, $
 	if (keyword_set(continuum)) then plot,wavestar,fluxstar,ps=0 $
         else plot,wavestar,fluxstar1,ps=0
 	if (keyword_set(continuum)) then djs_oplot,waveobj,fluxobj,ps=0,color='red'$
-        else  djs_oplot,waveobj,fluxobj1,ps=0,color='red' 	
-	
+        else  djs_oplot,waveobj,fluxobj1,ps=0,color='red'
+
       endif
 
 ; Should really store sigma squared, and allow negative values; error
@@ -372,7 +373,7 @@ pro mveldisp, objflux, objivar, objwave, starflux, starivar, starwave, $
 ; Let's try to compare from 80 pixels to 2.2 pixels
 
       if (NOT keyword_set(nodiff)) then $
-       answer = mfourier_difference(fluxfft, starshift, fluxvar0, $
+       answer = newdiff(fluxfft, starshift, fluxvar0, $
                 starvar0, testsigma=testsigma, deltachisq=1.0, $
                 lowlimit = 1.0/80.0, highlimit=1.0/5.0, doplot=doplot)
 

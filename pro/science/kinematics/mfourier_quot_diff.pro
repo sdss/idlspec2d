@@ -1,6 +1,6 @@
 ;+
 ; NAME:
-;   mfourier_quotient
+;   mfourier_quot_diff
 ;
 ; PURPOSE:
 ;   Perform a chi2 fit to the fourier quotient of a single
