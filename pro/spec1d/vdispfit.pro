@@ -276,7 +276,7 @@ function vdispfit, objflux, objivar, objloglam, $
 
       lastfile = thisfile
    endif else begin
-      splog, 'Using previously cached velocity dispersion templates'
+      print, 'Using previously cached velocity dispersion templates'
    endelse
 
    ;----------
