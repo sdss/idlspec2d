@@ -28,6 +28,7 @@ In this document:
      <LI><A HREF="#idlsetup">Setting Up IDL Tools</A>
      <LI><A HREF="#idldisplay">Displaying the Spectra From IDL</A>
      <LI><A HREF="#smdisplay">Displaying the Spectra From SM</A>
+     <LI><A HREF="#irafdisplay">Displaying the Spectra From IRAF</A>
   </OL>
   <LI><A HREF="#special">"Special" Plates</A>
   <LI><A HREF="#datamodel">What Is the Data Model?</A>
@@ -390,6 +391,35 @@ is the <A HREF="idlspec2d_doc.html#READSPEC">READSPEC</A> procedure.
 <P>
 The SM tools are still in development by Michael Strauss, Vijay Narayanan,
 and Robert Lupton.  Hopefully we can post this very shortly.
+
+<H4><A NAME="irafdisplay">Displaying the Spectra From IRAF</A></H4>
+
+<P>
+Use the splot task in the noao.onedspec package.  For example:
+
+<PRE>
+cl> noao
+no> onedspec
+on> splot spPlate-0311-51665.fits[0][*,1]   # plot fiber 1's flux
+on> splot spPlate-0311-51665.fits[1][*,1]   # plot fiber 1's inverse variance **
+on> splot spPlate-0311-51665.fits[0]        # interactively plot fluxes:
+Image line/aperture to plot (0:) (1): 65    # start w/fiber 65; use # to choose
+        # a new fiber, or ( and ) to move down and up by 1 in number; q to quit
+on> phelp splot                             # for detailed help on splot
+on> phelp onedspec                          # for summary of other tasks, e.g.:
+on> specplot spPlate-0311-51665.fits[0][*,1],spPlate-0311-51665.fits[0][*,2]
+        # stack and plot fibers 1 and 2 without overlapping
+</PRE>
+
+<P>
+If you are looking at early reductions, you may need to make a local copy of
+the spectral FITS file and delete the WCSDIM header keyword before using splot:
+
+<PRE>
+on> !cp spPlate-0311-51665.fits /my/directory/my_spPlate-0311-51665.fits
+on> cd /my/directory
+on> hedit my_spPlate-0311-51665.fits wcsdim del+ add- show+ update+ verify-
+</PRE>
 
 <H2><A NAME="datamodel">What Is the Data Model?</A></H2>
 
