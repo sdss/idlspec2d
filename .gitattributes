@@ -100,6 +100,7 @@ pro/spec2d/fitarcimage_old.pro -text
 pro/spec2d/fitdispersion.pro -text
 pro/spec2d/fitflatwidth.pro -text
 pro/spec2d/fitmeanx.pro -text
+pro/spec2d/fitsn.pro -text
 pro/spec2d/fitvacset.pro -text
 pro/spec2d/fitwithmx.pro -text
 pro/spec2d/flegendre.pro -text
