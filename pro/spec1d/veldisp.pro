@@ -58,20 +58,23 @@
 ; REVISION HISTORY:
 ;   25-Mar-2000  Written by S. Burles, FNAL
 ;   29-Mar-2000  Modified by D. Finkbeiner & D. Schlegel, APO
+;   25-Jun-2000  Cleaned up and commented by D. Finkbeiner, APO
 ;-
 ;------------------------------------------------------------------------------
-pro veldisp, objflux, objerr, starflux, starerr, result, klo_cut=klo_cut, $
+pro veldisp, objflux, objerr, objwave, starflux, starerr, starwave, result, klo_cut=klo_cut, $
  khi_cut=khi_cut, maxsig=maxsig, sigmastep=sigmastep, doplot=doplot, $
  nodiff=nodiff
        
-   IF (keyword_set(doplot)) THEN BEGIN
-      window, 0 &  window, 1 &  window, 2
-   ENDIF
-
-   if (NOT keyword_set(klo_cut)) then klo_cut = 1.0/30.0
+; set keyword defaults
+   if (NOT keyword_set(klo_cut)) then klo_cut = 1.0/128.
    if (NOT keyword_set(khi_cut)) then khi_cut = 1.0/3.0
    if (NOT keyword_set(maxsig)) then maxsig = 2.0
    if (NOT keyword_set(sigmastep)) then sigmastep = 0.2
+
+; prepare plot windows
+   IF (keyword_set(doplot)) THEN BEGIN
+      window, 0 &  window, 1 &  window, 2
+   ENDIF
 
    if (size(starflux, /n_dimen) NE 1) then $
     message, 'Stellar template is not 1-dimensional'
@@ -79,6 +82,7 @@ pro veldisp, objflux, objerr, starflux, starerr, result, klo_cut=klo_cut, $
    if (size(objflux, /tname) EQ 'DOUBLE') then PI = !dpi $
     else PI = !pi
 
+; check dimensions of everything
    ndim = size(objflux, /n_dimen)
    dims = size(objflux, /dimens)
    if (ndim EQ 1) then begin
@@ -99,6 +103,7 @@ pro veldisp, objflux, objerr, starflux, starerr, result, klo_cut=klo_cut, $
     OR size(objflux, /n_dimen) NE size(objerr, /n_dimen) THEN  $
     message, 'Dimensions of OBJFLUX and OBJERR do not match'
 
+; define structure to hold results
    tempresult = { $
        z                  : 0.0, $
        z_err              : 0.0, $
@@ -121,27 +126,11 @@ pro veldisp, objflux, objerr, starflux, starerr, result, klo_cut=klo_cut, $
    ;---------------------------------------------------------------------------
    ; Compute FFT for stellar template
 
-   tstarflux = djs_maskinterp(starflux, starerr LE 0.0, /const)
-   tstarerr = starerr
+   veldisp_fft, starflux, starerr, npixbig, starfft,  $
+     starfilt, starvar0, starvariancefft, $
+     klo_cut=klo_cut, khi_cut=khi_cut, wave=starwave, keep=[3500, 6100]
 
-   ; Normalize the star flux to be near unity
-   normstar = djs_mean(tstarflux) > djsig(tstarflux)
-   tstarflux = tstarflux / normstar
-   tstarerr = tstarerr / normstar
-
-   fft_apodize, tstarflux, tstarerr
-
-   tstarflux = [tstarflux, fltarr(npixbig-npixstar)]
-   tstarerr = [tstarerr, fltarr(npixbig-npixstar)]
-
-   starfft = fft(tstarflux) * npixbig
-   starvariancefft = fft(tstarerr^2) * npixbig
-   starvar0 = float(starvariancefft[0])
-
-   ; Band-pass filter the star spectrum
-   starfilt = bandpassfilter(starfft, klo_cut=klo_cut, khi_cut=khi_cut)
-
-   fitredshift, starfilt, starfilt, $
+   fitredshift, starfilt, starerr, starfilt, starerr, $
       nsearch=5, zfit=starcen, z_err=starcen_err, $
       veldispfit=starsigma, veldisp_err=starsigma_err, doplot=doplot
 
@@ -151,33 +140,25 @@ pro veldisp, objflux, objerr, starflux, starerr, result, klo_cut=klo_cut, $
    print,'    Gal    z      z_err   vel_cc (err)  vel_q  (err)' + $
     '  vel_d  (err)  alpha_d  alpha_q'
 
-   for iobj=0, nobj-1 do begin
+   FOR iobj=0, nobj-1 DO BEGIN 
 
-      tempflux = objflux[*,iobj]
-      temperr = objerr[*,iobj]
+      fluxerr = objerr[*, iobj]
+      veldisp_fft, objflux[*,iobj], fluxerr, npixbig,  $
+        fluxfft, fluxfilt, fluxvar0, fluxvariancefft,  $
+        klo_cut=klo_cut, khi_cut=khi_cut
 
-      tempflux = djs_maskinterp(tempflux, temperr LE 0.0, /const)
-
-      ; Normalize the object flux to be near unity
-      normobj = djs_mean(tempflux) > djsig(tempflux)
-      tempflux = tempflux / normobj
-      temperr = temperr / normobj
-
-      fft_apodize, tempflux, temperr
-
-      tempflux = [tempflux, fltarr(npixbig-npixobj)]
-      temperr = [temperr, fltarr(npixbig-npixobj)]
-
-      fluxfft = fft(tempflux) * npixbig
-      fluxvariancefft = fft(temperr^2)  * npixbig
-      fluxvar0 = float(fluxvariancefft[0])
-
-      ; Band-pass filter the object spectrum
-      fluxfilt = bandpassfilter(fluxfft, klo_cut=klo_cut, khi_cut=khi_cut)
-
-      fitredshift, fluxfilt, starfilt, $
+      fitredshift, fluxfilt, fluxerr, starfilt, starerr, $
        nsearch=5, zfit=fitcen, z_err=fitcen_err, $
        veldispfit=galsigma, veldisp_err=galsigma_err, doplot=doplot
+
+; 2nd try
+      veldisp_fft, objflux[*,iobj], objerr[*,iobj], npixbig,  $
+        fluxfft, fluxfilt, fluxvar0, fluxvariancefft,  $
+        keep=[3500, 6100]*10.^(fitcen/10000.)
+      
+      fitredshift, fluxfilt, objerr[*, iobj], starfilt, starerr, $
+        nsearch=5, zfit=fitcen, z_err=fitcen_err, $
+        veldispfit=galsigma, veldisp_err=galsigma_err, doplot=doplot
 
       result[iobj].z = fitcen    ; This redshift is in pixels!
       result[iobj].z_err = fitcen_err
@@ -224,8 +205,9 @@ pro veldisp, objflux, objerr, starflux, starerr, result, klo_cut=klo_cut, $
 
       if (keyword_set(doplot)) then quoplot = 2 else quoplot = 0
       answerq = fourier_quotient(fluxfft, starshift, fluxvar0, $
-             starvar0, testsigma=testsigma, deltachisq=1.0, $
-             lowlimit = 1.0/80.0, highlimit=1.0/2.2, doplot=quoplot)
+             starvar0, testsigma2=testsigma^2, deltachisq=1.0, $
+             lowlimit = 1.0/250.0, highlimit=1.0/5., doplot=quoplot, $
+                                broadarr=broadarr)
 
       if (n_elements(answerq) EQ 4) then begin
          result[iobj].sigma_quotient = answerq[1]
