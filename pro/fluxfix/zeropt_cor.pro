@@ -6,8 +6,8 @@
 ;   Compute a zeropoint correction to the flux calibration 
 ;
 ; CALLING SEQUENCE:
-;   zeropt_cor, hdr, wave, flux, invvar, plugmap, fcor1_zpt = fcor1_zpt, $
-;   fcor2_zpt, fcor2_zpt, tsobj_dir = tsobj_dir, fibermags = fibermags
+;   zeropt_cor, hdr, wave, flux, invvar, plugmap, fcor1_zpt = , $
+;   fcor2_zpt = , tsobj_dir = , fibermags = 
 ;
 ; INPUTS:
 ;    hdr  -- a string array containing the image header
@@ -55,7 +55,7 @@
 ;-------------------------------------------------------------------------------
 
 pro zeropt_cor, hdr, wave, flux, invvar, plugmap, fcor1_zpt = fcor1_zpt, $
-    fcor2_zpt, fcor2_zpt, tsobj_dir = tsobj_dir
+    fcor2_zpt = fcor2_zpt, tsobj_dir = tsobj_dir, fibermags = fibermags
 
   ;----------------------------------------------------------------------------
   ; Get info from image header
