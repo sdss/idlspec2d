@@ -131,6 +131,30 @@ pro spflatave, mjd=mjd, mjstart=mjstart, mjend=mjend, mjout=mjout, $
 ;         aveimg = aveimg * maskimg
 
          ;----------
+         ; Keep pixels near the left and right edge that didn't have
+         ; the minimum counts in any of the pixel flats, and set those
+         ; pixels equal to unity.
+
+         ; MASKSUM will equal zero for any pixels with no good flats
+         if (nfile EQ 1) then $
+          masksum = (pixflatarr GT 0) $
+         else $
+          masksum = total(pixflatarr GT 0, 3)
+
+         for iy=0, naxis2-1 do begin
+            igood = where(masksum[*,iy] GT 0, ngood)
+            ; Don't do anything if the whole row is bad
+            if (ngood GT 0) then begin
+               ; Set left-most pixels to unity
+               if (igood[0] NE 0) then $
+                aveimg[*,0:igood[0]-1] = 1.0
+               ; Set right-most pixels to unity
+               if (igood[ngood-1] NE naxis1-1) then $
+                aveimg[igood[*,ngood-1]+1:naxis1-1] = 1.0
+            endif
+         endfor
+
+         ;----------
          ; Write the output file
 
          outfile = djs_filepath( string(mjout, camnames[icam], $
