@@ -17,8 +17,9 @@
 ;   plotmag    - Magnitude range for plotting; default to [15,21].
 ;   fitmag     - Magnitude range over which to fit (S/N) as function of mag;
 ;                default to [-1,0.5] mags around the fiducial magntidues
-;                at which we evaluate the fit.
-;                default to the same as PLOTMAG.
+;                at which we evaluate the fit.  But if there are fewer than
+;                20 points in the specified magnitude range, then set
+;                FITMAG[0] = 1.0.
 ;   plottitle  - Title for top of plot
 ;   plotfile   - Optional plot file
 ;
@@ -62,7 +63,7 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
 
    bandnames = ["u'","g'","r'","i'","z'"]
    slopelabel = " * "+bandnames
-   snlabel = '(S/N)^2 @ '+bandnames+' ='+string(snmag,format='(f6.2)')
+   snlabel = '(S/N)^2 @ '+bandnames+' ='+string(snmag,format='(f7.2)')
 
    iobj = where(strtrim(plug.objtype,2) NE 'SKY', nobj)
    if (nobj LT 3) then return
@@ -175,6 +176,8 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
        myfitmag = fitmag $
       else $
        myfitmag = snmag[bands[iband]] + [-1.0,0.5]
+      if (n_elements(where(mag GT myfitmag[0] AND mag LT myfitmag[1])) LT 20) $
+       then myfitmag[0] = 1.0
 
       snoise2 = fltarr(2)
       xloc = snmag[bands[iband]]
@@ -195,11 +198,16 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
          endif
       endif
 
+      ylimits = 10^[0.80 * !y.crange[0] + 0.20 * !y.crange[1], $
+                 0.35 * !y.crange[0] + 0.65 * !y.crange[1] ]
+      oplot, [myfitmag[0],myfitmag[0]], ylimits, linestyle=1
+      oplot, [myfitmag[1],myfitmag[1]], ylimits, linestyle=1
+
       ;----------
       ; Label the plot
 
       if (keyword_set(afit)) then $
-       xyouts, plotmag[0]+0.5, 0.9, string(format='(a,f5.2,f6.2,a)', $
+       xyouts, plotmag[0]+0.5, 0.9, string(format='(a,f6.3,f7.3,a)', $
         'log S/N = ', afit, slopelabel[bands[iband]])
 
       if (keyword_set(sigma)) then $
@@ -209,17 +217,17 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
        10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.93], $
        snlabel[bands[iband]]
 
-      djs_oplot, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.50], $
+      djs_oplot, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.57], $
          10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.85], psym=7, $
          symsize=symsize
-      djs_xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.53], $
+      djs_xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.60], $
          10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.83], $
          string(format='("Spec1: ", f5.1)', snoise2[0])
 
-      djs_oplot, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.50], $
+      djs_oplot, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.57], $
          10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.75], psym=6, $
          symsize=symsize
-      djs_xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.53], $
+      djs_xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.60], $
          10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.73], $
          string(format='("Spec2: ", f5.1)', snoise2[1])
 

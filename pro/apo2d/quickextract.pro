@@ -131,8 +131,12 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    endelse
 
    if (iobj[0] NE -1) then begin
-      coeffs = fitsn(plugsort[iobj].mag[icolor], meansn[iobj], $
-       fitmag=snmag+[-1.0,0.5])
+      fitmag = snmag+[-1.0,0.5]
+      if (n_elements(where(plugsort[iobj].mag[icolor] GT fitmag[0] $
+       AND plugsort[iobj].mag[icolor] LT fitmag[1])) LT 20) $
+       then fitmag[0] = 1.0
+
+      coeffs = fitsn(plugsort[iobj].mag[icolor], meansn[iobj], fitmag=fitmag)
       if (keyword_set(coeffs)) then $
        snoise2 = 10^(2.0 * poly(snmag, coeffs)) $ ; The 2.0 is to square the S/N
       else $
