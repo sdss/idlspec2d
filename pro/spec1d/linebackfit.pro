@@ -87,6 +87,8 @@
 ; EXAMPLES:
 ;
 ; BUGS:
+;   Do not use lines with no points to fit in the computation of
+;   degrees of freedom for other lines.
 ;
 ; DATA FILES:
 ;
@@ -307,7 +309,7 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
     * alog(10.) * 10.^lfit[lindgen(nline)*3+1]
    linestruct.linez         =  (10.^lfit[lindgen(nline)*3+1] / lambda - 1) $
     * (lfit[lindgen(nline)*3+1] GT 0) ; Set to to zero if the parameter is zero
-   linestruct.linesigma     = lfit[lindgen(nline)*3+2] * alog(10.) * cspeed
+   linestruct.linesigma     = abs(lfit[lindgen(nline)*3+2]) * alog(10.) * cspeed
    linestruct.linearea_err  = perror[lindgen(nline)*3+0] $
     * alog(10.) * 10.^lfit[lindgen(nline)*3+1]
    linestruct.linez_err     = perror[lindgen(nline)*3+1] $
