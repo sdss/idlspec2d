@@ -60,12 +60,13 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
-;   bspline_valu()
 ;   bspline_iterfit()
+;   bspline_valu()
 ;   djs_laxisgen()
 ;   djs_maskinterp()
 ;   djs_median()
 ;   pixelmask_bits()
+;   splog
 ;
 ; REVISION HISTORY:
 ;   02-Jan-2000  Written by D. Schlegel; modified from COMBINE2DOUT
