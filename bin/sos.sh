@@ -1,6 +1,6 @@
 #! /bin/sh
 #------------------------------------------------------------------------------
-# Check to see if "aporync.sh" is already running.  If not, then start it.
+# Check to see if "aporsync.sh" is already running.  If not, then start it.
 #
 # S. Burles, APO, 4 May 2000
 #------------------------------------------------------------------------------
