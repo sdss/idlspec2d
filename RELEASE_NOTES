@@ -13,12 +13,13 @@ SKYSUBTRACT: Merely clean out some commented-out code and update internal
 opLimits.par: Impose limits on EXPTIME for bias,arc,flat,smear.
            Impose limits on (S/N)^2 for smear exposures.
 spChunkList.par: Add chunks 40-42.
+spPlateList.par: Update to include list of DR1 plates.
 
 In idlutils:
 
 HOGG_OPLOT_COVAR: New ellipse plotting routine.
 YANNY_WRITE: Put quotes around empty strings.  Otherwise, this is not
-           a valid Yanny file.
+           a valid Yanny file.  Bug fix for when passing STNAMES.
 
 -------------------------------------------------------------------------------
 v4_9_8 (Apr 12, 2002 idlspec2d only) running on IDL 5.3 - 5.5
