@@ -137,6 +137,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    ;----------
    ; Find flavor, plate and MJD
 
+   splog, 'Using SDSSHEAD to read FITS header'
    hdr = sdsshead(fullname)
 
    flavor = strtrim(sxpar(hdr, 'FLAVOR'),2)
