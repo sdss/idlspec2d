@@ -68,7 +68,8 @@ echo "SPROBOT: Launched at "`date` UID=$UID PPID=$PPID
 
 mjdlist=''
 
-remotedir=`$SPROBOT_RSH $hostname ls -d /data/spectro/[56789]???? | sed -n 's/\/.*\///p'`
+# Remove the leading "/data/spectro" and the trailing "/" from the directory list.
+remotedir=`$SPROBOT_RSH $hostname ls -d /data/spectro/[56789]???? | sed 's/\/data\/spectro\///g'  | sed 's/\///g'`
 for mjdstr in $remotedir ; do
 
    #----------
