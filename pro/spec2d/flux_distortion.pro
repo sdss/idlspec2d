@@ -55,14 +55,12 @@
 ;               * exp{ a2*x + a3*y + a4*x*y + a5*x^2 + a6*y^2
 ;                + a7*x*LL + a8*y*LL 
 ;                + a9*LL*(SPECID EQ 1) + a10*LL*(SPECID EQ 2) }
-;                + a11*x*y*LL + a12*x^2*LL + a13*y^2*LL
+;                + a10*LL^2*(SPECID EQ 1) + a12*LL^2*(SPECID EQ 2) }
 ;   where x=XFOCAL, y=YFOCAL, LL = 1 - (5100 Ang/wavelength)^2
 ;
 ; EXAMPLES:
 ;
 ; BUGS:
-;   At the moment, I've turned off the quadratic terms in the exponent
-;   that also have LL, such as exp(x^2*LL).  That leaves 11 terms being used.
 ;
 ; PROCEDURES CALLED:
 ;   airtovac
@@ -102,6 +100,8 @@ function flux_distort_corrvec, coeff, wavevec, thisplug
         + coeff[8] * yy * lwave2 $
         + coeff[9] * lwave2 * (specid EQ 1) $ 
         + coeff[10] * lwave2 * (specid EQ 2) $
+        + coeff[11] * lwave2^2 * (specid EQ 1) $ 
+        + coeff[12] * lwave2^2 * (specid EQ 2) $
         )
 ;        + coeff[11] * xx*yy * lwave2 $
 ;        + coeff[12] * xx^2 * lwave2 $
@@ -245,7 +245,7 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
    maxiter2 = 50
    sigrej = 5.
    maxrej = ceil(0.05 * ntrim) ; Do not reject more than 5% of remaining objects
-   npar = 11
+   npar = 13
 
    parinfo = {value: 0.d0, fixed: 0, limited: [0b,0b], limits: [0.d0,0.d0]}
    parinfo = replicate(parinfo, npar)
@@ -268,9 +268,12 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
        niter=niter, status=status, /quiet)
       splog, 'MPFIT niter=', niter, ' status=', status
 
+      ; Print the chi^2 after masking rejected points
+      thischi2 = total((flux_distort_fn(coeff))^2)
+      splog, 'Iteration #', iiter, ' chi^2=', thischi2
+
       ; For each object, set CHIVEC equal to the worst value in the 3 filters
       chiarr = abs(reform(flux_distort_fn(coeff, /nomask), ntrim, 3))
-      splog, 'Iteration #', iiter, ' chi^2=', total(chiarr^2)
       chivec = (chiarr[*,0] > chiarr[*,1]) > chiarr[*,2]
 
       ; There was a bug in v5_0_0 of this code, before the /nomask option
