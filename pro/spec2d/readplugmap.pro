@@ -109,7 +109,7 @@ function readplugmap, plugfile, plugdir=plugdir, $
       if (keyword_set(tsobj)) then begin
          qexist = tsobj.psfflux[2] NE 0
          qsky = strmatch(plugmap[iobj].objtype,'SKY*')
-         if (total((qsky EQ 0) AND qexist) LT 0.9*total(sky EQ 0)) then begin
+         if (total((qsky EQ 0) AND qexist) LT 0.9*total(qsky EQ 0)) then begin
             splog, 'Discarding calibObj structure because < 90% matches'
             tsobj = 0
          endif
