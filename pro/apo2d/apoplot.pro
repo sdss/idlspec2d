@@ -140,11 +140,11 @@ pro apoplot1, plate, fiberid, mjd=mjd, expnum=allexpnum, nsmooth=nsmooth, $
    for iscience=0, nscience-1 do begin
       thisfile = filepath(PPSCIENCE[sindx[iscience]].scifile, root_dir=mjddir)
       if (iscience EQ 0) then begin
-         objsub = mrdfits(thisfile,0,range=column)
-         objsubivar = mrdfits(thisfile,1,range=column)
+         objsub = mrdfits(thisfile, 0, range=column, /silent)
+         objsubivar = mrdfits(thisfile, 1, range=column, /silent)
       endif else begin
-         objsub = [[objsub], [mrdfits(thisfile,0,range=column)]]
-         objsubivar = [[objsubivar], [mrdfits(thisfile,range=column)]]
+         objsub = [[objsub], [mrdfits(thisfile, 0, range=column, /silent)]]
+         objsubivar = [[objsubivar], [mrdfits(thisfile, range=column, /silent)]]
       endelse
    endfor
 
@@ -160,7 +160,7 @@ pro apoplot1, plate, fiberid, mjd=mjd, expnum=allexpnum, nsmooth=nsmooth, $
 ;      j = where(PPFLAT.plate EQ plate AND PPFLAT.camera EQ allcams[icam])
 ;      j = (reverse(j))[0] ; Select the last one
 ;      thisfile = filepath(PPFLAT[j].tsetfile, root_dir=mjddir)
-;      flat = mrdfits(thisfile,0,range=column)
+;      flat = mrdfits(thisfile, 0, range=column, /silent)
 ;      ; Apply this flat to corresponding science frames
 ;      for jj=0, n_elements(jscience)-1 do begin
 ;         objsub[*,jscience[jj]] = objsub[*,jscience[jj]] / flat ; zeros?
@@ -172,13 +172,13 @@ pro apoplot1, plate, fiberid, mjd=mjd, expnum=allexpnum, nsmooth=nsmooth, $
       j = (reverse(j))[0] ; Select the last one
       if (icam EQ 0) then $
        plug = mrdfits(filepath(PPFLAT[j].tsetfile, root_dir=mjddir), $
-        3, range=column)
+        3, range=column, /silent)
 
       ; Read the arc for this plate+camera
       j = where(PPARC.plate EQ plate AND PPARC.camera EQ allcams[icam])
       j = (reverse(j))[0] ; Select the last one
       thisfile = filepath(PPARC[j].wsetfile, root_dir=mjddir)
-      wset = mrdfits(thisfile,1)
+      wset = mrdfits(thisfile, 1, /silent)
       traceset2xy, wset, xarc, yarc
       thisloglam = yarc[*,column[0]]
       if (icam EQ 0) then loglam = thisloglam $
@@ -190,7 +190,7 @@ pro apoplot1, plate, fiberid, mjd=mjd, expnum=allexpnum, nsmooth=nsmooth, $
       calibhdr = headfits(fcalibfile)
       cwavemin = sxpar(calibhdr, 'WAVEMIN')
       cwavemax = sxpar(calibhdr, 'WAVEMAX')
-      calibset = mrdfits(fcalibfile, 1)
+      calibset = mrdfits(fcalibfile, 1, /silent)
       calibfac = bspline_valu(yarc[*,column[0]], calibset)
       for jj=0, n_elements(jscience)-1 do begin
          objsub[*,jscience[jj]] = objsub[*,jscience[jj]] / calibfac
@@ -379,10 +379,10 @@ pro apoplot, plate, fiberid, mjd=mjd, expnum=expnum, nsmooth=nsmooth, $
    endif
 
    ; Read in all the HDU's in the log file as structures
-   PPBIAS = mrdfits(logfile, 1)
-   PPFLAT = mrdfits(logfile, 2)
-   PPARC = mrdfits(logfile, 3)
-   PPSCIENCE = mrdfits(logfile, 4)
+   PPBIAS = mrdfits(logfile, 1, /silent)
+   PPFLAT = mrdfits(logfile, 2, /silent)
+   PPARC = mrdfits(logfile, 3, /silent)
+   PPSCIENCE = mrdfits(logfile, 4, /silent)
 
    ;----------
    ; If writing to a PostScript file, then all plots are in the same file
