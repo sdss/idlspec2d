@@ -282,11 +282,11 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    if (colorband EQ 'b') then begin
       icolor = 1
       wrange = [4000,5500] ; coverage of g-band
-      snmag = 20.2
+      snmag = 20.33 ; Changed from 20.20 as per PR #5642
    endif else begin
       icolor = 3
       wrange = [6910,8500] ; coverage of i-band
-      snmag = 19.9
+      snmag = 20.06 ; Changed from 19.90 as per PR #5642
    endelse
 
    ;----------
