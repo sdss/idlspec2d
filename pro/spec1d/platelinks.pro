@@ -85,8 +85,8 @@ pro platelinks, outdir, public=public
       junk = findfile(file1, count=ct)
       if (ct GT 0) then begin
          junk = fileandpath(file2, path=thisdir)
-         spawn, '\mkdir -p ' + thisdir
-         spawn, '\ln -s ' + file1 + ' ' + file2
+         spawn, ['mkdir', '-p', thisdir], /noshell
+         spawn, ['ln', '-s', file1, file2], /noshell
       endif
    endfor
 
@@ -108,8 +108,8 @@ pro platelinks, outdir, public=public
          junk = findfile(file1, count=ct)
          if (ct GT 0) then begin
             junk = fileandpath(file2, path=thisdir)
-            spawn, '\mkdir -p ' + thisdir
-            spawn, '\ln -s ' + file1 + ' ' + file2
+            spawn, ['mkdir', '-p', thisdir], /noshell
+            spawn, ['ln', '-s', file1, file2], /noshell
          endif
       endfor
    endfor
