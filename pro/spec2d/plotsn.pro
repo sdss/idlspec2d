@@ -170,12 +170,16 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
 
    ; Use the CALIBFLUX magnitudes instead of MAG, if they exist
    ; from the call to READPLUGMAP() that generated this structure.
-   ; Any very small fluxes have MAG=0 so that they are ignored in the plots.
+   ; For small fluxes, set MAG=0 so that they are ignored in the plots.
+   ; Also, if CALIBFLUX_IVAR exist for any of the objects, then set MAG=0
+   ; for the objects w/out it (e.g., for objects without calibObj photometry).
    plugc = plug
    if (tag_exist(plugc,'CALIBFLUX')) then begin
       minflux = 0.1
       plugc.mag = (22.5 - 2.5*alog10(plugc.calibflux > minflux)) $
        * (plugc.calibflux GT minflux)
+      if (total(plugc.calibflux_ivar GT 0) GT 0) then $
+       plugc.mag = plugc.mag * (plugc.calibflux_ivar GT 0)
    endif
 
    nobj = n_elements(plugc)
