@@ -12,6 +12,11 @@
 # But we want to pass the additional keyword (e.g.) plate=666 
 # sos_redo plate=666
 
+if [ $# = 0 ] ; then
+  echo remove2redo | idl
+  exit
+fi
+
 if [ $# = 1 ] ; then
   if [ ! `echo $1 | grep plate=` ] ; then
     ssh $1 sos_redo 
