@@ -53,6 +53,7 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   divideflat
 ;   djs_median()
 ;   djs_oplot
 ;   djs_plot
@@ -173,7 +174,6 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 
       if (badplace[0] NE -1) then pixelmask[badplace] = $
                    pixelmask[badplace] OR pixelmask_bits('NEARBADPIXEL')
-    
 
       ;------------------
       ; Extract the object image
@@ -230,7 +230,6 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
       endif
 
       xnow = xtrace + bestlag 
-     
 
       if (NOT keyword_set(widthset)) then begin 
         ; (1) Extraction profiles in every 8th row
