@@ -138,8 +138,8 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
                            'WAVEMAX', wavemax, $
                            'BESTCORR', bestcorr, $
                            'NLAMPS', nlamps, $
-                           'DISPSIGMA_QUADRANT', medwidth, $
-                           'DISPSIGMA', max(medwidth) )
+                           'WSIGMA_QUADRANT', medwidth, $
+                           'WSIGMA', max(medwidth) )
 
    return, rstruct
 end

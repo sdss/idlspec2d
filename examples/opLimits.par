@@ -84,10 +84,10 @@ speclimit red flat NGOODFIBER r2 0 310
 
 # Issue an error if the spatial widths are gaussians with sigma > 1.10 pix.
 
-speclimit red flat XSIGMA b1 1.05 1.0999999
-speclimit red flat XSIGMA b2 1.05 1.0999999
-speclimit red flat XSIGMA r1 1.05 1.0999999
-speclimit red flat XSIGMA r2 1.05 1.0999999
+speclimit red flat XSIGMA b1 1.05 1.10
+speclimit red flat XSIGMA b2 1.05 1.10
+speclimit red flat XSIGMA r1 1.05 1.10
+speclimit red flat XSIGMA r2 1.05 1.10
 
 speclimit red flat XSIGMA b1 1.10 9e9
 speclimit red flat XSIGMA b2 1.10 9e9
@@ -154,15 +154,15 @@ speclimit red arc NLAMPS r2 0 30
 
 # Issue an error if the wavelength widths are gaussians with sigma > 1.20 pix.
 
-speclimit red arc DISPSIGMA b1 1.05 1.0999999
-speclimit red arc DISPSIGMA b2 1.05 1.0999999
-speclimit red arc DISPSIGMA r1 1.05 1.0999999
-speclimit red arc DISPSIGMA r2 1.05 1.0999999
+speclimit red arc WSIGMA b1 1.05 1.10
+speclimit red arc WSIGMA b2 1.05 1.10
+speclimit red arc WSIGMA r1 1.05 1.10
+speclimit red arc WSIGMA r2 1.05 1.10
 
-speclimit red arc DISPSIGMA b1 1.10 9e9
-speclimit red arc DISPSIGMA b2 1.10 9e9
-speclimit red arc DISPSIGMA r1 1.10 9e9
-speclimit red arc DISPSIGMA r2 1.10 9e9
+speclimit red arc WSIGMA b1 1.10 9e9
+speclimit red arc WSIGMA b2 1.10 9e9
+speclimit red arc WSIGMA r1 1.10 9e9
+speclimit red arc WSIGMA r2 1.10 9e9
 
 # The sky levels were 0.15 e-/pix and 0.30 e-/pix in the blue and
 # cameras on MJD 51612 (8/9 March 2000).  Report a warning (yellow)
@@ -182,21 +182,21 @@ speclimit red science SKYPERSEC r2 1.20 9e9
 # For individual science exposures, only issue a warning (not an error)
 # for exposures with (S/N)^2 < 2.0
 
-speclimit yellow science SN2 b1 0 1.9999
-speclimit yellow science SN2 b2 0 1.9999
-speclimit yellow science SN2 r1 0 1.9999
-speclimit yellow science SN2 r2 0 1.9999
+speclimit yellow science SN2 b1 0 1.99
+speclimit yellow science SN2 b2 0 1.99
+speclimit yellow science SN2 r1 0 1.99
+speclimit yellow science SN2 r2 0 1.99
 
 # Issue warnings about total (S/N)^2 for any camera not hitting 15/pix
 # (yellow warning), or 13/pix (red warning).
 
-speclimit red TOTAL TOTALSN2 b1 0 12.9999
-speclimit red TOTAL TOTALSN2 b2 0 12.9999
-speclimit red TOTAL TOTALSN2 r1 0 12.9999
-speclimit red TOTAL TOTALSN2 r2 0 12.9999
+speclimit red TOTAL TOTALSN2 b1 0 12.99
+speclimit red TOTAL TOTALSN2 b2 0 12.99
+speclimit red TOTAL TOTALSN2 r1 0 12.99
+speclimit red TOTAL TOTALSN2 r2 0 12.99
 
-speclimit yellow TOTAL TOTALSN2 b1 13 14.9999
-speclimit yellow TOTAL TOTALSN2 b2 13 14.9999
-speclimit yellow TOTAL TOTALSN2 r1 13 14.9999
-speclimit yellow TOTAL TOTALSN2 r2 13 14.9999
+speclimit yellow TOTAL TOTALSN2 b1 13 14.99
+speclimit yellow TOTAL TOTALSN2 b2 13 14.99
+speclimit yellow TOTAL TOTALSN2 r1 13 14.99
+speclimit yellow TOTAL TOTALSN2 r2 13 14.99
 

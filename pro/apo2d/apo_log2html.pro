@@ -409,7 +409,7 @@ pro apo_log2html, logfile, htmlfile
             endfor
 
             formats = ['(f7.1)', '(f7.1)', '(f4.2)', '(i)', '(f5.2)']
-            fields = ['WAVEMIN', 'WAVEMAX', 'BESTCORR', 'NLAMPS', 'DISPSIGMA']
+            fields = ['WAVEMIN', 'WAVEMAX', 'BESTCORR', 'NLAMPS', 'WSIGMA']
             textout = [ textout, $
              apo_log_fields(parcs, fields, formats=formats) ]
          endfor
