@@ -16,6 +16,8 @@ cd $SPECTRO_DATA
 echo "platelist, /create" | idl
 echo "platemerge" | idl 2> /dev/null
 echo "platemerge, /public" | idl 2> /dev/null
+echo "platemerge, public='EDR'" | idl 2> /dev/null
+echo "platemerge, public='DR1'" | idl 2> /dev/null
 echo "zplot" | idl 2> /dev/null
 echo "platehist" | idl 2> /dev/null
 
