@@ -416,7 +416,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
     skysub, skysubivar, iskies=iskies, pixelmask=pixelmask, $
     fibermask=fibermask, upper=10.0, lower=10.0, tai=tai_mid, $
     dispset=dispset, npoly=nskypoly, nbkpt=nbkpt, $
-    relchi2struct=relchi2struct, newmask=newmask)
+    relchi2set=relchi2set, newmask=newmask)
    pixelmask = newmask
    if (NOT keyword_set(skystruct)) then return
 
@@ -457,9 +457,9 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    flambdaivar = skysubivar
    skyimg = flux - flambda
    sxaddpar, objhdr, 'PSFSKY', nskypoly, ' Order of PSF skysubtraction'
-   if (keyword_set(relchi2struct)) then skychi2 = mean(relchi2struct.chi2) $
-    else skychi2 = 0.0
-   sxaddpar, objhdr, 'SKYCHI2', skychi2, ' Mean chi^2 of sky-subtraction'
+;   if (keyword_set(relchi2struct)) then skychi2 = mean(relchi2struct.chi2) $
+;    else skychi2 = 0.0
+;   sxaddpar, objhdr, 'SKYCHI2', skychi2, ' Mean chi^2 of sky-subtraction'
 
    ;------------------------------------------
    ; Telluric correction called for 'red' side
@@ -483,6 +483,22 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    finalmask = pixelmask
    for itrace=0, ntrace-1 do $
     finalmask[*,itrace] = finalmask[*,itrace] OR fibermask[itrace]
+
+   ;----------
+   ; Get an estimate of the relative chi^2 at each pixel.
+   ; Do this with a simple linear interpolation.
+
+   if (keyword_set(relchi2set)) then begin
+      xx = 0
+      traceset2xy, vacset, xx, loglam
+;      rchi2img = interpol(relchi2struct.chi2, relchi2struct.wave, loglam)
+      rchi2img = bspline_valu(loglam, relchi2set)
+      skychi2 = mean(rchi2img)
+   endif else begin
+      rchi2img = 0 * flambda + 1.
+      skychi2 = 0.
+   endelse
+   sxaddpar, objhdr, 'SKYCHI2', skychi2, ' Mean chi^2 of sky-subtraction'
 
    ;----------
    ; Add keywords to object header
@@ -534,6 +550,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    mwrfits, plugsort, outname
    mwrfits, skyimg, outname
    mwrfits, superfit, outname
+   mwrfits, rchi2img, outname
    if (keyword_set(do_telluric)) then $
     mwrfits, telluricfactor, outname ; This array only exists for red frames.
    spawn, ['gzip', '-f', outname], /noshell
