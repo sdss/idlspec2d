@@ -147,6 +147,7 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
 ;   objsub = obj - fullfit * (objivar GT 0.0) ; No need to do this.
    objsub = obj - fullfit
 
+   monster, wave[*,iskies], objsub[*,iskies]
    ;----------
    ; Fit to sky variance (not inverse variance)
 
