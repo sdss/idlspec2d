@@ -63,6 +63,7 @@
 ;   fitansimage()
 ;   fitvacset()
 ;   fluxcorr()
+;   heliocentric()
 ;   locateskylines
 ;   mwrfits
 ;   pixelmask_bits()
@@ -73,6 +74,8 @@
 ;   qaplot_skysub
 ;   skysubtract
 ;   splog
+;   sxaddpar
+;   sxpar()
 ;   telluric_corr
 ;   tweaktrace
 ;
@@ -247,7 +250,7 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
         itrace = lindgen(ntrace)*nterms
 
         ;---------------------------------------------------
-        ;   Fitansimage is now hard wired for 320 fibers!!!!
+        ;   Fitansimage is now hard wired for 320 fibers!!!!???
 
         fitans = fitansimage(ansimage, nterms, ntrace, npoly, yrow, $
             tempflux, fluxm = [1,1,0], scatfit=scatfit)
@@ -306,7 +309,7 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
        highrej=highrej, lowrej=lowrej, npoly=0, whopping=whopping, $
        chisq=chisq, ymodel=ymodel2, pixelmask=pixelmask
 
-      ;------
+      ;------------------
       ; QA chisq plot for fit calculated in extract image (make QAPLOT ???)
 
       xaxis = indgen(N_elements(chisq)) + 1
@@ -324,14 +327,15 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
 
       ;------------------
       ; Flat-field the extracted object fibers with the global flat
+
       divideflat, flux, fluxivar, fflat, fibermask=fibermask
 
       lowflat = where(fflat LT 0.5)
       if (lowflat[0] NE -1) then pixelmask[lowflat] = $
                    pixelmask[lowflat] OR pixelmask_bits('LOWFLAT')
 
-      ;--------------------------------------------------------------
-      ;  Look for pixels where scattered light is dominating
+      ;------------------
+      ; Look for pixels where scattered light is dominating
 
       scatteredpix = where(extract_boxcar(scatfit, xnow, radius=2.0) GT flux)
       if (scatteredpix[0] NE -1) then pixelmask[scatteredpix] = $
@@ -354,8 +358,24 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
       if (NOT keyword_set(arcshift)) then $
        splog, 'WARNING: Cannot shift to sky lines'
 
-      ; ----------------------------------------
-      ;  fitvacset performs shift to skylines and fit to vacuum wavelengths
+      ;------------------
+      ; Apply heliocentric correction
+      ; Correct LAMBDA, which is used to shift to vacuum wavelengths.
+
+      helio=0.0
+      ra = sxpar(objhdr,'RA')
+      dec = sxpar(objhdr,'DEC')
+      tai = sxpar(objhdr,'TAI')
+      if (size(ra, /tname) NE 'INT' AND size(dec, /tname) NE 'INT' AND  $
+       size(tai, /tname) NE 'INT') then begin
+         helio = heliocentric(ra, dec, tai=tai)
+         sxaddpar, objhdr, 'HELIO_RV', helio, $
+            ' Heliocentric correction (added to velocities)'
+         lambda = lambda / (1 + helio/299792.458)
+      endif
+
+      ;------------------
+      ; Shift to skylines and fit to vacuum wavelengths
 
       vacset = fitvacset(xarc, lambda, wset, arcshift, ncoeff=arccoeff)
 
@@ -398,7 +418,7 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
          title=plottitle+objname
       endif
 
-      ;------------------------------------------
+      ;------------------
       ; Flux calibrate to spectrophoto_std fibers
 
       fluxfactor = fluxcorr(skysub, skysubivar, vacset, plugsort, $
@@ -416,7 +436,6 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
       ;  May want to move all of the telluric_corr and plotting into
       ;  new procedure: telluric_fit,flambda, flambdaivar, vacset, plugsort 
 
- 
       if (color EQ 'red')  then begin
 
          ;-----------------------------------------------
@@ -466,12 +485,12 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
   
       endif
 
-      ;------
+      ;------------------
       ; Interpolate over masked pixels, just for aesthetic purposes
 
       flambda = djs_maskinterp(flambda, flambdaivar EQ 0, /const, iaxis=0 )
 
-      ;------
+      ;------------------
       ; Add keywords to object header
 
       sxaddpar, objhdr, 'OSIGMA',  sigma, $
@@ -494,9 +513,9 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
       mwrfits, fibermask, outname
       mwrfits, fluxfactor, outname
 
-      ;--------------------------------------------------------------------
+      ;------------------
       ; Add telluricfactor if red
-      ;
+
       if (color EQ 'red') then mwrfits, telluricfactor, outname
 
    return
