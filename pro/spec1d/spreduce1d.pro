@@ -508,7 +508,6 @@ ormask = 0 ; Free memory
    ;----------
    ; Generate output headers for spZbest, spZall, spZline files.
 
-   splog, 'Writing output files'
    sxaddpar, hdr, 'NAXIS', 0
    sxdelpar, hdr, 'NAXIS1'
    sxdelpar, hdr, 'NAXIS2'
@@ -624,6 +623,8 @@ ormask = 0 ; Free memory
 
    ;----------
    ; Generate final QA plots
+
+   splog, 'Generating QA plots'
 
    if (keyword_set(plotfile)) then begin
       cpbackup, plotfile
