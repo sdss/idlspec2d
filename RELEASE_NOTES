@@ -3,6 +3,8 @@ EXTRACT_OBJECT: Set the "NEARWHOPPER" mask bits only for fibers within 2
           fibers of a bright fiber, but not the bright fiber itself.
           For the bright fibers, add the bit "WHOPPER" (added to the
           param file spMaskbits.par).
+            Changed the rejection thresholds yet again, and also uncommented
+          2-D sky subtraction to test.
 EXTRACT_OBJECT, SKYSUBTRACT: Exit gracefully in the case of no good sky
           fibers.  In that case, issue an "ABORT" log message, return
           SKYSTRUCT=0 from SKYSUBTRACT, then do not write an spFrame file.
@@ -37,6 +39,7 @@ SDSSPROC: Add VERSLOG, VERSFLAT keywords to specify versions of the
 SDSSPROC, SPCALIB, SPREDUCE, SPREDUCE2D: No longer pass the name of the pixel
           flat between all these files.  Instead, just let SDSSPROC find the
           correct one in the "specflat" product, in $SPECLOG_DIR/flats.
+SMOOTH_HALO: A new version of smooth halo, which should be closer to the truth.
 SPCOADD_FRAMES: Include MJDLIST keyword in spPlate header, which will be
                 the list of all MJD's used in an SPCOMBINE.
                 Add BUNIT keyword for the flux, inverse variance, and
