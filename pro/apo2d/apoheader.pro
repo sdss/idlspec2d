@@ -78,7 +78,7 @@ pro apoheader, expnum
          qdone = fits_wait(filename[icam], deltat=1, tmax=1, /header_only)
          if (qdone) then begin
 ;            thishdr = headfits(filename[icam])
-            thishdr = sdsshead(filename[icam])
+            thishdr = sdsshead(filename[icam], /do_lock)
             sxaddpar, thishdr, '(END-BEG', $
              sxpar(thishdr,'TAI-END') - sxpar(thishdr,'TAI-BEG')
             phdr[icam] = ptr_new(thishdr)

@@ -66,7 +66,7 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
 
    sdssproc, filename, flatimg, flativar, hdr=flathdr, $
     nsatrow=nsatrow, fbadpix=fbadpix, $
-    spectrographid=spectrographid, camname=camname
+    spectrographid=spectrographid, camname=camname, /do_lock
 
    ;-----
    ; Decide if this flat is bad

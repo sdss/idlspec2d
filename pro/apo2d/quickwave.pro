@@ -68,7 +68,7 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
    ; Read in image
 
    sdssproc, arcname, arcimg, hdr=archdr, color=color, camname=camname, $
-    nsatrow=nsatrow, fbadpix=fbadpix
+    nsatrow=nsatrow, fbadpix=fbadpix, /do_lock
 
    ;-----
    ; Decide if this arc is bad

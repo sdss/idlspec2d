@@ -125,7 +125,7 @@ pro remove2redo, mjd=mjd, plate=plate, expnum=expnum
          ; FITS headers...
          print, format='(".",$)'
 
-         hdr = sdsshead(fullname[i])
+         hdr = sdsshead(fullname[i], /do_lock)
          allexpnum[i] = sxpar(hdr, 'EXPOSURE')
          if (sxpar(hdr, 'PLATEID') EQ plate) then qthisplate[i] = 1B
       endfor

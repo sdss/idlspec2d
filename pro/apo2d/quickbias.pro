@@ -5,7 +5,7 @@ function quickbias, biasname
    ;----------
    ; Read in image
 
-   sdssproc, biasname, biasimg, biasivar, color=color, camname=camname
+   sdssproc, biasname, biasimg, biasivar, color=color, camname=camname, /do_lock
 
    ;----------
    ; Test how much of the image was masked by SDSSPROC

@@ -79,7 +79,7 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    ; Read in the raw science image
 
    sdssproc, rawfile, image, invvar, hdr=hdr, camname=camname, $
-    nsatrow=nsatrow, fbadpix=fbadpix
+    nsatrow=nsatrow, fbadpix=fbadpix, /do_lock
    colorband = strmid(camname,0,1)
    spectroid = strmid(camname,1,1)
    exptime = sxpar(hdr, 'EXPTIME')
