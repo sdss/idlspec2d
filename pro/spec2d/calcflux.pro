@@ -1,5 +1,5 @@
 pro calcflux, ansrow, prow, fluxrow, finvrow, wfixed, proftype, lTrace,nCoeff, $
-            squashprofile=squashprofile
+            pixelmask, squashprofile=squashprofile
 
      if keyword_set(squashprofile) then begin
        fluxrow = ansrow[lTrace]
@@ -20,7 +20,8 @@ pro calcflux, ansrow, prow, fluxrow, finvrow, wfixed, proftype, lTrace,nCoeff, $
 ; best estimate we can do
        finvrow = prow[iTrace]*prow[iTrace] 
 
-       bad = where(finite(fluxrow) EQ 0 OR finite(finvrow) EQ 0)
+       bad = where(finite(fluxrow) EQ 0 OR finite(finvrow) EQ 0 OR $
+                  (pixelmask AND pixelmask_bits('FULLREJECT')))
        if (bad[0] NE -1) then begin
          fluxrow[bad] = 0.0
          finvrow[bad] = 0.0
