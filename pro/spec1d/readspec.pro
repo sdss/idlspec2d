@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   readspec, plate, fiber, [mjd=, znum=, flux=, flerr=, invvar=, $
 ;    andmask=, ormask=, disp=, plugmap=, loglam=, wave=, tsobj=, $
-;    zans=, zline=, synflux=, lineflux=, objhdr=, topdir=, /silent ]
+;    zans=, zline=, synflux=, lineflux=, objhdr=, topdir=, /align, /silent ]
 ;
 ; INPUTS:
 ;   plate      - Plate number(s)
@@ -23,6 +23,9 @@
 ;                ZNUM-th best-fit; e.g., set ZNUM=2 for second-best fit.
 ;   topdir     - Top-level directory for data; default to the environment
 ;                variable $SPECTRO_DATA.
+;   align      - If set, then align all the spectra in wavelength.
+;                Also, LOGLAM and WAVE will be output as single vectors
+;                (since they are all the same) rather than as one per object.
 ;   silent     - If set, then call MRDFITS with /SILENT.
 ;
 ; OUTPUTS:
@@ -37,8 +40,10 @@
 ;   ormask     - OR-mask [NPIXEL,NFIBER]
 ;   disp       - Wavelength dispersion [NPIXEL,NFIBER]
 ;   plugmap    - Plug-map entries [NFIBER]
-;   loglam     - Log10-wavelength in log10-Angstroms [NPIXEL,NFIBER]
-;   wave       - Wavelength in Angstroms [NPIXEL,NFIBER]
+;   loglam     - Log10-wavelength in log10-Angstroms [NPIXEL,NFIBER],
+;                or the vector [NPIXEL] if /ALIGN is set
+;   wave       - Wavelength in Angstroms [NPIXEL,NFIBER],
+;                or the vector [NPIXEL] if /ALIGN is set
 ;   tsobj      - tsObj-structure output [NFIBER]
 ;   zans       - Redshift output structure [NFIBER]
 ;   zline      - Line-fit output structure [NFIBER,NLINE]
@@ -143,13 +148,14 @@ end
 ;------------------------------------------------------------------------------
 pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
  andmask=andmask, ormask=ormask, disp=disp, plugmap=plugmap, $
- loglam=loglam, wave=wave, tsobj=tsobj, zans=zans, zline=zline, $
+ loglam=loglam, tsobj=tsobj, zans=zans, zline=zline, $
  synflux=synflux, lineflux=lineflux, znum=znum, objhdr=objhdr, $
- topdir=topdir, silent=silent
+ coeffzero=coeff0, coeffone=coeff1, npix=npix, $
+ topdir=topdir, align=align, silent=silent
 
    common com_readspec, q_flux, q_flerr, q_invvar, q_andmask, q_ormask, $
     q_disp, q_plugmap, q_loglam, q_wave, q_tsobj, q_zans, q_zline, $
-    q_synflux, q_lineflux, q_mjd, q_objhdr
+    q_synflux, q_lineflux, q_mjd, q_objhdr, q_needwave
 
    platestr = string(plate,format='(i4.4)')
    if (NOT keyword_set(mjd)) then mjdstr = '*' $
@@ -171,7 +177,6 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       disp = 0
       plugmap = 0
       loglam = 0
-      wave = 0
       tsobj = 0
       zans = 0
       zline = 0
@@ -212,15 +217,11 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
        structyp='PLUGMAPOBJ')
    endif
 
-   if (q_loglam OR q_wave) then begin
+   if (q_needwave) then begin
       if (NOT keyword_set(objhdr)) then objhdr = headfits(filename)
-      naxis1 = sxpar(objhdr, 'NAXIS1')
-;      naxis2 = sxpar(objhdr, 'NAXIS2')
-      coeff0 = sxpar(objhdr, 'COEFF0')
-      coeff1 = sxpar(objhdr, 'COEFF1')
-      loglam = coeff0 + coeff1 * findgen(naxis1)
-      loglam = rebin(loglam, naxis1, n_elements(rownums))
-      if (q_wave) then wave = 10^loglam
+      coeff0 = replicate(sxpar(objhdr, 'COEFF0'), n_elements(rownums))
+      coeff1 = replicate(sxpar(objhdr, 'COEFF1'), n_elements(rownums))
+      npix = sxpar(objhdr, 'NAXIS1')
    endif
 
    if (q_tsobj) then begin
@@ -323,19 +324,19 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
  andmask=andmask, ormask=ormask, disp=disp, plugmap=plugmap, $
  loglam=loglam, wave=wave, tsobj=tsobj, zans=zans, zline=zline, $
  synflux=synflux, lineflux=lineflux, objhdr=objhdr, $
- znum=znum, topdir=topdir, silent=silent
+ znum=znum, topdir=topdir, align=align, silent=silent
 
    if (n_params() LT 1) then begin
       print, 'Syntax: readspec, plate, [ fiber, mjd=, znum=, flux=, flerr=, invvar=, $'
       print, ' andmask=, ormask=, disp=, plugmap=, loglam=, wave=, tsobj=, $'
-      print, ' zans=, zline=, synflux=, lineflux=, objhdr=, topdir=, /silent ] '
+      print, ' zans=, zline=, synflux=, lineflux=, objhdr=, topdir=, /align, /silent ] '
       return
    endif
 
    ; This common block specifies which keywords will be returned.
    common com_readspec, q_flux, q_flerr, q_invvar, q_andmask, q_ormask, $
     q_disp, q_plugmap, q_loglam, q_wave, q_tsobj, q_zans, q_zline, $
-    q_synflux, q_lineflux, q_mjd, q_objhdr
+    q_synflux, q_lineflux, q_mjd, q_objhdr, q_needwave
 
    if (NOT keyword_set(topdir)) then begin
       topdir = getenv('SPECTRO_DATA')
@@ -359,6 +360,8 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    q_lineflux = arg_present(lineflux)
    q_mjd = arg_present(mjd) AND (keyword_set(mjd) EQ 0)
    q_objhdr = arg_present(objhdr)
+   objhdr = ''
+   q_needwave = q_loglam OR q_wave OR keyword_set(align)
 
    nplate = n_elements(plate)
    if (nplate EQ 0) then $
@@ -395,9 +398,9 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    platenums = platevec[ isort[iuniq] ]
    mjdnums = mjdvec[ isort[iuniq] ]
    nfile = n_elements(platenums)
-   objhdr = 0
 
    for ifile=0L, nfile-1 do begin
+      objhdr1 = 0
       flux1 = 0
       flerr1 = 0
       invvar1 = 0
@@ -405,8 +408,6 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       ormask1 = 0
       disp1 = 0
       plugmap1 = 0
-      loglam1 = 0
-      wave1 = 0
       tsobj1 = 0
       zans1 = 0
       zline1 = 0
@@ -421,13 +422,20 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       mjd1 = mjdnums[ifile]
       readspec1, platenums[ifile], irow, mjd=mjd1, $
        flux=flux1, flerr=flerr1, invvar=invvar1, andmask=andmask1, $
-       ormask=ormask1, disp=disp1, plugmap=plugmap1, loglam=loglam1, $
-       wave=wave1, tsobj=tsobj1, zans=zans1, zline=zline1, $
-       synflux=synflux1, lineflux=lineflux1, objhdr=objhdr, $
-       znum=znum, topdir=topdir, silent=silent
+       ormask=ormask1, disp=disp1, plugmap=plugmap1, $
+       tsobj=tsobj1, zans=zans1, zline=zline1, $
+       synflux=synflux1, lineflux=lineflux1, objhdr=objhdr1, $
+       znum=znum, coeffzero=coeff0, coeffone=coeff1, npix=npix, $
+       topdir=topdir, align=align, silent=silent
 
+      if (q_objhdr AND NOT keyword_set(objhdr)) then objhdr = objhdr1
       if (ifile EQ 0) then begin
          allindx = indx
+         if (q_needwave) then begin
+            allcoeff0 = coeff0
+            allcoeff1 = coeff1
+            npixmax = npix
+         endif
          if (q_flux) then flux = flux1
          if (q_flerr) then flerr = flerr1
          if (q_invvar) then invvar = invvar1
@@ -435,8 +443,6 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
          if (q_ormask) then ormask = ormask1
          if (q_disp) then disp = disp1
          if (q_plugmap) then plugmap = plugmap1
-         if (q_loglam) then loglam = loglam1
-         if (q_wave) then wave = wave1
          if (q_tsobj) then tsobj = tsobj1
          if (q_zans) then zans = zans1
          if (q_zline) then zline = zline1
@@ -445,22 +451,45 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
          if (q_mjd) then mjd = mjd1
       endif else begin
          allindx = [allindx, indx]
-         if (q_flux) then spec_append, flux, flux1
-         if (q_flerr) then spec_append, flerr, flerr1
-         if (q_invvar) then spec_append, invvar, invvar1
-         if (q_andmask) then spec_append, andmask, andmask1
-         if (q_ormask) then spec_append, ormask, ormask1
-         if (q_disp) then spec_append, disp, disp1
+         if (q_needwave) then begin
+            ; If pixshift > 0, then this newly-read spectrum starts at
+            ; bigger wavelengths than the previously-read spectra.
+            ; Adjust the starting wavelengths appropriately to correspond
+            ; to how spec_append will shift the spectra.
+            mincoeff0 = min(allcoeff0)
+            if (keyword_set(align)) then begin
+               ; The following two lines of code deal with setting a
+               ; wavelength scale for objects with missing data.
+               if (mincoeff0 EQ 0 AND coeff0 GT 0) then allcoeff0[*] = coeff0
+               if (mincoeff0 GT 0 AND coeff0 EQ 0) then coeff0 = mincoeff0
+               pixshift = fix( (coeff0 - mincoeff0) / coeff1 )
+               if (pixshift GT 0) then begin
+                  coeff0 = coeff0 - pixshift * coeff1
+                  npixmax = max(npixmax, npix+pixshift)
+               endif else begin
+                  allcoeff0 = allcoeff0 + pixshift * allcoeff1
+                  npixmax = max(npixmax-pixshift, npix)
+               endelse
+            endif else begin
+               pixshift = 0
+            endelse
+            allcoeff0 = [allcoeff0, coeff0]
+            allcoeff1 = [allcoeff1, coeff1]
+         endif
+         if (q_flux) then spec_append, flux, flux1, pixshift
+         if (q_flerr) then spec_append, flerr, flerr1, pixshift
+         if (q_invvar) then spec_append, invvar, invvar1, pixshift
+         if (q_andmask) then spec_append, andmask, andmask1, pixshift
+         if (q_ormask) then spec_append, ormask, ormask1, pixshift
+         if (q_disp) then spec_append, disp, disp1, pixshift
          if (q_plugmap) then plugmap = struct_append(plugmap, [plugmap1])
-         if (q_loglam) then spec_append, loglam, loglam1
-         if (q_wave) then spec_append, wave, wave1
          if (q_tsobj) then tsobj = struct_append(tsobj, [tsobj1])
          if (q_zans) then zans = struct_append(zans, [zans1])
 ;         if (q_zline) then zline = struct_append(zline, [zline1])
 ; Below will not always work ???
          if (q_zline) then zline = [[zline], [zline1]]
-         if (q_synflux) then spec_append, synflux, synflux1
-         if (q_lineflux) then spec_append, lineflux, lineflux1
+         if (q_synflux) then spec_append, synflux, synflux1, pixshift
+         if (q_lineflux) then spec_append, lineflux, lineflux1, pixshift
          if (q_mjd) then mjd = [mjd, mjd1]
       endelse
    endfor
@@ -476,8 +505,10 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       if (keyword_set(plugmap[0])) then $
        copy_struct_inx, plugmap, plugmap, index_to=allindx
    endif
-   if (q_loglam) then loglam[*,[allindx]] = loglam[*]
-   if (q_wave) then wave[*,[allindx]] = wave[*]
+   if (q_needwave) then begin
+      allcoeff0 = allcoeff0[allindx]
+      allcoeff1 = allcoeff1[allindx]
+   endif
    if (q_tsobj) then begin
       if (keyword_set(tsobj[0])) then $
        copy_struct_inx, tsobj, tsobj, index_to=allindx
@@ -494,7 +525,21 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    if (q_lineflux) then lineflux[*,[allindx]] = lineflux[*]
    if (q_mjd) then mjd[allindx] = mjd[*]
 
-   if (keyword_set(silent)) then print
+   ;----------
+   ; Construct the output wavelength solutions
+
+   if (q_loglam OR q_wave) then begin
+      if (keyword_set(align)) then begin
+         loglam = allcoeff0[0] + allcoeff1[0] * lindgen(npixmax)
+      endif else begin
+         nobj = n_elements(allcoeff0)
+         loglam = dblarr(npixmax,nobj)
+         for iobj=0, nobj-1 do $
+          loglam[*,iobj] = allcoeff0[iobj] + allcoeff1[iobj] * lindgen(npixmax)
+      endelse
+      if (q_wave AND q_loglam) then wave = 10^loglam $
+       else if (q_wave) then wave = temporary(10^loglam)
+   endif
 
    return
 end
