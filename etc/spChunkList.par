@@ -82,4 +82,7 @@ spchunklist      49 1118 1132 special   "Munn thick/thin disk"
 spchunklist      50 1133 1148 special   "Rockosi MS turnoff"
 spchunklist      51 1149 1155 special   "Yanny F stars"
 spchunklist      52 1156 1157 special   "Annis low-z galaxies; Eisenstein LRGs"
+spchunklist      53 1158 1176 special   "?"
+spchunklist      54 1177 1178 special   "?"
+spchunklist      55 1179 1183 special   "Heckman aperature bias"
 
