@@ -127,6 +127,8 @@ opHdrFix.par: Declare bad aborted smears for plate 601 and 803.
             Remove bad data for plate 724 on MJD 52240.
             Remove bad smear for plate 860 on MJD 52319.
 spectroSOS.html: Update to reflect new warning messages.
+sprobot.sh: Bug fix where we were rsync-ing all of sos.apo:/data/spectro/$MJD
+            on the line where we only wanted to get the guider directory!
 
 In specflat:
 specflat.table: Added "Flavor=Linux"
