@@ -263,7 +263,7 @@ pro apo_log2html, logfile, htmlfile
                jj = where(plate EQ thisplate AND flavor EQ 'flat' $
                 AND camera EQ camnames[icam] AND expnum EQ allexp[iexp])
                if (jj[0] NE -1) then pflats[icam] = pstruct[jj[0]] $
-                else pflats[icam] = 0
+                else pflats[icam] = ptr_new()
             endfor
 
             ; Output table line for this one flat exposure
@@ -288,7 +288,7 @@ pro apo_log2html, logfile, htmlfile
                jj = where(plate EQ thisplate AND flavor EQ 'arc' $
                 AND camera EQ camnames[icam] AND expnum EQ allexp[iexp])
                if (jj[0] NE -1) then parcs[icam] = pstruct[jj[0]] $
-                else parcs[icam] = 0
+                else parcs[icam] = ptr_new()
             endfor
 
             formats = ['(f7.1)', '(f7.1)', '(f4.2)', '(i)']
@@ -313,7 +313,7 @@ pro apo_log2html, logfile, htmlfile
                jj = where(plate EQ thisplate AND flavor EQ 'science' $
                 AND camera EQ camnames[icam] AND expnum EQ allexp[iexp])
                if (jj[0] NE -1) then pscience[icam,iexp] = pstruct[jj[0]] $
-                else pscience[icam,iexp] = 0
+                else pscience[icam,iexp] = ptr_new()
             endfor
          endfor
 
