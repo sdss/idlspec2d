@@ -31,6 +31,7 @@
 ;
 ; REVISION HISTORY:
 ;   19-May-1999  Written by David Schlegel, Princeton.
+;   01-Dec-2000  Handle scaler xpos correctly - D. Finkbeiner
 ;-
 ;------------------------------------------------------------------------------
 pro traceset2xy, tset, xpos, ypos
@@ -55,6 +56,8 @@ pro traceset2xy, tset, xpos, ypos
       endif else begin
          message, 'TSET.COEFF contains invalid number of dimensions'
       endelse
+
+      if n_elements(xpos) EQ 1 then xpos = transpose(xpos+fltarr(ntrace))
 
       nx = long(tset.xmax - tset.xmin + 1)
 
