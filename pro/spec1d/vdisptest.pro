@@ -72,7 +72,7 @@ print, 'Chi^2/DOF = ', vdans1.vdispchi2 / (vdans1.vdispdof > 1)
          binsz = 0.1
          !p.multi = 0
          plothist, chivec1, bin=binsz, xrange=[-10,10], $
-          xtitle='\chi', ytitle='\chi Distribution'
+          xtitle='\chi', ytitle=textoidl('\chi Distribution')
          plothist, chivec2, bin=binsz, /overplot, color=djs_icolor('blue')
          xplot = !x.crange[0] + findgen(101)*(!x.crange[1]-!x.crange[0])/100
          yplot = exp(-0.5*xplot^2) * npix * binsz / sqrt(2.*!pi)
@@ -103,9 +103,10 @@ print, 'Chi^2/DOF = ', vdans1.vdispchi2 / (vdans1.vdispdof > 1)
          !x.range = 0
          !y.range = 0
          csize = 2
-         djs_plot, lindgen(neigen)+1, vdmany.vdisp, /ynozero, psym=-4, $
+         djs_plot, lindgen(neigen)+1, vdmany.vdisp, /ynozero, $
           xtitle='Number of eigenspectra', ytitle='Vel-Disp. [km/s]', $
           charsize=csize
+         oploterr, lindgen(neigen)+1, vdmany.vdisp, vdmany.vdisp_err
          djs_plot, lindgen(neigen)+1, vdmany.vdispchi2, /ynozero, psym=-4, $
           xtitle='Number of eigenspectra', ytitle='\chi^2 of vel-disp.', $
           charsize=csize
@@ -115,6 +116,7 @@ print, 'Chi^2/DOF = ', vdans1.vdispchi2 / (vdans1.vdispdof > 1)
           yrange=[-0.1*ymax,1.1*ymax], $
           xtitle='Number of eigenspectra', ytitle='\Delta(\chi^2)', $
           charsize=csize
+         djs_oplot, !x.crange, [0,0]
          !p.multi = 0
 
          if (keyword_set(debug)) then begin
