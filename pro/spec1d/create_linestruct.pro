@@ -17,7 +17,8 @@ function create_linestruct, nline
     'lineew_err'        ,  -1.0, $
     'linecontlevel'     ,   0.0, $
     'linecontlevel_err' ,  -1.0, $
-    'linenpix'          ,   0L,  $
+    'linenpixleft'      ,   0L,  $
+    'linenpixright'     ,   0L,  $
     'linedof'           ,   0.0, $
     'linechi2'          ,  -1.0  )
    if (keyword_set(nline)) then $

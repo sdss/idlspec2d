@@ -68,14 +68,16 @@
 ;                                  the first or last value)
 ;                LINECONTLEVEL_ERR - Error in above, or -1L if the line center
 ;                                  is outside the wavelength range.
-;                LINENPIX        - Number of pixels within +/- 3 sigma of
-;                                  the line center that have INVVAR > 0.
-;                LINEDOF         - LINENPIX minus the number of terms fit
-;                                  for that line, which could be fractional
-;                                  (if one parameter is fixed between N lines,
-;                                  then we say only 1/N-th of that parameter
-;                                  is fit in each of those lines).  This can
-;                                  be zero or negative.
+;                LINENPIXLEFT    - Number of pixels from the line center to
+;                                  -3 sigma that have INVVAR > 0.
+;                LINENPIXRIGHT   - Number of pixels from the line center to
+;                                  +3 sigma that have INVVAR > 0.
+;                LINEDOF         - LINENPIXLEFT+LINENPIXRIGHT minus the number
+;                                  of terms fit for that line, which could be
+;                                  fractional (if one parameter is fixed between
+;                                  N lines, then we say only 1/N-th of that
+;                                  parameter is fit in each of those lines).
+;                                  This can be zero or negative.
 ;                LINECHI2       -  Chi^2 for all points within +/- 3 sigma of
 ;                                  the line center; -1L if no such points.
 ;
@@ -410,15 +412,21 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
    ; possible to have no lines within this domain.  Reject those fits.
 
    for iline=0, nline-1 do begin
-      indx = where( loglam GE lfit[iline*3+1] - 3 * lfit[iline*3+2] $
-                AND loglam LE lfit[iline*3+1] + 3 * lfit[iline*3+2] )
+      qleft = loglam GE lfit[iline*3+1] - 3 * lfit[iline*3+2] $
+       AND loglam LE lfit[iline*3+1]
+      qright = loglam LE lfit[iline*3+1] + 3 * lfit[iline*3+2] $
+       AND loglam GT lfit[iline*3+1]
+      qgood = invvar GT 0
+      linestruct[iline].linenpixleft = total(qleft AND qgood)
+      linestruct[iline].linenpixright = total(qright AND qgood)
+      linenpix = linestruct[iline].linenpixleft $
+       + linestruct[iline].linenpixright
 
-      if (indx[0] NE -1) then begin
-         linestruct[iline].linenpix = total(invvar[indx] GT 0)
-         linestruct[iline].linedof = $
-          linestruct[iline].linenpix - nfitterms[iline]
+      if (linenpix GT 0) then begin
+         linestruct[iline].linedof = linenpix - nfitterms[iline]
 
          if (linestruct[iline].linedof GT 0) then begin
+            indx = where(qgood AND (qleft OR qright))
             linestruct[iline].linechi2 = $
              total( (flux[indx] - yfit[indx])^2 * invvar[indx] )
          endif
@@ -426,7 +434,8 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
 
       ; Special-case rejection -- set AREA=0,AREA_ERR=-2
       ; if there are no data points within the line-fitting region.
-      if (linestruct[iline].linenpix EQ 0) then begin
+      if (linestruct[iline].linenpixleft + linestruct[iline].linenpixright $
+       EQ 0) then begin
          linestruct[iline].linearea = 0
          linestruct[iline].linearea_err = -2L
 
@@ -440,7 +449,8 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
    ; Construct the line equivalent widths
 
    for iline=0, nline-1 do begin
-      if (linestruct[iline].linenpix LE 0) then begin
+      if (linestruct[iline].linenpixleft + linestruct[iline].linenpixright $
+       LE 0) then begin
          linestruct[iline].lineew_err = -2L
       endif else if (linestruct[iline].linecontlevel LE 0) then begin
          linestruct[iline].lineew_err = -1L
