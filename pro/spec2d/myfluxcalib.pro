@@ -122,7 +122,7 @@ function fluxfit, loglam, objflux, objivar, color=color, refmag=refmag
    fiducial_flux = filter_thru(f8flux * f8wave^2, waveimg=f8wave)
    zeropoint = -(alog10(fiducial_flux[2]) - 35.4771)*2.5 - 48.6
 
-   if zeropoint LT 21.0 OR zero GT 21.5 then begin
+   if zeropoint LT 21.0 OR zeropoint GT 21.5 then begin
      splog, 'WARNING: has the flux calibration standard changed?'
      splog, 'Please address, for now, resetting to old zero point'
      zeropoint = oldzeropoint
