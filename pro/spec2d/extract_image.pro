@@ -260,7 +260,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
      if(ARG_PRESENT(chisq)) then chisq[cur] = chisqrow
 
      calcflux, ansrow, prow, fluxrow, finvrow, wfixed, proftype, lTrace,nCoeff,$
-            squashprofile=squashprofile
+            pixelmasktemp, squashprofile=squashprofile
      flux[iy,*] = fluxrow 
      finv[iy,*] = finvrow
 
