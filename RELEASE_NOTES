@@ -17,6 +17,7 @@ PLATEMERGE: Use MWRFITS_CHUNKS to allow us to write bigger files
            If SUBCLASS contains several words, then use a plus sign between
            the words in the ASCII file rather than a space (so that awk will
            work).
+PLOTSPEC: Added option to use Blanton + Hogg's java viewer (Blanton).
 SDSSPROC: If MJD <= 51813, then set QUALITY=excellent unless this is
            over-written by SPHDRFIX.  This is because for the early data,
            this keyword was arbitrarily set to 'unknown', 'bad',
