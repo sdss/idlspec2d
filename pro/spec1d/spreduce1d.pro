@@ -352,6 +352,8 @@ ormask = 0 ; Free memory
    t0 = systime(1)
    nfsig = 10
    fracnsigma = fltarr(nfsig,nper,nobj)
+   fracnsighi = fltarr(nfsig,nper,nobj)
+   fracnsiglo = fltarr(nfsig,nper,nobj)
    counts_spectro = fltarr(5,nper,nobj)
    counts_synth = fltarr(5,nper,nobj)
 
@@ -377,10 +379,15 @@ ormask = 0 ; Free memory
 
       for iobj=0, nobj-1 do begin
          goodmask = objivar[*,iobj] GT 0
-         chivec = abs(objflux[*,iobj] - synflux[*,iobj]) * sqrt(objivar[*,iobj])
-         for isig=0, nfsig-1 do $
-          fracnsigma[isig,iper,iobj] = $
-           total((chivec GT isig+1) * goodmask) / (total(goodmask) > 1)
+         chivec = (objflux[*,iobj] - synflux[*,iobj]) * sqrt(objivar[*,iobj])
+         for isig=0, nfsig-1 do begin
+            fracnsigma[isig,iper,iobj] = $
+             total((abs(chivec) GT isig+1) * goodmask) / (total(goodmask) > 1)
+            fracnsighi[isig,iper,iobj] = $
+             total((chivec GT isig+1) * goodmask) / (total(goodmask) > 1)
+            fracnsiglo[isig,iper,iobj] = $
+             total((chivec LT isig+1) * goodmask) / (total(goodmask) > 1)
+         endfor
       endfor
 
       fthru = filter_thru(synflux * rebin(flambda2fnu,npixobj,nobj), $
@@ -418,6 +425,8 @@ ormask = 0 ; Free memory
             zwarning:  0L, $
             sn_median: 0.0, $
             fracnsigma: fltarr(nfsig), $
+            fracnsighi: fltarr(nfsig), $
+            fracnsiglo: fltarr(nfsig), $
             counts_spectro: fltarr(5), $
             counts_synth: fltarr(5), $
             counts_sky: fltarr(5), $
@@ -447,6 +456,8 @@ ormask = 0 ; Free memory
    endfor
 
    res_all.fracnsigma = fracnsigma
+   res_all.fracnsighi = fracnsighi
+   res_all.fracnsiglo = fracnsiglo
    res_all.counts_spectro = counts_spectro
    res_all.counts_synth = counts_synth
 
@@ -476,8 +487,11 @@ ormask = 0 ; Free memory
     OR (strtrim(res_all.class) EQ 'QSO' AND res_all.theta[0] LE 0)
    zwarning = zwarning OR 8L * qflag
 
-   ; Warning: Fraction of points above 5 sigma is too large (> 5%).
-   qflag = fracnsigma[4,*,*] GT 0.05
+   ; Warning: Fraction of points above 5 sigma is too large (> 5%),
+   ; except for QSO's where we just look at the fraction of high outliers
+   ; since we expect absorption lines that could give many low outliers.
+   qflag = (strtrim(res_all.class) NE 'QSO' AND fracnsigma[4,*,*] GT 0.05) $
+    OR (strtrim(res_all.class) EQ 'QSO' AND fracnsighi[4,*,*] GT 0.05)
    zwarning = zwarning OR 16L * qflag
 
    ; Warning: Redshift-error warning flag set to -1, which means that
