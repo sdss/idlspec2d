@@ -33,7 +33,6 @@
 ;
 ; PROCEDURES CALLED:
 ;   djs_iterstat
-;   poly_fit
 ;
 ; REVISION HISTORY:
 ;   15-Apr-2000  Written by S. Burles, FNAL
