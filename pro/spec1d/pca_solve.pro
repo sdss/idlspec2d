@@ -32,6 +32,7 @@
 ;                    and use in replacing noisy or missing data; default to 3.
 ;   nreturn        - Number of PCA components to return; default to the same as
 ;                    NKEEP.
+;   quiet          - Minimal output to splog
 ;   _EXTRA         - Keywords for DJS_REJECT().
 ;
 ; OUTPUTS:
@@ -66,13 +67,14 @@
 ;
 ; REVISION HISTORY:
 ;   10-Oct-2000  Written by D. Schlegel, Princeton
+;   07-Jul-2003  added quiet keyword - C. Tremonti
 ;-
 ;------------------------------------------------------------------------------
 function pca_solve, objflux, objivar, objloglam, zfit, $
  wavemin=wavemin, wavemax=wavemax, newloglam=newloglam, $
  newflux=newflux, newivar=newivar,  maxiter=maxiter, $
  niter=niter, nkeep=nkeep, nreturn=nreturn, eigenval=eigenval, acoeff=acoeff, $
- outmask=outmask, usemask=usemask, _EXTRA=KeywordsForReject
+ outmask=outmask, usemask=usemask, _EXTRA=KeywordsForReject, quiet = quiet
 
    if (n_elements(maxiter) EQ 0) then maxiter = 0
    if (NOT keyword_set(niter)) then niter = 10
@@ -261,6 +263,7 @@ endelse
 
 ;writefits, 'test-'+strtrim(string(ipiter),1)+'.fits', $
 ; float(transpose(pres[0:nkeep-1,*]))
+         if not keyword_set(quiet) then $
          splog, 'Elapsed time for iteration #', ipiter, ' = ', systime(1)-t0
       endfor ; End PCA iterations
 
