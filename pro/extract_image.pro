@@ -259,7 +259,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
 
    ii = where(mask EQ 0, finallyrejected)
 
-   print, 'I masked ', finallyrejected - initiallyrejected, ' pixels'
+   splog, 'masked ', finallyrejected - initiallyrejected, ' pixels'
 
    return
 end

@@ -74,8 +74,8 @@ pro skysubtract, obj, objivar, plugmap, wset, skysub, skysubivar, $
 	  for i=0,nrow-1 do begin
 	    inside = where(wave[*,i] GT alog10(5571) AND $
 	                    wave[*,i] LT alog10(5588) AND $
-                            objivar[*,i] GT 0.0) 
-	    if (inside[0] NE -1 AND fibermask[i]) then begin
+                            objivar[*,i] GT 0.0, ninside) 
+	    if (ninside GT 6 AND fibermask[i]) then begin
 
 	      aa = [16000.0, 3.74655, 1.0e-4, 500.0]
 ;

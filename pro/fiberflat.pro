@@ -166,6 +166,8 @@ function fiberflat, flux, fluxivar, wset, $
    ; Check to see if fibermask has changed
    igood = where(fibermask NE 0, ngood)
 
+   if (igood[0] EQ -1) then message,'All flat fibers have been !!'
+ 
    ; Divide fflat by a global median of all fibers
    globalmed = median(medval[igood]) ; Global median for all vectors
    fflat = fflat / globalmed

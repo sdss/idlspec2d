@@ -260,7 +260,7 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams, $
    if (keyword_set(logfile)) then splog, /close
    if (keyword_set(plotfile)) then begin
       device, /close
-      set_plot, ''
+      set_plot, 'x'
    endif
 
    return

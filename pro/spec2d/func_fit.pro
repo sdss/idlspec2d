@@ -69,7 +69,7 @@ function func_fit, x, y, ncoeff, invvar=invvar, function_name=function_name, $
       invvar = intarr(nx) + 1
    endelse
 
-   if (NOT keyword_set(ia)) then ia = bytarr(ncoeff) + 1
+   if (n_elements(ia) NE ncoeff) then ia = bytarr(ncoeff) + 1
 
     goodia = ia NE 0
 
