@@ -44,17 +44,18 @@ function quickextract, flatname, arcname, sciname, outname, $
     objsub, objsubivar, iskies=iskies, fibermask=fibermask)
 
    ;----------
-   ; Write out the extracted spectra
-
-   mwrfits, objsub, outname, /create
-   mwrfits, ojbsubivar, outname
-
-   ;----------
    ; Analyze spectra for the sky level and signal-to-noise
 
    ; Select wavelength range to analyze
-   if (strmid(color,0,1) EQ 'b') then wrange = [4000,5500] $
-    else wrange = [6910,8500]
+   if (strmid(color,0,1) EQ 'b') then begin
+      icolor = 1
+      wrange = [4000,5500]
+      snmag = 19.2
+   endif else begin
+      icolor = 3
+      wrange = [6910,8500]
+      snmag = 18.9
+   endelse
 
    ; Find which fibers are sky fibers + object fibers
 ;   iskies = where(strtrim(plugsort.objtype,2) EQ 'SKY' $
@@ -89,15 +90,26 @@ function quickextract, flatname, arcname, sciname, outname, $
    endelse
 
    if (iobj[0] NE -1) then begin
-      snoise =  djs_mean( meansn[iobj] )
+;      snoise2 =  djs_mean( meansn[iobj] )^2
+      coeffs = fitsn(plugsort[iobj].mag[icolor], meansn[iobj])
+      snoise2 = 10^(2.0 * poly(snmag, coeffs)) ; The 2.0 is to square the S/N
    endif else begin
-      snoise = 0
+      snoise2 = 0
    endelse
 
    rstruct = create_struct('FLAVOR', 'science', $
                            'CAMERA', camname, $
                            'SKYPERSEC', skylevel, $
-                           'SN2', snoise^2 )
+;                           'SN2VECTOR', meansn, $
+                           'SN2', snoise2 )
+
+   ;----------
+   ; Write out the extracted spectra
+
+   mwrfits, objsub, outname, /create
+   mwrfits, ojbsubivar, outname
+   mwrfits, meansn, outname
+
    return, rstruct
 end
 

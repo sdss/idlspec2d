@@ -198,7 +198,7 @@ pro apo_log2html, logfile, htmlfile
    ncams = n_elements(camnames)
 
    ; Lock the file to do this.
-   while(djs_lockfile(htmlfile, lun=html_lun) EQ 0) do wait, 1
+   while(djs_lockfile(htmlfile, lun=html_lun) EQ 0) do wait, 5
 
    ; Read in all the HDU's in the log file as structures
 

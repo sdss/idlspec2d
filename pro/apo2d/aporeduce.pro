@@ -41,8 +41,10 @@
 ;
 ; PROCEDURES CALLED:
 ;   apo_log2html
+;   apo_plotsn
 ;   djs_lockfile()
 ;   djs_unlockfile
+;   mwrfits
 ;
 ; REVISION HISTORY:
 ;   30-Apr-2000  Written by D. Schlegel & S. Burles, APO
@@ -208,17 +210,24 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
 
    ;----------
    ; After being passed any 'r2' frame, whether or not it was reduced,
-   ; we re-generate the HTML file and optionally copy it to the directory
-   ; specified by COPYDIR.
+   ; we re-generate the HTML file for all plates and the S/N plot for
+   ; this plate.
+   ; Optionally copy it to the directory specified by COPYDIR.
+   ;
 
    if (camnames[icam] EQ 'r2') then begin
       wait, 10
+
+      plotfile = filepath('snplot-'+platestr+'.ps', root_dir=outdir)
+      apo_plotsn, plate, fullplugfile, outdir=outdir, plotfile=plotfile
+
       apo_log2html, logfile, htmlfile
 
       if (keyword_set(copydir)) then begin
          splog
          splog, 'Copying files to ', copydir
          spawn, 'scp1 ' + htmlfile + ' ' + copydir
+         spawn, 'scp1 ' + plotfile + ' ' + copydir
          splog, 'Done.'
       endif
    endif
