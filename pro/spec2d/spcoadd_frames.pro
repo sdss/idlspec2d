@@ -71,6 +71,7 @@
 ;   modfits
 ;   mrdfits()
 ;   pixelmask_bits()
+;   platesn
 ;   splog
 ;   sxaddpar
 ;   sxdelpar
