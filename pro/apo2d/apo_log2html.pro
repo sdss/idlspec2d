@@ -329,7 +329,7 @@ pro apo_log2html, logfile, htmlfile
          for iexp=0, nexp-1 do begin
             textout = [ textout, $
              apo_log_fields(pscience[*,iexp], 'SN2', $
-              printnames='(S/N)^2', formats='(i6)') ]
+              printnames='(S/N)^2', formats='(f6.0)') ]
          endfor
 
          ;----------
@@ -359,7 +359,7 @@ pro apo_log2html, logfile, htmlfile
                                                  ; field will be printed.
          textout = [ textout, $
           apo_log_fields(ptotal, 'TOTALSN2', $
-           printnames='TOTAL (S/N)^2', formats='(i6)') ]
+           printnames='TOTAL (S/N)^2', formats='(f6.0)') ]
       endif
 
       textout = [textout, apo_log_endplate()]
