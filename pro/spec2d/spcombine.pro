@@ -58,9 +58,15 @@ pro spcombine, planfile, docams=docams, xdisplay=xdisplay
    if (NOT keyword_set(docams)) then docams = ['b1', 'b2', 'r1', 'r2']
 
    ;----------
+   ; Strip path from plan file name, and change to that directory
+
+   thisplan = fileandpath(planfile[0], path=thispath)
+   cd, thispath, current=origdir
+
+   ;----------
    ; Find the SPEXP structure
 
-   yanny_read, planfile[0], pdata, hdr=hdr
+   yanny_read, thisplan, pdata, hdr=hdr
    for i=0, N_elements(pdata)-1 do begin
       if (tag_names(*pdata[i], /structure_name) EQ 'SPEXP') then $
        allseq = *pdata[i]
@@ -68,7 +74,8 @@ pro spcombine, planfile, docams=docams, xdisplay=xdisplay
    yanny_free, pdata
 
    if (N_elements(allseq) EQ 0) then begin
-      splog, 'ABORT: No SPEXP structures in plan file ' + planfile
+      splog, 'ABORT: No SPEXP structures in plan file ' + thisplan
+      cd, origdir
       return
    endif
 
@@ -100,7 +107,7 @@ pro spcombine, planfile, docams=docams, xdisplay=xdisplay
       device, filename=plotfile, /color
       splog, 'Plot file ', plotfile, ' opened ', systime()
    endif
-   splog, 'Plan file ', planfile
+   splog, 'Plan file ', thisplan
    splog, 'DOCAMS = ', docams
 
    splog, 'idlspec2d version ' + idlspec2d_version()
@@ -119,7 +126,8 @@ pro spcombine, planfile, docams=docams, xdisplay=xdisplay
    objname = allseq.name[icams]
    j = where(objname NE 'UNKNOWN')
    if (j[0] EQ -1) then begin
-      splog, 'ABORT: All file names are UNKNOWN in plan file ' + planfile
+      splog, 'ABORT: All file names are UNKNOWN in plan file ' + thisplan
+      cd, origdir
       return
    endif
    objname = objname[j]
@@ -143,6 +151,8 @@ pro spcombine, planfile, docams=docams, xdisplay=xdisplay
 
    if (keyword_set(logfile)) then splog, /close
 
+   ; Change back to original directory
+   cd, origdir
    return
 end
 ;------------------------------------------------------------------------------
