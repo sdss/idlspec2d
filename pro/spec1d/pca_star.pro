@@ -89,6 +89,9 @@ ormask = 0 ; Free memory
        zfit[indx], wavemin=wavemin, wavemax=wavemax, $
        niter=niter, nkeep=nkeep, newloglam=newloglam, eigenval=eigenval)
 
+      ; Normalize each stellar spectrum to a mean of 1.0
+      pcaflux = pcaflux / mean(pcaflux)
+
       spappend, newloglam, pcaflux, fullloglam, fullflux
 
    endfor
