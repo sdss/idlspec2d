@@ -29,6 +29,7 @@
 ;
 ; PROCEDURES CALLED:
 ;   combine2dout
+;   splog
 ;   spreduce
 ;   yanny_free
 ;   yanny_read

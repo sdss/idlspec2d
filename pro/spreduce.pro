@@ -45,9 +45,17 @@
 ;   djs_median()
 ;   extract_boxcar()
 ;   extract_image
+;   fit_skyset
+;   fitarcimage
+;   fluxcorr()
+;   locateskylines
+;   qaplot_arcline
 ;   readcol
 ;   readfits()
 ;   sdssproc
+;   skysubtract
+;   splog
+;   telluric_corr
 ;   traceset2xy
 ;   xy2traceset
 ;   yanny_free
@@ -231,7 +239,7 @@ for i=0,16 do oplot,fflat[*,i*19]
 
    for iobj=0, N_elements(objname)-1 do begin
 
-      splog, 'Timing: ',systime(1)-t_begin, ' seconds so far', $
+      splog, 'Start time ',systime(1)-t_begin, ' seconds so far', $
        format='(A,F8.2,A)'
 
       ;------------------
@@ -258,7 +266,6 @@ for i=0,16 do oplot,fflat[*,i*19]
       ; counts are 10000 ADU per row.
 
       fextract = extract_boxcar(image, xsol)
-;      fextract = extract_boxcar(image, xsol, ycen)
       scrunch = djs_median(fextract, 1) ; Find median counts/row in each fiber
       whopping = where(scrunch GT 10000.0, whopct)
       splog, 'Number of bright fibers = ', whopct
@@ -276,7 +283,7 @@ for i=0,16 do oplot,fflat[*,i*19]
       nrow = (size(image))[2]
       ncol = (size(image))[1]
       skiprow = 8
-      yrow = lindgen(nrow/skiprow)*skiprow + skiprow/2
+      yrow = lindgen(nrow/skiprow) * skiprow + skiprow/2
       nfirst = n_elements(yrow)
 
       sigma = 1.0
@@ -314,7 +321,7 @@ for i=0,16 do oplot,fflat[*,i*19]
            splog, 'Trace Tweaking: Step', i*3+3, '    (Sigma not tweaked)'
            sigmashift = transpose(fitans[lindgen(nTrace)*nTerms + sigmaterm, *])
            centershift = $
-              transpose(fitans[lindgen(nTrace)*nTerms + centerterm, *])
+            transpose(fitans[lindgen(nTrace)*nTerms + centerterm, *])
            tweaktrace, xnow, sigmanow, centershift, sigmashift
         endif
       endfor
@@ -341,35 +348,35 @@ for i=0,16 do oplot,fflat[*,i*19]
       ; Tweak up the wavelength solution to agree with the sky lines.
 
 ; DO NOT TWEAK THE SKY LINES ... ???
-wset_tweak = wset
+; wset_tweak = wset
 
-;      locateskylines, skylinefile, obj_flux, obj_fluxivar, $
-;       wset, invset, xsky, ysky, skywaves, lambda=skylambda
+      locateskylines, skylinefile, flux, fluxivar, $
+       wset, xsky, ysky, skywaves, lambda=skylambda
 
-      ;
+      ;------------------
       ; First convert lambda, and skywaves to log10 vacuum
-      ;
-;      splog, 'Converting wavelengths to vacuum'
-;      vaclambda = 10^lambda
-;      airtovac, vaclambda
-;      vaclambda = alog10(vaclambda)
-;
-;      vacsky = skywaves
-;      airtovac, vacsky
-;      vacsky = alog10(vacsky)
-;
-;      sxaddpar, hdr, 'VACUUM', 'WAVELENGTHS ARE IN VACUUM'
-;      sxaddpar, hdr, 'AIR2VAC', systime()
-;
-;      splog, 'Tweaking to sky lines'
-;      skycoeff = 2
-;      if(n_elements(vacsky) GT 3) then skycoeff = 3
-;
-;      fit_skyset, xpeak, ypeak, vaclambda, xsky, ysky, vacsky, skycoeff, $
-;        goodlines, wset_tweak, invset_tweak, ymin=ymin, ymax=ymax, func=func
-;
-;      locateskylines, skylinefile, flux, fluxivar, $
-;       wset_tweak, invset_tweak, xsky, ysky, skywaves, lambda=vacsky
+
+      splog, 'Converting wavelengths to vacuum'
+      vaclambda = 10^lambda
+      airtovac, vaclambda
+      vaclambda = alog10(vaclambda)
+
+      vacsky = skywaves
+      airtovac, vacsky
+      vacsky = alog10(vacsky)
+
+      sxaddpar, hdr, 'VACUUM', 'WAVELENGTHS ARE IN VACUUM'
+      sxaddpar, hdr, 'AIR2VAC', systime()
+
+      splog, 'Tweaking to sky lines'
+      skycoeff = 2
+      if (n_elements(vacsky) GT 3) then skycoeff = 3
+
+      fit_skyset, xpeak, ypeak, vaclambda, xsky, ysky, vacsky, skycoeff, $
+        goodlines, wset_tweak, ymin=ymin, ymax=ymax, func=func
+
+      locateskylines, skylinefile, flux, fluxivar, $
+       wset, xsky, ysky, skywaves, lambda=vacsky
 
       ;------------------
       ; Sky-subtract
@@ -428,21 +435,10 @@ wset_tweak = wset
       writespectra, objhdr, plugsort, flux, fluxivar, wset_tweak, $
        filebase=filebase
 
-      ; Clear out variables for memory efficiency, looks like this fragments
-      ; memory instead
-
-;      xnow = 0
-;      sigmanow = 0
-;      ansimage = 0
-;      fitans = 0
-;      centershift = 0
-;      sigmashift = 0
-;      fextract = 0
-     
       heap_gc   ; Garbage collection for all lost pointers
    endfor
 
-   splog,'Timing: ', systime(1)-t_begin, ' seconds TOTAL', $
+   splog, 'End time ', systime(1)-t_begin, ' seconds TOTAL', $
     format='(A,F8.2,A)'
 
 end

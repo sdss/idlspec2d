@@ -1,31 +1,27 @@
 ; Inputs: xarc, yarc, arclambda, xsky, ysky, skylambda, skycoeff
-; Outputs: goodlines, wset, invset
+; Outputs: goodlines, wset
 ; optional input keywords ymin, ymax, func
 
-
 pro fit_skyset, xarc, yarc, arclambda, xsky, ysky, skylambda, skycoeff, $
-        goodlines, wset, invset, ymin=ymin, ymax=ymax, func=func
+ goodlines, wset, ymin=ymin, ymax=ymax, func=func
 
+   if (keyword_set(func) EQ 0) then func = 'legendre'
+   if (keyword_set(ymin) EQ 0) then ymin = wset.xmin
+   if (keyword_set(ymax) EQ 0) then ymax = wset.xmax
 
-   if keyword_set(func) eq 0 then func = 'legendre'
-   if keyword_set(ymin) eq 0 then ymin = wset.xmin
-   if keyword_set(ymax) eq 0 then ymax = wset.xmax
+   narctrace=(size(xarc))[1]
+   nskytrace=(size(xsky))[1]
+   if (nskytrace NE narctrace) then $
+    message, 'Different number of traces found in arcs and skies'
+   ntrace = narctrace
+   narclines = (size(xarc))[2]
+   nskylines = (size(xsky))[2]
 
-
-    narctrace=(size(xarc))[1]
-    nskytrace=(size(xsky))[1]
-    if (nskytrace NE narctrace) then $
-       message, 'Different number of traces found in arcs and skies'
-    nTrace = narctrace
-    narclines = (size(xarc))[2]
-    nskylines = (size(xsky))[2]
-
-    ncoeff=(size(wset.coeff))[1]
-    icoeff=(size(invset.coeff))[1]
-    npix=2048	
+   ncoeff = (size(wset.coeff))[1]
+   npix=2048
  
-    ymid = 0.5*(invset.xmax + invset.xmin)
-    yrange = invset.xmax - invset.xmin
+    ymid = 0.5*(wset.xmax + wset.xmin)
+    yrange = wset.xmax - wset.xmin
     xx = dindgen(2048)
     pixarray = 2.0d0*dindgen(npix)/(npix-1) - 1.0d0
 
@@ -39,60 +35,42 @@ pro fit_skyset, xarc, yarc, arclambda, xsky, ysky, skylambda, skycoeff, $
     lambda = [arclambda, skylambda]
 
 ;wavnorm = 2.0d*xnew/(npix-1) - 1.0d
-	wavnorm = 2.0d*x/(ymax-ymin) - 1.0d
+   wavnorm = 2.0d*x/(ymax-ymin) - 1.0d
 
-        nline = n_elements(lambda)
+   nline = n_elements(lambda)
 
-	goodlines = lonarr(nline,nTrace) + 1
+   goodlines = lonarr(nline,ntrace) + 1
 
-	for i=0,nTrace-1 do begin
+   for i=0, ntrace-1 do begin
 
-	  done = 0
+     done = 0
 
-	  while (done EQ 0) do begin
-	    
-	    use = where(goodlines[*,i] NE 0)
-	    ncurarc = long(total(goodlines[0:narclines-1,i]))
+     while (done EQ 0) do begin
+       
+       use = where(goodlines[*,i] NE 0)
+       ncurarc = long(total(goodlines[0:narclines-1,i]))
 
-	    res = arcsky_fit((wavnorm[i,use])[*], lambda[use], ncurarc, $
+       res = arcsky_fit((wavnorm[i,use])[*], lambda[use], ncurarc, $
                ncoeff, skycoeff, function_name=function_name, yfit=yfit)
-	    diff = yfit - lambda[use]
+       diff = yfit - lambda[use]
 
 ;
-;	Take lines within 20 km/s - throw out 1 at a time
+;   Take lines within 20 km/s - throw out 1 at a time
 ;
-	    bad = where(abs(diff) GT 3.0d-5, nbad)
-	    if (nbad EQ 0) then done = 1 $ 
-	    else begin
-	      maxdiff = max(abs(diff),badplace)
-	      goodlines[use[badplace],i] = 0
-	    endelse 
-	  endwhile
+       bad = where(abs(diff) GT 3.0d-5, nbad)
+       if (nbad EQ 0) then done = 1 $ 
+       else begin
+         maxdiff = max(abs(diff),badplace)
+         goodlines[use[badplace],i] = 0
+       endelse 
+     endwhile
 
-	  wset.coeff[*,i] = res[0:ncoeff-1]
-	  wset.coeff[0:skycoeff-1,i] = $
-               wset.coeff[0:skycoeff-1,i] + res[ncoeff:*]
+      wset.coeff[*,i] = res[0:ncoeff-1]
+      wset.coeff[0:skycoeff-1,i] = $
+      wset.coeff[0:skycoeff-1,i] + res[ncoeff:*]
 
-;
-;	Now fit inverse set
-;
+      print, format='($, ".",i4.4,a5)',i,string([8b,8b,8b,8b,8b])
+   endfor   
 
-	yy = f_pixarray #  wset.coeff[*,i]
-;
-;	Fit to the 2048 pixels with the wavelengths as the dependent variable.
-;
-          yynorm = 2.0*(yy-ymid)/yrange
-          invset.coeff[*,i] = func_fit(yynorm, xx, icoeff, $
-              function_name=function_name)
-
-          print, format='($, ".",i4.4,a5)',i,string([8b,8b,8b,8b,8b])
-	endfor	
-
-
-  return
+   return
 end
-
-
-
-
-
