@@ -80,6 +80,7 @@ pro locateskylines_test, skylinefile, fimage, ivar, wset, xarc, arcshift=arcshif
 
    if (nskyline EQ 0) then begin
       splog, 'WARNING: No sky lines in wavelength range'
+      skyshift = 0
       return
    endif
 
@@ -128,6 +129,7 @@ maxerr = 0.05 ; ???
    igood = where(mask, ngood)
    if (ngood LT 100) then begin
       splog, 'WARNING: Too few good sky centroids for shifting wavelengths'
+      skyshift = 0
       return
    endif
 
@@ -139,6 +141,7 @@ maxerr = 0.05 ; ???
 
    if (ngoodsn EQ 0) then begin
       splog, 'WARNING: No sky lines with good S/N'
+      skyshift = 0
       return
    endif
 

@@ -76,6 +76,7 @@ pro locateskylines, skylinefile, fimage, ivar, wset, xarc, arcshift=arcshift, $
 
    if (nskyline EQ 0) then begin
       splog, 'WARNING: No sky lines in wavelength range'
+      skyshift = 0
       return
    endif
 
@@ -121,6 +122,7 @@ pro locateskylines, skylinefile, fimage, ivar, wset, xarc, arcshift=arcshift, $
    junk = where(aveinvvar GT 1./(0.2)^2, ngood)
    if (ngood EQ 0) then begin
       splog, 'WARNING: No good sky lines (with std-dev less than 0.2 pixels)'
+      skyshift = 0
       return
    endif else if (ngood LE 3) then begin
       shiftcoeff = 1 ; Fit an offset for each fiber
