@@ -290,6 +290,7 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
    yfit = fltarr(npix)
 
    igood = where(invvar GT 0, ngood)
+   status = 0
    if (ngood GT 0) then begin
       lfit = mpfitfun('manygauss', igood, flux[igood], $
        1./sqrt(invvar[igood]), parinfo=parinfo, $
