@@ -137,15 +137,6 @@ function spflux_medianfilt, loglam, objflux, objivar, mask=mask, width=width, $
    if (ndim EQ 1) then nspec = 1 $
     else nspec = dims[1]
 
-; Should also put the telluric features here...???
-   ; Specify where the lines are to mask out
-   linewave = [3830.0, 3889.0, $
-   ;         H-delta, Ca_k,   Ca_H,   G-band,     
-              4101.7, 3933.7, 3968.5, 4300, 4310, $
-   ;         H-gamma H-beta, Mgb, H-alpha
-              4340.5, 4861.3, 5153.0, 6562.8]
-   linewidth = 16.0 ; in Angstroms
-
    ;----------
    ; Loop over each spectrum
 
@@ -356,12 +347,65 @@ function spflux_pca, loglam, mratio, mrativar, nkeep=nkeep, $
    ; Reject pixels near stellar lines
    mask = spflux_masklines(loglam)
 
+   outmask = 0
    pcaflux = pca_solve(reform(mratio,npix,nspec), $
     reform(mrativar*mask,npix,nspec), reform(loglam,npix,nspec), $
     nkeep=nkeep, nreturn=nkeep, newloglam=newloglam, $
     acoeff=acoeff, outmask=outmask)
 
    return, pcaflux
+end
+
+;------------------------------------------------------------------------------
+function spflux_mratio_flatten, loglam, mratio, mrativar
+
+   ;--------
+   ; First re-bin the spectra to the same spacing
+
+   dims = size(loglam, /dimens)
+   npix = dims[0]
+   nobj = n_elements(loglam) / npix
+
+   minlog1 = min(loglam, max=maxlog1)
+   newloglam = wavevector(minlog1, maxlog1)
+   nnewpix = n_elements(newloglam)
+
+   newratio = fltarr(nnewpix, nobj)
+   newivar = fltarr(nnewpix, nobj)
+
+   for iobj=0L, nobj-1 do begin
+      isort = sort(loglam[*,0,iobj])
+      combine1fiber, loglam[isort,0,iobj], mratio[isort,0,iobj], $
+       mrativar[isort,0,iobj], $
+       newloglam=newloglam, newflux=newratio1, newivar=newivar1
+      newratio[*,iobj] = newratio1
+      newivar[*,iobj] = newivar1
+   endfor
+
+   ;--------
+   ; Compute the straight weighted mean at each wavelength
+
+   denom = total(newivar, 2) ; avoid divide-by-zeros
+   meanratio = total(newratio * newivar, 2) / (denom + (denom EQ 0))
+
+   ibadpix = where(meanratio LE 0, nbadpix)
+   if (nbadpix GT 0) then newivar[ibadpix,*] = 0
+
+   ;--------
+   ; Now for each object, compute the polynomial fit of it relative to the mean
+
+   flatarr = fltarr(npix,1,nobj)
+   for iobj=0L, nobj-1 do begin
+      ii = where(newivar[*,iobj] GT 0)
+      thisloglam = newloglam[ii]
+      thisratio = newratio[ii,iobj] / meanratio[ii]
+      thisivar = newivar[ii,iobj] * meanratio[ii]^2
+      res1 = poly_fit(thisloglam, thisratio, 2, $
+       measure_errors=1./sqrt(thisivar))
+      flatarr[*,0,iobj] = poly(loglam[*,0,iobj], res1)
+   endfor
+
+   return, flatarr
 end
 
 ;------------------------------------------------------------------------------
@@ -477,26 +521,41 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
    endfor
 
    ;----------
-   ; The MRATIO vectors are the "raw" flux-calib vectors for each exposure+CCD
-
-   mratio = objflux / modflux
-   mrativar = objivar * modflux^2
-
-   ;----------
    ; Keep track of which F stars are good
 
    qfinal = bytarr(nphoto) + 1B
+
+   iblue = where(strmatch(camname,'b*'), nblue)
+   ired = where(strmatch(camname,'r*'), nred)
 
    ;----------
    ; Loop over each exposure, and compute the PCA fit to MRATIO
    ; using outlier-rejection.
    ; Iterate, rejecting entire stars if they are terrible fits.
 
-   iblue = where(strmatch(camname,'b*'), nblue)
-   ired = where(strmatch(camname,'r*'), nred)
    qdone = 0L
    while (NOT qdone) do begin
       ifinal = where(qfinal,nfinal) ; This is the list of the good stars
+
+      ;----------
+      ; The MRATIO vectors are the "raw" flux-calib vectors for each expos+CCD
+
+      mratio = objflux / modflux
+      mrativar = objivar * modflux^2
+
+      ;----------
+      ; For each CCD + exposure, divide-out a low-order polynomial from
+      ; MRATIO each star to get them all to the same mean flux levels.
+      ; (This will remove the ~5% large-scale spectrophotometry errors
+      ; between invidual stars, both from spectrograph throughput variations
+      ; and from slight mis-typing of the stars.)
+
+      for ifile=0L, nfile-1 do begin
+         flatarr = spflux_mratio_flatten(loglam[*,ifile,ifinal], $
+          mratio[*,ifile,ifinal], mrativar[*,ifile,ifinal])
+         mratio[*,ifile,ifinal] = mratio[*,ifile,ifinal] / flatarr
+         mrativar[*,ifile,ifinal] = mrativar[*,ifile,ifinal] * flatarr^2
+      endfor
 
       pca_b = spflux_pca(loglam[*,iblue,ifinal], $
        mratio[*,iblue,ifinal], mrativar[*,iblue,ifinal], nkeep=nkeep, $
@@ -526,7 +585,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
          qdone = 1B ; No other stars to reject
       endelse
    endwhile
-; SHOULD ALSO REJECT BASED UPON CHI^2 W.R.T. KURUCZ MODELS!!!???
+; SHOULD ALSO REJECT BASED UPON CHI^2 W.R.T. KURUCZ MODELS/ABSORP. LINES!!!???
    splog, 'Rejected ', nphoto-nfinal, ' of ', nphoto, ' std stars'
 
    ;----------
@@ -590,8 +649,15 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
 ;      bkpt = [logmin, thisbkpts[ibk[1:nbk-2]], logmax]
 
       ; The following generates a number of uniformly-spaced break points
+;      bkpt = 0
+;      fullbkpts = bspline_bkpts(thisloglam[indx], nord=4, nbkpts=100, $
+;       bkpt=bkpt, /silent)
+
+; WE SHOULD PROBABLY CHOOSE BREAK POINTS EVERY CERTAIN TOTAL S/N,
+; LIKE WE DO FOR THE SUPER-SKY FIT !!???
+      ; The following generates break points spaced every Nth good value
       bkpt = 0
-      fullbkpts = bspline_bkpts(thisloglam[indx], nord=4, nbkpts=30, $
+      fullbkpts = bspline_bkpts(thisloglam[indx], nord=4, everyn=nfinal, $
        bkpt=bkpt, /silent)
 
       calibset = bspline_iterfit(thisloglam[indx], fluxcalib[indx], $
