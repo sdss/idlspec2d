@@ -33,6 +33,8 @@ FITS_READ: This Goddard routine seems to have had a bug introduced,
 FITS_WAIT: Add _EXTRA keyword for passing options to FITS_READ, such
            as /HEADER_ONLY or EXTEN=.
 HOGG_OPLOT_COVAR: New ellipse plotting routine.
+YANNY_READ: No need to read the data in this file (only the header
+           and structure definitions) if PDATA is not to be returned.
 YANNY_WRITE: Put quotes around empty strings.  Otherwise, this is not
            a valid Yanny file.  Bug fix for when passing STNAMES.
 
