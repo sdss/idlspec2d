@@ -5,9 +5,10 @@
 ;              i.e. 'GALAXY'
 ; MAXRCHI2   - If set, then only select objects whose reduced chi^2 is
 ;              less than or equal to this value.
+; QUICK      - If set, then only return ZANS and PLUG in the return structure.
 ;------------------------------------------------------------------------------
 function rline_getplate, plate, mjd=mjd, $
- primtarget=primtarget, class=class, maxrchi2=maxrchi2
+ primtarget=primtarget, class=class, maxrchi2=maxrchi2, quick=quick
 
      ; First read the plug-map
 
@@ -30,6 +31,15 @@ function rline_getplate, plate, mjd=mjd, $
 
      igood = where(mask)
      if (igood[0] EQ -1) then return, 0
+
+     if (keyword_set(quick)) then begin
+        tt = { plug : plug[0], $
+               zans : zans[0] }
+        tt = replicate(tt, n_elements(igood))
+        tt.zans = zans[igood]
+        tt.plug = plug[igood]
+        return, tt
+     endif
 
      readspec, zans[igood].plate, zans[igood].fiberid, mjd=zans[igood].mjd, $
       flux=flux, invvar=finv, loglam=loglam, plug=plug, zans=zans
