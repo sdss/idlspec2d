@@ -32,6 +32,10 @@
 ; COMMENTS:
 ;   Duplicate objects are found by matching positions to within 1 arcsec.
 ;
+;   Plot any objects that show a descrepency in redshifts between any
+;   of the observations, or any objects that have ZWARNING set to zero
+;   in one observation and non-zero in another.
+;
 ; EXAMPLES:
 ;   Compare data from different pluggings of the same plate:
 ;   IDL> platecompare, [406,406,406], mjd=[51817,51869,51876]
@@ -143,9 +147,11 @@ pro platecompare, plate, mjd=mjd, topdir=topdir, psfile=psfile
        thistop = topall[gindx[gstart[igroup]:gstart[igroup]+gcount[igroup]-1]]
 
       vdiff = (max(thiszans.z) - min(thiszans.z)) * cspeed
-      vbad = ((vdiff GT 250.) AND (thiszans[0].class EQ 'GALAXY')) $
-          OR ((vdiff GT 500.) AND (thiszans[0].class EQ 'QSO')) $
-          OR ((vdiff GT 50.) AND (thiszans[0].class EQ 'STAR'))
+      totalwarn = total(thiszans.zwarning NE 0)
+      vbad = ((vdiff GT 250.) AND strmatch(thiszans[0].class,'GALAXY*')) $
+          OR ((vdiff GT 500.) AND strmatch(thiszans[0].class,'QSO*')) $
+          OR ((vdiff GT 50.) AND strmatch(thiszans[0].class,'STAR*')) $
+          OR (totalwarn NE 0 AND totalwarn NE n_elements(thiszans))
       vbad = vbad AND ((thiszans[0].zwarning AND 1) EQ 0) ; Not SKY fiber
 
       xrange = [3600, 9300]
@@ -163,7 +169,6 @@ pro platecompare, plate, mjd=mjd, topdir=topdir, psfile=psfile
              /concat)
             sectarget = sdss_flagname('TTARGET', thisplug[ii].sectarget, $
              /concat)
-            print, thiszans[ii].class, thiszans[ii].z
             title = string(thiszans[ii].plate, thiszans[ii].mjd, $
              thiszans[ii].fiberid, $
              format='("Plate ", i4, "-", i5, " Fiber ", i3)')
@@ -180,6 +185,7 @@ pro platecompare, plate, mjd=mjd, topdir=topdir, psfile=psfile
             if (thiszans[ii].zwarning NE 0) then $
              zstring = zstring + $
               '  ZWARNING=' + strtrim(string(thiszans[ii].zwarning),2)
+            print, zstring
             if (keyword_set(topdir)) then thistop1 = thistop[ii] $
              else thistop1 = 0
             readspec, thiszans[ii].plate, thiszans[ii].fiberid, $
