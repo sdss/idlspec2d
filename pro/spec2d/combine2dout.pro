@@ -21,7 +21,7 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
 	if (NOT keyword_set(bin)) then bin = (69.0/299792.5) / 2.30258
 
 	if (NOT keyword_set(zeropoint)) then zeropoint = 3.5d
-	if (NOT keyword_set(nord)) then nord = 5
+	if (NOT keyword_set(nord)) then nord = 3
 	if (NOT keyword_set(ntrials)) then ntrials = 25
 	if (NOT keyword_set(bkptbin)) then bkptbin = bin
 
@@ -231,7 +231,8 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
 	   ss = sort(fullwave)
 	   fullbkpt = slatec_splinefit(fullwave[ss], fullspec[ss], coeff, $
               nord=nord, eachgroup=1, maxiter=20, upper=3.0, lower=3.0, $
-              bkpt=bkpt, everyn=everyn, invvar=fullivar[ss], mask=mask, /silent)
+              bkpt=bkpt, everyn=everyn, invvar=fullivar[ss], $
+              mask=mask, /silent)
 
 	   if (total(coeff) EQ 0.0) then begin
               splog, 'All b-splines coeffs have been set to ZERO!!!!'
@@ -339,6 +340,13 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
             bestguess = fltarr(npix)
             besterr = fltarr(npix)
 	  endif
+
+          inff = where(finite(bestguess) EQ 0 OR finite(besterr) EQ 0)
+          if (inff[0] NE -1) then begin
+            stop
+            bestguess[inff] = 0.0
+            besterr[inff] = 0.0
+          endif
 
 	  writefits, outputfile, [[bestguess],[besterr]], newhdr
 
