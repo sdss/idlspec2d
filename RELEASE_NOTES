@@ -13,6 +13,9 @@ entries on the same line to be consistent with how YANNY_PAR() works now.
 
 Fix the spike in memory usage at the end of SPCOMBINE.
 
+Major changes to PLATELIST routine to return more info, and make a FITS
+binary table.
+
 -------------------------------------------------------------------------------
 v4_5_0 (Jan 31, 2000)
 
