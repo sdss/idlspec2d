@@ -20,6 +20,9 @@ FIBER_ROLLCALL: This code has been broken out of PLATESN.
 FILTER_THRU: SDSS filter curves are now in the idlutils products under
         the subdirectory data/filters.
 FIND_NMINIMA: Fix bug when plotting.
+FLUX_DISTORTION: New function for computing the overall flux-distortion
+        on an entire plate using the spectrophotometry compared to the
+        fluxes in the plug-map structure.
 FSTARS_PLOT: New code to make color-color plots of spectro-photometric stars
         as compared to the stellar locus and BD+17.  This code actually dates
         back to Sep 2002, but was never checked in.
@@ -84,6 +87,11 @@ SPCOADD_V5: New code to replace SPCOADD_FRAMES for version 5 outputs.
         and output as HDU #6.
 SPCOMBINE: Pass all arguments if this proc is called recursively.
 SPCOMBINE_V5: New code to replace SPCOMBINE for version 5 outputs.
+        Add call to FLUX_DISTORTION to compute the 2-D spectro-photometric
+        corrections.  This modifies the fluxes both in the spCFrame and
+        the spPlate files.  This is a fairly major change, in that the
+        spectro-phometry is now explicitly tied to the plugmap-structure
+        magnitudes and colors (at least in the mean).
 SPFLUX_V5: New code to replace SPFLUX for version 5 outputs.  This computes
         the spectro-photometry vectors on an exposure-by-exposure basis
         (though doing the fit on all exposures at once).  The low-order
