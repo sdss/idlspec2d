@@ -206,6 +206,7 @@ pro/spec2d/traceset2pix.pro -text
 pro/spec2d/traceset2xy.pro -text
 pro/spec2d/tweaktrace.pro -text
 pro/spec2d/ushift.pro -text
+pro/spec2d/whopping_image.pro -text
 pro/spec2d/writeapid.pro -text
 pro/spec2d/xy2traceset.pro -text
 src/Makefile -text
