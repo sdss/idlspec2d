@@ -50,30 +50,30 @@
 ;-
 ;------------------------------------------------------------------------------
 function fourier_quotient, galfft, starfft, galvar0, starvar0, $
-          testsigma=testsigma, lowlimit = lowlimit, highlimit=highlimit, $
-          deltachisq=deltachisq, doplot=doplot
+ testsigma=testsigma, lowlimit = lowlimit, highlimit=highlimit, $
+ deltachisq=deltachisq, doplot=doplot
 
-      if (NOT keyword_set(lowlimit)) then lowlimit = 1.0/80.0
-      if (NOT keyword_set(highlimit)) then highlimit = 1.0/2.2
+   if (NOT keyword_set(lowlimit)) then lowlimit = 1.0/80.0
+   if (NOT keyword_set(highlimit)) then highlimit = 1.0/2.2
 
-      knums = fft_wavenums(n_elements(galfft))
-      inside = where(abs(knums) GT lowlimit AND $
-                     abs(knums) LT highlimit, ninside)
+   if (size(galfft, /tname) EQ 'DOUBLE') then PI = !dpi $
+    else PI = !pi
 
-      if (inside[0] EQ -1) then begin
-        print, 'no pixels in correct frequency range'
-        return, -1
-      endif
+   knums = fft_wavenums(n_elements(galfft))
+   inside = where(abs(knums) GT lowlimit AND $
+                  abs(knums) LT highlimit, ninside)
 
-      if n_elements(testsigma) EQ 0 then testsigma = findgen(30)*0.2
+   if (inside[0] EQ -1) then begin
+      print, 'No pixels in correct frequency range'
+      return, -1
+   endif
 
-;
+   if (n_elements(testsigma) EQ 0) then testsigma = findgen(30)*0.2
+
 ;       Tonry and Davis show a simple expression to maximize
 ;       This is a slow minimizer, stepping through 30 sigmas to
 ;       find best one.  This method is the fft difference method
 ;       We need a routine for each method.
-;
-
 
       nloop = n_elements(testsigma)
       chi2 = fltarr(nloop)
@@ -92,7 +92,7 @@ function fourier_quotient, galfft, starfft, galvar0, starvar0, $
               broad = gauss_periodic(knums[inside], [1., 0., fsig])
           ENDELSE 
 
-;        broad = exp(-(knums[inside]*testsigma[i] * 2.0 * !Pi)^2/2.0)
+;        broad = exp(-(knums[inside]*testsigma[i] * 2.0 * PI)^2/2.0)
 
           alpha[i] = total(q * broad / var)/total(broad^2/var)
           qres = (q-alpha[i]*broad)

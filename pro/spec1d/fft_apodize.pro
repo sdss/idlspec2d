@@ -20,7 +20,8 @@ pro fft_apodize, flux, fluxerr
    endelse
 
    objbell = 0.0 * flux
-   objbell[i1:i2] = cosbell(i2-i1+1, 0.2)
+   objbell[i1:i2] = cosbell(i2-i1+1, 0.2, $
+    double=(size(flux, /tname) EQ 'DOUBLE'))
 
    fluxmean = total(flux*objbell)/total(objbell)
    flux = (flux - fluxmean) * objbell

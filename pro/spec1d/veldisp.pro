@@ -76,6 +76,9 @@ pro veldisp, objflux, objerr, starflux, starerr, result, klo_cut=klo_cut, $
    if (size(starflux, /n_dimen) NE 1) then $
     message, 'Stellar template is not 1-dimensional'
 
+   if (size(objflux, /tname) EQ 'DOUBLE') then PI = !dpi $
+    else PI = !pi
+
    ndim = size(objflux, /n_dimen)
    dims = size(objflux, /dimens)
    if (ndim EQ 1) then begin
@@ -196,7 +199,7 @@ pro veldisp, objflux, objerr, starflux, starerr, result, klo_cut=klo_cut, $
           (starsigma*starsigma_err)^2)/result[iobj].sigma_cc
       endif
 
-      twopiei = 2.0 * !Pi * complex(0.0,1.0)
+      twopiei = 2.0 * PI * complex(0.0,1.0)
       knums = fft_wavenums(npixbig)
       phase = exp( - twopiei * knums * fitcen)
       starshift = starfft * phase
