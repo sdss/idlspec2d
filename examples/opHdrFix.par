@@ -391,3 +391,6 @@ ophdrfix sdR-??-00013631 EXPTIME   2460
 # These are bad test data taken on MJD 52337 using plate 778.
 ophdrfix sdR-??-0001362[4-5] FLAVOR   "'unknown'"
 
+# Wrong exposure time in these headers for plate 876 on MJD 52343.
+ophdrfix sdR-??-00013781 EXPTIME  1500
+

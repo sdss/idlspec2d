@@ -1,4 +1,5 @@
 
+ELODIE_BEST: New function in development for finding best-fit Elodie spectrum.
 FITARCIMAGE: List the (0-indexed) fiber numbers that in which
             any or all arc centroids are fixed.
 PLATECOMPARE: Fix 1-character typo preventing selecting the MJD
