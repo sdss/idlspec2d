@@ -219,7 +219,10 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
    ; Check to see if there are fewer good fibers
 
    igood = where(fibermask EQ 0 AND total(fflat,1) GT 0, ngood)
-   if (ngood EQ 0) then message, 'All flat fibers have been rejected!'
+   if (ngood EQ 0) then begin
+      splog, 'WARNING: All flat fibers have been rejected!'
+      return, -1
+   endif
  
    ;----------
    ; Divide FFLAT by a global median of all (good) fibers
