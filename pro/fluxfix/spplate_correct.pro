@@ -64,7 +64,7 @@
 ;    set.  When smear is removed, all of the spectra should have r-band 
 ;    synthetic magnitudes approximately equal to the fiber mag.  However there 
 ;    are sometimes slight offsets due to the manner in which the original 
-;    Spectro2d flux calibration was done.  The mean ratio of the
+;    Spectro2d flux calibration was done.  The median ratio of the
 ;    the r-band magnitudes synthesized from the spectra and the photo fiber
 ;    mags in the plugmap is used to reset the zeropoint, if this is desired.
 ; 
@@ -89,7 +89,6 @@
 ;
 ; PROCEDURES CALLED:
 ;    fibermask_bits()
-;    meanclip
 ;    mrdfits()
 ;    mwrfits
 ;    plate_flux_recal
@@ -250,8 +249,8 @@ pro spplate_correct, plate, mjd, spectro_data_dir = spectro_data_dir, $
     ifib1 = indgen(320)
     ifib2 = ifib1 + 320
 
-    meanclip, (r_photo_fnu[ifib1] / r_spectro_fnu[ifib1]), fcor1_zpt
-    meanclip, (r_photo_fnu[ifib2] / r_spectro_fnu[ifib2]), fcor2_zpt
+    fcor1_zpt = median(r_photo_fnu[ifib1] / r_spectro_fnu[ifib1])
+    fcor2_zpt = median(r_photo_fnu[ifib2] / r_spectro_fnu[ifib2])
 
     splog, 'Flux Zeropoint Correction to Spectrograph 1: ' + $
            string(fcor1_zpt, format = '(F6.3)')
