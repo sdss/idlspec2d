@@ -28,6 +28,8 @@ etc/intrinsicF2.dat -text
 etc/lamphgcdne.dat -text
 etc/lamplist.dat -text
 etc/red.bkpts -text
+etc/regress1d_all.dat -text
+etc/regress1d_all.plates -text
 etc/sdss_g_atm.dat -text
 etc/sdss_i_atm.dat -text
 etc/sdss_r_atm.dat -text
@@ -82,6 +84,7 @@ pro/spec1d/fourier_quotient.pro -text
 pro/spec1d/ftest.pro -text
 pro/spec1d/fundamental_line.pro -text
 pro/spec1d/gauss_periodic.pro -text
+pro/spec1d/make_regress1d.pro -text
 pro/spec1d/plug2tsobj.pro -text
 pro/spec1d/primfac.pro -text
 pro/spec1d/readspec.pro -text
