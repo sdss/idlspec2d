@@ -265,7 +265,9 @@ maxdev = 1.0d-5
 ;maxsig = 3.0
 
    nlamp = N_elements(lamps)
-   xy2traceset, transpose(double(xcen)), lamps.loglam # (dblarr(nfiber)+1), $
+   if (nlamp EQ 1) then ytmp = transpose(lamps.loglam * (dblarr(nfiber)+1)) $
+    else ytmp = lamps.loglam # (dblarr(nfiber)+1)
+   xy2traceset, transpose(double(xcen)), ytmp, $
      wfirst, invvar=transpose(xmask), func=func, ncoeff=ncoeff, $
      maxdev=maxdev, maxiter=nlamp, /singlerej, $
      xmask=xfitmask, xmin=0, xmax=npix-1, yfit=yfit
@@ -344,7 +346,9 @@ maxdev = 1.0d-5
    ;  Now do final traceset fit
    ;--------------------------------------------------------------------------
 
-   xy2traceset, transpose(double(xcen)), lamps.loglam # (dblarr(nfiber)+1), $
+   if (nlamp EQ 1) then ytmp = transpose(lamps.loglam * (dblarr(nfiber)+1)) $
+    else ytmp = lamps.loglam # (dblarr(nfiber)+1)
+   xy2traceset, transpose(double(xcen)), ytmp, $
      wset, func=func, ncoeff=ncoeff, $
      maxiter=nlamp, /singlerej, xmin=0, xmax=npix-1, yfit=yfit
 
