@@ -72,7 +72,7 @@ end
 pro combine2dout, filenames, outputroot, spectrographid, $
  binsz, zeropoint, nord=nord, wavemin=wavemin, $
  bkptbin=bkptbin, everyn=everyn, display=display, window=window, $
- individual=individual
+ individual=individual, maxsep=maxsep
 
    ; Initial binning was 69 km/s per pixel (with a sigma of 1.0 pixel)
    ; 69.02977415 km/s is log lambda 10^-4
@@ -83,6 +83,8 @@ pro combine2dout, filenames, outputroot, spectrographid, $
    if (NOT keyword_set(zeropoint)) then zeropoint = 3.5d
    if (NOT keyword_set(nord)) then nord = 3
    if (NOT keyword_set(bkptbin)) then bkptbin = binsz
+
+   if (NOT keyword_set(maxsep)) then maxsep = 2.0*binsz
 
    nfiles = N_elements(filenames)
    if (nfiles EQ 0) then return
@@ -239,6 +241,28 @@ pro combine2dout, filenames, outputroot, spectrographid, $
    blueflux = fltarr(nfiber)
    redflux = fltarr(nfiber)
 
+   nonzero = where(fluxivar GT 0.0)
+   minfullwave = min(wave[nonzero])
+   maxfullwave = max(wave[nonzero])
+
+   ; Get max and min from good pixels
+
+   if (NOT keyword_set(wavemin)) then begin
+      spotmin = fix((minfullwave - zeropoint)/binsz) + 1
+      spotmax = fix((maxfullwave - zeropoint)/binsz)
+      wavemin = spotmin * binsz + zeropoint
+      wavemax = spotmax * binsz + zeropoint
+   endif else begin
+      spotmin = 0
+      if (NOT keyword_set(wavemax)) then begin
+        spotmax = fix((maxfullwave - wavemin)/binsz)
+        wavemax = spotmax * binsz + wavemin
+      endif else spotmax = fix((wavemax - wavemin)/binsz)
+   endelse
+
+   npix = spotmax - spotmin + 1
+   newwave = dindgen(npix)*binsz + wavemin
+
    for i=0, nfiber-1 do begin
  
       scale[i] = 1.0
@@ -248,6 +272,7 @@ pro combine2dout, filenames, outputroot, spectrographid, $
       fullwave = wave[*,i]
       fullspec = flux[*,i]
       fullivar = fluxivar[*,i]
+      fullcombmask = bytarr(n_elements(fullspec))
       fullpixelmask = pixelmask[*,i]
       fullfibermask = fibermask[*,i]
 
@@ -257,99 +282,77 @@ pro combine2dout, filenames, outputroot, spectrographid, $
        +string(format='(i3.3,a)',i+1+(spectrographid-1)*320)+'.fits'
 
       bad = 0
-      nonzero = where(fullivar GT 0.0)
-      if (nonzero[0] EQ -1) then begin
+      bestguess = fltarr(npix)
+      bestivar = bestguess*0.0
+      besterr = bestivar
+      nonzero = where(fullivar GT 0.0,ngood)
 
-         splog, 'No good points, all have 0.0 or negative sigma'
+      if (ngood EQ 0 OR strtrim(plugmap[i].objtype,2) EQ 'NA') then begin
+
+         splog, 'No good points OR no plugmap entry'
+         outputpixelmask = lonarr(npix) - 1L
          bad = 1
 
       endif else begin
 
-         minfullwave = min(fullwave[nonzero])
-         maxfullwave = max(fullwave[nonzero])
-
-         ; Get max and min from good pixels
-
-         if (NOT keyword_set(wavemin)) then begin
-            spotmin = fix((minfullwave - zeropoint)/binsz) + 1
-            spotmax = fix((maxfullwave - zeropoint)/binsz)
-            wavemin = spotmin * binsz + zeropoint
-            wavemax = spotmax * binsz + zeropoint
-            bkptmin = wavemin
-            bkptmax = wavemax
-         endif else begin
-            spotmin = 0
-            bkptmin = minfullwave
-            if (NOT keyword_set(wavemax)) then begin
-               spotmax = fix((maxfullwave - wavemin)/binsz)
-               wavemax = spotmax * binsz + wavemin
-               bkptmax = wavemax
-            endif else begin
-               spotmax = fix((wavemax - wavemin)/binsz)
-               bkptmax = maxfullwave
-            endelse
-         endelse
-
-         npix = spotmax - spotmin + 1
-         nbkpt = fix((bkptmax - bkptmin)/bkptbin) + 1
-
-         newwave = dindgen(npix)*binsz + wavemin
-
-         ; Fit B-spline to each individual spectrum
+;	 Now let's break sorted wavelengths into groups where
+;	 pixel separations are larger than maxsep
 ;
-;           indbkpt = slatec_splinefit(fullwave, fullspec, $
-;              eachgroup=1, everyn=3, invvar=fullivar, /silent)
 
-         if (keyword_set(everyn)) then begin 
-            everyn = (nfiles + 1)/2 
-            bkpt = 0
-         endif else begin
-            bkpt = dindgen(nbkpt)*bkptbin + bkptmin
-         endelse
+         goodsort = nonzero[sort(fullwave[nonzero])]
+	 wavesort = fullwave[goodsort]
 
-         ; Need to construct ivar for bspline
+	 padwave = [min(wavesort) - 2.0*maxsep, wavesort, max(wavesort) + 2.0*maxsep]
 
-         ; Using newwave as breakpoints
+         startgroup = where(padwave[1:ngood] - padwave[0:ngood-1] GT maxsep,nstart)
+         endgroup = where(padwave[2:ngood+1] - padwave[1:ngood] GT maxsep,nend)
 
-         ss = sort(fullwave)
-         fullbkpt = slatec_splinefit(fullwave[ss], fullspec[ss], coeff, $
-          nord=nord, eachgroup=1, maxiter=20, upper=3.0, lower=3.0, $
-          bkpt=bkpt, everyn=everyn, invvar=fullivar[ss], mask=mask, /silent)
+         if (nstart NE nend) then $
+           message, 'ABORT: grouping tricks did not work!'
 
-         if (total(coeff) EQ 0.0) then begin
-            splog, 'WARNING: All B-spline coefficients have been set to zero!'
-         endif
 
-         splog, 'Masked ', fix(total(1-mask)), ' of', $
-          n_elements(mask), ' pixels'
+         for igrp=0,nstart - 1 do begin
+         
+           ss = goodsort[startgroup[igrp]: endgroup[igrp]]    
+;           bkptmin = wavesort[startgroup[igrp]]
+;           bkptmax = wavesort[endgroup[igrp]]
+;           nbkpt = fix((bkptmax - bkptmin)/bkptbin) + 1
+           bkpt = 0
 
-         mask[ss] = mask
+           fullbkpt = slatec_splinefit(fullwave[ss], fullspec[ss], coeff, $
+             nord=nord, eachgroup=1, maxiter=20, upper=3.0, lower=3.0, $
+             bkspace=bkptbin, bkpt=bkpt, invvar=fullivar[ss], mask=mask, /silent)
 
-         replace = where(mask EQ 0)
+           if (total(coeff) EQ 0.0) then $
+             splog, 'WARNING: All B-spline coefficients have been set to zero!'
+         
+           inside = where(newwave GE min(bkpt) AND newwave LE max(bkpt), numinside)
+           if (numinside EQ 0) then $
+             message, 'No wavelengths inside breakpoints'
 
-;
-;	Here replace original flux values of masked pixels with b-spline
-;       evaluations
-;
-         if (replace[0] NE -1) then begin 
-           fullspec[replace] = slatec_bvalu(fullwave[replace],fullbkpt,coeff)
+           fwave = float(newwave[inside])
+           bestguess[inside] = slatec_bvalu(fwave,fullbkpt,coeff)
 
-           fullpixelmask[replace] = fullpixelmask[replace] OR $
+           splog, 'Masked ', fix(total(1-mask)), ' of', n_elements(mask), ' pixels'
+
+           replace = where(mask EQ 0)
+
+           ;-------------------------------------------------------------------------
+           ;  Here replace original flux values of masked pixels with b-spline
+           ;  evaluations
+
+           if (replace[0] NE -1) then begin 
+             fullspec[ss[replace]] = slatec_bvalu(fullwave[ss[replace]],fullbkpt,coeff)
+
+             fullpixelmask[ss[replace]] = fullpixelmask[ss[replace]] OR $
                                       pixelmask_bits('COMBINEREJ')
-         endif
+           endif
 
+           fullcombmask[ss] = mask
 
+           if (i EQ 173) then stop
+         endfor
 
-         bestguess = fltarr(npix)
-         inside = where(newwave GE bkptmin AND newwave LE bkptmax, numinside)
-         if (inside[0] EQ -1) then $
-          message, 'No wavelengths inside breakpoints'
-
-         fwave = float(newwave[inside])
-         bestguess[inside] = slatec_bvalu(fwave,fullbkpt,coeff)
-
-         bestivar = bestguess*0.0
-         besterr = bestivar
 
          ;------------------------------------------------------------------------
          ; Also keep 2 spots for each file in case 2 pixels are touching newwave
@@ -366,8 +369,8 @@ pro combine2dout, filenames, outputroot, spectrographid, $
 
                   ; Let's conserve inverse variance
 
-                  totalbefore = total(fullivar[these] * mask[these])
-                  result = interpol(fullivar[these] * mask[these], $
+                  totalbefore = total(fullivar[these] * fullcombmask[these])
+                  result = interpol(fullivar[these] * fullcombmask[these], $
                    fullwave[these], newwave[inbetween])
 
                   if (total(result) GT 0.0) then begin
