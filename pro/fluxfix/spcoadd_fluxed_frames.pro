@@ -50,6 +50,8 @@
 ;                    should be matched to. (string). If not set the "best" 
 ;                    exposure is determined from the S/N and a measure of the 
 ;                    spectrophotometric quality
+;   noxytweak      - Allow correction for residual spectrophotometry errors
+;                    as a funtion of plate xy position to be turned off
 ;
 ; OUTPUTS: 
 ;   A fully calibrated "spPlate" file is produced.  The HDU's are as follows
@@ -150,7 +152,8 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
  mjd=mjd, binsz=binsz, zeropoint=zeropoint, nord=nord, wavemin=wavemin, $
  window=window, adderr=adderr, $
  docams=camnames, plotsnfile=plotsnfile, combinedir=combinedir, $
- tsobjname = tsobjname, smearname = smearname, best_exposure = best_exposure
+ tsobjname = tsobjname, smearname = smearname, best_exposure = best_exposure, $
+ noxytweak = noxytweak
 
    ;---------------------------------------------------------------------------
 
@@ -496,7 +499,7 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    ;---------------------------------------------------------------------------
    
    newplug_struct = create_struct(finalplugmap[0], 'tsobjid', lonarr(5), $
-     'tsobj_mag', fltarr(5))
+     'tsobj_mag', fltarr(5), 'ebv_sfd', 0.0)
    newplug = make_array(val=newplug_struct, dim=nfiber)
    struct_assign, finalplugmap, newplug
    newplug.tsobjid = finalplugtag.tsobjid
@@ -526,17 +529,20 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
      sid_str = strtrim(specnum, 2) 
      title_tag = 'Plate: ' + plate_str + ' MJD: ' + mjd_str + $
                  ' Spec: ' + sid_str
+  
+     ; Allow this step to be turned off 
+     if not keyword_set(noxytweak) then begin  
+       atmdisp_model = atmdisp_cor(finalloglam, finalflux[*,ispec], $
+         finalplugtag[ispec], besthdr, title = title_tag, surfgr_sig=xysig)
      
-     atmdisp_model = atmdisp_cor(finalloglam, finalflux[*,ispec], $
-       finalplugtag[ispec], besthdr, title = title_tag, surfgr_sig=xysig)
-     
-     surfgr_sig[specnum - 1] = xysig
-     tempflux = finalflux[*,ispec]
-     tempivar = finalivar[*,ispec]
-     divideflat, tempflux, invvar=tempivar, atmdisp_model, minval=0.2
-     finalflux[*,ispec] = tempflux
-     finalivar[*,ispec] = tempivar
-   
+       surfgr_sig[specnum - 1] = xysig
+       tempflux = finalflux[*,ispec]
+       tempivar = finalivar[*,ispec]
+       divideflat, tempflux, invvar=tempivar, atmdisp_model, minval=0.2
+       finalflux[*,ispec] = tempflux
+       finalivar[*,ispec] = tempivar
+     endif
+ 
    ;---------------------------------------------------------------------------
    ; Check the final spectrophotometry of the standards against the models.
    ; In particular, find wiggles near the dichroic and correct for them.
@@ -625,6 +631,34 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    endelse
 
    ;---------------------------------------------------------------------------
+   ; Correct objects for foregound Milky Way dust using SFD Maps
+   ;---------------------------------------------------------------------------
+
+   dustdir = getenv('DUST_DIR')
+   if keyword_set(dustdir) then $
+     dustmaps = file_test(dustdir + '/maps/SFD_dust_4096_ngp.fits') $
+   else dustmaps = 0
+
+   if dustmaps then begin
+     ; Get values of E(B-V) for each ra/dec from SFD maps
+     glactc, finalplugtag.ra, finalplugtag.dec, 2000, gall, galb, 1, /degre
+     ebv_sfd = dust_getval(gall, galb, ipath = dustdir + '/maps/', /interp)
+     finalplugmap.ebv_sfd = ebv_sfd 
+
+     ; Deredden the flux and ivar - use O'donnel extinction curve 
+     A_v = 3.1 * ebv_sfd
+     a_odonnell = ext_odonnell(10.0^finalloglam, 3.1)
+     e_tau = exp(a_odonnell # A_v / 1.086)
+     finalflux = finalflux * e_tau
+     finalivar = finalivar / e_tau^2
+
+   endif else begin
+      splog, 'WARNING!!!!  Foreground Dust correction NOT applied' 
+      ebv_sfd = 0.0
+   endelse
+
+
+   ;---------------------------------------------------------------------------
    ; Generate S/N plots
    ;---------------------------------------------------------------------------
   
@@ -635,7 +669,7 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
 
    platesn, finalflux, finalivar, finalandmask, finalplugtag, finalloglam, $
      hdr=hdr, plotfile=djs_filepath(plotsnfile, root_dir=combinedir), $
-     snvec=snvec, synthmag=synthmag
+     snvec=snvec, synthmag=synthmag, ebv_sfd = ebv_sfd
 
    ;---------------------------------------------------------------------------
    ; Add to the output header
@@ -683,11 +717,12 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    ;-----------
    ; Check for SFD maps
 
-   dustdir = getenv('DUST_DIR')
-   if keyword_set(dustdir) then begin
-     dustmaps = file_test(dustdir + '/maps/SFD_dust_4096_ngp.fits') ? 'T' : 'F'
-   endif else dustmaps = 'F'              
-   sxaddpar, hdr, 'SFD_USED', dustmaps, ' SFD dust maps used?'
+   dustmapstf = dustmaps ? 'T' : 'F'  
+   sxaddpar, hdr, 'SFD_USED', (dustmaps ? 'T':'F'), ' SFD dust maps used?'
+   sxaddpar, hdr, 'FDUSTCOR', (dustmaps ? 'T':'F'), ' Corrected for ' + $ 
+     'foreground MW dust?'
+   if dustmaps then medebv = median(ebv_sfd) else medebv = -9999
+   sxaddpar, hdr, 'MED_EBV ', medebv, ' Median E(B-V) from SFD'
 
    ;------------
    ; Keyword describing the sigma of the surface fit to the (g-r) residuals 
