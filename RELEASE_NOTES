@@ -1,4 +1,11 @@
 
+-------------------------------------------------------------------------------
+v4_9_12 (Jun 26, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
+Built against specflat v1_4.
+
+Minor enhancements for SOS.  For P-1D, now able to generate larger summary
+files and improvements to the web site.
+
 APO_LOG2HTML: Change link from SOS web pages to new location at
            "http://sdsshost.apo.nmsu.edu/idlspec2d/spectroSOS.html".
            For the total S/N^2 on a plate, only include exposures
@@ -68,6 +75,11 @@ REPSTR: Change loop indices to type long, which was necessary to the
 STRUCT_PRINT: Add options TARRAY, /NO_HEAD, /HTML, FDIDIT, DDIGIT, ALIAS.
 STRUCT_TRIMTAGS: New procedure.
 SXASCII_READ: Fixes for sxascii_read, I think it might actually work?!
+YANNY_READ: Hacked by Christy to fix the bug to allow semi-colons
+           within quotes.  This adds the internal function YANNY_INQUOTES().
+           I suspect there may be a better way to do this using REGEXP().
+           If someone ever figures that out, the version before this was 1.31
+           (which appeared in v4_9_10,v4_9_11).
 
 evilinstall: One line change to do one more check for proper sdsstools.
 
