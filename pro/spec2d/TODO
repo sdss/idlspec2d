@@ -1,4 +1,19 @@
 
+* Remove WARNING, ABORT words from HTML file from APO2HTML.
+
+* Preserve header info in APOREDUCE.
+
+* Put back Scott's conservevariance terms in COMBINE2DOUT.
+
+* Add keywords: INSTRUME ?
+
+* Use a proc SDSSHEAD in place of HEADFITS, which calls SDSSPROC to get
+  the header info correct (e.g., the CAMERA keyword).
+
+* ATV bug displaying BYTE images, or NaN's
+
+* Add HELIOCENTRIC code into current cvs.
+
 * Reject masked or deviant sky fibers from the supersky (as done for superflat)
 
 * In SPALLREDUCE, don't send the name UNKNOWN to COMBINE2DOUT.
