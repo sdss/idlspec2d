@@ -50,12 +50,15 @@ for dir in $astrologdirs
 do
    rsync -ar --rsh="ssh -c blowfish" \
     --rsync-path=/p/rsync/v2_4_3/rsync \
-    --include "Unplugged*.ps"  --include "fiberScan*.par" \
-    --include "guiderMon*.par" --include "op*.par" \
-    --include "plPlugMap*.par" --include "sdReport*.par" \
+    --include "sdReport*.par"    \
+    --include "plPlugMap*.par"   \
+    --include "guiderMon*.par"   \
     --include "exposureLog*.par" \
-    --exclude="*/*" \
-    --log-format="/astrolog/%f" \
+    --include "op*.par"          \
+    --include "Unplugged*.ps"    \
+    --include "fiberScan*.par"   \
+    --exclude="*/*"              \
+    --log-format="/astrolog/%f"  \
     sdsshost.apo.nmsu.edu:$dir $ASTROLOG_DIR
 done
 
