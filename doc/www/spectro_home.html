@@ -642,8 +642,15 @@ VERS1D  = Version of idlspec2d for 1D reduction
 </PRE>
 
 <P>
-The second file (spZbest*.fits) is the Princeton-1D output file as a
-FITS binary table.  The columns are as follows: <BR>
+The second file (spZbest*.fits) is the Princeton-1D output file.
+Early reductions have a single HDU, which is the FITS binary table
+described below.  Reductions with version v4_7_0+ also include
+a 2nd HDU which is the best-fit eigen-spectrum for each object.
+These can be regenerated from the tabular information, but for
+convenience I've explicitly computed them.
+
+<P>
+The columns in the first HDU are as follows: <BR>
 <PRE>
 PLATE      Plate number
 TILE       Tile number
@@ -730,6 +737,7 @@ The mask bits are set as follows: <BR>
 21 CROSSTALK       Cross-talk significant
 22 NOSKY           Sky level unknown at this wavelength (INVVAR=0)
 23 BRIGHTSKY       Sky level > flux + 10*(flux error)
+                   AND sky > 1.25 * median(sky,99 pixels)
 24 NODATA          No data available in combine B-spline (INVVAR=0)
 25 COMBINEREJ      Rejected in combine B-spline
 26 BADFLUXFACTOR   Low flux-calibration or flux-correction factor
