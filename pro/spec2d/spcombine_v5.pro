@@ -167,7 +167,7 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
             thisfile = (lookforgzip(djs_filepath(allseq[i].name[icams[j]], $
              root_dir=extractdir)))[0]
             if (keyword_set(thisfile)) then begin
-               hdr = headfits(allseq[i].name[j])
+               hdr = headfits(thisfile)
                score[j,i] = sxpar(hdr, 'FRAMESN2')
                cameras = strtrim(sxpar(hdr, 'CAMERAS'),2)
                camspecid[j,i] = strmid(cameras, 1, 1)
