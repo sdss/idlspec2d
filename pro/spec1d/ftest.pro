@@ -135,60 +135,6 @@ END
 
 
 
-PRO brg, result, z
-zap = 1
-  listpath = '~/idlspec2d/misc/'
-  readcol, listpath+'brg.list', num, plt, fiber, mjd, zchic
-;  w = where((plt GE  301) AND (plt LT 303))
-  w = where((plt GT 302) AND plt LT  306, ct)
-;  w = w[0:9] &  ct=n_elements(w)
-;  w = [88] & ct=1
-  plt = plt[w]
-  mjd = mjd[w]
-  fiber = fiber[w]
-  zchic = zchic[w]
-
-  readspec, 306, 250, flux=template,wave=wave,flerr=templatesig,plug=plug
-  readspec, plt, fiber, flux=galflux,wave=galwave,flerr=galsig,plug=galplug
-  bad = bytarr(ct)
-  FOR i=0, ct-1 DO BEGIN 
-      IF stdev(galflux[*, i]) EQ 0 THEN bad[i] = 1
-  ENDFOR 
-  w = where(bad EQ 0)
-  galflux = galflux[*, w]
-  galwave = galwave[*, w]
-  galsig  = galsig[*, w]
-  galplug = galplug[*, w]
-  plt = plt[w]
-  mjd = mjd[w]
-  fiber = fiber[w]
-  zchic = zchic[w]
-      
-
-  IF keyword_set(zap) THEN BEGIN 
-      
-      linemask = (galwave LT 5585) AND (galwave GE 5574)
-      galflux = djs_maskinterp(galflux, linemask, iaxis=0)
-      
-  ENDIF 
-
-
-  veldisp, galflux, galsig, galwave, template, templatesig, wave, result, $
-    sigmast=0.05, maxsig=6, /nodiff
-
-  z = 10.^(result.z/10000.)-1. 
-  sig = sqrt(result.sigma_quotient)
-  sig2err = (result.sigma_quotient_err)
-  mag = galplug.mag[2]
-  sigcc = result.sigma_cc
-
-  goodz = where(abs(z-zchic) LT 0.002, ct)
-  badz = where(abs(z-zchic) GT 0.002, ct)
-  print, 'Bad Fiber numbers: ', fiber[badz]
-stop
-  return
-
-END
 
 
 PRO ntest, noisenum, noisedenom
@@ -219,6 +165,8 @@ PRO ntest, noisenum, noisedenom
 
   res = fltarr(51)
   x0 = findgen(51)/10.
+
+
 ;  FOR i=0, 50 DO BEGIN 
 ;      r = sqrt((x-x0[i])^2+y^2)
 ;      print, mean(r)
@@ -231,5 +179,150 @@ PRO ntest, noisenum, noisedenom
   plot, x0, res^2-x0^2-model
 stop
   return
+END
+
+
+
+PRO brg, result, z
+zap = 1
+  listpath = '~/idlspec2d/misc/'
+  readcol, listpath+'brg.list', num, plt, fiber, mjd, zchic
+  w = where((plt GE  306) AND (plt LE 306), ct)
+;  w = where((plt EQ 308) AND (fiber EQ 237), ct)
+;  w = where((plt GT 302) AND plt LT  306, ct)
+;  w = w[0:19] &  ct=n_elements(w)
+;  w = [88] & ct=1
+  IF ct EQ 1 THEN w = w[0]
+  plt = plt[w]
+  mjd = mjd[w]
+  fiber = fiber[w]
+  zchic = zchic[w]
+
+  readspec, 306, 250, flux=template,wave=wave,flerr=templatesig;, plug=plug
+  readspec, plt, fiber, flux=galflux,wave=galwave,flerr=galsig;, plug=galplug
+
+  bad = bytarr(ct)
+  FOR i=0, ct-1 DO BEGIN 
+      IF stdev(galflux[*, i]) EQ 0 THEN bad[i] = 1
+  ENDFOR 
+  w = where(bad EQ 0)
+  galflux = galflux[*, w]
+  galwave = galwave[*, w]
+  galsig  = galsig[*, w]
+;  galplug = galplug[*, w]
+  plt = plt[w]
+  mjd = mjd[w]
+  fiber = fiber[w]
+  zchic = zchic[w]
+
+  IF keyword_set(zap) THEN BEGIN 
+      
+      linemask = (galwave LT 5586) AND (galwave GE 5573)
+      galflux = djs_maskinterp(galflux, linemask, iaxis=0)
+      
+  ENDIF 
+
+  keep = [3000, 6100]
+  veldisp, galflux, galsig, galwave, template, templatesig, wave, result, $
+    sigmast=0.05, maxsig=6, keep=keep
+
+;  FOR i=0, ct-1 DO BEGIN 
+;      gal = galflux[*, i]
+;      gsig = galsig[*, i]
+;      gwav = galwave[*, i]
+;      veldisp, gal, gsig, gwav, gal, gsig, gwav, result, $
+;        sigmast=0.05, maxsig=6, /nobe
+;  ENDFOR 
+
+  z = 10.^(result.z/10000.)-1. 
+  sig = sqrt(result.sigma_quotient)
+  sig2err = (result.sigma_quotient_err)
+;  mag = galplug.mag[2]
+  sigcc = result.sigma_cc
+
+  goodz = where(abs(z-zchic) LT 0.002, ct)
+  badz = where(abs(z-zchic) GT 0.002, ct)
+  IF ct EQ 0 THEN BEGIN 
+      print, 'ALL z values agree with Chicago.'
+  ENDIF ELSE BEGIN 
+      print, 'Bad Fiber numbers: ', fiber[badz]
+  ENDELSE 
+
+stop
+  return
+
+END
+
+
+
+PRO qtest
+zap = 1
+  listpath = '~/idlspec2d/misc/'
+  readcol, listpath+'brg.list', num, plt, fiber, mjd, zchic
+  w = where((plt GE  306) AND (plt LE 306), ct)
+;  w = w[0:19] &  ct=n_elements(w)
+
+  IF ct EQ 1 THEN w = w[0]
+  plt = plt[w]
+  mjd = mjd[w]
+  fiber = fiber[w]
+  zchic = zchic[w]
+
+  readspec, 306, 250, flux=template,wave=wave,flerr=templatesig;, plug=plug
+  readspec, 306, 458, flux=galflux,wave=galwave,flerr=galsig;, plug=galplug
+
+;  signal = total(galflux, 1)
+;  w = (where(signal EQ max(signal)))[0]
+
+w = 63
+;  galflux = galflux[*, w]
+;  galwave = galwave[*, w]
+;  galsig  = galsig[*, w]
+;  galplug = galplug[*, w]
+  plt = plt[w]
+  mjd = mjd[w]
+  fiber = fiber[w]
+  zchic = zchic[w]
+
+  IF keyword_set(zap) THEN BEGIN 
+      
+      linemask = (galwave LT 5586) AND (galwave GE 5573)
+      galflux = djs_maskinterp(galflux, linemask, iaxis=0)
+      
+  ENDIF 
+
+  n = 100
+  gal = galflux
+  galflux = gal#(fltarr(n)+1)
+  galsig  = galsig#(fltarr(n)+1)
+  galwave = galwave#(fltarr(n)+1)
+  iseed = !pi
+  FOR i=0, n-1 DO BEGIN 
+      galflux[*, i] = galflux[*, i]+randomn(iseed, n_elements(gal))*i/10
+  ENDFOR 
+  
+
+  keep = [3000, 6100]
+  veldisp, galflux, galsig, galwave, template, templatesig, wave, result, $
+    sigmast=0.10, maxsig=6, /nodiff, keep=keep
+
+  z = 10.^(result.z/10000.)-1. 
+  sig = sqrt(result.sigma_quotient)
+  sig2err = (result.sigma_quotient_err)
+;  mag = galplug.mag[2]
+  sigcc = result.sigma_cc
+  sigdif = result.sigma_diff
+
+  goodz = where(abs(z-zchic) LT 0.002, ct)
+  badz = where(abs(z-zchic) GT 0.002, ct)
+  IF ct EQ 0 THEN BEGIN 
+      print, 'ALL z values agree with Chicago.'
+  ENDIF ELSE BEGIN 
+      print, 'Bad Fiber numbers: ', fiber[badz]
+  ENDELSE 
+
+stop
+  return
+
 END
 
