@@ -14,6 +14,13 @@ spPlateList.par: Enlarge list of EDR plates to include multiple pluggings,
        den Berk's mail to sdss-spectro/665 on 2 May 2001.  The list now
        includes 137 plates, many of which are repeat observations.
 
+Spectro-Robot scripts:
+       Let the scripts "sprobot2d.sh" and "sprobot1d.sh" test whether they
+       are already running, and quit if they are.  Add another cron job
+       to "sprobot_start" to run the 1D robot every hour -- the idea is
+       to have 1D run quickly after 2D jobs finish.  Update the syntax
+       to "ps" commands as per RHL's suggestions.
+
 -------------------------------------------------------------------------------
 v4_7_3 (Apr 30, 2001 idlspec2d+idlutils)
 
