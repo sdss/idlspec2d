@@ -223,7 +223,7 @@ splot, zvec, rchi2arr
    endfor
 stop
 
-djs_readcol, '/home/schlegel/idlspec2d/templates/eigeninput_gal.dat', $
+djs_readcol, getenv('IDLSPEC2D_DIR') + '/templates/eigeninput_gal.dat', $
  plate, mjd, fiberid, zold, format='(L,L,L,F)'
 ii = fiberid-1
 splot,zold,(zstruct[ii].z-zold)*3e5,ps=4,syms=0.4
