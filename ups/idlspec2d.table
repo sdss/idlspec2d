@@ -1,0 +1,16 @@
+File=Table
+Product=idlspec2d
+
+Group:
+Flavor=IRIX+6
+Flavor=Linux+2
+Flavor=OSF1
+Qualifiers=""
+
+Common:
+   Action=setup
+      setupRequired("-f ${UPS_PROD_FLAVOR} idlutils")
+      proddir()
+      setupenv()
+End:
+
