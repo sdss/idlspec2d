@@ -1,5 +1,5 @@
 
-Minor changes to 2D for discarding some bad data.
+More development of 2D.
 Minor bug fixes for SOS.
 Runnable version for P-1D.
 
@@ -19,10 +19,15 @@ FINDOPFILE: Find the op file corresponding to a specified MJD.
             be used by other procs (like ATVRAWSPEC).
 FITDISPERSION: Mask regions not neighboring lines of interest.
             Simplifies extraction of line widths.
+            Minor tweaks, npoly=10 no longer valid -> changed to npoly=5.
 LINEBACKFIT: Fix possible crash condition when computing LINENPIX if
             the line width is unphysically narrow and no pixels fall
             within the region of an emission line.
-MATCH_TRACE:  Added keyword radius, and set default to 2
+MATCH_TRACE: Added keyword radius, and set default to 2 (rather than 3).
+            This seems to fix PR #2626 (Large bad regions not large enough
+            w/LOWFLAT) and PR #2063 (Extraction problem fibers 321-400 on
+            Plate 401/51788), both of which were due to some traces being
+            slightly off.
 PLATECOMPARE: New TOPDIR optional keyword for comparing different
             reductions of the same data.
 PLOTSPEC: Optional /ZWARNING flag.  Report error if FIBERID out of range.
@@ -90,10 +95,15 @@ SPREDUCE1D: The warning message for S/N > 200 pixels has been fixed,
             and another warning added for any pixels w/ flux < -10 * noise
             (e.g., unphysically low values).
             Call new procedure QAPLOT_FCALIBVEC to measure flux-calib errors.
-TRACE320CRUDE: Add replacement code section for traces with 
-                  bad columns near starting position.
+TRACE320CRUDE: Add replacement code section for traces with
+            bad columns near starting position.
 
 idlspec2d.table: Added "Flavor=Linux"
+eigeninput_star.dat, spEigenStar-52333.fits: Update of stellar templates.
+            Use many A stars, Carbon stars, Carbon_DQ stars, WD stars
+            instead of just 1 for building eigentemplates.
+            Many more K stars, with subtypes Kearly,Kmid,Klate.
+            No changes to F stars yet (or even checks of their velocities).
 mailhtml.sh: Grep for the "APO Spectro" from the HTML file to get the
             subject line for mail; I had changed this HTML title string,
             which then gave a missing subject line in the e-mail (PR #3200).
