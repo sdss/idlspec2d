@@ -133,7 +133,7 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
 
          ; Locate only unmasked points
          indx = where(fluxivar[*,i] GT 0.0 AND flux[*,i] GT minval $
-          AND fit2 GT minval, ct)
+          AND fit2[*,i] GT minval, ct)
 
          if (ct GT 0) then begin
 
@@ -226,8 +226,8 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
 ;   badflat = where(fmed LT 0.7 * djs_median(fmed))
 
    badflat = where(medval LT 0.7 * globalmed)
-   if (badflat[0] NE -1) then  $
-     fibermask[badflat] = fibermask[badflat] OR fibermask_bits('BADFLAT')
+   if (badflat[0] NE -1) then $
+    fibermask[badflat] = fibermask[badflat] OR fibermask_bits('BADFLAT')
 
    return, fflat
 end
