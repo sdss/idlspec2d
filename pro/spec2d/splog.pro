@@ -50,7 +50,11 @@ pro splog, noname=noname, filename=filename, append=append, close=close, $
    ; Declare LOGLUN in a common block so that it is remembered between calls.
    common com_splog, loglun
 
-   if (keyword_set(filename) AND NOT keyword_set(loglun)) then begin
+   if (keyword_set(filename)) then begin
+      ; First close a file if one is already open
+      if (keyword_set(loglun)) then splog, /close
+
+      ; Now open the file
       get_lun, loglun
       openw, loglun, filename, append=append
    endif
