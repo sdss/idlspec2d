@@ -252,7 +252,7 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
 
    skystruct = skysubtract(fluxsub, fluxivar, plugsort, wset, $
     objsub, objsubivar, iskies=iskies, fibermask=fibermask, tai=tai_mid, $
-    relchi2struct=relchi2struct)
+    relchi2struct=relchi2struct, sset=sset)
 
    ;----------
    ; Issue warnings about very large sky-subtraction chi^2
@@ -355,6 +355,8 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    mwrfits, objsub, outsci, /create
    mwrfits, objsubivar, outsci
    mwrfits, meansn, outsci
+   mwrfits, sset, outsci
+   mwrfits, relchi2struct, outsci
 
    return, rstruct
 end
