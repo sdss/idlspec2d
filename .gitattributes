@@ -160,6 +160,7 @@ pro/apo2d/quickwave.pro -text
 pro/apo2d/remove2redo.pro -text
 pro/apo2d/slithistory.pro -text
 pro/fluxfix/Makefile -text
+pro/fluxfix/djs_sfit_iter.pro -text
 pro/fluxfix/frame_flux_calib.pro -text
 pro/fluxfix/frame_flux_tweak.pro -text
 pro/fluxfix/kurucz_restore.pro -text
