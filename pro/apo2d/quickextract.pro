@@ -74,9 +74,19 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    ;----------
    ; Read in the raw science image
 
-   sdssproc, rawfile, image, invvar, hdr=hdr, color=color, camname=camname
+   sdssproc, rawfile, image, invvar, hdr=hdr, color=color, camname=camname, $
+    nsatrow=nsatrow, fbadpix=fbadpix
    colorband = strmid(color,0,1)
    exptime = sxpar(hdr, 'EXPTIME')
+
+   ;----------
+   ; Decide if this science exposure is bad
+
+   qbadsci = reject_science(image, hdr, nsatrow=nsatrow, fbadpix=fbadpix)
+   if (qbadsci) then begin
+      splog, 'ABORT: Unable to reduce science exposure'
+      return, 0
+   endif
 
    ;----------
    ; Read in the reduced data from the flat and arc
