@@ -140,6 +140,7 @@ pro/spec1d/pca_solve.pro -text
 pro/spec1d/pca_star.pro -text
 pro/spec1d/pca_vstnd.pro -text
 pro/spec1d/platelist.pro -text
+pro/spec1d/platemerge.pro -text
 pro/spec1d/plotspec.pro -text
 pro/spec1d/plug2tsobj.pro -text
 pro/spec1d/poly_array.pro -text
