@@ -482,7 +482,8 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
                ; wavelength scale for objects with missing data.
                if (mincoeff0 EQ 0 AND coeff0[0] GT 0) then allcoeff0[*] = coeff0
                if (mincoeff0 GT 0 AND coeff0[0] EQ 0) then coeff0[*] = mincoeff0
-               pixshift = fix( (coeff0[0] - mincoeff0) / coeff1[0] )
+               ; Add 0.5 below to take care of round-off errors
+               pixshift = floor( (coeff0[0] - mincoeff0) / coeff1[0] + 0.5 )
                if (pixshift GT 0) then begin
                   coeff0 = coeff0 - pixshift * coeff1
                   npixmax = max([npixmax, npix+pixshift])
