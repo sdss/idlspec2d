@@ -86,7 +86,7 @@ pro plotspec, plate, fiberid, mjd=mjd, nsmooth=nsmooth
 
    ypos = ypos + dypos
    sxyouts, xpos, ypos, $
-    TeXtoIDL('X^2_r =' + strtrim(string(zans.rchi2), format='(f6.2)'),2)), $
+    TeXtoIDL('X^2_r =' + strtrim(string(zans.rchi2, format='(f6.2)'),2)), $
     charsize=csize
 
    if (keyword_set(primtarget)) then begin

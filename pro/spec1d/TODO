@@ -1,4 +1,6 @@
 
+* Some z errors are negative!
+
 * For PCA_VSTND, get rid of bad endpoints made with too little data.
 
 * For PCA_SOLVE, trim to desired wavelength range before solving.
