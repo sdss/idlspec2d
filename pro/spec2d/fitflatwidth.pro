@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   widthset = fitflatwidth(flux, fluxivar, ansimage, [ fibermask, $
-;    ncoeff=, sigma= ])
+;    ncoeff=, sigma=, medwidth= ])
 ;
 ; INPUTS:
 ;   flux       - flat-field extracted flux
@@ -19,13 +19,15 @@
 ;   ncoeff     - Order of legendre polynomial to apply to width vs. row;
 ;                default to 5.
 ;   sigma      - The SIGMA input to EXTRACT_IMAGE when determining ANSIMAGE;
-;                default to 1.0.  This can be a scalar, an [NFIBER] vector,
+;                default to 1.0 pix.  This can be a scalar, an [NFIBER] vector,
 ;                or an [NROW,NFIBER] array.
 ;
 ; OUTPUTS:
 ;   widthset   - Traceset structure containing fitted coefficients
 ;
 ; OPTIONAL OUTPUTS:
+;   medwidth  - Median dispersion widths in each of the 4 quadrants
+;               of the CCD, ordered LL,LR,UL,UR.
 ;
 ; COMMENTS:
 ;   The widths are forced to be the same as a function of row number
@@ -46,7 +48,7 @@
 ;-
 ;------------------------------------------------------------------------------
 function fitflatwidth, flux, fluxivar, ansimage, fibermask, $
- ncoeff=ncoeff, sigma=sigma
+ ncoeff=ncoeff, sigma=sigma, medwidth=medwidth
 
    if (NOT keyword_set(ncoeff)) then ncoeff = 5
    if (NOT keyword_set(sigma)) then sigma = 1.0
@@ -54,7 +56,7 @@ function fitflatwidth, flux, fluxivar, ansimage, fibermask, $
    ntrace = (size(flux,/dimen))[1]
    nrow = (size(flux,/dimen))[0]
    if (ntrace NE 320) then $
-    message, 'Must have 320 traces'
+    message, 'Must have 320 traces!'
 
    ;----------
    ; Generate a mask of good measurements based only upon the fibermask.
@@ -72,7 +74,8 @@ function fitflatwidth, flux, fluxivar, ansimage, fibermask, $
    igood = where(mask)
    widthterm = transpose(ansimage[lindgen(ntrace)*2+1,*])
    width = make_array(size=size(flux), /float)
-   width[igood] = (1 + widthterm[igood] / flux[igood])
+   if (igood[0] NE -1) then $
+    width[igood] = (1 + widthterm[igood] / flux[igood])
 
    ndim = size(sigma, /n_dimen)
    if (n_elements(sigma) EQ 1) then begin
@@ -95,6 +98,7 @@ function fitflatwidth, flux, fluxivar, ansimage, fibermask, $
                 median(width[0:nrow/2-1,ntrace/2:ntrace-1]), $
                 median(width[nrow/2:nrow-1,0:ntrace/2-1]), $
                 median(width[nrow/2:nrow-1,ntrace/2:ntrace-1]) ]
+
    splog, ((max(medwidth) GT 1.10) ? 'WARNING: ' : '') $
     + 'Median spatial widths = ' $
     + string(medwidth,format='(4f5.2)') + ' pix (LL LR UL UR)'
