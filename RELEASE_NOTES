@@ -10,6 +10,8 @@ SKYSUBTRACT: Fix possible crash condition, whereby the re-fit to the
         supersky is not done if the first fit failed and FULLBKPT does
         not exist (line 243).
 
+etc/spChunkList.par: Add chunks 87-89.
+
 -------------------------------------------------------------------------------
 v4_10_7 (Dec 11, 2003 idlspec2d running on IDL 5.3 - 5.6
 Built against specflat v1_5, elodie v1_0, idlutils v4_10_7.
