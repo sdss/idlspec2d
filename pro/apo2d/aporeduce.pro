@@ -256,10 +256,11 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
 
       ;----------
       ; Get the universal time (UT) from the header in the format '12:34',
-      ; then convert to Mountain standard time (MST)
+      ; then convert to Mountain standard time (MST), which is 7 (or 17)
+      ; hours different from UT.
 
       ut = strmid(sxpar(hdr, 'TAIHMS'),0,5)
-      mst = string((long(strmid(ut,0,2))+18) MOD 24,format='(i2.2)' ) $
+      mst = string((long(strmid(ut,0,2))+17) MOD 24,format='(i2.2)' ) $
        + strmid(ut,2,3)
 
       rstruct = create_struct('FILENAME', filename, $
