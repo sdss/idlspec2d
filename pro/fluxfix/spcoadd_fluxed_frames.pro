@@ -87,21 +87,6 @@
 ;   02-Jan-2000  Written by D. Schlegel; modified from COMBINE2DOUT
 ;-
 ;------------------------------------------------------------------------------
-function makelabel, hdr
-
-   camera = strtrim(sxpar(hdr, 'CAMERAS'),2)
-   mjd = strtrim(string(sxpar(hdr, 'MJD')),2)
-   expos =  strtrim(string(sxpar(hdr, 'EXPOSURE')),2)
-   flat  =  strmid(sxpar(hdr, 'FLATFILE'),6,9)
-   arc   =  strmid(sxpar(hdr, 'ARCFILE'),6,9)
-
-   label = string(camera, "-", mjd, "-", expos, flat, arc, $
-            format='(a2,a1,i5.5,a1,i8.8,a9,a9)')
-
-   return, label
-end
-
-;------------------------------------------------------------------------------
 pro add_iraf_keywords, hdr, wavemin, binsz
 
    sxaddpar, hdr, 'WAT0_001', 'system=linear'
@@ -122,7 +107,9 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
  mjd=mjd, binsz=binsz, zeropoint=zeropoint, nord=nord, wavemin=wavemin, $
  bkptbin=bkptbin, window=window, maxsep=maxsep, adderr=adderr, $
  docams=camnames, plotsnfile=plotsnfile, combinedir=combinedir, $
- tsobjname = tsobjname
+ tsobjname = tsobjname, smearname = smearname
+
+   ;---------------------------------------------------------------------------
 
    if (NOT keyword_set(binsz)) then binsz = 1.0d-4 $
     else binsz = double(binsz)
@@ -138,192 +125,32 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
 
    filenames = spframes[sort(spframes)]
 
-   ;---------------------------------------------------------------------------
-
    if NOT keyword_set(camnames) then camnames = ['b1', 'b2', 'r1', 'r2']
    ncam = N_elements(camnames)
-   exptimevec = fltarr(ncam)
 
-   fibertag_struct = {plateid: 0, mjd: 0, fiberid: 0, $
-                      ra: 0.0, dec: 0.0, mag: fltarr(5), $
-                      xfocal: 0.0, yfocal: 0.0, objtype: ' ', $
-                      camcolor: ' ', spectrographid: 0, expid: ' '}
+   ;------------------
+   ; Get plate + mjd strings
+   
+   words = strsplit(fcalibprefix, '-', /extract)
+   prefix = words[0]
+   words = strsplit(outputname, '-', /extract)
+   plate_str = words[1]
+   mjd_str = words[2]
 
-   ;-----------------
-   ; Read in tsObjfile -- assume target info in HDU#1, new info in HDU#2
-   ; Is there a way to keep track of where the photo mags are from???
-   ; In tsObj header?
-  
-   if keyword_set(tsobjname) then tsobj = mrdfits(tsobjname, 2)
-    
    ;---------------------------------------------------------------------------
    ; Loop through each 2D output and read in the data
    ;---------------------------------------------------------------------------
-   for ifile=0, nfiles-1 do begin
+ 
+   spread_frames, filenames, window=window, binsz = binsz, $
+     adderr=adderr, camnames=camnames, tsobjname = tsobjname, $
+     flux = flux, ivar = fluxivar, wave = wave, dispersion = dispersion, $
+     pixelmask = pixelmask, plugmap = plugmap, fibertag = fibertag, $
+     camerasvec = camerasvec, label = label, filenum = filenum,  $
+     expid = expid, sn2 = sn2, exptimevec = exptimevec, mjdlist = mjdlist, $
+     hdrarr = hdrarr
 
-      ;----------
-      ; Read in all data from this input file.
-      ; Reading the plug-map structure will fail if its structure is
-      ; different between different files.
-
-      splog, 'Reading file #', ifile, ': ', filenames[ifile]
-      tempflux = mrdfits(filenames[ifile], 0, hdr)
-      tempivar = mrdfits(filenames[ifile], 1)
-      temppixmask = mrdfits(filenames[ifile], 2)
-
-      ;  Zero out the following four mask bits
-      bitval  = pixelmask_bits('COMBINEREJ') + pixelmask_bits('SMEARIMAGE') + $
-                pixelmask_bits('SMEARHIGHSN') + pixelmask_bits('SMEARMEDSN')
-      
-      temppixmask = temppixmask AND (NOT bitval) 
-
-      tempwset = mrdfits(filenames[ifile], 3)
-      tempdispset = mrdfits(filenames[ifile], 4)
-      tempplug = mrdfits(filenames[ifile], 5, structyp='PLUGMAPOBJ')
-      if (NOT keyword_set(tempflux)) then $
-       message, 'Error reading file ' + filenames[ifile]
-
-      if (ifile EQ 0) then $
-       hdrarr = ptr_new(hdr) $
-      else $
-       hdrarr = [hdrarr, ptr_new(hdr)]
-
-      thismjd = sxpar(hdr, 'MJD')
-      if (NOT keyword_set(mjdlist)) then mjdlist = thismjd $
-       else mjdlist = [mjdlist, thismjd]
-
-      ;----------
-      ; Add an additional error term equal to ADDERR of the flux.
-
-      if (keyword_set(adderr)) then begin
-         gmask = tempivar NE 0 ; =1 for good points
-         tempivar = 1.0 / ( 1.0/(tempivar + (1-gmask)) $
-          + (adderr * (tempflux>0))^2 ) * gmask
-      endif
-
-      ;----------
-      ; Read header info
-
-      cameras = strtrim(sxpar(hdr, 'CAMERAS'),2)
-      expstr = string(sxpar(hdr, 'EXPOSURE'), format='(i8.8)')
-      framesn2 = sxpar(hdr, 'FRAMESN2')
-
-      ;----------
-      ; Solve for wavelength and lambda-dispersion at each pixel in the image
-
-      traceset2xy, tempwset, junk, tempwave
-      traceset2xy, tempwset, junk-0.5, lowerwave
-      traceset2xy, tempwset, junk+0.5, upperwave
-      traceset2xy, tempdispset, junk, tempdispersion
-
-      ;----------
-      ; Here is the correct conversion from pixels to log-lambda dispersion.
-      ; We are converting from the dispersion in units of spFrame pixel sizes
-      ; to the dispersion in units of the new rebinned pixel size, which is
-      ; BINSZ in log-lambda units.
-
-      correct_dlam, tempdispersion, 0, tempwset, dlam=binsz, /inverse
-
-      ;----------
-
-      dims = size(tempflux, /dimens)
-      npix = dims[0]
-      nfib = dims[1]
-
-      ;----------
-      ; Make a map of the size of each pixel in delta-(log10-Angstroms),
-      ; and re-normalize the flux to ADU/(dloglam)
-
-      correct_dlam, tempflux, tempivar, tempwset, dlam=binsz
-
-      ;----------
-      ; Determine if this is a blue or red spectrum
-
-      icam = (where(cameras EQ camnames))[0]
-      if (icam EQ -1) then $
-       message, 'Unknown camera ' + cameras
-      exptimevec[icam] = exptimevec[icam] + sxpar(hdr, 'EXPTIME')
-
-      ;----------
-      ; Apodize the errors
-      ; Do this only for the dichroic overlap region, which are the first
-      ; rows in both the blue and red CCD's.
-
-      if (keyword_set(window)) then begin
-         swin = window < npix
-         indx = lindgen(swin)
-         tempivar[indx,*] = tempivar[indx,*] * (indx # replicate(1,nfib)) / swin
-      endif
-     
-      ;------------------------
-      ; Build structure like plugmap to carry all important tags
-
-      tempfibertag = make_array(dim = nfib, val = fibertag_struct)
-      struct_assign, tempplug, tempfibertag
-      tempfibertag.plateid = 0 ; FIX!!!
-      tempfibertag.mjd = 0 ; FIX!!!
-      tempfibertag[*].camcolor = strmid(cameras, 0, 1)
-      tempfibertag.expid = expstr
-      ; spectrograph ID (1/2) is reset b/c sometimes it is -1 for a few 
-      ; fibers in the plugmap -- what does this signify???
-      tempfibertag[*].spectrographid = strmid(cameras, 1, 1)
-
-      ;---------------
-      ; Match tsObj to plugmap and update fibertag structure with fibermags
-      ; from the tsObj
-
-      if keyword_set(tsobjname) then begin 
-        for ifib = 0, nfib - 1 do begin
-          adist = djs_diff_angle(tsobj.ra, tsobj.dec, $
-                  tempfibertag[ifib].ra, tempfibertag[ifib].dec, $
-                  units='degrees')
-          match = where(adist LT 2./3600)
-          tempfibertag[ifib].mag = tsobj[match].fibercounts
-        endfor
-      endif
-
-      ;----------
-      ; Concatenate data from all images
-
-      if (ifile EQ 0) then begin
-         flux = tempflux
-         fluxivar = tempivar
-         wave = tempwave
-         dispersion = tempdispersion
-         pixelmask = temppixmask
-
-         camerasvec = cameras
-         label = makelabel(hdr)
-         filenum = lonarr(nfib) + ifile
-         plugmap = tempplug
-         expid = expstr 
-         sn2 = framesn2
-         fibertag = tempfibertag
-      endif else begin
-         ; Append as images...
-         flux = [[flux], [tempflux]]
-         fluxivar = [[fluxivar], [tempivar]]
-         wave = [[wave], [tempwave]]
-         dispersion = [[dispersion], [tempdispersion]]
-         pixelmask = [[pixelmask], [temppixmask]]
-
-         ; Append as vectors...
-         camerasvec = [camerasvec, cameras]
-         label = [label, makelabel(hdr)]
-         filenum = [filenum, lonarr(nfib) + ifile]
-         plugmap = [plugmap, tempplug]
-         expid = [expid, expstr] 
-         sn2 = [sn2, framesn2]
-         fibertag = [fibertag, tempfibertag]
-      endelse
-
-   endfor
-
-   tempflux = 0
-   tempivar = 0
-   tempwave = 0
-   tempdispersion = 0
-   temppixmask = 0
+   fibertag.plateid = plate_str
+   fibertag.mjd = mjd_str
 
    ;----------
    ; Check how many exposures we have in each of the (4) cameras
@@ -345,7 +172,6 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    ; each frame, then apply it
    ;-----------------------------------------------------------------------
 
-   words = strsplit(fcalibprefix, '-', /extract)
    sphoto_err = fltarr(n_elements(camerasvec))
 
    ; Loop through cameras
@@ -356,9 +182,9 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
      frames = expid[where(camerasvec eq camid)]
 
      ; Create output flux calibration file names
-     fcalfiles = djs_filepath(words[0] + '-' + camid + '-' + frames + '.fits', $
+     fcalfiles = djs_filepath(prefix + '-' + camid + '-' + frames + '.fits', $
                  root_dir=combinedir)
-     stdstarfile = djs_filepath('spStd-' + words[1] + '-' + words[2] +  $
+     stdstarfile = djs_filepath('spStd-' + plate_str + '-' + mjd_str +  $
                    '-' + specnum + '.fits', root_dir=combinedir)
 
      ;--------------------------------
@@ -374,7 +200,8 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
 
      sphoto_calib, wave[*,isphoto], flux[*,isphoto], fluxivar[*,isphoto], $
                  pixelmask[*,isphoto], fibertag[isphoto], $
-                 fcalfiles, stdstarfile, blue = (camcol eq 'b')
+                 fcalfiles, stdstarfile, stype = (camcol eq 'b'), $
+                 pca_calibset = pca_calibset
 
      ;---------------------------------
      ; Apply sphoto calibration to all fibers in each frame
@@ -496,8 +323,6 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
 
    endfor
 
-   set_plot, 'x'
-
    ;---------------------------------------------------------------------------
    ; Construct output data structures, including the wavelength scale
    ;---------------------------------------------------------------------------
@@ -582,7 +407,7 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
          combine1fiber, wave[*,indx], flux[*,indx], fluxivar[*,indx], $
            finalmask=temppixmask, indisp=dispersion[*,indx], $
            newloglam=finalwave, newflux=bestflux, newivar=bestivar, $
-           andmask=bestandmask, ormask=bestormask, newdisp=bestdispersion, $
+           andmask = bestandmask, ormask=bestormask, newdisp=bestdispersion, $
            nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep, $
            maxiter=50, upper=3.0, lower=3.0, maxrej=1
 
@@ -598,10 +423,12 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
          ;-------------
          ; QA plot
 
-         plot, 10.0^finalwave, bestflux, xr=[3800, 9200], /xs
-         for ii = 0, n_elements(indx) - 1 do $
-           djs_oplot, 10.0^wave[*,indx[ii]], djs_median(flux[*,indx[ii]], $
-                      width=75, boundary='reflect'), color=!red
+         ;set_plot, 'x'
+
+         ;plot, 10.0^finalwave, bestflux, xr=[3800, 9200], /xs
+         ;for ii = 0, n_elements(indx) - 1 do $
+         ;  djs_oplot, 10.0^wave[*,indx[ii]], djs_median(flux[*,indx[ii]], $
+         ;             width=75, boundary='reflect'), color='red'
 
       endif else begin
          splog, 'Fiber', ifiber+1, ' NO DATA'
@@ -618,6 +445,22 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    fluxivar = 0
    temppixmask = 0
    dispersion = 0
+
+   ;--------------------------------------------------------------------------
+   ; Measure the difference between the combined science and smear spectra
+   ;--------------------------------------------------------------------------
+
+   if keyword_set(smearname) then begin
+
+     smearset = smear_compare(smearname, finalwave, finalflux, finalivar, $
+       best_exp, plate_str, mjd_str, camnames = camnames, adderr=adderr, $
+       combinedir = combinedir, tsobjname = tsobjname)
+
+     smear_coeff = smearset.coeff
+   endif else begin
+     splog, 'No smear exposures found!'
+     smear_coeff = dblarr(3, nfiber)
+   endelse
 
    ;---------------------------------------------------------------------------
    ; Generate S/N plots
@@ -829,6 +672,10 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
 
    ; 8th HDU are synthetic magnitude vectors
    mwrfits, synthmag, fulloutname
+
+   ; 9th HDU are the legendre coefficients of the smear correction vectors
+   ; (3 x 640 array)
+   mwrfits, smear_coeff, fulloutname
 
    ;---------------------------------------------------------------------------
    ; Write the modified pixel masks to the input files
