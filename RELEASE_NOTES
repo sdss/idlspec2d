@@ -1,6 +1,6 @@
 
 -------------------------------------------------------------------------------
-v4_5_0 (Jan 30, 2000)
+v4_5_0 (Jan 31, 2000)
 
 Edits to raw frame headers now possible with SPHDRFIX procedure, which
 reads the list of changes from opHdrFix.par file.  In particular, this
