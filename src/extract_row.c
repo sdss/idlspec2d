@@ -275,12 +275,43 @@ IDL_LONG extract_row
 void ProfileGauss(float *x, IDL_LONG ndat, float **y, float xcen, IDL_LONG xmin,
 		IDL_LONG xmax, float sigma, IDL_LONG nCoeff)
 { 
+	IDL_LONG i,j,k;
+	float base;
+	float diff, denom, frac;
+	float epow;
+
+	denom = 1.0/sqrt(6.2832 * sigma * sigma);
+
+	for (i=xmin,k=0; i<=xmax; i++, k++) {
+	  for (j=0;j<nCoeff;j++) y[j][k] = 0.0;
+	  if(i >= 0 && i < ndat && nCoeff > 0) {
+	    for(frac = -0.4; frac <= 0.5; frac += 0.2)  {
+	      diff = (xcen - x[i] + frac)/sigma;
+              epow = 0.5*diff*diff;
+
+              if (epow < MAXEXP) base = exp(-epow) * denom;
+              else base = 0.0;
+
+              y[0][k] += base;
+              if(nCoeff >1) y[1][k] += base*epow*2.0;
+              if(nCoeff >2) y[2][k] += base*diff;
+
+            }
+            for (j=0;j<nCoeff;j++) y[j][k] /= 5.0;
+	  }
+	}
+
+}
+
+void ProfileGaussStatic(float *x, IDL_LONG ndat, float **y, float xcen, 
+          IDL_LONG xmin, IDL_LONG xmax, float sigma, IDL_LONG nCoeff)
+{ 
 	IDL_LONG nm,i,j,k,backup,place;
 	float base;
 	float diff, denom, frac;
 	float sqbase, xfake;
 	float epow;
-	
+
 	static float oldsigma=0.0;
 	static float model[NSUBSAMP][3][31];
 
@@ -338,139 +369,75 @@ if (j >= 3) printf("VERY BAD!!!\n");
 void ProfileAbs3(float *x, IDL_LONG ndat, float **y, float xcen, 
                 IDL_LONG xmin, IDL_LONG xmax, float sigma, IDL_LONG nCoeff)
 { 
-	IDL_LONG nm,i,j,k,backup,place;
+	IDL_LONG i,j,k;
 	float base;
 	float diff, diffabs, denom, frac;
-	float sqbase, xfake;
 	float epow;
 	
-	static float oldsigma=0.0;
-	static float model[NSUBSAMP][3][31];
-
 /*		Below is denominator for x^3	*/
 
 	denom = 1.0/(2.88450 * 0.89298 * sigma);
 
-	if (sigma != oldsigma) {
+	for (i=xmin,k=0; i<=xmax; i++, k++) {
+	  for (j=0;j<nCoeff;j++) y[j][k] = 0.0;
+	  if(i >= 0 && i < ndat && nCoeff > 0) {
+	    for(frac = -0.4; frac <= 0.5; frac += 0.2)  {
+	      diff = (xcen - x[i] + frac)/sigma;
+              diffabs = fabs(diff);
+              epow = diff*diff*diffabs/3.0;
 
-	   printf("Filling Arrays\n");
-	   oldsigma = sigma;
-/*	   Fill static arrays	*/
-	   for(nm=0; nm<NSUBSAMP; nm++) {
- 	     xfake = 15.0 + ((float)nm) / NSUBSAMP;
-	     for (k=0; k<=30; k++) {
-	       for(j=0;j<3;j++) model[nm][j][k] = 0.0;
-	       for(frac = -0.4; frac <= 0.5; frac += 0.2)  {
-	     
-	         diff = (xfake - (float)k + frac)/sigma;
-                 diffabs = fabs(diff);
-                 epow = diff*diff*diffabs/3.0;
-                 if (epow < MAXEXP) base = exp(-epow) * denom;
-                  else base = 0.0;
+              if (epow < MAXEXP) base = exp(-epow) * denom;
+              else base = 0.0;
 
-                 model[nm][0][k] += base;
-                 sqbase = diff*diff*diffabs*base;
-	         model[nm][1][k] += sqbase;
-	         model[nm][2][k] += diff*diffabs*base;
+              y[0][k] += base;
+              if(nCoeff >1) y[1][k] += base*epow*3.0;
+              if(nCoeff >2) y[2][k] += base*diff*diffabs;
 
-                }
-	     for (j=0;j<3;j++) model[nm][j][k] /= 5.0;
-	   }
-	}
-      }
-
-        if (xcen > 0.0) {
-	  frac = xcen - (int)xcen;
-          backup = (int)xcen - xmin;
-        } else {
-	  frac = (int)xcen - xcen;
-          backup = (int)xcen - xmin - 1;
-        }
-
-	nm = frac * NSUBSAMP;
-	for(j=0;j<nCoeff;j++) 
-	  for (i=xmin,k=0,place=15-backup; i<=xmax; i++,k++,place++) 
-	     { 
-/*             printf("%d %d %d %d %d %f\n", 
-		i,j,k,place,nm,frac);	*/
-             y[j][k] = model[nm][j][place];
-	     }
-	 
+            }
+            for (j=0;j<nCoeff;j++) y[j][k] /= 5.0;
+	  }
+       }
 }
 
 void ProfileAbs25(float *x, IDL_LONG ndat, float **y, float xcen, 
                 IDL_LONG xmin, IDL_LONG xmax, float sigma, IDL_LONG nCoeff)
 { 
-	IDL_LONG nm,i,j,k,backup,place;
-	float base;
+	IDL_LONG i,j,k;
+	float base, base3;
 	float diff, diffabs, denom2, frac;
 	float denom3;
-	float sqbase, xfake;
-	float epow;
-
-	static float oldsigma=0.0;
-	static float model[NSUBSAMP][3][31];
+	float epow, epow3;
 
 /*		Below is denominator for x^3	*/
 
 	denom3 = 1.0/(2.88450 * 0.89298 * sigma);
 	denom2 = 1.0/sqrt(6.2832 * sigma * sigma);
 
-	if (sigma != oldsigma) {
+        if (nCoeff == 0 || nCoeff > 3) return;
 
-	   printf("Filling Arrays\n");
-	   oldsigma = sigma;
-/*	   Fill static arrays	*/
-	   for(nm=0; nm<NSUBSAMP; nm++) {
- 	     xfake = 15.0 + ((float)nm) / NSUBSAMP;
-	     for (k=0; k<=30; k++) {
-	       for(j=0;j<3;j++) model[nm][j][k] = 0.0;
-	       for(frac = -0.4; frac <= 0.5; frac += 0.2)  {
-	     
-	         diff = (xfake - (float)k + frac)/sigma;
-		 diffabs = fabs(diff);
-	         epow = diff*diff*diffabs/3.0;
-                 if (epow < MAXEXP) base = exp(-epow) * denom3;
-                  else base = 0.0;
+	for (i=xmin,k=0; i<=xmax; i++, k++) {
+	  for (j=0;j<nCoeff;j++) y[j][k] = 0.0;
 
-/*	Add in ^3 term first  */
-                 model[nm][0][k] += 1.5*base;
-                 sqbase = diff*diff*diffabs*base;
-	         model[nm][1][k] += 1.5*sqbase;
-	         model[nm][2][k] += 1.5*diff*diffabs*base;
+	  if(i >= 0 && i < ndat) {
+	    for(frac = -0.4; frac <= 0.5; frac += 0.2)  {
+	      diff = (xcen - x[i] + frac)/sigma;
+	      diffabs = fabs(diff);
+	      epow = 0.5*diff*diff;
+              if (epow < MAXEXP) base = 0.3* exp(-epow) * denom2;
+              else base = 0.0;
 
-/*	Add in ^2 term next  */
-                 epow = diff*diff/2.0;
-                 if (epow < MAXEXP) base = exp(-epow) * denom2;
-                  else base = 0.0;
-                 model[nm][0][k] += 0.5*base;
-                 sqbase = diff*diff*base;
-	         model[nm][1][k] += 0.5*sqbase;
-	         model[nm][2][k] += 0.5*diff*base;
-                }
+	      epow3 = diff*diff*diffabs/3.0;
+              if (epow3 < MAXEXP) base3 = 1.7 *exp(-epow3) * denom3;
+              else base3 = 0.0;
+
+              y[0][k] += base + base3;
+	      if(nCoeff >1) y[1][k] += 2.0*epow*base + 3.0*epow3*base3;
+	      if(nCoeff >2) y[2][k] += diff*base + diff*diffabs*base3;
+              }
 /*	Divide by 10 instead of 5 to get area 1.0  */
-	     for (j=0;j<3;j++) model[nm][j][k] /= 10.0;
+	     for (j=0;j<nCoeff;j++) y[j][k] /= 10.0;
 	   }
 	}
-      }
-
-        if (xcen > 0.0) {
-	  frac = xcen - (int)xcen;
-          backup = (int)xcen - xmin;
-        } else {
-	  frac = (int)xcen - xcen;
-          backup = (int)xcen - xmin - 1;
-        }
-
-	nm = frac * NSUBSAMP;
-	for(j=0;j<nCoeff;j++) 
-	  for (i=xmin,k=0,place=15-backup; i<=xmax; i++,k++,place++) 
-	     { 
-/*             printf("%d %d %d %d %d %f\n", 
-		i,j,k,place,nm,frac);	*/
-             y[j][k] = model[nm][j][place];
-	     }
-	 
 }
 
 void ProfileDoubleGauss(float *x, IDL_LONG ndat, float **y, float xcen, IDL_LONG xmin,
@@ -481,7 +448,7 @@ void ProfileDoubleGauss(float *x, IDL_LONG ndat, float **y, float xcen, IDL_LONG
 	float diff, denom, frac;
         float sigma2, diff2, base2, denom2;
 	float sqbase;
-	float epow;
+	float epow, epow2;
 
 	sigma2 = 2.0*sigma;
 	denom = 1.0/sqrt(6.2832 * sigma * sigma);
@@ -493,24 +460,16 @@ void ProfileDoubleGauss(float *x, IDL_LONG ndat, float **y, float xcen, IDL_LONG
 	     for(frac = -0.4; frac <= 0.5; frac += 0.2)  {
 	        diff = (xcen - x[i] + frac)/sigma;
 	        diff2 = (xcen - x[i] + frac)/sigma2;
-                epow = diff*diff/2.0;
-                if (epow < MAXEXP) base = exp(-epow) * denom;
+                epow = 0.5*diff*diff;
+                if (epow < MAXEXP) base = 0.9 * exp(-epow) * denom;
                  else base = 0.0;
-                epow = diff2*diff2/2.0;
-                if (epow < MAXEXP) base2 = exp(-epow) * denom2;
+                epow2 = 0.5*diff2*diff2;
+                if (epow < MAXEXP) base2 = 0.1 * exp(-epow2) * denom2;
                  else base2 = 0.0;
 
-                y[0][k] += base;
-	        if(nCoeff >1) y[1][k] += base2;
-	        if(nCoeff >2) {
-                   sqbase = diff*diff*base;
-	           y[2][k] += sqbase;
-
-	           if(nCoeff >3) y[3][k] += diff*base;
-
-	           for (j=4,mult=diff;j<nCoeff;j++,mult *= diff)
-	              y[j][k] += mult*sqbase;
-                   }
+                y[0][k] += base + base2;
+	        if(nCoeff >1) y[1][k] += 2.0*(epow*base + epow2*base2);
+	        if(nCoeff >2) y[2][k] += diff*base + diff2*base2;
                 }
 	     for (j=0;j<nCoeff;j++) y[j][k] /= 5.0;
 	   }
