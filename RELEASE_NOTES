@@ -27,6 +27,9 @@ opHdrFix.par: Fix the RA,DEC positions in the raw file headers to fix
            351/51780, 355/51788, 356/51779, 360/51780, 385/51783, 391/51782,
            395/51783.
            Discard exposures 14967-8 for plate 820/52404.
+sos_start,sprobot_start: If the environment variable PATH has more than 1020
+           characters than abort.  This is because the PATH appears to be
+           truncated beyond that point on certain Linux systems.
 spEigenElodie.fits: Recreate with fixed READ_ELODIE().  New first eigenspectrum
            now looks like a normal stellar spectrum.
 sprobot_start: Fix tiny typo (extra quotation on line 141).
@@ -45,6 +48,9 @@ DFPSPLOT: Added optional XSIZE keyword.
 DJS_BATCH: Add optional keyword SELECTHOST.  This will be used
            for the HoggPT processing of 2.5-m data.
            The inputs LOCALFILE,OUTFILE are now optional.
+FITS_WAIT: Allow DELTAT,TMAX to be zero.
+HOGG_ITERLINFIT: General-purpose sigma-clipping linear fitting routine
+           copied over from the hoggpt product.
 HOGG_STRSPLIT: New support proc for YANNY_READ.
 LOOKFORGZIP: Also look for ".Z" file if others not found.
 POLY_ITER: Change "LT" logic to "LE" to handle case where residual
