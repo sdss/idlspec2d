@@ -1,4 +1,6 @@
 
+APO_PLOTSN,QUICKTRACE: Need the /APOTAGS in the call to READPLUGMAP(),
+        which has been re-written to be used by the full 2D reductions too.
 BADFSTARS: Find bad F stars used for spectro-photometry in the Spectro-2D.
 BATCH2D: Call SPCOMBINE_V5 instead of SPCOMBINE.
         Update the list of output files to correspond to the new v5 outputs.
@@ -36,6 +38,10 @@ PLOTSN: Recent changes can make this routine crash if the photo and spectro
 PLOTSPEC: Add the /SKY option for over-plotting the sky.
 PLUGFILE_RELABEL: Relabel the OBJTYPE's for specified objects in all
         plPlugMapM files.
+READPLUGMAP: Many changes to this code, which is now used by both SOS
+        and by Spectro-2D.  Options /APOTAGS,/DEREDDEN are for the SOS code.
+        Option /CALIBOBJ is for the Spectro-2D reductions, and re-calibrates
+        the photometry to the Princeton calibObj files.
 READSPEC: Add support for reading the sky (SKY=) from HDU #6 of the spPlate
         files.
 SKYSUBTRACT: Fix possible crash condition, whereby the re-fit to the
@@ -59,6 +65,8 @@ SPFLUX_V5: New code to replace SPFLUX for version 5 outputs.  This computes
 SPFLUXCORR_V5: New code to replace FLUXCORR_NEW.  This will be called
         by SPCOMBINE_V5.
 SPREDUCE: Abort and return from this procedure if no good flats exist.
+        Call READPLUGMAP() to read the plug-map file, and get the photometric
+        calibrations from the calibObj files.
 SPREDUCE1D: Dispose of COUNTS_SPECTRO,COUNTS_SYNTH in favour of the fields
         SPECTROFLUX,SPECTROSYNFLUX which are in nano-maggies (1e9 larger).
         Also compute SPECTROSKYFLUX,SPECTROFLUX_IVAR,SPECTROSYNFLUX_IVAR
