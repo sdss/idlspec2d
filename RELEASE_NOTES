@@ -45,6 +45,7 @@ examples/opHdrFix.par: More updates, in an attempt to identify
            Change all FLAVOR='unknown' entries to QUALITY='bad'.
 pro/fluxfix/Makefile - Forget to add this Makefile, which is needed
            to prevent the "make install" from crashing on an IRIX platform.
+ups/idlspec2d.table: Change flavor to "ANY".
 
 In idlutils:
 
@@ -83,6 +84,7 @@ evilmake: Turn on optimization for all platforms except IRIX.
            Previously, we tried to set -O3 on IRIX, which crashes
            builds on the machine sdsshost.apo.
 src/spheregroup/chunks.c - Minor bug fixed.
+ups/idlutils.table: Change flavor to "ANY".
 
 -------------------------------------------------------------------------------
 v4_9_13 (Nov 24, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
