@@ -35,15 +35,12 @@
 ;-
 ;------------------------------------------------------------------------------
 
-function find_whopping, flux, thresh, whopct
+function find_whopping, scrunch, thresh, whopct, scr
 
     if NOT keyword_set(thresh) then thresh=10000.0
 
     scrunch = djs_median(flux, 1) ; Find median counts/row in each fiber
-    scrunch_sort = sort(scrunch)
-    i5 = n_elements(scrunch)/20
-    i95 = i5 * 19
-    boxcar = scrunch - djs_median(flux) ; Find median counts/row in all fibers
+    boxcar = scrunch - djs_median(scrunch) ;Find median counts/row in all fibers
 
     candidates = where(boxcar GT thresh, whopct)
 

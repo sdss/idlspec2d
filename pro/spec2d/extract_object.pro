@@ -106,10 +106,14 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ; counts are 10000 ADU per row.
 
    fextract = extract_boxcar(image, xtrace)
-   whopping = find_whopping(fextract, 10000.0, whopct)
+   scrunch = djs_median(fextract, 1) ; Find median counts/row in each fiber
+   whopping = find_whopping(scrunch, 10000.0, whopct)
+   scrunch_sort = sort(scrunch)
+   i5 = n_elements(scrunch)/20
+   i95 = i5 * 19
 
    splog, 'Whopping fibers: ', whopping
-   splog, 'Median counts in all fibers = ', fullscrunch
+   splog, 'Median counts in all fibers = ', djs_median(scrunch)
    splog, 'Number of bright fibers = ', whopct
 
    ; Assume that all fiber-mask bits are fatal for selecting sky fibers???
