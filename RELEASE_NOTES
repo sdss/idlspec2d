@@ -14,7 +14,9 @@ PLOTSPEC: Bug fix to allow one to specify the output file name with PSFILE=.
 READ_ELODIE: Use INTERPOL() instead of POPULATE_IMAGE for interpolating
            the high-resolution Elodie spectra onto the log-wavelength binning.
            I'm still uncertain as to the absolute units of the spectra.
+READSPEC: Add PATH option, which can override TOPDIR.
 SDSSPROC: Fix silly bug trying to set QUALITY='excellent' when undefined.
+SOLVEFILTER: New proc to determine the 2.5-m filters from the spectra.
 SPCOADD_FRAMES: Change BUNIT header keywords in output files to have
            the comment '1E-17 erg/cm^2/s/Ang' instead of the incorrect
            comment '10E-17 erg/cm/s/Ang'.
