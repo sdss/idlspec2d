@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   skystruct = skysubtract(obj, objivar, plugsort, wset, objsub, objsubivar, $
 ;    [ iskies= , fibermask=, nord=, upper=, lower=, maxiter=, pixelmask=, $
-;    dispset=, /novariance, relchi2struct=, npoly= ])
+;    dispset=, /novariance, relchi2struct=, npoly=, tai= ])
 ;
 ; INPUTS:
 ;   obj        - Image
@@ -25,6 +25,8 @@
 ;   novariance - Set keyword to prevent variance correction for sky residuals
 ;   relchi2struct- Structure containing information of chi^2 fitting
 ;   npoly      - Polynomial order of 2d fit.
+;   tai        - TAI of plate exposure, if supplied a linear airmass correction
+;                  is applied
 ;
 ; PARAMETERS FOR SLATEC_SPLINEFIT (for supersky fit):
 ;   nord       -
@@ -71,7 +73,7 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    iskies=iskies, fibermask=fibermask, nord=nord, upper=upper, $
    lower=lower, maxiter=maxiter, pixelmask=pixelmask, $
    dispset=dispset, npoly=npoly, relchi2struct=relchi2struct, $
-   novariance=novariance
+   novariance=novariance, tai=tai
 
    if (size(obj, /n_dimen) NE 2) then message, 'OBJIVAR is not 2-D'
    if (size(objivar, /n_dimen) NE 2) then message, 'OBJIVAR is not 2-D'
@@ -104,9 +106,16 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
       return, 0
    endif
 
+   if NOT keyword_set(tai) then airmass = replicate(1.0, nrow) $
+   else airmass = tai2airmass(plugsort.ra, plusort.dec, tai)
+
+   airmass_correction = replicate(1.0,ncol) # airmass
+
    skywave = wave[*,iskies]
    skyflux = obj[*,iskies]
    skyivar = objivar[*,iskies]
+
+   divideflat, skyflux, skyivar, airmass_correction[*,iskies]
 
    ;----------
    ; Mask any sky pixels where LOWFLAT or NEARBADPIXEL are set.
@@ -220,7 +229,7 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    ; Sky-subtract the entire image
 
 ;   objsub = obj - fullfit * (objivar GT 0.0) ; No need to do this.
-   objsub = obj - fullfit
+   objsub = obj - fullfit * airmass_correction
 
    ;----------
    ; Fit to sky variance (not inverse variance)
@@ -235,7 +244,7 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
 ;      skyvarbkpt = slatec_splinefit(skywave[posvar], skyvariance, skyvarcoeff, $
 ;       invvar=skyivar[posvar], nord=nord, upper=upper, lower=lower, $
 ;       maxiter=maxiter, /eachgroup, bkpt=bkpt)
-      skyvarfit = bspline_valu(wave, skyvarset)
+      skyvarfit = bspline_valu(wave, skyvarset) * airmass_correction
 
    endif
 
