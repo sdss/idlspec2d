@@ -47,6 +47,7 @@
 ;   get_tai
 ;   qaplot_arcline
 ;   qaplot_fflat
+;   readplugmap()
 ;   reject_science()
 ;   select_arc()
 ;   select_flat()
@@ -56,8 +57,6 @@
 ;   splog
 ;   sxaddpar
 ;   sxpar()
-;   yanny_free
-;   yanny_read
 ;
 ; DATA FILES:
 ;   $IDLSPEC2D_DIR/etc/skylines.dat
@@ -66,7 +65,6 @@
 ;   12-Oct-1999  Written by D. Schlegel & S. Burles, APO
 ;-
 ;------------------------------------------------------------------------------
-
 pro spreduce, flatname, arcname, objname, $
  plugfile=plugfile, lampfile=lampfile, $
  indir=indir, plugdir=plugdir, outdir=outdir, $
@@ -104,14 +102,7 @@ pro spreduce, flatname, arcname, objname, $
    ; Read PLUGMAP file and sort
    ;---------------------------------------------------------------------------
  
-   plugpath = filepath(plugfile, root_dir=plugdir)
-   plugfilename = (findfile(plugpath, count=ct))[0]
-   if (ct NE 1) then $
-    message, 'Cannot find plugMapFile ' + plugfile
-
-   yanny_read, plugfilename, pstruct, hdr=hdrplug
-   plugmap = *pstruct[0]
-   yanny_free, pstruct
+   plugmap = readplugmap(plugfile, plugdir=plugdir, /calibobj)
 
    ;-------------------------------------------------------------------------
    ; Plugsort will also return a mask of unplugged fibers
@@ -270,7 +261,7 @@ pro spreduce, flatname, arcname, objname, $
           'spFrame-'+string(format='(a1,i1,a,i8.8,a)',color,spectrographid, $
           '-',framenum,'.fits'), root_dir=outdir)
 
-         sxaddpar, objhdr, 'PLUGFILE', fileandpath(plugfilename)
+         sxaddpar, objhdr, 'PLUGFILE', fileandpath(plugfile)
          sxaddpar, objhdr, 'FLATFILE', fileandpath(bestflat.name)
          sxaddpar, objhdr, 'ARCFILE', fileandpath(bestarc.name)
          sxaddpar, objhdr, 'OBJFILE', fileandpath(objname[iobj])
