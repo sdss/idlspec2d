@@ -92,10 +92,13 @@ pro/rdss_fits.pro -text
 pro/read2dout.pro -text
 pro/readidlout.pro -text
 pro/sdssproc.pro -text
+pro/select_arc.pro -text
+pro/select_flat.pro -text
 pro/skysubtract.pro -text
 pro/sortplugmap.pro -text
 pro/spallflat.pro -text
 pro/spallreduce.pro -text
+pro/spcalib.pro -text
 pro/spec2d/Makefile -text
 pro/spec2d/TODO -text
 pro/spec2d/arcfit_guess.pro -text
@@ -146,10 +149,13 @@ pro/spec2d/rdss_fits.pro -text
 pro/spec2d/read2dout.pro -text
 pro/spec2d/readidlout.pro -text
 pro/spec2d/sdssproc.pro -text
+pro/spec2d/select_arc.pro -text
+pro/spec2d/select_flat.pro -text
 pro/spec2d/skysubtract.pro -text
 pro/spec2d/sortplugmap.pro -text
 pro/spec2d/spallflat.pro -text
 pro/spec2d/spallreduce.pro -text
+pro/spec2d/spcalib.pro -text
 pro/spec2d/spflatten.pro -text
 pro/spec2d/spflatten2.pro -text
 pro/spec2d/spgain.pro -text
