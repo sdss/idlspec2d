@@ -12,138 +12,54 @@ spechdrfix sdR-??-00001142 EXPTIME  60
 # Complete the mapping name in these headers on MJD 51433 for plate 198.
 # It properly says plate 198, but doesn't give the full map name.
 
-spechdrfix sdR-??-00001137 NAME     "'0198-51433-01'"
-spechdrfix sdR-??-00001138 NAME     "'0198-51433-01'"
-spechdrfix sdR-??-00001139 NAME     "'0198-51433-01'"
-spechdrfix sdR-??-0000114? NAME     "'0198-51433-01'"
-spechdrfix sdR-??-00001150 NAME     "'0198-51433-01'"
-spechdrfix sdR-??-00001151 NAME     "'0198-51433-01'"
-spechdrfix sdR-??-00001152 NAME     "'0198-51433-01'"
+spechdrfix sdR-??-0000113[7-9] NAME     "'0198-51433-01'"
+spechdrfix sdR-??-0000114[0-9] NAME     "'0198-51433-01'"
+spechdrfix sdR-??-0000115[0-2] NAME     "'0198-51433-01'"
 
 # Wrong mapping name in these headers on MJD 51441 for plate 214.
 
-spechdrfix sdR-??-00001347 NAME     "'0214-51432-02'"
-spechdrfix sdR-??-00001348 NAME     "'0214-51432-02'"
-spechdrfix sdR-??-00001349 NAME     "'0214-51432-02'"
-spechdrfix sdR-??-00001350 NAME     "'0214-51432-02'"
-spechdrfix sdR-??-00001351 NAME     "'0214-51432-02'"
-spechdrfix sdR-??-00001352 NAME     "'0214-51432-02'"
-spechdrfix sdR-??-00001353 NAME     "'0214-51432-02'"
-spechdrfix sdR-??-00001354 NAME     "'0214-51432-02'"
-spechdrfix sdR-??-00001355 NAME     "'0214-51432-02'"
-spechdrfix sdR-??-00001356 NAME     "'0214-51432-02'"
-spechdrfix sdR-??-00001357 NAME     "'0214-51432-02'"
-spechdrfix sdR-??-00001358 NAME     "'0214-51432-02'"
-spechdrfix sdR-??-00001359 NAME     "'0214-51432-02'"
-spechdrfix sdR-??-00001360 NAME     "'0214-51432-02'"
-spechdrfix sdR-??-00001361 NAME     "'0214-51432-02'"
+spechdrfix sdR-??-0000134[7-9] NAME     "'0214-51432-02'"
+spechdrfix sdR-??-0000135[0-9] NAME     "'0214-51432-02'"
+spechdrfix sdR-??-0000136[0-1] NAME     "'0214-51432-02'"
 
 # Wrong mapping name in these headers on MJD 51441 for plate 202.
 
-spechdrfix sdR-??-00001362 NAME     "'0202-51434-01'"
-spechdrfix sdR-??-00001363 NAME     "'0202-51434-01'"
-spechdrfix sdR-??-00001364 NAME     "'0202-51434-01'"
-spechdrfix sdR-??-00001365 NAME     "'0202-51434-01'"
-spechdrfix sdR-??-00001366 NAME     "'0202-51434-01'"
-spechdrfix sdR-??-00001367 NAME     "'0202-51434-01'"
-spechdrfix sdR-??-00001368 NAME     "'0202-51434-01'"
-spechdrfix sdR-??-00001369 NAME     "'0202-51434-01'"
-spechdrfix sdR-??-00001370 NAME     "'0202-51434-01'"
-spechdrfix sdR-??-00001371 NAME     "'0202-51434-01'"
-spechdrfix sdR-??-00001372 NAME     "'0202-51434-01'"
-spechdrfix sdR-??-00001373 NAME     "'0202-51434-01'"
+spechdrfix sdR-??-0000136[2-9] NAME     "'0202-51434-01'"
+spechdrfix sdR-??-0000137[0-3] NAME     "'0202-51434-01'"
 
 # Wrong mapping name in these headers on MJD 51454 for plate 191.
 # This doesn't actually matter, since there are no arcs for this plate anyway!
 
-spechdrfix sdR-??-00001388 NAME     "'0191-51454-01'"
-spechdrfix sdR-??-00001389 NAME     "'0191-51454-01'"
+spechdrfix sdR-??-0000138[8-9] NAME     "'0191-51454-01'"
 spechdrfix sdR-??-00001390 NAME     "'0191-51454-01'"
 
 # Wrong plate information in these headers on MJD 51455
 
-spechdrfix sdR-??-00001404 NAME     "'0187-51454-01'"
-spechdrfix sdR-??-00001405 NAME     "'0187-51454-01'"
-spechdrfix sdR-??-00001406 NAME     "'0187-51454-01'"
+spechdrfix sdR-??-0000140[4-6] NAME     "'0187-51454-01'"
 
-spechdrfix sdR-??-00001431 PLATEID  231
-spechdrfix sdR-??-00001431 TILEID   55
-spechdrfix sdR-??-00001431 MAPID    5145502
-spechdrfix sdR-??-00001431 NAME     "'0231-51455-01'"
-
-spechdrfix sdR-??-00001432 PLATEID  231
-spechdrfix sdR-??-00001432 TILEID   55
-spechdrfix sdR-??-00001432 MAPID    5145502
-spechdrfix sdR-??-00001432 NAME     "'0231-51455-01'"
-
-spechdrfix sdR-??-00001433 PLATEID  231
-spechdrfix sdR-??-00001433 TILEID   55
-spechdrfix sdR-??-00001433 MAPID    5145502
-spechdrfix sdR-??-00001433 NAME     "'0231-51455-01'"
-
-spechdrfix sdR-??-00001434 PLATEID  231
-spechdrfix sdR-??-00001434 TILEID   55
-spechdrfix sdR-??-00001434 MAPID    5145502
-spechdrfix sdR-??-00001434 NAME     "'0231-51455-01'"
-
-spechdrfix sdR-??-00001435 PLATEID  231
-spechdrfix sdR-??-00001435 TILEID   55
-spechdrfix sdR-??-00001435 MAPID    5145502
-spechdrfix sdR-??-00001435 NAME     "'0231-51455-01'"
-
-spechdrfix sdR-??-00001436 PLATEID  231
-spechdrfix sdR-??-00001436 TILEID   55
-spechdrfix sdR-??-00001436 MAPID    5145502
-spechdrfix sdR-??-00001436 NAME     "'0231-51455-01'"
-
-spechdrfix sdR-??-00001437 PLATEID  231
-spechdrfix sdR-??-00001437 TILEID   55
-spechdrfix sdR-??-00001437 MAPID    5145502
-spechdrfix sdR-??-00001437 NAME     "'0231-51455-01'"
+spechdrfix sdR-??-0000143[1-7] PLATEID  231
+spechdrfix sdR-??-0000143[1-7] TILEID   55
+spechdrfix sdR-??-0000143[1-7] MAPID    5145502
+spechdrfix sdR-??-0000143[1-7] NAME     "'0231-51455-01'"
 
 # Wrong plate information in these headers on MJD 51456.
 
-spechdrfix sdR-??-00001452 NAME     "'0217-51455-01'"
-spechdrfix sdR-??-00001453 NAME     "'0217-51455-01'"
-spechdrfix sdR-??-00001454 NAME     "'0217-51455-01'"
-spechdrfix sdR-??-00001455 NAME     "'0217-51455-01'"
-spechdrfix sdR-??-00001456 NAME     "'0217-51455-01'"
-spechdrfix sdR-??-00001457 NAME     "'0217-51455-01'"
-spechdrfix sdR-??-00001458 NAME     "'0217-51455-01'"
-spechdrfix sdR-??-00001459 NAME     "'0217-51455-01'"
+spechdrfix sdR-??-0000145[2-9] NAME     "'0217-51455-01'"
 spechdrfix sdR-??-00001460 NAME     "'0217-51455-01'"
 
 # This exposure on MJD 51581 was a garbage 1-second exposure for plate 295.
 
 spechdrfix sdR-??-00002309 FLAVOR   "'unknown'"
 
-# Wrong plate information in these headers on MJD 51629
+# Wrong plate information in these headers on MJD 51629.
 
-spechdrfix sdR-??-00003210 PLATEID  318
-spechdrfix sdR-??-00003210 TILEID   124
-spechdrfix sdR-??-00003210 MAPID    5162601
-spechdrfix sdR-??-00003210 NAME     "'0318-51626-01'"
-spechdrfix sdR-??-00003210 PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0318-51626-01.par'"
+spechdrfix sdR-??-0000321[0-3] PLATEID  318
+spechdrfix sdR-??-0000321[0-3] TILEID   124
+spechdrfix sdR-??-0000321[0-3] MAPID    5162601
+spechdrfix sdR-??-0000321[0-3] NAME     "'0318-51626-01'"
+spechdrfix sdR-??-0000321[0-3] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0318-51626-01.par'"
 
-spechdrfix sdR-??-00003211 PLATEID  318
-spechdrfix sdR-??-00003211 TILEID   124
-spechdrfix sdR-??-00003211 MAPID    5162601
-spechdrfix sdR-??-00003211 NAME     "'0318-51626-01'"
-spechdrfix sdR-??-00003211 PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0318-51626-01.par'"
-
-spechdrfix sdR-??-00003212 PLATEID  318
-spechdrfix sdR-??-00003212 TILEID   124
-spechdrfix sdR-??-00003212 MAPID    5162601
-spechdrfix sdR-??-00003212 NAME     "'0318-51626-01'"
-spechdrfix sdR-??-00003212 PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0318-51626-01.par'"
-
-spechdrfix sdR-??-00003213 PLATEID  318
-spechdrfix sdR-??-00003213 TILEID   124
-spechdrfix sdR-??-00003213 MAPID    5162601
-spechdrfix sdR-??-00003213 NAME     "'0318-51626-01'"
-spechdrfix sdR-??-00003213 PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0318-51626-01.par'"
-
-# Wrong exposure time in these headers on MJD 51629
+# Wrong exposure time in these headers on MJD 51629.
 
 spechdrfix sdR-??-00003225 EXPTIME  1148
 spechdrfix sdR-??-00003226 EXPTIME  985
@@ -174,17 +90,18 @@ spechdrfix sdR-??-00007112 ALT      71.520262
 # Shutters may have not opened on this exposure on MJD 51900.
 spechdrfix sdR-??-00007376 FLAVOR   "'unknown'"
 
-# Wrong exposure time in these headers on MJD 51928
+# Wrong exposure time in these headers on MJD 51928.
 spechdrfix sdR-??-00008299 EXPTIME  900
 
-# Flat field was on in these exposures on MJD 51929
+# Flat field was on in these exposures on MJD 51929.
 spechdrfix sdR-??-00008323 FLAVOR   "'unknown'"
 
-# First of the blantantly wrong plugmap files
+# Wrong plugmap indicated for plate 413 on MJD 51951.
 spechdrfix sdR-??-0000864[3-8] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0413-51942-01.par'"
 spechdrfix sdR-??-0000864[3-8] MAPID    5194201
 spechdrfix sdR-??-0000864[3-8] NAME     "'0413-51942-01'"
 
+# Wrong plugmap indicated for plate 550 on MJD 51959.
 spechdrfix sdR-??-0000880[8-9] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0550-51954-02.par'"
 spechdrfix sdR-??-0000880[8-9] MAPID    5195402
 spechdrfix sdR-??-0000880[8-9] NAME     "'0550-51954-02'"
@@ -192,6 +109,7 @@ spechdrfix sdR-??-0000881[0-6] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0550
 spechdrfix sdR-??-0000881[0-6] MAPID    5195402
 spechdrfix sdR-??-0000881[0-6] NAME     "'0550-51954-02'"
 
+# Wrong plugmap indicated for plate 547 on MJD 51959.
 spechdrfix sdR-??-0000881[7-9] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0547-51954-03.par'"
 spechdrfix sdR-??-0000881[7-9] MAPID    5195403
 spechdrfix sdR-??-0000881[7-9] NAME     "'0547-51954-03'"
@@ -199,11 +117,10 @@ spechdrfix sdR-??-0000882[0-4] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0547
 spechdrfix sdR-??-0000882[0-4] MAPID    5195403
 spechdrfix sdR-??-0000882[0-4] NAME     "'0547-51954-03'"
 
-
-# Guider was still on in this smear exposures on MJD 51981
+# Guider was still on in this smear exposures on MJD 51981.
 spechdrfix sdR-??-00008957 FLAVOR   "'unknown'"
 
-# two more blantantly wrong plugmap files
+# Wrong plugmap indicated for plate 542 on MJD 51984
 spechdrfix sdR-??-0000900[2-9] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0542-51984-02.par'"
 spechdrfix sdR-??-0000900[2-9] MAPID    5198402
 spechdrfix sdR-??-0000900[2-9] NAME     "'0542-51984-02'"
@@ -211,6 +128,7 @@ spechdrfix sdR-??-0000901[0-5] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0542
 spechdrfix sdR-??-0000901[0-5] MAPID    5198402
 spechdrfix sdR-??-0000901[0-5] NAME     "'0542-51984-02'"
 
+# Wrong plugmap indicated for plate 279 on MJD 51984.
 spechdrfix sdR-??-0000901[6-9] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0279-51977-02.par'"
 spechdrfix sdR-??-0000901[6-9] MAPID    5197702
 spechdrfix sdR-??-0000901[6-9] NAME     "'0279-51977-02'"
@@ -218,12 +136,10 @@ spechdrfix sdR-??-0000902[0-2] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0279
 spechdrfix sdR-??-0000902[0-2] MAPID    5197702
 spechdrfix sdR-??-0000902[0-2] NAME     "'0279-51977-02'"
 
-# Wrong reported time although exposure looked "fine"
+# Wrong reported time although exposure looked "fine".
 spechdrfix sdR-??-00009027 EXPTIME  900
 
-#
-# Wrong plugmap file entered for plate 0542
-#
+# Wrong plugmap indicated for plate 542 on MJD 51985.
 spechdrfix sdR-??-0000904[4-9] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0542-51984-02.par'"
 spechdrfix sdR-??-0000904[4-9] MAPID    5198402
 spechdrfix sdR-??-0000904[4-9] NAME     "'0542-51984-02'"
@@ -232,6 +148,7 @@ spechdrfix sdR-??-0000905[0-3] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0542
 spechdrfix sdR-??-0000905[0-3] MAPID    5198402
 spechdrfix sdR-??-0000905[0-3] NAME     "'0542-51984-02'"
 
+# Wrong plugmap indicated for plate 542 on MJD 51991.
 spechdrfix sdR-??-0000921[5-9] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0542-51984-02.par'"
 spechdrfix sdR-??-0000921[5-9] MAPID    5198402
 spechdrfix sdR-??-0000921[5-9] NAME     "'0542-51984-02'"
@@ -240,17 +157,16 @@ spechdrfix sdR-??-0000922[0-2] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0542
 spechdrfix sdR-??-0000922[0-2] MAPID    5198402
 spechdrfix sdR-??-0000922[0-2] NAME     "'0542-51984-02'"
 
+# Wrong plugmap indicated for plate 542 on MJD 51993.
 spechdrfix sdR-??-0000926[3-6] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0542-51984-02.par'"
 spechdrfix sdR-??-0000926[3-6] MAPID    5198402
 spechdrfix sdR-??-0000926[3-6] NAME     "'0542-51984-02'"
 
-# Axis abort during smear
+# Axis abort during smear.
 spechdrfix sdR-??-00009296 FLAVOR   "'unknown'"
 
-#
-# Wrong plugmap file entered for plate 0503
-#
-
+# Wrong plugmap indicated for plate 503 on MJD 51994.
 spechdrfix sdR-??-0000930[0-7] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0503-51991-01.par'"
 spechdrfix sdR-??-0000930[0-7] MAPID    5199101
 spechdrfix sdR-??-0000930[0-7] NAME     "'0503-51991-01'"
+
