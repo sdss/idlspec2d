@@ -34,11 +34,11 @@
 ;   fileandpath()
 ;   headfits()
 ;   mrdfits
+;   repstr()
 ;   sxpar()
 ;
 ; INTERNAL SUPPORT ROUTINES:
 ;   apo_color2hex()
-;   apo_stringreplace()
 ;   apo_log_header()
 ;   apo_log_endfile()
 ;   apo_log_tableline()
@@ -64,24 +64,6 @@ function apo_color2hex, colorname
    return, hexname
 end
 
-;------------------------------------------------------------------------------
-; The following replaces only the first instance of STRING1 within TEXT
-; with STRING2.
-function apo_stringreplace, text, string1, string2
-
-   newtext = ''
-
-   i = strpos(text, string1)
-   j = strlen(string1)
-   k = strlen(text)
-   if (i[0] NE -1) then begin
-      if (i GT 0) then newtext = newtext + strmid(text,0,i)
-      newtext = newtext + string2
-      if (i+j LT k) then newtext = newtext + strmid(text,i+j,k-i-j)
-   endif
-
-   return, newtext
-end
 ;------------------------------------------------------------------------------
 function apo_checklimits, field, camera, value
 
@@ -272,6 +254,7 @@ pro apo_log2html, logfile, htmlfile
    PPFLAT = mrdfits(logfile, 2)
    PPARC = mrdfits(logfile, 3)
    PPSCIENCE = mrdfits(logfile, 4)
+   PPTEXT = mrdfits(logfile, 5)
    djs_unlockfile, logfile
    if (NOT keyword_set(PPBIAS) AND NOT keyword_set(PPFLAT)) then begin
       djs_unlockfile, htmlfile, lun=html_lun
@@ -337,9 +320,6 @@ pro apo_log2html, logfile, htmlfile
       if (keyword_set(PPBIAS)) then ii = where(PPBIAS.plate EQ thisplate) $
        else ii = -1
       if (ii[0] NE -1) then begin
-         warnings = [warnings, (PPBIAS[ii].warnings)[*]]
-         aborts = [aborts, (PPBIAS[ii].aborts)[*]]
-
          allexp = PPBIAS[ii].expnum
          allexp = allexp[ uniq(allexp, sort(allexp)) ]
          nexp = n_elements(allexp)
@@ -372,9 +352,6 @@ pro apo_log2html, logfile, htmlfile
       if (keyword_set(PPFLAT)) then ii = where(PPFLAT.plate EQ thisplate) $
        else ii = -1
       if (ii[0] NE -1) then begin
-         warnings = [warnings, (PPFLAT[ii].warnings)[*]]
-         aborts = [aborts, (PPFLAT[ii].aborts)[*]]
-
          allexp = PPFLAT[ii].expnum
          allexp = allexp[ uniq(allexp, sort(allexp)) ]
          nexp = n_elements(allexp)
@@ -405,9 +382,6 @@ pro apo_log2html, logfile, htmlfile
       if (keyword_set(PPARC)) then ii = where(PPARC.plate EQ thisplate) $
        else ii = -1
       if (ii[0] NE -1) then begin
-         warnings = [warnings, (PPARC[ii].warnings)[*]]
-         aborts = [aborts, (PPARC[ii].aborts)[*]]
-
          allexp = PPARC[ii].expnum
          allexp = allexp[ uniq(allexp, sort(allexp)) ]
          nexp = n_elements(allexp)
@@ -437,9 +411,6 @@ pro apo_log2html, logfile, htmlfile
       if (keyword_set(PPSCIENCE)) then ii = where(PPSCIENCE.plate EQ thisplate) $
        else ii = -1
       if (ii[0] NE -1) then begin
-         warnings = [warnings, (PPSCIENCE[ii].warnings)[*]]
-         aborts = [aborts, (PPSCIENCE[ii].aborts)[*]]
-
          allexp = PPSCIENCE[ii].expnum
          allexp = allexp[ uniq(allexp, sort(allexp)) ]
          nexp = n_elements(allexp)
@@ -505,21 +476,16 @@ pro apo_log2html, logfile, htmlfile
       ;----------
       ; Print all WARNINGs and ABORTs for this plate
 
-      for j=0, n_elements(warnings)-1 do $
-       warnings[j] = apo_stringreplace(warnings[j], 'WARNING', $
-        '<B><FONT COLOR="' + apo_color2hex('YELLOW') + '">WARNING</FONT></B>')
-
-      for j=0, n_elements(aborts)-1 do $
-       aborts[j] = apo_stringreplace(aborts[j], 'ABORT', $
-        '<B><FONT COLOR="' + apo_color2hex('RED') + '">ABORT</FONT></B>')
-
-      j = where(warnings NE '')
-      if (j[0] NE -1) then $
-       textout = [textout, '<PRE>', warnings[j], '</PRE>']
-
-      j = where(aborts NE '')
-      if (j[0] NE -1) then $
-       textout = [textout, '<PRE>', aborts[j], '</PRE>']
+      if (keyword_set(PPTEXT)) then ii = where(PPTEXT.plate EQ thisplate) $
+       else ii = -1
+      if (ii[0] NE -1) then begin
+         addtext = PPTEXT[ii].text
+         addtext = repstr(addtext, 'WARNING', $
+          '<B><FONT COLOR="' + apo_color2hex('YELLOW') + '">WARNING</FONT></B>')
+         addtext = repstr(addtext, 'ABORT', $
+          '<B><FONT COLOR="' + apo_color2hex('RED') + '">ABORT</FONT></B>')
+         textout = [textout, '<PRE>', addtext, '</PRE>']
+      endif
    endfor
 
    textout = [textout, apo_log_endfile()]

@@ -6,11 +6,12 @@
 ;   Append to logfile as written by APOREDUCE.
 ;
 ; CALLING SEQUENCE:
-;   apo_appendlog, logfile, rstruct
+;   apo_appendlog, logfile, rstruct, tstruct
 ;
 ; INPUTS:
 ;   logfile    - FITS logfile as written by APOREDUCE.
-;   rstruct    - Structure to append to the log file.
+;   rstruct    - Structure to append to the log file with reduced data info
+;   tstruct    - Structure to append to the log file with WARNING/ABORT strings
 ;
 ; OPTIONAL INPUTS:
 ;
@@ -41,23 +42,24 @@
 ;   02-Dec-2000  Written by D. Schlegel, Princeton
 ;-
 ;------------------------------------------------------------------------------
-pro apo_appendlog, logfile, rstruct
+pro apo_appendlog, logfile, rstruct, tstruct
 
    ;----------
    ; Determine which HDU in the log file this structure will be appended.
 
-   case rstruct.flavor of
-      'bias'    : thishdu = 1
-      'dark'    : thishdu = 1
-      'flat'    : thishdu = 2
-      'arc'     : thishdu = 3
-      'science' : thishdu = 4
-      'smear'   : thishdu = 4
-      else: begin
-         splog, 'Unknown structure ', stname
-         return
-      end
-   endcase
+   if (keyword_set(rstruct)) then begin
+      case rstruct.flavor of
+         'bias'    : thishdu = 1
+         'dark'    : thishdu = 1
+         'flat'    : thishdu = 2
+         'arc'     : thishdu = 3
+         'science' : thishdu = 4
+         'smear'   : thishdu = 4
+         else      : thishdu = -1
+      endcase
+   endif else begin
+      thishdu = -1
+   endelse
 
    ;----------
    ; Lock the file to do this - otherwise we might read/write to a partially
@@ -69,8 +71,8 @@ pro apo_appendlog, logfile, rstruct
    ; If the log file does not yet exist, then create it.  Otherwise,
    ; append this structure to an existing structure, if it already exists.
 
-   pp = mrdfits(logfile, thishdu, hdr)
-   if (NOT keyword_set(hdr)) then begin
+   hdr = headfits(logfile)
+   if (NOT keyword_set(hdr) OR size(hdr,/tname) NE 'STRING') then begin
       ; Create a new FITS file
 
       ; Write HDU#0, which  is just a header with the version of the code.
@@ -78,18 +80,28 @@ pro apo_appendlog, logfile, rstruct
       sxaddpar, newhdr, 'VERS2D', idlspec2d_version()
       writefits, logfile, 0, newhdr
 
-      ; Write HDU numbers 1 through 4
-      for ihdu=1, 4 do begin
+      ; Write HDU numbers 1 through 5
+      for ihdu=1, 5 do begin
          if (ihdu EQ thishdu) then $
           mwrfits, rstruct, logfile $
          else $
           mwrfits, dummy, logfile
       endfor
-   endif else begin
-      ; Modify to an existing FITS file
+   endif else if (thishdu GT 0) then begin
+      ; Modify an existing FITS file
+      pp = mrdfits(logfile, thishdu)
       pp = struct_append(pp, rstruct)
       djs_modfits, logfile, pp, exten_no=thishdu
-   endelse
+   endif
+
+   ;----------
+   ; If TSTRUCT is set, then append that to HDU #5
+
+   if (keyword_set(tstruct)) then begin
+      pp = mrdfits(logfile, 5)
+      pp = struct_append(pp, tstruct)
+      djs_modfits, logfile, pp, exten_no=5
+   endif
 
    ;----------
    ; Now unlock the log file.

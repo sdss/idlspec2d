@@ -260,27 +260,23 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    if (i[0] EQ -1) then shortplugfile = fullplugfile $
     else shortplugfile = strmid(fullplugfile,i+1)
 
+
+   ;----------
+   ; Find WARNINGs and ABORTs from splog file.  Recast them as string
+   ; arrays that are not empty (e.g., ''), or MWRFITS will fail.
+
+   spawn, 'grep -e WARNING -e ABORT '+splgfile, tstring
+   if (keyword_set(tstring)) then begin
+      tstruct = create_struct('FILENAME', filename, $
+                              'MJD', mjd, $
+                              'PLATE', plate, $
+                              'EXPNUM', filee, $
+                              'TEXT', '' )
+      tstruct = replicate(tstruct, n_elements(tstring))
+      tstruct.text = tstring
+   endif
+
    if (keyword_set(rstruct)) then begin
-
-      ;----------
-      ; Find WARNINGs and ABORTs from splog file.  Recast them as string
-      ; arrays that are not empty (e.g., ''), or MWRFITS will fail.
-
-      spawn, 'grep WARNING '+splgfile, warnings
-      spawn, 'grep ABORT '+splgfile, aborts
-
-      if (warnings[0] NE '') then begin
-         warnings = strtrim([warnings],2)
-      endif else begin
-         warnings = [' ']
-      endelse
-
-      if (aborts[0] NE '') then begin
-         aborts = strtrim([aborts],2)
-      endif else begin
-         aborts = [' ']
-      endelse
-
       ;----------
       ; Get the universal time (UT) from the header in the format '12:34',
       ; then convert to Mountain standard time (MST), which is 7 (or 17)
@@ -302,11 +298,11 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
                               'FLAVOR', flavor, $
                               'CAMERA', camnames[icam], $
                               'MST', mst, $
-                              rstruct, $
-                              'WARNINGS', warnings, $
-                              'ABORTS', aborts )
+                              rstruct )
+   endif
 
-      apo_appendlog, logfile, rstruct
+   if (keyword_set(tstruct) OR keyword_set(rstruct)) then begin
+      apo_appendlog, logfile, rstruct, tstruct
    endif
 
    ;----------
