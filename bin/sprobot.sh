@@ -153,10 +153,10 @@ if [ -z "$topoutdir" ] ; then
 fi
 
 # The following would exit if no new data
-if [ -z "$mjdlist" ] ; then
-   echo "SPROBOT: No new data (MJDLIST)!"
-   exit
-fi
+#if [ -z "$mjdlist" ] ; then
+#   echo "SPROBOT: No new data (MJDLIST)!"
+#   exit
+#fi
 
 #------------------------------------------------------------------------------
 # Build the plan files if there is new data
