@@ -46,7 +46,7 @@
 ; BUGS:
 ;
 ; DATA FILES:
-;   $IDLSPEC2D_DIR/templates/TEMPLATEFILES
+;   $IDLSPEC2D_DIR/templates/spEigenVdisp*.fits
 ;
 ; PROCEDURES CALLED:
 ;   airtovac
