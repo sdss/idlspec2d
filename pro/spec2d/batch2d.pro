@@ -6,14 +6,19 @@
 ;   Batch process Spectro-2D reductions based upon already-built plan files.
 ;
 ; CALLING SEQUENCE:
-;   batch2d, [ platenums, topdir=, mjd=, mjstart=, mjend=, nice= ]
+;   batch2d, [ platenums, topdir=, platestart=, plateend=, $
+;    mjd=, mjstart=, mjend=, nice= ]
 ;
 ; INPUTS:
 ;
 ; OPTIONAL INPUTS:
 ;   platenums  - Plate numbers to reduce.
 ;   topdir     - Top directory for reductions; default to current directory.
+;   platestart - Starting plate number.
+;   plateend   - Ending plate number.
 ;   mjd        - MJD dates to reduce; default to all.
+;                Select based upon the MJD of the combine plan file, and
+;                reduce data from all nights needed for that combined plate+MJD.
 ;   mjstart    - Starting MJD dates to reduce.
 ;   mjend      - Ending MJD dates to reduce.
 ;   nice       - Unix nice-ness for spawned jobs; default to 19.
@@ -35,15 +40,17 @@
 ; EXAMPLES:
 ;
 ; BUGS:
-;   Does not yet support MJD, MJSTART, MJEND ???
 ;
 ; DATA FILES:
 ;   $IDLSPEC2D_DIR/examples/batch2d.par
 ;
 ; PROCEDURES CALLED:
+;   concat_dir()
 ;   djs_batch
 ;   djs_filepath()
 ;   fileandpath()
+;   get_mjd_dir()
+;   mjd_match()
 ;   repstr()
 ;   splog
 ;   yanny_free
@@ -210,8 +217,9 @@ function batch2d_combfiles, planfile, outfile=outfile
 end
 
 ;------------------------------------------------------------------------------
-pro batch2d, platenums, topdir=topdir, mjd=mjd, mjstart=mjstart, mjend=mjend, $
- nice=nice
+pro batch2d, platenums, topdir=topdir, $
+ platestart=platestart, plateend=plateend, $
+ mjd=mjd, mjstart=mjstart, mjend=mjend, nice=nice
 
    if (NOT keyword_set(platenums)) then platenums = '*'
    if (NOT keyword_set(topdir)) then begin
@@ -234,13 +242,17 @@ pro batch2d, platenums, topdir=topdir, mjd=mjd, mjstart=mjstart, mjend=mjend, $
 
    ;----------
    ; Create list of plate directories
+   ; Limit the list to only those specified by PLATENUMS,PLATESTART,PLATEEND
 
-   if (size(platenums,/tname) EQ 'INT' OR size(platenums,/tname) EQ 'LONG') $
-    then platestr = string(platenums,format='(i4.4)') $
-   else platestr = platenums
+;   if (size(platenums,/tname) EQ 'INT' OR size(platenums,/tname) EQ 'LONG') $
+;    then platestr = string(platenums,format='(i4.4)') $
+;   else platestr = platenums
+;   spawn, 'ls -d ' + string(platestr+' ', $
+;    format='(99(a," "))'), platedirs
 
-   spawn, 'ls -d ' + string(platestr+' ', $
-    format='(99(a," "))'), platedirs
+   platedirs = get_mjd_dir(topdir, mjd=platenums, mjstart=platestart, $
+    mjend=plateend)
+
    if (NOT keyword_set(platedirs[0])) then begin
       splog, 'No directories found'
       return
@@ -257,14 +269,18 @@ pro batch2d, platenums, topdir=topdir, mjd=mjd, mjstart=mjstart, mjend=mjend, $
       for ifile=0, nfile-1 do begin
          yanny_read, planfile[ifile], hdr=hdr
          thismjd = long(yanny_par(hdr, 'MJD'))
-; GET ONLY THE MJD's THAT WE WANT ???
-         if (keyword_set(platelist)) then begin
-            platelist = [platelist, platedirs[idir]]
-            planlist = [planlist, planfile[ifile]]
-         endif else begin
-            platelist = platedirs[idir]
-            planlist = planfile[ifile]
-         endelse
+
+         ; Decide if THISMJD is within the bounds specified by MJD,MJSTART,MJEND
+         if (mjd_match(thismjd, mjd=mjd, mjstart=mjstart, mjend=mjend)) $
+          then begin
+            if (keyword_set(platelist)) then begin
+               platelist = [platelist, platedirs[idir]]
+               planlist = [planlist, planfile[ifile]]
+            endif else begin
+               platelist = platedirs[idir]
+               planlist = planfile[ifile]
+            endelse
+         endif
       endfor
    endfor
 
@@ -312,7 +328,9 @@ pro batch2d, platenums, topdir=topdir, mjd=mjd, mjstart=mjstart, mjend=mjend, $
          openw, olun, fullscriptfile[iplate], /get_lun
          printf, olun, '; Auto-generated batch file '+systime()
          printf, olun, 'cd, ' + fq+pathcomb+fq
-         printf, olun, 'setenv, ' + fq+'RAWDATA_DIR=../rawdata'+fq
+;         printf, olun, 'setenv, ' + fq+'RAWDATA_DIR=../rawdata'+fq
+         printf, olun, 'setenv, ' + fq+'RAWDATA_DIR=' $
+          +concat_dir(topdir,'rawdata')+fq
          for i=0, n_elements(planfile2d)-1 do $
           printf, olun, 'spreduce2d, ' + fq+planfile2d[i]+fq
          printf, olun, 'spcombine, ' + fq+planfilecomb+fq
