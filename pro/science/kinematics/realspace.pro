@@ -92,6 +92,71 @@ pro testsetup
   return
 end 
 
+pro testrealspace, width, doplot=doplot
+  
+
+  fname = findfile('quicktest.sav', count=ct)
+  if ct eq 0 then testsetup
+  restore, 'quicktest.sav'  ;lam, eig, lamg, gal, ivar
+  restore, 'small_sample.sav'
+
+  N = 200
+  b = fltarr(N)
+  berr = fltarr(N)
+  chi2 = fltarr(N)
+
+  testsigma = (findgen(20)+0)/2.
+
+  galivar = 1./((galsig^2) + (galsig eq 0))
+  fac = (10.^(1e-4)-1)*299792   ; 69.0458
+
+  i = 0
+  
+  gal = galflux[*, i]
+  ivar = galivar[*, i]
+  wavg = galwave[*, i]
+  lamg = 10^wavg
+  z = sample[i].z
+  combine1fiber, wavg, gal, ivar, newloglam=wavg+alog10(1+z), $
+    newflux=newflux, newivar=newivar
+  iseed = !pi
+
+  FOR i=0, N-1 DO BEGIN 
+     
+     nfac = i/50. ; noise factor
+     noise = randomn(iseed, n_elements(newflux))*nfac
+     nivar = 1./(1./ivar + nfac^2)
+     
+     ans = realspace(width, lam, eig, lamg, newflux+noise, nivar, $
+                     testsigma=testsigma, $
+                     lamrange=lamrange, doplot=doplot, broadlam=broadlam, $
+                     broadarr=broadarr, dof=dof)
+
+     minchi2  = ans[0]
+     minsigma = ans[1]
+     errsig   = ans[2]
+;     dof = n_elements(gal)
+     b[i] = minsigma*fac
+     berr[i] = errsig*fac
+     chi2[i] = minchi2/dof
+
+     print, i, ' Chi2/dof', minchi2, '/', long(dof),  $
+       '  sigma:', minsigma, ' pix', $
+       minsigma*fac, ' +-', errsig*fac, ' km/s', $
+       format='(I5,A,F10.2,A,I5,A,F6.3,A,F8.1,A,F6.1,A)'
+
+  ENDFOR 
+
+  save, b, berr, chi2, file='test.sav'
+
+  plot, b, ps=7
+  errplot, b-berr, b+berr
+
+
+  return
+end
+
+
 
 
 pro callrealspace, width, doplot=doplot
@@ -100,7 +165,8 @@ pro callrealspace, width, doplot=doplot
   fname = findfile('quicktest.sav', count=ct)
   if ct eq 0 then testsetup
   restore, 'quicktest.sav'  ;lam, eig, lamg, gal, ivar
-  restore, 'small_sample.sav'
+;  restore, 'small_sample.sav'
+  restore, 'sample_MAIN_sept00.dat'
 
   N = (size(galflux))[2]
   b = fltarr(N)
@@ -135,7 +201,7 @@ pro callrealspace, width, doplot=doplot
      berr[i] = errsig*fac
      chi2[i] = minchi2/dof
 
-     print, 'Best Chi2', minchi2, '/', fix(dof), ' sigma:', minsigma, ' pix ', $
+     print, i, 'Chi2/dof', minchi2, '/', dof, ' sigma:', minsigma, ' pix ', $
        minsigma*fac, ' +-', errsig*fac, ' km/s'
   ENDFOR 
 
