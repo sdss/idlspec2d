@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   plotspec, plate, [ fiberid, mjd=, znum=, nsmooth=, psfile=, $
-;    /netimage, _EXTRA= ]
+;    /netimage, /zwarning, _EXTRA= ]
 ;
 ; INPUTS:
 ;   plate      - Plate number
@@ -31,6 +31,9 @@
 ;                Netscape is running and has permissions at the site
 ;                "http://sdssmosaic.fnal.gov:8015".
 ;                This is disabled if PSFILE is set.
+;   zwarning   - If set, then only select those non-sky fibers where the
+;                ZWARNING flag has been set; can be used with or without
+;                specifying fiber numbers with FIBERID.
 ;   _EXTRA     - Kewords for SPLOT, such as XRANGE, YRANGE, THICK.
 ;
 ; OUTPUTS:
@@ -229,12 +232,12 @@ end
 ;------------------------------------------------------------------------------
 pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
  psfile=psfile, xrange=xrange, yrange=yrange, noerase=noerase, $
- netimage=netimage, _EXTRA=KeywordsForSplot
+ netimage=netimage, zwarning=zwarning, _EXTRA=KeywordsForSplot
 
    if (n_params() LT 1) then begin
       print, 'Syntax - plotspec, plate, [ fiberid, mjd=, znum=, nsmooth=, $'
       print, '         psfile=, xrange=, yrange=, /noerase, $'
-      print, '         /netimage, _EXTRA=KeywordsForSplot'
+      print, '         /netimage, /zwarning, _EXTRA=KeywordsForSplot'
       return
    endif
 
@@ -263,6 +266,29 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
           format='("spec-",i4.4,"-",i5.5,".ps")')
       endif
    endif
+
+   if (min(fiberid) LT 1 OR max(fiberid) GT 640) then begin
+      print, 'Invalid FIBERID (must be between 1 and 640)'
+      return
+   endif
+
+   if (keyword_set(zwarning)) then begin
+      readspec, plate, fiberid, mjd=mjd, /silent, zans=zans
+      if (NOT keyword_set(zans)) then begin
+         print, 'No spZ file found for selecting ZWARNING flags'
+         return
+      endif else begin
+         indx = where((zans.zwarning AND 1) EQ 0 AND zans.zwarning NE 0, nfiber)
+         if (nfiber EQ 0) then begin
+            print, 'No non-sky fibers with ZWARNING flag set'
+            return
+         endif else begin
+            print, 'Selecting ', nfiber, ' non-sky fibers with ZWARNING flag set'
+            fiberid = fiberid[indx]
+         endelse
+      endelse
+   endif
+
    nfiber = n_elements(fiberid)
    if (size(psfile,/tname) EQ 'STRING' AND nfiber GT 1) then begin
       psfilename = psfile
