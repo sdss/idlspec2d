@@ -423,7 +423,7 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
                 string(icoef[2], format='(F6.3)'), charsize = 0.7
 
         if (ispecnum EQ 1 AND keyword_set(plottitle)) then $
-          xyouts, 0.8, 105, plottitle, align=0.5, charsize=1.5
+          xyouts, 0.8, ymax * 1.03, plottitle, align=0.5, charsize=1.5
       endfor
 
       for ispecnum=1, 2 do begin
