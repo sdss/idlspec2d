@@ -259,12 +259,16 @@ PLATEID = The plate ID, which must match that in the NAME header card.
 NAME    = Plug name, e.g. "0328-52277-01" for plate 328, plugged on 52277
           with a plugging ID of 01.  We assume that there is a plug-map
           file at APO with the name "/astrolog/$MJD/plPlugMapM-$NAME.par".
-TAI-BEG = The TAI time for the beginning of the exposure, which is used
-          to compute the airmass and sky-brightness gradients for sky-
-          subtraction.
 EXPTIME = The exposure time, which is used along with TAI-BEG to compute
           the airmass.  It is also used to determine whether the sky
           brightness or scattered light is larger than tolerances.
+TAI-BEG = The TAI time for the beginning of the exposure, which is used
+          to compute the airmass and sky-brightness gradients for sky-
+          subtraction.  If this keyword is missing, we guess it from
+          EXPTIME and TAI.
+TAI-END = Used with TAI-BEG.  If this keyword is missing, we guess it from
+          EXPTIME and TAI.
+TAI     = This keyword is used if TAI-BEG,TAI-END are missing.
 FFS     = Flat-field screen positions, which should be
           "0 0 0 0 0 0 0 0" for science exposures (all petals open)
           "1 1 1 1 1 1 1 1" for flat or arc exposures (all petals closed)
@@ -277,6 +281,10 @@ NE      = Neon lamp status, which should be
 HGCD    = HgCd lamp status, which should be
           "0 0 0 0" for science or flat exposures (all off)
           "1 1 1 1" for arc exposures (all on)
+OBSCOMM = This keyword is used only to identify the dithered flat sequence
+          taken in the Monthly Checkout with the "specFlats" script in SOP.
+          The flats in this sequence must have OBSCOMM="{dithered flats-flat}".
+          The arcs in this sequence must have OBSCOMM="{dithered flats-arc}".
 </PRE>
 
 <H4><A NAME="headers_informational">Informational FITS header cards</A></H4>
@@ -429,6 +437,11 @@ then a brief plain-text message.
 <P>
 The following messages may appear:
 <UL>
+<LI><B>Empty or invalid sdReport file</B> <BR>
+    The sdReport file (sdReport-$MJD.par) in sdsshost:/astrolog/$MJD
+    was either improperly copied to sos:/data/spectro/astrolog/$MJD,
+    or the file is not a valid Yanny parameter file.  This happened on
+    MJD=52311 when somehow the Yanny header was missing from this file.
 <LI><B>Exposure number in header disagrees w/filename</B> <BR>
     This means that IOP/SOP is in a very confused state, and it
     is putting a different exposure number in the header (EXPOSURE
