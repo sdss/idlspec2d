@@ -99,7 +99,12 @@ function telluric_corr,flux, fluxivar, wset, plugsort, $
        twave2: 7720., $
        cwave1: [7400., 7700.], $
        cwave2: [7580., 8000.] }
-      tellbands = [tellbands1, tellbands2]
+      tellbands3 = { TELLBAND, $
+       twave1: 8220., $
+       twave2: 8240., $
+       cwave1: [8125., 8235.], $
+       cwave2: [8225., 8325.] }
+      tellbands = [tellbands1, tellbands2, tellbands3]
    endif
 
    ;----------
