@@ -27,6 +27,7 @@ pro/extract_row.pro -text
 pro/fchebyshev.pro -text
 pro/fiberflat.pro -text
 pro/findobjects.pro -text
+pro/fit_tset.pro -text
 pro/fitansimage.pro -text
 pro/fitarcimage.pro -text
 pro/flegendre.pro -text
@@ -48,6 +49,7 @@ pro/spec2d/extract_row.pro -text
 pro/spec2d/fchebyshev.pro -text
 pro/spec2d/fiberflat.pro -text
 pro/spec2d/findobjects.pro -text
+pro/spec2d/fit_tset.pro -text
 pro/spec2d/fitansimage.pro -text
 pro/spec2d/fitarcimage.pro -text
 pro/spec2d/flegendre.pro -text
