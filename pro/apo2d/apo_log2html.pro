@@ -152,7 +152,8 @@ function apo_log_beginplate, platenum, mjd, camnames
 
    mjdstr = strtrim(string(mjd),2)
    platestr = strtrim(string(platenum),2)
-   plotfile = 'snplot-'+mjdstr+'-'+platestr+'.ps'
+   platestr4 = string(platenum, format='(i4.4)')
+   plotfile = 'snplot-'+mjdstr+'-'+platestr4+'.ps'
 
    textout = ['<A NAME="PLATE' + platestr + '">']
    textout = [textout, '<TABLE BORDER=1 CELLPADDING=3>']
