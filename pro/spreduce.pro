@@ -63,6 +63,7 @@
 ;   telluric_corr
 ;   tweaktrace
 ;   traceset2xy
+;   writespectra
 ;   xy2traceset
 ;   yanny_free
 ;   yanny_read
