@@ -13,6 +13,14 @@ READSPEC,SPEC_APPEND: Add the /ALIGN option for aligning all the spectra
            in wavelength.  Also, fix a bug whereby reading objects from
            multiple could get mis-aligned if the OBJHDR keyword was specified
            (this bug was just introduced in the last version).
+REDMONSTER,SKYSUBTRACT: Lower threshhold for flagging both the BADSKYCHI
+           and REDMONSTER mask bits from a relative chi^2 of 4.0 to 3.0.
+SKYMASK: Remove the rejection of andmask/BRIGHTSKY, and add rejection for
+           ormask/BADSKYCHI.  Now we reject based upon that and
+           ormask/REDMONSTER.  For good plates, this will be rejecting fewer
+           points.  For the recent horrible data (like plate 889/52346),
+           many more points are rejected since the sky chi^2 are so horrible.
+           This change will need some real testing.
 SDSS_FLAGNAME: Re-write to include many more types of mask bits
            from the file "spMaskbits.par".
 SDSS_FLAGVAL: New function, which is the inverse of SDSS_FLAGNAME().
@@ -28,6 +36,10 @@ ZTWEAK_STAR: New proc for getting the zero-point of the stellar
 
 eigeninput_star.par: Version of "eigeninput_star.dat" as a Yanny file.
            Add more Carbon_DQ stars.  Use cz instead of z.
+           For stellar types O through late K, change the classifications
+           to agree with Elodie (hopefully the fit from 4100-6800 Ang
+           is good enough for this), and tweak the redshifts of those
+           stars also (using ZTWEAK_STAR).
 spChunkList.par: Remove verstarg from structure, and add progname.
 spMaskbits.par: Heavily modified file to include many more types of mask bits.
 sprobot_start: Set the environment variable "DISPLAY=:0.0" so that any
