@@ -58,15 +58,21 @@
 ; REVISION HISTORY:
 ;   25-Mar-2000  Written by S. Burles, FNAL
 ;   29-Mar-2000  Modified by D. Finkbeiner & D. Schlegel, APO
-;   25-Jun-2000  Cleaned up and commented by D. Finkbeiner, APO
+;      Apr-2000  Modified by M. Bernardi. Introduced optional keywords:
+;                continuum, starnoise; the possibility of choosing 
+;                the wavelength range using the keywords:
+;                redshifts, wavemin, wavemax; khi_cut changes
+;                depending on the S/N of the galaxy.    
 ;   2000-Sep-11  Worked-over by the SWAT team
-;-
+;   09-Oct-2000  Cleaned up by M. Bernardi. Included realspace function
+;                written by D. Finkbeiner (keywords: waveeig, eig) 
+;
 ;------------------------------------------------------------------------------
 pro mveldisp, objflux, objivar, objwave, starflux, starivar, starwave, $
- result, redshifts= redshifts, czmin=czmin, czmax=czmax, klo_cut=klo_cut, $
- khi_cut=khi_cut, maxsig=maxsig, sigmastep=sigmastep, doplot=doplot, $
- nodiff=nodiff, noquotient=noquotient, nobe=nobe, keep=keep, $
- starnoise=starnoise, continuum=continuum, noxcorr=noxcorr
+ result, waveeig=waveeig, eig=eig, redshifts= redshifts, wavemin=wavemin,$
+ wavemax=wavemax,  klo_cut=klo_cut, khi_cut=khi_cut, maxsig=maxsig, $
+ sigmastep=sigmastep, doplot=doplot, nodiff=nodiff, $
+ starnoise=starnoise, continuum=continuum
 
 ; set keyword defaults
    if (NOT keyword_set(klo_cut)) then klo_cut = 1.0/128.
@@ -83,6 +89,10 @@ pro mveldisp, objflux, objivar, objwave, starflux, starivar, starwave, $
 
    if (size(objflux, /tname) EQ 'DOUBLE') then PI = !dpi $
     else PI = !pi
+
+   testsigma = findgen(ceil(float(maxsig)/sigmastep) + 1) * sigmastep
+
+   fac = (10.^(1e-4)-1)*299792   ; 69.0458
 
 ; check dimensions of everything
    ndim = size(objflux, /n_dimen)
@@ -111,14 +121,12 @@ pro mveldisp, objflux, objivar, objwave, starflux, starivar, starwave, $
        z                  : fltarr(nstar), $
        z_err              : fltarr(nstar), $
        zconf              : fltarr(nstar), $
-       sigma_cc           : intarr(nstar), $
-       sigma_cc_err       : intarr(nstar), $
-       sigma_quotient     : intarr(nstar), $
-       sigma_quotient_err : intarr(nstar), $
-       sigma_quot_diff    : intarr(nstar), $
-       sigma_quot_diff_err : intarr(nstar), $
+       sigma_xcor         : intarr(nstar), $
+       sigma_xcorerr      : intarr(nstar), $
        sigma_diff         : intarr(nstar), $
-       sigma_diff_err     : intarr(nstar) }
+       sigma_differr      : intarr(nstar), $
+       sigma_rs           : 0.0, $
+       sigma_rserr        : 0.0  }
    result = replicate(tempresult, nobj)
 
    ;---------------------------------------------------------------------------
@@ -127,9 +135,7 @@ pro mveldisp, objflux, objivar, objwave, starflux, starivar, starwave, $
    ; Pad to larger (or equal) 2^N, and then doubled for isolated b.c.
 
 
-;;;;; <- Mariangela's idea of a comment
-
-   print, ' nobj nstar  Deltaredshift    veldisp_cc veldisp_q_d veldisp_q  veldisp_d  redshift'
+   print, ' nobj nstar  redshift    veldisp_xcor veldisp_diff  veldisp_rs  1d_redshift'
 
 
      khi_cut_inp=khi_cut
@@ -159,43 +165,64 @@ pro mveldisp, objflux, objivar, objwave, starflux, starivar, starwave, $
       fluxivar = objivar[*, iobj]
       waveobj=objwave[*,iobj]
 
-    if (keyword_set(redshifts)) then begin    
-	if (NOT keyword_set(czmin)) then czmin=3000
-	if (NOT keyword_set(czmax)) then czmax=10000	
-;	galsize=(size(objflux))[1]
-;        xp=fltarr(galsize)
-;        xp=3.57403 + findgen(galsize)*0.0001
+
+
+    if (keyword_set(redshifts)) then begin   
+	if (NOT keyword_set(wavemin)) then wavemin=3000
+	if (NOT keyword_set(wavemax)) then wavemax=10000	
         xp=objwave[*,iobj]
         xpp=xp-alog10(1+redshifts[iobj])
-        ppp=where(10^xpp GT czmin AND 10^xpp LT czmax)
+        ppp=where(10^xpp GT wavemin AND 10^xpp LT wavemax)
 ; cut off last 300 km/s
-        czmaxgal=max(10^xpp[ppp]) - 300
-        czmingal=min(10^xpp[ppp])
+        wavemaxgal=max(10^xpp[ppp]) - 300
+        wavemingal=min(10^xpp[ppp])
         if (redshifts[iobj] GT 0.16) then begin
-        if (czmaxgal GT 6000) then czmaxgal= 6000
-        czmingal= 4000
+        if (wavemaxgal GT 6000) then wavemaxgal= 6000
+        wavemingal= 4000
 	endif 
-        ppp1=where(10^xpp GT czmingal AND 10^xpp LT czmaxgal)
+        ppp1=where(10^xpp GT wavemingal AND 10^xpp LT wavemaxgal)
 
 ; remove sky lines
+        kcor5570=0 
+        if (max(10^xpp[ppp1]) GE 5590) then begin
         skyremove, objflux[ppp1, iobj], xp[ppp1], $
                    5570, 5590, ppp2, kcor
         ppp1=ppp1[ppp2]
         kcor5570=kcor 
+	endif	
+
+        kcor6295=0 
+        if (max(10^xpp[ppp1]) GE 6310) then begin
         skyremove, objflux[ppp1, iobj], xp[ppp1], $
                    6295, 6310, ppp3, kcor
         ppp1=ppp1[ppp3]
         kcor6295=kcor
+        endif
 
 	fluxobj= objflux[ppp1, iobj]	
-;        if (redshifts[iobj] GT 0.2) then fluxobj=smooth(fluxobj,8)
 	fluxivar = objivar[ppp1, iobj]
         waveobj= 10^xpp[ppp1]
 ;	plot, waveobj, fluxobj,ps=0
 ;stop
-    endif
 
+        if (keyword_set(waveeig) AND keyword_set(eig)) then begin
+        if (keyword_set(doplot)) then rsoplot = 2 else rsoplot = 0
 
+         combine1fiber, objwave[*,iobj], objflux[*, iobj],objivar[*, iobj],$
+                        newloglam=objwave[*,iobj]+alog10(1+redshifts[iobj]), $
+                        newflux=newflux, newivar=newivar  
+         newwave=10^objwave[*,iobj]
+         answer_rs = realspace(waveeig, eig, newwave, newflux, newivar, $
+                     testsigma=testsigma, lamrange=[wavemingal,wavemaxgal], $
+                     doplot=rsoplot,dof=dof)
+        endif               
+         
+        if (n_elements(answer_rs) EQ 4) then begin
+        result[iobj].sigma_rs = answer_rs[1]*fac
+        result[iobj].sigma_rserr = answer_rs[2]*fac   
+        endif        
+
+      endif
 ;--------------------------------------------------------------------------- 
 ; Compute FFT for stellar template
 
@@ -203,8 +230,8 @@ pro mveldisp, objflux, objivar, objwave, starflux, starivar, starwave, $
 
    FOR istar=0, nstar-1 DO BEGIN 
 
-t1=systime(1)
-print,'BEGIN',systime(1)-t1
+;t1=systime(1)
+;print,'BEGIN',systime(1)-t1
 
     meanstar=mean(starflux[*, istar]) 
     if (keyword_set(starnoise)) then begin $ &
@@ -241,10 +268,8 @@ print,'BEGIN',systime(1)-t1
 
     if (keyword_set(redshifts)) then  begin   
 	starsize=(size(starflux))[1]
-;        xp=fltarr(starsize)
-;        xp=3.57403 + findgen(starsize)*0.0001
         xp=starwave[*,istar]
-        pp=where(10^xp GT czmingal AND 10^xp LT czmaxgal)
+        pp=where(10^xp GT wavemingal AND 10^xp LT wavemaxgal)
 
         if (kcor5570 EQ 1) then begin
         xxp=xp[pp]+alog10(1+redshifts[iobj]) 
@@ -259,7 +284,6 @@ print,'BEGIN',systime(1)-t1
 	endif
 
 	fluxstar= starflux[pp, istar]	
-;	if (redshifts[iobj] GT 0.2) then fluxstar=smooth(fluxstar,8)
 	fluxstarivar = starivar[pp, istar]
 	wavestar=10^xp[pp]
 ;	plot,wavestar, fluxstar,ps=0
@@ -294,23 +318,12 @@ print,'BEGIN',systime(1)-t1
      nsearch=5, zfit=starcen, z_err=starcen_err, $
      veldispfit=starsigma, veldisp_err=starsigma_err, doplot=doplot
 
-   ;---------------------------------------------------------------------------
-   ; LOOP OVER OBJECT SPECTRA
-
-
-
-
-;   FOR iobj=0, nobj-1 DO BEGIN 
-
-
-;      fluxivar = objivar[*, iobj]
-
-
-	mveldisp_fft, fluxobj, fluxivar, npixbig,  $
+   mveldisp_fft, fluxobj, fluxivar, npixbig,  $
           fluxfft, fluxfilt, fluxvar0, fluxvariancefft, fluxivar_pad,  $
           khigh, klo_cut=klo_cut, khi_cut=khi_cut
 	
-      if not keyword_set(noxcorr) then begin 
+
+
       mfitredshift, fluxfilt, fluxivar_pad, starfilt, starivar_pad, $
         nsearch=5, zfit=fitcen, z_err=fitcen_err, $
         veldispfit=galsigma, veldisp_err=galsigma_err, zconf=zconf, $
@@ -331,28 +344,27 @@ print,'BEGIN',systime(1)-t1
 	if (NOT keyword_set(redshifts)) then begin
         fluxobj= shift(fluxobj, -fitcen)
         waveobj= shift(waveobj, -fitcen)
+        waveobj= 10^waveobj 
+        wavestar= 10^wavestar
         endif
 	fluxobj1=fluxobj/mean(fluxobj)
 	fluxstar1=fluxstar/mean(fluxstar)
 	if (keyword_set(continuum)) then plot,wavestar,fluxstar,ps=0 $
-        else plot,wavestar,fluxstar1,ps=0,xr=[5050,5250]
-	if (keyword_set(continuum)) then djs_oplot,waveobj,fluxobj,ps=0,color='red'$
-        else  oplot,waveobj,fluxobj1,ps=0,color=150
+        else plot,wavestar,fluxstar1,ps=0
+	if (keyword_set(continuum)) then $
+              djs_oplot,waveobj,fluxobj,ps=0,color='red'$
+        else  djs_oplot,waveobj,fluxobj1,ps=0,color='red'
 
       endif
 
 ; Should really store sigma squared, and allow negative values; error
 ; should reflect it - DPF ???
       if (galsigma GT starsigma AND starsigma GT 0.0) then begin
-         result[iobj].sigma_cc[istar] = sqrt(galsigma^2 - starsigma^2)*70
-
-; fix this
-;         result[iobj].sigma_cc_err[istar] = sqrt((galsigma*galsigma_err)^2 + $
-;          (starsigma*starsigma_err)^2)/(result[iobj].sigma_cc[istar]/70)*70
-         result[iobj].sigma_cc_err[istar] = sqrt((galsigma_err)^2 + $
-          (starsigma_err)^2)*70
+         result[iobj].sigma_xcor[istar] = sqrt(galsigma^2 - starsigma^2)*fac
+         result[iobj].sigma_xcorerr[istar] = sqrt((galsigma_err)^2 + $
+          (starsigma_err)^2)*fac
       endif
-      ENDIF
+
 
       twopiei = 2.0 * PI * complex(0.0,1.0)
       knums = fft_wavenums(npixbig)
@@ -363,12 +375,11 @@ print,'BEGIN',systime(1)-t1
 ;      starshift = starfft * phase
        starshift = starfft
 
-      testsigma = findgen(ceil(float(maxsig)/sigmastep) + 1) * sigmastep
 
 ; Need to pick lower and upper limits to do comparison
 ; Let's try to compare from 80 pixels to 2.2 pixels
 
-print,'BEFORE newdiff  ',systime(1)-t1
+;print,'BEFORE newdiff  ',systime(1)-t1
 
       if (NOT keyword_set(nodiff)) then $
        answer = newdiff(fluxfft, starshift, fluxvar0, $
@@ -377,51 +388,21 @@ print,'BEFORE newdiff  ',systime(1)-t1
 		broadarr=broadarr, doplot=doplot)
 
       bestalpha = -9999.0
-print,'END',systime(1)-t1
+;print,'END',systime(1)-t1
 
       if (n_elements(answer) EQ 4) then begin
-         result[iobj].sigma_diff[istar] = answer[1]*70
-         result[iobj].sigma_diff_err[istar] = answer[2]*70
+         result[iobj].sigma_diff[istar] = answer[1]*fac
+         result[iobj].sigma_differr[istar] = answer[2]*fac
          bestalpha = answer[3]
       endif
 
-      if (keyword_set(doplot)) then quoplot = 2 else quoplot = 0
-      IF NOT keyword_set(noquotient) THEN BEGIN 
-         answerq = mfourier_quotient(fluxfft, starshift, fluxvar0, $
-                  starvar0, testsigma2=testsigma, deltachisq=1.0, $
-                  lowlimit = 1.0/80.0, highlimit=1.0/4., doplot=quoplot, $
-                                     broadarr=broadarr)
-      ENDIF 
 
-      if (n_elements(answerq) EQ 4) then begin
-;         result[iobj].sigma_quotient[istar] = sqrt(answerq[1])*70
-;         result[iobj].sigma_quotient_err[istar]  = $
-;                         (sqrt(answerq[1]+answerq[2])-sqrt(answerq[1]))*70
-          result[iobj].sigma_quotient[istar] = answerq[1]*70
-          result[iobj].sigma_quotient_err[istar] = answerq[2]*70
-         bestalpha_q = answerq[3]
-      endif
-
-
-        if (keyword_set(doplot)) then qtoplot = 3 else qtoplot = 0
-        IF NOT keyword_set(noquotient) THEN BEGIN 
-         answerq = mfourier_quot_diff(fluxfft, starshift, fluxvar0, $
-                  starvar0, testsigma2=testsigma, deltachisq=1.0, $
-                  lowlimit = 1.0/80.0, highlimit=1.0/5., doplot=qtoplot, $
-                                     broadarr=broadarrqt)
-      if (n_elements(answerq) EQ 4) then begin
-         result[iobj].sigma_quot_diff[istar] = answerq[1]*70
-         result[iobj].sigma_quot_diff_err[istar]  = answerq[2]*70
-          bestalpha_q_d = answerq[3]
-      endif
-        ENDIF
-
-          r = result[iobj]
-          print, iobj, istar, r.z[istar], r.z_err[istar], r.sigma_cc[istar], $
-            r.sigma_cc_err[istar], r.sigma_quot_diff[istar], r.sigma_quot_diff_err[istar], $
-            r.sigma_quotient[istar], r.sigma_quotient_err[istar], r.sigma_diff[istar], $
-            r.sigma_diff_err[istar],redshifts[iobj],$
-            format='(2(i4),x,f8.5," +/-",f8.5,4(2x,i3," +-",i3),x,f8.5)'
+      r = result[iobj]
+      print, iobj, istar, r.z[istar], r.z_err[istar], $
+            r.sigma_xcor[istar], r.sigma_xcorerr[istar], $
+            r.sigma_diff[istar], r.sigma_differr[istar], $
+            r.sigma_rs, r.sigma_rserr, redshifts[iobj],$
+            format='(2(i4),x,f8.5," +/-",f8.5,3(2x,i3," +-",i3),x,f8.5)'
 
 
    endfor
