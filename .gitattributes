@@ -306,6 +306,7 @@ pro/spec1d/pca_star.pro -text
 pro/spec1d/pca_vstnd.pro -text
 pro/spec1d/platecompare.pro -text
 pro/spec1d/platehist.pro -text
+pro/spec1d/platelinks.pro -text
 pro/spec1d/platelist.pro -text
 pro/spec1d/platemerge.pro -text
 pro/spec1d/plotm67.pro -text
