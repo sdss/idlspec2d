@@ -542,26 +542,24 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
 
        ; Normalize the flux correction vectors to the center of guiding
        ; (or the r-band?)
-       normwave = where(10.0^finalwave gt 5600 and 10.0^finalwave lt 6900) 
+       ;normwave = where(10.0^finalwave gt 5600 and 10.0^finalwave lt 6900) 
        ;normwave = where(10.0^finalwave gt 4200 and 10.0^finalwave lt 5400) 
-       cormed = fltarr(nok)
-       for istd = 0, nok - 1 do $
-         cormed[istd] = median(corvector[normwave, istd])
-       djs_iterstat, cormed, mean=cormean
-       corvector = corvector / (cormed ## replicate(1, nfinalpix)) * cormean
+       cormed = fltarr(nok) + 1
+       ;for istd = 0, nok - 1 do $
+       ;  cormed[istd] = median(corvector[normwave, istd])
+       ;djs_iterstat, cormed, mean=cormean
+       ;corvector = corvector / (cormed ## replicate(1, nfinalpix)) * cormean
 
        ;--------------
        ; Look at the residuals over the whole wavelength range (This can be 
        ; done by using the frame_flux_calib code with "final" switch set --
        ; this turns off the division of the corvectors by an average spectrum
-       ; and uses blue+red backpoints for the bspline)
 
        residset = frame_flux_calib(finalwave, corvector, corvivar, 0, $
-                  cormed, title_tag, median(stdinfo.sn), fsig = fsig, /final)
+                  cormed, title_tag, /fit_wiggles, fsig = fsig, /final)
 
        splog, 'Spectrophotometry error for spectrograph ' + sid_str + $
          ' (from the standards): ' + string(fsig * 100, format = '(I4)') + ' %'
-
 
        ;-------------------
        ; Correct for wiggles
