@@ -17,9 +17,9 @@
 ;   expstart   - If set, then only use exposure numbers >= EXPSTART
 ;   expend     - If set, then only use exposure numbers >= EXPEND
 ;   timesep    - Discard any bias that isn't within TIMESEP after another bias;
-;                default to 300 sec.  The time is obtained from TAI in the FITS
-;                header.  Note that this always discards the first bias in any
-;                sequence.
+;                default to 300 sec.  The time is obtained from TAI-BEG in the
+;                FITS header.  Note that this always discards the first bias in
+;                any sequence.
 ;   indir      - Look for input files in this directory; default to current
 ;                directory if neither MJD or INDIR are set.
 ;   outdir     - Output directory; default to same as INDIR.
@@ -186,7 +186,7 @@ pro spbiasgen, mjd=mjd, expnum=expnum, expstart=expstart, expend=expend, $
       flavor[ifile] = strtrim(sxpar(hdr, 'FLAVOR'),2)
       mjdarr[ifile] = sxpar(hdr, 'MJD')
       exposure[ifile] = sxpar(hdr, 'EXPOSURE')
-      taitime[ifile] = sxpar(hdr, 'TAI')
+      taitime[ifile] = sxpar(hdr, 'TAI-BEG')
       print, '.', format='(a,$)'
    endfor
    print

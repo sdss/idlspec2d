@@ -39,8 +39,8 @@
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
-;   Always pair arcs to the nearest good flat, and flats to the nearest good
-;   arc (nearest in time, as defined by the TAI keyword in the FITS headers).
+;   Always pair arcs to the nearest good flat, and flats to the nearest good arc
+;   (nearest in time, as defined by the TAI-BEG keyword in the FITS headers).
 ;
 ;   Also store SUPERFLATSET from fiberflat, since we need this to remove
 ;   small scale features present in all spectra
@@ -274,7 +274,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
       endif
 
       flatstruct[iflat].name = flatname[iflat]
-      flatstruct[iflat].tai = sxpar(flathdr, 'TAI')
+      flatstruct[iflat].tai = sxpar(flathdr, 'TAI-BEG')
       flatstruct[iflat].qbad = qbadflat
 
    endfor
@@ -311,7 +311,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
       ; Identify the nearest flat-field for this arc, which must be
       ; within TIMESEP seconds and be a good flat.
 
-      tai = sxpar(archdr, 'TAI')
+      tai = sxpar(archdr, 'TAI-BEG')
 
       iflat = -1
       igood = where(flatstruct.qbad EQ 0)
