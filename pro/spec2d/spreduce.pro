@@ -203,6 +203,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
       xsol = *(bestflat.xsol)
       fflat = *(bestflat.fflat)
+      fibermask = fibermask AND (*(bestflat.fibermask))
 
       qaplot_fflat, fflat, wset, filename=bestflat.name
 
