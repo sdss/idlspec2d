@@ -6,6 +6,9 @@ mjd = [51637, 51690]
 ;platenum = 302
 ;mjd = [51616,51688]
 
+platenum = 406
+mjd = [51817, 51869]
+
    readspec, platenum, mjd=mjd[0], flux=flux1, flerr=flerr1, wave=wave1, $
     plugmap=plug1
 ;flux1=flux1[2000:3800,*]
