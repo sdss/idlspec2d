@@ -158,7 +158,7 @@ pro skysubtract, obj, objivar, plugmap, wset, skysub, skysubivar, $
 ;       xrange=xrange, yrange=[-0.5,7.5], xstyle=1, ystyle=1, $
 ;       xtitle='\lambda [A]', ytitle='\chi^2', title=title, charsize=1.5
 ;      djs_oplot, 10^rwave, diff67, color='red', ps=10
-      djs_plot, 10^allwave, diff67, ps=10, $
+      djs_plot, 10^rwave, diff67, ps=10, $
        xrange=xrange, yrange=[0.0,8.0], xstyle=1, ystyle=1, $
        xtitle='\lambda [A]', ytitle='\chi^2', title=title, charsize=1.5
 

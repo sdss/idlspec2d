@@ -10,19 +10,18 @@ function makelabel, hdr
 end
 
 pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
-        ntrials=ntrials, fullspec=fullspec, fullerr=fullerr, $
+        fullspec=fullspec, fullerr=fullerr, $
         fullwave=fullwave, output=output, dosky=dosky, wavemin = wavemin, $
         bkptbin = bkptbin, everyn=everyn, display=display, window=window
 
 ;
 ;	Set to 50 km/s for now to match 1d
-;	Better guess would be 69 km/s
+;	Initial binning was 69 km/s per pixel (with a sigma of 1.0 pixel)
 ;
 	if (NOT keyword_set(bin)) then bin = (69.0/299792.5) / 2.30258
 
 	if (NOT keyword_set(zeropoint)) then zeropoint = 3.5d
 	if (NOT keyword_set(nord)) then nord = 3
-	if (NOT keyword_set(ntrials)) then ntrials = 25
 	if (NOT keyword_set(bkptbin)) then bkptbin = bin
 
 ; filenames = findfile('s-2b-*050*')

@@ -496,12 +496,12 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
          ;-----------------------------------------------
          ;  Split into two regions, A,B bands first
-         telluric1 = telluric_corr(flux, fluxivar, vacset, plugsort, $
+         telluric1 = telluric_corr(flambda, flambdaivar, vacset, plugsort, $
                  minw = 3.82, maxw=3.92, lower=5.0, upper=5.0, ncontbkpts=10)
 
          ;-----------------------------------------------
          ;  9100 Ang absorption next?
-         telluric2 = telluric_corr(flux, fluxivar, vacset, plugsort, $
+         telluric2 = telluric_corr(flambda, flambdaivar, vacset, plugsort, $
                  minw = 3.94, maxw=3.97, lower=5.0, upper=5.0)
        
          telluricfactor = telluric1 * telluric2

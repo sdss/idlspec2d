@@ -46,7 +46,7 @@ pro divideflat, flux, fluxivar, fflat, fibermask=fibermask, minval=minval
    ntrace = dims[1] 
 
    if (NOT keyword_set(minval)) then minval = 0.03
-   if (NOT keyword_set(fibermask)) then fibermask = bytarr(nfiber) + 1
+   if (NOT keyword_set(fibermask)) then fibermask = bytarr(ntrace) + 1
 
    if (total(size(fluxivar,/dimens) NE dims) NE 0) then $
     message, 'FLUX and FLUXIVAR are not the same dimensions'
