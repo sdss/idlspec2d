@@ -228,7 +228,7 @@ function zfind, objflux, objivar, hdr=hdr, $
        result[indx].tfile = fileandpath(thisfile)
       for icol=0, n_elements(columns)-1 do $
        result[indx].tcolumn[icol] = columns[icol]
-      result.npoly = npoly
+      if (keyword_set(npoly)) then result.npoly = npoly
    endif
 
    return, result
