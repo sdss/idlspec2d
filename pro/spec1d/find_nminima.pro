@@ -25,7 +25,8 @@ function zfitmin, yarr, xarr, dofarr=dofarr, $
 
    ; Set default return values
    errcode = 0L
-   xerr = 0.0
+   xerr1 = 0.0
+   xerr2 = 0.0
 
    ; Insist that there be at least 1 point to the left and right of XGUESS.
    junk = where(xarr LT xguess, nleft)
@@ -139,8 +140,7 @@ function zfitmin, yarr, xarr, dofarr=dofarr, $
 
    endif
 
-   if (keyword_set(xerr1) AND keyword_set(xerr2)) then $
-    xerr = sqrt(xerr1^2 + xerr2^2)
+   xerr = sqrt(xerr1^2 + xerr2^2)
 
    ; Insist that the minimum is in the fitting range, and not out of bounds
    if (keyword_set(xbest) AND errcode EQ 0) then begin
@@ -244,15 +244,22 @@ function find_nminima, yflux, xvec, dofarr=dofarr, nfind=nfind, minsep=minsep, $
       ; Save return values
 
       if (ifind EQ 0) then begin
+         ; Always retain the first peak
          xpeak = xpeak1
          xerr = xerr1
          errcode = errcode1
          ypeak = ypeak1
       endif else begin
-         xpeak = [xpeak, xpeak1]
-         xerr = [xerr, xerr1]
-         errcode = [errcode, errcode1]
-         ypeak = [ypeak, ypeak1]
+         ; Retain this peak only if it is at least MINSEP from any
+         ; peaks already found.
+         if (min(abs(xpeak - xpeak1)) GT minsep) then begin
+            xpeak = [xpeak, xpeak1]
+            xerr = [xerr, xerr1]
+            errcode = [errcode, errcode1]
+            ypeak = [ypeak, ypeak1]
+         endif else begin
+            splog, 'Discarding peak #', ifind+1, ' of ', nfind
+         endelse
       endelse
 
       ;----------
