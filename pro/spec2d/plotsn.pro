@@ -140,7 +140,7 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
        xmargin=xmargin, ymargin=ymargin, /xstyle, yrange=[0.5,100], /ystyle
 
       if (iband EQ 0 AND keyword_set(plottitle)) then $
-       xyouts, plotmag[1], 110.0, plottitle, align=0.5, charsize=1.5
+       xyouts, plotmag[1], 106.0, plottitle, align=0.5, charsize=1.5
 
       ;----------
       ; Plot the fiducial line (a thick blue line)
@@ -299,7 +299,7 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
 
          if (ispecnum EQ 1 AND keyword_set(plottitle)) then $
           xyouts, 1.1*xrange[1] - 0.1*xrange[0], $
-           1.05*yrange[1] - 0.05*yrange[0], $
+           1.03*yrange[1] - 0.03*yrange[0], $
            plottitle, align=0.5, charsize=1.5
       endfor
 
