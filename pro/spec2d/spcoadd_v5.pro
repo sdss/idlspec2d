@@ -229,8 +229,9 @@ pro spcoadd_v5, spframes, outputname, $
       calibfile = djs_filepath(string(camnames[icam], expnum, $
        format='("spFluxcalib-", a2, "-", i8.8, ".fits")'), $
        root_dir=combinedir)
+      calibfile = (findfile(calibfile+'*'))[0]
 
-      calibfac = mrdfits(calibfile, 0, calibhdr)
+      calibfac = mrdfits(calibfile, 0, calibhdr, /silent)
       minval = 0.05 * mean(calibfac)
       divideflat, tempflux, invvar=tempivar, calibfac, minval=minval
       divideflat, tempsky, calibfac, minval=minval
