@@ -26,6 +26,8 @@ pro make2dmerge, planfile
    mags       = mrdfits( platefile, 7)
 
    nfiber = (size(flux))[2]
+   npix = (size(flux))[1]
+   masktemp = { andmask : 0L, ormask : 0L, dispersion : 0.0 }
 
    for i = 0, nfiber - 1 do begin
 
@@ -67,6 +69,11 @@ pro make2dmerge, planfile
      if keyword_set(snvec) then sn=snvec[*,i]
      if keyword_set(mags) then m=mags[*,i]
 
+     maskstruct = replicate(masktemp, npix)
+     maskstruct.andmask = andmask[*,i]
+     maskstruct.ormask = ormask[*,i]
+     maskstruct.dispersion = dispersion[*,i]
+
      sxaddpar, thishdr, 'NGOOD', ngood, 'Number of Good Pixels'
      sxaddpar, thishdr, 'PIXMIN', 0.0, 'Place Holding'
      sxaddpar, thishdr, 'PIXMAX', 2047.0, 'Place Holding'
@@ -78,17 +85,15 @@ pro make2dmerge, planfile
      sxaddpar, thishdr, 'MAG_I',  m[2], "Synthetic magnitude in i'"
 
      sxaddpar, thishdr, 'NAXIS1', n_elements(err)
-     sxaddpar, thishdr, 'NAXIS2', 3
+     sxaddpar, thishdr, 'NAXIS2', 2
 
      ; 1st HDU is flux, error, and dispersion
      mwrfits, [[flux[*,i]],[err]], fibername, thishdr, /create
 
      ; 2nd HDU are pixelmasks
-     mwrfits, [[andmask[*,i]],[ormask[*,i]]], fibername
+     mkhdr, maskhdr, maskstruct, /extend
+     mwrfits, maskstruct, fibername, maskhdr
     
-     ; 3rd HDU are pixelmasks
-     mwrfits, dispersion[*,i], fibername
-     
    endfor
 
 return
