@@ -1,7 +1,13 @@
 
+COPY_STRUCT, COPY_STRUCT_INX (in idlutils):
+          These routines didn't work properly for structures with more
+          than 32768 elements, because of using only 2-byte integers.
+          This resulted in READSPEC not working properly for large lists,
+          and other dependent routines such as ZPLOT (where I noticed it!).
 READSPEC: Bug fix when reading one range of fiber numbers for a FITS
           binary table, i.e. "READSPEC, 301, [1,2,3], ZANS=ZANS" was not
           returning the correct values.
+ZPLOT: Include MJD in call to READSPEC.
 
 -------------------------------------------------------------------------------
 v4_7_3 (Apr 30, 2001 idlspec2d+idlutils)
@@ -23,7 +29,7 @@ only for re-running with cut versions of everything, including the "speclog"
 product.
 
 -------------------------------------------------------------------------------
-v4_7_2 (Apr 27, 2001)
+v4_7_2 (Apr 27, 2001 idlspec2d only)
 
 PLATELIST: Use the "spPlateList.par" file to determine which data are public.
            Add a PUB column to denote if a plate is in a public data release.
@@ -35,7 +41,7 @@ Update the batch files to use the wire machines as a default.
 Update spectro home page to reflect v4_7 reductions.
 
 -------------------------------------------------------------------------------
-v4_7_1 (Apr 9, 2001)
+v4_7_1 (Apr 9, 2001 idlspec2d+idlutils)
 
 FILTER_THRU: Add new Doi filter curves (CCD+atmosphere+telescope), and
              add /TOAIR flag to convert from vacuum to air wavelengths.
@@ -81,7 +87,7 @@ More entries in "opHdrFix.par" to fix all the incorrect plugmap files
             files copied into the /astrolog directories.
 
 -------------------------------------------------------------------------------
-v4_7_0 (Mar 16, 2001)
+v4_7_0 (Mar 16, 2001 idlspec2d+idlutils)
 
 FLUXCORR_NEW: Replace deviant fluxcorr coefficients with the median
               Attempt to mask large positive deviations in inverse variance

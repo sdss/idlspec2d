@@ -107,7 +107,7 @@ function rspec_mrdfits, fcb, exten_no, rownums=rownums, _EXTRA=EXTRA
    naxis1 = fcb.axis[0,exten_no]
 ;   naxis2 = fcb.axis[1,exten_no]
    iadd = 0
-   for ichunk=0, nchunks-1 do begin
+   for ichunk=0L, nchunks-1 do begin
       nadd = row_end[ichunk] - row_start[ichunk] + 1
       if (exten_no EQ 0 OR fcb.xtension[exten_no] EQ 'IMAGE') then begin
          fits_read, fcb, data1, exten_no=exten_no, $
@@ -325,7 +325,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    mjdnums = mjdvec[ isort[iuniq] ]
    nfile = n_elements(platenums)
 
-   for ifile=0, nfile-1 do begin
+   for ifile=0L, nfile-1 do begin
       flux1 = 0
       flerr1 = 0
       invvar1 = 0
