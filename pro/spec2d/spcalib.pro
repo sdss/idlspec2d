@@ -151,16 +151,16 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
 
       ;-----
       ; Decide if this flat is bad:
-      ;   Reject if more than 1% of the pixels are marked as bad.
-      ;   Reject if more than 20 rows are saturated.
+      ;   Reject if more than 2% of the pixels are marked as bad.
+      ;   Reject if more than 40 rows are saturated.
 
       qbadflat = 0
-      if (fbadpix GT 0.01) then begin
+      if (fbadpix GT 0.02) then begin
          qbadflat = 1
          splog, 'Reject flat ' + flatname[iflat] + $
           ': ' + string(format='(i3)', fix(fbadpix*100)) + '% bad pixels'
       endif
-      if (nsatrow GT 20) then begin
+      if (nsatrow GT 100) then begin
          qbadflat = 1
          splog, 'Reject flat ' + flatname[iflat] + $
           ': ' + string(format='(i4)', nsatrow) + ' saturated rows'
@@ -276,11 +276,11 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
 
       ;----------
       ; Decide if this arc is bad:
-      ;   Reject if more than 1% of the pixels are marked as bad.
+      ;   Reject if more than 2% of the pixels are marked as bad.
       ;   Reject if more than 100 rows are saturated.
 
       qbadarc = 0
-      if (fbadpix GT 0.01) then begin
+      if (fbadpix GT 0.02) then begin
          qbadarc = 1
          splog, 'Reject arc ' + arcname[iarc] + $
           ': ' + string(format='(i3)', fix(fbadpix*100)) + '% bad pixels'

@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   platesn, finalflux, finalivar, finalandmask, finalplugmap, loglam, $
-;    [ hdr=, plotfile= ]
+;    [ hdr=, plotfile=, snvec=, synthmag= ]
 ;
 ; INPUTS:
 ;   finalflux      - 
@@ -27,6 +27,9 @@
 ;
 ; OPTIONAL OUTPUTS:
 ;   hdr            - [Modified]
+;   snvec          - S/N vector for g,r,i bands
+;   synthmag       - Synthetic magnitudes from convolution with fiducial
+;                      Filter curves 
 ;
 ; COMMENTS:
 ;   Median fluxes are used in each band-pass to generate the synthesized
@@ -49,7 +52,7 @@
 ;-
 ;------------------------------------------------------------------------------
 pro platesn, finalflux, finalivar, finalandmask, finalplugmap, loglam, $
- hdr=hdr, plotfile=plotfile
+ hdr=hdr, plotfile=plotfile, snvec=snvec, synthmag=synthmag
 
    common com_maskbits, maskbits
 
