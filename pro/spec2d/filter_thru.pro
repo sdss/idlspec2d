@@ -14,7 +14,9 @@
 ; OPTIONAL INPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;   waveimg    - Wavelength image in Angstroms [NX,NTRACE]
+;   waveimg    - Wavelength image in Angstroms [NX,NTRACE], or this could
+;                be a single vector if the wavelength mapping is the same
+;                for all traces (note the latter is faster to compute)
 ;   wset       - Wavelength solution in log-lambda; required if WAVEIMG not set
 ;   mask       - Linearly interpolate over pixels where MASK is nonzero.
 ;                [NX,NTRACE]
@@ -84,9 +86,10 @@ function filter_thru, flux, waveimg=waveimg, wset=wset, mask=mask, norm=norm
       readcol, filename, fwave, fthru, /silent
 
       filtimg = 0.0 * flux
-      if (size(waveimg))[0] EQ 1 then $
-         filtimg[*] = interpol(fthru, fwave, waveimg) # replicate(1,ntrace) $
-      else filtimg[*] = interpol(fthru, fwave, waveimg) 
+      if (size(waveimg,/n_dimen) EQ 1) then $
+       filtimg[*] = interpol(fthru, fwave, waveimg) # replicate(1,ntrace) $
+      else $
+       filtimg[*] = interpol(fthru, fwave, waveimg) 
 
       if (keyword_set(mask)) then $
        res[*,ifile] = total(flux_interp * filtimg, 1) $
