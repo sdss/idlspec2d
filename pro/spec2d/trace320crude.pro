@@ -228,6 +228,7 @@ function trace320crude, image, invvar, ystart=ystart, nmed=nmed, $
 
         goodrows = where(clean AND tmp_xerr[*,itrace] NE 999, ngoodrows)
         if ngoodrows GE 100 then begin
+          xmask[goodrows,itrace] = 1
           xset_good = xset[goodrows,*]
           offset = tmp_xpos[goodrows,itrace] # replicate(1,ncheck) - $
                  xset_good[*,checktrace]
