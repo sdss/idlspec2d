@@ -222,7 +222,6 @@ pro platelist, infile, plist=plist, create=create, $
     'sn2_g2'   , 0.0, $
     'sn2_r2'   , 0.0, $
     'sn2_i2'   , 0.0, $
-    'smearuse' , ' ', $
     'nguide'   , 0L , $
     'seeing20' , 0.0, $
     'seeing50' , 0.0, $
@@ -431,7 +430,6 @@ pro platelist, infile, plist=plist, create=create, $
          plist[ifile].sn2_g2 = sxpar(hdr1, 'SPEC2_G')
          plist[ifile].sn2_r2 = sxpar(hdr1, 'SPEC2_R')
          plist[ifile].sn2_i2 = sxpar(hdr1, 'SPEC2_I')
-         plist[ifile].smearuse = sxpar(hdr1, 'SMEARUSE') ? 'T' : 'F'
          plist[ifile].nguide = sxpar(hdr1, 'NGUIDE')
          plist[ifile].seeing20 = sxpar(hdr1, 'SEEING20')
          plist[ifile].seeing50 = sxpar(hdr1, 'SEEING50')
