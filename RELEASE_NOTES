@@ -7,8 +7,18 @@ LINEBACKFIT: Fix possible crash condition when computing LINENPIX if
             the line width is unphysically narrow and no pixels fall
             within the region of an emission line.
 PLOTSPEC: Optional /ZWARNING flag.  Report error if FIBERID out of range.
+QUICKEXTRACT: Call REJECT_SCIENCE() to decide if a science exposure is bad
+            due to lamps being turned on, too many saturated pixels, etc.
 READSPEC: Don't fail when asking for SYNFLUX, but the spZ file doesn't exist.
             (This prevented PLOTSPEC from plotting anything in that case.)
+REJECT_SCIENCE: Check in the header that all the flat-field screens are
+            open and that all the FF,NE,HGCD lamps are turned off.
+            With this check, exposure #11504 of plate 727/52207 would
+            have been automatically rejected for having the FF lamps
+            turned on (see PR #3169).
+SDSS_FLAGNAME: Change some of the target names to agree with what's been
+            changed in the target code in the past year or so.  Note that
+            I had already updated the target names in spectro_home.html.
 SPCOADD_FRAMES: Remove the following keywords from the spPlate file:
             PIXBIAS,FLATFILE,ARCFILE,OBJFILE.
             Issue a warning message if any object fibers have OBJTYPE=NA,
