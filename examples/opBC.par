@@ -1,7 +1,7 @@
 FLAVOR     1
 
 typedef enum { 
-  DRKCUR =0,                 # low level dark current 
+  DRKCUR,                 # low level dark current 
   BLKCOL,                    # blocked column - fix with flatfield 
   BADBLK,                    # badly blocked col - just fill in 
   DEPCOL,                    # Depressed column 
@@ -12,10 +12,10 @@ typedef enum {
 } DFTYPE;
 
 typedef enum { 
-  BADCOL =0,                 # Interpolate over column 
+  BADCOL,                 # Interpolate over column 
   ADDCOL,                    # Additive correction - fix with debias vector 
   FILCOL                     # Fill in column 
-} DFACTION
+} DFACTION;
 
 
 typedef struct {
@@ -30,3 +30,4 @@ typedef struct {
   DFACTION dfaction;         # repair action for defect
 } BC;
 
+bc "2 amp" 0 3 1272 1 1206 842 BADBLK BADCOL

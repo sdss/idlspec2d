@@ -163,13 +163,19 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
    nCoeff = n_elements(wfixed)       ;Number of parameters per fibers
 
    nPoly = LONG(nPoly)
-   ma = nPoly + nTrace*nCoeff
+   oldma = nPoly + nTrace*nCoeff
    maxIter = LONG(maxIter)
    proftype = LONG(proftype)
 
    ; Allocate memory for C routines
-   if (ARG_PRESENT(ansimage)) then $
-            ansimage = fltarr(ma,nRowExtract)       ; parameter values
+   if (ARG_PRESENT(ansimage)) then begin
+     if ((size(ansimage))[0] NE 2) then $
+        ansimage = fltarr(oldma,nRowExtract)  $
+     else if ((size(ansimage))[1] NE oldma OR $
+        (size(ansimage))[2] NE nRowExtract OR (size(ansimage))[3] NE 4) then $
+            ansimage = fltarr(oldma,nRowExtract)       ; parameter values
+   endif
+
    ymodelrow = fltarr(nx)
    fscatrow = fltarr(nTrace)
    lTrace = lindgen(nTrace)
@@ -177,9 +183,15 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
 ;
 ;	Prepare Output arrays
 ;
+    if ((size(flux))[0] NE 2) then flux = fltarr(nRowExtract, nTrace) $
+     else if ((size(flux))[1] NE nRowExtract OR $
+        (size(flux))[2] NE nTrace OR (size(flux))[3] NE 4) $
+               then flux = fltarr(nRowExtract, nTrace)
 
-   flux = fltarr(nRowExtract, nTrace)
-   finv = fltarr(nRowExtract, nTrace)
+    if ((size(finv))[0] NE 2) then finv = fltarr(nRowExtract, nTrace) $
+     else if ((size(finv))[1] NE nRowExtract OR $
+        (size(finv))[2] NE nTrace OR (size(finv))[3] NE 4) $
+               then finv = fltarr(nRowExtract, nTrace)
 
    whoppingct = 0
    if(whopping[0] NE -1) then $
@@ -203,8 +215,6 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
      cur = yrow[iy]
      print, format='($, ".",i4.4,a5)',cur,string([8b,8b,8b,8b,8b])
 
-;     xcencurrent = xcenuse[*,cur]
- 
      if (sigmasize[0] EQ 2) then  sigmacur = sigma[*, cur] $
      else sigmacur = sigma1
      
@@ -226,15 +236,11 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
       xcen[cur,*], sigmacur, ymodel=ymodelrow, fscat=fscatrow, $
       proftype=proftype, iback=iback, $
       wfixed=wfixed, mask=masktemp, diagonal=prow, nPoly=nPoly, $
-      oback=oback, niter=niter, squashprofile=squashprofile,inputans=inputans, $
+      niter=niter, squashprofile=squashprofile,inputans=inputans, $
       maxIter=maxIter, highrej=highrej, lowrej=lowrej, calcCovar=calcCovar, $
       whopping=whoppingcur, relative=relative, fullcovar=fullcovar)
 
      mask[*,cur] = masktemp
-     if(ARG_PRESENT(ansimage)) then begin 
-       ansimage[0:nTrace*nCoeff-1,iy] = ansrow
-       ansimage[nTrace*nCoeff:nTrace*nCoeff+nPoly-1,iy] = oback
-     endif
 
      if(ARG_PRESENT(ymodel)) then ymodel[*,cur] = ymodelrow
      if(ARG_PRESENT(fscat)) then fscat[iy,*] = fscatrow
@@ -243,19 +249,13 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
             squashprofile=squashprofile
      flux[iy,*] = fluxrow 
      finv[iy,*] = finvrow
+
+     if(ARG_PRESENT(ansimage)) then ansimage[*,iy] = ansrow[0:oldma-1]
    endfor	  
 
    ii = where(mask EQ 0, finallyrejected)
 
    print, 'I masked ', finallyrejected - initiallyrejected, ' pixels'
-
-   ;
-   ;	Clean up some memory 
-
-   if (NOT ARG_PRESENT(mask)) then mask = 0
-   fullcovar = 0
-   inputans = 0
-   iback = 0
 
    return
 end

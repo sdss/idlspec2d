@@ -6,7 +6,7 @@
 ;   Read a FITS file into IDL data and header variables
 ;
 ; CALLING SEQUENCE:
-;   image = rdss_fits( filename, [ hdr ] )
+;   image = rdss_fits( filename, [ hdr, nofloat ] )
 ;
 ; INPUTS:
 ;   filename   - Scalar string containing the name of the FITS file  

@@ -140,7 +140,7 @@ function fitansimage, ansimage, nparams, nfibers, npoly, nrows, yrow, $
 
 	for i=0,nrows-1 do $
 	  scatimage[*,i] = fchebyshev(ynorm, nPoly, halfintwo=1) $
-              # ansimage[nfibers*nparams:*,i]  
+              # ansimage[nfibers*nparams:nfibers*nparams+npoly-1,i]  
 
 	for i=0,nrows-1 do begin
 	    tt = poly_fit(ynorm, scatimage[i,*], nordscat, /double)

@@ -88,6 +88,7 @@ pro spplan, indir=indir, plugdir=plugdir, flatdir=flatdir, $
  mjd=mjd, planfile=planfile, flats=flats, checkstats=checkstats, $
  run=run, root2d=root2d, combroot = combroot
 
+   if (NOT keyword_set(run)) then run = 0
    if (NOT keyword_set(indir)) then indir = '.'
    if (NOT keyword_set(root2d)) then begin 
       if (strpos(indir, '*') EQ -1) then root2d = indir $
@@ -342,6 +343,7 @@ pro spplan, indir=indir, plugdir=plugdir, flatdir=flatdir, $
    hdr = [hdr, "inputDir    '" + indir + "'  # Directory for raw images"]
    hdr = [hdr, "flatDir     '" + flatdir + "'     # Directory for pixel flats"]
    hdr = [hdr, "MJD     " + string(mjd) + "  # Modified Julian Date"]
+   hdr = [hdr, "run         " + string(run) + "  # Modified Julian Date"]
 
    if (NOT keyword_set(flats)) then $
     yanny_write, planfile, [ptr_new(pixflats), ptr_new(allplug), ptr_new(allseq)], hdr=hdr $

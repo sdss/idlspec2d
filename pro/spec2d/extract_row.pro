@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   ans = extract_row( fimage, invvar, xcen, sigma, [ymodel=ymodel,
 ;              fscat = fscat, proftype = proftype, wfixed = wfixed,
-;              inputans=inputans, iback = iback, oback =oback, bfixarr=bfixarr,
+;              inputans=inputans, iback = iback, bfixarr=bfixarr,
 ;              xvar = xvar, mask=mask, relative=relative,
 ;              diagonal=diagonal, fullcovar=fullcovar, wfixarr = wfixarr,
 ;              nPoly=nPoly, maxIter=maxIter, highrej=highrej, niter=niter,
@@ -80,10 +80,10 @@
 ;------------------------------------------------------------------------------
 function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
                    fscat = fscat, proftype = proftype, wfixed = wfixed, $
-                   inputans=inputans, iback = iback, oback =oback, $
+                   inputans=inputans, iback = iback, $
                    bfixarr = bfixarr, xvar=xvar, mask=mask, $
 		   relative=relative, squashprofile=squashprofile, $
-                   diagonal=p, fullcovar=covar, wfixarr = wfixarr, $
+                   diagonal=p, fullcovar=fullcovar, wfixarr = wfixarr, $
                    nPoly=nPoly, maxIter=maxIter, highrej=highrej, $
                    lowrej=lowrej, calcCovar=calcCovar, niter=niter, $
                    whopping=whopping
@@ -92,7 +92,7 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
    if (N_params() LT 4) then begin
       print, 'Syntax - ans = extract_row( fimage, invvar, xcen, sigma, [ymodel=ymodel,'
       print, ' fscat = fscat, proftype = proftype, wfixed = wfixed,'
-      print, ' inputans=inputans, iback = iback, oback =oback, bfixarr=bfixarr,'
+      print, ' inputans=inputans, iback = iback, bfixarr=bfixarr,'
       print, ' xvar=xvar, mask=mask, relative=relative, '
       print, ' squashprofile=squashprofile, '
       print, ' diagonal=diagonal, fullcovar=fullcovar, wfixarr = wfixarr,'
@@ -188,8 +188,10 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
 
 
    p = fltarr(ma)         ; diagonal errors
-   if (NOT arg_present(covar)) then $
-       covar = fltarr(ma,ma)  ; full covariance matrix
+   if (NOT arg_present(fullcovar)) then begin
+       print, 'watch out'
+       fullcovar = fltarr(ma,ma)  ; full covariance matrix
+   endif
 
    finished = 0
    niter = 0
@@ -209,7 +211,7 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
        nx, float(xvar), float(fimage), workinvvar, float(ymodel), nTrace, $
        nPoly, float(xcen), float(sigma), proftype, calcCovar, squashprofile, $
        whopping, whoppingct, $
-       nCoeff, ma, ans, long(wfixarr), p, fscat, covar)
+       nCoeff, ma, ans, long(wfixarr), p, fscat, fullcovar)
 
        diffs = (fimage - ymodel)*sqrt(workinvvar) 
        chisq = total(diffs*diffs)
@@ -238,8 +240,7 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
 ;       print,format='($,i)', niter
    endwhile
 
-   oback = ans[nTrace*nCoeff:nTrace*nCoeff+nPoly-1]
-   return, reform(ans[0:nTrace*nCoeff-1],nCoeff,nTrace)
+   return, ans
 
 end
 ;------------------------------------------------------------------------------

@@ -236,7 +236,9 @@ IDL_LONG extract_row
 
 
    /* Free temporary memory */
-   for(i=0; i<nTrace; i++) free(aprofile[i]);
+   for(i=0,k=0; i<nTrace; i++) 
+     for(j=0; j<nCoeff; j++,k++)
+        free(aprofile[k]);
    for(i=0; i<wPoly; i++) free(apoly[i]);
 
    free(aprofile);

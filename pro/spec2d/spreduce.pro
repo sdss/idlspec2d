@@ -129,20 +129,17 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       message, 'Cannot find flat image ' + flatname[iflat]
 
    print, 'Reading in Flat ', flatfilenames[0]
-   sdssproc, flatfilenames[0], flatimg, flativar, hdr=flathdr, $
+   sdssproc, flatfilenames[0], image, invvar, hdr=flathdr, $
     pixflatname=pixflatname
  
    ;---------------------------------------------------------------------------
    ; Create spatial tracing from flat-field image
    ;---------------------------------------------------------------------------
 
-   xcen = trace320crude(flatimg, yset=ycen, maxdev=0.15)
+   xsol = trace320crude(image, yset=ycen, maxdev=0.15)
 
-   xy2traceset, ycen, xcen, tset, ncoeff=5, maxdev=0.1
+   xy2traceset, ycen, xsol, tset, ncoeff=5, maxdev=0.1
    traceset2xy, tset, ycen, xsol
-
-   xcen = 0
-   ycen = 0
 
    ;---------------------------------------------------------------------------
    ; Extract the flat-field image
@@ -156,26 +153,21 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    nPoly = 6
    wfixed = [1] ; Just fit the first gaussian term
 
-   extract_image, flatimg, flativar, xsol, sigma, flat_flux, flat_fluxivar, $
+   extract_image, image, invvar, xsol, sigma, flux, fluxivar, $
     proftype=proftype, wfixed=wfixed, $
     highrej=highrej, lowrej=lowrej, nPoly=nPoly, relative=1
 
-   highpixels = where(flat_flux GT 1.0e5,numhighpixels)
+   highpixels = where(flux GT 1.0e5,numhighpixels)
 
    print, 'Found ', numhighpixels, ' highpixels in extracted flatfield ', $
        flatname[iflat]
-
-   flatimg = 0
-   flativar = 0
 
    ;---------------------------------------------------------------------------
    ; Compute fiber-to-fiber flat-field variations
    ;---------------------------------------------------------------------------
 
-   fflat = fiberflat(flat_flux, flat_fluxivar)
+   fflat = fiberflat(flux, fluxivar)
 
-   flat_flux=0
-   flat_fluxivar=0
    ;---------------------------------------------------------------------------
    ; Read the arc
    ;---------------------------------------------------------------------------
@@ -186,7 +178,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       message, 'Cannot find arc image ' + arcname[iarc]
 
      print, 'Reading in Arc ', arcfilenames[0]
-     sdssproc, arcfilenames[0], arcimg, arcivar, hdr=archdr, $
+     sdssproc, arcfilenames[0], image, invvar, hdr=archdr, $
       pixflatname=pixflatname, spectrographid=spectrographid, color=color
 
      
@@ -202,31 +194,27 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
      nPoly = 6 ; maybe more structure
      wfixed = [1] ; Just fit the first gaussian term
 
-     extract_image, arcimg, arcivar, xsol, sigma, arc_flux, arc_fluxivar, $
+     extract_image, image, invvar, xsol, sigma, flux, fluxivar, $
       proftype=proftype, wfixed=wfixed, $
       highrej=highrej, lowrej=lowrej, nPoly=nPoly, relative=1
 
-     arcimg = 0
-     arcivar = 0
      ;------------------
      ; Flat-field the extracted arcs with the global flat
      ; Hmmm.... would be circular if we need a wavelength calibration before
      ; making that flat.  We don't at the moment.
 
-     arc_flux = arc_flux / fflat
-     arc_fluxivar = arc_fluxivar * fflat^2
+     flux = flux / fflat
+     fluxivar = fluxivar * fflat^2
 
      ;-------------------------------------------------------------------------
      ; Compute wavelength calibration for arc lamp only
      ;-------------------------------------------------------------------------
 
      print, 'Searching for wavelength solution with fitarcimage'
-     arcstatus = fitarcimage(arc_flux, arc_fluxivar, color, lamplist, $
+     arcstatus = fitarcimage(flux, fluxivar, color, lamplist, $
       xpeak, ypeak, wset, invset, lambda=lambda, $
       xdif_lfit=xdif_lfit, xdif_tset=xdif_tset)
 
-     arc_flux=0
-     arc_fluxivar=0
      if (arcstatus) then begin
        iarc = iarc + 1
        iflat = iflat + 1
@@ -267,7 +255,7 @@ for i=0,16 do oplot,fflat[*,i*19]
 
       objfile = objfilenames[0]
      print, 'Reading in Object ', objfile
-      sdssproc, objfile, objimg, objivar, hdr=objhdr, $
+      sdssproc, objfile, image, invvar, hdr=objhdr, $
        pixflatname=pixflatname, spectrographid=spectrographid, color=color
 
       if (iobj EQ 0) then plugsort = sortplugmap(plugmap, spectrographid)
@@ -281,16 +269,11 @@ for i=0,16 do oplot,fflat[*,i*19]
       ; Do a boxcar extraction, and look for fibers where the median
       ; counts are 10000 ADU per row.
 
-      fextract = extract_boxcar(objimg, xsol)
-;      fextract = extract_boxcar(objimg, xsol, ycen)
+      fextract = extract_boxcar(image, xsol)
+;      fextract = extract_boxcar(image, xsol, ycen)
       scrunch = djs_median(fextract, 1) ; Find median counts/row in each fiber
       whopping = where(scrunch GT 10000.0, whopct)
       print, 'Number of bright fibers = ', whopct
-
-; QUICK EXTRACTION...
-;extract_image, objimg, objivar, xsol, sigma, obj_flux, obj_fluxivar, $
-; proftype=proftype, wfixed=[1,1,1], $
-; highrej=highrej, lowrej=lowrej, nPoly=nPoly, whopping=whopping
 
       ;------------------
       ; Extract the object image
@@ -302,8 +285,8 @@ for i=0,16 do oplot,fflat[*,i*19]
       ;              fitansimage
 
       print, 'Extracting frame '+objname[iobj]+' with 6 step process'
-      nrow = (size(objimg))[2]
-      ncol = (size(objimg))[1]
+      nrow = (size(image))[2]
+      ncol = (size(image))[1]
       skiprow = 8
       yrow = lindgen(nrow/skiprow)*skiprow + skiprow/2
       nfirst = n_elements(yrow)
@@ -324,7 +307,7 @@ for i=0,16 do oplot,fflat[*,i*19]
       
         ; 1) First extraction
         print, 'Object extraction: Step', i*3+1
-        extract_image, objimg, objivar, xnow, sigma, obj_flux,obj_fluxivar, $
+        extract_image, image, invvar, xnow, sigma, tempflux, tempfluxivar, $
          proftype=proftype, wfixed=wfixed, yrow=yrow, $
          highrej=highrej, lowrej=lowrej, nPoly=nPoly, whopping=whopping, $
          ansimage=ansimage
@@ -333,7 +316,7 @@ for i=0,16 do oplot,fflat[*,i*19]
 
         print, 'Answer Fitting: Step', i*3+2
         nparams = 3
-        nTrace = (size(obj_flux))[2]
+        nTrace = (size(flux))[2]
         fitans = fitansimage(ansimage, nparams, nTrace, nPoly, nfirst, yrow, $
          fluxm = [1,1,0], crossfit=1-i)
 
@@ -355,20 +338,20 @@ for i=0,16 do oplot,fflat[*,i*19]
 ;	Different sigmas require a new profile for each trace, so will
 ;	check timing in the future
 ;
-      extract_image, objimg, objivar, xnow, sigma, obj_flux, $
-       obj_fluxivar, proftype=proftype, wfixed=wfixed, fitans=fitans, $
+      extract_image, image, invvar, xnow, sigma, flux, $
+       fluxivar, proftype=proftype, wfixed=wfixed, fitans=fitans, $
        highrej=highrej, lowrej=lowrej, nPoly=nPoly, whopping=whopping 
 ;       ymodel=ymodel2
 
       ;------------------
       ; Flat-field the extracted object fibers with the global flat
-      obj_flux = obj_flux / fflat
-      obj_fluxivar = obj_fluxivar * fflat^2
+      flux = flux / fflat
+      fluxivar = fluxivar * fflat^2
 
       ;------------------
       ; Tweak up the wavelength solution to agree with the sky lines.
 
-      locateskylines, skylinefile, obj_flux, obj_fluxivar, $
+      locateskylines, skylinefile, flux, fluxivar, $
        wset, invset, xsky, ysky, skywaves
 
 ; DO NOT TWEAK THE SKY LINES -- THIS ROUTINE MESSES UP NEAR ROW 145 ???
@@ -393,35 +376,39 @@ for i=0,16 do oplot,fflat[*,i*19]
 	sxaddpar, hdr, 'AIR2VAC', systime()
       print, 'now tweaking to sky lines'
       skycoeff = 2
+      if(n_elements(vacsky) GT 3) then skycoeff = 3
+      if(n_elements(vacsky) GT 10) then skycoeff = 4
+
       fit_skyset, xpeak, ypeak, vaclambda, xsky, ysky, vacsky, skycoeff, $
         goodlines, wset_tweak, invset_tweak, ymin=ymin, ymax=ymax, func=func
+
+      locateskylines, skylinefile, flux, fluxivar, $
+       wset_tweak, invset_tweak, xsky, ysky, skywaves, lambda=vacsky
 
       ;------------------
       ; Sky-subtract
 
 
-      skysubtract, obj_flux, obj_fluxivar, plugsort, wset_tweak, $ 
+      skysubtract, flux, fluxivar, plugsort, wset_tweak, $ 
        skysub, skysubivar
 
-      obj_flux =0
-      obj_fluxivar =0
       ;------------------------------------------
       ; Flux calibrate to spectrophoto_std fibers
 
       fluxfactor = fluxcorr(skysub, skysubivar, wset_tweak, plugsort, $
                              lower=2.5, upper=10)
 
-      fluxout = skysub * fluxfactor
-      fluxoutivar = skysubivar / (fluxfactor^2)
+      flux = skysub * fluxfactor
+      fluxivar = skysubivar / (fluxfactor^2)
 
       ;------------------------------------------
       ; Telluric correction called for 'red' side
 
       if (color EQ 'red')  then begin
 
-        telluricfactor = telluric_corr(fluxout, fluxoutivar, wset, plugsort)
-	fluxout = fluxout / telluricfactor
-	fluxoutivar = fluxoutivar * (telluricfactor^2)
+        telluricfactor = telluric_corr(flux, fluxivar, wset, plugsort)
+	flux= flux / telluricfactor
+	fluxivar = fluxivar * (telluricfactor^2)
 
       endif
 
@@ -454,21 +441,13 @@ for i=0,16 do oplot,fflat[*,i*19]
 	sxaddpar, objhdr, 'NFITPOLY', nparams, 'order of profile parameter fit'
 
 
-      writespectra, objhdr, plugsort, fluxout, fluxoutivar, wset_tweak, $
+      writespectra, objhdr, plugsort, flux, fluxivar, wset_tweak, $
        filebase=filebase
 
 ;
 ;	Clear out variables for memory efficiency, looks like this fragments
 ;       memory instead
 ;
-;     objimg = 0
-;     objivar = 0
-;     skysub = 0
-;     skysubivar = 0
-;     fluxout = 0
-;     fluxoutivar = 0
-;     fluxfactor = 0
-;     telluricfactor = 0
 ;     xnow = 0
 ;     sigmanow = 0
 ;     ansimage = 0

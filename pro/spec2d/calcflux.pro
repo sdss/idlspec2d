@@ -7,15 +7,18 @@ pro calcflux, ansrow, prow, fluxrow, finvrow, wfixed, proftype, lTrace,nCoeff, $
        return
      endif
 
-     if(proftype GE 1) then begin
-       fluxrow = ansrow[0,*]
-       if(nCoeff GE 2) then fluxrow = fluxrow + ansrow[1,*]
-       if(nCoeff GE 3) then fluxrow = fluxrow + ansrow[2,*]
+     iTrace = lTrace*nCoeff
 
-     if(proftype GE 5) then fluxrow = fluxrow + ansrow[3,*]
+     if(proftype GE 1) then begin
+       fluxrow = ansrow[iTrace]
+       if(nCoeff GE 2) then fluxrow = fluxrow + ansrow[iTrace+1]
+       if(proftype GE 3 AND nCoeff GE 3) then $
+          fluxrow = fluxrow + ansrow[iTrace+2]
+
+     if(proftype GE 5) then fluxrow = fluxrow + ansrow[iTrace+3]
        
 ; best estimate we can do
-       finvrow = prow[lTrace*nCoeff]*prow[lTrace*nCoeff] 
+       finvrow = prow[iTrace]*prow[iTrace] 
 
 ;
 ;	Higher order symmetric terms are not yet included
@@ -23,6 +26,9 @@ pro calcflux, ansrow, prow, fluxrow, finvrow, wfixed, proftype, lTrace,nCoeff, $
        return
      endif
 
+;
+;	!!!We do not use the following, but keeping it for info
+;
      if(proftype EQ 1 OR proftype EQ 2) then begin
 ;       print, 'Analyzing row', cur, '     With Gaussian Profile', wfixed
 

@@ -64,9 +64,14 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
    ; Find keywords from the header
    plugDir = yanny_par(hdr, 'plugDir')
    extractDir = yanny_par(hdr, 'extractDir')
+   combDir = yanny_par(hdr, 'combDir')
+   if (combDir EQ '') then combDir=extractDir
+
    inputDir = yanny_par(hdr, 'inputDir')
    flatDir = yanny_par(hdr, 'flatDir')
    mjd = yanny_par(hdr, 'MJD')
+   run = strtrim(yanny_par(hdr, 'run'),2)
+   if (run EQ '') then run = '0'
 
   
    camnames = ['b1', 'r2', 'b2', 'r1']
@@ -84,7 +89,10 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
       j = where(allseq.seqid EQ seqid[iseq])
       plateid = allseq[j[0]].plateid
 
-      plateDir=filepath(strtrim(string(plateid),2)+'/2d_0',root_dir=extractDir)
+      plateDir=filepath(strtrim(string(plateid),2)+'/2d_'+ $
+           run,root_dir=extractDir)
+      combineDir=filepath(strtrim(string(plateid),2)+'/comb_'+ $
+           run,root_dir=combDir)
 
     if (NOT keyword_set(combineonly)) then begin
 
@@ -151,8 +159,9 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
              newflatspot[i] = tempflatspot[closestspot]
 	  endfor
 
-	  arcname = allseq[temparcspot].name[icam]
-	  flatname = allseq[newflatspot].name[icam]
+          ; Use reverse to check last arc first
+	  arcname = allseq[reverse(temparcspot)].name[icam]
+	  flatname = allseq[reverse(newflatspot)].name[icam]
 
             spreduce, flatname, arcname, objname, $
              pixflatname=filepath(pixflatname,root_dir=flatDir), $
@@ -168,9 +177,13 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
     endif
       ; Combine all red+blue exposures for a given sequence
 
+      if (NOT keyword_set(docams)) then begin
+
+	spawn, 'mkdir -p '+combineDir	
 	startcombtime = systime(1)
-      for side = 1, 2 do begin
-         for i=1, 320 do begin
+
+        for side = 1, 2 do begin
+          for i=1, 320 do begin
 
             outputfile = 'idlout-'+string(format='(i1,a,i4.4,a,i3.3,a)',side, $
              '-',plateid,'-',i,'.fit')
@@ -181,12 +194,13 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
 	    if (files[0] EQ '') then $
                print, 'No files found for ', i, ' side ', side $
             else $
-              combine2dout, files, filepath(outputfile,root_dir=plateDir), $
+              combine2dout, files, filepath(outputfile,root_dir=combineDir), $
                wavemin = alog10(3750.0)
          endfor
-      endfor
+       endfor
        print, 'Finished combining sequence', seqid[iseq], ' in', $
              systime(1)-startcombtime, ' seconds'
+     endif
 
    endfor ; End loop for sequence number
 

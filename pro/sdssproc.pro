@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   sdssproc, infile, [image, invvar, outfile=outfile, varfile=varfile, $
-;    hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, $
+;    hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, bcfile=bcfile, $
 ;    pixflatname=pixflatname, spectrographid=spectrographid, color=color ]
 ;
 ; INPUTS:
@@ -19,6 +19,7 @@
 ;   hdr        - Header returned in memory
 ;   configfile - Default to "opConfig.par"
 ;   ecalibfile - Default to "opECalib.par"
+;   bcfile     - Default to "opBC.par"
 ;   pixflatname- Name of pixel-to-pixel flat, produced with SPFLATTEN.
 ;
 ; OUTPUTS:
@@ -43,16 +44,17 @@
 ;------------------------------------------------------------------------------
 
 pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
- hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, $
+ hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, bcfile=bcfile, $
  pixflatname=pixflatname, spectrographid=spectrographid, color=color
 
    if (N_params() LT 1) then begin
       print, 'Syntax - sdssproc, infile, [image, invvar, outfile=outfile, varfile=varfile, ' 
-      print, ' hdr=hdr, configfile=configfile, ecalibfile=ecalibfile]'
+      print, ' hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, bcfile=bcfile]'
       return
    endif
    if (NOT keyword_set(configfile)) then configfile = 'opConfig.par'
    if (NOT keyword_set(ecalibfile)) then ecalibfile = 'opECalib.par'
+   if (NOT keyword_set(bcfile)) then bcfile = 'opBC.par'
 
    junk = findfile(configfile, count=ct)
    if (ct NE 1) then begin
@@ -74,7 +76,17 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
 
    realecalib = tempname[0]
 
-   rawdata = rdss_fits(infile, hdr)
+   tempname = findfile(bcfile, count=ct)
+   if (ct NE 1) then begin
+     pp = getenv('EVIL_PAR') 
+     tempname = findfile(filepath(bcfile, root_dir=pp), count=ct)
+   endif
+   if (ct NE 1) then $
+    message, 'No BC file ' + string(bcfile)
+
+   realbc= tempname[0]
+
+   rawdata = rdss_fits(infile, hdr, /nofloat)
 
    cards = sxpar(hdr,'NAXIS*')
 ;   if (cards[0] NE 2128 OR cards[1] NE 2069) then $
@@ -191,7 +203,16 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
    igood = where(qexist)
    nr = max((srow+nrow)[igood])
    nc = max((scol+ncol)[igood])
-   image = fltarr(nc, nr)
+   if ((size(image))[0] NE 2) then image = fltarr(nc, nr) $
+   else if ((size(image))[1] NE nc OR (size(image))[2] NE nr OR $
+            (size(image))[3] NE 4) then image = fltarr(nc, nr) 
+
+   yanny_read, realbc, pdata
+   bc = *pdata[0]
+   ptr_free,pdata
+   
+   bchere = where(bc.camrow EQ camrow AND bc.camcol EQ camcol,nbc)
+   if (nbc GT 0) then bc = bc[ bchere ]
 
 ;
 ;	Do image first
@@ -225,7 +246,10 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
    endfor
 
    if (ARG_PRESENT(invvar)) then begin
-     invvar = fltarr(nc, nr)
+     if ((size(invvar))[0] NE 2) then invvar = fltarr(nc, nr) $
+     else if ((size(invvar))[1] NE nc OR (size(invvar))[2] NE nr OR $
+            (size(invvar))[3] NE 4) then invvar = fltarr(nc, nr) 
+
      mask = bytarr(nc, nr)
  
      for iamp=0, 3 do begin
@@ -245,7 +269,17 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
        endif
      endfor
 
+     if (nbc GT 0) then begin
+       bcsc = (bc.dfcol0 > 0) < nc
+       bcec = (bc.dfcol0 + bc.dfncol - 1 < nc) > bcsc
+       bcsr = (bc.dfrow0 > 0) < nr
+       bcer = (bc.dfrow0 + bc.dfnrow - 1 < nr) > bcsr
 
+       for i=0,nbc-1 do mask[bcsc[i]:bcec[i],bcsr[i]:bcer[i]] = 0
+     endif
+     
+         
+	
      ; For saturated pixels, set INVVAR=0
      invvar = invvar * mask
    endif
