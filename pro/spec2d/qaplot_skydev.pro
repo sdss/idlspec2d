@@ -26,6 +26,7 @@
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
+;   This code has been deprecated in favor of QAPLOT_SKYSHIFT.
 ;
 ; EXAMPLES:
 ;
