@@ -202,6 +202,7 @@ pro/photoz/lrgmodel_tweak_template.pro -text
 pro/plan/daytime_test.pro -text
 pro/plan/dr1list_best.pro -text
 pro/plan/find_unplugged.pro -text
+pro/plan/fstars_plot.pro -text
 pro/plan/listexptime.pro -text
 pro/plan/platecen_test.pro -text
 pro/plan/plugfile_unmapped.pro -text
