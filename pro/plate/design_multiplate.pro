@@ -15,6 +15,8 @@
 ;                HOLETYPE can be either 'OBJECT' or 'GUIDE'; objects with
 ;                other values are ignored.  Other elements in the structure
 ;                will be copied into the output plug-map files.
+;                If OBJTYPE is not passed in this structure, then it is set to
+;                'SERENDIPITY_MANUAL' for all HOLETYPE='OBJECT'.
 ;                Stars with TILENUM=0 can only be used as guide stars.
 ;   racen      - RA center for each tile
 ;   deccen     - DEC center for each tile
@@ -256,14 +258,17 @@ print, 'Assigning real guide fiber number ', iguide+1
       ; For this pointing, add all objects.
 
       indx = where(stardata.tilenum EQ thistilenum $
-       AND strtrim(stardata.holetype,2) EQ 'OBJECT', nadd)
+       AND (strtrim(stardata.holetype,2) EQ 'OBJECT', nadd)
       if (nadd EQ 0) then $
        message, 'No objects found for this pointing'
       addplug = replicate(blankplug, nadd)
       struct_assign, stardata[indx], addplug
 
       addplug.holetype = 'OBJECT'
-      addplug.objtype = 'SERENDIPITY_MANUAL'
+      if ((where(tag_names(stardata) EQ 'OBJTYPE'))[0] NE -1) then $
+       addplug.objtype = stardata[indx].objtype $
+      else $
+       addplug.objtype = 'SERENDIPITY_MANUAL'
       if ((where(tag_names(stardata) EQ 'PRIORITY'))[0] NE -1) then $
        addplug.throughput = (stardata[indx].priority > 1L) < (2L^31-2) $
       else $
@@ -375,6 +380,47 @@ print, 'Assigning real guide fiber number ', iguide+1
    ; The required inputs are the plPlugMapT-$TILE.par files,
    ; plus plPlan.par, plObs.par, plParam.par.
    ;---------------------------------------------------------------------------
+
+   ;----------
+   ; Create the file "plPlan.par" in the current directory.
+
+   paramdir = concat_dir(getenv('IDLSPEC2D_DIR'), 'examples')
+   cd, current=thisdir
+   cd, thisdir
+   plhdr = ''
+   plhdr = [plhdr, "parametersDir " + paramdir]
+   plhdr = [plhdr, "parameters    " + "plParam.par"]
+   plhdr = [plhdr, "plObsFile     " + "plObs.par"]
+   plhdr = [plhdr, "outFileDir    " + thisdir]
+   plhdr = [plhdr, "tileDir       " + thisdir]
+   yanny_write, 'plPlan.par', hdr=plhdr
+
+   ;----------
+   ; Create the file "plObs.par" in the current directory.
+
+   plhdr = ''
+   plhdr = [plhdr, "plateRun special"]
+   plstructs = ["typedef struct {", $
+                "   int plateId;", $
+                "   int tileId;", $
+                "   float temp;", $
+                "   float haMin;", $
+                "   float haMax;", $
+                "   int mjdDesign", $
+                "} PLOBS;"
+   plobs = create_struct(name='PLOBS', $
+    'PLATEID'  ,  0L, $
+    'TILEID'   ,  0L, $
+    'TEMP'     , 0.0, $
+    'HAMIN'    , 0.0, $
+    'HAMAX'    , 0.0, $
+    'MJDDESIGN',  0L)
+   plobs = replicate(plobs, ntile)
+   plobs.plateid = platenums
+   plobs.tileid = tilenums
+   plobs.temp = apotemperature
+   plobs.mjddesign = current_mjd()
+   yanny_write, 'plObs.par', plobs, hdr=plhdr, structs=plstructs
 
 ; ???
 print, 'Now run "makePlates" in the "plate" product'
