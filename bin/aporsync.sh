@@ -68,7 +68,6 @@ sleep 1
 # the blue and guider files.
 rsync -ar --rsh="ssh -c blowfish" \
       --rsync-path=/p/rsync/v2_4_3/rsync \
-      --exclude="*guider*" \
       --log-format="/data/spectro/%f" --exclude="*-b*" \
       "sdsshost:/data/spectro/[56789]????" $rawdata_dir | startapo.sh 
 
