@@ -74,6 +74,11 @@ pro fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
    bsn = djs_median(bsmearflux * sqrt(bsmearivar),1)
    rsn = djs_median(rsmearflux * sqrt(rsmearivar),1)
    smearsnmed = transpose([[bsn],[rsn]])
+   badval = ( fibermask_bits('NOPLUG')   OR fibermask_bits('BADTRACE') $
+       OR fibermask_bits('BADFLAT')  OR fibermask_bits('BADARC')   $
+       OR fibermask_bits('NEARWHOPPER') )
+   qsmear =  (bsmearmask[0,*] OR rsmearmask[0,*]) AND badval
+
  
    ;---------------------------------------------------------
    ;  now put blue and red together
@@ -115,6 +120,7 @@ pro fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
 
       thismask  = smearmask OR pixelmask_bits('SMEARHIGHSN')
       thismask  = thismask  OR pixelmask_bits('SMEARMEDSN')
+      qsci = lonarr(nfiber)
 
    ; Special case: If the science image and smear image is the same,
    ; then force their ratio to be unity.
@@ -139,6 +145,7 @@ pro fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
              mask=bmask)
          bsn = djs_median(bsciflux * sqrt(bsciivar),1)
          checkblue = 1
+         qsci = qsci OR ( bscimask[0,*] AND badval)
 
        endif else $
          splog, 'WARNING: no blue science frame for ', corrfile[ifile]
@@ -161,6 +168,7 @@ pro fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
            mask=rmask)
          rsn = djs_median(rsciflux * sqrt(rsciivar),1)
          checkred = 1
+         qsci = qsci OR ( rscimask[0,*] AND badval)
 
        endif else $
          splog, 'WARNING: no red science frame for ', corrfile[ifile]
@@ -179,7 +187,8 @@ pro fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
        highsn = where((scisnmed[0,*] GT 2.5 OR checkblue EQ 0) $
                AND  (scisnmed[1,*] GT 5.0 OR checkred EQ 0) $
                AND  smearsnmed[0,*] GT 1.0 $
-               AND  smearsnmed[1,*] GT 1.0)
+               AND  smearsnmed[1,*] GT 1.0 $
+               AND  qsci EQ 0 AND qsmear EQ 0)
 
        spectrophoto = -1L
        fibersn = lonarr(nfiber) + 3
@@ -206,7 +215,8 @@ pro fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
          medsn = where((scisnmed[0,*] GT 1.0 $
                 OR scisnmed[1,*] GT 2.0 ) $
                AND  (smearsnmed[0,*] GT 0.2 $
-                OR smearsnmed[1,*] GT 0.5) AND fibersn NE 1) 
+                OR smearsnmed[1,*] GT 0.5) AND fibersn NE 1 $) 
+               AND  qsci EQ 0 AND qsmear EQ 0)
 
          if medsn[0] NE -1 then fibersn[medsn] = 2
 
@@ -236,7 +246,7 @@ pro fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
  
            xy2traceset, wave, smearnormflux, medsnset, $
             invvar=smearnormivar, ncoeff=1, inputfunc=sciflux, $
-            lower = 3, upper = 3
+            lower = 3, upper = 3, yfit=yy
 
            finalset.coeff[*,medsn] = mediancoeff # medsnset.coeff[0,medsn]
          endif
@@ -248,7 +258,7 @@ pro fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
          corrset = finalset
          traceset2xy, corrset, wave, corrimage
 
-         bad = where(djs_median(corrimage,1) GT 3.0*median(corrimage),nbad)
+         bad = where(djs_median(corrimage,1) GT 5.0*median(corrimage),nbad)
          if bad[0] NE -1 then begin
            splog, 'WARNING: Large deviations in flux correction '
            splog, 'WARNING: Replacing with median solution in fibers:', $
