@@ -31,6 +31,7 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   apo_checklimits()
 ;   djs_lockfile()
 ;   djs_unlockfile
 ;   mrdfits

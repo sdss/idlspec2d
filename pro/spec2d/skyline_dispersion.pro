@@ -91,8 +91,8 @@ function skyline_dispersion, flux, fluxivar, xcen, iskies, dispset
    sigma = transpose(arcwidth)
 
    ;----------
-   ; Extract sky lines from the [NPIX,NTRACE] image, re-measuring
-   ; the sigmas during extraction for every fiber (sky and non-sky).
+   ; Extract sky lines from the [NPIX,NTRACE] image, measuring the
+   ; wavelength sigmas during extraction for every fiber (sky and non-sky).
 
    extract_image, flux, fluxivar*skymask, xsky, transpose(arcwidth), $
     yrow=iskies, skylineflux, skylineivar, ansimage=ansimage, wfixed=[1,1], $
