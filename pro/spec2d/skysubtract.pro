@@ -6,12 +6,12 @@
 ;   Sky-subtract an image and modify the variance
 ;
 ; CALLING SEQUENCE:
-;   skystruct = skysubtract(obj, objivar, plugsort, wset, objsub, objsubivar, $
+;   skystruct = skysubtract(objflux, objivar, plugsort, wset, objsub, objsubivar, $
 ;    [ iskies= , fibermask=, nord=, upper=, lower=, maxiter=, pixelmask=, $
-;    dispset=, /novariance, relchi2struct=, npoly=, tai= ])
+;    dispset=, /novariance, relchi2struct=, npoly=, tai=, newmask= ])
 ;
 ; INPUTS:
-;   obj        - Image
+;   objflux    - Image
 ;   objivar    - Inverse variance for OBJ
 ;   plugsort   - Plugmap structure trimmed to one element per fiber
 ;   wset       - Wavelength solution
@@ -43,7 +43,8 @@
 ;   objsubivar - Inverse variance (OBJIVAR) after sky-subtraction
 ;
 ; OPTIONAL OUTPUTS:
-;   iskies=    - array of good sky fibers
+;   iskies     - Indices of good sky fibers
+;   newmask    - Modified version of PIXELMASK,
 ;
 ; COMMENTS:
 ;   Construct a "supersky" spectrum by spline-fitting the (good) sky fibers,
@@ -77,16 +78,16 @@
 ;-
 ;------------------------------------------------------------------------------
 
-function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
+function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
    iskies=iskies, fibermask=fibermask, nord=nord, upper=upper, $
    lower=lower, maxiter=maxiter, pixelmask=pixelmask, $
    dispset=dispset, npoly=npoly, relchi2struct=relchi2struct, $
-   novariance=novariance, tai=tai, nbkpt=nbkpt
+   novariance=novariance, tai=tai, nbkpt=nbkpt, newmask=newmask
 
-   if (size(obj, /n_dimen) NE 2) then message, 'OBJIVAR is not 2-D'
+   if (size(objflux, /n_dimen) NE 2) then message, 'OBJIVAR is not 2-D'
    if (size(objivar, /n_dimen) NE 2) then message, 'OBJIVAR is not 2-D'
 
-   dims = size(obj, /dimens)
+   dims = size(objflux, /dimens)
    ncol = dims[0]
    nrow = dims[1]
 
@@ -129,7 +130,7 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    airmass_correction = replicate(1.0,ncol) # airmass
 
    skywave = wave[*,iskies]
-   skyflux = obj[*,iskies]
+   skyflux = objflux[*,iskies]
    skyivar = objivar[*,iskies]
 
    divideflat, skyflux, invvar=skyivar, airmass_correction[*,iskies]
@@ -273,8 +274,8 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    ;----------
    ; Sky-subtract the entire image
 
-;   objsub = obj - fullfit * (objivar GT 0.0) ; No need to do this.
-   objsub = obj - fullfit * airmass_correction
+;   objsub = objflux - fullfit * (objivar GT 0.0) ; No need to do this.
+   objsub = objflux - fullfit * airmass_correction
 
    ;----------
    ; Fit to sky variance (not inverse variance)
@@ -409,6 +410,12 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
 ;   skyivar = skyivar[isort]
 
    ;----------
+   ; Create the output pixel mask.
+
+   if (keyword_set(pixelmask)) then newmask = pixelmask $
+    else newmask = make_array(size=size(objflux), /long)
+
+   ;----------
    ; If any pixels on the image are outside of the wavelength range
    ; covered by the "supersky", then the formal errors are infinite
    ; for those pixels after skysubtraction.  Set the mask bit 'NOSKY'
@@ -418,8 +425,8 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    iout = where(wave LT skywave[ii[0]] OR wave GT skywave[ii[ni-1]])
    if (iout[0] NE -1) then objsubivar[iout] = 0.0
 
-   if (keyword_set(pixelmask) AND iout[0] NE -1) then $
-    pixelmask[iout] = pixelmask[iout] OR pixelmask_bits('NOSKY')
+   if (iout[0] NE -1 AND keyword_set(newmask)) then $
+    newmask[iout] = newmask[iout] OR pixelmask_bits('NOSKY')
 
    ;----------
    ; Set the BADSKYCHI mask bit at any wavelength where the relative chi^2
@@ -427,13 +434,12 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    ; bit is not set for that pixel).
    ; Also, look for the Red Monster (any bad region contiguous in wavelength).
 
-   if (keyword_set(relchi2)) then begin
-      if (keyword_set(pixelmask)) then $
-       pixelmask = pixelmask OR pixelmask_bits('BADSKYCHI') $
-        * (relchi2fit GT thresh) $
-        * ((pixelmask AND pixelmask_bits('NOSKY')) EQ 0)
+   if (keyword_set(relchi2) AND keyword_set(newmask)) then begin
+      newmask = newmask OR pixelmask_bits('BADSKYCHI') $
+       * (relchi2fit GT thresh) $
+       * ((newmask AND pixelmask_bits('NOSKY')) EQ 0)
 
-      redmonster, relwave, relchi2, wave, pixelmask=pixelmask
+      redmonster, relwave, relchi2, wave, pixelmask=newmask
    endif
 
    ;----------
@@ -442,7 +448,7 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    ; and where the sky is greater than 2.0 times a median sky.
    ; Grow this mask by 1 neighboring pixel in each direction.
 
-   if (keyword_set(pixelmask)) then begin
+   if (keyword_set(newmask)) then begin
       ; Compute a median sky vector for each fiber
       medsky = 0 * fullfit
       for irow=0, nrow-1 do $
@@ -455,7 +461,7 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
       qbright = convol(qbright, [1,1,1], /center, /edge_truncate)
       ibright = where(qbright)
       if (ibright[0] NE -1) then $
-       pixelmask[ibright] = pixelmask[ibright] OR pixelmask_bits('BRIGHTSKY')
+       newmask[ibright] = newmask[ibright] OR pixelmask_bits('BRIGHTSKY')
    endif
 
    return, skystruct
