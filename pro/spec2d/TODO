@@ -1,4 +1,9 @@
 
+* Measure relative shifts between all the flat-field traces in SPCALIB,
+  then for each object pick the flat-field with the most similar traces.
+  We can do this cheaply by measuring the offset to just the first good flat,
+  then use the known relative shifts to pick the best match.
+
 * Add in error as a fraction of the whopping terms?
   Or at least set a pixelmask bit.
 
