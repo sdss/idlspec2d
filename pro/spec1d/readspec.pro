@@ -7,22 +7,17 @@
 ;
 ; CALLING SEQUENCE:
 ;   readspec, plate, fiber, [mjd=, flux=, flerr=, invvar=, $
-;    andmask=, ormask=, disp=, plugmap=, loglam=, wave=, tsobj=, $
-;    root_dir=, /silent ]
+;    andmask=, ormask=, disp=, plugmap=, loglam=, wave=, tsobj=, /silent ]
 ;
 ; INPUTS:
 ;   plate      - Plate number(s)
 ;
 ; OPTIONAL INPUTS:
 ;   fiber      - Fiber number(s), 1-indexed; if not set, or zero, then
-;                read all fibers for each plate.
+;                read all fibers for each plate.  We assume that there
+;                are exactly 640 fibers.
 ;   mjd        - MJD number(s); if not set, then select the most recent
 ;                data for this plate (largest MJD).
-;   silent     - Set to read files in a (more) silent way.
-;   root_dir   - Root directory for reduced spectro data files, which
-;                are assumed to be ROOT_DIR/pppp/spPlate-pppp-mmmmm.fits,
-;                where pppp=plate number and mmmm=MJD.
-;                Default to '/data/spectro/2d_3c'.
 ;   silent     - If set, then call MRDFITS with /SILENT.
 ;
 ; OUTPUTS:
@@ -46,6 +41,13 @@
 ;   Or, one can input PLATE as a vector, in which case the same FIBER is
 ;   read for all.
 ;
+;   The environment variable SPECTRO_DATA must be set to tell this routine
+;   where to find the data.  The reduced spectro data files are assumed to
+;   be $SPECTRO_DATA/pppp/spPlate-pppp-mmmmm.fits, where pppp=plate number
+;   and mmmm=MJD.
+;
+;   The tsObj files are assumed to be in the directory $SPECTRO_DATA/plates.
+;
 ; EXAMPLES:
 ;
 ; BUGS:
@@ -63,12 +65,11 @@
 ;
 ; REVISION HISTORY:
 ;   25-Jun-2000  Written by David Schlegel, Princeton.
-;   27-Jun-2000  silent keyword added - Doug Finkbeiner
 ;-
 ;------------------------------------------------------------------------------
-pro readspec1, plate, range, mjd=mjd, silent=silent, flux=flux, flerr=flerr, $
- invvar=invvar, andmask=andmask, ormask=ormask, disp=disp, plugmap=plugmap, $
- loglam=loglam, wave=wave, tsobj=tsobj, root_dir=root_dir
+pro readspec1, plate, range, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
+ andmask=andmask, ormask=ormask, disp=disp, plugmap=plugmap, $
+ loglam=loglam, wave=wave, tsobj=tsobj, root_dir=root_dir, silent=silent
 
    common com_readspec, q_flux, q_flerr, q_invvar, q_andmask, q_ormask, $
     q_disp, q_plugmap, q_loglam, q_wave, q_tsobj
@@ -155,13 +156,13 @@ pro readspec1, plate, range, mjd=mjd, silent=silent, flux=flux, flerr=flerr, $
 end
 
 ;------------------------------------------------------------------------------
-pro readspec, plate, fiber, mjd=mjd, silent=silent, flux=flux, flerr=flerr, $
- invvar=invvar, andmask=andmask, ormask=ormask, disp=disp, plugmap=plugmap, $
- loglam=loglam, wave=wave, tsobj=tsobj, root_dir=root_dir
+pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
+ andmask=andmask, ormask=ormask, disp=disp, plugmap=plugmap, $
+ loglam=loglam, wave=wave, tsobj=tsobj, silent=silent
 
    if (n_params() LT 1) then begin
-      print, 'Syntax: readspec, plate, [ fiber, mjd=, /silent, flux=, flerr=, invvar=, $'
-      print, ' andmask=, ormask=, disp=, plugmap=, loglam=, wave=, tsobj=, root_dir= ] '
+      print, 'Syntax: readspec, plate, [ fiber, mjd=, flux=, flerr=, invvar=, $'
+      print, ' andmask=, ormask=, disp=, plugmap=, loglam=, wave=, tsobj=, /silent ] '
       return
    endif
 
@@ -169,7 +170,9 @@ pro readspec, plate, fiber, mjd=mjd, silent=silent, flux=flux, flerr=flerr, $
    common com_readspec, q_flux, q_flerr, q_invvar, q_andmask, q_ormask, $
     q_disp, q_plugmap, q_loglam, q_wave, q_tsobj
 
-   if (NOT keyword_set(root_dir)) then root_dir = '/data/spectro/2d_3c'
+   root_dir = getenv('SPECTRO_DATA')
+   if (NOT keyword_set(root_dir)) then $
+    message, 'Environment variable SPECTRO_DATA must be set!'
 
    q_flux = arg_present(flux)
    q_flerr = arg_present(flerr)
@@ -227,9 +230,9 @@ pro readspec, plate, fiber, mjd=mjd, silent=silent, flux=flux, flerr=flerr, $
       if (keyword_set(silent)) then print, '+', format='(A,$)'
 
       readspec1, platenums[ifile], [i1,i2], mjd=mjdnums[ifile], $
-       silent=silent, flux=flux1, flerr=flerr1, invvar=invvar1, $
-        andmask=andmask1, ormask=ormask1, disp=disp1, plugmap=plugmap1, $
-        loglam=loglam1, wave=wave1, tsobj=tsobj1, root_dir=root_dir
+       flux=flux1, flerr=flerr1, invvar=invvar1, andmask=andmask1, $
+       ormask=ormask1, disp=disp1, plugmap=plugmap1, loglam=loglam1, $
+       wave=wave1, tsobj=tsobj1, root_dir=root_dir, silent=silent
 
       if (ifile EQ 0) then begin
          allindx = indx

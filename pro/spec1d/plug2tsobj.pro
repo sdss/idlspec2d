@@ -25,10 +25,10 @@
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
-;   At present, this looks for the tsObj files in '/data/spectro/plates'
-;   that were constructed by Fermi to have only the entries for each plate.
-;   But since plates can be re-plugged, we must re-sort these files to
-;   match the object ordering in the plug-map structure.
+;   The tsObj files are assumed to be in the directory $SPECTRO_DATA/plates.
+;   These files were constructed (by Fermi) to have only the objects for
+;   each plate.  But since plates can be re-plugged, we must re-sort these
+;   files to match the object ordering in the plug-map structure.
 ;
 ; EXAMPLES:
 ;   Read the plug-map for plate 306, fibers 1 to 10, then construct the
@@ -47,6 +47,10 @@
 ;-
 ;------------------------------------------------------------------------------
 function plug2tsobj, plateid, ra, dec, plugmap=plugmap
+
+   root_dir = getenv('SPECTRO_DATA')
+   if (NOT keyword_set(root_dir)) then $
+    message, 'Environment variable SPECTRO_DATA must be set!'
 
    if (keyword_set(plugmap) $
     AND (NOT keyword_set(ra) OR NOT keyword_set(dec))) then begin
@@ -79,11 +83,10 @@ function plug2tsobj, plateid, ra, dec, plugmap=plugmap
    endif
 
    platestr = strtrim(string(fix(plateid[0])),2)
-   dirname = '/data/spectro/plates'
    filename = 'tsObj-*-' + platestr + '.fit'
 
    ; Select the first matching file if there are several
-   filename = (findfile(filepath(filename, root_dir=dirname)))[0]
+   filename = (findfile(filepath(filename, root_dir=root_dir, subdirectory='plates')))[0]
    if (NOT keyword_set(filename)) then $
     message, 'tsObj file not found for plate ' + platestr
 
