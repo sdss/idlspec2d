@@ -699,6 +699,11 @@ pixflat = 0 ; clear memory
       writefits, outfile, image, hdr
    endif
 
+   if (fullname[0] NE '') then sxaddpar, hdr, 'PIXFLAT', fullname[0]
+   if keyword_set(bcfile) then sxaddpar, hdr, 'OPBC', bcfile
+   if keyword_set(configfile) then sxaddpar, hdr, 'OPCONFIG', configfile
+   if keyword_set(ecalibfile) then sxaddpar, hdr, 'OPECALIB', ecalibfile
+
    if (readivar) then begin
       varhdr = hdr
       if (keyword_set(outfile)) then $
