@@ -934,7 +934,9 @@ The PostScript plots associated with the
 This file contains the combined spectra for all exposures
 (potentially spanning multiple nights) for a given mapped plate.
 The first 5 HDU's contain NPIX by 640 images, where NPIX is the
-number of wavelengths.
+number of wavelengths.  The pixel scale is exactly 1e-4 in
+log-wavelength (any units), which corresponds to 1e-4 * c * ln(10)
+= 69.029765 km/sec.
 
 <P>
 The spPlate file contains the following:<BR>
