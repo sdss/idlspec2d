@@ -69,7 +69,6 @@ etc/flatmask-r2.fits.gz -text svneol=unset#unset
 etc/fluxcorr.bkpts -text
 etc/intrinsic1.dat -text
 etc/intrinsicF2.dat -text
-etc/kurucz_model_fix.fit -text svneol=unset#unset
 etc/kurucz_stds_v5.fit -text
 etc/lamphgcdne.dat -text
 etc/lamplist.dat -text
