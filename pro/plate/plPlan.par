@@ -1,6 +1,0 @@
-parametersDir      /u/schlegel/idlspec2d/pro/plate
-parameters         plParam.par
-plObsFile          plObs.par
-outFileDir         /u/schlegel/idlspec2d/pro/plate
-tileDir            /u/schlegel/idlspec2d/pro/plate
-
