@@ -5,6 +5,10 @@ PLATELIST: Make consistent with changes to spChunklist.par.
 PLOTSPEC: Added /ORMASK, /ANDMASK keywords.  Plot text for the zwarning flags.
            Use /normal coordinates for plot labels, so they stay on
            the plot even when zoomming in and out.
+READSPEC,SPEC_APPEND: Add the /ALIGN option for aligning all the spectra
+           in wavelength.  Also, fix a bug whereby reading objects from
+           multiple could get mis-aligned if the OBJHDR keyword was specified
+           (this bug was just introduced in the last version).
 SDSS_FLAGNAME: Re-write to include many more types of mask bits
            from the file "spMaskbits.par".
 SDSS_FLAGVAL: New function, which is the inverse of SDSS_FLAGNAME().
@@ -15,6 +19,7 @@ SKYSUBTRACT: Fix stupid bug where sky-fits are rejected if the mean
            (one of at least several such examples).
 TELLURIC_CORR: Center the plot title.
 
+eigeninput_star.par: Version of "eigeninput_star.dat" as a Yanny file.
 spChunkList.par: Remove verstarg from structure, and add progname.
 spMaskbits.par: Heavily modified file to include many more types of mask bits.
 sprobot_start: Set the environment variable "DISPLAY=:0.0" so that any
