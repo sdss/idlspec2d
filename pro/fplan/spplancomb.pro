@@ -177,7 +177,7 @@ pro spplancomb, topindir=topindir, topoutdir=topoutdir, $
                    '2dmerge/spMerge2d-' + mjdstr + '-' + platestr + '-' 
                fcalibprefix = 'spFluxcalib-' + platestr + '-' + mjdstr
                zfile = 'spZ-' + platestr + '-' + mjdstr + '.fits'
-               snplot = 'spSN2d-' + platestr + '-' + mjdstr + '.ps'
+               plotsnfile = 'spSN2d-' + platestr + '-' + mjdstr + '.ps'
                snfits = 'spSN2d-' + platestr + '-' + mjdstr + '.fits'
 
                ;----------
@@ -198,13 +198,10 @@ pro spplancomb, topindir=topindir, topoutdir=topoutdir, $
                 + "'  # Output combined spectra file"]
                hdr = [hdr, "mergefile   '" + mergefile $
                 + "'  # individual combined files for 1d"]
-               hdr = [hdr, "snplot        '" + snplot $
+               hdr = [hdr, "plotsnfile        '" + plotsnfile $
                 + "'  # Two page S/N and magnitude plot"]
                hdr = [hdr, "snfile        '" + snfits $
                 + "'  # Small fits file with S/N numbers "]
-
-;;               hdr = [hdr, "zfile   '" + zfile $
-;;                + "'  # Output redshift file"]
 
                ;----------
                ; Write output file

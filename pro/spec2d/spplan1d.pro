@@ -199,6 +199,8 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
                 + "'  # Prefix for flux-calibration files"]
                hdr = [hdr, "combinefile   '" + combinefile $
                 + "'  # Output combined spectra file"]
+               hdr = [hdr, "plotsnfile        '" + plotsnfile $
+                + "'  # Two page S/N and magnitude plot"]
 
                ;----------
                ; Write output file

@@ -385,6 +385,13 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
    endfor
 
    ;---------------------------------------------------------------------------
+   ; Generate S/N plots
+   ;---------------------------------------------------------------------------
+
+   platesn, finalflux, finalivar, finalandmask, finalplugmap, finalwave, $
+    hdr=hdr, plotfile=plotsnfile
+
+   ;---------------------------------------------------------------------------
    ; Create the output header
    ;---------------------------------------------------------------------------
 
@@ -396,7 +403,7 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
    sxdelpar, hdr, 'EXPOSURE'
    sxdelpar, hdr, 'SEQID'
 
-   sxaddpar, objhdr, 'VERSCOMB', idlspec2d_version(), $
+   sxaddpar, hdr, 'VERSCOMB', idlspec2d_version(), $
     'Version of idlspec2d for combining multiple spectra', after='VERS2D'
    sxaddpar, hdr, 'NEXP', nfiles, $
     'Number of exposures in this file', before='EXPTIME'

@@ -74,9 +74,8 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
 
    ; The following variables are defined only for non-SKY objects...
    plugc = plug[iobj]
-   spectroid = (plugc.fiberid - 1) / 320 ; Set to 0 or 1
-   s1 = where(spectroid EQ 0)
-   s2 = where(spectroid EQ 1)
+   s1 = where(plugc.spectrographid EQ 1)
+   s2 = where(plugc.spectrographid EQ 2)
 
    ;----------
    ; Open plot file
@@ -161,7 +160,8 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
       ; Use different symbols for each spectrograph.
       ; Plot these first so that the lines are visibly plotted on top.
 
-      psymvec = (spectroid EQ 0) * 7 + (spectroid EQ 1) * 6 
+      psymvec = (plugc.spectrographid EQ 1) * 7 $
+       + (plugc.spectrographid EQ 2) * 6 
       colorvec = replicate('red', nobj)
       ipos = where(diff GE 0)
       if (ipos[0] NE -1) then colorvec[ipos] = 'green'
@@ -262,16 +262,59 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
 
    endfor
 
-   !p.multi = 0
-
+stop
    if keyword_set(synthmag) then begin
+      !p.multi = [0,2,2]
+      symsize = 0.5
+      psym = 4
 
-     plot, [14,22], [14,22], xchars=xchars, ychars=ychars, $
-       xtitle='Fiber Magnitude', ytitle='Synthetic Magnitude', /yno
+      for ispecnum=1, 2 do begin
+         if (ispecnum EQ 1) then sindx = s1 $
+          else sindx = s2
 
-     djs_oplot, plugc.mag[1], synthmag[0,iobj], color='blue', ps=4,symsize=0.3
-     djs_oplot, plugc.mag[2], synthmag[1,iobj], color='green',ps=4,symsize=0.3
-     djs_oplot, plugc.mag[3], synthmag[2,iobj], color='red', ps=4, symsize=0.3
+         djs_plot, [14,22], [14,22], xchars=xchars, ychars=ychars, $
+          /xstyle, /ystyle, $
+          xtitle='Fiber Magnitude', ytitle='Synthetic Magnitude', $
+          title='(S/N)^2 for Spectro-' + string(ispecnum,format='(i1)')
+
+         djs_oplot, plugc[sindx].mag[1], synthmag[0,iobj[sindx]], $
+          psym=psym, symsize=symsize, color='blue'
+         djs_oplot, plugc[sindx].mag[2], synthmag[1,iobj[sindx]], $
+          psym=psym, symsize=symsize, color='green'
+         djs_oplot, plugc[sindx].mag[3], synthmag[2,iobj[sindx]], $
+          psym=psym, symsize=symsize, color='red'
+
+         djs_oplot, [14.6], [21.1], psym=psym, symsize=symsize, color='blue'
+         djs_oplot, [14.6], [20.6], psym=psym, symsize=symsize, color='green'
+         djs_oplot, [14.6], [20.1], psym=psym, symsize=symsize, color='red'
+         djs_xyouts, 15.0, 21.0, 'g-filter'
+         djs_xyouts, 15.0, 20.5, 'r-filter'
+         djs_xyouts, 15.0, 20.0, 'i-filter'
+      endfor
+
+      qgal = strtrim(plugc.objtype,2) EQ 'GALAXY'
+      for ispecnum=1, 2 do begin
+         if (ispecnum EQ 1) then sindx = s1 $
+          else sindx = s2
+
+         igal = sindx[ where(qgal[sindx]) ]
+         istar = sindx[ where(qgal[sindx] EQ 0) ]
+
+         djs_plot, [14,22], [14,22], xchars=xchars, ychars=ychars, $
+          /xstyle, /ystyle, $
+          xtitle='Fiber Magnitude', ytitle='Synthetic Magnitude', $
+          title='(S/N)^2 for Spectro-' + string(ispecnum,format='(i1)')
+
+         djs_oplot, plugc[istar].mag[3], synthmag[2,iobj[istar]], $
+          psym=psym, symsize=symsize, color='blue'
+         djs_oplot, plugc[igal].mag[3], synthmag[2,iobj[igal]], $
+          psym=psym, symsize=symsize, color='red'
+
+         djs_oplot, [14.6], [21.1], psym=psym, symsize=symsize, color='blue'
+         djs_oplot, [14.6], [20.6], psym=psym, symsize=symsize, color='red'
+         djs_xyouts, 15.0, 21.0, 'Stellar objects (r-filter)'
+         djs_xyouts, 15.0, 20.5, 'Galaxies (r-filter)'
+      endfor
 
    endif
 

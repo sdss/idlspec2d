@@ -90,6 +90,7 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay
    combinedir = yanny_par(hdr, 'combinedir')
    logfile = yanny_par(hdr, 'logfile')
    plotfile = yanny_par(hdr, 'plotfile')
+   plotsnfile = yanny_par(hdr, 'plotsnfile')
    fcalibprefix = yanny_par(hdr, 'fcalibprefix')
    combinefile = yanny_par(hdr, 'combinefile')
 
