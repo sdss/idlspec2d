@@ -165,6 +165,18 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
       nfib = dims[1]
 
       ;----------
+      ; Make a map of the size of each pixel in delta-(log10-Angstroms),
+      ; and re-normalize the flux to ADU/(dloglam)
+
+      dlogimg = [ tempwave[1,*] - tempwave[0,*], $
+       0.5 * (tempwave[2:npix-1,*] - tempwave[0:npix-3,*]), $
+       tempwave[npix-1,*] - tempwave[npix-2,*] ]
+      dlogimg = abs(dlogimg)
+
+      dloglam = 1.d-4 ; ??? Hard-wired ???
+      divideflat, tempflux, tempivar, (dlogimg/dloglam), minval=0
+
+      ;----------
       ; Determine if this is a blue or red spectrum
 
       icam = (where(cameras EQ camnames))[0]
