@@ -6,6 +6,10 @@ FIND_NMINIMA: Remove use of DJS_SVDFIT (which didn't work on the Mac
            with an explicit solution of the quadratic equation.
            Add another error code (-7L) for the case where all of the Y
            values are identical, in which case the fit is impossible.
+SPPLAN2D: Exclude files where the plate number does not match that
+           in the map name.  This happens, for ex, for exp #14970 on
+           MJD 52405, which has the MAPNAME for plate 802 but a PLATEID
+           of 9999.
 
 -------------------------------------------------------------------------------
 v4_10_0 (Apr 8, 2003 idlspec2d running on IDL 5.3 - 5.5
