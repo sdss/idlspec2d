@@ -11,8 +11,8 @@
 ;    indir=indir, plugdir=plugdir, outdir=outdir, qadir=qadir, qa=qa
 ;
 ; INPUTS:
-;   flatname   - Name of flat-field SDSS image(s)
-;   arcname    - Name of arc SDSS image(s)
+;   flatname   - Name of flat-field SDSS image
+;   arcname    - Name of arc SDSS image
 ;   objname    - Name of object SDSS image(s)
 ;
 ; REQUIRED KEYWORDS:
@@ -23,10 +23,10 @@
 ;   lampfile   - Name of file describing arc lamp lines;
 ;                default to the file 'lamphgcdne.dat' in the IDL path.
 ;   indir      - Input directory for FLATNAME, ARCNAME, OBJNAME;
-;                default to './'
-;   plugdir    - Input directory for PLUGFILE; default to './'
-;   outdir     - Directory for output files; default to './'
-;   qadir      - Directory for QA files; default to './'
+;                default to '.'
+;   plugdir    - Input directory for PLUGFILE; default to '.'
+;   outdir     - Directory for output files; default to '.'
+;   qadir      - Directory for QA files; default to '.'
 ;   qa         - QA (quality assurance flag) 
 ;
 ; OUTPUTS:
@@ -38,6 +38,7 @@
 ; EXAMPLES:
 ;
 ; BUGS:
+;   Tweaking to sky lines + vacuum wavelengths commented out 15-nov-99 (DJS).
 ;
 ; PROCEDURES CALLED:
 ;   djs_locate_file()
@@ -49,6 +50,7 @@
 ;   sdssproc
 ;   traceset2xy
 ;   xy2traceset
+;   yanny_free
 ;   yanny_read
 ;
 ; REVISION HISTORY:
@@ -60,9 +62,9 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
  plugfile=plugfile, lampfile=lampfile, $
  indir=indir, plugdir=plugdir, outdir=outdir, qadir=qadir, qa=qa
 
-   if (NOT keyword_set(indir)) then indir = './'
+   if (NOT keyword_set(indir)) then indir = '.'
    if (NOT keyword_set(plugdir)) then plugdir=indir
-   if (NOT keyword_set(outdir)) then outdir = './'
+   if (NOT keyword_set(outdir)) then outdir = '.'
    if (NOT keyword_set(qadir)) then qadir = outdir
 
    t_begin = systime(1)
@@ -109,26 +111,18 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
    yanny_read, plugfilenames[0], pstruct, hdr=hdrplug
    plugmap = *pstruct[0]
-   ptr_free, pstruct  ;;!!!I don't know if this destroys the pointer totally
+   yanny_free, pstruct
 
    ;---------------------------------------------------------------------------
    ; Read flat-field image
    ;---------------------------------------------------------------------------
 
-   iflat = 0
-   iarc = 0
-   arcdone = 0
-   numarcfiles = (size(arcname))[1]
-   numflatfiles = (size(flatname))[1]
-   while (arcdone EQ 0 AND iarc LT numarcfiles AND $
-         iflat LT numflatfiles) do begin
+   flatpath = filepath(flatname, root_dir=indir)
+   flatfilenames = findfile(flatpath, count=ct)
+   if (ct NE 1) then $
+    message, 'Cannot find flat image ' + flatname
 
-     flatpath = filepath(flatname[iflat], root_dir=indir)
-     flatfilenames = findfile(flatpath, count=ct)
-     if (ct NE 1) then $
-      message, 'Cannot find flat image ' + flatname[iflat]
-
-   print, 'Reading in Flat ', flatfilenames[0]
+   print, 'Reading in flat ', flatfilenames[0]
    sdssproc, flatfilenames[0], image, invvar, hdr=flathdr, $
     pixflatname=pixflatname
  
@@ -157,15 +151,10 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
     proftype=proftype, wfixed=wfixed, $
     highrej=highrej, lowrej=lowrej, nPoly=nPoly, relative=1
 
-   highpixels = where(flux GT 1.0e5,numhighpixels)
+   highpixels = where(flux GT 1.0e5, numhighpixels)
 
-   print, 'Found ', numhighpixels, ' highpixels in extracted flatfield ', $
-       flatname[iflat]
-
-   if (numhighpixels GT 1000) then begin
-     iarc = iarc + 1
-     iflat = iflat + 1
-   endif else begin
+   print, 'Found ', numhighpixels, ' highpixels in extracted flat ', $
+    flatname
 
    ;---------------------------------------------------------------------------
    ; Compute fiber-to-fiber flat-field variations
@@ -177,62 +166,50 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    ; Read the arc
    ;---------------------------------------------------------------------------
 
-     arcpath = filepath(arcname[iarc], root_dir=indir)
-     arcfilenames = findfile(arcpath, count=ct)
-     if (ct NE 1) then $
-      message, 'Cannot find arc image ' + arcname[iarc]
+   arcpath = filepath(arcname, root_dir=indir)
+   arcfilenames = findfile(arcpath, count=ct)
+   if (ct NE 1) then $
+    message, 'Cannot find arc image ' + arcname
 
-     print, 'Reading in Arc ', arcfilenames[0]
-     sdssproc, arcfilenames[0], image, invvar, hdr=archdr, $
-      pixflatname=pixflatname, spectrographid=spectrographid, color=color
+   print, 'Reading in arc ', arcfilenames[0]
+   sdssproc, arcfilenames[0], image, invvar, hdr=archdr, $
+    pixflatname=pixflatname, spectrographid=spectrographid, color=color
 
      
-     ;--------------------------------------------------------------------------
-     ; Extract the arc image
-     ;--------------------------------------------------------------------------
+  ;--------------------------------------------------------------------------
+  ; Extract the arc image
+  ;--------------------------------------------------------------------------
 
-     print, 'Extracting arc-lamp with simple gaussian'
-     sigma = 1.0
-     proftype = 1 ; Gaussian
-     highrej = 10
-     lowrej = 15
-     nPoly = 6 ; maybe more structure
-     wfixed = [1] ; Just fit the first gaussian term
+  print, 'Extracting arc-lamp with simple gaussian'
+  sigma = 1.0
+  proftype = 1 ; Gaussian
+  highrej = 10
+  lowrej = 15
+  nPoly = 6 ; maybe more structure
+  wfixed = [1] ; Just fit the first gaussian term
 
-     extract_image, image, invvar, xsol, sigma, flux, fluxivar, $
-      proftype=proftype, wfixed=wfixed, $
-      highrej=highrej, lowrej=lowrej, nPoly=nPoly, relative=1
+  extract_image, image, invvar, xsol, sigma, flux, fluxivar, $
+   proftype=proftype, wfixed=wfixed, $
+   highrej=highrej, lowrej=lowrej, nPoly=nPoly, relative=1
 
-     ;------------------
-     ; Flat-field the extracted arcs with the global flat
-     ; Hmmm.... would be circular if we need a wavelength calibration before
-     ; making that flat.  We don't at the moment.
+  ;------------------
+  ; Flat-field the extracted arcs with the global flat
+  ; Hmmm.... would be circular if we need a wavelength calibration before
+  ; making that flat.  We don't at the moment.
 
-     flux = flux / fflat
-     fluxivar = fluxivar * fflat^2
+  flux = flux / fflat
+  fluxivar = fluxivar * fflat^2
 
-     ;-------------------------------------------------------------------------
-     ; Compute wavelength calibration for arc lamp only
-     ;-------------------------------------------------------------------------
+  ;-------------------------------------------------------------------------
+  ; Compute wavelength calibration for arc lamp only
+  ;-------------------------------------------------------------------------
 
-     print, 'Searching for wavelength solution with fitarcimage'
-     arcstatus = fitarcimage(flux, fluxivar, color, lamplist, $
-      xpeak, ypeak, wset, invset, lambda=lambda, $
-      xdif_lfit=xdif_lfit, xdif_tset=xdif_tset)
+   print, 'Searching for wavelength solution with fitarcimage'
+   fitarcimage, flux, fluxivar, color, lamplist, $
+    xpeak, ypeak, wset, lambda=lambda, $
+    xdif_lfit=xdif_lfit, xdif_tset=xdif_tset
 
-     if (arcstatus) then begin
-       iarc = iarc + 1
-       iflat = iflat + 1
-       print, 'Trying the next arc ', arcname[iarc]
-       print, '   and next flat ', flatname[iflat]
-     endif else arcdone = 1
-     endelse 
-   endwhile
-
-   if (arcdone NE 1) then $
-     message, 'Did not find a good arc solution'
-
-   qaplot_arcline, xdif_tset, lambda, arcname[iarc]
+   qaplot_arcline, xdif_tset, lambda, arcname
 
 ; Plot flat-field ???
 plot,fflat[*,0], yr=[0,2], /ystyle, $
@@ -259,7 +236,7 @@ for i=0,16 do oplot,fflat[*,i*19]
        message, 'Cannot find object image ' + objname[iobj]
 
       objfile = objfilenames[0]
-     print, 'Reading in Object ', objfile
+      print, 'Reading in object ', objfile
       sdssproc, objfile, image, invvar, hdr=objhdr, $
        pixflatname=pixflatname, spectrographid=spectrographid, color=color
 
@@ -338,11 +315,11 @@ for i=0,16 do oplot,fflat[*,i*19]
 
       ; 4) Second and final extraction
       print, 'Object extraction: Step 6'
-;
-;	Using old sigma for now, which should be fine
-;	Different sigmas require a new profile for each trace, so will
-;	check timing in the future
-;
+
+      ; Using old sigma for now, which should be fine
+      ; Different sigmas require a new profile for each trace, so will
+      ; check timing in the future
+
       extract_image, image, invvar, xnow, sigma, flux, $
        fluxivar, proftype=proftype, wfixed=wfixed, fitans=fitans, $
        highrej=highrej, lowrej=lowrej, nPoly=nPoly, whopping=whopping 
@@ -356,42 +333,36 @@ for i=0,16 do oplot,fflat[*,i*19]
       ;------------------
       ; Tweak up the wavelength solution to agree with the sky lines.
 
-      locateskylines, skylinefile, flux, fluxivar, $
-       wset, invset, xsky, ysky, skywaves
-
-; DO NOT TWEAK THE SKY LINES -- THIS ROUTINE MESSES UP NEAR ROW 145 ???
-; COMMENT OUT locateskylines, fit_skyset
-
-       wset_tweak = wset
-       invset_tweak = invset
+; DO NOT TWEAK THE SKY LINES ... ???
+wset_tweak = wset
 
       ;
-      ;	First convert lambda, and skywaves to log10 vacuum
+      ; First convert lambda, and skywaves to log10 vacuum
       ;
-      print, 'converting wavelengths to vacuum'
-	vaclambda = 10^lambda
-        airtovac, vaclambda
-	vaclambda = alog10(vaclambda)
-
-	vacsky = skywaves
-        airtovac, vacsky
-	vacsky = alog10(vacsky)
-
-	sxaddpar, hdr, 'VACUUM', 'WAVELENGTHS ARE IN VACUUM'
-	sxaddpar, hdr, 'AIR2VAC', systime()
-      print, 'now tweaking to sky lines'
-      skycoeff = 2
-      if(n_elements(vacsky) GT 3) then skycoeff = 3
-
-      fit_skyset, xpeak, ypeak, vaclambda, xsky, ysky, vacsky, skycoeff, $
-        goodlines, wset_tweak, invset_tweak, ymin=ymin, ymax=ymax, func=func
-
-      locateskylines, skylinefile, flux, fluxivar, $
-       wset_tweak, invset_tweak, xsky, ysky, skywaves, lambda=vacsky
+;      print, 'Converting wavelengths to vacuum'
+;      vaclambda = 10^lambda
+;      airtovac, vaclambda
+;      vaclambda = alog10(vaclambda)
+;
+;      vacsky = skywaves
+;      airtovac, vacsky
+;      vacsky = alog10(vacsky)
+;
+;      sxaddpar, hdr, 'VACUUM', 'WAVELENGTHS ARE IN VACUUM'
+;      sxaddpar, hdr, 'AIR2VAC', systime()
+;
+;      print, 'now tweaking to sky lines'
+;      skycoeff = 2
+;      if(n_elements(vacsky) GT 3) then skycoeff = 3
+;
+;      fit_skyset, xpeak, ypeak, vaclambda, xsky, ysky, vacsky, skycoeff, $
+;        goodlines, wset_tweak, invset_tweak, ymin=ymin, ymax=ymax, func=func
+;
+;      locateskylines, skylinefile, flux, fluxivar, $
+;       wset_tweak, invset_tweak, xsky, ysky, skywaves, lambda=vacsky
 
       ;------------------
       ; Sky-subtract
-
 
       skysubtract, flux, fluxivar, plugsort, wset_tweak, $ 
        skysub, skysubivar
@@ -410,9 +381,9 @@ for i=0,16 do oplot,fflat[*,i*19]
 
       if (color EQ 'red')  then begin
 
-        telluricfactor = telluric_corr(flux, fluxivar, wset, plugsort)
-	flux= flux / telluricfactor
-	fluxivar = fluxivar * (telluricfactor^2)
+         telluricfactor = telluric_corr(flux, fluxivar, wset, plugsort)
+         flux = flux / telluricfactor
+         fluxivar = fluxivar * (telluricfactor^2)
 
       endif
 
@@ -425,42 +396,40 @@ for i=0,16 do oplot,fflat[*,i*19]
        's-'+string(format='(i1,a1,a,i4.4)',spectrographid, $
        color,'-',framenum), root_dir=outdir)
 
-;
-;	Add everything we can think of to object header
-;
-	sxaddpar, objhdr, 'PLUGMAPF', plugfilenames[0]
-	sxaddpar, objhdr, 'FLATFILE', flatfilenames[0]
-	sxaddpar, objhdr, 'ARCFILE',  arcfilenames[0]
-	sxaddpar, objhdr, 'OBJFILE',  objfile
-	sxaddpar, objhdr, 'LAMPLIST',  lampfilenames[0]
-	sxaddpar, objhdr, 'SKYLIST',  skylinefile
-	sxaddpar, objhdr, 'PIXFLAT',  pixflatname
-	sxaddpar, objhdr, 'OSIGMA',  sigma, $
-            'Original guess at sigma of spatial profiles'
-	sxaddpar, objhdr, 'SKIPROW', skiprow, 'Number of rows skipped in step 1'
-	sxaddpar, objhdr, 'LOWREJ', lowrej, 'Extraction, low rejection'
-	sxaddpar, objhdr, 'HIGHREJ', highrej, 'Extraction, high rejection'
-	sxaddpar, objhdr, 'SCATPOLY', nPoly, 'Order of scattered light poly'
-	sxaddpar, objhdr, 'PROFTYPE', proftype, '1 is Gaussian'
-	sxaddpar, objhdr, 'NFITPOLY', nparams, 'order of profile parameter fit'
+      ;------
+      ; Add everything we can think of to object header
 
+      sxaddpar, objhdr, 'PLUGMAPF', plugfilenames[0]
+      sxaddpar, objhdr, 'FLATFILE', flatfilenames[0]
+      sxaddpar, objhdr, 'ARCFILE',  arcfilenames[0]
+      sxaddpar, objhdr, 'OBJFILE',  objfile
+      sxaddpar, objhdr, 'LAMPLIST',  lampfilenames[0]
+      sxaddpar, objhdr, 'SKYLIST',  skylinefile
+      sxaddpar, objhdr, 'PIXFLAT',  pixflatname
+      sxaddpar, objhdr, 'OSIGMA',  sigma, $
+           'Original guess at sigma of spatial profiles'
+      sxaddpar, objhdr, 'SKIPROW', skiprow, 'Number of rows skipped in step 1'
+      sxaddpar, objhdr, 'LOWREJ', lowrej, 'Extraction, low rejection'
+      sxaddpar, objhdr, 'HIGHREJ', highrej, 'Extraction, high rejection'
+      sxaddpar, objhdr, 'SCATPOLY', nPoly, 'Order of scattered light poly'
+      sxaddpar, objhdr, 'PROFTYPE', proftype, '1 is Gaussian'
+      sxaddpar, objhdr, 'NFITPOLY', nparams, 'order of profile parameter fit'
 
       writespectra, objhdr, plugsort, flux, fluxivar, wset_tweak, $
        filebase=filebase
 
-;
-;	Clear out variables for memory efficiency, looks like this fragments
-;       memory instead
-;
-;     xnow = 0
-;     sigmanow = 0
-;     ansimage = 0
-;     fitans = 0
-;     centershift = 0
-;     sigmashift = 0
-;     fextract = 0
+      ; Clear out variables for memory efficiency, looks like this fragments
+      ; memory instead
+
+;      xnow = 0
+;      sigmanow = 0
+;      ansimage = 0
+;      fitans = 0
+;      centershift = 0
+;      sigmashift = 0
+;      fextract = 0
      
-     heap_gc   ; Garbage collection for all lost pointers
+      heap_gc   ; Garbage collection for all lost pointers
    endfor
 
    print,'> SPREDUCE: ', systime(1)-t_begin, ' seconds TOTAL', $

@@ -50,8 +50,9 @@
 ;   Should probably change default to no rejection.
 ;
 ; PROCEDURES CALLED:
-;   flegendre()
 ;   fchebyshev()
+;   flegendre()
+;   func_fit()
 ;
 ; REVISION HISTORY:
 ;   19-May-1999  Written by David Schlegel, Princeton.
@@ -113,8 +114,7 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
 ;          /double, function_name=function_name, singular=singular)
 
          xnorm = 2.0*(xpos[*,itrace]-xmid) / xrange ; X positions renormalized
-         nreject = 1
-         totalreject = 0
+         nreject = 0
          good = lonarr(nx) + 1
 
          ; Rejection iteration loop
@@ -143,9 +143,12 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
                endelse
             endelse
 
-            totalreject = nx - ngood
-            res = func_fit(xnorm[igood], ypos[igood,itrace], ncoeff, $
-              function_name=function_name)
+            nreject = nx - ngood
+
+            ; Do not fit more coefficients than there are points
+            ncfit = ncoeff < ngood
+            res = func_fit(xnorm[igood], ypos[igood,itrace], ncfit, $
+             function_name=function_name)
 
             if (func EQ 'legendre') then $
                yfit = flegendre(xnorm, ncoeff) # res
@@ -155,10 +158,10 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
             iiter = iiter + 1
          endwhile
    
-         tset.coeff[*,itrace] = res
-         if (totalreject GT 0) then $
-          print, 'Rejected ', totalreject, ' of ', nx, $
-           ' points on trace ', itrace
+         tset.coeff[*,itrace] = 0
+         tset.coeff[0:ncfit-1,itrace] = res
+         if (nreject GT 0) then $
+          print, 'Rejected ', nreject, ' of ', nx, ' points on trace ', itrace
 
          xmask[*,itrace] = qgood
 

@@ -25,6 +25,7 @@
 ;
 ; PROCEDURES CALLED:
 ;   rdss_fits()
+;   yanny_free
 ;   yanny_read
 ;
 ; REVISION HISTORY:
@@ -101,7 +102,7 @@ function quickproc, infile, hdr=hdr, configfile=configfile
 
    yanny_read, realconfig, pdata
    config = *pdata[0]
-   ptr_free,pdata
+   yanny_free, pdata
    config = config[ where(config.camrow EQ camrow AND config.camcol EQ camcol) ]
 
    if (cards[0] NE config.ncols OR cards[1] NE config.nrows) then $

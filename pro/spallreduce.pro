@@ -7,12 +7,13 @@
 ;   of data according to a plan file.
 ;
 ; CALLING SEQUENCE:
-;   spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
+;   spallreduce, planfile=planfile, [ combineonly=combineonly, docams=docams ]
 ;
 ; INPUTS:
 ;
 ; OPTIONAL INPUTS:
 ;   planfile   - Name of output plan file; default to 'spPlan2d.par'
+;   docams     - Cameras to reduce; default to ['b1', 'r2', 'b2', 'r1']
 ;
 ; OUTPUT:
 ;
@@ -24,10 +25,12 @@
 ;   Rather than use FINDFILE, we should know what all the idlout* files are.
 ;   Need to implement lampfile.
 ;   Pass QA flags to SPREDUCE
+;   Try to avoid using SPAWN.
 ;
 ; PROCEDURES CALLED:
 ;   combine2dout
 ;   spreduce
+;   yanny_free
 ;   yanny_read
 ;
 ; INTERNAL SUPPORT ROUTINES:
@@ -43,8 +46,8 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
 
    docomb = 0
    if (NOT keyword_set(docams)) then begin
-       docams = ['b1', 'r2', 'b2', 'r1'] ; do all cameras
-       docomb = 1
+      docams = ['b1', 'r2', 'b2', 'r1'] ; do all cameras
+      docomb = 1
    endif
    ndo = N_elements(docams)
 
@@ -60,7 +63,7 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
        allseq = *pdata[i]
    endfor
 
-   ptr_free, pdata
+   yanny_free, pdata
 
    if (N_elements(allseq) EQ 0) then $
     message, 'No ONEEXP structures in plan file ' + planfile
@@ -77,7 +80,6 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
    run = strtrim(yanny_par(hdr, 'run'),2)
    if (run EQ '') then run = '0'
 
-  
    camnames = ['b1', 'r2', 'b2', 'r1']
    camnums = ['01', '02', '03', '04']
    ncam = N_elements(camnames)
@@ -86,7 +88,7 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
    seqid = allseq[ sort(allseq.seqid) ].seqid
    seqid = allseq[ uniq(allseq.seqid) ].seqid
 
-   set_plot,'ps'
+;   set_plot, 'ps'
    for iseq=0, N_elements(seqid)-1 do begin
 
       ; Get the plate ID number from any (e.g., the first) exposure with
@@ -95,11 +97,11 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
       plateid = allseq[j[0]].plateid
 
       plateDir=filepath(strtrim(string(plateid),2)+'/2d_'+ $
-           run,root_dir=extractDir)
+       run,root_dir=extractDir)
       combineDir=filepath(strtrim(string(plateid),2)+'/comb_'+ $
-           run,root_dir=combDir)
+       run,root_dir=combDir)
 
-    if (NOT keyword_set(combineonly)) then begin
+      if (NOT keyword_set(combineonly)) then begin
 
       ; Find the corresponding plug map file
       j = where(allplug.seqid EQ seqid[iseq] $
@@ -112,7 +114,7 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
       for ido=0, ndo-1 do begin
 
          icam = where(camnames EQ docams[ido], camct)
-         if (camct NE 1) then message, 'Non-unique camera id'
+         if (camct NE 1) then message, 'Non-unique camera ID '
 
          ; Find the corresponding pixel flat
          pixflatname = pixflats.name[icam]
@@ -132,11 +134,7 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
             j = where(allseq.seqid EQ seqid[iseq] $
                   AND allseq.flavor EQ 'flat' $
                   AND allseq.name[icam] NE 'UNKNOWN' )
-
-;
-;	Changed flats and arcs to take the list of names in extract_image
-;
-            if (j[0] NE -1) then tempflatspot = j $
+            if (j[0] NE -1) then flatname = allseq[j[0]].name[icam] $
              else message, 'No flat for SEQID= ' $
               + strtrim(string(seqid[iseq]),2) + ', PLATEID= ' $
               + strtrim(string(plateid),2) + ', CAMERA= ' + camnums[icam]
@@ -144,51 +142,37 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
             ; Select the first arc exposure at this sequence + camera
             j = where(allseq.seqid EQ seqid[iseq] $
                   AND allseq.flavor EQ 'arc' $
-                  AND allseq.name[icam] NE 'UNKNOWN' , numarcs)
-            if (j[0] NE -1) then temparcspot = j $
+                  AND allseq.name[icam] NE 'UNKNOWN' )
+            if (j[0] NE -1) then arcname = allseq[j[0]].name[icam] $
              else message, 'No arc for SEQID= ' $
               + strtrim(string(seqid[iseq]),2) + ', PLATEID= ' $
               + strtrim(string(plateid),2) + ', CAMERA= ' + camnums[icam]
 
+            pixflatname = filepath(pixflatname, root_dir=flatDir)
 
-	    spawn, 'mkdir -p '+plateDir	
-
-;
-;	Need to make sure we have a one-to-some match between
-;	arcs and flats 
-;	  step through arcs and pick flat with closest seqid number
-
-          newflatspot = temparcspot
-	  for i=0,numarcs-1 do begin
-	     mindist = min(abs(tempflatspot-temparcspot[i]),closestspot)
-             newflatspot[i] = tempflatspot[closestspot]
-	  endfor
-
-          ; Use reverse to check last arc first
-	  arcname = allseq[reverse(temparcspot)].name[icam]
-	  flatname = allseq[reverse(newflatspot)].name[icam]
+            spawn, 'mkdir -p '+plateDir
 
             spreduce, flatname, arcname, objname, $
-             pixflatname=filepath(pixflatname,root_dir=flatDir), $
-             plugfile=plugfile, lampfile=lampfile, $
-             indir=inputDir, plugdir=plugDir, $
-             outdir=plateDir, qadir=plateDir
+             pixflatname=pixflatname, plugfile=plugfile, lampfile=lampfile, $
+             indir=inputDir, plugdir=plugDir, outdir=plateDir, $
+             qadir=extractDir
 
-          heap_gc   ; garbage collection
+            heap_gc   ; garbage collection
          endif
 
       endfor ; End loop for camera number
 
-    endif
-      ; Combine all red+blue exposures for a given sequence
+   endif
 
-      if (docomb) then begin
+   ; Combine all red+blue exposures for a given sequence
 
-	spawn, 'mkdir -p '+combineDir	
-	startcombtime = systime(1)
+   if (docomb) then begin
 
-        for side = 1, 2 do begin
-          for i=1, 320 do begin
+      spawn, 'mkdir -p '+combineDir
+      startcombtime = systime(1)
+
+      for side=1, 2 do begin
+         for i=1, 320 do begin
 
             outputfile = 'idlout-'+string(format='(i1,a,i4.4,a,i3.3,a)',side, $
              '-',plateid,'-',i,'.fit')
@@ -196,21 +180,21 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
             expres = string(format='(a,i1,a,i3.3,a)', 's-', side, '*', i,'.fit')
             files = findfile(filepath(expres,root_dir=plateDir))
 
-	    if (files[0] EQ '') then $
-               print, 'No files found for ', i, ' side ', side $
+            if (files[0] EQ '') then $
+             print, 'No files found for ', i, ' side ', side $
             else $
-              combine2dout, files, filepath(outputfile,root_dir=combineDir), $
-               wavemin = alog10(3750.0)
+             combine2dout, files, filepath(outputfile, root_dir=combineDir), $
+              wavemin = alog10(3750.0)
          endfor
-       endfor
-       print, 'Finished combining sequence', seqid[iseq], ' in', $
-             systime(1)-startcombtime, ' seconds'
-     endif
+      endfor
+      print, 'Finished combining sequence', seqid[iseq], ' in', $
+       systime(1)-startcombtime, ' seconds'
+   endif
 
    endfor ; End loop for sequence number
 
-   device, /close
-   set_plot, 'x'
+;   device, /close
+;   set_plot, 'X'
    return
 end
 ;------------------------------------------------------------------------------

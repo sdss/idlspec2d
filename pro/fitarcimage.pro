@@ -6,7 +6,7 @@
 ;   Determine wavelength calibration from arclines
 ;
 ; CALLING SEQUENCE:
-;   fitarcimage, arc, arcinvvar, color, linelist, xnew, ycen, wset, invset, $
+;   fitarcimage, arc, arcinvvar, color, linelist, xnew, ycen, wset, $
 ;    func=func, aset=aset, ncoeff=ncoeff, lambda=lambda, $
 ;    thresh=thresh, row=row, $
 ;    xdif_lfit=xdif_lfit, xdif_tset=xdif_tset
@@ -32,7 +32,6 @@
 ;   xnew       - pixel position of lines [nfiber, nlambda]
 ;   ycen       - fiber number [nfiber, nlambda]
 ;   wset       - traceset (pix -> lambda)
-;   invset     - inverse traceset (lambda -> pix)
 ;
 ; OPTIONAL OUTPUTS:
 ;   lambda     - returns alog10(wavelength) of good lines
@@ -50,6 +49,7 @@
 ;   THRESH is unused.
 ;   TRACESET2PIX maybe returns the transpose of what is natural?
 ;   Check QA stuff at end.
+;   When constructing MX, exclude any fibers with bad (e.g., saturated) pixels.
 ;
 ; INTERNAL PROCEDURES:
 ;   tset_struc()
@@ -125,7 +125,8 @@ function fullfit, spec, linelist, aset, dcoeff, nsteps, bestcorr=bestcorr
 
    ; Loop over all coefficients except the first one
 
-   nlag = fix( dcoeff[0] / (2. * aset.coeff[1] / npix) + 1 ) > 2
+   ; Set minimum number of lags to check equal to 10 pixels
+   nlag = fix( dcoeff[0] / (2. * abs(aset.coeff[1]) / npix) + 1 ) > 10
 print, 'nlag', nlag
    lags = indgen(nlag) - fix(nlag/2)
    nsteptot = 1
@@ -144,16 +145,31 @@ print, 'nlag', nlag
       ; Construct the simulated arc spectrum
       traceset2xy, tempset, xtemp, loglambda
       model = fltarr(2*npix)
-      for iline=0, nline-1 do begin
-         qless = (logline[iline] LT loglambda)
-         iloc = (where(qless))[0]
-         if (iloc GE 1 AND iloc LT npix-1) then begin
-            dx = logline[iline] - loglambda[iloc]
-            dpix = loglambda[iloc+1] - loglambda[iloc]
-            model[iloc:iloc+1] = model[iloc:iloc+1] $
-             + intensity[iline] * [1-dx, dx] / dpix
-         endif
-      endfor
+
+      if (loglambda[1] GT loglambda[0]) then begin ; Ascending wavelengths
+         for iline=0, nline-1 do begin
+            qless = (logline[iline] LT loglambda)
+            iloc = (where(qless))[0]
+            if (iloc GE 1 AND iloc LE npix-2) then begin
+               dx = logline[iline] - loglambda[iloc]
+               dpix = loglambda[iloc+1] - loglambda[iloc]
+               model[iloc:iloc+1] = model[iloc:iloc+1] $
+                + intensity[iline] * [1-dx, dx] / dpix
+            endif
+         endfor
+      endif else begin ; Descending wavelengths
+         for iline=0, nline-1 do begin
+            qless = (logline[iline] GT loglambda)
+            iloc = (where(qless))[0]
+            if (iloc GE 1 AND iloc LE npix-2) then begin
+               dx = loglambda[iloc] - logline[iline]
+               dpix = loglambda[iloc] - loglambda[iloc+1]
+               model[iloc:iloc+1] = model[iloc:iloc+1] $
+                + intensity[iline] * [1-dx, dx] / dpix
+            endif
+         endfor
+      endelse
+
       model = convol(model, gausskern, /center, /edge_truncate)
       model = sqrt(model > 1) - 1 ; Weight by the square-root of the intensity
 
@@ -162,6 +178,10 @@ print, 'nlag', nlag
          bestcorr = corrval
          bestlambda = loglambda
          lagbest = lags[icorr]
+; PLOT ???
+splot,speccorr,xr=[0,2048]
+soplot,shift(model,-lagbest)*mean(speccorr)/mean(model),color='red'
+print,bestcorr,lagbest,tempset.coeff
       endif
 
    endfor
@@ -220,7 +240,7 @@ function fitmx, wset, lambda, xpos, nord=nord
 end
 ;------------------------------------------------------------------------------
 
-pro fitarcimage, arc, arcinvvar, color, linelist, xnew, ycen, wset, invset, $
+pro fitarcimage, arc, arcinvvar, color, linelist, xnew, ycen, wset, $
  func=func, aset=aset, ncoeff=ncoeff, lambda=lambda, thresh=thresh, row=row, $
  xdif_lfit=xdif_lfit, xdif_tset=xdif_tset
 
@@ -274,14 +294,16 @@ pro fitarcimage, arc, arcinvvar, color, linelist, xnew, ycen, wset, invset, $
       ; Give fullfit initial starting point for wavelength solutions.
 
       if (color EQ 'blue') then begin
-         acoeff = [3.68, -0.106, -0.005, 0.005]
-         dcoeff = [0.0001, 0.0005, 0.001]
-         nsteps = [5, 5, 5]
+;         acoeff = [3.6846, -0.1060, -0.0042, 0.00012] ; Blue-1 (01)
+;         acoeff = [3.7014, -0.1028, -0.0040, 0.00020] ; Blue-2 (03)
+         acoeff = [3.6930, -0.1044, -0.0041, 0.00016]
+         dcoeff = [0.0200,  0.0040,  0.0003, 0.00010]
+         nsteps = [1, 10, 5, 5]
       endif else if (color EQ 'red') then begin
-; For red-1 (01) or red-2 (02)
-         acoeff =  [ 3.8640 , 0.1022, -0.0044, -0.00024]
-         dcoeff = [ 0.0030, 0.0020,  0.00030,  0.00010]
-         nsteps = [10, 5, 5, 5]
+         ; For red-1 (04) or red-2 (02)
+         acoeff = [ 3.8640, 0.1022, -0.0044, -0.00024]
+         dcoeff = [ 0.0100, 0.0020,  0.0003,  0.00010]
+         nsteps = [1, 5, 5, 5]
       endif
 
       nacoeff = N_elements(acoeff)
@@ -291,6 +313,7 @@ pro fitarcimage, arc, arcinvvar, color, linelist, xnew, ycen, wset, invset, $
       aset.coeff = acoeff
       wset = fullfit(spec, linelist, aset, dcoeff, nsteps, $
        bestcorr=bestcorr)
+stop
 
       if (color EQ 'blue' AND bestcorr LT 0.70) then $
        print, 'Initial wavelength solution looks suspicious'

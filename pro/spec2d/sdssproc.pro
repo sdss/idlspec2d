@@ -34,6 +34,7 @@
 ;
 ; PROCEDURES CALLED:
 ;   rdss_fits()
+;   yanny_free
 ;   yanny_read
 ;
 ; REVISION HISTORY:
@@ -151,7 +152,7 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
 
    yanny_read, realconfig, pdata
    config = *pdata[0]
-   ptr_free,pdata
+   yanny_free, pdata
    config = config[ where(config.camrow EQ camrow AND config.camcol EQ camcol) ]
 
    if (cards[0] NE config.ncols OR cards[1] NE config.nrows) then $
@@ -190,7 +191,7 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
    ; Read in ECalib File
    yanny_read, realecalib, pdata
    ecalib = *pdata[0]
-   ptr_free,pdata
+   yanny_free, pdata
    ecalib = ecalib[ where(ecalib.camrow EQ camrow AND ecalib.camcol EQ camcol) ]
 
    gain = [ecalib.gain0, ecalib.gain1, ecalib.gain2, ecalib.gain3]
@@ -209,7 +210,7 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
 
    yanny_read, realbc, pdata
    bc = *pdata[0]
-   ptr_free,pdata
+   yanny_free, pdata
    
    bchere = where(bc.camrow EQ camrow AND bc.camcol EQ camcol,nbc)
    if (nbc GT 0) then bc = bc[ bchere ]
