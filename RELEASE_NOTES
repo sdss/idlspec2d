@@ -1,4 +1,10 @@
 
+v4_7_6 (Jun 9, 2001 idlspec2d only)
+
+DATA_RSYNC:   Bug fixes in SOS copy, and adaptation to sos.apo.nmsu.edu
+              (i.e. ps -elf does not work, and scp1 does not exist).
+
+-------------------------------------------------------------------------------
 v4_7_5 (Jun 8, 2001 idlspec2d only)
 
 DATA_RSYNC:   SOS should now attempt to archive data with gzip and move offsite
