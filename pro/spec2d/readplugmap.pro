@@ -32,6 +32,7 @@
 ;                 CALIBFLUX = 22.5 - 2.5*alog10(MAG), CALIBFLUX_IVAR = 0.
 ;               We apply the putative AB corrections to these fluxes
 ;               (but not to the MAG values).
+;               Also add the SFD reddening values as SFD_EBV.
 ;
 ; OUTPUTS:
 ;   plugmap   - Plugmap structure
@@ -50,6 +51,7 @@
 ;
 ; PROCEDURES CALLED:
 ;   djs_filepath()
+;   dust_getval()
 ;   splog
 ;   struct_addtags()
 ;   yanny_readone()
@@ -98,10 +100,22 @@ function readplugmap, plugfile, plugdir=plugdir, $
    if (keyword_set(calibobj)) then begin
       splog, 'Adding fields from calibObj file'
       addtags = replicate(create_struct( $
-       'CALIBFLUX', fltarr(5), 'CALIBFLUX_IVAR', fltarr(5)), nplug)
+       'CALIBFLUX', fltarr(5), $
+       'CALIBFLUX_IVAR', fltarr(5), $
+       'SFD_EBV', 0.), nplug)
       plugmap = struct_addtags(plugmap, addtags)
 
       iobj = where(strmatch(plugmap.holetype,'OBJECT*'))
+
+      ;----------
+      ; Read the SFD dust maps
+
+      euler, plugmap[iobj].ra, plugmap[iobj].dec, ll, bb, 1
+      plugmap[iobj].sfd_ebv = dust_getval(ll, bb, /interp)
+
+      ;----------
+      ; Attempt to read the calibObj photometry data
+
       tsobj = plug2tsobj(plateid, plugmap=plugmap[iobj])
 
       ; Do not use the calibObj structure if more than 10% of the non-sky
