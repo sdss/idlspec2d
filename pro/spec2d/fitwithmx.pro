@@ -22,11 +22,21 @@ function fitwithmx, invset, lambda, xpos, nord=nord
         for i=0,nline-1 do begin
            mx=pix1[*,i]
            dif=xpos[*,i]-mx
-           dum=poly_fit(x,dif,nord,yfit)
+           if (!version.release LT '5.4') then begin
+              dum=poly_fit(x,dif,nord,yfit)
+           endif else begin
+              dum=poly_fit(x,dif,nord,yfit=yfit,/double)
+           endelse
+
            res1=yfit-dif
            good=abs(res1) lt 4*stddev(res1)
            good=abs(res1) lt 4*stddev(res1*good)
-           kent=polyfitw(x,dif,good,nord,yfit)   
+           if (!version.release LT '5.4') then begin
+              kent=polyfitw(x,dif,good,nord,yfit)
+           endif else begin
+              kent=polyfitw(x,dif,good,nord,yfit,/double)
+           endelse
+
            xnew[*,i] = mx+yfit
         endfor
 

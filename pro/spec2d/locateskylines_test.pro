@@ -154,8 +154,14 @@ maxerr = 0.05 ; ???
    ; offsets
 
    fibernums = djs_laxisgen([nfiber,nskyline], iaxis=0)
-   res1 = polyfitw(float(fibernums[igood]), (xsky-xpredict)[igood], $
-    1./(gxerr[igood])^2, nord, xfit1)
+   if (!version.release LT '5.4') then begin
+      res1 = polyfitw(float(fibernums[igood]), (xsky-xpredict)[igood], $
+       1./(gxerr[igood])^2, nord, xfit1)
+   endif else begin
+      res1 = polyfitw(float(fibernums[igood]), (xsky-xpredict)[igood], $
+       1./(gxerr[igood])^2, nord, xfit1, /double)
+   endelse
+
 ;splot, xpredict[igood], (xsky-xpredict)[igood],ps=3
 ;soplot, xpredict[igood], xfit1, ps=3, color='red'
 
@@ -164,8 +170,13 @@ maxerr = 0.05 ; ???
    ; Only fit this if there are at least 3 sky lines with good S/N.
 
    if (ngoodsn GE 3) then begin
+   if (!version.release LT '5.4') then begin
       res2 = polyfitw(float(xpredict[igood]), (xsky-xpredict)[igood]-xfit1, $
        1./(gxerr[igood])^2, 1, xfit2)
+   endif else begin
+      res2 = polyfitw(float(xpredict[igood]), (xsky-xpredict)[igood]-xfit1, $
+       1./(gxerr[igood])^2, 1, xfit2, /double)
+   endelse
 ;soplot, xpredict[igood], (xsky-xpredict)[igood]-xfit1,ps=3,color='red'
 ;soplot, xpredict[igood], xfit2
    endif else begin

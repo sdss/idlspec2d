@@ -104,7 +104,12 @@ function trace320crude, fimage, invvar, ystart=ystart, nmed=nmed, $
    for iy=0, ny-1 do begin
       xcheck = xgood AND xmask[iy,*] ; Test for good fiber & good centroid
       if (total(xcheck) GT ndegree+1) then begin
-        coeff = polyfitw(xstart, xset[iy,*], xcheck, ndegree, xfit)  
+         if (!version.release LT '5.4') then begin
+            coeff = polyfitw(xstart, xset[iy,*], xcheck, ndegree, xfit)
+         endif else begin
+            coeff = polyfitw(xstart, xset[iy,*], xcheck, ndegree, xfit, /double)
+         endelse
+
         xdiff = xfit - xset[iy,*]
         ibad = where(abs(xdiff) GT maxdev)
         if (ibad[0] NE -1) then xmask[iy,ibad] = 0
@@ -127,8 +132,15 @@ function trace320crude, fimage, invvar, ystart=ystart, nmed=nmed, $
       ixbad = where(xmask[iy,*] EQ 0, nbad)
       if (nbad GT 0 AND nbad LT ntrace-ndegree) then begin
          ixgood = where(xmask[iy,*] EQ 1)
-         coeff = polyfitw(xstart, xset[iy,*], xmask[iy,*], $
-          ndegree, xfit)
+
+         if (!version.release LT '5.4') then begin
+            coeff = polyfitw(xstart, xset[iy,*], xmask[iy,*], $
+             ndegree, xfit)
+         endif else begin
+            coeff = polyfitw(xstart, xset[iy,*], xmask[iy,*], $
+             ndegree, xfit, /double)
+         endelse
+
          xset[iy,ixbad] = xfit[ixbad]
       endif
    endfor

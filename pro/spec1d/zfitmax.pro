@@ -28,7 +28,13 @@ function zfitmax, yarr, xarr, xguess=xguess, width=width, xerr=xerr, ypeak=ypeak
    if (ct LT 3) then $
     return, xguess
 
-   coeff = poly_fit(xarr[indx]-xguess, yarr[indx], 2, yfit, junk, junk, corrm)
+   if (!version.release LT '5.4') then begin
+      coeff = poly_fit(xarr[indx]-xguess, yarr[indx], 2, $
+       yfit, junk, junk, corrm)
+   endif else begin
+      coeff = poly_fit(xarr[indx]-xguess, yarr[indx], 2, $
+       yfit=yfit, covar=corrm, /double)
+   endelse
    xbest = -0.5 * coeff[1] / coeff[2] + xguess
    xerr = - 0.5 * sqrt(corrm[1,1]) / coeff[2] $
     + 0.5 * coeff[1] * sqrt(corrm[2,2]) / (coeff[2])^2

@@ -59,7 +59,11 @@ function fitsn, mag, snvec, sigrej=sigrej, maxiter=maxiter, $
     for i=0, maxiter-1 do begin
        good = where(mask)
        if (good[0] EQ -1) then return, 0
-       coeffs = polyfitw(mag, logsn, mask, 1, yfit)
+       if (!version.release LT '5.4') then begin
+          coeffs = polyfitw(mag, logsn, mask, 1, yfit)
+       endif else begin
+          coeffs = polyfitw(mag, logsn, mask, 1, yfit, /double)
+       endelse
       
        diff = logsn - yfit
        djs_iterstat, diff[good], sigrej=sigrej, sigma=sigma, mask=smask

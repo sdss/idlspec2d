@@ -174,7 +174,12 @@ pro fitredshift, fluxfft, fluxerr, starfft, starerr, $
       lowerbound = max(where(newcorr LT peak/2 AND x LT velcen))
       upperbound = min(where(newcorr LT peak/2 AND x GT velcen))
       xtemp = x[lowerbound:upperbound] - velcen
-      parabola = poly_fit(xtemp, newcorr[xtemp+velcen], 2, yfit)
+      if (!version.release LT '5.4') then begin
+         parabola = poly_fit(xtemp, newcorr[xtemp+velcen], 2, yfit)
+      endif else begin
+         parabola = poly_fit(double(xtemp), double(newcorr[xtemp+velcen]), 2, $
+          yfit=yfit)
+      endelse
 
       if (parabola[2] GE 0.0) then begin
           print, 'peak is not well fit at ', velcen

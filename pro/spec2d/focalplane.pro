@@ -194,8 +194,14 @@ pro focal1
 
       for ifiber=0, nfiber-1 do begin
 
-         coeff = poly_fit(dx, transpose(fluxarr[ifiber,iuse]), 2, $
-          yfit, junk, junk, corrm)
+         if (!version.release LT '5.4') then begin
+            coeff = poly_fit(dx, transpose(fluxarr[ifiber,iuse]), 2, $
+             yfit, junk, junk, corrm)
+         endif else begin
+            coeff = poly_fit(dx, transpose(fluxarr[ifiber,iuse]), 2, $
+             yfit=yfit, covar=corrm, /double)
+         endelse
+
          xyoffset[ifiber,iaxis] = -0.5 * coeff[1] / coeff[2]
          xyofferr[ifiber,iaxis] = - 0.5 * sqrt(corrm[1,1]) / coeff[2] $
           + 0.5 * coeff[1] * sqrt(corrm[2,2]) / (coeff[2])^2

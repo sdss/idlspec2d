@@ -68,7 +68,12 @@ function fitmeanx, wset, lambda, xpos, aveinvvar, $
       qgood = abs(rawdiff-mm) LT maxdev
 
       ; Fit to RAWDIFF as a function of fiber number
-      junk = polyfitw(xaxis, rawdiff, qgood, nord, yfit)
+      if (!version.release LT '5.4') then begin
+         junk = polyfitw(xaxis, rawdiff, qgood, nord, yfit)
+      endif else begin
+         junk = polyfitw(xaxis, rawdiff, qgood, nord, yfit, /double)
+      endelse
+
       res1 = yfit - rawdiff
 
       ; Find which points are most deviant from the fit
@@ -76,7 +81,12 @@ function fitmeanx, wset, lambda, xpos, aveinvvar, $
       djs_iterstat, res1, sigrej=4.0, maxiter=3, mask=mask
 
       ; Re-fit to RAWDIFF as a function of fiber number (rejecting outliers)
-      junk = polyfitw(xaxis, rawdiff, mask, nord, yfit)
+      if (!version.release LT '5.4') then begin
+         junk = polyfitw(xaxis, rawdiff, mask, nord, yfit)
+      endif else begin
+         junk = polyfitw(xaxis, rawdiff, mask, nord, yfit, /double)
+      endelse
+
       xfit[*,i] = yfit
 
       igood = where(mask NE 0, ngood)
