@@ -41,6 +41,7 @@
 ; PROCEDURES CALLED:
 ;   djs_arrow
 ;   djs_icolor()
+;   djs_iterstat
 ;   djs_oplot
 ;   djs_plot
 ;   djs_xyouts
@@ -84,6 +85,11 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
    plugc = plug[iobj]
    s1 = where(plugc.spectrographid EQ 1)
    s2 = where(plugc.spectrographid EQ 2)
+   if (tag_exist(plugc,'CALIBFLUX')) then begin
+      minflux = 0.1
+      plugc.mag = (22.5 - 2.5*alog10(plugc.calibflux > minflux)) $
+       * (plugc.calibflux GT minflux)
+   endif
 
    ;----------
    ; Open plot file
@@ -366,12 +372,11 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
            psym=psym, symsize=symsize, color='blue'
          if (nstd GT 0) then $
           djs_oplot, plugc[istd].mag[2], rspectro[istd] - rphoto[istd], $
-           psym=psym, symsize=symsize, color='green'
-
+           psym=psym, symsize=2*symsize, color='green'
 
          djs_oplot, [14.6], [1.6], psym=psym, symsize=symsize, color='blue'
          djs_oplot, [14.6], [1.4], psym=psym, symsize=symsize, color='red'
-         djs_oplot, [14.6], [1.2], psym=psym, symsize=symsize, color='green'
+         djs_oplot, [14.6], [1.2], psym=psym, symsize=2*symsize, color='green'
          djs_xyouts, 14.6, 1.8, 'Spectro-' + string(ispecnum,format='(i1)')
          djs_xyouts, 15.0, 1.6, 'Stellar objects (r-filter)'
          djs_xyouts, 15.0, 1.4, 'Galaxies (r-filter)'
@@ -411,9 +416,6 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
         djs_iterstat, goff[qobj], mean=goff_mean, sigma=goff_sig
         djs_iterstat, roff[qobj], mean=roff_mean, sigma=roff_sig
         djs_iterstat, ioff[qobj], mean=ioff_mean, sigma=ioff_sig
-;        gfit = gaussfit(gxhist, gyhist, nterms=3, gcoef)
-;        rfit = gaussfit(rxhist, ryhist, nterms=3, rcoef)
-;        ifit = gaussfit(ixhist, iyhist, nterms=3, icoef)
         oplot, [0, 0], [0,100], thick=4
 
         xyouts, 0.15, ymax*0.90, 'g offset = ' + $
@@ -453,8 +455,6 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
 
         djs_iterstat, groff[qobj], mean=groff_mean, sigma=groff_sig
         djs_iterstat, rioff[qobj], mean=rioff_mean, sigma=rioff_sig
-;        grfit = gaussfit(grxhist, gryhist, nterms=3, grcoef)
-;        rifit = gaussfit(rixhist, riyhist, nterms=3, ricoef)
         oplot, [0, 0], [0,100], thick=4
 
         xyouts, 0.10,  ymax*0.90, '(g-r) offset = ' + $
