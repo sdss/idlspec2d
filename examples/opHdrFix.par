@@ -152,6 +152,9 @@ spechdrfix sdR-??-00003226 EXPTIME  985
 spechdrfix sdR-??-00003576 MAPID    517701
 spechdrfix sdR-??-00003576 NAME     "'0235-51577-01'"
 
+# Observers say bad smear
+spechdrfix sdR-??-00006280 FLAVOR   "'unknown'"
+
 # The data on this image looks scrambled in a bad way on MJD 51811.
 # This would have been the smear exposure for plate 381.
 spechdrfix sdR-??-00006630 FLAVOR   "'unknown'"
