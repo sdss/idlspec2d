@@ -78,9 +78,10 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    ;----------
    ; Read in the raw science image
 
-   sdssproc, rawfile, image, invvar, hdr=hdr, color=color, camname=camname, $
+   sdssproc, rawfile, image, invvar, hdr=hdr, camname=camname, $
     nsatrow=nsatrow, fbadpix=fbadpix
-   colorband = strmid(color,0,1)
+   colorband = strmid(camname,0,1)
+   spectroid = strmid(camname,1,1)
    exptime = sxpar(hdr, 'EXPTIME')
 
    ;----------
@@ -201,8 +202,9 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    scrunch = djs_median(flux * (fluxivar GT 0), 1) 
    whopping = find_whopping(scrunch, 10000.0, whopct)
    if (whopping[0] NE -1) then begin
-      splog, 'WARNING: Whopping fiber(s) at ', whopping, $
-             '  (may have adverse affect on S/N)'
+      wstring = strcompress(string(whopping+1+(spectroid EQ '2')*320))
+      splog, 'WARNING: Whopping fiber #'  + wstring $
+       + ' (may have adverse affect on S/N)'
       wp = [whopping - 2 , whopping -1, whopping, whopping+1 , whopping+2]
       wp = (wp > 0) < (nfiber - 1)
       fibermask[wp] = fibermask[wp] OR pixelmask_bits('NEARWHOPPER')
