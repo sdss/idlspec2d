@@ -152,7 +152,7 @@
  * been true, that you might have a platform with 32-bit IDL_MEMINTs
  * and a 64-bit long type.
  */
-#if defined(ALPHA_OSF) || defined(SUN_64) || defined(LINUX_ALPHA) || defined(HPUX_64)
+#if defined(ALPHA_OSF) || defined(SUN_64) || defined(LINUX_ALPHA) || defined(HPUX_64) || defined(sgi)
 #define LONG_NOT_32		/* Can be used to configure code */
 #endif
 
@@ -348,7 +348,7 @@ typedef IDL_ULONG IDL_HVID;
  *
  * MEMINT must always be a signed type.
  */
-#if defined(ALPHA_OSF) || defined(SUN_64) || defined(LINUX_ALPHA) || defined(HPUX_64)
+#if defined(ALPHA_OSF) || defined(SUN_64) || defined(LINUX_ALPHA) || defined(HPUX_64) || defined(sgi)
 #define IDL_MEMINT_64
 #define IDL_TYP_MEMINT	 IDL_TYP_LONG64
 #define IDL_TYP_UMEMINT	 IDL_TYP_ULONG64
