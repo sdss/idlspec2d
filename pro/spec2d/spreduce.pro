@@ -179,7 +179,13 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       splog, 'Reading object ', objname[iobj]
       sdssproc, objname[iobj], image, invvar, indir=indir, hdr=objhdr, $
        pixflatname=pixflatname, spectrographid=spectrographid, color=color, $
-       ecalibfile=ecalibfile, minflat = 0.5, maxflat=1.5
+       ecalibfile=ecalibfile, minflat=0.5, maxflat=1.5, $
+       nsatrow=nsatrow, fbadpix=fbadpix
+
+      ;-----
+      ; Decide if this science exposure is bad
+
+      qbadsci = reject_science(image, objhdr, nsatrow=nsatrow, fbadpix=fbadpix)
 
       ;----------
       ; Construct the best flat for this object from all of the reduced
@@ -194,7 +200,11 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       sxaddpar, objhdr, 'CARTID', long(yanny_par(hdrplug, 'cartridgeId')), $
              'Cartridge used in this plugging', after='TILEID'
 
-      if (NOT keyword_set(bestflat)) then begin
+      if (qbadsci) then begin
+
+         splog, 'ABORT: Science exposure is bad (saturated?)'
+
+      endif else if (NOT keyword_set(bestflat)) then begin
 
          splog, 'ABORT: No good flats (saturated?)'
 
