@@ -534,5 +534,35 @@ templates/spEigenStar-52374.fits -text svneol=unset#unset
 templates/spEigenVdisp.fits -text svneol=unset#unset
 templates/spEigenVstnd.fits -text svneol=unset#unset
 templates/spLRG-52928.fits -text
+templates/ssp_1.4Gyr_z008.spec -text
+templates/ssp_1.4Gyr_z02.spec -text
+templates/ssp_1.4Gyr_z05.spec -text
+templates/ssp_100Myr_z008.spec -text
+templates/ssp_100Myr_z02.spec -text
+templates/ssp_100Myr_z05.spec -text
+templates/ssp_11Gyr_z008.spec -text
+templates/ssp_11Gyr_z02.spec -text
+templates/ssp_11Gyr_z05.spec -text
+templates/ssp_2.5Gyr_z008.spec -text
+templates/ssp_2.5Gyr_z02.spec -text
+templates/ssp_2.5Gyr_z05.spec -text
+templates/ssp_25Myr_z008.spec -text
+templates/ssp_25Myr_z02.spec -text
+templates/ssp_25Myr_z05.spec -text
+templates/ssp_290Myr_z008.spec -text
+templates/ssp_290Myr_z02.spec -text
+templates/ssp_290Myr_z05.spec -text
+templates/ssp_5Gyr_z008.spec -text
+templates/ssp_5Gyr_z02.spec -text
+templates/ssp_5Gyr_z05.spec -text
+templates/ssp_5Myr_z008.spec -text
+templates/ssp_5Myr_z02.spec -text
+templates/ssp_5Myr_z05.spec -text
+templates/ssp_640Myr_z008.spec -text
+templates/ssp_640Myr_z02.spec -text
+templates/ssp_640Myr_z05.spec -text
+templates/ssp_900Myr_z008.spec -text
+templates/ssp_900Myr_z02.spec -text
+templates/ssp_900Myr_z05.spec -text
 ups/Makefile -text
 ups/idlspec2d.table -text
