@@ -82,66 +82,65 @@ pro fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
 
    for ifile = 0, nfiles - 1 do begin
  
-   if (bsmearfile EQ bscifile[ifile] AND $
-       rsmearfile EQ rscifile[ifile]) then begin
-      ;----------
-      ; Special case: If the science image and smear image is the same,
-      ; then force their ratio to be unity.
-
       fitimg = smearflux*0.0 + 1.0
       xy2traceset, wave, fitimg, corrset, ncoeff=ncoeff
 
       corrset.coeff[0,*] = 1.0
       corrset.coeff[1:*,*] = 0.0
 
-   endif else begin
+   ;----------
+   ; Special case: If the science image and smear image is the same,
+   ; then force their ratio to be unity.
 
-   bfit = bwave # replicate(0,nfiber)
-   bmask = bwave # replicate(0,nfiber)
-   bsn = fltarr(nfiber) 
-   checkblue = 0
+     if (NOT (bsmearfile EQ bscifile[ifile] AND $
+          rsmearfile EQ rscifile[ifile])) then begin
 
-   if bscifile[ifile] NE '' then begin
-     bsciflux = mrdfits(bscifile[ifile],0)
-     bsciivar = mrdfits(bscifile[ifile],1)
-     bscimask = mrdfits(bscifile[ifile],2)
-     bsciset  = mrdfits(bscifile[ifile],3)
-     traceset2xy, bsciset, xx, bsciloglam
+       bfit = bwave # replicate(0,nfiber)
+       bmask = bwave # replicate(0,nfiber)
+       bsn = fltarr(nfiber) 
+       checkblue = 0
 
-     bfit = median_rebin(bsciflux, bsciivar, bsciloglam, brange, $
-           mask=bmask)
-     bsn = djs_median(bsciflux * sqrt(bsciivar),1)
-     checkblue = 1
+       if bscifile[ifile] NE '' then begin
+         bsciflux = mrdfits(bscifile[ifile],0)
+         bsciivar = mrdfits(bscifile[ifile],1)
+         bscimask = mrdfits(bscifile[ifile],2)
+         bsciset  = mrdfits(bscifile[ifile],3)
+         traceset2xy, bsciset, xx, bsciloglam
 
-   endif else $
-     splog, 'WARNING: no blue science frame for ', corrfile[ifile]
+         bfit = median_rebin(bsciflux, bsciivar, bsciloglam, brange, $
+             mask=bmask)
+         bsn = djs_median(bsciflux * sqrt(bsciivar),1)
+         checkblue = 1
+
+       endif else $
+         splog, 'WARNING: no blue science frame for ', corrfile[ifile]
        
  
-   rfit = rwave # replicate(0,nfiber)
-   rmask = rwave # replicate(0,nfiber)
-   rsn = fltarr(nfiber) 
-   checkred = 0
+       rfit = rwave # replicate(0,nfiber)
+       rmask = rwave # replicate(0,nfiber)
+       rsn = fltarr(nfiber) 
+       checkred = 0
 
-   if rscifile[ifile] NE '' then begin
+       if rscifile[ifile] NE '' then begin
 
-     rsciflux = mrdfits(rscifile[ifile],0)
-     rsciivar = mrdfits(rscifile[ifile],1)
-     rscimask = mrdfits(rscifile[ifile],2)
-     rsciset  = mrdfits(rscifile[ifile],3)
-     traceset2xy, rsciset, xx, rsciloglam
+         rsciflux = mrdfits(rscifile[ifile],0)
+         rsciivar = mrdfits(rscifile[ifile],1)
+         rscimask = mrdfits(rscifile[ifile],2)
+         rsciset  = mrdfits(rscifile[ifile],3)
+         traceset2xy, rsciset, xx, rsciloglam
 
-     rfit = median_rebin(rsciflux, rsciivar, rsciloglam, rrange, $
+         rfit = median_rebin(rsciflux, rsciivar, rsciloglam, rrange, $
            mask=rmask)
-     rsn = djs_median(rsciflux * sqrt(rsciivar),1)
-     checkred = 1
+         rsn = djs_median(rsciflux * sqrt(rsciivar),1)
+         checkred = 1
 
-   endif else $
-     splog, 'WARNING: no red science frame for ', corrfile[ifile]
+       endif else $
+         splog, 'WARNING: no red science frame for ', corrfile[ifile]
 
-   scisnmed = transpose([[bsn],[rsn]])
+       scisnmed = transpose([[bsn],[rsn]])
 
-   sciflux = [bfit,rfit]
-   sciivar = [bmask,rmask]
+       sciflux = [bfit,rfit]
+       sciivar = [bmask,rmask]
 
      ;-------------------------------------------------------------
      ;   3 levels of S/N
@@ -149,74 +148,82 @@ pro fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
      ;    level 2:  Med  S/N, Scaled Spectrophoto solution
      ;    level 3:  Low  S/N, median spectrophoto solution
 
-     highsn = where((scisnmed[0,*] GT 2.5 OR checkblue EQ 0) $
+       highsn = where((scisnmed[0,*] GT 2.5 OR checkblue EQ 0) $
                AND  (scisnmed[1,*] GT 5.0 OR checkred EQ 0) $
                AND  smearsnmed[0,*] GT 1.0 $
                AND  smearsnmed[1,*] GT 1.0)
 
-     if highsn[0] EQ -1 then return
+       spectrophoto = -1L
+       fibersn = lonarr(nfiber) + 3
 
-     spectrophoto = where(strtrim(plugmap[highsn].objtype,2) EQ $
+       if highsn[0] NE -1 then begin
+
+         spectrophoto = where(strtrim(plugmap[highsn].objtype,2) EQ $
                            'SPECTROPHOTO_STD', nspectrophoto)
 
-     if spectrophoto[0] EQ -1 then begin
-        splog, "ABORT: No spectrophoto with high S/N"
-        return
-     endif
+         if spectrophoto[0] EQ -1 then $
+              spectrophoto = where(strtrim(plugmap[highsn].objtype,2) EQ $
+                           'REDDEN_STD', nspectrophoto)
 
-     spectrophoto = highsn[spectrophoto]
+         fibersn[highsn] = 1
+       endif
 
-     fibersn = lonarr(nfiber) + 3
-     fibersn[highsn] = 1
+       if spectrophoto[0] EQ -1 then begin
+             splog, "WARNING: No spectrophoto with high S/N"
+       endif else begin
 
-     medsn = where((scisnmed[0,*] GT 1.0 $
+         spectrophoto = highsn[spectrophoto]
+
+
+         medsn = where((scisnmed[0,*] GT 1.0 $
                 OR scisnmed[1,*] GT 2.0 ) $
                AND  (smearsnmed[0,*] GT 0.2 $
                 OR smearsnmed[1,*] GT 0.5) AND fibersn NE 1) 
 
-     if medsn[0] NE -1 then fibersn[medsn] = 2
+         if medsn[0] NE -1 then fibersn[medsn] = 2
 
-     xy2traceset, wave, smearflux, highsnset, $
-        invvar=smearivar, ncoeff=ncoeff, inputfunc=sciflux, $
-        lower = 3, upper = 3
+         xy2traceset, wave, smearflux, highsnset, $
+            invvar=smearivar, ncoeff=ncoeff, inputfunc=sciflux, $
+            lower = 3, upper = 3
 
-     traceset2xy, highsnset, wave, highsnimage 
+         traceset2xy, highsnset, wave, highsnimage 
 
-     medianset = highsnset
-     finalset  = highsnset
+         medianset = highsnset
+         finalset  = highsnset
 
-     if nspectrophoto EQ 1 then begin
-         mediancoeff = highsnset.coeff[*,spectrophoto] 
-         splog, "WARNING: Only 1 spectrophoto with high S/N"
-     endif else mediancoeff = djs_median(highsnset.coeff[*,spectrophoto],2) 
+         if nspectrophoto EQ 1 then begin
+           mediancoeff = highsnset.coeff[*,spectrophoto] 
+           splog, "WARNING: Only 1 spectrophoto with high S/N"
+         endif else mediancoeff = djs_median(highsnset.coeff[*,spectrophoto],2) 
 
-     medianset.coeff = mediancoeff # replicate(1,nfiber)
+         medianset.coeff = mediancoeff # replicate(1,nfiber)
 
-     traceset2xy, medianset, wave, medianimage
+         traceset2xy, medianset, wave, medianimage
 
-     smearnormflux = smearflux  
-     smearnormivar = smearivar
-     divideflat, smearnormflux, smearnormivar, medianimage 
+         smearnormflux = smearflux  
+         smearnormivar = smearivar
+         divideflat, smearnormflux, smearnormivar, medianimage 
 
-     if medsn[0] NE -1 then begin     
+         if medsn[0] NE -1 then begin     
  
-       xy2traceset, wave, smearnormflux, medsnset, $
-          invvar=smearnormivar, ncoeff=1, inputfunc=sciflux, $
-          lower = 3, upper = 3
+           xy2traceset, wave, smearnormflux, medsnset, $
+            invvar=smearnormivar, ncoeff=1, inputfunc=sciflux, $
+            lower = 3, upper = 3
 
-       finalset.coeff[*,medsn] = mediancoeff # medsnset.coeff[0,medsn]
+           finalset.coeff[*,medsn] = mediancoeff # medsnset.coeff[0,medsn]
+         endif
+
+         lowsn = where(fibersn EQ 3, nlowsn)
+         if nlowsn GT 0 then $
+           finalset.coeff[*,lowsn] = mediancoeff # replicate(1,nlowsn)
+
+         corrset = finalset
+         traceset2xy, corrset, wave, corrimage
+
+       endelse
      endif
 
-     lowsn = where(fibersn EQ 3, nlowsn)
-     if nlowsn GT 0 then $
-         finalset.coeff[*,lowsn] = mediancoeff # replicate(1,nlowsn)
-
-     corrset = finalset
-     traceset2xy, corrset, wave, corrimage
-
-   endelse
-
-   mwrfits, corrset, corrfile[ifile], /create
+     mwrfits, corrset, corrfile[ifile], /create
 
    endfor
 
