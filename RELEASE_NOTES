@@ -67,6 +67,11 @@ READSPEC: Add TOPDIR input keyword and ZLINE,LINEFLUX outputs.
             Use DIMS0 keyword in primary header of spZall,spZline files
             if it exists to determine the dimensions of [NPER,NOBJECT]
             multi-dimensional arrays.
+SKYSUBTRACT: Trigger a warning if the airmass exceeds 2.5 (note this proc
+            is also called by SoS).
+SPADD_GUIDERINFO: Fix crash condition when very little guiding info
+            and indexing goes negative.  Add NGUIDE to header.
+SPCOADD_FRAMES: Total the NGUIDE header keywords.
 SPECLINEFIT: Major re-organization of this procedure, allowing one to either
             pass a plate file name, or all the input arrays (as is now done
             from SPREDUCE1D).  Now fit to emission lines for all object
@@ -101,6 +106,8 @@ emlines.dat: Add Ly_alpha,N_V,C_IV,He_II,C_III] for QSOs.
             lines and other lines to have the same redshift.  One such
             example where the Balmer lines have a different (narrower!)
             width is 406/52238-362.
+opBC-50000.par,opBC-51813.par: Extended two bad columns in r1 to the top
+            of the CCD.
 opHdrFix.par: Declare data bad on MJD 52336-52337 due to spectrograph
             mechanicals problems, and other problems from 52312-52337.
 opLimits.par: Add error values for FLAT/XSIGMA and ARC/DISPSIGMA.
