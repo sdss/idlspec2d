@@ -54,6 +54,7 @@
 ; PROCEDURES CALLED:
 ;   djs_oplot
 ;   djs_plot
+;   djs_reject()
 ;   fibermask_bits()
 ;   func_fit()
 ;   bspline_valu()
@@ -128,11 +129,11 @@ function telluric_corr,flux, fluxivar, wset, plugsort, $
 
    qphoto = strtrim(plugsort.objtype,2) EQ 'SPECTROPHOTO_STD' $
         OR strtrim(plugsort.objtype,2) EQ 'REDDEN_STD'
-   qgfib = fibermask NE fibermask_bits('NOPLUG') $
-       AND fibermask NE fibermask_bits('BADTRACE') $
-       AND fibermask NE fibermask_bits('BADFLAT') $
-       AND fibermask NE fibermask_bits('NEARWHOPPER') $
-       AND fibermask NE fibermask_bits('BADARC')
+   qgfib = ((fibermask AND fibermask_bits('NOPLUG')) EQ 0) $
+       AND ((fibermask AND fibermask_bits('BADTRACE')) EQ 0) $
+       AND ((fibermask AND fibermask_bits('BADFLAT')) EQ 0) $
+       AND ((fibermask AND fibermask_bits('NEARWHOPPER')) EQ 0) $
+       AND ((fibermask AND fibermask_bits('BADARC')) EQ 0)
    tindx = where(qphoto AND qgfib, ntell)
 
    splog, 'Number of telluric standards = ', ntell
@@ -252,10 +253,25 @@ function telluric_corr,flux, fluxivar, wset, plugsort, $
                xmin = min(tellloglam[indc,itell], max=xmax)
                xfit = (tellloglam[*,itell] - xmin) / (xmax - xmin)
 
-; IN THE FOLLOWING, WE SHOULD USE REJECTION IN THE FIT!!! ???
-               res = func_fit(xfit[indc], tellflux[indc,itell], $
-                ncoeff, function_name='flegendre')
-               continuum = flegendre(xfit, ncoeff) # res
+               ; Iterate the fit using rejection at the 6-sigma level.
+               ; At most, reject 25% of the points.
+               iiter = 0
+               maxiter = 5
+               qdone = 0
+               inmask = tellivar[indc,itell] NE 0
+               outmask = 0
+               while (NOT keyword_set(qdone) AND iiter LE maxiter) do begin
+                  res = func_fit(xfit[indc], tellflux[indc,itell], $
+                   ncoeff, invvar=tellivar[indc,itell], $
+                   function_name='flegendre')
+                  continuum = flegendre(xfit, ncoeff) # res
+
+                  qdone = djs_reject(continuum[indc] - tellflux[indc,itell], $
+                   tellivar[indc,itell], lower=6, upper=6, $
+                   maxrej=ceil(0.25*n_elements(indc)), $
+                   inmask=inmask, outmask=outmask)
+                  iiter = iiter + 1
+               endwhile
 
             endelse
 
