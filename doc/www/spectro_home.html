@@ -291,13 +291,13 @@ To obtain the data from Princeton you will need access to the "alfred"
 account.  Send your SSH public key (in the file ".ssh/identity.pub") to
 <A HREF="mailto:schlegel@astro.princeton.edu">schlegel@astro.princeton.edu</A>.
 Once you have been added to the authorized_keys list for user "alfred",
-then you can copy all 80 Gb of outputs with:
+then you can copy all 160 Gb of outputs (as of Feb 2002) with:
 <DL><DD><PRE>
    rsync -arv --rsh="ssh" \
     alfred@sdssdata.princeton.edu:/u/dss/spectro/ .
 </PRE></DD></DL>
 Most people will only want the summary files, combined spectra, 1D outputs,
-and log files (about 25 Gb):
+and log files (about 35 Gb as of Feb 2002):
 <DL><DD><PRE>
    rsync -arv --rsh="ssh" --include "*/" \
     --include "platelist*" --include "spAll*" \ 
@@ -370,13 +370,13 @@ rsync -arv --rsh="ssh" \
 <P>
 Finally, you could set up a "cron" job to update your copy of the data on
 a daily basis.  This would be done by creating a cron table file (call it
-"cron.table" in this example).  If you want to copy all 80 Gb of spectro
+"cron.table" in this example).  If you want to copy all 160 Gb of spectro
 outputs, this file would look like:
 <DL><DD><PRE>
 15 3 * * * /usr/bin/rsync -arv --rsh="ssh" alfred@sdssdata.princeton.edu:/u/dss/spectro/ /my/directory
 </PRE></DD></DL>
 replacing "/my/directory" with your local data-directory name.
-Most people will want only the following files (25 Gb of data):
+Most people will want only the following files (35 Gb of data):
 <DL><DD><PRE>
 15 3 * * * /usr/bin/rsync -arv --rsh="ssh" --include "*/" --include "platelist*" --include "spAll*" --include "*spZ*.fits" --include "spPlate*.fits" --include "*.log" --include "*.ps" --exclude "*" alfred@sdssdata.princeton.edu:/u/dss/spectro/ /my/directory
 </PRE></DD></DL>
