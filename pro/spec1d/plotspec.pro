@@ -228,7 +228,7 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
     else xtitle = 'Observed Wavelength [Ang]'
    if (keyword_set(psfile)) then begin
       djs_plot, wave, objflux, xrange=xrange, yrange=yrange, $
-       xtitle=xtitle, ytitle=TeXtoIDL('Flux [10^{-17} erg/cm/s/Ang]'), $
+       xtitle=xtitle, ytitle=TeXtoIDL('Flux [10^{-17} erg/s/cm^2/Ang]'), $
        title=title, charsize=csize, _EXTRA=KeywordsForSplot, /xstyle, /ystyle
       if (NOT keyword_set(noerr)) then $
        djs_oplot, wave, objerr, color='red', _EXTRA=KeywordsForSplot
