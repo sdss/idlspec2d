@@ -79,13 +79,13 @@ function smooth_superflat, superflatset, airset, plottitle=plottitle
    endif
 
    fullfit = bspline_valu(loglam, smoothset)
-   ratio = model/(yfit + (yfit LE 0))
-   ibad = where(yfit LE 0 OR inmask EQ 0, nbad)
-   if (nbad GT 0) then ratio[ibad] = 1.
-   area = total(ratio-1)/sqrt(nsparse)
+   ratiodiff = model/(yfit + (yfit LE 0)) - 1.
+   ratiodiff = ratiodiff * (yfit GT 0)
+   if (keyword_set(inmask)) then ratiodiff = ratiodiff * (inmask NE 0)
+   area = total(ratiodiff)/sqrt(nsparse)
    sarea = string(area, format='(f8.4)')
 
-   if total(ratio-1)/sqrt(nsparse) GT 0.01 then $
+   if total(ratiodiff)/sqrt(nsparse) GT 0.01 then $
     splog, 'WARNING: Possible Argon lines in superflat, flux-fraction=' + sarea
    
    ;----------
@@ -99,7 +99,7 @@ function smooth_superflat, superflatset, airset, plottitle=plottitle
 
      djs_plot, wave, model, title=plottitle, xchars=0.001,/xs,xrange=xrange
      djs_oplot, wave, yfit, color='red'
-     djs_plot, wave, ratio, /ynozero, $
+     djs_plot, wave, ratiodiff + 1, /ynozero, $
       ymargin=[4,-4], /xstyle, xrange=xrange, xtitle='Wavelength (\AA)'
      djs_oplot, wave, yfit-yfit+1
      xyouts, [0.05], [0.5], 'Fraction of flux in emission lines= '+sarea+' ', $
