@@ -50,16 +50,16 @@ function spec_param_str, tsObjfile, ver1Ddir, list = list
                        ra: 0.0, dec: 0.0, $  
                        l: 0.0, b: 0.0, $        
                        objc_rowc: 0.0, objc_colc: 0.0, $
-                       mag_psf: fltarr(5), mag_psferr: fltarr(5), $
+                       psfcounts: fltarr(5), psfcountserr: fltarr(5), $
                        fracpsf: fltarr(5), $
-                       mag_fiber: fltarr(5), mag_fibererr: fltarr(5), $ 
-                       mag_petro: fltarr(5), mag_petroerr: fltarr(5), $
+                       fibercounts: fltarr(5), fibercountserr: fltarr(5), $ 
+                       petrocounts: fltarr(5), petrocountserr: fltarr(5), $
                        petrorad: fltarr(5), petroraderr: fltarr(5), $ 
                        petror50: fltarr(5), petror50err: fltarr(5), $ 
                        petror90: fltarr(5), petror90err: fltarr(5), $  
-                       mag_model: fltarr(5), mag_modelerr: fltarr(5), $
-                       mag_dev: fltarr(5), mag_deverr: fltarr(5), $
-                       mag_exp: fltarr(5), mag_experr: fltarr(5), $
+                       counts_model: fltarr(5), counts_modelerr: fltarr(5), $
+                       counts_dev: fltarr(5), counts_deverr: fltarr(5), $
+                       counts_exp: fltarr(5), counts_experr: fltarr(5), $
                        dev_l:  fltarr(5), exp_l: fltarr(5), $
                        r_dev: fltarr(5), r_deverr: fltarr(5), $
                        r_exp: fltarr(5), r_experr: fltarr(5), $
@@ -69,8 +69,8 @@ function spec_param_str, tsObjfile, ver1Ddir, list = list
                        primtarget:0L, sectarget:0L, $
                        flags: lonarr(5), flags2: lonarr(5), $ 
                        firstint: 0.0, $
-		       spectype: ' ', $  	
-                       specprimtar: 0L, specsectar: 0L, $
+		       type: ' ', $  	
+                       primtar: 0L, sectar: 0L, $
                        z_1Dclass: 0L, z_1Dstatus: 0L, $
                        z_1Dwarning: 0L,  $
                        z_1D: 0.0, z_1Derr: 0.0, z_1Dconf: 0.0, $
