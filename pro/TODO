@@ -61,6 +61,7 @@
     total exposure time is exposure time of all / 2
 
 * For the calibration op*.par files, make versions based upon MJD in /examples
+    --- opECalib-51574.par  is up to date with latest gains.
 
 * Make bad pixel masks for "opBC.par" file.
   Include bad pixels from pixflat.

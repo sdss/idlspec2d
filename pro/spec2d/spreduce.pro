@@ -184,11 +184,12 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
       ;------------------
       ; Read object image
-
+      ;   Minflat will mask all pixels with low 2d pixelflat values
+ 
       splog, 'Reading object ', objname[iobj]
       sdssproc, objname[iobj], image, invvar, indir=indir, hdr=objhdr, $
        pixflatname=pixflatname, spectrographid=spectrographid, color=color, $
-       ecalibfile=ecalibfile
+       ecalibfile=ecalibfile, minflat = 0.2
        
       ;-----
       ; Construct the best flat for this object from all of the reduced

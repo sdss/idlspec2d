@@ -9,7 +9,7 @@
 ;   sdssproc, infile, [image, invvar, indir=, $
 ;    outfile=, varfile=, nsatrow=, fbadpix=, $
 ;    hdr=hdr, configfile=, ecalibfile=, bcfile=, $
-;    pixflatname=, spectrographid=, color= ]
+;    pixflatname=, minflat=, spectrographid=, color= ]
 ;
 ; INPUTS:
 ;   infile     - Raw SDSS file name
@@ -25,6 +25,8 @@
 ;   configfile - Default to "opConfig.par"
 ;   ecalibfile - Default to "opECalib.par"
 ;   bcfile     - Default to "opBC.par"
+;   minflat    - Minimum values allowed for pixflat
+;                   (lower values of pixflat are set to 0 invvar)
 ;   pixflatname- Name of pixel-to-pixel flat, produced with SPFLATTEN.
 ;
 ; OUTPUTS:
@@ -75,7 +77,8 @@
 pro sdssproc, infile, image, invvar, indir=indir, $
  outfile=outfile, varfile=varfile, nsatrow=nsatrow, fbadpix=fbadpix, $
  hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, bcfile=bcfile, $
- pixflatname=pixflatname, spectrographid=spectrographid, color=color
+ pixflatname=pixflatname, spectrographid=spectrographid, color=color, $
+ minflat=minflat
 
    if (N_params() LT 1) then begin
       print, 'Syntax - sdssproc, infile, [image, invvar, indir=, $'
@@ -94,7 +97,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
 
    pp = getenv('IDLSPEC2D_DIR')+'/examples'
 
-   junk = findfile(configfile, count=ct)
+   tempname = findfile(configfile, count=ct)
    if (ct NE 1) then begin
      tempname = findfile(filepath(configfile, root_dir=pp), count=ct)
    endif
@@ -203,7 +206,8 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    config = config[i[0]]
 
    if (naxis[0] NE config.ncols OR naxis[1] NE config.nrows) then $
-      message, 'Config file dimensions do not match raw image'
+      splog, 'WARNING! Config file dimensions do not match raw image'
+   
 
    qexist = [config.amp0, config.amp1, config.amp2, config.amp3]
 
@@ -240,6 +244,13 @@ pro sdssproc, infile, image, invvar, indir=indir, $
     config.sccdrowsec2, config.sccdrowsec3]
    scol = [config.sccdcolsec0, config.sccdcolsec1, $
     config.sccdcolsec2, config.sccdcolsec3]
+
+   if (naxis[1] EQ 2049) then begin
+     splog, 'WARNING: NROWS is 2049, adjusting config entries' 
+     sdatarow = sdatarow - 20
+     noverrow = 1
+   endif
+    
 
    ; Read in ECalib File
    yanny_read, realecalib, pdata
@@ -513,7 +524,8 @@ bcmask = 0
       pixflat = readfits(fullname[0])
 
       if (readimg) then image = image / pixflat
-      if (readivar) then invvar = invvar * pixflat^2
+      if (NOT keyword_set(minflat)) then minflat = 0.0
+      if (readivar) then invvar = invvar * pixflat^2 * (pixflat GT minflat)
 pixflat = 0
    endif
 

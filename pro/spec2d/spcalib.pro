@@ -129,7 +129,7 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
       ;---------------------------------------------------------------------
 
       splog, 'Reading flat ', flatname[iflat]
-      sdssproc, flatname[iflat], flatimg, flativar, indir=indir,$
+      sdssproc, flatname[iflat], flatimg, flativar, indir=indir, $
        hdr=flathdr, pixflatname=pixflatname, nsatrow=nsatrow, fbadpix=fbadpix,$
        ecalibfile=ecalibfile
 

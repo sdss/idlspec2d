@@ -67,9 +67,9 @@ end
 ;------------------------------------------------------------------------------
 
 pro combine2dout, filenames, outputroot, spectrographid, $
- binsz, zeropoint, nord=nord, $
- fullspec=fullspec, fullwave=fullwave, wavemin=wavemin, $
- bkptbin=bkptbin, everyn=everyn, display=display, window=window
+ binsz, zeropoint, nord=nord, wavemin=wavemin, $
+ bkptbin=bkptbin, everyn=everyn, display=display, window=window, $
+ individual=individual
 
    ; Initial binning was 69 km/s per pixel (with a sigma of 1.0 pixel)
    ; 69.02977415 km/s is log lambda 10^-4
@@ -247,7 +247,6 @@ pro combine2dout, filenames, outputroot, spectrographid, $
       fullfibermask = fibermask[*,i]
 
       print, 'FULL fibermask ', fullfibermask
-      help, fullpixelmask
 
       outputfile = outputroot+'-' $
        +string(format='(i3.3,a)',i+1+(spectrographid-1)*320)+'.fits'

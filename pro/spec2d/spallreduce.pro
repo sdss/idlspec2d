@@ -252,7 +252,7 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
 
                for i=0, nfile-1 do splog, 'Combine file ', files[i]
                combine2dout, files, filepath(outputroot, root_dir=combineDir), $
-                side, wavemin=alog10(3750.0), window=100
+                side, wavemin=alog10(3750.0), window=100, /individual
             endif
 
          endfor

@@ -395,29 +395,29 @@ endif
             minw=3.94, maxw=3.97, lower=5.0, upper=5.0, ncontbkpts=5, $
             fibermask=fibermask)
 
-      if (keyword_set(contwave1)) then begin
-         !p.multi = [0,1,3]
-         djs_plot,10^contwave1,contflux1,ps=3,xr=10^[3.82,3.87],yr=[0.0,1.5], $
-              ymargin=[2,4], charsize=1.6, xstyle=1, $ 
-              xtitle='\lambda [A]', ytitle='Flux [electrons]', $
-              title = 'Telluric correction for '+objname
-         djs_oplot,10^contwave1,slatec_bvalu(contwave1,telluricbkpt1, $
+         if (keyword_set(contwave1)) then begin
+            !p.multi = [0,1,3]
+            djs_plot, 10^contwave1, contflux1, ps=3, xr=10^[3.82,3.87], $
+                 yr=[0.0,1.5], ymargin=[2,4], charsize=1.6, xstyle=1, $ 
+                 xtitle='\lambda [A]', ytitle='Flux [electrons]', $
+                 title = 'Telluric correction for '+objname
+            djs_oplot,10^contwave1,slatec_bvalu(contwave1,telluricbkpt1, $
                       telluriccoeff1),color='red'
 
-         djs_plot,10^contwave1,contflux1,ps=3,xr=10^[3.87,3.92],yr=[0.0,1.5], $
-              ymargin=[2,2], charsize=1.6, xstyle=1, $ 
-              xtitle='\lambda [A]', ytitle='Flux [electrons]'
-         djs_oplot,10^contwave1,slatec_bvalu(contwave1,telluricbkpt1, $
+            djs_plot, 10^contwave1, contflux1, ps=3, xr=10^[3.87,3.92], $
+                 yr=[0.0,1.5], ymargin=[2,2], charsize=1.6, xstyle=1, $ 
+                 xtitle='\lambda [A]', ytitle='Flux [electrons]'
+            djs_oplot,10^contwave1,slatec_bvalu(contwave1,telluricbkpt1, $
                       telluriccoeff1),color='red'
 
-         djs_plot,10^contwave2,contflux2,ps=3,yr=[0.0,1.5], $
-              ymargin=[4,2], charsize=1.6, xstyle=1, $ 
-              xtitle='\lambda [A]', ytitle='Flux [electrons]'
-         djs_oplot,10^contwave2,slatec_bvalu(contwave2,telluricbkpt2, $
+            djs_plot,10^contwave2,contflux2,ps=3,yr=[0.0,1.5], $
+                 ymargin=[4,2], charsize=1.6, xstyle=1, $ 
+                 xtitle='\lambda [A]', ytitle='Flux [electrons]'
+            djs_oplot,10^contwave2,slatec_bvalu(contwave2,telluricbkpt2, $
                       telluriccoeff2),color='red'
 
-         !p.multi = 0
-      endif
+            !p.multi = 0
+         endif
 
          telluricfactor = telluric1 * telluric2
          divideflat, flambda, flambdaivar, telluricfactor, minval=0.1
@@ -445,6 +445,12 @@ endif
       mwrfits, vacset, outname
       mwrfits, pixelmask, outname
       mwrfits, fibermask, outname
+      mwrfits, fluxfactor, outname
+
+      ;--------------------------------------------------------------------
+      ; Add telluricfactor if red
+      ;
+      if (color EQ 'red') then mwrfits, telluricfactor, outname
 
    return
 end

@@ -114,6 +114,7 @@ function findecalib, mjd, indir
    for i=0,nfiles-1 do begin
      yanny_read, files[i], info, hdr=hdr
      mjdlist[i] = yanny_par(hdr, 'mjd')
+     yanny_free, info
    endfor 
 
    diff = mjd - mjdlist 
