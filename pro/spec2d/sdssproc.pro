@@ -9,7 +9,7 @@
 ;   sdssproc, infile, [image, invvar, indir=, $
 ;    outfile=, varfile=, nsatrow=, fbadpix=, $
 ;    hdr=hdr, configfile=, ecalibfile=, bcfile=, $
-;    /applybias, /applypixflat, /silent, minflat=, maxflat=, $
+;    /applybias, /applypixflat, /silent, /do_lock, minflat=, maxflat=, $
 ;    spectrographid=, color=, camname= ]
 ;
 ; INPUTS:
@@ -31,6 +31,8 @@
 ;   applybias  - Apply 2-D bias image.
 ;   applypixflat- Apply 2-D pixel-to-pixel flat (after subtracting bias).
 ;   silent     - If set, then don't output any text.
+;   do_lock    - If set, then lock the "sdHdrFix-$MJD.par" file
+;                using DJS_LOCKFILE().
 ;   minflat    - Minimum values allowed for pixflat; pixels with the
 ;                flat out of range are masked; default to 0.
 ;   maxflat    - Maximum values allowed for pixflat; pixels with the
@@ -174,15 +176,11 @@ pro sdssproc, infile, image, invvar, indir=indir, $
  outfile=outfile, varfile=varfile, nsatrow=nsatrow, fbadpix=fbadpix, $
  hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, bcfile=bcfile, $
  applybias=applybias, applypixflat=applypixflat, silent=silent, $
- minflat=minflat, maxflat=maxflat, $
+ do_lock=do_lock, minflat=minflat, maxflat=maxflat, $
  spectrographid=spectrographid, color=color, camname=camname
 
    if (N_params() LT 1) then begin
-      print, 'Syntax - sdssproc, infile, [image, invvar, indir=, $'
-      print, ' outfile=, varfile=, nsatrow=, fbadpix=, $' 
-      print, ' hdr=, configfile=, ecalibfile=, bcfile=, $'
-      print, ' /applybias, /applypixflat, /silent, minflat=, maxflat=, $'
-      print, ' spectrographid=, color=, camname= ]'
+      doc_library, 'sdssproc'
       return
    endif
 
@@ -208,7 +206,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
       if (NOT keyword_set(silent)) then $
        splog, 'Warning: Unable to fix headers with this version of IDL'
    endif else begin
-      sphdrfix, infile, hdr
+      sphdrfix, infile, hdr, do_lock=do_lock
    endelse
 
    ;-----------

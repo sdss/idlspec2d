@@ -6,13 +6,15 @@
 ;   Fix header cards in raw SDSS spectroscopic data.
 ;
 ; CALLING SEQUENCE:
-;   sphdrfix, filename, hdr
+;   sphdrfix, filename, hdr, [ /do_lock ]
 ;
 ; INPUTS:
 ;   filename   - Name of raw FITS file
 ;   hdr        - FITS header
 ;
 ; OPTIONAL INPUTS:
+;   do_lock    - If set, then lock the "sdHdrFix-$MJD.par" file
+;                using DJS_LOCKFILE().
 ;
 ; OUTPUTS:
 ;   hdr        - FITS header (modified)
@@ -37,6 +39,8 @@
 ;   since we need the MJD to find the sdHdrFix file in the first place!
 ;
 ; PROCEDURES CALLED:
+;   djs_lockfile()
+;   djs_unlockfile
 ;   fileandpath()
 ;   splog
 ;   sxaddpar
@@ -107,12 +111,12 @@ pro sphdrfix1, filename, hdr, hfixpar
 end
 
 ;------------------------------------------------------------------------------
-pro sphdrfix, filename, hdr
+pro sphdrfix, filename, hdr, do_lock=do_lock
 
    common spec2d_hfixpar, hfix1
 
    if (n_params() LT 2) then begin
-      print, 'Syntax - sphdrfix, filename, hdr'
+      doc_library, 'sphdrfix'
       return
    endif
 
@@ -146,9 +150,15 @@ pro sphdrfix, filename, hdr
    plugdir = concat_dir(speclog_dir, mjdstr)
 
    reportfile = filepath('sdHdrFix-'+mjdstr+'.par', root_dir=plugdir)
+   if (keyword_set(do_lock)) then $
+    while(djs_lockfile(reportfile) EQ 0) do wait, 1
    yanny_read, reportfile, pdata, stnames=stnames, /anonymous, errcode=errcode
+   if (keyword_set(do_lock)) then $
+    djs_unlockfile, reportfile
 
-   if (keyword_set(pdata)) then begin
+   if (errcode NE 0) then begin
+      splog, 'WARNING: Error reading sdHdrFix file '+fileandpath(reportfile)
+   endif else if (keyword_set(pdata)) then begin
       ; Find the ONEEXP structure
       for i=0, N_elements(pdata)-1 do $
 ;       if (tag_names(*pdata[i], /structure_name) EQ 'OPHDRFIX') then $
@@ -160,8 +170,6 @@ pro sphdrfix, filename, hdr
        sphdrfix1, filename, hdr, hfix2
 
       yanny_free, pdata
-   endif else if (errcode NE 0) then begin
-      splog, 'WARNING: Error reading sdHdrFix file '+fileandpath(reportfile)
    endif
 
    return
