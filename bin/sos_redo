@@ -36,6 +36,16 @@ if [ $# = 2 ] ; then
 fi
 
 #------------------------------------------------------------------------------
+# Don't allow this to be run from the machine "sdsshost"!
+
+echo
+
+if [ `uname -n` = "sdsshost" ] ; then
+  echo "You are not allowed to launch Son-of-Spectro from sdsshost!"
+  exit
+fi
+
+#------------------------------------------------------------------------------
 # Attempt to run the idl procedure remove2redo
 
 echo remove2redo, $1 | idl
