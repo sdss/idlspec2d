@@ -47,6 +47,7 @@
 ;   mwrfits_chunks
 ;   plug2tsobj()
 ;   platelist
+;   repstr
 ;   struct_print
 ;   sxpar()
 ;
@@ -283,11 +284,17 @@ pro platemerge, zfile, outroot=outroot, public=public
    adat = replicate(adat, nout)
    struct_assign, outdat, adat
 
+   ; Replace any blank strings for CLASS with "".
    ii = where(strtrim(adat.class,2) EQ '')
    if (ii[0] NE -1) then adat[ii].class = '""'
 
-   ii = where(strtrim(adat.subclass,2) EQ '')
+   ; Replace any blank strings for SUBCLASS with "".
+   ; If SUBCLASS contains several words, then use a plus sign between
+   ; the words rather than a space.
+   adat.subclass = strtrim(adat.subclass,2)
+   ii = where(adat.subclass EQ '')
    if (ii[0] NE -1) then adat[ii].subclass = '""'
+   adat.subclass = repstr(adat.subclass, ' ', '+')
 
    objtypes = ['UNKNOWN', 'CR', 'DEFECT', 'GALAXY', 'GHOST', 'KNOWNOBJ', $
     'STAR', 'TRAIL', 'SKY']
