@@ -185,16 +185,18 @@ function smear_compare, smearname, finalwave, sciflux, sciivar, $
   qso = where(strmatch(finalplugtag.objtype, '*QSO*') eq 1 and $
                 smearset.coeff[0,*] ne 0.0, nqso)
 
+  linwave=10.0^finalwave
   if not keyword_set(noplot) then begin
-    djs_plot, 10.0^wave2d, smear_ratio[*,ptsrc], xr=[3800, 9200], /xs, $
+    djs_plot, linwave, smear_ratio[*,0], xr=[3800, 9200], /xs, $
       yr=[0, 2.5], /ys, xtitle = 'Wavelength', ytitle = 'Smear / Science', $
       title = 'Smear Correction Vectors for Point Sources', /nodata
     for iobj = 0, nptsrc - 1 do $
-      djs_oplot, 10.0^finalwave, smear_ratio[*,ptsrc[iobj]], nsum=20
+      djs_oplot, linwave, smear_ratio[*,ptsrc[iobj]], nsum=20, color='green'
     for iobj = 0, nqso - 1 do $
-      djs_oplot, 10.0^finalwave, smear_ratio[*,qso[iobj]], nsum=20, color='blue'
-    djs_oplot, [2000, 10000], [1, 1], color='red', thick= 4
-    legend, ['Point Sources', 'Quasars'], color=['black', 'blue'], psym=[0,0]
+      djs_oplot, linwave, smear_ratio[*,qso[iobj]], nsum=20, color='blue'
+    djs_oplot, [2000, 10000], [1, 1], thick= 4
+    legend, ['Quasars', 'Other Point Sources'], $
+            color=djs_icolor(['blue', 'green']), psym=[0,0]
   endif
 
   lowsn = where(smearset.coeff[0,*] eq 0.0, nlowsn)
