@@ -6,12 +6,16 @@
 ;   Routine to generate mean biases for a night.
 ;
 ; CALLING SEQUENCE:
-;   spbiasgen, [ mjd=, indir=, outdir=, docam=, sigrej=, maxiter= ]
+;   spbiasgen, [ mjd=, expnum=, expstart=, expend=, $
+;    indir=, outdir=, docam=, sigrej=, maxiter= ]
 ;
 ; INPUTS:
 ;
 ; OPTIONAL INPUTS:
 ;   mjd        - If INDIR not set, then look for files in $RAWDATA_DIR/MJD.
+;   expnum     - If set, then use these exposure numbers
+;   expstart   - If set, then only use exposure numbers >= EXPSTART
+;   expend     - If set, then only use exposure numbers >= EXPEND
 ;   indir      - Look for input files in this directory; default to current
 ;                directory if neither MJD or INDIR are set.
 ;   outdir     - Output directory; default to same as INDIR.
@@ -31,6 +35,9 @@
 ;   all the others for each camera.  There must be at least 3 frames.
 ;   A sigma-clipped mean is computed for each pixel.
 ;
+;   Trigger a failure if there are more than 25 biases for a given camera,
+;   since that is probably too many to load into memory.
+;
 ;   Four FITS files are produced, one for each camera:
 ;     pixbias-MJD-CAMERA.fits
 ;   where MJD is the 5-digit modified Julian date, and CAMERA
@@ -43,13 +50,14 @@
 ;   earlier nights too.
 ;
 ;   Generate one of these sets of biases with:
-;     spbiasgen, mjd=52069, outdir='.'
+;     spbiasgen, mjd=51893, expstart=7607, expend=7616, outdir='.'
 ;
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
 ;   djs_avsigclip()
 ;   djs_filepath()
+;   fileandpath()
 ;   sdsshead()
 ;   sdssproc
 ;   splog
@@ -98,11 +106,15 @@ pro spbiasgen1, files, outfile=outfile, outdir=outdir, $
    return
 end
 ;------------------------------------------------------------------------------
-pro spbiasgen, mjd=mjd, indir=indir, outdir=outdir, docam=docam
+pro spbiasgen, mjd=mjd, expnum=expnum, expstart=expstart, expend=expend, $
+ indir=indir, outdir=outdir, docam=docam
 
    if (keyword_set(docam)) then camnames = docam $
     else camnames = ['b1', 'b2', 'r1', 'r2']
    ncam = N_elements(camnames)
+
+   ;----------
+   ; Find all file names in the directory corresponding to this MJD
 
    if (keyword_set(mjd) AND NOT keyword_set(indir)) then begin
       indir = filepath('', root_dir=getenv('RAWDATA_DIR'), $
@@ -116,6 +128,33 @@ pro spbiasgen, mjd=mjd, indir=indir, outdir=outdir, docam=docam
       splog, 'No files found.'
       return
    endif
+
+   ;----------
+   ; Trim to exposure numbers specified by EXPNUM,EXPSTART,EXPEND
+
+   if (keyword_set(expnum) OR keyword_set(expstart) OR keyword_set(expend)) $
+    then begin
+      qkeep = bytarr(nfile) + 1b
+      exposure = long( strmid(fileandpath(files),7,8) )
+      if (keyword_set(expnum)) then begin
+         for ifile=0, nfile-1 do $
+          qkeep[ifile] = (total(exposure[ifile] EQ long(expnum)) NE 0)
+      endif
+      if (keyword_set(expstart)) then $
+       qkeep = qkeep AND (exposure GE long(expstart))
+      if (keyword_set(expend)) then $
+       qkeep = qkeep AND (exposure LE long(expend))
+      ikeep = where(qkeep, nfile)
+      if (nfile EQ 0) then begin
+         splog, 'No files found matching EXPNUM,EXPSTART,EXPEND.'
+         return
+      endif
+      splog, 'Trimming to ', nfile, ' files specified by EXPNUM,EXPSTART,EXPEND.'
+      files = files[ikeep]
+   endif
+
+   ;----------
+   ; Parse the FITS headers
 
    cameras = strarr(nfile)
    flavor = strarr(nfile)
@@ -147,7 +186,10 @@ pro spbiasgen, mjd=mjd, indir=indir, outdir=outdir, docam=docam
          if (nmatch EQ 0) then jbias[i] = -1
       endfor
       j = where(jbias NE -1, nbias)
-      if (nbias GE 3) then begin
+      if (nbias GT 25) then begin
+         splog, 'Too many biases (' + string(nbias) + ') to load into memory'
+         splog, 'Skipping pixbias generation for camera ' + camnames[icam]
+      endif else if (nbias GE 3) then begin
          jbias = jbias[j]
 
          pixbiasname = 'pixbias-' + string(mjdarr[jbias[0]],format='(i5.5)') $
@@ -159,7 +201,7 @@ pro spbiasgen, mjd=mjd, indir=indir, outdir=outdir, docam=docam
 
       endif else begin
          splog, 'Expected at least 3 biases (not including 1st), got ' $
-          + strtrim(string(bias),2)
+          + strtrim(string(nbias),2)
          splog, 'Skipping pixbias generation for camera ' + camnames[icam]
       endelse
    endfor
