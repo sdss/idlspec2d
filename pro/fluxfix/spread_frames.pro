@@ -164,7 +164,8 @@ pro spread_frames, spframes, window=window, binsz = binsz, $
       ; from the tsObj
 
       if keyword_set(tsobjname) then begin
-        tsobjid = [tsobj.run, tsobj.rerun, tsobj.camcol, tsobj.field, tsobj.id] 
+        tsobjid = [[tsobj.run], [tsobj.rerun], [tsobj.camcol], $
+                   [tsobj.field], [tsobj.id]]
 
         for ifib = 0, nfib - 1 do begin
           adist = djs_diff_angle(tsobj.ra, tsobj.dec, $
