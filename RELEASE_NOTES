@@ -3,6 +3,9 @@ sprobot_start: Remove "sprobotcopy" from the cron jobs, since copying
                reduced data to Fermi always fails.
                Set SPECLOG_DIR=$ASTROLOG_DIR for the Spectro-Robot.
 
+YANNY_READ (in idlutils): Try to make backwards-compatable with IDL 5.2
+          by replacing calls to STRSPLIT() with calls to STR_SEP.
+
 -------------------------------------------------------------------------------
 v4_7_4 (May 10, 2001 idlspec2d+idlutils)
 
