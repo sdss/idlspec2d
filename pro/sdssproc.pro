@@ -6,8 +6,9 @@
 ;   Read in Raw SDSS files, and process with opECalib.par and opConfig.par
 ;
 ; CALLING SEQUENCE:
-;   sdssproc, infile, [image, invvar, outfile=outfile, varfile=varfile, hdr=hdr,
-;     configfile=configfile, ecalibfile=ecalibfile]
+;   sdssproc, infile, [image, invvar, outfile=outfile, varfile=varfile, $
+;    hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, $
+;    spectrographid=spectrographid, color=color ]
 ;
 ; INPUTS:
 ;   infile     - Raw SDSS frame
@@ -79,31 +80,34 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
 ;      message, 'Expecting 2128x2069, found '+string(cards[0])+','$
 ;               +string(cards[1])
 
-   ; Determine which CCD from the CAMERAS header card
+   ; Determine which CCD from the file name itself!
+   ; Very bad form, but this information is not in the header.
+   ; The CAMERAS keyword is sometimes for the wrong camera.
+   i = rstrpos(infile, '-')
+   if (i[0] EQ -1 OR i-2 LT 0) then $
+    message, 'Cannot determine CCD number from file name ' + infile
+   camcol = fix( strmid(infile, i-2, 2) )
+
    cameras = strtrim( sxpar(hdr, 'CAMERAS'), 2 )
-   case cameras of
-     'b1': begin
+   case camcol of
+     1: begin
         spectrographid = 1
         color = 'blue'
-        camcol = 1
          end
-     'r1': begin
+     4: begin
         spectrographid = 1
         color = 'red'
-        camcol = 4
          end
-     'b2': begin
+     3: begin
         spectrographid = 2
         color = 'blue'
-        camcol = 3
          end
-     'r2': begin
+     2: begin
         spectrographid = 2
         color = 'red'
-        camcol = 2
         end
      else: begin
-        message, 'CAMERAS keyword not found'
+        message, 'Cannot determine CCD number from file name ' + infile
         end
    endcase
    camrow = 0
