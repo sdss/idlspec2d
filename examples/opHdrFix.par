@@ -20,6 +20,24 @@ spechdrfix sdR-??-00001150 NAME     "'0198-51433-01'"
 spechdrfix sdR-??-00001151 NAME     "'0198-51433-01'"
 spechdrfix sdR-??-00001152 NAME     "'0198-51433-01'"
 
+# Wrong mapping name in these headers on MJD 51441 for plate 214.
+
+spechdrfix sdR-??-00001347 NAME     "'0214-51432-02'"
+spechdrfix sdR-??-00001348 NAME     "'0214-51432-02'"
+spechdrfix sdR-??-00001349 NAME     "'0214-51432-02'"
+spechdrfix sdR-??-00001350 NAME     "'0214-51432-02'"
+spechdrfix sdR-??-00001351 NAME     "'0214-51432-02'"
+spechdrfix sdR-??-00001352 NAME     "'0214-51432-02'"
+spechdrfix sdR-??-00001353 NAME     "'0214-51432-02'"
+spechdrfix sdR-??-00001354 NAME     "'0214-51432-02'"
+spechdrfix sdR-??-00001355 NAME     "'0214-51432-02'"
+spechdrfix sdR-??-00001356 NAME     "'0214-51432-02'"
+spechdrfix sdR-??-00001357 NAME     "'0214-51432-02'"
+spechdrfix sdR-??-00001358 NAME     "'0214-51432-02'"
+spechdrfix sdR-??-00001359 NAME     "'0214-51432-02'"
+spechdrfix sdR-??-00001360 NAME     "'0214-51432-02'"
+spechdrfix sdR-??-00001361 NAME     "'0214-51432-02'"
+
 # Wrong mapping name in these headers on MJD 51441 for plate 202.
 
 spechdrfix sdR-??-00001362 NAME     "'0202-51434-01'"
