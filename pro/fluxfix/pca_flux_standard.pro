@@ -108,11 +108,7 @@ function kfluxratio, wave, objflux, objivar, kflux, fiber, $
    ;-------------
    ; Get zeropoint from phot fiber mag 
 
-   fluxfnu = red_kflux * wave^2 / 2.99792e18
-   fthru=filter_thru(fluxfnu, waveimg=wave, $
-                     filter_prefix = 'sdss_jun2001', /toair)
-   model_rmag = -2.5*alog10(fthru[2]) - 48.6
-   scalefactor = 10.0^(-0.4 * (fiber.mag[2] - model_rmag))
+   scalefactor = 10.0^(-0.4 * (fiber.mag[2] - fiber.red_model_mag[2]))
    red_kflux = red_kflux * scalefactor / 1e-17
 
    ;-----------
@@ -155,19 +151,23 @@ pro pca_flux_standard, loglam, stdflux, stdivar, stdinfo, $
    cormed = fltarr(nstd)
 
    wave = 10.0^loglam 
-   medwave = djs_median(wave)
+   ;medwave = djs_median(wave)
    ; Wavelength range over which to compute normalization
-   norm_indx = where(wave gt medwave - 500 and wave lt medwave + 500)
+   ;norm_indx = where(wave gt medwave - 500 and wave lt medwave + 500)
+
+   ; Normalize in the dichroic region but avoiding the exact edges
+   norm_indx = where(wave gt 5700 and wave lt 6300 and $
+                      wave lt max(wave) - 200 and wave gt min(wave) + 200)
 
    for istd=0, nstd-1 do begin
      model_index = (where(kindx.model eq stdinfo[istd].model))[0]
 
-     linterp, kwave*(1 + stdinfo[istd].v_off/cspeed), kflux[*,model_index], $
-              wave, kfluxi
+     kwave_full = kwave*(1 + stdinfo[istd].v_off/cspeed)
+     kflux_full = kflux[*,model_index]
+     linterp, kwave_full, kflux_full, wave, kfluxi
 
-     corvectori = kfluxratio(wave, stdflux[*,istd], $
-                  stdivar[*,istd], kfluxi, stdinfo[istd], $
-                  fluxvivar = corvivari)
+     corvectori = kfluxratio(wave, stdflux[*,istd], stdivar[*,istd], $
+                  kfluxi, stdinfo[istd], fluxvivar = corvivari)
 
      ; Normalize by median
      cormed[istd] = djs_median(corvectori[norm_indx])
@@ -191,7 +191,8 @@ pro pca_flux_standard, loglam, stdflux, stdivar, stdinfo, $
       acoeff[0,*] = -acoeff[0,*]
    endif
 
-   fcor = pcaflux * median(acoeff) 
+   ;fcor = pcaflux * median(acoeff) 
+   fcor = pcaflux / djs_median(pcaflux[norm_indx])
 
    ;--------------
    ; Measure the variance between the fluxcalib vectors derived 
