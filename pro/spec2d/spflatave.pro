@@ -6,7 +6,7 @@
 ;   Average together a set (or all!) pixel flats in the SPECFLAT directory.
 ;
 ; CALLING SEQUENCE:
-;   spflatave, [ mjd=, mjstart=, mjend=, mjout=, indir=, outdir= ]
+;   spflatave, [ mjd=, mjstart=, mjend=, mjout=, indir=, outdir=, docam= ]
 ;
 ; INPUTS:
 ;
@@ -17,6 +17,7 @@
 ;   mjout      - MJD for name of output average pixel flat; default to 0.
 ;   indir      - If INDIR not set, then look for files in $SPECFLAT_DIR/flats.
 ;   outdir     - Output directory; default to same as INDIR.
+;   docam      - Camera names; default to all cameras: ['b1', 'b2', 'r1', 'r2']
 ;
 ; OUTPUTS:
 ;
@@ -45,14 +46,15 @@
 ;-
 ;------------------------------------------------------------------------------
 pro spflatave, mjd=mjd, mjstart=mjstart, mjend=mjend, mjout=mjout, $
- indir=indir, outdir=outdir
+ indir=indir, outdir=outdir, docam=docam
 
    if (NOT keyword_set(indir)) then $
     indir = filepath('', root_dir=getenv('SPECFLAT_DIR'), subdirectory='flats')
    if (NOT keyword_set(outdir)) then outdir = indir
    if (NOT keyword_set(mjout)) then mjout = 0L
 
-   camnames = ['b1', 'b2', 'r1', 'r2']
+   if (keyword_set(docam)) then camnames = docam $
+    else camnames = ['b1', 'b2', 'r1', 'r2']
    ncam = N_elements(camnames)
 
    for icam=0, ncam-1 do begin

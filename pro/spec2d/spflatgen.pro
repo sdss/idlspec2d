@@ -6,7 +6,7 @@
 ;   Wrapper for SPFLATTEN2 for generating pixel-to-pixel flat-fields.
 ;
 ; CALLING SEQUENCE:
-;   spflatgen, [ mjd=, indir=, outdir= ]
+;   spflatgen, [ mjd=, indir=, outdir=, docam= ]
 ;
 ; INPUTS:
 ;
@@ -15,6 +15,7 @@
 ;   indir      - Look for input files in this directory; default to current
 ;                directory if neither MJD or INDIR are set.
 ;   outdir     - Output directory; default to same as INDIR.
+;   docam      - Camera names; default to all cameras: ['b1', 'b2', 'r1', 'r2']
 ;
 ; OUTPUTS:
 ;
@@ -55,9 +56,10 @@
 ;   06-Jul-2001  Written by D. Schlegel, Princeton
 ;-
 ;------------------------------------------------------------------------------
-pro spflatgen, mjd=mjd, indir=indir, outdir=outdir
+pro spflatgen, mjd=mjd, indir=indir, outdir=outdir, docam=docam
 
-   camnames = ['b1', 'b2', 'r1', 'r2']
+   if (keyword_set(docam)) then camnames = docam $
+    else camnames = ['b1', 'b2', 'r1', 'r2']
    ncam = N_elements(camnames)
 
    if (keyword_set(mjd) AND NOT keyword_set(indir)) then begin
