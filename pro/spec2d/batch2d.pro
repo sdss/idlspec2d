@@ -122,7 +122,7 @@ function batch2d_rawfiles, planfile, outfile=outfile
       return, infiles
    endif
 
-   yanny_read, planfile, pp, hdr=hdr
+   yanny_read, planfile[0], pp, hdr=hdr
    if (NOT keyword_set(pp)) then begin
       splog, 'WARNING: Could not find plan file ' + planfile
       return, ''
@@ -197,7 +197,7 @@ function batch2d_combfiles, planfile, outfile=outfile
       return, infiles
    endif
 
-   yanny_read, planfile, pp, hdr=hdr
+   yanny_read, planfile[0], pp, hdr=hdr
    if (NOT keyword_set(pp)) then begin
       splog, 'WARNING: Could not find plan file ' + planfile
       return, ''
