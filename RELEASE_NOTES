@@ -34,6 +34,12 @@ DUST_INTFILTER: New proc to integrate the extinction curve over a
            given source function + filter curve.
 GSC_READ_TABLE: New proc to read one table from the Guide Star Catalog.
 HOGG_SCATTERPLOT: New proc to plot greyscale scatterplot with contours.
+NONNEG_MULT_UPDATE,NONNEG_MULT_UPDATE_SOLVE: New code from M. Blanton
+           for non-negative least-squares solving.  This is a special
+           case of box constraints in quadratic programming, as suggested
+           by Sha, Saul, & Lee (2002), "Multiplicative updates for
+           nonnegative quadratic programming in support vector machines"
+           (UPenn Tech Report MS-CIS-02-19)
 STRUCT_PRINT: If /NO_HEAD is set, do not increase the width of a column
            to occomodate the column name.  New FORMATCODES option.
 YANNY_WRITE: New options /ALIGN and FORMATCODES, even though these options
