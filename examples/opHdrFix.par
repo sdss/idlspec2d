@@ -200,6 +200,11 @@ spechdrfix sdR-??-00010048 FLAVOR   "'unknown'"
 # on MJD 52055.
 spechdrfix sdR-??-00010061 FLAVOR   "'unknown'"
 
+# The wrong MJD appears in these headers on MJD=52130.  Note that only 3
+# exposures (all biases) were taken this night.  The first 2 had this problem.
+spechdrfix sdR-??-00010516 MJD   "52130"
+spechdrfix sdR-??-00010517 MJD   "52130"
+
 # Telescope status information missing for the pre-flat on plate 655
 # on MJD 52162.
 spechdrfix sdR-??-00010850  FFS   "'1 1 1 1 1 1 1 1'"
