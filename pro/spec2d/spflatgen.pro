@@ -102,7 +102,7 @@ pro spflatgen, mjd=mjd, indir=indir, outdir=outdir
          splog, 'Generating pixel flat ' + pixflatname
          splog, 'Output directory ' + outdir
          spflatten2, files[iflats[(nflat-1)/2]], files[iarcs[0]], files[iflats], $
-          pixflatname, outdir=outdir
+          outfile=pixflatname, outdir=outdir
       endif else begin
          splog, 'Expected sequence of at least 7 flats + 1 arc, got ' $
           + strtrim(string(nflat),2) + ' + ' + strtrim(string(narc),2)
