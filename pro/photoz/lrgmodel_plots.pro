@@ -52,6 +52,7 @@ pro lrgmodel_plots, suffix, public=public, recalibrate=recalibrate, $
  colorcut=colorcut, _EXTRA=KeywordsForPhotoz
 
    if (NOT keyword_set(suffix)) then suffix = ''
+   csize = 2.0
 
    ;----------
    ; Read the data files
@@ -70,6 +71,17 @@ pro lrgmodel_plots, suffix, public=public, recalibrate=recalibrate, $
       sdss_recalibrate,spall
       splog,'...done'
    endif
+
+   ;----------
+   ; Trim to Nikhil's LRG target selection
+
+   lrgbits = sdf_select_target(spall, /all)
+   qtrim = lrgbits NE 0
+   itrim = where(qtrim, ntrim)
+   spall = spall[itrim]
+   if (nsdss GT 0) then nsdss = total(qtrim[0:nsdss-1])
+   if (nadd1 GT 0) then nadd1 = total(qtrim[nsdss:nsdss+nadd1-1])
+   if (nadd2 GT 0) then nadd2 = total(qtrim[nsdss+nadd1:nsdss+nadd1+nadd2-1])
 
    ;----------
    ; Compute the colors
@@ -120,18 +132,18 @@ pro lrgmodel_plots, suffix, public=public, recalibrate=recalibrate, $
 
    djs_plot, spall[0:nsdss-1].z, zfit[0:nsdss-1], $
     psym=3, xr=[0,0.8], yr=[0,0.8], $
-    xtitle='Spectroscopic Z', ytitle='Photometric Z'
+    xtitle='Spectroscopic Z', ytitle='Photometric Z', charsize=csize
    djs_oplot, !x.crange, !x.crange, color='red'
    djs_oplot, [0.1,0.1], !y.crange, color='red'
 
    ; Re-plot with the SDSS-2dF points in color
    djs_plot, spall[0:nsdss-1].z, zfit[0:nsdss-1], $
     psym=3, xr=[0,0.8], yr=[0,0.8], $
-    xtitle='Spectroscopic Z', ytitle='Photometric Z'
+    xtitle='Spectroscopic Z', ytitle='Photometric Z', charsize=csize
    indx1 = nsdss + lindgen(nadd1)
    indx2 = nsdss + nadd1 + lindgen(nadd2)
-   djs_oplot, spall[indx1].z, zfit[indx1], psym=1, symsize=0.5, color='green'
-   djs_oplot, spall[indx2].z, zfit[indx2], psym=1, symsize=0.5, color='blue'
+   djs_oplot, spall[indx1].z, zfit[indx1], psym=1, symsize=0.25, color='green'
+   djs_oplot, spall[indx2].z, zfit[indx2], psym=1, symsize=0.25, color='blue'
    djs_oplot, !x.crange, !x.crange, color='red'
    djs_oplot, [0.1,0.1], !y.crange, color='red'
 
@@ -141,7 +153,7 @@ pro lrgmodel_plots, suffix, public=public, recalibrate=recalibrate, $
    ii = where(zfit GT 0.01)
    hogg_scatterplot, spall[ii].z, zfit[ii], xr=[0,0.8], yr=[0,0.8], $
     xtitle='Spectroscopic Z', ytitle='Photometric Z', /conditional, $
-    quantile=[0.025, 0.05, 0.16, 0.5, 0.84, 0.95, 0.975]
+    quantile=[0.025, 0.05, 0.16, 0.5, 0.84, 0.95, 0.975], charsize=csize
    djs_oplot, !x.crange, !x.crange, color='red'
    djs_oplot, [0.1,0.1], !y.crange, color='red'
 
@@ -151,7 +163,7 @@ pro lrgmodel_plots, suffix, public=public, recalibrate=recalibrate, $
    ii = where(zfit GT 0.01)
    hogg_scatterplot, spall[ii].z, zdiff[ii], xr=[0,0.8], yr=[-0.3,0.3], $
     xtitle='Spectroscopic Z', ytitle='z(photo) - z(spectro)', /conditional, $
-    quantile=[0.025, 0.05, 0.16, 0.5, 0.84, 0.95, 0.975]
+    quantile=[0.025, 0.05, 0.16, 0.5, 0.84, 0.95, 0.975], charsize=csize
    djs_oplot, !x.crange, [0,0], color='red'
    djs_oplot, [0.1,0.1], !y.crange, color='red'
 
@@ -161,7 +173,7 @@ pro lrgmodel_plots, suffix, public=public, recalibrate=recalibrate, $
    ii = where(zfit GT 0.01)
    hogg_scatterplot, zfit[ii], zdiff[ii], xr=[0,0.8], yr=[-0.3,0.3], $
     xtitle='Photometric Z', ytitle='z(photo) - z(spectro)', /conditional, $
-    quantile=[0.025, 0.05, 0.16, 0.5, 0.84, 0.95, 0.975]
+    quantile=[0.025, 0.05, 0.16, 0.5, 0.84, 0.95, 0.975], charsize=csize
    djs_oplot, !x.crange, [0,0], color='red'
    djs_oplot, [0.1,0.1], !y.crange, color='red'
 
@@ -172,7 +184,7 @@ pro lrgmodel_plots, suffix, public=public, recalibrate=recalibrate, $
    binsz = 0.005
    xrange = [-0.3,0.3]
    plothist, zdiff[jj], xrange=xrange, bin=binsz, /xstyle, $
-    xtitle='z(photo) - z(spectro)'
+    xtitle='z(photo) - z(spectro)', charsize=csize
    xvec = findgen((xrange[1]-xrange[0])/binsz) * binsz + xrange[0]
    yvec1 = 6000*exp(-(xvec/0.023)^2)
    yvec2 = 700*exp(-(xvec/0.023/3)^2)
@@ -187,16 +199,16 @@ pro lrgmodel_plots, suffix, public=public, recalibrate=recalibrate, $
    ii = where(zfit GT 0.01)
    hogg_scatterplot, rmag[ii], zdiff[ii], xr=[14,23], yr=[-0.3,0.3], $
     xtitle='r-mag', ytitle='z(photo) - z(spectro)', /conditional, $
-    quantile=[0.025, 0.05, 0.16, 0.5, 0.84, 0.95, 0.975]
+    quantile=[0.025, 0.05, 0.16, 0.5, 0.84, 0.95, 0.975], charsize=csize
    djs_oplot, !x.crange, [0,0], color='red'
 
    ; Re-plot with the SDSS-2dF points in color
    hogg_scatterplot, rmag[ii], zdiff[ii], xr=[14,23], yr=[-0.3,0.3], $
     xtitle='r-mag', ytitle='z(photo) - z(spectro)', /conditional, $
-    quantile=[0.025, 0.05, 0.16, 0.5, 0.84, 0.95, 0.975]
+    quantile=[0.025, 0.05, 0.16, 0.5, 0.84, 0.95, 0.975], charsize=csize
    djs_oplot, !x.crange, [0,0], color='red'
-   djs_oplot, rmag[indx1], zdiff[indx1], psym=1, symsize=0.5, color='green'
-   djs_oplot, rmag[indx2], zdiff[indx2], psym=1, symsize=0.5, color='blue'
+   djs_oplot, rmag[indx1], zdiff[indx1], psym=1, symsize=0.25, color='green'
+   djs_oplot, rmag[indx2], zdiff[indx2], psym=1, symsize=0.25, color='blue'
 
    ;----------
    ; PLOT: Delta-z vs. (g-r) (greyscale)
@@ -204,16 +216,16 @@ pro lrgmodel_plots, suffix, public=public, recalibrate=recalibrate, $
    ii = where(zfit GT 0.01)
    hogg_scatterplot, grcolor[ii], zdiff[ii], xr=[0.5,3.0], yr=[-0.3,0.3], $
     xtitle='(g-r)', ytitle='z(photo) - z(spectro)', /conditional, $
-    quantile=[0.025, 0.05, 0.16, 0.5, 0.84, 0.95, 0.975]
+    quantile=[0.025, 0.05, 0.16, 0.5, 0.84, 0.95, 0.975], charsize=csize
    djs_oplot, !x.crange, [0,0], color='red'
 
    ; Re-plot with the SDSS-2dF points in color
    hogg_scatterplot, grcolor[ii], zdiff[ii], xr=[0.5,3.0], yr=[-0.3,0.3], $
     xtitle='(g-r)', ytitle='z(photo) - z(spectro)', /conditional, $
-    quantile=[0.025, 0.05, 0.16, 0.5, 0.84, 0.95, 0.975]
+    quantile=[0.025, 0.05, 0.16, 0.5, 0.84, 0.95, 0.975], charsize=csize
    djs_oplot, !x.crange, [0,0], color='red'
-   djs_oplot, grcolor[indx1], zdiff[indx1], psym=1, symsize=0.5, color='green'
-   djs_oplot, grcolor[indx2], zdiff[indx2], psym=1, symsize=0.5, color='blue'
+   djs_oplot, grcolor[indx1], zdiff[indx1], psym=1, symsize=0.25, color='green'
+   djs_oplot, grcolor[indx2], zdiff[indx2], psym=1, symsize=0.25, color='blue'
 
    ;----------
    ; PLOT: Delta-z vs. [(r-i)-(g-r)/8.] (greyscale)
@@ -222,16 +234,16 @@ pro lrgmodel_plots, suffix, public=public, recalibrate=recalibrate, $
    ii = where(zfit GT 0.01)
    hogg_scatterplot, xaxis[ii], zdiff[ii], xr=[-0.5,2.0], yr=[-0.3,0.3], $
     xtitle='(r-i)-(g-r)/8', ytitle='z(photo) - z(spectro)', /conditional, $
-    quantile=[0.025, 0.05, 0.16, 0.5, 0.84, 0.95, 0.975]
+    quantile=[0.025, 0.05, 0.16, 0.5, 0.84, 0.95, 0.975], charsize=csize
    djs_oplot, !x.crange, [0,0], color='red'
 
    ; Re-plot with the SDSS-2dF points in color
    hogg_scatterplot, xaxis[ii], zdiff[ii], xr=[-0.5,2.0], yr=[-0.3,0.3], $
     xtitle='(r-i)-(g-r)/8', ytitle='z(photo) - z(spectro)', /conditional, $
-    quantile=[0.025, 0.05, 0.16, 0.5, 0.84, 0.95, 0.975]
+    quantile=[0.025, 0.05, 0.16, 0.5, 0.84, 0.95, 0.975], charsize=csize
    djs_oplot, !x.crange, [0,0], color='red'
-   djs_oplot, xaxis[indx1], zdiff[indx1], psym=1, symsize=0.5, color='green'
-   djs_oplot, xaxis[indx2], zdiff[indx2], psym=1, symsize=0.5, color='blue'
+   djs_oplot, xaxis[indx1], zdiff[indx1], psym=1, symsize=0.25, color='green'
+   djs_oplot, xaxis[indx2], zdiff[indx2], psym=1, symsize=0.25, color='blue'
 
    dfpsclose
 
