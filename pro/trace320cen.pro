@@ -127,7 +127,10 @@ print,'BIG GAP',j,xfiber[j], xfiber[j]-xfiber[j-1]
          n = ibun * npbundle + jbun      ; 0-indexed fiber number
 
          dx = min(abs(xpeak - xcen), i)
-         if (dx LT 0.25 * deltax) then begin
+         ; Be more lenient about finding the next peak where it should be
+         ; if we are at a big gap.
+         if ((jbun EQ 0 AND dx LT 0.35 * deltax) OR $
+             (jbun NE 0 AND dx LT 0.25 * deltax)) then begin
             xfiber[n] = xpeak[i]
             xgood[n] = 1
          endif else begin
