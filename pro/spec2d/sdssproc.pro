@@ -44,6 +44,8 @@
 ;
 ;   Required header keywords: EXPTIME.
 ;
+;   The returned image is in electrons, not ADU.
+;
 ;   The signal-to-noise is limited to never exceed 100, by adding 1.e-4
 ;   times the flux to the variance term.
 ;
@@ -97,6 +99,8 @@
 ;                Add a noise term of 100 ADU to the left amplifier of r2.
 ;                That amplifier had random bits being set incorrectly,
 ;                in particular the 32 bit and 256 bit.
+;   04-Nov-2000  Measure the bias values using DJS_ITERSTAT instead of MEDIAN,
+;                since the median is always only an integer value.
 ;-
 ;------------------------------------------------------------------------------
 function findopfile, expres, mjd, indir
@@ -468,10 +472,11 @@ pro sdssproc, infile, image, invvar, indir=indir, $
                 sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] 
             endif
 
-            biasval = median( biasreg )
-            djs_iterstat, biasreg, sigma=readoutDN
+            djs_iterstat, biasreg, sigrej=3.0, mean=biasval, sigma=readoutDN
 
             splog, 'Measured read-noise in DN for amp#', iamp, ' = ', readoutDN
+            splog, 'Measured bias value in DN for amp#', iamp, ' = ', biasval
+            splog, 'Applying gain for amp#', iamp, ' = ', gain[iamp]
 
             ; Copy the data for this amplifier into the final image
             ; Subtract the bias (in DN), and then multiply by the gain
