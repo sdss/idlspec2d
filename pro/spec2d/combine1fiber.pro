@@ -176,7 +176,7 @@ pro combine1fiber, inloglam, objflux, objivar, $
       if (nstart NE nend) then $
        message, 'ABORT: Grouping tricks did not work!'
 
-      for igrp=0, nstart-1 do begin
+      for igrp=0L, nstart-1 do begin
 
          ss = isort[ig1[igrp] : ig2[igrp]]
          bkpt = 0
@@ -250,7 +250,7 @@ pro combine1fiber, inloglam, objflux, objivar, $
       ; Start with all bits set in AND-mask.
       if (arg_present(andmask)) then andmask[*] = -1L
 
-      for j=0, max(specnum) do begin
+      for j=0L, max(specnum) do begin
          these = where(specnum EQ j)
 
          if (these[0] NE -1) then begin
