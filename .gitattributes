@@ -371,7 +371,6 @@ pro/spec1d/synthspec.pro -text
 pro/spec1d/vdispfit.pro -text
 pro/spec1d/vdisptest.pro -text
 pro/spec1d/veldisp.pro -text
-pro/spec1d/wavelets.pro -text
 pro/spec1d/wavevector.pro -text
 pro/spec1d/writespec.pro -text
 pro/spec1d/zcompute.pro -text
