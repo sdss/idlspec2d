@@ -1,4 +1,25 @@
 
+-------------------------------------------------------------------------------
+v4_11 branch + v4_11_0 (Feb 6, 2004)
+
+This branch was created by Lupton for FNAL operations.
+The branch point was v4_10_7 == v4_11_0, with the following changes:
+
+Four files copied from the mainline as they were on this date
+which was a tag on the mainline called RHL-create-v4_11):
+  pro/fluxfix/jeg_sphoto_coef.pro : New routine
+  pro/fluxfix/spcoadd_fluxed_frames.pro : Only changed by Tremonti
+  pro/spec2d/platesn.pro : Only changed by Tremonti
+  pro/spec2d/plotsn.pro : Bug fixes by DJS and later changes by Tremonti.
+
+-------------------------------------------------------------------------------
+v5_0_0 (Feb 19, 2004 idlspec2d running on IDL 5.4 - 6.0
+Built against specflat v1_5, elodie v1_0, idlutils v5_0_0.
+The speclog product was also tagged at v1_3, valid through MJD=53054 (today).
+
+Next major release of Spectro-2D, with the "Version 5" data model.
+Only minimal changes to P-1D, but search galaxy redshifts to z=1.
+
 APO_PLOTSN,QUICKTRACE: Need the /APOTAGS in the call to READPLUGMAP(),
         which has been re-written to be used by the full 2D reductions too.
 BADFMAGS: Find bad F star photometry that might get used by Spectro-2D.
@@ -44,9 +65,12 @@ PLATELIST: Get rid of the SMEARUSE entry, since it is now deprecated.
         Include any public plates in the default output file; this is
         because there are some DR1,DR2 plates that are called 'bad', but
         we probably still want them in the full merge files.
+        Read the spectro-photometry keywords [GRI]OFFSTD,[GRI]OFFRMS, etc.
 PLATESN: Remove the code that adds the spectro-photometry keywords to
         the output headers, since P-1D does this more carefully.
         Split out the fiber "roll call" code into FIBER_ROLLCALL.
+        Add a bunch of spectro-photometry keywords to the FITS header,
+        such as GOFFSTD,GRMSSTD,... -- These will be read by PLATELIST.
 PLOTSIGNAL: New routine for making diagnostic plots of the signal seen
         by the spectrographs, unlike most of our routines that show S/N.
 PLOTSN: Re-write of the code that makes all the plots beyond the first
