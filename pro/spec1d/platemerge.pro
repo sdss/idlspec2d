@@ -163,7 +163,9 @@ pro platemerge, zfile, outroot=outroot1, public=public
           'smearuse'    , ' ', $
           'primtarget'  ,  0L, $
           'sectarget'   ,  0L, $
-          'specprimary' ,  0B )
+          'specprimary' ,  0B, $
+          'specobj_id'  ,  0L, $
+          'nspecobs'    ,  0  )
          ; Trim away tag names from the tsObj structure that
          ; is also in the ZANS structure.  At the moment (May 2003),
          ; the only such tag is "MJD".
@@ -230,6 +232,8 @@ pro platemerge, zfile, outroot=outroot1, public=public
    t2 = systime(1)
 
    outdat.specprimary = 1 ; Start as all objects set to primary
+   ; Start with each object having a unique object ID...
+   outdat.specobj_id = lindgen(n_elements(outdat)) + 1L
 
    ; Loop through each possible pairing of plates, paying attention
    ; only to those within 4.5 deg of eachother on the sky.
@@ -262,32 +266,49 @@ pro platemerge, zfile, outroot=outroot1, public=public
                   j2 = indx2[mindx[i1]]
                   if ((strmatch(outdat[j1].progname,'main*') EQ 1) $
                    AND (strmatch(outdat[j2].progname,'main*') EQ 0)) then begin
-                     outdat[j2].specprimary = 0
+                     jdup = j2
                   endif else if ((strmatch(outdat[j1].progname,'main*') EQ 0) $
                    AND (strmatch(outdat[j2].progname,'main*') EQ 1)) then begin
-                     outdat[j1].specprimary = 0
+                     jdup = j1
                   endif else if ((strmatch(outdat[j1].platequality,'good*') EQ 1) $
                    AND (strmatch(outdat[j2].platequality,'good*') EQ 0)) then begin
-                     outdat[j2].specprimary = 0
+                     jdup = j2
                   endif else if ((strmatch(outdat[j1].platequality,'good*') EQ 0) $
                    AND (strmatch(outdat[j2].platequality,'good*') EQ 1)) then begin
-                     outdat[j1].specprimary = 0
+                     jdup = j1
                   endif else if (outdat[j1].zwarning EQ 0 $
                    AND outdat[j2].zwarning NE 0) then begin
-                     outdat[j2].specprimary = 0
+                     jdup = j2
                   endif else if (outdat[j1].zwarning NE 0 $
                    AND outdat[j2].zwarning EQ 0) then begin
-                     outdat[j1].specprimary = 0
+                     jdup = j1
                   endif else if (outdat[j1].platesn2 GE outdat[j2].platesn2) then begin
-                     outdat[j2].specprimary = 0
+                     jdup = j2
                   endif else begin
-                     outdat[j1].specprimary = 0
+                     jdup = j1
                   endelse
+
+                  outdat[jdup].specprimary = 0
+                  outdat[j2].specobj_id = outdat[j1].specobj_id
+
                endif
             endfor
          endif
       endfor
    endfor
+
+   ; Re-number the specobj_id's such that there are no missing numbers.
+   splog, 'Re-numbering SPECOBJID'
+   iuniq = uniq(outdat.specobj_id, sort(outdat.specobj_id))
+   tmpid = outdat[iuniq].specobj_id
+   tmpnum = lonarr(max(outdat.specobj_id)+1L)
+   tmpnum[tmpid] = lindgen(n_elements(tmpid)) + 1L
+   outdat.specobj_id = tmpnum[ outdat.specobj_id ]
+
+   ; Count the number of times each object has been observed
+   splog, 'Counting duplicate observations'
+   nhist = histogram(outdat.specobj_id, min=0L)
+   outdat.nspecobs = nhist[ outdat.specobj_id ]
 
    splog, 'Time to assign primaries = ', systime(1)-t2, ' sec'
 
