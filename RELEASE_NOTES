@@ -11,8 +11,10 @@ SPPLATE_CORRECT: Fixed small bug so that it works with the smear left in.
 STYPE_STANDARD: Fixed error in smoothing box size.
 ZEROPT_COR: Added range checks to get rid of seg faults.
 
-pro/fluxfix/Makefile - Forget to add this Makefile, which is needed
-           to prevent the "make install" from crashing on an IRIX platform.
+bin/sprobot.sh: Instead of looking for "/data/spectro/$MJD" to get
+           an MJD list, look for "/data/spectro/astrolog/$MJD".
+           This will get the log files for MJDs where there are no
+           spectroscopic data.
 etc/kurucz_model_fix.fit - New file for empirical corrections to
            SPECTRUM-Kurucz models, used by FLUX_STANDARD.
 examples/opHdrFix.par: More updates, in an attempt to identify
@@ -21,6 +23,8 @@ examples/opHdrFix.par: More updates, in an attempt to identify
            Flag a bunch of old data as bad, where I've specifically searched
            for short science exposures.
            Change all FLAVOR='unknown' entries to QUALITY='bad'.
+pro/fluxfix/Makefile - Forget to add this Makefile, which is needed
+           to prevent the "make install" from crashing on an IRIX platform.
 
 In idlutils:
 
