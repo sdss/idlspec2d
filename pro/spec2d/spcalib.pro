@@ -21,7 +21,7 @@
 ;   indir      - Input directory for FLATNAME, ARCNAME, OBJNAME;
 ;                default to '.'
 ;   timesep    - Maximum time separation between flats and arcs to pair them;
-;                default to 7200 sec.
+;                set to zero to disable this test; default to 7200 sec.
 ;
 ; OUTPUTS:
 ;   arcstruct  - Structure array with extracted arc calibration information
@@ -213,7 +213,7 @@ splog,'Arc fbadpix ', fbadpix ; ???
       igood = where(flatstruct.qbad EQ 0)
       if (igood[0] NE -1) then begin
          tsep = min( abs(tai - flatstruct[igood].tai), ii )
-         if (tsep LE timesep) then iflat = igood[ii]
+         if (tsep LE timesep AND timesep NE 0) then iflat = igood[ii]
       endif
 
       if (iflat GE 0) then begin
@@ -322,7 +322,7 @@ splog,'Arc fbadpix ', fbadpix ; ???
       igood = where(arcstruct.qbad EQ 0)
       if (igood[0] NE -1) then begin
          tsep = min( abs(flatstruct[iflat].tai - arcstruct[igood].tai), ii )
-         if (tsep LE timesep) then iarc = igood[ii]
+         if (tsep LE timese AND timesep NE 0p) then iarc = igood[ii]
       endif
 
       if (iarc GE 0) then $
