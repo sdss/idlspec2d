@@ -388,7 +388,6 @@ pro/spec2d/qaplot_skyshift.pro -text
 pro/spec2d/qaplot_skysub.pro -text
 pro/spec2d/read1spec.pro -text
 pro/spec2d/read2dout.pro -text
-pro/spec2d/readidlout.pro -text
 pro/spec2d/readplugmap.pro -text
 pro/spec2d/readsmear.pro -text
 pro/spec2d/redmonster.pro -text
