@@ -108,6 +108,7 @@ sprobot_start: Copy the data over starting at 10am Princeton time,
             which will be after "mailhtml.sh" is run at APO (at 7:20 am).
 
 YANNY_PAR (in idlutils): Add INDX keyword, and fix bug in returned COUNT.
+         Support for KEYNAME input as an array.
 evilinstall (in idlutils): If $CVSROOT is not set, then set it either
          by setting up the "sdsscvs" product or explicitly setting to the
          Fermi CVS location.  This allows the option of installing from a
