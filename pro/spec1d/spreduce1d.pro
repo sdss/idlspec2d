@@ -17,7 +17,7 @@
 ;                this must be a vector with unique values between 1 and
 ;                the number of rows in the plate file (typically 640).
 ;   doplot     - If set, then generate plots.  Send plots to a PostScript
-;                file unless /DEBUG is set.
+;                file spDiagDebug1d-$PLATE-$MJD.ps unless /DEBUG is set.
 ;   debug      - If set, then send plots to the X display and wait for
 ;                a keystroke after each plot; setting /DEBUG forces /DOPLOT.
 ;
@@ -45,6 +45,7 @@
 ;   filter_thru()
 ;   mrdfits()
 ;   mwrfits
+;   qaplot_fcalibvec
 ;   splog
 ;   skymask()
 ;   speclinefit
@@ -96,11 +97,12 @@ pro spreduce1d, platefile, fiberid=fiberid, doplot=doplot, debug=debug
    zbestfile = 'spZbest-' + platemjd + '.fits'
    if (NOT keyword_set(logfile)) then $
     logfile = 'spDiag1d-' + platemjd + '.log'
+   plotfile = 'spDiag1d-' + platemjd + '.ps'
 
    if (keyword_set(doplot) AND NOT keyword_set(debug)) then begin
-      plotfile = 'spDiag1d-' + platemjd + '.ps'
-      cpbackup, plotfile
-      dfpsplot, plotfile, /color
+      debugfile = 'spDiagDebug1d-' + platemjd + '.ps'
+      cpbackup, debugfile
+      dfpsplot, debugfile, /color
    endif
 
    stime0 = systime(1)
@@ -108,8 +110,9 @@ pro spreduce1d, platefile, fiberid=fiberid, doplot=doplot, debug=debug
    cpbackup, logfile
    splog, filename=logfile
    splog, 'Log file ' + logfile + ' opened ' + systime()
-   if (keyword_set(plotfile)) then $
-    splog, 'Plot file ' + plotfile
+   splog, 'Plot file ' + plotfile
+   if (keyword_set(debugfile)) then $
+    splog, 'Debug plot file ' + debugfile
    splog, 'IDL version: ' + string(!version,format='(99(a," "))')
    spawn, 'uname -a', uname
    splog, 'UNAME: ' + uname[0]
@@ -487,7 +490,7 @@ ormask = 0 ; Free memory
    ;----------
    ; Set ZWARNING flags.
 
-   splog, 'Setting ZWARNING flags'
+   splog, 'Setting flags'
    zwarning = lonarr(nper,nobj)
 
    ; Warning: Sky fiber.
@@ -536,6 +539,10 @@ ormask = 0 ; Free memory
    sxaddpar, hdr, 'EXTEND', 'T', after='NAXIS'
    sxaddpar, hdr, 'VERS1D', idlspec2d_version(), $
     'Version of idlspec2d for 1D reduction', after='VERSCOMB'
+   spawn, 'uname -n', uname
+   sxaddpar, hdr, 'UNAME', uname[0]
+   ww = strsplit(uname[0], '.', /extract)
+   if (ww[1<(n_elements(ww)-1)] EQ 'fnal') then return
 
    cpbackup, zallfile
    mwrfits, 0, zallfile, hdr, /create ; Retain the original header in first HDU
@@ -547,10 +554,23 @@ ormask = 0 ; Free memory
    mwrfits, synflux, zbestfile
    mwrfits, dispflux, zbestfile
 
+   if (keyword_set(debugfile)) then dfpsclose
+
+   ;----------
+   ; Generate final QA plots
+
+   cpbackup, plotfile
+   dfpsplot, plotfile, /color
+
+   plottitle = string(zans[0].plate, zans[0].mjd, $
+    format='("Flux-Calibration Errors Plate=", i4, " MJD=", i5)')
+   qaplot_fcalibvec, objloglam, objflux, objivar, synflux, plugmap, zans, $
+    plottitle=plottitle
+
+   dfpsclose
+
    ;----------
    ; Close log file
-
-   if (keyword_set(plotfile)) then dfpsclose
 
    splog, 'Total time for SPREDUCE1D = ', systime(1)-stime0, ' seconds', $
     format='(a,f6.0,a)'
