@@ -21,9 +21,9 @@
 ;                extend the range to include FITMAG if necessary.
 ;   plottitle  - Title for top of plot
 ;   plotfile   - Optional plot file
-;   synthmag   - Vector of synthetic magnitudes dimensionsed [3,640]
-;                and containing only gri mags; if set, then make more than
-;                the first page of plots
+;   synthmag   - Vector of synthetic magnitudes dimensionsed [5,640],
+;                but only the central three mags (gri) are used;
+;                if set, then make more than the first page of plots
 ;
 ; OUTPUTS:
 ;
@@ -66,34 +66,33 @@ pro plotsn1, plugc, synthmag, i1, i2, plottitle=plottitle, objtype=objtype
    !y.omargin = [5,3]
    symsize = 0.5
    psym = 1
-   csize = 1.0
+   csize = 1.5
+   textsize = 1.0
    xrange = [14.,24.]
    yrange = [-0.6,0.6]
 
-   gmagdiff = synthmag[0,*] - plugc.mag[1]
-   rmagdiff = synthmag[1,*] - plugc.mag[2]
-   imagdiff = synthmag[2,*] - plugc.mag[3]
+   magdiff = synthmag - plugc.mag
 
    for ipanel=0, 4 do begin
       case ipanel of
       0: begin
-         yplot = gmagdiff
+         yplot = magdiff[1,*]
          ytext = 'g-mag'
          end
       1: begin
-         yplot = rmagdiff
+         yplot = magdiff[2,*]
          ytext = 'r-mag'
          end
       2: begin
-         yplot = imagdiff
+         yplot = magdiff[3,*]
          ytext = 'i-mag'
          end
       3: begin
-         yplot = gmagdiff - rmagdiff
+         yplot = magdiff[1,*] - magdiff[2,*]
          ytext = '(g-r) color'
          end
       4: begin
-         yplot = rmagdiff - imagdiff
+         yplot = magdiff[2,*] - magdiff[3,*]
          ytext = '(r-i) color'
          end
       endcase
@@ -108,17 +107,17 @@ pro plotsn1, plugc, synthmag, i1, i2, plottitle=plottitle, objtype=objtype
       plot, xrange, [0,0], $
        xrange=xrange, yrange=yrange, /xstyle, /ystyle, $
        xtitle=xtitle, ytitle='(Spectro - PHOTO) mag', $
-       title=thistitle, charsize=1.5*csize, xtickname=xtickname
+       title=thistitle, charsize=csize, xtickname=xtickname
       xyouts, xrange[0]+1, 0.75*yrange[1], 'Spectro-1: '+ytext, $
-       charsize=csize
+       charsize=textsize
       if (i1[0] NE -1) then begin
          djs_oplot, plugc[i1].mag[2], yplot[i1], psym=psym, symsize=symsize
          djs_iterstat, yplot[i1], median=mn, sigma=sig
          mntext = string(mn, format='(" Median= ",f6.3)')
          devtext = string(sig, format='(" Stdev= ",f6.3)')
-         xyouts, 0.5*xrange[0]+0.5*xrange[1], 0.40*yrange[0], charsize=csize, $
+         xyouts, 0.5*xrange[0]+0.5*xrange[1], 0.40*yrange[0], charsize=textsize, $
           mntext
-         xyouts, 0.5*xrange[0]+0.5*xrange[1], 0.70*yrange[0], charsize=csize, $
+         xyouts, 0.5*xrange[0]+0.5*xrange[1], 0.70*yrange[0], charsize=textsize, $
           devtext
          splog, 'Spectro-1: ' + objtype + ' ' + ytext + mntext + devtext
       endif
@@ -126,17 +125,17 @@ pro plotsn1, plugc, synthmag, i1, i2, plottitle=plottitle, objtype=objtype
       plot, xrange, [0,0], $
        xrange=xrange, yrange=yrange, /xstyle, /ystyle, $
        xtitle=xtitle, ytitle='(Spectro - PHOTO) mag', $
-       title=thistitle, charsize=1.5*csize, xtickname=xtickname
+       title=thistitle, charsize=csize, xtickname=xtickname
       xyouts, xrange[0]+1, 0.75*yrange[1], 'Spectro-2: '+ytext, $
-       charsize=csize
+       charsize=textsize
       if (i2[0] NE -1) then begin
          djs_oplot, plugc[i2].mag[2], yplot[i2], psym=psym, symsize=symsize
          djs_iterstat, yplot[i2], median=mn, sigma=sig
          mntext = string(mn, format='(" Median= ",f6.3)')
          devtext = string(sig, format='(" Stdev= ",f6.3)')
-         xyouts, 0.5*xrange[0]+0.5*xrange[1], 0.40*yrange[0], charsize=csize, $
+         xyouts, 0.5*xrange[0]+0.5*xrange[1], 0.40*yrange[0], charsize=textsize, $
           mntext
-         xyouts, 0.5*xrange[0]+0.5*xrange[1], 0.70*yrange[0], charsize=csize, $
+         xyouts, 0.5*xrange[0]+0.5*xrange[1], 0.70*yrange[0], charsize=textsize, $
           devtext
          splog, 'Spectro-2: ' + objtype + ' ' + ytext + mntext + devtext
       endif
@@ -213,6 +212,16 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
 
    snplate = fltarr(2,nbands)
 
+   pmulti = !p.multi
+   ymargin = !y.margin
+   yomargin = !y.omargin
+
+   !p.multi = [0,2,nbands]
+   !y.margin = [1,0]
+   !y.omargin = [5,3]
+   csize = 1.5
+   textsize = 1.0
+
    ;---------------------------------------------------------------------------
    ; Loop over each band in the plot
    ;---------------------------------------------------------------------------
@@ -223,19 +232,15 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
       ; 1st PAGE PLOT 1: (S/N) vs. magnitude
       ;------------------------------------------------------------------------
 
-      ;----------
-      ; Select the data points: S/N and magnitude for all objects that
-      ; are not SKY fibers.
-
-      mag = plugc.mag[bands[iband]]
+      thismag = plugc.mag[bands[iband]]
 
       ;----------
       ; Fit the data as S/N vs. mag
 
-      afit = fitsn(mag[igood], snvec[iband,igood], sigma=sigma, $
+      afit = fitsn(thismag[igood], snvec[iband,igood], sigma=sigma, $
        colorband=bandnames[bands[iband]], fitmag=fitmag)
       logsnc = alog10(snvec[iband,*] > 0.01)
-      diff = logsnc - poly(mag, afit) ; Residuals from this fit
+      sndiff = logsnc - poly(thismag, afit) ; Residuals from this fit
 
       ;----------
       ; Extend the plotting range if necessary to include FITMAG
@@ -247,25 +252,24 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
       ; Set up the plot
 
       if (iband LT nbands-1) then begin
-         xchars = 0.001
-         ymargin = [0,2]
-         xtitle = 'mag'
+         xtickname = strarr(20)+' '
+         xtitle1 = ''
+         xtitle2 = ''
       endif else begin
-         xchars = 1.0
-         ymargin = [3,1]
-         xtitle = ''
+         xtickname = ''
+         xtitle1 = 'mag'
+         xtitle2 = 'X [mm]'
       endelse
-      xmargin = [8,1]
-      ychars = 1.0
       symsize = 0.65
 
-      plot, mag[igood], snvec[iband,igood], /nodata, /ylog, $
-       xchars=xchars, ychars=ychars, xrange=plotmag, $
-       xtitle=xtitle, ytitle='S/N in '+bandnames[bands[iband]]+'-band', $
-       xmargin=xmargin, ymargin=ymargin, /xstyle, yrange=[0.5,100], /ystyle
+      plot, thismag[igood], snvec[iband,igood], /nodata, /ylog, $
+       xtickname=xtickname, xrange=plotmag, $
+       xtitle=xtitle1, ytitle='S/N in '+bandnames[bands[iband]]+'-band', $
+       /xstyle, yrange=[0.5,100], /ystyle, charsize=csize
 
       if (iband EQ 0 AND keyword_set(plottitle)) then $
-       xyouts, plotmag[1], 106.0, plottitle, align=0.5, charsize=1.5
+       xyouts, plotmag[1], 106.0, 'S/N for '+plottitle, align=0.5, $
+        charsize=csize
 
       ;----------
       ; Plot the fiducial line (a thick blue line)
@@ -283,9 +287,9 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
       psymvec = (plugc.spectrographid EQ 1) * 7 $
        + (plugc.spectrographid EQ 2) * 6 
       colorvec = replicate('red', nobj)
-      ipos = where(diff[igood] GE 0)
+      ipos = where(sndiff[igood] GE 0)
       if (ipos[0] NE -1) then colorvec[ipos] = 'green'
-      djs_oplot, mag[igood], snvec[iband,igood] > 0.6, $
+      djs_oplot, thismag[igood], snvec[iband,igood] > 0.6, $
        psym=psymvec, symsize=symsize, color=colorvec
 
       ; Now overplot the fit line
@@ -303,7 +307,7 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
       snoise2 = fltarr(2)
       xloc = snmag[bands[iband]]
       if (s1[0] NE -1) then begin
-         afit1 = fitsn(mag[s1], snvec[iband,s1], fitmag=myfitmag, $
+         afit1 = fitsn(thismag[s1], snvec[iband,s1], fitmag=myfitmag, $
           colorband=bandnames[bands[iband]])
          if (keyword_set(afit1)) then begin
             snoise2[0] = 10^(2.0 * poly(snmag[bands[iband]],afit1)) 
@@ -312,7 +316,7 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
          endif
       endif
       if (s2[0] NE -1) then begin
-         afit2 = fitsn(mag[s2], snvec[iband,s2], fitmag=myfitmag, $
+         afit2 = fitsn(thismag[s2], snvec[iband,s2], fitmag=myfitmag, $
           colorband=bandnames[bands[iband]])
          if (keyword_set(afit2)) then begin
             snoise2[1] = 10^(2.0 * poly(snmag[bands[iband]],afit2)) 
@@ -331,28 +335,29 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
 
       if (keyword_set(afit)) then $
        xyouts, plotmag[0]+0.5, 0.9, string(format='(a,f6.3,f7.3,a)', $
-        'log S/N = ', afit, slopelabel[bands[iband]])
+        'log S/N = ', afit, slopelabel[bands[iband]]), charsize=textsize
 
       if (keyword_set(sigma)) then $
-       xyouts, plotmag[0]+0.5, 1.5, string(format='(a,f4.2)','Stdev=', sigma)
+       xyouts, plotmag[0]+0.5, 1.5, string(format='(a,f4.2)','Stdev=', sigma), $
+        charsize=textsize
 
       djs_xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.3], $
        10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.93], $
-       snlabel[bands[iband]]
+       snlabel[bands[iband]], charsize=textsize
 
       djs_oplot, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.57], $
          10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.85], psym=7, $
          symsize=symsize
       djs_xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.60], $
          10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.83], $
-         string(format='("Spec1: ", f5.1)', snoise2[0])
+         string(format='("Spec1: ", f5.1)', snoise2[0]), charsize=textsize
 
       djs_oplot, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.57], $
          10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.75], psym=6, $
          symsize=symsize
       djs_xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.60], $
          10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.73], $
-         string(format='("Spec2: ", f5.1)', snoise2[1])
+         string(format='("Spec2: ", f5.1)', snoise2[1]), charsize=textsize
 
       splog, snlabel[bands[iband]], snoise2, format='(a20, 2(f10.3))'
 
@@ -362,25 +367,85 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
       ; 1st PAGE PLOT 2: Throughput deviations plotted on the focal plane
       ;------------------------------------------------------------------------
 
-      plot, [0], [0], /nodata, xchars=xchars, ychars=ychars, $
-       xtitle='X [mm]', ytitle='Y [mm]', $
-       xrange=[-320,320], yrange=[-320,320], xstyle=1, ystyle=1, $
-       xmargin=xmargin, ymargin=ymargin
+      plot, [0], [0], /nodata, xtickname=xtickname, $
+       xtitle=xtitle2, ytitle='Y [mm]', $
+       xrange=[-320,320], yrange=[-320,320], xstyle=1, ystyle=1, charsize=csize
       if (ngood GT 0) then begin
-         colorvec = (diff[igood] GE 0) * djs_icolor('green') $
-          + (diff[igood] LT 0) * djs_icolor('red')
-         symvec = abs(diff[igood]) * 5 < 2
+         colorvec = (sndiff[igood] GE 0) * djs_icolor('green') $
+          + (sndiff[igood] LT 0) * djs_icolor('red')
+         symvec = (abs(sndiff[igood]) * 5 < 2) > 0.1
          djs_oplot, plugc[igood].xfocal, plugc[igood].yfocal, $
           symsize=symvec, color=colorvec, psym=2
       endif
-
    endfor
+
+   !p.multi = pmulti
+   !y.margin = ymargin
+   !y.omargin = yomargin
+
+   if (NOT keyword_set(synthmag)) then return
+
+   ;---------------------------------------------------------------------------
+   ; PAGE 2: Plot spectro-mag vs. PHOTO-mag
+   ; Loop over each band in the plot
+   ;---------------------------------------------------------------------------
+
+   pmulti = !p.multi
+   ymargin = !y.margin
+   yomargin = !y.omargin
+
+   !p.multi = [0,2,nbands]
+   !y.margin = [1,0]
+   !y.omargin = [5,3]
+
+   magdiff = synthmag - plugc.mag
+   for iband=0, nbands-1 do begin
+
+      if (iband LT nbands-1) then begin
+         xtickname = strarr(20)+' '
+         xtitle1 = ''
+         xtitle2 = ''
+      endif else begin
+         xtickname = ''
+         xtitle1 = 'Fiber ID'
+         xtitle2 = 'X [mm]'
+      endelse
+      psym = 1
+
+      plot, [0], [0], /nodata, $
+       xtickname=xtickname, xrange=[0,641], $
+       xtitle=xtitle1, ytitle='(Spectro-PHOTO) '+bandnames[bands[iband]]+'-mag', $
+       /xstyle, yrange=[-0.6,0.6], /ystyle, charsize=csize
+      oplot, !x.crange, [0,0]
+      if (ngood GT 0) then begin
+         thisdiff = magdiff[bands[iband],igood]
+         colorvec = (thisdiff LT 0) * djs_icolor('green') $
+          + (thisdiff GE 0) * djs_icolor('red')
+         symvec = (abs(thisdiff) * 5 < 2) > 0.1
+         djs_oplot, igood+1, thisdiff, $
+          symsize=symvec, color=colorvec, psym=psym
+      endif
+
+      if (iband EQ 0 AND keyword_set(plottitle)) then $
+       xyouts, !x.crange[1], 1.03*!y.crange[1]-0.03*!y.crange[0], $
+        'Throughput for '+plottitle, align=0.5, charsize=csize
+
+      plot, [0], [0], /nodata, xtickname=xtickname, $
+       xtitle=xtitle2, ytitle='Y [mm]', $
+       xrange=[-320,320], yrange=[-320,320], /xstyle, /ystyle, charsize=csize
+      if (ngood GT 0) then begin
+         djs_oplot, plugc[igood].xfocal, plugc[igood].yfocal, $
+          symsize=symvec, color=colorvec, psym=psym
+      endif
+   endfor
+
+   !p.multi = pmulti
+   !y.margin = ymargin
+   !y.omargin = yomargin
 
    ;------------------------------------------------------------------------
    ; Plots of spectro mags vs. PHOTO mags
    ;------------------------------------------------------------------------
-
-   if (NOT keyword_set(synthmag)) then return
 
    qstd = strmatch(plugc.objtype, '*STD*') 
    i1 = where(plugc.spectrographid EQ 1 AND qstd AND plugc.mag[2] NE 0)

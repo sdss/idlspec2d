@@ -1,4 +1,3 @@
-;+
 ; NAME:
 ;   platesn
 ;
@@ -15,9 +14,6 @@
 ;   finalandmask   - 
 ;   finalplugmap   - 
 ;   loglam         - 
-;
-; REQUIRED KEYWORDS:
-;   fcalibprefix   - Prefix for flux-calibration files.
 ;
 ; OPTIONAL KEYWORDS:
 ;   hdr            - FITS header; if specified, then keywords are added.
@@ -113,14 +109,13 @@ pro platesn, finalflux, finalivar, finalandmask, finalplugmap, loglam, $
    waveimg = 10^(loglam) 
    flambda2fnu = (waveimg*waveimg / 2.99792e18) # replicate(1,nfiber)
 
-   filter = transpose(filter_thru(finalflux*flambda2fnu, waveimg=waveimg, $
+   synflux = transpose(filter_thru(finalflux*flambda2fnu, waveimg=waveimg, $
     mask=(finalivar LE 0)))
 
-   synthmag = fltarr(3,nfiber)
-   posfilter = where(filter[1:3,*] GT 0)
-   if posfilter[0] NE -1 then $
-    synthmag[posfilter] = $
-     -2.5 * alog10((filter[1:3,*])[posfilter]) - 48.6 + 2.5*17.0
+   synthmag = fltarr(5,nfiber)
+   igood = where(synflux GT 0, ngood)
+   if (ngood GT 0) then $
+    synthmag[igood] = -2.5 * alog10(synflux[igood]) - 48.6 + 2.5*17.0
 
    ;----------
    ; Make S/N plot
