@@ -86,7 +86,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    if (NOT keyword_set(indir)) then indir = './'
    if (NOT keyword_set(plugdir)) then plugdir = indir
    if (NOT keyword_set(outdir)) then outdir = indir
-   if (NOT keyword_set(minexp)) then minexp = 61
+   if (n_elements(minexp) EQ 0) then minexp = 61
 
    filer = strmid(filename,0,3)  ; root 'sdR'
    filec = strmid(filename,4,2)  ; camera name
