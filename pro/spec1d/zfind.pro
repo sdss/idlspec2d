@@ -84,6 +84,7 @@ function sp1d_struct
     'z_err'      , 0.0, $
     'chi2'       , 0.0, $
     'dof'        ,  0L, $
+    'rchi2diff'  , 0.0, $
     'wcoverage'  , 0.0, $
     'tfile'      ,  '', $
     'tcolumn'    , lonarr(10) - 1L, $
