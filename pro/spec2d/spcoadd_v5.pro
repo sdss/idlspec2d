@@ -240,24 +240,23 @@ pro spcoadd_v5, spframes, outputname, $
 
       ;----------
       ; Apply flux-correction factor between spectro-photometric exposure
-      ; and this exposure.
+      ; and this exposure.  There's also an optional additive term.
+      ; So the flux is first multiplied by HDU#0, then we add HDU#1.
 
-;      spectroid = strmid(cameras,1,1)
-;      corrfile = djs_filepath('spFluxcorr-'+expstr+'-'+spectroid+'.fits', $
-;                   root_dir=combinedir)
-;      corrset = mrdfits(corrfile, 1)
-;      traceset2xy, corrset, tempwave, corrimg
-;
-;      thismask = mrdfits(corrfile, 2)
-;      if n_elements(thismask) EQ nfib then $
-;        temppixmask = temppixmask OR replicate(1,npix) # thismask
-;
-;      invertcorr = 1.0 / corrimg
-;      medcor = median(corrimg)
-;      divideflat, tempflux, invvar=tempivar, invertcorr, minval=0.05/medcor
-;      divideflat, tempsky, invertcorr, minval=0.05/medcor
-;      temppixmask = temppixmask OR $
-;           (corrimg GE 20.0 * medcor) * pixelmask_bits('BADFLUXFACTOR')
+      corrfile = djs_filepath(string(camnames[icam], expnum, $
+       format='("spFluxcorr-", a2, "-", i8.8, ".fits")'), $
+       root_dir=combinedir)
+      corrfile = (findfile(corrfile+'*'))[0]
+
+      aterm = mrdfits(corrfile, 0, corrhdr, /silent)
+      bterm = mrdfits(corrfile, 1)
+      invertcorr = 1. / aterm
+      minval = 0.05 * invertcorr
+      divideflat, tempflux, invvar=tempivar, invertcorr, minval=minval
+      tempflux = tempflux + bterm
+      divideflat, tempsky, invertcorr, minval=minval
+      temppixmask = temppixmask $
+       OR (invertcorr LE minval) * pixelmask_bits('BADFLUXFACTOR')
 
       ;----------
       ; Apodize the errors
@@ -267,7 +266,8 @@ pro spcoadd_v5, spframes, outputname, $
       if (keyword_set(window)) then begin
          swin = window < npix
          indx = lindgen(swin)
-         tempivar[indx,*] = tempivar[indx,*] * (indx # replicate(1,nfib)) / swin
+         tempivar[indx,*] = $
+          tempivar[indx,*] * (indx # replicate(1,nfib)) / swin
       endif
 
       ;----------
