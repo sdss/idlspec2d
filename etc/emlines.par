@@ -3,15 +3,15 @@
 typedef struct {
   double lambda;      # Wavelength in air
   char name[40];     # Name of line
-  char zindex[20];   # Entries w/ same zindex contrained to have same redshift
-  char windex[20];   # Entries w/ same windex contrained to have same width
-  char findex[20];   # Entries w/ same findex have contrained flux ratios
+  char zindex[20];   # Entries w/ same zindex constrained to have same redshift
+  char windex[20];   # Entries w/ same windex constrained to have same width
+  char findex[20];   # Entries w/ same findex have constrained flux ratios
   float fvalue;      # Relative scale factor for entries w/ same findex
 } emlineid;
 
-# emlineid  1549.48    "C_IV"        zemission  wemission  f1549  1
-# emlineid  1640.42    "He_II"       zemission  wemission  f1640  1
-# emlineid  1908.734   "C_III]"      zemission  wemission  f1908  1
+ emlineid  1549.48    "C_IV"        zemission  wemission  f1549  1
+ emlineid  1640.42    "He_II"       zemission  wemission  f1640  1
+ emlineid  1908.734   "C_III]"      zemission  wemission  f1908  1
  emlineid  2799.49    "Mg_II"       zemission  wemission  f2799  1
  emlineid  3725.94    "[O_II]"      zemission  wemission  f3725  1
  emlineid  3727.24    "[O_II]"      zemission  wemission  f3727  1
