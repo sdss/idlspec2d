@@ -5,6 +5,7 @@ bin/Makefile -text
 bin/aporsync.sh -text
 bin/killdata.sh -text
 bin/mailhtml.sh -text
+bin/make_room.sh -text
 bin/sos.sh -text
 bin/sos_redo -text
 bin/sos_start -text
