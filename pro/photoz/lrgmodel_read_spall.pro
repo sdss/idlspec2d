@@ -16,7 +16,9 @@ function lrgmodel_read_spall, public=public, regenerate=regenerate
       if (ct EQ 0) then message, 'Failed to find file ' + spfile
 
       columns = ['PROGNAME', 'PLATEQUALITY', 'PLATE', 'FIBERID', 'MJD', $
-       'CLASS', 'SPECPRIMARY', 'PRIMTARGET', 'Z', 'Z_ERR', 'ZWARNING', $
+       'RUN', 'RERUN', 'CAMCOL', 'FIELD', 'ID', 'COLC', $
+       'CLASS', 'SPECPRIMARY', 'PRIMTARGET', $
+       'Z', 'Z_ERR', 'ZWARNING', $
        'MODELFLUX', 'MODELFLUX_IVAR', 'EXTINCTION']
       spall = hogg_mrdfits(spfile, 1, columns=columns, $
        nrowchunk=10000L)
