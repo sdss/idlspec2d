@@ -186,7 +186,8 @@ pro veldisp, objflux, objerr, star, starerr, bestz=bestz, bestsigma=bestsigma, l
 ;       We need a routine for each method.
 ;
 
-        chi2 = fltarr(100)
+        chi2diff = fltarr(100)
+        chi2quotient = fltarr(100)
         sigma = fltarr(100)
         alpha = fltarr(100)
         for i=0,99 do begin
@@ -200,14 +201,20 @@ pro veldisp, objflux, objerr, star, starerr, bestz=bestz, bestsigma=bestsigma, l
 
           diff = fluxfft[inside] - alpha[i] * starshift[inside] * broad[inside]
 ;          chi2[i] = float(total(diff * conj(diff)/(fluxvar0 + starvar0 * broad[inside]^2)))
-          chi2[i] = float(total(diff * conj(diff)/(fluxvar0)))
+          chi2diff[i] = float(total(diff * conj(diff)/(fluxvar0)))
 
+;---------------------------------------------------------
+;          quotient = float(fluxfft/(starshift))
+;          quotient = float(fluxfft/(alpha[i]*starshift))
+;          diff = (quotient[inside] - broad[inside])
+;          chi2quotient[i] = total(diff^2)/fluxvar0
         endfor
+ 
 
-      minchi2 = min(chi2,minplace)
+      minchi2 = min(chi2diff,minplace)
       bestsigma[iobj] = sigma[minplace] 
 
-      chip = poly_fit(sigma/10.0,chi2,10,/double)
+      chip = poly_fit(sigma/10.0,chi2diff,10,/double)
       lotsofsigma = findgen(1000)/100.0
       chifit = poly(lotsofsigma/10.0,chip)
       minchifit = min(chifit,fitplace)
@@ -215,7 +222,7 @@ pro veldisp, objflux, objerr, star, starerr, bestz=bestz, bestsigma=bestsigma, l
       bestsigma[iobj] = lotsofsigma[fitplace]
       print,bestz[iobj], bestsigma[iobj], minchi2, alpha[minplace]
 
-      plot,sigma,chi2,ps=1,/yno
+      plot,sigma,chi2diff,ps=1,/yno
       oplot,lotsofsigma,chifit
      endelse
    endfor 
