@@ -12,7 +12,7 @@ pro fixvdisp
    for ifile=0, nfile-1 do begin
       print, 'Reading ' + filename[ifile]
 
-      zans = mrdfits(filename[ifile], 1, hdr)
+      zans = mrdfits(filename[ifile], 1, zhdr)
       spawn, 'mv -f ' + filename[ifile] + ' ' + filename[ifile]+'.OLD'
 
       mjdname = long( strmid( fileandpath(filename[ifile]), 13, 5) )
@@ -34,8 +34,8 @@ pro fixvdisp
          newans[igal].vdisp = sigma
          newans[igal].vdisp_err = sigerr
 
-         sxaddpar, objhdr, 'MJD', mjdname ; Force the MJD to be correct
-         mwrfits, 0, filename[ifile], objhdr, /create
+         sxaddpar, zhdr, 'MJD', mjdname ; Force the MJD to be correct
+         mwrfits, 0, filename[ifile], zhdr, /create
          mwrfits, newans, filename[ifile]
       endif
    endfor
