@@ -63,7 +63,7 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
 
    if (N_elements(planfile) GT 1) then begin
       for i=0, N_elements(planfile)-1 do $
-       spcombine, planfile[i], docams=docams, adderr=adderr, $
+       spcombine_v5, planfile[i], docams=docams, adderr=adderr, $
         xdisplay=xdisplay, minsn=minsn
       return
    endif
