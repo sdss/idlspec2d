@@ -30,6 +30,7 @@
 ;   djs_modfits
 ;   djs_unlockfile
 ;   headfits()
+;   idlutils_version()
 ;   idlspec2d_version()
 ;   modfits
 ;   mrdfits()
@@ -77,6 +78,8 @@ pro apo_appendlog, logfile, rstruct, tstruct
 
       ; Write HDU#0, which  is just a header with the version of the code.
       mkhdr, newhdr, '', /extend
+      sxaddpar, hdr, 'VERSIDL', !version.release, ' Version of IDL'
+      sxaddpar, newhdr, 'VERSUTIL', idlutils_version()
       sxaddpar, newhdr, 'VERS2D', idlspec2d_version()
       writefits, logfile, 0, newhdr
 
