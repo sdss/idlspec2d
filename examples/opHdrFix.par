@@ -367,6 +367,10 @@ ophdrfix sdR-??-0001247[0-0] NAME     "'0799-52277-01D'"
 ophdrfix sdR-??-0001247[1-3] NAME     "'0799-52277-01E'"
 ophdrfix sdR-??-0001247[4-4] NAME     "'0799-52277-01F'"
 
+# It looks like this exposure for plate 802 on MJD 52289
+# must have been aborted with essentially no exposure time on the sky.
+ophdrfix sdR-??-00012653 QUALITY   "'bad'"
+
 # All science exposures for plate 803 on MJD 52296 have
 # very high sky count rates and scattered light, for
 # some unknown reason.  The night log gives no clue.
@@ -487,12 +491,49 @@ ophdrfix sdR-??-00013631 EXPTIME   2460
 # These are bad test data taken on MJD 52337 using plate 778.
 ophdrfix sdR-??-0001362[4-5] FLAVOR   "'unknown'"
 
+# Wrong exposure time in these headers for plate 778 on MJD 52337.
+# The observers were trying to pause and re-start exposures.
+# The manually-reported times in the night log don't agree with
+# the timestamps of the exposures.  According to the timestamps,
+# these exposures cannot be longer than about 20 min.
+ophdrfix sdR-??-00013638 EXPTIME  1200
+ophdrfix sdR-??-00013639 EXPTIME  1200
+
+# Wrong exposure time in these headers for plate 788 on MJD 52337.
+# (Reported to be 2662 and 2605 sec!)
+# According to the night logs, there were problems with slow shutters,
+# and the "pauseStare" workaround was used.
+ophdrfix sdR-??-00013648 EXPTIME  1200
+ophdrfix sdR-??-00013649 EXPTIME  1200
+
+# Wrong exposure time in these headers for plate 888 on MJD 52339.
+# (Reported to be 22065 and 23537 sec!)
+ophdrfix sdR-??-00013692 EXPTIME  1200
+ophdrfix sdR-??-00013694 EXPTIME  1200
+
 # Wrong exposure time in these headers for plate 876 on MJD 52343.
 ophdrfix sdR-??-00013781 EXPTIME  1500
 
 # The flat-field petals were acting up during the pre-calibs
 # for plate 889 on MJD 52346
 ophdrfix sdR-??-00013806 FLAVOR   "'unknown'"
+
+# Wrong exposure time in these headers for plate 877 on MJD 52353.
+# (Reported to be 21765 and 23236 sec!)
+ophdrfix sdR-??-00013897 EXPTIME  900
+ophdrfix sdR-??-00013900 EXPTIME  900
+
+# Wrong exposure time in these headers for plate 574 on MJD 52354.
+# (Reported to be 22066 sec!)
+ophdrfix sdR-??-00013952 EXPTIME  1200
+
+# Wrong exposure time in these headers for plate 574 on MJD 52355.
+# (Reported to be 24136 sec!)
+ophdrfix sdR-??-00013977 EXPTIME  1800
+
+# Wrong exposure time in these headers for plate 574 on MJD 52356.
+# (Reported to be 22065 sec!)
+ophdrfix sdR-??-00013995 EXPTIME  1200
 
 # Wrong exposure time in these headers for plate 606 on MJD 52364.
 ophdrfix sdR-??-00014085 EXPTIME  900
@@ -501,6 +542,10 @@ ophdrfix sdR-??-00014085 EXPTIME  900
 # (Reported to be 23837 sec!)
 ophdrfix sdR-??-00014138 EXPTIME  1500
 
+# Wrong exposure time in these headers for plate 880 on MJD 52367.
+# (Reported to be 23236 sec!)
+ophdrfix sdR-??-00014165 EXPTIME  900
+
 # Wrong exposure time in these headers for plate 906 on MJD 52368.
 # (Reported to be 23238 sec!)
 ophdrfix sdR-??-00014199 EXPTIME  900
@@ -508,6 +553,30 @@ ophdrfix sdR-??-00014199 EXPTIME  900
 # These two exposures on plate 607 on MJD 52368 were taken through thick
 # clouds and have very little signal (except in the sky!)
 ophdrfix sdR-??-0001421[8-9] FLAVOR   "'unknown'"
+
+# Wrong exposure time in these headers for plate 882 on MJD 52370.
+# (Reported to be 22066 sec!)
+ophdrfix sdR-??-00014255 EXPTIME  1200
+
+# Wrong exposure time in these headers for plate 780 on MJD 52370.
+# (Reported to be 23338 sec!)
+ophdrfix sdR-??-00014262 EXPTIME  1000
+
+# Wrong exposure time in these headers for plate 907 on MJD 52373.
+# (Reported to be 21765 sec!)
+ophdrfix sdR-??-00014323 EXPTIME  900
+
+# Wrong exposure time in these headers for plate 509 on MJD 52374.
+# (Reported to be 22064 sec!)
+ophdrfix sdR-??-00014366 EXPTIME  1200
+
+# Wrong exposure time in these headers for plate 326 on MJD 52375.
+# (Reported to be 23239 sec!)
+ophdrfix sdR-??-00014410 EXPTIME  900
+
+# Wrong exposure time in these headers for plate 836 on MJD 52376.
+# (Reported to be 23337 sec!)
+ophdrfix sdR-??-00014459 EXPTIME  1000
 
 # The telescope appears to have not moved properly during the
 # smear on plate 887 on MJD 52376.  This exposure has very little S/N.
@@ -542,7 +611,11 @@ ophdrfix sdR-??-00014700 QUALITY   "'bad'"
 ophdrfix sdR-??-00014702 QUALITY   "'bad'"
 ophdrfix sdR-??-00014703 QUALITY   "'bad'"
 
-# This smear for plate 903 on MJD 14719 had very little S/N
+# Wrong exposure time in these headers for plate 903 on MJD 52384.
+# (Reported to be 24137 sec!)
+ophdrfix sdR-??-00014701 EXPTIME  1800
+
+# This smear for plate 903 on MJD 52385 had very little S/N
 ophdrfix sdR-??-00014719 QUALITY   "'bad'"
 
 # A bunch of test smears were taken for plate 951 on MJD 52394,
@@ -579,6 +652,10 @@ ophdrfix sdR-??-00014923 QUALITY   "'bad'"
 # This smear+science exposure for plate 820 on MJD 52404 had very low S/N.
 ophdrfix sdR-??-00014967 QUALITY   "'bad'"
 ophdrfix sdR-??-00014968 QUALITY   "'bad'"
+
+# Wrong exposure time in these headers for plate 946 on MJD 52405.
+# (Reported to be 22065 sec!)
+ophdrfix sdR-??-00014982 EXPTIME  1200
 
 # Wrong exposure time in these headers for plate 946 on MJD 52405.
 # (Reported to be 23536 sec!)
@@ -628,6 +705,10 @@ ophdrfix sdR-??-00015150 QUALITY   "'bad'"
 ophdrfix sdR-??-00015171 EXPTIME  900
 
 # Wrong exposure time in these headers for plate 968 on MJD 52412.
+# (Reported to be 22064 sec!)
+ophdrfix sdR-??-00015203 EXPTIME  1200
+
+# Wrong exposure time in these headers for plate 968 on MJD 52412.
 # (Reported to be 23838 sec!)
 ophdrfix sdR-??-00015205 EXPTIME  1500
 
@@ -643,4 +724,8 @@ ophdrfix sdR-??-00015235 QUALITY   "'bad'"
 # Wrong exposure time in these headers for plate 970 on MJD 52413.
 # (Reported to be 22065 sec!)
 ophdrfix sdR-??-00015227 EXPTIME  1200
+
+# Wrong exposure time in these headers for plate 960 on MJD 52425.
+# (Reported to be 23236 sec!)
+ophdrfix sdR-??-00015340 EXPTIME  900
 
