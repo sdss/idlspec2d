@@ -132,6 +132,9 @@ echo "RAWDATA_DIR=$RAWDATA_DIR" >> $cronfile
 echo "SPECTRO_DATA=$SPECTRO_DATA" >> $cronfile
 echo "SPROBOT_HOST=$SPROBOT_HOST" >> $cronfile
 echo "SPROBOT_LOCALDISKS=$SPROBOT_LOCALDISKS" >> $cronfile
+if [ -n "$SPROBOT_RSH" ] ; then
+   echo "SPROBOT_RSH=$SPROBOT_RSH" >> $cronfile
+fi
 echo "# This job will run at 1:00 am every day." >> $cronfile
 echo "0 1 * * * sprobotcopy.sh >> $SPRLOG 2>&1" >> $cronfile
 echo "# This job will run at 10:00 am every day (local time)." >> $cronfile

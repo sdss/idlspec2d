@@ -54,6 +54,11 @@ if [ -z "$SPROBOT_LOCALDISKS" ] ; then
   exit
 fi
 
+# Default to using "ssh" protocol
+if [ -z "$SPROBOT_RSH" ] ; then
+  SPROBOT_RSH=ssh
+fi
+
 echo ""
 echo "-------------------------------------------------------------------------------"
 echo "SPROBOT: Launched at "`date` UID=$UID PPID=$PPID
@@ -63,7 +68,7 @@ echo "SPROBOT: Launched at "`date` UID=$UID PPID=$PPID
 
 mjdlist=''
 
-remotedir=`ssh $hostname ls -d /data/spectro/[56789]???? | sed -n 's/\/.*\///p'`
+remotedir=`$SPROBOT_RSH $hostname ls -d /data/spectro/[56789]???? | sed -n 's/\/.*\///p'`
 for mjdstr in $remotedir ; do
 
    #----------
@@ -103,20 +108,20 @@ for mjdstr in $remotedir ; do
    if [ -n "$localdir" ] ; then
       # Copy the astrolog files...
       echo SPROBOT: rsync "$hostname:/astrolog/$mjdstr" $astrologdir
-      rsync -ar --rsh="ssh -c arcfour" \
+      rsync -ar --rsh="$SPROBOT_RSH" \
        "$hostname:/astrolog/$mjdstr" $astrologdir
 #       --rsync-path=/p/rsync/v2_4_3/rsync
 
       # Copy the raw FITS files... copy only files ending in ".fit.gz"
       echo SPROBOT: rsync "$hostname:/data/spectro/$mjdstr/*.fit.gz" $localdir
-      rsync -ar --rsh="ssh -c arcfour" \
+      rsync -ar --rsh="$SPROBOT_RSH" \
        "$hostname:/data/spectro/$mjdstr/*.fit.gz" $localdir
 #       --rsync-path=/p/rsync/v2_4_3/rsync
 #       "$hostname:/data/spectro/$mjdstr/*" $localdir
 
       # Copy the guider image directory...
       echo SPROBOT: rsync "$hostname:/data/spectro/$mjdstr/guider" $localdir
-      rsync -ar --rsh="ssh -c arcfour" \
+      rsync -ar --rsh="$SPROBOT_RSH" \
        "$hostname:/data/spectro/$mjdstr/guider/*.fits.gz" $localdir/guider
 
       # Compress the raw FITS files w/gzip...
