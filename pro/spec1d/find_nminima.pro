@@ -30,6 +30,7 @@
 ;
 ; OUTPUTS:
 ;   ypeak          - Fit value for either chi^2 or chi^2/DOF at the minima.
+;                    If the fit value is less than zero, then change it to zero.
 ;
 ; OPTIONAL OUTPUTS:
 ;   xerr           - Formal errors of XPEAK.
@@ -249,6 +250,8 @@ function zfitmin, yarr, xarr, dofarr=dofarr, $
       xbest = xguess
    endelse
 
+   ypeak = ypeak > 0 ; Insist that the Y minimum does not go below zero
+
    return, xbest
 end
 
@@ -356,7 +359,6 @@ function find_nminima, yflux, xvec, dofarr=dofarr, nfind=nfind, minsep=minsep, $
             !p.position[[0,2]] = !p.position[[0,2]] + dxplot
          endif
 
-; ???
          !x.ticks = 2
          nthis = n_elements(xplotval)
          !x.tickv = [xplotval[0], xpeak1, xplotval[nthis-1]]
