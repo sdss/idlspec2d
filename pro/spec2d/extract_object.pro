@@ -174,14 +174,13 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ;------------------------------------------------------------
    ;  Check for bad pixels within 3 pixels of trace
 
-   badcheck = extract_boxcar((invvar LE 0), xtrace, radius=2.5)
+   badcheck = extract_boxcar((invvar LE 0), xtrace, radius=1.0)
    badplace = where(badcheck GT 0)
 
    nx = (size(fextract,/dim))[0] 
    ny = (size(fextract,/dim))[1] 
    pixelmask = lonarr(nx,ny)
 
-   badcheck = extract_boxcar((invvar LE 0), xtrace, radius=1.0)
    badcolumns = where(total(badcheck GT 0,1) GT 0.1 * nx)
 
    if (badplace[0] NE -1) then pixelmask[badplace] = $
