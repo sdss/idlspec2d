@@ -225,8 +225,12 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
                hdr = [hdr, "plateid  " + platestr + "  # Plate number"]
                hdr = [hdr, "MJD      " + mjdstr $
                 + "  # Modified Julian Date for most recent observation"]
-               hdr = [hdr, "planfile2d  '" + planlist1 $
-                + "'  # Plan file for 2D spectral reductions"]
+               sq = "'"
+               hdr = [hdr, "planfile2d  " $
+                + string(sq+planlist1+sq+' ', format='(99a)') $
+                + " # Plan file(s) for 2D spectral reductions"]
+;               hdr = [hdr, "planfile2d  '" + planlist1 $
+;                + "'  # Plan file for 2D spectral reductions"]
                hdr = [hdr, "planfilecomb '" + planfile $
                 + "'  # Plan file for combining spectra"]
                hdr = [hdr, "extractdir '" + extractdir $
