@@ -237,7 +237,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
 
      ansrow = extract_row(fimage[*,cur], invvar[*,cur], $
       xcen[cur,*], sigmacur, ymodel=ymodelrow, fscat=fscatrow, $
-      proftype=proftype, iback=iback, reject=reject, pixelmask = pixelmasktemp, $
+      proftype=proftype, iback=iback, reject=reject, pixelmask=pixelmasktemp, $
       wfixed=wfixed, mask=masktemp, diagonal=prow, nPoly=nPoly, $
       niter=niter, squashprofile=squashprofile,inputans=inputans, $
       maxIter=maxIter, highrej=highrej, lowrej=lowrej, $
