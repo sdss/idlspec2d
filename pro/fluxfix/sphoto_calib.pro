@@ -1,32 +1,29 @@
 
-pro sphoto_calib, wave, flux, invvar, mask, fibertag, fcalfile, $
+pro sphoto_calib, wave, flux, invvar, mask, plugtag, fcalfile, $
     stdstarfile, stype = stype, input_calibset = input_calibset, $
     pca_calibset = pca_calibset
 
   ; Double check that all spcetra are from 1 camera + spectrograph
-  camid = fibertag.camcolor + strtrim(fibertag.spectrographid, 2)
+  camid = plugtag.camcolor + strtrim(plugtag.spectrographid, 2)
   if n_elements(uniq(camid)) gt 1 then begin
     splog, 'ABORT: Camera mismatch in spectrophotometric calibration!'
     return
   endif else camid = camid[0]
 
   ;-----------------------------------------
-  ; Figure out frame, fiber, & pixel dimensions (wave -> [npix, nfib*nframe])
-  ; For now, we assume we are only combining 1 plugmap
+  ; Figure out frame, fiber, & pixel dimensions 
+  ; Note, we assume we are only combining 1 plugmap
 
-  plug1 = fibertag[where(fibertag.expid eq fibertag[0].expid)]
-  nfib = n_elements(plug1)
-  frames = fibertag[where(fibertag.fiberid eq fibertag[0].fiberid)].expid
-  nframes = n_elements(frames)
   npix = n_elements(flux[*,0])
-  nspec = nfib * nframes
-  if n_elements(flux[0,*]) ne nspec then begin
-     splog, 'ABORT: # of frames and fibers not equal to # of spectra!'
-     return
-  endif
+  nspec = n_elements(flux[0,*])
+  fibers = plugtag[uniq(plugtag.fiberid, sort(plugtag.fiberid))].fiberid
+  nfibers = n_elements(fibers)
+  frames = plugtag[uniq(plugtag.expid, sort(plugtag.expid))].expid
+  nframes = n_elements(frames)
 
-  ;-----------------------------------------
+  ;----------------------------------------------------------------------------
   ; Put everything on a common wavelength grid
+  ;----------------------------------------------------------------------------
 
   if wave[0,0] lt wave[npix-1,0] then endpix=[0,npix-1] else endpix=[npix-1,0]
   wavemin = max(wave[endpix[0],*])
@@ -56,19 +53,23 @@ pro sphoto_calib, wave, flux, invvar, mask, fibertag, fcalfile, $
     newmask[*,ispec] = maski
   endfor
 
-  ;-----------------------------------------
+  ;----------------------------------------------------------------------------
   ; If the frames are blue, spectral type the standards 
+  ;----------------------------------------------------------------------------
 
   if keyword_set(stype) then begin
 
     ;-----------------------------------------
     ; Rectify spectra and combine frames for each fiber  
 
-    avgflux = fltarr(nnewpix, nfib)
-    avginvar = fltarr(nnewpix, nfib)
+    avgflux = fltarr(nnewpix, nfibers)
+    avginvar = fltarr(nnewpix, nfibers)
+    plug1 = replicate(plugtag[0], nfibers)
+    struct_assign, {fiberid: 0L}, plug1  ; Zero all elements
 
-    for ifib = 0, nfib - 1 do begin
-      indx = where(fibertag.fiberid eq plug1[ifib].fiberid)
+    for ifib = 0, nfibers - 1 do begin
+      indx = where(plugtag.fiberid eq fibers[ifib])
+      plug1[ifib] = plugtag[indx[1]]
       flux1fib = rectify(newflux[*,indx], newivar[*,indx], nivar = invar1fib)
 
       combine1fiber, wave2d[*,indx], flux1fib, invar1fib, $
@@ -87,15 +88,22 @@ pro sphoto_calib, wave, flux, invvar, mask, fibertag, fcalfile, $
               outfile = stdstarfile)
   endif 
 
+
+  ;----------------------------------------------------------------------------
+  ; Read back standard star info and expand to match the full list of spectra
+  ;----------------------------------------------------------------------------
+
   stdinfo = mrdfits(stdstarfile, 1)
-
-  ;-----------------------------------------
-  ; Expand the standard star info to match the full list of frames
-
   stdinfo_all = make_array(val = stdinfo[0], dim = nspec)
-  for ifib = 0, nfib * nframes -1 do $
-      stdinfo_all[ifib] = stdinfo[where(stdinfo.fiberid eq $
-                                        fibertag[ifib].fiberid)]
+  struct_assign, {fiberid: 0L}, stdinfo_all  ; Zero out all elements
+
+  for ispec = 0, nspec -1 do begin
+    fiber_match = where(stdinfo.fiberid eq plugtag[ispec].fiberid)
+    if fiber_match[0] ne -1 then stdinfo_all[ispec] = stdinfo[fiber_match]
+    ; Unmatched fibers will occur if the blue side had bad fibers (bad trace,
+    ; etc) but the red side was ok -- these will have S/N of zero so get 
+    ; eliminated in the next step
+  endfor
 
   ;---------------------
   ; Chose high S/N spectra (otherwise spectral typing is likely to be
@@ -119,11 +127,12 @@ pro sphoto_calib, wave, flux, invvar, mask, fibertag, fcalfile, $
     splog, 'Using ' + string(nok, format='(I2)') + ' spectrophoto standards'
   endelse
 
-  ;-----------------------------------------
+  ;----------------------------------------------------------------------------
   ; Compute the average spectrophotometric calibration from all frames 
+  ;----------------------------------------------------------------------------
 
   pca_flux_standard, newwave, newflux[*,ok], newivar[*,ok], $
-    stdinfo_all[ok], corvector = corvector, corvivar = corvivar, $
+    stdinfo_all[ok], camid, corvector = corvector, corvivar = corvivar, $
     cormed = cormed, calibset = pca_calibset, bkpts = bkpts 
 
   ; If desired, replace PCA average with normalized input calibset 
@@ -139,11 +148,12 @@ pro sphoto_calib, wave, flux, invvar, mask, fibertag, fcalfile, $
                    bkpt = input_calibset.fullbkpt, nord = 4)
   endif else avgcalibset = pca_calibset
 
-  ;-----------------------------------------
+  ;----------------------------------------------------------------------------
   ; Compute the spectrophoto calibration separately for each frame
+  ;----------------------------------------------------------------------------
 
   for iframe = 0, nframes - 1 do begin
-    indx = where(fibertag[ok].expid eq frames[iframe], nindx)
+    indx = where(plugtag[ok].expid eq frames[iframe], nindx)
 
     ; check to be sure that fluxcalib output name matches frame ID 
     if not strmatch(fcalfile[iframe], '*' + frames[iframe] + '*') then begin
@@ -158,7 +168,7 @@ pro sphoto_calib, wave, flux, invvar, mask, fibertag, fcalfile, $
  
     frame_calibset = frame_flux_calib(newwave, corvector[*,indx], $
       corvivar[*,indx], avgcalibset, cormed[indx], $
-      camid + '-' + frames[iframe], medsn, fsig = fsig)
+      'Frame ' + camid + '-' + frames[iframe], medsn, fsig = fsig)
 
     ;--------------
     ; Create header cards describing the data range and write to FITS
