@@ -89,14 +89,15 @@ function fourier_quotient, galfft, starfft, galvar0, starvar0, $
       for i=0,nloop-1 do begin
           IF testsigma[i] EQ 0 THEN broad = 1. ELSE BEGIN 
               fsig = 1.d/(2.*!dpi)/testsigma[i]
-              broad = gauss_periodic(knums[inside], [1., 0., fsig])
+              broad = gauss_periodic(knums[inside], [1., 0., fsig], shft=1.)
           ENDELSE 
 
 ;        broad = exp(-(knums[inside]*testsigma[i] * 2.0 * PI)^2/2.0)
 
           alpha[i] = total(q * broad / var)/total(broad^2/var)
           qres = (q-alpha[i]*broad)
-          qresbar = total(qres/sqrt(var))/total(1./sqrt(var))
+;          qresbar = total(qres/sqrt(var))/total(1./sqrt(var))
+          qresbar = 0
           chi2[i] = total((qres-qresbar)^2/var)
 
       endfor
@@ -111,7 +112,7 @@ function fourier_quotient, galfft, starfft, galvar0, starvar0, $
       bestalpha = interpol(alpha, testsigma, minsigma)
 ;fsig= 1.d/(2.*!dpi)/minsigma
 ;print,fsig
-;    broad = gauss_periodic(knums[inside], [1., 0., fsig])
+    broad = gauss_periodic(knums[inside], [1., 0., fsig], shft=1.)
 ;stop
       return, [minchi2, minsigma, errsigma, bestalpha]
 end 
