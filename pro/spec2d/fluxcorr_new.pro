@@ -1,4 +1,6 @@
-function median_rebin, flux, ivar, loglam, range, mask=mask
+function median_rebin, flux, ivar, loglam, range, mask=mask, sigrej=sigrej
+
+   if NOT keyword_set(sigrej) then sigrej = 20.0
 
    nr = (size(range))[2]
    ntrace = (size(flux))[2]
@@ -14,9 +16,12 @@ function median_rebin, flux, ivar, loglam, range, mask=mask
            good = where(ivar[inside,itrace] GT 0, ngood)
        
            if ngood GT 1 then begin 
-              fit[irange, itrace] = median(flux[inside[good],itrace])
+              djs_iterstat, flux[inside[good],itrace], median=md, sigma=sig
+              fit[irange, itrace] = md
               if ngood GT 0.5 * ninside then $
                    mask[irange, itrace]  = total(ivar[inside[good],itrace])
+              sn = sig * sqrt(mask[irange, itrace])
+              if sn GT sigrej OR sn LE 0 then mask[irange, itrace] = 0.0
            endif
         endif
      endfor
