@@ -110,4 +110,7 @@ spchunklist      74 1530 1566 special   "Low-z + BCG + Deep LRG"
 # The following two chunks are in the reverse order than you would expect
 spchunklist      76 1567 1581 main      ""
 spchunklist      75 1582 1596 main      ""
+spchunklist      77 1597 1616 main      ""
+spchunklist      78 1617 1628 main      ""
+spchunklist      79 1629 1636 special   "Szalay photo-z"
 
