@@ -240,7 +240,7 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
    ;----------
    ; Iterate the fit, rejecting outlier points.
 
-   maxiter1 = 10
+   maxiter1 = 5
    maxiter2 = 50
    sigrej = 5.
    maxrej = ceil(0.05 * ntrim) ; Do not reject more than 5% of remaining objects
