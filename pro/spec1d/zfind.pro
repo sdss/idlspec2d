@@ -119,8 +119,8 @@ function zfind, objflux, objivar, hdr=hdr, $
     pmax = ceil( alog10(1.0 + zmax) / objdloglam )
 
    if (n_elements(zguess) GT 0 AND keyword_set(pwidth)) then begin
-      pmin = floor( alog10(1.0 + zguess) / objdloglam - 0.5 * pwidth )
-      pmax = floor( alog10(1.0 + zguess) / objdloglam + 0.5 * pwidth )
+      pmin = floor( alog10(1.0 + zguess) / objdloglam - 0.5 * (pwidth+1+width) )
+      pmax = floor( alog10(1.0 + zguess) / objdloglam + 0.5 * (pwidth+1+width) )
    endif
 
    ;----------
@@ -174,14 +174,16 @@ function zfind, objflux, objivar, hdr=hdr, $
 
    ;----------
    ; Convert redshift (and error) from pixels to the conventional dimensionless
-   ; value.
+   ; value.  Do not modify any errors that are less than zero, since those
+   ; can be used as just warning flags from the fit.
 
    indx = where(zans.dof GT 0)
-   if (indx[0] NE -1) then begin
-      zans[indx].z = 10.^(objdloglam * zans[indx].z) - 1.
-      zans[indx].z_err = $
-       alog(10d) * objdloglam * zans[indx].z_err * (1 + zans[indx].z)
-   endif
+   if (indx[0] NE -1) then $
+    zans[indx].z = 10.^(objdloglam * zans[indx].z) - 1.
+   indx = where(zans.dof GT 0 and zans.z_err GT 0)
+   if (indx[0] NE -1) then $
+    zans[indx].z_err = $
+     alog(10d) * objdloglam * zans[indx].z_err * (1 + zans[indx].z)
 
    ;----------
    ; Copy into the output structure
