@@ -67,6 +67,10 @@
 ;   16-Sep-1999  Written by S. Burles, APO
 ;   30-Dec-1999  Modified by D. Schlegel, Princeton
 ;    4-Oct-2000  Changed to bspline_iterfit 
+;   26-Jul-2001  Implemented Higher-order fits, if dispset is set it fits
+;                  against fiber number (I know this doesn't make sense)
+;                Also upped the tolerance on rejection by 5 times!
+;                Too many pixels were masked for high order fit!
 ;-
 ;------------------------------------------------------------------------------
 
@@ -108,7 +112,7 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    endif
 
    if NOT keyword_set(tai) then airmass = replicate(1.0, nrow) $
-    else airmass = tai2airmass(plugsort.ra, plugsort.dec, tai=tai)
+    else airmass = float(tai2airmass(plugsort.ra, plugsort.dec, tai=tai))
 
    airmass_correction = replicate(1.0,ncol) # airmass
    splog, 'Range of airmass correction = ', min(airmass_correction), $
@@ -183,7 +187,7 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
 ;------------------------------------------------------------------------
  
      sset = bspline_iterfit(skywave, skyflux, invvar=skyivar, $
-       nord=nord, upper=upper, lower=lower, maxiter=maxiter, $
+       nord=nord, upper=upper*5, lower=lower*5, maxiter=maxiter, $
        /eachgroup, fullbkpt=fullbkpt, yfit=skyfit2, outmask=outmask)
  
      fullfit = bspline_valu(wave, sset) 
