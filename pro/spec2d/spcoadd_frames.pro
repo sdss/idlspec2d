@@ -171,6 +171,9 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
        message, 'Error reading file ' + filenames[ifile]
 
       if (ifile EQ 0) then hdr0 = hdr
+      thismjd = sxpar(hdr, 'MJD')
+      if (NOT keyword_set(mjdlist)) then mjdlist = thismjd $
+       else mjdlist = [mjdlist, thismjd]
 
       ;----------
       ; Add an additional error term equal to ADDERR of the flux.
@@ -469,6 +472,11 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
 
    if (keyword_set(mjd)) then $
     sxaddpar, hdr, 'MJD', mjd
+
+   ; Get the list of MJD's used for these reductions, then convert to a string
+   mjdlist = mjdlist[uniq(mjdlist, sort(mjdlist))]
+   mjdlist = strtrim(strcompress(string(mjdlist,format='(99a)')),2)
+   sxaddpar, hdr, 'MJDLIST', mjdlist, after='MJD'
 
    ;----------
    ; Add new header cards
