@@ -15,13 +15,26 @@
 topoutdir=$SPECTRO_DATA
 destdir=fsgi03.fnal.gov:mydata/2d_v4
 #destdir=sdssdp3.fnal.gov:/data/dp3.p/data/schlegel/2d_v4
+htmldir=spectro.princeton.edu:/peyton/home/spectro/httpd/html
 
 #------------------------------------------------------------------------------
-# Copy.
+# Generate summary files.
 
 echo ""
 echo "-------------------------------------------------------------------------------"
 echo "SPROBOTCOPY: Started at "`date`
+
+cd $topoutdir
+echo "platelist, outfile='platelist.txt'" | idl 2> /dev/null
+echo "platemerge" | idl 2> /dev/null
+
+#------------------------------------------------------------------------------
+# Copy plate summary list to HTML directory.
+
+scp platelist.txt $htmldir
+
+#------------------------------------------------------------------------------
+# Copy to Fermi.
 
 rsync -arv --rsh="ssh" \
  --include "spAll*" --exclude "*"  \
