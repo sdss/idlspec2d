@@ -38,6 +38,7 @@ SPFLUX_V5: Pull out the SPFLUX_READ_KURUCZ() code as a separate function.
         the FLATARR such that they should all lie on top of one another.
 SPCOADD_V5: Apply the flux-distortion image to the sky vectors, as well
         as to OBJFLUX,OBJIVAR.
+ZTWEAK_STAR: Add optional keywords.
 
 etc/spChunkList.par: Add chunks 91-93.
 templates/wfEigen*.fits: Add WFCCD templates from Prochaska
