@@ -63,7 +63,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    if (NOT keyword_set(indir)) then indir = './'
    if (NOT keyword_set(plugdir)) then plugdir=indir
    if (NOT keyword_set(outdir)) then outdir = './'
-   if (NOT keyword_set(qadir)) then outdir = './'
+   if (NOT keyword_set(qadir)) then qadir = outdir
 
    ;---------------------------------------------------------------------------
    ; Read LAMPLIST file for wavelength calibration
@@ -194,7 +194,16 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
     else message, 'No CAMCOL keyword in arc header'
 
    fitarcimage, arc_flux, arc_fluxivar, color, lamplist, xpeak, ypeak, wset, $
-    invset, ans=wavesolution, lambda=lambda, goodlines=goodlines
+         invset, ans=wavesolution, lambda=lambda, $
+	 xdif_lfit=xdif_lfit, xdif_tset=xdif_tset, errcode=errcode
+
+   IF errcode NE 0 then begin
+	message, '> SPREDUCE:  Fitarcimage failed - abort'
+   endif 
+
+   qaplot_arcline, xdif_tset, lambda, arcname
+
+
 
    ;---------------------------------------------------------------------------
    ; Compute fiber-to-fiber flat-field variations
