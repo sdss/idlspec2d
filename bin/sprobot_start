@@ -88,7 +88,8 @@ fi
 #------------------------------------------------------------------------------
 # Decide what the current version of idlspec2d is.
 
-vers=`echo $SETUP_IDLSPEC2D | awk '{print $2}'`
+# vers=`echo $SETUP_IDLSPEC2D | awk '{print $2}'`
+vers=`echo "print,idlspec2d_version()" | idl`
 
 #------------------------------------------------------------------------------
 # Construct the cron file to be loaded.  Start with the existing cron file,
@@ -112,7 +113,7 @@ echo "SPECTRO_DATA=$SPECTRO_DATA" >> $cronfile
 echo "# This job will run at 8:30 am every day." >> $cronfile
 #echo "30 8 * * * sprobot.sh >> $SPRLOG 2>&1" >> $cronfile
 # TEST !!!???
-echo "50 21 * * * sprobot.sh >> $SPRLOG 2>&1" >> $cronfile
+echo "48 15 * * * sprobot.sh >> $SPRLOG 2>&1" >> $cronfile
 echo "# SPROBOT END" >> $cronfile
 crontab $cronfile
 
