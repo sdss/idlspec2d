@@ -188,7 +188,6 @@ pro/spec2d/shift_trace.pro -text
 pro/spec2d/skysubtract.pro -text
 pro/spec2d/sortplugmap.pro -text
 pro/spec2d/spallflat.pro -text
-pro/spec2d/spallreduce.pro -text
 pro/spec2d/spcalib.pro -text
 pro/spec2d/spcoadd_frames.pro -text
 pro/spec2d/spcombine.pro -text
