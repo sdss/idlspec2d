@@ -33,8 +33,10 @@ doc/paper/frames.jpg -text svneol=unset#unset
 doc/www/.cvsignore -text
 doc/www/idlspec2d_install.html -text
 doc/www/idlspec2d_reduce.html -text
+doc/www/pathall.ps -text
 doc/www/platehist.ps -text
 doc/www/platelist.txt -text
+doc/www/spEigenStar-52374.ps -text
 doc/www/spectroSOS.html -text
 doc/www/spectro_apodisplay.html -text
 doc/www/spectro_home.html -text
