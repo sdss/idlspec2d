@@ -11,33 +11,37 @@
 void recenter_fweight
   (IDL_LONG    nx,
    float    *  imrow,
-   float    *  imerr,
+   float    *  invvar,
    float       radius,
+   float       xinit,
    float    *  xcen,
    float    *  xerr)
 {
-   long        ix;
-   long        ix1;
-   long        ix2;
-   long        nsum;
+   IDL_LONG    ii;
+   IDL_LONG    ix1;
+   IDL_LONG    ix2;
+   IDL_LONG    npix;
+   int         qbad;
    float       x1;
    float       x2;
-   float       sumfx;
+   float       sumxw;
    float       sumf;
-   float       sumss;
-   float    *  window;
+   float       sumsxsx;
+   float       sumw;
+   float       xdiff;
+   float    *  convol;
 
    /* Only recenter if the guess value is within the bounds of the image */
-   if (*xcen > 0.0 && *xcen < nx) {
+   if (xinit > 0.0 && xinit < nx) {
 
       /* Determine which pixel numbers over which to sum */
-      x1 = *xcen - radius + 0.5;
-      x2 = *xcen + radius + 0.5;
+      x1 = xinit - radius + 0.5;
+      x2 = xinit + radius + 0.5;
       ix1 = floor(x1);
       ix2 = floor(x2);
 
-      /* If either end of the window is out of bounds in the image, then
-         shrink both sides of the summing window until it is in bounds.
+      /* If either end of the convol is out of bounds in the image, then
+         shrink both sides of the summing convol until it is in bounds.
        */
       if (x1 < 0.0) {
          x2 += x1;
@@ -48,42 +52,50 @@ void recenter_fweight
          x2 = nx;
          ix2 = nx - 1;
       }
-      nsum = ix2 - ix1 + 1;
+      npix = ix2 - ix1 + 1;
 
-      window = (float *) malloc(sizeof(float) *nsum);
-      for (ix=ix1; ix <= ix2; ix++) {
-         /* Determine the weight of a boxcar window function for this
-          * pixel.  Note that the values of "window" will sum to 2*radius
+      convol = (float *) malloc(sizeof(float) * npix);
+      sumw = 0.0;
+      sumxw = 0.0;
+      sumf = 0.0;
+      qbad = 0;
+      for (ii=0; ii < npix; ii++) {
+         /* Determine the weight of a boxcar window function (convol) for this
+          * pixel.  Note that the values of "convol" will sum to 2*radius
           * unless the edge of the image is reached.
           */
-         if (ix == ix1) {
-            window[ix-ix1] = 1.0 + ix1 - x1;
-         } else if (ix == ix2) {
-            window[ix-ix1] = x2 - ix2;
+         if (ii == 0) {
+            convol[ii] = 1.0 + ix1 - x1;
+         } else if (ii == npix-1) {
+            convol[ii] = x2 - ix2;
          } else {
-            window[ix-ix1] = 1.0;
+            convol[ii] = 1.0;
          }
+         sumw = sumw + convol[ii] * imrow[ix1+ii];
+
+         xdiff = ix1 + ii - xinit;
+         sumxw += convol[ii] * imrow[ix1+ii] * xdiff;
+
+         if (invvar[ix1+ii] <= 0.0) qbad = 1;
       }
 
-      /* Compute the flux-weighted center. */
-      sumfx = 0.0;
-      sumf = 0.0;
-      sumss = 0.0;
-      for (ix=ix1; ix <= ix2; ix++) {
-         sumfx += window[ix-ix1] * imrow[ix] * (ix - *xcen);
-         sumf += window[ix-ix1] * imrow[ix];
-         sumss += window[ix-ix1] * imerr[ix] * imerr[ix];
-      }
+      if (sumw > 0.0 && qbad == 0) {
+         *xcen = sumxw / sumw + xinit;
 
-      if (sumf > 0.0) {
-         *xcen = sumfx / sumf + *xcen;
-         *xerr = 0.0; /* NOT IMPLEMENTED ??? */
+         /* Compute the error in the flux-weighted center */
+         sumsxsx = 0.0;
+         for (ii=0; ii < npix; ii++) {
+            xdiff = ix1 + ii - *xcen;
+            sumsxsx += xdiff * xdiff * convol[ii] * convol[ii]
+             / (sumw * sumw * invvar[ix1+ii]);
+         }
+         *xerr = sqrt(sumsxsx);
       } else {
          *xcen = -1.0;
          *xerr = 0.0;
       }
 
-      free(window);
+      free(convol);
    }
 }
 

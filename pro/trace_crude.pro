@@ -6,14 +6,14 @@
 ;   Create a crude trace set given one position (eg, a center) in each trace.
 ;
 ; CALLING SEQUENCE:
-;   xset = trace_crude( fimage, ferr, [xstart=, ystart=, radius=, yset=, $
-;    nave=, nmed=, xerr= ] )
+;   xset = trace_crude( fimage, invvar, [xstart=, ystart=, radius=, yset=, $
+;    nave=, nmed=, maxerr=, maxshift=, xerr= ] )
 ;
 ; INPUTS:
 ;   fimage     - Image
 ;
 ; OPTIONAL INPUTS:
-;   ferr       - Error image
+;   invvar     - Inverse variance (weight) image
 ;   xstart     - Initial guesses for X centers (one for each trace).
 ;                If not set, then this code searches for all peaks at YSTART.
 ;   ystart     - Y positions corresponding to "xstart" (expected as integers).
@@ -26,6 +26,10 @@
 ;                default to 1
 ;   nave       - Averaging size down columns before performing trace;
 ;                default to 5
+;   maxerr     - Maximum error in centroid allowed for valid recentering;
+;                default to 0.2
+;   maxshift   - Maximum shift in centroid allowed for valid recentering;
+;                default to 0.2
 ;
 ; OUTPUTS:
 ;   xset       - X centers for all traces
@@ -49,13 +53,14 @@
 ;   06-Aug-1999  Added optional outpust XERR (DJS).
 ;-
 ;------------------------------------------------------------------------------
-function trace_crude, fimage, ferr, xstart=xstart, ystart=ystart, $
- radius=radius, yset=yset, nave=nave, nmed=nmed
+function trace_crude, fimage, invvar, xstart=xstart, ystart=ystart, $
+ radius=radius, yset=yset, nave=nave, nmed=nmed, maxerr=maxerr, $
+ maxshift=maxshift, xerr=xerr
 
    ; Need 1 parameter
    if (N_params() LT 1) then begin
-      print, 'Syntax - xset = trace_crude( fimage, [ ferr, xstart=, ystart=, $'
-      print, ' radius=, nave=, nmed= ] )'
+      print, 'Syntax - xset = trace_crude( fimage, [ invvar, xstart=, ystart=, $'
+      print, ' radius=, nave=, nmed=, maxerr=, maxshift=, xerr= ] )'
       return, -1
    endif
 
@@ -65,44 +70,57 @@ function trace_crude, fimage, ferr, xstart=xstart, ystart=ystart, $
    if (NOT keyword_set(radius)) then radius = 3.0
    if (NOT keyword_set(nmed)) then nmed = 1
    if (NOT keyword_set(nave)) then nave = 5
+   if (NOT keyword_set(maxerr)) then maxerr = 0.2
+   if (NOT keyword_set(maxshift)) then maxshift = 0.2
 
    ; Make a copy of the image and error map
    imgtemp = float(fimage)
-   if (keyword_set(ferr)) then begin
-      errtemp = float(ferr)
+   if (keyword_set(invvar)) then begin
+      invtemp = float(invvar)
    endif else begin
-      errtemp = sqrt(fimage > 1)
+      invtemp = 1.0 / (fimage > 1)
    endelse
 
    ; Median filter the entire image along columns by NMED rows
    if (nmed GT 1) then $   
     for ix=1, nx-1 do imgtemp[ix,*] = median(transpose(imgtemp[ix,*]), nmed)
 
-   ; Boxcar-smooth the entire image along columns by NAVE rows
+   ; Boxcar-sum the entire image along columns by NAVE rows
    if (nave GT 1) then begin
-      kernal = transpose(intarr(nave) + 1.0/nave)
-      imgtemp = convol(imgtemp, kernal, /edge_truncate)
-      ; Average the variances
-      errtemp = sqrt( convol(errtemp^2, kernal, /edge_truncate) / nave )
+      kernal = transpose(intarr(nave) + 1.0)
+      imgconv = convol(imgtemp*invtemp, kernal, /edge_truncate)
+
+      ; Add the variances
+      invtemp = convol(invtemp, kernal, /edge_truncate)
+
+      ; Look for pixels with infinite errors - replace with original values
+      ibad = where(invtemp NE 0, nbad)
+      if (nbad GT 0) then begin
+         invtemp[ibad] = 1
+         imgconv[ibad] = imgtemp[ibad]
+      endif
+
+      ; Renormalize the summed image by the weights
+      imgtemp = imgconv / invtemp
    endif
 
    if (NOT keyword_set(xstart)) then begin
       ; Automatically find peaks for XSTART
 
-      ; Extract NAVE rows from the image at YSTART
-      nave = 1
+      ; Extract NSUM rows from the image at YSTART
+      nsum = 1
       imrow = $
-       imgtemp[*,long(ystart[0]-0.5*(nave-1)):long(ystart[0]+0.5*(nave-1))]
+       imgtemp[*,long(ystart[0]-0.5*(nsum-1)):long(ystart[0]+0.5*(nsum-1))]
       imrow = rebin(imrow, nx, 1)
-
-      ; Boxcar smooth in both X and Y
-;      imrow = smooth(imrow,3)
-
-      ; Find all local peaks that are also above 1.25 times the median
       medval = median(imrow)
+
+      ; Boxcar smooth along X
+      imrow = smooth(imrow,3)
+
+      ; Find all local peaks that are also above 1.0 times the median
       xstart = where( imrow[1:nx-2] GT imrow[0:nx-3] $
                   AND imrow[1:nx-2] GT imrow[2:nx-1] $
-                  AND imrow[1:nx-2] GT 1.25*medval) + 1
+                  AND imrow[1:nx-2] GT 1.0*medval) + 1
    endif
 
    if (N_elements(ystart) EQ 1) then $
@@ -116,8 +134,8 @@ function trace_crude, fimage, ferr, xstart=xstart, ystart=ystart, $
    xset = fltarr(ny, ntrace)
    xerr = fltarr(ny, ntrace)
    result = call_external(getenv('IDL_EVIL')+'libspec2d.so', 'trace_crude', $
-    nx, ny, imgtemp, errtemp, float(radius), ntrace, float(xstart), ypass, $
-    xset, xerr)
+    nx, ny, imgtemp, invtemp, float(radius), ntrace, float(xstart), ypass, $
+    xset, xerr, float(maxerr), float(maxshift))
 
    yset = djs_laxisgen([ny,nTrace], iaxis=0)
 

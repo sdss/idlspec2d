@@ -4,11 +4,15 @@
 
 #include "export.h"
 
+#define min(a,b) ( ((a) < (b)) ? (a) : (b) )
+#define max(a,b) ( ((a) > (b)) ? (a) : (b) )
+
 void recenter_fweight
   (IDL_LONG    nx,
    float    *  imrow,
    float    *  imerr,
    float       radius,
+   float       xinit,
    float    *  xcen,
    float    *  xerr);
 
