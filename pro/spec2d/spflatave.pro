@@ -25,6 +25,9 @@
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
+;   Some sigma-clipping is done before combining each pixel, clipping
+;   at 2-sigma if more than 7 frames, and a lower sigma for fewer frames.
+;
 ;   The output file has two HDU's, the first being the average flat,
 ;   the second being the standard deviation at each pixel.
 ;     --> Comment this out for the time being!!???

@@ -8,7 +8,8 @@
 ; CALLING SEQUENCE:
 ;   spcalib, flatname, arcname, fibermask=, $
 ;    lampfile=, indir=, timesep=, ecalibfile=, plottitle=, $
-;    arcinfoname=, flatinfoname=, arcstruct=, flatstruct=]
+;    minflat=, maxflat=, arcinfoname=, flatinfoname=, $
+;    arcstruct=, flatstruct=]
 ;
 ; INPUTS:
 ;   flatname   - Name(s) of flat-field SDSS image(s)
@@ -26,11 +27,12 @@
 ;                set to zero to disable this test; default to 7200 sec.
 ;   ecalibfile - opECalib file to pass to SDSSPROC
 ;   plottitle  - Prefix for titles in QA plots.
+;   minflat    - Parameter for SDSSPROC for pixel flats; default to 0.8
+;   maxflat    - Parameter for SDSSPROC for pixel flats; default to 1.2
 ;   arcinfoname- File name (with path) to output arc extraction and fitting
 ;                information
 ;   flatinfoname-File name (with path) to output flat field extraction and
 ;                fitting information
-;   minflat, maxflat- to mask pixflat
 ;
 ; OUTPUTS:
 ;   arcstruct  - Structure array with extracted arc calibration information
