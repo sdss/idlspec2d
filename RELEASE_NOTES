@@ -9,6 +9,7 @@ PLATEMERGE: Include logic for setting the SPECPRIMARY field in the outputs.
 READSPEC: Fix the re-sorting of the ZLINE output structure, which is
            complicated by being a multi-dimensional structure.
 SPREDUCE1D: The output FRACNSIGLO was being computed completely wrong -- Fixed.
+ZFIND: Bug fix for when NPOLY=0.
 
 aporsync_logs.sh: Include the "sdHdrFix*.par" files as the first ones
            to copy over from sdsshost.apo -> sos.apo.
