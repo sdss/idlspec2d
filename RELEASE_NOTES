@@ -1,4 +1,14 @@
 
+In idlutils:
+
+bin/Makefile: For the "make install", explicitly copy file names
+           rather than just "*".  Using the wildcard tries to copy
+           the CVS directory on an IRIX+6 platform, which then
+           crashes the install.
+goddard/text/Makefile: We were missing this Makefile.
+src/math/Makefile: Comment-out the build of the code that Hogg
+           just added but doesn't build: idl_nnls,nnls,diff,g1,g2,h12.
+
 -------------------------------------------------------------------------------
 v4_9_10 (May 28, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
 Built against specflat v1_4.
