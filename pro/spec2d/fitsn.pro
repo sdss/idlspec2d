@@ -26,6 +26,7 @@
 ;   sigma      - Standard deviation of residuals
 ;
 ; COMMENTS:
+;   If there are fewer than 3 points, then return COEFFS=0.
 ;
 ; EXAMPLES:
 ;
@@ -49,16 +50,16 @@ function fitsn, mag, snvec, sigrej=sigrej, maxiter=maxiter, $
     nspec = n_elements(snvec)
     mask = (snvec GT 0 AND mag GT fitmag[0] AND mag LT fitmag[1])
 
-    good = where(mask)
-    if (good[0] EQ -1) then return, 0
+    igood = where(mask, ngood)
+    if (ngood LE 2) then return, 0
 
     logsn = snvec*0.0 - 1.0 ; Arbitrarily set bad values to -1, though these
                          ; values are masked from the fit anyway
-    logsn[good] = alog10(snvec[good])
+    logsn[igood] = alog10(snvec[igood])
 
     for i=0, maxiter-1 do begin
-       good = where(mask)
-       if (good[0] EQ -1) then return, 0
+       igood = where(mask, ngood)
+       if (ngood LE 2) then return, 0
        if (!version.release LT '5.4') then begin
           coeffs = polyfitw(mag, logsn, mask, 1, yfit)
        endif else begin
@@ -66,14 +67,14 @@ function fitsn, mag, snvec, sigrej=sigrej, maxiter=maxiter, $
        endelse
       
        diff = logsn - yfit
-       djs_iterstat, diff[good], sigrej=sigrej, sigma=sigma, mask=smask
+       djs_iterstat, diff[igood], sigrej=sigrej, sigma=sigma, mask=smask
        treject = total(1-smask)
        if (treject EQ 0) then return, coeffs
 
-       mask[good] = mask[good] * smask
-       if (total(mask) LT 3) then return, 0
+       mask[igood] = mask[igood] * smask
+       if (total(mask) LE 2) then return, 0
     endfor
 
     return, coeffs
 end
-
+;------------------------------------------------------------------------------
