@@ -16,6 +16,7 @@ COMBINE1FIBER: Add the skies by inputting SKYFLUX and outputting NEWSKY.
 EXTRACT_OBJECT: Turn off telluric-corrections by default, which must now
         be enabled with the /DO_TELLURIC keyword.  Also, delete some old code.
         Compress (with gzip) the output file.
+FIBER_ROLLCALL: This code has been broken out of PLATESN.
 FILTER_THRU: SDSS filter curves are now in the idlutils products under
         the subdirectory data/filters.
 FIND_NMINIMA: Fix bug when plotting.
@@ -36,6 +37,7 @@ PLATELIST: Get rid of the SMEARUSE entry, since it is now deprecated.
         we probably still want them in the full merge files.
 PLATESN: Remove the code that adds the spectro-photometry keywords to
         the output headers, since P-1D does this more carefully.
+        Split out the fiber "roll call" code into FIBER_ROLLCALL.
 PLOTSIGNAL: New routine for making diagnostic plots of the signal seen
         by the spectrographs, unlike most of our routines that show S/N.
 PLOTSN: Re-write of the code that makes all the plots beyond the first
@@ -76,6 +78,7 @@ SPCOADD_FRAMES,SPCOADD_V5: For the EXPIDxx keywords in the output spPlate file,
         Also, drop the MJD from this identifying string, so that the first
         11 characters can be used to directly determine the names of the
         individual spFrame or spCFrame files.
+        Call FIBER_ROLLCALL from this routine, rather than doing it in PLATESN.
 SPCOADD_V5: New code to replace SPCOADD_FRAMES for version 5 outputs.
         The sky vectors are now combined in some semi-rational way,
         and output as HDU #6.
