@@ -289,7 +289,7 @@ pro apo_log2html, logfile, htmlfile
    endfor
    textout = apo_log_header(title1)
 
-   textout = [textout, '<FONT SIZE="+4">']
+;   textout = [textout, '<FONT SIZE="+4">']
    prevmjd = string(thismjd-1,format='(i5.5)')
    nextmjd = string(thismjd+1,format='(i5.5)')
    prevfile = 'logfile-' + prevmjd + '.html'
@@ -305,11 +305,11 @@ pro apo_log2html, logfile, htmlfile
     '<TD WIDTH="33%" ALIGN="RIGHT">Tomorrow: ' $
     + '<A HREF='+nextfile+'>MJD='+nextmjd+'</A></TD></TR>']
    textout = [textout, $
-    '<TR><TD></TD><TD WIDTH="100%" ALIGN="CENTER"><FONT SIZE="+4">'+platelist+'</FONT></TD><TD></TD></TR>']
+    '<TR><TD></TD><TD WIDTH="100%" ALIGN="CENTER"><FONT SIZE="+2">'+platelist+'</FONT></TD><TD></TD></TR>']
    textout = [textout, $
     '</TABLE>']
 ;   textout = [textout, '<ALIGN=CENTER>' + platelist + '</ALIGN>']
-   textout = [textout, '<FONT SIZE="+0">']
+;   textout = [textout, '<FONT SIZE="+0">']
 
    textout = [textout, $
     '<P>IDLSPEC2D version ' + vers2d + ' (' $
