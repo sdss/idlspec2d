@@ -87,9 +87,10 @@ pro apo_plotsn, logfile, plate, plugfile=plugfile, plotfile=plotfile
    if (keyword_set(plotfile)) then $
     while(djs_lockfile(plotfile, lun=plot_lun) EQ 0) do wait, 5
 
-   title = 'APO SPECTRO MJD=' + strtrim(string(mjd),2) $
+   plottitle = 'APO SPECTRO MJD=' + strtrim(string(mjd),2) $
     + ' PLATE=' + strtrim(string(plate),2)
-   plotsn, sqrt(sn2array), plugsort, bands=bands, title=title, plotfile=plotfile
+   plotsn, sqrt(sn2array), plugsort, bands=bands, plottitle=plottitle, $
+    plotfile=plotfile
 
    if (keyword_set(plotfile)) then $
     djs_unlockfile, plotfile, lun=plot_lun

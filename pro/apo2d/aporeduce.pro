@@ -224,7 +224,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
          splog, 'Copying files to ', copydir
          spawn, 'scp1 ' + htmlfile + ' ' + copydir
          spawn, 'scp1 ' + htmlfile + ' ' + $
-          filepath('logsheet-current.html', root_dir=copydir)
+          filepath('logfile-current.html', root_dir=copydir)
          spawn, 'scp1 ' + plotfile + ' ' + copydir
          splog, 'Done.'
       endif
