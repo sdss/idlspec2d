@@ -75,6 +75,9 @@ sprobot.sh: Change the name of the astrolog directory on sos.apo.nmsu.edu
 sprobot.sh,sprobot1d.sh,sprobot2d.sh,sprobotlist.sh:
            Output the environment variables $IDLSPEC2D_DIR,$IDLUTILS_DIR.
 spChunkList.par: Added chunks 48-55.
+spPlateList.par: Change yet again to agree with the latest posting from JEG
+           of 291 plates.  About a dozen have changed since the Annis list
+           dated 13 Oct 02.
 
 In idlutils:
 
