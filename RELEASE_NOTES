@@ -1,6 +1,7 @@
 
 FLUX_STANDARD: Added empirical correction to SPECTRUM-Kurucz models.
            Then got rid of them!
+GET_TAI: Trigger a Warning if (TAI-END) - (TAI-BEG) < EXPTIME + 20 sec.
 SPPLATE_CORRECT: Fixed small bug so that it works with the smear left in.
 STYPE_STANDARD: Fixed error in smoothing box size.
 ZEROPT_COR: Added range checks to get rid of seg faults.
@@ -9,6 +10,12 @@ pro/fluxfix/Makefile - Forget to add this Makefile, which is needed
            to prevent the "make install" from crashing on an IRIX platform.
 etc/kurucz_model_fix.fit - New file for empirical corrections to
            SPECTRUM-Kurucz models, used by FLUX_STANDARD.
+examples/opHdrFix.par: More updates, in an attempt to identify
+           all exposures with wrong exposure times in their headers
+           due to various SOP and DA bugs.
+           Flag a bunch of old data as bad, where I've specifically searched
+           for short science exposures.
+           Change all FLAVOR='unknown' entries to QUALITY='bad'.
 
 In idlutils:
 
