@@ -41,6 +41,7 @@
 ;   fileandpath()
 ;   get_mjd_dir()
 ;   idlspec2d_version()
+;   idlutils_version()
 ;   mjd_match()
 ;   splog
 ;   sdsshead()
@@ -234,6 +235,13 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
                 + "'  # Two page S/N and magnitude plot"]
                hdr = [hdr, "snfile        '" + snfits $
                 + "'  # Small fits file with S/N numbers "]
+               hdr = [hdr, "idlspec2dVersion '" + idlspec2d_version() $
+                + "'  # Version of idlspec2d when building plan file"]
+               hdr = [hdr, "idlutilsVersion '" + idlutils_version() $
+                + "'  # Version of idlutils when building plan file"]
+               spawn, 'speclog_version', logvers
+               hdr = [hdr, "speclogVersion '" + logvers $
+                + "'  # Version of speclog when building plan file"]
 
                ;----------
                ; Write output file

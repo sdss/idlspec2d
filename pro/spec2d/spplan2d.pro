@@ -55,6 +55,7 @@
 ;   fileandpath()
 ;   get_mjd_dir()
 ;   idlspec2d_version()
+;   idlutils_version()
 ;   splog
 ;   sdsshead()
 ;   spplan_findrawdata
@@ -276,6 +277,13 @@ pro spplan2d, topoutdir=topoutdir, mjd=mjd, $
                 + logfile + "'  # Text log file"]
                hdr = [hdr, "plotfile   '" + plotfile $
                 + "'  # PostScript log file"]
+               hdr = [hdr, "idlspec2dVersion '" + idlspec2d_version() $
+                + "'  # Version of idlspec2d when building plan file"]
+               hdr = [hdr, "idlutilsVersion '" + idlutils_version() $
+                + "'  # Version of idlutils when building plan file"]
+               spawn, 'speclog_version', logvers
+               hdr = [hdr, "speclogVersion '" + logvers $
+                + "'  # Version of speclog when building plan file"]
 
                ;----------
                ; Write output file
