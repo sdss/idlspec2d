@@ -489,6 +489,7 @@ pro apo_log2html, logfile, htmlfile
                ; and (S/N)^2 is not flagged as anything bad
                ; in the opLimits file (currently anything < 2.0 is bad).
                if (pscience[icam,iexp].flavor EQ 'science' $
+                 AND strmatch(pscience[icam,iexp].quality, 'excellent') $
                  AND apo_checklimits('science', 'SN2', $
                       pscience[icam,iexp].camera, $
                       pscience[icam,iexp].sn2) EQ '') then begin
