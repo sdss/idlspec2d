@@ -50,6 +50,7 @@ pro/spec2d/trace_crude.pro -text
 pro/spec2d/trace_fix.pro -text
 pro/spec2d/trace_fweight.pro -text
 pro/spec2d/traceset2xy.pro -text
+pro/spec2d/ushift.pro -text
 pro/spec2d/writespectra.pro -text
 pro/spec2d/xy2traceset.pro -text
 pro/sshift.pro -text
@@ -63,6 +64,7 @@ pro/trace_crude.pro -text
 pro/trace_fix.pro -text
 pro/trace_fweight.pro -text
 pro/traceset2xy.pro -text
+pro/ushift.pro -text
 pro/writespectra.pro -text
 pro/xy2traceset.pro -text
 src/evilmath.c -text
