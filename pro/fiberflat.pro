@@ -6,11 +6,12 @@
 ;
 ; CALLING SEQUENCE:
 ;   fflat = fiberflat( flat_flux, flat_fluxivar, $
-;    [ bkspace=, nord=, lower=, upper= ] )
+;    [ fibermask, bkspace=, nord=, lower=, upper= ] )
 ;
 ; INPUTS:
 ;   flat_flux  - Array of extracted flux from a flat-field image [Nrow,Ntrace]
 ;   flat_fluxivar - Inverse variance map for FLAT_FLUX.
+;   fibermask  - Mask array from plugmap file
 ;
 ; PARAMTERS FOR SLATEC_SPLINEFIT:
 ;   bkspace
@@ -40,7 +41,7 @@
 ;-
 ;------------------------------------------------------------------------------
 
-function fiberflat, flat_flux, flat_fluxivar, $
+function fiberflat, flat_flux, flat_fluxivar, fibermask, $
  bkspace=bkspace, nord=nord, lower=lower, upper=upper
 
    dims = size(flat_flux, /dimens)
@@ -57,15 +58,16 @@ function fiberflat, flat_flux, flat_fluxivar, $
    fflat = fltarr(ny,ntrace)
    yaxis = findgen(ny)
    for i=0, ntrace-1 do begin
-      print, format='($, ".",i4.4,a5)',i,string([8b,8b,8b,8b,8b])
-      fullbkpt = slatec_splinefit(yaxis, flat_flux[*,i], coeff, $
-       invvar=flat_fluxivar[*,i], nord=4, bkspace=bkspace, $
-       lower=lower, upper=upper, maxiter=3)
-      fflat[*,i] = slatec_bvalu(yaxis, fullbkpt, coeff)
+        print, format='($, ".",i4.4,a5)',i,string([8b,8b,8b,8b,8b])
+        fullbkpt = slatec_splinefit(yaxis, flat_flux[*,i], coeff, $
+         invvar=flat_fluxivar[*,i], nord=4, bkspace=bkspace, $
+         lower=lower, upper=upper, maxiter=3)
+        fflat[*,i] = slatec_bvalu(yaxis, fullbkpt, coeff)
    endfor
 
    ; Divide FFLAT by a global average of all fibers
-   fflat = fflat / mean(fflat)
+   flatmean = total(fflat # fibermask)/(total(fibermask)*ny)
+   fflat = fflat / flatmean
 
    return, fflat
 end

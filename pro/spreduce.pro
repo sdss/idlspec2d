@@ -124,7 +124,12 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
    splog, 'Reading in flat ', flatfilenames[0]
    sdssproc, flatfilenames[0], image, invvar, hdr=flathdr, $
-    pixflatname=pixflatname
+    pixflatname=pixflatname, spectrographid=spectrographid, color=color
+
+   ;-------------------------------------------------------------------------
+   ; Plugsort will return mask of good (1) and bad (0) fibers too
+   ;-------------------------------------------------------------------------
+   plugsort = sortplugmap(plugmap, spectrographid, fibermask)
  
    ;---------------------------------------------------------------------------
    ; Create spatial tracing from flat-field image
@@ -160,7 +165,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    ; Compute fiber-to-fiber flat-field variations
    ;---------------------------------------------------------------------------
 
-   fflat = fiberflat(flux, fluxivar)
+   fflat = fiberflat(flux, fluxivar, fibermask)
 
    ;---------------------------------------------------------------------------
    ; Read the arc
@@ -197,8 +202,10 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
   ; Hmmm.... would be circular if we need a wavelength calibration before
   ; making that flat.  We don't at the moment.
 
-  flux = flux / fflat
-  fluxivar = fluxivar * fflat^2
+  divideflat, flux, fluxivar, fflat, fibermask
+
+;  flux = flux / fflat
+;  fluxivar = fluxivar * fflat^2
 
   ;-------------------------------------------------------------------------
   ; Compute wavelength calibration for arc lamp only
@@ -240,7 +247,6 @@ for i=0,16 do oplot,fflat[*,i*19]
       sdssproc, objfile, image, invvar, hdr=objhdr, $
        pixflatname=pixflatname, spectrographid=spectrographid, color=color
 
-      if (iobj EQ 0) then plugsort = sortplugmap(plugmap, spectrographid)
 
       ;------------------
       ; Tweak up the spatial traces
@@ -327,8 +333,9 @@ for i=0,16 do oplot,fflat[*,i*19]
 
       ;------------------
       ; Flat-field the extracted object fibers with the global flat
-      flux = flux / fflat
-      fluxivar = fluxivar * fflat^2
+  divideflat, flux, fluxivar, fflat, fibermask
+;      flux = flux / fflat
+;      fluxivar = fluxivar * fflat^2
 
       ;------------------
       ; Tweak up the wavelength solution to agree with the sky lines.
@@ -374,7 +381,7 @@ wset_tweak = wset
       ; Flux calibrate to spectrophoto_std fibers
 
       fluxfactor = fluxcorr(skysub, skysubivar, wset_tweak, plugsort, $
-                             lower=2.5, upper=10)
+                             lower=1.5, upper=5)
 
       flux = skysub * fluxfactor
       fluxivar = skysubivar / (fluxfactor^2)

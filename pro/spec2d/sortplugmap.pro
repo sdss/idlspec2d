@@ -1,4 +1,4 @@
-function sortplugmap, plugmap, spectrographid, nFibers=nFibers
+function sortplugmap, plugmap, spectrographid, fibermask, nFibers=nFibers
 
    if (NOT keyword_set(nFibers)) then nFibers=320
    
@@ -20,6 +20,8 @@ function sortplugmap, plugmap, spectrographid, nFibers=nFibers
    
    place = plugmap[possible].fiberId - (spectrographid-1)*nFibers - 1
    plugsort[place] = plugmap[possible]
+   fibermask = bytarr(nFibers)
+   fibermask[place] = 1
 
    return, plugsort
 end

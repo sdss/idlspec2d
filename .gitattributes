@@ -24,6 +24,7 @@ pro/arcsky_fit.pro -text
 pro/calcflux.pro -text
 pro/checkflavor.pro -text
 pro/combine2dout.pro -text
+pro/divideflat.pro -text
 pro/extract_boxcar.pro -text
 pro/extract_image.pro -text
 pro/extract_profile.pro -text
@@ -48,6 +49,7 @@ pro/qaplot_arcline.pro -text
 pro/quickproc.pro -text
 pro/rdss_fits.pro -text
 pro/read2dout.pro -text
+pro/readidlout.pro -text
 pro/sdssproc.pro -text
 pro/skysubtract.pro -text
 pro/sortplugmap.pro -text
@@ -58,6 +60,7 @@ pro/spec2d/arcsky_fit.pro -text
 pro/spec2d/calcflux.pro -text
 pro/spec2d/checkflavor.pro -text
 pro/spec2d/combine2dout.pro -text
+pro/spec2d/divideflat.pro -text
 pro/spec2d/extract_boxcar.pro -text
 pro/spec2d/extract_image.pro -text
 pro/spec2d/extract_profile.pro -text
@@ -82,6 +85,7 @@ pro/spec2d/qaplot_arcline.pro -text
 pro/spec2d/quickproc.pro -text
 pro/spec2d/rdss_fits.pro -text
 pro/spec2d/read2dout.pro -text
+pro/spec2d/readidlout.pro -text
 pro/spec2d/sdssproc.pro -text
 pro/spec2d/skysubtract.pro -text
 pro/spec2d/sortplugmap.pro -text
