@@ -119,6 +119,7 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams, $
       ; this sequence ID number
       j = where(allseq.seqid EQ seqid[iseq])
       plateid = allseq[j[0]].plateid
+      splog, 'Begin plate ', strtrim(string(plateid),2), ' at ', systime()
 
       plateDir=filepath(strtrim(string(plateid),2)+'/2d_'+ $
        run,root_dir=extractDir)
@@ -234,16 +235,19 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams, $
              '-',plateid,'-')
 
             expres = string(format='(a,i1,a)', 's-', side, '*.fit')
-            files = findfile(filepath(expres,root_dir=plateDir))
+            files = findfile(filepath(expres, root_dir=plateDir), count=nfile)
+            splog, 'Combining ' + strtrim(string(nfile),2) $
+             + ' files for side ' + strtrim(string(side),2)
 
-	    splog, files
+            if (nfile GT 0) then begin
+               for i=0, nfile-1 do $
+                splog, 'Combine file ', files[i]
+               combine2dout, files, filepath(outputroot, root_dir=combineDir), $
+                wavemin=alog10(3750.0), everyn=1, display=display
+            endif
 
-            if (files[0] EQ '') then $
-             splog, 'No files found for side ', side $
-            else $
-             combine2dout, files, filepath(outputroot, root_dir=combineDir), $
-              wavemin = alog10(3750.0), everyn=1, display=display
       endfor
+
       splog, 'Finished combining sequence', seqid[iseq], ' in', $
        systime(1)-startcombtime, ' seconds'
    endif
@@ -251,7 +255,8 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams, $
    endfor ; End loop for sequence number
 
    veryend = systime(1)
-   splog, 'Total time for spallreduce ', veryend-verybegin,' seconds'
+   splog, 'Total time for elapsed ', veryend-verybegin,' seconds'
+
    ; Close log files
    if (keyword_set(logfile)) then splog, /close
    if (keyword_set(plotfile)) then begin
@@ -259,7 +264,6 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams, $
       set_plot, ''
    endif
 
-   
    return
 end
 ;------------------------------------------------------------------------------

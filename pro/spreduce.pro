@@ -125,7 +125,6 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
    ibest = -1 ; Index number for best flat+arc pair
    bestcorr = -1.0
- 
    oldflatfile = ''
 
    for ifile=0, (nflat<narc)-1 do begin
@@ -133,114 +132,87 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       splog, ifile+1, (nflat<narc), $
        format='("Looping through flat+arc pair #",I3," of",I3)'
 
-    ; Check if this is the same flat field
+      ; Check if this is the same flat field as the last one read
 
-    if (flatname[ifile] NE oldflatfile) then begin
-      ;------------------------------------------------------------------------
-      ; Read flat-field image
-      ;------------------------------------------------------------------------
+      if (flatname[ifile] NE oldflatfile) then begin
 
-      splog, 'Reading flat ', flatname[ifile]
-      sdssproc, flatname[ifile], image, invvar, indir=indir, $
-       hdr=flathdr, pixflatname=pixflatname
+         ;---------------------------------------------------------------------
+         ; Read flat-field image
+         ;---------------------------------------------------------------------
 
-      oldflatfile = flatname[ifile]
+         splog, 'Reading flat ', flatname[ifile]
+         sdssproc, flatname[ifile], image, invvar, indir=indir, $
+          hdr=flathdr, pixflatname=pixflatname
 
-      ;------------------------------------------------------------------------
-      ; Create spatial tracing from flat-field image
-      ;------------------------------------------------------------------------
+         ;-----
+         ; Decide if this flat is bad
+         ; Reject if more than 1% of the pixels are marked as bad
 
-      splog, 'Tracing 320 fibers in ',  flatname[ifile]
-      tmp_xsol = trace320crude(image, yset=ycen, maxdev=0.15)
+         fbadpix = N_elements(where(invvar EQ 0)) / N_elements(invvar)
+         if (fbadpix GT 0.01) then qbadflat = 1 $
+          else qbadflat = 0
 
-      splog, 'Fitting traces in ',  flatname[ifile]
-      xy2traceset, ycen, tmp_xsol, tset, ncoeff=5, maxdev=0.1
-      traceset2xy, tset, ycen, tmp_xsol
+         ;---------------------------------------------------------------------
+         ; Create spatial tracing from flat-field image
+         ;---------------------------------------------------------------------
 
-      ;------------------------------------------------------------------------
-      ; Extract the flat-field image
-      ;------------------------------------------------------------------------
+         splog, 'Tracing 320 fibers in ',  flatname[ifile]
+         tmp_xsol = trace320crude(image, yset=ycen, maxdev=0.15)
 
-      splog, 'Extracting flat-field image with simple gaussian'
-      sigma = 1.0
-      proftype = 1 ; Gaussian
-      highrej = 20
-      lowrej = 25
-      nPoly = 6
-      wfixed = [1] ; Just fit the first gaussian term
+         splog, 'Fitting traces in ',  flatname[ifile]
+         xy2traceset, ycen, tmp_xsol, tset, ncoeff=5, maxdev=0.1
+         traceset2xy, tset, ycen, tmp_xsol
 
-      extract_image, image, invvar, tmp_xsol, sigma, flat_flux, flat_fluxivar, $
-       proftype=proftype, wfixed=wfixed, $
-       highrej=highrej, lowrej=lowrej, nPoly=nPoly, relative=1
+         oldflatfile = flatname[ifile]
+      endif
 
-      highpixels = where(flat_flux GT 1.0e5, numhighpixels)
+      if (NOT qbadflat) then begin
 
-      splog, 'Found ', numhighpixels, ' highpixels in extracted flat ', $
-       flatname[ifile]
+         ;---------------------------------------------------------------------
+         ; Read the arc
+         ;---------------------------------------------------------------------
 
-      ;------------------------------------------------------------------------
-      ; Compute fiber-to-fiber flat-field variations
-      ;------------------------------------------------------------------------
+         splog, 'Reading arc ', arcname[ifile]
+         sdssproc, arcname[ifile], image, invvar, indir=indir, $
+          hdr=archdr, pixflatname=pixflatname
 
-      tmp_fflat = fiberflat(flat_flux, flat_fluxivar, fibermask)
+         ;---------------------------------------------------------------------
+         ; Extract the arc image
+         ;---------------------------------------------------------------------
 
-;
-;	This is to correct for radial position
-;      tmp_fflat = fiberflat(flat_flux, flat_fluxivar,fibermask,plugmap=plugmap)
+         splog, 'Extracting arc image with simple gaussian'
+         sigma = 1.0
+         proftype = 1 ; Gaussian
+         highrej = 15
+         lowrej = 15
+         nPoly = 6 ; maybe more structure
+         wfixed = [1] ; Just fit the first gaussian term
 
-   endif ; Checking if flat file is the same as last one
-      ;------------------------------------------------------------------------
-      ; Read the arc
-      ;------------------------------------------------------------------------
+         extract_image, image, invvar, tmp_xsol, sigma, flux, fluxivar, $
+          proftype=proftype, wfixed=wfixed, $
+          highrej=highrej, lowrej=lowrej, nPoly=nPoly, relative=1
 
-      splog, 'Reading arc ', arcname[ifile]
-      sdssproc, arcname[ifile], image, invvar, indir=indir, $
-       hdr=archdr, pixflatname=pixflatname
+         ;----------------------------------------------------------------------
+         ; Compute correlation coefficient for this arc image
+         ;----------------------------------------------------------------------
 
-      ;------------------------------------------------------------------------
-      ; Extract the arc image
-      ;------------------------------------------------------------------------
+         splog, 'Searching for wavelength solution'
+         tmp_aset = 0
+         fitarcimage, flux, fluxivar, aset=tmp_aset, $
+          color=color, lampfile=lampfile, bestcorr=corr
 
-      splog, 'Extracting arc image with simple gaussian'
-      sigma = 1.0
-      proftype = 1 ; Gaussian
-      highrej = 15
-      lowrej = 15
-      nPoly = 6 ; maybe more structure
-      wfixed = [1] ; Just fit the first gaussian term
+         ;-----
+         ; Determine if this is the best flat+arc pair
+         ; If so, then save the information that we need
 
-      extract_image, image, invvar, tmp_xsol, sigma, flux, fluxivar, $
-       proftype=proftype, wfixed=wfixed, $
-       highrej=highrej, lowrej=lowrej, nPoly=nPoly, relative=1
-
-      ;------------------
-      ; Flat-field the extracted arcs with the global flat
-      ; Hmmm.... would be circular if we need a wavelength calibration before
-      ; making that flat.  We don't at the moment.
-
-      divideflat, flux, fluxivar, tmp_fflat, fibermask
-
-      ;-------------------------------------------------------------------------
-      ; Compute correlation coefficient for this arc image
-      ;-------------------------------------------------------------------------
-
-      splog, 'Searching for wavelength solution'
-      tmp_aset = 0
-      fitarcimage, flux, fluxivar, aset=tmp_aset, $
-       color=color, lampfile=lampfile, bestcorr=corr
-
-      ;-----
-      ; Determine if this is the best flat+arc pair
-      ; If so, then save the information that we need
-
-      if (corr GT bestcorr) then begin
-         ibest = ifile
-         bestcorr = corr
-         arcimg = flux
-         arcivar = fluxivar
-         xsol = tmp_xsol
-         fflat = tmp_fflat
-         aset = tmp_aset
+         if (corr GT bestcorr) then begin
+            ibest = ifile
+            bestcorr = corr
+            arcimg = flux
+            arcivar = fluxivar
+            xsol = tmp_xsol
+            aset = tmp_aset
+         endif
       endif
 
    endfor
@@ -248,6 +220,12 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    ;---------------------------------------------------------------------------
    ; Make sure that the best flat+arc pair is good enough
    ;---------------------------------------------------------------------------
+
+   if (ibest EQ -1) then begin
+      splog, 'No good flats'
+      splog, 'Abort!'
+      return
+   endif
 
    splog, 'Best flat = ', flatname[ibest]
    splog, 'Best arc = ', arcname[ibest]
@@ -272,6 +250,41 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    wsave = wset
 
    qaplot_arcline, xdif_tset, lambda, arcname[ibest]
+
+   ;---------------------------------------------------------------------
+   ; Read best flat-field image (again)
+   ;---------------------------------------------------------------------
+
+   splog, 'Reading flat ', flatname[ibest]
+   sdssproc, flatname[ibest], image, invvar, indir=indir, $
+    hdr=flathdr, pixflatname=pixflatname
+
+   ;---------------------------------------------------------------------------
+   ; Extract the flat-field image
+   ;---------------------------------------------------------------------------
+
+   splog, 'Extracting flat-field image with simple gaussian'
+   sigma = 1.0
+   proftype = 1 ; Gaussian
+   highrej = 20
+   lowrej = 25
+   nPoly = 6
+   wfixed = [1] ; Just fit the first gaussian term
+
+   extract_image, image, invvar, xsol, sigma, flat_flux, flat_fluxivar, $
+    proftype=proftype, wfixed=wfixed, $
+    highrej=highrej, lowrej=lowrej, nPoly=nPoly, relative=1
+
+   highpixels = where(flat_flux GT 1.0e5, numhighpixels)
+   splog, 'Found ', numhighpixels, ' highpixels in extracted flat ', $
+    flatname[ibest]
+
+   ;---------------------------------------------------------------------------
+   ; Compute fiber-to-fiber flat-field variations
+   ;---------------------------------------------------------------------------
+
+   fflat = fiberflat(flat_flux, flat_fluxivar, wset, fibermask=fibermask)
+
 
 ; Plot flat-field ???
 plot,fflat[*,0], yr=[0,2], /ystyle, $

@@ -65,6 +65,7 @@
 ;   arcfit_guess()
 ;   djs_median
 ;   djsig()
+;   finalarcfit
 ;   trace_crude()
 ;   trace_fweight()
 ;   traceset2pix()
@@ -280,7 +281,7 @@ maxsig = 2.0
 
    finalarcfit, xnew, lamps.loglam, wset, ncoeff, fixabove, func=func, $
               maxdev=maxdev, maxiter=nlamp, /singlerej, $
-              nsetcoeff=8, maxsig=2.0
+              nsetcoeff=8, maxsig=maxsig
 
    print, 'Final arcfit complete'
 
@@ -325,6 +326,7 @@ maxsig = 2.0
    ; Do this so that the sky-line fitting will use those fit positions for
    ; the arc lines
    xnew = tset_pix
+
    return
 end
 ;------------------------------------------------------------------------------

@@ -1,4 +1,6 @@
 
+* Special-case a combine routine for only 2 exposures that will reject CR's
+
 * Count dead fibers in trace_crude
 
 * Compare throughput from dome flats vs. that on bright sky lines.
