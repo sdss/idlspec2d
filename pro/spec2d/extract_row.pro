@@ -12,7 +12,8 @@
 ;              xvar = xvar, mask=mask, relative=relative,
 ;              diagonal=diagonal, fullcovar=fullcovar, wfixarr = wfixarr,
 ;              nPoly=nPoly, maxIter=maxIter, highrej=highrej, niter=niter,
-;              lowrej=lowrej, calcCovar=calcCovar, squashprofile=squashprofile])
+;              lowrej=lowrej, calcCovar=calcCovar, squashprofile=squashprofile,
+;              whopping=whopping])
 ;
 ; INPUTS:
 ;   fimage     - Image[nCol]
@@ -43,6 +44,7 @@
 ;                  unless fullcovar is being analyzed, adds a factor of 2 or
 ;		   3 to CPU time.
 ;   niter      - number of rejection iterations performed
+;   whopping   - traces with extra high flux need extra terms
 ;
 ; OUTPUTS:
 ;   ans        -  Extracted flux in each parameter [nCoeff, nFiber]
@@ -83,7 +85,8 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
 		   relative=relative, squashprofile=squashprofile, $
                    diagonal=p, fullcovar=covar, wfixarr = wfixarr, $
                    nPoly=nPoly, maxIter=maxIter, highrej=highrej, $
-                   lowrej=lowrej, calcCovar=calcCovar, niter=niter
+                   lowrej=lowrej, calcCovar=calcCovar, niter=niter, $
+                   whopping=whopping
 
    ; Need 4 parameters
    if (N_params() LT 4) then begin
@@ -94,7 +97,8 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
       print, ' squashprofile=squashprofile, '
       print, ' diagonal=diagonal, fullcovar=fullcovar, wfixarr = wfixarr,'
       print, ' nPoly=nPoly, maxIter=maxIter, highrej=highrej, '
-      print, ' lowrej=lowrej, calcCovar=calcCovar, niter=niter])'
+      print, ' lowrej=lowrej, calcCovar=calcCovar, niter=niter,'
+      print, ' whopping=whopping])'
       return, -1
    endif
 
@@ -115,6 +119,14 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
    if (NOT keyword_set(proftype)) then proftype = 1
    relative = keyword_set(relative) 
    squashprofile =keyword_set(squashprofile) 
+
+   if (NOT keyword_set(whopping)) then begin
+      whoppingct = 0
+      whopping = -1.0
+   endif else begin
+      whoppingct = n_elements(whopping)
+   endelse
+
 
    if (NOT keyword_set(xvar)) then xvar = findgen(nx) $
       else if (nx NE n_elements(xvar)) then $
@@ -140,13 +152,14 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
       message, 'XCEN is not sorted or not separated by greater than 3 pixels.'
 
 
+   whopping = float(whopping)
+   whoppingct = LONG(whoppingct)
    nPoly = LONG(nPoly)
-   ma = nPoly + nTrace*nCoeff
+   ma = nPoly + nTrace*nCoeff + whoppingct
    maxIter = LONG(maxIter)
    proftype = LONG(proftype)
    calcCovar = LONG(calcCovar)
    squashprofile = LONG(squashprofile)
-
 		
    ymodel = fltarr(nx)
    fscat = fltarr(nTrace)
@@ -158,7 +171,8 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
       wfixarr(lindgen(nTrace)*nCoeff+i) = wfixed[i] 
       for i=1,nCoeff-1 do $
 	wfixarr(lindgen(nTrace)*nCoeff+i) = wfixed[i] * (1 - squashprofile)
-      if (keyword_set(bfixarr)) then wfixarr(nTrace*nCoeff:ma-1) = bfixarr
+      if (keyword_set(bfixarr)) then $
+              wfixarr(nTrace*nCoeff:nTrace*nCoeff + nPoly - 1) = bfixarr
    endif else if (ma NE n_elements(wfixarr)) then $
       message, 'Number of elements in FIMAGE and WFIXARR must be equal'
 
@@ -167,7 +181,7 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
    if (keyword_set(iback)) then begin
       if (nPoly NE n_elements(iback)) then $
          message, 'Number of elements in IBACK is not equal to nPoly'
-      ans(nTrace*nCoeff:ma-1) = iback 
+      ans(nTrace*nCoeff:nTrace*nCoeff + nPoly-1) = iback 
    endif
 
    if (keyword_set(inputans)) then begin
@@ -190,6 +204,7 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
       result = call_external(getenv('IDL_EVIL')+'libspec2d.so','extract_row',$
        nx, float(xvar), float(fimage), workinvvar, float(ymodel), nTrace, $
        nPoly, float(xcen), float(sigma), proftype, calcCovar, squashprofile, $
+       whopping, whoppingct, $
        nCoeff, ma, ans, long(wfixarr), p, fscat, covar)
 
        diffs = (fimage - ymodel)*sqrt(workinvvar) 
@@ -219,7 +234,7 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
 ;       print,format='($,i)', niter
    endwhile
 
-   oback = ans[ma-nPoly:ma-1]
+   oback = ans[nTrace*nCoeff:nTrace*nCoeff+nPoly-1]
    return, reform(ans[0:nTrace*nCoeff-1],nCoeff,nTrace)
 end
 ;------------------------------------------------------------------------------

@@ -130,3 +130,23 @@ djs_oplot,linelist[*,0],linelist[*,1]/50,ps=1,color='red'
 djs_oplot,10^lambda,lambda*0.0+400,ps=4
 djs_oplot,10^(poly((2.0*xcen[row,*]-2047.0)/2047.0,ans)),xcen[row,*]*0.0+500,ps=6
 
+
+IDL> 
+tt = doframe('sdR-04-00001151.fit','sdR-04-00001148.fit',$
+     ['sdR-04-00001136.fit'],'plPlugMapM-0198-51433-01.par',$
+       inputDir='/s1/data/SDSS/51433',outputDir='/s1/data/SDSS/51433/out')
+objectnums = ['-00001136','-00001138']
+
+cam = '04'
+flatnum = '-00001451'
+flat = 'sdR-'+cam+flatnum+'.fit'
+arcnum = '-00001449'
+arc = 'sdR-'+cam+arcnum+'.fit'
+objectnums = ['-00001441','-00001443','-00001445','-00001447']
+objects = 'sdR-'+cam+objectnums+'.fit'
+plugMapFile = 'plPlugMapM-0214-51432-02.par'
+inputDir='/s1/data/SDSS/51441'
+outputDir = '/s1/data/SDSS/51441/out'
+plugMapDir = inputDir+'/logs'
+tt = doaframe(flat,arc,objects,plugMapFile,inputDir=inputDir, outputDir=outputDir, plugMapDir=plugMapDir)
+

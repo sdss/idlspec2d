@@ -1,4 +1,5 @@
 * text=auto !eol
+etc/intrinsic1.dat -text
 etc/lamphgcdne.dat -text
 etc/lamplist.dat -text
 examples/README -text

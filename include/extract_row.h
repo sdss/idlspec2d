@@ -19,6 +19,8 @@ void fillProfile(float **y, float *x, float *xcen, IDL_LONG *xmin,
              IDL_LONG nTrace, IDL_LONG proftype);
 void fillPoly(float **y, float *x, IDL_LONG nx, IDL_LONG nPoly, 
          float x1, float x2);
+void fillWhopping(float **y, float *x, IDL_LONG nx, IDL_LONG whoppingct,
+         float *whoppingcen, float sigma);
 void subtractProfile(float *y, IDL_LONG nx, IDL_LONG *xmin,
               IDL_LONG *xmax, IDL_LONG nTrace, IDL_LONG nCoeff,
               float **aprofile, IDL_LONG *ia, float *a);

@@ -10,7 +10,7 @@
 ;              ymodel=ymodel, fscat=fscat,proftype = proftype,ansimage=ansimage,
 ;              wfixed=wfixed, sigmacor=sigmacor, xcencor=xcencor, mask=mask,
 ;              nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej,
-;              calcCovar=calcCovar, fitans=fitans])
+;              calcCovar=calcCovar, fitans=fitans, whopping=whopping])
 ;
 ; INPUTS:
 ;   fimage     - Image[nCol, nRow]
@@ -34,12 +34,14 @@
 ;   sigmacor   - new estimates of sigma, must have second element of wfixed set
 ;   xcencor    - new estimates of xcen, must have third element of wfixed set
 ;   mask       - byte mask: 1 is good and 0 is bad [nCol,nRow] 
-;   nPoly      - order of chebyshev scattered light background; default to 5
+;   nPoly      - order of chebyshev scattered light background; default to 4
 ;   maxIter    - maximum number of profile fitting iterations; default to 10
 ;   highrej    - positive sigma deviation to be rejected (default 10.0)
 ;   lowrej     - negative sigma deviation to be rejected (default 10.0)
 ;   calcCovar  - calculate Full covariance matrix
 ;   fitans     - ratio of profiles to do in single profile fitting
+;   whopping   - traces which have WHOPPINGingly high counts, and need extra
+;                background terms
 ;
 ; OUTPUTS:
 ;   flux       - Total extracted flux in each profile [nRowExtract, nFibers]
@@ -65,7 +67,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
                ymodel=ymodel, fscat=fscat,proftype=proftype,ansimage=ansimage, $
                wfixed=wfixed, sigmacor=sigmacor, xcencor=xcencor, mask=mask, $
                nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej, $
-	       calcCovar=calcCovar, fitans=fitans
+	       calcCovar=calcCovar, fitans=fitans, whopping=whopping
 
    ; Need 5 parameters
    if (N_params() LT 5) then begin
@@ -151,6 +153,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
    if (NOT keyword_set(proftype)) then proftype = 1  ; Gaussian
    if (NOT keyword_set(ymodel)) then ymodel = fltarr(nx,ny) 
    if (NOT keyword_set(calcCovar)) then calcCovar=0
+   if (NOT keyword_set(whopping)) then whopping = -1
 
    corcalc = lonarr(3)
    corcalc[0] = 1
@@ -219,17 +222,21 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
         message, 'XCEN is not sorted or not separated by greater than 3 pixels.'
 
      masktemp = mask[*,cur]
+
+     if(whopping[0] NE -1) then $
+         whoppingcur = xcencurrent[whopping] 
      
      if ARG_PRESENT(fitans) then inputans = fitans[*,*,cur]
      ansrow = extract_row(fimage[*,cur], invvar[*,cur], xcencurrent, $
       sigmacur, ymodel=ymodelrow, fscat=fscatrow, proftype=proftype, $
       wfixed=wfixed, mask=masktemp, diagonal=prow, nPoly=nPoly, $
       oback=oback, niter=niter, squashprofile=squashprofile,inputans=inputans, $
-      maxIter=maxIter, highrej=highrej, lowrej=lowrej, calcCovar=calcCovar)
+      maxIter=maxIter, highrej=highrej, lowrej=lowrej, calcCovar=calcCovar, $
+      whopping=whoppingcur)
 
      mask[*,cur] = masktemp
-     ansimage[0:ma-nPoly-1,iy] = ansrow
-     ansimage[ma-nPoly:ma-1,iy] = oback
+     ansimage[0:nTrace*nCoeff-1,iy] = ansrow
+     ansimage[nTrace*nCoeff:nTrace*nCoeff+nPoly-1,iy] = oback
 
      if(keyword_set(ymodel)) then ymodel[*,cur] = ymodelrow
      if(keyword_set(fscat)) then fscat[iy,*] = fscatrow

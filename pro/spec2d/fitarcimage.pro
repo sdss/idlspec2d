@@ -143,7 +143,7 @@ end
 ;fitarcimage, flux1148, 'blue', lamplist, xpeak, ypeak, $
 ;       tset, invset,ans=ans
 pro fitarcimage, arc, side, linelist, xcen, ycen, tset, invset, $
-                  func=func, ncoeff=ncoeff, ans=ans
+                  func=func, ncoeff=ncoeff, ans=ans, lambda=lambda
 
    if (NOT keyword_set(func)) then func = 'legendre'
    if (NOT keyword_set(ncoeff)) then ncoeff = 5
@@ -243,6 +243,8 @@ pro fitarcimage, arc, side, linelist, xcen, ycen, tset, invset, $
       if (func EQ 'legendre') then function_name = 'flegendre'
       if (func EQ 'chebyshev') then function_name = 'fchebyshev'
 
+      keep = lonarr(nlines) 
+
 	for i=0,nTrace-1 do begin
 
 	  done = 0
@@ -264,6 +266,7 @@ pro fitarcimage, arc, side, linelist, xcen, ycen, tset, invset, $
 	      oldcount = ngood
 	    endelse 
 	  endwhile
+          keep[goodlines] = keep[goodlines] + 1
 	  
 	  tset.coeff[*,i] = res
 
@@ -280,6 +283,7 @@ pro fitarcimage, arc, side, linelist, xcen, ycen, tset, invset, $
 	
           print, format='($, ".",i4.4,a5)',i,string([8b,8b,8b,8b,8b])
 	endfor	
+        lambda = lambda * (keep GT 0)
 
 	return
   end
