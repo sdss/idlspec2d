@@ -29,6 +29,8 @@
 ;   color      - Return spectrograph color ('red' or 'blue')
 ;
 ; COMMENTS:
+;   Only the header is read from the image if IMAGE, INVVAR, OUTFILE and
+;   VARFILE are all not set.
 ;
 ; BUGS:
 ;
@@ -56,6 +58,9 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
    if (NOT keyword_set(configfile)) then configfile = 'opConfig.par'
    if (NOT keyword_set(ecalibfile)) then ecalibfile = 'opECalib.par'
    if (NOT keyword_set(bcfile)) then bcfile = 'opBC.par'
+
+   readimg = arg_present(image) OR keyword_set(outfile)
+   readivar = arg_present(invvar) OR keyword_set(varfile)
 
    junk = findfile(configfile, count=ct)
    if (ct NE 1) then begin
@@ -87,7 +92,10 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
 
    realbc= tempname[0]
 
-   rawdata = rdss_fits(infile, hdr, /nofloat)
+   if (readimg OR readivar) then $
+    rawdata = rdss_fits(infile, hdr, /nofloat) $
+   else $
+    hdr = headfits(infile)
 
    cards = sxpar(hdr,'NAXIS*')
 ;   if (cards[0] NE 2128 OR cards[1] NE 2069) then $
@@ -104,10 +112,7 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
    camnames = ['b1', 'r2', 'b2', 'r1']
    camnums = ['01', '02', '03', '04']
 
-
-;
-;	They've changed filenames again, this works both ways
-;
+   ; They've changed filenames again, this works both ways
 
    camplace = where(strmid(infile, i-2, 2) EQ camnames, camct)
    if (camct NE 1) then $
@@ -215,46 +220,54 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
    bchere = where(bc.camrow EQ camrow AND bc.camcol EQ camcol,nbc)
    if (nbc GT 0) then bc = bc[ bchere ]
 
-;
-;	Do image first
-;
+   ; Do image first
+
    for iamp=0, 3 do begin
       if (qexist[iamp] EQ 1) then begin
-         if (nover[iamp] NE 0) then begin
-            ; Use the "overscan" region
-            biasval = median( $
-             rawdata[sover[iamp]:sover[iamp]+nover[iamp]-1, $
-             sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] )
-         endif else if (nmapover[iamp] NE 0) then begin
-            ; Use the "mapped overscan" region
-            biasval = median( $
-             rawdata[smapover[iamp]:smapover[iamp]+nmapover[iamp]-1, $
-             sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] )
+
+         if (readimg OR readivar) then begin
+
+            if (nover[iamp] NE 0) then begin
+               ; Use the "overscan" region
+               biasval = median( $
+                rawdata[sover[iamp]:sover[iamp]+nover[iamp]-1, $
+                sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] )
+            endif else if (nmapover[iamp] NE 0) then begin
+               ; Use the "mapped overscan" region
+               biasval = median( $
+                rawdata[smapover[iamp]:smapover[iamp]+nmapover[iamp]-1, $
+                sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] )
+            endif
+
+            ; Copy the data for this amplifier into the final image
+            image[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
+                     srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
+            rawdata[sdatacol[iamp]:sdatacol[iamp]+ncol[iamp]-1, $
+                     sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] - biasval
+
+            ; Add to the header
+            sxaddpar, hdr, 'BIAS'+string(iamp,format='(i1)'), biasval
+
          endif
 
-         ; Copy the data for this amplifier into the final image
-         image[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
-                  srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
-         rawdata[sdatacol[iamp]:sdatacol[iamp]+ncol[iamp]-1, $
-                  sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] - biasval
-
          ; Add to the header
-         sxaddpar, hdr, 'BIAS'+string(iamp,format='(i1)'), biasval
          sxaddpar, hdr, 'GAIN'+string(iamp,format='(i1)'), gain[iamp]
          sxaddpar, hdr, 'RDNOISE'+string(iamp,format='(i1)'), $
           gain[iamp]*readnoiseDN[iamp]
       endif
    endfor
 
-   if (ARG_PRESENT(invvar)) then begin
-     if ((size(invvar))[0] NE 2) then invvar = fltarr(nc, nr) $
-     else if ((size(invvar))[1] NE nc OR (size(invvar))[2] NE nr OR $
-            (size(invvar))[3] NE 4) then invvar = fltarr(nc, nr) 
+   if (readivar) then begin
+      if ((size(invvar))[0] NE 2) then $
+       invvar = fltarr(nc, nr) $
+      else if ((size(invvar))[1] NE nc OR (size(invvar))[2] NE nr OR $
+       (size(invvar))[3] NE 4) then $
+       invvar = fltarr(nc, nr) 
 
-     mask = bytarr(nc, nr)
+      mask = bytarr(nc, nr)
  
-     for iamp=0, 3 do begin
-       if (qexist[iamp] EQ 1) then begin
+      for iamp=0, 3 do begin
+         if (qexist[iamp] EQ 1) then begin
 
          mask[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
                   srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
@@ -267,36 +280,34 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
            1.0/(abs(image[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
                   srow[iamp]:srow[iamp]+nrow[iamp]-1]) /gain[iamp] + $
                   readnoiseDN[iamp]*readnoiseDN[iamp])
-       endif
-     endfor
+         endif
+      endfor
 
-     if (nbc GT 0) then begin
-       bcsc = (bc.dfcol0 > 0) < nc
-       bcec = (bc.dfcol0 + bc.dfncol - 1 < nc) > bcsc
-       bcsr = (bc.dfrow0 > 0) < nr
-       bcer = (bc.dfrow0 + bc.dfnrow - 1 < nr) > bcsr
+      if (nbc GT 0) then begin
+         bcsc = (bc.dfcol0 > 0) < nc
+         bcec = (bc.dfcol0 + bc.dfncol - 1 < nc) > bcsc
+         bcsr = (bc.dfrow0 > 0) < nr
+         bcer = (bc.dfrow0 + bc.dfnrow - 1 < nr) > bcsr
 
-       for i=0,nbc-1 do mask[bcsc[i]:bcec[i],bcsr[i]:bcer[i]] = 0
-     endif
-     
-         
-	
-     ; For saturated pixels, set INVVAR=0
-     invvar = invvar * mask
+         for i=0,nbc-1 do mask[bcsc[i]:bcec[i],bcsr[i]:bcer[i]] = 0
+      endif
+
+      ; For saturated pixels, set INVVAR=0
+      invvar = invvar * mask
    endif
 
    ;---------------------------------------------------------------------------
    ; Read pixel-to-pixel flat-field
    ;---------------------------------------------------------------------------
 
-   if (keyword_set(pixflatname)) then begin
+   if (keyword_set(pixflatname) AND (readimg OR readivar)) then begin
       fullname = findfile(pixflatname, count=ct)
       if (ct EQ 0) then $
        message, 'Cannot find pixflat image ' + pixflatname
       pixflat = readfits(fullname[0])
 
-      image = image / pixflat
-      if (ARG_PRESENT(invvar)) then invvar = invvar * pixflat^2
+      if (readimg) then image = image / pixflat
+      if (readivar) then invvar = invvar * pixflat^2
    endif
 
    ;---------------------------------------------------------------------------
@@ -306,10 +317,12 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
    if (keyword_set(outfile)) then $
     writefits, outfile, image, hdr
 
-   if (keyword_set(varfile) AND ARG_PRESENT(invvar)) then begin
+   if (readivar) then begin
       varhdr = hdr
-      sxaddpar, varhdr, 'VARFILE', 'INVERSE VARIANCE of ' + outfile
-      writefits, varfile, invvar, varhdr
+      if (keyword_set(outfile)) then $
+       sxaddpar, varhdr, 'VARFILE', 'INVERSE VARIANCE of ' + outfile
+      if (keyword_set(varfile)) then $
+       writefits, varfile, invvar, varhdr
    endif
  
    return
