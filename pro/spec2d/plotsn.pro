@@ -37,9 +37,10 @@ pro plotsn, sn, plug, bands=bands, title=title
 
    if (NOT keyword_set(bands)) then bands=[1, 2, 3]
 
-   bandnames = ["* u'","* g'","* r'","* i'","* z'"]
-   snmag = [19.0, 19.0, 19.0, 19.0, 19.0]
-   snof1 = [60.0, 50.0, 50.0, 100.0, 60.0]/100.0
+   bandnames = ["u'","g'","r'","i'","z'"]
+   slopelabel = " * "+bandnames
+   snmag = [19.0, 19.1, 19.1, 18.8, 18.0]
+   snlabel = '(S/N)^2 @ '+bandnames+' ='+string(snmag,format='(f5.1)')
 
    nbands = n_elements(bands)
    nfibers = n_elements(plug)
@@ -112,43 +113,48 @@ pro plotsn, sn, plug, bands=bands, title=title
       if (s2[0] NE -1) then djs_oplot, mag[s2], snc[s2] > 0.9, ps=4, syms=0.7
 
       xyouts, minmag+0.5, 3.0, string(format='(a,f5.2,f6.2,a)','log S/N = ', $
-           a, bandnames[bands[i]])
+           a, slopelabel[bands[i]])
 
       if (size(sigma, /tname) NE 'UNDEFINED') then $
       xyouts, minmag+0.5, 2.0, string(format='(a,f5.3)','Deviation: ', sigma)
 
+      djs_xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.6], $
+         10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.94], $
+         snlabel[bands[i]]
+
       djs_oplot, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.6], $
-         10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.91], ps=1, $
+         10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.89], ps=1, $
          syms=0.7, color='red'
       xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.62], $
-         10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.9], $
+         10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.88], $
          'Spec 1', color=djs_icolor('red')
 
       djs_oplot, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.6], $
-         10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.85], ps=4, syms=0.7
+         10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.83], ps=4, syms=0.7
       xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.62], $
-         10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.84], 'Spec 2'
+         10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.82], 'Spec 2'
 
-      minutes = fltarr(2)
+      sn2 = fltarr(2)
 
       if (s1[0] NE -1) then begin
         a1 = fitsn(mag[s1], snc[s1], minmag=snmag[bands[i]]-0.5, $
                   maxmag=snmag[bands[i]]+0.5)
-        minutes[0] = 10^(2.0 * poly(snmag[bands[i]],a1)) * snof1[bands[i]]
+        sn2[0] = 10^(2.0 * poly(snmag[bands[i]],a1)) 
       endif
       if (s2[0] NE -1) then begin
         a2 = fitsn(mag[s2], snc[s2], minmag=snmag[bands[i]]-0.5, $
                   maxmag=snmag[bands[i]]+0.5)
-        minutes[1] = 10^(2.0 * poly(snmag[bands[i]],a2)) * snof1[bands[i]]
+        sn2[1] = 10^(2.0 * poly(snmag[bands[i]],a2)) 
       endif
 
       xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.8], $
-           10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.9], $
-           string(format='(f5.1)', minutes[0]), color=djs_icolor('red')
+           10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.88], $
+           string(format='(f5.1)', sn2[0]), color=djs_icolor('red')
       xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.8], $
-           10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.84], $
-           string(format='(f5.1)', minutes[1])
+           10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.82], $
+           string(format='(f5.1)', sn2[1])
 
+      print, snlabel[bands[i]], sn2
 
       good = where(snc GT 0.0 AND mag GT minmag, ngood)
 
