@@ -780,7 +780,7 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
 
    ; 9th HDU are the legendre coefficients of the smear correction vectors
    ; (3 x 640 array)
-   mwrfits, smear_coeff, fulloutname
+   mwrfits, float(smear_coeff), fulloutname
 
    ;---------------------------------------------------------------------------
    ; Write the modified pixel masks to the input files
