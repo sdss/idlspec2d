@@ -148,35 +148,44 @@ function batch2d_rawfiles, planfile, outfile=outfile
    infiles = djs_filepath(expfiles[*]+'*', root_dir=mjdstr)
 
    ;----------
-   ; Replace the prefix 'sdR' with 'spSky' in the science frames,
-   ; with 'spArc' for the arc frames, and with 'spFlat' for the flat frames.
-   ; Also, force the suffix from '.fit' to '.fits'.
+   ; Make the list of spArc files
 
-   otherfiles = expfiles
-   if (size(otherfiles,/n_dimen) EQ 1) then nloop=1 $
-    else nloop = (size(otherfiles,/dimens))[1]
-   for i=0, nloop-1 do begin
-      case ((*pp[0]).flavor)[i] of
-         'arc': otherfiles[*,i] = repstr(otherfiles[*,i], 'sdR', 'spArc')
-         'flat': otherfiles[*,i] = repstr(otherfiles[*,i], 'sdR', 'spFlat')
-         'science': otherfiles[*,i] = repstr(otherfiles[*,i], 'sdR', 'spSky')
-         'smear': otherfiles[*,i] = repstr(otherfiles[*,i], 'sdR', 'spSky')
-      endcase
-      otherfiles[*,i] = repstr(otherfiles[*,i], '.fit', '.fits')
-   endfor
+   i = where((*pp[0]).flavor EQ 'arc')
+   arcfiles = expfiles[*,i]
+   arcfiles = repstr(arcfiles, 'sdR', 'spArc')
+   arcfiles = repstr(arcfiles, '.fit', '.fits')
 
    ;----------
-   ; Now get the reduced frames.
+   ; Make the list of spFlat files
+
+   i = where((*pp[0]).flavor EQ 'flat')
+   flatfiles = expfiles[*,i]
+   flatfiles = repstr(flatfiles, 'sdR', 'spFlat')
+   flatfiles = repstr(flatfiles, '.fit', '.fits')
+
+   ;----------
+   ; Make the list of spFrame files
 
    i = where((*pp[0]).flavor EQ 'science' OR (*pp[0]).flavor EQ 'smear')
    framefiles = expfiles[*,i]
    framefiles = repstr(framefiles, 'sdR', 'spFrame')
    framefiles = repstr(framefiles, '.fit', '.fits')
 
+   ;----------
+   ; Make the list of spFluxcalib, spFluxcorr, spCFrame files
+
+   fcalibfiles = repstr(framefiles, 'spFrame', 'spFluxcalib')
+   fcorrfiles = repstr(framefiles, 'spFrame', 'spFluxcorr')
+   cframefiles = repstr(framefiles, 'spFrame', 'spCFrame')
+
    outfile = [ djs_filepath(logfile, root_dir=extractdir), $
                djs_filepath(plotfile, root_dir=extractdir), $
+               djs_filepath(arcfiles[*], root_dir=extractdir), $
+               djs_filepath(flatfiles[*], root_dir=extractdir), $
                djs_filepath(framefiles[*], root_dir=extractdir), $
-               djs_filepath(otherfiles[*], root_dir=extractdir) ]
+               djs_filepath(fcalibfiles[*], root_dir=extractdir), $
+               djs_filepath(fcorrfiles[*], root_dir=extractdir), $
+               djs_filepath(cframefiles[*], root_dir=extractdir) ]
 
    yanny_free, pp
 
