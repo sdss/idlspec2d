@@ -12,9 +12,10 @@
 ; INPUTS:
 ;
 ; OPTIONAL INPUTS:
-;   planfile   - Name of output plan file; default to 'spPlan2d.par'
+;   planfile   - Name(s) of output plan file; default to reducing all
+;                plan files matching 'spPlan2d*.par'
 ;   docams     - Cameras to reduce; default to ['b1', 'b2', 'r1', 'r2'];
-;                set to 0 to disable running SPREDUCE.
+;                set to 0 or '' to disable running SPREDUCE.
 ;   nocombine  - Only run SPREDUCE, not COMBINE2DOUT.
 ;   xdisplay   - Send plots to X display rather than to plot file
 ;
