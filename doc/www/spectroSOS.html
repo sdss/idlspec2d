@@ -394,13 +394,21 @@ The values reported are:
     image.  For example, if this is 8, then 98% of the pixels are below 8
     electrons.  Bad regions on the CCD and saturated pixels are excluded
     from this evaluation.
+    The CCDs can also accumulate charge during the day that may need several
+    bias exposures to completely flush.  If this does not work, then the
+    CCD is probably warm.
 <LI><B>FLAT NGOODFIBER</B> <BR>
     The number of illuminated fibers.  This should be 320 if all the
-    fibers are plugged and unbroken.
+    fibers are plugged and unbroken.  Note that fibers that fall on particularly
+    bad parts of the CCD can also be excluded from the good fiber list
+    (the red CCDs have some of these cases).  If this number is less than
+    about 315, then you should be suspicious that some fibers have dropped out.
 <LI><B>FLAT XMIN (XMAX)</B> <BR>
     The minimum (maximum) X position of the spectra on the CCD.  If this is
     less than 0 (greater than 2047), then some of the spectra fall off the
-    left (right) side of the CCD.
+    left (right) side of the CCD.  This probably means that no one ran
+    the Spectro Monthly Checkout.  If it is off by more than 5 pix or so,
+    you should probably run the Monthly Checkout.
 <LI><B>FLAT XSIGMA</B> <BR>
     The profiles in the spatial (X) dimension have a gaussian fit with
     a width of this sigma.  The median of this width is taken independently in
@@ -412,11 +420,15 @@ The values reported are:
     The minimum (maximum) wavelength (in Angstroms) of any spectra on this CCD.
     Because of the optical distortions, this is always for the central
     fiber.  The edge fibers have less wavelength coverage.
+    This probably means that no one ran
+    the Spectro Monthly Checkout.  If it is off by more than 5 pix or so,
+    you should probably run the Monthly Checkout.
 <LI><B>ARC BESTCORR</B> <BR>
     The linear correlation coefficient between the arc spectra and a template
     arc spectrum.  If they agree perfectly, then this is 1.  The value of
     this correlation is typically 0.80.  If it drops too much lower, then
-    the arc spectra do not look as they should.  This could happen if some
+    the arc spectra do not look as they should.  This could happen if
+    the arcs did not turn on, the flat field screens did not close, or some
     of the arc lines are missing -- if, for example, the Hg lamps all failed.
     If the correlation is less than 0.5 or so, then it's even possible that
     the code has found the incorrect wavelength solution.
@@ -425,7 +437,7 @@ The values reported are:
     There are many more on the red CCD's because neon has many more lines
     there.  If this drops to too few lines, then some of the lamps have not
     turned on properly, have not warmed up, or have warmed up too much.
-<LI><B>ARC DISPSIGMA</B> <BR>
+<LI><B>ARC WSIGMA</B> <BR>
     The arc-line profiles in the wavelength (Y) dimension have a gaussian
     fit with a width of this sigma.  The median of this width is taken
     independently in each of 4 quadrants on a CCD, and the maximum of
@@ -433,7 +445,7 @@ The values reported are:
     If the spectrographs are in focus, then this value should be about 1.0 pix.
     If it is larger, then the spectrographs may be out-of-focus, or the
     slit-heads may not be properly latched.
-    (One would expect that both XSIGMA and DISPSIGMA would go out-of-focus
+    (One would expect that both XSIGMA and WSIGMA would go out-of-focus
     at the same time.)
 <LI><B>SCIENCE/SMEAR SKY/SEC</B> <BR>
     The median sky counts in electrons per pixel.
@@ -488,15 +500,17 @@ The following messages may appear:
     This is very, very bad.  This is indicative of an electronics problem
     that we first saw on MJD=51578 to 51580 (3 to 5 Feb 2000).
     The raw images have rows shifted to the right, sometimes by
-    many pixels.
+    many pixels.  Call Connie immediately.
 <LI><B>Fixing dropped-pixel rows (from electronics)</B> <BR>
     This is very bad.  This is indicative of an electronics problem
     that we first saw on MJD=51688 (23 May 2000).
     The raw images actually have some rows shifted by 1 or 2 pixels,
     usually more so near the bottom of the CCD (the first rows to be read).
+    Call Connie immediately.
 <LI><B>More than 10% of the image is rejected</B> <BR>
     This is very bad.  This can probably only happen if most of the CCD
-    has saturated pixels.
+    has saturated pixels, which probably means you're observing during
+    twilight, the CCDs are warm, or the dome lights are on.
 <LI><B>Flat-field screens not closed</B> <BR>
     The "FFS" keyword in the header indicates that at least one of the
     flat-field petals was not closed.  When this happens, the flat or arc
@@ -509,14 +523,20 @@ The following messages may appear:
     This condition is triggered when more than 2% of the non-masked pixels
     on the image are bad (saturated).
     When this happens, the flat (or arc) is not reduced.
+    This probably happens if the CCDs are warm, the dome lights are on,
+    or if for some reason the shutters were open too long.
 <LI><B>Reject flat (or arc) ... saturated rows</B> <BR>
     This condition is triggered when there are more than 100 saturated rows
     on the image.
     When this happens, the flat (or arc) is not reduced.
+    This probably happens if the CCDs are warm, the dome lights are on,
+    or if for some reason the shutters were open too long.
 <LI><B>Reject flat as too faint</B> <BR>
     This condition is triggered when the 80-th percentile of the image
     is less than 1000 electrons.
     When this happens, the flat is not reduced.
+    Either the flat field screens were not closed, the lamps were not
+    turned on, or the shutter didn't open.
 <LI><B>Reject science ... </B> <BR>
     A science exposure can be rejected if the header keywords indicate
     that the flat-field petals are closed, any flat-field or arc lamps
@@ -539,7 +559,10 @@ The following messages may appear:
     When this happens, the arc is not reduced.
 <LI><B>Best arc correlation = ...</B> <BR>
     The cross-correlation of the arc spectrum with the template arc spectrum
-    was bad.  This problem also triggers BESTCORR as bad in the table (see above).
+    was bad.  This problem also triggers BESTCORR as bad in the table (see
+    above).  This may be due to too little signal in the lamps, e.g. if
+    the flat field petals did not close or the lamps did not turn on.
+    If those are not the problems, then look at the raw image.
 <LI><B>Big wavelength gap</B> <BR>
     Some arc lines were not found in the arc spectra, and there is a large
     gap in wavelength space without any lines.  This will produce a poor
@@ -578,11 +601,14 @@ The following messages may appear:
     if for some reason there were far fewer than the mandated 16 sky fibers
     on a CCD, or most of those fibers just happened to be dead fibers.
     You should never see this message.  If you do, the data is un-reducable.
+    You could try one more exposure, but something is probably horribly
+    wrong with this plate.
 <LI><B>Airmass range = ...</B> <BR>
     This warning is triggered if the airmass exceeds 2.5.  At such large
     airmasses, the atmospheric refraction terms are getting large and the
-    sky background is bright.  The data is still usable, it's just not as
-    good as taking data at lower airmass.
+    sky background is bright.  The data is still perfectly usable, it's
+    just not as good as taking data at lower airmass.  Keep observing if
+    you must, but the airmass will rapidly approach infinity!
 <LI><B>Large flexure flat<->science</B> <BR>
     There is a large shift (more than 0.15 pix) between the flat-field and
     the science exposure, presumably from flexure in the spectrographs.
@@ -595,10 +621,12 @@ The following messages may appear:
     on the CCD.  If the objects are bright enough (12th mag?), then this can
     trigger other warnings such as "scattered light".  I think it's safe
     to say that whopping fibers only show up when there has been a mistake
-    made in the plate designs.  If you see this more than once on newly-designed
-    plates, you should file a PR against the TARGET code.  (For example,
-    Astuko found that some bright stars were incorrectly being targetted
-    as galaxies; PR 2471.)
+    made in the plate designs -- this is already recorded in PR 2471.
+    You <B>should</B> check that this object does not saturate (> 30,000 ADU)
+    the raw sdR image
+    (see <A HREF="spectro_apodisplay.html">Displaying Spectra at APO</A>).
+    Should it be saturating, reduce the exposure time to prevent saturation
+    or move on to the next plate.
 <LI><B>Bad sky residuals at ....</B> <BR>
     There is very poor sky-subtraction of the sky fibers at these wavelengths.
     This means that, somehow, there is excess light down the fibers that
@@ -607,6 +635,14 @@ The following messages may appear:
     at reduced chi=2.  Note that other, horrendous problems (like a warm CCD,
     scattered light, or out-of-focus spectrographs) could also trigger this.
     In that case, there should be relevant warning messages preceding this one.
+    If there is auroral activity, then this could be triggered at a few
+    specific lines like O_I at 6300 Ang.
+    This message can also be ignored at the edges of the CCDs
+    wavelength coverage -- near 3800 or 6200 Ang for b1,b2 or near
+    5800 or 9200 Ang for r1,r2 (c.f. PR 3656).
+    If none of the above apply, then there is some real problem.
+    I would look at the images and/or spectra to look for any obvious problems,
+    and file a PR against sospectro.  Might as well keep observing?
 <LI><B>Red Monster at ....</B> <BR>
     This warning is triggered if we see bad sky residuals (above) that
     is specifically in the wavelength range of about 6400-6600 Ang.
@@ -614,7 +650,8 @@ The following messages may appear:
     in which case the observers should unplug it immediately.
     The treshhold is set at reduced chi=2, and the worst that we have ever seen
     is at about the level chi=6.  The last time we definitively saw this was on
-    plate 426 on 3/4 Dec 2000 (MJD 51882).
+    plate 426 on 3/4 Dec 2000 (MJD 51882).  If you cannot find the source
+    of the excess light, keep observing but file a PR against sospectro.
 <LI><A NAME="diskfull"><B>SOS disk is ...% full</B></A> <BR>
     The specified disk on sos.apo is more than 95% full.  This could be
     either the disk used to copy the raw sdR images from sdsshost.apo,
@@ -623,6 +660,8 @@ The following messages may appear:
     whose original copies still exist on sdsshost.apo or they will be
     re-rsynced and re-reduced
     (see <A HREF="#howwork">How Son-of-Spectro Works</A>).
+    You could delete files from a previous night first on sdsshost.apo,
+    then from sos.apo.
 </UL>
 
 <H4><A NAME="outputs_log">Log files</A></H4>
