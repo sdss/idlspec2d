@@ -147,6 +147,16 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    ; Flat-field
    divideflat, fluxsub, fluxivar, fflat, fibermask=fibermask, /quiet
 
+   iskies = where(strtrim(plugsort.objtype,2) EQ 'SKY' $
+      AND (plugsort.fiberid GT 0) AND (fibermask EQ 0), nskies)
+
+   if nskies GT 10 then begin
+      skylevel = djs_median(fluxsub[*,iskies], 1)
+      outlier = (sort(skylevel))[[0,1,nskies-2,nskies-1]]
+      fibermask[outlier] = fibermask[outlier] OR fibermask_bits('BRIGHTSKY')
+   endif
+
+
    ; Sky-subtract
    skystruct = skysubtract(fluxsub, fluxivar, plugsort, wset, $
     objsub, objsubivar, iskies=iskies, fibermask=fibermask)
@@ -173,8 +183,6 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    ;----------
    ; Find which fibers are sky fibers + object fibers
 
-;   iskies = where(strtrim(plugsort.objtype,2) EQ 'SKY' $
-;    AND plugsort.fiberid GT 0)
    iobj = where(strtrim(plugsort.objtype,2) NE 'SKY' $
     AND plugsort.fiberid GT 0)
 
