@@ -1,4 +1,9 @@
 
+GUIDERMOVIE: The format for the date in the header of the guider images
+           has changed.  This code should now comptabably read the old
+           or new date format.
+WRITE_UROS: Add Flatvec,Rnois to output files.
+
 sprobot_start: Fix tiny typo (extra quotation on line 141).
 
 -------------------------------------------------------------------------------
