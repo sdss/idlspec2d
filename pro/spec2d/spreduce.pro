@@ -51,14 +51,17 @@
 ;   locateskylines
 ;   qaplot_arcline
 ;   qaplot_fflat
+;   qaplot_scatlight
+;   qaplot_skyline
+;   qaplot_skysub
 ;   qaskylines
-;   qaplot_fflat
 ;   readcol
 ;   readfits()
 ;   sdssproc
 ;   skysubtract
 ;   splog
 ;   telluric_corr
+;   tweaktrace
 ;   traceset2xy
 ;   xy2traceset
 ;   yanny_free
@@ -116,6 +119,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    ;-------------------------------------------------------------------------
    ; Plugsort will return mask of good (1) and bad (0) fibers too
    ;-------------------------------------------------------------------------
+
    plugsort = sortplugmap(plugmap, spectrographid, fibermask)
  
    ;---------------------------------------------------------------------------
@@ -154,8 +158,16 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
          fbadpix = float(N_elements(where(invvar EQ 0))) / N_elements(invvar)
 
          qbadflat = 0
-         if (fbadpix GT 0.01) then qbadflat = 1
-         if (nsatrow GT 10) then qbadflat = 1
+         if (fbadpix GT 0.01) then begin
+            qbadflat = 1
+            splog, 'Reject flat ' + flatname[ifile] + $
+             ' (' + string(format='(i3)', fix(fbadpix*100)) + '% bad pixels)'
+         endif
+         if (nsatrow GT 10) then begin
+            qbadflat = 1
+            splog, 'Reject flat ' + flatname[ifile] + $
+             ' (' + string(format='(i4)', nsatrow) + ' saturated rows)'
+         endif
 
          if (NOT qbadflat) then begin
             ;------------------------------------------------------------------
@@ -168,9 +180,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
             splog, 'Fitting traces in ',  flatname[ifile]
             xy2traceset, ycen, tmp_xsol, tset, ncoeff=5, maxdev=0.1
             traceset2xy, tset, ycen, tmp_xsol
-         endif else begin
-            splog, 'Rejecting flat ', flatname[ifile]
-         endelse
+         endif
 
          oldflatfile = flatname[ifile]
       endif
@@ -185,8 +195,16 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
          sdssproc, arcname[ifile], image, invvar, indir=indir, $
           hdr=archdr, pixflatname=pixflatname, nsatrow=nsatrow
 
+         ;-----
+         ; Decide if this arc is bad:
+         ;   Reject if more than 40 rows are saturated.
+
          qbadarc = 0
-         if (nsatrow GT 20) then qbadarc = 1
+         if (nsatrow GT 40) then begin
+            qbadarc = 1
+            splog, 'Reject arc ' + arcname[ifile] + $
+             ' (' + string(format='(i4)', nsatrow) + ' saturated rows)'
+         endif
 
          if (NOT qbadarc) then begin
             ;------------------------------------------------------------------
@@ -198,12 +216,12 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
             proftype = 1 ; Gaussian
             highrej = 15
             lowrej = 15
-            nPoly = 1 ; maybe more structure
+            npoly = 1 ; maybe more structure
             wfixed = [1,1] ; Just fit the first gaussian term
 
             extract_image, image, invvar, tmp_xsol, sigma, flux, fluxivar, $
              proftype=proftype, wfixed=wfixed, $
-             highrej=highrej, lowrej=lowrej, nPoly=nPoly, relative=1
+             highrej=highrej, lowrej=lowrej, npoly=npoly, relative=1
 
             ;-------------------------------------------------------------------
             ; Compute correlation coefficient for this arc image
@@ -244,7 +262,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    splog, 'Best arc = ', arcname[ibest]
 
    if ((color EQ 'blue' AND bestcorr LT 0.7) $
-    OR (color EQ 'red'  AND bestcorr LT 0.8) ) then begin
+    OR (color EQ 'red'  AND bestcorr LT 0.7) ) then begin
       splog, 'WARNING: Best arc correlation = ', bestcorr
    endif else $
     if ((color EQ 'blue' AND bestcorr LT 0.5) $
@@ -288,24 +306,24 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    proftype = 1 ; Gaussian
    highrej = 15
    lowrej = 15
-   nPoly = 1  ; just fit flat background to each row
+   npoly = 1  ; just fit flat background to each row
    wfixed = [1,1] ; Just fit the first gaussian term
 
    extract_image, image, invvar, xsol, sigma, flat_flux, flat_fluxivar, $
     proftype=proftype, wfixed=wfixed, $
-    highrej=highrej, lowrej=lowrej, nPoly=nPoly, relative=1
+    highrej=highrej, lowrej=lowrej, npoly=npoly, relative=1
 
-   highpixels = where(flat_flux GT 1.0e5, numhighpixels)
-   splog, 'Found ', numhighpixels, ' highpixels in extracted flat ', $
-    flatname[ibest]
+   junk = where(flat_flux GT 1.0e5, nbright)
+   splog, 'Found ', nbright, ' bright pixels in extracted flat ', $
+    flatname[ibest], format='(a,i7,a,a)'
 
    ;---------------------------------------------------------------------------
    ; Compute fiber-to-fiber flat-field variations
    ;---------------------------------------------------------------------------
 
-   fflat = fiberflat(flat_flux, flat_fluxivar, wset, fibermask=fibermask)
-;   fflat = fiberflat(flat_flux, flat_fluxivar, wset, fibermask=fibermask, $
-;    /dospline)
+;   fflat = fiberflat(flat_flux, flat_fluxivar, wset, fibermask=fibermask)
+   fflat = fiberflat(flat_flux, flat_fluxivar, wset, fibermask=fibermask, $
+    /dospline)
 
    qaplot_fflat, fflat, wset, filename=flatname[ibest]
 
@@ -315,6 +333,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
    for iobj=0, N_elements(objname)-1 do begin
 
+      splog, camname=objname[iobj]
       splog, 'Start time ',systime(1)-t_begin, ' seconds so far', $
        format='(A,F8.2,A)'
 
@@ -342,252 +361,248 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       splog, 'Median counts in all fibers = ', fullscrunch
       splog, 'Number of bright fibers = ', whopct
 
-      if (whopct GT 20) then $
-         splog, 'Too many whopping fibers (> 20), skipping...' $
-      else begin
+      if (whopct GT 20) then begin
+         splog, 'WARNING: Disable whopping terms ' + objname[iobj]
+         whopping = -1
+         whopct = 0
+      endif
 
-        ;------------------
-        ; Extract the object image
-        ; Use the "whopping" terms
-        ; We need to do 2 iteration extraction: 
-        ;        1) Fit profiles in a subset of rows
-        ;        2) Fit returned parameters with smooth functions
-        ;        3) Extract all 2048 rows with new profiles given by
-        ;              fitansimage
+      ;------------------
+      ; Extract the object image
+      ; Use the "whopping" terms
+      ; We need to do 2 iteration extraction: 
+      ;        1) Fit profiles in a subset of rows
+      ;        2) Fit returned parameters with smooth functions
+      ;        3) Extract all 2048 rows with new profiles given by
+      ;              fitansimage
 
-        splog, 'Extracting frame '+objname[iobj]+' with 6 step process'
-        nrow = (size(image))[2]
-        ncol = (size(image))[1]
-        skiprow = 8
-        yrow = lindgen(nrow/skiprow) * skiprow + skiprow/2
-        nfirst = n_elements(yrow)
+      splog, 'Extracting frame '+objname[iobj]+' with 6 step process'
+      nrow = (size(image))[2]
+      ncol = (size(image))[1]
+      skiprow = 8
+      yrow = lindgen(nrow/skiprow) * skiprow + skiprow/2
+      nfirst = n_elements(yrow)
   
-        sigma = 1.0
-        proftype = 1 ; Gaussian
-        highrej = 5  ; just for first extraction steps
-        lowrej = 5  ; just for first extraction steps
-        nPoly = 16 ; maybe more structure, lots of structure
-        wfixed = [1,1,1] ; gaussian term + centroid and  sigma terms
-        nTerms = 3
-        sigmaterm = 1
-        centerterm = 2
-        xnow = xsol
-        sigmanow = xsol*0.0 + sigma
+      sigma = 1.0
+      proftype = 1 ; Gaussian
+      highrej = 5  ; just for first extraction steps
+      lowrej = 5  ; just for first extraction steps
+      npoly = 16 ; maybe more structure, lots of structure
+      wfixed = [1,1,1] ; gaussian term + centroid and  sigma terms
+      nterms = 3
+      sigmaterm = 1
+      centerterm = 2
+      xnow = xsol ; Is this modified when extracting???
+      sigmanow = xsol*0.0 + sigma
 
-        ;  Kill or adjust first and last column
-        ;invvar[0,*] = 0.0
-        ;invvar[2047,*] = 0.0
-        image[0,*] = image[0,*]*0.7
-        image[2047,*] = image[2047,*]*0.7
+      ; Kill or adjust first and last column ???
+      ;invvar[0,*] = 0.0
+      ;invvar[2047,*] = 0.0
+      image[0,*] = image[0,*]*0.7
+      image[2047,*] = image[2047,*]*0.7
 
-        ;
-        ; My fitansimage is not going to work well without good profiles
-        ; Using it to tweak up traces, and then performing free fit to
-        ; object
-        ;
+      ; My fitansimage is not going to work well without good profiles ???
+      ; Using it to tweak up traces, and then performing free fit to object
 
-
-        for i = 0, 1 do begin
+      for i = 0, 1 do begin
       
-          ; 1) First extraction
-          splog, 'Object extraction: Step', i*3+1
-          extract_image, image, invvar, xnow, sigma, tempflux, tempfluxivar, $
-           proftype=proftype, wfixed=wfixed, yrow=yrow, $
-           highrej=highrej, lowrej=lowrej, nPoly=nPoly, whopping=whopping, $
-           ansimage=ansimage
+         ; (1) First extraction
 
-          ; 2) Refit ansimage to smooth profiles
+         splog, 'Object extraction: Step', i*3+1
+         extract_image, image, invvar, xnow, sigma, tempflux, tempfluxivar, $
+          proftype=proftype, wfixed=wfixed, yrow=yrow, $
+          highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
+          ansimage=ansimage
 
-          splog, 'Answer Fitting: Step', i*3+2
-          nparams = 3
-          nTrace = (size(tempflux))[2]
-          fitans = fitansimage(ansimage, nparams, nTrace, nPoly, nfirst, yrow, $
-           fluxm = [1,1,0], crossfit=1, scatfit=scatfit, scatimage=scatimage)
+         ; (2) Refit ansimage to smooth profiles
 
-          ; 3) Calculate new sigma and xsol arrays
+         splog, 'Answer Fitting: Step', i*3+2
+         nparams = 3
+         ntrace = (size(tempflux))[2]
+         fitans = fitansimage(ansimage, nparams, ntrace, npoly, nfirst, yrow, $
+          fluxm = [1,1,0], crossfit=1, scatfit=scatfit, scatimage=scatimage)
+
+         ; (3) Calculate new sigma and xsol arrays
       
-          if (i EQ 0) then begin 
-           splog, 'Trace Tweaking: Step', i*3+3, '    (Sigma not tweaked)'
-           sigmashift = transpose(fitans[lindgen(nTrace)*nTerms + sigmaterm, *])
-           centershift = $
-            transpose(fitans[lindgen(nTrace)*nTerms + centerterm, *])
-           tweaktrace, xnow, sigmanow, centershift, sigmashift
-          endif
-        endfor
+         if (i EQ 0) then begin 
+            splog, 'Trace Tweaking: Step', i*3+3, '    (Sigma not tweaked)'
+            sigmashift = $
+             transpose(fitans[lindgen(ntrace)*nterms + sigmaterm, *])
+            centershift = $
+             transpose(fitans[lindgen(ntrace)*nterms + centerterm, *])
+            tweaktrace, xnow, sigmanow, centershift, sigmashift
+         endif
 
-        splog, 'Scattered light: median ', median(scatfit), ' electrons'
+      endfor
 
-        ; 4) Second and final extraction
-        splog, 'Object extraction: Step 6'
+      qaplot_scatlight, scatimage, scatfit, wset=wset, xcen=xsol, $
+       fibermask=fibermask, filename=objname[iobj]
 
-        ; Using old sigma for now, which should be fine
-        ; Different sigmas require a new profile for each trace, so will
-        ; check timing in the future
-        ; subtract off fit to scattered light and don't allow polynomial terms
+      ; (4) Second and final extraction
+      splog, 'Object extraction: Step 6'
+
+      ; Using old sigma for now, which should be fine
+      ; Different sigmas require a new profile for each trace, so will
+      ; check timing in the future
+      ; subtract off fit to scattered light and don't allow polynomial terms
 
 ;      extract_image, image-scatfit, invvar, xnow, sigma, flux, $
 ;       fluxivar, proftype=proftype, wfixed=wfixed, $
-;       highrej=highrej, lowrej=lowrej, nPoly=0, whopping=whopping, chisq=chisq
+;       highrej=highrej, lowrej=lowrej, npoly=0, whopping=whopping, chisq=chisq
 
+      highrej = 15
+      lowrej = 15
+      fitans = fitans[0:nparams*ntrace-1,*]
+      extract_image, image-scatfit, invvar, xnow, sigma, flux, $
+       fluxivar, proftype=proftype, wfixed=wfixed, fitans=fitans, $
+       highrej=highrej, lowrej=lowrej, npoly=0, whopping=whopping, $
+       chisq=chisq, ymodel=ymodel2
 
-        highrej = 15
-        lowrej = 15
-        fitans = fitans[0:nparams*nTrace-1,*]
-        extract_image, image-scatfit, invvar, xnow, sigma, flux, $
-         fluxivar, proftype=proftype, wfixed=wfixed, fitans=fitans, $
-         highrej=highrej, lowrej=lowrej, nPoly=0, whopping=whopping, $
-         chisq=chisq, ymodel=ymodel2
+      ;------
+      ; QA chisq plot for fit calculcated in extract image (make QAPLOT ???)
 
-         ;------
-         ; QA contour plot of scattered light
+      xaxis = indgen(N_elements(chisq)) + 1
+      djs_plot, xaxis, chisq, $
+       xtitle='Row number',  ytitle = '\chi^2', $
+       title='Extraction chi^2 for '+objname[iobj]
 
-         contour, scatfit, /follow, nlevels = 10, /xstyle, /ystyle, $
-          title='Scattered light image for '+objname[iobj], c_charsize=1.5
+      ;------------------
+      ; Flat-field the extracted object fibers with the global flat
+      divideflat, flux, fluxivar, fflat, fibermask=fibermask
 
-         ;------
-         ; QA chisq plot for fit calculcated in extract image 
-
-         xaxis = indgen(N_elements(chisq)) + 1
-         djs_plot, xaxis, chisq, $
-          xtitle='Row number',  ytitle = '\chi^2', $
-          title='Extraction chi^2 for '+objname[iobj]
-
-        ;------------------
-        ; Flat-field the extracted object fibers with the global flat
-        divideflat, flux, fluxivar, fflat, fibermask=fibermask
-
-        ;------------------
-        ; Tweak up the wavelength solution to agree with the sky lines.
-        ; xshift contains polynomial coefficients to shift arc to sky lines.
+      ;------------------
+      ; Tweak up the wavelength solution to agree with the sky lines.
+      ; xshift contains polynomial coefficients to shift arc to sky lines.
   
-        locateskylines, skylinefile, flux, fluxivar, $
-           wset, xsky, ysky, skywaves, xset=xset
+      locateskylines, skylinefile, flux, fluxivar, $
+       wset, xsky, ysky, skywaves, xset=xset
 
-        ;------------------
-        ; First convert lambda, and skywaves to log10 vacuum
+      ;------------------
+      ; First convert lambda, and skywaves to log10 vacuum
 
-        splog, 'Converting wavelengths to vacuum'
-        vaclambda = lambda
-        airtovac, vaclambda
-        vacloglam = alog10(vaclambda)
+      splog, 'Converting wavelengths to vacuum'
+      vaclambda = lambda
+      airtovac, vaclambda
+      vacloglam = alog10(vaclambda)
 
-        vacsky = skywaves
-        airtovac, vacsky
-        vaclogsky = alog10(vacsky)
+      vacsky = skywaves
+      airtovac, vacsky
+      vaclogsky = alog10(vacsky)
 
-        sxaddpar, hdr, 'VACUUM', 'WAVELENGTHS ARE IN VACUUM'
-        sxaddpar, hdr, 'AIR2VAC', systime()
+      sxaddpar, hdr, 'VACUUM', 'WAVELENGTHS ARE IN VACUUM'
+      sxaddpar, hdr, 'AIR2VAC', systime()
 
-        splog, 'Tweaking to sky lines'
+      splog, 'Tweaking to sky lines'
 
-        ;
-        ; Fit to arc lines with sky shifts included
-        ;
+      ;------------------
+      ; Fit to arc lines with sky shifts included
 
+      ; This procedure produces numerical steps at 10^-6, 1 km/s
 
-        ;
-        ; This procedure produces numerical steps at 10^-6, 1 km/s
-        ;
-     
-        xshift = xpeak * 0.0
+      xshift = xpeak * 0.0
 
-        if (size(xset,/tname) NE 'UNDEFINED') then begin
-          traceset2xy, xset, transpose(xpeak), xshift
-          xshift = transpose(xshift)
-        endif else splog, 'Sky lines are TOO NOISY!! No shifting!!'
-  
-        plot, xpeak, xshift, ps=3, xtitle='Arc line position', $
-            ytitle = 'Offset to Sky line', $
-            title = 'Offset sky lines positions - arc line positions (in pix)'
-  
-        vacset = wset
-        fixabove = 2
-        finalarcfit, xpeak+xshift, vacloglam, vacset, arccoeff, fixabove, $
-               fibermask=fibermask, maxdev=0, maxiter=1, nsetcoeff=8, maxsig=2.0
+      if (size(xset,/tname) NE 'UNDEFINED') then begin
+         traceset2xy, xset, transpose(xpeak), xshift
+         xshift = transpose(xshift)
+      endif else begin
+         splog, 'WARNING: Sky lines are too noisy! No shifting!'
+      endelse
 
+      ; Move this QA plot elsewhere ???
+      plot, xpeak, xshift, ps=3, xtitle='Arc line position', /ynozero, $
+       ytitle = 'Offset to Sky Line [pix]', $
+       title = 'Offset to Sky Lines From Wavelength-Solution'
+
+      vacset = wset
+      fixabove = 2
+      finalarcfit, xpeak+xshift, vacloglam, vacset, arccoeff, fixabove, $
+       fibermask=fibermask, maxdev=0, maxiter=1, nsetcoeff=8, maxsig=2.0
 
 ;      fit_skyset, xpeak, ypeak, vacloglam, xsky, ysky, vaclogsky, skycoeff, $
 ;        goodlines, wset, ymin=ymin, ymax=ymax, func=func
 
-      
-        ;------------------
-        ; Sky-subtract
-  
-        skysubtract, flux, fluxivar, plugsort, vacset, $ 
-         skysub, skysubivar, fibermask=fibermask, upper=3.0, lower=3.0
-    
-        ;------------------------------------------
-        ; Flux calibrate to spectrophoto_std fibers
-  
-        fluxfactor = fluxcorr(skysub, skysubivar, vacset, plugsort, $
-                   color=color, lower=3.0, upper=3.0, fibermask=fibermask)
-    
-        flambda  = skysub 
-        flambdaivar = skysubivar 
-  
-        minfluxfactor = median(fluxfactor)*0.01
-        divideflat, flambda, flambdaivar, fluxfactor, minval=minfluxfactor
+      ;------------------
+      ; Sky-subtract
 
-        ;------------------------------------------
-        ; Telluric correction called for 'red' side
+      skysubtract, flux, fluxivar, plugsort, vacset, $
+       skysub, skysubivar, fibermask=fibermask, upper=3.0, lower=3.0
+
+      qaplot_skysub, flux, fluxivar, skysub, skysubivar, $
+       plugsort, vacset, fibermask=fibermask, filename=objname[iobj]
+      qaplot_skyline, 5578.9, flux, fluxivar, skysub, skysubivar, $
+       plugsort, vacset, fibermask=fibermask, dwave=5.0, $
+       filename=objname[iobj]
+
+      ;------------------------------------------
+      ; Flux calibrate to spectrophoto_std fibers
+
+      fluxfactor = fluxcorr(skysub, skysubivar, vacset, plugsort, $
+       color=color, lower=3.0, upper=3.0, fibermask=fibermask)
+
+      flambda  = skysub
+      flambdaivar = skysubivar
+
+      minfluxfactor = median(fluxfactor)*0.01
+      divideflat, flambda, flambdaivar, fluxfactor, minval=minfluxfactor
+
+      ;------------------------------------------
+      ; Telluric correction called for 'red' side
   
-        if (color EQ 'red')  then begin
+      if (color EQ 'red')  then begin
 
-           ;-----------------------------------------------
-           ;  Split into two regions, A,B bands first
-           telluric1 = telluric_corr(flambda, flambdaivar, vacset, plugsort, $
-                   minw = 3.82, maxw=3.92, lower=5.0, upper=5.0, ncontbkpts=10)
+         ;-----------------------------------------------
+         ;  Split into two regions, A,B bands first
+         telluric1 = telluric_corr(flambda, flambdaivar, vacset, plugsort, $
+          minw=3.82, maxw=3.92, lower=5.0, upper=5.0, ncontbkpts=10)
   
-           ;-----------------------------------------------
-           ;  9100 Ang absorption next?
-           telluric2 = telluric_corr(flambda, flambdaivar, vacset, plugsort, $
-                   minw = 3.94, maxw=3.97, lower=5.0, upper=5.0)
-       
-           telluricfactor = telluric1 * telluric2
-           divideflat, flambda, flambdaivar, telluricfactor, minval=0.1
+         ;-----------------------------------------------
+         ;  9100 Ang absorption next?
+         telluric2 = telluric_corr(flambda, flambdaivar, vacset, plugsort, $
+          minw=3.94, maxw=3.97, lower=5.0, upper=5.0)
+
+         telluricfactor = telluric1 * telluric2
+         divideflat, flambda, flambdaivar, telluricfactor, minval=0.1
   
-           qaskylines, flambda, flambdaivar, vacset, plugsort
-        endif
+         qaskylines, flambda, flambdaivar, vacset, plugsort
+      endif
 
-        ;------------------
-        ; Write extracted, lambda-calibrated, sky-subtracted spectra to disk
+      ;------------------
+      ; Write extracted, lambda-calibrated, sky-subtracted spectra to disk
 
-        framenum = sxpar(objhdr, 'EXPOSURE')
+      framenum = sxpar(objhdr, 'EXPOSURE')
   
-        filebase = filepath( $
-         's-'+string(format='(i1,a1,a,i4.4)',spectrographid, $
-         color,'-',framenum), root_dir=outdir)
+      filebase = filepath( $
+       's-'+string(format='(i1,a1,a,i4.4)',spectrographid, $
+       color,'-',framenum), root_dir=outdir)
   
-        ;------
-        ; Add everything we can think of to object header
+      ;------
+      ; Add keywords to object header
 
-        sxaddpar, objhdr, 'PLUGMAPF', plugfilename
-        sxaddpar, objhdr, 'FLATFILE', flatname[ibest]
-        sxaddpar, objhdr, 'ARCFILE', arcname[ibest]
-        sxaddpar, objhdr, 'OBJFILE', objname[iobj]
-        sxaddpar, objhdr, 'LAMPLIST', lampfile
-        sxaddpar, objhdr, 'SKYLIST', skylinefile
-        sxaddpar, objhdr, 'PIXFLAT', pixflatname
-        sxaddpar, objhdr, 'OSIGMA',  sigma, $
-           'Original guess at sigma of spatial profiles'
-        sxaddpar, objhdr, 'SKIPROW', skiprow, 'Number of rows skipped in step 1'
-        sxaddpar, objhdr, 'LOWREJ', lowrej, 'Extraction, low rejection'
-        sxaddpar, objhdr, 'HIGHREJ', highrej, 'Extraction, high rejection'
-        sxaddpar, objhdr, 'SCATPOLY', nPoly, 'Order of scattered light poly'
-        sxaddpar, objhdr, 'PROFTYPE', proftype, '1 is Gaussian'
-        sxaddpar, objhdr, 'NFITPOLY', nparams, 'order of profile parameter fit'
+      sxaddpar, objhdr, 'PLUGMAPF', plugfilename
+      sxaddpar, objhdr, 'FLATFILE', flatname[ibest]
+      sxaddpar, objhdr, 'ARCFILE', arcname[ibest]
+      sxaddpar, objhdr, 'OBJFILE', objname[iobj]
+      sxaddpar, objhdr, 'LAMPLIST', lampfile
+      sxaddpar, objhdr, 'SKYLIST', skylinefile
+      sxaddpar, objhdr, 'PIXFLAT', pixflatname
+      sxaddpar, objhdr, 'OSIGMA',  sigma, $
+       'Original guess at spatial sigma in pix'
+      sxaddpar, objhdr, 'SKIPROW', skiprow, 'Number of rows skipped in step 1'
+      sxaddpar, objhdr, 'LOWREJ', lowrej, 'Extraction, low rejection'
+      sxaddpar, objhdr, 'HIGHREJ', highrej, 'Extraction, high rejection'
+      sxaddpar, objhdr, 'SCATPOLY', npoly, 'Order of scattered light poly'
+      sxaddpar, objhdr, 'PROFTYPE', proftype, '1=Gaussian'
+      sxaddpar, objhdr, 'NFITPOLY', nparams, 'Order of profile parameter fit'
 
-        writespectra, objhdr, flambda, flambdaivar, plugsort, vacset, $
-         filebase=filebase
+      writespectra, objhdr, flambda, flambdaivar, plugsort, vacset, $
+       filebase=filebase
 
-        heap_gc   ; Garbage collection for all lost pointers
-
-      endelse
+      heap_gc   ; Garbage collection for all lost pointers
 
    endfor
 
    splog, 'End time ', systime(1)-t_begin, ' seconds TOTAL', $
-    format='(A,F8.2,A)'
+    format='(A,F8.2,A)', camname=''
 
    return
 end
