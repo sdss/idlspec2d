@@ -30,6 +30,7 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   apo_checklimits()
 ;   extract_image
 ;   fileandpath()
 ;   fitflatwidth()
@@ -116,6 +117,11 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
 
    widthset = fitflatwidth(tempflux, tempfluxivar, ansimage, fibermask, $
     ncoeff=5, sigma=sigma, medwidth=medwidth)
+
+   if (apo_checklimits('flat', 'XSIGMA', camname, max(medwidth)) $ 
+    EQ 'red') then $
+    splog, 'WARNING: Median spatial widths = ' $
+    + string(medwidth,format='(4f5.2)') + ' pix (LL LR UL UR)'
 
    ;----------
    ; Look for Argon lines (or any other emission lines) in the flat-fields,

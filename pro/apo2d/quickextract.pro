@@ -34,6 +34,7 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   apo_checklimits()
 ;   calcscatimage
 ;   divideflat
 ;   djs_mean()
@@ -172,6 +173,13 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
 
    widthset = fitflatwidth(tempflux, tempfluxivar, ansimage, fibermask, $
     ncoeff=5, sigma=sigma, medwidth=medwidth)
+
+   ; Use the limits as set for the flats, since we don't set limits
+   ; for the science exposure widths.
+   if (apo_checklimits('flat', 'XSIGMA', camname, max(medwidth)) $
+    EQ 'red') then $
+    splog, 'WARNING: Median spatial widths = ' $
+    + string(medwidth,format='(4f5.2)') + ' pix (LL LR UL UR)'
 
    ;----------
    ; Boxcar extract - no scattered light correction!

@@ -32,10 +32,12 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   apo_checklimits()
 ;   extract_boxcar()
 ;   fiberflat()
 ;   fileandpath()
 ;   fitarcimage
+;   fitdispersion()
 ;   qbadarc
 ;   mrdfits()
 ;   mwrfits
@@ -107,6 +109,11 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
    nfitcoeff = color EQ 'red' ? 4 : 3
    dispset = fitdispersion(flux, fluxivar, xpeak, $
     sigma=1.0, ncoeff=nfitcoeff, xmin=0.0, xmax=2047.0, medwidth=medwidth)
+
+   if (apo_checklimits('arc', 'WSIGMA', camname, max(medwidth)) $
+    EQ 'red') then $
+    splog, 'WARNING: Median wavelength widths = ' $
+    + string(medwidth,format='(4f5.2)') + ' pix (LL LR UL UR)'
 
    ;----------
    ; Compute fiber-to-fiber flat-field variations.
