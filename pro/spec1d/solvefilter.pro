@@ -7,8 +7,8 @@
 ;
 ; CALLING SEQUENCE:
 ;   solvefilter, [ filttype=, filternum=, plate=, mjd=, $
-;    adderr=, wavemin=, wavemax=, sncut=, maxiter=, fluxpath=, $
-;    value=, fixed= ]
+;    starerr=, qsoerr=, wavemin=, wavemax=, magrej=, sncut=, maxiter=, $
+;    fluxpath=, value=, fixed= ]
 ;
 ; INPUTS:
 ;
@@ -20,12 +20,20 @@
 ;   plate      - Plate number(s); if not specified, then select all DR1 plates
 ;                with number > 431.
 ;   mjd        - MJD for each PLATE.
-;   adderr     - Fractional error to add in quadrature to photometric error;
-;                default to 0.05.
+;   starerr    - Fractional error to add in quadrature to photometric errors
+;                for stars; default to 0.05; if <=0, then do not use stars.
+;   qsoerr     - Fractional error to add in quadrature to photometric errors
+;                for QSOs; default to 0.15; if <=0, then do not use QSOs.
 ;   wavemin    - Minimum wavelength for spectra during computation;
 ;                default to 3800 Ang.
 ;   wavemax    - Maximum wavelength for spectra during computation;
 ;                default to 9300 Ang.
+;   magrej     - Reject any objects where the raw photo vs. spectro magnitude
+;                difference is more than MAGREJ from the median difference
+;                for that plate.  This will reject wild outliers, which are
+;                often objects where there is a bright blend but the PHOTO
+;                flux is only for a fainter child.  Default value is 0.5 mag.
+;                Or, QSOs that have varied.
 ;   sncut      - Minimum SN_MEDIAN (median S/N per pixel) for spectroscopic
 ;                objects used in sample; default to 2.0
 ;   maxiter    - Maximum number of iterations in call to MPFIT(); default to 200
@@ -143,11 +151,16 @@ forward_function mpfit, solvefiltfn
 
 ;------------------------------------------------------------------------------
 ; Construct the filter curve corresponding to this set of parameters
+; Return the Gunn filter curve if THETA is not set.
+
 function solvefiltshape, theta, loglam
 
-   common com_solvefilt, groupnum, bigloglam, $
+   common com_solvefilt, groupnum, bigloglam, taugunn, $
     bigflux, photoflux, photoinvsig, tauextinct, ntot, nbigpix, $
     airmass, gunnfilt, filternum, filttype, groupratio, spectroflux
+
+   if (NOT keyword_set(theta)) then $
+    return, gunnfilt[*,filternum]
 
    case filttype of
    'tanh': begin
@@ -174,7 +187,7 @@ end
 ;------------------------------------------------------------------------------
 function solvefiltfn, theta
 
-   common com_solvefilt, groupnum, bigloglam, $
+   common com_solvefilt, groupnum, bigloglam, taugunn, $
     bigflux, photoflux, photoinvsig, tauextinct, ntot, nbigpix, $
     airmass, gunnfilt, filternum, filttype, groupratio, spectroflux
 
@@ -196,9 +209,12 @@ function solvefiltfn, theta
    for igroup=0L, ngroup-1 do begin
       indx = where(groupnum EQ igroup, nthis)
 
-      ; Get the extinction curve for these objects
+      ; Get the extinction curve for these objects.  If THETA is undefined,
+      ; then use the Gunn extinction curve.
       meanair = mean(airmass[indx])
-      fextinct = exp(-meanair * tauextinct)
+;      if (NOT keyword_set(theta)) then fextinct = exp(-meanair * taugunn) $
+      if (NOT keyword_set(theta)) then fextinct = 1. $ ; ???
+       else fextinct = exp(-meanair * tauextinct)
       fmult = fcurve * flambda2fnu * fextinct
 
       spectroflux[indx] = $
@@ -219,13 +235,15 @@ function solvefiltfn, theta
 end
 ;------------------------------------------------------------------------------
 pro solvefilter, filttype=filttype1, filternum=filternum1, $
- plate=plate, mjd=mjd, adderr=adderr, wavemin=wavemin, wavemax=wavemax, $
- sncut=sncut, maxiter=maxiter, fluxpath=fluxpath, value=value, fixed=fixed
+ plate=plate, mjd=mjd, starerr=starerr, qsoerr=qsoerr, $
+ wavemin=wavemin, wavemax=wavemax, $
+ magrej=magrej, sncut=sncut, maxiter=maxiter, fluxpath=fluxpath, $
+ value=value, fixed=fixed
 
    ;----------
    ; Set common block
 
-   common com_solvefilt, groupnum, bigloglam, $
+   common com_solvefilt, groupnum, bigloglam, taugunn, $
     bigflux, photoflux, photoinvsig, tauextinct, ntot, nbigpix, $
     airmass, gunnfilt, filternum, filttype, groupratio, spectroflux
 
@@ -233,12 +251,19 @@ pro solvefilter, filttype=filttype1, filternum=filternum1, $
     else filttype = 'sdss'
    if (n_elements(filternum1) NE 0) then filternum = filternum1 $
     else filternum = 3 ; Default to i-band
-   if (NOT keyword_set(adderr)) then adderr = 0.05 ; Fractional error to add
+   if (n_elements(starerr) EQ 0) then starerr = 0.05
+   if (n_elements(qsoerr) EQ 0) then qsoerr = 0.15
    if (NOT keyword_set(wavemin)) then wavemin = 3800.d0
    if (NOT keyword_set(wavemax)) then wavemax = 9300.d0
+   if (NOT keyword_set(magrej)) then magrej = 0.5
    if (NOT keyword_set(sncut)) then sncut = 2.0
    if (NOT keyword_set(maxiter)) then maxiter = 200
+   wcovcut = 0.32
    filtname = ['u','g','r','i','z']
+   if (starerr LE 0) then usestars = 0 $
+    else usestars = 1
+   if (qsoerr LE 0) then useqsos = 0 $
+    else useqsos = 1
 
    if (filternum LT 1 OR filternum GT 3) then $
     message, 'I only can cope with FILTERNUM=1,2, or 3'
@@ -422,23 +447,26 @@ pro solvefilter, filttype=filttype1, filternum=filternum1, $
       idlist = idstring[ uniq(idstring, sort(idstring)) ]
       ngroup = n_elements(idlist)
 
+      ; Reject wild mag outliers, which are often objects where there
+      ; is a bright blend but the PHOTO flux is only for a fainter child
+      magdiff = - 2.5 * alog10(zans.counts_spectro[filternum]) $
+       - tsobj.psfcounts[filternum]
+      meddiff = median(magdiff)
+
+      qstar = strmatch(zans.class,'STAR*')
+      qqso = strmatch(zans.class,'QSO*')
+
       for igroup=0, ngroup-1 do begin
          indx = where(idstring EQ idlist[igroup])
-
-         ; Reject wild mag outliers, which are often objects where there
-         ; is a  bright blend but the PHOTO flux is only for a fainter child
-         magdiff = tsobj[indx].psfcounts[filternum] $
-          + 2.5 * alog10(zans[indx].counts_spectro[filternum])
 
          igood = where(zans[indx].zwarning EQ 0 $
           AND qsingle[indx] EQ 1 $
           AND qgalaxy[indx] EQ 0 $
           AND qinterp[indx] EQ 0 $
-          AND ( strmatch(zans[indx].class,'STAR*') $
-           OR strmatch(zans[indx].class,'QSO*') ) $
-          AND magdiff GT median([magdiff])-0.5 $
-          AND magdiff LT median([magdiff])+0.5 $
-          AND zans[indx].wcoverage GT 0.30 $
+          AND (qstar[indx]*usestars OR qqso[indx]*useqsos) $
+          AND magdiff[indx] GT meddiff-magrej $
+          AND magdiff[indx] LT meddiff+magrej $
+          AND zans[indx].wcoverage GT wcovcut $
           AND zans[indx].sn_median GT sncut, ngood)
 
          if (ngood GE 2) then begin
@@ -506,7 +534,13 @@ objivar = 0
 
    photoflux = 10.d0^(-tsall.psfcounts[filternum]/2.5)
    photoflerr = tsall.psfcountserr[filternum] * abs(photoflux)
-   photoinvsig = 1. / sqrt( photoflerr^2 + (adderr*abs(photoflux))^2 )
+
+   ; Add an additional error term
+   qstar = strmatch(zall.class,'STAR*')
+   qqso = strmatch(zall.class,'QSO*')
+   photoinvsig = 1. / sqrt( photoflerr^2 $
+    + (qstar * starerr * abs(photoflux))^2 $
+    + (qqso * qsoerr * abs(photoflux))^2 )
 
    ; Now convert these to AB flux, according to the numbers derived
    ; by Hogg on 13 Aug 2002.
@@ -550,12 +584,27 @@ objivar = 0
    ;----------
    ; Reconstruct the filters at 1.3 airmasses
 
+   ; Gunn filter curve
+   finitial = solvefiltshape(parinfo.value, bigloglam) * exp(-1.3 * tauextinct)
+   finitial = finitial * mean(gunnfilt[*,filternum]) / mean(finitial)
+   junk1 = solvefiltfn() ; Force evaluation of spectroflux
+   initdiff1 = -2.5 * alog10(spectroflux / photoflux)
+   initdiff2 = -2.5 * alog10(spectroflux * groupratio[groupnum] / photoflux)
+
+   ; 1st guess filter curve
    fguess = solvefiltshape(parinfo.value, bigloglam) * exp(-1.3 * tauextinct)
    fguess = fguess * mean(gunnfilt[*,filternum]) / mean(fguess)
+   junk1 = solvefiltfn(parinfo.value) ; Force evaluation of spectroflux
+   guessdiff1 = -2.5 * alog10(spectroflux / photoflux)
+   guessdiff2 = -2.5 * alog10(spectroflux * groupratio[groupnum] / photoflux)
 
+   ; Best-fit filter curve
    fbest = solvefiltshape(theta, bigloglam) * exp(-1.3 * tauextinct)
    fbest = fbest * mean(gunnfilt[*,filternum]) / mean(fbest)
    fbest = fbest * (fbest GT 0) + 0.0 * (fbest LE 0) ; Get rid of values -0.00
+   junk2 = solvefiltfn(theta) ; Force evaluation of spectroflux
+   magdiff1 = -2.5 * alog10(spectroflux / photoflux)
+   magdiff2 = -2.5 * alog10(spectroflux * groupratio[groupnum] / photoflux)
 
    ;----------
    ; Derive the reduced chi^2 for each plate
@@ -590,46 +639,55 @@ objivar = 0
 
    xrange = [ bigwave[(where(fbest GT 0.01))[0]] - 300, $
     bigwave[(reverse(where(fbest GT 0.01)))[0]] + 300 ]
-   plot, bigwave, gunnfilt[*,filternum], $
+   plot, bigwave, gunnfilt[*,filternum]>fguess>fbest, /nodata, $
     xtitle='Air Wavelength [Ang]', ytitle='Filter Response at 1.3 Airmass', $
     charsize=csize, xrange=xrange, /xstyle, title=plottitle
+   djs_oplot, bigwave, gunnfilt[*,filternum], color='cyan'
    djs_oplot, bigwave, fguess, color='red'
    djs_oplot, bigwave, fbest, color='green'
    xplot = total(!x.crange * [0.95,0.05])
    yplot = !y.crange[1]
-   djs_xyouts, xplot, 0.32*yplot, 'Gunn Jun-2001', $
-    charsize=csize
-   djs_xyouts, xplot, 0.26*yplot, 'Schlegel Best-Fit '+datestring $
-    + ' \chi^2_r=' + string(chi2pdof,format='(f6.3)'), $
-    charsize=csize, color='green'
-   djs_xyouts, xplot, 0.20*yplot, 'Initial guess for fit' $
+   djs_xyouts, xplot, 0.32*yplot, 'Mamoru/Gunn Jun-2001', $
+    charsize=csize, color='cyan'
+   djs_xyouts, xplot, 0.26*yplot, 'Initial guess for fit' $
      + ' \chi^2_r=' + string(origrchi2,format='(f6.3)'), $
     charsize=csize, color='red'
+   djs_xyouts, xplot, 0.20*yplot, 'Schlegel Best-Fit '+datestring $
+    + ' \chi^2_r=' + string(chi2pdof,format='(f6.3)'), $
+    charsize=csize, color='green'
    djs_xyouts, xplot, 0.14*yplot, 'DOF =' + string(dof) $
-    + '  \Delta \chi^2 =' + string((origrchi2-chi2pdof)*dof,format='(f6.3)'), $
+    + '  \Delta \chi^2 =' + string((origrchi2-chi2pdof)*dof), $
     charsize=csize
 
    !p.multi = [0,1,2]
    iplot = where(rchi2plate GT 0)
-   djs_plot, plist[iplot].plate, rchi2plate[iplot], psym=4, $
+   djs_plot, [plist[iplot].plate], [rchi2plate[iplot]], psym=4, $
     xtitle='Plate Number', ytitle='\chi^2 / DOF', $
     charsize=csize, title=plottitle
 
    ; These are the values that we would *subtract* from the spectro mags
    iuniq = uniq(groupnum)
-   plot, zall[iuniq].plate, magoffset, psym=4, $
+   plot, [zall[iuniq].plate], [magoffset], psym=4, $
     xtitle='Plate Number', ytitle='(SPECTRO - PHOTO) Mag Offset per group', $
     charsize=csize, title=plottitle
    !p.multi = 0
 
    !p.multi = [0,1,2]
-   magdiff = -2.5 * alog10(spectroflux / photoflux)
-   plot, zall.plate + zall.fiberid/1000., magdiff, psym=3, $
+   plot, zall.plate + zall.fiberid/1000., guessdiff1, psym=3, $
+    xtitle='Plate Number', ytitle='(SPECTRO - PHOTO) w/out mag offsets', $
+    charsize=csize, title='Initial Guess Filter'
+   oplot, !x.crange, [0,0]
+   plot, zall.plate + zall.fiberid/1000., magdiff1, psym=3, $
+    yrange=!y.crange, /ystyle, $ ; Use same Y plotting limits as above
     xtitle='Plate Number', ytitle='(SPECTRO - PHOTO) w/out mag offsets', $
     charsize=csize, title=plottitle
    oplot, !x.crange, [0,0]
-   magdiff = -2.5 * alog10(spectroflux * groupratio[groupnum] / photoflux)
-   plot, zall.plate + zall.fiberid/1000., magdiff, psym=3, $
+
+   plot, zall.plate + zall.fiberid/1000., guessdiff2, psym=3, $
+    xtitle='Plate Number', ytitle='(SPECTRO - PHOTO) w/ mag offsets', $
+    charsize=csize, title='Initial Guess Filter'
+   oplot, !x.crange, [0,0]
+   plot, zall.plate + zall.fiberid/1000., magdiff2, psym=3, $
     yrange=!y.crange, /ystyle, $ ; Use same Y plotting limits as above
     xtitle='Plate Number', ytitle='(SPECTRO - PHOTO) w/ mag offsets', $
     charsize=csize, title=plottitle
@@ -641,33 +699,71 @@ objivar = 0
     magdiff[iworst], psym=4, color='red'
    for i=0, nworst-1 do $
     djs_xyouts, zall[iworst[i]].plate+zall[iworst[i]].fiberid/1000., $
-     magdiff[iworst[i]], string(zall[iworst[i]].plate, $
+     magdiff2[iworst[i]], string(zall[iworst[i]].plate, $
      zall[iworst[i]].mjd, zall[iworst[i]].fiberid, $
-     format='(i4,"/",i5,"-",i3," ")'), orient=90, align=1.0, color='red'
-   !p.multi = 0
+     format='(" ",i4,"/",i5,"-",i3," ")'), orient=90, $
+     align=(magdiff2[iworst[i]] LT 0), color='red'
 
-   !p.multi = [0,1,2]
-   istar = where(strmatch(zall.class,'STAR*'))
-   iqso = where(strmatch(zall.class,'QSO*'))
-   photocolor = tsall.psfcounts[1] - tsall.psfcounts[2]
-   plot, photocolor[istar], magdiff, psym=3, charsize=csize, $
-    xtitle='(g-r) for stars', ytitle='(SPECTRO - PHOTO) w/ mag offsets'
-   oplot, !x.crange, [0,0]
-   isort = sort(photocolor[istar])
-   djs_oplot, photocolor[istar[isort]], $
-    djs_median(magdiff[isort],width=51,boundary='reflect'), color='red'
-   djs_xyouts, total(!x.crange*[0.95,0.05]), total(!y.crange*[0.08,0.92]), $
-    'Running median of 51 pts', color='red', charsize=csize
+   istar = where(strmatch(zall.class,'STAR*'), nstar)
+   iqso = where(strmatch(zall.class,'QSO*'), nqso)
+   photocolor = tsall.psfcounts[2] - tsall.psfcounts[3]
 
-   plot, zall[iqso].z, magdiff, psym=3, charsize=csize, $
-    xtitle='z for QSOs', ytitle='(SPECTRO - PHOTO) w/ mag offsets'
-   oplot, !x.crange, [0,0]
-   isort = sort(zall[iqso].z)
-   djs_oplot, zall[iqso[isort]].z, $
-    djs_median(magdiff[isort],width=51,boundary='reflect'), color='red'
-   djs_xyouts, total(!x.crange*[0.95,0.05]), total(!y.crange*[0.08,0.92]), $
-    'Running median of 51 pts', color='red', charsize=csize
-   !p.multi = 0
+   if (nstar GT 1) then begin
+      plot, photocolor[istar], guessdiff2[istar], psym=3, charsize=csize, $
+       xtitle='(r-i) for stars', ytitle='(SPECTRO - PHOTO) w/ mag offsets', $
+       title='Initial Guess Filter'
+      oplot, !x.crange, [0,0]
+      isort = sort(photocolor[istar])
+      djs_oplot, photocolor[istar[isort]], $
+       djs_median(guessdiff2[istar[isort]],width=51<nstar,boundary='reflect'), $
+       color='red'
+      djs_xyouts, total(!x.crange*[0.95,0.05]), total(!y.crange*[0.08,0.92]), $
+       'RMS = ' + string(stdev(guessdiff2[istar])) + ' mag', $
+       color='red', charsize=csize
+      djs_xyouts, total(!x.crange*[0.95,0.05]), total(!y.crange*[0.14,0.86]), $
+       'Running median of 51 pts', color='red', charsize=csize
+      plot, photocolor[istar], magdiff2[istar], psym=3, charsize=csize, $
+       xtitle='(r-i) for stars', ytitle='(SPECTRO - PHOTO) w/ mag offsets', $
+       title=plottitle
+      oplot, !x.crange, [0,0]
+      djs_oplot, photocolor[istar[isort]], $
+       djs_median(magdiff2[istar[isort]],width=51<nstar,boundary='reflect'), $
+       color='green'
+      djs_xyouts, total(!x.crange*[0.95,0.05]), total(!y.crange*[0.08,0.92]), $
+       'RMS = ' + string(stdev(magdiff2[istar])) + ' mag', $
+       color='green', charsize=csize
+      djs_xyouts, total(!x.crange*[0.95,0.05]), total(!y.crange*[0.14,0.86]), $
+       'Running median of 51 pts', color='green', charsize=csize
+   endif
+
+   if (nqso GT 1) then begin
+      plot, zall[iqso].z, guessdiff2[iqso], psym=3, charsize=csize, $
+       xtitle='z for QSOs', ytitle='(SPECTRO - PHOTO) w/ mag offsets', $
+       title='Initial Guess Filter'
+      oplot, !x.crange, [0,0]
+      isort = sort(zall[iqso].z)
+      djs_oplot, zall[iqso[isort]].z, $
+       djs_median(guessdiff2[iqso[isort]],width=51<nqso,boundary='reflect'), $
+       color='red'
+      djs_xyouts, total(!x.crange*[0.95,0.05]), total(!y.crange*[0.08,0.92]), $
+       'RMS = ' + string(stdev(guessdiff2[iqso])) + ' mag', $
+       color='red', charsize=csize
+      djs_xyouts, total(!x.crange*[0.95,0.05]), total(!y.crange*[0.14,0.86]), $
+       'Running median of 51 pts', color='red', charsize=csize
+      plot, zall[iqso].z, magdiff2[iqso], psym=3, charsize=csize, $
+       xtitle='z for QSOs', ytitle='(SPECTRO - PHOTO) w/ mag offsets', $
+       title=plottitle
+      oplot, !x.crange, [0,0]
+      djs_oplot, zall[iqso[isort]].z, $
+       djs_median(magdiff2[iqso[isort]],width=51<nqso,boundary='reflect'), $
+       color='green'
+      djs_xyouts, total(!x.crange*[0.95,0.05]), total(!y.crange*[0.08,0.92]), $
+       'RMS = ' + string(stdev(magdiff2[iqso])) + ' mag', $
+        color='green', charsize=csize
+      djs_xyouts, total(!x.crange*[0.95,0.05]), total(!y.crange*[0.14,0.86]), $
+       'Running median of 51 pts', color='green', charsize=csize
+      !p.multi = 0
+   endif
 
    dfpsclose
 
@@ -682,7 +778,8 @@ objivar = 0
    printf, olun, '#'
    printf, olun, '# FILTER = ' + filtname[filternum]
    printf, olun, '# FILTTYPE = ' + filttype
-   printf, olun, '# ADDERR = ' + string(adderr)
+   printf, olun, '# STARERR = ' + string(starerr)
+   printf, olun, '# QSOERR = ' + string(qsoerr)
    printf, olun, '# SNCUT = ' + string(sncut)
    printf, olun, '# WAVEMIN = ' + string(wavemin)
    printf, olun, '# WAVEMAX = ' + string(wavemax)
