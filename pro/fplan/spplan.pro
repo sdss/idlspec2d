@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   spplan, [ topindir=, topoutdir=, mjd=, mjstart=, mjend=, minexp=, $
-;    /clobber ]
+;    flatdir=, /clobber ]
 ;
 ; INPUTS:
 ;
@@ -16,6 +16,7 @@
 ;                default to '/data/spectro'.
 ;   topoutdir  - Top directory name for output files; default to the
 ;                subdirectory '2d_' + VERSION under the current directory.
+;   flatdir    - override default pixflats directory  $TOPINDIR/pixflats
 ;   mjd        - Look for raw data files in RAWDIR/MJD; default to
 ;                search all subdirectories.  Note that this need not be
 ;                integer-valued, but could be for example '51441_test'.
@@ -31,7 +32,7 @@
 ;   Look for the input files in:
 ;     TOPINDIR/rawdata/MJD/sdR-cs-eeeeeeee.fit           - Raw frames
 ;     TOPINDIR/astrolog/MJD/plPlugMapM-pppp-mmmmm-aa.par - Plug map files
-;     TOPINDIR/flats/pixflat-mmmmm-cs.fits               - Pixel flats
+;     TOPINDIR/pixflats/pixflat-mmmmm-cs.fits               - Pixel flats
 ;   where c=color, s=spectrograph number, pppp=plate number, aa=mapper ID,
 ;   mmmmm=MJD.
 ;
@@ -110,7 +111,8 @@ end
 ;------------------------------------------------------------------------------
 
 pro spplan, topindir=topindir, topoutdir=topoutdir, mjd=mjd, $
- mjstart=mjstart, mjend=mjend, minexp=minexp, clobber=clobber
+ mjstart=mjstart, mjend=mjend, minexp=minexp, clobber=clobber, $
+ flatdir=flatdir
 
 ;   if (NOT keyword_set(topindir)) then topindir = '/data/spectro'
    if (NOT keyword_set(topindir)) then topindir = '/home/data'
@@ -131,6 +133,8 @@ pro spplan, topindir=topindir, topoutdir=topoutdir, mjd=mjd, $
 
    rawdir = concat_dir(topindir, 'rawdata')
    astrolog = concat_dir(topindir, 'astrolog')
+
+   if NOT keyword_set(flatdir) then  $
    flatdir = concat_dir(topindir, 'pixflats')
 
    ;----------

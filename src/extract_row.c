@@ -328,11 +328,9 @@ void AddExponentialWings(float *x, IDL_LONG ndat, float **y, float xcen,
 	  if(i >= 0 && i < ndat) {
 	      diff = fabs(xcen - x[i])/sigmal;
 	      y[0][k] += contribution * 0.5*exp(-diff)/sigmal;
-//	      printf("%f ", y[0][k]);
 
           }
 	}
-//	printf("\n");
 
 }
 void ProfileGauss(float *x, IDL_LONG ndat, float **y, float xcen, IDL_LONG xmin,
