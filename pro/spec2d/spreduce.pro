@@ -139,9 +139,33 @@ pro spreduce, flatname, arcname, objname, $
     arcstruct=arcstruct, flatstruct=flatstruct
 
    ;----------
-   ; Select the best arc
+   ; Find the mid-point in time for all of the science observations
 
-   bestarc = select_arc(arcstruct)
+   for iobj=0, n_elements(objname)-1 do begin
+      objhdr = sdsshead(objname[iobj], indir=indir)
+      get_tai, objhdr, tai_beg, tai_mid, tai_end
+      if (iobj EQ 0) then begin
+         tai1 = tai_beg
+         tai2 = tai_end
+      endif else begin
+         tai1 = tai1 < tai_beg
+         tai2 = tai2 > tai_end
+      endelse
+   endfor
+   tai_mid = 0.5 * (tai1 + tai2)
+
+   ;----------
+   ; Select one set of flats+arcs for all science exposures.
+   ; We *could* use a different flat+arc for each exposure,
+   ; which is something we have done in the past.
+   ; Instead, now just choose the flat taken nearest the mid-point
+   ; of all the science integrations, and take its corresponding arc.
+
+   bestflat = select_flat(flatstruct, tai_mid)
+   splog, 'Best flat = ', bestflat.name
+
+;   bestarc = select_arc(arcstruct)
+   bestarc = arcstruct[ bestflat.iarc ]
 
    if (NOT keyword_set(bestarc)) then begin
       splog, 'ABORT: No good arcs (saturated?)'
@@ -191,18 +215,10 @@ pro spreduce, flatname, arcname, objname, $
 
       qbadsci = reject_science(image, objhdr, nsatrow=nsatrow, fbadpix=fbadpix)
 
-      ;----------
-      ; Construct the best flat for this object from all of the reduced
-      ; flat-field frames
-
-      ; Set tai_mid equal to the time half-way through the exposure
-      get_tai, objhdr, tai_beg, tai_mid, tai_end
       ; In case TAI-BEG,TAI-END were missing from the header, add them in.
+      get_tai, objhdr, tai_beg, tai_mid, tai_end
       sxaddpar, objhdr, 'TAI-BEG', tai_beg
       sxaddpar, objhdr, 'TAI-END', tai_end
-
-      bestflat = select_flat(flatstruct, tai_mid)
-      splog, 'Best flat = ', bestflat.name
 
       sxaddpar, objhdr, 'FRAMESN2', 0.0
       sxaddpar, objhdr, 'CARTID', long(yanny_par(hdrplug, 'cartridgeId')), $
