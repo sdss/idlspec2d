@@ -54,6 +54,7 @@ STYPE_STANDARD: Spectral type the standard stars and save the result as
            a FITS file. (This should probably be changed to return the result).
 UNDO_SMEAR: Create correction vectors for 1 plate which can be used to
            remove the the effects of "smear" from the spectra.
+ZEROPT_COR: Compute a zeropoint correction to the flux calibration.
 
 aporsync_alllog.sh: New shell script for copying all of the log files
            from sdsshost.apo:/astrolog/$MJD to the sos.apo machine.
