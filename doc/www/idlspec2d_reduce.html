@@ -166,10 +166,6 @@ something like:
 Other environment variables that need to be set for the Spectro-Robot:
 <DL><DD><PRE>
   SPROBOT_LOCALDISKS -- List of local disks to which to copy the data.
-  BATCH2DFILE -- Yanny file with list of machines+protocols for Spectro-2D;
-                 default file is "$IDLSPEC2D_DIR/examples/batch2d.par".
-  BATCH1DFILE -- Yanny file with list of machines+protocols for Princeton-1D
-                 default file is "$IDLSPEC2D_DIR/examples/batch1d.par".
   RAWDATA_DIR -- Root directory for links to raw data directories, which
                  then live in $RAWDATA_DIR/$MJD
   ASTROLOG_DIR -- Root directory for astrolog files, which then live in
@@ -183,10 +179,16 @@ Other environment variables that need to be set for the Spectro-Robot:
   IDLSPEC2D_DIR -- Path set by idlspec2d product
   SPECFLAT_DIR -- Path set by specflat product
 </PRE></DD></DL>
-If the BATCH2DFILE or BATCH1DFILE variables are not set, then the default
-files are used.  If any of the other variables are not set, then
+If any of the above variables are not set, then
 "sprobot_start" will issue an error message and fail to load.  A log file
 is written to the file "$RAWDATA_DIR/sprobot.log".
+
+<P>
+There are two Yanny parameter files that list the computer names and protocols
+to use.  There are default files in "$IDLSPEC2D_DIR/examples/batch2d.par"
+and "$IDLSPEC2D_DIR/examples/batch1d.par" for use with Spectro-2D and P-1D
+respectively.  You can over-ride these default files by putting files with
+the same names in the directory $SPECTRO_DATA.
 
 <P>
 The Spectro-Robot commands:
