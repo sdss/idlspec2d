@@ -749,7 +749,13 @@ bcmask = 0 ; clear memory
 
    if (keyword_set(applypixflat) AND (readimg OR readivar)) then begin
       pp = filepath('', root_dir=getenv('SPECFLAT_DIR'), subdirectory='flats')
-      pixflatname = findopfile('pixflat*'+camname+'.'+'fits', mjd, pp)
+      ; First search for files "pixflatave-*.fits", and if not found then
+      ; look for "pixflat-*.fits".
+      pixflatname = findopfile('pixflatave-*-'+camname+'.fits', mjd, pp)
+      if (NOT keyword_set(pixflatname)) then $
+       pixflatname = findopfile('pixflat-*-'+camname+'.fits', mjd, pp)
+      if (NOT keyword_set(pixflatname)) then $
+       message, 'Pixel flat not found for camera ' + camname
       splog, 'Correcting with pixel flat ' + pixflatname
 
       pixflatimg = readfits(djs_filepath(pixflatname, root_dir=pp))
