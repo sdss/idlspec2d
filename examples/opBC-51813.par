@@ -55,6 +55,7 @@ bc "2 amp" 0 2 1762 2    980  1068 BADBLK HOTCOL   # extended 040600
 bc "2 amp" 0 2 2036 1    382  1666 BADBLK BADCOL   # extended 040600
 bc "2 amp" 0 2 1090 1    889  1159 BADBLK HOTCOL   # Put back in, not sure
                                                    # if whole col is bad.
+bc "2 amp" 0 2 1585 1    500  600  BADBLK BADCOL   # bad column in 52069 flat
 
 bc "2 amp" 0 3 173  1    306  1    BADBLK BADCOL
 bc "2 amp" 0 3 386  1    1576 472  BADBLK BADCOL   # extended 040600
