@@ -4,7 +4,7 @@ pro kurucz_restore, kwave, kflux, nkflux = nkflux, hdr = hdr, kindx = kindx, $
 
 ;kurucz_file = filepath('kurucz_stds_interp.fit', $
 ;              root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
-kurucz_file = '/u/cat/kurucz_stds_v5.fit'
+kurucz_file = '/home/tremonti/sdss/recal/kurucz/kurucz_stds_v5.fit'
 
 kflux = mrdfits(kurucz_file, 0, hdr, /silent)  ; flux
 kindx = mrdfits(kurucz_file, 1, /silent)
@@ -23,7 +23,13 @@ kwave = 10.0^(lindgen(npix) * 1.0d-4 + crval)
 wd_b = 1.1288826  
 wd_m = -2.3724042e-05
 kfix = 1.0 / (wd_m * kwave + wd_b)  ; flux
-for i = 0, nmod - 1 do kflux[*,i] = kflux[*,i] * kfix
+for i = 0, nmod - 1 do begin
+  kflux[*,i] = kflux[*,i] * kfix
+  fluxfnu = kflux[*,i] * kwave^2 / 2.99792e18
+  fthru=filter_thru(fluxfnu, waveimg=kwave, $
+                    filter_prefix = 'sdss_jun2001', /toair)
+  kindx[i].mag = -2.5*alog10(fthru) - 48.6
+endfor
 
 ;--------------------
 ; Smooth to lower resolution if desired
@@ -38,7 +44,8 @@ endif
 ;---------------
 ; Return rectified fluxes if desired
 
-nkflux = rectify(kflux, /mask, wave = kwave)
+;nkflux = rectify(kflux, /mask, wave = kwave)
+nkflux = rectify(kflux)
 
 end
 
