@@ -161,11 +161,11 @@ function zcompute, objflux, objivar, starflux, starmask, nfind=nfind, $
    if (NOT keyword_set(pspace)) then pspace = 1
 
    if (n_elements(pmin) GT 1) then $
-    message, 'ZMIN must be a scalar'
+    message, 'PMIN must be a scalar'
    if (n_elements(pmax) GT 1) then $
-    message, 'ZMAX must be a scalar'
+    message, 'PMAX must be a scalar'
    if (pmin GT pmax) then $
-    message, 'ZMAX must be greater than or equal to ZMIN'
+    message, 'PMAX must be greater than or equal to PMIN'
 
    nlag = ((pmax - pmin + 1) / pspace) > 1
    lags = - lindgen(nlag) * pspace + pixoffset - long(pmin) ; must be integers
