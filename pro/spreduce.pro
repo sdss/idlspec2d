@@ -269,12 +269,11 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    if ((color EQ 'blue' AND bestcorr LT 0.5) $
     OR (color EQ 'red'  AND bestcorr LT 0.5) ) then begin
       splog, 'ABORT: Best arc correlation = ', bestcorr
+      return
    endif else $
     if ((color EQ 'blue' AND bestcorr LT 0.7) $
-    OR (color EQ 'red'  AND bestcorr LT 0.7) ) then begin
+    OR (color EQ 'red'  AND bestcorr LT 0.7) ) then $
       splog, 'WARNING: Best arc correlation = ', bestcorr
-      return
-   endif
 
    ;---------------------------------------------------------------------------
    ; Compute wavelength calibration for arc lamp only
@@ -367,10 +366,42 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       fextract = extract_boxcar(image, xsol)
 
       scrunch = djs_median(fextract, 1) ; Find median counts/row in each fiber
+      scrunch_sort = sort(scrunch)
+      nfiber = (size(fextract))[2]
+      i5 = nfiber/20
+      i95 = i5 * 19
+
       fullscrunch = djs_median(fextract) ; Find median counts/row in all fibers
       whopping = where(scrunch - fullscrunch GT 10000.0, whopct)
       splog, 'Median counts in all fibers = ', fullscrunch
       splog, 'Number of bright fibers = ', whopct
+
+      iskies = where(plugsort.objtype EQ 'SKY' AND plugsort.fiberid GT 0 AND $
+                     (fibermask EQ 0), nskies)
+
+      if (nskies LE 1) then $
+              splog, 'ABORT: Only '+ string(nskies) + ' sky fibers found' $
+      else begin
+         skymedian = djs_median(scrunch[iskies])
+         if (skymedian GT 1000.0) then $
+            splog, 'ABORT: Sky fibers are too bright '+string(skymedian)
+      endelse   
+          
+      splog, '5% and 95% count levels ', scrunch[scrunch_sort[i5]], $
+                                         scrunch[scrunch_sort[i95]]
+
+      if (scrunch[scrunch_sort[i5]] GT 2000.0) then begin
+         splog, 'ABORT: Fibers have '+ string(scrunch[scrunch_sort[i5]]) + $
+                ' at the 5% '
+         ;
+         ;	Here we just need to move to the next exposure, not return
+         ;       completely.  This would argue for having a subroutine called
+         ;       for each exposure, so a return would only skip the botched
+         ;       exposure, and not all the rest
+         ;
+	 return
+      endif
+
 
       if (whopct GT 20) then begin
          splog, 'WARNING: Disable whopping terms ' + objname[iobj]
