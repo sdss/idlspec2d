@@ -498,6 +498,12 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
    sxaddpar, hdr, 'NAXIS1', n_elements(bestflux)
    sxaddpar, hdr, 'NAXIS2', nfiber
 
+   ;-----------------------------------------
+   ;   Here we check for smear exposure used and place info in header
+   ;-----------------------------------------
+   smearused = (finalandmask[0] AND pixelmask_bits('SMEARIMAGE')) GT 0
+   sxaddpar, hdr, 'SMEARUSE', smearused, 'Smear Image used?'
+
    add_iraf_keywords, hdr, wavemin, binsz
 
    mkhdr, hdrfloat, finalivar, /image, /extend
