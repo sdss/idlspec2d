@@ -6,7 +6,10 @@
 
 ;------------------------------------------------------------------------------
 ; Read the Kurucz models at the specified log-lambda and resolution
-; ISELECT - If set, then only return these model numbers
+; ISELECT - If set, then only return these model numbers.
+; Note that this function allocates a ridiculous amount of memory
+; for caching the oversampled spectra at many dispersions in GRIDFLUX.
+
 function spflux_read_kurucz, loglam, dispimg, iselect=iselect1, $
  kindx_return=kindx_return
 
@@ -17,19 +20,46 @@ function spflux_read_kurucz, loglam, dispimg, iselect=iselect1, $
    ; Read the high-resolution Kurucz models
 
    if (NOT keyword_set(kfile)) then begin
-      ; Read Christy's file with the high-resolution Kurucz models
-; ARE THESE FILES ALREADY CONVOLVED WITH THE SDSS RESPONSE, IN WHICH
-; CASE I'M DOING THIS TWICE!!!???
+      ; Read the file with the high-resolution Kurucz models as generated
+      ; by the procedure KURUCZ_FITSFILE.
       splog, 'Reading Kurucz models'
-      kfile = filepath('kurucz_stds_v5.fit', $
-       root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
-      kflux = mrdfits(kfile, 0, hdr, /silent)  ; flux
+      kfile = filepath('kurucz_stds_raw_v5.fits', $
+       root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='templates')
+      krawflux = mrdfits(kfile, 0, hdr, /silent)  ; flux
       kindx = mrdfits(kfile, 1, /silent)
-      dims = size(kflux, /dimens)
-      npix = dims[0]
+      dims = size(krawflux, /dimens)
+      nrawpix = dims[0]
       nmodel = dims[1]
-      kdlam = sxpar(hdr,'CD1_1')
-      kloglam = dindgen(npix) * kdlam + sxpar(hdr,'CRVAL1')
+      waves = dindgen(nrawpix) * sxpar(hdr,'CD1_1') + sxpar(hdr,'CRVAL1')
+      airtovac, waves ; Remap wavelengths from air to vacuum
+      rawloglam = alog10(waves)
+
+      ; The models will be sub-sampled relative to the SDSS pix scale of 1d-4:
+      subsamp = 5
+      kdlog = 1.d-4 / subsamp
+
+      ; These models are sampled linearly in **air** wavelength.
+      ; Re-map them to linear in (vacuum) log-wavelength.
+      splog, 'Remapping Kurucz models to log-wavelengths'
+      minlog1 = min(rawloglam, max=maxlog1)
+      kloglam = wavevector(minlog1, maxlog1, binsz=kdlog)
+      npix = n_elements(kloglam)
+      kflux = fltarr(npix,nmodel)
+      for imodel=0L, nmodel-1 do $
+       kflux[*,imodel] = rebin_spectrum(krawflux[*,imodel], rawloglam, kloglam)
+
+      ; Convolve the Kurucz models with a boxcar response
+      ; representing the size of the SDSS pixels.
+      splog, 'Convolving Kurucz models with SDSS pixel size'
+      if (subsamp GT 1) then begin
+         if ((subsamp MOD 2) EQ 0) then $
+          kern = ([0.5, fltarr(subsamp-1) + 1.0, 0.5]) / subsamp $
+         else $
+          kern = (fltarr(subsamp) + 1.0) / subsamp
+         for imodel=0L, nmodel-1 do begin
+            kflux[*,imodel] = convol(kflux[*,imodel], kern, /center)
+         endfor
+      endif
 
       ; Compute the spectro-photo fluxes for these spectra
       ; by just using these high-resolution redshift=0 spectra.
@@ -45,13 +75,15 @@ function spflux_read_kurucz, loglam, dispimg, iselect=iselect1, $
 
       ; Construct a grid of these models at various possible resolutions
       splog, 'Convolving Kurucz models with dispersions'
-      gridsig = 0.70 + findgen(50) * 0.02 ; span range [0.7,1.7]
-      nkpix = 7
+      gridsig = 0.70 + findgen(21) * 0.05 ; span range [0.7,1.7]
+      nkpix = 7 * subsamp + 1
       nres = n_elements(gridsig)
       gridlam = kloglam ; Keep the same wavelength mapping
       gridflux = fltarr(npix, nres, nmodel)
       for ires=0L, nres-1 do begin
-         kern = exp(-0.5 * (findgen(nkpix*2+1) - nkpix)^2 / (gridsig[ires])^2)
+print,ires,nres ; ???
+         kern = exp(-0.5 * (findgen(nkpix*2+1) - nkpix)^2 $
+          / (gridsig[ires]*subsamp)^2)
          kern = kern / total(kern)
          for imodel=0L, nmodel-1 do begin
             gridflux[*,ires,imodel] = convol(kflux[*,imodel], kern, /center)
@@ -212,8 +244,6 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1
    logshift = (-nshift/2. + findgen(nshift)) * 1.d-4
    chivec = fltarr(nshift)
    for ishift=0L, nshift-1 do begin
-; VERIFY THAT THE DISPIMG BELOW IS IN EXACTLY THE SAME UNITS
-; OF /10^-4 dloglam and not /pix !!!???
       modflux = spflux_read_kurucz(loglam-logshift[ishift], $
        dispimg, iselect=ifud)
       ; Median-filter this model
@@ -475,10 +505,11 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
        objflux=objflux1, objivar=objivar1, dispimg=dispimg1, $
        mask=mask1, adderr=adderr
 
-      ; Make a map of the size of each pixel in delta-(log10-Angstroms),
-      ; and re-normalize the flux to ADU/(dloglam).
-      ; Use the default value of 1.d-4 for DLOGLAM.
+      ; Make a map of the size of each pixel in delta-(log10-Angstroms).
+      ; Re-normalize the flux to ADU/(dloglam).
+      ; Re-normalize the dispersion from /(raw pixel) to /(new pixel).
       correct_dlam, objflux1, objivar1, wset1, dlam=dloglam
+      correct_dlam, dispimg1, 0, wset1, dlam=dloglam, /inverse
 
       loglam[*,ifile,*] = loglam1
       objflux[*,ifile,*] = objflux1
