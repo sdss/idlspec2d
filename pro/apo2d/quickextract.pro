@@ -37,6 +37,7 @@
 ;   divideflat
 ;   extract_image
 ;   extract_boxcar()
+;   fileandpath()
 ;   find_whopping()
 ;   quickboxcar()
 ;   mrdfits()
@@ -248,7 +249,8 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
       snoise2 = 0
    endelse
 
-   rstruct = create_struct('SKYPERSEC', skylevel, $
+   rstruct = create_struct('SCIFILE', fileandpath(outsci), $
+                           'SKYPERSEC', skylevel, $
 ;                           'MAG', plugsort.mag[icolor], $
                            'SN2VECTOR', meansn^2, $
                            'SN2', snoise2 )

@@ -34,6 +34,7 @@
 ; PROCEDURES CALLED:
 ;   extract_boxcar()
 ;   fiberflat()
+;   fileandpath()
 ;   fitarcimage
 ;   qbadarc
 ;   mrdfits()
@@ -123,7 +124,8 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
    wavemin = 10^(min(yy))
    wavemax = 10^(max(yy))
    nlamps = (size(xpeak,/dimens))[1]
-   rstruct = create_struct('WAVEMIN', wavemin, $
+   rstruct = create_struct('WSETFILE', fileandpath(wsetfile), $
+                           'WAVEMIN', wavemin, $
                            'WAVEMAX', wavemax, $
                            'BESTCORR', bestcorr, $
                            'NLAMPS', nlamps )

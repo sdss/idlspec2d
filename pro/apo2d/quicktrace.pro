@@ -29,6 +29,7 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   fileandpath()
 ;   quickboxcar()
 ;   mwrfits
 ;   readplugmap()
@@ -130,7 +131,8 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
    traceset2xy, tset, xx, yy
    xmin = min(yy)
    xmax = max(yy)
-   rstruct = create_struct('NGOODFIBER', ngfiber, $
+   rstruct = create_struct('TSETFILE', fileandpath(tsetfile), $
+                           'NGOODFIBER', ngfiber, $
                            'XMIN', xmin, $
                            'XMAX', xmax )
 
