@@ -94,8 +94,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
  copydir=copydir, no_diskcheck=no_diskcheck
 
    if (n_params() LT 1) then begin
-      print, 'Syntax - aporeduce, filename, [ indir=, outdir=, $'
-      print, ' plugfile=, plugdir=, minexp=, copydir=, /no_diskcheck ]'
+      doc_library, 'aporeduce'
       return
    endif
 
@@ -161,7 +160,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    ;----------
    ; Check disk space on both the input and the output disk.
 
-   if (NOT keyword_set(no_diskcheck)) then begin
+   if (keyword_set(no_diskcheck) EQ 0) then begin
       apo_diskcheck, indir
       apo_diskcheck, outdir
    endif
