@@ -41,6 +41,8 @@ QUICKTRACE,QUICKWAVE: Do not write the tsetfile or wsetfile if the
            such file for that exposure if it already exists).
 READSPEC: Fix the re-sorting of the ZLINE output structure, which is
            complicated by being a multi-dimensional structure.
+REMOVE2REDO: Only allow this proc to run on a machine named "sos",
+           unless /not_sos is set.  This is the same logic used by APOFIX.
 SDSSPROC: If the OBSCOMM keyword contains the words "dithered" or "focus",
            then assume this is test data (set QUALITY='test').
 SDSSHEAD,SDSSPROC,SPHDRFIX: Add /do_lock option to lock the sdHdrFix files when
