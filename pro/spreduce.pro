@@ -229,7 +229,10 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
             splog, 'Searching for wavelength solution'
             tmp_aset = 0
-            fitarcimage, flux, fluxivar, aset=tmp_aset, $
+; FOR NOW, REVERT TO THE OLD CODE! ???
+;            fitarcimage, flux, fluxivar, aset=tmp_aset, $
+;             color=color, lampfile=lampfile, bestcorr=corr
+            fitarcimage_old, flux, fluxivar, aset=tmp_aset, $
              color=color, lampfile=lampfile, bestcorr=corr
 
             ;-----
@@ -278,7 +281,11 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    arccoeff = 5
 
    splog, 'Searching for wavelength solution'
-   fitarcimage, arcimg, arcivar, xpeak, ypeak, wset, ncoeff=arccoeff, $
+; FOR NOW, REVERT TO THE OLD CODE! ???
+;   fitarcimage, arcimg, arcivar, xpeak, ypeak, wset, ncoeff=arccoeff, $
+;    aset=aset, $
+;    color=color, lampfile=lampfile, lambda=lambda, xdif_tset=xdif_tset
+   fitarcimage_old, arcimg, arcivar, xpeak, ypeak, wset, ncoeff=arccoeff, $
     aset=aset, $
     color=color, lampfile=lampfile, lambda=lambda, xdif_tset=xdif_tset
 
@@ -529,7 +536,20 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
       qaplot_skysub, flux, fluxivar, skysub, skysubivar, $
        plugsort, vacset, fibermask=fibermask, filename=objname[iobj]
+
+      ; QA for 2 skylines in the blue
+      qaplot_skyline, 4359.5, flux, fluxivar, skysub, skysubivar, $
+       plugsort, vacset, fibermask=fibermask, dwave=5.0, $
+       filename=objname[iobj]
       qaplot_skyline, 5578.9, flux, fluxivar, skysub, skysubivar, $
+       plugsort, vacset, fibermask=fibermask, dwave=5.0, $
+       filename=objname[iobj]
+
+      ; QA for 2 skylines in the red
+      qaplot_skyline, 7343.0, flux, fluxivar, skysub, skysubivar, $
+       plugsort, vacset, fibermask=fibermask, dwave=5.0, $
+       filename=objname[iobj]
+      qaplot_skyline, 8888.3, flux, fluxivar, skysub, skysubivar, $
        plugsort, vacset, fibermask=fibermask, dwave=5.0, $
        filename=objname[iobj]
 

@@ -64,6 +64,7 @@ pro/fit_skyset.pro -text
 pro/fit_tset.pro -text
 pro/fitansimage.pro -text
 pro/fitarcimage.pro -text
+pro/fitarcimage_old.pro -text
 pro/fitmeanx.pro -text
 pro/fitwithmx.pro -text
 pro/flegendre.pro -text
@@ -113,6 +114,7 @@ pro/spec2d/fit_skyset.pro -text
 pro/spec2d/fit_tset.pro -text
 pro/spec2d/fitansimage.pro -text
 pro/spec2d/fitarcimage.pro -text
+pro/spec2d/fitarcimage_old.pro -text
 pro/spec2d/fitmeanx.pro -text
 pro/spec2d/fitwithmx.pro -text
 pro/spec2d/flegendre.pro -text

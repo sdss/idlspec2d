@@ -3,6 +3,8 @@
   solution!!  Were too many fibers rejected or something??
   This then shows up as horrible sky-subtraction!!
   Something must be broken in FITARCIMAGE or FINALARCFIT.
+  Reverting to the old code, now the arc 51441/sdR-r2-00001347.fit
+    looks somewhat poor in first 40 rows.  Damn it!
 
 * BUG: The ends of the spectra have poor flux-calibration.  This is most
   obvious when one looks at the overlap of individual exposures.
