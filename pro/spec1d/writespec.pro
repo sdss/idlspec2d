@@ -1,9 +1,12 @@
 pro writespec, plate, fiberid, mjd=mjd, filename=filename
 
    readspec, plate, fiberid, flux=objflux, flerr=objerr, loglam=loglam, $
-    zans=zans
+    plug=plug, zans=zans
    wave = 10^loglam
    synflux = synthspec(zans, loglam=loglam)
+
+   primtarget = sdss_flagname('TARGET', plug.primtarget, /concat)
+   sectarget = sdss_flagname('TTARGET', plug.sectarget, /concat)
 
    platestr = string(plate, format='(i4.4)')
    mjdstr = string(zans.mjd, format='(i5.5)')
@@ -18,7 +21,10 @@ pro writespec, plate, fiberid, mjd=mjd, filename=filename
    printf, olun, '# Plate ' + platestr
    printf, olun, '# MJD ' + mjdstr
    printf, olun, '# Fiber ' + fibstr
-   printf, olun, '# Wavelength Flux   Error'
+   printf, olun, '# PRIMTARGET = ' + primtarget
+   printf, olun, '# SECTARGET = ' + sectarget
+   printf, olun, '#'
+   printf, olun, '# Wavelength Flux       Error'
    printf, olun, '# [Ang]      [10^(-17) erg/cm/s/Ang]  [10^(-17) erg/cm/s/Ang]'
    for i=0, n_elements(objflux)-1 do begin
       printf, olun, wave[i], objflux[i], objerr[i], $
