@@ -86,6 +86,7 @@ function zcompute, objflux, objivar, starflux, starmask, nfind=nfind, $
  mindof=mindof, width=width, minsep=minsep
 
    if (NOT keyword_set(nfind)) then nfind = 1
+   if (NOT keyword_set(pspace)) then pspace = 1
    if (NOT keyword_set(width)) then width = 3 * pspace
 
    ;---------------------------------------------------------------------------
@@ -158,7 +159,6 @@ function zcompute, objflux, objivar, starflux, starmask, nfind=nfind, $
     pmin = -2 * ((npixobj < npixstar) + 1) + pixoffset
    if (n_elements(pmax) EQ 0) then $
     pmax = pmin + 2 * ((npixobj < npixstar) - 1)
-   if (NOT keyword_set(pspace)) then pspace = 1
 
    if (n_elements(pmin) GT 1) then $
     message, 'PMIN must be a scalar'
@@ -216,7 +216,7 @@ function zcompute, objflux, objivar, starflux, starmask, nfind=nfind, $
       endfor
       zans[0:npeak-1].chi2 = zans[0:npeak-1].chi2 * zans[0:npeak-1].dof
    endif else if (ct GE 1) then begin
-      zans[0].chi2 = min(-chi2arr[indx]/dofarr[indx], ilag)
+      zans[0].chi2 = -min(-chi2arr[indx]/dofarr[indx], ilag)
       zans[0].z = poffset - lags[indx[ilag]]
       zans[0].z_err = 0
       zans[0].dof = dofarr[indx[ilag]]
