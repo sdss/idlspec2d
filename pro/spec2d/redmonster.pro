@@ -79,7 +79,7 @@ pro redmonster, relloglam, relchi2, objloglam, filtsz=filtsz, $
        else i1 = i1 + i0
       peakchi = sqrt(max(relchi2[i0:i1]))
       splog, string(fix(10^relloglam[i0]), fix(10^relloglam[i1]), peakchi, $
-       format='("WARNING: Bad sky residuals ", i5, " to ", i5, " Ang; Peak chi=", f6.2)')
+       format='("WARNING: Bad sky residuals at ", i5, " to ", i5, " Ang; Peak chi=", f6.2)')
       if ( 10^relloglam[i0] GT 6250 AND 10^relloglam[i0] LT 6500 $
        AND 10^relloglam[i1] GT 6500 AND 10^relloglam[i1] LT 6750) then begin
          splog, string(fix(10^relloglam[i0]), fix(10^relloglam[i1]), peakchi, $
