@@ -1,3 +1,8 @@
+
+* Exclude low-S/N frames from co-addition of a plate?
+
+* Do halo correction before scattered-light correction?
+
 * Replace slatec_splinefit and slatec_bvalu with their IDL counterparts 
 
 * Confirm proper dispset in combined spectra
