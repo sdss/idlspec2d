@@ -221,7 +221,7 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
 
       ;----------
       ; Re-do the super-fit with the new break points.
- 
+
       sset = bspline_iterfit(skywave, skyflux, invvar=skyivar, $
        nord=nord, upper=upper*1.5, lower=lower*1.5, maxiter=maxiter, $
        /eachgroup, fullbkpt=fullbkpt, yfit=skyfit, outmask=outmask)
@@ -250,12 +250,15 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
       fullx2 = replicate(1.0,ncol) # findgen(nrow)
       x2 = (fullx2[*,iskies])[isort]
 
-      sset = bspline_iterfit(skywave, skyflux, invvar=skyivar*outmask, $
+      sset2d = bspline_iterfit(skywave, skyflux, invvar=skyivar*outmask, $
        nord=nord, upper=upper, lower=lower, maxiter=maxiter, $
        npoly = npoly, /eachgroup, fullbkpt=fullbkpt, $
        yfit=skyfit, x2=x2, xmin=0., xmax=nrow)
 
-      fullfit = bspline_valu(wave, sset, x2=fullx2) 
+      if (keyword_set(sset2d)) then begin
+         sset = sset2d
+         fullfit = bspline_valu(wave, sset, x2=fullx2) 
+      endif
 
    endif
 
@@ -367,7 +370,7 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
 
    endif else begin
 
-      splog, 'WARNING: Too few sky fibers or pixels to model sky-sub variance'
+      splog, 'WARNING: Too few sky fibers or pixels to model sky-sub variance!!'
       relchi2fit = 1
 
    endelse
