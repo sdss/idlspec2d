@@ -6,16 +6,28 @@ LINEBACKFIT: Force the output sigmas to be non-negative (which also
             prevents a bug later in the code that assumes this is true
             when measuring the chi^2 of each line, as pointed out by
             John Moustakes).
+            Remove any lines where LINENPIX=0 by setting its AREA,EW to zero
+            and their errors to negative error codes, and remove from YFIT.
+            Evaluate YFIT even at points not included in the fit (if INVVAR=0).
 PLATECOMPARE: Fix 1-character typo preventing selecting the MJD
             when using the TOPDIR keyword also.
             Pass TOPDIR to READSPEC rather than explicitly resetting
             the $SPECTRO_DATA environment variable.
-PLOTSPEC: Add optional TOPDIR keyword.
+PLOTSPEC: Add options /ZLINE, /NOSYN, /NOERR, TOPDIR.
 READ_ELODIE: Optionally return the Elodie header in HDR.
-READSPEC: Add TOPDIR input keyword and ZLINE output keyword.
+READSPEC: Add TOPDIR input keyword and ZLINE,LINEFLUX outputs.
+            Use DIMS0 keyword in primary header of spZall,spZline files
+            if it exists to determine the dimensions of [NPER,NOBJECT]
+            multi-dimensional arrays.
+SPECLINEFIT: Major re-organization of this procedure, allowing one to either
+            pass a plate file name, or all the input arrays (as is now done
+            from SPREDUCE1D).  Now fit to emission lines for all object
+            types, not just galaxies.
 SPPLAN2D,SPPLAN1D: Add more informational messages.
 SPREDUCE1D: Simply overwrite any existing spZ files, rather than
             using cpbackup to save old ones.
+            Call SPECLINEFIT from the end of the code, since it now fits
+            emission lines for all types of objects (not just galaxies).
 SDSSPROC: Add "WARNING" to the warning messages about invalid or
             missing BC files.
 SKYLINE_DISPERSION: Re-write to get the indexing correct.  The first version
