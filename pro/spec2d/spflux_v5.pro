@@ -774,7 +774,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
             splog, 'Rejecting std star in fiber = ', $
              iphoto[ip] + 1 + 320 * (spectroid[0] - 1), $
              ' with unknown calibObj flux'
-            qfinal[iphoto[ip]] = 0
+            qfinal[ip] = 0
          endif
       endif else begin
          splog, 'WARNING: No CALIBFLUX for zero-pointing the fluxes'
@@ -832,6 +832,11 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       snlist[iworst] = snlimit + 1
       qfinal[iworst] = 0B
    endwhile
+
+   if (total(qfinal) EQ 0) then begin
+      splog, 'ABORT: No good spectro-photo stars!'
+      return
+   endif
 
    ;----------
    ; Loop over each exposure, and compute the PCA fit to MRATIO
