@@ -243,9 +243,16 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    endif
 
    if (q_synflux) then begin
-      if (NOT keyword_set(hdr)) then hdr = headfits(filename)
-      if (keyword_set(zans)) then $
-       synflux = synthspec(zans, hdr=hdr)
+      ; Read the synthetic spectrum from the Zbest file if ZNUM is not set.
+      if (NOT keyword_set(znum)) then begin
+         fits_open, zfile, zfcb
+         synflux = rspec_mrdfits(zfcb, 2, rownums=rownums, silent=silent)
+         fits_close, zfcb
+      endif else begin
+         if (NOT keyword_set(hdr)) then hdr = headfits(filename)
+         if (keyword_set(zans)) then $
+          synflux = synthspec(zans, hdr=hdr)
+      endelse
    endif
 
    if (q_mjd) then begin
