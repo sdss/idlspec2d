@@ -1,3 +1,10 @@
+
+ZFITMAX: Replace call to POLY_FIT with SVDFIT such that this routine
+         behaves the same under either IDL 5.3 or 5.4.  It was the
+         case that the errors were improperly computed using the re-
+         write of POLY_FIT in IDL 5.4.
+
+-------------------------------------------------------------------------------
 v4_8_2 (Aug 16, 2001 idlspec2d+idlutils)
 
 SPALLREDUCE: SPECFLAT_DIR is not set now, if SPECFLAT product exists and 
