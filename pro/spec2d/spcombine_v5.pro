@@ -214,16 +214,16 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
      bestexpnum=expnum[0,ibest]
 
    ;----------
+   ; Close plot file - S/N plots are then put in the PLOTSNFILE file.
+
+   if (keyword_set(plotfile) AND NOT keyword_set(xdisplay)) then dfpsclose
+
+   ;----------
    ; Co-add the fluxed exposures
 
    ii = where(score GT 0)
    spcoadd_v5, objname[ii], combinefile, mjd=thismjd, combinedir=combinedir, $
     adderr=adderr, docams=docams, plotsnfile=plotsnfile
-
-   ;----------
-   ; Close plot file - S/N plots are then put in the PLOTSNFILE file.
-
-   if (keyword_set(plotfile) AND NOT keyword_set(xdisplay)) then dfpsclose
 
    heap_gc   ; garbage collection
 
