@@ -69,7 +69,7 @@ PRO reduce_plate, platenum, first=first
 ; Read data
   galflux = (mrdfits(fname, 0))[*, result.fiber]
   galsig  = (mrdfits(fname, 1))[*, result.fiber]
-  galwave = (10.^loglam)#fltarr(n_elements(result))
+  galwave = (10.^loglam)#(fltarr(n_elements(result))+1)
 
 ;  readspec, result.plate, 0, flux=galflux, wave=galwave, $
 ;    flerr=galsig, /silent
