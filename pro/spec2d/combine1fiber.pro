@@ -165,8 +165,8 @@ endif else begin
          endelse
 endelse
 
-         inside = where(newloglam GE min(bkpt) $
-          AND newloglam LE max(bkpt), numinside)
+         inside = where(newloglam GE min(inloglam[ss]) $
+          AND newloglam LE max(inloglam[ss]), numinside)
 
          if (numinside EQ 0) then begin
             splog,'WARNING: No wavelengths inside breakpoints'
