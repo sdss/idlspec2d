@@ -497,14 +497,16 @@ The following messages may appear:
     recommended.  (However, don't bother to take a set of calibrations
     on a different night.  The Spectro-2D reductions never use calibrations
     from one night for science exposures on another.)
+<LI><B>Bad sky residuals at ....</B> <BR>
+    There is very poor sky-subtraction of the sky fibers at these wavelengths.
+    This means that, somehow, there is excess light that varies across the
+    plate.  This could be due to a light source near the telescope, or
+    possibly a bright, non-uniform sky.
 <LI><B>Red Monster at ....</B> <BR>
-    There is sometimes a light source at 6400-6600 Ang that we detect
-    by very poor sky-subtraction of the sky fibers at these wavelengths.
-    This means there is excess light that varies across the plate.
+    This warning is triggered if we see bad sky residuals (above) that
+    is specifically in the wavelength range of about 6400-6600 Ang.
     We think when this happens the handpaddle is still plugged in,
     in which case the observers should unplug it immediately.
-    This message could be triggered at other wavelengths should other
-    such light sources impact the data.
 </UL>
 
 <H4><A NAME="outputs_log">Log files</A></H4>
