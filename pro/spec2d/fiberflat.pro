@@ -28,6 +28,7 @@
 ;                polynomial (using NCOEFF).
 ;                This is now what we use?
 ;   plottitle  - Title for QA plot; if not set, then do not plot.
+;   smoothflat - ???
 ;
 ; PARAMETERS FOR SLATEC_SPLINEFIT:
 ;   nord
