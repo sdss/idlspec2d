@@ -81,6 +81,8 @@
 ;   bterms     - Coefficients for background terms [NBACK].
 ;
 ; COMMENTS:
+;   If a line was dropped from the fit (for example, no points to fit),
+;   then set the LINEAREA to 0 and the LINEAREA_ERR to -1L.
 ;
 ; EXAMPLES:
 ;
@@ -325,6 +327,16 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
    linestruct.linez_err     = perror[lindgen(nline)*3+1] $
     * alog(10.) * (linestruct.linez + 1)
    linestruct.linesigma_err = perror[lindgen(nline)*3+2] * alog(10.) * cspeed
+
+   ;----------
+   ; If a line was dropped from the fit (for example, no points to fit),
+   ; then set the LINEAREA to 0 and the LINEAREA_ERR to -1L.
+
+   ibad = where(perror[lindgen(nline)*3+0] LE 0)
+   if (ibad[0] NE -1) then begin
+      linestruct[ibad].linearea = 0
+      linestruct[ibad].linearea_err = -1L
+   endif
 
    ;----------
    ; Find the background levels only
