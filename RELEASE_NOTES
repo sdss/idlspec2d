@@ -21,15 +21,10 @@ APOREDUCE: Allow setting MINEXP to 0 sec.  Change default of MINEXP to 0 sec,
 APOPLOT: New proc for plotting spectra from the Son-of-Spectro outputs at APO.
 APOPLOT,LOGSHEET,PLOTSPEC: Set the !QUIET option for procedures where it is
            annoying to see all the IDL messages.
-BSPLINE_ITERFIT (in idlutils): Properly passing inmask to allow for
-           recouping lost data points.
 DANVB_CONVERT,DANVB_QSOLIST: Procs for generating a list of input
             QSO's from Dan van den Berk's EDR list "plateEDR.summ"
             for generating QSO eigenvectors.  The output file
             "eigeninput_qso.dat" is then used by PCA_QSO.
-DJS_REJECT (in idlutils): Added GROW option to mask neighboring pixels.
-            Also some small changes to the way grouping works.
-EFCMN (in idutils): Small change declaring a loop index as a long int.
 FIND_NMINIMA: Retain each peak only if it is at least MINSEP from all
             previous peaks.
 FINDSPEC: Crash if the plate list file is missing w/ an informative message.
@@ -89,6 +84,7 @@ REMOVE2TODO: Make more robust, and give more descriptive messages.
             Another attempt to fix errors in remove2redo.  It might now
             work with plate argument: "sos_redo plate=665", but should
             definitely work with simple invocation: "sos_redo".
+RLINE_FINDPEAKS: Updated to demand minimum separation, and commented.
 SDSS_FLAGS: Add "SOUTHERN_SURVEY" flags for TARGET and TTARGET.
             Also, return a warning message for any bits that are set
             but whose meaning is unknown.  Previously, a wrong answer
@@ -148,13 +144,30 @@ sos_redo: Don't allow this to be run from the machine sdsshost!
 sprobot_start: Copy the data over starting at 10am Princeton time,
             which will be after "mailhtml.sh" is run at APO (at 7:20 am).
 
+In idlutils:
+
+BSPLINE_ITERFIT: Properly passing INMASK to allow for recouping lost data
+           points.  Small cosmetic changes to work clearly with INMASK
+           and OUTMASK.
+DJS_REJECT: Added GROW option to mask neighboring pixels.
+            Added /GROUPBADPIX option, which probably fails with multi-
+            dimensional data (Scott thinks).
+            Also some small changes to the way grouping works.
+EFCMN: Small change declaring a loop index as a long int.
+YANNY_READ: If there are too few words on a line for a structure entry,
+           then set ERRCODE=-1 and return PDATA=0.
+           Also, increase the allowed line-length to 1023 characters
+           (was 255).  The file can still have longer lines by using
+           the back-slash as a continuation.  And one can still use
+           the /QUICK option for lines with more than 1023 characters,
+           but that option fails if continuation characters are used.
 vector_avsigclip_mask: Fix a bug in the C code vector_avsigclip_mask
            that could potentially affect the IDL proc DJS_AVSIGCLIP
            in the case when a mask is used but all points are rejected.
-evilinstall (in idlutils): If unable to check-out or install the code,
+evilinstall: If unable to check-out or install the code,
            then do not declare it current in the UPS table!
            Print "ABORT" for any failures in the install.
-evilmake (in idutils): Turn optimization flags back on, which we commented
+evilmake: Turn optimization flags back on, which we commented
            out some time ago because it failed on an OSF platform.
            Still might not work under OSF as far as we know, but who cares?
            We'll pick up 20% in speed for Spectro-2D under Linux by optimizing.
