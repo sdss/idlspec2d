@@ -49,6 +49,7 @@ IDL_LONG extract_row
    float       x1; 	/* Lower Chebyshev x limit  */
    IDL_LONG    wPoly; 	/* Number of coefficients nPoly + whopping terms */
    float       reject1, reject2;  /* profile area rejection thresholds */
+   float       rejectflux;  /* profile area rejection thresholds */
    IDL_LONG  * partialreject;   /* Mask set to 1 if trace meets reject1 */
    IDL_LONG  * fullreject;      /* Mask set to 1 if trace meets reject2 */
 
@@ -77,9 +78,10 @@ IDL_LONG extract_row
 
    proftype = *((IDL_LONG *)argv[argct++]);
 
-   /*  Reject 1 and 2 are the two members of a float array  */
-   reject1 = ((float *)argv[argct])[0];
-   reject2 = ((float *)argv[argct++])[1];
+   /*  Reject 1 and 2 and flux are the three members of a float array  */
+   reject2 = ((float *)argv[argct])[0];
+   rejectflux = ((float *)argv[argct])[1];
+   reject1 = ((float *)argv[argct++])[2];
 
    /*  These are two arrays which are set if pixels are partially,
           or fully rejected     */
@@ -183,7 +185,7 @@ IDL_LONG extract_row
    fillWhopping(&apoly[nPoly], x, nx, whoppingct, whoppingcen, whoppingsigma);
 
    CheckRowFibers(aprofile, xmin, xmax, nTrace, nCoeff, ans, ia, invvar, 
-                    reject1, reject2, partialreject, fullreject);
+                    reject1, reject2, rejectflux, partialreject, fullreject);
 
 /* Subtract out fixed variables first */
 
@@ -771,7 +773,7 @@ void subtractPoly(float *y, IDL_LONG nx, IDL_LONG nPoly, float **apoly,
            
 void CheckRowFibers(float **abig, IDL_LONG *xmin, IDL_LONG *xmax, 
       IDL_LONG nTrace, IDL_LONG nCoeff, float *a, IDL_LONG *ia, float *invvar,
-      float reject1, float reject2, IDL_LONG *partial, IDL_LONG *full) 
+      float reject1, float reject2, float rejectflux, IDL_LONG *partial, IDL_LONG *full) 
 {
 
 	IDL_LONG i,j,k,l,m;
@@ -781,7 +783,7 @@ void CheckRowFibers(float **abig, IDL_LONG *xmin, IDL_LONG *xmax,
 	   total = 0.0;
 	   for (k=xmin[i],m=0; k<=xmax[i]; k++,m++)
 	      if (invvar[k] > 0.0) total += abig[i*nCoeff][m];
-	   if (total < reject1 || total > 1.01) {
+	   if (total < reject1) {
               partial[i] = 1;
               
               for(j=nCoeff-1,l=j+i*nCoeff;j>=1;j--,l--) 
@@ -793,8 +795,8 @@ void CheckRowFibers(float **abig, IDL_LONG *xmin, IDL_LONG *xmax,
                     (int) xmin[i], (int) xmax[i]);   */
                     }
                  }
-	   if (total < reject2 || total > 1.01) {
-              full[i] = 1;
+	   if (total < rejectflux) full[i] = 1;
+	   if (total < reject2) {
               j = 0;
               l=i*nCoeff;
 	      if (ia[l]) {
