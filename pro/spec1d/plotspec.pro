@@ -103,9 +103,11 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
 ;   endelse
 
    if (keyword_set(nsmooth)) then begin
-      objflux = smooth(objflux, nsmooth)
-      if (keyword_set(synflux)) then $
-       synflux = smooth(synflux, nsmooth)
+      if (nsmooth GT 1) then begin
+         objflux = smooth(objflux, nsmooth)
+         if (keyword_set(synflux)) then $
+          synflux = smooth(synflux, nsmooth)
+      endif
    endif
 
    primtarget = sdss_flagname('TARGET', plug.primtarget, /concat)
