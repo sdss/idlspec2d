@@ -179,8 +179,8 @@ andmask = 0 ; Free memory
    ; Find STAR redshifts
 
    npoly = 4 ; With only 1 eigen-template, fit more polynomial terms for stars.
-   zmin = -0.002 ; -600 km/sec
-   zmax = 0.002 ; +600 km/sec
+   zmin = -0.004 ; -1200 km/sec
+   zmax = 0.004 ; +1200 km/sec
    pspace = 1
    nfind = 1
 
