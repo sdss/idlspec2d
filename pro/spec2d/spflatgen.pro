@@ -23,9 +23,8 @@
 ; COMMENTS:
 ;   This routine looks for flats and arcs in a given night that are logged
 ;   (according to the headers) to be spectroscopic pixel flats.  We expect
-;   exactly 7 flats in a sequence plus one or more arcs.  If there are not
-;   exactly 7 flats and at least one arc for a given camera, then no pixel
-;   flats are generated for that camera.
+;   at least 7 flats in a sequence plus one or more arcs.  If this is not
+;   true for a given camera, then no pixel flats are generated for that camera.
 ;
 ;   Four FITS files are produced, one for each camera:
 ;     pixflat-MJD-CAMERA.fits
@@ -97,13 +96,15 @@ pro spflatgen, mjd=mjd, indir=indir, outdir=outdir
       iflats = iflats[ where(exposure[iflats] - exposure[iflats[0]] $
        - lindgen(nflat) EQ 0, nflat) ]
 
-      if (nflat EQ 7 AND narc GE 1) then begin
+      if (nflat GE 7 AND narc GE 1) then begin
          pixflatname = 'pixflat-' + camnames[icam] $
           + '-' + string(mjdarr[iflats[0]],format='(i5.5)') + '.fits'
-         spflatten2, files[iflats[3]], files[iarcs[0]], files[iflats], $
-          pixflatname
+         splog, 'Generating pixel flat ' + pixflatname
+         splog, 'Output directory ' + outdir
+         spflatten2, files[iflats[(nflat-1)/2]], files[iarcs[0]], files[iflats], $
+          pixflatname, outdir=outdir
       endif else begin
-         splog, 'Expected 7 flats + some arcs, got ' $
+         splog, 'Expected sequence of at least 7 flats + 1 arc, got ' $
           + strtrim(string(nflat),2) + ' + ' + strtrim(string(narc),2)
          splog, 'Skipping pixflat generation for camera ' + camnames[icam]
       endelse
