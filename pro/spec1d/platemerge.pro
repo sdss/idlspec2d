@@ -153,7 +153,6 @@ pro platemerge, zfile, outroot=outroot1, public=public
     'chunkname'   , ' ', $
     'platequality', ' ', $
     'platesn2'    , 0.0, $
-    'smearuse'    , ' ', $
     'primtarget'  ,  0L, $
     'sectarget'   ,  0L, $
     'specprimary' ,  0B, $
@@ -191,7 +190,6 @@ pro platemerge, zfile, outroot=outroot1, public=public
       outdat[indx].chunkname = plist[ifile].chunkname
       outdat[indx].platequality = plist[ifile].platequality
       outdat[indx].platesn2 = plist[ifile].platesn2
-      outdat[indx].smearuse = plist[ifile].smearuse
 
       ; Get PRIMTARGET+SECTARGET with those values from
       ; the plug-map structure in spPlate file.
