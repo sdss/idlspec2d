@@ -108,6 +108,8 @@ function design_append, allplug, oneplug, nadd=nadd
    nadd = 0L
 
    platescale = 217.7358 ; mm/degree
+   if (strtrim(oneplug.holetype) EQ 'GUIDE') then morespace = 7.5 $ ; in mm
+    else morespace = 0.
 
    ;----------
    ; If this is the 1st object in the list, then we can always keep it
@@ -119,14 +121,14 @@ function design_append, allplug, oneplug, nadd=nadd
 
    ;----------
    ; Discard objects within 68 arcsec of the center hole or more
-   ; then 1.49 deg from the plate center (pad to 70 arcsec and 1.485 deg).
+   ; then 1.49 deg from the plate center (pad to 75 arcsec and 1.485 deg).
 
    thisrad = sqrt(oneplug.xfocal^2 + oneplug.yfocal^2)
-   if (thisrad LE platescale*70./3600. $
-    OR thisrad GE platescale*1.485) then return, allplug
+   if (thisrad LE platescale*75./3600.+morespace $
+    OR thisrad GE platescale*1.485-morespace) then return, allplug
 
    ;----------
-   ; Discard objects within 55 arcsec of existing objects. (Pad to 57 arcsec.)
+   ; Discard objects within 55 arcsec of existing objects. (Pad to 70 arcsec.)
    ; Do this based upon XFOCAL,YFOCAL positions.
    ; The closest two fibers can be is PLATESCALE * 55/3600(deg) = 3.32652 mm
 
@@ -134,11 +136,13 @@ function design_append, allplug, oneplug, nadd=nadd
       r2 = (allplug.xfocal - oneplug.xfocal)^2 $
            + (allplug.yfocal - oneplug.yfocal)^2
       mindist = min(sqrt(r2))
-      if (mindist LT platescale*57./3600.) then return, allplug
+      if (mindist LT platescale*70./3600.+morespace) then return, allplug
    endif
 
    ;----------
-   ; Discard objects within 7.0 mm of existing guide fibers
+   ; Discard objects within 7.0 mm of existing guide fibers.
+   ; (Pad this to 10 mm just to be extra careful, since the downstream PLATE
+   ; code is so stupid.)
 
    if (keyword_set(allplug)) then begin
       iguide = where(strtrim(allplug.holetype) EQ 'GUIDE', ct)
@@ -146,7 +150,7 @@ function design_append, allplug, oneplug, nadd=nadd
          r2 = (allplug[iguide].xfocal - oneplug.xfocal)^2 $
               + (allplug[iguide].yfocal - oneplug.yfocal)^2
          mindist = min(sqrt(r2))
-         if (mindist LT 7.0) then return, allplug
+         if (mindist LT 10.0+morespace) then return, allplug
       endif
    endif
 
