@@ -1,22 +1,100 @@
-
+;+
+; NAME:
+;   solvefilter
+;
+; PURPOSE:
+;   Solve for the 2.5-m imaging filter curves by using the spectra.
+;
+; CALLING SEQUENCE:
+;   solvefilter, [ filttype=, filternum=, plate=, mjd=, $
+;    adderr=, wavemin=, wavemax=, sncut=, maxiter=, fluxpath=
+;
+; INPUTS:
+;
+; OPTIONAL INPUTS:
+;   filttype   - Type of functional form for the filter curve.  Options are:
+;                  'sdss': Modified SDSS filter curve (default)
+;                  'tanh': Function with tanh() shape at edges
+;   filternum  - Filter number, 1=g, 2=r, 3=i; default to 3.
+;   plate      - Plate number(s); if not specified, then select all DR1 plates
+;                with number > 431.
+;   mjd        - MJD for each PLATE.
+;   adderr     - Fractional error to add in quadrature to photometric error;
+;                default to 0.05.
+;   wavemin    - Minimum wavelength for spectra during computation;
+;                default to 3800 Ang.
+;   wavemax    - Maximum wavelength for spectra during computation;
+;                default to 9300 Ang.
+;   sncut      - Minimum SN_MEDIAN (median S/N per pixel) for spectroscopic
+;                objects used in sample; default to 2.0
+;   maxiter    - Maximum number of iterations in iterative fit; default to 200
+;   fluxpath   - Path name for spPlate files used for reading the spectra.
+;                The spZ files are still read from $SPECTRO_DATA/$PLATE.
+;
+; OUTPUTS:
+;
+; OPTIONAL OUTPUTS:
+;
 ; COMMENTS:
-;   We only use unblended stars and QSOs.
+;   Iteratively solve for the SDSS 2.5-m filter curves, using one of
+;   the several possible parameterizations as specified by FILTTYPE.
+;   For each possible filter curve, we regress the spectroscopic magnitude
+;   vs. the photometric magnitude.  In order to not be sensitive to
+;   photometric calibration errors, each group of objects (same RUN, RERUN,
+;   CAMCOL, PLATE, SPECTROGRAPHID) is allowed to have a floating zero-point
+;   offset.  These offsets are plotted as MAGOFFSET in one of the final plots.
+;
+;   We only use unblended stars and QSOs, not any galaxies.
 ;   All calculations are done in vacuum wavelengths, but then converted
-;     to air wavelengths at the end.
+;   to air wavelengths at the end.
 ;
 ; EXAMPLES:
 ;   Solve for the i-band filter using Tremonti's re-reductions of the spectra:
-;     IDL> solvefilter, filtnum=3, fluxpath='/scr/wire50/cat/recalib/kurucz'
-
-; What are the outlier objects?
-; Plot the residuals as a fn of plate number
-; Do Christy's flux-calibrations improve things?
-; Which particular objects argue for a blue light leak (using chi^2)?
-; Should we more heavily weight the QSOs?
-; I should average together more telluric spectra for better S/N.
-; Use the extinction coeff for each imaging night.
-
-forward_function mpfit, mpfitfun, solvefiltfn
+;     IDL> solvefilter, filternum=3, fluxpath='/scr/wire50/cat/recalib/kurucz'
+;
+; BUGS:
+;   I should average together more telluric spectra for better S/N.
+;   I should use the extinction coeff for each imaging night.
+;   Do Christy's flux-calibrations improve things?
+;   Do any objects argue for light leaks?
+;   Should we more heavily weight the QSOs?
+;
+; DATA FILES:
+;   $IDLSPEC2D_DIR/etc/sdss_jun2001_$FILTER_atm.dat
+;   $SPECTRO_DATA/0432/spFrame-r2-00007466.fits*  (for telluric-correction)
+;   $SPECTRO_DATA/$PLATE/spPlate-$PLATE-$MJD.fits
+;   $SPECTRO_DATA/$PLATE/spZbest-$PLATE-$MJD.fits
+;   $SPECTRO_DATA/plates/tsObj*-$PLATE.fit
+;
+; PROCEDURES CALLED:
+;   dfpsclose
+;   dfpsplot
+;   djs_int2bin()
+;   djs_maskinterp()
+;   djs_oplot
+;   djs_plot
+;   djs_xyouts
+;   headfits()
+;   mpfit()
+;   mrdfits()
+;   readcol
+;   readspec
+;   sdss_run2mu()  (in photoop product)
+;   skymask()
+;   splog
+;   tai2airmass()
+;   traceset2xy
+;   wavevector()
+;
+; INTERNAL SUPPORT ROUTINES:
+;   solvefiltshape()
+;   solvefiltfn()
+;
+; REVISION HISTORY:
+;   05-Nov-2002  Written by David Schlegel, Princeton.
+;-
+;------------------------------------------------------------------------------
+forward_function mpfit, solvefiltfn
 
 ;------------------------------------------------------------------------------
 ; Construct the filter curve corresponding to this set of parameters
@@ -279,7 +357,7 @@ pro solvefilter, filttype=filttype1, filternum=filternum1, $
       ; Compute the airmass for each object
       junk = sdss_run2mu(tsobj.run, tsobj.field, tai=tai)
       airmass1 = tai2airmass(zans.plug_ra, zans.plug_dec, tai=tai)
-      if (min(airmass1) LT 0.99 OR max(airmass1) GT 3) then $
+      if (min(airmass1) LT 0.99 OR max(airmass1) GT 3.5) then $
        message, 'Invalid AIRMASS'
 
       ; Group objects with the same run+rerun+camcol+plate+spectrographid
