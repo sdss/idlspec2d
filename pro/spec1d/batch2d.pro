@@ -101,13 +101,15 @@ end
 
 ;------------------------------------------------------------------------------
 ; This doesn't yet check to see if things have already been run for some plates
-pro batch2d, platenums, topdir=topdir, mjd=mjd, mjstart=mjstart, mjend=mjend
+pro batch2d, platenums, topdir=topdir, mjd=mjd, mjstart=mjstart, mjend=mjend, $
+ nice=nice
 
    if (NOT keyword_set(platenums)) then platenums = '*'
    if (NOT keyword_set(topdir)) then begin
       cd, current=topdir
       cd, topdir
    endif
+   if (NOT keyword_set(nice)) then nice = 10
 
    ;----------
    ; Create symoblic link from current directory to raw data directory
@@ -220,7 +222,9 @@ pro batch2d, platenums, topdir=topdir, mjd=mjd, mjstart=mjstart, mjend=mjend
    ;----------
    ; Begin the batch jobs
 
-   command = 'nice +19 idl ' + fullscriptfile
+   nicestr = 'nice +' + strtrim(string(nice),2)
+   command = 'setenv RAWDATA_DIR ../rawdata;' $
+    + nicestr + ' idl ' + fullscriptfile
    batch, topdir, pinfile, poutfile, $
     hostconfig.protocol, hostconfig.remotehost, hostconfig.remotedir, $
     command, priority=priority

@@ -2,12 +2,13 @@
 ; If using other machines in Peyton, set
 ;   topdir='/peyton/scr/spectro0/data/2d_test'
 
-pro batch1d, fullplatefile, topdir=topdir
+pro batch1d, fullplatefile, topdir=topdir, nice=nice
 
    if (NOT keyword_set(topdir)) then begin
       cd, current=topdir
       cd, topdir
    endif
+   if (NOT keyword_set(nice)) then nice = 10
 
    ;----------
    ; Create list of plate files
@@ -101,7 +102,8 @@ pro batch1d, fullplatefile, topdir=topdir
    ;----------
    ; Begin the batch jobs
 
-   command = 'nice +19 idl ' + fullscriptfile
+   nicestr = 'nice +' + strtrim(string(nice),2) 
+   command = nicestr + ' idl ' + fullscriptfile
    batch, topdir, infile, outfile, $
     hostconfig.protocol, hostconfig.remotehost, hostconfig.remotedir, $
     command, priority=priority
