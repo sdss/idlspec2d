@@ -213,6 +213,8 @@ pro design_multiplate, stardata, tilenums=tilenums, platenums=platenums, $
       thistilenum = tilenums[itile]
       thisracen = racen[itile]
       thisdeccen = deccen[itile]
+      print
+      print, 'Working on TILE=', thistilenum, ' PLATE=', platenums[itile]
 
       ;----------
       ; For this pointing, find the approximate RA,DEC coordinates
@@ -324,6 +326,8 @@ pro design_multiplate, stardata, tilenums=tilenums, platenums=platenums, $
       ; For this pointing, add a grid of fake spectro-photo and reddening stars.
       ; This will be a grid of 13x13 positions separated by 13 arcmin.
       ; Alternate between calling them SPECTROPHOTO_STD or REDDEN_STD.
+      ; --> Actually, don't call anything a reddening standard, since
+      ;     we don't need them for the code to run.
 
       ngrid = [13,13]
       dphi = (djs_laxisgen(ngrid, iaxis=0) - (ngrid[0]-1)/2) * 13./60.
@@ -338,10 +342,13 @@ pro design_multiplate, stardata, tilenums=tilenums, platenums=platenums, $
       addplug.holetype = 'OBJECT'
       ieven = where(lindgen(ngrid[0]*ngrid[1]) MOD 2 EQ 0)
       iodd = where(lindgen(ngrid[0]*ngrid[1]) MOD 2 EQ 1)
-      addplug[ieven].objtype = 'SPECTROPHOTO_STD'
-      addplug[ieven].sectarget = 32L
-      addplug[iodd].objtype = 'REDDEN_STD'
-      addplug[iodd].sectarget = 2L
+; Don't call anything a reddening standard, since we don't need them.
+addplug.objtype = 'SPECTROPHOTO_STD'
+addplug.sectarget = 32L
+;      addplug[ieven].objtype = 'SPECTROPHOTO_STD'
+;      addplug[ieven].sectarget = 32L
+;      addplug[iodd].objtype = 'REDDEN_STD'
+;      addplug[iodd].sectarget = 2L
       addplug.throughput = 0L
       addplug.mag[*] = fakemag
 
@@ -368,6 +375,8 @@ pro design_multiplate, stardata, tilenums=tilenums, platenums=platenums, $
       ; Always keep the 1st of any close group of objects.
       ; This is a stupidly slow N^2 implementation...
 
+      print, 'Before resolving conflicts: Number(HOLETYPE=OBJECT) = ', $
+       n_elements(where(strtrim(allplug.holetype) EQ 'OBJECT'))
       iobj = 0L
       while (iobj LT n_elements(allplug)-1) do begin
          adiff = djs_diff_angle(allplug[iobj].ra, allplug[iobj].dec, $
@@ -377,19 +386,23 @@ pro design_multiplate, stardata, tilenums=tilenums, platenums=platenums, $
          allplug = allplug[igood]
          iobj = iobj + 1L
       endwhile
+      print, 'After resolving conflicts:  Number(HOLETYPE=OBJECT) = ', $
+       n_elements(where(strtrim(allplug.holetype) EQ 'OBJECT'))
 
       ;----------
-      ; Trim to only 592 real objects at most, or "fiberPlates" will crash
-      ; (excluding spectro-photo and reddening standards)
+      ; Trim to only 600 real objects at most, or "fiberPlates" will crash
+      ; (excluding spectro-photo standards).  That routine expects 600
+      ; objects at most + 32 skies + 8 spectro-photos.
 
       iobj = where(strtrim(allplug.holetype) EQ 'OBJECT' $
-       AND strtrim(allplug.objtype) NE 'SPECTROPHOTO_STD' $
-       AND strtrim(allplug.objtype) NE 'REDDEN_STD', nobj)
-      if (nobj GT 592) then begin
+       AND strtrim(allplug.objtype) NE 'SPECTROPHOTO_STD', nobj)
+      if (nobj GT 600) then begin
          qgood = lindgen(n_elements(allplug)) + 1B
-         qgood[iobj[592:nobj-1]] = 0 ; Mark these last ones as bad
+         qgood[iobj[600:nobj-1]] = 0 ; Mark these last ones as bad
          allplug = allplug[ where(qgood) ]
       endif
+      print, 'After trimming:             Number(HOLETYPE=OBJECT) = ', $
+       n_elements(where(strtrim(allplug.holetype) EQ 'OBJECT'))
 
       ;----------
       ; Write the plPlugMapT file for this tile...
