@@ -36,6 +36,22 @@
 ;   A plate is considered not reduced if any of the "spPlate*.par" files
 ;   do not have a corresponding "spDiag1d*.log" file.
 ;
+;   The command is piped to the bash shell on the remote machine, so IDL
+;   and the idlspec2d product must be present when running "bash --login".
+;   Normally, your .bashrc file should set up all the necessary path info.
+;   If the UPSVERSION keyword is used, then the UPS "setup" command must
+;   also be set up in the .bashrc file.
+;
+;   The command that is spawned will look something like (but all in one line):
+;     ssh1 wire1.princeton.edu 'cd /u/dss/spectro;
+;       echo "DISPLAY=:0.0; setup idlspec2d v4_9_6; /bin/nice -n 10
+;       idl 0406/spPlate-0406-51817.batch" | bash --login >& /dev/null'
+;
+;   The $DISPLAY environment variable is always set to ":0.0" on the remote
+;   machine to make certain that we only use one IDL license per machine.
+;   (Any IDL jobs that have the same the username, machine name, and $DISPLAY
+;   use the same license.)
+;
 ; EXAMPLES:
 ;
 ; BUGS:
@@ -184,17 +200,21 @@ pro batch1d, fullplatefile, topdir=topdir, upsversion=upsversion, $
 
    ;----------
    ; Begin the batch jobs.
-   ; Force this to be sent to a bash shell.
+   ; Force this to be sent to a bash shell locally, and pipe to a bash shell remotely.
    ; Redirect output to /dev/null; this redirection should be valid for
-   ;  either bash or csh shells.
+   ;   either bash or csh shells.
+   ; The command will look something like (but all in one line):
+   ;   cd /u/dss/spectro;
+   ;     echo "DISPLAY=:0.0; setup idlspec2d v4_9_6; /bin/nice -n 10
+   ;     idl 0406/spPlate-0406-51817.batch" | bash --login >& /dev/null'
 
    setenv, 'SHELL=bash'
-   precommand = ''
+   precommand = 'echo "DISPLAY=:0.0; '
    if (keyword_set(upsversion)) then $
     precommand = precommand + 'setup idlspec2d ' + upsversion + '; '
    if (keyword_set(nice)) then $
     precommand = precommand + '/bin/nice -n ' + strtrim(string(nice),2)
-   command = precommand + ' idl ' + fullscriptfile + ' >& /dev/null'
+   command = precommand + ' idl ' + fullscriptfile + '" | bash --login >& /dev/null'
 
    djs_batch, topdir, infile, outfile, $
     hostconfig.protocol, hostconfig.remotehost, hostconfig.remotedir, $
