@@ -90,6 +90,9 @@ pro spreduce1d, platefile, fiberid=fiberid, doplot=doplot, debug=debug
       return
    endelse
 
+   thismem = memory()
+   maxmem = 0
+
    ;----------
    ; Determine names of output files
 
@@ -754,6 +757,11 @@ ormask = 0 ; Free memory
     plottitle=plottitle
 
    if (keyword_set(plotfile)) then dfpsclose
+
+   ; Track memory usage
+   thismem = memory()
+   maxmem = maxmem > thismem[3]
+   splog, 'Max memory usage = ', string(maxmem/1e6,format='(f7.1)'), ' MB'
 
    ;----------
    ; Close log file
