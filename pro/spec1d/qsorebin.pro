@@ -51,7 +51,7 @@ pro qsorebin
 
    sxaddpar, hdr, 'COEFF0', newloglam[0]
    sxaddpar, hdr, 'COEFF1', objdloglam
-   mwrfits, newflux, 'spEigenQSO.fits', hdr, /create
+   mwrfits, float(newflux), 'spEigenQSO.fits', hdr, /create
 
    return
 end
