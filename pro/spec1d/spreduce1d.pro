@@ -543,36 +543,36 @@ ormask = 0 ; Free memory
    ; Warning: Sky fiber.
    for iobj=0, nobj-1 do begin
       if (strtrim(plugmap[iobj].objtype,2) EQ 'SKY') then $
-       zwarning[*,iobj] = zwarning[*,iobj] OR 1L
+       zwarning[*,iobj] = zwarning[*,iobj] OR sdss_flagval('ZWARNING', 'SKY')
    endfor
 
    ; Warning: too little wavelength coverage.
    qflag = res_all.wcoverage LT 0.18
-   zwarning = zwarning OR 2L * qflag
+   zwarning = zwarning OR qflag * sdss_flagval('ZWARNING', 'LITTLE_COVERAGE')
 
    ; Warning: delta-chi^2 is too small as compared to the next best ID.
    minrchi2diff = 0.01
    qflag = res_all.rchi2diff LT minrchi2diff $
     OR res_all.rchi2diff LT minrchi2diff * res_all.rchi2
-   zwarning = zwarning OR 4L * qflag
+   zwarning = zwarning OR qflag * sdss_flagval('ZWARNING', 'SMALL_DELTA_CHI2')
 
    ; Warning: synthetic spectrum is negative (for STAR only).
    qflag = (strtrim(res_all.class) EQ 'STAR' $
     AND strtrim(res_all.subclass) NE 'CV' $
     AND res_all.theta[0] LE 0)
-   zwarning = zwarning OR 8L * qflag
+   zwarning = zwarning OR qflag * sdss_flagval('ZWARNING', 'NEGATIVE_MODEL')
 
    ; Warning: Fraction of points above 5 sigma is too large (> 5%),
    ; except for QSO's where we just look at the fraction of high outliers
    ; since we expect absorption lines that could give many low outliers.
    qflag = (strtrim(res_all.class) NE 'QSO' AND fracnsigma[4,*,*] GT 0.05) $
     OR (strtrim(res_all.class) EQ 'QSO' AND fracnsighi[4,*,*] GT 0.05)
-   zwarning = zwarning OR 16L * qflag
+   zwarning = zwarning OR qflag * sdss_flagval('ZWARNING', 'MANY_OUTLIERS')
 
    ; Warning: Redshift-error warning flag set to -1, which means that
    ; the chi^2 minimum was at the edge of the redshift-fitting range.
 ;   qflag = res_all.z_err EQ -1
-;   zwarning = zwarning OR 32L * qflag
+;   zwarning = zwarning OR qflag * sdss_flagval('ZWARNING', 'Z_FITLIMIT')
 
    ; Warning: For QSOs, if C_IV, CIII], Mg_II, H_beta or H_alpha are negative
    ; and have at least a few pixels in the fit (DOF > 2).
@@ -588,7 +588,8 @@ ormask = 0 ; Free memory
             qflag = total(zline[indx].linearea LT 0 $
              AND zline[indx].linearea_err GT 0 $
              AND zline[indx].linedof GT 2) NE 0
-            zwarning[0,iobj] = zwarning[0,iobj] OR 64L * qflag
+            zwarning[0,iobj] = zwarning[0,iobj] $
+             OR qflag * sdss_flagval('ZWARNING', 'NEGATIVE_EMISSION')
          endif
       endif
    endfor
