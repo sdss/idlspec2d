@@ -99,10 +99,10 @@ speclimit yellow flat XSIGMA b2 1.00 9e9
 speclimit yellow flat XSIGMA r1 1.00 9e9
 speclimit yellow flat XSIGMA r2 1.00 9e9
 
-speclimit red flat XSIGMA b1 1.10 9e9
-speclimit red flat XSIGMA b2 1.05 9e9
-speclimit red flat XSIGMA r1 1.05 9e9
-speclimit red flat XSIGMA r2 1.05 9e9
+speclimit red flat XSIGMA b1 1.15 9e9
+speclimit red flat XSIGMA b2 1.10 9e9
+speclimit red flat XSIGMA r1 1.10 9e9
+speclimit red flat XSIGMA r2 1.10 9e9
 
 # The wavelength ranges should match closely to how we tuned the spectrographs
 # on MJD 51612 (8/9 March 2000).  Our best values were:
@@ -174,10 +174,10 @@ speclimit yellow arc WSIGMA b2 0.95 9e9
 speclimit yellow arc WSIGMA r1 0.95 9e9
 speclimit yellow arc WSIGMA r2 0.95 9e9
 
-speclimit red arc WSIGMA b1 1.10 9e9
-speclimit red arc WSIGMA b2 1.00 9e9
-speclimit red arc WSIGMA r1 1.00 9e9
-speclimit red arc WSIGMA r2 1.00 9e9
+speclimit red arc WSIGMA b1 1.15 9e9
+speclimit red arc WSIGMA b2 1.05 9e9
+speclimit red arc WSIGMA r1 1.05 9e9
+speclimit red arc WSIGMA r2 1.05 9e9
 
 # The sky levels were 0.15 e-/pix and 0.30 e-/pix in the blue and
 # cameras on MJD 51612 (8/9 March 2000).  Report a warning (yellow)
