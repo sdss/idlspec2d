@@ -74,7 +74,7 @@ function pca_solve, objflux, objivar, objloglam, zfit, $
  niter=niter, nkeep=nkeep, nreturn=nreturn, eigenval=eigenval, acoeff=acoeff, $
  outmask=outmask, usemask=usemask, _EXTRA=KeywordsForReject
 
-   if (NOT keyword_set(maxiter)) then maxiter = 0
+   if (n_elements(maxiter) EQ 0) then maxiter = 0
    if (NOT keyword_set(niter)) then niter = 10
    if (NOT keyword_set(nkeep)) then nkeep = 3
    if (NOT keyword_set(nreturn)) then nreturn = nkeep
