@@ -110,11 +110,13 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
       return
    endif
    if (NOT keyword_set(noerr)) then $
-    readspec, plate, fiberid, mjd=mjd, flerr=objerr
+    readspec, plate, fiberid, mjd=mjd, flerr=objerr, topdir=topdir, /silent
    if (NOT keyword_set(nosyn)) then $
-    readspec, plate, fiberid, mjd=mjd, znum=znum, synflux=synflux
+    readspec, plate, fiberid, mjd=mjd, znum=znum, synflux=synflux, $
+     topdir=topdir, /silent
    if (keyword_set(zans) AND keyword_set(q_zline)) then $
-    readspec, plate, fiberid, mjd=mjd, zline=zline, lineflux=lineflux
+    readspec, plate, fiberid, mjd=mjd, zline=zline, lineflux=lineflux, $
+     topdir=topdir, /silent
 
    if (keyword_set(nsmooth)) then begin
       if (nsmooth GT 1) then begin
