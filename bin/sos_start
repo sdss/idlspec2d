@@ -82,9 +82,9 @@ echo "IDLUTILS_DIR=$IDLUTILS_DIR" >> $cronfile
 echo "IDL_DIR=$IDL_DIR" >> $cronfile
 echo "IDL_PATH=$IDL_PATH" >> $cronfile
 echo "# This job will run every minute." >> $cronfile
-echo "* * * * * sos.sh >>& $SOSLOG" >> $cronfile
+echo "* * * * * sos.sh >> $SOSLOG 2>&1" >> $cronfile
 echo "# This job will run at 7:20 am every day." >> $cronfile
-echo "20 7 * * * mailhtml.sh >>& $SOSLOG" >> $cronfile
+echo "20 7 * * * mailhtml.sh >> $SOSLOG 2>&1" >> $cronfile
 echo "# This job will run at 7:25 am every day." >> $cronfile
 echo "25 7 * * * mv -f $SOSLOG $SOSLOG.old" >> $cronfile
 echo "# SOS END" >> $cronfile
