@@ -331,6 +331,7 @@ for i=0,16 do oplot,fflat[*,i*19]
       ;------------------
       ; Tweak up the wavelength solution to agree with the sky lines.
 
+stop
       locateskylines, skylinefile, flux, fluxivar, $
        wset, xsky, ysky, skywaves, lambda=skylambda
 
@@ -338,26 +339,26 @@ for i=0,16 do oplot,fflat[*,i*19]
       ; First convert lambda, and skywaves to log10 vacuum
 
       splog, 'Converting wavelengths to vacuum'
-      vaclambda = 10^lambda
+      vaclambda = lambda
       airtovac, vaclambda
-      vaclambda = alog10(vaclambda)
+      vacloglam = alog10(vaclambda)
 
       vacsky = skywaves
       airtovac, vacsky
-      vacsky = alog10(vacsky)
+      vaclogsky = alog10(vacsky)
 
       sxaddpar, hdr, 'VACUUM', 'WAVELENGTHS ARE IN VACUUM'
       sxaddpar, hdr, 'AIR2VAC', systime()
 
       splog, 'Tweaking to sky lines'
       skycoeff = 2
-      if (n_elements(vacsky) GT 3) then skycoeff = 3
+      if (n_elements(vaclogsky) GT 3) then skycoeff = 3
 
-      fit_skyset, xpeak, ypeak, vaclambda, xsky, ysky, vacsky, skycoeff, $
+      fit_skyset, xpeak, ypeak, vacloglam, xsky, ysky, vaclogsky, skycoeff, $
         goodlines, wset, ymin=ymin, ymax=ymax, func=func
 
       locateskylines, skylinefile, flux, fluxivar, $
-       wset, xsky, ysky, skywaves, lambda=vacsky
+       wset, xsky, ysky, skywaves, lambda=vaclogsky
 
       ;------------------
       ; Sky-subtract
