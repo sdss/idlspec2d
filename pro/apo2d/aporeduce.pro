@@ -21,7 +21,7 @@
 ;   plugfile   - Name of plugmap file (Yanny parameter file); default to
 ;                'plPlugMapM-'+NAME+'.par', where NAME is taken from that
 ;                keyword in the file FILENAME
-;   plugdir    - Input directory for PLUGFILE; default to '.'
+;   plugdir    - Input directory for PLUGFILE; default to INDIR
 ;   minexp     - Minimum exposure time for science frames; default to 61 sec
 ;   copydir    - If set, then copy the output log files to this directory using
 ;                "scp1" copy.  Make an additional copy of the HTML file
@@ -78,7 +78,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    endif
 
    if (NOT keyword_set(indir)) then indir = './'
-   if (NOT keyword_set(plugdir)) then plugdir = './'
+   if (NOT keyword_set(plugdir)) then plugdir = indir
    if (NOT keyword_set(outdir)) then outdir = indir
    if (NOT keyword_set(minexp)) then minexp = 61
 
@@ -195,9 +195,15 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    ; Append to binary FITS log file a structure with info for this frame
    ; Lock the file to do this.
 
+   i = rstrpos(fullplugfile,'/')
+   if (i[0] EQ -1) then shortplugfile = fullplugfile $
+    else shortplugfile = strmid(fullplugfile,i+1)
+
    if (keyword_set(rstruct)) then begin
       while(djs_lockfile(logfile) EQ 0) do wait, 1
-      rstruct = create_struct('MJD', mjd, $
+      rstruct = create_struct('FILENAME', filename, $
+                              'PLUGFILE', shortplugfile, $
+                              'MJD', mjd, $
                               'PLATE', plate, $
                               'EXPNUM', filee, $
                               rstruct )
@@ -216,7 +222,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       wait, 10
 
       plotfile = filepath('snplot-'+mjdstr+'-'+platestr+'.ps', root_dir=outdir)
-      apo_plotsn, logfile, plate, plugfile=fullplugfile, plotfile=plotfile
+      apo_plotsn, logfile, plate, plugdir=plugdir, plotfile=plotfile
 
       apo_log2html, logfile, htmlfile
 

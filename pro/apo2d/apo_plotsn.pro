@@ -6,17 +6,17 @@
 ;   Generate S/N plot for one plate from a FITS logfile written by APOREDUCE.
 ;
 ; CALLING SEQUENCE:
-;   apo_plotsn, logfile, plate, [ plugfile=, plotfile= ]
+;   apo_plotsn, logfile, plate, [ plugdir=, plotfile= ]
 ;
 ; INPUTS:
 ;   logfile    - Logfile as written by APOREDUCE.  This is a FITS file
 ;                with an HDU of information for each reduced frame.
 ;   plate      - Plate number to plot.
 ;
-; REQUIRED KEYWORDS:
-;   plugfile   - Name of plugmap file (Yanny parameter file)
-;
 ; OPTIONAL KEYWORDS:
+;   plugdir    - Input directory for PLUGFILE; default to '.'
+;                The name of the plugmap file is taken from the first
+;                structure in the LOGFILE.
 ;   plotfile   - Name of plot file; if not specified then send plot to
 ;                current device.
 ;
@@ -43,9 +43,10 @@
 ;   02-May-2000  Written by D. Schlegel, APO
 ;-
 ;------------------------------------------------------------------------------
-pro apo_plotsn, logfile, plate, plugfile=plugfile, plotfile=plotfile
+pro apo_plotsn, logfile, plate, plugdir=plugdir, plotfile=plotfile
 
    if (NOT keyword_set(plate)) then return
+   if (NOT keyword_set(plugdir)) then plugdir = './'
 
    platestr = string(plate, format='(i4.4)')
    bands = [1,3]
@@ -56,11 +57,13 @@ pro apo_plotsn, logfile, plate, plugfile=plugfile, plotfile=plotfile
    pp = apo_readlog(logfile, plate=plate, flavor='science')
    if (NOT keyword_set(pp)) then return
    mjd = (*pp[0]).mjd
+   plugfile = (*pp[0]).plugfile
 
    ;----------
    ; Read the plug map file for all 640 fibers
 
-   yanny_read, plugfile, pdata
+   fullplugfile = filepath(plugfile, root_dir=plugdir)
+   yanny_read, fullplugfile, pdata
    plugmap = *pdata[0]
    yanny_free, pdata
    plugsort = sortplugmap(plugmap, fibermask=fibermask)
