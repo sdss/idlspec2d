@@ -84,6 +84,7 @@ pro/science/k_correct.pro -text
 pro/spec1d/MCsimul2.pro -text
 pro/spec1d/Makefile -text
 pro/spec1d/bandpassfilter.pro -text
+pro/spec1d/computechi2.pro -text
 pro/spec1d/cosbell.pro -text
 pro/spec1d/diffplate.pro -text
 pro/spec1d/fft_apodize.pro -text

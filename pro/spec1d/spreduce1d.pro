@@ -78,7 +78,7 @@ andmask = 0 ; Free memory
 ;jj = where(chicclass EQ 'QSO')
 ;jj = where(chicclass EQ 'GALAXY')
 ;jj = jj[0:4] ; Trim to first few objects
-jj = lindgen(6)
+jj = lindgen(50)
 chicz = chicz[jj]
 chicclass = chicclass[jj]
 objflux = objflux[*,jj]
@@ -101,7 +101,7 @@ nobj=n_elements(jj)
    npoly = 3
    zmin = -0.01
    zmax = 0.6
-zmax = 0.25 ; ???
+;zmax = 0.25 ; ???
    pspace = 2
    nfind = 5
 
@@ -124,7 +124,7 @@ zmax = 0.25 ; ???
    npoly = 3
    zmin = -0.01
    zmax = 5.0
-zmax = 2.2 ; ???
+;zmax = 2.2 ; ???
    pspace = 4
    nfind = 5
 
