@@ -86,11 +86,6 @@ void recenter_fweight
    }
 }
 
-float rabs(float x) {
-	if(x < 0.0) return -x;
-	return x;
-}
-
 float **matrix_nr(int nrow, int ncol)
 /* allocate a float matrix with subscript range m[nrl..nrh][ncl..nch] */
 {
@@ -284,30 +279,6 @@ void FillABig(float **abig, float *x, float *xcen, int *xmin, int *xmax,
         }
 
 	free(atemp);
-}
-
-void CheckFibers(float **abig, int *xmin, int *xmax, int nTrace, 
-	          float *a, int *ia, float *invvar) 
-{
-
-	int i,k,m;
-	float total;
-
-	for (i=0;i<nTrace;i++) {
-	   total = 0.0;
-	   for (k=xmin[i],m=0; k<=xmax[i]; k++,m++)
-	      if (invvar[k] > 0.0) total += abig[i*2][m];
-	   if (total < 0.5 && ia[i*2+1]) {
-	      ia[i*2+1] = 0;
-	      a[i*2+1] = 0.0;
-        fprintf(stderr," Dropped # %d perturb term %f\n", i,total);
-	   }
-	   if (total < 0.2 && ia[i*2]) {
-	      ia[i*2] = 0;
-	      a[i*2] = 0.0;
-        fprintf(stderr," Dropped # %d gauss term %f\n", i,total);
-	   }
-	}   
 }
 
 void FillABig2(float **abig, float *x, float *xcen, int *xmin, int *xmax, 
@@ -682,7 +653,7 @@ void chebyshevFunc(float x, float *coeff, int nCoeff)
         int i;
         float twox;
 
-        if(nCoeff > 0) coeff[0] = 1;
+        if(nCoeff > 0) coeff[0] = 1.0;
         if(nCoeff > 1) coeff[1] = x;
 
         twox = 2.0*x;

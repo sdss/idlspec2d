@@ -127,7 +127,7 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
 
    result = call_external(getenv('IDL_EVIL')+'libspec2d.so','extract_row',$
     nx, x, float(fimage), float(invvar), float(ymodel), nTrace, nPoly, $
-    float(xcen), float(sigma), nCoeff, ma, ans, ia, p, covar, fscat)
+    float(xcen), float(sigma), profype, nCoeff, ma, ans, ia, p, covar, fscat)
     
 
    oback = ans[ma-nPoly:ma-1]

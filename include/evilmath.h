@@ -2,6 +2,8 @@
 #ifndef __INCevilmath_h
 #define __INCevilmath_h
 
+#include "export.h"
+
 void recenter_fweight
   (IDL_LONG    nx,
    float    *  imrow,
@@ -16,6 +18,9 @@ int fixedGauss2(float x[], float y[], float ymod[], float invvar[], float *xcen,
         int *xmin, int *xmax, float **abig);
 float **matrix_nr(int nrow, int ncol);
 void chebyshevFunc(float x, float *coeff, int nCoeff);
+void Profile(float *x, int ndat, float *y, float xcen, int xmin,
+                int xmax, float sigma);
+
 
 #endif /* __INCevilmath_h */
 
