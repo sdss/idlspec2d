@@ -353,7 +353,8 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
           finalmask=temppixmask, indisp=dispersion[*,indx], $
           newloglam=finalwave, newflux=bestflux, newivar=bestivar, $
           andmask=bestandmask, ormask=bestormask, newdisp=bestdispersion, $
-          nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep
+          nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep, $
+          maxiter=20, upper=3.0, lower=3.0
 
          finalflux[*,ifiber] = bestflux
          finalivar[*,ifiber] = bestivar

@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   combine1fiber, inloglam, objflux, [ objivar, finalmask=, indisp=, $
 ;    newloglam=, newflux=, newivar=, andmask=, ormask=, newdisp=, $
-;    nord=, binsz=, bkptbin=, maxsep= ]
+;    nord=, binsz=, bkptbin=, maxsep=, _EXTRA=KeywordsForReject ]
 ;
 ; INPUTS:
 ;   inloglam       - Wavelengths in log10-Angstroms [NPIX,NSPEC]
@@ -29,6 +29,7 @@
 ;   maxsep         - Maximum separation between input wavelengths.  The spline
 ;                    fit is split into pieces, with the breaks wherever this
 ;                    spacing is exceeded.  Default to 2.0 * BINSZ.
+;   _EXTRA         - Keywords for DJS_REJECT().
 ;
 ; OUTPUTS:
 ;
@@ -67,7 +68,8 @@ pro combine1fiber, inloglam, objflux, objivar, $
  finalmask=finalmask, indisp=indisp, $
  newloglam=newloglam, newflux=newflux, newivar=newivar, $
  andmask=andmask, ormask=ormask, newdisp=newdisp, $
- nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep
+ nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep, $
+ _EXTRA=KeywordsForReject
 
    ;----------
    ; Check that dimensions of inputs are valid
@@ -154,35 +156,23 @@ pro combine1fiber, inloglam, objflux, objivar, $
 if (n_elements(ss) LE 2) then begin
    bmask = bytarr(n_elements(ss)) ; All set to zero
 endif else begin
-;         if (keyword_set(objivar)) then begin
-;            fullbkpt = slatec_splinefit(inloglam[ss], objflux[ss], coeff, $
-;             nord=nord, eachgroup=1, maxiter=20, upper=3.0, lower=3.0, $
-;             bkspace=bkptbin, bkpt=bkpt, invvar=objivar[ss], mask=bmask, $
-;             /silent)
-;         endif else begin
-;            fullbkpt = slatec_splinefit(inloglam[ss], objflux[ss], coeff, $
-;             nord=nord, eachgroup=1, maxiter=20, upper=3.0, lower=3.0, $
-;             bkspace=bkptbin, bkpt=bkpt, mask=bmask, $
-;             /silent)
-;         endelse
+; SINCE THE /EACHGROUP KEYWORD NO LONGER EXISTS, WHAT REJECTION DO WE WANT???
           if (keyword_set(objivar)) then $
             sset = bspline_iterfit(inloglam[ss], objflux[ss], $
-              nord=nord, eachgroup=1, maxiter=20, upper=3.0, lower=3.0, $
+              nord=nord, $
               bkspace=bkptbin, bkpt=bkpt, invvar=objivar[ss], outmask=bmask, $
-              /silent) $
+              _EXTRA=KeywordsForReject) $
           else sset = bspline_iterfit(inloglam[ss], objflux[ss], $
-              nord=nord, eachgroup=1, maxiter=20, upper=3.0, lower=3.0, $
+              nord=nord, $
               bkspace=bkptbin, bkpt=bkpt, outmask=bmask, $
-              /silent) 
-
-
+              _EXTRA=KeywordsForReject)
 
 endelse
 
          inside = where(newloglam GE min(inloglam[ss])-EPS $
           AND newloglam LE max(inloglam[ss])+EPS, numinside)
 
-; Another work-around for the Slatec code... re-check FULLBKPT for failure ???
+; Another work-around for the Slatec code ???
          if (numinside EQ 0) then begin
             splog,'WARNING: No wavelengths inside breakpoints'
          endif else if (total(abs(sset.coeff)) EQ 0.0) then begin
@@ -190,7 +180,6 @@ endelse
          endif else begin
 
             newflux[inside] = bspline_valu(newloglam[inside], sset)
-;            newflux[inside] = slatec_bvalu(newloglam[inside], fullbkpt, coeff)
 
             splog, 'Masked ', fix(total(1-bmask)), ' of', $
              n_elements(bmask), ' pixels'
@@ -205,10 +194,11 @@ endelse
                ; The following would replace the original flux values
                ; of masked pixels with b-spline evaluations.
 ;               objflux[ss[ireplace]] = $
-;                slatec_bvalu(inloglam[ss[ireplace]],fullbkpt,coeff)
+;                bspline_valu(inloglam[ss[ireplace]], sset)
 
                ; Set the inverse variance of these pixels to zero.
-               objivar[ss[ireplace]] = 0.0
+               if (keyword_set(objivar)) then $
+                objivar[ss[ireplace]] = 0.0
 
                if (keyword_set(finalmask)) then $
                 finalmask[ss[ireplace]] = finalmask[ss[ireplace]] OR $
@@ -277,8 +267,7 @@ endelse
 
          endif
       endfor
-      splog, 'Medians:', string(format='(f7.2)', $
-       djs_median(objflux,1))
+;      splog, 'Medians:', djs_median(objflux,1)) ; ???
 
    endelse
 
