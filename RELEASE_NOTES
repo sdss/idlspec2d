@@ -55,6 +55,9 @@ READSPEC: Add support for reading the sky (SKY=) from HDU #6 of the spPlate
 SKYSUBTRACT: Fix possible crash condition, whereby the re-fit to the
         supersky is not done if the first fit failed and FULLBKPT does
         not exist (line 243).
+SPBIASGEN,SPFLATTEN2: In the output headers, start numbering the EXPID
+        keywords at EXPID01 instead of 00.  Also, drop MJD from that string.
+        This makes it consistent with the keywords in the spPlate files, for ex.
 SPCALIB: Change the way we spawn the gzip command.
 SPCOADD_FLUXED_FRAMES: Christy's code that now de-reddens the spectra;
         definitely do not use!
