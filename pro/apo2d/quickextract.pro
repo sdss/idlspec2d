@@ -158,9 +158,7 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
       snoise2 = 0
    endelse
 
-   rstruct = create_struct('FLAVOR', 'science', $
-                           'CAMERA', camname, $
-                           'SKYPERSEC', skylevel, $
+   rstruct = create_struct('SKYPERSEC', skylevel, $
 ;                           'MAG', plugsort.mag[icolor], $
                            'SN2VECTOR', meansn^2, $
                            'SN2', snoise2 )

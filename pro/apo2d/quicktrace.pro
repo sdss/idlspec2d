@@ -60,9 +60,7 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
    traceset2xy, tset, xx, yy
    xmin = min(yy)
    xmax = max(yy)
-   rstruct = create_struct('FLAVOR', 'flat', $
-                           'CAMERA', camname, $
-                           'NGOODFIBER', ngfiber, $
+   rstruct = create_struct('NGOODFIBER', ngfiber, $
                            'XMIN', xmin, $
                            'XMAX', xmax )
 

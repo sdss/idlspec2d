@@ -183,10 +183,12 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    splog, filename=splgfile, prelog=filename
 
    ;----------
-   ; Reduce file depending on its flavor: flat, arc, or science
+   ; Reduce file depending on its flavor: flat, arc, or science/smear
 
    rstruct = 0
-   case flavor of
+   myflavor = flavor
+   if (myflavor EQ 'smear') then myflavor = 'science
+   case myflavor of
       'flat' : begin
 ;         if (NOT flatexist AND plugexist) then $ ; Only reduce 1 flat/camera?
          if (plugexist) then $
@@ -269,6 +271,8 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
                               'PLATE', plate, $
                               'EXPNUM', filee, $
                               'EXPTIME', sxpar(hdr, 'EXPTIME'), $
+                              'FLAVOR', flavor, $
+                              'CAMERA', camnames[icam], $
                               'MST', mst, $
                               rstruct, $
                               'WARNINGS', warnings, $

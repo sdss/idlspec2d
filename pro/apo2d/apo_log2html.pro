@@ -350,7 +350,8 @@ pro apo_log2html, logfile, htmlfile
       ; Find all science exposures and collect them into one structure
 
       ; Now find all unique science exposure numbers for this plate
-      ii = where(plate EQ thisplate AND flavor EQ 'science')
+      ii = where(plate EQ thisplate $
+       AND (flavor EQ 'science' OR flavor EQ 'smear'))
       if (ii[0] NE -1) then begin
          allexp = expnum[ii[ uniq(expnum[ii], sort(expnum[ii])) ]]
          nexp = n_elements(allexp)
@@ -358,7 +359,8 @@ pro apo_log2html, logfile, htmlfile
          pscience = replicate(ptr_new(), ncams, nexp)
          for iexp=0, nexp-1 do begin
             for icam=0, ncams-1 do begin
-               jj = where(plate EQ thisplate AND flavor EQ 'science' $
+               jj = where(plate EQ thisplate $
+                AND (flavor EQ 'science' OR flavor EQ 'smear') $
                 AND camera EQ camnames[icam] AND expnum EQ allexp[iexp])
                if (jj[0] NE -1) then pscience[icam,iexp] = pstruct[jj[0]] $
                 else pscience[icam,iexp] = ptr_new()

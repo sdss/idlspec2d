@@ -60,9 +60,7 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius
    wavemin = 10^(min(yy))
    wavemax = 10^(max(yy))
    nlamps = (size(xpeak,/dimens))[1]
-   rstruct = create_struct('FLAVOR', 'arc', $
-                           'CAMERA', camname, $
-                           'WAVEMIN', wavemin, $
+   rstruct = create_struct('WAVEMIN', wavemin, $
                            'WAVEMAX', wavemax, $
                            'BESTCORR', bestcorr, $
                            'NLAMPS', nlamps )
