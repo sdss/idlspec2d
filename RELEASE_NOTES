@@ -7,6 +7,7 @@ PLOTSPEC: Bug fix to allow one to specify the output file name with PSFILE=.
 SDSSPROC: Fix silly bug trying to set QUALITY='excellent' when undefined.
 WRITE_UROS: Add Flatvec,Rnois to output files.
 
+export.h: Update this file to agree with the IDL 5.5beta for Mac OS X.
 opHdrFix.par: Fix the RA,DEC positions in the raw file headers to fix
            some remaining problems for PR #3009.  Specifically, the following
            plates were getting the wrong RA,DEC in the platelist files:
@@ -25,6 +26,8 @@ POLY_ITER: Change "LT" logic to "LE" to handle case where residual
            is 0 (e.g., a perfect fit)
 evilmake: Add "Darwin" (Mac OS X) as a possible platform.
            This doesn't work yet for Blanton's spheregroup code or Fortran.
+export.h: Update this file to agree with the IDL 5.5beta for Mac OS X.
+           (There are actually 5 copies of this file in this product!)
 
 -------------------------------------------------------------------------------
 v4_9_12 (Jun 26, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
