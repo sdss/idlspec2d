@@ -21,6 +21,7 @@
 ;
 ; OPTIONAL KEYWORDS:
 ;   hdr            - FITS header; if specified, then keywords are added.
+;                    The PLATE and MJD for the plot title are from this header.
 ;   plotfile       - If set, then write PostScript plot to this file.
 ;
 ; OUTPUTS:
