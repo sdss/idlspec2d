@@ -37,6 +37,9 @@
 ;   The files created are:
 ;     TOPDIR/PLATE/spPlan2d-mmmmm-pppp.par    - 2D plan file (could be several)
 ;
+;   If an output plan file already exists, this procedure will crash rather
+;   than overwrite that file.
+;
 ;   Note we assume Unix directory names and we SPAWN the Unix 'ls' command.
 ;
 ; EXAMPLES:
@@ -99,8 +102,14 @@ end
 
 pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
 
-   if (NOT keyword_set(rawdir)) then $
-    rawdir = '/usr/sdss/data05/spectro/rawdata'
+   if (NOT keyword_set(rawdir)) then begin
+      if ((findfile('/usr/sdss/data05/spectro/rawdata'))[0] NE '') then $
+       rawdir = '/usr/sdss/data05/spectro/rawdata' $
+      else if ((findfile('/home/schlegel/data/rawdata'))[0] NE '') then $
+       rawdir = '/home/schlegel/data/rawdata' $
+      else $
+       message, 'Must specify RAWDIR'
+   endif
    if (NOT keyword_set(astrolog)) then $
     astrolog = strmid(rawdir, 0, rstrpos(rawdir,'/')+1) + 'astrolog'
    if (NOT keyword_set(flatdir)) then flatdir = 'pixflat'
@@ -113,9 +122,7 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
    vers = idlspec2d_version()
    if (strpos(vers, 'NOCVS') EQ -1) then topdir = '2d_' + vers $
     else topdir = '2d_test'
-   splog, 'Setting output directory to ' + topdir
-   if (keyword_set(findfile(topdir))) then $
-    message, 'Output directory already exists ' + topdir
+   splog, 'Setting top-level of output directory to ' + topdir
 
    ; Create a list of the MJD directories (as strings)
    if (NOT keyword_set(mjd)) then begin
@@ -138,7 +145,9 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
       mjddir = mjdlist[imjd]
       inputdir = rawdir+'/'+mjddir
       plugdir = astrolog+'/'+mjddir
-      splog, 'Looking in directory', inputdir
+      splog, ''
+      splog, 'Data directory ', inputdir
+      splog, 'Astrolog directory ', plugdir
 
       ; Find all raw FITS files in this directory
       fullname = findfile(inputdir+'/*.fit', count=nfile)
@@ -209,7 +218,8 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
             if (pltid GT 0 AND pltid LT 9999) then $
              platestr = string(pltid,format='(i04.4)') $
              else platestr = '0000'
-            splog, camname='PLATE='+platestr
+            splog, camname=0, ''
+            splog, camname='Plate '+platestr
 
             ; Zero-out data structure
             oneseq = 0
@@ -225,17 +235,23 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
                        AND FLAVOR[ifile] NE 'arc' $
                        AND FLAVOR[ifile] NE 'science', ct)
             if (ct GT 0) then qdone[ifile[ignore]] = 1
-            for i=0, ct-1 do $
-             splog, 'Ignore file ', shortname[ifile[ignore[i]]], $
-              ' FLAVOR=', FLAVOR[ifile[ignore[i]]]
+            if (ct GT 0) then $
+             splog, 'Ignore ' + strtrim(string(ct),2) $
+              + ' frames with unusable flavor'
+;            for i=0, ct-1 do $
+;             splog, 'Ignore file ', shortname[ifile[ignore[i]]], $
+;              ' FLAVOR=', FLAVOR[ifile[ignore[i]]]
 
             ; Ignore short science exposures
             ignore = where(FLAVOR[ifile] EQ 'science' $
              AND EXPTIME[ifile] LT minexp, ct)
             if (ct GT 0) then qdone[ifile[ignore]] = 1
-            for i=0, ct-1 do $
-             splog, 'Ignore file ', shortname[ifile[ignore[i]]], $
-              ' EXPTIME=', EXPTIME[ifile[ignore[i]]]
+;            for i=0, ct-1 do $
+;             splog, 'Ignore file ', shortname[ifile[ignore[i]]], $
+;              ' EXPTIME=', EXPTIME[ifile[ignore[i]]]
+            if (ct GT 0) then $
+             splog, 'Ignore ' + strtrim(string(ct),2) $
+              + ' science frames with EXPTIME < ', minexp
 
             while (min(qdone[ifile]) EQ 0) do begin
                inotdone = where(qdone[ifile] EQ 0)
@@ -289,92 +305,99 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
                files = 'plPlugMapM-' + platestr + '*.par'
                files = findfile(filepath(files, root_dir=plugdir), count=ct)
                if (ct GT 1) then begin
-                  splog, 'Several plug map files found for plate number ' $
-                   + string(pltid)
+                  splog, 'WARNING: Several plug map files found for plate number ' $
+                   + platestr + ' in ' + plugdir
                   ; Use last one, because they should be ordered by MJD-rerun
-                  splog, 'Using plug map file ', files[ct-1]
-                  files = files[ct-1]
+                  files = files[ (sort(files))[ct-1]]
                   ct = 1
                endif
                if (ct EQ 1) then begin
-                  ; Take the only plugmap file
+                  ; Take the only plugmap file -- remove leading directory name
                   j = rstrpos(files[0], '/')
                   if (j EQ -1) then oneplug.name = files[0] $
                    else oneplug.name = strmid(files[0],j+1,strlen(files[0])-j)
+                  splog, 'Setting plug map file = ', oneplug.name
                endif
                if (ct EQ 0) then begin
-                  splog, 'No plug map files found for plate number ' $
-                   + string(pltid)
+                  splog, 'WARNING: No plug map files found for plate number ' $
+                   + platestr + ' in ' + plugdir
                endif
 
             endif
 
-         endfor
+            ;----------
+            ; Look for the pixel flats
 
-         ;----------
-         ; Look for the pixel flats
+            pixflats = spplan_create_pixflats()
+            for icam=0, ncam-1 do begin
+               files = 'pixflat-*-' + camnames[icam] + '.fits'
+               files = findfile(filepath(files, root_dir=flatdir), count=ct)
+               if (ct EQ 0) then begin
+                 files = 'pixflat-*-' + camnames[icam] + '.fits'
+                 files = findfile(filepath(files, root_dir=flatdir), count=ct)
+               endif
+               if (ct GT 1) then begin
+                  splog, 'Several pixel flats found for CAMERA= ' + camnames[icam]
+                  splog, 'Using pixel flat ', files[0]
+                  files = files[0]
+                  ct = 1
+               endif
+               if (ct EQ 1) then begin
+                  ; Take the only pixel flat
+                  j = rstrpos(files[0], '/')
+                  if (j EQ -1) then pixflats.name[icam] = files[0] $
+                   else pixflats.name[icam] = strmid(files[0],j+1,strlen(files[0])-j)
+               endif
+               if (ct EQ 0) then begin
+                  splog, 'No pixel flats found for CAMERA= ' + camnames[icam]
+               endif
 
-         pixflats = spplan_create_pixflats()
-         for icam=0, ncam-1 do begin
-            files = 'pixflat-*-' + camnames[icam] + '.fits'
-            files = findfile(filepath(files, root_dir=flatdir), count=ct)
-            if (ct EQ 0) then begin
-              files = 'pixflat-*-' + camnames[icam] + '.fits'
-              files = findfile(filepath(files, root_dir=flatdir), count=ct)
+            endfor
+
+            ;----------
+            ; Determine names of output files
+
+            outdir = topdir + '/' + platestr
+            if (strmid(flatdir,0,1) EQ '/') then fullflatdir = flatdir $
+             else fullflatdir = '../../' + flatdir
+            planfile = string( 'spPlan2d-', thismjd, '-', pltid, '.par', $
+             format='(a,i5.5,a,i4.4,a)' )
+            logfile = string( 'spDiag2d-', thismjd, '-', pltid, '.log', $
+             format='(a,i5.5,a,i4.4,a)' )
+            plotfile = string( 'spDiag2d-', thismjd, '-', pltid, '.ps', $
+             format='(a,i5.5,a,i4.4,a)' )
+
+            ;----------
+            ; Create keyword pairs for plan file
+
+            hdr = ''
+            hdr = [hdr, "MJD     " + string(thismjd) + "  # Modified Julian Date"]
+            hdr = [hdr, "inputDir    '" + inputdir + "'  # Directory for raw images"]
+            hdr = [hdr, "plugDir     '" + plugdir + "'  # Directory for plugmap files"]
+            hdr = [hdr, "flatDir     '" + fullflatdir + "'  # Directory for pixel flats"]
+            hdr = [hdr, "extractDir  '2d'       # Directory for 2d spectra"]
+            hdr = [hdr, "combineDir  '2dmerge'  # Directory for combined spectra"]
+            hdr = [hdr, "logfile     '" + logfile + "'  # Text log file"]
+            hdr = [hdr, "plotfile    '" + plotfile + "'  # PostScript log file"]
+
+            ; Only output plan file if some raw FITS data files exist
+            if (keyword_set(oneseq)) then begin
+               spawn, 'mkdir -p '+outdir
+               fullplanfile = filepath(planfile, root_dir=outdir)
+               if (keyword_set(findfile(fullplanfile))) then $
+                message, 'Output plan file already exists: '+planfile
+               splog, 'Writing plan file ', fullplanfile
+               yanny_write, fullplanfile, [ptr_new(pixflats), $
+                ptr_new(oneplug), ptr_new(oneseq)], hdr=hdr
             endif
-            if (ct GT 1) then begin
-               splog, 'Several pixel flats found for CAMERA= ' + camnames[icam]
-               splog, 'Using pixel flat ', files[0]
-               files = files[0]
-               ct = 1
-            endif
-            if (ct EQ 1) then begin
-               ; Take the only pixel flat
-               j = rstrpos(files[0], '/')
-               if (j EQ -1) then pixflats.name[icam] = files[0] $
-                else pixflats.name[icam] = strmid(files[0],j+1,strlen(files[0])-j)
-            endif
-            if (ct EQ 0) then begin
-               splog, 'No pixel flats found for CAMERA= ' + camnames[icam]
-            endif
-         endfor
 
-         ;----------
-         ; Determine names of output files
+         endfor ; End loop through sequence number (one plate)
 
-         outdir = topdir + '/' + platestr
-         if (strmid(flatdir,0,1) EQ '/') then fullflatdir = flatdir $
-          else fullflatdir = '../../' + flatdir
-         planfile = string( 'spPlan2d-', thismjd, '-', pltid, '.par', $
-          format='(a,i5.5,a,i4.4,a)' )
-         logfile = string( 'spDiag2d-', thismjd, '-', pltid, '.log', $
-          format='(a,i5.5,a,i4.4,a)' )
-         plotfile = string( 'spDiag2d-', thismjd, '-', pltid, '.ps', $
-          format='(a,i5.5,a,i4.4,a)' )
-
-         ;----------
-         ; Create keyword pairs for plan file
-
-         hdr = ''
-         hdr = [hdr, "MJD     " + string(thismjd) + "  # Modified Julian Date"]
-         hdr = [hdr, "inputDir    '" + inputdir + "'  # Directory for raw images"]
-         hdr = [hdr, "plugDir     '" + plugdir + "'  # Directory for plugmap files"]
-         hdr = [hdr, "flatDir     '" + fullflatdir + "'  # Directory for pixel flats"]
-         hdr = [hdr, "extractDir  '2d'       # Directory for 2d spectra"]
-         hdr = [hdr, "combineDir  '2dmerge'  # Directory for combined spectra"]
-         hdr = [hdr, "logfile     '" + logfile + "'  # Text log file"]
-         hdr = [hdr, "plotfile    '" + plotfile + "'  # PostScript log file"]
-
-         ; Only output plan file if some raw FITS data files exist
-         if (keyword_set(oneseq)) then begin
-            spawn, 'mkdir -p '+outdir
-            yanny_write, outdir+'/'+planfile, $
-             [ptr_new(pixflats), ptr_new(oneplug), ptr_new(oneseq)], hdr=hdr
-         endif
+         splog, camname=0
 
       endif
-      splog, camname=0
-   endfor
+
+   endfor ; End loop through input directory names (one MJD)
 
    return
 end
