@@ -57,7 +57,7 @@ function reject_science, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix
          ffs_sum = fix( total( fix( str_sep(ffs,' ') ) ) )
          if (ffs_sum GT 0) then begin
             qbad = 1
-            splog, 'WARNING: Reject science: Flat-field screens are closed!'
+            splog, 'ABORT: Reject science: Flat-field screens are closed!'
          endif
       endif
 
@@ -65,28 +65,28 @@ function reject_science, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix
       ne_sum = fix( total( fix( str_sep(lamp_ne,' ') ) ) )
       if (ne_sum GT 0) then begin
          qbad = 1
-         splog, 'WARNING: Reject science: Ne lamps turned on!'
+         splog, 'ABORT: Reject science: Ne lamps turned on!'
       endif
 
       lamp_hgcd = sxpar(hdr, 'HGCD')
       hgcd_sum = fix( total( fix( str_sep(lamp_hgcd,' ') ) ) )
       if (hgcd_sum GT 0) then begin
          qbad = 1
-         splog, 'WARNING: Reject science: HgCd lamps turned on!'
+         splog, 'ABORT: Reject science: HgCd lamps turned on!'
       endif
 
       lamp_ff = sxpar(hdr, 'FF')
       ff_sum = fix( total( fix( str_sep(lamp_ff,' ') ) ) )
       if (ff_sum GT 0) then begin
          qbad = 1
-         splog, 'WARNING: Reject science: Flat-field lamps turned on!'
+         splog, 'ABORT: Reject science: Flat-field lamps turned on!'
       endif
    endif
 
    if (keyword_set(fbadpix)) then begin
       if (fbadpix GT 0.10) then begin
          qbad = 1
-         splog, 'WARNING: Reject science: ' $
+         splog, 'ABORT: Reject science: ' $
           + string(format='(i3)', fix(fbadpix*100)) + '% bad pixels'
       endif
    endif
@@ -94,7 +94,7 @@ function reject_science, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix
    if (keyword_set(nsatrow)) then begin
       if (nsatrow GT 100) then begin
          qbad = 1
-         splog, 'WARNING: Reject science: ' $
+         splog, 'ABORT: Reject science: ' $
           + string(format='(i4)', nsatrow) + ' saturated rows'
       endif
    endif
@@ -103,7 +103,7 @@ function reject_science, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix
    percent80 = img[ isort[ 0.25 * n_elements(img) ] ]
    if (percent80 GT 1000.) then begin
       qbad = 1
-      splog, 'WARNING: Reject science as too bright: 25-th-percentile =' $
+      splog, 'ABORT: Reject science as too bright: 25-th-percentile =' $
        + string(percent80)
    endif
 

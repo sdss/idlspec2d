@@ -210,11 +210,12 @@ pro spreduce, flatname, arcname, objname, $
 
       if (qbadsci) then begin
 
-         splog, 'ABORT: Science exposure is bad (saturated?)'
+         ; We will have already output an abort message in the REJECT_SCIENCE() proc.
+         splog, 'Skipping reduction of this bad science exposure'
 
       endif else if (NOT keyword_set(bestflat)) then begin
 
-         splog, 'ABORT: No good flats (saturated?)'
+         splog, 'ABORT: No good flats'
 
       endif else begin
 
