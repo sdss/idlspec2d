@@ -170,7 +170,11 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
       if (NOT keyword_set(tempflux)) then $
        message, 'Error reading file ' + filenames[ifile]
 
-      if (ifile EQ 0) then hdr0 = hdr
+      if (ifile EQ 0) then $
+       hdrarr = ptr_new(hdr) $
+      else $
+       hdrarr = [hdrarr, ptr_new(hdr)]
+
       thismjd = sxpar(hdr, 'MJD')
       if (NOT keyword_set(mjdlist)) then mjdlist = thismjd $
        else mjdlist = [mjdlist, thismjd]
@@ -450,7 +454,7 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
 
    ; Modify the 1st file's header to use for the combined plate header.
 
-   hdr = hdr0
+   hdr = *hdrarr[0]
 
    platesn, finalflux, finalivar, finalandmask, finalplugmap, finalwave, $
      hdr=hdr, plotfile=djs_filepath(plotsnfile, root_dir=combinedir), $
@@ -477,6 +481,22 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
    sxdelpar, hdr, 'NBLEAD'
    sxdelpar, hdr, 'PIXFLAT'
    sxdelpar, hdr, 'FRAMESN2'
+
+   ;----------
+   ; Average together some of the fields from the individual headers.
+
+   cardname = [ 'AZ', 'ALT', 'TAI', 'WTIME', 'AIRTEMP', 'DEWPOINT', $
+    'DEWDEP', 'DUSTA', 'DUSTB', 'DUSTC', 'DUSTD', 'GUSTS', 'HUMIDITY', $
+    'HUMIDOUT', 'PRESSURE', 'WINDD', 'WINDS', 'TEMP01', 'TEMP02', $
+    'TEMP03', 'TEMP04', 'HELIO_RV', 'SEEING20', 'SEEING50', 'SEEING80', $
+    'RMSOFF20', 'RMSOFF50', 'RMSOFF80' ]
+   sxcombinepar, hdrarr, cardname, hdr, func='average'
+
+   cardname = 'TAI-BEG'
+   sxcombinepar, hdrarr, cardname, hdr, func='min'
+
+   cardname = 'TAI-END'
+   sxcombinepar, hdrarr, cardname, hdr, func='max'
 
    ;----------
    ; Use the MJD passed as a keyword, which will typically be for the most
