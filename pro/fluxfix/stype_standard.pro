@@ -234,17 +234,31 @@ function stype_standard, loglam, nflux, ninvvar, plugmap, outfile = outfile, $
   ; structure  
 
   for iobj=0, nsphoto-1 do begin
-    fiber = stdstar[iobj] 
+    fiber_struct = stdstar[iobj] 
    
-    rkwave = kwave * (1 + stdstar[iobj].v_off/cspeed) 
+    rkwave = kwave * (1 + fiber_struct.v_off/cspeed) 
     rkflux = fltarr(n_elements(wave), nk)
     for kobj = 0, nk - 1 do $
        rkflux[*,kobj] = interpol(nkflux[*,kobj], rkwave, wave)
 
     kurucz_match, wave, nflux[*,iobj], ninvvar[*,iobj], $
-                  rkflux, kindx, fiber, plottitle = outfile
-     
-    stdstar[iobj] = fiber
+                  rkflux, kindx, fiber_struct, plottitle = outfile
+
+    ;------------------
+    ; Determine reddened model magnitudes
+
+    A_v = 3.1 * fiber_struct.e_bv_sfd
+    a_odonnell = ext_odonnell(rkwave, 3.1)
+ 
+    model_index = (where(kindx.model eq fiber_struct.model))[0]
+    red_kflux = kflux[*,model_index] * exp(-1 * a_odonnell * A_v / 1.086)
+
+    fluxfnu = red_kflux * rkwave^2 / 2.99792e18
+    fthru=filter_thru(fluxfnu, waveimg=rkwave, $
+                      filter_prefix = 'sdss_jun2001', /toair)
+    fiber_struct.red_model_mag = -2.5*alog10(fthru) - 48.6
+ 
+    stdstar[iobj] = fiber_struct
   endfor 
 
   ;--------------
