@@ -3,7 +3,6 @@
 ;                or spectro-2, but not both!
 ;   adderr     - Additional error to add to the formal errors, as a
 ;                fraction of the flux; default to 0.03 (3 per cent).
-; OUTPUT A STRUCTURE WITH THE BEST_FIT KURUCZ MODELS!!!???
 ;------------------------------------------------------------------------------
 ; Read the Kurucz models at the specified log-lambda and resolution
 ; ISELECT - If set, then only return these model numbers.
@@ -314,12 +313,36 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1
       chivec[imodel] = total(chiarr[imodel,*])
    endfor
 
+   ;----------
    ; Return the best-fit model
+
    minchi2 = min(chivec, ibest)
    dof = total(sqivar NE 0)
-   splog, 'Best-fit chi2/DOF = ', minchi2/(dof>1)
+   splog, 'Best-fit total chi2/DOF = ', minchi2/(dof>1)
    bestflux = modflux[*,*,ibest]
-   kindx1 = create_struct(kindx[ibest], 'IMODEL', ibest, 'Z', zpeak)
+
+   ;----------
+   ; Compute the chi^2 just around the stellar absorp. lines
+   ; for the best-fit model star
+
+   linesqivar = sqivar * spflux_masklines(loglam, hwidth=12e-4, /stellar)
+   linechi2 = 0.
+   for ispec=0L, nspec-1 do begin
+      thismodel = spflux_medianfilt(loglam, modflux[*,ispec,ibest], $
+       width=filtsz, /reflect)
+      linechi2 = linechi2 + computechi2(medflux[*,ispec], $
+       linesqivar[*,ispec], thismodel)
+   endfor
+   linedof = total(linesqivar NE 0)
+   splog, 'Best-fit line chi2/DOF = ', linechi2/(linedof>1)
+
+   kindx1 = create_struct(kindx[ibest], $
+    'IMODEL', ibest, $
+    'Z', zpeak, $
+    'CHI2', minchi2, $
+    'DOF', dof, $
+    'LINECHI2', linechi2, $
+    'LINEDOF', linedof)
 
    ;----------
    ; Plot the filtered object spectrum, overplotting the best-fit Kurucz model
@@ -342,8 +365,10 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1
       djs_oplot, 10^loglam[*,iplot], medmodel[*,iplot], color='red'
    endif
    xyouts, 3860, 1.25, kindx1.model, charsize=csize
-   djs_xyouts, 4000, 0.2, $
-    string(minchi2/dof, format='("\chi^2/DOF=",f5.2)'), charsize=csize
+   djs_xyouts, 4000, 0.3, charsize=csize, $
+    string(minchi2/(dof>1), format='("Total \chi^2/DOF=",f5.2)')
+   djs_xyouts, 4000, 0.2, charsize=csize, $
+    string(linechi2/(linedof>1), format='("Lines \chi^2/DOF=",f5.2)')
    djs_xyouts, 3860, 0.1, string(kindx1.feh, kindx1.teff, kindx1.g, $
     zpeak*cspeed, $
     format='("Fe/H=", f4.1, "  T_{eff}=", f6.0, "  g=", f3.1, "  cz=",f5.0)'), $
@@ -567,9 +592,11 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
 
    camname = strarr(nfile)
    expnum = lonarr(nfile)
+   spectroid = lonarr(nfile)
    for ifile=0, nfile-1 do begin
       spframe_read, objname[ifile], hdr=hdr
       camname[ifile] = strtrim(sxpar(hdr, 'CAMERAS'),2)
+      spectroid[ifile] = strmid(camname[ifile],1,1)
       expnum[ifile] = sxpar(hdr, 'EXPOSURE')
    endfor
 
@@ -591,6 +618,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
    ; from the calibObj files !!!???
 
    plateid = sxpar(hdr, 'PLATEID')
+   thismjd = sxpar(hdr, 'MJD')
    tsobj = plug2tsobj(plateid, plugmap=plugmap)
    plugmap[iphoto].mag = 22.5 - 2.5 * alog10(tsobj[iphoto].psfflux)
 
@@ -641,34 +669,47 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
    !p.multi = [0,2,3]
    modflux = 0 * objflux
    for ip=0L, nphoto-1 do begin
+      ; Find the best-fit model -- evaluated for each exposure [NPIX,NEXP]
       thismodel = spflux_bestmodel(loglam[*,*,ip], objflux[*,*,ip], $
        objivar[*,*,ip], dispimg[*,*,ip], kindx=thisindx)
 
-      ; The returned models are redshifted, but not fluxed or
-      ; reddening-corrected.  Do that now...
-      extcurve = ext_odonnell(10.^loglam[*,*,ip], 3.1)
-      thismodel = thismodel * 10.^(-extcurve * 3.1 * ebv[ip] / 2.5)
-
-      ; Now integrate the apparent magnitude for this spectrum,
-      ; over the wavelength range [3006,10960] Ang.
-      ; The units of FTHRU are such that m = -2.5*alog10(FTHRU) + (48.6-2.5*17)
+      ; Also evaluate this model over a big wavelength range [3006,10960] Ang.
       tmploglam = 3.4780d0 + lindgen(5620) * 1.d-4
       tmpdispimg = 0 * tmploglam + 1.0 ; arbitrarily select this resolution
       tmpflux = spflux_read_kurucz(tmploglam, tmpdispimg, $
        iselect=thisindx.imodel)
+
+      ; The returned models are redshifted, but not fluxed or
+      ; reddening-corrected.  Do that now...
+      extcurve = ext_odonnell(10.^loglam[*,*,ip], 3.1)
+      thismodel = thismodel * extcurve
+      extcurve = ext_odonnell(10.^tmploglam, 3.1)
+      tmpflux = tmpflux * 10.^(-extcurve * 3.1 * ebv[ip] / 2.5)
+
+      ; Now integrate the apparent magnitude for this spectrum,
+      ; The units of FTHRU are such that m = -2.5*alog10(FTHRU) + (48.6-2.5*17)
       wavevec = 10.d0^tmploglam
       flambda2fnu = wavevec^2 / 2.99792e18
       fthru = filter_thru(tmpflux * flambda2fnu, waveimg=wavevec, /toair)
       thismag = -2.5 * alog10(fthru) - (48.6-2.5*17)
 
-      thismodel = thismodel $
-;       * 10.^((thisindx.mag[2] - plugmap[iphoto[ip]].mag[2])/2.5) ; ???
-       * 10.^((thismag[2] - plugmap[iphoto[ip]].mag[2])/2.5)
+;      scalefac = 10.^((thisindx.mag[2] - plugmap[iphoto[ip]].mag[2])/2.5) ; ???
+      scalefac = 10.^((thismag[2] - plugmap[iphoto[ip]].mag[2])/2.5)
+      thismodel = thismodel * scalefac
 
       modflux[*,*,ip] = thismodel
-      if (ip EQ 0) then kindx = replicate(thisindx, nphoto)
-      kindx[ip] = thisindx
-
+      if (ip EQ 0) then kindx = replicate( create_struct( $
+       'PLATE', 0L, $
+       'MJD', 0L, $
+       'FIBERID', 0L, $
+       'QGOOD', 0, $
+       thisindx, $
+       'MODELFLUX', fltarr(npix)), $
+       nphoto)
+      copy_struct_inx, thisindx, kindx, index_to=ip
+      kindx[ip].plate = plateid
+      kindx[ip].mjd = thismjd
+      kindx[ip].fiberid = iphoto[ip] + 1 + 320 * (spectroid[0] - 1)
    endfor
    !p.multi = 0
 
@@ -677,13 +718,28 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
 
    qfinal = bytarr(nphoto) + 1B
 
-   iblue = where(strmatch(camname,'b*'), nblue)
-   ired = where(strmatch(camname,'r*'), nred)
+   ; Start with a rejection of any stars with a bad chi^2/DOF either
+   ; in the full spectrum or in just the absorp. line regions.
+   ; Do not reject more than half the stars.
+   chi2limit = 2.0 ; ???
+   chi2list = (kindx.chi2 / (kindx.dof>1)) $
+    > (kindx.linechi2 / (kindx.linedof>1))
+   chi2list = chi2list + 100 * (kindx.linedof LT 10) ; Bad if < 10 pixels
+   while (max(chi2list) GT chi2limit AND total(qfinal) GT nphoto/2.) do begin
+      junk = max(chi2list, iworst)
+      splog, 'Rejecting std star in fiber = ', iphoto[iworst] $
+       + 320 * strmatch(camname[0],'*2') + 1
+      chi2list[iworst] = 0
+      qfinal[iworst] = 0B
+   endwhile
 
    ;----------
    ; Loop over each exposure, and compute the PCA fit to MRATIO
    ; using outlier-rejection.
    ; Iterate, rejecting entire stars if they are terrible fits.
+
+   iblue = where(strmatch(camname,'b*'), nblue)
+   ired = where(strmatch(camname,'r*'), nred)
 
    qdone = 0L
    while (qdone EQ 0) do begin
@@ -763,7 +819,8 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
          qdone = 1B ; No other stars to reject
       endelse
    endwhile
-; SHOULD ALSO REJECT BASED UPON CHI^2 W.R.T. KURUCZ MODELS/ABSORP. LINES!!!???
+
+   kindx[ifinal].qgood = 1
    splog, 'Rejected ', nphoto-nfinal, ' of ', nphoto, ' std stars'
 
    ;----------
@@ -869,11 +926,15 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       ;----------
       ; Write the output file
 
+      ; Put the Kurucz models for this exposure in the output structure
+      kindx.modelflux = reform(modflux[*,ifile,*], npix, nphoto)
+
       calibfile = djs_filepath(string(camname[ifile], expnum[ifile], $
        format='("spFluxcalib-", a2, "-", i8.8, ".fits")'), $
        root_dir=combinedir)
       mwrfits, calibimg, calibfile, hdr, /create
       mwrfits, calibset, calibfile
+      mwrfits, kindx, calibfile
    endfor
 
    return
