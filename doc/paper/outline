@@ -61,12 +61,15 @@ Flux-calibration and flux-correction vectors (DJS)
     * Plot throughput vs. time at mean wavelength of CCD
   * Test: Spectro-photometry of synthetic mags vs. photo mags
   * Plot: Mean spectra vs. mean best-fit models in observed wavelength
+  * Plot: Test of spectro-photometry using WD models
 
 Co-adding spectra (DJS + SB)
   Re-sampling with B-splines, retaining variance maps too
   Deal w/variable PSF (not)
   More outlier rejection
   Demonstrate no residual from dichroic
+
+Application of these methods to other pipelines: DEEP-2, etc.
 
 Appendix: B-splines (SB)
 
