@@ -132,8 +132,11 @@ In idlutils:
 ASINH2: Better asinh (from Blanton for PROFINTERP procedure).
 BSPLINE_ITERFIT: Always reset OUTMASK so that the input value does not matter.
             Set YFIT to all zeros in the case that the fit fails.
-PROFINTERP: Bug fixes, and use ASINH2.
+FIT_SERSIC,PROFINTERP,SERSIC: Bug fixes, and use ASINH2.
+MJD2DATELIST: New proc to construct a list of MJDs and date strings
+            spanning a range of MJDs (useful for plot limits).
 RADEC_TO_FIELDS: Configurable option allfieldfile.
+SEEING_RADIAL: New proc.
 SXPAR: Landsman fixed to handle CRVALn of different type properly
 YANNY_READ: If reading a Yanny file aborts, then log the file name,
             the line number of the failure, and the line itself.
