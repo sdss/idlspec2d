@@ -99,7 +99,7 @@ function trace_crude, fimage, invvar, xstart=xstart, ystart=ystart, $
       invtemp = convol(invtemp, kernal, /edge_truncate)
 
       ; Look for pixels with infinite errors - replace with original values
-      ibad = where(invtemp NE 0, nbad)
+      ibad = where(invtemp EQ 0, nbad)
       if (nbad GT 0) then begin
          invtemp[ibad] = 1
          imgconv[ibad] = imgtemp[ibad]
