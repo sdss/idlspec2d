@@ -314,7 +314,7 @@ pro platelist, infile, plist=plist, create=create, $
                plist[ifile].statuscombine = 'FAILED'
             endif else begin
                ; Case where this combine log file isn't completed
-               plist[ifile].statuscombine = 'Running'
+               plist[ifile].statuscombine = 'RUNNING'
             endelse
          endif else begin
             ; Case where this combine log file missing
