@@ -110,18 +110,17 @@ function telluric_corr,flux, fluxivar, wset, plugsort, $
        twave2: 8240., $
        cwave1: [8000., 8225., 0], $
        cwave2: [8105., 8325., 0] }
-      tellbands5 = { TELLBAND, $
-       twave1: 8530., $
-       twave2: 8865., $
-       cwave1: [8490., 8865., 0], $
-       cwave2: [8530., 8905., 0] }
-      tellbands6 = { TELLBAND, $
-       twave1: 8644., $
-       twave2: 8697., $
-       cwave1: [8604., 8697., 0], $
-       cwave2: [8644., 8737., 0] }
-      tellbands = [tellbands1, tellbands2, tellbands3, tellbands4, $
-       tellbands5, tellbands6]
+;      tellbands5 = { TELLBAND, $
+;       twave1: 8530., $
+;       twave2: 8865., $
+;       cwave1: [8490., 8865., 0], $
+;       cwave2: [8530., 8905., 0] }
+;      tellbands6 = { TELLBAND, $
+;       twave1: 8644., $
+;       twave2: 8697., $
+;       cwave1: [8604., 8697., 0], $
+;       cwave2: [8644., 8737., 0] }
+      tellbands = [tellbands1, tellbands2, tellbands3, tellbands4]
    endif
 
    ;----------
