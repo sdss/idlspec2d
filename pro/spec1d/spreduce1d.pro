@@ -537,6 +537,64 @@ ormask = 0 ; Free memory
     outfile=zlinefile, zline=zline, doplot=doplot, debug=debug
 
    ;----------
+   ; Classify galaxies and QSO's based upon emission lines:
+   ;   log10(OIII/Hbeta) > 0.7 - 1.2 * (log10(NII/Halpha) - 0.4)  AGN
+   ;                     <                                        STARFORMING
+   ; If the H_alpha E.W. > 500 Ang, then upgrade STARFORMING -> STARBURST.
+   ; If any galaxies or quasars have lines detected at the 10-sigma level
+   ;   with sigmas > 200 km/sec at the 5-sigma level, call them BROADLINE.
+
+   nline = (size(zline, /dimens))[0]
+   i5007 = where(strtrim(zline.linename,2) EQ '[O_III] 5007')
+   ihbeta = where(strtrim(zline.linename,2) EQ 'H_beta')
+   ihalpha = where(strtrim(zline.linename,2) EQ 'H_alpha')
+   i6583 = where(strtrim(zline.linename,2) EQ '[N_II] 6583')
+
+   q_good = zline[i5007].linearea_err GT 0 $
+    AND zline[ihbeta].linearea_err GT 0 $
+    AND zline[ihalpha].linearea_err GT 0 $
+    AND zline[i6583].linearea_err GT 0
+   q_good = q_good $
+    AND  zline[i5007].linearea GT 3 * zline[i5007].linearea_err $
+    AND zline[ihbeta].linearea GT 3 * zline[ihbeta].linearea_err $
+    AND zline[ihalpha].linearea GT 3 * zline[ihalpha].linearea_err $
+    AND zline[i6583].linearea GT 3 * zline[i6583].linearea_err
+   q_agn = zline[i5007].linearea * (zline[i6583].linearea)^(1.2) $
+    GT 10^(0.22) * zline[ihbeta].linearea * (zline[ihalpha].linearea)^(1.2)
+   q_obj = strtrim((res_all[0,*].class)[*],2) EQ 'GALAXY' $
+    OR strtrim((res_all[0,*].class)[*],2) EQ 'QSO'
+   q_stronghalpha = zline[ihalpha].lineew GT 50 $
+    AND zline[ihalpha].lineew_err GT 0 $
+    AND zline[ihalpha].lineew GT 3 * zline[ihalpha].lineew_err
+
+   ; Find the maximum of (sigma - 5*sigma_err) for all lines of each object
+   ; Insist that the lines be detected at the 10-sigma level.
+   maxsigma = fltarr(nobj)
+   for iobj=0, nobj-1 do $
+    for iline=0, nline-1 do $
+     if (strtrim(zline[iline,iobj].linename,2) NE 'Ly_alpha' $
+      AND zline[iline,iobj].linearea GT 10*zline[iline,iobj].linearea_err $
+      AND zline[iline,iobj].linesigma_err GT 0) then $
+       maxsigma[iobj] = maxsigma[iobj] > $
+        (zline[iline,iobj].linesigma - 5*zline[iline,iobj].linesigma_err)
+
+   indx = where(q_good AND q_obj AND q_agn)
+   if (indx[0] NE -1) then res_all[0,indx].subclass $
+    = strtrim(res_all[0,indx].subclass + ' AGN', 2)
+
+   indx = where(q_good AND q_obj AND (q_agn EQ 0) AND (q_stronghalpha EQ 0))
+   if (indx[0] NE -1) then res_all[0,indx].subclass $
+    = strtrim(res_all[0,indx].subclass + ' STARFORMING', 2)
+
+   indx = where(q_good AND q_obj AND (q_agn EQ 0) AND (q_stronghalpha EQ 1))
+   if (indx[0] NE -1) then res_all[0,indx].subclass $
+    = strtrim(res_all[0,indx].subclass + ' STARBURST', 2)
+
+   indx = where(q_obj AND maxsigma GT 200.)
+   if (indx[0] NE -1) then res_all[0,indx].subclass $
+    = strtrim(res_all[0,indx].subclass + ' BROADLINE', 2)
+
+   ;----------
    ; Find the best-fit Elodie star for all objects classified as stars
 
    fitindx = where(strtrim(res_all[0,*].class,2) EQ 'STAR', nfit)
