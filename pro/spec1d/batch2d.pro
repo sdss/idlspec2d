@@ -20,6 +20,7 @@ function batch2d_rawfiles, planfile, outfile=outfile
    thismjd = yanny_par(hdr, 'MJD')
    logfile = yanny_par(hdr, 'logfile')
    plotfile = yanny_par(hdr, 'plotfile')
+   plotsnfile = yanny_par(hdr, 'plotsnfile')
    for ii=0, n_elements(pp)-1 do begin
       sname = tag_names(*pp[ii], /structure_name)
       if (sname EQ 'SPEXP') then begin
@@ -45,6 +46,7 @@ function batch2d_rawfiles, planfile, outfile=outfile
 
    outfile = [ djs_filepath(logfile, root_dir=extractdir), $
                djs_filepath(plotfile, root_dir=extractdir), $
+               djs_filepath(plotsnfile, root_dir=extractdir), $
                newnames ]
 
    yanny_free, pp
