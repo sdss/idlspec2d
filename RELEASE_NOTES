@@ -6,6 +6,8 @@ APOHEADER: Use SDSSHEAD() instead of HEADFITS() to read the headers, such
            Also fix so that this proc works if both a ".fit" and ".fit.gz"
            file exist on disk.
            Also list the QUALITY keyword.
+GUIDERMOVIE,GUIDERMPEG: New procs for looking at the spectroscopic guider
+           images for a night.
 LOGSHEET: Do not include both uncompressed and compressed files in a listing.
            Remove the INDIR option, and add MJD and CAMERA keywords.
 PLATEMERGE: Include logic for setting the SPECPRIMARY field in the outputs.
