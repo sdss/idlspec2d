@@ -1,3 +1,9 @@
+v4_9_2 (Feb ??, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
+
+
+SPADD_GUIDERINFO: Append seeing information in header from gudierMon.par
+GET_TAI : A short proc to estimate, beginning, mid-point, and ending
+           timestamps for sdR exposures.
 
 -------------------------------------------------------------------------------
 v4_9_1 (Jan 24, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
