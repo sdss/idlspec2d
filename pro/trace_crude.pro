@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   xset = trace_crude( fimage, invvar, [xstart=, ystart=, radius=, yset=, $
-;    nave=, nmed=, maxerr=, maxshift=, maxshift0=, xerr= ] )
+;    nave=, nmed=, thresh=, maxerr=, maxshift=, maxshift0=, xerr= ] )
 ;
 ; INPUTS:
 ;   fimage     - Image
@@ -26,6 +26,8 @@
 ;                default to 1
 ;   nave       - Averaging size down columns before performing trace;
 ;                default to 5
+;   thresh     - Threshold for initial peak finding; if not set, then use
+;                1.0 times the median of the row(s) used for the initial peaks.
 ;   maxerr     - Maximum error in centroid allowed for valid recentering;
 ;                default to 0.2
 ;   maxshift   - Maximum shift in centroid allowed for valid recentering;
@@ -56,8 +58,8 @@
 ;-
 ;------------------------------------------------------------------------------
 function trace_crude, fimage, invvar, xstart=xstart, ystart=ystart, $
- radius=radius, yset=yset, nave=nave, nmed=nmed, maxerr=maxerr, $
- maxshift=maxshift, maxshift0=maxshift0, xerr=xerr
+ radius=radius, yset=yset, nave=nave, nmed=nmed, thresh=thresh, $
+ maxerr=maxerr, maxshift=maxshift, maxshift0=maxshift0, xerr=xerr
 
    ; Need 1 parameter
    if (N_params() LT 1) then begin
@@ -115,18 +117,20 @@ function trace_crude, fimage, invvar, xstart=xstart, ystart=ystart, $
       imrow = $
        imgtemp[*,long(ystart[0]-0.5*(nsum-1)):long(ystart[0]+0.5*(nsum-1))]
       imrow = rebin(imrow, nx, 1)
-      medval = median(imrow)
+
+      if (keyword_set(thresh)) then mthresh = thresh $
+       else mthresh = median(imrow)
 
       ; Boxcar smooth along X
       imrow = smooth(imrow,3)
 
-      ; Find all local peaks that are also above 1.0 times the median
+      ; Find all local peaks that are also above THESH times the median
 ;      xstart = where( imrow[1:nx-2] GT imrow[0:nx-3] $
 ;                  AND imrow[1:nx-2] GT imrow[2:nx-1] $
 ;                  AND imrow[1:nx-2] GT 1.0*medval) + 1
       rderiv = imrow[1:nx-1] - imrow[0:nx-2]
       izero = where( rderiv[0:nx-3] GT 0 AND rderiv[1:nx-2] LE 0 $
-       AND imrow[1:nx-2] GT 1.0*medval)
+       AND imrow[1:nx-2] GT mthresh)
       xstart = izero + 0.5 + rderiv[izero] / (rderiv[izero] - rderiv[izero+1])
    endif
 
