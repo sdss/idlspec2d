@@ -25,18 +25,36 @@ pro fillplugmap, plugmap, hdr
 return
 end
 
-pro readidlout, flux, sig=sig, wave=wave, expres=expres, plugmap=plugmap
+pro readidlout, flux, sig=sig, wave=wave, expres=expres, plugmap=plugmap, $
+       onlyplug=onlyplug, files=files
 
       if (size(expres,/tname) EQ 'UNDEFINED') then expres = 'spMerge2d*fits'
 
-      files = findfile(expres)
-      if (files[0] EQ '') then begin
-        print, 'no files found'
-        return
+      if (NOT keyword_set(files)) then begin
+        files = findfile(expres)
+        if (files[0] EQ '') then begin
+;        print, 'no files found, trying another way'
+          check = str_sep(expres, '*')
+          ncheck = n_elements(check)
+          allfiles = findfile('')
+          nfiles = n_elements(allfiles)
+          pos = lonarr(ncheck, nfiles)
+          for i=0, ncheck -1 do pos[i,*] = strpos(allfiles, check[i])
+          if (ncheck GE 2) then $
+            diff = (pos[1:ncheck-1,*] - pos[0:ncheck-2,*]) $
+                  *(pos[0:ncheck-2,*] NE -1) $
+          else diff = pos
+
+          goodfiles = where(total(diff LE 0,1) EQ 0)
+          if (goodfiles[0] EQ -1) then begin
+            print, 'This way did not work either, returning'
+            return
+          endif else files = allfiles[goodfiles]
+        endif
       endif
  
       if (ARG_PRESENT(plugmap)) then begin
-         shortplugmap =  { $
+         shortplugmap =  { HDRPLUG,  $
            OBJID         :  intarr(5), $
            RA            :  0.0d, $  
            DEC           :  0.0d, $ 
@@ -61,19 +79,26 @@ pro readidlout, flux, sig=sig, wave=wave, expres=expres, plugmap=plugmap
       npix = lonarr(nfiles)
       disp = dblarr(2,nfiles)
 
+      if (ARG_PRESENT(plugmap)) then $
+         plugmap = replicate(shortplugmap,nfiles)
+
       for i=0,nfiles - 1 do begin
         hdr = headfits(files[i])
         npix[i] = sxpar(hdr, 'NAXIS1')
         disp[0,i] = sxpar(hdr, 'COEFF0')
         disp[1,i] = sxpar(hdr, 'COEFF1')
+        
+        if (keyword_set(onlyplug)) then begin
+            fillplugmap, shortplugmap, hdr
+            plugmap[i] = shortplugmap
+        endif
       endfor
 
+      if (keyword_set(onlyplug)) then return
 
       flux = fltarr(max(npix),nfiles)
       if (ARG_PRESENT(sig)) then sig = fltarr(max(npix),nfiles)
       if (ARG_PRESENT(wave)) then wave = fltarr(max(npix),nfiles)
-      if (ARG_PRESENT(plugmap)) then $
-         plugmap = replicate(shortplugmap,nfiles)
 
 
       for i=0,nfiles - 1 do begin
