@@ -70,7 +70,7 @@ pro veldisp, objflux, objerr, objwave, starflux, starerr, starwave, result, klo_
    if (NOT keyword_set(khi_cut)) then khi_cut = 1.0/3.0
    if (NOT keyword_set(maxsig)) then maxsig = 2.0
    if (NOT keyword_set(sigmastep)) then sigmastep = 0.2
-   IF (keyword_set(nobe) THEN BEGIN 
+   IF (keyword_set(nobe)) THEN BEGIN 
        nodiff = 1 &  noquotient=1
    ENDIF 
 ; prepare plot windows
@@ -219,8 +219,14 @@ pro veldisp, objflux, objerr, objwave, starflux, starerr, starwave, result, klo_
          bestalpha_q = answerq[3]
       endif
 
-      print,iobj,result[iobj], format='(i4,f9.3,7(f8.3),$)'
-      print, bestalpha, bestalpha_q, format='(f10.4,f9.4)'
+      IF NOT keyword_set(noquotient) THEN BEGIN 
+          print,iobj,result[iobj], format='(i4,f9.3,7(f8.3),$)'
+          print, bestalpha, bestalpha_q, format='(f10.4,f9.4)'
+      ENDIF ELSE BEGIN 
+          print, iobj, result[iobj].z, result[iobj].z_err,  $
+            result[iobj].sigma_cc, result[iobj].sigma_cc_err, $
+            format='(i4,f9.3,3(f8.3))'
+      ENDELSE 
 
    endfor
 
