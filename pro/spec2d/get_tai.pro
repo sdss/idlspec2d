@@ -17,16 +17,20 @@ pro get_tai, hdr, tai_beg, tai_mid, tai_end, silent=silent
    tai_beg = sxpar(hdr, 'TAI-BEG')
    tai_end = sxpar(hdr, 'TAI-END')
 
+   qscience = strmatch(sxpar(hdr, 'FLAVOR'), 'science*') $
+    OR strmatch(sxpar(hdr, 'FLAVOR'), 'smear*')
+
    if (tai_beg GT 4.0d9 AND tai_end GT 4.0d9 AND $
     tai_end - tai_beg GE 0) then begin
       tai_mid = (tai_end + tai_beg)/2.0
       exptime_guess = tai_end - tai_beg
       ; The following condition is possible if the exposure was paused for
       ; more than 2 minutes.
-      if (exptime_guess GT exptime + 120 AND NOT keyword_set(silent)) then $
+      if (exptime_guess GT exptime + 120 AND qscience $
+       AND keyword_set(silent) EQ 0) then $
        splog, "Warning: (TAI-END) - (TAI-BEG) > EXPTIME + 120 sec"
       ; The following should never happen.
-      if (exptime_guess LT exptime + 20 AND NOT keyword_set(silent)) then $
+      if (exptime_guess LT exptime + 20 AND keyword_set(silent) EQ 0) then $
        splog, "Warning: (TAI-END) - (TAI-BEG) < EXPTIME + 20 sec"
    endif else if (tai GT 4.0d9) then begin
       tai_end = tai - 60.0   ; average buffer for readout 
