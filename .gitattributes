@@ -135,6 +135,7 @@ pro/science/kinematics/sp321 -text
 pro/science/kinematics/sp4 -text
 pro/science/kinematics/spbrg -text
 pro/science/kinematics/template.pro -text
+pro/science/kinematics/vdisprebin.pro -text
 pro/science/lickindex/Makefile -text
 pro/science/lickindex/gauss_smooth_wave.pro -text
 pro/science/lickindex/lickindices.pro -text
