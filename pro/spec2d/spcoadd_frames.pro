@@ -507,14 +507,17 @@ pro spcoadd_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
     'DEWDEP', 'DUSTA', 'DUSTB', 'DUSTC', 'DUSTD', 'GUSTS', 'HUMIDITY', $
     'HUMIDOUT', 'PRESSURE', 'WINDD', 'WINDS', 'TEMP01', 'TEMP02', $
     'TEMP03', 'TEMP04', 'HELIO_RV', 'SEEING20', 'SEEING50', 'SEEING80', $
-    'RMSOFF20', 'RMSOFF50', 'RMSOFF80' ]
+    'RMSOFF20', 'RMSOFF50', 'RMSOFF80', 'XCHI2', 'SKYCHI2' ]
    sxcombinepar, hdrarr, cardname, hdr, func='average'
 
-   cardname = 'TAI-BEG'
-   sxcombinepar, hdrarr, cardname, hdr, func='min'
+   sxcombinepar, hdrarr, 'TAI-BEG', hdr, func='min'
+   sxcombinepar, hdrarr, 'TAI-END', hdr, func='max'
 
-   cardname = 'TAI-END'
-   sxcombinepar, hdrarr, cardname, hdr, func='max'
+   sxcombinepar, hdrarr, 'XCHI2', hdr, func='max', outcard='XCHI2MAX', after='XCHI2'
+   sxcombinepar, hdrarr, 'XCHI2', hdr, func='min', outcard='XCHI2MIN', after='XCHI2'
+
+   sxcombinepar, hdrarr, 'SKYCHI2', hdr, func='max', outcard='SCHI2MAX', after='SKYCHI2'
+   sxcombinepar, hdrarr, 'SKYCHI2', hdr, func='min', outcard='SCHI2MIN', after='SKYCHI2'
 
    ; Add the NGUIDE keywords for all headers of one flavor of CAMERAS
    ; (e.g., for all the 'b1' exposures if the first frame is 'b1'.)
