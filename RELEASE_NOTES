@@ -59,6 +59,22 @@ opHdrFix.par: Declare bad aborted smears for plate 601 and 803.
             Remove bad smear for plate 860 on MJD 52319.
 spectroSOS.html: Update to reflect new warning messages.
 
+In idlutils:
+New procedures in pro/coord for various SDSS coordinate transformations.
+Many of these were in the hoggpt product:
+  ATBOUND
+  ATBOUND2
+  ETA_TO_STRIPE
+  ETALAMBDA_TO_STRIPE
+  ETALAMBDA_TO_MUNU
+  MUNU_TO_RADEC
+  RADEC_TO_FIELDS
+  RADEC_TO_MUNU
+  STRIPE_TO_ETA
+  STRIPE_TO_INCL
+COMDIS: Minor bug fix, making loop variable type long.
+SPHEREMATCH,chunks.c: Bug fix for wrap.
+
 -------------------------------------------------------------------------------
 v4_9_3 (Feb 12, 2002 idlspec2d only) running on IDL 5.3 - 5.5
 Built against idlutils v4_9_2, specflat v1_3.
