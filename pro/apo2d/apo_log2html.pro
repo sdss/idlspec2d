@@ -54,13 +54,12 @@
 ;   30-Apr-2000  Written by D. Schlegel, APO
 ;-
 ;------------------------------------------------------------------------------
-function apo_log_header, title1, title2
+function apo_log_header, title1
 
    ; Include a Java script to auto-load this page every 60 seconds
 
    textout = '<HTML>'
    textout = [textout, '<HEAD><TITLE>' + title1 + '</TITLE></HEAD>']
-   textout = [textout, '<H1 ALIGN=CENTER>' + title2 + '</H1>']
    squote = "'"
    textout = [textout, $
     '<BODY ONLOAD="timerID=setTimeout('+squote+'location.reload(true)'+squote+',60000)">']
@@ -114,7 +113,7 @@ function apo_log_beginplate, platenum, mjd, camnames, outdir=outdir
    textout = ['<A NAME="PLATE' + platestr + '">']
    textout = [textout, '<TABLE BORDER=1 CELLPADDING=3>']
    textout = [textout, apo_log_tableline(ncams)]
-   nextline = '<CAPTION><FONT SIZE="+3"><B> PLATE ' + platestr + '</B></FONT>'
+   nextline = '<CAPTION><FONT SIZE="+2"><B> Plate ' + platestr + '</B></FONT>'
    if (plotct NE 0) then $
     nextline = nextline $
      + ' - <A HREF="' + plotfile + '">S/N FIGURE</A>' + '</CAPTION>'
@@ -247,18 +246,41 @@ pro apo_log2html, logfile, htmlfile
    ;----------
    ; Consruct the header of the output text
 
-   title1 = 'APO SPECTRO LOGSHEET MJD=' + mjdstr + ' PLATE='
-   title2 = 'APO SPECTRO LOGSHEET MJD=' + mjdstr + '<BR> PLATE='
+   title1 = 'APO Spectro Logsheet MJD=' + mjdstr + ' Plate='
+   platelist = 'Plate='
    for iplate=0, nplates-1 do begin
       platestr = strtrim(string(allplates[iplate]),2)
       title1 = title1 + platestr
-      title2 = title2 + '<A HREF="#PLATE' + platestr + '">' + platestr + '</A>'
+      platelist = platelist + '<A HREF="#PLATE' + platestr + '">' + platestr + '</A>'
       if (iplate NE nplates-1) then begin
          title1 = title1 + ','
-         title2 = title2 + ','
+         platelist = platelist + ','
       endif
    endfor
-   textout = apo_log_header(title1, title2)
+   textout = apo_log_header(title1)
+
+   textout = [textout, '<FONT SIZE="+4">']
+   prevmjd = string(thismjd-1,format='(i5.5)')
+   nextmjd = string(thismjd+1,format='(i5.5)')
+   prevfile = 'logfile-' + prevmjd + '.html'
+   nextfile = 'logfile-' + nextmjd + '.html'
+   textout = [textout, $
+    '<TABLE CELLSPACING=0 CELLPADDING=0><TR>']
+   textout = [textout, $
+    '<TD WIDTH="33%" ALIGN="LEFT">Yesterday: ' $
+    + '<A HREF='+prevfile+'+>MJD='+prevmjd+'</A></TD>']
+   textout = [textout, $
+    '<TD WIDTH="34%" ALIGN="CENTER"><B><FONT SIZE="+4">Spectro MJD '+mjdstr+'</FONT></B></TD>']
+   textout = [textout, $
+    '<TD WIDTH="33%" ALIGN="RIGHT">Tomorrow: ' $
+    + '<A HREF='+nextfile+'+>MJD='+nextmjd+'</A></TD></TR>']
+   textout = [textout, $
+    '<TR><TD></TD><TD WIDTH="100%" ALIGN="CENTER"><FONT SIZE="+4">'+platelist+'</FONT></TD><TD></TD></TR>']
+   textout = [textout, $
+    '</TABLE>']
+;   textout = [textout, '<ALIGN=CENTER>' + platelist + '</ALIGN>']
+   textout = [textout, '<FONT SIZE="+0">']
+
    textout = [textout, $
     '<P>IDLSPEC2D version ' + vers2d + ' (' $
     + '<A HREF="http://sdsshost.apo.nmsu.edu/sdssProcedures/spectroSOS.html">documentation</A>).']
