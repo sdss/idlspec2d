@@ -322,6 +322,14 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    if (strmatch(obscomm,'*dithered*') OR strmatch(obscomm,'*focus*')) then $
     sxaddpar, hdr, 'QUALITY', 'test'
 
+   ;-----------
+   ; Check that this was not a non-test exposure taken during the daytime.
+
+   warn_daytime, hdr
+
+   ;-----------
+   ; Return if only the header (and no data) was requested.
+
    if (NOT readimg AND NOT readivar) then return
 
    ;-----------
