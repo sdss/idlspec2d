@@ -272,14 +272,17 @@ pro apoplot1, plate, fiberid, mjd=mjd, expnum=allexpnum, nsmooth=nsmooth, $
      xtitle='Wavelength [Ang]', ytitle='Flux [electrons]', title=title, $
      _EXTRA=KeywordsForSplot
    for iscience=0, nscience-1 do begin
-      thiscolor = colorvec[(where(PPSCIENCE[sindx[iscience]].expnum $
-       EQ allexpnum))[0] MOD n_elements(colorvec)]
-      if (keyword_set(psfile)) then $
-       djs_oplot, wave[*,cindx[iscience]], objsub[*,iscience], $
-        color=thiscolor, _EXTRA=KeywordsForSplot $
-      else $
-       soplot, wave[*,cindx[iscience]], objsub[*,iscience], $
-        color=thiscolor, _EXTRA=KeywordsForSplot
+      ; Only plot this exposure if it is one listed in ALLEXPNUM.
+      ithis = (where(PPSCIENCE[sindx[iscience]].expnum EQ allexpnum))[0]
+      if (ithis NE -1) then begin
+         thiscolor = colorvec[ithis MOD n_elements(colorvec)]
+         if (keyword_set(psfile)) then $
+          djs_oplot, wave[*,cindx[iscience]], objsub[*,iscience], $
+           color=thiscolor, _EXTRA=KeywordsForSplot $
+         else $
+          soplot, wave[*,cindx[iscience]], objsub[*,iscience], $
+           color=thiscolor, _EXTRA=KeywordsForSplot
+      endif
    endfor
 
    xpos = 0.80 * !x.crange[0] + 0.20 * !x.crange[1]
