@@ -11,10 +11,10 @@
 ;    dispset=, /novariance, relchi2struct=, npoly=, tai=, newmask= ])
 ;
 ; INPUTS:
-;   objflux    - Image
-;   objivar    - Inverse variance for OBJ
-;   plugsort   - Plugmap structure trimmed to one element per fiber
-;   wset       - Wavelength solution
+;   objflux    - Image flux [NPIX,NFIBER]
+;   objivar    - Inverse variance for OBJFLUX [NPIX,NFIBER]
+;   plugsort   - Plugmap structure trimmed to one element per fiber [NFIBER]
+;   wset       - Structure with traceset of wavelength solution
 ;
 ; OPTIONAL KEYWORDS:
 ;   fibermask  - Fiber status bits, set nonzero for bad status [NFIBER]
@@ -42,7 +42,7 @@
 ; OUTPUTS:
 ;   skystruct  - structure containing sorted sky wavelengths,flux,fluxivar
 ;                      +  bkpts and coeffs from fitting
-;   objsub     - Image (OBJ) after sky-subtraction
+;   objsub     - Image (OBJFLUX) after sky-subtraction
 ;   objsubivar - Inverse variance (OBJIVAR) after sky-subtraction
 ;
 ; OPTIONAL OUTPUTS:
@@ -87,7 +87,7 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
    dispset=dispset, npoly=npoly, relchi2struct=relchi2struct, $
    novariance=novariance, tai=tai, nbkpt=nbkpt, newmask=newmask
 
-   if (size(objflux, /n_dimen) NE 2) then message, 'OBJIVAR is not 2-D'
+   if (size(objflux, /n_dimen) NE 2) then message, 'OBJFLUX is not 2-D'
    if (size(objivar, /n_dimen) NE 2) then message, 'OBJIVAR is not 2-D'
 
    dims = size(objflux, /dimens)
@@ -164,11 +164,11 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
    ; the density of data points.
 
    bkpt = 0
-   firstset = bspline_iterfit(skywave, skyflux, invvar=skyivar, $
+   sset = bspline_iterfit(skywave, skyflux, invvar=skyivar, $
     nord=nord, upper=upper, lower=lower, maxiter=maxiter, $
     /eachgroup, everyn=2*nskies/3, bkpt=bkpt, outmask=outmask, yfit=skyfit)
 
-   if (NOT keyword_set(skyfit)) then begin
+   if (NOT keyword_set(sset)) then begin
       splog, 'ABORT: Fit sky is all zeros'
       return, 0
    endif
@@ -220,15 +220,23 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
        bkpt[newnbk-1] + highdiff*(lindgen(nord-1)+1) ]
 
       ;----------
-      ; Re-do the fit with the new break points.
+      ; Re-do the super-fit with the new break points.
  
       sset = bspline_iterfit(skywave, skyflux, invvar=skyivar, $
        nord=nord, upper=upper*1.5, lower=lower*1.5, maxiter=maxiter, $
-       /eachgroup, fullbkpt=fullbkpt, yfit=skyfit2, outmask=outmask)
+       /eachgroup, fullbkpt=fullbkpt, yfit=skyfit, outmask=outmask)
  
+      if (NOT keyword_set(sset)) then begin
+         splog, 'ABORT: Fit sky is all zeros'
+         return, 0
+      endif
+
    endif
 
    fullfit = bspline_valu(wave, sset) 
+
+   ;----------
+   ; Re-do the super-sky fit using the variable PSF, if DISPSET is set.
 
    if (keyword_set(dispset)) then begin
 
@@ -239,45 +247,21 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
       sigma = sigma - 1.0
       skysigma = (sigma[*,iskies])[isort]
 
-;      sset = bspline_iterfit(skywave, skyflux, invvar=skyivar*outmask, $
-;       nord=nord, upper=upper, lower=lower, maxiter=maxiter, x2=skysigma, $
-;       npoly = npoly, /eachgroup, fullbkpt=fullbkpt, $
-;       yfit=skyfit4)
-;
-;      fullfit = bspline_valu(wave, sset, x2=sigma) 
-;
-      ssetorig = sset
       fullx2 = replicate(1.0,ncol) # findgen(nrow)
-      x2     = (fullx2[*,iskies])[isort]
+      x2 = (fullx2[*,iskies])[isort]
 
       sset = bspline_iterfit(skywave, skyflux, invvar=skyivar*outmask, $
        nord=nord, upper=upper, lower=lower, maxiter=maxiter, $
        npoly = npoly, /eachgroup, fullbkpt=fullbkpt, $
-       yfit=skyfit3, x2=x2, xmin=0., xmax=nrow)
+       yfit=skyfit, x2=x2, xmin=0., xmax=nrow)
 
       fullfit = bspline_valu(wave, sset, x2=fullx2) 
 
-;
-;      The commented out code below fits the residuals "flux-fit" to
-;       higher order polynomial terms.  Not used for now
-;
-;       yfit=skyfit4, x2=x2, xmin=0., xmax=nrow, funcname='poly1', outmask=o)
-
-;      sset4 = bspline_iterfit(skywave, skyflux-skyfit2, invvar=skyivar*outmask, $
-;       nord=nord, upper=upper, lower=lower, maxiter=maxiter, $
-;       npoly = npoly-1, /eachgroup, fullbkpt=fullbkpt, $
-;       yfit=skyfit4, x2=x2, funcname='poly1', outmask=o)
-;
-;     fullfit = bspline_valu(wave, sset4, x2=fullx2) + fullfit
-;       yfit=skyfit4, x2=skysigma, funcname='poly1',outmask=o)
-;
-;     fullfit = bspline_valu(wave, sset4, x2=sigma) + fullfit
    endif
 
    ;----------
    ; Sky-subtract the entire image
 
-;   objsub = objflux - fullfit * (objivar GT 0.0) ; No need to do this.
    objsub = objflux - fullfit * airmass_correction
 
    ;----------
@@ -289,12 +273,7 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
       skyvarset = bspline_iterfit(skywave[posvar], skyvariance, $
         invvar=skyivar[posvar], nord=nord, upper=upper, lower=lower, $
         maxiter=maxiter, /eachgroup, bkpt=bkpt)
-
-;      skyvarbkpt = slatec_splinefit(skywave[posvar], skyvariance, skyvarcoeff, $
-;       invvar=skyivar[posvar], nord=nord, upper=upper, lower=lower, $
-;       maxiter=maxiter, /eachgroup, bkpt=bkpt)
       skyvarfit = bspline_valu(wave, skyvarset) * airmass_correction
-
    endif
 
    ;----------
@@ -317,9 +296,13 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
    if (nskies GE 3 AND ngoodpix GT ncol $
     AND NOT keyword_set(novariance)) then begin
 
-      skyfit = (fullfit[*,iskies])[isort]
-;      skyfit  = slatec_bvalu(skywave, fullbkpt, coeff) ; Same thing, more clear
-      skychi2 = (skyflux-skyfit)^2 * skyivar
+      ; We don't need to re-evaluate SKYFIT below, because we already
+      ; have it in memory.
+;      skyfit = (fullfit[*,iskies])[isort]
+
+      ; Note that SKYFLUX and SKYFIT below are the sky and the fit
+      ; where we've divided out the airmass correction first.
+      skychi2 = (skyflux - skyfit)^2 * skyivar
 
       ; Bin according to the break points used in the supersky fit.
 
@@ -368,11 +351,6 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
         upper=30, lower=30, maxiter=maxiter, everyn=2)
 
       relchi2fit = bspline_valu(wave, relchi2set) > 1
-
-;      fullbkpt = slatec_splinefit(relwave, relchi2, coeff, $
-;       maxiter=maxiter, upper=30, lower=30, everyn=2, nord=3)
-;      relchi2fit = slatec_bvalu(wave, fullbkpt, coeff)
-;      relchi2fit = relchi2fit > 1 ; Never let drop below 1
 
       splog, 'Median sky-residual chi2 = ', median(relchi2)
       splog, 'Max sky-residual chi2 = ', max(relchi2)
