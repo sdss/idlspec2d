@@ -6,7 +6,7 @@
 ;   Add line to sdHdrFix file to denote change in FITS header for sdR files.
 ;
 ; CALLING SEQUENCE:
-;   apofix, expnum, [ card, value, camera=, /bad, /test, /no_tsos ]
+;   apofix, expnum, [ card, value, camera=, /bad, /test, /not_sos ]
 ;
 ; INPUTS:
 ;   expnum     - Exposure number
@@ -25,7 +25,8 @@
 ;                This is equivalent to setting QUALITY='test'.
 ;   not_sos    - This keyword can be set to run this proc on a machine
 ;                that is not named "sos".  This would only be done for
-;                testing purposes.
+;                testing purposes, or if Son-of-Spectro has been moved
+;                to another machine.
 ;
 ; OUTPUT:
 ;
@@ -485,7 +486,13 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad, test=test, $
       endfor
 
       djs_unlockfile, logfile
-   endif
+   endif else begin
+      print, 'Changes will not appear unless you run sos_redo.'
+      print, 'Equivalently, you could type the following from IDL:'
+      print, '  remove2redo, mjd=' + mjdstr $
+       + ', expnum=' + strtrim(string(expnum),2)
+      print, ''
+   endelse
 
    return
 end
