@@ -25,6 +25,8 @@ opHdrFix.par: Fix the RA,DEC positions in the raw file headers to fix
            395/51783.
            Discard exposures 14967-8 for plate 820/52404.
 sprobot_start: Fix tiny typo (extra quotation on line 141).
+sprobot.sh: Change the name of the astrolog directory on sos.apo.nmsu.edu
+           from /astrolog -> /data/spectro/astrolog (they changed it!)
 spChunkList.par: Added chunks 48-51.
 
 In idlutils:
