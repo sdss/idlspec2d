@@ -14,8 +14,8 @@
 ;
 ; CALLING SEQUENCE:
 ;   extract_object, outname, objhdr, image, invvar, plugsort, wset, $
-;    xarc, lambda, xtrace, fflat, fibermask, color=, $
-;    [ widthset=, dispset=, skylinefile=, plottitle= ]
+;    xarc, lambda, xtrace, fflat, fibermask, proftype=, color=, $
+;    [ widthset=, dispset=, skylinefile=, plottitle=, superflatset= ]
 ;
 ; INPUTS:
 ;   outname    - Name of outputs FITS file
@@ -30,7 +30,7 @@
 ;   fflat      - 1d flat field vectors
 ;   fibermask  - Fiber status bits, set nonzero for bad status [NFIBER]
 ;   proftype   - Which type of profile should we use, (default=1 Gaussian)
-;   superflatset- If present, then divide by median superflat!
+;   superflatset- If present, then divide by median superflat! ???
 ;   color      - ???
 ;   widthset   - ???
 ;   dispset    - ???
@@ -98,7 +98,7 @@
 pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
  xarc, lambda, xtrace, fflat, fibermask, color=color, proftype=proftype, $
  widthset=widthset, dispset=dispset, skylinefile=skylinefile, $
- plottitle=plottitle, skyoutname=skyoutname, superflatset=superflatset
+ plottitle=plottitle, superflatset=superflatset
 
    objname = strtrim(sxpar(objhdr,'OBJFILE'),2) 
    flavor  = strtrim(sxpar(objhdr,'FLAVOR'),2) 
@@ -209,15 +209,14 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    wfixed = [1,1]
    nterms = n_elements(wfixed)
 
-
    splog, 'Step 1: Initial Object extraction'
 
    extract_image, image, invvar, xnow, sigma2, tempflux, tempfluxivar, $
-       proftype=proftype, wfixed=wfixed, yrow=yrow, $
-       highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
-       ansimage=ansimage, chisq=firstchisq, ymodel=ym, /relative
+    proftype=proftype, wfixed=wfixed, yrow=yrow, $
+    highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
+    ansimage=ansimage, chisq=firstchisq, ymodel=ym, /relative
 
-     ; (2) Calculate scattered light
+   ; (2) Calculate scattered light
 
    splog, 'Step 2: Just find scattered light image'
    scatfit = calcscatimage(ansimage[ntrace*nterms:*,*], yrow)
@@ -308,7 +307,8 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    helio=0.0
    ra = sxpar(objhdr,'RA')
    dec = sxpar(objhdr,'DEC')
-   tai = sxpar(objhdr,'TAI')
+   ; Set TAI equal to the time half-way through the exposure
+   tai_mid = sxpar(objhdr, 'TAI-BEG') + 0.5 * sxpar(objhdr, 'EXPTIME')
    ; If all these keywords are present in the header, they will be either
    ; type FLOAT or DOUBLE.  Note that SDSS will put NaN in the header for
    ; these values if they are unknown.
@@ -430,14 +430,8 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
      flambdaivar = skysubivar
      nskypoly = 1L
    endelse
+   skyimg = flux = flambda
    sxaddpar, objhdr, 'PSFSKY', nskypoly, ' Order of PSF skysubtraction'
-
-   ;---------------------------------------------------------------------
-   ;  Output sky image
-   ;
-   if keyword_set(skyoutname) then $
-     if skyoutname NE '' then $
-        mwrfits, flux - flambda, skyoutname, /create
 
    ;------------------------------------------
    ; Telluric correction called for 'red' side
@@ -531,18 +525,11 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    mwrfits, vacset, outname
    mwrfits, dispset, outname
    mwrfits, plugsort, outname
-
-   ;-----------------
-   ;  Superfit is now required to convert between "counts" and
-   ;  "normalized counts" which is used for flambda
-
+   mwrfits, skyimg, outname
    mwrfits, superfit, outname
+   mwrfits, telluricfactor, outname ; This array only exists for red frames.
 
    heap_gc
-
-; Save sky, fluxfactor, telluricfactor???
-;   mwrfits, fluxfactor, outname
-   if (color EQ 'red') then mwrfits, telluricfactor, outname
 
    return
 end
