@@ -287,7 +287,8 @@ targets not labelled as "QA" (notably in runs 94 and 125; see
 The following IDL commands can be used to select a truly unique set
 of objects:
 <DL><DD><PRE>
-  IDL> spall = mrdfits('spAll-qsurvey.fits',1)
+  IDL> columns = ['PLATE','FIBER','MJD','OBJTYPE','PLUG_RA','PLUG_DEC']
+  IDL> spall = hogg_mrdfits('spAll-qsurvey.fits',1,columns=columns)
   IDL> spall = spall[where(strmatch(spall.objtype, 'QA*') EQ 0)]
   IDL> junk = djs_angle_group(spall.plug_ra, spall.plug_dec, 1./3600, $
        gindx=gindx, gstart=gstart, gcount=gcount)
@@ -586,7 +587,9 @@ The following bit of IDL code will select a unique list of objects targetted
 by the main galaxy survey that have been spectroscopically confirmed
 as galaxies or QSOs:
 <DL><DD><PRE>
-IDL> spall = mrdfits('spAll.fits',1)
+IDL> columns = ['PLATE','FIBER','MJD','OBJTYPE','PLUG_RA','PLUG_DEC', $
+      'PROGNAME','SPECPRIMARY','PRIMARGET','SECTARGET','CLASS','Z','ZWARNING']
+IDL> spall = hogg_mrdfits('spAll.fits',1,columns=columns)
 IDL> imain = where(spall.specprimary EQ 1 $
       AND strmatch(spall.progname,'main*') $
       AND (spall.primtarget AND 2L^6 + 2L^7 + 2L^8) NE 0 $
@@ -600,7 +603,9 @@ The following bit of IDL code will select a unique list of objects targetted
 by the LRG galaxy survey that have been spectroscopically confirmed
 as galaxies:
 <DL><DD><PRE>
-IDL> spall = mrdfits('spAll.fits',1)
+IDL> columns = ['PLATE','FIBER','MJD','OBJTYPE','PLUG_RA','PLUG_DEC', $
+      'PROGNAME','SPECPRIMARY','PRIMARGET','SECTARGET','CLASS','Z','ZWARNING']
+IDL> spall = hogg_mrdfits('spAll.fits',1,columns=columns)
 IDL> ilrg = where(spall.specprimary EQ 1 $
       AND strmatch(spall.progname,'main*') $
       AND (spall.primtarget AND 2L^5 + 2L^26) NE 0 $
@@ -615,7 +620,9 @@ The following bit of IDL code will select a unique list of objects targetted
 by the QSO survey that have been spectroscopically confirmed
 as QSOs:
 <DL><DD><PRE>
-IDL> spall = mrdfits('spAll.fits',1)
+IDL> columns = ['PLATE','FIBER','MJD','OBJTYPE','PLUG_RA','PLUG_DEC', $
+      'PROGNAME','SPECPRIMARY','PRIMARGET','SECTARGET','CLASS','Z','ZWARNING']
+IDL> spall = hogg_mrdfits('spAll.fits',1,columns=columns)
 IDL> iqso = where(spall.specprimary EQ 1 $
       AND strmatch(spall.progname,'main*') $
       AND (spall.primtarget AND 2L^0 + 2L^1 + 2L^2 +2L^3 + 2L^4) NE 0 $
@@ -668,6 +675,7 @@ environment variable should already be set.  At Princeton, you would type
 the following for C-shell:
 <DL><DD><PRE>
   source /usr/peyton/common/licensed/idl/bin/idl_setup
+  setenv IDL_PATH         .:+{$IDL_DIR}/lib
 </PRE></DD></DL>
 or the following for Bourne shell:
 <DL><DD><PRE>
