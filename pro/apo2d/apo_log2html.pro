@@ -205,17 +205,7 @@ pro apo_log2html, logfile, htmlfile
    while(djs_lockfile(htmlfile, lun=html_lun) EQ 0) do wait, 5
 
    ; Read in all the HDU's in the log file as structures
-
-   ihdu = 1
-   pp = 1
-   while (keyword_set(pp)) do begin
-      pp = mrdfits(logfile, ihdu)
-      if (keyword_set(pp)) then begin
-         if (NOT keyword_set(pstruct)) then pstruct = ptr_new(pp) $
-          else pstruct = [pstruct, ptr_new(pp)]
-      endif
-      ihdu = ihdu + 1
-   endwhile
+   pstruct = apo_readlog(logfile)
    nstruct = n_elements(pstruct)
 
    mjd = lonarr(nstruct)

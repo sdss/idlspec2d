@@ -209,17 +209,17 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    endif
 
    ;----------
-   ; After being passed any 'r2' frame, whether or not it was reduced,
+   ; After being passed any 'r2' frame, and if it was reduced,
    ; we re-generate the HTML file for all plates and the S/N plot for
    ; this plate.
    ; Optionally copy it to the directory specified by COPYDIR.
    ;
 
-   if (camnames[icam] EQ 'r2') then begin
+   if (camnames[icam] EQ 'r2' AND keyword_set(rstruct)) then begin
       wait, 10
 
       plotfile = filepath('snplot-'+platestr+'.ps', root_dir=outdir)
-      apo_plotsn, plate, fullplugfile, outdir=outdir, plotfile=plotfile
+      apo_plotsn, logfile, plate, plugfile=fullplugfile, plotfile=plotfile
 
       apo_log2html, logfile, htmlfile
 

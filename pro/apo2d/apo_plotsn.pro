@@ -1,17 +1,64 @@
-pro apo_plotsn, plate, plugmapfile, outdir=outdir, plotfile=plotfile
+;+
+; NAME:
+;   apo_plotsn
+;
+; PURPOSE:
+;   Generate S/N plot for one plate from a FITS logfile written by APOREDUCE.
+;
+; CALLING SEQUENCE:
+;   apo_plotsn, logfile, plate, [ plugfile=, plotfile= ]
+;
+; INPUTS:
+;   logfile    - Logfile as written by APOREDUCE.  This is a FITS file
+;                with an HDU of information for each reduced frame.
+;   plate      - Plate number to plot.
+;
+; REQUIRED KEYWORDS:
+;   plugfile   - Name of plugmap file (Yanny parameter file)
+;
+; OPTIONAL KEYWORDS:
+;   plotfile   - Name of plot file; if not specified then send plot to
+;                current device.
+;
+; OUTPUT:
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;
+; BUGS:
+;
+; PROCEDURES CALLED:
+;   apo_readlog
+;   djs_lockfile()
+;   djs_unlockfile
+;   plotsn
+;   sortplugmap()
+;   yanny_read
+;   yanny_free
+;
+; REVISION HISTORY:
+;   02-May-2000  Written by D. Schlegel, APO
+;-
+;------------------------------------------------------------------------------
+pro apo_plotsn, logfile, plate, plugfile=plugfile, plotfile=plotfile
 
    if (NOT keyword_set(plate)) then return
 
    platestr = string(plate, format='(i4.4)')
-
    bands = [1,3]
-   snarray = fltarr(2, 640)
-   camnames = ['b1','b2','r1','r2']
+
+   ;----------
+   ; Read the science frames for this plate
+
+   pp = apo_readlog(logfile, plate=plate, flavor='science')
 
    ;----------
    ; Read the plug map file for all 640 fibers
 
-   yanny_read, plugmapfile, pdata
+   yanny_read, plugfile, pdata
    plugmap = *pdata[0]
    yanny_free, pdata
    plugsort = sortplugmap(plugmap, fibermask=fibermask)
@@ -20,19 +67,14 @@ pro apo_plotsn, plate, plugmapfile, outdir=outdir, plotfile=plotfile
    ; Loop through reductions for all science frames, and add S/N
    ; in quadrature, e.g. sum (S/N)^2
 
-   for icam=0, n_elements(camnames)-1 do begin
-      outsci = filepath('sci-'+platestr+'-'+camnames[icam]+'-*.fits', $
-       root_dir=outdir)
-      filenames = findfile(outsci, count=ct)
-      meansn = 0
-      for ifile=0, ct-1 do begin
-         meansn = sqrt( meansn^2 + (mrdfits(filenames[ifile], 2))^2 )
-      endfor
-      case icam of
-         0: snarray[0,0:319] = meansn
-         1: snarray[0,320:639] = meansn
-         2: snarray[1,0:319] = meansn
-         3: snarray[1,320:639] = meansn
+   sn2array = fltarr(2, 640)
+   for ii=0, n_elements(pp)-1 do begin
+      meansn2 = (*pp[ii]).sn2vector
+      case (*pp[ii]).camera of
+         'b1': sn2array[0,0:319] =  sn2array[0,0:319] + meansn2
+         'b2': sn2array[0,320:639] =  sn2array[0,320:639] + meansn2
+         'r1': sn2array[1,0:319] =  sn2array[1,0:319] + meansn2
+         'r2': sn2array[1,320:639] =  sn2array[1,320:639] + meansn2
       endcase
    endfor
 
@@ -44,7 +86,7 @@ pro apo_plotsn, plate, plugmapfile, outdir=outdir, plotfile=plotfile
     while(djs_lockfile(plotfile, lun=plot_lun) EQ 0) do wait, 5
 
    title = 'APO SPECTRO PLATE=' + strtrim(string(plate),2)
-   plotsn, snarray, plugsort, bands=bands, title=title, plotfile=plotfile
+   plotsn, sqrt(sn2array), plugsort, bands=bands, title=title, plotfile=plotfile
 
    if (keyword_set(plotfile)) then $
     djs_unlockfile, plotfile, lun=plot_lun

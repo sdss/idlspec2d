@@ -102,7 +102,8 @@ function quickextract, flatname, arcname, sciname, outname, $
    rstruct = create_struct('FLAVOR', 'science', $
                            'CAMERA', camname, $
                            'SKYPERSEC', skylevel, $
-;                           'SN2VECTOR', meansn, $
+;                           'MAG', plugsort.mag[icolor], $
+                           'SN2VECTOR', meansn^2, $
                            'SN2', snoise2 )
 
    ;----------
@@ -110,7 +111,7 @@ function quickextract, flatname, arcname, sciname, outname, $
 
    mwrfits, objsub, outname, /create
    mwrfits, ojbsubivar, outname
-   mwrfits, meansn, outname
+;   mwrfits, meansn, outname
 
    return, rstruct
 end
