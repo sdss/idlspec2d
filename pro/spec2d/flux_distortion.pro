@@ -7,14 +7,15 @@
 ;
 ; CALLING SEQUENCE:
 ;   corrimg = flux_distortion(objflux, objivar, andmask, ormask, plugmap=, $
-;    loglam=, [ minflux=, minobj=, platefile= ] )
+;    loglam=, [ minflux=, minobj=, platefile=, coeff= ] )
 ;
 ; INPUTS:
 ;   objflux    - Fluxes [NPIX,NFIBER]
 ;   objivar    - Inverse variances [NPIX,NFIBER]
 ;   andmask    - AND pixel mask [NPIX,NFIBER]
 ;   ormask     - OR pixel mask [NPIX,NFIBER]
-;   plugmap    - Plug-map structure [NFIBER]
+;   plugmap    - Plug-map structure [NFIBER], where CALIBFLUX,CALIBFLUX_IVAR
+;                will be used in preference over MAG for the photometric fluxes
 ;   loglam     - Wavelength vector in log10(Ang), which must be the same
 ;                for all objects [NPIX]
 ;
@@ -34,6 +35,7 @@
 ;                [NPIX,NFIBER]
 ;
 ; OPTIONAL OUTPUTS:
+;   coeff      - Best-fit coefficients for the distortion terms
 ;
 ; COMMENTS:
 ;   The the correction vectors are parameterized in terms of magnitude
@@ -42,12 +44,15 @@
 ;   There are also chromatic terms that scale as (5070/wavelength)^2,
 ;   sine that function gives an equal effect between 3900 and 5070 Ang
 ;   as between 5070 ang 9000 Ang
-;   There are also magnitude offsets as a function of 
+;   There are also magnitude offsets as a function of spectrograph ID,
+;   and a chromatic offset as a function of spectrograph ID.
 ;
 ;   In detail, the formulae are as follows:
-;     NEWFLUX = FLUX * [1 + a0 * (SPECID EQ 1) + a1 * (SPECID EQ 2)]
-;               * exp(a2*x + a3*y + a4*x*y + a5*x^2 + a6*y^2
-;                 + a7*x*LL + a8*y*LL + a9*x*y*LL + a10*x^2*LL + a11*y^2*LL)
+;     NEWFLUX = FLUX * [1 + a0*(SPECID EQ 1) + a1*(SPECID EQ 2)]
+;               * exp{ a2*x + a3*y + a4*x*y + a5*x^2 + a6*y^2
+;                + a7*x*LL + a8*y*LL 
+;                + a9*LL*(SPECID EQ 1) + a10*LL*(SPECID EQ 2) }
+;                + a11*x*y*LL + a12*x^2*LL + a13*y^2*LL
 ;   where x=XFOCAL, y=YFOCAL, LL = 1 - (5100 Ang/wavelength)^2
 ;
 ; EXAMPLES:
@@ -77,7 +82,7 @@
 forward_function mpfit, flux_distort_fn
 
 ;------------------------------------------------------------------------------
-function flux_distort_corrvec, coeff, lwave2, thisplug, filtnum
+function flux_distort_corrvec, coeff, lwave2, thisplug
 
    xx = thisplug.xfocal / 320.
    yy = thisplug.yfocal / 320.
@@ -90,10 +95,11 @@ function flux_distort_corrvec, coeff, lwave2, thisplug, filtnum
         + coeff[6] * yy^2 $
         + coeff[7] * xx * lwave2 $
         + coeff[8] * yy * lwave2 $
-        + coeff[9] * lwave2 $
-        + coeff[10] * xx*yy * lwave2 $
-        + coeff[11] * xx^2 * lwave2 $
-        + coeff[12] * yy^2 * lwave2)
+        + coeff[9] * lwave2 * (specid EQ 1) $
+        + coeff[10] * lwave2 * (specid EQ 2) $
+        + coeff[11] * xx*yy * lwave2 $
+        + coeff[12] * xx^2 * lwave2 $
+        + coeff[13] * yy^2 * lwave2)
 
    return, cvec
 end
@@ -109,7 +115,7 @@ function flux_distort_fn, coeff
    for i=0L, nobj-1 do $
     for j=0, 2 do $
      newflux[i,j] = total(trimflux[*,i] * fmask[*,j] $
-      * flux_distort_corrvec(coeff, lwave2, trimplug[i], j+1), /double)
+      * flux_distort_corrvec(coeff, lwave2, trimplug[i]), /double)
 
    ; Re-caste from an array to a vector, since MPFIT needs a vector.
 ;   retval = (newflux / calibflux)[*] - 1.
@@ -119,7 +125,8 @@ function flux_distort_fn, coeff
 end
 ;------------------------------------------------------------------------------
 function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
- loglam=loglam, minflux=minflux, minobj=minobj, platefile=platefile
+ loglam=loglam, minflux=minflux, minobj=minobj, platefile=platefile, $
+ coeff=coeff
 
    common com_flux_distort, trimflux, lwave2, fmask, calibflux, calibisig, $
     trimplug
@@ -162,9 +169,18 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
       fmask[*,ifile] = fmask1 * flambda2fnu * 10^((22.5 + 48.6 - 2.5*17.)/2.5)
    endfor
 
-   ; Hack at the moment to deal with any old files on disk ???
-   if (tag_exist(plugmap,'CALIBFLUX_IVAR') EQ 0) then $
-    plugmap = struct_addtags(plugmap, replicate({calibflux_ivar:fltarr(5)},640))
+   ;----------
+   ; Deal with any old PLUGMAP structures without the linear flux units.
+
+   if (tag_exist(plugmap,'CALIBFLUX') EQ 0) then begin
+      plugmap = struct_addtags(plugmap, $
+       replicate({calibflux:fltarr(5)},nobj))
+      plugmap.calibflux = 10.^((22.5 - plugmap.mag) / 2.5)
+   endif
+   if (tag_exist(plugmap,'CALIBFLUX_IVAR') EQ 0) then begin
+      plugmap = struct_addtags(plugmap, $
+       replicate({calibflux_ivar:fltarr(5)},nobj))
+   endif
 
    ;----------
    ; Select only objects that are not SKY or QSO, and
@@ -221,7 +237,7 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
    maxiter2 = 25
    sigrej = 5.
    maxrej = ceil(0.05 * ntrim) ; Do not reject more than 5% of remaining objects
-   npar = 13
+   npar = 14
 
    parinfo = {value: 0.d0, fixed: 0, limited: [0b,0b], limits: [0.d0,0.d0]}
    parinfo = replicate(parinfo, npar)
@@ -262,7 +278,7 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
 
    corrimg = fltarr(npixobj, nobj)
    for i=0L, nobj-1 do $
-    corrimg[*,i] = flux_distort_corrvec(coeff, lwave2, plugmap[i], 2)
+    corrimg[*,i] = flux_distort_corrvec(coeff, lwave2, plugmap[i])
 
    minval = min(corrimg, max=maxval)
    sigval = stdev(corrimg)
