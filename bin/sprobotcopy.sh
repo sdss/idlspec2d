@@ -37,6 +37,9 @@ scp platelist.txt $htmldir
 # Copy to Fermi.
 
 rsync -arv --rsh="ssh" \
+ --include "platelist*" --exclude "*"  \
+ $topoutdir/* $destdir
+rsync -arv --rsh="ssh" \
  --include "spAll*" --exclude "*"  \
  $topoutdir/* $destdir
 rsync -arv --rsh="ssh" --include "*/" \
