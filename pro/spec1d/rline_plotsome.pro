@@ -19,9 +19,9 @@ pro rline_plotsome, plotnum
       pinfo.string1= [ 'O II'    , 'O II'    , 'O II'    , 'O II'     ]
       pinfo.string2= [ 'z=0.272' , 'z=0.441' , 'z=0.806' , 'z=0.156'  ]
    endif else if (plotnum EQ 2) then begin
-      pinfo.iselect= [ 179          , 48           , 143          , 66            ]
+      pinfo.iselect= [ 179          , 93           , 143          , 66            ]
       pinfo.string1= [ 'Ly\alpha ??', 'Ly\alpha ??', 'Ly\alpha ??', 'Ly\alpha ??' ]
-      pinfo.string2= [ 'z=4.22'     , 'z=3.44'     , 'z=2.24'     , 'z=5.13'      ]
+      pinfo.string2= [ 'z=4.22'     , 'z=2.17'     , 'z=2.24'     , 'z=5.13'      ]
    endif
 
    dfpsplot, 'rline-panel-'+strtrim(string(plotnum),2)+'.ps', /color
@@ -51,7 +51,7 @@ pthick=1
       endelse
       if (iplot EQ nplot-1) then begin
          title1 = 'FULL SDSS SPECTRUM'
-         title2 = 'ZOOM ON ROGUE LINES'
+         title2 = 'ROGUE LINES'
       endif
       ytitle = 'Flux'
 
