@@ -70,7 +70,8 @@ function fitfineconst1, ishift, fitflux=fitflux, theta=theta
    ; THE "DATA" SPECTRUM: loglam[itrim], objflux[itrim]
    ; Approximate the variance in the "DATA" spectrum as:
    ;                      1/objivar[itrim]^2 + 0.5/bigivar[ibigpix]^2
-   sigma2 = 1. / (objivar[itrim])^2 + (1./lineratio^2) / (bigivar[ibigpix])^2
+;   sigma2 = 1. / (objivar[itrim])^2 + (1./lineratio^2) / (bigivar[ibigpix])^2
+   sigma2 = 1. / (objivar[itrim]) + (1./lineratio^2) / (bigivar[ibigpix])
    weight = 1. / sqrt(sigma2)
 
    ; Construct the basis vectors, which are polynomial terms

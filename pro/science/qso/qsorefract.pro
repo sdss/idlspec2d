@@ -2,7 +2,7 @@
 ; Compute the refraction terms for QSOs.
 
 pro qsorefract, ztab=ztab, urefract=urefract, grefract=grefract, $
- ugcolor=ug, grcolor=gr
+ ugcolor=ug, grcolor=gr, ricolor=ri, izcolor=iz
 
    eigendir = concat_dir(getenv('IDLSPEC2D_DIR'), 'templates')
    plotfile = 'qso-refract.ps'
@@ -84,9 +84,10 @@ pro qsorefract, ztab=ztab, urefract=urefract, grefract=grefract, $
       tmprval = interpol(rval, rwave, tmpwave)
 
       ; Integrate over the SDSS filters -- counts photons, not energy
-      num1 = filter_thru(tmpflux * tmprval * (tmpwave/4000), $
+      flambda2fnu = tmpwave^2 / 2.99792e18
+      num1 = filter_thru(tmpflux * tmprval * flambda2fnu, $
        waveimg=tmpwave, /toair)
-      num2 = filter_thru(tmpflux * (tmpwave/4000), $
+      num2 = filter_thru(tmpflux * flambda2fnu, $
        waveimg=tmpwave, /toair)
       rtabqso[iz,*] = num1 / num2
       qsomag[iz,*] = num2
@@ -106,7 +107,7 @@ pro qsorefract, ztab=ztab, urefract=urefract, grefract=grefract, $
    ;----------
    ; Now make the dtheta-dtheta plot
 
-   csize = 1.4
+   csize = 1.6
    scale = !radeg * 3600. ; Re-scale plots to arcsec at 45 deg from zenith
 
    if (keyword_set(plotfile)) then dfpsplot, plotfile, /square
@@ -131,6 +132,8 @@ pro qsorefract, ztab=ztab, urefract=urefract, grefract=grefract, $
 
    ug = -2.5 * alog10(qsomag[*,0] / qsomag[*,1])
    gr = -2.5 * alog10(qsomag[*,1] / qsomag[*,2])
+   ri = -2.5 * alog10(qsomag[*,2] / qsomag[*,3])
+   iz = -2.5 * alog10(qsomag[*,3] / qsomag[*,4])
 
    djs_plot, ug, gr, psym=-4, charsize=csize, /ynozero, $
     title='QSO Color-Color Plot', $
