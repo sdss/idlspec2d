@@ -11,14 +11,14 @@
 ;    fitting with fourier_difference and fourier_quotient methods
 ;
 ; CALLING SEQUENCE:
-;   veldisp, objflux, objerr, starflux, starerr, result, $
+;   veldisp, objflux, objivar, starflux, starivar, result, $
 ;    klo_cut=, khi_cut=, maxsig=, sigmastep=, /doplot, /nodiff ]
 ;
 ; INPUTS:
 ;   objflux    - Array of object spectra [npix, nobj]
-;   objerr     - Array of object errors [npix, nobj]
+;   objivar    - Array of object inverse variance [npix, nobj]
 ;   starflux   - Template spectrum [nstarpix]
-;   starerr    - Template error error [nstarpix]
+;   starivar   - Template inverse variance [nstarpix]
 ;
 ; OPTIONAL KEYWORDS:
 ;   klo_cut    - Low frequency cutoff for cross-correlation peak finding;
@@ -61,7 +61,7 @@
 ;   25-Jun-2000  Cleaned up and commented by D. Finkbeiner, APO
 ;-
 ;------------------------------------------------------------------------------
-pro veldisp, objflux, objerr, objwave, starflux, starerr, starwave, result, klo_cut=klo_cut, $
+pro veldisp, objflux, objivar, objwave, starflux, starivar, starwave, result, klo_cut=klo_cut, $
  khi_cut=khi_cut, maxsig=maxsig, sigmastep=sigmastep, doplot=doplot, $
  nodiff=nodiff, noquotient=noquotient, nobe=nobe, keep=keep
        
@@ -77,9 +77,6 @@ pro veldisp, objflux, objerr, objwave, starflux, starerr, starwave, result, klo_
    IF (keyword_set(doplot)) THEN BEGIN
       window, 0 &  window, 1 &  window, 2
    ENDIF
-
-   if (size(starflux, /n_dimen) NE 1) then $
-    message, 'Stellar template is not 1-dimensional'
 
    if (size(objflux, /tname) EQ 'DOUBLE') then PI = !dpi $
     else PI = !pi
@@ -97,13 +94,13 @@ pro veldisp, objflux, objerr, objwave, starflux, starerr, starwave, result, klo_
       message, 'OBJFLUX is neither 1-D or 2-D'
    endelse
 
-   if total(abs(size(starflux, /dimens)-size(starerr, /dimens))) NE 0 $
-    OR size(starflux, /n_dimen) NE size(starerr, /n_dimen) THEN  $
-    message, 'Dimensions of STARFLUX and STARERR do not match'
+   if total(abs(size(starflux, /dimens)-size(starivar, /dimens))) NE 0 $
+    OR size(starflux, /n_dimen) NE size(starivar, /n_dimen) THEN  $
+    message, 'Dimensions of STARFLUX and STARIVAR do not match'
 
-   if total(abs(size(objflux, /dimens)-size(objerr, /dimens))) NE 0 $
-    OR size(objflux, /n_dimen) NE size(objerr, /n_dimen) THEN  $
-    message, 'Dimensions of OBJFLUX and OBJERR do not match'
+   if total(abs(size(objflux, /dimens)-size(objivar, /dimens))) NE 0 $
+    OR size(objflux, /n_dimen) NE size(objivar, /n_dimen) THEN  $
+    message, 'Dimensions of OBJFLUX and OBJIVAR do not match'
 
 
    ;---------------------------------------------------------------------------
@@ -111,17 +108,22 @@ pro veldisp, objflux, objerr, objwave, starflux, starerr, starwave, result, klo_
    ; large of the size of STARFLUX and OBJFLUX.
    ; Pad to larger (or equal) 2^N, and then doubled for isolated b.c.
 
-   npixstar = n_elements(starflux)
+   npixstar = (size(starflux))[1]
    npixbig = 2L^(fix(alog(npixstar > npixobj)/alog(2) + 1.9999))
 
    ;---------------------------------------------------------------------------
    ; Compute FFT for stellar template
 
-   veldisp_fft, starflux, starerr, npixbig, starfft,  $
-     starfilt, starvar0, starvariancefft, starerr_pad, $
+   nstar = n_elements(starflux)/(size(starflux))[1]
+
+   FOR istar=0, nstar-1 DO BEGIN 
+
+
+   veldisp_fft, starflux[*, istar], starivar[*, istar], npixbig, starfft,  $
+     starfilt, starvar0, starvariancefft, starivar_pad, $
      klo_cut=klo_cut, khi_cut=khi_cut, wave=starwave, keep=keep
 
-   fitredshift, starfilt, starerr_pad, starfilt, starerr_pad, $
+   fitredshift, starfilt, starivar_pad, starfilt, starivar_pad, $
       nsearch=5, zfit=starcen, z_err=starcen_err, $
       veldispfit=starsigma, veldisp_err=starsigma_err, doplot=doplot
 
@@ -133,29 +135,32 @@ pro veldisp, objflux, objerr, objwave, starflux, starerr, starwave, result, klo_
    FOR iobj=0, nobj-1 DO BEGIN 
 
 
-      fluxerr = objerr[*, iobj]
-      veldisp_fft, objflux[*,iobj], fluxerr, npixbig,  $
-        fluxfft, fluxfilt, fluxvar0, fluxvariancefft, fluxerr_pad,  $
+      fluxivar = objivar[*, iobj]
+      veldisp_fft, objflux[*,iobj], fluxivar, npixbig,  $
+        fluxfft, fluxfilt, fluxvar0, fluxvariancefft, fluxivar_pad,  $
         klo_cut=klo_cut, khi_cut=khi_cut
 
-      fitredshift, fluxfilt, fluxerr_pad, starfilt, starerr_pad, $
-       nsearch=5, zfit=fitcen, z_err=fitcen_err, $
-       veldispfit=galsigma, veldisp_err=galsigma_err, doplot=doplot
-
+      fitredshift, fluxfilt, fluxivar_pad, starfilt, starivar_pad, $
+        nsearch=5, zfit=fitcen, z_err=fitcen_err, $
+        veldispfit=galsigma, veldisp_err=galsigma_err, zconf=zconf, $
+        doplot=doplot
+      
 ; 2nd try
 
       IF keyword_set(keep) THEN BEGIN 
-          veldisp_fft, objflux[*,iobj], fluxerr, npixbig,  $
-            fluxfft, fluxfilt, fluxvar0, fluxvariancefft, fluxerr_pad, $
+          veldisp_fft, objflux[*,iobj], fluxivar, npixbig,  $
+            fluxfft, fluxfilt, fluxvar0, fluxvariancefft, fluxivar_pad, $
             keep=keep*10.^(fitcen/10000.)
           
-;          fitredshift, fluxfilt, fluxerr_pad, starfilt, starerr_pad, $
+;          fitredshift, fluxfilt, fluxivar_pad, starfilt, starivar_pad, $
 ;            nsearch=5, zfit=fitcen, z_err=fitcen_err, $
 ;            veldispfit=galsigma, veldisp_err=galsigma_err, doplot=doplot
       ENDIF 
 
-      result[iobj].z = 10.^(fitcen/10000)-1. ; dimensionless z
-      result[iobj].z_err = alog(10)*1e-4*fitcen_err*(1+result[iobj].z)
+      result[iobj].z[istar]     = 10.^(fitcen/10000)-1. ; dimensionless z
+      result[iobj].z_err[istar] = alog(10)*1e-4*fitcen_err* $
+        (1+result[iobj].z[istar])
+      result[iobj].zconf[istar] = zconf
 
       if (keyword_set(doplot)) then begin
          wset,2
@@ -169,11 +174,11 @@ pro veldisp, objflux, objerr, objwave, starflux, starerr, starwave, result, klo_
 ; Should really store sigma squared, and allow negative values; error
 ; should reflect it - DPF ???
       if (galsigma GT starsigma AND starsigma GT 0.0) then begin
-         result[iobj].sigma2_cc = galsigma^2 - starsigma^2
+         result[iobj].sigma2_cc[istar] = galsigma^2 - starsigma^2
 
 ; fix this
-         result[iobj].sigma2_cc_err = sqrt((galsigma*galsigma_err)^2 + $
-          (starsigma*starsigma_err)^2)/result[iobj].sigma2_cc
+         result[iobj].sigma2_cc_err[istar] = sqrt((galsigma*galsigma_err)^2 + $
+          (starsigma*starsigma_err)^2)/result[iobj].sigma2_cc[istar]
       endif
 
       twopiei = 2.0 * PI * complex(0.0,1.0)
@@ -194,8 +199,8 @@ pro veldisp, objflux, objerr, objwave, starflux, starerr, starwave, result, klo_
       bestalpha = -9999.0
 
       if (n_elements(answer) EQ 4) then begin
-         result[iobj].sigma2_diff = answer[1]
-         result[iobj].sigma2_diff_err = answer[2]
+         result[iobj].sigma2_diff[istar] = answer[1]
+         result[iobj].sigma2_diff_err[istar] = answer[2]
          bestalpha = answer[3]
       endif
 
@@ -208,24 +213,24 @@ pro veldisp, objflux, objerr, objwave, starflux, starerr, starwave, result, klo_
       ENDIF 
 
       if (n_elements(answerq) EQ 4) then begin
-         result[iobj].sigma2_quotient = answerq[1]
-         result[iobj].sigma2_quotient_err  = answerq[2]
+         result[iobj].sigma2_quotient[istar] = answerq[1]
+         result[iobj].sigma2_quotient_err[istar]  = answerq[2]
          bestalpha_q = answerq[3]
       endif
 
       IF NOT keyword_set(noquotient) THEN BEGIN
           r = result[iobj]
-          print, iobj, r.plate, r.fiber, r.z, r.z_err, r.sigma2_cc, $
-            r.sigma2_cc_err, r.sigma2_quotient, r.sigma2_quotient_err, $
+          print, iobj, r.plate, r.fiber, r.z[istar], r.z_err[istar], r.sigma2_cc[istar], $
+            r.sigma2_cc_err[istar], r.sigma2_quotient[istar], r.sigma2_quotient_err[istar], $
             format='(i4,i5,i4,f8.5," +/-",f8.5,2(f8.3," +-",f6.3))'
 
       ENDIF ELSE BEGIN 
-          print, iobj, result[iobj].z, result[iobj].z_err,  $
-            result[iobj].sigma2_cc, result[iobj].sigma2_cc_err, $
+          print, iobj, result[iobj].z[istar], result[iobj].z_err[istar],  $
+            result[iobj].sigma2_cc[istar], result[iobj].sigma2_cc_err[istar], $
             format='(i4,f9.3,3(f8.3))'
       ENDELSE 
 
    endfor
-
+   endfor
    return
 end

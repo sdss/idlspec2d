@@ -109,7 +109,7 @@ end
 ;------------------------------------------------------------------------------ 
 pro fitredshift, fluxfft, fluxerr, starfft, starerr, $
  nsearch=nsearch, zmin=zmin, zfit=z, z_err=z_err, $
- veldispfit=veldisp, veldisp_err=veldisp_err, doplot=doplot
+ veldispfit=veldisp, veldisp_err=veldisp_err, zconf=zconf, doplot=doplot
 
 ; keyword defaults
    if (NOT keyword_set(nsearch)) then nsearch = 5
@@ -250,6 +250,18 @@ pro fitredshift, fluxfft, fluxerr, starfft, starerr, $
    z_err = gausserrors[1]
    veldisp = a[2]
    veldisp_err = gausserrors[2]
+
+;   zconf = a[0] ; height of gaussian
+
+   twopiei = 2.0 * !dpi * complex(0.0,1.0)
+   knums = fft_wavenums(n_elements(starfft))
+   phase = exp( - twopiei * knums * z)
+   model = double(fft(starfft*phase,/inv))
+   gal = double(fft(fluxfft, /inv))
+   
+   starmask = where(starerr NE 0)
+   chisq = total((model-gal)^2*fluxerr*starmask)/total(starmask)
+   zconf = chisq
 
    return
 end

@@ -64,7 +64,7 @@ END
 
 
 
-PRO reduce_plate, platenum, wave, template, result, first=first
+PRO reduce_plate, platenum, wave, ztemplate, result, first=first
 
   IF NOT keyword_set(platenum) THEN platenum = 306
   zap = 1  ; zap 5577
@@ -78,7 +78,8 @@ PRO reduce_plate, platenum, wave, template, result, first=first
     format='(I,L,I,F,A,L)'
 
 ; define structure to hold results - store info from regress file
-  result = veldisp_struc(n_elements(plt))
+  n_ztemp = n_elements(ztemplate)/(size(ztemplate))[1]
+  result = veldisp_struc(n_elements(plt), n_ztemp)
   result.plate = plt
   result.mjd   = mjd
   result.fiber = fiber
@@ -109,7 +110,8 @@ PRO reduce_plate, platenum, wave, template, result, first=first
   specpath = get_specpath()
 
 ; Read data
-  readspec, platenum, result.fiber, flux=galflux, flerr=galsig, wave=galwave, plug=galplug, /silent, root_dir=specpath+'2d_3c/'
+  readspec, platenum, result.fiber, flux=galflux, flerr=galsig,  $
+    wave=galwave, plug=galplug, /silent, root_dir=specpath+'2d_3c/'
 
   result.run    = galplug.objid[0]
   result.rerun  = galplug.objid[1]
@@ -118,10 +120,13 @@ PRO reduce_plate, platenum, wave, template, result, first=first
   result.id     = galplug.objid[4]
 
 ; fix up template
-  templatesig = template*0+1
-  lambda_match, galwave[*, 0], wave, template
-  lambda_match, galwave[*, 0], wave, templatesig
-  lambda_match, galwave[*, 0], wave, wave
+  print, n_ztemp, ' Templates '
+  ztemplatesig = ztemplate*0+1
+  refwave = galwave[*, 0]
+
+  lambda_match, refwave, wave, ztemplate
+  lambda_match, refwave, wave, ztemplatesig
+  lambda_match, refwave, wave, wave
 
 ; Remove blank spectra from list
   bad = bytarr(ct)
@@ -145,8 +150,13 @@ PRO reduce_plate, platenum, wave, template, result, first=first
 ; Restrict wavelength range to "keep" (in Angstroms)
   keep = [3500, 6100]
 
+
+;  ztemplate = ztemplate[*, 0]
+;  ztemplatesig = ztemplatesig[*, 0]
+  
+
 ; Call veldisp
-  veldisp, galflux, galsig, galwave, template, templatesig, wave, result, $
+  veldisp, galflux, galsig, galwave, ztemplate, ztemplatesig, wave, result, $
     sigmast=0.05, maxsig=6, /nodif, keep=keep
 
   z     = result.z
@@ -163,7 +173,7 @@ PRO reduce_plate, platenum, wave, template, result, first=first
 
 ; Write veldisp FITS file
   fname = generate_filename(result[0].mjd, result[0].plate)
-  mwrfits, result, specpath+'veldisp/brgtemplate/'+fname+'.fits', /create
+  mwrfits, result, specpath+'veldisp/'+fname+'.fits', /create
 
 ; Write trimmed tsobj file
   suffix= '-'+string(result[0].mjd,format='(I5.5)')+ $
@@ -172,7 +182,7 @@ PRO reduce_plate, platenum, wave, template, result, first=first
   readspec, platenum, tsobj=tsobj
   help, tsobj
   tsobjtrim = tsobj[(result.fiber-1)]
-  mwrfits, tsobjtrim,specpath+'veldisp/brgtemplate/tsObj-trim'+suffix, /create
+  mwrfits, tsobjtrim,specpath+'veldisp/tsObj-trim'+suffix, /create
 
   print
   print, 'Plate', platenum, ' finished.  ', systime()
