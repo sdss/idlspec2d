@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   res = pca_solve( objflux, objivar, objloglam, [ zfit, $
 ;    wavemin=, wavemax=, newloglam=, $
-;    maxiter=, niter=, nkeep=, eigenval=, acoeff=, outmask=, $
+;    maxiter=, niter=, nkeep=, nreturn=, eigenval=, acoeff=, outmask=, $
 ;    usemask=, _EXTRA= ] )
 ;
 ; INPUTS:
@@ -28,6 +28,8 @@
 ;   niter          - Number of PCA iterations; default to 10.
 ;   nkeep          - Number of PCA components to keep in each iteration
 ;                    and use in replacing noisy or missing data; default to 3.
+;   nreturn        - Number of PCA components to return; default to the same as
+;                    NKEEP.
 ;   _EXTRA         - Keywords for DJS_REJECT().
 ;
 ; OUTPUTS:
@@ -35,8 +37,8 @@
 ;
 ; OPTIONAL OUTPUTS:
 ;   newloglam      - PCA wavelength sampling in log-10(Angstroms) [NNEWPIX]
-;   eigenval       - Eigenvalue for each output eigenspectra [NKEEP]
-;   acoeff         - PCA coefficients [NKEEP,NOBJ]
+;   eigenval       - Eigenvalue for each output eigenspectra [NRETURN]
+;   acoeff         - PCA coefficients [NRETURN,NOBJ]
 ;   outmask        - Output mask from DJS_REJECT() [NNEWPIX,NOBJ]
 ;   usemask        - Number of unmasked spectra used for each pixel, so these
 ;                    are integers in the range 0 to NSPEC [NNEWPIX]; this is
@@ -64,12 +66,13 @@
 ;------------------------------------------------------------------------------
 function pca_solve, objflux, objivar, objloglam, zfit, $
  wavemin=wavemin, wavemax=wavemax, newloglam=newloglam, maxiter=maxiter, $
- niter=niter, nkeep=nkeep, eigenval=eigenval, acoeff=acoeff, $
+ niter=niter, nkeep=nkeep, nreturn=nreturn, eigenval=eigenval, acoeff=acoeff, $
  outmask=outmask, usemask=usemask, _EXTRA=KeywordsForReject
 
    if (NOT keyword_set(maxiter)) then maxiter = 0
    if (NOT keyword_set(niter)) then niter = 10
    if (NOT keyword_set(nkeep)) then nkeep = 3
+   if (NOT keyword_set(nreturn)) then nreturn = nkeep
 
    ndim = size(objflux, /n_dimen)
    dims = size(objflux, /dimens)
@@ -262,7 +265,7 @@ endelse
        usemask = total(outmask, 2)
    endif
 
-   eigenval = eigenval[0:nkeep-1]
-   return, transpose(pres[0:nkeep-1,*])
+   eigenval = eigenval[0:nreturn-1]
+   return, transpose(pres[0:nreturn-1,*])
 end
 ;------------------------------------------------------------------------------
