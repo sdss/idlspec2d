@@ -294,16 +294,10 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    camcol = indx[0] + 1
    camrow = 0
 
-   if (!version.release LT '5.4') then $
-    spawn, 'speclog_version', verslog $
-   else $
-    spawn, 'speclog_version', verslog, errstring
+   spawn, 'speclog_version', verslog
    if (NOT keyword_set(verslog)) then verslog = 'Unknown'
 
-   if (!version.release LT '5.4') then $
-    spawn, 'specflat_version', versflat $
-   else $
-    spawn, 'specflat_version', versflat, errstring
+   spawn, 'specflat_version', versflat
    if (NOT keyword_set(versflat)) then versflat = 'Unknown'
 
    sxaddpar, hdr, 'CAMROW', camrow
