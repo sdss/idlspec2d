@@ -57,6 +57,8 @@ SDSS_FLAGS: Add "SOUTHERN_SURVEY" flags for TARGET and TTARGET.
 SDSSPROC: Reverted to calls to specflat_version,speclog_version that work.
             New option /APPLYBIAS to bias-subtract.
 SPBIASAVE: New routine to average biases already generated with SPBIASGEN.
+SPPLAN2D: Change the default of MINEXP to 1 sec, so that special plates
+            like the M67 plate (#321) will be reduced.
 SMOOTH_SUPERFLAT: Located the spurious WARNING, changed to Warning, and
             upped the threshold.  It was not the critical one of the two
             smooth_superflat warnings.
