@@ -122,8 +122,9 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    scatfit = calcscatimage(ansimage[ntrace*nterms:*,*], yrow)
    scatflux = extract_boxcar(scatfit, xcen, radius=radius)
 
-   if (strmid(color,0,1) EQ 'b') then scatlimit = 20 $
-    else scatlimit = 30
+   exptime_factor = (exptime/900.0) > 1.0
+   if (strmid(color,0,1) EQ 'b') then scatlimit = 20 *exptime_factor $
+    else scatlimit = 30 * exptime_factor
 
    scatmed = median(scatfit)
    scatmax = max(scatfit)
