@@ -164,9 +164,10 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
    ; the density of data points.
 
    bkpt = 0
+   everyn = (2*nskies/3) > 1
    sset = bspline_iterfit(skywave, skyflux, invvar=skyivar, $
     nord=nord, upper=upper, lower=lower, maxiter=maxiter, $
-    /eachgroup, everyn=2*nskies/3, bkpt=bkpt, outmask=outmask, yfit=skyfit)
+    /eachgroup, everyn=everyn, bkpt=bkpt, outmask=outmask, yfit=skyfit)
 
    if (NOT keyword_set(sset)) then begin
       splog, 'ABORT: Fit sky is all zeros'
