@@ -53,28 +53,33 @@ function fiberflat, flat_flux, flat_fluxivar, fibermask, plugmap=plugmap, $
    if (N_elements(lower) EQ 0) then lower = 10
    if (N_elements(upper) EQ 0) then upper = 10
    if (N_elements(fibermask) NE ntrace) then fibermask = bytarr(ntrace) + 1
+   if (max(fibermask) EQ 0) then $
+    message, 'No good fibers according to FIBERMASK'
 
    ; For each fiber, construct the spline fit through the data
 
    fflat = fltarr(ny,ntrace)
    yaxis = findgen(ny)
    for i=0, ntrace-1 do begin
-        print, format='($, ".",i4.4,a5)',i,string([8b,8b,8b,8b,8b])
-        fullbkpt = slatec_splinefit(yaxis, flat_flux[*,i], coeff, $
-         invvar=flat_fluxivar[*,i], nord=4, bkspace=bkspace, $
-         lower=lower, upper=upper, maxiter=3)
-        fflat[*,i] = slatec_bvalu(yaxis, fullbkpt, coeff)
 
-	ugly = where(finite(fflat[*,i]) EQ 0 OR fflat[*,i] LE 0.0, uglyct)
-        if (uglyct GT 0) then begin
-          splog, 'bad spline in trace ', i, uglyct
-          fflat[ugly,i] = 0.0
-          if (uglyct GT 10) then fflat[*,i] = flat_flux[*,i]
-        endif
+      print, format='($, ".",i4.4,a5)',i,string([8b,8b,8b,8b,8b])
+
+      fullbkpt = slatec_splinefit(yaxis, flat_flux[*,i], coeff, $
+       invvar=flat_fluxivar[*,i], nord=4, bkspace=bkspace, $
+       lower=lower, upper=upper, maxiter=3)
+      fflat[*,i] = slatec_bvalu(yaxis, fullbkpt, coeff)
+
+      ugly = where(finite(fflat[*,i]) EQ 0 OR fflat[*,i] LE 0.0, uglyct)
+      if (uglyct GT 0) then begin
+         splog, 'bad spline in trace ', i, uglyct
+         fflat[ugly,i] = 0.0
+         if (uglyct GT 10) then fflat[*,i] = flat_flux[*,i]
+      endif
+
    endfor
 
    ; Divide FFLAT by a global average of all fibers
-   flatmean = total(fflat # fibermask)/(total(fibermask)*ny)
+   flatmean = total(fflat # fibermask) / (total(fibermask) * ny)
    fflat = fflat / flatmean
 
    fibermed = djs_median(fflat,1)

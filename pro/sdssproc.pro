@@ -96,7 +96,8 @@ pro sdssproc, infile, image, invvar, indir=indir, $
 
    realbc = tempname[0]
 
-   inpath = filepath(infile, root_dir=indir)
+   if (keyword_set(indir)) then inpath = filepath(infile, root_dir=indir) $
+    else inpath = infile
    fullname = (findfile(inpath, count=ct))[0]
    if (ct NE 1) then $
     message, 'Cannot find image ' + infile

@@ -52,6 +52,8 @@
 ;   djs_avsigclip()
 ;   extract_image
 ;   readfits()
+;   slatec_bvalu()
+;   slatec_splinefit()
 ;   sdssproc
 ;   writefits
 ;

@@ -1,4 +1,6 @@
 
+* Count dead fibers in trace_crude
+
 * Compare throughput from dome flats vs. that on bright sky lines.
 
 * Sky-subtraction: Fix edge effects in inverse variance scaling
