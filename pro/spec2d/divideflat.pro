@@ -59,14 +59,11 @@ pro divideflat, flux, fluxivar, fflat, fibermask=fibermask, minval=minval
     
    for itrace=0, ntrace-1 do begin
 
-
       ;  Do we really need to reject bad fibers here, does it hurt
-      ;  to divide them out anyway??
+      ;  to divide them out anyway???
 
-      ;  The first 4 bits of fibermask will specify a fiber which 
-      ;  is very bad and cannot be divided
-
-      if (fibermask[itrace] mod 16 EQ 0) then begin ; GOOD FIBER
+;      if (fibermask[itrace] AND fibermask_bits('BADFLAT') NE 0) then begin
+      if (1) then begin
 
          ; Find where the flat field vector for this fiber is less than MINVAL
          qgood = fflat[*,itrace] GT minval
