@@ -109,6 +109,23 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    endif
 
    ;----------
+   ; Open the log file to catch WARNINGs and ABORTs.
+
+   splgfile = filepath('splog-'+filec+'-'+filee+'.log', root_dir=outdir)
+   splog, filename=splgfile, prelog=filename
+   splog, 'Started at ', systime()
+
+   ;----------
+   ; Wait for a file to be fully written to disk, and exit if that doesn't
+   ; happen within 3 minutes.
+
+   if (fits_wait(fullname, deltat=10, tmax=180) EQ 0) then begin
+      splog, 'File never fully written to disk: '+ fullname
+      splog, /close
+      return
+   endif
+
+   ;----------
    ; Find flavor, plate and MJD
 
    hdr = sdsshead(fullname)
@@ -175,29 +192,11 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    wsetfile_last = (reverse(wsetfiles))[0]
    fflatfile_last = (reverse(fflatfiles))[0]
 
-   splgfile = filepath('splog-'+filec+'-'+filee+'.log', root_dir=outdir)
-
    plugexist = keyword_set(fullplugfile)
    flatexist = keyword_set(tsetfile_last) AND $
     keyword_set( findfile(tsetfile_last) )
    arcexist = keyword_set(wsetfile_last) AND $
     keyword_set( findfile(wsetfile_last) )
-
-   ;----------
-   ; Open the log file to catch WARNINGs and ABORTs.
-
-   splog, filename=splgfile, prelog=filename
-   splog, 'Started at ', systime()
-
-   ;----------
-   ; Wait for a file to be fully written to disk, and exit if that doesn't
-   ; happen within 3 minutes.
-
-   if (fits_wait(fullname, deltat=10, tmax=180) EQ 0) then begin
-      splog, 'File never fully written to disk: '+ fullname
-      splog, /close
-      return
-   endif
 
    ;----------
    ; Reduce file depending on its flavor: flat, arc, or science/smear
