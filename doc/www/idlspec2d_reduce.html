@@ -29,8 +29,8 @@ number (such as 0306), <I>eeeeeeee</I> refers to an exposure number
 <P>
 At Princeton, these paths would be set as follows:
 <DL><DD><PRE>
-   setenv RAWDATA_DIR    /u/dss/rawdata
-   setenv SPECLOG_DIR    /u/dss/astrolog
+   RAWDATA_DIR=/u/dss/rawdata
+   SPECLOG_DIR=/u/dss/astrolog
 </PRE></DD></DL>
 
 <P>
@@ -40,8 +40,7 @@ Both paths must be set appropriately.
 <H2 ALIGN="left">Obtaining the Raw Data</H2>
 
 <P>
-The raw data is available from Princeton, where we keep two copies
-spinning.  The raw images for a particular night ($MJD) can be found at:
+The raw images for a particular night ($MJD) can be found at:
 <DL><DD><PRE>
    sdssdata.princeton.edu:/u/dss/rawdata/$MJD/sdR*.fit
 </PRE></DD></DL>
@@ -62,7 +61,7 @@ My convention is to put the reduced data in a directory separate from
 the data where the top-level directory is $SPECTRO_DATA.  At Princeton,
 this would be set to
 <DL><DD><PRE>
-   setenv SPECTRO_DATA     /u/dss/spectro
+   SPECTRO_DATA=/u/dss/spectro
 </PRE></DD></DL>
 Each plate is put in its own subdirectory, so the reductions of plate 306
 would be in "/u/dss/spectro/0306".
@@ -135,6 +134,70 @@ For example, to reduce plate 306 from the command line,
 <DL><DD><PRE>
 echo "<A HREF="idlspec2d_doc.html#SPREDUCE2D">spreduce2d</A>, 'spPlan2d-0306-51690.par'" | idl >& /dev/null &
 </PRE></DD></DL>
+
+<H2 ALIGN="left">Reducing Data Automatically with the Spectro Robot</H2>
+
+<P>
+We use an IDL script BATCH2D for batch processing many plates at once:
+<DL><DD><PRE>
+  <A HREF="idlspec2d_doc.html#BATCH2D">idlspec2d_doc.html#BATCH2D</A>
+</PRE></DD></DL>
+which in turn calls DJS_BATCH:
+<DL><DD><PRE>
+  <A HREF="idlutils_doc.html#DJS_BATCH">idlutils_doc.html#DJS_BATCH</A>
+</PRE></DD></DL>
+This script will run jobs across local or remote networks using rsh
+or ssh protocols.  For a remote machine, the raw data files are shipped
+across the network, the plate is reduced, then the reductions are shipped
+back.  Presumably, this would work just fine on the Fermi farms.  The plan
+files need to be built before running this script.
+
+<P>
+There is a Spectro-Robot that automatically fetches data, builds plan files,
+and reduces it on a day-by-day basis.  The command "sprobot_start" loads
+the cron job.  The raw data is copied to the first disk with space listed
+in the SPROBOT_LOCALDISKS environment variable, then a link is built from
+$RAWDATA_DIR/$MJD to that directory.  At Princeton, the disk list is
+something like:
+<DL><DD><PRE>
+  SPROBOT_LOCALDISKS='/scr/spectro1/data/rawdata /scr/spectro2/data/rawdata'
+</PRE></DD></DL>
+
+Other environment variables that need to be set for the Spectro-Robot:
+<DL><DD><PRE>
+  SPROBOT_LOCALDISKS -- List of local disks to which to copy the data.
+  BATCH2DFILE -- Yanny file with list of machines+protocols for Spectro-2D;
+                 default file is "$IDLSPEC2D_DIR/examples/batch2d.par".
+  BATCH1DFILE -- Yanny file with list of machines+protocols for Princeton-1D
+                 default file is "$IDLSPEC2D_DIR/examples/batch1d.par".
+  RAWDATA_DIR -- Root directory for links to raw data directories, which
+                 then live in $RAWDATA_DIR/$MJD
+  ASTROLOG_DIR -- Root directory for astrolog files, which then live in
+                  $ASTROLOG_DIR/$MJD.
+  SPECLOG_DIR -- This can be identical to $ASTROLOG_DIR, or set by speclog
+                 product
+  SPECTRO_DATA -- Root directory for output files, which then live in
+                  $SPECTRO_DATA/$PLATE.
+  IDL_DIR -- Path set by IDL
+  IDLUTILS_DIR -- Path set by idlutils product
+  IDLSPEC2D_DIR -- Path set by idlspec2d product
+  SPECFLAT_DIR -- Path set by specflat product
+</PRE></DD></DL>
+If the BATCH2DFILE or BATCH1DFILE variables are not set, then the default
+files are used.  If any of the other variables are not set, then
+"sprobot_start" will issue an error message and fail to load.  A log file
+is written to the file "$RAWDATA_DIR/sprobot.log".
+
+<P>
+The Spectro-Robot commands:
+<DL><DD><PRE>
+  sprobot_start   -- Start the Spectro-Robot.
+  sprobot_status  -- See if the Spectro-Robot is running.
+  sprobot_stop    -- Stop the Spectro-Robot.
+</PRE></DD></DL>
+
+Finally, if one wished to *not* run Princeton-1D, then the line containing
+"sprobot1d.sh" would have to be removed from the file "sprobot.sh".
 
 <HR>
 
