@@ -219,10 +219,10 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
 
    if (NOT keyword_set(fiber)) then begin
       ; Special case to read all 640 fibers of each plate
-      platevec = reform( plate ## replicate(1,640L), 640L*nplate)
+      platevec = reform( [plate] ## replicate(1,640L), 640L*nplate)
       fibervec = reform( (lindgen(640L) + 1) # replicate(1,nplate), 640L*nplate)
       if (keyword_set(mjd)) then $
-       mjdvec = reform( mjd ## replicate(1,640L), 640L*nplate) $
+       mjdvec = reform( [mjd] ## replicate(1,640L), 640L*nplate) $
       else $
        mjdvec = lonarr(640L*nplate)
    endif else begin
