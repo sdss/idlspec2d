@@ -47,7 +47,9 @@
 ;   Three files are generated:
 ;     $SPECTRO_DATA/platelist.fits
 ;     $SPECTRO_DATA/platelist.txt
-;     $SPECTRO_DATA/platequality.txt
+;     $SPECTRO_DATA/platelist.html
+;     $SPECTRO_DATA/platequal.txt
+;     $SPECTRO_DATA/platequal.html
 ;
 ;   If INFILE is a list of plan files, i.e.
 ;     spPlancomb-0306-51690.par
@@ -106,7 +108,10 @@ pro platelist, infile, plist=plist, create=create, $
 
    minsn2 = 13.0
    fitsfile = djs_filepath('platelist.fits', root_dir=getenv('SPECTRO_DATA'))
-   ascfile = djs_filepath('platelist.txt', root_dir=getenv('SPECTRO_DATA'))
+   ascfile1 = djs_filepath('platelist.txt', root_dir=getenv('SPECTRO_DATA'))
+   htmlfile1 = djs_filepath('platelist.html', root_dir=getenv('SPECTRO_DATA'))
+   ascfile2 = djs_filepath('platequal.txt', root_dir=getenv('SPECTRO_DATA'))
+   htmlfile2 = djs_filepath('platequal.html', root_dir=getenv('SPECTRO_DATA'))
 
    ;----------
    ; If the /CREATE flag is not set, and the platelist file already exists
@@ -202,14 +207,45 @@ pro platelist, infile, plist=plist, create=create, $
     'n_star'   , 0L,  $
     'n_unknown', 0L,  $
     'n_sky'    , 0L, $
-    'success_main' , -1.0, $
-    'success_lrg' , -1.0, $
-    'success_qso' , -1.0, $
+    'success_main' , -0.001, $
+    'success_lrg' , -0.001, $
+    'success_qso' , -0.001, $
     'status2d' , 'Missing', $
     'statuscombine', 'Missing', $
     'status1d' , 'Missing', $
     'public'  , '', $
     'qualcomments'  , '' )
+   trimtags1 = [ $
+    'plate'    , $
+    'mjd'      , $
+    'ra'       , $
+    'dec'      , $
+    'progname' , $
+    'chunkname', $
+    'platequality' , $
+    'platesn2' , $
+    'n_galaxy' , $
+    'n_qso'    , $
+    'n_star'   , $
+    'n_unknown', $
+    'n_sky'    , $
+    'public'   ]
+   trimtags2 = [ $
+    'plate'    , $
+    'mjd'      , $
+    'sn2_g1'   , $
+    'sn2_i1'   , $
+    'sn2_g2'   , $
+    'sn2_i2'   , $
+    'fbadpix'  , $
+    'success_main' , $
+    'success_lrg'  , $
+    'success_qso'  , $
+    'status2d' , $
+    'statuscombine', $
+    'status1d' , $
+    'platequality' , $
+    'qualcomments'   ]
    plist = replicate(plist, nfile)
 
    ;----------
@@ -615,47 +651,37 @@ pro platelist, infile, plist=plist, create=create, $
    endfor
 
    ;---------------------------------------------------------------------------
-   ; Open output file
+   ; Write output files
 
-   if (keyword_set(ascfile)) then $
-    openw, olun, ascfile, /get_lun $
-   else $
-    olun = -1L
+   alias = [['CHUNKNAME'    , 'CHUNK'   ], $
+            ['PROGNAME'     , 'PROG'    ], $
+            ['PLATESN2'     , 'SN^2'    ], $
+            ['N_GALAXY'     , 'N gal'   ], $
+            ['N_QSO'        , 'N QSO'   ], $
+            ['N_STAR'       , 'N star'  ], $
+            ['N_UNKNOWN'    , 'N unk'   ], $
+            ['N_SKY'        , 'N sky'   ], $
+            ['FBADPIX'      , '%Badpix' ], $
+            ['SUCCESS_MAIN' , '%Main'   ], $
+            ['SUCCESS_LRG'  , '%LRG'    ], $
+            ['SUCCESS_QSO'  , '%QSO'    ], $
+            ['STATUS2D'     , '2D'      ], $
+            ['STATUSCOMBINE', 'Comb'    ], $
+            ['STATUS1D'     , '1D'      ], $
+            ['PLATEQUALITY' , 'QUALITY' ] ]
 
-   printf, olun, 'PLATE  MJD   RA    DEC   SN2_G1 SN2_I1 SN2_G2 SN2_I2 ' $
-    + 'Ngal Nqso Nsta Nunk Nsky Stat2D  StatCom Stat1D  Vers2D    Vers1D    Quality   Public '
-   printf, olun, '-----  ----- ----- ----- ------ ------ ------ ------ ' $
-    + '---- ---- ---- ---- ---- ------- ------- ------- --------- --------- --------- -------'
+   trimdat1 = struct_trimtags(plist, select_tags=trimtags1)
+   struct_print, trimdat1, filename=ascfile1, fdigit=3, alias=alias
+   struct_print, trimdat1, filename=htmlfile1, /html, fdigit=3, alias=alias
 
-   ;----------
-   ; Loop through all files
-
-   for ifile=0, nfile-1 do begin
-      printf, olun, plist[ifile].plate, plist[ifile].mjd, $
-       plist[ifile].ra, plist[ifile].dec, plist[ifile].sn2_g1, $
-       plist[ifile].sn2_i1, plist[ifile].sn2_g2, plist[ifile].sn2_i2, $
-       plist[ifile].n_galaxy, plist[ifile].n_qso, plist[ifile].n_star, $
-       plist[ifile].n_unknown, plist[ifile].n_sky, $
-       plist[ifile].status2d, plist[ifile].statuscombine, $
-       plist[ifile].status1d, $
-       plist[ifile].vers2d, plist[ifile].vers1d, $
-       plist[ifile].platequality, plist[ifile].public, $
-       format='(i5,i7,f6.1,f6.1,4f7.1,5i5,3(1x,a7),2(1x,a9),a10,a8)'
-   endfor
-
-   ;----------
-   ; Close output file
-
-   if (keyword_set(ascfile)) then begin
-      close, olun
-      free_lun, olun
-   endif
+   trimdat2 = struct_trimtags(plist, select_tags=trimtags2)
+   struct_print, trimdat2, filename=ascfile2, fdigit=3, alias=alias
+   struct_print, trimdat2, filename=htmlfile2, /html, fdigit=3, alias=alias
 
    ;----------
    ; Write the FITS binary table
 
-   if (keyword_set(fitsfile)) then $
-    mwrfits, plist, fitsfile, /create
+   mwrfits, plist, fitsfile, /create
 
 end
 ;------------------------------------------------------------------------------
