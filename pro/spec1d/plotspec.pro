@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   plotspec, plate, [ fiberid, mjd=, znum=, nsmooth=, psfile=, $
-;    /netimage, /zwarning, _EXTRA= ]
+;    /netimage, /zwarning, topdir=, _EXTRA= ]
 ;
 ; INPUTS:
 ;   plate      - Plate number
@@ -34,6 +34,8 @@
 ;   zwarning   - If set, then only select those non-sky fibers where the
 ;                ZWARNING flag has been set; can be used with or without
 ;                specifying fiber numbers with FIBERID.
+;   topdir     - Top-level directory for data; default to the environment
+;                variable $SPECTRO_DATA.
 ;   _EXTRA     - Kewords for SPLOT, such as XRANGE, YRANGE, THICK.
 ;
 ; OUTPUTS:
@@ -93,12 +95,12 @@
 ;------------------------------------------------------------------------------
 pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
  psfile=psfile, xrange=passxr, yrange=passyr, noerase=noerase, $
- netimage=netimage, EXTRA=KeywordsForSplot
+ netimage=netimage, topdir=topdir, EXTRA=KeywordsForSplot
 
    cspeed = 2.99792458e5
 
    readspec, plate, fiberid, mjd=mjd, znum=znum, flux=objflux, flerr=objerr, $
-    loglam=loglam, plug=plug, zans=zans, synflux=synflux, /silent
+    loglam=loglam, plug=plug, zans=zans, synflux=synflux, topdir=topdir, /silent
    if (NOT keyword_set(objflux)) then begin
       print, 'Plate not found!!'
       return
@@ -232,7 +234,7 @@ end
 ;------------------------------------------------------------------------------
 pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
  psfile=psfile, xrange=xrange, yrange=yrange, noerase=noerase, $
- netimage=netimage, zwarning=zwarning, _EXTRA=KeywordsForSplot
+ netimage=netimage, zwarning=zwarning, topdir=topdir, _EXTRA=KeywordsForSplot
 
    if (n_params() LT 1) then begin
       print, 'Syntax - plotspec, plate, [ fiberid, mjd=, znum=, nsmooth=, $'
@@ -246,7 +248,8 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
 
    if (n_elements(plate) NE 1) then $
     message, 'PLATE must be a scalar'
-   if (NOT keyword_set(mjd)) then readspec, plate, mjd=mjd, /silent
+   if (NOT keyword_set(mjd)) then readspec, plate, mjd=mjd, topdir=topdir, $
+    /silent
    if (NOT keyword_set(mjd)) then begin
       print, 'Plate not found!!'
       !quiet = quiet
@@ -273,7 +276,7 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
    endif
 
    if (keyword_set(zwarning)) then begin
-      readspec, plate, fiberid, mjd=mjd, /silent, zans=zans
+      readspec, plate, fiberid, mjd=mjd, topdir=topdir, /silent, zans=zans
       if (NOT keyword_set(zans)) then begin
          print, 'No spZ file found for selecting ZWARNING flags'
          return
@@ -317,7 +320,7 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
       plotspec1, plate, fiberid[ifiber], mjd=mjd, znum=znum, $
        nsmooth=nsmooth, psfile=psfile, $
        xrange=xrange, yrange=yrange, noerase=noerase, netimage=netimage, $
-       _EXTRA=KeywordsForSplot
+       topdir=topdir, _EXTRA=KeywordsForSplot
 
       if (keyword_set(psfile)) then begin
          if (NOT keyword_set(q_onefile) OR ifiber EQ nfiber-1) then dfpsclose
@@ -345,7 +348,7 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
             'P': begin
                     read, plate, mjd, prompt='Enter new plate and MJD (enter 0 for unknown MJD): '
                     if (NOT keyword_set(mjd)) then $
-                     readspec, plate, mjd=mjd, /silent
+                     readspec, plate, mjd=mjd, topdir=topdir, /silent
                     if (NOT keyword_set(mjd)) then begin
                        print, 'Plate not found!!'
                        !quiet = quiet
