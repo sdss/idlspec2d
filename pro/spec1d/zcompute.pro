@@ -91,7 +91,8 @@ end
 function zcompute, objflux, objivar, starflux, starmask, nfind=nfind, $
  poffset=poffset, pspace=pspace, pmin=pmin, pmax=pmax, $
  mindof=mindof, width=width, minsep=minsep, $
- plottitle=plottitle, doplot=doplot1, debug=debug, verbose=verbose
+ plottitle=plottitle, doplot=doplot1, debug=debug, verbose=verbose, $
+                   silent=silent
 
    if (NOT keyword_set(nfind)) then nfind = 1
    if (NOT keyword_set(pspace)) then pspace = 1
@@ -213,9 +214,10 @@ function zcompute, objflux, objivar, starflux, starmask, nfind=nfind, $
       thetaarr[*,ilag] = acoeff
 
       ; Burles counter of lag number...
-      print, format='("Lag ",i5," of ",i5,a1,$)', $
-       ilag, nlag, string(13b)
-   endfor
+      if(NOT keyword_set(silent)) then $
+        print, format='("Lag ",i5," of ",i5,a1,$)', $
+        ilag, nlag, string(13b)
+  endfor
 
    ;-----
    ; Fit this chi2/DOF minimum
