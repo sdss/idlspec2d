@@ -7,8 +7,8 @@ It also addresses some rsync bugs for Son-of-Spectro.
 
 APO_CHECKLIMITS: Wasn't matching on flavor.  Fixed.
 APO_LOG2HTML: Mistakenly was listing times as hr:sec instead of hr:min!
-FLUXCORR_NEW: Return 0.0 in entire fluxcorr image if 'No good spectrophoto
-           stars are found'.
+FLUXCORR_NEW:  Return all zeros in fluxcorr image if 
+                  "WARNING: No spectrophoto with high S/N"
 GET_TAI: A short proc to determine, beginning, mid-point, and ending
            timestamps for sdR exposures.  Uses TAI-BEG,TAI-END in header
            if they exist; otherwise compute from TAI and EXPTIME.
@@ -65,6 +65,7 @@ sprobot.sh: Copy the guider image directory.  We mistakenly lost this copying
 sos.sh,startapo.sh: Forget to switch to UT time in a couple of instances.
 
 In idlutils:
+DJS_REJECT  : Major bug in /groupbadpix option, should now work as intended
 BSPLINE_ITERFIT: Fix major bug with /GROUPBADPIX option which is used
            by COMBINE1FIBER.
 SXCOMBINEPAR: New proc to combine values of specified header cards from
