@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   platesn, finalflux, finalivar, finalandmask, finalplugmap, loglam, $
-;    [ hdr=, plotfile=, snvec=, synthmag=, ebv_sfd= ]
+;    [ hdr=, plotfile=, snvec=, synthmag= ]
 ;
 ; INPUTS:
 ;   finalflux      - 
@@ -23,7 +23,6 @@
 ;   hdr            - FITS header; if specified, then keywords are added.
 ;                    The PLATE and MJD for the plot title are from this header.
 ;   plotfile       - If set, then write PostScript plot to this file.
-;   ebv_sfd        - Pass to PLOTSN.
 ;
 ; OUTPUTS:
 ;
@@ -62,8 +61,7 @@
 ;-
 ;------------------------------------------------------------------------------
 pro platesn, finalflux, finalivar, finalandmask, finalplugmap, loglam, $
- hdr=hdr, plotfile=plotfile, snvec=snvec, synthmag=synthmag, filtsz=filtsz, $
- ebv_sfd = ebv_sfd
+ hdr=hdr, plotfile=plotfile, snvec=snvec, synthmag=synthmag, filtsz=filtsz
 
    if NOT keyword_set(filtsz) then filtsz=25
 
@@ -130,8 +128,7 @@ pro platesn, finalflux, finalivar, finalandmask, finalplugmap, loglam, $
    plottitle = 'PLATE=' + strtrim(string(sxpar(hdr,'PLATEID')),2) $
     + '  MJD=' + strtrim(string(sxpar(hdr,'MJD')),2)
    plotsn, snvec, finalplugmap, plotfile=plotfile, plottitle=plottitle, $
-    synthmag=synthmag, snplate=snplate, roffset = roffset, rsigma = rsigma, $
-    groffset = groffset, grsigma = grsigma, ebv_sfd = ebv_sfd
+    synthmag=synthmag
 
    ;----------
    ; Print roll call of bad fibers and bad pixels.
@@ -204,28 +201,6 @@ pro platesn, finalflux, finalivar, finalandmask, finalplugmap, loglam, $
             sxaddpar, hdr, key1, snplate[ispec-1,bb], comment, before='LOWREJ'
          endfor
       endfor
- 
-      ;-----------------
-      ; Add keywords describing the agreement of the syntmags and the
-      ; photo mags in the plugmap.  
-
-      sxaddpar, hdr, 'ROFFSET1', roffset[0], $
-                'Mean r-band mag difference (spectro - photo)'
-      sxaddpar, hdr, 'RSIGMA1', rsigma[0], $
-             'Stddev of r-band mag difference (spectro - photo)'
-      sxaddpar, hdr, 'GROFF1', groffset[0], $
-                'Mean (g-r) color difference (spectro - photo)'
-      sxaddpar, hdr, 'GRSIGMA1', grsigma[0], $
-                'Stddev of (g-r) color difference (spectro - photo)'
-      sxaddpar, hdr, 'ROFFSET2', roffset[1], $
-                'Mean r-band mag difference (spectro - photo)'
-      sxaddpar, hdr, 'RSIGMA2', rsigma[1], $
-             'Stddev of r-band mag difference (spectro - photo)'
-      sxaddpar, hdr, 'GROFF2', groffset[1], $
-                'Mean (g-r) color difference (spectro - photo)'
-      sxaddpar, hdr, 'GRSIGMA2', grsigma[1], $
-                'Stddev of (g-r) color difference (spectro - photo)'
-
    endif
 
    return
