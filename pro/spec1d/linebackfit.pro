@@ -183,7 +183,7 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
          message, 'Wrong number of elements for SIGGUESS'
       endelse
    endif else begin
-      siguess = replicate(1.5d-4, nline)
+      sigguess = replicate(1.5d-4, nline)
    endelse
 
    npix = n_elements(flux)
