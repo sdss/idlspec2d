@@ -21,7 +21,7 @@ PCA_SOLVE: Add NRETURN keyword for returning a different number of
 PCA_STAR: Major changes to read stellar classes and subclasses,
           then generate the 2-component PCA solution for all M stars
           (for example) and reconstruct types M1 through M9.
-PLATELIST: Add NEXP to output structure.
+PLATELIST: Add NEXP,EXPT_B1,EXPT_B2,EXPT_R1,EXPT_R2 to output structure.
 REDMONSTER: Change the warning message to "Bad sky residuals...",
             and only send the message "Red Monster at..." if it
             is around 6400-6600 Ang, where we think the problem may
