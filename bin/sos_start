@@ -4,10 +4,6 @@
 #
 # D. Schlegel, Princeton, 11 Dec 2000
 #------------------------------------------------------------------------------
-# Set file names.
-
-cronfile=/tmp/$USER.sos.cron
-SOSLOG=/data/spectro/spectrologs/sos.log
 
 #------------------------------------------------------------------------------
 # If a second argument is give, such as "sos_start plate-mapper", or 
@@ -18,6 +14,12 @@ if [ $# = 1 ] ; then
   ssh $1 sos_start
   exit
 fi
+
+#------------------------------------------------------------------------------
+# Set file names.
+
+cronfile=/tmp/$USER.sos.cron
+SOSLOG=/data/spectro/spectrologs/sos.log
 
 #------------------------------------------------------------------------------
 # Test that certain environment variables are already set.
