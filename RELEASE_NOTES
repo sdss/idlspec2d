@@ -8,6 +8,7 @@ PLATELIST: Added /PURGE2D, /PURGE1D options.
 PLOTSPEC: Added /NOERASE keyword.  Minor fix to Y plotting range.
 
 RMFILE (in idlutils): Add support for deleting a list of files.
+SPLOT (in idlutils): Minor bug fix to avoid plotting the axes twice.
 evilinstall (in idlutils): Syntax changes to work with bash on spectro.
 
 -------------------------------------------------------------------------------
