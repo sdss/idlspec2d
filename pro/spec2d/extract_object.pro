@@ -189,6 +189,12 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    if (badcolumns[0] NE -1) then fibermask[badcolumns] = $
                 fibermask[badcolumns] OR pixelmask_bits('MANYBADCOLUMNS')
 
+   if (whopping[0] NE -1) then begin
+     wp = [whopping - 2 , whopping -1, whopping, whopping+1 , whopping+2]
+     wp = (wp > 0) < (ny - 1)
+     fibermask[wp] = fibermask[wp] OR pixelmask_bits('NEARWHOPPER')
+   endif
+
    
    ;-----------------------------------------------------------------------
    ;  This is a kludge to fix first and last column
