@@ -1,13 +1,18 @@
 
+FIND_NMINIMA: Retain each peak only if it is at least MINSEP from all
+            previous peaks.
 SPBIASGEN: New routine for generating mean biases for a night.
 SPREDUCE1D, ZFIND, ZCOMPUTE, FIND_NMINIMA: Plotting and debugging
-           tools added with the /DOPLOT, /DEBUG keywords.
+            tools added with the /DOPLOT, /DEBUG keywords.
 SPREDUCE1D: Change flag for small chi^2 difference to be triggered
             when RCHI2DIFF < 0.01 or when RCHI2DIFF < 0.01 * RCHI2.
             This means that the difference in reduced chi^2 should be at
             least 0.01 if chi^2/DOF=1, or at least 0.10 if chi^2/DOF=10.
 ZCOMPUTE, FIND_NMINIMA: Return a (negative-valued) error code
             from FIND_NMINIMA, which ZCOMPUTE stuffs into Z_ERR.
+ZFIND: If fewer than NFIND peaks are found, then return blank structures
+            for the remaining (NFIND-NPEAK).  Previously, some of those
+            fields (such as TFILE,TCOLUMN) were filled with information.
 
 -------------------------------------------------------------------------------
 v4_8_4 (Aug 29, 2001 idlspec2d+idlutils)
