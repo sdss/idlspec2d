@@ -36,19 +36,6 @@ etc/spChunkList.par: Add chunks 91-93.
 templates/wfEigen*.fits: Add WFCCD templates from Prochaska
 
 -------------------------------------------------------------------------------
-v4_11 branch + v4_11_0 (Feb 6, 2004)
-
-This branch was created by Lupton for FNAL operations.
-The branch point was v4_10_7 == v4_11_0, with the following changes:
-
-Four files copied from the mainline as they were on this date
-which was a tag on the mainline called RHL-create-v4_11):
-  pro/fluxfix/jeg_sphoto_coef.pro : New routine
-  pro/fluxfix/spcoadd_fluxed_frames.pro : Only changed by Tremonti
-  pro/spec2d/platesn.pro : Only changed by Tremonti
-  pro/spec2d/plotsn.pro : Bug fixes by DJS and later changes by Tremonti.
-
--------------------------------------------------------------------------------
 v5_0_0 (Feb 19, 2004 idlspec2d running on IDL 5.4 - 6.0
 Built against specflat v1_5, elodie v1_0, idlutils v5_0_0.
 The speclog product was also tagged at v1_3, valid through MJD=53054 (today).
@@ -227,6 +214,19 @@ templates/spEigenCVstar-53054.fits, spEigenGal-53054.fits,
         Also, some mis-classified stars removed from the star list.
 
 -------------------------------------------------------------------------------
+v4_11 branch + v4_11_0 (Feb 6, 2004)
+
+This branch was created by Lupton for FNAL operations.
+The branch point was v4_10_7 == v4_11_0, with the following changes:
+
+Four files copied from the mainline as they were on this date
+which was a tag on the mainline called RHL-create-v4_11):
+  pro/fluxfix/jeg_sphoto_coef.pro : New routine
+  pro/fluxfix/spcoadd_fluxed_frames.pro : Only changed by Tremonti
+  pro/spec2d/platesn.pro : Only changed by Tremonti
+  pro/spec2d/plotsn.pro : Bug fixes by DJS and later changes by Tremonti.
+
+-------------------------------------------------------------------------------
 v4_10_7 (Dec 11, 2003 idlspec2d running on IDL 5.3 - 5.6
 Built against specflat v1_5, elodie v1_0, idlutils v4_10_7.
 Tagged for fixing SOS PR #5735.
@@ -374,6 +374,12 @@ etc/spPlateList.par: Update from 20 Nov 2002 to 11 Sep 2003.
 pro/Makefile: Add the plan subdirectory.
 ups/idlspec2d.table: Get rid of all the $UPS_PROD_FLAVOR references for 
            dependent products.
+
+-------------------------------------------------------------------------------
+v4_10_2
+This is an untested version of the code with the files in some
+state between v4_10_1 and v4_10_6.  It was created retro-actively
+by RHL on 18 March 2004 to tag the code as is stood on 13 Aug 2003.
 
 -------------------------------------------------------------------------------
 v4_10_1 (Jun 18, 2003 idlspec2d running on IDL 5.3 - 5.5
