@@ -176,10 +176,10 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
 
    endelse
 
-   ; Check to see if fibermask has changed
-   igood = where(fibermask NE 0, ngood)
+   ; Check to see if FIBERMASK has changed
+   igood = where(fibermask EQ 0, ngood)
 
-   if (igood[0] EQ -1) then message,'All flat fibers have been !!'
+   if (ngood EQ 0) then message, 'All flat fibers have been rejected!'
  
    ; Divide fflat by a global median of all (good) fibers
    globalmed = median(medval[igood]) ; Global median for all vectors
@@ -189,7 +189,7 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
    splog, 'Number of fiberflat points LE 0 = ', nz
 
    ;----------------------------------------------------------------
-   ;  Set flatfield bit in fibermask if needed
+   ;  Set flatfield bit in FIBERMASK if needed
    ;
    fmed = djs_median(fflat,1)
    badflat = where(fmed LT 0.5 * djs_median(fmed))
