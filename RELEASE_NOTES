@@ -32,6 +32,10 @@ Spectro robot scripts included in /bin directory (sprobot_start, etc.)
 For Son-of-Spectro, the WARNING and ABORT messages are now saved in HDU #5
 of the FITS log file, rather than as an element of the other HDU's.
 
+For Son-of-Spectro, now only copies astrolog directory of existing
+/data/spectro/$MJD data directory, since from now on the astrolog directory
+will never be purged.
+
 -------------------------------------------------------------------------------
 v4_3_1 (Dec 10, 2000)
 
