@@ -132,8 +132,8 @@ somewhat more information.
 <P>
 Aside from PLATE, TILE and MJD, this list contains the following:
 <PRE>
-RA       = Right ascension of plate center [J2000 degrees]
-DEC      = Declination of plate center [J2000 degrees]
+RA       = Right ascension of plate center [J2000 degrees].
+DEC      = Declination of plate center [J2000 degrees].
 MAPNAME  = Mapping name for this plate; data with the same mapping name
           are always combined into one plate file, even if taken on
           different nights.
@@ -151,13 +151,16 @@ SN2_I2   = (S/N)^2 per pixel at i=19.9 on spectrograph #2.
 N_GALAXY = The number of objects Princeton-1D called a galaxy.
 N_QSO    = The number of objects Princeton-1D called a QSO.
 N_STAR   = The number of objects Princeton-1D called a star.
-N_UNKNOWN= The number of objects Princeton-1D declared spectroscopically "unknown".
+N_UNKNOWN= The number of objects Princeton-1D declared spectroscopically 
+           unknown (a ZWARNING flag is set)
 N_SKY    = The number of sky fibers (almost always exactly 32)
 STATUS2D = Status of Spectro-2D pipeline; "Done" if done.
 STATUS1D = Status of Princeton-1D pipeline; "Done" if done.
 QSURVEY  = Status flag set to 1 for the best observation of any tile on the sky
            that satifies the following: (S/N)^2 > 15 for G1,G2,I1,I2, and
            the target version cannot be "special" or "devel".
+PUBLIC   = Name of public data release; presently plates are either not public,
+           or part of the early data release (EDR).
 </PRE>
 
 <P>
@@ -718,7 +721,8 @@ CLASS      Spectro classification: GALAXY, QSO, STAR, SKY;
            the ZWARNING flag
 SUBCLASS   Spectro sub-classification; presently only used for STARs with the
            catagories: O, B, A, F, K, M, L, Carbon_DQ, Carbon, WD, CV, sdM
-Z          Redshift
+Z          Redshift; if the ZWARNING flag is nonzero, then assume that this
+           redshift is incorrect
 Z_ERR      Redshift error; at present, not well determined
 RCHI2      Reduced chi^2 for best fit
 DOF        Degrees of freedom for best fit
