@@ -44,7 +44,8 @@
 ;                0=fixed, 1=float; default to [1].
 ;                The number of parameters to fit per fiber is determined
 ;                this way; e.g. nCoeff = n_elements(wfixed), so the default
-;                is to fit only 1 parameter per fiber.
+;                is to fit only 1 parameter per fiber.  For the (default)
+;                Gaussian profile, this is the height of the Gaussian.
 ;                Note that WFIXED is used to build the array WFIXARR.
 ;   inputans   - Input fit [ncoeff*nFiber+npoly+whoppingct]
 ;   iback      - 1D array of input background coeff 
@@ -309,14 +310,15 @@ function extract_row1, fimage, invvar, xcen, sigma, ymodel=ymodel, $
 
 ; HORRIBLE HACK SINCE EXTRACT_ROW RETURNS SOME NaN's!!!???
 jj = where(finite(ans) EQ 0)
-if (jj[0] NE -1) then ans[jj] = 0
-;if (jj[0] NE -1) then stop
+;if (jj[0] NE -1) then ans[jj] = 0
+if (jj[0] NE -1) then stop
 jj = where(finite(ymodel) EQ 0)
-if (jj[0] NE -1) then ymodel[jj] = 0
-;if (jj[0] NE -1) then stop
+;if (jj[0] NE -1) then ymodel[jj] = 0
+if (jj[0] NE -1) then stop
 jj = where(finite(fscat) EQ 0)
-if (jj[0] NE -1) then fscat[jj] = 0
-;if (jj[0] NE -1) then stop
+;if (jj[0] NE -1) then fscat[jj] = 0
+if (jj[0] NE -1) then stop
+;if (total(ymodel) EQ 0) then stop
 
    return, ans
 end
@@ -377,12 +379,12 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
 
    fibuse = bytarr(ntrace) + 1
 
-   ; Instead, look for any XCEN more than 2 pix off
-   ileft = where(xcen LT xvar[igood[0]]-2.0, nleft)
+   ; Instead, look for any XCEN more than 0 pix off
+   ileft = where(xcen LT xvar[igood[0]]-0.0, nleft)
    if (nleft GT 0) then fibuse[ileft] = 0
 
-   ; Instead, look for any XCEN more than 2 pix off
-   iright = where(xcen GT xvar[igood[ngood-1]]+2.0, nright)
+   ; Instead, look for any XCEN more than 0 pix off
+   iright = where(xcen GT xvar[igood[ngood-1]]+0.0, nright)
    if (nright GT 0) then fibuse[iright] = 0
 
    ; Don't fit to any centers where there are no good data points
@@ -415,6 +417,11 @@ ymodel = 0 ; ???
    for i=0, ncoeff-1 do $
     wfixarr[iuse*ncoeff+i] = tmp_wfixarr[lindgen(nuse)*ncoeff+i]
 
+   ; Set P for unused fibers equal to zero
+   p = fltarr(ma) + 0
+   for i=0, ncoeff-1 do $
+    p[iuse*ncoeff+i] = tmp_p[lindgen(nuse)*ncoeff+i]
+
    ; In FSCAT, linearly interpolate over unused fibers
    fscat = fltarr(ntrace)
    fscat[iuse] = tmp_fscat
@@ -429,6 +436,7 @@ ymodel = 0 ; ???
    if (nextra GT 0) then begin
       wfixarr[ma-nextra:ma-1] = tmp_wfixarr[tmp_ma-nextra:tmp_ma-1]
       ans[ma-nextra:ma-1] = tmp_ans[tmp_ma-nextra:tmp_ma-1]
+      p[ma-nextra:ma-1] = tmp_p[tmp_ma-nextra:tmp_ma-1]
    endif
 
    return, ans
