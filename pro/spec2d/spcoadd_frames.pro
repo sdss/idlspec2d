@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   spcoadd_frames, filenames, outputname, $
-;    fcalibprefix=, [ binsz=, zeropoint=, nord=, wavemin=, $
+;    fcalibprefix=, [ mjd=, binsz=, zeropoint=, nord=, wavemin=, $
 ;    bkptbin=, window=, maxsep=, adderr=, plotsnfile= ]
 ;
 ; INPUTS:
@@ -18,6 +18,7 @@
 ;   fcalibprefix   - Prefix for flux-calibration files.
 ;
 ; OPTIONAL KEYWORDS:
+;   mjd            - The MJD to put in the output header
 ;   binsz          - Bin size (in log-10 wavelength) in output spectra;
 ;                    default to 1d-4, which corresponds to 69.02977415 km/s.
 ;   zeropoint      - Log10(lambda) zero-point of the output spectra;
@@ -115,7 +116,7 @@ end
 
 ;------------------------------------------------------------------------------
 pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
- binsz=binsz, zeropoint=zeropoint, nord=nord, wavemin=wavemin, $
+ mjd=mjd, binsz=binsz, zeropoint=zeropoint, nord=nord, wavemin=wavemin, $
  bkptbin=bkptbin, window=window, maxsep=maxsep, adderr=adderr, $
  docams=camnames, plotsnfile=plotsnfile
 
@@ -437,6 +438,13 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
    sxdelpar, hdr, 'NBLEAD'
    sxdelpar, hdr, 'PIXFLAT'
    sxdelpar, hdr, 'FRAMESN2'
+
+   ;----------
+   ; Use the MJD passed as a keyword, which will typically be for the most
+   ; observation, and be consistent with the output file names
+
+   if (keyword_set(mjd)) then $
+    sxaddpar, hdr, 'MJD', mjd
 
    ;----------
    ; Add new header cards

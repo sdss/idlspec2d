@@ -34,6 +34,7 @@
 ;   spcoadd_frames
 ;   splog
 ;   yanny_free
+;   yanny_par()
 ;   yanny_read
 ;
 ; INTERNAL SUPPORT ROUTINES:
@@ -93,6 +94,9 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay
    plotsnfile = yanny_par(hdr, 'plotsnfile')
    fcalibprefix = yanny_par(hdr, 'fcalibprefix')
    combinefile = yanny_par(hdr, 'combinefile')
+   thismjd = yanny_par(hdr, 'MJD')
+   if (NOT keyword_set(thismjd)) then $
+    thismjd = max(allseq.mjd)
 
    if (keyword_set(combinedir)) then $
     spawn, 'mkdir -p ' + combinedir
@@ -201,7 +205,7 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay
    ; Co-add the fluxed exposures
 
    spcoadd_frames, djs_filepath(sciname, root_dir=extractdir), $
-    djs_filepath(combinefile, root_dir=combinedir), $
+    djs_filepath(combinefile, root_dir=combinedir), mjd=thismjd, $
     fcalibprefix=fcalibprefix, adderr=adderr, docams=docams, $
     plotsnfile=plotsnfile
 
