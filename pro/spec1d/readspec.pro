@@ -111,8 +111,6 @@ pro readspec1, plate, range, mjd=mjd, silent=silent, flux=flux, flerr=flerr, $
    common com_readspec, q_flux, q_flerr, q_invvar, q_andmask, q_ormask, $
     q_plugmap, q_loglam, q_wave, q_tsobj
 
-   if (NOT keyword_set(root_dir)) then root_dir = '/data/spectro/2d_3c'
-
    platestr = string(plate,format='(i4.4)')
    if (NOT keyword_set(mjd)) then mjdstr = '*' $
     else mjdstr = string(mjd,format='(i5.5)')
@@ -192,7 +190,7 @@ end
 ;------------------------------------------------------------------------------
 pro readspec, plate, fiber, mjd=mjd, silent=silent, flux=flux, flerr=flerr, $
  invvar=invvar, andmask=andmask, ormask=ormask, plugmap=plugmap, $
- loglam=loglam, wave=wave, tsobj=tsobj
+ loglam=loglam, wave=wave, tsobj=tsobj, root_dir=root_dir
 
    if (n_params() LT 1) then begin
       print, 'Syntax: readspec, plate, [ fiber, mjd=, /silent, flux=, flerr=, invvar=, $'
@@ -203,6 +201,8 @@ pro readspec, plate, fiber, mjd=mjd, silent=silent, flux=flux, flerr=flerr, $
    ; This common block specifies which keywords will be returned.
    common com_readspec, q_flux, q_flerr, q_invvar, q_andmask, q_ormask, $
     q_plugmap, q_loglam, q_wave, q_tsobj
+
+   if (NOT keyword_set(root_dir)) then root_dir = '/data/spectro/2d_3c'
 
    q_flux = arg_present(flux)
    q_flerr = arg_present(flerr)
