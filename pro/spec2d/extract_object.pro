@@ -82,7 +82,7 @@
 ;   qaplot_skyshift
 ;   qaplot_skysub
 ;   skysubtract
-;   spadd_guider_info
+;   spadd_guiderinfo
 ;   splog
 ;   sxaddpar
 ;   sxpar()
@@ -527,7 +527,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    sxaddpar,objhdr,'AIRMASS',$
           float(tai2airmass(ra, dec, tai=tai_mid)), after='ALT'
 
-   spadd_guider_info, objhdr
+   spadd_guiderinfo, objhdr
 
    sxaddpar, objhdr, 'EXTEND', 'T', after='NAXIS2'
 
