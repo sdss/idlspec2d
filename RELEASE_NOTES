@@ -54,6 +54,9 @@ PLATELIST: Add NEXP,EXPT_B1,EXPT_B2,EXPT_R1,EXPT_R2 to output structure.
           That case would mean that one of the night's of 2D data
           probably crashed, and we combined from whatever subset of data
           did run through from other nights.  This addressed PR #2993.
+          Add the /KILLPARTIAL option for deleting data from partially-
+          combined nights, which only happens from the Spectro-Robot
+          operating in real-time.
 PLOTSN: Changed auto-scaling of fitted magnitudes, when less than 20 objects
             are in the desired range.  Now the fitting range will expand to
             [10.0, snmag + 1.0].  So in case of g' [10.0, 21.2], this should
@@ -114,6 +117,10 @@ SPREDUCE1D: Change flag for small chi^2 difference to be triggered
             Added search for CV's using the eigenfile 'spEigenCVstar-*.fits'.
             Search for QSO's out to z=7.0, but this will require templates
             that span [525,9300] Ang.
+            For the moment, disable setting the 32L flag for ZWARNING,
+            since this seems to usually be erroneously set (when it is set)
+            in the 2nd pass through the ZFIND routine.  I'll have to track
+            that down later.
 ZCOMPUTE, FIND_NMINIMA: Return a (negative-valued) error code
             from FIND_NMINIMA, which ZCOMPUTE stuffs into Z_ERR.
 ZFIND: If fewer than NFIND peaks are found, then return blank structures
@@ -154,6 +161,7 @@ DJS_REJECT: Added GROW option to mask neighboring pixels.
             dimensional data (Scott thinks).
             Also some small changes to the way grouping works.
 EFCMN: Small change declaring a loop index as a long int.
+RMFILE: Bug fix for the case that one element of the filename array is blank.
 YANNY_READ: If there are too few words on a line for a structure entry,
            then set ERRCODE=-1 and return PDATA=0.
            Also, increase the allowed line-length to 1023 characters
