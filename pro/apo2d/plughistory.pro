@@ -28,7 +28,7 @@
 ;     IDL> plughistory
 ;
 ;   Make plots of history of unplugged fibers between MJD 52000 and MJD 52100:
-;     IDL> plughistory, mjdrange=[5200,52100]
+;     IDL> plughistory, mjdrange=[52000,52100]
 ;
 ; BUGS:
 ;
