@@ -35,8 +35,9 @@
 ;   mrdfits()
 ;   mwrfits
 ;   splog
+;   sxaddpar
+;   sxdelpar
 ;   sxpar()
-;   writefits
 ;   zfind()
 ;   zrefind()
 ;
@@ -311,6 +312,7 @@ andmask = 0 ; Free memory
    sxaddpar, hdr, 'NAXIS', 0
    sxdelpar, hdr, 'NAXIS1'
    sxdelpar, hdr, 'NAXIS2'
+   sxaddpar, hdr, 'EXTEND', 'T', after='NAXIS'
 
    mwrfits, 0, zallfile, hdr, /create ; Retain the original header in first HDU
    mwrfits, res_all, zallfile
