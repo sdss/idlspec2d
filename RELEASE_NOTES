@@ -7,6 +7,9 @@ FIND_NMINIMA: Remove use of DJS_SVDFIT (which didn't work on the Mac
            Add another error code (-7L) for the case where all of the Y
            values are identical, in which case the fit is impossible.
 GET_TAI: Add /SILENT option.
+LOCATESKYLINES: Change MAXSHIFT from 2.0 pixels to 3.5 pixels.  The worst-
+           case real arc->science flexure that we've seen is 3.2 pix
+           for the r2 camera on plate 192 MJD 51461.
 SDSSPROC: Call the new proc WARN_DAYTIME.
 SPCALIB: The correct TSET structure was not always being written
            to the spFlat files (though those files aren't actually
