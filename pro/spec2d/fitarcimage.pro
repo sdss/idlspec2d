@@ -368,7 +368,13 @@ function fitarcimage, arc, arcinvvar, side,linelist, xnew, ycen, tset, invset, $
    ; but only 0.3 pixels while tracing
 
    xcen = trace_crude(arc, yset=ycen, nave=1, nmed=1, xstart=xstart, $
-    ystart=row, maxshifte=0.3d, maxshift0=4.0d)
+    ystart=row, maxshifte=0.3d, maxshift0=2.0d)
+ 
+   ;
+   ; Iterate with trace_crude
+   ;
+   xcen = trace_crude(arc, yset=ycen, nave=1, nmed=1, xstart=xcen[row+30,*], $
+    ystart=row+30, maxshifte=0.3d, maxshift0=2.0d)
 
    ; Iterate the flux-weighted centers
    xnew = trace_fweight(arc, xcen, ycen)

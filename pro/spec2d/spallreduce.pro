@@ -138,7 +138,7 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
               + strtrim(string(plateid),2) + ', CAMERA= ' + camnums[icam]
 
 
-	    spawn, 'mkdir '+plateDir	
+	    spawn, 'mkdir -p '+plateDir	
 
 ;
 ;	Need to make sure we have a one-to-some match between
