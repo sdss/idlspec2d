@@ -322,7 +322,7 @@ splog,'Arc fbadpix ', fbadpix ; ???
       igood = where(arcstruct.qbad EQ 0)
       if (igood[0] NE -1) then begin
          tsep = min( abs(flatstruct[iflat].tai - arcstruct[igood].tai), ii )
-         if (tsep LE timese AND timesep NE 0p) then iarc = igood[ii]
+         if (tsep LE timese AND timesep NE 0) then iarc = igood[ii]
       endif
 
       if (iarc GE 0) then $
