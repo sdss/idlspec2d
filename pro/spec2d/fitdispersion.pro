@@ -152,7 +152,7 @@ function fitdispersion, arc_flux, arc_fluxivar, xcen_inp, $
                 median(width_fit[npix/2:npix-1,0:ntrace/2-1]), $
                 median(width_fit[npix/2:npix-1,ntrace/2:ntrace-1]) ]
 
-   splog, ((max(medwidth) GT 1.20) ? 'WARNING: ' : '') $
+   splog, ((max(medwidth) GT 1.10) ? 'WARNING: ' : '') $
     + 'Median wavelength widths = ' $
     + string(medwidth,format='(4f5.2)') + ' pix (LL LR UL UR)'
 

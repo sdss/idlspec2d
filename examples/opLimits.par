@@ -84,6 +84,11 @@ speclimit red flat NGOODFIBER r2 0 310
 
 # Issue an error if the spatial widths are gaussians with sigma > 1.10 pix.
 
+speclimit red flat XSIGMA b1 1.05 1.0999999
+speclimit red flat XSIGMA b2 1.05 1.0999999
+speclimit red flat XSIGMA r1 1.05 1.0999999
+speclimit red flat XSIGMA r2 1.05 1.0999999
+
 speclimit red flat XSIGMA b1 1.10 9e9
 speclimit red flat XSIGMA b2 1.10 9e9
 speclimit red flat XSIGMA r1 1.10 9e9
@@ -149,10 +154,15 @@ speclimit red arc NLAMPS r2 0 30
 
 # Issue an error if the wavelength widths are gaussians with sigma > 1.20 pix.
 
-speclimit red arc DISPSIGMA b1 1.20 9e9
-speclimit red arc DISPSIGMA b2 1.20 9e9
-speclimit red arc DISPSIGMA r1 1.20 9e9
-speclimit red arc DISPSIGMA r2 1.20 9e9
+speclimit red arc DISPSIGMA b1 1.05 1.0999999
+speclimit red arc DISPSIGMA b2 1.05 1.0999999
+speclimit red arc DISPSIGMA r1 1.05 1.0999999
+speclimit red arc DISPSIGMA r2 1.05 1.0999999
+
+speclimit red arc DISPSIGMA b1 1.10 9e9
+speclimit red arc DISPSIGMA b2 1.10 9e9
+speclimit red arc DISPSIGMA r1 1.10 9e9
+speclimit red arc DISPSIGMA r2 1.10 9e9
 
 # The sky levels were 0.15 e-/pix and 0.30 e-/pix in the blue and
 # cameras on MJD 51612 (8/9 March 2000).  Report a warning (yellow)
