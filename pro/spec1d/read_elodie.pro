@@ -1,20 +1,20 @@
 ;------------------------------------------------------------------------------
-; Read the Elodie eschelle spectra and pu on the SDSS pixelization.
+; Read the Elodie eschelle spectra and put on the SDSS pixelization.
 ;------------------------------------------------------------------------------
 function read_elodie, filename, loglam=newloglam, hdr=hdr
 
-   if (NOT keyword_set(filename)) then begin
-      print, 'Syntax: flux = read_elodie(filename, [loglam= ])'
+   if (n_params() LT 1) then begin
+      print, 'Syntax: flux = read_elodie(filename, [loglam=, hdr= ])'
    endif
 
    dloglam = 1.d-4
    nsubsamp = 8
-   nnew = 2200L
+   nnew = 2220L
    loglam0 = 3.6120
    sigma = 1.0 ; Gaussian sigma in pixels on the final sampled vector
 
    ; The Elodie spectra have 13501 0.2-Ang pixels from 4100 - 6800 Ang
-   objflux = readfits(filename, hdr)
+   objflux = mrdfits(filename, 0, hdr)
    if (NOT keyword_set(objflux)) then $
     message, 'File not found: ' + filename
    objwave = sxpar(hdr,'CRVAL1') + dindgen(sxpar(hdr,'NAXIS1')) $
