@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   res = elodie_best(objflux, objivar, $
-;    hdr=, objloglam0=, objdloglam=, zmin=, zmax= ])
+;    hdr=, objloglam0=, objdloglam=, zmin=, zmax=, fitindx= ])
 ;
 ; INPUTS:
 ;   objflux    - Flux for spectra [NPIX,NOBJECT]
@@ -19,10 +19,13 @@
 ;                Must be specified if OBJLOGLAM0,OBJDLOGLAM are not set.
 ;   objloglam0 - Zero-pint of log-10(Angstrom) wavelength mapping of OBJFLUX.
 ;   objdloglam - Wavelength spacing for OBJFLUX in log-10(Angstrom).
-;   zmin       - Minimum redshift to consider; default to -0.002
-;                (-600 km/sec).
-;   zmax       - Minimum redshift to consider; default to +0.002
-;                (+600 km/sec).
+;   zmin       - Minimum redshift to consider; default to -0.00333
+;                (-1000 km/sec).
+;   zmax       - Minimum redshift to consider; default to +0.00333
+;                (+1000 km/sec).
+;   fitindx    - If set, then only fit for the objects specified by
+;                these indices.  Set to -1 to not fit any objects (but
+;                return empty output structures); default to fitting all.
 ;
 ; OUTPUTS:
 ;   res        - Output structure with result for each object [NOBJECT].
@@ -35,6 +38,8 @@
 ;                  ELODIE_TEFF      - T_effective
 ;                  ELODIE_LOGG      - Log10(gravity)
 ;                  ELODIE_FEH       - [Fe/H]
+;                  ELODIE_Z_STDEV   - The standard deviation of the 12
+;                                     best-fit stars
 ;                The following elements are from the ZFIND() function:
 ;                  ELODIE_Z         - Redshift
 ;                  ELODIE_Z_ERR     - Redshift error
@@ -66,15 +71,16 @@ function elodie_struct
 
    result = create_struct( $
     name = 'ZELODIE', $
-    'elodie_filename' ,  '', $
-    'elodie_object'   ,  '', $
-    'elodie_sptype'   ,  '', $
+    'elodie_filename' , ' ', $
+    'elodie_object'   , ' ', $
+    'elodie_sptype'   , ' ', $
     'elodie_bv'       , 0.0, $
     'elodie_teff'     , 0.0, $
     'elodie_logg'     , 0.0, $
     'elodie_feh'      , 0.0, $
     'elodie_z'        , 0.0, $
     'elodie_z_err'    , 0.0, $
+    'elodie_z_stdev'  , 0.0, $
     'elodie_rchi2'    , 0.0, $
     'elodie_dof'      ,  0L  $
    )
@@ -85,11 +91,11 @@ end
 ;------------------------------------------------------------------------------
 function elodie_best, objflux, objivar, $
  hdr=objhdr, objloglam0=objloglam0, objdloglam=objdloglam, $
- zmin=zmin, zmax=zmax
+ zmin=zmin, zmax=zmax, fitindx=fitindx
 
    if (n_params() LT 2) then begin
       print, 'Syntax - res = elodie_best(objflux, objivar, [ hdr=, $'
-      print, ' objloglam0=, objdloglam=, zmin=, zmax= ]'
+      print, ' objloglam0=, objdloglam=, zmin=, zmax=, fitindx= ]'
       return, 0
    endif
    if (NOT keyword_set(objhdr)) then begin
@@ -100,10 +106,23 @@ function elodie_best, objflux, objivar, $
       objhdr = ['COEFF0  = ' + string(objloglam0), $
                 'COEFF1  = ' + string(objdloglam) ]
    endif
-   if (NOT keyword_set(zmin)) then zmin = -0.002
-   if (NOT keyword_set(zmax)) then zmax = 0.002
+   if (NOT keyword_set(zmin)) then zmin = -0.00333
+   if (NOT keyword_set(zmax)) then zmax = 0.00333
 
    stime0 = systime(1)
+
+   ;----------
+   ; Create the output structure, and return empty data if FITINDX=[-1].
+
+   ndim = size(objflux, /n_dimen)
+   if (ndim EQ 1) then nobj = 1 $
+    else nobj = (size(objflux, /dimens))[1]
+
+   if (n_elements(fitindx) GT 0) then thisindx = fitindx $
+    else thisindx = lindgen(nobj)
+
+   res_best = replicate(elodie_struct(), nobj)
+   if (thisindx[0] EQ -1) then return, res_best
 
    ;----------
    ; Read all the Elodie spectra
@@ -111,7 +130,7 @@ function elodie_best, objflux, objivar, $
    elodie_path = getenv('ELODIE_DIR')
    allfiles = findfile(filepath('00*', root_dir=elodie_path, $
     subdir='LL_ELODIE'), count=nstar)
-; ???
+; Test ???
 ;nstar=50
 ;allfiles = allfiles[0:nstar-1]
    t0 = systime(1)
@@ -144,14 +163,18 @@ function elodie_best, objflux, objivar, $
    ;----------
    ; Compute the best-fit between each object and each star
 
-   ndim = size(objflux, /n_dimen)
-   if (ndim EQ 1) then nobj = 1 $
-    else nobj = (size(objflux, /dimens))[1]
-
    for istar=0, nstar-1 do begin
-splog, 'Star number ', istar, ' of ', nstar
-      res1 = zfind(objflux, objivar, hdr=objhdr, starflux=starflux[*,istar], $
-       starloglam0=starloglam[0], npoly=3, zmin=zmin, zmax=zmax)
+      splog, 'Star number ', istar, ' of ', nstar
+
+      if (n_elements(fitindx) GT 0) then $
+       res1 = zfind(objflux[*,thisindx], objivar[*,thisindx], $
+        hdr=objhdr, starflux=starflux[*,istar], $
+        starloglam0=starloglam[0], npoly=3, zmin=zmin, zmax=zmax) $
+      else $
+       res1 = zfind(objflux, objivar, $
+        hdr=objhdr, starflux=starflux[*,istar], $
+        starloglam0=starloglam[0], npoly=3, zmin=zmin, zmax=zmax)
+
       if (istar EQ 0) then res_all = replicate(res1[0], nobj, nstar)
       res_all[*,istar] = res1[*]
    endfor
@@ -159,8 +182,8 @@ splog, 'Star number ', istar, ' of ', nstar
    ;----------
    ; For each object, select the best-fit star
 
-   res_best = replicate(elodie_struct(), nobj)
-   for iobj=0, nobj-1 do begin
+   for ifit=0, n_elements(thisindx)-1 do begin
+      iobj = thisindx[ifit]
       junk = min(res_all[iobj,*].rchi2, imin)
       res_best[iobj].elodie_filename = sxpar((*starhdr[imin]), 'FILENAME')
       res_best[iobj].elodie_object = sxpar((*starhdr[imin]), 'OBJECT')
@@ -176,12 +199,14 @@ splog, 'Star number ', istar, ' of ', nstar
       res_best[iobj].elodie_z_err = res_all[iobj,imin].z_err
       res_best[iobj].elodie_rchi2 = res_all[iobj,imin].rchi2
       res_best[iobj].elodie_dof = res_all[iobj,imin].dof
+      isort = sort(res_all[iobj,*].rchi2)
+      res_best[iobj].elodie_z_stdev = stddev(res_all[iobj,isort[0:11]].z)
    endfor
 
    splog, 'Total time for ELODIE_BEST = ', systime(1)-stime0, ' seconds', $
     format='(a,f6.0,a)'
 
-; ???
+; Test???
 ;plot,zans.z*3e5,res_best.elodie_z*3e5,ps=7
 ;for i=0,nstar-1 do oplot,zans.z*3e5,res_all[*,i].z*3e5,ps=3
 ;oplot,[-200,200],[-200,200]
