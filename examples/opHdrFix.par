@@ -21,11 +21,26 @@ spechdrfix sdR-??-0000115[0-2] NAME     "'0198-51433-01'"
 spechdrfix sdR-??-0000134[7-9] NAME     "'0214-51432-02'"
 spechdrfix sdR-??-0000135[0-9] NAME     "'0214-51432-02'"
 spechdrfix sdR-??-0000136[0-1] NAME     "'0214-51432-02'"
+spechdrfix sdR-??-0000134[7-9] TILEID   25
+spechdrfix sdR-??-0000135[0-9] TILEID   25
+spechdrfix sdR-??-0000136[0-1] TILEID   25
+spechdrfix sdR-??-0000134[7-9] RADEG    354.362912
+spechdrfix sdR-??-0000135[0-9] RADEG    354.362912
+spechdrfix sdR-??-0000136[0-1] RADEG    354.362912
+spechdrfix sdR-??-0000134[7-9] DECDEG   0.061307
+spechdrfix sdR-??-0000135[0-9] DECDEG   0.061307
+spechdrfix sdR-??-0000136[0-1] DECDEG   0.061307
 
 # Wrong mapping name in these headers for plate 202 on MJD 51441.
 
 spechdrfix sdR-??-0000136[2-9] NAME     "'0202-51434-01'"
 spechdrfix sdR-??-0000137[0-3] NAME     "'0202-51434-01'"
+spechdrfix sdR-??-0000136[2-9] TILEID   41
+spechdrfix sdR-??-0000137[0-3] TILEID   41
+spechdrfix sdR-??-0000136[2-9] RADEG    30.249929
+spechdrfix sdR-??-0000137[0-3] RADEG    30.249929
+spechdrfix sdR-??-0000136[2-9] DECDEG   0.159442
+spechdrfix sdR-??-0000137[0-3] DECDEG   0.159442
 
 # Wrong mapping name in these headers for plate 191 on MJD 51454.
 # This doesn't actually matter, since there are no arcs for this plate anyway!
@@ -33,9 +48,14 @@ spechdrfix sdR-??-0000137[0-3] NAME     "'0202-51434-01'"
 spechdrfix sdR-??-0000138[8-9] NAME     "'0191-51454-01'"
 spechdrfix sdR-??-00001390 NAME     "'0191-51454-01'"
 
-# Wrong plate information in these headers for plate 231 on MJD 51455
+# Wrong plate information in these headers for plate 187 on MJD 51455
 
 spechdrfix sdR-??-0000140[4-6] NAME     "'0187-51454-01'"
+spechdrfix sdR-??-0000140[4-6] TILEID   26
+spechdrfix sdR-??-0000140[4-6] RACEN    356.671046
+spechdrfix sdR-??-0000140[4-6] DECCEN   0.067442
+
+# Wrong plate information in these headers for plate 231 on MJD 51455
 
 spechdrfix sdR-??-0000143[1-7] PLATEID  231
 spechdrfix sdR-??-0000143[1-7] TILEID   55
