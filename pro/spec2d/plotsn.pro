@@ -399,6 +399,7 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
    !y.omargin = [5,3]
 
    magdiff = synthmag - plugc.mag
+   radius = sqrt(plugc.xfocal^2 + plugc.yfocal^2)
    for iband=0, nbands-1 do begin
 
       if (iband LT nbands-1) then begin
@@ -407,13 +408,13 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
          xtitle2 = ''
       endif else begin
          xtickname = ''
-         xtitle1 = 'Fiber ID'
+         xtitle1 = 'Radius [mm]'
          xtitle2 = 'X [mm]'
       endelse
       psym = 1
 
       plot, [0], [0], /nodata, $
-       xtickname=xtickname, xrange=[0,641], $
+       xtickname=xtickname, xrange=[0,330], $
        xtitle=xtitle1, ytitle='(Spectro-PHOTO) '+bandnames[bands[iband]]+'-mag', $
        /xstyle, yrange=[-0.6,0.6], /ystyle, charsize=csize
       oplot, !x.crange, [0,0]
@@ -422,7 +423,7 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
          colorvec = (thisdiff LT 0) * djs_icolor('green') $
           + (thisdiff GE 0) * djs_icolor('red')
          symvec = (abs(thisdiff) * 5 < 2) > 0.1
-         djs_oplot, igood+1, thisdiff, $
+         djs_oplot, radius[igood], thisdiff, $
           symsize=symvec, color=colorvec, psym=psym
       endif
 
