@@ -38,6 +38,8 @@ In this document:
          (<A HREF="platequality.html">Plate Quality List</A>)
      <LI><A HREF="#duplicates">Avoiding Duplicate Objects</A>
      <LI><A HREF="#get_version">What Version of the Code Was Used?</A>
+     <LI><A HREF="#get_public">Copying the Princeton Reductions of the Public Data</A> <FONT COLOR="#ff0000"> <-- Public data</FONT>
+
      <LI><A HREF="#get_where">Copying the Data from Princeton (alfred account)</A>
      <LI><A HREF="#get_rsync">How to Keep Your Data Up-to-Date</A>
   </OL>
@@ -47,7 +49,7 @@ In this document:
   </OL>
   <LI><A HREF="#display">Looking at the Data</A>
   <OL>
-     <LI><A HREF="#idlsetup">Setting Up IDL Tools</A>
+     <LI><A HREF="#idlsetup">Setting Up IDL Tools</A><FONT COLOR="#ff0000"> <-- Public code</FONT>
      <LI><A HREF="#idldisplay">Displaying the Spectra From IDL</A>
      <LI><A HREF="#smdisplay">Displaying the Spectra From SM</A>
      <LI><A HREF="#irafdisplay">Displaying the Spectra From IRAF</A>
@@ -308,6 +310,35 @@ header keywords VERS2D, VERSCOMB, VERS1D as described in the
 <P>
 All these reductions were done using versions of the code tagged v4_9_8
 (or later), which represents a homogeneous set of reductions.
+
+<H4><A NAME="get_public">Copying the Princeton Reductions of the Public Data</A></H4>
+
+<P>
+The Princeton re-reductions of the "public release" data is available
+from this web site.  There is the Early Data Release (EDR)
+with 109 plates (69,760 spectra), and the Data Release 1 (DR1)
+with 291 plates (186,240 spectra).
+
+<P>
+To download the 14 Gb of EDR data including the summary files:
+<DL><DD><PRE>
+ wget --dot-style=mega --no-clobber --no-host-directories \
+   --no-parent --non-verbose --recursive --retr-symlinks \
+   --accept "*.fits" --accept "spAll*" \
+   http://spectro.princeton.edu/spectro_EDR/
+</PRE></DD></DL>
+To download the 31 Gb of DR1 data (which is a superset of EDR)
+including the summary files:
+<DL><DD><PRE>
+ wget --dot-style=mega --no-clobber --no-host-directories \
+   --no-parent --non-verbose --recursive --retr-symlinks \
+   --accept "*.fits" --accept "spAll*" \
+   http://spectro.princeton.edu/spectro_DR1/
+</PRE></DD></DL>
+Note that these reductions are not identical to the "official SDSS
+data release", but have several improvements and include our redshift fits,
+spectral classifications, velocity dispersions for galaxies,
+and emission line fits.
 
 <H4><A NAME="get_where">Copying the Data from Princeton (alfred account)</A></H4>
 
