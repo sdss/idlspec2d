@@ -51,7 +51,7 @@ pro platemerge, zfile, outfile=outfile, ascfile=ascfile
    if (NOT keyword_set(outfile)) then outfile = 'spAll.fits'
    if (NOT keyword_set(ascfile)) then ascfile = 'spAll.dat'
 
-   nout = nfile * 640
+   nout = nfile * 640L
    print, 'Total number of objects = ', nout
 
    ;----------
@@ -70,9 +70,9 @@ pro platemerge, zfile, outfile=outfile, ascfile=ascfile
          struct_assign, {junk:0}, outdat ; Zero-out all elements
       endif
 
-      copy_struct_inx, zans, outdat, index_to=lindgen(640)+640*ifile
+      copy_struct_inx, zans, outdat, index_to=lindgen(640)+640L*ifile
       if (keyword_set(tsobj)) then $
-       copy_struct_inx, tsobj, outdat, index_to=lindgen(640)+640*ifile
+       copy_struct_inx, tsobj, outdat, index_to=lindgen(640)+640L*ifile
 
    endfor
 
