@@ -301,13 +301,14 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
       if (status EQ 5) then $
        splog, 'Warning: Maximum number of iterations reached: ', niter
       yfit[igood] = yfit1
-   endif else begin
-      splog, 'No points to fit'
+   endif
+   if (ngood EQ 0 OR status EQ 0) then begin
+      splog, 'Too few points to fit ', ngood
       nparam = 3 * nline + nback
       lfit = fltarr(nparam)
       perror = fltarr(nparam)
       covar = fltarr(nparam,nparam)
-   endelse
+   endif
 
    ;----------
    ; For parameters that are fixed, assign them the same errors as
