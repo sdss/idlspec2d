@@ -289,8 +289,9 @@ OBSCOMM = This keyword is used to identify the dithered flat sequence
           The arcs in this sequence must have OBSCOMM="{dithered flats-arc}".
           This keyword also identifies the Hartmann focus exposures, with
           the entries OBSCOMM="{focus, hartmann l}" or "{focus, hartmann r}".
-QUALITY = This should be either "excellent" or "bad".  Exposures are declared
-          "bad" using the <A HREF="http://spectro.princeton.edu/idlspec2d_doc.html#APOFIX">APOFIX</A> procedure.
+          Science exposures all have OBSCOMM="science ".
+QUALITY = This should be "excellent", "test", or "bad".  Exposures are declared
+          "test" or "bad" using the <A HREF="http://spectro.princeton.edu/idlspec2d_doc.html#APOFIX">APOFIX</A> procedure.
 </PRE>
 
 <H4><A NAME="headers_informational">Informational FITS header cards</A></H4>
