@@ -1,13 +1,34 @@
 
+* Make bad pixel masks for "opBC.par" file.
+  Include bad pixels from pixflat.
+
+* Discard flats that saturate in SPREDUCE or SPPLAN.
+
+* Combine "superflat" code from SPFLATTEN2 and FIBERFLAT.
+  The internal routine SPFLATTEN2/SUPERFLAT could be called by FIBERFLAT.
+
+* Plot the superflat vector as a QA plot
+
+* Check in code to compute system throughput (filter passbands)
+
+* Have FIBERFLAT only do a very low-order correction now that the
+  flat fields are so much better.
+
+----> Done (17-Dec-99).  Now only fit a cubic to each.
+      But I'm still not using FIBERMASK everywhere I should.
+
+* Don't allow too many whopping terms.
+
+* When constructing FFLAT in FIBERFLAT, mask out very low values
+  from the spline fits to avoid the large +/-/+ residuals.
+
 * Choose bkpts in combine2dout more carefully, bad behavior ensues
   with current choice (uniform bins).
 
 * Fit spline to each spectrum before full combine2dout spline to
    register each spectrum in scale (including red/blue merge)
 
-* Decide on vacuum or air wavelengths
-
-* Look for bright objects that blead -- discard entire columns of data?
+* Decide on vacuum or air wavelengths - document this!
 
 * Masked data has INVVAR=0, but then SIGMA=0 in the final outputs?
   What does spectro1d do with that?
@@ -49,8 +70,6 @@
 
 * Measure system throughput (Q.E.) !!
 
-* Make bad pixel mask
-
 * Look at the bias frames
 
 * The b1 CCD has too much overscan subtracted on rows 0 and 1.
@@ -62,11 +81,6 @@
 
 * Need fiber-to-fiber flat-fielding, and flatten out any global variations,
   such as low-response zones on the CCD.
-
-* Echelle spectrum of sky for cross-correlating sky fibers to absolute
-  wavelengths.
-
-* Echelle spectrum of A,B bands for their removal.
 
 * Characterize flexure 
 
