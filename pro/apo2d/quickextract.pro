@@ -97,8 +97,12 @@ function quickextract, flatname, arcname, sciname, outname, $
 
    if (iobj[0] NE -1) then begin
 ;      snoise2 =  djs_mean( meansn[iobj] )^2
-      coeffs = fitsn(plugsort[iobj].mag[icolor], meansn[iobj])
-      snoise2 = 10^(2.0 * poly(snmag, coeffs)) ; The 2.0 is to square the S/N
+      coeffs = fitsn(plugsort[iobj].mag[icolor], meansn[iobj], $
+       minmag=snmag-0.5, maxmag=snmag+0.5)
+      if (keyword_set(coeffs)) then $
+       snoise2 = 10^(2.0 * poly(snmag, coeffs)) $ ; The 2.0 is to square the S/N
+      else $
+       snoise2 = 0
    endif else begin
       snoise2 = 0
    endelse
