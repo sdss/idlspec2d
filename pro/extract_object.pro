@@ -199,6 +199,13 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
           highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
           ansimage=ansimage
 
+; HORRIBLE HACK SINCE EXTRACT_IMAGE RETURNS SOME NaN's!!!???
+jj = where(finite(ansimage) EQ 0)
+if (jj[0] NE -1) then begin
+  ansimage[jj] = 0
+  splog,'WARNING: Fixing NaNs!!!', N_elements(jj)
+endif
+
          ; (2) Refit ansimage to smooth profiles
 
          splog, 'Answer Fitting: Step', i*3+2
