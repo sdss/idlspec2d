@@ -1,0 +1,244 @@
+;+
+; NAME:
+;   spreduce2d
+;
+; PURPOSE:
+;   Calling script for SPREDUCE that reduces a night of data according
+;   to a plan file.
+;
+; CALLING SEQUENCE:
+;   spreduce2d, [ planfile, docams=, /xdisplay ]
+;
+; INPUTS:
+;
+; OPTIONAL INPUTS:
+;   planfile   - Name(s) of output plan file; default to reducing all
+;                plan files matching 'spPlan2d*.par'
+;   docams     - Cameras to reduce; default to ['b1', 'b2', 'r1', 'r2']
+;   xdisplay   - Send plots to X display rather than to plot file
+;
+; OUTPUT:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;
+; BUGS:
+;   This routine spawns the Unix command 'mkdir'.
+;
+; PROCEDURES CALLED:
+;   cpbackup
+;   idlspec2d_version()
+;   idlutils_version()
+;   splog
+;   spreduce
+;   yanny_free
+;   yanny_read
+;
+; INTERNAL SUPPORT ROUTINES:
+;
+; REVISION HISTORY:
+;   02-Nov-1999  Written by David Schlegel, Princeton.
+;-
+;------------------------------------------------------------------------------
+
+pro spreduce2d, planfile, docams=docams, xdisplay=xdisplay
+
+   if (NOT keyword_set(planfile)) then planfile = findfile('spPlan2d*.par')
+
+   ;----------
+   ; If multiple plan files exist, then call this script recursively
+   ; for each such plan file.
+
+   if (N_elements(planfile) GT 1) then begin
+      for i=0, N_elements(planfile)-1 do $
+       spreduce2d, planfile[i], docams=docams, xdisplay=xdisplay
+      return
+   endif
+
+   if (NOT keyword_set(docams)) then docams = ['b1', 'b2', 'r1', 'r2']
+
+   ;----------
+   ; Find the SPEXP structure
+
+   yanny_read, planfile[0], pdata, hdr=hdr
+   for i=0, N_elements(pdata)-1 do begin
+      if (tag_names(*pdata[i], /structure_name) EQ 'SPEXP') then $
+       allseq = *pdata[i]
+   endfor
+   yanny_free, pdata
+
+   if (N_elements(allseq) EQ 0) then begin
+      splog, 'ABORT: No SPEXP structures in plan file ' + planfile
+      return
+   endif
+
+   ;----------
+   ; Find keywords from the header
+
+   mjd = yanny_par(hdr, 'MJD')
+   inputdir = yanny_par(hdr, 'inputdir')
+   plugdir = yanny_par(hdr, 'plugdir')
+   flatdir = yanny_par(hdr, 'flatdir')
+   extractdir = yanny_par(hdr, 'extractdir')
+   logfile = yanny_par(hdr, 'logfile')
+   plotfile = yanny_par(hdr, 'plotfile')
+
+   if (keyword_set(extractdir)) then $
+    spawn, 'mkdir -p ' + extractdir
+
+   stime0 = systime(1)
+
+   ;----------
+   ; Open log files for output
+
+   if (keyword_set(logfile)) then begin
+      cpbackup, logfile
+      splog, filename=logfile
+      splog, 'Log file ', logfile, ' opened ', systime()
+   endif
+   if (keyword_set(plotfile) AND NOT keyword_set(xdisplay)) then begin
+      cpbackup, plotfile
+      set_plot, 'ps'
+      device, filename=plotfile, /color
+      splog, 'Plot file ', plotfile, ' opened ', systime()
+   endif
+   splog, 'Plan file ', planfile
+   splog, 'DOCAMS = ', docams
+
+   splog, 'idlspec2d version ' + idlspec2d_version()
+   splog, 'idlutils version ' + idlutils_version()
+
+   camnames = ['b1', 'b2', 'r1', 'r2']
+   ncam = N_elements(camnames)
+
+   ;----------
+   ; Find all the unique plate plugging names
+
+   allnames = allseq[ sort(allseq.mapname) ].mapname
+   allnames = allnames[ uniq(allnames) ]
+
+   for imap=0, N_elements(allnames)-1 do begin
+
+      ;----------
+      ; Get the plate ID number from any (e.g., the first) exposure with
+      ; this sequence ID number
+
+      thismap = allnames[imap]
+      j = where(allseq.mapname EQ thismap)
+      plateid = allseq[j[0]].plateid
+      platestr = string(plateid, format='(i4.4)')
+
+      stime1 = systime(1)
+      splog, 'Begin plate ' + platestr + ' at ' + systime()
+
+      ;----------
+      ; Find the corresponding plug map file
+
+      plugfile = 'plPlugMapM-' + thismap + '.par'
+      splog, 'Plug map file = ', plugfile
+
+      for ido=0, n_elements(docams)-1 do begin
+
+         icam = (where(camnames EQ docams[ido], camct))[0]
+         splog, prelog=camnames[icam]
+         if (camct NE 1) then message, 'Non-unique camera ID: ' + docams[ido]
+
+         ;----------
+         ; Find the corresponding pixel flat
+
+         pixflatname = 'pixflat-*-' + camnames[icam] + '.fits'
+         pixflatname = findfile( filepath(pixflatname, root_dir=flatdir) )
+         pixflatname = fileandpath(pixflatname)
+; For the time being, just take the first flat!!!???
+pixflatname = pixflatname[0]
+splog, 'Selecting pixel flat ' + pixflatname
+
+         j = where(allseq.mapname EQ thismap $
+               AND allseq.flavor EQ 'science' $
+               AND allseq.name[icam] NE 'UNKNOWN' )
+
+         if (j[0] NE -1) then begin
+
+            ; String array with all science exposures at this sequence + camera
+            objname = allseq[j].name[icam]
+
+            ;-----------
+            ; Select **all** flat exposures at this sequence + camera
+
+            j = where(allseq.mapname EQ thismap $
+                  AND allseq.flavor EQ 'flat' $
+                  AND allseq.name[icam] NE 'UNKNOWN', nflat )
+            if (nflat GT 0) then begin
+               flatname = allseq[j].name[icam]
+            endif else begin
+               flatname = ''
+               splog, 'ABORT: No flat for MAPNAME= ' + thismap $
+                + ', PLATEID= ' + platestr + ', CAMERA= ' + camnames[icam]
+            endelse
+
+            ;-----------
+            ; Select **all** arc exposures at this sequence + camera
+
+            j = where(allseq.mapname EQ thismap $
+                  AND allseq.flavor EQ 'arc' $
+                  AND allseq.name[icam] NE 'UNKNOWN', narc )
+            if (narc GT 0) then begin
+               arcname = allseq[j].name[icam]
+            endif else begin
+               arcname = ''
+               splog, 'ABORT: No arc for MAPNAME= ' + thismap $
+                + ', PLATEID= ' + platestr + ', CAMERA= ' + camnames[icam]
+            endelse
+
+            ;----------
+            ; Get full name of pixel flat
+
+            pixflatname = filepath(pixflatname, root_dir=flatdir)
+
+            stime2 = systime(1)
+
+            ;----------
+            ; Reduce this set of frames (all objects w/same plate + camera)
+
+            if (keyword_set(arcname) AND keyword_set(flatname)) then begin
+               plottitle = 'MJD='+strtrim(string(mjd),2) $
+                + ' PLATE='+platestr + ': '
+
+               spreduce, flatname, arcname, objname, $
+                pixflatname=pixflatname, plugfile=plugfile, lampfile=lampfile, $
+                indir=inputdir, plugdir=plugdir, outdir=extractdir, $
+                summarystruct=summarystruct, plottitle=plottitle
+            endif
+
+            splog, 'Time to reduce camera ', camnames[icam], ' = ', $
+             systime(1)-stime2, ' seconds', format='(a,a,a,f6.0,a)'
+
+            heap_gc   ; garbage collection
+         endif
+
+         splog, prelog=''
+      endfor ; End loop for camera number
+
+      splog, 'Time to reduce all cameras = ', $
+       systime(1)-stime1, ' seconds', format='(a,f6.0,a)'
+
+   endfor ; End loop for plugging name
+
+   splog, 'Total time for SPREDUCE2D = ', systime(1)-stime0, ' seconds', $
+    format='(a,f6.0,a)'
+   splog, 'Successful completion of SPREDUCE2D at ', systime()
+
+   ;----------
+   ; Close log files
+
+   if (keyword_set(plotfile) AND NOT keyword_set(xdisplay)) then begin
+      device, /close
+      set_plot, 'x'
+   endif
+
+   if (keyword_set(logfile)) then splog, /close
+
+   return
+end
+;------------------------------------------------------------------------------

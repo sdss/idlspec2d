@@ -175,6 +175,7 @@ pro/spec2d/spallflat.pro -text
 pro/spec2d/spallreduce.pro -text
 pro/spec2d/spcalib.pro -text
 pro/spec2d/spcoadd_frames.pro -text
+pro/spec2d/spcombine.pro -text
 pro/spec2d/spflatten.pro -text
 pro/spec2d/spflatten2.pro -text
 pro/spec2d/spgain.pro -text
@@ -183,6 +184,7 @@ pro/spec2d/spmulti.pro -text
 pro/spec2d/spplan.pro -text
 pro/spec2d/spplan2d.pro -text
 pro/spec2d/spreduce.pro -text
+pro/spec2d/spreduce2d.pro -text
 pro/spec2d/sshift.pro -text
 pro/spec2d/sshift2d.pro -text
 pro/spec2d/sshiftvec.pro -text
