@@ -11,9 +11,9 @@ all :;
 # Install things in their proper places in $(IDLSPEC2D_DIR)
 #
 install :
-	- cp *.pro $(IDLSPEC2D_DIR)/spec2d/pro
-	- cp Makefile $(IDLSPEC2D_DIR)/spec2d/pro
-	- cp TODO $(IDLSPEC2D_DIR)/spec2d/pro
+	- cp *.pro $(IDLSPEC2D_DIR)/pro/spec2d
+	- cp Makefile $(IDLSPEC2D_DIR)/pro/spec2d
+	- cp TODO $(IDLSPEC2D_DIR)/pro/spec2d
 
 clean :
 	- /bin/rm -f *~ core
