@@ -1,3 +1,15 @@
+v4_7_0 (Mar 15, 2001)
+
+FLUXCORR_NEW: Replace deviant fluxcorr coefficients with the median
+              Attempt to mask large positive deviations in inverse variance
+              (PR #2040) 
+SPCOMBINE:    combinedir is now a keyword for spcoadd_frames
+              spflux and spcoadd_frames utilizes directory keywords as well
+FIBERFLAT:     Simple check to exclude extrema  (PR #2123)
+COMBINE1FIBER: Replace the lines which errantly set NODATA with a check for the
+               extrema wavelengths which have no signal. (PR #1939)
+SPPLANCOMB, 
+SPALLCOMBINE:  Fixed Bug to combine a specific MJD
 
 BSPLINE_ITERFIT (in idlutils): Modified to avoid crashing SPREDUCE1D.
    Two changes: (1) Return a valid solution even in the case where the variance
@@ -48,7 +60,12 @@ to limit the number of exposures combined.  Default to a maximum of 7.
 -------------------------------------------------------------------------------
 v4_6_1 (Feb 14, 2001)
 
+<<<<<<< RELEASE_NOTES
 SPCOMBINE: Reverting to adderr=0.03 to prevent rejections in high S/N regions
+
+=======
+SPCOMBINE: Reverting to adderr=0.03 to prevent rejections in high S/N regions
+>>>>>>> 1.29
 SKYSUBTRACT: The "fix" in the previous version didn't properly check the
              bad mask bits, and in fact could make things worse.  Now fixed.
 
