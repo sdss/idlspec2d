@@ -6,20 +6,24 @@
 ;   Create a crude trace set given one position (eg, a center) in each trace.
 ;
 ; CALLING SEQUENCE:
-;   xset = trace_crude( fimage, [xstart, ystart, radius=radius, yset=yset]  )
+;   xset = trace_crude( fimage, [xstart, ystart=, radius=, yset=, nav=, nmed=] )
 ;
 ; INPUTS:
 ;   fimage     - Image
 ;   xstart     - Initial guesses for X centers (one for each trace).
 ;                If not set, then this code searches for all peaks at YSTART.
+;
+; OPTIONAL KEYWORDS:
 ;   ystart     - Y positions corresponding to "xstart" (expected as integers).
 ;                There are three options for this parameter:
 ;                (1) One element of YSTART for each value of XSTART,
 ;                (2) A scalar value that is used for every XSTART, or
 ;                (3) Not set, in which case the center row is used.
-;
-; OPTIONAL KEYWORDS:
 ;   radius     - Radius for centroiding; default to 3.0
+;   nmed       - Median filtering size down columns before performing trace;
+;                default to 1
+;   nave       - Averaging size down columns before performing trace;
+;                default to 5
 ;
 ; OUTPUTS:
 ;   xset       - X centers for all traces
@@ -41,11 +45,11 @@
 ;-
 ;------------------------------------------------------------------------------
 function trace_crude, fimage, xstart, ystart=ystart, radius=radius, yset=yset, $
-	nave = nave, nmed=nmed
+ nave=nave, nmed=nmed
 
    ; Need 1 parameter
    if (N_params() LT 1) then begin
-      print, 'Syntax - xset = trace_crude( fimage, [xstart, ystart=ystart, radius=radius] )'
+      print, 'Syntax - xset = trace_crude( fimage, [xstart, ystart=, radius=radius, nave=, nmed= ] )'
       return, -1
    endif
 
@@ -61,10 +65,11 @@ function trace_crude, fimage, xstart, ystart=ystart, radius=radius, yset=yset, $
 
    ; Median filter the entire image along columns by NMED rows
    if (nmed GT 1) then $   
-   for ix=1, nx-1 do ftemp[ix,*] = median(transpose(ftemp[ix,*]), nmed)
+    for ix=1, nx-1 do ftemp[ix,*] = median(transpose(ftemp[ix,*]), nmed)
 
    ; Boxcar-smooth the entire image along columns by NAVE rows
-   for ix=1, nx-1 do ftemp[ix,*] = smooth(transpose(ftemp[ix,*]), nave)
+   if (nave GT 1) then $   
+    for ix=1, nx-1 do ftemp[ix,*] = smooth(transpose(ftemp[ix,*]), nave)
 
    if (NOT keyword_set(xstart)) then begin
       ; Automatically find peaks for XSTART
