@@ -1,0 +1,12 @@
+
+* For eigenspectra, save a 2nd HDU which is the remaining inverse-variance.
+
+* Final correlation coeff should be computed with same wavelength-range
+  for template, and masked + apodized the same as the object spectrum.
+
+* Minimize reduced chi2 instead of chi2 ?
+
+* Still need to compute errors in redshift, but how?
+
+* Look at the e1/e0, e2,e0 values for the galaxies.
+
