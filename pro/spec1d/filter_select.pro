@@ -45,18 +45,6 @@
 ;   mrdfits()
 ;   mwrfits
 ;
-; DATA FILES:
-;   $IDLSPEC2D_DIR/etc/sdss_u_atm.dat
-;   $IDLSPEC2D_DIR/etc/sdss_g_atm.dat
-;   $IDLSPEC2D_DIR/etc/sdss_r_atm.dat
-;   $IDLSPEC2D_DIR/etc/sdss_i_atm.dat
-;   $IDLSPEC2D_DIR/etc/sdss_z_atm.dat
-;   $IDLSPEC2D_DIR/etc/doi_u_atm.dat
-;   $IDLSPEC2D_DIR/etc/doi_g_atm.dat
-;   $IDLSPEC2D_DIR/etc/doi_r_atm.dat
-;   $IDLSPEC2D_DIR/etc/doi_i_atm.dat
-;   $IDLSPEC2D_DIR/etc/doi_z_atm.dat
-;
 ; REVISION HISTORY:
 ;   05-APr-2000  Written by M. Blanton, Fermiland
 ;-

@@ -29,6 +29,7 @@
 ;                dimensions are [NTRACE,5] or [5] if NTRACE=1.
 ;
 ; COMMENTS:
+;   The filter curve files are assumed to be in $IDLUTILS_DIR/data/filters.
 ;
 ; EXAMPLES:
 ;
@@ -41,23 +42,6 @@
 ;   djs_maskinterp()
 ;   readcol
 ;   traceset2xy
-;
-; DATA FILES:
-;   $IDLSPEC2D_DIR/etc/sdss_jun2001_u_atm.dat
-;   $IDLSPEC2D_DIR/etc/sdss_jun2001_g_atm.dat
-;   $IDLSPEC2D_DIR/etc/sdss_jun2001_r_atm.dat
-;   $IDLSPEC2D_DIR/etc/sdss_jun2001_i_atm.dat
-;   $IDLSPEC2D_DIR/etc/sdss_jun2001_z_atm.dat
-;   $IDLSPEC2D_DIR/etc/sdss_u_atm.dat
-;   $IDLSPEC2D_DIR/etc/sdss_g_atm.dat
-;   $IDLSPEC2D_DIR/etc/sdss_r_atm.dat
-;   $IDLSPEC2D_DIR/etc/sdss_i_atm.dat
-;   $IDLSPEC2D_DIR/etc/sdss_z_atm.dat
-;   $IDLSPEC2D_DIR/etc/doi_u_atm.dat
-;   $IDLSPEC2D_DIR/etc/doi_g_atm.dat
-;   $IDLSPEC2D_DIR/etc/doi_r_atm.dat
-;   $IDLSPEC2D_DIR/etc/doi_i_atm.dat
-;   $IDLSPEC2D_DIR/etc/doi_z_atm.dat
 ;
 ; REVISION HISTORY:
 ;   10-Mar-2000  Written by D. Schlegel, Princeton
