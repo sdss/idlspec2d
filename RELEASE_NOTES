@@ -159,6 +159,7 @@ HOGG_INTERVAL: New proc.
 MAGGIES2LUPS: New proc.
 MJD2DATELIST: New proc to construct a list of MJDs and date strings
             spanning a range of MJDs (useful for plot limits).
+PPMTOMPEG: New proc.  Wrapper for ppmtompeg, the open-source UNIX mpeg writer.
 RADEC_TO_FIELDS: Configurable option allfieldfile.
 SEEING_RADIAL: New proc.
 SERSIC_PARAMS: New proc.
