@@ -11,11 +11,14 @@
 
 <H1><CENTER>SDSS Spectra</CENTER></H1>
 
+<P>
 This page should get SDSS Collaborators started using the spectra within
-minutes.  All you need is access to the Fermilab computer "fsgi03.fnal.gov"
-to retrieve the data.  If you have an IDL license, then you can quickly set
-up tools to view, query, and use these data.  Other tools will be posted
-here as they're made available.
+minutes.  To retrieve the data you either need access to the Fermilab
+computer "sdssdp3.fnal.gov", or permissions set for copying data from Princeton
+(<A HREF="#get_where">see below</A>).
+This page describes tools to view, query and use these data using IDL,
+SuperMongo or IRAF.  There are also <A HREF="#summary">summary ASCII files</A>
+that contain positions, magnitudes, classification information, and redshifts.
 
 <P>
 In this document:
@@ -399,10 +402,13 @@ This is a FITS binary table called "spAll.fits".
 At present, there are three versions of this file as follows:
 <OL>
    <LI><B>spAll.fits</B> - All spectroscopic data taken to date (approximately 200,000 spectra).
-   <LI><B>spAll-qsurvey.fits</B> - spAll trimmed to only those plates that comprise unique
+   <LI><B>spAll-qsurvey.fits</B> - spAll trimmed to only those plates
+       that comprise unique
        tiles with survey quality S/N (e.g., where QSURVEY=1 in the
        <A HREF="#platelist">platelist file</A>).
-   <LI><B>spAll-public.fits</B> - spAll trimmed to only those plates in the Early Data Release (plus repeat observations that are survey quality)
+   <LI><B>spAll-public.fits</B> - spAll trimmed to only those plates
+       that should be in the Early Data Release (including repeat observations
+       that are survey quality)
 </OL>
 
 <P>
@@ -447,7 +453,17 @@ spectra on a plate at once.
 <H4><A NAME="idlsetup">Setting Up IDL Tools</A></H4>
 
 <P>
-You need two products: "idlutils", and "idlspec2d".  These will work
+If you have someone maintaining survey code at your institution
+(i.e., at Princeton using a Linux box), you can set up the tools
+by simply typing:
+<DL><DD><PRE>
+source /u/products/etc/sdssfue.csh
+setup idlspec2d
+</PRE></DD></DL>
+
+<P>
+If you need to install the code yourself,
+you need two products: "idlutils", and "idlspec2d".  These will work
 on any platform (Linux, SGI, Solaris, etc) as long as you also have
 an IDL license.  You must have "idl" in your path, and the IDL_PATH
 environment variable should already be set.  At Princeton, you would type:
@@ -468,7 +484,6 @@ from a couple of tar files.  Click on the following files to download them:
 <P>
 If you've put these files in your home directory, then unpack and build
 them as follows:
-
 <DL><DD><PRE>
 tar xf idlutils*.tar
 tar xf idlspec2d*.tar
@@ -477,7 +492,7 @@ setenv IDLSPEC2D_DIR $HOME/idlspec2d
 setenv IDL_PATH  +{$IDLUTILS_DIR}/goddard/pro:{$IDL_PATH}
 setenv IDL_PATH  +{$IDLUTILS_DIR}/pro:{$IDL_PATH}
 setenv IDL_PATH  +{$IDLSPEC2D_DIR}/pro:{$IDL_PATH}
-set path = ( $path {$IDLUTILS_DIR}/bin )
+set path = ( $path {$IDLUTILS_DIR}/bin {$IDLSPEC2D_DIR}/bin )
 cd $IDLUTILS_DIR
 evilmake all
 cd $IDLSPEC2D_DIR
@@ -485,20 +500,10 @@ evilmake all
 </PRE></DD></DL>
 
 <P>
-If you have someone maintaining survey code at your institution, you
-could have them install version v4_7_0 of these products, then set use
-the "setup" command.  At Princeton, if you are on a Linux box, you
-could simply type:
-<DL><DD><PRE>
-source /u/products/etc/sdssfue.csh
-setup idlspec2d v4_7_0
-</PRE></DD></DL>
-
-<P>
 Extensive documentation exists for the commands described below, in
 the file:
 <DL><DD><PRE>
-$IDLSPEC2D_DIR/doc/www/idlspec2d_doc.html
+<A HREF="idlspec2d_doc.html">$IDLSPEC2D_DIR/doc/www/idlspec2d_doc.html</A>
 </PRE></DD></DL>
 
 <H4><A NAME="idldisplay">Displaying the Spectra From IDL</A></H4>
@@ -980,11 +985,10 @@ Plate 347-51693 crashed in 2D because the only science exposure was saturated.
 -------------------------------------------------------------------------------
 Bad problems:
 
-Plate 202/51441 has lots of wrong z=4.3 qso's.
+Plate 202/51441 has some wrong z=4.3 qso's.
 Plate 260/51612 looks like funny fluxing in the blue at around 4000 Ang,
                 probably due to very low S/N
 Plate 354/51792 taken during moon.
-Plate 426/51882 has lots of wrong z=4.3 qso's.
 Plate 426/51882 has the Red Monster at 6400-6550 Ang in exp #7366-7367
 Fibers 375,376 have bad sky residuals on many plates, e.g.
       on plates 360, 396, 418, 429, 437.  This appears to be a problem
