@@ -342,14 +342,13 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    sxaddpar, objhdr, 'SFLATTEN', 'F', ' Superflat has not been applied'
 
    if keyword_set(superflatset) AND keyword_set(airset) then begin
-     traceset2xy, airset, wpix, wloglam
-     fit2 = bspline_valu(wloglam, superflatset)
+     fit2 = smooth_superflat(superflatset, airset)
      if keyword_set(fit2) then begin
        divideflat, flux, fluxivar, fit2 
        sxaddpar, objhdr, 'SFLATTEN', 'T', ' Superflat has been applied'
      endif
    endif  
-  
+ 
 
    ;------------------
    ; Sky-subtract
