@@ -66,7 +66,7 @@
 ; REVISION HISTORY:
 ;   10-Jul-2000  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
-; Create outuput structure
+; Create output structure
 function create_zans, nstar, nfind
 
    zans1 = create_struct( $
