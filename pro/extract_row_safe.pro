@@ -4,9 +4,10 @@
 ;
 ; PURPOSE:
 ;   Fit the fiber profiles and background in a single row with least squares
+;   Wrapper to extract row, which does extra testing
 ;
 ; CALLING SEQUENCE:
-;   ans = extract_row( fimage, invvar, xcen, sigma, [ymodel=, fscat=, 
+;   ans = extract_row_safe( fimage, invvar, xcen, sigma, [ymodel=, fscat=, 
 ;              proftype=, wfixed=, inputans=, iback=, bfixarr=, xvar=,
 ;              mask=, relative=, diagonal=, fullcovar=, wfixarr=, npoly=,
 ;              maxiter=, lowrej=, highrej=, niter=, squashprofile=,
@@ -106,43 +107,24 @@
 ;   Dynamic link to extract_row.c
 ;
 ; REVISION HISTORY:
-;    8-Aug-1999  Written by Scott Burles, Chicago 
+;    4-Feb-1999  Written by Schlegel
+;        
 ;-
 ;------------------------------------------------------------------------------
-function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
- fscat=fscat, proftype=proftype, wfixed=wfixed, inputans=inputans, $
- iback=iback, bfixarr=bfixarr, xvar=xvar, mask=mask, relative=relative, $
- squashprofile=squashprofile, diagonal=p, fullcovar=fullcovar, $
- wfixarr=wfixarr, npoly=npoly, maxiter=maxiter, $
- lowrej=lowrej, highrej=highrej, niter=niter, reducedChi=reducedChi, $
- whopping=whopping, wsigma=wsigma, pixelmask=pixelmask, reject=reject
+; DJS hack to not pass fibers outside of the range of data to EXTRACT_ROW.
+; I have not implemented returning FULLCOVAR out of sheer laziness.
 
-   ; Need 4 parameters
-   if (N_params() LT 4) then $
-    message, 'Wrong number of parameters'
+function extract_row_safe, fimage, invvar, xcen, sigma, ymodel=ymodel, $
+ fscat=fscat, wfixed=wfixed, inputans=inputans, xvar=xvar, $
+ mask=mask, diagonal=p, wfixarr=wfixarr, npoly=npoly, $
+ niter=niter, whopping=whopping, pixelmask=pixelmask, $
+ reducedChi=reducedChi, _EXTRA=extra
 
    ntrace = n_elements(xcen)
    nx = n_elements(fimage)
 
-   if (n_elements(sigma) NE ntrace) then begin
-      sigma1 = sigma[0]
-      sigma = xcen*0.0 + sigma1
-   endif 
-
    if (n_elements(npoly) EQ 0) then npoly = 5
-   if (NOT keyword_set(maxiter)) then maxiter = 10
-   if (NOT keyword_set(highrej)) then highrej = 15.0
-   if (NOT keyword_set(lowrej)) then lowrej = 20.0
    if (NOT keyword_set(wfixed)) then wfixed = [1]
-   if (NOT keyword_set(proftype)) then proftype = 1 ; Gaussian
-   relative = keyword_set(relative) 
-   squashprofile = keyword_set(squashprofile) 
-   if (NOT keyword_set(wsigma)) then wsigma = 25.0
-
-   if (n_elements(reject) EQ 2) then begin
-      checkreject = sort([0.0,reject,1.0])
-      if (total(abs(checkreject - [0,2,1,3])) NE 0) then reject = [0.8,0.2] 
-   endif else reject = [0.8,0.2]
 
    if (n_elements(pixelmask) NE ntrace $
     OR size(pixelmask,/tname) NE 'LONG') then $
@@ -165,19 +147,6 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
    if (nx NE n_elements(invvar)) then $
     message, 'Number of elements in FIMAGE and INVVAR must be equal'
 
-   ;----------
-   ; Check that XCEN is sorted in increasing order
-   ; with separations of at least 3 pixels.
-
-   junk = where(xcen[0:ntrace-2] GE xcen[1:ntrace-1] - 3, ct)
-   if (ct GT 0) then $
-    message, 'XCEN is not sorted or not separated by greater than 3 pixels.'
-
-   ;----------
-   ; Allocate memory for the C subroutine.
-
-   ymodel = fltarr(nx)
-   fscat = fltarr(ntrace)
    ma = ntrace*ncoeff + npoly + whoppingct
 
    ;----------
@@ -197,128 +166,87 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
    if (ngood EQ 0) then return, ans
 
    ;----------
-   ; Build the fixed parameter array if it was not passed.
+   ; Disable fitting to any profiles out of the data range.
 
-   if (NOT keyword_set(wfixarr)) then begin
-      wfixarr = lonarr(ma) + 1
+   fibuse = bytarr(ntrace) + 1
 
-      ; Set values for the (gaussian) profile terms
-      i = 0
-      wfixarr[lindgen(ntrace)*ncoeff+i] = wfixed[i] 
-      for i=1, ncoeff-1 do $
-       wfixarr[lindgen(ntrace)*ncoeff+i] = wfixed[i] * (1 - squashprofile)
+   ; Instead, look for any XCEN more than 0 pix off
+   ileft = where(xcen LT xvar[igood[0]]-0.0, nleft)
+   if (nleft GT 0) then fibuse[ileft] = 0
 
-      ; Set values for the background polynomial terms
-      if (keyword_set(bfixarr)) then $
-       wfixarr[ntrace*ncoeff:ntrace*ncoeff + npoly - 1] = bfixarr
+   ; Instead, look for any XCEN more than 0 pix off
+   iright = where(xcen GT xvar[igood[ngood-1]]+0.0, nright)
+   if (nright GT 0) then fibuse[iright] = 0
 
-      ; Disable fitting to any profiles out of the data range.
-      ; If there are more than one XCEN profile centers to the left of
-      ; the first good data point, then reject all but the first
-      ; out-of-range profile.  Do the same to the right side.
+   ; Don't fit to any centers where there are no good data points
+   ; within 2.0 pix
+   for i=0, ntrace-1 do begin
+      ii = where(abs(xvar[igood] - xcen[i]) LT 2.0, nn)
+      if (nn EQ 0) then fibuse[i] = 0
+   endfor
 
-;      ileft = where(xcen LT xvar[igood[0]], nleft)
-;      if (nleft GT 1) then $
-;       wfixarr[0:(nleft-1)*ncoeff-1] = 0
-      ; Instead, look for any XCEN more than 2 pix off
-;      ileft = where(xcen LT xvar[igood[0]]-2.0, nleft)
-;      if (nleft GT 0) then $
-;       wfixarr[0:nleft*ncoeff-1] = 0
+   iuse = where(fibuse, nuse)
+   tmp_ma = nuse*ncoeff + npoly + whoppingct
 
-;      iright = where(xcen GT xvar[igood[ngood-1]], nright)
-;      if (nright GT 1) then $
-;       wfixarr[(ntrace-nright+1)*ncoeff : ntrace*ncoeff-1] = 0
-      ; Instead, look for any XCEN more than 2 pix off
-;      iright = where(xcen GT xvar[igood[ngood-1]]+2.0, nright)
-;      if (nright GT 0) then $
-;       wfixarr[(ntrace-nright)*ncoeff : ntrace*ncoeff-1] = 0
-
-      ; Don't fit to any centers where there are no good data points
-      ; within 2.0 pix
-;      for i=0, ntrace-1 do begin
-;         ii = where(abs(xvar[igood] - xcen[i]) LT 2.0, nn)
-;         if (nn EQ 0) then $
-;          wfixarr[i*ncoeff : i*ncoeff+ncoeff-1] = 0
-;      endfor
+   if (keyword_set(inputans)) then begin
+      tmp_inputans = fltarr(nuse*ncoeff)
+      for i=0, ncoeff-1 do $
+       tmp_inputans[lindgen(nuse)*ncoeff+i] = inputans[iuse*ncoeff+i]
    endif else begin
-      if (ma NE n_elements(wfixarr)) then $
-       message, 'Number of elements in FIMAGE and WFIXARR must be equal'
-      wfixarr = LONG(wfixarr)
+      tmp_inputans = 0
    endelse
 
-   if (keyword_set(iback)) then begin
-      if (npoly NE n_elements(iback)) then $
-       message, 'Number of elements in IBACK is not equal to NPOLY'
-      ans[ntrace*ncoeff:ntrace*ncoeff + npoly-1] = iback 
-;      wfixarr[ntrace*ncoeff:ntrace*ncoeff + npoly - 1] = 0
+   if (keyword_set(wfixarr)) then begin
+      tmp_wfixarr = lonarr(tmp_ma) + 1
+      for i=0, ncoeff-1 do $
+       tmp_wfixarr[lindgen(nuse)*ncoeff+i] = wfixarr[iuse*ncoeff+i]
+   endif else begin
+      tmp_wfixarr = 0
+   endelse
+
+   tmp_pixelmask = lonarr(nuse)
+   tmp_pixelmask = pixelmask[iuse]
+
+   if (N_elements(sigma) GT 1) then tmp_sigma = sigma[iuse] $
+    else tmp_sigma = sigma
+
+ymodel = 0 ; ???
+   tmp_ans = extract_row( fimage, invvar, xcen[iuse], tmp_sigma, $
+    ymodel=ymodel, $
+    fscat=tmp_fscat, wfixed=wfixed, inputans=tmp_inputans, xvar=xvar, $
+    mask=mask, diagonal=tmp_p, wfixarr=tmp_wfixarr, npoly=npoly, $
+    whopping=whopping, pixelmask=tmp_pixelmask, reducedChi=reducedChi, $
+    _EXTRA=extra)
+
+   ; Set WFIXARR for unused fibers equal to zero
+   wfixarr = lonarr(ma) + 0
+   for i=0, ncoeff-1 do $
+    wfixarr[iuse*ncoeff+i] = tmp_wfixarr[lindgen(nuse)*ncoeff+i]
+
+   ; Set P for unused fibers equal to zero
+   p = fltarr(ma) + 0
+   for i=0, ncoeff-1 do $
+    p[iuse*ncoeff+i] = tmp_p[lindgen(nuse)*ncoeff+i]
+
+   ; In FSCAT, linearly interpolate over unused fibers
+   fscat = fltarr(ntrace)
+   fscat[iuse] = tmp_fscat
+   fscat = djs_maskinterp(fscat, fibuse EQ 0)
+
+   ; Set ANS for unused fibers equal to zero
+   ans = fltarr(ma)
+   for i=0, ncoeff-1 do $
+    ans[iuse+i*nuse] = tmp_ans[lindgen(nuse)+i*nuse]
+
+   pixelmask[iuse] = tmp_pixelmask
+
+   nextra = npoly + whoppingct
+   if (nextra GT 0) then begin
+      wfixarr[ma-nextra:ma-1] = tmp_wfixarr[tmp_ma-nextra:tmp_ma-1]
+      ans[ma-nextra:ma-1] = tmp_ans[tmp_ma-nextra:tmp_ma-1]
+      p[ma-nextra:ma-1] = tmp_p[tmp_ma-nextra:tmp_ma-1]
    endif
-
-   if (arg_present(fullcovar)) then qcovar = 1L $
-    else qcovar = 0L
-   fullcovar = fltarr(ma,ma)
-
-   finished = 0
-   totalreject = 0
-
-   while(finished NE 1) do begin 
-
-      workinvvar = FLOAT(invvar * mask)
-      partial = lonarr(ntrace)
-      fullreject = lonarr(ntrace)
-
-      if (keyword_set(inputans)) then begin
-         if (ntrace*ncoeff NE n_elements(inputans)) then $
-          message, 'Number of elements in INPUTANS is not equal to NTRACE*NCOEFF'
-         ans[0:ntrace*ncoeff-1] = inputans
-      endif
-
-      result = call_external(getenv('IDLSPEC2D_DIR')+'/lib/libspec2d.so', $
-       'extract_row',$
-       nx, FLOAT(xvar), FLOAT(fimage), workinvvar, ymodel, ntrace, $
-       LONG(npoly), FLOAT(xcen), FLOAT(sigma), LONG(proftype), $
-       FLOAT(reject), partial, fullreject, qcovar, LONG(squashprofile), $
-       FLOAT(whopping), whoppingct, FLOAT(wsigma), $
-       ncoeff, ma, ans, wfixarr, p, fscat, fullcovar)
-
-      diffs = (fimage - ymodel) * sqrt(workinvvar) 
-      chisq = total(diffs*diffs)
-      countthese = total(wfixarr)
-      reducedChi = chisq / (total(mask) - countthese)
-      errscale = 1.0
-      if (relative) then errscale = sqrt(chisq/total(mask))
-
-      badhigh = where(diffs GT highrej*errscale, badhighct)
-      badlow = where(diffs LT -lowrej*errscale, badlowct)
-
-      finished = 1
-      if (badhighct GT 0) then begin
-         mask[badhigh] = 0
-         totalreject = totalreject + badhighct
-         finished = 0
-      endif 
-      if (badlowct GT 0) then begin
-         mask[badlow] = 0
-         totalreject = totalreject + badlowct
-         finished = 0
-      endif
-
-      diffs = (fimage - ymodel) * sqrt(invvar) 
-      if (finished EQ 0) then begin
-         ii = where(diffs GE -lowrej*errscale $
-          AND diffs LE highrej*errscale)
-         if (ii[0] NE -1) then mask[ii] = 1 ; These points still good
-      endif
-
-      niter = niter + 1
-      if (niter EQ maxiter) then finished = 1
-   endwhile
-
-   ;----------
-   ; Add bits to PIXELMASK
-
-   pixelmask = pixelmask OR (pixelmask_bits('PARTIALREJECT') * fix(partial))
-   pixelmask = pixelmask OR (pixelmask_bits('FULLREJECT') * fix(fullreject))
 
    return, ans
 end
-
+;------------------------------------------------------------------------------

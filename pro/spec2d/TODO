@@ -1,4 +1,6 @@
 
+* Add pixelmask bits when 2d pixelflat has low counts (less than 0.5?)
+
 * Need to have better (or any) standard star SED prediction based
     on u-g, g-r, r-i.
 
@@ -7,21 +9,12 @@
 
 * Implement PSF variable sky subtraction
 
-* Implement Proper variance (and covariance) terms in combine2dout
-    -Larger problem of returning general covariance terms with
-     slatec_efc and slatec_bvalu.  Probably requires doing customized
-     B-spline fitting.  Also a change to deal with bkpts gracefully.
-
 * trace_crude gives a wrong xstart for fiber 172 in 
     plate 192:  Tracing 320 fibers in sdR-r1-00001602.fit
     The fiber overlaps with fiber 171, but is not set as a
     bad fiber, so maybe this is why it is not fixed.
 
 * Change FIBERMASK not in FIBERFLAT, but in SUPERFLAT.
-
-* BUG: telluric_corr crashed on call to SLATEC_SPLINEFIT, because
-  TEMPIVAR was all zeros.  Should test for this.  Failure was
-  on 51433/plate#198/sdR-r1-00001137.fit.
 
 * BUG: trace320crude is failing for fiber 276 on plate 217: sdR-r2-00001459.fit
     The xcen is off by > 1 pixel thr whole length of the fiber, and
@@ -72,10 +65,6 @@
 * Make bad pixel masks for "opBC.par" file.
   Include bad pixels from pixflat.
 
-* Discard flats that saturate in SPREDUCE or SPPLAN.
-
-----> Done (17-Dec-99) in SPREDUCE, but maybe should implement in SPPLAN?
-
 * Plot the superflat vector as a QA plot
 
 * Have FIBERFLAT only do a very low-order correction now that the
@@ -104,11 +93,6 @@
 
 * QA plot for how well the telluric-removal is doing
 
-* When doing red/blue merging, apply a window function to the **variance**
-  of each to smoothly merge the two.  E.g., at the long-wavelengths of blue,
-  increase the variance -> infinity.
-
----->   current window of 100 pixels at red/blue merge is in place.
 
 * Bug when writing out files:
   % Type conversion error: Unable to convert given STRING to Integer.
@@ -124,9 +108,6 @@
 ----> Gaussians are fit to 5577 in each spectrum, after flat scaling
 
 * Sky-subtraction: Fix edge effects in inverse variance scaling
-
-* In flat-fields, be smarter with break points
-  Also, tune pix-to-pix flat with global flat to be high-pass / low-pass filter
 
 * Measure gain + read noise
 
@@ -144,15 +125,43 @@
 
 * Need some logic to make certain we're looking at a flat, arc, etc.
 
-* Characterize flexure 
-
 * Binned mode
-
-* Problems with CCD electronics?  Bleads with low counts?
+   -- worked at one time
 
 * Focal plane mapping
 
 * Output in header PSF information (spatial + wavelength) to final files.
+
+-------------------------------------------------------------------------------
+;   These have been dealt with
+-------------------------------------------------------------------------------
+* Problems with CCD electronics?  Bleads with low counts?
+    -- This was the shutter open
+
+* Characterize flexure 
+
+* In flat-fields, be smarter with break points
+  Also, tune pix-to-pix flat with global flat to be high-pass / low-pass filter
+
+* When doing red/blue merging, apply a window function to the **variance**
+  of each to smoothly merge the two.  E.g., at the long-wavelengths of blue,
+  increase the variance -> infinity.
+---->   current window of 100 pixels at red/blue merge is in place.
+
+* Discard flats that saturate in SPREDUCE or SPPLAN.
+----> Done (17-Dec-99) in SPREDUCE, but maybe should implement in SPPLAN?
+
+* BUG: telluric_corr crashed on call to SLATEC_SPLINEFIT, because
+  TEMPIVAR was all zeros.  Should test for this.  Failure was
+  on 51433/plate#198/sdR-r1-00001137.fit.
+
+-------------------------------------------------------------------------------
+;   These are not likely to be done in near future:
+-------------------------------------------------------------------------------
+* Implement Proper variance (and covariance) terms in combine2dout
+    -Larger problem of returning general covariance terms with
+     slatec_efc and slatec_bvalu.  Probably requires doing customized
+     B-spline fitting.  Also a change to deal with bkpts gracefully.
 
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------

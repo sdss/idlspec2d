@@ -8,7 +8,8 @@
 ; CALLING SEQUENCE:
 ;   spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 ;    plugfile=plugfile, lampfile=lampfile, $
-;    indir=indir, plugdir=plugdir, outdir=outdir
+;    indir=indir, plugdir=plugdir, outdir=outdir, $
+;    ecalibfile=ecalibfile
 ;
 ; INPUTS:
 ;   flatname   - Name(s) of flat-field SDSS image(s)
@@ -26,6 +27,7 @@
 ;                default to '.'
 ;   plugdir    - Input directory for PLUGFILE; default to '.'
 ;   outdir     - Directory for output files; default to '.'
+;   ecalibfile - opECalib.par file for spreduce
 ;
 ; OUTPUTS:
 ;
@@ -58,7 +60,8 @@
 
 pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
  plugfile=plugfile, lampfile=lampfile, $
- indir=indir, plugdir=plugdir, outdir=outdir
+ indir=indir, plugdir=plugdir, outdir=outdir, $
+ ecalibfile=ecalibfile
 
    if (NOT keyword_set(indir)) then indir = '.'
    if (NOT keyword_set(plugdir)) then plugdir=indir
@@ -85,7 +88,8 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    ; Determine spectrograph ID and color from first object file
    ;---------------------------------------------------------------------------
 
-   sdssproc, objname[0], indir=indir, spectrographid=spectrographid, color=color
+   sdssproc, objname[0], indir=indir, spectrographid=spectrographid, $
+             color=color, ecalibfile=ecalibfile
 
    ;---------------------------------------------------------------------------
    ; Read PLUGMAP file and sort
@@ -111,7 +115,8 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    ;---------------------------------------------------------------------------
 
    spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
-    lampfile=lampfile, indir=indir, arcstruct, flatstruct
+    lampfile=lampfile, indir=indir, arcstruct, flatstruct, $
+    ecalibfile=ecalibfile
 
    ;-----
    ; Select the best arc
@@ -182,8 +187,9 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
       splog, 'Reading object ', objname[iobj]
       sdssproc, objname[iobj], image, invvar, indir=indir, hdr=objhdr, $
-       pixflatname=pixflatname, spectrographid=spectrographid, color=color
-
+       pixflatname=pixflatname, spectrographid=spectrographid, color=color, $
+       ecalibfile=ecalibfile
+       
       ;-----
       ; Construct the best flat for this object from all of the reduced
       ; flat-field frames

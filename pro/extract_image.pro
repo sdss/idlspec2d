@@ -236,7 +236,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
      endif
 
      ansrow = extract_row(fimage[*,cur], invvar[*,cur], $
-      xcen[cur,*], sigmacur, ymodel=ymodelrow, fscat=fscatrow, $
+      xcen[cur,*],sigmacur,ymodel=ymodelrow, fscat=fscatrow, $
       proftype=proftype, iback=iback, reject=reject, pixelmask=pixelmasktemp, $
       wfixed=wfixed, mask=masktemp, diagonal=prow, nPoly=nPoly, $
       niter=niter, squashprofile=squashprofile,inputans=inputans, $
@@ -245,6 +245,15 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
       reducedChi=chisqrow)
 
      mask[*,cur] = masktemp
+
+     if (total(finite(ansrow) EQ 0) GT 0) then $
+       splog, 'ABORT! ansrow has NaNs at row', cur
+
+     if (total(finite(ymodelrow) EQ 0) GT 0) then $
+       splog, 'ABORT! ymodelrow has NaNs at row', cur
+
+     if (total(finite(fscatrow) EQ 0) GT 0) then $
+       splog, 'ABORT! fscatrow has NaNs at row', cur
 
      if(ARG_PRESENT(ymodel)) then ymodel[*,cur] = ymodelrow
      if(ARG_PRESENT(fscat)) then fscat[iy,*] = fscatrow

@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   spcalib, flatname, arcname, pixflatname=, fibermask=, $
-;    lampfile=, indir=, timesep=, arcstruct, flatstruct
+;    lampfile=, indir=, timesep=, ecalibfile=, arcstruct, flatstruct
 ;
 ; INPUTS:
 ;   flatname   - Name(s) of flat-field SDSS image(s)
@@ -24,6 +24,7 @@
 ;                default to '.'
 ;   timesep    - Maximum time separation between flats and arcs to pair them;
 ;                set to zero to disable this test; default to 7200 sec.
+;   ecalibfile - opECalib file to pass to sdssproc
 ;
 ; OUTPUTS:
 ;   arcstruct  - Structure array with extracted arc calibration information
@@ -96,7 +97,8 @@ end
 ;------------------------------------------------------------------------------
 
 pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
- lampfile=lampfile, indir=indir, timesep=timesep, arcstruct, flatstruct
+ lampfile=lampfile, indir=indir, timesep=timesep, ecalibfile=ecalibfile, $
+ arcstruct, flatstruct
 
    if (NOT keyword_set(indir)) then indir = '.'
    if (NOT keyword_set(timesep)) then timesep = 7200
@@ -127,8 +129,9 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
       ;---------------------------------------------------------------------
 
       splog, 'Reading flat ', flatname[iflat]
-      sdssproc, flatname[iflat], flatimg, flativar, indir=indir, $
-       hdr=flathdr, pixflatname=pixflatname, nsatrow=nsatrow, fbadpix=fbadpix
+      sdssproc, flatname[iflat], flatimg, flativar, indir=indir,$
+       hdr=flathdr, pixflatname=pixflatname, nsatrow=nsatrow, fbadpix=fbadpix,$
+       ecalibfile=ecalibfile
 
       ;-----
       ; Decide if this flat is bad:
@@ -192,7 +195,8 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
 
       splog, 'Reading arc ', arcname[iarc]
       sdssproc, arcname[iarc], arcimg, arcivar, indir=indir, $
-       hdr=archdr, pixflatname=pixflatname, nsatrow=nsatrow, fbadpix=fbadpix
+       hdr=archdr, pixflatname=pixflatname, nsatrow=nsatrow, fbadpix=fbadpix, $
+       ecalibfile=ecalibfile
 
 splog,'Arc fbadpix ', fbadpix ; ???
 
@@ -360,7 +364,7 @@ splog,'Arc fbadpix ', fbadpix ; ???
          if (nflat GT 1) then begin
             splog, 'Reading flat ', flatname[iflat]
             sdssproc, flatname[iflat], flatimg, flativar, indir=indir, $
-             hdr=flathdr, pixflatname=pixflatname
+             hdr=flathdr, pixflatname=pixflatname, ecalibfile=ecalibfile
          endif
 
          ;---------------------------------------------------------------------
