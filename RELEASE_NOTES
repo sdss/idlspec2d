@@ -10,6 +10,8 @@ CREATE_LINESTRUCT(): Function broken out of LINEBACKFIT so that it
 LINEBACKFIT: Fix possible crash condition when computing LINENPIX if
             the line width is unphysically narrow and no pixels fall
             within the region of an emission line.
+PLATECOMPARE: New TOPDIR optional keyword for comparing different
+            reductions of the same data.
 PLOTSPEC: Optional /ZWARNING flag.  Report error if FIBERID out of range.
 QUICKEXTRACT: Call REJECT_SCIENCE() to decide if a science exposure is bad
             due to lamps being turned on, too many saturated pixels, etc.
@@ -23,9 +25,6 @@ REJECT_SCIENCE: Check in the header that all the flat-field screens are
             With this check, exposure #11504 of plate 727/52207 would
             have been automatically rejected for having the FF lamps
             turned on (see PR #3169).
-SPREDUCE: No longer issue an abort message in this proc if the science
-            exposure is declared bad, but issue those messages from within
-            the REJECT_SCIENCE() function.
 SDSS_FLAGNAME: Change some of the target names to agree with what's been
             changed in the target code in the past year or so.  Note that
             I had already updated the target names in spectro_home.html.
@@ -39,10 +38,14 @@ SPCOADD_FRAMES: Remove the following keywords from the spPlate file:
             Issue a warning message if any object fibers have OBJTYPE=NA,
             which should be impossible, but the special plate 673 and
             possibly others had some such fibers.
+            Add UNAME keyword which is the result of 'uname -n'.
 SPECLINEFIT: Fixed dumb mistake on indexing that could crash.
             Always create an NLINE x NOBJ output structure, with blank
             entries where we do not measure lines (currently, only
             measuring for GALAXY objects).
+SPREDUCE: No longer issue an abort message in this proc if the science
+            exposure is declared bad, but issue those messages from within
+            the REJECT_SCIENCE() function.
 
 mailhtml.sh: Grep for the "APO Spectro" from the HTML file to get the
             subject line for mail; I had changed this HTML title string,
