@@ -90,6 +90,9 @@ pro/science/kinematics/mveldisp_stars.pro -text
 pro/science/kinematics/mveldisp_struc.pro -text
 pro/science/kinematics/newdiff.pro -text
 pro/science/kinematics/skyremove.pro -text
+pro/science/kinematics/sp321 -text
+pro/science/kinematics/sp4 -text
+pro/science/kinematics/spbrg -text
 pro/science/kinematics/template.pro -text
 pro/science/lickindex/gauss_smooth_wave.pro -text
 pro/science/lickindex/lickindices.pro -text
