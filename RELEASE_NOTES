@@ -1,6 +1,7 @@
 
 APO_PLOTSN,QUICKTRACE: Need the /APOTAGS in the call to READPLUGMAP(),
         which has been re-written to be used by the full 2D reductions too.
+BADFMAGS: Find bad F star photometry that might get used by Spectro-2D.
 BADFSTARS: Find bad F stars used for spectro-photometry in the Spectro-2D.
 BATCH2D: Call SPCOMBINE_V5 instead of SPCOMBINE.
         Update the list of output files to correspond to the new v5 outputs.
