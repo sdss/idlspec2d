@@ -22,6 +22,8 @@ PLATELIST: Use PLUG_RA,PLUG_DEC to match duplicate observations of
 PLATEMERGE: Small changes to allow using the (new) calibObj files
            instead of the (old) tsObj files.
            For the ASCII output, write MODELFLUX instead of COUNTS_MODEL.
+           In call to PLUG2TSOBJ, pass PLUGMAP so that warnings of unmatched
+           sky fibers are not printed.
 PLUG2TSOBJ: Small changes to allow reading of the (new) calibObj files.
            For now, assume these files are in $SPECTRO_DATA/calibobj.
            Print a warning message for non-matched objects only if they
