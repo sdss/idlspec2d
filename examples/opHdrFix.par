@@ -172,3 +172,11 @@ spechdrfix sdR-??-0000930[0-7] PLUGMAPO "'/data/spectro/plugMapM/plPlugMapM-0503
 spechdrfix sdR-??-0000930[0-7] MAPID    5199101
 spechdrfix sdR-??-0000930[0-7] NAME     "'0503-51991-01'"
 
+# First smear exposure accidentally taken with guider on for plate 583
+# on MJD 52055.
+spechdrfix sdR-??-00010048 FLAVOR   "'unknown'"
+
+# First smear exposure accidentally taken with guider on for plate 611
+# on MJD 52055.
+spechdrfix sdR-??-00010061 FLAVOR   "'unknown'"
+
