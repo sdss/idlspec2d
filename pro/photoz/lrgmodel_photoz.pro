@@ -7,10 +7,12 @@
 ;
 ; CALLING SEQUENCE:
 ;   zfit = lrgmodel_photoz(pflux, pflux_ivar, [ /abcorrect, extinction=, $
-;    abfudge=, ageburst=, zmetal=, filterlist=, adderr=, z_err=, chi2= ] )
+;    abfudge=, ageburst=, zmetal=, filterlist=, adderr=, $
+;    zsplinearr=, synfluxarr=, z_err=, chi2= ] )
 ;
 ; INPUTS:
-;   pflux          - Object fluxes in the 5 SDSS filters [5,NOBJ]
+;   pflux          - Object fluxes in the 5 SDSS filters [5,NOBJ]; if not set, then
+;                    simply return with the optional ZSPLINEARR,SYNFLUXARR.
 ;   pflux_ivar     - Inverse variances for FLUX [5,NOBJ]
 ;
 ; OPTIONAL INPUTS:
@@ -33,6 +35,8 @@
 ;   zfit           - Best-fit redshift [NOBJ]
 ;
 ; OPTIONAL OUTPUTS:
+;   zsplinearr     - Array of test redshifts used in the fits [NTEST]
+;   synfluxarr     - Array of the fluxes vs. redshift from the models [5,NTEST]
 ;   z_err          - Redshift error, or a negative value if an error
 ;                    occurred in the quadratic minimization estimate [NOBJ]
 ;   chi2           - Best-fit chi^2 [NOBJ]
@@ -67,7 +71,7 @@ function lrgmodel_photoz, pflux, pflux_ivar, z_err=z_err, $
  abcorrect=abcorrect, extinction=extinction, abfudge=abfudge, $
  ageburst=ageburst1, zmetal=zmetal1, $
  filterlist=filterlist, adderr=adderr, chi2=chi2, synfluxarr=synfluxarr, $
- nodata=nodata, zsplinearr=zsplinearr
+ zsplinearr=zsplinearr
 
    common com_lrgmodel_photoz, zarr, agevec, metalvec, $
     allwave, allflux, synflux, ageburst_save, zmetal_save
@@ -173,9 +177,9 @@ function lrgmodel_photoz, pflux, pflux_ivar, z_err=z_err, $
       zmetal_save = zmetal
   endif
 
-  if (arg_present(zsplinearr)) then zsplinearr=zarr
-  if (arg_present(synfluxarr)) then synfluxarr=synflux
-  if (keyword_set(nodata)) then return,0
+  if (arg_present(zsplinearr)) then zsplinearr = zarr
+  if (arg_present(synfluxarr)) then synfluxarr = synflux
+  if (NOT keyword_set(pflux)) then return, 0
 
    ;----------
    ; Initialize variables
