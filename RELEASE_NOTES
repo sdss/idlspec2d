@@ -1,4 +1,7 @@
 
+EXTRACT_BOXCAR,EXTRACT_PROFILE,EXTRACT_ROW,SSHIFTVEC:
+        Call IDLUTILS_SO_EXT() to get the suffix for dynamically
+        loaded libraries (rather than assuming ".so").
 EXTRACT_OBJECT: Write as HDU #8 an image of the relative chi^2, or an
         image of all 1's if no such structure was ever made in the SKYSUBTRACT
         code.  Note that these values are not truncated to be >=1, as they
