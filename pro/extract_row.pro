@@ -269,6 +269,14 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
    pixelmask = pixelmask OR (pixelmask_bits('PARTIALREJECT') * fix(partial))
    pixelmask = pixelmask OR (pixelmask_bits('FULLREJECT') * fix(fullreject))
 
+; HORRIBLE HACK SINCE EXTRACT_ROW RETURNS SOME NaN's!!!???
+jj = where(finite(ans) EQ 0)
+if (jj[0] NE -1) then ans[jj] = 0
+jj = where(finite(ymodel) EQ 0)
+if (jj[0] NE -1) then ymodel[jj] = 0
+jj = where(finite(fscat) EQ 0)
+if (jj[0] NE -1) then fscat[jj] = 0
+
    return, ans
 
 end
