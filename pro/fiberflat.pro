@@ -113,8 +113,6 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
       bkpt = findgen(nbkpts) * (max(loglam) - min(loglam)) / (nbkpts-1) $
        + min(loglam)
 
-      badflatbit = fibermask_bits('BADFLAT')
-
       for i=0, ntrace-1 do begin
          print, format='($, ".",i4.4,a5)',i,string([8b,8b,8b,8b,8b])
 
@@ -148,8 +146,8 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
             fflat[*,i] = slatec_bvalu(loglam[*,i], fullbkpt, coeff)
 
             ; Replace leading or trailing masked points with the first or last
-            ; unmasked value
-            ; bvalu already does the check below
+            ; unmasked value.
+            ; SLATEC_BVALU already does the check below
             ;if (indx[0] NE 0) then fit1[0:indx[0]-1] = fit1[indx[0]]
             ;if (indx[ct-1] NE ny-1) then fit1[indx[ct-1]+1:ny-1] = fit1[indx[ct-1]]
 
@@ -158,7 +156,7 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
             fflat[*,i] = 1.0
 
             ; Set bit for errors in FFLAT
-            fibermask[i] = fibermask[i] OR badflatbit
+            fibermask[i] = fibermask[i] OR fibermask_bits('BADFLAT')
 
          endelse
 
@@ -198,8 +196,8 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
 
 ;   fmed = djs_median(fflat,1)
 ;   badflat = where(fmed LT 0.7 * djs_median(fmed))
-;   badflat = where(medval LT 0.7 * globalmed)
 
+   badflat = where(medval LT 0.7 * globalmed)
    if (badflat[0] NE -1) then  $
      fibermask[badflat] = fibermask[badflat] OR fibermask_bits('BADFLAT')
 

@@ -37,6 +37,7 @@
 ;   ngrow      - For each trace, replace all centroids within NGROW rows
 ;                of a bad centroid with the predicted centroid locations.
 ;                Default to 5.
+;   fibermask  - Mask [NFIBER]
 ;
 ; OUTPUTS:
 ;   xset       - X centers for all traces
@@ -47,7 +48,7 @@
 ;   xgood      - Set to 1 for fibers that were actually found, 0 otherwise
 ;   xmask      - Mask set to 1 for good fiber centers, 0 for bad;
 ;                same dimensions as XSET.
-;   fibermask  - Fibermask bits are set for bad traces
+;   fibermask  - (Modified.)
 ;
 ; COMMENTS:
 ;
@@ -123,12 +124,6 @@ function trace320crude, fimage, invvar, ystart=ystart, nmed=nmed, xgood=xgood, $
    ;----------
    ; Loop to find all deviant centroids, and add these to the mask XMASK.
 
-;   ; (And set FIBERMASK bits???)
-;   ixgood = where(xgood)
-;   ixbad = where(xgood EQ 0 OR quarterbad)
-;   if (ixbad[0] NE -1) then $
-;    fibermask[ixbad] = fibermask[ixbad] OR fibermask_bits('BADTRACE')
-
    for iy=0, ny-1 do begin
       xcheck = xgood AND xmask[iy,*] ; Test for good fiber & good centroid
       if (total(xcheck) GT ndegree+1) then begin
@@ -160,6 +155,14 @@ function trace320crude, fimage, invvar, ystart=ystart, nmed=nmed, xgood=xgood, $
          xset[iy,ixbad] = xfit[ixbad]
       endif
    endfor
+
+   ;----------
+   ; Set FIBERMASK bit for any fiber with more than 20% of its positions
+   ; masked, which includes any positions off the CCD
+
+   ibad = where(total(1-xmask, 1) GT 0.20*ny)
+   if (ibad[0] NE -1) then $
+    fibermask[ibad] = fibermask[ibad] OR fibermask_bits('BADTRACE')
 
    return, xset
 end

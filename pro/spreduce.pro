@@ -110,11 +110,8 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    ; REDUCE CALIBRATION FRAMES
    ;---------------------------------------------------------------------------
 
-   stimecalib = systime(1)
    spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
     lampfile=lampfile, indir=indir, arcstruct, flatstruct
-   splog, 'Elapsed time for spcalib = ', systime(1)-stimecalib, ' seconds', $
-       format='(a,f6.0,a)' 
 
    ;-----
    ; Select the best arc
@@ -203,7 +200,15 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
       xsol = *(bestflat.xsol)
       fflat = *(bestflat.fflat)
-      fibermask = fibermask AND (*(bestflat.fibermask))
+
+      ;-----
+      ; Combine FIBERMASK bits from the plug-map file, best flat
+      ; and best arc
+
+      fibermask = fibermask $
+       OR (*(bestflat.fibermask) AND fibermask_bits('BADTRACE')) $
+       OR (*(bestflat.fibermask) AND fibermask_bits('BADFLAT')) $
+       OR (*(bestarc.fibermask) AND fibermask_bits('BADARC'))
 
       qaplot_fflat, fflat, wset, filename=bestflat.name
 

@@ -15,7 +15,9 @@
 ;
 ; OPTIONAL KEYWORDS:
 ;   pixflatname- Name of pixel-to-pixel flat, produced with SPFLATTEN.
-;   fibermask  - Mask of 0 for bad fibers and 1 for good fibers [NFIBER]
+;   fibermask  - Mask [NFIBER]
+;                Note this is not modified, but modified copies appear
+;                in the returned structures ARCSTRUCT and FLATSTRUCT.
 ;   lampfile   - Name of file describing arc lamp lines;
 ;                default to the file 'lamphgcdne.dat' in the IDL path.
 ;   indir      - Input directory for FLATNAME, ARCNAME, OBJNAME;
@@ -68,7 +70,8 @@ function create_arcstruct, narc
     'LAMBDA', ptr_new(), $
     'XPEAK', ptr_new(), $
     'XDIF_TSET', ptr_new(), $
-    'WSET', ptr_new() )
+    'WSET', ptr_new(), $
+    'FIBERMASK', ptr_new() )
 
    arcstruct = replicate(ftemp, narc)
 
@@ -97,6 +100,8 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
 
    if (NOT keyword_set(indir)) then indir = '.'
    if (NOT keyword_set(timesep)) then timesep = 7200
+
+   stime1 = systime(1)
 
    ;---------------------------------------------------------------------------
    ; Determine spectrograph ID and color from first flat file
@@ -142,13 +147,17 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
           ' (' + string(format='(i4)', nsatrow) + ' saturated rows)'
       endif
 
+      if (NOT keyword_set(fibermask)) then tmp_fibmask = bytarr(nfiber) $
+       else tmp_fibmask = fibermask
+
       if (NOT qbadflat) then begin
          ;------------------------------------------------------------------
          ; Create spatial tracing from flat-field image
          ;------------------------------------------------------------------
 
          splog, 'Tracing 320 fibers in ',  flatname[iflat]
-         xsol = trace320crude(flatimg, flativar, yset=ycen, maxdev=0.15)
+         xsol = trace320crude(flatimg, flativar, yset=ycen, maxdev=0.15, $
+          fibermask=tmp_fibmask)
 
          splog, 'Fitting traces in ',  flatname[iflat]
          xy2traceset, ycen, xsol, tset, ncoeff=5, maxdev=0.1
@@ -161,6 +170,7 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
       flatstruct[iflat].tai = sxpar(flathdr, 'TAI')
       flatstruct[iflat].qbad = qbadflat
       flatstruct[iflat].xsol = ptr_new(xsol)
+      flatstruct[iflat].fibermask = ptr_new(tmp_fibmask)
 
    endfor
 
@@ -226,6 +236,7 @@ splog,'Arc fbadpix ', fbadpix ; ???
       if (NOT qbadarc) then begin
 
          xsol = *(flatstruct[iflat].xsol)
+         tmp_fibmask = *(flatstruct[iflat].fibermask)
 
          ;------------------------------------------------------------------
          ; Extract the arc image
@@ -250,10 +261,10 @@ splog,'Arc fbadpix ', fbadpix ; ???
          splog, 'Searching for wavelength solution'
          aset = 0
 ; FOR NOW, REVERT TO THE OLD CODE! ???
-         fitarcimage, flux, fluxivar, aset=aset, $
-          color=color, lampfile=lampfile, bestcorr=bestcorr
-;         fitarcimage_old, flux, fluxivar, aset=aset, $
-;          color=color, lampfile=lampfile, bestcorr=bestcorr
+         fitarcimage, flux, fluxivar, aset=aset, color=color, $
+          lampfile=lampfile, fibermask=tmp_fibmask, bestcorr=bestcorr
+;         fitarcimage_old, flux, fluxivar, aset=aset, color=color, $
+;          lampfile=lampfile, fibermask=tmp_fibmask, bestcorr=bestcorr
 
          arcstruct[iarc].bestcorr = bestcorr
 
@@ -278,10 +289,12 @@ splog,'Arc fbadpix ', fbadpix ; ???
 ;       FOR NOW, REVERT TO THE OLD CODE! ???
          fitarcimage, flux, fluxivar, xpeak, ypeak, wset, $
           ncoeff=arccoeff, aset=aset, $
-          color=color, lampfile=lampfile, lambda=lambda, xdif_tset=xdif_tset
+          color=color, lampfile=lampfile, fibermask=tmp_fibmask, $
+          lambda=lambda, xdif_tset=xdif_tset
 ;         fitarcimage_old, flux, fluxivar, xpeak, ypeak, wset, $
 ;          ncoeff=arccoeff, aset=aset, $
-;          color=color, lampfile=lampfile, lambda=lambda, xdif_tset=xdif_tset
+;          color=color, lampfile=lampfile, fibermask=tmp_fibmask, $
+;          lambda=lambda, xdif_tset=xdif_tset
 
          if (NOT keyword_set(wset)) then begin
             splog, 'Wavelength solution failed'
@@ -292,6 +305,7 @@ splog,'Arc fbadpix ', fbadpix ; ???
             arcstruct[iarc].lambda = ptr_new(lambda)
             arcstruct[iarc].xpeak = ptr_new(xpeak)
             arcstruct[iarc].xdif_tset = ptr_new(xdif_tset)
+            arcstruct[iarc].fibermask = ptr_new(tmp_fibmask) 
          endelse
 
 ;         qaplot_arcline, xdif_tset, lambda, filename=arcname[iarc], color=color
@@ -336,6 +350,7 @@ splog,'Arc fbadpix ', fbadpix ; ???
 
          wset = *(arcstruct[iarc].wset)
          xsol = *(flatstruct[iflat].xsol)
+         tmp_fibmask = *(flatstruct[iflat].fibermask)
 
          ;---------------------------------------------------------------------
          ; Read flat-field image (again)
@@ -374,21 +389,21 @@ splog,'Arc fbadpix ', fbadpix ; ???
          ;---------------------------------------------------------------------
 
          ntrace = (size(flux, /dimens))[1]
-         if (keyword_set(fibermask)) then fmask = fibermask $
-          else fmask = bytarr(ntrace)
 
-;         fflat = fiberflat(flux, fluxivar, wset, fibermask=fmask)
-         fflat = fiberflat(flux, fluxivar, wset, fibermask=fmask, $
+;         fflat = fiberflat(flux, fluxivar, wset, fibermask=tmp_fibmask)
+         fflat = fiberflat(flux, fluxivar, wset, fibermask=tmp_fibmask, $
           /dospline)
 
 ;         qaplot_fflat, fflat, wset, filename=flatname[iflat]
 
          flatstruct[iflat].fflat = ptr_new(fflat)
-         flatstruct[iflat].fibermask = ptr_new(fmask)
+         flatstruct[iflat].fibermask = ptr_new(tmp_fibmask)
 
       endif
 
    endfor
+
+   splog, 'Elapsed time = ', systime(1)-stime1, ' seconds', format='(a,f6.0,a)'
 
    return
 end
