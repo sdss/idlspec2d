@@ -12,8 +12,13 @@ APO_LOG2HTML,APOREDUCE: Switch from saving the Mountain standard time (MST)
 APO_LOG2HTML: Compare the exposure "flavor" when looking at the operational
            limits (in the "opLimits.par" file).  This allows us to
            differentiate between bias and dark levels (PR #2562).
+APO_CHECKLIMITS,APO_COLOR2HEX: These functions broken out of APO_LOG2HTML
+           since they are now used by APO_PLOTSN too.
 APO_PLOTBIAS: Remove ROOT_DIR keyword, but look at $RAWDATA_DIR environ
            variable instead.  Look for uncompressed or compressed raw files.
+APO_PLOTSN,APO_LOG2HTML:  Only add (S/N)^2 that is not flagged as anything
+           bad in the opLimits file (currently anything < 2.0 is bad).
+           This should be true for both the HTML table and for the S/N plots.
 APOFLUXCALIB: Procedure for generating a canonical set of flux-calibration
            vectors (including the superflat) for on-the-mountain plotting
            of spectra using APOPLOT.
@@ -95,6 +100,8 @@ QUICKEXTRACT: Put exposure time dependence in scattered light warning.
             It is the same limit as we had before for 900-sec exposures,
             the same limit for shorter exposures, and a (scaled) higher
             limit for longer exposures.
+            Include FIBERMAG in the output structure, where we use MAG[1] for
+            any blue frames, and MAG[3] for any red frames.
 REDMONSTER: Change the warning message to "Bad sky residuals...",
             and only send the message "Red Monster at..." if it
             is around 6400-6600 Ang, where we think the problem may
@@ -219,6 +226,7 @@ sprobot.sh: Run the same version of the idlspec2d product as is set up
 Combine all of the install instructions into one place,
 in the file "idlspec2d_install.html".  The instructions
 from "spectroSOS.html" have been moved there.
+Add header card info to the "spectroSOS.html" document.
 
 In idlutils:
 
