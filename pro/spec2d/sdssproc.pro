@@ -9,7 +9,7 @@
 ;   sdssproc, infile, [image, invvar, indir=, $
 ;    outfile=, varfile=, nsatrow=, fbadpix=, $
 ;    hdr=hdr, configfile=, ecalibfile=, bcfile=, $
-;    pixflatname=, minflat=, spectrographid=, color= ]
+;    pixflatname=, minflat=, spectrographid=, color=, camname= ]
 ;
 ; INPUTS:
 ;   infile     - Raw SDSS file name
@@ -34,6 +34,7 @@
 ;   invvar     - Associated inverse variance
 ;   spectrographid - Return spectrograph ID (1 or 2)
 ;   color      - Return spectrograph color ('red' or 'blue')
+;   camname    - Return camera name: 'b1', 'r1', 'b2', or 'r2'
 ;
 ; COMMENTS:
 ;   Only the header is read from the image if IMAGE, INVVAR, OUTFILE and
@@ -107,13 +108,13 @@ pro sdssproc, infile, image, invvar, indir=indir, $
  outfile=outfile, varfile=varfile, nsatrow=nsatrow, fbadpix=fbadpix, $
  hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, bcfile=bcfile, $
  pixflatname=pixflatname, spectrographid=spectrographid, color=color, $
- minflat=minflat
+ camname=camname, minflat=minflat
 
    if (N_params() LT 1) then begin
       print, 'Syntax - sdssproc, infile, [image, invvar, indir=, $'
       print, ' outfile=, varfile=, nsatrow=, fbadpix=, $' 
       print, ' hdr=, configfile=, ecalibfile=, bcfile=, $'
-      print, ' pixflatname=, spectrographid=, color= ]'
+      print, ' pixflatname=, spectrographid=, color=, camname=, minflat= ]'
       return
    endif
 
@@ -170,21 +171,22 @@ pro sdssproc, infile, image, invvar, indir=indir, $
 ; Do not read the camera from the CAMERAS keyword, since this was often
 ; wrong in the early days!
 ;   cameras = strtrim( sxpar(hdr, 'CAMERAS'), 2 )
-   case camnames[indx[0]] of
+   camname = camnames[indx[0]]
+   case camname of
     'b1': begin
           spectrographid = 1
           color = 'blue'
           end
-    'r2': begin
-          spectrographid = 2
+    'r1': begin
+          spectrographid = 1
           color = 'red'
           end
     'b2': begin
           spectrographid = 2
           color = 'blue'
           end
-    'r1': begin
-          spectrographid = 1
+    'r2': begin
+          spectrographid = 2
           color = 'red'
           end
    endcase
