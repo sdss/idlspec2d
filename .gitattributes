@@ -34,6 +34,7 @@ bin/zplot -text
 doc/Makefile -text
 doc/mk_doc -text
 doc/paper/frames.jpg -text svneol=unset#unset
+doc/paper/outline -text
 doc/www/.cvsignore -text
 doc/www/idlspec2d_install.html -text
 doc/www/idlspec2d_reduce.html -text
