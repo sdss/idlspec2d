@@ -51,10 +51,12 @@ PRO reduce_plate, platenum, first=first
 
   dum = findfile('/deep2/dfink', count=deepcount)
   IF (deepcount GT 0) THEN BEGIN   ; check if in Berkeley
-      path = '/deepscr0/dfink/spectro/'+string(platenum, format='(I4.4)')+'/'
+      specpath = '/deepscr0/dfink/spectro/'
+      path = +string(specpath+platenum, format='(I4.4)')+'/'
       flist = findfile(path+'*.fits')
   ENDIF ELSE BEGIN 
-      path = '/data/spectro/2d_3c/'+string(platenum, format='(I4.4)')+'/'
+      specpath = '/data/spectro/'
+      path = specpath+'2d_3c/'+string(platenum, format='(I4.4)')+'/'
       flist = findfile(path+'2dnew/*.fits')
   ENDELSE 
   fname = flist[0]
@@ -119,7 +121,7 @@ PRO reduce_plate, platenum, first=first
   ENDELSE 
 
   fname = generate_filename(result[0].mjd, result[0].plate)
-  mwrfits, result, '/data/spectro/veldisp/brgtemplate/'+fname
+  mwrfits, result, specpath+'veldisp/brgtemplate/'+fname
 
   print
   print, 'Plate', platenum, ' finished.  ', systime()
