@@ -152,7 +152,7 @@ pro spflatten2, flatname, arcname, allflats, pixflat, $
 
    splog, 'Extracting arc image with simple gaussian'
    sigma = 1.0
-   proftype = 1 ; Gaussian
+   proftype = 3 ; ???
    highrej = 15
    lowrej = 15
    npoly = 1 ; maybe more structure
@@ -241,7 +241,7 @@ arcivar = 0
       ; when computing the supersky vector.
 
       sigma = 1.0
-      proftype = 1 ; Gaussian
+      proftype = 3 ; ???
       highrej = 15
       lowrej = 15
       npoly = 1  ; just fit flat background to each row
@@ -250,25 +250,35 @@ arcivar = 0
       extract_image, flatimg, flativar * (1-maskimg), $
        xsol, sigma, flux, fluxivar, $
        proftype=proftype, wfixed=wfixed, $
-       highrej=highrej, lowrej=lowrej, npoly=npoly, relative=1
+       highrej=highrej, lowrej=lowrej, npoly=npoly, /relative, $
+       ansimage=ansimage
 
       ;----------------------
       ; Construct the "superflat" vector for this particular frame
 
-      x2 = xsol / 2048. ; CCD-X position ???
+      x2 = xsol / 2048. ; CCD-X position
       asset = superflat(flux, fluxivar, wset, x2=x2, $
        fibermask=fibermask, minval=0.0, lower=lower, upper=upper, $
        nord=4, npoly=3)
 flux = 0
 fluxivar = 0
-      x2 = float(djs_laxisgen([nx,ny],iaxis=0)) / 2048. ; CCD-X position ???
+      x2 = float(djs_laxisgen([nx,ny],iaxis=0)) / 2048. ; CCD-X position
       fitimg = bspline_valu(waveimg, asset, x2=x2)
 fitimg = fitimg > 0.02 ; ???
 
       ;----------------------
-      ; Divide by the superflat image
+      ; Construct the scattered light image
 
-      flatimg = flatimg / fitimg
+      dims = size(xsol,/dimens)
+      nrow = dims[0]
+      ntrace = dims[1]
+      nterms = n_elements(wfixed)
+      scatfit = calcscatimage(ansimage[ntrace*nterms:*,*], yrow)
+
+      ;----------------------
+      ; Subtract scattered light, then divide by the superflat image
+
+      flatimg = (flatimg - scatfit) / fitimg
       flativar = flativar * fitimg^2
 fitimg = 0
 
