@@ -9,6 +9,11 @@ EXTRACT_OBJECT, SKYSUBTRACT: Exit gracefully in the case of no good sky
 FITMEANX: Make robust to no good sky lines for tweaking wavelength solution.
           In that case, the routine LOCATESKYLINES will return SKYSHIFT=0.
 LOCATESKYLINES: Test that the sky line file is successfully read.
+MYFLUXCALIB: Fairly major changes: Do a pre-filtering of the spectra that
+             go into the PCA-fitting of the flux-calibration vector, and
+             mask out the most deviant points.  Run the PCA-fitting with
+             more iterations to ensure convergence.  Also, finally comment
+             this code.
 PCA_SOLVE: Construct the USEMASK from the output mask (OUTMASK) instead of
            from NEWIVAR.  This is equivalent to TOTAL(OUTMASK,2).
            This should make the flux-calibration vectors produced by
@@ -16,6 +21,9 @@ PCA_SOLVE: Construct the USEMASK from the output mask (OUTMASK) instead of
            the solution based upon USEMASK.
 PLATELIST: Read MJDLIST keyword from the spPlate files, which will only exist
            with future reductions.
+PLATESN: Pass a plot title to PLOTSN.
+PLOTSN: For the 2nd page of plots with Synthesized mags. vs. PHOTO fiber mags.,
+        make these residual plots.  Also, use plot titles.
 REJECT_SCIENCE: New proc to reject science exposures if they are blatantly
                 bad (typically, if they are saturated).  We have already been
                 doing this for arc + flat exposures.  This proc is called
@@ -33,6 +41,10 @@ TELLURIC_CORR: Fixed horrible bug in using fibermask to reject bad fibers
                polynomial, do the fit with weighted points and iterated
                rejections using DJS_REJECT().
 
+DJS_REJECT (in idlutils): Add the GROUPDIM keyword, and allow GROUPDIM,
+          MAXREJ and GROUPSIZE to be vectors for several limits in the
+          rejection algorithm.  These were some major changes, and hopefully
+          are completely backwards-compatable.
 YANNY_READ (in idlutils): Try to make backwards-compatable with IDL 5.2
           by replacing calls to STRSPLIT() with calls to STR_SEP.
 build_links (in idlutils): New script for building links between directories.

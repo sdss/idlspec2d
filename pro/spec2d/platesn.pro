@@ -119,7 +119,7 @@ pro platesn, finalflux, finalivar, finalandmask, finalplugmap, loglam, $
    ; Make S/N plot
 
    plottitle = 'PLATE=' + strtrim(string(sxpar(hdr,'PLATE')),2) $
-    + 'MJD=' + strtrim(string(sxpar(hdr,'MJD')),2)
+    + '  MJD=' + strtrim(string(sxpar(hdr,'MJD')),2)
    plotsn, snvec, finalplugmap, plotfile=plotfile, plottitle=plottitle, $
     synthmag=synthmag, snplate=snplate
 
