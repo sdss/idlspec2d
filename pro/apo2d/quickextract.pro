@@ -8,7 +8,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   rstruct = quickextract(tsetfile, wsetfile, fflatfile, rawfile, outsci, $
-;           [radius=radius, filtsz=filtsz])
+;    [ radius=, filtsz= ])
 ;
 ; INPUTS:
 ;   tsetfile   - Name of fits file which contains matched trace
@@ -61,7 +61,8 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
  radius=radius, filtsz=filtsz
 
    if (n_params() LT 4) then begin
-      print, 'Syntax - quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci'
+      print, 'Syntax - rstruct = quickextract(tsetfile, wsetfile, fflatfile, $'
+      print, ' rawfile, outsci, radius=, filtsz= ])'
       return, 0
    endif
 
@@ -107,8 +108,8 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    ;----------
    ; First let's try scattered light fit
 
-   nrow = (size(image))[2]
-   ncol = (size(image))[1]
+   nrow = (size(image,/dimens))[1]
+   ncol = (size(image,/dimens))[0]
    skiprow = 8
    yrow = lindgen(nrow/skiprow) * skiprow + skiprow/2
    nfirst = n_elements(yrow)
@@ -136,7 +137,7 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
     proftype=proftype, wfixed=wfixed, yrow=yrow, highrej=5, lowrej=5, $
     npoly=npoly, ansimage=ansimage, relative=1
 
-   ntrace = (size(tempflux))[2]
+   ntrace = (size(tempflux,/dimens))[1]
    scatfit = calcscatimage(ansimage[ntrace*nterms:*,*], yrow)
    scatflux = extract_boxcar(scatfit, xcen, radius=radius)
 
@@ -165,23 +166,25 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    fluxsub = flux - scatflux
    nfiber = (size(flux,/dimens))[1]
 
+   ;----------
    ; Flat-field
+
    divideflat, fluxsub, invvar=fluxivar, fflat, /quiet
 
-   ;--------------------------------------------------------------------
-   ; Check for whopping fibers in SOS reductions, 
-   ; especially useful for flagging affected sky fibers
+   ;----------
+   ; Check for whopping fibers in SOS reductions, which is
+   ; especially useful for flagging affected sky fibers.
 
    scrunch = djs_median(flux * (fluxivar GT 0), 1) 
    whopping = find_whopping(scrunch, 10000.0, whopct)
    if (whopping[0] NE -1) then begin
-     splog, 'WARNING: Whopping fiber(s) at ', whopping, $
-            '  (may have adverse affect on S/N)'
-     wp = [whopping - 2 , whopping -1, whopping, whopping+1 , whopping+2]
-     wp = (wp > 0) < (nfiber - 1)
-     fibermask[wp] = fibermask[wp] OR pixelmask_bits('NEARWHOPPER')
+      splog, 'WARNING: Whopping fiber(s) at ', whopping, $
+             '  (may have adverse affect on S/N)'
+      wp = [whopping - 2 , whopping -1, whopping, whopping+1 , whopping+2]
+      wp = (wp > 0) < (nfiber - 1)
+      fibermask[wp] = fibermask[wp] OR pixelmask_bits('NEARWHOPPER')
    endif
-   
+
    iskies = where(strtrim(plugsort.objtype,2) EQ 'SKY' $
       AND (plugsort.fiberid GT 0) AND (fibermask EQ 0), nskies)
 
@@ -193,34 +196,34 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
       splog, 'Warning: Rejecting Bright Sky Fibers ', iskies[outlier]
    endif
 
-   ;------------------------------------------------------------------------
-   ;  If too many sky fibers than only choose best one per each bundle
-   ;  Hardwired
+   ;----------
+   ; If too many sky fibers then only choose best one per each bundle.
 
    iskies = where(strtrim(plugsort.objtype,2) EQ 'SKY' $
-      AND (plugsort.fiberid GT 0) AND (fibermask EQ 0), nskies)
+    AND (plugsort.fiberid GT 0) AND (fibermask EQ 0), nskies)
 
    nbundles = 16
    nfibersperbundle = 20
    if nskies GT 20 then begin
-     for i=0,nbundles-1 do begin
-       possible = where(iskies / nfibersperbundle EQ i, npossible)
-       if npossible GT 1 then begin
-         reject = where(possible NE npossible/2)
-         if reject[0] NE -1 then begin
-           reject = iskies[possible[reject]]
-           splog, 'Warning: Rejecting Sky Fibers ', reject
-           fibermask[reject] = fibermask[reject] $
-                                OR fibermask_bits('BADSKYFIBER')
+      for i=0,nbundles-1 do begin
+         possible = where(iskies / nfibersperbundle EQ i, npossible)
+         if npossible GT 1 then begin
+            reject = where(possible NE npossible/2)
+            if reject[0] NE -1 then begin
+               reject = iskies[possible[reject]]
+               splog, 'Warning: Rejecting Sky Fibers ', reject
+               fibermask[reject] = fibermask[reject] $
+                                   OR fibermask_bits('BADSKYFIBER')
+            endif
          endif
-       endif
-     endfor       
+      endfor       
    endif
 
+   ;----------
+   ; Sky-subtract
 
    get_tai, hdr, tai_beg, tai_mid, tai_end
 
-   ; Sky-subtract
    skystruct = skysubtract(fluxsub, fluxivar, plugsort, wset, $
     objsub, objsubivar, iskies=iskies, fibermask=fibermask, tai=tai_mid)
 
@@ -304,4 +307,4 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
 
    return, rstruct
 end
-
+;------------------------------------------------------------------------------
