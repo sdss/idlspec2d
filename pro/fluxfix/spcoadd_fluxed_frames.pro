@@ -333,7 +333,7 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
      invertcorr = 1.0 / corrimg
      tempflux = flux[*,indx]
      tempivar = fluxivar[*,indx]
-     divideflat, tempflux, invvar=tempivar, invertcorr, minval=0.25
+     divideflat, tempflux, invvar=tempivar, invertcorr, minval=0.2
 
      flux[*,indx] = tempflux
      fluxivar[*,indx] = tempivar
@@ -472,6 +472,7 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    ; dispersion correction
 
    hdr = *hdrarr[(where(expid eq best_exp))[0]]
+   surfgr_sig = fltarr(2)
 
    ; Do this separately for spectrographs 1 & 2
    for specnum = 1, 2 do begin
@@ -482,8 +483,9 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
                  ' Spec: ' + sid_str
      
      atmdisp_model = atmdisp_cor(finalwave, finalflux[*,ispec], $
-                     finalplugtag[ispec], hdr, title = title_tag)
-
+       finalplugtag[ispec], hdr, title = title_tag, surfgr_sig=xysig)
+     
+     surfgr_sig[specnum - 1] = xysig
      tempflux = finalflux[*,ispec]
      tempivar = finalivar[*,ispec]
      divideflat, tempflux, invvar=tempivar, atmdisp_model, minval=0.3
@@ -515,8 +517,9 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
                    stdinfo, corvivar = corvivar)
 
        ; Normalize the flux correction vectors to the center of guiding
-       ;normwave = where(10.0^finalwave gt 5600 and 10.0^finalwave lt 6900) 
-       normwave = where(10.0^finalwave gt 4200 and 10.0^finalwave lt 5400) 
+       ; (or the r-band?)
+       normwave = where(10.0^finalwave gt 5600 and 10.0^finalwave lt 6900) 
+       ;normwave = where(10.0^finalwave gt 4200 and 10.0^finalwave lt 5400) 
        cormed = fltarr(nok)
        for istd = 0, nok - 1 do $
          cormed[istd] = median(corvector[normwave, istd])
@@ -560,14 +563,14 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
 
    if keyword_set(smearname) then begin
 
-     smearset = smear_compare(smearname, finalwave, finalflux, finalivar, $
+     smear_hdu = smear_compare(smearname, finalwave, finalflux, finalivar, $
        best_exp, plate_str, mjd_str, camnames = camnames, adderr=adderr, $
        combinedir = combinedir, tsobjname = tsobjname)
 
-     smear_coeff = smearset.coeff
    endif else begin
+     smear_struct = {sci_sn: 0.0, smear_sn: 0.0, legendre_coeff: fltarr(4)}
+     smear_hdu = make_array(dim=nfiber, value=smear_struct)
      splog, 'No smear exposures found!'
-     smear_coeff = fltarr(3, nfiber)
    endelse
 
    ;---------------------------------------------------------------------------
@@ -620,14 +623,15 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
 
    ;----------
    ; Average together some of the fields from the individual headers.
-
+   ; CT -- Weight by S/N^2 since this is the effective weighting of the
+   ; exposures when they are combined
    cardname = [ 'AZ', 'ALT', 'TAI', 'WTIME', 'AIRTEMP', 'DEWPOINT', $
     'DEWDEP', 'DUSTA', 'DUSTB', 'DUSTC', 'DUSTD', 'GUSTS', 'HUMIDITY', $
     'HUMIDOUT', 'PRESSURE', 'WINDD', 'WINDS', 'TEMP01', 'TEMP02', $
     'TEMP03', 'TEMP04', 'HELIO_RV', 'SEEING20', 'SEEING50', 'SEEING80', $
     'RMSOFF20', 'RMSOFF50', 'RMSOFF80', 'XCHI2', 'SKYCHI2', $
-    'WSIGMA', 'XSIGMA' ]
-   sxcombinepar, hdrarr, cardname, hdr, func='average'
+    'WSIGMA', 'XSIGMA', 'AIRMASS']
+   sxcombinepar, hdrarr, cardname, hdr, func='average', weights=sn2
 
    sxcombinepar, hdrarr, 'TAI-BEG', hdr, func='min'
    sxcombinepar, hdrarr, 'TAI-END', hdr, func='max'
@@ -730,6 +734,15 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    endif else dustmaps = 'F'              
    sxaddpar, hdr, 'SFD_USED', dustmaps, ' SFD dust maps used?'
 
+   ;------------
+   ; Keyword describing the sigma of the surface fit to the (g-r) residuals 
+   ; A big # indicates that lots of 'tilt' had to be taken out by the 
+   ; atmdisp_cor procedure
+    sxaddpar, hdr, 'XYGRSIG1', surfgr_sig[0], $
+              'Sigma of (g-r) offsets as fcn of plate x/y'
+    sxaddpar, hdr, 'XYGRSIG2', surfgr_sig[1], $
+              'Sigma of (g-r) offsets as fcn of plate x/y'
+
    ;----------
    ; Compute the fraction of bad pixels in total, and on each spectrograph.
    ; Bad pixels are any with SKYMASK(INVVAR)=0, excluding those where
@@ -801,8 +814,8 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    mwrfits, synthmag, fulloutname
 
    ; 9th HDU are the legendre coefficients of the smear correction vectors
-   ; (3 x 640 array)
-   mwrfits, float(smear_coeff), fulloutname
+   ; (a binary table)
+   mwrfits, smear_hdu, fulloutname
 
    ;---------------------------------------------------------------------------
    ; Write the modified pixel masks to the input files
