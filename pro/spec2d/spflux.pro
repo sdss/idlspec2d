@@ -83,7 +83,7 @@ pro spflux, sciname, fcalibprefix, adderr=adderr
          fcalibfiles = fcalibprefix + ['-b2.fits','-r2.fits']
 
         myfluxcalib, [sciname[ibcalib], sciname[ircalib]], $
-         fcalibfiles, colors=['b','r'], adderr=adderr, rset=rset, bset=bset
+         fcalibfiles, colors=['b','r'], adderr=adderr
 
         ;----------
         ; Loop through each exposure and construct the flux-correction function
@@ -121,7 +121,7 @@ pro spflux, sciname, fcalibprefix, adderr=adderr
         endfor
 
 ;         myfluxcorr, sciname[ibcalib], sciname[ircalib], $
-;          bluelist, redlist, corrlist, adderr=adderr, rset=rset, bset=bset
+;          bluelist, redlist, corrlist, adderr=adderr ; ???
 
          fluxcorr_new, sciname[ibcalib], sciname[ircalib], $
           bluelist, redlist, corrlist

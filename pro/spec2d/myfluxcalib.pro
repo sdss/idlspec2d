@@ -132,8 +132,7 @@ end
 ;                REDDEN standard in common.
 ;   calibfile  - Name(s) of output calibration files, one per FILENAME
 
-pro myfluxcalib, filename, calibfile, colors=colors, adderr=adderr, $
-    rset=rset, bset=bset
+pro myfluxcalib, filename, calibfile, colors=colors, adderr=adderr
 
    dloglam = 1.0d-4 ; ???
 
@@ -303,9 +302,6 @@ objmask = 0 ; Free memory
 
       calibset = fluxfit(allloglam[indx], pcaflux[indx], $
        color=colors[ifile], refmag=refmag)
-
-      if colors[ifile] EQ 'r' then rset = calibset
-      if colors[ifile] EQ 'b' then bset = calibset
 
       ;----------
       ; Create header cards describing the fit range
