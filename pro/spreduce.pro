@@ -78,22 +78,6 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    t_begin = systime(1)
 
    ;---------------------------------------------------------------------------
-   ; Read LAMPLIST file for wavelength calibration
-   ;---------------------------------------------------------------------------
-
-   if (keyword_set(lampfile)) then begin
-      lampfilenames = findfile(lampfile, count=ct)
-      if (ct EQ 0) then message, 'No LAMPFILE found '+lampfile
-   endif else begin
-      lampdefault = 'lamphgcdne.dat'
-      lampfilenames = djs_locate_file(lampdefault)
-      if (lampfilenames EQ '') then message, 'No LAMPFILE found '+lampdefault
-   endelse
-         
-   readcol, lampfilenames[0], lampwave, lampinten, lampquality, format='d,f,a'
-   lamplist = [[lampwave], [lampinten], [(lampquality EQ 'GOOD')]]
-
-   ;---------------------------------------------------------------------------
    ; Locate skyline file for sky wavelength calibration
    ;---------------------------------------------------------------------------
 
@@ -220,8 +204,8 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
   ;-------------------------------------------------------------------------
 
    splog, 'Searching for wavelength solution with fitarcimage'
-   fitarcimage, flux, fluxivar, color, lamplist, $
-    xpeak, ypeak, wset, lambda=lambda, $
+   fitarcimage, flux, fluxivar, xpeak, ypeak, wset, $
+    color=color, lampfile=lampfile, lambda=lambda, $
     xdif_lfit=xdif_lfit, xdif_tset=xdif_tset
 
    qaplot_arcline, xdif_tset, lambda, arcname
@@ -417,7 +401,7 @@ for i=0,16 do oplot,fflat[*,i*19]
       sxaddpar, objhdr, 'FLATFILE', flatfilenames[0]
       sxaddpar, objhdr, 'ARCFILE',  arcfilenames[0]
       sxaddpar, objhdr, 'OBJFILE',  objfile
-      sxaddpar, objhdr, 'LAMPLIST',  lampfilenames[0]
+      sxaddpar, objhdr, 'LAMPLIST',  lampfile
       sxaddpar, objhdr, 'SKYLIST',  skylinefile
       sxaddpar, objhdr, 'PIXFLAT',  pixflatname
       sxaddpar, objhdr, 'OSIGMA',  sigma, $

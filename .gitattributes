@@ -20,6 +20,7 @@ misc/distort.blue -text
 misc/distort.red -text
 misc/uomoto.distortions -text
 pro/TODO -text
+pro/arcfit_guess.pro -text
 pro/arcsky_fit.pro -text
 pro/calcflux.pro -text
 pro/checkflavor.pro -text
@@ -56,6 +57,7 @@ pro/sortplugmap.pro -text
 pro/spallflat.pro -text
 pro/spallreduce.pro -text
 pro/spec2d/TODO -text
+pro/spec2d/arcfit_guess.pro -text
 pro/spec2d/arcsky_fit.pro -text
 pro/spec2d/calcflux.pro -text
 pro/spec2d/checkflavor.pro -text

@@ -10,10 +10,10 @@ pro qaplot_arcline, xdif, lambda, arcname
   nline = (size(xdif))[2]
   arcnum = strmid(arcname, 0, strpos(arcname, '.fit'))
 
-  plot,xdif[*,0]*1e3+10.^lambda[0],ps=3,yr=[5000,9000],/yst, $
+  plot,xdif[*,0]*1e3+lambda[0],ps=3,yr=[5000,9000],/yst, $
 	xr=[-10,330],/xst, xtit='Fiber Number', ytit='Lambda (A)', $
 	title='Arcline Fit for  '+arcnum
-  for k=1,nline-1 do oplot,xdif[*,k]*1e3+10.^lambda[k],ps=3
+  for k=1,nline-1 do oplot,xdif[*,k]*1e3+lambda[k],ps=3
 
 
   sig=fltarr(nline)
@@ -25,14 +25,12 @@ pro qaplot_arcline, xdif, lambda, arcname
      meandif[k]=mn
   endfor
 
-
-
   fiber=140
   xres=xdif[fiber,*]*1e3
 
-  plot, 10.^lambda, xres, yr=[-100,100], xtit='lambda', $
+  plot, lambda, xres, yr=[-100,100], xtit='lambda', $
 	ytit='Delta X (mPix)'
-  errplot, 10.^lambda, xres-sig, xres+sig
+  errplot, lambda, xres-sig, xres+sig
 
   xyouts, 0.95, 0., systime(), /normal, align=1, chars=0.5
 
