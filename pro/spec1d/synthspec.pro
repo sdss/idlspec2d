@@ -36,6 +36,22 @@ function synthspec, hdr, zans, eigendir=eigendir
 
    if (n_elements(eigendir) EQ 0) then $
     eigendir = concat_dir(getenv('IDLSPEC2D_DIR'), 'templates')
+   tfile = strtrim(zans.tfile,2)
+
+   ;----------
+   ; Determine the wavelength mapping for the object spectra,
+   ; which are the same for all of them.
+
+   naxis1 = sxpar(hdr, 'NAXIS1')
+   objloglam0 = sxpar(hdr, 'COEFF0')
+   objdloglam = sxpar(hdr, 'COEFF1')
+   objloglam = objloglam0 + dindgen(naxis1) * objdloglam
+
+   ;----------
+   ; If no template file, then return all zeros.
+
+   if (tfile EQ '') then $
+    return, fltarr(naxis1)
 
    ;----------
    ; Read the template file, and optionally trim to only those columns
@@ -43,8 +59,7 @@ function synthspec, hdr, zans, eigendir=eigendir
    ; Assume that the wavelength binning is the same as for the objects
    ; in log-wavelength.
 
-   starflux = readfits(djs_filepath(strtrim(zans.tfile,2), $
-    root_dir=eigendir), shdr)
+   starflux = readfits(djs_filepath(tfile, root_dir=eigendir), shdr)
    starloglam0 = sxpar(shdr, 'COEFF0')
    stardloglam0 = sxpar(shdr, 'COEFF1')
 
@@ -74,10 +89,12 @@ function synthspec, hdr, zans, eigendir=eigendir
 
    objloglam0 = sxpar(hdr, 'COEFF0')
    objdloglam = sxpar(hdr, 'COEFF1')
-
    objloglam = objloglam0 + dindgen(sxpar(hdr,'NAXIS1')) * objdloglam
-   starloglam = starloglam0 + dindgen(npixstar) * objdloglam
+
+   ;----------
    ; Apply redshift...
+
+   starloglam = starloglam0 + dindgen(npixstar) * objdloglam
    combine1fiber, starloglam + alog10(1+zans.z), synflux, $
     newloglam=objloglam, newflux=newflux
 
