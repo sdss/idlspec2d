@@ -100,15 +100,25 @@ function trace320crude, image, invvar, ystart=ystart, nmed=nmed, $
    xmask = xerr LT 990  ; =1 for good centers, =0 for bad
 
    ;--------------------------------------------------------------------
-   ; started on near a bad columns? THEN set xgood[itrace] = 0
+   ; Mark this trace as potentially bad (xgood[itrace] = 0)
+   ; if either the initial extraction row had bad pixels,
+   ; or the initial extraction row was off the left or right
+   ; edge of the CCD.
 
    ncol = (size(invvar,/dimen))[0]
    if ncol GT 0 then begin
      for itrace=0, ntrace-1 do begin
-       bottom = long(xstart[itrace]-radius) >0
-       top    = long(xstart[itrace]+radius) < ncol-1L
-       badcol = where(invvar[bottom:top, ystart] LE 0, ct)
-       if ct GT 0 then xgood[itrace] = 0
+       ix1 = floor(xstart[itrace]-radius) > 0L
+       ix2 =  ceil(xstart[itrace]+radius) < (ncol-1)
+       if (ix1 GT ncol-1 OR ix2 LT 0) then begin
+          ; Case where the initial extraction position
+          ; was off the left or right edge of the CCD.
+          xgood[itrace] = 0
+       endif else begin
+          ; Check if any bad pixels at initial centroiding position.
+          junk = where(invvar[ix1:ix2,ystart] LE 0, nbad)
+          if (nbad GT 0) then xgood[itrace] = 0
+       endelse
      endfor
    endif
 
