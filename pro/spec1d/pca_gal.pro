@@ -1,8 +1,8 @@
 ;------------------------------------------------------------------------------
 pro pca_gal
 
-   minwave = 3300
-   maxwave = 8800
+   wavemin = 3300
+   wavemax = 8800
    snmax = 100
    niter = 10
    nkeep = 4
@@ -45,15 +45,15 @@ andmask = 0 ; Free memory
    ;----------
 
    pcaflux = pca_solve(objflux, objivar, objloglam, zfit, $
+    wavemin=wavemin, wavemax=wavemax, $
     niter=niter, nkeep=nkeep, newloglam=newloglam, eigenval=eigenval)
 
-   indx = where(10^newloglam GE minwave AND 10^newloglam LE maxwave)
    sxaddpar, hdr, 'OBJECT', 'GALAXY'
-   sxaddpar, hdr, 'COEFF0', newloglam[indx[0]]
+   sxaddpar, hdr, 'COEFF0', newloglam[0]
    sxaddpar, hdr, 'COEFF1', objdloglam
    for i=0, n_elements(eigenval)-1 do $
     sxaddpar, hdr, 'EIGEN'+strtrim(string(i),1), eigenval[i]
-   mwrfits, float(pcaflux[indx,*]), outfile, hdr, /create
+   mwrfits, float(pcaflux), outfile, hdr, /create
 stop
 
    return

@@ -1,5 +1,6 @@
 ;------------------------------------------------------------------------------
 function pca_solve, objflux, objivar, objloglam, zfit, $
+ wavemin=wavemin, wavemax=wavemax, $
  niter=niter, nkeep=nkeep, newloglam=newloglam, eigenval=eigenval
 
    if (NOT keyword_set(niter)) then niter = 10
@@ -20,9 +21,11 @@ function pca_solve, objflux, objivar, objloglam, zfit, $
    ;----------
    ; Determine the new wavelength mapping
 
-   newloglam = wavevector(min(objloglam) - max(logshift), $
-    max(objloglam) - min(logshift), binsz=objdloglam)
-;newloglam=newloglam[1000:4000] ; ???
+   logmin = min(objloglam) - max(logshift)
+   logmax = max(objloglam) - min(logshift)
+   if (keyword_set(wavemin)) then logmin = logmin > alog10(wavemin)
+   if (keyword_set(wavemax)) then logmax = logmax < alog10(wavemax)
+   newloglam = wavevector(logmin, logmax, binsz=objdloglam)
    nnew = n_elements(newloglam)
    newflux = fltarr(nnew,nobj)
    newivar = fltarr(nnew,nobj)
