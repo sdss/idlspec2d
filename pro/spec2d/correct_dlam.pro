@@ -38,7 +38,7 @@
 ;   04-Oct-2000  Written by S. Burles, FNAL
 ;-
 ;------------------------------------------------------------------------------
-pro correct_dlam, flux, fluxivar, wset, dlam=dlam
+pro correct_dlam, flux, fluxivar, wset, dlam=dlam, inverse=inverse
 
    if (NOT keyword_set(dlam)) then dlam = 1.0d-4
 
@@ -47,7 +47,11 @@ pro correct_dlam, flux, fluxivar, wset, dlam=dlam
    traceset2xy, wset, xx+0.5, upper
 
    dlogimg = abs(upper - lower)
-   divideflat, flux, fluxivar, (dlogimg/dlam), minval=0
+
+   if keyword_set(inverse) then $
+      divideflat, flux, fluxivar, (dlam/dlogimg), minval=0 $
+   else $
+      divideflat, flux, fluxivar, (dlogimg/dlam), minval=0
 
    return
 end
