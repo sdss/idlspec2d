@@ -21,8 +21,13 @@ pro get_tai, hdr, tai_beg, tai_mid, tai_end
     tai_end - tai_beg GE 0) then begin
       tai_mid = (tai_end + tai_beg)/2.0
       exptime_guess = tai_end - tai_beg
+      ; The following condition is possible if the exposure was paused for
+      ; more than 2 minutes.
       if (exptime_guess GT exptime + 120) then $
        splog, "Warning: (TAI-END) - (TAI-BEG) > EXPTIME + 120 sec"
+      ; The following should never happen.
+      if (exptime_guess LT exptime + 20) then $
+       splog, "Warning: (TAI-END) - (TAI-BEG) < EXPTIME + 20 sec"
    endif else if (tai GT 4.0d9) then begin
       tai_end = tai - 60.0   ; average buffer for readout 
       tai_beg = tai_end - exptime
