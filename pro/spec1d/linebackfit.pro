@@ -91,6 +91,7 @@
 ; DATA FILES:
 ;
 ; PROCEDURES CALLED:
+;   create_linestruct()
 ;   mpfitfun
 ;
 ; INTERNAL SUPPORT ROUTINES:
@@ -158,23 +159,8 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
    ;----------
    ; Initialize the output structure, and set default return values
 
-   linestruct = create_struct( name='EMLINEFIT',   $
-    'linename'          ,   ' ', $
-    'linewave'          ,   0.0, $
-    'linez'             ,   0.0, $
-    'linez_err'         ,   0.0, $
-    'linesigma'         ,   0.0, $
-    'linesigma_err'     ,   0.0, $
-    'linearea'          ,   0.0, $
-    'linearea_err'      ,   0.0, $
-    'lineew'            ,   0.0, $
-    'lineew_err'        ,  -1.0, $
-    'linecontlevel'     ,   0.0, $
-    'linecontlevel_err' ,  -1.0, $
-    'linenpix'          ,   0L,  $
-    'linedof'           ,   0.0, $
-    'linechi2'          ,  -1.0  )
-   linestruct = replicate(linestruct, nline)
+   linestruct = create_linestruct(nline)
+
    linestruct.linewave = lambda
    if (keyword_set(linename)) then begin
       linestruct.linename = linename
