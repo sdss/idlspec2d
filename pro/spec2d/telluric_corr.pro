@@ -326,8 +326,6 @@ function telluric_corr,flux, fluxivar, wset, plugsort, $
 
       for iband=0, n_elements(tellbands)-1 do begin
 
-         if (iband EQ 0) then title=plottitle $
-          else title = ''
          xlo = min(tellbands[iband].twave1) - xmargin
          xhi = max(tellbands[iband].twave2) + xmargin
          indx = where(10^fitloglam GE xlo AND 10^fitloglam LE xhi)
@@ -336,8 +334,10 @@ function telluric_corr,flux, fluxivar, wset, plugsort, $
             ; Plot the data points used for the fit
             djs_plot, 10^fitloglam[indx], fitflux[indx], ps=3, $
              xrange=[xlo,xhi], yrange=[0.0,1.5], ymargin=[2,4], $
-             xstyle=1, xtitle='\lambda [A]', ytitle='Correction factor', $
-             title=title
+             xstyle=1, xtitle='\lambda [A]', ytitle='Correction factor'
+
+            if (iband EQ 0) then xyouts, 0.5, 0.95, plottitle, $
+             charsize=1.5, align=0.5, /normal
 
             ; Overplot the fit
             tellplot = bspline_valu(fitloglam[indx], tellset)
