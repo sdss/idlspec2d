@@ -11,9 +11,10 @@
 ;
 ; INPUTS:
 ;   plate      - Plate number(s)
-;   fiber      - Fiber number(s)
 ;
 ; OPTIONAL INPUTS:
+;   fiber      - Fiber number(s), 1-indexed; if not set, or zero, then
+;                read all fibers for each plate.
 ;   mjd        - MJD number(s); if not set, then select the most recent
 ;                data for this plate (largest MJD).
 ;
@@ -92,13 +93,11 @@ pro spec_append, arg1, arg2
 end
 
 ;------------------------------------------------------------------------------
-pro readspec1, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
+pro readspec1, plate, range, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
  andmask=andmask, ormask=ormask, plugmap=plugmap, loglam=loglam, wave=wave
 
    common com_readspec, q_flux, q_flerr, q_invvar, q_andmask, q_ormask, $
     q_plugmap, q_loglam, q_wave
-
-   irow = fiber - 1
 
    platestr = string(plate,format='(i4.4)')
    if (NOT keyword_set(mjd)) then mjdstr = '*' $
@@ -128,11 +127,11 @@ pro readspec1, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    end
 
    if (q_flux) then begin
-      flux = mrdfits(filename, 0, hdr, range=[irow,irow])
+      flux = mrdfits(filename, 0, hdr, range=range)
    endif
 
    if (q_invvar OR q_flerr) then begin
-      invvar = mrdfits(filename, 1, range=[irow,irow])
+      invvar = mrdfits(filename, 1, range=range)
       if (q_flerr) then begin
          i = where(invvar GT 0)
          flerr = 0 * invvar
@@ -141,15 +140,15 @@ pro readspec1, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    endif
 
    if (q_andmask) then begin
-      andmask = mrdfits(filename, 2, range=[irow,irow])
+      andmask = mrdfits(filename, 2, range=range)
    endif
 
    if (q_ormask) then begin
-      ormask = mrdfits(filename, 3, range=[irow,irow])
+      ormask = mrdfits(filename, 3, range=range)
    endif
 
    if (q_plugmap) then begin
-      plugmap = mrdfits(filename, 4, range=[irow,irow], $
+      plugmap = mrdfits(filename, 4, range=range, $
        structyp='PLUGMAPOBJ')
    endif
 
@@ -169,7 +168,7 @@ end
 pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
  andmask=andmask, ormask=ormask, plugmap=plugmap, loglam=loglam, wave=wave
 
-   if (n_params() LT 2) then begin
+   if (n_params() LT 1) then begin
       print, 'Syntax: readspec, plate, fiber, [mjd=, flux=, flerr=, invvar=, $'
       print, ' andmask=, ormask=, plugmap=, loglam=, wave= ] '
       return
@@ -189,19 +188,25 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    q_wave = arg_present(wave)
 
    nplate = n_elements(plate)
-   nfiber = n_elements(fiber)
-   if (nplate GT 1 AND nfiber GT 1 AND nplate NE nfiber) then $
-    message, 'Number of elements in PLATE and FIBER must agree or be 1'
+   if (keyword_set(fiber)) then begin
+      nfiber = n_elements(fiber)
+      if (nplate GT 1 AND nfiber GT 1 AND nplate NE nfiber) then $
+       message, 'Number of elements in PLATE and FIBER must agree or be 1'
+   endif else begin
+      nfiber = 1
+      fiber = 0 ; This will force a read of all fiber numbers
+   endelse
 
    if (nplate GT 1 OR nfiber GT 1) then begin
       ; Call this routine recursively...
       nvec = nplate > nfiber
       platevec = lonarr(nvec) + plate
       fibervec = lonarr(nvec) + fiber
+
       if (keyword_set(mjd)) then mjdvec = lonarr(nvec) + mjd $
        else mjdvec = lonarr(nvec)
 
-      for ifiber=0, nfiber-1 do begin
+      for ifiber=0, nvec-1 do begin
          flux1 = 0
          flerr1 = 0
          invvar1 = 0
@@ -210,7 +215,14 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
          plugmap1 = 0
          loglam1 = 0
          wave1 = 0
-         readspec1, platevec[ifiber], fibervec[ifiber], mjd=mjdvec[ifiber], $
+
+         if (fibervec[ifiber] EQ 0) then begin
+            range = 0
+         endif else begin
+            irow = fibervec[ifiber] -1
+            range = [irow,irow]
+         endelse
+         readspec1, platevec[ifiber], range, mjd=mjdvec[ifiber], $
           flux=flux1, flerr=flerr1, invvar=invvar1, $
            andmask=andmask1, ormask=ormask1, plugmap=plugmap1, $
            loglam=loglam1, wave=wave1
@@ -244,7 +256,13 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
          endelse
       endfor
    endif else begin
-      readspec1, plate, fiber, mjd=mjd, $
+      if (fiber EQ 0) then begin
+         range = 0
+      endif else begin
+         irow = fiber -1
+         range = [irow,irow]
+      endelse
+      readspec1, plate, range, mjd=mjd, $
        flux=flux, flerr=flerr, invvar=invvar, $
         andmask=andmask, ormask=ormask, plugmap=plugmap, $
         loglam=loglam, wave=wave
