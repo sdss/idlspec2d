@@ -14,6 +14,9 @@ examples/opECalib.par -text
 include/evilmath.h -text
 include/export.h -text
 include/extract_row.h -text
+misc/distort.blue -text
+misc/distort.red -text
+misc/uomoto.distortions -text
 pro/TODO -text
 pro/arcsky_fit.pro -text
 pro/calcflux.pro -text
