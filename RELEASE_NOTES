@@ -5,7 +5,7 @@ New set of templates for P-1D; QSO's now use 4 eigentemplates.
 
 DANVB_CONVERT,DANVB_QSOLIST: Procs for generating a list of input
             QSO's from Dan van den Berk's EDR list "plateEDR.summ"
-            for generating QSO eingenvectors.  The output file
+            for generating QSO eigenvectors.  The output file
             "eigeninput_qso.dat" is then used by PCA_QSO.
 FIND_NMINIMA: Retain each peak only if it is at least MINSEP from all
             previous peaks.
