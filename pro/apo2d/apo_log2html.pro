@@ -320,12 +320,6 @@ pro apo_log2html, logfile, htmlfile
        apo_log_beginplate(thisplate, thismjd, camnames, outdir=outdir)]
 
       ;----------
-      ; Append all WARNINGs and ABORTs for this plate to the following
-
-      warnings = ''
-      aborts = ''
-
-      ;----------
       ; Find all biases and loop over each exposure number with any
 
       if (keyword_set(PPBIAS)) then ii = where(PPBIAS.plate EQ thisplate) $
@@ -500,7 +494,12 @@ pro apo_log2html, logfile, htmlfile
       if (keyword_set(PPTEXT)) then ii = where(PPTEXT.plate EQ thisplate) $
        else ii = -1
       if (ii[0] NE -1) then begin
-         addtext = strtrim(PPTEXT[ii].text, 2) ; Remove leading+trailing spaces
+         ; Remove leading+trailing spaces
+         addtext = strtrim(PPTEXT[ii].text, 2)
+         ; Remove the first word from each line (which is the name of the
+         ; IDL proc that generated the warning or abort message)
+         for jj=0, n_elements(addtext)-1 do $
+          addtext[jj] = strmid( addtext[jj], strpos(addtext[jj],' ')+1 )
          addtext = repstr(addtext, 'WARNING', $
           '<B><FONT COLOR="' + apo_color2hex('YELLOW') + '">WARNING</FONT></B>')
          addtext = repstr(addtext, 'ABORT', $
