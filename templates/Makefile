@@ -10,7 +10,7 @@ all :;
 # Install things in their proper places in $(IDLSPEC2D_DIR)
 #
 install :
-	- cp * $(IDLSPEC2D_DIR)/templates
+	- cp *.* $(IDLSPEC2D_DIR)/templates
 	- cp Makefile $(IDLSPEC2D_DIR)/templates
 
 clean :
