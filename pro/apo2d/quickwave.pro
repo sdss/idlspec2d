@@ -1,3 +1,50 @@
+;+
+; NAME:
+;   quickwave
+;
+; PURPOSE:
+;   Perform full wavelength calibration with boxcar extraction
+;    requires trace from a previously output tsetfile
+;
+; CALLING SEQUENCE:
+;   rstruct = quickwave( arcname, tsetfile, wsetfile, fflatfile, $
+;       radius=radius, doplot=doplot )
+;
+; INPUTS:
+;   arcname    - Raw SDSS Arclamp image to be processed
+;   tsetfile   - Name of fits file which contains matched trace
+;   wsetfile   - Name of fits file which will contain wavelength solution
+;   fflatfile  - Name of fits file which will contain flat field vectors
+;
+; OPTIONAL INPUTS:
+;   radius     - Radius for boxcar extraction (default 3)
+;   doplot     - Used for debugging purposes
+;
+; OUTPUT:
+;   rstruct    - Results to be added html file upon completion
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;
+; BUGS:
+;
+; PROCEDURES CALLED:
+;   extract_boxcar()
+;   fiberflat()
+;   fitarcimage
+;   qbadarc
+;   mrdfits()
+;   mwrfits
+;   sdssproc
+;   traceset2xy
+;
+; REVISION HISTORY:
+;   3-Apr-2000  Written by S. Burles & D. Schlegel, APO
+;-
+;------------------------------------------------------------------------------
 function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
     doplot=doplot
 

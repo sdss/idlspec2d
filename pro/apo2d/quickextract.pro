@@ -1,3 +1,53 @@
+;+
+; NAME:
+;   quickextract
+;
+; PURPOSE:
+;   Extraction with quick scattered light and sky subtraction.
+;   S/N is estimated and output for html generation.
+;
+; CALLING SEQUENCE:
+;   rstruct = quickextract(tsetfile, wsetfile, fflatfile, rawfile, outsci, $
+;           [radius=radius, filtsz=filtsz])
+;
+; INPUTS:
+;   tsetfile   - Name of fits file which contains matched trace
+;   wsetfile   - Name of fits file which contains matched wavelengths
+;   fflatfile  - Name of fits file which containes flat field vectors
+;   rawfile    - Name of SDSS science frame to extract
+;   outsci     - Name of fits file to store workings of quickextract
+;
+; OPTIONAL INPUTS:
+;   radius     - Radius for boxcar extraction (default 3)
+;   filtsz     - Median filter size to apply before average S/N is calculated.
+;
+; OUTPUT:
+;   rstruct    - Results to be added html file upon completion
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;
+; BUGS:
+;
+; PROCEDURES CALLED:
+;   calcscatimage
+;   divideflat
+;   extract_image
+;   extract_boxcar()
+;   quickboxcar()
+;   mrdfits()
+;   mwrfits
+;   sdssproc
+;   skysubtract()
+;   traceset2xy
+;
+; REVISION HISTORY:
+;   3-Apr-2000  Written by S. Burles & D. Schlegel, APO
+;-
+;------------------------------------------------------------------------------
 function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
  radius=radius, filtsz=filtsz
 
