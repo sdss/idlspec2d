@@ -141,11 +141,21 @@ pro combine1fiber, inloglam, objflux, objivar, $
       ngood = npix
    endelse
 
+   ; Create the ORMASK if we need ANDMASK, since we set the NODATA
+   ; bad pixels in the ORMASK first.
+   if (arg_present(andmask)) then $
+    andmask = lonarr(nfinalpix)
+   if (arg_present(ormask) OR arg_present(andmask)) $
+    then ormask = lonarr(nfinalpix)
+
    if (ngood EQ 0) then begin
 
       if (keyword_set(verbose)) then splog, 'No good points'
-      andmask = pixelmask_bits('NODATA')
-      ormask = pixelmask_bits('NODATA')
+      if (keyword_set(andmask)) then $
+       andmask = andmask AND pixelmask_bits('NODATA')
+      if (keyword_set(ormask)) then $
+       ormask = ormask AND pixelmask_bits('NODATA')
+
       return
 
    endif else begin
@@ -235,10 +245,8 @@ pro combine1fiber, inloglam, objflux, objivar, $
       ;---------------------------------------------------------------------
       ; Combine inverse variance and pixel masks.
 
-      if (arg_present(andmask)) then $
-       andmask = lonarr(nfinalpix) - 1 ; Start with all bits set in AND-mask.
-      if (arg_present(ormask)) then $
-       ormask = lonarr(nfinalpix)
+      ; Start with all bits set in AND-mask.
+      if (arg_present(andmask)) then andmask[*] = -1L
 
       for j=0, max(specnum) do begin
          these = where(specnum EQ j)
@@ -300,7 +308,6 @@ pro combine1fiber, inloglam, objflux, objivar, $
         
    endelse
 
-
    ;----------
    ; Grow regions where 3 or more pixels are rejected together ???
 
@@ -338,15 +345,12 @@ pro combine1fiber, inloglam, objflux, objivar, $
          maxglam = max(newloglam[goodpts])
          
          ibad = where(newloglam LT minglam OR newloglam GT maxglam)
-         if ibad[0] NE -1 then begin
-            if (keyword_set(andmask)) then $
-              andmask[ibad] = andmask[ibad] OR pixelmask_bits('NODATA')
+         if (ibad[0] NE -1) then begin
             if (keyword_set(ormask)) then $
-              ormask[ibad] = ormask[ibad] OR pixelmask_bits('NODATA')
+             ormask[ibad] = ormask[ibad] OR pixelmask_bits('NODATA')
          endif
       endif
 
- 
       ;----------
       ; Set the NODATA mask bit wherever there is no good data
       ;
@@ -364,7 +368,13 @@ pro combine1fiber, inloglam, objflux, objivar, $
    ; Replace values of -1 in the AND mask with 0's
 
    if (keyword_set(andmask)) then $
-    andmask = andmask * (andmask NE -1)
+    andmask = andmask * (andmask NE -1L)
+
+   ;----------
+   ; Copy the NODATA bad pixels from the ORMASK to the ANDMASK
+
+   if (keyword_set(andmask)) then $
+    andmask = andmask OR (ormask AND pixelmask_bits('NODATA'))
 
    return
 end
