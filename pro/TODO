@@ -1,4 +1,10 @@
 
+* Choose bkpts in combine2dout more carefully, bad behavior ensues
+  with current choice (uniform bins).
+
+* Fit spline to each spectrum before full combine2dout spline to
+   register each spectrum in scale (including red/blue merge)
+
 * Decide on vacuum or air wavelengths
 
 * Look for bright objects that blead -- discard entire columns of data?
@@ -14,6 +20,8 @@
   of each to smoothly merge the two.  E.g., at the long-wavelengths of blue,
   increase the variance -> infinity.
 
+---->   current window of 100 pixels at red/blue merge is in place.
+
 * Bug when writing out files:
   % Type conversion error: Unable to convert given STRING to Integer.
   % Detected at:  CHK_AND_UPD       206 
@@ -24,6 +32,8 @@
 * Count dead fibers in trace_crude
 
 * Compare throughput from dome flats vs. throughput on bright sky lines.
+
+----> Gaussians are fit to 5577 in each spectrum, after flat scaling
 
 * Sky-subtraction: Fix edge effects in inverse variance scaling
 
@@ -53,7 +63,7 @@
 * Need fiber-to-fiber flat-fielding, and flatten out any global variations,
   such as low-response zones on the CCD.
 
-* Eschelle spectrum of sky for cross-correlating sky fibers to absolute
+* Echelle spectrum of sky for cross-correlating sky fibers to absolute
   wavelengths.
 
 * Echelle spectrum of A,B bands for their removal.

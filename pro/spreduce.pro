@@ -466,11 +466,12 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 ;      fit_skyset, xpeak, ypeak, vacloglam, xsky, ysky, vaclogsky, skycoeff, $
 ;        goodlines, wset, ymin=ymin, ymax=ymax, func=func
 
+      
       ;------------------
       ; Sky-subtract
 
       skysubtract, flux, fluxivar, plugsort, vacset, $ 
-       skysub, skysubivar, fibermask=fibermask
+       skysub, skysubivar, fibermask=fibermask, upper=3.0, lower=3.0
 
       ;------------------------------------------
       ; Flux calibrate to spectrophoto_std fibers
@@ -500,6 +501,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
          flux = flux / telluricfactor 
          fluxivar = fluxivar * (telluricfactor^2)
 
+         qaskylines, flux, fluxivar, vacset, plugsort
       endif
 
       ;------------------

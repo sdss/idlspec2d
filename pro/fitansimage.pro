@@ -166,9 +166,10 @@ function fitansimage, ansimage, nparams, nfibers, npoly, nrows, yrow, $
 	  scatfit[*,i] = fullcheb # fitans[nfibers*nparams:*,i]  
 
 	for i=0,nrows-1 do $
-	  scatimage[*,i] = fchebyshev(yfnorm, nPoly) $
-;	  scatimage[*,i] = fchebyshev(yfnorm, nPoly, halfintwo=1) $
+	  scatimage[*,i] = fullcheb $
               # ansimage[nfibers*nparams:nfibers*nparams+npoly-1,i]  
+
+;	  scatimage[*,i] = fchebyshev(yfnorm, nPoly, halfintwo=1) $
 
 ;	for i=0,fullrows-1 do begin
 ;            fullbkpt = slatec_splinefit(ynorm, scatimage[i,*], coeff, $

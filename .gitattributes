@@ -64,6 +64,7 @@ pro/logsheet.pro -text
 pro/makefile.old -text
 pro/qaplot_arcline.pro -text
 pro/qaplot_fflat.pro -text
+pro/qaskylines.pro -text
 pro/quickproc.pro -text
 pro/rdss_fits.pro -text
 pro/read2dout.pro -text
@@ -108,6 +109,7 @@ pro/spec2d/logsheet.pro -text
 pro/spec2d/makefile.old -text
 pro/spec2d/qaplot_arcline.pro -text
 pro/spec2d/qaplot_fflat.pro -text
+pro/spec2d/qaskylines.pro -text
 pro/spec2d/quickproc.pro -text
 pro/spec2d/rdss_fits.pro -text
 pro/spec2d/read2dout.pro -text

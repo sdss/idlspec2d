@@ -56,8 +56,8 @@ function fiberflat, flux, fluxivar, wset, $
 
    if (N_elements(pixspace) EQ 0) then pixspace = 10
    if (N_elements(nord) EQ 0) then nord = 4
-   if (N_elements(lower) EQ 0) then lower = 10
-   if (N_elements(upper) EQ 0) then upper = 10
+   if (N_elements(lower) EQ 0) then lower = 10.0
+   if (N_elements(upper) EQ 0) then upper = 10.0
    if (N_elements(fibermask) NE ntrace) then fibermask = bytarr(ntrace) + 1
 
    igood = where(fibermask NE 0, ngood)
@@ -141,7 +141,7 @@ function fiberflat, flux, fluxivar, wset, $
 
          ; Dispose of leading or trailing points with zero weight
          fullbkpt = slatec_splinefit(loglam[indx,i], ratio, coeff, $
-          maxiter=maxiter, upper=upper, lower=lower, $
+          maxiter=maxiter, upper=upper, lower=lower, eachgroup=1, $
           invvar=ratioivar, nord=nord, bkpt=bkpt[istart:iend], mask=mask)
 
          ; Evaluate spline fit to this fiber

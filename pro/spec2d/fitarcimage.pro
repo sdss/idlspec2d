@@ -203,7 +203,7 @@ pro fitarcimage, arc, arcivar, xnew, ycen, wset, $
    splog, 'Iterating flux-weighted centers'
    xnew = trace_fweight(arc, xcen, ycen)
    xnew = trace_fweight(arc, xnew, ycen)
-   xnew = trace_fweight(arc, xnew, ycen, radius=2.0, xerr=xerr)
+   xnew = trace_fweight(arc, xnew, ycen, radius=2.0, invvar=arcivar, xerr=xerr)
    xcen = xnew
 
    ; Make use of the errors??? - Seems to just mess things up???
@@ -263,7 +263,7 @@ maxsig = 3.0
    xy2traceset, transpose(double(xnew)), lamps.loglam # (dblarr(nfiber)+1), $
      wset, invvar=transpose(xweight), func=func, ncoeff=ncoeff, $
      maxdev=maxdev, maxiter=nlamp, /singlerej, $
-     xmask=xmask, xmin=0, xmax=npix-1
+     xmask=xmask, xmin=0, xmax=npix-1, yfit=yfit
 
    print, 'Pass 1 complete'
 

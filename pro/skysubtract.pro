@@ -1,6 +1,6 @@
 pro skysubtract, obj, objivar, plugmap, wset, skysub, skysubivar, $
             nbkpt=nbkpt, nord=nord, fibermask=fibermask, allwave=allwave, $
-	    allsky=allsky, allfit=allfit
+	    allsky=allsky, allfit=allfit, upper=upper, lower=lower
 
 	objsize = size(obj)
 	ndim = objsize[0]
@@ -51,6 +51,7 @@ pro skysubtract, obj, objivar, plugmap, wset, skysub, skysubivar, $
 
 	fullfit = slatec_bvalu(wave, fullbkpt, coeff) 
 	skysub = obj - fullfit * (objivar GT 0.0)
+
 
         ; blue plot
 	if (min(wave) LT alog10(5600.0)) then begin

@@ -18,10 +18,10 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
 ;	Set to 50 km/s for now to match 1d
 ;	Better guess would be 69 km/s
 ;
-	if (NOT keyword_set(bin)) then bin = (70.0/300000.0) / 2.30258
+	if (NOT keyword_set(bin)) then bin = (69.0/299792.5) / 2.30258
 
 	if (NOT keyword_set(zeropoint)) then zeropoint = 3.5d
-	if (NOT keyword_set(nord)) then nord = 2
+	if (NOT keyword_set(nord)) then nord = 5
 	if (NOT keyword_set(ntrials)) then ntrials = 25
 	if (NOT keyword_set(bkptbin)) then bkptbin = bin
 
@@ -128,7 +128,6 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
           fullspec = flux[*,i] 
           fullivar = fluxivar[*,i] 
 
-
           outputfile = outputroot+string(format='(i3.3,a)',i+1)+'.fit'
 
 	  nonzero = where(fullivar GT 0.0)
@@ -207,10 +206,17 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
 
 	   newwave = dindgen(npix)*bin + wavemin
 
-         if (keyword_set(everyn)) then begin 
-           everyn = (nfiles + 1)/2 
-           bkpt = 0
-         endif else bkpt = dindgen(nbkpt)*bkptbin + bkptmin
+;
+;		Fit b-spline to each individual spectrum
+;
+;           indbkpt = slatec_splinefit(fullwave, fullspec, $
+;              eachgroup=1, everyn=3, invvar=fullivar, /silent)
+
+
+           if (keyword_set(everyn)) then begin 
+             everyn = (nfiles + 1)/2 
+             bkpt = 0
+           endif else bkpt = dindgen(nbkpt)*bkptbin + bkptmin
 	
 
 ;
@@ -224,7 +230,7 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
 
 	   ss = sort(fullwave)
 	   fullbkpt = slatec_splinefit(fullwave[ss], fullspec[ss], coeff, $
-              nord=nord, eachgroup=1, maxiter=20, upper=5.0, lower=5.0, $
+              nord=nord, eachgroup=1, maxiter=20, upper=3.0, lower=3.0, $
               bkpt=bkpt, everyn=everyn, invvar=fullivar[ss], mask=mask, /silent)
 
 	   if (total(coeff) EQ 0.0) then begin
@@ -272,8 +278,13 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
 	   if (nonzero[0] NE -1) then $
              besterr[nonzero] = 1.0/sqrt(bestivar[nonzero])
 
-          plot, 10^fullwave, fullspec, ps=3, xr=[3700,4400]
-          oplot, 10^newwave, bestguess 
+          djs_plot, 10^fullwave, fullspec, ps=3, xr=[3700,4800], yr=[-2,10], $
+                title=string(format='(i4,x,a,5(f7.3))', $
+                   plugmap[i].fiberid, plugmap[i].objtype, plugmap[i].mag), $
+                xtitle='\lambda [A]', ytitle='Flux (10^-17 cgs)'
+
+          djs_oplot, 10^newwave, bestguess,color='red',ps=10
+
 
           endelse
 	  newhdr = hdr
