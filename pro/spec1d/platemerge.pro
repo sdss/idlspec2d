@@ -160,7 +160,13 @@ pro platemerge, zfile, outroot=outroot1, public=public
           'platequality', ' ', $
           'platesn2'    , 0.0, $
           'smearuse'    , ' ', $
+          'primtarget'  ,  0L, $
+          'sectarget'   ,  0L, $
           'specprimary' ,  0B )
+         ; Trim away tag names from the tsObj structure that
+         ; is also in the ZANS structure.  At the moment (May 2003),
+         ; the only such tag is "MJD".
+         tsobj0 = struct_trimtags(tsobj0, except_tags=tag_names(zans[0]))
          tmpout = create_struct(pstuff, zans[0], tsobj0)
 
          ; Exclude tags we don't want
@@ -186,10 +192,12 @@ pro platemerge, zfile, outroot=outroot1, public=public
          outdat = replicate(outdat1, nout)
       endif
 
+      ; Assign the tsObj entries first, then over-write any
+      ; duplicate tags with ZANS (such as MJD).
       thisdat = replicate(outdat1, 640)
-      struct_assign, zans, thisdat, /nozero
       if (keyword_set(tsobj)) then $
        struct_assign, tsobj, thisdat, /nozero
+      struct_assign, zans, thisdat, /nozero
 
       ; Fill in the first columns of this output structure
       thisdat.progname = plist[ifile].progname
@@ -198,7 +206,8 @@ pro platemerge, zfile, outroot=outroot1, public=public
       thisdat.platesn2 = plist[ifile].platesn2
       thisdat.smearuse = plist[ifile].smearuse
 
-      ; Over-write PRIMTARGET+SECTARGET with those values from spPlate file.
+      ; Get PRIMTARGET+SECTARGET with those values from
+      ; the plug-map structure in spPlate file.
       plugmap = mrdfits(fullplatefile[ifile], 5, /silent)
       thisdat.primtarget = plugmap.primtarget
       thisdat.sectarget = plugmap.sectarget
@@ -303,7 +312,7 @@ pro platemerge, zfile, outroot=outroot1, public=public
     'ra'         , 0.0d, $
     'dec'        , 0.0d, $
     'platesn2'   ,  0.0, $
-    'counts_model', fltarr(5), $
+    'modelflux'  ,  fltarr(5), $
     'objc_type'  ,  '', $
     'primtarget' ,  0L, $
     'sectarget'  ,  0L, $
