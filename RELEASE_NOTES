@@ -44,6 +44,9 @@ READPLUGMAP: Many changes to this code, which is now used by both SOS
         the photometry to the Princeton calibObj files.
 READSPEC: Add support for reading the sky (SKY=) from HDU #6 of the spPlate
         files.
+        No longer name the returned plug-map structure, since we may be
+        adding tags to this structure, and I believe structures no longer
+        need to be named in order to concatenate them in IDL.
 SKYSUBTRACT: Fix possible crash condition, whereby the re-fit to the
         supersky is not done if the first fit failed and FULLBKPT does
         not exist (line 243).
