@@ -1,4 +1,11 @@
 
+* Fiberflats can have wacky values (look at its plot)
+
+* Fiberflat plot doesn't indicate bad fibers.
+
+* Don't create pointers for SPCALIB, or if I do, then be sure to discard them
+  with arcstruct_destroy(), flatstruct_destroy().
+
 * Add pixelmask bits when 2d pixelflat has low counts (less than 0.5?)
 
 * Need to have better (or any) standard star SED prediction based
@@ -99,6 +106,8 @@
   % Type conversion error: Unable to convert given STRING to Integer.
   % Detected at:  CHK_AND_UPD       206 
     /home/schlegel/evilspec/goddard/pro/fits/mwrfits.pro
+
+---->  Fixed, and sent mail to W. Landsman about this.
 
 * Special-case a combine routine for only 2 exposures that will reject CR's
 
@@ -242,6 +251,11 @@ Data Model:
 
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
+Standalone routines:
+
+readidlout
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 Unused routines:
 
 combineI (old version of combine2dout?)
@@ -252,9 +266,7 @@ fitwithmx (deprecated)
 funccheb
 gauss_smooth
 read2dout
-readidlout
 svdcheb
-testextract
 trace_fix
 writeapid
 
