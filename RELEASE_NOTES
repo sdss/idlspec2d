@@ -13,7 +13,7 @@ GET_TAI: A short proc to determine, beginning, mid-point, and ending
            Note that version v4_9_1 would not reduce the early data since
            we had changed to using TAI-BEG, which did not exist for the
            early data.
-SPADD_GUIDERINFO: Append seeing information in header from gudierMon.par
+SPADD_GUIDERINFO: Append seeing information in header from guiderMon.par
 SPCOADD_FRAMES: Combine a whole bunch of header cards from the individual
            input exposure for the output exposure.  Specifically, this was
            to address PR 2174 to average the weather data.  The cards effected:
@@ -24,6 +24,15 @@ SPCOADD_FRAMES: Combine a whole bunch of header cards from the individual
            'RMSOFF20', 'RMSOFF50', 'RMSOFF80'
            We also take the min of all 'TAI-BEG' cards, and the max of
            all 'TAI-END' cards.
+
+aporsync_logs.sh : 
+           Changed the syntax to just copy these type of files in astrolog:
+-------------------------------------------------------------------------------
+Unplugged-0827-52296-01.ps   opBC-51791.par      plPlugMapM-0827-52296-01.par
+exposureLog-52305.par        opCamera-51960.par  sdReport-52305.par
+fiberScan-0827-52296-01.par  opConfig-52305.par
+guiderMon-52305.par          opECalib-52114.par
+-------------------------------------------------------------------------------
 
 killdata.sh,mailhtml.sh: Spectrolog cleanup is now done +25 MJDs afterwards,
            which will allow for sos_redo, apoplot and debugging to have
