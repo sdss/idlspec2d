@@ -32,6 +32,8 @@ spEigenElodie.fits: Recreate with fixed READ_ELODIE().  New first eigenspectrum
 sprobot_start: Fix tiny typo (extra quotation on line 141).
 sprobot.sh: Change the name of the astrolog directory on sos.apo.nmsu.edu
            from /astrolog -> /data/spectro/astrolog (they changed it!)
+sprobot.sh,sprobot1d.sh,sprobot2d.sh,sprobotlist.sh:
+           Output the environment variables $IDLSPEC2D_DIR,$IDLUTILS_DIR.
 spChunkList.par: Added chunks 48-51.
 
 In idlutils:
