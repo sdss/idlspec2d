@@ -41,6 +41,9 @@ REDMONSTER: Change the warning message to "Bad sky residuals...",
             be due to the hand-paddle LED.  This change is for the
             benefit of the observers (from Son-of-Spectro warnings).
             Also output the peak chi.
+REDMONSTERLIST: New procedure: List of number of galaxies and quasars per
+            plate, the number of redshifts that differ from prior reductions,
+            and the fraction of various 2D flags set.
 REMOVE2TODO: Make more robust, and give more descriptive messages.
 SDSS_FLAGS: Add "SOUTHERN_SURVEY" flags for TARGET and TTARGET.
             Also, return a warning message for any bits that are set
