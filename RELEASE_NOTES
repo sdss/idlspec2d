@@ -1,5 +1,6 @@
 
 APO_LOG2HTML: Default link to GIF plot, with another link to PostScript.
+APOPLOTARC: New proc for plotting arc spectra from the Son-of-Spectro outputs.
 APOPLOTSKY: New proc for plotting sky spectra from the Son-of-Spectro outputs.
 APOREDUCE: Convert the PostScript plot to GIF format using "pstogif",
            which is in idlutils.
@@ -90,6 +91,9 @@ DJS_LOCKFILE,DJS_UNLOCKFILE: These routines had a small chance that
            small chance is now eliminated on Unix platforms running
            IDL 5.4 or later by building a symbolic link as the lock file.
 DJS_SFIT: New proc for surface fitting to tabulated data with errors.
+EXT_CCM,EXT_ODONNELL: Move these old dust-related routines here since
+           they are general-purpose.  They were not previously in any
+           repository.
 FITS_WAIT: Allow DELTAT,TMAX to be zero.
 HOGG_ITERLINFIT: General-purpose sigma-clipping linear fitting routine
            copied over from the hoggpt product.
