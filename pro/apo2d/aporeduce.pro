@@ -141,7 +141,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    mjd = sxpar(hdr, 'MJD')
    mjdstr = strtrim(string(mjd),2)
 
-   splog, 'FLAVOR=', flavor, ' PLATEID=', plateid, 'MJD=', mjd
+   splog, 'FLAVOR=', flavor, ' PLATEID=', plate, 'MJD=', mjd
 
    ;----------
    ; Determine names for the FITS and HTML output log files
