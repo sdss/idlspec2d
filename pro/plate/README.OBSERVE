@@ -83,7 +83,7 @@ For the next pointing, you will need to load the next plug-map, go to
 the field, guide for a short while if the stars aren't in the center of
 the fiber, turn off the guider, and issue another smear command.  For ex:
 
-  SOP> loadCartridge plPlugMapM-0798-59999-01.par
+  SOP> loadCartridge plPlugMapM-0798-59999-01B.par
   SOP> gotoField
   SOP> enableFiber 1 4 6
   SOP> disableFiber 2 3 5 7 8 9 10 11
@@ -104,7 +104,8 @@ through those fibers.  (The normal "smear" command always smears
 in elevation.)  The default speed of 1 arcmin/minute results in an
 effective exposure time of ~3 sec, which is good for these stars.
 
-The "decSmear" command will have to be sourced from a CVS version of IOP.
+The "decSmear" command will have to be sourced from a CVS version of IOP,
+or copied from "sdsshost:/home/schlegel/decSmear.tcl".
 
 These primary coordinates were from the same erroneous source as SOP,
 so we expect some small offsets to find these stars:
@@ -112,7 +113,7 @@ so we expect some small offsets to find these stars:
   HD 19 ... offset in RA by -3"
   BD+21 ... offset in RA by -8"
 
-  SOP> loadCartridge plPlugMapM-0798-59999-01.par
+  SOP> loadCartridge plPlugMapM-0798-59999-01D.par
   SOP> gotoField
   SOP> enableFiber 11
   SOP> disableFiber 1 2 3 4 5 6 7 8 9 10
