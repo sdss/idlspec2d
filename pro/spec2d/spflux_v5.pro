@@ -328,20 +328,33 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1
    ; and one that goes blueward of 4000 Ang.
    snvec = total(objflux * sqrt(objivar), 1) $
     * (10.^loglam[0,*] LT 4000 OR 10.^loglam[npix-1,*] LT 4000)
-   junk = max(snvec, iplot)
+   junk = max(snvec, iplot) ; Best blue exposure
 
-   csize = 0.75
+   snvec = total(objflux * sqrt(objivar), 1) $
+    * (10.^loglam[0,*] GT 8600 OR 10.^loglam[npix-1,*] GT 8600)
+   junk = max(snvec, jplot) ; Best red exposure
+
+   csize = 0.85
    djs_plot, [3840., 4120.], [0.0, 1.4], /xstyle, /ystyle, /nodata, $
     xtitle='Wavelength [Ang]', ytitle='Normalized Flux'
-   djs_oplot, 10^loglam[*,iplot], medflux[*,iplot]
-   djs_oplot, 10^loglam[*,iplot], medmodel[*,iplot], color='red'
-   xyouts, 3860, 0.2, kindx1.model, charsize=csize
+   if (iplot[0] NE -1) then begin
+      djs_oplot, 10^loglam[*,iplot], medflux[*,iplot]
+      djs_oplot, 10^loglam[*,iplot], medmodel[*,iplot], color='red'
+   endif
+   xyouts, 3860, 1.25, kindx1.model, charsize=csize
    djs_xyouts, 4000, 0.2, $
     string(minchi2/dof, format='("\chi^2/DOF=",f5.2)'), charsize=csize
    djs_xyouts, 3860, 0.1, string(kindx1.feh, kindx1.teff, kindx1.g, $
     zpeak*cspeed, $
     format='("Fe/H=", f4.1, "  T_{eff}=", f6.0, "  g=", f3.1, "  cz=",f5.0)'), $
     charsize=csize
+
+   djs_plot, [8440., 9160.], [0.0, 1.4], /xstyle, /ystyle, /nodata, $
+    xtitle='Wavelength [Ang]', ytitle='Normalized Flux'
+   if (jplot[0] NE -1) then begin
+      djs_oplot, 10^loglam[*,jplot], medflux[*,jplot]
+      djs_oplot, 10^loglam[*,jplot], medmodel[*,jplot], color='red'
+   endif
 
    return, bestflux
 end
@@ -486,7 +499,7 @@ function spflux_mratio_flatten, loglam1, mratio1, mrativar1, pres=pres
    ;--------
    ; Now for each object, compute the polynomial fit of it relative to the mean
 
-   npoly = 3
+   npoly = 3 ; ???
    flatarr = fltarr(npix, nobj)
    pres = fltarr(npoly, nobj)
    for iobj=0L, nobj-1 do begin
@@ -495,9 +508,15 @@ function spflux_mratio_flatten, loglam1, mratio1, mrativar1, pres=pres
          thisloglam = newloglam[ii]
          thisratio = newratio[ii,iobj] / meanratio[ii]
          thisivar = newivar[ii,iobj] * meanratio[ii]^2
-         pres1 = poly_fit(thisloglam, thisratio, npoly-1, $
+
+         ; The following is a weighted fit...
+         pres1 = poly_fit(thisloglam-3.5, thisratio, npoly-1, $
           measure_errors=1./sqrt(thisivar))
-         flatarr[*,iobj] = poly(loglam[*,iobj], pres1)
+
+         ; The following would be an unweighted fit...
+;         pres1 = poly_fit(thisloglam-3.5d0, thisratio, npoly-1)
+
+         flatarr[*,iobj] = poly(loglam[*,iobj]-3.5d0, pres1)
          pres[*,iobj] = reform(pres1, npoly)
        endif else begin
          flatarr[*,iobj] = 1
@@ -787,7 +806,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       flatarr_mean = 0 * tmploglam
       for i=0L, nfinal-1 do $
        flatarr_mean = flatarr_mean $
-        + poly(tmploglam, thispres[*,0,i]) / nfinal
+        + poly(tmploglam-3.5d0, thispres[*,0,i]) / nfinal
       if (keyword_set(x2)) then begin
          x2_min = min(airmass[*,ifile,iphoto[ifinal]], max=x2_max)
          splog, 'Exposure ', objname[ifile], $
