@@ -149,5 +149,7 @@ spchunklist     109 2114 2146 main      ""
 spchunklist     110 2147 2147 main      ""
 spchunklist     112 2148 2173 main      ""
 spchunklist     108 8001 8009 special   "ET"
-spchunklist     111 8010 8010 special   "ET Project Kepler"
+spchunklist     111 8010 8010 special   "ET Project Kepler (not drilled)"
+spchunklist     113 8011 8014 special   "ET Project bright reference stars"
+spchunklist     114 8015 8015 special   "ET Project Kepler"
 
