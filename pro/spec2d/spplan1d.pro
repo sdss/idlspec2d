@@ -168,7 +168,7 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
                logfile = 'spDiag1d-' + platestr + '-' + mjdstr + '.log'
                plotfile = 'spDiag1d-' + platestr + '-' + mjdstr + '.ps'
                combinefile = 'spPlate-' + platestr + '-' + mjdstr + '.fits'
-               zfile = 'spPlate-' + platestr + '-' + mjdstr + '-z.fits'
+               zfile = 'spZ-' + platestr + '-' + mjdstr + '.fits'
 
                ;----------
                ; Create keyword pairs for plan file
