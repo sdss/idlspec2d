@@ -180,6 +180,18 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
       flatstruct[iflat].xsol = ptr_new(xsol)
       flatstruct[iflat].fibermask = ptr_new(tmp_fibmask)
 
+      ;---------------------------------------------------------
+      ; Check to see if traces are separated by > 3 pixels
+      ;
+
+      ntrace = (size(xsol, /dimens))[1]
+      sep = xsol[*,1:ntrace-1] - xsol[*,0:ntrace-2]
+      tooclose = where(sep LT 3)
+      if (tooclose[0] NE -1) then begin
+        splog, 'WARNING: Traces are not separated more than 3 pixels'
+        flatstruct[iflat].qbad = 1
+      endif
+
    endfor
 
    ;---------------------------------------------------------------------------
@@ -213,7 +225,7 @@ splog,'Arc fbadpix ', fbadpix ; ???
       qbadarc = 0
       if (fbadpix GT 0.01) then begin
          qbadarc = 1
-         splog, 'Reject arc ' + flatname[iflat] + $
+         splog, 'Reject arc ' + arcname[iarc] + $
           ' (' + string(format='(i3)', fix(fbadpix*100)) + '% bad pixels)'
       endif
       if (nsatrow GT 40) then begin
@@ -312,6 +324,7 @@ splog,'Arc fbadpix ', fbadpix ; ???
             arcstruct[iarc].wset = ptr_new(wset)
             arcstruct[iarc].nmatch = N_elements(lambda)
             arcstruct[iarc].lambda = ptr_new(lambda)
+            arcstruct[iarc].tsep = tsep
             arcstruct[iarc].xpeak = ptr_new(xpeak)
             arcstruct[iarc].xdif_tset = ptr_new(xdif_tset)
             arcstruct[iarc].fibermask = ptr_new(tmp_fibmask) 
@@ -344,7 +357,6 @@ splog,'Arc fbadpix ', fbadpix ; ???
 
       arcstruct[iarc].name = arcname[iarc]
       arcstruct[iarc].tai = tai
-      arcstruct[iarc].tsep = tsep
       arcstruct[iarc].iflat = iflat
       arcstruct[iarc].qbad = qbadarc
 
@@ -368,6 +380,7 @@ splog,'Arc fbadpix ', fbadpix ; ???
       if (igood[0] NE -1) then begin
          tsep = min( abs(flatstruct[iflat].tai - arcstruct[igood].tai), ii )
          if (tsep LE timesep AND timesep NE 0) then iarc = igood[ii]
+         flatstruct[iflat].tsep = tsep
       endif
 
       if (iarc GE 0) then $
@@ -376,7 +389,6 @@ splog,'Arc fbadpix ', fbadpix ; ???
        splog, 'Flat ' + flatname[iflat] + ' paired with no arc'
 
       flatstruct[iflat].iarc = iarc
-      flatstruct[iflat].tsep = tsep
 
       if (NOT flatstruct[iflat].qbad AND iarc NE -1) then begin
 

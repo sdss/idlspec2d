@@ -12,6 +12,6 @@ Common:
       setupRequired("-f ${UPS_PROD_FLAVOR} idlutils")
       proddir()
       setupenv()
-      envAppend(IDL_PATH, +${UPS_PROD_DIR}/pro)
+      envPrepend(IDL_PATH, +${UPS_PROD_DIR}/pro)
 End:
 

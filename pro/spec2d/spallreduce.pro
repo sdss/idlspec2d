@@ -82,8 +82,10 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
 
    yanny_free, pdata
 
-   if (N_elements(allseq) EQ 0) then $
-    message, 'No ONEEXP structures in plan file ' + planfile
+   if (N_elements(allseq) EQ 0) then begin
+     splog, 'ABORT: No ONEEXP structures in plan file ' + planfile
+     return
+   endif
 
    ; Find keywords from the header
    inputDir = yanny_par(hdr, 'inputDir')
@@ -140,9 +142,12 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
       j = where(allplug.seqid EQ seqid[iseq] $
             AND allplug.plateid EQ plateid )
       if (j[0] NE -1) then plugfile = allplug[j[0]].name $
-       else message, 'No plug map file for SEQID= ' $
+      else begin
+        splog, 'ABORT: No plug map file for SEQID= ' $
         + strtrim(string(seqid[iseq]),2) + ', PLATEID= ' $
         + strtrim(string(plateid),2)
+        return
+      endelse
       splog, 'Plug map file = ', plugfile
 
       for ido=0, ndocam-1 do begin
@@ -172,9 +177,12 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
                   AND allseq.flavor EQ 'flat' $
                   AND allseq.name[icam] NE 'UNKNOWN', nflat )
             if (nflat GT 0) then flatname = allseq[j].name[icam] $
-             else message, 'No flat for SEQID= ' $
-              + strtrim(string(seqid[iseq]),2) + ', PLATEID= ' $
-              + strtrim(string(plateid),2) + ', CAMERA= ' + camnames[icam]
+            else begin
+              splog, 'ABORT: No flat for SEQID= ' $
+                + strtrim(string(seqid[iseq]),2) + ', PLATEID= ' $
+                + strtrim(string(plateid),2) + ', CAMERA= ' + camnames[icam]
+              return
+            endelse
 
             ;------
             ; Select **all** arc exposures at this sequence + camera
@@ -183,9 +191,12 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
                   AND allseq.flavor EQ 'arc' $
                   AND allseq.name[icam] NE 'UNKNOWN', narc )
             if (narc GT 0) then arcname = allseq[j].name[icam] $
-             else message, 'No arc for SEQID= ' $
-              + strtrim(string(seqid[iseq]),2) + ', PLATEID= ' $
-              + strtrim(string(plateid),2) + ', CAMERA= ' + camnames[icam]
+            else begin
+              splog, 'ABORT: No arc for SEQID= ' $
+                + strtrim(string(seqid[iseq]),2) + ', PLATEID= ' $
+                + strtrim(string(plateid),2) + ', CAMERA= ' + camnames[icam]
+              return
+            endelse
 
             ;-----
             ; Get full name of pixel flat

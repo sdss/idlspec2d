@@ -236,20 +236,23 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
 
             hdr = headfits(inputdir+'/'+fullname[i])
 
-            PLATEID[i] = long( sxpar(hdr, 'PLATEID') )
-            EXPTIME[i] = sxpar(hdr, 'EXPTIME')
-            EXPOSURE[i] = long( sxpar(hdr, 'EXPOSURE') )
-            FLAVOR[i] = strtrim(sxpar(hdr, 'FLAVOR'),2)
-            CAMERAS[i] = strmid(shortname[i],4,2) ; Camera number from file name
+            if (size(hdr,/tname) EQ 'STRING') then begin
+              PLATEID[i] = long( sxpar(hdr, 'PLATEID') )
+              EXPTIME[i] = sxpar(hdr, 'EXPTIME')
+              EXPOSURE[i] = long( sxpar(hdr, 'EXPOSURE') )
+              FLAVOR[i] = strtrim(sxpar(hdr, 'FLAVOR'),2)
+              CAMERAS[i] = $
+                strmid(shortname[i],4,2) ; Camera number from file name
 
-            ; Rename 'target' -> 'science', and 'calibration' -> 'arc'
-            if (FLAVOR[i] EQ 'target') then FLAVOR[i] = 'science'
-            if (FLAVOR[i] EQ 'calibration') then FLAVOR[i] = 'arc'
+              ; Rename 'target' -> 'science', and 'calibration' -> 'arc'
+              if (FLAVOR[i] EQ 'target') then FLAVOR[i] = 'science'
+              if (FLAVOR[i] EQ 'calibration') then FLAVOR[i] = 'arc'
 
-            ; Read the MJD from the header of the first file
-            ; This should usually be the same as MJDDIR, though an integer
-            ; rather than a string variable.
-            if (i EQ 0) then thismjd = sxpar(hdr, 'MJD')
+              ; Read the MJD from the header of the first file
+              ; This should usually be the same as MJDDIR, though an integer
+              ; rather than a string variable.
+              if (i EQ 0) then thismjd = sxpar(hdr, 'MJD')
+            endif
          endfor
 
          ;----------

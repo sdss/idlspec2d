@@ -161,7 +161,8 @@ pro superflat, flux, fluxivar, wset, fullbkpt, coeff, $
 
    ; Overplot pixels masked from the fit
    ii = where(mask EQ 0)
-   djs_oplot, 10^allwave[indx[ii]], allflux[indx[ii]], ps=3, color='red'
+   if (ii[0] EQ -1) then splog, 'No pixels masked from fit, YIPPEE!!???' $
+   else djs_oplot, 10^allwave[indx[ii]], allflux[indx[ii]], ps=3, color='red'
 
    return
 end
