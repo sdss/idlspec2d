@@ -1,20 +1,22 @@
 
 <HTML>
 <HEAD>
-   <TITLE>Displaying Raw Spectro Images at APO</TITLE>
+   <TITLE>Displaying Spectra at APO</TITLE>
 </HEAD>
 <BODY TEXT="#000000" LINK="#0000ff" VLINK="#800080" BGCOLOR="#eeeeee"
 ALINK="#FF0000">
 
-<CENTER><H1>Displaying Raw Spectro Images at APO</H1></CENTER>
+<CENTER><H1>Displaying Spectra at APO</H1></CENTER>
 
-This document desribes ways of displaying raw spectro images at Apache Point.
+This document desribes ways of displaying raw spectro images
+and SOS-extracted spectra at Apache Point.
 
 <P>
 In this document:
 <UL>
-  <LI><A HREF="#display_sop">Displaying Images From SOP</A>
-  <LI><A HREF="#display_idl">Displaying Images From IDL</A>
+  <LI><A HREF="#display_sop">Displaying Raw Images From SOP</A>
+  <LI><A HREF="#display_idl">Displaying Raw Images From IDL</A>
+  <LI><A HREF="#display_sos">Displaying SOS-Reduced Spectra</A>
   <LI><A HREF="#plot_bias">Analyzing Bias+Dark Frames</A>
 </UL>
 
@@ -45,9 +47,9 @@ of 1000 to 1300 ADU,
 <H2><A NAME="display_idl">Displaying Images From IDL</A></H2>
 
 <P>
-I've set up IDL on sdsshost (and on plate-mapper), for use in displaying
-spectro images.  Note that since all the spectro data is automatically
-copied to plate-mapper (by the Son-of-Spectro cron job),
+I've set up IDL on sdsshost.apo (and on sos.apo, plate-mapper.apo),
+for use in displaying spectro images.  Note that since all the spectro
+data is automatically copied to sos.apo (by the Son-of-Spectro cron job),
 you can display images on either machine.
 
 <P>
@@ -99,6 +101,68 @@ Another useful command is
 </PRE></DD></DL>
 which will list select header information for the images in your current
 directory.
+
+<H2><A NAME="display_sos">Displaying SOS-Reduced Spectra</A></H2>
+
+<P>
+The SOS-extracted spectra can be displayed using IDL tools on
+the computer sos.apo.  For the full documentation, see
+<A HREF="http://spectro.princeton.edu/idlspec2d_doc.html#APOPLOT">http://spectro.princeton.edu/idlspec2d_doc.html#APOPLOT</A>.
+
+<P>
+You must be logged onto sos.apo (or whichever machine is
+running Son-of-Spectro).  Set up the idlspec2d product and start IDL with:
+<DL><DD><PRE>
+setup idlspec2d
+idl
+</PRE></DD></DL>
+
+<UL>
+<LI>Example: Display plate 401, fiber 100 (if you are in the middle
+of the night that this plate was observed):
+<DL><DD><PRE>
+IDL> <A HREF="http://spectro.princeton.edu/idlspec2d_doc.html#APOPLOT">apoplot</A>, 401, 100
+</PRE></DD></DL>
+A very rough flux-calibration is done.  The spectrum from each
+exposure (both blue + red) is drawn in a different color.
+The mouse buttons will zoom in (left), recenter (center), or zoom out (right).
+The frame can be saved as a PostScript file by selecting File->WriteEPS
+from the left-hand corner.
+
+<LI>
+Example: Make the same plot, but median-filter the spectrum:
+<DL><DD><PRE>
+IDL> <A HREF="http://spectro.princeton.edu/idlspec2d_doc.html#APOPLOT">apoplot</A>, 401, 100, nmed=9
+</PRE></DD></DL>
+
+<LI>
+Example: Plot all fibers for plate 401 from the brightest object to
+the faintest, and pull up the PHOTO image from Steve Kent's web site
+(you must already have a Netscape window open for this to work):
+<DL><DD><PRE>
+IDL> <A HREF="http://spectro.princeton.edu/idlspec2d_doc.html#APOPLOT">apoplot</A>, 401, /magsort, /netimage
+</PRE></DD></DL>
+
+<LI>
+Example: Plot data from an earlier night (for example, 52282):
+<DL><DD><PRE>
+IDL> <A HREF="http://spectro.princeton.edu/idlspec2d_doc.html#APOPLOT">apoplot</A>, 401, 100, mjd=52282
+</PRE></DD></DL>
+
+<LI>
+Example: Loop through all the fibers for the same plate by not specifying
+the fiber number:
+<DL><DD><PRE>
+IDL> <A HREF="http://spectro.princeton.edu/idlspec2d_doc.html#APOPLOT">apoplot</A>, 401
+</PRE></DD></DL>
+
+</UL>
+
+<P>
+Quitting IDL:
+<DL><DD><PRE>
+IDL> exit
+</PRE></DD></DL>
 
 <H2><A NAME="plot_bias">Analyzing Bias+Dark Frames</A></H2>
 
