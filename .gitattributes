@@ -282,6 +282,7 @@ pro/science/qso/qso_sortpeaks.pro -text
 pro/science/qso/qsorefract.pro -text
 pro/science/qso/qsorplot.pro -text
 pro/science/qso/quickplot.pro -text
+pro/science/sdss_spec_block.pro -text
 pro/science/spec_param_str.pro -text
 pro/science/spectra_sample.pro -text
 pro/spec1d/Makefile -text
