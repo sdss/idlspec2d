@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   readspec, plate, fiber, [mjd=, znum=, flux=, flerr=, invvar=, $
-;    andmask=, ormask=, disp=, plugmap=, loglam=, wave=, tsobj=, $
+;    andmask=, ormask=, disp=, sky=, plugmap=, loglam=, wave=, tsobj=, $
 ;    zans=, zline=, synflux=, lineflux=, objhdr=, zhdr=, $
 ;    topdir=, path=, /align, /silent ]
 ;
@@ -41,6 +41,7 @@
 ;   andmask    - AND-mask [NPIXEL,NFIBER]
 ;   ormask     - OR-mask [NPIXEL,NFIBER]
 ;   disp       - Wavelength dispersion [NPIXEL,NFIBER]
+;   sky        - Sky flux [NPIXEL,NFIBER]
 ;   plugmap    - Plug-map entries [NFIBER]
 ;   loglam     - Log10-wavelength in log10-Angstroms [NPIXEL,NFIBER],
 ;                or the vector [NPIXEL] if /ALIGN is set
@@ -153,14 +154,14 @@ end
 
 ;------------------------------------------------------------------------------
 pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
- andmask=andmask, ormask=ormask, disp=disp, plugmap=plugmap, $
+ andmask=andmask, ormask=ormask, disp=disp, sky=sky, plugmap=plugmap, $
  loglam=loglam, tsobj=tsobj, zans=zans, zline=zline, $
  synflux=synflux, lineflux=lineflux, znum=znum, objhdr=objhdr, zhdr=zhdr, $
  coeffzero=coeff0, coeffone=coeff1, npix=npix, $
  topdir=topdir, path=path, align=align, silent=silent
 
    common com_readspec, q_flux, q_flerr, q_invvar, q_andmask, q_ormask, $
-    q_disp, q_plugmap, q_loglam, q_wave, q_tsobj, q_zans, q_zline, $
+    q_disp, q_sky, q_plugmap, q_loglam, q_wave, q_tsobj, q_zans, q_zline, $
     q_synflux, q_lineflux, q_mjd, q_objhdr, q_zhdr, q_needwave
 
    platestr = string(plate,format='(i4.4)')
@@ -184,6 +185,7 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       andmask = 0
       ormask = 0
       disp = 0
+      sky = 0
       plugmap = 0
       loglam = 0
       tsobj = 0
@@ -222,6 +224,10 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
 
    if (q_disp) then begin
       disp = rspec_mrdfits(fcb, 4, rownums=rownums, silent=silent)
+   endif
+
+   if (q_sky) then begin
+      sky = rspec_mrdfits(fcb, 6, rownums=rownums, silent=silent)
    endif
 
    if (q_plugmap) then begin
@@ -373,7 +379,7 @@ end
 
 ;------------------------------------------------------------------------------
 pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
- andmask=andmask, ormask=ormask, disp=disp, plugmap=plugmap, $
+ andmask=andmask, ormask=ormask, disp=disp, sky=sky, plugmap=plugmap, $
  loglam=loglam, wave=wave, tsobj=tsobj, zans=zans, zline=zline, $
  synflux=synflux, lineflux=lineflux, objhdr=objhdr, zhdr=zhdr, $
  znum=znum, topdir=topdir, path=path, align=align, silent=silent
@@ -385,7 +391,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
 
    ; This common block specifies which keywords will be returned.
    common com_readspec, q_flux, q_flerr, q_invvar, q_andmask, q_ormask, $
-    q_disp, q_plugmap, q_loglam, q_wave, q_tsobj, q_zans, q_zline, $
+    q_disp, q_sky, q_plugmap, q_loglam, q_wave, q_tsobj, q_zans, q_zline, $
     q_synflux, q_lineflux, q_mjd, q_objhdr, q_zhdr, q_needwave
 
    if (NOT keyword_set(topdir) AND NOT keyword_set(path)) then begin
@@ -400,6 +406,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    q_andmask = arg_present(andmask)
    q_ormask = arg_present(ormask)
    q_disp = arg_present(disp)
+   q_sky = arg_present(sky)
    q_plugmap = arg_present(plugmap) OR arg_present(tsobj)
    q_loglam = arg_present(loglam)
    q_wave = arg_present(wave)
@@ -460,6 +467,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       andmask1 = 0
       ormask1 = 0
       disp1 = 0
+      sky1 = 0
       plugmap1 = 0
       tsobj1 = 0
       zans1 = 0
@@ -475,7 +483,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       mjd1 = mjdnums[ifile]
       readspec1, platenums[ifile], irow, mjd=mjd1, $
        flux=flux1, flerr=flerr1, invvar=invvar1, andmask=andmask1, $
-       ormask=ormask1, disp=disp1, plugmap=plugmap1, $
+       ormask=ormask1, disp=disp1, sky=sky1, plugmap=plugmap1, $
        tsobj=tsobj1, zans=zans1, zline=zline1, $
        synflux=synflux1, lineflux=lineflux1, objhdr=objhdr1, zhdr=zhdr1, $
        znum=znum, coeffzero=coeff0, coeffone=coeff1, npix=npix, $
@@ -496,6 +504,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
          if (q_andmask) then andmask = andmask1
          if (q_ormask) then ormask = ormask1
          if (q_disp) then disp = disp1
+         if (q_sky) then sky = sky1
          if (q_plugmap) then plugmap = plugmap1
          if (q_tsobj) then tsobj = tsobj1
          if (q_zans) then zans = zans1
@@ -538,6 +547,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
          if (q_andmask) then spec_append, andmask, andmask1, pixshift
          if (q_ormask) then spec_append, ormask, ormask1, pixshift
          if (q_disp) then spec_append, disp, disp1, pixshift
+         if (q_sky) then spec_append, sky, sky1, pixshift
          if (q_plugmap) then plugmap = struct_append(plugmap, [plugmap1])
          if (q_tsobj) then tsobj = struct_append(tsobj, [tsobj1])
          if (q_zans) then zans = struct_append(zans, [zans1])
@@ -558,6 +568,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    if (q_andmask) then andmask[*,[allindx]] = andmask[*]
    if (q_ormask) then ormask[*,[allindx]] = ormask[*]
    if (q_disp) then disp[*,[allindx]] = disp[*]
+   if (q_sky) then sky[*,[allindx]] = sky[*]
    if (q_plugmap) then begin
       if (keyword_set(plugmap[0])) then $
        copy_struct_inx, plugmap, plugmap, index_to=allindx
