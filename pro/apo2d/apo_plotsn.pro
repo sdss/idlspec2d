@@ -36,6 +36,7 @@
 ;   mrdfits
 ;   plotsn
 ;   sortplugmap()
+;   splog
 ;   yanny_read
 ;   yanny_free
 ;
@@ -49,6 +50,7 @@ pro apo_plotsn, logfile, plate, plugdir=plugdir, plotfile=plotfile
    if (NOT keyword_set(plugdir)) then plugdir = './'
 
    platestr = string(plate, format='(i4.4)')
+   splog, 'Generating S/N plot for plate '+platestr
    bands = [1,3]
 
    ;----------
@@ -103,6 +105,7 @@ pro apo_plotsn, logfile, plate, plugdir=plugdir, plotfile=plotfile
 
    if (keyword_set(plotfile)) then $
     djs_unlockfile, plotfile, lun=plot_lun
+   splog, 'Plot finished'
 
    return
 end

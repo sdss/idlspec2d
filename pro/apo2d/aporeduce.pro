@@ -312,12 +312,13 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       wait, 10
 
       plotfile = filepath('snplot-'+mjdstr+'-'+platestr+'.ps', root_dir=outdir)
+      splog, 'Generating S/N plot '+plotfile
       apo_plotsn, logfile, plate, plugdir=plugdir, plotfile=plotfile
 
+      splog, 'Generating HTML file '+htmlfile
       apo_log2html, logfile, htmlfile
 
       if (keyword_set(copydir)) then begin
-         splog
          splog, 'Copying files to ', copydir
          spawn, 'scp1 ' + htmlfile + ' ' + copydir
          spawn, 'scp1 ' + htmlfile + ' ' + $
