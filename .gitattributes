@@ -1,6 +1,8 @@
 * text=auto !eol
 /Makefile -text
 bin/Makefile -text
+bin/aporsync.sh -text
+bin/startapo.sh -text
 doc/Makefile -text
 doc/mk_doc -text
 doc/www/.cvsignore -text
