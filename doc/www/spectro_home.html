@@ -251,10 +251,11 @@ be added to the above Fermi directory.
 An efficient way to keep your copy of these reductions current is to use
 the Unix "rsync" command:
 <DL><DD><PRE>
-rsync -arv --rsh="ssh" sdssdp6.fnal.gov:/data/dp3.p/data/schlegel/2d_v4_7 .
+rsync -arv --rsh="ssh" sdssdp7.fnal.gov:/data/dp3.p/data/schlegel/2d_v4_7 .
 </PRE></DD></DL>
 You can use this to copy the data to your own computer in the first place.
-Note that you must go through the machine "sdssdp6" even though the data
+Note that you must go through the machine "sdssdp6" or "sdssdp7"
+even though the data
 sits on a disk on "sdssdp3", since the "rsync" command only exists on the
 one machine.  If you run "rsync" again, it will copy any files that have been
 changed or added.  Note that you need "ssh" to work without asking for a
@@ -277,7 +278,7 @@ Finally, you could set up a "cron" job to update your copy of the data on
 a daily basis.  This would be done by creating a cron table file (call it
 "cron.table" in this example):
 <DL><DD><PRE>
-15 5 * * * /usr/bin/rsync -arv --rsh="ssh" sdssdp6.fnal.gov:/data/dp3.p/data/schlegel/2d_v4_7 /my/directory
+15 5 * * * /usr/bin/rsync -arv --rsh="ssh" sdssdp7.fnal.gov:/data/dp3.p/data/schlegel/2d_v4_7 /my/directory
 </PRE></DD></DL>
 replacing "/my/directory" with your local data-directory name.
 Then load this "cron" job by typing:
