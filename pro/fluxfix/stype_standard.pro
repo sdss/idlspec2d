@@ -71,18 +71,6 @@
 ;   28-Sep-2002  Written by C. Tremonti
 ;-
 ;------------------------------------------------------------------------------
-function qgoodfiber, fibermask
-   qgood = ((fibermask AND fibermask_bits('NOPLUG')) EQ 0) $
-       AND ((fibermask AND fibermask_bits('BADTRACE')) EQ 0) $
-       AND ((fibermask AND fibermask_bits('BADFLAT')) EQ 0) $
-       AND ((fibermask AND fibermask_bits('BADARC')) EQ 0) $
-       AND ((fibermask AND fibermask_bits('MANYBADCOLUMNS')) EQ 0) $
-       AND ((fibermask AND fibermask_bits('NEARWHOPPER')) EQ 0) $
-       AND ((fibermask AND fibermask_bits('MANYREJECTED')) EQ 0)
-   return, qgood
-end
-
-;------------------------------------------------------------------------------
 ; Find the Kurucz model which best matches a star
 
 pro kurucz_match, wave, nflux, nivar, nkflux, kindx, fiber, $
