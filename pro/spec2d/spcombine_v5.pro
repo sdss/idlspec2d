@@ -30,6 +30,8 @@
 ;
 ; PROCEDURES CALLED:
 ;   cpbackup
+;   dfpsclose
+;   dfpsplot
 ;   idlspec2d_version()
 ;   idlutils_version()
 ;   spcoadd_frames
@@ -121,7 +123,7 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
    if (keyword_set(plotfile) AND NOT keyword_set(xdisplay)) then begin
       cpbackup, djs_filepath(plotfile, root_dir=combinedir)
       set_plot, 'ps'
-      device, filename=djs_filepath(plotfile, root_dir=combinedir), /color
+      dfpsplot, djs_filepath(plotfile, root_dir=combinedir), /color
       splog, 'Plot file ' + plotfile
    endif
    splog, 'Plan file ', thisplan
@@ -183,23 +185,19 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
    spflux_v5, objname[i1], adderr=adderr, combinedir=combinedir
    i2 = where(strmid(objname,9,1) EQ '2')
    spflux_v5, objname[i2], adderr=adderr, combinedir=combinedir
-stop
+dfpsclose & stop
 
    ;----------
    ; Co-add the fluxed exposures
 
    spcoadd_v5, objname, combinefile, mjd=thismjd, combinedir=combinedir, $
     adderr=adderr, docams=docams, plotsnfile=plotsnfile
-stop
-
 
    ;----------
    ; Close plot file - S/N plots are then put in the PLOTSNFILE file.
 
-   if (keyword_set(plotfile) AND NOT keyword_set(xdisplay)) then begin
-      device, /close
-      set_plot, 'x'
-   endif
+   if (keyword_set(plotfile) AND NOT keyword_set(xdisplay)) then dfpsclose
+stop
 
    ;----------
    ; Select only the science+smear frames

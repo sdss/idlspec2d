@@ -289,6 +289,7 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1
    ; Return the best-fit model
    minchi2 = min(chivec, ibest)
    dof = total(sqivar NE 0)
+   splog, 'Best-fit chi2/DOF = ', minchi2/(dof>1)
    bestflux = modflux[*,*,ibest]
    kindx1 = create_struct(kindx[ibest], 'IMODEL', ibest, 'Z', zpeak)
 
@@ -296,17 +297,18 @@ function spflux_bestmodel, loglam, objflux, objivar, dispimg, kindx=kindx1
    ; Plot the filtered object spectrum, overplotting the best-fit Kurucz model
    ; Only plot the first spectrum -- this assumes it is the blue CCD ???
 
+   csize = 0.75
    djs_plot, [3840., 4120.], [0.0, 1.4], /xstyle, /ystyle, /nodata, $
     xtitle='Wavelength [Ang]', ytitle='Normalized Flux'
    djs_oplot, 10^loglam[*,0], medflux[*,0]
    djs_oplot, 10^loglam[*,0], medmodel[*,0], color='red'
-   xyouts, 3860, 0.2, kindx1.model, charsize=1.5
+   xyouts, 3860, 0.2, kindx1.model, charsize=csize
    djs_xyouts, 4000, 0.2, $
-    string(minchi2/dof, format='("\chi^2/DOF=",f5.2)'), charsize=1.5
+    string(minchi2/dof, format='("\chi^2/DOF=",f5.2)'), charsize=csize
    djs_xyouts, 3860, 0.1, string(kindx1.feh, kindx1.teff, kindx1.g, $
     zpeak*cspeed, $
     format='("Fe/H=", f4.1, "  T_{eff}=", f6.0, "  g=", f3.1, "  cz=",f5.0)'), $
-    charsize=1.5
+    charsize=csize
 
 ;set_plot,'x' ; ???
 ;imodel = ibest & ispec = 0
@@ -375,7 +377,7 @@ function spflux_bspline, loglam, mratio, mrativar, outmask=outmask, $
  _EXTRA=KeywordsForBkpts
 
    isort = sort(loglam)
-   nord = 4
+   nord = 3 ; ???
 
    ; The following generates break points spaced every Nth good value
    bkpt = 0
@@ -454,6 +456,29 @@ function spflux_mratio_flatten, loglam1, mratio1, mrativar1, pres=pres
 end
 
 ;------------------------------------------------------------------------------
+pro spflux_plotcalib, fitloglam, fitflux, mratiologlam, mratioflux, $
+ mrativar, logrange=logrange
+
+   xrange = 10.^logrange
+   ii = where(fitloglam GE logrange[0] AND fitloglam LE logrange[1])
+   yrange = [0, 1.1*max(fitflux[ii])]
+   nfinal = (size(mratioflux, /dimens))[2]
+
+   djs_plot, xrange, yrange, /xstyle, /ystyle, /nodata, $
+    xtitle='Wavelength [Ang]', ytitle='Counts/(10^{-17}erg/cm^2/s/Ang'
+   for k=0, nfinal-1 do begin
+      jj = where(mratiologlam[*,0,k] GE logrange[0] $
+       AND mratiologlam[*,0,k] LE logrange[1] $
+       AND mrativar[*,0,k] GT 0, ct)
+      if (ct GT 1) then $
+       djs_oplot, 10.^mratiologlam[jj,0,k], mratioflux[jj,0,k], psym=3
+   endfor
+   djs_oplot, 10.^fitloglam[ii], fitflux[ii], color='red'
+
+   return
+end
+
+;------------------------------------------------------------------------------
 pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
 
    if (n_elements(adderr) EQ 0) then adderr = 0.03
@@ -526,6 +551,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
    ;----------
    ; For each star, find the best-fit model.
 
+   !p.multi = [0,2,3]
    modflux = 0 * objflux
    for ip=0L, nphoto-1 do begin
       thismodel = spflux_bestmodel(loglam[*,*,ip], objflux[*,*,ip], $
@@ -566,6 +592,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
 ;  (modflux[*,*,ip])[ii]/(median(modflux[*,*,ip]))[ii],color='red', ps=3
 ;endif
    endfor
+   !p.multi = 0
 
    ;----------
    ; Keep track of which F stars are good
@@ -614,8 +641,8 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       ;----------
       ; Do the B-spline fits
 
-      everyn = nblue * nfinal * 3
-      ii = where(mrativar[*,ired,ifinal] GT 0)
+      everyn = nblue * nfinal * 5
+      ii = where(mrativar[*,iblue,ifinal] GT 0)
       sset_b = spflux_bspline((loglam[*,iblue,ifinal])[ii], $
        (mratio[*,iblue,ifinal])[ii], (mrativar[*,iblue,ifinal])[ii], $
        everyn=everyn, outmask=mask_b)
@@ -697,8 +724,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
        flatarr_mean = flatarr_mean $
         + poly(tmploglam, thispres[*,0,i]) / nfinal
       tmpflux = bspline_valu(tmploglam, thisset) * flatarr_mean
-      sset_tmp = bspline_iterfit(tmploglam, tmpflux, $
-       nord=thisset.nord, bkpt=thisset.fullbkpt, maxiter=0)
+      sset_tmp = bspline_iterfit(tmploglam, tmpflux, oldset=thisset, maxiter=0)
 ;set_plot,'x'
 ;foo=bspline_valu(thisloglam, sset_tmp)
 ;splot,10^thisloglam,tmpflux,ps=3,yr=[0,20]
@@ -706,7 +732,16 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
 if (min(tmpflux) LT 0 OR max(tmpflux) GT 1000) then stop ; ???
 
       ;----------
-      ; Make plots
+      ; Make plots of the spectro-photometry data for this exposure only,
+      ; overplotting the global fit to all exposures in red.
+
+      !p.multi = [0,1,2]
+      logrange = logmax - logmin
+      spflux_plotcalib, tmploglam, tmpflux/flatarr_mean, $
+       thisloglam, thismratio, thismrativar, logrange=(logmin+[0,1]*logrange/2.)
+      spflux_plotcalib, tmploglam, tmpflux/flatarr_mean, $
+       thisloglam, thismratio, thismrativar, logrange=(logmin+[1,2]*logrange/2.)
+      !p.multi = 0
 
       xrange = [10.^logmin, 10.^logmax]
       djs_plot, 10.^tmploglam, tmpflux/flatarr_mean, $
