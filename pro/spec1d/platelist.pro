@@ -263,7 +263,7 @@ pro platelist, infile, outfile=outfile, plist=plist
          plist[ifile].n_star = total(class EQ 'STAR')
          plist[ifile].n_unknown = total(class EQ 'UNKNOWN')
          plist[ifile].n_sky = total(class EQ 'SKY')
-         plist[ifile].vers1d = strtrim(sxpar(hdr1, 'VERS1D'))
+         plist[ifile].vers1d = strtrim(sxpar(hdr2, 'VERS1D'))
          plist[ifile].status1d = 'Done'
       endif else begin
          ;----------
