@@ -27,7 +27,9 @@ echo "SPROBOTCOPY: Started at "`date`
 
 cd $topoutdir
 echo "platelist, /create" | idl 2> /dev/null
-# echo "platemerge" | idl 2> /dev/null
+echo "platemerge" | idl 2> /dev/null
+echo "platemerge, /qsurvey" | idl 2> /dev/null
+echo "platemerge, /public" | idl 2> /dev/null
 
 #------------------------------------------------------------------------------
 # Copy plate summary list to HTML directory.
@@ -37,20 +39,20 @@ scp platelist.txt $htmldir
 #------------------------------------------------------------------------------
 # Copy to Fermi.
 
-rsync -arv --rsh="ssh" \
- --include "platelist*" --exclude "*"  \
- $topoutdir/* $destdir
-rsync -arv --rsh="ssh" \
- --include "spAll*" --exclude "*"  \
- $topoutdir/* $destdir
-rsync -arv --rsh="ssh" --include "*/" \
- --include "*spZ*.fits" --exclude "*"  \
- $topoutdir/* $destdir
-rsync -arv --rsh="ssh" --include "*/" \
- --include "*spPlate*.fits" --exclude "*"  \
- $topoutdir/* $destdir
-rsync -arv --rsh="ssh" --include "*/" \
- --include "*spSN2d*.ps" --exclude "*"  \
- $topoutdir/* $destdir
+#rsync -arv --rsh="ssh" \
+# --include "platelist*" --exclude "*"  \
+# $topoutdir/* $destdir
+#rsync -arv --rsh="ssh" \
+# --include "spAll*" --exclude "*"  \
+# $topoutdir/* $destdir
+#rsync -arv --rsh="ssh" --include "*/" \
+# --include "*spZ*.fits" --exclude "*"  \
+# $topoutdir/* $destdir
+#rsync -arv --rsh="ssh" --include "*/" \
+# --include "*spPlate*.fits" --exclude "*"  \
+# $topoutdir/* $destdir
+#rsync -arv --rsh="ssh" --include "*/" \
+# --include "*spSN2d*.ps" --exclude "*"  \
+# $topoutdir/* $destdir
 
 #------------------------------------------------------------------------------
