@@ -294,7 +294,6 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    if (!version.release LT '5.4') then $
     spawn, 'specflat_version', versflat $
    else $
-    spawn, 'speclog_version', verslog, errstring
     spawn, 'specflat_version', versflat, errstring
    if (NOT keyword_set(versflat)) then versflat = 'Unknown'
 
