@@ -5,12 +5,25 @@ BATCH2D: Enabled keywords PLATESTART,PLATEEND,MJD,MJSTART,MJEND.
          The latter would fail when outputs for some plates were
          in other linked directories, and then '../rawdata' did not
          resolve to anything.
+FIND_NMINIMA: Replacement code for FIND_NPEAKS, for solving the chi^2
+              minima for redshifts.  This routine will fit a quadratic
+              if there are only 3 points, and a gaussian plus a constant
+              if there are more than 3 points.
 MJD_MATCH: New routine split out of SPPLAN1D.
 SPPLAN1D: Now call MJD_MATCH().
+SPREDUCE1D: Change the width in velocity space for fitting the chi^2
+            minima in the redshift-finding.  These widths can be broader
+            now that we'll be fitting with gaussians rather than quadratic.
+            (The quadratic fits were not a good approximation when fitting
+            more than a few points.)  Now always use at least 5 points.
+ZCOMPUTE: Replace call to FIND_NPEAKS() with FIND_NMINIMA().
 ZFITMAX: Replace call to POLY_FIT with SVDFIT such that this routine
          behaves the same under either IDL 5.3 or 5.4.  It was the
          case that the errors were improperly computed using the re-
          write of POLY_FIT in IDL 5.4.
+
+In idlutils, added MPFIT routines from Craig Markwardt.  These will
+be used for the redshift-finding code (specifically, FIND_NMINIMA).
 
 -------------------------------------------------------------------------------
 v4_8_2 (Aug 16, 2001 idlspec2d+idlutils)
