@@ -192,7 +192,7 @@ function apo_log_fields, pp, fields, printnames=printnames, formats=formats
    expstring = string(pp[igood[0]].expnum, format='(i8.8)')
    jd = 2400000.5D + pp[igood[0]].tai / (24.D*3600.D)
    caldat, jd, jd_month, jd_day, jd_year, jd_hr, jd_min, jd_sec
-   utstring = string(jd_hr, jd_sec, format='(i2.2,":",i2.2)')
+   utstring = string(jd_hr, jd_sec, format='(i2.2,":",i2.2,"Z")')
    tags = tag_names(pp[igood[0]])
 
    for ifield=0, n_elements(fields)-1 do begin
