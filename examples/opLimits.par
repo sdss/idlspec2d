@@ -264,14 +264,14 @@ textlimit yellow SUMMARY PLATEQUALITY * marginal
 textlimit red SUMMARY PLATEQUALITY * bad
 
 textlimit yellow SUMMARY STATUS1D * Pending
-textlimit yellow SUMMARY STATUS1D * Running
+textlimit yellow SUMMARY STATUS1D * RUNNING
 textlimit red SUMMARY STATUS1D * FAILED
 
 textlimit yellow SUMMARY STATUSCOMBINE * Pending
-textlimit yellow SUMMARY STATUSCOMBINE * Running
+textlimit yellow SUMMARY STATUSCOMBINE * RUNNING
 textlimit red SUMMARY STATUSCOMBINE * FAILED
 
 textlimit yellow SUMMARY STATUS2D * Pending
-textlimit yellow SUMMARY STATUS2D * Running
+textlimit yellow SUMMARY STATUS2D * RUNNING
 textlimit red SUMMARY STATUS2D * FAILED
 
