@@ -47,6 +47,7 @@
 ;   mwrfits
 ;   splog
 ;   skymask()
+;   speclinefit
 ;   sxaddpar
 ;   sxdelpar
 ;   sxpar()
@@ -551,6 +552,11 @@ ormask = 0 ; Free memory
     format='(a,f6.0,a)'
    splog, 'Successful completion of SPREDUCE1D at ', systime()
    splog, /close
+
+   ;----------
+   ; Call the line-fitting code for this plate
+
+   speclinefit, platefile, fiberid=fiberid, doplot=doplot, debug=debug
 
    return
 end
