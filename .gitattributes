@@ -135,16 +135,11 @@ pro/plate/centerCollision-0001.par -text
 pro/plate/design_multiplate.pro -text
 pro/plate/design_praesepe.pro -text
 pro/plate/design_starstruct.pro -text
-pro/plate/g_codes_alignment.txt -text
-pro/plate/g_codes_completion.txt -text
-pro/plate/g_codes_lighttrap.txt -text
-pro/plate/g_codes_object.txt -text
 pro/plate/n1817.j11 -text
 pro/plate/n1817.match -text
 pro/plate/n752.j10 -text
 pro/plate/n752.match -text
 pro/plate/plObs.par -text
-pro/plate/plParam.par -text
 pro/plate/plPlan.par -text
 pro/plate/plPlugMapT-XXXX.par -text
 pro/plate/plate_rotate.pro -text
