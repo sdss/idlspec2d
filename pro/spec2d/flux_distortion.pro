@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   corrimg = flux_distortion(objflux, objivar, andmask, ormask, plugmap=, $
-;    loglam=, [ minflux=, minobj=, platefile=, coeff= ] )
+;    loglam=, [ minflux=, minobj=, platefile=, plotfile=, hdr=, coeff= ] )
 ;
 ; INPUTS:
 ;   objflux    - Fluxes [NPIX,NFIBER]
@@ -29,6 +29,9 @@
 ;   platefile  - If set, then read OBJFLUX and all the other inputs from
 ;                this spPlate file instead of using those inputs;
 ;                also, generate PostScript plots using the PLATESN procedure.
+;   plotfile   - If set, then make a contour plot of the distortion
+;                corrections to this PostScript file
+;   hdr        - If set, then get the PLATE and MJD from this FITS header
 ;
 ; OUTPUTS:
 ;   corrimg    - Flux-distortion image by which OBJFLUX should be multiplied
@@ -58,6 +61,8 @@
 ; EXAMPLES:
 ;
 ; BUGS:
+;   At the moment, I've turned off the quadratic terms in the exponent
+;   that also have LL, such as exp(x^2*LL).
 ;
 ; PROCEDURES CALLED:
 ;   airtovac
@@ -97,9 +102,10 @@ function flux_distort_corrvec, coeff, wavevec, thisplug
         + coeff[8] * yy * lwave2 $
         + coeff[9] * lwave2 * (specid EQ 1) $ 
         + coeff[10] * lwave2 * (specid EQ 2) $
-        + coeff[11] * xx*yy * lwave2 $
-        + coeff[12] * xx^2 * lwave2 $
-        + coeff[13] * yy^2 * lwave2)
+        )
+;        + coeff[11] * xx*yy * lwave2 $
+;        + coeff[12] * xx^2 * lwave2 $
+;        + coeff[13] * yy^2 * lwave2)
 
    return, cvec
 end
@@ -128,7 +134,7 @@ end
 ;------------------------------------------------------------------------------
 function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
  loglam=loglam, minflux=minflux, minobj=minobj, platefile=platefile, $
- coeff=coeff
+ plotfile=plotfile, hdr=hdr, coeff=coeff
 
    common com_flux_distort, trimflux, wavevec, fmask, calibflux, calibisig, $
     trimplug, outmask
@@ -235,9 +241,10 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
 
    maxiter1 = 10
    maxiter2 = 50
+maxiter1 = 2 & maxiter2 = 4 ; ???
    sigrej = 5.
    maxrej = ceil(0.05 * ntrim) ; Do not reject more than 5% of remaining objects
-   npar = 14
+   npar = 11
 
    parinfo = {value: 0.d0, fixed: 0, limited: [0b,0b], limits: [0.d0,0.d0]}
    parinfo = replicate(parinfo, npar)
@@ -285,6 +292,68 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
    minval = min(corrimg, max=maxval)
    sigval = stdev(corrimg)
    splog, 'Flux distortion min/max/sig = ', minval, maxval, sigval
+
+   if (keyword_set(plotfile)) then begin
+      xx = djs_laxisgen([641,641],iaxis=0) - 320
+      yy = djs_laxisgen([641,641],iaxis=1) - 320
+      thisplug = replicate(create_struct('XFOCAL', 0., 'YFOCAL', 0., $
+       'SPECTROGRAPHID', 0), 641, 641)
+      thisplug.xfocal = xx
+      thisplug.yfocal = yy
+      thisplug.spectrographid = 1 + (yy GT 0)
+
+      dfpsplot, plotfile, /color
+
+      pmulti = !p.multi
+      ymargin = !y.margin
+      yomargin = !y.omargin
+
+      !p.multi = [0,2,3]
+      !y.margin = [1,0]
+      !y.omargin = [5,3]
+
+      wcen = [4000., 5100., 9000.]
+
+      for iplot=0, 2 do begin
+         ; First skip the left-side plot...
+         plot, [0,1], [0,1], /nodata, xstyle=5, ystyle=5
+         if (keyword_set(hdr) AND iplot EQ 0) then begin
+            platestr = string(sxpar(hdr,'PLATE'), format='(i4)')
+            mjdstr = string(sxpar(hdr,'MJD'), format='(i5)')
+            xyouts, 1.0, 1.0, align=0.5, charsize=2, $
+             'Flux Distortions PLATE=' + platestr + ' MJD=' + mjdstr
+         endif
+
+         if (iplot EQ 2) then begin
+            xtitle = 'X [mm]'
+            xtickname = ''
+         endif else begin
+            xtitle =''
+            xtickname = strarr(20)+' '
+         endelse
+
+         cvec = flux_distort_corrvec(coeff, wcen[iplot], thisplug)
+         mvec = -2.5*alog10(cvec) * (sqrt(xx^2 + yy^2) LT 320.)
+
+         maxdiff = max(abs(mvec))
+         if (maxdiff LT 0.125) then levels = 0.025*findgen(11) - 0.125 $
+          else if (maxdiff LT 0.25) then levels = 0.05*findgen(11) - 0.25 $
+          else if (maxdiff LT 0.50) then levels = 0.10*findgen(11) - 0.50 $
+          else levels = 0.20*findgen(11) - 1.0
+         c_colors = (levels GE 0) * djs_icolor('blue') $
+          + (levels LT 0) * djs_icolor('red')
+         contour, mvec, xx[*,0], transpose(yy[0,*]), /follow, $
+          levels=levels, xrange=[-320,320], yrange=[-320,320], $
+          /xstyle, /ystyle, c_colors=c_colors, c_charsize=1, $
+          xtitle=xtitle, ytitle='Y [mm]', charsize=1, $
+          title=title
+         xyouts, -300, 280, string(wcen[iplot],format='(i4)') + ' Ang'
+      endfor
+
+      !p.multi = pmulti
+      !y.margin = ymargin
+      !y.omargin = yomargin
+   endif
 
    if (keyword_set(platefile)) then begin
       platesn, objflux, objivar, $
