@@ -32,13 +32,13 @@ fi
 # Test to see if rsync is running
 
 echo
-rproc=`\ps -elf | grep aporsync.sh | grep -v -e grep`
+rproc=`\ps -elf | grep aporsync | grep -v -e grep`
 if [ -n "$rproc" ] ; then
   echo "The following aporsync jobs are currently running:"
   echo `\ps -elf | head -1`
 #  for i in $rproc ; do echo $i ; done
 #  echo $rproc
-  \ps -elf | grep aporsync.sh | grep -v -e grep
+  \ps -elf | grep aporsync | grep -v -e grep
   echo "You may need to kill old jobs if there is a problem."
 else
   echo "No aporsync jobs are currently running."

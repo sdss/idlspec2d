@@ -1,11 +1,8 @@
 #! /bin/sh
 
 #------------------------------------------------------------------------------
-# This routine is called by the cron daemon, as set up with "cron.table".
+# This routine is called by the cron daemon, as set up with "sos_start".
 # It syncs files from sdsshost to the local machine (i.e., sos.apo.nmsu.edu).
-#
-# We set up two jobs, one for the blue files and one for the red.
-# We assume that the local machine has two processors, and we utilize both.
 #
 # We need the executable code "rsync" in the default path
 # (e.g., as /usr/bin/rsync).
@@ -13,7 +10,7 @@
 # S. Burles, APO, 4 May 2000
 #------------------------------------------------------------------------------
 
-echo "APORSYNC: Launched at "`date` UID=$UID PPID=$PPID
+echo "APORSYNC_LOGS: Launched at "`date` UID=$UID PPID=$PPID
 
 if [ -n "$RAWDATA_DIR" ]  
 then 
@@ -54,27 +51,14 @@ do
     sdsshost:$dir $speclog_dir
 done
 
-# This syncs /data/spectro/[5-9]???? from sdsshost to the local machine,
-# exluding the red and guider files.
-rsync -ar --rsh="ssh -c blowfish" \
-      --rsync-path=/p/rsync/v2_4_3/rsync \
-      --exclude="*guider*" \
-      --log-format="/data/spectro/%f" --exclude="*-r*" \
-      "sdsshost:/data/spectro/[5-9]????" $rawdata_dir | startapo.sh &
-
-# Historically, we have had a sleep statement here to keep the blue side
-# copying over before the red side.  It used to be that APOREDUCE created
-# its summary files after the r2 CCD is reduced, and assumed that all other
-# CCD's have been reduced by then.  This is no longer true -- we create the
-# summary file after each file is reduced.
-sleep 1
-
 # This syncs /astrolog/[5-9]???? from sdsshost to the local machine,
-# exluding the blue and guider files.
+# exluding the blue and red files (only include guider files).
 rsync -ar --rsh="ssh -c blowfish" \
       --rsync-path=/p/rsync/v2_4_3/rsync \
-      --log-format="/data/spectro/%f" --exclude="*-b*" \
-      "sdsshost:/data/spectro/[5-9]????" $rawdata_dir | startapo.sh 
+      --log-format="/data/spectro/%f" \
+      --exclude="*-b*" \
+      --exclude="*-r*" \
+      "sdsshost:/data/spectro/[5-9]????" $rawdata_dir
 
-echo "APORSYNC: Finished at "`date` UID=$UID PPID=$PPID
+echo "APORSYNC_LOGS: Finished at "`date` UID=$UID PPID=$PPID
 
