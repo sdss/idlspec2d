@@ -7,13 +7,15 @@
 ;   of data according to a plan file.
 ;
 ; CALLING SEQUENCE:
-;   spallreduce, planfile=planfile, [ combineonly=combineonly, docams=docams ]
+;   spallreduce, planfile=, [ docams=, /combineonly, xdisplay ]
 ;
 ; INPUTS:
 ;
 ; OPTIONAL INPUTS:
 ;   planfile   - Name of output plan file; default to 'spPlan2d.par'
 ;   docams     - Cameras to reduce; default to ['b1', 'r2', 'b2', 'r1']
+;   combineonly- Only run COMBINE2DOUT, and not SPREDUCE
+;   xdisplay   - Send plots to X display rather than to plot file
 ;
 ; OUTPUT:
 ;
@@ -45,9 +47,8 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams, $
-        display=display
-
+pro spallreduce, planfile=planfile, docams=docams, $
+ combineonly=combineonly, xdisplay=xdisplay
 display = 0 ; Disable this plotting of hundreds of pages!! (???)
 
    if (NOT keyword_set(planfile)) then planfile = 'spPlan2d.par'
@@ -103,7 +104,7 @@ display = 0 ; Disable this plotting of hundreds of pages!! (???)
       splog, filename=logfile, /append
       splog, 'Log file ', logfile, ' opened ', systime()
    endif
-   if (keyword_set(plotfile)) then begin
+   if (keyword_set(plotfile) AND NOT keyword_set(xdisplay)) then begin
       set_plot, 'ps'
       device, filename=plotfile, /color
       splog, 'Plot file ', plotfile, ' opened ', systime()
@@ -267,7 +268,7 @@ display = 0 ; Disable this plotting of hundreds of pages!! (???)
 
    ; Close log files
    if (keyword_set(logfile)) then splog, /close
-   if (keyword_set(plotfile)) then begin
+   if (keyword_set(plotfile) AND NOT keyword_set(xdisplay)) then begin
       device, /close
       set_plot, 'x'
    endif
