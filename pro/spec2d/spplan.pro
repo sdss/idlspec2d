@@ -131,8 +131,12 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
    ; it already exists and contains some files.
 
    vers = idlspec2d_version()
-   if (strpos(vers, 'NOCVS') EQ -1) then topdir = '2d_' + vers $
-    else topdir = '2d_test'
+   if (strpos(vers, 'NOCVS') EQ -1) then begin
+     dirver = vers
+     if (strmid(dirver,0,1) EQ 'v' AND strlen(dirver) GT 1) then $
+       dirver = strmid(dirver,1)
+     topdir = '2d_' + dirver 
+   endif else topdir = '2d_test'
    splog, 'Setting top-level of output directory to ' + topdir
 
    ; Create a list of the MJD directories (as strings)
