@@ -426,3 +426,7 @@ ophdrfix sdR-??-00014085 EXPTIME  900
 # (Reported to be 23837 sec!)
 ophdrfix sdR-??-00014138 EXPTIME  1500
 
+# These two exposures on plate 607 on MJD 52368 were taken through thick
+# clouds and have very little signal (except in the sky!)
+ophdrfix sdR-??-0001421[8-9] FLAVOR   "'unknown'"
+

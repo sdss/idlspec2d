@@ -1,4 +1,5 @@
 
+ELODIE_BEST: Add FITINDX keyword. Expand default fitting range to +/-1000 km/s.
 MYFLUXCALIB: Put the plate+MJD+camname in the plot titles.
 PIXELMASK_BITS: Now simply call the new function SDSS_FLAGVAL().
 PCA_STAR: Now read the Yanny file "eigeninput_star.par", and use cz.
@@ -16,6 +17,7 @@ SDSS_FLAGNAME: Re-write to include many more types of mask bits
            from the file "spMaskbits.par".
 SDSS_FLAGVAL: New function, which is the inverse of SDSS_FLAGNAME().
 SPREDUCE1D: Use SDSS_FLAGVAL() to set the zwarning mask bits.
+           Call ELODIE_BEST() for stars, and append to spZbest output structure.
 SKYSUBTRACT: Fix stupid bug where sky-fits are rejected if the mean
            sky is negative, though that only happens rarely.  This did
            cause all the b1 exposures on plate 283/51584 to get rejected
