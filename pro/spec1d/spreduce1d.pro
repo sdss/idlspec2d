@@ -105,8 +105,8 @@ andmask = 0 ; Free memory
 ;jj = where(chicclass EQ 'QSO')
 ;jj = where(chicclass EQ 'GALAXY')
 ;jj = jj[0:9] ; Trim to first few objects
-;jj = lindgen(640)
-jj = lindgen(2)
+jj = lindgen(640)
+;jj = lindgen(2)
 chicz = chicz[jj]
 chicclass = chicclass[jj]
 objflux = objflux[*,jj]
@@ -128,7 +128,7 @@ nobj=n_elements(jj)
 
    npoly = 3
    zmin = -0.01
-   zmax = 0.6
+   zmax = 0.5 ; Limit for now until template goes further into the UV ???
    pspace = 2
    nfind = 5
 
@@ -157,7 +157,7 @@ nobj=n_elements(jj)
    npoly = 3
    zmin = -0.01
    zmax = 3.75 ; Max range to use for now, with the template starting at
-               ; 800 Ang (rest), which corresponds to 3800 Ang at this z.
+               ; 800 Ang (rest), which corresponds to 3800 Ang at this z. ???
    pspace = 4
    nfind = 5
 
@@ -231,6 +231,7 @@ print,[transpose(chicz),res_all[0,*].z]
    writefits, outfile, 0, hdr ; Retain the original header in the first HDU
    mwrfits, res_all, outfile
 
+return
 stop
 davez=res_all[0,*].z
 set_plot,'ps'
@@ -264,8 +265,10 @@ davez=transpose(res_all[0,*].z)
 k=where( abs(davez-chicz)*3e5 GT 4000 )
 print,[transpose(k),transpose(chicz[k]),transpose(davez[k])]
 
-chi2dof = res_all.chi2 / res_all.dof
+chi2dof = res_all.chi2 / (res_all.dof > 1)
 chidiff = chi2dof[1,*] - chi2dof[0,*]
+isky = where(res_all[0,*].class EQ 'SKY')
+chidiff[isky] = chi2dof[2,isky] - chi2dof[1,isky]
 splot,chicz,chidiff,ps=4
 soplot,chicz[k],chidiff[k],ps=1,color='red'
 
