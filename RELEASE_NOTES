@@ -150,6 +150,13 @@ FIND_SIMPLE
 QUICK_PHOTFRAC
 SQUAREPHOT
 
+Various astrometric routines have been moved from the hoggpt product
+into pro/astrom:
+ANGLE_FROM_PAIRS
+ASTROM_ENGINE
+ASTROM_TWEAK
+OFFSET_FROM_PAIRS
+
 evilmake: Add "Darwin" (Mac OS X) as a possible platform.
            Export F77=g77 for the platform.
            This doesn't work yet for Blanton's spheregroup code or Fortran.
