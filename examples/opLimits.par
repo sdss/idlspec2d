@@ -9,8 +9,13 @@ typedef struct {
   float hivalue;     # High value
 } speclimit;
 
-# Issue errors if the 98th percentile of the bias frames is larger than
-# the following values.
+# Issue errors if the 98th percentile of the bias frames is not in the
+# range (0,20).
+
+speclimit red PERCENTILE98 b1 -65536 0
+speclimit red PERCENTILE98 b2 -65536 0
+speclimit red PERCENTILE98 r1 -65536 0
+speclimit red PERCENTILE98 r2 -65536 0
 
 speclimit red PERCENTILE98 b1 20 65536
 speclimit red PERCENTILE98 b2 20 65536
