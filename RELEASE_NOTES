@@ -1,0 +1,300 @@
+
+-------------------------------------------------------------------------------
+v4_5_0 (Jan 30, 2000)
+
+Edits to raw frame headers now possible with SPHDRFIX procedure, which
+reads the list of changes from opHdrFix.par file.  In particular, this
+allows us to edit wrong headers in some of the earliest data.
+
+The F-star flux-calibration vectors are generated with a PCA analysis
+that now allows several rejection iterations.
+
+More iterations added to the arc-line centroiding in FITARCIMAGE
+(addresses PR #874).
+
+Son-of-Spectro now tests for the Red Monster (light at 6400-6550 Ang in
+science frames), and tests for argon lines in the flat-fields.
+
+-------------------------------------------------------------------------------
+v4_4_0 (Jan 23, 2000)
+
+Remove any telluric-correction beyond 8250 Ang, since we don't believe
+any of it there.  In fact, it looks like we were multiplying-in features
+that are F-star absorption lines at 8540 and 8660 Ang.  But what about
+the broad feature at 8665 Ang -- is that a telluric-band, or an intrinsic
+F-star feature??
+
+Keyword CARTID added to headers to track cartridge ID's.
+
+Spectro robot scripts included in /bin directory (sprobot_start, etc.)
+
+For Son-of-Spectro, the WARNING and ABORT messages are now saved in HDU #5
+of the FITS log file, rather than as an element of the other HDU's.
+
+-------------------------------------------------------------------------------
+v4_3_1 (Dec 10, 2000)
+
+This version of "idlspec2d" has the following enhancements for
+Son-of-Spectro (SOS):
+
+(1) The hard-wired user/machine/version dependencies have been removed.
+    SOS can now be run by any user on any machine, which we may want to
+    do to avoid conflicts with the fiber-mapper.  Though for now, this
+    will continue to be run from "observer@plate-mapper".
+(2) Starting+stopping SOS is now done with the commands
+       sos_start
+       sos_status
+       sos_stop
+    which will start-up whichever version of the code has been either
+    declared or set up.  Backing out of versions is now straight-forward.
+(3) The code can now be managed remotely.  For example, from "sdsshost"
+    you can type:
+       setup idlspec2d
+       sos_status observer@plate-mapper
+    to check the status of SOS.
+(4) SOS delays execution when the fiber-mapper is being run.
+(5) More logging information is kept.
+(6) Identified and removed Y2022 bugs which would have stopped SOS from
+    working at MJD=60000.  It should now work until the year 2132.
+(6) Documentation is now complete, and updated to reflect all above changes.
+    The relevant documentation is also in the "sdssProcedures" product.
+
+-------------------------------------------------------------------------------
+v4_3_0 (Dec 6, 2000)
+
+The changes are primarily to the Son-of-Spectro (SoS) code, specifically:
+
+(1) The FITS log files have been re-structured to significantly speed
+    up reading these files.  This was the bottleneck that slowed SoS
+    down towards the end of a night, since each instance of reading these
+    files locked out other processes.  Our hope is that now SoS will
+    keep up during the night.
+(2) Bias and dark exposures are now analyzed, and the 98th percentile
+    of all values in these images are reported to SoS.  For example,
+    if 98% of the pixels in a bias are below 8 ADU, then PERCENTILE98 = 8.
+(3) The operational limits file has been edited so that SoS values
+    that appear in red should definitely be considered very bad.
+    For example, if the number of arc lines found (NLAMPS) is red, then
+    that arc exposure should be considered bad and another should be
+    taken until a good number are found.
+      In practice, we expect it to be rare that anything falls out of spec.
+
+-------------------------------------------------------------------------------
+v4_2_0 (Nov 28, 2000?)
+
+1)  Skip low S/N smear images in flux correction (previously aborted)
+
+2)  Added bad columns to opBC.par
+
+3)  Fixed bug in sdssproc when dealing with shifted rows between
+    MJD 51578 AND 51580 inclusive.
+
+4)  Changed structure of spMerge2d to have [flux,err] as image
+    in HDU 0, and [andmask, ormask, dispersion] as binary table in HDU 1.
+
+5)  Added headers cards to HDU's 1-5 in spPlate*fits to include wavelength
+    information.
+
+6)  Fixed bug to work on sdR*gz files.
+
+
+-------------------------------------------------------------------------------
+v4_1_0 (Oct 20, 2000?)
+
+The following lists the highlights/lowlights
+of the new 2d version:
+
+Here is a catalog of the raw 2d output:
+
+    spFrame-cc-xxxxxxxx.fits       Object Frame extraction
+
+        HDU0 :  "Flattened" counts per pixel   Float 2048x320
+        HDU1 :  Inverse variance of HDU0       Float 2048x320
+        HDU2 :  Pixelmask (see below)          Long  2048x320
+        HDU3 :  Wavelength coefficients        Structure
+        HDU4 :  Dispersion coefficients        Structure
+        HDU5 :  plPlugMapP for 320 fibers      Structure
+        HDU6 :  Telluric correction image      Float 2048x320  (only for red)
+
+    spSky-cc-xxxxxxxx.fits    2048x320  Subtracted sky image
+    spFlat-cc-xxxxxxxx.fits   2048x320  flat field vectors
+    spArc-cc-xxxxxxxx.fits    2048x320  Arc spectra extractions +
+                                           HDU1: inverse variance
+    spDiag2d-pppp-mmmmm.ps
+    spDiag2d-pppp-mmmmm.log
+
+Legend:
+
+xxxxxxxx  Frame number
+pppp      Plate number
+mmmmm     MJD
+cc        camera
+s         spectrograph
+
+Just before combining 2 or more exposures into fully merged spectra
+we perform two flux calibration steps.   The outputs are:
+
+    spFluxcalib-xxxxxxxx-s.fits   Bspline structure to convert 
+                                  flattened counts to 10^-17 ergs/s/cm^2/A
+
+    spFluxcorr-xxxxxxxx-s.fits    Polynomial coefficients to correct 
+                                  science frames to smear frame
+
+The final coaddition uses spFrame, spFluxcalib, and spFluxcorr to create
+
+    spPlate-pppp-mmmmm.fits    Fully calibrated final 2d output
+
+        HDU0 :  Fluxed log-linear spectra   Float npix x 640  where npix ~3900
+                 units of 10^(-17) ergs/s/cm^2/A
+
+        HDU1 :  Inverse variance of HDU0
+        HDU2 :  Pixelmask (Intersection  aka AND mask)  LONG npix x 640
+        HDU3 :  Pixelmask (Union  aka OR mask)          LONG npix x 640
+        HDU4 :  Dispersion Image (sigma of arc lines)
+                  in units of 1.0e-4 log10 lambda
+        HDU5 :  plPlugMapP                              STRUCTURE
+
+After the final coaddition, the data will be restructured into 
+individual files, one for each fiber:
+
+    spMerge2d-pppp-mmmmm-fff.fits   (fff is fiber number 1 through 640)
+        
+        HDU0 :  Flux and err      Float npix x 2
+        HDU1 :  Pixelmask AND,OR  LONG  npix x 2
+        HDU2 :  Dipsersion image  Float npix x 1
+
+
+!!!!!Notice:  Multiple MJDs with the same plugging will be combined!!!!!
+             into single outputs, but will be labeled with the 
+                 highest MJD of the group.
+  
+             Bad data which should not be combined
+             with subsequent data should be deleted before the subsequent
+             data is run through 2d.
+
+New features of v4_1_0:
+
+  Major New Features:
+
+    1) Spectrophotometry:
+       
+      a)  Flux calibrate with all available SPECTROPHOTO_STD and
+          REDDEN_STD stars.  Use PCA to derive first and second
+          eigenspectra.  Compare directly with SDSS Fundamentals to
+          calibrate each smear exposure.  
+      
+      b)  Flux correct each science frame with throughput and color
+          terms to match spectrophoto solution of smear image for
+          each fiber.  Use SPECTROPHOTO_STD solution to low S/N fibers.
+
+    2) Correct for Near Infrared Scattering (see msg from jeg) and
+       possible optical scattering.  The scattered light background
+       is estimated from a model profile of the full 2048x2048 image.
+
+    3) New maskbits:
+       
+        Each individual frame extracted by 2d has the following maskbits
+        possibly set for each pixel: (found in idlspec2d/etc/spMaskbits.par)
+
+      # The following mask bits are for the fiber, set in FIBERMASK_BITS()
+maskbits  0 NOPLUG          # Fiber not listed in plugmap file
+maskbits  1 BADTRACE        # Bad trace from routine TRACE320CRUDE
+maskbits  2 BADFLAT         # Low counts in fiberflat
+maskbits  3 BADARC          # Bad arc solution
+maskbits  4 MANYBADCOLUMNS  # >10% pixels are bad columns
+maskbits  5 MANYREJECTED    # >10% pixels are rejected in extraction
+maskbits  6 LARGESHIFT      # Large spatial shift between flat and object pos'n
+maskbits  7 BADSKYFIBER     # Sky Fiber shows extreme residuals
+
+# The following mask bits are for a pixel, set in PIXELMASK_BITS()
+maskbits 16 NEARBADPIXEL    # Bad pixel within 3 pixels of trace
+maskbits 17 LOWFLAT         # Flat field less than 0.5
+maskbits 18 FULLREJECT      # Pixel fully rejected in extraction (INVVAR=0)
+maskbits 19 PARTIALREJECT   # Some pixels rejected in extraction
+maskbits 20 SCATTEREDLIGHT  # Scattered light significant
+maskbits 21 CROSSTALK       # Cross-talk significant
+maskbits 22 NOSKY           # Sky level unknown at this wavelength (INVVAR=0)
+maskbits 23 BRIGHTSKY       # Sky level > flux + 10*(flux-error)
+maskbits 24 NODATA          # No data available in combine B-spline (INVVAR=0)
+maskbits 25 COMBINEREJ      # Rejected in combine B-spline
+
+        Maskbits 0 through 7 apply to the full set of 2048 pixels on 
+        blue or red spectra.
+
+        The combined spectra found in spPlate*fits or spMerge2d*fits
+        have two masks:  
+          AND mask: the bit is set if all overlapping pixels is set.
+          OR  mask:         "         any overlapping pixel bit is set.
+
+Minor changes: 
+     
+    1) Lower limit to variance in raw image, 
+       equivalent to S/N < 100 per pixel.
+
+    2) New optimal extraction profile: 0.5 * exp(-x^2) + 0.5*exp(-|x|^3)
+       (proftype 3)
+
+    3) Restricted wavelength range in telluric correction
+    
+    4) Tighter rejection limits, more stringent cosmic rejection
+       limits: +- 4 sigma
+
+    5) Sign has been corrected in heliocentric velocity
+
+    6) The header has the following changes:
+
+         CALID*  has been deleted
+         UNSIGNED has been deleted
+         
+         FRAMESN2    S/N^2 for each frame, does not apply to merged
+                          spectra
+         EXPID       can accomodate more than 10 exposures
+         PIXFLAT:    2d pixel flat used
+         OPBC:       bad pixel file applied
+         OPECALIB:   opEcalib file applied
+         OPCONFIG:   opConfig file applied
+
+         SPEC1_G, SPEC1_R, SPEC1_I
+         SPEC2_G, SPEC2_R, SPEC2_I :  Fiducial S/N across spectrographs
+            
+         MAG_G, MAG_R, MAG_I : Synthetic magnitude after
+                               spectrophotometry
+
+      
+     7) Bspline package no longer requires slatec library
+
+     8) Sky fibers with significant extra flux are rejected
+
+     9) Number of bad fibers with given bits set are tabulated at end
+   
+    10) pipeline can run and use .fit.gz  gzipped raw data files,
+        saving about 40% of space required by raw spectro data
+     
+    11) Spectral Resolution is output in the final merged spectra.
+
+    12) Use a better algorithm to tweak flat field trace to match object
+        trace.
+
+    13) Fixes in to account for electronics problem in August
+
+-------------------------------------------------------------------------------
+v3c (May 12, 2000?)
+
+It still requires idlutils v3b to run.
+It is tagged on the branch, v3branch, and includes the following
+improvements to the 2d pipeline:
+
+- Auto-generation of S/N plot at conclusion of spectra merging.
+- Increased number of supersky breakpoints to achieve better sky subtraction
+- Added entries to opBC.par file, this will remove most of the remaining
+  glitches.
+- Added a new routine, "spmulti", which can combine multiple MJDs
+  with the same plugmap file
+- Heliocentric correction is now done on an exposure by exposure basis in 2d.
+- Removed header cards which are no longer pertinent, and added some
+  extras requested by Andy.
+    Ones to note are NGOOD (number of good pixels in final spectrum)
+    SN_G, SN_R, SN_I  (3 measures of S/N)
+- Dispersion and spatial widths are output as a function of fiber
+  fiber number & pixel (in spArcInfo and spFlatInfo respectively)
+
