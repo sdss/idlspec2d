@@ -88,6 +88,7 @@
 ;   kfluxratio()
 ;
 ; REVISION HISTORY:
+;   25-Nov-2002  Added empirical correction to Kurucz models
 ;   22-Sep-2002  Revised to use Kurucz models by C. Tremonti
 ;   08-Sep-2000  Formerly newfluxcalib Written by D. Schlegel & S. Burles
 ;-
@@ -264,12 +265,20 @@ pro flux_standard, loglam, stdflux, stdivar, stdmask, stdstarfile, $
                  root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
 
    kflux = mrdfits(kurucz_file, 0, hdr, /silent)  ; flux
-   nkflux = mrdfits(kurucz_file, 1, /silent) ; normalized flux
    kindx = mrdfits(kurucz_file, 2, /silent)  ; info about models
 
    crval = sxpar(hdr, 'CRVAL1')
    dloglam = 1d-4
    kwave = 10.0^(lindgen(n_elements(kflux[*,0])) * dloglam + crval)
+
+   ;---------------
+   ; Apply wavelength dependent empirical correction to models
+
+   kmodel_fix = mrdfits(filepath('kurucz_model_fix.fit', $
+                root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc'), 0)
+
+   kflux = kflux * rebin(kmodel_fix, n_elements(kflux[*,0]), $
+                         n_elements(kflux[0,*]))
 
    ;--------------
    ; Compute the offset of the models from the data in pixels 
