@@ -91,11 +91,12 @@ function fitsn, mag, snvec, sigrej=sigrej, maxiter=maxiter, $
       igood = where(mask, ngood)
       if (ngood LE 2) then return, 0
       if (!version.release LT '5.4') then begin
-         coeffs = polyfitw(mag, logsn, mask, 1, yfit)
+         coeffs = poly_fit(mag[igood], logsn[igood], 1)
       endif else begin
-         coeffs = polyfitw(mag, logsn, mask, 1, yfit, /double)
+         coeffs = poly_fit(mag[igood], logsn[igood], 1, /double)
       endelse
-     
+      yfit = poly(mag, coeffs)
+ 
       diff = logsn - yfit
       djs_iterstat, diff[igood], sigrej=sigrej, sigma=sigma, mask=smask
       treject = total(1-smask)
