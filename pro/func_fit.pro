@@ -3,7 +3,7 @@
 ;   func_fit
 ;
 ; PURPOSE:
-;   Convert from an array of x,y positions to a trace set
+;   Fit X, Y positions to a functional form.
 ;
 ; CALLING SEQUENCE:
 ;   res = function func_fit( x, y, ncoeff, [invvar=, function_name=, $
@@ -69,25 +69,41 @@ function func_fit, x, y, ncoeff, invvar=invvar, function_name=function_name, $
       invvar = intarr(nx) + 1
    endelse
 
+   ; If IA is not set, then let all coefficients be fit (e.g., IA[*]=1)
    if (n_elements(ia) NE ncoeff) then ia = bytarr(ncoeff) + 1
 
-   goodia = ia NE 0
+   goodia = ia NE 0 ; Indices of coefficients to fit
 
-   ; Select unmasked points
-   igood = where(invvar GT 0, ngood)
-   if (ngood EQ 0) then $
-    message, 'No good data points in fit'
-
-   res = fltarr(ncoeff)
-
+   ; If coefficients are being fixed but INPUTANS is not specified,
+   ; then declare INPUTANS and set all those fixed coefficients equal to zero.
    fixed = where(goodia EQ 0, nfix)
    if (nfix GT 0) then $
     if (NOT keyword_set(inputans)) then inputans = fltarr(ncoeff)
 
-   if (ngood EQ 1) then begin
+   ;------
+   ; Select unmasked points
+
+   igood = where(invvar GT 0, ngood)
+   res = fltarr(ncoeff)
+
+   if (ngood EQ 0) then begin
+
+      ; Case with no good data points.
+      ; Set all fit coefficients equal to zero.
+      ; Also, set all the YFIT values equal to zero.
+
+      yfit = 0 * y
+
+   endif else if (ngood EQ 1) then begin
+
+      ; Case with only 1 good data point.
+      ; Set the first fit coefficient equal to the value of that one data point
+      ; (and other coefficients equal to zero).
+      ; Also, set all the YFIT values to that same value.
 
       res[0] = y[igood[0]]
-      yfit = y[igood[0]]
+      yfit = 0 * y
+      yfit[*] = y[igood[0]]
 
    endif else begin
 
@@ -118,7 +134,7 @@ function func_fit, x, y, ncoeff, invvar=invvar, function_name=function_name, $
       beta = transpose( (ysub * (invvar > 0)) # finalarr)
       alpha = transpose(finalarr) # extra2
 
-      ; Don't send just one parameter to svdfit
+      ; Don't send just one parameter to SVD fit
 
       if (nparams GT 1) then begin
          svdc, alpha, w, u, v, /double
