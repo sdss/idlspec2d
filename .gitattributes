@@ -296,6 +296,7 @@ pro/spec2d/locateskylines_test.pro -text
 pro/spec2d/logsheet.pro -text
 pro/spec2d/makefile.old -text
 pro/spec2d/match_trace.pro -text
+pro/spec2d/mjd_match.pro -text
 pro/spec2d/monster.pro -text
 pro/spec2d/myfluxcalib.pro -text
 pro/spec2d/myfluxcorr.pro -text
