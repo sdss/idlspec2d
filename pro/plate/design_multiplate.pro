@@ -747,13 +747,13 @@ addplug.sectarget = 32L
    ;---------------------------------------------------------------------------
 
    if (NOT keyword_set(norename)) then begin
-      ; The first tile retains its name, the others get letters appended.
-      for itile=1, n_elements(platenums)-1 do begin
+      for itile=0, n_elements(platenums)-1 do begin
          pointingname = string(byte(65+itile))
          thisplatename = string(platenums[0],format='(i4.4)') + pointingname
 
-         ; Change the name of the output file
-         plugmappfile[itile] = 'plPlugMapP-' + thisplatename + '.par'
+         ; The first tile retains its name, the others get letters appended.
+         if (itile GT 0) then $
+          plugmappfile[itile] = 'plPlugMapP-' + thisplatename + '.par'
 
          ; Change the "plateId" in the Yanny header
 ; Actually don't change this, since it might break SOP!!

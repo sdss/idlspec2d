@@ -26,7 +26,7 @@ pro design_praesepe
    magmin = reverse([ 5.9,  9.0, 12.0])
    magmax = reverse([ 9.2, 12.2, 15.5])
    guidemag = [10.5, 12.5]
-   tilenums = [9207,9208,9209]
+   tilenums = [9217,9218,9219]
    platenums = [798,1,2]
    matchdist = 2.0/3600. ; match distance in degrees
 
