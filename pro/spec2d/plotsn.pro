@@ -84,7 +84,7 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
 
    if (keyword_set(plotfile)) then begin
       if (nbands LE 2) then ysize=7.0 $
-       else ysize=10.0
+       else ysize=9.5
       set_plot, 'ps'
       device, filename=plotfile, /color, /portrait, $
        xsize=8.0, ysize=ysize, xoffset=0.25, yoffset=0.5, /inch
@@ -286,7 +286,7 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
 
          djs_plot, xrange, [0,0], xchars=xchars, ychars=ychars, $
           xrange=xrange, yrange=yrange, /xstyle, /ystyle, $
-          xtitle='Fiber Magnitude', ytitle='Synthetic Magnitude Resid.'
+          xtitle='Fiber Magnitude', ytitle = 'Spectro Mag - Photo Fiber Mag'
 
          djs_oplot, plugc[sindx].mag[1], $
           synthmag[0,iobj[sindx]] - plugc[sindx].mag[1], $
@@ -349,7 +349,7 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
 
          djs_plot, xrange, [0,0], xchars=xchars, ychars=ychars, $
           xrange=xrange, yrange=yrange, /xstyle, /ystyle, $
-          xtitle='Fiber Magnitude', ytitle='Synthetic Magnitude Resid.'
+          xtitle='Fiber Magnitude', ytitle='Spectro mag - Photo Fiber mag.'
 
          if (ngal GT 0) then $
           djs_oplot, plugc[igal].mag[2], $
@@ -374,6 +374,86 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
          djs_xyouts, 15.0, 1.2, 'Standard Stars (r-filter)'
       endfor
 
+      ;------------------------------------------------------------------------
+      ; Third plot -- histograms
+      ;------------------------------------------------------------------------
+
+      goff = synthmag[0,iobj] - plugc.mag[1]
+      roff = synthmag[1,iobj] - plugc.mag[2]
+      ioff = synthmag[2,iobj] - plugc.mag[3]
+      groff = goff - roff
+      rioff = roff - ioff
+
+      for ispecnum=1, 2 do begin
+         qobj = where(plugc.spectrographid eq ispecnum and $
+                      abs(goff) lt 1 and abs(roff) lt 1 and abs(ioff) lt 1)
+        
+         plothist, roff[qobj], xr=[-0.6, 0.6], yr =[0, 30], bin=0.01, $
+           xtitle = 'Spectro Mag - Photo Fiber Mag', $
+           ytitle = 'Number of Spectra', $
+           xticklen=1, yticklen=1, xgrids=1, ygrids=1, /xs, charthick=2
+        
+         plothist, goff[qobj], gxhist, gyhist, bin=0.01, $
+                   color=djs_icolor('green'), /over, thick=3
+         plothist, roff[qobj], rxhist, ryhist, bin=0.01, $
+                   color=djs_icolor('red'), /over, thick=3
+         plothist, ioff[qobj], ixhist, iyhist, bin=0.01, $
+           color=djs_icolor('dark red'), /over, thick=3
+        
+        legend, ['g', 'r', 'i'], color=djs_icolor(['green', 'red', $
+          'dark red']), linestyle=0, charthick=3
+
+        gfit = gaussfit(gxhist, gyhist, nterms=3, gcoef)
+        rfit = gaussfit(rxhist, ryhist, nterms=3, rcoef)
+        ifit = gaussfit(ixhist, iyhist, nterms=3, icoef)
+        oplot, [0, 0], [0,100], thick=4
+
+        xyouts, 0.10, 27, 'g offset = ' + string(gcoef[1], format='(F6.3)'), $
+                charsize = 0.8
+        xyouts, 0.10, 24, 'g sigma = ' + string(gcoef[2], format='(F6.3)'), $
+                charsize = 0.8
+        xyouts, 0.10, 21, 'r offset = ' + string(rcoef[1], format='(F6.3)'), $
+                charsize = 0.8
+        xyouts, 0.10, 18, 'r sigma = ' + string(rcoef[2], format='(F6.3)'), $
+                charsize = 0.8
+        xyouts, 0.10, 15, 'i offset = ' + string(icoef[1], format='(F6.3)'), $
+                charsize = 0.8
+        xyouts, 0.10, 12, 'i sigma = ' + string(icoef[2], format='(F6.3)'), $
+                charsize = 0.8
+      endfor
+
+      for ispecnum=1, 2 do begin
+         qobj = where(strmatch(plugc.objtype, '*SKY*')  ne 1 and $
+                      plugc.spectrographid eq ispecnum and $
+                      abs(goff) lt 1 and abs(roff) lt 1 and abs(ioff) lt 1)
+
+        plothist, groff[qobj], xr=[-0.6, 0.6], bin=0.01, yr = [0, 30], $
+           xtitle = 'Color Difference (Spectro - Photo)', $
+           ytitle = 'Number of Spectra', $
+           xticklen=1, yticklen=1, xgrids=1, ygrids=1, /xs, charthick=2
+
+        plothist, groff[qobj], grxhist, gryhist, bin=0.01, $
+                  color=djs_icolor('green'), /over, thick=3
+        plothist, rioff[qobj], rixhist, riyhist, bin=0.01, $
+                  color=djs_icolor('red'), /over, thick=3
+
+        legend, ['(g-r)', '(r-i)'], color=djs_icolor(['green', 'red']), $
+               linestyle=0, charthick=3
+
+        grfit = gaussfit(grxhist, gryhist, nterms=3, grcoef)
+        rifit = gaussfit(rixhist, riyhist, nterms=3, ricoef)
+        oplot, [0, 0], [0,100], thick=4
+
+        xyouts, 0.05, 27, '(g-r) offset = ' +string(grcoef[1], format='(F6.3)'), $
+                charsize = 0.8
+        xyouts, 0.05, 24, '(g-r) sigma = ' +string(grcoef[2], format='(F6.3)'), $
+                charsize = 0.8
+        xyouts, 0.05, 21, '(r-i) offset = ' +string(ricoef[1], format='(F6.3)'), $
+                charsize = 0.8
+        xyouts, 0.05, 18, '(r-i) sigma = ' + string(ricoef[2], format='(F6.3)'), $
+                charsize = 0.8
+         
+     endfor
    endif
 
    !p.multi  = oldmulti

@@ -205,8 +205,7 @@ pro platesn, finalflux, finalivar, finalandmask, finalplugmap, loglam, $
  
       ;-----------------
       ; Add keywords describing the agreement of the syntmags and the
-      ; photo mags in the plugmap.  We use the mean value of the two
-      ; spectrographs
+      ; photo mags in the plugmap.  
 
       sxaddpar, hdr, 'ROFFSET1', roffset[0], $
                 'Mean r-band mag difference (spectro mag - photo mag)'
