@@ -115,7 +115,8 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
  squashprofile=squashprofile, diagonal=p, fullcovar=fullcovar, $
  wfixarr=wfixarr, npoly=npoly, maxiter=maxiter, $
  lowrej=lowrej, highrej=highrej, niter=niter, reducedChi=reducedChi, $
- whopping=whopping, wsigma=wsigma, pixelmask=pixelmask, reject=reject
+ whopping=whopping, wsigma=wsigma, pixelmask=pixelmask, reject=reject, $
+ ojdreject=oldreject
 
    ; Need 4 parameters
    if (N_params() LT 4) then $
@@ -139,10 +140,20 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
    squashprofile = keyword_set(squashprofile) 
    if (NOT keyword_set(wsigma)) then wsigma = 25.0
 
-   if (n_elements(reject) EQ 2) then begin
+   ; Here we want a three element array where both are between 0 and 1, and the
+   ; first is larger than the second.  
+   ; The first threshold sets the minimum area required to perform single parameter
+   ; profile fitting
+   ; The second threshold is the minimum area required not to reject the pixel in the
+   ; final extracted spectrum.
+   ; The third parameter is the area required
+   ; in the profile fit containing good pixels to do a full fit.
+
+   defaultreject = [0.2, 0.5, 0.8]
+   if (n_elements(reject) EQ 3) then begin
       checkreject = sort([0.0,reject,1.0])
-      if (total(abs(checkreject - [0,2,1,3])) NE 0) then reject = [0.8,0.2] 
-   endif else reject = [0.8,0.2]
+      if (total(abs(checkreject - [0,1,2,3,4])) NE 0) then reject = defaultreject
+   endif else reject = defaultreject
 
    if (n_elements(pixelmask) NE ntrace $
     OR size(pixelmask,/tname) NE 'LONG') then $
@@ -287,27 +298,46 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
       errscale = 1.0
       if (relative) then errscale = sqrt(chisq/total(mask))
 
-      badhigh = where(diffs GT highrej*errscale, badhighct)
-      badlow = where(diffs LT -lowrej*errscale, badlowct)
-
       finished = 1
-      if (badhighct GT 0) then begin
-         mask[badhigh] = 0
-         totalreject = totalreject + badhighct
-         finished = 0
-      endif 
-      if (badlowct GT 0) then begin
-         mask[badlow] = 0
-         totalreject = totalreject + badlowct
-         finished = 0
-      endif
+      if (NOT keyword_set(oldreject)) then begin
+         ; I'm changing rejection algorithm
+         indchi = diffs / (highrej*errscale)
+         neg = where(diffs LT 0)
+         if (neg[0] NE -1) then indchi[neg] = diffs[neg] / (-lowrej*errscale)
+         badcandidate = where(indchi GT 1.0, badct)
+         if (badct GT 0) then begin
+           finished = 0
+           ; find groups
+           padbad = [-2, badcandidate, nx + 2]
+           startgroup = where(padbad[1:badct] - padbad[0:badct-1] GT 1, ngrp)
+           endgroup = where(padbad[2:badct+1] - padbad[1:badct] GT 1)
+           for i=0, ngrp - 1 do begin
+             worstdiff = max(indchi[startgroup[i]:endgroup[i]],worst)
+             mask[badcandidate[worst+startgroup[i]]] = 0
+	   endfor
+           totalreject = totalreject + ngrp
+         endif
+      endif else begin
+        badhigh = where(diffs GT highrej*errscale, badhighct)
+        badlow = where(diffs LT -lowrej*errscale, badlowct)
+        if (badhighct GT 0) then begin
+           mask[badhigh] = 0
+           totalreject = totalreject + badhighct
+           finished = 0
+        endif 
+        if (badlowct GT 0) then begin
+           mask[badlow] = 0
+           totalreject = totalreject + badlowct
+           finished = 0
+        endif
 
-      diffs = (fimage - ymodel) * sqrt(invvar) 
-      if (finished EQ 0) then begin
-         ii = where(diffs GE -lowrej*errscale $
-          AND diffs LE highrej*errscale)
-         if (ii[0] NE -1) then mask[ii] = 1 ; These points still good
-      endif
+        diffs = (fimage - ymodel) * sqrt(invvar) 
+        if (finished EQ 0) then begin
+           ii = where(diffs GE -lowrej*errscale $
+            AND diffs LE highrej*errscale)
+           if (ii[0] NE -1) then mask[ii] = 1 ; These points still good
+        endif
+      endelse
 
       niter = niter + 1
       if (niter EQ maxiter) then finished = 1
