@@ -127,6 +127,11 @@ for mjdstr in $remotedir ; do
        "$hostname:/data/spectro/astrolog/$mjdstr" $astrologdir
 #       --rsync-path=/p/rsync/v2_4_3/rsync
 
+      # Move the important astrolog files from $ASTROLOG_DIR->$SPECLOG_DIR
+      # to make a CVS-versioned copy.
+      echo "SPROBOT: speclog_update $mjdstr"
+      speclog_update $mjdstr
+
       # Copy the raw FITS files... copy only files ending in ".fit.gz"
       echo "SPROBOT: Current time "`date` UID=$UID PPID=$PPID
       echo SPROBOT: rsync "$hostname:/data/spectro/$mjdstr/*.fit.gz" $localdir
