@@ -49,6 +49,9 @@ pro platemerge, zfile, outfile=outfile, ascfile=ascfile, qsurvey=qsurvey
    if (NOT keyword_set(ascfile)) then $
     ascfile = djs_filepath('spAll.dat', root_dir=getenv('SPECTRO_DATA'))
 
+   ;----------
+   ; Find the list of spZ files.
+
    if (NOT keyword_set(zfile)) then begin
       platelist, plist=plist
       if (NOT keyword_set(plist)) then return
@@ -79,6 +82,12 @@ pro platemerge, zfile, outfile=outfile, ascfile=ascfile, qsurvey=qsurvey
    print, 'Total number of objects = ', nout
 
    ;----------
+   ; Find the corresponding spPlate files (needed only for PRIMTARGET+SECTARGET
+   ; flags, which are incorrect in the tsObj files.
+
+   fullplatefile = repstr(fullzfile, 'spZbest', 'spPlate')
+
+   ;----------
    ; Loop through each file
 
    for ifile=0, nfile-1 do begin
@@ -96,10 +105,15 @@ pro platemerge, zfile, outfile=outfile, ascfile=ascfile, qsurvey=qsurvey
          struct_assign, {junk:0}, outdat ; Zero-out all elements
       endif
 
-      copy_struct_inx, zans, outdat, index_to=lindgen(640)+640L*ifile
+      indx = lindgen(640)+640L*ifile
+      copy_struct_inx, zans, outdat, index_to=indx
       if (keyword_set(tsobj)) then $
-       copy_struct_inx, tsobj, outdat, index_to=lindgen(640)+640L*ifile
+       copy_struct_inx, tsobj, outdat, index_to=indx
 
+      ; Over-write PRIMTARGET+SECTARGET with those values from spPlate file.
+      plugmap = mrdfits(fullplatefile[ifile], 5)
+      outdat[indx].primtarget = plugmap.primtarget
+      outdat[indx].sectarget = plugmap.sectarget
    endfor
 
    ;----------
