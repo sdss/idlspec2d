@@ -100,8 +100,8 @@ pro apo_plotsn, logfile, plate, plugdir=plugdir, plotfile=plotfile
    if (keyword_set(plotfile)) then $
     while(djs_lockfile(plotfile, lun=plot_lun) EQ 0) do wait, 5
 
-   plottitle = 'APO SPECTRO MJD=' + strtrim(string(mjd),2) $
-    + ' PLATE=' + strtrim(string(plate),2)
+   plottitle = 'APO Spectro MJD=' + strtrim(string(mjd),2) $
+    + ' Plate=' + strtrim(string(plate),2)
    plotsn, sqrt(sn2array), plugsort, bands=bands, plottitle=plottitle, $
     plotfile=plotfile
 

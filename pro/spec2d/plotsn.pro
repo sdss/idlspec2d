@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   plotsn, snvec, plugmap, [ bands=, plotmag=, fitmag=, plottitle=, $
-;    plotfile=, synthmag=, snplate=  ]
+;    plotfile=, synthmag=, snplate= ]
 ;
 ; INPUTS:
 ;   snvec      - S/N array [nbands, nfibers]
@@ -15,12 +15,10 @@
 ;
 ; OPTIONAL KEYWORDS:
 ;   bands      - Index of bands to fit; default to [1,2,3] for g,r,i bands.
-;   plotmag    - Magnitude range for plotting; default to [15,21].
 ;   fitmag     - Magnitude range over which to fit (S/N) as function of mag;
-;                default to [-2,-0.5] mags around the fiducial magntidues
-;                at which we evaluate the fit.  But if there are fewer than
-;                20 points in the specified magnitude range, then set
-;                FITMAG[0] = 10.0.
+;                default to those used by FITSN().
+;   plotmag    - Magnitude range for plotting; default to [15,21], but
+;                extend the range to include FITMAG if necessary.
 ;   plottitle  - Title for top of plot
 ;   plotfile   - Optional plot file
 ;   synthmag   - Vector of synthetic magnitudes
@@ -67,7 +65,7 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
    if ((size(snvec,/dimen))[0] NE nbands) then return
    if ((size(snvec,/dimen))[1] NE nfibers) then return
 
-   bandnames = ["u'","g'","r'","i'","z'"]
+   bandnames = ["u","g","r","i","z"]
    slopelabel = " * "+bandnames
    snlabel = '(S/N)^2 @ '+bandnames+' ='+string(snmag,format='(f7.2)')
 
@@ -119,6 +117,20 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
       mag = plugc.mag[bands[iband]]
 
       ;----------
+      ; Fit the data as S/N vs. mag
+
+      afit = fitsn(mag, snc, sigma=sigma, colorband=bandnames[bands[iband]], $
+       fitmag=fitmag)
+      logsnc = alog10(snc > 0.01)
+      diff = logsnc - poly(mag, afit) ; Residuals from this fit
+
+      ;----------
+      ; Extend the plotting range if necessary to include FITMAG
+
+      plotmag[0] = plotmag[0] < fitmag[0]
+      plotmag[1] = plotmag[1] > fitmag[1]
+
+      ;----------
       ; Set up the plot
 
       if (iband LT nbands-1) then begin
@@ -149,16 +161,9 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
        color='blue', thick=5
 
       ;----------
-      ; Plot a fit to the data done across the entire plotting range.
-      ; Also, identify which points fall above and below this fit.
-
-      afit = fitsn(mag, snc, sigma=sigma, fitmag=plotmag)
-      logsnc = alog10(snc > 0.01)
-      diff = logsnc - poly(mag, afit) ; Residuals from this fit
-
-      ;----------
       ; Plot the data points, (S/N) vs. magnitude.
-      ; Color code green for positive residuals, red for negative.
+      ; Identify which points fall above and below this fit,
+      ;  color code green for positive residuals, red for negative.
       ; Use different symbols for each spectrograph.
       ; Plot these first so that the lines are visibly plotted on top.
 
@@ -180,17 +185,13 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
       ; Also, draw an arrow that terminates at the S/N at the magnitude
       ; where we measure the canonical (S/N)^2.
 
-      if (keyword_set(fitmag)) then $
-       myfitmag = fitmag $
-      else $
-       myfitmag = snmag[bands[iband]] + [-2.0,-0.5]
-      if (n_elements(where(mag GT myfitmag[0] AND mag LT myfitmag[1])) LT 20) $
-       then myfitmag = [10.0, myfitmag[1] + 1.5] 
+      if (keyword_set(fitmag)) then myfitmag = fitmag
 
       snoise2 = fltarr(2)
       xloc = snmag[bands[iband]]
       if (s1[0] NE -1) then begin
-         afit1 = fitsn(mag[s1], snc[s1], fitmag=myfitmag)
+         afit1 = fitsn(mag[s1], snc[s1], fitmag=myfitmag, $
+          colorband=bandnames[bands[iband]])
          if (keyword_set(afit1)) then begin
             snoise2[0] = 10^(2.0 * poly(snmag[bands[iband]],afit1)) 
             yloc = 10^poly(xloc,afit1)
@@ -198,7 +199,8 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
          endif
       endif
       if (s2[0] NE -1) then begin
-         afit2 = fitsn(mag[s2], snc[s2], fitmag=myfitmag)
+         afit2 = fitsn(mag[s2], snc[s2], fitmag=myfitmag, $
+          colorband=bandnames[bands[iband]])
          if (keyword_set(afit2)) then begin
             snoise2[1] = 10^(2.0 * poly(snmag[bands[iband]],afit2)) 
             yloc = 10^poly(xloc,afit2)
