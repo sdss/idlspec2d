@@ -314,18 +314,18 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ; these values if they are unknown.
    if ( size(ra, /tname) NE 'INT' $
     AND size(dec, /tname) NE 'INT' $
-    AND size(tai, /tname) NE 'INT' $
-    AND finite(ra) AND finite(dec) AND finite(tai) ) then begin
-      helio = heliocentric(ra, dec, tai=tai)
+    AND size(tai_mid, /tname) NE 'INT' $
+    AND finite(ra) AND finite(dec) AND finite(tai_mid) ) then begin
+      helio = heliocentric(ra, dec, tai=tai_mid)
       splog, 'Heliocentric correction = ', helio, ' km/s'
       sxaddpar, objhdr, 'HELIO_RV', helio, $
        ' Heliocentric correction (added to velocities)'
    endif else begin
       splog, 'WARNING: Header info not present to compute heliocentric correction'
    endelse
-   if (size(tai, /tname) EQ 'INT' OR finite(tai) EQ 0) then begin
+   if (size(tai_mid, /tname) EQ 'INT' OR finite(tai_mid) EQ 0) then begin
       splog, 'WARNING: Header info not present to compute airmass correction to sky level'
-      tai = 0
+      tai_mid = 0
    endif
 
    ;------------------
@@ -358,7 +358,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    nbkpt = color EQ 'blue' ? 3*nx/4 : nx
    skystruct = skysubtract(flux, fluxivar, plugsort, vacset, $
     skysub, skysubivar, iskies=iskies, pixelmask=pixelmask, $
-    fibermask=fibermask, upper=3.0, lower=3.0, tai=tai, $
+    fibermask=fibermask, upper=3.0, lower=3.0, tai=tai_mid, $
     relchi2struct=relchi2struct, nbkpt=nbkpt)
    if (NOT keyword_set(skystruct)) then return
 
@@ -375,7 +375,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
             string(iskies[badskyfiber])
        skystruct = skysubtract(flux, fluxivar, plugsort, vacset, $
           skysub, skysubivar, iskies=iskies, pixelmask=pixelmask, $
-          fibermask=fibermask, upper=10.0, lower=10.0, tai=tai, $
+          fibermask=fibermask, upper=10.0, lower=10.0, tai=tai_mid, $
           relchi2struct=relchi2struct, nbkpt=nbkpt)
    endif
  
@@ -386,7 +386,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    nskypoly = 3L
    skystruct_psf = skysubtract(flux, fluxivar, plugsort, vacset, $
     skysubpsf, skysubpsfivar, iskies=iskies, pixelmask=pixelmask, $
-    fibermask=fibermask, upper=10.0, lower=10.0, tai=tai, $
+    fibermask=fibermask, upper=10.0, lower=10.0, tai=tai_mid, $
     dispset=dispset, npoly=nskypoly, nbkpt=nbkpt)
 
    qaplot_skysub, flux, fluxivar, skysub, skysubivar, $
@@ -401,10 +401,10 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    if (color EQ 'blue') then begin
       qaplot_skyline, 4359.5, flux, fluxivar, skysub, skysubivar, $
        plugsort, vacset, iskies, fibermask=fibermask, dwave=4.0, $
-       tai=tai, title=plottitle+objname
+       tai=tai_mid, title=plottitle+objname
       qaplot_skyline, 5578.9, flux, fluxivar, skysub, skysubivar, $
        plugsort, vacset, iskies, fibermask=fibermask, dwave=5.0, $
-       tai=tai, title=plottitle+objname
+       tai=tai_mid, title=plottitle+objname
    endif
 
    ;------------------
@@ -413,10 +413,10 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    if (color EQ 'red') then begin
       qaplot_skyline, 7343.0, flux, fluxivar, skysub, skysubivar, $
        plugsort, vacset, iskies, fibermask=fibermask, dwave=7.0, $
-       tai=tai, title=plottitle+objname
+       tai=tai_mid, title=plottitle+objname
       qaplot_skyline, 8888.3, flux, fluxivar, skysub, skysubivar, $
        plugsort, vacset, iskies, fibermask=fibermask, dwave=7.0, $
-       tai=tai, title=plottitle+objname
+       tai=tai_mid, title=plottitle+objname
    endif
 
    ;------------------------------------------
