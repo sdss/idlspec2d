@@ -25,6 +25,9 @@ BATCH1D,BATCH2D: Allow NICE to be set to zero.  Add UPSVERSION keyword to do
            a "setup idlspec2d $UPSVERSION" on the remote machine before
            executing the IDL job.  This allows you to batch jobs using a
            version other than that which is declared current under UPS.
+BATCH2D: At the end of a batch job, spawn the following:
+           spawn, 'rm -f spArc*.fits* spFlat*.fits* spSky*.fits*'
+           in order to remove files that eat up too much disk space right now.
 DANVB_CONVERT,DANVB_QSOLIST: Procs for generating a list of input
             QSO's from Dan van den Berk's EDR list "plateEDR.summ"
             for generating QSO eigenvectors.  The output file
