@@ -11,9 +11,10 @@ pro platesn, platefile, snplot, planfile=planfile
       yanny_free, pdata
    endif
 
-   finalflux=mrdfits( platefile, 0, hdr)
-   finalivar=mrdfits( platefile , 1)
-   finalplugmap=mrdfits( platefile, 5)
+   finalflux=mrdfits( platefile, 0, hdr, /silent)
+   finalivar=mrdfits( platefile , 1, /silent)
+   finalandmask  =mrdfits( platefile , 2, /silent)
+   finalplugmap=mrdfits( platefile, 5, /silent)
 
    nfiber = (size(finalflux))[2]
    npix   = (size(finalflux))[1]
@@ -51,6 +52,28 @@ pro platesn, platefile, snplot, planfile=planfile
    plotsn, snvec, finalplugmap, plotfile=snplot, plottitle=plottitle, $
       synthmag=synthetic_mags, snplate=snplate
 
+   ;--------------------------------------------------------------------
+   ;          Bad Fiber roll call
+   ;
+  
+   rollcall = lonarr(3,8)
+
+   for i=0,7 do $
+      rollcall[*,i] = $
+          [  total(total((finalandmask[gwave,*] AND 2L^i) GT 0, 1) GT 0), $
+             total(total((finalandmask[rwave,*] AND 2L^i) GT 0, 1) GT 0), $
+             total(total((finalandmask[iwave,*] AND 2L^i) GT 0, 1) GT 0)]
+   
+   splog, "Fiber Problem",  "  # in g'",  "  # in r'", "  # in i'" , $
+          format='(3x,a20, 3(a9))'
+   common com_maskbits, maskbits
+   test = pixelmask_bits("NODATA")
+   for i=0,7 do begin
+     label = maskbits[where(maskbits.bit EQ i)].label
+     info = string(format='(a20,3(i9.3))',label,rollcall[*,i])
+     splog, label, rollcall[*,i], format='(a20,3(i9))'
+   endfor
+
    ;---------------------------------------------------------------------------
    ;	!!! This is crazy, but I'm going to write out the S/N 
    ;    !!!   per plate in the hdr !!
@@ -76,9 +99,8 @@ pro platesn, platefile, snplot, planfile=planfile
    ; Write combined output file
    ;---------------------------------------------------------------------------
 
-   finalandmask=mrdfits( platefile, 2)
-   finalormask=mrdfits( platefile, 3)
-   finaldispersion=mrdfits( platefile, 4)
+   finalormask=mrdfits( platefile, 3, /silent)
+   finaldispersion=mrdfits( platefile, 4, /silent)
 
    ; 1st HDU is flux
    mwrfits, finalflux, platefile, hdr, /create
