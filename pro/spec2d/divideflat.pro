@@ -16,7 +16,7 @@
 ; OPTIONAL KEYWORDS:
 ;   fibermask  - Mask of 0 for bad fibers and 1 for good fibers [NFIBER]
 ;   minval     - Minimum value to consider good for flat-field;
-;                default to 0.01.
+;                default to 0.03.
 ;
 ; OUTPUTS:
 ;
@@ -45,7 +45,7 @@ pro divideflat, flux, fluxivar, fflat, fibermask=fibermask, minval=minval
    npix = dims[0] 
    ntrace = dims[1] 
 
-   if (NOT keyword_set(minval)) then minval = 0.01
+   if (NOT keyword_set(minval)) then minval = 0.03
    if (NOT keyword_set(fibermask)) then fibermask = bytarr(nfiber) + 1
 
    if (total(size(fluxivar,/dimens) NE dims) NE 0) then $

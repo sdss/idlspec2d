@@ -6,7 +6,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   fflat = fiberflat( flux, fluxivar, wset, $
-;    [ fibermask=fibermask, pixspace=, nord=, lower=, upper= ] )
+;    [ fibermask=fibermask, minval=, pixspace=, nord=, lower=, upper= ] )
 ;
 ; INPUTS:
 ;   flux       - Array of extracted flux from a flat-field image [Nrow,Ntrace]
@@ -15,6 +15,8 @@
 ;
 ; OPTIONAL KEYWORDS:
 ;   fibermask  - Mask of 0 for bad fibers and 1 for good fibers [NFIBER]
+;   minval     - Minimum value to use in fits to flat-field vectors;
+;                default to 0.03.
 ;   pixspace   - Approximate spacing in pixels for break points in the
 ;                spline fits to individual fibers; default to 10 pixels
 ;
@@ -46,14 +48,15 @@
 ;-
 ;------------------------------------------------------------------------------
 
-function fiberflat, flux, fluxivar, wset, $
- fibermask=fibermask, pixspace=pixspace, nord=nord, lower=lower, upper=upper
+function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
+ minval=minval, pixspace=pixspace, nord=nord, lower=lower, upper=upper
 
    dims = size(flux, /dimens)
    ny = dims[0]
    ntrace = dims[1]
    fflat = fltarr(ny,ntrace)
 
+   if (NOT keyword_set(minval)) then minval = 0.03
    if (N_elements(pixspace) EQ 0) then pixspace = 10
    if (N_elements(nord) EQ 0) then nord = 4
    if (N_elements(lower) EQ 0) then lower = 10.0
@@ -64,9 +67,9 @@ function fiberflat, flux, fluxivar, wset, $
    if (ngood EQ 0) then $
     message, 'No good fibers according to FIBERMASK'
 
-   ; If any flux points have zero or negative flux, set the weight to zero
-   ibad = where(flux LE 0)
-   if (ibad[0] NE -1) then fluxivar[ibad] = 0
+;   ; If any flux points have zero or negative flux, set the weight to zero
+;   ibad = where(flux LE 0)
+;   if (ibad[0] NE -1) then fluxivar[ibad] = 0
 
    ; Compute the wavelengths for all flat vectors from the trace set
    traceset2xy, wset, xx, loglam
@@ -89,7 +92,7 @@ function fiberflat, flux, fluxivar, wset, $
    izero = where(medval LE 0)
    if (izero[0] NE -1) then medval[izero] = 1.0
 
-   ; Create a version of flux and fluxivar that has all fibers
+   ; Create a version of flux (and fluxivar) that has all fibers
    ; approximately scaled to have a median value of 1
    scalef = fltarr(ny,ntrace)
    scalefivar = fltarr(ny,ntrace)
@@ -104,20 +107,25 @@ function fiberflat, flux, fluxivar, wset, $
    allwave = (loglam[*,igood])[isort]
    allflux = (scalef[*,igood])[isort]
    allivar = (scalefivar[*,igood])[isort]
-   afullbkpt = slatec_splinefit(allwave, allflux, acoeff, $
+   indx = where(allflux GT minval)
+   if (indx[0] EQ -1) then $
+    message, 'No points above MINVAL'
+   afullbkpt = slatec_splinefit(allwave[indx], allflux[indx], acoeff, $
     maxiter=maxiter, upper=upper, lower=lower, $
-    invvar=allivar, nord=4, nbkpts=ny, mask=mask)
+    invvar=allivar[indx], nord=4, nbkpts=ny, mask=mask)
 
+   fit2  = slatec_bvalu(loglam, afullbkpt, acoeff)
+
+; Plot ???
 ;ii=where(mask EQ 0)
-;splot,allwave,allflux,ps=3
-;soplot,allwave[ii],allflux[ii],ps=3,color='red' 
+;splot,10^allwave,allflux,ps=3
+;soplot,10^loglam,fit2,ps=3,color='green'
+;soplot,10^allwave[indx[ii]],allflux[indx[ii]],ps=3,color='red' 
 
    ; Always select the same break points in log-wavelength for all fibers
    nbkpts = fix(ny / pixspace) + 2
    bkpt = findgen(nbkpts) * (max(loglam) - min(loglam)) / (nbkpts-1) $
     + min(loglam)
-
-   fit2  = slatec_bvalu(loglam, afullbkpt, acoeff)
 
    for i=0, ntrace-1 do begin
       print, format='($, ".",i4.4,a5)',i,string([8b,8b,8b,8b,8b])
@@ -127,7 +135,8 @@ function fiberflat, flux, fluxivar, wset, $
       ; Larger breakpoint separations and less hassles 
 
       ; Locate only unmasked points
-      indx = where(fluxivar[*,i] GT 0.0 AND fit2 GT 0.0, ct)
+      indx = where(fluxivar[*,i] GT 0.0 AND flux[*,i] GT minval $
+       AND fit2 GT minval, ct)
 
       if (ct GT 0) then begin
 
@@ -141,7 +150,7 @@ function fiberflat, flux, fluxivar, wset, $
 
          ; Dispose of leading or trailing points with zero weight
          fullbkpt = slatec_splinefit(loglam[indx,i], ratio, coeff, $
-          maxiter=maxiter, upper=upper, lower=lower, eachgroup=1, $
+          maxiter=maxiter, upper=upper, lower=lower, /eachgroup, $
           invvar=ratioivar, nord=nord, bkpt=bkpt[istart:iend], mask=mask)
 
          ; Evaluate spline fit to this fiber
