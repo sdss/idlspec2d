@@ -12,8 +12,8 @@
 ;   tset       - Structure containing trace set
 ;
 ; OPTIONAL KEYWORDS:
-;   xpos       - Input positions to evaluate YPOS; if not specified, then
-;                generate an [NX,NTRACE] array of each pixel position
+;   xpos       - Input positions to evaluate YPOS; if not specified (or 0),
+;                then generate an [NX,NTRACE] array of each pixel position
 ;
 ; OUTPUTS:
 ;   xpos       - X positions corresponding to YPOS
@@ -56,8 +56,6 @@ pro traceset2xy, tset, xpos, ypos
       endif else begin
          message, 'TSET.COEFF contains invalid number of dimensions'
       endelse
-
-      if n_elements(xpos) EQ 1 then xpos = transpose(xpos+fltarr(ntrace))
 
       nx = long(tset.xmax - tset.xmin + 1)
 
