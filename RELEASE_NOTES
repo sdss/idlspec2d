@@ -159,6 +159,7 @@ SPREDUCE1D: Change flag for small chi^2 difference to be triggered
             since this seems to usually be erroneously set (when it is set)
             in the 2nd pass through the ZFIND routine.  I'll have to track
             that down later.
+            Fix bug that SN_MEDIAN wasn't positive definite.
 ZCOMPUTE, FIND_NMINIMA: Return a (negative-valued) error code
             from FIND_NMINIMA, which ZCOMPUTE stuffs into Z_ERR.
 ZFIND: If fewer than NFIND peaks are found, then return blank structures
