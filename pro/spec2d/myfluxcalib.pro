@@ -240,7 +240,7 @@ objmask = 0 ; Free memory
       traceset2xy, corrset, loglam, corrimg
 
       divideflat, objflux, objivar, 1.0/corrimg, $
-            minval=0.05*mean(1.0/corrimg)
+            minval=0.05/median(corrimg)
 
       ;----------
       ; Re-bin the spectro-photo stars to the same wavelength mapping
@@ -306,6 +306,8 @@ objmask = 0 ; Free memory
    ; Set up for QA plots
 
    !p.multi = [0,1,nfile]
+
+stop
 
    ;----------
    ; Do the actual fits
