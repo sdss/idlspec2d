@@ -61,7 +61,7 @@ do
       rm -f $dir/wset*.fits
       rm -f $dir/*.ps
 #      rm -f $dir/logfile*.fits
-#      rm -f $dir/logfile*.html
+      rm -f $dir/logfile*.html
    fi
 done
 
