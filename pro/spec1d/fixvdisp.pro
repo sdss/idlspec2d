@@ -16,9 +16,6 @@ pro fixvdisp
       spawn, 'mv -f ' + filename[ifile] + ' ' + filename[ifile]+'.OLD'
 
       mjdname = long( strmid( fileandpath(filename[ifile]), 13, 5) )
-      mjdhdr = long(sxpar(hdr, 'MJD'))
-      if (mjdname NE mjdhdr) then print, 'MJD IS WRONG!!', mjdname, mjdhdr
-      sxaddpar, hdr, 'MJD', mjdname
 
       ; Compute the velocity dispersions only if there are galaxies
       ; in this file, and VDISP doesn't yet exist in the structure.
@@ -37,6 +34,7 @@ pro fixvdisp
          newans[igal].vdisp = sigma
          newans[igal].vdisp_err = sigerr
 
+         sxaddpar, objhdr, 'MJD', mjdname ; Force the MJD to be correct
          mwrfits, 0, filename[ifile], objhdr, /create
          mwrfits, newans, filename[ifile]
       endif
