@@ -8,7 +8,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   spplancomb, [ topindir=, topoutdir=, mjd=, mjstart=, mjend=, $
-;    platenum=, platestart=, plateend=, /clobber ]
+;    platenum=, platestart=, plateend=, /clobber, ncombine=ncombine ]
 ;
 ; INPUTS:
 ;
@@ -27,6 +27,7 @@
 ;   plateend   - Ending plate number.
 ;   clobber    - If set, then over-write conflicting plan files; default to
 ;                not over-write files.
+;   ncombine   - The best n exposures to combine
 ;
 ; OUTPUT:
 ;
@@ -59,7 +60,7 @@
 pro spplancomb, topindir=topindir, topoutdir=topoutdir, $
  mjd=mjd, mjstart=mjstart, mjend=mjend, $
  platenum=platenum, platestart=platestart, plateend=plateend, $
- clobber=clobber
+ clobber=clobber, ncombine=ncombine
 
    ;----------
    ; Determine the top-level of the input and output directory tree
@@ -150,6 +151,7 @@ pro spplancomb, topindir=topindir, topoutdir=topoutdir, $
                ; and the suffix '.fit' with '.fits'
 
                newnames = spexp.name
+               sneach = fltarr(4, n_elements(spexp))
                for i=0, n_elements(newnames)-1 do begin
                   jj = strpos(newnames[i], '-')
 ;                  kk = strpos(newnames[i], '.', /reverse_search) ; IDL 5.3 com
@@ -157,9 +159,36 @@ pro spplancomb, topindir=topindir, topoutdir=topoutdir, $
                   if (jj NE -1 AND kk NE -1) then $
                    newnames[i] = 'spFrame' + strmid(newnames[i], jj, kk-jj) $
                     + '.fits'
+                   hh = headfits(newnames[i])
+                   if keyword_set(hh) then sneach[i] = sxpar(hh, 'FRAMESN2')
                endfor
                spexp.name = newnames
 
+               if keyword_set(ncombine) then begin
+                 sntotal = total(sneach,1)
+                 k = where(spexp.flavor EQ 'science', nsci) 
+                 if nsci GT ncombine then begin
+		   ss = k[reverse(sort(sntotal[k]))]
+                   ss = ss[0:ncombine-1]
+
+                   nonsci = where(spexp.flavor NE 'science') 
+                   if nonsci[0] NE -1 then tempexp  = spexp[[nonsci,ss]] $
+                   else tempexp  = spexp[ss]
+
+                   spexp = tempexp[sort(tempexp.name[0])]
+
+                   splog, 'WARNING: Only including ', string(ncombine), $
+                          '  Exposures out of ', string(nsci)
+
+                   splog, 'All exposures     ',sntotal[k]
+                   splog, 'Include exposures ',sntotal[ss]
+                   splog, 'Fraction  =       ', $
+                      total(sntotal[ss])/total(sntotal[k])
+
+                 endif
+               endif      
+
+  
                ;----------
                ; Determine names of output files
 

@@ -8,7 +8,7 @@
 ;   of data according to a plan file.
 ;
 ; CALLING SEQUENCE:
-;   spallreduce, [ planfile, docams=, /nocombine, /xdisplay ]
+;   spallreduce, [ planfile, docams=, /ncombine, /xdisplay ]
 ;
 ; INPUTS:
 ;
@@ -18,7 +18,7 @@
 ;   docams     - Cameras to reduce; default to ['b1', 'b2', 'r1', 'r2'];
 ;                set to 0 or '' to disable running SPREDUCE and to only
 ;                combine files.
-;   nocombine  - Only run SPREDUCE, not COMBINE2DOUT.
+;   ncombine   - How many exposures to combine, the best N
 ;   xdisplay   - Send plots to X display rather than to plot file
 ;
 ; OUTPUT:
@@ -46,10 +46,12 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
+pro spallreduce, planfile, docams=docams, ncombine=ncombine, $
  xdisplay=xdisplay
 
    if (NOT keyword_set(planfile)) then planfile = findfile('spPlan2d*.par')
+   if (NOT keyword_set(ncombine)) then ncombine=7
+
    if (N_elements(planfile) NE 1) then $
       message, 'Please just give me one plan file'
 
@@ -78,8 +80,8 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
    ;  Now coadd, and also produce stopgap 2dmerge directory
    ;
 
-   if keyword_set(nocombine) then return
-   spallcombine, mjd, topindir='.'
+   if NOT keyword_set(ncombine) then return
+   spallcombine, mjd, topindir='.', ncombine=ncombine
 
    return
 end
