@@ -182,19 +182,20 @@ ormask = 0 ; Free memory
    endif else begin
       fiblist = lindgen(nobj) + 1
    endelse
-   if (n_elements(zans) LT nobj) then begin
-      nfib = n_elements(fiblist)
-      zindx = lonarr(nfib)
-      for i=0, nfib-1 do zindx[i] = (where(zans.fiberid EQ fiblist[i]))[0]
-      if ((where(zindx EQ -1))[0] NE -1) then $
-       message, 'Some FIBERIDs do not exist in spZbest file'
-   endif
 
-   objflux = objflux[*,fiberid-1]
-   objivar = objivar[*,fiberid-1]
-   anyandmask = anyandmask[fiberid-1]
-   anyormask = anyormask[fiberid-1]
-   plugmap = plugmap[fiberid-1]
+   ; Find the object in the ZANS structure that matches each fiber ID.
+   nfib = n_elements(fiblist)
+   zindx = lonarr(nfib)
+   for i=0, nfib-1 do zindx[i] = (where(zans.fiberid EQ fiblist[i]))[0]
+   if ((where(zindx EQ -1))[0] NE -1) then $
+    message, 'Some FIBERIDs do not exist in spZbest file'
+
+   ; Now trim the arrays and structure to the specified fibers
+   objflux = objflux[*,fiblist-1]
+   objivar = objivar[*,fiblist-1]
+   anyandmask = anyandmask[fiblist-1]
+   anyormask = anyormask[fiblist-1]
+   plugmap = plugmap[fiblist-1]
    zans = zans[zindx]
    dispflux = dispflux[*,zindx]
    nobj = nfib
