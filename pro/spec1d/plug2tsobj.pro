@@ -27,7 +27,8 @@
 ;                tsObj file was not found on disk.
 ;
 ; OPTIONAL OUTPUTS:
-;   silent     - Make the call to MRDFITS silent.
+;   silent     - Make the call to MRDFITS silent, but still log warning
+;                messages if the calibObj file is not found or is empty.
 ;
 ; COMMENTS:
 ;   The calibObj files are assumed to be in the directory $SPECTRO_DATA/calibobj.
@@ -107,7 +108,7 @@ function plug2tsobj, plateid, ra1, dec1, plugmap=plugmap, dmin=dmin, $
    filename = (findfile(filepath(filename, root_dir=root_dir, $
     subdirectory='calibobj')))[0]
    if (NOT keyword_set(filename)) then begin
-      print, 'WARNING: calibObj file not found for plate ' + platestr
+      splog, 'WARNING: calibObj file not found for plate ' + platestr
       return, 0
    endif
 
@@ -117,7 +118,7 @@ function plug2tsobj, plateid, ra1, dec1, plugmap=plugmap, dmin=dmin, $
    if (keyword_set(message)) then tstemp = 0 $ ; File is invalid FITS file
     else tstemp = mrdfits(filename, 1, silent=silent)
    if (NOT keyword_set(tstemp)) then begin
-      print, 'WARNING: calibObj file is empty: ' + filename
+      splog, 'WARNING: calibObj file is empty: ' + filename
       return, 0
    endif
 
