@@ -1,6 +1,7 @@
 ; Return the smear fluxes de-redshifted and rebinned to log-linear.
 pro readsmear, thisplate, thismjd, fiberid, $
- smearloglam=smearloglam, smearflux=smearflux, smearivar=smearivar
+ smearloglam=smearloglam, smearflux=smearflux, smearivar=smearivar, $
+ synflux=synflux
 
    if (NOT keyword_set(fiberid)) then fiberid = lindgen(640) + 1
 smearloglam = 3.5d + lindgen(4500)*1.d-4 ; ???
@@ -11,8 +12,10 @@ smearloglam = 3.5d + lindgen(4500)*1.d-4 ; ???
    thisdir = concat_dir(getenv('SPECTRO_DATA'), platestr)
 
    ; Read the wavelength mapping + modelled flux
-   readspec, thisplate, mjd=thismjd, fiberid, loglam=loglam, $
-    synflux=synflux, zans=zans
+   readspec, thisplate, mjd=thismjd, fiberid, loglam=loglam, zans=zans
+
+   ; Read the synthetic spectrum (on the new wavelength mapping)
+;   synflux = multisynthspec(zans, loglam=smearloglam)
 
    ; Figure out the smear exposure number for this plate
    thisplan = 'spPlancomb-' + platemjd +'.par'
@@ -33,9 +36,9 @@ smearloglam = 3.5d + lindgen(4500)*1.d-4 ; ???
 
    for specid=0, 1 do begin
       findx = fiberid - 1 - 320*specid ; Index numbers in these files
-      ii = where(findx GE 0 AND findx LT 320, nfindx)
+      ifindx = where(findx GE 0 AND findx LT 320, nfindx)
       if (nfindx GT 0) then begin
-         findx = findx[ii]
+         findx = findx[ifindx]
 
          if (specid EQ 0) then camnames = ['b1','r1'] $
           else camnames = ['b2','r2']
@@ -79,9 +82,32 @@ smearloglam = 3.5d + lindgen(4500)*1.d-4 ; ???
             divideflat, tempflux, invvar=tempivar, calibfac, $
              minval=0.05*mean(calibfac)
 
+; Do we want the pixel masks too???
 ;            temppixmask = temppixmask $
 ;             OR (calibfac LE 0.05*mean(calibfac)) $
 ;             * pixelmask_bits('BADFLUXFACTOR')
+
+            ; Read the synthetic spectrum
+            for ii=0, nfindx-1 do begin
+               tempsynflux = synthspec(zans[ifindx[ii]], loglam=temploglam)
+               ; Look for 5-sigma outliers from the synthetic spectrum ???
+; Reject neighboring points too???
+; And reject points with very low S/N ???
+maxdev = 5.0
+maxerr = 50.0
+minsn = 0.0
+               qbad = (abs(tempflux[*,ii] - tempsynflux) $
+                * sqrt(tempivar[*,ii]) GT maxdev) $
+                OR (abs(tempflux[*,ii]) * sqrt(tempivar[*,ii]) LT minsn) $
+                OR tempivar[*,ii] LT 1./maxerr^2
+               ibad = where(qbad)
+; plot,10^temploglam,tempflux[*,ii]
+; djs_oplot,10^temploglam,tempsynflux,color='red'
+; djs_oplot,10^temploglam[ibad],0*ibad,color='green',psym=4
+
+               if (ibad[0] NE -1) then $
+                tempflux[ibad] = tempsynflux[ibad]
+            endfor
 
             ; Accumulate these flux values into our arrays
             accflux[*,icam,ioffset:ioffset+nfindx-1] = tempflux
