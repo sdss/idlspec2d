@@ -882,14 +882,16 @@ It is fastest to only re-reduce a specific exposure number.
 To force a re-reduction of exposure number 12345 on all 4 cameras
 (whether it has already been reduced or not) use the EXPNUM option:
 <DL><DD><PRE>
-  % ssh sos.apo.nmsu.edu sos_redo expnum=12345
+  % ssh observer@sos.apo.nmsu.edu
+  % sos_redo expnum=12345
 </PRE></DD></DL>
 If you want to find and reduce only failed reductions for a plate
 use the PLATE option.  This may take several more minutes because
 all of the FITS headers for the night are parsed.
 To re-reduce only missing exposures for plate 666:
 <DL><DD><PRE>
-  % ssh sos.apo.nmsu.edu sos_redo plate=666
+  % ssh observer@sos.apo.nmsu.edu
+  % sos_redo plate=666
 </PRE></DD></DL>
 The last exposure taken is not re-reduced unless explicitly told to
 with the EXPNUM option.  Currently, either EXPNUM or PLATE must be
