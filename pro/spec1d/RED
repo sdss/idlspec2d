@@ -54,4 +54,15 @@ djs_plot,ugpredict[j],cresid[j],ps=1, $
  xtitle='SFD (u-g)',ytitle='Residual (u-g)',charsize=2
 djs_oplot, [0,1], [0,1]
 
+;----------------------
+; Try a dispersion-color relation instead of Mg-color...
+i=where(redall.reddening[0] LT 0.25 AND redall.redsample)
+acoeff=linfit(redall[i].vdisp,redall[i].modelcolor[0])
+splot,alog10(redall[i].vdisp),redall[i].modelcolor[0],ps=1
+splot,alog10(redall[i].vdisp),redall[i].modelcolor[0] $
+- acoeff[0] - acoeff[1]*alog10(redall[i].vdisp),ps=1
+cresid = redall.modelcolor[0] - (acoeff[0] + acoeff[1] * alog10(redall.vdisp))
+ugpredict = redall.reddening[0] - redall.reddening[1]
+j = where(redall.redsample)
+splot,ugpredict[j],cresid[j],ps=4
 
