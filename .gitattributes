@@ -469,6 +469,7 @@ pro/spec2d/trace320crude.pro -text
 pro/spec2d/trace_fix.pro -text
 pro/spec2d/tweaktrace.pro -text
 pro/spec2d/ushift.pro -text
+pro/spec2d/warn_daytime.pro -text
 pro/spec2d/write_uros.pro -text
 pro/spec2d/writeapid.pro -text
 pro/specdb/Makefile -text
