@@ -51,6 +51,7 @@
 ;   djs_icolor()
 ;   djs_oplot
 ;   djs_plot
+;   djs_svdfit()
 ;   mpfitpeak
 ;   mpfitpeak_gauss
 ;   splog
@@ -179,7 +180,7 @@ function zfitmin, yarr, xarr, dofarr=dofarr, $
    endif else if (nthis EQ 3 AND errcode EQ 0) then begin
 
       ndegree = 3
-      coeff = svdfit(thisx-xguess, thisy, ndegree, $
+      coeff = djs_svdfit(thisx-xguess, thisy, ndegree, $
        yfit=yfit, covar=covar, sigma=corrsig, /double)
       if (nthis LE ndegree) then $
        yerror = 0 $
