@@ -46,4 +46,10 @@ spchunklist special 715 715 special # These is the Bright Stars test plate
 spchunklist 23 716 726 v3_1_0
 spchunklist 24 727 753 v3_1_0
 spchunklist 25 754 769 v3_1_0
+spchunklist 26 770 773 v3_1_0
+spchunklist 27 774 796 v3_1_0
+spchunklist 27 797 811 special # 797 faint F subdwarfs; 798-801 star clusters;
+                               # 802-806 Annis galaxy clusters + galaxies;
+                               # 807-811 Szalay photo-z
+spchunklist 28 812 824 v3_1_0
 
