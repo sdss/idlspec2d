@@ -251,12 +251,12 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
       fracbad = float(nbad) / ngfiber
       qgood[i] = fracbad LE 0.10
       if (qgood[i] EQ 0) then $
-       splog, 'Discarding trace', i, ',   fraction bad', fracbad
+       splog, 'Discarding trace', i, ' at ', lamps[i], ' Ang: FRACBAD=', fracbad
 
       djs_iterstat, xdiff[*,i], sigma=sigma
       if sigma GT 0.2 then begin
        qgood[i] = 0
-       splog, 'Discarding trace', i, ',   Did not converge', sigma
+       splog, 'Discarding trace', i, ', at ', lamps[i], ' Ang: RMS=', sigma, ' pix'
       endif
       
    endfor
