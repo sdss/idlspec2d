@@ -22,7 +22,9 @@
 ;                'plPlugMapM-'+NAME+'.par', where NAME is taken from that
 ;                keyword in the file FILENAME
 ;   plugdir    - Input directory for PLUGFILE; default to INDIR
-;   minexp     - Minimum exposure time for science frames; default to 61 sec
+;   minexp     - Minimum exposure time for science frames; default to 0 sec
+;                so that any frame with a non-negative exposure time is
+;                reduced.
 ;   copydir    - If set, then copy the output log files to this directory using
 ;                "scp1" copy.  Make an additional copy of the HTML file
 ;                called 'logsheet-current.html'.
@@ -86,7 +88,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    if (NOT keyword_set(indir)) then indir = './'
    if (NOT keyword_set(plugdir)) then plugdir = indir
    if (NOT keyword_set(outdir)) then outdir = indir
-   if (n_elements(minexp) EQ 0) then minexp = 61
+   if (n_elements(minexp) EQ 0) then minexp = 0
 
    filer = strmid(filename,0,3)  ; root 'sdR'
    filec = strmid(filename,4,2)  ; camera name
@@ -242,7 +244,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
           outsci = filepath('sci-'+platestr+'-'+filec+'-'+filee+'.fits',$
                  root_dir=outdir)
 
-          if (flatexist AND arcexist AND exptime GT minexp) then begin
+          if (flatexist AND arcexist AND exptime GE minexp) then begin
              rstruct = quickextract(tsetfile_last, wsetfile_last, $
               fflatfile_last, fullname, outsci)
           endif else begin
@@ -250,7 +252,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
               splog, 'ABORT: Unable to reduce this science exposure (need flat)'
              if (NOT keyword_set(arcexist)) then $
               splog, 'ABORT: Unable to reduce this science exposure (need arc)'
-             if (exptime LE minexp) then $
+             if (exptime LT minexp) then $
               splog, 'ABORT: Exposure time = ' + string(exptime) $
                + ' < ' + string(minexp)
           endelse
