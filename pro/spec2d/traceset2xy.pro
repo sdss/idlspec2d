@@ -69,7 +69,7 @@ pro traceset2xy, tset, xpos, ypos
          xvec = 2.0 * (xpos[*,iTrace]-xmid)/xrange
          if (tset.func EQ 'legendre') then legarr = flegendre(xvec, ncoeff)
          if (tset.func EQ 'chebyshev') then legarr = fchebyshev(xvec, ncoeff)
-         ypos[*,iTrace] = legarr # tset.coeff[*,iTrace]
+         ypos[*,iTrace] = legarr # [tset.coeff[*,iTrace]]
       endfor
 
    endif else begin
