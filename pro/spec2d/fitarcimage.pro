@@ -380,10 +380,12 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    maxbad = nlamp/4
 
    fixthese = where(badcount GT 0 AND badcount LT maxbad, nfix)
-
    splog, 'Fixing centroids in '+string(nfix)+' fibers'
+   splog, fixthese
+
    replacethese = where(badcount GE maxbad, nreplace) 
    splog, 'Replacing all centroids in '+string(nreplace)+' fibers'
+   splog, replacethese
 
    if (fixthese[0] NE -1) then begin
      xy2traceset, transpose(xcen[fixthese,*]), transpose(meandiff[fixthese,*]),$
