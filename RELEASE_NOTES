@@ -1,4 +1,9 @@
 
+-------------------------------------------------------------------------------
+v4_10_7 (Dec 11, 2003 idlspec2d running on IDL 5.3 - 5.6
+Built against specflat v1_5, elodie v1_0, idlutils v4_10_7.
+Tagged for fixing SOS PR #5735.
+
 COLLIMATE: Since the DJS_SVDFIT() function was removed in v4_10_1,
         explicitly compute the chi^2 minimum with a matrix inversion.
 FIND_NMINIMA: If the fit value of YPEAK is less than zero, then change
