@@ -22,23 +22,53 @@ function vdisp_gconv, x, sigma, _EXTRA=EXTRA
 end
 ;------------------------------------------------------------------------------
 
-pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly
+pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
+ sigma=sigma, sigerr=sigerr
 
    common com_vdispfit, bigflux, bigloglam, bigmask, nsamp, bigsig, nbigpix, nsig
+
+   if (NOT keyword_set(objloglam) AND NOT keyword_set(hdr)) then $
+    message, 'Must specify either OBJLOGLAM or HDR!'
+
+   if (n_elements(npoly) EQ 0) then npoly = 5
+   dims = size(objflux, /dimens)
+   npixobj = dims[0]
+   if (size(objflux, /n_dimen) EQ 1) then nobj = 1 $
+    else nobj = dims[1]
+
+   ;---------------------------------------------------------------------------
+   ; If multiple object flux vectors exist, then call this routine recursively.
+
+   if (nobj GT 1) then begin
+      sigma = fltarr(nobj)
+      sigerr = fltarr(nobj)
+      for iobj=0, nobj-1 do begin
+         if (keyword_set(objloglam)) then $
+          vdispfit, objflux[*,iobj], objivar[*,iobj], objloglam[*,iobj], $
+           zobj=zobj[iobj], npoly=npoly, sigma=sigma1, sigerr=sigerr1 $
+         else $
+          vdispfit, objflux[*,iobj], objivar[*,iobj], hdr=hdr, $
+           zobj=zobj[iobj], npoly=npoly, sigma=sigma1, sigerr=sigerr1
+         sigma[iobj] = sigma1
+         sigerr[iobj] = sigerr1
+      endfor
+      return
+   endif
+
+   ;---------------------------------------------------------------------------
 
    ;----------
    ; Determine the wavelength mapping for the object spectra,
    ; which are the same for all of them.
 
    if (NOT keyword_set(objloglam)) then begin
-      if (NOT keyword_set(hdr)) then $
-       message, 'Must specify either OBJLOGLAM or HDR!'
-
-      npixobj = (size(objflux, /dimens))[0]
-      objloglam0 = sxpar(hdr, 'COEFF0') - alog10(1 + zobj) ; De-redshift this!
+      objloglam0 = sxpar(hdr, 'COEFF0')
       objdloglam = sxpar(hdr, 'COEFF1')
       objloglam = objloglam0 + dindgen(npixobj) * objdloglam
-   endif
+   endif else begin
+      objdloglam = objloglam[1] - objloglam[0]
+   endelse
+   restloglam = objloglam - alog10(1 + zobj) ; De-redshift this!
 
    if (NOT keyword_set(bigflux)) then begin
 
@@ -101,47 +131,54 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly
    ; Find the pixel numbers to use from the object and the templates
 
    ; Find the sub-pixel shifts in the object
-   subshift = round(((bigloglam[0]-objloglam[0]) / objdloglam MOD 1) * nsamp)
+   subshift = round(((bigloglam[0]-restloglam[0]) / objdloglam MOD 1) * nsamp)
    indx = subshift + nsamp * lindgen(nbigpix/nsamp)
 
-   if (max(objloglam) LT min(bigloglam[indx]) $
-    OR min(objloglam) GT max(bigloglam[indx])) then begin
+   if (max(restloglam) LT min(bigloglam[indx]) $
+    OR min(restloglam) GT max(bigloglam[indx])) then begin
       splog, 'No wavelength overlap with template'
       return
    endif
 
-   if (objloglam0 LT bigloglam[indx[0]]) then begin
+   if (restloglam[0] LT bigloglam[indx[0]]) then begin
       ipixt0 = 0L
-      junk = min(abs(objloglam - bigloglam[indx[0]]), ipixo0)
+      junk = min(abs(restloglam - bigloglam[indx[0]]), ipixo0)
    endif else begin
       ipixo0 = 0L
-      junk = min(abs(bigloglam[indx] - objloglam[0]), ipixt0)
+      junk = min(abs(bigloglam[indx] - restloglam[0]), ipixt0)
    endelse
 
    npixcomp = (npixobj - ipixo0 + 1) < (n_elements(indx) - ipixt0)
+
+   indxo = ipixo0 + lindgen(npixcomp) ; Indices for object spectrum
+   indxt = indx[ipixt0 + lindgen(npixcomp)] ; Indices for template spectra
 
    ;----------
    ; Add more eigen-templates that represent polynomial terms.
 
    if (keyword_set(npoly)) then $
-    polyflux = poly_array(npixstar,npoly)
+    polyflux = poly_array(npixcomp,npoly)
 
    ;----------
+   ; Fit for chi^2 at each possible velocity dispersion
 
    chi2arr = fltarr(nsig)
+
+   objsmall = objflux[indxo]
+   sqivar = sqrt( objivar[indxo] ) * bigmask[indxt]
+
    for isig=0, nsig-1 do begin
 
-      eigenflux = bigflux[indx[ipixt0:ipixt0+npixcomp-1],*,isig]
+      eigenflux = bigflux[indxt,*,isig]
       if (keyword_set(npoly)) then eigenflux = [[eigenflux], [polyflux]]
 
-      chi2arr[isig] = computechi2(objflux[ipixo0:ipixo0+npixcomp-1], $
-       sqrt(objivar[ipixo0:ipixo0+npixcomp-1]), eigenflux, $
+      chi2arr[isig] = computechi2(objsmall, sqivar, eigenflux, $
        acoeff=acoeff, dof=dof, yfit=yfit)
 
    endfor
 
-   findchi2min, bigsig, chi2arr, minchi2, minsigma, errsigma
+   findchi2min, bigsig, chi2arr, minchi2, sigma, sigerr
+print,sigma
 
-stop
 end
 ;------------------------------------------------------------------------------
