@@ -244,14 +244,26 @@ pro collimate, expnum1, expnum2, docams=docams, indir=indir, $
          ibesty = ibest / nshift
 
          if (ibestx GT 0 AND ibestx LT nshift-1) then begin
-            coeff = djs_svdfit(xshift[ibestx-1:ibestx+1], $
-             ans[ibestx-1:ibestx+1,ibesty], 3, /double)
+;            coeff = svdfit(xshift[ibestx-1:ibestx+1], $
+;             ans[ibestx-1:ibestx+1,ibesty], 3, /double)
+
+            thisx = xshift[ibestx-1:ibestx+1]
+            thisy = ans[ibestx-1:ibestx+1,ibesty]
+            mmatrix = [[1d0,1d0,1d0], [thisx], [thisx^2]]
+            coeff = invert(mmatrix, /double) # thisy
+
             xoffset[iregx,iregy] = -0.5 * coeff[1] / coeff[2]
          endif
 
          if (ibesty GT 0 AND ibesty LT nshift-1) then begin
-            coeff = djs_svdfit(yshift[ibesty-1:ibesty+1], $
-             transpose(ans[ibestx,ibesty-1:ibesty+1]), 3, /double)
+;            coeff = svdfit(yshift[ibesty-1:ibesty+1], $
+;             transpose(ans[ibestx,ibesty-1:ibesty+1]), 3, /double)
+
+            thisx = yshift[ibesty-1:ibesty+1]
+            thisy = transpose(ans[ibestx,ibesty-1:ibesty+1])
+            mmatrix = [[1d0,1d0,1d0], [thisx], [thisx^2]]
+            coeff = invert(mmatrix, /double) # thisy
+
             yoffset[iregx,iregy] = -0.5 * coeff[1] / coeff[2]
          endif
       endfor
