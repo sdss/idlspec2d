@@ -109,7 +109,6 @@ examples/spFluxcalib-b2.fits -text svneol=unset#unset
 examples/spFluxcalib-r1.fits -text svneol=unset#unset
 examples/spFluxcalib-r2.fits -text svneol=unset#unset
 include/Makefile -text
-include/evilmath.h -text
 include/export.h -text
 include/extract_row.h -text
 lib/Makefile -text
@@ -449,13 +448,9 @@ pro/specdb/mysql_write.pro -text
 pro/specdb/postgres_write.pro -text
 pro/specdb/specdb_create.pro -text
 src/Makefile -text
-src/evilmath.c -text
 src/extract_boxcar.c -text
 src/extract_row.c -text
 src/sshiftvec.c -text
-src/trace_crude.c -text
-src/trace_fweight.c -text
-src/trace_gweight.c -text
 templates/Makefile -text
 templates/eigeninput_cvstar.dat -text
 templates/eigeninput_gal.dat -text

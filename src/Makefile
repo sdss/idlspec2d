@@ -14,13 +14,9 @@ INC = ../include
 LIB = $(IDLSPEC2D_DIR)/lib
 
 OBJECTS = \
-	evilmath.o \
 	extract_boxcar.o \
 	extract_row.o \
-	sshiftvec.o \
-	trace_crude.o \
-	trace_gweight.o \
-	trace_fweight.o
+	sshiftvec.o
 
 all : $(LIB)/libspec2d.$(SO_EXT)
 
