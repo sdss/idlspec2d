@@ -1,6 +1,9 @@
 
 APOFIX: Use QUALITY header keyword to declare exposures bad (as specified
-           by PR #3687).
+           by PR #3687).  Enclose any string in single-quotes, so that
+           the SPHDRFIX routine can desriminate between strings and numbers.
+           Add lots of explicit checks for valid values for each keyword,
+           and only allow the modification of a small list of keywords.
 APOHEADER: Use SDSSHEAD() instead of HEADFITS() to read the headers, such
            that this printout includes any observer edits to the headers.
            Also fix so that this proc works if both a ".fit" and ".fit.gz"
