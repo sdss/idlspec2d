@@ -11,8 +11,8 @@
 ;    zsplinearr=, synfluxarr=, z_err=, chi2= ] )
 ;
 ; INPUTS:
-;   pflux          - Object fluxes in the 5 SDSS filters [5,NOBJ]; if not set, then
-;                    simply return with the optional ZSPLINEARR,SYNFLUXARR.
+;   pflux          - Object fluxes in the 5 SDSS filters [5,NOBJ]; if not set,
+;                    then simply return with the optional ZSPLINEARR,SYNFLUXARR.
 ;   pflux_ivar     - Inverse variances for FLUX [5,NOBJ]
 ;
 ; OPTIONAL INPUTS:
@@ -143,6 +143,13 @@ function lrgmodel_photoz, pflux, pflux_ivar, z_err=z_err, $
          thisage = lookback(1000., 0.27, 0.73) / hubble0 $
           - lookback((zarr[iz] > 0), 0.27, 0.73) / hubble0 - ageburst
 
+         ; Demand that we stay in the bounds (at least the lower bounds)
+         ; of the models.  Specifically, at the minimum, we don't want
+         ; to be taking the logarithm of zero or negative numbers for
+         ; these parameters when we interpolate in log-log space.
+         thisage = thisage > agevec[0]
+         zmetal = zmetal > metalvec[0]
+
          ; Linearly interpolate from the templates in log(age),log(zmetal),
          ; vs. log(flux) space.
          i0 = ((reverse(where(agevec LT thisage)))[0] > 0) $
@@ -248,6 +255,7 @@ function lrgmodel_photoz, pflux, pflux_ivar, z_err=z_err, $
       for iz=0L, numz-1 do begin
          chi2arr[iz] = computechi2(thisflux[filterlist], thisisig[filterlist], $
           synflux[filterlist,iz], acoeff=acoeff, dof=dof)
+if (finite(chi2arr[iz]) EQ 0) then stop
       endfor
 
       ; Fit a quadratic function to the 3 points surrounding the minimum,
