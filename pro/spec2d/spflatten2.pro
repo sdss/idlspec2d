@@ -75,6 +75,7 @@
 ;   fileandpath()
 ;   genflatmask()
 ;   readfits()
+;   repstr()
 ;   rmfile
 ;   sdssproc
 ;   superflat()
@@ -110,12 +111,13 @@ pro spflatten2, flatname, arcname, allflats, pixflat, $
    endif
    if (NOT keyword_set(maxiter)) then maxiter = 2
 
-   tmpname1 = djs_filepath( $
-    repstr(fileandpath(allflats), 'sdR', 'tmp-flat'), $
-    root_dir=tmpdir)
-   tmpname2 = djs_filepath( $
-    repstr(fileandpath(allflats), 'sdR', 'tmp-ymodel'), $
-    root_dir=tmpdir)
+   tmpname1 = repstr(fileandpath(allflats), 'sdR', 'tmp-flat')
+   tmpname1 = repstr(tmpname1, '.gz', '')
+   tmpname1 = djs_filepath(tmpname1, root_dir=tmpdir)
+
+   tmpname2 = repstr(fileandpath(allflats), 'sdR', 'tmp-ymodel')
+   tmpname2 = repstr(tmpname2, '.gz', '')
+   tmpname2 = djs_filepath(tmpname2, root_dir=tmpdir)
 
    ;---------------------------------------------------------------------------
    ; First find the wavelength solution
