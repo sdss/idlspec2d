@@ -8,7 +8,7 @@
 ;
 ; CALLING SEQUENCE:
 ;    fitredshift, fluxfft, starfft, $
-;     [ nsearch=, zfit=z, z_err=, veldispfit=, veldisp_err=, /doplot ]
+;     [ nsearch=, zfit=, z_err=, veldispfit=, veldisp_err=, /doplot ]
 ;
 ; INPUTS:
 ;   fluxfft    - complex fft of prepared galaxy spectrum
@@ -18,7 +18,7 @@
 ;
 ; OPTIONAL KEYWORDS:
 ;   nsearch    - number of peaks to search, almost always only 1 is searched
-;   zmin       - minimum z (in pixels) to allow (should be < 0)
+;   zmin       - Minimum z (in pixels) to allow (should be < 0)
 ;   doplot     - plot the correlation peak and fits in an xwindow
 ;
 ; OPTIONAL OUTPUTS:
@@ -108,15 +108,13 @@ end
 
 ;------------------------------------------------------------------------------ 
 pro fitredshift, fluxfft, fluxerr, starfft, starerr, $
- nsearch=nsearch, zmin=zmin, zfit=z, z_err=z_err, $
+ nsearch=nsearch, zmin=zmin, zfit=zfit, z_err=z_err, $
  veldispfit=veldisp, veldisp_err=veldisp_err, zconf=zconf, doplot=doplot
 
-; keyword defaults
    if (NOT keyword_set(nsearch)) then nsearch = 5
-   if (NOT keyword_set(zmin)) then zmin = -60
 
 ; returned value defaults
-   z = 0.
+   zfit = 0.
    z_err = 999.
    veldisp = 0.
    veldisp_err = 999.
@@ -163,7 +161,11 @@ pro fitredshift, fluxfft, fluxerr, starfft, starerr, $
    for i=0, nsearch-1 do begin
 
       newcorr = corr * sqrt(reweight) ; A hack!!!???
-      newcorr[0:pad+zmin-1] = 0.0
+
+      if (keyword_set(zmin)) then begin
+; ???
+         newcorr[0:pad+zmin-1] = 0.0
+      endif
 
       findmaxarea, newcorr, velcen, peak, cen=cen, area=area, pks=pks
 
@@ -238,15 +240,15 @@ pro fitredshift, fluxfft, fluxerr, starfft, starerr, $
    ENDIF 
 
 
-   if (keyword_set(doplot)) then begin
-      wset,0
-      djs_plot, x-velcen, newcorr, ps =10, xr=[-20,20], $
+;   if (keyword_set(doplot)) then begin
+;      wset,0
+      djs_plot, x-velcen, newcorr, ps =10, xr=[-40,40], $
        title='Best correlation peak w/fits (Green:gauss, Red: Parabola)'
       djs_oplot, xtemp, poly(xtemp, parabola), color='red'
       djs_oplot, xtemp2, gaussf, color='green'
-   endif
+;   endif
 
-   z = velcen + a[1] - pad
+   zfit = velcen + a[1] - pad
    z_err = gausserrors[1]
    veldisp = a[2]
    veldisp_err = gausserrors[2]
@@ -255,7 +257,7 @@ pro fitredshift, fluxfft, fluxerr, starfft, starerr, $
 
    twopiei = 2.0 * !dpi * complex(0.0,1.0)
    knums = fft_wavenums(n_elements(starfft))
-   phase = exp( - twopiei * knums * z)
+   phase = exp( - twopiei * knums * zfit)
    model = double(fft(starfft*phase,/inv))
    gal = double(fft(fluxfft, /inv))
    
