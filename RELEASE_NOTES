@@ -1,5 +1,13 @@
 
+-------------------------------------------------------------------------------
+v4_9_9 (Apr 26, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
+Built against specflat v1_4.
+
+New version for Son-of-Spectro with added functionality.
+
 APO_LOG2HTML: Add columns for EXPTIME and AIRTEMP to web page tables.
+           Comment-out lines that set FONT SIZE="+4", since that shows up
+           as huge on the mozilla web browser.
 APOALL,APOREDUCE: Add the /no_diskcheck option.
 APOHEADER: New proc for the observers' to print the subset of interesting
            header keywords from the raw sdR files.
@@ -7,16 +15,27 @@ APOFIX: New proc for declaring exposures bad, or fixing other header files,
            by using sdHdrFix-$MJD.par files (a new file type).
 APOPLOT: Bug fix to prevent crash when specifying EXPNUM.
 APOREDUCE: Add CARTID,AIRTEMP,CCDTEMP to all output structures.
+BATCH1D: Add spZline file to list of output files.
 EXTRACT_OBJECT: Mitigate possible crash condition if relchi2struct not set.
+LINEBACKFIT: Fix crash condition if there is at least 1 data point, but
+           too few points to fit.  When this happens, MPFITFUN() returns
+           with STATUS=0 and does not set PERROR, etc.  This crashed
+           plate 230/52251.
 PLATELIST: Add NGUIDE,FBADPIX,FBADPIX1,FBADPIX2 to structure.
            No longer compute airmass from TAI, since TAI is now an average
            time and may even correspond to the middle of the day if a plate
            is observed over two nights.  Trust the average airmass in the
-           spPlate header.
+           spPlate header.  Add PLATESN2,PLATEQUALITY fields.
+PLATEMERGE: Limit output file to only 'good' or 'marginal' plates.
+           Get rid of /QSURVEY option.  Add the following columns to
+           the output FITS file: progname, chunkname, platequality,
+           platesn2, specprimary (not using that last field yet).
 QAPLOT_SKYSUB: Don't crash even in the case of a single sky fiber
            (as for plate 218/51461).
 QUICKEXTRACT: Return the relchi2struct from SKYSUBTRACT, and put SKYCHI2
            in the output structure.
+           For the warning message "Whopping", report the fiber numbers
+           as 1 to 640, rather than the 0-indexed fibers on each spectrograph.
 SKYSUBTRACT: Merely clean out some commented-out code and update internal
            comments.  Avoid a possible crash condition in the case of
            all (or most?) bad sky fibers.  Version v4_9_8 would still crash
@@ -35,11 +54,16 @@ opLimits.par: Impose limits on EXPTIME for bias,arc,flat,smear.
 spChunkList.par: Add chunks 40-42.
 spPlateList.par: Update to include list of DR1 plates.
 spectroSOS.html: Document the new procs APOHEADER,APOFIX.
+sprobotlist.sh: Get rid of "platemerge, /qsurvey" since that option
+           no longer exists.
 
 In idlutils:
 
 BSPLINE_FIT: The YFIT vector was not always being computed, depending upon
            how this routine completed.  Also, some Schlegelization of the code.
+DJS_BATCH: Quit if REMOTEHOST is not set, or if any entries are null strings.
+           This allows us to disable the Spectro robots by commenting out
+           all lines in the batch2d.par,batch1d.par files.
 DJS_MEDIAN: Allow ARRAY to be a vector, and pass DIMENSION=1; this is the
            degenerate case where a scalar is returned.
 FITSDIR,MRDFITS,MWRFITS,READFITS,SXADDPAR: Fink merged the latest bug fixes
@@ -53,6 +77,7 @@ FITS_WAIT: Add _EXTRA keyword for passing options to FITS_READ, such
 HOGG_OPLOT_COVAR: New ellipse plotting routine.
 YANNY_READ: No need to read the data in this file (only the header
            and structure definitions) if PDATA is not to be returned.
+           Get the ABORT statement all on one line.
 YANNY_WRITE: Put quotes around empty strings.  Otherwise, this is not
            a valid Yanny file.  Bug fix for when passing STNAMES.
 
