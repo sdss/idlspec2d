@@ -58,8 +58,11 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
 ;
    xnew = match_trace(image, invvar, xcen)
    bestlag = median(xnew-xcen)
-   splog, 'Shifting traces by match_trace ', bestlag
-   if (abs(bestlag) GT 0.1) then splog, 'WARNING: A Post-calib is required!'
+   minlag = min(xnew-xcen)
+   maxlag = max(xnew-xcen)
+   splog, 'Match_trace range: ', minlag, bestlag, maxlag
+   if (minlag LT -0.1 OR maxlag GT 0.1) then $
+      splog, 'WARNING: A Post-calib is required!'
 ;
 ;------------------------------------------------------------------------------
 
