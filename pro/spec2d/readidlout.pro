@@ -15,6 +15,11 @@ pro fillplugmap, plugmap, hdr
       plugmap.xfocal = sxpar(hdr, 'XFOCAL')
       plugmap.yfocal = sxpar(hdr, 'YFOCAL')
       plugmap.fiberid = sxpar(hdr, 'FIBERID') 
+      plugmap.z1d     = sxpar(hdr, 'Z') 
+      plugmap.z1d_error = sxpar(hdr, 'Z_ERR') 
+      plugmap.z1d_conf  = sxpar(hdr, 'Z_CONF') 
+      plugmap.z1d_status = sxpar(hdr, 'Z_STATUS') 
+      plugmap.fiberid = sxpar(hdr, 'FIBERID') 
       plugmap.primtarget = sxpar(hdr, 'PRIMTARG')
       plugmap.sectarget = sxpar(hdr, 'SECTARGE')
 return
@@ -40,6 +45,10 @@ pro readidlout, flux, sig=sig, wave=wave, expres=expres, plugmap=plugmap
            XFOCAL        :  0.0d, $
            YFOCAL        :  0.0d, $
            FIBERID       :  -1, $
+           z1d           : 0.0 , $
+           z1d_error     : 0.0 , $
+           z1d_conf      : 0.0 , $
+           z1d_status    :  -9 , $
            PRIMTARGET    :  -1, $
            SECTARGET     :  -1 }
       endif
