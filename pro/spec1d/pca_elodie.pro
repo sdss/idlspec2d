@@ -68,7 +68,7 @@ pro pca_elodie
 
    ikeep = where(eigenval GT 0.01)
    eigenval = eigenval[ikeep]
-   pres = pres[*,ikeep]
+   pres = float( pres[*,ikeep] )
 
    ;----------
    ; Write output file
