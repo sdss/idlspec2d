@@ -3,24 +3,27 @@
 ;   fitvacset
 ;
 ; PURPOSE:
-;   Use measured positions of arc lines and shift coefficients
-;    passed through arcshift to produce a final vacuum wavelength solution 
+;   Re-fit the wavelength solution in vacuum wavelengths, and applying shifts
+;   to the pixel positions and heliocentric corrections to wavelengths.
 ;
 ; CALLING SEQUENCE:
-;   vacset = fitvacset(xpeak, lambda, wset, arcshift, ncoeff=ncoeff)
+;   vacset = fitvacset(xpeak, lambda, wset, arcshift, helio=helio)
 ;
 ; INPUTS:
-;   xpeak  - Arc line centroids 
-;   lambda - Corresponding wavelengths
-;   wset   - Initial arc line solution coefficients
+;   xpeak       - Arc line centroids 
+;   lambda      - Corresponding wavelengths
+;   wset        - Initial arc line wavelenthh solution; this is only used
+;                 to determine the order of the fit (NCOEFF), and the range
+;                 of the fit in pixel space (XMIN,XMAX).  The vectors XPEAK,
+;                 LAMBDA are used to re-fit the wavelength solution itself.
 ;   arcshift    - Shifts to apply to arc lines in pix [NROW,NTRACE]
 ;
 ; OPTIONAL KEYWORDS:
-;   ncoeff - Number of coefficients to fit final wavelength solution (Default 5)
+;   helio       - Heliocentric correction to add to velocities in km/s.
 ;
 ; OUTPUTS:
-;   vacset - output wavelength solution which includes shift to
-;                    sky lines and conversion to vacuum wavelengths
+;   vacset      - output wavelength solution which includes shift to
+;                 sky lines and conversion to vacuum wavelengths
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -29,38 +32,47 @@
 ; EXAMPLES:
 ;
 ; PROCEDURES CALLED:
-;   traceset2xy
+;   airtovac
+;   splog
 ;   xy2traceset
 ;
 ; REVISION HISTORY:
 ;   20-Jan-2000  Written by S. Burles, Chicago
 ;-
 ;------------------------------------------------------------------------------
-function fitvacset, xpeak, lambda, wset, arcshift, ncoeff=ncoeff
+function fitvacset, xpeak, lambda, wset, arcshift, helio=helio
 
-      if (NOT keyword_set(ncoeff)) then ncoeff=5
+   xmin = wset.xmin
+   xmax = wset.xmax
+   ncoeff = (size(wset.coeff, /dimens))[0]
+   nfiber = (size(xpeak, /dimens))[0]
 
-      ;------------------
-      ; First convert lambda, and skywaves to log10 vacuum
+   if (NOT keyword_set(arcshift)) then arcshift = 0 $
+    else splog, 'Tweaking to sky lines'
 
-      splog, 'Converting wavelengths to vacuum'
-      vaclambda = lambda
-      airtovac, vaclambda
-      vacloglam = alog10(vaclambda)
+   ;----------
+   ; First convert lambda, and skywaves to log10 vacuum
 
-      splog, 'Tweaking to sky lines'
+   splog, 'Converting wavelengths to vacuum'
+   vaclambda = lambda
+   airtovac, vaclambda
+   vacloglam = alog10(vaclambda)
 
-      if (NOT keyword_set(arcshift)) then begin
-         splog, 'WARNING: Sky lines are too noisy! No shifting!'
-         arcshift = 0
-      endif
+   ;----------
+   ; Apply heliocentric correction
 
-      vacset = wset
-      nfiber = (size(xpeak))[1]
+   if (keyword_set(helio)) then begin
+      vaclambda = vaclambda / (1 + helio/299792.458)
+   endif
 
-      xy2traceset, transpose(double(xpeak+arcshift)), $
-                   vacloglam # (dblarr(nfiber)+1), $
-                   vacset, ncoeff=ncoeff, xmin=wset.xmin, xmax=wset.xmax
+   ;----------
+   ; Re-fit the wavelength solution using LAMBDA converted to vacuum
+   ; wavelengths, and pixels shifted by ARCSHIFT.
 
-      return, vacset
+   xy2traceset, transpose(double(xpeak+arcshift)), $
+    vacloglam # (dblarr(nfiber)+1), $
+    vacset, ncoeff=ncoeff, xmin=xmin, xmax=xmax
+
+   return, vacset
 end
+;------------------------------------------------------------------------------

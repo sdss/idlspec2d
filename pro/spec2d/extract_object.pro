@@ -369,15 +369,20 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
       if (size(ra, /tname) NE 'INT' AND size(dec, /tname) NE 'INT' AND  $
        size(tai, /tname) NE 'INT') then begin
          helio = heliocentric(ra, dec, tai=tai)
+         splog, 'Heliocentric correction = ', helio, ' km/s'
          sxaddpar, objhdr, 'HELIO_RV', helio, $
-            ' Heliocentric correction (added to velocities)'
-         lambda = lambda / (1 + helio/299792.458)
-      endif
+          ' Heliocentric correction (added to velocities)'
+      endif else begin
+         splog, 'WARNING: Header info not present to compute heliocentric correcoin'
+      endelse
 
       ;------------------
       ; Shift to skylines and fit to vacuum wavelengths
 
-      vacset = fitvacset(xarc, lambda, wset, arcshift, ncoeff=arccoeff)
+      vacset = fitvacset(xarc, lambda, wset, arcshift, helio=helio)
+
+      qaplot_skydev, flux, fluxivar, vacset, plugsort, color, $
+       title=plottitle+objname
 
       sxaddpar, objhdr, 'VACUUM', 'WAVELENGTHS ARE IN VACUUM'
       sxaddpar, objhdr, 'AIR2VAC', systime()
@@ -390,15 +395,14 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
         fibermask=fibermask, upper=3.0, lower=3.0, $
         relchi2struct=relchi2struct)
 
-      ; plot, skystruct.wave, skystruct.flux, ps=3
+      ; plot, skystruct.wave, skystruct.flux, ps=3 ; ???
 
       qaplot_skysub, flux, fluxivar, skysub, skysubivar, $
        vacset, iskies, title=plottitle+objname
 
-      qaplot_skydev, flux, fluxivar, vacset, plugsort, color, $
-       title=plottitle+objname
+      ;------------------
+      ; QA for 2 skylines in the blue (specify vacuum wavelengths below)
 
-      ; QA for 2 skylines in the blue
       if (color EQ 'blue') then begin
         qaplot_skyline, 4359.5, flux, fluxivar, skysub, skysubivar, $
          plugsort, vacset, iskies, fibermask=fibermask, dwave=4.0, $
@@ -408,7 +412,9 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
          title=plottitle+objname
       endif
 
-      ; QA for 2 skylines in the red
+      ;------------------
+      ; QA for 2 skylines in the red (specify vacuum wavelengths below)
+
       if (color EQ 'red') then begin
         qaplot_skyline, 7343.0, flux, fluxivar, skysub, skysubivar, $
          plugsort, vacset, iskies, fibermask=fibermask, dwave=7.0, $
