@@ -1,5 +1,17 @@
 # List of computers to use for batch jobs of Spectro-2D
 # This file is used by the IDL procedure BATCH2D.
+#
+# MACHINE       CPU        SPEED  MEM   OWNER
+# ------------  ---------  -----  ----  -----
+# darkness      PentiumII    363   256  Schlegel
+# coma          Pentium   4x 200  1024  public 
+# hydra         Pentium   3x 200  1024  public 
+# diomedes      PentiumII    450   256  public
+# tantalus      PentiumII    450   256  public
+# lepus         PentiumIII   450   256  dept.
+# polaris       PentiumIII   450   256  dept.
+# draco         PentiumIII   450   256  dept.
+# gandalf       Pentium      200    96  ?
 
 typedef struct {
   char remotehost[40];   # Remote host name
@@ -7,9 +19,20 @@ typedef struct {
   char protocol[5];      # Protocol name, ssh or rsh
 } hostconfig;
 
-hostconfig localhost "" ""
-hostconfig localhost "" ""
-#hostconfig coma.princeton.edu "" ""
-#hostconfig hydra.princeton.edu "" ""
-#hostconfig coma.princeton.edu /scr0/schlegel ssh
+#hostconfig localhost "" ""
+#hostconfig localhost "" ""
+hostconfig coma.princeton.edu "" ssh1
+hostconfig hydra.princeton.edu "" ssh1
+hostconfig diomedes.princeton.edu "" ssh1
+hostconfig tantalus.princeton.edu "" ssh1
+#hostconfig lepus.princeton.edu "" ssh1
+#hostconfig polaris.princeton.edu "" ssh1
+#hostconfig draco.princeton.edu "" ssh1
+
+#hostconfig coma.princeton.edu /u/schlegel/tmp/coma ssh1
+#hostconfig hydra.princeton.edu /u/schlegel/tmp/hydra ssh1
+#hostconfig tantalus.princeton.edu /u/schlegel/tmp/tantalus ssh1
+#hostconfig lepus.princeton.edu /u/schlegel/tmp/lepus ssh1
+#hostconfig polaris.princeton.edu /u/schlegel/tmp/polaris ssh1
+#hostconfig draco.princeton.edu /u/schlegel/tmp/draco ssh1
 
