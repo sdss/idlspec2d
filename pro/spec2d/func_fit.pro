@@ -84,10 +84,9 @@ function func_fit, x, y, ncoeff, invvar=invvar, function_name=function_name, $
    ; Select unmasked points
 
    igood = where(invvar GT 0, ngood)
+   res = fltarr(ncoeff)
 
    if (ngood EQ 0) then begin
-
-      res = fltarr(ncoeff)
 
       ; Case with no good data points.
       ; Set all fit coefficients equal to zero.
@@ -96,8 +95,6 @@ function func_fit, x, y, ncoeff, invvar=invvar, function_name=function_name, $
       yfit = 0 * y
 
    endif else if (ngood EQ 1) then begin
-
-      res = fltarr(ncoeff)
 
       ; Case with only 1 good data point.
       ; Set the first fit coefficient equal to the value of that one data point
@@ -112,7 +109,6 @@ function func_fit, x, y, ncoeff, invvar=invvar, function_name=function_name, $
 
       ; Do not fit more coefficients than there are data points
       ncfit = ncoeff < nx
-      res = fltarr(ncfit)
 
       if (function_name EQ 'flegendre') then $
        legarr = flegendre(x, ncfit)
@@ -149,7 +145,11 @@ function func_fit, x, y, ncoeff, invvar=invvar, function_name=function_name, $
 
       if (nfix GT 0) then res[fixed] = inputans[fixed]
 
-      yfit = legarr # res 
+      if (ncfit LT ncoeff) then begin
+         yfit = [legarr # res[0:ncfit-1], fltarr(ncoeff-ncfit)]
+      endif else begin
+         yfit = legarr # res
+      endelse
 
    endelse
 
