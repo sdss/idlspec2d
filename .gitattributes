@@ -71,6 +71,7 @@ pro/apo2d/quickboxcar.pro -text
 pro/apo2d/quickextract.pro -text
 pro/apo2d/quicktrace.pro -text
 pro/apo2d/quickwave.pro -text
+pro/kinematics/README -text
 pro/makefile.old -text
 pro/science/README -text
 pro/science/bandpassinfo.pro -text
