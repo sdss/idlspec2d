@@ -152,7 +152,7 @@ function batch2d_rawfiles, planfile, outfile=outfile
    ;----------
    ; Now get the reduced frames.
 
-   i = where((*pp[0]).flavor EQ 'science')
+   i = where((*pp[0]).flavor EQ 'science' OR (*pp[0]).flavor EQ 'smear')
    framefiles = expfiles[*,i]
    framefiles = repstr(framefiles, 'sdR', 'spFrame')
    framefiles = repstr(framefiles, '.fit', '.fits')
