@@ -534,6 +534,11 @@ The following information is compiled for each object:
 In addition, we've also made ASCII files with the most relevant quantities
 that one may wish to search on.  These files are "spAll*.dat", and are basically
 a stripped-down version of "spAll*.fits" for those FITS-challenged astronomers.
+I have made some small changes to the ASCII file to make it more convenient
+with Unix commands such as "awk" that want to index based upon word number:
+(1) blank strings have been replaced with double-quotes, and
+(2) spaces within strings have been replaced with plus signs
+(i.e., replacing "BROADLINE STARBURST" with "BROADLINE+STARBUST").
 
 <P>
 These photometric outputs were assembled by Daniel Eisenstein and Mike Blanton.
