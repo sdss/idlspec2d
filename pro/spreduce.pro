@@ -125,12 +125,17 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
    ibest = -1 ; Index number for best flat+arc pair
    bestcorr = -1.0
+ 
+   oldflatfile = ''
 
    for ifile=0, (nflat<narc)-1 do begin
 
       splog, ifile+1, (nflat<narc), $
        format='("Looping through flat+arc pair #",I3," of",I3)'
 
+    ; Check if this is the same flat field
+
+    if (flatname[ifile] NE oldflatfile) then begin
       ;------------------------------------------------------------------------
       ; Read flat-field image
       ;------------------------------------------------------------------------
@@ -138,6 +143,8 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       splog, 'Reading flat ', flatname[ifile]
       sdssproc, flatname[ifile], image, invvar, indir=indir, $
        hdr=flathdr, pixflatname=pixflatname
+
+      oldflatfile = flatname[ifile]
 
       ;------------------------------------------------------------------------
       ; Create spatial tracing from flat-field image
@@ -177,6 +184,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
       tmp_fflat = fiberflat(flux, fluxivar, fibermask)
 
+   endif ; Checking if flat file is the same as last one
       ;------------------------------------------------------------------------
       ; Read the arc
       ;------------------------------------------------------------------------
