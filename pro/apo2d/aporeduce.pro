@@ -174,8 +174,10 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    splgfile = filepath('splog-'+filec+'-'+filee+'.log', root_dir=outdir)
 
    plugexist = keyword_set(fullplugfile)
-   flatexist = keyword_set( findfile(tsetfile_last) )
-   arcexist = keyword_set( findfile(wsetfile_last) )
+   flatexist = keyword_set(tsetfile_last) AND $
+    keyword_set( findfile(tsetfile_last) )
+   arcexist = keyword_set(wsetfile_last) AND $
+    keyword_set( findfile(wsetfile_last) )
 
    ;----------
    ; Open the log file to catch WARNINGs and ABORTs.
