@@ -386,22 +386,22 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
       rioff = roff - ioff
 
       for ispecnum=1, 2 do begin
-         qobj = where(plugc.spectrographid eq ispecnum and $
-                      abs(goff) lt 1 and abs(roff) lt 1 and abs(ioff) lt 1)
-       
+         qobj = where(plugc.spectrographid eq ispecnum)
+
          ymax = 100 
          plothist, roff[qobj], xr=[-0.6, 0.6], yr =[0, ymax], bin=0.02, $
            xtitle = 'Spectro Mag - Photo Fiber Mag', $
            ytitle = 'Number of Spectra', /xs, charthick=2, thick=3
 ;           xticklen=1, yticklen=1, xgrids=1, ygrids=1 
-        
+
+         xrange = [-1,1]
          plothist, goff[qobj], gxhist, gyhist, bin=0.02, $
-                   color=djs_icolor('blue'), /over, thick=4
+          color=djs_icolor('blue'), /over, thick=4, xrange=xrange, /xstyle
          plothist, roff[qobj], rxhist, ryhist, bin=0.02, $
-                   color=djs_icolor('green'), /over, thick=4
+          color=djs_icolor('green'), /over, thick=4, xrange=xrange, /xstyle
          plothist, ioff[qobj], ixhist, iyhist, bin=0.02, $
-           color=djs_icolor('red'), /over, thick=4
-        
+          color=djs_icolor('red'), /over, thick=4, xrange=xrange, /xstyle
+
         legend, ['g', 'r', 'i'], color=djs_icolor(['blue', 'green', $
           'red']), linestyle=0, charthick=2, charsize = 0.7, thick=4
 
@@ -431,14 +431,13 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
       endfor
 
       for ispecnum=1, 2 do begin
-         qobj = where(strmatch(plugc.objtype, '*SKY*')  ne 1 and $
-                      plugc.spectrographid eq ispecnum and $
-                      abs(goff) lt 1 and abs(roff) lt 1 and abs(ioff) lt 1 $
-                      and plugc.mag[2] gt 0)
+         qobj = where(strmatch(plugc.objtype, 'SKY*') NE 1 $
+          AND plugc.spectrographid EQ ispecnum $
+          AND plugc.mag[2] GT 0)
 
         plothist, groff[qobj], xr=[-0.6, 0.6], bin=0.02, yr = [0,ymax], $
-           xtitle = 'Color Difference (Spectro - Photo)', $
-           ytitle = 'Number of Spectra', /xs, charthick=2, thick=3
+         xtitle = 'Color Difference (Spectro - Photo)', $
+         ytitle = 'Number of Spectra', /xs, charthick=2, thick=3
 ;           xticklen=1, yticklen=1, xgrids=1, ygrids=1
 
         plothist, groff[qobj], grxhist, gryhist, bin=0.02, $
@@ -479,3 +478,4 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
 
    return
 end
+;------------------------------------------------------------------------------
