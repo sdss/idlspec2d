@@ -140,7 +140,8 @@ pro spflatten2, flatname, arcname, allflats, pixflat, $
 
    splog, 'Reading flat ', flatname
    sdssproc, flatname[0], flatimg, flativar, indir=indir, hdr=flathdr, $
-    /applybias, spectrographid=spectrographid, color=color
+    /applybias, spectrographid=spectrographid, color=color, $
+    bcfile='opBC-empty.par'
 
    dims = size(flatimg, /dimens)
    nx = dims[0]

@@ -100,7 +100,8 @@ pro spbiasgen1, files, outfile=outfile, outdir=outdir, $
 
    for ifile=0, nfile-1 do begin
       splog, 'Reading file #', ifile+1, ' of ', nfile
-      sdssproc, files[ifile], thisimg, thisivar, hdr=hdr
+      sdssproc, files[ifile], thisimg, thisivar, hdr=hdr, $
+       bcfile='opBC-empty.par'
       if (ifile EQ 0) then begin
          hdr0 = hdr
          imgarr = make_array(dimension=[size(thisimg,/dimens),nfile], /float)
