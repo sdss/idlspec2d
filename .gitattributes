@@ -470,7 +470,6 @@ templates/Makefile -text
 templates/eigeninput_cvstar.dat -text
 templates/eigeninput_gal.dat -text
 templates/eigeninput_qso.dat -text
-templates/eigeninput_star.dat -text
 templates/eigeninput_star.par -text
 templates/eigeninput_vstnd.dat -text
 templates/qso.template -text
