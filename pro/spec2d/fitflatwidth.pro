@@ -18,7 +18,9 @@
 ;   fibermask  - nTrace bit mask, which marks bad fibers
 ;   ncoeff     - Order of legendre polynomial to apply to width vs. row;
 ;                default to 5.
-;   sigma      - The zeroth order sigma of extracted profile; default to 1.0.
+;   sigma      - The SIGMA input to EXTRACT_IMAGE when determining ANSIMAGE;
+;                default to 1.0.  This can be a scalar, an [NFIBER] vector,
+;                or an [NROW,NFIBER] array.
 ;
 ; OUTPUTS:
 ;   widthset   - Traceset structure containing fitted coefficients
@@ -69,15 +71,33 @@ function fitflatwidth, flux, fluxivar, ansimage, fibermask, $
 
    igood = where(mask)
    widthterm = transpose(ansimage[lindgen(ntrace)*2+1,*])
-   width = flux * 0.0
-   width[igood] = widthterm[igood] / flux[igood]
+   width = make_array(size=size(flux), /float)
+   width[igood] = (1 + widthterm[igood] / flux[igood])
+
+   ndim = size(sigma, /n_dimen)
+   if (n_elements(sigma) EQ 1) then begin
+      width = width * sigma[0]
+   endif else if (ndim EQ 1) then begin
+      for itrace=0, ntrace-1 do $
+       width[*,itrace] = width[*,itrace] * sigma[itrace]
+   endif else if (ndim EQ 2) then begin
+      if (n_elements(sigma) NE n_elements(width)) then $
+       message, 'Dimensions of SIGMA and WIDTH do not agree'
+      width = width * sigma
+   endif else begin
+      message, 'Unsupported number of elements for SIGMA'
+   endelse
 
    ;----------
    ; Trigger warning messages if widths are too large.
 
-   medwidth = median(width[igood])
-   splog, ((medwidth GT 1.2) ? 'WARNING: ' : '') $
-    + 'Median spatial width term = ', medwidth
+   medwidth = [ median(width[0:nrow/2-1,0:ntrace/2-1]), $
+                median(width[0:nrow/2-1,ntrace/2:ntrace-1]), $
+                median(width[nrow/2:nrow-1,0:ntrace/2-1]), $
+                median(width[nrow/2:nrow-1,ntrace/2:ntrace-1]) ]
+   splog, ((max(medwidth) GT 1.2) ? 'WARNING: ' : '') $
+    + 'Median spatial widths = ' $
+    + string(medwidth,format='(4f5.2)') + ' pix (LL LR UL UR)'
 
    ;----------
    ; Perform median across bundles on good arclines only
@@ -95,13 +115,13 @@ function fitflatwidth, flux, fluxivar, ansimage, fibermask, $
       endfor
    endfor
 
-   expand_width = (1 + rebin(width_bundle,nrow,ntrace,/sample)) * sigma
+   width_final = rebin(width_bundle, nrow, ntrace, /sample)
 
    ;----------
    ; Turn the widths back into a traceset.
 
    xy2traceset, findgen(nrow) # replicate(1,ntrace), $
-    expand_width, widthset, ncoeff=ncoeff, xmin=xmin, xmax=xmax
+    width_final, widthset, ncoeff=ncoeff, xmin=xmin, xmax=xmax
 
    return, widthset
 end
