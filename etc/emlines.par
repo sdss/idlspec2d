@@ -1,7 +1,7 @@
 # This file used by SPECLINEFIT procedure for emission line fitting.
 
 typedef struct {
-  double lambda;      # Wavelength in air
+  double lambda;      # Wavelength in air for >=2000 Ang, vacuum for < 2000 Ang
   char name[40];     # Name of line
   char zindex[20];   # Entries w/ same zindex constrained to have same redshift
   char windex[20];   # Entries w/ same windex constrained to have same width
@@ -9,6 +9,9 @@ typedef struct {
   float fvalue;      # Relative scale factor for entries w/ same findex
 } emlineid;
 
+# Do not constrain the redshift, width, or flux level of Lyman-alpha
+# to agree with any other lines.
+ emlineid  1215.67    "Ly_alpha"    zlya       wlya       f1215  1
  emlineid  1549.48    "C_IV"        zemission  wemission  f1549  1
  emlineid  1640.42    "He_II"       zemission  wemission  f1640  1
  emlineid  1908.734   "C_III]"      zemission  wemission  f1908  1
