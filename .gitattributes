@@ -187,6 +187,7 @@ pro/fplan/spplancomb.pro -text
 pro/inspect/Makefile -text
 pro/inspect/inspectfiles.pro -text
 pro/inspect/inspectgen.pro -text
+pro/plan/daytime_test.pro -text
 pro/plan/listexptime.pro -text
 pro/plan/platecen_test.pro -text
 pro/plan/update_platelist.pro -text
