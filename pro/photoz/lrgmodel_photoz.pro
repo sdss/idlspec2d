@@ -211,7 +211,7 @@ function lrgmodel_photoz, pflux, pflux_ivar, z_err=z_err, $
    numz = n_elements(zarr)
 
    for iobj=0L, nobj-1 do begin
-      print, format='("Object ",i5," of ",i5,a1,$)', $
+      print, format='("Object ",i8," of ",i8,a1,$)', $
         iobj, nobj, string(13b)
 
       chi2arr = dblarr(numz)
