@@ -446,6 +446,58 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    temppixmask = 0
    dispersion = 0
 
+   ;---------------------------------------------------------------------------
+   ; Check the final spectrophotometry of the standards against the models.
+   ; In particular, find wiggles near the dichroic and correct for them.
+   ;---------------------------------------------------------------------------
+
+   sid_str = ['1', '2']
+   sigma_sphoto = fltarr(2)
+   splog, 'Correcting for spectrophotometry residuals'
+
+   ; Do this separately for spectrographs 1 & 2
+   for specnum = 1, 2 do begin
+ 
+     ; Identify standards
+     isphoto = where((strtrim(finalfibertag.objtype) EQ 'SPECTROPHOTO_STD' OR $
+              strtrim(finalfibertag.objtype) EQ 'REDDEN_STD') AND $
+             (finalfibertag.spectrographid eq specnum))
+   
+     stdstarfile = djs_filepath('spStd-' + plate_str + '-' + mjd_str +  $
+                    '-' + sid_str[specnum - 1] + '.fits', root_dir=combinedir)
+
+     ; Check flux calibration -- fit residuals with b-spline 
+
+     !P.MULTI = [0, 1, 2]
+     fluxcalib_resid, finalwave, finalflux[*,isphoto], finalivar[*,isphoto], $
+       finalandmask[*,isphoto], stdstarfile, combinedir = combinedir, $
+       calibset = residset, fsig = fsig, $
+       title_tag = 'Plate: ' + plate_str + ' MJD ' + mjd_str + $
+       ' Spectrograph: ' + sid_str[specnum - 1]
+     !P.MULTI = 0
+
+     ; Store sphoto error  
+     sigma_sphoto[specnum - 1] = fsig 
+     splog, 'Spectrophotometry error for spectrograph ' + $
+       sid_str[specnum - 1] + ' (from the standards): ' + $
+       string(fsig * 100, format = '(I4)') + ' %'
+
+     ;-------------------
+     ; Correct for wiggles
+ 
+     ispec = where(finalfibertag.spectrographid eq specnum, nspec)     
+     residcor = bspline_valu(finalwave, residset)  ; Mean of Data / Models
+     residcor = residcor # replicate(1, nspec)
+ 
+     tempflux = finalflux[*,ispec]
+     tempivar = finalivar[*,ispec]
+
+     divideflat, tempflux, invvar=tempivar, residcor, minval=0.5
+     
+     finalflux[*,ispec] = tempflux
+     finalivar[*,ispec] = tempivar 
+   endfor
+
    ;--------------------------------------------------------------------------
    ; Measure the difference between the combined science and smear spectra
    ;--------------------------------------------------------------------------
@@ -599,9 +651,26 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    ;----------
    ; Check for smear exposure used and place info in header
 
-   smearused = total((finalandmask AND pixelmask_bits('SMEARIMAGE')) NE 0) $
-    GT 0 ? 'T' : 'F'
-   sxaddpar, hdr, 'SMEARUSE', smearused, ' Smear image used?'
+   ;smearused = total((finalandmask AND pixelmask_bits('SMEARIMAGE')) NE 0) $
+   ; GT 0 ? 'T' : 'F'
+   smearused = keyword_set(smearname) ? 'T' : 'F'
+   sxaddpar, hdr, 'SMEARUSE', smearused, ' Smear available?'
+
+   ;----------
+   ; Check for tsObj and place info in header
+   if keyword_set(tsobjname) then begin
+      words = strsplit(tsobjname, '/', /extract)
+      tsfile = words[n_elements(words) - 1]
+   endif else tsfile = ''
+   sxaddpar, hdr, 'TSOBJNAM', tsfile, 'Name of tsObj file used'
+
+   ;-----------
+   ; Check for SFD maps
+   dustdir = getenv('DUST_DIR')
+   if keyword_set(dustdir) then begin
+     dustmaps = file_test(dustdir + '/maps/SFD_dust_4096_ngp.fits') ? 'T' : 'F'
+   endif else dustmaps = 'F'              
+   sxaddpar, hdr, 'SFD_USED', dustmaps, 'SFD dust maps used?'
 
    ;----------
    ; Compute the fraction of bad pixels in total, and on each spectrograph.
