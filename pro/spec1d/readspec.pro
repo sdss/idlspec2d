@@ -491,7 +491,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
                   npixmax = max([npixmax-pixshift, npix])
                endelse
             endif else begin
-               npixmax = max(npix, npixmax)
+               npixmax = max([npix, npixmax])
                pixshift = 0
             endelse
             allcoeff0 = [allcoeff0, coeff0]
