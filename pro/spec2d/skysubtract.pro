@@ -19,6 +19,9 @@
 ; OPTIONAL KEYWORDS:
 ;   fibermask  - Fiber status bits, set nonzero for bad status [NFIBER]
 ;   pixelmask  - Mask of 0 for good pixels [NPIX,NFIBER]
+;   thresh     - Treshold in relative chi^2 for identifying BADSKYCHI in;
+;                the pixel mask.  Default to 4.0, and pass this value to
+;                the REDMONSTER function.
 ;   dispset    - Dispersion trace-set; if present, then solve for the
 ;                super-sky vector using a variable PSF described by this
 ;                structure.
@@ -80,7 +83,7 @@
 
 function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
    iskies=iskies, fibermask=fibermask, nord=nord, upper=upper, $
-   lower=lower, maxiter=maxiter, pixelmask=pixelmask, $
+   lower=lower, maxiter=maxiter, pixelmask=pixelmask, thresh=thresh, $
    dispset=dispset, npoly=npoly, relchi2struct=relchi2struct, $
    novariance=novariance, tai=tai, nbkpt=nbkpt, newmask=newmask
 
@@ -91,10 +94,10 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
    ncol = dims[0]
    nrow = dims[1]
 
-   if NOT keyword_set(upper) then upper = 10.0
-   if NOT keyword_set(lower) then lower = 10.0
-   if NOT keyword_set(nbkpt) then nbkpt = ncol
-   thresh = 3.0
+   if (NOT keyword_set(upper)) then upper = 10.0
+   if (NOT keyword_set(lower)) then lower = 10.0
+   if (NOT keyword_set(nbkpt)) then nbkpt = ncol
+   if (NOT keyword_set(thresh)) then thresh = 4.0
 
    if (n_elements(fibermask) NE nrow) then fibermask = bytarr(nrow) 
 
@@ -439,7 +442,7 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
        * (relchi2fit GT thresh) $
        * ((newmask AND pixelmask_bits('NOSKY')) EQ 0)
 
-      redmonster, relwave, relchi2, wave, pixelmask=newmask
+      redmonster, relwave, relchi2, wave, thresh=thresh, pixelmask=newmask
    endif
 
    ;----------

@@ -17,8 +17,8 @@
 ;   objlogam   - Log10(Angstroms) image for object frame [NPIX,NFIBER];
 ;                required input for modifying PIXELMASK
 ;   filtsz     - Filter size for looking for Red Monster; default to 25 pix
-;   thresh     - Treshold in relative chi^2 for identifying Red Monster;
-;                default to 3.0
+;   thresh     - Treshold in relative chi^2 for identifying REDMONSTER;
+;                in the pixel mask; default to 4.0.
 ;   pixelmask  - If this and OBJLOGLAM are specified, then add the REDMONSTER
 ;                bit to this mask [NPIX,NFIBER]
 ;
@@ -43,7 +43,7 @@ pro redmonster, relloglam, relchi2, objloglam, filtsz=filtsz, $
  thresh=thresh, pixelmask=pixelmask
 
    if (NOT keyword_set(filtsz)) then filtsz = 25
-   if (NOT keyword_set(thresh)) then thresh = 3.0
+   if (NOT keyword_set(thresh)) then thresh = 4.0
 
    filtwd = (filtsz-1)/2 ; Half-width of filter
 
