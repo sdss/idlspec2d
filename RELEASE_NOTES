@@ -28,6 +28,8 @@ In idlutils:
 BSPLINE_BKPTS: Integer roll-over bug fixed by DPF for more than 2^30
            data points (doesn't matter for SDSS pipelines, but it
            does for DEIMOS).
+DJS_BATCH: Add optional keyword SELECTHOST.  This will be used
+           for the HoggPT processing of 2.5-m data.
 LOOKFORGZIP: Also look for ".Z" file if others not found.
 POLY_ITER: Change "LT" logic to "LE" to handle case where residual
            is 0 (e.g., a perfect fit)
