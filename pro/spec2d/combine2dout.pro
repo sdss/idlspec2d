@@ -61,6 +61,7 @@ pro combine2dout, filenames, outputfile, bin, zeropoint, nord=nord, $
 	maxblue = max(fullwave(where(bluered EQ 0)))
 	minred = min(fullwave(where(bluered EQ 1)))
 
+	scale = 1.0
 	if (minred LT maxblue) then begin
           bluecross = where(bluered EQ 0 and fullwave GT minred)
           redcross = where(bluered EQ 1 and fullwave LT maxblue)
@@ -158,6 +159,8 @@ pro combine2dout, filenames, outputfile, bin, zeropoint, nord=nord, $
                 BEFORE='EXPTIME'
 
 	sxaddpar, newhdr, 'EXPTIME', exptime, 'total exposure time (seconds)'
+	sxaddpar, newhdr, 'REDSCAL',scale,'Red scaling to match blue overlap', $
+                AFTER='EXPTIME'
 
 	writefits, outputfile, [[bestguess],[besterr]], newhdr
 	return
