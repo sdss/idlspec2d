@@ -88,18 +88,23 @@ function plug2tsobj, plateid, ra, dec, plugmap=plugmap
     message, 'tsObj file not found for plate ' + platestr
 
    tstemp = mrdfits(filename, 1)
-   tsobj = replicate(tstemp[0], n_elements(ra))
+   tsobj1 = tstemp[0]
+   struct_assign, {junk:0}, tsobj1 ; Zero-out this new structure
+   tsobj = replicate(tsobj1, n_elements(ra))
 
    ;----------
    ; Find the tsObj-file entry for each plug-map entry by matching
    ; the RA,DEC positions on the sky.  Insist that they agree to 1 arcsec.
 
    for iplug=0, n_elements(ra)-1 do begin
-      adist = djs_diff_angle(tstemp.ra, tstemp.dec, ra[iplug], dec[iplug])
-      dmin = min(adist, imin)
-      if (dmin GT 1./3600) then $
-       message, 'No matches to within 1 arcsec'
-      tsobj[iplug] = tstemp[imin]
+      ; Assume that this object is non-existent if RA=DEC=0
+      if (ra[iplug] NE 0 AND dec[iplug] NE 0) then begin
+         adist = djs_diff_angle(tstemp.ra, tstemp.dec, ra[iplug], dec[iplug])
+         dmin = min(adist, imin)
+         if (dmin GT 1./3600) then $
+          message, 'No matches to within 1 arcsec'
+         tsobj[iplug] = tstemp[imin]
+      endif
    endfor
 
    return, tsobj
