@@ -39,7 +39,7 @@ pro make2dmerge, planfile
 
      thishdr = hdr
 
-     sxaddpar, thishdr, 'EXTEND', 'T'
+;     sxaddpar, thishdr, 'EXTEND', 'T'
      sxaddpar, thishdr, 'OBJID', string(format='(5(i))', plugmap[i].objid), $
        before='NWORDER'
      sxaddpar, thishdr, 'MAG', string(format='(5(f11.3))', plugmap[i].mag), $
