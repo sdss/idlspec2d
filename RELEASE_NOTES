@@ -1,4 +1,8 @@
 
+PLATELIST: Added /PURGE2D, /PURGE1D options.
+PLOTSPEC: Added /NOERASE keyword.  Minor fix to Y plotting range.
+
+RMFILE (in idlutils): Add support for deleting a list of files.
 evilinstall (in idlutils): Syntax changes to work with bash on spectro.
 
 -------------------------------------------------------------------------------
@@ -29,6 +33,7 @@ sprobot.sh: Copy only the compressed ("sdR-*.fit.gz") files from
 evilinstall (in idlutils): Minor syntax changes to work with RH7.1 on spectro.
 ATV (in idlutils): Handle unsupported CTYPE, CTYPE reversal gracefully;
                    left click on apphot (Imexam) prints coords
+SPHEREMATCH (in idlutils): New code to match two lists of RA,DEC.
 
 -------------------------------------------------------------------------------
 v4_8_0 (Jul 17, 2001 idlspec2d+idlutils)
