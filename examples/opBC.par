@@ -30,4 +30,16 @@ typedef struct {
   DFACTION dfaction;         # repair action for defect
 } BC;
 
-bc "2 amp" 0 3 1272 1 1206 842 BADBLK BADCOL
+bc "2 amp" 0 1 0    2048 0    3    BADBLK BADCOL
+bc "2 amp" 0 2 0    2048 0    3    BADBLK BADCOL
+bc "2 amp" 0 2 1090 1    890  100  BADBLK HOTCOL
+bc "2 amp" 0 2 1181 2    1170 280  BADBLK HOTCOL
+bc "2 amp" 0 2 1435 1    0    2048 BADBLK HOTCOL
+bc "2 amp" 0 2 1762 2    980  200  BADBLK HOTCOL
+bc "2 amp" 0 3 1272 2    1206 842  BADBLK BADCOL
+bc "2 amp" 0 4 1112 4    0    2048 BADBLK HOTCOL
+bc "2 amp" 0 4 1196 1    1380 668  BADBLK BADCOL
+bc "2 amp" 0 4 1201 1    0    2048 BADBLK HOTCOL
+bc "2 amp" 0 4 1585 2    0    2048 BADBLK HOTCOL
+bc "2 amp" 0 4 1709 1    0    2048 BADBLK HOTCOL
+bc "2 amp" 0 4 1942 1    0    2048 BADBLK HOTCOL
