@@ -727,6 +727,10 @@ ophdrfix sdR-??-00014923 QUALITY   "'bad'"
 ophdrfix sdR-??-00014967 QUALITY   "'bad'"
 ophdrfix sdR-??-00014968 QUALITY   "'bad'"
 
+# These were test data taken using plate 820 on MJD 52405.
+# Using the arc exposure #14971 totally wrecked the v4_9_8 reductions.
+ophdrfix sdR-??-0001497[0-7] QUALITY   "'test'"
+
 # Wrong exposure time in these headers for plate 946 on MJD 52405.
 # (Reported to be 22065 sec!)
 ophdrfix sdR-??-00014982 EXPTIME  1200
