@@ -19,8 +19,8 @@
 ;   fibermask  - Fiber status bits, set nonzero for bad status [NFIBER].
 ;                Note this is not modified, but modified copies appear
 ;                in the returned structures ARCSTRUCT and FLATSTRUCT.
-;   lampfile   - Name of file describing arc lamp lines;
-;                default to the file 'lamphgcdne.dat' in the IDL path.
+;   lampfile   - Name of file describing arc lamp lines, which would
+;                over-ride the default file read by FITARCIMAGE.
 ;   indir      - Input directory for FLATNAME, ARCNAME, OBJNAME;
 ;                default to '.'
 ;   timesep    - Maximum time separation between flats and arcs to pair them;
@@ -51,6 +51,7 @@
 ;   fiberflat()
 ;   fitarcimage
 ;   fitarcimage_old
+;   fitdispersion
 ;   sdssproc
 ;   shift_trace()
 ;   splog
@@ -362,7 +363,7 @@ splog,'Arc fbadpix ', fbadpix ; ???
 
             nfitcoeff = color EQ 'red' ? 4 : 3
             dispset = fitdispersion(flux, fluxivar, xpeak, $
-               sigma=1.0, ncoeff=nfitcoeff, xmin=0.0, xmax=2047.0)
+             sigma=1.0, ncoeff=nfitcoeff, xmin=0.0, xmax=2047.0)
 
             arcstruct[iarc].dispset = ptr_new(dispset)
             arcstruct[iarc].wset = ptr_new(wset)

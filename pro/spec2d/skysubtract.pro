@@ -124,44 +124,40 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
      
    endif else begin
 
-     ;--------------------------------------------------------------
-     ;  sigma is smooth fit to widths of arclines
-     ;
-     traceset2xy, dispset, pixnorm, sigma
-     sigma = sigma - 1.0
-     skysigma = (sigma[*,iskies])[isort]
+      ; SIGMA is smooth fit to widths of arclines ???
+      traceset2xy, dispset, pixnorm, sigma
+      sigma = sigma - 1.0
+      skysigma = (sigma[*,iskies])[isort]
 
-     fullbkpt2 = slatec_splinefit(skywave, skyflux, coeff2, invvar=skyivar, $
-       nord=nord, upper=upper, lower=lower, maxiter=maxiter, x2 = skysigma, $
+      fullbkpt2 = slatec_splinefit(skywave, skyflux, coeff2, invvar=skyivar, $
+       nord=nord, upper=upper, lower=lower, maxiter=maxiter, x2=skysigma, $
        npoly = nsigmapoly, /eachgroup, everyn=2*nskies/3, bkpt=bkpt)
 
-     fullfit2 = bvalu2d(wave, sigma, fullbkpt2, coeff2) 
-     skyfit2  = bvalu2d(skywave, skysigma, fullbkpt2, coeff2) 
+      fullfit2 = bvalu2d(wave, sigma, fullbkpt2, coeff2) 
+      skyfit2  = bvalu2d(skywave, skysigma, fullbkpt2, coeff2) 
    endelse
 
-  
    ;----------
    ; Sky-subtract the entire image
 
 ;   objsub = obj - fullfit * (objivar GT 0.0) ; No need to do this.
-
-
    objsub = obj - fullfit
 
-
+   ;----------
    ; Fit to sky variance (not inverse variance)
 
    posvar = where(skyivar GT 0)
    if (posvar[0] NE -1) then begin
       skyvariance = 1.0/skyivar[posvar]
-      skyvarbkpt = slatec_splinefit(skywave[posvar], skyvariance, skyvarcoeff, invvar=skyivar[posvar], $
-        nord=nord, upper=upper, lower=lower, maxiter=maxiter, /eachgroup, bkpt=bkpt)
+      skyvarbkpt = slatec_splinefit(skywave[posvar], skyvariance, skyvarcoeff, $
+       invvar=skyivar[posvar], nord=nord, upper=upper, lower=lower, $
+       maxiter=maxiter, /eachgroup, bkpt=bkpt)
       skyvarfit = slatec_bvalu(wave, skyvarbkpt, skyvarcoeff)
    endif
 
-   ;---------------------------------------------------------
-   ;  Store "super" sky information in a structure
-   ;  We can't name it, because it could change size each time
+   ;----------
+   ; Store "super" sky information in a structure
+   ; We can't name it, because it could change size each time
 
    skystruct = create_struct( $
     'ISKIES', iskies, $
@@ -219,9 +215,11 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
       ii = where(relwave NE 0, nbin)
       relwave = relwave[ii]
  
+      ;----------
       ; Spline fit RELCHI2, only for the benefit of getting a smooth function
       ; Also, force the fit to always be >= 1, such that we never reduce the
       ; formal errors.
+
       fullbkpt = slatec_splinefit(relwave, relchi2, coeff, $
        maxiter=maxiter, upper=30, lower=30, everyn=2, nord=3)
       relchi2fit = slatec_bvalu(wave, fullbkpt, coeff)
@@ -230,9 +228,9 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
       splog, 'Median sky-residual chi2 = ', median(relchi2)
       splog, 'Max sky-residual chi2 = ', max(relchi2)
 
-      ;---------------------------------------------------------
-      ;  Store Relative Chi2 information in a structure
-      ;  Add in other information we want to write to disk??
+      ;----------
+      ; Store Relative Chi2 information in a structure
+      ; Add in other information we want to write to disk??
       
       relchi2struct = create_struct( $
           'WAVE', relwave, $

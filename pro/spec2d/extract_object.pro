@@ -14,7 +14,8 @@
 ;
 ; CALLING SEQUENCE:
 ;   extract_object, outname, objhdr, image, invvar, plugsort, wset, $
-;    xarc, lambda, xtrace, fflat, fibermask, color=, [plottitle=]
+;    xarc, lambda, xtrace, fflat, fibermask, color=, $
+;    [ widthset=, dispset=, skylinefile=, plottitle= ]
 ;
 ; INPUTS:
 ;   outname    - Name of outputs FITS file
@@ -28,6 +29,11 @@
 ;   xtrace     - spatial traces from flat field
 ;   fflat      - 1d flat field vectors
 ;   fibermask  - Fiber status bits, set nonzero for bad status [NFIBER]
+;   color      - ???
+;   widthset   - ???
+;   dispset    - ???
+;   skylinefile- ???
+;   plottitle  - ???
 ;
 ; REQUIRED KEYWORDS:
 ;   color      - camera color (red or blue)
@@ -99,432 +105,430 @@ function find_whopping, boxcar, thresh, whopct
     top = where(diff[1:whopct] NE 1,topct)
 
     if (topct NE bottomct) then begin
-      message, 'Bug introduced by Scott, look in find_whopping in extract_object.pro'
+      message, 'Bug introduced by Scott, look in find_whopping in extract_object.pro' ; ???
     endif
 
     whopping = lonarr(topct)
     for i=0, topct -1 do begin
-      mmax = max(boxcar[bottom[i]:top[i]], place)
-      whopping[i] = candidates[place + bottom[i]]
+       mmax = max(boxcar[bottom[i]:top[i]], place)
+       whopping[i] = candidates[place + bottom[i]]
     endfor
 
     whopct = topct
     return, whopping
-
 end
 
 ;------------------------------------------------------------------------------
 pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
- xarc, lambda, xtrace, fflat, fibermask, color=color, plottitle=plottitle, $
- widthset=widthset
+ xarc, lambda, xtrace, fflat, fibermask, color=color, $
+ widthset=widthset, dispset=dispset, skylinefile=skylinefile, $
+ plottitle=plottitle
 
-      skylinefile = strtrim(sxpar(objhdr,'SKYLIST'),2) 
-      objname = strtrim(sxpar(objhdr,'OBJFILE'),2) 
+   objname = strtrim(sxpar(objhdr,'OBJFILE'),2) 
  
-      ;------------------
-      ; Identify very bright objects
-      ; Do a boxcar extraction, and look for fibers where the median
-      ; counts are 10000 ADU per row.
+   ;------------------
+   ; Identify very bright objects
+   ; Do a boxcar extraction, and look for fibers where the median
+   ; counts are 10000 ADU per row.
 
-      fextract = extract_boxcar(image, xtrace)
+   fextract = extract_boxcar(image, xtrace)
 
-      scrunch = djs_median(fextract, 1) ; Find median counts/row in each fiber
-      scrunch_sort = sort(scrunch)
-      nfiber = (size(fextract))[2]
-      i5 = nfiber/20
-      i95 = i5 * 19
+   scrunch = djs_median(fextract, 1) ; Find median counts/row in each fiber
+   scrunch_sort = sort(scrunch)
+   nfiber = (size(fextract,/dimens))[1]
+   i5 = nfiber/20
+   i95 = i5 * 19
 
-      fullscrunch = djs_median(fextract) ; Find median counts/row in all fibers
-      whopping = find_whopping(scrunch - fullscrunch, 10000.0, whopct)
+   fullscrunch = djs_median(fextract) ; Find median counts/row in all fibers
+   whopping = find_whopping(scrunch - fullscrunch, 10000.0, whopct)
 
-      splog, 'Whopping fibers: ', whopping
-      splog, 'Median counts in all fibers = ', fullscrunch
-      splog, 'Number of bright fibers = ', whopct
+   splog, 'Whopping fibers: ', whopping
+   splog, 'Median counts in all fibers = ', fullscrunch
+   splog, 'Number of bright fibers = ', whopct
 
-      iskies = where(strtrim(plugsort.objtype,2) EQ 'SKY' $
-       AND plugsort.fiberid GT 0 AND (fibermask EQ 0), nskies)
+   iskies = where(strtrim(plugsort.objtype,2) EQ 'SKY' $
+    AND plugsort.fiberid GT 0 AND (fibermask EQ 0), nskies)
 
-      if (nskies LT 2) then begin
-          splog, 'ABORT: Only '+ string(nskies) + ' sky fibers found' 
-          return
-      endif 
+   if (nskies LT 2) then begin
+      splog, 'ABORT: Only '+ string(nskies) + ' sky fibers found' 
+      return
+   endif 
 
-      skymedian = djs_median(scrunch[iskies])
-      splog, 'Sky fiber median '+string(skymedian)
-      if (skymedian GT 2000) then begin
-         splog, 'ABORT: Median sky flux is brighter than 2000 e-'
-         return
-      endif
+   skymedian = djs_median(scrunch[iskies])
+   splog, 'Sky fiber median '+string(skymedian)
+   if (skymedian GT 2000) then begin
+      splog, 'ABORT: Median sky flux is brighter than 2000 e-'
+      return
+   endif
 
-      splog, '5% and 95% count levels ', scrunch[scrunch_sort[i5]], $
-                                         scrunch[scrunch_sort[i95]]
+   splog, '5% and 95% count levels ', scrunch[scrunch_sort[i5]], $
+                                      scrunch[scrunch_sort[i95]]
 
-      if (whopct GT 20) then begin
-         splog, 'WARNING: Disable whopping terms ' + objname
-         whopping = -1
-         whopct = 0
-      endif
+   if (whopct GT 20) then begin
+      splog, 'WARNING: Disable whopping terms ' + objname
+      whopping = -1
+      whopct = 0
+   endif
 
-      ;------------------------------------------------------------
-      ;  Check for bad pixels within 3 pixels of trace
+   ;------------------------------------------------------------
+   ;  Check for bad pixels within 3 pixels of trace
 
-      badcheck = extract_boxcar((invvar LE 0), xtrace, radius=2.5)
-      badplace = where(badcheck GT 0)
+   badcheck = extract_boxcar((invvar LE 0), xtrace, radius=2.5)
+   badplace = where(badcheck GT 0)
 
-      nx = (size(fextract,/dim))[0] 
-      ny = (size(fextract,/dim))[1] 
-      pixelmask = lonarr(nx,ny)
+   nx = (size(fextract,/dim))[0] 
+   ny = (size(fextract,/dim))[1] 
+   pixelmask = lonarr(nx,ny)
 
-      if (badplace[0] NE -1) then pixelmask[badplace] = $
-                   pixelmask[badplace] OR pixelmask_bits('NEARBADPIXEL')
+   if (badplace[0] NE -1) then pixelmask[badplace] = $
+                pixelmask[badplace] OR pixelmask_bits('NEARBADPIXEL')
 
-      ;------------------
-      ; Extract the object image
-      ; Use the "whopping" terms
-      ; We need to do 2 iteration extraction: 
-      ;        1) Fit profiles in a subset of rows
-      ;        2) Fit returned parameters with smooth functions
-      ;        3) Extract all 2048 rows with new profiles given by
-      ;              fitansimage
+   ;------------------
+   ; Extract the object image
+   ; Use the "whopping" terms
+   ; We need to do 2 iteration extraction: 
+   ;        1) Fit profiles in a subset of rows
+   ;        2) Fit returned parameters with smooth functions
+   ;        3) Extract all 2048 rows with new profiles given by
+   ;              fitansimage
 
-      splog, 'Extracting frame '+objname+' with 3 step process'
-      nrow = (size(image))[2]
-      ncol = (size(image))[1]
-      skiprow = 8
-      yrow = lindgen(nrow/skiprow) * skiprow + skiprow/2
-      nfirst = n_elements(yrow)
+   splog, 'Extracting frame '+objname+' with 3 step process'
+   dims = size(image,/dimens)
+   ncol = dims[0]
+   nrow = dims[1]
+   skiprow = 8
+   yrow = lindgen(nrow/skiprow) * skiprow + skiprow/2
+   nfirst = n_elements(yrow)
   
-      sigma = 1.0
-      proftype = 1 ; Gaussian
-      highrej = 5  ; just for first extraction steps
-      lowrej = 5  ; just for first extraction steps
-                   ; We need to check npoly with new scattered light backgrounds
-      npoly = 8 ; maybe more structure, lots of structure
-      wfixed = [1,1,1] ; gaussian term + centroid and  sigma terms
-      nterms = 3
-      sigmaterm = 1
-      centerterm = 2
-      xnow = xtrace; Is this modified when extracting???
-      sigmanow = xtrace*0.0 + sigma
-      maxshift = 1.5
+   sigma = 1.0
+   proftype = 1 ; Gaussian
+   highrej = 5  ; just for first extraction steps
+   lowrej = 5  ; just for first extraction steps
+                ; We need to check npoly with new scattered light backgrounds
+   npoly = 8 ; maybe more structure, lots of structure
+   wfixed = [1,1,1] ; gaussian term + centroid and  sigma terms
+   nterms = 3
+   sigmaterm = 1
+   centerterm = 2
+   xnow = xtrace; Is this modified when extracting???
+   sigmanow = xtrace*0.0 + sigma
+   maxshift = 1.5
 maxshift = 2.0 ; ??? Need this for MJD=51579
 
-      ; Kill or adjust first and last column ???
-      ;invvar[0,*] = 0.0
-      ;invvar[2047,*] = 0.0
-      image[0,*] = image[0,*]*0.7
-      image[2047,*] = image[2047,*]*0.7
+   ; Kill or adjust first and last column ???
+   ;invvar[0,*] = 0.0
+   ;invvar[2047,*] = 0.0
+   image[0,*] = image[0,*]*0.7
+   image[2047,*] = image[2047,*]*0.7
 
-      ; My fitansimage is not going to work well without good profiles ???
-      ; Using it to tweak up traces, and then performing free fit to object
+   ; My fitansimage is not going to work well without good profiles ???
+   ; Using it to tweak up traces, and then performing free fit to object
 
-      ;  Using new shift_trace, pick xcen and ycen to sample image
+   ;  Using new shift_trace, pick xcen and ycen to sample image
 
-      skiptrace = 20L
-      ysample = lindgen(nrow) # replicate(1,nfiber - 2*skiptrace)
-      xsample = xtrace[*,skiptrace:nfiber - skiptrace - 1]
+   skiptrace = 20L
+   ysample = lindgen(nrow) # replicate(1, nfiber - 2*skiptrace)
+   xsample = xtrace[*,skiptrace:nfiber - skiptrace - 1]
      
-      bestlag = shift_trace(image, xsample, ysample, lagrange=1.0, lagstep=0.1)
+   bestlag = shift_trace(image, xsample, ysample, lagrange=1.0, lagstep=0.1)
 
-      splog, 'Shifting traces by pixel shift of ', bestlag
+   splog, 'Shifting traces by pixel shift of ', bestlag
 
-      if (abs(bestlag) GT 1.0) then begin
-        splog, 'WARNING: pixel shift is large!'
+   if (abs(bestlag) GT 1.0) then begin
+      splog, 'WARNING: pixel shift is large!'
+   endif
+
+   xnow = xtrace + bestlag 
+
+   if (NOT keyword_set(widthset)) then begin 
+      ; (1) Extraction profiles in every 8th row
+
+      splog, 'Object extraction: Step 1'
+      extract_image, image, invvar, xnow, sigma, tempflux, tempfluxivar, $
+       proftype=proftype, wfixed=wfixed, yrow=yrow, $
+       highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
+       ansimage=ansimage, chisq=firstchisq
+      ntrace = (size(tempflux,/dimens))[1]
+
+      ; (2) Refit ansimage to smooth profiles
+
+      splog, 'Answer Fitting: Step 2'
+
+      ;---------------------------------------------------
+      ;   Fitansimage is now hard wired for 320 fibers!!!!???
+
+      fitans = fitansimage(ansimage, nterms, ntrace, npoly, yrow, $
+          tempflux, fluxm=[1,1,0], scatfit=scatfit)
+
+      fitans = fitans[0:nterms*ntrace-1,*]
+
+      ; (3) Calculate new sigma and xtrace arrays
+    
+      sigmashift = transpose(fitans[lindgen(ntrace)*nterms + sigmaterm, *])
+      centershift= transpose(fitans[lindgen(ntrace)*nterms + centerterm, *])
+
+      splog, format='(a,3(f8.3))', 'Centershift ', min(centershift),  $
+       median(centershift), max(centershift)
+
+      splog, format='(a,3(f8.3))', 'Sigmashift ', min(sigmashift),  $
+       median(sigmashift), max(sigmashift)
+
+      if (max(abs(centershift)) GT maxshift OR $
+       max(abs(sigmashift)) GT maxshift/3.0) then begin
+         splog, 'ABORT: Shift terms are not well behaved!'
+         return
       endif
-
-      xnow = xtrace + bestlag 
-
-      if (NOT keyword_set(widthset)) then begin 
-        ; (1) Extraction profiles in every 8th row
-
-        splog, 'Object extraction: Step 1'
-        extract_image, image, invvar, xnow, sigma, tempflux, tempfluxivar, $
-          proftype=proftype, wfixed=wfixed, yrow=yrow, $
-          highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
-          ansimage=ansimage, chisq=firstchisq
-
-        ; (2) Refit ansimage to smooth profiles
-
-        splog, 'Answer Fitting: Step 2'
-        ntrace = (size(tempflux))[2]
-        itrace = lindgen(ntrace)*nterms
-
-        ;---------------------------------------------------
-        ;   Fitansimage is now hard wired for 320 fibers!!!!???
-
-        fitans = fitansimage(ansimage, nterms, ntrace, npoly, yrow, $
-            tempflux, fluxm = [1,1,0], scatfit=scatfit)
-
-        fitans = fitans[0:nterms*ntrace-1,*]
-
-
-        ; (3) Calculate new sigma and xtrace arrays
-      
-        sigmashift = transpose(fitans[lindgen(ntrace)*nterms + sigmaterm, *])
-        centershift= transpose(fitans[lindgen(ntrace)*nterms + centerterm, *])
-
-        splog, format='(a,3(f8.3))', 'Centershift ', min(centershift),  $
-          median(centershift), max(centershift)
-
-        splog, format='(a,3(f8.3))', 'Sigmashift ', min(sigmashift),  $
-          median(sigmashift), max(sigmashift)
-
-        if (max(abs(centershift)) GT maxshift OR $
-             max(abs(sigmashift)) GT maxshift/3.0) then begin
-              splog, 'ABORT: Shift terms are not well behaved!'
-              return
-        endif
      
-      endif else begin
-        traceset2xy,widthset,xx,yy
-        ntrace = (size(yy))[2]
-        nterms = 2
-        wfixed = [1,1]
-        fitans = fltarr(ntrace*nterms,nrow)
-        fitans[lindgen(ntrace)*nterms,*] = transpose(2-yy)
-        fitans[lindgen(ntrace)*nterms + sigmaterm,*] = transpose(yy-1)
+   endif else begin
+     traceset2xy, widthset, xx, yy
+     ntrace = (size(yy,/dimens))[1]
+     nterms = 2
+     wfixed = [1,1]
+     fitans = fltarr(ntrace*nterms,nrow)
+     fitans[lindgen(ntrace)*nterms,*] = transpose(2-yy)
+     fitans[lindgen(ntrace)*nterms + sigmaterm,*] = transpose(yy-1)
 
-        splog, 'Object extraction: Step 1'
-        extract_image, image, invvar, xnow, sigma, tempflux, tempfluxivar, $
-          proftype=proftype, wfixed=wfixed, yrow=yrow, fitans=fitans, $
-          highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
-          ansimage=ansimage, chisq=firstchisq
+     splog, 'Object extraction: Step 1'
+     extract_image, image, invvar, xnow, sigma, tempflux, tempfluxivar, $
+      proftype=proftype, wfixed=wfixed, yrow=yrow, fitans=fitans, $
+      highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
+      ansimage=ansimage, chisq=firstchisq
 
-        splog, 'Step 2: Just find scattered light image'
-        junk = fitansimage(ansimage, 1, ntrace, npoly, yrow, $
-            tempflux, fluxm = [1], scatfit=scatfit)
-      endelse
+     splog, 'Step 2: Just find scattered light image'
+     junk = fitansimage(ansimage, 1, ntrace, npoly, yrow, $
+      tempflux, fluxm=[1], scatfit=scatfit)
+   endelse
 
-      qaplot_scatlight, scatfit, yrow, $
-       wset=wset, xcen=xtrace, fibermask=fibermask, $
-       title=plottitle+'Scattered Light on '+objname
+   qaplot_scatlight, scatfit, yrow, $
+    wset=wset, xcen=xtrace, fibermask=fibermask, $
+    title=plottitle+'Scattered Light on '+objname
 
-      ; (4) Second and final extraction
-      splog, 'Object extraction: Step 3'
+   ; (4) Second and final extraction
+   splog, 'Object extraction: Step 3'
 
-      highrej = 15
-      lowrej = 15
-      extract_image, image-scatfit, invvar, xnow, sigma, flux, $
-       fluxivar, proftype=proftype, wfixed=wfixed, fitans=fitans, $
-       highrej=highrej, lowrej=lowrej, npoly=0, whopping=whopping, $
-       chisq=chisq, ymodel=ymodel2, pixelmask=pixelmask
+   highrej = 15
+   lowrej = 15
+   extract_image, (image - scatfit), invvar, xnow, sigma, flux, $
+    fluxivar, proftype=proftype, wfixed=wfixed, fitans=fitans, $
+    highrej=highrej, lowrej=lowrej, npoly=0, whopping=whopping, $
+    chisq=chisq, ymodel=ymodel2, pixelmask=pixelmask
 
-      ;------------------
-      ; QA chisq plot for fit calculated in extract image (make QAPLOT ???)
+   ;------------------
+   ; QA chisq plot for fit calculated in extract image (make QAPLOT ???)
 
-      xaxis = indgen(N_elements(chisq)) + 1
-      djs_plot, xaxis, chisq, $
-       xrange=[0,N_elements(chisq)], xstyle=1, $
-       xtitle='Row number',  ytitle = '\chi^2', $
-       title=plottitle+'Extraction chi^2 for '+objname
+   xaxis = indgen(N_elements(chisq)) + 1
+   djs_plot, xaxis, chisq, $
+    xrange=[0,N_elements(chisq)], xstyle=1, $
+    xtitle='Row number',  ytitle = '\chi^2', $
+    title=plottitle+'Extraction chi^2 for '+objname
 
-      djs_oplot, yrow, firstchisq[yrow], color='green', ps=4
+   djs_oplot, yrow, firstchisq[yrow], color='green', ps=4
 
-      xyouts, 100, 0.05*!y.crange[0]+0.95*!y.crange[1], $
-               'BLACK = Final chisq extraction'
-      xyouts, 100, 0.08*!y.crange[0]+0.92*!y.crange[1], $
-               'GREEN = Initial chisq extraction'
+   xyouts, 100, 0.05*!y.crange[0]+0.95*!y.crange[1], $
+            'BLACK = Final chisq extraction'
+   xyouts, 100, 0.08*!y.crange[0]+0.92*!y.crange[1], $
+            'GREEN = Initial chisq extraction'
 
-      ;------------------
-      ; Flat-field the extracted object fibers with the global flat
+   ;------------------
+   ; Flat-field the extracted object fibers with the global flat
 
-      divideflat, flux, fluxivar, fflat, fibermask=fibermask
+   divideflat, flux, fluxivar, fflat, fibermask=fibermask
 
-      lowflat = where(fflat LT 0.5)
-      if (lowflat[0] NE -1) then pixelmask[lowflat] = $
-                   pixelmask[lowflat] OR pixelmask_bits('LOWFLAT')
+   lowflat = where(fflat LT 0.5)
+   if (lowflat[0] NE -1) then pixelmask[lowflat] = $
+                pixelmask[lowflat] OR pixelmask_bits('LOWFLAT')
 
-      ;------------------
-      ; Look for pixels where scattered light is dominating
+   ;------------------
+   ; Look for pixels where scattered light is dominating
 
-      scatteredpix = where(extract_boxcar(scatfit, xnow, radius=2.0) GT flux)
-      if (scatteredpix[0] NE -1) then pixelmask[scatteredpix] = $
-                    pixelmask[scatteredpix] + pixelmask_bits('SCATTEREDLIGHT')
+   scatteredpix = where(extract_boxcar(scatfit, xnow, radius=2.0) GT flux)
+   if (scatteredpix[0] NE -1) then pixelmask[scatteredpix] = $
+                 pixelmask[scatteredpix] + pixelmask_bits('SCATTEREDLIGHT')
 
-      ;------------------
-      ; Tweak up the wavelength solution to agree with the sky lines.
-      ; xshet contains polynomial coefficients to shift arc to sky line frame.
+   ;------------------
+   ; Tweak up the wavelength solution to agree with the sky lines.
+   ; xshet contains polynomial coefficients to shift arc to sky line frame.
 
-      locateskylines, skylinefile, flux, fluxivar, wset, $
-       xarc, arcshift=arcshift, $
-       xsky=xsky, skywaves=skywaves, skyshift=skyshift
-; ???
-;      locateskylines_test, skylinefile, flux, fluxivar, wset, $
-;       xarc, arcshift=arcshift, $
-;       xsky=xsky, skywaves=skywaves, skyshift=skyshift
-      qaplot_skyshift, wset, xsky, skywaves, skyshift, $
-       title=plottitle+'Sky Line Deviations for '+objname
+   locateskylines, skylinefile, flux, fluxivar, wset, $
+    xarc, arcshift=arcshift, $
+    xsky=xsky, skywaves=skywaves, skyshift=skyshift
 
-      if (NOT keyword_set(arcshift)) then $
-       splog, 'WARNING: Cannot shift to sky lines'
+   qaplot_skyshift, wset, xsky, skywaves, skyshift, $
+    title=plottitle+'Sky Line Deviations for '+objname
 
-      ;------------------
-      ; Apply heliocentric correction
-      ; Correct LAMBDA, which is used to shift to vacuum wavelengths.
+   if (NOT keyword_set(arcshift)) then $
+    splog, 'WARNING: Cannot shift to sky lines'
 
-      helio=0.0
-      ra = sxpar(objhdr,'RA')
-      dec = sxpar(objhdr,'DEC')
-      tai = sxpar(objhdr,'TAI')
-      if (size(ra, /tname) NE 'INT' AND size(dec, /tname) NE 'INT' AND  $
-       size(tai, /tname) NE 'INT') then begin
-         helio = heliocentric(ra, dec, tai=tai)
-         splog, 'Heliocentric correction = ', helio, ' km/s'
-         sxaddpar, objhdr, 'HELIO_RV', helio, $
-          ' Heliocentric correction (added to velocities)'
-      endif else begin
-         splog, 'WARNING: Header info not present to compute heliocentric correcoin'
-      endelse
+   ;------------------
+   ; Apply heliocentric correction
+   ; Correct LAMBDA, which is used to shift to vacuum wavelengths.
 
-      ;------------------
-      ; Shift to skylines and fit to vacuum wavelengths
+   helio=0.0
+   ra = sxpar(objhdr,'RA')
+   dec = sxpar(objhdr,'DEC')
+   tai = sxpar(objhdr,'TAI')
+   if (size(ra, /tname) NE 'INT' AND size(dec, /tname) NE 'INT' AND  $
+    size(tai, /tname) NE 'INT') then begin
+      helio = heliocentric(ra, dec, tai=tai)
+      splog, 'Heliocentric correction = ', helio, ' km/s'
+      sxaddpar, objhdr, 'HELIO_RV', helio, $
+       ' Heliocentric correction (added to velocities)'
+   endif else begin
+      splog, 'WARNING: Header info not present to compute heliocentric correcoin'
+   endelse
 
-      vacset = fitvacset(xarc, lambda, wset, arcshift, helio=helio)
+   ;------------------
+   ; Shift to skylines and fit to vacuum wavelengths
 
-      qaplot_skydev, flux, fluxivar, vacset, plugsort, color, $
+   vacset = fitvacset(xarc, lambda, wset, arcshift, helio=helio)
+
+   qaplot_skydev, flux, fluxivar, vacset, plugsort, color, $
+    title=plottitle+objname
+
+   sxaddpar, objhdr, 'VACUUM', 'WAVELENGTHS ARE IN VACUUM'
+   sxaddpar, objhdr, 'AIR2VAC', systime()
+
+   ;------------------
+   ; Sky-subtract
+
+   skystruct = skysubtract(flux, fluxivar, plugsort, vacset, $
+    skysub, skysubivar, iskies=iskies, pixelmask=pixelmask, $
+    fibermask=fibermask, upper=3.0, lower=3.0, $
+    relchi2struct=relchi2struct)
+
+   qaplot_skysub, flux, fluxivar, skysub, skysubivar, $
+    vacset, iskies, title=plottitle+objname
+
+   ;------------------
+   ; QA for 2 skylines in the blue (specify vacuum wavelengths below)
+
+   if (color EQ 'blue') then begin
+      qaplot_skyline, 4359.5, flux, fluxivar, skysub, skysubivar, $
+       plugsort, vacset, iskies, fibermask=fibermask, dwave=4.0, $
        title=plottitle+objname
+      qaplot_skyline, 5578.9, flux, fluxivar, skysub, skysubivar, $
+       plugsort, vacset, iskies, fibermask=fibermask, dwave=5.0, $
+       title=plottitle+objname
+   endif
 
-      sxaddpar, objhdr, 'VACUUM', 'WAVELENGTHS ARE IN VACUUM'
-      sxaddpar, objhdr, 'AIR2VAC', systime()
+   ;------------------
+   ; QA for 2 skylines in the red (specify vacuum wavelengths below)
 
-      ;------------------
-      ; Sky-subtract
+   if (color EQ 'red') then begin
+      qaplot_skyline, 7343.0, flux, fluxivar, skysub, skysubivar, $
+       plugsort, vacset, iskies, fibermask=fibermask, dwave=7.0, $
+       title=plottitle+objname
+      qaplot_skyline, 8888.3, flux, fluxivar, skysub, skysubivar, $
+       plugsort, vacset, iskies, fibermask=fibermask, dwave=7.0, $
+       title=plottitle+objname
+   endif
 
-      skystruct = skysubtract(flux, fluxivar, plugsort, vacset, $
-        skysub, skysubivar, iskies=iskies, pixelmask=pixelmask, $
-        fibermask=fibermask, upper=3.0, lower=3.0, $
-        relchi2struct=relchi2struct)
+   ;------------------
+   ; Flux calibrate to spectrophoto_std fibers
 
-      ; plot, skystruct.wave, skystruct.flux, ps=3 ; ???
+   fluxfactor = fluxcorr(skysub, skysubivar, vacset, plugsort, $
+    color=color, lower=3.0, upper=3.0, fibermask=fibermask)
 
-      qaplot_skysub, flux, fluxivar, skysub, skysubivar, $
-       vacset, iskies, title=plottitle+objname
+   flambda  = skysub
+   flambdaivar = skysubivar
 
-      ;------------------
-      ; QA for 2 skylines in the blue (specify vacuum wavelengths below)
+   minfluxfactor = median(fluxfactor) * 0.01
+   divideflat, flambda, flambdaivar, fluxfactor, minval=minfluxfactor
 
-      if (color EQ 'blue') then begin
-        qaplot_skyline, 4359.5, flux, fluxivar, skysub, skysubivar, $
-         plugsort, vacset, iskies, fibermask=fibermask, dwave=4.0, $
-         title=plottitle+objname
-        qaplot_skyline, 5578.9, flux, fluxivar, skysub, skysubivar, $
-         plugsort, vacset, iskies, fibermask=fibermask, dwave=5.0, $
-         title=plottitle+objname
-      endif
+   ;------------------------------------------
+   ; Telluric correction called for 'red' side
+   ;
+   ;  May want to move all of the telluric_corr and plotting into
+   ;  new procedure: telluric_fit,flambda, flambdaivar, vacset, plugsort 
 
-      ;------------------
-      ; QA for 2 skylines in the red (specify vacuum wavelengths below)
+   if (color EQ 'red')  then begin
 
-      if (color EQ 'red') then begin
-        qaplot_skyline, 7343.0, flux, fluxivar, skysub, skysubivar, $
-         plugsort, vacset, iskies, fibermask=fibermask, dwave=7.0, $
-         title=plottitle+objname
-        qaplot_skyline, 8888.3, flux, fluxivar, skysub, skysubivar, $
-         plugsort, vacset, iskies, fibermask=fibermask, dwave=7.0, $
-         title=plottitle+objname
-      endif
+      ;-----------------------------------------------
+      ;  Split into two regions, A,B bands first
+      telluric1 = telluric_corr(flambda, flambdaivar, vacset, plugsort, $
+         contwave=contwave1, contflux=contflux1, contivar=contivar1, $
+         telluricbkpt=telluricbkpt1, telluriccoeff=telluriccoeff1, $
+         minw=3.82, maxw=3.92, lower=5.0, upper=5.0, ncontbkpts=10, $
+         fibermask=fibermask)
 
-      ;------------------
-      ; Flux calibrate to spectrophoto_std fibers
-
-      fluxfactor = fluxcorr(skysub, skysubivar, vacset, plugsort, $
-       color=color, lower=3.0, upper=3.0, fibermask=fibermask)
-
-      flambda  = skysub
-      flambdaivar = skysubivar
-
-      minfluxfactor = median(fluxfactor)*0.01
-      divideflat, flambda, flambdaivar, fluxfactor, minval=minfluxfactor
-
-      ;------------------------------------------
-      ; Telluric correction called for 'red' side
-      ;
-      ;  May want to move all of the telluric_corr and plotting into
-      ;  new procedure: telluric_fit,flambda, flambdaivar, vacset, plugsort 
-
-      if (color EQ 'red')  then begin
-
-         ;-----------------------------------------------
-         ;  Split into two regions, A,B bands first
-         telluric1 = telluric_corr(flambda, flambdaivar, vacset, plugsort, $
-            contwave=contwave1, contflux=contflux1, contivar=contivar1, $
-            telluricbkpt=telluricbkpt1, telluriccoeff=telluriccoeff1, $
-            minw=3.82, maxw=3.92, lower=5.0, upper=5.0, ncontbkpts=10, $
-            fibermask=fibermask)
-  
-         ;-----------------------------------------------
-         ;  9100 Ang absorption next?
-         telluric2 = telluric_corr(flambda, flambdaivar, vacset, plugsort, $
-            contwave=contwave2, contflux=contflux2, contivar=contivar2,    $
-            telluricbkpt=telluricbkpt2, telluriccoeff=telluriccoeff2, $
-            minw=3.94, maxw=3.97, lower=5.0, upper=5.0, ncontbkpts=5, $
+      ;-----------------------------------------------
+      ;  9100 Ang absorption next?
+      telluric2 = telluric_corr(flambda, flambdaivar, vacset, plugsort, $
+         contwave=contwave2, contflux=contflux2, contivar=contivar2,    $
+         telluricbkpt=telluricbkpt2, telluriccoeff=telluriccoeff2, $
+         minw=3.94, maxw=3.97, lower=5.0, upper=5.0, ncontbkpts=5, $
             fibermask=fibermask)
 
-         if (size(contwave1,/tname) NE 'UNDEFINED') then begin
-            !p.multi = [0,1,3]
-            djs_plot, 10^contwave1, contflux1, ps=3, xr=10^[3.82,3.87], $
-                 yr=[0.0,1.5], ymargin=[2,4], charsize=1.6, xstyle=1, $ 
-                 xtitle='\lambda [A]', ytitle='Flux [electrons]', $
-                 title=plottitle+'Telluric correction for '+objname
-            djs_oplot,10^contwave1,slatec_bvalu(contwave1,telluricbkpt1, $
-                      telluriccoeff1),color='red'
+      if (size(contwave1,/tname) NE 'UNDEFINED') then begin
+         !p.multi = [0,1,3]
+         djs_plot, 10^contwave1, contflux1, ps=3, xr=10^[3.82,3.87], $
+              yr=[0.0,1.5], ymargin=[2,4], charsize=1.6, xstyle=1, $ 
+              xtitle='\lambda [A]', ytitle='Flux [electrons]', $
+              title=plottitle+'Telluric correction for '+objname
+         djs_oplot,10^contwave1,slatec_bvalu(contwave1,telluricbkpt1, $
+                   telluriccoeff1),color='red'
 
-            djs_plot, 10^contwave1, contflux1, ps=3, xr=10^[3.87,3.92], $
-                 yr=[0.0,1.5], ymargin=[2,2], charsize=1.6, xstyle=1, $ 
-                 xtitle='\lambda [A]', ytitle='Flux [electrons]'
-            djs_oplot,10^contwave1,slatec_bvalu(contwave1,telluricbkpt1, $
-                      telluriccoeff1),color='red'
-         endif
-
-         if (size(contwave2,/tname) NE 'UNDEFINED') then begin
-            djs_plot,10^contwave2,contflux2,ps=3,yr=[0.0,1.5], $
-                 ymargin=[4,2], charsize=1.6, xstyle=1, $ 
-                 xtitle='\lambda [A]', ytitle='Flux [electrons]'
-            djs_oplot,10^contwave2,slatec_bvalu(contwave2,telluricbkpt2, $
-                      telluriccoeff2),color='red'
-
-         endif
-
-         !p.multi = 0
-         telluricfactor = telluric1 * telluric2
-         divideflat, flambda, flambdaivar, telluricfactor, minval=0.1
-  
+         djs_plot, 10^contwave1, contflux1, ps=3, xr=10^[3.87,3.92], $
+              yr=[0.0,1.5], ymargin=[2,2], charsize=1.6, xstyle=1, $ 
+              xtitle='\lambda [A]', ytitle='Flux [electrons]'
+         djs_oplot,10^contwave1,slatec_bvalu(contwave1,telluricbkpt1, $
+                   telluriccoeff1),color='red'
       endif
 
-      ;------------------
-      ; Interpolate over masked pixels, just for aesthetic purposes
+      if (size(contwave2,/tname) NE 'UNDEFINED') then begin
+         djs_plot,10^contwave2,contflux2,ps=3,yr=[0.0,1.5], $
+              ymargin=[4,2], charsize=1.6, xstyle=1, $ 
+              xtitle='\lambda [A]', ytitle='Flux [electrons]'
+         djs_oplot,10^contwave2,slatec_bvalu(contwave2,telluricbkpt2, $
+                   telluriccoeff2),color='red'
 
-      flambda = djs_maskinterp(flambda, flambdaivar EQ 0, /const, iaxis=0 )
+      endif
 
-      ;------------------
-      ; Add keywords to object header
+      !p.multi = 0
+      telluricfactor = telluric1 * telluric2
+      divideflat, flambda, flambdaivar, telluricfactor, minval=0.1
 
-      sxaddpar, objhdr, 'VERS2D', idlspec2d_version(), $
-       'Version of idlspec2d for 2D reduction', after='VERSREAD'
-      sxaddpar, objhdr, 'OSIGMA',  sigma, $
-       'Original guess at spatial sigma in pix'
-      sxaddpar, objhdr, 'SKIPROW', skiprow, 'Number of rows skipped in step 1'
-      sxaddpar, objhdr, 'LOWREJ', lowrej, 'Extraction, low rejection'
-      sxaddpar, objhdr, 'HIGHREJ', highrej, 'Extraction, high rejection'
-      sxaddpar, objhdr, 'SCATPOLY', npoly, 'Order of scattered light poly'
-      sxaddpar, objhdr, 'PROFTYPE', proftype, '1=Gaussian'
-      sxaddpar, objhdr, 'NFITPOLY', nterms, 'Order of profile parameter fit'
+   endif
 
-      ;------------------
-      ; Write extracted, lambda-calibrated, sky-subtracted spectra to disk
-  
-      mwrfits, flambda, outname, objhdr, /create
-      mwrfits, flambdaivar, outname
-      mwrfits, plugsort, outname
-      mwrfits, vacset, outname
-      mwrfits, pixelmask, outname
-      mwrfits, fibermask, outname
-      mwrfits, fluxfactor, outname
+   ;----------
+   ; Interpolate over masked pixels, just for aesthetic purposes
 
-      ;------------------
-      ; Add telluricfactor if red
+   flambda = djs_maskinterp(flambda, flambdaivar EQ 0, /const, iaxis=0 )
 
-      if (color EQ 'red') then mwrfits, telluricfactor, outname
+   ;----------
+   ; Combine FIBERMASK and PIXELMASK to FINALMASK
+
+   finalmask = pixelmask
+   for itrace=0, ntrace-1 do $
+    finalmask[*,itrace] = finalmask[*,itrace] OR fibermask[itrace]
+
+   ;----------
+   ; Add keywords to object header
+
+   sxaddpar, objhdr, 'VERS2D', idlspec2d_version(), $
+    'Version of idlspec2d for 2D reduction', after='VERSREAD'
+   sxaddpar, objhdr, 'OSIGMA',  sigma, $
+    'Original guess at spatial sigma in pix'
+   sxaddpar, objhdr, 'SKIPROW', skiprow, 'Number of rows skipped in step 1'
+   sxaddpar, objhdr, 'LOWREJ', lowrej, 'Extraction, low rejection'
+   sxaddpar, objhdr, 'HIGHREJ', highrej, 'Extraction, high rejection'
+   sxaddpar, objhdr, 'SCATPOLY', npoly, 'Order of scattered light polynomial'
+   sxaddpar, objhdr, 'PROFTYPE', proftype, '1=Gaussian'
+   sxaddpar, objhdr, 'NFITPOLY', nterms, 'Order of profile parameter fit'
+
+   ;----------
+   ; Write extracted, lambda-calibrated, sky-subtracted spectra to disk
+
+   mwrfits, flambda, outname, objhdr, /create
+   mwrfits, flambdaivar, outname
+   mwrfits, finalmask, outname
+   mwrfits, vacset, outname
+   mwrfits, dispset, outname
+   mwrfits, plugsort, outname
+
+; Save sky, fluxfactor, telluric???
+;   mwrfits, fluxfactor, outname
+;   if (color EQ 'red') then mwrfits, telluricfactor, outname
 
    return
 end
