@@ -20,7 +20,7 @@
 ;                '?2' to denote a change to both 'b2' and 'r2'.  Default to
 ;                '??' to denote a change to sdR files for all 4 cameras.
 ;   bad        - If set, then declare the specified exposure number to be bad.
-;                Do this by setting FLAVOR='unknown'.
+;                Do this by setting QUALITY='bad'.
 ;                If set, then overwrite and values passed for CARD and VALUE.
 ;
 ; OUTPUT:
@@ -41,7 +41,7 @@
 ;   Declare exposure #1234 as bad:
 ;     IDL> apofix, 1234, /bad
 ;   or equivalently:
-;     IDL> apofix, 1234, 'flavor', 'unknown'
+;     IDL> apofix, 1234, 'quality', 'bad'
 ;
 ; BUGS:
 ;
@@ -127,8 +127,8 @@ pro apofix, expnum, card, newval, camera=camera, bad=bad
    endif
 
    if (keyword_set(bad)) then begin
-      card = 'flavor'
-      value = 'unknown'
+      card = 'quality'
+      value = 'bad'
    endif
 
    if (size(card, /tname) NE 'STRING' $
