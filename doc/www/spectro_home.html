@@ -932,11 +932,28 @@ PLUG_DEC   Object DEC (drilled fiber position)
 CLASS      Spectro classification: GALAXY, QSO, STAR; reductions prior to
            version v4_7 will also use SKY and UNKNOWN; later versions set
            the ZWARNING flags
-SUBCLASS   Spectro sub-classification; presently only used for STARs with the
-           catagories: O, B, A, F, K, M, L, Carbon_DQ, Carbon, WD, CV, sdM
+SUBCLASS   Spectro sub-classification.  Galaxies and QSO's can be given
+             sub-classificatoins based upon their emission lines.
+             This text includes the word "AGN" if:
+               log10(OIII/Hbeta) > 0.7 - 1.2 * (log10(NII/Halpha) - 0.4)
+             This text includes the word "STARFORMING" if:
+               log10(OIII/Hbeta) < 0.7 - 1.2 * (log10(NII/Halpha) - 0.4)
+             If the H_alpha E.W. > 500 Ang, then upgrade "STARFORMING" to
+             "STARBURST."
+             In all cases for AGN, STARFORMING, and STARBURST, the 4 emission
+             lines used for that sub-classification must have well-measured
+             errors (e.g., LINEAREA_ERR > 0).
+             If any galaxies or quasars have lines detected at the 10-sigma
+             level with sigmas > 200 km/sec at the 5-sigma level, call them
+             "BROADLINE".
+           For stars, the following subclassifications are in use:
+             O, OB, B6, B9, A0, A0p, F2, F5, F9, G0, G2, G5, K1, K3, K5, K7,
+             M0V, M2V,M1, M2, M3, M4, M5, M6, M7, M8, L0, L1, L2, L3, L4, L5,
+             L5.5, L9, T2, Carbon, Carbon_lines, Carbon_DQ, Carbon_DQred, CV.
 Z          Redshift; if the ZWARNING flag is nonzero, then assume that this
            redshift is incorrect
-Z_ERR      Redshift error based upon fit to chi^2 minimum
+Z_ERR      Redshift error based upon fit to chi^2 minimum; negative for
+           invalid fit
 RCHI2      Reduced chi^2 for best fit
 DOF        Degrees of freedom for best fit
 RCHI2DIFF  Difference in reduced chi^2 of best solution to 2nd best solution
@@ -945,7 +962,7 @@ TCOLUMN    Columns to use in template file (0-indexed); unused values set to -1
 NPOLY      Number of polynomial terms used in conjuction with TFILE
 THETA      Eigenvalue coefficients for each column in template file + each polynomial term
 VDISP      Velocity dispersion, only computed for galaxies (km/sec)
-VDISP_ERR  Error in VDISP (km/sec)
+VDISP_ERR  Error in VDISP (km/sec); negative for invalid fit
 WAVEMIN    Minimum observed (vacuum) wavelength for this object (Angstroms)
 WAVEMAX    Maximum observed (vacuum) wavelength for this object (Angstroms)
 WCOVERAGE  Amount of wavelength coverage in log-10(Angstroms)
@@ -983,6 +1000,19 @@ SPEC1_I    (S/N)^2 at i=19.90 for spectrograph #1 (same value for 320 fibers)
 SPEC2_G    (S/N)^2 at g=20.20 for spectrograph #2 (same value for 320 fibers)
 SPEC2_R    (S/N)^2 at r=20.25 for spectrograph #2 (same value for 320 fibers)
 SPEC2_I    (S/N)^2 at i=19.90 for spectrograph #2 (same value for 320 fibers)
+ELODIE_FILENAME   File name for best-fit Elodie star
+ELODIE_OBJECT     Star name (mostly Henry Draper names)
+ELODIE_SPTYPE     Spectral type
+ELODIE_BV         (B-V) color
+ELODIE_TEFF       Effective temperature
+ELODIE_LOGG       Log10(gravity)
+ELODIE_FEH        [Fe/H]
+ELODIE_Z          Redshift
+ELODIE_Z_ERR      Redshift error; negative for invalid fit
+ELODIE_Z_MODELERR The standard deviation in redshift amongst the 12
+                  best-fit stars
+ELODIE_RCHI2      Reduced chi^2
+ELODIE_DOF        Degrees of freedom for fit
 </PRE>
 
 <H4><A NAME="dm_spzline">spZline-<I>pppp</I>-<I>mmmmm</I>.fits</H4>
