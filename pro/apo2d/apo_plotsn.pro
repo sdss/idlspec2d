@@ -54,6 +54,7 @@ pro apo_plotsn, logfile, plate, plugfile=plugfile, plotfile=plotfile
    ; Read the science frames for this plate
 
    pp = apo_readlog(logfile, plate=plate, flavor='science')
+   mjd = (*pp[0]).mjd
 
    ;----------
    ; Read the plug map file for all 640 fibers
@@ -85,7 +86,8 @@ pro apo_plotsn, logfile, plate, plugfile=plugfile, plotfile=plotfile
    if (keyword_set(plotfile)) then $
     while(djs_lockfile(plotfile, lun=plot_lun) EQ 0) do wait, 5
 
-   title = 'APO SPECTRO PLATE=' + strtrim(string(plate),2)
+   title = 'APO SPECTRO MJD=' + strtrim(string(mjd),2) $
+    + ' PLATE=' + strtrim(string(plate),2)
    plotsn, sqrt(sn2array), plugsort, bands=bands, title=title, plotfile=plotfile
 
    if (keyword_set(plotfile)) then $
