@@ -13,7 +13,7 @@
 ;
 ; OPTIONAL INPUTS:
 ;   card       - FITS header keyword to change; this is case-insensitive,
-;                so that 'exposure' is the same as 'EXPOSURE'.
+;                so that 'exptime' is the same as 'EXPTIME'.
 ;   value      - New value for FITS header keyword.
 ;   camera     - Camera name in which to change values, e.g. 'b1', 'r1',
 ;                'b2' or 'r2'.  A '?' can be used as a wildcard, for example
@@ -41,12 +41,12 @@
 ;   valid values for each keyword.
 ;
 ;   Note that string values must be enclosed in single- or double-quotes.
-;   Note that double-precision numbers must be written with "d" notation,
-;   for example 3.14d7 instead of 3.14e7.
+;   Numeric values should not be in quotes.  Double-precision numbers should
+;   be written with "d" notation, for example 3.14d7 instead of 3.14e7.
 ;
 ; EXAMPLES:
 ;   Fix the exposure time for exposure #1234 to be 900 sec:
-;     IDL> apofix, 1234, 'exposure', 900
+;     IDL> apofix, 1234, 'exptime', 900
 ;
 ;   Fix the TAI time for exposure #1234 to be 4.443852968d+09
 ;   (use the "d" notation for double-precision, even though it
