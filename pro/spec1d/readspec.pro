@@ -8,7 +8,8 @@
 ; CALLING SEQUENCE:
 ;   readspec, plate, fiber, [mjd=, znum=, flux=, flerr=, invvar=, $
 ;    andmask=, ormask=, disp=, plugmap=, loglam=, wave=, tsobj=, $
-;    zans=, zline=, synflux=, lineflux=, objhdr=, topdir=, /align, /silent ]
+;    zans=, zline=, synflux=, lineflux=, objhdr=, zhdr=, $
+;    topdir=, /align, /silent ]
 ;
 ; INPUTS:
 ;   plate      - Plate number(s)
@@ -49,9 +50,12 @@
 ;   zline      - Line-fit output structure [NFIBER,NLINE]
 ;   synflux    - Best-fit synthetic eigen-spectrum [NPIXEL,NFIBER]
 ;   lineflux   - Best-fit emission line fits + background terms  [NPIXEL,NFIBER]
-;   objhdr     - The FITS header from the first object read.  If spectra
-;                from multiple plates are read, then it is indeterminant
-;                which header this will be.
+;   objhdr     - The FITS header from the first object spPlate file read.
+;                If spectra from multiple plates are read, then it is
+;                indeterminant which header this will be.
+;   zhdr       - The FITS header from the first object spZ file read.
+;                If spectra from multiple plates are read, then it is
+;                indeterminant which header this will be.
 ;
 ; COMMENTS:
 ;   One can input PLATE and FIBER as vectors, in which case there must
@@ -149,13 +153,13 @@ end
 pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
  andmask=andmask, ormask=ormask, disp=disp, plugmap=plugmap, $
  loglam=loglam, tsobj=tsobj, zans=zans, zline=zline, $
- synflux=synflux, lineflux=lineflux, znum=znum, objhdr=objhdr, $
+ synflux=synflux, lineflux=lineflux, znum=znum, objhdr=objhdr, zhdr=zhdr, $
  coeffzero=coeff0, coeffone=coeff1, npix=npix, $
  topdir=topdir, align=align, silent=silent
 
    common com_readspec, q_flux, q_flerr, q_invvar, q_andmask, q_ormask, $
     q_disp, q_plugmap, q_loglam, q_wave, q_tsobj, q_zans, q_zline, $
-    q_synflux, q_lineflux, q_mjd, q_objhdr, q_needwave
+    q_synflux, q_lineflux, q_mjd, q_objhdr, q_zhdr, q_needwave
 
    platestr = string(plate,format='(i4.4)')
    if (NOT keyword_set(mjd)) then mjdstr = '*' $
@@ -231,7 +235,7 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       tsobj = plug2tsobj(plate, plugmap=plugmap)
    endif
 
-   if (q_zans OR q_synflux) then begin
+   if (q_zans OR q_synflux OR q_zhdr) then begin
       if (NOT keyword_set(znum)) then $
        zfile = 'spZbest-' + platestr + '-' + mjdstr + '.fits' $
       else $
@@ -318,6 +322,7 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    fits_close, fcb
 
    if (q_objhdr AND (NOT keyword_set(objhdr))) then objhdr = headfits(filename)
+   if (q_zhdr AND (NOT keyword_set(zhdr))) then zhdr = headfits(zfile)
 
    return
 end
@@ -326,20 +331,18 @@ end
 pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
  andmask=andmask, ormask=ormask, disp=disp, plugmap=plugmap, $
  loglam=loglam, wave=wave, tsobj=tsobj, zans=zans, zline=zline, $
- synflux=synflux, lineflux=lineflux, objhdr=objhdr, $
+ synflux=synflux, lineflux=lineflux, objhdr=objhdr, zhdr=zhdr, $
  znum=znum, topdir=topdir, align=align, silent=silent
 
    if (n_params() LT 1) then begin
-      print, 'Syntax: readspec, plate, [ fiber, mjd=, znum=, flux=, flerr=, invvar=, $'
-      print, ' andmask=, ormask=, disp=, plugmap=, loglam=, wave=, tsobj=, $'
-      print, ' zans=, zline=, synflux=, lineflux=, objhdr=, topdir=, /align, /silent ] '
+      doc_library, 'readspec'
       return
    endif
 
    ; This common block specifies which keywords will be returned.
    common com_readspec, q_flux, q_flerr, q_invvar, q_andmask, q_ormask, $
     q_disp, q_plugmap, q_loglam, q_wave, q_tsobj, q_zans, q_zline, $
-    q_synflux, q_lineflux, q_mjd, q_objhdr, q_needwave
+    q_synflux, q_lineflux, q_mjd, q_objhdr, q_zhdr, q_needwave
 
    if (NOT keyword_set(topdir)) then begin
       topdir = getenv('SPECTRO_DATA')
@@ -363,7 +366,9 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    q_lineflux = arg_present(lineflux)
    q_mjd = arg_present(mjd) AND (keyword_set(mjd) EQ 0)
    q_objhdr = arg_present(objhdr)
+   q_zhdr = arg_present(zhdr)
    objhdr = ''
+   zhdr = ''
    q_needwave = q_loglam OR q_wave OR keyword_set(align)
 
    nplate = n_elements(plate)
@@ -404,6 +409,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
 
    for ifile=0L, nfile-1 do begin
       objhdr1 = 0
+      zhdr1 = 0
       flux1 = 0
       flerr1 = 0
       invvar1 = 0
@@ -427,11 +433,12 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
        flux=flux1, flerr=flerr1, invvar=invvar1, andmask=andmask1, $
        ormask=ormask1, disp=disp1, plugmap=plugmap1, $
        tsobj=tsobj1, zans=zans1, zline=zline1, $
-       synflux=synflux1, lineflux=lineflux1, objhdr=objhdr1, $
+       synflux=synflux1, lineflux=lineflux1, objhdr=objhdr1, zhdr=zhdr1, $
        znum=znum, coeffzero=coeff0, coeffone=coeff1, npix=npix, $
        topdir=topdir, align=align, silent=silent
 
       if (q_objhdr AND NOT keyword_set(objhdr)) then objhdr = objhdr1
+      if (q_zhdr AND NOT keyword_set(zhdr)) then zhdr = zhdr1
       if (ifile EQ 0) then begin
          allindx = indx
          if (q_needwave) then begin
