@@ -288,15 +288,14 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 
    ;------------------
    ; Flat-field the extracted object fibers with the global flat
-   ; 
+
+   divideflat, flux, fluxivar, fflat, fibermask=fibermask
+
    ; flatinterp interpolates over regions 
+;   smoothfflat = flatinterp(fflat, 0.5, nsmooth=15)
+;   divideflat, flux, fluxivar, smoothfflat
 
-   smoothfflat = flatinterp(fflat, 0.5, nsmooth=15)
-   divideflat, flux, fluxivar, smoothfflat
-
-   lowflat = where(fflat LT 0.5)
-   if (lowflat[0] NE -1) then pixelmask[lowflat] = $
-                pixelmask[lowflat] OR pixelmask_bits('LOWFLAT')
+   pixelmask = pixelmask OR ((fflat LT 0.5) * pixelmask_bits('LOWFLAT'))
 
    ;------------------
    ; Look for pixels where scattered light is dominating
