@@ -44,9 +44,11 @@ pro divideflat, flux, fflat, invvar=invvar, minval=minval, quiet=quiet
    if (n_params() NE 2) then $
     message, 'Wrong number of arguments.'
 
+   ndim = size(flux, /n_dimen)
    dims = size(flux, /dimens)
-   npix = dims[0] 
-   ntrace = dims[1] 
+   npix = dims[0]
+   if (ndim EQ 1) then ntrace = 1 $
+    else ntrace = dims[1] 
 
    if (n_elements(minval) EQ 0) then minval = 0.03
 
