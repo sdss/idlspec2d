@@ -92,6 +92,8 @@ pro combine1fiber, inloglam, objflux, objivar, $
    ;----------
    ; Set defaults
 
+   EPS = (machar()).eps ; Use this to avoid some round-off errors
+
    if (NOT keyword_set(binsz)) then begin
       if (npix EQ 1) then binsz = 1 $
        else binsz = inloglam[1] - inloglam[0]
@@ -165,8 +167,8 @@ endif else begin
          endelse
 endelse
 
-         inside = where(newloglam GE min(inloglam[ss]) $
-          AND newloglam LE max(inloglam[ss]), numinside)
+         inside = where(newloglam GE min(inloglam[ss])-EPS $
+          AND newloglam LE max(inloglam[ss])+EPS, numinside)
 
          if (numinside EQ 0) then begin
             splog,'WARNING: No wavelengths inside breakpoints'
@@ -233,7 +235,7 @@ endelse
 
                   smask = interpol(float(fullcombmask[these]), $
                    inloglam[these], newloglam[inbetween])
-                  ibad = where(smask LT 1.0 - (machar()).eps) ; check roundoff
+                  ibad = where(smask LT 1.0 - EPS)
                   if (ibad[0] NE -1) then result[ibad] = 0
 
                   newivar[inbetween] = newivar[inbetween] + result
