@@ -9,6 +9,14 @@
 # D. Schlegel, Princeton, 19 Dec 2000
 #------------------------------------------------------------------------------
 
+# Exit if this process is already running.
+
+n=`ps -elf | grep sprobot1d.sh | grep -v grep | wc -l`
+if [ X"$n" != X"" -a "$n" -gt 2 ]; then
+  echo "Already running sprobot1d.sh.  Exiting."
+  exit
+fi
+
 # Do not put this in the background, because we search for the "sprobot1d.sh"
 # process to determine if this is already running!
 
