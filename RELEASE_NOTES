@@ -16,10 +16,13 @@ BSPLINE_ITERFIT (in idlutils): Modified to avoid crashing SPREDUCE1D.
    of the y-vector is zero.  (2) In the case where there are too few points to
    fit, still return a valid solution of all zeros.
 FINDSPEC: New routine for finding SDSS spectra that match a given RA, DEC.
+MULTISYNTHSPEC: New routine that is sometimes faster than SYNTHSPEC, but
+           I would not recommend using this yet.
 MYFLUXCALIB: Make robust to degenerate case of only 1 input spectro-photo std.
 PLATELIST: Lower (S/N)^2 cutoff to 13 for all G,I bands (from 15 previously).
            If ZWARNING flag exists in 1D outputs, use that to determine
            number of UNKNOWN or SKY identifications.
+READSPEC: Add option to generate the synthetic spectra.
 REDMONSTER: New routine for looking for Red Monster (large regions of
             bad sky residuals, which, for example happens when the hand-paddle
             light is on at the telescope).  Flag these pixels with the
@@ -33,6 +36,10 @@ SPREDUCE1D: Search for stars at velocities to +/- 1200 km/s (was 600 km/s).
             Compute velocity dispersions using real-space method (VDISPFIT).
             Slightly increase width for re-fitting galaxy redshifts from
               PWIDTH=5 to 7.  This may fix PR #1938.
+            Speed up computation of FRACNSIGMA by calling FILTER_THRU()
+              for the whole plate at once.
+            Output SYNFLUX as a 2nd HDU in the spZbest*.fits file.
+SYNTHSPEC: Calling sequence now allows for returning an array of spectra.
 TELLURIC_CORR: If a telluric star is deemded bad, then reject all of
             its FITFLUX pixels from the global fit.  Previously, we were
             only rejecting the pixels INDT, but still allowing bad continuum
