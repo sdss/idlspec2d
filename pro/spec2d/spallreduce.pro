@@ -227,6 +227,7 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
       startcombtime = systime(1)
 
       for side=1, 2 do begin
+
             outputroot = 'idlout-'+string(format='(i1,a,i4.4,a)',side, $
              '-',plateid,'-')
 
@@ -237,7 +238,7 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
              splog, 'No files found for side ', side $
             else $
              combine2dout, files, filepath(outputroot, root_dir=combineDir), $
-              wavemin = alog10(3750.0)
+              wavemin = alog10(3750.0), everyn=1
       endfor
       splog, 'Finished combining sequence', seqid[iseq], ' in', $
        systime(1)-startcombtime, ' seconds'

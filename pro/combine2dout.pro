@@ -170,7 +170,7 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
 	   newwave = dindgen(npix)*bin + wavemin
 
          if (keyword_set(everyn)) then $
-           everyn = nfiles/2 + 1 $
+           everyn = (nfiles + 1)/2 $
          else bkpt = dindgen(nbkpt)*bkptbin + bkptmin
 	
 
@@ -187,6 +187,7 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
 ;	Using newwave as breakpoints
 ;		
 
+	   stop
 	   ss = sort(fullwave)
 	   fullbkpt = slatec_splinefit(fullwave[ss], fullspec[ss], coeff, $
               bkpt=bkpt, everyn=everyn, invvar=fullivar[ss], mask=mask, /silent)
