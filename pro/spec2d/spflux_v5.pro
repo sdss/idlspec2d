@@ -811,6 +811,10 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
        else x2 = 0
       calibimg = bspline_valu(loglam1, calibset, x2=x2)
 
+      ; Set to zero any pixels outside the known flux-calibration region
+      ibad = where(loglam1 LT 10^logmin OR loglam1 GT 10^logmax, nbad)
+      if (nbad GT 0) then calibimg[ibad] = 0
+
       ;----------
       ; Write the output file
 
