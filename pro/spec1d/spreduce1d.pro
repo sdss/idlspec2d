@@ -647,17 +647,18 @@ ormask = 0 ; Free memory
 
    ; Warning: For QSOs, if C_IV, CIII], Mg_II, H_beta or H_alpha are negative
    ; and have at least a few pixels on each side of the fit (LINENPIXLEFT >= 4,
-   ; LINENPIXRIGHT >= 4, and DOF >= 4).
+   ; LINENPIXRIGHT >= 4, and DOF >= 4).  Must be at least 3-sigma negative.
    for iobj=0, nobj-1 do begin
       if (strtrim(res_all[0,iobj].class,2) EQ 'QSO') then begin
          indx = where(zline.fiberid EQ res_all[0,iobj].fiberid $
-          AND (zline.linename EQ 'C_IV 1549' $
-            OR zline.linename EQ 'C_III] 1908' $
-            OR zline.linename EQ 'Mg_II 2799' $
-            OR zline.linename EQ 'H_beta' $
-            OR zline.linename EQ 'H_alpha') )
+          AND (strmatch(zline.linename, 'C_IV 1549*') $
+            OR strmatch(zline.linename, 'C_III] 1908*') $
+            OR strmatch(zline.linename, 'Mg_II 2799*') $
+            OR strmatch(zline.linename, 'H_beta*') $
+            OR strmatch(zline.linename, 'H_alpha*')) )
          if (indx[0] NE -1) then begin
-            qflag = total(zline[indx].linearea LT 0 $
+            qflag = total( $
+             zline[indx].linearea + 3*zline[indx].linearea_err LT 0 $
              AND zline[indx].linearea_err GT 0 $
              AND zline[indx].linenpixleft GE 4 $
              AND zline[indx].linenpixright GE 4 $
