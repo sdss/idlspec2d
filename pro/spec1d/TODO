@@ -1,11 +1,21 @@
 
-* Some z errors are negative!
+* Write PLATELIST routine to list reduced plates.
 
-* For PCA_VSTND, get rid of bad endpoints made with too little data.
+* Fix fudge bug fix in TWEAK_GAL code.  Also, apodize the ends of the input
+  spectrum to minimize edge effects, or trim to points common to all test z's.
+
+* Output synthetic gri colors for each object.
+
+* Some z errors are negative!
 
 * For PCA_SOLVE, trim to desired wavelength range before solving.
 
 * For eigenspectra, save a 2nd HDU which is the remaining inverse-variance.
+
+* Look at the e1/e0, e2,e0 values for the galaxies.
+
+--------------DONE-------------------------------------------------------------
+* For PCA_VSTND, get rid of bad endpoints made with too little data.
 
 * Final correlation coeff should be computed with same wavelength-range
   for template, and masked + apodized the same as the object spectrum.
@@ -13,6 +23,4 @@
 * Minimize reduced chi2 instead of chi2 ?
 
 * Still need to compute errors in redshift, but how?
-
-* Look at the e1/e0, e2,e0 values for the galaxies.
 
