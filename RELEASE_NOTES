@@ -9,6 +9,8 @@ CREATE_LINESTRUCT,LINEBACKFIT,SPREDUCE1D: Replace LINENPIX with the number
 FLUX_STANDARD: Added empirical correction to SPECTRUM-Kurucz models.
            Then got rid of them!
 GET_TAI: Trigger a Warning if (TAI-END) - (TAI-BEG) < EXPTIME + 20 sec.
+PLATECOMPARE: Also plot any objects that have ZWARNING set to zero
+           in one observation and non-zero in another.
 PLATELINKS: New proc for generating symbolic links to either all of the
            interesting files in the $SPECTRO_DATA tree, or one of the
            public subsets (e.g., "EDR" or "DR1").
@@ -23,6 +25,8 @@ SPHDRFIX: Test if the opHdrFix file (or the directory!) even exist at all.
 READSPEC: Fix minor bug that would truncate the wavelength mapping
            when spectra are read from multiple plates and /ALIGN not used.
 SPPLATE_CORRECT: Fixed small bug so that it works with the smear left in.
+SPREDUCE1D: In setting the NEGATIVE_EMISSION flag for QSOs, demand that
+           the line be negative by at least 3-sigma.
 STYPE_STANDARD: Fixed error in smoothing box size.
 ZEROPT_COR: Added range checks to get rid of seg faults.
 
