@@ -50,12 +50,25 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
    if (NOT keyword_set(ecalibfile)) then ecalibfile = 'opECalib.par'
    
    junk = findfile(configfile, count=ct)
+   if (ct NE 1) then begin
+     pp = getenv('EVIL_PAR') 
+     junk = findfile(filepath(configfile, root_dir=pp), count=ct)
+   endif
    if (ct NE 1) then $
-    message, 'No configuration file ' + string(configfile)
+     message, 'No configuration file ' + string(configfile)
+
+   realconfig = junk[0]
 
    junk = findfile(ecalibfile, count=ct)
+   if (ct NE 1) then begin
+     pp = getenv('EVIL_PAR') 
+     junk = findfile(filepath(ecalibfile, root_dir=pp), count=ct)
+   endif
    if (ct NE 1) then $
     message, 'No ECalib file ' + string(ecalibfile)
+
+   realecalib = junk[0]
+
 
    rawdata = rdss_fits(infile, hdr)
 
@@ -75,7 +88,7 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
 
    ; Read in opConfig.par file
 
-   yanny_read, configfile, pdata
+   yanny_read, realconfig, pdata
    config = *pdata[0]
    config = config[ where(config.camrow EQ camrow AND config.camcol EQ camcol) ]
 
@@ -113,7 +126,7 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
     config.sccdcolsec2, config.sccdcolsec3]
 
    ; Read in ECalib File
-   yanny_read, ecalibfile, pdata
+   yanny_read, realecalib, pdata
    ecalib = *pdata[0]
    ecalib = ecalib[ where(ecalib.camrow EQ camrow AND ecalib.camcol EQ camcol) ]
 

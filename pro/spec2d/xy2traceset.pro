@@ -92,6 +92,7 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
          res = svdfit(2.0*(xpos[*,i]-xmid)/xrange, ypos[*,i], ncoeff, $
           /double, function_name=function_name, singular=singular)
          tset.coeff[*,i] = res
+         print, format='($, ".",i4.4,a5)',i,string([8b,8b,8b,8b,8b])
       endfor
 
    endif else begin

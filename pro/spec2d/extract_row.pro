@@ -41,6 +41,7 @@
 ;		   Default is 0, and should be left at 0
 ;                  unless fullcovar is being analyzed, adds a factor of 2 or
 ;		   3 to CPU time.
+;   niter      - number of rejection iterations performed
 ;
 ; OUTPUTS:
 ;   ans        -  Extracted flux in each parameter [nCoeff, nFiber]
@@ -80,7 +81,7 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
                    bfixarr = bfixarr, xvar=xvar, mask=mask, $
                    diagonal=p, fullcovar=covar, wfixarr = wfixarr, $
                    nPoly=nPoly, maxIter=maxIter, highrej=highrej, $
-                   lowrej=lowrej, calcCovar=calcCovar
+                   lowrej=lowrej, calcCovar=calcCovar, niter=niter
 
    ; Need 4 parameters
    if (N_params() LT 4) then begin
@@ -90,7 +91,7 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
       print, ' xvar=xvar, mask=mask, '
       print, ' diagonal=diagonal, fullcovar=fullcovar, wfixarr = wfixarr,'
       print, ' nPoly=nPoly, maxIter=maxIter, highrej=highrej, '
-      print, ' lowrej=lowrej, calcCovar=calcCovar])'
+      print, ' lowrej=lowrej, calcCovar=calcCovar, niter=niter])'
       return, -1
    endif
 
@@ -108,6 +109,7 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
    if (NOT keyword_set(lowrej)) then lowrej = 5.0
    if (NOT keyword_set(wfixed)) then wfixed = [1]
    if (NOT keyword_set(calcCovar)) then calcCovar = 0
+   if (NOT keyword_set(proftype)) then proftype = 1
 
    if (NOT keyword_set(xvar)) then xvar = findgen(nx) $
       else if (nx NE n_elements(xvar)) then $
@@ -118,7 +120,7 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
          message, 'Number of elements in FIMAGE and MASK must be equal'
 
    nCoeff = n_elements(wfixed)       ;Number of parameters per fibers
-   proftype = 1                      ;Gaussian
+;   proftype = 1                      ;Gaussian
 
    if (nx NE N_elements(invvar)) then $
     message, 'Number of elements in FIMAGE and INVVAR must be equal'

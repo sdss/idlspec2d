@@ -7,9 +7,10 @@
 ;
 ; CALLING SEQUENCE:
 ;   extract_image(fimage, invvar, xcen, sigma, flux, [finv, yrow=yrow,
-;              ymodel=ymodel, fscat=fscat, proftype = proftype, 
+;              ymodel=ymodel, fscat=fscat,proftype = proftype,ansimage=ansimage,
 ;              wfixed=wfixed, sigmacor=sigmacor, xcencor=xcencor, mask=mask,
-;              nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej])
+;              nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej,
+;              calcCovar=calcCovar])
 ;
 ; INPUTS:
 ;   fimage     - Image[nCol, nRow]
@@ -21,6 +22,10 @@
 ; OPTIONAL KEYWORDS:
 ;   yrow       - long array specifying which rows to extract, default is all
 ;   proftype   - currently, one can only use 1: Gaussian (scalar)
+;              - or                          2: Exp Cubic
+;              - or                          3: Double Gaussian
+;              - or              4: Exp Cubic with doublewide Gaussian
+;   ansimage   - return the coefficients of fit for each row [nCoeff,nRow]
 ;   wfixed     - array of 1's and zero's which set which parameters are fixed.
 ;                e.g. [1] just gaussian's with fixed width sigma
 ;                     [1, 1] fit gaussian + sigma correction
@@ -31,8 +36,9 @@
 ;   mask       - byte mask: 1 is good and 0 is bad [nCol,nRow] 
 ;   nPoly      - order of chebyshev scattered light background; default to 5
 ;   maxIter    - maximum number of profile fitting iterations; default to 10
-;   highrej    - positive sigma deviation to be rejected (default 5.0)
-;   lowrej     - negative sigma deviation to be rejected (default 5.0)
+;   highrej    - positive sigma deviation to be rejected (default 10.0)
+;   lowrej     - negative sigma deviation to be rejected (default 10.0)
+;   calcCovar  - calculate Full covariance matrix
 ;
 ; OUTPUTS:
 ;   flux       - Total extracted flux in each profile [nRowExtract, nFibers]
@@ -55,14 +61,16 @@
 ;-
 ;------------------------------------------------------------------------------
 pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
-               ymodel=ymodel, fscat=fscat, proftype = proftype,  $
+               ymodel=ymodel, fscat=fscat,proftype=proftype,ansimage=ansimage, $
                wfixed=wfixed, sigmacor=sigmacor, xcencor=xcencor, mask=mask, $
-               nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej 
+               nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej, $
+	       calcCovar=calcCovar
 
    ; Need 5 parameters
    if (N_params() LT 5) then begin
       print, 'Syntax - extract_image(fimage, invvar, xcen, sigma, flux, [finv,'
       print, ' yrow=yrow, ymodel=ymodel, fscat=fscat, proftype = proftype, '
+      print, ' ansimage = ansimage, calcCovar=calcCovar'
       print, ' wfixed=wfixed, sigmacor=sigmacor, xcencor=xcencor, mask=mask, '
       print, ' nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej])'
       return
@@ -136,11 +144,25 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
 
    if (N_elements(nPoly) EQ 0) then nPoly = 5      ; order of background
    if (NOT keyword_set(maxIter)) then maxIter = 10
-   if (NOT keyword_set(highrej)) then highrej = 5.0
-   if (NOT keyword_set(lowrej)) then lowrej = 5.0 
+   if (NOT keyword_set(highrej)) then highrej = 10.0
+   if (NOT keyword_set(lowrej)) then lowrej = 10.0 
    if (NOT keyword_set(wfixed)) then wfixed = [1]  ; Zeroth order term
    if (NOT keyword_set(proftype)) then proftype = 1  ; Gaussian
    if (NOT keyword_set(ymodel)) then ymodel = fltarr(nx,ny) 
+   if (NOT keyword_set(calcCovar)) then calcCovar=0
+
+   corcalc = lonarr(3)
+   corcalc[0] = 1
+   if (keyword_set(sigmacor)) then begin
+       corcalc[1] = 1
+       sigmacor = fltarr(nRowExtract,nTrace) 
+   endif
+   if (keyword_set(xcencor)) then begin
+       corcalc[2] = 1
+       xcencor = fltarr(nRowExtract,nTrace) 
+   endif
+
+   ymodel = fltarr(nx,ny) 
 
    masksize = size(mask)
    if (NOT keyword_set(mask)) then mask = make_array(nx,ny, /byte, value=1) $
@@ -153,32 +175,13 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
 
    nCoeff = n_elements(wfixed)       ;Number of parameters per fibers
 
-   if (n_elements(sigmacor) EQ 0) then $
-      sigmacor = fltarr(nRowExtract,nTrace) $
-   else if((size(sigmacor))[0] NE 2) then $
-        sigmacor = fltarr(nRowExtract,nTrace) $
-      else if ((size(sigmacor))[1] NE nRowExtract) then $
-        sigmacor = fltarr(nRowExtract,nTrace) $
-      else if ((size(sigmacor))[2] NE nTrace) then $
-        sigmacor = fltarr(nRowExtract,nTrace) 
-
-   if (n_elements(xcencor) EQ 0) then $
-      xcencor = fltarr(nRowExtract,nTrace) $
-   else if((size(xcencor))[0] NE 2) then $
-        xcencor = fltarr(nRowExtract,nTrace) $
-      else if ((size(xcencor))[1] NE nRowExtract) then $
-        xcencor = fltarr(nRowExtract,nTrace) $
-      else if ((size(xcencor))[2] NE nTrace) then $
-        xcencor = fltarr(nRowExtract,nTrace) 
-
    nPoly = LONG(nPoly)
    ma = nPoly + nTrace*nCoeff
    maxIter = LONG(maxIter)
    proftype = LONG(proftype)
 
    ; Allocate memory for C routines
-   p = fltarr(ma)         ; diagonal errors
-   ans = fltarr(ma)       ; parameter values
+   ansimage = fltarr(ma,nRowExtract)       ; parameter values
    ymodelrow = fltarr(nx)
    fscatrow = fltarr(nTrace)
    lTrace = lindgen(nTrace)
@@ -198,6 +201,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
 
    for iy=0, nRowExtract-1 do begin
      cur = yrow[iy]
+     print, format='($, ".",i4.4,a5)',cur,string([8b,8b,8b,8b,8b])
      xcencurrent = xcenuse[*,cur]
      sigmacur = sigma1[*, cur]
 ;
@@ -208,99 +212,25 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
      if (count GT 0) then $
         message, 'XCEN is not sorted or not separated by greater than 3 pixels.'
 
+     masktemp = mask[*,cur]
      ansrow = extract_row(fimage[*,cur], invvar[*,cur], xcencurrent, $
       sigmacur, ymodel=ymodelrow, fscat=fscatrow, proftype=proftype, $
-      wfixed=wfixed, mask=mask[*,cur], diagonal=prow, nPoly=nPoly, $
-      maxIter=maxIter, highrej=highrej, lowrej=lowrej, calcCovar=0)
+      wfixed=wfixed, mask=masktemp, diagonal=prow, nPoly=nPoly, $
+      oback=oback, niter=niter, $
+      maxIter=maxIter, highrej=highrej, lowrej=lowrej, calcCovar=calcCovar)
 
-     if(proftype EQ 1) then begin
-        print, format='($, ".",i4.4)',cur
-;       print, 'Analyzing row', cur, '     With Gaussian Profile', wfixed
-
-       fluxrow = ansrow[0,*]
-       fluxinvvar = prow[lTrace*nCoeff]*prow[lTrace*nCoeff] ; best estimate we can do
-					      ; without covariance matrix
-
-       if(nCoeff GE 2) then begin 	      ; add in symmetric term if present
-	  widthrow = ansrow[1,*]
-          widthinvvar = prow[lTrace*nCoeff + 1]*prow[lTrace*nCoeff + 1]
-          fluxrow = fluxrow + widthrow
-
-;
-;	Estimate new widths if specified
-;
-          if(wfixed[1] GT 0 AND keyword_set(sigmacor)) then begin 
-;             print, 'Calculating SIGMACOR...'
-
-;
-;	 Make a guess at an underestimated error
-;
-	     safe = where(fluxrow GT 0.0, safecount)
-             if (safecount GT 0) then begin
-                r = widthrow[safe]/fluxrow[safe]
-                rinvvar = fluxrow[safe] * fluxrow[safe] * $
-                        fluxinvvar[safe]  * widthinvvar[safe]
-	        nz = where(rinvvar NE 0.0, nonzerocount)
-	 
-                if (nonzerocount GT 0) then $
-                  rinvvar[nz] = rinvvar[nz] / (r[nz]*r[nz] * $
-                     fluxinvvar[safe[nz]] + widthinvvar[safe[nz]])
-
-;
-;		Only take corrections significant at 2 sigma
-;
-	        check = where(rinvvar GT 4.00 AND abs(r) LT 0.4, count)
-                if(count GT 0) then $
-	          sigmacur[safe[check]] = sigmacur[safe[check]] * $ 
-                   (r[check]+ 1.0)
-             endif
-             sigmacor[iy,*] = sigmacur
-          endif
-
-       endif
-
-;
-;	Estimate new centroids if specified
-;
-       if(nCoeff GE 3) then  $ ; calculate asymmetric term if present
-       if(wfixed[2] GT 0 AND keyword_set(xcencor)) then begin 
-;          print, 'Calculating XCENCOR...'
-
-	 centerrow = ansrow[2,*]
-         centinvvar = prow[lTrace*nCoeff + 2]*prow[lTrace*nCoeff + 2]
-
-;
-;	 Make a guess at an underestimated error
-;
-	 safe = where(fluxrow GT 0.0, safecount)
-         if (safecount GT 0) then begin
-            r = centerrow(safe)/fluxrow(safe)
-            rinvvar = fluxrow[safe] * fluxrow[safe] * $
-                        fluxinvvar[safe]  * centinvvar[safe]
-            nz = where(rinvvar NE 0.0, nonzerocount)
-
-            if (nonzerocount GT 0) then $
-               rinvvar[nz] = rinvvar[nz] / (r[nz]*r[nz] * $
-                     fluxinvvar[safe[nz]] + centinvvar[safe[nz]])
-;
-;		Only take corrections significant at 2 sigma
-;
-	    check = where(rinvvar GT 4.00 AND abs(r) LT 0.4, count)
-            xcencurrent = fltarr(nTrace)
-            if(count GT 0) then $
-	       xcencurrent(safe(check)) = r(check) * sigmacur(safe(check))
-          endif
-          xcencor[iy,*] = xcencurrent
-       endif
-     endif
+     mask[*,cur] = masktemp
+     ansimage[0:ma-nPoly-1,iy] = ansrow
+     ansimage[ma-nPoly:ma-1,iy] = oback
 
      if(keyword_set(ymodel)) then ymodel[*,cur] = ymodelrow
      if(keyword_set(fscat)) then fscat[iy,*] = fscatrow
 
+     calcflux, ansrow, prow, fluxrow, finvrow, wfixed, proftype, lTrace,nCoeff,$
+            sigmacur, xcencur, corcalc 
      flux[iy,*] = fluxrow 
-     finv[iy,*] = fluxinvvar
+     finv[iy,*] = finvrow
    endfor	  
 
    return
 end
-;------------------------------------------------------------------------------

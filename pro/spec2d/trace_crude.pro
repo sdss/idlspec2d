@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   xset = trace_crude( fimage, invvar, [xstart=, ystart=, radius=, yset=, $
-;    nave=, nmed=, thresh=, maxerr=, maxshift=, maxshift0=, xerr= ] )
+;    nave=, nmed=, thresh=, maxerr=, maxshifte=, maxshift0=, xerr= ] )
 ;
 ; INPUTS:
 ;   fimage     - Image
@@ -30,7 +30,7 @@
 ;                1.0 times the median of the row(s) used for the initial peaks.
 ;   maxerr     - Maximum error in centroid allowed for valid recentering;
 ;                default to 0.2
-;   maxshift   - Maximum shift in centroid allowed for valid recentering;
+;   maxshifte  - Maximum shift in centroid allowed for valid recentering;
 ;                default to 0.1
 ;   maxshift0  - Maximum shift in centroid allowed for initial row;
 ;                default to 0.5
@@ -59,7 +59,7 @@
 ;------------------------------------------------------------------------------
 function trace_crude, fimage, invvar, xstart=xstart, ystart=ystart, $
  radius=radius, yset=yset, nave=nave, nmed=nmed, thresh=thresh, $
- maxerr=maxerr, maxshift=maxshift, maxshift0=maxshift0, xerr=xerr
+ maxerr=maxerr, maxshifte=maxshift, maxshift0=maxshift0, xerr=xerr
 
    ; Need 1 parameter
    if (N_params() LT 1) then begin

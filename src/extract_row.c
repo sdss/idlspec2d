@@ -103,7 +103,8 @@ IDL_LONG extract_row
    for(i=0, k=0; i<nTrace; i++)
       for(j=0; j<nCoeff; j++, k++) {
          length = xmax[i] - xmin[i] + 1;
-         if (length > 0) aprofile[k] = (float *)malloc(length * sizeof(float));
+         if (length < 0) length = 0;
+         aprofile[k] = (float *)malloc(length * sizeof(float));
       }
 
    fillProfile(aprofile, x, xcen, xmin, xmax, sigma, nx, nCoeff, 
@@ -130,15 +131,18 @@ IDL_LONG extract_row
 
 
    if(mfit != ma) {
-      fprintf(stderr, "Subtracting fixed variables\n");
+/*      fprintf(stderr, "Subtracting fixed variables\n"); */
       subtractProfile(ysub, nx, xmin, xmax, nTrace, nCoeff, aprofile, ia, ans);
       subtractPoly(ysub, nx, nPoly, apoly, &ia[tTrace], &ans[tTrace]);
    } 
 
    beta = (float *)malloc(sizeof(float)*ma);
 
+   
    fillCovar(ysub, invvar, nx, aprofile, apoly, nTrace, nCoeff, nPoly, 
           beta, ia, covar, xmin, xmax);
+
+//   printf("Fill Covar done \n");
 
    choldcRow(covar, ia, nTrace, nCoeff, nPoly, p); 
 //   printf("choldc Custom2 done\n");
@@ -162,6 +166,7 @@ IDL_LONG extract_row
       for(i=0; i < nx; i++) 
          ymod[i] += ans[j]*apoly[k][i];
     }
+//   printf("scattered light model done\n");
 
    /* Use 0th term to estimate scattered light contribution  */
    for (j=0;j<nTrace;j++) 
@@ -172,6 +177,7 @@ IDL_LONG extract_row
       for (coeff=0; coeff<nCoeff; coeff++,l++)
          for (i=xmin[j], k=0; i <= xmax[j]; i++, k++) 
             ymod[i] += ans[l]*aprofile[l][k];
+//   printf("model done\n");
 
    /* Free temporary memory */
    for(i=0; i<tTrace; i++) free(aprofile[i]);
@@ -184,6 +190,7 @@ IDL_LONG extract_row
    free(xmin);
    free(xmax);
    free(covar);
+//   printf("variables freed\n");
 
    return retval;
 }
@@ -226,6 +233,127 @@ void ProfileGauss(float *x, IDL_LONG ndat, float **y, float xcen, IDL_LONG xmin,
 	}
 }
 
+void ProfileAbs3(float *x, IDL_LONG ndat, float **y, float xcen, 
+                IDL_LONG xmin, IDL_LONG xmax, float sigma, IDL_LONG nCoeff)
+{ 
+	IDL_LONG i,j,k;
+	float base, mult;
+	float diff, diffabs, denom, frac;
+	float sqbase;
+
+//		Below is denominator fro x^3
+
+	denom = 1.0/(2.88450 * 0.89298 * sigma);
+
+	for (i=xmin,k=0; i<=xmax; i++, k++) {
+	   for (j=0;j<nCoeff;j++) y[j][k] = 0.0;
+	  if(i >= 0 && i < ndat && nCoeff > 0) {
+	     for(frac = -0.4; frac <= 0.5; frac += 0.2)  {
+	        diff = (xcen - x[i] + frac)/sigma;
+                diffabs = fabs(diff);
+	        base = exp(-diff*diff*diffabs/3.0)*denom;
+
+                y[0][k] += base;
+	        if(nCoeff >1) {
+                   sqbase = diff*diff*diffabs*base;
+	           y[1][k] += sqbase;
+
+	           if(nCoeff >2) y[2][k] += diff*diffabs*base;
+
+	           for (j=3,mult=diff;j<nCoeff;j++,mult *= diff)
+	              y[j][k] += mult*sqbase;
+                   }
+                }
+	     for (j=0;j<nCoeff;j++) y[j][k] /= 5.0;
+	   }
+	}
+}
+
+void ProfileDoubleGauss(float *x, IDL_LONG ndat, float **y, float xcen, IDL_LONG xmin,
+		IDL_LONG xmax, float sigma, IDL_LONG nCoeff)
+{ 
+	IDL_LONG i,j,k;
+	float base, mult;
+	float diff, denom, frac;
+        float sigma2, diff2, base2, denom2;
+	float sqbase;
+
+	sigma2 = 2.0*sigma;
+	denom = 1.0/sqrt(6.2832 * sigma * sigma);
+	denom2 = 1.0/sqrt(6.2832 * sigma2 * sigma2);
+
+
+	for (i=xmin,k=0; i<=xmax; i++, k++) {
+	   for (j=0;j<nCoeff;j++) y[j][k] = 0.0;
+	  if(i >= 0 && i < ndat && nCoeff > 0) {
+	     for(frac = -0.4; frac <= 0.5; frac += 0.2)  {
+	        diff = (xcen - x[i] + frac)/sigma;
+	        diff2 = (xcen - x[i] + frac)/sigma2;
+	        base = exp(-diff*diff/2.0)*denom;
+	        base2 = exp(-diff2*diff2/2.0)*denom2;
+
+                y[0][k] += base;
+	        if(nCoeff >1) y[1][k] += base2;
+	        if(nCoeff >2) {
+                   sqbase = diff*diff*base;
+	           y[2][k] += sqbase;
+
+	           if(nCoeff >3) y[3][k] += diff*base;
+
+	           for (j=4,mult=diff;j<nCoeff;j++,mult *= diff)
+	              y[j][k] += mult*sqbase;
+                   }
+                }
+	     for (j=0;j<nCoeff;j++) y[j][k] /= 5.0;
+	   }
+	}
+}
+
+void ProfileAbs3WideGauss(float *x, IDL_LONG ndat, float **y, float xcen, 
+                IDL_LONG xmin, IDL_LONG xmax, float sigma, IDL_LONG nCoeff)
+{ 
+	IDL_LONG i,j,k;
+	float base, mult;
+	float diff, diffabs, denom, frac;
+        float sigma2, diff2, base2, denom2;
+	float sqbase;
+
+
+//		Below is denominator fro x^3
+
+	denom = 1.0/(2.88450 * 0.89298 * sigma);
+	sigma2 = 2.0*sigma;
+	denom2 = 1.0/sqrt(6.2832 * sigma2 * sigma2);
+
+	for (i=xmin,k=0; i<=xmax; i++, k++) {
+	   for (j=0;j<nCoeff;j++) y[j][k] = 0.0;
+	  if(i >= 0 && i < ndat && nCoeff > 0) {
+	     for(frac = -0.4; frac <= 0.5; frac += 0.2)  {
+	        diff = (xcen - x[i] + frac)/sigma;
+                diffabs = fabs(diff);
+	        base = exp(-diff*diff*diffabs/3.0)*denom;
+	        diff2 = (xcen - x[i] + frac)/sigma2;
+	        base2 = exp(-diff2*diff2/2.0)*denom2;
+
+
+                y[0][k] += base;
+	        if(nCoeff >1) y[1][k] += base2;
+	        if(nCoeff >2) {
+                   sqbase = diff*diff*diffabs*base;
+	           y[2][k] += sqbase;
+
+	           if(nCoeff >3) y[3][k] += diff*diffabs*base;
+
+	           for (j=4,mult=diff;j<nCoeff;j++,mult *= diff)
+	              y[j][k] += mult*sqbase;
+                   }
+                }
+	     for (j=0;j<nCoeff;j++) y[j][k] /= 5.0;
+	   }
+	}
+}
+
+
 void findXLimits(IDL_LONG *xmin, IDL_LONG *xmax, float *x, float *xcen, 
                IDL_LONG nx, IDL_LONG nTrace, float *sigma, float sigmal)
 {
@@ -249,8 +377,8 @@ void findXLimits(IDL_LONG *xmin, IDL_LONG *xmax, float *x, float *xcen,
       xmin[i] = place;
       xmax[i] = place2 - 1; 
 
-      if(xmax[i] <= xmin[i]) 
-         fprintf(stderr," Fiber # %d has no influence %f \n", (int) i, diff);
+/*      if(xmax[i] <= xmin[i]) 
+         fprintf(stderr," Fiber # %d has no influence %f \n", (int) i, diff); */
 
       place = xmin[i];
    }     
@@ -298,8 +426,8 @@ void CheckRowFibers(float **abig, IDL_LONG *xmin, IDL_LONG *xmax,
 	               if (ia[l]) {
 	                  ia[l] = 0;
 	                   a[l] = 0.0;
-          fprintf(stderr,"Fiber %d, dropped term %d, total: %f\n", 
-                    (int) i, (int) j,total);
+/*          fprintf(stderr,"Fiber %d, dropped term %d, total: %f\n", 
+                    (int) i, (int) j,total);   */
                     }
                  }
 	      if (total < 0.2) {
@@ -308,8 +436,8 @@ void CheckRowFibers(float **abig, IDL_LONG *xmin, IDL_LONG *xmax,
 	            if (ia[l]) {
 	               ia[l] = 0;
 	                a[l] = 0.0;
-          fprintf(stderr,"Fiber %d, dropped term %d, total: %f\n", 
-                   (int) i, (int) j,total);
+/*          fprintf(stderr,"Fiber %d, dropped term %d, total: %f\n", 
+                   (int) i, (int) j,total);   */
                     }
                }
 	}   
@@ -324,10 +452,26 @@ void fillProfile(float **y, float *x, float *xcen, IDL_LONG *xmin,
 	for (i=0,j=0; i<nTrace; i++,j+=nCoeff) {
 	    length = xmax[i] - xmin[i] + 1;
 	    if (length > 0 && sigma[i] > 0.0) {
-	      if (proftype != 1) 
-	         fprintf(stderr,"Only proftype=1 exists, using Gaussian");
-               ProfileGauss(x, nx, &y[j], xcen[i], xmin[i], xmax[i], 
+	      if (proftype == 1) 
+                 ProfileGauss(x, nx, &y[j], xcen[i], xmin[i], xmax[i], 
                       sigma[i], nCoeff);
+	      else if (proftype == 2)  {
+                 ProfileAbs3(x, nx, &y[j], xcen[i], xmin[i], xmax[i], 
+                      sigma[i], nCoeff);
+                 }
+	      else if (proftype == 3)  {
+                 ProfileDoubleGauss(x, nx, &y[j], xcen[i], xmin[i],xmax[i],
+                      sigma[i], nCoeff);
+                 }
+	      else if (proftype == 4)  {
+                 ProfileAbs3WideGauss(x, nx, &y[j], xcen[i], xmin[i],xmax[i],
+                      sigma[i], nCoeff);
+                 }
+              else {
+	         fprintf(stderr,"Using Gaussian");
+                 ProfileGauss(x, nx, &y[j], xcen[i], xmin[i], xmax[i], 
+                      sigma[i], nCoeff);
+              }
             }
 	}
  
