@@ -12,7 +12,7 @@
 ;   img        - Raw science image
 ;
 ; OPTIONAL INPUTS:
-;   hdr        - Header for image (unused)
+;   hdr        - Header for image
 ;   nsatrow    - Returned from SDSSPROC()
 ;   fbadpix    - Returned from SDSSPROC()
 ;
@@ -28,6 +28,14 @@
 ;     Reject if the 25-th percentile is more than 1000 electrons.
 ;       This percentile should be very low (of order 10 electrons), since
 ;       it will be the counts between fibers.
+;     Reject if any of the flat-field screens are closed.  If the FFS keyword
+;       is in the header, it should be FFS = '0 0 0 0 0 0 0 0'
+;     Reject if any of the flat-field lamps are turned on.  If the FF keyword
+;       is in the header, it should be FF = '0 0 0 0'
+;     Reject if any of the neon arc lamps are turned on.  If the NE keyword
+;       is in the header, it should be NE = '0 0 0 0'
+;     Reject if any of the HgCd arc lamps are turned on.  If the HGCD keyword
+;       is in the header, it should be HGCD = '0 0 0 0'
 ;
 ; EXAMPLES:
 ;
@@ -42,6 +50,38 @@
 function reject_science, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix
 
    qbad = 0
+
+   if (keyword_set(hdr)) then begin
+      ffs = sxpar(hdr, 'FFS')
+      if (keyword_set(ffs)) then begin
+         ffs_sum = fix( total( fix( str_sep(ffs,' ') ) ) )
+         if (ffs_sum GT 0) then begin
+            qbad = 1
+            splog, 'WARNING: Reject science: Flat-field screens are closed!'
+         endif
+      endif
+
+      lamp_ne = sxpar(hdr, 'NE')
+      ne_sum = fix( total( fix( str_sep(lamp_ne,' ') ) ) )
+      if (ne_sum GT 0) then begin
+         qbad = 1
+         splog, 'WARNING: Reject science: Ne lamps turned on!'
+      endif
+
+      lamp_hgcd = sxpar(hdr, 'HGCD')
+      hgcd_sum = fix( total( fix( str_sep(lamp_hgcd,' ') ) ) )
+      if (hgcd_sum GT 0) then begin
+         qbad = 1
+         splog, 'WARNING: Reject science: HgCd lamps turned on!'
+      endif
+
+      lamp_ff = sxpar(hdr, 'FF')
+      ff_sum = fix( total( fix( str_sep(lamp_ff,' ') ) ) )
+      if (ff_sum GT 0) then begin
+         qbad = 1
+         splog, 'WARNING: Reject science: Flat-field lamps turned on!'
+      endif
+   endif
 
    if (keyword_set(fbadpix)) then begin
       if (fbadpix GT 0.10) then begin
