@@ -62,6 +62,7 @@
 ;   $IDLSPEC2D_DIR/etc/TEMPLATEFILES
 ;
 ; PROCEDURES CALLED:
+;   computechi2()
 ;   find_nminima()
 ;   splog
 ;
