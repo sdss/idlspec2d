@@ -31,20 +31,20 @@
 ;   res        - Output structure with result for each object [NOBJECT].
 ;                The following elements are from the FITS header of the
 ;                best-fit Elodie spectrum:
-;                  ELODIE_FILENAME  - Filename
-;                  ELODIE_OBJECT    - Object name
-;                  ELODIE_SPTYPE    - Spectral type
-;                  ELODIE_BV        - (B-V) color
-;                  ELODIE_TEFF      - T_effective
-;                  ELODIE_LOGG      - Log10(gravity)
-;                  ELODIE_FEH       - [Fe/H]
-;                  ELODIE_Z_STDEV   - The standard deviation of the 12
-;                                     best-fit stars
+;                  ELODIE_FILENAME   - Filename
+;                  ELODIE_OBJECT     - Object name
+;                  ELODIE_SPTYPE     - Spectral type
+;                  ELODIE_BV         - (B-V) color
+;                  ELODIE_TEFF       - T_effective
+;                  ELODIE_LOGG       - Log10(gravity)
+;                  ELODIE_FEH        - [Fe/H]
+;                  ELODIE_Z_MODELERR - The standard deviation in redshift
+;                                      amongst the 12 best-fit stars
 ;                The following elements are from the ZFIND() function:
-;                  ELODIE_Z         - Redshift
-;                  ELODIE_Z_ERR     - Redshift error
-;                  ELODIE_RCHI2     - Reduced chi^2
-;                  ELODIE_DOF       - Degrees of freedom for fit
+;                  ELODIE_Z          - Redshift
+;                  ELODIE_Z_ERR      - Redshift error
+;                  ELODIE_RCHI2      - Reduced chi^2
+;                  ELODIE_DOF        - Degrees of freedom for fit
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -71,18 +71,18 @@ function elodie_struct
 
    result = create_struct( $
     name = 'ZELODIE', $
-    'elodie_filename' , ' ', $
-    'elodie_object'   , ' ', $
-    'elodie_sptype'   , ' ', $
-    'elodie_bv'       , 0.0, $
-    'elodie_teff'     , 0.0, $
-    'elodie_logg'     , 0.0, $
-    'elodie_feh'      , 0.0, $
-    'elodie_z'        , 0.0, $
-    'elodie_z_err'    , 0.0, $
-    'elodie_z_stdev'  , 0.0, $
-    'elodie_rchi2'    , 0.0, $
-    'elodie_dof'      ,  0L  $
+    'elodie_filename'  , ' ', $
+    'elodie_object'    , ' ', $
+    'elodie_sptype'    , ' ', $
+    'elodie_bv'        , 0.0, $
+    'elodie_teff'      , 0.0, $
+    'elodie_logg'      , 0.0, $
+    'elodie_feh'       , 0.0, $
+    'elodie_z'         , 0.0, $
+    'elodie_z_err'     , 0.0, $
+    'elodie_z_modelerr', 0.0, $
+    'elodie_rchi2'     , 0.0, $
+    'elodie_dof'       ,  0L  $
    )
 
    return, result
@@ -200,7 +200,7 @@ function elodie_best, objflux, objivar, $
       res_best[iobj].elodie_rchi2 = res_all[iobj,imin].rchi2
       res_best[iobj].elodie_dof = res_all[iobj,imin].dof
       isort = sort(res_all[iobj,*].rchi2)
-      res_best[iobj].elodie_z_stdev = stddev(res_all[iobj,isort[0:11]].z)
+      res_best[iobj].elodie_z_modelerr = stddev(res_all[iobj,isort[0:11]].z)
    endfor
 
    splog, 'Total time for ELODIE_BEST = ', systime(1)-stime0, ' seconds', $
