@@ -54,8 +54,11 @@
 ; EXAMPLES:
 ;   The following nights probably contain a bias sequence:
 ;     51686 51781 51809 51852 51893 51950 51978 52010 52038 52069
-;   (Those are the nights with a pixel flat sequence.)  There are probably
-;   earlier nights too.
+;     52245 52276 52305
+;   (Those are the nights with a pixel flat sequence.)  There are other
+;   nights with many biases that may be useful, but may have been done
+;   for other testing purposes:
+;     52084 52085 52121 52229 52294
 ;
 ;   Generate one of these sets of biases with:
 ;     spbiasgen, mjd=51893, expstart=7607, expend=7616, outdir='.'
