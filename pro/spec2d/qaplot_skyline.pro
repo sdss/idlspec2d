@@ -114,11 +114,14 @@ pro qaplot_skyline, lwave, obj, objivar, objsub, objsubivar, plugsort, wset, $
    else $
     airmass = 0
 
-   if (min(airmass) LT 1.0 OR max(airmass) GT 3.0) then begin
-      splog, 'WARNING: Airmass out of range: ' + $
+   if (min(airmass) LT 1.0) then begin
+      splog, 'WARNING: Invalid Airmass range = ' + $
        string(minmax(airmass), format='(2(f6.2,x))')
       airmass = 1
-   endif
+   endif else begin
+      splog, 'Airmass range = ' + $
+       string(minmax(airmass), format='(2(f6.2,x))')
+   endelse
 
    lflux = lflux / airmass
 
@@ -159,12 +162,14 @@ pro qaplot_skyline, lwave, obj, objivar, objsub, objsubivar, plugsort, wset, $
    djs_oplot, radius[iskies], lflux[iskies], psym=2, color='red'
    djs_oplot, !x.crange, [lmean,lmean], color='red'
 
-   if (keyword_set(tai)) then begin
+   if (keyword_set(tai) AND n_elements(airmass) GT 1) then begin
       plot, airmass, lflux, psym=1, yrange=yrange, $
        xtitle='Airmass', ytitle=ytitle
       djs_oplot, airmass[iskies], lflux[iskies], psym=2, color='red'
       djs_oplot, !x.crange, [lmean,lmean], color='red'
-   endif
+   endif else begin
+      splog, 'No AIRMASS range for plotting airmass residuals'
+   endelse
 
    !p.multi = 0
 
