@@ -227,7 +227,7 @@ function fluxcorr, flux, fluxivar, wset, plugsort, color=color, $
 
 	negs = where(fullfit LE 0.0, nnegs)
 	if (nnegs GT 0) then $
-	 splog, 'ABORT: Flux factor has negative elements!'
+	 splog, 'WARNING: Flux factor has negative elements:', nnegs
 
 	fluxfactor = fullfit / (fullf8v * scaling)
 

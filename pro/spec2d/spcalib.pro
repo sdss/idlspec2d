@@ -148,7 +148,7 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
       ;-----
       ; Decide if this flat is bad:
       ;   Reject if more than 1% of the pixels are marked as bad.
-      ;   Reject if more than 10 rows are saturated.
+      ;   Reject if more than 20 rows are saturated.
 
       qbadflat = 0
       if (fbadpix GT 0.01) then begin
@@ -156,7 +156,7 @@ pro spcalib, flatname, arcname, pixflatname=pixflatname, fibermask=fibermask, $
          splog, 'Reject flat ' + flatname[iflat] + $
           ' (' + string(format='(i3)', fix(fbadpix*100)) + '% bad pixels)'
       endif
-      if (nsatrow GT 10) then begin
+      if (nsatrow GT 20) then begin
          qbadflat = 1
          splog, 'Reject flat ' + flatname[iflat] + $
           ' (' + string(format='(i4)', nsatrow) + ' saturated rows)'
@@ -263,8 +263,9 @@ splog,'Arc fbadpix ', fbadpix ; ???
          qbadarc = 1
       endelse
 
-      xsol = *(flatstruct[iflat].xsol)
-      tmp_fibmask = *(flatstruct[iflat].fibermask)
+      if (NOT qbadarc) then begin
+        xsol = *(flatstruct[iflat].xsol)
+        tmp_fibmask = *(flatstruct[iflat].fibermask)
 
 
 
@@ -272,19 +273,20 @@ splog,'Arc fbadpix ', fbadpix ; ???
 ;	Calculate possible shift between arc and flat
 ;
 
-       skiptrace = 20L
-       nrow = (size(xsol))[1]
-       nfiber = (size(xsol))[2]
-       ysample = lindgen(nrow) # replicate(1,nfiber - 2*skiptrace)
-       xsample = xsol[*,skiptrace:nfiber - skiptrace - 1]
+         skiptrace = 20L
+         nrow = (size(xsol))[1]
+         nfiber = (size(xsol))[2]
+         ysample = lindgen(nrow) # replicate(1,nfiber - 2*skiptrace)
+         xsample = xsol[*,skiptrace:nfiber - skiptrace - 1]
 
-       bestlag = shift_trace(arcimg, xsample, ysample, $
+         bestlag = shift_trace(arcimg, xsample, ysample, $
               lagrange=1.0, lagstep=0.1)
 
-       if (abs(bestlag) GT 2.0) then begin
+         if (abs(bestlag) GT 2.0) then begin
             qbadarc = 1
             splog, 'Reject arc: pixel shift is larger than 2 pixels'
-       endif 
+         endif 
+       endif
 
        if (NOT qbadarc) then begin
            splog, 'Shifting traces to fit arc by pixel shift of ', bestlag

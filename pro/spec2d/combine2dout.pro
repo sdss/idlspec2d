@@ -86,6 +86,12 @@ pro combine2dout, filenames, outputroot, spectrographid, $
 
    if (NOT keyword_set(maxsep)) then maxsep = 2.0*binsz
 
+;------------------------------------------------------------------------
+;  We should sort here to get blue together and then reds afterward
+;
+
+   filenames = filenames[sort(filenames)]
+
    nfiles = N_elements(filenames)
    if (nfiles EQ 0) then return
 
@@ -323,31 +329,37 @@ pro combine2dout, filenames, outputroot, spectrographid, $
              nord=nord, eachgroup=1, maxiter=20, upper=3.0, lower=3.0, $
              bkspace=bkptbin, bkpt=bkpt, invvar=fullivar[ss], mask=mask, /silent)
 
-           if (total(coeff) EQ 0.0) then $
-             splog, 'WARNING: All B-spline coefficients have been set to zero!'
-         
-           inside = where(newwave GE min(bkpt) AND newwave LE max(bkpt), numinside)
-           if (numinside EQ 0) then $
-             message, 'No wavelengths inside breakpoints'
+           inside = where(newwave GE min(bkpt) $
+                        AND newwave LE max(bkpt), numinside)
 
-           fwave = float(newwave[inside])
-           bestguess[inside] = slatec_bvalu(fwave,fullbkpt,coeff)
+           if (total(abs(coeff)) EQ 0.0 OR numinside EQ 0) then begin
+             if (numinside EQ 0) then $
+               splog,'WARNING: No wavelengths inside breakpoints'
+             if (total(abs(coeff)) EQ 0.0) then $
+               splog,'WARNING: All B-spline coefficients have been set to zero!'
+           endif else begin         
 
-           splog, 'Masked ', fix(total(1-mask)), ' of', n_elements(mask), ' pixels'
+             fwave = float(newwave[inside])
+             bestguess[inside] = slatec_bvalu(fwave,fullbkpt,coeff)
 
-           replace = where(mask EQ 0)
+             splog, 'Masked ', fix(total(1-mask)), ' of', $
+               n_elements(mask), ' pixels'
 
-           ;-------------------------------------------------------------------------
+             replace = where(mask EQ 0)
+
+           ;-----------------------------------------------------------------
            ;  Here replace original flux values of masked pixels with b-spline
            ;  evaluations
 
-           if (replace[0] NE -1) then begin 
-             fullspec[ss[replace]] = slatec_bvalu(fullwave[ss[replace]],fullbkpt,coeff)
+             if (replace[0] NE -1) then begin 
+               fullspec[ss[replace]] = $
+                 slatec_bvalu(fullwave[ss[replace]],fullbkpt,coeff)
 
-             fullpixelmask[ss[replace]] = fullpixelmask[ss[replace]] OR $
+               fullpixelmask[ss[replace]] = fullpixelmask[ss[replace]] OR $
                                       pixelmask_bits('COMBINEREJ')
-           endif
+             endif
 
+           endelse
            fullcombmask[ss] = mask
 
          endfor
@@ -359,9 +371,12 @@ pro combine2dout, filenames, outputroot, spectrographid, $
          andmask = lonarr(npix) - 1L
          ormask = lonarr(npix)
 
+         medflux = fltarr(nfiles)
          for j=0, nfiles-1 do begin
             these = where(specnum EQ j)
             if (these[0] NE -1) then begin
+	       medflux[j] = djs_median(fullspec[these])
+
                inbetween = where(newwave GE min(fullwave[these]) AND $
                                  newwave LE max(fullwave[these]))
                if (inbetween[0] NE -1) then begin
@@ -390,6 +405,7 @@ pro combine2dout, filenames, outputroot, spectrographid, $
 
             endif
          endfor
+	 splog, 'Medians:', string(format='(f7.2)',medflux)
 
       ;-------------------------------------------------------------------------
       ;  Replace -1's in andmask
