@@ -2,17 +2,17 @@
 pro writespectra, tt, hdr, filebase
 
 	ntrace = (size(tt))[1]
-	npix = (size(tt.data[*,0]))[1]
+	npix = (size(tt.counts))[1]
 	
 	for i=0,ntrace -1 do begin
 	  thishdr = hdr
 	  name = filebase + string(format = '(i3.3)', i+1) + '.fit'
 
-	  flux = tt[i].data[*,0]
+	  flux = tt[i].counts
 	  err = flux*0.0 - 1.0
-	  good = where(tt[i].data[*,1] GT 0.0)
+	  good = where(tt[i].invvar GT 0.0)
 	  if (good[0] NE -1) then $
-            err(good) = 1.0/sqrt(tt[i].data[good,1])
+            err(good) = 1.0/sqrt(tt[i].invvar[good])
 
 	  sxaddpar, thishdr, 'OBJID', string(format='(5(i))', $
                 tt[i].plugmap.objid)

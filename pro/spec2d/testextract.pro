@@ -121,3 +121,10 @@ aa = extract_row(image11361[*,row], var11361[*,row], xsol11511[row,*], 1.0, ymod
 ;
 
 doaframe, 'sdR-04-00001151.fit','sdR-04-00001148.fit',['sdR-04-00001136.fit'], 'plPlugMapM-0198-51433-01.par',outputDir='out'
+
+
+plot,10^(poly(pixarray,ans)),spec,xr=[5800,7000]
+djs_oplot,linelist[*,0],linelist[*,1]/50,ps=1,color='red'
+djs_oplot,10^lambda,lambda*0.0+400,ps=4
+djs_oplot,10^(poly((2.0*xcen[row,*]-2047.0)/2047.0,ans)),xcen[row,*]*0.0+500,ps=6
+

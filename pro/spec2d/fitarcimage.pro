@@ -98,12 +98,13 @@ function corrlamps, a
 	   if(place GT 0 AND place LT 2047) then begin	
 	     x1 = place+start-middle
 	     x2 = place+start+middle
-	     model[x1:x2] = model[x1:x2] + profile*sqrt(intensity[i])
+	     model[x1:x2] = model[x1:x2] + profile*intensity[i]
 	     endif
 	  endfor
 
 	bestcorr = 0.0
 	bestlag = 0
+	model = sqrt(model)
         if (total(model) GT 0) then begin
 	  res = c_correlate(model,speccorr, lag)
 	  bestcorr = max(res,val)
@@ -123,17 +124,17 @@ function fullfit, spec, linelist, guess
 	scale[0] = scale[0]*0.03
 
 	first = lampfit(spec, linelist, guess0, transpose([[p0],[scale]]), $
-	   width = 20.0, lagwidth=200, ftol=1.0e-2)
+	   width = 20.0, lagwidth=200, ftol=1.0e-4)
 	
 	final = first
 
 	while (abs(bestlag) GT 5)  do begin
 	  guess0 = first[0]
 	  p0 = first[1:*]
-	  scale = abs(p0)*0.5
-	  scale[0] = scale[0]*0.03
+	  scale = abs(p0)*1.0
+	  scale[0] = scale[0]*0.05
 	  final = lampfit(spec, linelist, guess0, transpose([[p0],[scale]]), $
-	     width = 5.0, lagwidth=100, ftol=1.0e-6)
+	     width = 10.0, lagwidth=100, ftol=1.0e-4)
 	endwhile
 
 	return,final
@@ -161,7 +162,7 @@ pro fitarcimage, arc, side, linelist, xcen, ycen, tset, invset, $
 ;	First trace
 ;
 
-	xcen = trace_crude(arc, yset=ycen, nave=1, nmed=1, thresh = 200, $
+	xcen = trace_crude(arc, yset=ycen, nave=1, nmed=1, thresh = 50, $
                maxshifte=1.0)
 
 	
@@ -176,7 +177,7 @@ pro fitarcimage, arc, side, linelist, xcen, ycen, tset, invset, $
 
 	  guess = 0
 	  if (side EQ 'blue') then guess = [3.68, -0.106, -0.005, 0.005]	
-	  if (side EQ 'red') then guess = [3.87, 0.11, -0.005, 0.005]	
+	  if (side EQ 'red') then guess = [3.87, 0.10, -0.003]	
 	  if (guess[0] EQ 0) then begin
 	    print,'please choose side (red or blue)'
 	    return
@@ -198,7 +199,8 @@ pro fitarcimage, arc, side, linelist, xcen, ycen, tset, invset, $
 	  diff = loglamlist - thispeak[i]
 	  val[i] = min(abs(diff),place)
 
-	  if(val[i] LT 0.0003) then lambda[i] = loglamlist[place]
+	  if(val[i] LT 0.0003 AND linelist[place,2] NE 0.0) then $
+              lambda[i] = loglamlist[place]
 	endfor
 
 	goodlines = where(lambda GT 0.0, oldcount)
@@ -244,20 +246,21 @@ pro fitarcimage, arc, side, linelist, xcen, ycen, tset, invset, $
 	for i=0,nTrace-1 do begin
 
 	  done = 0
+	  goodlines = where(lambda GT 0.0, oldcount)
 	  while (done EQ 0) do begin
 	    res = svdfit((wnorm[i,goodlines])[*], lambda[goodlines], ncoeff, $
                function_name=function_name, singular=singular,yfit=yfit)
 	    diff = yfit - lambda[goodlines]
-	
+
 ;
 ;	Take lines within 20 km/s
 ;
 	    allgood = where(abs(diff) LT 3.0e-5, ngood)
 	    if (ngood EQ oldcount OR ngood EQ 0) then done = 1 $ 
 	    else begin
-	      stop
+	      maxdiff = max(abs(diff),badplace)
+	      allgood = where(lindgen(oldcount) NE badplace, ngood)
 	      goodlines = goodlines[allgood]
-	      print, oldcount-ngood
 	      oldcount = ngood
 	    endelse 
 	  endwhile

@@ -203,6 +203,8 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
 ;       Check to see if keywords are set to fill optional arrays
 ;
 
+   ii = where(mask EQ 0, initiallyrejected)
+
    for iy=0, nRowExtract-1 do begin
      cur = yrow[iy]
      print, format='($, ".",i4.4,a5)',cur,string([8b,8b,8b,8b,8b])
@@ -237,6 +239,10 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
      flux[iy,*] = fluxrow 
      finv[iy,*] = finvrow
    endfor	  
+
+   ii = where(mask EQ 0, finallyrejected)
+
+   print, 'I masked ', finallyrejected - initiallyrejected, ' pixels'
 
    return
 end

@@ -5,7 +5,7 @@ function skysubtract, tt, skyfinal
 ;	small set is [xmin, xmax, coeffs] for wavelengths in log10
 ;
 
-	npix = (size(tt.data))[1]
+	npix = (size(tt.counts))[1]
 	nTrace = (size(tt))[1]
 
 	skies = where (tt.plugmap.objtype EQ 'SKY')
@@ -21,7 +21,7 @@ function skysubtract, tt, skyfinal
 
 	skyspline = fltarr(npix,nsky)
 	for i=0,nsky - 1 do $
-	    skyspline[*,i] = spl_init(pp,skystruct[i].data[*,0])
+	    skyspline[*,i] = spl_init(pp,skystruct[i].counts)
 
 
 ;
@@ -53,7 +53,7 @@ function skysubtract, tt, skyfinal
 	    wavenorm = (2.0*waves - (wavemin+wavemax))/(wavemax-wavemin)
 	    pixFromWave = flegendre(wavenorm, iparams) # wavecoeff
 	    skyrebin[*,i] = $
-              spl_interp(pp,skystruct[i].data[*,0],skyspline[*,i],pixFromWave)
+              spl_interp(pp,skystruct[i].counts,skyspline[*,i],pixFromWave)
 
 	    offtheedge = where(pixFromWave LT smallset[0] $
                         OR pixFromWave GT smallset[1])
@@ -67,7 +67,7 @@ function skysubtract, tt, skyfinal
 	      skyfinal[i,j] = median(skyrebin[i,goodies])
 	  endfor
 
-	  ttsub[j].data[*,0] = ttsub[j].data[*,0] - skyfinal[*,j]
+	  ttsub[j].counts = ttsub[j].counts - skyfinal[*,j]
 	endfor
 	
 	return, ttsub

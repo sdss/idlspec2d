@@ -217,6 +217,219 @@ IDL_LONG extract_row
    return retval;
 }
 
+IDL_LONG extract_mulitple_rows
+  (int      argc,
+   void *   argv[])
+{
+   IDL_LONG    nx;
+   float     * x;
+   float     * fimage;
+   float     * invvar;
+   float     * ymod;
+   IDL_LONG    nTrace;
+   IDL_LONG    nPoly;
+   IDL_LONG    proftype;
+   IDL_LONG    calcCovar;
+   IDL_LONG    nCoeff;
+   IDL_LONG    ma;
+   float     * xcen;
+   float     * sigma;
+   IDL_LONG  * ia;
+   float     * ans;
+   float     * p;
+   float    ** covar;
+   float     * fscat;
+
+   IDL_LONG    iy;
+   IDL_LONG    squashprofile;
+   IDL_LONG    retval = 1;
+
+   IDL_LONG    argct;
+   IDL_LONG  * xmin;
+   IDL_LONG  * xmax;
+   float    ** aprofile;
+   float    ** apoly;
+   float       sigmal = 5.0; 	// set limits of profile influence  
+   float       x2; 	// Top Chebyshev x limit
+   float       x1; 	// Lower Chebyshev x limit 
+
+   IDL_LONG    i,j,k,l;
+   IDL_LONG    length;
+   IDL_LONG    mfit;
+   IDL_LONG    coeff;
+   IDL_LONG    tTrace;
+   float     * ysub;
+   float     * beta;
+
+   /* Allocate pointers from IDL */
+
+   argct  = 0;
+   nx     = *((IDL_LONG *)argv[argct++]);
+   x      = (float *)argv[argct++];
+   fimage = (float *)argv[argct++];
+   invvar = (float *)argv[argct++];
+   ymod   = (float *)argv[argct++];
+
+   nTrace = *((IDL_LONG *)argv[argct++]);
+   nPoly  = *((IDL_LONG *)argv[argct++]);
+
+   xcen   = (float *)argv[argct++];
+   sigma  = (float *)argv[argct++];
+
+   proftype = *((IDL_LONG *)argv[argct++]);
+   calcCovar = *((IDL_LONG *)argv[argct++]);
+   squashprofile = *((IDL_LONG *)argv[argct++]);
+   nCoeff = *((IDL_LONG *)argv[argct++]);
+   ma     = *((IDL_LONG *)argv[argct++]);
+   ans    = (float *)argv[argct++];
+   ia     = (IDL_LONG *)argv[argct++];
+   p      = (float *)argv[argct++];
+   fscat  = (float *)argv[argct++];
+
+   covar  = (float **)malloc(ma * sizeof(float *)); 
+   for (iy=0; iy < ma; iy++) covar[iy] = (float *)argv[argct]+iy*ma;
+
+//   fprintf(stderr, "Going to fit_row now\n");
+
+//   for (i=0; i < nx; i++) 
+//      fprintf(stderr, "%d %f %f %f\n",(int) i,x[i],fimage[i],invvar[i]);
+
+   xmin = (IDL_LONG *)malloc(sizeof(IDL_LONG)*nTrace);
+   xmax = (IDL_LONG *)malloc(sizeof(IDL_LONG)*nTrace);
+
+   findXLimits(xmin, xmax, x, xcen, nx, nTrace, sigma, sigmal);
+
+//
+//	ma = nCoeff*nTrace + nPoly
+//
+
+   tTrace = nCoeff*nTrace;
+   if (ma != tTrace + nPoly) {
+      fprintf(stderr, "ma %d  does not equal nCoeff (%d) *nTrace (%d) + nPoly (%d)", (int) ma, (int) nCoeff, (int) nTrace, (int) nPoly);
+      return -1;
+   }
+	
+   aprofile = (float **)malloc(tTrace * sizeof(float *));
+   apoly = (float **)malloc(nPoly * sizeof(float *));
+
+//
+//	Room for fiber profiles
+//
+   for(i=0, k=0; i<nTrace; i++)
+      for(j=0; j<nCoeff; j++, k++) {
+         length = xmax[i] - xmin[i] + 1;
+         if (length < 0) length = 0;
+         aprofile[k] = (float *)malloc(length * sizeof(float));
+      }
+
+   fillProfile(aprofile, x, xcen, xmin, xmax, sigma, nx, nCoeff, 
+          nTrace, proftype);
+
+   if (squashprofile) {
+//     printf("Squashing Profile\n");
+     for(i=0; i<nTrace; i++)
+       for(l=xmin[i],k=0;l<=xmax[i];l++,k++) {
+	 aprofile[i][k] = aprofile[i*nCoeff][k]*ans[i*nCoeff];
+         for(j=1; j<nCoeff; j++) 
+           aprofile[i][k] +=aprofile[i*nCoeff+j][k]*ans[i*nCoeff+j];
+      }
+     for(i=0; i<nTrace; i++) {
+       ia[i] = 1;
+//       for(l=xmin[i],k=0;l<=xmax[i];l++,k++) 
+//           printf("%f, ", aprofile[i*nCoeff][k]);
+//	printf("\n");
+       }
+     nCoeff = 1;
+          
+   }
+
+//
+//	Room for polynomial profiles
+//
+   for(i=0; i<nPoly; i++) {
+      apoly[i] = (float *)malloc(nx * sizeof(float));
+      ia[i+nCoeff*nTrace] = ia[i+tTrace];
+   }
+    
+   x2 = (float) nx;
+   x1 = 0.0;  
+   fillPoly(apoly, x, nx, nPoly, x1, x2);
+
+   CheckRowFibers(aprofile, xmin, xmax, nTrace, nCoeff, ans, ia, invvar);
+
+/* Subtract out fixed variables first */
+
+   ysub = (float *)malloc(nx * sizeof(float));
+
+   for(i=0, mfit=0; i<ma; i++) if(ia[i]) mfit++;
+   for(i=0; i<nx; i++) ysub[i] = fimage[i];
+
+
+   if(mfit != ma && !squashprofile) {
+/*      fprintf(stderr, "Subtracting fixed variables\n"); */
+      subtractProfile(ysub, nx, xmin, xmax, nTrace, nCoeff, aprofile, ia, ans);
+      subtractPoly(ysub, nx, nPoly, apoly, &ia[tTrace], &ans[tTrace]);
+   } 
+
+   beta = (float *)malloc(sizeof(float)*ma);
+
+   
+   fillCovar(ysub, invvar, nx, aprofile, apoly, nTrace, nCoeff, nPoly, 
+          beta, ia, covar, xmin, xmax);
+
+//   printf("Fill Covar done \n");
+
+   choldcRow(covar, ia, nTrace, nCoeff, nPoly, p); 
+//   printf("choldc Custom2 done\n");
+
+   cholslRow(covar, ia, nTrace, nCoeff, nPoly, p, beta, ans); 
+   //printf("cholsl done\n");
+
+   if (calcCovar > 0) {
+      cholslRowCovar(covar, ia, nTrace, nCoeff, nPoly, p); 
+      //printf("cholsl Covar done\n");
+   }  
+//     else {
+//      printf("Skipping Covariance Calculation\n");
+//   }
+
+   for(i=0;i<nx;i++) ymod[i] = 0.0;
+    
+   /* scattered light first  */
+
+   for (j=nCoeff*nTrace,k=0;k<nPoly;j++,k++) {
+      for(i=0; i < nx; i++) 
+         ymod[i] += ans[j]*apoly[k][i];
+    }
+//   printf("scattered light model done\n");
+
+   /* Use 0th term to estimate scattered light contribution  */
+   for (j=0;j<nTrace;j++) 
+      for (i=xmin[j], k=0, fscat[j]=0.0; i <= xmax[j]; i++, k++) 
+            fscat[j] += aprofile[j*nCoeff][k]*ymod[i];
+
+   for (j=0,l=0;j<nTrace;j++) 
+      for (coeff=0; coeff<nCoeff; coeff++,l++)
+         for (i=xmin[j], k=0; i <= xmax[j]; i++, k++) 
+            ymod[i] += ans[l]*aprofile[l][k];
+//   printf("model done\n");
+
+   /* Free temporary memory */
+   for(i=0; i<tTrace; i++) free(aprofile[i]);
+   for(i=0; i<nPoly; i++) free(apoly[i]);
+
+   free(aprofile);
+   free(apoly);
+   free(ysub);
+   free(beta);
+   free(xmin);
+   free(xmax);
+   free(covar);
+//   printf("variables freed\n");
+
+   return retval;
+}
+
  
 void ProfileGauss(float *x, IDL_LONG ndat, float **y, float xcen, IDL_LONG xmin,
 		IDL_LONG xmax, float sigma, IDL_LONG nCoeff)
