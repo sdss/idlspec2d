@@ -289,9 +289,6 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    ; Do the first traceset fit
    ;---------------------------------------------------------------------------
 
-; ??? Let maxdev be a parameter; should be about 3.0d-5 = 20 km/s
-;maxsig = 3.0
-
    nlamp = N_elements(lamps)
    if (nlamp EQ 1) then ytmp = transpose(lamps.loglam * (dblarr(nfiber)+1)) $
     else ytmp = lamps.loglam # (dblarr(nfiber)+1)
