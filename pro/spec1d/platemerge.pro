@@ -38,6 +38,9 @@
 ;     3) Prefer observations with ZWARNING=0
 ;     4) Prefer the observation with the larger PLATESN2
 ;
+;   Temporary files are created first, such as 'spAll.fits.tmp', which
+;   are renamed at the end of the routine to 'spAll.fits', etc.
+;
 ; EXAMPLES:
 ;
 ; BUGS:
@@ -161,7 +164,7 @@ pro platemerge, zfile, outroot=outroot1, public=public
 
    splog, 'Reading ZANS files'
    for ifile=0L, nfile-1 do begin
-      print, 'Reading ZANS file ',ifile+1, ' of ', nfile,': '+fullzfile[ifile]
+      print, 'Reading ZANS file ',ifile+1, ' of ', nfile
 
       hdr = headfits(fullzfile[ifile])
       plate = sxpar(hdr, 'PLATEID')
@@ -318,7 +321,7 @@ pro platemerge, zfile, outroot=outroot1, public=public
        splog, 'WARNING: No tsObj file found for plate ', oudat[indx[0]].plate
       copy_struct_inx, outdat, platedat, index_from=indx
 
-      mwrfits_chunks, platedat, outroot[0]+'.fits', $
+      mwrfits_chunks, platedat, outroot[0]+'.fits.tmp', $
        create=(ifile EQ 0), append=(ifile GT 0)
    endfor
 
@@ -355,7 +358,7 @@ pro platemerge, zfile, outroot=outroot1, public=public
     'specprimary']
 
    ; Read the tags that we need from the FITS file
-   outdat = hogg_mrdfits(outroot[0]+'.fits', 1, nrowchunk=10000L, $
+   outdat = hogg_mrdfits(outroot[0]+'.fits.tmp', 1, nrowchunk=10000L, $
     select_tags=ascii_tags)
    adat = replicate(adat1, n_elements(outdat))
    copy_struct, outdat, adat
@@ -379,7 +382,7 @@ pro platemerge, zfile, outroot=outroot1, public=public
    outdat = 0 ; Clear memory
 
    splog, 'Writing ASCII file ' + outroot[0]+'.dat'
-   struct_print, adat, filename=outroot[0]+'.dat'
+   struct_print, adat, filename=outroot[0]+'.dat.tmp'
 
    adat = 0 ; Clear memory
 
@@ -398,9 +401,16 @@ pro platemerge, zfile, outroot=outroot1, public=public
          sxaddpar, linehdr, 'DIMS1', nobj, ' Number of objects'
       endif
 
-      mwrfits_chunks, linedat, outroot[1]+'.fits', $
+      mwrfits_chunks, linedat, outroot[1]+'.fits.tmp', $
        create=(ifile EQ 0), append=(ifile GT 0)
    endfor
+
+   ;----------
+   ; Rename temporary files
+
+   spawn, ['mv', outroot[0]+'.fits.tmp', outroot[0]+'.fits'], /noshell
+   spawn, ['mv', outroot[0]+'.dat.tmp', outroot[0]+'.dat'], /noshell
+   spawn, ['mv', outroot[1]+'.fits.tmp', outroot[1]+'.fits'], /noshell
 
    thismem = memory()
    maxmem = thismem[3]
