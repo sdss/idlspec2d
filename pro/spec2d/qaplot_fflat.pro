@@ -76,7 +76,7 @@ pro qaplot_fflat, fflat, wset, fibermask=fibermask, dx=dx, title=title
          fsort = fflat[j]
          fsort = fsort[sort(fsort)]
 
-         botval[ibin] = fsort[ceil(0.01*ct)]
+         botval[ibin] = fsort[ceil(0.01*ct) < ct-1]
          topval[ibin] = fsort[floor(0.99*ct)]
 
          meanval[ibin] = median([fflat[j]])
