@@ -115,7 +115,7 @@ pro design_n752
 ;soplot,tycdat.radeg,tycdat.dedeg,ps=1,symsize=0.5
 
    design_multiplate, stardata, racen=racen, deccen=deccen, $
-    tilenums=tilenumes, platenums=platenums
+    tilenums=tilenumes, platenums=platenums, /addfund
 
 end
 ;------------------------------------------------------------------------------

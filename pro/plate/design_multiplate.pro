@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   design_multiplate, stardata, [ tilenums=, platenums=, racen=, deccen=, $
-;    guidetiles=, apotemperature=apotemperature ]
+;    guidetiles=, apotemperature=apotemperature, /addfund ]
 ;
 ; INPUTS:
 ;   stardata   - Structure with data for each star; must contain the
@@ -28,6 +28,11 @@
 ;   guidetiles - Tile number for each of the 11 guide fibers.  There exist
 ;                default values for the cases 1,2,3 or 4 tiles.
 ;   apotemperature - Design temperature for APO; default to 5 deg C.
+;   addfund    - If set, then add one more tile+plate with 9 or 10 holes
+;                in a line of declination from guide fiber #11 for the
+;                nearest of the 5 SDSS fundamental standard stars.
+;                We try to place 10 of these holes, spaced by 1 arcmin, but
+;                one can be knocked out by the guide-fiber alignment hole.
 ;
 ; OUTPUTS:
 ;
@@ -39,7 +44,8 @@
 ;
 ;   Objects are assigned according to their priority.  If none are specified
 ;   with STARDATA.PRIORITY, then random priorities between 1 and 100 are
-;   assigned.
+;   assigned.  We reserve priorities of 0 and [2^31-2,2^31] for internal
+;   purposes.
 ;
 ; EXAMPLES:
 ;
@@ -48,6 +54,7 @@
 ; PROCEDURES CALLED:
 ;   concat_dir()
 ;   cpbackup
+;   current_mjd()
 ;   djs_diff_angle()
 ;   djs_laxisgen()
 ;   plate_rotate
@@ -91,7 +98,7 @@ end
 ;------------------------------------------------------------------------------
 pro design_multiplate, stardata, tilenums=tilenums, platenums=platenums, $
  racen=racen, deccen=deccen, guidetiles=guidetiles, $
- apotemperature=apotemperature
+ apotemperature=apotemperature, addfund=addfund
 
    if (NOT keyword_set(tilenums)) then begin
       tilenums = stardata.tilenum
@@ -153,7 +160,34 @@ pro design_multiplate, stardata, tilenums=tilenums, platenums=platenums, $
    plugmappfile = 'plPlugMapP-' + string(platenums,format='(i4.4)') + '.par'
 
    fakemag = 25.0 ; Magnitudes for all fake objects
+   maxpriority = 2L^31 - 1 ; Maximum value; this is the value for GUIDE stars
+   fundpriority = maxpriority - 2 ; Priority for fundamental standards
    paramdir = concat_dir(getenv('IDLSPEC2D_DIR'), 'examples')
+
+   ;----------
+   ; Set up the data for the fundamental standards, and apply the
+   ; proper motion corrections from epoch 2000 to the current epoch.
+
+   pfund = $
+   { name:         '',  $
+     ra:         0.0d,  $
+     dec:        0.0d,  $
+     pm_ra:      0.0 ,  $
+     pm_dec:     0.0 ,  $
+     vmag:       0.0  }
+   funddat = replicate(pfund, 5)
+   funddat.name  = ['HD_19445','BD+21o607','HD_84937','BD+26o2606','BD+17o4708']
+   funddat.ra    = [  47.10663,   63.64800, 147.23375,  222.25961,   332.87167 ]
+   funddat.dec   = [  26.33094,   22.35119,  13.74426,   25.70750,    18.09139 ]
+   funddat.pm_ra = [    -0.210,      0.425,     0.373,     -0.009,       0.512 ]
+   funddat.pm_dec= [    -0.830,       9.22,    -0.774,     -0.346,       0.060 ]
+   funddat.vmag  = [      8.05,       10.0,      8.28,       9.72,        9.47 ]
+
+   thismjd = current_mjd()
+   funddat.ra = funddat.ra $
+    + (funddat.pm_ra / 3600.) * (thismjd - 51544)/365.24
+   funddat.dec = funddat.dec $
+    + (funddat.pm_dec / 3600.) * (thismjd - 51544)/365.24
 
    ;----------
    ; Read a template plugmap structure
@@ -235,23 +269,33 @@ pro design_multiplate, stardata, tilenums=tilenums, platenums=platenums, $
             ; Case where the guide fiber is on this pointing.
             ; Assign the nearest available guide fiber
 
-            print, 'Assigning real guide fiber number ', iguide+1
+            print, 'Assigning real guide fiber number ', iguide+1, $
+             ' on tile ', thistilenum
             indx = where(strtrim(stardata.holetype,2) EQ 'GUIDE')
             adiff = djs_diff_angle(guidera[iguide], guidedec[iguide], $
              stardata[indx].ra, stardata[indx].dec)
             junk = min(adiff, imin)
             addplug = blankplug
             struct_assign, stardata[indx[imin]], addplug
-            addplug.throughput = 2L^31-1 ; Maximum value
+            addplug.throughput = maxpriority ; Maximum value
+
+            ; Save the coordinates of the real guide star #11
+            ; and the corresponding plate center.
+            if (iguide+1 EQ 11) then begin
+               gra1 = thisracen
+               gdec1 = thisdeccen
+               gra2 = stardata[indx[imin]].ra
+               gdec2 = stardata[indx[imin]].dec
+            endif
 
          endif else begin
 
             ;----------
             ; Case where the guide fiber will not be used on this pointing.
             ; Assign a bunch of possible guide fibers near the optimal position.
-            ; This will be a grid of 5x5 positions separated by 3 arcmin.
+            ; This will be a grid of 7x7 positions separated by 3 arcmin.
 
-            ngrid = [5,5]
+            ngrid = [7,7]
             dphi = (djs_laxisgen(ngrid, iaxis=0) - (ngrid[0]-1)/2) * 3./60.
             dtheta = (djs_laxisgen(ngrid, iaxis=1) - (ngrid[1]-1)/2) * 3./60.
             plate_rotate, 0.0, 0.0, guidera[iguide], guidedec[iguide], $
@@ -267,7 +311,7 @@ pro design_multiplate, stardata, tilenums=tilenums, platenums=platenums, $
 
          addplug.holetype = 'GUIDE'
          addplug.objtype = 'NA'
-;         addplug.fiberid = iguide + 1 ; The "fiberPlates" code will assign this
+         addplug.fiberid = iguide + 1 ; The "fiberPlates" code will assign this
          addplug.sectarget = 64L
 
          if (NOT keyword_set(allplug)) then allplug = addplug $
@@ -289,7 +333,7 @@ pro design_multiplate, stardata, tilenums=tilenums, platenums=platenums, $
       if ((where(tag_names(stardata) EQ 'OBJTYPE'))[0] NE -1) then $
        addplug.objtype = stardata[indx].objtype
       if ((where(tag_names(stardata) EQ 'PRIORITY'))[0] NE -1) then $
-       addplug.throughput = (stardata[indx].priority > 1L) < (2L^31-2) $
+       addplug.throughput = (stardata[indx].priority > 1L) < (maxpriority-3) $
       else $
        addplug.throughput = long(randomu(24680, nadd) * 100) + 1
 ;      addplug.sectarget = 2L^24 ; This would be the serendipity flag
@@ -424,6 +468,91 @@ addplug.sectarget = 32L
    endfor ; End loop over pointing number
 
    ;---------------------------------------------------------------------------
+   ; ADD HOLES FOR FUNDAMENTAL STANDARD
+   ;
+   ; Add a line of holes north/south of guide fiber #11 with very high priority.
+   ; Append another tile+plate for this.
+   ;---------------------------------------------------------------------------
+
+   if (keyword_set(addfund)) then begin
+
+; ???
+fundtilenum = max(tilenums) + 1
+fundplatenum = max(platenums) + 1
+      ntile = ntile + 1
+      tilenums = [tilenums, fundtilenum]
+      platenums = [platenums, fundplatenum]
+      plugmaptfile = [plugmaptfile, $
+       'plPlugMapT-' + string(fundtilenum,format='(i4.4)') + '.par']
+      plugmappfile = [plugmappfile, $
+       'plPlugMapP-' + string(fundplatenum,format='(i4.4)') + '.par']
+
+      ; Find the nearest fundamental standard
+      adiff = djs_diff_angle(funddat.ra, funddat.dec, gra1, gdec1)
+      mindiff = min(adiff, ifund)
+      print, 'Selecting the fundamental star ', funddat[ifund].name, $
+       ' dAngle=', mindiff, ' degrees'
+
+      ; Pretend that we had a pointing with guide#11 (GRA2,GDEC2) at the center
+      ; position and an object at GRA1,GDEC1.  Move to a pointing with the
+      ; fundamental star (FUNDDAT[IFUND].RA,DEC) in the center, and solve for
+      ; the "object position" -- which will actually be the plate center.
+
+      print, 'Put fundamental star fibers near guide #11 at ', gra2, gdec2
+;      plate_rotate, gra2, gdec2, funddat[ifund].ra, funddat[ifund].dec, $
+;       gra1, gdec2, fundracen, funddeccen
+      plate_newcenter, gra1, gdec1, fundracen, funddeccen, $
+       gra2, gdec2, funddat[ifund].ra, funddat[ifund].dec
+
+      racen = [racen, fundracen]
+      deccen = [deccen, funddeccen]
+
+      ;----------
+      ; Copy the last plug-map data, calling everything priority zero.
+      ; Rotate all those coordinates from the last plate center
+      ; to the fundamental-star plate center.
+
+      allplug.throughput = 0
+      allplug.mag[*] = fakemag
+      plate_rotate, thisracen, thisdeccen, fundracen[0], funddeccen[0], $
+       allplug.ra, allplug.dec, tmpra, tmpdec
+      allplug.ra = tmpra
+      allplug.dec = tmpdec
+
+      ;----------
+      ; Add a line of holes in declination offset from guide fiber #11.
+
+      decoffset =  [-5,-4,-3,-2,-1,1,2,3,4,5]/60.0
+      nadd = n_elements(decoffset)
+      addplug = replicate(blankplug, nadd)
+      addplug.ra = funddat[ifund].ra
+      addplug.dec = funddat[ifund].dec + decoffset
+      addplug.mag[*] = funddat[ifund].vmag ; Use same mag for all filters???
+      addplug.throughput = fundpriority ; Very high priority for these holes
+      addplug.holetype = 'OBJECT'
+      addplug.objtype = 'SERENDIPITY_MANUAL' ; This will be changed later
+                                             ; to SPECTROPHOTO_STD
+      allplug = [allplug, addplug]
+
+      ;----------
+      ; Write the plPlugMapT file for this tile...
+
+      outhdr = ['completeTileVersion   v1_0', $
+                'tileId ' + string(fundtilenum), $
+                'raCen ' + string(fundracen), $
+                'decCen ' + string(funddeccen) ]
+      for jtile=0, ntile-1 do begin
+         outhdr = [outhdr, $
+          'raCen'+strtrim(string(jtile),2)+ '  '+string(racen[jtile]) ]
+         outhdr = [outhdr, $
+          'decCen'+strtrim(string(jtile),2)+ '  '+string(deccen[jtile]) ]
+      endfor
+
+      yanny_write, plugmaptfile[itile], ptr_new(allplug), hdr=outhdr, $
+       enums=plugenum, structs=plugstruct
+   endif
+
+   ;---------------------------------------------------------------------------
    ; RUN "makePlates" IN THE SDSS "PLATE" PRODUCT.
    ; The required inputs are the plPlugMapT-$TILE.par files,
    ; plus plPlan.par, plObs.par, plParam.par.
@@ -469,7 +598,7 @@ addplug.sectarget = 32L
    plobs.plateid = platenums
    plobs.tileid = tilenums
    plobs.temp = apotemperature
-   plobs.mjddesign = current_mjd()
+   plobs.mjddesign = thismjd
    yanny_write, 'plObs.par', ptr_new(plobs), hdr=plhdr, structs=plstructs
 
    print
@@ -545,6 +674,17 @@ addplug.sectarget = 32L
    if (nadded LT 640) then $
     message, 'Fewer than 640 objects'
 
+   ;----------
+   ; If the /ADDFUND flag is set, then recast those fundamental standard holes
+   ; as such
+
+;   indx = where(newplug.throughput EQ fundpriority, nindx)
+   indx = where(newplatearr EQ fundplatenum, nindx) ; Should be same as above
+   if (nindx GT 0) then begin
+      print, 'Renaming ', nindx, ' fundamental standard holes'
+      newplug[indx].objtype = 'SPECTROPHOTO_STD'
+   endif
+
    ;---------------------------------------------------------------------------
    ; WRITE THE MODIFIED PLUGMAPP FILES.
    ; This combines objects from the different tiles.
@@ -587,15 +727,24 @@ addplug.sectarget = 32L
             indx = where(newplatearr EQ platenums[itile2])
             if (indx[0] NE -1) then begin
                print, 'Rotating ', n_elements(indx), ' objects from plate ', $
-                thisplate, ' to plate ', platenums[itile2]
-               plate_rotate, racen[itile], deccen[itile], $
-                racen[itile2], deccen[itile2], $
+                platenums[itile2], ' to plate ', thisplate
+               plate_rotate, racen[itile2], deccen[itile2], $
+                racen[itile], deccen[itile], $
                 modplug[indx].ra, modplug[indx].dec, tmpra, tmpdec
                modplug[indx].ra = tmpra
                modplug[indx].dec = tmpdec
             endif
          endif
       endfor
+
+      ;----------
+      ; Alignment holes seem to always be given RA=0, DEC=0
+
+      indx = where(strtrim(modplug.holetype) EQ 'ALIGNMENT')
+      if (indx[0] EQ -1) then $
+       message, 'Alignment holes not found'
+      modplug[indx].ra = 0
+      modplug[indx].dec = 0
 
       ;----------
       ; Add the one quality hole which we already have, which is the
@@ -630,6 +779,35 @@ addplug.sectarget = 32L
    print, '   makeDrillPos'
    print, '   use_cs3'
    print, 'Then you are done!'
+stop
+
+yanny_read,'plPlugMapP-0801.par',a & a=*a
+yanny_read,'plPlugMapP-0798.par',a & a=*a
+i=where(a.ra NE 0)
+k=where(strtrim(a.holetype) eq 'GUIDE')
+plot,a[i].ra,a[i].dec,/yno,ps=4
+djs_oplot,a[k].ra,a[k].dec,ps=1,color='red'
+plot,a[i].xfocal,a[i].yfocal,/yno,ps=4
+djs_oplot,a[k].xfocal,a[k].yfocal,ps=1,color='red'
+
+yanny_read,'plPlugMapP-0801.par.1',a & a=*a
+i=where(a.ra NE 0)
+plot,a[i].xfocal,a[i].yfocal,/yno,ps=4
+yanny_read,'plPlugMapP-0798.par.1',a & a=*a
+k=where(strtrim(a.holetype) eq 'GUIDE')
+djs_oplot,a[k].xfocal,a[k].yfocal,ps=1,color='red'
+
+
+yanny_read,'plPlugMapP-0798.par',a & a=*a
+yanny_read,'plPlugMapP-0800.par',b & b=*b
+i=where(a.ra NE 0)
+j=where(b.ra NE 0)
+plot,a[i].xfocal,a[i].yfocal,/yno,ps=4
+djs_oplot,b[j].xfocal,b[j].yfocal,ps=1,color='red'
+i=where(a.ra GT 1 AND a.ra LT 300)
+j=where(b.ra GT 1 AND b.ra LT 300)
+plot,a[i].ra,a[i].dec,/yno,ps=4
+djs_oplot,b[j].ra-0.2,b[j].dec,ps=1,color='red'
 
    return
 end
