@@ -97,8 +97,8 @@ pro spflatgen, mjd=mjd, indir=indir, outdir=outdir
        - lindgen(nflat) EQ 0, nflat) ]
 
       if (nflat GE 7 AND narc GE 1) then begin
-         pixflatname = 'pixflat-' + camnames[icam] $
-          + '-' + string(mjdarr[iflats[0]],format='(i5.5)') + '.fits'
+         pixflatname = 'pixflat-' + string(mjdarr[iflats[0]],format='(i5.5)') $
+          + '-' + camnames[icam] + '.fits'
          splog, 'Generating pixel flat ' + pixflatname
          splog, 'Output directory ' + outdir
          spflatten2, files[iflats[(nflat-1)/2]], files[iarcs[0]], files[iflats], $
