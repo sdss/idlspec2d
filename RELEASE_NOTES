@@ -20,7 +20,8 @@ EXTRACT_ROW: Do not correct rejection levels in relative mode if chi^2 < 1.0.
 FIBERFLAT: Update to call SUPERFLAT() as a function instead of a proc,
            though should not be functionally different yet.
 FILTER_THRU: Switch to the newly-measured filtered curves, "sdss_jun2001*.dat".
-             Also, correct the integrations for the pixel size.
+             Use the Goddard routine LINTERP instead of the IDL built-in
+             INTERPOL.  Also, correct the integrations for the pixel size.
 FITMEANX: Make robust to no good sky lines for tweaking wavelength solution.
           In that case, the routine LOCATESKYLINES will return SKYSHIFT=0.
 FPOLY, FUNC_FIT, TRACESET2PIX, TRACESET2XY, XY2TRACESET:
