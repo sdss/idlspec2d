@@ -268,6 +268,8 @@ andmask = 0 ; Free memory
        counts_spectro[i,*,iobj] = fthru[i] * 10^((48.6 - 2.5*17.)/2.5)
 
       for ii=0, nper-1 do begin
+; ??? Save time for now...
+if (ii EQ 0) then begin
          goodmask = objivar[*,iobj] GT 0
          synflux = synthspec(res_all[ii,iobj], loglam=objloglam)
          chivec = abs(objflux[*,iobj] - synflux) * sqrt(objivar)
@@ -275,8 +277,6 @@ andmask = 0 ; Free memory
           fracnsigma[isig,ii,iobj] = $
            total((chivec GT isig+1) * goodmask) / (total(goodmask) > 1)
 
-; ??? Save time for now...
-if (ii EQ 0) then begin
          fthru = filter_thru(synflux * flambda2fnu, waveimg=wavevec, /norm)
          counts_synth[*,ii,iobj] = fthru * 10^((48.6 - 2.5*17.)/2.5)
 endif
