@@ -35,7 +35,7 @@ pro spappend, newloglam, pcaflux, fullloglam, fullflux
 end
 
 ;------------------------------------------------------------------------------
-pro pca_star
+pro pca_star, filename
 
    wavemin = 0
    wavemax = 0
@@ -54,9 +54,15 @@ pro pca_star
    ;----------
    ; Read the input spectra
 
-   filename = filepath('eigeninput_star.par', $
-    root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='templates')
-   yanny_read, filename, pdat
+   if (NOT keyword_set(filename)) then $
+    filename = filepath('eigeninput_star.par', $
+     root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='templates')
+   thisfile = (findfile(filename))[0]
+   if (NOT keyword_set(thisfile)) then begin
+      print, 'File not found: ' + filename
+      return
+   endif
+   yanny_read, thisfile, pdat
    slist = *pdat[0]
    yanny_free, pdat
 
