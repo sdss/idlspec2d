@@ -95,8 +95,13 @@ function rspec_mrdfits, fcb, exten_no, rownums=rownums, _EXTRA=EXTRA
       rowdiff = rownums[1:nrows-1] - rownums[0:nrows-2]
       i0 = where(rowdiff NE 1, nchunks)
       nchunks = nchunks + 1
-      row_start = rownums[ [0, i0 + 1] ]
-      row_end = rownums[ [i0, nrows-1] ]
+      if (nchunks EQ 1) then begin
+         row_start = rownums[0]
+         row_end = rownums[nrows-1]
+      endif else begin
+         row_start = rownums[ [0, i0 + 1] ]
+         row_end = rownums[ [i0, nrows-1] ]
+      endelse
    endelse
 
    naxis1 = fcb.axis[0,exten_no]
