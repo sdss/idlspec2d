@@ -308,6 +308,13 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    sxaddpar, hdr, 'CAMERAS', camname
 
    ;-----------
+   ; If MJD <= 51813, then set QUALITY=excellent unless this is over-written
+   ; by SPHDRFIX.  This is because for the early data, this keyword was
+   ; arbitrarily set to 'unknown', 'bad', 'acceptable', or 'excellent'.
+
+   if (mjd LE 51813) then sxaddpar, 'QUALITY', 'excellent'
+
+   ;-----------
    ; If the OBSCOMM keyword contains the words "dithered" or "focus",
    ; then assume this is test data (set QUALITY=test).
 
