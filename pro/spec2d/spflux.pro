@@ -2,11 +2,11 @@
 ;   sciname        - Name of science and smear reduced images, for only
 ;                    one of the spectrographs.
 ;   fcalibprefix   - Prefix for flux-calibration files.
+;   adderr         - Additional error to add to the formal errors, as a
+;                    fraction of the flux.
 
 ;------------------------------------------------------------------------------
 pro spflux, sciname, fcalibprefix, adderr=adderr
-
-   if (NOT keyword_set(adderr)) then adderr = 0.03
 
    ;----------
    ; Select the exposure number to use as the fiducial spectro-photo exposure.

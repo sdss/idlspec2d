@@ -81,6 +81,9 @@ function fluxfit, loglam, objflux, objivar, color=color, mags=mags
    sset = bspline_iterfit(loglam, fitflux, $
     invvar=fitivar, nord=3, bkpt=allbkpts, upper=3, lower=3, $
     maxrej=0.05*n_elements(objflux))
+;stop ; ???
+;splot,10^loglam,fitflux
+;soplot,10^loglam,bspline_valu(loglam,sset),color='red'
 
    ;----------
    ; Scale the flux
@@ -213,7 +216,6 @@ pro myfluxcalib, filename, calibfile, colors=colors, adderr=adderr
           + (adderr * (objflux>0))^2 ) * gmask
       endif
 
-
       ;----------
       ; Make a map of the size of each pixel in delta-(log10-Angstroms),
       ; and re-normalize the flux to ADU/(dloglam)
@@ -235,7 +237,8 @@ pro myfluxcalib, filename, calibfile, colors=colors, adderr=adderr
 ;stop ; ???
 ;set_plot,'x'
 ;junk=bspline_valu(loglam[*,jbest], calibset)
-;splot, loglam[*,jbest], junk
+;splot,loglam[*,jbest],objflux[*,jbest]
+;splot, loglam[*,jbest], objflux[*,jbest]/junk
 
       ;----------
       ; Create header cards describing the fit range

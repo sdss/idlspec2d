@@ -14,6 +14,8 @@
 ;   planfile   - Name(s) of output plan file; default to reducing all
 ;                plan files matching 'spPlan1d*.par'
 ;   docams     - Cameras to combine; default to ['b1', 'b2', 'r1', 'r2']
+;   adderr     - Additional error to add to the formal errors, as a
+;                fraction of the flux; default to 0.03 (3 per cent).
 ;   xdisplay   - Send plots to X display rather than to plot file
 ;
 ; OUTPUT:
@@ -41,9 +43,10 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro spcombine, planfile, docams=docams, xdisplay=xdisplay
+pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay
 
    if (NOT keyword_set(planfile)) then planfile = findfile('spPlan1d*.par')
+   if (NOT keyword_set(adderr)) then adderr = 0.03
 
    ;----------
    ; If multiple plan files exist, then call this script recursively
@@ -140,14 +143,14 @@ pro spcombine, planfile, docams=docams, xdisplay=xdisplay
    ;----------
    ; Compute the spectro-photometry
 
-   spflux, objname, fcalibprefix
+   spflux, objname, fcalibprefix, adderr=adderr
 
    ;----------
    ; Co-add the fluxed exposures
 
    spcoadd_frames, djs_filepath(objname, root_dir=extractdir), $
     djs_filepath(combinefile, root_dir=combinedir), $
-    fcalibprefix=fcalibprefix
+    fcalibprefix=fcalibprefix, adderr=adderr
 
    heap_gc   ; garbage collection
 

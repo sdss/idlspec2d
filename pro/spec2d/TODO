@@ -1,4 +1,7 @@
 
+* For calls to COMBINE1FIBER, first normalize to ergs/1e-4 log-lam,
+  just as is done for flux-calibration.
+
 * SPPLAN1D needs a fully-qualified TOPINDIR, but should be able to work
   relative from current directory.
 

@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   spcoadd_frames, filenames, outputname, $
 ;    fcalibprefix=, [ binsz=, zeropoint=, nord=, wavemin=, $
-;    bkptbin=, window=, maxsep= ]
+;    bkptbin=, window=, maxsep=, adderr= ]
 ;
 ; INPUTS:
 ;   filenames      - Name(s) of files to combine (written by SPREDUCE)
@@ -34,6 +34,8 @@
 ;                    default to 100 pixels apodization on each end of the
 ;                    spectra.
 ;   maxsep         - ???
+;   adderr         - Additional error to add to the formal errors, as a
+;                    fraction of the flux.
 ;
 ; OUTPUTS:
 ;
@@ -94,7 +96,7 @@ end
 ;------------------------------------------------------------------------------
 pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
  binsz=binsz, zeropoint=zeropoint, nord=nord, wavemin=wavemin, $
- bkptbin=bkptbin, window=window, maxsep=maxsep
+ bkptbin=bkptbin, window=window, maxsep=maxsep, adderr=adderr
 
    if (NOT keyword_set(binsz)) then binsz = 1.0d-4 $
     else binsz = double(binsz)
@@ -136,6 +138,15 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
       tempplug = mrdfits(filenames[ifile], 5, structyp='PLUGMAPOBJ')
       if (NOT keyword_set(tempflux)) then $
        message, 'Error reading file ' + filenames[ifile]
+
+      ;----------
+      ; Add an additional error term equal to ADDERR of the flux.
+
+      if (keyword_set(adderr)) then begin
+         gmask = tempivar NE 0 ; =1 for good points
+         tempivar = 1.0 / ( 1.0/(tempivar + (1-gmask)) $
+          + (adderr * (tempflux>0))^2 ) * gmask
+      endif
 
       ;----------
       ; Read header info

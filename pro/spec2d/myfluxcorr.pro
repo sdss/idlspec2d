@@ -168,6 +168,12 @@ ncoeff = 3 ; ???
    meanfit = total(fitimg[*,igood],2) / ngood
    xy2traceset, newloglam, meanfit, cset1, ncoeff=ncoeff
 
+;stop ; ???
+;i=0
+;splot,ssmearflux[*,i]
+;soplot,ssciflux[*,i],color='red'
+;soplot,ssciflux[*,i]*fitimg[*,i],color='green'
+
    ;----------
    ; Replace bad fits with the mean fit
 
