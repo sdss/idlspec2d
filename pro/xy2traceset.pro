@@ -127,7 +127,7 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
       endfor
 
    endif else begin
-      error, 'Unknown function' + func
+      message, 'Unknown function' + func
    endelse
 
    return
