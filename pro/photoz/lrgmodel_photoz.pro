@@ -68,7 +68,8 @@ function lrgmodel_photoz, pflux, pflux_ivar, z_err=z_err, $
  ageburst=ageburst1, zmetal=zmetal1, $
  filterlist=filterlist, adderr=adderr, chi2=chi2
 
-   common com_lrgmodel_photoz, zarr, synflux, ageburst_save, zmetal_save
+   common com_lrgmodel_photoz, zarr, agevec, metalvec, $
+    allwave, allflux, synflux, ageburst_save, zmetal_save
 
    if (n_elements(filterlist) EQ 0) then filterlist = lindgen(5)
    if (n_elements(adderr) EQ 0) then adderr = 0.03
@@ -139,8 +140,10 @@ function lrgmodel_photoz, pflux, pflux_ivar, z_err=z_err, $
 
          ; Linearly interpolate from the templates in log(age),log(zmetal),
          ; vs. log(flux) space.
-         i0 = ((reverse(where(agevec LT thisage)))[0] > 0) < (nage-2)
-         j0 = ((reverse(where(metalvec LT zmetal)))[0] > 0) < (nmetal-2)
+         i0 = ((reverse(where(agevec LT thisage)))[0] > 0) $
+          < (n_elements(agevec)-2)
+         j0 = ((reverse(where(metalvec LT zmetal)))[0] > 0) $
+          < (n_elements(metalvec)-2)
          i1 = i0 + 1
          j1 = j0 + 1
          agewts = [alog10(agevec[i1]/thisage), -alog10(agevec[i0]/thisage)]
