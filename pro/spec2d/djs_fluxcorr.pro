@@ -20,7 +20,7 @@ pro fluxrebin, filename, newloglam, newflux, newivar, adderr=adderr
    objivar = mrdfits(filename,1)
    objmask = mrdfits(filename,2)
    wset = mrdfits(filename,3)
-   traceset2xy, wset, 0, objloglam
+   traceset2xy, wset, xx, objloglam
 
    dims = size(objloglam, /dimens)
    npix = dims[0]

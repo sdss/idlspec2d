@@ -202,7 +202,7 @@ pro myfluxcalib, filename, calibfile, colors=colors, adderr=adderr
       objivar = mrdfits(filename[ifile], 1)
       objmask = mrdfits(filename[ifile], 2)
       wset = mrdfits(filename[ifile], 3)
-      traceset2xy, wset, 0, loglam
+      traceset2xy, wset, xx, loglam
 
       ;----------
       ; Read header info
