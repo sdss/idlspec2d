@@ -1,5 +1,7 @@
 ;------------------------------------------------------------------------------
 ; Read the Elodie eschelle spectra and put on the SDSS pixelization.
+; The spectra are originally in units of normalized F-lambda (erg/s/cm^2/Ang),
+; which are also the units that we output.
 ;------------------------------------------------------------------------------
 function read_elodie, filename, loglam=newloglam, hdr=hdr
 
