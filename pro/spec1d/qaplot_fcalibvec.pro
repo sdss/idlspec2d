@@ -71,8 +71,9 @@ function medfcalibvec, objflux, objivar, synflux, ifiber, minpts=minpts
    ; Interpolate over bad values
    medvec = djs_maskinterp(medvec, medvec EQ 0, /const)
 
-   ; Median-filter this vector
+   ; Median-filter this vector, then smooth...
    medvec = median(medvec, 5)
+   medvec = smooth(medvec, 5, /edge_truncate)
 
    return, medvec
 end
@@ -94,28 +95,29 @@ pro qaplot_fcalibvec, loglam, objflux, objivar, synflux, plugmap, zans, $
    xrange = minmax(wave) + [-100,100]
    csize = 1.5
 
-   !p.multi = [0,1,2]
    for specid=1, 2 do begin
-      plot, xrange, [1,1], xrange=xrange, yrange=[0.75,1.25], $
+      plot, xrange, [1,1], xrange=xrange, yrange=[0.80,1.80], $
        /xstyle, /ystyle, xtitle='Wavelength [Ang]', xticklen=1.0, $
-       ytitle='Observed/Model Flux', title=plottitle, charsize=csize
-      xpos = 0.75 * !x.crange[0] + 0.25 * !x.crange[1]
-      xyouts, xpos, 1.20, 'Spectrograph #' + string(specid,format='(i1)'), $
+       ytitle='Observed/Model Flux + offset', title=plottitle, charsize=csize
+      xpos = 0.90 * !x.crange[0] + 0.10 * !x.crange[1]
+      xyouts, xpos, 1.75, 'Spectrograph #' + string(specid,format='(i1)'), $
        charsize=csize
 
       ifiber = where(plugmap.spectrographid EQ specid $
        AND strtrim(zans.class,2) EQ 'QSO' $
        AND zans.zwarning EQ 0, nfiber)
       medvec = medfcalibvec(objflux, objivar, synflux, ifiber, minpts=1)
-      djs_oplot, wave, medvec, color='blue'
-      djs_xyouts, xpos, 1.08, color='blue', charsize=csize, $
+      djs_oplot, wave, medvec+0.20, color='blue'
+      djs_oplot, !x.crange, [1.20,1.20], color='blue'
+      djs_xyouts, xpos, 1.65, color='blue', charsize=csize, $
        string(nfiber, format='("QSOs (", i3, ")")')
 
       ifiber = where(plugmap.spectrographid EQ specid $
        AND zans.zwarning EQ 0, nfiber)
       medvec = medfcalibvec(objflux, objivar, synflux, ifiber)
-      djs_oplot, wave, medvec
-      djs_xyouts, xpos, 1.16, charsize=csize, $
+      djs_oplot, wave, medvec+0.00
+      djs_oplot, !x.crange, [1.00,1.00]
+      djs_xyouts, xpos, 1.60, charsize=csize, $
        string(nfiber, format='("All good fibers (", i3, ")")')
 
       ;----------
@@ -139,13 +141,12 @@ pro qaplot_fcalibvec, loglam, objflux, objivar, synflux, plugmap, zans, $
            OR strtrim(plugmap.objtype,2) EQ 'REDDEN_STD') $
        AND zans.zwarning EQ 0, nfiber)
       medvec = medfcalibvec(objflux, objivar, synflux, ifiber)
-      djs_oplot, wave, medvec, color='red'
-      djs_xyouts, xpos, 1.12, color='red', charsize=csize, $
+      djs_oplot, wave, medvec+0.20, color='red'
+      djs_oplot, !x.crange, [1.40,1.40]
+      djs_xyouts, xpos, 1.70, color='red', charsize=csize, $
        string(nfiber, format='("Spectro-photo + reddening stars (", i3, ")")')
 
    endfor
-
-   !p.multi = 0
 
    return
 end
