@@ -8,23 +8,32 @@
 ;   Read in Raw SDSS files, and process with opECalib and opConfig.fit
 ;
 ; CALLING SEQUENCE:
-;   sdssproc, infile, outfile, [hdr=hdr, $
-;     configfile=configfile, ccdfile=ccdfile, varfile=varfile]
+;   sdssproc, infile, [image, invvar, outfile=outfile, varfile=varfile, hdr=hdr,
+;     configfile=configfile, ccdfile=ccdfile]
 ;
 ; INPUTS:
 ;   infile     - Raw SDSS frame
-;   outfile    - Calibrated 2d frame, after processing
+;
+; OUTPUTS:
+;   image      - Processed 2d image
+;   invvar     - associated Inverse Variance
 ;
 ; OPTIONAL KEYWORDS:
+;   outfile    - Calibrated 2d frame, after processing
+;   varfile    - Inverse Variance Frame after processing
+;   hdr        - Header returned in memory
 ;   configfile - "opConfig.fit" 
 ;   ccdfile    - "opECalib.fit" 
-;   hdr        - Header returned in memory
-;   varfile    - Inverse Variance Frame after processing
 ;
 ;
-pro sdssproc, infile, outfile, hdr=hdr, $
-   configfile=configfile, ccdfile=ccdfile, varfile=varfile
+pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
+    hdr=hdr, configfile=configfile, ccdfile=ccdfile 
 
+   if (N_params() LT 1) then begin
+      print, 'Syntax - sdssproc, infile, [image, invvar, outfile=outfile, varfile=varfile, ' 
+      print, ' hdr=hdr, configfile=configfile, ccdfile=ccdfile]'
+      return, -1
+   endif
    if (NOT keyword_set(configfile)) then configfile = 'opConfig.fit'
    if (NOT keyword_set(ccdfile)) then ccdfile = 'opECalib.fit'
    
@@ -101,7 +110,7 @@ pro sdssproc, infile, outfile, hdr=hdr, $
    igood = where(qexist)
    nr = max((srow+nrow)[igood])
    nc = max((scol+ncol)[igood])
-   finalimg = fltarr(nc, nr)
+   image = fltarr(nc, nr)
    invvar = fltarr(nc, nr)
 
    for iamp=0, 3 do begin
@@ -117,14 +126,14 @@ pro sdssproc, infile, outfile, hdr=hdr, $
          endif
 
          ; Copy the data for this amplifier into the final image
-         finalimg[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
+          image[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
                   srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
           rawdata[sdatacol[iamp]:sdatacol[iamp]+ncol[iamp]-1, $
                   sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] - biasval
 
          invvar[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
                   srow[iamp]:srow[iamp]+nrow[iamp]-1] = $
-           1.0/(abs(finalimg[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
+           1.0/(abs(image[scol[iamp]:scol[iamp]+ncol[iamp]-1, $
                   srow[iamp]:srow[iamp]+nrow[iamp]-1]) /gain[iamp] + $
 	          readnoiseDN[iamp]*readnoiseDN[iamp])
 
@@ -138,7 +147,7 @@ pro sdssproc, infile, outfile, hdr=hdr, $
 
 
    if (keyword_set(outfile)) then $
-    writefits, outfile, finalimg, hdr
+    writefits, outfile, image, hdr
 
    if (keyword_set(varfile)) then begin
       varhdr = hdr

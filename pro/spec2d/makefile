@@ -86,7 +86,8 @@ all :
 	*) echo "This system is not supported" ;; \
 	esac
 
-objs = extract_boxcar.o sshiftvec.o trace_crude.o trace_fweight.o evilmath.o
+objs = extract_boxcar.o extract_profile.o sshiftvec.o trace_crude.o \
+        trace_fweight.o evilmath.o
 
 libspec2d.$(SO_EXT): $(objs)
 	$(LD) $(X_LD_FLAGS) -o ../lib/libspec2d.$(SO_EXT) $(objs)
