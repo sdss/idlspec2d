@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   plotsn, snvec, plugmap, [ bands=, plotmag=, fitmag=, plottitle=, $
-;    plotfile=, synthmag=, snplate= ]
+;    plotfile=, synthmag=, snplate=, ebv_sfd= ]
 ;
 ; INPUTS:
 ;   snvec      - S/N array [nbands, nfibers]
@@ -22,6 +22,8 @@
 ;   plottitle  - Title for top of plot
 ;   plotfile   - Optional plot file
 ;   synthmag   - Vector of synthetic magnitudes
+;   ebv_sfd    - If passed, then use these E(B-V) values to de-redden
+;                (make brighter) the magnitudes from the plug-map file.
 ;
 ; OUTPUTS:
 ;

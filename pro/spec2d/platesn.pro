@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   platesn, finalflux, finalivar, finalandmask, finalplugmap, loglam, $
-;    [ hdr=, plotfile=, snvec=, synthmag= ]
+;    [ hdr=, plotfile=, snvec=, synthmag=, ebv_sfd= ]
 ;
 ; INPUTS:
 ;   finalflux      - 
@@ -23,6 +23,7 @@
 ;   hdr            - FITS header; if specified, then keywords are added.
 ;                    The PLATE and MJD for the plot title are from this header.
 ;   plotfile       - If set, then write PostScript plot to this file.
+;   ebv_sfd        - Pass to PLOTSN.
 ;
 ; OUTPUTS:
 ;
