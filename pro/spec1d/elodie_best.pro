@@ -176,7 +176,7 @@ function elodie_best, objflux, objivar, $
         starloglam0=starloglam[0], npoly=3, zmin=zmin, zmax=zmax)
 
       if (istar EQ 0) then res_all = replicate(res1[0], nobj, nstar)
-      res_all[*,istar] = res1[*]
+      res_all[thisindx,istar] = res1[*]
    endfor
 
    ;----------
