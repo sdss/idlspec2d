@@ -54,6 +54,7 @@ pro fit_skyset, xarc, yarc, arclambda, xsky, ysky, skylambda, skycoeff, $
                ncoeff, skycoeff, function_name=function_name, yfit=yfit)
        diff = yfit - lambda[use]
 
+
 ;
 ;   Take lines within 20 km/s - throw out 1 at a time
 ;
@@ -68,6 +69,11 @@ pro fit_skyset, xarc, yarc, arclambda, xsky, ysky, skylambda, skycoeff, $
       wset.coeff[*,i] = res[0:ncoeff-1]
       wset.coeff[0:skycoeff-1,i] = $
       wset.coeff[0:skycoeff-1,i] + res[ncoeff:*]
+
+      newfit = flegendre((wavnorm[i,use])[*], ncoeff) # wset.coeff[*,i]
+       
+;      for j=ncurarc,n_elements(use) - 1 do $
+;         splog, 'Line ', j, yfit[j], lambda[use[j]], diff[j], newfit[j]
 
       print, format='($, ".",i4.4,a5)',i,string([8b,8b,8b,8b,8b])
    endfor   

@@ -13,10 +13,8 @@ function sortplugmap, plugmap, spectrographid, fibermask, nFibers=nFibers
    if (possible[0] EQ -1) then $
     message, 'No fibers found in plugmap!'
 
-   if n_elements(possible) NE nFibers then begin
-      missing = nFibers - n_elements(possible)
-      print, 'SORTPLUGMAP: ', missing, ' fibers seem to be broken'
-   endif
+   missing = nFibers - n_elements(possible)
+   splog, missing, ' fibers seem to be broken'
    
    place = plugmap[possible].fiberId - (spectrographid-1)*nFibers - 1
    plugsort[place] = plugmap[possible]

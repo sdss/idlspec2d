@@ -157,7 +157,7 @@ IDL_LONG extract_row
     
    x2 = (float) (nx-1);
    x1 = 0.0;  
-   fillPoly(apoly, x, nx, nPoly, x1, x2);
+   if (nPoly > 0) fillPoly(apoly, x, nx, nPoly, x1, x2);
 
 /*
 //  Whopping profile has somewhere near 50 pixel sigma
@@ -175,7 +175,7 @@ IDL_LONG extract_row
 
 
    if(mfit != ma && !squashprofile) {
-/*      fprintf(stderr, "Subtracting fixed variables\n"); */
+/*      fprintf(stderr, "Subtracting fixed variables\n");  */
       subtractProfile(ysub, nx, xmin, xmax, nTrace, nCoeff, aprofile, ia, ans);
       subtractPoly(ysub, nx, wPoly, apoly, &ia[tTrace], &ans[tTrace]);
    } 
@@ -189,8 +189,6 @@ IDL_LONG extract_row
    
    fillCovar(ysub, invvar, nx, aprofile, apoly, nTrace, nCoeff, wPoly, 
           beta, ia, covar, xmin, xmax);
-
-/*   printf("Fill Covar done \n");	 */
 
    bad = choldcRow(covar, ia, nTrace, nCoeff, wPoly, p); 
 /*   printf("choldc Custom2 done\n");	*/
@@ -645,21 +643,21 @@ void CheckRowFibers(float **abig, IDL_LONG *xmin, IDL_LONG *xmax,
 	   total = 0.0;
 	   for (k=xmin[i],m=0; k<=xmax[i]; k++,m++)
 	      if (invvar[k] > 0.0) total += abig[i*nCoeff][m];
-	         if (total < 0.8) {
-                    for(j=nCoeff-1,l=j+i*nCoeff;j>=1;j--,l--) 
-	               if (ia[l]) {
-	                  ia[l] = 0;
-	                   a[l] = 0.0;
+	   if (total < 0.8) {
+              for(j=nCoeff-1,l=j+i*nCoeff;j>=1;j--,l--) 
+	         if (ia[l]) {
+	            ia[l] = 0;
+	            a[l] = 0.0;
 /*          fprintf(stderr,"Fiber %d, dropped term %d, total: %f\n", 
                     (int) i, (int) j,total);   */
                     }
                  }
-	      if (total < 0.4) {
-                 j = 0;
-                 l=i*nCoeff;
-	            if (ia[l]) {
-	               ia[l] = 0;
-	                a[l] = 0.0;
+	   if (total < 0.4) {
+              j = 0;
+              l=i*nCoeff;
+	      if (ia[l]) {
+	         ia[l] = 0;
+	         a[l] = 0.0;
 /*          fprintf(stderr,"Fiber %d, dropped term %d, total: %f\n", 
                    (int) i, (int) j,total);   */
                     }
@@ -750,6 +748,7 @@ void fillPoly(float **y, float *x, IDL_LONG nx, IDL_LONG nPoly,
 {
 	int i,j;
         float norm;
+
 	float *atemp = (float *)malloc(nPoly * sizeof(float));   
 
         for (i=0;i<nx;i++) {
@@ -1002,7 +1001,10 @@ int choldcRow(float **a, IDL_LONG *ia, IDL_LONG nTrace, IDL_LONG nCoeff,
 	         for (sum=a[i][j],k=i-1;k>=0;k--) 
 	            if(ia[k]) sum -= a[i][k]*a[j][k];
 	         if(i==j) {
-	            if (sum <= 0.0) fprintf(stderr,"choldc failed %d\n", (int) i);
+	            if (sum <= 0.0)  {
+                      fprintf(stderr,"choldc failed %d\n", (int) i);
+                      return -i;
+                    }
 	            p[i] = sqrt(sum);
 	      } else a[j][i] = sum/p[i];
            }

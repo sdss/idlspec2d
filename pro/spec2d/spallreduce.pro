@@ -199,7 +199,7 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
             for iarc=0, narc-1 do begin
                junk = min( abs(flattime - arctime[iarc]), iclose)
                flatsortname[iarc] = flatname[iclose]
-               splog, 'Pair arc ', arcname[iarc], ' with flat ', flatname[iarc]
+               splog, 'Pair arc ', arcname[iarc], ' with flat ', flatname[iclose]
             endfor
 
             ; Get full name of pixel flat
@@ -227,20 +227,17 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
       startcombtime = systime(1)
 
       for side=1, 2 do begin
-         for i=1, 320 do begin
+            outputroot = 'idlout-'+string(format='(i1,a,i4.4,a)',side, $
+             '-',plateid,'-')
 
-            outputfile = 'idlout-'+string(format='(i1,a,i4.4,a,i3.3,a)',side, $
-             '-',plateid,'-',i,'.fit')
-
-            expres = string(format='(a,i1,a,i3.3,a)', 's-', side, '*', i,'.fit')
+            expres = string(format='(a,i1,a)', 's-', side, '*.fit')
             files = findfile(filepath(expres,root_dir=plateDir))
 
             if (files[0] EQ '') then $
-             splog, 'No files found for ', i, ' side ', side $
+             splog, 'No files found for side ', side $
             else $
-             combine2dout, files, filepath(outputfile, root_dir=combineDir), $
+             combine2dout, files, filepath(outputroot, root_dir=combineDir), $
               wavemin = alog10(3750.0)
-         endfor
       endfor
       splog, 'Finished combining sequence', seqid[iseq], ' in', $
        systime(1)-startcombtime, ' seconds'

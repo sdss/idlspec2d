@@ -1,9 +1,16 @@
 
 function fluxcorr, flux, fluxivar, wset, plugsort, $
-        spectrostd=spectrostd, bkptfile=bkptfile, lower=lower, upper=upper
+        spectrostd=spectrostd, bkptfile=bkptfile, lower=lower, upper=upper, $
+        fibermask=fibermask
 
 	if (NOT keyword_set(lower)) then lower = 2.5
 	if (NOT keyword_set(upper)) then upper = 10
+
+        ncol = (size(flux))[1] 
+        nrow = (size(flux))[2] 
+        if (n_elements(fibermask) NE nrow) then $
+           fibermask = bytarr(nrow) + 1
+
 ;
 ;	We'll need a smoothly splined version of the intrinsic
 ;	f8 subdwarf.
@@ -22,7 +29,7 @@ function fluxcorr, flux, fluxivar, wset, plugsort, $
 ;	Now try to find the best spectrophoto_std on this CCD
 ;	
 	
-	spectrophoto = where(plugsort.objtype EQ 'SPECTROPHOTO_STD')
+	spectrophoto = where(plugsort.objtype EQ 'SPECTROPHOTO_STD' AND fibermask)
 	if (spectrophoto[0] EQ -1) then begin
 	  print,'FLUXCORR: no spectrophoto stds on this side, trying reddening'
 	  spectrophoto = where(plugsort.objtype EQ 'REDDEN_STD')

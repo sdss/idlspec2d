@@ -67,14 +67,14 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
                wfixed=wfixed, mask=mask, $
                nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej, $
 	       calcCovar=calcCovar, fitans=fitans, whopping=whopping, $
-               relative=relative
+               relative=relative, chisq=chisq
 
    ; Need 5 parameters
    if (N_params() LT 5) then begin
       print, 'Syntax - extract_image(fimage, invvar, xcen, sigma, flux, [finv,'
       print, ' yrow=yrow, ymodel=ymodel, fscat=fscat, proftype = proftype, '
       print, ' ansimage = ansimage, calcCovar=calcCovar, fitans=fitans,relative=relative'
-      print, ' wfixed=wfixed, mask=mask, '
+      print, ' wfixed=wfixed, mask=mask, chisq=chisq, '
       print, ' nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej])'
       return
    endif
@@ -150,6 +150,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
 
 
    if (ARG_PRESENT(ymodel)) then ymodel = fltarr(nx,ny) 
+   if (ARG_PRESENT(chisq)) then chisq = fltarr(ny) 
 
    masksize = size(mask)
    if (NOT keyword_set(mask)) then mask = make_array(nx,ny, /byte, value=1) $
@@ -229,7 +230,8 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
      
      if ARG_PRESENT(fitans) then begin
           inputans = fitans[0:nTrace*nCoeff-1,cur]
-          iback = fitans[nTrace*nCoeff:nTrace*nCoeff+nPoly-1,cur]
+          if ((size(fitans))[1] GT nTrace*nCoeff) then $
+            iback = fitans[nTrace*nCoeff:nTrace*nCoeff+nPoly-1,cur]
      endif
 
      ansrow = extract_row(fimage[*,cur], invvar[*,cur], $
@@ -238,12 +240,14 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
       wfixed=wfixed, mask=masktemp, diagonal=prow, nPoly=nPoly, $
       niter=niter, squashprofile=squashprofile,inputans=inputans, $
       maxIter=maxIter, highrej=highrej, lowrej=lowrej, calcCovar=calcCovar, $
-      whopping=whoppingcur, relative=relative, fullcovar=fullcovar)
+      whopping=whoppingcur, relative=relative, fullcovar=fullcovar, $
+      reducedChi=chisqrow)
 
      mask[*,cur] = masktemp
 
      if(ARG_PRESENT(ymodel)) then ymodel[*,cur] = ymodelrow
      if(ARG_PRESENT(fscat)) then fscat[iy,*] = fscatrow
+     if(ARG_PRESENT(chisq)) then chisq[cur] = chisqrow
 
      calcflux, ansrow, prow, fluxrow, finvrow, wfixed, proftype, lTrace,nCoeff,$
             squashprofile=squashprofile

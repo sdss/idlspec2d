@@ -1,5 +1,5 @@
 pro calcflux, ansrow, prow, fluxrow, finvrow, wfixed, proftype, lTrace,nCoeff, $
-            sigmacur, xcencur, corcalc, squashprofile=squashprofile
+            squashprofile=squashprofile
 
      if keyword_set(squashprofile) then begin
        fluxrow = ansrow[lTrace]
@@ -19,6 +19,12 @@ pro calcflux, ansrow, prow, fluxrow, finvrow, wfixed, proftype, lTrace,nCoeff, $
        
 ; best estimate we can do
        finvrow = prow[iTrace]*prow[iTrace] 
+
+       bad = where(finite(fluxrow) EQ 0 OR finite(finvrow) EQ 0)
+       if (bad[0] NE -1) then begin
+         fluxrow[bad] = 0.0
+         finvrow[bad] = 0.0
+       endif
 
 ;
 ;	Higher order symmetric terms are not yet included

@@ -60,8 +60,6 @@
 ;   Check QA stuff at end.
 ;   FIBERMASK not yet modified if an arc is atrociously bad.
 ;
-; INTERNAL PROCEDURES:
-;   fitmeanx()
 ;
 ; PROCEDURES CALLED:
 ;   arcfit_guess()
@@ -77,46 +75,6 @@
 ;   15-Oct-1999  Written by S. Burles, D. Finkbeiner, & D. Schlegel, APO.
 ;   09-Nov-1999  Major modifications by D. Schlegel, Ringberg.
 ;-
-;------------------------------------------------------------------------------
-; LAMBDA = log10-wavelength
-
-function fitmeanx, wset, lambda, xpos, nord=nord
-
-   if (NOT keyword_set(nord)) then nord = 4
-   dims = size(xpos, /dim)
-   nfiber = dims[0]
-   nlambda = dims[1]
-
-   ; Evaluate the trace set to get the fit pixel position at each arc lambda
-   pix1 = traceset2pix(wset, lambda)
-
-   x = findgen(nfiber) / float(nfiber) ; From [0,1)
-   xnew = xpos
-
-   ; Loop through each arc line...
-
-   for i=0, nlambda-1 do begin
-      mx = transpose(pix1[i,*]) ; Pixel position where wavelength should fall
-      dif = xpos[*,i] - mx ; Measured position minus MX
-
-      ; Fit to DIF as a function of fiber number
-      junk = poly_fit(x, dif, nord, yfit)
-      res1 = yfit - dif
-
-      ; Find which points are most deviant (4-sigma cut; 2 iterations)
-      qgood = abs(res1) LT 4.*stddev(res1)
-      qgood = abs(res1) LT 4.*stddev(res1*qgood)
-
-      ; Re-fit to DIF as a function of fiber number (rejecting outliers)
-      junk = polyfitw(x, dif, qgood, nord, yfit)
-
-      ; Return the position where the wavelength should fall (MX) plus
-      ; a fitted-function to the deviations from those positions.
-      xnew[*,i] = mx + yfit
-   endfor
-
-   return, xnew
-end
 ;------------------------------------------------------------------------------
 
 pro fitarcimage, arc, arcivar, xnew, ycen, wset, $
@@ -261,9 +219,9 @@ pro fitarcimage, arc, arcivar, xnew, ycen, wset, $
 
    for i=0, nmatch-1 do begin
       xpix = round(xnew[*,i]) ; Nearest X position (wavelength) in all traces
-      mivar = fltarr(nfiber) + 1
+      mivar = fltarr(ngfiber) + 1
       for ix=-1, 1 do begin
-         mivar = mivar * arcivar[ ((xpix+ix)>0)<(npix-1), igfiber ]
+         mivar = mivar * arcivar[ (((xpix+ix)>0)<(npix-1))[igfiber], igfiber ]
       endfor
       junk = where(mivar EQ 0, nbad)
       fracbad = float(nbad) / ngfiber

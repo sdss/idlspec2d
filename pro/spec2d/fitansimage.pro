@@ -6,7 +6,8 @@
 ;
 function fitansimage, ansimage, nparams, nfibers, npoly, nrows, yrow, $
         fluxm=fluxm, nord=nord, nordscat=nordscat, $
-        ymin=ymin, ymax=ymax, fullrows=fullrows, crossfit=crossfit
+        ymin=ymin, ymax=ymax, fullrows=fullrows, crossfit=crossfit,  $
+        scatimage = scatimage, scatfit=scatfit
 
   if (N_params() LT 6) then begin
       print, 'Syntax - fitansimage(ansimage, nparams, nfibers, npoly, '
@@ -96,6 +97,8 @@ function fitansimage, ansimage, nparams, nfibers, npoly, nrows, yrow, $
 	      done = 0
 	      while (done EQ 0) do begin
 	        good = where(mask)
+                if (total(mask) LT 10) then $ 
+	          splog, 'Only ', total(mask), ' points left in ', i, j
 	        these = iTrace[good] + j
 	        tt = polyfitw(iFiber[good], smallans[these,i], $
                     (smallflux[good,i] > 0), nord, yfit)
@@ -135,26 +138,30 @@ function fitansimage, ansimage, nparams, nfibers, npoly, nrows, yrow, $
 	;	First expand terms into nrows x nrows image
 
 
-	scatimage = fltarr(nrows,nrows)
-	scatfit = fltarr(nrows,fullrows)
+	scatimage = fltarr(fullrows,nrows)
+	scatfit = fltarr(fullrows,fullrows)
 
 	for i=0,nrows-1 do $
-	  scatimage[*,i] = fchebyshev(ynorm, nPoly, halfintwo=1) $
+	  scatimage[*,i] = fchebyshev(yfnorm, nPoly, halfintwo=1) $
               # ansimage[nfibers*nparams:nfibers*nparams+npoly-1,i]  
 
-	for i=0,nrows-1 do begin
-	    tt = poly_fit(ynorm, scatimage[i,*], nordscat, /double)
-	    diff = scatimage[i,*] - poly(ynorm,tt)
-	    good = where(abs(diff) LT 3*stddev(diff))
-	    tt2 = poly_fit(ynorm[good], scatimage[i,good], nordscat, /double)
-	    scatfit[i,*] = poly(yfnorm,tt2)
+	for i=0,fullrows-1 do begin
+            fullbkpt = slatec_splinefit(ynorm, scatimage[i,*], coeff, $
+                     nbkpts = 20)
+;	    tt = poly_fit(ynorm, scatimage[i,*], nordscat, /double)
+;	    diff = scatimage[i,*] - poly(ynorm,tt)
+;	    good = where(abs(diff) LT 3*stddev(diff))
+;            print, n_elements(good)
+;	    tt2 = poly_fit(ynorm[good], scatimage[i,good], nordscat, /double)
+;	    scatfit[i,*] = poly(yfnorm,tt2)
+	    scatfit[i,*] = slatec_bvalu(yfnorm,fullbkpt,coeff)
 	endfor
 
 ;	return, [[[scatfit]],[[scatimage]]]
 
 	for i=0,fullrows-1 do begin
 	    fitans[nfibers*nparams:*,i] =  $
-               func_fit(ynorm, scatfit[*,i], nPoly, $
+               func_fit(yfnorm, scatfit[*,i], nPoly, $
                  function_name='fchebyshev', halfintwo=1)
 	endfor
 	return, fitans

@@ -48,10 +48,11 @@ function fiberflat, flat_flux, flat_fluxivar, fibermask, $
    ny = dims[0]
    ntrace = dims[1]
 
-   if (N_elements(bkspace) EQ 0) then bkspace = 15
+   if (N_elements(bkspace) EQ 0) then bkspace = 10
    if (N_elements(nord) EQ 0) then nord = 4
    if (N_elements(lower) EQ 0) then lower = 10
    if (N_elements(upper) EQ 0) then upper = 10
+   if (N_elements(fibermask) NE ntrace) then fibermask = bytarr(ntrace) + 1
 
    ; For each fiber, construct the spline fit through the data
 
@@ -63,6 +64,13 @@ function fiberflat, flat_flux, flat_fluxivar, fibermask, $
          invvar=flat_fluxivar[*,i], nord=4, bkspace=bkspace, $
          lower=lower, upper=upper, maxiter=3)
         fflat[*,i] = slatec_bvalu(yaxis, fullbkpt, coeff)
+
+	ugly = where(finite(fflat[*,i]) EQ 0 OR fflat[*,i] LE 0.0, uglyct)
+        if (uglyct GT 0) then begin
+          splog, 'bad spline in trace ', i, uglyct
+          fflat[ugly,i] = 0.0
+          if (uglyct GT 10) then fflat[*,i] = flat_flux[*,i]
+        endif
    endfor
 
    ; Divide FFLAT by a global average of all fibers

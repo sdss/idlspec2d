@@ -168,7 +168,7 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
 
             nreject = nx - ngood
 
-            res = func_fit(xnorm, ypos[*,itrace], ncoeff, weights=qgood, $
+            res = func_fit(xnorm, ypos[*,itrace], ncoeff, invvar=qgood, $
              function_name=function_name, yfit=yfit, _EXTRA=extra)
 
             if (func EQ 'legendre') then $

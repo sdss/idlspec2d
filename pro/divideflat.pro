@@ -22,14 +22,18 @@ pro divideflat,  flux, fluxivar, fflat, fibermask
         if (goodflat[0] EQ -1) then begin
           print, ' No good flat field points in trace ', i
           fluxivar[*,i] = 0.0
-        endif else if (badflat[0] NE -1) then $
-          fluxivar[badflat,i] = 0.0
-
+          flux[*,i] = 0.0
+        endif else begin
+          if (badflat[0] NE -1) then begin
+            fluxivar[badflat,i] = 0.0
+            flux[badflat,i] = 0.0
+          endif
 ;
 ;	Only divide good fflat pixels
 ;
-        flux[goodflat,i] = flux[goodflat,i] / fflat[goodflat,i]
-        fluxivar[goodflat,i] = fluxivar[goodflat,i] * fflat[goodflat,i]^2
+          flux[goodflat,i] = flux[goodflat,i] / fflat[goodflat,i]
+          fluxivar[goodflat,i] = fluxivar[goodflat,i] * fflat[goodflat,i]^2
+        endelse
       endif else begin
 ;
 ;	Set both to zero for now

@@ -111,8 +111,9 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    plugmap = *pstruct[0]
    yanny_free, pstruct
 
-   ; PLUGSORT will return mask of good (1) and bad (0) fibers too
-
+   ;-------------------------------------------------------------------------
+   ; Plugsort will return mask of good (1) and bad (0) fibers too
+   ;-------------------------------------------------------------------------
    plugsort = sortplugmap(plugmap, spectrographid, fibermask)
  
    ;---------------------------------------------------------------------------
@@ -127,7 +128,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
    for ifile=0, (nflat<narc)-1 do begin
 
-      splog, ifile, (nflat<narc), $
+      splog, ifile+1, (nflat<narc), $
        format='("Looping through flat+arc pair #",I3," of",I3)'
 
       ;------------------------------------------------------------------------
@@ -245,11 +246,13 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    ; Compute wavelength calibration for arc lamp only
    ;---------------------------------------------------------------------------
 
-   splog, 'Searching for wavelength solution'
-   fitarcimage, arcimg, arcivar, xpeak, ypeak, wset, $
-    color=color, lampfile=lampfile, lambda=lambda, xdif_tset=xdif_tset
+   arccoeff = 5
 
-wsave = wset
+   splog, 'Searching for wavelength solution'
+   fitarcimage, arcimg, arcivar, xpeak, ypeak, wset, ncoeff=arccoeff, $
+    color=color, lampfile=lampfile, lambda=lambda, xdif_tset=xdif_tset
+     
+   wsave = wset
 
    qaplot_arcline, xdif_tset, lambda, arcname[ibest]
 
@@ -318,7 +321,12 @@ for i=0,16 do oplot,fflat[*,i*19]
       xnow = xsol
       sigmanow = xsol*0.0 + sigma
 
-      for i = 0, 1 do begin
+      ;
+      ;	My fitansimage is not going to work well without good profiles
+      ; Using it to tweak up traces, and then performing free fit to
+      ; object
+      ;
+      for i = 0, 0 do begin
       
         ; 1) First extraction
         splog, 'Object extraction: Step', i*3+1
@@ -331,9 +339,9 @@ for i=0,16 do oplot,fflat[*,i*19]
 
         splog, 'Answer Fitting: Step', i*3+2
         nparams = 3
-        nTrace = (size(flux))[2]
+        nTrace = (size(tempflux))[2]
         fitans = fitansimage(ansimage, nparams, nTrace, nPoly, nfirst, yrow, $
-         fluxm = [1,1,0], crossfit=1-i)
+         fluxm = [1,1,0], crossfit=1-i, scatfit=scatfit, scatimage=scatimage)
 
         ; 3) Calculate new sigma and xsol arrays
       
@@ -346,30 +354,39 @@ for i=0,16 do oplot,fflat[*,i*19]
         endif
       endfor
 
+      splog, 'Skipping steps 4 and 5'
+
       ; 4) Second and final extraction
       splog, 'Object extraction: Step 6'
 
       ; Using old sigma for now, which should be fine
       ; Different sigmas require a new profile for each trace, so will
       ; check timing in the future
+      ;  subtract off fit to scattered light and don't allow any polynomial terms
 
-      extract_image, image, invvar, xnow, sigma, flux, $
-       fluxivar, proftype=proftype, wfixed=wfixed, fitans=fitans, $
-       highrej=highrej, lowrej=lowrej, nPoly=nPoly, whopping=whopping 
+      extract_image, image-scatfit, invvar, xnow, sigma, flux, $
+       fluxivar, proftype=proftype, wfixed=wfixed, $
+       highrej=highrej, lowrej=lowrej, nPoly=0, whopping=whopping, chisq=chisq
+
+
+;      fitans = fitans[0:nparams*nTrace-1,*]
+;      extract_image, image-scatfit, invvar, xnow, sigma, flux, $
+;       fluxivar, proftype=proftype, wfixed=wfixed, fitans=fitans, $
+;       highrej=highrej, lowrej=lowrej, nPoly=0, whopping=whopping, chisq=chisq
 ;       ymodel=ymodel2
+
+      plot, chisq
 
       ;------------------
       ; Flat-field the extracted object fibers with the global flat
-
       divideflat, flux, fluxivar, fflat, fibermask
-;      flux = flux / fflat
-;      fluxivar = fluxivar * fflat^2
 
       ;------------------
       ; Tweak up the wavelength solution to agree with the sky lines.
+      ; xshift contains polynomial coefficients to shift arc to sky lines.
 
       locateskylines, skylinefile, flux, fluxivar, $
-       wset, xsky, ysky, skywaves, lambda=skylambda
+       wset, xsky, ysky, skywaves, xshift=xshift
 
       ;------------------
       ; First convert lambda, and skywaves to log10 vacuum
@@ -387,26 +404,36 @@ for i=0,16 do oplot,fflat[*,i*19]
       sxaddpar, hdr, 'AIR2VAC', systime()
 
       splog, 'Tweaking to sky lines'
-      skycoeff = 2
-      if (n_elements(vaclogsky) GT 3) then skycoeff = 3
 
-      fit_skyset, xpeak, ypeak, vacloglam, xsky, ysky, vaclogsky, skycoeff, $
-        goodlines, wset, ymin=ymin, ymax=ymax, func=func
+      ;
+      ;	Fit to arc lines with sky shifts included
+      ;
+    
+      xarc = double(xpeak) 
+      wold = wset
+      for i=0,nTrace - 1 do $
+       xarc[i,*] = xpeak[i,*] + poly(xpeak[i,*],xshift[i,*])
 
-      locateskylines, skylinefile, flux, fluxivar, $
-       wset, xsky, ysky, skywaves, lambda=vaclogsky
+       xy2traceset, transpose(xarc), vacloglam # (dblarr(nTrace)+1), wset, $
+          ncoeff=arccoeff, maxdev=0, maxiter=0,  xmin=0, xmax=2047
+ 
+      wset.coeff[2:*,*] = wold.coeff[2:*,*]
+       
+
+;      fit_skyset, xpeak, ypeak, vacloglam, xsky, ysky, vaclogsky, skycoeff, $
+;        goodlines, wset, ymin=ymin, ymax=ymax, func=func
 
       ;------------------
       ; Sky-subtract
 
       skysubtract, flux, fluxivar, plugsort, wset, $ 
-       skysub, skysubivar
+       skysub, skysubivar, fibermask=fibermask
 
       ;------------------------------------------
       ; Flux calibrate to spectrophoto_std fibers
 
       fluxfactor = fluxcorr(skysub, skysubivar, wset, plugsort, $
-                             lower=1.5, upper=5)
+                             lower=1.5, upper=5, fibermask=fibermask)
 
       flux = skysub * fluxfactor
       fluxivar = skysubivar / (fluxfactor^2)
@@ -450,7 +477,7 @@ for i=0,16 do oplot,fflat[*,i*19]
       sxaddpar, objhdr, 'PROFTYPE', proftype, '1 is Gaussian'
       sxaddpar, objhdr, 'NFITPOLY', nparams, 'order of profile parameter fit'
 
-      writespectra, objhdr, plugsort, flux, fluxivar, wset, $
+      writespectra, objhdr, flux, fluxivar, plugsort, wset, $
        filebase=filebase
 
       heap_gc   ; Garbage collection for all lost pointers

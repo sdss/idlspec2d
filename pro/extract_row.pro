@@ -86,7 +86,7 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
                    diagonal=p, fullcovar=fullcovar, wfixarr = wfixarr, $
                    nPoly=nPoly, maxIter=maxIter, highrej=highrej, $
                    lowrej=lowrej, calcCovar=calcCovar, niter=niter, $
-                   whopping=whopping
+                   whopping=whopping, reducedChi = reducedChi
 
    ; Need 4 parameters
    if (N_params() LT 4) then begin
@@ -110,7 +110,7 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
     sigma = xcen*0.0 + sigma1
    endif 
 
-   if (NOT keyword_set(nPoly)) then nPoly = 5
+   if (n_elements(nPoly) EQ 0) then nPoly = 5
    if (NOT keyword_set(maxIter)) then maxIter = 10
    if (NOT keyword_set(highrej)) then highrej = 15.0
    if (NOT keyword_set(lowrej)) then lowrej = 20.0
@@ -178,6 +178,11 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
       message, 'Number of elements in FIMAGE and WFIXARR must be equal'
 
    ans = fltarr(ma)       ; parameter values
+   p = fltarr(ma)         ; diagonal errors
+
+   nonzerovar = where(invvar GT 0.0, ngood)
+   reducedChi = 0.0
+   if (ngood EQ 0) then return, ans
 
    if keyword_set(iback) then begin
       if (nPoly NE n_elements(iback)) then $
@@ -187,7 +192,6 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
    endif
 
 
-   p = fltarr(ma)         ; diagonal errors
    if (NOT arg_present(fullcovar)) then begin
        print, 'watch out'
        fullcovar = fltarr(ma,ma)  ; full covariance matrix

@@ -8,7 +8,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   locateskylines, skylinefile, fimage, ivar, wset, xsky, ysky, skywaves, $
-;    lambda=lambda, errcode=errcode
+;    lambda=lambda, xshift=xshift
 ;
 ; INPUTS:
 ;   skylinefile - filename of skyline file
@@ -45,11 +45,13 @@
 ;
 ; REVISION HISTORY:
 ;   15-Oct-1999  Written by S. Burles, D. Finkbeiner, & D. Schlegel, APO
+;   18-Nov-1999  Moved skyline QA to fit_skyset (SMB)
 ;-
 ;------------------------------------------------------------------------------
 
 pro locateskylines, skylinefile, fimage, ivar, wset, $
- xsky, ysky, skywaves, lambda=lambda, errcode=errcode
+ xsky, ysky, skywaves, lambda=lambda, xshift=xshift 
+  
 
    if (keyword_set(lambda)) then begin 
       skywaves = 10.d^lambda
@@ -83,108 +85,30 @@ pro locateskylines, skylinefile, fimage, ivar, wset, $
    ysky = ysky[*,gind]
    skywaves = skywaves[gind]
 
-   fmed=fimage-fimage
-   for i=0, nfiber-1 do fmed[*,i] = median(fimage[*,i], 17)
-
    ; Iterate trace_fweight ???
    xskytmp = trace_fweight(fimage, xarc, ysky, invvar=ivar) 
-   xsky = trace_fweight(fimage, xskytmp, ysky, invvar=ivar) 
+   xsky = trace_fweight(fimage, xskytmp, ysky, invvar=ivar, radius=2.0) 
 
-   ;---------------------------------------------------------------------------
-   ;  Bonehead Statistics
-   ;---------------------------------------------------------------------------
-
-   ; xsky now contains positions of skylines.  We have no idea if they 
-   ; are any good unless we do some checks.
-
-   nskyline = (size(xsky))[2]
-   mean  = fltarr(nskyline)
-   sigma = fltarr(nskyline)
-   xres  = xarc - xsky
-
-   ; Amp 1
-   for i=0, nskyline-1 do begin 
-      djs_iterstat, xres[3:150,i], mean=mn, sigma=sig ; HORRIBLE HARDWIRE???
-      mean[i] = mn
-      sigma[i] = sig
-   endfor 
-   mean1 = mean
-   sigma1 = sigma
-
-   ; Amp 2
-   for i=0, nskyline-1 do begin 
-      djs_iterstat, xres[170:316,i], mean=mn, sigma=sig ; HORRIBLE HARDWIRE???
-      mean[i] = mn
-      sigma[i] = sig
-   endfor 
-   mean2 = mean
-   sigma2 = sigma
-
-   ; Both amps
-   for i=0, nskyline-1 do begin 
-      djs_iterstat, xres[*,i], mean=mn, sigma=sig
-      mean[i] = mn
-      sigma[i] = sig
-   endfor 
-
-   ;---------------------------------------------------------------------------
-   ;  Quality assurance
-   ;---------------------------------------------------------------------------
-
-   pmulti = !p.multi
-   !p.multi = [0,1,2]
-   plot, skywaves, mean1, yr=[-.3,.3]+median(mean), /yst, $
-    xtit='Wavelength (A)', ytit='Delta x (Pix)', /xst, $
-    title='Sky line residual'
-   errplot, skywaves, mean1-sigma1, mean1+sigma1
-   oplot, skywaves, mean2, line=1
-
-   ; Reject outliers with "drop dead" requirements
-   good = (abs(mean) LT 3) AND (abs(sigma) LT 1.0)
-   gind = where(good, nline)   
-   if (gind[0] EQ -1) then message, 'No sky lines!!!'
-   print,nline, ' good lines - ',fix(total(good EQ 0)), ' rejected'
-
-   ; Trim list again 
-   mean  = mean[gind]
-   sigma = sigma[gind]
-   xarc  = xarc[*,gind]
-   xsky  = xsky[*,gind]
-   ysky  = ysky[*,gind]
-   skywaves = skywaves[gind]
-      
-   if (nline GE 1) then nord=0
-   if (nline GE 3) then nord=1
-   if (nline GE 7) then nord=2
-
-   print, 'Fit order:', nord
-
-   flexcoeff = polyfitw(skywaves, mean, 1./sigma^2, nord, yfit)
-   oplot, skywaves, yfit, line=2
-
-   infostr = string('Dispersion:', stddev(mean-yfit)*1E3,' mpix', $
-    format='(A,F7.1,A)')
-
-   plot, skywaves, mean-yfit, $
-    xrange=[min(skywaves)-100,max(skywaves)+100], yr=[-.2,.2], $
-    xtit='Wavelength (A)', ytit='Delta x (Pix)', $
-    title='After flexure correction'
-   errplot,skywaves,mean-yfit-sigma,mean-yfit+sigma
-   xyouts, 0.95, 0., systime(), /normal, align=1, chars=0.5
-   xyouts, 0.05, 0., infostr, /norm
-   print, infostr
-
-print, 'No flexure correction...yet'
-
-;
-;   SMB (10/31/99): Prepare for flexure correction here
-;   Return the best skyline positions, and fit in spreduce
-;
    lambda = alog10(skywaves)
    xskyold = xsky
-   xsky = fitmeanx(wset, lambda, xskyold)
+   xdiff = fitmeanx(wset, alog10(skywaves), xskyold, aveinvvar, mx = mx )
 
-   !p.multi=pmulti
+   good = where(aveinvvar[0,*] GT 1.0, ngood)
+   if (good[0] EQ -1) then begin
+     splog, 'No good sky lines (with residuals less than 0.2 pixels'
+     return
+   endif
+
+   shiftcoeff = 1
+   if (ngood GT 10) then shiftcoeff = 2
+   xshift = dblarr(nfiber,shiftcoeff+1)
+   for i=0,nfiber - 1 do  $
+     xshift[i,*] = polyfitw(mx[i,good],xdiff[i,good], aveinvvar[i,good], shiftcoeff)
+   
+   xsky = xsky[*,good] 
+   skywaves = skywaves[good]
+
+      
    return
 
 end

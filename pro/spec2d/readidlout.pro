@@ -1,5 +1,7 @@
 function readidlout, expres, disp, sig
 
+      if (NOT keyword_set(expres)) then expres = 'idl*fit'
+
       files = findfile(expres)
       if (files[0] EQ '') then begin
         print, 'no files found'

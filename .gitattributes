@@ -25,6 +25,7 @@ pro/arcsky_fit.pro -text
 pro/calcflux.pro -text
 pro/checkflavor.pro -text
 pro/combine2dout.pro -text
+pro/combineI.pro -text
 pro/divideflat.pro -text
 pro/extract_boxcar.pro -text
 pro/extract_image.pro -text
@@ -37,6 +38,7 @@ pro/fit_skyset.pro -text
 pro/fit_tset.pro -text
 pro/fitansimage.pro -text
 pro/fitarcimage.pro -text
+pro/fitmeanx.pro -text
 pro/fitwithmx.pro -text
 pro/flegendre.pro -text
 pro/fluxcorr.pro -text
@@ -62,6 +64,7 @@ pro/spec2d/arcsky_fit.pro -text
 pro/spec2d/calcflux.pro -text
 pro/spec2d/checkflavor.pro -text
 pro/spec2d/combine2dout.pro -text
+pro/spec2d/combineI.pro -text
 pro/spec2d/divideflat.pro -text
 pro/spec2d/extract_boxcar.pro -text
 pro/spec2d/extract_image.pro -text
@@ -74,6 +77,7 @@ pro/spec2d/fit_skyset.pro -text
 pro/spec2d/fit_tset.pro -text
 pro/spec2d/fitansimage.pro -text
 pro/spec2d/fitarcimage.pro -text
+pro/spec2d/fitmeanx.pro -text
 pro/spec2d/fitwithmx.pro -text
 pro/spec2d/flegendre.pro -text
 pro/spec2d/fluxcorr.pro -text

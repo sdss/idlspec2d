@@ -1,5 +1,5 @@
 pro skysubtract, obj, objivar, plugmap, wset, skysub, skysubivar, $
-            nbkpt=nbkpt, nord=nord, everyn=everyn, allwave=allwave, $
+            nbkpt=nbkpt, nord=nord, fibermask=fibermask, allwave=allwave, $
 	    allsky=allsky, allfit=allfit
 
 	objsize = size(obj)
@@ -10,6 +10,9 @@ pro skysubtract, obj, objivar, plugmap, wset, skysub, skysubivar, $
 
 	ncol = objsize[1]
 	nrow = objsize[2]
+
+        if (n_elements(fibermask) NE nrow) then $
+           fibermask = bytarr(nrow) + 1
 
 	if (size(plugmap))[1] NE nrow then $
 	   message, 'plugmap does not have same size as nrow'
@@ -23,7 +26,8 @@ pro skysubtract, obj, objivar, plugmap, wset, skysub, skysubivar, $
 	; Find sky fibers
 	;
   	
-	skies = where(plugmap.objtype EQ 'SKY' AND plugmap.fiberid GT 0, nskies)
+	skies = where(plugmap.objtype EQ 'SKY' AND plugmap.fiberid GT 0 AND $
+                      fibermask, nskies)
 	if skies[0] EQ -1 then message, 'no sky fibers in plugmap'
 
         allwave    =  (wave[*,skies])[*]
@@ -42,11 +46,10 @@ pro skysubtract, obj, objivar, plugmap, wset, skysub, skysubivar, $
 ;
         fullbkpt   = slatec_splinefit(allwave, allsky, coeff, $
                      invvar=allskyivar, maxIter=maxIter, upper=upper, $
-                     lower=lower, nbkpts=3*ncol/2)
+                     lower=lower, everyn=nskies/2)
         allfit  = slatec_bvalu(allwave, fullbkpt, coeff)
 
 	skysub = obj - slatec_bvalu(wave, fullbkpt, coeff)
-
 
 ;
 ;	Now attempt to model variance with residuals on sky
