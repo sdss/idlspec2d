@@ -88,11 +88,11 @@ speclimit SN2 b2 0 99999
 speclimit SN2 r1 0 99999
 speclimit SN2 r2 0 99999
 
-# Issue warnings about total (S/N)^2 for any camera not hitting 80/pix.
+# Issue warnings about total (S/N)^2 for any camera not hitting 60/pix.
 
-speclimit TOTALSN2 b1 80 99999
-speclimit TOTALSN2 b2 80 99999
-speclimit TOTALSN2 r1 80 99999
-speclimit TOTALSN2 r2 80 99999
-speclimit TOTALSN2 ALL 80 99999
+speclimit TOTALSN2 b1 60 99999
+speclimit TOTALSN2 b2 60 99999
+speclimit TOTALSN2 r1 60 99999
+speclimit TOTALSN2 r2 60 99999
+speclimit TOTALSN2 ALL 60 99999
 
