@@ -13,7 +13,7 @@
 ; OPTIONAL INPUTS:
 ;   infile      - Either a list of spPlancomb-*.par files, or a list of
 ;                 spPlate*.fits files; default to all files matching
-;                 '*/spPlancomb-*.par'.
+;                 '$SPECTRO_DATA/*/spPlancomb-*.par'.
 ;   outfile     - If set, then write output to this file.
 ;
 ; OUTPUTS:
@@ -48,9 +48,11 @@
 ; REVISION HISTORY:
 ;   29-Oct-2000  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
-pro platelist, infile, outfile=outfile
+pro platelistnew, infile, outfile=outfile, plist=plist
 
-   if (NOT keyword_set(infile)) then infile = '*/spPlancomb-*.par'
+   if (NOT keyword_set(infile)) then $
+    infile = djs_filepath('spPlancomb-*.par', $
+     root_dir=getenv('SPECTRO_DATA'), subdirectory='*')
    fullfile = findfile(infile, count=nfile)
    if (nfile EQ 0) then return
 
@@ -58,6 +60,18 @@ pro platelist, infile, outfile=outfile
    ; Sort these files
 
    fullfile = fullfile[sort(fullfile)]
+
+   ;----------
+   ; Create output structure
+
+   plist = create_struct( $
+    'plateid' , 0L, $
+    'mjd'     , 0L, $
+    'ra'      , 0.0, $
+    'dec'     , 0.0, $
+    'snvec'   , fltarr(4), $
+    'nums'    , lonarr(5) )
+   plist = replicate(plist, nfile)
 
    ;----------
    ; Open output file
@@ -152,6 +166,12 @@ pro platelist, infile, outfile=outfile
        format='(i5,i7,f6.1,f6.1,4f7.1,5i5)'
       flush, olun
 
+      plist[ifile].plateid = plateid
+      plist[ifile].mjd = mjd
+      plist[ifile].ra = ra
+      plist[ifile].dec = dec
+      plist[ifile].snvec = snvec
+      plist[ifile].nums = nums
    endfor
 
    ;----------
@@ -162,6 +182,5 @@ pro platelist, infile, outfile=outfile
       free_lun, olun
    endif
 
-   return
 end
 ;------------------------------------------------------------------------------
