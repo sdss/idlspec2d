@@ -60,6 +60,7 @@
 ;   bspline_valu()
 ;   splog
 ;   redmonster
+;   tai2airmass()
 ;   traceset2xy
 ;
 ; REVISION HISTORY:
