@@ -29,12 +29,17 @@ function read_elodie, filename, loglam=newloglam, hdr=hdr
 
    ; Resample to a vector starting at bigloglam0,
    ; spaced every dloglam/nsubsamp
-   bigloglam0 = loglam0 - 0.5 * (nsubsamp - 1) * dloglam / nsubsamp
-   ibigpix = (alog10(objwave) - bigloglam0) / (dloglam/nsubsamp)
-   newflux = fltarr(nnew*nsubsamp)
+;   bigloglam0 = loglam0 - 0.5 * (nsubsamp - 1) * dloglam / nsubsamp
+;   ibigpix = (alog10(objwave) - bigloglam0) / (dloglam/nsubsamp)
+;   newflux = fltarr(nnew*nsubsamp)
+;   igood = where(finite(objflux))
+;   populate_image, newflux, ibigpix[igood], weights=objflux[igood], $
+;    assign='cic'
+
    igood = where(finite(objflux))
-   populate_image, newflux, ibigpix[igood], weights=objflux[igood], $
-    assign='cic'
+   bigloglam0 = loglam0 - 0.5 * (nsubsamp - 1) * dloglam / nsubsamp
+   bigloglam = bigloglam0 + lindgen(nnew*nsubsamp) * (dloglam/nsubsamp)
+   newflux = interpol(objflux[igood], alog10(objwave[igood]), bigloglam)
 
    ; Convolve with a gaussian
    nkpix = long(10*sigma*nsubsamp)
