@@ -556,6 +556,9 @@ pro spcoadd_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    sxaddpar, hdr, 'NAXIS1', n_elements(bestflux)
    sxaddpar, hdr, 'NAXIS2', nfiber
 
+   spawn, 'uname -n', uname
+   sxaddpar, hdr, 'UNAME', uname[0]
+
    ;-----------------------------------------
    ;   Here we check for smear exposure used and place info in header
    ;-----------------------------------------
