@@ -1,4 +1,6 @@
 
+DJS_SVDFIT: This proc removed, since it was a temporary fix to
+           be called for solving a singular matrix from FIND_NMINIMA.
 FIND_NMINIMA: Remove use of DJS_SVDFIT (which didn't work on the Mac
            anyway).  Re-write the fitting to exactly three points
            with an explicit solution of the quadratic equation.
