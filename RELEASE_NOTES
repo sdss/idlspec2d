@@ -1,6 +1,11 @@
 
+PLATECOMPARE: Fix 1-character typo preventing selecting the MJD
+            when using the TOPDIR keyword also.
 SDSSPROC: Add "WARNING" to the warning messages about invalid or
             missing BC files.
+
+In idlutils:
+eviltarball: Comment out the reference to sdsscvs.
 
 In specflat:
 specflat.table: Added "Flavor=Linux"
