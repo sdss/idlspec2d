@@ -124,6 +124,8 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 
       fullscrunch = djs_median(fextract) ; Find median counts/row in all fibers
       whopping = find_whopping(scrunch - fullscrunch, 10000.0, whopct)
+
+      splog, 'Whopping fibers: ', whopping
       splog, 'Median counts in all fibers = ', fullscrunch
       splog, 'Number of bright fibers = ', whopct
 
