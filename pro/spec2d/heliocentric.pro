@@ -15,9 +15,11 @@
 ;   epoch          - Epoch of observation for RA, DEC; default to 2000.
 ;
 ; OPTIONAL KEYWORDS:
-;   jd             - Decimal Julian date.
+;   jd             - Decimal Julian date.  Note this should probably be
+;                    type DOUBLE.
 ;   tai            - Number of seconds since Nov 17 1858; either JD or TAI
-;                    must be specified.
+;                    must be specified.  Note this should probably either
+;                    be type DOUBLE or LONG64.
 ;   longitude      - Longitude of observatory; default to 105.820417 deg for APO
 ;   latitute       - Latitude of observatory; default to 32.780361 deg for APO
 ;   altitude       - Altitude of observatory; default to 2788 m for APO
@@ -36,7 +38,7 @@
 ;
 ; PROCEDURES CALLED:
 ;   baryvel
-;   zenpos
+;   ct2lst
 ;
 ; REVISION HISTORY:
 ;   09-May-2000  Written by S. Burles & D. Schlegel
@@ -49,13 +51,13 @@ function heliocentric, ra, dec, epoch, jd=jd, tai=tai, $
    if (NOT keyword_set(epoch)) then epoch = 2000.0
 
    ; Default to location of Apache Point Observatory
-   if (NOT keyword_set(latitude)) then latitude = 105.820417
-   if (NOT keyword_set(longitude)) then longitude = 32.780361
+   if (NOT keyword_set(longitude)) then longitude = 105.820417
+   if (NOT keyword_set(latitude)) then latitude = 32.780361
    if (NOT keyword_set(altitude)) then altitude = 2788.
 
    if (NOT keyword_set(jd)) then begin
       if (keyword_set(tai)) then begin
-         jd = 2400000.D + tai / (24.*60.*60.)
+         jd = 2400000.D + tai / (24.D*3600.D)
       endif else begin
          message, 'Must specify either JD or TAI', /cont
          return, 0
@@ -63,10 +65,10 @@ function heliocentric, ra, dec, epoch, jd=jd, tai=tai, $
    endif
 
    ; Set up common block for ZENPOS
-   COMMON SITE, lat, lng, tzone
-   lat = latitude
-   lng = longitude
-   tzone = 7 ; Not used!
+;   COMMON SITE, lat, lng, tzone
+;   lat = latitude
+;   lng = longitude
+;   tzone = 7 ; Not used!
 
    DRADEG = 180.d0 / !DPI
 
@@ -76,39 +78,41 @@ function heliocentric, ra, dec, epoch, jd=jd, tai=tai, $
    baryvel, jd, epoch, dvelh, dvelb
 
    ; Project velocity toward star
-   vbarycen = dvelb[0]*cos(dec)*cos(ra) + $
-            dvelb[1]*cos(dec)*sin(ra) + dvelb[2]*sin(dec) 
+   vbarycen = dvelb[0]*cos(dec/DRADEG)*cos(ra/DRADEG) + $
+            dvelb[1]*cos(dec/DRADEG)*sin(ra/DRADEG) + dvelb[2]*sin(dec/DRADEG) 
 
    ;----------
    ; Compute rotational velocity of observer on the Earth
 
    ; LAT is the latitude in radians.
-   lat = latitude / DRADEG
+   latrad = latitude / DRADEG
 
    ; Reduction of geodetic latitude to geocentric latitude (radians).
    ; DLAT is in arcseconds.
 
-   dlat = -(11.d0 * 60.d0 + 32.743000d0) * sin(2.d0 * lat) + $
-            1.163300d0 * sin(4.d0 * lat) -0.002600d0 * sin(6.d0 * lat)
-   lat  = lat + (dlat / 3600.d0) / DRADEG
+   dlat = -(11.d0 * 60.d0 + 32.743000d0) * sin(2.d0 * latrad) + $
+            1.163300d0 * sin(4.d0 * latrad) -0.002600d0 * sin(6.d0 * latrad)
+   latrad  = latrad + (dlat / 3600.d0) / DRADEG
 
    ; R is the radius vector from the Earth's center to the observer (meters).
    ; VC is the corresponding circular velocity
    ; (meters/sidereal day converted to km / sec).
    ; (sidereal day = 23.934469591229 hours (1986))
 
-   r = 6378160.0d0 * (0.998327073d0 + 0.00167643800d0 * cos(2.d0 * lat) - $
-       0.00000351d0 * cos(4.d0 * lat) + 0.000000008d0 * cos(6.d0 * lat)) + $
-         altitude
+   r = 6378160.0d0 * (0.998327073d0 + 0.00167643800d0 * cos(2.d0 * latrad) - $
+       0.00000351d0 * cos(4.d0 * latrad) + 0.000000008d0 * cos(6.d0 * latrad)) $
+       + altitude
    vc = 2.d0 * !DPI * (r / 1000.d0)  / (23.934469591229d0 * 3600.d0)
 
-   ; Compute the zenith position
-   zenpos, jd, zrarad, zdecrad ; returns RA,DEC of zenith in radians
-   LST = zrarad * DRADEG
+   ; Compute the hour angle, HA
+;   zenpos, jd, zrarad, zdecrad ; returns RA,DEC of zenith in radians
+;   LST = zrarad * DRADEG
+   ct2lst, LST, longitude, junk, jd
+   LST = 15. * LST ; convert from hours to degrees
    HA = LST - ra
 
    ; Project the velocity onto the line of sight to the star.
-   vrotate = vc * cos(lat) * cos(dec/DRADEG) * sin(HA/DRADEG)
+   vrotate = vc * cos(latrad) * cos(dec/DRADEG) * sin(HA/DRADEG)
 
    return, (-vbarycen - vrotate)
 end
