@@ -98,7 +98,15 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
      color=color, title=' Arcline Fit for '+arcname
 
    if (NOT keyword_set(wset)) then return, 0
-   traceset2xy, wset, xx, yy
+   traceset2xy, wset, xx, loglam
+
+   ;----------
+   ; Fit the wavelength dispersion, and trigger warnings if the spectrographs
+   ; look out-of-focus in the wavelength dimension.
+
+   nfitcoeff = color EQ 'red' ? 4 : 3
+   dispset = fitdispersion(flux, fluxivar, xpeak, $
+    sigma=1.0, ncoeff=nfitcoeff, xmin=0.0, xmax=2047.0, medwidth=medwidth)
 
    ;----------
    ; Compute fiber-to-fiber flat-field variations.
@@ -122,14 +130,17 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
 
    mwrfits, wset, wsetfile, /create
 
-   wavemin = 10^(min(yy))
-   wavemax = 10^(max(yy))
+   wavemin = 10^(min(loglam))
+   wavemax = 10^(max(loglam))
    nlamps = (size(xpeak,/dimens))[1]
    rstruct = create_struct('WSETFILE', fileandpath(wsetfile), $
                            'WAVEMIN', wavemin, $
                            'WAVEMAX', wavemax, $
                            'BESTCORR', bestcorr, $
-                           'NLAMPS', nlamps )
+                           'NLAMPS', nlamps, $
+                           'DISPSIGMA_QUADRANT', medwidth, $
+                           'DISPSIGMA', max(medwidth) )
 
    return, rstruct
 end
+;------------------------------------------------------------------------------
