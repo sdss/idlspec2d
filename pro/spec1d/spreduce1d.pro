@@ -539,10 +539,10 @@ ormask = 0 ; Free memory
    ;----------
    ; Find the best-fit Elodie star for all objects classified as stars
 
-   splog, 'Fitting to Elodie spectra'
+   fitindx = where(strtrim(res_all[0,*].class,2) EQ 'STAR', nfit)
+   splog, 'Fitting to Elodie spectra for ', nfit, ' stars'
    t0 = systime(1)
 
-   fitindx = where(strtrim(res_all[0,*].class,2) EQ 'STAR')
    res_elodie = elodie_best(objflux, objivar, hdr=hdr, fitindx=fitindx)
 
    splog, 'CPU time to fit to Elodie = ', systime(1)-t0

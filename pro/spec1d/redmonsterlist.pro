@@ -9,7 +9,7 @@ pro redmonsterlist, olddir=olddir
    splog, filename='monsterlist.log'
 
    platelist, plist=plist
-   idone = where(strtrim(plist.status1d,2) EQ 'Done')
+   idone = where(strtrim(plist.statuscombine,2) EQ 'Done')
    plist = plist[idone]
 
    splog, 'PLATE MJD   %Gal   %QSO     Whoppr Reject ' $
@@ -43,7 +43,8 @@ pro redmonsterlist, olddir=olddir
 
       if (ngal GT 0 AND keyword_set(zans)) then begin
          junk = where(zans[igal].zwarning EQ 0 $
-          AND strtrim(zans[igal].class) EQ 'GALAXY', nggal)
+          AND (strtrim(zans[igal].class) EQ 'GALAXY' $
+            OR strtrim(zans[igal].class) EQ 'QSO'), nggal)
          fgal = 100 * float(nggal) / ngal
       endif else begin
          fgal = 0.

@@ -10,6 +10,8 @@ MYFLUXCALIB: Put the plate+MJD+camname in the plot titles.
 PIXELMASK_BITS: Now simply call the new function SDSS_FLAGVAL().
 PCA_STAR: Now read the Yanny file "eigeninput_star.par", and use cz.
 PLATELIST: Make consistent with changes to spChunklist.par.
+PLATESN: For the roll call, output both the number of bad fibers for
+           fiber masks, and the fraction of bad pixels for pixel masks.
 PLOTSPEC: Added /ORMASK, /ANDMASK keywords.  Plot text for the zwarning flags.
            Use /normal coordinates for plot labels, so they stay on
            the plot even when zoomming in and out.
