@@ -33,7 +33,7 @@
 ;   netimage   - If set, then launch a Netscape browser with the object
 ;                image from Steve Kent's web site.  This only works if
 ;                Netscape is running and has permissions at the site
-;                "http://sdsslnx.fnal.gov:8015".
+;                "http://sdssmosaic.fnal.gov:8015".
 ;                This is disabled if PSFILE is set.
 ;   _EXTRA     - Kewords for SPLOT, such as XRANGE, YRANGE, THICK.
 ;
@@ -320,7 +320,7 @@ pro apoplot1, plate, fiberid, mjd=mjd, expnum=allexpnum, nsmooth=nsmooth, $
    endfor
 
    if (keyword_set(netimage) AND NOT keyword_set(psfile)) then begin
-      netstring = 'http://sdsslnx.fnal.gov:8015/template/tsSingle.tml?run=' $
+      netstring = 'http://sdssmosaic.fnal.gov:8015/template/tsSingle.tml?run=' $
        + strtrim(string(plug.objid[0]),2) $
        + '&camcol=' + strtrim(string(plug.objid[2]),2) $
        + '&field=' + strtrim(string(plug.objid[3]),2) $
