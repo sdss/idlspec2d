@@ -142,6 +142,7 @@ pro fitfineconst, plate, fiber, mjd=mjd, doplot=doplot, $
          djs_oplot, loglam[itrim], thisfit, color='green'
          wait, wtime
       endif
+if (ishift EQ 55) then stop
    endfor
 
    ;----------
@@ -152,6 +153,7 @@ pro fitfineconst, plate, fiber, mjd=mjd, doplot=doplot, $
     xerr=besterr, errcode=errcode, doplot=doplot, $
     xtitle='Line separation in log10(Ang)', $
     plottitle=plottitle)
+stop
 
 end
 ;------------------------------------------------------------------------------
