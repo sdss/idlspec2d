@@ -8,5 +8,14 @@ typedef struct {
 } hostconfig;
 
 hostconfig localhost "" ""
-hostconfig coma.princeton.edu /scr0/schlegel ssh1
+hostconfig localhost "" ""
+hostconfig coma.princeton.edu /u/schlegel/tmp ssh1
+hostconfig coma.princeton.edu /u/schlegel/tmp ssh1
+hostconfig hydra.princeton.edu /u/schlegel/tmp ssh1
+hostconfig hydra.princeton.edu /u/schlegel/tmp ssh1
+#hostconfig diomedes.princeton.edu /u/schlegel/tmp ssh1
+hostconfig tantalus.princeton.edu /u/schlegel/tmp ssh1
+hostconfig lepus.princeton.edu /u/schlegel/tmp ssh1
+hostconfig polaris.princeton.edu /u/schlegel/tmp ssh1
+hostconfig draco.princeton.edu /u/schlegel/tmp ssh1
 
