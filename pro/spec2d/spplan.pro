@@ -215,7 +215,7 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
          CAMERAS = strarr(nfile)
          for i=0, nfile-1 do begin
 
-            hdr = headfits(filepath(fullname[i], root_dir=inputdir)
+            hdr = headfits(filepath(fullname[i], root_dir=inputdir))
 
             if (size(hdr,/tname) EQ 'STRING') then begin
               PLATEID[i] = long( sxpar(hdr, 'PLATEID') )
