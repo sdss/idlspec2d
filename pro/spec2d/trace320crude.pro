@@ -6,7 +6,7 @@
 ;   Calling script to return 320 full traces using TRACE_CRUDE.
 ;
 ; CALLING SEQUENCE:
-;   xset = trace320crude( fimage, invvar, [mthresh=, ystart=, nmed=, xgood=, $
+;   xset = trace320crude( fimage, invvar, [mthresh=, ystart=, nmed=, $
 ;    xmask=, yset=, maxerr=, maxshifte=, maxshift0=, xerr=, maxdev=, ngrow=, $
 ;    fibermask=  ] )
 ;
@@ -45,7 +45,6 @@
 ; OPTIONAL OUTPUTS:
 ;   yset       - Y centers for all traces
 ;   xerr       - Errors for XSET
-;   xgood      - Set to 1 for fibers that were actually found, 0 otherwise
 ;   xmask      - Mask set to 1 for good fiber centers, 0 for bad;
 ;                same dimensions as XSET.
 ;   fibermask  - (Modified.)
@@ -57,13 +56,14 @@
 ; PROCEDURES CALLED:
 ;   fibermask_bits()
 ;   trace_crude()
+;   trace_fweight()
 ;   trace320cen()
 ;
 ; REVISION HISTORY:
 ;   13-Sep-1999  Written by David Schlegel, Princeton.
 ;-
 ;------------------------------------------------------------------------------
-function trace320crude, fimage, invvar, ystart=ystart, nmed=nmed, xgood=xgood, $
+function trace320crude, fimage, invvar, ystart=ystart, nmed=nmed, $
    xmask=xmask, radius=radius, yset=yset, maxerr=maxerr, maxshifte=maxshifte, $
    maxshift0=maxshift0, xerr=xerr, maxdev=maxdev, ngrow=ngrow, $
    fibermask=fibermask
@@ -74,6 +74,7 @@ function trace320crude, fimage, invvar, ystart=ystart, nmed=nmed, xgood=xgood, $
    ;----------
    ; Find the 320 X-centers in the row specified by YSTART
 
+   ; XGOOD=1 for fibers that were actually found, 0 otherwise
    xstart = trace320cen(fimage, mthresh=mthresh, ystart=ystart, nmed=nmed, $
     xgood=xgood)
    ntrace = N_elements(xstart) ; Better be 320
@@ -88,31 +89,6 @@ function trace320crude, fimage, invvar, ystart=ystart, nmed=nmed, xgood=xgood, $
    xmask = xerr LT 990  ; =1 for good centers, =0 for bad
 
    ;----------
-   ; Re-fit the centroids.  Do this in case one of the XSTART positions
-   ; happenened to be bad.
-
-;   xset = trace_fweight(fimage, xset, yset, radius=radius, invvar=invvar, $
-;    xerr=xerr)
-;;   xset = trace_gweight(fimage, xset, yset, sigma=1.0, invvar=invvar, $
-;;    xerr=xerr)
-;   xmask = xerr LT 990  ; =1 for good centers, =0 for bad
-
-   ;----------
-   ; Replace XSET with a smooth trace-set
-
-;   xy2traceset, yset, xset, tset, ncoeff=5, yfit=xnew, invvar=xmask, $
-;    maxdev=maxdev, /singlerej
-;   xset = xnew
-
-   ;----------
-   ; Identify bad traces as those with more than 1/4 of their centroids bad
-
-;   nx = (size(xset, /dimens))[0]
-;   quarterbad = (total(xmask,1) LT 0.75 * nx)
-;   ixgood = where(xgood AND NOT quarterbad)
-;   xstart[ixgood] = xset[ystart,ixgood]
-
-   ;----------
    ; Compare the traces in each row to those in row YSTART.
    ; Our assumption is that those centers should be a polynomial mapping
    ; of the centers from row YSTART.  Centers that are deviant from this
@@ -123,6 +99,7 @@ function trace320crude, fimage, invvar, ystart=ystart, nmed=nmed, xgood=xgood, $
 
    ;----------
    ; Loop to find all deviant centroids, and add these to the mask XMASK.
+   ; XMASK=1 for good.
 
    for iy=0, ny-1 do begin
       xcheck = xgood AND xmask[iy,*] ; Test for good fiber & good centroid
@@ -157,8 +134,34 @@ function trace320crude, fimage, invvar, ystart=ystart, nmed=nmed, xgood=xgood, $
    endfor
 
    ;----------
+   ; Perform a second centering iteration on the fibers initially rejected
+   ; by TRACE320CEN.  Those fibers might not actually be bad, but might
+   ; have just had bad pixels near YSTART.
+
+   indx = where(xgood EQ 0, ct)
+   for ii=0, ct-1 do begin
+      itrace = indx[ii]
+
+      tmp_xpos = trace_fweight(fimage, xset[*,itrace], yset[*,itrace], $
+       radius=radius, xerr=tmp_xerr, invvar=invvar)
+
+      xset[*,itrace] = tmp_xpos
+      xerr[*,itrace] = tmp_xerr
+      xmask[*,itrace] = tmp_xerr LT 990 ; =1 for good centers, =0 for bad
+   endfor
+
+   ;----------
+   ; Replace XSET with a smooth trace-set
+
+;   xy2traceset, yset, xset, tset, ncoeff=5, yfit=xnew, invvar=xmask, $
+;    maxdev=maxdev, /singlerej
+;   xset = xnew
+
+   ;----------
    ; Set FIBERMASK bit for any fiber with more than 20% of its positions
-   ; masked, which includes any positions off the CCD
+   ; masked, which includes any positions off the CCD.  Do not pay any
+   ; attention to XGOOD, since that may indicate that a fiber is only
+   ; bad near YSTART.
 
    ibad = where(total(1-xmask, 1) GT 0.20*ny)
    if (ibad[0] NE -1) then $
