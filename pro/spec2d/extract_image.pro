@@ -160,7 +160,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
 
 
    if (ARG_PRESENT(ymodel)) then ymodel = fltarr(nx,ny) 
-   if (ARG_PRESENT(chisq)) then chisq = fltarr(ny) 
+   chisq = fltarr(ny) 
 
    masksize = size(mask)
    if (NOT keyword_set(mask)) then mask = make_array(nx,ny, /byte, value=1) $
@@ -269,7 +269,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
 
      if(ARG_PRESENT(ymodel)) then ymodel[*,cur] = ymodelrow
      if(ARG_PRESENT(fscat)) then fscat[iy,*] = fscatrow
-     if(ARG_PRESENT(chisq)) then chisq[cur] = chisqrow
+     chisq[cur] = chisqrow
 
      calcflux, ansrow, prow, fluxrow, finvrow, wfixed, proftype, lTrace,nCoeff,$
             pixelmasktemp, squashprofile=squashprofile
@@ -309,6 +309,9 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
      print, format='($, ".",i4.4,i4,f7.2,a16)',cur,niter, chisqrow, $
           string([8b,8b,8b,8b,8b,8b,8b,8b,8b,8b,8b,8b,8b,8b,8b,8b])
    endfor
+
+   if total(finite(chisq) EQ 0) GT 0 then $
+      message, "There are infinities in extract_image, need to investigate, related to sdss-pr idlspec2d/2229"
 
    ii = where(mask EQ 0, finallyrejected)
 
