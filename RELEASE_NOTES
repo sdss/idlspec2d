@@ -22,8 +22,17 @@ STYPE_STANDARD: More development by Christy.
 UNDO_SMEAR (removed)
 ZEROPT_COR (removed)
 
+APOPLOTGEOM: This is a plotting routine to visualize the geometry of the
+        arc lines on the CCD from the Son-of-Spectro outputs.  It was
+        written in Nov 2002, but never checked in.
 COMPUTECHI2: Do the chi^2 computation in double-precision.
+DAYTIME_TEST: Proc to look for spectro exposures taken during the day
+        and not marked as test.
+DR1LIST_BEST: Proc to determine which plates *should* have been in DR1
+        that match the tiles of those actually chosen.
 FILTER_THRU: Make silent in call to xy2traceset.
+FIND_UNPLUGGED: Proc to find all unplugged fibers that still seemed
+        to get a spectrum in the reduced data.
 FITSN: Changed call to the obsolete function POLYFITW, to the newer
         but worse POLY_FIT.
         Apply a work-around to the apparent change in PHOTO fiber-mags,
@@ -33,6 +42,11 @@ FITSN: Changed call to the obsolete function POLYFITW, to the newer
           [17.90,19.40] -> [18.06,19.56] in red
 LISTEXPTIME: New simple proc for listing all exposure times.
 PCA_SOLVE: Added /quiet keyword.
+PHOTO_LOADER: New proc to write PHOTO outputs from SDSS_READOBJ() to an
+        ASCII stream for direct input into Postgres; written by Hogg
+        and Schlegel.
+PLATECEN_TEST: Proc to check the consistency of the RA,DEC positions in
+        the output spPlate file headers.
 PLATESN: New header keywords ROFFSET & RSIGMA store the offset and standard
         deviation of the r-band difference in the spectro and photo mags.  
         GIOFF and GISIGMA store the offset and scatter in the (g-i) color.
@@ -44,6 +58,8 @@ PLOTSN: Fixed histogram scales, changed colors for histograms.
         <= 0 (but what would those be?).  Plotting ranges changed.
         A 3rd set of plots for histograms.
         (Revert this code back to v4_10_1 if need be.)
+PLUGFILE_UNMAPPED: Proc to list which fibers in a plPlugMapM file are unmapped,
+        and the info that might help decide where those fibers should be.
 QUICKEXTRACT: Apply a work-around to the apparent change in PHOTO fiber-mags,
         as discussed in sdss-obs/4029 and PR #5642.  Shift the mags at
         which to evaluate the S/N from:
@@ -55,10 +71,15 @@ SDSSPROC: Compute the standard deviation in the bias region again,
         such as that on the left half of r2 on MJD 51779.
         Trigger a warning message if above 10 ADU.
         This addresses PR #3700.
+SMEARTIMES: Proc to list the TAI timestamps of 'smear' exposures in a log file.
+        The purpose of this is to get an exact list of times and determine
+        from the TPM logs whether the telescope moved in the way that it
+        was supposed to during these 'smear' exposures.
 SPREDUCE1D: Add the "UNPLUGGED" value to the ZWARNING flag.
         Add the fields SPECTROFLUX,SPECTROSYNTHFLUX,SPECTROSKYFLUX
         which are the same as the COUNTS* fields but in nanomaggies
         instead of maggies, which are the same units as our imaging outputs.
+UPDATE_PLATELIST: Proc for easily updating the spPlateList.par file.
 
 doc/spectroSOS.html: Add the warning message about "Std. dev. in bias region".
 etc/atmdisp_vec_am1.1.see2.0.fit - Tremonti's atmos. dispersion corrrection?
@@ -73,6 +94,7 @@ etc/kurucz_stds_v5.fit: Made with new SPECTRUM code.  Use white dwarf
 etc/kurucz_model_fix.fit (removed)
 etc/kurucz_stds_interp.fit (removed)
 etc/spChunkList.par: Add chunks 28A, 71, 68A.
+etc/spPlateList.par: Update from 20 Nov 2002 to 11 Sep 2003.
 pro/Makefile: Add the plan subdirectory.
 ups/idlspec2d.table: Get rid of all the $UPS_PROD_FLAVOR references for 
            dependent products.
