@@ -40,7 +40,7 @@ function make_skyinvvar, spplatefilename, ncoeff=ncoeff
 
    if NOT keyword_set(ncoeff) then ncoeff=3
 
-   if (size(splatefilename,/tname) NE 'STRING') then return, 0
+   if (size(spplatefilename,/tname) NE 'STRING') then return, 0
    filename = spplatefilename[0]  
 
    flux = mrdfits(filename,0,hdr)
