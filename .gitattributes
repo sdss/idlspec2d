@@ -73,6 +73,7 @@ pro/spec2d/arcfit_guess.pro -text
 pro/spec2d/arcsky_fit.pro -text
 pro/spec2d/calcflux.pro -text
 pro/spec2d/checkflavor.pro -text
+pro/spec2d/checksn.pro -text
 pro/spec2d/combine2dout.pro -text
 pro/spec2d/combineI.pro -text
 pro/spec2d/divideflat.pro -text
