@@ -1,7 +1,6 @@
 
 function frame_flux_calib, wave, corvector, corvivar, avgcorvset, cormed, $
-         bkpts, framename, fsig = fsig, fcor = fcor, noplot = noplot, $
-         blue = blue 
+         framename, sig2noise, fsig = fsig, fcor = fcor, noplot = noplot
 
   ;----------------
   ; Create 2d wave and flux calib vector average
@@ -33,13 +32,14 @@ function frame_flux_calib, wave, corvector, corvivar, avgcorvset, cormed, $
   ;----------------
   ; Create an average hi-frequency vector
   hifvect = residcorv
-  divideflat, hifvect, lowfvect, minval=0.1
+  divideflat, hifvect, lowfvect, minval=0.01
   hifmed = djs_median(hifvect, 2)
 
   ;--------------
-  ; Recombine high & low-frequencey parts and the average 
+  ; Recombine high & low-frequencey parts (but only use high-f is S/N > 5)  
 
-  fcor = lowfmed * hifmed * avgcorv[*,0]
+  fcor = lowfmed * avgcorv[*,0]
+  if sig2noise gt 12 then fcor = fcor * hifmed
 
   ;--------------
   ; Measure the variance between the fluxcalib vectors derived
@@ -67,7 +67,7 @@ function frame_flux_calib, wave, corvector, corvivar, avgcorvset, cormed, $
 
   frameresid = corvector * (1.0/fcor # cormed)
 
-  if keyword_set(blue) then $
+  if min(10.0^wave) lt 5000 then $
       range = where(10.0^wave gt 5000 and 10.0^wave lt 6000) $
   else range = where(10.0^wave gt 6000 and 10.0^wave lt 7000)
 
@@ -83,8 +83,8 @@ function frame_flux_calib, wave, corvector, corvivar, avgcorvset, cormed, $
 
   ;--------------
   ; Do the spline fit
-  calibset = bspline_iterfit(wave, fcor, nord=4, bkpt=bkpts, $
-             upper=3, lower=3, maxrej=ceil(0.10*n_elements(fcor)))
+  calibset = bspline_iterfit(wave, fcor, bkpt = avgcorvset.fullbkpt, $
+             nord=4, upper=3, lower=3, maxrej=ceil(0.10*n_elements(fcor)))
 
   calibfac = bspline_valu(wave, calibset)
 
