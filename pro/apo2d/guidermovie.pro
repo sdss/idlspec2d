@@ -265,7 +265,6 @@ pro guidermovie, mjd=mjd, plate=plate, expnum=expnum, _EXTRA=KeywordsForATV
 
    while (strupcase(cc) NE 'Q') do begin
 
-print,'ZZ  ',cc
       if (cc EQ 'F') then begin
          ifile = ifile + 1
          if (ifile GE nfile) then begin
