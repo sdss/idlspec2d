@@ -1032,12 +1032,16 @@ EXPT_B2 = b2 camera exposure time (seconds)
 EXPT_R1 = r1 camera exposure time (seconds)
 EXPT_R2 = r2 camera exposure time (seconds)
 EXPTIME = Minimum of exposure times for all cameras
-SPEC1_G = (S/N)^2 per pixel at g=20.2 on spectrograph #1.
-SPEC2_G = (S/N)^2 per pixel at g=20.2 on spectrograph #2.
-SPEC1_R = (S/N)^2 per pixel at r=20.25 on spectrograph #1.
-SPEC2_R = (S/N)^2 per pixel at r=20.25 on spectrograph #2.
-SPEC1_I = (S/N)^2 per pixel at i=19.9 on spectrograph #1.
-SPEC2_I = (S/N)^2 per pixel at i=19.9 on spectrograph #2.
+SPEC1_G = (S/N)^2 per pixel at g=20.2 on spectrograph #1
+SPEC2_G = (S/N)^2 per pixel at g=20.2 on spectrograph #2
+SPEC1_R = (S/N)^2 per pixel at r=20.25 on spectrograph #1
+SPEC2_R = (S/N)^2 per pixel at r=20.25 on spectrograph #2
+SPEC1_I = (S/N)^2 per pixel at i=19.9 on spectrograph #1
+SPEC2_I = (S/N)^2 per pixel at i=19.9 on spectrograph #2
+BESTEXP = Exposure number for the "best" exposure (all 4 cameras)
+EXPIDxx = Identifier for the each invididual exposure+CCD used in this combine,
+          for ex. 'b1-00006853-00006857-00006858' refers to the b1 CCD,
+          exposure #6853, using flat #6857 and arc #6858
 TAI     = Number of seconds since Nov 17 1858 for mid-point of observation
 TAI-BEG = Number of seconds since Nov 17 1858 for beginning of observation
 TAI-END = Number of seconds since Nov 17 1858 for end of observation
@@ -1110,10 +1114,20 @@ are meant to include sky-subtraction errors, but there are instances
 (particularly around 5577) where these errors may be untrustworthy.
 
 <P>
-<B>Dispersion and sky</B>  The dispersion per pixel and the sky flux
+<B>Dispersion and sky:</B> The dispersion per pixel and the sky flux
 are computed at each pixel by re-weighting the individual spectra
 at each pixel according to their formal errors.  This re-weighting
 is only approximate.
+
+<P>
+<B>Sky wavelengths:</B> Note that the sky lines are slightly shifted
+in the reductions because we transform the velocities to the barycenter
+of the solar system.  Each exposure that contributes to the co-added
+spectra will have slightly different barycenter correction, so the
+"average sky" contains a superposition of these slightly-offset sky lines.
+These shifts keep the object spectra as-measured at the barycenter,
+regardless of the time of year or the Earth's rotation relative to
+the spectroscopic targets.
 
 <H4><A NAME="dm_spdiagcomblog">spDiagcomb-<I>pppp</I>-<I>mmmmm</I>.log</A></H4>
 
