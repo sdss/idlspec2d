@@ -43,7 +43,8 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
+pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams, $
+        display=display
 
    if (NOT keyword_set(planfile)) then planfile = 'spPlan2d.par'
 
@@ -92,6 +93,7 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
 
    spawn, 'mkdir -p '+extractDir
 
+   verybegin = systime(1)
    ; Open log files for output
    if (keyword_set(logfile)) then begin
       splog, filename=logfile, /append
@@ -240,7 +242,7 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
              splog, 'No files found for side ', side $
             else $
              combine2dout, files, filepath(outputroot, root_dir=combineDir), $
-              wavemin = alog10(3750.0), everyn=1
+              wavemin = alog10(3750.0), everyn=1, display=display
       endfor
       splog, 'Finished combining sequence', seqid[iseq], ' in', $
        systime(1)-startcombtime, ' seconds'
@@ -248,6 +250,8 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
 
    endfor ; End loop for sequence number
 
+   veryend = systime(1)
+   splog, 'Total time for spallreduce ', veryend-verybegin,' seconds'
    ; Close log files
    if (keyword_set(logfile)) then splog, /close
    if (keyword_set(plotfile)) then begin
@@ -255,6 +259,7 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams
       set_plot, ''
    endif
 
+   
    return
 end
 ;------------------------------------------------------------------------------

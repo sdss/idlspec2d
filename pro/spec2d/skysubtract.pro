@@ -130,7 +130,7 @@ pro skysubtract, obj, objivar, plugmap, wset, skysub, skysubivar, $
 ;
 ;	Try plotting sky residuals as a function of wavelength
 ;
-	plot, 10^allwave, diff, ps=3, yr=[0,10], $
+	plot, 10^allwave, diff, ps=3, yr=[0,10], /xstyle, $
                title='Skysubtraction chi squared'
 
 	pos67 = 2*binsize/3

@@ -115,12 +115,13 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
           else if (strtrim(plugmap[i].objtype,2) EQ 'NA') then $
                splog, ' skipping bad fiber ', i $
           else begin
-            splog, plugmap[i].objtype, plugmap[i].mag 
-          fullwave = wave[*,i] 
-          fullspec = flux[*,i] 
-          fullivar = fluxivar[*,i] 
+            splog, i, plugmap[i].objtype, plugmap[i].mag, $ 
+		      format = '(i4.3, a, f6.2, f6.2, f6.2, f6.2, f6.2)'
+            fullwave = wave[*,i] 
+            fullspec = flux[*,i] 
+            fullivar = fluxivar[*,i] 
 
-          outputfile = outputroot+string(format='(i3.3,a)',i)+'.fit'
+            outputfile = outputroot+string(format='(i3.3,a)',i)+'.fit'
 ;
 ;	Use medians to merge red and blue here
 ;
@@ -150,13 +151,15 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
 
 	             
 	             splog, i, ' Blue:', bluemed, bluesigma, $
-                               'Red: ', redmed, redsigma,  'scale: ', scale[i]
+                      ' Red: ', redmed, redsigma,  ' scale: ', scale[i], $
+		      format = '(i4.3, a, f6.2, f6.2, a, f6.2, f6.2, a, f6.2)'
 	             fullspec[redpix] = fullspec[redpix]*scale[i]
 	             fullivar[redpix] = fullivar[redpix]/(scale[i]^2)
 	          endif
 	       endif
 
 	   endif
+
 
 	   if (NOT keyword_set(wavemin)) then begin
 	     spotmin = fix((min(fullwave) - zeropoint)/bin) + 1
@@ -183,9 +186,10 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
 
 	   newwave = dindgen(npix)*bin + wavemin
 
-         if (keyword_set(everyn)) then $
-           everyn = (nfiles + 1)/2 $
-         else bkpt = dindgen(nbkpt)*bkptbin + bkptmin
+         if (keyword_set(everyn)) then begin 
+           everyn = (nfiles + 1)/2 
+           bkpt = 0
+         endif else bkpt = dindgen(nbkpt)*bkptbin + bkptmin
 	
 
 ;
@@ -203,7 +207,13 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
 
 	   ss = sort(fullwave)
 	   fullbkpt = slatec_splinefit(fullwave[ss], fullspec[ss], coeff, $
+              nord=nord, rejper=0.3, upper=5.0, lower=5.0, $
               bkpt=bkpt, everyn=everyn, invvar=fullivar[ss], mask=mask, /silent)
+
+	   if (total(coeff) EQ 0.0) then $
+              splog, 'All b-splines coeffs have been set to ZERO!!!!'
+
+	   splog, 'Masked ', fix(total(1-mask)), ' pixels'
 
 	   mask[ss] = mask
 
@@ -231,8 +241,9 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
 	         result = interpol(fullivar[these] * mask[these], $
                       fullwave[these], newwave[inbetween])
 
-                 conservevariance = total(result) / totalbefore	
-	         bestivar[inbetween] = bestivar[inbetween] + result * conservevariance
+                 conservevariance = totalbefore / total(result) 
+	         bestivar[inbetween] = bestivar[inbetween] + $
+                   result * conservevariance
 
 	       endif
 	     endif
@@ -272,9 +283,10 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
 	    writefits, outputfile, [[bestguess],[besterr]], newhdr
 
             if (keyword_set(display)) then begin
-              djs_plot, 10^newwave, bestguess, /xstyle, /ystyle
+              plot, 10^newwave, bestguess, /xstyle, yr=[-3,10]
               djs_oplot, 10^newwave, besterr, color='red'
             endif
+
           endelse
         endelse 
       endfor
