@@ -16,6 +16,8 @@ COMBINE1FIBER: Add the skies by inputting SKYFLUX and outputting NEWSKY.
 EXTRACT_OBJECT: Turn off telluric-corrections by default, which must now
         be enabled with the /DO_TELLURIC keyword.  Also, delete some old code.
         Compress (with gzip) the output file.
+FILTER_THRU: SDSS filter curves are now in the idlutils products under
+        the subdirectory data/filters.
 FIND_NMINIMA: Fix bug when plotting.
 FSTARS_PLOT: New code to make color-color plots of spectro-photometric stars
         as compared to the stellar locus and BD+17.  This code actually dates
@@ -106,6 +108,8 @@ etc/dr2spectro.par: List of DR2 plates from the web site
         "http://www.sdss.org/dr2/coverage/dr2spectro.par".
 etc/spChunkList.par: Add chunks 87-89.
 etc/spPlateList.par: Add list of DR2 plates.
+etc/sdss_*.dat: Remove these SDSS filter curves, which are now in the
+        idlutils products under the subdirectory data/filters.
 etc/skylines.par: Updates many of the sky lines to agree with the NIST 2.0
         database at "http://physics.nist.gov/cgi-bin/AtData/main_asd".
         The changes are very minor.  This does not update any of the OH lines.
