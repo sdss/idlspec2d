@@ -34,7 +34,7 @@
 ;   objivar    - Object inverse variance [NPIX,NOBJ]
 ;   zhdr       - Optional header for output file.
 ;   zans       - Output structure from SPREDUCE1D.  The following fields
-;                are used in this procedure: PLATE,TILE,FIBERID,CLASS,Z.
+;                are used in this procedure: PLATE,MJD,FIBERID,CLASS,Z.
 ;   synflux    - Best-fit synthetic spectra; used for STAR background terms.
 ;   dispflux   - Best-fit dispersion spectra; used for GALAXY background terms.
 ;   outfile    - Name of output file (the name is generated from PLATEFILE
@@ -271,7 +271,6 @@ pro speclinefit, platefile, fiberid=fiberid, $
    ; (The values below are copied from the ZANS structure).
 
    res1 = { plate:    0L, $
-            tile:     0L, $
             mjd:      0L, $
             fiberid:  0L        }
    res_prepend = make_array(value=res1, dimension=size(lfitall,/dimens))
@@ -284,10 +283,9 @@ pro speclinefit, platefile, fiberid=fiberid, $
    for iobj=0, nobj-1 do begin
       splog, 'Fitting object #', iobj
 
-      ; If for any weird reason PLATE,TILE,MJD in the ZANS struct are different
+      ; If for any weird reason PLATE,MJD in the ZANS struct are different
       ; from those values in the header, use the values from the ZANS structure.
       res_prepend[*,iobj].plate = zans[iobj].plate
-      res_prepend[*,iobj].tile = zans[iobj].tile
       res_prepend[*,iobj].mjd = zans[iobj].mjd
       res_prepend[*,iobj].fiberid = zans[iobj].fiberid
 
