@@ -33,6 +33,7 @@ SPREDUCE1D: Simply overwrite any existing spZ files, rather than
             using cpbackup to save old ones.
             Call SPECLINEFIT from the end of the code, since it now fits
             emission lines for all types of objects (not just galaxies).
+            Add another ZWARNING flag for QSOs with negative emission lines.
 SDSSPROC: Add "WARNING" to the warning messages about invalid or
             missing BC files.
 SKYLINE_DISPERSION: Re-write to get the indexing correct.  The first version
