@@ -13,6 +13,11 @@ ophdrfix sdR-??-00001142 EXPTIME  60
 # taken earlier that night.
 ophdrfix sdR-??-0000114[2-5] QUALITY   "'test'"
 
+# Discard this 5-sec arc on plate 198 on MJD 51433, since the
+# arc exposure should only be 2-sec (the previous two exposures
+# are at least 3 sec).
+ophdrfix sdR-??-00001150 QUALITY   "'test'"
+
 # Complete the mapping name in these headers for plate 198 on MJD 51433.
 # It properly says plate 198, but doesn't give the full map name.
 ophdrfix sdR-??-0000113[7-9] NAME     "'0198-51433-01'"
@@ -703,6 +708,9 @@ ophdrfix sdR-??-0001404[0-7] QUALITY   "'test'"
 
 # Wrong exposure time in these headers for plate 606 on MJD 52364.
 ophdrfix sdR-??-00014085 EXPTIME  900
+
+# These were test data taken on plate 574 on MJD 52366.
+ophdrfix sdR-??-0001412[0-7] QUALITY   "'test'"
 
 # Wrong exposure time in these headers for plate 508 on MJD 52366.
 # (Reported to be 23837 sec!)
