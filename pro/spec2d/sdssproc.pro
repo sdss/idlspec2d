@@ -136,22 +136,39 @@ function findopfile, expres, mjd, indir, abort_notfound=abort_notfound
    endif
 
    mjdlist = lonarr(nfile)
-   for i=0,nfile-1 do begin
+   for i=0, nfile-1 do begin
       thisfile = fileandpath(files[i])
-      if (strmid(thisfile, strpos(thisfile, '.')) EQ '.par') then begin
-         ; Get the MJD from the header of the Yanny file
-         yanny_read, files[i], hdr=hdr
-         mjdlist[i] = long(yanny_par(hdr, 'mjd'))
-      endif else begin
-         ; Get the MJD from the file name; use the 5 digits after the first minus sign
-         mjdlist[i] = strmid(thisfile, strpos(thisfile,'-')+1,5)
-      endelse
+; Change below to select which file to use based upon the MJD in
+; the file name rather than the MJD in the header of a Yanny param file.
+;      if (strmid(thisfile, strpos(thisfile, '.')) EQ '.par') then begin
+;         ; Get the MJD from the header of the Yanny file
+;         yanny_read, files[i], hdr=hdr
+;         mjdlist[i] = long(yanny_par(hdr, 'mjd'))
+;      endif else begin
+         ; Get the MJD from the file name; use the 5 digits after
+         ; the first minus sign.  Prepend the '0' below to avoid triggering
+         ; an IDL "Type conversion error".
+         mjdlist[i] = long( '0'+strmid(thisfile, strpos(thisfile,'-')+1,5) )
+;      endelse
    endfor
 
-   diff = mjd - mjdlist
-   score = min(diff  + 10000000L*(diff LT 0), bestmjd)
+   ; Sort the files by MJD in descending order
+   isort = reverse(sort(mjdlist))
+   mjdlist = mjdlist[isort]
+   files = files[isort]
 
-   return, fileandpath(files[bestmjd])
+   ; Select the op file with the same MJD or the closest MJD preceding
+   ; this one.
+   ibest = (where(mjdlist LE mjd))[0]
+   if (ibest[0] EQ -1) then begin
+      splog, 'WARNING: No ' + expres + ' op files appear to have an MJD <= ' $
+       + strtrim(string(mjd),2)
+      ibest = 0
+   endif
+   selectfile = fileandpath(files[ibest])
+   splog, 'Selecting op file ' + selectfile
+
+   return, selectfile
 end
 ;------------------------------------------------------------------------------
 ;  Create the bad column mask (1 for a masked pixel) with image size nc,nr
