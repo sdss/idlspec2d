@@ -1,6 +1,11 @@
 
+FLUX_STANDARD, FRAME_FLUX_TWEAK, KURUCZ_RESTORE, NEWSPCOMBINE,
+PCA_FLUX_STANDARD, RECTIFY, SPCOADD_FLUXED_FRAMES, SPHOTO_CALIB,
+STYPE_STANDARD: More development by Christy.
+
 etc/emlines.par: The [O_II] lines were updated from Peter van Hoof's web
            site at: http://www.pa.uky.edu/~peter/atomic/
+etc/kurucz_stds_v5.fit: Made with new SPECTRUM code.
 etc/spChunkList.par: Add chunks 28A, 71, 68A.
 
 -------------------------------------------------------------------------------
