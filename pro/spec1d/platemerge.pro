@@ -14,7 +14,7 @@
 ;   zfile       - Redshift file(s) from spectro-1D; default to all files
 ;                 specified by the PLATELIST routine.
 ;   outroot     - Root name for output files; default to '$SPECTRO_DATA/spAll';
-;                 the files are then 'spAll.fits' and 'spAll.dat'.
+;                 the files are then 'spAll.fits', 'spAll.dat', 'spAllLine.dat'.
 ;                 If /PUBLIC is set, then add '-public' to the root name.
 ;   public      - If set, then limit to plates in platelist with PUBLIC != ''
 ;
@@ -44,26 +44,31 @@
 ;   djs_diff_angle()
 ;   headfits()
 ;   mrdfits()
+;   mwrfits
 ;   mwrfits_chunks
 ;   plug2tsobj()
 ;   platelist
+;   readspec
 ;   repstr
 ;   struct_print
+;   sxaddpar
 ;   sxpar()
 ;
 ; REVISION HISTORY:
 ;   30-Oct-2000  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
-pro platemerge, zfile, outroot=outroot, public=public
+pro platemerge, zfile, outroot=outroot1, public=public
 
    dtheta = 2.0 / 3600.
    tags_exclude = ['FIRST*','ROSAT*','MATCHID']
 
-   if (NOT keyword_set(outroot)) then begin
-      outroot = 'spAll'
+   if (keyword_set(outroot1)) then begin
+      outroot = [outroot1, outroot1+'Line']
+   endif else begin
+      outroot = ['spAll','spAllLine']
       if (keyword_set(public)) then outroot = outroot + '-public'
       outroot = djs_filepath(outroot, root_dir=getenv('SPECTRO_DATA'))
-   endif
+   endelse
 
    t1 = systime(1)
 
@@ -265,7 +270,7 @@ pro platemerge, zfile, outroot=outroot, public=public
    ;----------
    ; Write the output FITS file, in chunks of 20 plates
 
-   mwrfits_chunks, outdat, outroot+'.fits', /create, chunksize=640*20
+   mwrfits_chunks, outdat, outroot[0]+'.fits', /create, chunksize=640*20
 
    ;----------
    ; Create the structure for ASCII output
@@ -312,9 +317,26 @@ pro platemerge, zfile, outroot=outroot, public=public
    objtypes = ['UNKNOWN', 'CR', 'DEFECT', 'GALAXY', 'GHOST', 'KNOWNOBJ', $
     'STAR', 'TRAIL', 'SKY']
    adat.objc_type = objtypes[outdat.objc_type]
-outdat = 0 ; Free memory ???
+outdat = 0 ; Free memory
 
-   struct_print, adat, filename=outroot+'.dat'
+   struct_print, adat, filename=outroot[0]+'.dat'
+
+   ;----------
+   ; Create the merged line data
+
+   plate = adat.plate
+   mjd = adat.mjd
+   fiberid = adat.fiberid
+adat = 0 ; Free memory
+
+   readspec, plate, mjd=mjd, fiberid, zline=linedat
+   nobj = n_elements(plate)
+   nper = n_elements(linedat) / nobj
+   sxaddpar, linehdr, 'DIMS0', nper, ' Number of emission lines'
+   sxaddpar, linehdr, 'DIMS1', nobj, ' Number of objects'
+
+   mwrfits, 0, outroot[1]+'.fits', linehdr, /create
+   mwrfits_chunks, linedat, outroot[1]+'.fits', chunksize=640*nper*20
 
    splog, 'Total time = ', systime(1)-t1, ' sec'
 
