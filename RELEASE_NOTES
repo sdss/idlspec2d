@@ -4,6 +4,9 @@ PLATECOMPARE: Fix 1-character typo preventing selecting the MJD
 SDSSPROC: Add "WARNING" to the warning messages about invalid or
             missing BC files.
 
+opHdrFix.par: Declare data bad on MJD 52336-52337 due to spectrograph
+            mechanicals problems.
+
 In idlutils:
 eviltarball: Comment out the reference to sdsscvs.
 
