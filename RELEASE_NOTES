@@ -71,6 +71,10 @@ zplot: Quick-and-dirty script for finding and plotting a spectrum (at Princeton)
        w/out setting up any path variables or SDSS products.
 
 BSPLINE_ACTION, INTRV (in idlutils): Bug fixes for 2-D spline fitting.
+BSPLINE_FIT, BSPLINE_ITERFIT (in idlutils):
+     Remove MASK keyword, since it is too confusing with INMASK, OUTMASK
+     already used in BSPLINE_ITERFIT().  It didn't look like it was
+     actually used anyway!
 DJS_REJECT (in idlutils): Add the GROUPDIM keyword, and allow GROUPDIM,
           MAXREJ and GROUPSIZE to be vectors for several limits in the
           rejection algorithm.  These were some major changes, and hopefully
