@@ -207,9 +207,9 @@ pro platelist, infile, plist=plist, create=create, $
     'n_star'   , 0L,  $
     'n_unknown', 0L,  $
     'n_sky'    , 0L, $
-    'success_main' , -0.001, $
-    'success_lrg' , -0.001, $
-    'success_qso' , -0.001, $
+    'success_main' , -1.0, $
+    'success_lrg' , -1.0, $
+    'success_qso' , -1.0, $
     'status2d' , 'Missing', $
     'statuscombine', 'Missing', $
     'status1d' , 'Missing', $
@@ -523,16 +523,16 @@ pro platelist, infile, plist=plist, create=create, $
          if (nmain GT 0) then $
           plist[ifile].success_main = $
            100 * total(zans[imain].zwarning EQ 0 $
-           AND (strmatch(zans[imain].class,'GALAXY') $
-            OR strmatch(zans[imain].class,'QSO'))) / nmain
+           AND (strmatch(zans[imain].class,'GALAXY*') $
+            OR strmatch(zans[imain].class,'QSO*'))) / nmain
          if (nlrg GT 0) then $
           plist[ifile].success_lrg = $
            100 * total(zans[ilrg].zwarning EQ 0 $
-           AND strmatch(zans[ilrg].class,'GALAXY')) / nlrg
+           AND strmatch(zans[ilrg].class,'GALAXY*')) / nlrg
          if (nqso GT 0) then $
           plist[ifile].success_qso = $
            100 * total(zans[iqso].zwarning EQ 0 $
-           AND strmatch(zans[iqso].class,'QSO')) / nqso
+           AND strmatch(zans[iqso].class,'QSO*')) / nqso
       endif else begin
          ;----------
          ; Find the state of the 1D reductions -- spZbest file is missing
