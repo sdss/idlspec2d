@@ -28,7 +28,8 @@ columns=lindgen(24)
         format='("vdisp-",i4.4,"-",i5.5,".ps")')
       dfpsplot, plotfile, /color
    endif
-   if (keyword_set(debug) OR keyword_set(plotfile)) then doplot=1
+   if (keyword_set(debug) OR keyword_set(plotfile)) then doplot = 1
+   if (keyword_set(plotfile)) then debug = 0
 
    if (keyword_set(brightest)) then begin
       igal = where(strtrim(zans.class,2) EQ 'GALAXY' AND zans.zwarning EQ 0, $
@@ -45,7 +46,7 @@ columns=lindgen(24)
       plottitle = string(plate, zans[igal[jj]].fiberid, $
        format='("Vel. Disp. Plate ",i4," Fiber ",i3)')
 
-      wave = 10^loglam / (1 + zans[igal[jj]].z)
+      restwave = 10^loglam / (1 + zans[igal[jj]].z)
       vdans1 = vdispfit(objflux[*,igal[jj]], objivar[*,igal[jj]], $
        loglam, zobj=zans[igal[jj]].z, $
        eigenfile=eigenfile, eigendir=eigendir, columns=columns, $
@@ -68,14 +69,16 @@ columns=lindgen(24)
          csize = 2
          ymax = 1.25 * max(djs_median(objflux[ipix,igal[jj]],width=101))
          ymin = -0.2 * ymax
-         djs_plot, [wave[ipix]], [objflux[ipix,igal[jj]]], yrange=[ymin,ymax], $
+         djs_plot, [restwave[ipix]], [objflux[ipix,igal[jj]]], $
+          yrange=[ymin,ymax], $
           color='default', xtitle='Rest-frame Wavelength', ytitle='Flux', $
           title=plottitle, charsize=csize
-         djs_oplot, [wave[ipix]], [yfit1[ipix]], color='red'
+         djs_oplot, [restwave[ipix]], [yfit1[ipix]], color='red'
          djs_oplot, !x.crange, [0,0]
-         djs_oplot, wave[ipix], objflux[ipix,igal[jj]]-synflux[ipix,igal[jj]], $
+         djs_oplot, restwave[ipix], $
+          objflux[ipix,igal[jj]]-synflux[ipix,igal[jj]], $
           color='blue'
-         djs_oplot, wave[ipix], objflux[ipix,igal[jj]]-yfit1[ipix], $
+         djs_oplot, restwave[ipix], objflux[ipix,igal[jj]]-yfit1[ipix], $
           color='red'
 
          xplot = 0.9 * !x.crange[0] + 0.1 * !x.crange[1]
@@ -127,6 +130,9 @@ columns=lindgen(24)
             if (NOT keyword_set(vdmany)) then vdmany = vdans1 $
              else vdmany = [vdmany,vdans1]
          endfor
+         if (NOT keyword_set(vdall)) then vdall = vdmany $
+          else vdall = [[vdall],[vdmany]]
+
          !p.multi = [0,1,3]
          !x.range = 0
          !y.range = 0
