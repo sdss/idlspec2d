@@ -93,6 +93,7 @@ for mjdstr in $remotedir ; do
       # create a symbolic link to that directory from the root data dir.
 
       if [ -n "$localdir" ] ; then
+         echo "SPROBOT: Current time "`date` UID=$UID PPID=$PPID
          echo SPROBOT: mkdir -p $localdir
          mkdir -p $localdir
          if [ $localdir != $toprawdir/$mjdstr ] ; then
@@ -107,12 +108,14 @@ for mjdstr in $remotedir ; do
 
    if [ -n "$localdir" ] ; then
       # Copy the astrolog files...
+      echo "SPROBOT: Current time "`date` UID=$UID PPID=$PPID
       echo SPROBOT: rsync "$hostname:/astrolog/$mjdstr" $astrologdir
       rsync -ar --rsh="$SPROBOT_RSH" \
        "$hostname:/astrolog/$mjdstr" $astrologdir
 #       --rsync-path=/p/rsync/v2_4_3/rsync
 
       # Copy the raw FITS files... copy only files ending in ".fit.gz"
+      echo "SPROBOT: Current time "`date` UID=$UID PPID=$PPID
       echo SPROBOT: rsync "$hostname:/data/spectro/$mjdstr/*.fit.gz" $localdir
       rsync -ar --rsh="$SPROBOT_RSH" \
        "$hostname:/data/spectro/$mjdstr/*.fit.gz" $localdir
@@ -120,6 +123,7 @@ for mjdstr in $remotedir ; do
 #       "$hostname:/data/spectro/$mjdstr/*" $localdir
 
       # Copy the guider image directory...
+      echo "SPROBOT: Current time "`date` UID=$UID PPID=$PPID
       echo SPROBOT: rsync "$hostname:/data/spectro/$mjdstr/guider" $localdir
       rsync -ar --rsh="$SPROBOT_RSH" \
        "$hostname:/data/spectro/$mjdstr/guider/*.fits.gz" $localdir/guider
@@ -156,6 +160,7 @@ fi
 #------------------------------------------------------------------------------
 # Build the plan files if there is new data
 
+echo "SPROBOT: Current time "`date` UID=$UID PPID=$PPID
 echo SPROBOT: MJDLIST=$mjdlist
 
 if [ -n "$mjdlist" ] ; then
@@ -179,6 +184,7 @@ if [ ${vers:0:5} != NOCVS ] ; then upsversion=$vers ; fi
 # in the background.  The calls to the 2d and 1d scripts will exit if
 # those scripts are already running.
 
+   echo "SPROBOT: Current time "`date` UID=$UID PPID=$PPID
    sprobot2d.sh ",topdir='$topoutdir', upsversion='$upsversion', nice=19"
    cd $SPECTRO_DATA
    echo "platelist, /create" | idl
