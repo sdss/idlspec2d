@@ -19,6 +19,9 @@ LOCATESKYLINES: Change MAXSHIFT from 2.0 pixels to 3.5 pixels.  The worst-
 PLATELIST: Use PLUG_RA,PLUG_DEC to match duplicate observations of
            individual objects, rather than RA,DEC (which can be zeros
            if there was no match to the photometry).
+PLATEMERGE: Small changes to allow using the (new) calibObj files
+           instead of the (old) tsObj files.
+           For the ASCII output, write MODELFLUX instead of COUNTS_MODEL.
 PLUG2TSOBJ: Small changes to allow reading of the (new) calibObj files.
            For now, assume these files are in $SPECTRO_DATA/calibobj.
            Print a warning message for non-matched objects only if they
