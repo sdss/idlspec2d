@@ -308,7 +308,7 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
       countthese = total(wfixarr)
       reducedChi = chisq / (total(mask) - countthese)
       errscale = 1.0
-      if (relative) then errscale = sqrt(chisq/total(mask))
+      if (relative) then errscale = sqrt((chisq/total(mask)) > 1.0)
 
       finished = 1
       ; I'm changing the rejection algorithm
