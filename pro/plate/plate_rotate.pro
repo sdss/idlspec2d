@@ -33,11 +33,10 @@
 ;------------------------------------------------------------------------------
 pro plate_rotate, racen1, deccen1, racen2, deccen2, ra1, dec1, ra2, dec2
 
-  if N_params() EQ 0 then begin 
+  if (n_params() EQ 0) then begin 
      print, 'plate_rotate, racen1, deccen1, racen2, deccen2, ra1, dec1, ra2, dec2'
      return
-
-  end
+  endif
 
 ; convert input ra1, dec1 to unit vectors
   uv = ll2uv([[ra1-racen1], [dec1]], /double)  ; array [N, 3]
