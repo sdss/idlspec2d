@@ -117,6 +117,9 @@ pro apoall, rawdir, astrolog=astrolog, flatdir=flatdir, mjd=mjd, $
          FLAVOR = strarr(nfile)
          CAMERAS = strarr(nfile)
          for i=0, nfile-1 do begin
+            ; Print something since this might take a while to read all the
+            ; FITS headers...
+            print, format='(".",$)'
 
             hdr = sdsshead(filepath(fullname[i], root_dir=inputdir))
 
