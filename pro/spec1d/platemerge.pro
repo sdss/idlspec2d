@@ -40,7 +40,6 @@
 ; DATA FILES:
 ;
 ; PROCEDURES CALLED:
-;   copy_struct_inx
 ;   djs_angle_match()
 ;   djs_diff_angle()
 ;   headfits()
@@ -57,6 +56,7 @@
 pro platemerge, zfile, outroot=outroot, public=public
 
    dtheta = 2.0 / 3600.
+   tags_exclude = ['FIRST*','ROSAT*','MATCHID']
 
    if (NOT keyword_set(outroot)) then begin
       outroot = 'spAll'
@@ -138,31 +138,52 @@ pro platemerge, zfile, outroot=outroot, public=public
           'platesn2'    , 0.0, $
           'smearuse'    , ' ', $
           'specprimary' ,  0B )
-         outdat = replicate(create_struct(pstuff, zans[0], tsobj0), nout)
-         struct_assign, {junk:0}, outdat ; Zero-out all elements
+         tmpout = create_struct(pstuff, zans[0], tsobj0)
+
+         ; Exclude tags we don't want
+         tags = tag_names(tmpout)
+         ntag = n_elements(tags)
+         qkeep = bytarr(ntag) + 1B
+         for itag=0, ntag-1 do begin
+            for jtag=0, n_elements(tags_exclude)-1 do begin
+               if (strmatch(tags[itag], tags_exclude[jtag])) then $
+                qkeep[itag] = 0B
+            endfor
+         endfor
+         ikeep = where(qkeep, nkeep)
+         outdat1 = create_struct(tags[ikeep[0]], tmpout.(ikeep[0]))
+         for ii=1, nkeep-1 do $
+          outdat1 = create_struct(outdat1, tags[ikeep[ii]], tmpout.(ikeep[ii]))
+
+         struct_assign, {junk:0}, outdat1 ; Zero-out all elements
+         outdat = replicate(outdat1, nout)
       endif
 
-      indx = lindgen(640)+640L*ifile
-      copy_struct_inx, zans, outdat, index_to=indx
+      thisdat = replicate(outdat1, 640)
+      struct_assign, zans, thisdat, /nozero
       if (keyword_set(tsobj)) then $
-       copy_struct_inx, tsobj, outdat, index_to=indx
+       struct_assign, tsobj, thisdat, /nozero
 
       ; Fill in the first columns of this output structure
-      outdat[indx].progname = plist[ifile].progname
-      outdat[indx].chunkname = plist[ifile].chunkname
-      outdat[indx].platequality = plist[ifile].platequality
-      outdat[indx].platesn2 = plist[ifile].platesn2
-      outdat[indx].smearuse = plist[ifile].smearuse
+      thisdat.progname = plist[ifile].progname
+      thisdat.chunkname = plist[ifile].chunkname
+      thisdat.platequality = plist[ifile].platequality
+      thisdat.platesn2 = plist[ifile].platesn2
+      thisdat.smearuse = plist[ifile].smearuse
 
       ; Over-write PRIMTARGET+SECTARGET with those values from spPlate file.
       plugmap = mrdfits(fullplatefile[ifile], 5)
-      outdat[indx].primtarget = plugmap.primtarget
-      outdat[indx].sectarget = plugmap.sectarget
+      thisdat.primtarget = plugmap.primtarget
+      thisdat.sectarget = plugmap.sectarget
 
       ; Over-write the MJD with that from the plate file name ???
       ; Early versions of 2D (such as v4_3_1) could have an inconsistent value.
 ;      thismjd = long( strmid(fileandpath(fullplatefile[ifile]), 13, 5) )
-;      outdat[indx].mjd = thismjd
+;      thisdat.mjd = thismjd
+
+      ; Copy the data for this plate into the big output structure
+      indx = lindgen(640)+640L*ifile
+      outdat[indx] = thisdat
    endfor
 
    ;----------
