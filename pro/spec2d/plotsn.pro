@@ -262,10 +262,9 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
 
    endfor
 
-stop
    if keyword_set(synthmag) then begin
       !p.multi = [0,2,2]
-      symsize = 0.5
+      symsize = 0.35
       psym = 4
 
       for ispecnum=1, 2 do begin

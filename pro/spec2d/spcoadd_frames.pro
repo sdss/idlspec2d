@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   spcoadd_frames, filenames, outputname, $
 ;    fcalibprefix=, [ binsz=, zeropoint=, nord=, wavemin=, $
-;    bkptbin=, window=, maxsep=, adderr= ]
+;    bkptbin=, window=, maxsep=, adderr=, plotsnfile= ]
 ;
 ; INPUTS:
 ;   filenames      - Name(s) of files to combine (written by SPREDUCE)
@@ -98,7 +98,7 @@ end
 pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
  binsz=binsz, zeropoint=zeropoint, nord=nord, wavemin=wavemin, $
  bkptbin=bkptbin, window=window, maxsep=maxsep, adderr=adderr, $
- docams=camnames
+ docams=camnames, plotsnfile=plotsnfile
 
    if (NOT keyword_set(binsz)) then binsz = 1.0d-4 $
     else binsz = double(binsz)

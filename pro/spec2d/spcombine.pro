@@ -191,7 +191,8 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay
 
    spcoadd_frames, djs_filepath(sciname, root_dir=extractdir), $
     djs_filepath(combinefile, root_dir=combinedir), $
-    fcalibprefix=fcalibprefix, adderr=adderr, docams=docams
+    fcalibprefix=fcalibprefix, adderr=adderr, docams=docams, $
+    plotsnfile=plotsnfile
 
    heap_gc   ; garbage collection
 
