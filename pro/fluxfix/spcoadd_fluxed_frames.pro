@@ -484,7 +484,7 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
 
      tempflux = finalflux[*,ispec]
      tempivar = finalivar[*,ispec]
-     divideflat, tempflux, invvar=tempivar, model, minval=0.3
+     divideflat, tempflux, invvar=tempivar, atmdisp_model, minval=0.3
      finalflux[*,ispec] = tempflux
      finalivar[*,ispec] = tempivar
    
