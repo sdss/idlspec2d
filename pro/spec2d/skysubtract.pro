@@ -144,19 +144,18 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
 ;-------------------------------------------------------------------------
 ;
 ;     This code has been added to slightly reduce the number of
-;     breakpoints, from 3100 to 2030 or so.  This also gives better
+;     breakpoints, from 3100 to "ncol".  This also gives better
 ;     behavior near the boundaries
 ;
 ;-------------------------------------------------------------------------
 
      maxsky = max(skywave[where(skyivar GT 0)], min=minsky)
-     snsqrt = sqrt(skyfit * sqrt(skyivar))
-     good = where(skyivar GT 0)
+     snsqrt = sqrt((skyfit * sqrt(skyivar) > 0))
+     good = where(snsqrt GT 0)
      snsqrt[good] = convol(snsqrt[good], gauss_kernel(2.0*nskies))
 
      snsum = snsqrt
-     for i=1,n_elements(snsqrt)-1 do snsum[i] = snsum[i] + snsum[i-1]
-     nbkpt = n_elements(bkpt)
+     for i=1L,n_elements(snsqrt)-1 do snsum[i] = snsum[i] + snsum[i-1]
      nbkpt = ncol
      place = long(snsum/max(snsum)*nbkpt) < (nbkpt-2)
      newbkpt = uniq(place)

@@ -367,7 +367,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ; Sky-subtract again, this time with dispset (PSF subtraction)
    ; 
 
-   nskypoly = 4L
+   nskypoly = 3L
    skystruct_psf = skysubtract(flux, fluxivar, plugsort, vacset, $
      skysubpsf, skysubpsfivar, iskies=iskies, pixelmask=pixelmask, $
      fibermask=fibermask, upper=3.0, lower=3.0, dispset=dispset, npoly=nskypoly)
@@ -402,25 +402,25 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
        title=plottitle+objname
    endif
 
-   ;---------------------------------------------------------------------
-   ;  Output sky image
-   ;
-   if keyword_set(skyoutname) then $
-     if skyoutname NE '' then $
-        mwrfits, flux - skysub, skyoutname, /create
-
    ;------------------------------------------
    ; Save the sky-subtracted flux values as is, and now modify flambda.
 
    if keyword_set(skystruct_psf) then begin
      flambda = skysubpsf
-     flambdaivar = skysubivarpsf
+     flambdaivar = skysubpsfivar
    endif else begin
      flambda = skysub
      flambdaivar = skysubivar
      nskypoly = 1L
    endelse
    sxaddpar, objhdr, 'PSFSKY', nskypoly, ' Order of PSF skysubtraction'
+
+   ;---------------------------------------------------------------------
+   ;  Output sky image
+   ;
+   if keyword_set(skyoutname) then $
+     if skyoutname NE '' then $
+        mwrfits, flux - flambda, skyoutname, /create
 
    ;------------------------------------------
    ; Telluric correction called for 'red' side
