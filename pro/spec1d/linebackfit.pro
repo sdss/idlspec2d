@@ -33,7 +33,8 @@
 ;                where the scaling of each vector is fit [NPIX,NBACK].
 ;                The redshift of these background vectors is not fit, but
 ;                rather we maintain the one-to-one correspondence of each
-;                BACKGROUND pixel to each FLUX pixel.
+;                BACKGROUND pixel to each FLUX pixel.  The initial guess
+;                for the scaling of each background vector is unity.
 ;   zguess     - Initial guess for redshifts of all lines (scalar).
 ;
 ; OUTPUTS:
@@ -155,7 +156,7 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
    ;----------
    ; Initialize the output structure, and set default return values
 
-   linestruct = create_struct(   $
+   linestruct = create_struct( name='EMLINEFIT',   $
     'linename'          ,   ' ', $
     'linewave'          ,   0.0, $
     'linez'             ,   0.0, $
@@ -198,9 +199,9 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
       parinfo[2+iline*3].value = 1.0d-4
    endfor
 
-; How do we fit these initial guesses for background terms???
+   ; Set the initial guess for the scaling of each background vector to unity.
    for iback=0, nback-1 do begin
-      parinfo[nline*3+iback].value = 0.01
+      parinfo[nline*3+iback].value = 1.0
    endfor
 
    ;----------
