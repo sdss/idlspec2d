@@ -30,6 +30,11 @@
 ;   $IDLSPEC2D_DIR/etc/TEMPLATEFILES
 ;
 ; PROCEDURES CALLED:
+;   combine1fiber
+;   concat_dir()
+;   poly_array()
+;   readfits()
+;   sxpar()
 ;
 ; REVISION HISTORY:
 ;   20-Aug-2000  Written by D. Schlegel, Princeton
