@@ -76,6 +76,7 @@ eigeninput_star.dat: Many more M stars added for implementing changes
             to PCA_STAR.
 opHdrFix.par: Correct some values for TILEID,RADEG,DECDEG for the early plates
             187, 202 and 214.
+sos_redo: Don't allow this to be run from the machine sdsshost!
 
 -------------------------------------------------------------------------------
 v4_8_4 (Aug 29, 2001 idlspec2d+idlutils)
@@ -97,7 +98,7 @@ sprobot,sprobot_start: Scripts now use the environment variables
           the raw data from, and which local disks to write to.
           These scripts are now generalized to the point where they can
           be run from anywhere by just setting up environment variables.
-spChunkList.par: Update chunk list for chunks 20,21 (up to plate 714).
+spChunkList.par: Update chunk list for chunks 20-25 (up to plate 769).
 
 BSPLINE_BKPTS (in idlutils): Do not crash even in the case of very few
          data points.  But untested whether this actually does what we want
