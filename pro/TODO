@@ -4,6 +4,8 @@
 
 * Discard flats that saturate in SPREDUCE or SPPLAN.
 
+----> Done (17-Dec-99) in SPREDUCE, but maybe should implement in SPPLAN?
+
 * Combine "superflat" code from SPFLATTEN2 and FIBERFLAT.
   The internal routine SPFLATTEN2/SUPERFLAT could be called by FIBERFLAT.
 

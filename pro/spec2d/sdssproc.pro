@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   sdssproc, infile, [image, invvar, indir=indir, $
-;    outfile=outfile, varfile=varfile, $
+;    outfile=outfile, varfile=varfile, nsatrow=nsatrow, $
 ;    hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, bcfile=bcfile, $
 ;    pixflatname=pixflatname, spectrographid=spectrographid, color=color ]
 ;
@@ -17,7 +17,9 @@
 ; OPTIONAL KEYWORDS:
 ;   indir      - Input directory for INFILE
 ;   outfile    - Calibrated 2d frame, after processing
-;   varfile    - Inverse Variance Frame after processing
+;   varfile    - Inverse variance frame after processing
+;   nsatrow    - Number of saturated rows, assuming that a row is saturated
+;                if at least 20 of its pixels are above saturation level.
 ;   hdr        - Header returned in memory
 ;   configfile - Default to "opConfig.par"
 ;   ecalibfile - Default to "opECalib.par"
@@ -65,13 +67,13 @@
 ;------------------------------------------------------------------------------
 
 pro sdssproc, infile, image, invvar, indir=indir, $
- outfile=outfile, varfile=varfile, $
+ outfile=outfile, varfile=varfile, nsatrow=nsatrow, $
  hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, bcfile=bcfile, $
  pixflatname=pixflatname, spectrographid=spectrographid, color=color
 
    if (N_params() LT 1) then begin
-      print, 'Syntax - sdssproc, infile, [image, invvar, indir=indir, '
-      print, ' outfile=outfile, varfile=varfile, ' 
+      print, 'Syntax - sdssproc, infile, [image, invvar, indir=indir, $'
+      print, ' outfile=outfile, varfile=varfile, nsatrow=nsatrow, $' 
       print, ' hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, bcfile=bcfile]'
       return
    endif
@@ -80,7 +82,8 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    if (NOT keyword_set(bcfile)) then bcfile = 'opBC.par'
 
    readimg = arg_present(image) OR keyword_set(outfile)
-   readivar = arg_present(invvar) OR keyword_set(varfile)
+   readivar = arg_present(invvar) OR keyword_set(varfile) $
+    OR arg_present(nsatrow)
 
    pp = getenv('IDLSPEC2D_DIR')+'/examples'
 
@@ -404,7 +407,8 @@ pro sdssproc, infile, image, invvar, indir=indir, $
       ;------
       ; Look for blead trails and mask them.
       ; At present, SATMASK is set to 0 for saturated pixels.  Look for any
-      ; column with >=11 saturated pixels in a row.
+      ; column with >=11 saturated pixels in a row.  In that case, mask
+      ; all pixels from that row number up to the top of the CCD.
 
       kern = transpose(fltarr(11) + 1.0)
       mask1 = fix( convol(satmask+0.0, kern, /center, /edge_truncate) ) EQ 0
@@ -419,6 +423,18 @@ pro sdssproc, infile, image, invvar, indir=indir, $
             irow = (where(mask1[icol,*]))[0] ; First bad row in this column
             satmask[icol,irow:nr-1] = 0
          endfor
+      endif
+
+      ;------
+      ; Count the number of rows (wavelengths) that we think are saturated.
+      ; A row is considered to be saturated if at least 20 of its pixels are.
+      ; Note that this counting is done before masking out bad columns.
+      ; What we really should do is ignore bad columns when computing this.
+
+      if (arg_present(nsatrow)) then begin
+         totsat = total((1-satmask), 1)
+         junk = where(totsat GE 20, nsatrow)
+         splog, 'Number of saturated rows = ', nsatrow
       endif
 
       ;------

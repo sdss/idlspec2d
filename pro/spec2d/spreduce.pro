@@ -144,26 +144,33 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
          splog, 'Reading flat ', flatname[ifile]
          sdssproc, flatname[ifile], image, invvar, indir=indir, $
-          hdr=flathdr, pixflatname=pixflatname
+          hdr=flathdr, pixflatname=pixflatname, nsatrow=nsatrow
 
          ;-----
-         ; Decide if this flat is bad
-         ; Reject if more than 1% of the pixels are marked as bad
+         ; Decide if this flat is bad:
+         ;   Reject if more than 1% of the pixels are marked as bad.
+         ;   Reject if more than 10 rows are saturated.
 
          fbadpix = N_elements(where(invvar EQ 0)) / N_elements(invvar)
-         if (fbadpix GT 0.01) then qbadflat = 1 $
-          else qbadflat = 0
 
-         ;---------------------------------------------------------------------
-         ; Create spatial tracing from flat-field image
-         ;---------------------------------------------------------------------
+         qbadflat = 0
+         if (fbadpix GT 0.01) then qbadflat = 1
+         if (nsatrow GT 10) then qbadflat = 1
 
-         splog, 'Tracing 320 fibers in ',  flatname[ifile]
-         tmp_xsol = trace320crude(image, yset=ycen, maxdev=0.15)
+         if (NOT qbadflat) then begin
+            ;------------------------------------------------------------------
+            ; Create spatial tracing from flat-field image
+            ;------------------------------------------------------------------
 
-         splog, 'Fitting traces in ',  flatname[ifile]
-         xy2traceset, ycen, tmp_xsol, tset, ncoeff=5, maxdev=0.1
-         traceset2xy, tset, ycen, tmp_xsol
+            splog, 'Tracing 320 fibers in ',  flatname[ifile]
+            tmp_xsol = trace320crude(image, yset=ycen, maxdev=0.15)
+
+            splog, 'Fitting traces in ',  flatname[ifile]
+            xy2traceset, ycen, tmp_xsol, tset, ncoeff=5, maxdev=0.1
+            traceset2xy, tset, ycen, tmp_xsol
+         endif else begin
+            splog, 'Rejecting flat ', flatname[ifile]
+         endelse
 
          oldflatfile = flatname[ifile]
       endif
@@ -224,8 +231,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    ;---------------------------------------------------------------------------
 
    if (ibest EQ -1) then begin
-      splog, 'No good flats'
-      splog, 'Abort!'
+      splog, 'ABORT: No good flats'
       return
    endif
 
@@ -233,8 +239,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    splog, 'Best arc = ', arcname[ibest]
 
    if (bestcorr LT 0.7) then begin
-      splog, 'Best arc correlation = ', bestcorr
-      splog, 'Abort!'
+      splog, 'ABORT: Best arc correlation = ', bestcorr
       return
    endif
 
