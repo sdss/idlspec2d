@@ -167,9 +167,11 @@ pro batch1d, fullplatefile, topdir=topdir, upsversion=upsversion, $
        root_dir=localpath[i])
       zbestfile = djs_filepath('spZbest-'+platemjd[i]+'.fits', $
        root_dir=localpath[i])
+      zlinefile = djs_filepath('spZline-'+platemjd[i]+'.fits', $
+       root_dir=localpath[i])
       diagps = djs_filepath('spDiag1d-'+platemjd[i]+'.ps', $
        root_dir=localpath[i])
-      outfile[i] = ptr_new([ diaglog[i], diagps, zallfile, zbestfile ])
+      outfile[i] = ptr_new([ diaglog[i], diagps, zallfile, zbestfile, zlinefile ])
    endfor
 
    ;----------
