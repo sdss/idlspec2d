@@ -388,21 +388,21 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
          qobj = where(plugc.spectrographid eq ispecnum and $
                       abs(goff) lt 1 and abs(roff) lt 1 and abs(ioff) lt 1)
        
-         ymax = 80 
+         ymax = 100 
          plothist, roff[qobj], xr=[-0.6, 0.6], yr =[0, ymax], bin=0.02, $
            xtitle = 'Spectro Mag - Photo Fiber Mag', $
            ytitle = 'Number of Spectra', /xs, charthick=2, thick=3
 ;           xticklen=1, yticklen=1, xgrids=1, ygrids=1 
         
          plothist, goff[qobj], gxhist, gyhist, bin=0.02, $
-                   color=djs_icolor('green'), /over, thick=4
+                   color=djs_icolor('blue'), /over, thick=4
          plothist, roff[qobj], rxhist, ryhist, bin=0.02, $
-                   color=djs_icolor('red'), /over, thick=4
+                   color=djs_icolor('green'), /over, thick=4
          plothist, ioff[qobj], ixhist, iyhist, bin=0.02, $
-           color=djs_icolor('dark red'), /over, thick=4
+           color=djs_icolor('red'), /over, thick=4
         
-        legend, ['g', 'r', 'i'], color=djs_icolor(['green', 'red', $
-          'dark red']), linestyle=0, charthick=2, charsize = 0.7, thick=4
+        legend, ['g', 'r', 'i'], color=djs_icolor(['blue', 'green', $
+          'red']), linestyle=0, charthick=2, charsize = 0.7, thick=4
 
         gfit = gaussfit(gxhist, gyhist, nterms=3, gcoef)
         rfit = gaussfit(rxhist, ryhist, nterms=3, rcoef)
@@ -421,6 +421,9 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
                 string(icoef[1], format='(F6.3)'), charsize = 0.7
         xyouts, 0.15,  ymax*0.40, 'i sigma = ' + $
                 string(icoef[2], format='(F6.3)'), charsize = 0.7
+
+        if (ispecnum EQ 1 AND keyword_set(plottitle)) then $
+          xyouts, 0.8, 85, plottitle, align=0.5, charsize=1.5
       endfor
 
       for ispecnum=1, 2 do begin
