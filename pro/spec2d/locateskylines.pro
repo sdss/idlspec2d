@@ -10,7 +10,7 @@ pro locateskylines, skylinefile, fimage, invvar, invset, $
 ;	Make xsky, ysky, pairs from skywaves
 ;
 	nrows = (size(fimage))[2]
-	xnorm = (2.0*alog10(skywaves) - (invset.xmin + invset.xmax))/
+	xnorm = (2.0*alog10(skywaves) - (invset.xmin + invset.xmax))/ $
 	          (invset.xmax - invset.xmin)
 
 	ysky = fltarr(nrows,nlines)

@@ -122,21 +122,21 @@ function fullfit, spec, linelist, guess
 
 	guess0 = guess[0]
 	p0 = guess[1:*]
-	scale = abs(p0)*0.5
-	scale[0] = scale[0]*0.03
+	scale = abs(p0)*0.3
+	scale[0] = scale[0]*0.05
 
 	first = lampfit(spec, linelist, guess0, transpose([[p0],[scale]]), $
-	   width = 30.0, lagwidth=250, ftol=1.0e-3)
+	   width = 25.0, lagwidth=250, ftol=1.0e-4)
 	
 	final = first
 
 	while (abs(bestlag) GT 5)  do begin
 	  guess0 = first[0]
 	  p0 = first[1:*]
-	  scale = abs(p0)*0.5
-	  scale[0] = scale[0]*0.02
+	  scale = abs(p0)*0.1
+	  scale[0] = scale[0]*0.2
 	  final = lampfit(spec, linelist, guess0, transpose([[p0],[scale]]), $
-	     width = 20.0, lagwidth=100, ftol=1.0e-3)
+	     width = 10.0, lagwidth=100, ftol=1.0e-4)
 	endwhile
 
 	return,final
@@ -217,14 +217,18 @@ pro fitarcimage, arc, side, linelist, xnew, ycen, tset, invset, $
 	for i=0,nlines-1 do begin
 	  diff = loglamlist - thispeak[i]
 	  val[i] = min(abs(diff),place)
-
+;	  print, i, val[i], 10^thispeak[i], 10^loglamlist[place]
 	  if(val[i] LT 0.0003 AND linelist[place,2] NE 0.0) then $
               lambda[i] = loglamlist[place]
 	endfor
 
 	nonzero = where(lambda GT 0.0, oldcount)
+	highones = where(lambda GT 3.9, highct)
 	if(oldcount LT 6) then $
 	  message, 'only '+string(oldcount)+ ' good arclines found'
+
+	print, 'Found ', oldcount, ' good arc lines'
+	if (highct GT 0) then print, '----', highct, ' are above 8000 A'
 
 	xnew = xnew[*,nonzero]
 	ycen = ycen[*,nonzero]

@@ -148,12 +148,12 @@ arcnum = '-00001467'
 plugMapFile = 'plPlugMapM-0214-51432-02.par'
 objectnums = ['-00001447']
 
-cam = '04'
-flatnum = '-00001473'
+cam = '02'
+flatnum = '-00001474'
 flat = 'sdR-'+cam+flatnum+'.fit'
-arcnum = '-00001467'
+arcnum = '-00001468'
 arc = 'sdR-'+cam+arcnum+'.fit'
-objectnums = ['-00001459','-00001461','-00001463','-00001465'] ;plate 202
+objectnums = ['-00001460','-00001462','-00001464','-00001466'] ;plate 202
 objects = 'sdR-'+cam+objectnums+'.fit'
 inputDir='/s1/data/SDSS/51441'
 outputDir = '/s1/data/SDSS/51441/out'
@@ -176,6 +176,6 @@ objects = 'sdR-'+cam+objectnums+'.fit'
 inputDir='.'
 outputDir = 'out'
 plugMapFile = 'plPlugMapM-0198-51433-01.par'
-tt = doaframe(flat,arc,objects,plugMapFile,outputDir=outputDir)
+tt = doaframe(flat,arc,objects,plugMapFile,outputDir=outputDir, thresh=40)
 
 
