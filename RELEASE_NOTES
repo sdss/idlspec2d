@@ -1,4 +1,6 @@
 
+COMBINE1FIBER: Bug fix to get the NODATA bad pixel set in the ANDMASK
+           where-ever it is set in the ORMASK.
 ELODIE_BEST: Add FITINDX keyword. Expand default fitting range to +/-1000 km/s.
 EXTRACT_OBJECT: Add "OPTCHI2" keyword to output header, recording the
            mean chi^2 of the optimal extraction.
