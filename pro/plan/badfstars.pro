@@ -23,7 +23,7 @@
 ;   These are considered to be bad F stars if the following conditions
 ;   are satisfied:
 ;     WCOVERAGE > 0.10
-;     |cz| > 500 km/sec OR CLASS != 'STAR'
+;     (|cz| > 500 km/sec) OR (not an B,A,F,G-type star)
 ;   These objects are then listed in the file 'badfstars.log', and then
 ;   plotted if /DOPLOT is set.
 ;
@@ -44,14 +44,21 @@ pro badfstars, doplot=doplot
    spfile = filepath('spAll.fits', root_dir=getenv('SPECTRO_DATA'))
    columns = ['PLATE','FIBERID','MJD', $
     'PRIMTARGET','SECTARGET','OBJTYPE', $
-    'RA','DEC','CLASS','Z','ZWARNING','WCOVERAGE']
+    'RA','DEC','CLASS','SUBCLASS','Z','ZWARNING','WCOVERAGE']
 
    spall = hogg_mrdfits(spfile, 1, columns=columns, nrowchunk=10000L)
 
    qfstar = strmatch(spall.objtype,'SPECTROPHOTO_STD*') $
     OR strmatch(spall.objtype,'REDDEN_STD*')
-   ibad = where(qfstar AND spall.wcoverage GT 0.10 $
-    AND (abs(spall.z) GT 500./3e5 OR strmatch(spall.class,'STAR*') EQ 0), nbad)
+
+   ; We want these to be classified as an A, F or G-type star.
+   qgoodclass = strmatch(spall.class,'STAR*') AND $
+    (strmatch(spall.subclass,'A*') OR strmatch(spall.subclass,'F*') $
+    OR strmatch(spall.subclass,'G*') OR strmatch(spall.subclass,'B*'))
+   qbad = qfstar AND spall.wcoverage GT 0.10 $
+    AND (abs(spall.z) GT 500./3e5 OR (qgoodclass EQ 0))
+
+   ibad = where(qbad, nbad)
 
    splog, file='badfstars.log'
    for j=0L, nbad-1 do $
