@@ -2,6 +2,8 @@
 COLLIMATE: Since the DJS_SVDFIT() function was removed in v4_10_1,
         explicitly compute the chi^2 minimum with a matrix inversion.
 LRG_PHOTOZ: New simple photo-z finder for LRGs using a single template.
+NEWSPCOMBINE: Christy's code: changed so that if one frame does not make
+        the S/N cut then all 4 frames of that exposure are rejected.
 QUICKEXTRACT: The logic to trim away extra sky fibers when there are
         more than 20 appeared to be incorrect, and could trim away most
         or all sky fibers.  I fixed this, and also now choose 40 skies
