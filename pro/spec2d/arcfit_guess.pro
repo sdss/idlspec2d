@@ -81,11 +81,11 @@ function arcfit_iter, spec, loglam, intensity, $
 
    ncoeff = N_elements(aset.coeff)
 
-   nsz = 4*fix(nsmooth) + 1 ; kernal size (odd)
+   nsz = 4*long(nsmooth) + 1 ; kernal size (odd)
    gausskern = exp( -( ((nsz-1)/2 - findgen(nsz))^2 ) / nsmooth^2 )
    gausskern = gausskern / total(gausskern)
 
-   npad = fix((npix+1)/2) ; Padding on left and right of spectra before
+   npad = long((npix+1)/2) ; Padding on left and right of spectra before
                           ; cross-correlating
 
    ; Pad, subtract baseline (with median filter), and smooth input spectrum
@@ -106,11 +106,11 @@ function arcfit_iter, spec, loglam, intensity, $
                                ; the cross-correlation left and right of this.
    tempset = aset
 
-
    ; Set minimum number of lags to check equal to 10 pixels
-   lagmax = fix( dcoeff[0] / (2. * abs(aset.coeff[1]) / npix) + 1 ) > 10
-   nlag = fix(lagmax/dlag)
-   lags = (indgen(nlag) - fix(nlag/2)) * dlag
+   lagmax = long( dcoeff[0] / (2. * abs(aset.coeff[1]) / npix) + 1 ) > 10
+;lagmax = long( dcoeff[0] / (2. * abs(aset.coeff[1])) + 1 ) > 10 ; ???
+   nlag = long(lagmax/dlag)
+   lags = (indgen(nlag) - long(nlag/2)) * dlag
    splog, 'Searching lags from ', min(lags), ' to ', max(lags), $
     ' spaced ', dlag, ' pixels', format='(a,i5,a,i5,a,i3,a)'
 
@@ -123,7 +123,7 @@ function arcfit_iter, spec, loglam, intensity, $
       itemp = istep
       for ic=1, ncoeff-1 do begin
          ntemp = ntemp / nsteps[ic]
-         j = fix(itemp/ntemp)
+         j = long(itemp/ntemp)
          tempset.coeff[ic] = coeff_lo[ic] + (dcoeff[ic]/nsteps[ic]) * j
          itemp = itemp - j * ntemp
       endfor
