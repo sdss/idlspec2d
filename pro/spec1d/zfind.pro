@@ -86,8 +86,8 @@ function sp1d_struct
     'tcolumn'    , lonarr(10) - 1L, $
     'npoly'      ,  0L, $
     'theta'      , fltarr(10), $
-    'sigma2'     , 0.0, $
-    'sigma2_err' , 0.0  $
+    'vdisp'      , 0.0, $
+    'vdisp_err'  , 0.0  $
    )
 
    return, result
