@@ -443,8 +443,8 @@ pro apo_log2html, logfile, htmlfile
                ; in the opLimits file (currently anything < 2.0 is bad).
                if (pscience[icam,iexp].flavor EQ 'science' $
                  AND apo_checklimits('science', 'SN2', $
-                      ppscience[icam,iexp].camera, $
-                      ppscience[icam,iexp].sn2) EQ '') then begin
+                      pscience[icam,iexp].camera, $
+                      pscience[icam,iexp].sn2) EQ '') then begin
 ;                 AND pscience[icam,iexp].sn2 GE 2.0) then begin
                   ptotal[icam].totalsn2 = ptotal[icam].totalsn2 + $
                    pscience[icam,iexp].sn2
