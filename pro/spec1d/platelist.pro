@@ -6,7 +6,7 @@
 ;   Make list of reduced plates
 ;
 ; CALLING SEQUENCE:
-;   platelist, [fullplatefile, /create, /purge2d, /purge1d, plist= ]
+;   platelist, [infile, /create, /purge2d, /purge1d, /killpartial, plist= ]
 ;
 ; INPUTS:
 ;
@@ -31,6 +31,12 @@
 ;                 'Pending'.  Setting /PURGE1D also sets /CREATE.
 ;                 Deleting these log files will cause the next invocation
 ;                 of BATCH1D to re-reduce those plates.
+;   killpartial - If set, then delete all files associated with a combine
+;                 of only some nights of a multi-night plate.  Such files
+;                 can be produced by the Spectro-Robot when it fully reduces
+;                 data from one night, but then more data is obtained for
+;                 that plugging of the same plate on a later date.  This
+;                 deletes spPlate and spZ files and their logs files.
 ;
 ; OUTPUTS:
 ;
@@ -86,7 +92,7 @@
 ;   29-Oct-2000  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
 pro platelist, infile, plist=plist, create=create, $
- purge2d=purge2d, purge1d=purge1d
+ purge2d=purge2d, purge1d=purge1d, killpartial=killpartial
 
    minsn2 = 13.0
    fitsfile = djs_filepath('platelist.fits', root_dir=getenv('SPECTRO_DATA'))
@@ -176,6 +182,14 @@ pro platelist, infile, plist=plist, create=create, $
    ; Loop through all files
    ;---------------------------------------------------------------------------
 
+   platefile = strarr(nfile)
+   combparfile = strarr(nfile)
+   comblogfile = strarr(nfile)
+   combpsfile = strarr(nfile)
+   zlogfile = strarr(nfile)
+   zbestfile = strarr(nfile)
+   zallfile = strarr(nfile)
+
    for ifile=0, nfile-1 do begin
 
       splog, 'Looking at ' + fullfile[ifile]
@@ -187,25 +201,27 @@ pro platelist, infile, plist=plist, create=create, $
 
       if (strmid(fullfile[ifile],strlen(fullfile[ifile])-4) EQ '.par') $
        then begin
-         combparfile = fullfile
+         combparfile[ifile] = fullfile[ifile]
          yanny_read, fullfile[ifile], hdr=hdrp
-         platefile = $
+         platefile[ifile] = $
           djs_filepath(yanny_par(hdrp, 'combinefile'), root_dir=path)
       endif else begin
-         platefile = fullfile[ifile]
-         combparfile = repstr(platefile, 'spPlate', 'spPlancomb')
-         combparfile = repstr(combparfile, '.fits', '.par')
+         platefile[ifile] = fullfile[ifile]
+         combparfile[ifile] = repstr(platefile[ifile], 'spPlate', 'spPlancomb')
+         combparfile[ifile] = repstr(combparfile[ifile], '.fits', '.par')
       endelse
 
       ;----------
       ; Determine names of associated files
 
-      comblogfile = repstr(combparfile, '.par', '.log')
-      comblogfile = repstr(comblogfile, 'spPlancomb', 'spDiagcomb')
-      platemjd = strmid(fileandpath(platefile), 8, 10)
-      zbestfile = 'spZbest-' + platemjd + '.fits'
-
-      fullzfile = djs_filepath(zbestfile, root_dir=path)
+      comblogfile[ifile] = repstr(combparfile[ifile], '.par', '.log')
+      comblogfile[ifile] = repstr(comblogfile[ifile], 'spPlancomb', 'spDiagcomb')
+      combpsfile[ifile] = repstr(comblogfile[ifile], '.log', '.ps')
+      platemjd = strmid(fileandpath(platefile[ifile]), 8, 10)
+      zbestfile[ifile] = djs_filepath('spZbest-' + platemjd + '.fits', $
+       root_dir=path)
+      zallfile[ifile] = djs_filepath('spZall-' + platemjd + '.fits', $
+       root_dir=path)
 
       ; Read the combine plan file to get the list of all the 2D plan files
       ; from its Yanny header.
@@ -260,7 +276,7 @@ pro platelist, infile, plist=plist, create=create, $
       ;----------
       ; Read plate file - get status of Combine
 
-      hdr1 = headfits(platefile)
+      hdr1 = headfits(platefile[ifile])
       if (size(hdr1, /tname) EQ 'STRING') then begin
 ;         plist[ifile].plate = sxpar(hdr1, 'PLATEID')
 ;         plist[ifile].mjd = sxpar(hdr1, 'MJD')
@@ -311,6 +327,8 @@ pro platelist, infile, plist=plist, create=create, $
             rmfile, logfile2d
             splog, 'PURGE2D ', comblogfile[ifile]
             rmfile, comblogfile[ifile]
+            splog, 'PURGE2D ', combpsfile[ifile]
+            rmfile, combpsfile[ifile]
             plist[ifile].status2d = 'Pending'
             plist[ifile].statuscombine = 'Pending'
          endif
@@ -320,8 +338,8 @@ pro platelist, infile, plist=plist, create=create, $
       ; Get the following from the file names, since sometimes they
       ; are wrong in the file headers!!
 
-      plist[ifile].plate = long( strmid(fileandpath(platefile), 8, 4) )
-      plist[ifile].mjd = long( strmid(fileandpath(platefile), 13, 5) )
+      plist[ifile].plate = long( strmid(fileandpath(platefile[ifile]), 8, 4) )
+      plist[ifile].mjd = long( strmid(fileandpath(platefile[ifile]), 13, 5) )
 
       ;----------
       ; Determine the chunk name and the version of target used
@@ -344,7 +362,7 @@ pro platelist, infile, plist=plist, create=create, $
       ; coordinates of the object closest to the center of the plate
       ; as defined by XFOCAL=YFOCAL=0.
 
-      plug = mrdfits(platefile, 5, /silent)
+      plug = mrdfits(platefile[ifile], 5, /silent)
       if (keyword_set(plug)) then begin
          iobj = where(strtrim(plug.holetype,2) EQ 'OBJECT')
          junk = min( plug[iobj].xfocal^2 + plug[iobj].yfocal^2, imin)
@@ -357,9 +375,9 @@ pro platelist, infile, plist=plist, create=create, $
       ;----------
       ; Read Zbest file - get status of 1D
 
-      hdr2 = headfits(fullzfile)
+      hdr2 = headfits(zbestfile[ifile])
       if (size(hdr2, /tname) EQ 'STRING') then begin
-         zans = mrdfits(fullzfile, 1, /silent)
+         zans = mrdfits(zbestfile[ifile], 1, /silent)
          class = strtrim(zans.class,2)
          ; Use the ZWARNING flag if it exists to identify SKY or UNKNOWN.
          if ((where(tag_names(zans) EQ 'ZWARNING'))[0] NE -1) then $
@@ -379,20 +397,20 @@ pro platelist, infile, plist=plist, create=create, $
          ;----------
          ; Find the state of the 1D reductions -- spZbest file is missing
 
-         thislogfile = repstr(fileandpath(platefile), 'spPlate', 'spDiag1d')
-         thislogfile = repstr(thislogfile, '.fits', '.log')
-         thislogfile = djs_filepath(thislogfile, root_dir=path)
-         thislogfile = (findfile(thislogfile))[0]
-         if (keyword_set(thislogfile)) then begin
-            spawn, 'tail -1 '+thislogfile, lastline
+         zlogfile[ifile] = repstr(fileandpath(platefile[ifile]), 'spPlate', 'spDiag1d')
+         zlogfile[ifile] = repstr(zlogfile[ifile], '.fits', '.log')
+         zlogfile[ifile] = djs_filepath(zlogfile[ifile], root_dir=path)
+         zlogfile[ifile] = (findfile(zlogfile[ifile]))[0]
+         if (keyword_set(zlogfile[ifile])) then begin
+            spawn, 'tail -1 '+zlogfile[ifile], lastline
             if (strmatch(lastline[0], '*Successful completion*')) then begin
                ; Case where this 1D log file completed
                plist[ifile].status1d = 'FAILED'; Should have found spZbest file
             endif else begin
                ; Case where this 1D log file isn't completed
                if (keyword_set(purge1d)) then begin
-                  splog, 'PURGE1D ', thislogfile
-                  rmfile, thislogfile
+                  splog, 'PURGE1D ', zlogfile[ifile]
+                  rmfile, zlogfile[ifile]
                   plist[ifile].status1d = 'Pending'
                endif else begin
                   plist[ifile].status1d = 'RUNNING'
@@ -427,9 +445,24 @@ pro platelist, infile, plist=plist, create=create, $
    if (indx[0] NE -1) then qkeep[indx] = 1
 
    ; List partially-combined plates that we're discarding from the list
-   for ifile=0, nfile-1 do $
-    if (qkeep[ifile] NE 1) then $
-     splog, 'Discard partially-combined ' + fullfile[ifile]
+   for ifile=0, nfile-1 do begin
+      if (qkeep[ifile] NE 1) then begin
+         splog, 'Discard partially-combined ' + combparfile[ifile]
+         if (keyword_set(killpartial)) then begin
+; Also should be purging the spFluxcalib files and spSN2d files !!!???
+            killfiles = [ combparfile[ifile], $
+                          comblogfile[ifile], $
+                          combpsfile[ifile], $
+                          platefile[ifile], $
+                          zbestfile[ifile], $
+                          zallfile[ifile], $
+                          zlogfile[ifile] ]
+            for ikill=0, n_elements(killfiles)-1 do $
+             splog, 'KILLPARTIAL ', killfiles[ikill]
+            rmfile, killfiles
+         endif
+      endif
+   endfor
 
    ; Trim the plate list, and update NFILE to this trimmed number
    plist = plist[where(qkeep, nfile)]
