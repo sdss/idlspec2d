@@ -22,6 +22,10 @@ In this document:
   <LI><A HREF="#launch">How to Launch Son-of-Spectro</A>
   <LI><A HREF="#version">Backing out to an older version</A>
   <LI><A HREF="#install">Installing a new version</A>
+  <UL>
+     <LI><A HREF="#install_ups">Installing w/UPS</A>
+     <LI><A HREF="#install_cvs">Installing w/out UPS</A>
+  </UL>
   <LI><A HREF="#howwork">How Son-of-Spectro Works</A>
   <LI><A HREF="#outputs">Son-of-Spectro Outputs</A>
   <UL>
@@ -109,6 +113,8 @@ account on any remote computer.  The only requirements are as following:
 <P>
 The following intructions only apply to versions of "idlspec2d" v4_3_1 and later.
 
+<H2><A NAME="install_ups">Installing w/UPS</A></H2>
+
 <P>
 Check out a tagged version, such as v4_3_1, of both "idlutils" and "idlspec2d".
 To avoid typing mistakes, I start by defining two environment variables
@@ -147,6 +153,49 @@ Build the code:
 
 <P>
 Now you are ready to <A HREF="#launch">launch</A> this new version of the code.
+
+<H2><A NAME="install_cvs">Installing w/out UPS</A></H2>
+
+<P>
+IDL must already be installed on your system, and
+the environment variables IDL_DIR and IDL_PATH must already be set.
+
+<P>
+Check out a tagged version, such as v4_3_1, of both "idlutils" and "idlspec2d",
+into your home directory (for this example).
+To avoid typing mistakes, I start by defining two environment variables
+for the version numbers:
+<DL><DD><PRE>
+  % setenv IDLUTILS_VERS v4_3_1
+  % setenv IDLSPEC2D_VERS v4_3_1
+  % setup sdsscvs # Only needed on machines set up by Fermi
+  % cd
+  % cvs co -r $IDLUTILS_VERS idlutils
+  % cvs co -r $IDLSPEC2D_VERS idlspec2d
+</PRE></DD></DL>
+
+<P>
+Set the environment variables.  From a "csh" or "tcsh" shell:
+<DL><DD><PRE>
+  % setenv IDLUTILS_DIR $HOME/idlutils
+  % setenv IDLSPEC2D_DIR $HOME/idlspec2d
+  % set path=( $IDLUTILS_DIR/bin $IDLSPEC2D_DIR/bin $path )
+  % setenv IDL_PATH +{$IDLUTILS_DIR}/goddard/pro:{$IDL_PATH}
+  % setenv IDL_PATH +{$IDLUTILS_DIR}/pro:{$IDL_PATH}
+  % setenv IDL_PATH +{$IDLSPEC2D_DIR}/pro:{$IDL_PATH}
+</PRE></DD></DL>
+
+<P>
+Build the code:
+<DL><DD><PRE>
+  % cd $IDLUTILS_DIR
+  % evilmake all
+  % cd $IDSPEC2D_DIR
+  % evilmake all
+</PRE></DD></DL>
+
+<P>
+Now you are ready to <A HREF="#launch">launch</A> the code.
 
 <H2><A NAME="howwork">How Son-of-Spectro Works</A></H2>
 
@@ -286,6 +335,19 @@ then a brief plain-text message.
 <P>
 The following messages may appear:
 <UL>
+<LI><B>Fixing shifted rows (from electronics)</B> <BR>
+    This is very, very bad.  This is indicative of an electronics problem
+    that we first saw on MJD=51578 to 51580 (3 to 5 Feb 2000).
+    The raw images have rows shifted to the right, sometimes by
+    many pixels.
+<LI><B>Fixing dropped-pixel rows (from electronics)</B> <BR>
+    This is very bad.  This is indicative of an electronics problem
+    that we first saw on MJD=51688 (23 May 2000).
+    The raw images actually have some rows shifted by 1 or 2 pixels,
+    usually more so near the bottom of the CCD (the first rows to be read).
+<LI><B>More than 10% of the image is rejected</B> <BR>
+    This is very bad.  This can probably only happen if most of the CCD
+    has saturated pixels.
 <LI><B>Scattered light</B> <BR>
     There was a high baseline count rate on the CCD, and appears even
     between fibers.  This can most obviously occur if there are light
@@ -294,22 +356,19 @@ The following messages may appear:
     There can also be a scattered light contribution just from a very
     bright sky, or if there are very bright objects on some fibers that
     are scattering or bleeding light across the CCD.
-<LI><B>More than 10% of the image is rejected</B> <BR>
-    This is very bad.  This can probably only happen if most of the CCD
-    has saturated pixels.
 <LI><B>Best arc correlation</B> <BR>
     The cross-correlation of the arc spectrum with the template arc spectrum
     was bad.  This is also triggered as BESTCORR in the table (see above).
-<LI><B>Too few sky fibers to model sky-sub variance</B> - <BR>
-    There are not enough good sky fibers on the CCD.  This will only happen
-    if for some reason there were far fewer than the mandated 16 sky fibers
-    on a CCD, or most of those fibers just happened to be dead fibers.
-    You should never see this message.
 <LI><B>Big wavelength gap</B> <BR>
     Some arc lines were not found in the arc spectra, and there is a large
     gap in wavelength space without any lines.  This will produce a poor
     wavelength solution.  More arcs should be taken until this message
     does not appear.
+<LI><B>Too few sky fibers to model sky-sub variance</B> - <BR>
+    There are not enough good sky fibers on the CCD.  This will only happen
+    if for some reason there were far fewer than the mandated 16 sky fibers
+    on a CCD, or most of those fibers just happened to be dead fibers.
+    You should never see this message.
 </UL>
 
 <H4><A NAME="outputs_log">Log files</A></H4>
