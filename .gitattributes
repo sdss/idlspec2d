@@ -235,6 +235,7 @@ pro/science/qso/qso_createspec.pro -text
 pro/science/qso/qso_slowcont.pro -text
 pro/science/qso/qso_sortpeaks.pro -text
 pro/science/qso/qsorefract.pro -text
+pro/science/qso/qsorplot.pro -text
 pro/science/qso/quickplot.pro -text
 pro/science/spec_param_str.pro -text
 pro/science/spectra_sample.pro -text
