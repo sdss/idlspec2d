@@ -188,7 +188,7 @@ ormask = 0 ; Free memory
    for iobj=0L, nobj-1 do begin
       thismask = objflux[*,iobj] * sqrt(objivar[*,iobj]) LE -10.
       thismask = smooth(float(thismask),5) GT 0
-      objivar = objivar * (1 - thismask)
+      objivar[*,iobj] = objivar[*,iobj] * (1 - thismask)
    endfor
 
    ;----------
