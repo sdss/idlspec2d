@@ -259,13 +259,15 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    if (nbc GT 0) then bc = bc[ bchere ]
 
    ;------
-   ; Test to see if the shutter was open during readout.
+   ; Test to see if the shutter was open during readout if the exposure
+   ; was longer than 640 seconds.
    ; Look at the signal in the overscan rows (at the bottom of the CCD).
    ; Toggle the variable QSHUTTER if this appears to be true in any
    ; of the amplifiers.
 
+   exptime = sxpar(hdr, 'EXPTIME')
    qshutter = 0
-   if (readimg OR readivar) then begin
+   if (exptime GT 640 AND (readimg OR readivar)) then begin
       nskip = 2  ; Ignore the first and last NSKIP rows of these overscan rows
       for iamp=0, 3 do begin
          if (qexist[iamp] EQ 1) then begin
@@ -274,8 +276,10 @@ pro sdssproc, infile, image, invvar, indir=indir, $
             biasvec = djs_median(biasreg, 2)
             ; Count the number of "hot" overscan columns, hotter than 3-sigma
             ; above the median
-            junk = where(biasvec GT median(biasvec) + 3*djsig(biasvec), nhot)
-            if (nhot GE 10) then qshutter = 1 ; Flag the shutter as being open
+;            junk = where(biasvec GT median(biasvec) + 3*djsig(biasvec), nhot)
+            junk = where(biasvec GT median(biasvec) + 4, nhot)
+            if (nhot GE 15) then qshutter = 1 ; Flag the shutter as being open
+            splog, 'Number of hot overscan columns for amp', iamp, ' = ', nhot
          endif
       endfor
    endif
@@ -473,6 +477,21 @@ pro sdssproc, infile, image, invvar, indir=indir, $
 
       if (readimg) then image = image / pixflat
       if (readivar) then invvar = invvar * pixflat^2
+   endif
+
+   ;---------------------------------------------------------------------------
+   ; Check for NaN's
+   ;---------------------------------------------------------------------------
+
+   ; This should never happen, but just in case...
+
+   if (readimg OR readivar) then begin
+      inan = where(finite(image) EQ 0, nnan)
+      if (nnan GT 0) then begin
+         splog, 'WARNING: Replacing ', nnan, ' NaN values'
+         image[inan] = 0
+         invvar[inan] = 0
+      endif
    endif
 
    ;---------------------------------------------------------------------------
