@@ -152,6 +152,7 @@ pro/spec1d/fftpad.pro -text
 pro/spec1d/find_npeaks.pro -text
 pro/spec1d/findchi2min.pro -text
 pro/spec1d/findfiber.pro -text
+pro/spec1d/findspec.pro -text
 pro/spec1d/fitredshift.pro -text
 pro/spec1d/fixfits1d.pro -text
 pro/spec1d/fixmjd.pro -text
