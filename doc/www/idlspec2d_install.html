@@ -91,11 +91,20 @@ versions of those other products.  An install would then look something like:
                               # but could also be "Linux" or "Linux+2".
                               # At sos.apo, set to "Linux"
                               # At plate-mapper.apo, set to "Linux+2"
-                              # At hoggpt.apo, set to "Linux+2"
-                              # At spectro.princeton, set to "Linux+2"
+                              # At hoggpt.apo, set to "Linux"
+                              # At spectro.princeton, set to "Linux"
   % evilinstall idlutils v4_9_12 ; setup idlutils
   % evilinstall specflat v1_4 ; setup specflat
   % evilinstall idlspec2d v4_9_12 ; setup idlspec2d
+</PRE></DD></DL>
+Note that IRIX systems (such as sdsshost.apo) may require some
+by-hand fixes.  In particular, the UPS database file, e.g.,
+<DL><DD><PRE>
+  /p/upsdb/idlspec2d/v4_9_12.version
+</PRE></DD></DL>
+needs to have the following line added:
+<DL><DD><PRE>
+  UPS_DIR = ups
 </PRE></DD></DL>
 
 </OL>
