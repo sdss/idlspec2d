@@ -424,10 +424,9 @@ pro combine2dout, filenames, outputroot, spectrographid, $
 
       ;  Let's also add in parameters for fibermask
 
-      nn = n_elements(fullfibermask)
-      for jj=0,n_elements(fullfibermask) - 1 do $
-        sxaddpar, newhdr, string(format='(a,i3.3)','FMASK',jj), fullfibermask[jj], $
-                       'FiberMask bits,  see idlspec2d/pro/fibermask_bits.pro'
+;      for jj=0,n_elements(fullfibermask) - 1 do $
+;        sxaddpar, newhdr, string(format='(a,i3.3)','FMASK',jj), long(fullfibermask[jj]), $
+;                       'FiberMask bits,  see idlspec2d/pro/fibermask_bits.pro'
 
 
       ; This is place holding for a fiber with no counts at all!
