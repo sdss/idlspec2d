@@ -72,18 +72,16 @@ function apo_checklimits, field, camera, value
 end
 
 ;------------------------------------------------------------------------------
-function apo_log_header, title
+function apo_log_header, title1, title2
 
    ; Include a Java script to auto-load this page every 30 seconds
 
    textout = '<HTML>'
-   textout = [textout, $
-'<SCRIPT LANGUAGE="JavaScript"> function reload(){ history.go(0) } </SCRIPT>']
-   textout = [textout, '<HEAD><TITLE>' + title + '</TITLE></HEAD>']
-   textout = [textout, '<H2 ALIGN=CENTER>' + title + '</H2>']
+   textout = [textout, '<HEAD><TITLE>' + title1 + '</TITLE></HEAD>']
+   textout = [textout, '<H2 ALIGN=CENTER>' + title2 + '</H2>']
    squote = "'"
    textout = [textout, $
-    '<BODY ONLOAD="timerID=setTimeout('+squote+'reload()'+squote+',30000)">']
+    '<BODY ONLOAD="timerID=setTimeout('+squote+'location.reload(true)'+squote+',30000)">']
 
    return, textout
 end
@@ -121,13 +119,14 @@ function apo_log_beginplate, platenum, mjd, camnames
    ncams = n_elements(camnames)
 
    mjdstr = strtrim(string(mjd),2)
-   platestr = string(platenum, format='(i4.4)')
+   platestr = strtrim(string(platenum),2)
    plotfile = 'snplot-'+mjdstr+'-'+platestr+'.ps'
 
-   textout = ['<TABLE BORDER=1 CELLPADDING=3>']
+   textout = ['<A NAME="PLATE' + platestr + '">']
+   textout = [textout, '<TABLE BORDER=1 CELLPADDING=3>']
    textout = [textout, apo_log_tableline(ncams)]
    textout = [textout, $
-    '<CAPTION><B> PLATE ' + strtrim(string(platenum),2) + '</B>' $
+    '<CAPTION><B> PLATE ' + platestr + '</B>' $
     + ' - <A HREF="' + plotfile + '">S/N FIGURE</A>' + '</CAPTION>' ]
    nextline = rowsep + colsep
    for icam=0, ncams-1 do $
@@ -240,12 +239,18 @@ pro apo_log2html, logfile, htmlfile
    ;----------
    ; Consruct the header of the output text
 
-   title = 'APO SPECTRO LOGSHEET MJD=' + mjdstr + ' PLATE='
+   title1 = 'APO SPECTRO LOGSHEET MJD=' + mjdstr + ' PLATE='
+   title2 = 'APO SPECTRO LOGSHEET MJD=' + mjdstr + '<BR> PLATE='
    for iplate=0, nplates-1 do begin
-      title = title + strtrim(string(allplates[iplate]),2)
-      if (iplate NE nplates-1) then title=title+','
+      platestr = strtrim(string(allplates[iplate]),2)
+      title1 = title1 + platestr
+      title2 = title2 + '<A HREF="#PLATE' + platestr + '">' + platestr + '</A>'
+      if (iplate NE nplates-1) then begin
+         title1 = title1 + ','
+         title2 = title2 + ','
+      endif
    endfor
-   textout = apo_log_header(title)
+   textout = apo_log_header(title1, title2)
 
    ;---------------------------------------------------------------------------
    ; Loop over each plate
