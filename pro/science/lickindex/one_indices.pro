@@ -56,7 +56,8 @@ noise=1/galnoise^2
 endif
 inf = where(finite(noise) EQ 0)
 if (inf[0] NE -1) then noise[inf]=0
-galsmooth= gauss_smooth_wave(xv,y,res,xv)
+;galsmooth= gauss_smooth_wave(xv,y,res,xv)
+galsmooth=y
 
 bcont=fltarr(21)
 rcont=bcont
