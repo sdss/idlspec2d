@@ -179,6 +179,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
       xnow = xtrace; Is this modified when extracting???
       sigmanow = xtrace*0.0 + sigma
       maxshift = 1.5
+maxshift = 2.0 ; ??? Need this for MJD=51579
 
       ; Kill or adjust first and last column ???
       ;invvar[0,*] = 0.0
@@ -265,7 +266,17 @@ endif
        fluxivar, proftype=proftype, wfixed=wfixed, fitans=fitans, $
        highrej=highrej, lowrej=lowrej, npoly=0, whopping=whopping, $
        chisq=chisq, ymodel=ymodel2, pixelmask=pixelmask
- 
+
+; Write out a non-sky-sub image???
+rawname=outname
+i=rstrpos(outname,'spSpec')
+strput,rawname,'spRaw',i
+mwrfits, flux, rawname, objhdr, /create
+mwrfits, fluxivar, rawname
+mwrfits, plugsort, rawname
+mwrfits, wset, rawname
+mwrfits, pixelmask, rawname
+mwrfits, fibermask, rawname
 
       ;------
       ; QA chisq plot for fit calculated in extract image (make QAPLOT ???)
@@ -309,7 +320,6 @@ endif
 
       sxaddpar, objhdr, 'VACUUM', 'WAVELENGTHS ARE IN VACUUM'
       sxaddpar, objhdr, 'AIR2VAC', systime()
-
 
       ;------------------
       ; Sky-subtract
