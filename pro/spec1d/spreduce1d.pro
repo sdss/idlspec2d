@@ -42,6 +42,7 @@
 ;   sxdelpar
 ;   sxpar()
 ;   synthspec()
+;   vdispfit
 ;   zfind()
 ;   zrefind()
 ;
@@ -149,6 +150,16 @@ andmask = 0 ; Free memory
     pwidth=5, pspace=1, width=5, zold=res_gal)
    splog, 'CPU time to re-fit GALAXY redshifts = ', systime(1)-t0
 
+   splog, 'Find velocity dispersions for galaxies'
+   t0 = systime(1)
+   for ifind=0, nfind-1 do begin
+      vdispfit, objflux, objivar, hdr=hdr, zobj=res_gal[ifind,*].z, $
+       sigma=sigma, sigerr=sigerr
+      res_gal[ifind,*].vdisp = reform(sigma,1,nobj)
+      res_gal[ifind,*].vdisp_err = reform(sigerr,1,nobj)
+   endfor
+   splog, 'CPU time to fit GALAXY velocity dispersions = ', systime(1)-t0
+
    res_gal.class = 'GALAXY'
    res_gal.subclass = ' '
 
@@ -254,6 +265,7 @@ andmask = 0 ; Free memory
    ; Generate the synthetic spectra, and count the fraction of points
    ; that deviate more than N sigma (where N goes from 1 to NFSIG).
 
+   t0 = systime(1)
    nfsig = 10
    fracnsigma = fltarr(nfsig,nper,nobj)
    counts_spectro = fltarr(5,nper,nobj)
@@ -271,7 +283,7 @@ andmask = 0 ; Free memory
        counts_spectro[i,*,iobj] = fthru[i] * 10^((48.6 - 2.5*17.)/2.5)
 
       for ii=0, nper-1 do begin
-; ??? Save time for now...
+; ??? Save time for now and only look at best fit, since synthspec is slow ???
 if (ii EQ 0) then begin
          goodmask = objivar[*,iobj] GT 0
          synflux = synthspec(res_all[ii,iobj], loglam=objloglam)
@@ -285,6 +297,7 @@ if (ii EQ 0) then begin
 endif
       endfor
    endfor
+   splog, 'CPU time to generate chi^2 statistics = ', systime(1)-t0
 
    ;----------
    ; Add other fields to the output structure
