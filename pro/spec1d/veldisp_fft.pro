@@ -10,7 +10,7 @@
 PRO veldisp_fft, flux_in, err_in, npixbig, fluxfft, fluxfilt, fluxvar0, fluxvariancefft, err, wave=wave, keep=keep, klo_cut=klo_cut, khi_cut=khi_cut
 
 ; make copies to work on
-  flux = flux_in
+  flux = flux_in-mean(flux_in)
   err = err_in
 
 
@@ -18,13 +18,6 @@ PRO veldisp_fft, flux_in, err_in, npixbig, fluxfft, fluxfilt, fluxvar0, fluxvari
 ; interpolate over bad regions
   flux = djs_maskinterp(flux, err LE 0.0, /const)
   
-; Normalize the object flux to be near unity
-  norm = djs_mean(flux) > djsig(flux)
-
-  IF norm GT 0 THEN BEGIN 
-      flux = flux / norm
-      err = err / norm
-  ENDIF 
 
   IF keyword_set(wave) AND keyword_set(keep) THEN BEGIN 
       kmask = (wave GE min(keep)) AND (wave LE max(keep))
@@ -48,9 +41,13 @@ PRO veldisp_fft, flux_in, err_in, npixbig, fluxfft, fluxfilt, fluxvar0, fluxvari
   fluxvariancefft = fft(err^2)  * npixbig
   fluxvar0 = float(fluxvariancefft[0])
  
-
+  w = where(err NE 0)
 ; Band-pass filter the object spectrum
   fluxfilt = bandpassfilter(fluxfft, klo_cut=klo_cut, khi_cut=khi_cut)
+  norm = djsig((float(fft(fluxfilt, /inv)))[w], sigrej=6)
+
+  fluxfilt = fluxfilt/norm
+
   IF total(finite(fluxfilt) EQ 0) NE 0 THEN BEGIN 
       message, 'Infinite value in FFT'
   ENDIF 

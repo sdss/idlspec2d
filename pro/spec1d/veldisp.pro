@@ -105,17 +105,6 @@ pro veldisp, objflux, objerr, objwave, starflux, starerr, starwave, result, klo_
     OR size(objflux, /n_dimen) NE size(objerr, /n_dimen) THEN  $
     message, 'Dimensions of OBJFLUX and OBJERR do not match'
 
-; define structure to hold results
-   tempresult = { $
-       z                  : 0.0, $
-       z_err              : 0.0, $
-       sigma_cc           : 0.0, $
-       sigma_cc_err       : 0.0, $
-       sigma_quotient     : 0.0, $
-       sigma_quotient_err : 0.0, $
-       sigma_diff         : 0.0, $
-       sigma_diff_err     : 0.0 }
-   result = replicate(tempresult, nobj)
 
    ;---------------------------------------------------------------------------
    ; Decide how large the padded spectra should be, based upon the
@@ -139,8 +128,7 @@ pro veldisp, objflux, objerr, objwave, starflux, starerr, starwave, result, klo_
    ;---------------------------------------------------------------------------
    ; LOOP OVER OBJECT SPECTRA
 
-   print,'    Gal    z      z_err   vel_cc (err)  vel_q  (err)' + $
-    '  vel_d  (err)  alpha_d  alpha_q'
+   print, '     plt fiber     redshift          veldisp_cc^2     veldisp_q^2'
 
    FOR iobj=0, nobj-1 DO BEGIN 
 
@@ -166,8 +154,8 @@ pro veldisp, objflux, objerr, objwave, starflux, starerr, starwave, result, klo_
             veldispfit=galsigma, veldisp_err=galsigma_err, doplot=doplot
       ENDIF 
 
-      result[iobj].z = fitcen    ; This redshift is in pixels!
-      result[iobj].z_err = fitcen_err
+      result[iobj].z = 10.^(fitcen/10000)-1. ; dimensionless z
+      result[iobj].z_err = alog(10)*1e-4*fitcen_err*(1+result[iobj].z)
 
       if (keyword_set(doplot)) then begin
          wset,2
@@ -181,7 +169,9 @@ pro veldisp, objflux, objerr, objwave, starflux, starerr, starwave, result, klo_
 ; Should really store sigma squared, and allow negative values; error
 ; should reflect it - DPF ???
       if (galsigma GT starsigma AND starsigma GT 0.0) then begin
-         result[iobj].sigma_cc = sqrt(galsigma^2 - starsigma^2)
+         result[iobj].sigma_cc = galsigma^2 - starsigma^2
+
+; fix this
          result[iobj].sigma_cc_err = sqrt((galsigma*galsigma_err)^2 + $
           (starsigma*starsigma_err)^2)/result[iobj].sigma_cc
       endif
@@ -223,9 +213,12 @@ pro veldisp, objflux, objerr, objwave, starflux, starerr, starwave, result, klo_
          bestalpha_q = answerq[3]
       endif
 
-      IF NOT keyword_set(noquotient) THEN BEGIN 
-          print,iobj,result[iobj], format='(i4,f9.3,7(f8.3),$)'
-          print, bestalpha, bestalpha_q, format='(f10.4,f9.4)'
+      IF NOT keyword_set(noquotient) THEN BEGIN
+          r = result[iobj]
+          print, iobj, r.plate, r.fiber, r.z, r.z_err, r.sigma_cc, $
+            r.sigma_cc_err, r.sigma_quotient, r.sigma_quotient_err, $
+            format='(i4,i5,i4,f8.5," +/-",f8.5,2(f8.3," +-",f6.3))'
+
       ENDIF ELSE BEGIN 
           print, iobj, result[iobj].z, result[iobj].z_err,  $
             result[iobj].sigma_cc, result[iobj].sigma_cc_err, $

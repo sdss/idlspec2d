@@ -78,12 +78,15 @@ function fourier_quotient, galfft, starfft, galvar0, starvar0, $
 
    alphatry = findgen(21)*0.1 
 
-   q = galfft[inside]/starfft[inside]
+   galnorm = djsig(float(galfft[inside]), sigrej=5)
+   starnorm =  djsig(float(starfft[inside]), sigrej=5)
+   
+   q = galfft[inside]/starfft[inside]*starnorm/galnorm
 
 ; Reject outliers on q (they can be quite large and drive the fit)
       qs = exp(smooth(alog(q), 25, /edge))
       dif = float(alog((q/qs)))
-      djs_iterstat, dif, sigma=qsig
+      djs_iterstat, dif, sigma=qsig, sigrej=5
       wbad = where(abs(dif) GT qsig*5, ct)
       IF ct GT 0 THEN q[wbad] = qs[wbad]
 
@@ -111,17 +114,19 @@ qs = median(q, 75)
 
       ENDIF 
 
-      var = stdev(float(galfft[inside]))^2+stdev(float(starfft[inside]))
-
       for i=0,nloop-1 do begin
           broad = broadarr[*, i]
           broad = broad/max(broad)
 
-          res = broad*starfft[inside]-galfft[inside]
-          chi2[i] = total(abs(res)^2)/n_elements(inside)/var
+          alpha[i] = total(float(qs) * broad)/total(broad^2)
+; nul residual (for just noise)
+          nul = sqrt(alpha[i]^2*broad^2+1)
+          res = broad*alpha[i]*starfft[inside]/starnorm-galfft[inside]/galnorm
+ 
+;IF i EQ 50 THEN stop
+          chi2[i] = total(abs(res)^2)/n_elements(inside)/mean(nul)
 
 ;          alpha[i] = total(float(q) * broad / var)/total(broad^2/var)
-          alpha[i] = total(float(qs) * broad)/total(broad^2)
 
       endfor
 
@@ -142,7 +147,7 @@ qs = median(q, 75)
 
       plot, knums[inside], qs, ps=3, yr=[-1, 2]
       oplot, knums[inside], broad*bestalpha, ps=3
-      plot, testsigma2, chi2, ps=-7, yr=[.5, 2.5]
+      plot, testsigma2, chi2, ps=-7
       oplot,[0,100],[1,1]*minchi2+deltachisq
 
       return, [minchi2, minsigma, errsigma, bestalpha]

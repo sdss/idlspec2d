@@ -1,3 +1,16 @@
+PRO hogglist
+
+  FOR platenum=300, 309 DO BEGIN 
+      reduce_plate, platenum
+  ENDFOR 
+
+  return
+END
+
+
+
+
+
 PRO ftest_obs
 
     fftfreq = getidlfreq(npixbell)
@@ -185,12 +198,13 @@ END
 
 PRO brg, result, z
 zap = 1
+
   listpath = '~/idlspec2d/misc/'
   readcol, listpath+'brg.list', num, plt, fiber, mjd, zchic
-  w = where((plt GE  306) AND (plt LE 306), ct)
+  w = where((plt GE  300) AND (plt LE 300), ct)
 ;  w = where((plt EQ 308) AND (fiber EQ 237), ct)
 ;  w = where((plt GT 302) AND plt LT  306, ct)
-;  w = w[0:19] &  ct=n_elements(w)
+;  w = w[0:9] &  ct=n_elements(w)
 ;  w = [88] & ct=1
   IF ct EQ 1 THEN w = w[0]
   plt = plt[w]
@@ -198,8 +212,14 @@ zap = 1
   fiber = fiber[w]
   zchic = zchic[w]
 
-  readspec, 306, 250, flux=template,wave=wave,flerr=templatesig;, plug=plug
+  readcol, '~/brg.08.gk.01', wave, template
+;  readspec, 306, 250, flux=template,wave=wave,flerr=templatesig;, plug=plug
   readspec, plt, fiber, flux=galflux,wave=galwave,flerr=galsig;, plug=galplug
+
+  templatesig = template*0+1
+  lambda_match, galwave[*, 0], wave, template
+  lambda_match, galwave[*, 0], wave, templatesig
+  lambda_match, galwave[*, 0], wave, wave
 
   bad = bytarr(ct)
   FOR i=0, ct-1 DO BEGIN 
@@ -222,16 +242,16 @@ zap = 1
       
   ENDIF 
 
-  keep = [3000, 6100]
+  keep = [3500, 6100]
   veldisp, galflux, galsig, galwave, template, templatesig, wave, result, $
-    sigmast=0.05, maxsig=6, keep=keep
+    sigmast=0.05, maxsig=6, /nodif, keep=keep
 
 ;  FOR i=0, ct-1 DO BEGIN 
 ;      gal = galflux[*, i]
 ;      gsig = galsig[*, i]
 ;      gwav = galwave[*, i]
 ;      veldisp, gal, gsig, gwav, gal, gsig, gwav, result, $
-;        sigmast=0.05, maxsig=6, /nobe
+;        sigmast=0.05, maxsig=6, /nodif
 ;  ENDFOR 
 
   z = 10.^(result.z/10000.)-1. 
@@ -252,6 +272,85 @@ stop
   return
 
 END
+
+
+
+PRO gal
+  zap = 1  ; zap 5577
+
+  listpath = '~/idlspec2d/etc/'
+  readcol, listpath+'regress1d_all.dat', plt, mjd, fiber, zchic, class,  $
+    format='(I,L,I,F,A)'
+  w = where((plt GE  306) AND (plt LE 306) AND (class EQ 'GALAXY'), ct)
+
+  IF ct EQ 1 THEN w = w[0]
+  plt = plt[w]
+  mjd = mjd[w]
+  fiber = fiber[w]
+  zchic = zchic[w]
+
+  readcol, '~/brg.08.gk.01', wave, template
+;  readspec, 306, 250, flux=template,wave=wave,flerr=templatesig;, plug=plug
+  readspec, plt, fiber, flux=galflux,wave=galwave,flerr=galsig;, plug=galplug
+
+  templatesig = template*0+1
+  lambda_match, galwave[*, 0], wave, template
+  lambda_match, galwave[*, 0], wave, templatesig
+  lambda_match, galwave[*, 0], wave, wave
+
+  bad = bytarr(ct)
+  FOR i=0, ct-1 DO BEGIN 
+      IF stdev(galflux[*, i]) EQ 0 THEN bad[i] = 1
+  ENDFOR 
+  w = where(bad EQ 0)
+  galflux = galflux[*, w]
+  galwave = galwave[*, w]
+  galsig  = galsig[*, w]
+;  galplug = galplug[*, w]
+  plt = plt[w]
+  mjd = mjd[w]
+  fiber = fiber[w]
+  zchic = zchic[w]
+
+  IF keyword_set(zap) THEN BEGIN 
+      
+      linemask = (galwave LT 5586) AND (galwave GE 5573)
+      galflux = djs_maskinterp(galflux, linemask, iaxis=0)
+      
+  ENDIF 
+
+  keep = [3500, 6100]
+  veldisp, galflux, galsig, galwave, template, templatesig, wave, result, $
+    sigmast=0.05, maxsig=6, /nodif, keep=keep
+
+;  FOR i=0, ct-1 DO BEGIN 
+;      gal = galflux[*, i]
+;      gsig = galsig[*, i]
+;      gwav = galwave[*, i]
+;      veldisp, gal, gsig, gwav, gal, gsig, gwav, result, $
+;        sigmast=0.05, maxsig=6, /nodif
+;  ENDFOR 
+
+  z = 10.^(result.z/10000.)-1. 
+  sig = sqrt(result.sigma_quotient)
+  sig2err = (result.sigma_quotient_err)
+;  mag = galplug.mag[2]
+  sigcc = result.sigma_cc
+
+  goodz = where(abs(z-zchic) LT 0.002, ct)
+  badz = where(abs(z-zchic) GT 0.002, ct)
+  IF ct EQ 0 THEN BEGIN 
+      print, 'ALL z values agree with Chicago.'
+  ENDIF ELSE BEGIN 
+      print, 'Bad Fiber numbers: ', fiber[badz]
+  ENDELSE 
+
+stop
+  return
+
+END
+
+
 
 
 
