@@ -101,7 +101,7 @@ pro superflat, flux, fluxivar, wset, fullbkpt, coeff, $
       fracpts[i] = 1.0 - total(tmpmask)/N_elements(tmpmask)
       if (ntmp GT filtsz) then $
        medval[i] = djs_mean( $
-        median([ tmpflux[ (filtsz-1)/2 : ntmp-(filtsz-1)/2 ], filtsz ) ]) $
+        median([ tmpflux[ (filtsz-1)/2 : ntmp-(filtsz-1)/2 ], filtsz ]) ) $
       else $
        medval[i] = median([tmpflux])
    endfor
