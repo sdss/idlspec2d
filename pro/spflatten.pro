@@ -94,13 +94,8 @@ pro spflatten, flatname, pixflat, sigrej=sigrej, maxiter=maxiter, $
       ;----------------------
       ; Read flat-field image
 
-      fullpath = filepath(flatname[iflat], root_dir=indir)
-      fullname = findfile(fullpath, count=ct)
-      if (ct NE 1) then $
-       message, 'Cannot find flat image' + flatname[iflat]
-      sdssproc, fullname[0], flatimg, flativar, hdr=flathdr
-;flatimg = flatimg[*,0:49]   ; TEST ???
-;flativar = flativar[*,0:49] ; TEST ???
+      sdssproc, flatname[iflat], flatimg, flativar, indir=indir, hdr=flathdr
+
       dims = size(flatimg, /dimens)
       nx = dims[0]
       ny = dims[1]

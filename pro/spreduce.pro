@@ -11,9 +11,9 @@
 ;    indir=indir, plugdir=plugdir, outdir=outdir, qadir=qadir, qa=qa
 ;
 ; INPUTS:
-;   flatname   - Name of flat-field SDSS image
-;   arcname    - Name of arc SDSS image
-;   objname    - Name of object SDSS image(s)
+;   flatname   - Name(s) of flat-field SDSS image(s)
+;   arcname    - Name(s) of arc SDSS image(s)
+;   objname    - Name(s) of object SDSS image(s)
 ;
 ; REQUIRED KEYWORDS:
 ;   plugfile   - Name of plugmap file (Yanny parameter file)
@@ -38,7 +38,7 @@
 ; EXAMPLES:
 ;
 ; BUGS:
-;   Tweaking to sky lines + vacuum wavelengths commented out 15-nov-99 (DJS).
+;   Should test that arcs and flats are valid images with CHECKFLAVOR.
 ;
 ; PROCEDURES CALLED:
 ;   djs_locate_file()
@@ -93,122 +93,165 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    skylinefile = skyfilenames[0]
 
    ;---------------------------------------------------------------------------
-   ; Read PLUGMAP file
+   ; Determine spectrograph ID and color from first object file
+   ;---------------------------------------------------------------------------
+
+   sdssproc, objfile, indir=indir, spectrographid=spectrographid, color=color
+
+   ;---------------------------------------------------------------------------
+   ; Read PLUGMAP file and sort
    ;---------------------------------------------------------------------------
  
    plugpath = filepath(plugfile, root_dir=plugdir)
-   plugfilenames = findfile(plugpath, count=ct)
+   plugfilename = (findfile(plugpath, count=ct))[0]
    if (ct NE 1) then $
     message, 'Cannot find plugMapFile ' + plugfile
 
-   yanny_read, plugfilenames[0], pstruct, hdr=hdrplug
+   yanny_read, plugfilename, pstruct, hdr=hdrplug
    plugmap = *pstruct[0]
    yanny_free, pstruct
 
-   ;---------------------------------------------------------------------------
-   ; Read flat-field image
-   ;---------------------------------------------------------------------------
+   ; PLUGSORT will return mask of good (1) and bad (0) fibers too
 
-   flatpath = filepath(flatname, root_dir=indir)
-   flatfilenames = findfile(flatpath, count=ct)
-   if (ct NE 1) then $
-    message, 'Cannot find flat image ' + flatname
-
-   splog, 'Reading in flat ', flatfilenames[0]
-   sdssproc, flatfilenames[0], image, invvar, hdr=flathdr, $
-    pixflatname=pixflatname, spectrographid=spectrographid, color=color
-
-   ;-------------------------------------------------------------------------
-   ; Plugsort will return mask of good (1) and bad (0) fibers too
-   ;-------------------------------------------------------------------------
    plugsort = sortplugmap(plugmap, spectrographid, fibermask)
  
    ;---------------------------------------------------------------------------
-   ; Create spatial tracing from flat-field image
+   ; LOOP THROUGH FLAT+ARC IMAGE TO IDENTIFY THE BEST PAIR
    ;---------------------------------------------------------------------------
 
-   xsol = trace320crude(image, yset=ycen, maxdev=0.15)
+   nflat = N_elements(flatname)
+   narc = N_elements(arcname)
 
-   xy2traceset, ycen, xsol, tset, ncoeff=5, maxdev=0.1
-   traceset2xy, tset, ycen, xsol
+   ibest = -1 ; Index number for best flat+arc pair
+   bestcorr = -1.0
+
+   for ifile=0, (nflat<narc)-1 do begin
+
+      splog, ifile, (nflat<narc), $
+       format='("Looping through flat+arc pair #",I3," of",I3)'
+
+      ;------------------------------------------------------------------------
+      ; Read flat-field image
+      ;------------------------------------------------------------------------
+
+      splog, 'Reading flat ', flatfile
+      sdssproc, flatfile, image, invvar, indir=indir, $
+       hdr=flathdr, pixflatname=pixflatname
+
+      ;------------------------------------------------------------------------
+      ; Create spatial tracing from flat-field image
+      ;------------------------------------------------------------------------
+
+      tmp_xsol = trace320crude(image, yset=ycen, maxdev=0.15)
+
+      xy2traceset, ycen, tmp_xsol, tset, ncoeff=5, maxdev=0.1
+      traceset2xy, tset, ycen, tmp_xsol
+
+      ;------------------------------------------------------------------------
+      ; Extract the flat-field image
+      ;------------------------------------------------------------------------
+
+      splog, 'Extracting flat-field image with simple gaussian'
+      sigma = 1.0
+      proftype = 1 ; Gaussian
+      highrej = 20
+      lowrej = 25
+      nPoly = 6
+      wfixed = [1] ; Just fit the first gaussian term
+
+      extract_image, image, invvar, tmp_xsol, sigma, flux, fluxivar, $
+       proftype=proftype, wfixed=wfixed, $
+       highrej=highrej, lowrej=lowrej, nPoly=nPoly, relative=1
+
+      highpixels = where(flux GT 1.0e5, numhighpixels)
+
+      splog, 'Found ', numhighpixels, ' highpixels in extracted flat ', $
+       flatfile
+
+      ;------------------------------------------------------------------------
+      ; Compute fiber-to-fiber flat-field variations
+      ;------------------------------------------------------------------------
+
+      tmp_fflat = fiberflat(flux, fluxivar, fibermask)
+
+      ;------------------------------------------------------------------------
+      ; Read the arc
+      ;------------------------------------------------------------------------
+
+      splog, 'Reading arc ', arcfile
+      sdssproc, arcfile, image, invvar, indir=indir, $
+       hdr=archdr, pixflatname=pixflatname
+
+      ;------------------------------------------------------------------------
+      ; Extract the arc image
+      ;------------------------------------------------------------------------
+
+      splog, 'Extracting arc image with simple gaussian'
+      sigma = 1.0
+      proftype = 1 ; Gaussian
+      highrej = 10
+      lowrej = 15
+      nPoly = 6 ; maybe more structure
+      wfixed = [1] ; Just fit the first gaussian term
+
+      extract_image, image, invvar, tmp_xsol, sigma, flux, fluxivar, $
+       proftype=proftype, wfixed=wfixed, $
+       highrej=highrej, lowrej=lowrej, nPoly=nPoly, relative=1
+
+      ;------------------
+      ; Flat-field the extracted arcs with the global flat
+      ; Hmmm.... would be circular if we need a wavelength calibration before
+      ; making that flat.  We don't at the moment.
+
+      divideflat, flux, fluxivar, tmp_fflat, fibermask
+
+      ;-------------------------------------------------------------------------
+      ; Compute correlation coefficient for this arc image
+      ;-------------------------------------------------------------------------
+
+      splog, 'Searching for wavelength solution'
+      fitarcimage, flux, fluxivar, $
+       color=color, lampfile=lampfile, bestcorr=corr
+
+      ;-----
+      ; Determine if this is the best flat+arc pair
+      ; If so, then save the information that we need
+
+      if (corr GT bestcorr) then begin
+         ibest = ifile
+         bestcorr = corr
+         arcimg = flux
+         arcivar = fluxivar
+         xsol = tmp_xsol
+         fflat = tmp_fflat
+      endif
+
+   endfor
 
    ;---------------------------------------------------------------------------
-   ; Extract the flat-field image
+   ; Make sure that the best flat+arc pair is good enough
    ;---------------------------------------------------------------------------
 
-   splog, 'Extracting flat-field with simple gaussian'
-   sigma = 1.0
-   proftype = 1 ; Gaussian
-   highrej = 20
-   lowrej = 25
-   nPoly = 6
-   wfixed = [1] ; Just fit the first gaussian term
+   splog, 'Best flat = ', flatname[ibest]
+   splog, 'Best arc = ', arcname[ibest]
 
-   extract_image, image, invvar, xsol, sigma, flux, fluxivar, $
-    proftype=proftype, wfixed=wfixed, $
-    highrej=highrej, lowrej=lowrej, nPoly=nPoly, relative=1
-
-   highpixels = where(flux GT 1.0e5, numhighpixels)
-
-   splog, 'Found ', numhighpixels, ' highpixels in extracted flat ', $
-    flatname
+   if (bestcorr LT 0.7) then begin
+      splog, 'Best arc correlation = ', bestcorr
+      splog, 'Abort!'
+      return
+   endif
 
    ;---------------------------------------------------------------------------
-   ; Compute fiber-to-fiber flat-field variations
+   ; Compute wavelength calibration for arc lamp only
    ;---------------------------------------------------------------------------
 
-   fflat = fiberflat(flux, fluxivar, fibermask)
+   splog, 'Searching for wavelength solution'
+   fitarcimage, arcimg, arcivar, xpeak, ypeak, wset, $
+    color=color, lampfile=lampfile, lambda=lambda, xdif_tset=xdif_tset
 
-   ;---------------------------------------------------------------------------
-   ; Read the arc
-   ;---------------------------------------------------------------------------
+wsave = wset
 
-   arcpath = filepath(arcname, root_dir=indir)
-   arcfilenames = findfile(arcpath, count=ct)
-   if (ct NE 1) then $
-    message, 'Cannot find arc image ' + arcname
-
-   splog, 'Reading in arc ', arcfilenames[0]
-   sdssproc, arcfilenames[0], image, invvar, hdr=archdr, $
-    pixflatname=pixflatname, spectrographid=spectrographid, color=color
-
-     
-  ;--------------------------------------------------------------------------
-  ; Extract the arc image
-  ;--------------------------------------------------------------------------
-
-  splog, 'Extracting arc-lamp with simple gaussian'
-  sigma = 1.0
-  proftype = 1 ; Gaussian
-  highrej = 10
-  lowrej = 15
-  nPoly = 6 ; maybe more structure
-  wfixed = [1] ; Just fit the first gaussian term
-
-  extract_image, image, invvar, xsol, sigma, flux, fluxivar, $
-   proftype=proftype, wfixed=wfixed, $
-   highrej=highrej, lowrej=lowrej, nPoly=nPoly, relative=1
-
-  ;------------------
-  ; Flat-field the extracted arcs with the global flat
-  ; Hmmm.... would be circular if we need a wavelength calibration before
-  ; making that flat.  We don't at the moment.
-
-  divideflat, flux, fluxivar, fflat, fibermask
-
-;  flux = flux / fflat
-;  fluxivar = fluxivar * fflat^2
-
-  ;-------------------------------------------------------------------------
-  ; Compute wavelength calibration for arc lamp only
-  ;-------------------------------------------------------------------------
-
-   splog, 'Searching for wavelength solution with fitarcimage'
-   fitarcimage, flux, fluxivar, xpeak, ypeak, wset, $
-    color=color, lampfile=lampfile, lambda=lambda, $
-    xdif_lfit=xdif_lfit, xdif_tset=xdif_tset
-
-   qaplot_arcline, xdif_tset, lambda, arcname
+   qaplot_arcline, xdif_tset, lambda, arcname[ibest]
 
 ; Plot flat-field ???
 plot,fflat[*,0], yr=[0,2], /ystyle, $
@@ -229,16 +272,9 @@ for i=0,16 do oplot,fflat[*,i*19]
       ;------------------
       ; Read object image
 
-      objpath = filepath(objname[iobj], root_dir=indir)
-      objfilenames = findfile(objpath, count=ct)
-      if (ct NE 1) then $
-       message, 'Cannot find object image ' + objname[iobj]
-
-      objfile = objfilenames[0]
-      splog, 'Reading in object ', objfile
-      sdssproc, objfile, image, invvar, hdr=objhdr, $
+      splog, 'Reading object ', objfile
+      sdssproc, objfile, image, invvar, indir=indir, hdr=objhdr, $
        pixflatname=pixflatname, spectrographid=spectrographid, color=color
-
 
       ;------------------
       ; Tweak up the spatial traces
@@ -324,7 +360,8 @@ for i=0,16 do oplot,fflat[*,i*19]
 
       ;------------------
       ; Flat-field the extracted object fibers with the global flat
-  divideflat, flux, fluxivar, fflat, fibermask
+
+      divideflat, flux, fluxivar, fflat, fibermask
 ;      flux = flux / fflat
 ;      fluxivar = fluxivar * fflat^2
 
@@ -397,13 +434,13 @@ for i=0,16 do oplot,fflat[*,i*19]
       ;------
       ; Add everything we can think of to object header
 
-      sxaddpar, objhdr, 'PLUGMAPF', plugfilenames[0]
-      sxaddpar, objhdr, 'FLATFILE', flatfilenames[0]
-      sxaddpar, objhdr, 'ARCFILE',  arcfilenames[0]
-      sxaddpar, objhdr, 'OBJFILE',  objfile
-      sxaddpar, objhdr, 'LAMPLIST',  lampfile
-      sxaddpar, objhdr, 'SKYLIST',  skylinefile
-      sxaddpar, objhdr, 'PIXFLAT',  pixflatname
+      sxaddpar, objhdr, 'PLUGMAPF', plugfilename
+      sxaddpar, objhdr, 'FLATFILE', flatname[ibest]
+      sxaddpar, objhdr, 'ARCFILE', arcname[ibest]
+      sxaddpar, objhdr, 'OBJFILE', objfile
+      sxaddpar, objhdr, 'LAMPLIST', lampfile
+      sxaddpar, objhdr, 'SKYLIST', skylinefile
+      sxaddpar, objhdr, 'PIXFLAT', pixflatname
       sxaddpar, objhdr, 'OSIGMA',  sigma, $
            'Original guess at sigma of spatial profiles'
       sxaddpar, objhdr, 'SKIPROW', skiprow, 'Number of rows skipped in step 1'
@@ -422,5 +459,6 @@ for i=0,16 do oplot,fflat[*,i*19]
    splog, 'End time ', systime(1)-t_begin, ' seconds TOTAL', $
     format='(A,F8.2,A)'
 
+   return
 end
 ;------------------------------------------------------------------------------

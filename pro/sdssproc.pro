@@ -6,7 +6,8 @@
 ;   Read in Raw SDSS files, and process with opECalib.par and opConfig.par
 ;
 ; CALLING SEQUENCE:
-;   sdssproc, infile, [image, invvar, outfile=outfile, varfile=varfile, $
+;   sdssproc, infile, [image, invvar, indir=indir, $
+;    outfile=outfile, varfile=varfile, $
 ;    hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, bcfile=bcfile, $
 ;    pixflatname=pixflatname, spectrographid=spectrographid, color=color ]
 ;
@@ -14,6 +15,7 @@
 ;   infile     - Raw SDSS frame
 ;
 ; OPTIONAL KEYWORDS:
+;   indir      - Input directory for INFILE
 ;   outfile    - Calibrated 2d frame, after processing
 ;   varfile    - Inverse Variance Frame after processing
 ;   hdr        - Header returned in memory
@@ -46,12 +48,14 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
+pro sdssproc, infile, image, invvar, indir=indir, $
+ outfile=outfile, varfile=varfile, $
  hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, bcfile=bcfile, $
  pixflatname=pixflatname, spectrographid=spectrographid, color=color
 
    if (N_params() LT 1) then begin
-      print, 'Syntax - sdssproc, infile, [image, invvar, outfile=outfile, varfile=varfile, ' 
+      print, 'Syntax - sdssproc, infile, [image, invvar, indir=indir, '
+      print, ' outfile=outfile, varfile=varfile, ' 
       print, ' hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, bcfile=bcfile]'
       return
    endif
@@ -92,10 +96,15 @@ pro sdssproc, infile, image, invvar, outfile=outfile, varfile=varfile, $
 
    realbc= tempname[0]
 
+   inpath = filepath(infile, root_dir=indir)
+   fullname = (findfile(inpath, count=ct))[0]
+   if (ct NE 1) then $
+    message, 'Cannot find image ' + infile
+
    if (readimg OR readivar) then $
-    rawdata = rdss_fits(infile, hdr, /nofloat) $
+    rawdata = rdss_fits(fullname, hdr, /nofloat) $
    else $
-    hdr = headfits(infile)
+    hdr = headfits(fullname)
 
    cards = sxpar(hdr,'NAXIS*')
 ;   if (cards[0] NE 2128 OR cards[1] NE 2069) then $
