@@ -470,6 +470,21 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    sxaddpar, objhdr, 'PROFTYPE', proftype, 'Extraction profile: 1=Gaussian'
    sxaddpar, objhdr, 'NFITPOLY', nterms, 'Extraction: Number of parameters in each profile'
 
+   snvec = djs_median(flambda*sqrt(flambdaivar),1)
+   if color EQ 'blue' then begin
+        mag=plugsort.mag[1] 
+        snmag = 20.2
+   endif else begin
+        mag=plugsort.mag[3]
+        snmag = 19.9
+   endelse
+
+   fitmag = snmag + [-2.0,-0.5]
+   sncoeff = fitsn(mag, snvec, fitmag=fitmag)
+   sn2 = 10^(2.0 * poly([snmag],sncoeff))
+
+   sxaddpar, objhdr, 'FRAMESN2', sn2
+
    ;----------
    ; Write extracted, lambda-calibrated, sky-subtracted spectra to disk
 
