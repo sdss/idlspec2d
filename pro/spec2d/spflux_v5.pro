@@ -579,7 +579,8 @@ function spflux_mratio_flatten, loglam1, mratio1, mrativar1, pres=pres
    ; magnitudes from the imaging.
 
    igoodpix = where(qbadpix EQ 0)
-   medratio = djs_median(newratio, 2)
+   if (ndim EQ 1) then medratio = newratio $
+    else medratio = djs_median(newratio, 2)
    rescale = median( medratio[igoodpix] / meanratio[igoodpix] )
    if (rescale LE 0) then begin
      splog, 'Warning: RESCALE = ', rescale
@@ -620,7 +621,8 @@ function spflux_mratio_flatten, loglam1, mratio1, mrativar1, pres=pres
        endelse
    endfor
 
-   pres = reform(pres, [npoly, dims[1:ndim-1]])
+   if (ndim GT 1) then $
+    pres = reform(pres, [npoly, dims[1:ndim-1]])
    return, reform(flatarr, dims)
 end
 
