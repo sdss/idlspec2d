@@ -1,7 +1,14 @@
 
+CREATE_LINESTRUCT,LINEBACKFIT,SPREDUCE1D: Replace LINENPIX with the number
+           of pixels to the left and right of the line center, LINENPIXLEFT
+           and LINENPIXRIGHT.  Use both of those to trigger the warning
+           NEGATIVE_EMISSION from quasars, which was triggered sometimes
+           when there were only pixels to one side of the line center
+           (PR #3797).
 FLUX_STANDARD: Added empirical correction to SPECTRUM-Kurucz models.
            Then got rid of them!
 GET_TAI: Trigger a Warning if (TAI-END) - (TAI-BEG) < EXPTIME + 20 sec.
+PLATEMERGE: Create spAllLine files.
 PLOTSPEC: Fix trivial bug (had "EXTRA" instead of "_EXTRA") in passing
            additional plotting keywords to plots.  Also, pass those
            keywords along to the XYOUTS commands.
@@ -34,6 +41,7 @@ DUST_INTFILTER: New proc to integrate the extinction curve over a
            given source function + filter curve.
 GSC_READ_TABLE: New proc to read one table from the Guide Star Catalog.
 HOGG_SCATTERPLOT: New proc to plot greyscale scatterplot with contours.
+MWRFITS_CHUNKS - Do not always create a new file (unless /CREATE is set).
 NONNEG_MULT_UPDATE,NONNEG_MULT_UPDATE_SOLVE: New code from M. Blanton
            for non-negative least-squares solving.  This is a special
            case of box constraints in quadratic programming, as suggested
@@ -42,6 +50,7 @@ NONNEG_MULT_UPDATE,NONNEG_MULT_UPDATE_SOLVE: New code from M. Blanton
            (UPenn Tech Report MS-CIS-02-19)
 STRUCT_PRINT: If /NO_HEAD is set, do not increase the width of a column
            to occomodate the column name.  New FORMATCODES option.
+STRUCT_TRIMTAGS: Would not have worked if only the very 1st tag were selected.
 YANNY_WRITE: New options /ALIGN and FORMATCODES, even though these options
            make it possible to write invalid Yanny files.
 
