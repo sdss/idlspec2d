@@ -3,7 +3,7 @@
 ;                or spectro-2, but not both!
 ;   adderr     - Additional error to add to the formal errors, as a
 ;                fraction of the flux; default to 0.03 (3 per cent).
-
+; OUTPUT A STRUCTURE WITH THE BEST_FIT KURUCZ MODELS!!!???
 ;------------------------------------------------------------------------------
 ; Read the Kurucz models at the specified log-lambda and resolution
 ; ISELECT - If set, then only return these model numbers.
@@ -31,15 +31,19 @@ function spflux_read_kurucz, loglam, dispimg, iselect=iselect1, $
       nrawpix = dims[0]
       nmodel = dims[1]
       waves = dindgen(nrawpix) * sxpar(hdr,'CD1_1') + sxpar(hdr,'CRVAL1')
-      airtovac, waves ; Remap wavelengths from air to vacuum
-      rawloglam = alog10(waves)
 
       ; The models will be sub-sampled relative to the SDSS pix scale of 1d-4:
       subsamp = 5
       kdlog = 1.d-4 / subsamp
 
+      ; Change units to erg/cm^2/s/Ang by dividing by the wavelength
+      for imodel=0L, nmodel-1 do $
+       krawflux[*,imodel] = krawflux[*,imodel] / waves
+
       ; These models are sampled linearly in **air** wavelength.
       ; Re-map them to linear in (vacuum) log-wavelength.
+      airtovac, waves ; Remap wavelengths from air to vacuum
+      rawloglam = alog10(waves)
       splog, 'Remapping Kurucz models to log-wavelengths'
       minlog1 = min(rawloglam, max=maxlog1)
       kloglam = wavevector(minlog1, maxlog1, binsz=kdlog)
@@ -403,7 +407,7 @@ function spflux_bspline, loglam, mratio, mrativar, outmask=outmask, $
 
    ; Choose the break points using the EVERYN option, but masking
    ; out more pixels near stellar features just when selecting them.
-   mask1 = 1 - spflux_masklines(loglam, hwidth=10e-4, /stellar)
+   mask1 = 1 - spflux_masklines(loglam, hwidth=12.e-4, /stellar)
    ii = where(mrativar[isort] GT 0 AND mask1[isort] EQ 1)
    bkpt = 0
    fullbkpt = bspline_bkpts(loglam[isort[ii]], everyn=everyn, $
@@ -765,7 +769,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       if (keyword_set(x2)) then begin
          x2_min = min(airmass[*,ifile,iphoto[ifinal]], max=x2_max)
          splog, 'Exposure ', objname[ifile], $
-          'spans airmass range ', x2_min, x2_max
+          ' spans airmass range ', x2_min, x2_max
          tmpflux1 = bspline_valu(tmploglam, thisset, x2=x2_min+0*tmploglam) $
           * flatarr_mean
          tmpflux2 = bspline_valu(tmploglam, thisset, x2=x2_max+0*tmploglam) $
