@@ -103,12 +103,14 @@ function trace320crude, image, invvar, ystart=ystart, nmed=nmed, $
    ; started on near two or more bad columns? THEN set xgood[itrace] = 0
 
    ncol = (size(invvar,/dimen))[0]
-   for itrace=0, ntrace-1 do begin
-     bottom = long(xstart[itrace]-radius) >0
-     top    = long(xstart[itrace]+radius) < ncol-1L
-     badcol = where(invvar[bottom:top, ystart] LE 0, ct)
-     if ct GT 0 then xgood[itrace] = 0
-   endfor
+   if ncol GT 0 then begin
+     for itrace=0, ntrace-1 do begin
+       bottom = long(xstart[itrace]-radius) >0
+       top    = long(xstart[itrace]+radius) < ncol-1L
+       badcol = where(invvar[bottom:top, ystart] LE 0, ct)
+       if ct GT 0 then xgood[itrace] = 0
+     endfor
+   endif
 
    ;----------
    ; Compare the traces in each row to those in row YSTART.
