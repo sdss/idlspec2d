@@ -6,8 +6,9 @@
 ;   Compute velocity dispersions for galaxy spectra.
 ;
 ; CALLING SEQUENCE:
-;   vdispfit, objflux, objivar, [ objloglam, hdr=, zobj=, npoly=, $
-;    eigenfile=, eigendir=, columns=, sigma=, sigerr=, yfit= ]
+;   vdans = vdispfit(objflux, objivar, [ objloglam, hdr=, zobj=, npoly=, $
+;    eigenfile=, eigendir=, columns=, sigma=, sigerr=, yfit=, $
+;    plottitle=, /doplot, /debug ])
 ;
 ; INPUTS:
 ;   objflux    - Galaxy spectrum (spectra); array of [NPIX,NGALAXY].
@@ -29,12 +30,24 @@
 ;                '$IDLSPEC2D_DIR/templates'
 ;   columns    - Column numbers of the eigenspectra image to use in the
 ;                PCA fit; default to all columns.
+;   plottitle  - Title of plot (if /DOPLOT is set).
+;   doplot     - If set, then make plots.
+;   debug      - If set, then wait for keystroke after plot.
 ;
 ; OUTPUTS:
+;   vdans      - Output structure [NGALAXY] with the following elements:
+;                vdisp : Velocity dispersion in km/sec.
+;                vdisp_err : Error for VDISP in km/sec.
+;                vdispchi2 : Minimum chi^2
+;                vdispnpix : Number of pixels overlapping the templates
+;                            and used in the fits
+;                vdispdof : Degrees of freedom = the number of pixels
+;                           overlapping the templates minus the number of
+;                           templates minus the number of polynomial terms
+;                           minus 1 (the last 1 is for the velocity dispersion)
+;                vdisptheta : ???
 ;
 ; OPTIONAL OUTPUTS:
-;   sigma      - Velocity dispersion in km/sec.
-;   sigerr     - Error for SIGMA in km/sec.
 ;   yfit       - Best-fit template (actually, the one with the closest
 ;                velocity dispersion to the best-fit sigma); wavelengths
 ;                outside of those available with the templates have their
@@ -65,36 +78,54 @@
 ;   combine1fiber
 ;   computechi2()
 ;   djs_filepath()
-;   findchi2min
+;   find_nminima
 ;   mrdfits()
 ;   poly_array()
 ;   splog
 ;   sxpar()
 ;
 ; INTERNAL SUPPORT ROUTINES:
+;   create_vdans()
 ;   vdisp_gconv()
 ;
 ; REVISION HISTORY:
 ;   13-Mar-2001  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
-function vdisp_gconv, x, sigma, _EXTRA=EXTRA
+; Create output structure
+function create_vdans, nstar
+
+   vdans = create_struct( $
+    name = 'VDANS'+strtrim(string(nstar),1), $
+    'vdisp'      , 0.0, $
+    'vdisp_err'  , 0.0, $
+    'vdispchi2'  , 0.0, $
+    'vdispnpix'  ,  0L, $
+    'vdispdof'   ,  0L, $
+    'vdisptheta' , fltarr(nstar) )
+
+   return, vdans
+end
+;------------------------------------------------------------------------------
+function vdisp_gconv, x, sigma
 
    ; Special case for no smoothing
    if (sigma EQ 0) then return, x
 
-   ksize = round(4*sigma+1) * 2
-   xx = findgen(ksize) - ksize/2
+   khalfsz = round(4*sigma+1)
+   xx = findgen(khalfsz*2+1) - khalfsz
 
    kernel = exp(-xx^2 / (2*sigma^2))
    kernel = kernel / total(kernel)
 
-   return, convol(x, kernel, _EXTRA=EXTRA)
+   return, convol(x, kernel, /center, /edge_truncate)
 end
 
 ;------------------------------------------------------------------------------
-pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
+function vdispfit, objflux, objivar, objloglam, $
+ hdr=hdr, zobj=zobj, npoly=npoly, $
  eigenfile=eigenfile, eigendir=eigendir, columns=columns, $
- sigma=sigma, sigerr=sigerr, yfit=yfit
+ sigma=sigma, sigerr=sigerr, yfit=yfit, $
+ plottitle=plottitle, doplot=doplot1, debug=debug
 
    common com_vdispfit, bigflux, bigloglam, bigmask, nsamp, bigsig, $
     nbigpix, nsig, dsig, nstar, lastfile
@@ -109,6 +140,11 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
     else nobj = dims[1]
    if (NOT keyword_set(zobj)) then zobj = fltarr(nobj)
    if (NOT keyword_set(lastfile)) then lastfile = ''
+   if (NOT keyword_set(plottitle)) then plottitle = ''
+
+   ; Plot if either /DOPLOT or /DEBUG is set.
+   if (keyword_set(doplot1)) then doplot = doplot1
+   if (keyword_set(debug)) then doplot = 1
 
    ;---------------------------------------------------------------------------
    ; If multiple object flux vectors exist, then call this routine recursively.
@@ -121,16 +157,15 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
       for iobj=0, nobj-1 do begin
          if (lamdims EQ 1) then thisloglam = objloglam $
           else if (lamdims EQ 2) then thisloglam = objloglam[*,iobj]
-         vdispfit, objflux[*,iobj], objivar[*,iobj], thisloglam, hdr=hdr, $
-          zobj=zobj[iobj], npoly=npoly, $
-          eigenfile=eigenfile, eigendir=eigendir, columns=columns, $
-          sigma=sigma1, sigerr=sigerr1, yfit=yfit1
-         sigma[iobj] = sigma1
-         sigerr[iobj] = sigerr1
+         vdans1 = vdispfit(objflux[*,iobj], objivar[*,iobj], $
+          thisloglam, hdr=hdr, zobj=zobj[iobj], npoly=npoly, $
+          eigenfile=eigenfile, eigendir=eigendir, columns=columns, yfit=yfit1)
+         if (iobj EQ 0) then vdans = vdans1 $
+          else vdans = [[vdans], [vdans1]]
          if (keyword_set(yfit)) then yfit[*,iobj] = yfit1
       endfor
-      return
-   endif else zobj= zobj[0]
+      return, vdans
+   endif
 
    ;----------
    ; Determine the wavelength mapping for the object spectra,
@@ -190,7 +225,12 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
       bigloglam = eloglam0 + dindgen(nbigpix) * edloglam / nsamp
       bigflux = fltarr(nbigpix, nstar, nsig)
 
+      splog, 'Oversampling eigentemplates'
       for istar=0, nstar-1 do begin
+         ; Burles counter...
+         print, format='("Template ",i5," of ",i5,a1,$)', $
+          istar+1, nstar, string(13b)
+
          combine1fiber, eloglam, eflux[*,istar], $
           newloglam=bigloglam, newflux=tmpflux, maxiter=0
          bigflux[*,istar,0] = tmpflux
@@ -200,10 +240,15 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
       ;----------
       ; Generate array of broadened templates
 
+      splog, 'Broadening eigentemplates'
       for isig=1, nsig-1 do begin
          for istar=0, nstar-1 do begin
+            ; Burles counter...
+            print, format='("Template ",i5," of ",i5,a1,$)', $
+             isig*nstar+istar+1, nsig*nstar, string(13b)
+
             bigflux[*,istar,isig] = $
-             vdisp_gconv(bigflux[*,istar,0], bigsig[isig]/pixsz, /edge_truncate)
+             vdisp_gconv(bigflux[*,istar,0], bigsig[isig]/pixsz)
          endfor
       endfor
 
@@ -230,7 +275,14 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
         OR bigloglam GT vaclist[iline] + mwidth)
 
       lastfile = thisfile
-   endif
+   endif else begin
+      splog, 'Using previously cached velocity dispersion templates'
+   endelse
+
+   ;----------
+   ; Create the output structure
+
+   vdans = create_vdans(nstar)
 
    ;----------
    ; Find the pixel numbers to use from the object and the templates
@@ -245,10 +297,10 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
    if (max(restloglam) LT min(bigloglam[indx]) $
     OR min(restloglam) GT max(bigloglam[indx])) then begin
 ;      splog, 'No wavelength overlap with template'
-      sigma = 0.0
-      sigerr = 9999.
+      vdans.vdisp = 0.0
+      vdans.vdisp_err = 9999.
       yfit = fltarr(npixobj)
-      return
+      return, vdans
    endif
 
    if (restloglam[0] LT bigloglam[indx[0]]) then begin
@@ -296,19 +348,41 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
    ;----------
    ; Fit for the dispersion value at the minimum in chi^2
 
-   findchi2min, bigsig, chi2arr, minchi2, sigma, sigerr
+;   findchi2min, bigsig, chi2arr, minchi2, sigma, sigerr, $
+;    plottitle=plottitle, doplot=doplot, debug=debug
+   ; Use only the 3 points nearest the minimum for the fit.
+   ; If the minimum is at a dispersion of zero, then duplicate the
+   ; next point as a negative dispersion value simply for the benefit
+   ; of computing an error, and to prevent an error code from being
+   ; generated in the call to FIND_NMINIMA.
+   junk = min(chi2arr, imin)
+   if (imin GT 0) then $
+    sigma = find_nminima(chi2arr, bigsig, $
+     width=1.5*dsig, ypeak=minchi2, xerr=sigerr, $
+     errcode=errcode, plottitle=plottitle, doplot=doplot, debug=debug) $
+   else $
+    sigma = find_nminima([chi2arr[1],chi2arr], [-bigsig[1],bigsig], $
+     width=1.5*dsig, ypeak=minchi2, xerr=sigerr, $
+     errcode=errcode, plottitle=plottitle, doplot=doplot, debug=debug)
+   vdans.vdisp = sigma > 0 ; Numerical round-off can push this negative
+   ; Set VDISP_ERR to the error-code if it is non-zero
+   vdans.vdisp_err = sigerr * (errcode EQ 0) + errcode
+   vdans.vdispchi2 = minchi2
+   vdans.vdispnpix = npixcomp
+   vdans.vdispdof = npixcomp - nstar - npoly - 1 ; One dof is for the vel. disp.
 
    ;----------
    ; Return the best-fit template (actually, the one with the closest
    ; velocity dispersion to the best-fit sigma).
 
+   junk = min(abs(bigsig - sigma), isig)
    if (arg_present(yfit)) then begin
-      junk = min(abs(bigsig - sigma), isig)
       eigenflux = bigflux[indxt,iuse,isig]
       if (keyword_set(npoly)) then eigenflux = [[eigenflux], [polyflux]]
       yfit = fltarr(npixobj)
       yfit[indxo] = acoeffarr[*,isig] ## eigenflux
    endif
+   vdans.vdisptheta = acoeffarr[*,isig]
 
    ;----------
    ; If the best-fit value is at the maximum dispersion value tested,
@@ -316,9 +390,9 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
    ; to a large value.
 
    if (sigma GE max(bigsig)) then begin
-      sigerr = 9999.
+      vdans.vdisp_err = -3L
    endif
 
-   return
+   return, vdans
 end
 ;------------------------------------------------------------------------------
