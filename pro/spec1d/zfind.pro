@@ -8,8 +8,9 @@
 ;
 ; CALLING SEQUENCE:
 ;   result = zfind( objflux, objivar, hdr=hdr, $
-;    eigenfile=, [eigendir=, columns=, npoly=, $
-;     zmin=, zmax=, zguess=, pwidth=, nfind=, width=, _EXTRA= ]
+;    [ starflux=, starloglam0=, stardloglam=, $
+;    eigenfile=, eigendir=, columns=, npoly=, $
+;    zmin=, zmax=, zguess=, pwidth=, nfind=, width=, _EXTRA= ]
 ;
 ; INPUTS:
 ;   objflux    - Object fluxes [NPIXOBJ,NOBJ]
@@ -18,14 +19,18 @@
 ; REQUIRED KEYWORDS:
 ;   hdr        - FITS header for objects, used to construct the wavelengths
 ;                from the following keywords: COEFF0, COEFF1.
+;
+; OPTIONAL KEYWORDS:
+;   starflux   - Eigenspectra [NPIXSTAR,NSTAR].
+;   starloglam0- Zero-point of log-10(Angstrom) wavelength mapping of STARFLUX.
+;   stardloglam- Wavelength spacing for STARFLUX in log-10(Angstroms)
 ;   eigenfile  - Input FITS file with an [NPIXSTAR,NSTAR] image with
 ;                either templates or eigenspectra.  If a wildcard appears
 ;                in the file name, then the file that appears last in a sort
 ;                is used.
 ;                The header keywords COEFF0, COEFF1 are used to specify
 ;                the wavelength mapping in log-10 Angstroms.
-;
-; OPTIONAL KEYWORDS:
+;                This must be set if STARFLUX,STARLOGLAM0 are not set.
 ;   eigendir   - Directory for EIGENFILE; default to $IDLSPEC2D/templates.
 ;   columns    - Column numbers of the eigenspectra image to use in the
 ;                PCA fit; default to all columns.
@@ -101,6 +106,7 @@ end
 
 ;------------------------------------------------------------------------------
 function zfind, objflux, objivar, hdr=hdr, $
+ starflux=starflux, starloglam0=starloglam0, stardloglam=stardloglam, $
  eigenfile=eigenfile, eigendir=eigendir, columns=columns, npoly=npoly, $
  zmin=zmin, zmax=zmax, zguess=zguess, pwidth=pwidth, $
  nfind=nfind, width=width, _EXTRA=EXTRA
@@ -131,24 +137,34 @@ function zfind, objflux, objivar, hdr=hdr, $
       pmax = floor( alog10(1.0 + zguess) / objdloglam + 0.5 * (pwidth+1+width1) )
    endif
 
-   ;----------
-   ; Find the most recent template file matching EIGENFILE
+   if (keyword_set(eigenfile)) then begin
+      ;----------
+      ; Find the most recent template file matching EIGENFILE
 
-   allfiles = findfile(djs_filepath(eigenfile, root_dir=eigendir), count=ct)
-   if (ct EQ 0) then $
-    message, 'Unable to find EIGENFILE matching '+eigenfile
-   thisfile = allfiles[ (reverse(sort(allfiles)))[0] ]
-   splog, 'Selecting EIGENFILE=' + thisfile
+      allfiles = findfile(djs_filepath(eigenfile, root_dir=eigendir), count=ct)
+      if (ct EQ 0) then $
+       message, 'Unable to find EIGENFILE matching '+eigenfile
+      thisfile = allfiles[ (reverse(sort(allfiles)))[0] ]
+      splog, 'Selecting EIGENFILE=' + thisfile
 
-   ;----------
-   ; Read the template file, and optionally trim to only those columns
-   ; specified by COLUMNS.
-   ; Assume that the wavelength binning is the same as for the objects
-   ; in log-wavelength.
+      ;----------
+      ; Read the template file, and optionally trim to only those columns
+      ; specified by COLUMNS.
+      ; Assume that the wavelength binning is the same as for the objects
+      ; in log-wavelength.
 
-   starflux = readfits(thisfile, shdr)
-   starloglam0 = sxpar(shdr, 'COEFF0')
-   stardloglam0 = sxpar(shdr, 'COEFF1')
+      starflux = readfits(thisfile, shdr)
+      starloglam0 = sxpar(shdr, 'COEFF0')
+      stardloglam0 = sxpar(shdr, 'COEFF1')
+   endif
+
+   if (NOT keyword_set(starflux) AND NOT keyword_set(starloglam0)) then begin
+      message, 'Either EIGENFILE or STARFLUX,STARLOGLAM0 must be set'
+   endif
+
+   if (keyword_set(stardloglam)) then begin
+      message, 'Object wavelength spacing and STARDLOGLAM must be the same'
+   endif
 
    ndim = size(starflux, /n_dimen)
    dims = size(starflux, /dimens)
@@ -206,7 +222,8 @@ function zfind, objflux, objivar, hdr=hdr, $
       result[indx].dof = zans[indx].dof
       ntheta = n_elements(zans[0].theta)
       result[indx].theta[0:ntheta-1] = zans[indx].theta
-      result[indx].tfile = fileandpath(thisfile)
+      if (keyword_set(eigenfile)) then $
+       result[indx].tfile = fileandpath(thisfile)
       for icol=0, n_elements(columns)-1 do $
        result[indx].tcolumn[icol] = columns[icol]
       result.npoly = npoly
