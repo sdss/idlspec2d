@@ -37,7 +37,15 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   djs_iterstat
+;   headfits()
+;   idlspec2d_version()
+;   idlutils_version()
 ;   rdss_fits()
+;   readfits()
+;   sxaddpar
+;   sxpar()
+;   writefits
 ;   yanny_free
 ;   yanny_read
 ;
@@ -45,6 +53,7 @@
 ;   13-May-1999  Written by Scott Burles & David Schlegel, Apache Point.
 ;   08-Sep-1999  Modified to read Yanny param files instead of FITS
 ;                versions of the same (DJS).
+;   01-Dec-1999  Added version stamping (DJS).
 ;-
 ;------------------------------------------------------------------------------
 
@@ -153,7 +162,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
         spectrographid = 2
         color = 'blue'
         camcol = 3
-        sxaddpar, hdr, 'CAMERAS', 'b2       ', 'Guessed b2 by default'
+        sxaddpar, hdr, 'CAMERAS', 'b2       ', ' Guessed b2 by default'
 ;        message, 'Cannot determine CCD number from file name ' + infile
         end
    endcase
@@ -161,6 +170,10 @@ pro sdssproc, infile, image, invvar, indir=indir, $
 
    sxaddpar, hdr, 'CAMROW', camrow
    sxaddpar, hdr, 'CAMCOL', camcol
+   sxaddpar, hdr, 'TELESCOP', 'SDSS 2.5-M', ' Sloan Digital Sky Survey'
+   sxaddpar, hdr, 'AUTHOR', 'Scott Burles & David Schlegel'
+   sxaddpar, hdr, 'SPEC2D_V', idlspec2d_version(), ' Version of idlspec2d'
+   sxaddpar, hdr, 'UTILS_V', idlutils_version(), ' Version of idlutils'
  
    ; Read in opConfig.par file
 
@@ -259,9 +272,10 @@ pro sdssproc, infile, image, invvar, indir=indir, $
                   sdatarow[iamp]:sdatarow[iamp]+nrow[iamp]-1] - biasval) * gain[iamp]
 
          ; Add to the header
-         sxaddpar, hdr, 'GAIN'+string(iamp,format='(i1)'), gain[iamp]
+         sxaddpar, hdr, 'GAIN'+string(iamp,format='(i1)'), $
+          gain[iamp], ' Gain in electrons per ADU'
          sxaddpar, hdr, 'RDNOISE'+string(iamp,format='(i1)'), $
-          gain[iamp]*readnoiseDN[iamp], 'Readout Noise in electrons'
+          gain[iamp]*readnoiseDN[iamp], ' Readout noise in electrons'
         endif
       endif
    endfor
@@ -323,16 +337,20 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    ; Write output files
    ;---------------------------------------------------------------------------
 
-   if (keyword_set(outfile)) then $
-    writefits, outfile, image, hdr
+   if (keyword_set(outfile)) then begin
+      if (keyword_set(varfile)) then $
+       sxaddpar, hdr, 'VARFILE', varfile, ' Corresponding inverse var file'
+      writefits, outfile, image, hdr
+   endif
 
    if (readivar) then begin
       varhdr = hdr
       if (keyword_set(outfile)) then $
-       sxaddpar, varhdr, 'VARFILE', 'INVERSE VARIANCE of ' + outfile
+       sxaddpar, hdr, 'IMGFILE', outfile, ' Corresponding image file'
       if (keyword_set(varfile)) then $
        writefits, varfile, invvar, varhdr
    endif
  
    return
 end
+;------------------------------------------------------------------------------

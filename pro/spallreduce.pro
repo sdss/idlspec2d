@@ -31,6 +31,8 @@
 ;
 ; PROCEDURES CALLED:
 ;   combine2dout
+;   idlspec2d_version()
+;   idlutils_version()
 ;   splog
 ;   spreduce
 ;   yanny_free
@@ -104,6 +106,9 @@ pro spallreduce, planfile=planfile, combineonly=combineonly, docams=docams, $
       device, filename=plotfile, /color
       splog, 'Plot file ', plotfile, ' opened ', systime()
    endif
+
+   splog, 'idlspec2d version ' + idlspec2d_version()
+   splog, 'idlutils version ' + idlutils_version()
 
    camnames = ['b1', 'r2', 'b2', 'r1']
    camnums = ['01', '02', '03', '04']

@@ -1,4 +1,13 @@
 
+* Decide on vacuum or air wavelengths
+
+* Look for bright objects that blead -- discard entire columns of data?
+
+* Masked data has INVVAR=0, but then SIGMA=0 in the final outputs?
+  What does spectro1d do with that?
+
+* Let QUICKPROC be an option in SDSSPROC
+
 * QA plot for how well the telluric-removal is doing
 
 * When doing red/blue merging, apply a window function to the **variance**
@@ -134,4 +143,22 @@ Data Model:
   * Which files are needed for reductions?
   * Which files are obsolete?
   * Fermi archiving issues.
+
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+Unused routines:
+
+combineI
+extract2
+findobjects
+fit_tset
+fitwithmx
+funccheb
+gauss_smooth
+read2dout
+readidlout
+svdcheb
+testextract
+trace_fix
+writeapid
 

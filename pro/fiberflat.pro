@@ -128,18 +128,16 @@ function fiberflat, flux, fluxivar, wset, $
       ; Locate only unmasked points
       indx = where(fluxivar[*,i] GT 0.0 AND fit2 GT 0.0, ct)
 
-
       if (ct GT 0) then begin
 
          istart = (where(bkpt GT min(loglam[indx,i])))[0]
          istart = (istart - 1) > 0
          iend = (where(bkpt GT max(loglam[indx,i])))[0]
          if (iend EQ -1) then iend = nbkpts-1
-         print,istart,iend
-     
+
          ratio = flux[indx,i] / fit2[indx]
          ratioivar = fluxivar[indx,i] * fit2[indx]^2
-       
+
          ; Dispose of leading or trailing points with zero weight
          fullbkpt = slatec_splinefit(loglam[indx,i], ratio, coeff, $
           maxiter=maxiter, upper=upper, lower=lower, $

@@ -11,14 +11,15 @@
 cvs co idlutils
 cvs co idlspec2d
 
-# Then build everything...
+# Then build everything... ("evilmake" is in {$IDLUTILS_DIR}/bin)
 
 setenv IDLUTILS_DIR {$HOME}/idlutils
 setenv IDLSPEC2D_DIR {$HOME}/idlspec2d
+setenv PATH {$PATH}:{$IDLUTILS_DIR}/bin
 cd {$IDLUTILS_DIR}
-bin/evilmake all
+evilmake all
 cd {$IDLSPEC2D_DIR}
-bin/evilmake all
+evilmake all
 
 # Then set environment variables for IDL...
 
