@@ -3,31 +3,55 @@
 ;   spmedian_rebin
 ;
 ; PURPOSE:
+;   Coarsely rebin the data using medians to reject outliers
 ;
 ; CALLING SEQUENCE:
-;   smearcorr, bsmearfile, rsmearfile, bcalibfile, rcalibfile, $
-;              bscifile, rscifile, corrfile, noplot = noplot
+;    medflux = spmedian_rebin(loglam, flux, ivar, color, mask=, sigrej=, $
+;      outwave=, sn=, quality=)
 ;
 ; INPUTS:
-;
+;   loglam - wavelength array in log10(Angstroms) [npix, nfiber]
+;   flux   - flux array [npix, nfiber]
+;   ivar   - inverse variance [npix, nfiber]
+;   color  - choices are 'r' (data from red camera) 'b' (data from blue camera)
+;            or 'full' (data from both cameras combined -- for use with smears)
+;   
 ; OPTIONAL KEYWORDS:
+;   sigrej - threshold for masking of data (scalar)
 ;
-; OUTPUTS:  Files containing the polynomial coefficients of the fit to 
+; OUTPUTS:   
+;   A rebinned version of the input flux spectrum is returned. [nnewpix, nfiber]
 ;
 ; OPTIONAL OUTPUTS:
+;   mask     - The approximate inverse variance of the output spectrum (set 
+;              to zero for bad pix).  [nnewpix, nfiber]
+;   outwave  - output wavelength scale in log10(Angstroms) [nnewpix] 
+;   sn       - median S/N prior to rebinning [nfiber]
+;   quality  - flag set to zero for good data, one if bad trace/arc/flat, etc
+;              [nfiber]
 ;
 ; COMMENTS:
+;   Used when division of low S/N spectra is necessary.  See "frame_flux_tweak"
+;   and "smear_compare". 
 ;
 ; EXAMPLES:
+;   plot, 10.0^loglam[*,0], flux[*,0]
+;   medflux = spmedian_rebin(loglam, flux, ivar, 'full', outwave=outwave)
+;   oplot, 10.0^outwave, medflux[*,0]
 ;
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   djs_iterstat()
+;   djs_median()
+;   fibermaks_bits()
 ;
 ; REVISION HISTORY:
-;   17-Oct-2000  Formerly fluxcorr_new -- written by S. Burles
+;   12-Aug-2003  Split into stand-alone function by C. Tremonti
+;   17-Oct-2000  Formerly part of fluxcorr_new -- written by S. Burles
 ;-
 ;------------------------------------------------------------------------------
+
 function spmedian_rebin, loglam, flux, ivar, color, mask=mask, sigrej=sigrej, $
          outwave = outwave, sn = sn, quality = quality
 
@@ -60,6 +84,7 @@ function spmedian_rebin, loglam, flux, ivar, color, mask=mask, sigrej=sigrej, $
 
    ;--------------------------
    ; Do iterative rejection on each bin of each fiber
+
    for itrace=0,ntrace-1 do begin
      for irange = 0, nr -1 do begin
         inside = where(loglam[*,itrace] GE range[0,irange] $

@@ -1,9 +1,81 @@
+;+
+; NAME:
+;   sphoto_calib
+;
+; PURPOSE:
+;   Derive spectrophotometric calibration for a group of exposures from 
+;   one camera + spectrograph
+;
+; CALLING SEQUENCE:
+;   sphoto_calib, wave, flux, invvar, mask, plugtag, fcalfile, $
+;     stdstarfile, [/stype, input_calibset=, /noplot]
+;
+; INPUTS:
+;   wave        -  wavelength array in log10(ang) [npix, nstd*nexp]
+;   flux        -  flux array of standard stars [npix, nstd*nexp]
+;   invvar      -  inverse variance of standard stars [npix, nstd*nexp]
+;   mask        -  pixel masks of standard stars [npix, nstd*nexp]
+;   plugtag     -  structure containing plugmap info + exposure identification
+;   fcalfile    -  vector of names for flux calibration FITS files [nexp]
+;                  Traditionally spFluxcalib-cc-eeeeeeee.fits where cc is the 
+;                  camera id (b1,b2,r1,r2) and eeeeeeee is the exposure number
+;   stdstarfile -  name of FITS file containing standard star info -- if 
+;                  "stype" is set, this is created.  Traditionally the names
+;                  are spStd-pppp-mmmmm-s.fits where pppp=plateid, 
+;                  mmmmmm=MJD, and s = spectrograph ID [1/2]
+;
+; OPTIONAL INPUT:
+;   stype          - if set spectral type the standard stars (for this to
+;                    work the frames must be blue!!)
+;   input_calibset - use this as the average flux correction (instead of
+;                    using PCA to determine the average)  This is typically
+;                    done done for the smear exposures since their S/N is low.
+;   noplot         - toggle plotting of flux correction residuals -- the
+;                    PCA average is always shown
+;
+; OUTPUT:
+;   The bspline coefficients of the average flux calibration vectors 
+;   of each exposure are written out as FITS files (using the names in 
+;   fcalfile).  If "stype" is set, info about the standard stars (Teff, 
+;   [Fe/H], velocity, etc) is saved as a binary FITS structure in the 
+;   file given by "stdstarfile".
+;
+; OPTIONAL OUTPUT:
+; 
+; COMMENTS:
+;   Frames from the blue camera should be processed first, because the 
+;   spectral typing requires blue wavelengths.
+; 
+; BUGS:
+;   The PCA code is run (and plots are made) even if the output is not used.
+;
+; EXAMPLES:
+;
+; PROCEDURES CALLED:
+;   bspline_iterfit
+;   bspline_valu
+;   combine1fiber
+;   djs_maskinterp
+;   djs_median
+;   frame_flux_calib
+;   mrdfits 
+;   pca_flux_standard
+;   rectify
+;   skymask
+;   stype_standard
+;   splog
+;
+; INTERNAL SUPPORT ROUTINES:
+;
+; REVISION HISTORY:
+;   12-Aug-2003  Created by C. Tremonti, Steward Observatory
+;-
+;------------------------------------------------------------------------------
 
-pro sphoto_calib, wave, flux, invvar, mask, plugtag, fcalfile, $
-    stdstarfile, stype = stype, input_calibset = input_calibset, $
-    pca_calibset = pca_calibset, noplot = noplot
+pro sphoto_calib, wave, flux, invvar, mask, plugtag, fcalfile, stdstarfile, $
+    stype = stype, input_calibset = input_calibset, noplot = noplot
 
-  ; Double check that all spcetra are from 1 camera + spectrograph
+  ; Double check that all spectra are from 1 camera + spectrograph
   camid = plugtag.camcolor + strtrim(plugtag.spectrographid, 2)
   if n_elements(uniq(camid)) gt 1 then begin
     splog, 'ABORT: Camera mismatch in spectrophotometric calibration!'
@@ -41,11 +113,11 @@ pro sphoto_calib, wave, flux, invvar, mask, plugtag, fcalfile, $
 
     combine1fiber, wave[*,ispec], flux[*,ispec], invvar[*,ispec], $
       finalmask=mask[*,ispec], newloglam=newwave, newflux=fluxi, $
-      newivar=invvari, andmask=maski, binsz=dloglam
+      newivar=invvari, ormask=maski, binsz=dloglam
 
     ;-------------------
     ; Mask out bad pixels and regions dominated by sky-sub residuals
-    invvari = skymask(invvari, maski, ngrow =3)
+    ;invvari = skymask(invvari, 0, maski, ngrow =3) ; Does this help??
     fluxi = djs_maskinterp(fluxi, (invvari EQ 0), iaxis=0, /const)
  
     newflux[*,ispec] = fluxi
@@ -133,9 +205,9 @@ pro sphoto_calib, wave, flux, invvar, mask, plugtag, fcalfile, $
   ; Compute the average spectrophotometric calibration from all frames 
   ;----------------------------------------------------------------------------
 
-  pca_flux_standard, newwave, newflux[*,ok], newivar[*,ok], $
-    stdinfo_all[ok], camid, corvector = corvector, corvivar = corvivar, $
-    cormed = cormed, calibset = pca_calibset, bkpts = bkpts 
+  pca_calibset = pca_flux_standard(newwave, newflux[*,ok], newivar[*,ok], $
+    newmask[*,ok], stdinfo_all[ok], camid, corvector = corvector, $
+    corvivar = corvivar, cormed = cormed)
 
   ; If desired, replace PCA average with normalized input calibset 
   ; (This option is used for smears)
@@ -168,25 +240,12 @@ pro sphoto_calib, wave, flux, invvar, mask, plugtag, fcalfile, $
     good = where(newivar[*,ok[indx]] ne 0) 
     medsn = median(sn[good])
 
-    ; Find the median of the low and hi-frequency componets of the 
+    ; Find the median of the low and hi-frequency components of the 
     ; corvectors separately -- use the hi-f part only if the S/N is good
     frame_calibset = frame_flux_calib(newwave, corvector[*,indx], $
-      corvivar[*,indx], avgcalibset, cormed[indx], $
+      corvivar[*,indx], avgcalibset, cormed[indx], framename = $
       'Frame ' + camid + '-' + frames[iframe], fit_wiggles = (medsn gt 12), $
-      fsig = fsig, noplot = noplot)
-
-    ;--------------
-    ; Create header cards describing the data range and write to FITS
-    ; The keyword 'SPHOTERR' holds the standard deviation of the
-    ; correction vectors for the individual stars -- this is a good measure
-    ; of the quality of the spectrophotometry
-
-    hdr = ['']
-    sxaddpar, hdr, 'WAVEMIN', min(10.0^newwave)
-    sxaddpar, hdr, 'WAVEMAX', max(10.0^newwave)
-    sxaddpar, hdr, 'SPHOTERR', fsig
-    mwrfits, 0, fcalfile[iframe], hdr, /create 
-    mwrfits, frame_calibset, fcalfile[iframe]  
+      outfile = fcalfile[iframe], fsig = fsig, noplot = noplot)
 
   endfor
 

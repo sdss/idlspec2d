@@ -1,115 +1,89 @@
 ;+
 ; NAME:
-;   smearcorr
+;   frame_flux_tweak
 ;
 ; PURPOSE:
+;   To genreate low order correctons to each red-blue exposure pair which 
+;   match the flux (on a fiber-by-fiber basis) to that in a fiducial exposure
+;   selected to have the best S/N and spectrophotometry. This is necessary 
+;   so that multiple exposures can be combined with effective cosmic ray 
+;   rejection.  The flux vectors of each exposure should be multiplied by the 
+;   resultant 4th order legnedre polynomial.
 ;
 ; CALLING SEQUENCE:
+;   frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
+;     best_exp, plugtag, corrfile, diag=, title=
 ;
 ; INPUTS:
+;   bloglam  - blue wavelength array in (log10 Ang.) [nblue_pix, nfiber*nexp]
+;   rloglam  - red wavelength array in (log10 Ang.) [nred_pix, nfiber*nexp] 
+;   bflux    - blue flux array (uncalibrated) [nblue_pix, nfiber*nexp]
+;   rflux    - red flux array (uncalibrated) [nred_pix, nfiber*nexp]
+;   bivar    - blue inverse variance [nblue_pix, nfiber*nexp]
+;   rivar    - red inverse variance [nred_pix, nfiber*nexp]
+;   best_exp - string containing the exposure ID of the "best" exposure --
+;              this is used as the fiducial exposure against which the 
+;              others are ratioed
+;   plugtag  - plugmap-like structure which also contains the exposure ID of 
+;              each spectrum [nfiber*nexp]
+;   corrfile - names of output FITS files (1/exposure) [nexp]. The traditional
+;              names are spFluxcorr-eeeeeeee-s.fits where "eeeeeeee" is the 
+;              exposure ID and "s" is the spectrograph ID (1/2)
 ;
 ; OPTIONAL KEYWORDS:
+;   diag  - if set show plots of individual fibers at the 3 S/N levels
 ;
 ; OUTPUTS:  
+;   FITS files named in "corrfile" are generated containing the 4th order
+;   legendere coefficients of the ratio of the best exposure and each of 
+;   the others (on a fiber-to-fiber basis).  Plots are also generated.
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
-;
-;   smearcorr is used to calculate and write to file a low order
-;   polynomial function which registers the flux in the science exposures
-;   to the flux in a fiducial exposure.  
+;   Objects with high S/N are fit with a 4th order legendre
+;   Objects with medium S/N are fit with a 3rd order legendre
+;   Objects with Low S/N are assigned the median correction of the five nearest
+;       fibers.  The zeropoint is then fit.
+;   Bad fits -- those wildly deviant from the others -- are replaced with a 
+;       zeropoint shift.
 ;
 ; EXAMPLES:
 ;
 ; BUGS:
-;
-;  Blue wavelength region is hardwired: b1 = findgen(60)*4.0e-3 + 3.568
-;  Red wavelength region is hardwired : r1 = findgen(54)*4.0e-3 + 3.756
-;  Order of polynomial is hardwired:  3
-;
+;  The median corrections assigned to low S/N fibers are probably imperfect
+;  because of the mix of point and extended sources on the plate.  Also
+;  the shape of the correction may not be well fit by a low order polynomial
+;  -- particularly if there is a mis-match in the dichroic region.
+; 
+;  Mask bits not currently returned!! (no record of hi/med/low S/N correction)
+;  
 ; PROCEDURES CALLED:
 ;   djs_iterstat
-;   mrdfits()
+;   djs_oplot
+;   djs_plot
+;   legend
 ;   mwrfits
 ;   pixelmask_bits()
+;   splog
+;   spmedian_rebin()
 ;   traceset2xy
 ;   xy2traceset
-;   spmedian_rebin
+;
 ; INTERNAL SUPPORT ROUTINES:
 ;
 ; REVISION HISTORY:
 ;   17-Oct-2000  Formerly fluxcorr_new -- written by S. Burles
 ;   09-Oct-2002  Revised by C. Tremonti to calibrate point sources to the 
-;                smear and galaxies to the calib images. Added rebin_exposure()
-;                and smear_coeff() to streamline. 
+;                smear and galaxies to the calib images.
+;   12-Aug-2003  Changed by C. Tremonti to work on pairs of science images.
+;                Split off "spmedian_rebin" & altered handling of medium and 
+;                low S/N cases
 ;-
 ;------------------------------------------------------------------------------
-function median_rebin, loglam, flux, ivar, color, mask=mask, sigrej=sigrej, $
-         outwave = outwave, sn = sn, quality = quality
 
-   if NOT keyword_set(sigrej) then sigrej = 20.0
-
-   ;---------
-   ; Define new wavelength sampling
-
-   if color eq 'r' then begin
-     w1 = findgen(54)*4.0e-3 + 3.756
-     w2 = findgen(54)*4.0e-3 + w1[1]
-   endif 
-   if color eq 'b' then begin
-     w1 = findgen(60)*4.0e-3 + 3.568
-     w2 = findgen(60)*4.0e-3 + w1[1]
-   endif
-   if color eq 'full' then begin
-     w1 = findgen(96)*4.0e-3 + 3.568
-     w2 = findgen(96)*4.0e-3 + w1[1]
-   endif
-   range = transpose([[w1],[w2]])
-   outwave = djs_median(range,1)
-
-   ;--------------------------
-   ; Set up vectors for output
-   nr = (size(range))[2]
-   ntrace = (size(flux))[2]
-   fit = fltarr(nr, ntrace)
-   mask = fltarr(nr, ntrace)
-
-   ;--------------------------
-   ; Do iterative rejection on each bin of each fiber
-   for itrace=0,ntrace-1 do begin
-     for irange = 0, nr -1 do begin
-        inside = where(loglam[*,itrace] GE range[0,irange] $
-                 AND loglam[*,itrace] LT range[1,irange], ninside)
-        if ninside GT 0 then begin
-           good = where(ivar[inside,itrace] GT 0, ngood)
-       
-           if ngood GT 1 then begin 
-              djs_iterstat, flux[inside[good],itrace], median=md, sigma=sig
-              fit[irange, itrace] = md
-              if ngood GT 0.5 * ninside then $
-                   mask[irange, itrace]  = total(ivar[inside[good],itrace])
-              sn = sig * sqrt(mask[irange, itrace])
-              if sn GT sigrej OR sn LE 0 then mask[irange, itrace] = 0.0
-           endif
-        endif
-     endfor
-   endfor
-
-   sn = djs_median(flux * sqrt(ivar),1)
-
-   badval = ( fibermask_bits('NOPLUG')   OR fibermask_bits('BADTRACE') $
-       OR fibermask_bits('BADFLAT')  OR fibermask_bits('BADARC')   $
-       OR fibermask_bits('NEARWHOPPER') )
-
-   quality = (mask[0,*] AND badval)
-
-   return, fit
-end
-
-;------------------------------------------------------------------------------
 pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
-    best_exp, plugtag, corrfile, diag = diag, title = title
+    best_exp, plugtag, corrfile, diag = diag
 
    expid = plugtag[uniq(plugtag.expid)].expid
    splog, 'Best Exposure =', best_exp
@@ -134,7 +108,8 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
 
    npix = (size(bestflux,/dimens))[0]
    nfiber = (size(bestflux,/dimens))[1]
-   wave = [bwave,rwave] # replicate(1,nfiber)
+   medloglam = [bwave,rwave] # replicate(1,nfiber) 
+   wave = 10.0^medloglam[*,0]
 
    ; --------------------------------------------------------
    ;  Create basic mask
@@ -156,7 +131,7 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
       ; with an amplitude of 1.0
  
       fitimg = bestflux*0.0 + 1.0
-      xy2traceset, wave, fitimg, corrset, ncoeff=4, /silent
+      xy2traceset, medloglam, fitimg, corrset, ncoeff=4, /silent
       corrset.coeff[0,*] = 1.0
       corrset.coeff[1:*,*] = 0.0
       thismask  = bestmask 
@@ -218,14 +193,14 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
       ; Calculate polynomial coeffs for the 3 cases
    
       if npoly3 gt 0 then begin
-        xy2traceset, wave[*,poly3], bestflux[*,poly3], polyset, $
+        xy2traceset, medloglam[*,poly3], bestflux[*,poly3], polyset, $
             invvar=bestivar[*,poly3], ncoeff=4, inputfunc=sciflux[*,poly3], $
             lower = 3, upper = 3
         corrset.coeff[*,poly3] = polyset.coeff
       endif
 
       if npoly2 gt 0 then begin
-        xy2traceset, wave[*,poly2], bestflux[*,poly2], polyset, $
+        xy2traceset, medloglam[*,poly2], bestflux[*,poly2], polyset, $
             invvar=bestivar[*,poly2], ncoeff=3, inputfunc=sciflux[*,poly2], $
             lower = 3, upper = 3
         corrset.coeff[0,poly2] = polyset.coeff[0,*]
@@ -250,8 +225,8 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
           corrset.coeff[*,poly1[ifib]] = djs_median(corrset.coeff[*,near5], 2)
         endfor
            
-        traceset2xy, corrset, wave, corrtemp
-        xy2traceset, wave[*,poly1], bestflux[*,poly1], polyset, $
+        traceset2xy, corrset, medloglam, corrtemp
+        xy2traceset, medloglam[*,poly1], bestflux[*,poly1], polyset, $
           invvar=bestivar[*,poly1], ncoeff=1, $
           inputfunc=sciflux[*,poly1] * corrtemp[*,poly1], lower = 3, upper = 3
 
@@ -296,16 +271,15 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
           !P.MULTI = [0, 1, 2]
           for ii = 0, nbad - 1 do begin
             ifib = bad[ii]
-            plot, 10.0^wave[*,ifib], corrtemp[*,ifib], yr=[0.0, 2.0], /nodata, $
-              ytitle='Best Frame Flux / Science Frame Flux', $
-              title='Bad Vector'
-            oplot, 10.0^wave[*,ifib], bestflux[*,ifib]/sciflux[*,ifib], $
-              psym=6, syms=0.5, thick=3
-            djs_oplot, 10.0^wave[*,ifib], corrtemp[*,ifib], color='red', thick=3
+            plot, wave, corrtemp[*,ifib], yr=[0.0, 2.0], /nodata, $
+              ytitle='Best Frame Flux / Science Frame Flux', title='Bad Vector'
+            oplot, wave, bestflux[*,ifib]/sciflux[*,ifib], psym=6, syms=0.5, $
+              thick=3
+            djs_oplot, wave, corrtemp[*,ifib], color='red', thick=3
           endfor      
         endif
  
-        xy2traceset, wave[*,bad], bestflux[*,bad], polyset, $
+        xy2traceset, medloglam[*,bad], bestflux[*,bad], polyset, $
             invvar=bestivar[*,bad], ncoeff=1, inputfunc=sciflux[*,bad], $
             lower = 3, upper = 3
         corrset.coeff[0,bad] = polyset.coeff
@@ -329,7 +303,7 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
 
       if keyword_set(noplot) then continue
 
-      traceset2xy, corrset, wave, corrimage
+      traceset2xy, corrset, medloglam, corrimage
 
       ;---------------------
       ; Show individual fits to standards and examples of 3 S/N bins
@@ -339,30 +313,29 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
         std = where(strmatch(plugtag[indx].objtype, '*_STD*'), nstd)
         for ii = 0, nstd - 1 do begin
           istd = std[ii]
-          plot, 10.0^wave[*,istd], corrimage[*,istd], yr=[0.5, 1.5], /nodata, $
-                ytitle='Best Frame Flux / Science Frame Flux', $
-                title='Standard Star'
-          oplot, 10.0^wave[*,istd], bestflux[*,istd]/sciflux[*,istd], psym=6, $
-                 syms=0.5, thick=3
-          djs_oplot, 10.0^wave[*,istd], corrimage[*,istd], color='red', thick=3
+          plot, wave, corrimage[*,istd], yr=[0.5, 1.5], /nodata, $
+            ytitle='Best Frame Flux / Science Frame Flux', title='Standard Star'
+          oplot, wave, bestflux[*,istd]/sciflux[*,istd], psym=6, syms=0.5, $
+            thick=3
+          djs_oplot, wave, corrimage[*,istd], color='red', thick=3
         endfor 
       
         for ii = 0, (10 < npoly2) - 1 do begin
           istd = poly2[ii]
-          plot, 10.0^wave[*,istd], corrimage[*,istd], yr=[0.5, 1.5], /nodata, $
-                  ytitle='Best Frame Flux / Science Frame Flux', title='Poly 2'
-          oplot, 10.0^wave[*,istd], bestflux[*,istd]/sciflux[*,istd], psym=6, $
-                 syms=0.5, thick=3
-          djs_oplot, 10.0^wave[*,istd], corrimage[*,istd], color='red', thick=3
+          plot, wave, corrimage[*,istd], yr=[0.5, 1.5], /nodata, $
+            ytitle='Best Frame Flux / Science Frame Flux', title='Poly 2'
+          oplot, wave, bestflux[*,istd]/sciflux[*,istd], psym=6, $
+            syms=0.5, thick=3
+          djs_oplot, wave, corrimage[*,istd], color='red', thick=3
         endfor 
 
         for ii = 0, (10 < npoly1) - 1 do begin
           istd = poly1[ii]
-          plot, 10.0^wave[*,istd], corrimage[*,istd], yr=[0.0, 2.0], /nodata, $
-                  ytitle='Best Frame Flux / Science Frame Flux', title='Poly 1'
-          oplot, 10.0^wave[*,istd], bestflux[*,istd]/sciflux[*,istd], psym=6, $
-                 syms=0.5, thick=3
-          djs_oplot, 10.0^wave[*,istd], corrimage[*,istd], color='red', thick=3
+          plot, wave, corrimage[*,istd], yr=[0.0, 2.0], /nodata, $
+            ytitle='Best Frame Flux / Science Frame Flux', title='Poly 1'
+          oplot, wave, bestflux[*,istd]/sciflux[*,istd], psym=6, $
+            syms=0.5, thick=3
+          djs_oplot, wave, corrimage[*,istd], color='red', thick=3
         endfor 
       endif
 
@@ -371,19 +344,16 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
 
       !P.MULTI = [0, 1, 2]
 
-      djs_plot, 10.0^wave, corrimage, /nodata, yr=[0.4, 1.6], $
-                xr=[min(10.0^wave)-100,max(10.0^wave)+100], $
-                /xstyle, /ystyle, xtitle='\lambda [\AA]', $
-                ytitle='Best Frame Flux / Science Frame Flux', $
-                title = 'Science: ' + expid[ifile] + ' Best: ' + best_exp 
+      djs_plot, wave, corrimage, /nodata, yr=[0.4, 1.6], $
+        xr=[min(wave)-100, max(wave)+100], /xstyle, /ystyle, $
+        xtitle='\lambda [\AA]', ytitle='Best Frame Flux / Science Frame Flux', $
+        title = 'Science: ' + expid[ifile] + ' Best: ' + best_exp 
 
 
       for iobj=0, npoly2 -1 do $
-        djs_oplot, 10.0^wave[*,poly2[iobj]], corrimage[*,poly2[iobj]], $
-                   color='blue', nsum=5
+        djs_oplot, wave, corrimage[*,poly2[iobj]], color='blue', nsum=5
       for iobj=0, npoly1 -1 do $
-        djs_oplot, 10.0^wave[*,poly1[iobj]], corrimage[*,poly1[iobj]], $
-                   color='magenta', nsum=5
+        djs_oplot, wave, corrimage[*,poly1[iobj]], color='magenta', nsum=5
 
       legend, ['High S/N', 'Med S/N', 'Low S/N', 'Standard Star'], psym=0, $
               thick = 3, color=djs_icolor(['green', 'blue', 'magenta', 'red'])
@@ -391,21 +361,19 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
       ;-----------------
       ; Plot all high S/N correction vectors + standards
 
-      djs_plot, 10.0^wave, corrimage, /nodata, yr=[0.4, 1.6], $
-                xr=[min(10.0^wave)-100,max(10.0^wave)+100], $
-                /xstyle, /ystyle, xtitle='\lambda [\AA]', $
-                ytitle='Best Frame Flux / Science Frame Flux'
+      djs_plot, wave, corrimage, /nodata, yr=[0.4, 1.6], $
+        xr=[min(wave)-100,max(wave)+100], /xstyle, /ystyle, $
+        xtitle='\lambda [\AA]', ytitle='Best Frame Flux / Science Frame Flux'
 
       for iobj=0, npoly3 -1 do $
-        djs_oplot, 10.0^wave[*,poly3[iobj]], corrimage[*,poly3[iobj]], $
-                   color='green', nsum=5
+        djs_oplot, wave, corrimage[*,poly3[iobj]], color='green', nsum=5
 
       std = where(strmatch(plugtag[indx].objtype, '*_STD*'), nstd)
       for iobj=0, nstd -1 do $
-        djs_oplot, 10.0^wave[*,std[iobj]], corrimage[*,std[iobj]], $
-                   color='red', nsum=5, thick=2
+        djs_oplot, wave, corrimage[*,std[iobj]], color='red', nsum=5, thick=2
 
       !P.MULTI = 0
    endfor
    return
 end
+

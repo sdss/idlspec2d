@@ -1,121 +1,97 @@
 ;+
 ; NAME:
-;  flux_standard
+;  pca_flux_standard
 ;
 ; PURPOSE:
-;   Solve for flux-calibration vectors on a single camera + spectrograph.
-;   This is accomplished by matching the normalized standard star spectra 
-;   to Kurucz models and then ratioing the spectrum (in counts) to the best 
-;   fitting model (in units of ergs/s/cm^2/A) scaled to match the photo fiber 
-;   mag.  The final flux correction vector is made from the average of the 
-;   vectors for each of the standard stars after rejecting outliers.
+;   Solve for the mean flux-calibration vector of one camera + spectrograph
+;   using data from all available exposures. This is accomplished by matching 
+;   the normalized standard star spectra to Kurucz models and then ratioing 
+;   the spectrum (in counts) to the best fitting model (in units of 
+;   ergs/s/cm^2/A) scaled to match the photo fiber mag.  Because the individual
+;   exposures were taken under different conditions, the zeropoint of the
+;   flux calibration vectors from different exposures will be different.  To
+;   eliminate this problem all of the vectors are normalized between
+;   5700-6300 A. (The red/blue cameras sample different parts of this
+;   wavelength region.)  The average flux correction vector is the first 
+;   PCA eigenspectrum.
 ;
 ; CALLING SEQUENCE:
-;    flux_standard, loglam, stdflux, stdivar, stdmask, stdstarfile, $
-;    outname = , calibset = ,  waveminmax = , corvector = , $
-;    goodv = , fcor = ,  fsig = , noplot = 
-;
+;   pca_flux_standard, loglam, stdflux, stdivar, stdmask, stdinfo, [camid=, $
+;     corvector=, corvivar=, cormed=, fcor=, fsig=, noplot=] 
 ;
 ; INPUTS:
-;   loglam       - wavelength in log10(Angstroms) of the input spectra [npix]
-;   stdflux      - array of standard star spectra [npix, nstar]
-;   stdivar      - inverse variance of standard star spectra [npix, nstar]
-;   stdmask      - and mask of the standard star spectra [npix, nstar]
-;   stdstarfile  - name of FITS file containing info about the best model fit 
-;                  produced by stype_standard (e.g. spStd-0506-52022-1.fits)
+;   loglam   - wavelength in log10(Angstroms) of the input spectra [npix]
+;   stdflux  - array of standard star spectra [npix, nstar*nexp]
+;   stdivar  - inverse variance of standard star spectra [npix, nstar*nexp]
+;   stdmask  - or mask of the standard star spectra [npix, nstar*exp]
+;   stdinfo  - structure containing info about the best model fit produced by 
+;              "stype_standard"
 ;
 ; OPTIONAL INPUTS:
-;   outname      - name of FITS file to contain the final correction vector
-;                  (e.g. fluxcalib-0506-52022-b1.fits) -- also the plot title
-;   waveminmax   - wavelength range to spline fit (in Angstroms) [wlow, whigh]
+;   camid        - string giving the camera id for plot titles -- i.e. 'b1'
 ;   noplot       - toggle plotting
 ;
-; OUTPUT:  FITS file containing the coefficients of a spline fit to the ratio 
-;          of the flux in counts to the flux in real units (1e-17 erg/s/cm^2/s).
-;          The FITS header keyword 'SPHOTERR' stores a measure of the quality 
-;          of the spectrophotometry.  This number is also passed in the keyword
-;          "fsig".
+; OUTPUT:  
+;   A structure containing the coefficients of a spline fit the average
+;   flux correction vector (normalized at 5700-6300 A).
 ;
-;          Diagnostic plots are also produced.  The flux correction vector 
-;          produced from each high S/N standard is plotted in black; the mean 
-;          of all the fluxcor vectors in green; and the bspline of the mean 
-;          vector in red.
+;   Diagnostic plots are also produced.  The flux correction vector produced
+;   from each high S/N standard is plotted in black; the mean of all the 
+;   fluxcor vectors in green; and the bspline of the mean vector in red.
 ;
 ; OPTIONAL OUTPUTS:
-;   calibset     - spline coefficients of the fit
-;   corvector    - flux calibrations derived from the individual
-;                  standard stars [npix, nstds]
-;   goodv        - array to indicate if corvector is used in fcor [nstds]
+;   corvector    - flux calibrations derived from the individual standard
+;                  stars [npix, nstar*nexp]
+;   corvivar     - inverse variance of flux calib vectors [npix, nstar*nexp]
 ;   fcor         - final flux correction vector [npix] (not spline fit) 
 ;   fsig         - standard deviation of the flux calibration derived from
 ;                  individual stars about the final answer (scalar)
 ;
-; COMMENTS:  The file IDLSPEC2D_DIR/etc/kurucz_stds_interp.fit is needed.  This
-;            file is described in more detail in "stype_standard".
+; COMMENTS:  
 ;
 ; EXAMPLES:
 ;
-; BUGS: The kurucz models we are using have not been fully tested.  Do they 
-;       yield reliable broad band fluxes??
+; BUGS: 
+;   The Kurucz models we are using have not been fully tested.  Do they 
+;   yield reliable broad band fluxes at all T_eff & [Fe/H]??
+;
+;   The mean flux calib vector produced by the PCA sometimes shows abrupt
+;   jumps in flux -- this is somewhat mitigated by the spline fit.
 ;
 ; PROCEDURES CALLED:
+;   bspline_bkpts()
 ;   bspline_iterfit()
 ;   bspline_valu()
-;   divideflat
-;   djs_filepath()
-;   djs_maskinterp()
+;   djs_iterstat()
 ;   djs_median()
-;   djs_oplot
-;   djs_plot
-;   djs_reject()
-;   ext_odonnell()
-;   ext_ccm()
-;   fibermask_bits()
-;   fileandpath()
-;   glactc()
-;   mrdfits()
-;   mwrfits
-;   readcol
-;   sky mask
-;   splog
-;   sxaddpar
-;   sxpar()
-;   traceset2xy
-;
+;   pca_solve
+;   skymask()
+;   spdata2model_ratio
 ;
 ; INTERNAL SUPPORT ROUTINES
-;   kfluxratio()
 ;
 ; REVISION HISTORY:
-;   25-Nov-2002  Added empirical correction to Kurucz models
-;   22-Sep-2002  Revised to use Kurucz models by C. Tremonti
+;   12-Aug-2003  Split off corvector creation into "spdata2model"
+;   22-Sep-2002  Revised to use Kurucz models by C. Tremonti, JHU
 ;   08-Sep-2000  Formerly newfluxcalib Written by D. Schlegel & S. Burles
 ;-
 ;------------------------------------------------------------------------------
 
-pro pca_flux_standard, loglam, stdflux, stdivar, stdinfo, camid, $
-    corvector = corvector, corvivar = corvivar, cormed = cormed, $
-    fcor = fcor, fsig = fsig, bkpts = bkpts, calibset = calibset, $
-    noplot = noplot 
+function pca_flux_standard, loglam, stdflux, stdivar, stdmask, stdinfo, $
+    camid, corvector = corvector, corvivar = corvivar, cormed = cormed, $
+    fcor = fcor, fsig = fsig, noplot = noplot 
 
    ; Compute ratio of data to model for each standard
    corvector = spdata2model_ratio(loglam, stdflux, stdivar, stdmask, stdinfo, $
-               corvivar = corvivar)
+               corvivar = corvivar, cormed=cormed, /norm)
 
    nstd = n_elements(corvector[0,*])
    npix = n_elements(corvector[*,0])
-   cormed = fltarr(nstd)
 
-   ; Normalize in the dichroic region but avoiding the exact edges
+   ; chose same wavelengths for normalization as used for corvectors
    wave = 10.0^loglam 
    norm_indx = where(wave gt 5700 and wave lt 6300 and $
                      wave lt max(wave) - 200 and wave gt min(wave) + 200)
-
-   for istd=0, nstd-1 do begin
-     cormed[istd] = djs_median(corvector[norm_indx,istd])
-     corvector[*,istd] = corvector[*,istd] / cormed[istd]
-     corvivar[*, istd] = corvivar[*,istd] * cormed[istd]^2 
-   endfor
 
    ;---------------
    ; Now find the average of the vectors with iterative rejection
@@ -145,23 +121,9 @@ pro pca_flux_standard, loglam, stdflux, stdivar, stdinfo, camid, $
      sigma=fsig, maxiter=3, sigrej=5
 
    ;--------------
-   ; Select break points for spline
-
-   minwave = min(wave)
-   maxwave = max(wave)
-   if (minwave lt 5000) then bkptfile = filepath('blue.bkpts', $
-     root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc') $
-   else bkptfile = filepath('red.bkpts', $
-     root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
-   readcol, bkptfile, bkpts, silent=1
-
-   ibk = where(bkpts GE minwave AND bkpts LE maxwave, nbk)
-   if (nbk LT 4) then splog, 'Error selecting break points'
-   bkpts = [minwave, bkpts[ibk], maxwave]
-   bkpts = alog10(bkpts) ; Convert to log-10 Angstroms
-
-   ;--------------
    ; Do the spline fit
+
+   padbkpts = bspline_bkpts(loglam, nord=4, nbkpts=50, bkpt=bkpts, /silent)
 
    calibset = bspline_iterfit(loglam, fcor, nord=4, bkpt=bkpts, $
               upper=3, lower=3, maxrej=ceil(0.05*n_elements(fcor)))
@@ -171,9 +133,10 @@ pro pca_flux_standard, loglam, stdflux, stdivar, stdinfo, camid, $
    ;----------
    ; QA plot
 
-   if keyword_set(noplot) then return
+   if keyword_set(noplot) then return, calibset
+   if not keyword_set(camid) then camid = ''
 
-   djs_plot, [minwave-100,maxwave+100], [0,1.1*max(corvector)], /nodata, $
+   djs_plot, [min(wave)-100,max(wave)+100], [0,1.1*max(corvector)], /nodata, $
              /xstyle, /ystyle, xtitle='\lambda [A]', $
              ytitle='Counts / (10^{-17}erg/cm^{2}/s/A)', $
              title = 'Average Spectrophoto Correction for ' + camid + ' Frames' 
@@ -186,7 +149,7 @@ pro pca_flux_standard, loglam, stdflux, stdivar, stdinfo, camid, $
    ;xyouts, mean(wave) - 500, [0.9*max(corvector)], $
    ;  'Standard star variation = ' + string(fsig * 100, format='(I3)') + ' %' 
 
-   return
+   return, calibset
 
 end
 ;------------------------------------------------------------------------------

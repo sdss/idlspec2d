@@ -1,3 +1,65 @@
+;+
+; NAME:
+;   kurucz_restore
+;
+; PURPOSE:
+;   Read back Kurucz models from FITS and apply an empirical correction
+;
+; CALLING SEQUENCE:
+;   kurucz_restore, kwave, kflux, nkflux=, hdr=, kindx=, smoothpix=
+;
+; INPUTS:
+; 
+; OPTIONAL INPUTS:
+;   smoothpix - smooth models by this number of pixels -- useful for 
+;               comparisons to non-SDSS data
+;   
+; OUTPUT:
+;   kwave - wavelength in Angstroms of Kurucz models (binning is in log-10 A)
+;           [npix]
+;   kflux - flux of Kuruz models [npix, nmodel]
+;
+; OPTIONAL OUTPUTS:
+;   nkflux - normalized model flux [npix, nmodel]
+;   hdr    - header of FITS file 
+;   kindx  - structure containing info on each model (Teff, logg, [Fe/H], mags)
+;
+; COMMENTS:
+;   The model file called "kurucz_stds_v5.fit' is assumed to be in 
+;   $IDLSPEC2D_DIR/etc.  The models have been produced by the SPECTRUM code 
+;   (R.0. Gray & C. J. Corbally, 1994, AJ, 107, 742) using the latest Kurucz
+;   model atmospheres.  The 0th HDU contains the flux in ergs/s/cm^2/A -- 
+;   the absolute value of the flux is arbitrary.  The spectra have been 
+;   convolved to SDSS resolution (approximately) and rebinned to dloglam 
+;   = 1e-4.  The 1st HDU contains information about each model such as 
+;   effective temperature, surface gravity, and metallicity.  The wavelength 
+;   information is in the header.  The second HDU contains information about
+;   an empirical correction which should be applied to the models.
+;
+; BUGS:
+;   The empirical correction which is applied is derived from comparing 
+;   hot DA white dwarfs in SDSS to models.  This only corrects the low order 
+;   shape of the spectra.  A different correction is probably needed for each 
+;   T_eff and [Fe/H].
+;
+; EXAMPLES:
+;   kurucz_restore, kwave, kflux
+;   plot, kwave, kflux[*, 5]
+;
+; PROCEDURES CALLED:
+;   filter_thru()
+;   mrdfits()
+;   rectify
+;   sxpar()
+;   traceset2xy
+;
+; INTERNAL SUPPORT ROUTINES:
+;
+; REVISION HISTORY:
+;   12-Aug-2003  Created by C. Tremonti, Steward Observatory
+;
+;-
+;------------------------------------------------------------------------------
 
 pro kurucz_restore, kwave, kflux, nkflux = nkflux, hdr = hdr, kindx = kindx, $
     smoothpix = smoothpix

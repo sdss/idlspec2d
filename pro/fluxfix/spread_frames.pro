@@ -1,3 +1,79 @@
+;+
+; NAME:
+;   spread_frames
+;
+; PURPOSE:
+;   Read in multiple frame files produced by spectro2d and pass back arrays
+;   of the various quantities.
+;
+; CALLING SEQUENCE:
+;   spread_frames, spframes, [window=, binsz =,  adderr=, camnames=, $
+;     tsobjname=, flux=, ivar=, loglam=, dispersion=,  pixelmask=, plugmap=, $
+;     plugtag=, camerasvec=, filenum=,  expid=, sn2=, hdrarr=, merged_hdr=]
+;
+; INPUTS:
+;   spframes -
+;
+; OPTIONAL INPUT KEYWORDS:
+;   window   -  window size for apodizing the errors of the spectrum from each
+;               individual frame -- default to 100 pixels on each end of the 
+;               spectrum
+;   binsz    -  bin size (in log10(ang) of the output spectra; default to 
+;               1d-4 which is 69 km/s
+;   adderr   -  additional error to add to the formal errors as a fraction 
+;               of the flux
+;   camnames  - camera names to combine -- default to ['b1', 'b2', 'r1', 'r2']
+;  
+;   tsobjname - full path name to tsobjfile if one is available. It is 
+;               assumed that the target info is in HDU#1 and the latest 
+;               photo re-run is in HDU#2
+;
+; OUTPUT:
+;
+; OPTIONAL OUTPUT:
+;   flux       - flux array from all frames [npix, nfiber*nfames] 
+;   ivar       - inverse variance array from all frames [npix, nfiber*nframes] 
+;   loglam     - wavelength array (log10(Ang)) [npix, nfiber*nframes] 
+;   dispersion - instrumental resolution array [npix, nfiber*nfrmes]
+;   pixelmask  - mask array [npix, nfiber*nframes]
+;   plugmap    - array of structures containing plugmap [nfiber*nframes]
+;   plugtag    - like plugmap but with newer tsObj info if available and with
+;                exposure ID info included (useful for bookkeeping)
+;   camerasvec - vector of camera IDs (b1,b2,r1,r2) [nframes]
+;   filenum    - file number of frame (used in bookkeeping) [nfiber*nframes]
+;   expid      - exposure ID number [nframes]  
+;   sn2        - signal-to-noise squared of each frame [nframes]
+;   hdrarr     - array of pointers to header files from each frame [nframes]
+;   merged_hdr - header to be used for combined frames (some quantities 
+;                keywords contain averages of the keywords in the frames)
+;
+; COMMENTS:
+;
+; BUGS:
+;
+; EXAMPLES:
+;
+; PROCEDURES CALLED:
+;   correct_dlam
+;   djs_diff_angle
+;   mrdfits
+;   pixelmask_bits()
+;   splog
+;   sxaddpar
+;   sxcombinepar
+;   sxdelpar
+;   traceset2xy
+;   idlspec2d_version
+;   
+; INTERNAL SUPPORT ROUTINES:
+;   makelabel()
+;
+; REVISION HISTORY:
+;   12-Aug-2003  Made into a stand-alone routine by C. Tremonti, Steward Obs.
+;   02-Jan-2000  Written as part of "spcoadd_frames" by D. Schlegel, Princeton
+;
+;-
+;------------------------------------------------------------------------------
 
 function makelabel, hdr
 
@@ -17,11 +93,10 @@ end
 
 pro spread_frames, spframes, window=window, binsz = binsz, $
     adderr=adderr, camnames=camnames, tsobjname = tsobjname, $
-    flux = flux, ivar = ivar, wave = wave, dispersion = dispersion, $
+    flux = flux, ivar = ivar, loglam = loglam, dispersion = dispersion, $
     pixelmask = pixelmask, plugmap = plugmap, plugtag = plugtag, $
-    camerasvec = camerasvec, label = label, filenum = filenum,  $
-    expid = expid, sn2 = sn2, exptimevec = exptimevec, mjdlist = mjdlist, $
-    hdrarr = hdrarr
+    camerasvec = camerasvec, filenum = filenum, expid = expid, sn2 = sn2, $
+    hdrarr = hdrarr, merged_hdr = merged_hdr
  
    ;---------------------------------------------------------------------------
 
@@ -42,8 +117,6 @@ pro spread_frames, spframes, window=window, binsz = binsz, $
 
    ;-----------------
    ; Read in tsObjfile -- assume target info in HDU#1, new info in HDU#2
-   ; Is there a way to keep track of where the photo mags are from???
-   ; In tsObj header?
   
    if keyword_set(tsobjname) then tsobj = mrdfits(tsobjname, 2)
 
@@ -103,9 +176,7 @@ pro spread_frames, spframes, window=window, binsz = binsz, $
       ;----------
       ; Solve for wavelength and lambda-dispersion at each pixel in the image
 
-      traceset2xy, tempwset, junk, tempwave
-      traceset2xy, tempwset, junk-0.5, lowerwave
-      traceset2xy, tempwset, junk+0.5, upperwave
+      traceset2xy, tempwset, junk, temploglam
       traceset2xy, tempdispset, junk, tempdispersion
 
       ;----------
@@ -191,7 +262,7 @@ pro spread_frames, spframes, window=window, binsz = binsz, $
       if (ifile EQ 0) then begin
          flux = tempflux
          ivar = tempivar
-         wave = tempwave
+         loglam = temploglam
          dispersion = tempdispersion
          pixelmask = temppixmask
 
@@ -206,7 +277,7 @@ pro spread_frames, spframes, window=window, binsz = binsz, $
          ; Append as images...
          flux = [[flux], [tempflux]]
          ivar = [[ivar], [tempivar]]
-         wave = [[wave], [tempwave]]
+         loglam = [[loglam], [temploglam]]
          dispersion = [[dispersion], [tempdispersion]]
          pixelmask = [[pixelmask], [temppixmask]]
 
@@ -220,6 +291,116 @@ pro spread_frames, spframes, window=window, binsz = binsz, $
          plugtag = [plugtag, tempplugtag]
       endelse
    endfor
+
+   ;---------------------------------------------------------------------------
+   ; Create header for combined frames
+   ;---------------------------------------------------------------------------
+
+   ; Modify the 1st file's header to use for the combined plate header.
+  
+   merged_hdr = *hdrarr[0]
+
+   ;----------
+   ; Remove header cards that were specific to this first exposure
+   ; (where we got the header).
+
+   ncoeff = sxpar(merged_hdr, 'NWORDER')
+   for i=2, ncoeff-1 do sxdelpar, merged_hdr, 'COEFF'+strtrim(string(i),2)
+
+   sxdelpar, merged_hdr, ['SPA', 'IPA', 'IPARATE']
+   sxdelpar, merged_hdr, 'EXPOSURE'
+   sxdelpar, merged_hdr, 'SEQID'
+   sxdelpar, merged_hdr, 'DARKTIME'
+   sxdelpar, merged_hdr, 'CAMERAS'
+   sxdelpar, merged_hdr, 'PLUGMAPO'
+   for i=1, 4 do sxdelpar, merged_hdr, 'GAIN'+strtrim(string(i),2)
+   for i=1, 4 do sxdelpar, merged_hdr, 'RDNOISE'+strtrim(string(i),2)
+   sxdelpar, merged_hdr, ['CAMCOL', 'CAMROW']
+   sxdelpar, merged_hdr, ['AMPLL', 'AMPLR', 'AMPUL', 'AMPUR']
+   sxdelpar, merged_hdr, ['FFS', 'FF', 'NE', 'HGCD']
+   sxdelpar, merged_hdr, ['SPEC1', 'SPEC2']
+   sxdelpar, merged_hdr, 'NBLEAD'
+   sxdelpar, merged_hdr, 'PIXFLAT'
+   sxdelpar, merged_hdr, 'PIXBIAS'
+   sxdelpar, merged_hdr, 'FLATFILE'
+   sxdelpar, merged_hdr, 'ARCFILE'
+   sxdelpar, merged_hdr, 'OBJFILE'
+   sxdelpar, merged_hdr, 'FRAMESN2'
+
+   ;----------
+   ; Average together some of the fields from the individual headers.
+   ; CT -- Weight by S/N^2 since this is the effective weighting of the
+   ; exposures when they are combined
+
+   cardname = [ 'AZ', 'ALT', 'TAI', 'WTIME', 'AIRTEMP', 'DEWPOINT', $
+    'DEWDEP', 'DUSTA', 'DUSTB', 'DUSTC', 'DUSTD', 'GUSTS', 'HUMIDITY', $
+    'HUMIDOUT', 'PRESSURE', 'WINDD', 'WINDS', 'TEMP01', 'TEMP02', $
+    'TEMP03', 'TEMP04', 'HELIO_RV', 'SEEING20', 'SEEING50', 'SEEING80', $
+    'RMSOFF20', 'RMSOFF50', 'RMSOFF80', 'XCHI2', 'SKYCHI2', $
+    'WSIGMA', 'XSIGMA', 'AIRMASS']
+
+   sxcombinepar, hdrarr, cardname, merged_hdr, func='average', weights=sn2
+
+   sxcombinepar, hdrarr, 'TAI-BEG', merged_hdr, func='min'
+   sxcombinepar, hdrarr, 'TAI-END', merged_hdr, func='max'
+
+   sxcombinepar, hdrarr, 'XCHI2', merged_hdr, func='max', outcard='XCHI2MAX', $
+    after='XCHI2'
+   sxcombinepar, hdrarr, 'XCHI2', merged_hdr, func='min', outcard='XCHI2MIN', $
+    after='XCHI2'
+
+   sxcombinepar, hdrarr, 'SKYCHI2', merged_hdr, func='max', $
+     outcard='SCHI2MAX', after='SKYCHI2'
+   sxcombinepar, hdrarr, 'SKYCHI2', merged_hdr, func='min', $
+     outcard='SCHI2MIN', after='SKYCHI2'
+
+   sxcombinepar, hdrarr, 'WSIGMA', merged_hdr, func='max', outcard='WSIGMAX', $
+    after='WSIGMA'
+   sxcombinepar, hdrarr, 'WSIGMA', merged_hdr, func='min', outcard='WSIGMIN', $
+    after='WSIGMA'
+
+   sxcombinepar, hdrarr, 'XSIGMA', merged_hdr, func='max', outcard='XSIGMAX', $
+    after='XSIGMA'
+   sxcombinepar, hdrarr, 'XSIGMA', merged_hdr, func='min', outcard='XSIGMIN', $
+    after='XSIGMA'
+
+   ; Add the NGUIDE keywords for all headers of one flavor of CAMERAS
+   ; (e.g., for all the 'b1' exposures if the first frame is 'b1'.)
+
+   cardname = 'NGUIDE'
+   sxcombinepar, hdrarr[0], cardname, merged_hdr, func='total'
+   cameras0 = sxpar(*(hdrarr[0]), 'CAMERAS')
+   for ihdr=1, n_elements(hdrarr)-1 do begin
+      if (sxpar(*(hdrarr[ihdr]), 'CAMERAS') EQ cameras0) then $
+       sxcombinepar, hdrarr[ihdr], cardname, merged_hdr, func='total'
+   endfor
+
+   ;----------
+   ; Get the list of MJD's used for these reductions, then convert to a string
+   ; The header keyword MJD will be that of the first exposure (this can
+   ; be changed later if desired)
+
+   mjdlist = mjdlist[uniq(mjdlist, sort(mjdlist))]
+   mjdlist = strtrim(strcompress(string(mjdlist,format='(99a)')),2)
+   sxaddpar, merged_hdr, 'MJDLIST', mjdlist, after='MJD'
+
+   ;----------
+   ; Add new header cards
+
+   sxaddpar, merged_hdr, 'VERSCOMB', idlspec2d_version(), $
+    ' Version of idlspec2d for combining multiple spectra', after='VERS2D'
+   sxaddpar, merged_hdr, 'NEXP', nfiles, $
+    ' Number of exposures in this file', before='EXPTIME'
+   for ifile=0,nfiles-1 do $
+    sxaddpar, merged_hdr, string('EXPID',ifile, format='(a5,i2.2)'), $
+      label[ifile], ' ID string for exposure '+strtrim(string(ifile),2), $
+      before='EXPTIME'
+
+   sxaddpar, merged_hdr, 'EXPTIME', min(exptimevec), $
+    ' Minimum of exposure times for all cameras'
+   for icam=0, ncam-1 do $
+    sxaddpar, merged_hdr, 'EXPT_'+camnames[icam], exptimevec[icam], $
+     ' '+camnames[icam]+' camera exposure time (seconds)', before='EXPTIME'
 
    return
 end

@@ -1,4 +1,3 @@
-
 ;+
 ; NAME:
 ;   djs_iter_sfit
@@ -7,50 +6,52 @@
 ;   Surface-fitting code to tabulated data (with iterateive rejection).
 ;
 ; CALLING SEQUENCE:
-;   acoeff = djs_sfit( fval, xval, yval, degreex, degreey, $
-;    [ sqivar=, yfit= ] )
+;   acoeff = djs_sfit_iter(fval, xval, yval, degreex, degreey, $
+;            sqivar=, yfit=, mask=, maxdev=, maxrej=, $
+;            upper=, lower=, maxiter=, freeiter=, outmask=)
 ;
 ; INPUTS:
-;   fval       - Function values at XVAL,YVAL.
-;   xval       - X coordinate values
-;   yval       - Y coordinate values
-;   degreex    - Degree of polynomial fit in X; 1 for linear, 2 for quadratic
-;   degreey    - Degree of polynomial fit in Y; 1 for linear, 2 for quadratic
+;   fval      - Function values at XVAL,YVAL.
+;   xval      - X coordinate values
+;   yval      - Y coordinate values
+;   degreex   - Degree of polynomial fit in X; 1 for linear, 2 for quadratic
+;   degreey   - Degree of polynomial fit in Y; 1 for linear, 2 for quadratic
 ;
 ; OPTIONAL INPUTS:
-;   sqivar     - Inverse sigma, which are the weights
+;   sqivar    - Inverse sigma, which are the weights
+;   mask      - Input mask for fitting and rejection (1=good, 0=bad)
+;   maxdev    - Rejcet pts w/ abs(data - model) > maxdev (passed to djs_reject)
+;   upper     - Rejcet pts w/ data > model + upper*sigma (passed to djs_reject)
+;   lower     - Rejcet pts w/ data > model + lower*sigma (passed to djs_reject)
+;   maxiter   - Maximum # of rejection iterations 
+;   freeiter  - Rejected points accumulate for this # of iterations,
+;               then the mask is reset to the input mask
 ;
 ; OUTPUTS:
-;   acoeff     - Fit coefficients as [DEGREEX+1,DEGREEY+1] array
+;   acoeff    - Fit coefficients as [DEGREEX+1,DEGREEY+1] array
 ;
 ; OPTIONAL OUTPUTS:
-;   yfit       - Fit values
+;   yfit      - Fit values
+;   outmask   - Masked points used in final iteration (1=used, 0=rejected)
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   Create a random 2-dimensional field with a gradient in the X direction,
-;   and fit to a quadratic function in both X and Y:
-;     IDL> xval = dindgen(100) # replicate(1,100) / 100.
-;     IDL> yval = replicate(1,100) # dindgen(100) / 100.
-;     IDL> image = smooth(randomu(1234,100,100),11,/edge) + 0.2*xval^2
-;     IDL> acoeff = djs_sfit(image,xval,yval,2,2,yfit=yfit)
-;   Display the original image, and then the residual between that
-;   image and the fit:
-;     IDL> atv, image
-;     IDL> atv, image - yfit
 ;
 ; BUGS:
+;   Doesn't like NaNs
 ;
 ; PROCEDURES CALLED:
+;   djs_reject
+;   splog
+;   stddev
 ;
 ; INTERNAL SUPPORT ROUTINS:
 ;
 ; REVISION HISTORY:
-;   25-Oct-2002  Written by David Schlegel, Princeton.
+;   12-Aug-2003  Adapted from djs_sfit by C. Tremonti, Steward Observatory
 ;-
 ;------------------------------------------------------------------------------
-
 
 function djs_sfit_iter, fval, xval, yval, degreex, degreey, $
    sqivar=sqivar, yfit=yfit, mask = mask, maxdev = maxdev, maxrej = maxrej, $
@@ -120,8 +121,9 @@ function djs_sfit_iter, fval, xval, yval, degreex, degreey, $
      endif 
 
      ; Do the rejection
-     qdone = djs_reject(bvec, zfit, inmask = inmask, outmask = outmask, maxdev = maxdev, $
-             upper = upper, lower=lower, /sticky, maxrej = maxrej)
+     qdone = djs_reject(bvec, zfit, inmask = inmask, outmask = outmask, $
+             maxdev = maxdev, upper = upper, lower=lower, /sticky, $
+             maxrej = maxrej)
 
      bad = where(outmask ne 1, nbad)
      if nbad gt 0 then inmask[bad] = 0

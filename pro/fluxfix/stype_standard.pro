@@ -3,75 +3,82 @@
 ;   stype_standard
 ;
 ; PURPOSE:
-;   Spectral type the standard stars and save the result as a FITS file.
-;   The input spectra are normalized and then compared to a grid of 
+;   Spectral type the standard stars and store the result as a structure.
+;   The normalized input spectra are compared to a grid of normalized
 ;   Kurucz models produced by the SPECTRUM code (R.0. Gray & C. J. Corbally,
 ;   1994, AJ, 107, 742) and convolved to SDSS resolution. Since nearly all 
 ;   of the interesting spectral features are in the blue, data from the 
 ;   blue camera only can be used.
 ;
 ; CALLING SEQUENCE:
-;   stype_standard, loglam, flux, invvar, plugmap, outfile 
+;   std =  stype_standard(loglam, nflux, ninvvar, plugmap, outfile=, $
+;          nonsdss=, smoothpix=) 
 ;
 ; INPUTS:
-;   loglam     - Wavelength array of input spectra in log10(Angstroms) [npix]
-;   flux       - Array of standard star spectra [npix, nstar]
-;   invvar     - Inverse variance of standard star spectra [npix,nstar]
-;   plugmap    - Plugmap corresponding to the input standard stars [nstar]
-;   outfile    - Name of output file. It must be of the from
-;                ?????-pppp-mmmm-s.fits where, pppp is the plateid, 
-;                mmmmm is the mjd and s is the spectrograph ID.
-;                e.g. spStd-0519-52283-1.fits 
+;   loglam  - Wavelength array of input spectra in log10(Angstroms) [npix]
+;   nflux   - Array of normalized standard star spectra [npix, nstar]
+;   ninvvar - Inverse variance of standard star spectra [npix,nstar]
+;   plugmap - Plugmap corresponding to the input standard stars [nstar]
 ;
-; OUTPUT:  A FITS binary table containing the information on the best fit 
-;          models.  Diagnostic plots are also produced.  Each spectophoto 
-;          standard is shown normalized with the best fit spectrum plotted 
-;          over top in red.  
+; OUTPUT:
+;   A structure containing best fit model name, Teff, g, [Fe/H] and 
+;   magnitudes is returned.  Diagnostic plots are also produced.  Each 
+;   spectophoto standard is shown with the (normalized) best fit spectrum 
+;   plotted over top in red.  
 ;
-; COMMENTS:  A file containing the Kurucz model data is required.  It is 
-;            called "kurucz_stds_interp.fit" and it should reside in 
-;            IDLSPEC2D_DIR/etc.) The 0th HDU contains the flux in
-;            ergs/s/cm^2/A -- the absolute value of the flux arbitrary.
-;            The spectra have been convolved to SDSS resolution (approximately)
-;            and rebinned to dloglam = 1e-4.  The 1st HDU contains the 
-;            normalized flux.  The 2nd HDU contains information about each 
-;            model such as effective temperature, surface gravity, and 
-;            metallicity.  The wavelength information is in the header.
+; KEYWORDS:
+;   outfile   - Name of output FITS file. It must be of the from
+;               ?????-pppp-mmmm-s.fits where, pppp is the plateid, 
+;               mmmmm is the mjd and s is the spectrograph ID.
+;               e.g. spStd-0519-52283-1.fits 
+;   nonsdss   - Set to 1 for use with data which is not from the SDSS --
+;               the plugmap is not used in this case, and no reddening
+;               is applied.
+;   smoothpix - number of pixels to smooth Kurucz models by -- for use with
+;               data of lower resolution than the SDSS
 ;
-; BUGS:
-;            The SFD dust maps are needed to estimate the foreground extinction 
-;            to add to the models.  To acomodate this a new environment
-;            variable "DUST_DIR" is required.  In the future the dust 
-;            maps will be part of IDL_SPEC2D.
+; COMMENTS:  
+;   A file containing the Kurucz model data is required.  It is called 
+;   "kurucz_stds_*.fit" and it should reside in IDLSPEC2D_DIR/etc.  See 
+;   "kurucz_restore.pro" for a description of this file.
 ;
+;   The SFD dust maps are needed to estimate the foreground extinction 
+;   to add to the models.  To acomodate this a new environment variable 
+;   "DUST_DIR" is required.   
+;
+; BUGS:     
+;   Spectral typing is slightly sensitive to the method of normalization
 ;
 ; EXAMPLES:
 ;
 ; PROCEDURES CALLED:
-;   correct_dlam
-;   divideflat
-;   djs_filepath()
-;   djs_maskinterp()
+;   djs_icolor()
 ;   djs_median()
 ;   djs_oplot
 ;   djs_plot
-;   fibermask_bits()
-;   fileandpath()
-;   mrdfits()
+;   dust_getval()
+;   ext_odonnell()
+;   filter_thru()
+;   glactc()
+;   kurucz_restore
 ;   mwrfits
-;   sxpar()
-;   traceset2xy
-;
+;   splog
+;   zcompute()
 ;
 ; INTERNAL SUPPORT ROUTINES
-;   qgoodfiber()
 ;   kurucz_match()
 ;
 ; REVISION HISTORY:
 ;   28-Sep-2002  Written by C. Tremonti
+;   12-Aug-2003  Modified by C. Tremonti for use with Spectro2d
 ;-
 ;------------------------------------------------------------------------------
-; Find the Kurucz model which best matches a star
+
+;------------------------------------------------------------------------------
+; Subroutine: kurucz_match
+;------------------------------------------------------------------------------
+
+; Find the Kurucz model which best matches a star (min chi^2)
 
 pro kurucz_match, wave, nflux, nivar, nkflux, kindx, fiber, $
     plottitle = plottitle
@@ -127,6 +134,11 @@ pro kurucz_match, wave, nflux, nivar, nkflux, kindx, fiber, $
 end
 
 ;------------------------------------------------------------------------------
+
+;------------------------------------------------------------------------------
+; Main pro: stype_standard
+;------------------------------------------------------------------------------
+
 function stype_standard, loglam, nflux, ninvvar, plugmap, outfile = outfile, $
          nonsdss = nonsdss, smoothpix = smoothpix 
 
@@ -136,10 +148,17 @@ function stype_standard, loglam, nflux, ninvvar, plugmap, outfile = outfile, $
 
    ;---------
    ; Extract Plate and MJD and spectrograph ID from output name
-   words = strsplit(outfile, '-', /extract)
-   plate = words[1]
-   mjd = words[2]
-   side = words[3]
+
+   if keyword_set(outfile) then begin
+     words = strsplit(outfile, '-', /extract)
+     plate = words[1]
+     mjd = words[2]
+     side = words[3]
+   endif else begin
+     plate = 0
+     mdj = 0
+     side = 0
+   endelse
 
    nsphoto = n_elements(plugmap)
 

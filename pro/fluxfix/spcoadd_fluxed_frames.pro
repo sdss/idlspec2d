@@ -1,18 +1,20 @@
 ;+
 ; NAME:
-;   spcoadd_frames
+;   spcoadd_fluxed_frames
 ;
 ; PURPOSE:
-;   Combine several reduced frames of the same objects
+;   Combine reduced frames with the same plugmap and spectrophotometrically
+;   calibrate the output
 ;
 ; CALLING SEQUENCE:
-;   spcoadd_frames, spframes, outputname, $
-;    fcalibprefix=, [ mjd=, binsz=, zeropoint=, nord=, wavemin=, $
-;    bkptbin=, window=, maxsep=, adderr=, plotsnfile=, combinedir= ]
+;   spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=, [mjd=, $
+;     binsz=, zeropoint=, nord=, wavemin=, window=, adderr=, docams=, $
+;     plotsnfile=, combinedir=, tsobjname=, smearname=, best_exposure=]
 ;
 ; INPUTS:
-;   spframes       - Name(s) of files to combine (written by SPREDUCE)
-;   outputname     - Output file name
+;   spframes       - Names of files to combine (written by SPREDUCE)
+;   outputname     - Output file name of the form spPlate-pppp-mmmmm.fits
+;                    where pppp=plateid, mmmmm=MJD.  
 ;
 ; REQUIRED KEYWORDS:
 ;   fcalibprefix   - Prefix for flux-calibration files.
@@ -29,64 +31,91 @@
 ;   wavemin        - Log-10 wavelength of first pixel in output spectra;
 ;                    default to the nearest bin to the smallest wavelength
 ;                    of the input spectra.
-;   bkptbin        - ???
 ;   window         - Window size for apodizing the errors of the spectrum
-;                    from each individual frame;
-;                    default to 100 pixels apodization on each end of the
-;                    spectra.
-;   maxsep         - ???
+;                    from each individual frame; default to 100 pixels 
+;                    apodization on each end of the spectrum.
 ;   adderr         - Additional error to add to the formal errors, as a
 ;                    fraction of the flux.
 ;   combinedir     - Optional output directory
+;   docams         - Cameras to combine; default to ['b1', 'b2', 'r1', 'r2']
+;   plotsnfile     - File which will contain diagnostics of the final S/N 
+;                    and spectrophotometric quality
+;   tsobjname      - Name of tsObj file. Fibermags used in setting spectrophoto
+;                    zeropoints -- if tsObj not available fibermags are  
+;                    taken from the plugmap
+;   smearname      - Names of frames containing data observed in "smear" mode.
+;                    Polynomials describing the ratio of the calibrated smear
+;                    and science image are written the the 8th HDU. 
+;   best_exposure  - Exposure ID of the exposure which all other exposures
+;                    should be matched to. (string). If not set the "best" 
+;                    exposure is determined from the S/N and a measure of the 
+;                    spectrophotometric quality
 ;
-; OUTPUTS:
-;
+; OUTPUTS: 
+;   A fully calibrated "spPlate" file is produced.  The HDU's are as follows
+;   HDU #0: flux [npix, nfiber]
+;   HDU #1: inverse variance [npix, nfiber]
+;   HDU #2: and mask [npix, nfiber]
+;   HDU #3: or mask  [npix, nfiber]
+;   HDU #4: dispersion [npix, nfiber]
+;   HDU #5: plugmap - structure [nfiber] 
+;   HDU #6: S/N in g, r, i  [3, nfiber]
+;   HDU #7: synthetic g, r, i mag [3, nfiber]
+;   HDU #8: smear coeffs -- structure [nfiber]
+; 
 ; OPTIONAL OUTPUTS:
+;   Diagnostic plots in "spDiagcomb-" and "spSN2d-" files
 ;
 ; COMMENTS:
-;   This routine can combine data from multiple (different) plug maps.
-;   Objects are matched based upon their positions agreeing to 2 arc sec.
-;
+;   This routine can combine data from a single plug maps.
 ;   All input files must have the same number of pixels per spectrum,
 ;   i.e. 2048 wavelength samplings, although those wavelengths can
-;   be different.
-;
-;   The input files (FILENAMES) have their pixelmasks modified by this routine.
-;
-;   Flux-correction files are also read in, where they are assumed to
-;   have the name spFluxcorr-EEEEEEEE-S.fits, where EEEEEEEE is the exposure
-;   number and S is the spectrograph ID (1 or 2).
-;
+;   be different.  The spectrophotometry is now tied to Kurucz models.
+;   Two new structure tags are added to the plugmap "tsobj_mag" and "tsobjid"
+;   to track the tsobj info used in the reductions.
+;      
 ; EXAMPLES:
 ;
 ; BUGS:
 ;   Should only apodize starting with the first/last good pixel of a spectrum.
+;   Probably will not work without data for all 4 cameras 
+;   Mask bits should be looked at more carefully
 ;
 ; PROCEDURES CALLED:
+;   atmdisp_cor
+;   bspline_valu
 ;   combine1fiber
-;   correct_dlam
 ;   divideflat
 ;   djs_diff_angle()
-;   idlspec2d_version()
+;   djs_filepath()
+;   fibermask_bits
+;   frame_flux_calib
+;   frame_flux_tweak
 ;   mkhdr
 ;   modfits
 ;   mrdfits()
+;   mwrfits
 ;   pixelmask_bits()
 ;   platesn
+;   smear_compare
+;   spdata2model_ratio
+;   sphoto_calib
 ;   splog
 ;   sxaddpar
-;   sxdelpar
 ;   sxpar()
 ;   traceset2xy
 ;   writefits
 ;
 ; INTERNAL SUPPORT PROCEDURES:
-;   makelabel()
+;   add_iraf_keywords
+;   qgoodfiber
 ;
 ; REVISION HISTORY:
-;   02-Jan-2000  Written by D. Schlegel; modified from COMBINE2DOUT
+;   12-Aug-2003  modified from "spcoadd_frames" by C. Tremonti, Steward Obs.
+;   02-Jan-2000  spcoadd_frames written by D. Schlegel
 ;-
 ;------------------------------------------------------------------------------
+
 pro add_iraf_keywords, hdr, wavemin, binsz
 
    sxaddpar, hdr, 'WAT0_001', 'system=linear'
@@ -116,9 +145,10 @@ function qgoodfiber, fibermask
 end
 
 ;------------------------------------------------------------------------------
+
 pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
  mjd=mjd, binsz=binsz, zeropoint=zeropoint, nord=nord, wavemin=wavemin, $
- bkptbin=bkptbin, window=window, maxsep=maxsep, adderr=adderr, $
+ window=window, adderr=adderr, $
  docams=camnames, plotsnfile=plotsnfile, combinedir=combinedir, $
  tsobjname = tsobjname, smearname = smearname, best_exposure = best_exposure
 
@@ -142,7 +172,7 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    ncam = N_elements(camnames)
 
    ;------------------
-   ; Get plate + mjd strings
+   ; Get plate + mjd strings from input name
    
    words = strsplit(fcalibprefix, '-', /extract)
    prefix = words[0]
@@ -156,11 +186,10 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
  
    spread_frames, filenames, window=window, binsz = binsz, $
      adderr=adderr, camnames=camnames, tsobjname = tsobjname, $
-     flux = flux, ivar = fluxivar, wave = wave, dispersion = dispersion, $
+     flux = flux, ivar = fluxivar, loglam = loglam, dispersion = dispersion, $
      pixelmask = pixelmask, plugmap = plugmap, plugtag = plugtag, $
-     camerasvec = camerasvec, label = label, filenum = filenum,  $
-     expid = expid, sn2 = sn2, exptimevec = exptimevec, mjdlist = mjdlist, $
-     hdrarr = hdrarr
+     camerasvec = camerasvec, filenum = filenum,  $
+     expid = expid, sn2 = sn2, hdrarr = hdrarr, merged_hdr = hdr
 
    plugtag.plateid = plate_str
    plugtag.mjd = mjd_str
@@ -174,7 +203,6 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
       if (icam EQ 0) then nminfile = nmatch $
        else nminfile = nminfile < nmatch
    endfor
-; ??? Should make this routine robust to fewer files!!!
    if (nminfile LT 2) then begin
       splog, 'ABORT: At least 2 files needed for each camera'
       return
@@ -219,10 +247,9 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
      ;---------------------------------
      ; Compute spectral types and write flux calibration vectors
 
-     sphoto_calib, wave[*,isphoto], flux[*,isphoto], fluxivar[*,isphoto], $
+     sphoto_calib, loglam[*,isphoto], flux[*,isphoto], fluxivar[*,isphoto], $
                  pixelmask[*,isphoto], plugtag[isphoto], $
-                 fcalfiles, stdstarfile, stype = (camcol eq 'b'), $
-                 pca_calibset = pca_calibset
+                 fcalfiles, stdstarfile, stype = (camcol eq 'b')
 
      ;---------------------------------
      ; Apply sphoto calibration to all fibers in each frame
@@ -243,12 +270,12 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
 
        cwavemin = sxpar(calibhdr, 'WAVEMIN')
        cwavemax = sxpar(calibhdr, 'WAVEMAX')
-       calibfac = bspline_valu(wave[*,indx], calibset)
+       calibfac = bspline_valu(loglam[*,indx], calibset)
          
        ; Set to bad any pixels whose wavelength is outside the known
        ; flux-calibration region.
-       ibad = where(wave[*,indx] LT alog10(cwavemin) OR $
-                    wave[*,indx] GT alog10(cwavemax))
+       ibad = where(loglam[*,indx] LT alog10(cwavemin) OR $
+                    loglam[*,indx] GT alog10(cwavemax))
        if (ibad[0] NE -1) then calibfac[ibad] = 0
 
        tempflux = flux[*,indx]
@@ -304,12 +331,12 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    corrfiles1 = 'spFluxcorr-' + uniqexp + '-1.fits'
    corrfiles2 = 'spFluxcorr-' + uniqexp + '-2.fits'
 
-   frame_flux_tweak, wave[*, iframe_b1], wave[*, iframe_r1], $
+   frame_flux_tweak, loglam[*, iframe_b1], loglam[*, iframe_r1], $
                    flux[*, iframe_b1], flux[*, iframe_r1], $
                    fluxivar[*, iframe_b1], fluxivar[*, iframe_r1], $
                    best_exposure, plugtag[iframe_b1], corrfiles1
   
-   frame_flux_tweak, wave[*, iframe_b2], wave[*, iframe_r2], $
+   frame_flux_tweak, loglam[*, iframe_b2], loglam[*, iframe_r2], $
                    flux[*, iframe_b2], flux[*, iframe_r2], $
                    fluxivar[*, iframe_b2], fluxivar[*, iframe_r2], $
                    best_exposure, plugtag[iframe_b2], corrfiles2
@@ -330,7 +357,7 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
                   plugtag.camcolor eq strmid(camerasvec[iexp], 0, 1) AND $ 
                   plugtag.spectrographid eq strmid(camerasvec[iexp], 1, 1))
 
-     traceset2xy, corrset, wave[*,indx], corrimg
+     traceset2xy, corrset, loglam[*,indx], corrimg
 
      ; Don't let the flux correction be more than a factor of 10!!
      invertcorr = 1.0 / corrimg
@@ -354,8 +381,8 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    totalpix = (size(flux, /dimens))[0]
 
    nonzero = where(fluxivar GT 0.0)
-   minfullwave = min(wave[nonzero])
-   maxfullwave = max(wave[nonzero])
+   minfullwave = min(loglam[nonzero])
+   maxfullwave = max(loglam[nonzero])
 
    ; Get max and min wavelength from good pixels
 
@@ -373,7 +400,8 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    endelse
 
    nfinalpix = spotmax - spotmin + 1L
-   finalwave = dindgen(nfinalpix) * binsz + wavemin
+   finalloglam = dindgen(nfinalpix) * binsz + wavemin
+   finalwave = 10.0^finalloglam
 
    nfiber = max(plugmap.fiberid)
 
@@ -421,12 +449,12 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
 
          temppixmask = pixelmask[*,indx]
 
-         combine1fiber, wave[*,indx], flux[*,indx], fluxivar[*,indx], $
+         combine1fiber, loglam[*,indx], flux[*,indx], fluxivar[*,indx], $
            finalmask=temppixmask, indisp=dispersion[*,indx], $
-           newloglam=finalwave, newflux=bestflux, newivar=bestivar, $
+           newloglam=finalloglam, newflux=bestflux, newivar=bestivar, $
            andmask = bestandmask, ormask=bestormask, newdisp=bestdispersion, $
-           nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep, $
-           maxiter=50, upper=3.0, lower=3.0, maxrej=1
+           nord=nord, binsz=binsz, maxiter=50, upper=3.0, $
+           lower=3.0, maxrej=1
 
          finalflux[*,ifiber] = bestflux
          finalivar[*,ifiber] = bestivar
@@ -442,9 +470,9 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
 
          ;set_plot, 'x'
 
-         ;plot, 10.0^finalwave, bestflux, xr=[3800, 9200], /xs
+         ;plot, finalwave, bestflux, xr=[3800, 9200], /xs
          ;for ii = 0, n_elements(indx) - 1 do $
-         ;  djs_oplot, 10.0^wave[*,indx[ii]], djs_median(flux[*,indx[ii]], $
+         ;  djs_oplot, 10.0^loglam[*,indx[ii]], djs_median(flux[*,indx[ii]], $
          ;             width=75, boundary='reflect'), color='red'
 
       endif else begin
@@ -457,7 +485,7 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    ;-------------
    ; Clear memory
 
-   wave = 0
+   loglam = 0
    flux = 0
    fluxivar = 0
    temppixmask = 0
@@ -486,7 +514,7 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    ; "frame_flux_tweak") to determine the airmass/seeing of the atmospheric
    ; dispersion correction
 
-   hdr = *hdrarr[(where(expid eq best_exposure))[0]]
+   besthdr = *hdrarr[(where(expid eq best_exposure))[0]]
    surfgr_sig = fltarr(2)
    modelgr_sig = fltarr(2)
    modelgr_off = fltarr(2)
@@ -499,8 +527,8 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
      title_tag = 'Plate: ' + plate_str + ' MJD: ' + mjd_str + $
                  ' Spec: ' + sid_str
      
-     atmdisp_model = atmdisp_cor(finalwave, finalflux[*,ispec], $
-       finalplugtag[ispec], hdr, title = title_tag, surfgr_sig=xysig)
+     atmdisp_model = atmdisp_cor(finalloglam, finalflux[*,ispec], $
+       finalplugtag[ispec], besthdr, title = title_tag, surfgr_sig=xysig)
      
      surfgr_sig[specnum - 1] = xysig
      tempflux = finalflux[*,ispec]
@@ -536,14 +564,14 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
        ;---------------------      
        ; Compute ratio of data/model for each good standard
 
-       corvector = spdata2model_ratio(finalwave, finalflux[*,isphoto], $
-                   finalivar[*,isphoto], finalandmask[*,isphoto], $
+       corvector = spdata2model_ratio(finalloglam, finalflux[*,isphoto], $
+                   finalivar[*,isphoto], finalormask[*,isphoto], $
                    stdinfo, corvivar = corvivar)
 
        ; Normalize the flux correction vectors to the center of guiding
        ; (or the r-band?)
-       ;normwave = where(10.0^finalwave gt 5600 and 10.0^finalwave lt 6900) 
-       ;normwave = where(10.0^finalwave gt 4200 and 10.0^finalwave lt 5400) 
+       ;normwave = where(finalwave gt 5600 and finalwave lt 6900) 
+       ;normwave = where(finalwave gt 4200 and finalwave lt 5400) 
        cormed = fltarr(nok) + 1
        ;for istd = 0, nok - 1 do $
        ;  cormed[istd] = median(corvector[normwave, istd])
@@ -555,8 +583,9 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
        ; done by using the frame_flux_calib code with "final" switch set --
        ; this turns off the division of the corvectors by an average spectrum
 
-       residset = frame_flux_calib(finalwave, corvector, corvivar, 0, $
-                  cormed, title_tag, /fit_wiggles, fsig = fsig, /final)
+       residset = frame_flux_calib(finalloglam, corvector, corvivar, 0, $
+                  cormed, framename = title_tag, /fit_wiggles, $
+                  fsig = fsig, /final)
 
        splog, 'Spectrophotometry error for spectrograph ' + sid_str + $
          ' (from the standards): ' + string(fsig * 100, format = '(I4)') + ' %'
@@ -564,7 +593,7 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
        ;-------------------
        ; Correct for wiggles
  
-       residcor = bspline_valu(finalwave, residset)  ; Mean of Data / Models
+       residcor = bspline_valu(finalloglam, residset)  ; Mean of Data / Models
        residcor = residcor # replicate(1, nspec)
  
        tempflux = finalflux[*,ispec]
@@ -585,7 +614,7 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
 
    if keyword_set(smearname) then begin
 
-     smear_hdu = smear_compare(smearname, finalwave, finalflux, finalivar, $
+     smear_hdu = smear_compare(smearname, finalloglam, finalflux, finalivar, $
        best_exposure, plate_str, mjd_str, camnames = camnames, adderr=adderr, $
        combinedir = combinedir, tsobjname = tsobjname, /noplot)
 
@@ -598,128 +627,30 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    ;---------------------------------------------------------------------------
    ; Generate S/N plots
    ;---------------------------------------------------------------------------
-
-   ; Modify the 1st file's header to use for the combined plate header.
-
-   hdr = *hdrarr[0]
   
    ; Use plugtag instead of the plugmap b/c this contains updated 
    ; fibermags from the tsObj (if available)
 
    ;save, /all, filename = 'snplot_test.sav'
 
-   platesn, finalflux, finalivar, finalandmask, finalplugtag, finalwave, $
+   platesn, finalflux, finalivar, finalandmask, finalplugtag, finalloglam, $
      hdr=hdr, plotfile=djs_filepath(plotsnfile, root_dir=combinedir), $
      snvec=snvec, synthmag=synthmag
 
    ;---------------------------------------------------------------------------
-   ; Create the output header
+   ; Add to the output header
    ;---------------------------------------------------------------------------
-
-   ;----------
-   ; Remove header cards that were specific to this first exposure
-   ; (where we got the header).
-
-   ncoeff = sxpar(hdr, 'NWORDER')
-   for i=2, ncoeff-1 do sxdelpar, hdr, 'COEFF'+strtrim(string(i),2)
-
-   sxdelpar, hdr, ['SPA', 'IPA', 'IPARATE']
-   sxdelpar, hdr, 'EXPOSURE'
-   sxdelpar, hdr, 'SEQID'
-   sxdelpar, hdr, 'DARKTIME'
-   sxdelpar, hdr, 'CAMERAS'
-   sxdelpar, hdr, 'PLUGMAPO'
-   for i=1, 4 do sxdelpar, hdr, 'GAIN'+strtrim(string(i),2)
-   for i=1, 4 do sxdelpar, hdr, 'RDNOISE'+strtrim(string(i),2)
-   sxdelpar, hdr, ['CAMCOL', 'CAMROW']
-   sxdelpar, hdr, ['AMPLL', 'AMPLR', 'AMPUL', 'AMPUR']
-   sxdelpar, hdr, ['FFS', 'FF', 'NE', 'HGCD']
-   sxdelpar, hdr, ['SPEC1', 'SPEC2']
-   sxdelpar, hdr, 'NBLEAD'
-   sxdelpar, hdr, 'PIXFLAT'
-   sxdelpar, hdr, 'PIXBIAS'
-   sxdelpar, hdr, 'FLATFILE'
-   sxdelpar, hdr, 'ARCFILE'
-   sxdelpar, hdr, 'OBJFILE'
-   sxdelpar, hdr, 'FRAMESN2'
-
-   ;----------
-   ; Average together some of the fields from the individual headers.
-   ; CT -- Weight by S/N^2 since this is the effective weighting of the
-   ; exposures when they are combined
-   cardname = [ 'AZ', 'ALT', 'TAI', 'WTIME', 'AIRTEMP', 'DEWPOINT', $
-    'DEWDEP', 'DUSTA', 'DUSTB', 'DUSTC', 'DUSTD', 'GUSTS', 'HUMIDITY', $
-    'HUMIDOUT', 'PRESSURE', 'WINDD', 'WINDS', 'TEMP01', 'TEMP02', $
-    'TEMP03', 'TEMP04', 'HELIO_RV', 'SEEING20', 'SEEING50', 'SEEING80', $
-    'RMSOFF20', 'RMSOFF50', 'RMSOFF80', 'XCHI2', 'SKYCHI2', $
-    'WSIGMA', 'XSIGMA', 'AIRMASS']
-   sxcombinepar, hdrarr, cardname, hdr, func='average', weights=sn2
-
-   sxcombinepar, hdrarr, 'TAI-BEG', hdr, func='min'
-   sxcombinepar, hdrarr, 'TAI-END', hdr, func='max'
-
-   sxcombinepar, hdrarr, 'XCHI2', hdr, func='max', outcard='XCHI2MAX', $
-    after='XCHI2'
-   sxcombinepar, hdrarr, 'XCHI2', hdr, func='min', outcard='XCHI2MIN', $
-    after='XCHI2'
-
-   sxcombinepar, hdrarr, 'SKYCHI2', hdr, func='max', outcard='SCHI2MAX', $
-    after='SKYCHI2'
-   sxcombinepar, hdrarr, 'SKYCHI2', hdr, func='min', outcard='SCHI2MIN', $
-    after='SKYCHI2'
-
-   sxcombinepar, hdrarr, 'WSIGMA', hdr, func='max', outcard='WSIGMAX', $
-    after='WSIGMA'
-   sxcombinepar, hdrarr, 'WSIGMA', hdr, func='min', outcard='WSIGMIN', $
-    after='WSIGMA'
-
-   sxcombinepar, hdrarr, 'XSIGMA', hdr, func='max', outcard='XSIGMAX', $
-    after='XSIGMA'
-   sxcombinepar, hdrarr, 'XSIGMA', hdr, func='min', outcard='XSIGMIN', $
-    after='XSIGMA'
-
-   ; Add the NGUIDE keywords for all headers of one flavor of CAMERAS
-   ; (e.g., for all the 'b1' exposures if the first frame is 'b1'.)
-   cardname = 'NGUIDE'
-   sxcombinepar, hdrarr[0], cardname, hdr, func='total'
-   cameras0 = sxpar(*(hdrarr[0]), 'CAMERAS')
-   for ihdr=1, n_elements(hdrarr)-1 do begin
-      if (sxpar(*(hdrarr[ihdr]), 'CAMERAS') EQ cameras0) then $
-       sxcombinepar, hdrarr[ihdr], cardname, hdr, func='total'
-   endfor
 
    ;----------
    ; Use the MJD passed as a keyword, which will typically be for the most
    ; observation, and be consistent with the output file names
 
-   if (keyword_set(mjd)) then $
-    sxaddpar, hdr, 'MJD', mjd
-
-   ; Get the list of MJD's used for these reductions, then convert to a string
-   mjdlist = mjdlist[uniq(mjdlist, sort(mjdlist))]
-   mjdlist = strtrim(strcompress(string(mjdlist,format='(99a)')),2)
-   sxaddpar, hdr, 'MJDLIST', mjdlist, after='MJD'
+   if (keyword_set(mjd)) then sxaddpar, hdr, 'MJD', mjd
 
    ;----------
    ; Add new header cards
 
-   sxaddpar, hdr, 'VERSCOMB', idlspec2d_version(), $
-    ' Version of idlspec2d for combining multiple spectra', after='VERS2D'
-   sxaddpar, hdr, 'NEXP', nfiles, $
-    ' Number of exposures in this file', before='EXPTIME'
-   for ifile=0,nfiles-1 do $
-    sxaddpar, hdr, string('EXPID',ifile, format='(a5,i2.2)'), label[ifile], $
-     ' ID string for exposure '+strtrim(string(ifile),2), before='EXPTIME'
-
-   sxaddpar, hdr, 'EXPTIME', min(exptimevec), $
-    ' Minimum of exposure times for all cameras'
-   for icam=0, ncam-1 do $
-    sxaddpar, hdr, 'EXPT_'+camnames[icam], exptimevec[icam], $
-     ' '+camnames[icam]+' camera exposure time (seconds)', before='EXPTIME'
-   sxaddpar, hdr, 'SPCOADD', systime(), $
-    ' SPCOADD finished', after='EXPTIME'
-
-   sxaddpar, hdr, 'NWORDER', 2, ' Linear-log10 coefficients'
+   sxaddpar, hdr, 'SPCOADD', systime(), ' SPCOADD finished', after='EXPTIME'
    sxaddpar, hdr, 'NWORDER', 2, ' Linear-log10 coefficients'
    sxaddpar, hdr, 'WFITTYPE', 'LOG-LINEAR', ' Linear-log10 dispersion'
    sxaddpar, hdr, 'COEFF0', wavemin, $
@@ -742,6 +673,7 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
 
    ;----------
    ; Check for tsObj and place info in header
+
    if keyword_set(tsobjname) then begin
       words = strsplit(tsobjname, '/', /extract)
       tsfile = words[n_elements(words) - 1]
@@ -750,6 +682,7 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
 
    ;-----------
    ; Check for SFD maps
+
    dustdir = getenv('DUST_DIR')
    if keyword_set(dustdir) then begin
      dustmaps = file_test(dustdir + '/maps/SFD_dust_4096_ngp.fits') ? 'T' : 'F'
@@ -760,6 +693,7 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
    ; Keyword describing the sigma of the surface fit to the (g-r) residuals 
    ; A big # indicates that lots of 'tilt' had to be taken out by the 
    ; atmdisp_cor procedure
+
     sxaddpar, hdr, 'XYGRSIG1', surfgr_sig[0], $
               ' Sigma of (g-r) offsets as a fcn of plate x/y'
     sxaddpar, hdr, 'XYGRSIG2', surfgr_sig[1], $
@@ -768,15 +702,15 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
     ;------------
     ; Keywords describing the difference in (g-r) of the reddened models 
     ; and the photometry
-    sxaddpar, hdr, 'MPGRSIG1', modelgr_sig[0], $
-              ' Sigma of (g-r)_model - (g-r)_photo Spec 1'
-    sxaddpar, hdr, 'MPGRSIG2', modelgr_sig[1], $
-              ' Sigma of (g-r)_model - (g-r)_photo Spec 2'
 
     sxaddpar, hdr, 'MPGROFF1', modelgr_off[0], $
               ' Mean of (g-r)_model - (g-r)_photo of Spec 1'
+    sxaddpar, hdr, 'MPGRSIG1', modelgr_sig[0], $
+              ' Sigma of (g-r)_model - (g-r)_photo Spec 1'
     sxaddpar, hdr, 'MPGROFF2', modelgr_off[1], $
               ' Mean of (g-r)_model - (g-r)_photo of Spec 2'
+    sxaddpar, hdr, 'MPGRSIG2', modelgr_sig[1], $
+              ' Sigma of (g-r)_model - (g-r)_photo Spec 2'
 
    ;----------
    ; Compute the fraction of bad pixels in total, and on each spectrograph.

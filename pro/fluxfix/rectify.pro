@@ -1,3 +1,50 @@
+;+
+; NAME:
+;   rectify
+;
+; PURPOSE:
+;   Rectify spectra using a sliding median
+;
+; CALLING SEQUENCE:
+;   normflux = rectify(flux, [ivar, nivar=, mask=, wave=])
+;
+; INPUTS:
+;   flux -  flux vector [npix, nspec]
+;
+; OPTIONAL INPUTS:
+;   ivar -  inverse variance -- needed if "nivar" is returned [npix, nspec]
+;   mask - if set then mask strong optical absorption feature before doing
+;          sliding median.  (To do this "wave" must also be supplied.)
+;          On exit this keyword will hold a copy of the flux array with 
+;          masked pixels set to NaN
+;   wave - wavelength vector in Angstroms -- only needed if "mask" is set
+;
+; OUTPUT:
+;   Rectified flux vector [npix, nspec]
+; 
+; OPTIONAL OUTPUT:
+;   nivar - inverse variance of rectified flux [npix, nspec]
+;   
+; COMMENTS:
+;   If mask is set 16 pixels around the folling lines are masked:      
+;   H-delta, Ca_K, Ca_H, G-band, H-gamma H-beta, Mgb, H-alpha
+;
+; BUGS:
+;   Medianing is done in pixel space not wavelength space -- so for two spectra
+;   to be rectified in the same manner they must have identical wavelength
+;   sampling.
+;
+; EXAMPLES:
+;
+; PROCEDURES CALLED:
+;   djs_median()
+;
+; INTERNAL SUPPORT ROUTINES:
+;
+; REVISION HISTORY:
+;   12-Aug-2003  Created by C. Tremonti, Steward Observatory
+;-
+;------------------------------------------------------------------------------
 
 function rectify, flux, ivar, nivar = nivar, mask = mask, wave = wave
 
@@ -5,7 +52,6 @@ ny = n_elements(flux[0,*])
 mflux = flux 
 nflux = flux * 0
 if  keyword_set(ivar) then nivar = ivar * 0
-
 
 if keyword_set(mask) and keyword_set(wave) then begin
   

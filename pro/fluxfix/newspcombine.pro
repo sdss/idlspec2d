@@ -1,12 +1,14 @@
 ;+
 ; NAME:
-;   spcombine
+;   newspcombine
 ;
 ; PURPOSE:
-;   Calling script for SPCOADD_FRAMES.
+;   Flux calibrates and combines exposures with a common plugmap.
+;   (Calling script for SPCOADD_FLUXED_FRAMES.)
 ;
 ; CALLING SEQUENCE:
-;   spcombine, [ planfile, docams=, adderr=, /xdisplay, minsn2=, /smearinclude ]
+;   newspcombine, [ planfile, docams=, adderr=, /xdisplay, minsn2=, $
+;     best_exposure= ]
 ;
 ; INPUTS:
 ;
@@ -18,10 +20,14 @@
 ;                fraction of the flux; default to 0.03 (3 per cent).
 ;   xdisplay   - Send plots to X display rather than to plot file
 ;   minsn2     - Minimum S/N^2 to include science frame in coadd (default 0.2)
-;   smearinclude- If set, then include 'smear' flavor exposures as well
-;                as 'science' flavor.
+;   best_exposure - string containing the exposure ID of the "best" exposure.
+;                This is the exposure which all exposures will be scaled to
+;                match before the images are coadded.  If this is not set, the
+;                exposure with the best S/N and spectrophotometry is chosen.
 ;
 ; OUTPUT:
+;   spPlate-PPPP-MMMMM.fits file
+;   Diganostic plots in spDiagcomb-PPPP-MMMMM.ps, spSN2d-PPPP-MMMMM.ps
 ;
 ; COMMENTS:
 ;
@@ -29,13 +35,16 @@
 ;
 ; BUGS:
 ;   This routine spawns the Unix command 'mkdir'.
+;   For a given exposure to be combined data from all 4 cameras must be
+;   present
 ;
 ; PROCEDURES CALLED:
+;   djs_filepath()
 ;   cpbackup
 ;   idlspec2d_version()
 ;   idlutils_version()
-;   spcoadd_raw_frames
-;   spflux_frames
+;   lookforgzip()
+;   spcoadd_fluxed_frames
 ;   splog
 ;   yanny_free
 ;   yanny_par()
@@ -44,8 +53,7 @@
 ; INTERNAL SUPPORT ROUTINES:
 ;
 ; REVISION HISTORY:
-;   20-Oct-2002  Revised by C. Tremonti to use new fluxing routines
-;   06-Jul-2000  Written by David Schlegel, Princeton.
+;   12-Aug-2003  Adapted from spcombine by C. Tremonti, Steward Observatory
 ;-
 ;------------------------------------------------------------------------------
 pro newspcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $

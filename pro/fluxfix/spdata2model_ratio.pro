@@ -1,8 +1,71 @@
 ;+
+; NAME:
+;   spdata2model_ratio
+;
+; PURPOSE:
+;   Construct flux correction vectors by ratioing the observed spectra of
+;   standard stars to Kurucz models of the appropriate spectral type and
+;   smoothing the result.
+;
+; CALLING SEQUENCE:
+;    corvector = spdata2model_ratio(loglam, stdflux, stdivar, stdmask, 
+;      stdinfo, corvivar=, cormed=, /norm)
+;
+; INPUTS:
+;   loglam  -- wavelength array in log10(Angstroms) [npix]
+;   stdflux -- array of standard star fluxes [npix, nstd]
+;   stdivar -- inverse variance of standard star fluxes [npix, nstd]
+;   stdmask -- ormask of standard star spectra [npix, nstd] 
+;              (used to mask sky residuals)
+;   stdinfo -- structure containing information about which Kurucz model
+;              is to be used with each standard star [nstd]. (This is the
+;              output of "stype_standard".)
+; 
+; OPTIONAL INPUT:
+;   norm   --  normalize the vectors before returning them (between 
+;              5700 - 6300 A -- avoiding the last 200 pixels before the
+;              dichroic)
+;
+; OUTPUT:
+;   Vectors which represent the smoothed ratio of (data/model) for each
+;   standard star.  [npix, nstd]
+;
+; OPTIONAL OUTPUT:
+;   corvivar - inverse variance corresponding to each flux correction vector.  
+;              [npix, nstd]
+;   cormed   - median of each flux correction vector between 5700 and 6300 A
+;              (but avoiding the 200 pixels nearest the dichroic) [nstd]
+;
+; COMMENTS:
+;   For each standard star the best fit Kurucz model (as determined by 
+;   "stype_standard") is restored, redshifted, and linearly interpolated to 
+;   match the wavelength grid of the data.  Each model is then reddened
+;   using the SDF reddening at the RA/DEC of the standard star and the 
+;   extinction curve used by SFD (O'donnell).  
+;
+; BUGS:
+;
+; EXAMPLES:
+;
+; PROCEDURES CALLED:
+;   divideflat
+;   djs_maskinterp
+;   djs_median()
+;   ext_odonnell
+;   filter_thru()
+;   kurucz_restore
+;   linterp
+;   skymask() 
+; 
+; INTERNAL SUPPORT ROUTINES:
+;
+; REVISION HISTORY:
+;   12-Aug-2003  Create by C. Tremonti, Steward Observatory
 ;-
 ;------------------------------------------------------------------------------
+
 function spdata2model_ratio, loglam, stdflux, stdivar, stdmask, stdinfo, $
-         corvivar = corvivar
+         corvivar = corvivar, cormed = cormed, norm = norm
 
    ;--------------
    ; Read in Kurucz model files
@@ -12,7 +75,7 @@ function spdata2model_ratio, loglam, stdflux, stdivar, stdmask, stdinfo, $
    ;-------------------
    ; Mask out bad pixels and regions dominated by sky-sub residuals
 
-   stdivar = skymask(stdivar, stdmask, ngrow=5)
+   ;stdivar = skymask(stdivar, 0, stdmask, ngrow=3)  ; Does this help???
    stdflux = djs_maskinterp(stdflux, stdivar EQ 0, iaxis=0, /const)
 
    ;-----------------
@@ -23,6 +86,7 @@ function spdata2model_ratio, loglam, stdflux, stdivar, stdmask, stdinfo, $
    nstd = n_elements(stdflux[0,*])
    corvector = fltarr(npix, nstd)
    corvivar = fltarr(npix, nstd)
+   cormed = fltarr(nstd)
    wave = 10.0^loglam 
 
    for istd=0, nstd-1 do begin
@@ -60,6 +124,18 @@ function spdata2model_ratio, loglam, stdflux, stdivar, stdmask, stdinfo, $
      corvector[*,istd] = smooth(fluxvect, 25, /NAN)
      corvivar[*, istd] = fluxvivar
 
+     ;-----------
+     ; Normalize in the dichroic region but avoiding the exact edges
+
+     norm_indx = where(wave gt 5700 and wave lt 6300 and $
+                       wave lt max(wave) - 200 and wave gt min(wave) + 200)
+
+     cormed[istd] = djs_median(corvector[norm_indx,istd])
+    
+     if keyword_set(norm) then begin
+       corvector[*,istd] = corvector[*,istd] / cormed[istd]
+       corvivar[*, istd] = corvivar[*,istd] * cormed[istd]^2
+     endif
    endfor
 
    return, corvector

@@ -1,7 +1,94 @@
+;+
+; NAME:
+;   atmdisp_cor
+; 
+; PURPOSE:
+;   Atmospheric dispersion causes wavelength dependent lightloss from 
+;   fiber spectra.  The mean atmospheric dispersion experienced by the 
+;   standard stars on each plate is automatically corrected for as part of
+;   the flux calibration.  However, any shift in the centering of the 
+;   spectroscopic targets in the fibers across the plate will result in 
+;   differences in atmospheric dispersion as a function of plate position.
+;   These centering errors -- caused by small errors in the plate scale or
+;   rotation -- can produce flux calibration errors of up to 20%.  This
+;   procedure is designed to correct for these.
+;
+;   Synthetic magnitudes are computed from the spectra on 1 half-plate and
+;   compared to the photo fiber magnitudes.  The residuals are fit as a 
+;   function of plate x/y position with a 3rd order polynomial. The (g-r) 
+;   offsets of this fit are then mapped into an atmospheric dispersion 
+;   correction.  This mapping makes use of models of the atmospheric dispersion
+;   of point sources observed with 2" seeing through 3" fibers at a variety
+;   of airmasses.  The absolute light loss is mapped using the r-band mag
+;   residuals.  A vector of wavelength dependent corrections is returned.
+;
+; CALLING SEQUENCE:
+;
+;   atm_model = atmdisp_cor(loglam, flux, plugtag, hdr, title = title, $
+;                           surfgr_sig = surfgr_sig)
+;
+; INPUTS:
+;   loglam  - wavelength array of input spectra in log10(Angstroms) [npix]
+;   flux    - flux array from 1 half plate [npix, nfiber] (nfiber~320)
+;   plugtag - plugmap [nfiber] -- used for mags, plate x/y, sky & standard ID
+;   hdr     - image header -- used for aquiring airmass info (maybe also
+;             seeing and guiding in the future)
+;
+; OUTPUT:
+;   A model of the atmospheric dispersion correction for each fiber is
+;   returned [npix, nfiber].  (To correct: flux_cor = flux / atm_model)
+;   Plots are generated showing the (g-r) and r mag offsets as a function 
+;   of plate x/y before and after the correction.  Histograms are produced
+;   as well.
+; 
+; KEYWORDS:
+;   title     -  title of output plots (usually plate/mjd/specid)
+;   surfgr_sig - sigma of 2d fit to the (g-r) offsets -- this is a good
+;                indicator of how big the correction is.
+;
+; COMMENTS:
+;   This function requires an external source of info about the effects
+;   of atmospheric dispersion as a function of wavelength.  This info is
+;   stored in structures in IDLSPEC2D_DIR/etc/.  They are named 
+;   'atmdisp_vec_am' + airmass + 'see2.0.fit' where airmass is a value from
+;   1.1 - 1.5.
+;
+; BUGS:
+;   Galaxies and stars respond differently to atmospheric dispersion beause
+;   of thier different spatial extent.  The mean correction which is 
+;   derived here is really that appropriate for the average galaxy -- 
+;   so corrections for point sources are likely to be underestimated a bit.
+;   To do this right the spatial profile of each object should be taken into
+;   account.
+;
+; EXAMPLES:
+;
+; PROCEDURES CALLED:
+;   djs_icolor()
+;   djs_iterstat()
+;   djs_oplot
+;   djs_sfit_iter()
+;   filter_thru()
+;   gaussfit()
+;   legend
+;   linterp
+;   mrdfits
+;   plothist
+;   traceset2xy
+;   
+; INTERNAL SUPPORT ROUTINES:
+;   sphoto_xy
+;
+; REVISION HISTORY:
+;   Created 12-Aug-2003 by C. Tremonti, Steward Observatory
+;-
+;-----------------------------------------------------------------------------
 
 ;-----------------------------------------------------------------------------
-; Make plot of spectrophtometry vs plate x or y
+; Subroutine: sphoto_xy
 ;-----------------------------------------------------------------------------
+
+; Make plot of spectrophtometry vs plate x or y
 
 pro sphoto_xy, platepos, sphotoff, xx = xx, yy=yy, ytag = ytag, $
     first = first, ok = ok, std = std, rej = rej
@@ -31,10 +118,12 @@ end
 
 ;-----------------------------------------------------------------------------
 
+;-----------------------------------------------------------------------------
+; Main pro: atmdisp_cor
+;-----------------------------------------------------------------------------
+
 function atmdisp_cor, loglam, flux, plugtag, hdr, title = title, $
-         surfgr_sig = surfgr_sig, ngroff = ngroff, nrioff = nrioff, $
-         mean_groff = groff_mean, mean_ngroff = ngroff_mean, $
-         sig_groff = groff_sig, sig_ngroff = ngroff_sig
+  surfgr_sig = surfgr_sig
 
   npix = n_elements(flux[*,0])
   nfib = n_elements(flux[0,*])
@@ -170,8 +259,6 @@ function atmdisp_cor, loglam, flux, plugtag, hdr, title = title, $
 
   legend, ['(g-r)', '(r-i)'], color=djs_icolor(['green', 'red']), $
           psym=[0,0], thick=4, charsize = 0.6
-  groff_mean = grcoef[1]
-  groff_sig = grcoef[2]
 
   ;----------------
   ; correct the flux
@@ -209,9 +296,6 @@ function atmdisp_cor, loglam, flux, plugtag, hdr, title = title, $
           string(ricoef[1], format='(F6.3)'), charsize = 0.6
   xyouts, 0.10, ymax*0.60, '(r-i) sigma = ' + $
           string(ricoef[2], format='(F6.3)'), charsize = 0.6
-
-  ngroff_mean = grcoef[1]
-  ngroff_sig = grcoef[2]
 
 ;-----------------------------------------------------------------------------
 ; Now correct the total fluxes using the r-band mags
