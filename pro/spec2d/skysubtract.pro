@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   skystruct = skysubtract(objflux, objivar, plugsort, wset, objsub, objsubivar, $
 ;    [ iskies= , fibermask=, nord=, upper=, lower=, maxiter=, pixelmask=, $
-;    dispset=, /novariance, relchi2struct=, npoly=, tai=, newmask=, sset= ])
+;    dispset=, /novariance, relchi2set=, npoly=, tai=, newmask=, sset= ])
 ;
 ; INPUTS:
 ;   objflux    - Image flux [NPIX,NFIBER]
@@ -26,7 +26,7 @@
 ;                super-sky vector using a variable PSF described by this
 ;                structure.
 ;   novariance - Set keyword to prevent variance correction for sky residuals
-;   relchi2struct- Structure containing information of chi^2 fitting
+;   relchi2set- Structure containing information of chi^2 fitting
 ;   npoly      - Polynomial order of 2d fit.
 ;   tai        - TAI of plate exposure, if supplied a linear airmass correction
 ;                  is applied
@@ -85,7 +85,7 @@
 function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
    iskies=iskies, fibermask=fibermask, nord=nord, upper=upper, $
    lower=lower, maxiter=maxiter, pixelmask=pixelmask, thresh=thresh, $
-   dispset=dispset, npoly=npoly, relchi2struct=relchi2struct, $
+   dispset=dispset, npoly=npoly, relchi2set=relchi2set, $
    novariance=novariance, tai=tai, nbkpt=nbkpt, newmask=newmask, sset=sset
 
    if (size(objflux, /n_dimen) NE 2) then message, 'OBJFLUX is not 2-D'
@@ -364,11 +364,11 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
       ; Store Relative Chi2 information in a structure
       ; Add in other information we want to write to disk??
       
-      relchi2struct = create_struct( $
-          'WAVE', relwave, $
-          'CHI2', relchi2, $
-          'FULLBKPT', relchi2set.fullbkpt, $
-          'COEFF', relchi2set.coeff)
+;      relchi2struct = create_struct( $
+;          'WAVE', relwave, $
+;          'CHI2', relchi2, $
+;          'FULLBKPT', relchi2set.fullbkpt, $
+;          'COEFF', relchi2set.coeff)
 
    endif else begin
 
