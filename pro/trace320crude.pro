@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   xset = trace320crude( fimage, invvar, [mthresh=, ystart=, nmed=, xgood=, $
-;    xmask=, yset=, maxerr=, maxshifte=, maxshift0=, xerr=, ngrow=  ] )
+;    xmask=, yset=, maxerr=, maxshifte=, maxshift0=, xerr=, maxdev=, ngrow=  ] )
 ;
 ; INPUTS:
 ;   fimage     - Image
@@ -30,6 +30,9 @@
 ;                default to 0.5
 ;
 ; OPTIONAL INPUTS:
+;   maxdev     - Maximum deviation of X in pixels; default to rejecting any
+;                XPOS positions that deviate by more than 1.0 pixels from
+;                a polynomial remapping of the centroids from other rows.
 ;   ngrow      - For each trace, replace all centroids within NGROW rows
 ;                of a bad centroid with the predicted centroid locations.
 ;                Default to 5.
@@ -58,8 +61,9 @@
 ;------------------------------------------------------------------------------
 function trace320crude, fimage, invvar, ystart=ystart, nmed=nmed, xgood=xgood, $
  xmask=xmask, radius=radius, yset=yset, maxerr=maxerr, maxshifte=maxshift, $
- maxshift0=maxshift0, xerr=xerr, ngrow=ngrow
+ maxshift0=maxshift0, xerr=xerr, maxdev=maxdev, ngrow=ngrow
 
+   if (NOT keyword_set(maxdev)) then maxdev = 1.0
    if (NOT keyword_set(ngrow)) then ngrow = 5
 
    ; Find the 320 X-centers in the row specified by YSTART
@@ -86,7 +90,7 @@ function trace320crude, fimage, invvar, ystart=ystart, nmed=nmed, xgood=xgood, $
    for iy=0, ny-1 do begin
       coeff = polyfitw(xstart, xset[iy,*], xgood, ndegree, xfit)
       xdiff = xfit - xset[iy,*]
-      ibad = where(abs(xdiff) GT 0.15)
+      ibad = where(abs(xdiff) GT maxdev)
       xmask[iy, ixgood] = 1 ; First set all good traces in this row = 1
       if (ibad[0] NE -1) then begin
          xmask[iy,ibad] = 0

@@ -110,12 +110,12 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
               function_name=function_name)
 
             if (func EQ 'legendre') then $
-               yfit = flegendre(xnorm[igood], ncoeff) # res
+               yfit = flegendre(xnorm, ncoeff) # res
             if (func EQ 'chebyshev') then $
-               yfit = fchebyshev(xnorm[igood], ncoeff) # res
+               yfit = fchebyshev(xnorm, ncoeff) # res
 
             nglast = ngood
-            igood = where( abs(yfit-ypos[igood,i]) LT maxdev, ngood)
+            igood = where( abs(yfit-ypos[*,i]) LT maxdev, ngood)
          endwhile    
    
          tset.coeff[*,i] = res
