@@ -88,6 +88,18 @@ pro platemerge, zfile, outfile=outfile, ascfile=ascfile, qsurvey=qsurvey
    fullplatefile = repstr(fullzfile, 'spZbest', 'spPlate')
 
    ;----------
+   ; Find the first tsObj file that exists for use in constructing the
+   ; output structure.
+
+   ifile = 0
+   while (NOT keyword_set(tsobj0)) do begin
+      tsobj0 = plug2tsobj(plist[ifile].plate, 0, 0)
+      ifile = ifile + 1
+      if (ifile EQ nfile) then $
+       message, 'No tsObj files found!'
+   endwhile
+
+   ;----------
    ; Loop through each file
 
    for ifile=0, nfile-1 do begin
@@ -101,9 +113,7 @@ pro platemerge, zfile, outfile=outfile, ascfile=ascfile, qsurvey=qsurvey
        splog, 'WARNING: No tsObj file found for plate ', plate
 
       if (NOT keyword_set(outdat)) then begin
-         tsobj0 = plug2tsobj(475, 0, 0) ; Get template from plate 475 for tsObj
-         readspec, 475, 1, zans=zans0 ; Get template from plate 475 for zans
-         outdat = replicate( create_struct(zans0, tsobj0), nout)
+         outdat = replicate( create_struct(zans[0], tsobj0), nout)
          struct_assign, {junk:0}, outdat ; Zero-out all elements
       endif
 
