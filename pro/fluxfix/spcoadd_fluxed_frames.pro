@@ -467,6 +467,11 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
 
    splog, 'Correcting for spectrophotometry residuals'
 
+   ;hdr = *hdrarr[0]
+   ;platesn, finalflux, finalivar, finalandmask, finalplugtag, finalwave, $
+   ;  hdr=hdr, plotfile=djs_filepath(plotsnfile, root_dir=combinedir), $
+   ;  snvec=snvec, synthmag=synthmag
+
    ; Do this separately for spectrographs 1 & 2
    for specnum = 1, 2 do begin
 
@@ -493,7 +498,8 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
                    stdinfo, corvivar = corvivar)
 
        ; Normalize the flux correction vectors to the center of guiding
-       normwave = where(10.0^finalwave gt 5300 and 10.0^finalwave lt 5700) 
+       ;normwave = where(10.0^finalwave gt 5300 and 10.0^finalwave lt 5700) 
+       normwave = where(10.0^finalwave gt 4200 and 10.0^finalwave lt 5400) 
        cormed = fltarr(nok)
        for istd = 0, nok - 1 do $
          cormed[istd] = median(corvector[normwave, istd])
@@ -512,6 +518,7 @@ pro spcoadd_fluxed_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
 
        splog, 'Spectrophotometry error for spectrograph ' + sid_str + $
          ' (from the standards): ' + string(fsig * 100, format = '(I4)') + ' %'
+
 
        ;-------------------
        ; Correct for wiggles

@@ -41,8 +41,9 @@ function spdata2model_ratio, loglam, stdflux, stdivar, stdmask, stdinfo, $
      ;-------------
      ; Get zeropoint from phot fiber mag 
 
-     scalefactor = 10.0^(-0.4 * (stdinfo[istd].mag[2] - $
-                                 stdinfo[istd].red_model_mag[2]))
+     ; choose guiding center as either r band (2) or g (1)
+     scalefactor = 10.0^(-0.4 * (stdinfo[istd].mag[1] - $
+                                 stdinfo[istd].red_model_mag[1]))
      red_kflux = red_kflux * scalefactor / 1e-17
 
      ;-----------
