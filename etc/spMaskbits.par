@@ -88,3 +88,12 @@ maskbits TTARGET 31 SOUTHERN_SURVEY
 
 #------------------------------------------------------------------------------
 
+maskbits ZWARNING  0 SKY
+maskbits ZWARNING  1 LITTLE_COVERAGE
+maskbits ZWARNING  2 SMALL_DELTA_CHI2
+maskbits ZWARNING  3 NEGATIVE_MODEL
+maskbits ZWARNING  4 MANY_OUTLIERS
+maskbits ZWARNING  5 Z_FITLIMIT
+maskbits ZWARNING  6 NEGATIVE_EMISSION
+
+#------------------------------------------------------------------------------
