@@ -444,3 +444,7 @@ ophdrfix sdR-??-0001458[0-1] FLAVOR   "'unknown'"
 # (Reported to be 2 sec!)
 ophdrfix sdR-??-00014596 EXPTIME  900
 
+# Wrong exposure time in these headers for plate 510 on MJD 52381.
+# (Reported to be 23136 sec!)
+ophdrfix sdR-??-00014637 EXPTIME  800
+
