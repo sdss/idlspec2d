@@ -141,6 +141,7 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
 
    if (NOT keyword_set(minobj)) then minobj = 50
    if (NOT keyword_set(minflux)) then minflux = 5.
+   t0 = systime(1)
 
    if (keyword_set(platefile)) then begin
       objflux = mrdfits(platefile,0,hdr)
@@ -360,6 +361,8 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
       platesn, objflux*corrimg, objivar/corrimg^2, $
        andmask, plugmap, loglam, hdr=hdr, plotfile='test2.ps'
    endif
+
+   splog, 'Time to compute distortions = ', systime(1)-t0, ' sec'
 
    return, corrimg
 end
