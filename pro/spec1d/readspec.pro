@@ -552,7 +552,6 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
          if (q_sky) then spec_append, sky, sky1, pixshift
          if (q_plugmap) then plugmap = struct_append(plugmap, [plugmap1])
          if (q_tsobj) then tsobj = struct_append(tsobj, [tsobj1])
-if (n_elements(tsobj) NE n_elements(allindx)) then stop ; ???
          if (q_zans) then zans = struct_append(zans, [zans1])
 ; The first two attempts below can fail if the ZLINE structure changes.
 ;         if (q_zline) then zline = struct_append(zline, [zline1])
