@@ -35,22 +35,24 @@ fi
 # Only consider those MJD subdirectories /astrolog/$MJD where a corresponding
 # data directory exists in /data/spectro/$MJD.
 # Only copy the following select set of files:
-#   Unplugged*.ps
-#   exposureLog*.par
-#   fiberScan*.par
-#   guiderMon*.par
-#   op*.par
-#   plPlugMap*.par
 #   sdReport*.par
+#   plPlugMap*.par
+#   guiderMon*.par
+#   exposureLog*.par
+#   op*.par
+#   Unplugged*.ps
+#   fiberScan*.par
+# Copy the following file from the local machine back to sdsshost.apo
+# (since this file is created on the Son-of-Spectro machine):
+#   sdHdrFix*.par
 
 datadirs=`ssh sdsshost.apo.nmsu.edu ls -d /data/spectro/[5-9]????`
 astrologdirs=`echo $datadirs | sed -n 's/\/data\/spectro/\/astrolog/pg'`
 
-for dir in $astrologdirs
+for thisdir in $astrologdirs
 do
    rsync -ar --rsh="ssh -c blowfish" \
     --rsync-path=/p/rsync/v2_4_3/rsync \
-    --include "sdHdrFix*.par"    \
     --include "sdReport*.par"    \
     --include "plPlugMap*.par"   \
     --include "guiderMon*.par"   \
@@ -60,7 +62,10 @@ do
     --include "fiberScan*.par"   \
     --exclude="*/*"              \
     --log-format="/astrolog/%f"  \
-    sdsshost.apo.nmsu.edu:$dir $ASTROLOG_DIR
+   thismjd=`echo $thisdir | sed -n 's/\/.*\///p'`
+   rsync -ar --rsh="ssh -c blowfish" \
+    --rsync-path=/p/rsync/v2_4_3/rsync \
+    $ASTROLOG_DIR/$thismjd/"sdHdrFix*.par" sdsshost.apo.nmsu.edu:$thisdir
 done
 
 # This syncs /astrolog/[5-9]???? from sdsshost to the local machine,
