@@ -36,10 +36,9 @@ bc "2 amp" 0 1 1754 2    1386 662  BADBLK BADCOL
 bc "2 amp" 0 1 1762 2    1471 557  BADBLK BADCOL
 
 bc "2 amp" 0 2 0    2048 0    3    BADBLK BADCOL
-bc "2 amp" 0 2 370  1    1800 248  BADBLK BADCOL   # Added 070901, from neighbor
-bc "2 amp" 0 2 370  1    325  40   BADBLK BADCOL   # Added 072001
-bc "2 amp" 0 2 371  1    578  1478 BADBLK BADCOL   # Added 040600
+bc "2 amp" 0 2 370  2    0    2048 BADBLK BADCOL   # Full two columns, 010502
 bc "2 amp" 0 2 731  1    1538 510  BADBLK BADCOL   # Added 040600
+bc "2 amp" 0 2 1068 1    1400 648  BADBLK HOTCOL   # Added 010502
 bc "2 amp" 0 2 1090 1    885  1163 BADBLK HOTCOL   # extended 040600
 bc "2 amp" 0 2 1181 2    1150 898  BADBLK HOTCOL   # extended 040600
 bc "2 amp" 0 2 1435 1    0    2048 BADBLK HOTCOL
@@ -55,7 +54,7 @@ bc "2 amp" 0 3 1272 2    1206 842  BADBLK BADCOL
 
 bc "2 amp" 0 4 178  1    1615 433  BADBLK HOTCOL   # extended 040600
 bc "2 amp" 0 4 2011 1    906  1142 BADBLK HOTCOL   # extended 040600
-bc "2 amp" 0 4 1111 6    0    2048 BADBLK HOTCOL   # widened 040600
+bc "2 amp" 0 4 1112 4    0    2048 BADBLK HOTCOL   # widened 040600, thinned 010602
 bc "2 amp" 0 4 1196 1    1380 668  BADBLK BADCOL
 bc "2 amp" 0 4 1201 1    720  30   BADBLK HOTCOL   # widened 040600
 #bc "2 amp" 0 4 1201 3    0    2048 BADBLK HOTCOL   # widened 040600
