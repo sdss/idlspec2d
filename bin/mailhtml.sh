@@ -34,7 +34,7 @@ do
     echo "" >> $mailfile
 
     echo "!$filename<<EOT" >> $mailfile
-    cat $thislog >> $mailfile
+    cat $thislog | sed -e 's/<BODY.*>/<BODY>/' >> $mailfile
     echo "EOT" >> $mailfile
    
     sn=`find $dir -name "snplot*ps" -print` 
@@ -52,10 +52,13 @@ do
 #    mail -s "$subject" sdss-test@astro.princeton.edu < $mailfile
 
 #
-#	Kill everything in the log directory, and then remove the directory.
+#	Kill almost everything in the log directory
 #
-    echo "rm -rf $dir"
-    rm -rf $dir
+
+    rm -f $dir'/wset*.fits'
+    rm -f $dir'/tset*.fits'
+    rm -f $dir'/fflat*.fits'
+    rm -f $dir'/sci*.fits'
 
 done
 
