@@ -16,7 +16,7 @@
 ;   mjend      - Valid ending MJD for input pixel flats.
 ;   mjout      - MJD for name of output average pixel flat; default to 0,
 ;                resulting in file names like 'pixflatave-00000-b1.fits'.
-;   indir      - If INDIR not set, then look for files in $SPECFLAT_DIR/flats.
+;   indir      - Input directory; default to current directory.
 ;   outdir     - Output directory; default to same as INDIR.
 ;   docam      - Camera names; default to all cameras: ['b1', 'b2', 'r1', 'r2']
 ;
@@ -43,6 +43,7 @@
 ;   headfits()
 ;   mrdfits()
 ;   splog
+;   sxaddpar
 ;   sxpar()
 ;   writefits
 ;
@@ -53,8 +54,7 @@
 pro spflatave, mjd=mjd, mjstart=mjstart, mjend=mjend, mjout=mjout, $
  indir=indir, outdir=outdir, docam=docam
 
-   if (NOT keyword_set(indir)) then $
-    indir = filepath('', root_dir=getenv('SPECFLAT_DIR'), subdirectory='flats')
+   if (NOT keyword_set(indir)) then indir = ''
    if (NOT keyword_set(outdir)) then outdir = indir
    if (NOT keyword_set(mjout)) then mjout = 0L
 
@@ -174,6 +174,12 @@ pixflatarr = 0 ; Clear memory
                 aveimg[igood[ngood-1]+1:naxis1-1,iy] = 1.0
             endif
          endfor
+
+         ;----------
+         ; Append comments to the header
+
+         for ifile=0, nfile-1 do $
+          sxaddpar, hdr, 'COMMENT', 'Include file ' + fileandpath(files[ifile])
 
          ;----------
          ; Write the output file
