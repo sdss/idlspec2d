@@ -33,12 +33,13 @@
 ; PROCEDURES CALLED:
 ;   djs_oplot
 ;   djs_plot
+;   fibermask_bits()
+;   traceset2xy
 ;
 ; REVISION HISTORY:
 ;   23-Nov-1999  Written by D. Schlegel, Princeton
 ;-
 ;------------------------------------------------------------------------------
-
 pro qaplot_fflat, fflat, wset, fibermask=fibermask, dx=dx, title=title
 
    if (NOT keyword_set(dx)) then dx = 1.e-3

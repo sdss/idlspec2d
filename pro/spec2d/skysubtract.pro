@@ -55,6 +55,8 @@
 ;   pixelmask_bits()
 ;   bspline_iterfit()
 ;   bspline_valu()
+;   splog
+;   traceset2xy
 ;
 ; REVISION HISTORY:
 ;   16-Sep-1999  Written by S. Burles, APO
@@ -227,7 +229,6 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
       ; Spline fit RELCHI2, only for the benefit of getting a smooth function
       ; Also, force the fit to always be >= 1, such that we never reduce the
       ; formal errors.
-
 
       relchi2set = bspline_iterfit(relwave, relchi2, nord=3, $
         upper=30, lower=30, maxiter=maxiter, everyn=2)

@@ -32,13 +32,15 @@
 ;   djs_iterstat
 ;   djs_oplot
 ;   djs_plot
+;   errplot
+;   traceset2xy
+;   splog
 ;
 ; REVISION HISTORY:
 ;   15-Oct-1999  Written by D. Finkbeiner, APO
 ;   23-Nov-1999  Modified by D. Schlegel, Princeton
 ;-
 ;------------------------------------------------------------------------------
-
 pro qaplot_arcline, xdif, wset, lambda, color=color, fibermask=fibermask, $
  title=title
 

@@ -33,7 +33,10 @@
 ; PROCEDURES CALLED:
 ;   djs_median
 ;   djs_oplot
+;   djs_oploterr
 ;   djs_plot
+;   splog
+;   traceset2xy
 ;
 ; INTERNAL SUPPORT ROUTINES:
 ;   skyplot
