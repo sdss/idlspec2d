@@ -212,6 +212,13 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
  psfile=psfile, xrange=xrange, yrange=yrange, noerase=noerase, $
  _EXTRA=KeywordsForSplot
 
+   if (n_params() LT 1) then begin
+      print, 'Syntax - plotspec, plate, [ fiberid, mjd=, znum=, nsmooth=, $'
+      print, '         psfile=, xrange=, yrange=, noerase=, $'
+      print, '         _EXTRA=KeywordsForSplot'
+      return
+   endif
+
    if (n_elements(plate) NE 1) then $
     message, 'PLATE must be a scalar'
    if (NOT keyword_set(mjd)) then readspec, plate, mjd=mjd
