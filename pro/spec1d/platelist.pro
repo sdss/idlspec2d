@@ -6,7 +6,7 @@
 ;   Make list of reduced plates
 ;
 ; CALLING SEQUENCE:
-;   platelist, [fullplatefile, /create, /purge, plist= ]
+;   platelist, [fullplatefile, /create, /purge2d, /purge1d, plist= ]
 ;
 ; INPUTS:
 ;
@@ -19,13 +19,18 @@
 ;                   '$SPECTRO_DATA/*/spPlate-*.fits'.
 ;   create      - If set, then re-generate the "platelist.fits" file;
 ;                 if not set, then simply read this file from a previous call.
-;   purge       - If set, then delete all log files for plates that are
+;   purge2d     - If set, then delete all log files for plates that are
 ;                 considered to be 'RUNNING', but not those that are 'Done',
-;                 'Pending' or 'FAILED'.  This is done indepenently for 2D or 1D
-;                 reductions, and those reductions are then listed as 'Pending'.
-;                 Setting /PURGE also sets /CREATE.  Deleting these log
-;                 files will cause the next invocations of BATCH2D/BATCH1D
-;                 to re-reduce these plates.
+;                 'Pending' or 'FAILED'.  Those plates are then listed as
+;                 'Pending'.  Setting /PURGE2D also sets /CREATE.
+;                 Deleting these log files will cause the next invocation
+;                 of BATCH2D to re-reduce those plates.
+;   purge1d     - If set, then delete all log files for plates that are
+;                 considered to be 'RUNNING', but not those that are 'Done',
+;                 'Pending' or 'FAILED'.  Those plates are then listed as
+;                 'Pending'.  Setting /PURGE1D also sets /CREATE.
+;                 Deleting these log files will cause the next invocation
+;                 of BATCH1D to re-reduce those plates.
 ;
 ; OUTPUTS:
 ;
@@ -80,7 +85,8 @@
 ; REVISION HISTORY:
 ;   29-Oct-2000  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
-pro platelist, infile, plist=plist, create=create, purge=purge
+pro platelist, infile, plist=plist, create=create, $
+ purge2d=purge2d, purge1d=purge1d
 
    minsn2 = 13.0
    fitsfile = djs_filepath('platelist.fits', root_dir=getenv('SPECTRO_DATA'))
@@ -90,7 +96,8 @@ pro platelist, infile, plist=plist, create=create, purge=purge
    ; If the /CREATE flag is not set, and the platelist file already exists
    ; on disk, then simply return the info in that file.
 
-   if (NOT keyword_set(create) AND NOT keyword_set(purge)) then begin
+   if (NOT keyword_set(create) AND NOT keyword_set(purge2d) $
+    AND NOT keyword_set(purge1d)) then begin
       thisfile = (findfile(fitsfile))[0]
       if (keyword_set(thisfile)) then begin
          plist = mrdfits(thisfile,1)
@@ -233,7 +240,8 @@ pro platelist, infile, plist=plist, create=create, purge=purge
 
          ; Check status of individual 2D runs
          planlist = yanny_par(hdrcomb, 'planfile2d') ; Assume we find this
-         planlist = djs_filepath(planlist[iplan], root_dir=path)
+         planlist = djs_filepath(planlist, root_dir=path)
+         logfile2d = '' ; List of 2D log files that exist
          for iplan=0, n_elements(planlist)-1 do begin
             yanny_read, planlist[iplan], hdr=hdr2d
             plist[ifile].mjdlist = strtrim(plist[ifile].mjdlist $
@@ -241,6 +249,8 @@ pro platelist, infile, plist=plist, create=create, purge=purge
             thislogfile = djs_filepath(yanny_par(hdr2d, 'logfile'), root_dir=path)
             thislogfile = (findfile(thislogfile))[0]
             if (keyword_set(thislogfile)) then begin
+               if (NOT keyword_set(logfile2d)) then logfile2d = thislogfile $
+                else logfile2d = [logfile2d, thislogfile]
                spawn, 'tail -1 '+thislogfile, lastline
                if (strmatch(lastline[0], '*Successful completion*')) then begin
                   ; Case where this 2D log file completed
@@ -277,9 +287,11 @@ pro platelist, infile, plist=plist, create=create, purge=purge
          endif else if (statusrun EQ 0 AND statusdone EQ 0) then begin
             plist[ifile].status2d = 'Pending' ; No log files created
          endif else begin
-            if (keyword_set(purge)) then begin
-               rmfile, planlist
-               rmfile, comblogfile
+            if (keyword_set(purge2d)) then begin
+               splog, 'PURGE2D ', logfile2d
+               rmfile, logfile2d
+               splog, 'PURGE2D ', comblogfile[ifile]
+               rmfile, comblogfile[ifile]
                plist[ifile].status2d = 'Pending' ; Some log files created
             endif else begin
                plist[ifile].status2d = 'RUNNING' ; Some log files created
@@ -362,7 +374,8 @@ pro platelist, infile, plist=plist, create=create, purge=purge
                plist[ifile].status1d = 'FAILED'; Should have found spZbest file
             endif else begin
                ; Case where this 1D log file isn't completed
-               if (keyword_set(purge)) then begin
+               if (keyword_set(purge1d)) then begin
+                  splog, 'PURGE1D ', thislogfile
                   rmfile, thislogfile
                   plist[ifile].status1d = 'Pending'
                endif else begin
