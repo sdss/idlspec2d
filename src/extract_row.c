@@ -128,11 +128,12 @@ IDL_LONG extract_row
    for(i=0, mfit=0; i<ma; i++) if(ia[i]) mfit++;
    for(i=0; i<nx; i++) ysub[i] = fimage[i];
 
+
    if(mfit != ma) {
       fprintf(stderr, "Subtracting fixed variables\n");
       subtractProfile(ysub, nx, xmin, xmax, nTrace, nCoeff, aprofile, ia, ans);
       subtractPoly(ysub, nx, nPoly, apoly, &ia[tTrace], &ans[tTrace]);
-   }
+   } 
 
    beta = (float *)malloc(sizeof(float)*ma);
 
@@ -264,9 +265,10 @@ void subtractProfile(float *y, IDL_LONG nx, IDL_LONG *xmin,
 
         for (i=0,l=0;i<nTrace;i++) 
            for (coeff=0; coeff<nCoeff; coeff++,l++) 
-              if (!ia[l]) 
-                 for (j=xmin[i],k=0;j<=xmax[i];i++,k++) 
+              if (!ia[l])  
+                 for (j=xmin[i],k=0;j<=xmax[i];j++,k++)  
                     y[j] -= a[l] * aprofile[l][k];
+               
 }
 
 void subtractPoly(float *y, IDL_LONG nx, IDL_LONG nPoly, float **apoly, 
