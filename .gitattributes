@@ -45,6 +45,7 @@ etc/template5gal.dat -text
 examples/Makefile -text
 examples/README -text
 examples/batch1d.par -text
+examples/batch2d.par -text
 examples/opBC-51809.par -text
 examples/opBC-51813.par -text
 examples/opBC.par -text
@@ -116,6 +117,7 @@ pro/spec1d/TODO -text
 pro/spec1d/bandpassfilter.pro -text
 pro/spec1d/batch.pro -text
 pro/spec1d/batch1d.pro -text
+pro/spec1d/batch2d.pro -text
 pro/spec1d/computechi2.pro -text
 pro/spec1d/cosbell.pro -text
 pro/spec1d/diffplate.pro -text
