@@ -1,6 +1,9 @@
 
 FIND_NMINIMA: Retain each peak only if it is at least MINSEP from all
             previous peaks.
+PCA_SOLVE: Add NRETURN keyword for returning a different number of
+            eigen-components from the number used (NKEEP) for replacing
+            bad and noisy data points.
 SPBIASGEN: New routine for generating mean biases for a night.
 SPREDUCE1D, ZFIND, ZCOMPUTE, FIND_NMINIMA: Plotting and debugging
             tools added with the /DOPLOT, /DEBUG keywords.
