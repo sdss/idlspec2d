@@ -150,57 +150,65 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    skyflux = skyflux[isort]
    skyivar = skyivar[isort]
 
-   ngoodpix = total(skyivar NE 0)
-
    ;----------
-   ; Compute "supersky" with a spline fit
+   ; Compute "supersky" with a spline fit.
    ; Use the EVERYN parameter to space the spline points according to
    ; the density of data points.
 
    bkpt = 0
+   firstset = bspline_iterfit(skywave, skyflux, invvar=skyivar, $
+    nord=nord, upper=upper, lower=lower, maxiter=maxiter, $
+    /eachgroup, everyn=2*nskies/3, bkpt=bkpt, outmask=outmask, yfit=skyfit)
 
-     firstset = bspline_iterfit(skywave, skyflux, invvar=skyivar, $
-       nord=nord, upper=upper, lower=lower, maxiter=maxiter, $
-       /eachgroup, everyn=2*nskies/3, bkpt=bkpt, yfit=skyfit)
+   if (total(skyfit) LE 0) then begin
+      splog, 'ABORT: Fit sky is all zeros'
+      return, 0
+   endif
 
-;-------------------------------------------------------------------------
-;
-;     This code has been added to slightly reduce the number of
-;     breakpoints, from 3100 to "ncol".  This also gives better
-;     behavior near the boundaries
-;
-;-------------------------------------------------------------------------
+   ;----------
+   ; This code has been added to slightly reduce the number of
+   ; breakpoints, from 3100 to NCOL, where we now space them such
+   ; that there is an equal amount of S/N between each.
+   ; This also gives better behavior near the boundaries.
 
-     maxsky = max(skywave[where(skyivar GT 0)], min=minsky)
-     snsqrt = sqrt((skyfit * sqrt(skyivar) > 0))
-     good = where(snsqrt GT 0)
-     snsqrt[good] = convol(snsqrt[good], gauss_kernel(2.0*nskies))
+   igood = where(skyivar GT 0 AND outmask NE 0, ngoodpix)
+   minwave  = min(skywave[igood])
+   snsqrt = sqrt((skyfit * sqrt(skyivar) > 0))
+   ipos = where(snsqrt GT 0, npos)
+   gkern = gauss_kernel(2.0*nskies)
 
-     snsum = snsqrt
-     for i=1L,n_elements(snsqrt)-1 do snsum[i] = snsum[i] + snsum[i-1]
-     place = long(snsum/max(snsum)*nbkpt) < (nbkpt-2)
-     newbkpt = uniq(place)
-     bkpt = skywave[newbkpt]
-     bkpt[0] = minsky
-     bkpt[7:nbkpt-8] = (smooth(skywave[newbkpt],7))[7:nbkpt-8]
-     nbkpt = n_elements(bkpt)
-     lowdiff = (bkpt[1]-bkpt[0])*10.0
-     highdiff = (bkpt[nbkpt-1]-bkpt[nbkpt-2])*10.0
-     fullbkpt= [ bkpt[0] - lowdiff, bkpt, max(bkpt)+highdiff]
-     for i=2,nord-1 do fullbkpt= [ fullbkpt[0] - lowdiff, fullbkpt, $
-                                  max(fullbkpt)+ highdiff]
+   if (npos GT n_elements(gkern) AND nbkpt GE 16) then begin
+      snsqrt[ipos] = convol(snsqrt[ipos], gauss_kernel(2.0*nskies))
 
-;------------------------------------------------------------------------
+      snsum = snsqrt
+      for i=1L, n_elements(snsqrt)-1 do snsum[i] = snsum[i] + snsum[i-1]
+      place = long(snsum/max(snsum)*nbkpt) < (nbkpt-2)
+      newbkpt = uniq(place)
+      bkpt = skywave[newbkpt]
+      bkpt[0] = minwave
+      bkpt[7:nbkpt-8] = (smooth(skywave[newbkpt],7))[7:nbkpt-8]
+
+      ; Why the factor of 10 below ???
+      newnbk = n_elements(bkpt)
+      lowdiff = (bkpt[1] - bkpt[0]) * 10.0
+      highdiff = (bkpt[newnbk-1] - bkpt[newnbk-2]) * 10.0
+      fullbkpt = [ bkpt[0] - lowdiff, bkpt, max(bkpt)+highdiff ]
+      for i=2, nord-1 do $
+       fullbkpt= [ fullbkpt[0] - lowdiff, fullbkpt, max(fullbkpt)+ highdiff ]
+   endif
+
+   ;----------
+   ; Re-do the fit with the new break points.
  
-     sset = bspline_iterfit(skywave, skyflux, invvar=skyivar, $
-       nord=nord, upper=upper*1.5, lower=lower*1.5, maxiter=maxiter, $
-       /eachgroup, fullbkpt=fullbkpt, yfit=skyfit2, outmask=outmask)
+   sset = bspline_iterfit(skywave, skyflux, invvar=skyivar, $
+    nord=nord, upper=upper*1.5, lower=lower*1.5, maxiter=maxiter, $
+    /eachgroup, fullbkpt=fullbkpt, yfit=skyfit2, outmask=outmask)
  
-     fullfit = bspline_valu(wave, sset) 
+   fullfit = bspline_valu(wave, sset) 
 
-   if keyword_set(dispset) then begin
+   if (keyword_set(dispset)) then begin
 
-      if NOT keyword_set(npoly) then npoly=4L
+      if (NOT keyword_set(npoly)) then npoly = 4L
 
       ; SIGMA is smooth fit to widths of arclines ???
       traceset2xy, dispset, pixnorm, sigma
