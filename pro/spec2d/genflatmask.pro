@@ -31,7 +31,7 @@
 ;
 ;   Mask values =0 for good pixels, =1 for bad.
 ;
-;   This routine spawns the Unix comments 'zcat' and 'rm'.
+;   This routine spawns the Unix command 'zcat'.
 ;
 ; EXAMPLES:
 ;
@@ -116,7 +116,7 @@ function genflatmask, flatname, spectrographid=spectrographid, color=color, $
 
       spawn, 'zcat ' + masknamein + ' > ' + masknameout
       maskimg = readfits(masknameout)
-      spawn, 'rm -f ' + masknameout
+      rmfile, masknameout
 
    endelse
 
