@@ -126,16 +126,16 @@ speclimit red flat XSIGMA b2 1.10 9e9
 speclimit red flat XSIGMA r1 1.10 9e9
 speclimit red flat XSIGMA r2 1.10 9e9
 
-# For arcs, insist on exposure times of 2 sec.
+# For arcs, insist on exposure times of 2-3 sec.
 
 speclimit red arc EXPTIME b1 -9e9 1
 speclimit red arc EXPTIME b2 -9e9 1
 speclimit red arc EXPTIME r1 -9e9 1
 speclimit red arc EXPTIME r2 -9e9 1
-speclimit red arc EXPTIME b1 3 9e9
-speclimit red arc EXPTIME b2 3 9e9
-speclimit red arc EXPTIME r1 3 9e9
-speclimit red arc EXPTIME r2 3 9e9
+speclimit red arc EXPTIME b1 4 9e9
+speclimit red arc EXPTIME b2 4 9e9
+speclimit red arc EXPTIME r1 4 9e9
+speclimit red arc EXPTIME r2 4 9e9
 
 # The wavelength ranges should match closely to how we tuned the spectrographs
 # on MJD 51612 (8/9 March 2000).  Our best values were:
@@ -212,16 +212,16 @@ speclimit red arc WSIGMA b2 1.05 9e9
 speclimit red arc WSIGMA r1 1.05 9e9
 speclimit red arc WSIGMA r2 1.05 9e9
 
-# For science frames, insist on exposure times between 600 and 1500 sec.
+# For science frames, insist on exposure times between 600 and 1800 sec.
 
 speclimit red science EXPTIME b1 -9e9 598
 speclimit red science EXPTIME b2 -9e9 598
 speclimit red science EXPTIME r1 -9e9 598
 speclimit red science EXPTIME r2 -9e9 598
-speclimit red science EXPTIME b1 1502 9e9
-speclimit red science EXPTIME b2 1502 9e9
-speclimit red science EXPTIME r1 1502 9e9
-speclimit red science EXPTIME r2 1502 9e9
+speclimit red science EXPTIME b1 1801 9e9
+speclimit red science EXPTIME b2 1801 9e9
+speclimit red science EXPTIME r1 1801 9e9
+speclimit red science EXPTIME r2 1801 9e9
 
 # The sky levels were 0.15 e-/pix and 0.30 e-/pix in the blue and
 # cameras on MJD 51612 (8/9 March 2000).  Report a warning (yellow)
