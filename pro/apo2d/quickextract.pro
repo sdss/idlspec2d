@@ -75,6 +75,7 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    ; Read in the raw science image
 
    sdssproc, rawfile, image, invvar, hdr=hdr, color=color, camname=camname
+   colorband = strmid(color,0,1)
    exptime = sxpar(hdr, 'EXPTIME')
 
    ;----------
@@ -130,11 +131,11 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    scatflux = extract_boxcar(scatfit, xcen, radius=radius)
 
    exptime_factor = (exptime/900.0) > 1.0
-   if (strmid(color,0,1) EQ 'b') then scatlimit = 20 *exptime_factor $
+   if (colorband EQ 'b') then scatlimit = 20 *exptime_factor $
     else scatlimit = 30 * exptime_factor
 
-   scatmed = median(scatfit)
-   scatmax = max(scatfit)
+   scatmed = fix(median(scatfit))
+   scatmax = fix(max(scatfit))
 
    if (scatmed GT scatlimit) then $
      splog, 'WARNING: Scattered light median = ', scatmed, ' electrons' $
@@ -193,15 +194,13 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    ;----------
    ; Select wavelength range to analyze
 
-   if (strmid(color,0,1) EQ 'b') then begin
+   if (colorband EQ 'b') then begin
       icolor = 1
       wrange = [4000,5500] ; coverage of g-band
-      fitmag = [18.2, 19.7]
       snmag = 20.2
    endif else begin
       icolor = 3
       wrange = [6910,8500] ; coverage of i-band
-      fitmag = [17.9, 19.4]
       snmag = 19.9
    endelse
 
@@ -243,11 +242,8 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    endelse
 
    if (iobj[0] NE -1) then begin
-      if (n_elements(where(plugsort[iobj].mag[icolor] GT fitmag[0] $
-       AND plugsort[iobj].mag[icolor] LT fitmag[1])) LT 20) $
-       then fitmag[0] = 1.0
-
-      coeffs = fitsn(plugsort[iobj].mag[icolor], meansn[iobj], fitmag=fitmag)
+      coeffs = fitsn(plugsort[iobj].mag[icolor], meansn[iobj], $
+       colorband=colorband)
       if (keyword_set(coeffs)) then $
        snoise2 = 10^(2.0 * poly(snmag, coeffs)) $ ; The 2.0 is to square the S/N
       else $
