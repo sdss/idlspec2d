@@ -44,7 +44,11 @@
 ;   apo_plotsn
 ;   djs_lockfile()
 ;   djs_unlockfile
+;   fits_wait()
 ;   mwrfits
+;   quickextract()
+;   quicktrace()
+;   quickwave()
 ;
 ; REVISION HISTORY:
 ;   30-Apr-2000  Written by D. Schlegel & S. Burles, APO
@@ -183,6 +187,17 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    ; Open the log file to catch WARNINGs and ABORTs.
 
    splog, filename=splgfile, prelog=filename
+   splog, 'Started at ', systime()
+
+   ;----------
+   ; Wait for a file to be fully written to disk, and exit if that doesn't
+   ; happen within 3 minutes.
+
+   if (fits_wait(fullname, deltat=10, tmax=180) EQ 0) then begin
+      splog, 'File never fully written to disk: '+ fullname
+      splog, /close
+      return
+   endif
 
    ;----------
    ; Reduce file depending on its flavor: flat, arc, or science/smear
@@ -223,11 +238,6 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
           splog, 'Unknown flavor: ', flavor
        end
    endcase
-
-   ;----------
-   ; Close splog file
-
-   splog, /close
 
    ;----------
    ; Append to binary FITS log file a structure with info for this frame
@@ -313,6 +323,12 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
          splog, 'Done.'
       endif
    endif
+
+   ;----------
+   ; Close splog file
+
+   splog, 'Finished at ', systime()
+   splog, /close
 
    return
 end
