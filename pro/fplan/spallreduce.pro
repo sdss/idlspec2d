@@ -50,7 +50,7 @@ pro spallreduce, planfile, docams=docams, ncombine=ncombine, $
  xdisplay=xdisplay
 
    if (NOT keyword_set(planfile)) then planfile = findfile('spPlan2d*.par')
-   if (NOT keyword_set(ncombine)) then ncombine=7
+   if n_elements(ncombine) EQ 0 then ncombine=7
 
    if (N_elements(planfile) NE 1) then $
       message, 'Please just give me one plan file'
