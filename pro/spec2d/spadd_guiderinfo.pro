@@ -75,10 +75,10 @@ pro spadd_guiderinfo, hdr
          tags = tag_names(*pdata[i])
          ; Ensure that this guiderMon file has all of the following tag
          ; names, which wasn't the case for the early data.
-         if (where(tags EQ 'timeStamp') NE -1 $
-          AND where(tags EQ 'fwhm') NE -1 $
-          AND where(tags EQ 'dra') NE -1 $
-          AND where(tags EQ 'ddec') NE -1) then begin
+         if ((where(tags EQ 'TIMESTAMP'))[0] NE -1 $
+          AND (where(tags EQ 'FWHM'))[0] NE -1 $
+          AND (where(tags EQ 'DRA'))[0] NE -1 $
+          AND (where(tags EQ 'DDEC'))[0] NE -1) then begin
             guidermon = *pdata[i]
          endif else begin
             splog, 'WARNING: Invalid format for guiderMon file ' + guidermonfile
