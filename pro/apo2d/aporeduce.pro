@@ -332,17 +332,14 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    endif
 
    if (keyword_set(rstruct)) then begin
-      ;----------
-      ; Get the universal time (UT) from the header in the format '12:34',
-      ; then convert to Mountain standard time (MST), which is 7 (or 17)
-      ; hours different from UT.
-      ; Instead, only store the TAI time which we will convert to UT time
-      ; on-the-fly.
 
-;      ut = strmid(sxpar(hdr, 'TAIHMS'),0,5)
-;      mst = string((long(strmid(ut,0,2))+17) MOD 24,format='(i2.2)' ) $
-;      + strmid(ut,2,3)
+      ; Get the time in TAI, which we convert on-the-fly to UT when needed.
       tai = sxpar(hdr, 'TAI')
+
+      ; Get the CCD temperatures.
+      ; Note that b1=01, b2=03, r1=04, r2=02
+      cardname = (['TEMP01', 'TEMP03', 'TEMP04', 'TEMP02'])[icam]
+      ccdtemp = float(sxpar(hdr,cardname))
 
       ; The following prevents a crash in MWRFITS.
       if (NOT keyword_set(shortplugfile)) then shortplugfile = ' '
@@ -351,11 +348,14 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
                               'PLUGFILE', string(shortplugfile), $
                               'MJD', long(mjd), $
                               'PLATE', long(plate), $
+                              'CARTID', long(sxpar(hdr,'CARTID')), $
                               'EXPNUM', long(filee), $
                               'EXPTIME', double(sxpar(hdr, 'EXPTIME')), $
                               'FLAVOR', string(flavor), $
                               'CAMERA', string(camnames[icam]), $
                               'TAI', double(tai), $
+                              'AIRTEMP', float(sxpar(hdr,'AIRTEMP')), $
+                              'CCDTEMP', ccdtemp, $
                               rstruct )
    endif
 
