@@ -200,6 +200,7 @@ pro spplan2d, topoutdir=topoutdir, mjd=mjd, $
             if (pltid GT 0 AND pltid LT 9990) then begin
                platestr = string(pltid, format='(i04.4)')
             endif else begin
+               splog, 'WARNING: Plate number invalid for MAPNAME=' + allmaps[imap]
                platestr = '0000'
                spexp = 0
             endelse
@@ -226,7 +227,8 @@ pro spplan2d, topoutdir=topoutdir, mjd=mjd, $
             endif
 
             if (keyword_set(spexp)) then begin
-               junk = where(spexp.flavor EQ 'science', ct)
+               junk = where(spexp.flavor EQ 'science' $
+                OR spexp.flavor EQ 'smear', ct)
                if (ct EQ 0) then begin
                   splog, 'WARNING: No science frames for MAPNAME=' + allmaps[imap]
                   spexp = 0
