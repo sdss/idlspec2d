@@ -289,7 +289,8 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
       else $
        soplot, wave, lineflux, color=linecolor, _EXTRA=KeywordsForSplot, lw=2
 
-      linewave = zline.linewave * (1 + zline.linez * keyword_set(restframe))
+      linewave = zline.linewave $
+       * (1 + zline.linez * (keyword_set(restframe) EQ 0))
       ; Convert line sigma from km/sec to Angstroms
       linesigma = linewave * zline.linesigma / cspeed
       linepeak = zline.linecontlevel + zline.linearea / (sqrt(2*!pi) * linesigma)
