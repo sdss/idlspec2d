@@ -48,6 +48,7 @@
 ;   xmask      - Mask set to 1 for good points and 0 for rejected points;
 ;                same dimensions as XPOS, YPOS.
 ;   yfit       - Fit values at each XPOS.
+;   totalreject- Total number of pixels rejected during xy2traceset
 ;
 ; COMMENTS:
 ;   Note that both MAXDEV and MAXSIG can be set for applying both rejection
@@ -73,7 +74,7 @@
 pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
  xmin=xmin, xmax=xmax, maxdev=maxdev, maxsig=maxsig, maxiter=maxiter, $
  singlerej=singlerej, xmask=xmask, yfit=yfit, inputans=inputans, $
- invvar=invvar, _EXTRA=KeywordsForFuncFit
+ invvar=invvar, totalreject=totalreject, _EXTRA=KeywordsForFuncFit
 
    ; Need 3 parameters
    if (N_params() LT 3) then begin
