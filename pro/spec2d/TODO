@@ -1,4 +1,10 @@
 
+* Change FIBERMASK not in FIBERFLAT, but in SUPERFLAT.
+
+* BUG: telluric_corr crashed on call to SLATEC_SPLINEFIT, because
+  TEMPIVAR was all zeros.  Should test for this.  Failure was
+  on 51433/plate#198/sdR-r1-00001137.fit.
+
 * BUG: trace320crude is failing for fiber 276 on plate 217: sdR-r2-00001459.fit
     The xcen is off by > 1 pixel thr whole length of the fiber, and
     flat field extraction is horrible, object extraction is bad as well.
