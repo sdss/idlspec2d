@@ -138,8 +138,8 @@ andmask = 0 ; Free memory
 
    npoly = 3
    zmin = 0.0033 ; +1000 km/sec
-   zmax = 3.75 ; Max range to use for now, with the template starting at
-               ; 800 Ang (rest), which corresponds to 3800 Ang at this z. ???
+   zmax = 6.00 ; Max range to use for now, with the template starting at
+               ; 525 Ang (rest), which corresponds to 3700 Ang at this z.
    pspace = 4
    nfind = 5
 
