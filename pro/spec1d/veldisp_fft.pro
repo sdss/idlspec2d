@@ -15,8 +15,11 @@ PRO veldisp_fft, flux, err, npixbig, fluxfft, fluxfilt, fluxvar0, fluxvarianceff
   
 ; Normalize the object flux to be near unity
   norm = djs_mean(flux) > djsig(flux)
-  flux = flux / norm
-  err = err / norm
+
+  IF norm GT 0 THEN BEGIN 
+      flux = flux / norm
+      err = err / norm
+  ENDIF 
 
   IF keyword_set(wave) AND keyword_set(keep) THEN BEGIN 
       kmask = (wave GE min(keep)) AND (wave LE max(keep))
