@@ -180,7 +180,13 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    expnum = long( strmid(infile, i+1, 8) )
    if (NOT keyword_set(expnum)) then $
     message, 'Cannot determine exposure number from file name ' + infile
-   sxaddpar, hdr, 'EXPOSURE', expnum
+   hdrexp = sxpar(hdr, 'EXPOSURE')
+   if (expnum NE hdrexp) then begin
+      splog, 'WARNING: Exposure number in header (' $
+       + strtrim(string(hdrexp),2) + ') disagrees w/filename (' $
+       + strtrim(string(expnum),2) + ') !!'
+      sxaddpar, hdr, 'EXPOSURE', expnum
+   endif
 
    ;-----------
    ; Determine which CCD from the file name itself, using either the
