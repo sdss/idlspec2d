@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   zfit = lrgmodel_photoz(pflux, pflux_ivar, [ /abcorrect, extinction=, $
 ;    abfudge=, ageburst=, zmetal=, filterlist=, adderr=, $
-;    zsplinearr=, synfluxarr=, z_err=, chi2= ] )
+;    zsplinearr=, synfluxarr=, z_err=, chi2=, fitflux= ] )
 ;
 ; INPUTS:
 ;   pflux          - Object fluxes in the 5 SDSS filters [5,NOBJ]; if not set,
@@ -40,6 +40,8 @@
 ;   z_err          - Redshift error, or a negative value if an error
 ;                    occurred in the quadratic minimization estimate [NOBJ]
 ;   chi2           - Best-fit chi^2 [NOBJ]
+;   fitflux        - Fluxes for the best-fit model, useful for knowing the
+;                    colors of the best-fit model
 ;
 ; COMMENTS:
 ;   The fluxes should be AB fluxes, or SDSS 2.5-m natural system fluxes
@@ -71,7 +73,7 @@ function lrgmodel_photoz, pflux, pflux_ivar, z_err=z_err, $
  abcorrect=abcorrect, extinction=extinction, abfudge=abfudge, $
  ageburst=ageburst1, zmetal=zmetal1, $
  filterlist=filterlist, adderr=adderr, chi2=chi2, synfluxarr=synfluxarr, $
- zsplinearr=zsplinearr
+ zsplinearr=zsplinearr, fitflux=fitflux
 
    common com_lrgmodel_photoz, zarr, agevec, metalvec, $
     allwave, allflux, synflux, ageburst_save, zmetal_save
@@ -264,6 +266,20 @@ if (finite(chi2arr[iz]) EQ 0) then stop
        xerr=xerr1, errcode=errcode, ypeak=ypeak1)
       z_err[iobj] = xerr1 * (errcode EQ 0) + errcode
       chi2[iobj] = ypeak1
+
+      if (arg_present(fitflux)) then begin
+         ; Interpolate the model fluxes to the exact redshift
+         if (iobj EQ 0) then fitflux = fltarr(5,nobj)
+         for j=0, 4 do begin
+            linterp, zarr, transpose(synflux[j,*]), zfit[iobj], flux1
+            fitflux[j,iobj] = flux1
+         endfor
+         ; Re-fit the amplitude of the model fluxes to match the object
+         junk = computechi2(thisflux[filterlist], thisisig[filterlist], $
+          fitflux[filterlist,iobj], acoeff=acoeff)
+         fitflux[filterlist,iobj] = acoeff[0] * fitflux[filterlist,iobj]
+       endif
+
    endfor
    print
 
