@@ -85,4 +85,6 @@ spchunklist      52 1156 1157 special   "Annis low-z galaxies; Eisenstein LRGs"
 spchunklist      53 1158 1176 main      ""
 spchunklist      54 1177 1178 main      ""
 spchunklist      55 1179 1183 special   "Heckman aperature bias"
+spchunklist      56 1184 1196 main      ""
+spchunklist     33A 1197 1202 main      "Replaces chunk 33 plates"
 
