@@ -296,10 +296,10 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
          if (ispecnum EQ 1) then sindx = s1 $
           else sindx = s2
 
-         ii = where(gal[sindx], ngal)
+         ii = where(qgal[sindx], ngal)
          if (ngal GT 0) then igal = sindx[ii]
 
-         ii = where(gal[sindx] EQ 0, nstar)
+         ii = where(qgal[sindx] EQ 0, nstar)
          if (nstar GT 0) then istar = sindx[ii]
 
          djs_plot, [14,22], [14,22], xchars=xchars, ychars=ychars, $
