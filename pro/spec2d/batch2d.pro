@@ -362,7 +362,7 @@ pro batch2d, platenums, topdir=topdir, $
          for i=0, n_elements(planfile2d)-1 do $
           printf, olun, 'spreduce2d, ' + fq+planfile2d[i]+fq
          printf, olun, 'spcombine, ' + fq+planfilecomb+fq
-         printf, olun, 'spawn, '+fq+'rm -f spArc*.fits* spFlat*.fits* spSky*.fits*'+fq
+         printf, olun, 'spawn, '+fq+'rm -f spArc*.fits* spFlat*.fits*'+fq
          printf, olun, 'exit'
          close, olun
          free_lun, olun
