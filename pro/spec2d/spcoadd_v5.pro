@@ -630,28 +630,28 @@ pro spcoadd_v5, spframes, outputname, $
 
    fulloutname = djs_filepath(outputname, root_dir=combinedir)
 
-   ; 1st HDU is flux
+   ; HDU #0 is flux
    sxaddpar, hdr, 'BUNIT', '1E-17 erg/cm^2/s/Ang'
    mwrfits, finalflux, fulloutname, hdr, /create
 
-   ; 2nd HDU is inverse variance
+   ; HDU #1 is inverse variance
    sxaddpar, hdrfloat, 'BUNIT', '1/(1E-17 erg/cm^2/s/Ang)^2'
    mwrfits, finalivar, fulloutname, hdrfloat
 
-   ; 3rd HDU is AND-pixelmask
+   ; HDU #2 is AND-pixelmask
    mwrfits, finalandmask, fulloutname, hdrlong
 
-   ; 4th HDU is OR-pixelmask
+   ; HDU #3 is OR-pixelmask
    mwrfits, finalormask, fulloutname, hdrlong
 
-   ; 5th HDU is dispersion map
+   ; HDU #4 is dispersion map
    sxaddpar, hdrfloat, 'BUNIT', 'pixels'
    mwrfits, finaldispersion, fulloutname, hdrfloat
 
-   ; 6th HDU is plugmap
+   ; HDU #5 is plugmap
    mwrfits, finalplugmap, fulloutname
 
-   ; 7th HDU is the sky
+   ; HDU #6 is the sky
    mwrfits, finalsky, fulloutname
 
    return
