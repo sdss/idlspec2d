@@ -325,16 +325,32 @@ endelse
 
        newflux = djs_maskinterp(newflux, newivar EQ 0, /const)
 
+       goodpts = where(newivar GT 0)
+       if goodpts[0] NE -1 then begin
+         minglam = min(newloglam[goodpts])
+         maxglam = max(newloglam[goodpts])
+         
+         ibad = where(newloglam LT minglam OR newloglam GT maxglam)
+         if ibad[0] NE -1 then begin
+            if (keyword_set(andmask)) then $
+              andmask[ibad] = andmask[ibad] OR pixelmask_bits('NODATA')
+            if (keyword_set(ormask)) then $
+              ormask[ibad] = ormask[ibad] OR pixelmask_bits('NODATA')
+         endif
+      endif
+
+ 
       ;----------
       ; Set the NODATA mask bit wherever there is no good data
+      ;
+      ;    ibad = where(newivar EQ 0)
+      ;    if (ibad[0] NE -1) then begin
+      ;      if (keyword_set(andmask)) then $
+      ;        andmask[ibad] = andmask[ibad] OR pixelmask_bits('NODATA')
+      ;      if (keyword_set(ormask)) then $
+      ;        ormask[ibad] = ormask[ibad] OR pixelmask_bits('NODATA')
+      ;    endif
 
-      ibad = where(newivar EQ 0)
-      if (ibad[0] NE -1) then begin
-         if (keyword_set(andmask)) then $
-          andmask[ibad] = andmask[ibad] AND pixelmask_bits('NODATA')
-         if (keyword_set(ormask)) then $
-          ormask[ibad] = ormask[ibad] AND pixelmask_bits('NODATA')
-      endif
    endif
 
    ;----------
