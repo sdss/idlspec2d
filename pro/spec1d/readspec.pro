@@ -463,15 +463,15 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
             if (keyword_set(align)) then begin
                ; The following two lines of code deal with setting a
                ; wavelength scale for objects with missing data.
-               if (mincoeff0 EQ 0 AND coeff0 GT 0) then allcoeff0[*] = coeff0
-               if (mincoeff0 GT 0 AND coeff0 EQ 0) then coeff0 = mincoeff0
-               pixshift = fix( (coeff0 - mincoeff0) / coeff1 )
+               if (mincoeff0 EQ 0 AND coeff0[0] GT 0) then allcoeff0[*] = coeff0
+               if (mincoeff0 GT 0 AND coeff0[0] EQ 0) then coeff0[*] = mincoeff0
+               pixshift = fix( (coeff0[0] - mincoeff0) / coeff1[0] )
                if (pixshift GT 0) then begin
                   coeff0 = coeff0 - pixshift * coeff1
-                  npixmax = max(npixmax, npix+pixshift)
+                  npixmax = max([npixmax, npix+pixshift])
                endif else begin
                   allcoeff0 = allcoeff0 + pixshift * allcoeff1
-                  npixmax = max(npixmax-pixshift, npix)
+                  npixmax = max([npixmax-pixshift, npix])
                endelse
             endif else begin
                pixshift = 0
