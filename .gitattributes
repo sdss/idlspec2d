@@ -100,6 +100,7 @@ examples/opECalib.par -text
 examples/opHdrFix.par -text
 examples/opLimits.par -text
 examples/plParam.par -text
+examples/plPlugMapT-XXXX.par -text
 include/Makefile -text
 include/evilmath.h -text
 include/export.h -text
