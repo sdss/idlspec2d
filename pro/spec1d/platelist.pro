@@ -286,7 +286,7 @@ pro platelist, plist=plist, create=create
          zans = mrdfits(fullzfile, 1, /silent)
          class = strtrim(zans.class,2)
          ; Use the ZWARNING flag if it exists to identify SKY or UNKNOWN.
-         if (where(tag_names(zans) EQ 'ZWARNING') NE -1) then $
+         if ((where(tag_names(zans) EQ 'ZWARNING'))[0] NE -1) then $
           zwarning = zans.zwarning $
          else $
           zwarning = bytarr(n_elements(zans))
@@ -295,7 +295,7 @@ pro platelist, plist=plist, create=create
          plist[ifile].n_qso = total(class EQ 'QSO' AND zwarning EQ 0)
          plist[ifile].n_star = total(class EQ 'STAR' AND zwarning EQ 0)
          plist[ifile].n_unknown = total(class EQ 'UNKNOWN' $
-          OR (zwarning EQ 0 AND qsky EQ 0))
+          OR (zwarning NE 0 AND qsky EQ 0))
          plist[ifile].n_sky = total(class EQ 'SKY' OR qsky EQ 1)
          plist[ifile].vers1d = strtrim(sxpar(hdr2, 'VERS1D'))
          plist[ifile].status1d = 'Done'
