@@ -476,7 +476,7 @@ ophdrfix sdR-?2-0001306[6-8] QUALITY   "'bad'"
 # plate 601 on MJD 52316.  Only the first half of the smear
 # was taken (if that).  Unfortunately, this is the only
 # smear for this plate.
-ophdrfix sdR-??-00013096 QUALITY   "'bad'"
+ophdrfix sdR-??-00013097 QUALITY   "'bad'"
 
 # The smear exposure had a TCC abort for exposure #13111 of
 # plate 803 on MJD 52317.  Only the first half of the smear
