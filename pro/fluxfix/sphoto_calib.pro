@@ -110,18 +110,20 @@ pro sphoto_calib, wave, flux, invvar, mask, plugtag, fcalfile, $
   ; wrong).  The velocity cut (hopefully) eliminates galaxies and
   ; other things that accidentally get targeted
 
-  ok = where(stdinfo_all.sn gt 20 and abs(stdinfo_all.v_off) lt 450, nok)
+  ok = where(stdinfo_all.sn gt 20 and abs(stdinfo_all.v_off) lt 450 and $
+             stdinfo_all.mag[2] gt 0, nok)
   nok = nok / nframes
   if nok lt 3 then begin
     splog, 'WARNING:  Too few spectrophoto standards with good S/N'
     splog, 'Proceeding anyway!'
-    ok = where(stdinfo_all.sn gt 10 and abs(stdinfo_all.v_off) lt 450, nok)
+    ok = where(stdinfo_all.sn gt 10 and abs(stdinfo_all.v_off) lt 450 and $
+               stdinfo_all.mag[2] gt 0, nok)
     nok = nok / nframes
   endif
   if nok lt 3 then begin
     splog, 'WARNING:  NO good spectrophoto standards!!!'
     splog, 'Proceeding anyway!'
-    ok = where(stdinfo_all.sn gt 0, nok)
+    ok = where(stdinfo_all.sn gt 0 and stdinfo_all.mag[2] gt 0, nok)
     nok = nok / nframes
   endif else begin
     splog, 'Using ' + string(nok, format='(I2)') + ' spectrophoto standards'
