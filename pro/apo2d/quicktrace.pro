@@ -9,13 +9,14 @@
 ;   rstruct = quicktrace (filename, tsetfile, plugmapfile, nbin=nbin)
 ;
 ; INPUTS:
-;   filename   - Flat field filename (Will not work with other flavors)
-;   tsetfile   - Name of fits file to store workings of quicktrace
-;   plugmapfile- Yanny parameter file with plugmap entries, moved into
-;                   tsetfile for use by other images.
+;   filename   - Flat-field filename
+;   tsetfile   - Output FITS file
+;   plugmapfile- Yanny parameter file with plugmap data, copied to an HDU
+;                in the output TSETFILE for use by other routines.
 ;
 ; OPTIONAL INPUTS:
-;   nbin       - Binning of flat field to get quick tracing (default 8)
+;   nbin       - Sub-sampling of row numbers for measuring the spatial
+;                profile widths; default to 16 for every 16-th row.
 ;
 ; OUTPUT:
 ;   rstruct    - Results to be added html file upon completion
@@ -29,9 +30,11 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   extract_image
 ;   fileandpath()
-;   quickboxcar()
+;   fitflatwidth()
 ;   mwrfits
+;   quickboxcar()
 ;   readplugmap()
 ;   reject_flat()
 ;   sdssproc
@@ -48,7 +51,7 @@
 ;------------------------------------------------------------------------------
 function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
 
-   if (NOT keyword_set(nbin)) then nbin=8
+   if (NOT keyword_set(nbin)) then nbin = 16
 
    ;----------
    ; Read in image
@@ -80,13 +83,13 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
    ncol = dims[0]
    nrow = dims[1]
 
-   if (nrow MOD nbin NE 0) then begin
-      splog, 'ABORT: Unable to bin at ', nbin
-      return, 0
-   endif
-
-   nsmallrow = nrow / nbin
-   smallimg = djs_median(reform(flatimg,ncol,nbin,nsmallrow),2)
+;   if (nrow MOD nbin NE 0) then begin
+;      splog, 'ABORT: Unable to bin at ', nbin
+;      return, 0
+;   endif
+;
+;   nsmallrow = nrow / nbin
+;   smallimg = djs_median(reform(flatimg,ncol,nbin,nsmallrow),2)
 
    xsol = trace320crude(flatimg, flativar, yset=ycen, maxdev=0.15, $
                         fibermask=fibermask)
@@ -99,7 +102,24 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
    flux = quickboxcar(flatimg, flativar, tset=tset, fluxivar=fluxivar)
 
    ;----------
-   ; Argon anyone?
+   ; Optimal-extraction of a sparse number of rows simply to measure the
+   ; profile widths, and trigger warnings if the spectrographs look
+   ; out-of-focus.
+
+   traceset2xy, tset, rownums, xcen
+   yrow = lindgen(long(nrow/nbin)) * nbin
+   sigma = 1.0
+
+   extract_image, flatimg, flativar, xcen, sigma, $
+    tempflux, tempfluxivar, proftype=1, wfixed=[1,1], yrow=yrow, $
+    highrej=5, lowrej=5, npoly=10, ansimage=ansimage, relative=1
+
+   widthset = fitflatwidth(tempflux, tempfluxivar, ansimage, fibermask, $
+    ncoeff=5, sigma=sigma)
+
+   ;----------
+   ; Look for Argon lines (or any other emission lines) in the flat-fields,
+   ; none of which should be there.
 
    nocrs = median(flux,3)   ; 3x3 median filter
    noargon = nocrs
@@ -136,3 +156,4 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
 
    return, rstruct
 end
+;------------------------------------------------------------------------------
