@@ -137,10 +137,9 @@ In general, the 320 fibers for spectrograph \#1 are plugged for those
 objects south of the centerline of the field of view, and the 320 fibers
 for spectrograph \#2 are plugged for the north.
 
-The spectra are converted from raw counts (ADUs) to physical
-units ($\ergs$).
-
-$ 100 \ergscmang$
+% The spectra are converted from raw counts (ADUs) to physical
+% units ($\ergs$).
+% $ 100 \ergscmang$
 
 A mean relative response between fibers has already been corrected
 using the quartz flat-field lamps (see Section ???).
@@ -160,11 +159,12 @@ typically 8 on each spectrograph.
 
 We select relatively bright F dwarfs as spectrophotometric 
 standards.  Ideally, we want the low-metallicity, halo stars in order 
-to have spectra that have few spectroscopic features.
+to have spectra that have atmospheric opacities that are easy to model.
 The F stars are chosen to satisfy the following color criteria:
 $$ 0.6 < u-g < 1.2 $$
 $$ 0.0 < g-r < 0.6 $$
 $$ g-r > 0.75 * (u-g) - 0.45 $$
+as shown in Figure ???.
 This selects stars that are on the blue edge of the main
 sequence in (u-g) color.  At high Galactic latitudes,
 ??? stars per square degree fall in this color box.
@@ -188,8 +188,53 @@ implies distances of $1.7 < d < 3.5$ kpc for the SPECTROPHOTO_STD
 stars and $3.5 < d < 6.9$ kpc for the REDDEN_STD stars.
 Note that the color-selection and magnitude cuts are done on
 ``instrinsic'' magnitudes, meaning that we first apply corrections
-for SFD extinction.
+for SFD extinction under the assumption that these stars are
+completely behind the Galactic dust.
 
+The spectra for these stars are compared to the model spectra
+from the SPECTRUM code of Gray \& Corbally (1994) as updated
+in Gray \etal\ (2001).
+We constructed a grid of 90 models with effective temperatures
+from $5000$ to $7000 \K$ (spaced every $250 \K$), [Fe/H] values
+from -2 to 0 (spaced every 0.5), and gravities of $\log g=4$
+and $\log g=4.5$.  These models are then ``observed'' as they
+would be seen in our spectra.  We convolve the models with
+the instrumental dispersion as a function of wavelength
+(see Section ???), and sample the results at the observed wavelengths.
+Since there are typically three exposures in the two spectrographs
+(blue and red) for each star, this means we re-generate the full
+grid of models for six observations of each star.
+We perform $\chi^2$ minimizations between these models and the
+6 spectra simultaneously.  We use the observed errors per pixel,
+which are independent because we have done no resampling of the data.
+All spectra and models are first median-filtered with a scale of $7000\kms$,
+and the regions of atmospheric absorption in the red are masked
+for the purpose of spectral typing our stars.
+A velocity in the range $-700 < v < +700 \kms$ is fit
+by comparing to the model with $T_{eff} = 6000\K$, Fe/H=$-1.5$,
+$\log g=4$.  All the models are redshifted with this best-fit velocity,
+and the resulting model with the smallest $\chi^2$ is chosen
+as the best-fit model.  We reject any stars with a reduced $\chi^2$
+larger than 2.0 in the full spectrum, with a reduced $\chi^2$
+larger than 2.0 in the wavelength regions of the strong stellar
+absorption lines, or with a median S/N less than 2.0 in
+those absorption line regions.
+We also reject stars if more than $20\%$ of the pixels are bad
+in any of the 3 or more observations, which typically only happens
+if a fiber is broken or the spectrum falls on bad columns on the CCD.
+Figure ??? shows the distribution of parameters that we have fit
+for the ??? flux-calibration stars on the Data Release 4 plates.
+
+Each flux-calibration star provides a means of converting our
+observed spectra to physical units.  
+In practice, a single star is not sufficient because of the
+slight undersampling in wavelength, bad pixels in any
+particular observation, stellar typing errors,
+and the desire to achieve better S/N in the flux-calibration
+vector than one star provides.
+
+
+Models are redshifted, fluxed, reddened.
 
 
 The stuff I'm calibrating to has been public for a while.  The original
@@ -216,15 +261,23 @@ about resonding to email too.
 \bibliographystyle{unsrt}
 \bibliography{gsrp}
 
-%\begin{thebibliography}{DUM}
-%
-%\bibitem[Schlegel, Finkbeiner \& Davis 1998 (SFD)]{sfd98} 
-%Schlegel, D. J., Finkbeiner, D. P., \& Davis M. 1998, \apj, 500, 525 (SFD)
-%
-%\bibitem[York et al. 2000]{york00}
-%York, D. G. \etal\ 2000, \aj, 120, 1579
-%
-%\end{thebibliography}
+\begin{thebibliography}{DUM}
+
+%Gray's code SPECTRUM is
+%available http://www.acs.appstate.edu/dept/physics/spectrum/spectrum.html
+\bibitem[Gray et al. 2001]{gray01}
+Gray, R.\ O., Graham, P.\ W., \& Hoyt, S.\ R. 2001, \aj, 121, 2159
+
+\bibitem[Gray \& Corbally 1994]{gray94}
+Gray, R.\ O., \& Corbally, C.\ J. 1994, \aj, 107, 742
+
+\bibitem[Schlegel, Finkbeiner \& Davis 1998 (SFD)]{sfd98} 
+Schlegel, D.\ J., Finkbeiner, D.\ P., \& Davis M.\ 1998, \apj, 500, 525 (SFD)
+
+\bibitem[York et al. 2000]{york00}
+York, D.\ G. \etal\ 2000, \aj, 120, 1579
+
+\end{thebibliography}
 \clearpage
 
 %------------------------------------------------------------------------------
