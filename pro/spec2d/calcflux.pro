@@ -7,7 +7,7 @@ pro calcflux, ansrow, prow, fluxrow, finvrow, wfixed, proftype, lTrace,nCoeff, $
        return
      endif
 
-     if(proftype GE 3) then begin
+     if(proftype GE 1) then begin
        fluxrow = ansrow[0,*]
        if(nCoeff GE 2) then fluxrow = fluxrow + ansrow[1,*]
        if(nCoeff GE 3) then fluxrow = fluxrow + ansrow[2,*]

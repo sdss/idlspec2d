@@ -117,6 +117,10 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    if (keyword_set(pixflatname)) then begin
       fullpath = filepath(pixflatname, root_dir=indir)
       fullname = findfile(fullpath, count=ct)
+      if (ct NE 1) then begin
+	fullpath = filepath(pixflatname, root_dir=getenv('EVIL_PAR'))
+        fullname = findfile(fullpath, count=ct)
+      endif
       if (ct NE 1) then $
        message, 'Cannot find pixflat image ' + pixflatname
       pixflat = readfits(fullname[0])
@@ -133,8 +137,10 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    sdssproc, fullname[0], flatimg, flativar, hdr=flathdr
  
    ; Flat-field the flat image
-   if (keyword_set(pixflatname)) then $
+   if (keyword_set(pixflatname)) then begin
+    print, 'Dividing flat-field image by 2d flat'
     flatimg = flatimg / pixflat
+   endif
 
    ;---------------------------------------------------------------------------
    ; Create spatial tracing from flat-field image
@@ -161,6 +167,9 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
     proftype=proftype, wfixed=wfixed, $
     highrej=highrej, lowrej=lowrej, nPoly=nPoly, relative=1, ymodel=ymodel
 
+   flatimg = 0
+   flativar = 0
+
    ;---------------------------------------------------------------------------
    ; Compute fiber-to-fiber flat-field variations
    ;---------------------------------------------------------------------------
@@ -180,6 +189,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
    ; Flat-field the arc image
    if (keyword_set(pixflatname)) then begin
+      print, 'Dividing arclamp image by 2d flat'
       arcimg = arcimg / pixflat
       arcivar = arcivar * pixflat^2
    endif
@@ -200,6 +210,8 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
     proftype=proftype, wfixed=wfixed, $
     highrej=highrej, lowrej=lowrej, nPoly=nPoly, relative=1
 
+   arcimg = 0
+   arcivar = 0
    ;------------------
    ; Flat-field the extracted arcs with the global flat
    ; Hmmm.... would be circular if we need a wavelength calibration before
@@ -213,7 +225,6 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    ;---------------------------------------------------------------------------
 
    print, 'Searching for wavelength solution with fitarcimage'
-
    fitarcimage, arc_flux, arc_fluxivar, color, lamplist, xpeak, ypeak, wset, $
     invset, ans=wavesolution, lambda=lambda, $
     xdif_lfit=xdif_lfit, xdif_tset=xdif_tset, errcode=errcode
@@ -326,19 +337,31 @@ for i=0,16 do oplot,fflat[*,i*19]
       ; Tweak up the wavelength solution to agree with the sky lines.
 
       locateskylines, skylinefile, obj_flux, obj_fluxivar, $
-       wset, invset, wset_tweak, invset_tweak, $
-       xsky, ysky, skywaves
+       wset, invset, xsky, ysky, skywaves,lambda=skylambda
+
+       wset_tweak = wset
+       invset_tweak = invset
+
+	print, 'now tweaking to sky lines'
+	skycoeff = 2
+      fit_skyset, xpeak, ypeak, lambda, xsky, ysky, skylambda, skycoeff, $
+        goodlines, wset_tweak, invset_tweak, ymin=ymin, ymax=ymax, func=func
 
       ;------------------
       ; Sky-subtract
 
       plugsort = sortplugmap(plugmap, spectrographid)
 
-;      skysubtract, flat1, flat1ivar, plugsort, wset, skysub, skysubivar, $
-;                     allwave=allwave, allsky=allsky, allfit=allskyfit
-
       skysubtract, obj_flux, obj_fluxivar, plugsort, wset_tweak, $ 
        skysub, skysubivar
+
+      fluxcorr, skysub, skysubivar, wset_tweak, plugsort, fluxfactor
+
+      fluxout = skysub * fluxfactor
+      fluxoutivar = skysubivar / (fluxfactor^2)
+
+      obj_fluxout = obj_flux * fluxfactor
+      obj_fluxoutivar = obj_fluxivar / (fluxfactor^2)
 
       ;------------------
       ; Write extracted, lambda-calibrated, sky-subtracted spectra to disk
@@ -349,7 +372,7 @@ for i=0,16 do oplot,fflat[*,i*19]
        's-'+string(format='(i1,a1,a,i4.4)',spectrographid, $
        color,'-',framenum), root_dir=outdir)
 
-      writespectra, objhdr, plugsort, skysub, skysubivar, wset_tweak, $
+      writespectra, objhdr, plugsort, fluxout, fluxoutivar, wset_tweak, $
        filebase=filebase
 
    endfor

@@ -8,8 +8,8 @@
 ;
 ; CALLING SEQUENCE:
 ;   locateskylines, skylinefile, fimage, ivar, $
-;	tset_arc, invset, tset_tweak, invset_tweak, $
-;       xsky, ysky, skywaves, lambda=lambda, errcode=errcode
+;	tset_arc, invset, xsky, ysky, skywaves, $
+;       lambda=lambda, errcode=errcode
 ;
 ; INPUTS:
 ;   skylinefile - filename of skyline file
@@ -25,8 +25,6 @@
 ;   xsky        - pixel position of lines [nfiber, nline]
 ;   ysky        - fiber number [nfiber, nline]
 ;   skywaves    - wavelengths used (Angstroms)
-;   tset_tweak  - traceset (pix -> lambda) tweaked to sky
-;   invset_tweak- inverse traceset (lambda -> pix) tweaked to sky
 ;
 ; OPTIONAL OUTPUTS:
 ;   errcode     - returns errcode (see below)
@@ -48,7 +46,7 @@
 ;------------------------------------------------------------------------------
 
 PRO locateskylines, skylinefile, fimage, ivar, $
-	tset_arc, invset, tset_tweak, invset_tweak, $
+	tset_arc, invset, $
         xsky, ysky, skywaves, lambda=lambda, errcode=errcode
 
 	if keyword_set(lambda) then begin 
@@ -175,14 +173,18 @@ PRO locateskylines, skylinefile, fimage, ivar, $
         xyouts, 0.05, 0., infostr, /norm
 	print, infostr
 
-print, 'No flexure correction...'
+print, 'No flexure correction...yet'
 
-        tset_tweak   = tset_arc
-        invset_tweak = invset
+;
+;	SMB (10/31/99): Prepare for flexure correction here
+;	Return the best skyline positions, and fit in spreduce
+;
+	lambda = alog10(skywaves)
+	xskyold = xsky
+	xsky = fitwithmx(invset, lambda, xskyold)
 
 ; What is this ??? 
 ;	traceset2xy, tset_arc, xpos, ypos
-;        fit_tset, xnew, ycen, lambda, goodlines, tset_tweak, invset_tweak
 
 
 	!p.multi=pmulti

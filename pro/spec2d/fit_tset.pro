@@ -14,6 +14,7 @@ pro fit_tset, xnew, ycen, lambda, goodlines, wset, invset, $
    if keyword_set(ymin) eq 0 then ymin = wset.xmin
    if keyword_set(ymax) eq 0 then ymax = wset.xmax
 
+
     ntrace=(size(xnew))[1]
     ncoeff=(size(wset.coeff))[1]
     icoeff=(size(invset.coeff))[1]
@@ -50,8 +51,10 @@ pro fit_tset, xnew, ycen, lambda, goodlines, wset, invset, $
 	       use = where(goodlines[*,i] NE 0)
             endelse 
 
-	    res = svdfit((wavnorm[i,use])[*], lambda[use], ncoeff, $
-               function_name=function_name, singular=singular,yfit=yfit)
+	    res = func_fit((wavnorm[i,use])[*], lambda[use], ncoeff, $
+               function_name=function_name, yfit=yfit)
+;	    res = svdfit((wavnorm[i,use])[*], lambda[use], ncoeff, $
+;               function_name=function_name, singular=singular,yfit=yfit)
 	    diff = yfit - lambda[use]
 
 ;

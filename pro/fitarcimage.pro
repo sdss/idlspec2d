@@ -81,14 +81,15 @@ function lampfit, spec, linelist, guess0, guesshi, width=width, lagwidth = lagwi
 	intensity = (linelist[*,1])[*]
 	pix = fltarr(nlines)
 
+;
+;	Cap strong lines at 3000 counts
+;
 	nsmooth = npix+2*lagwidth
-	specsmooth = convol(spec,profile)
+	specsmooth = convol(spec < 3000,profile)
 	speccorr = fltarr(nsmooth)
 	start = lagwidth
-;
-;	Cap strong lines at 1000 counts
-;
-	speccorr[start:start+npix-1] = (specsmooth < 1000.0)
+
+	speccorr[start:start+npix-1] = specsmooth 
 	lag = lindgen(2*lagwidth) - lagwidth
 	llag = lag
 
@@ -167,7 +168,7 @@ function fullfit, spec, linelist, guess
 	scale[0] = scale[0]*0.05d
 
 	first = lampfit(spec, linelist, guess0, transpose([[p0],[scale]]), $
-	   width = 25.0d, lagwidth=250d, ftol=1.0d-4)
+	   width = 25.0d, lagwidth=250d, ftol=1.0d-2)
 	
 	final = first
 
@@ -428,7 +429,8 @@ PRO fitarcimage, arc, arcinvvar, side, linelist, xnew, ycen, tset, invset, $
 		'    fraction bad', fracbad
         endfor
 
-        goodind=where(1-isbad)
+        goodind=where(1-isbad, numgood)
+	print, 'I found some lines: ', numgood
         if goodind[0] eq -1 then begin 
 	    message,'No good arc lines!!!', /continue
             errcode=3
@@ -449,7 +451,12 @@ PRO fitarcimage, arc, arcinvvar, side, linelist, xnew, ycen, tset, invset, $
         print,'Pass 1 complete'
 
 ; Keep only "good" lines
-	gind = where(total(goodlines eq 0,2) eq 0)
+; Currently this means only 3 lines can be rejected per bundle
+	possible = (size(goodlines))[2]
+	nlines = (size(goodlines))[1]
+	if (possible NE 320) then message, "can't figure out bundle test"
+	testg = reform(goodlines,nlines, 20, 16)	
+	gind = where(total(total(testg eq 0,2) gt 3,2) eq 0)
         if gind[0] eq -1 then begin 
            message,"fit_tset FAILED", /continue
            errcode=4
@@ -465,29 +472,11 @@ PRO fitarcimage, arc, arcinvvar, side, linelist, xnew, ycen, tset, invset, $
         fit_tset, xnew, ycen, lambda, goodlines, tset, invset
         print,'Pass 2 complete'
 
-; evaluate invset at every lambda
-        pix1 = traceset2pix(invset,lambda)
-
-
-	nord=4
- 	x=findgen(nfiber)/float(nfiber)
-        xmeasured = xnew       
-
-;---------------------------------------------------------------------------
-; Poly fits for each arcline
-;---------------------------------------------------------------------------
-
-	for i=0,nline-1 do begin 
-           mx=pix1[*,i]
- 	   dif=xnew[*,i]-mx
- 	   dum=poly_fit(x,dif,nord,yfit)
-           res1=yfit-dif
-	   good=abs(res1) lt 4*stddev(res1)
-	   good=abs(res1) lt 4*stddev(res1*good)
-           kent=polyfitw(x,dif,good,nord,yfit)	  
-	   xnew[*,i] = mx+yfit
- 	endfor
-
+;
+;	Fit arc lines subtracting out scatter term
+;
+	xmeasured = xnew
+	xnew = fitwithmx(invset, lambda, xmeasured) 
 
         fit_tset, xnew, ycen, lambda, goodlines, tset, invset
         print,'Pass 3 complete'

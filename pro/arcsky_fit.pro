@@ -1,18 +1,13 @@
 
-pro arcsky_fit, xarc, yarc, arccoeff, xsky, ysky, skycoeff, $
-          wskyset, invskyset, function_name=function_name
-	if (N_params() LT 6) then begin
-          print, 'function arcsky_fit, xarc, yarc, arccoeff, xsky, ysky, '
-          print, ' ycoeff, function_name=function_name'
-	  print,'function_name can be legendre or chebyshev'
-	  return
+function arcsky_fit, x, y, numarcs, arccoeff, skycoeff, $
+          function_name=function_name, yfit=yfit
+	if (N_params() LT 5) then begin
+          print, 'function arcsky_fit(xarc, yarc, arccoeff, xsky, ysky, '
+          print, ' ycoeff, function_name=function_name)'
+	  print,'function_name can be flegendre or fchebyshev'
+	  return, -1
 	endif
 
-	xarc=(xarc)[*]
-	xsky=(xsky)[*]
-	x=(2.0d*[xarc, xsky]-2047.0d)/2047.0d
-
-	numarcs = n_elements(xarc)
 	
 	if(NOT keyword_set(function_name)) then $
  	      function_name = 'flegendre'
@@ -33,9 +28,6 @@ pro arcsky_fit, xarc, yarc, arccoeff, xsky, ysky, skycoeff, $
 	    skylegarr[0:numarcs-1,*] = 0.0
 	    legarr = [[arclegarr],[skylegarr]]
 	endif
-        y = [yarc, ysky]
-
-
 	
 	beta = transpose(y # legarr)
 
@@ -45,13 +37,8 @@ pro arcsky_fit, xarc, yarc, arccoeff, xsky, ysky, skycoeff, $
 	
 	res = svsol(u, w, v, beta, /double)
 
-        arcfit = flegendre(x, arccoeff) # res[0:arccoeff-1]
-        skyres = res[0:arccoeff-1]
-        skyres[0:skycoeff-1] = skyres[0:skycoeff-1] +res[arccoeff:*]
-        skyfit = flegendre(x, arccoeff) # skyres
+	yfit = legarr # res
 
-wskyset=res
-
-	return
+	return, res
 end
 	

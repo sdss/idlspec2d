@@ -44,12 +44,27 @@ function fitansimage, ansimage, nparams, nfibers, npoly, nrows, yrow, $
 	for j=0,nparams-1 do flux = flux + fluxm[j] * ansimage[j+iTrace,*]
 
 	for i=0,nfibers-1 do begin
-	    good = where(flux[i,*] NE 0.0)
+	    mask = (flux[i,*] GT 0.0)
 	    fitans[i*nparams,*] = 1.0
 	    newflux[i,*] = 1.0
 	  for j=1,nparams-1 do begin
+	    good = where(mask)
 	    fitthis[good,j+i*nparams] = ansimage[j+i*nparams,good]/flux[i,good]
-	    tt = polyfitw(ynorm, fitthis[*,j+i*nparams], flux[i,*], nord)
+;
+;		Iterate a few times to reject outliers
+;
+	    done = 0
+	    while (done EQ 0) do begin
+	      good = where(mask)
+	      tt = polyfitw(ynorm[good], fitthis[good,j+i*nparams], $
+                    (flux[i,good] > 0), nord, yfit)
+              diff = fitthis[good,j+i*nparams] - yfit
+	      worst = max(abs(diff),place)
+;	      print, i, worst, place, 4*stddev(diff)
+	      if (worst LT 4*stddev(diff)) then done = 1 $
+              else mask[good[place]] = 0
+	    endwhile
+
 	    fitans[j+i*nparams,*] = poly(yfnorm,tt)
 	    newflux[i,*] = newflux[i,*] + fluxm[j] * fitans[j+i*nparams,*] 
 	  endfor

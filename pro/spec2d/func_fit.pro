@@ -1,6 +1,6 @@
 
 function func_fit, x, y, ncoeff, function_name=function_name, $
-        halfintwo=halfintwo
+        halfintwo=halfintwo, yfit=yfit
 
 	if (N_params() LT 3) then begin
 	  print,'function func_fit, x, y, ncoeff, function_name=function_name' 
@@ -23,6 +23,8 @@ function func_fit, x, y, ncoeff, function_name=function_name, $
 	svdc, alpha, w, u, v, /double
 	
 	res = svsol(u, w, v, beta, /double)
+
+	yfit = legarr # res
 
 	return,res
 end

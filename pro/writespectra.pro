@@ -4,6 +4,7 @@ pro writespectra, objhdr, plugsort, flux, fluxivar, wset, $
 
    dims = size(flux, /dimens)
    ntrace = dims[1]
+   nparams = (size(wset.coeff,/dimens))[0]
    
    for i=0, ntrace-1 do begin
 
@@ -34,7 +35,6 @@ pro writespectra, objhdr, plugsort, flux, fluxivar, wset, $
      sxaddpar, outhdr, 'FIBERID', plugsort[i].fiberId
 
      ; Add wavelength cards...
-     nparams = (size(wset,/dimens))[0]
      sxaddpar, outhdr, 'NWORDER', nparams
      sxaddpar, outhdr, 'WFITTYPE', 'LOG-'+wset.func
      sxaddpar, outhdr, 'PIXMIN', wset.xmin

@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   extract_image(fimage, invvar, xcen, sigma, flux, [finv, yrow=yrow,
 ;              ymodel=ymodel, fscat=fscat,proftype = proftype,ansimage=ansimage,
-;              wfixed=wfixed, sigmacor=sigmacor, xcencor=xcencor, mask=mask,
+;              wfixed=wfixed, mask=mask,
 ;              nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej,
 ;              calcCovar=calcCovar, fitans=fitans, whopping=whopping,relative=relative])
 ;
@@ -31,8 +31,6 @@
 ;                     [1, 1] fit gaussian + sigma correction
 ;                     [1, 0, 1] fit gaussian + center correction
 ;                     [1, 1, 1] fit gaussian + sigma and center corrections.   
-;   sigmacor   - new estimates of sigma, must have second element of wfixed set
-;   xcencor    - new estimates of xcen, must have third element of wfixed set
 ;   mask       - byte mask: 1 is good and 0 is bad [nCol,nRow] 
 ;   nPoly      - order of chebyshev scattered light background; default to 4
 ;   maxIter    - maximum number of profile fitting iterations; default to 10
@@ -66,7 +64,7 @@
 ;------------------------------------------------------------------------------
 pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
                ymodel=ymodel, fscat=fscat,proftype=proftype,ansimage=ansimage, $
-               wfixed=wfixed, sigmacor=sigmacor, xcencor=xcencor, mask=mask, $
+               wfixed=wfixed, mask=mask, $
                nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej, $
 	       calcCovar=calcCovar, fitans=fitans, whopping=whopping, $
                relative=relative
@@ -76,7 +74,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
       print, 'Syntax - extract_image(fimage, invvar, xcen, sigma, flux, [finv,'
       print, ' yrow=yrow, ymodel=ymodel, fscat=fscat, proftype = proftype, '
       print, ' ansimage = ansimage, calcCovar=calcCovar, fitans=fitans,relative=relative'
-      print, ' wfixed=wfixed, sigmacor=sigmacor, xcencor=xcencor, mask=mask, '
+      print, ' wfixed=wfixed, mask=mask, '
       print, ' nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej])'
       return
    endif
@@ -158,16 +156,6 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
    if (NOT keyword_set(whopping)) then whopping = -1
    relative = keyword_set(relative)
 
-   corcalc = lonarr(3)
-   corcalc[0] = 1
-   if (keyword_set(sigmacor)) then begin
-       corcalc[1] = 1
-       sigmacor = fltarr(nRowExtract,nTrace) 
-   endif
-   if (keyword_set(xcencor)) then begin
-       corcalc[2] = 1
-       xcencor = fltarr(nRowExtract,nTrace) 
-   endif
 
    ymodel = fltarr(nx,ny) 
 
@@ -263,7 +251,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
      if(keyword_set(fscat)) then fscat[iy,*] = fscatrow
 
      calcflux, ansrow, prow, fluxrow, finvrow, wfixed, proftype, lTrace,nCoeff,$
-            sigmacur, xcencur, corcalc,squashprofile=squashprofile
+            squashprofile=squashprofile
      flux[iy,*] = fluxrow 
      finv[iy,*] = finvrow
    endfor	  
