@@ -13,7 +13,7 @@
 ;
 ; OPTIONAL INPUTS:
 ;   planfile   - Name of output plan file; default to 'spPlan2d.par'
-;   docams     - Cameras to reduce; default to ['b1', 'r2', 'b2', 'r1'];
+;   docams     - Cameras to reduce; default to ['b1', 'b2', 'r1', 'r2'];
 ;                set to 0 to disable running SPREDUCE.
 ;   nocombine  - Only run SPREDUCE, not COMBINE2DOUT.
 ;   xdisplay   - Send plots to X display rather than to plot file
@@ -25,12 +25,8 @@
 ; EXAMPLES:
 ;
 ; BUGS:
-;   Rather than use FINDFILE, we should know what all the idlout* files are.
-;   Need to implement lampfile.
-;   Pass QA flags to SPREDUCE
 ;   Try to avoid using SPAWN.
-;   Should pair up flats+arcs like Scott had done previously before passing
-;     to SPREDUCE.
+;   Let COMBINE2DOUT select files based upon the plan file...
 ;
 ; PROCEDURES CALLED:
 ;   combine2dout
@@ -51,13 +47,22 @@
 pro spallreduce, planfile=planfile, docams=docams, $
  nocombine=nocombine, xdisplay=xdisplay
 
-   if (NOT keyword_set(planfile)) then planfile = 'spPlan2d.par'
+   if (NOT keyword_set(planfile)) then planfile = findfile('spPlan2d*.par')
 
-   if (N_elements(docams) EQ 0) then docams = ['b1', 'r2', 'b2', 'r1']
+   ; If multiple plan files exist, then call this script recursively
+   ; for each such plan file.
+   if (N_elements(planfile) GT 1) then begin
+      for i=0, N_elements(planfile)-1 do $
+       spallreduce, planfile=planfile[i], docams=docams, $
+        nocombine=nocombine, xdisplay=xdisplay
+      return
+   endif
+
+   if (N_elements(docams) EQ 0) then docams = ['b1', 'b2', 'r1', 'r2']
    if (keyword_set(docams)) then ndocam = N_elements(docams) $
     else ndocam = 0
 
-   yanny_read, planfile, pdata, hdr=hdr
+   yanny_read, planfile[0], pdata, hdr=hdr
 
    ; Find the ONEEXP structure
    for i=0, N_elements(pdata)-1 do begin
@@ -75,23 +80,17 @@ pro spallreduce, planfile=planfile, docams=docams, $
     message, 'No ONEEXP structures in plan file ' + planfile
 
    ; Find keywords from the header
-   plugDir = yanny_par(hdr, 'plugDir')
-   extractDir = yanny_par(hdr, 'extractDir')
-   combDir = yanny_par(hdr, 'combDir')
-   if (NOT keyword_set(combDir)) then combDir=extractDir
-
    inputDir = yanny_par(hdr, 'inputDir')
+   plugDir = yanny_par(hdr, 'plugDir')
    flatDir = yanny_par(hdr, 'flatDir')
+   extractDir = yanny_par(hdr, 'extractDir')
+   combineDir = yanny_par(hdr, 'combineDir')
+   logfile = yanny_par(hdr, 'logfile')
+   plotfile = yanny_par(hdr, 'plotfile')
+
    mjd = yanny_par(hdr, 'MJD')
    run = yanny_par(hdr, 'run')
    run = strtrim(string(run), 2)
-
-   logfile = yanny_par(hdr, 'logfile')
-   if (keyword_set(logfile)) then $
-    logfile = filepath(logfile, root_dir=extractDir)
-   plotfile = yanny_par(hdr, 'plotfile')
-   if (keyword_set(plotfile)) then $
-    plotfile = filepath(plotfile, root_dir=extractDir)
 
    spawn, 'mkdir -p '+extractDir
 
@@ -112,8 +111,7 @@ pro spallreduce, planfile=planfile, docams=docams, $
    splog, 'idlspec2d version ' + idlspec2d_version()
    splog, 'idlutils version ' + idlutils_version()
 
-   camnames = ['b1', 'r2', 'b2', 'r1']
-   camnums = ['01', '02', '03', '04']
+   camnames = ['b1', 'b2', 'r1', 'r2']
    ncam = N_elements(camnames)
 
    ; Find all the sequence IDs
@@ -129,11 +127,6 @@ pro spallreduce, planfile=planfile, docams=docams, $
 
       stime1 = systime(1)
       splog, 'Begin plate ', strtrim(string(plateid),2), ' at ', systime()
-
-      plateDir=filepath(strtrim(string(plateid),2)+'/2d_'+run, $
-       root_dir=extractDir)
-      combineDir=filepath(strtrim(string(plateid),2)+'/comb_'+run, $
-       root_dir=combDir)
 
       ; Find the corresponding plug map file
       j = where(allplug.seqid EQ seqid[iseq] $
@@ -153,7 +146,7 @@ pro spallreduce, planfile=planfile, docams=docams, $
          ; Find the corresponding pixel flat
          pixflatname = pixflats.name[icam]
          if (pixflatname EQ 'UNKNOWN') then $
-          message, 'No pixel flat for CAMERA= ' + camnums[icam]
+          message, 'No pixel flat for CAMERA= ' + camnames[icam]
 
          j = where(allseq.seqid EQ seqid[iseq] $
                AND allseq.flavor EQ 'science' $
@@ -173,7 +166,7 @@ pro spallreduce, planfile=planfile, docams=docams, $
             if (nflat GT 0) then flatname = allseq[j].name[icam] $
              else message, 'No flat for SEQID= ' $
               + strtrim(string(seqid[iseq]),2) + ', PLATEID= ' $
-              + strtrim(string(plateid),2) + ', CAMERA= ' + camnums[icam]
+              + strtrim(string(plateid),2) + ', CAMERA= ' + camnames[icam]
 
             ;------
             ; Select **all** arc exposures at this sequence + camera
@@ -184,7 +177,7 @@ pro spallreduce, planfile=planfile, docams=docams, $
             if (narc GT 0) then arcname = allseq[j].name[icam] $
              else message, 'No arc for SEQID= ' $
               + strtrim(string(seqid[iseq]),2) + ', PLATEID= ' $
-              + strtrim(string(plateid),2) + ', CAMERA= ' + camnums[icam]
+              + strtrim(string(plateid),2) + ', CAMERA= ' + camnames[icam]
 
             ;-----
             ; Read the time of each flat + arc
@@ -217,13 +210,11 @@ pro spallreduce, planfile=planfile, docams=docams, $
             ; Get full name of pixel flat
             pixflatname = filepath(pixflatname, root_dir=flatDir)
 
-            spawn, 'mkdir -p '+plateDir
-
             stime2 = systime(1)
 
             spreduce, flatsortname, arcname, objname, $
              pixflatname=pixflatname, plugfile=plugfile, lampfile=lampfile, $
-             indir=inputDir, plugdir=plugDir, outdir=plateDir
+             indir=inputDir, plugdir=plugDir, outdir=extractDir
 
             splog, 'Time to reduce camera ', camnames[icam], ' = ', $
              systime(1)-stime2, ' seconds', format='(a,a,a,f6.0,a)'
@@ -247,18 +238,19 @@ pro spallreduce, planfile=planfile, docams=docams, $
 
          for side=1, 2 do begin
 
-            outputroot = 'idlout-'+string(format='(i1,a,i4.4,a)',side, $
-             '-',plateid,'-')
+            outputroot = string('spMerge2d-',mjd,'-',plateid, $
+             format='(a,i5.5,a1,i4.4)')
 
-            expres = string(format='(a,i1,a)', 's-', side, '*.fit')
-            files = findfile(filepath(expres, root_dir=plateDir), count=nfile)
+            expres = string(format='(a,i1,a)', 'spSpec2d-*', side, '-*.fit')
+            files = findfile(filepath(expres, root_dir=extractDir), count=nfile)
             splog, 'Combining ' + strtrim(string(nfile),2) $
              + ' files for side ' + strtrim(string(side),2)
 
+stop
             if (nfile GT 0) then begin
                for i=0, nfile-1 do splog, 'Combine file ', files[i]
                combine2dout, files, filepath(outputroot, root_dir=combineDir), $
-                wavemin=alog10(3750.0), window=100
+                side, wavemin=alog10(3750.0), window=100
             endif
 
          endfor

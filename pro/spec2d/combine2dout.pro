@@ -6,12 +6,16 @@
 ;   Combine several reduced frames of the same objects
 ;
 ; CALLING SEQUENCE:
-;   combine2dout, filenames, outputroot, binsz, zeropoint, nord=nord, $
+;   combine2dout, filenames, outputroot, spectrographid, $
+;    binsz, zeropoint, nord=nord, $
 ;    fullspec=fullspec, fullwave=fullwave, wavemin=wavemin, $
 ;    bkptbin=bkptbin, everyn=everyn, display=display, window=window
 ;
 ; INPUTS:
-;   filenames  - Name(s) of files written by SPREDUCE
+;   filenames      - Name(s) of files written by SPREDUCE
+;   outputroot     - Root name for all output files
+;   spectrographid - Spectrograph ID (1 or 2) for use in computing fiber
+;                    number for output file name
 ;
 ; REQUIRED KEYWORDS:
 ;
@@ -53,7 +57,8 @@ end
 
 ;------------------------------------------------------------------------------
 
-pro combine2dout, filenames, outputroot, binsz, zeropoint, nord=nord, $
+pro combine2dout, filenames, outputroot, spectrographid, $
+ binsz, zeropoint, nord=nord, $
  fullspec=fullspec, fullwave=fullwave, wavemin=wavemin, $
  bkptbin=bkptbin, everyn=everyn, display=display, window=window
 
@@ -163,7 +168,8 @@ pro combine2dout, filenames, outputroot, binsz, zeropoint, nord=nord, $
       fullspec = flux[*,i]
       fullivar = fluxivar[*,i]
 
-      outputfile = outputroot+string(format='(i3.3,a)',i+1)+'.fit'
+      outputfile = outputroot+'-' $
+       +string(format='(i3.3,a)',i+1+(spectrographid-1)*320)+'.fit'
 
       bad = 0
       nonzero = where(fullivar GT 0.0)

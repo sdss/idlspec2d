@@ -591,8 +591,8 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       framenum = sxpar(objhdr, 'EXPOSURE')
   
       filebase = filepath( $
-       's-'+string(format='(i1,a1,a,i4.4)',spectrographid, $
-       color,'-',framenum), root_dir=outdir)
+       'spSpec2d-'+string(format='(a1,i1,a,i8.8)',color,spectrographid, $
+       '-',framenum), root_dir=outdir)
   
       ;------
       ; Add keywords to object header
