@@ -6,6 +6,8 @@ EXTRACT_OBJECT: Set the "NEARWHOPPER" mask bits only for fibers within 2
 EXTRACT_OBJECT, SKYSUBTRACT: Exit gracefully in the case of no good sky
           fibers.  In that case, issue an "ABORT" log message, return
           SKYSTRUCT=0 from SKYSUBTRACT, then do not write an spFrame file.
+FIBERFLAT: Update to call SUPERFLAT() as a function instead of a proc,
+           though should not be functionally different yet.
 FITMEANX: Make robust to no good sky lines for tweaking wavelength solution.
           In that case, the routine LOCATESKYLINES will return SKYSHIFT=0.
 LOCATESKYLINES: Test that the sky line file is successfully read.
@@ -35,6 +37,19 @@ SPCOADD_FRAMES: Include MJDLIST keyword in spPlate header, which will be
                 the list of all MJD's used in an SPCOMBINE.
                 Add BUNIT keyword for the flux, inverse variance, and
                 dispersion HDU's.
+SPFLATTEN2: Major changes! Now call the 2-dimensional B-spline code when
+            generating the superflats.  However, there seem to be problems
+            with this code for some combinations of NORD and NPOLY.  I have
+            set NORD=3, NPOLY=4 which seems to be a combination that works.
+            (A PR has been filed against idlutils.)
+            Also, small changes to how directory names are parsed, and retain
+            the header from the file ALLFLATS[0] for the output file.
+SUPERFLAT: Pass X2, NORD and NPOLY keywords to support fitting 2-dimensional
+           B-splines in the call to BSPLINE_ITERFIT().  At the moment,
+           this will only be implemented for the proc SPFLATTEN2, not for
+           FIBERFLAT.  (So this shouldn't effect the spectro reductions
+           except for updated pixel flats.)
+           Also, make this a function instead of a proc.
 TELLURIC_CORR: Fixed horrible bug in using fibermask to reject bad fibers
                (fixes PR #2162).  Also, when fitting the local continuum
                around a single telluric band for a single star with a
@@ -45,6 +60,7 @@ DJS_REJECT (in idlutils): Add the GROUPDIM keyword, and allow GROUPDIM,
           MAXREJ and GROUPSIZE to be vectors for several limits in the
           rejection algorithm.  These were some major changes, and hopefully
           are completely backwards-compatable.
+SPLOT (in idlutils): Changed interactive gaussfit (g) so amplitude is correct.
 YANNY_READ (in idlutils): Try to make backwards-compatable with IDL 5.2
           by replacing calls to STRSPLIT() with calls to STR_SEP.
 build_links (in idlutils): New script for building links between directories.
