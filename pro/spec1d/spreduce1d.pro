@@ -68,13 +68,6 @@ pro spreduce1d, platefile, outfile
 
    if (NOT keyword_set(outfile)) then $
     outfile = 'spZ' + strmid(platefile,strpos(platefile,'spPlate')+7)
-;    outfile = strmid(platefile,0,strpos(platefile,'.fits')) + '-z.fits'
-
-djs_readcol, '/home/schlegel/idlspec2d/etc/regress1d_all.dat', $
- chicplate, junk, chicfiberid, chicz, chicclass, format='(L,L,L,F,A)'
-ii=where(chicplate EQ 306)
-chicz=chicz[ii]
-chicclass=chicclass[ii]
 
    stime0 = systime(1)
 
@@ -100,20 +93,6 @@ chicclass=chicclass[ii]
    ibad = where(skymask)
 andmask = 0 ; Free memory
    if (ibad[0] NE -1) then objivar[ibad] = 0
-
-; Trim to QSO's only...
-;jj = where(chicclass EQ 'QSO')
-;jj = where(chicclass EQ 'GALAXY')
-;jj = jj[0:9] ; Trim to first few objects
-jj = lindgen(640)
-;jj = lindgen(2)
-;jj = [128,129]
-chicz = chicz[jj]
-chicclass = chicclass[jj]
-objflux = objflux[*,jj]
-objivar = objivar[*,jj]
-plugmap = plugmap[jj]
-nobj=n_elements(jj)
 
    ;----------
    ; Look for where the S/N is unreasonably large
@@ -188,7 +167,7 @@ nobj=n_elements(jj)
    ;----------
    ; Find STAR redshifts
 
-   npoly = 3
+   npoly = 4 ; With only 1 eigen-template, fit more polynomial terms for stars.
    zmin = -0.002 ; -600 km/sec
    zmax = 0.002 ; +600 km/sec
    pspace = 1
@@ -253,12 +232,6 @@ nobj=n_elements(jj)
       endif
    endfor
 
-print,[transpose(chicz),res_all[0,*].z]
-
-;   vres = veldisp(objflux, objivar, starflux, starmask, $
-;    zoffset=zoffset)
-
-
    splog, 'Total time for SPREDUCE1D = ', systime(1)-stime0, ' seconds', $
     format='(a,f6.0,a)'
    splog, 'Successful completion of SPREDUCE1D at ', systime()
@@ -270,54 +243,6 @@ print,[transpose(chicz),res_all[0,*].z]
    writefits, outfile, 0, hdr ; Retain the original header in the first HDU
    mwrfits, res_all, outfile
 
-stop
-return
-stop
-davez=res_all[0,*].z
-set_plot,'ps'
-device,file='qsoz-306a.ps'
-djs_plot, chicz, davez,ps=4,xr=[0,3],yr=[0,3], charsize=2, $
- xtitle='Chicago-z',ytitle='z from \chi^2-min',title='QSOs on plate 306'
-oplot,[0,3],[0,3]
-device,/close
-set_plot,'x'
-
-set_plot,'ps'
-device,file='qsoz-306b.ps'
-djs_plot, chicz, ((davez-chicz)*3e5 > (-5800))<5800, $
- ps=4,yr=[-1,1]*6000,xr=[0,3], charsize=2, $
- xtitle='Chicago-z',ytitle='\Delta z from \chi^2-min',title='QSOs on plate 306'
-oplot,[0,3],[0,0]
-device,/close
-set_plot,'x'
-
-djs_plot, chicz, ((davez-chicz)*3e5 > (-580))<580, $
- ps=4,yr=[-1,1]*600,xr=[0,1], charsize=2
-j=where( abs(davez-chicz)*3e5 LT 400 )
-
-j=where( abs(davez-chicz)*3e5 LT 4000 )
-print,mean((davez-chicz)[j]*3e5),djsig((davez-chicz)[j]*3e5)
-print,n_elements(j)/float(nobj)
-
-res_all=mrdfits('spPlate-0306-51690-z.fits',1)
-res_all=reform(res_all,10,320)
-davez=transpose(res_all[0,*].z)
-k=where( abs(davez-chicz)*3e5 GT 4000 )
-print,[transpose(k),transpose(chicz[k]),transpose(davez[k])]
-
-chi2dof = res_all.chi2 / (res_all.dof > 1)
-chidiff = chi2dof[1,*] - chi2dof[0,*]
-isky = where(res_all[0,*].class EQ 'SKY')
-chidiff[isky] = chi2dof[2,isky] - chi2dof[1,isky]
-splot,chicz,chidiff,ps=4
-soplot,chicz[k],chidiff[k],ps=1,color='red'
-
-splot,chicz,chi2dof,ps=4
-soplot,chicz[k],chi2dof[k],ps=1,color='red'
-
-kdiff=k[where(chidiff[k] GT 2)] ; These are the objs where we really disagree
-
-objloglam=sxpar(hdr,'COEFF0')+findgen(3880)*sxpar(hdr,'COEFF1')
    return
 end
 ;------------------------------------------------------------------------------
