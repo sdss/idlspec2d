@@ -145,11 +145,11 @@ function fullfit, spec, linelist, guess
 
 	guess0 = guess[0]
 	p0 = guess[1:*]
-	scale = abs(p0)*0.3
-	scale[0] = scale[0]*0.05
+	scale = abs(p0)*0.3d
+	scale[0] = scale[0]*0.05d
 
 	first = lampfit(spec, linelist, guess0, transpose([[p0],[scale]]), $
-	   width = 25.0, lagwidth=250, ftol=1.0e-4)
+	   width = 25.0d, lagwidth=250d, ftol=1.0d-4)
 	
 	final = first
 
@@ -159,13 +159,13 @@ function fullfit, spec, linelist, guess
 	  scale = abs(p0)*0.1
 	  scale[0] = scale[0]*0.2
 	  final = lampfit(spec, linelist, guess0, transpose([[p0],[scale]]), $
-	     width = 10.0, lagwidth=100, ftol=1.0e-4)
+	     width = 10.0d, lagwidth=100d, ftol=1.0d-4)
 	endwhile
 
 	return,final
 end
 
-pro fitarcimage, arc, side, linelist, xnew, ycen, tset, invset, $
+pro fitarcimage, arc, arcinvvar, side, linelist, xnew, ycen, tset, invset, $
                   func=func, ncoeff=ncoeff, ans=ans, lambda=lambda, $
                   thresh=thresh, row=row, goodlines=goodlines
 ;
@@ -201,14 +201,6 @@ pro fitarcimage, arc, side, linelist, xnew, ycen, tset, invset, $
 ;	one might want to change nave and nmed for first pass
 ;
 
-	xcen = trace_crude(arc, yset=ycen, nave=1, nmed=1, thresh = thresh, $
-               maxshifte=1.0)
-	xnew = trace_fweight(arc, xcen, ycen)
-
-	bad = where(abs(xnew-xcen) GT 3.0)
-	if(bad[0] NE -1) then xnew[bad] = xcen[bad]
-
-
 ;
 ;	Somewhere here you might want to fit gaussians to get better
 ;	centroids, but you might want to wait until after the first
@@ -219,12 +211,12 @@ pro fitarcimage, arc, side, linelist, xnew, ycen, tset, invset, $
 ;	Now find wavelength solution
 ;
 
-	spec = arc[*,row]
+;	spec = arc[*,row]
 
 ;
 ;	One can try to implement the median below for robustness
 ;
-;	spec = djs_median(arc[*,row-1:row+1],2)
+ 	spec = djs_median(arc[*,row-2:row+2],2)
 
 	if (ans[0] EQ 0) then begin
 
@@ -240,7 +232,8 @@ pro fitarcimage, arc, side, linelist, xnew, ycen, tset, invset, $
 	    return
 	  endif
 
-          ans = fullfit(spec, linelist, guess)
+          guess = double(guess)
+          ans   = fullfit(double(spec), linelist, guess)
 
 	  if (side EQ 'blue' AND bestcorr LT 0.6) then $
             print, 'Initial wavelength solution looks suspicious'
@@ -249,54 +242,21 @@ pro fitarcimage, arc, side, linelist, xnew, ycen, tset, invset, $
 
 	endif
 
-;
-;	This next section attempts to identify "GOOD" lines in linelist
-;	with the traces stored in (xnew, ycen)
-;
-	wnorm = 2.0*xnew/(npix-1) - 1.0
-	wpeak = poly(wnorm, ans)		
-	
-	thispeak = (wpeak[row,*])[*]
-	nlines = n_elements(thispeak)
-	lambda = fltarr(nlines)
-	val = fltarr(nlines)
-	loglamlist = (alog10(linelist[*,0]))[*]
-	for i=0,nlines-1 do begin
-	  diff = loglamlist - thispeak[i]
-	  val[i] = min(abs(diff),place)
-;	  print, i, val[i], 10^thispeak[i], 10^loglamlist[place]
-	  if(val[i] LT 0.0003 AND linelist[place,2] NE 0.0) then $
-              lambda[i] = loglamlist[place]
-	endfor
 
-	nonzero = where(lambda GT 0.0, oldcount)
-	highones = where(lambda GT 3.9, highct)
-	if(oldcount LT 6) then $
-	  message, 'only '+string(oldcount)+ ' good arclines found'
-
-	print, 'Found ', oldcount, ' good arc lines'
-	if (highct GT 0) then print, '----', highct, ' are above 8000 A'
-
-	xnew = xnew[*,nonzero]
-	ycen = ycen[*,nonzero]
-        lambda = lambda[nonzero]
-	wnorm = 2.0*xnew/(npix-1) - 1.0
-	
-;
 ;	Now store best log lambda solutions in tset
 ;	
 
      tset = $      
       { func    :    func              , $
-        xmin    :    0.0               , $
-        xmax    :    0.0               , $
-        coeff   :    fltarr(ncoeff, nTrace) $
+        xmin    :    0.0d               , $
+        xmax    :    0.0d               , $
+        coeff   :    dblarr(ncoeff, nTrace) $
       }
      invset = $      
-      { func    :    func              , $
-        xmin    :    0.0               , $
-        xmax    :    0.0               , $
-        coeff   :    fltarr(icoeff, nTrace) $
+      { func    :    func               , $
+        xmin    :    0.0d               , $
+        xmax    :    0.0d               , $
+        coeff   :    dblarr(icoeff, nTrace) $
       }
 
 	tset.xmin = 0.0
@@ -312,11 +272,104 @@ pro fitarcimage, arc, side, linelist, xnew, ycen, tset, invset, $
 	  endif
 	ymid = 0.5*(invset.xmax + invset.xmin)
 	yrange = invset.xmax - invset.xmin
-	xx = findgen(2048)
-	pixarray = 2.0*findgen(npix)/(npix-1) - 1.0
+	xx = dindgen(2048)
+	pixarray = 2.0d0*dindgen(npix)/(npix-1) - 1.0d0
 
       if (func EQ 'legendre') then function_name = 'flegendre'
       if (func EQ 'chebyshev') then function_name = 'fchebyshev'
+     
+        yy = poly(pixarray,ans)
+     
+        yynorm = 2.0d0*(yy-ymid)/yrange
+        invans = func_fit(yynorm, xx, icoeff, $
+           function_name=function_name)
+
+        uselines = where(linelist[*,2] GT 0.0)
+        if (uselines[0] EQ -1) then $
+          message, 'No unblended lines in linelist'
+
+        uselambda = alog10(linelist[uselines,0])
+        uselambdanorm = 2.0d*(uselambda - ymid)/yrange
+
+
+      if (func EQ 'legendre') then $
+             xstart = flegendre(uselambdanorm,icoeff) # invans
+      if (func EQ 'chebyshev') then $
+             xstart = fchebyshev(uselambdanorm,icoeff) # invans
+
+        inimage = where(xstart GE 0.0 AND xstart LE 2047.0)
+        if (inimage[0] NE -1) then xstart = xstart[inimage]
+	xcen = trace_crude(arc, yset=ycen, nave=1, nmed=1, xstart=xstart, $
+               ystart=row, maxshifte=1.0d)
+        xfix = trace_fix(xcen, ycen=ycen)
+	xnew = trace_fweight(arc, xfix, ycen)
+
+
+	bad = where(abs(xnew-xcen) GT 3.0)
+	if(bad[0] NE -1) then xnew[bad] = xcen[bad]
+
+
+        ntempTrace = (size(xnew))[2] 
+        y2=findgen(nTrace)
+
+	isbad=lonarr(ntempTrace)
+        for i=0,ntempTrace-1 do begin
+           inew = round(xnew[*,i])
+	   arcvarlist=[arcinvvar[inew,y2],arcinvvar[inew+1,y2], $
+		arcinvvar[inew-1,y2]]
+           wheresat=where(arcvarlist eq 0, nsat)
+           fracbad = nsat/float(nTrace*3)
+           isbad[i] = (fracbad GT 0.02)
+           if isbad[i] then print, 'Discarding trace',i, $
+		'    fraction bad', fracbad
+        endfor
+
+
+
+        goodind=where(1-isbad)
+        if goodind[0] eq -1 then message,'Evil RULES!'
+	
+	xnew = xnew[*,goodind]
+	ycen = ycen[*,goodind]
+        lambda = uselambda[inimage[goodind]]
+
+;
+;	This next section attempts to identify "GOOD" lines in linelist
+;	with the traces stored in (xnew, ycen)
+;
+	
+	nonzero = where(lambda GT 0.0, oldcount)
+	highones = where(lambda GT 3.9, highct)
+	if(oldcount LT 6) then $
+	  message, 'only '+string(oldcount)+ ' good arclines found'
+
+	print, 'Found ', oldcount, ' good arc lines'
+	if (highct GT 0) then print, '----', highct, ' are above 8000 A'
+
+;	xnew = xnew[*,nonzero]
+;	ycen = ycen[*,nonzero]
+;        lambda = lambda[nonzero]
+	
+
+
+	;
+	nord=3
+ 	x=findgen(nTrace)/float(nTrace)
+        xmeasured = xnew       
+
+	ntempTrace = (size(xnew))[2]
+	mx=total(xnew,2)/ntempTrace
+	for i=0,ntempTrace-1 do begin 
+	  dif=xnew[*,i]-mx
+	  dum=poly_fit(x,dif,nord,yfit)
+          res1=yfit-dif
+	  good=abs(res1) lt 4*stdev(res1)
+	  good=abs(res1) lt 4*stdev(res1*good)
+          kent=polyfitw(x,dif,good,3,yfit)	  
+	  xnew[*,i] = mx+yfit
+ 	endfor
+
+	wnorm = 2.0d*xnew/(npix-1) - 1.0d
 
 	goodlines = lonarr(oldcount,nTrace) + 1
         
@@ -335,7 +388,7 @@ pro fitarcimage, arc, side, linelist, xnew, ycen, tset, invset, $
 ;
 ;	Take lines within 20 km/s
 ;
-	    bad = where(abs(diff) GT 3.0e-5, nbad)
+	    bad = where(abs(diff) GT 3.0d-5, nbad)
 	    if (nbad EQ 0) then done = 1 $ 
 	    else begin
 	      maxdiff = max(abs(diff),badplace)
