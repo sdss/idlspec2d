@@ -34,6 +34,7 @@
 ;   physical model with flux and sky background is not implemented
 ;
 ; PROCEDURES CALLED:
+;   djs_iterstat
 ;   poly_fit
 ;
 ; REVISION HISTORY:
@@ -65,10 +66,10 @@ function fitsn, mag, snvec, physical=physical, sigrej=sigrej, maxiter=maxiter, $
       
        diff = logsn - yfit
        djs_iterstat, diff[good], sigrej=sigrej, sigma=sigma, mask=smask
-       treject = total(smask)
+       treject = total(1-smask)
        if (treject EQ 0) then return, coeffs
 
-       mask[good] = mask[good] * (1-smask)
+       mask[good] = mask[good] * smask
        if (total(mask) LT 3) then return, 0
     endfor
 

@@ -33,6 +33,7 @@
 ; EXAMPLES:
 ;
 ; PROCEDURES CALLED:
+;   djs_iterstat
 ;
 ; REVISION HISTORY:
 ;   19-Oct-1999  Written by S. Burles, Chicago
@@ -75,10 +76,10 @@ function fitmeanx, wset, lambda, xpos, aveinvvar, $
       djs_iterstat, res1, sigrej=4.0, maxiter=3, mask=mask
 
       ; Re-fit to RAWDIFF as a function of fiber number (rejecting outliers)
-      junk = polyfitw(xaxis, rawdiff, 1-mask, nord, yfit)
+      junk = polyfitw(xaxis, rawdiff, mask, nord, yfit)
       xfit[*,i] = yfit
 
-      igood = where(mask EQ 0, ngood)
+      igood = where(mask NE 0, ngood)
       if (ngood LE 1) then  sdev = 0.0 $
        else sdev = stddev((yfit-rawdiff)[igood])
       if (sdev EQ 0.0) then aveinvvar[i] = 0 $
