@@ -1,4 +1,8 @@
 
+APO_LOG2HTML,APOREDUCE,BATCH1D,BATCH2D,CATPLOT,SDSSPROC,
+SPPLAN1D,SPPLAN_FINDRAWDATA:
+        Replace calls to the obsolete function RSTRPOS()
+        with STRPOS(/REVERSE_SEARCH).
 EXTRACT_BOXCAR,EXTRACT_PROFILE,EXTRACT_ROW,SSHIFTVEC:
         Call IDLUTILS_SO_EXT() to get the suffix for dynamically
         loaded libraries (rather than assuming ".so").
