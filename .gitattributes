@@ -284,7 +284,7 @@ templates/eigeninput_star.dat -text
 templates/eigeninput_vstnd.dat -text
 templates/qso.template -text
 templates/qsolist.27plates -text
-templates/spEigenGals.fits -text svneol=unset#unset
+templates/spEigenGal-51838.fits -text svneol=unset#unset
 templates/spEigenQSO.fits -text svneol=unset#unset
 templates/spEigenStar.fits -text svneol=unset#unset
 templates/spEigenVstnd.fits -text svneol=unset#unset
