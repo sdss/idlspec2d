@@ -172,8 +172,7 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay
 
    objname = (allseq.name[icams])[j]
 
-   spflux, djs_filepath(objname, root_dir=extractdir), $
-    fcalibprefix, outdir=combinedir, adderr=adderr
+   spflux, objname, fcalibprefix, outdir=combinedir, adderr=adderr
 
    ;----------
    ; Close plot file - S/N plots are then put in the PLOTSNFILE file.
@@ -208,8 +207,7 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay
    ;----------
    ; Co-add the fluxed exposures
 
-   spcoadd_frames, djs_filepath(sciname, root_dir=extractdir), $
-    combinefile, mjd=thismjd, combinedir=combinedir, $
+   spcoadd_frames, sciname, combinefile, mjd=thismjd, combinedir=combinedir, $
     fcalibprefix=fcalibprefix, adderr=adderr, docams=docams, $
     plotsnfile=plotsnfile
 
