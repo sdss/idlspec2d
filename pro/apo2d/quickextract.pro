@@ -73,9 +73,11 @@ function quickextract, flatname, arcname, sciname, outname, $
                 AND logwave[*,ifib] LT alog10(wrange[1]) $
                 AND objsubivar[*,ifib] GT 0, nwave)
       if (nwave GT 0) then begin
-         meanfluxvec = djs_median( flux[iwave,ifib], width=filtsz<nwave )
+         meanfluxvec = djs_median( flux[iwave,ifib], width=filtsz<nwave, $
+          boundary='reflect' )
          meansnvec = djs_median( objsub[iwave,ifib] $
-                  * sqrt(objsubivar[iwave,ifib]), width=filtsz<nwave )
+          * sqrt(objsubivar[iwave,ifib]), width=filtsz<nwave, $
+          boundary='reflect' )
          meanflux[ifib] = djs_mean(meanfluxvec)
          meansn[ifib] = djs_mean(meansnvec)
       endif
