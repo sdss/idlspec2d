@@ -115,8 +115,8 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
           else if (strtrim(plugmap[i].objtype,2) EQ 'NA') then $
                splog, ' skipping bad fiber ', i $
           else begin
-            splog, i, plugmap[i].objtype, plugmap[i].mag, $ 
-		      format = '(i4.3, a, f6.2, f6.2, f6.2, f6.2, f6.2)'
+            splog, i, ' ', plugmap[i].objtype, plugmap[i].mag, $ 
+		      format = '(i4.3, a, a, f6.2, f6.2, f6.2, f6.2, f6.2)'
             fullwave = wave[*,i] 
             fullspec = flux[*,i] 
             fullivar = fluxivar[*,i] 
@@ -207,13 +207,15 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
 
 	   ss = sort(fullwave)
 	   fullbkpt = slatec_splinefit(fullwave[ss], fullspec[ss], coeff, $
-              nord=nord, rejper=0.3, upper=5.0, lower=5.0, $
+              nord=nord, rejper=0.1, maxiter=20, upper=5.0, lower=5.0, $
               bkpt=bkpt, everyn=everyn, invvar=fullivar[ss], mask=mask, /silent)
 
-	   if (total(coeff) EQ 0.0) then $
+	   if (total(coeff) EQ 0.0) then begin
               splog, 'All b-splines coeffs have been set to ZERO!!!!'
+           endif
 
-	   splog, 'Masked ', fix(total(1-mask)), ' pixels'
+	   splog, 'Masked ', fix(total(1-mask)), ' of', $
+                n_elements(mask), ' pixels'
 
 	   mask[ss] = mask
 
