@@ -171,7 +171,7 @@ scp -r fsgi03.fnal.gov:/usr/sdss/data04/schlegel/2d_v4
 </PRE></DD></DL>
 If you don't have permissions on this machine, contact your
 <A HREF="http://www-sdss.fnal.gov:8000/guru/gurulist.html">local data guru</A>
-or <A HREF="mailto:bclee@fnal.gov">Brian Lee at Fermi</A>.
+or <A HREF="mailto:jen_a@fnal.gov">Jen Adelman at Fermi</A>.
 
 <P>
 Each plate has three files associated with it:
@@ -485,12 +485,9 @@ by executing:
 At Princeton, you could type the following to display plate 306 fiber 100,
 then overplot the best-fit template:
 <DL><DD><PRE>
-ssh tanuki
-setenv IDLSPECDIR /u/dss/data/2d_v4
-setenv TEMPLATEDIR /u/schlegel/idlspec2d/templates
-setenv PLATELIST platelist
-setenv TSOBJLIST tsObjlist  # Optional for PHOTO params
-setenv TSOBJDIR /peyton/scr/ginka0/vijay/sdss_spectra/tsObj  # Optional for PHOTO params
+ssh moonshine
+setenv SPECTRO_DATA /u/dss/data/2d_v4
+setenv IDLSPEC2D_DIR /u/schlegel/idlspec2d
 cd ~strauss/spectro_sm/release
 ~rhl/sm/src/sm
 dev x11
