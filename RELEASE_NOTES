@@ -110,6 +110,9 @@ opHdrFix.par: Declare bad aborted smears for plate 601 and 803.
             Remove bad smear for plate 860 on MJD 52319.
 spectroSOS.html: Update to reflect new warning messages.
 
+In specflat:
+specflat.table: Added "Flavor=Linux"
+
 In idlutils:
 New procedures in pro/coord for various SDSS coordinate transformations.
 Many of these were in the hoggpt product:
