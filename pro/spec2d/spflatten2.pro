@@ -69,6 +69,7 @@
 ;   extract_image
 ;   genflatmask()
 ;   readfits()
+;   rmfile
 ;   slatec_bvalu()
 ;   slatec_splinefit()
 ;   sdssproc
@@ -235,6 +236,8 @@ arcivar = 0
 
       ;----------------------
       ; Extract the flat-field vectors
+      ; Apply the bad pixel mask, MASKIMG, so that we avoid those bad regions
+      ; when computing the supersky vector.
 
       sigma = 1.0
       proftype = 1 ; Gaussian
@@ -243,7 +246,8 @@ arcivar = 0
       npoly = 1  ; just fit flat background to each row
       wfixed = [1,1] ; Just fit the first gaussian term
 
-      extract_image, flatimg, flativar, xsol, sigma, flux, fluxivar, $
+      extract_image, flatimg, flativar * (1-maskimg), $
+       xsol, sigma, flux, fluxivar, $
        proftype=proftype, wfixed=wfixed, $
        highrej=highrej, lowrej=lowrej, npoly=npoly, relative=1
 
@@ -252,6 +256,8 @@ arcivar = 0
 
       superflat, flux, fluxivar, wset, afullbkpt, acoeff, $
        fibermask=fibermask, minval=0.0, lower=lower, upper=upper
+flux = 0
+fluxivar = 0
       fitimg = slatec_bvalu(waveimg, afullbkpt, acoeff)
 
       ;----------------------
