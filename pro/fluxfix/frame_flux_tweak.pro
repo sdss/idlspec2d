@@ -169,11 +169,11 @@ end
 
 ;------------------------------------------------------------------------------
 pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
-    best_indx, plugmap, fiber_descriptor, corrfile
+    best_exp, fibertag, corrfile
 
-   expid = fiber_descriptor[uniq(fiber_descriptor)]
-   indx = where(fiber_descriptor eq expid[best_indx])
-   splog, 'Best frame =', expid[best_indx]
+   expid = fibertag[uniq(fibertag.expid)].expid
+   splog, 'Best Exposure =', best_exp
+   indx = where(fibertag.expid eq best_exp)
 
    ;----------
    ; Create red & blue smoothed best images
@@ -209,7 +209,7 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
 
    for ifile=0, nfiles-1 do begin
 
-      indx = where(fiber_descriptor eq expid[ifile])
+      indx = where(fibertag.expid eq expid[ifile])
       splog, 'Fluxing science image =', expid[ifile]
 
       ;------------
@@ -217,7 +217,7 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
       ; with an amplitude of 1.0
  
       fitimg = bestflux*0.0 + 1.0
-      xy2traceset, wave, fitimg, corrset, ncoeff=ncoeff
+      xy2traceset, wave, fitimg, corrset, ncoeff=ncoeff, /silent
       corrset.coeff[0,*] = 1.0
       corrset.coeff[1:*,*] = 0.0
       thismask  = bestmask 
@@ -225,7 +225,7 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
       ;--------------
       ; If the science image and best image are the same,
       ; force their ratio to be unity.
-      if (ifile EQ best_indx) then begin
+      if (expid[ifile] EQ best_exp) then begin
         mwrfits, corrset, corrfile[ifile], /create
         mwrfits, thismask, corrfile[ifile]
         continue
@@ -281,6 +281,7 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
             lower = 3, upper = 3
         corrset.coeff[*,poly3] = polyset.coeff
       endif
+
       if npoly2 gt 0 then begin
         xy2traceset, wave[*,poly2], bestflux[*,poly2], polyset, $
             invvar=bestivar[*,poly2], ncoeff=2, inputfunc=sciflux[*,poly2], $
@@ -297,7 +298,7 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
 
       ;----------
       ; Identify sky fibers from the plug map   
-      sky = where(strmatch(plugmap[indx].objtype, '*SKY*'))
+      sky = where(strmatch(fibertag[indx].objtype, '*SKY*'))
       corrset.coeff[0,sky] = 1.0
       corrset.coeff[1,sky] = 0.0
       corrset.coeff[2,sky] = 0.0
@@ -359,11 +360,15 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
 
       traceset2xy, corrset, wave, corrimage
 
-      ;for i = 0, 30 do begin
-      ;  plot, 10.0^wave[*,i], corrimage[*,i], yr=[0.5, 1.5]
-      ;  oplot, 10.0^wave[*,i], bestflux[*,i]/sciflux[*,i]
-      ;  djs_oplot, 10.0^wave[*,i], corrimage[*,i], color='red', thick=3
-      ;endfor
+      std = where(strmatch(fibertag[indx].objtype, '*_STD*'), nstd)
+      for ii = 0, nstd - 1 do begin
+        istd = std[ii]
+        plot, 10.0^wave[*,istd], corrimage[*,istd], yr=[0.5, 1.5], /nodata, $
+                ytitle='Best Frame Flux / Science Frame Flux'
+        oplot, 10.0^wave[*,istd], bestflux[*,istd]/sciflux[*,istd], psym=6, $
+               syms=0.5, thick=3
+        djs_oplot, 10.0^wave[*,istd], corrimage[*,istd], color='red', thick=3
+      endfor
 
       djs_plot, 10.0^wave, corrimage, /nodata, yr=[0.5, 1.5], $
                 xr=[min(10.0^wave)-100,max(10.0^wave)+100], $
@@ -373,7 +378,7 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
 
       hipts = where(fiber_coeff eq 3, nhipts)
       lowpts = where(fiber_coeff ne 3, nlowpts)
-      std = where(strmatch(plugmap[indx].objtype, '*_STD*'), nstd)
+      std = where(strmatch(fibertag[indx].objtype, '*_STD*'), nstd)
 
       for iobj=0, nlowpts -1 do $
         djs_oplot, 10.0^wave[*,lowpts[iobj]], corrimage[*,lowpts[iobj]], $
