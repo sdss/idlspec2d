@@ -54,7 +54,6 @@
 ;   djs_svdfit()
 ;   mpfitpeak
 ;   mpfitpeak_gauss
-;   splog
 ;   textoidl
 ;
 ; INTERNAL SUPPORT ROUTINES:
@@ -319,7 +318,7 @@ function find_nminima, yflux, xvec, dofarr=dofarr, nfind=nfind, minsep=minsep, $
             errcode = [errcode, errcode1]
             ypeak = [ypeak, ypeak1]
          endif else begin
-            splog, 'Discarding peak #', npeak+1, ' of ', nfind
+            print, 'Discarding peak #', npeak+1, ' of ', nfind
          endelse
       endelse
 
