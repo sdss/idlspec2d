@@ -514,7 +514,7 @@ ormask = 0 ; Free memory
    sxdelpar, hdr, 'NAXIS2'
    sxaddpar, hdr, 'EXTEND', 'T', after='NAXIS'
    sxaddpar, hdr, 'VERS1D', idlspec2d_version(), $
-    'Version of idlspec2d for 1D reduction', after='VERSCOMB'
+    ' Version of idlspec2d for 1D reduction', after='VERSCOMB'
    spawn, 'uname -n', uname
    sxaddpar, hdr, 'UNAME', uname[0]
    ww = strsplit(uname[0], '.', /extract)
@@ -577,14 +577,16 @@ ormask = 0 ; Free memory
 
    res_all.zwarning = zwarning
 
-   ; Warning: For QSOs, if C_IV, CIII], or Mg_II are negative
+   ; Warning: For QSOs, if C_IV, CIII], Mg_II, H_beta or H_alpha are negative
    ; and have at least a few pixels in the fit (DOF > 2).
    for iobj=0, nobj-1 do begin
       if (strtrim(plugmap[iobj].objtype,2) EQ 'QSO') then begin
          indx = where(zline.fiberid EQ res_all[0,iobj].fiberid $
           AND (zline.linename EQ 'C_IV' $
             OR zline.linename EQ 'C_III]' $
-            OR zline.linename EQ 'Mg_II') )
+            OR zline.linename EQ 'Mg_II' $
+            OR zline.linename EQ 'H_beta' $
+            OR zline.linename EQ 'H_alpha') )
          qflag = total(zline[indx].linearea LT 0 $
           AND zline[indx].linearea_err GT 0 $
           AND zline[indx].linedof GT 2)
