@@ -457,3 +457,110 @@ ophdrfix sdR-??-00014638 FLAVOR   "'unknown'"
 # Ignore this bad smear on plate 886 on MJD 52381
 ophdrfix sdR-??-00014653 FLAVOR   "'unknown'"
 
+# Ignore these data through thick clouds for plate 818 on MJD 52383
+ophdrfix sdR-??-00014688 QUALITY   "'bad'"
+ophdrfix sdR-??-00014689 QUALITY   "'bad'"
+
+# Ignore these data through thick clouds for plate 903 on MJD 52384
+ophdrfix sdR-??-00014700 QUALITY   "'bad'"
+ophdrfix sdR-??-00014702 QUALITY   "'bad'"
+ophdrfix sdR-??-00014703 QUALITY   "'bad'"
+
+# This smear for plate 903 on MJD 14719 had very little S/N
+ophdrfix sdR-??-00014719 QUALITY   "'bad'"
+
+# A bunch of test smears were taken for plate 951 on MJD 52394,
+# and some low-quality science exposures.  Discard all these
+# data in favor of those taken on MJD 52398.
+ophdrfix sdR-??-0001477[1-9] QUALITY   "'test'"
+ophdrfix sdR-??-0001478[0-4] QUALITY   "'test'"
+
+# This was an exposure on plate 917 MJD 52395 aborted after 400 sec.
+# (Two other exposures were taken on this plate with a high sky brightness.)
+ophdrfix sdR-??-00014792 QUALITY   "'bad'"
+
+# This was a single low-S/N exposure on plate 903 MJD 52398
+ophdrfix sdR-??-00014812 QUALITY   "'bad'"
+
+# This science exposure and smear had very low S/N for
+# plate 917 on MJD 52398
+ophdrfix sdR-??-00014830 QUALITY   "'bad'"
+ophdrfix sdR-??-00014831 QUALITY   "'bad'"
+
+# This was a single low-S/N exposure on plate 796 MJD 52398
+ophdrfix sdR-??-00014834 QUALITY   "'bad'"
+
+# Wrong exposure time in these headers for plate 903 on MJD 52400.
+# (Reported to be 22065 sec!)
+ophdrfix sdR-??-00014911 EXPTIME  1200
+
+# This smear for plate 903 on MJD 52400 had very low S/N.
+ophdrfix sdR-??-00014913 QUALITY   "'bad'"
+
+# This smear for plate 917 on MJD 52400 had very low S/N.
+ophdrfix sdR-??-00014923 QUALITY   "'bad'"
+
+# Wrong exposure time in these headers for plate 946 on MJD 52405.
+# (Reported to be 23536 sec!)
+ophdrfix sdR-??-00014985 EXPTIME  1200
+
+# Wrong exposure time in these headers for plate 946 on MJD 52407.
+# (Reported to be 22066 sec!)
+ophdrfix sdR-??-00015025 EXPTIME  1200
+
+# Wrong exposure time in these headers for plate 846 on MJD 52407.
+# (Reported to be 23536 sec!)
+ophdrfix sdR-??-00015030 EXPTIME  1200
+
+# This signle exposure on plate 947 on MJD 52408 had low S/N,
+# and an enormous number of CRs!
+ophdrfix sdR-??-00015040 QUALITY   "'bad'"
+
+# This exposure on plate 819 on MJD 52408 taken through clouds.
+ophdrfix sdR-??-00015068 QUALITY   "'bad'"
+
+# Reject this exposure taken for plate 902 on MJD 52409
+# when the sky was very bright.
+ophdrfix sdR-??-00015093 QUALITY   "'bad'"
+
+# Wrong exposure time in these headers for plate 902 on MJD 52409.
+# (Reported to be 22066 sec!)
+ophdrfix sdR-??-00015095 EXPTIME  1200
+
+# Reject this low-S/N smear for plate 902 on MJD 52409.
+ophdrfix sdR-??-00015097 QUALITY   "'bad'"
+
+# Wrong exposure time in these headers for plate 947 on MJD 52410.
+# (Reported to be 22365 sec!)
+ophdrfix sdR-??-00015132 EXPTIME  1500
+
+# Reject this low-S/N smear for plate 947 on MJD 52410.
+ophdrfix sdR-??-00015135 QUALITY   "'bad'"
+
+# Reject this low-S/N smear for plate 958 on MJD 52410.
+ophdrfix sdR-??-00015144 QUALITY   "'bad'"
+
+# Reject this low-S/N science exposure for plate 925 on MJD 52410.
+ophdrfix sdR-??-00015150 QUALITY   "'bad'"
+
+# Wrong exposure time in these headers for plate 953 on MJD 52411.
+# (Reported to be 23238 sec!)
+ophdrfix sdR-??-00015171 EXPTIME  900
+
+# Wrong exposure time in these headers for plate 968 on MJD 52412.
+# (Reported to be 23838 sec!)
+ophdrfix sdR-??-00015205 EXPTIME  1500
+
+# Reject this low-S/N smear for plate 968 on MJD 52412.
+ophdrfix sdR-??-00015209 QUALITY   "'bad'"
+
+# Reject this low-S/N smear for plate 926 on MJD 52412.
+ophdrfix sdR-??-00015218 QUALITY   "'bad'"
+
+# Reject this low-S/N science exposure for plate 960 on MJD 52413.
+ophdrfix sdR-??-00015235 QUALITY   "'bad'"
+
+# Wrong exposure time in these headers for plate 970 on MJD 52413.
+# (Reported to be 22065 sec!)
+ophdrfix sdR-??-00015227 EXPTIME  1200
+
