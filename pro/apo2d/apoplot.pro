@@ -6,7 +6,7 @@
 ;   Routine for plotting spectra from the Son-of-Spectro outputs at APO.
 ;
 ; CALLING SEQUENCE:
-;   apoplot, plate, [ fiberid, mjd=, nsmooth=, psfile=, $
+;   apoplot, plate, [ fiberid, mjd=, expnum=, nsmooth=, nmed=, psfile=, $
 ;    /netimage, _EXTRA= ]
 ;
 ; INPUTS:
@@ -16,8 +16,12 @@
 ;   fiberid    - Fiber number(s); if not set, then plot all fibers for plate.
 ;   mjd        - MJD number; if not set, then select the most recent MJD
 ;                in the $SPECTROLOG_DIR directory.
-;   nsmooth    - If set, then boxcar smooth both the object and synthetic
-;                spectra with a width equal to NSMOOTH.
+;   expnum     - If set, then plot only these exposure numbers for this plate
+;                rather than all exposure numbers for this plate.
+;   nsmooth    - If set, then boxcar smooth the object spectra with a
+;                width equal to NSMOOTH.
+;   nmed       - If set, then median filter the object spectra with a
+;                width equal to NMED.
 ;   psfile     - If set, then send plot to a PostScript file instead of
 ;                to the SPLOT interactive widget.  The PostScript file name
 ;                can be set explicitly, e.g. with PSFILE='test.ps'.  Or if
@@ -101,8 +105,8 @@
 ;   04-Dec-2001  Written by D. Schlegel, Princeton
 ;-
 ;------------------------------------------------------------------------------
-pro apoplot1, plate, fiberid, mjd=mjd, nsmooth=nsmooth, $
- psfile=psfile, xrange=passxr, yrange=passyr, noerase=noerase, $
+pro apoplot1, plate, fiberid, mjd=mjd, expnum=allexpnum, nsmooth=nsmooth, $
+ nmed=nmed, psfile=psfile, xrange=passxr, yrange=passyr, noerase=noerase, $
  netimage=netimage, _EXTRA=KeywordsForSplot
 
    common com_apoplot, mjddir, PPBIAS, PPFLAT, PPARC, PPSCIENCE
@@ -202,8 +206,10 @@ pro apoplot1, plate, fiberid, mjd=mjd, nsmooth=nsmooth, $
    ;----------
    ; Choose plot colors based upon exposure numbers
 
-   allexpnum = PPSCIENCE[sindx].expnum
-   allexpnum = allexpnum[ uniq(allexpnum, sort(allexpnum)) ]
+   if (NOT keyword_set(allexpnum)) then begin
+      allexpnum = PPSCIENCE[sindx].expnum
+      allexpnum = allexpnum[ uniq(allexpnum, sort(allexpnum)) ]
+   endif
    nexp = n_elements(allexpnum)
 
    ;----------
@@ -211,6 +217,12 @@ pro apoplot1, plate, fiberid, mjd=mjd, nsmooth=nsmooth, $
 
    objsub = djs_maskinterp(objsub, objsubivar EQ 0, iaxis=0, /const)
    for iscience=0, nscience-1 do begin
+      if (keyword_set(nmed)) then begin
+         if (nmed GT 1) then begin
+            objsub[*,iscience] = djs_median(objsub[*,iscience], width=nmed, $
+             boundary='reflect')
+         endif
+      endif
       if (keyword_set(nsmooth)) then begin
          if (nsmooth GT 1) then begin
             objsub[*,iscience] = smooth(objsub[*,iscience], nsmooth)
@@ -258,8 +270,8 @@ pro apoplot1, plate, fiberid, mjd=mjd, nsmooth=nsmooth, $
      xtitle='Wavelength [Ang]', ytitle='Flux [electrons]', title=title, $
      _EXTRA=KeywordsForSplot
    for iscience=0, nscience-1 do begin
-      thiscolor = colorvec[(where(PPSCIENCE[iscience].expnum EQ allexpnum))[0] $
-       MOD n_elements(colorvec)]
+      thiscolor = colorvec[(where(PPSCIENCE[sindx[iscience]].expnum $
+       EQ allexpnum))[0] MOD n_elements(colorvec)]
       if (keyword_set(psfile)) then $
        djs_oplot, wave[*,cindx[iscience]], objsub[*,iscience], $
         color=thiscolor, _EXTRA=KeywordsForSplot $
@@ -319,15 +331,15 @@ pro apoplot1, plate, fiberid, mjd=mjd, nsmooth=nsmooth, $
 end
 
 ;------------------------------------------------------------------------------
-pro apoplot, plate, fiberid, mjd=mjd, nsmooth=nsmooth, $
- psfile=psfile, noerase=noerase, xrange=xrange, yrange=yrange, $
+pro apoplot, plate, fiberid, mjd=mjd, expnum=expnum, nsmooth=nsmooth, $
+ nmed=nmed, psfile=psfile, noerase=noerase, xrange=xrange, yrange=yrange, $
  _EXTRA=KeywordsForSplot
 
    common com_apoplot, mjddir, PPBIAS, PPFLAT, PPARC, PPSCIENCE
 
    if (n_params() LT 1) then begin
       print, 'Syntax - apoplot, plate, [ fiberid, mjd=, nsmooth=, $'
-      print, '         psfile=, xrange=, yrange=, /noerase, $'
+      print, '         nmed=, psfile=, xrange=, yrange=, /noerase, $'
       print, '         /netimage, _EXTRA=KeywordsForSplot'
       return
    endif
@@ -408,8 +420,8 @@ pro apoplot, plate, fiberid, mjd=mjd, nsmooth=nsmooth, $
          endif
       endif
 
-      apoplot1, plate, fiberid[ifiber], mjd=mjd, $
-       nsmooth=nsmooth, psfile=psfile, $
+      apoplot1, plate, fiberid[ifiber], mjd=mjd, expnum=expnum, $
+       nmed=nmed, nsmooth=nsmooth, psfile=psfile, $
        xrange=xrange, yrange=yrange, noerase=noerase, netimage=netimage, $
        _EXTRA=KeywordsForSplot
 
@@ -423,10 +435,16 @@ pro apoplot, plate, fiberid, mjd=mjd, nsmooth=nsmooth, $
             else $
              sstring = ''
 
+            if (keyword_set(nmed)) then $
+             mstring = ' (currently=' + strtrim(string(nmed),2) + ')' $
+            else $
+             mstring = ''
+
             print, 'Press b=back one fiber'
             print, '      p=select new plate'
             print, '      f=select new fiber number'
             print, '      q=quit (and enter interactive mode for this plot)'
+            print, '      m=change median filtering' + mstring
             print, '      s=change boxcar smoothing' + sstring
             print, '      x=change X plotting range'
             print, '      y=change Y plotting range'
@@ -445,6 +463,10 @@ pro apoplot, plate, fiberid, mjd=mjd, nsmooth=nsmooth, $
                     ifiber = ((long(newfiber)-1) > 0) < (nfiber-1)
                  end
             'Q': ifiber = nfiber
+            'M': begin
+                    read, nmed, prompt='Enter median filtering width (0=none): '
+                    nmed = long(nmed) > 0
+                 end
             'S': begin
                     read, nsmooth, prompt='Enter boxcar smoothing width (0=none): '
                     nsmooth = long(nsmooth) > 0
