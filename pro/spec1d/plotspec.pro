@@ -7,7 +7,8 @@
 ;
 ; CALLING SEQUENCE:
 ;   plotspec, plate, [ fiberid, mjd=, znum=, nsmooth=, /zline, /nosyn, /noerr, $
-;    /ormask, /andmask, psfile=, /netimage, /zwarning, topdir=, _EXTRA= ]
+;    /ormask, /andmask, psfile=, /restframe, /netimage, /zwarning, topdir=, $
+;    _EXTRA= ]
 ;
 ; INPUTS:
 ;   plate      - Plate number(s)
@@ -34,6 +35,8 @@
 ;                where pppp=plate number, mmmmm=MJD, fff=fiber ID.
 ;                If FIBERID is specified, then put all plots in a single file
 ;                named "spec-pppp-mmmmm.ps".
+;   restframe  - If set, then plot the wavelengths in the rest frame,
+;                e.g. divide the wavelengths by (1+z).
 ;   netimage   - If set, then launch a Netscape browser with the object
 ;                image from Steve Kent's web site.  This only works if
 ;                Netscape is running and has permissions at the site
@@ -154,7 +157,7 @@ end
 pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
  zline=q_zline, nosyn=nosyn, noerr=noerr, ormask=ormask, andmask=andmask, $
  psfile=psfile, xrange=passxr, yrange=passyr, noerase=noerase, $
- netimage=netimage, topdir=topdir, EXTRA=KeywordsForSplot
+ restframe=restframe, netimage=netimage, topdir=topdir, EXTRA=KeywordsForSplot
 
    cspeed = 2.99792458e5
    textcolor = 'green'
@@ -164,6 +167,7 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
 
    readspec, plate, fiberid, mjd=mjd, znum=znum, flux=objflux, $
     wave=wave, plug=plug, zans=zans, topdir=topdir, /silent
+   if (keyword_set(restframe)) then wave = wave / (1. + zans.z)
    if (NOT keyword_set(objflux)) then begin
       print, plate, mjd, fiberid, $
        format='("Spectrum not found for plate=", i4, " MJD=", i5, " fiber=", i3)'
@@ -220,10 +224,11 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
    title = 'Plate ' + strtrim(string(plate),2) $
     + '  Fiber ' + strtrim(string(fiberid),2) $
     + '  MJD=' + strtrim(string(mjd),2)
+   if (keyword_set(restframe)) then xtitle = 'Rest-Frame Wavelength [Ang]' $
+    else xtitle = 'Observed Wavelength [Ang]'
    if (keyword_set(psfile)) then begin
       djs_plot, wave, objflux, xrange=xrange, yrange=yrange, $
-       xtitle='Wavelength [Ang]', $
-       ytitle=TeXtoIDL('Flux [10^{-17} erg/cm/s/Ang]'), $
+       xtitle=xtitle, ytitle=TeXtoIDL('Flux [10^{-17} erg/cm/s/Ang]'), $
        title=title, charsize=csize, _EXTRA=KeywordsForSplot, /xstyle, /ystyle
       if (NOT keyword_set(noerr)) then $
        djs_oplot, wave, objerr, color='red', _EXTRA=KeywordsForSplot
@@ -232,8 +237,7 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
    endif else begin
       if (NOT keyword_set(noerase)) then $
        splot, wave, objflux, xrange=xrange, yrange=yrange, $
-        xtitle='Wavelength [Ang]', $
-        ytitle=TeXtoIDL('Flux [10^{-17} erg/cm/s/Ang]'), $
+        xtitle=xtitle, ytitle=TeXtoIDL('Flux [10^{-17} erg/cm/s/Ang]'), $
         title=title, charsize=csize, _EXTRA=KeywordsForSplot $
       else $
        soplot, wave, objflux, _EXTRA=KeywordsForSplot
@@ -285,7 +289,7 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
       else $
        soplot, wave, lineflux, color=linecolor, _EXTRA=KeywordsForSplot, lw=2
 
-      linewave = zline.linewave * (1 + zline.linez)
+      linewave = zline.linewave * (1 + zline.linez * keyword_set(restframe))
       ; Convert line sigma from km/sec to Angstroms
       linesigma = linewave * zline.linesigma / cspeed
       linepeak = zline.linecontlevel + zline.linearea / (sqrt(2*!pi) * linesigma)
@@ -350,13 +354,11 @@ end
 pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
  zline=zline, nosyn=nosyn, noerr=noerr, ormask=ormask, andmask=andmask, $
  psfile=psfile, xrange=xrange, yrange=yrange, noerase=noerase, $
- netimage=netimage, zwarning=zwarning, topdir=topdir, _EXTRA=KeywordsForSplot
+ restframe=restframe, netimage=netimage, zwarning=zwarning, topdir=topdir, $
+ _EXTRA=KeywordsForSplot
 
    if (n_params() LT 1) then begin
-      print, 'Syntax - plotspec, plate, [ fiberid, mjd=, znum=, nsmooth=, $'
-      print, '         /zline, /nosyn, /noerr, /ormask, /andmask, $'
-      print, '         psfile=, xrange=, yrange=, /noerase, $'
-      print, '         /netimage, /zwarning, _EXTRA=KeywordsForSplot'
+      doc_library, 'plotspec'
       return
    endif
 
@@ -500,7 +502,7 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
        znum=znum, nsmooth=nsmooth, zline=zline, nosyn=nosyn, noerr=noerr, $
        ormask=ormask, andmask=andmask, psfile=psfile, $
        xrange=xrange, yrange=yrange, noerase=noerase, netimage=netimage, $
-       topdir=topdir, _EXTRA=KeywordsForSplot
+       restframe=restframe, topdir=topdir, _EXTRA=KeywordsForSplot
 
       if (keyword_set(psfile)) then begin
          if (NOT keyword_set(q_onefile) OR ifiber EQ nfiber-1) then dfpsclose
