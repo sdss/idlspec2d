@@ -70,8 +70,6 @@ function trace320crude, fimage, invvar, ystart=ystart, nmed=nmed, xgood=xgood, $
    if (NOT keyword_set(maxdev)) then maxdev = 1.0
    if (NOT keyword_set(ngrow)) then ngrow = 5
 
-
-
    ; Find the 320 X-centers in the row specified by YSTART
    xstart = trace320cen(fimage, mthresh=mthresh, ystart=ystart, nmed=nmed, $
     xgood=xgood)
@@ -83,36 +81,39 @@ function trace320crude, fimage, invvar, ystart=ystart, nmed=nmed, xgood=xgood, $
     radius=radius, yset=yset, maxerr=maxerr, maxshifte=maxshifte, $
     maxshift0=maxshift0, xerr=xerr )
 
-   ; Let me try and xy2traceset to find better center than xstart
+   ; Improve upon the centroids XSET by re-fitting each center using
+   ; a gaussian fit, then replacing XSET with a smooth trace-set.
+
    xset = trace_gweight(fimage, xset, yset, sigma=1.0, invvar=invvar, xerr=xerr)
    xmask = xerr LT 990
-   xy2traceset, yset, xset, firstset, ncoeff=5, yfit=xx, invvar=xmask, $
-                maxdev=maxdev
+   xy2traceset, yset, xset, firstset, ncoeff=5, yfit=xtemp, invvar=xmask, $
+    maxdev=maxdev
+   xset = xtemp
 
-   nx = (size(xset))[1]
+   nx = (size(xset, /dimens))[0]
    quarterbad = (total(xmask,1) LT 3*nx/4)
    ixgood = where(xgood AND NOT quarterbad)
-   xstart[ixgood] = xx[ystart,ixgood]
+   xstart[ixgood] = xset[ystart,ixgood]
 
    ; Compare the traces in each row to those in row YSTART.
    ; Our assumption is that those centers should be a polynomial mapping
    ; of the centers from row YSTART.  Centers that are deviant from this
    ; mapping are replaced with the position predicted by this mapping.
 
-   ny = (size(fimage))[2]
+   ny = (size(fimage, /dimens))[1]
    ndegree = 4 ; Five terms
 
    ; Loop to find all deviant centroids
    ixgood = where(xgood)
 
-   ; set fibermask bits
+   ; Set FIBERMASK bits
    ixbad = where(xgood EQ 0 OR quarterbad)
    if (ixbad[0] NE -1) then $
-        fibermask[ixbad] = fibermask[ixbad] OR fibermask_bits('BADTRACE')
+    fibermask[ixbad] = fibermask[ixbad] OR fibermask_bits('BADTRACE')
 
    for iy=0, ny-1 do begin
-      coeff = polyfitw(xstart, xx[iy,*], xgood AND xmask[iy,*], ndegree, xfit) 
-      xdiff = xfit - xx[iy,*]
+      coeff = polyfitw(xstart, xset[iy,*], xgood AND xmask[iy,*], ndegree, xfit) 
+      xdiff = xfit - xset[iy,*]
       ibad = where(abs(xdiff) GT maxdev)
       xmask[iy, ixgood] = 1 ; First set all good traces in this row = 1
       if (ibad[0] NE -1) then begin
@@ -130,12 +131,12 @@ function trace320crude, fimage, invvar, ystart=ystart, nmed=nmed, xgood=xgood, $
       ixbad = where(xmask[iy,*] EQ 0)
       if (ixbad[0] NE -1) then begin
          ixgood = where(xmask[iy,*] EQ 1)
-         coeff = polyfitw(xstart, xx[iy,*], xmask[iy,*], $
+         coeff = polyfitw(xstart, xset[iy,*], xmask[iy,*], $
           ndegree, xfit)
-         xx[iy,ixbad] = xfit[ixbad]
+         xset[iy,ixbad] = xfit[ixbad]
       endif
    endfor
 
-   return, xx
+   return, xset
 end
 ;------------------------------------------------------------------------------
