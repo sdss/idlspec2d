@@ -49,10 +49,6 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
-;   djs_iterstat
-;   djs_oplot
-;   djs_oploterr
-;   djs_plot
 ;   pixelmask_bits()
 ;   slatec_splinefit()
 ;   slatec_bvalue()
@@ -148,7 +144,7 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
 
    posvar = where(skyivar GT 0)
    if (posvar[0] NE -1) then begin
-      skyvariance = 1.0/skyivar[posvar]
+      skyvariance = 1.0 / skyivar[posvar]
       skyvarbkpt = slatec_splinefit(skywave[posvar], skyvariance, skyvarcoeff, $
        invvar=skyivar[posvar], nord=nord, upper=upper, lower=lower, $
        maxiter=maxiter, /eachgroup, bkpt=bkpt)
@@ -202,7 +198,7 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
             tmpchi2 = skychi2[ii]
             relchi2[ibin] = tmpchi2[ (sort(tmpchi2))[pos67] ]
 
-            ; Schlegel counter of bin number...
+            ; Burles counter of bin number...
             print, format='("Bin ",i4," of ",i4,a1,$)', $
              ibin, nbin, string(13b)
 
@@ -248,12 +244,13 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    ;----------
    ; Modify OBJSUBIVAR with the relative variance
 
-   objsubivar = objivar 
-   if (size(skyvarfit,/tname) NE 'UNDEFINED') then begin
+   objsubivar = objivar
+   if (keyword_set(skyvarfit) AND n_elements(relchi2fit) GT 1) then begin
       posvar = where(objivar GT 0)
       if (posvar[0] NE -1) then begin
-        objvar = 1.0/objivar[posvar]
-        objsubivar[posvar] = 1.0/(objvar + ((relchi2fit[posvar] > 1)-1.0)*skyvarfit[posvar])
+        objvar = 1.0 / objivar[posvar]
+        objsubivar[posvar] = $
+         1.0 / (objvar + ((relchi2fit[posvar] > 1)-1.0)*skyvarfit[posvar])
       endif
    endif 
 
@@ -264,20 +261,28 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    ;----------
    ; If any pixels on the image are outside of the wavelength range
    ; covered by the "supersky", then the formal errors are infinite
-   ; for those pixels after skysubtraction.  Set SKYSUBIVAR=0.
-   ; Do we want to set a bit in pixelmask if pixels have no sky??
+   ; for those pixels after skysubtraction.  Set the mask bit 'NOSKY'
+   ; and set SKYSUBIVAR=0.
+   ;
+   ; Also, set the mask bit 'BRIGHTSKY' for any pixels where the sky
+   ; level is more than the (sky-subtracted) object flux + 5 * error.
 
    ii = where(skyivar GT 0, ni) ; Note that SKYWAVE is already sorted
    iout = where(wave LT skywave[ii[0]] OR wave GT skywave[ii[ni-1]])
    if (iout[0] NE -1) then objsubivar[iout] = 0.0
 
-   if (N_elements(pixelmask) EQ N_elements(obj)) then begin
-     badsky = where(fullfit GT 10.0 * abs(objsub))   ;?? Does this make sense
-     if (badsky[0] NE -1) then pixelmask[badsky] = $
-                             pixelmask[badsky] OR pixelmask_bits('SKYLEVEL')
+   if (keyword_set(pixelmask)) then begin
+      igood = where(objsubivar NE 0)
+      if (igood[0] NE -1) then begin
+         ibright = where( fullfit[igood] GT objsub[igood] $
+          + 5.0 / sqrt(objsubivar[igood]) )
+         if (ibright[0] NE -1) then $
+          pixelmask[igood[ibright]] = pixelmask[igood[ibright]] $
+           OR pixelmask_bits('BRIGHTSKY')
+      endif
 
-     if (iout[0] NE -1) then pixelmask[iout] = $
-                             pixelmask[iout] OR pixelmask_bits('NOSKY')
+      if (iout[0] NE -1) then $
+       pixelmask[iout] = pixelmask[iout] OR pixelmask_bits('NOSKY')
    endif
 
    return, skystruct

@@ -16,12 +16,12 @@ maskbits  6 LARGESHIFT      # Large spatial shift between flat and object pos'n
 # The following mask bits are for a pixel, set in PIXELMASK_BITS()
 maskbits 16 NEARBADPIXEL    # Bad pixel within 3 pixels of trace
 maskbits 17 LOWFLAT         # Flat field less than 0.5
-maskbits 18 FULLREJECT      # Pixel fully rejected in extraction
+maskbits 18 FULLREJECT      # Pixel fully rejected in extraction (INVVAR=0)
 maskbits 19 PARTIALREJECT   # Some pixels rejected in extraction
 maskbits 20 SCATTEREDLIGHT  # Scattered light significant
 maskbits 21 CROSSTALK       # Cross-talk significant
-maskbits 22 NOSKY           # No sky subtraction
-maskbits 23 SKYLEVEL        # Sky background is > 10*flux
-maskbits 24 NODATA          # No data available in combine B-spline
+maskbits 22 NOSKY           # Sky level unknown at this wavelength (INVVAR=0)
+maskbits 23 BRIGHTSKY       # Sky level > flux + 5*(flux-error)
+maskbits 24 NODATA          # No data available in combine B-spline (INVVAR=0)
 maskbits 25 COMBINEREJ      # Rejected in combine B-spline
 
