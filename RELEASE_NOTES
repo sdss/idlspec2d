@@ -1,10 +1,19 @@
 
+EXTRACT_OBJECT: Set the "NEARWHOPPER" mask bits only for fibers within 2
+          fibers of a bright fiber, but not the bright fiber itself.
+          For the bright fibers, add the bit "WHOPPER" (added to the
+          param file spMaskbits.par).
 EXTRACT_OBJECT, SKYSUBTRACT: Exit gracefully in the case of no good sky
           fibers.  In that case, issue an "ABORT" log message, return
           SKYSTRUCT=0 from SKYSUBTRACT, then do not write an spFrame file.
 FITMEANX: Make robust to no good sky lines for tweaking wavelength solution.
           In that case, the routine LOCATESKYLINES will return SKYSHIFT=0.
 LOCATESKYLINES: Test that the sky line file is successfully read.
+PCA_SOLVE: Construct the USEMASK from the output mask (OUTMASK) instead of
+           from NEWIVAR.  This is equivalent to TOTAL(OUTMASK,2).
+           This should make the flux-calibration vectors produced by
+           the proc MYFLUXCALIB more robust, since it rejects pixels in
+           the solution based upon USEMASK.
 PLATELIST: Read MJDLIST keyword from the spPlate files, which will only exist
            with future reductions.
 REJECT_SCIENCE: New proc to reject science exposures if they are blatantly
@@ -14,10 +23,11 @@ REJECT_SCIENCE: New proc to reject science exposures if they are blatantly
                 science frame is rejected.
 SPCOADD_FRAMES: Include MJDLIST keyword in spPlate header, which will be
                 the list of all MJD's used in an SPCOMBINE.
-TELLURIC_CORR: Fixed horrible bug in using fibermask to reject bad fibers (fixes PR #2162).
-               Also, when fitting the local continuum around a single telluric band
-               for a single star with a polynomial, do the fit with weighted points
-               and iterated rejections using DJS_REJECT().
+TELLURIC_CORR: Fixed horrible bug in using fibermask to reject bad fibers
+               (fixes PR #2162).  Also, when fitting the local continuum
+               around a single telluric band for a single star with a
+               polynomial, do the fit with weighted points and iterated
+               rejections using DJS_REJECT().
 
 YANNY_READ (in idlutils): Try to make backwards-compatable with IDL 5.2
           by replacing calls to STRSPLIT() with calls to STR_SEP.

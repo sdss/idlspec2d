@@ -160,12 +160,18 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
                 fibermask[badcolumns] OR pixelmask_bits('MANYBADCOLUMNS')
 
    if (whopping[0] NE -1) then begin
-     wp = [whopping - 2 , whopping -1, whopping, whopping+1 , whopping+2]
-     wp = (wp > 0) < (ny - 1)
-     fibermask[wp] = fibermask[wp] OR pixelmask_bits('NEARWHOPPER')
+      ; Set the mask bit for whopping fibers themselves
+      fibermask[whopping] = fibermask[whopping] OR pixelmask_bits('WHOPPER')
+
+      ; Set the mask bit for fibers near whopping fibers, excluding the
+      ; whopping fibers themselves.  Note that a fiber could still have both
+      ; WHOPPER and NEARWHOPPER set if it is both bright and near another
+      ; bright fiber.
+      wp = [whopping - 2 , whopping -1, whopping+1 , whopping+2]
+      wp = wp[ where(wp GE 0 AND wp LT ny) ]
+      fibermask[wp] = fibermask[wp] OR pixelmask_bits('NEARWHOPPER')
    endif
 
-   
    ;-----------------------------------------------------------------------
    ;  This is a kludge to fix first and last column ???
    ;-----------------------------------------------------------------------
