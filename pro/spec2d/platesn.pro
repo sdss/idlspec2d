@@ -30,7 +30,7 @@
 ;   hdr            - [Modified]
 ;   snvec          - S/N vector for g,r,i bands
 ;   synthmag       - Synthetic magnitudes from convolution with fiducial
-;                      Filter curves 
+;                    filter curves 
 ;
 ; COMMENTS:
 ;   Median fluxes are used in each band-pass to generate the synthesized
@@ -46,6 +46,7 @@
 ;   filter_thru()
 ;   pixelmask_bits()
 ;   plotsn
+;   sdss_flagname()
 ;   splog
 ;   sxaddpar
 ;   sxpar()
@@ -125,30 +126,63 @@ pro platesn, finalflux, finalivar, finalandmask, finalplugmap, loglam, $
     synthmag=synthmag, snplate=snplate
 
    ;----------
-   ; Bad Fiber roll call
-  
-   rollcall = lonarr(3,8)
+   ; Print roll call of bad fibers and bad pixels.
+   ; Assume that all mask bits under bit #16 are for the entire fiber.
 
-   for i=0, 7 do $
-    rollcall[*,i] = $
-     [ total(total((finalandmask[gwave,*] AND 2L^i) GT 0, 1) GT 0), $
-       total(total((finalandmask[rwave,*] AND 2L^i) GT 0, 1) GT 0), $
-       total(total((finalandmask[iwave,*] AND 2L^i) GT 0, 1) GT 0)  ]
-   
-   splog, "Fiber Problem",  "  # in g'",  "  # in r'", "  # in i'" , $
-          format='(3x,a20, 3(a9))'
+   bitlabel = sdss_flagname('SPPIXMASK', 2UL^32-1, /silent)
+   bitnum = where(bitlabel NE '', nlabel)
+   bitlabel = bitlabel[bitnum]
 
-   ; The following sets up the names of the pixelmask bits...
-   junk = pixelmask_bits('NODATA')
+   ncam = 4
+   camnames = ['b1','r1','b2','r2']
+   camwave1 = [3500, 6000, 3500, 6000]
+   camwave2 = [6000, 9500, 6000, 9500]
+   specidimg = bytarr(npix,nfiber) + 1B
+   specidimg[*,nfiber/2:nfiber-1] = 2
 
-   for i=0, 7 do begin
-      label = maskbits[where(maskbits.bit EQ i)].label
-      info = string(format='(a20,3(i9.3))',label,rollcall[*,i])
-      splog, label, rollcall[*,i], format='(a20,3(i9))'
+   rollcall = fltarr(ncam)
+
+   splog, ' '
+   splog, camnames, format='(24x,4a7)'
+   splog, format='(24x,4(" ------"))'
+   for ilabel=0, nlabel-1 do begin
+      for icam=0, ncam-1 do begin
+         specid = fix( strmid(camnames[icam],1) )
+         thiscam = strmid(camnames[icam],0,1)
+         fib1 = (specid-1) * (nfiber/2)
+         fib2 = fib1 + (nfiber/2) - 1
+
+         if (bitnum[ilabel] LT 16) then begin
+            ; CASE: Fiber mask
+            ; Look at only the g-band or i-band wavelengths, so that
+            ; we ignore any overlap in wavelength between cameras.
+            if (thiscam EQ 'b') then indx = gwave $
+             else indx = iwave
+            qmask = (finalandmask[indx,fib1:fib2] AND 2L^bitnum[ilabel]) NE 0
+            rollcall[icam] = total( total(qmask,1) NE 0 )
+         endif else begin
+            ; CASE: Pixel mask
+            ; Include overlap in wavelength between cameras, calling
+            ; any wavelengths < 6000 Ang the blue camera, and
+            ; any wavelengths > 6000 Ang the red camera.
+            indx = where(loglam GT alog10(camwave1[icam]) $
+             AND loglam LT alog10(camwave2[icam]), nindx)
+            qmask = (finalandmask[indx,fib1:fib2] AND 2L^bitnum[ilabel]) NE 0
+            rollcall[icam] = 100.0 * total(qmask NE 0) $
+             / (nindx * (fib2-fib1+1))
+         endelse
+      endfor
+      if (bitnum[ilabel] LT 16) then begin
+         splog, 'N(fiber) '+bitlabel[ilabel]+'               ', $
+          long(rollcall), format='(a24,4i7)'
+      endif else begin
+         splog, '%(pixel) '+bitlabel[ilabel]+'               ', $
+          rollcall, format='(a24,4f7.2)'
+      endelse
    endfor
 
    ;----------
-   ; Modify the header
+   ; Add the keywords SPEC1_G,SPEC1_R,... to the header.
 
    if (keyword_set(hdr)) then begin
       bands = ['G','R','I']
