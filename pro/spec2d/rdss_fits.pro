@@ -6,7 +6,7 @@
 ;   Read a FITS file into IDL data and header variables
 ;
 ; CALLING SEQUENCE:
-;   image = rdss_fits( filename, [ hdr, nofloat ] )
+;   image = rdss_fits( filename, [ hdr, /nofloat ] )
 ;
 ; INPUTS:
 ;   filename   - Scalar string containing the name of the FITS file  
@@ -16,6 +16,7 @@
 ;                Unix compressed file.
 ;
 ; OPTIONAL KEYWORDS:
+;   nofloat    - If set, then keep data as unsigned integers.
 ;
 ; OUTPUTS:
 ;   image      - FITS data array constructed from designated record.
