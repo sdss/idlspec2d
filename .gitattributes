@@ -182,8 +182,10 @@ pro/plate/brightcmag.pro -text
 pro/plate/design_multiplate.pro -text
 pro/plate/design_n1817.pro -text
 pro/plate/design_n752.pro -text
+pro/plate/design_plate.pro -text
 pro/plate/design_pleiades.pro -text
 pro/plate/design_praesepe.pro -text
+pro/plate/design_random.pro -text
 pro/plate/design_read2mass.pro -text
 pro/plate/design_starstruct.pro -text
 pro/plate/n1817.j11 -text
