@@ -1,4 +1,9 @@
 
+READSPEC: Bug fix when reading one range of fiber numbers for a FITS
+          binary table, i.e. "READSPEC, 301, [1,2,3], ZANS=ZANS" was not
+          returning the correct values.
+
+-------------------------------------------------------------------------------
 v4_7_3 (Apr 30, 2001 idlspec2d+idlutils)
 
 PLATESN: Typo introduced on April 13th that crashes SPCOMBINE -- fixed!
