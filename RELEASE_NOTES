@@ -3,10 +3,15 @@ v4_?_? (Nov ??, 2001 idlspec2d+idlutils) running on IDL 5.3 - 5.5
 v1_? of specflat
 
 Bug fixes to run on IDL 5.5.
-Changes to how the SOS robot launches the rsync jobs.
+Changes to how the SOS robot launches the rsync jobs and fix other SOS bugs.
 Bias-subtraction now implemented (bias images in the "specflat" product).
 New set of templates for P-1D; QSO's now use 4 eigentemplates.
 
+APO_LOG2HTML,APOREDUCE: Switch from saving the Mountain standard time (MST)
+            string to only storing TAI time, and computing UT on-the-fly.
+APO_LOG2HTML: Compare the exposure "flavor" when looking at the operational
+           limits (in the "opLimits.par" file).  This allows us to
+           differentiate between bias and dark levels (PR #2562).
 APOREDUCE: Allow setting MINEXP to 0 sec.
 DANVB_CONVERT,DANVB_QSOLIST: Procs for generating a list of input
             QSO's from Dan van den Berk's EDR list "plateEDR.summ"
