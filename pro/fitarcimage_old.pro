@@ -34,13 +34,14 @@
 ;                wavelengths solution; default to 5
 ;
 ; OUTPUTS:
+;   aset       - (Modified)
 ;   xnew       - pixel position of lines [nfiber, nlambda]
 ;   ycen       - fiber number [nfiber, nlambda]
 ;   wset       - traceset (pix -> lambda)
 ;
 ; OPTIONAL OUTPUTS:
 ;   lampfile   - Modified from input to include full path name of file
-;   lambda     - Returns alog10(wavelength) of good lamp lines
+;   lambda     - Returns wavelengths of good lamp lines [Angstroms]
 ;   fibermask  - (Modified)
 ;   xdif_tset  - Fit residual of lamp lines to fit positions [pixels]
 ;   bestcorr   - Correlation coefficient with simulated arc spectrum
@@ -149,7 +150,6 @@ pro fitarcimage_old, arc, arcivar, xnew, ycen, wset, $
    ; One might want to change nave and nmed for first pass???
 
    if (NOT keyword_set(aset)) then begin
-
       ; Extract one spectrum from the NMED spectra around fiber number ROW
       ; by taking the median value at each wavelength.
       ; Find the NMED fibers nearest to ROW that are not masked.
@@ -162,16 +162,11 @@ pro fitarcimage_old, arc, arcivar, xnew, ycen, wset, $
 
       spec = djs_median(arc[*,ii], 2)
 
-      wset = arcfit_guess( spec, lamps.loglam, lamps.intensity, color=color, $
+      aset = arcfit_guess( spec, lamps.loglam, lamps.intensity, color=color, $
        bestcorr=bestcorr )
 
       splog, 'Best correlation = ', bestcorr
-
-   endif else begin
-
-      wset = aset
-
-   endelse
+   endif
 
    ; Return from routine if XCEN, YCEN and WSET are not to be returned
    if (N_params() LE 2) then return
@@ -179,7 +174,7 @@ pro fitarcimage_old, arc, arcivar, xnew, ycen, wset, $
    ; Trim lamp list to only those within the wavelength range
    ; and denoted as good in the LAMPS structure.
 
-   xstart = traceset2pix(wset, lamps.loglam)
+   xstart = traceset2pix(aset, lamps.loglam)
    qtrim = xstart GT 1 AND xstart LT npix-2 AND lamps.good
    itrim = where(qtrim, ct)
    if (ct EQ 0) then $
@@ -192,7 +187,7 @@ pro fitarcimage_old, arc, arcivar, xnew, ycen, wset, $
    ;---------------------------------------------------------------------------
 
    ; Allow for a shift of up to 2 pixels in the initial centers,
-   ; but only 0.3 pixels while tracing
+   ; but only 0.5 pixels while tracing
 
    splog, 'Tracing', N_elements(lamps), ' arc lines'
    xcen = trace_crude(arc, yset=ycen, nave=1, nmed=1, xstart=xstart, $

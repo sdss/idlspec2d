@@ -35,13 +35,14 @@
 ;   gauss      - Use gaussian profile fitting for final centroid fit
 ;
 ; OUTPUTS:
+;   aset       - (Modified)
 ;   xcen       - pixel position of lines [nfiber, nlambda]
 ;   ycen       - fiber number [nfiber, nlambda]
 ;   wset       - traceset (pix -> lambda)
 ;
 ; OPTIONAL OUTPUTS:
 ;   lampfile   - Modified from input to include full path name of file
-;   lambda     - Returns alog10(wavelength) of good lamp lines
+;   lambda     - Returns wavelengths of good lamp lines [Angstroms]
 ;   fibermask  - (Modified)
 ;   xdif_tset  - Fit residual of lamp lines to fit positions [pixels]
 ;   bestcorr   - Correlation coefficient with simulated arc spectrum
@@ -151,7 +152,6 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    ; One might want to change nave and nmed for first pass???
 
    if (NOT keyword_set(aset)) then begin
-
       ; Extract one spectrum from the NMED spectra around fiber number ROW
       ; by taking the median value at each wavelength.
       ; Find the NMED fibers nearest to ROW that are not masked.
@@ -164,18 +164,11 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
 
       spec = djs_median(arc[*,ii], 2)
 
-      wset = arcfit_guess( spec, lamps.loglam, lamps.intensity, color=color, $
+      aset = arcfit_guess( spec, lamps.loglam, lamps.intensity, color=color, $
        bestcorr=bestcorr )
 
-      aset = wset
-
       splog, 'Best correlation = ', bestcorr
-
-   endif else begin
-
-      wset = aset
-
-   endelse
+   endif
 
    ; Return from routine if XCEN, YCEN and WSET are not to be returned
    if (N_params() LE 2) then return
@@ -183,7 +176,7 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    ; Trim lamp list to only those within the wavelength range
    ; and denoted as good in the LAMPS structure.
 
-   xstart = traceset2pix(wset, lamps.loglam)
+   xstart = traceset2pix(aset, lamps.loglam)
    qtrim = xstart GT 1 AND xstart LT npix-2 AND lamps.good
    itrim = where(qtrim, ct)
    if (ct EQ 0) then $
@@ -196,7 +189,7 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    ;---------------------------------------------------------------------------
 
    ; Allow for a shift of up to 2 pixels in the initial centers,
-   ; but only 0.3 pixels while tracing
+   ; but only 0.5 pixels while tracing
 
    splog, 'Tracing', N_elements(lamps), ' arc lines'
    xcen = trace_crude(arc, yset=ycen, nave=1, nmed=1, xstart=xstart, $
@@ -269,7 +262,7 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
 
 ; ??? Let maxdev be a parameter; should be about 3.0d-5 = 20 km/s
 maxdev = 1.0d-5
-maxsig = 3.0
+;maxsig = 3.0
 
    nlamp = N_elements(lamps)
    xy2traceset, transpose(double(xcen)), lamps.loglam # (dblarr(nfiber)+1), $
