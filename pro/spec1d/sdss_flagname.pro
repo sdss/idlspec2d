@@ -1,4 +1,5 @@
 
+;------------------------------------------------------------------------------
 function sdss_flags, flagprefix
 
    temp = {STRUCT_FLAG, name: '', num:  0 }
@@ -31,7 +32,8 @@ function sdss_flags, flagprefix
       { STRUCT_FLAG, 'SERENDIP_RED'        , 22 }, $
       { STRUCT_FLAG, 'SERENDIP_DISTANT'    , 23 }, $
       { STRUCT_FLAG, 'SERENDIP_MANUAL'     , 24 }, $
-      { STRUCT_FLAG, 'QSO_FAINT'           , 25 } ]
+      { STRUCT_FLAG, 'QSO_FAINT'           , 25 }, $
+      { STRUCT_FLAG, 'SOUTHERN_SURVEY'     , 31 } ]
 
    endif else if (flagprefix EQ 'TTARGET') then begin
      ; Flags for secondary target
@@ -45,7 +47,8 @@ function sdss_flags, flagprefix
       { STRUCT_FLAG, 'GUIDE_STAR'          ,  6 }, $
       { STRUCT_FLAG, 'BUNDLE_HOLE'         ,  7 }, $
       { STRUCT_FLAG, 'QUALITY_HOLE'        ,  8 }, $
-      { STRUCT_FLAG, 'HOT_STD'             ,  9 } ]
+      { STRUCT_FLAG, 'HOT_STD'             ,  9 }, $
+      { STRUCT_FLAG, 'SOUTHERN_SURVEY'     , 31 } ]
 
    endif else if (flagprefix EQ 'OBJ1') then begin
      ; Photo's flags
@@ -137,15 +140,21 @@ end
 function sdss_flagname, flagprefix, flagvalue, concat=concat
 
    flagnames = sdss_flags(flagprefix)
-   indx = where(djs_int2bin(flagvalue))
+   indx = where(djs_int2bin(flagvalue), nret)
    if (indx[0] EQ -1) then begin
       retval = ''
    endif else begin
-      retval = flagnames[indx].name
+      retval = strarr(nret)
+      for iret=0, nret-1 do begin
+         j = where(indx[iret] EQ flagnames.num)
+         if (j[0] NE -1) then retval[j] = flagnames[j].name $
+          else splog, 'MESSAGE: Unknown bit ', indx[iret], $
+           ' for flag ', flagprefix
+      endfor
    endelse
 
    if (keyword_set(concat)) then begin
-      for i=1, n_elements(retval)-1 do $
+      for i=1, nret-1 do $
        retval[0] = retval[0] + ' ' + retval[i]
       retval = retval[0]
    endif
