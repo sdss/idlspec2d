@@ -39,9 +39,6 @@
 ; Hardwired exclusion of blueshifts greater than 100 pixels
 ;        this helps the noisiest cases
 ;
-; Need to compile GAUSSFIT beforehand, which includes the 
-;        fitting function GAUSS_FUNCT 
-;
 ; PROCEDURES CALLED:
 ;   findmaxarea
 ;   curvefit
@@ -109,6 +106,9 @@ pro fitredshift, fluxfft, starfft, $
 
    if (NOT keyword_set(nsearch)) then nsearch = 5
    if (NOT keyword_set(zmin)) then zmin = -60
+
+   ; The following compiles GAUSS_FUNCT, which is in the routine GAUSSFIT
+   junk = gaussfit(findgen(7),findgen(7))
 
    corr = float(fft(fluxfft * conj(starfft),/inverse))
 
