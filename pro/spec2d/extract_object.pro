@@ -182,53 +182,24 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    if (badplace[0] NE -1) then pixelmask[badplace] = $
                 pixelmask[badplace] OR pixelmask_bits('NEARBADPIXEL')
 
-   ;------------------
-   ; Extract the object image
-   ; Use the "whopping" terms
-   ; We need to do 2 iteration extraction: 
-   ;        1) Fit profiles in a subset of rows
-   ;        2) Fit returned parameters with smooth functions
-   ;        3) Extract all 2048 rows with new profiles given by
-   ;              fitansimage
-
-   splog, 'Extracting frame '+objname+' with 3 step process'
-   dims = size(image,/dimens)
-   ncol = dims[0]
-   nrow = dims[1]
-   skiprow = 8
-   yrow = lindgen(nrow/skiprow) * skiprow + skiprow/2
-   nfirst = n_elements(yrow)
-  
-   sigma = 1.0
-   proftype = 1 ; Gaussian
-   highrej = 5  ; just for first extraction steps
-   lowrej = 5  ; just for first extraction steps
-                ; We need to check npoly with new scattered light backgrounds
-   npoly = 8 ; maybe more structure, lots of structure
-   wfixed = [1,1,1] ; gaussian term + centroid and  sigma terms
-   nterms = 3
-   sigmaterm = 1
-   centerterm = 2
-   xnow = xtrace; Is this modified when extracting???
-   sigmanow = xtrace*0.0 + sigma
-   maxshift = 1.5
-maxshift = 2.0 ; ??? Need this for MJD=51579
-
-   ; Kill or adjust first and last column ???
-   ;invvar[0,*] = 0.0
-   ;invvar[2047,*] = 0.0
+   
+   ;-----------------------------------------------------------------------
+   ;  This is a kludge to fix first and last column
+   ;-----------------------------------------------------------------------
    image[0,*] = image[0,*]*0.7
    image[2047,*] = image[2047,*]*0.7
 
-   ; My fitansimage is not going to work well without good profiles ???
-   ; Using it to tweak up traces, and then performing free fit to object
+   ;
+   ;  First we should attempt to shift trace to object flexure
+   ;
 
-   ;  Using new shift_trace, pick xcen and ycen to sample image
-
+   maxshift = 2.0 ; ??? Need this for MJD=51579
+   dims = size(image,/dimens)
+   ncol = dims[0]
+   nrow = dims[1]
    skiptrace = 20L
    ysample = lindgen(nrow) # replicate(1, nfiber - 2*skiptrace)
    xsample = xtrace[*,skiptrace:nfiber - skiptrace - 1]
-     
    bestlag = shift_trace(image, xsample, ysample, lagrange=1.0, lagstep=0.1)
 
    splog, 'Shifting traces by pixel shift of ', bestlag
@@ -237,24 +208,59 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
       splog, 'WARNING: pixel shift is large!'
    endif
 
-   xnow = xtrace + bestlag 
+   xnow = xtrace + bestlag
+
+   highrej = 5  ; just for first extraction steps
+   lowrej = 5  ; just for first extraction steps
+                ; We need to check npoly with new scattered light backgrounds
+   npoly = 8 ; maybe more structure, lots of structure
+   skiprow = 8
+   yrow = lindgen(nrow/skiprow) * skiprow + skiprow/2
+   nfirst = n_elements(yrow)
+  
+
+   ;-----------------------------------------------------------------------
+   ;  The fork in the road:
+   ;    If we have widths from widthset, then just extract
+   ;    otherwise determine width from object and extract
+   ;-----------------------------------------------------------------------
 
    if (NOT keyword_set(widthset)) then begin 
-      ; (1) Extraction profiles in every 8th row
+     ;------------------
+     ; Extract the object image
 
-      splog, 'Object extraction: Step 1'
-      extract_image, image, invvar, xnow, sigma, tempflux, tempfluxivar, $
+     ; Use the "whopping" terms
+     ; We need to do 2 iteration extraction: 
+     ;        1) Fit profiles in a subset of rows
+     ;        2) Fit returned parameters with smooth functions
+     ;        3) Extract all 2048 rows with new profiles given by
+     ;              fitansimage
+
+     splog, 'Extracting frame '+objname+' with 3 step process'
+     sigma = 1.0
+     proftype = 1 ; Gaussian
+     wfixed = [1,1,1] ; gaussian term + centroid and  sigma terms
+     nterms = 3
+     sigmaterm = 1
+     centerterm = 2
+
+     ; (1) Extraction profiles in every 8th row
+
+     splog, 'Object extraction: Step 1'
+     extract_image, image, invvar, xnow, sigma, tempflux, tempfluxivar, $
        proftype=proftype, wfixed=wfixed, yrow=yrow, $
        highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
        ansimage=ansimage, chisq=firstchisq
-      ntrace = (size(tempflux,/dimens))[1]
 
-      ; (2) Refit ansimage to smooth profiles
+     ntrace = (size(tempflux,/dimens))[1]
 
-      splog, 'Answer Fitting: Step 2'
+     ; (2) Refit ansimage to smooth profiles
 
-      ;---------------------------------------------------
-      ;   Fitansimage is now hard wired for 320 fibers!!!!???
+
+     splog, 'Answer Fitting: Step 2'
+
+     ;---------------------------------------------------
+     ;   Fitansimage is now hard wired for 320 fibers!!!!???
 
       fitans = fitansimage(ansimage, nterms, ntrace, npoly, yrow, $
           tempflux, fluxm=[1,1,0], scatfit=scatfit)
@@ -272,6 +278,8 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
       splog, format='(a,3(f8.3))', 'Sigmashift ', min(sigmashift),  $
        median(sigmashift), max(sigmashift)
 
+      sigma2 = sigma * (1.0 + sigmashift)
+
       if (max(abs(centershift)) GT maxshift OR $
        max(abs(sigmashift)) GT maxshift/3.0) then begin
          splog, 'ABORT: Shift terms are not well behaved!'
@@ -279,24 +287,26 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
       endif
      
    endif else begin
-     traceset2xy, widthset, xx, yy
-     ntrace = (size(yy,/dimens))[1]
-     nterms = 2
+
+     traceset2xy, widthset, xx, sigma2
+     ntrace = (size(sigma2,/dimens))[1]
      wfixed = [1,1]
-     fitans = fltarr(ntrace*nterms,nrow)
-     fitans[lindgen(ntrace)*nterms,*] = transpose(2-yy)
-     fitans[lindgen(ntrace)*nterms + sigmaterm,*] = transpose(yy-1)
+     nterms = n_elements(wfixed)
 
      splog, 'Object extraction: Step 1'
-     extract_image, image, invvar, xnow, sigma, tempflux, tempfluxivar, $
-      proftype=proftype, wfixed=wfixed, yrow=yrow, fitans=fitans, $
+     extract_image, image, invvar, xnow, sigma2, tempflux, tempfluxivar, $
+      proftype=proftype, wfixed=wfixed, yrow=yrow, $
       highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
       ansimage=ansimage, chisq=firstchisq
 
      splog, 'Step 2: Just find scattered light image'
-     junk = fitansimage(ansimage, 1, ntrace, npoly, yrow, $
-      tempflux, fluxm=[1], scatfit=scatfit)
+     junk = fitansimage(ansimage, nterms, ntrace, npoly, yrow, $
+      tempflux, fluxm=[1,1], scatfit=scatfit)
    endelse
+
+   ;-----------------------------------------------------------------------
+   ;  Now, subtract scattered light and do final extraction with all rows
+   ;-----------------------------------------------------------------------
 
    qaplot_scatlight, scatfit, yrow, $
     wset=wset, xcen=xtrace, fibermask=fibermask, $
@@ -305,12 +315,15 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
    ; (4) Second and final extraction
    splog, 'Object extraction: Step 3'
 
-   highrej = 15
-   lowrej = 15
-   extract_image, (image - scatfit), invvar, xnow, sigma, flux, $
-    fluxivar, proftype=proftype, wfixed=wfixed, fitans=fitans, $
+   highrej = 5
+   lowrej = 5
+
+   extract_image, (image - scatfit), invvar, xnow, sigma2, flux, $
+    fluxivar, proftype=proftype, wfixed=wfixed, $
     highrej=highrej, lowrej=lowrej, npoly=0, whopping=whopping, $
-    chisq=chisq, ymodel=ymodel2, pixelmask=pixelmask
+    chisq=chisq, ymodel=ymodel2, pixelmask=pixelmask, $
+    reject= [0.05,0.1,0.2]
+    
 
    ;------------------
    ; QA chisq plot for fit calculated in extract image (make QAPLOT ???)
@@ -394,6 +407,14 @@ maxshift = 2.0 ; ??? Need this for MJD=51579
     skysub, skysubivar, iskies=iskies, pixelmask=pixelmask, $
     fibermask=fibermask, upper=3.0, lower=3.0, $
     relchi2struct=relchi2struct)
+
+   ;
+   ; Sky-subtract again, this time with dispset (PSF subtraction)
+   ; 
+
+   skystruct_psf = skysubtract(flux, fluxivar, plugsort, vacset, $
+    skysubpsf, skysubpsfivar, iskies=iskies, pixelmask=pixelmask, $
+    fibermask=fibermask, upper=3.0, lower=3.0, dispset=dispset)
 
    qaplot_skysub, flux, fluxivar, skysub, skysubivar, $
     vacset, iskies, title=plottitle+objname
