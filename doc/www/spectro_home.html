@@ -539,16 +539,6 @@ spectra on a plate at once.
 <H4><A NAME="idlsetup">Setting Up IDL Tools</A></H4>
 
 <P>
-If you have someone maintaining survey code at your institution
-(i.e., at Princeton using a Linux box), you can set up the tools
-by simply typing:
-<DL><DD><PRE>
-  source /u/products/etc/sdssfue.csh  # If you are using C-shell
-  source /u/products/etc/sdssfue.sh   # If you are using Bourne-shell
-  setup idlspec2d
-</PRE></DD></DL>
-
-<P>
 You must have "idl" in your path, and the IDL_PATH
 environment variable should already be set.  At Princeton, you would type
 the following for C-shell:
@@ -560,6 +550,16 @@ or the following for Bourne shell:
   IDL_DIR=/usr/peyton/common/licensed/idl
   IDL_PATH=.:+{$IDL_DIR}/lib
   alias idl=$IDL_DIR/bin/idl
+</PRE></DD></DL>
+
+<P>
+If you have someone maintaining survey code at your institution
+(i.e., at Princeton using a Linux box), you can set up the tools
+by simply typing:
+<DL><DD><PRE>
+  source /u/products/etc/sdssfue.csh  # If you are using C-shell
+  source /u/products/etc/sdssfue.sh   # If you are using Bourne-shell
+  setup idlspec2d
 </PRE></DD></DL>
 
 <P>
