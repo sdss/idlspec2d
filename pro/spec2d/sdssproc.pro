@@ -3,7 +3,7 @@
 ;   sdssproc
 ;
 ; PURPOSE:
-;   Read in Raw SDSS files, and process with opConfig, opECalib, opBC par files.
+;   Read in raw SDSS files, and process with opConfig, opECalib, opBC par files.
 ;
 ; CALLING SEQUENCE:
 ;   sdssproc, infile, [image, invvar, indir=, $
@@ -21,17 +21,19 @@
 ;   nsatrow    - Number of saturated rows, assuming that a row is saturated
 ;                if at least 20 of its pixels are above saturation level
 ;   fbadpix    - Fraction of bad pixels, not including bad columns
-;   hdr        - Header returned in memory
 ;   configfile - Default to "opConfig.par"
 ;   ecalibfile - Default to "opECalib.par"
 ;   bcfile     - Default to "opBC.par"
+;   pixflatname- Name of pixel-to-pixel flat, produced with SPFLATTEN.
 ;   minflat    - Minimum values allowed for pixflat
 ;                   (lower values of pixflat are set to 0 invvar)
-;   pixflatname- Name of pixel-to-pixel flat, produced with SPFLATTEN.
 ;
 ; OUTPUTS:
+;
+; OPTIONAL OUTPUTS:
 ;   image      - Processed 2d image
 ;   invvar     - Associated inverse variance
+;   hdr        - Processed FITS header
 ;   spectrographid - Return spectrograph ID (1 or 2)
 ;   color      - Return spectrograph color ('red' or 'blue')
 ;   camname    - Return camera name: 'b1', 'r1', 'b2', or 'r2'
@@ -44,6 +46,11 @@
 ;
 ;   The signal-to-noise is limited to never exceed 100, by adding 1.e-4
 ;   times the flux to the variance term.
+;
+;   Change the CAMERAS keyword to the camera as specified by the file name.
+;
+;   Rename 'target' to 'science', and 'calibration' to 'arc' in the
+;   header keyword FLAVOR.
 ;
 ; BUGS:
 ;   The open-shutter correction SMEARIMG will include smeared data from
@@ -133,22 +140,6 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    else $
     hdr = headfits(fullname)
 
-   mjd = sxpar(hdr, 'MJD')
-
-   pp = filepath('', root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='examples')
-
-   if (NOT keyword_set(configfile)) then $
-       configfile = findopfile('opConfig*par',mjd,pp)
-   if (NOT keyword_set(ecalibfile)) then $
-       ecalibfile = findopfile('opECalib*par',mjd,pp)
-   if (NOT keyword_set(bcfile)) then $
-       bcfile = findopfile('opBC*par',mjd,pp)
-
-   naxis = sxpar(hdr,'NAXIS*')
-   if (naxis[0] NE 2128 OR naxis[1] NE 2069) then $
-    splog, 'WARNING: Expecting 2128x2069, found '+string(naxis[0])+'x'$
-     +string(naxis[1])
-
    ;------
    ; Determine which CCD from the file name itself, using either the
    ; numbering scheme (01,02,03,04) or naming scheme (b1,r2,b2,r1).
@@ -200,6 +191,37 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    sxaddpar, hdr, 'SPEC2D_V', idlspec2d_version(), ' Version of idlspec2d'
    sxaddpar, hdr, 'UTILS_V', idlutils_version(), ' Version of idlutils'
  
+   ; Rename 'target' -> 'science', and 'calibration' -> 'arc'
+   mjd = sxpar(hdr, 'MJD')
+   flavor = strtrim(sxpar(hdr, 'FLAVOR'),2)
+   if (flavor EQ 'target') then flavor = 'science'
+   if (flavor EQ 'calibration') then flavor = 'arc'
+   if (mjd GT 51576) then begin
+      if (sxpar(hdr, 'COLBIN') NE 1 OR $
+          sxpar(hdr, 'ROWBIN') NE 1) then flavor = 'unknown'
+   endif
+   sxaddpar, hdr, 'FLAVOR', flavor
+   sxaddpar, hdr, 'CAMERAS', camname
+
+   if (NOT readimg AND NOT readivar) then return
+
+   ;------
+   ; Find names of the configurations files
+
+   pp = filepath('', root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='examples')
+
+   if (NOT keyword_set(configfile)) then $
+       configfile = findopfile('opConfig*par',mjd,pp)
+   if (NOT keyword_set(ecalibfile)) then $
+       ecalibfile = findopfile('opECalib*par',mjd,pp)
+   if (NOT keyword_set(bcfile)) then $
+       bcfile = findopfile('opBC*par',mjd,pp)
+
+   naxis = sxpar(hdr,'NAXIS*')
+   if (naxis[0] NE 2128 OR naxis[1] NE 2069) then $
+    splog, 'WARNING: Expecting 2128x2069, found '+string(naxis[0])+'x'$
+     +string(naxis[1])
+
    ;------
    ; Read in opConfig.par file
    ; Take the first entry for the configuration of each CCD in the event
@@ -302,7 +324,6 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    ; was longer than 640 seconds.
 
    exptime = sxpar(hdr, 'EXPTIME')
-   flavor = sxpar(hdr, 'FLAVOR')
    qshutter = 0
 
    ; Toggle the variable QSHUTTER if the observation was taken before
