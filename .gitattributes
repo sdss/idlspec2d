@@ -292,6 +292,7 @@ pro/spec1d/platecompare.pro -text
 pro/spec1d/platehist.pro -text
 pro/spec1d/platelist.pro -text
 pro/spec1d/platemerge.pro -text
+pro/spec1d/plotm67.pro -text
 pro/spec1d/plotspec.pro -text
 pro/spec1d/plotzrepeats.pro -text
 pro/spec1d/plug2tsobj.pro -text
