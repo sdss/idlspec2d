@@ -76,6 +76,7 @@
 ;   djs_iterstat
 ;   fileandpath()
 ;   findopfile()
+;   fits_purge_nans
 ;   fits_wait()
 ;   headfits()
 ;   idlspec2d_version()
@@ -325,6 +326,11 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    ; Check that this was not a non-test exposure taken during the daytime.
 
    warn_daytime, hdr
+
+   ;-----------
+   ; Dispose of other invalid header keywords
+
+   fits_purge_nans, hdr, verbose=(keyword_set(silent) EQ 0)
 
    ;-----------
    ; Return if only the header (and no data) was requested.
