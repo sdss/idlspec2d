@@ -701,16 +701,16 @@ pixflat = 0 ; clear memory
    ; Write output files
    ;---------------------------------------------------------------------------
 
+   if keyword_set(bcfile) then sxaddpar, hdr, 'OPBC', bcfile
+   if keyword_set(configfile) then sxaddpar, hdr, 'OPCONFIG', configfile
+   if keyword_set(ecalibfile) then sxaddpar, hdr, 'OPECALIB', ecalibfile
+   sxdelpar, hdr, 'UNSIGNED'   
+
    if (keyword_set(outfile)) then begin
       if (keyword_set(varfile)) then $
        sxaddpar, hdr, 'VARFILE', varfile, ' Corresponding inverse var file'
       writefits, outfile, image, hdr
    endif
-
-   if keyword_set(bcfile) then sxaddpar, hdr, 'OPBC', bcfile
-   if keyword_set(configfile) then sxaddpar, hdr, 'OPCONFIG', configfile
-   if keyword_set(ecalibfile) then sxaddpar, hdr, 'OPECALIB', ecalibfile
-   sxdelpar, hdr, 'UNSIGNED'   
 
    if (readivar) then begin
       varhdr = hdr
