@@ -65,7 +65,7 @@ function apo_color2hex, colorname
 end
 
 ;------------------------------------------------------------------------------
-function apo_checklimits, field, camera, value
+function apo_checklimits, flavor, field, camera, value
 
    common apo_limits, slimits
 
@@ -160,7 +160,7 @@ function apo_log_beginplate, platenum, mjd, camnames, outdir=outdir
    nextline = rowsep + colsep
    for icam=0, ncams-1 do $
     nextline = nextline + colsep + camnames[icam]
-   nextline = nextline + colsep + 'MST'
+   nextline = nextline + colsep + 'UT'
    textout = [textout, nextline]
 
    textout = [textout, apo_log_tableline(ncams)]
@@ -190,7 +190,9 @@ function apo_log_fields, pp, fields, printnames=printnames, formats=formats
 
    flavor = pp[igood[0]].flavor
    expstring = strtrim(string( pp[igood[0]].expnum ),2)
-   mststring = strtrim(string( pp[igood[0]].mst ),2)
+   jd = 2400000.5D + pp[igood[0]].tai / (24.D*3600.D)
+   caldat, jd, jd_month, jd_day, jd_year, jd_hr, jd_min, jd_sec
+   utstring = string(jd_hr, jd_sec, format='(i2.2,":",i2.2)')
    tags = tag_names(pp[igood[0]])
 
    for ifield=0, n_elements(fields)-1 do begin
@@ -204,8 +206,8 @@ function apo_log_fields, pp, fields, printnames=printnames, formats=formats
             tmpval = pp[icam].(itag)
             if (keyword_set(tmpval)) then $
              value = string(tmpval, format=format)
-            value = apo_checklimits(fields[ifield], camnames[icam], tmpval) $
-             + value
+            value = apo_checklimits(flavor, fields[ifield], $
+             camnames[icam], tmpval) + value
          endif
          nextline = nextline + colsep + value
       endfor
@@ -213,7 +215,7 @@ function apo_log_fields, pp, fields, printnames=printnames, formats=formats
 
       if (ifield EQ 0) then $
        textout = rowsep + strupcase(flavor) + '-' + expstring $
-        + nextline + mststring + colsep $
+        + nextline + utstring + colsep $
       else $
        textout = [textout, rowsep + nextline]
    endfor
@@ -461,7 +463,7 @@ pro apo_log2html, logfile, htmlfile
          rstruct = create_struct('MJD', 0L, $
                                  'PLATE', 0L, $
                                  'EXPNUM', '', $
-                                 'MST', '', $
+                                 'TAI', '', $
                                  'FLAVOR', 'TOTAL', $
                                  'CAMERA', '', $
                                  'TOTALSN2', 0.0 )

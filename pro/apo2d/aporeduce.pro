@@ -289,23 +289,26 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       ; Get the universal time (UT) from the header in the format '12:34',
       ; then convert to Mountain standard time (MST), which is 7 (or 17)
       ; hours different from UT.
+      ; Instead, only store the TAI time which we will convert to UT time
+      ; on-the-fly.
 
-      ut = strmid(sxpar(hdr, 'TAIHMS'),0,5)
-      mst = string((long(strmid(ut,0,2))+17) MOD 24,format='(i2.2)' ) $
-       + strmid(ut,2,3)
+;      ut = strmid(sxpar(hdr, 'TAIHMS'),0,5)
+;      mst = string((long(strmid(ut,0,2))+17) MOD 24,format='(i2.2)' ) $
+;      + strmid(ut,2,3)
+      tai = sxpar(hdr, 'TAI')
 
       ; The following prevents a crash in MWRFITS.
       if (NOT keyword_set(shortplugfile)) then shortplugfile = ' '
 
-      rstruct = create_struct('FILENAME', filename, $
-                              'PLUGFILE', shortplugfile, $
-                              'MJD', mjd, $
-                              'PLATE', plate, $
-                              'EXPNUM', filee, $
-                              'EXPTIME', sxpar(hdr, 'EXPTIME'), $
-                              'FLAVOR', flavor, $
-                              'CAMERA', camnames[icam], $
-                              'MST', mst, $
+      rstruct = create_struct('FILENAME', string(filename), $
+                              'PLUGFILE', string(shortplugfile), $
+                              'MJD', long(mjd), $
+                              'PLATE', long(plate), $
+                              'EXPNUM', long(filee), $
+                              'EXPTIME', double(sxpar(hdr, 'EXPTIME')), $
+                              'FLAVOR', string(flavor), $
+                              'CAMERA', string(camnames[icam]), $
+                              'TAI', double(tai), $
                               rstruct )
    endif
 
