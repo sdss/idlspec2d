@@ -10,7 +10,9 @@ function flatinterp, fflat, minflat, nsmooth=nsmooth
        if nbad GT 0 AND ngood GT 10 then begin
          interp = fflat[*,i]
          interp[good] = smooth(fflat[good,i],nsmooth)
-         smoothfflat[bad,i] = (djs_maskinterp(interp,fflat[*,i] LE minflat))[bad]
+         mask = [0,fflat[*,i] LE minflat,0]
+         i2 = [interp[good[0]], interp, interp[good[ngood-1]]] 
+         smoothfflat[bad,i] = (djs_maskinterp(i2,mask))[bad+1]
        endif
      endfor
 
