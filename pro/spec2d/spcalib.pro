@@ -159,8 +159,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
       ;---------------------------------------------------------------------
 
       splog, 'Reading flat ', flatname[iflat]
-      sdssproc, flatname[iflat], flatimg, flativar, indir=indir, $
-       hdr=flathdr, /applypixflat, nsatrow=nsatrow, fbadpix=fbadpix,$
+      sdssproc, flatname[iflat], flatimg, flativar, indir=indir, hdr=flathdr, $
+       /applybias, /applypixflat, nsatrow=nsatrow, fbadpix=fbadpix,$
        ecalibfile=ecalibfile, minflat=minflat, maxflat=maxflat
 
       ;-----
@@ -296,8 +296,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
       ;---------------------------------------------------------------------
 
       splog, 'Reading arc ', arcname[iarc]
-      sdssproc, arcname[iarc], arcimg, arcivar, indir=indir, $
-       hdr=archdr, /applypixflat, nsatrow=nsatrow, fbadpix=fbadpix, $
+      sdssproc, arcname[iarc], arcimg, arcivar, indir=indir, hdr=archdr, $
+       /applybias, /applypixflat, nsatrow=nsatrow, fbadpix=fbadpix, $
        ecalibfile=ecalibfile, minflat=minflat, maxflat=maxflat
 
       splog, 'Fraction of bad pixels in arc = ', fbadpix
@@ -499,8 +499,9 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
          ; If there is only 1 flat image, then it's still in memory
          if (nflat GT 1) then begin
             splog, 'Reading flat ', flatname[iflat]
-            sdssproc, flatname[iflat], flatimg, flativar, indir=indir, $
-             hdr=flathdr, /applypixflat, ecalibfile=ecalibfile, $
+            sdssproc, flatname[iflat], flatimg, flativar, $
+             indir=indir, hdr=flathdr, $
+             /applybias, /applypixflat, ecalibfile=ecalibfile, $
              minflat=minflat, maxflat=maxflat
          endif
 

@@ -133,7 +133,7 @@ pro spflatten2, flatname, arcname, allflats, pixflat, $
 
    splog, 'Reading flat ', flatname
    sdssproc, flatname[0], flatimg, flativar, indir=indir, hdr=flathdr, $
-    spectrographid=spectrographid, color=color
+    /applybias, spectrographid=spectrographid, color=color
 
    dims = size(flatimg, /dimens)
    nx = dims[0]
@@ -154,7 +154,7 @@ pro spflatten2, flatname, arcname, allflats, pixflat, $
 
    splog, 'Reading arc ', arcname
    sdssproc, arcname, arcimg, arcivar, indir=indir, hdr=archdr, $
-    color=color
+    /applybias, color=color
 
    ;------
    ; Extract the arc image
@@ -233,7 +233,8 @@ arcivar = 0
       ;----------------------
       ; Read flat-field image
 
-      sdssproc, allflats[iflat], flatimg, flativar, indir=indir, hdr=flathdr
+      sdssproc, allflats[iflat], flatimg, flativar, indir=indir, hdr=flathdr, $
+       /applybias
       if (iflat EQ 0) then hdr0 = flathdr
 
       ;----------------------

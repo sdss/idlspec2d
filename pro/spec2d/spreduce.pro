@@ -181,7 +181,7 @@ pro spreduce, flatname, arcname, objname, $
  
       splog, 'Reading object ', objname[iobj]
       sdssproc, objname[iobj], image, invvar, indir=indir, hdr=objhdr, $
-       /applypixflat, spectrographid=spectrographid, color=color, $
+       /applybias, /applypixflat, spectrographid=spectrographid, color=color, $
        ecalibfile=ecalibfile, minflat=0.8, maxflat=1.2, $
        nsatrow=nsatrow, fbadpix=fbadpix
 
