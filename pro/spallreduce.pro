@@ -211,7 +211,7 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
             spreduce, flatname, arcname, objname, $
              pixflatname=pixflatname, plugfile=plugfile, lampfile=lampfile, $
              indir=inputDir, plugdir=plugDir, outdir=extractDir, $
-             ecalibfile=ecalibfile
+             ecalibfile=ecalibfile, summarystruct=summarystruct
 
             splog, 'Time to reduce camera ', camnames[icam], ' = ', $
              systime(1)-stime2, ' seconds', format='(a,a,a,f6.0,a)'

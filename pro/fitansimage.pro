@@ -1,139 +1,118 @@
+;+
+; NAME:
+;   fitansimage
 ;
+; PURPOSE:
+;   Convert output from extract_image (ansimage) into a smooth
+;    function of fiber number and row
+;
+; CALLING SEQUENCE:
+;    fitans = fitansimage(ansimage, nterms, ntrace, npoly, nfirst, yrow, $
+;            tempflux, fluxm = [1,1,0], scatfit=scatfit, $
+;            smallflux, fluxm=fluxm, nord=nord, nscatbkpts=nscatbkpts, $
+;            ymin=ymin, ymax=ymax, fullrows=fullrows)
+;
+; INPUTS:
+;     ansimage  -  Keyword Output from extract_image
+;     nterms    -  number of profile terms
+;     ntrace    -  Number of fibers (currently hardwired to 320)
+;     npoly     -  Order of chebyshev polynomial in scattered light
+;     yrow      -  Array of rows extracted in first pass 
+;     smallflux -  Flux extracted in first pass
+;
+; OPTIONAL KEYWORDS:
+;     fluxm    -   Factor profile terms contribute to total flux
+;                   (asymmetric terms are set to zero)
+;
+; OUTPUTS:
+;    fitans    -  Smooth version of ansimage (expanded to 2048 rows)
+;
+; OPTIONAL OUTPUTS:
+;    scatfit   - Image of scattered light from smoothing polynomials
+;
+; COMMENTS:
 ;	fitansimage takes the output from extract_image, and smooths
 ;          the corresponding parameters of nfibers and npoly with
 ;	   functions of order nord 
 ;
+; EXAMPLES:
 ;
-function fitansimage, ansimage, nparams, nfibers, npoly, nrows, yrow, $
-        fluxm=fluxm, nord=nord, nscatbkpts=nscatbkpts, $
-        ymin=ymin, ymax=ymax, fullrows=fullrows, crossfit=crossfit,  $
-        scatimage = scatimage, scatfit=scatfit, mingood = mingood
+; BUGS:
+;
+; PROCEDURES CALLED:
+;
+; REVISION HISTORY:
+;   ??-Oct-1999  Written by S. Burles, Chicago
+;   25-Feb-2000  Modified to be more robust (yeah!)
+; 		   but requires exactly 320 fibers (boo)
+;-
+;------------------------------------------------------------------------------
+function fitansimage, ansimage, nparams, nfibers, npoly, yrow, $
+        smallflux, fluxm=fluxm, nord=nord, nscatbkpts=nscatbkpts, $
+        ymin=ymin, ymax=ymax, fullrows=fullrows,  $
+        scatfit=scatfit
 
   if (N_params() LT 6) then begin
       print, 'Syntax - fitansimage(ansimage, nparams, nfibers, npoly, '
-      print, '  nrows, yrow, fluxm=fluxm, nord=nord, nscatbkpts=nscatbkpts, '
-      print, '  ymin=ymin, ymax=ymax, fullrows=fullrows, crossfit=crossfit)'
+      print, '  yrow, tempflux, fluxm=fluxm, nord=nord, nscatbkpts=nscatbkpts, '
+      print, '  ymin=ymin, ymax=ymax, fullrows=fullrows)'
       return, -1
    endif
 
-	anssize = size(ansimage)
-
 	if(NOT keyword_set(fluxm)) then $
  			fluxm = make_array(nparams,/long,value=1)
-	if(NOT keyword_set(nord)) then nord=2	 ;quadratic
+	if(NOT keyword_set(nord)) then nord=3	 ;quadratic
 	if(NOT keyword_set(nscatbkpts)) then nscatbkpts=20 ;scattered light
 	if(NOT keyword_set(ymin)) then ymin=0.0	 
 	if(NOT keyword_set(ymax)) then ymax=2047.0	 
 	if(NOT keyword_set(fullrows)) then fullrows=2048	 
-	if(keyword_set(crossfit)) then niter = 2 $
-	else niter = 1
 
-	flux = fltarr(nfibers,nrows)
+        nrows = n_elements(yrow)
 
-        if (NOT keyword_set(mingood)) then mingood = nrows/3
 
 	ynorm = (2.0*yrow-(ymax+ymin))/(ymax-ymin)
 	yfnorm = (2.0*findgen(fullrows)-(ymax+ymin))/(ymax-ymin) 
-	smallans = fltarr(nparams*nfibers+npoly,nrows)
 	fitans = fltarr(nparams*nfibers+npoly,fullrows)
-	smallflux = fltarr(nfibers,nrows)
 	newflux = fltarr(nfibers,fullrows)
         iTrace = lindgen(nfibers)*nparams
         iParams = lindgen(nparams) 
 	iFiber = findgen(nfibers)
-	fitthis = fltarr(nrows,nparams*nfibers + npoly)
 
-	for j=0,nparams-1 do flux = flux + fluxm[j] * ansimage[j+iTrace,*]
+	for i=0,nfibers-1 do fitans[i*nparams,*] = 1.0
 
-	for i=0,nfibers-1 do begin
-	    mask = (flux[i,*] GT 0.0)
-	    fitans[i*nparams,*] = 1.0
-	    smallans[i*nparams,*] = 1.0
-	  for j=1,nparams-1 do begin
-	    good = where(mask)
-            if (good[0] NE -1) then $
-	      fitthis[good,j+i*nparams] = ansimage[j+i*nparams,good]/flux[i,good]
+        fillans = where(smallflux GT 0)
+        if (nfibers NE 320 OR fillans[0] EQ -1) then $
+	  splog, 'ABORT: ansimage not well defined for traces' $
+        else begin
+
+	  answeight = fltarr(nrows, 20, 16)
+	  answeight[fillans] = 1.0
+
+          ;  smallans will be used to fit a smooth function for fitans
+	  for i=1,nparams-1 do begin
+
+	    smallans = fltarr(nrows, 20, 16)
+	    smallans[fillans] = $
+              (transpose(ansimage[itrace+i, *]))[fillans] $
+                                 / smallflux[fillans]
+
+	    squashweight = total(answeight,2)
+            xy2traceset,yrow # replicate(1,16),djs_median(smallans,2),set1, $
+               ncoeff=nord, xmin=ymin, xmax=ymax, invvar= squashweight
+
+            x = findgen(fullrows) # replicate(1,16)
+            traceset2xy, set1, x, tempans
+
+            x = ((findgen(16) + 0.5)*20) # replicate(1,fullrows)
+            xy2traceset,x, transpose(tempans), finalsigmaset, $
+             ncoeff=nord+2, xmin=0, xmax=nfibers
+
+            x = findgen(nfibers) # replicate(1,fullrows)
+            traceset2xy, finalsigmaset, x, finalshift
+
+            fitans[iTrace+i,*] = finalshift
           endfor
-       endfor
-
-       for iter=1,niter do begin 
-         for i=0,nfibers-1 do begin
-	   for j=1,nparams-1 do begin
-	      mask = bytarr(nrows)+1
-;
-;		Iterate a few times to reject outliers
-;
-	      done = 0
-	      while (done EQ 0) do begin
-	        good = where(mask,ngood)
-                if (ngood LT mingood) then done = 1 $
-                else begin
-	          tt = polyfitw(ynorm[good], fitthis[good,j+i*nparams], $
-                    (flux[i,good] > 0), nord, yfit)
-                  diff = fitthis[good,j+i*nparams] - yfit
-	          worst = max(abs(diff),place)
-;	          print, i, worst, place, 4*stddev(diff)
-	          if (worst LE 4*stddev(diff)) then done = 1 $
-                  else mask[good[place]] = 0
-                endelse
-	      endwhile
-
-              if (ngood GE mingood) then begin
-	        smallans[j+i*nparams,*] = poly(ynorm,tt)
-	        fitans[j+i*nparams,*] = poly(yfnorm,tt)
-              endif
-	    endfor
-	  endfor
-
-
-      ;----------------------------------------------------------
-      ;  Iterate one more time (crossfit) with a spline vs. fiber number to
-      ;  obtain a much smoother parameter map
-
-        if (keyword_set(crossfit) AND iter EQ 1) then begin
-
-         for i=0,nfibers - 1 do $
-	    smallflux[i,*] = fluxm # smallans[iParams+i*nparams,*]
-
-	 for i=0,nrows-1 do begin
-           print, format='($, ".",i4.4,a5)',i,string([8b,8b,8b,8b,8b])
-
-           for j=1,nparams-1 do begin
-;
-;		Iterate a few times to reject outliers
-;
-	      mask = (smallflux[*,i] GT 0.0)
-	      done = 0
-	      while (done EQ 0) do begin
-	        good = where(mask,ngood)
-                if (ngood LT nfibers/3) then begin
-                      done = 1 
-                      splog, 'only a unmasked fibers in row ',i
-                endif else begin
-	          these = iTrace[good] + j
-	          tt = polyfitw(iFiber[good], smallans[these,i], $
-                    (smallflux[good,i] > 0), nord, yfit)
-                  diff = (smallans[these,i] - yfit)*(smallflux[good,i] > 0)
-	          worst = max(abs(diff),place)
-;	          print, i, worst, place, 4*stddev(diff)
-	          if (worst LE 4*stddev(diff)) then done = 1 $
-                  else mask[good[place]] = 0
-                endelse
-	      endwhile
-
-              if (ngood GE nfibers/3) then $
-	         fitthis[i,iTrace+j] = poly(iFiber,tt)
-
-;             fullbkpt = slatec_splinefit(iFiber, smallans[iTrace+j,i], $
-;                coeff, nbkpt = 5, invvar=(smallflux[good,i] > 0))
-;	     fitthis[i,iTrace+j] = slatec_bvalu(iFiber, fullbkpt, coeff)
-	   endfor
-         endfor
-       endif
-
-
-      endfor  ;niter loop
-
+        endelse
 
       ;--------------------------------------------------------
       ;  Normalize fitans with total flux
@@ -146,48 +125,24 @@ function fitansimage, ansimage, nparams, nfibers, npoly, nrows, yrow, $
             fitans[j+iTrace,*] = fitans[j+iTrace,*] / newflux 
 
 
-	;---------------------------------------------------
-	;	Now do background terms
-	;	First expand terms into nrows x nrows image
-        ;    Without the step function at halfway
+      ;---------------------------------------------------
+      ;	Now do background terms
+      ;	First expand terms into nrows x nrows image
+      ;    Without the step function at halfway
 
+      scatfit = fltarr(fullrows,fullrows)
 
-	scatimage = fltarr(fullrows,nrows)
-	scatfit = fltarr(fullrows,fullrows)
-
-        for i=0, nPoly-1 do begin
-            fullbkpt = slatec_splinefit(ynorm, ansimage[nfibers*nparams+i,*], $
+      for i=0, nPoly-1 do begin
+        fullbkpt = slatec_splinefit(ynorm, ansimage[nfibers*nparams+i,*], $
                      coeff, nbkpts = nscatbkpts)
-            fitans[nfibers*nparams+i,*] = slatec_bvalu(yfnorm, fullbkpt, coeff)
-        endfor
+        fitans[nfibers*nparams+i,*] = slatec_bvalu(yfnorm, fullbkpt, coeff)
+      endfor
 
-        fullcheb = fchebyshev(yfnorm, nPoly)
-        for i=0,fullrows-1 do $
+      fullcheb = fchebyshev(yfnorm, nPoly)
+      for i=0,fullrows-1 do $
 	  scatfit[*,i] = fullcheb # fitans[nfibers*nparams:*,i]  
 
-	for i=0,nrows-1 do $
-	  scatimage[*,i] = fullcheb $
-              # ansimage[nfibers*nparams:nfibers*nparams+npoly-1,i]  
+      return, fitans
 
-;	  scatimage[*,i] = fchebyshev(yfnorm, nPoly, halfintwo=1) $
-
-;	for i=0,fullrows-1 do begin
-;            fullbkpt = slatec_splinefit(ynorm, scatimage[i,*], coeff, $
-;                     nbkpts = 20)
-;	    scatfit[i,*] = slatec_bvalu(yfnorm,fullbkpt,coeff)
-;	endfor
-
-;	return, [[[scatfit]],[[scatimage]]]
-
-;	for i=0,fullrows-1 do begin
-;	    fitans[nfibers*nparams:*,i] =  $
-;               func_fit(yfnorm, scatfit[*,i], nPoly, $
-;                 function_name='fchebyshev', yfit=ytemp)
-;                 function_name='fchebyshev', halfintwo=1, yfit=ytemp)
-;            scatfit[*,i] = ytemp
-;	endfor
-
-	return, fitans
-
-	end   
+end   
 	  

@@ -9,7 +9,7 @@
 ;   spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 ;    plugfile=plugfile, lampfile=lampfile, $
 ;    indir=indir, plugdir=plugdir, outdir=outdir, $
-;    ecalibfile=ecalibfile
+;    ecalibfile=ecalibfile, summarystruct=summarystruct
 ;
 ; INPUTS:
 ;   flatname   - Name(s) of flat-field SDSS image(s)
@@ -61,7 +61,7 @@
 pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
  plugfile=plugfile, lampfile=lampfile, $
  indir=indir, plugdir=plugdir, outdir=outdir, $
- ecalibfile=ecalibfile
+ ecalibfile=ecalibfile, summarystruct=summarystruct
 
    if (NOT keyword_set(indir)) then indir = '.'
    if (NOT keyword_set(plugdir)) then plugdir=indir
@@ -150,12 +150,9 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    lambda = *(bestarc.lambda)
    xpeak = *(bestarc.xpeak)
    wset =  *(bestarc.wset)
-   xsol = *(bestflat.xsol)
-   fflat = *(bestflat.fflat)
 
-   qaplot_arcline, *(bestarc.xdif_tset), lambda, $
+   qaplot_arcline, *(bestarc.xdif_tset), wset, lambda, $
     filename=bestarc.name, color=color
-   qaplot_fflat, fflat, wset, filename=bestflat.name
 
    ;---------------------------------------------------------------------------
    ; LOOP THROUGH OBJECT FRAMES
@@ -189,6 +186,9 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
          return
       endif
 
+      xsol = *(bestflat.xsol)
+      fflat = *(bestflat.fflat)
+      qaplot_fflat, fflat, wset, filename=bestflat.name
 
       ;-----
       ; Combine FIBERMASK bits from the plug-map file, best flat

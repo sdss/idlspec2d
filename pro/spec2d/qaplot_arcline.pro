@@ -37,7 +37,7 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro qaplot_arcline, xdif, lambda, filename=filename, color=color
+pro qaplot_arcline, xdif, wset, lambda, filename=filename, color=color
 
    if (NOT keyword_set(filename)) then filename = ''
 
@@ -54,6 +54,9 @@ pro qaplot_arcline, xdif, lambda, filename=filename, color=color
       mnarr[k] = mn
       sgarr[k] = sg
    endfor
+
+   traceset2xy,wset,transpose(replicate(wset.xmin,nfiber)),minwave
+   traceset2xy,wset,transpose(replicate(wset.xmax,nfiber)),maxwave
 
    ;---------------------------------------------------------------------------
    ; Print residuals in arc fits
@@ -99,6 +102,9 @@ pro qaplot_arcline, xdif, lambda, filename=filename, color=color
    fibernum = findgen(nfiber)+1
    for k=0, nlamp-1 do $
     djs_oplot, 500*xdif[*,k]+lambda[k], fibernum
+
+   djs_oplot, 10^minwave, fibernum, color='green', thick=2
+   djs_oplot, 10^maxwave, fibernum, color='green', thick=2
 
    ; Make plot of deviations
 

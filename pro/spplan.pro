@@ -134,8 +134,12 @@ pro spplan, rawdir, astrolog=astrolog, mjd=mjd, flatdir=flatdir, minexp=minexp
        rawdir = '/usr/sdss/data05/spectro/rawdata' $
       else if ((findfile('/home/schlegel/data/rawdata'))[0] NE '') then $
        rawdir = '/home/schlegel/data/rawdata' $
-      else $
-       message, 'Must specify RAWDIR'
+      else if ((findfile('rawdata'))[0] NE '') then $
+       rawdir = './rawdata' $
+      else begin
+        print, 'Must specify RAWDIR'
+        return
+      endelse
    endif
 
    if (NOT keyword_set(astrolog)) then $

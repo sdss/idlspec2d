@@ -237,10 +237,14 @@ endif
          ; (2) Refit ansimage to smooth profiles
 
          splog, 'Answer Fitting: Step', i*3+2
-         nparams = 3
          ntrace = (size(tempflux))[2]
-         fitans = fitansimage(ansimage, nparams, ntrace, npoly, nfirst, yrow, $
-          fluxm = [1,1,0], crossfit=1, scatfit=scatfit, scatimage=scatimage)
+         itrace = lindgen(ntrace)*nterms
+
+         ;---------------------------------------------------
+         ;   Fitansimage is now hard wired for 320 fibers!!!!
+
+         fitans = fitansimage(ansimage, nterms, ntrace, npoly, yrow, $
+            tempflux, fluxm = [1,1,0], scatfit=scatfit)
 
          ; (3) Calculate new sigma and xtrace arrays
       
@@ -288,7 +292,7 @@ endif
 
       highrej = 15
       lowrej = 15
-      fitans = fitans[0:nparams*ntrace-1,*]
+      fitans = fitans[0:nterms*ntrace-1,*]
       extract_image, image-scatfit, invvar, xnow, sigma, flux, $
        fluxivar, proftype=proftype, wfixed=wfixed, fitans=fitans, $
        highrej=highrej, lowrej=lowrej, npoly=0, whopping=whopping, $
@@ -461,7 +465,7 @@ endif
       sxaddpar, objhdr, 'HIGHREJ', highrej, 'Extraction, high rejection'
       sxaddpar, objhdr, 'SCATPOLY', npoly, 'Order of scattered light poly'
       sxaddpar, objhdr, 'PROFTYPE', proftype, '1=Gaussian'
-      sxaddpar, objhdr, 'NFITPOLY', nparams, 'Order of profile parameter fit'
+      sxaddpar, objhdr, 'NFITPOLY', nterms, 'Order of profile parameter fit'
 
       ;------------------
       ; Write extracted, lambda-calibrated, sky-subtracted spectra to disk
