@@ -6,8 +6,8 @@
 ;   Routine for reading 2D/1D spectro outputs at Princeton
 ;
 ; CALLING SEQUENCE:
-;   readspec, plate, fiber, [mjd=, silent=, flux=, flerr=, invvar=, $
-;    andmask=, ormask=, plugmap=, loglam=, wave=, tsobj=, root_dir= ]
+;   readspec, plate, fiber, [mjd=, flux=, flerr=, invvar=, $
+;    andmask=, ormask=, plugmap=, loglam=, wave=, tsobj=, root_dir=, /silent ]
 ;
 ; INPUTS:
 ;   plate      - Plate number(s)
@@ -22,6 +22,7 @@
 ;                are assumed to be ROOT_DIR/pppp/spPlate-pppp-mmmmm.fits,
 ;                where pppp=plate number and mmmm=MJD.
 ;                Default to '/data/spectro/2d_3c'.
+;   silent     - If set, then call MRDFITS with /SILENT.
 ;
 ; OUTPUTS:
 ;
@@ -48,6 +49,7 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   copy_struct_inx
 ;   headfits()
 ;   mrdfits
 ;   plug2tsobj()
@@ -212,82 +214,89 @@ pro readspec, plate, fiber, mjd=mjd, silent=silent, flux=flux, flerr=flerr, $
    q_wave = arg_present(wave)
    q_tsobj = arg_present(tsobj)
 
-   nplate = n_elements(plate)
-   if (keyword_set(fiber)) then begin
-      nfiber = n_elements(fiber)
-      if (nplate GT 1 AND nfiber GT 1 AND nplate NE nfiber) then $
-       message, 'Number of elements in PLATE and FIBER must agree or be 1'
-   endif else begin
-      nfiber = 1
-      fiber = 0 ; This will force a read of all fiber numbers
-   endelse
+   if (NOT keyword_set(fiber)) then fiber = lindgen(640) + 1
+;      nfiber = n_elements(fiber)
+;      if (nplate GT 1 AND nfiber GT 1 AND nplate NE nfiber) then $
+;       message, 'Number of elements in PLATE and FIBER must agree or be 1'
+;   endif else begin
+;      nfiber = 1
+;      fiber = 0 ; This will force a read of all fiber numbers
+;   endelse
 
-   if (nplate GT 1 OR nfiber GT 1) then begin
-      ; Call this routine recursively...
-      nvec = nplate > nfiber
-      platevec = lonarr(nvec) + plate
-      fibervec = lonarr(nvec) + fiber
+   nvec = n_elements(plate) > n_elements(fiber)
+   platevec = lonarr(nvec) + plate
+   fibervec = lonarr(nvec) + fiber
+   if (keyword_set(mjd)) then mjdvec = lonarr(nvec) + mjd $
+    else mjdvec = lonarr(nvec)
 
-      if (keyword_set(mjd)) then mjdvec = lonarr(nvec) + mjd $
-       else mjdvec = lonarr(nvec)
+   ; Find unique plate+MJD combinations, since each has its own data file
+   sortstring = strtrim(string(platevec),2) + '-' + strtrim(string(mjdvec),2)
+   isort = sort(sortstring)
+   iuniq = uniq(sortstring[isort])
+   platenums = platevec[ isort[iuniq] ]
+   mjdnums = mjdvec[ isort[iuniq] ]
+   nfile = n_elements(platenums)
 
-      for ifiber=0, nvec-1 do begin
-         flux1 = 0
-         flerr1 = 0
-         invvar1 = 0
-         andmask1 = 0
-         ormask1 = 0
-         plugmap1 = 0
-         loglam1 = 0
-         wave1 = 0
-         tsobj1 = 0
+   for ifile=0, nfile-1 do begin
+      flux1 = 0
+      flerr1 = 0
+      invvar1 = 0
+      andmask1 = 0
+      ormask1 = 0
+      plugmap1 = 0
+      loglam1 = 0
+      wave1 = 0
+      tsobj1 = 0
 
-         if (fibervec[ifiber] EQ 0) then begin
-            range = 0
-         endif else begin
-            irow = fibervec[ifiber] -1
-            range = [irow,irow]
-         endelse
-         IF keyword_set(silent) THEN print, '+', format='(A,$)'
-         readspec1, platevec[ifiber], range, mjd=mjdvec[ifiber], $
-          silent=silent, flux=flux1, flerr=flerr1, invvar=invvar1, $
-           andmask=andmask1, ormask=ormask1, plugmap=plugmap1, $
-           loglam=loglam1, wave=wave1, tsobj=tsobj1
-         if (ifiber EQ 0) then begin
-            if (q_flux) then flux = flux1
-            if (q_flerr) then flerr = flerr1
-            if (q_invvar) then invvar = invvar1
-            if (q_andmask) then andmask = andmask1
-            if (q_ormask) then ormask = ormask1
-            if (q_plugmap) then plugmap = plugmap1
-            if (q_loglam) then loglam = loglam1
-            if (q_wave) then wave = wave1
-            if (q_tsobj) then tsobj = tsobj1
-         endif else begin
-            if (q_flux) then spec_append, flux, flux1
-            if (q_flerr) then spec_append, flerr, flerr1
-            if (q_invvar) then spec_append, invvar, invvar1
-            if (q_andmask) then spec_append, andmask, andmask1
-            if (q_ormask) then spec_append, ormask, ormask1
-            if (q_plugmap) then plugmap = struct_append(plugmap, plugmap1)
-            if (q_loglam) then spec_append, loglam, loglam1
-            if (q_wave) then spec_append, wave, wave1
-            if (q_tsobj) then tsobj = struct_append(tsobj, tsobj1)
-         endelse
-      endfor
-      IF keyword_set(silent) THEN print
-   endif else begin
-      if (fiber EQ 0) then begin
-         range = 0
+      indx = where(platevec EQ platenums[ifile] AND mjdvec EQ mjdnums[ifile])
+      irow = fibervec[indx] - 1
+      i1 = min(irow)
+      i2 = max(irow)
+
+      if (keyword_set(silent)) then print, '+', format='(A,$)'
+
+      readspec1, platenums[ifile], [i1,i2], mjd=mjdnums[ifile], $
+       silent=silent, flux=flux1, flerr=flerr1, invvar=invvar1, $
+        andmask=andmask1, ormask=ormask1, plugmap=plugmap1, $
+        loglam=loglam1, wave=wave1, tsobj=tsobj1
+
+      if (ifile EQ 0) then begin
+         allindx = indx
+         if (q_flux) then flux = flux1[*,irow-i1]
+         if (q_flerr) then flerr = flerr1[*,irow-i1]
+         if (q_invvar) then invvar = invvar1[*,irow-i1]
+         if (q_andmask) then andmask = andmask1[*,irow-i1]
+         if (q_ormask) then ormask = ormask1[*,irow-i1]
+         if (q_plugmap) then plugmap = plugmap1[irow-i1]
+         if (q_loglam) then loglam = loglam1[*,irow-i1]
+         if (q_wave) then wave = wave1[*,irow-i1]
+         if (q_tsobj) then tsobj = tsobj1[irow-i1]
       endif else begin
-         irow = fiber -1
-         range = [irow,irow]
+         allindx = [allindx, indx]
+         if (q_flux) then spec_append, flux, flux1[*,irow-i1]
+         if (q_flerr) then spec_append, flerr, flerr1[*,irow-i1]
+         if (q_invvar) then spec_append, invvar, invvar1[*,irow-i1]
+         if (q_andmask) then spec_append, andmask, andmask1[*,irow-i1]
+         if (q_ormask) then spec_append, ormask, ormask1[*,irow-i1]
+         if (q_plugmap) then plugmap = struct_append(plugmap, plugmap1[irow-i1])
+         if (q_loglam) then spec_append, loglam, loglam1[*,irow-i1]
+         if (q_wave) then spec_append, wave, wave1[*,irow-i1]
+         if (q_tsobj) then tsobj = struct_append(tsobj, tsobj1[irow-i1])
       endelse
-      readspec1, plate, range, mjd=mjd, silent=silent, $
-       flux=flux, flerr=flerr, invvar=invvar, $
-        andmask=andmask, ormask=ormask, plugmap=plugmap, $
-        loglam=loglam, wave=wave, tsobj=tsobj
-   endelse
+   endfor
+
+   ; Re-sort the data
+   if (q_flux) then flux[*,[allindx]] = flux[*]
+   if (q_flerr) then flerr[*,[allindx]] = flerr[*]
+   if (q_invvar) then invvar[*,[allindx]] = invvar[*]
+   if (q_andmask) then andmask[*,[allindx]] = andmask[*]
+   if (q_ormask) then ormask[*,[allindx]] = ormask[*]
+   if (q_plugmap) then copy_struct_inx, plugmap, plugmap, index_to=allindx
+   if (q_loglam) then loglam[*,[allindx]] = loglam[*]
+   if (q_wave) then wave[*,[allindx]] = wave[*]
+   if (q_tsobj) then copy_struct_inx, tsobj, tsobj, index_to=allindx
+
+   if (keyword_set(silent)) then print
 
    return
 end
