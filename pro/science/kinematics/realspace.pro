@@ -92,7 +92,7 @@ pro testsetup
   return
 end 
 
-pro testrealspace, width, doplot=doplot
+pro testrealspace, doplot=doplot
   
 
   fname = findfile('quicktest.sav', count=ct)
@@ -127,7 +127,7 @@ pro testrealspace, width, doplot=doplot
      noise = randomn(iseed, n_elements(newflux))*nfac
      nivar = 1./(1./ivar + nfac^2)
      
-     ans = realspace(width, lam, eig, lamg, newflux+noise, nivar, $
+     ans = realspace(lam, eig, lamg, newflux+noise, nivar, $
                      testsigma=testsigma, $
                      lamrange=lamrange, doplot=doplot, broadlam=broadlam, $
                      broadarr=broadarr, dof=dof)
@@ -159,7 +159,7 @@ end
 
 
 
-pro callrealspace, width, doplot=doplot
+pro callrealspace, doplot=doplot
   
 
   fname = findfile('quicktest.sav', count=ct)
@@ -188,7 +188,7 @@ pro callrealspace, width, doplot=doplot
        newflux=newflux, newivar=newivar
      
      
-     ans = realspace(width, lam, eig, lamg, newflux, newivar, $
+     ans = realspace(lam, eig, lamg, newflux, newivar, $
                      testsigma=testsigma, $
                      lamrange=lamrange, doplot=doplot, broadlam=broadlam, $
                      broadarr=broadarr, dof=dof)
@@ -227,7 +227,7 @@ end
 ;   so that the uncertainties in the galaxy spectrum can be used. 
 ;
 ; CALLING SEQUENCE:
-;   answers = realspace(width, lam, eig, lamg, gal, ivar, $
+;   answers = realspace(lam, eig, lamg, gal, ivar, $
 ;               testsigma=, lamrange=, /doplot, broadarr= )
 ;
 ; INPUTS:
@@ -268,7 +268,7 @@ end
 ;                     with Daniel Eisenstein and David Schlegel. 
 ;-
 ;------------------------------------------------------------------------------
-function realspace, width, lameig, eig, lamg, gal_in, ivar_in, $
+function realspace, lameig, eig, lamg, gal_in, ivar_in, $
                     testsigma=testsigma, broadlam=broadlam, $
                     lamrange=lamrange, doplot=doplot, broadarr=broadarr, $
                     dof=dof
