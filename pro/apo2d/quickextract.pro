@@ -63,12 +63,14 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    scatmax = max(scatfit)
    if (scatmed GT 20) then $
      splog, 'WARNING: Scattered light median = ', scatmed, ' electrons' $
+      + ' (WARM CCD OR TWILIGHT?)' $
     else $
      splog, 'Scattered light median = ', scatmed, ' electrons'
    if (scatmax GT 40) then $
      splog, 'WARNING: Scattered light max = ', scatmax, ' electrons' $
+      + ' (WARM CCD OR TWILIGHT?)' $
     else $
-     splog, 'Scattered light max =    ', scatmax, ' electrons'
+     splog, 'Scattered light max = ', scatmax, ' electrons'
 
    ;----------
    ; Boxcar extract - no scattered light correction!

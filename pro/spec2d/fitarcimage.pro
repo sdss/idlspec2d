@@ -333,13 +333,13 @@ maxdev = 1.0d-5
       if (logwdiff[i] GT 0.10) then begin
          ; Abort for gaps as large as [4000,5035] or [8000,10071] Angstroms.
          splog, 'WARNING: Reject arc. Big wavelength gap from ', 10^logwlist[i], $
-          ' to ', 10^logwlist[i+1], ' Ang'
+          ' to ', 10^logwlist[i+1], ' Ang (LAMPS NOT WARM?)'
          wset = 0
          return
       endif else if (logwdiff[i] GT 0.04) then begin
          ; Warning for gaps as large as [4000,4386] or [8000,8771] Angstroms.
          splog, 'WARNING: Big wavelength gap from ', 10^logwlist[i], $
-          ' to ', 10^logwlist[i+1], ' Ang'
+          ' to ', 10^logwlist[i+1], ' Ang (LAMPS NOT WARM?)'
       endif
    endfor
 
