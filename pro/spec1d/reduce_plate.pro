@@ -42,8 +42,8 @@
 
 FUNCTION generate_filename, mjd, plate
   
-  fname = string('spVelDisp-', mjd, '-', plate, '.fits', $
-                 format='(A,I5.5,A,I4.4,A)')
+  fname = string('spVelDisp-', mjd, '-', plate, $
+                 format='(A,I5.5,A,I4.4)')
   return, fname
 END 
 
@@ -109,7 +109,7 @@ PRO reduce_plate, platenum, wave, template, result, first=first
   specpath = get_specpath()
 
 ; Read data
-  readspec, platenum, result.fiber, flux=galflux, flerr=galsig, wave=galwave, plug=galplug, /silent
+  readspec, platenum, result.fiber, flux=galflux, flerr=galsig, wave=galwave, plug=galplug, /silent, root_dir=specpath+'2d_3c/'
 
   result.run    = galplug.objid[0]
   result.rerun  = galplug.objid[1]
@@ -161,8 +161,18 @@ PRO reduce_plate, platenum, wave, template, result, first=first
         (nobj-ct)/float(nobj)*100, '%'
   ENDELSE 
 
+; Write veldisp FITS file
   fname = generate_filename(result[0].mjd, result[0].plate)
-  mwrfits, result, specpath+'veldisp/brgtemplate/'+fname
+  mwrfits, result, specpath+'veldisp/brgtemplate/'+fname+'.fits', /create
+
+; Write trimmed tsobj file
+  suffix= '-'+string(result[0].mjd,format='(I5.5)')+ $
+    '-'+string(platenum[0],format='(I4.4)')+'.fits'
+
+  readspec, platenum, tsobj=tsobj
+  help, tsobj
+  tsobjtrim = tsobj[(result.fiber-1)]
+  mwrfits, tsobjtrim,specpath+'veldisp/brgtemplate/tsObj-trim'+suffix, /create
 
   print
   print, 'Plate', platenum, ' finished.  ', systime()
