@@ -6,7 +6,7 @@
 ;   Create a crude trace set given one position (eg, a center) in each trace.
 ;
 ; CALLING SEQUENCE:
-;   xset = trace_crude( fimage, [xstart, ystart, radius=radius] )
+;   xset = trace_crude( fimage, [xstart, ystart, radius=radius, yset=yset]  )
 ;
 ; INPUTS:
 ;   fimage     - Image
@@ -25,19 +25,22 @@
 ;   xset       - X centers for all traces
 ;
 ; OPTIONAL OUTPUTS:
+;   yset       - Y centers for all traces
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
 ;
 ; PROCEDURES CALLED:
+;   djs_laxisgen()
 ;   Dynamic link to trace_crude.c
 ;
 ; REVISION HISTORY:
 ;   14-May-1999  Written by David Schlegel, Princeton.
+;   12-Jul-1999  Added optional output YSET (DJS).
 ;-
 ;------------------------------------------------------------------------------
-function trace_crude, fimage, xstart, ystart, radius=radius
+function trace_crude, fimage, xstart, ystart, radius=radius, yset=yset
 
    ; Need 1 parameter
    if (N_params() LT 1) then begin
@@ -92,6 +95,8 @@ function trace_crude, fimage, xstart, ystart, radius=radius
    result = call_external(getenv('IDL_EVIL')+'libspec2d.so', 'trace_crude', $
     nx, ny, ftemp, float(radius), ntrace, float(xstart), ypass, $
     xset)
+
+   yset = djs_laxisgen([ny,nTrace], iaxis=0)
 
    return, xset
 end

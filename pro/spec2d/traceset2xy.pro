@@ -46,16 +46,13 @@ pro traceset2xy, tset, xpos, ypos
 
       ymid = 0.5 * (tset.ymin + tset.ymax)
       yrange = tset.ymax - tset.ymin
+      ypos = djs_laxisgen([ny, nTrace], iaxis=0) + tset.ymin
 
-      ypos = djs_laxisgen([ny, nTrace], iaxis=0)
       xpos = fltarr(ny, nTrace)
-      ypos = 2.0 * (ypos - ymid) / yrange
-
+      yvec = 2.0 * findgen(ny)/(ny-1) - 1.0
+      legarr = flegendre(yvec, ncoeff)
       for iTrace=0, nTrace-1 do begin
-         xpos[*,iTrace] = flegendre(ypos[*,iTrace], ncoeff) $
-          # tset.coeff[*,iTrace]
-;         for iy=0, ny-1 do xpos[iy,iTrace] = $
-;          transpose(tset.coeff[*,iTrace]) # svdleg(ypos[iy,iTrace], ncoeff)
+         xpos[*,iTrace] = legarr # tset.coeff[*,iTrace]
       endfor
 
       end
