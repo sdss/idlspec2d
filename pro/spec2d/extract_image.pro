@@ -33,7 +33,8 @@
 ;                     [1, 1, 1] fit gaussian + sigma and center corrections.   
 ;   mask       - byte mask: 1 is good and 0 is bad [nCol,nRow] 
 ;   pixelmask  - bits set due to extraction rejection [nRow,nFiber]
-;   reject     - two elements array setting partial and full rejection thresholds 
+;   reject     - Array setting rejection threshholds; defaults are set
+;                in EXTRACT_ROW().
 ;   nPoly      - order of chebyshev scattered light background; default to 4
 ;   maxIter    - maximum number of profile fitting iterations; default to 20
 ;   highrej    - positive sigma deviation to be rejected (default 10.0)
@@ -58,26 +59,26 @@
 ; EXAMPLES:
 ;
 ; PROCEDURES CALLED:
-;    extract_row.pro
+;   extract_row()
 ;
 ; REVISION HISTORY:
-;    8-Aug-1999  Version 0.0 Scott Burles, Chicago 
+;   08-Aug-1999  Version 0.0 Scott Burles, Chicago 
 ;-
 ;------------------------------------------------------------------------------
 pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
                ymodel=ymodel, fscat=fscat,proftype=proftype,ansimage=ansimage, $
                wfixed=wfixed, mask=mask, pixelmask=pixelmask, reject=reject, $
                nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej, $
-	       fitans=fitans, whopping=whopping, oldreject=oldreject, $
+               fitans=fitans, whopping=whopping, oldreject=oldreject, $
                relative=relative, chisq=chisq, wsigma=wsigma
 
    ; Need 5 parameters
    if (N_params() LT 5) then begin
       print, 'Syntax - extract_image(fimage, invvar, xcen, sigma, flux, [finv,'
-      print, ' yrow=yrow, ymodel=ymodel, fscat=fscat, proftype = proftype, '
-      print, ' ansimage = ansimage, fitans=fitans,relative=relative'
-      print, ' wfixed=wfixed, mask=mask, chisq=chisq, wsigma=wsigma'
-      print, ' nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej])'
+      print, ' yrow=, ymodel=, fscat=, proftype=, '
+      print, ' ansimage, fitans=, /relative'
+      print, ' wfixed=, mask=, chisq=, reject=, wsigma='
+      print, ' nPoly=, maxIter=, highrej=, lowrej= ])'
       return
    endif
 
@@ -296,7 +297,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
      endif
      print, format='($, ".",i4.4,i4,f7.2,a16)',cur,niter, chisqrow, $
           string([8b,8b,8b,8b,8b,8b,8b,8b,8b,8b,8b,8b,8b,8b,8b,8b])
-   endfor	  
+   endfor
 
    ii = where(mask EQ 0, finallyrejected)
 
