@@ -100,13 +100,13 @@ pro spplan2d, topoutdir=topoutdir, mjd=mjd, $
    for imjd=0, N_elements(mjdlist)-1 do begin
 
       mjddir = mjdlist[imjd]
+      thismjd = long(mjdlist[imjd])
       inputdir = concat_dir(rawdata_dir, mjddir)
       plugdir = concat_dir(speclog_dir, mjddir)
 
       splog, ''
       splog, 'Data directory ', inputdir
 
-      
       ; Find all raw FITS files in this directory
       fullname = spplan_findrawdata(inputdir, nfile)
       splog, 'Number of FITS files found: ', nfile
@@ -140,10 +140,8 @@ pro spplan2d, topoutdir=topoutdir, mjd=mjd, $
                CAMERAS[i] = strtrim(sxpar(hdr, 'CAMERAS'),2)
                MAPNAME[i] = strtrim(sxpar(hdr, 'NAME'),2)
 
-               ; Read the MJD from the header of the first file
-               ; This should usually be the same as MJDDIR, though an integer
-               ; rather than a string variable.
-               if (i EQ 0) then thismjd = sxpar(hdr, 'MJD')
+               if (sxpar(hdr, 'MJD') NE thismjd) then $
+                splog, 'Warning: Wrong MJD in file '+fileandpath(fullname[i])
 
                ; MAPNAME should be of the form '0306-51683-01'.
                ; If it only contains the PLATEID (for MJD <= 51454),
