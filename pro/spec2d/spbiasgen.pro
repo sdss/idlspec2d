@@ -1,0 +1,169 @@
+;+
+; NAME:
+;   spbiasgen
+;
+; PURPOSE:
+;   Routine to generate mean biases for a night.
+;
+; CALLING SEQUENCE:
+;   spbiasgen, [ mjd=, indir=, outdir=, docam=, sigrej=, maxiter= ]
+;
+; INPUTS:
+;
+; OPTIONAL INPUTS:
+;   mjd        - If INDIR not set, then look for files in $RAWDATA_DIR/MJD.
+;   indir      - Look for input files in this directory; default to current
+;                directory if neither MJD or INDIR are set.
+;   outdir     - Output directory; default to same as INDIR.
+;   docam      - Camera names; default to all cameras: ['b1', 'b2', 'r1', 'r2']
+;   sigrej     - Sigma rejection level; default to 1, 1, 1.1, 1.3, 1.6 or 1.9
+;                for 1,2,3,4,5 or 6 flats.  For more then 6 flats, default
+;                to 2.0.
+;   maxiter    - Number of rejection iterations; default to 2.
+;
+; OUTPUTS:
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;   This routine looks for biases in a given night that are logged as such.
+;   Discard the first bias in any sequence, and generate a mean bias from
+;   all the others for each camera.  There must be at least 3 frames.
+;   A sigma-clipped mean is computed for each pixel.
+;
+;   Four FITS files are produced, one for each camera:
+;     pixbias-MJD-CAMERA.fits
+;   where MJD is the 5-digit modified Julian date, and CAMERA
+;   is 'b1', 'b2', 'r1', and 'r2'.
+;
+; EXAMPLES:
+;   The following nights probably contain a bias sequence:
+;     51686 51781 51809 51852 51893 51950 51978 52010 52038 52069
+;   (Those are the nights with a pixel flat sequence.)  There are probably
+;   earlier nights too.
+;
+;   Generate one of these sets of biases with:
+;     spbiasgen, mjd=52069, outdir='.'
+;
+; BUGS:
+;
+; PROCEDURES CALLED:
+;   djs_avsigclip()
+;   djs_filepath()
+;   sdsshead()
+;   sdssproc
+;   splog
+;   sxpar()
+;   writefits
+;
+; INTERNAL SUPPORT ROUTINES:
+;   spbiasgen1
+;
+; REVISION HISTORY:
+;   30-Aug-2001  Written by D. Schlegel, Princeton
+;-
+;------------------------------------------------------------------------------
+pro spbiasgen1, files, outfile=outfile, outdir=outdir, $
+ sigrej=sigrej, maxiter=maxiter
+
+   nfile = n_elements(files)
+
+   if (NOT keyword_set(sigrej)) then begin
+      if (nfile LE 2) then sigrej = 1.0 $ ; Irrelevant for only 1 or 2 files
+       else if (nfile EQ 3) then sigrej = 1.1 $
+       else if (nfile EQ 4) then sigrej = 1.3 $
+       else if (nfile EQ 5) then sigrej = 1.6 $
+       else if (nfile EQ 6) then sigrej = 1.9 $
+       else sigrej = 2.0
+   endif
+   if (NOT keyword_set(maxiter)) then maxiter = 3
+
+   for ifile=0, nfile-1 do begin
+      splog, 'Reading file #', ifile+1, ' of ', nfile
+      sdssproc, files[ifile], thisimg, thisivar, hdr=hdr
+      if (ifile EQ 0) then begin
+         hdr0 = hdr
+         imgarr = make_array(dimension=[size(thisimg,/dimens),nfile], /float)
+         inmask = make_array(dimension=[size(thisimg,/dimens),nfile], /byte)
+      endif
+      imgarr[*,*,ifile] = thisimg
+      inmask[*,*,ifile] = thisivar LT 0
+   endfor
+
+   mnimg = djs_avsigclip(imgarr, sigrej=sigrej, maxiter=maxiter, $
+    inmask=inmask)
+
+   writefits, djs_filepath(outfile, root_dir=outdir), mnimg, hdr0
+
+   return
+end
+;------------------------------------------------------------------------------
+pro spbiasgen, mjd=mjd, indir=indir, outdir=outdir, docam=docam
+
+   if (keyword_set(docam)) then camnames = docam $
+    else camnames = ['b1', 'b2', 'r1', 'r2']
+   ncam = N_elements(camnames)
+
+   if (keyword_set(mjd) AND NOT keyword_set(indir)) then begin
+      indir = filepath('', root_dir=getenv('RAWDATA_DIR'), $
+       subdirectory=string(mjd,format='(i5.5)'))
+   endif
+   if (keyword_set(indir) AND NOT keyword_set(outdir)) then $
+    outdir = indir
+
+   files = findfile(djs_filepath('sdR-*.fit*',root_dir=indir), count=nfile)
+   if (nfile EQ 0) then begin
+      splog, 'No files found.'
+      return
+   endif
+
+   cameras = strarr(nfile)
+   flavor = strarr(nfile)
+   mjdarr = lonarr(nfile)
+   exposure = lonarr(nfile)
+
+   print, 'Reading FITS headers...', format='(a,$)'
+   for ifile=0, nfile-1 do begin
+      hdr = sdsshead(files[ifile])
+      cameras[ifile] = strtrim(sxpar(hdr, 'CAMERAS'),2)
+      flavor[ifile] = strtrim(sxpar(hdr, 'FLAVOR'),2)
+      mjdarr[ifile] = sxpar(hdr, 'MJD')
+      exposure[ifile] = sxpar(hdr, 'EXPOSURE')
+      print, '.', format='(a,$)'
+   endfor
+   print
+
+   for icam=0, ncam-1 do begin
+      ; Select biases for this camera
+      ibias = where(cameras EQ camnames[icam] $
+       AND strtrim(flavor,2) EQ 'bias', nbias)
+
+      ; Discard any bias that is not immediately preceded by
+      ; a bias.  That is, we don't include the first bias in
+      ; any sequence.
+      jbias = ibias ; This is a copy of those indices, putting -1 for bad ones
+      for i=0, nbias-1 do begin
+         junk = where(exposure[ibias[i]] EQ (exposure[ibias]+1), nmatch)
+         if (nmatch EQ 0) then jbias[i] = -1
+      endfor
+      j = where(jbias NE -1, nbias)
+      if (nbias GE 3) then begin
+         jbias = jbias[j]
+
+         pixbiasname = 'pixbias-' + string(mjdarr[jbias[0]],format='(i5.5)') $
+          + '-' + camnames[icam] + '.fits'
+         splog, 'Generating pixel bias ' + pixbiasname
+         splog, 'Output directory ' + outdir
+         spbiasgen1, files[jbias], outfile=pixbiasname, outdir=outdir, $
+          sigrej=sigrej, maxiter=maxiter
+
+      endif else begin
+         splog, 'Expected at least 3 biases (not including 1st), got ' $
+          + strtrim(string(bias),2)
+         splog, 'Skipping pixbias generation for camera ' + camnames[icam]
+      endelse
+   endfor
+
+   return
+end
+;------------------------------------------------------------------------------
