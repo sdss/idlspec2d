@@ -1,8 +1,57 @@
-
-;   objname    - These must be spFrame file names all from either spectro-1
-;                or spectro-2, but not both!
+;+
+; NAME:
+;   spfluxcorr_v5
+;
+; PURPOSE:
+;   Compute flux-correction vectors for each CCD+exposure
+;
+; CALLING SEQUENCE:
+;   spfluxcorr_v5, objname, [ adderr=, combinedir=, ] bestexpnum=
+;
+; INPUTS:
+;   objname    - File names (including path) for spFrame files, all from
+;                either spectro-1 or spectro-2, but not both!
+;   bestexpnum - Exposure number for best exposure, to which all other
+;                exposures are tied.
+;
+; OPTIONAL INPUTS:
 ;   adderr     - Additional error to add to the formal errors, as a
 ;                fraction of the flux; default to 0.03 (3 per cent).
+;   combinedir - Directory for output files
+;
+; OUTPUTS:
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;
+; BUGS:
+;
+; DATA FILES:
+;
+; PROCEDURES CALLED:
+;   djs_filepath()
+;   djs_reject()
+;   mpfit()
+;   mrdfits()
+;   mwrfits
+;   splog
+;   soplot
+;   splot
+;
+; INTERNAL SUPPORT ROUTINES:
+;   fcorr_goodvector()
+;   spfluxcorr_fn()
+;   fcorr_chi_fn()
+;   spfluxcorr_vectors()
+;   spfluxcorr_solve2()
+;   spfluxcorr_solve()
+;
+; REVISION HISTORY:
+;   05-Feb-2004  Written by D. Schlegel, Princeton
+;-
 ;------------------------------------------------------------------------------
 forward_function mpfit, fcorr_chi_fn
 
