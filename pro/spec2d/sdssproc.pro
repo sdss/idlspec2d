@@ -162,7 +162,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    ; Fix the headers with any hand-edits that we have determined.
 
    if (!version.release LT '5.3') then $
-    splog, 'WARNING: Unable to fix headers with this version of IDL' $
+    splog, 'Warning: Unable to fix headers with this version of IDL' $
    else $
     sphdrfix, infile, hdr
 
