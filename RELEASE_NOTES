@@ -254,6 +254,7 @@ DJS_REJECT: Added GROW option to mask neighboring pixels.
             Also some small changes to the way grouping works.
 EFCMN: Small change declaring a loop index as a long int.
 RMFILE: Bug fix for the case that one element of the filename array is blank.
+YANNY_FREE: Don't crash if PDATA is not set.
 YANNY_READ: If there are too few words on a line for a structure entry,
            then set ERRCODE=-1 and return PDATA=0.
            Also, increase the allowed line-length to 1023 characters
@@ -263,6 +264,9 @@ YANNY_READ: If there are too few words on a line for a structure entry,
            but that option fails if continuation characters are used.
            Add the STNAMES keyword to return the names of structures
            for when /ANONYMOUS must be used.
+           Special-case the replacement of {{}} with "", since it seems
+           that some bonehead used the former to denote blank strings in
+           the idReport files.
 vector_avsigclip_mask: Fix a bug in the C code vector_avsigclip_mask
            that could potentially affect the IDL proc DJS_AVSIGCLIP
            in the case when a mask is used but all points are rejected.
