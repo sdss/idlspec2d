@@ -1,4 +1,23 @@
 
+v4_7_3 (Apr 30, 2001 idlspec2d+idlutils)
+
+PLATESN: Typo introduced on April 13th that crashes SPCOMBINE -- fixed!
+SDREPORTMAKE: New proc for generating sdReport files from raw idR files.
+
+In idlutils:
+YANNY_READ: Add optional /ANONYMOUS flag to avoid conflicts in structure
+            types, in the event that named structures actually change
+            between calls (will be used by SDREPORTMAKE).
+            Split lines with semi-colons, for when reading early sdReport
+            files with SDREPORTMAKE; however, this may introduce bugs
+            elsewhere because it was not done totally generally.
+
+In the Spectro-Robot bash scripts, change the top-level directory for
+the plug-map files from $SPECLOG_DIR to $ASTROLOG_DIR.  Use the $SPECLOG_DIR
+only for re-running with cut versions of everything, including the "speclog"
+product.
+
+-------------------------------------------------------------------------------
 v4_7_2 (Apr 27, 2001)
 
 PLATELIST: Use the "spPlateList.par" file to determine which data are public.
