@@ -198,12 +198,17 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
     keyword_set( findfile(wsetfile_last) )
 
    ;----------
-   ; Reduce file depending on its flavor: flat, arc, or science/smear
+   ; Reduce file depending on its flavor: bias/dark, flat, arc, or science/smear
 
    rstruct = 0
    myflavor = flavor
-   if (myflavor EQ 'smear') then myflavor = 'science
+   if (myflavor EQ 'smear') then myflavor = 'science'
+   if (myflavor EQ 'dark') then myflavor = 'bias'
    case myflavor of
+      'bias' : begin
+         rstruct = quickbias(fullname)
+      end
+
       'flat' : begin
 ;         if (NOT flatexist AND plugexist) then $ ; Only reduce 1 flat/camera?
          if (plugexist) then $
@@ -275,7 +280,9 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       mst = string((long(strmid(ut,0,2))+17) MOD 24,format='(i2.2)' ) $
        + strmid(ut,2,3)
 
-      stname = 'APO_' + strupcase(myflavor)
+      ; The following prevents a crash in MWRFITS.
+      if (NOT keyword_set(shortplugfile)) then shortplugfile = ' '
+
       rstruct = create_struct('FILENAME', filename, $
                               'PLUGFILE', shortplugfile, $
                               'MJD', mjd, $
@@ -287,8 +294,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
                               'MST', mst, $
                               rstruct, $
                               'WARNINGS', warnings, $
-                              'ABORTS', aborts, $
-                              name=stname )
+                              'ABORTS', aborts )
 
       apo_appendlog, logfile, rstruct
    endif

@@ -33,6 +33,7 @@
 ; PROCEDURES CALLED:
 ;   djs_lockfile()
 ;   djs_unlockfile
+;   mrdfits
 ;   plotsn
 ;   sortplugmap()
 ;   yanny_read
@@ -53,7 +54,7 @@ pro apo_plotsn, logfile, plate, plugdir=plugdir, plotfile=plotfile
    ;----------
    ; Read the science frames for this plate
 
-   PPSCIENCE = mrdfits(logfile, 3)
+   PPSCIENCE = mrdfits(logfile, 4)
    if (NOT keyword_set(PPSCIENCE)) then return
    ii = where(PPSCIENCE.plate EQ plate)
    if (ii[0] EQ -1) then return

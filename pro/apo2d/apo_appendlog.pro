@@ -47,10 +47,12 @@ pro apo_appendlog, logfile, rstruct
    ; Determine which HDU in the log file this structure will be appended.
 
    case rstruct.flavor of
-      'flat'    : thishdu = 1
-      'arc'     : thishdu = 2
-      'science' : thishdu = 3
-      'smear'   : thishdu = 3
+      'bias'    : thishdu = 1
+      'dark'    : thishdu = 1
+      'flat'    : thishdu = 2
+      'arc'     : thishdu = 3
+      'science' : thishdu = 4
+      'smear'   : thishdu = 4
       else: begin
          splog, 'Unknown structure ', stname
          return
@@ -70,7 +72,7 @@ pro apo_appendlog, logfile, rstruct
    pp = mrdfits(logfile, thishdu, hdr)
    if (NOT keyword_set(hdr)) then begin
       ; Create a new FITS file
-      for ihdu=1, 3 do begin
+      for ihdu=1, 4 do begin
          if (ihdu EQ thishdu) then $
           mwrfits, rstruct, logfile, create=(ihdu EQ 1) $
          else $

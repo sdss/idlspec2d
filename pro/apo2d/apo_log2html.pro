@@ -248,17 +248,28 @@ pro apo_log2html, logfile, htmlfile
    while(djs_lockfile(htmlfile, lun=html_lun) EQ 0) do wait, 5
 
    ; Read in all the HDU's in the log file as structures
-   PPFLAT = mrdfits(logfile, 1)
-   PPARC = mrdfits(logfile, 2)
-   PPSCIENCE = mrdfits(logfile, 3)
-   if (NOT keyword_set(PPFLAT)) then begin
+   PPBIAS = mrdfits(logfile, 1)
+   PPFLAT = mrdfits(logfile, 2)
+   PPARC = mrdfits(logfile, 3)
+   PPSCIENCE = mrdfits(logfile, 4)
+   if (NOT keyword_set(PPBIAS) AND NOT keyword_set(PPFLAT)) then begin
       djs_unlockfile, htmlfile, lun=html_lun
       return
    endif
 
-   allplates = PPFLAT[ uniq(PPFLAT.plate, sort(PPFLAT.plate)) ].plate
+   allplates = [0]
+   if (keyword_set(PPBIAS)) then begin
+      allplates = [allplates, PPBIAS.plate]
+      thismjd = PPBIAS[0].mjd
+   endif
+   if (keyword_set(PPFLAT)) then begin
+      allplates = [allplates, PPFLAT.plate]
+      thismjd = PPFLAT[0].mjd
+   endif
+   allplates = allplates[1:n_elements(allplates)-1]
+   allplates = allplates[ uniq(allplates, sort(allplates)) ]
    nplates = n_elements(allplates)
-   mjdstr = strtrim(string(PPFLAT[0].mjd),2)
+   mjdstr = strtrim(thismjd,2)
 
    ;----------
    ; Consruct the header of the output text
@@ -288,13 +299,48 @@ pro apo_log2html, logfile, htmlfile
       thisplate = allplates[iplate]
 
       textout = [textout, $
-       apo_log_beginplate(thisplate, PPFLAT[0].mjd, camnames)]
+       apo_log_beginplate(thisplate, thismjd, camnames)]
 
       ;----------
       ; Append all WARNINGs and ABORTs for this plate to the following
 
       warnings = ''
       aborts = ''
+
+      ;----------
+      ; Find all biases and loop over each exposure number with any
+
+      if (keyword_set(PPBIAS)) then ii = where(PPBIAS.plate EQ thisplate) $
+       else ii = -1
+      if (ii[0] NE -1) then begin
+         warnings = [warnings, PPBIAS[ii].warnings]
+         aborts = [aborts, PPBIAS[ii].aborts]
+
+         allexp = PPBIAS[ii].expnum
+         allexp = allexp[ uniq(allexp, sort(allexp)) ]
+         nexp = n_elements(allexp)
+         onebias = create_struct(PPBIAS[0], 'PERCENTILE98', 0.0)
+         struct_assign, {junk:0}, onebias ; Zero-out all elements
+         for iexp=0, nexp-1 do begin
+            pbias = replicate(onebias, ncams)
+            for icam=0, ncams-1 do begin
+               jj = (where(PPBIAS.plate EQ thisplate $
+                AND PPBIAS.camera EQ camnames[icam] $
+                AND PPBIAS.expnum EQ allexp[iexp]))[0]
+               if (jj NE -1) then begin
+                  copy_struct_inx, PPBIAS[jj], pbias, index_to=icam
+                  pbias[icam].percentile98 = PPBIAS[jj].percentile[97]
+               endif
+            endfor
+
+            ; Output table line for this one bias exposure
+            fields = ['PERCENTILE98']
+            formats = ['(i4)', '(f7.1)', '(f7.1)']
+            textout = [ textout, $
+             apo_log_fields(pbias, fields, formats=formats) ]
+
+         endfor
+      endif
 
       ;----------
       ; Find all flats and loop over each exposure number with any
