@@ -1,4 +1,6 @@
 
+FITARCIMAGE: List the (0-indexed) fiber numbers that in which
+            any or all arc centroids are fixed.
 PLATECOMPARE: Fix 1-character typo preventing selecting the MJD
             when using the TOPDIR keyword also.
 READ_ELODIE: Optionally return the Elodie header in HDR.
@@ -14,6 +16,9 @@ ZFIND: Make EIGENFILE an optional input, so that STARFLUX,STARLOGLAM0
 opHdrFix.par: Declare data bad on MJD 52336-52337 due to spectrograph
             mechanicals problems, and other problems from 52312-52337.
 sprobot.sh: Add more time stamps to the robot log file.
+            Change the ssh command that retrieves the MJD directory list
+            from the remote machine -- it appears that something about the
+            sed command no longer works the same.
 
 In idlutils:
 RADEC_TO_FIELDS: Configurable option allfieldfile.
