@@ -69,14 +69,15 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
    if (NOT keyword_set(topindir)) then topindir = defaultdir
    if (NOT keyword_set(topoutdir)) then topoutdir = topindir
 
-   splog, 'Setting top-level of input directory to ' + topindir
-   splog, 'Setting top-level of output directory to ' + topoutdir
+   splog, 'Setting TOPINDIR=', topindir
+   splog, 'Setting TOPOUTDIR=', topoutdir
 
    ;----------
    ; Create a list of the plate directories (as strings)
 
    platelist = get_mjd_dir(topindir, mjd=platenum, mjstart=platestart, $
     mjend=plateend)
+   splog, 'Number of plate directories = ', n_elements(platelist)
 
    camnames = ['b1', 'b2', 'r1', 'r2']
    ncam = N_elements(camnames)

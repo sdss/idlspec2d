@@ -73,7 +73,7 @@ pro spplan2d, topoutdir=topoutdir, mjd=mjd, $
    ; Determine the top-level of the output directory tree
 
    if (NOT keyword_set(topoutdir)) then topoutdir = ''
-   splog, 'Setting top-level of output directory to ' + topoutdir
+   splog, 'Setting TOPOUTDIR=', topoutdir
 
    ;----------
    ; Read environment variable for RAWDATA_DIR for finding raw data files.
@@ -81,15 +81,19 @@ pro spplan2d, topoutdir=topoutdir, mjd=mjd, $
    rawdata_dir = getenv('RAWDATA_DIR')
    if (NOT keyword_set(rawdata_dir)) then $
     message, 'Must set environment variable RAWDATA_DIR'
+   splog, 'Setting RAWDATA_DIR=', rawdata_dir
 
    speclog_dir = getenv('SPECLOG_DIR')
    if (NOT keyword_set(speclog_dir)) then $
     message, 'Must set environment variable SPECLOG_DIR'
-    
+   splog, 'Setting SPECLOG_DIR=', speclog_dir
+
    ;----------
    ; Create a list of the MJD directories (as strings)
 
    mjdlist = get_mjd_dir(rawdata_dir, mjd=mjd, mjstart=mjstart, mjend=mjend)
+   nmjd = n_elements(mjdlist)
+   splog, 'Number of MJDs = ', nmjd
 
    camnames = ['b1', 'b2', 'r1', 'r2']
    ncam = N_elements(camnames)
@@ -97,7 +101,7 @@ pro spplan2d, topoutdir=topoutdir, mjd=mjd, $
    ;---------------------------------------------------------------------------
    ; Loop through each input MJD directory
 
-   for imjd=0, N_elements(mjdlist)-1 do begin
+   for imjd=0, nmjd-1 do begin
 
       mjddir = mjdlist[imjd]
       thismjd = long(mjdlist[imjd])
