@@ -360,10 +360,29 @@ pro apo_log2html, logfile, htmlfile
          textout = [ textout, $
           apo_log_fields(ptotal, 'TOTALSN2', $
            printnames='TOTAL (S/N)^2', formats='(i6)') ]
-
       endif
 
       textout = [textout, apo_log_endplate()]
+
+      ;----------
+      ; Append all WARNINGs and ABORTs for this plate
+
+      ii = where(plate EQ thisplate)
+      warnings = ''
+      aborts = ''
+      for j=0, n_elements(ii)-1 do begin
+         warnings = [warnings, strtrim((*pstruct[ii[j]]).warnings,2)]
+         aborts = [aborts, strtrim((*pstruct[ii[j]]).aborts,2)]
+      endfor
+      j = where(warnings NE '')
+      if (j[0] NE -1) then warnings = warnings[j] $
+       else warnings = ''
+      j = where(aborts NE '')
+      if (j[0] NE -1) then aborts = aborts[j] $
+       else aborts = ''
+
+      textout = [textout, '<PRE>', warnings, '</PRE>']
+      textout = [textout, '<PRE>', aborts, '</PRE>']
    endfor
 
    textout = [textout, apo_log_endfile()]
@@ -377,6 +396,7 @@ pro apo_log2html, logfile, htmlfile
    ; Free pointers
    for i=0, nstruct-1 do $
     if (keyword_set(pstruct[i])) then ptr_free, pstruct[i]
+   heap_gc ; Just in case we missed some!
 
    return
 end

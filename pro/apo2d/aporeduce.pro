@@ -148,10 +148,16 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    tsetfile = filepath('tset-'+platestr+'-'+filec+'.fits', root_dir=outdir)
    wsetfile = filepath('wset-'+platestr+'-'+filec+'.fits', root_dir=outdir)
    fflatfile = filepath('fflat-'+platestr+'-'+filec+'.fits', root_dir=outdir)
+   splgfile = filepath('splog-'+filec+'-'+filee+'.log', root_dir=outdir)
 
    plugexist = keyword_set(fullplugfile)
    flatexist = keyword_set( findfile(tsetfile) )
    arcexist = keyword_set( findfile(wsetfile) )
+
+   ;----------
+   ; Open the log file to catch WARNINGs and ABORTs.
+
+   splog, filename=splgfile, prelog=filename
 
    ;----------
    ; Reduce file depending on its flavor: flat, arc, or science
@@ -192,6 +198,11 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    endcase
 
    ;----------
+   ; Close splog file
+
+   splog, /close
+
+   ;----------
    ; Append to binary FITS log file a structure with info for this frame
    ; Lock the file to do this.
 
@@ -200,13 +211,36 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
     else shortplugfile = strmid(fullplugfile,i+1)
 
    if (keyword_set(rstruct)) then begin
-      while(djs_lockfile(logfile) EQ 0) do wait, 1
+
+      ; Find WARNINGs and ABORTs from splog file.  Recast them as string
+      ; arrays that are not empty (e.g., ''), or MWRFITS will fail.
+
+      spawn, 'grep WARNING '+splgfile, warnings
+      spawn, 'grep ABORT '+splgfile, aborts
+
+      if (warnings[0] NE '') then begin
+         warnings = strtrim([warnings],2)
+      endif else begin
+         warnings = [' ']
+      endelse
+
+      if (aborts[0] NE '') then begin
+         aborts = strtrim([aborts],2)
+      endif else begin
+         aborts = [' ']
+      endelse
+
       rstruct = create_struct('FILENAME', filename, $
                               'PLUGFILE', shortplugfile, $
                               'MJD', mjd, $
                               'PLATE', plate, $
                               'EXPNUM', filee, $
-                              rstruct )
+                              rstruct, $
+                              'WARNINGS', warnings, $
+                              'ABORTS', aborts )
+
+;if (djs_lockfile(logfile) EQ 0) then stop ; ???
+      while(djs_lockfile(logfile) EQ 0) do wait, 1
       mwrfits, rstruct, logfile
       djs_unlockfile, logfile
    endif
