@@ -6,14 +6,15 @@
 ;   Routine to design a plate with several pointings.
 ;
 ; CALLING SEQUENCE:
-;   design_multiplate, stardata, [ tilenums=, racen=, deccen=, $
+;   design_multiplate, stardata, [ tilenums=, platenums=, racen=, deccen=, $
 ;    guidetiles= ]
 ;
 ; INPUTS:
 ;   stardata   - Structure with data for each star; must contain the
 ;                fields RA, DEC, MAG[5], PRIORITY, HOLETYPE, TILENUM.
 ;                HOLETYPE can be either 'OBJECT' or 'GUIDE'; objects with
-;                other values are ignored.
+;                other values are ignored.  Other elements in the structure
+;                will be copied into the output plug-map files.
 ;                Stars with TILENUM=0 can only be used as guide stars.
 ;   racen      - RA center for each tile
 ;   deccen     - DEC center for each tile
@@ -21,6 +22,7 @@
 ; OPTIONAL INPUTS:
 ;   tilenums   - Array of tile numbers; default to the unique list of
 ;                tile numbers in STARDATA.TILENUM, but exclude the number zero.
+;   platenums  - Array of plate numbers; default to the same as TILENUMS.
 ;   guidetiles - Tile number for each of the 11 guide fibers.  There exist
 ;                default values for the cases 1,2,3 or 4 tiles.
 ;
@@ -32,21 +34,52 @@
 ;   There is no attempt to move plate centers such that a guide fiber
 ;   can be re-used in another pointing.
 ;
+;   Objects are assigned according to their priority.  If none are specified
+;   with STARDATA.PRIORITY, then random priorities between 1 and 100 are
+;   assigned.
+;
 ; EXAMPLES:
 ;
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
-;   djs_avsigclip()
+;   cpbackup
+;   djs_diff_angle()
+;   djs_laxisgen()
+;   plate_rotate
+;   yanny_free
+;   yanny_read
 ;
 ; INTERNAL SUPPORT ROUTINES:
-;   spbiasgen1
+;   design_append()
 ;
 ; REVISION HISTORY:
 ;   21-Nov-2001  Written by D. Schlegel, Princeton
 ;-
 ;------------------------------------------------------------------------------
-pro design_multiplate, stardata, tilenums=tilenums, $
+; Search for conflicts between an existing list of drill holes and one
+; more potential object.  Return the existing list with the new object
+; appended if there was no conflict.
+
+function design_append, newplug, oneplug
+
+   platescale = 217.7358 ; mm/degree
+
+   if (NOT keyword_set(newplug)) then return, oneplug
+
+   ; Discard objects within 55 arcsec of existing objects.
+   ; Do this based upon XFOCAL,YFOCAL positions.
+   ; The closest two fibers can be is PLATESCALE * 55/3600(deg) = 3.32652 mm
+
+   r2 = (newplug.xfocal - oneplug.xfocal)^2 $
+        + (newplug.yfocal - oneplug.yfocal)^2
+   mindist = min(sqrt(r2))
+   if (mindist LT platescale*55./3600.) then return, newplug
+
+   return, [newplug, oneplug]
+end
+;------------------------------------------------------------------------------
+pro design_multiplate, stardata, tilenums=tilenums, platenums=platenums, $
  racen=racen, deccen=deccen, guidetiles=guidetiles
 
    if (NOT keyword_set(tilenums)) then begin
@@ -56,7 +89,11 @@ pro design_multiplate, stardata, tilenums=tilenums, $
       tilenums = tilenums[ where(tilenums NE 0) ]
    endif
 
+   if (NOT keyword_set(platenums)) then platenums = tilenums
+
    ntile = n_elements(tilenums)
+   if (n_elements(platenums) NE ntile) then $
+    message, 'Number of elements in PLATENUMS must agree w/ number of tiles'
    if (n_elements(racen) NE ntile OR n_elements(deccen) NE ntile) then $
     message, 'Number of elements in RACEN,DECCEN must agree w/ number of tiles'
 
@@ -88,6 +125,9 @@ pro design_multiplate, stardata, tilenums=tilenums, $
    if (NOT keyword_set(racen) OR NOT keyword_set(deccen)) then $
     message, 'RACEN,DECCEN must be specified'
 
+   plugmaptfile = 'plPlugMapT-' + string(tilenums,format='(i4.4)') + '.par'
+   plugmappfile = 'plPlugMapP-' + string(platenums,format='(i4.4)') + '.par'
+
    fakemag = 25.0 ; Magnitudes for all fake objects
 
    ;----------
@@ -96,6 +136,7 @@ pro design_multiplate, stardata, tilenums=tilenums, $
    yanny_read, 'plPlugMapT-XXXX.par', pp, $
     hdr=plughdr, enums=plugenum, structs=plugstruct
    blankplug = *pp[0]
+   yanny_free, pp
    struct_assign, {junk:0}, blankplug
 
    ;----------
@@ -118,7 +159,7 @@ pro design_multiplate, stardata, tilenums=tilenums, $
    nguide = 11
    gfiber = replicate(gfiber, nguide)
 
-   platescale = 217.7358
+   platescale = 217.7358 ; mm/degree
    guideparam = [[  1,  199.0,  -131.0,  165.0,  199.0,  -131.0 ], $
                  [  2,   93.0,  -263.0,  165.0,   93.0,  -263.0 ], $
                  [  3, -121.0,  -263.0,  165.0, -121.0,  -263.0 ], $
@@ -167,14 +208,14 @@ pro design_multiplate, stardata, tilenums=tilenums, $
             ; Case where the guide fiber is on this pointing.
             ; Assign the nearest available guide fiber
 
-splog, 'Assigning real guide fiber number ', iguide+1
+print, 'Assigning real guide fiber number ', iguide+1
             indx = where(strtrim(stardata.holetype,2) EQ 'GUIDE')
             adiff = djs_diff_angle(guidera[iguide], guidedec[iguide], $
              stardata[indx].ra, stardata[indx].dec)
             junk = min(adiff, imin)
             addplug = blankplug
             struct_assign, stardata[indx[imin]], addplug
-            addplug.throughput = 2L
+            addplug.throughput = 2L^31 ; Maximum value
 
          endif else begin
 
@@ -219,7 +260,10 @@ splog, 'Assigning real guide fiber number ', iguide+1
 
       addplug.holetype = 'OBJECT'
       addplug.objtype = 'SERENDIPITY_MANUAL'
-      addplug.throughput = 1L
+      if ((where(tag_names(stardata) EQ 'PRIORITY'))[0] NE -1) then $
+       addplug.throughput = (stardata[indx].priority > 1L) < (2L^31-1) $
+      else $
+       addplug.throughput = long(randomu(24680, nadd) * 100) + 1
       addplug.sectarget = 2L^24
 
       allplug = [allplug, addplug]
@@ -273,23 +317,21 @@ splog, 'Assigning real guide fiber number ', iguide+1
       allplug = [allplug, addplug]
 
       ;----------
-      ; Remove objects more than 1.49 deg from the center
+      ; Remove objects more than 1.49 deg from the center.
+      ; Also remove objects within 68 arcsec of the center hole.
+      ; (This is a QUALITY hole added somewhere in the PLATE product.)
 
       adiff = djs_diff_angle(thisracen, thisdeccen, allplug.ra, allplug.dec)
-      allplug = allplug[ where(adiff LT 1.49) ]
+      allplug = allplug[ where(adiff LT 1.49 AND adiff GT 68./3600.) ]
 
       ;----------
-      ; Resolve conflicts
-
+      ; Resolve conflicts.
       ; First re-sort everything from highest priority to lowest, so
       ; that we can always keep the 1st object in the list in the event
       ; of a conflict.
 
       isort = reverse(sort(allplug.throughput))
       allplug = allplug[isort]
-      allplug.throughput = 0 ; Zero this out now that we've used it.
-
-      ; Resolve conflicts with center hole ??? Separate by 68 arc sec ???
 
       ; Loop through all objects, discarding close pairs (within 55 arcsec)
       ; Always keep the 1st of any close group of objects.
@@ -301,12 +343,9 @@ splog, 'Assigning real guide fiber number ', iguide+1
           allplug.ra, allplug.dec)
          igood = where(adiff GT 55.0/3600.0 $
           OR lindgen(n_elements(allplug)) EQ iobj, ngood)
-;         if (ngood LT n_elements(allplug)) then $
-;          print, 'Discarding ', n_elements(allplug)-ngood, ' objects'
          allplug = allplug[igood]
          iobj = iobj + 1L
       endwhile
-
 
       ;----------
       ; Write the plPlugMapT file for this tile...
@@ -322,14 +361,113 @@ splog, 'Assigning real guide fiber number ', iguide+1
           'decCen'+strtrim(string(jtile),2)+ '  '+string(deccen[jtile]) ]
       endfor
 
-      outfile = 'plPlugMapT-' + string(thistilenum,format='(i4.4)') + '.par'
-      yanny_write, outfile, ptr_new(allplug), hdr=outhdr, $
+      yanny_write, plugmaptfile[itile], ptr_new(allplug), hdr=outhdr, $
        enums=plugenum, structs=plugstruct
-stop
 
    endfor ; End loop over pointing number
 
+   ;---------------------------------------------------------------------------
+   ; RUN "makePlates" IN THE SDSS "PLATE" PRODUCT.
+   ; The required inputs are the plPlugMapT-$TILE.par files,
+   ; plus plPlan.par, plObs.par, plParam.par.
+   ;---------------------------------------------------------------------------
+
+; ???
+print, 'Now run "makePlates" in the "plate" product'
 stop
+
+   ;---------------------------------------------------------------------------
+   ; RE-COMBINE THE PLUGMAP FILES
+   ;---------------------------------------------------------------------------
+
+   ;----------
+   ; Read the plugMapP files and track which plate number each object is from
+   ; by storing the plate number in the FIBERID field.
+
+   hdrarr = replicate(ptr_new(), ntile)
+   for itile=0, ntile-1 do begin
+;      yanny_read, plugmappfile[itile], pp, $
+      yanny_read, plugmaptfile[itile], pp, $ ; ???
+       hdr=plughdr, enums=plugenum, structs=plugstruct
+      hdrarr[itile] = ptr_new(plughdr)
+      thisplate = sxpar(plughdr, 'plateId')
+      (*pp[0]).fiberid = thisplate ; Store the plate number in FIBERID
+      if (itile EQ 0) then allplug = *pp[0] $
+       else allplug = [allplug, *pp[0]]
+      if (itile EQ 0) then platenums = thisplate $
+       else platenums = [platenums, thisplate]
+      yanny_free, pp
+   endfor
+
+   ;----------
+   ; Select the 11 non-fake guide stars
+
+   iguide = where(allplug.holetype EQ 'GUIDE' AND allplug.throughput GT 0)
+   if (n_elements(iguide) NE 11) then $
+    message, 'The number of guide fibers is wrong.'
+   newplug = allplug[iguide]
+
+   ;----------
+   ; Select all real objects and then fake skies if we run out of real objects.
+   ; Sort by priority (in THROUGHPUT field), but then add tiny random numbers
+   ; in order to randomize between objects with the same priority.
+
+   iobj = where(allplug.holetype EQ 'OBJECT', nobj)
+   isort = reverse(sort(allplug[iobj].throughput + randomu(2468,nobj)))
+   iobj = iobj[isort]
+   for ii=0, nobj-1 do begin
+      design_append, newplug, allplug[iobj[ii]]
+   endfor
+
+   ;----------
+   ; Check that there are 11 guide fibers plus 640 objects
+
+   if (n_elements(newplug) LT 651) then $
+    message, 'Fewer than 651 non-conflicting guide + object positions'
+   newplug = newplug[0:650]
+
+   ;---------------------------------------------------------------------------
+   ; WRITE THE MODIFIED PLUGMAPP FILES.
+   ; This overwrites files that already exist.
+   ;---------------------------------------------------------------------------
+
+   for itile=0, n_elements(platenums)-1 do begin
+
+      thisplate = platenums[itile]
+      modplug = newplug
+
+      ;----------
+      ; Keep only the guide fibers on this tile. ???
+
+
+      ;----------
+      ; Objects that are actually on other tiles are renamed to SKY
+      ; on this plate.
+
+      indx = where(modplug.fiberid NE thisplate)
+      if (indx[0] NE -1) then begin
+         modplug[indx].objtype = 'SKY'
+      endif
+
+      cpbackup, plugmappfile[itile]
+
+      yanny_write, plugmappfile[itile], ptr_new(modplug), $
+       hdr=*(hdrarr[itile]), enums=plugenum, structs=plugstruct
+   endfor
+
+   ;----------
+; Also need to keep QUALITY and ALIGNMENT holes !!!???
+
+   ;---------------------------------------------------------------------------
+   ; CREATE THE DRILL FILES FROM THE 1ST PLATE.
+   ; (Drill files from any of the plates would be identical.)
+   ; Run the code fiberPlates, makeFanuc, makeDrillPos, use_cs3.
+   ;---------------------------------------------------------------------------
+
+; ???
+print, 'Now run "fiberPlates" in the "plate" product'
+stop
+
    return
 end
 

@@ -47,6 +47,8 @@ pro design_praesepe
    magmin = [ 6.0, 10.0, 13.0]
    magmax = [10.2, 13.2, 16.5]
    guidemag = [10.5, 12.5]
+   tilenums = [9001,9002,9003]
+   platenums = [901,902,903]
 
    ntile = n_elements(racen)
 
@@ -100,7 +102,7 @@ pro design_praesepe
       if (nadd EQ 0) then $
        message, 'No objects available for this tile'
       addstar = stardata[iadd]
-      addstar.tilenum = itile + 1
+      addstar.tilenum = tilenums[itile]
       addstar.holetype = 'OBJECT'
       if (itile EQ 0) then newdata = addstar $
        else newdata = [newdata, addstar]
@@ -126,8 +128,8 @@ stop
 ;splot,stardata.ra,stardata.dec,ps=4,color='green'
 ;soplot,tycdat.radeg,tycdat.dedeg,ps=1,symsize=0.5
 
-   design_multiplate, stardata, racen=racen, deccen=deccen
+   design_multiplate, stardata, racen=racen, deccen=deccen, $
+    tilenums=tilenumes, platenums=platenums
 
-stop
 end
 ;------------------------------------------------------------------------------

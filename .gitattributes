@@ -139,7 +139,6 @@ pro/plate/g_codes_alignment.txt -text
 pro/plate/g_codes_completion.txt -text
 pro/plate/g_codes_lighttrap.txt -text
 pro/plate/g_codes_object.txt -text
-pro/plate/idlsave.dat -text svneol=unset#unset
 pro/plate/n1817.j11 -text
 pro/plate/n1817.match -text
 pro/plate/n752.j10 -text
