@@ -14,6 +14,7 @@ hostconfig wire4.princeton.edu "" ssh1
 hostconfig wire5.princeton.edu "" ssh1
 hostconfig wire6.princeton.edu "" ssh1
 hostconfig wire7.princeton.edu "" ssh1
+#hostconfig wire8.princeton.edu "" ssh1
 #hostconfig localhost "" ""
 #hostconfig dusty.princeton.edu "" ssh
 #hostconfig kaze.princeton.edu "" ssh
@@ -25,6 +26,7 @@ hostconfig wire4.princeton.edu "" ssh1
 hostconfig wire5.princeton.edu "" ssh1
 hostconfig wire6.princeton.edu "" ssh1
 hostconfig wire7.princeton.edu "" ssh1
+#hostconfig wire8.princeton.edu "" ssh1
 #hostconfig localhost "" ""
 #hostconfig dusty.princeton.edu "" ssh
 #hostconfig kaze.princeton.edu "" ssh
