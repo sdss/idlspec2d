@@ -6,14 +6,15 @@
 ;   Merge all Spectro-1D outputs with tsObj files.
 ;
 ; CALLING SEQUENCE:
-;   platemerge, [fullplatefile, outfile=]
+;   platemerge, [zfile, outfile=, ascfile=]
 ;
 ; INPUTS:
 ;
 ; OPTIONAL INPUTS:
-;   fullzfile   - Redshift file(s) from spectro-1D; default to all files
+;   zfile       - Redshift file(s) from spectro-1D; default to all files
 ;                   matching '*/spZbest*.fits'
-;   outfile     - Output file name; default to 'spAll.fits'
+;   outfile     - Output FITS file name; default to 'spAll.fits'
+;   ascfile     - Output ASCII file name; default to 'spAll.dat'
 ;
 ; OUTPUTS:
 ;
@@ -32,21 +33,23 @@
 ;   headfits()
 ;   mrdfits()
 ;   mwrfits
+;   struct_print
 ;   sxpar()
 ;
 ; REVISION HISTORY:
 ;   30-Oct-2000  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
-pro platemerge, fullzfile, outfile=outfile
+pro platemerge, zfile, outfile=outfile, ascfile=ascfile
 
-   if (NOT keyword_set(fullzfile)) then $
-    fullzfile = findfile('*/spZbest*.fits', count=nfile) $
-   else $
-    nfile = n_elements(fullzfile)
-   fullzfile = fullzfile[ sort(fullzfile) ]
+   if (NOT keyword_set(zfile)) then zfile = '*/spZbest*.fits'
+
+   fullzfile = findfile(zfile, count=nfile)
+   print, 'Found ', nfile, ' files'
    if (nfile EQ 0) then return
+   fullzfile = fullzfile[ sort(fullzfile) ]
 
    if (NOT keyword_set(outfile)) then outfile = 'spAll.fits'
+   if (NOT keyword_set(ascfile)) then ascfile = 'spAll.dat'
 
    nout = nfile * 640
    print, 'Total number of objects = ', nout
@@ -76,6 +79,39 @@ pro platemerge, fullzfile, outfile=outfile
    ; Write the output file
 
    mwrfits, outdat, outfile
+
+   ;----------
+   ; Create the structure for ASCII output
+
+   adat = create_struct( $
+    'plate'      ,  0L, $
+    'mjd'        ,  0L, $
+    'fiberid'    ,  0L, $
+    'class'      ,  '', $
+    'subclass'   ,  '', $
+    'z'          , 0.0, $
+    'rchi2'      , 0.0, $
+    'dof'        ,  0L, $
+    'ra'         , 0.0d, $
+    'dec'        , 0.0d, $
+    'modelcounts', fltarr(5), $
+    'objc_type'  ,  '', $
+    'primtarget' ,  0L, $
+    'sectarget'  ,  0L )
+   adat = replicate(adat, nout)
+   struct_assign, outdat, adat
+
+   ii = where(strtrim(adat.class,2) EQ '')
+   if (ii[0] NE -1) then adat[ii].class = '""'
+
+   ii = where(strtrim(adat.subclass,2) EQ '')
+   if (ii[0] NE -1) then adat[ii].subclass = '""'
+
+   objtypes = ['UNKNOWN', 'CR', 'DEFECT', 'GALAXY', 'GHOST', 'KNOWNOBJ', $
+    'STAR', 'TRAIL', 'SKY']
+   adat.objc_type = objtypes[outdat.objc_type]
+
+   struct_print, adat, filename=ascfile
 
    return
 end
