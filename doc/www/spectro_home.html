@@ -151,8 +151,8 @@ header keywords VERS2D, VERSCOMB, VERS1D as described in the
 
 <P>
 All these reductions were done using versions between v4_1_2 and v4_3_1.
-The differences between these versions are not significant.  Mostly, changes
-were made to improve robustness and allow us to reduce more marginal data.
+The differences between these versions are not significant.  We have not
+yet reduced the data with the most recent code (v4_5_0).
 
 <H4><A NAME="get_where">Where Is the Data?</A></H4>
 
@@ -207,7 +207,7 @@ An efficient way to keep your copy of these reductions current is to use
 the Unix "rsync" command:
 <DL><DD><PRE>
 rsync -arv --rsh="ssh" \
- --rsync-path=/afs/fnal.gov/files/home/room2/schlegel/bin/rsync
+ --rsync-path=/afs/fnal.gov/files/home/room2/schlegel/bin/rsync \
  fsgi03.fnal.gov:/usr/sdss/data04/schlegel/2d_v4 .
 </PRE></DD></DL>
 You can use this to copy the data to your own computer in the first place.
