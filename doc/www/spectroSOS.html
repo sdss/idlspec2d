@@ -81,6 +81,23 @@ A second argument should be the machine name with an optional user-name, i.e.:
   % sos_status observer@plate-mapper.apo.nmsu.edu
 </PRE></DD></DL>
 
+<P>
+Note that the following directories should exist on plate-mapper and be
+write-able by the observer account:
+<DL><DD><PRE>
+  /astrolog
+  /data/spectro
+  /data/spectro/spectrologs
+  /data/spectro/spectrologs/html
+</PRE></DD></DL>
+
+<P>
+Note that the following links should exist on plate-mapper:
+<DL><DD><PRE>
+  ln -s /data/spectro/spectrologs/html /home/skent/inventory/www/apo2d
+  ln -s /data/spectro/spectrologs/html /usrdevel/skent/inventory/www/apo2d
+</PRE></DD></DL>
+
 <H2><A NAME="version">Backing out to an older version</A></H2>
 
 <P>
