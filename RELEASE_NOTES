@@ -1,4 +1,8 @@
 
+Makefile in /bin did not copy all executables when installing; now it does.
+
+-------------------------------------------------------------------------------
+v4_7_1 (Apr 9, 2001)
 
 FILTER_THRU: Add new Doi filter curves (CCD+atmosphere+telescope), and
              add /TOAIR flag to convert from vacuum to air wavelengths.
@@ -42,7 +46,6 @@ Changed SOS signal-to-noise warning to a yellow warning below S/N=15/pix,
 More entries in "opHdrFix.par" to fix all the incorrect plugmap files
             known to date.  However, we still need to get the correct
             files copied into the /astrolog directories.
-
 
 -------------------------------------------------------------------------------
 v4_7_0 (Mar 16, 2001)
