@@ -371,6 +371,11 @@ then a brief plain-text message.
 <P>
 The following messages may appear:
 <UL>
+<LI><B>Exposure number in header disagrees w/filename</B> <BR>
+    This means that IOP/SOP is in a very confused state, and it
+    is putting a different exposure number in the header (EXPOSURE
+    keyword) from what is being used to generate file names.
+    You should probably exit SOP, re-start SOP, then issue a "goStare -init".
 <LI><B>Fixing shifted rows (from electronics)</B> <BR>
     This is very, very bad.  This is indicative of an electronics problem
     that we first saw on MJD=51578 to 51580 (3 to 5 Feb 2000).
