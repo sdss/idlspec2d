@@ -63,8 +63,8 @@ First, set up IDL and the idlspec2d product, and start up IDL:
 Move into the directory for MJD 51886 and display the first image:
 <DL><DD><PRE>
   IDL> cd,'/data/spectro/51886'
-  IDL> img=rdss_fits('sdR-b1-00007538.fit')
-  IDL> atv,img
+  IDL> img=<A HREF="http://spectro.princeton.edu/idlutils_doc.html#RDSS_FITS">rdss_fits</A>('sdR-b1-00007538.fit')
+  IDL> <A HREF="http://spectro.princeton.edu/idlutils_doc.html#ATV">atv</A>,img
 </PRE></DD></DL>
 A display widget, ATV, will then pop up.  It functions much like SAOimage.
 There's a "Help" pull-down if you want to read what it does.  But typically,
@@ -76,16 +76,16 @@ plots can be made by hitting the "r" and "c" keys.
 There is another tool built on top of ATV that will overplot the bad
 column mask in red:
 <DL><DD><PRE>
-  IDL> atvrawspec,'sdR-b1-00007538.fit'
-  IDL> atvrawspec,'sdR-b1-00007538.fit',min=0,max=20  ; <-- Force display range
+  IDL> <A HREF="http://spectro.princeton.edu/idlspec2d_doc.html#ATVRAWSPEC">atvrawspec</A>,'sdR-b1-00007538.fit'
+  IDL> <A HREF="http://spectro.princeton.edu/idlspec2d_doc.html#ATVRAWSPEC">atvrawspec</A>,'sdR-b1-00007538.fit',min=0, max=20  ; <-- Force display range
 </PRE></DD></DL>
 
 <P>
 To read in a raw image and median-filter before displaying,
 <DL><DD><PRE>
-  IDL> img=rdss_fits('sdR-b1-00007538.fit') ; <-- Read a raw image
-  IDL> sdssproc,'sdR-b1-00007538.fit',img   ; <-- Or read + overscan-correct
-  IDL> atv,median(img,9)
+  IDL> img=<A HREF="http://spectro.princeton.edu/idlutils_doc.html#RDSS_FITS">rdss_fits</A>('sdR-b1-00007538.fit') ; <-- Read a raw image
+  IDL> <A HREF="http://spectro.princeton.edu/idlspec2d_doc.html#SDSSPROC">sdssproc</A>,'sdR-b1-00007538.fit',img   ; <-- Or read + overscan-correct
+  IDL> <A HREF="http://spectro.princeton.edu/idlutils_doc.html#ATV">atv</A>median(img,9)
 </PRE></DD></DL>
 
 <P>
@@ -166,11 +166,11 @@ This is the APO_PLOTBIAS procedure.  It takes as its only argument
 a spectroscopic exposure number, then plots a histogram of bias values
 for all 4 cameras of that exposure:
 <DL><DD><PRE>
-  IDL> apo_plotbias, 7538
+IDL> <A HREF="http://spectro.princeton.edu/idlspec2d_doc.html#APO_PLOTBIAS">apo_plotbias</A>, 7538
 </PRE></DD></DL>
 This plot can optionally be written to a PostScript file with:
 <DL><DD><PRE>
-  IDL> apo_plotbias, 7538, plotfile='bias.ps'
+IDL> <A HREF="http://spectro.princeton.edu/idlspec2d_doc.html#APO_PLOTBIAS">apo_plotbias</A>, 7538, plotfile='bias.ps'
 </PRE></DD></DL>
 Bad regions on the CCD and saturated pixels are excluded from these
 histograms.
