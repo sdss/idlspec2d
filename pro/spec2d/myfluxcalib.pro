@@ -45,6 +45,7 @@
 ;   djs_plot
 ;   fibermask_bits()
 ;   fileandpath()
+;   filter_thru()
 ;   mrdfits()
 ;   mwrfits
 ;   pca_solve()
@@ -181,7 +182,7 @@ function fluxfit, loglam, objflux, objivar, color=color, refmag=refmag, $
    yplot = bspline_valu(loglam,sset)
    djs_plot, [min(wave)-100,max(wave)+100], [0,1.1*max(yplot)], /nodata, $
     /xstyle, /ystyle, $
-    xtitle='\lambda [A]', ytitle='Counts / (10^{-17}erg/cm/s/Ang)', $
+    xtitle='\lambda [A]', ytitle='Counts / (10^{-17}erg/cm^2/s/Ang)', $
     title=plottitle
    ymid = total(0.5 * !y.crange)
    for i=0, n_elements(absmin)-1 do begin
