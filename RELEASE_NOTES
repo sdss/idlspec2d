@@ -1,12 +1,22 @@
 
+v4_9_6 (Mar ??, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
+Built against specflat v1_3??.
+
+Son-of-Spectro checks for spectrograph focus, changing its data format.
+
 APO_LOG2HTML: Add FLAT/XSIGMA and ARC/DISPSIGMA to output tables.
+            Remove the line of Java-script from the HTML file that
+            does the auto-refresh (we'll only put that line in the
+            file "logfile-current.html", as created by APOREDUCE).
 APOALL: Major updating of this calling script to conform with current
-            environment variables ASTROLOG_DIR, RAWDATA_DIR.  Also,
-            reduce bias,dark,smear exposures.
+            environment variables ASTROLOG_DIR,RAWDATA_DIR,SPECTROLOG_DIR.
+            Also, reduce bias,dark,smear exposures.
 APOREDUCE: No longer do the test in the beginning of this procedure that
             the FITS file should exist, since FITS_WAIT() will do that test
             and repeatably look for the file for several minutes.
             Log the versions of IDL,idlspec2d,idlutils into the log file.
+            When copying the HTML file to "logfile-current.html", add
+            the line of Java-script that does the auto-refresh.
 BATCH1D,BATCH2D: Set the DISPLAY environment variable on remote machines
             to always be ":0.0", so that only one IDL license on each
             remote machine.  Also, pipe the commands through the bash shell
