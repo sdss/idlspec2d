@@ -6,13 +6,15 @@
 ;   1-D reduction of spectra from 1 plate
 ;
 ; CALLING SEQUENCE:
-;   spreduce1d, [platefile]
+;   spreduce1d, [ platefile, fiberid= ]
 ;
 ; INPUTS:
 ;
 ; OPTIONAL INPUTS:
 ;   platefile  - Plate file(s) from spectro-2D; default to all files
 ;                matching 'spPlate*.fits'
+;   fiberid    - If specified, then only reduce these fiber numbers;
+;                this must be a vector with unique values between 1 and 640.
 ;
 ; OUTPUTS:
 ;
@@ -44,7 +46,7 @@
 ; REVISION HISTORY:
 ;   28-Jun-2000  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
-pro spreduce1d, platefile
+pro spreduce1d, platefile, fiberid=fiberid
 
    if (NOT keyword_set(platefile)) then platefile = findfile('spPlate*.fits')
 
@@ -90,6 +92,18 @@ pro spreduce1d, platefile
 
    objivar = skymask(objivar, andmask)
 andmask = 0 ; Free memory
+
+   ;----------
+   ; Trim to specified fibers if FIBERID is set
+
+   if (keyword_set(fiberid)) then begin
+      objflux = objflux[*,fiberid-1]
+      objivar = objivar[*,fiberid-1]
+      plugmap = plugmap[fiberid-1]
+      nobj = n_elements(fiberid)
+   endif else begin
+      fiberid = lindgen(nobj) + 1
+   endelse
 
    ;----------
    ; Look for where the S/N is unreasonably large
@@ -276,7 +290,7 @@ andmask = 0 ; Free memory
    res_all = struct_addtags(res_prepend, res_all)
 
    for iobj=0, nobj-1 do begin
-      res_all[*,iobj].fiberid = iobj+1
+      res_all[*,iobj].fiberid = fiberid
       res_all[*,iobj].objid = plugmap[iobj].objid
       res_all[*,iobj].objtype = plugmap[iobj].objtype
       res_all[*,iobj].plug_ra = plugmap[iobj].ra
