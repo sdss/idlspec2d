@@ -100,7 +100,7 @@ function filter_thru, flux, waveimg=waveimg, wset=wset, mask=mask, $
    logwave = alog10(newwaveimg)
    diffx   = (findgen(nx-1) + 0.5) # replicate(1,ntrace)
    diffy   = logwave[1:*,*] - logwave[0:nx-2,*]
-   xy2traceset, diffx, diffy, diffset, ncoeff=4, xmin=0, xmax=nx-1.
+   xy2traceset, diffx, diffy, diffset, ncoeff=4, xmin=0, xmax=nx-1., /silent
    traceset2xy, diffset, pixnorm, logdiff
 
    logdiff = abs(logdiff)
