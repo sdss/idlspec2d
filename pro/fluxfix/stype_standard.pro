@@ -11,14 +11,14 @@
 ;   blue camera only can be used.
 ;
 ; CALLING SEQUENCE:
-;   stype_standard, loglam, flux, invvar, plugmap, outname 
+;   stype_standard, loglam, flux, invvar, plugmap, outfile 
 ;
 ; INPUTS:
 ;   loglam     - Wavelength array of input spectra in log10(Angstroms) [npix]
 ;   flux       - Array of standard star spectra [npix, nstar]
 ;   invvar     - Inverse variance of standard star spectra [npix,nstar]
 ;   plugmap    - Plugmap corresponding to the input standard stars [nstar]
-;   outname    - Name of output file. It must be of the from
+;   outfile    - Name of output file. It must be of the from
 ;                ?????-pppp-mmmm-s.fits where, pppp is the plateid, 
 ;                mmmmm is the mjd and s is the spectrograph ID.
 ;                e.g. spStd-0519-52283-1.fits 
@@ -88,7 +88,6 @@ end
 pro kurucz_match, wave, nflux, nivar, nkflux, kindx, fiber, $
     plottitle = plottitle
 
-   
    ;---------------------
    ; Compute the chisq  
 
@@ -97,14 +96,13 @@ pro kurucz_match, wave, nflux, nivar, nkflux, kindx, fiber, $
    nivar[where(wave gt 5570 and wave lt 5590)] = 0 ; Avoid 5577 sky line
 
    for imod = 0, nummod - 1 do begin
-  ; Use only blue side
-     goodpix = where(wave gt 3850 and wave lt 5800 and nivar ne 0) 
+     goodpix = where(wave gt 3850 and wave lt 6000 and nivar ne 0 $
+                     and finite(nflux) and finite(nivar)) 
  
-     chi2[imod] = median((nflux[goodpix] -  nkflux[goodpix,imod])^2 $
-                         * nivar[goodpix]) 
+     chi2[imod] = total((nflux[goodpix] -  nkflux[goodpix,imod])^2 * $
+                        nivar[goodpix]) / (n_elements(goodpix) - nummod)
    endfor 
-  
-;stop 
+ 
    ;-----------------
    ; Store model info in structure that was passed in 
 
@@ -141,8 +139,8 @@ pro kurucz_match, wave, nflux, nivar, nkflux, kindx, fiber, $
 end
 
 ;------------------------------------------------------------------------------
-pro stype_standard, loglam, flux, invvar, plugmap, outname, $
-    nonsdss = nonsdss, smoothpix = smoothpix 
+function stype_standard, loglam, nflux, ninvvar, plugmap, outfile = outfile, $
+         nonsdss = nonsdss, smoothpix = smoothpix 
 
    dloglam = 1.0d-4 
    cspeed = 2.99792458e5
@@ -150,7 +148,7 @@ pro stype_standard, loglam, flux, invvar, plugmap, outname, $
 
    ;---------
    ; Extract Plate and MJD and spectrograph ID from output name
-   words = strsplit(outname, '-', /extract)
+   words = strsplit(outfile, '-', /extract)
    plate = words[1]
    mjd = words[2]
    side = words[3]
@@ -159,9 +157,7 @@ pro stype_standard, loglam, flux, invvar, plugmap, outname, $
 
    ;------------- 
    ; Normalize the spectrum
-
-   nflux = rectify(flux, invvar, nivar = ninvvar, /mask, wave = wave)
-   nflux = djs_maskinterp(nflux, ninvvar EQ 0, iaxis=0, /const)
+   ;nflux = rectify(flux, invvar, nivar = ninvvar, /mask, wave = wave)
 
    ;-------------
    ; Set up structure to hold fstar data
@@ -220,8 +216,7 @@ pro stype_standard, loglam, flux, invvar, plugmap, outname, $
    ; Use fiducial model with T_eff = 6000, Log(gravity) = 4, and 
    ; log(Fe/H) = -1 to determine the velocity offset of the stars in pixels
 
-   fidmodel = where(kindx.teff eq 6000 and kindx.g eq 4 and $
-                    kindx.feh eq -1.0)
+   fidmodel = where(kindx.teff eq 6000 and kindx.g eq 4 and kindx.feh eq -1.5)
    nkfluxi = nkflux[*, fidmodel] 
   
    bad = where(kwave lt min(wave) + 200 or kwave gt max(wave) - 200) 
@@ -247,15 +242,15 @@ pro stype_standard, loglam, flux, invvar, plugmap, outname, $
        rkflux[*,kobj] = interpol(nkflux[*,kobj], rkwave, wave)
 
     kurucz_match, wave, nflux[*,iobj], ninvvar[*,iobj], $
-                  rkflux, kindx, fiber, plottitle = outname
+                  rkflux, kindx, fiber, plottitle = outfile
      
     stdstar[iobj] = fiber
   endfor 
 
   ;--------------
   ; Save the output as a FITS binary table 
-  mwrfits, stdstar, outname, /create
+  if keyword_set(outfile) then mwrfits, stdstar, outfile, /create
 
-  return
+  return, stdstar
 end
 ;------------------------------------------------------------------------------
