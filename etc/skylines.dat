@@ -1,24 +1,24 @@
 # Lick sky lines
 # Compiled from Handbook of Chemistry & Physics 67th edition (1987)
 # and Osterbrock & Martel (1992), PASP, 104. 76.
-  4046.563   Hg I
-  4358.3277  Hg I
-# 4668.560   Na I (broadened)
+  4046.56    Hg I
+  4358.33    Hg I
+# 4668.558   Na I (broadened)
 # 4982.813   Na I (broadened)
-  5460.7348  Hg I
-  5577.345   O I
-# 5769.5982  Hg I (too faint - on dichroic)
-# 5790.663   Hg I (too faint)
-#  5889.950   Na D (broadened) 5889.950 + 5895.924
-#  5895.924   Na D (broadened) 5889.950 + 5895.924  Need to gaussian deblend
+  5460.74    Hg I
+  5577.339   O I
+# 5769.60    Hg I (too faint - on dichroic)
+# 5790.66    Hg I (too faint)
+# 5889.95    Na D (broadened) 5889.950 + 5895.924
+# 5895.924   Na D (broadened) 5889.950 + 5895.924  Need to gaussian deblend
 # 5893       Na D (broadened) 5889.950 + 5895.924
-  6300.32    O I blended with OH
+  6300.304   O I blended with OH
 # 6306.93    OH (9-3) P_1 3 blended with O I
-  6363.81    O I (has neighbor - might be OK)
+  6363.776    O I (has neighbor - might be OK)
 # 6402.246   Ne I (too faint)
 # 6413.82    OH (9-3) P_2 7
 # 6498.72    OH (6-1) Q_1/Q_2 1
-# 6506.528   Ne I (too faint)
+# 6506.5281  Ne I (too faint)
 # 6533.04    OH (6-1) P_1 2 (kind of faint also)
 # 6544.02    OH (6-1) P_2 3 (faint, maybe blend?)
   6553.61    OH (6-1) P_1 3
@@ -39,7 +39,7 @@
 # 6939.52    OH (7-2) P_2 4  (too faint)
   6949.03    OH (7-2) P_1 4
 # 6978.40    OH (7-2) P_1 5  (too faint)
-# 7032.413   Ne I  (way too faint)
+# 7032.4131  Ne I  (way too faint)
 # 7041.35    OH (7-2) P_2 7
 # 7048.11    OH (7-2) P_1 7
 # 7240       OH blend 7238.79 7240.86 7241.43 7241.96
