@@ -9,7 +9,7 @@
   5577.345   O I
 # 5769.5982  Hg I (too faint - on dichroic)
 # 5790.663   Hg I (too faint)
-  5889.950   Na D (broadened) 5889.950 + 5895.924
+#  5889.950   Na D (broadened) 5889.950 + 5895.924
 #  5895.924   Na D (broadened) 5889.950 + 5895.924  Need to gaussian deblend
 # 5893       Na D (broadened) 5889.950 + 5895.924
   6300.32    O I blended with OH
