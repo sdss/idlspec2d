@@ -231,8 +231,7 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    endif
 
    if (q_plugmap) then begin
-      plugmap = rspec_mrdfits(fcb, 5, rownums=rownums, silent=silent, $
-       structyp='PLUGMAPOBJ')
+      plugmap = rspec_mrdfits(fcb, 5, rownums=rownums, silent=silent)
    endif
 
    if (q_needwave) then begin
