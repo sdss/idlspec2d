@@ -457,14 +457,17 @@ The following messages may appear:
     This condition is triggered when the 80-th percentile of the image
     is less than 1000 electrons.
     When this happens, the flat is not reduced.
-<LI><B>Emission lines (Argon?) in flats</B> <BR>
+<LI><B>Possible Argon lines in superflat</B> <BR>
     Emission lines are present in the quartz-halogen flat-field images,
-    which are supposed to be featureless.  We have identified these rogue
-    lines as argon.  JEG's best guess is that these
+    which are supposed to be featureless.  When a number follows this message,
+    that is a measure of the line strength -- the trigger is set to 0.01,
+    but we usually see it as 0.1 to 0.5 when present.
+    We have identified these rogue lines as argon.
+    JEG's best guess is that these
     contaminating lines come from trace amounts of argon in the HgCd lamps,
     which must still have current running through them when they are supposed
-    to be off.  If possible, it is much better to get flat-field exposures
-    without this problem.
+    to be off.  We can still reduce the data with these lines, but you should
+    re-open PR 1859 if this problem is seen again.
 <LI><B>Arc lamps not turned on</B> <BR>
     The "NE" and "HGCD" keywords in the header indicates that either the
     neon or HgCd lamps are not fully turned on.
