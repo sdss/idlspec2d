@@ -52,84 +52,15 @@
 ;   idlspec2d_version()
 ;   splog
 ;   sdsshead()
+;   spplan_findrawdata
+;   spplan_create_spexp
 ;   sxpar()
 ;   yanny_write
-;
-; INTERNAL SUPPORT ROUTINES:
-;   spplan_findrawdata
-;   spplan_create_exp
-;   spplan_create_plug
-;   spplan_create_pixflats
 ;
 ; REVISION HISTORY:
 ;   02-Nov-1999  Written by David Schlegel, Princeton.
 ;-
 ;------------------------------------------------------------------------------
-function spplan_findrawdata, inputdir, nfile
-
-   fullnames = findfile(filepath('sdR*.fit', root_dir=inputdir), count=nfile)
-   gzipnames = findfile(filepath('sdR*.fit.gz', root_dir=inputdir), count=n)
-
-   if n EQ 0 then return, fullnames
-
-   place = rstrpos(gzipnames,'.gz')  
-   for i=0,n-1 do begin
-
-     if place[i] GT 1 then begin
-        tempname = strmid(gzipnames[i], 0, place[i])
-
-        if fullnames[0] EQ '' then fullnames = tempname $
-        else fullnames = [fullnames, tempname]
-     endif
-   endfor
-
-   ss = sort(fullnames)
-   fullnames = fullnames[ss]
-   nfile = n_elements(fullnames)
-
-   return, fullnames
-end
-
-;------------------------------------------------------------------------------
-function spplan_create_spexp, expnum, plateid, mjd, mapname, flavor, exptime, $
- filename, cameras, minexp=minexp
-
-   if (flavor NE 'flat' AND flavor NE 'arc' $
-    AND flavor NE 'science' AND flavor NE 'smear') then $
-    return, 0
-   if (keyword_set(minexp)) then begin
-      if (flavor EQ 'science' AND exptime LT minexp) then $
-       return, 0 
-   endif
-
-   badname = 'UNKNOWN'
-   camnames = ['b1', 'b2', 'r1', 'r2']
-   ncam = N_elements(camnames)
-
-   spexp = {spexp, $
-    plateid : long(plateid), $
-    mjd     : long(mjd), $
-    mapname : string(mapname), $
-    flavor  : string(flavor), $
-    exptime : float(exptime), $
-    name    : strarr(ncam) }
-
-   for icam=0, ncam-1 do begin
-      ii = where(cameras EQ camnames[icam], ct)
-      if (ct GT 1) then $
-       message, 'Multiple files with EXPOSURE=' + string(expnum) $
-        + ' CAMERAS=' + camnames[icam]
-      if (ct EQ 1) then $
-       spexp.name[icam] = filename[ii[0]] $
-      else $
-       spexp.name[icam] = badname
-   endfor
-
-   return, spexp
-end
-
-;------------------------------------------------------------------------------
-
 pro spplan2d, topoutdir=topoutdir, mjd=mjd, $
  mjstart=mjstart, mjend=mjend, minexp=minexp, clobber=clobber
 
