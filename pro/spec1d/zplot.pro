@@ -45,13 +45,14 @@ pro zplot_circle, radius, label=label, ltheta=ltheta, _EXTRA=KeywordsForPlot
    return
 end
 ;------------------------------------------------------------------------------
-pro zplot_exclude, theta
+pro zplot_exclude, theta, ramid=ramid
 
+   if (NOT keyword_set(ramid)) then ramid = 0
    nplot = 40
    maxrad = sqrt( (max(abs(!x.crange)))^2 + (max(abs(!y.crange)))^2 )
 
-   xplot = cos(theta / !radeg)
-   yplot = sin(theta / !radeg)
+   xplot = cos((theta - ramid) / !radeg)
+   yplot = sin((theta - ramid) / !radeg)
 
    for i=0, nplot-1 do begin
       rfac = i * maxrad / nplot
@@ -63,18 +64,38 @@ pro zplot_exclude, theta
    return
 end
 ;------------------------------------------------------------------------------
-pro zplot_exclude_galaxy
+pro zplot_exclude_galaxy, _EXTRA=extra
 
    ; The Galactic plane crosses the equatorial plane at RA= 102.86, 282.86
-   zplot_exclude, 102.86 + [-15,15]
-   zplot_exclude, 282.86 + [-15,15]
+   zplot_exclude, 102.86 + [-15,15], _EXTRA=extra
+   zplot_exclude, 282.86 + [-15,15], _EXTRA=extra
+
+   return
+end
+;------------------------------------------------------------------------------
+pro zplot_label, ramid=ramid
+
+   xplot = [!x.crange[1], 0, !x.crange[0], 0]
+   yplot = [0, !y.crange[1], 0, !y.crange[0]]
+   for i=0, n_elements(xplot)-1 do begin
+      theta = (atan(yplot[i], xplot[i]) * !radeg - ramid) / 15. ; in hours
+      if (theta LT 0) then theta = theta + 24.
+      if (xplot[i] EQ 0) then align = 0.5 $
+       else if (xplot[i] GT 0) then align = 0.0 $
+       else align = 1.0
+      if (yplot[i] GT 0) then thisy = 1.01 * yplot[i] $
+       else if (yplot[i] LT 0) then thisy = 1.04 * yplot[i] $
+       else thisy = yplot[i]
+      djs_xyouts, xplot[i], thisy, $
+       ' '+strtrim(string(fix(theta)),2)+'^h ', align=align
+   endfor
 
    return
 end
 ;------------------------------------------------------------------------------
 pro zplot
 
-   ramid = 90.0
+   ramid = 0.0
 
    plate = [202,260,265,266,267,268,269,279, $
     280,281,282,283,284,285,291,292,293,297,298,299, $
@@ -88,16 +109,18 @@ pro zplot
    readspec, plate, plug=plug, zans=zans
    indx = where(strtrim(zans.class,2) EQ 'GALAXY')
 
-   xplot = zans.z * sin((plug.ra - ramid) / !radeg)
-   yplot = zans.z * cos((plug.ra - ramid) / !radeg)
+   xplot = zans.z * cos((plug.ra - ramid) / !radeg)
+   yplot = zans.z * sin((plug.ra - ramid) / !radeg)
 
    spec_gal = strtrim(zans.class,2) EQ 'GALAXY'
    spec_qso = strtrim(zans.class,2) EQ 'QSO'
-   target_brg = (plug.primtarget AND 2^5) NE 0 $
-    OR (plug.primtarget AND 2^26) NE 0
    target_main = (plug.primtarget AND 2^6) NE 0 $
     OR (plug.primtarget AND 2^7) NE 0 $
     OR (plug.primtarget AND 2^8) NE 0
+   target_brg = (plug.primtarget AND 2^5) NE 0 $
+    OR (plug.primtarget AND 2^26) NE 0
+   target_brg = target_brg AND (target_main EQ 0) ; Don't let an object be
+                                                  ; both in MAIN and BRG.
    target_qso = (plug.primtarget AND 2^0) NE 0 $
     OR (plug.primtarget AND 2^1) NE 0 $
     OR (plug.primtarget AND 2^2) NE 0 $
@@ -108,8 +131,8 @@ pro zplot
    ibrg = where(spec_gal AND target_brg)
    iqso = where(spec_qso)
 
-   !x.margin = [1,1]
-   !y.margin = [1,1]
+   !x.margin = [4,4]
+   !y.margin = [2,2]
 
    ;----------
    ; Plot to z=0.15
@@ -125,7 +148,8 @@ pro zplot
    djs_oplot, xplot[iqso], yplot[iqso], ps=3, color='blue'
    zplot_circle, [0.05, 0.10], ltheta=70
    zplot_circle, [0.15]
-   zplot_exclude_galaxy
+   zplot_exclude_galaxy, ramid=ramid
+   zplot_label, ramid=ramid
    dfpsclose
 
    ;----------
@@ -141,7 +165,8 @@ pro zplot
    djs_oplot, xplot[iqso], yplot[iqso], ps=3, symsize=0.25, color='blue'
    zplot_circle, [0.20, 0.40], ltheta=70
    zplot_circle, [0.60]
-   zplot_exclude_galaxy
+   zplot_exclude_galaxy, ramid=ramid
+   zplot_label, ramid=ramid
    dfpsclose
 
    ;----------
@@ -158,7 +183,8 @@ pro zplot
     symsize=zans[iqso].z/8., color='blue'
    zplot_circle, [1,2,3,4], ltheta=70
    zplot_circle, [5]
-   zplot_exclude_galaxy
+   zplot_exclude_galaxy, ramid=ramid
+   zplot_label, ramid=ramid
    dfpsclose
 
    ;----------
@@ -166,8 +192,8 @@ pro zplot
 
    zmin = 0.01
    logzmin = alog10(zmin)
-   xplot = (alog10(zans.z>zmin)-logzmin) * sin((plug.ra - ramid) / !radeg)
-   yplot = (alog10(zans.z>zmin)-logzmin) * cos((plug.ra - ramid) / !radeg)
+   xplot = (alog10(zans.z>zmin)-logzmin) * cos((plug.ra - ramid) / !radeg)
+   yplot = (alog10(zans.z>zmin)-logzmin) * sin((plug.ra - ramid) / !radeg)
 
    dfpsplot, 'zplot-log.ps', /color, /square
    logzmax = alog10(5.01)
@@ -183,7 +209,8 @@ pro zplot
    zplot_circle, alog10([0.03,0.1,0.5,2])-logzmin, $
     label=['0.03', '0.1','0.5','2'], ltheta=45
    zplot_circle, alog10(5)-logzmin, label='5', ltheta=45
-   zplot_exclude_galaxy
+   zplot_exclude_galaxy, ramid=ramid
+   zplot_label, ramid=ramid
    dfpsclose
 
    return
