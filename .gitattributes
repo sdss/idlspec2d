@@ -160,6 +160,7 @@ pro/fluxfix/plate_flux_recal.pro -text
 pro/fluxfix/spplate_correct.pro -text
 pro/fluxfix/stype_standard.pro -text
 pro/fluxfix/undo_smear.pro -text
+pro/fluxfix/zeropt_cor.pro -text
 pro/fplan/Makefile -text
 pro/fplan/checksn.pro -text
 pro/fplan/make2dmerge.pro -text
