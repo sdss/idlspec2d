@@ -1,0 +1,44 @@
+# The following five listings are the filters for u', g', r', i', and z'
+# as taken from Mamoru Doi's measurements from the Dec. 15 averages given at
+# http://indus.astron.s.u-tokyo.ac.jp/~doi/calib/calib.html
+# I have then included a correction for the atmosphere (1.3 airmass)
+# and the aluminum on the primary and secondary mirrors (March 2000 
+# measurements).
+#
+# The files list wavelength in Angstroms, the cameras filter transmission,
+# the total transmission including atmosphere and aluminum, the
+# correction applied for the atmosphere, and the correction applied
+# for the aluminum.  Hence, you want to use columns 1 and 3.
+#
+# Note that Mamoru's web site also lists the responses separately for
+# each chip.  I've used the averages he gives, but one could apply
+# the corrections in columns 4 and 5 to the individual chip responses.
+#
+# I think that all of this remains preliminary.
+#
+# Daniel Eisenstein (4/5/2001)
+#
+# r'
+# Lambda Raw_filter Atm+alum+filter atmosphere(airmass=1.3) aluminum
+#
+ 5230 0.00127
+ 5330 0.00128
+ 5430 0.01412
+ 5530 0.16993
+ 5630 0.42679
+ 5730 0.57585
+ 5830 0.63162
+ 5930 0.65661
+ 6030 0.67390
+ 6130 0.67949
+ 6230 0.69336
+ 6330 0.70616
+ 6430 0.70834
+ 6530 0.70680
+ 6630 0.67970
+ 6730 0.42563
+ 6830 0.09956
+ 6930 0.01459
+ 7030 0.00390
+ 7130 0.00141
+ 7230 0.00094
