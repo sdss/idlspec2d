@@ -10,7 +10,7 @@
 ;    [ color=color, lampfile=lampfile, fibermask=fibermask, $
 ;    func=func, aset=aset, ncoeff=ncoeff, lambda=lambda, $
 ;    thresh=thresh, row=row, nmed=nmed, $
-;    xdif_lfit=xdif_lfit, xdif_tset=xdif_tset, bestcorr=bestcorr ]
+;    xdif_tset=xdif_tset, bestcorr=bestcorr ]
 ;
 ; INPUTS:
 ;   arc        - Extracted arc spectra with dimensions [NY,NFIBER]
@@ -40,10 +40,9 @@
 ;
 ; OPTIONAL OUTPUTS:
 ;   lampfile   - Modified from input to include full path name of file
-;   lambda     - returns alog10(wavelength) of good lamp lines
+;   lambda     - Returns alog10(wavelength) of good lamp lines
 ;   fibermask  - (Modified)
-;   xdif_lfit  - fit residual for individual arclines
-;   xdif_tset  - fit residual of traceset
+;   xdif_tset  - Fit residual of lamp lines to fit positions [pixels]
 ;   bestcorr   - Correlation coefficient with simulated arc spectrum
 ;
 ; COMMENTS:
@@ -81,7 +80,7 @@
 pro fitarcimage, arc, arcivar, xcen, ycen, wset, $
  color=color, lampfile=lampfile, fibermask=fibermask, $
  func=func, aset=aset, ncoeff=ncoeff, lambda=lambda, thresh=thresh, $
- row=row, nmed=nmed, xdif_lfit=xdif_lfit, xdif_tset=xdif_tset, bestcorr=bestcorr
+ row=row, nmed=nmed, xdif_tset=xdif_tset, bestcorr=bestcorr
 
    ;---------------------------------------------------------------------------
    ; Preliminary stuff
@@ -316,29 +315,13 @@ maxsig = 3.0
 
    tset_pix = transpose( traceset2pix(wset, lamps.loglam) )
 
-   xdif_tset = (xmeasured-tset_pix)  ; difference between measured line 
-                                     ;  positions and fit positions
-   xdif_lfit = (xmeasured-xcen)      ; dif between measured line positions
-                                     ;  and best fit for each line
+   xdif_tset = (xmeasured-tset_pix)  ; difference between measured line
+                                     ; positions and fit positions
 
-   splog, '', /noname
-   splog, 'Arcline fit summary'
-   splog, 'All sigma values are in millipixels'
-   splog, format='(71("-"))'
-   for k=0, nlamp-1 do $
-      splog,'Arcline',k,':  lambda =',lamps[k].lambda, $
-            '    median_tset =', median(1e3*xdif_tset[*,k]), $
-            '    sig_tset =', djsig(1e3*xdif_tset[*,k]), $
-            format='(A,I3,A,F8.2,A,F7.2,A,F7.2)'
-
-   highones = where(lamps.lambda GT 8000., highct)
-
-   splog, 'Found ', nlamp, ' good arc lines'
-   if (highct GT 0) then splog, '----', highct, ' are above 8000 A'
    splog, 'Time ',systime(1)-t_begin, ' seconds elapsed', $
     format='(A,F6.0,A)'
 
-   lampfile = lampfilename
+   lampfile = lampfilename ; Return the name of the lampfile used.
    lambda = lamps.lambda
 
    ; Replace the "measured" arc line positions (XNEW) with the fit positions

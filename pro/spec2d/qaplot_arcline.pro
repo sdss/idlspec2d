@@ -41,13 +41,32 @@ pro qaplot_arcline, xdif, lambda, filename=filename, color=color
 
    if (NOT keyword_set(filename)) then filename = ''
 
-   ; Set multi-plot format
-   pmulti = !p.multi
-   !p.multi = [0,1,2]
-
    dims = size(xdif, /dimens)
    nfiber = dims[0]
    nlamp = dims[1]
+
+   ;---------------------------------------------------------------------------
+   ; Print residuals in arc fits
+
+   splog, 'Number of arc lines: ', nlamp
+
+   if (color EQ 'blue') then begin
+      junk = where(lambda LT 4000., ct)
+      splog, 'Number below 4000 Ang: ', ct
+   endif else if (color EQ 'red') then begin
+      junk = where(lambda GT 8000., ct)
+      splog, 'Number above 8000 Ang: ', ct
+   endif
+
+   for k=0, nlamp-1 do $
+    splog, 'Arcline ',k,': lambda=',lambda[k], $
+     ' Ang, median dev=', median(xdif[*,k]), $
+     ' pix, sigma dev=', djsig(xdif[*,k]), ' pix', $
+     format='(A,I3,A,F8.2,A,F7.3,A,F7.3,A)'
+
+   ;---------------------------------------------------------------------------
+   ; Set multi-plot format
+   !p.multi = [0,1,2]
 
    ; Determine the plot limits in wavelength
    if (color EQ 'blue') then begin
@@ -90,7 +109,7 @@ pro qaplot_arcline, xdif, lambda, filename=filename, color=color
    xyouts, 0.95, 0., systime(), /normal, align=1 ; , charsize=0.5
 
    ; End multi-plot format
-   !p.multi = pmulti
+   !p.multi = 0
 
    return
 end
