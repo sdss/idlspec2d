@@ -217,13 +217,14 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    skiprow = 8
    yrow = lindgen(nrow/skiprow) * skiprow + skiprow/2
    nfirst = n_elements(yrow)
-  
 
    ;-----------------------------------------------------------------------
    ;  The fork in the road:
    ;    If we have widths from widthset, then just extract
    ;    otherwise determine width from object and extract
    ;-----------------------------------------------------------------------
+
+   splog, 'Extracting frame '+objname+' with 3 step process'
 
    if (NOT keyword_set(widthset)) then begin 
      ;------------------
@@ -236,7 +237,6 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
      ;        3) Extract all 2048 rows with new profiles given by
      ;              fitansimage
 
-     splog, 'Extracting frame '+objname+' with 3 step process'
      sigma = 1.0
      proftype = 1 ; Gaussian
      wfixed = [1,1,1] ; gaussian term + centroid and  sigma terms
@@ -246,7 +246,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 
      ; (1) Extraction profiles in every 8th row
 
-     splog, 'Object extraction: Step 1'
+     splog, 'Object extraction: Step 1 (fit width)'
      extract_image, image, invvar, xnow, sigma, tempflux, tempfluxivar, $
        proftype=proftype, wfixed=wfixed, yrow=yrow, $
        highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
@@ -293,7 +293,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
      wfixed = [1,1]
      nterms = n_elements(wfixed)
 
-     splog, 'Object extraction: Step 1'
+     splog, 'Object extraction: Step 1 (use width from arcs)'
      extract_image, image, invvar, xnow, sigma2, tempflux, tempfluxivar, $
       proftype=proftype, wfixed=wfixed, yrow=yrow, $
       highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
@@ -527,8 +527,9 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 
    sxaddpar, objhdr, 'VERS2D', idlspec2d_version(), $
     'Version of idlspec2d for 2D reduction', after='VERSREAD'
-   sxaddpar, objhdr, 'OSIGMA',  sigma, $
-    'Original guess at spatial sigma in pix'
+   if (keyword_set(osigma)) then $
+    sxaddpar, objhdr, 'OSIGMA',  sigma, $
+     'Original guess at spatial sigma in pix'
    sxaddpar, objhdr, 'SKIPROW', skiprow, 'Extraction: Number of rows skipped in step 1'
    sxaddpar, objhdr, 'LOWREJ', lowrej, 'Extraction: low rejection'
    sxaddpar, objhdr, 'HIGHREJ', highrej, 'Extraction: high rejection'
