@@ -2,7 +2,7 @@
 EXTRACT_OBJECT: NEARBADPIXEL only if it is within 1 pixel of trace center
                 used to reject possibly bad sky pixels.
 FIBERFLAT: Fiber is flagged BADFLAT is more than 30% of pixels are masked.
-FLATINTERP: Take precaution with bad flatfield extending to edges.
+FLATINTERP: Remove call to this code.
 SPCALIB: Back to original flat field rejection levels matches object extraction.
 SKYSUBTRACT: Check for NEARBADPIXEL bit as well in pixelmask.
 
