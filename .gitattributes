@@ -340,6 +340,7 @@ pro/spec2d/sshift2d.pro -text
 pro/spec2d/sshiftvec.pro -text
 pro/spec2d/superflat.pro -text
 pro/spec2d/telluric_corr.pro -text
+pro/spec2d/throughput_calib.pro -text
 pro/spec2d/trace320cen.pro -text
 pro/spec2d/trace320crude.pro -text
 pro/spec2d/trace_crude.pro -text
