@@ -48,7 +48,7 @@
 ;-
 ;------------------------------------------------------------------------------
 pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
-   minsn2=minsn2, smearinclude=smearinclude
+ minsn2=minsn2, smearinclude=smearinclude
 
    if (NOT keyword_set(planfile)) then planfile = findfile('spPlancomb*.par')
    if (n_elements(adderr) EQ 0) then adderr = 0.03
@@ -60,7 +60,8 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
 
    if (N_elements(planfile) GT 1) then begin
       for i=0, N_elements(planfile)-1 do $
-       spcombine, planfile[i], docams=docams, xdisplay=xdisplay
+       spcombine, planfile[i], docams=docams, adderr=adderr, $
+        xdisplay=xdisplay, minsn=minsn
       return
    endif
 
