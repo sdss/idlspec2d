@@ -69,7 +69,12 @@ sprobot.sh: Copy the guider image directory.  We mistakenly lost this copying
            when we went to explicitly copying only the sdR*.fit.gz files.
 sos.sh,startapo.sh: Forget to switch to UT time in a couple of instances.
 opBC.par,opBC-51813.par: New bad column masks, somewhat circular dependence
-           on pixflats.
+           on pixflats.  Make opBC.par identical to opBC-51813.par, so that
+           the only different bad column masks are for the few nights from
+           MJD=51809->51812 as stored in opBC-51809.par.
+           For r2 (camcol=2), now mask all of columns 370-371 instead of parts.
+           For r2 (camcol=2), add mask for column 1068.
+           For r1 (camcol=4), mask only cols 1112-1115, not cols 1112-1117.
 
 In idlutils:
 DJS_REJECT  : Major bug in /groupbadpix option, should now work as intended
