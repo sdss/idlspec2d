@@ -72,6 +72,7 @@
 ;   djs_avsigclip()
 ;   djs_filepath()
 ;   extract_image
+;   fileandpath()
 ;   genflatmask()
 ;   readfits()
 ;   rmfile
@@ -110,10 +111,10 @@ pro spflatten2, flatname, arcname, allflats, pixflat, $
    if (NOT keyword_set(maxiter)) then maxiter = 2
 
    tmpname1 = djs_filepath( $
-    'tmp.flatimg.'+strtrim(string(indgen(nflat)),2)+'.fits',$
+    repstr(fileandpath(allflats), 'sdR', 'tmp-flat'), $
     root_dir=tmpdir)
    tmpname2 = djs_filepath( $
-    'tmp.ymodel.'+strtrim(string(indgen(nflat)),2)+'.fits',$
+    repstr(fileandpath(allflats), 'sdR', 'tmp-ymodel'), $
     root_dir=tmpdir)
 
    ;---------------------------------------------------------------------------
