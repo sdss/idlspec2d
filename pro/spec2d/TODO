@@ -1,4 +1,6 @@
 
+* Plate 306, fibers 172-175 now look worse than in July.
+
 * Warning if telluric correction is out of range (not between 0 and 1.5?)
 
 * Move iteration code from XY2TRACESET to FUNC_FIT(), letting it call itself
