@@ -2,9 +2,17 @@
 -------------------------------------------------------------------------------
 v4_8_0 (Jul 17, 2001 idlspec2d+idlutils)
 
+******MAJOR CHANGE: spFrame output is now normalized with superflat,
+                    to correct for small scale features which cannot be removed
+                    by standard star correction.
+                    HDU 6 now contains the superfit in spFrame
+                    Telluric correction has been moved to HDU 7.
+
 SKYSUBTRACT: Increased rejection limit for 1d fit.  This should be more robust
           anyway, and tighter rejection was masking out real PSF variations
-          which led to very big sky residuals in 2d fit
+          which led to very big sky residuals in 2d fit.
+          Also decreased the number of blue side breakpoints to 1024.
+
 FITVACSET :  keyword "airset" which return air wavelength solution with
           no heliocentric correction (required to properly sample superflat
           shifted to skyline frame)
@@ -15,7 +23,10 @@ EXTRACT_OBJECT, SKYSUBTRACT, SPCALIB: Implement 2D-splining for sky-
           Also, first attempt to put in airmass correction to the sky
           brightness by dividing all the sky vectors by the airmass of
           each fiber, then fitting for the supersky, then multiplying
-          back in the airmass terms.
+          back in the airmass terms. 
+          New limits to mask in pixelflat 0.8 < flat < 1.2.
+                              old values: 0.5 < flat < 1.5
+          
 EXTRACT_OBJECT: Set the "NEARWHOPPER" mask bits only for fibers within 2
           fibers of a bright fiber, but not the bright fiber itself.
           For the bright fibers, add the bit "WHOPPER" (added to the
@@ -118,6 +129,8 @@ zplot: Quick-and-dirty script for finding and plotting a spectrum (at Princeton)
 f8v.abs: Increase flux-calibrating mask around H-alpha by 50%, now
          masking +/- 1500 km/s (+/- 32.8 Ang).
 opBC-51813.par: One extra bad column [370,1800:2047] on r2.
+                There are a few extra additions to match the new
+                pixflatave-00000 files.
 
 BSPLINE_ACTION, INTRV (in idlutils): Bug fixes for 2-D spline fitting.
      Include 'poly1' function in BSPLINE_ACTION(), and set the function
