@@ -6,6 +6,7 @@
    3823.7   3849.3   # H (2->9) at 3836.47 [vac Ang] +- 12.8 (1000 km/s)
    3877.2   3903.2   # H (2->8) at 3890.15 [vac Ang] +- 13.0 (1000 km/s)
    3924.0   3948.0   # Ca at 3934.8 [vac Ang]
+   3948.0   3958.0   # Let's avoid these 10 Ang as well
    3958.0   3984.4   # H-epsilon at 3971.20 [vac Ang] +- 13.2 (1000 km/s)
                      # and Ca at 3969.6 [vac Ang]
    4089.2   4116.6   # H-delta at 4102.90 [vac Ang] +- 13.7 (1000 km/s)
