@@ -57,6 +57,12 @@ if [ -z "$SPECTROLOG_DIR" ] ; then
 fi
 echo "Setting \$SPECTROLOG_DIR=$SPECTROLOG_DIR"
 
+# If the PATH is too long, then abort.
+if [ `echo $PATH | wc -c` -gt 1020 ] ; then
+  echo "PATH is too long (more than 1020 characters)"
+  exit
+fi
+
 #------------------------------------------------------------------------------
 # Set file names used internally in this script.
 

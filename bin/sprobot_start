@@ -82,6 +82,12 @@ if [ -z "$SPROBOT_LOCALDISKS" ] ; then
   exit
 fi
 
+# If the PATH is too long, then abort.
+if [ `echo $PATH | wc -c` -gt 1020 ] ; then
+  echo "PATH is too long (more than 1020 characters)"
+  exit
+fi
+
 #------------------------------------------------------------------------------
 # Don't allow this to be run from the machine "sdsshost"!
 
