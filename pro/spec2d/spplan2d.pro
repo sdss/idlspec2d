@@ -12,8 +12,7 @@
 ; INPUTS:
 ;
 ; OPTIONAL INPUTS:
-;   topoutdir  - Top directory name for output files; default to ''
-;                subdirectory '2d_' + VERSION under the current directory.
+;   topoutdir  - Top directory name for output files; default to ''.
 ;   mjd        - Look for raw data files in RAWDATA_DIR/MJD; default to
 ;                search all subdirectories.  Note that this need not be
 ;                integer-valued, but could be for example '51441_test'.
