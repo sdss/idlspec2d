@@ -30,7 +30,7 @@
 ; EXAMPLES:
 ;
 ; BUGS:
-;   No attempt is made to preciesely match the instrumental dispersion
+;   No attempt is made to precisely match the instrumental dispersion
 ;   of the SDSS spectra and the Elodie spectra.  The Elodie spectra are
 ;   smoothed to an instrumental dispersion of 70 km/sec.
 ;
@@ -44,7 +44,7 @@
 ; REVISION HISTORY:
 ;   03-Apr-2002  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
-pro ztweak_star, filename
+pro ztweak_star, filename, zmin=zmin, zmax=zmax, overwrite=overwrite
 
    snmax = 100
    if (NOT keyword_set(zmin)) then zmin = -0.00333
