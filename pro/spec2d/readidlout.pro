@@ -10,16 +10,16 @@ pro fillplugmap, plugmap, hdr
       plugmap.mag = tempmag
 
       plugmap.objtype = sxpar(hdr, 'OBJTYPE')
-      plugmap.ra = sxpar(hdr, 'RA')
-      plugmap.dec = sxpar(hdr, 'DEC')
+      plugmap.ra = sxpar(hdr, 'RAOBJ')
+      plugmap.dec = sxpar(hdr, 'DECOBJ')
       plugmap.xfocal = sxpar(hdr, 'XFOCAL')
       plugmap.yfocal = sxpar(hdr, 'YFOCAL')
+      plugmap.plateid  = sxpar(hdr, 'PLATEID') 
       plugmap.fiberid = sxpar(hdr, 'FIBERID') 
       plugmap.z1d     = sxpar(hdr, 'Z') 
       plugmap.z1d_error = sxpar(hdr, 'Z_ERR') 
       plugmap.z1d_conf  = sxpar(hdr, 'Z_CONF') 
       plugmap.z1d_status = sxpar(hdr, 'Z_STATUS') 
-      plugmap.fiberid = sxpar(hdr, 'FIBERID') 
       plugmap.primtarget = sxpar(hdr, 'PRIMTARG')
       plugmap.sectarget = sxpar(hdr, 'SECTARGE')
 return
@@ -62,6 +62,7 @@ pro readidlout, flux, sig=sig, wave=wave, expres=expres, plugmap=plugmap, $
            OBJTYPE       :  ' ', $
            XFOCAL        :  0.0d, $
            YFOCAL        :  0.0d, $
+           PLATEID       :  -1, $
            FIBERID       :  -1, $
            z1d           : 0.0 , $
            z1d_error     : 0.0 , $
