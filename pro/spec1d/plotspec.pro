@@ -47,7 +47,7 @@
 ;                specifying fiber numbers with FIBERID.
 ;   topdir     - Top-level directory for data; default to the environment
 ;                variable $SPECTRO_DATA.
-;   _EXTRA     - Kewords for SPLOT, such as XRANGE, YRANGE, THICK.
+;   _EXTRA     - Kewords for SPLOT and XYOUTS, such as XRANGE, YRANGE, THICK.
 ;
 ; OUTPUTS:
 ;
@@ -157,7 +157,7 @@ end
 pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
  zline=q_zline, nosyn=nosyn, noerr=noerr, ormask=ormask, andmask=andmask, $
  psfile=psfile, xrange=passxr, yrange=passyr, noerase=noerase, $
- restframe=restframe, netimage=netimage, topdir=topdir, EXTRA=KeywordsForSplot
+ restframe=restframe, netimage=netimage, topdir=topdir, _EXTRA=KeywordsForSplot
 
    cspeed = 2.99792458e5
    textcolor = 'green'
@@ -233,7 +233,7 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
       if (NOT keyword_set(noerr)) then $
        djs_oplot, wave, objerr, color='red', _EXTRA=KeywordsForSplot
       if (keyword_set(synflux)) then $
-       djs_oplot, wave, synflux, color='blue', _EXTRA=KeywordsForSplot, lw=2
+       djs_oplot, wave, synflux, color='blue', lw=2, _EXTRA=KeywordsForSplot
    endif else begin
       if (NOT keyword_set(noerase)) then $
        splot, wave, objflux, xrange=xrange, yrange=yrange, $
@@ -244,7 +244,7 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
       if (NOT keyword_set(noerr)) then $
        soplot, wave, objerr, color='red', _EXTRA=KeywordsForSplot
       if (keyword_set(synflux)) then $
-       soplot, wave, synflux, color='blue', _EXTRA=KeywordsForSplot, lw=2
+       soplot, wave, synflux, color='blue', lw=2, _EXTRA=KeywordsForSplot
    endelse
 
    xpos = 0.9 * !x.window[0] + 0.1 * !x.window[1]
@@ -266,28 +266,32 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
 
       if (keyword_set(psfile)) then $
        xyouts, xpos, ypos, zans.class + ' ' + zans.subclass + zstring, $
-        charsize=csize, color=djs_icolor(textcolor), /normal $
+        charsize=csize, color=djs_icolor(textcolor), /normal, $
+        _EXTRA=KeywordsForSplot $
       else $
        sxyouts, xpos, ypos, zans.class + ' ' + zans.subclass + zstring, $
-        charsize=csize, color=textcolor, /normal
+        charsize=csize, color=textcolor, /normal, $
+        _EXTRA=KeywordsForSplot
 
       ypos = ypos + dypos
 
       if (keyword_set(psfile)) then $
        xyouts, xpos, ypos, $
         TeXtoIDL('X^2_r =' + strtrim(string(zans.rchi2, format='(f6.2)'),2)), $
-        charsize=csize, color=djs_icolor(textcolor), /normal $
+        charsize=csize, color=djs_icolor(textcolor), /normal, $
+        _EXTRA=KeywordsForSplot $
       else $
        sxyouts, xpos, ypos, $
         TeXtoIDL('X^2_r =' + strtrim(string(zans.rchi2, format='(f6.2)'),2)), $
-        charsize=csize, color=textcolor, /normal
+        charsize=csize, color=textcolor, /normal, $
+        _EXTRA=KeywordsForSplot
    endif
 
    if (keyword_set(lineflux)) then begin
       if (keyword_set(psfile)) then $
-       djs_oplot, wave, lineflux, color=linecolor, _EXTRA=KeywordsForSplot, lw=2 $
+       djs_oplot, wave, lineflux, color=linecolor, lw=2, _EXTRA=KeywordsForSplot $
       else $
-       soplot, wave, lineflux, color=linecolor, _EXTRA=KeywordsForSplot, lw=2
+       soplot, wave, lineflux, color=linecolor, lw=2, _EXTRA=KeywordsForSplot
 
       linewave = zline.linewave $
        * (1 + zline.linez * (keyword_set(restframe) EQ 0))
@@ -299,43 +303,50 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
             if (keyword_set(psfile)) then $
              xyouts, linewave[iline], linepeak[iline], $
               '  '+zline[iline].linename, orient=90, $
-              charsize=0.75*csize, color=djs_icolor(linecolor) $
+              charsize=0.75*csize, color=djs_icolor(linecolor), $
+              _EXTRA=KeywordsForSplot $
             else $
              sxyouts, linewave[iline], linepeak[iline], $
               '  '+zline[iline].linename, orient=90, $
-              charsize=0.75*csize, color=linecolor
+              charsize=0.75*csize, color=linecolor, $
+              _EXTRA=KeywordsForSplot
          endif
       endfor
    endif
 
    if (keyword_set(ormask)) then begin
       plotspec_mask, wave, ormask, psfile=psfile, $
-       psym=1, symsize=0.6, color=orcolor, nolabel=keyword_set(andmask)
+       psym=1, symsize=0.6, color=orcolor, $
+       nolabel=keyword_set(andmask), _EXTRA=KeywordsForSplot
    endif
 
    if (keyword_set(andmask)) then begin
       plotspec_mask, wave, andmask, psfile=psfile, $
-       psym=6, symsize=0.6, color=andcolor
+       psym=6, symsize=0.6, color=andcolor, _EXTRA=KeywordsForSplot
    endif
 
    if (keyword_set(primtarget)) then begin
       ypos = ypos + dypos
       if (keyword_set(psfile)) then $
        xyouts, xpos, ypos, 'PRIMTARGET = ' + primtarget, $
-        charsize=csize, color=djs_icolor(textcolor), /normal $
+        charsize=csize, color=djs_icolor(textcolor), /normal, $
+        _EXTRA=KeywordsForSplot $
       else $
        sxyouts, xpos, ypos, 'PRIMTARGET = ' + primtarget, $
-        charsize=csize, color=textcolor, /normal
+        charsize=csize, color=textcolor, /normal, $
+        _EXTRA=KeywordsForSplot
    endif
 
    if (keyword_set(sectarget)) then begin
       ypos = ypos + dypos
       if (keyword_set(psfile)) then $
        xyouts, xpos, ypos, 'SECTARGET = ' + sectarget, $
-        charsize=csize, color=djs_icolor(textcolor), /normal $
+        charsize=csize, color=djs_icolor(textcolor), /normal, $
+        _EXTRA=KeywordsForSplot $
       else $
        sxyouts, xpos, ypos, 'SECTARGET = ' + sectarget, $
-        charsize=csize, color=textcolor, /normal
+        charsize=csize, color=textcolor, /normal, $
+        _EXTRA=KeywordsForSplot
    endif
 
    if (keyword_set(netimage) AND NOT keyword_set(psfile)) then begin
