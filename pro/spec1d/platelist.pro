@@ -136,7 +136,10 @@ pro platelist, infile, plist=plist, create=create, $
     'mjd'      , 0L, $
     'ra'       , 0.0, $
     'dec'      , 0.0, $
+    'cartid'   , 0L, $
     'tai'      , 0.0D, $
+    'tai_beg'  , 0.0D, $
+    'tai_end'  , 0.0D, $
     'airmass'  , 0.0, $
     'exptime'  , 0.0, $
     'mapname'  , ' ', $
@@ -158,6 +161,13 @@ pro platelist, infile, plist=plist, create=create, $
     'sn2_r2'   , 0.0, $
     'sn2_i2'   , 0.0, $
     'smearuse' , ' ', $
+    'seeing20' , 0.0, $
+    'seeing50' , 0.0, $
+    'seeing80' , 0.0, $
+    'rmsoff20' , 0.0, $
+    'rmsoff50' , 0.0, $
+    'rmsoff80' , 0.0, $
+    'airtemp'  , 0.0, $
     'n_galaxy' , 0L,  $
     'n_qso'    , 0L,  $
     'n_star'   , 0L,  $
@@ -285,7 +295,10 @@ pro platelist, infile, plist=plist, create=create, $
          plist[ifile].tile = sxpar(hdr1, 'TILEID')
          plist[ifile].ra = sxpar(hdr1, 'RA')
          plist[ifile].dec = sxpar(hdr1, 'DEC')
+         plist[ifile].cartid = sxpar(hdr1, 'CARTID')
          plist[ifile].tai = sxpar(hdr1, 'TAI')
+         plist[ifile].tai_beg = sxpar(hdr1, 'TAI_BEG')
+         plist[ifile].tai_end = sxpar(hdr1, 'TAI_END')
          plist[ifile].airmass = tai2airmass(plist[ifile].ra, $
           plist[ifile].dec, tai=plist[ifile].tai)
          plist[ifile].exptime = sxpar(hdr1, 'EXPTIME')
@@ -301,6 +314,13 @@ pro platelist, infile, plist=plist, create=create, $
          plist[ifile].sn2_r2 = sxpar(hdr1, 'SPEC2_R')
          plist[ifile].sn2_i2 = sxpar(hdr1, 'SPEC2_I')
          plist[ifile].smearuse = sxpar(hdr1, 'SMEARUSE') ? 'T' : 'F'
+         plist[ifile].seeing20 = sxpar(hdr1, 'SEEING20')
+         plist[ifile].seeing50 = sxpar(hdr1, 'SEEING50')
+         plist[ifile].seeing80 = sxpar(hdr1, 'SEEING80')
+         plist[ifile].rmsoff20 = sxpar(hdr1, 'RMSOFF20')
+         plist[ifile].rmsoff50 = sxpar(hdr1, 'RMSOFF50')
+         plist[ifile].rmsoff80 = sxpar(hdr1, 'RMSOFF80')
+         plist[ifile].airtemp = sxpar(hdr1, 'AIRTEMP')
          plist[ifile].mapname = strtrim(sxpar(hdr1, 'NAME'))
          plist[ifile].vers2d = strtrim(sxpar(hdr1, 'VERS2D'))
          plist[ifile].verscomb = strtrim(sxpar(hdr1, 'VERSCOMB'))
