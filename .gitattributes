@@ -21,6 +21,11 @@ etc/intrinsicF2.dat -text
 etc/lamphgcdne.dat -text
 etc/lamplist.dat -text
 etc/red.bkpts -text
+etc/sdss_g_atm.dat -text
+etc/sdss_i_atm.dat -text
+etc/sdss_r_atm.dat -text
+etc/sdss_u_atm.dat -text
+etc/sdss_z_atm.dat -text
 etc/skylines.dat -text
 examples/Makefile -text
 examples/README -text
