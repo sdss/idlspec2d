@@ -48,7 +48,7 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius
        /dospline)
       flat_flux = 0 ; clear memory
       flat_ivar = 0 ; clear memory
-      mwrfits, fflatfile, tsetfile
+      mwrfits, fflat, fflatfile
       fflat = 0 ; clear memory
    endif
 
