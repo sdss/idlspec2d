@@ -151,7 +151,8 @@ function fluxcorr, flux, fluxivar, wset, plugsort, color=color, $
         fullfit = slatec_bvalu(wave, fullbkpt, coeff)
 
 	negs = where(fullfit LE 0.0, nnegs)
-	if (nnegs GT 0) then message, 'Flux factor has negative elements'
+	if (nnegs GT 0) then $
+	 splog, 'WARNING: Flux factor has negative elements!'
 
 	fluxfactor = fullfit / (fullf8v * scaling)
 
