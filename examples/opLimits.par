@@ -18,10 +18,10 @@ speclimit red bias PERCENTILE98 b2 -65536 0
 speclimit red bias PERCENTILE98 r1 -65536 0
 speclimit red bias PERCENTILE98 r2 -65536 0
 
-speclimit red bias PERCENTILE98 b1 20 65536
-speclimit red bias PERCENTILE98 b2 20 65536
-speclimit red bias PERCENTILE98 r1 20 65536
-speclimit red bias PERCENTILE98 r2 20 65536
+speclimit red bias PERCENTILE98 b1 15 65536
+speclimit red bias PERCENTILE98 b2 15 65536
+speclimit red bias PERCENTILE98 r1 15 65536
+speclimit red bias PERCENTILE98 r2 15 65536
 
 # Issue errors if the 98th percentile of the dark frames is not in the
 # range (0,35).
