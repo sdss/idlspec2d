@@ -146,8 +146,9 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay
 
    objname = allseq.name[icams]
    for ifile=0, n_elements(objname)-1 do $
-    if ((findfile(objname[ifile]))[0] EQ '') then $ (
-            (allseq.name[icams])[ifile] = ''
+    if ((findfile(objname[ifile]))[0] EQ '') then  objname[ifile] = ''
+
+   allseq.name[icams] = objname
 
 
    j = where(allseq.name[icams])
