@@ -34,11 +34,5 @@ function quickbias, biasname
 
    rstruct = create_struct('PERCENTILE', ptiles)
 
-   ;----------
-   ; Close splog file
-
-   splog, 'Finished at ', systime()
-   splog, /close
-
    return, rstruct
 end
