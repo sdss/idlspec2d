@@ -1,13 +1,12 @@
 ;------------------------------------------------------------------------------
 pro pca_gal
 
-   wavemin = 3300
-   wavemax = 8800
-wavemin = 2500 ; ???
-wavemax = 9200 ; ???
+   wavemin = 2300.
+   wavemax = 9300.
    snmax = 100
    niter = 10
    nkeep = 4
+   minuse = 10
 
    get_juldate, jd
    mjdstr = string(long(jd-2400000L), format='(i5)')
@@ -19,8 +18,6 @@ wavemax = 9200 ; ???
    eigenfile = filepath('eigeninput_gal.dat', $
     root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='templates')
    djs_readcol, eigenfile, skip=2, plate, mjd, fiber, zfit, format='(L,L,L,D)'
-;readcol, eigenfile, skip=2, plate, mjd, fiber, zfit, format='(L,L,L,D)', $
-; numline=20 ; ???
 
    readspec, plate, fiber, mjd=mjd, flux=objflux, invvar=objivar, $
     andmask=andmask, plugmap=plugmap, loglam=objloglam
@@ -40,11 +37,37 @@ andmask = 0 ; Free memory
    endif
 
    ;----------
+   ; Set the new wavelength mapping here...
+
+   newloglam = wavevector(alog10(wavemin), alog10(wavemax), binsz=objdloglam)
+
+   ;----------
+   ; Do PCA solution
 
    pcaflux = pca_solve(objflux, objivar, objloglam, zfit, $
-    wavemin=wavemin, wavemax=wavemax, $
-    niter=niter, nkeep=nkeep, newloglam=newloglam, eigenval=eigenval)
+;    wavemin=wavemin, wavemax=wavemax, $
+    niter=niter, nkeep=nkeep, newloglam=newloglam, eigenval=eigenval, $
+    usemask=usemask)
    pcaflux = float(pcaflux)
+
+   ;----------
+   ; Fill in bad data with a running median of good data
+
+   qgood = usemask GE minuse
+   igood = where(qgood, ngood)
+   ibad = where(qgood EQ 0, nbad)
+   medflux = 0 * pcaflux
+   if (nbad GT 0) then begin
+      for i=0, nkeep-1 do begin
+         medflux[igood,i] = $
+          djs_median(pcaflux[igood,i], width=51, boundary='nearest')
+         medflux[*,i] = djs_maskinterp(medflux[*,i], qgood EQ 0, /const)
+      endfor
+      pcaflux[ibad,*] = medflux[ibad,*]
+   endif
+
+   ;----------
+   ; Write output file
 
    sxaddpar, hdr, 'OBJECT', 'GALAXY'
    sxaddpar, hdr, 'COEFF0', newloglam[0]

@@ -1,6 +1,10 @@
+;------------------------------------------------------------------------------
 pro qsorebin
 
    objdloglam = 1.d-4
+   wavemin = 525.
+   wavemax = 9300.
+   minuse = 40
 
    ;----------
    ; Read the template files
@@ -9,7 +13,7 @@ pro qsorebin
 
    tfile = filepath('qso.template', $
     root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='templates')
-   djs_readcol, tfile, twave, tflux, terr, lq, uq, npt, $
+   djs_readcol, tfile, twave, tflux, terr, lq, uq, usemask, $
     format='(D,F,F,F,F,L)'
    tloglam0 = alog10(twave[0])
    tdloglam = alog10(twave[1] / twave[0])
@@ -17,21 +21,39 @@ pro qsorebin
    tivar = 0 * terr
    tivar[igood] = 1. / (terr[igood])^2
 
-   ; Test if the binning is the same as for the objects.
-   ; If not, then re-bin to the same pixel bin size.
+   ;----------
+   ; Set the new wavelength mapping here...
 
-   if (abs((tdloglam-objdloglam)/objdloglam) GT 1.e-5) then begin
-      ii = where(tivar GT 0 AND npt GT 10 AND twave GT 800)
-      tloglam0 = alog10(twave[ii[0]])
-      nnewbin = alog10(max(twave[ii]) / min(twave[ii])) / objdloglam
-      newloglam = tloglam0 + lindgen(nnewbin) * objdloglam
-      newflux = interpol(tflux[ii], alog10(twave[ii]), newloglam)
-      newivar = interpol(tivar, alog10(twave), newloglam)
+   newloglam = wavevector(alog10(wavemin), alog10(wavemax), binsz=objdloglam)
+
+   ;----------
+   ; Re-bin to the same pixel bin size.
+
+   newflux = interpol(tflux, alog10(twave), newloglam)
+   newivar = interpol(tivar, alog10(twave), newloglam)
+   newuse = interpol(float(usemask), alog10(twave), newloglam)
+
+   ;----------
+   ; Fill in bad data with a running median of good data
+
+   qgood = newuse GE minuse AND newivar GT 0
+   igood = where(qgood, ngood)
+   ibad = where(qgood EQ 0, nbad)
+   medflux = 0 * newflux
+   if (nbad GT 0) then begin
+      medflux[igood] = djs_median(newflux[igood], width=51, boundary='nearest')
+      medflux = djs_maskinterp(medflux, qgood EQ 0, /const)
+      newflux[ibad] = medflux[ibad]
    endif
+
+   ;----------
+   ; Write output file
 
    sxaddpar, hdr, 'COEFF0', newloglam[0]
    sxaddpar, hdr, 'COEFF1', objdloglam
    mwrfits, newflux, 'spEigenQSO.fits', hdr, /create
 
-stop
+   return
 end
+;------------------------------------------------------------------------------
+
