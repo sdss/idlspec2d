@@ -104,8 +104,10 @@ function batch2d_rawfiles, planfile, outfile=outfile
       endif
    endfor
 
+   ; Add a wildcard to the end of the raw FITS files so that we
+   ; find compressed (.gz) files.
    mjdstr = string(thismjd, format='(i05.5)')
-   infiles = djs_filepath(expfiles, root_dir=mjdstr)
+   infiles = djs_filepath(expfiles+'*', root_dir=mjdstr)
 
    ;----------
    ; Replace the prefix 'sdR' with 'spFrame' in the science frames
