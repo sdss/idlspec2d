@@ -3,6 +3,7 @@
 ;   spplan
 ;
 ; PURPOSE:
+;   This is a Fermi-only routine.
 ;   Create plan file(s) for running the Spectro-2D pipeline.
 ;
 ; CALLING SEQUENCE:

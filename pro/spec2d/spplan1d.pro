@@ -12,8 +12,7 @@
 ; INPUTS:
 ;
 ; OPTIONAL INPUTS:
-;   topindir   - Top directory name for 2D outputs; default to the
-;                subdirectory '2d_' + VERSION under the current directory.
+;   topindir   - Top directory name for 2D outputs; default to ''
 ;   topoutdir  - Top directory name for 2D outputs; default to the
 ;                same as TOPINDIR.
 ;   mjd        - Use data from these MJD's.
@@ -64,9 +63,7 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
    ; Determine the top-level of the input and output directory tree
 
    if (NOT keyword_set(topindir) OR NOT keyword_set(topoutdir)) then begin
-      vers = idlspec2d_version()
-      if (strpos(vers, 'NOCVS') NE -1) then vers = 'test'
-      defaultdir = '2d_' + vers
+      defaultdir = ''
    endif
 
    if (NOT keyword_set(topindir)) then topindir = defaultdir

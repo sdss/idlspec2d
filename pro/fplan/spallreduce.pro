@@ -3,6 +3,7 @@
 ;   spallreduce
 ;
 ; PURPOSE:
+;   This is a Fermi-only routine.
 ;   Calling script for SPREDUCE and COMBINE2DOUT that reduces a night
 ;   of data according to a plan file.
 ;
@@ -54,10 +55,24 @@ pro spallreduce, planfile, docams=docams, nocombine=nocombine, $
 
    ;-------------------------------------------------------------
    ;  First just do standard 2d reduction
-   ;
+
+   ; Read path names from plan file
+   yanny_read, planfile[0], hdr=hdr
+   inputdir = yanny_par(hdr, 'inputdir')
+   plugdir = yanny_par(hdr, 'plugdir')
+   flatdir = yanny_par(hdr, 'flatdir')
+
+   ; Remove the MJD from INPUTDIR, PLUGDIR
+   junk = fileandpath(inputdir, path=inputdir)
+   junk = fileandpath(plugdir, path=plugdir)
+
+   ; Set environment variables for call to SPREDUCE2D
+   setenv, 'RAWDATA_DIR=' + inputdir
+   setenv, 'SPECLOG_DIR=' + plugdir
+   setenv, 'SPECFLAT_DIR=' + flatdir
+
    spreduce2d, planfile[0], docams=docams, xdisplay=xdisplay
 
-        
    ;-------------------------------------------------------------
    ;  Now coadd, and also produce stopgap 2dmerge directory
    ;

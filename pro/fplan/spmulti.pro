@@ -3,6 +3,7 @@
 ;   spmulti
 ;
 ; PURPOSE:
+;   This is a Fermi-only routine.
 ;   Combine all files in 2dmerge directory
 ;
 ; CALLING SEQUENCE:

@@ -6,17 +6,15 @@
 ;   Create plan file(s) for running the Spectro-2D pipeline.
 ;
 ; CALLING SEQUENCE:
-;   spplan2d, [ topindir=, topoutdir=, mjd=, mjstart=, mjend=, minexp=, $
+;   spplan2d, [ topoutdir=, mjd=, mjstart=, mjend=, minexp=, $
 ;    /clobber ]
 ;
 ; INPUTS:
 ;
 ; OPTIONAL INPUTS:
-;   topindir   - Top directory name for input files;
-;                default to '/data/spectro'.
-;   topoutdir  - Top directory name for output files; default to the
+;   topoutdir  - Top directory name for output files; default to ''
 ;                subdirectory '2d_' + VERSION under the current directory.
-;   mjd        - Look for raw data files in RAWDIR/MJD; default to
+;   mjd        - Look for raw data files in RAWDATA_DIR/MJD; default to
 ;                search all subdirectories.  Note that this need not be
 ;                integer-valued, but could be for example '51441_test'.
 ;   mjstart    - Starting MJD.
@@ -28,23 +26,20 @@
 ; OUTPUT:
 ;
 ; COMMENTS:
-;   Look for the input files in:
-;     TOPINDIR/rawdata/MJD/sdR-cs-eeeeeeee.fit           - Raw frames
-;     TOPINDIR/astrolog/MJD/plPlugMapM-pppp-mmmmm-aa.par - Plug map files
-;     TOPINDIR/flats/pixflat-mmmmm-cs.fits               - Pixel flats
-;   where c=color, s=spectrograph number, pppp=plate number, aa=mapper ID,
-;   mmmmm=MJD.
+;   The environment variable RAWDATA_DIR must be set.
 ;
-;   The top-level of the output directory structure, TOPOUTDIR, is 2d_VERSION,
-;   where we read the version with IDLSPEC2D_VERSION().  If this is not a CVS-
-;   declared version of the code, then the output directory is '2d_test'.
-;   The files created are:
-;     TOPOUTDIR/PLATE/spPlan2d-pppp-mmmmm.par  - 2D plan file (could be several)
+;   Look for the raw FITS data files in:
+;     RAWDATA_DIR/MJD/sdR-cs-eeeeeeee.fit
+;   where c=color, s=spectrograph number, eeeeeeee=exposure number.
+;
+;   The output 2D plan files created are:
+;     TOPOUTDIR/PLATE/spPlan2d-pppp-mmmmm.par
+;   where pppp=plate number, mmmmm=MJD.
 ;
 ; EXAMPLES:
 ;   Create the plan file(s) for reducing the data for MJD=51441, with that
-;   top level directory set to '/u/schlegel/spectro'
-;   > spplan2d, '/u/schlegel/spectro', mjd=51441
+;   top level directory set to '/u/schlegel/2d_test'
+;   > spplan2d, '/u/schlegel/2d_test', mjd=51441
 ;
 ; BUGS:
 ;   This routine spawns the Unix command 'mkdir'.
@@ -61,6 +56,7 @@
 ;   yanny_write
 ;
 ; INTERNAL SUPPORT ROUTINES:
+;   spplan_findrawdata
 ;   spplan_create_exp
 ;   spplan_create_plug
 ;   spplan_create_pixflats
@@ -69,7 +65,7 @@
 ;   02-Nov-1999  Written by David Schlegel, Princeton.
 ;-
 ;------------------------------------------------------------------------------
-function findrawdata, inputdir, nfile
+function spplan_findrawdata, inputdir, nfile
 
    fullnames = findfile(filepath('sdR*.fit', root_dir=inputdir), count=nfile)
    gzipnames = findfile(filepath('sdR*.fit.gz', root_dir=inputdir), count=n)
@@ -94,6 +90,7 @@ function findrawdata, inputdir, nfile
    return, fullnames
 end
 
+;------------------------------------------------------------------------------
 function spplan_create_spexp, expnum, plateid, mjd, mapname, flavor, exptime, $
  filename, cameras, minexp=minexp
 
@@ -133,34 +130,28 @@ end
 
 ;------------------------------------------------------------------------------
 
-pro spplan2d, topindir=topindir, topoutdir=topoutdir, mjd=mjd, $
+pro spplan2d, topoutdir=topoutdir, mjd=mjd, $
  mjstart=mjstart, mjend=mjend, minexp=minexp, clobber=clobber
 
-;   if (NOT keyword_set(topindir)) then topindir = '/data/spectro'
-   if (NOT keyword_set(topindir)) then topindir = '/home/data'
    if (NOT keyword_set(minexp)) then minexp = 300
 
    ;----------
    ; Determine the top-level of the output directory tree
 
-   if (NOT keyword_set(topoutdir)) then begin
-      vers = idlspec2d_version()
-      if (strpos(vers, 'NOCVS') NE -1) then vers = 'test'
-      topoutdir = '2d_' + vers
-   endif
+   if (NOT keyword_set(topoutdir)) then topoutdir = ''
    splog, 'Setting top-level of output directory to ' + topoutdir
 
    ;----------
-   ; Set directory names RAWDIR, ASTROLOG, FLATDIR
+   ; Read environment variable for RAWDATA_DIR for finding raw data files.
 
-   rawdir = concat_dir(topindir, 'rawdata')
-   astrolog = concat_dir(topindir, 'astrolog')
-   flatdir = concat_dir(topindir, 'pixflats')
+   rawdata_dir = getenv('RAWDATA_DIR')
+   if (NOT keyword_set(rawdata_dir)) then $
+    message, 'Must set environment variable RAWDATA_DIR'
 
    ;----------
    ; Create a list of the MJD directories (as strings)
 
-   mjdlist = get_mjd_dir(rawdir, mjd=mjd, mjstart=mjstart, mjend=mjend)
+   mjdlist = get_mjd_dir(rawdata_dir, mjd=mjd, mjstart=mjstart, mjend=mjend)
 
    camnames = ['b1', 'b2', 'r1', 'r2']
    ncam = N_elements(camnames)
@@ -171,16 +162,14 @@ pro spplan2d, topindir=topindir, topoutdir=topoutdir, mjd=mjd, $
    for imjd=0, N_elements(mjdlist)-1 do begin
 
       mjddir = mjdlist[imjd]
-      inputdir = concat_dir(rawdir, mjddir)
-      plugdir = concat_dir(astrolog, mjddir)
+      inputdir = concat_dir(rawdata_dir, mjddir)
 
       splog, ''
       splog, 'Data directory ', inputdir
-      splog, 'Astrolog directory ', plugdir
 
       
       ; Find all raw FITS files in this directory
-      fullname = findrawdata(inputdir,nfile)
+      fullname = spplan_findrawdata(inputdir, nfile)
       splog, 'Number of FITS files found: ', nfile
 
       if (nfile GT 0) then begin
@@ -313,12 +302,6 @@ pro spplan2d, topindir=topindir, topoutdir=topoutdir, mjd=mjd, $
                 + "'  # Plan file for 2D spectral reductions"]
                hdr = [hdr, "MJD     " + mjdstr $
                 + "  # Modified Julian Date"]
-               hdr = [hdr, "inputdir   '" + inputdir $
-                + "'  # Directory for raw images"]
-               hdr = [hdr, "plugdir    '" + plugdir $
-                + "'  # Directory for plugmap files"]
-               hdr = [hdr, "flatdir    '" + flatdir $
-                + "'  # Directory for pixel flats"]
                hdr = [hdr, "extractdir ''" $
                 + "  # Directory for extracted spectra"]
                hdr = [hdr, "logfile    '" $

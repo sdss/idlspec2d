@@ -20,6 +20,13 @@
 ; OUTPUT:
 ;
 ; COMMENTS:
+;   The following environment variables must be set:
+;      RAWDATA_DIR
+;      SPECLOG_DIR
+;      SPECFLAT_DIR
+;   Look for raw FITS data files in RAWDATA_DIR/MJD.
+;   Look for plug map files in SPECLOG_DIR/MJD.
+;   Look for spectroscopic flat files in SPECFLAT_DIR.
 ;
 ; EXAMPLES:
 ;
@@ -59,6 +66,21 @@ pro spreduce2d, planfile, docams=docams, xdisplay=xdisplay
    if (NOT keyword_set(docams)) then docams = ['b1', 'b2', 'r1', 'r2']
 
    ;----------
+   ; Read environment variables for RAWDATA_DIR, SPECLOG_DIR, SPECFLAT_DIR
+
+   rawdata_dir = getenv('RAWDATA_DIR')
+   if (NOT keyword_set(rawdata_dir)) then $
+    message, 'Must set environment variable RAWDATA_DIR'
+
+   speclog_dir = getenv('SPECLOG_DIR')
+   if (NOT keyword_set(speclog_dir)) then $
+    message, 'Must set environment variable SPECLOG_DIR'
+
+   specflat_dir = getenv('SPECFLAT_DIR')
+   if (NOT keyword_set(specflat_dir)) then $
+    message, 'Must set environment variable SPECFLAT_DIR'
+
+   ;----------
    ; Strip path from plan file name, and change to that directory
 
    thisplan = fileandpath(planfile[0], path=thispath)
@@ -85,9 +107,11 @@ pro spreduce2d, planfile, docams=docams, xdisplay=xdisplay
    ; Find keywords from the header
 
    mjd = yanny_par(hdr, 'MJD')
-   inputdir = yanny_par(hdr, 'inputdir')
-   plugdir = yanny_par(hdr, 'plugdir')
-   flatdir = yanny_par(hdr, 'flatdir')
+   mjdstr = string(thismjd, format='(i05.5)')
+
+   inputdir = concat_dir(rawdata_dir, mjdstr)
+   plugdir = concat_dir(speclog_dir, mjdstr)
+   flatdir = specflat_dir
    extractdir = yanny_par(hdr, 'extractdir')
    logfile = yanny_par(hdr, 'logfile')
    plotfile = yanny_par(hdr, 'plotfile')

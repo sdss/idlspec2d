@@ -3,6 +3,7 @@
 ;   spplancomb
 ;
 ; PURPOSE:
+;   This is a Fermi-only routine.
 ;   Create plan file(s) for combining spFrame exposures
 ;
 ; CALLING SEQUENCE:
