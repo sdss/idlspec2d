@@ -173,7 +173,7 @@ endelse
           AND newloglam LE max(inloglam[ss])+EPS, numinside)
 
 ; Another work-around for the Slatec code ???
-         if (numinside EQ 0) then begin
+         if (numinside LE 2) then begin
             splog,'WARNING: No wavelengths inside breakpoints'
          endif else if (total(abs(sset.coeff)) EQ 0.0) then begin
             splog,'WARNING: All B-spline coefficients have been set to zero!'
