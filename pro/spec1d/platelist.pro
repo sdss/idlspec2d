@@ -202,6 +202,9 @@ pro platelist, infile, plist=plist, create=create, $
     'n_star'   , 0L,  $
     'n_unknown', 0L,  $
     'n_sky'    , 0L, $
+    'success_main' , -1.0, $
+    'success_lrg' , -1.0, $
+    'success_qso' , -1.0, $
     'status2d' , 'Missing', $
     'statuscombine', 'Missing', $
     'status1d' , 'Missing', $
@@ -452,6 +455,7 @@ pro platelist, infile, plist=plist, create=create, $
       hdr2 = headfits(zbestfile[ifile])
       if (size(hdr2, /tname) EQ 'STRING') then begin
          zans = mrdfits(zbestfile[ifile], 1, /silent)
+         plug = mrdfits(platefile[ifile], 5, /silent)
          class = strtrim(zans.class,2)
          ; Use the ZWARNING flag if it exists to identify SKY or UNKNOWN.
          if ((where(tag_names(zans) EQ 'ZWARNING'))[0] NE -1) then $
@@ -467,6 +471,32 @@ pro platelist, infile, plist=plist, create=create, $
          plist[ifile].n_sky = total(class EQ 'SKY' OR qsky EQ 1)
          plist[ifile].vers1d = strtrim(sxpar(hdr2, 'VERS1D'))
          plist[ifile].status1d = 'Done'
+
+         nobj = n_elements(zans)
+         targets = strarr(nobj)
+         for iobj=0, nobj-1 do $
+          targets[iobj] = sdss_flagname('TARGET',plug[iobj].primtarget, /silent, /concat)+' '
+         imain = where(strmatch(targets,'*GALAXY *') $
+          OR strmatch(targets,'*GALAXY_BIG *') $
+          OR strmatch(targets,'*GALAXY_BRIGHT_CORE *'), nmain)
+         ilrg = where(strmatch(targets,'*GALAXY_RED *') $
+          OR strmatch(targets,'*GALAXY_RED_II *'), nlrg)
+         iqso = where(strmatch(targets,'*QSO_HIZ *') $
+          OR strmatch(targets,'*QSO_CAP *') $
+          OR strmatch(targets,'*QSO_SKIRT *'), nqso)
+         if (nmain GT 0) then $
+          plist[ifile].success_main = $
+           100 * total(zans[imain].zwarning EQ 0 $
+           AND (strmatch(zans[imain].class,'GALAXY') $
+            OR strmatch(zans[imain].class,'QSO'))) / nmain
+         if (nlrg GT 0) then $
+          plist[ifile].success_lrg = $
+           100 * total(zans[ilrg].zwarning EQ 0 $
+           AND strmatch(zans[ilrg].class,'GALAXY')) / nlrg
+         if (nqso GT 0) then $
+          plist[ifile].success_qso = $
+           100 * total(zans[iqso].zwarning EQ 0 $
+           AND strmatch(zans[iqso].class,'QSO')) / nqso
       endif else begin
          ;----------
          ; Find the state of the 1D reductions -- spZbest file is missing
