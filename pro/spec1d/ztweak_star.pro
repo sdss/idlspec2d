@@ -118,12 +118,14 @@ ormask = 0 ; Free memory
    cz_out = res.elodie_z * cspeed
    cz_diff = cz_out - cz_in
 
+   splog, file='ztweak_star.log'
    splog, 'PLATE  MJD   FIBER CZ_IN   CZ_OUT  CZ_DIFF SPTYPE  '
    splog, '-----  ----- ----- ------- ------- ------- --------'
    for iobj=0, nobj-1 do $
     splog, slist[iobj].plate, slist[iobj].mjd, slist[iobj].fiberid, $
      cz_in[iobj], cz_out[iobj], cz_diff[iobj], res[iobj].elodie_sptype, $
      format='(i5,i7,i6,3f8.1," ",a8)'
+   splog, /close
 
    ;----------
    ; Optionally overwrite the input file.
