@@ -23,7 +23,8 @@
 ;   ageburst       - Age of the Universe at the single-burst; default
 ;                    to value from previous call, or 2.5 Gyr
 ;   zmetal         - Metallicity at the single-burst; default
-;                    to value from previous call, or [Fe/H] = 0.025 dex.
+;                    to value from previous call, or Z=0.018
+;                    (where Z=0.02 is solar)
 ;   filterlist     - List of filter indices to use in fits; default to
 ;                    using all five filters [0,1,2,3,4]
 ;   adderr         - Fractional error to add in quadrature; default to 0.03
@@ -45,11 +46,10 @@
 ; EXAMPLES:
 ;
 ; BUGS:
-;   The LRG template is not quite correct.  I have modified the spectrum
-;   on large scales by multiplying by an empirically-determined function.
-;   Also, I've extrapolated the two ends of the spectrum
-;   to be essentially flat in f_lambda.
-;   The 3-sigma-clipped scatter appears to be 0.023 at z>0.1.
+;   Note that I allow the Bruzual-Charlot models to be extrapolated
+;   beyond the ages and metallicities that they provide.  This is done
+;   via linear interpolation in log(age)-log(metals)-log(flux) spec.
+;   This may not be valid.
 ;
 ; PROCEDURES CALLED:
 ;   computechi2()
@@ -74,13 +74,13 @@ function lrgmodel_photoz, pflux, pflux_ivar, z_err=z_err, $
    if (n_elements(filterlist) EQ 0) then filterlist = lindgen(5)
    if (n_elements(adderr) EQ 0) then adderr = 0.03
    if (n_elements(abfudge) EQ 0) then abfudge = [0,0,0,0,0]
-   if (n_elements(ageburst_save) EQ 0) then ageburst_save = 2.5
-   if (n_elements(zmetal_save) EQ 0) then zmetal_save = 0.025
+   if (n_elements(ageburst_save) EQ 0) then ageburst_save = -999
+   if (n_elements(zmetal_save) EQ 0) then zmetal_save = -999
 
    if (keyword_set(ageburst1)) then ageburst = ageburst1 $
     else ageburst = 2.5
    if (keyword_set(zmetal1)) then zmetal = zmetal1 $
-    else zmetal = 0.016
+    else zmetal = 0.018
 
    ;----------
    ; Read the Bruzual-Charlot model spectra FITS files.
@@ -166,12 +166,10 @@ function lrgmodel_photoz, pflux, pflux_ivar, z_err=z_err, $
 
          synflux[*,iz] = filter_thru( bigspecflux, $
           waveimg=bigwave, /toair)
-;if (iz EQ 0) then begin
-; print,synflux[*,iz]/synflux[2,iz]
-; stop
-;endif
       endfor
       print
+      ageburst_save = ageburst
+      zmetal_save = zmetal
    endif
 
    ;----------
