@@ -63,7 +63,7 @@ pro mysql_write, filename, pdata, table=table, delim=delim, $
    if (stname EQ '') then stname = 'anonymous'
 
    ; Replace variable names that are reserved by MySQL to non-conflicting names
-   for itag=0, ntag-1 do begin
+   for itag=0L, ntag-1 do begin
       ii = where(tags[itag] EQ reserved_names)
       if (ii[0] NE -1) then tags[itag] = reserved_replace[ii[0]]
    endfor
@@ -82,7 +82,7 @@ pro mysql_write, filename, pdata, table=table, delim=delim, $
    printf, olun, 'create table ' + stname
    printf, olun, format='("(",$)'
 
-   for itag=0, ntag-1 do begin          ; Loop through each variable
+   for itag=0L, ntag-1 do begin          ; Loop through each variable
       tt = size( pdata[0].(itag), /tname )
       dims = size( pdata[0].(itag), /dimens )
       ndim = size( pdata[0].(itag), /n_dimen )
@@ -96,10 +96,10 @@ pro mysql_write, filename, pdata, table=table, delim=delim, $
          sline = sline + tags[itag] + ' ' + tagname + ' ' + modifiers
       endif else begin
          varname = tags[itag]
-         for j=0, ndim-1 do $
+         for j=0L, ndim-1 do $
           varname = varname + '_' + $
            strtrim(string( djs_laxisgen(dims, iaxis=j) ), 2)
-         for j=0, nel-1 do begin
+         for j=0L, nel-1 do begin
             sline = sline + varname[j] + ' ' + tagname + ' ' + modifiers
             if (j NE nel-1) then sline = sline + ', '
          endfor
@@ -126,9 +126,9 @@ pro mysql_write, filename, pdata, table=table, delim=delim, $
    get_lun, olun
    openw, olun, filename, append=append
 
-   for iel=0, N_elements(pdata)-1 do begin ; Loop thru each row
+   for iel=0L, N_elements(pdata)-1 do begin ; Loop thru each row
 
-      for itag=0, ntag-1 do begin          ; Loop through each variable
+      for itag=0L, ntag-1 do begin          ; Loop through each variable
          words = pdata[iel].(itag)
          nword = N_elements(words)
 
@@ -136,7 +136,7 @@ pro mysql_write, filename, pdata, table=table, delim=delim, $
          ; in any of its elements.  If there is white space, then
          ; put double-quotes around that element.
          if (size(words,/tname) EQ 'STRING') then begin
-            for iw=0, nword-1 do $
+            for iw=0L, nword-1 do $
              if (strpos(words[iw],' ') NE -1) then $
               words[iw] = '"' + words[iw] + '"'
          endif else begin
@@ -150,7 +150,7 @@ pro mysql_write, filename, pdata, table=table, delim=delim, $
             sline = sline + words
          endif else begin
             sline = sline + words[0]
-            for i=1, N_elements( (pdata)[iel].(itag) )-1 do $
+            for i=1L, N_elements( (pdata)[iel].(itag) )-1 do $
              sline = sline + delim + words[i]
          endelse
       endfor

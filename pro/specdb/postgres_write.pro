@@ -65,7 +65,7 @@ pro postgres_write, filename, pdata, table=table, delim=delim, append=append, $
    printf, olun, 'create table ' + stname
    printf, olun, format='("(",$)'
 
-   for itag=0, ntag-1 do begin          ; Loop through each variable
+   for itag=0L, ntag-1 do begin          ; Loop through each variable
       tt = size( pdata[0].(itag), /tname )
       dims = size( pdata[0].(itag), /dimens )
       ndim = size( pdata[0].(itag), /n_dimen )
@@ -74,7 +74,7 @@ pro postgres_write, filename, pdata, table=table, delim=delim, append=append, $
       if (itag EQ 0) then sline = '' $
        else sline = ' '
       sline = sline + tags[itag] + ' ' + tagname
-      for j=0, ndim-1 do begin
+      for j=0L, ndim-1 do begin
          sline = sline + '[' + strtrim(string(dims[j]),2) + ']'
       endfor
       if (itag EQ ntag-1) then sline = sline + ');' $
@@ -98,9 +98,9 @@ pro postgres_write, filename, pdata, table=table, delim=delim, append=append, $
    get_lun, olun
    openw, olun, filename, append=append
 
-   for iel=0, N_elements(pdata)-1 do begin ; Loop thru each row
+   for iel=0L, N_elements(pdata)-1 do begin ; Loop thru each row
 
-      for itag=0, ntag-1 do begin          ; Loop through each variable
+      for itag=0L, ntag-1 do begin          ; Loop through each variable
          words = pdata[iel].(itag)
          nword = N_elements(words)
 
@@ -108,7 +108,7 @@ pro postgres_write, filename, pdata, table=table, delim=delim, append=append, $
          ; in any of its elements.  If there is white space, then
          ; put double-quotes around that element.
          if (size(words,/tname) EQ 'STRING') then begin
-            for iw=0, nword-1 do $
+            for iw=0L, nword-1 do $
              if (strpos(words[iw],' ') NE -1) then $
               words[iw] = '"' + words[iw] + '"'
          endif else begin
@@ -122,7 +122,7 @@ pro postgres_write, filename, pdata, table=table, delim=delim, append=append, $
             sline = sline + words
          endif else begin
             sline = sline + '{' + words[0]
-            for i=1, N_elements( (pdata)[iel].(itag) )-1 do $
+            for i=1L, N_elements( (pdata)[iel].(itag) )-1 do $
              sline = sline + ',' + words[i]
             sline = sline + '}'
          endelse
