@@ -1,4 +1,6 @@
 
+ATMDISP_COR
+DJS_SFIT_ITER
 DR1_SPPLATE_COR (removed)
 FLUXCALIB_RESID (removed)
 FLUX_STANDARD (removed)
@@ -29,9 +31,16 @@ PLATESN: New header keywords ROFFSET & RSIGMA store the offset and standard
 PCA_SOLVE: Added /quiet keyword.
 PLOTSN: Fixed histogram scales, changed colors for histograms.
 
+etc/atmdisp_vec_am1.1.see2.0.fit - Tremonti's atmos. dispersion corrrection?
+etc/atmdisp_vec_am1.2.see2.0.fit - Tremonti's atmos. dispersion corrrection?
+etc/atmdisp_vec_am1.3.see2.0.fit - Tremonti's atmos. dispersion corrrection?
+etc/atmdisp_vec_am1.4.see2.0.fit - Tremonti's atmos. dispersion corrrection?
+etc/atmdisp_vec_am1.5.see2.0.fit - Tremonti's atmos. dispersion corrrection?
 etc/emlines.par: The [O_II] lines were updated from Peter van Hoof's web
            site at: http://www.pa.uky.edu/~peter/atomic/
 etc/kurucz_stds_v5.fit: Made with new SPECTRUM code.
+etc/kurucz_model_fix.fit (removed)
+etc/kurucz_stds_interp.fit (removed)
 etc/spChunkList.par: Add chunks 28A, 71, 68A.
 
 -------------------------------------------------------------------------------
