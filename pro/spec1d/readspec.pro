@@ -9,7 +9,7 @@
 ;   readspec, plate, fiber, [mjd=, znum=, flux=, flerr=, invvar=, $
 ;    andmask=, ormask=, disp=, plugmap=, loglam=, wave=, tsobj=, $
 ;    zans=, zline=, synflux=, lineflux=, objhdr=, zhdr=, $
-;    topdir=, /align, /silent ]
+;    topdir=, path=, /align, /silent ]
 ;
 ; INPUTS:
 ;   plate      - Plate number(s)
@@ -24,6 +24,7 @@
 ;                ZNUM-th best-fit; e.g., set ZNUM=2 for second-best fit.
 ;   topdir     - Top-level directory for data; default to the environment
 ;                variable $SPECTRO_DATA.
+;   path       - Override all path information with this directory name.
 ;   align      - If set, then align all the spectra in wavelength.
 ;                Also, LOGLAM and WAVE will be output as single vectors
 ;                (since they are all the same) rather than as one per object.
@@ -155,7 +156,7 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
  loglam=loglam, tsobj=tsobj, zans=zans, zline=zline, $
  synflux=synflux, lineflux=lineflux, znum=znum, objhdr=objhdr, zhdr=zhdr, $
  coeffzero=coeff0, coeffone=coeff1, npix=npix, $
- topdir=topdir, align=align, silent=silent
+ topdir=topdir, path=path, align=align, silent=silent
 
    common com_readspec, q_flux, q_flerr, q_invvar, q_andmask, q_ormask, $
     q_disp, q_plugmap, q_loglam, q_wave, q_tsobj, q_zans, q_zline, $
@@ -166,8 +167,11 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
     else mjdstr = string(mjd,format='(i5.5)')
 
    filename = 'spPlate-' + platestr + '-' + mjdstr + '.fits'
-   filename = lookforgzip(filepath(filename, root_dir=topdir, $
-    subdirectory=platestr), count=ct)
+   if (keyword_set(path)) then $
+    filename = lookforgzip(filepath(filename, root_dir=path), count=ct) $
+   else $
+    filename = lookforgzip(filepath(filename, root_dir=topdir, $
+     subdirectory=platestr), count=ct)
 
    if (ct GT 1) then filename = filename[ (reverse(sort(filename)))[0] ] $
     else filename = filename[0]
@@ -241,8 +245,11 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
       else $
        zfile = 'spZall-' + platestr + '-' + mjdstr + '.fits'
 
-      zfile = lookforgzip(filepath(zfile, root_dir=topdir, $
-       subdirectory=platestr), count=ct)
+      if (keyword_set(path)) then $
+       zfile = lookforgzip(filepath(zfile, root_dir=path), count=ct) $
+      else $
+       zfile = lookforgzip(filepath(zfile, root_dir=topdir, $
+        subdirectory=platestr), count=ct)
       if (ct GT 1) then zfile = zfile[ (reverse(sort(zfile)))[0] ] $
        else zfile = zfile[0]
 
@@ -280,8 +287,11 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    if (q_zline OR q_lineflux) then begin
       linefile = 'spZline-' + platestr + '-' + mjdstr + '.fits'
 
-      linefile = lookforgzip(filepath(linefile, root_dir=topdir, $
-       subdirectory=platestr), count=ct)
+      if (keyword_set(path)) then $
+       linefile = lookforgzip(filepath(linefile, root_dir=path), count=ct) $
+      else $
+       linefile = lookforgzip(filepath(linefile, root_dir=topdir, $
+        subdirectory=platestr), count=ct)
       if (ct GT 1) then linefile = linefile[ (reverse(sort(linefile)))[0] ] $
        else linefile = linefile[0]
    endif
@@ -332,7 +342,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
  andmask=andmask, ormask=ormask, disp=disp, plugmap=plugmap, $
  loglam=loglam, wave=wave, tsobj=tsobj, zans=zans, zline=zline, $
  synflux=synflux, lineflux=lineflux, objhdr=objhdr, zhdr=zhdr, $
- znum=znum, topdir=topdir, align=align, silent=silent
+ znum=znum, topdir=topdir, path=path, align=align, silent=silent
 
    if (n_params() LT 1) then begin
       doc_library, 'readspec'
@@ -344,7 +354,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
     q_disp, q_plugmap, q_loglam, q_wave, q_tsobj, q_zans, q_zline, $
     q_synflux, q_lineflux, q_mjd, q_objhdr, q_zhdr, q_needwave
 
-   if (NOT keyword_set(topdir)) then begin
+   if (NOT keyword_set(topdir) AND NOT keyword_set(path)) then begin
       topdir = getenv('SPECTRO_DATA')
       if (NOT keyword_set(topdir)) then $
        message, 'Environment variable SPECTRO_DATA must be set!'
@@ -435,7 +445,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
        tsobj=tsobj1, zans=zans1, zline=zline1, $
        synflux=synflux1, lineflux=lineflux1, objhdr=objhdr1, zhdr=zhdr1, $
        znum=znum, coeffzero=coeff0, coeffone=coeff1, npix=npix, $
-       topdir=topdir, align=align, silent=silent
+       topdir=topdir, path=path, align=align, silent=silent
 
       if (q_objhdr AND NOT keyword_set(objhdr)) then objhdr = objhdr1
       if (q_zhdr AND NOT keyword_set(zhdr)) then zhdr = zhdr1
