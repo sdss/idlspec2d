@@ -11,6 +11,11 @@
 # S. Burles, APO, 4 May 2000
 #------------------------------------------------------------------------------
 
+#
+# Wait for first file to finish complete copy
+#
+sleep 20
+
 # Loop through each file name that has been passed.
 while read f
 do 
