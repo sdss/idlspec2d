@@ -223,26 +223,27 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    endif
 
    ;----------
-   ; If too many sky fibers then only choose best one per each bundle.
+   ; If too many sky fibers then only choose the first+last per bundle.
 
    iskies = where(strtrim(plugsort.objtype,2) EQ 'SKY' $
     AND (plugsort.fiberid GT 0) AND (fibermask EQ 0), nskies)
 
-   nbundles = 16
+   nbundle = 16
    nfibersperbundle = 20
-   if nskies GT 20 then begin
-      for i=0,nbundles-1 do begin
-         possible = where(iskies / nfibersperbundle EQ i, npossible)
-         if npossible GT 1 then begin
-            reject = where(possible NE npossible/2)
-            if reject[0] NE -1 then begin
-               reject = iskies[possible[reject]]
-               splog, 'Warning: Rejecting Sky Fibers ', reject
-               fibermask[reject] = fibermask[reject] $
-                                   OR fibermask_bits('BADSKYFIBER')
-            endif
+   if (nskies GT 40) then begin
+      for i=0, nbundle-1 do begin
+         iposs = where(fix(iskies/nfibersperbundle) EQ i, nposs)
+         if (nposs GT 2) then begin
+            ; Trim all but the first + last sky fiber per bundle
+            itrim = iskies[iposs[1:nposs-2]]
+            splog, 'Trimming extra sky fibers ', itrim
+            fibermask[itrim] = fibermask[itrim] $
+             OR fibermask_bits('BADSKYFIBER')
          endif
-      endfor       
+      endfor
+      ; Re-select the sky fibers
+      iskies = where(strtrim(plugsort.objtype,2) EQ 'SKY' $
+       AND (plugsort.fiberid GT 0) AND (fibermask EQ 0), nskies)
    endif
 
    ;----------
