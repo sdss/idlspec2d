@@ -145,7 +145,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 
       nx = (size(fextract,/dim))[0] 
       ny = (size(fextract,/dim))[1] 
-      pixelmask = intarr(nx,ny)
+      pixelmask = lonarr(nx,ny)
 
       if (badplace[0] NE -1) then pixelmask[badplace] = $
                    pixelmask[badplace] OR pixelmask_bits('NEARBADPIXEL')

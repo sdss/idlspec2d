@@ -194,8 +194,9 @@ pro fitarcimage_old, arc, arcivar, xnew, ycen, wset, $
     ystart=row, maxshifte=0.5d, maxshift0=2.0d)
 
    ; Iterate the flux-weighted centers
-   splog, 'Iterating flux-weighted centers'
-   xnew = trace_fweight(arc, xcen, ycen)
+   splog, 'Iterating with gaussian-weighted centers'
+   xnew = trace_gweight(arc, xcen, ycen, sigma = 1.0, invvar=arcivar, xerr=xerr)
+   stop
 
    ; Make use of the errors??? - Seems to just mess things up???
    ; Well... the reason for that is satured lines, which return infinite errors

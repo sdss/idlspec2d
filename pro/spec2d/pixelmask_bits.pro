@@ -3,7 +3,7 @@
 ;   pixelmask_bits
 ;
 ; PURPOSE:
-;   Return mask value corresponding to a mask condition for FIBERMASK.
+;   Return mask value corresponding to a mask condition for PIXELMASK.
 ;
 ; CALLING SEQUENCE:
 ;   mask = pixelmask_bits(bitlabel)
@@ -12,7 +12,7 @@
 ;   bitlabel   - String name specifying bit
 ;
 ; OUTPUTS:
-;   mask       - Integer set to 2^BIT, where BIT is the bit specified by
+;   mask       - Signed long set to 2^BIT, where BIT is the bit specified by
 ;                BITLABEL, or set to 0 if no label is matched
 ;
 ; OPTIONAL OUTPUTS:
@@ -23,12 +23,12 @@
 ;   mask = pixelmask_bits('FULLREJECT') 
 ;
 ; BUGS:
-;   ???  We may want to return unsigned long instead
 ;
 ; PROCEDURES CALLED:
 ;
 ; REVISION HISTORY:
 ;   23-Jan-2000 Written by S. Burles, Chicago
+;   27-Jan-2000 Changed from signed int to signed long
 ;-
 ;------------------------------------------------------------------------------
 function pixelmask_bits, bitlabel
@@ -48,6 +48,6 @@ function pixelmask_bits, bitlabel
 
      if (nmatch NE 1) then return, 0
 
-     return, 2^match[0]
+     return, 2L^match[0]
 end
 

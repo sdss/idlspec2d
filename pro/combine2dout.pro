@@ -63,10 +63,11 @@ pro combine2dout, filenames, outputroot, spectrographid, $
  fullspec=fullspec, fullwave=fullwave, wavemin=wavemin, $
  bkptbin=bkptbin, everyn=everyn, display=display, window=window
 
-   ; Set to 50 km/s for now to match 1D-pipeline
    ; Initial binning was 69 km/s per pixel (with a sigma of 1.0 pixel)
+   ; 69.02977415 km/s is log lambda 10^-4
 
-   if (NOT keyword_set(binsz)) then binsz = (69.0/299792.5) / 2.30258
+   if (NOT keyword_set(binsz)) then binsz = 1.0d-4 $
+   else binsz = double(binsz)
 
    if (NOT keyword_set(zeropoint)) then zeropoint = 3.5d
    if (NOT keyword_set(nord)) then nord = 3
@@ -77,6 +78,11 @@ pro combine2dout, filenames, outputroot, spectrographid, $
 
    redfiles = 0
    bluefiles = 0
+
+   ;------------------------------------------------------------
+   ; Somewhere up here we should add a flag combination if gives a
+   ; positive intersection with fibermask... To reject single fibers.
+
 
    ; Read first file
 
@@ -97,7 +103,7 @@ pro combine2dout, filenames, outputroot, spectrographid, $
    ; Try to read in pixelmask
 
    tt = mrdfits(filenames[0], 4)
-   if (size(tt,/n_elem) EQ 1) then pixelmask = intarr(npix,nfiber) $
+   if (size(tt,/n_elem) EQ 1) then pixelmask = lonarr(npix,nfiber) $
    else pixelmask = tt
 
    ;-------------------------------------------------------------
@@ -135,7 +141,7 @@ pro combine2dout, filenames, outputroot, spectrographid, $
       ; Try to read in pixelmask
 
       tt = mrdfits(filenames[i], 4)
-      if (size(tt,/n_elem) EQ 1) then pixelmask = [pixelmask, intarr(npix,nfiber)] $
+      if (size(tt,/n_elem) EQ 1) then pixelmask = [pixelmask, lonarr(npix,nfiber)] $
       else pixelmask = [pixelmask, tt]
 
       ;-------------------------------------------------------------
@@ -144,7 +150,6 @@ pro combine2dout, filenames, outputroot, spectrographid, $
       tt = mrdfits(filenames[i], 5)
       if (size(tt,/n_elem) EQ 1) then fibermask = [fibermask, transpose(bytarr(nfiber))] $
       else fibermask = [fibermask, transpose(tt)]
-
 
       if (keyword_set(window)) then $
        tempivar[0:window] = tempivar[0:window] * findgen(window+1) / window
@@ -168,8 +173,8 @@ pro combine2dout, filenames, outputroot, spectrographid, $
 
    splog, 'Found '+string(redfiles)+' Red files'
    splog, 'Found '+string(bluefiles)+' Blue files'
-   if (redfiles LT 3 OR bluefiles LT 3) then begin
-      splog, 'For the time being, I expect at least 3 of each to work'
+   if (redfiles LT 2 OR bluefiles LT 2) then begin
+      splog, 'For the time being, I expect at least 2 of each red and blue to work'
       return
    endif
 
@@ -227,6 +232,11 @@ pro combine2dout, filenames, outputroot, spectrographid, $
       fullwave = wave[*,i]
       fullspec = flux[*,i]
       fullivar = fluxivar[*,i]
+      fullpixelmask = pixelmask[*,i]
+      fullfibermask = fibermask[*,i]
+
+      print, 'FULL fibermask ', fullfibermask
+      help, fullpixelmask
 
       outputfile = outputroot+'-' $
        +string(format='(i3.3,a)',i+1+(spectrographid-1)*320)+'.fit'
@@ -311,6 +321,12 @@ pro combine2dout, filenames, outputroot, spectrographid, $
          bestivar = bestguess*0.0
          besterr = bestivar
 
+         ;------------------------------------------------------------------------
+         ; Also keep 2 spots for each file in case 2 pixels are touching newwave
+
+         andmask = lonarr(npix) - 1L
+         ormask = lonarr(npix)
+
          for j=0, nfiles-1 do begin
             these = where(specnum EQ j)
             if (these[0] NE -1) then begin
@@ -328,10 +344,26 @@ pro combine2dout, filenames, outputroot, spectrographid, $
                   bestivar[inbetween] = bestivar[inbetween] + $
                    result * conservevariance
 
+                  lowside = fix((fullwave[these]-wavemin)/binsz)
+                  highside = lowside + 1
+                  andmask[lowside]  = andmask[lowside] AND fullpixelmask[these]
+                  andmask[highside] = andmask[highside] AND fullpixelmask[these]
+                  ormask[lowside]   = ormask[lowside] OR fullpixelmask[these]
+                  ormask[highside]  = ormask[highside] OR fullpixelmask[these]
+
+                  ; We can also try some bitmask tricks in here
                endif
+
             endif
          endfor
 
+      ;-------------------------------------------------------------------------
+      ;  Replace -1's in andmask
+      ;
+      andmask = andmask * (andmask NE -1)
+
+      outputpixelmask = ormask OR ishft(andmask,16)
+      
          nonzero = where(bestivar GT 0.0)
          if (nonzero[0] NE -1) then $
           besterr[nonzero] = 1.0/sqrt(bestivar[nonzero])
@@ -346,6 +378,8 @@ pro combine2dout, filenames, outputroot, spectrographid, $
          endif
 
       endelse
+
+
 
       newhdr = hdr
 
@@ -370,6 +404,7 @@ pro combine2dout, filenames, outputroot, spectrographid, $
       sxaddpar, newhdr, 'WFITTYPE', 'LOG-LINEAR', 'Linear-log10 dispersion'
       sxaddpar, newhdr, 'COEFF0', wavemin, $
        'Center wavelength (log10) of first pixel'
+      ;  !!!  make sure binsz  is double for precision  !!!
       sxaddpar, newhdr, 'COEFF1', binsz, 'Log10 dispersion per pixel'
       sxaddpar, newhdr, 'REDSCAL', scale[i], $
        'Red scaling to match blue overlap', AFTER='EXPTIME'
@@ -380,11 +415,20 @@ pro combine2dout, filenames, outputroot, spectrographid, $
       sxaddpar, newhdr, 'WAT1_001', $
        'wtype=linear label=Wavelength units=Angstroms'
       sxaddpar, newhdr, 'CRVAL1', wavemin, 'Iraf zero point'
+      ;  !!!  make sure binsz  is double for precision  !!!
       sxaddpar, newhdr, 'CD1_1', binsz, 'Iraf dispersion'
       sxaddpar, newhdr, 'CRPIX1', 1, 'Iraf starting pixel'
       sxaddpar, newhdr, 'CTYPE1', 'LINEAR'
       sxaddpar, newhdr, 'WCSDIM', 2
       sxaddpar, newhdr, 'DC-FLAG', 1, 'Log-linear flag'
+
+      ;  Let's also add in parameters for fibermask
+
+      nn = n_elements(fullfibermask)
+      for jj=0,n_elements(fullfibermask) - 1 do $
+        sxaddpar, newhdr, string(format='(a,i3.3)','FMASK',jj), fullfibermask[jj], $
+                       'FiberMask bits,  see idlspec2d/pro/fibermask_bits.pro'
+
 
       ; This is place holding for a fiber with no counts at all!
 
@@ -399,7 +443,10 @@ pro combine2dout, filenames, outputroot, spectrographid, $
          besterr[inff] = 0.0
       endif
 
-      writefits, outputfile, [[bestguess],[besterr]], newhdr
+      ; 1st HDU is flux and error
+      mwrfits, [[bestguess],[besterr]], outputfile, newhdr, /create
+      ; 2nd HDU is pixelmask
+      mwrfits, outputpixelmask, outputfile
 
       if (keyword_set(display)) then begin
          plot, 10^newwave, bestguess, /xstyle, yr=[-3,10]

@@ -121,8 +121,8 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
    ;------------------------------------------------------------------------
    ;   Pixelmask is an int array (I guess)
    ;    
-   if (n_elements(pixelmask) NE nTrace OR size(pixelmask,/type) NE 2) then $
-         pixelmask = intarr(nTrace)
+   if (n_elements(pixelmask) NE nTrace OR size(pixelmask,/type) NE 3) then $
+         pixelmask = lonarr(nTrace)
 
    relative = keyword_set(relative) 
    squashprofile =keyword_set(squashprofile) 
