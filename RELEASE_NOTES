@@ -77,6 +77,8 @@ eigeninput_star.dat: Many more M stars added for implementing changes
 opHdrFix.par: Correct some values for TILEID,RADEG,DECDEG for the early plates
             187, 202 and 214.
 sos_redo: Don't allow this to be run from the machine sdsshost!
+sprobot_start: Copy the data over starting at 10am Princeton time,
+            which will be after "mailhtml.sh" is run at APO (at 7:20 am).
 
 -------------------------------------------------------------------------------
 v4_8_4 (Aug 29, 2001 idlspec2d+idlutils)
