@@ -149,7 +149,7 @@ function apo_log_fields, pp, fields, printnames=printnames, formats=formats
    igood = where(strtrim(pp.flavor,2) NE '')
    if (igood[0] EQ -1) then return, ''
 
-   flavor = pp[igood[0]].flavor
+   flavor = strtrim(pp[igood[0]].flavor,2)
 
    ; Print the exposure number as long as EXPNUM is set, which is always
    ; case except for the TOTAL S/N^2 row.

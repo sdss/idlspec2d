@@ -16,7 +16,8 @@ function apo_checklimits, flavor, field, camera, value
       yanny_free, pdata
    endif
 
-   indx = where(slimits.field EQ field AND slimits.camera EQ camera, nlim)
+   indx = where(slimits.field EQ field AND slimits.camera EQ camera $
+            AND slimits.flavor EQ flavor, nlim)
    for ilim=0, nlim-1 do begin
       if (value GE slimits[indx[ilim]].lovalue $
        AND value LE slimits[indx[ilim]].hivalue) then $
