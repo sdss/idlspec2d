@@ -37,7 +37,6 @@ crontab -l | awk 'BEGIN{doprint = 1}{if ($2 == "SPROBOT" && $3 == "BEGIN") {dopr
 # Load this new cron file
 
 crontab $cronfile
-vers=`echo $SETUP_IDLSPEC2D | awk '{print $2}'`
 echo "Spectro-Robot stopped."
 
 \rm $cronfile
