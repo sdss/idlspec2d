@@ -170,7 +170,8 @@ pro newspcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
 
    ; Log missing files
    planname = allseq.name[icams]
-   missing = where(objname ne planname)
+   missing = where(objname eq '')
+
    if missing[0] ne -1 then $
       splog, 'Files not found on disk: ' + planname[missing]
  
