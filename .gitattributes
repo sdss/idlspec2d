@@ -59,7 +59,7 @@ pro/funccheb.pro -text
 pro/gauss_smooth.pro -text
 pro/locateskylines.pro -text
 pro/logsheet.pro -text
-pro/makefile -text
+pro/makefile.old -text
 pro/qaplot_arcline.pro -text
 pro/qaplot_fflat.pro -text
 pro/quickproc.pro -text
@@ -102,7 +102,7 @@ pro/spec2d/funccheb.pro -text
 pro/spec2d/gauss_smooth.pro -text
 pro/spec2d/locateskylines.pro -text
 pro/spec2d/logsheet.pro -text
-pro/spec2d/makefile -text
+pro/spec2d/makefile.old -text
 pro/spec2d/qaplot_arcline.pro -text
 pro/spec2d/qaplot_fflat.pro -text
 pro/spec2d/quickproc.pro -text
@@ -168,4 +168,3 @@ src/extract_row.c -text
 src/sshiftvec.c -text
 src/trace_crude.c -text
 src/trace_fweight.c -text
-ups/evilspec.table -text

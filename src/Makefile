@@ -8,18 +8,19 @@ SHELL = /bin/sh
 .c.o :
 	$(CC) -c $(CCCHK) $(CFLAGS) $(X_CFLAGS) $*.c
 #
-CFLAGS  = -I$(IDL_DIR)/external $(SDSS_CFLAGS) -DCHECK_LEAKS
+CFLAGS  = -I$(IDL_DIR)/external $(SDSS_CFLAGS) -DCHECK_LEAKS -I$(INC) 
 
+INC = ../include
 LIB = $(IDLSPEC2D_DIR)/lib
 
 OBJECTS = \
-	evilmath.c \
-	extract_boxcar.c \
-	extract_profile.c \
-	extract_row.c \
-	sshiftvec.c \
-	trace_crude.c \
-	trace_fweight.c
+	evilmath.o \
+	extract_boxcar.o \
+	extract_profile.o \
+	extract_row.o \
+	sshiftvec.o \
+	trace_crude.o \
+	trace_fweight.o
 
 all : $(LIB)/libspec2d.$(SO_EXT)
 
