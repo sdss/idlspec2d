@@ -6,14 +6,14 @@
 ;   Convert from an array of x,y positions to a trace set
 ;
 ; CALLING SEQUENCE:
-;   res = function func_fit( x, y, ncoeff, [invvar=invvar, function_name=function_name, $
-;    /halfintwo, yfit=yfit, inputans=inputans, ia=ia]
+;   res = function func_fit( x, y, ncoeff, [invvar=, function_name=, $
+;    /halfintwo, yfit=, ia=, inputans= ]
 ;
 ; INPUTS:
 ;   x          - X values (independent variable)
 ;   y          - Y values (dependent variable)
 ;   ncoeff     - Number of coefficients to fit
-;   invvar     - (INVERSE VARIANCE) Weight values; only supports 0<= for masked, >0 for unmasked
+;   invvar     - Weight values (inverse variance)
 ;
 ; OPTIONAL KEYWORDS:
 ;   function_name - Function to fit; options are:
@@ -21,8 +21,9 @@
 ;                'chebyshev'
 ;                Default to 'legendre'
 ;   halfintwo  - Optional keyword for Chebyshev function, FCHEBYSHEV
-;   inputans   - if holding parameters fixed, set this array to values desired
-;   ia         - array of 1's and 0's specifying free (1's) and fixed (0's) variables
+;   ia         - Array specifying free (1) and fixed (0) variables [NCOEFF]
+;   inputans   - If holding parameters fixed, set this array to those values
+;                [NCOEFF]
 ;
 ; OUTPUTS:
 ;   res        - Fit coefficients
@@ -48,13 +49,12 @@
 ;------------------------------------------------------------------------------
 
 function func_fit, x, y, ncoeff, invvar=invvar, function_name=function_name, $
- halfintwo=halfintwo, yfit=yfit, inputans=inputans, ia=ia
+ halfintwo=halfintwo, yfit=yfit, ia=ia, inputans=inputans
 
    if (N_params() LT 3) then begin
-     print,'function func_fit, x, y, ncoeff, function_name=function_name' 
-     print,'  halfintwo=halfintwo, yfit=yfit, invvar=invvar' 
-     print,'function_name can be legendre or chebyshev'
-     return, 0
+      print,'function func_fit, x, y, ncoeff, [invvar=invvar, function_name=function_name' 
+      print,' halfintwo=halfintwo, yfit=yfit, ia=ia, inputans=inputans]'
+      return, 0
    endif
 
    if (NOT keyword_set(function_name)) then function_name = 'flegendre'
@@ -71,7 +71,7 @@ function func_fit, x, y, ncoeff, invvar=invvar, function_name=function_name, $
 
    if (n_elements(ia) NE ncoeff) then ia = bytarr(ncoeff) + 1
 
-    goodia = ia NE 0
+   goodia = ia NE 0
 
    ; Select unmasked points
    igood = where(invvar GT 0, ngood)
@@ -82,7 +82,7 @@ function func_fit, x, y, ncoeff, invvar=invvar, function_name=function_name, $
 
    fixed = where(goodia EQ 0, nfix)
    if (nfix GT 0) then $
-     if (NOT keyword_set(inputans)) then inputans = fltarr(ncoeff)
+    if (NOT keyword_set(inputans)) then inputans = fltarr(ncoeff)
 
    if (ngood EQ 1) then begin
 
@@ -99,9 +99,7 @@ function func_fit, x, y, ncoeff, invvar=invvar, function_name=function_name, $
       if (function_name EQ 'fchebyshev') then $
        legarr = fchebyshev(x, ncfit, halfintwo=halfintwo)
 
-;
-;	Subtract fixed terms first
-;
+      ; Subtract fixed terms first
      
       yfix = y * 0.0 
       nonfix = where(goodia[0:ncfit-1], nparams)
@@ -119,14 +117,14 @@ function func_fit, x, y, ncoeff, invvar=invvar, function_name=function_name, $
       extra2 = finalarr * ((fltarr(nparams) + 1) ## (invvar > 0))
       beta = transpose( (ysub * (invvar > 0)) # finalarr)
       alpha = transpose(finalarr) # extra2
-;
-;	Don't send just one parameter to svdfit
-;
+
+      ; Don't send just one parameter to svdfit
+
       if (nparams GT 1) then begin
-        svdc, alpha, w, u, v, /double
-        res[nonfix] = svsol(u, w, v, beta, /double)
+         svdc, alpha, w, u, v, /double
+         res[nonfix] = svsol(u, w, v, beta, /double)
       endif else begin
-        res[0] = beta / alpha
+         res[0] = beta / alpha
       endelse
 
       if (nfix GT 0) then res[fixed] = inputans[fixed]

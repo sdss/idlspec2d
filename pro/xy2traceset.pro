@@ -9,7 +9,7 @@
 ;   xy2traceset, xpos, ypos, tset, [ func=func, ncoeff=ncoeff, $
 ;    xmin=xmin, xmax=xmax, maxdev=maxdev, maxsig=maxsig, maxiter=maxiter, $
 ;    singlerej=singlerej, xmask=xmask, yfit=yfit, inputans=inputans, $
-;    invvar=invvar, _EXTRA=extra ]
+;    invvar=invvar, _EXTRA=KeywordsForFuncFit ]
 ;
 ; INPUTS:
 ;   xpos       - X positions corresponding to YPOS as an [nx,Ntrace] array
@@ -39,6 +39,7 @@
 ;                rejecting the worst one each time.  In this case, MAXITER
 ;                represents the maximum number of points that can be rejected
 ;                per trace.
+;   inputans   - ???
 ;
 ; OUTPUTS:
 ;   tset       - Structure containing trace set
@@ -72,7 +73,7 @@
 pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
  xmin=xmin, xmax=xmax, maxdev=maxdev, maxsig=maxsig, maxiter=maxiter, $
  singlerej=singlerej, xmask=xmask, yfit=yfit, inputans=inputans, $
- invvar=invvar, _EXTRA=extra
+ invvar=invvar, _EXTRA=KeywordsForFuncFit
 
    ; Need 3 parameters
    if (N_params() LT 3) then begin
@@ -137,7 +138,7 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
          nreject = 0
          good = lonarr(nx) + 1
 
-	 if (keyword_set(inputans)) then curans = inputans[*,itrace] 
+         if (keyword_set(inputans)) then curans = inputans[*,itrace] 
 
          ; Rejection iteration loop
 
@@ -188,12 +189,12 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
             res = func_fit(xnorm, ypos[*,itrace], ncoeff, $
              invvar=tempivar, $
              function_name=function_name, yfit=ycurfit, inputans=curans, $
-             _EXTRA=extra)
+             _EXTRA=KeywordsForFuncFit)
 
 ;            if (func EQ 'legendre') then $
 ;             ycurfit = flegendre(xnorm, ncoeff) # res
 ;            if (func EQ 'chebyshev') then $
-;             ycurfit = fchebyshev(xnorm, ncoeff, _EXTRA=extra) # res
+;             ycurfit = fchebyshev(xnorm, ncoeff, _EXTRA=KeywordsForFuncFit) # res
 
             iiter = iiter + 1
          endwhile
