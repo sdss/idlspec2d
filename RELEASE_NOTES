@@ -1,18 +1,23 @@
 
 PLATECOMPARE: Fix 1-character typo preventing selecting the MJD
             when using the TOPDIR keyword also.
+READ_ELODIE: Optionally return the Elodie header in HDR.
 SDSSPROC: Add "WARNING" to the warning messages about invalid or
             missing BC files.
 TRACE320CRUDE: Fix a bug just introduced in v4_9_5 that would cause
             the code to crash if ystart at any trace falls off the
             left or right edge of the CCD.  This caused the
             plate 0179/51580 (and some others) to crash.
+ZFIND: Make EIGENFILE an optional input, so that STARFLUX,STARLOGLAM0
+            can be specified directly instead of passing a file name.
 
 opHdrFix.par: Declare data bad on MJD 52336-52337 due to spectrograph
             mechanicals problems, and other problems from 52312-52337.
 sprobot.sh: Add more time stamps to the robot log file.
 
 In idlutils:
+RADEC_TO_FIELDS: Configurable option allfieldfile.
+src/spheregroup/chunks.c: Roundoff error problem fixed.
 eviltarball: Comment out the reference to sdsscvs.
 
 In specflat:
