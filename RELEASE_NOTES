@@ -1,4 +1,6 @@
 
+sprobot_start: Fix tiny typo (extra quotation on line 141).
+
 -------------------------------------------------------------------------------
 v4_9_12 (Jun 26, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
 Built against specflat v1_4.
