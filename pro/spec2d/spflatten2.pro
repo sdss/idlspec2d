@@ -252,7 +252,7 @@ arcivar = 0
        string( sxpar(flathdr,'CAMERAS'), sxpar(flathdr,'MJD'), $
         sxpar(flathdr,'EXPOSURE'), sxpar(archdr,'EXPOSURE'), $
         format='(a2,"-",i5.5,"-",i8.8,"-",i8.8)'), $
-        'ID string for exposure ' + strtrim(string(ifile),2), before='EXPTIME'
+        'ID string for exposure ' + strtrim(string(iflat),2), before='EXPTIME'
 
       ;----------------------
       ; Create spatial tracing from flat-field image
