@@ -37,6 +37,7 @@
 ;                of wavelength between fibers [Nrow, Ntrace]
 ;
 ; OPTIONAL OUTPUTS:
+;   fibermask  - (Modified)
 ;
 ; COMMENTS:
 ;   The user should first "flat-field" the input array to take out
@@ -152,9 +153,8 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
          endif else begin
 
             fflat[*,i] = 1.0
-;
-;	Bit 3 is set for errors in fiberflat
-;
+
+            ; Set bit for errors in FFLAT
             fibermask[i] = fibermask[i] OR badflatbit
 
          endelse
@@ -192,13 +192,12 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
 
    ;----------------------------------------------------------------
    ;  Set flatfield bit in FIBERMASK if needed
-   ;
+
    fmed = djs_median(fflat,1)
    badflat = where(fmed LT 0.5 * djs_median(fmed))
 
    if (badflat[0] NE -1) then  $
      fibermask[badflat] = fibermask[badflat] OR fibermask_bits('BADFLAT')
-
 
    return, fflat
 end

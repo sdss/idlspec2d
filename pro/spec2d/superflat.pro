@@ -15,7 +15,7 @@
 ;   wset       - Wavelength solution
 ;
 ; OPTIONAL KEYWORDS:
-;   fibermask  - Mask of 0 for bad fibers and 1 for good fibers [NFIBER]
+;   fibermask  - Mask of 0 for good fibers [NFIBER]
 ;   minval     - Minimum value to use in fits to flat-field vectors;
 ;                default to 0.03.
 ;
@@ -29,6 +29,7 @@
 ;
 ; OPTIONAL OUTPUTS:
 ;   medval     - Median value of each fiber [NFIBER]
+;   fibermask  - (Modified)
 ;
 ; COMMENTS:
 ;
@@ -75,12 +76,43 @@ pro superflat, flux, fluxivar, wset, fullbkpt, coeff, $
 
    ;------
    ; Find the approximate scalings between all fibers
-   ; Do this with a straight median value for all wavelengths in common
+   ; Do this with a straight mean value for all wavelengths in common,
+   ; interpolating over bad pixels.
+   ;   FRACPTS = Fraction of unmasked pixels in each flat vector
+   ;   MEDVAL = Mean value for each flat vector, after a median-filter
+   ;            which hopefully removes cosmic rays and the like
 
+   filtsz = 11
    qq = loglam GE logmin AND loglam LE logmax
    medval = fltarr(ntrace)
-   for i=0, ntrace-1 do $
-    medval[i] = median( flux[where(qq[*,i]),i] )
+   fracpts = fltarr(ntrace)
+   for i=0, ntrace-1 do begin
+      indx = where(qq[*,i], ntmp)
+      tmpmask = fluxivar[indx,i] EQ 0
+      tmpflux = djs_linterp( flux[indx,i], tmpmask )
+      fracpts[i] = 1.0 - total(tmpmask)/N_elements(tmpmask)
+      if (ntmp GT filtsz) then $
+       medval[i] = djs_mean( $
+        median( tmpflux[ (filtsz-1)/2 : ntmp-(filtsz-1)/2 ], filtsz ) ) $
+      else $
+       medval[i] = median(tmpflux)
+   endfor
+
+   ;------
+   ; Limit the superflat to use only good fibers, and those fibers that
+   ; have at least 95% good wavelength range as compared to the best fiber
+   ; and whose counts are within 30% of the median (good) fiber throughput.
+
+   globalmed = median(medval[igood])
+   if (globalmed LT 0) then $
+    message, 'Median flat-field vector is negative!'
+   igood = where(fibermask EQ 0 AND fracpts GE 0.95*max(fracpts) $
+    AND abs(medval-globalmed)/globalmed LT 0.30, ngood)
+; ??? Should we set a bit in FIBERMASK for fibers unused for the superflat ???
+
+   ;-----
+   ; Prevent divide-by-zeros below
+
    izero = where(medval LE 0)
    if (izero[0] NE -1) then medval[izero] = 1.0
 
