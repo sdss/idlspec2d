@@ -167,11 +167,13 @@ pro sphoto_calib, wave, flux, invvar, mask, plugtag, fcalfile, $
     sn = newflux[*,ok[indx]] * sqrt(newivar[*,ok[indx]])
     good = where(newivar[*,ok[indx]] ne 0) 
     medsn = median(sn[good])
- 
+
+    ; Find the median of the low and hi-frequency componets of the 
+    ; corvectors separately -- use the hi-f part only if the S/N is good
     frame_calibset = frame_flux_calib(newwave, corvector[*,indx], $
       corvivar[*,indx], avgcalibset, cormed[indx], $
-      'Frame ' + camid + '-' + frames[iframe], medsn, fsig = fsig, $
-       noplot = noplot)
+      'Frame ' + camid + '-' + frames[iframe], fit_wiggles = (medsn gt 12), $
+      fsig = fsig, noplot = noplot)
 
     ;--------------
     ; Create header cards describing the data range and write to FITS
