@@ -42,6 +42,9 @@
 ;   Always pair arcs to the nearest good flat, and flats to the nearest good
 ;   arc (nearest in time, as defined by the TAI keyword in the FITS headers).
 ;
+;   Also store SUPERFLATSET from fiberflat, since we need this to remove
+;   small scale features present in all spectra
+
 ; EXAMPLES:
 ;
 ; BUGS:
@@ -71,6 +74,7 @@
 ;   24-Jan-2000  Written by D. Schlegel, Princeton
 ;   27-Nov-2000  Changed to proftype 3, added minflat, maxflat keywords
 ;    8-Jan-2001  And now back to proftype 1, more robust against bad columns
+;   26-Jan-2001  And now let's check both 1&3, and use the better fit
 ;     
 ;-
 ;------------------------------------------------------------------------------
@@ -104,10 +108,12 @@ function create_flatstruct, nflat
     'TSEP', 0D, $
     'QBAD', 0, $
     'IARC', -1, $
+    'PROFTYPE', 0, $
     'FIBERMASK', ptr_new(), $
     'XSOL', ptr_new(), $
     'WIDTHSET', ptr_new(), $
-    'FFLAT', ptr_new() )
+    'FFLAT', ptr_new(), $
+    'SUPERFLATSET', ptr_new() )
 
    flatstruct = replicate(ftemp, nflat)
 
@@ -213,9 +219,6 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
          ;---------------------------------------------------------------------
 
          sigma = 1.0 ; Initial guess for gaussian width
-;        proftype = 1 ; Gaussian 
-         proftype = 3 ; |x|^3
-         splog, 'Extracting flat-field image with proftype', proftype
          highrej = 15
          lowrej = 15
          npoly = 10 ; Fit 1 terms to background
@@ -224,19 +227,47 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
          ; Step 1: Extract flat field with polynomial background for
          ;           fitflatwidth 
          
-         splog, 'Extracting flat to obtain width and flux'
+         splog, 'Extracting flat with Gaussian (proftype 1)'
          extract_image, flatimg, flativar, xsol, sigma, flux, fluxivar, $
-          proftype=proftype, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
-          npoly=npoly, relative=1, ansimage=ansimage, reject=[0.1, 0.6, 0.6]
+          proftype=1, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
+          npoly=npoly, relative=1, ansimage=ansimage, reject=[0.1, 0.6, 0.6], $
+          chisq=chisq1
 
-         widthset = fitflatwidth(flux, fluxivar, ansimage, tmp_fibmask, $
+         widthset1 = fitflatwidth(flux, fluxivar, ansimage, tmp_fibmask, $
           ncoeff=5, sigma=sigma)
          ansimage = 0
+
+         splog, 'Extracting flat with exponential cubic (proftype 3)'
+         extract_image, flatimg, flativar, xsol, sigma, flux, fluxivar, $
+          proftype=3, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
+          npoly=npoly, relative=1, ansimage=ansimage, reject=[0.1, 0.6, 0.6], $
+          chisq=chisq3
+
+         widthset3 = fitflatwidth(flux, fluxivar, ansimage, tmp_fibmask, $
+          ncoeff=5, sigma=sigma)
+         ansimage = 0
+
+         ; I would prefer to use x^3, so weight by 0.8
+
+         m1 = median(chisq1)
+         m3 = 0.8 * median(chisq3)
+
+         if m1 LT m3 then begin
+           proftype = 1 ; Gaussian
+           widthset = widthset1
+           splog, 'WARNING: Using Gaussian, median chi squareds:', m1, ' vs',m3
+         endif else begin
+           proftype = 3 ; |x|^3
+           widthset = widthset3
+           splog, 'Using Cubic, median chi squareds: ', m3, ' vs', m1
+         endelse
+
 
          junk = where(flux GT 1.0e5, nbright)
          splog, 'Found ', nbright, ' bright pixels in extracted flat ', $
           flatname[iflat], format='(a,i7,a,a)'
 
+         flatstruct[iflat].proftype  = proftype
          flatstruct[iflat].fibermask = ptr_new(tmp_fibmask)
          flatstruct[iflat].widthset = ptr_new(widthset)
 
@@ -300,6 +331,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
          xsol = *(flatstruct[iflat].xsol)
          widthset = *(flatstruct[iflat].widthset)
          tmp_fibmask = *(flatstruct[iflat].fibermask)
+         proftype = flatstruct[iflat].proftype
 
          ;----------
          ; Calculate possible shift between arc and flat
@@ -458,6 +490,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
          wset = *(arcstruct[iarc].wset)
          xsol = *(flatstruct[iflat].xsol)
          tmp_fibmask = *(flatstruct[iflat].fibermask)
+         proftype = flatstruct[iflat].proftype
 
          ;---------------------------------------------------------------------
          ; Read flat-field image (again)
@@ -476,8 +509,6 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
          ;---------------------------------------------------------------------
 
          traceset2xy, widthset, xx, sigma2   ; sigma2 is real width
-;         proftype = 1 ; Gaussian  
-         proftype = 3 ; |x|^3
          highrej = 15
          lowrej = 15
          npoly = 5 ; Fit 10 terms to background, just get best model
@@ -516,7 +547,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
          xsol = 0
 
          fflat = fiberflat(flux, fluxivar, wset, fibermask=tmp_fibmask, $
-          /dospline, plottitle=plottitle+' Superflat', pixspace=5)
+          /dospline, plottitle=plottitle+' Superflat', pixspace=5, $
+          superflatset=superflatset)
 
          if (n_elements(fflat) EQ 1) then begin
             flatstruct[iflat].qbad  = 1
@@ -524,6 +556,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
          endif
 
          flatstruct[iflat].fflat = ptr_new(fflat)
+         flatstruct[iflat].superflatset = ptr_new(superflatset)
          flatstruct[iflat].fibermask = ptr_new(tmp_fibmask)
          
 
@@ -542,6 +575,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
             mwrfits, tset, flatinfofile
             mwrfits, fibermask, flatinfofile
             mwrfits, widthset, flatinfofile
+            mwrfits, superflatset, flatinfofile
          endif
 
       endif

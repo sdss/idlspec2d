@@ -29,6 +29,8 @@
 ;   xtrace     - spatial traces from flat field
 ;   fflat      - 1d flat field vectors
 ;   fibermask  - Fiber status bits, set nonzero for bad status [NFIBER]
+;   proftype   - Which type of profile should we use, (default=1 Gaussian)
+;   superflatset- If present, then divide by median superflat!
 ;   color      - ???
 ;   widthset   - ???
 ;   dispset    - ???
@@ -90,12 +92,13 @@
 ;
 ; REVISION HISTORY:
 ;   24-Jan-2000  Written by S. Burles, Chicago
+;   26-Jul-2001  Also pass proftype and superflatset
 ;-
 ;------------------------------------------------------------------------------
 pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
- xarc, lambda, xtrace, fflat, fibermask, color=color, $
+ xarc, lambda, xtrace, fflat, fibermask, color=color, proftype=proftype, $
  widthset=widthset, dispset=dispset, skylinefile=skylinefile, $
- plottitle=plottitle, skyoutname=skyoutname
+ plottitle=plottitle, skyoutname=skyoutname, superflatset=superflatset
 
    objname = strtrim(sxpar(objhdr,'OBJFILE'),2) 
    flavor  = strtrim(sxpar(objhdr,'FLAVOR'),2) 
@@ -198,8 +201,6 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    nrow = (size(image))[2]
    yrow = lindgen(nrow) 
    nfirst = n_elements(yrow)
-;   proftype = 1 ; Gaussian 
-   proftype = 3 ; |x|^3
 
    splog, 'Extracting frame '+objname+' with 3 step process'
 
@@ -275,12 +276,8 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ;------------------
    ; Flat-field the extracted object fibers with the global flat
 
-   divideflat, flux, fluxivar, fflat, fibermask=fibermask
-
-   ; flatinterp interpolates over regions 
-;   smoothfflat = flatinterp(fflat, 0.5, nsmooth=15)
-;   divideflat, flux, fluxivar, smoothfflat
-
+   divideflat, flux, fluxivar, fflat
+ 
    pixelmask = pixelmask OR ((fflat LT 0.5) * pixelmask_bits('LOWFLAT'))
 
    ;------------------
@@ -334,12 +331,25 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ;------------------
    ; Shift to skylines and fit to vacuum wavelengths
 
-   vacset = fitvacset(xarc, lambda, wset, arcshift, helio=helio)
-
+   vacset = fitvacset(xarc, lambda, wset, arcshift, helio=helio, airset=airset)
    qaplot_skydev, flux, fluxivar, vacset, plugsort, color, $
     title=plottitle+objname
-
    sxaddpar, objhdr, 'VACUUM', 'T', ' Wavelengths are in vacuum'
+
+   ;------------------
+   ;  If present, reconstruct superflat and normalize
+
+   sxaddpar, objhdr, 'SFLATTEN', 'F', ' Superflat has not been applied'
+
+   if keyword_set(superflatset) AND keyword_set(airset) then begin
+     traceset2xy, airset, wpix, wloglam
+     fit2 = bspline_valu(wloglam, superflatset)
+     if keyword_set(fit2) then begin
+       divideflat, flux, fluxivar, fit2 
+       sxaddpar, objhdr, 'SFLATTEN', 'T', ' Superflat has been applied'
+     endif
+   endif  
+  
 
    ;------------------
    ; Sky-subtract
