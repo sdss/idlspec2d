@@ -18,6 +18,8 @@ QUICKEXTRACT: Change message about post-cabibs from "REQUIRED" to merely
               "recommended."
 QUICKTRACE: Tweak test for putative Argon lines in flats to be a less
             sensitive trigger.
+Changed SOS signal-to-noise warning to a yellow warning below S/N=15/pix,
+            and S/N=13/pix.
 
 -------------------------------------------------------------------------------
 v4_7_0 (Mar 16, 2001)

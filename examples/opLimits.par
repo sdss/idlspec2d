@@ -148,10 +148,16 @@ speclimit red SN2 b2 0 0
 speclimit red SN2 r1 0 0
 speclimit red SN2 r2 0 0
 
-# Issue warnings about total (S/N)^2 for any camera not hitting 15/pix.
+# Issue warnings about total (S/N)^2 for any camera not hitting 15/pix
+# (yellow warning), or 13/pix (red warning).
 
-speclimit red TOTALSN2 b1 0 14.9999
-speclimit red TOTALSN2 b2 0 14.9999
-speclimit red TOTALSN2 r1 0 14.9999
-speclimit red TOTALSN2 r2 0 14.9999
+speclimit red TOTALSN2 b1 0 12.9999
+speclimit red TOTALSN2 b2 0 12.9999
+speclimit red TOTALSN2 r1 0 12.9999
+speclimit red TOTALSN2 r2 0 12.9999
+
+speclimit yellow TOTALSN2 b1 13 14.9999
+speclimit yellow TOTALSN2 b2 13 14.9999
+speclimit yellow TOTALSN2 r1 13 14.9999
+speclimit yellow TOTALSN2 r2 13 14.9999
 
