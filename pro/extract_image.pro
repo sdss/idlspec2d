@@ -246,7 +246,7 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
           inputans = fitans[0:nTrace*nCoeff-1,cur]
           iback = fitans[nTrace*nCoeff:nTrace*nCoeff+nPoly-1,cur]
      endif
-          
+
      ansrow = extract_row(fimage[*,cur:curend], invvar[*,cur:curend], $
       xcencurrent, sigmacur, ymodel=ymodelrow, fscat=fscatrow, $
       proftype=proftype, iback=iback, $
