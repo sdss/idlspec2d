@@ -490,9 +490,13 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
       ; Open the PostScript file if appropriate
 
       if (keyword_set(psfile)) then begin
-         if (NOT keyword_set(q_onefile)) then $
-          psfilename = string(platelist[ifiber], mjdlist[ifiber], $
-           fiberid[ifiber], format='("spec-",i4.4,"-",i5.5,"-",i3.3,".ps")')
+         if (NOT keyword_set(q_onefile)) then begin
+            if (size(psfile,/tname) EQ 'STRING') then $
+             psfilename = psfile $
+            else $
+             psfilename = string(platelist[ifiber], mjdlist[ifiber], $
+              fiberid[ifiber], format='("spec-",i4.4,"-",i5.5,"-",i3.3,".ps")')
+         endif
 
          if (NOT keyword_set(q_onefile) OR ifiber EQ 0) then begin
             dfpsplot, psfilename, /color, /square
