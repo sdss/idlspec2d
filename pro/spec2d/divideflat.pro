@@ -45,7 +45,7 @@ pro divideflat, flux, fluxivar, fflat, fibermask=fibermask, minval=minval
    npix = dims[0] 
    ntrace = dims[1] 
 
-   if (NOT keyword_set(minval)) then minval = 0.03
+   if (n_elements(minval) EQ 0) then minval = 0.03
    if (NOT keyword_set(fibermask)) then fibermask = bytarr(ntrace) 
 
    if (total(size(fluxivar,/dimens) NE dims) NE 0) then $
