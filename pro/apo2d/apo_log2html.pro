@@ -335,8 +335,8 @@ pro apo_log2html, logfile, htmlfile
       if (keyword_set(PPBIAS)) then ii = where(PPBIAS.plate EQ thisplate) $
        else ii = -1
       if (ii[0] NE -1) then begin
-         warnings = [warnings, PPBIAS[ii].warnings]
-         aborts = [aborts, PPBIAS[ii].aborts]
+         warnings = [warnings, (PPBIAS[ii].warnings)[*]]
+         aborts = [aborts, (PPBIAS[ii].aborts)[*]]
 
          allexp = PPBIAS[ii].expnum
          allexp = allexp[ uniq(allexp, sort(allexp)) ]
@@ -370,8 +370,8 @@ pro apo_log2html, logfile, htmlfile
       if (keyword_set(PPFLAT)) then ii = where(PPFLAT.plate EQ thisplate) $
        else ii = -1
       if (ii[0] NE -1) then begin
-         warnings = [warnings, PPFLAT[ii].warnings]
-         aborts = [aborts, PPFLAT[ii].aborts]
+         warnings = [warnings, (PPFLAT[ii].warnings)[*]]
+         aborts = [aborts, (PPFLAT[ii].aborts)[*]]
 
          allexp = PPFLAT[ii].expnum
          allexp = allexp[ uniq(allexp, sort(allexp)) ]
@@ -403,8 +403,8 @@ pro apo_log2html, logfile, htmlfile
       if (keyword_set(PPARC)) then ii = where(PPARC.plate EQ thisplate) $
        else ii = -1
       if (ii[0] NE -1) then begin
-         warnings = [warnings, PPARC[ii].warnings]
-         aborts = [aborts, PPARC[ii].aborts]
+         warnings = [warnings, (PPARC[ii].warnings)[*]]
+         aborts = [aborts, (PPARC[ii].aborts)[*]]
 
          allexp = PPARC[ii].expnum
          allexp = allexp[ uniq(allexp, sort(allexp)) ]
@@ -435,8 +435,8 @@ pro apo_log2html, logfile, htmlfile
       if (keyword_set(PPSCIENCE)) then ii = where(PPSCIENCE.plate EQ thisplate) $
        else ii = -1
       if (ii[0] NE -1) then begin
-         warnings = [warnings, PPSCIENCE[ii].warnings]
-         aborts = [aborts, PPSCIENCE[ii].aborts]
+         warnings = [warnings, (PPSCIENCE[ii].warnings)[*]]
+         aborts = [aborts, (PPSCIENCE[ii].aborts)[*]]
 
          allexp = PPSCIENCE[ii].expnum
          allexp = allexp[ uniq(allexp, sort(allexp)) ]
