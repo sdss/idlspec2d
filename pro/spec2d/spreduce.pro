@@ -182,54 +182,56 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
       ; Set TAI equal to the time half-way through the exposure
       tai = sxpar(objhdr, 'TAI') + 0.5 * sxpar(objhdr, 'EXPTIME')
       bestflat = select_flat(flatstruct, tai)
-
       splog, 'Best flat = ', bestflat.name
+
       if (NOT keyword_set(bestflat)) then begin
+
          splog, 'ABORT: No good flats (saturated?)'
-         return
-      endif
 
-      xsol = *(bestflat.xsol)
-      fflat = *(bestflat.fflat)
-      widthset = *(bestflat.widthset)
+      endif else begin
 
-      qaplot_fflat, fflat, wset, $
-       title=plottitle+'Fiber-Flats for '+bestflat.name
+         xsol = *(bestflat.xsol)
+         fflat = *(bestflat.fflat)
+         widthset = *(bestflat.widthset)
 
-      ;----------
-      ; Combine FIBERMASK bits from the plug-map file, best flat
-      ; and best arc
+         qaplot_fflat, fflat, wset, $
+          title=plottitle+'Fiber-Flats for '+bestflat.name
 
-      fibermask = fibermask $
-       OR (*(bestflat.fibermask) AND fibermask_bits('BADTRACE')) $
-       OR (*(bestflat.fibermask) AND fibermask_bits('BADFLAT')) $
-       OR (*(bestarc.fibermask) AND fibermask_bits('BADARC'))
+         ;----------
+         ; Combine FIBERMASK bits from the plug-map file, best flat
+         ; and best arc
 
-      ;----------
-      ; Determine output file name and modify the object header
+         fibermask = fibermask $
+          OR (*(bestflat.fibermask) AND fibermask_bits('BADTRACE')) $
+          OR (*(bestflat.fibermask) AND fibermask_bits('BADFLAT')) $
+          OR (*(bestarc.fibermask) AND fibermask_bits('BADARC'))
 
-      framenum = sxpar(objhdr, 'EXPOSURE')
-      outname = filepath( $
-       'spSpec2d-'+string(format='(a1,i1,a,i8.8,a)',color,spectrographid, $
-       '-',framenum,'.fits'), root_dir=outdir)
+         ;----------
+         ; Determine output file name and modify the object header
 
-      sxaddpar, objhdr, 'PLUGMAPF', plugfilename
-      sxaddpar, objhdr, 'FLATFILE', bestflat.name
-      sxaddpar, objhdr, 'ARCFILE', bestarc.name
-      sxaddpar, objhdr, 'OBJFILE', objname[iobj]
-      sxaddpar, objhdr, 'LAMPLIST', lampfile
-      sxaddpar, objhdr, 'SKYLIST', skylinefile
-      sxaddpar, objhdr, 'PIXFLAT', pixflatname
+         framenum = sxpar(objhdr, 'EXPOSURE')
+         outname = filepath( $
+          'spSpec2d-'+string(format='(a1,i1,a,i8.8,a)',color,spectrographid, $
+          '-',framenum,'.fits'), root_dir=outdir)
 
-      ;-----
-      ; Extract the object frame
+         sxaddpar, objhdr, 'PLUGMAPF', plugfilename
+         sxaddpar, objhdr, 'FLATFILE', bestflat.name
+         sxaddpar, objhdr, 'ARCFILE', bestarc.name
+         sxaddpar, objhdr, 'OBJFILE', objname[iobj]
+         sxaddpar, objhdr, 'LAMPLIST', lampfile
+         sxaddpar, objhdr, 'SKYLIST', skylinefile
+         sxaddpar, objhdr, 'PIXFLAT', pixflatname
 
-      extract_object, outname, objhdr, image, invvar, plugsort, wset, $
-       xpeak, lambda, xsol, fflat, fibermask, widthset=widthset, color=color, $
-       plottitle=plottitle
+         ;-----
+         ; Extract the object frame
 
-      splog, 'Elapsed time = ', systime(1)-stimeobj, ' seconds', $
-       format='(a,f6.0,a)' 
+         extract_object, outname, objhdr, image, invvar, plugsort, wset, $
+          xpeak, lambda, xsol, fflat, fibermask, widthset=widthset, $
+          color=color, plottitle=plottitle
+
+         splog, 'Elapsed time = ', systime(1)-stimeobj, ' seconds', $
+          format='(a,f6.0,a)' 
+      endelse
 
    endfor
 
