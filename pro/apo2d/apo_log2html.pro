@@ -324,6 +324,10 @@ pro apo_log2html, logfile, htmlfile
    ; Now unlock the HTML file.
    djs_unlockfile, htmlfile, lun=html_lun
 
+   ; Free pointers
+   for i=0, nstruct-1 do $
+    if (keyword_set(pstruct[i])) then ptr_free, pstruct[i]
+
    return
 end
 ;------------------------------------------------------------------------------
