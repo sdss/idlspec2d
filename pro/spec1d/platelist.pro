@@ -84,6 +84,7 @@
 ;
 ; PROCEDURES CALLED:
 ;   chunkinfo()
+;   copy_struct_inx
 ;   djs_filepath()
 ;   fileandpath()
 ;   headfits()
@@ -204,7 +205,8 @@ pro platelist, infile, plist=plist, create=create, $
     'status2d' , 'Missing', $
     'statuscombine', 'Missing', $
     'status1d' , 'Missing', $
-    'public'  , '' )
+    'public'  , '', $
+    'qualcomments'  , '' )
    plist = replicate(plist, nfile)
 
    ;----------
@@ -424,8 +426,9 @@ pro platelist, infile, plist=plist, create=create, $
 
       j = where(plist[ifile].plate EQ publicdata.plate $
        AND plist[ifile].mjd EQ publicdata.mjd)
-      if (j[0] NE -1) then $
-       plist[ifile].public = publicdata[j[0]].public
+      if (j[0] NE -1) then begin
+         copy_struct_inx, publicdata[j[0]], plist, index_to=ifile
+      endif
 
       ;----------
       ; The RA,DEC in the header is sometimes wrong, so try to derive
@@ -541,7 +544,8 @@ pro platelist, infile, plist=plist, create=create, $
    ;----------
    ; Make a list of one S/N for each plate which is the minimum of
    ; G1, I1, G2, I2.
-   ; Assign a plate quality.
+   ; Assign a plate quality, but do not over-write any plate quality
+   ; from the manually-assigned one in the "spPlateList.par" file.
 
    qualstring = ['bad', 'marginal', 'good']
    for ifile=0, nfile-1 do begin
@@ -554,7 +558,8 @@ pro platelist, infile, plist=plist, create=create, $
          if (plist[ifile].platesn2 LT 15) then iqual = iqual < 1
          if (plist[ifile].fbadpix GT 0.10) then iqual = iqual < 0
          if (plist[ifile].fbadpix GT 0.05) then iqual = iqual < 1
-         plist[ifile].platequality = qualstring[iqual]
+         if (NOT keyword_set(strtrim(plist[ifile].platequality))) then $
+          plist[ifile].platequality = qualstring[iqual]
       endif
    endfor
 
