@@ -95,6 +95,12 @@ pro spflatave, mjd=mjd, mjstart=mjstart, mjend=mjend, mjout=mjout, $
           pixflatarr[*,*,ifile] = mrdfits(files[ifile])
 
          ;----------
+         ; Set the first and last column of every flat as bad.
+
+         pixflatarr[0,*,*] = 0
+         pixflatarr[naxis1-1,*,*] = 0
+
+         ;----------
          ; Generate a map of the sigma at each pixel (doing some rejection).
          ; This is a horrible loop over each pixel, but shouldn't take more
          ; than a few minutes.
@@ -114,11 +120,13 @@ pro spflatave, mjd=mjd, mjstart=mjstart, mjend=mjend, mjout=mjout, $
             ; The SPFLATTEN2 routine will have set values = 0 where there
             ; were not enough counts to determine the flat-field value.
             vals = pixflatarr[lindgen(nfile)*npix+ipix]
-            vals = vals[ where(vals GE 0) > 0 ]
-            djs_iterstat, vals, $
-             sigrej=sigrej, maxiter=maxiter, sigma=sigma1, mean=mean1
-            aveimg[ipix] = mean1
-            sigimg[ipix] = sigma1
+            ii = where(vals GT 0)
+            if (ii[0] NE -1) then begin
+               djs_iterstat, vals[ii], $
+                sigrej=sigrej, maxiter=maxiter, sigma=sigma1, mean=mean1
+               aveimg[ipix] = mean1
+               sigimg[ipix] = sigma1
+            endif
          endfor
 
          ;----------
@@ -141,17 +149,18 @@ pro spflatave, mjd=mjd, mjstart=mjstart, mjend=mjend, mjout=mjout, $
           masksum = (pixflatarr GT 0) $
          else $
           masksum = total(pixflatarr GT 0, 3)
+pixflatarr = 0 ; Clear memory
 
          for iy=0, naxis2-1 do begin
-            igood = where(masksum[*,iy] GT 0, ngood)
+            igood = where(masksum[*,iy] GT 0 AND aveimg[*,iy] GT 0, ngood)
             ; Don't do anything if the whole row is bad
             if (ngood GT 0) then begin
                ; Set left-most pixels to unity
                if (igood[0] NE 0) then $
-                aveimg[*,0:igood[0]-1] = 1.0
+                aveimg[0:igood[0]-1,iy] = 1.0
                ; Set right-most pixels to unity
                if (igood[ngood-1] NE naxis1-1) then $
-                aveimg[igood[*,ngood-1]+1:naxis1-1] = 1.0
+                aveimg[igood[ngood-1]+1:naxis1-1,iy] = 1.0
             endif
          endfor
 
