@@ -25,6 +25,8 @@ Plate  MJD    Fib   z          Class      Subclass   Comments
   407  51820   592     0.0000  STAR_CV    STAR_CV    S/N= 4.2
   430  51877   430     0.0000  STAR_CV    STAR_CV    S/N= 5.2
   431  51877   316     0.0000  STAR_CV    STAR_CV    S/N= 3.8
+  434  51885   430     0.0000  STAR_CV    STAR_CV    S/N=36.0  Very blue
+# 439  51877   582     0.0000  STAR_CV    STAR_CV    S/N=19.8  Mostly K-star spectrum
   439  51877   624     0.0000  STAR_CV    STAR_CV    S/N=10.2
   443  51873   360     0.0000  STAR_CV    STAR_CV    S/N= 8.5
   445  51873    89     0.0000  STAR_CV    STAR_CV    S/N= 4.1
