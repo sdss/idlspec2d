@@ -245,9 +245,12 @@ pro platelist, infile, plist=plist, create=create, $
     'n_star'   , 0L,  $
     'n_unknown', 0L,  $
     'n_sky'    , 0L, $
+    'n_target_main',  0L, $
+    'n_target_lrg' ,  0L, $
+    'n_target_qso' ,  0L, $
     'success_main' , 0.0, $
-    'success_lrg' , 0.0, $
-    'success_qso' , 0.0, $
+    'success_lrg'  , 0.0, $
+    'success_qso'  , 0.0, $
     'status2d' , 'Missing', $
     'statuscombine', 'Missing', $
     'status1d' , 'Missing', $
@@ -271,6 +274,8 @@ pro platelist, infile, plist=plist, create=create, $
    trimtags2 = [ $
     ['plate'        ,   'i4'], $
     ['mjd'          ,   'i5'], $
+    ['progname'     ,    'a'], $
+    ['chunkname'    ,    'a'], $
     ['sn2_g1'       , 'f5.1'], $
     ['sn2_i1'       , 'f5.1'], $
     ['sn2_g2'       , 'f5.1'], $
@@ -558,6 +563,9 @@ pro platelist, infile, plist=plist, create=create, $
          iqso = where(strmatch(targets,'*QSO_HIZ *') $
           OR strmatch(targets,'*QSO_CAP *') $
           OR strmatch(targets,'*QSO_SKIRT *'), nqso)
+         plist[ifile].n_target_main = nmain
+         plist[ifile].n_target_lrg = nlrg
+         plist[ifile].n_target_qso = nqso
          if (nmain GT 0) then $
           plist[ifile].success_main = $
            100 * total(zans[imain].zwarning EQ 0 $
@@ -694,12 +702,12 @@ pro platelist, infile, plist=plist, create=create, $
    alias = [['CHUNKNAME'    , 'CHUNK'   ], $
             ['PROGNAME'     , 'PROG'    ], $
             ['PLATESN2'     , 'SN^2'    ], $
-            ['N_GALAXY'     , 'N gal'   ], $
-            ['N_QSO'        , 'N QSO'   ], $
-            ['N_STAR'       , 'N star'  ], $
-            ['N_UNKNOWN'    , 'N unk'   ], $
-            ['N_SKY'        , 'N sky'   ], $
-            ['FBADPIX'      , '%Badpix' ], $
+            ['N_GALAXY'     , 'N_gal'   ], $
+            ['N_QSO'        , 'N_QSO'   ], $
+            ['N_STAR'       , 'N_star'  ], $
+            ['N_UNKNOWN'    , 'N_unk'   ], $
+            ['N_SKY'        , 'N_sky'   ], $
+            ['FBADPIX'      , 'Badpix'  ], $
             ['SUCCESS_MAIN' , '%Main'   ], $
             ['SUCCESS_LRG'  , '%LRG'    ], $
             ['SUCCESS_QSO'  , '%QSO'    ], $
