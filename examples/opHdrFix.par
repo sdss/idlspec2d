@@ -523,6 +523,10 @@ ophdrfix sdR-??-0001247[4-4] NAME     "'0799-52277-01F'"
 # must have been aborted with essentially no exposure time on the sky.
 ophdrfix sdR-??-00012653 QUALITY   "'bad'"
 
+# These were test exposures on plate 830 on MJD 52292 (no useable data
+# that night)
+ophdrfix sdR-??-0001270[0-5] QUALITY   "'test'"
+
 # All science exposures for plate 803 on MJD 52296 have
 # very high sky count rates and scattered light, for
 # some unknown reason.  The night log gives no clue.
