@@ -194,8 +194,8 @@ function zfind, objflux, objivar, hdr=hdr, fiberid=fiberid, $
    for iobj=0, nobj-1 do $
     result[*,iobj].wcoverage = wcoverage[iobj]
    result.tfile = eigenfile
-   for iobj=0, nobj-1 do $
-    result[iobj].tcolumn[0:n_elements(columns)-1] = columns
+   for icol=0, n_elements(columns)-1 do $
+    result.tcolumn[icol] = columns[icol]
    result.npoly = npoly
 
    return, result
