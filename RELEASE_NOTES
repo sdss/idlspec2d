@@ -13,7 +13,7 @@ CREATE_LINESTRUCT(): Function broken out of LINEBACKFIT so that it
 EXTRACT_OBJECT: Added call to skyline_dispersion (for increasing the
             instrumental response width to agree with the width of sky
             lines), but correction is not implemented because the measurement
-            appears to be very noisy.
+            appears to be very noisy. Check invvar with whopping fibers.
 FINDOPFILE: Find the op file corresponding to a specified MJD.
             This function is broken out of SDSSPROC so that it can
             be used by other procs (like ATVRAWSPEC).
@@ -22,6 +22,7 @@ FITDISPERSION: Mask regions not neighboring lines of interest.
 LINEBACKFIT: Fix possible crash condition when computing LINENPIX if
             the line width is unphysically narrow and no pixels fall
             within the region of an emission line.
+MATCH_TRACE:  Added keyword radius, and set default to 2
 PLATECOMPARE: New TOPDIR optional keyword for comparing different
             reductions of the same data.
 PLOTSPEC: Optional /ZWARNING flag.  Report error if FIBERID out of range.
@@ -37,6 +38,7 @@ QUICKEXTRACT: Call REJECT_SCIENCE() to decide if a science exposure is bad
             from each of the 16 bundles.  Assumes 20 fibers per bundle.
             This addresses PR #3238.
             Fix bug whereby bad pixels can trigger whopping fibers.
+            Bad pixels can trigger whopping fibers.
 READSPEC: Don't fail when asking for SYNFLUX, but the spZ file doesn't exist.
             (This prevented PLOTSPEC from plotting anything in that case.)
 REJECT_SCIENCE: Check in the header that all the flat-field screens are
@@ -88,6 +90,8 @@ SPREDUCE1D: The warning message for S/N > 200 pixels has been fixed,
             and another warning added for any pixels w/ flux < -10 * noise
             (e.g., unphysically low values).
             Call new procedure QAPLOT_FCALIBVEC to measure flux-calib errors.
+TRACE320CRUDE: Add replacement code section for traces with 
+                  bad columns near starting position.
 
 idlspec2d.table: Added "Flavor=Linux"
 mailhtml.sh: Grep for the "APO Spectro" from the HTML file to get the
