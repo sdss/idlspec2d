@@ -26,14 +26,14 @@
 ;-
 pro match_tsobjtargets,tsobjtargetsbase,ra,dec,run,rerun,camcol,field,id,tsobj,matchlength=matchlength,tsobjbase=tsobjbase
 
-maxrerun=1000l
+maxrerun=50l
 maxfield=2000l
 
 if (NOT keyword_set(tsobj)) then tsobj=lonarr(n_elements(ra)+1l)
 if (NOT keyword_set(matchlength)) then matchlength=1.d
 matchlength=matchlength/3600.
 
-tmpindx=run*maxrerun*6l+rerun*6l+camcol-1l
+tmpindx=long(run)*maxrerun*6l+long(rerun)*6l+long(camcol)-1l
 sortindx=tmpindx[sort(tmpindx)]
 indx=long(sortindx[uniq(sortindx)])
 
@@ -42,6 +42,7 @@ for i=0l, n_elements(indx)-1l do begin
     curr_run=indx[i]/(maxrerun*6l)
     curr_rerun=(indx[i]-curr_run*maxrerun*6l)/6l
     curr_camcol=indx[i]-curr_run*maxrerun*6l-curr_rerun*6l+1l
+    print,curr_run
     curr_run5=string(curr_run,format='(i5.5)')
     curr_rerun0=string(curr_rerun,format='(i0)')
     curr_camcol1=string(curr_camcol,format='(i1)')
