@@ -12,13 +12,16 @@ pro lrg_photoz_test
     nrowchunk=10000L) ;, range=[100000,200000])
 
    ; Trim to LRGs
-   itrim = where( strmatch(spall.class,'GALAXY*') $
+   itrim = where(strmatch(spall.platequality,'good*') $
 ;    AND strmatch(spall.progname,'main*') $
-    AND strmatch(spall.platequality,'good*') $
-    AND spall.specprimary EQ 1 $ ; Best spectroscopic observations
-    AND total(spall.modelflux_ivar GT 0,1) EQ 5 $ ; Good photom in all bands
+;    AND strmatch(spall.class,'GALAXY*') $
+;    AND total(spall.modelflux_ivar GT 0,1) EQ 5 $ ; Good photom in *all* bands
+    AND spall.modelflux_ivar[1] $ ; Good photom in g-band
+    AND spall.modelflux_ivar[2] $ ; Good photom in r-band
+    AND spall.modelflux_ivar[3] $ ; Good photom in i-band
     AND (spall.primtarget AND (2L^5+2L^26)) NE 0 $ ; Targetted as LRG
-    AND spall.zwarning EQ 0, ntrim )
+;    AND spall.zwarning EQ 0 $
+    AND spall.specprimary EQ 1, ntrim) ; Best spectroscopic observations
    spall = spall[itrim]
 
    ; Do the photo-z fits
