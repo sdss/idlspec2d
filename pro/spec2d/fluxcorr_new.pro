@@ -1,3 +1,67 @@
+;+
+; NAME:
+;   spcalib
+;
+; PURPOSE:
+;   Extract calibration frames.
+;
+; CALLING SEQUENCE:
+;   fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
+;
+; INPUTS:
+;   bsmearfile - spFrame fits file chosen as blue smear image
+;   rsmearfile - spFrame fits file chosen as red smear image
+;   bscifile   - spFrame fits file(s) blue science image
+;   rscifile   - spFrame fits file(s) red science image
+;   corrfile   - Fits file to output flux correction vectors.
+;
+; OPTIONAL KEYWORDS:
+;
+; OUTPUTS:
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+;   fluxcorr_new is used to calculate and write to file a low order
+;    polynomial function which registers the flux in the science exposures
+;    to the median flux levels in the smear exposures.
+;
+;   Based on S/N, the produced function per fiber can be given by one
+;    of three methods.  For the highest S/N fibers, typically 10\% of the
+;    fibers including spectrophoto stds, the full 3rd order fit is done.
+;   For medium S/N fibers, only a one parameter scaling of the best 
+;     spectrophoto correction is produced.
+;   For the lowest S/N fibers, the spectrophoto correction is used without
+;     any scaling.  Beware, this means a stellar spectrophoto correction 
+;     is applied to all low S/N fibers, even if they are not
+;     seeing-limited targets.
+;
+; EXAMPLES:
+;
+; BUGS:
+;
+;  Blue wavelength region is hardwired: b1 = findgen(60)*4.0e-3 + 3.568
+;  Red wavelength region is hardwired : r1 = findgen(54)*4.0e-3 + 3.756
+;  Order of polynomial is hardwired:  3
+;
+; PROCEDURES CALLED:
+;   djs_iterstat
+;   mrdfits()
+;   mwrfits
+;   pixelmask_bits()
+;   traceset2xy
+;   xy2traceset
+;
+; INTERNAL SUPPORT ROUTINES:
+;   median_rebin():  Used to rebin spectra in large wavelength blocks
+;                    passed in parameter range 
+;
+; REVISION HISTORY:
+;   17-Oct-2000  Written by S. Burles
+;     
+;-
+;------------------------------------------------------------------------------
 function median_rebin, flux, ivar, loglam, range, mask=mask, sigrej=sigrej
 
    if NOT keyword_set(sigrej) then sigrej = 20.0
@@ -30,6 +94,7 @@ function median_rebin, flux, ivar, loglam, range, mask=mask, sigrej=sigrej
 return, fit
 end
               
+;------------------------------------------------------------------------------
 pro fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
 
    splog, 'Smear image blue=', bsmearfile
@@ -216,8 +281,7 @@ pro fluxcorr_new, bsmearfile, rsmearfile, bscifile, rscifile, corrfile
          medsn = where((scisnmed[0,*] GT 1.0 $
                 OR scisnmed[1,*] GT 2.0 ) $
                AND  (smearsnmed[0,*] GT 0.2 $
-                OR smearsnmed[1,*] GT 0.5) AND fibersn NE 1 $) 
-               AND  qsci EQ 0 AND qsmear EQ 0)
+                OR smearsnmed[1,*] GT 0.5) AND fibersn NE 1 ) 
 
          if medsn[0] NE -1 then fibersn[medsn] = 2
 
