@@ -1,18 +1,21 @@
-PATH=/usr/bin:/bin:/usr/local/bin:/usr/X11R6/bin:.:/usrdevel/scott/idlspec2d/bin
-IDLSPEC2D_DIR=/usrdevel/scott/idlspec2d
-IDLUTILS_DIR=/usrdevel/scott/idlutils
+PATH=/usr/bin:/bin:/usr/local/bin:/usr/X11R6/bin:.:/p/idlspec2d/cvs/bin
+IDLSPEC2D_DIR=/p/idlspec2d/cvs
+IDLUTILS_DIR=/p/idlutils/cvs
 IDL_DIR=/usr/local/rsi/idl_5.2
-IDL_PATH=+/usr/local/rsi/idl_5.2/lib:+/usr/local/rsi/idl_5.2/examples:+/usrdevel/scott/idlutils/goddard/pro:+/usrdevel/scott/idlutils/pro:+/usrdevel/scott/idlspec2d/pro
+IDL_PATH=+/usr/local/rsi/idl_5.2/lib:+/usr/local/rsi/idl_5.2/examples:+/p/idlutils/cvs/goddard/pro:+/p/idlutils/cvs/pro:+/p/idlspec2d/cvs/pro
 
-#----------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 # This is the top-level program for running APO2D on-the-mountain reductions.
 # Simply type
 #    crontab cron.table
 # to load this into the cron server.  That's it!  (As long as the paths are
 # set up properly in.
 #
+# To stop this from running, type
+#    crontab -r
+#
 # S. Burles, APO, 4 May 2000
-#----------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 # This job will run every minute.
 * * * * * sos.sh >/dev/null 2>&1

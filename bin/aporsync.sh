@@ -1,6 +1,6 @@
 #! /bin/sh
 
-#----------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 # This routine is called by the cron daemon, as set up with "cron.table".
 # It syncs files from sdsshost to plate-mapper at apo.nmsu.edu.
 #
@@ -8,7 +8,7 @@
 # We do this so that we can utilize both processors on plate-mapper.
 #
 # S. Burles, APO, 4 May 2000
-#----------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 # This syncs /astrlog/5???? from sdsshost to plate-mapper, excluding
 # the id* files.

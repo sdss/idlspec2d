@@ -1,5 +1,5 @@
 #! /bin/sh
-#----------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 # The script "aporsync" calls this script.
 # Try to parse 1 filename sent from stdin.
 # The file should look something like 
@@ -9,7 +9,7 @@
 # Send all this to the IDL routine APOREDUCE.
 #
 # S. Burles, APO, 4 May 2000
-#----------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 # Loop through each file name that has been passed.
 while read f

@@ -1,5 +1,5 @@
 #! /bin/sh
-#----------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 # This is a cron job that should run once per day from plate-mapper.apo.nmsu.edu,
 # currently at 7am.
 #
@@ -10,7 +10,7 @@
 # turn links to any PostScript plots that were also in that same directory.
 #
 # S. Burles, APO, 4 May 2000
-#----------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 logs=`ls -d /data/spectro/spectrologs/5*/* \
           | grep logfile | grep html | grep -v lock`
