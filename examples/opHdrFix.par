@@ -237,6 +237,12 @@ ophdrfix sdR-??-00010850  HGCD  "'0 0 0 0 '"
 ophdrfix sdR-??-00010850  SPEC1 "'1 0 1 1 '"
 ophdrfix sdR-??-00010850  SPEC2 "'1 0 1 1 '"
 
+# The last science exposure for plate 644 on MJD 52173 has a
+# recorded exposure time of 1148 sec, but appears to be a dark or
+# bias frame.  No indications from the observer log what went wrong.
+# for plate 889 on MJD 52346
+ophdrfix sdR-??-00010965 FLAVOR   "'unknown'"
+
 # Telescope status information missing for the pre-arc on plate 676
 # on MJD 52178.
 ophdrfix sdR-??-00011085  FFS   "'1 1 1 1 1 1 1 1'"
