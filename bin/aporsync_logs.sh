@@ -43,8 +43,9 @@ fi
 #   Unplugged*.ps
 #   fiberScan*.par
 # Copy the following file from the local machine back to sdsshost.apo
-# (since this file is created on the Son-of-Spectro machine):
-#   sdHdrFix*.par
+# (since this file is created on the Son-of-Spectro machine), but only
+# if that file actually exists:
+#   sdHdrFix-$MJD.par
 
 datadirs=`ssh sdsshost.apo.nmsu.edu ls -d /data/spectro/[5-9]????`
 astrologdirs=`echo $datadirs | sed -n 's/\/data\/spectro/\/astrolog/pg'`
@@ -62,10 +63,14 @@ do
     --include "fiberScan*.par"   \
     --exclude="*/*"              \
     --log-format="/astrolog/%f"  \
+    sdsshost.apo.nmsu.edu:$thisdir $ASTROLOG_DIR
    thismjd=`echo $thisdir | sed -n 's/\/.*\///p'`
-   rsync -ar --rsh="ssh -c blowfish" \
-    --rsync-path=/p/rsync/v2_4_3/rsync \
-    $ASTROLOG_DIR/$thismjd/"sdHdrFix*.par" sdsshost.apo.nmsu.edu:$thisdir
+   if [ -e $ASTROLOG_DIR/$thismjd/sdHdrFix-$thismjd.par ] ; then
+      rsync -ar --rsh="ssh -c blowfish" \
+       --rsync-path=/p/rsync/v2_4_3/rsync \
+       $ASTROLOG_DIR/$thismjd/sdHdrFix-$thismjd.par \
+       sdsshost.apo.nmsu.edu:$thisdir
+   fi
 done
 
 # This syncs /astrolog/[5-9]???? from sdsshost to the local machine,
