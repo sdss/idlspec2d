@@ -1,5 +1,5 @@
 # Limits to test for on-the-mountain reductions.
-# This file is used by the procedure APO_LOG2HTML.
+# This file is used by the function APO_CHECKLIMITS().
 
 typedef struct {
   char color[10];    # Color of error flag
@@ -8,55 +8,37 @@ typedef struct {
   char camera[2];    # Camera name
   float lovalue;     # Low value
   float hivalue;     # High value
-} speclimit;
+} SPECLIMIT;
+
+typedef struct {
+  char color[10];    # Color of error flag
+  char flavor[20];   # Flavor of exposure: bias,dark,arc,flat,science,smear
+  char field[40];    # Field name
+  char camera[2];    # Camera name
+  char strval[40];   # String value
+} TEXTLIMIT;
 
 # For biases, insist on exposure times of 0 sec.
 
-speclimit red bias EXPTIME b1 -9e9 -1
-speclimit red bias EXPTIME b2 -9e9 -1
-speclimit red bias EXPTIME r1 -9e9 -1
-speclimit red bias EXPTIME r2 -9e9 -1
-speclimit red bias EXPTIME b1 1 9e9
-speclimit red bias EXPTIME b2 1 9e9
-speclimit red bias EXPTIME r1 1 9e9
-speclimit red bias EXPTIME r2 1 9e9
+speclimit red bias EXPTIME * -9e9 -1
+speclimit red bias EXPTIME * 1 9e9
 
 # Issue errors if the 98th percentile of the bias frames is not in the
 # range (0,20).
 
-speclimit red bias PERCENTILE98 b1 -65536 0
-speclimit red bias PERCENTILE98 b2 -65536 0
-speclimit red bias PERCENTILE98 r1 -65536 0
-speclimit red bias PERCENTILE98 r2 -65536 0
-
-speclimit red bias PERCENTILE98 b1 15 65536
-speclimit red bias PERCENTILE98 b2 15 65536
-speclimit red bias PERCENTILE98 r1 15 65536
-speclimit red bias PERCENTILE98 r2 15 65536
+speclimit red bias PERCENTILE98 * -65536 0
+speclimit red bias PERCENTILE98 * 15 65536
 
 # Issue errors if the 98th percentile of the dark frames is not in the
 # range (0,35).
 
-speclimit red dark PERCENTILE98 b1 -65536 0
-speclimit red dark PERCENTILE98 b2 -65536 0
-speclimit red dark PERCENTILE98 r1 -65536 0
-speclimit red dark PERCENTILE98 r2 -65536 0
+speclimit red dark PERCENTILE98 * -65536 0
+speclimit red dark PERCENTILE98 * 35 65536
 
-speclimit red dark PERCENTILE98 b1 35 65536
-speclimit red dark PERCENTILE98 b2 35 65536
-speclimit red dark PERCENTILE98 r1 35 65536
-speclimit red dark PERCENTILE98 r2 35 65536
+# For flats, insist on exposure times of 10 - 12 sec.
 
-# For flats, insist on exposure times of 10 sec.
-
-speclimit red flat EXPTIME b1 -9e9 9
-speclimit red flat EXPTIME b2 -9e9 9
-speclimit red flat EXPTIME r1 -9e9 9
-speclimit red flat EXPTIME r2 -9e9 9
-speclimit red flat EXPTIME b1 11 9e9
-speclimit red flat EXPTIME b2 11 9e9
-speclimit red flat EXPTIME r1 11 9e9
-speclimit red flat EXPTIME r2 11 9e9
+speclimit red flat EXPTIME * -9e9 9
+speclimit red flat EXPTIME * 13 9e9
 
 # The locations of the fibers on the CCD's should match closely to how we
 # tuned the spectrographs on MJD 51612 (8/9 March 2000).
@@ -128,14 +110,8 @@ speclimit red flat XSIGMA r2 1.10 9e9
 
 # For arcs, insist on exposure times of 2-3 sec.
 
-speclimit red arc EXPTIME b1 -9e9 1
-speclimit red arc EXPTIME b2 -9e9 1
-speclimit red arc EXPTIME r1 -9e9 1
-speclimit red arc EXPTIME r2 -9e9 1
-speclimit red arc EXPTIME b1 4 9e9
-speclimit red arc EXPTIME b2 4 9e9
-speclimit red arc EXPTIME r1 4 9e9
-speclimit red arc EXPTIME r2 4 9e9
+speclimit red arc EXPTIME * -9e9 1
+speclimit red arc EXPTIME * 4 9e9
 
 # The wavelength ranges should match closely to how we tuned the spectrographs
 # on MJD 51612 (8/9 March 2000).  Our best values were:
@@ -214,14 +190,8 @@ speclimit red arc WSIGMA r2 1.05 9e9
 
 # For science frames, insist on exposure times between 599 and 1804 sec.
 
-speclimit red science EXPTIME b1 -9e9 598
-speclimit red science EXPTIME b2 -9e9 598
-speclimit red science EXPTIME r1 -9e9 598
-speclimit red science EXPTIME r2 -9e9 598
-speclimit red science EXPTIME b1 1805 9e9
-speclimit red science EXPTIME b2 1805 9e9
-speclimit red science EXPTIME r1 1805 9e9
-speclimit red science EXPTIME r2 1805 9e9
+speclimit red science EXPTIME * -9e9 598
+speclimit red science EXPTIME * 1805 9e9
 
 # The sky levels were 0.15 e-/pix and 0.30 e-/pix in the blue and
 # cameras on MJD 51612 (8/9 March 2000).  Report a warning (yellow)
@@ -241,45 +211,27 @@ speclimit red science SKYPERSEC r2 1.20 9e9
 # For individual science exposures, only issue a warning (not an error)
 # for exposures with (S/N)^2 < 2.0
 
-speclimit yellow science SN2 b1 0 1.99
-speclimit yellow science SN2 b2 0 1.99
-speclimit yellow science SN2 r1 0 1.99
-speclimit yellow science SN2 r2 0 1.99
+speclimit yellow science SN2 * 0 1.99
 
 # Issue warnings about total (S/N)^2 for any camera not hitting 15/pix
 # (yellow warning), or 13/pix (red warning).
 
-speclimit red TOTAL TOTALSN2 b1 0 12.99
-speclimit red TOTAL TOTALSN2 b2 0 12.99
-speclimit red TOTAL TOTALSN2 r1 0 12.99
-speclimit red TOTAL TOTALSN2 r2 0 12.99
-
-speclimit yellow TOTAL TOTALSN2 b1 13 14.99
-speclimit yellow TOTAL TOTALSN2 b2 13 14.99
-speclimit yellow TOTAL TOTALSN2 r1 13 14.99
-speclimit yellow TOTAL TOTALSN2 r2 13 14.99
+speclimit red TOTAL TOTALSN2 * 0 12.99
+speclimit yellow TOTAL TOTALSN2 * 13 14.99
 
 # For smear frames, insist on exposure times of 240 sec.
 
-speclimit red smear EXPTIME b1 -9e9 238
-speclimit red smear EXPTIME b2 -9e9 238
-speclimit red smear EXPTIME r1 -9e9 238
-speclimit red smear EXPTIME r2 -9e9 238
-speclimit red smear EXPTIME b1 242 9e9
-speclimit red smear EXPTIME b2 242 9e9
-speclimit red smear EXPTIME r1 242 9e9
-speclimit red smear EXPTIME r2 242 9e9
+speclimit red smear EXPTIME * -9e9 238
+speclimit red smear EXPTIME * 243 9e9
 
 # For smear exposures, issue an error if (S/N)^2 < 0.10,
 # and a warning if < 0.15.
 
-speclimit yellow smear SN2 b1 0 0.15
-speclimit yellow smear SN2 b2 0 0.15
-speclimit yellow smear SN2 r1 0 0.15
-speclimit yellow smear SN2 r2 0 0.15
+speclimit yellow smear SN2 * 0 0.15
+speclimit red smear SN2 * 0 0.10
 
-speclimit red smear SN2 b1 0 0.10
-speclimit red smear SN2 b2 0 0.10
-speclimit red smear SN2 r1 0 0.10
-speclimit red smear SN2 r2 0 0.10
+# Mark test exposures in yellow, and bad exposures in red.
+
+textlimit yellow * QUALITY * test
+textlimit red * QUALITY * bad
 
