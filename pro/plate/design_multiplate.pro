@@ -766,6 +766,53 @@ addplug.sectarget = 32L
    endif
 
    ;---------------------------------------------------------------------------
+   ; SET THE FIBERID'S FOR PLOTTING OVERLAY FILES
+   ; These are done with 7 bundles across the lowest part, then 9, 9, 7.
+   ;---------------------------------------------------------------------------
+
+   print, 'Setting negative FIBERIDs for "makePlots"'
+   iobj = where(newplug.holetype EQ 'OBJECT')
+   if (n_elements(iobj) NE 640) then $
+    message, 'Fewer than 640 OBJECT positions on this plate!'
+
+;      isort = sort(newplug[iobj].yfocal)
+;      newplug[iobj[isort]].fiberid = -lindgen(640) - 1
+
+   newid = lindgen(20) + 1
+   isort = sort(newplug[iobj].yfocal)
+
+   ; Loop over 4 swaths in declination
+   ysort = sort(newplug[iobj].yfocal)
+   for iyswath=0, 3 do begin
+      ; Select which objects are in this horizontal band
+      if (iyswath EQ 0) then begin
+         indx = iobj[ysort[0:139]]
+         nxswath = 7
+      endif else if (iyswath EQ 1) then begin
+         indx = iobj[ysort[140:319]]
+         nxswath = 9
+      endif else if (iyswath EQ 2) then begin
+         indx = iobj[ysort[320:499]]
+         nxswath = 9
+      endif else if (iyswath EQ 3) then begin
+         indx = iobj[ysort[500:639]]
+         nxswath = 7
+      endif
+
+      ; For those objects in this horizontal band, sort by X
+      indx = indx[ sort(newplug[indx].xfocal) ]
+
+      ; Loop through short stretch of X in this horizontal band,
+      ; then sort in those stretches by Y
+      for ixswath=0, nxswath-1 do begin
+         ii = indx[ixswath*20:ixswath*20+19]
+         ii = ii[ sort(newplug[ii].yfocal) ]
+         newplug[ii].fiberid = -newid ; (set these ID's as negative numbers)
+         newid = newid + 20
+      endfor
+   endfor
+
+   ;---------------------------------------------------------------------------
    ; WRITE THE MODIFIED PLUGMAPP FILES.
    ; This combines objects from the different tiles.
    ; This overwrites files that already exist.
@@ -840,13 +887,6 @@ addplug.sectarget = 32L
       modplug.spectrographid = -9999
       modplug.throughput = -9999
 
-      ; Must set the following to avoid "makePlots" from crashing!!
-      iobj = where(modplug.holetype EQ 'OBJECT')
-      if (n_elements(iobj) NE 640) then $
-       message, 'Fewer than 640 OBJECT positions on this plate!'
-      isort = sort(modplug[iobj].yfocal)
-      modplug[iobj[isort]].fiberid = -lindgen(640) - 1
-
       yanny_write, plugmappfile[itile], ptr_new(modplug), $
        hdr=*(hdrarr[itile]), enums=plugenum, structs=plugstruct
    endfor
@@ -870,7 +910,7 @@ addplug.sectarget = 32L
    print, '   makeFanuc'
    print, '   makeDrillPos'
    print, '   use_cs3  <-- This erroneously complains about some collisions'
-   print, '   makePlots -skipBrightCheck  <-- Still fails as of 28-Nov-01'
+   print, '   makePlots -skipBrightCheck'
    print, 'Then you are done!'
 
    return
