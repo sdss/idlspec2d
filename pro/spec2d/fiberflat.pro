@@ -27,6 +27,8 @@
 ; EXAMPLES:
 ;
 ; BUGS:
+;   Crappy algorithm.  In particular, the ends (in lambda space) or
+;   poorly treated (where only some fibers have signal).
 ;
 ; PROCEDURES CALLED:
 ;
@@ -80,12 +82,10 @@ flattemp[*,i] = smooth(flattemp[*,i],100)
     flattemp[*,i] = flattemp[*,i] / mm
 
    ; Linearly interpolate back to the original wavelength scale for each fiber
-   fflux = fltarr(ny, ntrace)
+   fflat = fltarr(ny, ntrace)
    for i=0, ntrace-1 do $
-      fflux[*,i] = interpol(flattemp[*,i], wtemp, waves[*,i])
+      fflat[*,i] = interpol(flattemp[*,i], wtemp, waves[*,i])
 
-; ???
-stop
    return, fflat
 end
 ;------------------------------------------------------------------------------

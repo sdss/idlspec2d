@@ -6,7 +6,7 @@
 ;   Extract, wavelength-calibrate, and flatten SDSS spectral frame(s).
 ;
 ; CALLING SEQUENCE:
-;   spreduce, flatname, arcname, objname, pixflatname, $
+;   spreduce, flatname, arcname, objname, pixflatname=, $
 ;    plugfile=plugfile, lampfile=lampfile, $
 ;    indir=indir, plugdir=plugdir, outdir=outdir
 ;
@@ -15,15 +15,13 @@
 ;   arcname    - Name of arc SDSS image
 ;   objname    - Name of object SDSS image(s)
 ;
-; OPTIONAL INPUT:
-;   pixflatname- Name of pixel-to-pixel flat, produced with SPFLATTEN.
-;
 ; REQUIRED KEYWORDS:
 ;   plugfile   - Name of plugmap file (Yanny parameter file)
-;   lampfile   - Name of file describing arc lamp lines;
-;                default to the file 'lamphgcdne.dat' in the IDL path.
 ;
 ; OPTIONAL KEYWORDS:
+;   pixflatname- Name of pixel-to-pixel flat, produced with SPFLATTEN.
+;   lampfile   - Name of file describing arc lamp lines;
+;                default to the file 'lamphgcdne.dat' in the IDL path.
 ;   indir      - Input directory for FLATNAME, ARCNAME, OBJNAME;
 ;                default to './'
 ;   plugdir    - Input directory for PLUGFILE; default to './'
@@ -56,7 +54,7 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro spreduce, flatname, arcname, objname, pixflatname, $
+pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
  plugfile=plugfile, lampfile=lampfile, $
  indir=indir, plugdir=plugdir, outdir=outdir
 
@@ -87,7 +85,7 @@ pro spreduce, flatname, arcname, objname, pixflatname, $
    fullpath = filepath(plugfile, root_dir=plugdir)
    fullname = findfile(fullpath, count=ct)
    if (ct NE 1) then $
-    message, 'Cannot find plugMapFile' + plugMapFile
+    message, 'Cannot find plugMapFile ' + plugMapFile
 
    yanny_read, fullname[0], pstruct, hdr=hdrplug
    plugmap = *pstruct[0]
@@ -100,8 +98,8 @@ pro spreduce, flatname, arcname, objname, pixflatname, $
       fullpath = filepath(pixflatname, root_dir=indir)
       fullname = findfile(fullpath, count=ct)
       if (ct NE 1) then $
-       message, 'Cannot find pixflat image' + pixflatname
-      pixflat = readfits(pixflatname)
+       message, 'Cannot find pixflat image ' + pixflatname
+      pixflat = readfits(fullname[0])
    endif
 
    ;---------------------------------------------------------------------------
@@ -111,7 +109,7 @@ pro spreduce, flatname, arcname, objname, pixflatname, $
    fullpath = filepath(flatname, root_dir=indir)
    fullname = findfile(fullpath, count=ct)
    if (ct NE 1) then $
-    message, 'Cannot find flat image' + flatname
+    message, 'Cannot find flat image ' + flatname
    sdssproc, fullname[0], flatimg, flativar, hdr=flathdr
  
    ; Flat-field the flat image
@@ -151,12 +149,14 @@ pro spreduce, flatname, arcname, objname, pixflatname, $
    fullpath = filepath(arcname, root_dir=indir)
    fullname = findfile(fullpath, count=ct)
    if (ct NE 1) then $
-    message, 'Cannot find arc image' + arcname
+    message, 'Cannot find arc image ' + arcname
    sdssproc, fullname[0], arcimg, arcivar, hdr=archdr
 
    ; Flat-field the arc image
-   if (keyword_set(pixflatname)) then $
-    arcimg = arcimg / pixflat
+   if (keyword_set(pixflatname)) then begin
+      arcimg = arcimg / pixflat
+      arcivar = arcivar * pixflat^2
+   endif
 
    ;---------------------------------------------------------------------------
    ; Extract the arc image
@@ -171,6 +171,13 @@ pro spreduce, flatname, arcname, objname, pixflatname, $
    extract_image, arcimg, arcivar, xsol, sigma, arc_flux, arc_fluxivar, $
     proftype=proftype, wfixed=[1,1,1], $
     highrej=highrej, lowrej=lowrej, nPoly=nPoly, relative=1
+
+   ;------------------
+   ; Flat-field the extracted arcs with the global flat
+   ; Hmmm.... Circular here, since we need a wavelength calibration before
+   ; making that flat
+;   arc_flux = arc_flux / fflat
+;   arc_fluxivar = arc_fluxivar * fflat^2
 
    ;---------------------------------------------------------------------------
    ; Compute wavelength calibration for arc lamp only
@@ -191,57 +198,6 @@ pro spreduce, flatname, arcname, objname, pixflatname, $
    ;---------------------------------------------------------------------------
 
    fflat = fiberflat(flat_flux, wset)
-; Now do something with fiberflat !!!???
-
-   ; Construct a vector for each fiber to take out global variations of
-   ; the fibers relative to each other.  This needs the wavelength calibration.
-   medval = median(flat_flux)
-   medsize = 35
-   flatglobal = 0 * flat_flux
-   ntrace=(size(flat_flux))[2]
-   for i=0, ntrace-1 do $
-      flatglobal[*,i] = median(flat_flux[*,i], medsize) / medval
-
-   ; Compute the wavelengths for the extracted spectra
-   traceset2xy,wset,xx,yy
-   waves = 10^yy
-
-   ; Find the wavelength range [WAVEMIN,WAVEMIN] that is in common for
-   ; all fibers.  Also find the minimum wavelength separation between pixels.
-   ny = (size(waves))[1]
-   if (waves[0,0] LT waves[ny-1,0]) then begin
-      ; Ascending wavelengths
-      wavemin = max(waves[0,*])
-      wavemax = min(waves[ny-1,*])
-      deltaw = min( waves[1:ny-1,*] - waves[0:ny-2,*] )
-   endif else begin
-      ; Descending wavelengths
-      wavemin = max(waves[ny-1,*])
-      wavemax = min(waves[0,*])
-      deltaw = min( waves[0:ny-2,*] - waves[1:ny-1,*] )
-   endelse
-
-   ; Linearly interpolate all of the flat-field vectors onto a common
-   ; wavelength scale
-   wtemp = wavemin + findgen(fix(wavemax-wavemin)/deltaw)
-   ntrace=(size(flat_flux))[2]
-   flattemp = fltarr(N_elements(wtemp),ntrace)
-   for i=0, ntrace-1 do $
-      flattemp[*,i] = interpol(flat_flux[*,i], waves[*,i], wtemp)
-
-; mm = djs_median(flattemp,2)
-; mm = mm / median(mm)
-; junk = 0*flattemp
-; for i=0, 319 do $
-;  junk[*,i]= median( flattemp[*,i]/(median(flattemp[*,i])*mm), 25)
-; writefits,'flat_b1.fits',junk
-; dfpsplot, 'flat_b1.ps', /square
-; djs_plot, wtemp, [0], yr=[0.8,3.0],/ystyle, xtitle='Lambda', $
-;  ytitle='Flat-field vectors + const', charsize=2
-; for i=0, 300, 20 do $
-;  djs_oplot, wtemp, $
-;   median( flattemp[*,i]/(median(flattemp[*,i])*mm), 25) +i/200.
-; dfpsclose
 
    ;---------------------------------------------------------------------------
    ; LOOP THROUGH OBJECT FRAMES
@@ -255,16 +211,13 @@ pro spreduce, flatname, arcname, objname, pixflatname, $
       fullpath = filepath(objname[iobj], root_dir=indir)
       fullname = findfile(fullpath, count=ct)
       if (ct NE 1) then $
-       message, 'Cannot find object image' + objname[iobj]
+       message, 'Cannot find object image ' + objname[iobj]
       sdssproc, fullname[0], objimg, objivar, hdr=objhdr
 
-      ; Flat-field the object image
-;      objimg = objimg / pixflat
-
-      ; What about invvar?  Is below okay?
+      ; What about invvar???  Is below okay???
       if (keyword_set(pixflatname)) then begin
-       objimg = objimg / pixflat
-       objivar = objivar * pixflat * pixflat 
+         objimg = objimg / pixflat
+         objivar = objivar * pixflat^2
       endif
 
       ;------------------
@@ -316,6 +269,10 @@ pro spreduce, flatname, arcname, objname, pixflatname, $
        highrej=highrej, lowrej=lowrej, nPoly=nPoly, whopping=whopping, $
        ymodel=ymodel2
 
+      ;------------------
+      ; Flat-field the extracted object fibers with the global flat
+      obj_flux = obj_flux / fflat
+      obj_fluxivar = obj_fluxivar * fflat^2
 stop
 
       ;------------------

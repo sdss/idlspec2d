@@ -1,5 +1,16 @@
 
+* Make QA plots
+
+* Put obsolete routines in /pro/obsolete
+
+* Carry header around + add header cards
+
+* How to apply the flat-fields to the inverse variance?
+* Watch for numeric overflows when FLAT <= 0
+
 * Measure gain + read noise
+
+* Measure throughput!!
 
 * Make bad pixel mask
 
@@ -20,4 +31,89 @@
 
 * Echelle spectrum of A,B bands for their removal.
 
+* Characterize flexure 
+
+* Binned mode
+
+* Problems with CCD electronics?  Bleads with low counts?
+
+* Focal plane mapping
+
+* Output in header PSF information (spatial + wavelength) to final files.
+
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+
+2D Pre-Processing:
+  * Overscan + bias subtraction
+  * Pixel-to-pixel flat-fielding
+
+2D Reductions:
+  * Spatial tracing from flat-field image
+      - Never, ever, ever mis-identify fiber numbers
+      - Fit traces to smooth functions
+      - Inspection of traces
+
+  * Optimal extraction of flats, arcs, objects
+      - Characterize PSF in spatial direction
+      - Reject cosmics
+      - Remove cross-talk
+
+  * Wavelength calibration
+      - Fit to arc lines + sky
+      - Robust against bad centroids on some fibers
+        (e.g., consistent fits between fibers)
+      - Achieve < 0.4 pixel residuals (30 km/s)
+      - Characterize PSF in wavelength direction
+
+  * Flat-fielding
+      - Remove fiber-to-fiber variations
+      - Remove dichroic effects
+      - Model relative wavelength response between fibers
+
+  * Object extraction
+      - Tweak spatial traces from flat -> object frame
+      - Extraction: the "3 Step Plan"
+        [1] Characterize exact spatial profile shape.
+            Characterize scattered light.
+        [2] Demand smoothly varying profiles (fit)
+            Demand smoothly varying scattered light (fit)
+        [3] Extract, fixing profile shape, center + scattered light terms
+            e.g., ONLY fit flux level
+      - Proper handling of bright objects.
+        Use 1-param fit to exponential tails.
+
+  * Sky-subtraction
+      - Construct "super-sky"
+      - Deal with the variable PSF
+
+  * Telluric absorption removal
+      - Template
+      - Correction methods
+
+  * Rebinning spectra + co-adding red+blue / multiple exposures
+      - Deal with the variable PSF
+      - More outlier rejection
+      - Demonstrate no residuals from dichroic
+
+  * Variance maps
+      - Retain bad pixel info
+      - Correct for flat-fielding
+      - Include sky-sub variance term
+      - Properly rebin along with the spectra
+
+Code requirements (cf, "Requirements Document"):
+   * Support on SDSS platforms
+   * "Adequate development/debugging environment"
+   * Code reliability
+   * Code management (CVS, UPD)
+   * Distribute code in "timely fashion"
+   * Timing: Extract 1 night in < 1 day processing
+   * Run tests on real data
+   * Documentation
+
+Data Model:
+  * Which files are needed for reductions?
+  * Which files are obsolete?
+  * Fermi archiving issues.
 

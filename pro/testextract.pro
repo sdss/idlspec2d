@@ -243,3 +243,23 @@ tt = doaframe(flat,arc,objects,plugMapFile,inputDir=inputDir, $
 ttred = doaframe(flat,arc,objects,plugMapFile,inputDir=inputDir, $
  outputDir=outputDir, plugMapDir=plugMapDir)
 
+
+;--- Now using SPREDUCE ---
+;
+;  Plate 191 on MJD=51456
+;
+cam = '01'
+flatnum = '-00001464'
+flat = 'sdR-'+cam+flatnum+'.fit'
+arcnum = '-00001462'
+arc = 'sdR-'+cam+arcnum+'.fit'
+objectnums = ['-00001450','-00001452','-00001454','-00001456','-00001458']
+objects = 'sdR-'+cam+objectnums+'.fit'
+pixflatname = 'pixflat-51441-r1.fits'
+indir = '51456'
+outdir = 'out'
+plugdir = indir
+plugfile = 'plPlugMapM-0191-51454-01.par'
+spreduce, flat, arc, objects, plugfile=plugfile, $
+ indir=indir, plugdir=plugdir, outdir=outdir, pixflatname=pixflatname
+
