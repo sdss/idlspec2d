@@ -37,6 +37,7 @@
 ;   divideflat
 ;   extract_image
 ;   extract_boxcar()
+;   find_whopping()
 ;   quickboxcar()
 ;   mrdfits()
 ;   mwrfits

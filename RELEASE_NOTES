@@ -24,6 +24,8 @@ QUICKTRACE: Tweak test for putative Argon lines in flats to be a less
             sensitive trigger.
 REMOVE2REDO: (New proc) Checks for missing entries in logfile*fits and
             removes corresponding raw data
+The routine FIND_WHOPPING is moved out of EXTRACT_OBJECT so that it can
+            be called by QUICKEXTRACT.
 Changed SOS signal-to-noise warning to a yellow warning below S/N=15/pix,
             and S/N=13/pix.
 More entries in "opHdrFix.par" to fix all the incorrect plugmap files
