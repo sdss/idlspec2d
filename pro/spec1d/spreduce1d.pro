@@ -549,8 +549,9 @@ ormask = 0 ; Free memory
    mwrfits, res_all, zallfile
 
    cpbackup, zbestfile
+   zans = (res_all[0,*])[*]
    mwrfits, 0, zbestfile, hdr, /create ; Retain the original header in first HDU
-   mwrfits, (res_all[0,*])[*], zbestfile
+   mwrfits, zans, zbestfile
    mwrfits, synflux, zbestfile
    mwrfits, dispflux, zbestfile
 
