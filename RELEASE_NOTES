@@ -4,6 +4,7 @@ GUIDERMOVIE: The format for the date in the header of the guider images
            has changed.  This code should now comptabably read the old
            or new date format.
 PLOTSPEC: Bug fix to allow one to specify the output file name with PSFILE=.
+           Fix units on Y axis to /cm^2 instead of /cm.
 SDSSPROC: Fix silly bug trying to set QUALITY='excellent' when undefined.
 WRITE_UROS: Add Flatvec,Rnois to output files.
 
