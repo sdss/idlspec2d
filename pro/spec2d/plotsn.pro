@@ -48,8 +48,8 @@ pro plotsn, sn, plug, bands=bands, title=title, plotfile=plotfile
 
    bandnames = ["u'","g'","r'","i'","z'"]
    slopelabel = " * "+bandnames
-   snmag = [19.0, 19.1, 19.1, 18.8, 18.0]
-   snlabel = '(S/N)^2 @ '+bandnames+' ='+string(snmag,format='(f5.1)')
+   snmag = [19.0, 19.2, 19.25, 18.9, 18.0]
+   snlabel = '(S/N)^2 @ '+bandnames+' ='+string(snmag,format='(f6.2)')
 
    nbands = n_elements(bands)
    nfibers = n_elements(plug)
@@ -73,6 +73,7 @@ pro plotsn, sn, plug, bands=bands, title=title, plotfile=plotfile
 
    oldmulti = !p.multi  
    !p.multi = [0,2,nbands]
+   !p.charsize = 1.6
 
    minmag = 15.0
    maxmag = 21.0
@@ -117,9 +118,22 @@ pro plotsn, sn, plug, bands=bands, title=title, plotfile=plotfile
       if (i EQ 0 AND keyword_set(title)) then $
          xyouts, minmag+0.5, 110.0, title, charsize=1.2
 
-      if (s1[0] NE -1) then djs_oplot, mag[s1], snc[s1] > 0.9, $
-           ps=1, syms=0.7, color='red'
-      if (s2[0] NE -1) then djs_oplot, mag[s2], snc[s2] > 0.9, ps=4, syms=0.7
+      if (s1[0] NE -1) then begin
+          upper = where(diff[s1] GT 0)
+          if (upper[0] NE -1) then djs_oplot, mag[s1[upper]], $
+             snc[s1[upper]] > 0.9, ps=1, syms=0.7, color='green'
+          lower = where(diff[s1] LE 0)
+          if (lower[0] NE -1) then djs_oplot, mag[s1[lower]], $
+             snc[s1[lower]] > 0.9, ps=1, syms=0.7, color='red'
+      endif
+      if (s2[0] NE -1) then begin
+          upper = where(diff[s2] GT 0)
+          if (upper[0] NE -1) then djs_oplot, mag[s2[upper]], $
+             snc[s2[upper]] > 0.9, ps=4, syms=0.7, color='green'
+          lower = where(diff[s2] LE 0)
+          if (lower[0] NE -1) then djs_oplot, mag[s2[lower]], $
+             snc[s2[lower]] > 0.9, ps=4, syms=0.7, color='red'
+      endif
 
       xyouts, minmag+0.5, 3.0, string(format='(a,f5.2,f6.2,a)','log S/N = ', $
            a, slopelabel[bands[i]])
@@ -173,7 +187,7 @@ pro plotsn, sn, plug, bands=bands, title=title, plotfile=plotfile
             ymargin=ymargin, cap=1.0 $
         else plot, plug.xfocal, plug.yfocal, ychars=2.0, xchars=xchars, $
             ymargin=ymargin, /nodata
-      if (nlow GT 0) then djs_oplot, plugc[low].xfocal, plug[low].yfocal, ps=1
+      if (nlow GT 0) then djs_oplot, plugc[low].xfocal, plugc[low].yfocal, ps=1
 
 
   endfor
