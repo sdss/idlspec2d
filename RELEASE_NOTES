@@ -27,7 +27,8 @@ PLATEMERGE: Include logic for setting the SPECPRIMARY field in the outputs.
            and use structure assignments rather than copy_struct_inx.
            Exclude some tags from the output structure, spec. ROSAT*,FIRST*.
 PLOTSPEC: Some major re-organizing of the main routine to allow PLATE,MJD
-           to be passed as vectors.
+           to be passed as vectors.  Add optional ZHDR return value.
+           Add /RESTFRAME option.
 QUICKTRACE,QUICKWAVE: Do not write the tsetfile or wsetfile if the
            quality of the exposure in not 'excellent' (and remove any
            such file for that exposure if it already exists).
