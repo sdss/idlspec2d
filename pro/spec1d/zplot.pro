@@ -87,7 +87,7 @@ pro zplot_label, ramid=ramid
        else if (yplot[i] LT 0) then thisy = 1.04 * yplot[i] $
        else thisy = yplot[i]
       djs_xyouts, xplot[i], thisy, $
-       ' '+strtrim(string(fix(theta)),2)+'^h ', align=align
+       ' '+strtrim(string(round(theta)),2)+'^h ', align=align
    endfor
 
    return
