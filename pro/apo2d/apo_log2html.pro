@@ -420,13 +420,15 @@ pro apo_log2html, logfile, htmlfile
       aborts = ''
       for j=0, n_elements(ii)-1 do begin
          warning1 = strtrim((*pstruct[ii[j]]).warnings,2)
-         warning1 = apo_stringreplace(warning1, 'WARNING', $
-          '<B><FONT COLOR="' + apo_color2hex('YELLOW') + '">WARNING</FONT>')
+         for k=0, n_elements(warning1)-1 do $
+          warning1[k] = apo_stringreplace(warning1[k], 'WARNING', $
+           '<B><FONT COLOR="' + apo_color2hex('YELLOW') + '">WARNING</FONT>')
          warnings = [warnings, warning1]
 
          abort1 = strtrim((*pstruct[ii[j]]).aborts,2)
-         abort1 = apo_stringreplace(abort1, 'ABORT', $
-          '<B><FONT COLOR="' + apo_color2hex('RED') + '">ABORT</FONT>')
+         for k=0, n_elements(abort1)-1 do $
+          abort1[k] = apo_stringreplace(abort1[k], 'ABORT', $
+           '<B><FONT COLOR="' + apo_color2hex('RED') + '">ABORT</FONT>')
          aborts = [aborts, abort1]
       endfor
       j = where(warnings NE '')
