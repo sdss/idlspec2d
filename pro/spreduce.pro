@@ -243,7 +243,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
    splog, 'Searching for wavelength solution'
    fitarcimage, arcimg, arcivar, xpeak, ypeak, wset, ncoeff=arccoeff, $
-    aset=aset, xcen=xcen, $
+    aset=aset, $
     color=color, lampfile=lampfile, lambda=lambda, xdif_tset=xdif_tset
      
    qaplot_arcline, xdif_tset, lambda, filename=arcname[ibest], color=color
