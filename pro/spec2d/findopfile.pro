@@ -6,7 +6,7 @@
 ;   Find the op file corresponding to a specified MJD.
 ;
 ; CALLING SEQUENCE:
-;   filename = findopfile( expres, mjd, [ indir, /abort_notfound ] )
+;   filename = findopfile( expres, mjd, [ indir, /abort_notfound, /silent ] )
 ;
 ; INPUTS:
 ;   expres     - Op file names to match which may include any wildcards
@@ -17,6 +17,7 @@
 ;   indir      - Input directory
 ;   abort_notfound - If set and no files are found to match the expression,
 ;                    then abort with the MESSAGE command; otherwise return ''.
+;   silent     - If set, then don't output any text.
 ;
 ; OUTPUTS:
 ;   filename   - Matched file name without path information
@@ -58,10 +59,12 @@
 ;                Broken out from an internal function of SDSSPROC.
 ;-
 ;------------------------------------------------------------------------------
-function findopfile, expres, mjd, indir, abort_notfound=abort_notfound
+function findopfile, expres, mjd, indir, abort_notfound=abort_notfound, $
+ silent=silent
 
    if (n_params() LT 2) then begin
-      print, 'Syntax - filename = findopfile( expres, mjd, [ indir, /abort_notfound ] )'
+      print, 'Syntax - filename = findopfile( expres, mjd, [ indir, $'
+      print, ' /abort_notfound, /silent ] )'
       return, ''
    endif
 
@@ -99,12 +102,14 @@ function findopfile, expres, mjd, indir, abort_notfound=abort_notfound
    ; this one.
    ibest = (where(mjdlist LE mjd))[0]
    if (ibest[0] EQ -1) then begin
-      splog, 'WARNING: No ' + expres + ' op files appear to have an MJD <= ' $
+      if (NOT keyword_set(silent)) then $
+       splog, 'WARNING: No ' + expres + ' op files appear to have an MJD <= ' $
        + strtrim(string(mjd),2)
       ibest = 0
    endif
    selectfile = fileandpath(files[ibest])
-   splog, 'Selecting op file ' + selectfile
+   if (NOT keyword_set(silent)) then $
+    splog, 'Selecting op file ' + selectfile
 
    return, selectfile
 end

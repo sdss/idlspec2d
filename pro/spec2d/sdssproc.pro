@@ -9,7 +9,7 @@
 ;   sdssproc, infile, [image, invvar, indir=, $
 ;    outfile=, varfile=, nsatrow=, fbadpix=, $
 ;    hdr=hdr, configfile=, ecalibfile=, bcfile=, $
-;    /applybias, /applypixflat, minflat=, maxflat=, $
+;    /applybias, /applypixflat, /silent, minflat=, maxflat=, $
 ;    spectrographid=, color=, camname= ]
 ;
 ; INPUTS:
@@ -30,6 +30,7 @@
 ;                appropriate MJD.
 ;   applybias  - Apply 2-D bias image.
 ;   applypixflat- Apply 2-D pixel-to-pixel flat (after subtracting bias).
+;   silent     - If set, then don't output any text.
 ;   minflat    - Minimum values allowed for pixflat; pixels with the
 ;                flat out of range are masked; default to 0.
 ;   maxflat    - Maximum values allowed for pixflat; pixels with the
@@ -79,7 +80,6 @@
 ;   idlutils_version()
 ;   lookforgzip()
 ;   rdss_fits()
-;   readfits()
 ;   sphdrfix
 ;   splog
 ;   sxaddpar
@@ -128,14 +128,16 @@
 ;  Create the bad column mask (1 for a masked pixel) with image size nc,nr
 ;  If the operation doesn't work just return 0 for no masked pixels
 
-function make_badcolumn_mask, bcfile, camrow, camcol, nc=nc, nr=nr
+function make_badcolumn_mask, bcfile, camrow, camcol, nc=nc, nr=nr, $
+ silent=silent
 
    if NOT keyword_set(nc) then nc=2048L
    if NOT keyword_set(nr) then nr=2048L
 
    yanny_read, bcfile, pdata
    if (size(pdata,/tname)) EQ 'INT' then begin
-      splog, 'WARNING: Could not read BC file ' + fileandpath(bcfile)
+      if (NOT keyword_set(silent)) then $
+       splog, 'WARNING: Could not read BC file ' + fileandpath(bcfile)
       return, 0
    endif
 
@@ -144,8 +146,9 @@ function make_badcolumn_mask, bcfile, camrow, camcol, nc=nc, nr=nr
 
    ibc = where(bc.camrow EQ camrow AND bc.camcol EQ camcol, nbc)
    if (NOT keyword_set(nbc)) then begin
-      splog,'WARNING: Could not find this camera info in BC file ' $
-       + fileandpath(bcfile)
+      if (NOT keyword_set(silent)) then $
+       splog,'WARNING: Could not find this camera info in BC file ' $
+        + fileandpath(bcfile)
       return, 0
    endif
 
@@ -170,7 +173,7 @@ end
 pro sdssproc, infile, image, invvar, indir=indir, $
  outfile=outfile, varfile=varfile, nsatrow=nsatrow, fbadpix=fbadpix, $
  hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, bcfile=bcfile, $
- applybias=applybias, applypixflat=applypixflat, $
+ applybias=applybias, applypixflat=applypixflat, silent=silent, $
  minflat=minflat, maxflat=maxflat, $
  spectrographid=spectrographid, color=color, camname=camname
 
@@ -178,7 +181,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
       print, 'Syntax - sdssproc, infile, [image, invvar, indir=, $'
       print, ' outfile=, varfile=, nsatrow=, fbadpix=, $' 
       print, ' hdr=, configfile=, ecalibfile=, bcfile=, $'
-      print, ' /applybias, /applypixflat, minflat=, maxflat=, $'
+      print, ' /applybias, /applypixflat, /silent, minflat=, maxflat=, $'
       print, ' spectrographid=, color=, camname= ]'
       return
    endif
@@ -194,7 +197,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
     message, 'Cannot find image ' + infile
 
    if (readimg OR readivar) then $
-    rawdata = rdss_fits(fullname, hdr, /nofloat) $
+    rawdata = rdss_fits(fullname, hdr, /nofloat, silent=silent) $
    else $
     hdr = headfits(fullname)
 
@@ -202,7 +205,8 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    ; Fix the headers with any hand-edits that we have determined.
 
    if (!version.release LT '5.3') then $
-    splog, 'Warning: Unable to fix headers with this version of IDL' $
+    if (NOT keyword_set(silent)) then $
+     splog, 'Warning: Unable to fix headers with this version of IDL' $
    else $
     sphdrfix, infile, hdr
 
@@ -217,9 +221,10 @@ pro sdssproc, infile, image, invvar, indir=indir, $
     message, 'Cannot determine exposure number from file name ' + infile
    hdrexp = sxpar(hdr, 'EXPOSURE')
    if (expnum NE hdrexp) then begin
-      splog, 'WARNING: Exposure number in header (' $
-       + strtrim(string(hdrexp),2) + ') disagrees w/filename (' $
-       + strtrim(string(expnum),2) + ') !!'
+      if (NOT keyword_set(silent)) then $
+       splog, 'WARNING: Exposure number in header (' $
+        + strtrim(string(hdrexp),2) + ') disagrees w/filename (' $
+        + strtrim(string(expnum),2) + ') !!'
       sxaddpar, hdr, 'EXPOSURE', expnum
    endif
 
@@ -325,9 +330,10 @@ pro sdssproc, infile, image, invvar, indir=indir, $
          redfile = (lookforgzip(djs_filepath(redfile, root_dir=indir)))[0]
 
          if (fits_wait(redfile, deltat=1, tmax=1)) then $
-          reddata = rdss_fits(redfile, /nofloat) $
+          reddata = rdss_fits(redfile, /nofloat, silent=silent) $
          else $
-          splog, 'Warning: Could not read corresponding red file ' + redfile
+          if (NOT keyword_set(silent)) then $
+           splog, 'Warning: Could not read corresponding red file ' + redfile
       endif else begin
          reddata = rawdata
       endelse
@@ -338,7 +344,8 @@ pro sdssproc, infile, image, invvar, indir=indir, $
        nbad = 0
 
       if (nbad GT 0) then begin
-         splog, 'WARNING: Fixing ', nbad, ' shifted rows (from electronics)'
+         if (NOT keyword_set(silent)) then $
+          splog, 'WARNING: Fixing ', nbad, ' shifted rows (from electronics)'
 
          ; For unrecoverable data, set KILLDATA=0
          killdata = byte(0*rawdata) + 1b
@@ -384,9 +391,10 @@ pro sdssproc, infile, image, invvar, indir=indir, $
          redfile = (lookforgzip(djs_filepath(redfile, root_dir=indir)))[0]
 
          if (fits_wait(redfile, deltat=1, tmax=1)) then $
-          reddata = rdss_fits(redfile, /nofloat) $
+          reddata = rdss_fits(redfile, /nofloat, silent=silent) $
          else $
-          splog, 'Warning: Could not read corresponding red file ' + redfile
+          if (NOT keyword_set(silent)) then $
+           splog, 'Warning: Could not read corresponding red file ' + redfile
       endif else begin
          reddata = rawdata
       endelse
@@ -398,7 +406,9 @@ pro sdssproc, infile, image, invvar, indir=indir, $
        nbad = 0
 
       if (nbad GT 0) then begin
-         splog, 'WARNING: Fixing ', nbad, ' dropped-pixel rows (from electronics)'
+         if (NOT keyword_set(silent)) then $
+          splog, 'WARNING: Fixing ', nbad, $
+           ' dropped-pixel rows (from electronics)'
          rawdata[1:1063,ibad] = rawdata[0:1062,ibad]
          rawdata[20,ibad] = median( rawdata[20,ibad] )
          rawdata[2108:2127,ibad] = rawdata[2107:2126,ibad]
@@ -415,15 +425,18 @@ pro sdssproc, infile, image, invvar, indir=indir, $
     root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='examples')
 
    if (NOT keyword_set(configfile)) then $
-    configfile = findopfile('opConfig*par', mjd, config_dir, /abort_notfound)
+    configfile = findopfile('opConfig*par', mjd, config_dir, $
+     /abort_notfound, silent=silent)
    if (NOT keyword_set(ecalibfile)) then $
-    ecalibfile = findopfile('opECalib*par', mjd, config_dir, /abort_notfound)
+    ecalibfile = findopfile('opECalib*par', mjd, config_dir, $
+     /abort_notfound, silent=silent)
    if (NOT keyword_set(bcfile)) then $
-    bcfile = findopfile('opBC*par', mjd, config_dir, /abort_notfound)
+    bcfile = findopfile('opBC*par', mjd, config_dir, $
+     /abort_notfound, silent=silent)
 
    naxis1 = sxpar(hdr,'NAXIS1')
    naxis2 = sxpar(hdr,'NAXIS2')
-   if (naxis1 NE 2128 OR naxis2 NE 2069) then $
+   if (naxis1 NE 2128 OR naxis2 NE 2069 AND NOT keyword_set(silent)) then $
     splog, 'WARNING: Expecting 2128x2069, found '+string(naxis1)+'x'$
      +string(naxis2)
 
@@ -438,7 +451,8 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    i = where(config.camrow EQ camrow AND config.camcol EQ camcol)
    config = config[i[0]]
 
-   if (naxis1 NE config.ncols OR naxis2 NE config.nrows) then $
+   if (naxis1 NE config.ncols OR naxis2 NE config.nrows $
+    AND NOT keyword_set(silent)) then $
       splog, 'WARNING! Config file dimensions do not match raw image'
 
    qexist = [config.amp0, config.amp1, config.amp2, config.amp3]
@@ -488,7 +502,8 @@ pro sdssproc, infile, image, invvar, indir=indir, $
     config.sccdcolsec2, config.sccdcolsec3]
 
    if (naxis2 EQ 2049) then begin
-     splog, 'WARNING: NROWS is 2049, adjusting config entries' 
+     if (NOT keyword_set(silent)) then $
+      splog, 'WARNING: NROWS is 2049, adjusting config entries' 
      sdatarow = sdatarow - 20
      noverrow = 1
    endif
@@ -555,7 +570,8 @@ pro sdssproc, infile, image, invvar, indir=indir, $
 ;            ; above the median
 ;            junk = where(biasvec GT median(biasvec) + 4, nhot)
 ;            if (nhot GE 15) then qshutter = 1 ; Flag the shutter as being open
-;            splog, 'Number of hot overscan columns for amp', iamp, ' = ', nhot
+;            if (NOT keyword_set(silent)) then $
+;             splog, 'Number of hot overscan columns for amp', iamp, ' = ', nhot
 ;         endif
 ;      endfor
 ;   endif
@@ -578,9 +594,11 @@ pro sdssproc, infile, image, invvar, indir=indir, $
 
             djs_iterstat, biasreg, sigrej=3.0, mean=biasval, sigma=readoutDN
 
-            splog, 'Measured read-noise in DN for amp#', iamp, ' = ', readoutDN
-            splog, 'Measured bias value in DN for amp#', iamp, ' = ', biasval
-            splog, 'Applying gain for amp#', iamp, ' = ', gain[iamp]
+            if (NOT keyword_set(silent)) then begin
+               splog, 'Measured read-noise in DN for amp#', iamp, ' = ', readoutDN
+               splog, 'Measured bias value in DN for amp#', iamp, ' = ', biasval
+               splog, 'Applying gain for amp#', iamp, ' = ', gain[iamp]
+            endif
 
             ; Copy the data for this amplifier into the final image
             ; Subtract the bias (in DN), and then multiply by the gain
@@ -608,7 +626,8 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    ; and is multiplied by the gain.
 
    if (qshutter) then begin
-      splog, 'WARNING: Correcting for open shutter during readout '
+      if (NOT keyword_set(silent)) then $
+       splog, 'WARNING: Correcting for open shutter during readout '
 
       t1 = exptime ; Read time for entire frame
       t2 = 0.026976 ; Read time for one row of data (from Connie Rockosi)
@@ -625,8 +644,10 @@ pro sdssproc, infile, image, invvar, indir=indir, $
       smearimg = (t2/t1) * smearimg
       image = image - smearimg
 
-      splog, 'Median value of open-shutter contamination = ', median(smearimg)
-      splog, 'Max value of open-shutter contamination = ', max(smearimg)
+      if (NOT keyword_set(silent)) then begin
+         splog, 'Median value of open-shutter contamination = ', median(smearimg)
+         splog, 'Max value of open-shutter contamination = ', max(smearimg)
+      endif
    endif
 
    ;------
@@ -710,7 +731,8 @@ pro sdssproc, infile, image, invvar, indir=indir, $
       iblead = where(qblead, nblead)
       sxaddpar, hdr, 'NBLEAD', nblead, ' Number of columns with blead trails'
       if (nblead GT 0) then begin
-         splog, 'Number of bleading columns = ', nblead
+         if (NOT keyword_set(silent)) then $
+          splog, 'Number of bleading columns = ', nblead
          for i=0, nblead-1 do begin
             icol = iblead[i] ; Column number for this blead trail
             irow = (where(mask1[icol,*]))[0] ; First bad row in this column
@@ -727,7 +749,8 @@ pro sdssproc, infile, image, invvar, indir=indir, $
       if (arg_present(nsatrow)) then begin
          totsat = total((1-satmask), 1)
          junk = where(totsat GE 20, nsatrow)
-         splog, 'Number of saturated rows = ', nsatrow
+         if (NOT keyword_set(silent)) then $
+          splog, 'Number of saturated rows = ', nsatrow
       endif
 
       ;------
@@ -741,8 +764,8 @@ pro sdssproc, infile, image, invvar, indir=indir, $
       ;------
       ; Mask out bad columns
 
-      bcmask = make_badcolumn_mask($
-          filepath(bcfile,root_dir=config_dir), camrow, camcol)
+      bcmask = make_badcolumn_mask( $
+       filepath(bcfile,root_dir=config_dir), camrow, camcol, silent=silent)
 
       ;------
       ; For masked pixels, set INVVAR=0
@@ -770,15 +793,20 @@ admask = 0 ; clear memory
       pp = filepath('', root_dir=getenv('SPECFLAT_DIR'), subdirectory='biases')
       ; First search for files "pixbiasave-*.fits", and if not found then
       ; look for "pixbias-*.fits".
-      pixbiasname = findopfile('pixbiasave-*-'+camname+'.fits', mjd, pp)
+      pixbiasname = findopfile('pixbiasave-*-'+camname+'.fits', mjd, pp, $
+       silent=silent)
       if (NOT keyword_set(pixbiasname)) then $
-       pixbiasname = findopfile('pixbias-*-'+camname+'.fits', mjd, pp)
+       pixbiasname = findopfile('pixbias-*-'+camname+'.fits', mjd, pp, $
+        silent=silent)
 
       if (NOT keyword_set(pixbiasname)) then begin
-         splog, 'WARNING: Bias image not found for camera ' + camname
+         if (NOT keyword_set(silent)) then $
+          splog, 'WARNING: Bias image not found for camera ' + camname
       endif else begin
-         splog, 'Correcting with bias image ' + pixbiasname
-         pixbiasimg = mrdfits(djs_filepath(pixbiasname, root_dir=pp))
+         if (NOT keyword_set(silent)) then $
+          splog, 'Correcting with bias image ' + pixbiasname
+         pixbiasimg = mrdfits(djs_filepath(pixbiasname, root_dir=pp), $
+          silent=silent)
 
          image = image - pixbiasimg
 pixbiasimg = 0 ; clear memory
@@ -796,16 +824,21 @@ pixbiasimg = 0 ; clear memory
       pp = filepath('', root_dir=getenv('SPECFLAT_DIR'), subdirectory='flats')
       ; First search for files "pixflatave-*.fits", and if not found then
       ; look for "pixflat-*.fits".
-      pixflatname = findopfile('pixflatave-*-'+camname+'.fits', mjd, pp)
+      pixflatname = findopfile('pixflatave-*-'+camname+'.fits', mjd, pp, $
+       silent=silent)
       if (NOT keyword_set(pixflatname)) then $
-       pixflatname = findopfile('pixflat-*-'+camname+'.fits', mjd, pp)
+       pixflatname = findopfile('pixflat-*-'+camname+'.fits', mjd, pp, $
+        silent=silent)
 
       if (NOT keyword_set(pixflatname)) then begin
-         splog, 'WARNING: Pixel flat not found for camera ' + camname
+         if (NOT keyword_set(silent)) then $
+          splog, 'WARNING: Pixel flat not found for camera ' + camname
       endif else begin
-         splog, 'Correcting with pixel flat ' + pixflatname
+         if (NOT keyword_set(silent)) then $
+          splog, 'Correcting with pixel flat ' + pixflatname
 
-         pixflatimg = mrdfits(djs_filepath(pixflatname, root_dir=pp))
+         pixflatimg = mrdfits(djs_filepath(pixflatname, root_dir=pp), $
+          silent=silent)
 
          if (readimg) then image = image / (pixflatimg + (pixflatimg LE 0))
          if (NOT keyword_set(minflat)) then minflat = 0.0
@@ -829,7 +862,8 @@ pixflatimg = 0 ; clear memory
    if (readimg OR readivar) then begin
       inan = where(finite(image) EQ 0, nnan)
       if (nnan GT 0) then begin
-         splog, 'WARNING: Replacing ', nnan, ' NaN values'
+         if (NOT keyword_set(silent)) then $
+          splog, 'WARNING: Replacing ', nnan, ' NaN values'
          image[inan] = 0
          invvar[inan] = 0
       endif
