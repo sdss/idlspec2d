@@ -103,6 +103,7 @@ function apo_log_beginplate, platenum, mjd, camnames, outdir=outdir
    platestr = strtrim(string(platenum),2)
    platestr4 = string(platenum, format='(i4.4)')
    plotfile = 'snplot-'+mjdstr+'-'+platestr4+'.ps'
+   giffile = 'snplot-'+mjdstr+'-'+platestr4+'.gif'
 
    ; See if the plot file actually exists, and only then create a link to it.
 ;   junk = findfile( djs_filepath(plotfile, root_dir=outdir), count=plotct)
@@ -116,7 +117,8 @@ function apo_log_beginplate, platenum, mjd, camnames, outdir=outdir
    nextline = '<CAPTION><FONT SIZE="+2"><B> Plate ' + platestr + '</B></FONT>'
    if (plotct NE 0) then $
     nextline = nextline $
-     + ' - <A HREF="' + plotfile + '">S/N FIGURE</A>' + '</CAPTION>'
+     + ' - <A HREF="' + giffile + '">S/N FIGURE</A>' + '</CAPTION>' $
+     + ' (<A HREF="' + plotfile + '"PostScript</A>>'
    textout = [textout, nextline]
    nextline = rowsep + colsep
    for icam=0, ncams-1 do $
