@@ -521,8 +521,13 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
        copy_struct_inx, zans, zans, index_to=allindx
    endif
    if (q_zline) then begin
-      if (keyword_set(zline[0])) then $
-       copy_struct_inx, zline, zline, index_to=allindx
+      if (keyword_set(zline[0])) then begin
+         ; Logically, we want to make the assignment ZLINE[*,ALLINDX] = ZLINE
+         nlines = (size(zline, /dimen))[0]
+         index_to = make_array(size=size(zline), /long)
+         for iline=0, nlines-1 do index_to[iline,*] = allindx * nlines + iline
+         copy_struct_inx, zline, zline, index_to=index_to[*]
+      endif
    endif
    if (q_synflux) then synflux[*,[allindx]] = synflux[*]
    if (q_lineflux) then lineflux[*,[allindx]] = lineflux[*]
