@@ -397,7 +397,7 @@ pro splot_writeeps
    if (nfiles GT 0 and filename NE '') then begin
       mesg = strarr(2)
       mesg[0] = 'Overwrite existing file:'
-      tmp_string = strmid(filename, rstrpos(filename, '/') + 1)
+      tmp_string = strmid(filename, strpos(filename, '/', /reverse_search) + 1)
       mesg[1] = strcompress(tmp_string + '?', /remove_all)
       result =  dialog_message(mesg, $
                  /default_no, $

@@ -227,7 +227,7 @@ pro apo_log2html, logfile, htmlfile
       return
    endif else if (n_params() EQ 1) then begin
       thisfile = fileandpath(logfile, path=thispath)
-      ipos = rstrpos(thisfile, '.fits')
+      ipos = strpos(thisfile, '.fits', /reverse_search)
       if (ipos EQ -1) then ipos = strlen(thisfile)
       htmlfile = djs_filepath(strmid(thisfile, 0, ipos) + '.html', $
        root_dir=thispath)

@@ -97,7 +97,7 @@ function batch2d_nolog, planfile
    retindx = -1L
    for ifile=0, n_elements(planfile)-1 do begin
       thisfile = fileandpath(planfile[ifile], path=thispath)
-      kk = rstrpos(thisfile, '.')
+      kk = strpos(thisfile, '.', /reverse_search)
       logfile = 'spDiag' + strmid(thisfile, 6, kk-6) + '.log'
       logfile = djs_filepath(logfile, root_dir=thispath)
       if (NOT keyword_set(findfile(logfile))) then retindx = [retindx, ifile]
@@ -356,7 +356,7 @@ pro batch2d, platenums, topdir=topdir, $
          planfilecomb = fileandpath(planlist[iplate], path=pathcomb)
 
          ; Construct the name of the batch file
-         i = rstrpos(planfilecomb, '.')
+         i = rstrpos(planfilecomb, '.', /reverse_search)
          if (i EQ -1) then i = strlen(planfilecomb)
          fullscriptfile[iplate] = $
           djs_filepath(strmid(planfilecomb,0,i)+'.batch', root_dir=pathcomb)

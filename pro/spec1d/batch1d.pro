@@ -138,7 +138,7 @@ pro batch1d, fullplatefile, topdir=topdir, upsversion=upsversion, $
    fq = "'"
    fullscriptfile = strarr(nplate)
    for iplate=0, nplate-1 do begin
-      i = rstrpos(platefile[iplate], '.')
+      i = strpos(platefile[iplate], '.', /reverse_search)
       if (i EQ -1) then i = strlen(platefile[iplate])
       fullscriptfile[iplate] = $
        djs_filepath(strmid(platefile[iplate],0,i)+'.batch', $

@@ -6,7 +6,7 @@ function spplan_findrawdata, inputdir, nfile
 
    if n EQ 0 then return, fullnames
 
-   place = rstrpos(gzipnames,'.gz')  
+   place = strpos(gzipnames, '.gz', /reverse_search)
    for i=0,n-1 do begin
 
      if place[i] GT 1 then begin

@@ -79,7 +79,7 @@ pro apo_diskcheck, dirname
       dfout_entry = dfout[n_elements(dfout)-1]
       if (dfout_entry NE '') then begin
          perc  = str_sep(dfout_entry,'%')
-         percentfull = long(strmid(perc[0],rstrpos(perc[0],' ')))
+         percentfull = long(strmid(perc[0],strpos(perc[0],' ',/reverse_search)))
          if (percentfull GT 95) then $
           splog, 'WARNING: SOS disk '+dirname+' is ' $
            +strtrim(string(percentfull),2)+'% full'
@@ -321,7 +321,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    ; Append to binary FITS log file a structure with info for this frame
    ; Lock the file to do this.
 
-   i = rstrpos(fullplugfile,'/')
+   i = strpos(fullplugfile,'/',/reverse_search)
    if (i[0] EQ -1) then shortplugfile = fullplugfile $
     else shortplugfile = strmid(fullplugfile,i+1)
 

@@ -215,7 +215,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    ; Very bad form, but this information is sometimes wrong in the header.
    ; In particular, the counting got off by 1 on MJD=51882.
 
-   i = rstrpos(infile, '-')
+   i = strpos(infile, '-', /reverse_search)
    expnum = long( strmid(infile, i+1, 8) )
    if (NOT keyword_set(expnum)) then $
     message, 'Cannot determine exposure number from file name ' + infile
@@ -234,7 +234,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
    ; Very bad form, but this information is not in the header since
    ; the CAMERAS keyword is sometimes wrong.
 
-   i = rstrpos(infile, '-')
+   i = strpos(infile, '-', /reverse_search)
    if (i[0] EQ -1 OR i-2 LT 0) then $
     message, 'Cannot determine CCD number from file name ' + infile
 
@@ -349,7 +349,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
     AND (readimg OR readivar)) then begin
       if (camname EQ 'b2') then begin
 ;         i1 = strpos(infile,'b2',/reverse_search) ; IDL 5.3 command
-         i1 = rstrpos(infile,'b2')
+         i1 = strpos(infile,'b2',/reverse_search)
          if (i1 EQ -1) then $
           message, 'Unable to parse corresponding red file for '+infile
          redfile = infile
@@ -409,8 +409,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
     AND (camname EQ 'b2' OR camname EQ 'r2') $
     AND (readimg OR readivar)) then begin
       if (camname EQ 'b2') then begin
-;         i1 = strpos(infile,'b2',/reverse_search) ; IDL 5.3 command
-         i1 = rstrpos(infile,'b2') ; IDL 5.2 command
+         i1 = strpos(infile,'b2',/reverse_search) ; IDL 5.3 command
          if (i1 EQ -1) then $
           message, 'Unable to parse corresponding red file for '+infile
          redfile = infile
