@@ -42,6 +42,7 @@ install :
 		(mkdir $(IDLSPEC2D_DIR)/$$f; cd $$f ; echo In $$f; $(MAKE) $(MFLAGS) install ); \
 	done
 	- cp Makefile $(IDLSPEC2D_DIR)
+	- cp RELEASE_NOTES $(IDLSPEC2D_DIR)
 
 clean :
 	- /bin/rm -f *~ core
