@@ -3,6 +3,87 @@
 ;                or spectro-2, but not both!
 ;   adderr     - Additional error to add to the formal errors, as a
 ;                fraction of the flux; default to 0.03 (3 per cent).
+
+;+
+; NAME:
+;   spflux_v5
+;
+; PURPOSE:
+;   Compute flux-calibration vectors for each CCD+exposure.
+;
+; CALLING SEQUENCE:
+;   spflux_v5, objname, [ adderr=, combinedir= ]
+;
+; INPUTS:
+;   objname    - File names (including path)
+;
+; OPTIONAL INPUTS:
+;   adderr     - Additional error to add to the formal errors, as a
+;                fraction of the flux; default to 0.03
+;   combinedir - Directory for output files
+;
+; OUTPUTS:
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;   One output file is written for every input file OBJNAME,
+;   prefixed with spFluxcalib.  It containts the following:
+;     HDU #0: Calibration image
+;     HDU #1: Trace-set used to construct the former
+;     HDU #2: Structure with info on each standard star
+;
+; EXAMPLES:
+;
+; BUGS:
+;
+; DATA FILES:
+;
+; PROCEDURES CALLED:
+;   airtovac
+;   bspline_bkpts()
+;   bspline_iterfit()
+;   bspline_valu()
+;   combine1fiber
+;   computechi2()
+;   correct_dlam
+;   djs_filepath()
+;   djs_maskinterp()
+;   djs_median()
+;   djs_oplot
+;   djs_plot
+;   djs_xyouts
+;   dust_getval()
+;   euler
+;   ext_odonnell
+;   filter_thru()
+;   find_nminima()
+;   mrdfits()
+;   mwrfits
+;   pixelmask_bits()
+;   plug2tsobj()
+;   rebin_spectrum()
+;   spframe_read
+;   skymask()
+;   splog
+;   tai2airmass()
+;   wavevector()
+;
+; INTERNAL SUPPORT ROUTINES:
+;   spflux_read_kurucz()
+;   spflux_masklines()
+;   spflux_medianfilt()
+;   spflux_bestmodel()
+;   spflux_goodfiber()
+;   spflux_bspline()
+;   spflux_mratio_flatten()
+;   spflux_plotcalib
+;   sxaddpar
+;   sxpar()
+;
+; REVISION HISTORY:
+;   05-Feb-2004  Written by D. Schlegel, Princeton
+;-
 ;------------------------------------------------------------------------------
 ; Read the Kurucz models at the specified log-lambda and resolution
 ; ISELECT - If set, then only return these model numbers.
@@ -21,6 +102,7 @@ function spflux_read_kurucz, loglam, dispimg, iselect=iselect1, $
    if (NOT keyword_set(kfile)) then begin
       ; Read the file with the high-resolution Kurucz models as generated
       ; by the procedure KURUCZ_FITSFILE.
+      ; The units should already be erg/cm^2/s/Ang.
       splog, 'Reading Kurucz models'
       kfile = filepath('kurucz_stds_raw_v5.fits', $
        root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='templates')
@@ -34,11 +116,6 @@ function spflux_read_kurucz, loglam, dispimg, iselect=iselect1, $
       ; The models will be sub-sampled relative to the SDSS pix scale of 1d-4:
       subsamp = 5
       kdlog = 1.d-4 / subsamp
-
-      ; Change units to erg/cm^2/s/Ang by dividing by the wavelength
-; Or are we already in these units???
-;      for imodel=0L, nmodel-1 do $
-;       krawflux[*,imodel] = krawflux[*,imodel] / waves
 
       ; These models are sampled linearly in **air** wavelength.
       ; Re-map them to linear in (vacuum) log-wavelength.
