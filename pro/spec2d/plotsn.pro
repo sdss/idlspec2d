@@ -20,7 +20,7 @@
 ;                default to [-2,-0.5] mags around the fiducial magntidues
 ;                at which we evaluate the fit.  But if there are fewer than
 ;                20 points in the specified magnitude range, then set
-;                FITMAG[0] = 1.0.
+;                FITMAG[0] = 10.0.
 ;   plottitle  - Title for top of plot
 ;   plotfile   - Optional plot file
 ;   synthmag   - Vector of synthetic magnitudes
