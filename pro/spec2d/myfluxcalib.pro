@@ -279,12 +279,16 @@ objmask = 0 ; Free memory
 
    ;----------
    ; Find the PCA solution for all files simultaneously
+   ; Use a rejection scheme that rejects up to 1% of all spectral bins
+   ; (~40 pixels) for each 10% of the spectrum (~800 pixels).
 
-; DO WE NEED REJECTION HERE OF BAD POINTS OR BAD INPUT SPECTRA ???
+   npix = (size(allflux,/dimens))[0]
    pcaflux = pca_solve(allflux, allivar, $
-    niter=10, nkeep=1, usemask=usemask, eigenval=eigenval, acoeff=acoeff)
-   maxmask = max(usemask)
+    niter=10, nkeep=1, usemask=usemask, eigenval=eigenval, acoeff=acoeff, $
+    maxiter=3, upper=5, lower=5, maxrej=ceil(0.01*npix), $
+    groupsize=ceil(npix/5.))
 
+   maxmask = max(usemask)
    if (maxmask LE 3) then minuse = 1 $
     else if (maxmask EQ 4) then minuse = 2 $
     else minuse = 3
