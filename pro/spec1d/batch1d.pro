@@ -21,6 +21,10 @@
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
+;   The list of hosts and protocols should be in the Yanny parameter file
+;   specified by the environment variable BATCH2DFILE, or the default file
+;   "$IDLSPEC2D_DIR/examples/batch1d.par" is used.
+;
 ;   If using machines in Peyton, set
 ;     topdir='/peyton/scr/spectro0/data/2d_v4'
 ;   A plate is considered not reduced if any of the "spPlate*.par" files
@@ -29,6 +33,9 @@
 ; EXAMPLES:
 ;
 ; BUGS:
+;
+; DATA FILES:
+;   $IDLSPEC2D_DIR/examples/batch1d.par
 ;
 ; PROCEDURES CALLED:
 ;   djs_batch
@@ -148,8 +155,10 @@ pro batch1d, fullplatefile, topdir=topdir, nice=nice
    ;----------
    ; Determine which computers to use for these reductions
 
-   hostfile = filepath('batch1d.par', $
-    root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='examples')
+   hostfile = getenv('BATCH1DFILE')
+   if (NOT keyword_set(hostfile)) then $
+    hostfile = filepath('batch1d.par', $
+     root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='examples')
    yanny_read, hostfile, pp
    hostconfig = *pp[0]
    yanny_free, pp
