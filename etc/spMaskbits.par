@@ -98,3 +98,14 @@ maskbits ZWARNING  5 Z_FITLIMIT
 maskbits ZWARNING  6 NEGATIVE_EMISSION
 
 #------------------------------------------------------------------------------
+
+maskbits RESOLVE  0 SET_RUN
+maskbits RESOLVE  1 FIELD
+maskbits RESOLVE  2 RUN
+maskbits RESOLVE  3 RUN_MARGINAL
+maskbits RESOLVE  4 TRIMRUN
+maskbits RESOLVE  5 TRIMRUN_MARGINAL
+maskbits RESOLVE  6 SCANLINE
+maskbits RESOLVE  7 SET_PRIMARY
+maskbits RESOLVE  8 PRIMARY
+maskbits RESOLVE  9 PRIMARY_MARGINAL
