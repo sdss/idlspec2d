@@ -59,7 +59,7 @@
 ;-
 ;------------------------------------------------------------------------------
 function filter_thru, flux, waveimg=waveimg, wset=wset, mask=mask, norm=norm, $
- filter_prefix=filter_prefix
+ filter_prefix=filter_prefix, toair=toair
 
    dims = size(flux, /dimens)
    nx = dims[0]
