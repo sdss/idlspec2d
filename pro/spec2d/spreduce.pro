@@ -183,44 +183,49 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
 
          splog, 'Reading arc ', arcname[ifile]
          sdssproc, arcname[ifile], image, invvar, indir=indir, $
-          hdr=archdr, pixflatname=pixflatname
+          hdr=archdr, pixflatname=pixflatname, nsatrow=nsatrow
 
-         ;---------------------------------------------------------------------
-         ; Extract the arc image
-         ;---------------------------------------------------------------------
+         qbadarc = 0
+         if (nsatrow GT 20) then qbadarc = 1
 
-         splog, 'Extracting arc image with simple gaussian'
-         sigma = 1.0
-         proftype = 1 ; Gaussian
-         highrej = 15
-         lowrej = 15
-         nPoly = 1 ; maybe more structure
-         wfixed = [1,1] ; Just fit the first gaussian term
+         if (NOT qbadarc) then begin
+            ;------------------------------------------------------------------
+            ; Extract the arc image
+            ;------------------------------------------------------------------
 
-         extract_image, image, invvar, tmp_xsol, sigma, flux, fluxivar, $
-          proftype=proftype, wfixed=wfixed, $
-          highrej=highrej, lowrej=lowrej, nPoly=nPoly, relative=1
+            splog, 'Extracting arc image with simple gaussian'
+            sigma = 1.0
+            proftype = 1 ; Gaussian
+            highrej = 15
+            lowrej = 15
+            nPoly = 1 ; maybe more structure
+            wfixed = [1,1] ; Just fit the first gaussian term
 
-         ;----------------------------------------------------------------------
-         ; Compute correlation coefficient for this arc image
-         ;----------------------------------------------------------------------
+            extract_image, image, invvar, tmp_xsol, sigma, flux, fluxivar, $
+             proftype=proftype, wfixed=wfixed, $
+             highrej=highrej, lowrej=lowrej, nPoly=nPoly, relative=1
 
-         splog, 'Searching for wavelength solution'
-         tmp_aset = 0
-         fitarcimage, flux, fluxivar, aset=tmp_aset, $
-          color=color, lampfile=lampfile, bestcorr=corr
+            ;-------------------------------------------------------------------
+            ; Compute correlation coefficient for this arc image
+            ;-------------------------------------------------------------------
 
-         ;-----
-         ; Determine if this is the best flat+arc pair
-         ; If so, then save the information that we need
+            splog, 'Searching for wavelength solution'
+            tmp_aset = 0
+            fitarcimage, flux, fluxivar, aset=tmp_aset, $
+             color=color, lampfile=lampfile, bestcorr=corr
 
-         if (corr GT bestcorr) then begin
-            ibest = ifile
-            bestcorr = corr
-            arcimg = flux
-            arcivar = fluxivar
-            xsol = tmp_xsol
-            aset = tmp_aset
+            ;-----
+            ; Determine if this is the best flat+arc pair
+            ; If so, then save the information that we need
+
+            if (corr GT bestcorr) then begin
+               ibest = ifile
+               bestcorr = corr
+               arcimg = flux
+               arcivar = fluxivar
+               xsol = tmp_xsol
+               aset = tmp_aset
+            endif
          endif
       endif
 
@@ -231,7 +236,7 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    ;---------------------------------------------------------------------------
 
    if (ibest EQ -1) then begin
-      splog, 'ABORT: No good flats'
+      splog, 'ABORT: No good flats and/or no good arcs (saturated?)'
       return
    endif
 
@@ -258,7 +263,12 @@ pro spreduce, flatname, arcname, objname, pixflatname=pixflatname, $
    fitarcimage, arcimg, arcivar, xpeak, ypeak, wset, ncoeff=arccoeff, $
     aset=aset, $
     color=color, lampfile=lampfile, lambda=lambda, xdif_tset=xdif_tset
-     
+
+   if (NOT keyword_set(wset)) then begin
+      splog, 'ABORT: Wavelength solution failed'
+      return 
+   endif
+
    qaplot_arcline, xdif_tset, lambda, filename=arcname[ibest], color=color
 
    ;---------------------------------------------------------------------
