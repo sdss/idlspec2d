@@ -63,14 +63,16 @@
 ;------------------------------------------------------------------------------
 pro veldisp, objflux, objerr, objwave, starflux, starerr, starwave, result, klo_cut=klo_cut, $
  khi_cut=khi_cut, maxsig=maxsig, sigmastep=sigmastep, doplot=doplot, $
- nodiff=nodiff
+ nodiff=nodiff, noquotient=noquotient, nobe=nobe
        
 ; set keyword defaults
    if (NOT keyword_set(klo_cut)) then klo_cut = 1.0/128.
    if (NOT keyword_set(khi_cut)) then khi_cut = 1.0/3.0
    if (NOT keyword_set(maxsig)) then maxsig = 2.0
    if (NOT keyword_set(sigmastep)) then sigmastep = 0.2
-
+   IF (keyword_set(nobe) THEN BEGIN 
+       nodiff = 1 &  noquotient=1
+   ENDIF 
 ; prepare plot windows
    IF (keyword_set(doplot)) THEN BEGIN
       window, 0 &  window, 1 &  window, 2
@@ -204,10 +206,12 @@ pro veldisp, objflux, objerr, objwave, starflux, starerr, starwave, result, klo_
       endif
 
       if (keyword_set(doplot)) then quoplot = 2 else quoplot = 0
-      answerq = fourier_quotient(fluxfft, starshift, fluxvar0, $
-             starvar0, testsigma2=testsigma^2, deltachisq=1.0, $
-             lowlimit = 1.0/250.0, highlimit=1.0/5., doplot=quoplot, $
-                                broadarr=broadarr)
+      IF NOT keyword_set(noquotient) THEN BEGIN 
+         answerq = fourier_quotient(fluxfft, starshift, fluxvar0, $
+                  starvar0, testsigma2=testsigma^2, deltachisq=1.0, $
+                  lowlimit = 1.0/250.0, highlimit=1.0/5., doplot=quoplot, $
+                                     broadarr=broadarr)
+      ENDIF 
 
       if (n_elements(answerq) EQ 4) then begin
          result[iobj].sigma_quotient = answerq[1]
