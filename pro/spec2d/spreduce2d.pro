@@ -66,6 +66,9 @@ pro spreduce2d, planfile, docams=docams, xdisplay=xdisplay
 
    if (NOT keyword_set(docams)) then docams = ['b1', 'b2', 'r1', 'r2']
 
+   thismem = memory()
+   maxmem = 0
+
    ;----------
    ; Read environment variables for RAWDATA_DIR, SPECLOG_DIR, SPECFLAT_DIR
 
@@ -256,6 +259,11 @@ pro spreduce2d, planfile, docams=docams, xdisplay=xdisplay
        systime(1)-stime1, ' seconds', format='(a,f6.0,a)'
 
    endfor ; End loop for plugging name
+
+   ; Track memory usage
+   thismem = memory()
+   maxmem = maxmem > thismem[3]
+   splog, 'Max memory usage = ', string(maxmem/1e6,format='(f7.1)'), ' MB'
 
    splog, 'Total time for SPREDUCE2D = ', systime(1)-stime0, ' seconds', $
     format='(a,f6.0,a)'
