@@ -41,6 +41,9 @@ SPCOMBINE: Set default value of MINSN2 to 0.2 instead of 0.0.  This is a
            possible result from running FLUXCORR_NEW where the signal is
            so low that we can't compute the flux-correction vectors w.r.t.
            the smear exposure.
+SPREDUCE1D: Set the ZWARNING=8 flag (synthetic spectrum is negative) only
+           for stars, not for QSO's any more since we use several eigen-
+           components to fit QSO's now, nor for CV stars for the same reason.
 
 aporsync_logs.sh : 
            Changed the syntax to just copy these type of files in astrolog
@@ -62,8 +65,10 @@ sprobot.sh: Copy the guider image directory.  We mistakenly lost this copying
 sos.sh,startapo.sh: Forget to switch to UT time in a couple of instances.
 
 In idlutils:
+BSPLINE_ITERFIT: Fix major bug with /GROUPBADPIX option which is used
+           by COMBINE1FIBER.
 SXCOMBINEPAR: New proc to combine values of specified header cards from
-           many FITS headers.  Used by SPCOADD_FRAMES.
+           many FITS headers.  (This option used by SPCOADD_FRAMES.)
 
 -------------------------------------------------------------------------------
 v4_9_1 (Jan 24, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
