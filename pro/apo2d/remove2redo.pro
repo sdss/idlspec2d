@@ -212,7 +212,7 @@ pro remove2redo, mjd=mjd, plate=plate, expnum=expnum
        for icam=0, n_elements(camnames)-1 do $
         redofiles = [redofiles, $
          findfile(filepath('sdR-' + camnames[icam] + '-' $
-         + string(expnum[iexp],format='(i8.8)') + '.fit*', $
+         + string(expnum[iexp],format='(i8.8)') + '.fit', $
          root_dir=rawdata_dir, subdirectory=mjdstr))]
       iredo = where(redofiles NE '')
       if (iredo[0] NE -1) then redofiles = redofiles[iredo] $
@@ -221,7 +221,7 @@ pro remove2redo, mjd=mjd, plate=plate, expnum=expnum
 
    if (keyword_set(plate)) then begin
       iredo = where(qdone EQ 0)
-      if (iredo[0] NE -1) then redofiles = fullname[iredo] +'*'
+      if (iredo[0] NE -1) then redofiles = fullname[iredo]
    endif
 
    if (NOT keyword_set(redofiles)) then begin
