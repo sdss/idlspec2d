@@ -157,6 +157,7 @@ pro platelist, infile, plist=plist, create=create, $
     'n_unknown', 0L,  $
     'n_sky'    , 0L, $
     'status2d' , 'Missing', $
+    'statuscombine', 'Missing', $
     'status1d' , 'Missing', $
     'qsurvey'  , 0L, $
     'public'  , '' )
@@ -206,8 +207,58 @@ pro platelist, infile, plist=plist, create=create, $
 
       fullzfile = djs_filepath(zbestfile, root_dir=path)
 
+      ; Read the combine plan file to get the list of all the 2D plan files
+      ; from its Yanny header.
+      ; Also get the mapping name from the combine par file in case we were
+      ; unable to get it from the spPlate file.
+      yanny_read, combparfile[ifile], pp, hdr=hdrcomb
+      plist[ifile].mapname = (*pp[0])[0].mapname
+      yanny_free, pp
+
       ;----------
-      ; Read plate file - get status of 2D
+      ; Find the state of the 2D reductions (not the combine step)
+
+      statusdone = 0
+      statusrun = 0
+      statusmissing = 0
+
+      ; Check status of individual 2D runs
+      planlist = yanny_par(hdrcomb, 'planfile2d') ; Assume we find this
+      planlist = djs_filepath(planlist, root_dir=path)
+      logfile2d = '' ; List of 2D log files that exist
+      for iplan=0, n_elements(planlist)-1 do begin
+         yanny_read, planlist[iplan], hdr=hdr2d
+         plist[ifile].mjdlist = strtrim(plist[ifile].mjdlist $
+          + ' ' + yanny_par(hdr2d, 'MJD'),2)
+         thislogfile = djs_filepath(yanny_par(hdr2d, 'logfile'), root_dir=path)
+         thislogfile = (findfile(thislogfile))[0]
+         if (keyword_set(thislogfile)) then begin
+            if (NOT keyword_set(logfile2d)) then logfile2d = thislogfile $
+             else logfile2d = [logfile2d, thislogfile]
+            spawn, 'tail -1 '+thislogfile, lastline
+            if (strmatch(lastline[0], '*Successful completion*')) then begin
+               ; Case where this 2D log file completed
+               statusdone = statusdone + 1
+            endif else begin
+               ; Case where this 2D log file isn't completed
+               statusrun = statusrun + 1
+            endelse
+         endif else begin
+            ; Case where this 2D log file missing
+            statusmissing = statusmissing + 1
+         endelse
+      endfor
+
+      if (statusmissing GT 0 AND statusrun EQ 0) then begin
+         plist[ifile].status2d = 'Pending'
+      endif else if (statusmissing GT 0 OR statusrun GT 0) then begin
+         plist[ifile].status2d = 'RUNNING'
+      endif else begin
+         plist[ifile].status2d = 'Done'
+      endelse
+
+      ;----------
+      ; Read plate file - get status of Combine
 
       hdr1 = headfits(platefile)
       if (size(hdr1, /tname) EQ 'STRING') then begin
@@ -235,80 +286,34 @@ pro platelist, infile, plist=plist, create=create, $
          plist[ifile].mapname = strtrim(sxpar(hdr1, 'NAME'))
          plist[ifile].vers2d = strtrim(sxpar(hdr1, 'VERS2D'))
          plist[ifile].verscomb = strtrim(sxpar(hdr1, 'VERSCOMB'))
-         plist[ifile].status2d = 'Done'
+         plist[ifile].statuscombine = 'Done'
       endif else begin
-         ; Get the mapping name from the combine par file
-         yanny_read, combparfile[ifile], pp, hdr=hdrcomb
-         plist[ifile].mapname = (*pp[0])[0].mapname
-         yanny_free, pp
-
-         ;----------
-         ; Find the state of the 2D reductions -- spPlate file is missing
-
-         statusdone = 0
-         statusrun = 0
-         statusmissing = 0
-
-         ; Check status of individual 2D runs
-         planlist = yanny_par(hdrcomb, 'planfile2d') ; Assume we find this
-         planlist = djs_filepath(planlist, root_dir=path)
-         logfile2d = '' ; List of 2D log files that exist
-         for iplan=0, n_elements(planlist)-1 do begin
-            yanny_read, planlist[iplan], hdr=hdr2d
-            plist[ifile].mjdlist = strtrim(plist[ifile].mjdlist $
-             + ' ' + yanny_par(hdr2d, 'MJD'),2)
-            thislogfile = djs_filepath(yanny_par(hdr2d, 'logfile'), root_dir=path)
-            thislogfile = (findfile(thislogfile))[0]
-            if (keyword_set(thislogfile)) then begin
-               if (NOT keyword_set(logfile2d)) then logfile2d = thislogfile $
-                else logfile2d = [logfile2d, thislogfile]
-               spawn, 'tail -1 '+thislogfile, lastline
-               if (strmatch(lastline[0], '*Successful completion*')) then begin
-                  ; Case where this 2D log file completed
-                  statusdone = statusdone + 1
-               endif else begin
-                  ; Case where this 2D log file isn't completed
-                  statusrun = statusrun + 1
-               endelse
-            endif else begin
-               ; Case where this 2D log file missing
-               statusmissing = statusmissing + 1
-            endelse
-         endfor
-
-         ; Check status of 2D combining
+         ; Case where no spPlate file exists
          thislogfile = djs_filepath(yanny_par(hdrcomb, 'logfile'), root_dir=path)
          thislogfile = (findfile(thislogfile))[0]
          if (keyword_set(thislogfile)) then begin
             spawn, 'tail -1 '+thislogfile, lastline
             if (strmatch(lastline[0], '*Successful completion*')) then begin
                ; Case where this combine log file completed
-               statusdone = statusdone + 1
+               plist[ifile].statuscombine = 'FAILED'
             endif else begin
                ; Case where this combine log file isn't completed
-               statusrun = statusrun + 1
+               plist[ifile].statuscombine = 'Running'
             endelse
          endif else begin
             ; Case where this combine log file missing
-            statusmissing = statusmissing + 1
+            plist[ifile].statuscombine = 'Pending'
          endelse
 
-         if (statusmissing EQ 0 AND statusrun EQ 0) then begin
-            plist[ifile].status2d = 'FAILED' ; Should have found spPlate file
-         endif else if (statusrun EQ 0 AND statusdone EQ 0) then begin
-            plist[ifile].status2d = 'Pending' ; No log files created
-         endif else begin
-            if (keyword_set(purge2d)) then begin
-               splog, 'PURGE2D ', logfile2d
-               rmfile, logfile2d
-               splog, 'PURGE2D ', comblogfile[ifile]
-               rmfile, comblogfile[ifile]
-               plist[ifile].status2d = 'Pending' ; Some log files created
-            endif else begin
-               plist[ifile].status2d = 'RUNNING' ; Some log files created
-            endelse
-         endelse
-
+         if (keyword_set(purge2d) $
+          AND plist[ifile].statuscombine NE 'Done') then begin
+            splog, 'PURGE2D ', logfile2d
+            rmfile, logfile2d
+            splog, 'PURGE2D ', comblogfile[ifile]
+            rmfile, comblogfile[ifile]
+            plist[ifile].status2d = 'Pending'
+            plist[ifile].statuscombine = 'Pending'
+         endif
       endelse
 
       ;----------
@@ -467,9 +472,9 @@ pro platelist, infile, plist=plist, create=create, $
     olun = -1L
 
    printf, olun, 'PLATE  MJD   RA    DEC   SN2_G1 SN2_I1 SN2_G2 SN2_I2 ' $
-    + 'Ngal Nqso Nsta Nunk Nsky Stat2D  Stat1D  Vers2D    Vers1D    ? Pub'
+    + 'Ngal Nqso Nsta Nunk Nsky Stat2D  StatCom Stat1D  Vers2D    Vers1D    ? Pub'
    printf, olun, '-----  ----- ----- ----- ------ ------ ------ ------ ' $
-    + '---- ---- ---- ---- ---- ------- ------- --------- --------- - ---'
+    + '---- ---- ---- ---- ---- ------- ------- ------- --------- --------- - ---'
 
    ;----------
    ; Loop through all files
@@ -480,10 +485,11 @@ pro platelist, infile, plist=plist, create=create, $
        plist[ifile].sn2_i1, plist[ifile].sn2_g2, plist[ifile].sn2_i2, $
        plist[ifile].n_galaxy, plist[ifile].n_qso, plist[ifile].n_star, $
        plist[ifile].n_unknown, plist[ifile].n_sky, $
-       plist[ifile].status2d, plist[ifile].status1d, $
+       plist[ifile].status2d, plist[ifile].statuscombine, $
+       plist[ifile].status1d, $
        plist[ifile].vers2d, plist[ifile].vers1d, $
        plist[ifile].qsurvey, plist[ifile].public, $
-       format='(i5,i7,f6.1,f6.1,4f7.1,5i5,2(1x,a7),2(1x,a9),i2,a4)'
+       format='(i5,i7,f6.1,f6.1,4f7.1,5i5,3(1x,a7),2(1x,a9),i2,a4)'
    endfor
 
    ;----------
