@@ -53,7 +53,7 @@ pro spallreduce, planfile=planfile, docams=docams, $
 
    if (NOT keyword_set(planfile)) then planfile = 'spPlan2d.par'
 
-   if (NOT keyword_set(docams)) then docams = ['b1', 'r2', 'b2', 'r1']
+   if (N_elements(docams) EQ 0) then docams = ['b1', 'r2', 'b2', 'r1']
    if (keyword_set(docams)) then ndocam = N_elements(docams) $
     else ndocam = 0
 
