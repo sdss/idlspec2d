@@ -153,6 +153,7 @@ pro/apo2d/quickwave.pro -text
 pro/apo2d/remove2redo.pro -text
 pro/fluxfix/dr1_spplate_cor.pro -text
 pro/fluxfix/flux_standard.pro -text
+pro/fluxfix/spplate_correct.pro -text
 pro/fluxfix/stype_standard.pro -text
 pro/fluxfix/undo_smear.pro -text
 pro/fplan/Makefile -text
