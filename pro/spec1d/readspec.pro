@@ -384,7 +384,7 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    nplate = n_elements(plate)
    if (nplate EQ 0) then $
     message, 'PLATE must be defined'
-   if (n_elements(mjd) GT 0 AND n_elements(mjd) NE nplate) then $
+   if (keyword_set(mjd) AND n_elements(mjd) NE nplate) then $
     message, 'Number of elements in PLATE and MJD must agree'
 
    if (NOT keyword_set(fiber)) then begin
