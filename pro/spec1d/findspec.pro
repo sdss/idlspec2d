@@ -85,7 +85,7 @@ pro findspec, ra, dec, infile=infile, outfile=outfile, slist=slist,  $
    nvec = n_elements(ra)
    if (nvec GT 1) then begin
       for i=0, nvec-1 do begin
-         findspec, ra[i], dec[i], slist=slist1, /silent
+         findspec, ra[i], dec[i], slist=slist1, duplicate=duplicate, /silent
          if (i EQ 0) then slist = slist1 $
           else slist = [slist, slist1]
       endfor
