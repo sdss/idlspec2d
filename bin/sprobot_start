@@ -128,7 +128,7 @@ echo "30 6 * * * sprobotcopy.sh >> $SPRLOG 2>&1" >> $cronfile
 echo "# This job will run at 8:30 am every day." >> $cronfile
 echo "30 8 * * * sprobot.sh >> $SPRLOG 2>&1" >> $cronfile
 echo "# This job will run every 10 minutes to keep the disk automounter up." >> $cronfile
-echo "*/10 * * * * ls $IDLSPEC2D_DIR > /dev/null" >> $cronfile
+echo "*/10 * * * * spamdup" >> $cronfile
 echo "# SPROBOT END" >> $cronfile
 
 #------------------------------------------------------------------------------
