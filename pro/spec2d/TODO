@@ -9,6 +9,10 @@ Plate  camera   fiber (0 indexed)      Problem
 
 
 ----------------------------------------------------------------------------
+* Need to save WARNING/ABORT messages as a separate HDU from APOREDUCE.
+
+* Pass batch1d.par, batch2d.par file names as environ variables, or use
+  defaults.
 
 * Output Cartridge# on SOS web page.
   Also look for "fail" in sos.log, in case the disks fill.

@@ -18,7 +18,7 @@ if [ $# = 1 ] ; then
 fi
 
 #------------------------------------------------------------------------------
-# Set file names.
+# Set file names used internally in this script.
 
 cronfile=/tmp/$USER.sprobot.cron
 SPRLOG=$RAWDATA_DIR/sprobot.log
@@ -115,7 +115,6 @@ echo "30 6 * * * sprobotcopy.sh >> $SPRLOG 2>&1" >> $cronfile
 echo "# This job will run at 8:30 am every day." >> $cronfile
 echo "30 8 * * * sprobot.sh >> $SPRLOG 2>&1" >> $cronfile
 echo "# SPROBOT END" >> $cronfile
-crontab $cronfile
 
 #------------------------------------------------------------------------------
 # Load this new cron file.

@@ -16,7 +16,7 @@ if [ $# = 1 ] ; then
 fi
 
 #------------------------------------------------------------------------------
-# Set file names.
+# Set file names used internally in this script.
 
 cronfile=/tmp/$USER.sos.cron
 SOSLOG=/data/spectro/spectrologs/sos.log
@@ -89,7 +89,6 @@ echo "20 7 * * * mailhtml.sh >> $SOSLOG 2>&1" >> $cronfile
 echo "# This job will run at 7:25 am every day." >> $cronfile
 echo "25 7 * * * mv -f $SOSLOG $SOSLOG.old" >> $cronfile
 echo "# SOS END" >> $cronfile
-crontab $cronfile
 
 #------------------------------------------------------------------------------
 # Load this new cron file.
