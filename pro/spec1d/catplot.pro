@@ -1672,7 +1672,10 @@ pro splot_spinspect_new
     widget_control, spinspect_state.manual_comments_text_id, $
                     set_value = (*pdata[0])[i].manual_comments
 
-    plotspec, spinspect_state.plateid, spinspect_state.fiberid
+    plotspec, spinspect_state.plateid, spinspect_state.fiberid, $
+              nsmooth = spinspect_state.nsmooth
+
+    return
 end
 
 ;------------------------------------------------------------------------------
@@ -1701,7 +1704,8 @@ pro splot_spinspect_update
     widget_control, spinspect_state.manual_comments_text_id, $
                     get_value = manual_comments
     (*pdata[0])[i].manual_comments = manual_comments
-
+  
+    return
 end
 
 ;------------------------------------------------------------------------------
@@ -1732,12 +1736,19 @@ pro splot_spinspect_event, event
 	 splot_spinspect_new
        end
 
+     'nsmooth_text': begin
+         widget_control, spinspect_state.nsmooth_text_id, get_value = nsmooth
+	 spinspect_state.nsmooth = nsmooth
+         plotspec, spinspect_state.plateid, spinspect_state.fiberid, $
+                   nsmooth = spinspect_state.nsmooth
+       end
+
      'inspected': begin
          print, 'Inspected Fiber ' + $
 	        string(spinspect_state.fiberid, format = '(I3)')
 	 splot_spinspect_update
 	 print, (*pdata[0])[spinspect_state.fiberid - 1]
-	 if spinspect_state.fiberid ge 640 then return$
+	 if spinspect_state.fiberid ge 640 then return
 	 spinspect_state.fiberid = spinspect_state.fiberid + 1
 	 splot_spinspect_new
        end
@@ -1747,13 +1758,13 @@ pro splot_spinspect_event, event
                 string(spinspect_state.fiberid, format = '(I3)') + $
 	        ' NOT inspected!'
 	 print, (*pdata[0])[spinspect_state.fiberid - 1]
-	 if spinspect_state.fiberid ge 640 then return$
+	 if spinspect_state.fiberid ge 640 then return
 	 spinspect_state.fiberid = spinspect_state.fiberid + 1
 	 splot_spinspect_new
        end
 
      'back': begin
-	 if spinspect_state.fiberid le 1 then return$
+	 if spinspect_state.fiberid le 1 then return
 	 spinspect_state.fiberid = spinspect_state.fiberid - 1
          print, 'Moving back to fiber ' + $
                 string(spinspect_state.fiberid, format = '(I3)') 
@@ -1786,6 +1797,7 @@ pro splot_spinspect
        fiberid: 0L                        , $ ; Current Fiber id #
        mjd: 0L                            , $ ; MJD of plate
        inspector: ""                      , $ ; Name of Inspector
+       nsmooth: 5                         , $ ; Pixels to smooth by
        spinspect_file_text_id: 0L         , $ ; ID of spInspect File = widget
        inspector_text_id: 0L              , $ ; ID of Inspector = widget
        class_text_id: 0L                  , $ ; ID of Class = widget
@@ -1795,6 +1807,7 @@ pro splot_spinspect
        manual_subclass_text_id: 0L        , $ ; ID of Manual Subclass = widget
        manual_z_text_id: 0L               , $ ; ID of Manual Z = widget
        manual_comments_text_id: 0L        , $ ; ID of Manual Comments = widget
+       nsmooth_text_id: 0L                , $ ; ID of Smooth By = widget
        goto_text_id: 0L                     $ ; ID Goto Fiber = widget
      }
 
@@ -1830,7 +1843,7 @@ pro splot_spinspect
 
      spinspect_state.subclass_text_id = cw_field(button_base3, $
        uvalue = 'subclass_text',  $
-       title = ' Sunclass:',  $
+       title = ' Subclass:',  $
        xsize = 12, /string, /noedit)
 
      spinspect_state.z_text_id = cw_field(button_base3, $
@@ -1860,7 +1873,14 @@ pro splot_spinspect
        uvalue = 'manual_comments_text', /string,  $
        title = ' Comments:', $
        value = ' ',  $
-       xsize = 56)
+       xsize = 37)
+
+    spinspect_state.nsmooth_text_id = cw_field(button_base5, $
+       uvalue = 'nsmooth_text', /int,  $
+       title = ' Smooth by:', $
+       value = spinspect_state.nsmooth,  $
+       /return_events, $
+       xsize = 4)
 
      inspected_button = widget_button(button_base6, $
        value = ' Fiber Inspected ', ysize = 28, $
