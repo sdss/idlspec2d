@@ -6,7 +6,7 @@
 ;   Calling script for SPCOADD_FRAMES.
 ;
 ; CALLING SEQUENCE:
-;   spcombine, [ planfile, docams=, adderr=, /xdisplay, minsn= ]
+;   spcombine, [ planfile, docams=, adderr=, /xdisplay, minsn=, /smearinclude ]
 ;
 ; INPUTS:
 ;
@@ -17,7 +17,9 @@
 ;   adderr     - Additional error to add to the formal errors, as a
 ;                fraction of the flux; default to 0.03 (3 per cent).
 ;   xdisplay   - Send plots to X display rather than to plot file
-;   minsn2     - Minimum S/N^2 to include science frame in coadd (default 0.0)
+;   minsn2     - Minimum S/N^2 to include science frame in coadd (default 0.2)
+;   smearinclude- If set, then include 'smear' flavor exposures as well
+;                as 'science' flavor.
 ;
 ; OUTPUT:
 ;
@@ -46,11 +48,11 @@
 ;-
 ;------------------------------------------------------------------------------
 pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
-   minsn2=minsn2
+   minsn2=minsn2, smearinclude=smearinclude
 
    if (NOT keyword_set(planfile)) then planfile = findfile('spPlancomb*.par')
    if (n_elements(adderr) EQ 0) then adderr = 0.03
-   if (n_elements(minsn2) EQ 0) then minsn2 = 0.0
+   if (n_elements(minsn2) EQ 0) then minsn2 = 0.2
 
    ;----------
    ; If multiple plan files exist, then call this script recursively
@@ -191,7 +193,10 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
    ;----------
    ; Select only the science frames
 
-   isci = where(allseq.flavor EQ 'science' OR allseq.flavor EQ 'smear')
+   if (keyword_set(smearinclude)) then $
+    isci = where(allseq.flavor EQ 'science' OR allseq.flavor EQ 'smear') $
+   else $
+    isci = where(allseq.flavor EQ 'science')
 
    if (isci[0] EQ -1) then begin 
       splog, 'No science frames in this plan ' + thisplan
