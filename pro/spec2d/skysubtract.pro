@@ -103,17 +103,17 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    skyflux = obj[*,iskies]
    skyivar = objivar[*,iskies]
 
-   if keyword_set(pixelmask) then begin
-     goodflat = where((pixelmask[*,iskies] AND pixelmask_bits('LOWFLAT')) EQ 0 $
-              OR (pixelmask[*,iskies] AND pixelmask_bits('NEARBADPIXEL')) EQ 0,$
-                ngoodflat)
-       if ngoodflat GT ncol then begin
-         skywave = skywave[goodflat] 
-         skyflux = skyflux[goodflat] 
-         skyivar = skyivar[goodflat] 
-       endif else splog,'WARNING: Too many sky pixelmask bits have LOWFLAT set'
+   ;----------
+   ; Mask any sky pixels where LOWFLAT or NEARBADPIXEL are set.
+
+   if (keyword_set(pixelmask)) then begin
+      qbad = ((pixelmask[*,iskies] AND pixelmask_bits('LOWFLAT')) NE 0) $
+           OR ((pixelmask[*,iskies] AND pixelmask_bits('NEARBADPIXEL')) NE 0)
+      ibad = where(qbad, nbad)
+      splog, 'Discarding ', float(nbad)/n_elements(skywave), $
+       ' (fractional) of the sky pixels as bad'
+      if (nbad GT 0) then skyivar[ibad] = 0
    endif
-       
 
    ;----------
    ; Sort sky points by wavelengths
@@ -123,12 +123,14 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    skyflux = skyflux[isort]
    skyivar = skyivar[isort]
 
+   ngoodpix = total(skyivar NE 0)
+
    ;----------
    ; Compute "supersky" with a spline fit
    ; Use the EVERYN parameter to space the spline points according to
    ; the density of data points.
 
-      bkpt= 0
+   bkpt = 0
 
    if (NOT keyword_set(dispset)) then begin
      sset = bspline_iterfit(skywave, skyflux, invvar=skyivar, $
@@ -152,7 +154,6 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
       fullfit = bspline_valu(wave, sset, x2=sigma) 
    endelse
 
-
    ;----------
    ; Sky-subtract the entire image
 
@@ -160,6 +161,7 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    objsub = obj - fullfit
 
    monster, wave[*,iskies], objsub[*,iskies]
+
    ;----------
    ; Fit to sky variance (not inverse variance)
 
@@ -194,7 +196,8 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    ; This is difficult since variance has noise, so only do this if there
    ; are at least 3 sky fibers.
 
-   if (nskies GE 3 AND NOT keyword_set(novariance)) then begin
+   if (nskies GE 3 AND ngoodpix GT ncol $
+    AND NOT keyword_set(novariance)) then begin
 
       skyfit = (fullfit[*,iskies])[isort]
 ;      skyfit  = slatec_bvalu(skywave, fullbkpt, coeff) ; Same thing, more clear
@@ -268,7 +271,7 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
 
    endif else begin
 
-      splog, 'WARNING: Too few sky fibers to model sky-sub variance'
+      splog, 'WARNING: Too few sky fibers or pixels to model sky-sub variance'
       relchi2fit = 1
 
    endelse
