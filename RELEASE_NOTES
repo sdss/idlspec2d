@@ -8,6 +8,8 @@ BATCH1D,BATCH2D: Set the DISPLAY environment variable on remote machines
             on the remote machine, which means the UPS environment must
             be set up in the .bashrc file on the remote machine.
 ELODIE_BEST: New function in development for finding best-fit Elodie spectrum.
+EXTRACT_OBJECT: Remove call to QAPLOT_SKYDEV, since that QA plot contains
+            no more information than QAPLOT_SKYSHIFT.
 FITARCIMAGE: List the (0-indexed) fiber numbers that in which
             any or all arc centroids are fixed.
 FITFLATWIDTH: Add support for SIGMA being a scalar, vector, or array.
@@ -23,6 +25,8 @@ PLATECOMPARE: Fix 1-character typo preventing selecting the MJD
             Pass TOPDIR to READSPEC rather than explicitly resetting
             the $SPECTRO_DATA environment variable.
 PLOTSPEC: Add options /ZLINE, /NOSYN, /NOERR, TOPDIR.
+QAPLOT_SKYLINE: Divide the skyline flux values by the airmass, since those
+            lines basically scale with airmass.
 READ_ELODIE: Optionally return the Elodie header in HDR.
 READSPEC: Add TOPDIR input keyword and ZLINE,LINEFLUX outputs.
             Use DIMS0 keyword in primary header of spZall,spZline files
@@ -76,6 +80,8 @@ BSPLINE_ITERFIT: Always reset OUTMASK so that the input value does not matter.
 PROFINTERP: Bug fixes, and use ASINH2.
 RADEC_TO_FIELDS: Configurable option allfieldfile.
 SXPAR: Landsman fixed to handle CRVALn of different type properly
+YANNY_READ: If reading a Yanny file aborts, then log the file name,
+            the line number of the failure, and the line itself.
 src/spheregroup/chunks.c: Roundoff error problem fixed.
 eviltarball: Comment out the reference to sdsscvs.
 evilinstall: Use UPS_PROD_FLAVOR environment variable (not UPS_FLAVOR).

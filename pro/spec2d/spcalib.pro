@@ -265,7 +265,6 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
            splog, 'Using Cubic, median chi squareds: ', m3, ' vs', m1
          endelse
 
-
          junk = where(flux GT 1.0e5, nbright)
          splog, 'Found ', nbright, ' bright pixels in extracted flat ', $
           flatname[iflat], format='(a,i7,a,a)'
@@ -553,7 +552,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
          xsol = 0
 
          fflat = fiberflat(flux, fluxivar, wset, fibermask=tmp_fibmask, $
-          /dospline, plottitle=plottitle+' Superflat', pixspace=5, $
+          /dospline, pixspace=5, $
+          plottitle=plottitle+' Superflat '+flatstruct[iflat].name, $
           superflatset=superflatset)
 
          if (n_elements(fflat) EQ 1) then begin
@@ -564,7 +564,6 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
          flatstruct[iflat].fflat = ptr_new(fflat)
          flatstruct[iflat].superflatset = ptr_new(superflatset)
          flatstruct[iflat].fibermask = ptr_new(tmp_fibmask)
-         
 
          ;------------------------------------------------------------------
          ; Write information on flat field processing
