@@ -111,10 +111,10 @@ endfor
 ymax = 50
 !P.MULTI = [0, 2, 1]
 
-nplothist, rioff[ok], bin=0.01, xr=[-0.4, 0.4], yr = [0, ymax], $
+plothist, rioff[ok], bin=0.01, xr=[-0.4, 0.4], yr = [0, ymax], $
     xtitle = '(g-r) model - photo', ytitle = 'Number of Spectra', title = title
-nplothist, rioff[ok], rixhist, riyhist, bin=0.01, color=djs_icolor('red'), /over, thick=3
-nplothist, groff[ok], grxhist, gryhist, bin=0.01, color=djs_icolor('green'), /over, thick=3
+plothist, rioff[ok], rixhist, riyhist, bin=0.01, color=djs_icolor('red'), /over, thick=3
+plothist, groff[ok], grxhist, gryhist, bin=0.01, color=djs_icolor('green'), /over, thick=3
 oplot, [0, 0], [0, 1e4], thick=4
 grfit = gaussfit(grxhist, gryhist, nterms=3, grcoef)
 rifit = gaussfit(rixhist, riyhist, nterms=3, ricoef)
@@ -137,10 +137,10 @@ nsmag = transpose(mag[*,[1,2,3]])
 ngroff = (nsmag[0,*] - nsmag[1,*])  - (pmag[0,*] - pmag[1,*])
 nrioff = (nsmag[1,*] - nsmag[2,*])  - (pmag[1,*] - pmag[2,*])
 
-nplothist, nrioff[ok], bin=0.01, xr=[-0.4, 0.4], yr = [0, ymax], $
+plothist, nrioff[ok], bin=0.01, xr=[-0.4, 0.4], yr = [0, ymax], $
     xtitle = '(g-r) model - photo', ytitle = 'Number of Spectra', title = title
-nplothist, nrioff[ok], rixhist, riyhist, bin=0.01, color=djs_icolor('red'), /over, thick=3
-nplothist, ngroff[ok], grxhist, gryhist, bin=0.01, color=djs_icolor('green'), /over, $
+plothist, nrioff[ok], rixhist, riyhist, bin=0.01, color=djs_icolor('red'), /over, thick=3
+plothist, ngroff[ok], grxhist, gryhist, bin=0.01, color=djs_icolor('green'), /over, $
            thick=3
 oplot, [0, 0], [0, 1e4], thick=4
 grfit = gaussfit(grxhist, gryhist, nterms=3, grcoef)
