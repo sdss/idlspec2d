@@ -1,4 +1,6 @@
 
+Fixed DJS_BATCH to work properly on remote but cross-mounted CPU's.
+
 -------------------------------------------------------------------------------
 v4_5_0 (Jan 31, 2000)
 
