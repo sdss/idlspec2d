@@ -5,6 +5,8 @@ BSPLINE_ITERFIT (in idlutils): Modified to avoid crashing SPREDUCE1D.
    fit, still return a valid solution of all zeros.
 FINDSPEC: New routine for finding SDSS spectra that match a given RA, DEC.
 PLATELIST: Lower (S/N)^2 cutoff to 13 for all G,I bands (from 15 previously).
+           If ZWARNING flag exists in 1D outputs, use that to determine
+           number of UNKNOWN or SKY identifications.
 SPREDUCE1D: Search for stars at velocities to +/- 1200 km/s (was 600 km/s).
             No longer identify objects as UNKNOWN, but rather set bits
               in a ZWARNING flag.
