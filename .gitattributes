@@ -10,6 +10,8 @@ bin/sos.sh -text
 bin/sos_start -text
 bin/sos_status -text
 bin/sos_stop -text
+bin/spamd_start -text
+bin/spamd_stop -text
 bin/spamdup -text
 bin/sprobot.sh -text
 bin/sprobot1d.sh -text

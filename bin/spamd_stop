@@ -1,0 +1,34 @@
+#!/bin/bash -f
+#------------------------------------------------------------------------------
+# Script to stop Spectro-AMD (e.g., un-load the cron job).
+#
+# D. Schlegel, Princeton, 8 Mar 2001
+#------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
+# Test to see if the cron job is not loaded.  If not, then quit.
+
+echo
+qrun=`crontab -l | awk 'BEGIN{begin = 0; end = 0}{if ($2 == "SPAMD" && $3 == "BEGIN") {begin = 1}; if ($2 == "SPAMD" && $3 == "END" && begin == 1) {end = 1}}END{if (begin == 1 && end == 1){print "1"} else {print "0"}}'`
+if [ $qrun = 0 ] ; then
+  echo "The Spectro-AMD cron job is not running."
+  exit
+fi
+
+#------------------------------------------------------------------------------
+# Construct the cron file to be loaded.  Use the existing cron file,
+# but deleting the lines for SPAMD.
+
+cronfile=/tmp/$USER.spamd.cron
+# Print the cron tab w/out the first 3 lines and w/out the SPAMD lines.
+crontab -l | awk 'BEGIN{doprint = 1}{if ($2 == "SPAMD" && $3 == "BEGIN") {doprint = 0}; if (NR > 3 && doprint == 1) {print $0}; if ($2 == "SPAMD" && $3 == "END") {doprint = 1} }' > $cronfile
+
+#------------------------------------------------------------------------------
+# Load this new cron file
+
+crontab $cronfile
+echo "Spectro-AMD stopped."
+
+\rm $cronfile
+
+#------------------------------------------------------------------------------
