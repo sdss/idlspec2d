@@ -315,8 +315,9 @@ pro platelist, infile, plist=plist, create=create, $
          plist[ifile].tai = sxpar(hdr1, 'TAI')
          plist[ifile].tai_beg = sxpar(hdr1, 'TAI-BEG')
          plist[ifile].tai_end = sxpar(hdr1, 'TAI-END')
-         plist[ifile].airmass = tai2airmass(plist[ifile].ra, $
-          plist[ifile].dec, tai=plist[ifile].tai)
+         plist[ifile].airmass = sxpar(hdr1, 'AIRMASS')
+;         plist[ifile].airmass = tai2airmass(plist[ifile].ra, $
+;          plist[ifile].dec, tai=plist[ifile].tai)
          plist[ifile].exptime = sxpar(hdr1, 'EXPTIME')
          plist[ifile].nexp = sxpar(hdr1, 'NEXP')
          plist[ifile].expt_b1 = sxpar(hdr1, 'EXPT_B1')
@@ -421,15 +422,15 @@ pro platelist, infile, plist=plist, create=create, $
       ; coordinates of the object closest to the center of the plate
       ; as defined by XFOCAL=YFOCAL=0.
 
-      plug = mrdfits(platefile[ifile], 5, /silent)
-      if (keyword_set(plug)) then begin
-         iobj = where(strtrim(plug.holetype,2) EQ 'OBJECT')
-         junk = min( plug[iobj].xfocal^2 + plug[iobj].yfocal^2, imin)
-         plist[ifile].ra = plug[iobj[imin]].ra
-         plist[ifile].dec = plug[iobj[imin]].dec
-         plist[ifile].airmass = tai2airmass(plist[ifile].ra, $
-          plist[ifile].dec, tai=plist[ifile].tai)
-      endif
+;      plug = mrdfits(platefile[ifile], 5, /silent)
+;      if (keyword_set(plug)) then begin
+;         iobj = where(strtrim(plug.holetype,2) EQ 'OBJECT')
+;         junk = min( plug[iobj].xfocal^2 + plug[iobj].yfocal^2, imin)
+;         plist[ifile].ra = plug[iobj[imin]].ra
+;         plist[ifile].dec = plug[iobj[imin]].dec
+;         plist[ifile].airmass = tai2airmass(plist[ifile].ra, $
+;          plist[ifile].dec, tai=plist[ifile].tai)
+;      endif
 
       ;----------
       ; Read Zbest file - get status of 1D
