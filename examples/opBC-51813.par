@@ -59,6 +59,8 @@ bc "2 amp" 0 3 173  1    306  1    BADBLK BADCOL
 bc "2 amp" 0 3 386  1    1576 472  BADBLK BADCOL   # extended 040600
 bc "2 amp" 0 3 1427 1    134  1    BADBLK BADCOL
 bc "2 amp" 0 3 1272 2    1206 842  BADBLK BADCOL
+bc "2 amp" 0 3 341  1    78   70   BADBLK BADCOL   # Badcol in pixflats
+
 
 bc "2 amp" 0 4 178  1    1615 433  BADBLK HOTCOL   # extended 040600
 bc "2 amp" 0 4 2011 1    912  1136 BADBLK HOTCOL   # extended 040600
