@@ -14,15 +14,17 @@ pro locateskylines, skylinefile, second, secondinvvar, invset, $
 	          (invset.xmax - invset.xmin)
 
 	ysky = fltarr(nrows,nlines)
-	xsky = fltarr(nrows,nlines)
+	xstart = fltarr(nrows,nlines)
 	for i=0,nrows-1 do begin
-	  ysky[i,*] = ysky[i,*] + i
+	  ysky[i,*] = float(i)
 	  if (invset.func EQ 'legendre') then $
-              xsky[i,*] = flegendre(xnorm,ncoeff) # invset.coeff[*,i]
+              xstart[i,*] = flegendre(xnorm,ncoeff) # invset.coeff[*,i]
 	  if (invset.func EQ 'chebyshev') then $
-              xsky[i,*] = fchebyshev(xnorm,ncoeff) # invset.coeff[*,i]
+              xstart[i,*] = fchebyshev(xnorm,ncoeff) # invset.coeff[*,i]
  
 	endfor	  
+
+	xsky =  trace_crude(second, secondinvvar, xstart=xstart, ystart=ysky) 
 
 	return
 end 

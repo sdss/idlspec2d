@@ -5,7 +5,7 @@ function skysubtract, tt, skyfinal, color=color
 ;	small set is [xmin, xmax, coeffs] for wavelengths in log10
 ;
 
-	if (NOT keyword_set(side)) then color='blue'
+	if (NOT keyword_set(color)) then color='blue'
 
 	npix = (size(tt.flux))[1]
 	nTrace = (size(tt))[1]
@@ -67,14 +67,14 @@ function skysubtract, tt, skyfinal, color=color
 
 	  for i=0,npix-1 do begin
 	    goodies = where(skymask[i,*])
-	    if (goodies[0] NE -1) then  $
+	    if (goodies[0] NE -1) then  begin
 	      skyfinal[i,j] = median(skyrebin[i,goodies])
 
 ;
 ;	This is a kluge to take out weird WIDE feature near 6500 Ang.
 ;	We assume it's correlated with xFocal which may not be true
 ;
-;	    if (color EQ 'red') then begin
+;	    if (color EQ 'rred') then begin
 ;	      skytemp = skyrebin[i,goodies] - skyfinal[i,j]
 ;
 ;	LADFIT is an absolute deviation fit, and should be less subject to
@@ -82,8 +82,8 @@ function skysubtract, tt, skyfinal, color=color
 ;
 ;	      ab = ladfit(skystruct[goodies].plugmap.xFocal,skytemp)
 ;	      skyredjunk[i] = ab[0] + ab[1] * tt[j].plugmap.xFocal
-;	      stop
 ;	    endif else skyredjunk[i]=0.0
+	   endif
 	  endfor
 
 ;	  skyfinal[*,j] = skyfinal[*,j] - skyredjunk

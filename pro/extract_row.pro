@@ -86,7 +86,7 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
                    diagonal=p, fullcovar=covar, wfixarr = wfixarr, $
                    nPoly=nPoly, maxIter=maxIter, highrej=highrej, $
                    lowrej=lowrej, calcCovar=calcCovar, niter=niter, $
-                   whopping=whopping
+                   whopping=whopping, multirow=multirow
 
    ; Need 4 parameters
    if (N_params() LT 4) then begin
@@ -123,10 +123,8 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
    if (NOT keyword_set(whopping)) then begin
       whoppingct = 0
       whopping = -1.0
-   endif else begin
-      whoppingct = n_elements(whopping)
-   endelse
-
+   endif else if (whopping[0] LT 0.0) then whoppingct = 0 $
+   else whoppingct = n_elements(whopping)
 
    if (NOT keyword_set(xvar)) then xvar = findgen(nx) $
       else if (nx NE n_elements(xvar)) then $
@@ -146,7 +144,21 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
 ;	Check that xcen is sorted in increasing order
 ;	with separations of at 3 pixels.
 ;
-   check = where(xcen[0:nTrace-1] GE xcen[1:nTrace-2] - 3,count)
+   if (keyword_set(multirow)) then begin
+      ma = nPoly + (nTrace*nCoeff + whoppingct)/multirow 
+      for i=0,multirow-1 do begin
+       x1 = i*nTrace/multirow
+       x2 = (i+1)*nTrace/multirow-1
+       check = where(xcen[x1:x2-1] GE xcen[x1+1:x2] - 3,count)
+       if (count GT 0) then $
+         message, 'XCEN is not sorted or not separated by greater than 3 pixels.'
+     endfor
+   endif else begin
+     x1 = 0
+     x2 = nTrace-1
+     check = where(xcen[x1:x2-1] GE xcen[x1+1:x2] - 3,count)
+     ma = nPoly + nTrace*nCoeff + whoppingct
+   endelse
 
    if (count GT 0) then $
       message, 'XCEN is not sorted or not separated by greater than 3 pixels.'
@@ -155,7 +167,7 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
    whopping = float(whopping)
    whoppingct = LONG(whoppingct)
    nPoly = LONG(nPoly)
-   ma = nPoly + nTrace*nCoeff + whoppingct
+
    maxIter = LONG(maxIter)
    proftype = LONG(proftype)
    calcCovar = LONG(calcCovar)
@@ -178,16 +190,16 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
 
    ans = fltarr(ma)       ; parameter values
 
-   if (keyword_set(iback)) then begin
+   if (keyword_set(iback) AND (NOT keyword_set(multirow))) then begin
       if (nPoly NE n_elements(iback)) then $
          message, 'Number of elements in IBACK is not equal to nPoly'
       ans(nTrace*nCoeff:nTrace*nCoeff + nPoly-1) = iback 
    endif
 
-   if (keyword_set(inputans)) then begin
-      if (nTrace*nCoeff NE n_elements(inputans)) then $
+   if (keyword_set(inputans) AND (NOT keyword_set(multirow))) then begin
+      if (ma-nPoly-whoppingct NE n_elements(inputans)) then $
          message, 'Number of elements in INPUTANS is not equal to nTrace*nCoeff'
-      ans(0:nTrace*nCoeff-1) = inputans
+      ans(0:ma-nPoly-whoppingct-1) = inputans
    endif
 
    p = fltarr(ma)         ; diagonal errors
@@ -201,11 +213,21 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
 
       workinvvar = float(invvar*mask)
 
+
+   if (keyword_set(multirow)) then begin
+      result = call_external(getenv('IDL_EVIL')+'libspec2d.so','extract_multi_row',$
+       nx, float(xvar), float(fimage), workinvvar, float(ymodel), nTrace, $
+       nPoly, float(xcen), float(sigma), proftype, calcCovar, squashprofile, $
+       whopping, whoppingct, $
+       nCoeff, ma, ans, long(wfixarr), p, fscat, covar)
+   endif else begin 
       result = call_external(getenv('IDL_EVIL')+'libspec2d.so','extract_row',$
        nx, float(xvar), float(fimage), workinvvar, float(ymodel), nTrace, $
        nPoly, float(xcen), float(sigma), proftype, calcCovar, squashprofile, $
        whopping, whoppingct, $
        nCoeff, ma, ans, long(wfixarr), p, fscat, covar)
+   endelse
+
 
        diffs = (fimage - ymodel)*sqrt(workinvvar) 
        chisq = total(diffs*diffs)
@@ -234,7 +256,13 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
 ;       print,format='($,i)', niter
    endwhile
 
-   oback = ans[nTrace*nCoeff:nTrace*nCoeff+nPoly-1]
-   return, reform(ans[0:nTrace*nCoeff-1],nCoeff,nTrace)
+   if(keyword_set(multirow)) then begin
+     oback = ans[ma-nPoly:*]
+     return, reform(ans[0:nTrace*nCoeff/multirow-1],nCoeff,nTrace/multirow)
+   endif else begin
+     oback = ans[nTrace*nCoeff:nTrace*nCoeff+nPoly-1]
+     return, reform(ans[0:nTrace*nCoeff-1],nCoeff,nTrace)
+   endelse
+
 end
 ;------------------------------------------------------------------------------

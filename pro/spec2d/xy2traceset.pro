@@ -42,7 +42,7 @@
 ;-
 ;------------------------------------------------------------------------------
 pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
- xmin=xmin, xmax=xmax
+ xmin=xmin, xmax=xmax, sigma=sigma
 
    ; Need 3 parameters
    if (N_params() LT 3) then begin
@@ -52,6 +52,7 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
    endif
 
    if (NOT keyword_set(func)) then func = 'legendre'
+   if (NOT keyword_set(sigma)) then sigma = 1.0
 
    ndim = size(ypos, /n_dim)
    dims = size(ypos, /dim)
@@ -91,11 +92,39 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
 ;          /double, /legendre, singular=singular)
 ;         res = svdfit(2.0*(xpos[*,i]-xmid)/xrange, ypos[*,i], ncoeff, $
 ;          /double, function_name=function_name, singular=singular)
-         res = func_fit(2.0*(xpos[*,i]-xmid)/xrange, ypos[*,i], ncoeff, $
+
+        nreject = 1
+        totalreject=0
+        good = lonarr(nx) + 1
+        xnorm = 2.0*(xpos[*,i]-xmid)/xrange
+
+;
+;	Putting in rejection
+;
+	  while (nreject NE 0) do begin
+	    use = where(good EQ 1)
+            res = func_fit(xnorm[use], ypos[use,i], ncoeff, $
               function_name=function_name)
 
-         tset.coeff[*,i] = res
-         print, format='($, ".",i4.4,a5)',i,string([8b,8b,8b,8b,8b])
+            if (func EQ 'legendre') then $
+               yfit = flegendre(xnorm[use],ncoeff) # res
+            if (func EQ 'chebyshev') then $
+               yfit = fchebyshev(xnorm[use],ncoeff) # res
+
+            nreject = 0
+	    if(stdev(yfit-ypos[use,i]) GT sigma) then begin
+	      worst = max(abs(yfit-ypos[use,i]), badone)
+	      good[use[badone]] = 0
+	      nreject = 1
+              totalreject = totalreject+1
+            endif
+          endwhile    
+   
+        tset.coeff[*,i] = res
+	if (totalreject GT 0) then $
+           print, 'Rejected ', totalreject, ' Pixels on trace ', i
+
+        print, format='($, ".",i4.4,a5)',i,string([8b,8b,8b,8b,8b])
       endfor
 
    endif else begin

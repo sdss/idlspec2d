@@ -39,7 +39,7 @@ pro calcflux, ansrow, prow, fluxrow, finvrow, wfixed, proftype, lTrace,nCoeff, $
 ;	Estimate new widths if specified
 ;
           if(wfixed[1] GT 0 AND keyword_set(sigmacor)) then begin 
-;             print, 'Calculating SIGMACOR...'
+             print, 'Calculating SIGMACOR...'
 
 ;
 ;	 Make a guess at an underestimated error

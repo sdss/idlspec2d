@@ -68,7 +68,8 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
                ymodel=ymodel, fscat=fscat,proftype=proftype,ansimage=ansimage, $
                wfixed=wfixed, sigmacor=sigmacor, xcencor=xcencor, mask=mask, $
                nPoly=nPoly, maxIter=maxIter, highrej=highrej, lowrej=lowrej, $
-	       calcCovar=calcCovar, fitans=fitans, whopping=whopping,relative=relative
+	       calcCovar=calcCovar, fitans=fitans, whopping=whopping,relative=relative, $
+               multirow=multirow
 
    ; Need 5 parameters
    if (N_params() LT 5) then begin
@@ -212,35 +213,38 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
 
    for iy=0, nRowExtract-1 do begin
      cur = yrow[iy]
+     curend = yrow[iy]
+     if (keyword_set(multirow)) then curend = yrow[iy] + multirow - 1
      print, format='($, ".",i4.4,a5)',cur,string([8b,8b,8b,8b,8b])
-     xcencurrent = xcenuse[*,cur]
-     sigmacur = sigma1[*, cur]
+     xcencurrent = xcenuse[*,cur:curend]
+     sigmacur = sigma1[*, cur:curend]
 ;
 ;	Check that xcen is sorted in increasing order
 ;	with separations of at 3 pixels.
-;
-     check = where(xcencurrent[0:nTrace-1] GE xcencurrent[1:nTrace-2] - 3,count)
-     if (count GT 0) then $
-        message, 'XCEN is not sorted or not separated by greater than 3 pixels.'
+;	Already done in extract_row
 
-     masktemp = mask[*,cur]
+;     check = where(xcencurrent[0:nTrace-1] GE xcencurrent[1:nTrace-2] - 3,count)
+;     if (count GT 0) then $
+;        message, 'XCEN is not sorted or not separated by greater than 3 pixels.'
+
+     masktemp = mask[*,cur:curend]
 
      if(whopping[0] NE -1) then $
-         whoppingcur = xcencurrent[whopping] 
+         whoppingcur = xcenuse[whopping,cur:curend] 
      
      if ARG_PRESENT(fitans) then inputans = fitans[*,*,cur]
-     ansrow = extract_row(fimage[*,cur], invvar[*,cur], xcencurrent, $
+     ansrow = extract_row(fimage[*,cur:curend], invvar[*,cur:curend], xcencurrent, $
       sigmacur, ymodel=ymodelrow, fscat=fscatrow, proftype=proftype, $
       wfixed=wfixed, mask=masktemp, diagonal=prow, nPoly=nPoly, $
       oback=oback, niter=niter, squashprofile=squashprofile,inputans=inputans, $
       maxIter=maxIter, highrej=highrej, lowrej=lowrej, calcCovar=calcCovar, $
-      whopping=whoppingcur, relative=relative)
+      whopping=whoppingcur, relative=relative, multirow=multirow)
 
-     mask[*,cur] = masktemp
+     mask[*,cur:curend] = masktemp
      ansimage[0:nTrace*nCoeff-1,iy] = ansrow
      ansimage[nTrace*nCoeff:nTrace*nCoeff+nPoly-1,iy] = oback
 
-     if(keyword_set(ymodel)) then ymodel[*,cur] = ymodelrow
+     if(keyword_set(ymodel)) then ymodel[*,cur:curend] = ymodelrow
      if(keyword_set(fscat)) then fscat[iy,*] = fscatrow
 
      calcflux, ansrow, prow, fluxrow, finvrow, wfixed, proftype, lTrace,nCoeff,$

@@ -10,6 +10,7 @@
 #define TINY 1.0e-20
 
 IDL_LONG extract_row (int argc, void *argv[]);
+IDL_LONG extract_multi_row (int argc, void *argv[]);
 void ProfileGauss(float *x, IDL_LONG ndat, float **y, float xcen, IDL_LONG xmin,
 		IDL_LONG xmax, float sigma, IDL_LONG nCoeff);
 void findXLimits(IDL_LONG *xmin, IDL_LONG *xmax, float *x, float *xcen, 
@@ -28,6 +29,9 @@ void subtractPoly(float *y, IDL_LONG nx, IDL_LONG nPoly, float **apoly,
         IDL_LONG *ia, float *a);
 void CheckRowFibers(float **abig, IDL_LONG *xmin, IDL_LONG *xmax, 
       IDL_LONG nTrace, IDL_LONG nCoeff, float *a, IDL_LONG *ia, float *invvar);
+void CheckMultiRowFibers(float **abig, IDL_LONG *xmin, IDL_LONG *xmax,
+      IDL_LONG nTrace, IDL_LONG nCoeff, float *a, IDL_LONG *ia, float *invvar,
+      IDL_LONG nsingle, IDL_LONG multirow);
 void fillCovar(float *ysub, float *invvar, IDL_LONG nx, float **aprofile,
        float **apoly, IDL_LONG nTrace, IDL_LONG nCoeff, IDL_LONG nPoly,
       float *beta, IDL_LONG *ia, float **covar, IDL_LONG *xmin, IDL_LONG *xmax);

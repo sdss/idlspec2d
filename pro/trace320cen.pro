@@ -121,7 +121,7 @@ print,'BIG GAP',j,xfiber[j], xfiber[j]-xfiber[j-1]
     else xcen = xfiber[0] - (20-ffiber) * deltax ; missing up to 10 fibers
 
    ; Second iteration, where we insist upon the bundle gap positions
-   xgood = fltarr(nfiber)
+   xgood = lonarr(nfiber)
    for ibun=0, nbun-1 do begin
       for jbun=0, npbundle-1 do begin
          n = ibun * npbundle + jbun      ; 0-indexed fiber number

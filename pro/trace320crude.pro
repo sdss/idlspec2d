@@ -86,6 +86,7 @@ function trace320crude, fimage, invvar, ystart=ystart, nmed=nmed, xgood=xgood, $
    xdiff = abs( xnew[*,1:ntrace-1] - xnew[*,0:ntrace-2] )
    xbad = xdiff LT minsep
 
+
 ; ???
 
    ; Now look for traces that are sometimes too close to their neighbors,
@@ -93,34 +94,46 @@ function trace320crude, fimage, invvar, ystart=ystart, nmed=nmed, xgood=xgood, $
    for itrace=0, ntrace-2 do begin
       ibad = where(xbad[*,itrace], nbad)
       if (nbad GT 0) then begin
-         igood = where(NOT xbad[*,itrace], ngood)
+         igood = where(xbad[*,itrace] EQ 0, ngood)
 
          ; Identify which trace number has gone bad
          if (xgood[itrace] EQ 1 AND xgood[itrace+1] EQ 0) then begin
-            ifix = itrace
-         endif else if (xgood[itrace] EQ 0 AND xgood[itrace+1] EQ 1) then begin
             ifix = itrace+1
+            ihelp = itrace
+         endif else if (xgood[itrace] EQ 0 AND xgood[itrace+1] EQ 1) then begin
+            ifix = itrace
+            ihelp = itrace+1
          endif else begin
             if (itrace MOD 20 EQ 0) then begin
                space1 = median( xnew[igood,itrace+1] - xnew[igood,itrace] )
                space2 = median( xnew[ibad,itrace+1] - xnew[ibad,itrace] )
-               if (space2 GT space1+1.5) then ifix = itrace+1 $
-                else ifix = itrace
+               if (space2 GT space1+1.5) then begin
+                  ifix = itrace 
+                  ihelp = itrace + 1
+               endif else begin
+                  ifix = itrace + 1
+                  ihelp = itrace
+               endelse
             endif else begin
                space1 = median( xnew[igood,itrace] - xnew[igood,itrace-1] )
                space2 = median( xnew[ibad,itrace] - xnew[ibad,itrace-1] )
-               if (space2 GT space1+1.5) then ifix = itrace $
-                else ifix = itrace+1
+               if (space2 GT space1+1.5) then begin
+                  ifix = itrace - 1 
+                  ihelp = itrace 
+               endif else begin
+                  ifix = itrace 
+                  ihelp = itrace - 1
+               endelse
             endelse
          endelse
 
 print,'fix ', ifix
          ; Fix trace number IFIX
-         if (ifix GT 1) then begin
+         if (ifix GE 0 AND ihelp GE 0) then begin
             ; Grow the bad pixels to their neighbors
             ibad = where( smooth(float(xbad[*,itrace]), 1+2*ngrow) GT 0)
-            xadd = median( xnew[igood,ifix] - xnew[igood,ifix-1] )
-            xnew[ibad,ifix] = xnew[ibad,ifix-1] + xadd
+            xadd = median( xnew[igood,ifix] - xnew[igood,ihelp] )
+            xnew[ibad,ifix] = xnew[ibad,ihelp] + xadd 
          endif
 
       endif

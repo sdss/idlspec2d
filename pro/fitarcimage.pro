@@ -65,7 +65,7 @@ function lampfit, spec, linelist, guess0, guesshi, width=width, lagwidth = lagwi
 
 	p0 = (guesshi[0,*])[*]
 	scale = (guesshi[1,*])[*]
-	res = amoeba(ftol, p0 = p0, scale=scale, function_name='corrlamps')
+	res = amoeba(ftol, p0 = p0, scale=scale, function_name='corrlamps', nmax=200)
 	
 	ans = [guess0,res]
 	nparams = n_elements(ans)
@@ -124,26 +124,27 @@ function fullfit, spec, linelist, guess
 	scale[0] = scale[0]*0.03
 
 	first = lampfit(spec, linelist, guess0, transpose([[p0],[scale]]), $
-	   width = 20.0, lagwidth=200, ftol=1.0e-4)
+	   width = 20.0, lagwidth=200, ftol=1.0e-3)
 	
 	final = first
 
 	while (abs(bestlag) GT 5)  do begin
 	  guess0 = first[0]
 	  p0 = first[1:*]
-	  scale = abs(p0)*1.0
-	  scale[0] = scale[0]*0.05
+	  scale = abs(p0)*0.5
+	  scale[0] = scale[0]*0.02
 	  final = lampfit(spec, linelist, guess0, transpose([[p0],[scale]]), $
-	     width = 10.0, lagwidth=100, ftol=1.0e-4)
+	     width = 10.0, lagwidth=100, ftol=1.0e-3)
 	endwhile
 
 	return,final
 end
 
-;fitarcimage, flux1148, 'blue', lamplist, xpeak, ypeak, $
-;       tset, invset,ans=ans
 pro fitarcimage, arc, side, linelist, xcen, ycen, tset, invset, $
-                  func=func, ncoeff=ncoeff, ans=ans, lambda=lambda
+                  func=func, ncoeff=ncoeff, ans=ans, lambda=lambda, $
+                  thresh=thresh, row=row
+
+   common lagstuff, lag, bestlag, bestcorr, zeroterm
 
    if (NOT keyword_set(func)) then func = 'legendre'
    if (NOT keyword_set(ncoeff)) then ncoeff = 5
@@ -158,20 +159,28 @@ pro fitarcimage, arc, side, linelist, xcen, ycen, tset, invset, $
    npix = dims[0]
    nTrace = dims[1]
 
+   if (NOT keyword_set(row)) then row = (nTrace-30)/2
+
+   if (NOT keyword_set(thresh)) then begin
+     if (side EQ 'blue') then thresh = 200
+     if (side EQ 'red') then thresh = 500
+   endif
 ;
 ;	First trace
 ;
 
-	xcen = trace_crude(arc, yset=ycen, nave=1, nmed=1, thresh = 50, $
+	xcen = trace_crude(arc, yset=ycen, nave=1, nmed=1, thresh = thresh, $
                maxshifte=1.0)
+
+	xcen = trace_fix(xcen, ycen=ycen)
 
 	
 ;
 ;	Now find wavelength solution
 ;
 
-	row = 150
 	spec = arc[*,row]
+;	spec = djs_median(arc[*,row-1:row+1],2)
 
 	if (ans[0] EQ 0) then begin
 
@@ -184,6 +193,11 @@ pro fitarcimage, arc, side, linelist, xcen, ycen, tset, invset, $
 	  endif
 
           ans = fullfit(spec, linelist, guess)
+
+	  if (side EQ 'blue' AND bestcorr LT 0.8) then $
+            print, 'Initial wavelength solution looks suspicious'
+	  if (side EQ 'red' AND bestcorr LT 0.6) then $
+            print, 'Initial wavelength solution looks suspicious'
 
 	endif
 
