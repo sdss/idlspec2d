@@ -60,12 +60,7 @@ to limit the number of exposures combined.  Default to a maximum of 7.
 -------------------------------------------------------------------------------
 v4_6_1 (Feb 14, 2001)
 
-<<<<<<< RELEASE_NOTES
 SPCOMBINE: Reverting to adderr=0.03 to prevent rejections in high S/N regions
-
-=======
-SPCOMBINE: Reverting to adderr=0.03 to prevent rejections in high S/N regions
->>>>>>> 1.29
 SKYSUBTRACT: The "fix" in the previous version didn't properly check the
              bad mask bits, and in fact could make things worse.  Now fixed.
 
