@@ -693,6 +693,29 @@ pro sdssproc, infile, image, invvar, indir=indir, $
 ;                 ' = ', testrms, ' DN (5-sig clip)'
 ;            endif
 
+            ; In the data region, not more than 3e-7 of the pixels
+            ; should be more than 5-sigma below the bias level.
+            ; Report a warning message if this fraction is > 0.01 percent.
+            ; (Dispose of the first 5 rows of the bias when computing stats,
+            ; as we do in all the above tests too.)
+
+            lovalue = (biasval - 5.*rnoise_expect[iamp])
+            lopixval = $
+             rawdata[sdatacol[iamp]:sdatacol[iamp]+ncol[iamp]-1, $
+              sdatarow[iamp]+5:sdatarow[iamp]+nrow[iamp]-1] $
+             LT lovalue
+            numlopix = total(lopixval)
+            fraclopix = numlopix / n_elements(lopixval)
+            lopixval = 0 ; clear memory
+            if (NOT keyword_set(silent)) then $
+             splog, 'Amp #', iamp, ' Number of pix below bias-5*sigma=', $
+              lovalue, ' DN is ', numlopix, $
+              format='(a,i1,a,f6.0,a,i7)'
+            if (100*fraclopix GT 0.01) then $
+             splog, 'WARNING: Amp #', iamp, ' way too many pixels (', $
+              100*fraclopix, '%) below bias-5*sigma=', lovalue, ' DN', $
+              format='(a,i1,a,f5.2,a,f6.0,a)'
+
             ; Copy the data for this amplifier into the final image
             ; Subtract the bias (in DN), and then multiply by the gain
             ; Now image is in electrons

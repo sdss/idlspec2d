@@ -543,7 +543,7 @@ The following messages may appear:
     for hours), or if there is an electronics problem.  This would pick
     up the problem seen on 22/23 Aug 2000 (MJD 51779) when the left amplifier
     on r2 was randomly flipping bits (c.f., PR #2335).  Or, the problems
-    seen in Aug 2004, when r2 was digitally mixing bits between the
+    seen in Aug 2004 (PR #6143), when r2 was digitally mixing bits between the
     left and right amplifiers.
 <LI><B>Amp #... bias region difference at xxx-th-percentile =... DN</B> <BR>
     This measures another statistic of the bias region for either
@@ -556,6 +556,11 @@ The following messages may appear:
     small or too large, as compared to what gaussian statistics dictate.
     This should catch the same sorts of electronics problems as listed
     for the above warning message.
+<LI><B>Amp #... way too many pixels (xxx%) below bias-5*sigma=... DN</B> <BR>
+    This test looks for anomolously low pixel values in the data region
+    of the CCD.  There should essentially never be any pixel values below
+    5-sigma less than the bias level, unless there is something wrong with
+    the electronics.  This did happen in Aug 2004 (see PR #6143).
 <LI><B>Fixing shifted rows (from electronics)</B> <BR>
     This is very, very bad.  This is indicative of an electronics problem
     that we first saw on MJD=51578 to 51580 (3 to 5 Feb 2000).
