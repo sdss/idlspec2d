@@ -106,14 +106,14 @@ end
 ;------------------------------------------------------------------------------
 function apo_log_header, title1, title2
 
-   ; Include a Java script to auto-load this page every 30 seconds
+   ; Include a Java script to auto-load this page every 60 seconds
 
    textout = '<HTML>'
    textout = [textout, '<HEAD><TITLE>' + title1 + '</TITLE></HEAD>']
    textout = [textout, '<H1 ALIGN=CENTER>' + title2 + '</H1>']
    squote = "'"
    textout = [textout, $
-    '<BODY ONLOAD="timerID=setTimeout('+squote+'location.reload(true)'+squote+',30000)">']
+    '<BODY ONLOAD="timerID=setTimeout('+squote+'location.reload(true)'+squote+',60000)">']
 
    return, textout
 end
