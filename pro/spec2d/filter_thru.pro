@@ -45,7 +45,7 @@
 ;   10-Mar-2000  Written by D. Schlegel, Princeton
 ;-
 ;------------------------------------------------------------------------------
-function filter_thru, flux, waveimg=waveimg, wset=wset, mask=mask
+function filter_thru, flux, waveimg=waveimg, wset=wset, mask=mask, norm=norm
 
    dims = size(flux, /dimens)
    nx = dims[0]
@@ -56,7 +56,7 @@ function filter_thru, flux, waveimg=waveimg, wset=wset, mask=mask
     'sdss_i_atm.dat', 'sdss_z_atm.dat']
    nfile = N_elements(ffiles)
 
-   if (ntrace EQ 1) then res = fltarr(nfile) $
+   if (ntrace EQ 1) then res = fltarr(1, nfile) $
     else res = fltarr(ntrace, nfile)
 
    ;----------
@@ -88,6 +88,8 @@ function filter_thru, flux, waveimg=waveimg, wset=wset, mask=mask
        res[*,ifile] = total(flux_interp * filtimg, 1) $
       else $
        res[*,ifile] = total(flux * filtimg, 1)
+
+      if (keyword_set(norm)) then res[*,ifile] = res[*,ifile]/total(filtimg,1)
 
    endfor
 
