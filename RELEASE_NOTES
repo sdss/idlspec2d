@@ -35,6 +35,7 @@ spectroSOS.html: Include more links to spectro.princeton web site.
 
 In idlutils:
 
+BSPLINE_ITERFIT: Added /double to computation of INVVAR (line 107).
 DJS_BATCH: Fix invalid return codes in a sub-proc.
 
 -------------------------------------------------------------------------------
