@@ -20,6 +20,8 @@ GET_MJD_DIR: Comment-out test that MJD directories contain files, since
            that's so bloody slow.
 GUIDERMOVIE,GUIDERMPEG: New procs for looking at the spectroscopic guider
            images for a night.
+INSPECFILES,INSPECTGEN: New routines for generating prototype files
+           for manual inspection.
 LOGSHEET: Do not include both uncompressed and compressed files in a listing.
            Remove the INDIR option, and add MJD and CAMERA keywords.
 PLATEMERGE: Include logic for setting the SPECPRIMARY field in the outputs.
