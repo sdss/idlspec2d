@@ -1,8 +1,11 @@
 
+APOFIX: Use QUALITY header keyword to declare exposures bad (as specified
+           by PR #3687).
 APOHEADER: Use SDSSHEAD() instead of HEADFITS() to read the headers, such
            that this printout includes any observer edits to the headers.
            Also fix so that this proc works if both a ".fit" and ".fit.gz"
            file exist on disk.
+           Also list the QUALITY keyword.
 LOGSHEET: Do not include both uncompressed and compressed files in a listing.
            Remove the INDIR option, and add MJD and CAMERA keywords.
 PLATEMERGE: Include logic for setting the SPECPRIMARY field in the outputs.
@@ -15,6 +18,12 @@ ZFIND: Bug fix for when NPOLY=0.
 
 aporsync_logs.sh: Include the "sdHdrFix*.par" files as the first ones
            to copy over from sdsshost.apo -> sos.apo.
+opLimits.par: Change exposure time limits to [599,1804] sec, in response
+           to PR #3653.
+spectro_apodisplay.html: Include more links to spectro.princeton web site.
+spectroSOS.html: Include more links to spectro.princeton web site.
+           Update to include comments regarding freeing up disk space (PR 3675).
+           Update to include changes to declaring exposures bad (PR 3687).
 
 In idlutils:
 
