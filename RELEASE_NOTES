@@ -1,17 +1,28 @@
 
+FIND_NMINIMA: Fix tiny bug for optional plots.
 GUIDERMOVIE: The format for the date in the header of the guider images
            has changed.  This code should now comptabably read the old
            or new date format.
 PLOTSPEC: Bug fix to allow one to specify the output file name with PSFILE=.
+SDSSPROC: Fix silly bug trying to set QUALITY='excellent' when undefined.
 WRITE_UROS: Add Flatvec,Rnois to output files.
 
+opHdrFix.par: Fix the RA,DEC positions in the raw file headers to fix
+           some remaining problems for PR #3009.  Specifically, the following
+           plates were getting the wrong RA,DEC in the platelist files:
+           351/51780, 355/51788, 356/51779, 360/51780, 385/51783, 391/51782,
+           395/51783.
+           Discard exposures 14967-8 for plate 820/52404.
 sprobot_start: Fix tiny typo (extra quotation on line 141).
+spChunkList.par: Added chunks 48-51.
 
 In idlutils:
 
 BSPLINE_BKPTS: Integer roll-over bug fixed by DPF for more than 2^30
            data points (doesn't matter for SDSS pipelines, but it
            does for DEIMOS).
+POLY_ITER: Change "LT" logic to "LE" to handle case where residual
+           is 0 (e.g., a perfect fit)
 
 -------------------------------------------------------------------------------
 v4_9_12 (Jun 26, 2002 idlspec2d+idlutils) running on IDL 5.3 - 5.5
