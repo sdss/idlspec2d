@@ -95,15 +95,16 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
       splog, 'Plate directory ', platedir
 
       ;----------
-      ; Find all plan files
+      ; Find all 2D plan files
 
       allplan = findfile(filepath('spPlan2d*.par', root_dir=topindir, $
        subdirectory=platedir), count=nplan)
 
       ;----------
-      ; Read all the plan files
+      ; Read all the 2D plan files
 
       allexp = 0
+      planlist = 0
       extractdir = ''
 
       for iplan=0, nplan-1 do begin
@@ -112,8 +113,13 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
          for ii=0, n_elements(pp)-1 do begin
             sname = tag_names(*pp[ii], /structure_name)
             if (sname EQ 'SPEXP') then begin
-               if (NOT keyword_set(allexp)) then allexp = *pp[ii] $
-                else allexp = [allexp, *pp[ii]]
+               if (NOT keyword_set(allexp)) then begin
+                  allexp = *pp[ii]
+                  planlist = fileandpath(allplan[iplan])
+               endif else begin
+                  allexp = [allexp, *pp[ii]]
+                  planlist = [planlist, fileandpath(allplan[iplan])]
+               endelse
                if (NOT keyword_set(extractdir)) then $
                 extractdir = yanny_par(hdr, 'extractdir')
             endif
@@ -142,13 +148,18 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
             if (keyword_set(spexp)) then begin
 
                ;----------
+               ; Determine the 2D plan files that are relevant
+
+               planlist1 = planlist[indx]
+               planlist1 = planlist1[ uniq(planlist1, sort(planlist1)) ]
+
+               ;----------
                ; Replace the prefix 'sdR' with 'spFrame' in the science frames
                ; and the suffix '.fit' with '.fits'
 
                newnames = spexp.name
                for i=0, n_elements(newnames)-1 do begin
                   jj = strpos(newnames[i], '-')
-;                  kk = strpos(newnames[i], '.', /reverse_search) ; IDL 5.3 com
                   kk = rstrpos(newnames[i], '.')
                   if (jj NE -1 AND kk NE -1) then $
                    newnames[i] = 'spFrame' + strmid(newnames[i], jj, kk-jj) $
@@ -175,6 +186,10 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
                ; Create keyword pairs for plan file
 
                hdr = ''
+               hdr = [hdr, "planfile2d  '" + planlist1 $
+                + "'  # Plan file for 2D spectral reductions"]
+               hdr = [hdr, "planfilecomb '" + planfile $
+                + "'  # Plan file for combining spectra"]
                hdr = [hdr, "extractdir '" + extractdir $
                 + "'  # Directory for extracted spectra"]
                hdr = [hdr, "combinedir ''" $

@@ -309,6 +309,8 @@ pro spplan2d, topindir=topindir, topoutdir=topoutdir, mjd=mjd, $
                ; Create keyword pairs for plan file
 
                hdr = ''
+               hdr = [hdr, "planfile2d  '" + planfile $
+                + "'  # Plan file for 2D spectral reductions"]
                hdr = [hdr, "MJD     " + mjdstr $
                 + "  # Modified Julian Date"]
                hdr = [hdr, "inputdir   '" + inputdir $
