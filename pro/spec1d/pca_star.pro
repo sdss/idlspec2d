@@ -1,40 +1,5 @@
 ; Generate both an output FITS file and a PostScript plot.
 ;------------------------------------------------------------------------------
-pro spappend, newloglam, pcaflux, fullloglam, fullflux
-
-   if (NOT keyword_set(fullloglam)) then begin
-      fullloglam = newloglam
-      fullflux = pcaflux
-      return
-   endif
-
-   npix1 = n_elements(newloglam)
-   npix2 = (size(fullloglam,/dimens))[0]
-
-   if (newloglam[0] EQ fullloglam[0]) then begin
-      npix = min(npix1,npix2)
-      fullloglam = fullloglam[0:npix-1]
-      fullflux = [ [fullflux[0:npix-1,*]], [pcaflux[0:npix-1]] ]
-   endif else if (newloglam[0] GT fullloglam[0]) then begin
-      ; Assume NEWLOGLAM[0] = FULLLOGLAM[PSHIFT], and trim the first PSHIFT
-      ; elements from FULLLOGLAM and FULLFLUX.
-      junk = min(abs(fullloglam - newloglam[0]), pshift)
-      npix = min(npix1,npix2-pshift)
-      fullloglam = fullloglam[pshift:pshift+npix-1]
-      fullflux = [ [fullflux[pshift:pshift+npix-1,*]], [pcaflux[0:npix-1]] ]
-   endif else begin
-      ; Assume NEWLOGLAM[PSHIFT] = FULLLOGLAM[0], and trim the first PSHIFT
-      ; elements from NEWLOGLAM and PCAFLUX.
-      junk = min(abs(newloglam - fullloglam[0]), pshift)
-      npix = min(npix1-pshift,npix2)
-      fullloglam = fullloglam[0:npix-1]
-      fullflux = [ [fullflux[0:npix-1,*]], [pcaflux[pshift:pshift+npix-1]] ]
-   endelse
-
-   return
-end
-
-;------------------------------------------------------------------------------
 pro pca_star, filename
 
    wavemin = 0
@@ -68,7 +33,7 @@ pro pca_star, filename
 
    readspec, slist.plate, slist.fiberid, mjd=slist.mjd, $
     flux=objflux, invvar=objivar, $
-    andmask=andmask, ormask=ormask, plugmap=plugmap, loglam=objloglam
+    andmask=andmask, ormask=ormask, plugmap=plugmap, loglam=objloglam, /align
 
    ;----------
    ; Insist that all of the requested spectra exist
@@ -111,7 +76,7 @@ ormask = 0 ; Free memory
       ;----------
       ; Find the subclasses for this stellar type
 
-      indx = where(slist.class EQ classlist[iclass])
+      indx = where(slist.class EQ classlist[iclass], nindx)
       thesesubclass = slist[indx].subclass
       isort = sort(thesesubclass)
       subclasslist = thesesubclass[isort[uniq(thesesubclass[isort])]]
@@ -123,10 +88,20 @@ ormask = 0 ; Free memory
 
       if (nsubclass EQ 1) then nkeep = 1 $
        else nkeep = 2
-      pcaflux = pca_solve(objflux[*,indx], objivar[*,indx], objloglam[*,indx], $
+      newloglam = objloglam
+      pcaflux = pca_solve(objflux[*,indx], objivar[*,indx], objloglam, $
        slist[indx].cz/cspeed, wavemin=wavemin, wavemax=wavemax, $
        niter=niter, nkeep=nkeep, newloglam=newloglam, $
-       eigenval=eigenval, acoeff=acoeff)
+       eigenval=eigenval, acoeff=acoeff, usemask=usemask)
+
+      ;----------
+      ; Set indeterminant fluxes to zero, e.g. values outside of the
+      ; wavelength range used in the fit.
+
+;      minuse = floor((nindx+1) / 2)
+      minuse = 1 ; ???
+      ibad = where(usemask LT minuse, nbad)
+      if (nbad GT 0) then pcaflux[ibad,*] = 0
 
 ; The following would plot the 0th object and overplot the best-fit PCA
 ;ii=0
@@ -155,7 +130,12 @@ ormask = 0 ; Free memory
             thisratio = median(aratio, /even)
             thisflux = pcaflux[*,0] + thisratio * pcaflux[*,1]
          endelse
-         spappend, newloglam, thisflux, fullloglam, fullflux
+
+         ; The output wavelength mapping is the same for everything,
+         ; so we can simply stack the PCA spectra.
+         if (NOT keyword_set(fullflux)) then fullflux = thisflux $
+          else fullflux = [[fullflux], [thisflux]]
+
          if (NOT keyword_set(namearr)) then namearr = subclasslist[isub] $
           else namearr = [namearr, subclasslist[isub]]
 
@@ -194,7 +174,7 @@ ormask = 0 ; Free memory
    ; Construct header for output file
 
    sxaddpar, hdr, 'OBJECT', 'STAR'
-   sxaddpar, hdr, 'COEFF0', fullloglam[0]
+   sxaddpar, hdr, 'COEFF0', newloglam[0]
    sxaddpar, hdr, 'COEFF1', objdloglam
    ; Add a space to the name below, so that 'F' appears as a string and
    ; not as a logical.
