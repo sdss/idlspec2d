@@ -115,6 +115,7 @@ function create_flatstruct, nflat
     'PROFTYPE', 0, $
     'MEDWIDTH', fltarr(4), $
     'FIBERMASK', ptr_new(), $
+    'TSET', ptr_new(), $
     'XSOL', ptr_new(), $
     'WIDTHSET', ptr_new(), $
     'FFLAT', ptr_new(), $
@@ -197,6 +198,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
          endif
 
          traceset2xy, tset, ycen, xsol
+         flatstruct[iflat].tset = ptr_new(tset)
          flatstruct[iflat].xsol = ptr_new(xsol)
          flatstruct[iflat].fibermask = ptr_new(tmp_fibmask)
       endif else begin
@@ -431,20 +433,20 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
             ; Write information on arc lamp processing
 
             if (keyword_set(arcinfoname)) then begin
+               sxaddpar, archdr, 'FBADPIX', fbadpix, $
+                'Fraction of bad pixels in raw image'
+               sxaddpar, archdr, 'BESTCORR', bestcorr, $
+                'Best Correlation coefficient'
 
-              sxaddpar, archdr, 'FBADPIX', fbadpix, $
-                  'Fraction of bad pixels in raw image'
-              sxaddpar, archdr, 'BESTCORR', bestcorr, $
-                  'Best Correlation coefficient'
+               arcinfofile = string(format='(a,i8.8,a)',arcinfoname, $
+                sxpar(archdr, 'EXPOSURE'), '.fits')
 
-              arcinfofile = string(format='(a,i8.8,a)',arcinfoname, $
-                 sxpar(archdr, 'EXPOSURE'), '.fits')
-
-              mwrfits, flux, arcinfofile, archdr, /create
-              mwrfits, [transpose(lambda), xpeak], arcinfofile
-              mwrfits, wset, arcinfofile
-              mwrfits, fibermask, arcinfofile 
-              mwrfits, dispset, arcinfofile 
+               mwrfits, flux, arcinfofile, archdr, /create
+               mwrfits, [transpose(lambda), xpeak], arcinfofile
+               mwrfits, *arcstruct[iarc].wset, arcinfofile
+               mwrfits, *arcstruct[iarc].fibermask, arcinfofile 
+               mwrfits, *arcstruct[iarc].dispset, arcinfofile 
+               spawn, 'gzip -f ' + arcinfofile
             endif
 
          endelse
@@ -581,11 +583,12 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
             flatinfofile = string(format='(a,i8.8,a)',flatinfoname, $
              sxpar(flathdr, 'EXPOSURE'), '.fits')
 
-            mwrfits, fflat, flatinfofile, flathdr, /create
-            mwrfits, tset, flatinfofile
-            mwrfits, fibermask, flatinfofile
-            mwrfits, widthset, flatinfofile
-            mwrfits, superflatset, flatinfofile
+            mwrfits, *flatstruct[iflat].fflat, flatinfofile, flathdr, /create
+            mwrfits, *flatstruct[iflat].tset, flatinfofile
+            mwrfits, *flatstruct[iflat].fibermask, flatinfofile
+            mwrfits, *flatstruct[iflat].widthset, flatinfofile
+            mwrfits, *flatstruct[iflat].superflatset, flatinfofile
+            spawn, 'gzip -f ' + flatinfofile
          endif
 
       endif
