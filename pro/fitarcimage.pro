@@ -31,6 +31,21 @@ end
 
 
 
+; Define traceset structure
+function tset_struc, func, ncoeff, nTrace
+
+     tset = $      
+      { func    :    func              , $
+        xmin    :    0.0d               , $
+        xmax    :    0.0d               , $
+        coeff   :    dblarr(ncoeff, nTrace) $
+      }
+
+  return,tset
+end
+
+
+
 function lampfit, spec, linelist, guess0, guesshi, width=width, lagwidth = lagwidth, lag=lag, ftol=ftol
 ;
 ;	Lampfit sets up data for amoeba with gaussian profile
@@ -165,9 +180,69 @@ function fullfit, spec, linelist, guess
 	return,final
 end
 
-pro fitarcimage, arc, arcinvvar, side, linelist, xnew, ycen, tset, invset, $
-                  func=func, ncoeff=ncoeff, ans=ans, lambda=lambda, $
-                  thresh=thresh, row=row, goodlines=goodlines
+
+;------------------------------------------------------------------------------
+;+
+; NAME:
+;   fitarcimage
+;
+; PURPOSE:
+;   determine wavelength calibration from arclines
+;
+; CALLING SEQUENCE:
+;   fitarcimage, arc, arcinvvar, side, linelist, xnew, ycen, tset, invset, $
+;       func=func, ncoeff=ncoeff, ans=ans, lambda=lambda, $
+;       thresh=thresh, row=row, $
+;       xdif_lfit=xdif_lfit, xdif_tset=xdif_tset, errcode=errcode
+;
+; INPUTS:
+;   arc        - extracted arc spectra
+;   arcinvvar  - inverse variance of arc
+;   side       - 'red' or 'blue'
+;   linelist   - list of expected arclines
+;
+; OPTIONAL KEYWORDS:
+;   func       - name of fitting function (e.g. 'legendre')
+;   ncoeff     - number of fitting coefficients 
+;   ans        - first guess for wavelength solution
+;   thresh     - threshhold counts for significant lines (e.g. 500)
+;   row        - central row to use on first guess
+;
+; OUTPUTS:
+;   xnew       - pixel position of lines [nfiber, nline]
+;   ycen       - fiber number [nfiber, nline]
+;   tset       - traceset (pix -> lambda)
+;   invset     - inverse traceset (lambda -> pix)
+;
+; OPTIONAL OUTPUTS:
+;   lambda     - returns alog10(wavelength) of good lines
+;   xdif_lfit  - fit residual for individual arclines
+;   xdif_tset  - fit residual of traceset
+;   errcode    - returns errcode (see below)
+;
+; COMMENTS:
+;   Error codes:
+;  -1 - <unknown error>
+;   0 - Everything fine
+;   1 - Expecting 2-d arc image
+;   2 - No unblended lines in linelist
+;   3 - No good arc lines!!!
+;   4 - fit_tset FAILED"
+;
+; EXAMPLES:
+;
+; BUGS:
+;
+; PROCEDURES CALLED:
+;
+; REVISION HISTORY:
+;   15-Oct-1999  Written by S. Burles, D. Finkbeiner, & D. Schlegel, APO
+;-
+;------------------------------------------------------------------------------
+PRO fitarcimage, arc, arcinvvar, side, linelist, xnew, ycen, tset, invset, $
+        func=func, ncoeff=ncoeff, ans=ans, lambda=lambda, $
+        thresh=thresh, row=row, $
+	xdif_lfit=xdif_lfit, xdif_tset=xdif_tset, errcode=errcode
 ;
 ;	Fit arc image is the highest level routine in this file.
 ;	It traces the arc line peaks found in arc.  Threshold
@@ -175,22 +250,46 @@ pro fitarcimage, arc, arcinvvar, side, linelist, xnew, ycen, tset, invset, $
 ;
 ;
 
-   common lagstuff, lag, bestlag, bestcorr, zeroterm
+   COMMON lagstuff, lag, bestlag, bestcorr, zeroterm
+
+;---------------------------------------------------------------------------
+; Error handling
+;---------------------------------------------------------------------------
+
+   errcode = -1
+   catch, Error_status
+   if Error_status NE 0 then begin 
+       message, string(' ---->  Unexpected error code ', Error_status),/cont
+       return
+   endif 
+
+
+;---------------------------------------------------------------------------
+; Preliminary stuff
+;---------------------------------------------------------------------------
 
    if (NOT keyword_set(func)) then func = 'legendre'
    if (NOT keyword_set(ncoeff)) then ncoeff = 5
    if (NOT keyword_set(ans)) then ans = 0
+   if (func EQ 'legendre') then function_name = 'flegendre'
+   if (func EQ 'chebyshev') then function_name = 'fchebyshev'
+
+
+   t_begin = systime(1)
 
    icoeff = ncoeff + 2
 
    ndim = size(arc, /n_dim)
-   if (ndim NE 2) then $
-	message, 'expecting 2-d arc image'
+   if (ndim NE 2) then begin 
+	message, 'expecting 2-d arc image', /continue
+	errcode=1
+        return
+   endif
    dims = size(arc, /dim)
    npix = dims[0]
-   nTrace = dims[1]
+   nfiber = dims[1]
 
-   if (NOT keyword_set(row)) then row = (nTrace-30)/2
+   if (NOT keyword_set(row)) then row = (nfiber-30)/2
 
    if (NOT keyword_set(thresh)) then begin
      if (side EQ 'blue') then thresh = 200
@@ -206,15 +305,9 @@ pro fitarcimage, arc, arcinvvar, side, linelist, xnew, ycen, tset, invset, $
 ;	centroids, but you might want to wait until after the first
 ;	round of polynomial fitting.
 ;
-	
+
 ;
 ;	Now find wavelength solution
-;
-
-;	spec = arc[*,row]
-
-;
-;	One can try to implement the median below for robustness
 ;
  	spec = djs_median(arc[*,row-2:row+2],2)
 
@@ -225,8 +318,9 @@ pro fitarcimage, arc, arcinvvar, side, linelist, xnew, ycen, tset, invset, $
 ;	point for wavelength solutions.
 ;
 	  guess = 0
-	  if (side EQ 'blue') then guess = [3.68, -0.106, -0.005, 0.005]	
-	  if (side EQ 'red') then guess = [3.87, 0.10, -0.003]	
+	  if (side EQ 'blue') then guess = [3.68, -0.106, -0.005, 0.005]
+          if (side EQ 'red') then guess = [3.87, 0.10, -0.003]	
+
 	  if (guess[0] EQ 0) then begin
 	    print,'please choose side (red or blue)'
 	    return
@@ -245,39 +339,26 @@ pro fitarcimage, arc, arcinvvar, side, linelist, xnew, ycen, tset, invset, $
 
 ;	Now store best log lambda solutions in tset
 ;	
-
-     tset = $      
-      { func    :    func              , $
-        xmin    :    0.0d               , $
-        xmax    :    0.0d               , $
-        coeff   :    dblarr(ncoeff, nTrace) $
-      }
-     invset = $      
-      { func    :    func               , $
-        xmin    :    0.0d               , $
-        xmax    :    0.0d               , $
-        coeff   :    dblarr(icoeff, nTrace) $
-      }
-
+ 	tset   = tset_struc(func, ncoeff, nfiber)
+	invset = tset_struc(func, icoeff, nfiber) 
 	tset.xmin = 0.0
 	tset.xmax = 1.0*(npix - 1)
 
-	  if (side EQ 'blue') then begin
+	if (side EQ 'blue') then begin
 	    invset.xmin = 3.57
 	    invset.xmax = 3.80
-	  endif
-	  if (side EQ 'red') then begin
+	endif
+	if (side EQ 'red') then begin
 	    invset.xmin = 3.75
 	    invset.xmax = 3.97
-	  endif
+	endif
+
 	ymid = 0.5*(invset.xmax + invset.xmin)
 	yrange = invset.xmax - invset.xmin
 	xx = dindgen(2048)
 	pixarray = 2.0d0*dindgen(npix)/(npix-1) - 1.0d0
 
-      if (func EQ 'legendre') then function_name = 'flegendre'
-      if (func EQ 'chebyshev') then function_name = 'fchebyshev'
-     
+; evaluate polynomial returned by fullfit     
         yy = poly(pixarray,ans)
      
         yynorm = 2.0d0*(yy-ymid)/yrange
@@ -285,8 +366,11 @@ pro fitarcimage, arc, arcinvvar, side, linelist, xnew, ycen, tset, invset, $
            function_name=function_name)
 
         uselines = where(linelist[*,2] GT 0.0)
-        if (uselines[0] EQ -1) then $
-          message, 'No unblended lines in linelist'
+        if (uselines[0] EQ -1) then begin 
+          message, 'No unblended lines in linelist', /continue
+          errcode=2
+          return
+        endif
 
         uselambda = alog10(linelist[uselines,0])
         uselambdanorm = 2.0d*(uselambda - ymid)/yrange
@@ -297,12 +381,20 @@ pro fitarcimage, arc, arcinvvar, side, linelist, xnew, ycen, tset, invset, $
       if (func EQ 'chebyshev') then $
              xstart = fchebyshev(uselambdanorm,icoeff) # invans
 
+
+
         inimage = where(xstart GE 0.0 AND xstart LE 2047.0)
         if (inimage[0] NE -1) then xstart = xstart[inimage]
 	xcen = trace_crude(arc, yset=ycen, nave=1, nmed=1, xstart=xstart, $
                ystart=row, maxshifte=1.0d)
+
         xfix = trace_fix(xcen, ycen=ycen)
-	xnew = trace_fweight(arc, xfix, ycen)
+
+;	xnew = trace_gauss(arc, xfix, ycen)
+
+; iterate trace_fweight twice
+	xtmp = trace_fweight(arc, xfix, ycen, invvar=arcinvvar)
+	xnew = trace_fweight(arc, xtmp, ycen, invvar=arcinvvar)
 
 
 	bad = where(abs(xnew-xcen) GT 3.0)
@@ -310,7 +402,13 @@ pro fitarcimage, arc, arcinvvar, side, linelist, xnew, ycen, tset, invset, $
 
 
         ntempTrace = (size(xnew))[2] 
-        y2=findgen(nTrace)
+        y2=findgen(nfiber)
+
+;---------------------------------------------------------------------------
+; Reject saturated lines
+;---------------------------------------------------------------------------
+; Reject lines with more than 2% of pixels saturated within 1 pixel 
+;    of all line centers (in dispersion direction). 
 
 	isbad=lonarr(ntempTrace)
         for i=0,ntempTrace-1 do begin
@@ -318,106 +416,119 @@ pro fitarcimage, arc, arcinvvar, side, linelist, xnew, ycen, tset, invset, $
 	   arcvarlist=[arcinvvar[inew,y2],arcinvvar[inew+1,y2], $
 		arcinvvar[inew-1,y2]]
            wheresat=where(arcvarlist eq 0, nsat)
-           fracbad = nsat/float(nTrace*3)
+           fracbad = nsat/float(nfiber*3)
            isbad[i] = (fracbad GT 0.02)
            if isbad[i] then print, 'Discarding trace',i, $
 		'    fraction bad', fracbad
         endfor
 
-
-
         goodind=where(1-isbad)
-        if goodind[0] eq -1 then message,'Evil RULES!'
+        if goodind[0] eq -1 then begin 
+	    message,'No good arc lines!!!', /continue
+            errcode=3
+            return
+        endif
 	
+; Trim linelist
 	xnew = xnew[*,goodind]
 	ycen = ycen[*,goodind]
         lambda = uselambda[inimage[goodind]]
 
-;
-;	This next section attempts to identify "GOOD" lines in linelist
-;	with the traces stored in (xnew, ycen)
-;
+
+;---------------------------------------------------------------------------
+; Do the first traceset fit
+;---------------------------------------------------------------------------
+; 
+        fit_tset, xnew, ycen, lambda, goodlines, tset, invset ;, /linesearch
+        print,'Pass 1 complete'
+
+; Keep only "good" lines
+	gind = where(total(goodlines eq 0,2) eq 0)
+        if gind[0] eq -1 then begin 
+           message,"fit_tset FAILED", /continue
+           errcode=4
+           return
+        endif
+	goodlines=0
 	
-	nonzero = where(lambda GT 0.0, oldcount)
-	highones = where(lambda GT 3.9, highct)
-	if(oldcount LT 6) then $
-	  message, 'only '+string(oldcount)+ ' good arclines found'
+	nline = n_elements(gind)    ; number of good lines
+        xnew=xnew[*,gind]
+	lambda=lambda[gind]
+	ycen=ycen[*,gind]
 
-	print, 'Found ', oldcount, ' good arc lines'
-	if (highct GT 0) then print, '----', highct, ' are above 8000 A'
+        fit_tset, xnew, ycen, lambda, goodlines, tset, invset
+        print,'Pass 2 complete'
 
-;	xnew = xnew[*,nonzero]
-;	ycen = ycen[*,nonzero]
-;        lambda = lambda[nonzero]
-	
+; evaluate invset at every lambda
+        pix1 = traceset2pix(invset,lambda)
 
 
-	;
-	nord=3
- 	x=findgen(nTrace)/float(nTrace)
+	nord=4
+ 	x=findgen(nfiber)/float(nfiber)
         xmeasured = xnew       
 
-	ntempTrace = (size(xnew))[2]
-	mx=total(xnew,2)/ntempTrace
-	for i=0,ntempTrace-1 do begin 
-	  dif=xnew[*,i]-mx
-	  dum=poly_fit(x,dif,nord,yfit)
-          res1=yfit-dif
-	  good=abs(res1) lt 4*stdev(res1)
-	  good=abs(res1) lt 4*stdev(res1*good)
-          kent=polyfitw(x,dif,good,3,yfit)	  
-	  xnew[*,i] = mx+yfit
+;---------------------------------------------------------------------------
+; Poly fits for each arcline
+;---------------------------------------------------------------------------
+
+	for i=0,nline-1 do begin 
+           mx=pix1[*,i]
+ 	   dif=xnew[*,i]-mx
+ 	   dum=poly_fit(x,dif,nord,yfit)
+           res1=yfit-dif
+	   good=abs(res1) lt 4*stdev(res1)
+	   good=abs(res1) lt 4*stdev(res1*good)
+           kent=polyfitw(x,dif,good,nord,yfit)	  
+	   xnew[*,i] = mx+yfit
  	endfor
 
-	wnorm = 2.0d*xnew/(npix-1) - 1.0d
 
-	goodlines = lonarr(oldcount,nTrace) + 1
-        
-
-	for i=0,nTrace-1 do begin
-
-	  done = 0
-
-	  while (done EQ 0) do begin
-	    
-	    use = where(goodlines[*,i] NE 0)
-	    res = svdfit((wnorm[i,use])[*], lambda[use], ncoeff, $
-               function_name=function_name, singular=singular,yfit=yfit)
-	    diff = yfit - lambda[use]
-
-;
-;	Take lines within 20 km/s
-;
-	    bad = where(abs(diff) GT 3.0d-5, nbad)
-	    if (nbad EQ 0) then done = 1 $ 
-	    else begin
-	      maxdiff = max(abs(diff),badplace)
-	      goodlines[use[badplace],i] = 0
-	    endelse 
-	  endwhile
-
-	  tset.coeff[*,i] = res
-
-;
-;	Now fit inverse set
-;
-          if (func EQ 'legendre') then yy = flegendre(pixarray,ncoeff) # res
-          if (func EQ 'chebyshev') then yy = fchebyshev(pixarray,ncoeff) # res
-
-;
-;	Fit to the 2048 pixels with the wavelengths as the dependent variable.
-;
-          yynorm = 2.0*(yy-ymid)/yrange
-          invset.coeff[*,i] = func_fit(yynorm, xx, icoeff, $
-              function_name=function_name)
+        fit_tset, xnew, ycen, lambda, goodlines, tset, invset
+        print,'Pass 3 complete'
+; now tset, invset contain "all" the information in the data. 
 
 
-;
-;	My silly row output
-;	
-          print, format='($, ".",i4.4,a5)',i,string([8b,8b,8b,8b,8b])
-	endfor	
+;---------------------------------------------------------------------------
+; Quality Assurance
+;---------------------------------------------------------------------------
 
+; pixel positions derived from the traceset
+
+        tset_pix = traceset2pix(invset,lambda)
+
+	xdif_tset=(xmeasured-tset_pix)  ; difference between measured line 
+                                        ;  positions and fit positions
+        xdif_lfit=(xmeasured-xnew)      ; dif between measured line positions
+                                        ;  and best fit for each line
+
+        print
+        print, 'Arcline fit summary'
+        print, 'All sigma values are in millipixels'
+        print,format='(71("-"))'
+        for k=0,n_elements(gind)-1 do $
+	   print,'Arcline',k,':  lambda =',10.^lambda[k], $
+                 '    sig_lfit =',djsig(1e3*xdif_lfit[*,k]), $
+	         '    sig_tset =',djsig(1e3*xdif_tset[*,k]), $
+	         format='(A,I3,A,F8.2,A,F7.2,A,F7.2)'
+
+
+	highones = where(lambda GT alog10(8000.), highct)
+	if(nline LT 6) then $
+	  message, 'WARNING: only '+string(nline)+ ' good arclines found',/cont
+
+	print, 'Found ', nline, ' good arc lines'
+	if (highct GT 0) then print, '----', highct, ' are above 8000 A'
+        print,'> FITARCIMAGE: ',systime(1)-t_begin, ' seconds elapsed', $
+	   format='(A,F8.2,A)'
+
+	errcode = 0 ; everything is fine
 	return
-  end
+end
+
+;---------------------------------------------------------------------------
+; fitarcimage.pro EOF
+;---------------------------------------------------------------------------
+
+
+
 
