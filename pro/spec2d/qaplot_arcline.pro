@@ -120,9 +120,10 @@ pro qaplot_arcline, xdif, wset, lambda, color=color, fibermask=fibermask, $
    ;----------
    ; Make plot of deviations
 
-   djs_plot, lambda, mnarr, xrange=xrange, yrange=[-0.1,0.1], $
+   djs_plot, lambda, mnarr, xrange=xrange, yrange=[-0.1,0.1], psym=6, $
     xstyle=1, ystyle=1, $
     xtitle='\lambda [A]', ytitle='Deviation [pix]'
+   djs_oplot, xrange, [0,0]
    errplot, lambda, mnarr-sgarr, mnarr+sgarr
 
    xyouts, 0.95, 0., systime(), /normal, align=1 ; , charsize=0.5
