@@ -67,6 +67,9 @@ YANNY_READ: Make use of Hogg's procedure HOGG_STRSPLIT, which should be more
            This should save a huge amount of time when reading large files,
            since we used to concatenate structures with a=[a,b] every time
            a new line was read.
+           Add support for compressed files, with file names ending with
+           either '.gz' or '.Z'.  This is somewhat complicated by the fact
+           that we need to start by getting the number of lines in the file.
 YANNY_READONE: New proc; wrapper for YANNY_READ.
 evilmake: Add "Darwin" (Mac OS X) as a possible platform.
            Export F77=g77 for the platform.
