@@ -6,7 +6,8 @@
 ;   Routine for plotting a single fiber from Princeton-1D spectro outputs
 ;
 ; CALLING SEQUENCE:
-;   plotspec, plate, [ fiberid, mjd=, znum=, nsmooth=, psfile=, _EXTRA= ]
+;   plotspec, plate, [ fiberid, mjd=, znum=, nsmooth=, psfile=, $
+;    /netimage, _EXTRA= ]
 ;
 ; INPUTS:
 ;   plate      - Plate number
@@ -25,6 +26,11 @@
 ;                you simply set this as a flag, e.g. with /PSFILE, then the
 ;                default file name is spec-pppp-mmmmm-fff.ps,
 ;                where pppp=plate number, mmmmm=MJD, fff=fiber ID.
+;   netimage   - If set, then launch a Netscape browser with the object
+;                image from Steve Kent's web site.  This only works if
+;                the trimmed tsObj files are available in the directory
+;                $SPECTRO_DATA/plates, and Netscape is running and has
+;                permissions at the site "http://sdsslnx.fnal.gov:8015".
 ;   _EXTRA     - Kewords for SPLOT, such as XRANGE, YRANGE, THICK.
 ;
 ; OUTPUTS:
@@ -82,7 +88,7 @@
 ;------------------------------------------------------------------------------
 pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
  psfile=psfile, xrange=passxr, yrange=passyr, noerase=noerase, $
- _EXTRA=KeywordsForSplot
+ netimage=netimage, EXTRA=KeywordsForSplot
 
    cspeed = 2.99792458e5
 
@@ -205,17 +211,32 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
         charsize=csize, color=textcolor
    endif
 
+   if (keyword_set(netimage)) then begin
+      readspec, plate, fiberid, mjd=mjd, tsobj=tsobj
+      if (keyword_set(tsobj)) then begin
+         netstring = 'http://sdsslnx.fnal.gov:8015/template/tsSingle.tml?run=' $
+          + strtrim(string(tsobj.run),2) $
+          + '&camcol=' + strtrim(string(tsobj.camcol),2) $
+          + '&field=' + strtrim(string(tsobj.field),2) $
+          + '&row=' + strtrim(string(long(tsobj.objc_rowc)),2) $
+          + '&col=' + strtrim(string(long(tsobj.objc_colc)),2)
+         spawn, '\netscape -remote "openURL(' + netstring + ')"'
+      endif else begin
+         print, 'WARNING: tsObj file not found for plate ', plate
+      endelse
+   endif
+
    return
 end
 ;------------------------------------------------------------------------------
 pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
  psfile=psfile, xrange=xrange, yrange=yrange, noerase=noerase, $
- _EXTRA=KeywordsForSplot
+ netimage=netimage, _EXTRA=KeywordsForSplot
 
    if (n_params() LT 1) then begin
       print, 'Syntax - plotspec, plate, [ fiberid, mjd=, znum=, nsmooth=, $'
       print, '         psfile=, xrange=, yrange=, noerase=, $'
-      print, '         _EXTRA=KeywordsForSplot'
+      print, '         /netimage, _EXTRA=KeywordsForSplot'
       return
    endif
 
@@ -267,7 +288,8 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
 
       plotspec1, plate, fiberid[ifiber], mjd=mjd, znum=znum, $
        nsmooth=nsmooth, psfile=psfile, $
-       xrange=xrange, yrange=yrange, noerase=noerase, _EXTRA=KeywordsForSplot
+       xrange=xrange, yrange=yrange, noerase=noerase, netimage=netimage, $
+       _EXTRA=KeywordsForSplot
 
       if (keyword_set(psfile)) then begin
          if (NOT keyword_set(q_onefile) OR ifiber EQ nfiber-1) then dfpsclose
