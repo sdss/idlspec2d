@@ -262,6 +262,19 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
 
    endfor
 
+   !p.multi = 0
+
+   if keyword_set(synthmag) then begin
+
+     plot, [14,22], [14,22], xchars=xchars, ychars=ychars, $
+       xtitle='Fiber Magnitude', ytitle='Synthetic Magnitude', /yno
+
+     djs_oplot, plugc.mag[1], synthmag[0,iobj], color='blue', ps=4,symsize=0.3
+     djs_oplot, plugc.mag[2], synthmag[1,iobj], color='green',ps=4,symsize=0.3
+     djs_oplot, plugc.mag[3], synthmag[2,iobj], color='red', ps=4, symsize=0.3
+
+   endif
+
    !p.multi  = oldmulti
 
    ;----------
