@@ -160,7 +160,6 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay
 
    allseq.name[icams] = objname
 
-
    j = where(allseq.name[icams])
    if (j[0] EQ -1) then begin
       splog, 'ABORT: No files on disk for plan file ' + thisplan
@@ -174,7 +173,7 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay
    objname = (allseq.name[icams])[j]
 
    spflux, djs_filepath(objname, root_dir=extractdir), $
-      fcalibprefix, outdir=combinedir, adderr=adderr
+    fcalibprefix, outdir=combinedir, adderr=adderr
 
    ;----------
    ; Close plot file - S/N plots are then put in the PLOTSNFILE file.
@@ -209,14 +208,16 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay
    ;----------
    ; Co-add the fluxed exposures
 
-   cd, combinedir, current=old_dir
+   if (keyword_set(combinedir)) then $
+    cd, combinedir, current=old_dir
 
    spcoadd_frames, djs_filepath(sciname, root_dir=extractdir), $
     combinefile, mjd=thismjd, $
     fcalibprefix=fcalibprefix, adderr=adderr, docams=docams, $
     plotsnfile=plotsnfile
 
-   cd, old_dir
+   if (keyword_set(combinedir)) then $
+    cd, old_dir
 
    heap_gc   ; garbage collection
 
@@ -225,12 +226,11 @@ pro spcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay
    splog, 'Successful completion of SPCOMBINE at ', systime()
 
    ;----------
-   ; Close log files
+   ; Close log files and change to original directory
 
    if (keyword_set(logfile)) then splog, /close
-
-   ; Change back to original directory
    cd, origdir
+
    return
 end
 ;------------------------------------------------------------------------------
