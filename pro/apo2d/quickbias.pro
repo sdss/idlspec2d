@@ -25,6 +25,11 @@ function quickbias, biasname
    ptiles = biasimg[ isort[ngood*lindgen(ntile)/ntile] ]
 
    ;----------
+   ; Add the 100-th percentile as the maximum unmasked value
+
+   ptiles = [ptiles, biasimg[isort[ngood-1]]]
+
+   ;----------
    ; Return a structure with the percentiles
 
    rstruct = create_struct('PERCENTILE', ptiles)
