@@ -49,11 +49,18 @@ QUICKEXTRACT: Apply a work-around to the apparent change in PHOTO fiber-mags,
         which to evaluate the S/N from:
           mag=20.20 -> 20.33 in blue
           mag=19.90 -> 20.06 in red
+SDSSPROC: Compute the standard deviation in the bias region again,
+        but using a weaker 5-sigma clipping.  This is done solely
+        for the purpose of identifying any electronics problems,
+        such as that on the left half of r2 on MJD 51779.
+        Trigger a warning message if above 10 ADU.
+        This addresses PR #3700.
 SPREDUCE1D: Add the "UNPLUGGED" value to the ZWARNING flag.
         Add the fields SPECTROFLUX,SPECTROSYNTHFLUX,SPECTROSKYFLUX
         which are the same as the COUNTS* fields but in nanomaggies
         instead of maggies, which are the same units as our imaging outputs.
 
+doc/spectroSOS.html: Add the warning message about "Std. dev. in bias region".
 etc/atmdisp_vec_am1.1.see2.0.fit - Tremonti's atmos. dispersion corrrection?
 etc/atmdisp_vec_am1.2.see2.0.fit - Tremonti's atmos. dispersion corrrection?
 etc/atmdisp_vec_am1.3.see2.0.fit - Tremonti's atmos. dispersion corrrection?
@@ -316,7 +323,7 @@ UNDO_SMEAR: Create correction vectors for 1 plate which can be used to
            remove the the effects of "smear" from the spectra.
 ZEROPT_COR: Compute a zeropoint correction to the flux calibration.
 
-Eaporsync_alllog.sh: New shell script for copying all of the log files
+aporsync_alllog.sh: New shell script for copying all of the log files
            from sdsshost.apo:/astrolog/$MJD to the sos.apo machine.
            This will be done once per day at 7:45.  This rsync must
            follow symbolic links on sdsshost.apo, since it now looks
