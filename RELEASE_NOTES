@@ -71,6 +71,10 @@ SPCOMBINE: Set default value of MINSN2 to 0.2 instead of 0.0.  This is a
            possible result from running FLUXCORR_NEW where the signal is
            so low that we can't compute the flux-correction vectors w.r.t.
            the smear exposure.
+SPECLINEFIT: First calling script for line-fitting code, modelled after
+           SPREDUCE1D.  This can be stand-alone, or called at the end
+           of SPREDUCE1D.  For the time being, only do these fits for
+           objects of type GALAXY.
 SPREDUCE1D: Set the ZWARNING=8 flag (synthetic spectrum is negative) only
            for stars, not for QSO's any more since we use several eigen-
            components to fit QSO's now, nor for CV stars for the same reason.
@@ -79,6 +83,7 @@ SPREDUCE1D: Set the ZWARNING=8 flag (synthetic spectrum is negative) only
            Make consistent with changes to VDISPFIT.
            Add CHI68P to output structure, for the 68-th percentile value
            of abs(chi).
+           Call SPECLINEFIT at the end of this proc.
 TRACE320CRUDE: Threshold to set 'BADTRACE' is now 45% bad pixels, whereas
            it used to be 20%.
 VDISPFIT: Option to return the best fit with YFIT keyword.
