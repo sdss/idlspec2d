@@ -93,16 +93,19 @@ function skyline_dispersion, flux, fluxivar, xcen, iskies, dispset
    ;----------
    ; Extract sky lines from the [NPIX,NTRACE] image, measuring the
    ; wavelength sigmas during extraction for every fiber (sky and non-sky).
-   ; SKYLINEFLUX = [NLINE,NSKY]
-   ; SKYLINEIVAR = [NLINE,NSKY]
+   ; SKYLINEFLUX = [NFIBER,NLINE]
+   ; SKYLINEIVAR = [NFIBER,NLINE]
 
    extract_image, flux, fluxivar*skymask, xsky, transpose(arcwidth), $
-    yrow=iskies, skylineflux, skylineivar, ansimage=ansimage, wfixed=[1,1], $
+    skylineflux, skylineivar, ansimage=ansimage, wfixed=[1,1], $
     highrej=10, lowrej=10, relative=1, npoly=5, proftype=1
 
    ;----------
    ; Compare the width terms for arcs and sky lines in only the sky fibers
-   ; GMASK = [NLINE,NSKY]
+   ; GMASK    = [NLINE,NFIBER]
+   ; SKYGMASK = [NLINE,NFIBER] --> Same as above, but nonzero only for skies
+   ; ARCWIDTH = [NLINE,NFIBER]
+   ; SKYWIDTH = [NLINE,NFIBER]
 
    gmask = transpose(skylineivar) GT 0 AND transpose(skylineflux) GT 0
 
@@ -110,15 +113,19 @@ function skyline_dispersion, flux, fluxivar, xcen, iskies, dispset
     / (transpose(skylineflux) * gmask + (1-gmask)) )
    quad_diff = skywidth^2 - arcwidth^2
 
+   skygmask = 0 * gmask
+   skygmask[*,iskies] = gmask[*,iskies]
+
    ;----------
    ; Log the differences between the arc and sky-line widths for each line
+   ; (only using sky fibers).
 
    for iline=0, nline-1 do begin
-      igood = where(gmask[iline,*] GT 0, ngood)
+      igood = where(skygmask[iline,iskies] GT 0, ngood)
       if (ngood GT 0) then begin
-         djs_iterstat, arcwidth[igood,iline], median=med1, sigma=sig1
-         djs_iterstat, skywidth[igood,iline], median=med2, sigma=sig2
-         djs_iterstat, quad_diff[igood,iline], median=med3, sigma=sig3
+         djs_iterstat, arcwidth[iline,igood], median=med1, sigma=sig1
+         djs_iterstat, skywidth[iline,igood], median=med2, sigma=sig2
+         djs_iterstat, quad_diff[iline,igood], median=med3, sigma=sig3
          splog, 'Line #', iline, ' median sigma(arc)=', med1, $
           ' sigma(sky)=', med2
          splog, 'Line #', iline, ' sigma^2(add)=', med3, ' +/- ', sig3
@@ -127,9 +134,9 @@ function skyline_dispersion, flux, fluxivar, xcen, iskies, dispset
 
    ;----------
    ; Measure the median value of the quadrature difference between
-   ; the sky-line widths and arc-line widths.
+   ; the sky-line widths and arc-line widths (only using sky fibers).
 
-   igood = where(gmask GT 0, ngood)
+   igood = where(skygmask GT 0, ngood)
    if (ngood GT 0) then begin
       djs_iterstat, quad_diff[igood], median=addsig2, sigma=addsig2_err
       splog, 'Flexure sigma^2(add) = ', addsig2, ' +/- ', addsig2_err
