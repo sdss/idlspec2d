@@ -13,7 +13,7 @@ pro pca_cvstar
    outfile = 'spEigenCVstar-' + mjdstr + '.fits'
    plotfile = 'spEigenCVstar-' + mjdstr + '.ps'
 
-   dfpsplot, plotfile, /color
+   dfpsplot, plotfile, /color, /landscape
    colorvec = ['default', 'red', 'green', 'blue']
 
    ;----------

@@ -13,7 +13,7 @@ pro pca_star, filename
    outfile = 'spEigenStar-' + mjdstr + '.fits'
    plotfile = 'spEigenStar-' + mjdstr + '.ps'
 
-   dfpsplot, plotfile, /color
+   dfpsplot, plotfile, /color, /landscape
    colorvec = ['default', 'red', 'green', 'blue']
 
    ;----------

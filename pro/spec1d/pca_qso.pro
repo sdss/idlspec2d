@@ -13,7 +13,7 @@ pro pca_qso
    outfile = 'spEigenQSO-' + mjdstr + '.fits'
    plotfile = 'spEigenQSO-' + mjdstr + '.ps'
 
-   dfpsplot, plotfile, /color
+   dfpsplot, plotfile, /color, /landscape
    colorvec = ['default', 'red', 'green', 'blue']
 
    ;----------
