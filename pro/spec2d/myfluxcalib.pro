@@ -1,3 +1,67 @@
+;+
+; NAME:
+;   myfluxcalib
+;
+; PURPOSE:
+;   Solve for flux-calibration vectors, one for each camera (blue and red)
+;   on a single spectrograph.
+;
+; CALLING SEQUENCE:
+;   myfluxcalib, filename, calibfile, colors=, adderr=
+;
+; INPUTS:
+;   filename   - Name(s) of input file names, typically one blue and
+;                one red file.  The pluggings need not be the same,
+;                but there must be at least one good SPECTROPHOTO or
+;                REDDEN standard in common.
+;   calibfile  - Name(s) of output calibration files, one per FILENAME
+;
+; REQUIRED KEYWORDS:
+;   colors     - The name(s) of each camera, 'b' for blue or 'r' for red;
+;                typically, we pass both with COLORS=['b','r']
+;
+; OPTIONAL INPUTS:
+;   adderr     - Fractional errors to add in quadrature to measured errors
+;                at each point in each spectrum; a good value is 0.03 for 3%.
+;
+; OUTPUT:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;
+; BUGS:
+;
+; PROCEDURES CALLED:
+;   bspline_iterfit()
+;   bspline_valu()
+;   correct_dlam
+;   divideflat
+;   djs_diff_angle()
+;   djs_filepath()
+;   djs_maskinterp()
+;   djs_median()
+;   djs_oplot
+;   djs_plot
+;   fibermask_bits()
+;   fileandpath()
+;   mrdfits()
+;   mwrfits
+;   pca_solve()
+;   readcol
+;   splog
+;   sxaddpar
+;   sxpar()
+;   traceset2xy
+;
+; INTERNAL SUPPORT ROUTINES
+;   fluxfit()
+;   qgoodfiber()
+;   resortplugmap()
+;
+; REVISION HISTORY:
+;   08-Sep-2000  Written by D. Schlegel & S. Burles
+;-
 ;------------------------------------------------------------------------------
 ; Re-sort the 2nd plug-map to match that of the first file, so
 ; that PLUGMAP2[INDX] = PLUGMAP1
@@ -17,6 +81,7 @@ function resortplugmap, plugmap1, plugmap2
 end
 
 ;------------------------------------------------------------------------------
+; Actually to the fit of the observed spectrum to that of an F8 star.
 function fluxfit, loglam, objflux, objivar, color=color, refmag=refmag
 
    wave = 10^loglam
@@ -32,20 +97,20 @@ function fluxfit, loglam, objflux, objivar, color=color, refmag=refmag
 
    ;----------
    ; Scale the flux
-;       at v=0, flux at 5556A is 956 photons/cm^2/A/s
-;               = 3.52e-9 ergs/cm^2/s/A
-;       scale to r', with 10^(-r'/2.5)
-;       and return in units to 1e-17 ergs/cm/s/A
-;       so factor in exponent is 10^((21.37 - r')/2.5)
-;
-;       AB magnitude, the scaling this assumes
-;       the AB magnitude of BD+17 is 9.4 at 5560
-;
-;       we then use f_nu = 10^-0.4*(AB+48.6)
-;       and then f_lambda = f_nu * c / (lambda)^2
-; 
-;       c is 3.0e18 Ang/s
-;       lambda is in Ang
+   ;       at v=0, flux at 5556A is 956 photons/cm^2/A/s
+   ;               = 3.52e-9 ergs/cm^2/s/A
+   ;       scale to r', with 10^(-r'/2.5)
+   ;       and return in units to 1e-17 ergs/cm/s/A
+   ;       so factor in exponent is 10^((21.37 - r')/2.5)
+   ;
+   ;       AB magnitude, the scaling this assumes
+   ;       the AB magnitude of BD+17 is 9.4 at 5560
+   ;
+   ;       we then use f_nu = 10^-0.4*(AB+48.6)
+   ;       and then f_lambda = f_nu * c / (lambda)^2
+   ; 
+   ;       c is 3.0e18 Ang/s
+   ;       lambda is in Ang
 
    scalefac = 10.^((21.37 - refmag) / 2.5)
    f8flux = f8flux * scalefac
@@ -100,14 +165,14 @@ function fluxfit, loglam, objflux, objivar, color=color, refmag=refmag
    djs_plot, [min(wave)-100,max(wave)+100], [0,1.1*max(yplot)], /nodata, $
     /xstyle, /ystyle, $
     xtitle='\lambda [A]', ytitle='Counts / (10^{-17}erg/cm/s/Ang)', $
-    title='Spectro-Photo PCA for ' + color + '-band'
-   djs_oplot, 10^loglam, fitflux
+    title='Spectro-Photo PCA for ' + color + '-camera'
    ymid = total(0.5 * !y.crange)
    for i=0, n_elements(absmin)-1 do begin
-      djs_oplot, [absmin[i],absmin[i]], !y.crange, linestyle=2, color='blue'
-      djs_oplot, [absmax[i],absmax[i]], !y.crange, linestyle=2, color='blue'
+      djs_oplot, [absmin[i],absmin[i]], !y.crange, color='blue'
+      djs_oplot, [absmax[i],absmax[i]], !y.crange, color='blue'
       djs_oplot, [absmin[i],absmax[i]], [ymid,ymid], color='blue'
    endfor
+   djs_oplot, 10^loglam, fitflux
    djs_oplot, wave, yplot, color='red'
    djs_oplot, 10^allbkpts, bspline_valu(allbkpts,sset), psym=4, color='red'
 
@@ -127,12 +192,6 @@ function qgoodfiber, fibermask
 end
 
 ;------------------------------------------------------------------------------
-;   filename   - Name(s) of input file names, typically one blue and
-;                one red file.  The pluggings need not be the same,
-;                but there must be at least one good SPECTROPHOTO or
-;                REDDEN standard in common.
-;   calibfile  - Name(s) of output calibration files, one per FILENAME
-
 pro myfluxcalib, filename, calibfile, colors=colors, adderr=adderr
 
    dloglam = 1.0d-4 ; ???
@@ -149,7 +208,7 @@ pro myfluxcalib, filename, calibfile, colors=colors, adderr=adderr
    bd17color = bd17mag[0:3] - bd17mag[1:4]
 
    ;----------
-   ; Read the plug maps and masks and decide which star to use
+   ; Read the plug maps and masks and decide which star(s) to use
 
    for ifile=0, nfile-1 do begin
       thismask = mrdfits(filename[ifile],2)
@@ -240,12 +299,12 @@ objmask = 0 ; Free memory
       cc = fileandpath(calibfile[ifile], path=combinedir)
  
       corrset = mrdfits($
-        djs_filepath('spFluxcorr-'+expstr+'-'+spectroid+'.fits', $
-         root_dir=combinedir), 1)
+       djs_filepath('spFluxcorr-'+expstr+'-'+spectroid+'.fits', $
+        root_dir=combinedir), 1)
       traceset2xy, corrset, loglam, corrimg
 
       divideflat, objflux, objivar, 1.0/corrimg, $
-            minval=0.1/median(corrimg)
+       minval=0.1/median(corrimg)
 
       ;----------
       ; Re-bin the spectro-photo stars to the same wavelength mapping
@@ -289,9 +348,60 @@ objmask = 0 ; Free memory
 
    npix = (size(allflux,/dimens))[0]
 
+   ;-------------------------
+   ; With so few spectra for a PCA solution, try to reject some of the
+   ; most deviant points first.  Do this by re-normalizing all the spectra
+   ; to the same mean, and replace the discrepant points with the mean
+   ; of the good points (and mask them).
+
+   ; Find the normalization factor for each spectrum, MULTFAC.
+   multfac = fltarr(nphoto)
+   for iobj=0, nphoto-1 do $
+    multfac[iobj] = $
+     median( djs_median(allflux[0:nnew[0]-1,iobj], $
+      width=99, boundary='reflect')) + $
+     median( djs_median(allflux[nnew[0]:npix-1,iobj], $
+      width=99, boundary='reflect'))
+
+   ; At each wavelength, find the median normalized flux value.
+   medvec = fltarr(npix)
+   for ipix=0, npix-1 do begin
+      normflux = allflux[ipix,*] / multfac
+;      normivar = allivar[ipix,*] * multfac^2
+      igood = where(allivar[ipix,*] NE 0, ngood)
+      if (ngood EQ 0) then medvec[ipix] = median([normflux]) $
+       else medvec[ipix] = median([normflux[igood]])
+   endfor
+
+   ; Now for each spectrum, mask deviant points.
+   ; Look for locally deviant points in the ratio of each object spectrum
+   ; to the median spectrum.  This allows there to be a different color
+   ; for each object, showing up as a slope in that ratio.
+   ; Only reject points that are locally deviant by more than 50%.
+   nreject = 0
+   for iobj=0, nphoto-1 do begin
+      ratvec = allflux[*,iobj] / multfac[iobj] - medvec
+      ratvec[0:nnew[0]-1] = ratvec[0:nnew[0]-1] $
+       - djs_median(ratvec[0:nnew[0]-1], $
+       width=99, boundary='reflect')
+      ratvec[nnew[0]:npix-1] = ratvec[nnew[0]:npix-1] $
+       - djs_median(ratvec[nnew[0]:npix-1], $
+       width=99, boundary='reflect')
+      ibad = where(abs(ratvec) GT 0.50 * medvec, nbad) ; <-- 50% threshhold
+      ; Mask the deviant points and replace with the median value
+      if (nbad GT 0) then begin
+         allflux[ibad,iobj] = medvec[ibad] * multfac[iobj]
+         allivar[ibad,iobj] = 0
+         nreject = nreject + nbad
+      endif
+   endfor
+   splog, 'Rejected points from median spectrum = ', nreject
+
+   ; Use a large number of iterations below to be sure that we converge
+   ; in de-weighting very bad points.
    pcaflux = pca_solve(allflux, allivar, $
-    niter=10, nkeep=1, usemask=usemask, eigenval=eigenval, acoeff=acoeff, $
-    maxiter=3, upper=5, lower=5, maxrej=ceil(0.01*npix), $
+    niter=30, nkeep=1, usemask=usemask, eigenval=eigenval, acoeff=acoeff, $
+    maxiter=5, upper=5, lower=5, maxrej=ceil(0.01*npix), $
     groupsize=ceil(npix/5.))
 
    maxmask = max(usemask)
@@ -306,7 +416,9 @@ objmask = 0 ; Free memory
 
    refmag = plugmap[iphoto].mag[2] + 2.5 * alog10(acoeff)
    splog, 'Estimates of spectro-photo PCA r-mag = ', refmag
-   refmag = median([refmag])
+   splog, 'Dispersion of spectro-photo PCA r-mag = ', $
+    (nphoto EQ 1 ? 0 : stdev(refmag))
+   refmag = median([refmag], /even)
 
    ;----------
    ; Set up for QA plots
@@ -327,6 +439,8 @@ objmask = 0 ; Free memory
       indx = lindgen(i2-i1+1) + i1
       indx = indx[ where(usemask[indx] GE minuse) ]
 
+      ; Compare this mean (PCA) spectrum to an F star spectrum,
+      ; w/out using any errors but allowing some rejection.
       calibset = fluxfit(allloglam[indx], pcaflux[indx], $
        color=colors[ifile], refmag=refmag)
 
