@@ -12,7 +12,7 @@
 ;    combinedir=, bestexpnum= ]
 ;
 ; INPUTS:
-;   spframes       - Name(s) of files to combine (written by SPREDUCE)
+;   spframes       - Name(s) of spFrame files (written by SPREDUCE)
 ;   outputname     - Output file name
 ;
 ; OPTIONAL KEYWORDS:
@@ -45,14 +45,9 @@
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
-;   This routine can combine data from multiple (different) plug maps.
-;   Objects are matched based upon their positions agreeing to 2 arc sec.
-;
 ;   All input files must have the same number of pixels per spectrum,
 ;   i.e. 2048 wavelength samplings, although those wavelengths can
 ;   be different.
-;
-;   The input files (FILENAMES) have their pixelmasks modified by this routine.
 ;
 ;   Flux-correction files are also read in, where they are assumed to
 ;   have the name spFluxcorr-EEEEEEEE-S.fits, where EEEEEEEE is the exposure
@@ -61,7 +56,10 @@
 ; EXAMPLES:
 ;
 ; BUGS:
-;   Should only apodize starting with the first/last good pixel of a spectrum.
+;   This routine used to combine data from multiple (different) plug maps.
+;   Objects are matched based upon their positions agreeing to 2 arc sec.
+;   This is *not* true any longer, especially when applying the
+;   flux-distortion solutions.
 ;
 ; PROCEDURES CALLED:
 ;   combine1fiber
@@ -69,6 +67,7 @@
 ;   divideflat
 ;   djs_diff_angle()
 ;   fiber_rollcall
+;   flux_distortion()
 ;   idlspec2d_version()
 ;   mkhdr
 ;   mrdfits()
@@ -242,7 +241,7 @@ pro spcoadd_v5, spframes, outputname, $
       aterm = mrdfits(thisfile, 0, corrhdr, /silent)
       bterm = mrdfits(thisfile, 1)
       invertcorr = 1. / aterm
-      minval = 0.05 * invertcorr
+      minval = 0.05 / mean(aterm)
       divideflat, tempflux, invvar=tempivar, invertcorr, minval=minval
       tempflux = tempflux + bterm
       divideflat, tempsky, invertcorr, minval=minval
@@ -420,11 +419,32 @@ pro spcoadd_v5, spframes, outputname, $
    endfor
 
    ;---------------------------------------------------------------------------
+   ; FLUX DISTORTION IMAGE
+   ;---------------------------------------------------------------------------
+
+   ; Compute the flux distortion image
+   corrimg = flux_distortion(finalflux, finalivar, finalandmask, finalormask, $
+    plugmap=finalplugmap, loglam=finalwave)
+
+   ; Plot S/N and throughput **before** this distortion-correction.
+   platesn, finalflux, finalivar, finalandmask, finalplugmap, finalwave, $
+    hdr=hdr, plotfile=djs_filepath(plotsnfile+'.orig', root_dir=combinedir)
+
+   ; Apply this flux-distortion to the final, co-added fluxes.
+   invcorrimg = 1. / corrimg
+   minicorrval = 0.05 / mean(corrimg)
+   divideflat, finalflux, invvar=finalivar, invcorrimg, minval=minicorrval
+
+   ; Plot S/N and throughput **after** this distortion-correction.
+   ; (This over-writes header cards written in the first call.)
+   platesn, finalflux, finalivar, finalandmask, finalplugmap, finalwave, $
+    hdr=hdr, plotfile=djs_filepath(plotsnfile, root_dir=combinedir)
+
+   ;---------------------------------------------------------------------------
    ; Write the corrected spCFrame files.
    ; All the fluxes + their errors are calibrated.
    ; The wavelengths + dispersions are converted from trace sets to 2D images.
    ; The pixel mask has the COMBINEREJ bit set.
-; The plug map should have the modified magnitudes !!!???
    ;---------------------------------------------------------------------------
 
    for ifile=0, nfiles-1 do begin
@@ -432,13 +452,26 @@ pro spcoadd_v5, spframes, outputname, $
       thisfile = djs_filepath(repstr(thisfile,'spFrame','spCFrame'), $
        root_dir=thispath)
       splog, 'Writing file #', ifile, ': ', thisfile
-      indx = where(filenum EQ ifile)
+      indx = where(filenum EQ ifile, nthis)
 
       hdr = *hdrarr[ifile]
       sxaddpar, hdr, 'BUNIT', '1E-17 erg/cm^2/s/Ang'
 
-      mwrfits, flux[*,indx], thisfile, hdr, /create
-      mwrfits, fluxivar[*,indx], thisfile
+      ; Apply the flux-distortion image to each individual frame, by
+      ; interpolating off the full wavelength-scale distortion image
+      ; onto the wavelength mapping of each individual exposure+CCD.
+      for i=0L, nthis-1 do begin
+         thisflux1 = flux[*,indx[i]]
+         thisivar1 = fluxivar[*,indx[i]]
+         j = plugmap[indx[i]].fiberid - 1
+         thisicorr = interpol(invcorrimg[*,j], finalwave, wave[*,indx[i]])
+         divideflat, thisflux1, invvar=thisivar1, thisicorr, minval=minicorrval
+         flux[*,indx[i]] = thisflux1
+         fluxivar[*,indx[i]] = thisivar1
+      endfor
+
+      mwrfits, thisflux, thisfile, hdr, /create
+      mwrfits, thisivar, thisfile
       mwrfits, pixelmask[*,indx], thisfile
       mwrfits, wave[*,indx], thisfile
       mwrfits, dispersion[*,indx], thisfile
@@ -457,23 +490,18 @@ pro spcoadd_v5, spframes, outputname, $
    skyflux = 0
 
    ;---------------------------------------------------------------------------
-   ; Generate S/N plots
+   ; Create the output header
    ;---------------------------------------------------------------------------
 
-   ; Modify the 1st file's header to use for the combined plate header.
-
-   hdr = *hdrarr[0]
-
-   platesn, finalflux, finalivar, finalandmask, finalplugmap, finalwave, $
-    hdr=hdr, plotfile=djs_filepath(plotsnfile, root_dir=combinedir)
-
+   ;----------
    ; Print roll call of bad fibers and bad pixels.
 
    fiber_rollcall, finalandmask, finalwave
 
-   ;---------------------------------------------------------------------------
-   ; Create the output header
-   ;---------------------------------------------------------------------------
+   ;----------
+   ; Modify the 1st file's header to use for the combined plate header.
+
+   hdr = *hdrarr[0]
 
    ;----------
    ; Remove header cards that were specific to this first exposure
@@ -639,6 +667,11 @@ pro spcoadd_v5, spframes, outputname, $
    ;---------------------------------------------------------------------------
    ; Write combined output file
    ;---------------------------------------------------------------------------
+
+   ; First write the file with the flux distortion vectors
+   distortfile = djs_filepath(repstr(outputname,'spPlate','spFluxdistort'), $
+    root_dir=combinedir)
+   mwrfits, corrimg, distortfile, hdr, /create
 
    fulloutname = djs_filepath(outputname, root_dir=combinedir)
 
