@@ -146,6 +146,7 @@ pro/fplan/spplancomb.pro -text
 pro/makefile.old -text
 pro/plate/README -text
 pro/plate/README.OBSERVE -text
+pro/plate/brightcmag.pro -text
 pro/plate/design_multiplate.pro -text
 pro/plate/design_n1817.pro -text
 pro/plate/design_n752.pro -text
