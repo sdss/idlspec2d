@@ -223,6 +223,24 @@ These duplicates can be identified with OBJTYPE="QA".  That OBJTYPE
 column exists either in HDU #5 of the <A HREF="#datamodel">spPlate files</A>,
 or in a column by that name in the <A HREF="#summary">spAll summary files</A>.
 
+<P>
+Note that the above statements are almost but not exactly true.
+There were some target-selection errors that resulted in duplicated
+targets not labelled as "QA" (notably in runs 94 and 125; see
+<A HREF="http://www.astro.princeton.edu:81/sdss-spectro/msg.710.html">sdss-spectro/710</A>).
+The following IDL commands can be used to select a truly unique set
+of objects:
+<DL><DD><PRE>
+  IDL> spall = mrdfits('spAll-qsurvey.fits',1)
+  IDL> spall = spall[where(strmatch(spall.objtype, 'QA*') EQ 0)]
+  IDL> junk = djs_angle_group(spall.plug_ra, spall.plug_dec, 1./3600, $
+       gindx=gindx, gstart=gstart, gcount=gcount)
+  IDL> spall = spall[gindx[gstart]]
+</PRE></DD></DL>
+The above removes "QA" objects, then selects the first instance of any
+remaining duplicates.  The procedure DJS_ANGLE_GROUP() is not speedy,
+and may take about an hour.
+
 <H4><A NAME="get_version">What Version of the Code Was Used?</A></H4>
 
 <P>
@@ -1015,8 +1033,6 @@ Yes, the data are stored using <B>vacuum</B> wavelengths.  This makes sense
 for quasologists.  But most optical astronomers know the wavelengths of
 transitions as measured at S.T.P., which is how the CRC lists them for
 any transitions redward of 2000 Angstroms.
-Note that the wavelengths are also corrected to barycentric at the mid-point
-of each exposure (using TAI-BEG + 0.5 * EXPTIME from the header).
 
 <P>
 The IAU standard for conversion from air to vacuum wavelengths is given
@@ -1041,6 +1057,10 @@ Below, I've listed the vacuum wavelength of some transitions:
  6730.82   6732.68   [S II]
 </PRE>
 
+<P>
+Note that the wavelengths are also shifted such that measured velocities
+will be relative to barycentric at the mid-point
+of each 15-minute exposure (using TAI-BEG + 0.5 * EXPTIME from the header).
 <H2><A NAME="problems">Problems</A></H2>
 
 <H4><A NAME="problems_known">Known Problems</A></H4>
