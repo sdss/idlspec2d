@@ -26,7 +26,7 @@ do
   echo STARTAPO: Directory $dir
   echo STARTAPO: Filename $filename
   astrolog=`echo $dir | sed -n 's/\/data\/spectro/\/astrolog/p'`
-  outdir=`echo $dir | sed -n 's/spectro/spectrologs/p'`
+  outdir=`echo $dir | sed -n 's/\/spectro/\/spectro\/spectrologs/p'`
   copydir=/data/spectro/spectrologs/html/
 
 # If we don't have the output directories, make them.
