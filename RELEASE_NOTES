@@ -1,6 +1,7 @@
 
-etc/emlines.par: # The [O_II] lines were updated from Peter van Hoof's web
+etc/emlines.par: The [O_II] lines were updated from Peter van Hoof's web
            site at: http://www.pa.uky.edu/~peter/atomic/
+etc/spChunkList.par: Add chunks 28A, 71, 68A.
 
 -------------------------------------------------------------------------------
 v4_10_1 (Jun 18, 2003 idlspec2d running on IDL 5.3 - 5.5
