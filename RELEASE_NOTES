@@ -46,6 +46,10 @@ ZFITMAX: Replace call to POLY_FIT with SVDFIT such that this routine
          case that the errors were improperly computed using the re-
          write of POLY_FIT in IDL 5.4.
 
+New template files spEigenGal-52146.fits,spEigenStar-52146.fits
+based upon v4_8_1 reductions, though using the same input list of
+spectra that we've been using for ages.
+
 In idlutils, added MPFIT routines from Craig Markwardt.  These will
 be used for the redshift-finding code (specifically, FIND_NMINIMA).
 
