@@ -1,6 +1,7 @@
 
 Changes to how the SOS robot launches the rsync jobs.
-Changes to P-1D not yet fully implemented.
+Bias-subtraction now implemented (bias images in the "specflat" product).
+New set of templates for P-1D; QSO's now use 4 eigentemplates.
 
 DANVB_CONVERT,DANVB_QSOLIST: Procs for generating a list of input
             QSO's from Dan van den Berk's EDR list "plateEDR.summ"
