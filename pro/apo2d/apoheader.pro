@@ -104,6 +104,7 @@ pro apoheader, expnum
     'NE'       , $
     'HGCD'     , $
     'OBSCOMM'  , $
+    'QUALITY'  , $
 ; These are informational keywords...
     'TILEID'   , $
     'RA'       , $
