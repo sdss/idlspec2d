@@ -18,6 +18,10 @@
 ;                'chebyshev'
 ;                Default to 'legendre'
 ;   ncoeff     - Number of coefficients in fit; default to 3
+;   xmin       - Explicitly set XMIN for trace set rather than using minimum
+;                in XPOS
+;   xmax       - Explicitly set XMAX for trace set rather than using maximum
+;                in XPOS
 ;
 ; OUTPUTS:
 ;   tset       - Structure containing trace set
@@ -37,11 +41,13 @@
 ;   04-Aug-1999  Added chebyshev option (DJS).
 ;-
 ;------------------------------------------------------------------------------
-pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff
+pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff, $
+ xmin=xmin, xmax=xmax
 
    ; Need 3 parameters
    if (N_params() LT 3) then begin
-      print, 'Syntax - xy2traceset, xpos, ypos, tset, [func=func, ncoeff=ncoeff]'
+      print, 'Syntax - xy2traceset, xpos, ypos, tset, [func=func, ncoeff=ncoeff, $
+      print, ' xmin=xmin, xmax=xmax]'
       return
    endif
 
@@ -73,8 +79,10 @@ pro xy2traceset, xpos, ypos, tset, func=func, ncoeff=ncoeff
         coeff   :    fltarr(ncoeff, nTrace) $
       }
 
-      tset.xmin = min(xpos)
-      tset.xmax = max(xpos)
+      if (size(xmin,/tname) NE 'UNDEFINED') then tset.xmin = xmin $
+       else tset.xmin = min(xpos)
+      if (size(xmax,/tname) NE 'UNDEFINED') then tset.xmax = xmax $
+       else tset.xmax = max(xpos)
       xmid = 0.5 * (tset.xmin + tset.xmax)
       xrange = tset.xmax - tset.xmin
 
