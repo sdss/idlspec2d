@@ -135,6 +135,9 @@ pro skysubtract, obj, objivar, plugmap, wset, skysub, skysubivar, $
 	for i=0,nn-1 do diff67[i] = (diffr[sort(diffr[*,i]),i])[pos67]
 	for i=0,nn-1 do alphav[i] = median(rivar[*,i])
 
+   splog, 'Median sky-residual chi2 = ', median(diff67)
+   splog, 'Max sky-residual chi2 = ', max(diff67)
+
    ;---------------------------------------------------------------------------
    ; Make plots
    ; This should probably be moved to a QAPLOT file ???
