@@ -254,11 +254,14 @@ arcivar = 0
       ;----------------------
       ; Construct the "superflat" vector for this particular frame
 
-      superflat, flux, fluxivar, wset, afullbkpt, acoeff, $
+;      superflat, flux, fluxivar, wset, afullbkpt, acoeff, $
+;       fibermask=fibermask, minval=0.0, lower=lower, upper=upper
+      superflat, flux, fluxivar, wset, sset, $
        fibermask=fibermask, minval=0.0, lower=lower, upper=upper
 flux = 0
 fluxivar = 0
-      fitimg = slatec_bvalu(waveimg, afullbkpt, acoeff)
+;      fitimg = slatec_bvalu(waveimg, afullbkpt, acoeff)
+      fitimg = bspline_valu(waveimg, sset)
 
       ;----------------------
       ; Divide by the superflat image
