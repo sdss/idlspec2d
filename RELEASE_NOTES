@@ -1,3 +1,5 @@
+v4_6_1 (Feb 14, 2001)
+SPCOMBINE: Reverting to adderr=0.03 to prevent rejections in high S/N regions
 
 SKYSUBTRACT: The "fix" in the previous version didn't properly check the
              bad mask bits, and in fact could make things worse.  Now fixed.
