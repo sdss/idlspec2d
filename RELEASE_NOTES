@@ -9,6 +9,9 @@ APOHEADER: Use SDSSHEAD() instead of HEADFITS() to read the headers, such
 LOGSHEET: Do not include both uncompressed and compressed files in a listing.
            Remove the INDIR option, and add MJD and CAMERA keywords.
 PLATEMERGE: Include logic for setting the SPECPRIMARY field in the outputs.
+           Speed this up by pre-generating the exact output structure,
+           and use structure assignments rather than copy_struct_inx.
+           Exclude some tags from the output structure, spec. ROSAT*,FIRST*.
 PLOTSPEC: Some major re-organizing of the main routine to allow PLATE,MJD
            to be passed as vectors.
 READSPEC: Fix the re-sorting of the ZLINE output structure, which is
