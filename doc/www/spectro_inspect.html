@@ -61,14 +61,22 @@ There is a new product called "spinspect", which can only be checked out
 by folks who either have an account at Princeton or data access through
 the "alfred" account.
 <DL><DD><PRE>
-  bash
-  CVSROOT=spectro.princeton.edu:/usr/local/cvsprivate
-  CVS_RSH=ssh
-  cvs co spinspect
+  % bash
+  % CVSROOT=spectro.princeton.edu:/usr/local/cvsprivate
+  % CVS_RSH=ssh
+  % cvs co spinspect
 </PRE></DD></DL>
+Once you have this product in your home directory, you can update with
+other people's changes with:
+<DL><DD><PRE>
+  % cd ~/spinspect
+  % cvs update
+</PRE></DD></DL>
+
+<P>
 The template files can be found in
 <DL><DD><PRE>
-  spinspect/empty/spInspect-$plate-$mjd.par
+  spinspect/prototype/spInspect-$plate-$mjd.par
 </PRE></DD></DL>
 Once a plate has been inspected, that data is imported in files
 <DL><DD><PRE>
