@@ -22,8 +22,10 @@ pro quickwave, rawfile, arcname, flatname
      camname = strtrim(sxpar(archdr, 'CAMERAS'),2)
 
      tset = mrdfits(flatname[i],1)
+     fibermask = mrdfits(flatname[i],3)
+
      traceset2xy, tset, ycen, xcen 
- 
+
      ; boxcar extract
      flux = extract_boxcar(arcimg, xcen, radius = 3.0)
 
@@ -31,10 +33,10 @@ pro quickwave, rawfile, arcname, flatname
      fluxivar = 1.0/(abs(flux) + 10.0)
 
      fitarcimage, flux, fluxivar, xpeak, ypeak, wset, aset=aset, $
-        lampfile=lampfile, fibermask=tmp_fibmask, bestcorr=bestcorr, $
+        lampfile=lampfile, fibermask=fibermask, bestcorr=bestcorr, $
         color=color
 
-     mwrfits, wset[i], arcname[i], /create
+     if (keyword_set(wset)) then mwrfits, wset, arcname[i], /create
 
    endfor
 end

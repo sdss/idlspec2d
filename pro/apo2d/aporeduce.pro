@@ -1,7 +1,9 @@
 
-pro aporeduce, filename, indir, outdir=outdir, plugmapfile=plugmapfile
+pro aporeduce, filename, indir, outdir=outdir, plugmapfile=plugmapfile, $
+     plugdir=plugdir
 
      if (NOT keyword_set(indir)) then indir='./'
+     if (NOT keyword_set(plugdir)) then plugdir='./'
      if (NOT keyword_set(outdir)) then outdir=indir
 
      if (size(filename,/tname) NE 'STRING') then begin
@@ -46,8 +48,10 @@ pro aporeduce, filename, indir, outdir=outdir, plugmapfile=plugmapfile
      mjd = sxpar(hdr, 'MJD')
     
      if (NOT keyword_set(plugmapfile)) then $
-         plugmapfile = '/data/spectro/plugmap/plPlugMapM-'+$
-             sxpar(hdr,'NAME')+'.par'
+         plugmapfile = 'plPlugMapM-'+sxpar(hdr,'NAME')+'.par'
+     fullplugmapfile = filepath(plugmapfile, root_dir=plugdir)
+
+     plugmapexist = findfile(fullplugmapfile) NE ''
 
      flatname = filepath('tset-'+platestr+'-'+filec+'.fits', $
                              root_dir=outdir)
@@ -57,7 +61,8 @@ pro aporeduce, filename, indir, outdir=outdir, plugmapfile=plugmapfile
      arcexist = findfile(arcname) NE ''
 
      case flavor of
-       'flat' : if (NOT flatexist[0]) then quicktrace, file, flatname
+       'flat' : if (NOT flatexist[0] AND plugmapexist[0]) then $
+            quicktrace, file, flatname, fullplugmapfile
 
        'arc'  : if (flatexist[0] AND (NOT arcexist[0])) then $
                    quickwave, file, arcname, flatname
@@ -67,8 +72,8 @@ pro aporeduce, filename, indir, outdir=outdir, plugmapfile=plugmapfile
           outname = filepath('sci-'+platestr+'-'+filec+'-'+filee+'.fits',$
                 root_dir=outdir)
 
-          if (flatexist[0] AND arcexist[0] AND exptime GT 300) then $
-             quickextract, flatname, arcname, file, outname, plugmapfile
+          if (flatexist[0] AND arcexist[0] AND exptime GT 61) then $
+             quickextract, flatname, arcname, file, outname
 
           ; Now we should check to see if all 4 images have been reduced
          
