@@ -100,8 +100,8 @@ pro kurucz_match, wave, nflux, nivar, nkflux, kindx, fiber, $
   ; Use only blue side
      goodpix = where(wave gt 3850 and wave lt 5800 and nivar ne 0) 
  
-     chi2[imod] = total((nflux[goodpix] -  nkflux[goodpix,imod])^2 $
-                         * nivar[goodpix], /NAN) 
+     chi2[imod] = median((nflux[goodpix] -  nkflux[goodpix,imod])^2 $
+                         * nivar[goodpix]) 
    endfor 
   
 ;stop 
@@ -115,27 +115,26 @@ pro kurucz_match, wave, nflux, nivar, nkflux, kindx, fiber, $
    fiber.teff = kindx[chiindx].teff
    fiber.g = kindx[chiindx].g
    fiber.model_mag = kindx[chiindx].mag
- 
+
    ;--------------
    ; Plot normalized star spectra and best fit model
 
    if keyword_set(plottitle) then begin
      origpmulti = !P.MULTI
      !P.MULTI = [0, 1, 2]
-     gpix = where(wave gt 3810 and wave lt 9190)
-     djs_plot, wave[gpix], nflux[gpix], psym=10, xr=[3800,5000], $
-               yr=[0,1.5], /xs, title = plottitle, $
+     djs_plot, wave, nflux, psym=10, xr=[3800,5000], $
+               yr=[0,1.3], /xs, /ys, title = plottitle, $
                xtitle = 'Wavelength (A)', ytitle = 'Normalized Flux'
-     djs_oplot, wave[gpix], nkflux[gpix,chiindx], color='red', psym=10
+     djs_oplot, wave, nkflux[*,chiindx], color='red', psym=10
 
-     xyouts, 3850, 1.35, 'Fiber: ' + string(fiber.fiberid, format='(I3)')
-     xyouts, 4050, 1.35, 'S/N = ' + string(fiber.sn, format='(F4.1)')
-     xyouts, 4300, 1.35, 'Model: ' + fiber.model
-     xyouts, 4750, 1.35, 'Chi2 = ' + string(fiber.chi2, format='(F6.2)')
+     xyouts, 3850, 1.2, 'Fiber: ' + string(fiber.fiberid, format='(I3)')
+     xyouts, 4050, 1.2, 'S/N = ' + string(fiber.sn, format='(F4.1)')
+     xyouts, 4300, 1.2, 'Model: ' + fiber.model
+     xyouts, 4750, 1.2, 'Chi2 = ' + string(fiber.chi2, format='(F6.2)')
 
-     djs_plot, wave[gpix], nflux[gpix], psym=10, xr=[5000,6800], yr=[0,1.5], $
-               /xs, xtitle = 'Wavelength (A)', ytitle = 'Normalized Flux'
-     djs_oplot, wave[gpix], nkflux[gpix,chiindx], color='red', psym=10
+     djs_plot, wave, nflux, psym=10, xr=[5000,6200], yr=[0,1.3], $
+               /xs, /ys, xtitle = 'Wavelength (A)', ytitle = 'Normalized Flux'
+     djs_oplot, wave, nkflux[*,chiindx], color='red', psym=10
 
      !P.MULTI = origpmulti
    endif
