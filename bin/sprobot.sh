@@ -138,11 +138,13 @@ done
 # If $topoutdir is not defined, then exit.
 
 if [ -z "$topoutdir" ] ; then
+   echo "SPROBOT: TOPOUTDIR must be set!"
    exit
 fi
 
 # The following would exit if no new data
 if [ -z "$mjdlist" ] ; then
+   echo "SPROBOT: No new data (MJDLIST)!"
    exit
 fi
 
