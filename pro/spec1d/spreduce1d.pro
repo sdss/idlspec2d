@@ -146,7 +146,7 @@ andmask = 0 ; Free memory
    t0 = systime(1)
    res_qso = zfind(objflux, objivar, hdr=hdr, fiberid=plugmap.fiberid, $
     eigenfile=eigenfile, npoly=npoly, zmin=zmin, zmax=zmax, pspace=pspace, $
-    nfind=nfind, width=pspace*3)
+    nfind=nfind, width=pspace*5)
    splog, 'CPU time to compute QSO redshifts = ', systime(1)-t0
 
    splog, 'Locally re-fitting QSO redshifts'
