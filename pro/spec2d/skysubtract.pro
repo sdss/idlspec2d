@@ -404,36 +404,43 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
    endif 
 
    ; Reselect the values of SKYIVAR from OBJSUBIVAR
+   ; (Comment this out, since it's not actually needed below)
 ;   skyivar = (objsubivar[*,iskies])[*]
 ;   skyivar = skyivar[isort]
-
-   ;----------
-   ; Set the BADSKYCHI mask bit at any wavelength where the relative chi^2
-   ; for the sky fibers is greater than 4.
-   ; Also, look for the Red Monster (any bad region contiguous in wavelength)
-
-   if (keyword_set(relchi2)) then begin
-      if (keyword_set(pixelmask)) then $
-       pixelmask = pixelmask OR pixelmask_bits('BADSKYCHI') $
-        * (relchi2fit GT thresh)
-
-      redmonster, relwave, relchi2, wave, pixelmask=pixelmask
-   endif
 
    ;----------
    ; If any pixels on the image are outside of the wavelength range
    ; covered by the "supersky", then the formal errors are infinite
    ; for those pixels after skysubtraction.  Set the mask bit 'NOSKY'
    ; and set SKYSUBIVAR=0.
-   ;
-   ; Also, set the mask bit 'BRIGHTSKY' for any pixels where the sky
-   ; level is more than the (sky-subtracted) object flux + 10 * error,
-   ; and where the sky is greater than 1.25 times a median sky.
-   ; Grow this mask by 1 neighboring pixel in each direction.
 
    ii = where(skyivar GT 0, ni) ; Note that SKYWAVE is already sorted
    iout = where(wave LT skywave[ii[0]] OR wave GT skywave[ii[ni-1]])
    if (iout[0] NE -1) then objsubivar[iout] = 0.0
+
+   if (keyword_set(pixelmask) AND iout[0] NE -1) then $
+    pixelmask[iout] = pixelmask[iout] OR pixelmask_bits('NOSKY')
+
+   ;----------
+   ; Set the BADSKYCHI mask bit at any wavelength where the relative chi^2
+   ; for the sky fibers is greater than THRESH (and insist that the NOSKY
+   ; bit is not set for that pixel).
+   ; Also, look for the Red Monster (any bad region contiguous in wavelength).
+
+   if (keyword_set(relchi2)) then begin
+      if (keyword_set(pixelmask)) then $
+       pixelmask = pixelmask OR pixelmask_bits('BADSKYCHI') $
+        * (relchi2fit GT thresh) $
+        * ((pixelmask AND pixelmask_bits('NOSKY')) EQ 0)
+
+      redmonster, relwave, relchi2, wave, pixelmask=pixelmask
+   endif
+
+   ;----------
+   ; Set the mask bit 'BRIGHTSKY' for any pixels where the sky
+   ; level is more than the (sky-subtracted) object flux + 10 * error,
+   ; and where the sky is greater than 1.25 times a median sky.
+   ; Grow this mask by 1 neighboring pixel in each direction.
 
    if (keyword_set(pixelmask)) then begin
       ; Compute a median sky vector for each fiber
@@ -449,9 +456,6 @@ function skysubtract, obj, objivar, plugsort, wset, objsub, objsubivar, $
       ibright = where(qbright)
       if (ibright[0] NE -1) then $
        pixelmask[ibright] = pixelmask[ibright] OR pixelmask_bits('BRIGHTSKY')
-
-      if (iout[0] NE -1) then $
-       pixelmask[iout] = pixelmask[iout] OR pixelmask_bits('NOSKY')
    endif
 
    return, skystruct
