@@ -77,6 +77,7 @@ function create_arcstruct, narc
     'XPEAK', ptr_new(), $
     'XDIF_TSET', ptr_new(), $
     'WSET', ptr_new(), $
+    'DISPSET', ptr_new(), $
     'FIBERMASK', ptr_new() )
 
    arcstruct = replicate(ftemp, narc)
@@ -94,6 +95,7 @@ function create_flatstruct, nflat
     'IARC', -1, $
     'FIBERMASK', ptr_new(), $
     'XSOL', ptr_new(), $
+    'WIDTHSET', ptr_new(), $
     'FFLAT', ptr_new() )
 
    flatstruct = replicate(ftemp, nflat)
@@ -345,6 +347,12 @@ splog,'Arc fbadpix ', fbadpix ; ???
             splog, 'Wavelength solution failed'
             qbadarc = 1
          endif else begin
+
+            nfitcoeff = color EQ 'red' ? 4 : 3
+            dispset = fitdispersion(flux, fluxivar, xpeak, $
+               sigma=1.0, ncoeff=nfitcoeff, xmin=0.0, xmax=2047.0)
+
+            arcstruct[iarc].dispset = ptr_new(dispset)
             arcstruct[iarc].wset = ptr_new(wset)
             arcstruct[iarc].nmatch = N_elements(lambda)
             arcstruct[iarc].lambda = ptr_new(lambda)
@@ -444,9 +452,11 @@ splog,'Arc fbadpix ', fbadpix ; ???
          wfixed = [1,1] ; Just fit the first gaussian term
 
          extract_image, flatimg, flativar, xsol, sigma, $
-          flux, fluxivar, $
-          proftype=proftype, wfixed=wfixed, $
-          highrej=highrej, lowrej=lowrej, npoly=npoly, relative=1
+          flux, fluxivar, proftype=proftype, wfixed=wfixed, $
+          highrej=highrej, lowrej=lowrej, npoly=npoly, relative=1, $
+          ansimage=ansimage
+
+
 
          junk = where(flux GT 1.0e5, nbright)
          splog, 'Found ', nbright, ' bright pixels in extracted flat ', $
@@ -468,7 +478,11 @@ splog,'Arc fbadpix ', fbadpix ; ???
                ':  No good traces?!?'
          endif
 
+         widthset = fitflatwidth(flux, fluxivar, ansimage, tmp_fibmask, $
+               ncoeff=5, sigma=sigma)
+
          flatstruct[iflat].fflat = ptr_new(fflat)
+         flatstruct[iflat].widthset = ptr_new(widthset)
          flatstruct[iflat].fibermask = ptr_new(tmp_fibmask)
 
          ;------------------------------------------------------------------
