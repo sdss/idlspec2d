@@ -10,7 +10,7 @@ IDL_PATH=+/usr/local/rsi/idl/lib:+/usr/local/rsi/idl/examples:+/p/idlutils/cvs/g
 # commands listed below should be executed by that user.
 #
 # Simply type
-#    crontab cron.table
+#    crontab /p/idlspec2d/cvs/cron.table
 # to load this into the cron server.  That's it!  (As long as the paths are
 # set up properly in the top of this file.)
 #
@@ -20,9 +20,20 @@ IDL_PATH=+/usr/local/rsi/idl/lib:+/usr/local/rsi/idl/examples:+/p/idlutils/cvs/g
 # To stop this cron job from running, type
 #    crontab -r
 #
+# Currently (as of Dec 2000), the active version of the idlutils & idlspec2d
+# code is pointed to by logical links from /p/idlutils/cvs & /p/idlspec2d/cvs.
+# To back out to an older version, do the following:
+#    (1) Stop the cron job:
+#        crontab -r
+#    (2) Change these links to the version that you want, for example v4_3_1:
+#        ln -fs /p/idlutils/v4_3_1 /p/idlutils/cvs
+#        ln -fs /p/idlspec2d/v4_3_1 /p/idlspec2d/cvs
+#    (3) Start the cron job running again:
+#        crontab /p/idlspec2d/cvs/bin/cron.table
+#
 #------------------------------------------------------------------------------
-# The current paths above are set up to run off the cvs version of idlutils
-# and idlspec2d, installed in /p/idlutils/cvs and /p/idlspec2d/cvs on the
+# The current paths above are set up to run off the version of idlutils
+# and idlspec2d pointed to by /p/idlutils/cvs & /p/idlspec2d/cvs on the
 # machine "plate-mapper.apo.nmsu.edu".
 # The code can be checked out and built as follows:
 #   setenv IDLUTILS_DIR /p/idlutils/cvs
