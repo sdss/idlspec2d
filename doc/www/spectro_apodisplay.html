@@ -53,15 +53,8 @@ data is automatically copied to sos.apo (by the Son-of-Spectro cron job),
 you can display images on either machine.
 
 <P>
-<B>NOTE:</B> As of this writing (Dec 2000), the IDL license manager
-is not running on sdsshost, and you may have to run these routines
-on plate-mapper.
-
-<P>
 First, set up IDL and the idlspec2d product, and start up IDL:
 <DL><DD><PRE>
-  % setup idl
-  % setup idlutils
   % setup idlspec2d
   % idl
 </PRE></DD></DL>
@@ -80,17 +73,18 @@ to be something reasonable - say, 0 to 20 for a bias.  Row and column
 plots can be made by hitting the "r" and "c" keys.
 
 <P>
-You may wish to overscan-correct the image before displaying it.
-This is done with the SDSSPROC procedure:
+There is another tool built on top of ATV that will overplot the bad
+column mask in red:
 <DL><DD><PRE>
-  IDL> sdssproc,'sdR-b1-00007538.fit',img
-  IDL> atv,img
-  IDL> atv,img,min=0,max=20  ; Force display range to [0,20]
+  IDL> atvrawspec,'sdR-b1-00007538.fit'
+  IDL> atvrawspec,'sdR-b1-00007538.fit',min=0,max=20  ; <-- Force display range
 </PRE></DD></DL>
 
 <P>
-To median-filter an image before displaying it,
+To read in a raw image and median-filter before displaying,
 <DL><DD><PRE>
+  IDL> img=rdss_fits('sdR-b1-00007538.fit') ; <-- Read a raw image
+  IDL> sdssproc,'sdR-b1-00007538.fit',img   ; <-- Or read + overscan-correct
   IDL> atv,median(img,9)
 </PRE></DD></DL>
 
