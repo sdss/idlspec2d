@@ -455,11 +455,11 @@ pro spcoadd_frames, filenames, outputname, fcalibprefix=fcalibprefix, $
    sxaddpar, hdr, 'WAT0_001', 'system=linear'
    sxaddpar, hdr, 'WAT1_001', $
     'wtype=linear label=Wavelength units=Angstroms'
-   sxaddpar, hdr, 'CRVAL1', wavemin, 'Iraf zero point'
-   sxaddpar, hdr, 'CD1_1', binsz, 'Iraf dispersion'
-   sxaddpar, hdr, 'CRPIX1', 1, 'Iraf starting pixel'
+   sxaddpar, hdr, 'CRVAL1', wavemin, $
+    'Central wavelength (log10) of first pixel'
+   sxaddpar, hdr, 'CD1_1', binsz, 'Log10 dispersion per pixel'
+   sxaddpar, hdr, 'CRPIX1', 1, 'Starting pixel (1-indexed)'
    sxaddpar, hdr, 'CTYPE1', 'LINEAR'
-   sxaddpar, hdr, 'WCSDIM', nfiber
    sxaddpar, hdr, 'DC-FLAG', 1, 'Log-linear flag'
 
    ;---------------------------------------------------------------------------
