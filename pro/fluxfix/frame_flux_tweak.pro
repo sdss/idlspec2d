@@ -109,7 +109,7 @@ end
 
 ;------------------------------------------------------------------------------
 pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
-    best_exp, plugtag, corrfile
+    best_exp, plugtag, corrfile, diag = diag
 
    expid = plugtag[uniq(plugtag.expid)].expid
    splog, 'Best Exposure =', best_exp
@@ -267,7 +267,7 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
 
       ;---------------
       ; Reject any bad corrections and replace with zeropoint shift only.
-      ; Bad vectors are those with fit coefficients deviant by > 5-sigma.   
+      ; Bad vectors are those with fit coefficients deviant by > 6-sigma.   
       ; Sigma is computed of the zero order coeff since this quantity is 
       ; robustly measured and a good indicator of plate quality
 
@@ -277,30 +277,33 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
       coef2 = corrset.coeff[2,*] / coef0 
       coef3 = corrset.coeff[3,*] / coef0 
 
-      djs_iterstat, coef0, sigrej=5, mean=coef0mean, sigma=coef0sig 
+      djs_iterstat, coef0, sigrej=6, mean=coef0mean, sigma=coef0sig 
       coef0 = coef0 / coef0mean
       coef0sig = (coef0sig / coef0mean) > 0.10
     
-      isbad = (coef0 LT  (1 - 5*coef0sig) OR coef0 GT (1 + 5*coef0sig)) OR $
-              (coef1 LT -5*coef0sig OR coef1 GT 5*coef0sig) OR $
-              (coef2 LT -5*coef0sig OR coef2 GT 5*coef0sig) OR $
-              (coef3 LT -5*coef0sig OR coef3 GT 5*coef0sig) 
+      isbad = (coef0 LT  (1 - 6*coef0sig) OR coef0 GT (1 + 6*coef0sig)) OR $
+              (coef1 LT -6*coef0sig OR coef1 GT 6*coef0sig) OR $
+              (coef2 LT -6*coef0sig OR coef2 GT 6*coef0sig) OR $
+              (coef3 LT -6*coef0sig OR coef3 GT 6*coef0sig) 
 
       bad = where(isbad, nbad)
       if bad[0] NE -1 then begin
         splog, 'Warning: Large deviations in flux correction '
         splog, 'Warning: Replacing with zero point shift:', $
         string(bad + 1)
-
-      !P.MULTI = [0, 1, 2]
-      for ii = 0, nbad - 1 do begin
-        ifib = bad[ii]
-        plot, 10.0^wave[*,ifib], corrtemp[*,ifib], yr=[0.0, 2.0], /nodata, $
-                ytitle='Best Frame Flux / Science Frame Flux', title='Bad Vector'
-        oplot, 10.0^wave[*,ifib], bestflux[*,ifib]/sciflux[*,ifib], psym=6, $
-               syms=0.5, thick=3
-        djs_oplot, 10.0^wave[*,ifib], corrtemp[*,ifib], color='red', thick=3
-       endfor      
+    
+        if keyword_set(diag) then begin 
+          !P.MULTI = [0, 1, 2]
+          for ii = 0, nbad - 1 do begin
+            ifib = bad[ii]
+            plot, 10.0^wave[*,ifib], corrtemp[*,ifib], yr=[0.0, 2.0], /nodata, $
+              ytitle='Best Frame Flux / Science Frame Flux', $
+              title='Bad Vector'
+            oplot, 10.0^wave[*,ifib], bestflux[*,ifib]/sciflux[*,ifib], $
+              psym=6, syms=0.5, thick=3
+            djs_oplot, 10.0^wave[*,ifib], corrtemp[*,ifib], color='red', thick=3
+          endfor      
+        endif
  
         xy2traceset, wave[*,bad], bestflux[*,bad], polyset, $
             invvar=bestivar[*,bad], ncoeff=1, inputfunc=sciflux[*,bad], $
@@ -331,35 +334,37 @@ pro frame_flux_tweak, bloglam, rloglam, bflux, rflux, bivar, rivar, $
       ;---------------------
       ; Show individual fits to standards and examples of 3 S/N bins
 
-      !P.MULTI = [0, 1, 2]
-      std = where(strmatch(plugtag[indx].objtype, '*_STD*'), nstd)
-      for ii = 0, nstd - 1 do begin
-        istd = std[ii]
-        plot, 10.0^wave[*,istd], corrimage[*,istd], yr=[0.5, 1.5], /nodata, $
+      if keyword_set(diag) then begin
+        !P.MULTI = [0, 1, 2]
+        std = where(strmatch(plugtag[indx].objtype, '*_STD*'), nstd)
+        for ii = 0, nstd - 1 do begin
+          istd = std[ii]
+          plot, 10.0^wave[*,istd], corrimage[*,istd], yr=[0.5, 1.5], /nodata, $
                 ytitle='Best Frame Flux / Science Frame Flux', $
                 title='Standard Star'
-        oplot, 10.0^wave[*,istd], bestflux[*,istd]/sciflux[*,istd], psym=6, $
-               syms=0.5, thick=3
-        djs_oplot, 10.0^wave[*,istd], corrimage[*,istd], color='red', thick=3
-      endfor 
+          oplot, 10.0^wave[*,istd], bestflux[*,istd]/sciflux[*,istd], psym=6, $
+                 syms=0.5, thick=3
+          djs_oplot, 10.0^wave[*,istd], corrimage[*,istd], color='red', thick=3
+        endfor 
       
-      for ii = 0, (10 < npoly2) - 1 do begin
-        istd = poly2[ii]
-        plot, 10.0^wave[*,istd], corrimage[*,istd], yr=[0.5, 1.5], /nodata, $
-                ytitle='Best Frame Flux / Science Frame Flux', title='Poly 2'
-        oplot, 10.0^wave[*,istd], bestflux[*,istd]/sciflux[*,istd], psym=6, $
-               syms=0.5, thick=3
-        djs_oplot, 10.0^wave[*,istd], corrimage[*,istd], color='red', thick=3
-      endfor 
+        for ii = 0, (10 < npoly2) - 1 do begin
+          istd = poly2[ii]
+          plot, 10.0^wave[*,istd], corrimage[*,istd], yr=[0.5, 1.5], /nodata, $
+                  ytitle='Best Frame Flux / Science Frame Flux', title='Poly 2'
+          oplot, 10.0^wave[*,istd], bestflux[*,istd]/sciflux[*,istd], psym=6, $
+                 syms=0.5, thick=3
+          djs_oplot, 10.0^wave[*,istd], corrimage[*,istd], color='red', thick=3
+        endfor 
 
-      for ii = 0, (10 < npoly1) - 1 do begin
-        istd = poly1[ii]
-        plot, 10.0^wave[*,istd], corrimage[*,istd], yr=[0.0, 2.0], /nodata, $
-                ytitle='Best Frame Flux / Science Frame Flux', title='Poly 1'
-        oplot, 10.0^wave[*,istd], bestflux[*,istd]/sciflux[*,istd], psym=6, $
-               syms=0.5, thick=3
-        djs_oplot, 10.0^wave[*,istd], corrimage[*,istd], color='red', thick=3
-      endfor 
+        for ii = 0, (10 < npoly1) - 1 do begin
+          istd = poly1[ii]
+          plot, 10.0^wave[*,istd], corrimage[*,istd], yr=[0.0, 2.0], /nodata, $
+                  ytitle='Best Frame Flux / Science Frame Flux', title='Poly 1'
+          oplot, 10.0^wave[*,istd], bestflux[*,istd]/sciflux[*,istd], psym=6, $
+                 syms=0.5, thick=3
+          djs_oplot, 10.0^wave[*,istd], corrimage[*,istd], color='red', thick=3
+        endfor 
+      endif
 
       ;-----------------
       ; Plot all low and medium S/N correction vectors
