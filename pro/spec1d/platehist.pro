@@ -3,13 +3,9 @@ pro platehist
 
    platelist, plist=plist
 
-   ;  The following would trim to unique survey quality plates
-;   plist = plist[where(plist.qsurvey)]
-
    ; The following trims to all survey quality data, including repeats
-   minsn2 = 13.0
-   plist = plist[where(plist.sn2_g1 GT minsn2 AND plist.sn2_g2 GT minsn2 $
-    AND plist.sn2_i1 GT minsn2 AND plist.sn2_i2 GT minsn2)]
+   plist = plist[ where(strmatch(plist.platequality,'good*') $
+    OR strmatch(plist.platequality,'marginal*')) ]
 
    nbin = max(plist.mjd)-min(plist.mjd)+1
    mjdvec = min(plist.mjd) + lindgen(nbin)
@@ -63,23 +59,14 @@ pro platehist
     string(unkvec[nbin-1], format='("Unclassified (",i6,")")'), $
     charsize=csize, align=0.5
 
-   for i=1, n_elements(mjdlist)-1 do begin
-      djs_oplot, [mjdlist[i],mjdlist[i]], !y.crange, linestyle=1
-      xyouts, mjdlist[i]-18, total(!y.crange * [0.60,0.40]), $
+   for i=0, n_elements(mjdlist)-1 do begin
+      if (i NE 0 AND i NE n_elements(mjdlist)-1) then $
+       djs_oplot, [mjdlist[i],mjdlist[i]], !y.crange, linestyle=1
+      xoff = 0.02 * (!x.crange[1] - !x.crange[0])
+      xplot = mjdlist[i] + 2*xoff
+      xyouts, xplot, total(!y.crange * [0.60,0.40]), $
        datelist[i], orient=90, charsize=csize, align=0.5
    endfor
-
-   ; Jan 1, 2000 = MJD 51544
-   ; Jul 1, 2000 = MJD 51726
-   ; Jan 1, 2001 = MJD 51910
-   ; Jul 1, 2001 = MJD 52092 ?
-;   mjdlist = [51544, 51726, 51910, 52092]
-;   datelist = ['1 Jan 2000', '1 July 2000', '1 Jan 2001', '1 July 2001']
-;   for i=0, n_elements(mjdlist)-1 do begin
-;      djs_oplot, [mjdlist[i],mjdlist[i]], !y.crange, linestyle=1
-;      xyouts, mjdlist[i]-18, total(!y.crange * [0.60,0.40]), $
-;       datelist[i], orient=90, charsize=csize, align=0.5
-;   endfor
 
    dfpsclose
 
