@@ -55,6 +55,9 @@
 ; EXAMPLES:
 ;
 ; BUGS:
+;   These SDSS primary standards coordinates were not quite correct
+;   in the design of the initial set of special plates.  See the comments
+;   in the code.
 ;
 ; PROCEDURES CALLED:
 ;   concat_dir()
@@ -204,10 +207,16 @@ pro design_multiplate, stardata, tilenums=tilenums, platenums=platenums, $
      mag:        fltarr(5) }
    funddat = replicate(pfund, 5)
    funddat.name  = ['HD_19445','BD+21o607','HD_84937','BD+26o2606','BD+17o4708']
-   funddat.ra    = [  47.10663,   63.64800, 147.23375,  222.25961,   332.87167 ]
-   funddat.dec   = [  26.33094,   22.35119,  13.74426,   25.70750,    18.09139 ]
-   funddat.pm_ra = [    -0.210,      0.425,     0.373,     -0.009,       0.512 ]
-   funddat.pm_dec= [    -0.830,       9.22,    -0.774,     -0.346,       0.060 ]
+; These first set of coordinates, which are not quite correct, were used
+; in the design of the initial set of special plates.
+;   funddat.ra    =[  47.10663,   63.64800, 147.23375,  222.25961,   332.87167 ]
+;   funddat.dec   =[  26.33094,   22.35119,  13.74426,   25.70750,    18.09139 ]
+;   funddat.pm_ra =[    -0.210,      0.425,     0.373,     -0.009,       0.512 ]
+;   funddat.pm_dec=[    -0.830,       9.22,    -0.774,     -0.346,       0.060 ]
+   funddat.ra    =[  47.10579,   63.64573, 147.23510,  222.25980,   332.88109 ]
+   funddat.dec   =[  26.33096,   22.35116,  13.74427,   25.70250,    18.09277 ]
+   funddat.pm_ra =[    -0.210,      0.425,     0.373,     -0.009,       0.512 ]
+   funddat.pm_dec=[    -0.830,       9.22,    -0.774,     -0.346,       0.060 ]
    funddat.vmag  = [      8.05,       10.0,      8.28,       9.72,        9.47]
    funddat[0].mag = [ 9.08 , 8.23 , 7.92 , 7.82,  7.79 ] ; HD_19445
    funddat[1].mag = [10.289, 9.395, 9.114, 9.025, 9.017] ; BD+21 (V=10.0)
