@@ -24,6 +24,8 @@
 ;                  2: (exponential)^3
 ;                  3: (exponential)^2.5
 ;                Default to 1.
+;   inputans   - Input fit, excluding background and whopping terms
+;                [ncoeff*nFiber]
 ;   relative   - Set to use reduced chi-square to scale rejection threshold
 ;   squashprofile - ???
 ;   npoly      - Order of chebyshev scattered light background; default to 5
@@ -47,7 +49,6 @@
 ;                is to fit only 1 parameter per fiber.  For the (default)
 ;                Gaussian profile, this is the height of the Gaussian.
 ;                Note that WFIXED is used to build the array WFIXARR.
-;   inputans   - Input fit [ncoeff*nFiber+npoly+whoppingct]
 ;   iback      - 1D array of input background coeff 
 ;                (needed if fixed parameters are non-zero)
 ;   bfixarr    - 1D integer array to specify which terms of the background
@@ -256,9 +257,9 @@ function extract_row1, fimage, invvar, xcen, sigma, ymodel=ymodel, $
       fullreject = lonarr(ntrace)
 
       if (keyword_set(inputans)) then begin
-         if (ma-npoly-whoppingct NE n_elements(inputans)) then $
+         if (ntrace*ncoeff NE n_elements(inputans)) then $
           message, 'Number of elements in INPUTANS is not equal to NTRACE*NCOEFF'
-         ans[0:ma-npoly-whoppingct-1] = inputans
+         ans[0:ntrace*ncoeff-1] = inputans
       endif
 
       result = call_external(getenv('IDLSPEC2D_DIR')+'/lib/libspec2d.so', $
@@ -328,16 +329,20 @@ end
 ; I have not implemented returning FULLCOVAR out of sheer laziness.
 
 function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
- fscat=fscat, wfixed=wfixed, xvar=xvar, mask=mask, diagonal=p, $
-; fullcovar=fullcovar, wfixarr=wfixarr, npoly=npoly, $
- wfixarr=wfixarr, npoly=npoly, $
- niter=niter, whopping=whopping, reducedChi=reducedChi, _EXTRA=extra
+ fscat=fscat, wfixed=wfixed, inputans=inputans, xvar=xvar, $
+ mask=mask, diagonal=p, wfixarr=wfixarr, npoly=npoly, $
+ niter=niter, whopping=whopping, pixelmask=pixelmask, $
+ reducedChi=reducedChi, _EXTRA=extra
 
    ntrace = n_elements(xcen)
    nx = n_elements(fimage)
 
    if (n_elements(npoly) EQ 0) then npoly = 5
    if (NOT keyword_set(wfixed)) then wfixed = [1]
+
+   if (n_elements(pixelmask) NE ntrace $
+    OR size(pixelmask,/tname) NE 'LONG') then $
+    pixelmask = lonarr(ntrace)
 
    if (NOT keyword_set(whopping)) then whopping = -1
    if (whopping[0] EQ -1) then whoppingct = 0 $
@@ -397,6 +402,14 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
    iuse = where(fibuse, nuse)
    tmp_ma = nuse*ncoeff + npoly + whoppingct
 
+   if (keyword_set(inputans)) then begin
+      tmp_inputans = fltarr(nuse*ncoeff)
+      for i=0, ncoeff-1 do $
+       tmp_inputans[lindgen(nuse)*ncoeff+i] = inputans[iuse*ncoeff+i]
+   endif else begin
+      tmp_inputans = 0
+   endelse
+
    if (keyword_set(wfixarr)) then begin
       tmp_wfixarr = lonarr(tmp_ma) + 1
       for i=0, ncoeff-1 do $
@@ -407,9 +420,8 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
 
 ymodel = 0 ; ???
    tmp_ans = extract_row1( fimage, invvar, xcen[iuse], sigma, ymodel=ymodel, $
-    fscat=tmp_fscat, wfixed=wfixed, xvar=xvar, mask=mask, diagonal=tmp_p, $
-;    fullcovar=tmp_fullcovar, wfixarr=tmp_wfixarr, npoly=npoly, $
-    wfixarr=tmp_wfixarr, npoly=npoly, $
+    fscat=tmp_fscat, wfixed=wfixed, inputans=tmp_inputans, xvar=xvar, $
+    mask=mask, diagonal=tmp_p, wfixarr=tmp_wfixarr, npoly=npoly, $
     whopping=whopping, reducedChi=reducedChi, _EXTRA=extra)
 
    ; Set WFIXARR for unused fibers equal to zero
