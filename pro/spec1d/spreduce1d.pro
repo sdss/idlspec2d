@@ -61,7 +61,9 @@ pro spreduce1d, platefile, outfile
           spreduce1d, platefile[i]
       endfor
       return
-   endif
+   endif else begin
+      platefile = platefile[0]
+   endelse
 
    ;----------
    ; Determine name of output file
