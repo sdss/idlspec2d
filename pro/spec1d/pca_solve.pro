@@ -37,6 +37,8 @@
 ;
 ; OPTIONAL OUTPUTS:
 ;   newloglam      - PCA wavelength sampling in log-10(Angstroms) [NNEWPIX]
+;   newflux        - Rebinned OBJFLUX on the wavelength-mapping NEWLOGLAM.
+;   newivar        - Rebinned OBJIVAR on the wavelength-mapping NEWLOGLAM.
 ;   eigenval       - Eigenvalue for each output eigenspectra [NRETURN]
 ;   acoeff         - PCA coefficients [NRETURN,NOBJ]
 ;   outmask        - Output mask from DJS_REJECT() [NNEWPIX,NOBJ]
@@ -65,7 +67,8 @@
 ;-
 ;------------------------------------------------------------------------------
 function pca_solve, objflux, objivar, objloglam, zfit, $
- wavemin=wavemin, wavemax=wavemax, newloglam=newloglam, maxiter=maxiter, $
+ wavemin=wavemin, wavemax=wavemax, newloglam=newloglam, $
+ newflux=newflux, newivar=newivar,  maxiter=maxiter, $
  niter=niter, nkeep=nkeep, nreturn=nreturn, eigenval=eigenval, acoeff=acoeff, $
  outmask=outmask, usemask=usemask, _EXTRA=KeywordsForReject
 
