@@ -175,9 +175,10 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
     ncoeff=5, sigma=sigma, medwidth=medwidth)
 
    ; Use the limits as set for the flats, since we don't set limits
-   ; for the science exposure widths.
+   ; for the science exposure widths.  Do not issue a warning message
+   ; for smear exposures (which have low S/N), but only science exposures.
    if (apo_checklimits('flat', 'XSIGMA', camname, max(medwidth)) $
-    EQ 'red') then $
+    EQ 'red' AND strtrim(sxpar(hdr,'FLAVOR'),2) NE 'smear') then $
     splog, 'WARNING: Median spatial widths = ' $
     + string(medwidth,format='(4f5.2)') + ' pix (LL LR UL UR)'
 
