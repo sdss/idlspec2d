@@ -199,8 +199,6 @@ pro spcoadd_frames, spframes, outputname, fcalibprefix=fcalibprefix, $
       ; Solve for wavelength and lambda-dispersion at each pixel in the image
 
       traceset2xy, tempwset, junk, tempwave
-      traceset2xy, tempwset, junk-0.5, lowerwave
-      traceset2xy, tempwset, junk+0.5, upperwave
       traceset2xy, tempdispset, junk, tempdispersion
 
       ;----------
