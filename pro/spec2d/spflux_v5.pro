@@ -869,8 +869,14 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       calibimg = bspline_valu(loglam1, calibset, x2=x2)
 
       ; Set to zero any pixels outside the known flux-calibration region
-      ibad = where(loglam1 LT logmin OR loglam1 GT logmax, nbad)
+      qbad = loglam1 LT logmin OR loglam1 GT logmax
+      ibad = where(qbad, nbad)
       if (nbad GT 0) then calibimg[ibad] = 0
+      minval = min(calibimg[where(qbad EQ 0)], max=maxval)
+      if (maxval/minval GT 20. OR minval LT 0) then $
+       splog, 'WARNING: Min/max fluxcorr = ', minval, maxval $
+      else $
+       splog, 'Min/max fluxcorr = ', minval, maxval
 
       ;----------
       ; Write the output file
