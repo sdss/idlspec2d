@@ -37,9 +37,12 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   concat_dir()
 ;   fileandpath()
+;   get_tai
 ;   splog
 ;   sxaddpar
+;   sxpar()
 ;   yanny_free
 ;   yanny_read
 ;
