@@ -6,8 +6,8 @@ pro batch1d, fullplatefile, topdir=topdir, nice=nice
 
    if (NOT keyword_set(topdir)) then begin
       cd, current=topdir
-      cd, topdir
    endif
+   cd, topdir
    if (NOT keyword_set(nice)) then nice = 10
 
    ;----------
@@ -23,23 +23,30 @@ pro batch1d, fullplatefile, topdir=topdir, nice=nice
    nplate = n_elements(platefile)
 
    ;----------
-   ; Find which programs are already done by looking at the log files
+   ; Find which programs are already done by testing for the existing
+   ; of a log file.
 
    platemjd = strmid(platefile, 8, 10)
-   diaglog = localpath + '/spDiag1d-' + platemjd + '.log'
 
-   qdone = lonarr(nplate)
-   endstring = 'Successful completion of SPREDUCE1D'
+   diaglog = strarr(nplate)
+   qdone = bytarr(nplate)
+;   endstring = 'Successful completion of SPREDUCE1D'
    for iplate=0, nplate-1 do begin
-      spawn, 'tail -1 ' + diaglog[iplate], tailstring
-      qdone[iplate] = strpos(tailstring[0], endstring) NE -1
+      diaglog[iplate] = $
+       djs_filepath('spDiag1d-' + platemjd[iplate] + '.log', $
+        root_dir=localpath[iplate])
+;      spawn, 'tail -1 ' + diaglog[iplate], tailstring
+;      qdone[iplate] = strpos(tailstring[0], endstring) NE -1
+      qdone[iplate] = keyword_set(findfile(diaglog[iplate]))
       if (qdone[iplate]) then $
-       print, 'File ' + platefile[iplate] + ' already reduced'
+       splog, 'File ' + platefile[iplate] + ' already reduced' $
+      else $
+       splog, 'File ' + platefile[iplate] + ' not reduced'
    endfor
 
    indx = where(qdone EQ 0, nplate)
    if (nplate EQ 0) then begin
-      print, 'All plates have been reduced already'
+      splog, 'All plates have been reduced already'
       return
    endif
 
@@ -78,14 +85,16 @@ pro batch1d, fullplatefile, topdir=topdir, nice=nice
    ;----------
    ; Create lists of expected output files
 
-   zallfile = localpath + '/spZall-' + platemjd + '.fits'
-   zbestfile = localpath + '/spZbest-' + platemjd + '.fits'
-   diagps = localpath + '/spDiag1d-' + platemjd + '.ps'
-
    outfile = ptrarr(nplate)
-   for i=0, nplate-1 do $
-    outfile[i] = $
-     ptr_new([ diaglog[i], diagps[i], zallfile[i], zbestfile[i] ])
+   for i=0, nplate-1 do begin
+      zallfile = djs_filepath('spZall-'+platemjd[i]+'.fits', $
+       root_dir=localpath[i])
+      zbestfile = djs_filepath('spZbest-'+platemjd[i]+'.fits', $
+       root_dir=localpath[i])
+      diagps = djs_filepath('spDiag1d-'+platemjd[i]+'.ps', $
+       root_dir=localpath[i])
+      outfile[i] = ptr_new([ diaglog[i], diagps, zallfile, zbestfile ])
+   endfor
 
    ;----------
    ; Prioritize to do the most recent plates first

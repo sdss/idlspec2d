@@ -1,6 +1,7 @@
 ; If using other machines in Peyton, set
 ;   topdir='/peyton/scr/spectro0/data/2d_test'
-
+; A plate is considered not reduced if any of the "spPlan2d*.par" files
+; do not have a corresponding "spDiag2d*.log" file.
 ;------------------------------------------------------------------------------
 ; For a list of files with names like 'path/spPlanXXX.par', 
 ; return the indexes of all that do **not** have a corresponding 
@@ -121,16 +122,14 @@ function batch2d_combfiles, planfile, outfile=outfile
 end
 
 ;------------------------------------------------------------------------------
-; This doesn't yet check to see if things have already been run for some plates
-; !!!???
 pro batch2d, platenums, topdir=topdir, mjd=mjd, mjstart=mjstart, mjend=mjend, $
  nice=nice
 
    if (NOT keyword_set(platenums)) then platenums = '*'
    if (NOT keyword_set(topdir)) then begin
       cd, current=topdir
-      cd, topdir
    endif
+   cd, topdir
    if (NOT keyword_set(nice)) then nice = 10
 
    ;----------
