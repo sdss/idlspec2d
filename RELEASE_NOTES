@@ -4,6 +4,8 @@ GET_TAI: Report warning about exposures less than 2 minutes only
         for science or smear exposures.
 LRGMODEL_TRAIN: Calling script for training the Bruzual-Charlot models
         for photo-z's.
+PLOTSIGNAL: New routine for making diagnostic plots of the signal seen
+        by the spectrographs, unlike most of our routines that show S/N.
 SKYSUBTRACT: Fix possible crash condition, whereby the re-fit to the
         supersky is not done if the first fit failed and FULLBKPT does
         not exist (line 243).
