@@ -332,8 +332,9 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
          spawn, 'scp1 ' + htmlfile + ' ' + copydir
          spawn, 'scp1 ' + htmlfile + ' ' + $
           filepath('logfile-current.html', root_dir=copydir)
-         spawn, 'scp1 ' + plotfile + ' ' + copydir
          spawn, 'scp1 ' + logfile  + ' ' + copydir
+         if (keyword_set(plotfile)) then $
+          spawn, 'scp1 ' + plotfile + ' ' + copydir
          splog, 'Done.'
       endif
    endif
