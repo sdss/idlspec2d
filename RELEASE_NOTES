@@ -68,7 +68,7 @@ PCA_STAR: Major changes to read stellar classes and subclasses,
           then generate the 2-component PCA solution for all M stars
           (for example) and reconstruct types M1 through M9.
 PLATECOMPARE: Add /PSFILE option.
-PLATELIST: Add NEXP,EXPT_B1,EXPT_B2,EXPT_R1,EXPT_R2 to output structure.
+PLATELIST: Add NEXP,EXPT_B1,EXPT_B2,EXPT_R1,EXPT_R2,SMEARUSE to output struct.
           Now show the status of 2D and Combine separately, which will make it
           obvious when this problem occurs. When it happens, Status2D
           might still be "Running" even though StatusCombine is "Done".
@@ -172,6 +172,9 @@ SPREDUCE1D: Change flag for small chi^2 difference to be triggered
             in the 2nd pass through the ZFIND routine.  I'll have to track
             that down later.
             Fix bug that SN_MEDIAN wasn't positive definite.
+            Add FRACNSIGHI,FRACNSIGLO to outputs.  Trigger ZWARNING=16 from
+            only high outliers (FRACSIGHI) for QSO's, whereas we trigger
+            based upon FRACNSIGMA for all other objects.
 ZCOMPUTE, FIND_NMINIMA: Return a (negative-valued) error code
             from FIND_NMINIMA, which ZCOMPUTE stuffs into Z_ERR.
 ZFIND: If fewer than NFIND peaks are found, then return blank structures
