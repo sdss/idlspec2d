@@ -111,13 +111,13 @@ pro qaplot_skysub, obj, objivar, objsub, objsubivar, wset, iskies, $
    ; Set multi-plot format
    !p.multi = [0,1,2]
 
-   djs_plot, iskies, $
-    djs_median( objsub[*,iskies]^2 * objivar[*,iskies], 1), $
+   djs_plot, [iskies], $
+    [djs_median( objsub[*,iskies]^2 * objivar[*,iskies], 1)], $
     xrange=[1,nrow], xstyle=1, psym=2, charsize=1.1, $
     xtitle = 'Fiber number', ytitle='Median \chi^2', $
     title=title+' Sky Fibers'
-   djs_oplot, iskies, $
-    djs_median( objsub[*,iskies]^2 * objsubivar[*,iskies], 1), $
+   djs_oplot, [iskies], $
+    [djs_median( objsub[*,iskies]^2 * objsubivar[*,iskies], 1)], $
     psym=2, color='blue'
    xyouts, 10, 0.1, 'BLUE=After rescaling variance', charsize=1.1
 
@@ -133,7 +133,7 @@ pro qaplot_skysub, obj, objivar, objsub, objsubivar, wset, iskies, $
         ' = ', medskyflux[ibad[i]], ' electrons'
    endif
 
-   djs_plot, iskies, medskyflux, $
+   djs_plot, [iskies], [medskyflux], $
     xrange=[1,nrow], xstyle=1, psym=2, charsize=1.5, $
     xtitle = 'Fiber number', ytitle='Median Sky-Sub Flux'
    djs_oplot, [1,nrow], [0,0], color='red'
