@@ -125,18 +125,19 @@ pro lrgmodel_tweak_template, pflux1, pflux_ivar1, zz1, weights=weights, $
 
    ; Call MPFIT to iterate on the solution for the template
    parinfo = {value: 0.D, fixed: 0, limited: [0b,0b], $
-    limits: [0.d0,0.d0], step: 0.D}
+    limits: [0.d0,0.d0], step: 0.D, parname: ''}
    parinfo = replicate(parinfo, 2)
    parinfo.value = [ageguess, metalguess]
 ;   parinfo.step = [0.01, 0.0005]
+   parinfo.parname = ['AGEBURST' ,'ZMETAL']
    parinfo[0].limited = [1b, 1b]
    parinfo[0].limits = agerange
    parinfo[1].limited = [1b, 1b]
    parinfo[1].limits = metalrange
 
-;   ftol = 1d-20
-;   gtol = 1d-20
-;   xtol = 1d-20
+   ftol = 1d-20
+   gtol = 1d-20
+   xtol = 1d-20
    coeff = mpfit('lrgmodel_tweak_fn', parinfo=parinfo, perror=perror, $
     maxiter=maxiter, ftol=ftol, gtol=gtol, xtol=xtol, $
     niter=niter, status=status)
