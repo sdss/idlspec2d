@@ -48,6 +48,8 @@ POLY_ITER: Change "LT" logic to "LE" to handle case where residual
            is 0 (e.g., a perfect fit)
 POPULATE_IMAGE: Fix possible crash condition under Mac OS X when IMAGE
            is 1-dimensional (and NY was not type LONG in the call to C-code).
+SPLOT: Bug fix in the autoscale code (splot_autoscale_x) that crashed
+           on Mac OS X.
 evilmake: Add "Darwin" (Mac OS X) as a possible platform.
            Export F77=g77 for the platform.
            This doesn't work yet for Blanton's spheregroup code or Fortran.
