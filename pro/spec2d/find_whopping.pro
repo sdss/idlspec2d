@@ -10,12 +10,12 @@
 ;   whopping = find_whopping(flux, thresh, whopct)
 ;
 ; INPUTS:
-;   flux       - extracted spectra [npix, nfiber]
-;   thresh     - minimum threshold for median counts in whopping fiber
-;                 Default 10000.0
+;   flux       - Mean/median flux per object [NFIBER]
+;   thresh     - Minimum threshold for median counts in whopping fiber;
+;                default 10000.0
 ;
 ; OUTPUTS:
-;   whopping   - indices of whopping fiber(s) in flux
+;   whopping   - 0-indexed indices of whopping fiber(s)
 ;
 ; OPTIONAL OUTPUTS:
 ;   whopct     - Number of whopping fibers detected
