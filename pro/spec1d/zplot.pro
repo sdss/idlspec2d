@@ -45,13 +45,41 @@ pro zplot_circle, radius, label=label, ltheta=ltheta, _EXTRA=KeywordsForPlot
    return
 end
 ;------------------------------------------------------------------------------
+pro zplot_exclude, theta
+
+   nplot = 40
+   maxrad = sqrt( (max(abs(!x.crange)))^2 + (max(abs(!y.crange)))^2 )
+
+   xplot = cos(theta / !radeg)
+   yplot = sin(theta / !radeg)
+
+   for i=0, nplot-1 do begin
+      rfac = i * maxrad / nplot
+      djs_oplot, rfac*xplot, rfac*yplot, linestyle=2, _EXTRA=KeywordsForPlot
+   endfor
+   djs_oplot, [0, rfac*xplot[0]], [0, rfac*yplot[0]]
+   djs_oplot, [0, rfac*xplot[1]], [0, rfac*yplot[1]]
+
+   return
+end
+;------------------------------------------------------------------------------
+pro zplot_exclude_galaxy
+
+   ; The Galactic plane crosses the equatorial plane at RA= 102.86, 282.86
+   zplot_exclude, 102.86 + [-15,15]
+   zplot_exclude, 282.86 + [-15,15]
+
+   return
+end
+;------------------------------------------------------------------------------
 pro zplot
 
    ramid = 90.0
 
-   plate = [202,265,266,267,268,269,279,280, $
-    281,282,283,284,285,291,292,293,297,298,299, $
-    300,301,302,303,304,305,306,307,308,309,310,311,312,313,314, $
+   plate = [202,260,265,266,267,268,269,279, $
+    280,281,282,283,284,285,291,292,293,297,298,299, $
+    300,301,302,303,304,305,306,307,308,309, $
+    310,311,312,313,314,315, $
     338,339,340,341,342,343,344,345,346,348, $
     373,374,380,382,383,384,386,387, $
     388,389,390,392,393,394,396,397,398,399,400,401,402,404, $
@@ -95,8 +123,9 @@ pro zplot
    djs_oplot, xplot[imain], yplot[imain], ps=3
    djs_oplot, xplot[ibrg], yplot[ibrg], ps=3, color='red'
    djs_oplot, xplot[iqso], yplot[iqso], ps=3, color='blue'
-   zplot_circle, [0.05, 0.10], ltheta=90
+   zplot_circle, [0.05, 0.10], ltheta=70
    zplot_circle, [0.15]
+   zplot_exclude_galaxy
    dfpsclose
 
    ;----------
@@ -110,8 +139,9 @@ pro zplot
    djs_oplot, xplot[imain], yplot[imain], ps=3
    djs_oplot, xplot[ibrg], yplot[ibrg], ps=1, symsize=0.25, color='red'
    djs_oplot, xplot[iqso], yplot[iqso], ps=3, symsize=0.25, color='blue'
-   zplot_circle, [0.20, 0.40], ltheta=90
+   zplot_circle, [0.20, 0.40], ltheta=70
    zplot_circle, [0.60]
+   zplot_exclude_galaxy
    dfpsclose
 
    ;----------
@@ -126,8 +156,9 @@ pro zplot
    djs_oplot, xplot[ibrg], yplot[ibrg], ps=3, color='red'
    djs_oplot, xplot[iqso], yplot[iqso], ps=1, $
     symsize=zans[iqso].z/8., color='blue'
-   zplot_circle, [1,2,3,4], ltheta=90
+   zplot_circle, [1,2,3,4], ltheta=70
    zplot_circle, [5]
+   zplot_exclude_galaxy
    dfpsclose
 
    ;----------
@@ -152,6 +183,7 @@ pro zplot
    zplot_circle, alog10([0.03,0.1,0.5,2])-logzmin, $
     label=['0.03', '0.1','0.5','2'], ltheta=45
    zplot_circle, alog10(5)-logzmin, label='5', ltheta=45
+   zplot_exclude_galaxy
    dfpsclose
 
    return
