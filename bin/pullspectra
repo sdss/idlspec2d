@@ -6,9 +6,15 @@
 # ran this script.  This lets you run this script each day in order to
 # keep your data up-to-date.
 #
+# Syntax:
+#   pullspectra
+# or
+#   pullspectra /my/directory
+#
 # Assume that the data comes from:
 #   alfred@spectro.princeton.edu:$SPECTRO_DATA
-# Assume that the data goes to the local machine at:
+# Assume that the data goes to the local machine at the destination
+# given by the first argument to this command, or, if not set, then to:
 #   $SPECTRO_DATA
 # These defaults can be over-written by changing the appropriate lines
 # in this script.  For example, if you are copying the "test" reductions
@@ -38,11 +44,21 @@
 
 remotehost=alfred@spectro.princeton.edu
 
-toplocal=$SPECTRO_DATA
+# Use the first argument to this command as the local destination directory.
+# Otherwise, use the environment variable $SPECTRO_DATA.
+
+if [ $# -ge 1 ] ; then
+  toplocal=$1
+else
+  toplocal=$SPECTRO_DATA
+fi
 if [ -z "$toplocal" ] ; then
   echo "Environment variable SPECTRO_DATA is not set on local machine"
   exit
 fi
+
+# Use the environment variable $SPECTRO_DATA on the remote machine
+# as the path for the spectroscopic data.
 
 topremote=`ssh1 $remotehost "echo $SPECTRO_DATA"`
 if [ -z "$topremote" ] ; then
@@ -53,6 +69,7 @@ fi
 echo Copy from $remotehost:$topremote
 echo Copy to $toplocal
 
+exit
 # Copy the summary files
 
 rsync -tuv --rsh="ssh1" $remotehost:$topremote/"platelist*" $toplocal
