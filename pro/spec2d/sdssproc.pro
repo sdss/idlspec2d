@@ -805,7 +805,7 @@ admask = 0 ; clear memory
 
       pixflatimg = mrdfits(djs_filepath(pixflatname, root_dir=pp))
 
-      if (readimg) then image = image / pixflatimg
+      if (readimg) then image = image / (pixflatimg + (pixflatimg LE 0))
       if (NOT keyword_set(minflat)) then minflat = 0.0
       if (NOT keyword_set(maxflat)) then maxflat = 1.0e10
       if (readivar) then $
