@@ -43,6 +43,9 @@ misc/Makefile -text
 misc/distort.blue -text
 misc/distort.red -text
 misc/uomoto.distortions -text
+pro/apo2d/aporeduce.pro -text
+pro/apo2d/quicktrace.pro -text
+pro/apo2d/quickwave.pro -text
 pro/makefile.old -text
 pro/spec2d/TODO -text
 pro/spec2d/arcfit_guess.pro -text
