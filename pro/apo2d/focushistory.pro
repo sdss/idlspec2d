@@ -234,7 +234,13 @@ pro focushistory, mjdrange=mjdrange1
    dfpsclose
    !p.multi = 0
 
-stop
+   ;----------
+   ; Create a save-set with these data
+
+   ssfile = string(min(mjdrange), max(mjdrange), $
+    format='("Focushistory-",i5.5,"-",i5.5,".ss")')
+   save, file=ssfile
+
    return
 end
 ;------------------------------------------------------------------------------
