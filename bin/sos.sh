@@ -23,7 +23,7 @@ fi
 
 if \ps -elf | grep aporsync_red.sh  | grep -v -e grep
 then
-  echo "APORSYNC_RED: Already running at "`date`
+  echo "APORSYNC_RED: Already running at "`date -u`
 else
   aporsync_red.sh &
 fi

@@ -56,7 +56,7 @@ do
        mkdir $outdir
      fi
 
-     echo STARTAPO: Processing $input at `date`
+     echo STARTAPO: Processing $input at `date -u`
 #     $IDL_DIR/bin/lmutil lmstat
      echo "aporeduce, '$filename',indir='$dir', outdir='$outdir', \
           plugdir='$astrolog', copydir='$copydir' " | nice idl >& $outdir/err.$filename
