@@ -144,8 +144,15 @@ acont[nn]=(bcont[nn]+rcont[nn])/2
 errcont[nn]=sqrt(errcontb[nn]^2+errcontr[nn]^2)
  endif
 
-ew[nn]=dw[nn]*(acont[nn]-ind[nn])/acont[nn]
-errew[nn]=ew[nn]*sqrt((errcont[nn]^2+errin[nn]^2)/(acont[nn]-ind[nn])^2+errcont[nn]^2/acont[nn]^2)
+; EDITED by hogg
+;ew[nn]=dw[nn]*(acont[nn]-ind[nn])/acont[nn]
+;errew[nn]= ew[nn]* $
+;           sqrt((errcont[nn]^2+errin[nn]^2)/(acont[nn]-ind[nn])^2+ $
+;                 errcont[nn]^2/acont[nn]^2)
+ew[nn]=dw[nn]*(1.0-(ind[nn]/acont[nn]))
+errew[nn]= (dw[nn]*ind[nn]/acont[nn])* $
+           sqrt((errin[nn]/ind[nn])^2+(errcont[nn]/acont[nn])^2)
+
 magline[nn]=-2.5*alog10(ind[nn]/acont[nn])
 errmagline[nn]=2.5/2.303*sqrt(errin[nn]^2/ind[nn]^2+errcont[nn]^2/acont[nn]^2)
 
