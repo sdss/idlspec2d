@@ -186,7 +186,8 @@ pro spbiasgen, mjd=mjd, expnum=expnum, expstart=expstart, expend=expend, $
       flavor[ifile] = strtrim(sxpar(hdr, 'FLAVOR'),2)
       mjdarr[ifile] = sxpar(hdr, 'MJD')
       exposure[ifile] = sxpar(hdr, 'EXPOSURE')
-      taitime[ifile] = sxpar(hdr, 'TAI-BEG')
+      get_tai, objhdr, tai_beg, tai_mid, tai_end
+      taitime[ifile] = tai_beg
       print, '.', format='(a,$)'
    endfor
    print

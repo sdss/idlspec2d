@@ -60,6 +60,7 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   calcscatimage()
 ;   divideflat
 ;   djs_median()
 ;   djs_oplot
@@ -67,10 +68,10 @@
 ;   extract_boxcar()
 ;   extract_image
 ;   fibermask_bits()
-;   calcscatimage()
 ;   fitsn()
 ;   fitvacset()
 ;   fluxcorr()
+;   get_tai
 ;   heliocentric()
 ;   locateskylines
 ;   mwrfits
@@ -81,6 +82,7 @@
 ;   qaplot_skyshift
 ;   qaplot_skysub
 ;   skysubtract
+;   spadd_guider_info
 ;   splog
 ;   sxaddpar
 ;   sxpar()
@@ -311,7 +313,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 
    ;--------------------------------------------------------
    ; Call standard proc to determine time-stamps
-   ;
+
    get_tai, objhdr, tai_beg, tai_mid, tai_end
 
    ; Set TAI equal to the time half-way through the exposure

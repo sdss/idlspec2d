@@ -56,6 +56,7 @@
 ;   fitarcimage_old
 ;   fitdispersion
 ;   fitflatwidth()
+;   get_tai
 ;   reject_arc()
 ;   reject_flat()
 ;   sdssproc

@@ -44,6 +44,7 @@
 ; PROCEDURES CALLED:
 ;   extract_object
 ;   fibermask_bits()
+;   get_tai
 ;   qaplot_arcline
 ;   qaplot_fflat
 ;   reject_science()
