@@ -273,10 +273,8 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
    ;----------
    ; Select which eigenvectors to use (default to all)
 
-   if (NOT keyword_set(columns)) then iuse = lindgen(nstar) $
+   if (n_elements(columns) EQ 0) then iuse = lindgen(nstar) $
     else iuse = columns
-   if (keyword_set(npoly)) then $
-    iuse = [iuse, nstar+lindgen(npoly)]
    nuse = n_elements(iuse)
 
    ;----------
@@ -287,7 +285,7 @@ pro vdispfit, objflux, objivar, objloglam, hdr=hdr, zobj=zobj, npoly=npoly, $
    objsmall = objflux[indxo]
    sqivar = sqrt( objivar[indxo] ) * bigmask[indxt]
 
-   acoeffarr = fltarr(nuse,nsig)
+   acoeffarr = fltarr(nuse+npoly,nsig)
    for isig=0, nsig-1 do begin
       eigenflux = bigflux[indxt,iuse,isig]
       if (keyword_set(npoly)) then eigenflux = [[eigenflux], [polyflux]]

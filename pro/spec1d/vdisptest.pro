@@ -6,7 +6,8 @@ eigenfile='spEigenElodie.fits'
 eigendir='.'
 columns=lindgen(4)
    readspec, 406, mjd=52238, flux=objflux, invvar=objivar, zans=zans
-   hdr = headfits('spPlate-0406-52238.fits')
+    hdr = headfits(filepath('spPlate-0406-52238.fits', $
+     root_dir=getenv('SPECTRO_DATA')+'/0406'))
    igal = where(strtrim(zans.class,2) EQ 'GALAXY' AND zans.zwarning EQ 0, $
     ngal)
    ; Sort by S/N
@@ -30,11 +31,12 @@ columns=lindgen(4)
       soplot, wave[ipix], objflux[ipix,igal[jj]]-yfit[ipix], color='red'
 print,'Fiber = ', zans[igal[jj]].fiberid, ' sigma=', sigma, ' +/- ', sigerr
 stop
-plothist, (objflux[ipix,igal[jj]]-yfit[ipix])*sqrt(objivar[ipix,igal[jj]]), $
- bin=0.1,xr=[-10,10]
-wait,0.4
-   endfor
 
+chivec = (objflux[ipix,igal[jj]]-yfit[ipix])*sqrt(objivar[ipix,igal[jj]])
+plothist, chivec, bin=0.1,xr=[-10,10]
+print, 'Median chi=',median(abs(chivec))
+stop
+   endfor
 
 return
 end
