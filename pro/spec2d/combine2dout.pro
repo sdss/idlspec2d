@@ -207,7 +207,7 @@ pro combine2dout, filenames, outputroot, bin, zeropoint, nord=nord, $
 
 	   ss = sort(fullwave)
 	   fullbkpt = slatec_splinefit(fullwave[ss], fullspec[ss], coeff, $
-              nord=nord, rejper=0.1, maxiter=20, upper=5.0, lower=5.0, $
+              nord=nord, eachgroup=1, maxiter=20, upper=5.0, lower=5.0, $
               bkpt=bkpt, everyn=everyn, invvar=fullivar[ss], mask=mask, /silent)
 
 	   if (total(coeff) EQ 0.0) then begin
