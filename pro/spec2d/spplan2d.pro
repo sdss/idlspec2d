@@ -36,7 +36,7 @@
 ;   mmmmm=MJD.
 ;
 ;   The top-level of the output directory structure, TOPOUTDIR, is 2d_VERSION,
-;   where we read the version with IDLSPEC2d_VERSION().  If this is not a CVS-
+;   where we read the version with IDLSPEC2D_VERSION().  If this is not a CVS-
 ;   declared version of the code, then the output directory is '2d_test'.
 ;   The files created are:
 ;     TOPOUTDIR/PLATE/spPlan2d-pppp-mmmmm.par  - 2D plan file (could be several)
