@@ -41,7 +41,11 @@ In this document:
   <LI><A HREF="#datamodel">What Is the Data Model?</A>
   <LI><A HREF="#targetflags">What Are the Target Flags?</A>
   <LI><A HREF="#vacuum">The Wavelengths Are in Vacuum!!??</A>
-  <LI><A HREF="#problems">Reporting Problems</A>
+  <LI><A HREF="#problems">Problems</A>
+  <OL>
+     <LI><A HREF="#problems_known">Known Problems</A>
+     <LI><A HREF="#problems_report">How to Report Problems</A>
+  </OL>
 </UL>
 
 <P>
@@ -687,14 +691,20 @@ and print their PLATE, MJD, and FIBERID as follows:
 <DL><DD><PRE>
 IDL> a = mrdfits('spAll.fits',1) ; This file should be in your current directory
 IDL> i = where((a.primtarget AND 2L^14) NE 0)
-IDL> print,transpose([[a[i].plate],[a[i].mjd],[a[i].fiberid]])
+IDL> print, transpose([[a[i].plate],[a[i].mjd],[a[i].fiberid]])
 
      [ Prints list of objects targetted as a Carbon star.]
 
-IDL> i = where(strmid(a.subclass,0,6) EQ 'Carbon')
-IDL> print,transpose([[a[i].plate],[a[i].mjd],[a[i].fiberid]])
+IDL> i = where(strmatch(a.subclass, 'Carbon*'))
+IDL> print, transpose([[a[i].plate],[a[i].mjd],[a[i].fiberid]])
 
      [ Prints list of objects spectroscopically called a Carbon star.]
+</PRE></DD></DL>
+
+<P>
+Now plot the first object that was found above:
+<DL><DD><PRE>
+IDL> i=0 & plotspec, a[i].plate, a[i].fiberid, mjd=a[i].mjd
 </PRE></DD></DL>
 
 <P>
@@ -782,7 +792,47 @@ Below, I've listed the vacuum wavelength of some transitions:
  6730.82   6732.68   [S II]
 </PRE>
 
-<H2><A NAME="problems">Reporting Problems</A></H2>
+<H2><A NAME="problems">Problems</A></H2>
+
+<H4><A NAME="problems_known">Known Problems</A></H4>
+
+<P>
+Here is a list of the most offensive known problems in Spectro-2D:
+<PRE>
+-------------------------------------------------------------------------------
+Failed plates:
+
+plate 390-51900 -- did I crash this by g-zipping its raw files at the same time?
+
+Plate 182-51703 crashed in 2D - arcs
+Plate 191-51454                        : has wrong MAPNAME - calls it plate 187?
+plate 192-51461 crashed combining - no valid spectro-photo smear or calib
+Plate 194-51462 crashed in 2D - arcs
+Plate 203-51456 crashed when combining ;   same as above??
+Plate 204-51455 crashed in 2D - arcs
+Plate 213-51578 crashed when combining
+plate 217 crashed when combining - FLUXCORR_NEW failures ; wrong plugmap ??
+Plate 218                        : has wrong MAPNAME
+plate 235-51462 crashed when combining... got a NaN... but first failed on b2 arcs
+                                 ; Fails because only b2 flat is saturated
+plate 283-51660 crashed when 2D combining - no spectro-photo calib
+plate 296-51578 crashed when 2D combining - no spectro-photo calib
+Plate 318 special plate needs edited plug-map files in order to run
+plate 420-51871 crashed because exp#7112 had NaNs in the header for RA,DEC
+          which crashed the HELIOCENTRIC proc
+plate 432-51884 has no sky fibers in plugmap?
+plate 434-51885 crashed when 2D combining
+plate 437-51876 seg fault reducing frame "sdR-b2-00007223.fit"
+plate 443-51873 - not enough exposures to combine?
+-------------------------------------------------------------------------------
+Plates that will never reduce:
+
+plate 324-51616 only has one science exposure, so won't combine
+plate 347-51693 crashed in 2D because the only science exposure was saturated.
+-------------------------------------------------------------------------------
+</PRE>
+
+<H4><A NAME="problems_report">How to Report Problems</A></H4>
 
 <P>
 Problems can be reported via the bug database at:
@@ -792,7 +842,8 @@ http://www.astro.princeton.edu:81/cgi-bin/gnatsweb.pl</A>
 </PRE></DD></DL>
 File bugs about the extracted spectra against the category "idlspec2d",
 and about the redshifts or template-fitting against "idlspec1d".
-
+Before filing a problem report (PR), first search the bug database to
+make sure no one else has already reported that problem.
 
 <HR>
 <A HREF="http://astro.princeton.edu/~schlegel/">David Schlegel</A>,
