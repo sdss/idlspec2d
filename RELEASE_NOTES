@@ -7,6 +7,7 @@ Changes to how the SOS robot launches the rsync jobs.
 Bias-subtraction now implemented (bias images in the "specflat" product).
 New set of templates for P-1D; QSO's now use 4 eigentemplates.
 
+APOREDUCE: Allow setting MINEXP to 0 sec.
 DANVB_CONVERT,DANVB_QSOLIST: Procs for generating a list of input
             QSO's from Dan van den Berk's EDR list "plateEDR.summ"
             for generating QSO eigenvectors.  The output file
