@@ -208,6 +208,7 @@ pro/spec2d/batch2d.pro -text
 pro/spec2d/calcflux.pro -text
 pro/spec2d/calcscatimage.pro -text
 pro/spec2d/checkflavor.pro -text
+pro/spec2d/chunkinfo.pro -text
 pro/spec2d/combine1fiber.pro -text
 pro/spec2d/correct_dlam.pro -text
 pro/spec2d/divideflat.pro -text
