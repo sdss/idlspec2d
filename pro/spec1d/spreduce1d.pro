@@ -208,7 +208,7 @@ ormask = 0 ; Free memory
 
    npoly = 3
    zmin = -0.01 ; -3000 km/sec
-   zmax = 0.60 ; Max z for a rest-frame template to 2300 Ang to cover 3700 Ang
+   zmax = 1.00 ; Max z for a rest-frame template to 1850 Ang to cover 3700 Ang
    pspace = 2
    nfind = 5
    plottitle = 'Galaxy Redshift'
@@ -221,7 +221,7 @@ ormask = 0 ; Free memory
    res_gal = zfind(objflux, objivar, hdr=hdr, $
     eigenfile=eigenfile, npoly=npoly, zmin=zmin, zmax=zmax, pspace=pspace, $
     nfind=nfind, width=5*pspace, $
-    plottitle=plottitle, doplot=doplot, debug=debug)
+    plottitle=plottitle, doplot=doplot, debug=debug, /verbose)
    splog, 'CPU time to compute GALAXY redshifts = ', systime(1)-t0
 
    splog, 'Locally re-fitting GALAXY redshifts'
@@ -268,7 +268,7 @@ ormask = 0 ; Free memory
    res_qso = zfind(objflux, objivar, hdr=hdr, $
     eigenfile=eigenfile, npoly=npoly, zmin=zmin, zmax=zmax, pspace=pspace, $
     nfind=nfind, width=7*pspace, $
-    plottitle=plottitle, doplot=doplot, debug=debug)
+    plottitle=plottitle, doplot=doplot, debug=debug, /verbose)
    splog, 'CPU time to compute QSO redshifts = ', systime(1)-t0
 
    splog, 'Locally re-fitting QSO redshifts'
