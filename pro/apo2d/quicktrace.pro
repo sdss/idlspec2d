@@ -56,6 +56,21 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
    flux = quickboxcar(flatimg, flativar, tset=tset, fluxivar=fluxivar)
 
    ;----------
+   ; Argon anyone?
+
+   nocrs = median(flux,3)   ; 3x3 median filter
+   noargon = nocrs
+   ntrace = (size(nocrs))[2]
+   for i=0,ntrace -1 do noargon[*,i] = median(noargon[*,i],21)
+   argonlevel = total(nocrs - noargon,1)
+   djs_iterstat, argonlevel, median=medargon, sigma=sigargon
+   argonsn = medargon / (sigargon /sqrt(ntrace))
+
+   ; argonsn = 5 looks to be about normal, argonsn > 10 should throw warning
+   if argonsn GT 10.0 then $
+      splog,'WARNING: Argon is present, significance is :', argonsn
+
+   ;----------
    ; Write traceset to FITS file
 
    mwrfits, flux, tsetfile, /create
