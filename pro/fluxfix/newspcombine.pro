@@ -279,7 +279,7 @@ pro newspcombine, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
    nsci = n_elements(sciname)
    mapname = strarr(nsci)
    for i = 0, nsci - 1 do begin
-     checkhdr = headfits(sciname)
+     checkhdr = headfits(sciname[i])
      mapname[i] = strtrim(sxpar(checkhdr, 'NAME'), 2) 
    endfor
    diff = where(mapname ne mapname[0], ndiff)
