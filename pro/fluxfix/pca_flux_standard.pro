@@ -132,7 +132,7 @@ end
 pro pca_flux_standard, loglam, stdflux, stdivar, stdinfo, $
     corvector = corvector, corvivar = corvivar, cormed = cormed, $
     fcor = fcor, fsig = fsig, bkpts = bkpts, calibset = calibset, $
-    noplot = noplot
+    noplot = noplot 
 
    ;--------------
    ; Read in Kurucz model files
@@ -157,7 +157,7 @@ pro pca_flux_standard, loglam, stdflux, stdivar, stdinfo, $
 
    ; Normalize in the dichroic region but avoiding the exact edges
    norm_indx = where(wave gt 5700 and wave lt 6300 and $
-                      wave lt max(wave) - 200 and wave gt min(wave) + 200)
+                     wave lt max(wave) - 200 and wave gt min(wave) + 200)
 
    for istd=0, nstd-1 do begin
      model_index = (where(kindx.model eq stdinfo[istd].model))[0]
