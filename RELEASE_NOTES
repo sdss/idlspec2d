@@ -1,4 +1,7 @@
 
+APO_LOG2HTML: Default link to GIF plot, with another link to PostScript.
+APOREDUCE: Convert the PostScript plot to GIF format using "pstogif",
+           which is in idlutils.
 EXTRACT_ROW: Be sure to pass "whoppingct" as type LONG to the C code.
            If not, then it fails on the Mac OS X platform.
 FIND_NMINIMA: Fix tiny bug for optional plots.
@@ -27,6 +30,8 @@ READ_ELODIE: Use INTERPOL() instead of POPULATE_IMAGE for interpolating
 READSPEC: Add PATH option, which can override TOPDIR.
            Determine the MJD dynamically if set equal to 0.
 SDSSPROC: Fix silly bug trying to set QUALITY='excellent' when undefined.
+SLITHISTORY: New proc to plot history of spectro slit-head positions
+           based upon the (new) plSlitps files from the mapper.
 SOLVEFILTER: New proc to determine the 2.5-m filters from the spectra.
 SPCOADD_FRAMES: Change BUNIT header keywords in output files to have
            the comment '1E-17 erg/cm^2/s/Ang' instead of the incorrect
@@ -42,6 +47,7 @@ aporsync_alllog.sh: New shell script for copying all of the log files
 aporsync_logs.sh: The last line of the first rsync command was accidentally
            dropped in this last version - fix.  Also, only copy sdHdrFix file
            if it exists.  This addresses PR #3968.
+           Also copy plSlitpos*.par,plPlugMap*.log files.
 export.h: Update this file to agree with the IDL 5.5beta for Mac OS X.
 opHdrFix.par: Fix the RA,DEC positions in the raw file headers to fix
            some remaining problems for PR #3009.  Specifically, the following
@@ -99,6 +105,8 @@ YANNY_READ: Make use of Hogg's procedure HOGG_STRSPLIT, which should be more
            either '.gz' or '.Z'.  This is somewhat complicated by the fact
            that we need to start by getting the number of lines in the file.
 YANNY_READONE: New proc; wrapper for YANNY_READ.
+YANNY_WRITE: Default to having the variable names in the typedef's in
+           lower-case (not that it matters).
 evilmake: Add "Darwin" (Mac OS X) as a possible platform.
            Export F77=g77 for the platform.
            This doesn't work yet for Blanton's spheregroup code or Fortran.
