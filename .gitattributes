@@ -101,6 +101,10 @@ examples/opHdrFix.par -text
 examples/opLimits.par -text
 examples/plParam.par -text
 examples/plPlugMapT-XXXX.par -text
+examples/spFluxcalib-b1.fits -text svneol=unset#unset
+examples/spFluxcalib-b2.fits -text svneol=unset#unset
+examples/spFluxcalib-r1.fits -text svneol=unset#unset
+examples/spFluxcalib-r2.fits -text svneol=unset#unset
 include/Makefile -text
 include/evilmath.h -text
 include/export.h -text
