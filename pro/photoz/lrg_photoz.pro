@@ -42,8 +42,8 @@
 ;
 ; BUGS:
 ;   The LRG template is not quite correct.  I have modified the spectrum
-;   on large scales by multiplying by an empirically-determined quadratic
-;   correction.  Also, I've extrapolated the two ends of the spectrum
+;   on large scales by multiplying by an empirically-determined function.
+;   Also, I've extrapolated the two ends of the spectrum
 ;   to be essentially flat in f_lambda.
 ;   The 3-sigma-clipped scatter appears to be 0.023 at z>0.1.
 ;

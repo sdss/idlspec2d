@@ -3,7 +3,7 @@
 ;   lrg_tweak_template
 ;
 ; PURPOSE:
-;   Very simple photo-z finder for LRGs using a single template.
+;   Compute the corrections to the input LRG template used for LRG_PHOTOZ().
 ;
 ; CALLING SEQUENCE:
 ;   lrg_tweak_template, pflux, pflux_ivar, zz, $
@@ -36,8 +36,7 @@
 ;   This routine computes the modifications to an input LRG spectrum
 ;   that gives a better total chi^2 when computing photometric redshifts.
 ;   The form of the transformation is:
-;      Flux = Flux * (1 + COEFF[0] * Wave + COEFF[1] * Wave^2)
-;             * (1 + COEFF[2] * z * Wave)
+;      Flux = Flux * Wave^COEFF[0] * (1 + COEFF[1] * z * Wave)
 ;
 ;   The fluxes should be AB fluxes, or SDSS 2.5-m natural system fluxes
 ;   if /ABCORRECT is set.
