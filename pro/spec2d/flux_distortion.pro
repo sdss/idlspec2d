@@ -288,11 +288,6 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
       else $
        iiter = iiter + 1
       splog, 'Number of rejected objects = ', long(total(1-outmask))
-; ???
-corrimg = fltarr(npixobj, nobj)
-for i=0L, nobj-1 do $
- corrimg[*,i] = flux_distort_corrvec(coeff, wavevec, plugmap[i])
-splog,'Deviations = ', minmax(corrimg),stdev(corrimg)
 
       ; For the next iteration, start with the last best fit.
 ;      parinfo.value = coeff
