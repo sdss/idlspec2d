@@ -45,7 +45,7 @@ In this document:
      <LI><A HREF="#get_where">Copying the Proprietary Reductions from Princeton (alfred account)</A>
      <LI><A HREF="#get_rsync">How to Keep Your Data Up-to-Date</A>
   </OL>
-  <LI><A HREF="#summary">Summary Files</A>
+  <LI><A HREF="#summary">Summary Files</A> <FONT COLOR="#ff0000"> <-- spAll files</FONT>
   <OL>
      <LI><A HREF="#completesample">Selecting Complete Samples</A>
   </OL>
@@ -314,26 +314,61 @@ through v4_10_6, which represents a fairly homogeneous set of reductions.
 
 <P>
 The Princeton re-reductions of the "public release" data is available
-from this web site.  There is the Early Data Release (EDR)
-with 109 plates (69,760 spectra), and the Data Release 1 (DR1)
-with 291 plates (186,240 spectra).
+from this web site.  The data are grouped into disjoint samples of when
+the data became available:
+the Early Data Release (EDR) with 139 plates (88,960 spectra),
+Data Release 1 (DR1) adds to this 192 plates (122,880 spectra),
+Data Release 2 (DR2) adds to this 279 plates (178,560 spectra),
+and Data Release 3 (DR3) adds to this 252 plates (161,280 spectra).
+Not public yet is the addition from DR4 of 479 plates (306,560 spectra).
 
 <P>
-To download the 14 Gb of EDR data including the summary files:
+To download the 14 Gb of EDR data
+(including the <A HREF="#summary">spAll-EDR summary file</A>;
+if you <B>only</B> want the spAll file, then remove
+"--accept *.fits" from the command):
 <DL><DD><PRE>
  wget --dot-style=mega --no-clobber --no-host-directories \
    --no-parent --non-verbose --recursive --retr-symlinks \
    --accept "*.fits" --accept "spAll*" \
    http://spectro.princeton.edu/spectro_EDR/
 </PRE></DD></DL>
-To download the 31 Gb of DR1 data (which is a superset of EDR)
-including the summary files:
+To download the 18 Gb of data new to DR1
+(including the <A HREF="#summary">spAll-DR1 summary file</A>):
 <DL><DD><PRE>
  wget --dot-style=mega --no-clobber --no-host-directories \
    --no-parent --non-verbose --recursive --retr-symlinks \
    --accept "*.fits" --accept "spAll*" \
    http://spectro.princeton.edu/spectro_DR1/
 </PRE></DD></DL>
+To download the 27 Gb of data new to DR2
+(including the <A HREF="#summary">spAll-DR2 summary file</A>):
+<DL><DD><PRE>
+ wget --dot-style=mega --no-clobber --no-host-directories \
+   --no-parent --non-verbose --recursive --retr-symlinks \
+   --accept "*.fits" --accept "spAll*" \
+   http://spectro.princeton.edu/spectro_DR2/
+</PRE></DD></DL>
+To download the 24 Gb of data new to DR3
+(including the <A HREF="#summary">spAll-DR3 summary file</A>):
+<DL><DD><PRE>
+ wget --dot-style=mega --no-clobber --no-host-directories \
+   --no-parent --non-verbose --recursive --retr-symlinks \
+   --accept "*.fits" --accept "spAll*" \
+   http://spectro.princeton.edu/spectro_DR3/
+</PRE></DD></DL>
+For members of the SDSS collaboration only, 
+the 46 Gb of data new to DR4 can be downloaded with the following command
+(after substituting the usual username and password):
+<DL><DD><PRE>
+ wget --dot-style=mega --no-clobber --no-host-directories \
+   --no-parent --non-verbose --recursive --retr-symlinks \
+   --accept "*.fits" --accept "spAll*" \
+   http://www.astro.princeton.edu:81/spectro_DR4/ \
+   --http-user=??? --http-passwd=???
+</PRE></DD></DL>
+
+<P>
 Note that these reductions are not identical to the "official SDSS
 data release", but have several improvements and include our redshift fits,
 spectral classifications, velocity dispersions for galaxies,
@@ -545,9 +580,14 @@ either the hardware or target selection for the survey.  These plates are:
 <P>
 We generated one monstrous file with all the spectroscopic
 and photometric outputs (but not the actual images, spectra
-or spectroscopic line fits).
-This is a FITS binary table called "spAll.fits".
-At present, there are four versions of this file as follows:
+or spectroscopic line fits).  These files are FITS binary tables.
+The photometric information is from the best-available
+``uber-calibration'' of the imaging data as of April 2005.
+The details of the photometric information can be found here:
+  <A HREF="http://photo.astro.princeton.edu/#data_model">http://photo.astro.princeton.edu/#data_model</A> .
+These files include matches to to the FIRST radio catalog,
+the 2MASS catalog, and the USNO-B astrometric catalog.
+The following files exist:
 <OL>
    <LI><B>spAll.fits</B> - All spectroscopic data taken to date
        from 'marginal' or 'good' plates
@@ -555,12 +595,19 @@ At present, there are four versions of this file as follows:
    <LI><B>spAll-EDR.fits</B> - spAll generated from only those plates
        in the Early Data Release (EDR)
    <LI><B>spAll-DR1.fits</B> - spAll generated from only those plates
-       in the Data Release 1 (DR1)
-   <LI><B>spAll-public.fits</B> - spAll generated from only those plates
-       in the Early Data Release (EDR) or Data Release 1 (DR1)
+       new to Data Release 1 (DR1)
+   <LI><B>spAll-DR2.fits</B> - spAll generated from only those plates
+       new to Data Release 2 (DR2)
+   <LI><B>spAll-DR3.fits</B> - spAll generated from only those plates
+       new to Data Release 3 (DR3)
+   <LI><B>spAll-DR4.fits</B> - spAll generated from only those plates
+       new to Data Release 4 (DR4)
+   <LI><B>spAll-public.fits</B> - spAll generated from EDR+DR1+DR2+DR3+DR4
 </OL>
 Although these files are quite large, most FITS readers will allow
 you to read such files piece-wise.
+There are corresponding ASCII versions of these files, i.e. <B>spAll.dat</B>,
+that contain a subset of the information.
 
 <P>
 The following information is compiled for each object:
@@ -1598,7 +1645,7 @@ MJD -> 51605 (->2 Mar 2000): Scattered light from internal LED's contaminate
                    work-arounds that basically eliminated the problem.
                    Definitely compromises data for plates 187,188,190,191,
                    192,194,198,202,203,214,217,231,265,266,269,283,295.
-MJD 51578 - 51580 (3-5 Feb 2000): Severe "shifted row" electronics problem.
+MJD 51578 - 55580 (3-5 Feb 2000): Severe "shifted row" electronics problem.
                    This only effects plate 295/51580.
 MJD 51584,51585,51608,51614,51615,51629,51630: Raw images are the wrong size!
                    Unsure what this actually does to the data.
