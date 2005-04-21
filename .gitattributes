@@ -78,7 +78,6 @@ etc/intrinsic1.dat -text
 etc/intrinsicF2.dat -text
 etc/kurucz_stds_v5.fit -text
 etc/lamphgcdne.dat -text
-etc/lamplist.dat -text
 etc/linematch.par -text
 etc/red.bkpts -text
 etc/regress1d_all.chicago -text
