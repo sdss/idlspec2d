@@ -14,6 +14,7 @@ EXTRACT_OBJECT: Write as HDU #8 an image of the relative chi^2, or an
         are when we re-scale the sky errors.
         If there is a telluric image (which we've deprecated for the v5 code),
         then it is now in HDU #9.
+FITARCIMAGE: Print the wavelengths of any rejected arc lines.
 FLUX_DISTORTION: There was a bug in the way objects were being rejected
         in the main iteration loop.  Basically, objects were being rejected,
         but then had chi=0 in the next iteration, and then were put back
@@ -128,8 +129,9 @@ ZCOMPUTE_QSO: A version of ZCOMPUTE that is basically the same code, but
 
 doc/www/idlspec2d_reduce.html,spectro_home.html: The machine alias name
         sdssdata.princeton.edu should really be sdssdata.astro.princeton.edu
+etc/lamplist.dat: Remove this file, since we use "lamphgcdne.dat" instead.
 etc/spChunkList.par: Add chunks 91 through 107, 99A, 100A, 108, 109,
-        110, 111, 112.
+        110, 111, 112, 113, 114.
 etc/spPlateList.par: Add 436 new plates, through MJD 53360 (Dec 21, 2004).
         Add the DR4 public plates, consistent with sdss-archive/2374.
         (I posted some inconsistencies about these plate lists to
