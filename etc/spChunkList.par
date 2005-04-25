@@ -152,4 +152,8 @@ spchunklist     108 8001 8009 special   "ET"
 spchunklist     111 8010 8010 special   "ET Project Kepler (not drilled)"
 spchunklist     113 8011 8014 special   "ET Project bright reference stars"
 spchunklist     114 8015 8015 special   "ET Project Kepler"
+spchunklist     115 2196 2201 main      ""
+spchunklist     116 2202 2210 main      ""
+spchunklist     117 2174 2184 special   "SEGUE bright"
+spchunklist     118 2185 2195 special   "SEGUE faint"
 
