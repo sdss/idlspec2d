@@ -33,8 +33,9 @@
 ; REVISION HISTORY:
 ;   2001-11-17  written - Hogg (NYU)
 ;-
-pro sdss_spec_block, plate, fiberid, mjd, block_flux=block_flux, $
-                     block_ivar=block_ivar, block_lambda=block_lambda, $
+pro sdss_spec_block, plate, fiberid, mjd, block_flux=out_block_flux, $
+                     block_ivar=out_block_ivar, $
+                     block_lambda=out_block_lambda, $
                      avloglam=avloglam, deextinct=deextinct, vdisp=vdisp
 
 masksky=1
@@ -57,7 +58,7 @@ for iplate=0L, n_elements(platelist)-1L do begin
     plate_indx=where(plate eq platelist[iplate],plate_count)
     readspec, plate[plate_indx],fiberid[plate_indx],mjd=mjd[plate_indx], $
       flux=flux,flerr=flerr,invvar=invvar,andmask=andmask,ormask=ormask, $
-      loglam=loglam, zans=zans, tsobj=tsobj
+      loglam=loglam, zans=zans
     flux= double(flux)
     invvar= double(invvar)
     for i=0L,plate_count-1 do begin
@@ -110,6 +111,10 @@ for iplate=0L, n_elements(platelist)-1L do begin
         block_lambda[*]=10.^(avloglam)
     endfor
 endfor
+
+out_block_flux=block_flux
+out_block_ivar=block_ivar
+out_block_lambda=block_lambda
     
 return
 end
