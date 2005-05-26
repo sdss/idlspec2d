@@ -36,7 +36,8 @@
 pro sdss_spec_block, plate, fiberid, mjd, block_flux=out_block_flux, $
                      block_ivar=out_block_ivar, $
                      block_lambda=out_block_lambda, $
-                     avloglam=avloglam, deextinct=deextinct, vdisp=vdisp
+                     avloglam=avloglam, deextinct=deextinct, vdisp=vdisp, $
+                     minerror=minerror
 
 masksky=1
 
@@ -94,14 +95,31 @@ for iplate=0L, n_elements(platelist)-1L do begin
         if(keyword_set(vdisp)) then begin
             adddisp2=vdisp^2-zans[i].vdisp^2
             if(adddisp2 gt 0.) then begin
-                sigma=sqrt(adddisp2)/(2.99792e+5*alog(10.))
-                lum=gauss_smooth(avloglam,lum,sigma,avloglam)
+;;                 sigma=sqrt(adddisp2)/(2.99792e+5*alog(10.))
+                lum=k_smooth(avloglam,lum,sqrt(adddisp2))
+                lum_ivar_new=k_smooth(avloglam,lum_ivar,sqrt(adddisp2))
+                iz=where(lum_ivar eq 0, nz)
+                if(nz gt 0) then $
+                  lum_ivar_new[iz]=0.
+                lum_ivar=lum_ivar_new
+            endif
+        endif
+
+;; apply minimum errors
+        if(keyword_set(minerror)) then begin
+            inz=where(lum_ivar gt 0., nnz)
+            if(nnz gt 0) then begin
+                fracerr=1./(sqrt(lum_ivar[inz])*lum[inz])
+                fracerr=sqrt(fracerr^2+minerror^2)
+                lum_ivar[inz]=1./(fracerr*lum[inz])^2
             endif
         endif
 
 ; increment vectors
-        if(n_elements(block_flux) eq 0) then begin
-            nl=n_elements(lum)
+        nl=n_elements(lum)
+        if(n_elements(block_flux) ne nl*nspec OR $
+           n_elements(block_ivar) ne nl*nspec OR $
+           n_elements(block_lambda) ne nl) then begin
             block_flux=fltarr(nl,nspec)
             block_ivar=fltarr(nl,nspec)
             block_lambda=fltarr(nl)
