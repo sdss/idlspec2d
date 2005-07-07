@@ -1,12 +1,12 @@
 ;+
 ; NAME:
-;   read1spec
+;   readonespec
 ;
 ; PURPOSE:
 ;   Routine for reading single exposure spectra from Spectro-2D outputs
 ;
 ; CALLING SEQUENCE:
-;   read1spec, plate, fiber, [mjd=, flux=, flerr=, invvar=, $
+;   readonespec, plate, fiber, [mjd=, flux=, flerr=, invvar=, $
 ;    mask=, disp=, sky=, loglam=, wave=, synflux=, objhdr=, framehdr=, $
 ;    topdir=, path=, /silent ]
 ;
