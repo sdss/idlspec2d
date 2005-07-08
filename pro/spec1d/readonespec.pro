@@ -122,7 +122,7 @@ pro readonespec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    if (arg_present(framehdr)) then begin
       framehdr = ptrarr(nfile)
       for ifile=0L, nfile-1 do begin
-         spframe_read, filename[0], hdr=framehdr1
+         spframe_read, filename[ifile], hdr=framehdr1
          framehdr[ifile] = ptr_new(framehdr1)
       endfor
    endif
