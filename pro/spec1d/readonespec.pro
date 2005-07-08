@@ -36,7 +36,7 @@
 ;   wave       - Wavelength in Angstroms [NPIXEL,NFIBER]
 ;   synflux    - Best-fit synthetic eigen-spectrum [NPIXEL,NFILE]
 ;   objhdr     - The FITS header from the spPlate file
-;   framehdr   - The FITS header from the first object spCFrame file read
+;   framehdr   - Pointer array to the FITS headers from all the spCFrame files
 ;
 ; COMMENTS:
 ;   The environment variable SPECTRO_DATA must be set to tell this routine
@@ -119,8 +119,13 @@ pro readonespec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
         root_dir=topdir, subdirectory=platestr))
    endfor
 
-   if (arg_present(framehdr)) then $
-    spframe_read, filename[0], hdr=framehdr
+   if (arg_present(framehdr)) then begin
+      framehdr = ptrarr(nfile)
+      for ifile=0L, nfile-1 do begin
+         spframe_read, filename[0], hdr=framehdr1
+         framehdr[ifile] = ptr_new(framehdr1)
+      endfor
+   endif
 
    if (arg_present(flux)) then begin
       flux = fltarr(2048,nfile)
