@@ -48,6 +48,7 @@ QUICKEXTRACT: Remove the end of the warning message for "Whopping fiber"
         fact it usually just affects a few fibers.
 READPLUGMAP: Fix bug when replacing unknown fluxes in the calibObj
         structure with old values in the plug-map file.
+READONESPEC: Return all headers in FRAMEHDR.
 READSPEC: Change how the internal procedure READSPEC1 works, such that
         arrays of zeros are returned if data is missing.  This allows us
         to return a good one-to-one list of objects from an input list
