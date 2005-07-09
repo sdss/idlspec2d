@@ -154,7 +154,7 @@ pro readonespec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    endif
 
    if (arg_present(mask)) then begin
-      mask = fltarr(2048,nfile)
+      mask = lonarr(2048,nfile)
       for ifile=0L, nfile-1 do begin
          spframe_read, filename[ifile], indx, mask=mask1
          mask[*,ifile] = mask1
