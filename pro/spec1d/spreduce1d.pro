@@ -42,7 +42,9 @@
 ;   cpbackup
 ;   dfpsclose
 ;   dfpsplot
+;   djs_filepath()
 ;   elodie_best()
+;   fileandpath()
 ;   filter_thru()
 ;   mrdfits()
 ;   mwrfits
