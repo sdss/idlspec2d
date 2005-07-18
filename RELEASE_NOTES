@@ -123,6 +123,9 @@ SSHIFT,SSHIFT2D: Remove these routines that are in the idlutils product.
 SYNTHSPEC,ZFIND: If the eigenspectrum file does not contain in image in HDU #0,
         then look for a B-spline in HDU #1 and assume that it describes
         a B-spline.  (This is what we're trying to use for QSOs now.)
+TRACE320CRUDE: This routine was not actually setting the default value
+        of RADIUS, but was getting it from an internal call to TRACE_CRUDE.
+        This has been fixed (necessarily, after a similar fix to TRACE_CRUDE).
 ZTWEAK_STAR: Add optional keywords.
 ZCOMPUTE_QSO: A version of ZCOMPUTE that is basically the same code, but
         using a B-spline composite spectrum that must be evaluated at each
