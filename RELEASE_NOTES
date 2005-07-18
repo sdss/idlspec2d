@@ -2,6 +2,7 @@
 ARCFIT_GUESS: Change the FIX() functions to LONG(), though I don't believe
         this was causing any trouble.
 APO_LOG2HTML,APOREDUCE,BATCH1D,BATCH2D,CATPLOT,SDSSPROC,
+COMPUTECHI2: Add optional outputs COVAR,VAR.
 ELODIE_BEST: Trim to stars not labelled as binary or triple stars, according
         to the Q_VR keyword in the Elodie FITS headers.  Rockosi brought
         this to my attention on Sep 20, 2004.
