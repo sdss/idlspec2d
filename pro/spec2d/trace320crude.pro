@@ -73,6 +73,7 @@ function trace320crude, image, invvar, ystart=ystart, nmed=nmed, $
 
    if (NOT keyword_set(maxdev)) then maxdev = 1.0
    if (NOT keyword_set(ngrow)) then ngrow = 5
+   if (NOT keyword_set(radius)) then radius = 3.0
 
    ;----------
    ; If INVVAR is set, then start by interpolating over bad pixels
