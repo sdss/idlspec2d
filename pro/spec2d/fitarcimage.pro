@@ -251,14 +251,16 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
       fracbad = float(nbad) / ngfiber
       qgood[i] = fracbad LE 0.10
       if (qgood[i] EQ 0) then $
-       splog, 'Discarding trace', i, ' at ', lamps[i], ' Ang: FRACBAD=', fracbad
+       splog, 'Discarding trace', i, ' at ', lamps[i].lambda, $
+        ' Ang: FRACBAD=', fracbad
 
       djs_iterstat, xdiff[*,i], sigma=sigma
       if sigma GT 0.2 then begin
        qgood[i] = 0
-       splog, 'Discarding trace', i, ', at ', lamps[i], ' Ang: RMS=', sigma, ' pix'
+       splog, 'Discarding trace', i, ', at ', lamps[i].lambda, $
+        ' Ang: RMS=', sigma, ' pix'
       endif
-      
+
    endfor
 
    ; Trim linelist
