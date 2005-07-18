@@ -130,6 +130,7 @@ ZCOMPUTE_QSO: A version of ZCOMPUTE that is basically the same code, but
 
 doc/www/idlspec2d_reduce.html,spectro_home.html: The machine alias name
         sdssdata.princeton.edu should really be sdssdata.astro.princeton.edu
+doc/www/spectro_home.html: Add info for downloading DR4.
 etc/lamplist.dat: Remove this file, since we use "lamphgcdne.dat" instead.
 etc/spChunkList.par: Add chunks 91 through 107, 99A, 100A, 108, 109,
         110, 111, 112, 113, 114, 115-118, 119, 120, 121.
