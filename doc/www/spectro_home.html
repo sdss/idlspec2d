@@ -319,8 +319,8 @@ the data became available:
 the Early Data Release (EDR) with 139 plates (88,960 spectra),
 Data Release 1 (DR1) adds to this 192 plates (122,880 spectra),
 Data Release 2 (DR2) adds to this 279 plates (178,560 spectra),
-and Data Release 3 (DR3) adds to this 252 plates (161,280 spectra).
-Not public yet is the addition from DR4 of 479 plates (306,560 spectra).
+Data Release 3 (DR3) adds to this 252 plates (161,280 spectra),
+and Data Release 4 (DR4) adds to this 479 plates (306,560 spectra),
 
 <P>
 To download the 14 Gb of EDR data
@@ -357,14 +357,22 @@ To download the 24 Gb of data new to DR3
    --accept "*.fits" --accept "spAll*" \
    http://spectro.princeton.edu/spectro_DR3/
 </PRE></DD></DL>
+To download the 46 Gb of data new to DR4
+(including the <A HREF="#summary">spAll-DR4 summary file</A>):
+<DL><DD><PRE>
+ wget --dot-style=mega --no-clobber --no-host-directories \
+   --no-parent --non-verbose --recursive --retr-symlinks \
+   --accept "*.fits" --accept "spAll*" \
+   http://spectro.princeton.edu/spectro_DR4/
+</PRE></DD></DL>
 For members of the SDSS collaboration only, 
-the 46 Gb of data new to DR4 can be downloaded with the following command
+once DR5 is available, it can be downloaded with the following command
 (after substituting the usual username and password):
 <DL><DD><PRE>
  wget --dot-style=mega --no-clobber --no-host-directories \
    --no-parent --non-verbose --recursive --retr-symlinks \
    --accept "*.fits" --accept "spAll*" \
-   http://www.astro.princeton.edu:81/spectro_DR4/ \
+   http://www.astro.princeton.edu:81/spectro_DR5/ \
    --http-user=??? --http-passwd=???
 </PRE></DD></DL>
 
