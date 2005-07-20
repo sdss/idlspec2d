@@ -6,6 +6,9 @@ COMPUTECHI2: Add optional outputs COVAR,VAR.
 ELODIE_BEST: Trim to stars not labelled as binary or triple stars, according
         to the Q_VR keyword in the Elodie FITS headers.  Rockosi brought
         this to my attention on Sep 20, 2004.
+ELODIE_BEST,FITREDSHIFT,FITMEANX,FITWITHMX,MYFLUXCALIB,SDSSPROC,TRACE_FIT:
+        Add /double keyword to STDDEV() call, such the behaviour will be
+        the same on 32-bit or 64-bit machines.
 EXTRACT_BOXCAR,EXTRACT_PROFILE,EXTRACT_ROW,SSHIFTVEC:
         Call IDLUTILS_SO_EXT() to get the suffix for dynamically
         loaded libraries (rather than assuming ".so").
@@ -16,6 +19,9 @@ EXTRACT_OBJECT: Write as HDU #8 an image of the relative chi^2, or an
         If there is a telluric image (which we've deprecated for the v5 code),
         then it is now in HDU #9.
 FITARCIMAGE: Print the wavelengths of any rejected arc lines.
+FITREDSHIFT,QAPLOT_FCALIBVEC,SOLVEFILTER,SPREDUCE1D,VELDISP,
+        FLUX_DISTORTION,SDSSPROC: Change calls from the deprecated STDEV()
+        to STDDEV().
 FLUX_DISTORTION: There was a bug in the way objects were being rejected
         in the main iteration loop.  Basically, objects were being rejected,
         but then had chi=0 in the next iteration, and then were put back
@@ -56,6 +62,7 @@ READSPEC: Change how the internal procedure READSPEC1 works, such that
         of plate,mjd,fiberid.  However, I'm not positive that this is always
         the desired behaviour.  For ex, requesting a non-existent plate
         will now return 640-element arrays of zeros.
+REDUCE_PLATE: Removed (old code).
 SDSSPROC: Re-enable the call to 'speclog_version'.
         Add call to FITS_PURGE_NANS in order to address PR #6032, 6084,
         whereby the DA has written invalid FITS header keywords.
