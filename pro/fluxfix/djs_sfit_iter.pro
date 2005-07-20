@@ -44,15 +44,11 @@
 ; PROCEDURES CALLED:
 ;   djs_reject
 ;   splog
-;   stddev
-;
-; INTERNAL SUPPORT ROUTINS:
 ;
 ; REVISION HISTORY:
 ;   12-Aug-2003  Adapted from djs_sfit by C. Tremonti, Steward Observatory
 ;-
 ;------------------------------------------------------------------------------
-
 function djs_sfit_iter, fval, xval, yval, degreex, degreey, $
    sqivar=sqivar, yfit=yfit, mask = mask, maxdev = maxdev, maxrej = maxrej, $
    upper=upper, lower=lower, maxiter = maxiter, freeiter = freeiter, $
