@@ -190,6 +190,7 @@ examples/opECalib-51577.par: Update the gains based upon work by Eric Switzer
            r1:  1.15 1.00  3.7 3.7  -> 1.09 1.00  4.08 4.04
            r2:  1.00 1.05  3.7 3.7  -> 1.05 1.05  4.32 4.12
         Note that this is the opECalib file used for the vast majority of data.
+include/export.h: New export.h file in the IDL 6.2 beta distribution.
 lib/Makefile: For "make clean", also remove ".a" and ".dylib" files.
 templates/eigeninput_star.par:
         Shift all of the normal stellar templates (O through M) to
