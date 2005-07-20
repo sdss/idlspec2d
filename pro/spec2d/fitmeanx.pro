@@ -99,7 +99,7 @@ function fitmeanx, wset, lambda, xpos, aveinvvar, $
          endelse
 
          xfit[*,i] = yfit
-         sdev = stddev((yfit-rawdiff)[igood])
+         sdev = stddev((yfit-rawdiff)[igood], /double)
       endif else begin
          ; Case with too few points to fit
          sdev = 0.0

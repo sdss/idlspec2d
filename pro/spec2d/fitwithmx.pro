@@ -29,8 +29,8 @@ function fitwithmx, invset, lambda, xpos, nord=nord
            endelse
 
            res1=yfit-dif
-           good=abs(res1) lt 4*stddev(res1)
-           good=abs(res1) lt 4*stddev(res1*good)
+           good=abs(res1) lt 4*stddev(res1,/double)
+           good=abs(res1) lt 4*stddev(res1*good,/double)
            if (!version.release LT '5.4') then begin
               kent=polyfitw(x,dif,good,nord,yfit)
            endif else begin

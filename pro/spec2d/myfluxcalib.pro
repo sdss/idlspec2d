@@ -449,7 +449,7 @@ objmask = 0 ; Free memory
    refmag = plugmap[iphoto].mag[2] + 2.5 * alog10(acoeff)
    splog, 'Estimates of spectro-photo PCA r-mag = ', refmag
    splog, 'Dispersion of spectro-photo PCA r-mag = ', $
-    (nphoto EQ 1 ? 0 : stddev(refmag))
+    (nphoto EQ 1 ? 0 : stddev(refmag, /double))
    refmag = median([refmag], /even)
 
    ;----------

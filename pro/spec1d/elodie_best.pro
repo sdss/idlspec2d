@@ -218,7 +218,8 @@ function elodie_best, objflux, objivar, $
       res_best[iobj].elodie_rchi2 = res_all[iobj,imin].rchi2
       res_best[iobj].elodie_dof = res_all[iobj,imin].dof
       isort = sort(res_all[iobj,*].rchi2)
-      res_best[iobj].elodie_z_modelerr = stddev(res_all[iobj,isort[0:11]].z)
+      res_best[iobj].elodie_z_modelerr = $
+       stddev(res_all[iobj,isort[0:11]].z, /double)
    endfor
 
    splog, 'Total time for ELODIE_BEST = ', systime(1)-stime0, ' seconds', $

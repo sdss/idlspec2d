@@ -72,8 +72,8 @@ function trace_fix, xcen, minsep=minsep, ngrow=ngrow, ycen=ycen, xerr=xerr
       if (total(xbad[*,itrace]) EQ ny) then begin
          ; Either trace number ITRACE or ITRACE+1 should be discarded.
          ; Get rid of the one with the most curvature.
-         disp1 = stddev( xnew[0:ny-2,itrace] - xnew[1:ny-1,itrace] )
-         disp2 = stddev( xnew[0:ny-2,itrace+1] - xnew[1:ny-1,itrace+1] )
+         disp1 = stddev(xnew[0:ny-2,itrace] - xnew[1:ny-1,itrace], /double)
+         disp2 = stddev(xnew[0:ny-2,itrace+1] - xnew[1:ny-1,itrace+1], /double)
          if (disp1 GT disp2) then badnum = itrace $
           else badnum = itrace + 1
          remove_column, xnew, badnum

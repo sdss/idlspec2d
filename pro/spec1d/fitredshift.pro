@@ -81,7 +81,7 @@ pro findmaxarea, look, xcen, peak, maxarea, cen=cen, area=area, pks=pks
          area[i] = total(ruin[lowerbound:upperbound]) 
 
          dev[i] = stddev([look[velcen-100:lowerbound-1],$
-                          look[upperbound+1:velcen+100]])
+                          look[upperbound+1:velcen+100]], /double)
          cen[i] = velcen
          ruin[lowerbound:upperbound] = 0.0
       endif else i=20
@@ -212,7 +212,7 @@ pro fitredshift, fluxfft, fluxerr, starfft, starerr, $
 
    left = long(velcen + xcen - 1) - lindgen(100)
    right = long(velcen + xcen + 1) + lindgen(100)
-   asig = stddev(newcorr[left]-newcorr[right]) / sqrt(2.)
+   asig = stddev(newcorr[left]-newcorr[right], /double) / sqrt(2.)
 
    ; Here's my attempt to fit a gaussian to the correlation peak
    ; The main problem here is to decide where the baseline of the
