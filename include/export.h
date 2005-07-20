@@ -2,7 +2,7 @@
 
 
 /*
- *  Copyright (c) 1992-2002, Research Systems Inc.  All rights reserved.
+ *  Copyright (c) 1992-2005, Research Systems Inc.  All rights reserved.
  *  Reproduction by any means whatsoever is prohibited without express
  *  written permission.
 */
@@ -51,8 +51,6 @@
 #define IDL_M_GENERIC                    -1
 #define IDL_M_NAMED_GENERIC              -2
 #define IDL_M_SYSERR                     -4
-#define IDL_M_NOSUPPORT                  -5
-#define IDL_M_NOPROCSUPPORT              -6
 
 #endif                         /* msg_code_IDL_DEF */
 
@@ -87,12 +85,24 @@
 #define ALPHA_OSF
 #endif
 
-#if defined(_WIN32) && !defined(WIN32)
+#if defined(_WIN32) || defined(MSWIN)
+#ifndef MSWIN
+#define MSWIN
+#endif
+#ifdef _WIN64
+#define MSWIN_64
+/* Used to mark porting code that has to be eliminated */
+#define WIN64_PORT_STUB
+#else
+#define MSWIN_32
+#endif
+/*
+ * Important note: WIN32 is also defined for 64-bit Windows. Use
+ * IDL_MEMINT_64 or MSWIN_64 to detect 64-bit builds.
+ */
+#ifndef WIN32
 #define WIN32
 #endif
-
-#if defined(_ALPHA_) && defined(WIN32)
-#define ALPHA_WIN32
 #endif
 
 #if defined(__linux__) && !defined(linux)
@@ -100,13 +110,26 @@
 #endif
 
 #ifdef linux
-#ifdef __alpha__
-#define LINUX_ALPHA
-#else
 #define LINUX_X86
+#ifdef __x86_64__
+#define LINUX_X86_64
+#else
+#define LINUX_X86_32
 #endif
 #endif
 
+#if defined(sgi) && (_MIPS_SZPTR == 64)
+#define IRIX_64
+#endif
+
+#if defined(_AIX) && defined(__64BIT__)
+#define AIX_64
+#endif
+
+/*
+ * Proper ANSI C doesn't allow pre-defined cpp macros that don't start
+ * with an underscore. Explicitly define the ones we use.
+ */
 #if defined(__hpux) && !defined(hpux)
 #define hpux
 #endif
@@ -118,7 +141,7 @@
 #endif
 
 /* darwin */
-#if defined(__APPLE__) && !defined(__MACOS__)
+#ifdef __APPLE__
 #ifndef darwin
 #define darwin
 #endif
@@ -128,57 +151,54 @@
 #endif
 
 
-/* MAC is not predefined by Macintosh compilers but is used widely by IDL */
-#if defined(__MACOS__) && !defined(MAC)
-#define MAC
-#endif
-
-/*
- * Proper ANSI C doesn't allow pre-defined cpp macros that don't start
- * with an underscore. Explicitly define the ones we use.
- */
+/* A rose by any other name: There are multiple ways to say Unix */
 #if !defined(unix) && (defined(__unix__) || defined(__unix) || defined(_AIX) || defined(darwin))
 #define unix
 #endif
 
 /*
- * In IDL terms, a longword is 32 bits. By using this typedef in place
- * of the standard C "long", we can handle systems where this assumption
- * does not hold.
+ * IDL_SIZEOF_C_LONG: The number of bytes contained in a C long
+ * 	integer (i.e. sizeof(long)).
  *
- * NOTE: You might be wondering why not use IDL_MEMINT_64 for this
- * purpose. The reason is that they really aren't the same thing, although
- * they generally do track each other. It is possible, and has in fact
- * been true, that you might have a platform with 32-bit IDL_MEMINTs
- * and a 64-bit long type.
- */
-#if defined(ALPHA_OSF) || defined(SUN_64) || defined(LINUX_ALPHA) || defined(HPUX_64) || defined(sgi)
-#define LONG_NOT_32		/* Can be used to configure code */
-#endif
-
-
-/*
- * IDL is built with ANSI C on all platforms. However, there are
- * still a few K&R compilers out there. If you are using such a
- * compiler, define the preprocessor symbol IDL_CC_NOT_ANSI before
- * including this header file.
+ * IDL_SIZEOF_C_PTR: The number of bytes contained in a machine pointer
+ * 	(i.e. sizeof(char *)).
  *
- * The following macro will suppress argument prototypes in function
- * declarations allowing them to compile with a K&R compiler. Please be
- * aware, however, that the actual functions were compiled with an ANSI
- * compiler with full prototypes, so the default K&R type promotion rules
- * will cause runtime errors if you pass char, short, or float arguments.
- * K&R C widens these to int or double, but the actual routines expect
- * the un-widened types. Routines with these argument types should not
- * be called from K&R compiled code.
+ * The C language does not specify a required size for the short, int or
+ * long types. It requires that sizeof(char) is 1, and it requires
+ * that the following relationship hold:
+ *
+ *	sizeof(char) <= sizeof(short) <= sizeof(int) <= sizeof(long).
+ *
+ * In the days of 16-bit computing (16-bit machine pointers), it was
+ * common for short and int to be 2 bytes (16-bits), and sizeof(long)
+ * to be 4 (32-bit). In the era of 32-bit computing (32-bit machine
+ * pointers), it was almost always true that short remains at 2 bytes
+ * while both int and long were 32-bit quantities. This is commonly
+ * called ILP32, and is the model used on all 32-bit platforms ever
+ * supported by IDL.
+ *
+ * 64-bit systems fall into two camps: Unix systems use the LP64 model,
+ * in which sizeof(short) is 2, sizeof(int) is 4, and both sizeof(long)
+ * and machine pointers are 8 (64-bit). Microsoft Windows uses a different
+ * approach: sizeof(long) remains at 4 while machine pointers move to 8,
+ * and programmers use an explicitly defined type for 64-bit integers.
+ *
+ * Note that although sizeof(long) generally tracks sizeof(machine pointer),
+ * this relationship cannot be always be relied on, so both sizes must be
+ * known independently.
  */
-#ifdef IDL_CC_NOT_ANSI
-#define IDL_ARG_PROTO(args) ()
+#if defined(ALPHA_OSF) || defined(SUN_64) || defined(LINUX_X86_64) || defined(HPUX_64) || defined(IRIX_64) || defined(AIX_64)
+#define IDL_SIZEOF_C_LONG	8
 #else
-#define IDL_ARG_PROTO(args) args
+#define IDL_SIZEOF_C_LONG	4
+#endif
+#if (IDL_SIZEOF_C_LONG == 8) || defined(MSWIN_64)
+#define IDL_SIZEOF_C_PTR	8
+#else
+#define IDL_SIZEOF_C_PTR	4
 #endif
 
-
+      
 #ifdef FALSE
 #undef FALSE
 #endif
@@ -196,15 +216,15 @@
  * for functions that people outside of RSI can use.
 */
 
-#define cx_public		/* C default file scope, private to RSI */
-#define cx_export		/* C default file scope, visible in export.h */
+#define cx_public	/* C default file scope, private to RSI */
+#define cx_export	/* C default file scope, visible in idl_export.h */
 
 /*
  * Microsoft Windows has two calling conventions, __stdcall and __cdecl. We
  * refer to them using the following macros so that they can be easily
  * nulled on non-MS platforms.
  */
-#ifdef WIN32
+#ifdef MSWIN
 #define IDL_STDCALL __stdcall
 #define IDL_CDECL __cdecl
 #else
@@ -215,7 +235,7 @@
 
 /*
  * Some platforms support tty based user interaction (Unix)
- * while others (Macintosh, Windows) don't. On those that don't, we
+ * while others (Windows) don't. On those that don't, we
  * want to avoid compiling code that will never be called.
  * This symbol is defined on those systems that support ttys.
  */
@@ -238,16 +258,36 @@
 /**** Maximum # of params allowed in a call ****/
 #define IDL_MAXPARAMS 65535	/* 2^16 - 1 */
 
-/* This is an integer type that can hold a pointer without lossage */
-typedef long IDL_PTR_INT;
+/*
+ * IDL_PTRINT is an integer type of the same size as a machine pointer.
+ * It can hold a pointer without truncation or excess range.
+ * IDL_TYP_PTRINT is the IDL typecode for the IDL type that maps to
+ * an IDL_PTRINT.
+ */
+#if IDL_SIZEOF_C_PTR == 8		/* 64-bit systems */
+#define IDL_TYP_PTRINT IDL_TYP_LONG64
+#if IDL_SIZEOF_C_LONG == 8		/* LP64 */
+typedef long IDL_PTRINT;
+#elif defined(MSWIN)
+typedef __int64 IDL_PTRINT;
+#else
+#error "IDL_PTRINT not defined --- unexpected value of IDL_SIZEOF_C_LONG"
+#endif
+#elif IDL_SIZEOF_C_PTR == 4	/* 32-bit systems --- all ILP32 */
+typedef long IDL_PTRINT;
+#define IDL_TYP_PTRINT IDL_TYP_LONG
+#else
+#error "IDL_PTRINT not defined --- unexpected value of IDL_SIZEOF_C_PTR"
+#endif
+
+/*** Maximum length of an identifier ***/
+#define IDL_MAXIDLEN 128
 
 /**** Longest allowed file path specification ****/
-#ifdef MAC
-#define IDL_MAXPATH 255
-#elif defined(unix)
-#define IDL_MAXPATH    1024		/* That's what BSD allows */
-#elif defined(WIN32)
+#ifdef MSWIN
 #define IDL_MAXPATH 260
+#else
+#define IDL_MAXPATH    1024		/* That's what BSD allows */
 #endif
 
 
@@ -262,7 +302,8 @@ typedef long IDL_PTR_INT;
 #ifndef defs_IDL_DEF
 #define defs_IDL_DEF
 
-#if !defined(WIN32) || !defined(PLTYPES)
+
+#if !defined(MSWIN) || !defined(PLTYPES)
 typedef unsigned char UCHAR;	/* Unsigned character type */
 #endif
 
@@ -273,27 +314,22 @@ typedef enum {
 } IDLBool_t;
 
 /*
- * IDL integer types. For historical reasons, the following types
- * do not have a typedef in our code and instead use the C primatives
- * listed here:
- *
- *	TYP_BYTE	UCHAR
- *	TYP_INT		short
- *
- * TYP_LONG used to be represented by "long", but the advent of 64-bit
- * systems where long can be 64-bits caused us to define a typedef for
- * it. All the newer types have typedefs as well.
+ * IDL integer types. For historical reasons, we use UCHAR for TYP_BYTE
+ * instead of defining an IDL_BYTE type.
  */
+typedef short IDL_INT;
 typedef unsigned short IDL_UINT;
-#ifdef LONG_NOT_32
+#if IDL_SIZEOF_C_LONG == 8
 typedef int IDL_LONG;
 typedef unsigned int IDL_ULONG;
-#else
+#elif IDL_SIZEOF_C_LONG == 4
 typedef long IDL_LONG;
 typedef unsigned long IDL_ULONG;
+#else
+#error "IDL_LONG not defined --- unexpected value of IDL_SIZEOF_C_LONG"
 #endif
 
-#ifdef WIN32
+#ifdef MSWIN
 typedef __int64 IDL_LONG64;
 typedef unsigned __int64 IDL_ULONG64;
 #else
@@ -348,20 +384,22 @@ typedef IDL_ULONG IDL_HVID;
  *
  * MEMINT must always be a signed type.
  */
-#if defined(ALPHA_OSF) || defined(SUN_64) || defined(LINUX_ALPHA) || defined(HPUX_64) || defined(sgi)
+#if IDL_SIZEOF_C_PTR == 8
 #define IDL_MEMINT_64
 #define IDL_TYP_MEMINT	 IDL_TYP_LONG64
 #define IDL_TYP_UMEMINT	 IDL_TYP_ULONG64
 #define IDL_MEMINT	 IDL_LONG64
 #define IDL_UMEMINT	 IDL_ULONG64
-#else
+#elif IDL_SIZEOF_C_PTR == 4
 #define IDL_TYP_MEMINT	 IDL_TYP_LONG
 #define IDL_TYP_UMEMINT	 IDL_TYP_ULONG
 #define IDL_MEMINT	 IDL_LONG
 #define IDL_UMEMINT	 IDL_ULONG
+#else
+#error "IDL_MEMINT not defined --- unexpected value of IDL_SIZEOF_C_PTR "
 #endif
 
-#if defined(sun) || defined(ALPHA_OSF) || defined(sgi) || defined(hpux) || defined(WIN32) || defined(LINUX_ALPHA)
+#if defined(sun) || defined(ALPHA_OSF) || defined(sgi) || defined(hpux) || defined(MSWIN) || defined(linux) || defined(_AIX)
 				/* Files can have 64-bit sizes */
 #define IDL_FILEINT_64
 #define IDL_TYP_FILEINT	  IDL_TYP_LONG64
@@ -395,12 +433,35 @@ typedef IDL_ULONG IDL_HVID;
 
 /***** IDL_VARIABLE flag values ********/
 
-#define IDL_V_CONST         1
-#define IDL_V_TEMP          2
-#define IDL_V_ARR           4
-#define IDL_V_FILE          8
-#define IDL_V_DYNAMIC       16
-#define IDL_V_STRUCT        32
+#define IDL_V_CONST         1	/* A variable that does not have a name,
+				   and which is treated as a static
+				   non-assignable expression by the interpreter.
+				   The most common example is a lexical
+				   constant. Different from V_TEMP in that
+				   V_CONST variables are not part of the
+				   temporary variable pool, and because IDL
+				   can alter the value of a V_TEMP variable
+				   under some circumstances. */
+#define IDL_V_TEMP          2	/* An unnamed variable from the IDL temporary
+				   variable pool, used to hold the results
+				   of expressions, and often returned as the
+				   result of IDL system functions */
+#define IDL_V_ARR           4	/* Variable has an array block, accessed via
+				   the value.arr field of IDL_VARIABLE, and
+				   the data is kept there. If V_ARR is not
+				   set, the variable is scalar, and the value
+				   is kept directly within the value union. */
+#define IDL_V_FILE          8	/* An ASSOC variable. Note that V_ARR is
+				   not set for ASSOC variables, but they
+				   still have array blocks. */
+#define IDL_V_DYNAMIC       16	 /* Variable contains pointers to other
+				    data that must be cleaned up when the
+				    variable is destroyed. This happens
+				    with scalar strings, or arrays of any
+				    type. */
+#define IDL_V_STRUCT        32	 /* Variable is a structure. V_ARR is always
+				    set when V_STRUCT is set (there are no
+				    scalar structures) */
 #define IDL_V_NOT_SCALAR    (IDL_V_ARR | IDL_V_FILE | IDL_V_STRUCT)
 
 /**** IDL_ARRAY flag values ****/
@@ -426,6 +487,8 @@ typedef IDL_ULONG IDL_HVID;
 				   non-zero file offsets. If not for this
 				   minor compatability win, this bit would
 				   serve no significant purpose. */
+#define IDL_A_SHM	    16	 /* This array is a shared memory segment */
+
 
 
 /**** Basic IDL structures: ****/
@@ -495,7 +558,7 @@ typedef struct _idl_ident {
  * to clean up after calls to IDL_ImportArray(), which is used to create
  * arrays using memory that IDL does not allocate.
  */
-typedef void (* IDL_ARRAY_FREE_CB) IDL_ARG_PROTO((UCHAR *));
+typedef void (* IDL_ARRAY_FREE_CB)(UCHAR *data);
 
 /* Type of the dim field of an IDL_ARRAY. */
 typedef IDL_MEMINT IDL_ARRAY_DIM[IDL_MAX_ARRAY_DIM];
@@ -529,22 +592,25 @@ typedef union {
 				   type, but having this field is sometimes
 				   useful for internal code */
   UCHAR c;			/* Byte value */
-  short i;			/* Integer short value */
-  IDL_UINT ui;			/* Unsigned integer short value */
-  IDL_LONG l;			/* Long value */
-  IDL_ULONG ul;			/* Unsigned long value */
-  IDL_LONG64 l64;		/* 64-bit integer value */
-  IDL_ULONG64 ul64;		/* Unsigned 64-bit integer value */
-  float f;			/* Floating value */
-  double d;			/* Double value */
+  IDL_INT i;			/* 16-bit integer */
+  IDL_UINT ui;			/* 16-bit unsigned integer */
+  IDL_LONG l;			/* 32-bit integer */
+  IDL_ULONG ul;			/* 32-bit unsigned integer */
+  IDL_LONG64 l64;		/* 64-bit integer */
+  IDL_ULONG64 ul64;		/* 64-bit unsigned integer */
+  float f;			/* 32-bit floating point value */
+  double d;			/* 64-bit floating point value */
   IDL_COMPLEX cmp;		/* Complex value */
   IDL_DCOMPLEX dcmp;		/* Double complex value */
   IDL_STRING str;		/* String descriptor */
   IDL_ARRAY *arr;		/* ^ to array descriptor */
   IDL_SREF s;			/* Descriptor of structure */
   IDL_HVID hvid;		/* Heap variable identifier */
+
+  /* The following are mappings to basic types that vary between platforms */
   IDL_MEMINT memint;		/* Memory size or offset */
   IDL_FILEINT fileint;		/* File size or offset */
+  IDL_PTRINT ptrint;		/* A pointer size integer */
 } IDL_ALLTYPES;
 
 typedef struct {		/* IDL_VARIABLE definition */
@@ -647,6 +713,15 @@ typedef void *IDL_StructDefPtr;
 #define IDL_MSG_INFO	    4   /* Informational. Like IDL_MSG_RET, but won't
 				   set !ERR or !ERR_STRING. Also,
 				   inhibited by !QUIET */
+#define IDL_MSG_SUPPRESS	7   /* IDL_Message() returns immediately
+				       without processing the message at all.
+				       This code can be used to implement
+				       libraries of code that can throw errors
+				       or simply return status depending on
+				       the input value of the action
+				       parameter. */
+
+
 
 
 /* Allowed attribute masks that can be OR'd into the action code */
@@ -676,9 +751,31 @@ typedef void *IDL_StructDefPtr;
 					       system supplied error message,
 					       via errno. Note that other types
 					       of syscodes cannot be handled
-					       via this mechanism. Use
-					       IDL_MessageSyscode() in those
-					       cases. */
+					       via this mechanism, and that
+					       it is considered to be
+					       obsolete. Use
+					       IDL_MessageSyscode() instead. */
+
+/*
+ * Types of system error code that can be passed to IDL_MessageSyscode()
+ * and IDL_MessageSyscodeFromBlock().
+ *
+ * NOTE:
+ *	- The message module depends on the specific values of
+ *	  these constants. They cannot be arbitrarily reassigned.
+ *	- The constants are only defined on platforms where that
+ *	  error type is possible. This is to help catch uses of
+ *	  them on incorrect platforms.
+ */
+typedef enum {
+  IDL_MSG_SYSCODE_NONE=0,	/* There is no system error part */
+  IDL_MSG_SYSCODE_ERRNO=1	/* Unix style errno based error */
+#ifdef MSWIN
+  , IDL_MSG_SYSCODE_WIN=2	/* Windows system codes (aka GetLastError() */
+  , IDL_MSG_SYSCODE_WINSOCK=3	/* MS Windows winsock error codes
+				   WSAGetLastError()*/
+#endif
+} IDL_MSG_SYSCODE_T;
 
 /* The type of elements in the defs argument to IDL_MessageDefineBlock() */
 typedef struct {
@@ -688,6 +785,13 @@ typedef struct {
 
 /* Type returned by IDL_MessageDefineBlock() */
 typedef void *IDL_MSG_BLOCK;
+
+/*
+ * Opaque type. Not for non-IDL-internal use. Set any arguments of
+ * this type to NULL.
+ */
+typedef void *IDL_MSG_ERRSTATE_PTR;
+
 
 
 #endif				/* message_IDL_DEF */
@@ -727,6 +831,12 @@ typedef void *IDL_MSG_BLOCK;
 
 /**** Get pointer to a valid string from an IDL_STRING descriptor */
 #define IDL_STRING_STR(desc) ((desc)->slen ? (desc)->s : "")
+
+/**** Compute strlen() of a static lexical C string at compile time ****/
+#define IDL_STATIC_STRLEN(lexstr) (sizeof(lexstr) - 1)
+
+/**** Initialize an IDL_STRING descriptor from a static lexical C string ****/
+#define IDL_STATIC_STRING(lexstr) { IDL_STATIC_STRLEN(lexstr), 0, lexstr }
 
 #define IDL_DELTMP(v) { if (((v)->flags) & IDL_V_TEMP) IDL_Deltmp(v); }
 
@@ -796,17 +906,66 @@ typedef void *IDL_MSG_BLOCK;
 	IDL_MessageVE_REQOBJREF(v, IDL_MSG_LONGJMP);}
 
 
-     /* Check if var has a dynamic part. If so, delete it using IDL_Delvar  */
+/* Check if var has a dynamic part. If so, delete it using IDL_Delvar  */
 #define IDL_DELVAR(v) { if (((v)->flags) & IDL_V_DYNAMIC) IDL_Delvar(v); }
 
 
-#if defined(LINUX_ALPHA)
-#define IDL_CAST_PTRINT(cast, orig_value) ((cast) ((IDL_PTR_INT) (orig_value)))
+#if defined(HPUX_64) || (defined(__cplusplus) && defined(MSWIN)) || defined(darwin) || defined(linux) || defined(MSWIN_64)
+#define IDL_CAST_PTRINT(cast, orig_value) ((cast) ((IDL_PTRINT) (orig_value)))
 #else
 #define IDL_CAST_PTRINT(cast, orig_value) ((cast) (orig_value))
 #endif
 
 #endif				/* macros_IDL_DEF */
+
+
+
+
+/***** Definitions from idl_pds *****/
+
+#ifndef idl_pds_IDL_DEF
+#define idl_pds_IDL_DEF
+
+
+
+
+
+typedef struct {
+  IDL_STRING name;
+  IDL_STRING block;
+  IDL_LONG code;
+  IDL_LONG sys_code[2];
+  IDL_STRING sys_code_type;
+  IDL_STRING msg;
+  IDL_STRING sys_msg;
+  IDL_STRING msg_prefix;
+} IDL_SYS_ERROR_STATE;
+
+
+
+
+typedef struct {
+  IDL_LONG x;
+  IDL_LONG y;
+  IDL_LONG button;
+  IDL_LONG time;
+} IDL_MOUSE_STRUCT;
+
+
+
+
+typedef struct {
+  IDL_STRING arch;
+  IDL_STRING os;
+  IDL_STRING os_family;
+  IDL_STRING os_name;
+  IDL_STRING release;
+  IDL_STRING build_date;
+  IDL_INT memory_bits;
+  IDL_INT file_offset_bits;
+} IDL_SYS_VERSION;
+
+#endif				/* idl_pds_IDL_DEF */
 
 
 
@@ -1210,12 +1369,6 @@ typedef struct {		/* Structure defining polygon fills */
 } IDL_POLYFILL_ATTR;
 
 
-typedef struct {		/* Struct containing last mouse status */
-  int x,y;			/* X & Y device coordinates */
-  int button;			/* Button status bits */
-  int time;			/* Time stamp,  not present in all devices */
-} IDL_MOUSE_STRUCT;
-
 /*
  * Prototypes for remaining functions in IDL_DEVICE_CORE struct (below)
  */
@@ -1538,10 +1691,10 @@ typedef struct {
  * or IDL_KWProcessByOffset() with IDL_KWFree(). This newer API is simpler
  * to understand and use, and therefore less error prone.
  */
-extern int IDL_CDECL IDL_KWGetParams IDL_ARG_PROTO((int argc, IDL_VPTR
-        *argv, char *argk, IDL_KW_PAR *kw_list, IDL_VPTR *plain_args,  int
-        mask));
-extern void IDL_CDECL IDL_KWCleanup IDL_ARG_PROTO((int fcn));
+extern int IDL_CDECL IDL_KWGetParams(int argc, IDL_VPTR *argv, char *argk,
+				     IDL_KW_PAR *kw_list,
+				     IDL_VPTR *plain_args, int mask);
+extern void IDL_CDECL IDL_KWCleanup(int fcn);
 
 #define IDL_KW_MARK 1		/* Mark string stack before calling get_
 				   kw_params.  */
@@ -1597,26 +1750,19 @@ extern void IDL_CDECL IDL_KWCleanup IDL_ARG_PROTO((int fcn));
 #define os_IDL_DEF
 
 
-/* Structure passed to IDL_GetUserInfo() */
-typedef struct {
-  char *logname;		/* Users login name */
-#ifndef MAC
-  char *homedir;		/* User's home directory */
-#endif
-  char *pid;			/* The process ID */
-  char host[64];		/* The machine name */
-  char wd[IDL_MAXPATH+1];	/* The current directory */
-  char date[25];		/* The current date */
-} IDL_USER_INFO;
+/* Buffer used to hold a standard ASCII 24-character date string. */
+typedef char IDL_ATIME_BUF[25];   /* Extra byte for NULL termination */
 
-/* SPAWN allows more arguments on the Macintosh than on the other platforms. */
-#ifdef MAC
-#define IDL_MAXSPAWNPARAMS IDL_MAXPARAMS
-#elif defined(unix) || defined(WIN32)
-#define IDL_MAXSPAWNPARAMS 3
-#else
-#define IDL_MAXSPAWNPARAMS 2
-#endif
+/* Structure passed to IDL_GetUserInfo() */
+#define IDL_USER_INFO_MAXHOSTLEN 64
+typedef struct {
+  char *logname;			/* Users login name */
+  char *homedir;			/* User's home directory */
+  char *pid;				/* The process ID */
+  char host[IDL_USER_INFO_MAXHOSTLEN];	/* The machine name */
+  char wd[IDL_MAXPATH+1];		/* The current directory */
+  IDL_ATIME_BUF date;			/* The current date */
+} IDL_USER_INFO;
 
 #endif				/* os_IDL_DEF */
 
@@ -1634,9 +1780,7 @@ typedef struct {
 #define IDL_POUT_NOSP       4	/* Don't add leading space */
 #define IDL_POUT_NOBREAK    8	/* Don't start a new line if too long */
 #define IDL_POUT_LEADING    16	/* Print leading text at start of line */
-#define IDL_POUT_GET_POS    32	/* Get current file position */
-#define IDL_POUT_SET_POS    64	/* Set current file position */
-#define IDL_POUT_FORCE_FL   128	/* Finish current line, even if it is empty */
+#define IDL_POUT_FORCE_FL   32  /* Finish current line, even if it is empty */
 
 
 /*** Structure for control argument to pout() ***/
@@ -1669,8 +1813,8 @@ typedef struct {
  * is the major version number, the second is the minor number, and the
  * third is the sub-release number (used primarily for bug fix releases).
  */
-#define IDL_VERSION_MAJOR 5
-#define IDL_VERSION_MINOR 5
+#define IDL_VERSION_MAJOR 6
+#define IDL_VERSION_MINOR 2
 #define IDL_VERSION_SUB	  0
 
 /*
@@ -1680,7 +1824,7 @@ typedef struct {
  * in the string can include letters (e.g. 3.6.1c) for extremely minor
  * releases and this is not reflected in IDL_VERSION_SUB.
  */
-#define IDL_VERSION_STRING "5.5.X"
+#define IDL_VERSION_STRING "6.2 Beta"
 #endif				/* prog_nam_IDL_DEF */
 
 
@@ -1733,7 +1877,7 @@ typedef struct {		/* Information that characterizes a raster */
 #ifndef rline_IDL_DEF
 #define rline_IDL_DEF
 
-/**** Flags to OR together for options parameter to IDL_Rline() ****/
+/**** Flags to OR together for options parameter to IDL_RlineRead() ****/
 #define IDL_RLINE_OPT_NOSAVE        1   /* Don't save in recall buffer */
 #define IDL_RLINE_OPT_NOJOURNAL     2   /* Don't journal */
 #define IDL_RLINE_OPT_JOURCMT       4   /* Put a '; ' at start in journal */
@@ -1751,6 +1895,9 @@ typedef struct {		/* Information that characterizes a raster */
 
 /**** Stream file flags type ****/
 typedef IDL_LONG IDL_SFILE_FLAGS_T;
+
+
+typedef IDL_LONG IDL_SFILE_PIPE_EXIT_STATUS;
 
 /*
  * Time information. All fields are based on the Posix epoch
@@ -1794,7 +1941,7 @@ typedef struct {
 } IDL_SignalSet_t;
 
 /* The IDL definition for all signal handler functions. */
-typedef void (* IDL_SignalHandler_t) IDL_ARG_PROTO((int signo));
+typedef void (* IDL_SignalHandler_t)(int signo);
 
 #endif				/* sig_IDL_DEF */
 
@@ -1845,73 +1992,6 @@ typedef struct {		/* A tag definition for K_MakeSTruct */
 
 #ifndef sysnames_IDL_DEF
 #define sysnames_IDL_DEF
-
-/* Structure used for IDL_SysvVersion global variable */
-typedef struct {
-  IDL_STRING arch;		/* Machine architecture */
-  IDL_STRING os;		/* Operating System. Should reflect the
-				   kernel name (as from "uname -a") for the
-				   system, and once selected, must never
-				   change. IDL programs depend on this
-				   for configuring themselves. I recommend
-				   using os_family instead in IDL pro code. */
-  IDL_STRING os_family;		/* Operating System family.
-				   (e.g. Unix, Windows, Macintosh).
-				   This is the generic OS name, and is usually
-				   easier to use and more appropriate than
-				   !VERSION.OS. */
-  IDL_STRING os_name;		/* The "marketting" name used by the vendor
-				   for this platform. This is purely a
-				   descriptive name, and may change from
-				   release to release as the vendor of the
-				   OS changes their marketing strategy. IDL
-				   programs should not make decisions based
-				   on this value, but use it only for
-				   descriptive text. */
-  IDL_STRING release;		/* Software release */
-  IDL_STRING build_date;	/* Date on which this executable was built */
-  short memory_bits;		/* # of bits used to address memory */
-  short file_offset_bits;	/* # of bits used to represent file offsets */
-} IDL_SYS_VERSION;
-
-/* Structure used for IDL_SysvErrorState global variable */
-typedef struct {
-  IDL_STRING name;		/* Symbolic name of current error */
-  IDL_STRING block;		/* Name of error block for current error */
-  /* Error code. !ERR is often changed by various parts of IDL for
-   * non-error reasons. These unfortunate side effects are historical in
-   * nature, and cannot be eliminated. !ERROR_STATE.CODE is just like !ERR
-   * except that its purpose is pure, it only contains the code of the
-   * last error, and always matches the rest of !ERROR_STATE.
-   */
-  IDL_LONG code;		
-  IDL_LONG sys_code[2];		/* System error code */
-  IDL_STRING sys_code_type;	/* Type of system code (errno, WIn32, etc) */
-  IDL_STRING msg;		/* Text of IDL error message */
-  IDL_STRING sys_msg;		/* System component of error message */
-  IDL_STRING msg_prefix;	/* Prefix attached to all error messages */
-} IDL_SYS_ERROR_STATE;
-
-/*
- * These #defines allow use of older error related system variables and
- * map them to the corresponding field in !ERROR_STATE. These #defines
- * will eventually be obsoleted and moved to obsolete.h. Programmers
- * should convert their code to use the new name in preparation for this.
- */
-#define IDL_SysvErrString IDL_SysvErrorState.msg
-#define IDL_SysvSyserrString IDL_SysvErrorState.sys_msg
-#define IDL_SysvErrorCode IDL_SysvErrorState.code
-#define IDL_SysvSyserrorCodes IDL_SysvErrorState.sys_code
-
-
-/*
- * Allowed values for type argument to IDL_SysvValuesGetFloat() and
- * IDL_SysvValuesGetDouble().
- */
-#define IDL_SYSVVALUES_INF	0
-#define IDL_SYSVVALUES_NAN	1
-
-
 /*
  * Possible values for the options argument to IDL_SysRtnEnable().
  */
@@ -1983,6 +2063,35 @@ typedef struct {		/* System function definition */
 
 
 
+/***** Definitions from sysv *****/
+
+#ifndef sysv_IDL_DEF
+#define sysv_IDL_DEF
+/*
+ * These #defines allow use of older error related system variables and
+ * map them to the corresponding field in !ERROR_STATE. Programmers
+ * should convert their code to use the new names instead.
+ */
+#define IDL_SysvErrString IDL_SysvErrorState.msg
+#define IDL_SysvSyserrString IDL_SysvErrorState.sys_msg
+#define IDL_SysvErrorCode IDL_SysvErrorState.code
+#define IDL_SysvSyserrorCodes IDL_SysvErrorState.sys_code
+
+
+/*
+ * Allowed values for type argument to IDL_SysvValuesGetFloat() and
+ * IDL_SysvValuesGetDouble().
+ */
+#define IDL_SYSVVALUES_INF	0
+#define IDL_SYSVVALUES_NAN	1
+
+
+
+#endif				/* sysv_IDL_DEF */
+
+
+
+
 /***** Definitions from tout *****/
 
 #ifndef tout_IDL_DEF
@@ -1992,21 +2101,16 @@ typedef void (* IDL_TOUT_OUTF)(int flags, char *buf, int n);
 
 #define IDL_TOUT_F_STDERR   1	/* Output to stderr instead of stdout */
 #define IDL_TOUT_F_NLPOST   4	/* Output a newline at end of line */
+
+/*
+ * When tout is doing "more(1)" processing, and prompts for user
+ * input, these are the possible responses.
+ */
+#define IDL_TOUT_MORE_RSP_QUIT	0   /* Quit */
+#define IDL_TOUT_MORE_RSP_PAGE	1   /* Continue for another page */
+#define IDL_TOUT_MORE_RSP_LINE	2   /* Continue for a single line */
      
 #endif				/* tout_IDL_DEF */
-
-
-
-
-/***** Definitions from uicb *****/
-
-#ifndef uicb_IDL_DEF
-#define uicb_IDL_DEF
-
-
-typedef int (* IDL_UicbMacEvent_t)(void *event);
-
-#endif				/* uicb_IDL_DEF */
 
 
 
@@ -2040,44 +2144,13 @@ typedef int (* IDL_UicbMacEvent_t)(void *event);
 				   RPC servers that don't know where their
 				   output will need to go before invocation.*/
 #define IDL_INIT_BACKGROUND	32
-				/* This tells IDL that it is going to be used
-				   in a background mode by some other program,
-				   and it is not in control of the user's
-				   input command line. One effect of this is
-				   that XMANAGER will block, since IDL cannot
-				   use its active command line functionality
-				   to dispatch events.
-
-				   Normally under Unix, if IDL sees that
-				   stdin and stdout are ttys, it puts the tty
-				   into raw mode and uses termcap/terminfo to
-				   handle command line editing. When using
-				   callable IDL in a background process that
-				   isn't doing I/O to the tty, the termcap
-				   initialization can cause the process
-				   to block because of job control from the
-				   shell with a message like "Stopped (tty
-				   output) idl". Setting this option prevents
-				   all tty edit functions and disables the
-				   calls to termcap. I/O to the tty is done
-				   with a simple fgets()/printf().
-				   In the case of IDL_INIT_GUI, this is
-				   ignored. */
-
-#define IDL_INIT_NOTTYEDIT	IDL_INIT_BACKGROUND
-				/* Renamed it to better reflect it's more
-				   general functionality. */
+				/* Identical to the combination:
+				   (IDL_INIT_NOCMDLINE|IDL_INIT_NOTTYEDIT) */
 
 #define IDL_INIT_QUIET		64   /* Suppresses the startup announcement and
 					message of the day. */
 
 #define IDL_INIT_STUDENT	128   /* IDL Student Edition */
-
-#define IDL_INIT_CLIENT		(1 << 8)
-#define IDL_INIT_GUI_CLIENT	(IDL_INIT_CLIENT|IDL_INIT_GUI)
-                                /* Start IDLDE if it wasn't started, else
-				   just send the filename specified to
-				   already running IDLDE. */
 
 #define IDL_INIT_DEMO		(1 << 9)   /* Force IDL into demo mode */
 
@@ -2091,9 +2164,45 @@ typedef int (* IDL_UicbMacEvent_t)(void *event);
 #define IDL_INIT_GENVER		(1 << 11)
 				/* Request genver licensing. Unix-only */
 
-#define IDL_INIT_OCX		(1 << 12)
-				/* Initialize the IDLDrawX ActiveX Control. Windows-only */
+#define IDL_INIT_NOCMDLINE	(1 << 12)
+				/* IDL should assume that it has no command
+				   line. In this mode, any attempt to read
+				   from stdin should be treated as if EOF
+				   was returned. */
 
+#define IDL_INIT_OCX		IDL_INIT_NOCMDLINE
+				/* An old name for IDL_INITNOCMDLINE */
+
+#define IDL_INIT_VM		(1 << 13)
+				/* Initialize in virtual machine mode.
+				   This is add-on behavior to runtime mode
+				   but unlike embedded, this flag does not
+				   include the runtime behavior.  The
+				   runtime flag must be set as well to
+				   initiate virtual machine behavior. */
+
+
+#define IDL_INIT_NOVM		(1 << 14)
+				/* Prevent going into vm mode if a license
+				   is not available. */
+
+
+#define IDL_INIT_NOTTYEDIT	(1 << 15)
+				/* Prevents IDL from using termcap/terminfo to 
+				   handle command line editing, and disables
+				   the use of the SIGWINCH signal to track
+				   the current tty size. This is usually what
+				   you want when using callable IDL in a
+				   background process that isn't doing I/O
+				   to the tty. In such cases, the termcap
+				   initialization can cause the process
+				   to block because of job control from the
+				   shell with a message like "Stopped (tty
+				   output) idl". Setting this option prevents
+				   all tty edit functions. I/O to the tty is
+				   done with a simple fgets()/printf().
+				   In the case of IDL_INIT_GUI, this is
+				   ignored. */
 
 
 #endif				/* main_IDL_DEF */
@@ -2114,9 +2223,9 @@ typedef int (* IDL_UicbMacEvent_t)(void *event);
 #define widgets_IDL_DEF
 
 typedef void (* IDL_WIDGET_STUB_SET_SIZE_FUNC)
-     IDL_ARG_PROTO((IDL_ULONG id, int width, int height));
+     (IDL_ULONG id, int width, int height);
 
-#endif  /* widgets_DEF */
+#endif				/* widgets_DEF */
 
 
 
@@ -2158,20 +2267,18 @@ typedef void (* IDL_WIDGET_STUB_SET_SIZE_FUNC)
 				/* Unformatted f77(1) I/O */
 #define IDL_F_UNIX_F77      (((IDL_SFILE_FLAGS_T) 1) << 10)
 				/* File is a pipe to a child process */
-#define IDL_F_UNIX_PIPE     (((IDL_SFILE_FLAGS_T) 1) << 11)
+#define IDL_F_PIPE	    (((IDL_SFILE_FLAGS_T) 1) << 11)
+#define IDL_F_UNIX_PIPE     IDL_F_PIPE
 				/* Call read(2) and write(2) directly
 				   and allow short transfers. */
 #define IDL_F_UNIX_RAWIO    (((IDL_SFILE_FLAGS_T) 1) << 12)
 #define IDL_F_UNIX_NOSTDIO  IDL_F_UNIX_RAWIO   /* Old name for rawio */
 				/* It's a device/special file */
 #define IDL_F_UNIX_SPECIAL  (((IDL_SFILE_FLAGS_T) 1) << 13)
-				/* Fixed length records */
+				/* Uses stdio instead of native I/O */
 #define IDL_F_STDIO          (((IDL_SFILE_FLAGS_T) 1) << 14)
 				/* File is an internet TCP/IP socket */
 #define IDL_F_SOCKET	     (((IDL_SFILE_FLAGS_T) 1) << 15)
-				/* Macintosh file should have BIN creator
-				   type instead of TEXT. */
-#define IDL_F_MAC_BINARY     (((IDL_SFILE_FLAGS_T) 1) << 16)
 
 
 /*
@@ -2205,6 +2312,14 @@ typedef void (* IDL_WIDGET_STUB_SET_SIZE_FUNC)
 #define IDL_F_DOS_NOAUTOMODE ((IDL_SFILE_FLAGS_T) 0)
 #define IDL_F_DOS_BINARY     ((IDL_SFILE_FLAGS_T) 0)
 
+/*
+ * IDL 5.5 was the last version of IDL for Clasic Mac OS. Mac OS X
+ * is a Unix operating system, and does not have a binary/text distinction
+ * for files.
+ */
+#define IDL_F_MAC_BINARY     ((IDL_SFILE_FLAGS_T) 0)
+
+
   
 /* Sets the IDL_F_NOCLOSE bit for file unit. */
 #define IDL_FILE_NOCLOSE(unit) IDL_FileSetClose((unit), FALSE)
@@ -2229,9 +2344,9 @@ typedef void (* IDL_WIDGET_STUB_SET_SIZE_FUNC)
 #define IDL_EFS_NOPIPE      128     /* Unit cannot be a pipe */
 #define IDL_EFS_NOXDR       256     /* Unit cannot be a XDR file */
 #define IDL_EFS_ASSOC       512     /* Unit can be assoc'd. This implies USER,
-				       OPEN, NOTTY, NOPIPE, NOXDR, and NOGZIP,
-				       in addition to other OS specific
-				       concerns */
+				       OPEN, NOTTY, NOPIPE, NOXDR, NOCOMPRESS,
+				       and NOSOCKET, in addition to other
+				       OS specific concerns */
 #define IDL_EFS_NOT_RAWIO   1024    /* Under Unix, file wasn't opened with
 				       IDL_F_UNIX_RAWIO attribute. */
 #define IDL_EFS_NOT_NOSTDIO IDL_EFS_NOT_RAWIO	/* Old name for RAWIO */
@@ -2259,6 +2374,8 @@ typedef struct {
   FILE *fptr;
 } IDL_FILE_STAT;
 
+#define IDL_FCU_FREELUN		2   /* If LUN has had a GET_LUN operation to
+				       reserve the unit, release it. */
 #endif				/* zfiles_IDL_DEF */
 
 
@@ -2301,7 +2418,7 @@ typedef struct {
 
 
 #include <string.h>		/* Prototypes for standard str*() functions */
-#if (defined(unix) && !defined(hpux) && !defined(AIX)) || defined(__MACOS__)
+#if (defined(unix) && !defined(hpux))
 #include <strings.h>		/* For bcopy(), bzero(), and bcmp() */
 #endif
 
@@ -2314,7 +2431,7 @@ typedef struct {
  */
 
 
-#if defined(hpux) || defined(WIN32) || defined(MAC)
+#if defined(hpux) || defined(MSWIN)
 #ifndef bcopy
 #define bcopy(src,dest,len)     (memcpy((dest), (src), (len)))
 #endif
@@ -2326,6 +2443,22 @@ typedef struct {
 #endif
 #endif				/* bcopy(), bzero(), and bcmp() */
 
+/*
+ * The IDL_BZERO macros encapsulate the most common idioms of bzero():
+ *	IDL_BZERO - Zero scalar.
+ *	IDL_BZERO_ARRAY - Zero array.
+ *	IDL_BZERO_BYADDR - Zero scalar given a pointer (address) to it
+ * All of these cases involve getting the address, casting it to (char *),
+ * and calculating the size of the item. There is room for human error in
+ * all of these stages, many of which will go undetected at compile time
+ * (and even at runtime). The macros will always get these issues right, leaving
+ * the programmer the sole task of choosing the right one to use.
+ */
+#define IDL_BZERO(zero_var) bzero((char *) &(zero_var), sizeof(zero_var))
+#define IDL_BZERO_ARRAY(zero_arr) bzero((char *) (zero_arr), sizeof(zero_arr))
+#define IDL_BZERO_BYADDR(zero_var_addr) \
+  bzero((char *) (zero_var_addr), sizeof(*(zero_var_addr)))
+     
 
 /*
  * Solaris has these functions starting with Solaris 8. No one else
@@ -2340,18 +2473,24 @@ typedef struct {
 #define IDL_SUPPLIES_STRBCOPY
 
 
-#ifdef WIN32			/* Different names for the same thing */
+#ifdef MSWIN			/* Different names for the same thing */
 #define strcasecmp _stricmp
 #define strncasecmp _strnicmp
-#elif defined(__MACOS__)
-#define IDL_SUPPLIES_STRCASECMP
-#define IDL_SUPPLIES_STRNCASECMP
+
+			/* They don't supply these without the underscore */
+#define snprintf _snprintf
+#define vsnprintf _vsnprintf
 #endif
 
-
-#if defined(ALPHA_OSF) || defined(irix) || defined(WIN32) || defined(MAC)
 /*
- * Note: IRIX 6.5 has snprintf(). Can remove that host from this list then.
+ * strcasestr() is our own invention, so of course we supply the implemenation.
+ */
+#define IDL_SUPPLIES_STRCASESTR
+
+
+#if defined(ALPHA_OSF)
+/*
+ * Thankfully, just about everyone supplies a real snprintf() now.
  */
 #define IDL_SUPPLIES_SNPRINTF
 #define IDL_SUPPLIES_VSNPRINTF
@@ -2385,6 +2524,10 @@ typedef struct {
 #define strncasecmp IDL_StrBase_strncasecmp
 #endif
 
+#ifdef IDL_SUPPLIES_STRCASESTR
+#define strcasestr IDL_StrBase_strcasestr
+#endif
+
 #ifdef IDL_SUPPLIES_SNPRINTF
 #define snprintf IDL_StrBase_snprintf
 #endif
@@ -2416,470 +2559,370 @@ typedef IDL_TIMER_CONTEXT *IDL_TIMER_CONTEXT_PTR;
 /* Forward declarations for all exported routines and data */
 
 
-extern IDL_VPTR IDL_CDECL IDL_CvtBytscl IDL_ARG_PROTO((int argc, IDL_VPTR
-        *argv, char *argk));
-extern char *IDL_CDECL IDL_FilePathFromRoot IDL_ARG_PROTO((char *pathbuf,
-        IDL_STRING *root, char *file, char *ext, int nsubdir,  char
-        **subdir));
-extern char *IDL_CDECL IDL_FilePathFromDist IDL_ARG_PROTO((char *pathbuf,
-        char *file, char *ext, int nsubdir, char **subdir));
-extern void IDL_CDECL IDL_FilePathGetTmpDir IDL_ARG_PROTO((char *path));
-extern int IDL_CDECL IDL_FilePathExpand IDL_ARG_PROTO((char *path, int
-        msg_action));
-extern void *IDL_CDECL IDL_MemAlloc IDL_ARG_PROTO((IDL_MEMINT n, char
-        *err_str, int action));
-extern void *IDL_CDECL IDL_MemRealloc IDL_ARG_PROTO((void *ptr, IDL_MEMINT
-        n, char *err_str, int action));
-extern void IDL_CDECL IDL_MemFree IDL_ARG_PROTO((IDL_REGISTER void *m,
-        char *err_str, int action));
-extern void *IDL_CDECL IDL_MemAllocPerm IDL_ARG_PROTO((IDL_MEMINT n, char
-        *err_str, int action));
-extern void IDL_CDECL IDL_TimerSet IDL_ARG_PROTO((IDL_LONG length,
-        IDL_TIMER_CB callback, int from_callback, IDL_TIMER_CONTEXT_PTR
-        context));
-extern void IDL_CDECL IDL_TimerCancel IDL_ARG_PROTO((IDL_TIMER_CONTEXT
-        context));
-extern void IDL_CDECL IDL_TimerBlock IDL_ARG_PROTO((int stop));
-extern IDL_UicbMacEvent_t IDL_CDECL IDL_UicbRegMacEvent
-        IDL_ARG_PROTO((IDL_UicbMacEvent_t func));
-extern void IDL_CDECL IDL_SignalSetInit IDL_ARG_PROTO((IDL_SignalSet_t
-        *set, int signo));
-extern void IDL_CDECL IDL_SignalSetAdd IDL_ARG_PROTO((IDL_SignalSet_t
-        *set, int signo));
-extern void IDL_CDECL IDL_SignalSetDel IDL_ARG_PROTO((IDL_SignalSet_t
-        *set, int signo));
-extern int IDL_CDECL IDL_SignalSetIsMember IDL_ARG_PROTO((IDL_SignalSet_t
-        *set, int signo));
-extern void IDL_CDECL IDL_SignalMaskGet IDL_ARG_PROTO((IDL_SignalSet_t
-        *set));
-extern void IDL_CDECL IDL_SignalMaskSet IDL_ARG_PROTO((IDL_SignalSet_t
-        *set, IDL_SignalSet_t *oset));
-extern void IDL_CDECL IDL_SignalMaskBlock IDL_ARG_PROTO((IDL_SignalSet_t
-        *set, IDL_SignalSet_t *oset));
-extern void IDL_CDECL IDL_SignalBlock IDL_ARG_PROTO((int signo,
-        IDL_SignalSet_t *oset));
-extern void IDL_CDECL IDL_SignalSuspend IDL_ARG_PROTO((IDL_SignalSet_t
-        *set));
-extern int IDL_CDECL IDL_SignalRegister IDL_ARG_PROTO((int signo,
-        IDL_SignalHandler_t func, int msg_action));
-extern int IDL_CDECL IDL_SignalUnregister IDL_ARG_PROTO((int signo,
-        IDL_SignalHandler_t func, int msg_action));
-extern int IDL_CDECL IDL_GetKbrd IDL_ARG_PROTO((int should_wait));
-extern void IDL_CDECL IDL_TerminalRaw IDL_ARG_PROTO((int to_from, int
-        fnin));
-extern void IDL_CDECL IDL_Pout IDL_ARG_PROTO((IDL_POUT_CNTRL *control,
-        ...));
-extern void IDL_CDECL IDL_PoutVa IDL_ARG_PROTO((IDL_POUT_CNTRL *control,
-        va_list args));
-extern void IDL_CDECL IDL_PoutRaw IDL_ARG_PROTO((int unit, char *buf, int
-        n));
-extern IDL_PLOT_COM IDL_PlotCom;
-extern UCHAR IDL_ColorMap[];
-extern IDL_PLOT_COM *IDL_CDECL IDL_PlotComAddr IDL_ARG_PROTO((void));
-extern UCHAR *IDL_CDECL IDL_ColorMapAddr IDL_ARG_PROTO((void));
-extern void IDL_CDECL IDL_PolyfillSoftware IDL_ARG_PROTO((int *x, int *y,
-        int n, IDL_POLYFILL_ATTR *s));
-extern double IDL_CDECL IDL_GraphText IDL_ARG_PROTO((IDL_GR_PT *p,
-        IDL_ATTR_STRUCT *ga, IDL_TEXT_STRUCT *a, char *text));
-extern int IDL_STDCALL IDL_InitOCX IDL_ARG_PROTO((void *pInit));
-extern int IDL_CDECL IDL_GetKbrd IDL_ARG_PROTO((int should_wait));
-extern void IDL_CDECL IDL_ExitRegister
-        IDL_ARG_PROTO((IDL_EXIT_HANDLER_FUNC proc));
-extern void IDL_CDECL IDL_ExitUnregister
-        IDL_ARG_PROTO((IDL_EXIT_HANDLER_FUNC proc));
-extern long IDL_CDECL IDL_IsIDLEvent IDL_ARG_PROTO(( void *theEvent ));
-extern void IDL_CDECL IDL_WidgetIssueStubEvent IDL_ARG_PROTO((char *rec,
-        IDL_LONG value));
-extern void IDL_CDECL IDL_WidgetSetStubIds IDL_ARG_PROTO((char *rec,
-        unsigned long t_id, unsigned long b_id));
-extern void IDL_CDECL IDL_WidgetGetStubIds IDL_ARG_PROTO((char *rec,
-        unsigned long *t_id, unsigned long *b_id));
-extern void IDL_CDECL IDL_WidgetStubLock IDL_ARG_PROTO((int set));
-extern void *IDL_CDECL IDL_WidgetStubGetParent IDL_ARG_PROTO((IDL_ULONG
-        id, char *szDisplay));
-extern char *IDL_CDECL IDL_WidgetStubLookup IDL_ARG_PROTO((IDL_ULONG id));
-extern void IDL_CDECL IDL_WidgetStubSetSizeFunc IDL_ARG_PROTO((char *rec,
-        IDL_WIDGET_STUB_SET_SIZE_FUNC func));
-extern void IDL_CDECL IDL_CvtVAXToFloat IDL_ARG_PROTO((float *fp,
-        IDL_MEMINT n));
-extern void IDL_CDECL IDL_CvtFloatToVAX IDL_ARG_PROTO((float *fp,
-        IDL_MEMINT n));
-extern void IDL_CDECL IDL_CvtVAXToDouble IDL_ARG_PROTO((double *dp,
-        IDL_MEMINT n));
-extern void IDL_CDECL IDL_CvtDoubleToVAX IDL_ARG_PROTO((double *dp,
-        IDL_MEMINT n));
-extern void IDL_CDECL IDL_EzCall IDL_ARG_PROTO((int argc, IDL_VPTR argv[],
-        IDL_EZ_ARG arg_struct[]));
-extern void IDL_CDECL IDL_EzCallCleanup IDL_ARG_PROTO((int argc, IDL_VPTR
-        argv[], IDL_EZ_ARG arg_struct[]));
-extern void IDL_CDECL IDL_EzReplaceWithTranspose IDL_ARG_PROTO((IDL_VPTR
-        *v, IDL_VPTR orig));
-extern int IDL_CDECL IDL_MessageNameToCode IDL_ARG_PROTO((IDL_MSG_BLOCK
-        block, char *name));
-extern IDL_MSG_BLOCK IDL_CDECL IDL_MessageDefineBlock IDL_ARG_PROTO((char
-        *block_name, int n, IDL_MSG_DEF *defs));
-extern void IDL_CDECL IDL_MessageErrno IDL_ARG_PROTO((int code, ...));
-extern void IDL_CDECL IDL_MessageErrnoVa IDL_ARG_PROTO((int code, va_list
-        args));
-extern void IDL_CDECL IDL_MessageErrnoFromBlock
-        IDL_ARG_PROTO((IDL_MSG_BLOCK block, int code, ...));
-extern void IDL_CDECL IDL_MessageErrnoFromBlockVa
-        IDL_ARG_PROTO((IDL_MSG_BLOCK block, int code, va_list args));
-extern void IDL_CDECL IDL_Message IDL_ARG_PROTO((int code, int action,
-        ...));
-extern void IDL_CDECL IDL_MessageVa IDL_ARG_PROTO((int code, int action,
-        va_list args));
-extern void IDL_CDECL IDL_MessageFromBlock IDL_ARG_PROTO((IDL_MSG_BLOCK
-        block, int code, int action,...));
-extern void IDL_CDECL IDL_MessageFromBlockVa IDL_ARG_PROTO((IDL_MSG_BLOCK
-        block, int code, int action, va_list args));
-extern void IDL_CDECL IDL_MessageVarError IDL_ARG_PROTO((int code,
-        IDL_VPTR var, int action));
-extern void IDL_CDECL IDL_MessageVarErrorFromBlock
-        IDL_ARG_PROTO((IDL_MSG_BLOCK block, int code, IDL_VPTR var, int
-        action));
-extern void IDL_CDECL IDL_MessageResetSysvErrorState IDL_ARG_PROTO((void));
-extern void IDL_CDECL IDL_MessageSJE IDL_ARG_PROTO((void *value));
-extern void *IDL_CDECL IDL_MessageGJE IDL_ARG_PROTO((void));
-extern void IDL_CDECL IDL_MessageVE_UNDEFVAR IDL_ARG_PROTO((IDL_VPTR var,
-        int action));
-extern void IDL_CDECL IDL_MessageVE_NOTARRAY IDL_ARG_PROTO((IDL_VPTR var,
-        int action));
-extern void IDL_CDECL IDL_MessageVE_NOTSCALAR IDL_ARG_PROTO((IDL_VPTR var,
-        int action));
-extern void IDL_CDECL IDL_MessageVE_NOEXPR IDL_ARG_PROTO((IDL_VPTR var,
-        int action));
-extern void IDL_CDECL IDL_MessageVE_NOCONST IDL_ARG_PROTO((IDL_VPTR var,
-        int action));
-extern void IDL_CDECL IDL_MessageVE_NOFILE IDL_ARG_PROTO((IDL_VPTR var,
-        int action));
-extern void IDL_CDECL IDL_MessageVE_NOCOMPLEX IDL_ARG_PROTO((IDL_VPTR var,
-        int action));
-extern void IDL_CDECL IDL_MessageVE_NOSTRING IDL_ARG_PROTO((IDL_VPTR var,
-        int action));
-extern void IDL_CDECL IDL_MessageVE_NOSTRUCT IDL_ARG_PROTO((IDL_VPTR var,
-        int action));
-extern void IDL_CDECL IDL_MessageVE_REQSTR IDL_ARG_PROTO((IDL_VPTR var,
-        int action));
-extern void IDL_CDECL IDL_MessageVE_NOSCALAR IDL_ARG_PROTO((IDL_VPTR var,
-        int action));
-extern void IDL_CDECL IDL_MessageVE_NOMEMINT64 IDL_ARG_PROTO((IDL_VPTR
-        var, int action));
-extern void IDL_CDECL IDL_MessageVE_STRUC_REQ IDL_ARG_PROTO((IDL_VPTR var,
-        int action));
-extern void IDL_CDECL IDL_MessageVE_REQPTR IDL_ARG_PROTO((IDL_VPTR var,
-        int action));
-extern void IDL_CDECL IDL_MessageVE_REQOBJREF IDL_ARG_PROTO((IDL_VPTR var,
-        int action));
-extern void IDL_CDECL IDL_Message_BADARRDNUM IDL_ARG_PROTO((int action));
-extern char *IDL_CDECL IDL_Rline IDL_ARG_PROTO((char *s, IDL_MEMINT n, int
-        unit, FILE *stream, int is_tty, char *prompt, int opt));
-extern void IDL_CDECL IDL_RlineSetStdinOptions IDL_ARG_PROTO((int opt));
-extern void IDL_CDECL IDL_Logit IDL_ARG_PROTO((char *s));
-extern int IDL_CDECL IDL_Win32Init IDL_ARG_PROTO((int iOpts, void
-        *hinstExe, void *hwndExe, void *hAccel));
-extern int IDL_CDECL IDL_SetValue IDL_ARG_PROTO((int id, void* pvValue));
-extern void IDL_CDECL IDL_ToutPush IDL_ARG_PROTO((IDL_TOUT_OUTF outf));
-extern IDL_TOUT_OUTF IDL_CDECL IDL_ToutPop IDL_ARG_PROTO((void));
-extern char *IDL_CDECL IDL_VarName IDL_ARG_PROTO((IDL_VPTR v));
-extern IDL_VPTR IDL_CDECL IDL_GetVarAddr1 IDL_ARG_PROTO((char *name, int
-        ienter));
-extern IDL_VPTR IDL_CDECL IDL_GetVarAddr IDL_ARG_PROTO((char *name));
-extern IDL_VPTR IDL_CDECL IDL_FindNamedVariable IDL_ARG_PROTO((char *name,
-        int ienter));
-extern char *IDL_CDECL IDL_MakeTempArray IDL_ARG_PROTO((int type, int
-        n_dim, IDL_MEMINT dim[], int init, IDL_VPTR *var));
-extern char *IDL_CDECL IDL_MakeTempVector IDL_ARG_PROTO((int type,
-        IDL_MEMINT dim, int init, IDL_VPTR *var));
-extern void IDL_CDECL IDL_Wait IDL_ARG_PROTO((int argc, IDL_VPTR argv[]));
-extern void IDL_CDECL IDL_GetUserInfo IDL_ARG_PROTO((IDL_USER_INFO
-        *user_info));
-extern void IDL_CDECL IDL_TTYReset IDL_ARG_PROTO((void));
-extern int IDL_CDECL IDL_AddToQueue IDL_ARG_PROTO((char* pString));
-extern int IDL_CDECL IDL_GetWait IDL_ARG_PROTO((int fType));
-extern int IDL_CDECL IDL_SetWait IDL_ARG_PROTO((int fType, int iVal));
-extern int IDL_CDECL IDL_MacResExecute IDL_ARG_PROTO((int argc, char
-        *argv[]));
-extern int IDL_CDECL IDL_MacResExecuteStr IDL_ARG_PROTO((char *cmd));
-extern char *IDL_CDECL IDL_MakeTempStruct IDL_ARG_PROTO((IDL_StructDefPtr
-        sdef, int n_dim, IDL_MEMINT *dim, IDL_VPTR *var, int zero));
-extern char *IDL_CDECL IDL_MakeTempStructVector
-        IDL_ARG_PROTO((IDL_StructDefPtr sdef, IDL_MEMINT dim, IDL_VPTR
-        *var, int zero));
-extern IDL_StructDefPtr IDL_CDECL IDL_MakeStruct IDL_ARG_PROTO((char
-        *name, IDL_STRUCT_TAG_DEF *tags));
-extern IDL_MEMINT IDL_CDECL IDL_StructTagInfoByName
-        IDL_ARG_PROTO((IDL_StructDefPtr sdef, char *name, int msg_action,
-        IDL_VPTR *var));
-extern IDL_MEMINT IDL_CDECL IDL_StructTagInfoByIndex
-        IDL_ARG_PROTO((IDL_StructDefPtr sdef, int index, int msg_action,
-        IDL_VPTR *var));
-extern char *IDL_CDECL IDL_StructTagNameByIndex
-        IDL_ARG_PROTO((IDL_StructDefPtr sdef, int index, int msg_action,
-        char **struct_name));
-extern int IDL_CDECL IDL_StructNumTags IDL_ARG_PROTO((IDL_StructDefPtr
-        sdef));
-extern void IDL_CDECL IDL_Win32MessageLoop  IDL_ARG_PROTO((int fFlush));
-extern int IDL_CDECL IDL_AddDevice IDL_ARG_PROTO(( IDL_DEVICE_DEF *dev, 
-        int msg_action));
-extern void IDL_CDECL IDL_RgbToHsv IDL_ARG_PROTO((UCHAR *r, UCHAR *g,
-        UCHAR *b, float *h, float *s, float *v, int n));
-extern void IDL_CDECL IDL_RgbToHls IDL_ARG_PROTO((UCHAR *r, UCHAR *g,
-        UCHAR *b, float *h, float *l, float *s, int n));
+extern void IDL_CDECL IDL_Win32MessageLoop(int fFlush);
+extern IDL_LONG IDL_CDECL IDL_LongScalar(IDL_REGISTER IDL_VPTR v);
+extern IDL_ULONG IDL_CDECL IDL_ULongScalar(IDL_REGISTER IDL_VPTR v);
+extern IDL_LONG64 IDL_CDECL IDL_Long64Scalar(IDL_REGISTER IDL_VPTR v);
+extern IDL_ULONG64 IDL_CDECL IDL_ULong64Scalar(IDL_REGISTER IDL_VPTR v);
+extern double IDL_CDECL IDL_DoubleScalar(IDL_REGISTER IDL_VPTR v);
+extern IDL_MEMINT IDL_CDECL IDL_MEMINTScalar(IDL_REGISTER IDL_VPTR v);
+extern IDL_FILEINT IDL_CDECL IDL_FILEINTScalar(IDL_REGISTER IDL_VPTR v);
+extern float IDL_CDECL IDL_CastUL64_f(IDL_ULONG64 value);
+extern double IDL_CDECL IDL_CastUL64_d(IDL_ULONG64 value);
+extern void IDL_CDECL IDL_StrDup(IDL_REGISTER IDL_STRING *str,
+        IDL_REGISTER IDL_MEMINT n);
+extern void IDL_CDECL IDL_StrDelete(IDL_STRING *str, IDL_MEMINT n);
+extern void IDL_CDECL IDL_StrStore(IDL_STRING *s, char *fs);
+extern void IDL_CDECL IDL_StrEnsureLength(IDL_STRING *s, int n);
+extern IDL_VPTR IDL_CDECL IDL_StrToSTRING(char *s);
+extern void IDL_CDECL IDL_Freetmp(IDL_REGISTER IDL_VPTR p);
+extern void IDL_CDECL IDL_Deltmp(IDL_REGISTER IDL_VPTR p);
+extern IDL_VPTR IDL_CDECL IDL_Gettmp(void);
+extern IDL_VPTR IDL_CDECL IDL_GettmpInt(IDL_INT value);
+extern IDL_VPTR IDL_CDECL IDL_GettmpLong(IDL_LONG value);
+extern IDL_VPTR IDL_CDECL IDL_GettmpObjRef(IDL_HVID value);
+extern IDL_VPTR IDL_CDECL IDL_GettmpUInt(IDL_UINT value);
+extern IDL_VPTR IDL_CDECL IDL_GettmpULong(IDL_ULONG value);
+extern IDL_VPTR IDL_CDECL IDL_GettmpFILEINT(IDL_FILEINT value);
+extern IDL_VPTR IDL_CDECL IDL_GettmpMEMINT(IDL_MEMINT value);
+extern char *IDL_CDECL IDL_GetScratch(IDL_REGISTER IDL_VPTR *p,
+        IDL_REGISTER IDL_MEMINT n_elts,  IDL_REGISTER IDL_MEMINT elt_size);
+extern char *IDL_CDECL IDL_GetScratchOnThreshold(IDL_REGISTER char
+        *auto_buf, IDL_REGISTER IDL_MEMINT auto_elts,  IDL_REGISTER IDL_MEMINT
+        n_elts,  IDL_REGISTER IDL_MEMINT elt_size,  IDL_VPTR *tempvar);
+extern IDL_VPTR IDL_CDECL IDL_CvtBytscl(int argc, IDL_VPTR *argv, char
+        *argk);
+extern int IDL_CDECL IDL_StrBase_strcasecmp(const char *str1, const char
+        *str2);
+extern int IDL_CDECL IDL_StrBase_strncasecmp(const char *str1, const char
+        *str2, size_t nchars);
+extern size_t IDL_CDECL IDL_StrBase_strlcpy(char *dst, const char *src,
+        size_t siz);
+extern size_t IDL_CDECL IDL_StrBase_strlcat(char *dst, const char *src,
+        size_t siz);
+extern int IDL_CDECL IDL_StrBase_vsnprintf(char *s, size_t n, const char
+        *format, va_list args);
+extern int IDL_CDECL IDL_StrBase_snprintf(char *s, size_t n, const char
+        *format, ...);
+extern int IDL_CDECL IDL_StrBase_strbcopy(char *dst, const char *src,
+        size_t siz);
+extern void IDL_CDECL IDL_VarCopy(IDL_REGISTER IDL_VPTR src, IDL_REGISTER
+        IDL_VPTR dst);
+extern void IDL_CDECL IDL_StoreScalar(IDL_VPTR dest, int type,
+        IDL_ALLTYPES *value);
+extern void IDL_CDECL IDL_StoreScalarZero(IDL_VPTR dest, int type);
+extern IDL_VPTR IDL_CDECL IDL_BasicTypeConversion(int argc, IDL_VPTR
+        argv[], IDL_REGISTER int type);
+extern IDL_VPTR IDL_CDECL IDL_CvtByte(int argc, IDL_VPTR argv[]);
+extern IDL_VPTR IDL_CDECL IDL_CvtFix(int argc, IDL_VPTR argv[]);
+extern IDL_VPTR IDL_CDECL IDL_CvtLng(int argc, IDL_VPTR argv[]);
+extern IDL_VPTR IDL_CDECL IDL_CvtFlt(int argc, IDL_VPTR argv[]);
+extern IDL_VPTR IDL_CDECL IDL_CvtDbl(int argc, IDL_VPTR argv[]);
+extern IDL_VPTR IDL_CDECL IDL_CvtUInt(int argc, IDL_VPTR argv[]);
+extern IDL_VPTR IDL_CDECL IDL_CvtULng(int argc, IDL_VPTR argv[]);
+extern IDL_VPTR IDL_CDECL IDL_CvtLng64(int argc, IDL_VPTR argv[]);
+extern IDL_VPTR IDL_CDECL IDL_CvtULng64(int argc, IDL_VPTR argv[]);
+extern IDL_VPTR IDL_CDECL IDL_CvtMEMINT(int argc, IDL_VPTR argv[]);
+extern IDL_VPTR IDL_CDECL IDL_CvtFILEINT(int argc, IDL_VPTR argv[]);
+extern IDL_VPTR IDL_CDECL IDL_CvtComplex(int argc, IDL_VPTR argv[], char
+        *argk);
+extern IDL_VPTR IDL_CDECL IDL_CvtDComplex(int argc, IDL_VPTR argv[]);
+extern IDL_VPTR IDL_CDECL IDL_CvtString(int argc, IDL_VPTR argv[], char
+        *argk);
+extern IDL_LONG IDL_CDECL IDL_grMesh_Clip(float fPlane[4], short clipSide,
+         float *pfVin, IDL_LONG iNVerts,  IDL_LONG *piCin, IDL_LONG iNConn, 
+        float **pfVout, IDL_LONG *iNVout,  IDL_LONG **piCout, IDL_LONG *iNCout, 
+        IDL_VPTR vpAuxInKW, IDL_VPTR vpAuxOutKW,  IDL_VPTR vpCut);
+extern int IDL_CDECL IDL_KWProcessByOffset(int argc, IDL_VPTR *argv, char
+        *argk, IDL_KW_PAR *kw_list, IDL_VPTR *plain_args,  int mask, void *base);
+extern int IDL_CDECL IDL_KWProcessByAddr(int argc, IDL_VPTR *argv, char
+        *argk, IDL_KW_PAR *kw_list, IDL_VPTR *plain_args,  int mask, int
+        *free_required);
+extern void IDL_CDECL IDL_KWFree(void);
+extern void IDL_CDECL IDL_KWFreeAll(void);
+extern void IDL_CDECL IDL_unform_io(int type, int argc, IDL_VPTR *argv,
+        char *argk);
+extern void IDL_CDECL IDL_Print(int argc, IDL_VPTR *argv, char *argk);
+extern void IDL_CDECL IDL_PrintF(int argc, IDL_VPTR *argv, char *argk);
+extern char *IDL_DitherMethodNames[];
+extern char *IDL_CDECL IDL_DitherMethodNamesFunc(int method);
+extern void IDL_CDECL IDL_RasterDrawThick(IDL_GR_PT *p0, IDL_GR_PT *p1,
+        IDL_ATTR_STRUCT *a,  IDL_DEVCORE_FCN_POLYFILL routine,  int dot_width);
+extern void IDL_CDECL IDL_RasterPolyfill(int *x, int *y, int n,
+        IDL_POLYFILL_ATTR *p, IDL_RASTER_DEF *r);
+extern void IDL_CDECL IDL_RasterDraw(IDL_GR_PT *p0, IDL_GR_PT *p1, 
+        IDL_ATTR_STRUCT *a, IDL_RASTER_DEF *r);
+extern void IDL_CDECL IDL_Raster8Image(UCHAR *data, IDL_ULONG nx,
+        IDL_ULONG ny,  IDL_ULONG x0, IDL_ULONG y0,  IDL_ULONG xsize, IDL_ULONG
+        ysize,  IDL_TV_STRUCT *secondary,  IDL_RASTER_DEF *rs,  IDLBool_t
+        bReverse);
+extern void IDL_CDECL IDL_RasterImage(UCHAR *data, IDL_ULONG nx, IDL_ULONG
+        ny,  IDL_ULONG x0, IDL_ULONG y0,  IDL_ULONG xsize, IDL_ULONG ysize, 
+        IDL_TV_STRUCT *secondary,  IDL_RASTER_DEF *rs,  IDLBool_t bReverse);
+extern void IDL_CDECL IDL_Dither(UCHAR *data, int ncols, int nrows,
+        IDL_RASTER_DEF *r, int x0, int y0, IDL_TV_STRUCT *secondary);
+extern void IDL_CDECL IDL_BitmapLandscape(IDL_RASTER_DEF *in,
+        IDL_RASTER_DEF *out, int y0);
+extern void IDL_CDECL IDL_VarGetData(IDL_VPTR v, IDL_MEMINT *n, char **pd,
+        int ensure_simple);
+extern IDL_STRING *IDL_CDECL IDL_VarGet1EltStringDesc(IDL_VPTR v, IDL_VPTR
+        *tc_v, int like_print);
+extern char *IDL_CDECL IDL_VarGetString(IDL_VPTR v);
+extern IDL_VPTR IDL_CDECL IDL_ImportArray(int n_dim, IDL_MEMINT dim[], int
+        type, UCHAR *data, IDL_ARRAY_FREE_CB free_cb,  IDL_StructDefPtr s);
+extern IDL_VPTR IDL_CDECL IDL_ImportNamedArray(char *name, int n_dim,
+        IDL_MEMINT dim[],  int type, UCHAR *data,  IDL_ARRAY_FREE_CB free_cb, 
+        IDL_StructDefPtr s);
+extern void IDL_CDECL IDL_Delvar(IDL_VPTR var);
+extern IDL_VPTR IDL_CDECL IDL_VarTypeConvert(IDL_VPTR v, IDL_REGISTER int
+        type);
+extern void IDL_CDECL IDL_VarEnsureSimple(IDL_VPTR v);
+extern char *IDL_CDECL IDL_VarMakeTempFromTemplate(IDL_VPTR template_var,
+        int type, IDL_StructDefPtr sdef,  IDL_VPTR *result_addr, int zero);
+extern int IDL_CDECL IDL_AddDevice( IDL_DEVICE_DEF *dev,  int msg_action);
+extern void IDL_CDECL IDL_RgbToHsv(UCHAR *r, UCHAR *g, UCHAR *b, float *h,
+        float *s, float *v, int n);
+extern void IDL_CDECL IDL_RgbToHls(UCHAR *r, UCHAR *g, UCHAR *b, float *h,
+        float *l, float *s, int n);
+extern void IDL_CDECL IDL_HsvToRgb(float *h, float *s, float *v, UCHAR *r,
+        UCHAR *g, UCHAR *b, int n);
+extern void IDL_CDECL IDL_HlsToRgb(float *h, float *l, float *s, UCHAR *r,
+        UCHAR *g, UCHAR *b, int n);
+extern int IDL_CDECL IDL_SysRtnAdd(IDL_SYSFUN_DEF2 *defs, int is_function,
+        int cnt);
+extern IDL_MEMINT IDL_CDECL IDL_SysRtnNumEnabled(int is_function, int
+        enabled);
+extern void IDL_CDECL IDL_SysRtnGetEnabledNames(int is_function,
+        IDL_STRING *str, int enabled);
+extern void IDL_CDECL IDL_SysRtnEnable(int is_function, IDL_STRING *names,
+        IDL_MEMINT n, int option,  IDL_SYSRTN_GENERIC disfcn);
+extern IDL_SYSRTN_GENERIC IDL_CDECL IDL_SysRtnGetRealPtr(int is_function,
+        char *name);
+extern char *IDL_CDECL IDL_SysRtnGetCurrentName(void);
+extern IDL_TERMINFO IDL_FileTerm;
+extern char *IDL_CDECL IDL_FileTermName(void);
+extern int IDL_CDECL IDL_FileTermIsTty(void);
+extern int IDL_CDECL IDL_FileTermLines(void);
+extern int IDL_CDECL IDL_FileTermColumns(void);
+extern int IDL_CDECL IDL_FileEnsureStatus(int action, int unit, int flags);
+extern void IDL_CDECL IDL_FileSetMode(int unit, int binary);
+extern int IDL_CDECL IDL_FileOpenUnitBasic(int unit, char *filename, int
+        access_mode, IDL_SFILE_FLAGS_T flags, int msg_action, 
+        IDL_MSG_ERRSTATE_PTR errstate);
+extern int IDL_CDECL IDL_FileOpen(int argc, IDL_VPTR argv[], char *argk,
+        int access_mode, IDL_SFILE_FLAGS_T extra_flags,  int longjmp_safe, int
+        msg_attr);
+extern int IDL_CDECL IDL_FileCloseUnit(int unit, int flags,
+        IDL_SFILE_PIPE_EXIT_STATUS *exit_status,  int msg_action,
+        IDL_MSG_ERRSTATE_PTR errstate);
+extern void IDL_CDECL IDL_FileClose(int argc, IDL_VPTR argv[], char *argk);
+extern void IDL_CDECL IDL_FileFlushUnit(int unit);
+extern void IDL_CDECL IDL_FileGetUnit(int argc, IDL_VPTR argv[]);
+extern void IDL_CDECL IDL_FileFreeUnit(int argc, IDL_VPTR argv[]);
+extern int IDL_CDECL IDL_FileSetPtr(int unit, IDL_FILEINT pos, int extend,
+        int msg_action);
+extern int IDL_CDECL IDL_FileEOF(int unit);
+extern void IDL_CDECL IDL_FileStat(int unit, IDL_FILE_STAT *stat_blk);
+extern void IDL_CDECL IDL_FileSetClose(int unit, int allow);
+extern IDL_VPTR IDL_CDECL IDL_FileVaxFloat(int argc, IDL_VPTR *argv, char
+        *argk);
+extern int IDL_CDECL IDL_LMGRLicenseInfo(int iFlags);
+extern int IDL_CDECL IDL_LMGRSetLicenseInfo(int iFlags);
+extern int IDL_CDECL IDL_LMGRLicenseCheckout(char *szFeature, char
+        *szVersion);
+extern int IDL_CDECL IDL_BailOut(int stop);
+extern int IDL_CDECL IDL_Cleanup(int just_cleanup);
+extern int IDL_CDECL IDL_Init(int options, int *argc, char *argv[]);
+extern int IDL_CDECL IDL_Main(int options, int argc, char *argv[]);
+extern int IDL_CDECL IDL_ExecuteStr(char *cmd);
+extern int IDL_CDECL IDL_Execute(int argc, char *argv[]);
+extern int IDL_CDECL IDL_RuntimeExec(char *file);
+extern void IDL_CDECL IDL_Runtime(int options, int *argc, char *argv[],
+        char *file);
 extern char *IDL_OutputFormat[];
-extern char *IDL_CDECL IDL_OutputFormatFunc IDL_ARG_PROTO((int type));
+extern char *IDL_CDECL IDL_OutputFormatFunc(int type);
 extern int IDL_OutputFormatLen[];
-extern int IDL_CDECL IDL_OutputFormatLenFunc IDL_ARG_PROTO((int type));
+extern int IDL_CDECL IDL_OutputFormatLenFunc(int type);
 extern char *IDL_OutputFormatNatural[];
 extern IDL_LONG IDL_TypeSize[];
-extern int IDL_CDECL IDL_TypeSizeFunc IDL_ARG_PROTO((int type));
+extern int IDL_CDECL IDL_TypeSizeFunc(int type);
 extern char *IDL_TypeName[];
-extern char *IDL_CDECL IDL_TypeNameFunc IDL_ARG_PROTO((int type));
+extern char *IDL_CDECL IDL_TypeNameFunc(int type);
 extern IDL_ALLTYPES IDL_zero;
-extern IDL_VPTR IDL_CDECL IDL_nonavailable_rtn IDL_ARG_PROTO((int argc,
-        IDL_VPTR argv[], char *argk));
-extern int IDL_CDECL IDL_LMGRLicenseInfo IDL_ARG_PROTO((int iFlags));
-extern int IDL_CDECL IDL_LMGRSetLicenseInfo IDL_ARG_PROTO((int iFlags));
-extern int IDL_CDECL IDL_LMGRLicenseCheckout IDL_ARG_PROTO((char
-        *szFeature, char *szVersion));
+extern IDL_VPTR IDL_CDECL IDL_nonavailable_rtn(int argc, IDL_VPTR argv[],
+        char *argk);
+extern int IDL_CDECL IDL_AddSystemRoutine(IDL_SYSFUN_DEF *defs, int
+        is_function, int cnt);
+extern void IDL_CDECL IDL_WidgetIssueStubEvent(char *rec, IDL_LONG value);
+extern void IDL_CDECL IDL_WidgetSetStubIds(char *rec, unsigned long t_id,
+        unsigned long b_id);
+extern void IDL_CDECL IDL_WidgetGetStubIds(char *rec, unsigned long *t_id,
+        unsigned long *b_id);
+extern void IDL_CDECL IDL_WidgetStubLock(int set);
+extern void *IDL_CDECL IDL_WidgetStubGetParent(IDL_ULONG id, char
+        *szDisplay);
+extern char *IDL_CDECL IDL_WidgetStubLookup(IDL_ULONG id);
+extern void IDL_CDECL IDL_WidgetStubSetSizeFunc(char *rec,
+        IDL_WIDGET_STUB_SET_SIZE_FUNC func);
+extern int IDL_CDECL IDL_MessageNameToCode(IDL_MSG_BLOCK block, char
+        *name);
+extern IDL_MSG_BLOCK IDL_CDECL IDL_MessageDefineBlock(char *block_name,
+        int n, IDL_MSG_DEF *defs);
+extern void IDL_CDECL IDL_MessageErrno(int code, ...);
+extern void IDL_CDECL IDL_MessageErrnoFromBlock(IDL_MSG_BLOCK block, int
+        code, ...);
+extern void IDL_CDECL IDL_Message(int code, int action, ...);
+extern void IDL_CDECL IDL_MessageFromBlock(IDL_MSG_BLOCK block, int code,
+        int action,...);
+extern void IDL_CDECL IDL_MessageSyscode(int code, IDL_MSG_SYSCODE_T
+        syscode_type, int syscode, int action, ...);
+extern void IDL_CDECL IDL_MessageSyscodeFromBlock(IDL_MSG_BLOCK block, int
+        code, IDL_MSG_SYSCODE_T syscode_type,  int syscode, int action, ...);
+extern void IDL_CDECL IDL_MessageVarError(int code, IDL_VPTR var, int
+        action);
+extern void IDL_CDECL IDL_MessageVarErrorFromBlock(IDL_MSG_BLOCK block,
+        int code, IDL_VPTR var, int action);
+extern void IDL_CDECL IDL_MessageResetSysvErrorState(void);
+extern void IDL_CDECL IDL_MessageSJE(void *value);
+extern void *IDL_CDECL IDL_MessageGJE(void);
+extern void IDL_CDECL IDL_MessageVE_UNDEFVAR(IDL_VPTR var, int action);
+extern void IDL_CDECL IDL_MessageVE_NOTARRAY(IDL_VPTR var, int action);
+extern void IDL_CDECL IDL_MessageVE_NOTSCALAR(IDL_VPTR var, int action);
+extern void IDL_CDECL IDL_MessageVE_NOEXPR(IDL_VPTR var, int action);
+extern void IDL_CDECL IDL_MessageVE_NOCONST(IDL_VPTR var, int action);
+extern void IDL_CDECL IDL_MessageVE_NOFILE(IDL_VPTR var, int action);
+extern void IDL_CDECL IDL_MessageVE_NOCOMPLEX(IDL_VPTR var, int action);
+extern void IDL_CDECL IDL_MessageVE_NOSTRING(IDL_VPTR var, int action);
+extern void IDL_CDECL IDL_MessageVE_NOSTRUCT(IDL_VPTR var, int action);
+extern void IDL_CDECL IDL_MessageVE_REQSTR(IDL_VPTR var, int action);
+extern void IDL_CDECL IDL_MessageVE_NOSCALAR(IDL_VPTR var, int action);
+extern void IDL_CDECL IDL_MessageVE_NOMEMINT64(IDL_VPTR var, int action);
+extern void IDL_CDECL IDL_MessageVE_STRUC_REQ(IDL_VPTR var, int action);
+extern void IDL_CDECL IDL_MessageVE_REQPTR(IDL_VPTR var, int action);
+extern void IDL_CDECL IDL_MessageVE_REQOBJREF(IDL_VPTR var, int action);
+extern void IDL_CDECL IDL_Message_BADARRDNUM(int action);
+extern char *IDL_CDECL IDL_Rline(char *s, IDL_MEMINT n, int unit, FILE
+        *stream, int is_tty, char *prompt, int opt);
+extern void IDL_CDECL IDL_RlineSetStdinOptions(int opt);
+extern void IDL_CDECL IDL_Logit(char *s);
+extern char *IDL_CDECL IDL_FilePathFromRoot(int flags, char *pathbuf, char
+        *root, char *file, char *ext,  int nsubdir, char **subdir);
+extern char *IDL_CDECL IDL_FilePathFromDist(int flags, char *pathbuf, char
+        *file, char *ext, int nsubdir, char **subdir);
+extern char *IDL_CDECL IDL_FilePathFromDistBin(int flags, char *pathbuf,
+        char *file, char *ext);
+extern char *IDL_CDECL IDL_FilePathFromDistHelp(int flags, char *pathbuf,
+        char *file, char *ext);
+extern void IDL_CDECL IDL_FilePathGetTmpDir(char *path);
+extern int IDL_CDECL IDL_FilePathExpand(char *path, int msg_action);
 extern IDL_SYS_VERSION IDL_SysvVersion;
-extern IDL_STRING *IDL_CDECL IDL_SysvVersionArch IDL_ARG_PROTO((void));
-extern IDL_STRING *IDL_CDECL IDL_SysvVersionOS IDL_ARG_PROTO((void));
-extern IDL_STRING *IDL_CDECL IDL_SysvVersionOSFamily IDL_ARG_PROTO((void));
-extern IDL_STRING *IDL_CDECL IDL_SysvVersionRelease IDL_ARG_PROTO((void));
+extern IDL_STRING *IDL_CDECL IDL_SysvVersionArch(void);
+extern IDL_STRING *IDL_CDECL IDL_SysvVersionOS(void);
+extern IDL_STRING *IDL_CDECL IDL_SysvVersionOSFamily(void);
+extern IDL_STRING *IDL_CDECL IDL_SysvVersionRelease(void);
 extern char *IDL_ProgramName;
-extern char *IDL_CDECL IDL_ProgramNameFunc IDL_ARG_PROTO((void));
+extern char *IDL_CDECL IDL_ProgramNameFunc(void);
 extern char *IDL_ProgramNameLC;
-extern char *IDL_CDECL IDL_ProgramNameLCFunc IDL_ARG_PROTO((void));
+extern char *IDL_CDECL IDL_ProgramNameLCFunc(void);
 extern IDL_STRING IDL_SysvDir;
-extern IDL_STRING *IDL_CDECL IDL_SysvDirFunc IDL_ARG_PROTO((void));
+extern IDL_STRING *IDL_CDECL IDL_SysvDirFunc(void);
 extern IDL_LONG IDL_SysvErrCode;
-extern IDL_LONG IDL_CDECL IDL_SysvErrCodeValue IDL_ARG_PROTO((void));
+extern IDL_LONG IDL_CDECL IDL_SysvErrCodeValue(void);
 extern IDL_SYS_ERROR_STATE IDL_SysvErrorState;
-extern IDL_SYS_ERROR_STATE *IDL_CDECL IDL_SysvErrorStateAddr
-        IDL_ARG_PROTO((void));
-extern IDL_STRING *IDL_CDECL IDL_SysvErrStringFunc IDL_ARG_PROTO((void));
-extern IDL_STRING *IDL_CDECL IDL_SysvSyserrStringFunc
-        IDL_ARG_PROTO((void));
-extern IDL_LONG IDL_CDECL IDL_SysvErrorCodeValue IDL_ARG_PROTO((void));
-extern IDL_LONG *IDL_CDECL IDL_SysvSyserrorCodesAddr IDL_ARG_PROTO((void));
+extern IDL_SYS_ERROR_STATE *IDL_CDECL IDL_SysvErrorStateAddr(void);
+extern IDL_STRING *IDL_CDECL IDL_SysvErrStringFunc(void);
+extern IDL_STRING *IDL_CDECL IDL_SysvSyserrStringFunc(void);
+extern IDL_LONG IDL_CDECL IDL_SysvErrorCodeValue(void);
+extern IDL_LONG *IDL_CDECL IDL_SysvSyserrorCodesAddr(void);
 extern IDL_LONG IDL_SysvOrder;
-extern IDL_LONG IDL_CDECL IDL_SysvOrderValue IDL_ARG_PROTO((void));
-extern int IDL_CDECL IDL_SysRtnAdd IDL_ARG_PROTO((IDL_SYSFUN_DEF2 *defs,
-        int is_function, int cnt));
-extern IDL_MEMINT IDL_CDECL IDL_SysRtnNumEnabled IDL_ARG_PROTO((int
-        is_function, int enabled));
-extern void IDL_CDECL IDL_SysRtnGetEnabledNames IDL_ARG_PROTO((int
-        is_function, IDL_STRING *str, int enabled));
-extern void IDL_CDECL IDL_SysRtnEnable IDL_ARG_PROTO((int is_function,
-        IDL_STRING *names, IDL_MEMINT n, int option,  IDL_SYSRTN_GENERIC
-        disfcn));
-extern IDL_SYSRTN_GENERIC IDL_CDECL IDL_SysRtnGetRealPtr
-        IDL_ARG_PROTO((int is_function, char *name));
-extern char *IDL_CDECL IDL_SysRtnGetCurrentName IDL_ARG_PROTO((void));
-extern float IDL_CDECL IDL_SysvValuesGetFloat IDL_ARG_PROTO((int type));
-extern double IDL_CDECL IDL_SysvValuesGetDouble IDL_ARG_PROTO((int type));
-extern int IDL_CDECL IDL_AddSystemRoutine IDL_ARG_PROTO((IDL_SYSFUN_DEF
-        *defs, int is_function, int cnt));
-extern int IDL_CDECL IDL_BailOut IDL_ARG_PROTO((int stop));
-extern int IDL_CDECL IDL_Cleanup IDL_ARG_PROTO((int just_cleanup));
-extern int IDL_CDECL IDL_Init IDL_ARG_PROTO((int options, int *argc, char
-        *argv[]));
-extern int IDL_CDECL IDL_Main IDL_ARG_PROTO((int init_options, int argc,
-        char *argv[]));
-extern int IDL_CDECL IDL_ExecuteStr IDL_ARG_PROTO((char *cmd));
-extern int IDL_CDECL IDL_Execute IDL_ARG_PROTO((int argc, char *argv[]));
-extern int IDL_CDECL IDL_RuntimeExec IDL_ARG_PROTO((char *file));
-extern void IDL_CDECL IDL_Runtime IDL_ARG_PROTO((int options, int *argc,
-        char *argv[], char *file));
-extern IDL_TERMINFO IDL_FileTerm;
-extern char *IDL_CDECL IDL_FileTermName IDL_ARG_PROTO((void));
-extern int IDL_CDECL IDL_FileTermIsTty IDL_ARG_PROTO((void));
-extern int IDL_CDECL IDL_FileTermLines IDL_ARG_PROTO((void));
-extern int IDL_CDECL IDL_FileTermColumns IDL_ARG_PROTO((void));
-extern int IDL_CDECL IDL_FileEnsureStatus IDL_ARG_PROTO((int action, int
-        unit, int flags));
-extern void IDL_CDECL IDL_FileSetMode IDL_ARG_PROTO((int unit, int
-        binary));
-extern int IDL_CDECL IDL_FileOpen IDL_ARG_PROTO((int argc, IDL_VPTR
-        argv[], char *argk, int access_mode, IDL_SFILE_FLAGS_T
-        extra_flags,  int longjmp_safe, int msg_attr));
-extern void IDL_CDECL IDL_FileClose IDL_ARG_PROTO((int argc, IDL_VPTR
-        argv[], char *argk));
-extern void IDL_CDECL IDL_FileFlushUnit IDL_ARG_PROTO((int unit));
-extern void IDL_CDECL IDL_FileGetUnit IDL_ARG_PROTO((int argc, IDL_VPTR
-        argv[]));
-extern void IDL_CDECL IDL_FileFreeUnit IDL_ARG_PROTO((int argc, IDL_VPTR
-        argv[]));
-extern int IDL_CDECL IDL_FileSetPtr IDL_ARG_PROTO((int unit, IDL_FILEINT
-        pos, int extend, int msg_action));
-extern int IDL_CDECL IDL_FileEOF IDL_ARG_PROTO((int unit));
-extern void IDL_CDECL IDL_FileStat IDL_ARG_PROTO((int unit, IDL_FILE_STAT
-        *stat_blk));
-extern void IDL_CDECL IDL_FileSetClose IDL_ARG_PROTO((int unit, int
-        allow));
-extern IDL_VPTR IDL_CDECL IDL_FileVaxFloat IDL_ARG_PROTO((int argc,
-        IDL_VPTR *argv, char *argk));
-extern void IDL_CDECL IDL_VarCopy IDL_ARG_PROTO((IDL_REGISTER IDL_VPTR
-        src, IDL_REGISTER IDL_VPTR dst));
-extern void IDL_CDECL IDL_StoreScalar IDL_ARG_PROTO((IDL_VPTR dest, int
-        type, IDL_ALLTYPES *value));
-extern void IDL_CDECL IDL_StoreScalarZero IDL_ARG_PROTO((IDL_VPTR dest,
-        int type));
-extern int IDL_CDECL IDL_KWProcessByOffset IDL_ARG_PROTO((int argc,
-        IDL_VPTR *argv, char *argk, IDL_KW_PAR *kw_list, IDL_VPTR
-        *plain_args,  int mask, void *base));
-extern int IDL_CDECL IDL_KWProcessByAddr IDL_ARG_PROTO((int argc, IDL_VPTR
-        *argv, char *argk, IDL_KW_PAR *kw_list, IDL_VPTR *plain_args,  int
-        mask, int *free_required));
-extern void IDL_CDECL IDL_KWFree IDL_ARG_PROTO((void));
-extern void IDL_CDECL IDL_KWFreeAll IDL_ARG_PROTO((void));
-extern char *IDL_DitherMethodNames[];
-extern char *IDL_CDECL IDL_DitherMethodNamesFunc IDL_ARG_PROTO((int
-        method));
-extern void IDL_CDECL IDL_RasterDrawThick IDL_ARG_PROTO((IDL_GR_PT *p0,
-        IDL_GR_PT *p1, IDL_ATTR_STRUCT *a,  IDL_DEVCORE_FCN_POLYFILL
-        routine,  int dot_width));
-extern void IDL_CDECL IDL_RasterPolyfill IDL_ARG_PROTO((int *x, int *y,
-        int n, IDL_POLYFILL_ATTR *p, IDL_RASTER_DEF *r));
-extern void IDL_CDECL IDL_RasterDraw IDL_ARG_PROTO((IDL_GR_PT *p0,
-        IDL_GR_PT *p1,  IDL_ATTR_STRUCT *a, IDL_RASTER_DEF *r));
-extern void IDL_CDECL IDL_Raster8Image IDL_ARG_PROTO((UCHAR *data,
-        IDL_ULONG nx, IDL_ULONG ny,  IDL_ULONG x0, IDL_ULONG y0, 
-        IDL_ULONG xsize, IDL_ULONG ysize,  IDL_TV_STRUCT *secondary, 
-        IDL_RASTER_DEF *rs,  IDLBool_t bReverse));
-extern void IDL_CDECL IDL_RasterImage IDL_ARG_PROTO((UCHAR *data,
-        IDL_ULONG nx, IDL_ULONG ny,  IDL_ULONG x0, IDL_ULONG y0, 
-        IDL_ULONG xsize, IDL_ULONG ysize,  IDL_TV_STRUCT *secondary, 
-        IDL_RASTER_DEF *rs,  IDLBool_t bReverse));
-extern void IDL_CDECL IDL_Dither IDL_ARG_PROTO((UCHAR *data, int ncols,
-        int nrows, IDL_RASTER_DEF *r, int x0, int y0, IDL_TV_STRUCT
-        *secondary));
-extern void IDL_CDECL IDL_BitmapLandscape IDL_ARG_PROTO((IDL_RASTER_DEF
-        *in, IDL_RASTER_DEF *out, int y0));
-extern IDL_LONG IDL_CDECL IDL_LongScalar IDL_ARG_PROTO((IDL_REGISTER
-        IDL_VPTR v));
-extern IDL_ULONG IDL_CDECL IDL_ULongScalar IDL_ARG_PROTO((IDL_REGISTER
-        IDL_VPTR v));
-extern IDL_LONG64 IDL_CDECL IDL_Long64Scalar IDL_ARG_PROTO((IDL_REGISTER
-        IDL_VPTR v));
-extern IDL_ULONG64 IDL_CDECL IDL_ULong64Scalar IDL_ARG_PROTO((IDL_REGISTER
-        IDL_VPTR v));
-extern double IDL_CDECL IDL_DoubleScalar IDL_ARG_PROTO((IDL_REGISTER
-        IDL_VPTR v));
-extern IDL_MEMINT IDL_CDECL IDL_MEMINTScalar IDL_ARG_PROTO((IDL_REGISTER
-        IDL_VPTR v));
-extern IDL_FILEINT IDL_CDECL IDL_FILEINTScalar IDL_ARG_PROTO((IDL_REGISTER
-        IDL_VPTR v));
-extern float IDL_CDECL IDL_CastUL64_f IDL_ARG_PROTO((IDL_ULONG64 value));
-extern double IDL_CDECL IDL_CastUL64_d IDL_ARG_PROTO((IDL_ULONG64 value));
-extern IDL_ULONG64 IDL_CDECL IDL_CastReal_UL64 IDL_ARG_PROTO((double x));
-extern IDL_VPTR IDL_CDECL IDL_BasicTypeConversion IDL_ARG_PROTO((int argc,
-        IDL_VPTR argv[], IDL_REGISTER int type));
-extern IDL_VPTR IDL_CDECL IDL_CvtByte IDL_ARG_PROTO((int argc, IDL_VPTR
-        argv[]));
-extern IDL_VPTR IDL_CDECL IDL_CvtFix IDL_ARG_PROTO((int argc, IDL_VPTR
-        argv[]));
-extern IDL_VPTR IDL_CDECL IDL_CvtLng IDL_ARG_PROTO((int argc, IDL_VPTR
-        argv[]));
-extern IDL_VPTR IDL_CDECL IDL_CvtFlt IDL_ARG_PROTO((int argc, IDL_VPTR
-        argv[]));
-extern IDL_VPTR IDL_CDECL IDL_CvtDbl IDL_ARG_PROTO((int argc, IDL_VPTR
-        argv[]));
-extern IDL_VPTR IDL_CDECL IDL_CvtUInt IDL_ARG_PROTO((int argc, IDL_VPTR
-        argv[]));
-extern IDL_VPTR IDL_CDECL IDL_CvtULng IDL_ARG_PROTO((int argc, IDL_VPTR
-        argv[]));
-extern IDL_VPTR IDL_CDECL IDL_CvtLng64 IDL_ARG_PROTO((int argc, IDL_VPTR
-        argv[]));
-extern IDL_VPTR IDL_CDECL IDL_CvtULng64 IDL_ARG_PROTO((int argc, IDL_VPTR
-        argv[]));
-extern IDL_VPTR IDL_CDECL IDL_CvtMEMINT IDL_ARG_PROTO((int argc, IDL_VPTR
-        argv[]));
-extern IDL_VPTR IDL_CDECL IDL_CvtFILEINT IDL_ARG_PROTO((int argc, IDL_VPTR
-        argv[]));
-extern IDL_VPTR IDL_CDECL IDL_CvtComplex IDL_ARG_PROTO((int argc, IDL_VPTR
-        argv[], char *argk));
-extern IDL_VPTR IDL_CDECL IDL_CvtDComplex IDL_ARG_PROTO((int argc,
-        IDL_VPTR argv[]));
-extern IDL_VPTR IDL_CDECL IDL_CvtString IDL_ARG_PROTO((int argc, IDL_VPTR
-        argv[], char *argk));
-extern int IDL_CDECL IDL_GetKbrd IDL_ARG_PROTO((int should_wait));
-extern int IDL_CDECL IDL_StrBase_strcasecmp IDL_ARG_PROTO((const char
-        *str1, const char *str2));
-extern int IDL_CDECL IDL_StrBase_strncasecmp IDL_ARG_PROTO((const char
-        *str1, const char *str2, size_t nchars));
-extern size_t IDL_CDECL IDL_StrBase_strlcpy IDL_ARG_PROTO((char *dst,
-        const char *src, size_t siz));
-extern size_t IDL_CDECL IDL_StrBase_strlcat IDL_ARG_PROTO((char *dst,
-        const char *src, size_t siz));
-extern int IDL_CDECL IDL_StrBase_vsnprintf IDL_ARG_PROTO((char *s, size_t
-        n, const char *format, va_list args));
-extern int IDL_CDECL IDL_StrBase_snprintf IDL_ARG_PROTO((char *s, size_t
-        n, const char *format, ...));
-extern int IDL_CDECL IDL_StrBase_strbcopy IDL_ARG_PROTO((char *dst, const
-        char *src, size_t siz));
-extern void IDL_CDECL IDL_StrDup IDL_ARG_PROTO((IDL_REGISTER IDL_STRING
-        *str, IDL_REGISTER IDL_MEMINT n));
-extern void IDL_CDECL IDL_StrDelete IDL_ARG_PROTO((IDL_STRING *str,
-        IDL_MEMINT n));
-extern void IDL_CDECL IDL_StrStore IDL_ARG_PROTO((IDL_STRING *s, char
-        *fs));
-extern void IDL_CDECL IDL_StrEnsureLength IDL_ARG_PROTO((IDL_STRING *s,
-        int n));
-extern IDL_VPTR IDL_CDECL IDL_StrToSTRING IDL_ARG_PROTO((char *s));
-extern void IDL_CDECL IDL_unform_io IDL_ARG_PROTO((int type, int argc,
-        IDL_VPTR *argv, char *argk));
-extern void IDL_CDECL IDL_Print IDL_ARG_PROTO((int argc, IDL_VPTR *argv,
-        char *argk));
-extern void IDL_CDECL IDL_PrintF IDL_ARG_PROTO((int argc, IDL_VPTR *argv,
-        char *argk));
-extern void IDL_CDECL IDL_VarGetData IDL_ARG_PROTO((IDL_VPTR v, IDL_MEMINT
-        *n, char **pd, int ensure_simple));
-extern IDL_STRING *IDL_CDECL IDL_VarGet1EltStringDesc
-        IDL_ARG_PROTO((IDL_VPTR v, IDL_VPTR *tc_v));
-extern char *IDL_CDECL IDL_VarGetString IDL_ARG_PROTO((IDL_VPTR v));
-extern IDL_VPTR IDL_CDECL IDL_ImportArray IDL_ARG_PROTO((int n_dim,
-        IDL_MEMINT dim[], int type, UCHAR *data, IDL_ARRAY_FREE_CB
-        free_cb,  IDL_StructDefPtr s));
-extern IDL_VPTR IDL_CDECL IDL_ImportNamedArray IDL_ARG_PROTO((char *name,
-        int n_dim, IDL_MEMINT dim[],  int type, UCHAR *data, 
-        IDL_ARRAY_FREE_CB free_cb,  IDL_StructDefPtr s));
-extern void IDL_CDECL IDL_Delvar IDL_ARG_PROTO((IDL_VPTR var));
-extern void IDL_CDECL IDL_VarEnsureSimple IDL_ARG_PROTO((IDL_VPTR v));
-extern char *IDL_CDECL IDL_VarMakeTempFromTemplate IDL_ARG_PROTO((IDL_VPTR
-        template, int type, IDL_StructDefPtr sdef,  IDL_VPTR *res, int
-        zero));
-extern void IDL_CDECL IDL_Freetmp IDL_ARG_PROTO((IDL_REGISTER IDL_VPTR p));
-extern void IDL_CDECL IDL_Deltmp IDL_ARG_PROTO((IDL_REGISTER IDL_VPTR p));
-extern IDL_VPTR IDL_CDECL IDL_Gettmp IDL_ARG_PROTO((void));
-extern IDL_VPTR IDL_CDECL IDL_GettmpInt IDL_ARG_PROTO((short value));
-extern IDL_VPTR IDL_CDECL IDL_GettmpUInt IDL_ARG_PROTO((IDL_UINT value));
-extern IDL_VPTR IDL_CDECL IDL_GettmpLong IDL_ARG_PROTO((IDL_LONG value));
-extern IDL_VPTR IDL_CDECL IDL_GettmpObjRef IDL_ARG_PROTO((IDL_HVID value));
-extern IDL_VPTR IDL_CDECL IDL_GettmpULong IDL_ARG_PROTO((IDL_ULONG value));
-extern IDL_VPTR IDL_CDECL IDL_GettmpFILEINT IDL_ARG_PROTO((IDL_FILEINT
-        value));
-extern IDL_VPTR IDL_CDECL IDL_GettmpMEMINT IDL_ARG_PROTO((IDL_MEMINT
-        value));
-extern char *IDL_CDECL IDL_GetScratch IDL_ARG_PROTO((IDL_REGISTER IDL_VPTR
-        *p, IDL_REGISTER IDL_MEMINT n_elts,  IDL_REGISTER IDL_MEMINT
-        elt_size));
-extern char *IDL_CDECL IDL_GetScratchOnThreshold
-        IDL_ARG_PROTO((IDL_REGISTER char *auto_buf, IDL_REGISTER
-        IDL_MEMINT auto_elts,  IDL_REGISTER IDL_MEMINT n_elts, 
-        IDL_REGISTER IDL_MEMINT elt_size,  IDL_VPTR *tempvar));
-extern IDL_LONG IDL_CDECL IDL_grMesh_Clip IDL_ARG_PROTO((float fPlane[4],
-        short clipSide,  float *pfVin, IDL_LONG iNVerts,  IDL_LONG *piCin,
-        IDL_LONG iNConn,  float **pfVout, IDL_LONG *iNVout,  IDL_LONG
-        **piCout, IDL_LONG *iNCout,  IDL_VPTR vpAuxInKW, IDL_VPTR
-        vpAuxOutKW,  IDL_VPTR vpCut));
-extern IDL_LONG *IDL_CDECL IDL_igTessTriangulatePoly IDL_ARG_PROTO((float
-        *x,float *y, float *z, IDL_LONG iNVerts,  IDL_LONG *iRetConn));
-extern int IDL_CDECL IDL_DSCheckVPinBV IDL_ARG_PROTO(( float
-        bvCoords[8][2], int iViewport[4] ));
-extern int IDL_CDECL IDL_DSCheckVPBVIntersection IDL_ARG_PROTO(( float
-        bvCoords[8][2],  int iViewport[4] ));
+extern IDL_LONG IDL_CDECL IDL_SysvOrderValue(void);
+extern float IDL_CDECL IDL_SysvValuesGetFloat(int type);
+extern double IDL_CDECL IDL_SysvValuesGetDouble(int type);
+extern int IDL_STDCALL IDL_InitOCX(void *pInit);
+extern char *IDL_CDECL IDL_MakeTempArray(int type, int n_dim, IDL_MEMINT
+        dim[], int init, IDL_VPTR *var);
+extern char *IDL_CDECL IDL_MakeTempVector(int type, IDL_MEMINT dim, int
+        init, IDL_VPTR *var);
+extern void IDL_CDECL IDL_Wait(int argc, IDL_VPTR argv[]);
+extern void IDL_CDECL IDL_GetUserInfo(IDL_USER_INFO *user_info);
+extern int IDL_CDECL IDL_GetKbrd(int should_wait);
+extern void IDL_CDECL IDL_TTYReset(void);
+extern void IDL_CDECL IDL_Pout(IDL_POUT_CNTRL *control, int flags, char
+        *fmt, ...);
+extern void IDL_CDECL IDL_PoutVa(IDL_POUT_CNTRL *control, int flags, char
+        *fmt, va_list *args);
+extern void IDL_CDECL IDL_PoutRaw(int unit, char *buf, int n);
+extern void IDL_CDECL IDL_ExitRegister(IDL_EXIT_HANDLER_FUNC proc);
+extern void IDL_CDECL IDL_ExitUnregister(IDL_EXIT_HANDLER_FUNC proc);
+extern char *IDL_CDECL IDL_MakeTempStruct(IDL_StructDefPtr sdef, int
+        n_dim, IDL_MEMINT *dim, IDL_VPTR *var, int zero);
+extern char *IDL_CDECL IDL_MakeTempStructVector(IDL_StructDefPtr sdef,
+        IDL_MEMINT dim, IDL_VPTR *var, int zero);
+extern IDL_StructDefPtr IDL_CDECL IDL_MakeStruct(char *name,
+        IDL_STRUCT_TAG_DEF *tags);
+extern IDL_MEMINT IDL_CDECL IDL_StructTagInfoByName(IDL_StructDefPtr sdef,
+        char *name, int msg_action, IDL_VPTR *var);
+extern IDL_MEMINT IDL_CDECL IDL_StructTagInfoByIndex(IDL_StructDefPtr
+        sdef, int index, int msg_action, IDL_VPTR *var);
+extern char *IDL_CDECL IDL_StructTagNameByIndex(IDL_StructDefPtr sdef, int
+        index, int msg_action, char **struct_name);
+extern int IDL_CDECL IDL_StructNumTags(IDL_StructDefPtr sdef);
+extern void IDL_CDECL IDL_ToutPush(IDL_TOUT_OUTF outf);
+extern IDL_TOUT_OUTF IDL_CDECL IDL_ToutPop(void);
+extern void *IDL_CDECL IDL_MemAlloc(IDL_MEMINT n, char *err_str, int
+        msg_action);
+extern void *IDL_CDECL IDL_MemRealloc(void *ptr, IDL_MEMINT n, char
+        *err_str, int action);
+extern void IDL_CDECL IDL_MemFree(IDL_REGISTER void *m, char *err_str, int
+        msg_action);
+extern void *IDL_CDECL IDL_MemAllocPerm(IDL_MEMINT n, char *err_str, int
+        action);
+extern IDL_PLOT_COM IDL_PlotCom;
+extern UCHAR IDL_ColorMap[];
+extern IDL_PLOT_COM *IDL_CDECL IDL_PlotComAddr(void);
+extern UCHAR *IDL_CDECL IDL_ColorMapAddr(void);
+extern void IDL_CDECL IDL_PolyfillSoftware(int *x, int *y, int n,
+        IDL_POLYFILL_ATTR *s);
+extern double IDL_CDECL IDL_GraphText(IDL_GR_PT *p, IDL_ATTR_STRUCT *ga,
+        IDL_TEXT_STRUCT *a, char *text);
+extern char *IDL_CDECL IDL_VarName(IDL_VPTR v);
+extern IDL_VPTR IDL_CDECL IDL_GetVarAddr1(char *name, int ienter);
+extern IDL_VPTR IDL_CDECL IDL_GetVarAddr(char *name);
+extern IDL_VPTR IDL_CDECL IDL_FindNamedVariable(char *name, int ienter);
+extern void IDL_CDECL IDL_TimerSet(IDL_LONG length, IDL_TIMER_CB callback,
+        int from_callback, IDL_TIMER_CONTEXT_PTR context);
+extern void IDL_CDECL IDL_TimerCancel(IDL_TIMER_CONTEXT context);
+extern void IDL_CDECL IDL_TimerBlock(int stop);
+extern void IDL_CDECL IDL_SignalSetInit(IDL_SignalSet_t *set, int signo);
+extern void IDL_CDECL IDL_SignalSetAdd(IDL_SignalSet_t *set, int signo);
+extern void IDL_CDECL IDL_SignalSetDel(IDL_SignalSet_t *set, int signo);
+extern int IDL_CDECL IDL_SignalSetIsMember(IDL_SignalSet_t *set, int
+        signo);
+extern void IDL_CDECL IDL_SignalMaskGet(IDL_SignalSet_t *set);
+extern void IDL_CDECL IDL_SignalMaskSet(IDL_SignalSet_t *set,
+        IDL_SignalSet_t *oset);
+extern void IDL_CDECL IDL_SignalMaskBlock(IDL_SignalSet_t *set,
+        IDL_SignalSet_t *oset);
+extern void IDL_CDECL IDL_SignalBlock(int signo, IDL_SignalSet_t *oset);
+extern void IDL_CDECL IDL_SignalSuspend(IDL_SignalSet_t *set);
+extern int IDL_CDECL IDL_SignalRegister(int signo, IDL_SignalHandler_t
+        func, int msg_action);
+extern int IDL_CDECL IDL_SignalUnregister(int signo, IDL_SignalHandler_t
+        func, int msg_action);
+extern void IDL_CDECL IDL_CvtVAXToFloat(float *fp, IDL_MEMINT n);
+extern void IDL_CDECL IDL_CvtFloatToVAX(float *fp, IDL_MEMINT n);
+extern void IDL_CDECL IDL_CvtVAXToDouble(double *dp, IDL_MEMINT n);
+extern void IDL_CDECL IDL_CvtDoubleToVAX(double *dp, IDL_MEMINT n);
+extern void IDL_CDECL IDL_EzCall(int argc, IDL_VPTR argv[], IDL_EZ_ARG
+        arg_struct[]);
+extern void IDL_CDECL IDL_EzCallCleanup(int argc, IDL_VPTR argv[],
+        IDL_EZ_ARG arg_struct[]);
+extern void IDL_CDECL IDL_EzReplaceWithTranspose(IDL_VPTR *v, IDL_VPTR
+        orig);
+extern int IDL_CDECL IDL_SetValue(int id, void* pvValue);
+extern int IDL_CDECL IDL_Win32Init(int iOpts, void *hinstExe, void
+        *hwndExe, void *hAccel);
+extern void IDL_CDECL IDL_TerminalRaw(int to_from, int fnin);
 
 
 #ifdef __cplusplus
