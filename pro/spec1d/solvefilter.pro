@@ -718,7 +718,7 @@ objivar = 0
        djs_median(guessdiff2[istar[isort]],width=51<nstar,boundary='reflect'), $
        color='red'
       djs_xyouts, total(!x.crange*[0.95,0.05]), total(!y.crange*[0.08,0.92]), $
-       'RMS = ' + string(stdev(guessdiff2[istar])) + ' mag', $
+       'RMS = ' + string(stddev(guessdiff2[istar])) + ' mag', $
        color='red', charsize=csize
       djs_xyouts, total(!x.crange*[0.95,0.05]), total(!y.crange*[0.14,0.86]), $
        'Running median of 51 pts', color='red', charsize=csize
@@ -730,7 +730,7 @@ objivar = 0
        djs_median(magdiff2[istar[isort]],width=51<nstar,boundary='reflect'), $
        color='green'
       djs_xyouts, total(!x.crange*[0.95,0.05]), total(!y.crange*[0.08,0.92]), $
-       'RMS = ' + string(stdev(magdiff2[istar])) + ' mag', $
+       'RMS = ' + string(stddev(magdiff2[istar])) + ' mag', $
        color='green', charsize=csize
       djs_xyouts, total(!x.crange*[0.95,0.05]), total(!y.crange*[0.14,0.86]), $
        'Running median of 51 pts', color='green', charsize=csize
@@ -746,7 +746,7 @@ objivar = 0
        djs_median(guessdiff2[iqso[isort]],width=51<nqso,boundary='reflect'), $
        color='red'
       djs_xyouts, total(!x.crange*[0.95,0.05]), total(!y.crange*[0.08,0.92]), $
-       'RMS = ' + string(stdev(guessdiff2[iqso])) + ' mag', $
+       'RMS = ' + string(stddev(guessdiff2[iqso])) + ' mag', $
        color='red', charsize=csize
       djs_xyouts, total(!x.crange*[0.95,0.05]), total(!y.crange*[0.14,0.86]), $
        'Running median of 51 pts', color='red', charsize=csize
@@ -758,7 +758,7 @@ objivar = 0
        djs_median(magdiff2[iqso[isort]],width=51<nqso,boundary='reflect'), $
        color='green'
       djs_xyouts, total(!x.crange*[0.95,0.05]), total(!y.crange*[0.08,0.92]), $
-       'RMS = ' + string(stdev(magdiff2[iqso])) + ' mag', $
+       'RMS = ' + string(stddev(magdiff2[iqso])) + ' mag', $
         color='green', charsize=csize
       djs_xyouts, total(!x.crange*[0.95,0.05]), total(!y.crange*[0.14,0.86]), $
        'Running median of 51 pts', color='green', charsize=csize

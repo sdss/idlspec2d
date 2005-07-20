@@ -633,9 +633,9 @@ ormask = 0 ; Free memory
    if (nskies GT 1) then begin
       for ifilt=0, 4 do begin
          res_all.spectroflux_ivar[ifilt] = $
-          1. / stdev(res_all[0,iskies].spectroflux[ifilt])
+          1. / stddev(res_all[0,iskies].spectroflux[ifilt],/double)
          res_all.spectrosynflux_ivar[ifilt] = $
-          1. / stdev(res_all[0,iskies].spectrosynflux[ifilt])
+          1. / stddev(res_all[0,iskies].spectrosynflux[ifilt],/double)
       endfor
    endif else begin
       splog, 'WARNING: Only ', nskies, ' sky fibers'

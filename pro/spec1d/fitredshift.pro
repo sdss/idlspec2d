@@ -121,7 +121,7 @@ pro fitredshift, fluxfft, fluxerr, starfft, starerr, $
    veldisp_err = 999.
 
 ; check dimensions - ASSUME everything is already padded to 2^N
-   IF stdev([n_elements(fluxfft), n_elements(fluxerr),  $
+   IF stddev([n_elements(fluxfft), n_elements(fluxerr),  $
              n_elements(starfft), n_elements(starerr)]) NE 0 THEN BEGIN 
        help, fluxfft, fluxerr, starfft, starerr 
        message, 'dimensions do not match!'
@@ -212,7 +212,7 @@ pro fitredshift, fluxfft, fluxerr, starfft, starerr, $
 
    left = long(velcen + xcen - 1) - lindgen(100)
    right = long(velcen + xcen + 1) + lindgen(100)
-   asig = stdev(newcorr[left]-newcorr[right]) / sqrt(2.)
+   asig = stddev(newcorr[left]-newcorr[right]) / sqrt(2.)
 
    ; Here's my attempt to fit a gaussian to the correlation peak
    ; The main problem here is to decide where the baseline of the

@@ -110,7 +110,7 @@ pro veldisp_fft, flux_in, err_in, npixbig, fluxfft, fluxfilt, fluxvar0, $
    ; Band-pass filter the object spectrum
    w = where(err NE 0)
    fluxfilt = bandpassfilter(fluxfft, klo_cut=klo_cut, khi_cut=khi_cut)
-   norm = stdev((float(fft(fluxfilt, /inv)))[w])
+   norm = stddev((float(fft(fluxfilt, /inv)))[w],/double)
 
    fluxfilt = fluxfilt / norm
 

@@ -131,7 +131,7 @@ pro qaplot_fcalibvec, loglam, objflux, objivar, synflux, plugmap, zans, $
       ; Trigger warning messages based upon the correction vector
       ; from all fibers.
 
-      rmscorr = stdev(medvec)
+      rmscorr = stddev(medvec,/double)
       outstring = string(specid, rmscorr, $
        format='("Spectro-",i1," RMS flux-corr errors = ", f6.3)')
       splog, outstring

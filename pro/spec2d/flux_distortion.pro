@@ -304,7 +304,7 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
     corrimg[*,i] = flux_distort_corrvec(coeff, wavevec, plugmap[i])
 
    minval = min(corrimg, max=maxval)
-   sigval = stdev(corrimg)
+   sigval = stddev(corrimg,/double)
    splog, 'Flux distortion min/max/sig = ', minval, maxval, sigval
 
    if (keyword_set(plotfile)) then begin
