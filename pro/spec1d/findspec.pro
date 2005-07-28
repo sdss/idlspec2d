@@ -73,7 +73,7 @@ pro findspec, ra, dec, infile=infile, outfile=outfile, searchrad=searchrad, $
        message, 'Plate list (platelist.fits) not found in $SPECTRO_DATA'
       nlist = n_elements(plist)
       platesn = fltarr(nlist)
-      for i=0, nlist-1 do $
+      for i=0L, nlist-1L do $
        platesn[i] = min([ plist[i].sn2_g1, plist[i].sn2_g2, $
         plist[i].sn2_i1, plist[i].sn2_i2 ])
    endif
@@ -93,7 +93,7 @@ pro findspec, ra, dec, infile=infile, outfile=outfile, searchrad=searchrad, $
    nvec = n_elements(ra)
    if (nvec GT 1) then begin
       slist = 0
-      for i=0, nvec-1 do begin
+      for i=0L, nvec-1L do begin
          findspec, ra[i], dec[i], searchrad=searchrad, $
           slist=slist1, best=best, /silent
          if (keyword_set(slist1)) then $
@@ -121,7 +121,7 @@ pro findspec, ra, dec, infile=infile, outfile=outfile, searchrad=searchrad, $
    adist = djs_diff_angle(ra, dec, plist.ra, plist.dec)
 
    slist = 0
-   for iplate=0, nlist-1 do begin
+   for iplate=0L, nlist-1L do begin
       if (adist[iplate] LT 1.55 + searchrad) then begin
          readspec, plist[iplate].plate, mjd=plist[iplate].mjd, plugmap=plugmap
          if (keyword_set(plugmap)) then begin
