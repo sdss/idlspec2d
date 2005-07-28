@@ -18,6 +18,7 @@ EXTRACT_OBJECT: Write as HDU #8 an image of the relative chi^2, or an
         are when we re-scale the sky errors.
         If there is a telluric image (which we've deprecated for the v5 code),
         then it is now in HDU #9.
+FINDSPEC: Make FOR loops type long.
 FITARCIMAGE: Print the wavelengths of any rejected arc lines.
 FITREDSHIFT,QAPLOT_FCALIBVEC,SOLVEFILTER,SPREDUCE1D,VELDISP,
         FLUX_DISTORTION,SDSSPROC: Change calls from the deprecated STDEV()
