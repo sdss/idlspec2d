@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   zfit = lrgmodel_photoz(pflux, pflux_ivar, [ /abcorrect, extinction=, $
 ;    abfudge=, ageburst=, zmetal=, filterlist=, adderr=, $
-;    zsplinearr=, synfluxarr=, z_err=, chi2=, fitflux= ] )
+;    zsplinearr=, synfluxarr=, z_err=, chi2=, fitflux=, plotfile= ] )
 ;
 ; INPUTS:
 ;   pflux          - Object fluxes in the 5 SDSS filters [5,NOBJ]; if not set,
@@ -30,6 +30,7 @@
 ;   filterlist     - List of filter indices to use in fits; default to
 ;                    using all five filters [0,1,2,3,4]
 ;   adderr         - Fractional error to add in quadrature; default to 0.03
+;   plotfile       - If set, then send debugging plots to this file
 ;
 ; OUTPUTS:
 ;   zfit           - Best-fit redshift [NOBJ]
@@ -73,7 +74,7 @@ function lrgmodel_photoz, pflux, pflux_ivar, z_err=z_err, $
  abcorrect=abcorrect, extinction=extinction, abfudge=abfudge, $
  ageburst=ageburst1, zmetal=zmetal1, $
  filterlist=filterlist, adderr=adderr, chi2=chi2, synfluxarr=synfluxarr, $
- zsplinearr=zsplinearr, fitflux=fitflux
+ zsplinearr=zsplinearr, fitflux=fitflux, plotfile=plotfile
 
    common com_lrgmodel_photoz, zarr, agevec, metalvec, $
     allwave, allflux, synflux, ageburst_save, zmetal_save
@@ -130,8 +131,11 @@ function lrgmodel_photoz, pflux, pflux_ivar, z_err=z_err, $
    if (ageburst NE ageburst_save OR zmetal NE zmetal_save $
     OR keyword_set(synflux) EQ 0) then begin
 
-      numz = 104
-      zarr = -0.03 + 0.01 * findgen(numz)
+      dz = 0.01
+      zmin = -0.03
+      zmax = 1.0
+      numz = (zmax - zmin) / dz + 1
+      zarr = zmin + dz * findgen(numz)
 
       synflux = dblarr(5,numz)
       for iz=0L, numz-1 do begin
@@ -283,10 +287,36 @@ if (finite(chi2arr[iz]) EQ 0) then stop
    endfor
    print
 
-; Below makes the color-color plots for the photo-z
-;gr = 2.5*alog10(synflux[2,*]/synflux[1,*])
-;ri = 2.5*alog10(synflux[3,*]/synflux[2,*])
-;splot,gr,ri,ps=-4
+   ; Below makes the color-color plots for the photo-z
+   if (keyword_set(plotfile)) then begin
+      dfpsplot, plotfile, /square, /color
+      for iobj=0L, nobj-1 do begin
+         for j=0, 2 do begin
+            color1 = (2.5*alog10(synflux[j+1,*]/synflux[j,*]))[*]
+            color2 = (2.5*alog10(synflux[j+2,*]/synflux[j+1,*]))[*]
+            thiscolor1 = 2.5*alog10(pflux[j+1,iobj]/pflux[j,iobj])
+            thiscolor2 = 2.5*alog10(pflux[j+2,iobj]/pflux[j+1,iobj])
+            thiserr1 = 2.5*alog10(1+1./(pflux[j,iobj]*sqrt(pflux_ivar[j,iobj]))) $
+             + 2.5*alog10(1+1./(pflux[j+1,iobj]*sqrt(pflux_ivar[j+1,iobj])))
+            thiserr2 = 2.5*alog10(1+1./(pflux[j+1,iobj]*sqrt(pflux_ivar[j+1,iobj]))) $
+             + 2.5*alog10(1+1./(pflux[j+2,iobj]*sqrt(pflux_ivar[j+2,iobj])))
+            djs_plot, [color1,thiscolor1], [color2,thiscolor2], /nodata, $
+             xtitle='('+filtername(j)+'-'+filtername(j+1)+')', $
+             ytitle='('+filtername(j+1)+'-'+filtername(j+2)+')', charsize=1.5, $
+             title='Object '+strtrim(iobj,2) $
+             + ' z(FIT)='+strtrim(string(zfit[iobj],format='(f5.2)'),2)
+            djs_oplot, color1, color2, psym=-4
+            for k=0, (n_elements(zarr)-1)/10 do $
+             djs_xyouts, color1[k*10], color2[k*10], $
+              '  z='+strtrim(string(zarr[k*10], format='(f5.2)'),2), $
+              charsize=1.5
+            djs_oplot, [thiscolor1], [thiscolor2], psym=6, symsize=2, color='red'
+            djs_oplot, thiscolor1+[-1,1]*thiserr1, thiscolor2+[0,0], color='red'
+            djs_oplot, thiscolor1+[0,0], thiscolor2+[-1,1]*thiserr2, color='red'
+         endfor
+      endfor
+      dfpsclose
+   endif
 
    return, zfit
 end
