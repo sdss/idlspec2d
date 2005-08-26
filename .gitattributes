@@ -35,6 +35,7 @@ bin/zplot -text
 doc/IR_scattering.txt -text
 doc/Makefile -text
 doc/mk_doc -text
+doc/paper/.cvsignore -text
 doc/paper/frames.jpg -text svneol=unset#unset
 doc/paper/outline -text
 doc/paper/paper2d.tex -text
