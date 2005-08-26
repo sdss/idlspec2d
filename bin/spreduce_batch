@@ -1,0 +1,71 @@
+#!/bin/bash -login
+#------------------------------------------------------------------------------
+# Script to run a Spectro-2D or P-1D job locally in the background.
+#
+# This script takes 4 arguments:
+#   spreduce_batch VERSION NICENESS DIRECTORY FILENAME
+# For example:
+#   spreduce_batch v4_9_5 19 /u/dss/spectro 0889/spPlate-0889-52346.batch
+#
+# The $DISPLAY environment variable is always set to ":0.0" to make certain
+# that we only use one IDL license per machine.  (Any IDL jobs that have the
+# same the username, machine name, and $DISPLAY use the same license.)
+#
+# D. Schlegel, Princeton, 18 Mar 2002
+#------------------------------------------------------------------------------
+# Set variables from command-line inputs.
+
+if [ $# != 4 ] ; then
+  echo "Need 4 inputs"
+  exit
+fi
+
+VERSION=$1
+NICENESS=$2
+DIRECTORY=$3
+FILENAME=$4
+DISPLAY=:0.0
+
+setup idlspec2d $VERSION
+echo Setting up idlspec2d $IDLSPEC2D_DIR
+
+#------------------------------------------------------------------------------
+# Test that all environment variables that are needed are set.
+
+if [ -z "$IDLUTILS_DIR" ] ; then
+  echo "IDLUTILS_DIR must be set!"
+  exit
+fi
+
+if [ -z "$IDL_DIR" ] ; then
+  echo "IDL_DIR must be set!"
+  exit
+fi
+
+if [ -z "$IDL_PATH" ] ; then
+  echo "IDL_PATH must be set!"
+  exit
+fi
+
+if [ -z "$SPECLOG_DIR" ] ; then
+  echo "SPECLOG_DIR must be set!"
+  exit
+fi
+
+if [ -z "$SPECFLAT_DIR" ] ; then
+  echo "SPECFLAT_DIR must be set!"
+  exit
+fi
+
+if [ -z "$RAWDATA_DIR" ] ; then
+  echo "RAWDATA_DIR must be set!"
+  exit
+fi
+
+exit
+#------------------------------------------------------------------------------
+cd $DIRECTORY
+/bin/nice -n $NICENESS idl $FILENAME >& /dev/null
+
+exit
+#------------------------------------------------------------------------------

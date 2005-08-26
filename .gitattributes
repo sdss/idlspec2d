@@ -21,6 +21,7 @@ bin/spamd_start -text
 bin/spamd_stop -text
 bin/spamdup -text
 bin/speclog_update -text
+bin/spreduce_batch -text
 bin/sprobot.sh -text
 bin/sprobot1d.sh -text
 bin/sprobot2d.sh -text
