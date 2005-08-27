@@ -300,6 +300,8 @@ pro spfluxcorr_v5, objname, adderr=adderr, combinedir=combinedir, $
    maxpoly = 3
    nback = 0
 
+   t0 = systime(1)
+
    ;----------
    ; Get the list of spectrograph ID and camera names
 
@@ -533,6 +535,8 @@ pro spfluxcorr_v5, objname, adderr=adderr, combinedir=combinedir, $
       mwrfits, yadd[*,*,ifile], corrfile
       spawn, ['gzip','-f',corrfile], /noshell
    endfor
+
+   splog, 'Time to compute fluxcorr vectors = ', systime(1)-t0, ' sec'
 
    return
 end
