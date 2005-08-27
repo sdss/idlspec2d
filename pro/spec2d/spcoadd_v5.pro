@@ -384,16 +384,16 @@ pro spcoadd_v5, spframes, outputname, $
 
          finalplugmap[ifiber] = plugmap[indx]
 
-         ; Identify all objects within 2 arcsec of this position, and
+         ; Identify all objects with the same XFOCAL,YFOCAL plate position, and
          ; combine all these objects into a single spectrum.
          ; If all pluggings are identical, then this will always be
          ; the same fiber ID.
          ; Also, insist that the object type is not 'NA', which would
          ; occur for unplugged fibers.
 
-         adist = djs_diff_angle(plugmap.ra, plugmap.dec, $
-          plugmap[indx].ra, plugmap[indx].dec, units='degrees')
-         indx = where(adist LT 2./3600. AND strtrim(plugmap.objtype,2) NE 'NA')
+         indx = where(abs(plugmap.xfocal - plugmap[indx].xfocal) LT 0.0001 $
+          AND abs(plugmap.yfocal - plugmap[indx].yfocal) LT 0.0001 $
+          AND strtrim(plugmap.objtype,2) NE 'NA')
       endif
 
       if (indx[0] NE -1) then begin
