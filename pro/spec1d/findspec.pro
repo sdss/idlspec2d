@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   findspec, [ra, dec, infile=, outfile=, searchrad=, slist=, $
-;    /best, /silent ]
+;    /best, /print ]
 ;
 ; INPUTS:
 ;
@@ -24,7 +24,7 @@
 ;                This also forces the return of one structure element in SLIST
 ;                per position, so that you get exactly a paired list between
 ;                RA,DEC and SLIST.
-;   silent     - If set, then suppress printing outputs to the terminal.
+;   print      - If set, then print matches to the terminal.
 ;
 ; OUTPUTS:
 ;
@@ -63,7 +63,7 @@
 ;-
 ;------------------------------------------------------------------------------
 pro findspec, ra, dec, infile=infile, outfile=outfile, searchrad=searchrad, $
- slist=slist, best=best, silent=silent
+ slist=slist, best=best, print=print1
 
    common com_findspec, plist, nlist, platesn
 
@@ -77,6 +77,9 @@ pro findspec, ra, dec, infile=infile, outfile=outfile, searchrad=searchrad, $
        platesn[i] = min([ plist[i].sn2_g1, plist[i].sn2_g2, $
         plist[i].sn2_i1, plist[i].sn2_i2 ])
    endif
+   idone = where(strmatch(plist.status1d,'Done*'), ndone)
+   if (ndone EQ 0) then $
+    message, 'No reduced plates!'
 
    ;----------
    ; Read an input file if specified
@@ -84,25 +87,9 @@ pro findspec, ra, dec, infile=infile, outfile=outfile, searchrad=searchrad, $
    if (keyword_set(infile)) then begin
       djs_readcol, infile, ra, dec, format='(D,D)'
    endif
+   nobj = n_elements(ra)
 
    if (NOT keyword_set(searchrad)) then searchrad = 3./3600.
-
-   ;----------
-   ; Call this routine recursively if RA,DEC are arrays
-
-   nvec = n_elements(ra)
-   if (nvec GT 1) then begin
-      slist = 0
-      for i=0L, nvec-1L do begin
-         findspec, ra[i], dec[i], searchrad=searchrad, $
-          slist=slist1, best=best, /silent
-         if (keyword_set(slist1)) then $
-          slist = keyword_set(slist) ? [slist, slist1] : slist1
-      endfor
-      if (NOT keyword_set(silent)) then struct_print, slist
-      if (keyword_set(outfile)) then struct_print, slist, filename=outfile
-      return
-   endif
 
    ;----------
    ; Create output structure
@@ -115,56 +102,79 @@ pro findspec, ra, dec, infile=infile, outfile=outfile, searchrad=searchrad, $
     'dec'     , 0.d, $
     'matchrad', 0.0 )
 
+   ; Set default return values
+   if (keyword_set(best)) then slist = replicate(blanklist, nobj) $
+    else slist = 0
+
    ;----------
-   ; Loop through each possible plate, looking for any matches.
+   ; Match all plates with objects
 
-   adist = djs_diff_angle(ra, dec, plist.ra, plist.dec)
+   nplate = n_elements(plist)
+   spherematch, ra, dec, plist[idone].ra, plist[idone].dec, searchrad+1.55, $
+    imatch1, itmp, dist12, maxmatch=0
+   if (imatch1[0] EQ -1) then return
+   imatch2 = idone[itmp]
 
-   slist = 0
-   for iplate=0L, nlist-1L do begin
-      if (adist[iplate] LT 1.55 + searchrad) then begin
-         readspec, plist[iplate].plate, mjd=plist[iplate].mjd, plugmap=plugmap
-         if (keyword_set(plugmap)) then begin
-            objdist = djs_diff_angle(ra, dec, plugmap.ra, plugmap.dec)
-            ikeep = where(objdist LE searchrad, nkeep)
-            if (nkeep GT 0) then begin
-               slist1 = replicate(blanklist, nkeep)
-               slist1.plate = plist[iplate].plate
-               slist1.mjd = plist[iplate].mjd
-               slist1.fiberid = plugmap[ikeep].fiberid
-               slist1.ra = plugmap[ikeep].ra
-               slist1.dec = plugmap[ikeep].dec
-               slist1.matchrad = objdist[ikeep]
-               if (keyword_set(slist)) then begin
-                  slist = [slist, slist1]
-                  snval = [snval, platesn[iplate]]
-               endif else begin
-                  slist = slist1
-                  snval = platesn[iplate]
-               endelse
-            endif
-         endif
-      endif
+   ;----------
+   ; Read all relevant plates
+
+   iplate = imatch2[uniq(imatch2,sort(imatch2))]
+   for i=0L, n_elements(iplate)-1L do begin
+      readspec, plist[iplate[i]].plate, mjd=plist[iplate[i]].mjd, $
+       plugmap=plugmap1, /silent
+      if (i EQ 0) then plugmap = replicate(plugmap1[0], 640L*n_elements(iplate))
+      copy_struct_inx, plugmap1, plugmap, index_to=i*640L+lindgen(640)
    endfor
+   spherematch, ra, dec, plugmap.ra, plugmap.dec, searchrad, $
+    i1, i2, d12, maxmatch=0
+   if (i1[0] EQ -1) then return
+   i2plate = iplate[long(i2/640)] ; index within the PLIST structure
+
+   if (NOT keyword_set(best)) then begin
+
+      ;------------------------------------------------------------------------
+      ; RETURN ALL MATCHES
+      ;------------------------------------------------------------------------
+
+      slist = replicate(blanklist, n_elements(i1))
+      slist.plate = plist[i2plate].plate
+      slist.mjd = plist[i2plate].mjd
+      slist.fiberid = plugmap[i2].fiberid
+      slist.ra = plugmap[i2].ra
+      slist.dec = plugmap[i2].dec
+      slist.matchrad = d12
+
+   endif else begin
+      ;------------------------------------------------------------------------
+      ; RETURN ONLY BEST MATCH PER OBJECT
+      ;------------------------------------------------------------------------
+
+      ; Read the median S/N for each spectrum
+      readspec, plist[i2plate].plate, mjd=plist[i2plate].mjd, $
+       plugmap[i2].fiberid, zans=zans, /silent
+
+      ; We have all the possible matches.  Now sort those in the order
+      ; of each input object, but with the last entry being the best
+      ; according to the SN_MEDIAN value.
+      isort = sort(i1 + (zans.sn_median>0)/max(zans.sn_median+1.))
+      i1 = i1[isort]
+      i2 = i2[isort]
+      i2plate = i2plate[isort]
+      d12 = d12[isort]
+
+      iuniq = uniq(i1)
+      slist[i1[iuniq]].plate = plist[i2plate[iuniq]].plate
+      slist[i1[iuniq]].mjd = plist[i2plate[iuniq]].mjd
+      slist[i1[iuniq]].fiberid = plugmap[i2[iuniq]].fiberid
+      slist[i1[iuniq]].ra = plugmap[i2[iuniq]].ra
+      slist[i1[iuniq]].dec = plugmap[i2[iuniq]].dec
+      slist[i1[iuniq]].matchrad = d12[iuniq]
+   endelse
 
    ;----------
-   ; Select the exposure on the plate with the best S/N
+   ; Print to terminal and/or output file
 
-   if (keyword_set(best) AND n_elements(slist) GT 1) then begin
-      ; First trim to the plate with the best S/N
-      junk = max(snval, ibest)
-      indx = where(slist.plate EQ slist[ibest].plate AND slist.mjd EQ slist[ibest].mjd)
-      slist = slist[indx]
-
-      ; Then trim to the closest object on that plate
-      if (n_elements(slist) GT 1) then begin
-         junk = min(slist.matchrad, ibest)
-         slist = slist[ibest]
-      endif
-   endif
-   if (keyword_set(best) AND NOT keyword_set(slist)) then slist = blanklist
-
-   if (NOT keyword_set(silent)) then struct_print, slist
+   if (keyword_set(print1)) then struct_print, slist
    if (keyword_set(outfile)) then struct_print, slist, filename=outfile
 
    return
