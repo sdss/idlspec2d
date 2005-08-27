@@ -380,8 +380,8 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    superfit = 0
 
    if keyword_set(superflatset) AND keyword_set(airset) then begin
-     superfit = smooth_superflat(superflatset, airset, $
-        plottitle=plottitle+'Smooth superflat for '+objname)
+     superfit = float(smooth_superflat(superflatset, airset, $
+      plottitle=plottitle+'Smooth superflat for '+objname))
      if keyword_set(superfit) then begin
        divideflat, flux, invvar=fluxivar, superfit 
        sxaddpar, objhdr, 'SFLATTEN', 'T', ' Superflat has been applied'
@@ -564,9 +564,6 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    mwrfits, plugsort, outname
    mwrfits, skyimg, outname
    mwrfits, superfit, outname
-;
-;   mwrfits, rchi2img, outname
-;
    mwrfits, skystruct, outname
    if (keyword_set(do_telluric)) then $
     mwrfits, telluricfactor, outname ; This array only exists for red frames.
