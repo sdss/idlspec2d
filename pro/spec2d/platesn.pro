@@ -1,3 +1,4 @@
+;+
 ; NAME:
 ;   platesn
 ;
@@ -5,17 +6,17 @@
 ;   Generate S/N plots for an entire plate.
 ;
 ; CALLING SEQUENCE:
-;   platesn, objflux, objivar, andmask, plugmap, loglam, $
-;    [ filtsz=, hdr=, platefile=, plotfile=, snvec=, synthmag= ]
+;   platesn, [ objflux, objivar, andmask, plugmap, loglam, $
+;    filtsz=, hdr=, platefile=, plotfile=, snvec=, synthmag= ]
 ;
 ; INPUTS:
+;
+; OPTIONAL KEYWORDS:
 ;   objflux    - 
 ;   objivar    - 
 ;   andmask    - 
 ;   plugmap    - 
 ;   loglam     - 
-;
-; OPTIONAL KEYWORDS:
 ;   filtsz     - Filter size for median-filtering the S/N values within
 ;                a spectrum; default to 25 pix.
 ;   hdr        - FITS header; if specified, then keywords are added.
