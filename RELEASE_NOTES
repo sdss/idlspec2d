@@ -18,11 +18,19 @@ EXTRACT_OBJECT: Write as HDU #8 an image of the relative chi^2, or an
         are when we re-scale the sky errors.
         If there is a telluric image (which we've deprecated for the v5 code),
         then it is now in HDU #9.
-FINDSPEC: Make FOR loops type long.
+FINDSPEC: Complete re-write to match against long lists of objects quickly,
+        rather than the slow loop over one object at a time.  Also, address
+        PR #6583 to deal with the crazy possibility of the same object (with
+        the same RA+DEC) appearing on the same plate.
 FITARCIMAGE: Print the wavelengths of any rejected arc lines.
 FITREDSHIFT,QAPLOT_FCALIBVEC,SOLVEFILTER,SPREDUCE1D,VELDISP,
         FLUX_DISTORTION,SDSSPROC: Change calls from the deprecated STDEV()
         to STDDEV().
+FITSN: If fewer than 20 good points within the default fitting mag range,
+        then redefine that fitting range to be [0,+1] mag from the median
+        of good magnitudes.  This makes the plots look better from Spectro-2D
+        and from SOS.  It should also help address PR #6325, by choosing
+        more reasonable fit ranges for SEGUE plates with bright stars.
 FLUX_DISTORTION: There was a bug in the way objects were being rejected
         in the main iteration loop.  Basically, objects were being rejected,
         but then had chi=0 in the next iteration, and then were put back
@@ -45,6 +53,9 @@ PLATEMERGE: Add the fields CALIBFLUX,CALIBFLUX_IVAR which are explicitly
         Get rid of the ZFILE option in place of the PLATE,MJD options.
         Make robust to the spZLine structures being different for
         different plates, for ex. if different code versions were used.
+PLOTSN: Choose which objects are "good" on a filter-by-filter basis,
+        to avoid stars with crazy magnitudes (like 0 or -9999) from
+        throwing the plots (for example, on SEGUE plate 2255).
 PLOTSPEC: Add capability to plot reconstructed frames (added by Blanton).
 QAPLOT_FCALIBVEC: Put plots for each spectrograph on its own page, and
         put offsets between the plots for all objects, F stars, and QSOs
@@ -55,7 +66,14 @@ QUICKEXTRACT: Remove the end of the warning message for "Whopping fiber"
         being interpreted as chaning the S/N on the whole plate, when in
         fact it usually just affects a few fibers.
 READPLUGMAP: Fix bug when replacing unknown fluxes in the calibObj
-        structure with old values in the plug-map file.
+          structure with old values in the plug-map file.
+        Add OFFSETID and SCI_EXPTIME to the output structures, which
+          are obtained from an optional PLUGMAPTARG structure in the
+          plPlugMapM file.  The plate where I've added that is SEGUE plate 2255,
+          which has multiple offsets in the same exposure.
+        Do not use magnitudes in the input file not in the range [0,50],
+          in order to avoid overflows when magnitudes are set to crazy
+          values like -999.
 READONESPEC: Return all headers in FRAMEHDR.
 READSPEC: Change how the internal procedure READSPEC1 works, such that
         arrays of zeros are returned if data is missing.  This allows us
@@ -88,6 +106,9 @@ SKYSUBTRACT: Return the trace-set RELCHI2SET instead of RELCHI2STRUCT,
         Apply a ratio of "number of sky pixels in a breakpoint bin" to the 
           number of degrees of freedom in the fit to the correction to 
           local chi^2.
+        Recast "fullfit" to floating-point to avoid returning a double-
+          precision sky array.  This was happening due to same changes to
+          the B-spline code to support double-precision.
 SMOOTH_SUPERFLAT: Bug fix, whereby we could trigger a warning message when
         the ends of the wavelength range did not have any good data points.
         In such a case, the fits are meaningless, and any value could result.
@@ -101,6 +122,9 @@ SPCALIB: Change call from SMOOTH_HALO() to SMOOTH_HALO2D() for fitting
         difference.
 SPCOADD_V5: Apply the flux-distortion image to the sky vectors, as well
         as to OBJFLUX,OBJIVAR.
+        Match objects between exposures by XFOCAL,YFOCAL in the plugmap
+        rather than using RA,DEC.  This is because there are the bizarre
+        plates like SEGUE plate 2255 that has the same object several times.
 SPFLUX_READ_KURUCZ: This function was pulled out of SPFLUX_V5.
 SPFLUX_V5: Pull out the SPFLUX_READ_KURUCZ() code as a separate function.
         Comment-out the median/mean rescaling factor in SPFLUX_MRATIO_FLATTEN(),
@@ -112,6 +136,8 @@ SPFLUX_V5: Pull out the SPFLUX_READ_KURUCZ() code as a separate function.
         the FLATARR such that they should all lie on top of one another.
         The "Flux-calib" plot for spectro-2 incorrectly listed fiber numbers
         between 1 and 320 instead of 321 and 640 -- fixed.
+        Only select spectro-photo stars from OFFSETID=1, which will deal
+        with multiple-offset plates like SEGUE plate 2255.
 SPFLUXCORR_V5: Return chi instead of sqrt(chi2) from the function FCORR_CHI_FN.
         Add INPARAMS option to SPFLUXCORR_SOLVE2() function.
         In the final loop, first do a fit using the SPFLUXCORR_SOLVE() code
@@ -126,6 +152,8 @@ SPGAIN: Revamp this code, trying to measure the gain from a set of flats
 SPPLAN1D,SPPLAN_FINDRAWDATA:
         Replace calls to the obsolete function RSTRPOS()
         with STRPOS(/REVERSE_SEARCH).
+SPREDUCE: Pass exposure time to READPLUGMAP, which now uses that for
+        multiple-offset plates (like SEGUE plate 2255).
 SPREDUCE1D: (Use the B-spline spectra for QSO-fitting).
 SSHIFT,SSHIFT2D: Remove these routines that are in the idlutils product.
 SYNTHSPEC,ZFIND: If the eigenspectrum file does not contain in image in HDU #0,
@@ -140,6 +168,7 @@ ZCOMPUTE_QSO: A version of ZCOMPUTE that is basically the same code, but
         redshift.  Because there are multiplicative polynomials rather than
         additive polynomial terms, this may fail to find weak em-line QSOs.
 
+bin/spreduce_batch: Script to batch a single Spectro-2D or Spectro-1D job.
 doc/www/idlspec2d_reduce.html,spectro_home.html: The machine alias name
         sdssdata.princeton.edu should really be sdssdata.astro.princeton.edu
 doc/www/spectro_home.html: Add info for downloading DR4.
