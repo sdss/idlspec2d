@@ -72,8 +72,16 @@ function fitsn, mag, snvec, sigrej=sigrej, maxiter=maxiter, $
          'I' : fitmag = [17.90, 19.40]
          else: message, 'Invalid COLOR keyword value'
       endcase
+
+      ; If fewer than 20 good points within the default fitting mag range,
+      ; then redefine that fitting range to be [0,+1] mag from the median
+      ; of good magnitudes
       if (total(snvec GT 0 AND mag GT fitmag[0] AND mag LT fitmag[1]) $
-       LT 20 AND total(snvec GT 0) GT 2) then fitmag = [0,23]
+       LT 20 AND total(snvec GT 0) GT 2) then begin
+         igood = where(snvec GT 0 AND mag NE 0, ngood)
+         if (ngood LT 3) then fitmag = [0,23] $
+          else fitmag = median(mag[igood]) + [0,1]
+      endif
    endif
 
    sigma = 0
