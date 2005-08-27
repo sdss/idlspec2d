@@ -96,13 +96,14 @@ pro spreduce, flatname, arcname, objname, $
    ;---------------------------------------------------------------------------
 
    sdssproc, objname[0], indir=indir, spectrographid=spectrographid, $
-             color=color, ecalibfile=ecalibfile
+    color=color, ecalibfile=ecalibfile, hdr=objhdr
 
    ;---------------------------------------------------------------------------
    ; Read PLUGMAP file and sort
    ;---------------------------------------------------------------------------
  
-   plugmap = readplugmap(plugfile, plugdir=plugdir, /calibobj)
+   plugmap = readplugmap(plugfile, plugdir=plugdir, $
+    exptime=sxpar(objhdr,'EXPTIME'), /calibobj)
 
    ;-------------------------------------------------------------------------
    ; Plugsort will also return a mask of unplugged fibers
