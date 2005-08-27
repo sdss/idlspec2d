@@ -48,12 +48,31 @@
 ;   fitsn()
 ;   splog
 ;
+; INTERNAL SUPPORT ROUTINES:
+;   plotsn_good()
+;   plotsn1
+;
 ; REVISION HISTORY:
 ;   28-Jan-2003  Add E(B-V) keyword to allow for spectra which have 
 ;                foreground reddening removed
 ;   20-Oct-2002  Plot range on synthmag vs fiber mag plot changed by C. Tremonti
 ;   15-Apr-2000  Written by S. Burles, FNAL
 ;-
+;------------------------------------------------------------------------------
+function plotsn_good, plugc, iband1, snvec, iband2, igood, s1, s2
+
+   qgood = strtrim(plugc.objtype,2) NE 'SKY' AND plugc.mag[iband1] GT 0 $
+    AND snvec[iband2,*] GT 0
+   igood = where(qgood, ngood)
+   if (ngood LT 3) then $
+    splog, 'Warning: Too few non-sky objects to plot in band #', iband1
+
+   ; The following variables are defined only for non-SKY objects...
+   s1 = where(plugc.spectrographid EQ 1 AND qgood)
+   s2 = where(plugc.spectrographid EQ 2 AND qgood)
+
+   return, ngood
+end
 ;------------------------------------------------------------------------------
 pro plotsn1, plugc, synthmag, i1, i2, plottitle=plottitle, objtype=objtype
 
@@ -181,18 +200,7 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
       if (total(plugc.calibflux_ivar GT 0) GT 0) then $
        plugc.mag = plugc.mag * (plugc.calibflux_ivar GT 0)
    endif
-
    nobj = n_elements(plugc)
-   qgood = strtrim(plugc.objtype,2) NE 'SKY' AND plugc.mag[2] GT 0
-   igood = where(qgood, ngood)
-   if (ngood LT 3) then begin
-      splog, 'Warning: Too few non-sky objects to plot'
-      return
-   endif
-
-   ; The following variables are defined only for non-SKY objects...
-   s1 = where(plugc.spectrographid EQ 1 AND qgood)
-   s2 = where(plugc.spectrographid EQ 2 AND qgood)
 
    ;----------
    ; Open plot file
@@ -232,6 +240,9 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
 
    for iband=0, nbands-1 do begin
 
+      ngood = plotsn_good(plugc, bands[iband], snvec, iband, igood, s1, s2)
+      if (ngood GE 3) then begin
+
       ;------------------------------------------------------------------------
       ; 1st PAGE PLOT 1: (S/N) vs. magnitude
       ;------------------------------------------------------------------------
@@ -247,16 +258,18 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
       sndiff = logsnc - poly(thismag, afit) ; Residuals from this fit
 
       ;----------
-      ; Extend the plotting range if necessary to include FITMAG
+      ; Extend the plotting range if necessary to include FITMAG,
+      ; and all good magnitudes
 
-      plotmag[0] = plotmag[0] < fitmag[0]
-      plotmag[1] = plotmag[1] > fitmag[1]
+      plotmag[0] = plotmag[0] < fitmag[0] < min(thismag[igood])
+      plotmag[1] = plotmag[1] > fitmag[1] > max(thismag[igood])
 
       ;----------
       ; Set up the plot
 
       if (iband LT nbands-1) then begin
-         xtickname = strarr(20)+' '
+         xtickname = strarr(20)+' ' ; Disable X axis on all but bottom plot
+         xtickname = ''
          xtitle1 = ''
          xtitle2 = ''
       endif else begin
@@ -267,7 +280,8 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
       symsize = 0.65
 
       plot, thismag[igood], snvec[iband,igood], /nodata, /ylog, $
-       xtickname=xtickname, xrange=plotmag, $
+;       xtickname=xtickname, $
+       xrange=plotmag, $
        xtitle=xtitle1, ytitle='S/N in '+bandnames[bands[iband]]+'-band', $
        /xstyle, yrange=[0.5,100], /ystyle, charsize=csize
 
@@ -381,6 +395,8 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
          djs_oplot, plugc[igood].xfocal, plugc[igood].yfocal, $
           symsize=symvec, color=colorvec, psym=2
       endif
+
+   endif
    endfor
 
    !p.multi = pmulti
@@ -406,6 +422,9 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
    radius = sqrt(plugc.xfocal^2 + plugc.yfocal^2)
    for iband=0, nbands-1 do begin
 
+      ngood = plotsn_good(plugc, bands[iband], snvec, iband, igood, s1, s2)
+      if (ngood GE 3) then begin
+
       if (iband LT nbands-1) then begin
          xtickname = strarr(20)+' '
          xtitle1 = ''
@@ -417,7 +436,7 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
       endelse
       psym = strmatch(plugc.objtype, 'QSO*') * 1 $ ; Plus
        + strmatch(plugc.objtype, 'GALAXY*') * 6 ; Square
-      psym = psym + (symvec EQ 0) * 2 ; Asterisk for anything else
+      psym = psym + (psym EQ 0) * 2 ; Asterisk for anything else
 
       plot, [0], [0], /nodata, $
        xtickname=xtickname, xrange=[0,330], xtitle=xtitle1, $
@@ -450,6 +469,8 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
          djs_oplot, plugc[igood].xfocal, plugc[igood].yfocal, $
           symsize=symvec, color=colorvec, psym=psym[igood]
       endif
+
+   endif
    endfor
 
    !p.multi = pmulti
