@@ -267,7 +267,7 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
    ;----------
    ; Sky-subtract the entire image
 
-   objsub = objflux - fullfit * airmass_correction
+   objsub = objflux - float(fullfit) * airmass_correction
 
    ;----------
    ; Fit to sky variance (not inverse variance)
