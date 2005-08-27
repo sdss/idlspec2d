@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   plugmap = readplugmap( plugfile, [ plugdir=, /apotags, /deredden, $
-;    /calibobj ] )
+;    exptime=, /calibobj ] )
 ;
 ; INPUTS:
 ;   plugfile  - Name of Yanny-parameter plugmap file
@@ -23,6 +23,10 @@
 ;               reddening value for the entire plate as found in the
 ;               Yanny header of the plugmap file; this is done for the
 ;               on-the-mountain reductions.
+;   exptime   - Default exposure time SCI_EXPTIME to add to the output;
+;               if there are multiple pointings and EXPTIME is set, then
+;               the exposure time in each pointing is scaled such that
+;               their sum is EXPTIME.
 ;   calibobj  - If set, then add a CALIBFLUX,CALIBFLUX_IVAR entries based upon
 ;               the calibObj files.  For stellar objects, this contains the
 ;               PSF fluxes in nMgy.  For galaxies, it contains the fiber fluxes
@@ -52,16 +56,21 @@
 ; PROCEDURES CALLED:
 ;   djs_filepath()
 ;   dust_getval()
+;   euler
+;   plug2tsobj()
+;   splog
+;   sdss_flagval()
 ;   splog
 ;   struct_addtags()
-;   yanny_readone()
+;   yanny_par()
+;   yanny_read
 ;
 ; REVISION HISTORY:
 ;   29-Jan-2001  Written by S. Burles, FNAL
 ;-
 ;------------------------------------------------------------------------------
 function readplugmap, plugfile, plugdir=plugdir, $
- apotags=apotags, deredden=deredden, calibobj=calibobj
+ apotags=apotags, deredden=deredden, exptime=exptime, calibobj=calibobj
 
    ; The correction vector is here --- adjust this as necessary.
    ; These are the same numbers as in SDSSFLUX2AB in the photoop product.
@@ -74,13 +83,43 @@ function readplugmap, plugfile, plugdir=plugdir, $
       return, 0
    endif
 
-   plugmap = yanny_readone(thisfile, 'PLUGMAPOBJ', hdr=hdr, /anonymous)
-   if (NOT keyword_set(plugmap)) then begin
+   yanny_read, thisfile, pstruct, hdr=hdr, stnames=stnames, /anonymous
+   if (NOT keyword_set(pstruct)) then begin
       print, 'WARNING: Invalid plugmap file ' + thisfile
       return, 0
    endif
-
+   plugmap = *pstruct[(where(stnames EQ 'PLUGMAPOBJ'))[0]]
    nplug = n_elements(plugmap)
+
+   ; Add the tags OFFSETID and SCI_EXPTIME for 
+   plugmap = struct_addtags(plugmap, $
+    replicate(create_struct('OFFSETID', 0L, 'SCI_EXPTIME', 0.), nplug))
+   i = (where(stnames EQ 'PLUGMAPPOINT', ct))[0]
+   if (ct GT 0) then begin
+      splog, 'Using OFFSETID and SCI_EXPTIME from PLUGMAPPOINT structure'
+      plugpoint = *pstruct[i]
+      for j=0L, n_elements(plugpoint)-1L do begin
+         k = where(abs(plugmap.xfocal - plugpoint[j].xfocal) LT 0.0001 $
+          AND abs(plugmap.yfocal - plugpoint[j].yfocal) LT 0.0001, ct)
+         if (ct GT 0) then begin
+            plugmap[k[0]].offsetid = plugpoint[j].offsetid
+            plugmap[k[0]].sci_exptime = plugpoint[j].sci_exptime
+         endif
+      endfor
+   endif else begin
+      ; Use default values
+      plugmap.offsetid = 1
+      sci_exptime = 1
+   endelse
+   if (keyword_set(exptime)) then begin
+      iuniq = uniq(plugmap.offsetid, sort(plugmap.offsetid))
+      exptot = total(plugmap[iuniq].sci_exptime)
+      if (exptot GT 0) then begin
+         splog, 'Rescaling SCI_EXPTIME values by ', exptime/exptot
+         plugmap.sci_exptime = plugmap.sci_exptime * exptime/exptot
+      endif
+   endif
+
    plateid = (yanny_par(hdr, 'plateId'))[0]
    redden_med = yanny_par(hdr, 'reddeningMed')
 
@@ -123,8 +162,10 @@ function readplugmap, plugfile, plugdir=plugdir, $
       if (keyword_set(tsobj)) then begin
          qexist = tsobj.psfflux[2] NE 0
          qsky = strmatch(plugmap[iobj].objtype,'SKY*')
-         if (total((qsky EQ 0) AND qexist) LT 0.9*total(qsky EQ 0)) then begin
-            splog, 'Discarding calibObj structure because < 90% matches'
+         splog, 'Matched ', fix(total(qsky EQ 0 AND qexist)), $
+          ' of ', fix(total(qsky EQ 0)), ' non-SKY objects'
+         if (total((qsky EQ 0) AND qexist) LT 0.80*total(qsky EQ 0)) then begin
+            splog, 'Discarding calibObj structure because < 80% matches'
             tsobj = 0
          endif
       endif
@@ -174,15 +215,19 @@ function readplugmap, plugfile, plugdir=plugdir, $
 
       ;----------
       ; For any objects that do not have photometry from the calibObj
-      ; structure, simply translate the flux from the plugmap MAG values.
+      ; structure, simply translate the flux from the plugmap MAG values
+      ; (as long as those values are in the range 0 < MAG < +50).
 
       for ifilt=0, 4 do begin
-         ibad = where(plugmap[iobj].calibflux[ifilt] EQ 0, nbad)
+         ibad = where(plugmap[iobj].calibflux[ifilt] EQ 0 $
+          AND plugmap[iobj].mag[ifilt] GT 0 $
+          AND plugmap[iobj].mag[ifilt] LT 50, nbad)
          if (nbad GT 0) then begin
             splog, 'Using plug-map fluxes for ', nbad, $
              ' values in filter ', ifilt
             plugmap[iobj[ibad]].calibflux[ifilt] = $
              10.^((22.5 - plugmap[iobj[ibad]].mag[ifilt]) / 2.5)
+            plugmap[iobj[ibad]].calibflux_ivar[ifilt] = 0
          endif
       endfor
 
