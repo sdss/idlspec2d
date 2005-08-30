@@ -44,6 +44,13 @@ FLUX_DISTORTION: There was a bug in the way objects were being rejected
         (one for each spectrograph).  This takes out curvature in the spectra
         which I otherwise couldn't fit out -- though if the AB zeropoints are
         not correct, then these terms enforce consistency but are not correct.
+        Add the functionality to have multiple offset pointings on the same
+        plate, which is true for SEGUE plates 2247 and 2255 (the latter was
+        already observed).  Do the standard flux-distortion corrections from
+        the first offset (where OFFSETID=1).  If there are repeated objects
+        between that offset and others (as determined by matching RA,Dec),
+        then solve for the mean flux-correction vector between those offsets.
+        Otherwise, scale the fluxes according to SCI_EXPTIME in the plugmap.
 LRGMODEL_PHOTOZ: Optionally compute and return FITFLUX.
 PCA_SOLVE: Make loop variables long ints.
 PLATELIST: Use FINDFILE() function to see if files exist before calling
@@ -147,6 +154,8 @@ SPFLUXCORR_V5: Return chi instead of sqrt(chi2) from the function FCORR_CHI_FN.
         when there is no improvement to chi^2.  This is because one could
         imaging that going from 1->2 terms is very little improvment, but
         then 2->3 is substantial improvment.
+        Generalize the internal routines SPFLUXCORR_SOLVE,SPFLUXCORR_SOLVE2
+        and rename it to SOLVE_POLY_RATIO in the idlutils product.
 SPGAIN: Revamp this code, trying to measure the gain from a set of flats
         taken on MJD 53114 for this purpose.
 SPPLAN1D,SPPLAN_FINDRAWDATA:
