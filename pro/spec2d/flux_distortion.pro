@@ -64,7 +64,11 @@
 ;
 ; PROCEDURES CALLED:
 ;   airtovac
+;   dfpsclose
+;   dfpsplot
 ;   djs_maskinterp()
+;   djs_oplot
+;   djs_plot
 ;   djs_reject()
 ;   flux_distort_corrvec()
 ;   flux_distort_fn()
@@ -154,12 +158,29 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
        + dindgen(sxpar(hdr, 'NAXIS1')) * sxpar(hdr, 'COEFF1')
    endif
 
+   if (keyword_set(hdr)) then begin
+      platestr = string(sxpar(hdr,'PLATEID'), format='(i4)')
+      mjdstr = string(sxpar(hdr,'MJD'), format='(i5)')
+      plottitle = 'PLATE=' + platestr + ' MJD=' + mjdstr
+   endif
+
    dims = size(objflux, /dimens)
    npixobj = dims[0]
    nobj = dims[1]
    thisivar = skymask(objivar, andmask, ormask)
 
    wavevec = 10d0^loglam
+
+   ;----------
+   ; Set up for plots
+
+   if (keyword_set(plotfile)) then begin
+      dfpsplot, plotfile, /color
+      pmulti = !p.multi
+      ymargin = !y.margin
+      yomargin = !y.omargin
+      if (NOT keyword_set(plottitle)) then plottitle = ''
+   endif
 
    ;----------
    ; Read the three filter curves of interest
@@ -191,8 +212,9 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
    endif
 
    ;----------
-   ; Select only objects that are not SKY or QSO, and
-   ; with a positive flux in gri-bands,
+   ; Select only objects that are not SKY or QSO,
+   ; on the first pointing offset (if there are multiple pointings),
+   ; and with a positive flux in gri-bands,
    ; and at least 90% of pixels are good within the wavelengths of interest.
    ; Also, trim to only objects with known errors (according to CALIBFLUX_IVAR)
    ; if that's at least 80% of the otherwise-good objects.
@@ -202,6 +224,7 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
    qivar = plugmap.calibflux_ivar[2] GT 0
    qtrim = strmatch(plugmap.objtype,'SKY*') EQ 0 $
     AND strmatch(plugmap.objtype,'QSO*') EQ 0 $
+    AND plugmap.offsetid EQ 1 $
     AND plugmap.calibflux[1] GT minflux $
     AND plugmap.calibflux[2] GT minflux $
     AND plugmap.calibflux[3] GT minflux $
@@ -307,6 +330,97 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
    sigval = stddev(corrimg,/double)
    splog, 'Flux distortion min/max/sig = ', minval, maxval, sigval
 
+   ;----------
+   ; If multiple pointings on this plate, then deal with that here by
+   ; rescaling the fluxes of each fiber according to its exposure time ???
+
+   offsetlist = plugmap[uniq(plugmap.offsetid, sort(plugmap.offsetid))].offsetid
+   offsetlist = offsetlist[sort(offsetlist)]
+   nlist = n_elements(offsetlist)
+   if (nlist GT 1) then begin
+      for ilist=1L, nlist-1L do begin
+         indx1 = where(plugmap.offsetid EQ offsetlist[0] $
+          AND strmatch(plugmap.objtype,'SKY*') EQ 0)
+         indx2 = where(plugmap.offsetid EQ offsetlist[ilist] $
+          AND strmatch(plugmap.objtype,'SKY*') EQ 0)
+         spherematch, plugmap[indx1].ra, plugmap[indx1].dec, $
+          plugmap[indx2].ra, plugmap[indx2].dec, 0.1/3600, i1, i2, d12
+         nmatch = n_elements(i1) * (i1[0] NE -1)
+         ratioarr = 0
+         splog, nmatch, ' common objects between offset #', offsetlist[0], $
+          ' and offset #', offsetlist[ilist]
+         if (nmatch GT 0) then begin
+            for imatch=0L, nmatch-1 do begin
+               ; Solve for the ratio vector (YMULT) which is what we
+               ; multiply the 2nd spectrum by to get this first.
+               ; First, correct by the current flux-distortion image,
+               ; which hardly matters if the spatial offsets are small.
+               ; This is a quadratic (3 terms).
+               minlog = min(loglam, max=maxlog)
+               xvector = (loglam - minlog) / (maxlog - minlog)
+               solve_poly_ratio, xvector, $
+                objflux[*,indx2[i2[imatch]]] * corrimg[*,indx2[i2[imatch]]], $
+                objflux[*,indx1[i1[imatch]]] * corrimg[*,indx1[i1[imatch]]], $
+                objivar[*,indx2[i2[imatch]]] / corrimg[*,indx2[i2[imatch]]]^2, $
+                objivar[*,indx1[i1[imatch]]] / corrimg[*,indx1[i1[imatch]]]^2, $
+                npoly=3, nback=0, ymult=ymult
+               ratioarr = keyword_set(ratioarr) ? [[ratioarr],[ymult]] $
+                : ymult
+            endfor
+            if (keyword_set(ratioarr)) then begin
+               if (size(ratioarr,/n_dimen) EQ 1) then nvec = 1 $
+                else nvec = (size(ratioarr,/dimens))[1]
+               if (nvec EQ 1) then ratiovec = ratioarr $
+                else ratiovec = total(ratioarr,2) / nvec
+;                else ratiovec = djs_median(ratioarr,2)
+               splog, 'Scaling offset #', offsetlist[ilist], $
+                ' by flux ratio vector with mean = ', $
+                mean(ratiovec)
+               splog, 'Scaling offset #', offsetlist[ilist], $
+                ' RMS = ', 100.*stddev(ratioarr) / mean(ratiovec), ' %'
+               for j=0L, n_elements(indx2)-1L do $
+                corrimg[*,indx2[j]] = corrimg[*,indx2[j]] * ratiovec
+
+               ; Make a plot
+               if (keyword_set(plotfile)) then begin
+                  !p.multi = [0,1,2]
+                  xrange = minmax(10.^loglam)
+                  djs_plot, xrange, minmax(ratioarr), $
+                   /xstyle, /ynozero, /nodata, $
+                   xtitle='Wavelength [Ang]', ytitle='Flux ratios', $
+                   title = plottitle + ' Flux ratios for offset #' $
+                    + strtrim(string(ilist),2)
+                  for i=0L, nvec-1L do $
+                   djs_oplot, 10.^loglam, ratioarr[*,i]
+                  djs_oplot, 10.^loglam, ratiovec, color='red'
+                  xyouts, total(!x.crange*[0.95,0.05]), $
+                   total(!y.crange*[0.10,0.90]), $
+                   strtrim(string(nvec),2) + ' non-SKY repeat objects'
+                  djs_xyouts, total(!x.crange*[0.95,0.05]), $
+                   total(!y.crange*[0.15,0.85]), 'Mean ratio vector', $
+                   color='red'
+
+                  plotratio = ratioarr $
+                   / rebin(ratiovec,n_elements(ratiovec),nvec)
+                  djs_plot, xrange, minmax(plotratio), $
+                   /xstyle, /ynozero, /nodata, $
+                   xtitle='Wavelength [Ang]', $
+                   ytitle='Flux ratios / Mean vector'
+                  for i=0L, nvec-1L do $
+                   djs_oplot, 10.^loglam, plotratio[*,i]
+                  djs_oplot, xrange, [1,1], color='red'
+               endif
+            endif
+         endif
+         if (nmatch EQ 0 OR keyword_set(ratioarr) EQ 0) then begin
+            thisratio = plugmap[indx1[i1[0]]].sci_exptime $
+             / plugmap[indx2[i2[0]]].sci_exptime
+            splog, 'Scaling fluxes by exposure time ratio = ', thisratio
+            corrimg[*,indx2] = corrimg[*,indx2] * thisratio
+         endif
+      endfor
+   endif
+
    if (keyword_set(plotfile)) then begin
       xx = djs_laxisgen([641,641],iaxis=0) - 320
       yy = djs_laxisgen([641,641],iaxis=1) - 320
@@ -315,12 +429,6 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
       thisplug.xfocal = xx
       thisplug.yfocal = yy
       thisplug.spectrographid = 1 + (yy GT 0)
-
-      dfpsplot, plotfile, /color
-
-      pmulti = !p.multi
-      ymargin = !y.margin
-      yomargin = !y.omargin
 
       !p.multi = [0,2,3]
       !y.margin = [1,0]
@@ -331,12 +439,9 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
       for iplot=0, 2 do begin
          ; First skip the left-side plot...
          plot, [0,1], [0,1], /nodata, xstyle=5, ystyle=5
-         if (keyword_set(hdr) AND iplot EQ 0) then begin
-            platestr = string(sxpar(hdr,'PLATEID'), format='(i4)')
-            mjdstr = string(sxpar(hdr,'MJD'), format='(i5)')
-            xyouts, 1.0, 1.0, align=0.5, charsize=2, $
-             'Flux Distortions PLATE=' + platestr + ' MJD=' + mjdstr
-         endif
+         if (iplot EQ 0) then $
+          xyouts, 1.0, 1.0, align=0.5, charsize=2, $
+           plottitle + ' Flux Distortions'
 
          if (iplot EQ 2) then begin
             xtitle = 'X [mm]'
@@ -367,6 +472,8 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
       !p.multi = pmulti
       !y.margin = ymargin
       !y.omargin = yomargin
+
+      dfpsclose
    endif
 
    if (keyword_set(platefile)) then begin
