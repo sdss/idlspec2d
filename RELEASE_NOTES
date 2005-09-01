@@ -177,6 +177,12 @@ ZCOMPUTE_QSO: A version of ZCOMPUTE that is basically the same code, but
         redshift.  Because there are multiplicative polynomials rather than
         additive polynomial terms, this may fail to find weak em-line QSOs.
 
+bin/aporsync_alllog.sh, aporsync_blue.sh, aporsync_logs.sh, aporsync_red.sh,
+        killdata.sh, sos_start: Pull the data (sdR files and log files)
+        from the machine specified by the environment variable
+        $RAWDATA_HOST rather than from the hardwired sdsshost.apo.nmsu.edu.
+        Set the default value to sdssfiles1.apo.nmsu.edu in the sos_start
+        script.
 bin/aporsync_alllog.sh, aporsync_blue.sh, aporsync_logs.sh, aporsync_red.sh:
         Remove the "--rsync-path" option to these scripts, which was used
         to point to the only working version of rsync on sdsshost.apo.
