@@ -183,6 +183,9 @@ SPPLAN1D,SPPLAN_FINDRAWDATA:
 SPREDUCE: Pass exposure time to READPLUGMAP, which now uses that for
         multiple-offset plates (like SEGUE plate 2255).
 SPREDUCE1D: (Use the B-spline spectra for QSO-fitting).
+        When computing FRACNSIGMA,FRACNSIGHI,FRACNSIGLO, ignore points
+        blueward of rest-frame 1216 Ang, since these numbers would then
+        be dominated by LyA absorption in QSOs.  (This is PR #2703.)
 SSHIFT,SSHIFT2D: Remove these routines that are in the idlutils product.
 SYNTHSPEC,ZFIND: If the eigenspectrum file does not contain in image in HDU #0,
         then look for a B-spline in HDU #1 and assume that it describes
