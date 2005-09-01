@@ -135,7 +135,8 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    maxlag = max(xnew-xcen)
    splog, 'Match_trace range: ', minlag, bestlag, maxlag
    if (bestlag LT -0.15 OR bestlag GT 0.15) then $
-    splog, 'WARNING: Large flexure flat<->science (Post-calibs recommended!)'
+    splog, 'WARNING: Large flexure flat<->science ' $
+    + string(bestlag,format='(f5.2)') + ' pix (Post-calibs recommended!)'
 
    ;----------
    ; Do an optimal extraction for the purpose of measuring scattered
