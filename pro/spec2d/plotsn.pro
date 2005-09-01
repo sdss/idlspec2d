@@ -6,7 +6,7 @@
 ;   Plot S/N and residuals in up to 3 bands
 ;
 ; CALLING SEQUENCE:
-;   plotsn, snvec, plugmap, [ bands=, plotmag=, fitmag=, plottitle=, $
+;   plotsn, snvec, plugmap, [ bands=, plotmag=, fitmag=, snmag=, plottitle=, $
 ;    plotfile=, synthmag=, snplate= ]
 ;
 ; INPUTS:
@@ -17,6 +17,9 @@
 ;   bands      - Index of bands to fit; default to [1,2,3] for g,r,i bands.
 ;   fitmag     - Magnitude range over which to fit (S/N) as function of mag;
 ;                default to those used by FITSN().
+;   snmag      - Fit magnitudes for all 5 bands (even if we don't specify
+;                to use all of them with BANDS); default to
+;                [20.0, 20.2, 20.25, 19.9, 19.0]
 ;   plotmag    - Magnitude range for plotting; default to [15,21], but
 ;                extend the range to include FITMAG if necessary.
 ;   plottitle  - Title for top of plot
@@ -168,6 +171,7 @@ pro plotsn1, plugc, synthmag, i1, i2, plottitle=plottitle, objtype=objtype
 end
 ;------------------------------------------------------------------------------
 pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
+ snmag=snmag, $
  plottitle=plottitle, plotfile=plotfile, synthmag=synthmag, snplate=snplate
 
    if (size(snvec,/n_dim) NE 2) then return
@@ -175,7 +179,8 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
    if (NOT keyword_set(plotmag)) then plotmag = [15.0, 21.0]
 
    ; Set fiducial magnitudes about which to fit and evaluate the fit
-   snmag = [20.0, 20.2, 20.25, 19.9, 19.0]
+   if (NOT keyword_set(snmag)) then $
+    snmag = [20.0, 20.2, 20.25, 19.9, 19.0]
 
    nbands = n_elements(bands)
    nfibers = n_elements(plug)

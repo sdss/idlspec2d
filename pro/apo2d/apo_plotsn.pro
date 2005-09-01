@@ -103,8 +103,8 @@ pro apo_plotsn, logfile, plate, plugdir=plugdir, plotfile=plotfile
 
    plottitle = 'APO Spectro MJD=' + strtrim(string(mjd),2) $
     + ' Plate=' + strtrim(string(plate),2)
-   plotsn, sqrt(sn2array), plugsort, bands=bands, plottitle=plottitle, $
-    plotfile=plotfile
+   plotsn, sqrt(sn2array), plugsort, bands=bands, snmag=[0,20.33,0,20.06,0], $
+    plottitle=plottitle, plotfile=plotfile
 
    if (keyword_set(plotfile)) then $
     djs_unlockfile, plotfile, lun=plot_lun
