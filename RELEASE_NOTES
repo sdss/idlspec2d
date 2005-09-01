@@ -9,6 +9,15 @@
 ARCFIT_GUESS: Change the FIX() functions to LONG(), though I don't believe
         this was causing any trouble.
 APO_LOG2HTML,APOREDUCE,BATCH1D,BATCH2D,CATPLOT,SDSSPROC,
+APO_PLOTSN,PLOTSN: There was a problem long ago whereby the fiber magnitudes
+        from photo changed, and we decided to change the magnitude at which
+        Son-of-Spectro computes the S/N for each exposure.  This was fixed
+        in Oct 2003 as documented in PR #5642 and sdss-obs/4029.  However,
+        the S/N plots from SOS still use the old magnitudes.  I've changed
+        those g,r magnitude limits from 20.20,19.90 -> 20.33,20.06 to be
+        consistent with the SOS tables.  Note that the old limits will still
+        be used by the full Spectro-2D reductions (since those are now tied
+        to PSF magnitudes in newly-generated calibObj files).
 COMPUTECHI2: Add optional outputs COVAR,VAR.
 ELODIE_BEST: Trim to stars not labelled as binary or triple stars, according
         to the Q_VR keyword in the Elodie FITS headers.  Rockosi brought
