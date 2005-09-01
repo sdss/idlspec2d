@@ -125,7 +125,6 @@ for mjdstr in $remotedir ; do
       echo SPROBOT: rsync "$hostname:/data/spectro/astrolog/$mjdstr" $astrologdir
       rsync -ar --rsh="$SPROBOT_RSH" \
        "$hostname:/data/spectro/astrolog/$mjdstr" $astrologdir
-#       --rsync-path=/p/rsync/v2_4_3/rsync
 
       # Move the important astrolog files from $ASTROLOG_DIR->$SPECLOG_DIR
       # to make a CVS-versioned copy.
@@ -137,7 +136,6 @@ for mjdstr in $remotedir ; do
       echo SPROBOT: rsync "$hostname:/data/spectro/$mjdstr/*.fit.gz" $localdir
       rsync -ar --rsh="$SPROBOT_RSH" \
        "$hostname:/data/spectro/$mjdstr/*.fit.gz" $localdir
-#       --rsync-path=/p/rsync/v2_4_3/rsync
 #       "$hostname:/data/spectro/$mjdstr/*" $localdir
 
       # Copy the guider image directory...

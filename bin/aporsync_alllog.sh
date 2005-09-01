@@ -52,7 +52,6 @@ for thisdir in $astrologdirs
 do
    echo Copy all log files from $thisdir
    rsync -ar --rsh="ssh -c blowfish" \
-    --rsync-path=/p/rsync/v2_4_3/rsync \
     --copy-unsafe-links \
     sdsshost.apo.nmsu.edu:$thisdir $ASTROLOG_DIR
 done

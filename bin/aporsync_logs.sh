@@ -55,7 +55,6 @@ astrologdirs=`echo $datadirs | sed -n 's/\/data\/spectro/\/astrolog/pg'`
 for thisdir in $astrologdirs
 do
    rsync -ar --rsh="ssh -c blowfish" \
-    --rsync-path=/p/rsync/v2_4_3/rsync \
     --include "sdReport*.par"    \
     --include "plPlugMap*.par"   \
     --include "plPlugMap*.log"   \
@@ -71,7 +70,6 @@ do
    thismjd=`echo $thisdir | sed -n 's/\/.*\///p'`
    if [ -e $ASTROLOG_DIR/$thismjd/sdHdrFix-$thismjd.par ] ; then
       rsync -ar --rsh="ssh -c blowfish" \
-       --rsync-path=/p/rsync/v2_4_3/rsync \
        $ASTROLOG_DIR/$thismjd/sdHdrFix-$thismjd.par \
        sdsshost.apo.nmsu.edu:$thisdir
    fi
@@ -80,7 +78,6 @@ done
 # This syncs /astrolog/[5-9]???? from sdsshost to the local machine,
 # exluding the blue and red files (only include guider files).
 rsync -ar --rsh="ssh -c blowfish" \
-      --rsync-path=/p/rsync/v2_4_3/rsync \
       --log-format="/data/spectro/%f" \
       --include "*/guider" \
       --include "gimg*" \
