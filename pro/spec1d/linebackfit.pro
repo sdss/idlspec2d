@@ -458,14 +458,18 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
 
          ; The following is a crude approximation of the EW error,
          ; assuming that the line area + continuum level are uncorrelated.
-         if (linestruct[iline].linearea_err LE 0) then $
-          linestruct[iline].lineew_err = -3L $
-         else if (linestruct[iline].linecontlevel_err LE 0) then $
-          linestruct[iline].lineew_err = -3L $
-         else $
-          linestruct[iline].lineew_err = linestruct[iline].lineew * sqrt( $
-           (linestruct[iline].linearea_err / linestruct[iline].linearea)^2 $
-           + (linestruct[iline].linecontlevel_err / linestruct[iline].linecontlevel)^2 )
+         if (linestruct[iline].linearea_err LE 0) then begin
+            linestruct[iline].lineew_err = -3L
+         endif else if (linestruct[iline].linecontlevel_err LE 0) then begin
+          linestruct[iline].lineew_err = -3L
+         endif else begin
+            linestruct[iline].lineew_err = linestruct[iline].lineew * $
+             (linestruct[iline].linearea_err / linestruct[iline].linearea $
+             - linestruct[iline].linecontlevel_err $
+             / linestruct[iline].linecontlevel )
+            if (linestruct[iline].lineew_err LT 0) then $
+             linestruct[iline].lineew_err = -4L
+         endelse
       endelse
    endfor
 
