@@ -177,6 +177,11 @@ ZCOMPUTE_QSO: A version of ZCOMPUTE that is basically the same code, but
         redshift.  Because there are multiplicative polynomials rather than
         additive polynomial terms, this may fail to find weak em-line QSOs.
 
+bin/aporsync_alllog.sh, aporsync_blue.sh, aporsync_logs.sh, aporsync_red.sh:
+        Remove the "--rsync-path" option to these scripts, which was used
+        to point to the only working version of rsync on sdsshost.apo.
+        Now that the IRIX machine sdsshost.apo has been replaced with
+        a Linux machine, that is no longer necessary.
 bin/spreduce_batch: Script to batch a single Spectro-2D or Spectro-1D job.
 doc/www/idlspec2d_reduce.html,spectro_home.html: The machine alias name
         sdssdata.princeton.edu should really be sdssdata.astro.princeton.edu
