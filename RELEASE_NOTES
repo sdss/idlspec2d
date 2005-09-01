@@ -1,4 +1,11 @@
 
+; Need to do the following computation in double-precision!!
+; Tentatively re-caste as such within VDISPFIT in call to COMPUTECHI2.
+ readspec,401,201,flux=objflux,invvar=objivar,zans=zans,loglam=objloglam
+ foo=vdispfit(objflux,objivar,objloglam,/debug,/doplot,zobj=zans.z,$ 
+  eigenfile='spEigenElodie.fits', columns=lindgen(24), yfit=dispflux)
+
+
 ARCFIT_GUESS: Change the FIX() functions to LONG(), though I don't believe
         this was causing any trouble.
 APO_LOG2HTML,APOREDUCE,BATCH1D,BATCH2D,CATPLOT,SDSSPROC,
@@ -72,6 +79,8 @@ QUICKEXTRACT: Remove the end of the warning message for "Whopping fiber"
         which used to say "(may have adverse afffect on S/N)".  This was
         being interpreted as chaning the S/N on the whole plate, when in
         fact it usually just affects a few fibers.
+        For the warning message "Large flexure...", append the shift
+        number to the message (in response to PR #6239).
 READPLUGMAP: Fix bug when replacing unknown fluxes in the calibObj
           structure with old values in the plug-map file.
         Add OFFSETID and SCI_EXPTIME to the output structures, which
