@@ -225,7 +225,7 @@ function zfind, objflux, objivar, hdr=hdr, $
        plottitle=plottitle, _EXTRA=EXTRA)
    endif else begin
       ; Mask any pixels on the templates where the first template contains zeros
-      starmask = total(starflux[*,0] EQ 0,2) EQ 0
+      starmask = starflux[*,0] NE 0
       zans = zcompute(objflux, objivar, starflux, starmask, poffset=poffset, $
        pmin=pmin, pmax=pmax, nfind=nfind, width=width, $
        plottitle=plottitle, _EXTRA=EXTRA)
