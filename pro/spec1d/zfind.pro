@@ -58,6 +58,11 @@
 ;   with ZGUESS and PWIDTH.  If none of those parameters are set, then all
 ;   possible redshifts that overlap the object and star (template) are tested.
 ;
+;   Mask any pixels on the templates where the first template contains zeros.
+;   This is useful, in particular, where the stellar templates have zeros
+;   at the beginning or end of the spectral range due lack of wavelength
+;   coverage.
+;
 ; EXAMPLES:
 ;
 ; BUGS:
@@ -182,24 +187,20 @@ function zfind, objflux, objivar, hdr=hdr, $
    else if (ndim EQ 1) then nstar = 1 $
    else nstar = dims[1]
 
-   if keyword_set(nstar) then begin 
-     if (n_elements(columns) NE 0) then begin
-        starflux = starflux[*,columns]
-     endif else begin
-        columns = lindgen(nstar)
-     endelse
+   ; Trim to specified columns
+   if (keyword_set(nstar)) then begin 
+      if (n_elements(columns) NE 0) then starflux = starflux[*,columns] $
+       else columns = lindgen(nstar)
+   endif
 
-     ;----------
-     ; Add more eigen-templates that represent polynomial terms.
+   ;----------
+   ; Add more eigen-templates that represent polynomial terms.
 
-     if (keyword_set(npoly)) then $
-      starflux = [ [starflux], [poly_array(npixstar,npoly)] ]
-   endif else if (keyword_set(npoly)) then $
-      starflux = poly_array(npixobj,npoly) $
-   else $
-     message, 'starflux is utterly empty'
-
-       
+   if (keyword_set(npoly) AND keyword_set(starflux)) then begin
+       starflux = [ [starflux], [poly_array(npixstar,npoly)] ]
+   endif else if (keyword_set(npoly)) then begin
+      starflux = poly_array(npixobj,npoly)
+   endif
 
    ;----------
    ; Compute the redshift difference between the first pixel of the object
@@ -223,7 +224,9 @@ function zfind, objflux, objivar, hdr=hdr, $
        pmin=pmin, pmax=pmax, nfind=nfind, width=width, $
        plottitle=plottitle, _EXTRA=EXTRA)
    endif else begin
-      zans = zcompute(objflux, objivar, starflux, poffset=poffset, $
+      ; Mask any pixels on the templates where the first template contains zeros
+      starmask = total(starflux[*,0] EQ 0,2) EQ 0
+      zans = zcompute(objflux, objivar, starflux, starmask, poffset=poffset, $
        pmin=pmin, pmax=pmax, nfind=nfind, width=width, $
        plottitle=plottitle, _EXTRA=EXTRA)
    endelse
