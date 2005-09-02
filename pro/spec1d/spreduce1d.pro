@@ -430,7 +430,7 @@ ormask = 0 ; Free memory
          ; Ignore points blue-ward of rest-frame 1216 Ang, since these numbers
          ; would then be dominated by LyA absorption in QSOs.
          igood = where(objivar[*,iobj] GT 0 $
-          AND wavevec GT 1216.*(1+res_all[iper,iobj].z))
+          AND wavevec GT 1216.*(1+res_all[iper,iobj].z), ngood)
          if (ngood GT 0) then begin
             chivec = (objflux[igood,iobj] - synflux[igood,iobj]) $
              * sqrt(objivar[igood,iobj])
