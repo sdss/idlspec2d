@@ -198,7 +198,11 @@ ZCOMPUTE_QSO: A version of ZCOMPUTE that is basically the same code, but
         using a B-spline composite spectrum that must be evaluated at each
         redshift.  Because there are multiplicative polynomials rather than
         additive polynomial terms, this may fail to find weak em-line QSOs.
-
+ZFIND: Mask any pixels on the templates where the first template contains zeros.
+        This is useful, in particular, where the stellar templates have zeros
+        at the beginning or end of the spectral range due lack of wavelength
+        coverage.  This is done by setting the STARMASK parameter that is
+        passed to ZCOMPUTE.  This should fix PR #5903.
 bin/aporsync_alllog.sh, aporsync_blue.sh, aporsync_logs.sh, aporsync_red.sh,
         killdata.sh, sos_start: Pull the data (sdR files and log files)
         from the machine specified by the environment variable
