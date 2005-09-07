@@ -257,6 +257,7 @@ etc/spPlateList.par: Add 436 new plates, through MJD 53360 (Dec 21, 2004).
           722 52206  DR4
           903 52385  DR4
           1296 52738  DR4
+        Add another 233 plates through MJD 53566 (July 14, 2005).
 examples/opECalib-51577.par: Update the gains based upon work by Eric Switzer
         and a more careful look at a recent set of identical flats taken
         on the night MJD 53114.  I've updated the numbers as follows for
