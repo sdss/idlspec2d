@@ -220,7 +220,7 @@ doc/www/idlspec2d_reduce.html,spectro_home.html: The machine alias name
 doc/www/spectro_home.html: Add info for downloading DR4.
 etc/lamplist.dat: Remove this file, since we use "lamphgcdne.dat" instead.
 etc/spChunkList.par: Add chunks 91 through 107, 99A, 100A, 108, 109,
-        110, 111, 112, 113, 114, 115-118, 119, 120, 121, 122, 123.
+        110, 111, 112, 113, 114, 115-118, 119, 120, 121, 122, 123, 124, 125.
 etc/spPlateList.par: Add 436 new plates, through MJD 53360 (Dec 21, 2004).
         Add the DR4 public plates, consistent with sdss-archive/2374.
         (I posted some inconsistencies about these plate lists to
