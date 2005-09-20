@@ -58,7 +58,7 @@
 ;     52573 52602 52633 52655 52689 52718 52747 (<- should declare some bad!)
 ;     52808 52868 52899 52956 52983 53014 53044 53073 53100 53132
 ;     53162 53220 53257 ...???
-;     53610
+;     53610 53633
 ;   (Those are the nights with a pixel flat sequence.)  There are other
 ;   nights with many biases that may be useful, but may have been done
 ;   for other testing purposes:
