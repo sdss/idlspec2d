@@ -328,7 +328,7 @@ To download the 14 Gb of EDR data
 if you <B>only</B> want the spAll file, then remove
 "--accept *.fits" from the command):
 <DL><DD><PRE>
- wget --dot-style=mega --no-clobber --no-host-directories \
+ wget --dot-style=mega --quota=0 --no-host-directories \
    --no-parent --non-verbose --recursive --retr-symlinks \
    --accept "*.fits" --accept "spAll*" \
    http://spectro.princeton.edu/spectro_EDR/
@@ -336,7 +336,7 @@ if you <B>only</B> want the spAll file, then remove
 To download the 18 Gb of data new to DR1
 (including the <A HREF="#summary">spAll-DR1 summary file</A>):
 <DL><DD><PRE>
- wget --dot-style=mega --no-clobber --no-host-directories \
+ wget --dot-style=mega --quota=0 --no-host-directories \
    --no-parent --non-verbose --recursive --retr-symlinks \
    --accept "*.fits" --accept "spAll*" \
    http://spectro.princeton.edu/spectro_DR1/
@@ -344,7 +344,7 @@ To download the 18 Gb of data new to DR1
 To download the 27 Gb of data new to DR2
 (including the <A HREF="#summary">spAll-DR2 summary file</A>):
 <DL><DD><PRE>
- wget --dot-style=mega --no-clobber --no-host-directories \
+ wget --dot-style=mega --quota=0 --no-host-directories \
    --no-parent --non-verbose --recursive --retr-symlinks \
    --accept "*.fits" --accept "spAll*" \
    http://spectro.princeton.edu/spectro_DR2/
@@ -352,7 +352,7 @@ To download the 27 Gb of data new to DR2
 To download the 24 Gb of data new to DR3
 (including the <A HREF="#summary">spAll-DR3 summary file</A>):
 <DL><DD><PRE>
- wget --dot-style=mega --no-clobber --no-host-directories \
+ wget --dot-style=mega --quota=0 --no-host-directories \
    --no-parent --non-verbose --recursive --retr-symlinks \
    --accept "*.fits" --accept "spAll*" \
    http://spectro.princeton.edu/spectro_DR3/
@@ -360,7 +360,7 @@ To download the 24 Gb of data new to DR3
 To download the 46 Gb of data new to DR4
 (including the <A HREF="#summary">spAll-DR4 summary file</A>):
 <DL><DD><PRE>
- wget --dot-style=mega --no-clobber --no-host-directories \
+ wget --dot-style=mega --quota=0 --no-host-directories \
    --no-parent --non-verbose --recursive --retr-symlinks \
    --accept "*.fits" --accept "spAll*" \
    http://spectro.princeton.edu/spectro_DR4/
@@ -369,7 +369,7 @@ For members of the SDSS collaboration only,
 once DR5 is available, it can be downloaded with the following command
 (after substituting the usual username and password):
 <DL><DD><PRE>
- wget --dot-style=mega --no-clobber --no-host-directories \
+ wget --dot-style=mega --quota=0 --no-host-directories \
    --no-parent --non-verbose --recursive --retr-symlinks \
    --accept "*.fits" --accept "spAll*" \
    http://www.astro.princeton.edu:81/spectro_DR5/ \
