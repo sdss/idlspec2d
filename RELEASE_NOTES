@@ -81,6 +81,8 @@ PLOTSN: Choose which objects are "good" on a filter-by-filter basis,
         to avoid stars with crazy magnitudes (like 0 or -9999) from
         throwing the plots (for example, on SEGUE plate 2255).
 PLOTSPEC: Add capability to plot reconstructed frames (added by Blanton).
+        Fix units on Y axis to /cm^2 instead of /cm (was fixed in v4_9_13
+        when plotting to files, but not when to the terminal).
 QAPLOT_FCALIBVEC: Put plots for each spectrograph on its own page, and
         put offsets between the plots for all objects, F stars, and QSOs
         so that we can see the plots more easily.  Also, smooth the plots
