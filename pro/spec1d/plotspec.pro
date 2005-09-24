@@ -256,7 +256,7 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
    endif else begin
       if (NOT keyword_set(noerase)) then $
        splot, xrange, yrange, /nodata, xrange=xrange, yrange=yrange, $
-        xtitle=xtitle, ytitle=TeXtoIDL('Flux [10^{-17} erg/cm/s/Ang]'), $
+        xtitle=xtitle, ytitle=TeXtoIDL('Flux [10^{-17} erg/s/cm^2/Ang]'), $
         title=title, charsize=csize, _EXTRA=KeywordsForSplot
       if (keyword_set(allexp)) then $
        soplot, allwave, allflux, psym=3, _EXTRA=KeywordsForSplot $
