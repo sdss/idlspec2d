@@ -125,6 +125,7 @@ pro spflatgen, mjd=mjd, expnum=expnum, expstart=expstart, expend=expend, $
 
    cameras = strarr(nfile)
    obscomm = strarr(nfile)
+   quality = strarr(nfile)
    mjdarr = lonarr(nfile)
    exposure = lonarr(nfile)
 
@@ -133,6 +134,7 @@ pro spflatgen, mjd=mjd, expnum=expnum, expstart=expstart, expend=expend, $
       hdr = sdsshead(files[ifile])
       cameras[ifile] = strtrim(sxpar(hdr, 'CAMERAS'),2)
       obscomm[ifile] = strtrim(sxpar(hdr, 'OBSCOMM'),2)
+      quality[ifile] = strtrim(sxpar(hdr, 'QUALITY'),2)
       mjdarr[ifile] = sxpar(hdr, 'MJD')
       exposure[ifile] = sxpar(hdr, 'EXPOSURE')
       print, '.', format='(a,$)'
@@ -142,8 +144,10 @@ pro spflatgen, mjd=mjd, expnum=expnum, expstart=expstart, expend=expend, $
    for icam=0, ncam-1 do begin
       ; Select flats and arcs for this camera
       iflats = where(cameras EQ camnames[icam] $
+       AND quality NE 'bad' $
        AND obscomm EQ '{dithered flats-flat}', nflat)
       iarcs = where(cameras EQ camnames[icam] $
+       AND quality NE 'bad' $
        AND obscomm EQ '{dithered flats-arc}', narc)
 
       ; Re-sort each list by exposure number
