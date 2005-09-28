@@ -264,6 +264,8 @@ etc/spPlateList.par: Add 436 new plates, through MJD 53360 (Dec 21, 2004).
         Marked plates for DR5, according to sdss-archive/2661 (226 plates) and
         sdss-archive/2684 (89 plates).  Note that I already had the following
         two plates in DR4: 712/52179 and 1664/52965, and will keep them there.
+        I've also added 1138/53228 and 1144/53238 to DR5, since the Spectro v5
+        reductions turn these plates into 'marginal' rather than 'bad.
 examples/opECalib-51577.par: Update the gains based upon work by Eric Switzer
         and a more careful look at a recent set of identical flats taken
         on the night MJD 53114.  I've updated the numbers as follows for
