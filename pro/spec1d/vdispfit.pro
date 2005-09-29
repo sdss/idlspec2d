@@ -45,7 +45,9 @@
 ;                           overlapping the templates minus the number of
 ;                           templates minus the number of polynomial terms
 ;                           minus 1 (the last 1 is for the velocity dispersion)
-;                vdisptheta : ???
+;                vdisptheta : Coefficients for each template, where the
+;                           first terms are for the stellar templates
+;                           followed by those for the polynomial terms
 ;
 ; OPTIONAL OUTPUTS:
 ;   yfit       - Best-fit template (actually, the one with the closest
