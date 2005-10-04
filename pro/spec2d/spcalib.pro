@@ -451,8 +451,6 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
 
          endelse
 
-;         qaplot_arcline, xdif_tset, lambda, filename=arcname[iarc], color=color
-
       endif
 
       arcstruct[iarc].name = arcname[iarc]
