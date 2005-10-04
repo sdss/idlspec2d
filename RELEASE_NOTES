@@ -83,6 +83,10 @@ PLOTSN: Choose which objects are "good" on a filter-by-filter basis,
 PLOTSPEC: Add capability to plot reconstructed frames (added by Blanton).
         Fix units on Y axis to /cm^2 instead of /cm (was fixed in v4_9_13
         when plotting to files, but not when to the terminal).
+        Break out call to displaying photo images with a call to
+        the new routine PLOTSPEC_IMAGE.
+PLOTSPEC_IMAGE: New routine called by PLOTSPEC for displaying images
+        with calls to the photoop product.
 QAPLOT_FCALIBVEC: Put plots for each spectrograph on its own page, and
         put offsets between the plots for all objects, F stars, and QSOs
         so that we can see the plots more easily.  Also, smooth the plots
@@ -266,6 +270,26 @@ etc/spPlateList.par: Add 436 new plates, through MJD 53360 (Dec 21, 2004).
         two plates in DR4: 712/52179 and 1664/52965, and will keep them there.
         I've also added 1138/53228 and 1144/53238 to DR5, since the Spectro v5
         reductions turn these plates into 'marginal' rather than 'bad.
+        Note that the following 18 'good' or 'marginal' plates could be
+        included (c.f. sdss-archive/26744):
+          230       52251  special
+          231       52221  special
+         1244       52674  special
+         1247       52677  special
+         1250       52930  special
+         1251       52964  special
+         1252       52970  special
+         1253       52974  special
+         1254       52972  special
+         1256       52902  special
+         1257       52944  special
+         1259       52931  special
+         1637       52992  special
+         1638       52999  special
+         1641       53032  special
+         1907       53265  special
+         1913       53295  special
+         1917       53295  special
 examples/opECalib-51577.par: Update the gains based upon work by Eric Switzer
         and a more careful look at a recent set of identical flats taken
         on the night MJD 53114.  I've updated the numbers as follows for
