@@ -188,6 +188,8 @@ arcivar = 0
    splog, 'Searching for wavelength solution'
    fitarcimage, flux, fluxivar, xpeak, ypeak, wset, ncoeff=arccoeff, $
     color=color, lampfile=lampfile, bestcorr=corr
+   if (NOT keyword_set(wset)) then $
+    message, 'ABORT: Failed to find wavelength solution!'
 
    ;---------------------------------------------------------------------------
    ; Construct wavelength image
