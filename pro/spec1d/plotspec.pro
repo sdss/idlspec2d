@@ -105,6 +105,7 @@
 ;   djs_oplot
 ;   djs_plot
 ;   djs_xyouts
+;   plotspec_image
 ;   readspec
 ;   soplot
 ;   splot
@@ -563,24 +564,22 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
             print, '      x=change X plotting range'
             print, '      y=change Y plotting range'
             print, '      z=change which PCA-fit to overplot'
-            print, '      v=to look at reconstructed frame'
+            print, '      v=view reconstructed frame'
             print, '      any other key=forward'
 
             cc = strupcase(get_kbrd(1))
-            print,cc
+            print, cc
             case cc of
-; Begin MB 06/17/02
             'V': begin
-                    readspec, platelist[ifiber], fiberid[ifiber], $
-                      mjd=mjdlist[ifiber], zans=zans
-                    fpframe=fpbin_to_frame(ra=zans.plug_ra, $
-                                           dec=zans.plug_dec, $
-                                           cutout=300, $
-                                           /calibrate, /register, /allid, $
-                                           rerun=137, hdr=hdr)
-                    atv, fpframe, head=hdr
+                    if (keyword_set(getenv('PHOTOOP_DIR'))) then begin
+                       readspec, platelist[ifiber], fiberid[ifiber], $
+                        mjd=mjdlist[ifiber], zans=zans, /silent
+                       plotspec_image, ra=zans.plug_ra, dec=zans.plug_dec, $
+                        cutout=300, /calibrate, /register, /allid
+                    endif else begin
+                       print, 'Need to set up photoop product to display images'
+                    endelse
                  end
-; End MB 06/17/02
             'B': ifiber = (ifiber - 1) > 0
             'P': begin
                     read, plate, mjd, prompt='Enter new plate and MJD (enter 0 for unknown MJD): '
