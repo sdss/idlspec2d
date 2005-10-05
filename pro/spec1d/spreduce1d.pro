@@ -146,6 +146,9 @@ pro spreduce1d, platefile, fiberid=fiberid, doplot=doplot, debug=debug
 ;   dispmap = mrdfits(platefile,4)
    plugmap = mrdfits(platefile,5)
    skyflux = mrdfits(platefile,6)
+   ; For plate files before Spectro-2D v5, there are no sky vectors,
+   ; and this last HDU is something else.
+   if (n_elements(skyflux) NE n_elements(objflux)) then skyflux = 0
 
    anyandmask = transpose(andmask[0,*])
    anyormask = transpose(ormask[0,*])
@@ -172,7 +175,7 @@ ormask = 0 ; Free memory
       anyandmask = anyandmask[fiberid-1]
       anyormask = anyormask[fiberid-1]
       plugmap = plugmap[fiberid-1]
-      skyflux = skyflux[*,fiberid-1]
+      if (keyword_set(skyflux)) then skyflux = skyflux[*,fiberid-1]
       nobj = n_elements(fiberid)
    endif else begin
       fiberid = lindgen(nobj) + 1
@@ -409,9 +412,12 @@ ormask = 0 ; Free memory
     waveimg=wavevec, mask=(objivar EQ 0))
    spectroflux[*,0,*] = transpose(fthru) * 10^((22.5 + 48.6 - 2.5*17.)/2.5)
 
-   sthru = filter_thru(skyflux * rebin(flambda2fnu,npixobj,nobj), $
-    waveimg=wavevec, mask=(objivar EQ 0))
-   spectroskyflux[*,0,*] = transpose(sthru) * 10^((22.5 + 48.6 - 2.5*17.)/2.5)
+   if (keyword_set(skyflux)) then begin
+      sthru = filter_thru(skyflux * rebin(flambda2fnu,npixobj,nobj), $
+       waveimg=wavevec, mask=(objivar EQ 0))
+      spectroskyflux[*,0,*] = $
+       transpose(sthru) * 10^((22.5 + 48.6 - 2.5*17.)/2.5)
+   endif
 
    ; Loop in reverse order, so that we look at the best-fit spectra last,
    ; and keep those spectra around for later.
