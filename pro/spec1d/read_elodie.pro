@@ -7,6 +7,7 @@ function read_elodie, filename, loglam=newloglam, hdr=hdr
 
    if (n_params() LT 1) then begin
       print, 'Syntax: flux = read_elodie(filename, [loglam=, hdr= ])'
+      return, 0
    endif
 
    dloglam = 1.d-4
