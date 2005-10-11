@@ -18,6 +18,9 @@ APO_PLOTSN,PLOTSN: There was a problem long ago whereby the fiber magnitudes
         consistent with the SOS tables.  Note that the old limits will still
         be used by the full Spectro-2D reductions (since those are now tied
         to PSF magnitudes in newly-generated calibObj files).
+ATVRAWSPEC: Plot a red column over every bad column, not just a box around
+        each bad region.  For ex, the 4 bad columns (1112-1115) on r1 will
+        not appear with a 4 red lines.
 COMPUTECHI2: Add optional outputs COVAR,VAR.
 ELODIE_BEST: Trim to stars not labelled as binary or triple stars, according
         to the Q_VR keyword in the Elodie FITS headers.  Rockosi brought
