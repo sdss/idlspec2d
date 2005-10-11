@@ -121,6 +121,10 @@ pro atvrawspec, filename, _EXTRA=KeywordsForATV
          atvplot, bc[ibc].dfcol0+[0,bc[ibc].dfncol-1,bc[ibc].dfncol-1,0,0], $
           bc[ibc].dfrow0+[0,0,bc[ibc].dfnrow-1,bc[ibc].dfnrow-1,0], $
           color=badcolor
+         if (bc[ibc].dfncol GE 3) then $
+          for j=1, bc[ibc].dfncol-2 do $
+           atvplot, bc[ibc].dfcol0+[j,j], bc[ibc].dfrow0+[0,bc[ibc].dfnrow-1], $
+            color=badcolor
       endelse
    endfor
 
