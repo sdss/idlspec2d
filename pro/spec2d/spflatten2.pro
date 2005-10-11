@@ -292,7 +292,7 @@ arcivar = 0
 flux = 0
 fluxivar = 0
       x2 = float(djs_laxisgen([nx,ny],iaxis=0)) / 2048. ; CCD-X position
-      fitimg = bspline_valu(waveimg, asset, x2=x2)
+      fitimg = float( bspline_valu(waveimg, asset, x2=x2) )
 fitimg = fitimg > 0.02 ; ???
 
       ;----------------------
