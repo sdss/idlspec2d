@@ -165,6 +165,8 @@ SPCOADD_V5: Apply the flux-distortion image to the sky vectors, as well
         rather than using RA,DEC.  This is because there are the bizarre
         plates like SEGUE plate 2255 that has the same object several times.
 SPFLATGEN: Discard exposures where the quality keyword is set to 'bad'.
+SPFLATTEN2: Recast an internal variable to float to prevent double-precision
+        output files.
 SPFLUX_READ_KURUCZ: This function was pulled out of SPFLUX_V5.
 SPFLUX_V5: Pull out the SPFLUX_READ_KURUCZ() code as a separate function.
         Comment-out the median/mean rescaling factor in SPFLUX_MRATIO_FLATTEN(),
