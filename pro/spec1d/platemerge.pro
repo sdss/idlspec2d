@@ -36,10 +36,10 @@
 ;   multiple times will have SPECPRIMARY=1 for one instance only, and =0
 ;   for all other instances.  The criteria (in order of importance) are
 ;   as follows:
-;     1) Prefer PROGNAME='main' over any other program names
+;     1) Prefer observations with positive SN_MEDIAN
 ;     2) Prefer PLATEQUALITY='good' over any other plate quality
 ;     3) Prefer observations with ZWARNING=0
-;     4) Prefer the observation with the larger PLATESN2
+;     4) Prefer objects with larger SN_MEDIAN
 ;
 ;   Temporary files are created first, such as 'spAll.fits.tmp', which
 ;   are renamed at the end of the routine to 'spAll.fits', etc.
@@ -51,8 +51,8 @@
 ; DATA FILES:
 ;
 ; PROCEDURES CALLED:
-;   djs_angle_match()
-;   djs_diff_angle()
+;   copy_struct
+;   copy_struct_inx
 ;   djs_filepath()
 ;   headfits()
 ;   hogg_mrdfits()
@@ -62,6 +62,8 @@
 ;   platelist
 ;   readspec
 ;   repstr
+;   spheregroup
+;   splog
 ;   struct_print
 ;   sxaddpar
 ;   sxpar()
@@ -159,7 +161,7 @@ pro platemerge, plate, mjd=mjd, outroot=outroot1, public=public
       tsobj0 = plug2tsobj(plist[ifile].plate, 0, 0)
       ifile = ifile + 1
       if (ifile EQ nfile) then $
-       message, 'No tsObj files found!'
+       message, 'No calibObj files found!'
    endwhile
 
    ;----------
@@ -229,84 +231,37 @@ pro platemerge, plate, mjd=mjd, outroot=outroot1, public=public
 
    t2 = systime(1)
 
-   outdat.specprimary = 1 ; Start as all objects set to primary
-   ; Start with each object having a unique object ID...
-   outdat.specobj_id = lindgen(n_elements(outdat)) + 1L
+   ; Determine the score for each object
+   ; 1) Prefer observations with positive SN_MEDIAN
+   ; 2) Prefer PLATEQUALITY='good' over any other plate quality
+   ; 3) Prefer observations with ZWARNING=0
+   ; 4) Prefer objects with larger SN_MEDIAN
+   score = 4 * (outdat.sn_median GT 0) $
+    + 2 * (strmatch(outdat.platequality,'good*') EQ 1) $
+    + 1 * (outdat.zwarning EQ 0) $
+    + (outdat.sn_median>0) / max(outdat.sn_median+1.)
 
-   ; Loop through each possible pairing of plates, paying attention
-   ; only to those within 4.5 deg of eachother on the sky.
-   ; (This is a rather generous match distance; 3.0 deg should be enough
-   ; unless there is a mistake somewhere.)
+   ingroup = spheregroup(outdat.plug_ra, outdat.plug_dec, dtheta, $
+    multgroup=multgroup, firstgroup=firstgroup, nextgroup=nextgroup)
 
-   for ifile1=0L, nfile-1 do begin
-      for ifile2=ifile1+1L, nfile-1 do begin
-         adist = djs_diff_angle(plist[ifile1].ra, plist[ifile1].dec, $
-          plist[ifile2].ra, plist[ifile2].dec)
-         if (adist LT 4.5) then begin
-            print, 'Matching plate #', ifile1+1, ' and ', ifile2+1, $
-             ' (of ', nfile, ')'
-            indx1 = ifile1 * 640L + lindgen(640)
-            indx2 = ifile2 * 640L + lindgen(640)
-            nn = djs_angle_match(outdat[indx1].plug_ra, outdat[indx1].plug_dec, $
-             outdat[indx2].plug_ra, outdat[indx2].plug_dec, dtheta=dtheta, $
-             mcount=mcount, mindx=mindx, mmax=1)
-            for i1=0, n_elements(indx1)-1 do begin
-               if (mcount[i1] GT 1) then $
-                message, 'More than 1 match found between two plates!'
-               if (mcount[i1] EQ 1) then begin
-                  ; Resolve a conflict between object indx1[i1]
-                  ; and indx2[mindx[i1]]
-                  ; 1) Prefer PROGNAME='main' over any other program names
-                  ; 2) Prefer PLATEQUALITY='good' over any other plate quality
-                  ; 3) Prefer observations with ZWARNING=0
-                  ; 4) Prefer the observation with the larger PLATESN2
-                  j1 = indx1[i1]
-                  j2 = indx2[mindx[i1]]
-                  if ((strmatch(outdat[j1].progname,'main*') EQ 1) $
-                   AND (strmatch(outdat[j2].progname,'main*') EQ 0)) then begin
-                     jdup = j2
-                  endif else if ((strmatch(outdat[j1].progname,'main*') EQ 0) $
-                   AND (strmatch(outdat[j2].progname,'main*') EQ 1)) then begin
-                     jdup = j1
-                  endif else if ((strmatch(outdat[j1].platequality,'good*') EQ 1) $
-                   AND (strmatch(outdat[j2].platequality,'good*') EQ 0)) then begin
-                     jdup = j2
-                  endif else if ((strmatch(outdat[j1].platequality,'good*') EQ 0) $
-                   AND (strmatch(outdat[j2].platequality,'good*') EQ 1)) then begin
-                     jdup = j1
-                  endif else if (outdat[j1].zwarning EQ 0 $
-                   AND outdat[j2].zwarning NE 0) then begin
-                     jdup = j2
-                  endif else if (outdat[j1].zwarning NE 0 $
-                   AND outdat[j2].zwarning EQ 0) then begin
-                     jdup = j1
-                  endif else if (outdat[j1].platesn2 GE outdat[j2].platesn2) then begin
-                     jdup = j2
-                  endif else begin
-                     jdup = j1
-                  endelse
+   ; Set the unique object IDs
+   outdat.specobj_id = ingroup + 1L
 
-                  outdat[jdup].specprimary = 0
-                  outdat[j2].specobj_id = outdat[j1].specobj_id
-
-               endif
-            endfor
-         endif
-      endfor
+   for j=0L, n_elements(firstgroup)-1L do begin
+      if (firstgroup[j] NE -1) then begin
+         if (multgroup[j] EQ 1) then begin
+            outdat[firstgroup[j]].specprimary = 1
+            outdat[firstgroup[j]].nspecobs = 1
+         endif else begin
+            indx = lonarr(multgroup[j])
+            indx[0] = firstgroup[j]
+            for k=0L, multgroup[j]-2L do indx[k+1] = nextgroup[indx[k]]
+            foo = max(score[indx], ibest)
+            outdat[ibest].specprimary = 1
+            outdat[indx].nspecobs = multgroup[j]
+         endelse
+      endif
    endfor
-
-   ; Re-number the specobj_id's such that there are no missing numbers.
-   splog, 'Re-numbering SPECOBJID'
-   iuniq = uniq(outdat.specobj_id, sort(outdat.specobj_id))
-   tmpid = outdat[iuniq].specobj_id
-   tmpnum = lonarr(max(outdat.specobj_id)+1L)
-   tmpnum[tmpid] = lindgen(n_elements(tmpid)) + 1L
-   outdat.specobj_id = tmpnum[ outdat.specobj_id ]
-
-   ; Count the number of times each object has been observed
-   splog, 'Counting duplicate observations'
-   nhist = histogram(outdat.specobj_id, min=0L)
-   outdat.nspecobs = nhist[ outdat.specobj_id ]
 
    splog, 'Time to assign primaries = ', systime(1)-t2, ' sec'
 
