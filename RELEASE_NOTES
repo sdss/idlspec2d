@@ -74,9 +74,16 @@ PLATELIST: Use FINDFILE() function to see if files exist before calling
         MRDFITS(); this should be a slight speed-improvement.
 PLATEMERGE: Add the fields CALIBFLUX,CALIBFLUX_IVAR which are explicitly
         copied over from the plug-map structures.
-        Get rid of the ZFILE option in place of the PLATE,MJD options.
-        Make robust to the spZLine structures being different for
+          Get rid of the ZFILE option in place of the PLATE,MJD options.
+          Make robust to the spZLine structures being different for
         different plates, for ex. if different code versions were used.
+          Re-write the bit of code that matches objects.  This was necessary
+        to address PR #6583, since there are now some bizarre, special
+        plates where the same object appears twice.  Note that this also
+        fixes the bug whereby some objects are not matched if the plate list
+        has incorrect central RA,DEC positions (such as plate 1274 on MJD 52995
+        where those values are NaNs).  The new implementation uses SPHEREGROUP.
+        Also, the logic for setting SPECPRIMARY was slightly changed.
 PLOTSN: Choose which objects are "good" on a filter-by-filter basis,
         to avoid stars with crazy magnitudes (like 0 or -9999) from
         throwing the plots (for example, on SEGUE plate 2255).
