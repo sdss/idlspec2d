@@ -69,7 +69,7 @@ pro spbiasave, mjd=mjd, mjstart=mjstart, mjend=mjend, mjout=mjout, $
       files = findfile(djs_filepath('pixbias-*-'+camnames[icam]+'.fits', $
        root_dir=indir), count=nfile)
       if (nfile GT 0) then begin
-         thismjd = long(strmid(fileandpath(files),9,5))
+         thismjd = long(strmid(fileandpath(files),8,5))
          qkeep = bytarr(nfile) + 1
          if (keyword_set(mjstart)) then $
           qkeep = qkeep AND (thismjd GE mjstart)

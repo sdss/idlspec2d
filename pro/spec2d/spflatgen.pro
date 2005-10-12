@@ -53,6 +53,7 @@
 ;     53132 53162 53220 53257 ...???
 ;     53610 53633
 ;     53649 (15 dithers)
+;     53651 (15 dithers)
 ;   Generate one of these sets of flats with:
 ;     spflatgen, mjd=51781, outdir='.'
 ;

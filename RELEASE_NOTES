@@ -1,3 +1,4 @@
+Fix strmid off-by-1 in spflatave and spbiasave.
 
 ; Need to do the following computation in double-precision!!
 ; Tentatively re-caste as such within VDISPFIT in call to COMPUTECHI2.
