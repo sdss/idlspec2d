@@ -74,6 +74,8 @@
 ;                          'bad'      if MINSN2 < 13.0
 ;   PLATEQUALITY is set to 'marginal' if FBADPIX > 0.05
 ;                          'bad'      if FBADPIX > 0.10
+;   PLATEQUALITY is set to 'marginal' if min(NEXP_*) < 3
+;                          'bad'      if min(NEXP_*) < 2
 ;
 ;   Decide which plates constitute unique tiles with the required S/N,
 ;   then set QSURVEY=1.  Require PLATEQUALITY='good' or 'marginal'.
@@ -213,6 +215,10 @@ pro platelist, infile, plist=plist, create=create, $
     'qsurvey'  , 0L,  $
     'mjdlist'  , ' ', $
     'nexp'     , 0L,  $
+    'nexp_b1'  , 0L,  $
+    'nexp_b2'  , 0L,  $
+    'nexp_r1'  , 0L,  $
+    'nexp_r2'  , 0L,  $
     'expt_b1'  , 0.0, $
     'expt_b2'  , 0.0, $
     'expt_r1'  , 0.0, $
@@ -438,6 +444,10 @@ pro platelist, infile, plist=plist, create=create, $
 ;          plist[ifile].dec, tai=plist[ifile].tai)
          plist[ifile].exptime = sxpar(hdr1, 'EXPTIME')
          plist[ifile].nexp = sxpar(hdr1, 'NEXP')
+         plist[ifile].nexp_b1 = sxpar(hdr1, 'NEXP_B1')
+         plist[ifile].nexp_b2 = sxpar(hdr1, 'NEXP_B2')
+         plist[ifile].nexp_r1 = sxpar(hdr1, 'NEXP_R1')
+         plist[ifile].nexp_r2 = sxpar(hdr1, 'NEXP_R2')
          plist[ifile].expt_b1 = sxpar(hdr1, 'EXPT_B1')
          plist[ifile].expt_b2 = sxpar(hdr1, 'EXPT_B2')
          plist[ifile].expt_r1 = sxpar(hdr1, 'EXPT_R1')
@@ -723,6 +733,9 @@ pro platelist, infile, plist=plist, create=create, $
    qualstring = ['bad', 'marginal', 'good']
    for ifile=0, nfile-1 do begin
       if (strtrim(plist[ifile].statuscombine,2) EQ 'Done') then begin
+         nexp_min = min( $
+          [plist[ifile].nexp_b1, plist[ifile].nexp_b2, $
+          plist[ifile].nexp_r1, plist[ifile].nexp_r2], max=nexp_max)
          plist[ifile].platesn2 = min( $
           [plist[ifile].sn2_g1, plist[ifile].sn2_i1, $
           plist[ifile].sn2_g2, plist[ifile].sn2_i2])
@@ -731,6 +744,11 @@ pro platelist, infile, plist=plist, create=create, $
          if (plist[ifile].platesn2 LT 15) then iqual = iqual < 1
          if (plist[ifile].fbadpix GT 0.10) then iqual = iqual < 0
          if (plist[ifile].fbadpix GT 0.05) then iqual = iqual < 1
+         ; For reductions before v5_1, NEXP_MIN and NEXP_MAX are always zero
+         if (nexp_max GT 0) then begin
+            if (nexp_min LT 2) then iqual = iqual < 0
+            if (nexp_min LT 3) then iqual = iqual < 1
+         endif
          if (NOT keyword_set(strtrim(plist[ifile].platequality))) then $
           plist[ifile].platequality = qualstring[iqual]
       endif
