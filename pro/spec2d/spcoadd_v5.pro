@@ -149,6 +149,7 @@ pro spcoadd_v5, spframes, outputname, $
 
    if NOT keyword_set(camnames) then camnames = ['b1', 'b2', 'r1', 'r2']
    ncam = N_elements(camnames)
+   nexpvec = lonarr(ncam)
    exptimevec = fltarr(ncam)
 
    ;---------------------------------------------------------------------------
@@ -213,6 +214,7 @@ pro spcoadd_v5, spframes, outputname, $
       icam = (where(cameras EQ camnames))[0]
       if (icam EQ -1) then $
        message, 'Unknown camera ' + cameras
+      nexpvec[icam] = nexpvec[icam] + 1
       exptimevec[icam] = exptimevec[icam] + sxpar(hdr, 'EXPTIME')
 
       ;----------
@@ -315,8 +317,8 @@ pro spcoadd_v5, spframes, outputname, $
        else nminfile = nminfile < nmatch
    endfor
 ; ??? Should make this routine robust to fewer files!!!
-   if (nminfile LT 2) then begin
-      splog, 'ABORT: At least 2 files needed for each camera'
+   if (nminfile LT 1) then begin
+      splog, 'ABORT: At least 1 file needed for each camera'
       return
    endif
 
@@ -619,6 +621,9 @@ pro spcoadd_v5, spframes, outputname, $
 
    sxaddpar, bighdr, 'EXPTIME', min(exptimevec), $
     ' Minimum of exposure times for all cameras'
+   for icam=0, ncam-1 do $
+    sxaddpar, bighdr, 'NEXP_'+camnames[icam], nexpvec[icam], $
+     ' '+camnames[icam]+' camera number of exposures', before='EXPTIME'
    for icam=0, ncam-1 do $
     sxaddpar, bighdr, 'EXPT_'+camnames[icam], exptimevec[icam], $
      ' '+camnames[icam]+' camera exposure time (seconds)', before='EXPTIME'
