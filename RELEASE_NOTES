@@ -76,6 +76,9 @@ LRGMODEL_PHOTOZ: Optionally compute and return FITFLUX.
 PCA_SOLVE: Make loop variables long ints.
 PLATELIST: Use FINDFILE() function to see if files exist before calling
         MRDFITS(); this should be a slight speed-improvement.
+        Since the v5 version of this code will combine data with as few as
+        1 exposure in a given camera, set the plate quality to 'bad' if there
+        is only 1 exposure, or 'mariginal' if only 2 exposures in any given CCD.
 PLATEMERGE: Add the fields CALIBFLUX,CALIBFLUX_IVAR which are explicitly
         copied over from the plug-map structures.
           Get rid of the ZFILE option in place of the PLATE,MJD options.
@@ -168,6 +171,7 @@ SPCOADD_V5: Apply the flux-distortion image to the sky vectors, as well
         Match objects between exposures by XFOCAL,YFOCAL in the plugmap
         rather than using RA,DEC.  This is because there are the bizarre
         plates like SEGUE plate 2255 that has the same object several times.
+        Add keywords NEXP_B1,NEXP_B2,NEXP_R1,NEXP_R2 to output header.
 SPFLATGEN: Discard exposures where the quality keyword is set to 'bad'.
 SPFLATTEN2: Recast an internal variable to float to prevent double-precision
         output files.
@@ -303,6 +307,9 @@ etc/spPlateList.par: Add 436 new plates, through MJD 53360 (Dec 21, 2004).
          1907       53265  special
          1913       53295  special
          1917       53295  special
+examples/opBC-50000.par,opBC-51809.par,opBC-51813.par: Added a partial
+        bad column on the b2 CCD that is responsible for some of the absorption
+        glitches seen in fibers 343+344 (c.f. PR #3681).
 examples/opECalib-51577.par: Update the gains based upon work by Eric Switzer
         and a more careful look at a recent set of identical flats taken
         on the night MJD 53114.  I've updated the numbers as follows for
