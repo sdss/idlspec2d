@@ -285,8 +285,8 @@ pro combine1fiber, inloglam, objflux, objivar, $
 
                endif
 
-               lowside = fix((inloglam[these]-newloglam[0])/binsz)
-               highside = lowside + 1
+               lowside = floor((inloglam[these]-newloglam[0])/binsz)
+               highside = lowside + 1L
 
                if (arg_present(andmask) AND keyword_set(finalmask)) then begin
                   andmask[lowside] = andmask[lowside] AND finalmask[these]
