@@ -163,4 +163,6 @@ spchunklist     122 2264 2288 main      ""
 spchunklist     123 2289 2298 main      ""
 spchunklist     124 2299 2300 special   "SEGUE bright"
 spchunklist     125 2301 2302 special   "SEGUE faint"
+spchunklist     126 2303 2317 special   "SEGUE"
+spchunklist     127 2318 2332 special   "SEGUE"
 
