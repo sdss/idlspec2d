@@ -72,7 +72,7 @@ pro platecompare, plate, mjd=mjd, topdir=topdir, psfile=psfile
       return
    endif
 
-   charsize = 2.0
+   charsize = 1.5
 
    if (keyword_set(mjd)) then begin
       if (n_elements(plate) EQ 1) then begin
