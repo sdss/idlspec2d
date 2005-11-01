@@ -156,6 +156,7 @@ SKYSUBTRACT: Return the trace-set RELCHI2SET instead of RELCHI2STRUCT,
         Recast "fullfit" to floating-point to avoid returning a double-
           precision sky array.  This was happening due to same changes to
           the B-spline code to support double-precision.
+SLITHISTORY: Do not plot missing measurements (zeros).
 SMOOTH_SUPERFLAT: Bug fix, whereby we could trigger a warning message when
         the ends of the wavelength range did not have any good data points.
         In such a case, the fits are meaningless, and any value could result.
