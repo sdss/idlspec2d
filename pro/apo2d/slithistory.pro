@@ -18,17 +18,15 @@
 ;
 ; COMMENTS:
 ;   A single PostScript file is created "Slithistory-$MJDSTART-$MJDEND.ps",
-;   with one page per cartridge.  The top panel shows the number of fibers
-;   plugged as a function of MJD.  The bottom panel shows the fraction
-;   of times each fiber is plugged, with < 90%-plugged fibers labelled
-;   with their fiber number. ???
+;   with one page per cartridge.  The fiber bundle spacing is plotted
+;   in units of the fiber-mapper stepper motor steps.
 ;
 ; EXAMPLES:
 ;   Make plots of history of slit-head positions for all time:
 ;     IDL> slithistory
 ;
 ;   Make plots of history of slit-head positions between MJD 52000 and MJD 52020:
-;     IDL> setenv, 'ASTROLOG_DIR=/u/schlegel/idlmapper/tmp3'
+;     IDL> setenv, 'ASTROLOG_DIR=/scr/spectro1/spectro/scan'
 ;     IDL> slithistory, mjdrange=[52000,52020]
 ;
 ; BUGS:
@@ -131,15 +129,15 @@ pro slithistory, mjdrange=mjdrange
             for ibund=0, nbund-1 do begin
                thiscolor = colorvec[ibund MOD n_elements(colorvec)]
                if (ibund EQ 0) then $
-                djs_plot, mjdvec[ifile], bundspace[*,ibund], $
-                 psym=psym, color=thiscolor, $
+                djs_plot, [0,1], [0,1], /nodata, $
                  xrange=xrange, yrange=yrange, /xstyle, /ystyle, $
                  xtickformat='(i5)', charsize=1.2, $
-                 xtitle='MJD', ytitle='Gap size [motor steps]', title=title $
-               else $
-                djs_oplot, mjdvec[ifile], bundspace[*,ibund], $
-                 psym=psym, color=thiscolor
-               djs_xyouts, mjdvec[ifile[nmatch-1]], bundspace[nmatch-1,ibund], $
+                 xtitle='MJD', ytitle='Gap size [motor steps]', title=title
+               ii = where(bundspace[*,ibund] NE 0) > 0
+               djs_oplot, [mjdvec[ifile[ii]]], [bundspace[ii,ibund]], $
+                psym=psym, color=thiscolor
+               ilast = ii[n_elements(ii)-1]
+               djs_xyouts, mjdvec[ifile[ilast]], bundspace[ilast,ibund], $
                 ' '+strtrim(string(fibernum[ibund]),2), color=thiscolor
             endfor
          endfor
