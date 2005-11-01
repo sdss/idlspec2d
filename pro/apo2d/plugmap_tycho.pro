@@ -61,9 +61,6 @@ pro tycho_plot_unplugged, plugdat, plotfile=plotfile, title=title, $
 
    pobj = plugdat[iobject]
 
-   ; Determine which objects are too bright
-   misslist = ibright
-
    if (keyword_set(plotfile)) then $
     dfpsplot, plotfile, /square, /color
 
@@ -72,13 +69,13 @@ pro tycho_plot_unplugged, plugdat, plotfile=plotfile, title=title, $
      title=title, xtitle='xFocal [mm]', ytitle='yFocal [mm]'
    oplot, [-320], [320], psym=1, symsize=0.5
    xyouts, [-320], [320], '  Plugged fiber'
-   if (misslist[0] NE -1) then begin
-      djs_oplot, [pobj[misslist].xfocal], [pobj[misslist].yfocal], $
+   if (ibright[0] NE -1) then begin
+      djs_oplot, [plugdat[ibright].xfocal], [plugdat[ibright].yfocal], $
        psym=2, symsize=2, color='red'
-      nbright = n_elements(misslist)
+      nbright = n_elements(ibright)
    endif else nbright = 0
    djs_oplot, [-320], [300], psym=2, symsize=2, color='red'
-   xyouts, [-320], [300], '  Bright Tycho stars (' + strtrim(nbright) + ')'
+   xyouts, [-320], [300], '  Bright Tycho stars (' + strtrim(nbright,2) + ')'
 
    if (nguide GT 0) then begin
       usersym, cos(findgen(21)*!pi/10), sin(findgen(21)*!pi/10) ; open circ
@@ -126,7 +123,7 @@ pro plugmap_tycho, plugfile, matchdist=matchdist1, mlimit=mlimit1
    racen = yanny_par(hdr, 'raCen')
    deccen = yanny_par(hdr, 'decCen')
    plotfile = 'tycho-' + repstr(fileandpath(plugfile), '.par', '.ps')
-   title = 'TYCHO STARS ON PLATE ' + strtrim(yanny_par(hdr, 'plateId')) $
+   title = 'TYCHO STARS ON PLATE ' + strtrim(yanny_par(hdr, 'plateId'),2) $
     + ' V < ' + string(mlimit,format='(f5.2)')
 
    tyc = tycho_read(racen=racen, deccen=deccen, radius=1.6)
@@ -136,11 +133,14 @@ pro plugmap_tycho, plugfile, matchdist=matchdist1, mlimit=mlimit1
    if (i2[0] NE -1) then begin
       ii = where(tyc[i2].vtmag LE mlimit, ct)
       if (ct GT 0) then begin
-         ibright = iobj[i2[ii]]
+         ibright = iobj[i1[ii]]
          for i=0L, ct-1L do $
-          splog, 'Bright star' $
+          splog, 'Bright' $
            + ' RA= ' + string(plugdat[ibright[i]].ra,format='(f8.4)') $
-           + ' Dec= ' + string(plugdat[ibright[i]].dec,format='(f8.4)')
+           + ' Dec= ' + string(plugdat[ibright[i]].dec,format='(f8.4)') $
+           + ' X= ' + string(plugdat[ibright[i]].xfocal,format='(f5.0)') $
+           + ' Y= ' + string(plugdat[ibright[i]].xfocal,format='(f5.0)') $
+           + ' Vmag= ' + string(tyc[i2[ii[i]]].vtmag,format='(f4.1)')
       endif
       splog, 'Number of bright stars = ', ct
    endif
