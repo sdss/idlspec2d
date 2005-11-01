@@ -101,6 +101,7 @@ PLOTSPEC: Add capability to plot reconstructed frames (added by Blanton).
         the new routine PLOTSPEC_IMAGE.
 PLOTSPEC_IMAGE: New routine called by PLOTSPEC for displaying images
         with calls to the photoop product.
+PLUGMAP_TYCHO: New proc for plotting bright Tycho stars on a plate.
 QAPLOT_FCALIBVEC: Put plots for each spectrograph on its own page, and
         put offsets between the plots for all objects, F stars, and QSOs
         so that we can see the plots more easily.  Also, smooth the plots
