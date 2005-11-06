@@ -16,7 +16,8 @@
 ; OPTIONAL INPUTS:
 ;   objlogam   - Log10(Angstroms) image for object frame [NPIX,NFIBER];
 ;                required input for modifying PIXELMASK
-;   filtsz     - Filter size for looking for Red Monster; default to 25 pix
+;   filtsz     - Filter size for looking for Red Monster; default to 25 pix,
+;                but not more than the number of pixels in RELLOGLAM
 ;   thresh     - Treshold in relative chi^2 for identifying REDMONSTER;
 ;                in the pixel mask; default to 4.0.
 ;   pixelmask  - If this and OBJLOGLAM are specified, then add the REDMONSTER
@@ -39,19 +40,21 @@
 ;   14-Mar-2001  Written by D. Schlegel, Princeton
 ;-
 ;------------------------------------------------------------------------------
-pro redmonster, relloglam, relchi2, objloglam, filtsz=filtsz, $
+pro redmonster, relloglam, relchi2, objloglam, filtsz=filtsz1, $
  thresh=thresh, pixelmask=pixelmask
 
-   if (NOT keyword_set(filtsz)) then filtsz = 25
+   if (keyword_set(filtsz1)) then filtsz = filtsz1 $
+    else filtsz = 25
    if (NOT keyword_set(thresh)) then thresh = 4.0
 
+   nbin = n_elements(relloglam)
+   filtsz = filtsz < nbin
    filtwd = (filtsz-1)/2 ; Half-width of filter
 
    ;----------
    ; Filter the relative chi^2 vector to be the lowest quartile value
    ; within a moving filter of size FILTSZ.
 
-   nbin = n_elements(relloglam)
    filtchi2 = fltarr(nbin)
    for ibin=0, nbin-1 do begin
       i0 = (ibin - filtwd) > 0L
