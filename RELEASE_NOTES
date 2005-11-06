@@ -223,7 +223,11 @@ SPREDUCE1D: (Use the B-spline spectra for QSO-fitting).
         When computing FRACNSIGMA,FRACNSIGHI,FRACNSIGLO, ignore points
         blueward of rest-frame 1216 Ang, since these numbers would then
         be dominated by LyA absorption in QSOs.  (This is PR #2703.)
+        Add call to STAR_DVELOCITY, but only for stars, even though in
+        principle it should work for any objects.
 SSHIFT,SSHIFT2D: Remove these routines that are in the idlutils product.
+STAR_DVELOCITY: New proc to solve for velocity shifts between multiple
+        exposures.
 SYNTHSPEC,ZFIND: If the eigenspectrum file does not contain in image in HDU #0,
         then look for a B-spline in HDU #1 and assume that it describes
         a B-spline.  (This is what we're trying to use for QSOs now.)
