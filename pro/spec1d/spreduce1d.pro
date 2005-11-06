@@ -52,6 +52,7 @@
 ;   splog
 ;   skymask()
 ;   speclinefit
+;   star_dvelocity()
 ;   struct_addtags()
 ;   sxaddpar
 ;   sxdelpar
@@ -456,6 +457,7 @@ ormask = 0 ; Free memory
       spectrosynflux[*,iper,*] = $
        transpose(fthru) * 10^((22.5 + 48.6 - 2.5*17.)/2.5)
    endfor
+flambda2fnu = 0 ; Free memory
 
    splog, 'CPU time to generate chi^2 statistics = ', systime(1)-t0
 
@@ -634,6 +636,19 @@ ormask = 0 ; Free memory
    splog, 'CPU time to fit to Elodie = ', systime(1)-t0
 
    ;----------
+   ; Find the best-fit Elodie star for all objects classified as stars
+
+   fitindx = where(strtrim(res_all[0,*].class,2) EQ 'STAR', nfit)
+   splog, 'Fitting velocity shifts for ', nfit, ' stars'
+   t0 = systime(1)
+
+   res_vshift = star_dvelocity(res_all[0].plate, mjd=res_all[0].mjd, $
+    fitindx=fitindx, path='.')
+;    fitindx=res_all[0,*].fiberid, path='.') ; Fit all objects, not just stars
+
+   splog, 'CPU time to fit to star velocity shifts = ', systime(1)-t0
+
+   ;----------
    ; Compute the errors in the magnitudes.
    ; Do this by looking at the dispersion in the sky-fiber fluxes.
    ; We assign identical errors (in linear flux units) to all 640 fibers.
@@ -738,6 +753,7 @@ ormask = 0 ; Free memory
    sxaddpar, hdr, 'UNAME', uname[0]
 
    zans = struct_addtags((res_all[0,*])[*], res_elodie)
+   zans = struct_addtags(zans, res_vshift)
    mwrfits, 0, zbestfile, hdr, /create ; Retain the original header in first HDU
    mwrfits, zans, zbestfile
    mwrfits, synflux, zbestfile
