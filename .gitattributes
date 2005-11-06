@@ -370,6 +370,7 @@ pro/spec1d/solvefilter.pro -text
 pro/spec1d/spec_append.pro -text
 pro/spec1d/speclinefit.pro -text
 pro/spec1d/spreduce1d.pro -text
+pro/spec1d/star_dvelocity.pro -text
 pro/spec1d/synthspec.pro -text
 pro/spec1d/vdispfit.pro -text
 pro/spec1d/vdisptest.pro -text
