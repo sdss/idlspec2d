@@ -163,7 +163,8 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
             ; Dispose of leading or trailing points with zero weight
 
             ratioset = bspline_iterfit(loglam[indx,i],ratio,invvar=ratioivar, $
-             maxiter=maxiter, upper=upper, lower=lower, /eachgroup, $
+             maxiter=maxiter, upper=upper, lower=lower, $
+             groupsize=n_elements(indx), $
              nord=nord, bkpt=bkpt[istart:iend])
 
             inside = where(loglam[*,i] GE minlam AND loglam[*,i] LE maxlam)

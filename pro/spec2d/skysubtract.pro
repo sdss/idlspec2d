@@ -34,10 +34,10 @@
 ;                This gives us the freedom to use less points for the blue side.
 ;
 ; PARAMETERS FOR SLATEC_SPLINEFIT (for supersky fit):
-;   nord       -
-;   upper      -
-;   lower      -
-;   maxiter    -
+;   nord       - Order of B-spline; default set in BSPLINE_ITERFIT()
+;   upper      - Low rejection sigma; default to 10
+;   lower      - High rejection sigma; default to 10
+;   maxiter    - Maximum number of iterations for reject loop; default to 5
 ;
 ; OUTPUTS:
 ;   skystruct  - structure containing sorted sky wavelengths,flux,fluxivar
@@ -95,6 +95,7 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
    ncol = dims[0]
    nrow = dims[1]
 
+   if (n_elements(maxiter) EQ 0) then maxiter = 5
    if (NOT keyword_set(upper)) then upper = 10.0
    if (NOT keyword_set(lower)) then lower = 10.0
    if (NOT keyword_set(nbkpt)) then nbkpt = ncol
@@ -123,6 +124,13 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
       splog, 'ABORT: No unmasked sky fibers in PLUGMAP'
       return, 0
    endif
+
+   ; At each wavelength, don't reject more than 10% of the sky pixels
+   ; per iteration.  No need to set GROUPSIZE=2, because the B-spline code
+   ; re-sorts all the data into wavelength order first, which effectively
+   ; transposes the data.
+   groupsize = nskies
+   maxrej = ceil(0.10*nskies)
 
    if NOT keyword_set(tai) then airmass = replicate(1.0, nrow) $
     else airmass = float(tai2airmass(plugsort.ra, plugsort.dec, tai=tai))
@@ -167,8 +175,10 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
    bkpt = 0
    everyn = (2*nskies/3) > 1
    sset = bspline_iterfit(skywave, skyflux, invvar=skyivar, $
-    nord=nord, upper=upper, lower=lower, maxiter=maxiter, $
-    /eachgroup, everyn=everyn, bkpt=bkpt, outmask=outmask, yfit=skyfit)
+    nord=nord, everyn=everyn, bkpt=bkpt, $
+    upper=upper, lower=lower, maxiter=maxiter, $
+    maxrej=maxrej, groupsize=groupsize, $
+    outmask=outmask, yfit=skyfit)
 
    if (NOT keyword_set(sset)) then begin
       splog, 'ABORT: Fit sky is all zeros'
@@ -225,8 +235,10 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
       ; Re-do the super-fit with the new break points.
 
       sset = bspline_iterfit(skywave, skyflux, invvar=skyivar, $
-       nord=nord, upper=upper*1.5, lower=lower*1.5, maxiter=maxiter, $
-       /eachgroup, fullbkpt=fullbkpt, yfit=skyfit, outmask=outmask)
+       nord=nord, fullbkpt=fullbkpt, $
+       upper=upper*1.5, lower=lower*1.5, maxiter=maxiter, $
+       maxrej=maxrej, groupsize=groupsize, $
+       outmask=outmask, yfit=skyfit)
  
       if (NOT keyword_set(sset)) then begin
          splog, 'ABORT: Fit sky is all zeros'
@@ -253,8 +265,9 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
       x2 = (fullx2[*,iskies])[isort]
 
       sset2d = bspline_iterfit(skywave, skyflux, invvar=skyivar*outmask, $
-       nord=nord, upper=upper, lower=lower, maxiter=maxiter, $
-       npoly = npoly, /eachgroup, fullbkpt=fullbkpt, $
+       nord=nord, npoly=npoly, fullbkpt=fullbkpt, $
+       upper=1.5*upper, lower=1.5*lower, maxiter=maxiter, $
+       maxrej=maxrej, groupsize=groupsize, $
        yfit=skyfit, x2=x2, xmin=0., xmax=nrow)
 
       if (keyword_set(sset2d)) then begin
@@ -276,8 +289,10 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
    if (posvar[0] NE -1) then begin
       skyvariance = 1.0 / skyivar[posvar]
       skyvarset = bspline_iterfit(skywave[posvar], skyvariance, $
-        invvar=skyivar[posvar], nord=nord, upper=upper, lower=lower, $
-        maxiter=maxiter, /eachgroup, bkpt=bkpt)
+       invvar=skyivar[posvar], nord=nord, bkpt=bkpt, $
+       upper=upper, lower=lower, maxiter=maxiter, $
+       maxrej=maxrej, groupsize=groupsize)
+
 ;;
 ;;  Should this be airmass_correction^2 in the next line, alright it should be
 ;;
@@ -363,16 +378,6 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
 
       splog, 'Median sky-residual chi2 = ', median(relchi2)
       splog, 'Max sky-residual chi2 = ', max(relchi2)
-
-      ;----------
-      ; Store Relative Chi2 information in a structure
-      ; Add in other information we want to write to disk??
-      
-;      relchi2struct = create_struct( $
-;          'WAVE', relwave, $
-;          'CHI2', relchi2, $
-;          'FULLBKPT', relchi2set.fullbkpt, $
-;          'COEFF', relchi2set.coeff)
 
    endif else begin
 
