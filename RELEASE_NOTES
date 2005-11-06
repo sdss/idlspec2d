@@ -22,6 +22,7 @@ APO_PLOTSN,PLOTSN: There was a problem long ago whereby the fiber magnitudes
 ATVRAWSPEC: Plot a red column over every bad column, not just a box around
         each bad region.  For ex, the 4 bad columns (1112-1115) on r1 will
         not appear with a 4 red lines.
+COMBINE1FIBER: Make robust to the B-spline code failing (and return zeros).
 COMPUTECHI2: Add optional outputs COVAR,VAR.
 ELODIE_BEST: Trim to stars not labelled as binary or triple stars, according
         to the Q_VR keyword in the Elodie FITS headers.  Rockosi brought
@@ -38,6 +39,9 @@ EXTRACT_OBJECT: Write as HDU #8 an image of the relative chi^2, or an
         are when we re-scale the sky errors.
         If there is a telluric image (which we've deprecated for the v5 code),
         then it is now in HDU #9.
+FIBERFLAT: Replace the /EACHGROUP keyword in BSPLINE_ITERFIT with appropriate
+        GROUPSIZE keywords.  The former was a holdover from the days
+        of the Fortran Slatec code.
 FINDSPEC: Complete re-write to match against long lists of objects quickly,
         rather than the slow loop over one object at a time.  Also, address
         PR #6583 to deal with the crazy possibility of the same object (with
@@ -128,6 +132,10 @@ READSPEC: Change how the internal procedure READSPEC1 works, such that
         of plate,mjd,fiberid.  However, I'm not positive that this is always
         the desired behaviour.  For ex, requesting a non-existent plate
         will now return 640-element arrays of zeros.
+REDMONSTER: Make robust to the perverse case of the number of (good) pixels
+        in the spectrum being less than the median filter size of 25 pixels.
+        This happened for saturated data on plate 2333, but does not happen
+        on any other plates.
 REDUCE_PLATE: Removed (old code).
 SDSSPROC: Re-enable the call to 'speclog_version'.
         Add call to FITS_PURGE_NANS in order to address PR #6032, 6084,
@@ -156,6 +164,9 @@ SKYSUBTRACT: Return the trace-set RELCHI2SET instead of RELCHI2STRUCT,
         Recast "fullfit" to floating-point to avoid returning a double-
           precision sky array.  This was happening due to same changes to
           the B-spline code to support double-precision.
+        Replace the /EACHGROUP keyword in BSPLINE_ITERFIT with appropriate
+          GROUPSIZE keywords.  The former was a holdover from the days
+          of the Fortran Slatec code.
 SLITHISTORY: Do not plot missing measurements (zeros).
 SMOOTH_SUPERFLAT: Bug fix, whereby we could trigger a warning message when
         the ends of the wavelength range did not have any good data points.
