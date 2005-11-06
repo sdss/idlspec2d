@@ -199,22 +199,22 @@ pro combine1fiber, inloglam, objflux, objivar, $
               nord=nord, /groupbadpix, $
               bkspace=bkptbin, bkpt=bkpt, outmask=bmask, $
               _EXTRA=KeywordsForReject, /silent)
+            if (total(abs(sset.coeff)) EQ 0.0) then begin
+               sset = 0
+               if (keyword_set(verbose)) then $
+                splog, 'WARNING: All B-spline coefficients have been set to zero!'
+            endif
          endif else begin
             bmask = bytarr(n_elements(ss)) ; All set to zero (rejected)
+            sset = 0
+            if (keyword_set(verbose)) then $
+             splog,'WARNING: All B-spline coefficients have been set to zero!'
          endelse
 
          inside = where(newloglam GE min(inloglam[ss])-EPS $
           AND newloglam LE max(inloglam[ss])+EPS, numinside)
 
-; Another work-around for the Slatec code ???
-         if (numinside LE 2) then begin
-            if (keyword_set(verbose)) then $
-             splog,'WARNING: No wavelengths inside breakpoints'
-         endif else if (total(abs(sset.coeff)) EQ 0.0) then begin
-            if (keyword_set(verbose)) then $
-             splog,'WARNING: All B-spline coefficients have been set to zero!'
-         endif else begin
-
+         if (keyword_set(sset)) then begin
             newflux[inside] = bspline_valu(newloglam[inside], sset, $
                                    mask=bvalumask)
             goodvalu = where(bvalumask)
@@ -245,7 +245,7 @@ pro combine1fiber, inloglam, objflux, objivar, $
                  pixelmask_bits('COMBINEREJ')
             endif
 
-         endelse
+         endif
          fullcombmask[ss] = bmask
 
       endfor
