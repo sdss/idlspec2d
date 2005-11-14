@@ -248,12 +248,15 @@ function batch2d_combfiles, planfile, outfile=outfile
 end
 
 ;------------------------------------------------------------------------------
-pro batch2d, platenums, topdir=topdir, $
+pro batch2d, platenums1, topdir=topdir, $
  platestart=platestart, plateend=plateend, $
  mjd=mjd, mjstart=mjstart, mjend=mjend, $
  upsversion=upsversion, nice=nice, clobber=clobber
 
-   if (NOT keyword_set(platenums)) then platenums = '*'
+   if (size(platenums1,/tname) EQ 'STRING') then platenums = platenums1 $
+    else if (keyword_set(platenums)) then $
+      platenums = string(platenums1,format='(i4.4)') $
+    else platenums = '*'
    if (NOT keyword_set(topdir)) then begin
       cd, current=topdir
    endif
