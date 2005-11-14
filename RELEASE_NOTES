@@ -22,6 +22,9 @@ APO_PLOTSN,PLOTSN: There was a problem long ago whereby the fiber magnitudes
 ATVRAWSPEC: Plot a red column over every bad column, not just a box around
         each bad region.  For ex, the 4 bad columns (1112-1115) on r1 will
         not appear with a 4 red lines.
+BATCH2D: Allow PLATENUMS to be integer-valued, in which case they are
+        recaste as zero-padded strings that are 4 characters long
+        (such that they match the directory names).
 COMBINE1FIBER: Make robust to the B-spline code failing (and return zeros).
 COMPUTECHI2: Add optional outputs COVAR,VAR.
 ELODIE_BEST: Trim to stars not labelled as binary or triple stars, according
