@@ -11,6 +11,10 @@ pro pca_gal
    get_juldate, jd
    mjdstr = string(long(jd-2400000L), format='(i5)')
    outfile = 'spEigenGal-' + mjdstr + '.fits'
+   plotfile = 'spEigenGal-' + mjdstr + '.ps'
+
+   dfpsplot, plotfile, /color, /landscape
+   colorvec = ['default', 'red', 'green', 'blue']
 
    ;----------
    ; Read the input spectra
@@ -60,7 +64,7 @@ ormask = 0 ; Free memory
    pcaflux = pca_solve(objflux, objivar, objloglam, zfit, $
 ;    wavemin=wavemin, wavemax=wavemax, $
     niter=niter, nkeep=nkeep, newloglam=newloglam, eigenval=eigenval, $
-    usemask=usemask)
+    acoeff=acoeff, usemask=usemask)
    pcaflux = float(pcaflux)
 
    ;----------
@@ -80,6 +84,29 @@ ormask = 0 ; Free memory
    endif
 
    ;----------
+   ; Make plots
+
+   djs_plot, 10^newloglam, pcaflux[*,0], $
+    xrange=minmax(10^newloglam), yrange=minmax(pcaflux), /xstyle, $
+    color=colorvec[0], $
+    xtitle='Wavelength [Ang]', ytitle='Flux [arbitrary units]', $
+    title='Galaxies: Eigenspectra', /xlog
+   for i=1, nkeep-1 do $
+    djs_oplot, 10^newloglam, pcaflux[*,i], $
+     color=colorvec[i MOD n_elements(colorvec)]
+
+   aratio10 = acoeff[1,*] / acoeff[0,*]
+   aratio20 = acoeff[2,*] / acoeff[0,*]
+   djs_plot, aratio10, aratio20, /nodata, $
+    xtitle='Eigenvalue Ratio (a_1/a_0)', $
+    ytitle='Eigenvalue Ratio (a_2/a_0)', $
+    title='Galaxies: Eigenvalue Ratios'
+   for j=0, n_elements(aratio10)-1 do $
+    djs_xyouts, aratio10[j], aratio20[j], align=0.5, $
+     string(plate[j], fiber[j], format='(i4,"-",i3)'), $
+     color=colorvec[j MOD n_elements(colorvec)]
+
+   ;----------
    ; Write output file
 
    sxaddpar, hdr, 'OBJECT', 'GALAXY'
@@ -89,6 +116,8 @@ ormask = 0 ; Free memory
     sxaddpar, hdr, 'EIGEN'+strtrim(string(i),1), eigenval[i]
 
    mwrfits, pcaflux, outfile, hdr, /create
+
+   dfpsclose
 
    return
 end
