@@ -355,26 +355,45 @@ end
 
 function rspec_zline_append, zline1, zline2
 
+   qstruct1 = size(zline1,/tname) EQ 'STRUCT'
+   qstruct2 = size(zline2,/tname) EQ 'STRUCT'
+
+   if (qstruct1 EQ 0 AND qstruct2 EQ 0) then $
+    return, lonarr(n_elements(zline1) + n_elements(zline2))
+
    ndim1 = size(zline1, /n_dimen)
    ndim2 = size(zline2, /n_dimen)
    dims1 = size(zline1, /dimens)
    dims2 = size(zline2, /dimens)
-   if (ndim1 EQ 1) then nobj1 = 1L $
-    else nobj1 = dims1[1]
-   if (ndim2 EQ 1) then nobj2 = 1L $
-    else nobj2 = dims2[1]
+   nline = 1L
+   if (qstruct1) then begin
+      if (ndim1 EQ 1) then nobj1 = 1L $
+       else nobj1 = dims1[1]
+      nline = nline > dims1[0]
+   endif else begin
+      nobj1 = n_elements(zline1)
+   endelse
+   if (qstruct2) then begin
+      if (ndim2 EQ 1) then obj2 = 1L $
+       else nobj2 = dims2[1]
+      nline = nline > dims2[0]
+   endif else begin
+      nobj2 = n_elements(zline2)
+   endelse
    nobjtot = nobj1 + nobj2
-   nline = dims1[0] > dims2[0]
 
-   blankline = zline1[0]
+   if (qstruct1) then blankline = zline1[0] $
+    else blankline = zline2[0]
    struct_assign, {junk:0}, blankline
    zlinetot = replicate(blankline, nline, nobjtot)
-   copy_struct_inx, zline1, zlinetot, $
-    index_to=(lindgen(dims1[0]) # (lonarr(nobj1)+1) $
-    + (lonarr(dims1[0])+1) # (lindgen(nobj1)*nline))[*]
-   copy_struct_inx, zline2, zlinetot, $
-    index_to=(lindgen(dims2[0]) # (lonarr(nobj2)+1) $
-    + (lonarr(dims2[0])+1) # (lindgen(nobj2)*nline))[*] + nline*nobj1
+   if (qstruct1) then $
+    copy_struct_inx, zline1, zlinetot, $
+     index_to=(lindgen(dims1[0]) # (lonarr(nobj1)+1) $
+     + (lonarr(dims1[0])+1) # (lindgen(nobj1)*nline))[*]
+   if (qstruct2) then $
+    copy_struct_inx, zline2, zlinetot, $
+     index_to=(lindgen(dims2[0]) # (lonarr(nobj2)+1) $
+     + (lonarr(dims2[0])+1) # (lindgen(nobj2)*nline))[*] + nline*nobj1
 
    return, zlinetot
 end
@@ -490,6 +509,8 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
        synflux=synflux1, lineflux=lineflux1, objhdr=objhdr1, zhdr=zhdr1, $
        znum=znum, coeffzero=coeff0, coeffone=coeff1, npix=npix, $
        topdir=topdir, path=path, align=align, silent=silent
+      coeff0 = double(coeff0)
+      coeff1 = double(coeff1)
 
       if (q_objhdr AND NOT keyword_set(objhdr)) then objhdr = objhdr1
       if (q_zhdr AND NOT keyword_set(zhdr)) then zhdr = zhdr1
@@ -523,10 +544,17 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
             ; to how spec_append will shift the spectra.
             mincoeff0 = min(allcoeff0)
             if (keyword_set(align)) then begin
-               ; The following two lines of code deal with setting a
+               ; The following few lines of code deal with setting a
                ; wavelength scale for objects with missing data.
-               if (mincoeff0 EQ 0 AND coeff0[0] GT 0) then allcoeff0[*] = coeff0
-               if (mincoeff0 GT 0 AND coeff0[0] EQ 0) then coeff0[*] = mincoeff0
+               if (mincoeff0 EQ 0 AND coeff0[0] GT 0) then begin
+                  allcoeff0[*] = coeff0[0]
+                  allcoeff1[*] = coeff1[0]
+               endif
+               if (mincoeff0 GT 0 AND coeff0[0] EQ 0) then begin
+                  coeff0[*] = mincoeff0
+                  coeff1[*] = allcoeff1[0]
+               endif
+
                ; Add 0.5 below to take care of round-off errors
                pixshift = floor( (coeff0[0] - mincoeff0) / coeff1[0] + 0.5 )
                if (pixshift GT 0) then begin
@@ -550,9 +578,9 @@ pro readspec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
          if (q_ormask) then spec_append, ormask, ormask1, pixshift
          if (q_disp) then spec_append, disp, disp1, pixshift
          if (q_sky) then spec_append, sky, sky1, pixshift
-         if (q_plugmap) then plugmap = struct_append(plugmap, [plugmap1])
-         if (q_tsobj) then tsobj = struct_append(tsobj, [tsobj1])
-         if (q_zans) then zans = struct_append(zans, [zans1])
+         if (q_plugmap) then plugmap = struct_append(plugmap, plugmap1, /force)
+         if (q_tsobj) then tsobj = struct_append(tsobj, tsobj1, /force)
+         if (q_zans) then zans = struct_append(zans, zans1, /force)
 ; The first two attempts below can fail if the ZLINE structure changes.
 ;         if (q_zline) then zline = struct_append(zline, [zline1])
 ;         if (q_zline) then zline = [[zline], [zline1]]
