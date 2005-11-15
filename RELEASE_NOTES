@@ -80,6 +80,7 @@ FLUX_DISTORTION: There was a bug in the way objects were being rejected
         Otherwise, scale the fluxes according to SCI_EXPTIME in the plugmap.
 LINEBACKFIT: The calculation of LINEEW_ERR was incorrect, as noted in PR #6235.
 LRGMODEL_PHOTOZ: Optionally compute and return FITFLUX.
+PCA_CVSTAR,PCA_GAL,PCA_QSO: Insist that all requested spectra exist.
 PCA_SOLVE: Make loop variables long ints.
 PLATELIST: Use FINDFILE() function to see if files exist before calling
         MRDFITS(); this should be a slight speed-improvement.
