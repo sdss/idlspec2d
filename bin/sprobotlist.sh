@@ -15,9 +15,13 @@ echo "IDLUTILS_DIR="$IDLUTILS_DIR
 cd $SPECTRO_DATA
 echo "platelist, /create" | idl
 echo "platemerge" | idl 2> /dev/null
-echo "platemerge, /public" | idl 2> /dev/null
-echo "platemerge, public='EDR'" | idl 2> /dev/null
-echo "platemerge, public='DR1'" | idl 2> /dev/null
+#echo "platemerge, /public" | idl 2> /dev/null
+#echo "platemerge, public='EDR'" | idl 2> /dev/null
+#echo "platemerge, public='DR1'" | idl 2> /dev/null
+#echo "platemerge, public='DR2'" | idl 2> /dev/null
+#echo "platemerge, public='DR3'" | idl 2> /dev/null
+#echo "platemerge, public='DR4'" | idl 2> /dev/null
+#echo "platemerge, public='DR5'" | idl 2> /dev/null
 echo "zplot" | idl 2> /dev/null
 echo "platehist" | idl 2> /dev/null
 
