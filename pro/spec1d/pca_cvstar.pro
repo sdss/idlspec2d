@@ -31,7 +31,19 @@ pro pca_cvstar
 ;   subclass = subclass[indx]
 
    readspec, plate, fiber, mjd=mjd, flux=objflux, invvar=objivar, $
-    andmask=andmask, ormask=ormask, loglam=objloglam
+    andmask=andmask, ormask=ormask, loglam=objloglam, plugmap=plugmap
+
+   ;----------
+   ; Insist that all of the requested spectra exist
+
+   imissing = where(plugmap.fiberid EQ 0, nmissing)
+   if (nmissing GT 0) then begin
+      for i=0, nmissing-1 do $
+       print, 'Missing plate=', slist[imissing[i]].plate, $
+        ' mjd=', slist[imissing[i]].mjd, $
+        ' fiber=', slist[imissing[i]].fiberid
+      message, string(nmissing) + ' missing object(s)'
+   endif
 
    ;----------
    ; Do not fit where the spectrum may be dominated by sky-sub residuals.

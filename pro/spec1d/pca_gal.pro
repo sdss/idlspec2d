@@ -23,6 +23,18 @@ pro pca_gal
     andmask=andmask, ormask=ormask, plugmap=plugmap, loglam=objloglam
 
    ;----------
+   ; Insist that all of the requested spectra exist
+
+   imissing = where(plugmap.fiberid EQ 0, nmissing)
+   if (nmissing GT 0) then begin
+      for i=0, nmissing-1 do $
+       print, 'Missing plate=', slist[imissing[i]].plate, $
+        ' mjd=', slist[imissing[i]].mjd, $
+        ' fiber=', slist[imissing[i]].fiberid
+      message, string(nmissing) + ' missing object(s)'
+   endif
+
+   ;----------
    ; Do not fit where the spectrum may be dominated by sky-sub residuals.
 
    objivar = skymask(objivar, andmask, ormask)
