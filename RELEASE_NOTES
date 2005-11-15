@@ -262,6 +262,9 @@ bin/aporsync_alllog.sh, aporsync_blue.sh, aporsync_logs.sh, aporsync_red.sh:
         Now that the IRIX machine sdsshost.apo has been replaced with
         a Linux machine, that is no longer necessary.
 bin/spreduce_batch: Script to batch a single Spectro-2D or Spectro-1D job.
+bin/sprobotlist.sh: Only run the PLATEMERGE command for all data, but
+        not all the subsets such as DR1, etc.  No need to recreate those
+        every day!
 doc/www/idlspec2d_reduce.html,spectro_home.html: The machine alias name
         sdssdata.princeton.edu should really be sdssdata.astro.princeton.edu
 doc/www/spectro_home.html: Add info for downloading DR4.
