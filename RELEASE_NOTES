@@ -136,6 +136,8 @@ READSPEC: Change how the internal procedure READSPEC1 works, such that
         of plate,mjd,fiberid.  However, I'm not positive that this is always
         the desired behaviour.  For ex, requesting a non-existent plate
         will now return 640-element arrays of zeros.
+        Make this routine robust to missing data when reading in structures,
+        such as plugmap, zline, tsobj.
 REDMONSTER: Make robust to the perverse case of the number of (good) pixels
         in the spectrum being less than the median filter size of 25 pixels.
         This happened for saturated data on plate 2333, but does not happen
