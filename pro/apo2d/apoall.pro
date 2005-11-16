@@ -50,7 +50,7 @@ pro apoall, mjd=mjd, mjstart=mjstart, mjend=mjend, $
  minexp=minexp, copydir=copydir
 
    ;----------
-   ; Set directory names RAWDIR, ASTROLOG, FLATDIR
+   ; Set directory names, where $SPECTROLOG_DIR is used for the output dir
 
    rawdata_dir = getenv('RAWDATA_DIR')
    if (NOT keyword_set(rawdata_dir)) then $
