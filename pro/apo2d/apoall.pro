@@ -32,6 +32,10 @@
 ;   in the same directory as the sdR files.
 ;
 ; EXAMPLES:
+;   Rerun the SOS code on the spectro data from MJD 53682, putting
+;   the results in the current directory:
+;     IDL> setenv, 'RAWDATA_DIR=.'
+;     IDL> apoall, mjd=53682
 ;
 ; BUGS:
 ;
