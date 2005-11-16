@@ -655,7 +655,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
              splog, 'WARNING: Amp #', iamp, $
               ' expected read noise = ', rnoise_expect[iamp], $
               ', measured = ', rnoise_measure[iamp], ' DN', $
-              format='(a,i1,a,f5.2,a,f5.2,a)'
+              format='(a,i1,a,f5.2,a,f8.2,a)'
 
             ; Trigger a warning message if the bias region has differences
             ; between the 16th-percentile and 84th-percentile that are
@@ -673,7 +673,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
                 splog, 'WARNING: Amp #', iamp, ' bias region difference at ', $
                  100.*fnormal, 'th-percentile = ', $
                  biasdiff, ' DN, expected ', 2*siglevel*rnoise_expect[iamp], $
-                 format='(a,i1,a,f5.2,a,f5.1,a,f5.1)'
+                 format='(a,i1,a,f5.2,a,f7.1,a,f5.1)'
             endfor
 
             ; Compute the standard deviation in the bias region again,
@@ -714,7 +714,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
             if (100*fraclopix GT 0.01) then $
              splog, 'WARNING: Amp #', iamp, ' way too many pixels (', $
               100*fraclopix, '%) below bias-5*sigma=', lovalue, ' DN', $
-              format='(a,i1,a,f5.2,a,f6.0,a)'
+              format='(a,i1,a,f6.2,a,f6.0,a)'
 
             ; Copy the data for this amplifier into the final image
             ; Subtract the bias (in DN), and then multiply by the gain
