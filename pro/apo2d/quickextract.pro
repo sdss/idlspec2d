@@ -203,9 +203,12 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    scrunch = djs_median(flux * (fluxivar GT 0), 1) 
    whopping = find_whopping(scrunch, 10000.0, whopct)
    if (whopping[0] NE -1) then begin
+      ; Only print the fiber numbers for the first 5 whopping fibers
       wstring = strcompress(string(whopping+1+(spectroid EQ '2')*320))
-      for i=0, n_elements(wstring)-1 do $
-       splog, 'WARNING: Whopping fiber #'  + wstring[i]
+      splog, 'WARNING: Whopping fiber #' $
+       + string(wstring[0:4<(whopct-1)],format='(5a)') $
+       + ((whopct GT 5) ? $
+        ' (+ ' + strtrim(string(whopct-10),2) + ' more)' : '')
       wp = [whopping - 2 , whopping -1, whopping, whopping+1 , whopping+2]
       wp = (wp > 0) < (nfiber - 1)
       fibermask[wp] = fibermask[wp] OR pixelmask_bits('NEARWHOPPER')
@@ -253,19 +256,21 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
 
    skystruct = skysubtract(fluxsub, fluxivar, plugsort, wset, $
     objsub, objsubivar, iskies=iskies, fibermask=fibermask, tai=tai_mid, $
-    relchi2struct=relchi2struct, sset=sset)
+    relchi2set=relchi2set, sset=sset)
 
    ;----------
    ; Issue warnings about very large sky-subtraction chi^2
 
    if (keyword_set(skystruct)) then begin
+      thiswave = logwave[*,0]
+      rchi2 = bspline_valu(thiswave, relchi2set)
       ; Ignore wavelengths near 5577 Ang
-      i5577 = where(relchi2struct.wave GT alog10(5577.-10.) $
-       AND relchi2struct.wave LT alog10(5577.+10.))
-      if (i5577[0] NE -1) then relchi2struct.chi2[i5577] = 0
-      medval = median(relchi2struct.chi2)
-      maxval = max(relchi2struct.chi2, imax)
-      maxwave = 10.^relchi2struct.wave[imax]
+      i5577 = where(thiswave GT alog10(5577.-10.) $
+       AND thiswave LT alog10(5577.+10.))
+      if (i5577[0] NE -1) then rchi2[i5577] = 0
+      medval = median(rchi2)
+      maxval = max(rchi2, imax)
+      maxwave = 10.^thiswave[imax]
       if (medval GT 2.) then $
        splog, 'WARNING: Median sky-residual chi2 = ', medval
       if (maxval GT 60.) then $
@@ -338,7 +343,7 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
       snoise2 = 0
    endelse
 
-   if (keyword_set(relchi2struct)) then skychi2 = mean(relchi2struct.chi2) $
+   if (keyword_set(rchi2)) then skychi2 = mean(rchi2) $
     else skychi2 = 0.0
 
    rstruct = create_struct('SCIFILE', fileandpath(outsci), $
@@ -357,7 +362,7 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    mwrfits, objsubivar, outsci
    mwrfits, meansn, outsci
    mwrfits, sset, outsci
-   mwrfits, relchi2struct, outsci
+   mwrfits, relchi2set, outsci
 
    return, rstruct
 end
