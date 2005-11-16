@@ -64,6 +64,7 @@ function computechi2, objflux, sqivar, starflux, $
    mmatrix = starflux * (sqivar # replicate(1,nstar))
 
 ;   ---------  the line above is about twice as fast --------------
+;   mmatrix = starflux
 ;   for i=0L, nstar-1 do $
 ;     mmatrix[*,i] = mmatrix[*,i] * sqivar
 
