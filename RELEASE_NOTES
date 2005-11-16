@@ -120,6 +120,9 @@ QUICKEXTRACT: Remove the end of the warning message for "Whopping fiber"
         fact it usually just affects a few fibers.
         For the warning message "Large flexure...", append the shift
         number to the message (in response to PR #6239).
+        Only print the fiber numbers for the first 5 whopping fibers.
+        Change cod to be consistent with SKYSUBTRACT, which now returns
+        RELCHI2SET rather than RELCHI2STRUCT.
 READPLUGMAP: Fix bug when replacing unknown fluxes in the calibObj
           structure with old values in the plug-map file.
         Add OFFSETID and SCI_EXPTIME to the output structures, which
