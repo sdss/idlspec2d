@@ -1,3 +1,6 @@
+APO data files are back to coming from sdssshost
+READPLUGMAP: Add missing iobj, so that the SOS reddening can run.
+
 Fix strmid off-by-1 in spflatave and spbiasave.
 
 ; Need to do the following computation in double-precision!!

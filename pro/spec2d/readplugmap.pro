@@ -242,6 +242,7 @@ function readplugmap, plugfile, plugdir=plugdir, $
 
    if (keyword_set(deredden)) then begin
       splog, 'Applying reddening vector ', redden_med
+      iobj = where(strmatch(plugmap.holetype,'OBJECT*'))
       for ifilt=0, 4 do $
        plugmap[iobj].mag[ifilt] = plugmap[iobj].mag[ifilt] - redden_med[ifilt]
    endif

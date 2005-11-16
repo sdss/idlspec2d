@@ -47,7 +47,7 @@ fi
 echo "Setting \$RAWDATA_DIR=$RAWDATA_DIR"
 
 if [ -z "$RAWDATA_HOST" ] ; then
-   RAWDATA_HOST=sdssfiles1.apo.nmsu.edu
+   RAWDATA_HOST=sdsshost.apo.nmsu.edu
 fi
 echo "Setting \$RAWDATA_HOST=$RAWDATA_HOST"
 
