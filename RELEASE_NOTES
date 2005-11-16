@@ -1,7 +1,3 @@
-APO data files are back to coming from sdssshost
-READPLUGMAP: Add missing iobj, so that the SOS reddening can run.
-
-Fix strmid off-by-1 in spflatave and spbiasave.
 
 ; Need to do the following computation in double-precision!!
 ; Tentatively re-caste as such within VDISPFIT in call to COMPUTECHI2.
@@ -133,6 +129,8 @@ READPLUGMAP: Fix bug when replacing unknown fluxes in the calibObj
         Do not use magnitudes in the input file not in the range [0,50],
           in order to avoid overflows when magnitudes are set to crazy
           values like -999.
+        Add missing iobj, so that the call from QUICKTRACE with the /DEREDDEN
+          option works.
 READONESPEC: Return all headers in FRAMEHDR.
 READSPEC: Change how the internal procedure READSPEC1 works, such that
         arrays of zeros are returned if data is missing.  This allows us
@@ -184,6 +182,7 @@ SMOOTH_SUPERFLAT: Bug fix, whereby we could trigger a warning message when
         This was triggering false warning messages on plate 1053/52468 in r2,
         plate 1051/52468 on r2, etc.  This should now be fixed by setting
         the internal variable RATIO=1 for bad points.
+SPBIASAVE,SPFLATAVE: Fix bug where filename matching is off-by-1.
 SPBIASGEN: Trivial bug fix to mask bad pixels.
 SPCALIB: Change call from SMOOTH_HALO() to SMOOTH_HALO2D() for fitting
         the scattered light background.  This should do a more proper treatment
