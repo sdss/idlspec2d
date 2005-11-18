@@ -92,6 +92,9 @@ LRGMODEL_PHOTOZ: Optionally compute and return FITFLUX.
 PCA_CVSTAR,PCA_GAL,PCA_QSO: Insist that all requested spectra exist.
 PCA_GAL: Make plots.
 PCA_SOLVE: Make loop variables long ints.
+        Make the internal arrays double-precision instead of floats
+        before calling COMPUTECHI2 due to round-off errors on some
+        platforms (PR #6754).
 PLATELIST: Use FINDFILE() function to see if files exist before calling
         MRDFITS(); this should be a slight speed-improvement.
         Since the v5 version of this code will combine data with as few as
@@ -261,6 +264,9 @@ ZCOMPUTE_QSO: A version of ZCOMPUTE that is basically the same code, but
         using a B-spline composite spectrum that must be evaluated at each
         redshift.  Because there are multiplicative polynomials rather than
         additive polynomial terms, this may fail to find weak em-line QSOs.
+ZCOMPUTE,ZCOMPUTE_CHI2: Recast the fluxes and models in double-precision
+        before calling COMPUTECHI2 due to round-off errors on some
+        platforms (PR #6754).
 ZFIND: Mask any pixels on the templates where the first template contains zeros.
         This is useful, in particular, where the stellar templates have zeros
         at the beginning or end of the spectral range due lack of wavelength
