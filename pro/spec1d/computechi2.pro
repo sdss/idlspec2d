@@ -60,8 +60,8 @@ function computechi2, objflux, sqivar, starflux, $
    if (ndim EQ 1) then nstar = 1 $
     else nstar = (size(starflux, /dimens))[1]
 
-   bvec = objflux * sqivar
-   mmatrix = starflux * (sqivar # replicate(1,nstar))
+   bvec = double(objflux) * double(sqivar)
+   mmatrix = double(starflux) * (double(sqivar) # replicate(1,nstar))
 
 ;   ---------  the line above is about twice as fast --------------
 ;   mmatrix = starflux
@@ -90,7 +90,7 @@ function computechi2, objflux, sqivar, starflux, $
    chi2 = total( (mmatrix # acoeff - bvec)^2, /double )
 
    if (arg_present(yfit)) then $
-    yfit = acoeff ## starflux
+    yfit = acoeff ## double(starflux)
 ;    yfit = transpose(acoeff # mmatrixt) / sqivar
    if (arg_present(dof)) then $
     dof = total(sqivar NE 0) - nstar
@@ -99,7 +99,7 @@ function computechi2, objflux, sqivar, starflux, $
       covar = dblarr(nstar,nstar)
       for j=0L, nstar-1L do begin
          for k=0L, nstar-1L do begin
-            covar[j,k] = total(vv[j,*]^2 * vv[k,*]^2 / (ww[k]))
+            covar[j,k] = total(vv[j,*]^2 * vv[k,*]^2 / (ww[k]), /double)
          endfor
       endfor
    endif
@@ -116,7 +116,7 @@ function computechi2, objflux, sqivar, starflux, $
       covar = dblarr(nstar,nstar)
       for i=0L, nstar-1L do begin
          for j=0L, i do begin
-            covar[i,j] = total(wwt * vv[*,i] * vv[*,j])
+            covar[i,j] = total(wwt * vv[*,i] * vv[*,j], /double)
             covar[j,i] = covar[i,j]
          endfor
       endfor
@@ -129,7 +129,7 @@ function computechi2, objflux, sqivar, starflux, $
          var[*] = covar[i,i]
       endif else begin
          for j=0L, nstar-1L do $
-          var[j] = total( (vv[j,*])^2 * wwt )
+          var[j] = total((vv[j,*])^2 * wwt, /double)
       endelse
    endif
 
