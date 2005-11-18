@@ -30,6 +30,12 @@ COMBINE1FIBER: Make robust to the B-spline code failing (and return zeros).
         input data points span an extremely small wavelength range,
         within which there are no output wavelengths.
 COMPUTECHI2: Add optional outputs COVAR,VAR.
+        Explicitly do all arithmetic in double-precision, due to the change
+        in behaviour of IDL on the Mac and 64-bit Linux where matrix multiplies
+        have less precision (as described in PR #6754).  If the change is
+        only made here, then there is alot of recasting of arrays that
+        will slow the code.  Therefore, in practice we'll want to recast
+        these arrays in the calling routines (like in ZCOMPUTE).
 ELODIE_BEST: Trim to stars not labelled as binary or triple stars, according
         to the Q_VR keyword in the Elodie FITS headers.  Rockosi brought
         this to my attention on Sep 20, 2004.
