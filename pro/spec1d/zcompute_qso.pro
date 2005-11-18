@@ -199,22 +199,36 @@ function zcompute_qso, objflux, objivar, starset, starflux, starmask, nfind=nfin
 
    ;---------------------------------------------------------------------------
 
-   sqivar = sqrt(objivar)
+   ; Recast these in double-precision due to round-off errors on some
+   ; platforms (PR #6754).
+   objflux_double = double(objflux)
+   starflux_double = double(starflux)
+   sqivar = sqrt(double(objivar))
    objmask = objivar NE 0
    objpix = lindgen(n_elements(objflux)) 
+
    for ilag=0L, nlag-1 do begin
 
       rpix = objpix + lags[ilag]
-      qso_model = (bspline_valu(rpix, starset, x2=objpix) # replicate(1,nstar) ) * $
-                   starflux
+      qso_model = $
+       (bspline_valu(rpix, starset, x2=objpix) # replicate(1,nstar) ) * $
+       starflux_double
+; ???
+thisz = 10^((pmin + ilag)*1e-4) - 1
+npoly = 2
+polyterms = poly_array(n_elements(objpix),npoly)
+ii = where(rpix LT alog10(1216)) ; ???
+if (ii[0] NE -1) then $
+ polyterms[ii,*] = polyterms[ii,*] * exp(-0.0024 * (1+thisz)^3.7)
+qso_model = [ [qso_model], [polyterms] ]
 ;      j1 = lags[ilag] < (npixstar-1L)
 ;      if (j1 LT 0) then i1 = -j1 $
 ;       else i1 = 0L
 ;      j1 = j1 > 0L
 ;      j2 = npixstar-1 < (npixobj+j1-i1-1L)
 ;      i2 = i1 + j2 - j1
-      chi2arr[ilag] = computechi2( objflux, sqivar * starmask, qso_model, $
-        acoeff=acoeff, dof=dof)
+      chi2arr[ilag] = computechi2( objflux_double, sqivar * starmask, $
+       qso_model, acoeff=acoeff, dof=dof)
       dofarr[ilag] = dof
       thetaarr[*,ilag] = acoeff
 

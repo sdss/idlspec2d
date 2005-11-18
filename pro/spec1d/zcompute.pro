@@ -197,7 +197,11 @@ function zcompute, objflux, objivar, starflux, starmask, nfind=nfind, $
 
    ;---------------------------------------------------------------------------
 
-   sqivar = sqrt(objivar)
+   ; Recast these in double-precision due to round-off errors on some
+   ; platforms (PR #6754).
+   objflux_double = double(objflux)
+   starflux_double = double(starflux)
+   sqivar = sqrt(double(objivar))
    objmask = objivar NE 0
 
    for ilag=0L, nlag-1 do begin
@@ -207,8 +211,8 @@ function zcompute, objflux, objivar, starflux, starmask, nfind=nfind, $
       j1 = j1 > 0L
       j2 = npixstar-1 < (npixobj+j1-i1-1L)
       i2 = i1 + j2 - j1
-      chi2arr[ilag] = computechi2( objflux[i1:i2], $
-       sqivar[i1:i2] * starmask[j1:j2], starflux[j1:j2,*], $
+      chi2arr[ilag] = computechi2( objflux_double[i1:i2], $
+       sqivar[i1:i2] * starmask[j1:j2], starflux_double[j1:j2,*], $
        acoeff=acoeff, dof=dof)
       dofarr[ilag] = dof
       thetaarr[*,ilag] = acoeff
