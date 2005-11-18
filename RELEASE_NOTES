@@ -25,6 +25,10 @@ BATCH2D: Allow PLATENUMS to be integer-valued, in which case they are
         recaste as zero-padded strings that are 4 characters long
         (such that they match the directory names).
 COMBINE1FIBER: Make robust to the B-spline code failing (and return zeros).
+        Fix a rare crash condition that happened on plate 321: It is
+        possible for NUMINSIDE to be zero (on the inner loop), if the
+        input data points span an extremely small wavelength range,
+        within which there are no output wavelengths.
 COMPUTECHI2: Add optional outputs COVAR,VAR.
 ELODIE_BEST: Trim to stars not labelled as binary or triple stars, according
         to the Q_VR keyword in the Elodie FITS headers.  Rockosi brought
