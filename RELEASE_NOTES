@@ -340,6 +340,8 @@ etc/spPlateList.par: Add 436 new plates, through MJD 53360 (Dec 21, 2004).
          1907       53265  special
          1913       53295  special
          1917       53295  special
+        Remove the plates 521/52325 and 574/52337, which were only
+        partial reductions that should not be in this list.
 examples/opBC-50000.par,opBC-51809.par,opBC-51813.par: Added a partial
         bad column on the b2 CCD that is responsible for some of the absorption
         glitches seen in fibers 343+344 (c.f. PR #3681).
