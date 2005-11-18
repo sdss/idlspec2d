@@ -114,8 +114,8 @@ if (keyword_set(objloglam)) then begin ; ???
       objdloglam = abs(newloglam[1] - newloglam[0])
    endelse
    nnew = n_elements(newloglam)
-   newflux = fltarr(nnew,nobj)
-   newivar = fltarr(nnew,nobj)
+   newflux = dblarr(nnew,nobj)
+   newivar = dblarr(nnew,nobj)
 
    ndim = size(objloglam, /n_dimen)
    if (ndim EQ 1) then begin
@@ -149,7 +149,7 @@ endelse
    ; Construct the synthetic weight vector, to be used when replacing
    ; the low-S/N object pixels with the reconstructions.
 
-   synwvec = fltarr(nnew) + 1 ; Set to 1 if no data for this wavelength
+   synwvec = dblarr(nnew) + 1 ; Set to 1 if no data for this wavelength
    for ipix=0L, nnew-1 do begin
       indx = where(newivar[ipix,*] NE 0)
       if (indx[0] NE -1) then $
@@ -164,7 +164,7 @@ endelse
 
 ;   normflux = total(newflux,1) / nnew
 ;   iuse = where(normflux GT 0.05 * median(normflux), nuse)
-;   synflux = fltarr(nnew)
+;   synflux = dblarr(nnew)
 ;   usemask = lonarr(nnew)
 ;   for ipix=0L, nnew-1 do begin
 ;      ibad = where(newivar[ipix,iuse] EQ 0, nbad)
@@ -220,14 +220,14 @@ endelse
       ; Iteratively do the PCA solution
 
       filtflux = newflux
-      acoeff = fltarr(nkeep,nobj)
+      acoeff = dblarr(nkeep,nobj)
 
       t0=systime(1)
       for ipiter=0L, niter-1 do begin
          eigenval = 1 ; Set so that the PCOMP() routine returns this.
          coeff = 1 ; Set so that the PCOMP() routine returns this.
 
-         totflux = fltarr(nobj)
+         totflux = dblarr(nobj)
          for iobj=0L, nobj-1 do $
           totflux[iobj] = total(abs(filtflux[*,iobj] - filtflux[0,iobj]))
          igoodobj = where(totflux GT 0, ngoodobj)
