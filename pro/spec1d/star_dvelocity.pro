@@ -121,11 +121,12 @@ function star_dvelocity, plate, mjd=mjd, fitindx=fitindx, path=path
    ;----------
    ; Create the output structure, and return empty data if FITINDX=[-1].
 
+   ntot = 640
    if (n_elements(fitindx) GT 0) then thisindx = fitindx $
-    else thisindx = lindgen(640)
+    else thisindx = lindgen(ntot)
    nobj = n_elements(thisindx)
 
-   res_best = replicate(dvelocity_struct(), nobj)
+   res_best = replicate(dvelocity_struct(), ntot)
    if (thisindx[0] EQ -1) then return, res_best
 
    ;----------
@@ -160,7 +161,8 @@ function star_dvelocity, plate, mjd=mjd, fitindx=fitindx, path=path
       iuniq = uniq(expnum, sort(expnum))
       nexp = n_elements(iuniq)
       for i=0L, nexp-1L do $
-       res_best[iobj].velocity_tai[i] = sxpar(*framehdr[iuniq[i]],'TAI')
+       res_best[thisindx[iobj]].velocity_tai[i] = $
+        sxpar(*framehdr[iuniq[i]],'TAI')
 
       ; Define ILIST as 0...NEXP-1 for each input file (spectrum)
       explist = expnum[iuniq]
@@ -255,8 +257,8 @@ minchi2diff = 5. ; ???
        niter=niter, status=status, /quiet)
 
       pixscale = alog(10.) * 2.99792458e5 ; (km/sec)/(10e-4 log-wave)
-      res_best[iobj].velocity[0:nexp-1] = fitval * pixscale
-      res_best[iobj].velocity_err[0:nexp-1] = perror * pixscale
+      res_best[thisindx[iobj]].velocity[0:nexp-1] = fitval * pixscale
+      res_best[thisindx[iobj]].velocity_err[0:nexp-1] = perror * pixscale
    endfor
 
    splog, 'Total time for STAR_DVELOCITY = ', systime(1)-stime0, ' seconds', $
