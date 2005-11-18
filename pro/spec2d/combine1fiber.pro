@@ -214,7 +214,10 @@ pro combine1fiber, inloglam, objflux, objivar, $
          inside = where(newloglam GE min(inloglam[ss])-EPS $
           AND newloglam LE max(inloglam[ss])+EPS, numinside)
 
-         if (keyword_set(sset)) then begin
+         ; It is possible for NUMINSIDE to be zero, if the input data points
+         ; span an extremely small wavelength range, within which there are
+         ; no output wavelengths.
+         if (keyword_set(sset) AND numinside GT 0) then begin
             newflux[inside] = bspline_valu(newloglam[inside], sset, $
                                    mask=bvalumask)
             goodvalu = where(bvalumask)
