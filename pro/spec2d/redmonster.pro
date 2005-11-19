@@ -48,7 +48,7 @@ pro redmonster, relloglam, relchi2, objloglam, filtsz=filtsz1, $
    if (NOT keyword_set(thresh)) then thresh = 4.0
 
    nbin = n_elements(relloglam)
-   filtsz = filtsz < nbin
+   filtsz = filtsz < (nbin - 1L)
    filtwd = (filtsz-1)/2 ; Half-width of filter
 
    ;----------
