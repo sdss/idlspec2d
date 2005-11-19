@@ -274,7 +274,7 @@ pro spcoadd_v5, spframes, outputname, $
          flux = tempflux
          fluxivar = tempivar
          wave = tempwave
-         dispersion = tempdispersion
+         dispersion = float(tempdispersion)
          pixelmask = temppixmask
          skyflux = tempsky
 
@@ -287,7 +287,7 @@ pro spcoadd_v5, spframes, outputname, $
          flux = [[flux], [tempflux]]
          fluxivar = [[fluxivar], [tempivar]]
          wave = [[wave], [tempwave]]
-         dispersion = [[dispersion], [tempdispersion]]
+         dispersion = [[dispersion], [float(tempdispersion)]]
          pixelmask = [[pixelmask], [temppixmask]]
          skyflux = [[skyflux], [tempsky]]
 
