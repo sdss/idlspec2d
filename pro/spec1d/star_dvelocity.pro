@@ -6,7 +6,7 @@
 ;   Solve for velocity shifts between multiple exposures.
 ;
 ; CALLING SEQUENCE:
-;   res = star_dvelocity(plate, mjd=, [ vmin=, vmax=, fitindx=, path= ] )
+;   res = star_dvelocity(plate, mjd=, [ vmin=, vmax=, fiberid=, path= ] )
 ;
 ; INPUTS:
 ;   plate      - Plate number
@@ -15,9 +15,10 @@
 ; OPTIONAL INPUTS:
 ;   vmin       - Minimum velocity to consider; default to -700.
 ;   vmax       - Maxmimum velocity to consider; default to 700.
-;   fitindx    - If set, then only fit for the objects specified by
-;                these indices.  Set to -1 to not fit any objects (but
-;                return empty output structures); default to fitting all.
+;   fiberid    - If set, then only fit for the objects specified by
+;                these 1-indexed fiber IDs.  Set to 0 to not
+;                fit any objects (but return empty 640-element output
+;                structures); default to fitting all.
 ;   path       - Override all path information with this directory name
 ;                (for reading the spCFrame files)
 ;
@@ -38,7 +39,7 @@
 ;
 ; EXAMPLES:
 ;   Fit the velocity shifts for the white dwarf star in SDSS publication #535:
-;     IDL> res=star_dvelocity(518,mjd=52282,fitindx=284)
+;     IDL> res=star_dvelocity(518,mjd=52282,fiberid=285)
 ;
 ; BUGS:
 ;
@@ -106,11 +107,11 @@ function dvelocity_fn, value, loglam=loglam, objflux=objflux, objivar=objivar, $
 end
 
 ;------------------------------------------------------------------------------
-function star_dvelocity, plate, mjd=mjd, fitindx=fitindx, path=path
+function star_dvelocity, plate, mjd=mjd, fiberid=fiberid1, path=path
 
    if (n_params() LT 1) then begin
       print, 'Syntax - res = star_dvelocity(plate, mjd=, $'
-      print, ' [ fitindx=, path= ] )'
+      print, ' [ fiberid=, path= ] )'
       return, 0
    endif
    if (NOT keyword_set(vmin)) then vmin = -700.
@@ -121,21 +122,22 @@ function star_dvelocity, plate, mjd=mjd, fitindx=fitindx, path=path
    ;----------
    ; Create the output structure, and return empty data if FITINDX=[-1].
 
-   ntot = 640
-   if (n_elements(fitindx) GT 0) then thisindx = fitindx $
-    else thisindx = lindgen(ntot)
-   nobj = n_elements(thisindx)
-
+   ntot = 640L
    res_best = replicate(dvelocity_struct(), ntot)
-   if (thisindx[0] EQ -1) then return, res_best
+
+   if (n_elements(fiberid1) EQ 1 AND keyword_set(fiberid1) EQ 0) $
+    then return, res_best ; If FIBERID was set to zero
+   if (keyword_set(fiberid1)) then fiberid = fiberid1 $
+    else fiberid = lindgen(ntot)
 
    ;----------
    ; Compute the velocities for each object
 
+   nobj = n_elements(fiberid)
    for iobj=0L, nobj-1L do begin
       splog, 'Object number ', iobj, ' of ', nobj
 
-      readonespec, plate, mjd=mjd, thisindx[iobj]+1, $
+      readonespec, plate, mjd=mjd, fiberid[iobj], $
        framehdr=framehdr, loglam=loglam, flux=objflux, invvar=objivar, $
        mask=mask, path=path
       nfile = n_elements(framehdr)
@@ -161,7 +163,7 @@ function star_dvelocity, plate, mjd=mjd, fitindx=fitindx, path=path
       iuniq = uniq(expnum, sort(expnum))
       nexp = n_elements(iuniq)
       for i=0L, nexp-1L do $
-       res_best[thisindx[iobj]].velocity_tai[i] = $
+       res_best[fiberid[iobj]-1].velocity_tai[i] = $
         sxpar(*framehdr[iuniq[i]],'TAI')
 
       ; Define ILIST as 0...NEXP-1 for each input file (spectrum)
@@ -257,8 +259,8 @@ minchi2diff = 5. ; ???
        niter=niter, status=status, /quiet)
 
       pixscale = alog(10.) * 2.99792458e5 ; (km/sec)/(10e-4 log-wave)
-      res_best[thisindx[iobj]].velocity[0:nexp-1] = fitval * pixscale
-      res_best[thisindx[iobj]].velocity_err[0:nexp-1] = perror * pixscale
+      res_best[fiberid[iobj]-1].velocity[0:nexp-1] = fitval * pixscale
+      res_best[fiberid[iobj]-1].velocity_err[0:nexp-1] = perror * pixscale
    endfor
 
    splog, 'Total time for STAR_DVELOCITY = ', systime(1)-stime0, ' seconds', $

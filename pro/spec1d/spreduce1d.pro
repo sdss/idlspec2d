@@ -636,15 +636,17 @@ flambda2fnu = 0 ; Free memory
    splog, 'CPU time to fit to Elodie = ', systime(1)-t0
 
    ;----------
-   ; Find the best-fit Elodie star for all objects classified as stars
+   ; Find the velocity shifts for all objects classified as stars
 
    fitindx = where(strtrim(res_all[0,*].class,2) EQ 'STAR', nfit)
+   if (nfit EQ 0) then thisid = 0 $
+    else thisid = res_all[0,fitindx].fiberid
    splog, 'Fitting velocity shifts for ', nfit, ' stars'
    t0 = systime(1)
 
    res_vshift = star_dvelocity(res_all[0].plate, mjd=res_all[0].mjd, $
-    fitindx=fitindx, path='.')
-;    fitindx=res_all[0,*].fiberid, path='.') ; Fit all objects, not just stars
+    fiberid=thisid, path='.')
+   res_vshift = res_vshift[ res_all[0,*].fiberid-1 ]
 
    splog, 'CPU time to fit to star velocity shifts = ', systime(1)-t0
 
