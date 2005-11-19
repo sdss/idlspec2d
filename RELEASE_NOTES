@@ -1,11 +1,4 @@
 
-; Need to do the following computation in double-precision!!
-; Tentatively re-caste as such within VDISPFIT in call to COMPUTECHI2.
- readspec,401,201,flux=objflux,invvar=objivar,zans=zans,loglam=objloglam
- foo=vdispfit(objflux,objivar,objloglam,/debug,/doplot,zobj=zans.z,$ 
-  eigenfile='spEigenElodie.fits', columns=lindgen(24), yfit=dispflux)
-
-
 ARCFIT_GUESS: Change the FIX() functions to LONG(), though I don't believe
         this was causing any trouble.
 APO_LOG2HTML,APOREDUCE,BATCH1D,BATCH2D,CATPLOT,SDSSPROC,
@@ -24,6 +17,9 @@ ATVRAWSPEC: Plot a red column over every bad column, not just a box around
 BATCH2D: Allow PLATENUMS to be integer-valued, in which case they are
         recaste as zero-padded strings that are 4 characters long
         (such that they match the directory names).
+CHECKSN,MAKE2DMERGE,SPALLCOMBINE,SPALLREDUCE,SPMULTI,SPPLANCOMB,SPPLAN:
+        These are all deprecated Fermi-only routines that would no
+        longer work with the v5 versions of this code, so remove them.
 COMBINE1FIBER: Make robust to the B-spline code failing (and return zeros).
         Fix a rare crash condition that happened on plate 321: It is
         possible for NUMINSIDE to be zero (on the inner loop), if the
@@ -372,6 +368,8 @@ examples/opECalib-51577.par: Update the gains based upon work by Eric Switzer
         Note that this is the opECalib file used for the vast majority of data.
 include/export.h: New export.h file in the IDL 6.2 beta distribution.
 lib/Makefile: For "make clean", also remove ".a" and ".dylib" files.
+pro/Makefile: Remove reference to pro/fplan directory, since all those
+        deprecated routines have been removed.
 templates/eigeninput_star.par:
         Shift all of the normal stellar templates (O through M) to
         agree with the Elodie redshifts in the v5_0_0 reductions.
