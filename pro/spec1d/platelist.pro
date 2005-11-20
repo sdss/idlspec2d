@@ -11,7 +11,8 @@
 ; INPUTS:
 ;
 ; OPTIONAL INPUTS:
-;   infile      - Either a list of combine-plan files or a list of plate files.
+;   infile      - Either a list of combine-plan files or a list of plate files,
+;                 which can contain wildcards.
 ;                 If not specified, then search for all plan files matching
 ;                   '$SPECTRO_DATA/*/spPlancomb-*.par'.
 ;                 If no such plan files are found, then search for all plate
@@ -179,7 +180,13 @@ pro platelist, infile, plist=plist, create=create, $
    if (NOT keyword_set(infile)) then $
     infile = djs_filepath('spPlancomb-*.par', $
      root_dir=getenv('SPECTRO_DATA'), subdirectory='*')
-   fullfile = findfile(infile, count=nfile)
+   for i=0L, n_elements(infile)-1L do begin
+      thisfile = findfile(infile[i], count=ct)
+      if (ct GT 0) then $
+       fullfile = keyword_set(fullfile) ? [fullfile, thisfile] : thisfile
+   endfor
+   nfile = n_elements(fullfile)
+
    if (nfile EQ 0) then begin
       infile = djs_filepath('spPlate-*.fits', $
        root_dir=getenv('SPECTRO_DATA'), subdirectory='*')
