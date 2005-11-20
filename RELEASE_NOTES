@@ -96,6 +96,7 @@ PLATELIST: Use FINDFILE() function to see if files exist before calling
         Since the v5 version of this code will combine data with as few as
         1 exposure in a given camera, set the plate quality to 'bad' if there
         is only 1 exposure, or 'mariginal' if only 2 exposures in any given CCD.
+        Allow INFILE to be an array.
 PLATEMERGE: Add the fields CALIBFLUX,CALIBFLUX_IVAR which are explicitly
         copied over from the plug-map structures.
           Get rid of the ZFILE option in place of the PLATE,MJD options.
