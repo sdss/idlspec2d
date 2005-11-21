@@ -95,43 +95,53 @@ function computechi2, objflux, sqivar, starflux, $
    if (arg_present(dof)) then $
     dof = total(sqivar NE 0) - nstar
 
-   if (arg_present(covar)) then begin
-      covar = dblarr(nstar,nstar)
-      for j=0L, nstar-1L do begin
-         for k=0L, nstar-1L do begin
-            covar[j,k] = total(vv[j,*]^2 * vv[k,*]^2 / (ww[k]), /double)
-         endfor
-      endfor
-   endif
+;   if (arg_present(covar)) then begin
+;      covar = dblarr(nstar,nstar)
+;      for j=0L, nstar-1L do begin
+;         for k=0L, nstar-1L do begin
+;            covar[j,k] = total(vv[j,*]^2 * vv[k,*]^2 / (ww[k]), /double)
+;         endfor
+;      endfor
+;   endif
 
-   if (arg_present(covar) OR arg_present(var)) then begin
-      igood = where(ww GT 0, ngood)
-      wwt = dblarr(nstar)
-      if (ngood GT 0) then begin
-         wwt[igood] = 1.d0 / ww[igood]
-      endif
-   endif
-
-   if (arg_present(covar)) then begin
-      covar = dblarr(nstar,nstar)
-      for i=0L, nstar-1L do begin
-         for j=0L, i do begin
-            covar[i,j] = total(wwt * vv[*,i] * vv[*,j], /double)
-            covar[j,i] = covar[i,j]
-         endfor
-      endfor
-   endif
-
-   if (arg_present(var)) then begin
-      var = dblarr(nstar)
-      if (arg_present(covar)) then begin
-         i = lindgen(nstar)
-         var[*] = covar[i,i]
+   if (nstar EQ 1) then begin
+      ivar = sqivar^2
+      wtot = total(ivar,/double)
+      if (wtot LE 0) then begin
+         var = [0]
       endif else begin
-         for j=0L, nstar-1L do $
-          var[j] = total((vv[j,*])^2 * wwt, /double)
+         xmean = total(objflux * ivar, /double) / wtot
+         var = [total((objflux - xmean)^2 * ivar, /double)]
       endelse
-   endif
+      covar = var
+   endif else begin
+      if (arg_present(covar) OR arg_present(var)) then begin
+         igood = where(ww GT 0, ngood)
+         wwt = dblarr(nstar)
+         if (ngood GT 0) then wwt[igood] = 1.d0 / ww[igood]
+      endif
+
+      if (arg_present(covar)) then begin
+         covar = dblarr(nstar,nstar)
+         for i=0L, nstar-1L do begin
+            for j=0L, i do begin
+               covar[i,j] = total(wwt * vv[*,i] * vv[*,j], /double)
+               covar[j,i] = covar[i,j]
+            endfor
+         endfor
+      endif
+
+      if (arg_present(var)) then begin
+         var = dblarr(nstar)
+         if (arg_present(covar)) then begin
+            i = lindgen(nstar)
+            var[*] = covar[i,i]
+         endif else begin
+            for j=0L, nstar-1L do $
+             var[j] = total((vv[j,*])^2 * wwt, /double)
+         endelse
+      endif
+   endelse
 
    return, chi2
 end
