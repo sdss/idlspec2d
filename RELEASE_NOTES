@@ -32,6 +32,8 @@ COMPUTECHI2: Add optional outputs COVAR,VAR.
         only made here, then there is alot of recasting of arrays that
         will slow the code.  Therefore, in practice we'll want to recast
         these arrays in the calling routines (like in ZCOMPUTE).
+        Fix the computation of VAR and COVAR in the case of one template
+        vector in AMATRIX.
 ELODIE_BEST: Trim to stars not labelled as binary or triple stars, according
         to the Q_VR keyword in the Elodie FITS headers.  Rockosi brought
         this to my attention on Sep 20, 2004.
