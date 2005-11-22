@@ -266,11 +266,16 @@ ZCOMPUTE_QSO: A version of ZCOMPUTE that is basically the same code, but
 ZCOMPUTE,ZCOMPUTE_CHI2: Recast the fluxes and models in double-precision
         before calling COMPUTECHI2 due to round-off errors on some
         platforms (PR #6754).
+ZCOMPUTE: Add THETA_COVAR to the output structure.  Instead of storing all
+        of the coefficients for the fits at all lags, add a final call
+        to COMPUTECHI2 at the end to compute THETA and THETA_COVAR.
+        These changes relate to PR #6757.
 ZFIND: Mask any pixels on the templates where the first template contains zeros.
         This is useful, in particular, where the stellar templates have zeros
         at the beginning or end of the spectral range due lack of wavelength
         coverage.  This is done by setting the STARMASK parameter that is
         passed to ZCOMPUTE.  This should fix PR #5903.
+        Return THETA_COVAR as computed by ZCOMPUTE (see PR #6757).
 bin/aporsync_alllog.sh, aporsync_blue.sh, aporsync_logs.sh, aporsync_red.sh,
         killdata.sh, sos_start: Pull the data (sdR files and log files)
         from the machine specified by the environment variable
