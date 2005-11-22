@@ -67,7 +67,8 @@ end
 function dvelocity_fn, value, loglam=loglam, objflux=objflux, objivar=objivar, $
  ilist=ilist, newloglam=newloglam
 
-   nexp = max(ilist) + 1
+   nexp = max(ilist) + 1L
+   if (nexp LE 1) then return, 0.
 
    nnewpix = n_elements(newloglam)
    newflux = fltarr(nnewpix, nexp)
@@ -174,93 +175,98 @@ function star_dvelocity, plate, mjd=mjd, fiberid=fiberid1, path=path
       minlam = min(loglam, max=maxlam)
       newloglam = wavevector(minlam, maxlam)
 
-      ;----------
-      ; Compute the relative velocity between each possible pair of exposures
+      if (nexp GT 1) then begin
+
+         ;----------
+         ; Compute the relative velocity between each possible pair of exposures
 
 subsamp = 10 ; ???
 width = 1.e-4 ; ???
 maxshift = 20.d-4 ; ???
 minchi2diff = 5. ; ???
-      binsz = 1.0d-4/subsamp
-      bigloglam = wavevector(minlam - maxshift, maxlam + maxshift, $
-       binsz=binsz)
-      nbigpix = n_elements(bigloglam)
-      ipix1 = long(maxshift/binsz) + lindgen((maxlam-minlam)/1.0d-4) * subsamp
-      nlag = 2 * long(maxshift/binsz) + 1
-      lags = lindgen(nlag) - (nlag-1)/2
+         binsz = 1.0d-4/subsamp
+         bigloglam = wavevector(minlam - maxshift, maxlam + maxshift, $
+          binsz=binsz)
+         nbigpix = n_elements(bigloglam)
+         ipix1 = long(maxshift/binsz) $
+          + lindgen((maxlam-minlam)/1.0d-4) * subsamp
+         nlag = 2 * long(maxshift/binsz) + 1
+         lags = lindgen(nlag) - (nlag-1)/2
 
-      ; Resample all of the spectra on the subsampled wavelength grid
-      bigflux = fltarr(nbigpix, nexp)
-      bigivar = fltarr(nbigpix, nexp)
-      for iexp=0L, nexp-1L do begin
-         ii = where(ilist EQ iexp)
-         combine1fiber, loglam[*,ii], objflux[*,ii], objivar[*,ii], $
-          newloglam=bigloglam, newflux=bigflux1, newivar=bigivar1
-         bigflux[*,iexp] = bigflux1
-         bigivar[*,iexp] = bigivar1
-      endfor
-
-      npair = nexp * (nexp - 1) / 2
-      mmatrix = dblarr(npair+1,nexp)
-      mmatrix[0,0] = 1.d0 ; Force velocity of first exposure to zero
-      bvec = dblarr(npair+1)
-      sqivar = dblarr(npair+1)
-      ipair = 1L
-      for i1=0, nexp-2 do begin
-         for i2=i1+1, nexp-1 do begin
-            chivec = dblarr(nlag)
-            for ilag=0L, nlag-1L do begin
-               qgood = bigivar[ipix1,i1] GT 0 AND $
-                bigivar[ipix1+lags[ilag],i2] GT 0
-               thisivar = qgood / (1./(bigivar[ipix1,i1] + (qgood EQ 0)) $
-                + 1./(bigivar[ipix1+lags[ilag],i2] + (qgood EQ 0)))
-               chivec[ilag] = total( $
-                (bigflux[ipix1,i1] - bigflux[ipix1+lags[ilag],i2])^2 $
-                * thisivar )
-            endfor
-
-            ; Find the best-fit shift in log-wavelength
-            xpeak1 = find_nminima(chivec, lags*1.d-4/subsamp, xerr=xerr1, $
-             width=width, nfind=2, ypeak=ypeak1) ;, /debug,/doplot)
-            if (n_elements(ypeak1) GT 1) then $
-             if (ypeak1[1] GT 0 AND ypeak1[1] LT ypeak1[0]+minchi2diff $
-              and abs(xpeak1[0]-xpeak1[1]) LT xerr1[0]) then $
-              xerr1[0] = abs(xpeak1[0]-xpeak1[1])
-            mmatrix[ipair,i1] = 1.
-            mmatrix[ipair,i2] = -1.
-            bvec[ipair] = xpeak1[0]
-            if (xerr1[0] GT 0) then sqivar[ipair] = 1. / xerr1[0]
-            ipair = ipair + 1
+         ; Resample all of the spectra on the subsampled wavelength grid
+         bigflux = fltarr(nbigpix, nexp)
+         bigivar = fltarr(nbigpix, nexp)
+         for iexp=0L, nexp-1L do begin
+            ii = where(ilist EQ iexp)
+            combine1fiber, loglam[*,ii], objflux[*,ii], objivar[*,ii], $
+             newloglam=bigloglam, newflux=bigflux1, newivar=bigivar1
+            bigflux[*,iexp] = bigflux1
+            bigivar[*,iexp] = bigivar1
          endfor
-      endfor
-      sqivar[0] = total(sqivar) ; Heavily weight the datum that the velocity
-                                ; of the first exposure is zero
-      junk = computechi2(bvec, sqivar, mmatrix, acoeff=fitvelocity1, var=var)
 
-      ;----------
-      ; Do the fit
+         npair = nexp * (nexp - 1) / 2
+         mmatrix = dblarr(npair+1,nexp)
+         mmatrix[0,0] = 1.d0 ; Force velocity of first exposure to zero
+         bvec = dblarr(npair+1)
+         sqivar = dblarr(npair+1)
+         ipair = 1L
+         for i1=0, nexp-2 do begin
+            for i2=i1+1, nexp-1 do begin
+               chivec = dblarr(nlag)
+               for ilag=0L, nlag-1L do begin
+                  qgood = bigivar[ipix1,i1] GT 0 AND $
+                   bigivar[ipix1+lags[ilag],i2] GT 0
+                  thisivar = qgood / (1./(bigivar[ipix1,i1] + (qgood EQ 0)) $
+                   + 1./(bigivar[ipix1+lags[ilag],i2] + (qgood EQ 0)))
+                  chivec[ilag] = total( $
+                   (bigflux[ipix1,i1] - bigflux[ipix1+lags[ilag],i2])^2 $
+                   * thisivar )
+               endfor
 
-      parinfo = {value: 0.D, fixed: 0, limited: [0b,0b], limits: [0.d0,0.d0], $
-       tied: '', step: 2.e-6, mpmaxstep: 1.e-4 }
-      parinfo = replicate(parinfo, nexp)
-      parinfo.value = fitvelocity1
+               ; Find the best-fit shift in log-wavelength
+               xpeak1 = find_nminima(chivec, lags*1.d-4/subsamp, xerr=xerr1, $
+                width=width, nfind=2, ypeak=ypeak1) ;, /debug,/doplot)
+               if (n_elements(ypeak1) GT 1) then $
+                if (ypeak1[1] GT 0 AND ypeak1[1] LT ypeak1[0]+minchi2diff $
+                 and abs(xpeak1[0]-xpeak1[1]) LT xerr1[0]) then $
+                 xerr1[0] = abs(xpeak1[0]-xpeak1[1])
+               mmatrix[ipair,i1] = 1.
+               mmatrix[ipair,i2] = -1.
+               bvec[ipair] = xpeak1[0]
+               if (xerr1[0] GT 0) then sqivar[ipair] = 1. / xerr1[0]
+               ipair = ipair + 1
+            endfor
+         endfor
+         sqivar[0] = total(sqivar) ; Heavily weight the datum that the velocity
+                                   ; of the first exposure is zero
+         junk = computechi2(bvec, sqivar, mmatrix, acoeff=fitvelocity1, var=var)
+
+         ;----------
+         ; Do the fit
+
+         parinfo = {value: 0.D, fixed: 0, limited: [0b,0b], $
+          limits: [0.d0,0.d0], tied: '', step: 2.e-6, mpmaxstep: 1.e-4 }
+         parinfo = replicate(parinfo, nexp)
+         parinfo.value = fitvelocity1
 ; ???
-      parinfo[0].fixed = 1
-;      for i=1L, nexp-1 do parinfo[0].tied = parinfo[0].tied $
-;       + ' - P(' + strtrim(string(i),2) + ')'
+         parinfo[0].fixed = 1
+;         for i=1L, nexp-1 do parinfo[0].tied = parinfo[0].tied $
+;          + ' - P(' + strtrim(string(i),2) + ')'
 
-      ftol = 1d-20
-      gtol = 1d-20
-      xtol = 1d-20
-      functargs = { loglam: loglam, objflux: objflux, objivar: objivar, $
-       ilist: ilist, newloglam: newloglam }
-      fitval = mpfit('dvelocity_fn', parinfo=parinfo, functargs=functargs, $
-       perror=perror, maxiter=maxiter, ftol=ftol, gtol=gtol, xtol=xtol, $
-       niter=niter, status=status, /quiet)
+         ftol = 1d-20
+         gtol = 1d-20
+         xtol = 1d-20
+         maxiter = 50L
+         functargs = { loglam: loglam, objflux: objflux, objivar: objivar, $
+          ilist: ilist, newloglam: newloglam }
+         fitval = mpfit('dvelocity_fn', parinfo=parinfo, functargs=functargs, $
+          perror=perror, maxiter=maxiter, ftol=ftol, gtol=gtol, xtol=xtol, $
+          niter=niter, status=status, /quiet)
 
-      pixscale = alog(10.) * 2.99792458e5 ; (km/sec)/(10e-4 log-wave)
-      res_best[fiberid[iobj]-1].velocity[0:nexp-1] = fitval * pixscale
-      res_best[fiberid[iobj]-1].velocity_err[0:nexp-1] = perror * pixscale
+         pixscale = alog(10.) * 2.99792458e5 ; (km/sec)/(10e-4 log-wave)
+         res_best[fiberid[iobj]-1].velocity[0:nexp-1] = fitval * pixscale
+         res_best[fiberid[iobj]-1].velocity_err[0:nexp-1] = perror * pixscale
+      endif
    endfor
 
    splog, 'Total time for STAR_DVELOCITY = ', systime(1)-stime0, ' seconds', $
