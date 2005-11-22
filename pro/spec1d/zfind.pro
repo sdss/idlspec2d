@@ -97,6 +97,7 @@ function sp1d_struct
     'tcolumn'    , lonarr(10) - 1L, $
     'npoly'      ,  0L, $
     'theta'      , fltarr(10), $
+    'theta_covar', fltarr(10,10), $
     'vdisp'      , 0.0, $
     'vdisp_err'  , 0.0, $
     'vdispz'     , 0.0, $
@@ -256,6 +257,7 @@ function zfind, objflux, objivar, hdr=hdr, $
       result[indx].dof = zans[indx].dof
       ntheta = n_elements(zans[0].theta)
       result[indx].theta[0:ntheta-1] = zans[indx].theta
+      result[indx].theta_covar[0:ntheta-1,0:ntheta-1] = zans[indx].theta_covar
       if (keyword_set(eigenfile)) then $
        result[indx].tfile = fileandpath(thisfile)
       for icol=0, n_elements(columns)-1 do $
