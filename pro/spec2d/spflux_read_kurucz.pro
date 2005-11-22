@@ -33,6 +33,7 @@
 ; BUGS:
 ;
 ; DATA FILES:
+;   $IDLSPEC2D_DIR/templates/kurucz_stds_raw_v5.fits
 ;
 ; PROCEDURES CALLED:
 ;   mrdfits()
