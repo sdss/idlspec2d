@@ -51,6 +51,7 @@
 ;                      minus the number of templates.
 ;                theta : Mixing angles [NTEMPLATE].  These are computed at the
 ;                        nearest integral redshift, e.g. at ROUND(ZOFFSET).
+;                theta_covar : Covariance matrix for THETA
 ;
 ; COMMENTS:
 ;   Fits are done to chi^2/DOF, not to chi^2.
@@ -82,7 +83,8 @@ function create_zans, nstar, nfind
     'z_err' , 0.0, $
     'chi2'  , 0.0, $
     'dof'   ,  0L, $
-    'theta' , fltarr(nstar) )
+    'theta' , fltarr(nstar), $
+    'theta_covar' , fltarr(nstar,nstar) )
 
    return, replicate(zans1, nfind)
 end
@@ -212,10 +214,9 @@ function zcompute, objflux, objivar, starflux, starmask, nfind=nfind, $
       j2 = npixstar-1 < (npixobj+j1-i1-1L)
       i2 = i1 + j2 - j1
       chi2arr[ilag] = computechi2( objflux_double[i1:i2], $
-       sqivar[i1:i2] * starmask[j1:j2], starflux_double[j1:j2,*], $
-       acoeff=acoeff, dof=dof)
+       sqivar[i1:i2] * starmask[j1:j2], starflux_double[j1:j2,*], dof=dof)
       dofarr[ilag] = dof
-      thetaarr[*,ilag] = acoeff
+;      thetaarr[*,ilag] = acoeff
 
       ; Burles counter of lag number...
       if(NOT keyword_set(silent)) then $
@@ -243,7 +244,7 @@ function zcompute, objflux, objivar, starflux, starmask, nfind=nfind, $
       for ipeak=0L, npeak-1 do begin
          junk = min(abs(lags-xpeak1[ipeak]), ilag)
          zans[ipeak].dof = dofarr[ilag]
-         zans[ipeak].theta = thetaarr[*,ilag]
+;         zans[ipeak].theta = thetaarr[*,ilag]
       endfor
       zans[0:npeak-1].chi2 = zans[0:npeak-1].chi2 * zans[0:npeak-1].dof
 
@@ -252,15 +253,36 @@ function zcompute, objflux, objivar, starflux, starmask, nfind=nfind, $
          print, 'Press any key...'
          cc = strupcase(get_kbrd(1))
       endif
-
    endif else if (ct GE 1) then begin
+      npeak = 1
       zans[0].chi2 = -min(-chi2arr[indx]/dofarr[indx], ilag)
       zans[0].z = poffset - lags[indx[ilag]]
       zans[0].z_err = 0
       zans[0].dof = dofarr[indx[ilag]]
       zans[0].chi2 = zans[0].chi2 * zans[0].dof
-      zans[0].theta = thetaarr[*,indx[ilag]]
-   endif
+;      zans[0].theta = thetaarr[*,indx[ilag]]
+   endif else begin
+      npeak = 0
+   endelse
+
+   ;-----
+   ; Re-evaluate the fits at the best-fits, in order to compute THETA
+   ; and THETA_COVAR
+
+   for ipeak=0L, npeak-1 do begin
+      j1 = long(round(poffset - zans[ipeak].z)) < (npixstar-1L)
+      if (j1 LT 0) then i1 = -j1 $
+       else i1 = 0L
+      j1 = j1 > 0L
+      j2 = npixstar-1 < (npixobj+j1-i1-1L)
+      i2 = i1 + j2 - j1
+      thischi2 = computechi2( objflux_double[i1:i2], $
+       sqivar[i1:i2] * starmask[j1:j2], starflux_double[j1:j2,*], $
+       acoeff=acoeff, covar=covar)
+      zans[ipeak].theta = acoeff
+      zans[ipeak].theta_covar = covar
+   endfor
+
 
    return, zans
 end
