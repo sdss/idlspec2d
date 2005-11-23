@@ -178,6 +178,7 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
                camspecid[j,i] = strmid(cameras, 1, 1)
                expnum[j,i] = sxpar(hdr, 'EXPOSURE')
             endif else begin
+               expnum[j,i] = long(strmid(allseq[i].name[icams[j]],11,8))
                allseq[i].name[icams[j]] = ''
             endelse
          endelse
@@ -202,7 +203,7 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
    ; best exposure, or whose score is less than some absolute value.
    ; These numbers are hard-wired!!!???
 
-   ibad = where(expscore LT 1.0 OR expscore LT 0.20*bestscore, nbad)
+   ibad = where(expscore LE 0.0 OR expscore LT 0.20*bestscore, nbad)
    if (nbad GT 0) then begin
       for j=0, nbad-1 do splog, 'WARNING: Discarding ' $
        + allseq[ibad[j]].flavor + ' exposure #', $
