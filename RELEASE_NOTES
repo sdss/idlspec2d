@@ -114,6 +114,8 @@ PLATEMERGE: Add the fields CALIBFLUX,CALIBFLUX_IVAR which are explicitly
 PLOTSN: Choose which objects are "good" on a filter-by-filter basis,
         to avoid stars with crazy magnitudes (like 0 or -9999) from
         throwing the plots (for example, on SEGUE plate 2255).
+        Trivial bug fixes to prevent crashes when making plots with
+        a single point.
 PLOTSPEC: Add capability to plot reconstructed frames (added by Blanton).
         Fix units on Y axis to /cm^2 instead of /cm (was fixed in v4_9_13
         when plotting to files, but not when to the terminal).
@@ -209,6 +211,11 @@ SPCOADD_V5: Apply the flux-distortion image to the sky vectors, as well
         rather than using RA,DEC.  This is because there are the bizarre
         plates like SEGUE plate 2255 that has the same object several times.
         Add keywords NEXP_B1,NEXP_B2,NEXP_R1,NEXP_R2 to output header.
+SPCOMBINE_V5: Make the (dangerous!) change of setting the minimum score
+        for an exposure to a S/N value of >0 rather than >1.  This is
+        necessary for some SEGUE plates, but is dangerous for main survey
+        plates if some data is not marked bad.  Hopefully, we'll track
+        all those bad data down with PR #6722.
 SPFLATGEN: Discard exposures where the quality keyword is set to 'bad'.
 SPFLATTEN2: Recast an internal variable to float to prevent double-precision
         output files.
