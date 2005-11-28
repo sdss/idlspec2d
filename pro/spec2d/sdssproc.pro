@@ -89,7 +89,6 @@
 ;   sxpar()
 ;   writefits
 ;   yanny_free
-;   yanny_par()
 ;   yanny_read
 ;
 ; INTERNAL SUPPORT ROUTINES:
