@@ -54,11 +54,14 @@
 ;------------------------------------------------------------------------------
 function dvelocity_struct
 
+   nmax = 16
+
    result = create_struct( $
     name = 'VSHIFT', $
-    'velocity_tai', dblarr(10), $
-    'velocity'    , fltarr(10), $
-    'velocity_err', fltarr(10) $
+    'velocity_tai', dblarr(nmax), $
+    'velocity'    , fltarr(nmax), $
+    'velocity_err', fltarr(nmax), $
+    'velocity_covar', fltarr(nmax,nmax) $
    )
 
    return, result
@@ -261,11 +264,13 @@ minchi2diff = 5. ; ???
           ilist: ilist, newloglam: newloglam }
          fitval = mpfit('dvelocity_fn', parinfo=parinfo, functargs=functargs, $
           perror=perror, maxiter=maxiter, ftol=ftol, gtol=gtol, xtol=xtol, $
-          niter=niter, status=status, /quiet)
+          niter=niter, status=status, covar=covar, /quiet)
 
          pixscale = alog(10.) * 2.99792458e5 ; (km/sec)/(10e-4 log-wave)
          res_best[fiberid[iobj]-1].velocity[0:nexp-1] = fitval * pixscale
          res_best[fiberid[iobj]-1].velocity_err[0:nexp-1] = perror * pixscale
+         res_best[fiberid[iobj]-1].velocity_covar[0:nexp-1,0:nexp-1] = $
+          covar * pixscale^2
       endif
    endfor
 
