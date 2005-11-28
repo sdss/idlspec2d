@@ -1271,7 +1271,8 @@ TFILE      Template file in $IDLSPEC2D_DIR/templates
 TCOLUMN    Columns to use in template file (0-indexed); unused values set to -1
 NPOLY      Number of polynomial terms used in conjunction with TFILE
 THETA      Eigenvalue coefficients for each column in template file + each polynomial term
-THETA_COVAR  Covariance matrix for THETA
+THETA_COVAR  Covariance matrix for THETA, where the square root of the
+           diagonal elements gives the formal 1-sigma statistical errors
 VDISP      Velocity dispersion, only computed for galaxies (km/sec)
            and explicitly masking emission line regions
 VDISP_ERR  Error in VDISP (km/sec); negative for invalid fit
@@ -1352,6 +1353,8 @@ VELOCITY_TAI      Timestamp for each exposure [sec]
 VELOCITY          Velocity for each exposure [km/s], where the first exposure
                   should be zero within roundoff
 VELOCITY_ERR      Error in VELOCITY [km/s]
+VELOCITY_COVAR    Covariance matrix for VELOCITY, where the square root of the
+                  diagonal elements gives the formal 1-sigma statistical errors
 </PRE>
 
 <H4><A NAME="dm_spzline">spZline-<I>pppp</I>-<I>mmmmm</I>.fits</A></H4>
