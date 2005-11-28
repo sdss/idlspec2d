@@ -103,7 +103,7 @@ pro spreduce, flatname, arcname, objname, $
    ;---------------------------------------------------------------------------
  
    plugmap = readplugmap(plugfile, plugdir=plugdir, $
-    exptime=sxpar(objhdr,'EXPTIME'), /calibobj)
+    exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrplug, /calibobj)
 
    ;-------------------------------------------------------------------------
    ; Plugsort will also return a mask of unplugged fibers
