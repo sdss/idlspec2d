@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   plugmap = readplugmap( plugfile, [ plugdir=, /apotags, /deredden, $
-;    exptime=, /calibobj ] )
+;    exptime=, hdr=, /calibobj ] )
 ;
 ; INPUTS:
 ;   plugfile  - Name of Yanny-parameter plugmap file
@@ -42,6 +42,7 @@
 ;   plugmap   - Plugmap structure
 ;
 ; OPTIONAL OUTPUTS:
+;   hdr       - Header from Yanny-formatted plugmap file
 ;
 ; COMMENTS:
 ;   Do not use the calibObj structure if more than 10% of the non-sky
@@ -70,7 +71,10 @@
 ;-
 ;------------------------------------------------------------------------------
 function readplugmap, plugfile, plugdir=plugdir, $
- apotags=apotags, deredden=deredden, exptime=exptime, calibobj=calibobj
+ apotags=apotags, deredden=deredden, exptime=exptime, calibobj=calibobj, $
+ hdr=hdr
+
+   hdr = 0 ; Default return value
 
    ; The correction vector is here --- adjust this as necessary.
    ; These are the same numbers as in SDSSFLUX2AB in the photoop product.
