@@ -148,6 +148,7 @@ READPLUGMAP: Fix bug when replacing unknown fluxes in the calibObj
           values like -999.
         Add missing iobj, so that the call from QUICKTRACE with the /DEREDDEN
           option works.
+        Add HDR return keyword, which is used by SPREDUCE routine.
 READONESPEC: Return all headers in FRAMEHDR.
 READSPEC: Change how the internal procedure READSPEC1 works, such that
         arrays of zeros are returned if data is missing.  This allows us
@@ -250,6 +251,8 @@ SPPLAN1D,SPPLAN_FINDRAWDATA:
         with STRPOS(/REVERSE_SEARCH).
 SPREDUCE: Pass exposure time to READPLUGMAP, which now uses that for
         multiple-offset plates (like SEGUE plate 2255).
+        Return plugmap-header from call to READPLUGMAP(), since it is
+        used to get the CARTID for the output files.
 SPREDUCE1D: (Use the B-spline spectra for QSO-fitting).
         When computing FRACNSIGMA,FRACNSIGHI,FRACNSIGLO, ignore points
         blueward of rest-frame 1216 Ang, since these numbers would then
