@@ -139,7 +139,7 @@ function star_dvelocity, plate, mjd=mjd, fiberid=fiberid1, path=path
 
    nobj = n_elements(fiberid)
    for iobj=0L, nobj-1L do begin
-      splog, 'Object number ', iobj, ' of ', nobj
+      splog, 'Object number ', iobj, ' of ', nobj, ', Fiber #', fiberid[iobj]
 
       readonespec, plate, mjd=mjd, fiberid[iobj], $
        framehdr=framehdr, loglam=loglam, flux=objflux, invvar=objivar, $
