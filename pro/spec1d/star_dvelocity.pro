@@ -54,7 +54,7 @@
 ;------------------------------------------------------------------------------
 function dvelocity_struct
 
-   nmax = 16
+   nmax = 20
 
    result = create_struct( $
     name = 'VSHIFT', $
