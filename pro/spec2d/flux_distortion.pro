@@ -361,8 +361,8 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
                solve_poly_ratio, xvector, $
                 objflux[*,indx2[i2[imatch]]] * corrimg[*,indx2[i2[imatch]]], $
                 objflux[*,indx1[i1[imatch]]] * corrimg[*,indx1[i1[imatch]]], $
-                objivar[*,indx2[i2[imatch]]] / corrimg[*,indx2[i2[imatch]]]^2, $
-                objivar[*,indx1[i1[imatch]]] / corrimg[*,indx1[i1[imatch]]]^2, $
+                thisivar[*,indx2[i2[imatch]]] / corrimg[*,indx2[i2[imatch]]]^2, $
+                thisivar[*,indx1[i1[imatch]]] / corrimg[*,indx1[i1[imatch]]]^2, $
                 npoly=3, nback=0, ymult=ymult
                ratioarr = keyword_set(ratioarr) ? [[ratioarr],[ymult]] $
                 : ymult
