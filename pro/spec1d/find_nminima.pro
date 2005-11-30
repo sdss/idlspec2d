@@ -144,7 +144,7 @@ function zfitmin, yarr, xarr, dofarr=dofarr, $
 
       nterms = 4
       yfit = mpfitpeak(thisx-xguess, thisy, coeff, nterms=nterms, $
-       /gaussian, /negative, perror=perror)
+       /gaussian, /negative, perror=perror, status=status)
       if (nthis LE nterms) then $
        yerror = 0 $
       else $
@@ -152,7 +152,11 @@ function zfitmin, yarr, xarr, dofarr=dofarr, $
 
       ; Compute the fit error of the minimum of the quadratic.
       ; We rescale by the apparent errors in Y.
-      xerr1 = perror[1] * yerror
+      if (status GT 0) then begin
+         xerr1 = perror[1] * yerror
+      endif else begin
+         errcode = -8L
+      endelse
 
       ; Compute where chi^2 increases by 1.
       ; Insist that the gaussian fit spans a range of at least one
