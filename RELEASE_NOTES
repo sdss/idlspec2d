@@ -87,6 +87,8 @@ FLUX_DISTORTION: There was a bug in the way objects were being rejected
         between that offset and others (as determined by matching RA,Dec),
         then solve for the mean flux-correction vector between those offsets.
         Otherwise, scale the fluxes according to SCI_EXPTIME in the plugmap.
+        When fitting for the ratio vectors, use THISIVAR internally instead
+        of OBJIVAR (the former masks out bad sky-subtraction regions).
 LINEBACKFIT: The calculation of LINEEW_ERR was incorrect, as noted in PR #6235.
 LRGMODEL_PHOTOZ: Optionally compute and return FITFLUX.
 PCA_CVSTAR,PCA_GAL,PCA_QSO: Insist that all requested spectra exist.
