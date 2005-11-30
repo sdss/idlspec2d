@@ -52,6 +52,8 @@ EXTRACT_OBJECT: Write as HDU #8 an image of the relative chi^2, or an
 FIBERFLAT: Replace the /EACHGROUP keyword in BSPLINE_ITERFIT with appropriate
         GROUPSIZE keywords.  The former was a holdover from the days
         of the Fortran Slatec code.
+FIND_NMINIMA: Catch the status from calling MPFITPEAK, and deal with it
+        appropriately if the fit failed.
 FINDSPEC: Complete re-write to match against long lists of objects quickly,
         rather than the slow loop over one object at a time.  Also, address
         PR #6583 to deal with the crazy possibility of the same object (with
