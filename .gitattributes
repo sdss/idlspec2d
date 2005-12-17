@@ -67,7 +67,6 @@ etc/atmdisp_vec_am1.4see2.0.fit -text
 etc/atmdisp_vec_am1.5see2.0.fit -text
 etc/blue.bkpts -text
 etc/brg.08.gk.01 -text
-etc/dr2spectro.par -text
 etc/emlines.par -text
 etc/f8v.abs -text
 etc/f8vspline.dat -text
