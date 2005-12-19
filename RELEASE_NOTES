@@ -1,7 +1,8 @@
 
 -------------------------------------------------------------------------------
-v5_0_0 (Feb 19, 2004 idlspec2d running on IDL 5.4 - 6.2
-Built against specflat v1_5, elodie v1_0, idlutils v5_1_0 for upgrading SOS.
+v5_1_0 (Dec 19, 2005 idlspec2d running on IDL 5.4 - 6.2
+Built against specflat v1_6, elodie v1_0, idlutils v5_1_0 for upgrading SOS;
+fix double-precision on OSX and Linux64.
 
 ARCFIT_GUESS: Change the FIX() functions to LONG(), though I don't believe
         this was causing any trouble.
