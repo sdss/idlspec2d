@@ -397,6 +397,7 @@ include/export.h: New export.h file in the IDL 6.2 beta distribution.
 lib/Makefile: For "make clean", also remove ".a" and ".dylib" files.
 pro/Makefile: Remove reference to pro/fplan directory, since all those
         deprecated routines have been removed.
+pro/photoz/Makefile: Add this Makefile.
 templates/eigeninput_star.par:
         Shift all of the normal stellar templates (O through M) to
         agree with the Elodie redshifts in the v5_0_0 reductions.
