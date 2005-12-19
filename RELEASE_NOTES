@@ -1,4 +1,8 @@
 
+-------------------------------------------------------------------------------
+v5_0_0 (Feb 19, 2004 idlspec2d running on IDL 5.4 - 6.2
+Built against specflat v1_5, elodie v1_0, idlutils v5_1_0 for upgrading SOS.
+
 ARCFIT_GUESS: Change the FIX() functions to LONG(), though I don't believe
         this was causing any trouble.
 APO_LOG2HTML,APOREDUCE,BATCH1D,BATCH2D,CATPLOT,SDSSPROC,
@@ -399,6 +403,12 @@ templates/eigeninput_star.par:
         No change to the WD or WDmagnetic velocities (out of ignorance).
 templates/spBsplineQSO-53115.fits: Fist attempt at a B-spline composite
         for QSO spectra as a fn. of redshift (made by Burles).
+templates/spEigenCVstar-53724.fits,spEigenGal-53724.fits,spEigenQSO-53724.fits,
+        spEigenStar-53724.fits: Rebuilt these templates using an untagged
+        version of the reductions essentially equivalent to v5_1_0, such
+        that the spectrophotometry will be improved.  Note that we still
+        mean to improve these templates at some later date by improving
+        the lists of input objects, especially for stars.
 templates/wfEigen*.fits: Add WFCCD templates from Prochaska
 
 -------------------------------------------------------------------------------
