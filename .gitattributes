@@ -173,6 +173,7 @@ pro/fluxfix/stype_standard.pro -text
 pro/inspect/Makefile -text
 pro/inspect/inspectfiles.pro -text
 pro/inspect/inspectgen.pro -text
+pro/photoz/Makefile -text
 pro/photoz/lrg_photoz.pro -text
 pro/photoz/lrg_photoz_test.pro -text
 pro/photoz/lrg_tweak_template.pro -text
