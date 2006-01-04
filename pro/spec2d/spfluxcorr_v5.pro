@@ -34,6 +34,7 @@
 ; PROCEDURES CALLED:
 ;   djs_filepath()
 ;   djs_reject()
+;   fcalib_default()
 ;   mrdfits()
 ;   mwrfits
 ;   solve_poly_ratio
@@ -83,12 +84,14 @@ pro spfluxcorr_v5, objname, adderr=adderr, combinedir=combinedir, $
    camcolor = strarr(nfile)
    expnum = lonarr(nfile)
    spectroid = lonarr(nfile)
+   exptime = fltarr(nfile)
    for ifile=0, nfile-1 do begin
       spframe_read, objname[ifile], hdr=hdr
       camname[ifile] = strtrim(sxpar(hdr, 'CAMERAS'),2)
       camcolor[ifile] = strmid(camname[ifile],0,1)
       spectroid[ifile] = strmid(camname[ifile],1,1)
       expnum[ifile] = sxpar(hdr, 'EXPOSURE')
+      exptime[ifile] = sxpar(hdr, 'EXPTIME')
    endfor
 
    explist = expnum[uniq(expnum, sort(expnum))]
@@ -140,7 +143,14 @@ pro spfluxcorr_v5, objname, adderr=adderr, combinedir=combinedir, $
        format='("spFluxcalib-", a2, "-", i8.8, ".fits")'), $
        root_dir=combinedir)
       calibfile = (findfile(calibfile+'*'))[0]
-      calibfac = mrdfits(calibfile, 0, /silent)
+; ???
+      if (keyword_set(calibfile)) then begin
+         calibfac = mrdfits(calibfile, 0, /silent)
+      endif else begin
+         splog, 'WARNING: Reading default flux-calib vectors for camera=' $
+          + camname[ifile]
+         calibfac = fcalib_default(camname[ifile], loglam1, exptime[ifile])
+      endelse
       minval = 0.05 * mean(calibfac)
       divideflat, objflux1, invvar=objivar1, calibfac, minval=minval
 
