@@ -398,6 +398,7 @@ pro/spec2d/extract_object.pro -text
 pro/spec2d/extract_profile.pro -text
 pro/spec2d/extract_row.pro -text
 pro/spec2d/extract_row_safe.pro -text
+pro/spec2d/fcalib_default.pro -text
 pro/spec2d/fiber_rollcall.pro -text
 pro/spec2d/fiberflat.pro -text
 pro/spec2d/fibermask_bits.pro -text
