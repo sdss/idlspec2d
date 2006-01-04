@@ -94,6 +94,7 @@
 ;   djs_median()
 ;   djs_oplot
 ;   djs_plot
+;   fcalib_default()
 ;   get_mjd_dir()
 ;   soplot
 ;   splot
@@ -185,15 +186,11 @@ pro apoplot1, plate, fiberid, mjd=mjd, expnum=allexpnum, nsmooth=nsmooth, $
        else loglam = [[loglam], [thisloglam]]
 
       ; Read and apply a canonical flux-calibration vector
-      fcalibfile = filepath('spFluxcalib-'+allcams[icam]+'.fits', $
-       root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='examples')
-      calibhdr = headfits(fcalibfile)
-      cwavemin = sxpar(calibhdr, 'WAVEMIN')
-      cwavemax = sxpar(calibhdr, 'WAVEMAX')
-      calibset = mrdfits(fcalibfile, 1, /silent)
-      calibfac = bspline_valu(yarc[*,column[0]], calibset)
+      calibfac = fcalib_default(allcams[icam], yarc[*,column[0]], 1.)
+      qgood = calibfac GT 0
       for jj=0, n_elements(jscience)-1 do begin
-         objsub[*,jscience[jj]] = objsub[*,jscience[jj]] / calibfac
+         objsub[*,jscience[jj]] = qgood * objsub[*,jscience[jj]] $
+          / (PPSCIENCE[jscience[jj]].exptime * calibfac + (qgood EQ 0))
       endfor
 
       ; Mask out any regions where we don't know the flux-calibration vector
