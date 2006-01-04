@@ -3,7 +3,7 @@
 ;   spflux_v5
 ;
 ; PURPOSE:
-;   Compute flux-calibration vectors for each CCD+exposure.
+;   Compute flux-calibration vectors for each CCD+exposure from std stars
 ;
 ; CALLING SEQUENCE:
 ;   spflux_v5, objname, [ adderr=, combinedir= ]
@@ -988,11 +988,12 @@ if (max(calibimg) EQ 0) then stop ; ???
       qbad = loglam1 LT logmin OR loglam1 GT logmax
       ibad = where(qbad, nbad)
       if (nbad GT 0) then calibimg[ibad] = 0
+
       minval = min(calibimg[where(qbad EQ 0)], max=maxval)
       if (maxval/minval GT 20. OR minval LT 0) then $
-       splog, 'WARNING: Min/max fluxcorr = ', minval, maxval $
+       splog, 'WARNING: Min/max fluxcalib = ', minval, maxval $
       else $
-       splog, 'Min/max fluxcorr = ', minval, maxval
+       splog, 'Min/max fluxcalib = ', minval, maxval
 
       ;----------
       ; Write the output file
