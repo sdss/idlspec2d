@@ -27,12 +27,12 @@
 ;   wavemin        - Log-10 wavelength of first pixel in output spectra;
 ;                    default to the nearest bin to the smallest wavelength
 ;                    of the input spectra.
-;   bkptbin        - ???
+;   bkptbin        - Parameter for COMBINE1FIBER
 ;   window         - Window size for apodizing the errors of the spectrum
 ;                    from each individual frame;
 ;                    default to 100 pixels apodization on each end of the
 ;                    spectra.
-;   maxsep         - ???
+;   maxsep         - Parameter for COMBINE1FIBER
 ;   adderr         - Additional error to add to the formal errors, as a
 ;                    fraction of the flux.
 ;   combinedir     - Optional output directory
@@ -66,6 +66,7 @@
 ;   correct_dlam
 ;   divideflat
 ;   djs_diff_angle()
+;   fcalib_default()
 ;   fiber_rollcall
 ;   flux_distortion()
 ;   idlspec2d_version()
@@ -162,7 +163,8 @@ pro spcoadd_v5, spframes, outputname, $
       ; Reading the plug-map structure will fail if its structure is
       ; different between different files.
 
-      splog, 'Reading file #', ifile, ': ', filenames[ifile]
+      splog, 'Reading file #', ifile, ': ', filenames[ifile], $
+       prename=filenames[ifile]
       spframe_read, filenames[ifile], objflux=tempflux, objivar=tempivar, $
        mask=temppixmask, wset=tempwset, dispset=tempdispset, plugmap=tempplug, $
        skyflux=tempsky, hdr=hdr, adderr=adderr
@@ -226,12 +228,19 @@ pro spcoadd_v5, spframes, outputname, $
        root_dir=combinedir)
       calibfile = (findfile(calibfile+'*'))[0]
 
-      calibfac = mrdfits(calibfile, 0, calibhdr, /silent)
+      if (keyword_set(calibfile)) then begin
+         calibfac = mrdfits(calibfile, 0, calibhdr, /silent)
+      endif else begin
+         splog, 'WARNING: Reading default flux-calib vectors for camera=' $
+          + camnames[icam]
+         calibfac = fcalib_default(camnames[icam], tempwave, exptimevec[icam])
+      endelse
       minval = 0.05 * mean(calibfac)
       divideflat, tempflux, invvar=tempivar, calibfac, minval=minval
       divideflat, tempsky, calibfac, minval=minval
       temppixmask = temppixmask $
-       OR (calibfac LE minval) * pixelmask_bits('BADFLUXFACTOR')
+       OR ((calibfac LE minval OR keyword_set(calibfile) EQ 0) $
+       * pixelmask_bits('BADFLUXFACTOR'))
 
       ;----------
       ; Apply flux-correction factor between spectro-photometric exposure
@@ -298,6 +307,7 @@ pro spcoadd_v5, spframes, outputname, $
          plugmap = [plugmap, tempplug]
       endelse
 
+      splog, prename=''
    endfor
 
    tempflux = 0
@@ -438,6 +448,17 @@ pro spcoadd_v5, spframes, outputname, $
    corrimg = flux_distortion(finalflux, finalivar, finalandmask, finalormask, $
     plugmap=finalplugmap, loglam=finalwave, plotfile=distortpsfile, hdr=bighdr)
 
+   igood = where(finalivar GT 0)
+   thismin = min(corrimg[igood], max=thismax)
+   cratio = thismin / thismax
+   if (cratio LT 1./100) then begin
+      splog, 'WARNING: Flux distortion image dynamic range = ', 1./cratio, $
+       ' (DISABLE)'
+      corrimg[*] = 1.
+   endif else begin
+      splog, 'Flux distortion image dynamic range = ', 1./cratio
+   endelse
+
    ; Plot S/N and throughput **before** this distortion-correction.
    splog, prelog='Initial'
    platesn, finalflux, finalivar, finalandmask, finalplugmap, finalwave, $
@@ -472,7 +493,7 @@ pro spcoadd_v5, spframes, outputname, $
       thisfile = fileandpath(filenames[ifile], path=thispath)
       thisfile = djs_filepath(repstr(thisfile,'spFrame','spCFrame'), $
        root_dir=thispath)
-      splog, 'Writing file #', ifile, ': ', thisfile
+      splog, 'Writing file #', ifile, ': ', thisfile, prename=filenames[ifile]
       indx = where(filenum EQ ifile, nthis)
 
       hdr = *hdrarr[ifile]
@@ -503,6 +524,7 @@ pro spcoadd_v5, spframes, outputname, $
       mwrfits, plugmap[indx], thisfile
       mwrfits, skyflux[*,indx], thisfile
    endfor
+   splog, prename=''
 
    ;----------
    ; Clear memory
