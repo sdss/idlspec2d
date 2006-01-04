@@ -80,9 +80,11 @@ function zfitmin, yarr, xarr, dofarr=dofarr, $
 
    if (keyword_set(xplotfit)) then doplot = 1
    npts = n_elements(yarr)
-   if (NOT keyword_set(xarr)) then xarr = findgen(npts)
-   if (keyword_set(dofarr)) then ydof = yarr / (dofarr + (dofarr EQ 0)) $
-    else ydof = yarr
+   if (NOT keyword_set(xarr)) then xarr = dindgen(npts)
+   if (keyword_set(dofarr)) then $
+    ydof = double(yarr) / (dofarr + (dofarr EQ 0)) $
+   else $
+    ydof = double(yarr)
    if (NOT keyword_set(xguess)) then begin
       junk = min(ydof, imin)
       xguess = xarr[imin]
@@ -127,12 +129,12 @@ function zfitmin, yarr, xarr, dofarr=dofarr, $
    ; Note that we always expect at least one point, which is
    ; at XGUESS.
    indx = indx[sort(xarr[indx])]
-   thisx = xarr[indx]
+   thisx = double(xarr[indx])
    meandof = mean(dofarr[indx])
    thisy = ydof[indx] * meandof
 
    if (keyword_set(doplot)) then begin
-      xplotfit = thisx[0] + findgen(101) * (thisx[nthis-1] - thisx[0]) / 100.
+      xplotfit = thisx[0] + dindgen(101) * (thisx[nthis-1] - thisx[0]) / 100.
       xplotval = thisx
       yplotval = thisy / meandof
    endif
@@ -268,7 +270,7 @@ function find_nminima, yflux, xvec, dofarr=dofarr, nfind=nfind, minsep=minsep, $
    if (ndata EQ 1) then $
     return, 0
 
-   if (NOT keyword_set(xvec)) then xvec = lindgen(ndata)
+   if (NOT keyword_set(xvec)) then xvec = dindgen(ndata)
    if (NOT keyword_set(dofarr)) then dofarr = 1
    if (NOT keyword_set(nfind)) then nfind = 1
    if (n_elements(minsep) EQ 0) then minsep = 0
