@@ -218,10 +218,13 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
    i2 = where(camspecid EQ 2 AND score GT 0, ct2)
    objname = allseq.name[icams]
 
+   splog, prename='sp1'
    if (ct1 GT 0) then $
     spflux_v5, objname[i1], adderr=adderr, combinedir=combinedir
+   splog, prename='sp2'
    if (ct2 GT 0) then $
     spflux_v5, objname[i2], adderr=adderr, combinedir=combinedir
+   splog, prename=''
 
    ; Track memory usage
    thismem = memory()
