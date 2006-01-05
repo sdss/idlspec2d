@@ -83,13 +83,13 @@ function readplugmap, plugfile, plugdir=plugdir, $
    thisfile = (findfile(djs_filepath(plugfile, root_dir=plugdir), $
     count=ct))[0]
    if (ct NE 1) then begin
-      print, 'WARNING: Cannot find plugmap file ' + plugfile
+      splog, 'WARNING: Cannot find plugmap file ' + plugfile
       return, 0
    endif
 
    yanny_read, thisfile, pstruct, hdr=hdr, stnames=stnames, /anonymous
    if (NOT keyword_set(pstruct)) then begin
-      print, 'WARNING: Invalid plugmap file ' + thisfile
+      splog, 'WARNING: Invalid plugmap file ' + thisfile
       return, 0
    endif
    plugmap = *pstruct[(where(stnames EQ 'PLUGMAPOBJ'))[0]]
