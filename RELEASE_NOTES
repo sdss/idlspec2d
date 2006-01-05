@@ -13,6 +13,7 @@ SPFLUX_V5: Print statements.
 SPFLUXCORR_V5: If flux-calibration failed (for ex, if no standard stars),
         then issue a warning message and then use FCALIB_DEFAULT() to
         apply a default flux-calibration vector.
+SPREDUCE: If plug-map file not found, then print an ABORT message and return.
 
 examples/spFluxcalib-b1.fits,spFluxcalib-b2.fits,
         spFluxcalib-r1.fits,spFluxcalib-r2.fits: Update thse default flux-
