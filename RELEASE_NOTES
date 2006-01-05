@@ -5,6 +5,7 @@ APOPLOT: Break the flux-calibration code out into the FCALIB_DEFAULT function.
 FCALIB_DEFAULT: Function for default flux-calibration vectors, where this
         code is based upon what was internal to APOPLOT.
 FIND_NMINIMA: Recast some arguments as double-precision.
+GET_TAI: Fix a WARNING message that was always spuriously triggered.
 SPCOADD_V5: Print the dynamic range off the flux distortion image, and
         print a warning and disable the correction in the dynamic range
         exceeds 100.
