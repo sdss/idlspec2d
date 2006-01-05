@@ -104,6 +104,11 @@ pro spreduce, flatname, arcname, objname, $
  
    plugmap = readplugmap(plugfile, plugdir=plugdir, $
     exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrplug, /calibobj)
+   if (NOT keyword_set(plugmap)) then begin
+      splog, 'ABORT: Plug map not found ' $
+       + djs_filepath(plugfile, root_dir=plugdir)
+      return
+   endif
 
    ;-------------------------------------------------------------------------
    ; Plugsort will also return a mask of unplugged fibers
