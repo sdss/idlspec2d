@@ -30,8 +30,8 @@ pro get_tai, hdr, tai_beg, tai_mid, tai_end, silent=silent
        AND keyword_set(silent) EQ 0) then $
        splog, "Warning: (TAI-END) - (TAI-BEG) > EXPTIME + 120 sec"
       ; The following should never happen.
-      if (exptime_guess LT exptime + 20 AND keyword_set(silent) EQ 0) then $
-       splog, "Warning: (TAI-END) - (TAI-BEG) < EXPTIME + 20 sec"
+      if (exptime_guess LT exptime - 20 AND keyword_set(silent) EQ 0) then $
+       splog, "Warning: (TAI-END) - (TAI-BEG) < EXPTIME - 20 sec"
    endif else if (tai GT 4.0d9) then begin
       tai_end = tai - 60.0   ; average buffer for readout 
       tai_beg = tai_end - exptime
