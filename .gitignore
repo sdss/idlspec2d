@@ -4,3 +4,6 @@ doc/paper/paper2d.log
 doc/paper/paper2d.pdf
 doc/paper/paper2d.ps
 doc/www/idlspec2d_doc.html
+lib/*.a
+lib/*.dylib
+lib/*.so

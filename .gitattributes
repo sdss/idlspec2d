@@ -114,6 +114,7 @@ examples/spFluxcalib-r2.fits -text svneol=unset#unset
 include/Makefile -text
 include/export.h -text
 include/extract_row.h -text
+lib/.cvsignore -text
 lib/Makefile -text
 misc/Makefile -text
 misc/atomic.dat -text
