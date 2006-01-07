@@ -126,6 +126,10 @@ function readplugmap, plugfile, plugdir=plugdir, $
 
    plateid = (yanny_par(hdr, 'plateId'))[0]
    redden_med = yanny_par(hdr, 'reddeningMed')
+   if (n_elements(redden_med) NE 5) then begin
+      splog, 'WARNING: Wrong number of elements for REDDEN_MED'
+      redden_med = fltarr(5)
+   endif
 
    if (keyword_set(apotags)) then begin
       addtags = { $
