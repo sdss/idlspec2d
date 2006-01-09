@@ -6,7 +6,7 @@ FCALIB_DEFAULT: Function for default flux-calibration vectors, where this
         code is based upon what was internal to APOPLOT.
 FIND_NMINIMA: Recast some arguments as double-precision.
 GET_TAI: Fix a WARNING message that was always spuriously triggered.
-READPLUGMAP: Make robust to "redden_med" in the plug-map file header
+READPLUGMAP: Make robust to "reddeningMed" in the plug-map file header
         being either missing or not having 5 elements, as happened with
         the Orion plate 1245 on MJD 53742.
 SPCOADD_V5: Print the dynamic range off the flux distortion image, and
