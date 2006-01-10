@@ -11,6 +11,8 @@ FCALIB_DEFAULT: Function for default flux-calibration vectors, where this
         code is based upon what was internal to APOPLOT.
 FIND_NMINIMA: Recast some arguments as double-precision.
 GET_TAI: Fix a WARNING message that was always spuriously triggered.
+LINEBACKFIT: Fix crash condition when not specifing the background terms.
+READONESPEC: Add the CAMERAS option for specifying only blue or red CCDs.
 READPLUGMAP: Make robust to "reddeningMed" in the plug-map file header
         being either missing or not having 5 elements, as happened with
         the Orion plate 1245 on MJD 53742.
