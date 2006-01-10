@@ -2,6 +2,11 @@
 APOFLUXCALIB: Generalize this routine to work from any plates, and fix
         to work with the Spectro v5 outputs.
 APOPLOT: Break the flux-calibration code out into the FCALIB_DEFAULT function.
+CALCSCATIMAGE,COMBINE1FIBER,FIBERFLAT,MYFLUXCALIB,SKYSUBTRACT,
+        SMOOTH_SUPERFLAT,SPFLATTEN2,SPFLUX_V5,SUPERFLAT,TELLURIC_CORR:
+        Include specification of REQUIREN in call to the B-spline
+        fitting code (BSPLINE_ITERFIT) for robustness, often just
+        setting this to 1 or 2.
 FCALIB_DEFAULT: Function for default flux-calibration vectors, where this
         code is based upon what was internal to APOPLOT.
 FIND_NMINIMA: Recast some arguments as double-precision.
