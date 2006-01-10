@@ -365,6 +365,7 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
    if (nback EQ 0) then begin
       bterms = 0
       bfit = fltarr(npix)
+      berr = fltarr(npix)
    endif else begin
       bterms = lfit[nline*3:nline*3+nback-1]
       bcovar = covar[nline*3:nline*3+nback-1,nline*3:nline*3+nback-1]
