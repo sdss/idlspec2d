@@ -239,7 +239,7 @@ function telluric_corr,flux, fluxivar, wset, plugsort, $
                sset = bspline_iterfit(tellloglam[indc,itell], $
                 tellflux[indc,itell], invvar=tellivar[indc,itell], $
                 maxiter=10, upper=upper, lower=lower, $
-                nord=nord, bkpt=bkpt[istart:iend], maxrej=maxrej)
+                nord=nord, bkpt=bkpt[istart:iend], maxrej=maxrej, requiren=1)
 
                continuum = bspline_valu(tellloglam[*,itell], sset)
 
@@ -306,7 +306,7 @@ function telluric_corr,flux, fluxivar, wset, plugsort, $
 
    tellset = bspline_iterfit(fitloglam, fitflux, $
     nord=nord, maxiter=10, lower=lower, upper=upper, invvar=fitivar, $
-    everyn=2*ntell, rejper=0.1)
+    everyn=2*ntell, rejper=0.1, requiren=1)
 
    tellcorr = bspline_valu(loglam, tellset)
 

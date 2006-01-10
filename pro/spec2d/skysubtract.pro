@@ -178,7 +178,7 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
     nord=nord, everyn=everyn, bkpt=bkpt, $
     upper=upper, lower=lower, maxiter=maxiter, $
     maxrej=maxrej, groupsize=groupsize, $
-    outmask=outmask, yfit=skyfit)
+    outmask=outmask, yfit=skyfit, requiren=2)
 
    if (NOT keyword_set(sset)) then begin
       splog, 'ABORT: Fit sky is all zeros'
@@ -238,7 +238,7 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
        nord=nord, fullbkpt=fullbkpt, $
        upper=upper*1.5, lower=lower*1.5, maxiter=maxiter, $
        maxrej=maxrej, groupsize=groupsize, $
-       outmask=outmask, yfit=skyfit)
+       outmask=outmask, yfit=skyfit, requiren=2)
  
       if (NOT keyword_set(sset)) then begin
          splog, 'ABORT: Fit sky is all zeros'
@@ -268,7 +268,7 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
        nord=nord, npoly=npoly, fullbkpt=fullbkpt, $
        upper=1.5*upper, lower=1.5*lower, maxiter=maxiter, $
        maxrej=maxrej, groupsize=groupsize, $
-       yfit=skyfit, x2=x2, xmin=0., xmax=nrow)
+       yfit=skyfit, x2=x2, xmin=0., xmax=nrow, requiren=2)
 
       if (keyword_set(sset2d)) then begin
          sset = sset2d
@@ -291,7 +291,7 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
       skyvarset = bspline_iterfit(skywave[posvar], skyvariance, $
        invvar=skyivar[posvar], nord=nord, bkpt=bkpt, $
        upper=upper, lower=lower, maxiter=maxiter, $
-       maxrej=maxrej, groupsize=groupsize)
+       maxrej=maxrej, groupsize=groupsize, requiren=2)
 
 ;;
 ;;  Should this be airmass_correction^2 in the next line, alright it should be
@@ -372,7 +372,7 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
       ; formal errors.
 
       relchi2set = bspline_iterfit(relwave, relchi2, nord=3, $
-        upper=30, lower=30, maxiter=maxiter, everyn=2)
+        upper=30, lower=30, maxiter=maxiter, everyn=2, requiren=1)
 
       relchi2fit = bspline_valu(wave, relchi2set) > 1
 

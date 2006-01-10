@@ -191,12 +191,12 @@ pro combine1fiber, inloglam, objflux, objivar, $
          if (n_elements(ss) GT 2) then begin
             if (keyword_set(objivar)) then $
              sset = bspline_iterfit(inloglam[ss], objflux[ss], $
-              nord=nord, /groupbadpix, $
+              nord=nord, /groupbadpix, requiren=1, $
               bkspace=bkptbin, bkpt=bkpt, invvar=objivar[ss], outmask=bmask, $
               _EXTRA=KeywordsForReject, /silent) $
             else $
              sset = bspline_iterfit(inloglam[ss], objflux[ss], $
-              nord=nord, /groupbadpix, $
+              nord=nord, /groupbadpix, requiren=1, $
               bkspace=bkptbin, bkpt=bkpt, outmask=bmask, $
               _EXTRA=KeywordsForReject, /silent)
             if (total(abs(sset.coeff)) EQ 0.0) then begin

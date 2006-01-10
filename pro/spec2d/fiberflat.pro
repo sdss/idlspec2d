@@ -165,7 +165,7 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
             ratioset = bspline_iterfit(loglam[indx,i],ratio,invvar=ratioivar, $
              maxiter=maxiter, upper=upper, lower=lower, $
              groupsize=n_elements(indx), $
-             nord=nord, bkpt=bkpt[istart:iend])
+             nord=nord, bkpt=bkpt[istart:iend], requiren=2)
 
             inside = where(loglam[*,i] GE minlam AND loglam[*,i] LE maxlam)
             if inside[0] NE -1 then $

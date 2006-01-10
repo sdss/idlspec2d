@@ -365,7 +365,7 @@ function spflux_bspline, loglam, mratio, mrativar, outmask=outmask, $
  everyn=everyn, airmass=airmass
 
    isort = sort(loglam)
-   nord = 3 ; ???
+   nord = 3
 
    ; Choose the break points using the EVERYN option, but masking
    ; out more pixels near stellar features just when selecting them.
@@ -382,7 +382,7 @@ function spflux_bspline, loglam, mratio, mrativar, outmask=outmask, $
    sset = bspline_iterfit(loglam[isort], mratio[isort], $
     invvar=mrativar[isort], lower=3, upper=3, fullbkpt=fullbkpt, $
     maxrej=ceil(0.05*n_elements(indx)), outmask=outmask1, nord=nord, $
-    x2=x2, npoly=2*keyword_set(airmass))
+    x2=x2, npoly=2*keyword_set(airmass), requiren=(everyn-1)>1)
    if (max(sset.coeff) EQ 0) then $
     message, 'B-spline fit failed!!'
    if (arg_present(outmask)) then begin

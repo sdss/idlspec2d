@@ -58,8 +58,9 @@ function smooth_superflat, superflatset, airset, plottitle=plottitle
    ;  and reject with impunity
 
    invvar = (model > 0) * 2.0e5
-   smoothset = bspline_iterfit(sparselam, model, invvar=invvar, lower=3,upper=1.5,$
-           everyn=8, maxrej=2, niter=20, groupsize=50, yfit=yfit, outmask=outmask)
+   smoothset = bspline_iterfit(sparselam, model, invvar=invvar, $
+    lower=3, upper=1.5, everyn=8, maxrej=2, niter=20, $
+    groupsize=50, requiren=2, yfit=yfit, outmask=outmask)
  
    bad = where(outmask EQ 0, nbad)
 
@@ -75,7 +76,7 @@ function smooth_superflat, superflatset, airset, plottitle=plottitle
      inmask[bad - 1 > 0] = 0
      inmask[bad + 1 < (nsparse - 1)] = 0
      smoothset = bspline_iterfit(sparselam, model, invvar=inmask, $
-                        everyn=8, yfit=yfit, outmask=outmask2)
+      everyn=8, requiren=2, yfit=yfit, outmask=outmask2)
    endif
 
    fullfit = bspline_valu(loglam, smoothset)

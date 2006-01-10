@@ -370,7 +370,8 @@ fitimg = fitimg > 0.02 ; ???
 
          sset = bspline_iterfit(yaxis[indx], transpose(flatimg[i,indx]), $
           invvar=transpose(flativar[i,indx]), nord=nord, bkspace=pixspace, $
-          upper=4, lower=4, maxiter=3, maxrej=ceil(0.05*n_elements(indx)))
+          upper=4, lower=4, maxiter=3, maxrej=ceil(0.05*n_elements(indx)), $
+          requiren=1)
          ymodel[i,*] = bspline_valu(yaxis, sset)
 
 ;         fullbkpt = slatec_splinefit(yaxis[indx], flatimg[i,indx], coeff, $

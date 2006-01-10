@@ -66,7 +66,8 @@ pro myfluxcorr, bsmearfile, rsmearfile, bscifile, rscifile, corrfile, $
              outside = [inside[0]-1,inside,inside[ninside-1]+1]
 
              sset = bspline_iterfit(smearwave[*,ifiber], smearflux[*,ifiber], $
-               invvar=smearivar[*,ifiber], bkpt=bkpt[outside], lower=5, upper=5)
+               invvar=smearivar[*,ifiber], bkpt=bkpt[outside], $
+               lower=5, upper=5, requiren=2)
 
            endif
         endif

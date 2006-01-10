@@ -30,6 +30,9 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   bspline_valu()
+;   bspline_iterfit()
+;   fchebyshev()
 ;
 ; REVISION HISTORY:
 ;   29-Sep-2000  Written by S. Burles, FNAL, adopted from fitansimage
@@ -66,7 +69,8 @@ function calcscatimage, ansimage, yrow, nscatbkpts=nscatbkpts, $
    fitans = fltarr(npoly, fullrows)
   
    for i=0, npoly-1 do begin
-     sset = bspline_iterfit(ynorm, ansimage[i,*], nbkpts = nscatbkpts)
+     sset = bspline_iterfit(ynorm, ansimage[i,*], nbkpts=nscatbkpts, $
+      requiren=2)
      fitans[i,*] = bspline_valu(yfnorm, sset)
    endfor
 

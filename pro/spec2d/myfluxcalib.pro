@@ -174,7 +174,7 @@ function fluxfit, loglam, objflux, objivar, color=color, refmag=refmag, $
     else invvar = 0
    sset = bspline_iterfit(loglam[indx], fitflux[indx], $
     invvar=invvar, nord=4, bkpt=allbkpts, upper=3, lower=3, $
-    maxrej=ceil(0.05*n_elements(objflux)))
+    maxrej=ceil(0.05*n_elements(objflux)), requiren=2)
 
    ;----------
    ; QA plot
