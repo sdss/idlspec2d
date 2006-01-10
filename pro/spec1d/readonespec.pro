@@ -6,7 +6,7 @@
 ;   Routine for reading single exposure spectra from Spectro-2D outputs
 ;
 ; CALLING SEQUENCE:
-;   readonespec, plate, fiber, [mjd=, flux=, flerr=, invvar=, $
+;   readonespec, plate, fiber, [mjd=, cameras=, flux=, flerr=, invvar=, $
 ;    mask=, disp=, sky=, loglam=, wave=, synflux=, objhdr=, framehdr=, $
 ;    topdir=, path=, /silent ]
 ;
@@ -17,6 +17,8 @@
 ; OPTIONAL INPUTS:
 ;   mjd        - MJD number; if not set, then select the most recent
 ;                data for this plate (largest MJD).
+;   cameras    - If specified, then only match to either the blue ('b')
+;                or red ('r')
 ;   topdir     - Top-level directory for data; default to the environment
 ;                variable $SPECTRO_DATA.
 ;   path       - Override all path information with this directory name.
@@ -60,7 +62,8 @@
 ;   10-Feb-2004  Written by David Schlegel, Princeton.
 ;-
 ;------------------------------------------------------------------------------
-pro readonespec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
+pro readonespec, plate, fiber, mjd=mjd, cameras=cameras, $
+ flux=flux, flerr=flerr, invvar=invvar, $
  mask=mask, disp=disp, sky=sky, loglam=loglam, wave=wave, $
  synflux=synflux, objhdr=objhdr, framehdr=framehdr, $
  topdir=topdir, path=path, silent=silent
@@ -69,6 +72,12 @@ pro readonespec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
     OR n_elements(mjd) GT 1) then begin
       print, 'PLATE, FIBER, MJD must be scalars'
       return
+   endif
+   if (keyword_set(cameras)) then begin
+      if (cameras[0] NE 'b' AND cameras[0] NE 'r') then begin
+         print, 'Invalid value for CAMERAS'
+         return
+      endif
    endif
 
    if (NOT keyword_set(topdir) AND NOT keyword_set(path)) then begin
@@ -100,6 +109,8 @@ pro readonespec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
 
    ; Trim to the files that correspond to the spectrograph with this fiber
    itrim = where(strmid(expid,1,1) EQ spectroid, nfile)
+   if (nfile GT 0 AND keyword_set(cameras)) then $
+    itrim = itrim[where(strmid(expid[itrim],0,1) EQ cameras[0], nfile)>0]
    if (nfile EQ 0) then begin
       print, 'No files on this for spectrograph #', spectroid
       return
@@ -112,11 +123,16 @@ pro readonespec, plate, fiber, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    platestr = string(plate,format='(i4.4)')
    for ifile=0L, nfile-1 do begin
       if (keyword_set(path)) then $
-       filename[ifile] = lookforgzip(filepath(filename[ifile], $
+       tmpname = lookforgzip(filepath(filename[ifile], $
         root_dir=path)) $
       else $
-       filename[ifile] = lookforgzip(filepath(filename[ifile], $
+       tmpname = lookforgzip(filepath(filename[ifile], $
         root_dir=topdir, subdirectory=platestr))
+      if (NOT keyword_set(tmpname)) then begin
+         print, 'File not found: ' + filename[ifile]
+         return
+      endif
+      filename[ifile] = tmpname
    endfor
 
    if (arg_present(framehdr)) then begin
