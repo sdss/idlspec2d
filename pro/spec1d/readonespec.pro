@@ -36,7 +36,9 @@
 ;   sky        - Sky flux [NPIXEL,NFILE]
 ;   loglam     - Log10-wavelength in log10-Angstroms [NPIXEL,NFILE]
 ;   wave       - Wavelength in Angstroms [NPIXEL,NFIBER]
-;   synflux    - Best-fit synthetic eigen-spectrum [NPIXEL,NFILE]
+;   synflux    - Best-fit synthetic eigen-spectrum [NPIXEL,NFILE];
+;                return vectors of zeros if the Spectro-1D files
+;                cannot be found
 ;   objhdr     - The FITS header from the spPlate file
 ;   framehdr   - Pointer array to the FITS headers from all the spCFrame files
 ;
@@ -57,6 +59,7 @@
 ;   combine1fiber()
 ;   readspec
 ;   spframe_read
+;   splog
 ;
 ; REVISION HISTORY:
 ;   10-Feb-2004  Written by David Schlegel, Princeton.
@@ -67,6 +70,19 @@ pro readonespec, plate, fiber, mjd=mjd, cameras=cameras, $
  mask=mask, disp=disp, sky=sky, loglam=loglam, wave=wave, $
  synflux=synflux, objhdr=objhdr, framehdr=framehdr, $
  topdir=topdir, path=path, silent=silent
+
+   ; Set default return values
+   flux = 0
+   flerr = 0
+   invvar = 0
+   mask = 0
+   disp = 0
+   sky = 0
+   loglam = 0
+   wave = 0
+   synflux = 0
+   objhdr = 0
+   framehdr = 0
 
    if (n_elements(plate) NE 1 OR n_elements(fiber) NE 1 $
     OR n_elements(mjd) GT 1) then begin
@@ -214,8 +230,13 @@ pro readonespec, plate, fiber, mjd=mjd, cameras=cameras, $
    if (arg_present(synflux)) then begin
       readspec, plate, fiber, mjd=mjd, loglam=loglam1, synflux=synflux1, $
        topdir=topdir, path=path
-      combine1fiber, loglam1, synflux1, newloglam=loglam, newflux=synflux
-      synflux = reform(synflux, size(loglam,/dimens))
+      if (keyword_set(synflux1)) then begin
+         combine1fiber, loglam1, synflux1, newloglam=loglam, newflux=synflux
+         synflux = reform(synflux, size(loglam,/dimens))
+      endif else begin
+         splog, 'WARNING: Setting missing SYNFLUX vectors to zero'
+         synflux = 0 * loglam
+      endelse
    endif
 
    return
