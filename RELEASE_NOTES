@@ -12,6 +12,9 @@ FCALIB_DEFAULT: Function for default flux-calibration vectors, where this
 FIND_NMINIMA: Recast some arguments as double-precision.
 GET_TAI: Fix a WARNING message that was always spuriously triggered.
 LINEBACKFIT: Fix crash condition when not specifing the background terms.
+PLATEMERGE: Bug fix whereby the SPECPRIMARY flag was not being set properly
+        for any object observed multiple times, as pointed out by Hennawi
+        in PR #6841.
 READONESPEC: Add the CAMERAS option for specifying only blue or red CCDs.
         Set default return values to zero.  Make robust to missing Spectro-1D
         reductions, and just return vectors zeros for SYNFLUX in those cases.
