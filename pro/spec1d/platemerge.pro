@@ -257,7 +257,7 @@ pro platemerge, plate, mjd=mjd, outroot=outroot1, public=public
             indx[0] = firstgroup[j]
             for k=0L, multgroup[j]-2L do indx[k+1] = nextgroup[indx[k]]
             foo = max(score[indx], ibest)
-            outdat[ibest].specprimary = 1
+            outdat[indx[ibest]].specprimary = 1
             outdat[indx].nspecobs = multgroup[j]
          endelse
       endif
