@@ -103,6 +103,7 @@
 ; PROCEDURES CALLED:
 ;   create_linestruct()
 ;   mpfitfun
+;   splog
 ;
 ; INTERNAL SUPPORT ROUTINES:
 ;   onegauss()
