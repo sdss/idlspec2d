@@ -102,7 +102,8 @@ pro readonespec, plate, fiber, mjd=mjd, cameras=cameras, $
        message, 'Environment variable SPECTRO_DATA must be set!'
    endif
 
-   readspec, plate, mjd=mjd, fiber, objhdr=objhdr, topdir=topdir, path=path
+   readspec, plate, mjd=mjd, fiber, objhdr=objhdr, topdir=topdir, path=path, $
+    silent=silent
    if (NOT keyword_set(objhdr)) then begin
       print, 'spPlate file not found'
       return
@@ -229,7 +230,7 @@ pro readonespec, plate, fiber, mjd=mjd, cameras=cameras, $
 
    if (arg_present(synflux)) then begin
       readspec, plate, fiber, mjd=mjd, loglam=loglam1, synflux=synflux1, $
-       topdir=topdir, path=path
+       topdir=topdir, path=path, silent=silent
       if (keyword_set(synflux1)) then begin
          combine1fiber, loglam1, synflux1, newloglam=loglam, newflux=synflux
          synflux = reform(synflux, size(loglam,/dimens))
