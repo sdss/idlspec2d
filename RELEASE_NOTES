@@ -12,6 +12,7 @@ FCALIB_DEFAULT: Function for default flux-calibration vectors, where this
 FIND_NMINIMA: Recast some arguments as double-precision.
 GET_TAI: Fix a WARNING message that was always spuriously triggered.
 LINEBACKFIT: Fix crash condition when not specifing the background terms.
+        Add options ZLIMITS and SIGLIMITS.
 PLATEMERGE: Bug fix whereby the SPECPRIMARY flag was not being set properly
         for any object observed multiple times, as pointed out by Hennawi
         in PR #6841.
