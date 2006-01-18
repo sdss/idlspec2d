@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   result = linebackfit(lambda, loglam, flux, invvar=, $
-;    linename=, zindex=, windex=, findex=, fvalue=, $
+;    linename=, zindex=, windex=, findex=, fvalue=, zlimits=, siglimits=, $
 ;    background=, zguess=, sigguess=, yfit=, bfit=, bterms= )
 ;
 ; INPUTS:
@@ -29,6 +29,12 @@
 ;                the same flux ratios as in FVALUE [NLINE]; default to
 ;                all values of 1.  These values are also used as the
 ;                initial guesses for the line strengths.
+;   zlimits    - Optional limits in velocity, either as a 2-elements array
+;                for the low/high limit of every line, or as a [2,NLINE] array
+;                with different limits for each line [km/s]
+;   siglimits  - Optional limits in sigma, either as a 2-elements array
+;                for the low/high limit of every line, or as a [2,NLINE] array
+;                with different limits for each line [km/s]
 ;   background - Background vector(s) to fit simultaneously with the lines,
 ;                where the scaling of each vector is fit [NPIX,NBACK].
 ;                The redshift of these background vectors is not fit, but
@@ -103,7 +109,6 @@
 ; PROCEDURES CALLED:
 ;   create_linestruct()
 ;   mpfitfun
-;   splog
 ;
 ; INTERNAL SUPPORT ROUTINES:
 ;   onegauss()
@@ -142,6 +147,7 @@ end
 ;------------------------------------------------------------------------------
 function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
  zindex=zindex, windex=windex, findex=findex, fvalue=fvalue, $
+ zlimits=zlimits1, siglimits=siglimits1, $
  background=background, zguess=zguess1, sigguess=sigguess1, $
  yfit=yfit, bfit=bfit, bterms=bterms
 
@@ -285,7 +291,33 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
 
    ;----------
    ; Constrain min/max redshift relative to initial guess
-; ???
+
+   if (keyword_set(zlimits1)) then begin
+      if (size(zlimits1,/n_dimen) EQ 1) then $
+       zlimits = rebin(zlimits1, 2, nline) $
+      else $
+       zlimits = zlimits1
+      parinfo[lindgen(nline)*3+1].limits[0] = $
+       alog10(lambda * (1. + reform(zlimits[0,*])))
+      parinfo[lindgen(nline)*3+1].limits[1] = $
+       alog10(lambda * (1. + reform(zlimits[1,*])))
+      parinfo[lindgen(nline)*3+1].limited = 1
+   endif
+
+   ;----------
+   ; Constrain min/max sigmas relative to initial guess
+
+   if (keyword_set(siglimits1)) then begin
+      if (size(siglimits1,/n_dimen) EQ 1) then $
+       siglimits = rebin(siglimits1, 2, nline) $
+      else $
+       siglimits = siglimits1
+      parinfo[lindgen(nline)*3+2].limits[0] = $
+       reform(siglimits[0,*]) / (alog(10.)*cspeed)
+      parinfo[lindgen(nline)*3+2].limits[1] = $
+       reform(siglimits[1,*]) / (alog(10.)*cspeed)
+      parinfo[lindgen(nline)*3+2].limited = 1
+   endif
 
    ;----------
    ; Do the fit!
@@ -366,7 +398,6 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
    if (nback EQ 0) then begin
       bterms = 0
       bfit = fltarr(npix)
-      berr = fltarr(npix)
    endif else begin
       bterms = lfit[nline*3:nline*3+nback-1]
       bcovar = covar[nline*3:nline*3+nback-1,nline*3:nline*3+nback-1]
