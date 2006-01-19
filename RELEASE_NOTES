@@ -20,6 +20,7 @@ READONESPEC: Add the CAMERAS option for specifying only blue or red CCDs.
         Set default return values to zero.  Make robust to missing Spectro-1D
         reductions, and just return vectors zeros for SYNFLUX in those cases.
         Propogate the /SILENT flag everywhere.
+        Add option to read LINEFLUX, resampled to the output wavelengths.
 READPLUGMAP: Make robust to "reddeningMed" in the plug-map file header
         being either missing or not having 5 elements, as happened with
         the Orion plate 1245 on MJD 53742.
