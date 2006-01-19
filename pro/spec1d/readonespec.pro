@@ -7,8 +7,8 @@
 ;
 ; CALLING SEQUENCE:
 ;   readonespec, plate, fiber, [mjd=, cameras=, flux=, flerr=, invvar=, $
-;    mask=, disp=, sky=, loglam=, wave=, synflux=, objhdr=, framehdr=, $
-;    topdir=, path=, /silent ]
+;    mask=, disp=, sky=, loglam=, wave=, synflux=, lineflux=, $
+;    objhdr=, framehdr=, topdir=, path=, /silent ]
 ;
 ; INPUTS:
 ;   plate      - Plate number (scalar)
@@ -37,6 +37,9 @@
 ;   loglam     - Log10-wavelength in log10-Angstroms [NPIXEL,NFILE]
 ;   wave       - Wavelength in Angstroms [NPIXEL,NFIBER]
 ;   synflux    - Best-fit synthetic eigen-spectrum [NPIXEL,NFILE];
+;                return vectors of zeros if the Spectro-1D files
+;                cannot be found
+;   lineflux   - Best-fit emission lines fits + background terms [NPIXEL,NFILE];
 ;                return vectors of zeros if the Spectro-1D files
 ;                cannot be found
 ;   objhdr     - The FITS header from the spPlate file
@@ -68,7 +71,7 @@
 pro readonespec, plate, fiber, mjd=mjd, cameras=cameras, $
  flux=flux, flerr=flerr, invvar=invvar, $
  mask=mask, disp=disp, sky=sky, loglam=loglam, wave=wave, $
- synflux=synflux, objhdr=objhdr, framehdr=framehdr, $
+ synflux=synflux, lineflux=lineflux, objhdr=objhdr, framehdr=framehdr, $
  topdir=topdir, path=path, silent=silent
 
    ; Set default return values
@@ -81,6 +84,7 @@ pro readonespec, plate, fiber, mjd=mjd, cameras=cameras, $
    loglam = 0
    wave = 0
    synflux = 0
+   lineflux = 0
    objhdr = 0
    framehdr = 0
 
@@ -202,8 +206,8 @@ pro readonespec, plate, fiber, mjd=mjd, cameras=cameras, $
       endfor
    endif
 
-   if (arg_present(loglam) OR arg_present(wave) OR arg_present(synflux)) $
-    then begin
+   if (arg_present(loglam) OR arg_present(wave) OR arg_present(synflux) $
+    OR arg_present(lineflux)) then begin
       loglam = fltarr(2048,nfile)
       for ifile=0L, nfile-1 do begin
          spframe_read, filename[ifile], indx, loglam=loglam1
@@ -237,6 +241,18 @@ pro readonespec, plate, fiber, mjd=mjd, cameras=cameras, $
       endif else begin
          splog, 'WARNING: Setting missing SYNFLUX vectors to zero'
          synflux = 0 * loglam
+      endelse
+   endif
+
+   if (arg_present(lineflux)) then begin
+      readspec, plate, fiber, mjd=mjd, loglam=loglam1, lineflux=lineflux1, $
+       topdir=topdir, path=path, silent=silent
+      if (keyword_set(lineflux1)) then begin
+         combine1fiber, loglam1, lineflux1, newloglam=loglam, newflux=lineflux
+         lineflux = reform(lineflux, size(loglam,/dimens))
+      endif else begin
+         splog, 'WARNING: Setting missing SYNFLUX vectors to zero'
+         lineflux = 0 * loglam
       endelse
    endif
 
