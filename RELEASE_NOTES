@@ -1,4 +1,9 @@
 
+-------------------------------------------------------------------------------
+v5_1_1 (Feb 2, 2006 idlspec2d running on IDL 5.4 - 6.2
+Built against specflat v1_6, elodie v1_0, idlutils v5_1_1
+improving robustness of B-spline routines.
+
 APOFLUXCALIB: Generalize this routine to work from any plates, and fix
         to work with the Spectro v5 outputs.
 APOPLOT: Break the flux-calibration code out into the FCALIB_DEFAULT function.
