@@ -202,13 +202,13 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
 
    scrunch = djs_median(flux * (fluxivar GT 0), 1) 
    whopping = find_whopping(scrunch, 10000.0, whopct)
-   if (whopping[0] NE -1) then begin
+   if (whopct GT 0) then begin
       ; Only print the fiber numbers for the first 5 whopping fibers
       wstring = strcompress(string(whopping+1+(spectroid EQ '2')*320))
       splog, 'WARNING: Whopping fiber #' $
        + string(wstring[0:4<(whopct-1)],format='(5a)') $
        + ((whopct GT 5) ? $
-        ' (+ ' + strtrim(string(whopct-10),2) + ' more)' : '')
+        ' (+ ' + strtrim(string(whopct-5),2) + ' more)' : '')
       wp = [whopping - 2 , whopping -1, whopping, whopping+1 , whopping+2]
       wp = (wp > 0) < (nfiber - 1)
       fibermask[wp] = fibermask[wp] OR pixelmask_bits('NEARWHOPPER')
