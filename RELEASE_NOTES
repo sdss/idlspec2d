@@ -1,6 +1,8 @@
 
 QUICKEXTRACT: Bug fix in print statement "Whopping fiber #..."
 
+etc/spChunkList.par: Add chunks 135-137.
+
 -------------------------------------------------------------------------------
 v5_1_2 (Feb 2, 2006 idlspec2d running on IDL 5.4 - 6.2
 Built against specflat v1_6, elodie v1_0, idlutils v5_1_1
