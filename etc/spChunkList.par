@@ -172,4 +172,7 @@ spchunklist     131 2360 2376 main      ""
 spchunklist     132 2377 2377 special   "SEGUE cluster NGC 7789"
 spchunklist     133 2378 2397 special   "SEGUE bright"
 spchunklist     134 2398 2417 special   "SEGUE faint"
+spchunklist     135 2418 2440 main      ""
+spchunklist     136 2441 2442 special   "SEGUE bright"
+spchunklist     137 2443 2444 special   "SEGUE faint"
 
