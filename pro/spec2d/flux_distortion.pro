@@ -55,7 +55,7 @@
 ;               * exp{ a2*x + a3*y + a4*x*y + a5*x^2 + a6*y^2
 ;                + a7*x*LL + a8*y*LL 
 ;                + a9*LL*(SPECID EQ 1) + a10*LL*(SPECID EQ 2) }
-;                + a10*LL^2*(SPECID EQ 1) + a12*LL^2*(SPECID EQ 2) }
+;                + a11*LL^2*(SPECID EQ 1) + a12*LL^2*(SPECID EQ 2) }
 ;   where x=XFOCAL, y=YFOCAL, LL = 1 - (5100 Ang/wavelength)^2
 ;
 ; EXAMPLES:
