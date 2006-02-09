@@ -7,7 +7,8 @@
 ;
 ; CALLING SEQUENCE:
 ;   corrimg = flux_distortion(objflux, objivar, andmask, ormask, plugmap=, $
-;    loglam=, [ minflux=, minobj=, platefile=, plotfile=, hdr=, coeff= ] )
+;    loglam=, [ minflux=, minobj=, maxdelta=, platefile=, plotfile=, hdr=, $
+;    coeff= ] )
 ;
 ; INPUTS:
 ;   objflux    - Fluxes [NPIX,NFIBER]
@@ -26,6 +27,9 @@
 ;   minobj     - Minimum number of objects that have good fluxes in all
 ;                three gri-bands for computing the corrections; default to 50;
 ;                if fewer than this many, then CORRIMG is returned with all 1's
+;   maxdelta   - Maximum peak deviation in flux distortion image allowed
+;                per iteration from a change in any one parameter; default
+;                to 0.03
 ;   platefile  - If set, then read OBJFLUX and all the other inputs from
 ;                this spPlate file instead of using those inputs;
 ;                also, generate PostScript plots using the PLATESN procedure.
@@ -138,14 +142,15 @@ function flux_distort_fn, coeff, nomask=nomask
 end
 ;------------------------------------------------------------------------------
 function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
- loglam=loglam, minflux=minflux, minobj=minobj, platefile=platefile, $
- plotfile=plotfile, hdr=hdr, coeff=coeff
+ loglam=loglam, minflux=minflux, minobj=minobj, maxdelta=maxdelta, $
+ platefile=platefile, plotfile=plotfile, hdr=hdr, coeff=coeff
 
    common com_flux_distort, trimflux, wavevec, fmask, calibflux, calibisig, $
     trimplug, outmask
 
    if (NOT keyword_set(minobj)) then minobj = 50
    if (NOT keyword_set(minflux)) then minflux = 5.
+   if (n_elements(maxdelta) EQ 0) then maxdelta = 0.03
    t0 = systime(1)
 
    if (keyword_set(platefile)) then begin
@@ -270,8 +275,24 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
    maxrej = ceil(0.05 * ntrim) ; Do not reject more than 5% of remaining objects
    npar = 13
 
-   parinfo = {value: 0.d0, fixed: 0, limited: [0b,0b], limits: [0.d0,0.d0]}
+   parinfo = {value: 0.d0, fixed: 0, limited: [0b,0b], limits: [0.d0,0.d0], $
+    mpmaxstep: 0.d0}
    parinfo = replicate(parinfo, npar)
+
+   ; Compute the maximum step size per iteration for each parameter
+   ; based upon MAXDPERSTEP.
+   coeff_eps = 0.01
+   corrimg = fltarr(npixobj, nobj)
+   for ipar=0, npar-1 do begin
+      coeff = dblarr(npar)
+      coeff[ipar] = coeff_eps
+      for i=0L, nobj-1 do $
+       corrimg[*,i] = flux_distort_corrvec(coeff, wavevec, plugmap[i])
+      thismin = min(corrimg, max=thismax)
+      thisdiff = thismax - thismin
+      parinfo[ipar].mpmaxstep = coeff_eps * maxdelta / thisdiff
+   endfor
+
    ftol = 1d-20
    gtol = 1d-20
    xtol = 1d-20
@@ -285,7 +306,7 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
       ; previous fit.  This is to prevent us from "walking away" from
       ; the correction solution in the case where some initially bad points
       ; effect the fit.
-      parinfo.value = 1.d-3
+      parinfo.value = 0
       coeff = mpfit('flux_distort_fn', parinfo=parinfo, $
        maxiter=maxiter2, ftol=ftol, gtol=gtol, xtol=xtol, $
        niter=niter, status=status, /quiet)
@@ -332,7 +353,7 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
 
    ;----------
    ; If multiple pointings on this plate, then deal with that here by
-   ; rescaling the fluxes of each fiber according to its exposure time ???
+   ; rescaling the fluxes of each fiber according to its exposure time.
 
    offsetlist = plugmap[uniq(plugmap.offsetid, sort(plugmap.offsetid))].offsetid
    offsetlist = offsetlist[sort(offsetlist)]
