@@ -59,7 +59,6 @@
 ;   dust_getval()
 ;   euler
 ;   plug2tsobj()
-;   splog
 ;   sdss_flagval()
 ;   splog
 ;   struct_addtags()
