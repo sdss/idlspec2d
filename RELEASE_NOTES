@@ -1,4 +1,14 @@
 
+FLUX_DISTORTION: Add MAXDPERSTEP keyword with a default value of 0.03,
+        which is the maximum peak deviation in flux distortion image
+        allowed per iteration from a change in any one parameter.
+        This prevents the fit from jumping to crazy solutions with
+        high order quadratic terms (PR #6774).  Note that an update
+        to the MPFIT code was also necessary for the correct behaviour
+        of the MPMAXSTEP parameter.
+PLATEMERGE: Add EXCEPT_TAGS keyword, and default to excluding tags
+        with the name '*COVAR', since those are typically large
+        covariance matrices that I've added recently to the ZANS structure.
 QUICKEXTRACT: Bug fix in print statement "Whopping fiber #..."
 
 etc/spChunkList.par: Add chunks 135-137.
