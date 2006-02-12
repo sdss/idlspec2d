@@ -6,7 +6,7 @@
 ;   Merge all Spectro-1D outputs with tsObj files.
 ;
 ; CALLING SEQUENCE:
-;   platemerge, [ plate, mjd=, outroot=, public= ]
+;   platemerge, [ plate, mjd=, except_tags=, outroot=, public= ]
 ;
 ; INPUTS:
 ;
@@ -16,6 +16,7 @@
 ;   mjd         - Optional MJDs corresponding to the specified PLATEs;
 ;                 if specified, then PLATE and MJD should have the same
 ;                 number of elements.
+;   except_tags - Tag names to exclude; default to '*COVAR'.
 ;   outroot     - Root name for output files; default to '$SPECTRO_DATA/spAll';
 ;                 the files are then 'spAll.fits', 'spAll.dat', 'spAllLine.dat'.
 ;                 If /PUBLIC is set, then add '-public' to the root name.
@@ -71,10 +72,13 @@
 ; REVISION HISTORY:
 ;   30-Oct-2000  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
-pro platemerge, plate, mjd=mjd, outroot=outroot1, public=public
+pro platemerge, plate, mjd=mjd, except_tags=except_tags1, $
+ outroot=outroot1, public=public
 
    dtheta = 2.0 / 3600.
 
+   if (n_elements(except_tags1) GT 0) then except_tags = except_tags1 $
+    else except_tags = '*COVAR'
    if (keyword_set(outroot1)) then begin
       outroot = [outroot1, outroot1+'Line']
    endif else begin
@@ -289,6 +293,8 @@ pro platemerge, plate, mjd=mjd, outroot=outroot1, public=public
    ; is already in the output structure.  For ex, MJD is in both.
    tsobj0 = struct_selecttags(tsobj0, except_tags=tag_names(outdat))
    platedat1 = create_struct(outdat[0], tsobj0)
+   if (keyword_set(except_tags)) then $
+    platedat1 = struct_selecttags(platedat1, except_tags=except_tags)
    struct_assign, {junk:0}, platedat1 ; Zero-out all elements
 
    splog, 'Writing FITS file ' + outroot[0]+'.fits'
