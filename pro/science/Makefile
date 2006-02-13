@@ -10,7 +10,7 @@ SHELL = /bin/sh
 #
 CFLAGS  = $(SDSS_CFLAGS) -DCHECK_LEAKS -I../include
 
-SUBDIRS = kinematics lickindex lya qso
+SUBDIRS = ism kinematics lickindex lya qso
 
 all :
 	@ for f in $(SUBDIRS); do \
