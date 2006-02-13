@@ -233,6 +233,7 @@ pro/plate/tyc_sdssmags.pro -text
 pro/science/Makefile -text
 pro/science/README -text
 pro/science/bandpassinfo.pro -text
+pro/science/ism/nebularsky.pro -text
 pro/science/k_correct.pro -text
 pro/science/kinematics/MCsimul.pro -text
 pro/science/kinematics/Makefile -text
