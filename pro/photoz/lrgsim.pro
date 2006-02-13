@@ -97,14 +97,12 @@ function lrgmodel_colors, filtloglam, filtcurve, zarr, $
       bigloglam = bigloglam[uniq(bigloglam,sort(bigloglam))]
       dloglam = bigloglam - shift(bigloglam,1)
       dloglam[0] = dloglam[1]
-      flambda2fnu = (10d^bigloglam)^2 / 2.99792e18
 
       linterp, thisloglam, thisflux, bigloglam, bigflux1
       for ifilt=0, nfilt-1 do begin
          linterp, filtloglam, filtcurve[*,ifilt], bigloglam, bigfiltcurve
-         sumfilt = total(filtcurve[*,ifilt] * dloglam)
-         synflux[ifilt,iz] = $
-          total(bigflux1 * flambda2fnu * bigfiltcurve * dloglam) $
+         sumfilt = total(bigfiltcurve * dloglam)
+         synflux[ifilt,iz] = total(bigflux1 * bigfiltcurve * dloglam) $
           / (sumfilt + (sumfilt LE 0))
       endfor
 
@@ -170,7 +168,7 @@ end
 pro lrgsim, area1, fsystem1
 
    if (keyword_set(area1)) then area = area1 $
-    else area = 1000.
+    else area = 100.
    if (keyword_set(fsystem1)) then fsystem = fsystem1 $
     else fsystem = 'SDSS'
 
