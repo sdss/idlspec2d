@@ -185,6 +185,7 @@ pro/photoz/lrgmodel_plots.pro -text
 pro/photoz/lrgmodel_read_spall.pro -text
 pro/photoz/lrgmodel_train.pro -text
 pro/photoz/lrgmodel_tweak_template.pro -text
+pro/photoz/lrgsim.pro -text
 pro/plan/badfmags.pro -text
 pro/plan/badfstars.pro -text
 pro/plan/daytime_test.pro -text
