@@ -27,7 +27,7 @@
 ;                default to 'lineflux', which is the velocity-dispersion
 ;                broadened Elodie templates plus emission lines.
 ;   lwidth     - Full width for masking around possible galaxy emission lines;
-;                default to 0.001 in log-wavelenghth (about 691 km/s)
+;                default to 0.002 in log-wavelenghth (about 1382 km/s)
 ;   outfile    - Output file; default to 'nebular.fits'
 ;   debug      - If set, then make debugging plots, and wait for keystroke
 ;                after each plot
@@ -87,7 +87,7 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, fitrange=fitrange1, $
    if (keyword_set(fitflux1)) then fitflux = strlowcase(fitflux1) $
     else fitflux = 'lineflux'
    if (keyword_set(lwidth1)) then lwidth = lwidth1 $
-    else lwidth = 0.001
+    else lwidth = 0.002
    if (fitflux NE 'synflux' AND fitflux NE 'lineflux') then $
     message, 'Invalid string for FITFLUX'
 
