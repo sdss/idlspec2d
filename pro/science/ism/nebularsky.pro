@@ -145,9 +145,10 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, fitrange=fitrange1, $
          zans_trim = struct_selecttags(zans, select_tags=select_tags)
          qsky = (zans.zwarning AND 1) NE 0 AND (zans.zwarning AND 2^1+2^7) EQ 0
          qgalaxy = zans.zwarning EQ 0 AND strmatch(zans.class,'GALAXY*')
+         qstar = zans.zwarning EQ 0 AND strmatch(zans.class,'STAR*')
 
          for ifiber=0, 639 do begin
-            if (qsky[ifiber] OR qgalaxy[ifiber]) then begin
+            if (qsky[ifiber] OR qgalaxy[ifiber] OR qstar[ifiber]) then begin
 
                ; Read in all the individual exposures for this object
                ; (red cameras only)
@@ -238,7 +239,7 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, fitrange=fitrange1, $
                         soplot, xplot[jj,iobs], yfit[jj,iobs], color='red'
                      endif
                   endfor
-                  thisclass = qgalaxy[ifiber] ? zans[ifiber].class : 'SKY'
+                  thisclass = qsky[ifiber] ? 'SKY' : zans[ifiber].class
                   xyouts, total([0.9,0.1]*!x.crange), $
                    total([0.1,0.9]*!y.crange), thisclass, charsize=csize
                   cc = get_kbrd(1) 
