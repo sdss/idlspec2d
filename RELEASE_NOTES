@@ -1,4 +1,9 @@
 
+SDSSPROC: In response to PR #6893 against Son-of-Spectro, don't print
+        any error messages if the spawn of 'speclog_version' fails.
+        That bash script only exists in the speclog product, which is
+        not required for Son-of-Spectro.
+
 -------------------------------------------------------------------------------
 v5_1_3 (Feb 14, 2006 idlspec2d running on IDL 5.4 - 6.2
 Built against specflat v1_6, elodie v1_0, idlutils v5_1_3
