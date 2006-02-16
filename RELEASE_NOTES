@@ -4,6 +4,18 @@ SDSSPROC: In response to PR #6893 against Son-of-Spectro, don't print
         That bash script only exists in the speclog product, which is
         not required for Son-of-Spectro.
 
+templates/bc03_padova1994_chab_z*_ssp.fit.gz: These are 4 FITS files with
+        the full BC03 SP unnormalized grids (ages in years, wavelengths
+        in Angstroms, and fluxes).  These files came from Christy Tremonti
+        on 14 Feb 2006 with the following notes:  "The ages are kind of
+        oddly spaced -- I'm not really sure why, that's just how they come.
+        Note that the wavelengths are not uniformly spaced outside of the
+        optical and extend to from 90 A - 1600000 A. (If you quickly plot
+        wave vs flux, you won't see anything b/c the optical is compressed
+        at the left edge of the plot!)  I created these FITS files using
+        a handy IDL BC03 reader "im__read_bc03.pro".  It was written by
+        John Moustakas."
+
 -------------------------------------------------------------------------------
 v5_1_3 (Feb 14, 2006 idlspec2d running on IDL 5.4 - 6.2
 Built against specflat v1_6, elodie v1_0, idlutils v5_1_3
