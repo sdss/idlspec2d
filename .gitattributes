@@ -522,6 +522,10 @@ src/extract_boxcar.c -text
 src/extract_row.c -text
 src/sshiftvec.c -text
 templates/Makefile -text
+templates/bc03_padova1994_chab_z004_ssp.fit.gz -text svneol=unset#unset
+templates/bc03_padova1994_chab_z008_ssp.fit.gz -text svneol=unset#unset
+templates/bc03_padova1994_chab_z02_ssp.fit.gz -text svneol=unset#unset
+templates/bc03_padova1994_chab_z05_ssp.fit.gz -text svneol=unset#unset
 templates/eigeninput_cvstar.dat -text
 templates/eigeninput_gal.dat -text
 templates/eigeninput_qso.dat -text
