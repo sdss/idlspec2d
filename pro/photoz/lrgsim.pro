@@ -1,10 +1,35 @@
 ; area - Survey area; default to 1000 deg^2
 
 ;------------------------------------------------------------------------------
-function lrgmodel_colors, filtloglam, filtcurve, zarr, $
- ageburst=ageburst1, zmetal=zmetal1
+; Return number per (h^-1 Mpc)^3 per (rest-frame R-petro-mag)
+function lrg_phi, Rmag
+   smallh = 1.0
 
-   common com_lrgmodel_photoz, allwave, allflux
+;   mu = -22.29 + 5.*alog10(smallh)
+;   sig = 0.219
+;   nbar = 0.159e-4 * smallh^3
+;   q = -0.5
+;   qq = 1./q^2
+;   const = -0.4 * alog(10.)
+;   numer = (Rmag - mu) / (sig / const)
+;   phi = nbar * q * const * qq^qq / (sig * gamma(qq)) $
+;    * exp(qq * (q*numer - exp(q*numer)))
+
+   ; This lum function is from Blanton et al astro-ph/0210215
+   phi_star = 1.49e-2 * smallh^3
+   M_star = -20.44 + 5.*alog10(smallh)
+   alpha = -1.05
+   phi = 0.4 * alog(10.) * phi_star * (10.^(0.4*(M_star-Rmag)))^(alpha+1) $
+    * exp(-10^(0.4*(M_star-Rmag)))
+
+   return, phi
+end
+
+;------------------------------------------------------------------------------
+function lrgmodel_colors, filtloglam, filtcurve, zarr, $
+ ageburst=ageburst1, zmetal=zmetal1, OmegaM=OmegaM, OmegaL=OmegaL
+
+   common com_lrgmodel_photoz, allwave, allflux, agevec
 
    if (keyword_set(ageburst1)) then ageburst = ageburst1 $
     else ageburst = 2.5
@@ -21,34 +46,32 @@ function lrgmodel_colors, filtloglam, filtcurve, zarr, $
 
    metalstr = ['z008', 'z02', 'z05']
    metalvec = [0.008, 0.02, 0.05]
-   agestr = [ '5Myr', '25Myr', '100Myr', '290Myr', '640Myr', '900Myr', $
-    '1.4Gyr', '2.5Gyr', '5Gyr', '11Gyr' ]
-   agevec = [0.005, 0.025, 0.100, 0.290, 0.640, 0.900, 1.4, 2.5, 5.0, 11.0]
 
-   ; Read in an model LRG spectra, assuming the same wavelengths for all
+   ; Read in a model LRG spectra, assuming the same wavelengths for all
    if (NOT keyword_set(allwave)) then begin
-      nage = n_elements(agevec)
       nmetal = n_elements(metalvec)
       eigendir = concat_dir(getenv('IDLSPEC2D_DIR'), 'templates')
-      for iage=0, nage-1 do begin
-         for imetal=0, nmetal-1 do begin
-            eigenfile = 'ssp_' + agestr[iage] + '_' + metalstr[imetal] + '.spec'
-            readcol, djs_filepath(eigenfile, root_dir=eigendir), $
-             lambda1, flux1, comment='#', format='(F,F)'
-            if (iage EQ 0 AND imetal EQ 0) then begin
-               npix = n_elements(lambda1)
-               allwave = lambda1
-               allflux = fltarr(npix, nage, nmetal)
-            endif
-            ; Convert to f_nu
-            flambda2fnu = lambda1^2 / 2.99792d18
-            allflux[*,iage,imetal] = flux1 * flambda2fnu
-         endfor
+      for imetal=0, nmetal-1 do begin
+         eigenfile = 'bc03_padova1994_chab_' + metalstr[imetal] + '_ssp.fit.gz'
+         bcdat = mrdfits(djs_filepath(eigenfile, root_dir=eigendir), 1)
+         if (imetal EQ 0) then begin
+            npix = n_elements(bcdat.wave)
+            nage = n_elements(bcdat.age)
+            allwave = bcdat.wave
+            agevec = bcdat.age / 1e9 ; convert to Gyr
+            allflux = fltarr(npix, nage, nmetal)
+         endif
+         allflux[*,*,imetal] = bcdat.flux
       endfor
+      ; Convert to f_nu
+      flambda2fnu = allwave^2 / 2.99792d18
+      for imetal=0, nmetal-1 do $
+       for iage=0, nage-1 do $
+        allflux[*,iage,imetal] = allflux[*,iage,imetal] * flambda2fnu
    endif
 
    ;----------
-   ; Compute the colors as a function of redshift.
+   ; Compute the fluxes as a function of redshift.
 
    numz = n_elements(zarr)
    synflux = dblarr(nfilt,numz)
@@ -60,8 +83,8 @@ function lrgmodel_colors, filtloglam, filtcurve, zarr, $
       ; and say that these galaxies formed when the Universe
       ; was AGEBURST Gyr old
       hubble0 = 71. * 3.1558e7 / 3.0856e19 * 1e9 ; units of Gyr^-1
-      thisage = lookback(1000., 0.27, 0.73) / hubble0 $
-       - lookback((zarr[iz] > 0), 0.27, 0.73) / hubble0 - ageburst
+      thisage = lookback(1000., OmegaM, OmegaL) / hubble0 $
+       - lookback((zarr[iz] > 0), OmegaM, OmegaL) / hubble0 - ageburst
 
       ; Demand that we stay in the bounds (at least the lower bounds)
       ; of the models.  Specifically, at the minimum, we don't want
@@ -149,37 +172,22 @@ pro lrg_filters, fsystem, wave, filtcurve
 end
 
 ;------------------------------------------------------------------------------
-; Return number per (h^-1 Mpc)^3 per (rest-frame R-petro-mag)
-function lrg_phi, Rmag
-   smallh = 1.0
-   mu = -22.29 + 5.*alog10(smallh)
-   sig = 0.219
-   nbar = 0.159e-4 * smallh^3
-   q = -0.5
-   qq = 1./q^2
-   const = -0.4 * alog(10.)
-   numer = (Rmag - mu) / (sig / const)
-   phi = nbar * q * const * qq^qq / (sig * gamma(qq)) $
-    * exp(qq * (q*numer - exp(q*numer)))
-   return, phi
-end
-
-;------------------------------------------------------------------------------
 pro lrgsim, area1, fsystem1
 
    if (keyword_set(area1)) then area = area1 $
-    else area = 100.
+    else area = 1000.
    if (keyword_set(fsystem1)) then fsystem = fsystem1 $
     else fsystem = 'SDSS'
+   nfilt = 5 ; ???
 
-   OmegaM = 0.3
-   OmegaL = 0.7
+   OmegaM = 0.27
+   OmegaL = 0.73
 
-   mrange = [-24, -20]
-   zrange = [0., 2.]
-   deltaz = 0.01
-   zmax = 2.0
-   deltam = 0.02
+   mrange = [-24, -21.84]
+mrange = [-24, -20.5]
+   zrange = [0., 0.9]
+   deltaz = 0.001
+   deltam = 0.01
    cspeed = 3.e5
    iseed = 12345
 
@@ -187,29 +195,29 @@ pro lrgsim, area1, fsystem1
    ; Construct bins in redshift
    ; Compute dVolume in units of (Mpc/h)^3
 
-   znum = long((zrange[1] - zrange[0]) / deltaz)
+   znum = long((zrange[1] - zrange[0]) / deltaz) + 1
    zvec = (findgen(znum) + 0.5) * deltaz
    ; Compute the volume in (Mpc/h)^3 per deg^2 per redshift slice
    dVolume = deltaz * dcomvoldz(zvec, OmegaM, OmegaL) * (cspeed/100)^3 $
     * (!pi/180.)^2 * area
-   Dlum = lumdis(zvec, OmegaM, OmegaL)
-   dmodulus = 5.*alog10(dlum)
+   Dlum = lumdis(zvec, OmegaM, OmegaL) / lumdis(1e-3/cspeed, OmegaM, OmegaL)
+   dmodulus = 5.*alog10(Dlum)
 
    ;----------
    ; Construct bins in absolute luminosity
 
-   mnum = long((mrange[1] - mrange[0]) / deltam)
+   mnum = long((mrange[1] - mrange[0]) / deltam) + 1
    Mabsvec = Mrange[0] + (findgen(mnum) + 0.5) * deltam
-   phi = lrg_phi(Mabsvec)
+   phi = lrg_phi(Mabsvec) * deltam
 
    ;----------
    ; Construct number density in z-M
 
    zarr = rebin(zvec,znum,mnum)
    Mabsarr = transpose(rebin(Mabsvec,mnum,znum))
-   narr = dvolume # phi
+   narr = dVolume # phi
 
-;foo = 0*narr ; ???
+foo = 0*narr ; ???
    ;----------
    ; Construct the random catalog of objects
 
@@ -220,13 +228,18 @@ pro lrgsim, area1, fsystem1
    rand = [rand[sort(rand)], nsum+1]
    j = 0L ; index into RAND
    tmpsum = 0.d0
-   outdat = replicate(create_struct('z', 0., 'Mabs', 0.), ntot)
+   outdat = replicate(create_struct( $
+    'z', 0., $
+    'Mabs', 0., $
+    'dmodulus', 0., $
+    'mag', fltarr(nfilt)), ntot)
+
    for iz=0L, znum-1L do begin
       print,zvec[iz],string(13b),format='(" z=",f,a1,$)'
       for im=0L, mnum-1L do begin
          tmpsum = tmpsum + narr[iz,im]
          while (rand[j] LT tmpsum) do begin
-;foo[iz,im] = foo[iz,im] + 1 ; ???
+foo[iz,im] = foo[iz,im] + 1 ; ???
             outdat[j].z = zarr[iz,im]
             outdat[j].Mabs = Mabsarr[iz,im]
             j = j + 1
@@ -236,14 +249,63 @@ pro lrgsim, area1, fsystem1
    print
    ; Avoid discretization at the bin boundaries by adding small randomu numbers
    outdat.z = outdat.z + (randomu(iseed,ntot) - 0.5) * deltaz
-   outdat.Mabs = outdat.z + (randomu(iseed,ntot) - 0.5) * deltam
+   outdat.Mabs = outdat.Mabs + (randomu(iseed,ntot) - 0.5) * deltam
+
+   ; Convert absolute magnitudes to apparent
+   linterp, zvec, dmodulus, outdat.z, thismodulus
+   outdat.dmodulus = thismodulus
 
    ;----------
    ; Compute the galaxy fluxes in the specified filters
 
    lrg_filters, fsystem, filtwave, filtcurve
    synflux = lrgmodel_colors(alog10(filtwave), filtcurve, zvec, $
-    ageburst=ageburst, zmetal=zmetal)
+    ageburst=ageburst, zmetal=zmetal, OmegaM=OmegaM, OmegaL=OmegaL)
+   synmag = -2.5 * alog10(synflux)
+   ; Normalize these to an absolute mag of zero in r-band at z=0
+   synmag = synmag - synmag[2,0]
+   for ifilt=0, nfilt-1 do begin
+      linterp, zvec, (synmag[ifilt,*])[*], outdat.z, thismag
+      outdat.mag[ifilt] = thismag + outdat.Mabs + outdat.dmodulus
+   endfor
+
+   ;----------
+   ; Select the Padmanabhan photo-z sample, and plot it
+
+   rmag = outdat.mag[2]
+   imag = outdat.mag[3]
+   grcolor = outdat.mag[1] - outdat.mag[2]
+   ricolor = outdat.mag[2] - outdat.mag[3]
+   c_perp = ricolor - grcolor/4. - 0.18
+   d_perp = ricolor - grcolor/8.
+   c_par = 0.7*grcolor + 1.2*(ricolor - 0.18)
+   qcut1 = (abs(c_perp) LT 0.2) $
+    AND (rmag LT (13.6 + c_par/0.3)) $
+    AND (rmag LT 19.7)
+   qcut2 = (d_perp GT 0.55) $
+    AND (grcolor GT 1.4) $
+    AND (imag LT (18.3 + 2.*d_perp)) $
+    AND (imag LT 20)
+
+   splot,outdat.z,outdat.mag[3],ps=3, xtitle='z', ytitle='i-mag'
+   i = where(qcut1 EQ 1 AND qcut2 EQ 0)
+   soplot,outdat[i].z,outdat[i].mag[3],ps=3,color='green'
+   j = where(qcut1 EQ 0 AND qcut2 EQ 1)
+   soplot,outdat[j].z,outdat[j].mag[3],ps=3,color='red'
+   k = where(qcut1 EQ 1 AND qcut2 EQ 1)
+   soplot,outdat[k].z,outdat[k].mag[3],ps=3,color='blue'
+
+   qpadman = qcut1 OR qcut2
+   npadman = total(qpadman)
+   splog, 'Number in Padmanabhan sample = ', npadman
+   splog, 'Areal density = ', npadman/area, ' / deg^2'
+   npadman2 = total((qcut1 OR qcut2) AND outdat.z LT 0.60)
+   splog, 'Volume density = ', npadman/total(dvolume[0:0.60/deltaz]), $
+    ' / (h^-1 Mpc)^3'
+
+   window, 1
+   plothist, outdat[where(qpadman)].z, bin=0.01, xr=!x.crange, $
+    xtitle='z', ytitle='Number'
 
 stop
 end
