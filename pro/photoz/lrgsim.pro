@@ -304,7 +304,7 @@ foo[iz,im] = foo[iz,im] + 1 ; ???
     ' / (h^-1 Mpc)^3'
 
    window, 1
-   plothist, outdat[where(qpadman)].z, bin=0.01, xr=!x.crange, $
+   plothist, outdat[where(qpadman)].z, bin=0.01, $
     xtitle='z', ytitle='Number'
 
 stop
