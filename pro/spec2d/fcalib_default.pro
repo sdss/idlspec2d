@@ -19,8 +19,8 @@
 ;
 ; OUTPUTS:
 ;   calibfac   - Flux-calibration values, set to 0 if outside
-;                the knonwn wavelengths; the spectra in ADU should be
-;                divided by this
+;                the knonwn wavelengths; the spectra in electrons (not ADU)
+;                should be divided by this
 ;
 ; OPTIONAL OUTPUTS:
 ;
