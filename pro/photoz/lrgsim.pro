@@ -1,23 +1,15 @@
 ; area - Survey area; default to 1000 deg^2
 
 ;------------------------------------------------------------------------------
-; Return number per (h^-1 Mpc)^3 per (rest-frame R-petro-mag)
+; Return number per (h^-1 Mpc)^3 per (rest-frame r-band Petro mags).
+; I make things brighter by 0.106 mag as the k+e-correction from
+; Blanton's function at z=0.10 to z=0.
 function lrg_phi, Rmag
    smallh = 1.0
 
-;   mu = -22.29 + 5.*alog10(smallh)
-;   sig = 0.219
-;   nbar = 0.159e-4 * smallh^3
-;   q = -0.5
-;   qq = 1./q^2
-;   const = -0.4 * alog(10.)
-;   numer = (Rmag - mu) / (sig / const)
-;   phi = nbar * q * const * qq^qq / (sig * gamma(qq)) $
-;    * exp(qq * (q*numer - exp(q*numer)))
-
    ; This lum function is from Blanton et al astro-ph/0210215
    phi_star = 1.49e-2 * smallh^3
-   M_star = -20.44 + 5.*alog10(smallh)
+   M_star = -20.44 + 5.*alog10(smallh) - 0.106
    alpha = -1.05
    phi = 0.4 * alog(10.) * phi_star * (10.^(0.4*(M_star-Rmag)))^(alpha+1) $
     * exp(-10^(0.4*(M_star-Rmag)))
@@ -197,7 +189,7 @@ mrange = [-24, -20.5]
 
    znum = long((zrange[1] - zrange[0]) / deltaz) + 1
    zvec = (findgen(znum) + 0.5) * deltaz
-   ; Compute the volume in (Mpc/h)^3 per deg^2 per redshift slice
+   ; Compute the volume in (Mpc/h)^3 per redshift slice
    dVolume = deltaz * dcomvoldz(zvec, OmegaM, OmegaL) * (cspeed/100)^3 $
     * (!pi/180.)^2 * area
    Dlum = lumdis(zvec, OmegaM, OmegaL) / lumdis(1e-3/cspeed, OmegaM, OmegaL)
@@ -217,7 +209,7 @@ mrange = [-24, -20.5]
    Mabsarr = transpose(rebin(Mabsvec,mnum,znum))
    narr = dVolume # phi
 
-foo = 0*narr ; ???
+;foo = 0*narr ; ???
    ;----------
    ; Construct the random catalog of objects
 
@@ -239,7 +231,7 @@ foo = 0*narr ; ???
       for im=0L, mnum-1L do begin
          tmpsum = tmpsum + narr[iz,im]
          while (rand[j] LT tmpsum) do begin
-foo[iz,im] = foo[iz,im] + 1 ; ???
+;foo[iz,im] = foo[iz,im] + 1 ; ???
             outdat[j].z = zarr[iz,im]
             outdat[j].Mabs = Mabsarr[iz,im]
             j = j + 1
@@ -247,7 +239,7 @@ foo[iz,im] = foo[iz,im] + 1 ; ???
       endfor
    endfor
    print
-   ; Avoid discretization at the bin boundaries by adding small randomu numbers
+   ; Avoid discretization at the bin boundaries by adding small random numbers
    outdat.z = outdat.z + (randomu(iseed,ntot) - 0.5) * deltaz
    outdat.Mabs = outdat.Mabs + (randomu(iseed,ntot) - 0.5) * deltam
 
@@ -265,17 +257,32 @@ foo[iz,im] = foo[iz,im] + 1 ; ???
    ; Normalize these to an absolute mag of zero in r-band at z=0
    synmag = synmag - synmag[2,0]
    for ifilt=0, nfilt-1 do begin
-      linterp, zvec, (synmag[ifilt,*])[*], outdat.z, thismag
+      linterp, zvec, reform(synmag[ifilt,*]), outdat.z, thismag
       outdat.mag[ifilt] = thismag + outdat.Mabs + outdat.dmodulus
    endfor
 
    ;----------
    ; Select the Padmanabhan photo-z sample, and plot it
+   ; Before selection, add typical sky errors to the fluxes,
+   ; plus an error that's 1% of the object flux
+   ; I make things brighter by 0.07 mag to approximately convert from
+   ; Blanton's Petrosian magnitudes to model magnitudes.
+   ; Our Cut I should be Petro mags, and Cut II should be model mags.
 
-   rmag = outdat.mag[2]
-   imag = outdat.mag[3]
-   grcolor = outdat.mag[1] - outdat.mag[2]
-   ricolor = outdat.mag[2] - outdat.mag[3]
+   pmags = outdat.mag
+   nmgy_err = [0.4, 0.2, 0.3, 0.5, 1.7]
+   perr = 0 * pmags
+   for ifilt=0, 4 do $
+    perr[ifilt,*] = randomn(iseed,ntot) $
+     * (nmgy_err[ifilt] + 0.01 * 10.^((22.5-reform(pmags[ifilt,*]))/2.5))
+   for ifilt=0, 4 do $
+    pmags[ifilt,*] = 22.5 $
+     - 2.5*alog10( (10.^((22.5-pmags[ifilt,*])/2.5) + perr[ifilt,*]) > 0.01)
+
+   rmag = reform(pmags[2,*])
+   imag = reform(pmags[3,*])
+   grcolor = reform(pmags[1,*] - pmags[2,*])
+   ricolor = reform(pmags[2,*] - pmags[3,*])
    c_perp = ricolor - grcolor/4. - 0.18
    d_perp = ricolor - grcolor/8.
    c_par = 0.7*grcolor + 1.2*(ricolor - 0.18)
@@ -284,8 +291,8 @@ foo[iz,im] = foo[iz,im] + 1 ; ???
     AND (rmag LT 19.7)
    qcut2 = (d_perp GT 0.55) $
     AND (grcolor GT 1.4) $
-    AND (imag LT (18.3 + 2.*d_perp)) $
-    AND (imag LT 20)
+    AND (imag-0.07 LT (18.3 + 2.*d_perp)) $
+    AND (imag-0.07 LT 20)
 
    splot,outdat.z,outdat.mag[3],ps=3, xtitle='z', ytitle='i-mag'
    i = where(qcut1 EQ 1 AND qcut2 EQ 0)
@@ -295,17 +302,23 @@ foo[iz,im] = foo[iz,im] + 1 ; ???
    k = where(qcut1 EQ 1 AND qcut2 EQ 1)
    soplot,outdat[k].z,outdat[k].mag[3],ps=3,color='blue'
 
-   qpadman = qcut1 OR qcut2
+   qpadman = (qcut1 OR qcut2) AND outdat.z GT 0.2 ; AND outdat.z LT 0.6
    npadman = total(qpadman)
    splog, 'Number in Padmanabhan sample = ', npadman
    splog, 'Areal density = ', npadman/area, ' / deg^2'
-   npadman2 = total((qcut1 OR qcut2) AND outdat.z LT 0.60)
-   splog, 'Volume density = ', npadman/total(dvolume[0:0.60/deltaz]), $
-    ' / (h^-1 Mpc)^3'
+   splog, 'Volume density = ', $
+    npadman/total(dvolume[0.20/deltaz:0.60/deltaz]), ' / (h^-1 Mpc)^3'
+stop
 
-   window, 1
-   plothist, outdat[where(qpadman)].z, bin=0.01, $
-    xtitle='z', ytitle='Number'
+   ; Plot the redshift distribution, and the same smoothed by 0.03 RMS in z
+   zhist = float(histogram(outdat[where(qpadman)].z, binsize=deltaz, $
+    min=zrange[0], max=zrange[1]))
+   sigerr = 0.03 ; photo-z error
+   nghalf = long(0.1 * n_elements(zvec))
+   gkern = exp(-0.5*((findgen(nghalf*2+1)-nghalf)*deltaz/sigerr)^2)
+   zhist2 = convol(zhist, gkern/total(gkern), /center, /edge_truncate)
+   splot, zvec, zhist, xtitle='z', ytitle='Number', psym=10
+   soplot, zvec, zhist2, color='red', psym=10
 
 stop
 end
