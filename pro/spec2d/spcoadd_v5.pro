@@ -139,7 +139,6 @@ pro spcoadd_v5, spframes, outputname, $
 
    ;----------
    ; Sort filenames such that this list contains first the blue then the red
-; Why should this matter to sort them ???
 
    nfiles = n_elements(spframes)
    if (nfiles EQ 0) then return
