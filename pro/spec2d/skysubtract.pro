@@ -173,7 +173,7 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
    ; the density of data points.
 
    bkpt = 0
-   everyn = (2*nskies/3) > 1
+   everyn = floor(2.*nskies/3) > 1
    sset = bspline_iterfit(skywave, skyflux, invvar=skyivar, $
     nord=nord, everyn=everyn, bkpt=bkpt, $
     upper=upper, lower=lower, maxiter=maxiter, $
@@ -293,9 +293,6 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
        upper=upper, lower=lower, maxiter=maxiter, $
        maxrej=maxrej, groupsize=groupsize, requiren=2)
 
-;;
-;;  Should this be airmass_correction^2 in the next line, alright it should be
-;;
       skyvarfit = bspline_valu(wave, skyvarset) * airmass_correction^2
    endif
 
@@ -333,7 +330,7 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
       nbin = N_elements(bkpt) - 1
       relwave = fltarr(nbin)
       relchi2 = fltarr(nbin)
-      for ibin=0, nbin-1 do begin
+      for ibin=0L, nbin-1L do begin
          ; Locate data points in this bin, excluding masked pixels
          ii = where(skywave GE bkpt[ibin] AND skywave LT bkpt[ibin+1] $
           AND skyivar GT 0, nn)
@@ -360,31 +357,29 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
       endfor
 
       ; Trim to only those bins where we set RELCHI2
-      ; ?? Do we need to trim relchi2 also, to have matching size arrays??
 
       ii = where(relwave NE 0, nbin)
-      relwave = relwave[ii]
-      relchi2 = relchi2[ii]
+      if (nbin GT 0) then begin
+         relwave = relwave[ii]
+         relchi2 = relchi2[ii]
  
-      ;----------
-      ; Spline fit RELCHI2, only for the benefit of getting a smooth function
-      ; Also, force the fit to always be >= 1, such that we never reduce the
-      ; formal errors.
+         ;----------
+         ; Spline fit RELCHI2, only for the benefit of getting a smooth function
+         ; Also, force the fit to always be >= 1, such that we never reduce the
+         ; formal errors.
 
-      relchi2set = bspline_iterfit(relwave, relchi2, nord=3, $
-        upper=30, lower=30, maxiter=maxiter, everyn=2, requiren=1)
+         relchi2set = bspline_iterfit(relwave, relchi2, nord=3, $
+           upper=30, lower=30, maxiter=maxiter, everyn=2, requiren=1)
+         relchi2fit = bspline_valu(wave, relchi2set) > 1
+         splog, 'Median sky-residual chi2 = ', median(relchi2)
+         splog, 'Max sky-residual chi2 = ', max(relchi2)
+      endif
+   endif
 
-      relchi2fit = bspline_valu(wave, relchi2set) > 1
-
-      splog, 'Median sky-residual chi2 = ', median(relchi2)
-      splog, 'Max sky-residual chi2 = ', max(relchi2)
-
-   endif else begin
-
+   if (NOT keyword_set(relchi2fit)) then begin
       splog, 'WARNING: Too few sky fibers or pixels to model sky-sub variance!!'
       relchi2fit = 1
-
-   endelse
+   endif
 
    ;----------
    ; Modify OBJSUBIVAR with the relative variance
@@ -446,7 +441,7 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
    if (keyword_set(newmask)) then begin
       ; Compute a median sky vector for each fiber
       medsky = 0 * fullfit
-      for irow=0, nrow-1 do $
+      for irow=0L, nrow-1L do $
        medsky[*,irow] = djs_median(fullfit[*,irow], width=99, $
         boundary='reflect')
 
