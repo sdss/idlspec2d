@@ -3,6 +3,10 @@ SDSSPROC: In response to PR #6893 against Son-of-Spectro, don't print
         any error messages if the spawn of 'speclog_version' fails.
         That bash script only exists in the speclog product, which is
         not required for Son-of-Spectro.
+SKYSUBTRACT: The rescaling of the errors with RELCHI2FIT seems to fail
+        in the case where all sky fibers but 4 have been rejected.
+        This happened on plate 2333/53679 exposure b1-00034582,
+        which is a bright SEGUE plate with all sorts of S/N problems.
 
 templates/bc03_padova1994_chab_z*_ssp.fit.gz: These are 4 FITS files with
         the full BC03 SP unnormalized grids (ages in years, wavelengths
