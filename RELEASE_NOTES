@@ -1,5 +1,3 @@
-Added an examples/opECalib-blank.par, with gain/bias/linearity set to 1/0/1. This just
-makes it a bit easier to investigate raw frames with the standard tools.
 
 PLOTSPEC: Add /stds and /skys flags to select just those fibers.
 SDSSPROC: In response to PR #6893 against Son-of-Spectro, don't print
@@ -11,6 +9,10 @@ SKYSUBTRACT: The rescaling of the errors with RELCHI2FIT seems to fail
         This happened on plate 2333/53679 exposure b1-00034582,
         which is a bright SEGUE plate with all sorts of S/N problems.
 
+etc/spChunkList.par: Add chunks 139-142.
+examples/opECalib-blank.par: Files with gain, bias, linearity, set to 1,0,1
+        to make it a bit easier to investigate raw frames with the standard
+        tools (Loomis).
 templates/bc03_padova1994_chab_z*_ssp.fit.gz: These are 4 FITS files with
         the full BC03 SP unnormalized grids (ages in years, wavelengths
         in Angstroms, and fluxes).  These files came from Christy Tremonti
