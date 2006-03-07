@@ -103,6 +103,7 @@ examples/opConfig-50000.par -text
 examples/opECalib-50000.par -text
 examples/opECalib-51430.par -text
 examples/opECalib-51577.par -text
+examples/opECalib-blank.par -text
 examples/opHdrFix.par -text
 examples/opLimits.par -text
 examples/plParam.par -text

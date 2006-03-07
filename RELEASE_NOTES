@@ -1,4 +1,7 @@
+Added an examples/opECalib-blank.par, with gain/bias/linearity set to 1/0/1. This just
+makes it a bit easier to investigate raw frames with the standard tools.
 
+PLOTSPEC: Add /stds and /skys flags to select just those fibers.
 SDSSPROC: In response to PR #6893 against Son-of-Spectro, don't print
         any error messages if the spawn of 'speclog_version' fails.
         That bash script only exists in the speclog product, which is
