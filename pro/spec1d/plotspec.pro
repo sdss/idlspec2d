@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   plotspec, plate, [ fiberid, mjd=, znum=, nsmooth=, /zline, /nosyn, /noerr, $
 ;    /sky, /ormask, /andmask, psfile=, /restframe, /netimage, $
-;    /zwarning, /stds, /skys, /allexp, topdir=, _EXTRA= ]
+;    /zwarning, /allexp, topdir=, _EXTRA= ]
 ;
 ; INPUTS:
 ;   plate      - Plate number(s)
@@ -44,9 +44,8 @@
 ;                "http://sdssmosaic.fnal.gov:8015". ???
 ;                This is disabled if PSFILE is set.
 ;   zwarning   - If set, then only select those non-sky fibers where the
-;                ZWARNING flag has been set.
-;   stds       - If set, then only select the standard star fibers.
-;   skys       - If set, then only select the sky fibers.
+;                ZWARNING flag has been set; can be used with or without
+;                specifying fiber numbers with FIBERID.
 ;   allexp     - If set, then plot all the individual exposure spectra,
 ;                rather than the co-added spectrum.
 ;   topdir     - Top-level directory for data; default to the environment
@@ -393,7 +392,6 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
  ormask=ormask, andmask=andmask, $
  psfile=psfile, xrange=xrange, yrange=yrange, noerase=noerase, $
  restframe=restframe, netimage=netimage, zwarning=zwarning, allspec=allspec, $
- stds=stds, skys=skys, $
  topdir=topdir, _EXTRA=KeywordsForSplot
 
    if (n_params() LT 1) then begin
@@ -428,17 +426,16 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
       endif
    endelse
    
-   nsel = (keyword_set(zwarning) + keyword_set(skys) + keyword_set(stds) + keyword_set(fiberid))
-   if (nsel GT 1) then begin
-       print, 'only fiberid, or one of /zwarning, /skys, /stds may be set.'
-       !quiet = quiet
-       return
-   endif
-
    ;----------
    ; If /ZWARNING is set, then find the flagged fibers to plot.
 
    if (keyword_set(zwarning)) then begin
+      if (keyword_set(fiberid)) then begin
+         print, 'FIBERID and /ZWARNING cannot both be set.'
+         !quiet = quiet
+         return
+      endif
+
       for iplate=0, nplate-1 do begin
          readspec, plate[iplate], mjd=mjd[iplate], $
           topdir=topdir, /silent, zans=zans
@@ -449,9 +446,15 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
          endif
          indx = where((zans.zwarning AND 1) EQ 0 AND zans.zwarning NE 0, nthis)
          if (nthis GT 0) then begin
-             platelist = replicate(plate[iplate], nthis)
-             mjdlist = replicate(mjd[iplate], nthis)
-             fiberid = zans[indx].fiberid
+            if (NOT keyword_set(fiberid)) then begin
+               platelist = replicate(plate[iplate], nthis)
+               mjdlist = replicate(mjd[iplate], nthis)
+               fiberid = zans[indx].fiberid
+            endif else begin
+               platelist = [platelist, replicate(plate[iplate], nthis)]
+               mjdlist = [mjdlist, replicate(mjd[iplate], nthis)]
+               fiberid = [fiberid, zans[indx].fiberid]
+            endelse
          endif
       endfor
       if (NOT keyword_set(fiberid)) then begin
@@ -461,63 +464,6 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
       endif
       nfiber = n_elements(fiberid)
       print, 'Selecting ', nfiber, ' non-sky fibers with ZWARNING flag set'
-   endif
-
-   ;----------
-   ; If /stds is set, then select only the standard star fibers
-
-   if (keyword_set(stds)) then begin
-      for iplate=0, nplate-1 do begin
-         readspec, plate[iplate], mjd=mjd[iplate], $
-          topdir=topdir, /silent, plugmap=plugmap
-         if (NOT keyword_set(plugmap)) then begin
-            print, 'No plPlugMap file found for selecting standard stars'
-            !quiet = quiet
-            return
-         endif
-         indx = where((strtrim(plugmap.objtype,2) EQ 'SPECTROPHOTO_STD' $
-                       OR strtrim(plugmap.objtype,2) EQ 'REDDEN_STD'), nthis)
-         if (nthis GT 0) then begin
-             platelist = replicate(plate[iplate], nthis)
-             mjdlist = replicate(mjd[iplate], nthis)
-             fiberid = indx+1
-         endif
-      endfor
-      if (NOT keyword_set(fiberid)) then begin
-         print, 'No standard stars found'
-         !quiet = quiet
-         return
-      endif
-      nfiber = n_elements(fiberid)
-      print, 'Selecting ', nfiber, ' standard star fibers'
-   endif
-
-   ;----------
-   ; If /skys is set, then select only the standard star fibers
-
-   if (keyword_set(skys)) then begin
-      for iplate=0, nplate-1 do begin
-         readspec, plate[iplate], mjd=mjd[iplate], $
-          topdir=topdir, /silent, plugmap=plugmap
-         if (NOT keyword_set(plugmap)) then begin
-            print, 'No plPlugMap file found for selecting standard stars'
-            !quiet = quiet
-            return
-         endif
-         indx = where((strtrim(plugmap.objtype,2) EQ 'SKY'), nthis)
-         if (nthis GT 0) then begin
-             platelist = replicate(plate[iplate], nthis)
-             mjdlist = replicate(mjd[iplate], nthis)
-             fiberid = indx+1
-         endif
-      endfor
-      if (NOT keyword_set(fiberid)) then begin
-         print, 'No sky fibers found'
-         !quiet = quiet
-         return
-      endif
-      nfiber = n_elements(fiberid)
-      print, 'Selecting ', nfiber, ' sky fibers'
    endif
 
    ;----------
