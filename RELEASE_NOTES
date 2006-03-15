@@ -1,5 +1,5 @@
 
-PLOTSPEC: Add /stds and /skys flags to select just those fibers.
+PLOTSPECQA: Wrapper to PLOTSPEC to select only standard stars or skies.
 SDSSPROC: In response to PR #6893 against Son-of-Spectro, don't print
         any error messages if the spawn of 'speclog_version' fails.
         That bash script only exists in the speclog product, which is
