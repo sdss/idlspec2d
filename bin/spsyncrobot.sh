@@ -30,6 +30,16 @@ copiedMJDs=$RAWDATA_DIR/copiedMJDs.list
 #------------------------------------------------------------------------------
 # Test that certain environment variables are already set.
 
+if [ -z "$SSH_AGENT_PID" ] ; then
+  echo "SSH_AGENT_PID must be set!"
+  exit
+fi
+
+if [ -z "$SSH_AUTH_SOCK" ] ; then
+  echo "SSH_AUTH_SOCK must be set!"
+  exit
+fi
+
 if [ -z "$ASTROLOG_DIR" ] ; then
   echo "ASTROLOG_DIR must be set!"
   exit
@@ -55,6 +65,12 @@ if [ -z "$SPROBOT_RSH" ] ; then
   SPROBOT_RSH=ssh
 fi
 
+# Sanity check
+if ! `ssh-add -l | grep -q -n dssadmin@`; then
+    echo "no dssadmin ssh-agent for spectro!"
+    exit 1
+fi
+
 echo ""
 echo "-------------------------------------------------------------------------------"
 echo "SPROBOT: Launched at "`date` UID=$UID PPID=$PPID
@@ -75,7 +91,7 @@ mjdlist=''
 # The following line fails, because the directory list too long!
 # So instead, "cd" into the directory first.
 # remotedir=`$SPROBOT_RSH $hostname ls -d /data/spectro/astrolog/[5-9]???? | tail -7 | sed 's/\/data\/spectro\/astrolog\///g' | sed 's/\///g'`
-remotedir=`$SPROBOT_RSH $hostname "(cd /data/spectro/astrolog ; ls -d [5-9]???? | tail -7 | sed 's/\///g')"`
+remotedir=`$SPROBOT_RSH $hostname "(cd /data/spectro/astrolog ; ls -d [5-9]???? | tail -20 | sed 's/\///g')"`
 echo REMOTEDIR=$remotedir
 
 for mjdstr in $remotedir ; do
