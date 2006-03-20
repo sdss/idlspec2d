@@ -165,8 +165,8 @@ for mjdstr in $remotedir ; do
 #      gzip $localdir/*.fit $localdir/*/*.fit
 
       # Normalize permissions.
-      find $localdir/$mjdstr -type f -print | xargs chmod 644
-      find $localdir/$mjdstr -type d -print | xargs chmod 755
+      find $localdir -type f -print | xargs chmod 644
+      find $localdir -type d -print | xargs chmod 755
 
       if [ -z "$mjdlist" ] ; then
          mjdlist=$mjdstr

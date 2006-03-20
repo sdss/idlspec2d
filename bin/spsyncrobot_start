@@ -87,6 +87,10 @@ if [ -z "$SPROBOT_LOCALDISKS" ] ; then
   exit
 fi
 
+if [ -z "$CVS_RSH" ] ; then
+    CVS_RSH=ssh
+fi
+
 # If the PATH is too long, then abort.
 if [ `echo $PATH | wc -c` -gt 1020 ] ; then
   echo "PATH is too long (more than 1020 characters)"
