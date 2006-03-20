@@ -536,6 +536,14 @@ templates/eigeninput_gal.dat -text
 templates/eigeninput_qso.dat -text
 templates/eigeninput_star.par -text
 templates/eigeninput_vstnd.dat -text
+templates/fluxed_sky_346.fits -text svneol=unset#application/octet-stream
+templates/fluxed_sky_437.fits -text svneol=unset#application/octet-stream
+templates/fluxed_sky_564U.fits -text svneol=unset#application/octet-stream
+templates/fluxed_sky_580L.fits -text svneol=unset#application/octet-stream
+templates/fluxed_sky_580U.fits -text svneol=unset#application/octet-stream
+templates/fluxed_sky_800U.fits -text svneol=unset#application/octet-stream
+templates/fluxed_sky_860L.fits -text svneol=unset#application/octet-stream
+templates/fluxed_sky_860U.fits -text svneol=unset#application/octet-stream
 templates/kurucz_stds_raw_v5.fits -text
 templates/qso.template -text
 templates/qsolist.27plates -text
