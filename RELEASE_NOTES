@@ -1,3 +1,6 @@
+bin/spXXXrobot logic: split sprobot into an rsync task and a processing task. The 
+	intent is to match the photoop userid logic, where data is copied as one
+	user and reduced as another. 
 
 PLOTSPECQA: Wrapper to PLOTSPEC to select only standard stars or skies.
 SDSSPROC: In response to PR #6893 against Son-of-Spectro, don't print

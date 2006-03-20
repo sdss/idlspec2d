@@ -21,6 +21,9 @@ bin/spamd_start -text
 bin/spamd_stop -text
 bin/spamdup -text
 bin/speclog_update -text
+bin/spredrobot.sh -text
+bin/spredrobot_start -text
+bin/spredrobot_stop -text
 bin/spreduce_batch -text
 bin/sprobot.sh -text
 bin/sprobot1d.sh -text
@@ -29,6 +32,9 @@ bin/sprobot_start -text
 bin/sprobot_status -text
 bin/sprobot_stop -text
 bin/sprobotlist.sh -text
+bin/spsyncrobot.sh -text
+bin/spsyncrobot_start -text
+bin/spsyncrobot_stop -text
 bin/startapo.sh -text
 bin/zplot -text
 /branches -text

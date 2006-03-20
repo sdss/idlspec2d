@@ -1,0 +1,44 @@
+#!/bin/bash -f
+#------------------------------------------------------------------------------
+# Script to stop the processing half of Spectro-Robot (e.g., un-load the cron job).
+#
+# D. Schlegel, Princeton, 20 Dec 2000
+#------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
+# If a second argument is give, such as "spredrobot_stop plate-mapper", or 
+# "spredrobot_stop observer@plate-mapper.apo.nmsu.edu", then run this command 
+# remotely on the machine "plate-mapper".
+
+if [ $# = 1 ] ; then
+  ssh $1 spredrobot_stop
+  exit
+fi
+
+#------------------------------------------------------------------------------
+# Test to see if the cron job is not loaded.  If not, then quit.
+
+echo
+qrun=`crontab -l | awk 'BEGIN{begin = 0; end = 0}{if ($2 == "SPREDROBOT" && $3 == "BEGIN") {begin = 1}; if ($2 == "SPREDROBOT" && $3 == "END" && begin == 1) {end = 1}}END{if (begin == 1 && end == 1){print "1"} else {print "0"}}'`
+if [ $qrun = 0 ] ; then
+  echo "The Spectro-Robot cron job is not running."
+  exit
+fi
+
+#------------------------------------------------------------------------------
+# Construct the cron file to be loaded.  Use the existing cron file,
+# but deleting the lines for SPREDROBOT.
+
+cronfile=/tmp/$USER.spredrobot.cron
+# Print the cron tab w/out the first 3 lines and w/out the SPREDROBOT lines.
+crontab -l | awk 'BEGIN{doprint = 1}{if ($2 == "SPREDROBOT" && $3 == "BEGIN") {doprint = 0}; if (NR > 3 && doprint == 1) {print $0}; if ($2 == "SPREDROBOT" && $3 == "END") {doprint = 1} }' > $cronfile
+
+#------------------------------------------------------------------------------
+# Load this new cron file
+
+crontab $cronfile
+echo "Spectro-Robot stopped."
+
+\rm $cronfile
+
+#------------------------------------------------------------------------------
