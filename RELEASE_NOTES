@@ -1,6 +1,3 @@
-bin/spXXXrobot logic: split sprobot into an rsync task and a processing task. The 
-	intent is to match the photoop userid logic, where data is copied as one
-	user and reduced as another. 
 
 PLOTSPECQA: Wrapper to PLOTSPEC to select only standard stars or skies.
 SDSSPROC: In response to PR #6893 against Son-of-Spectro, don't print
@@ -12,6 +9,17 @@ SKYSUBTRACT: The rescaling of the errors with RELCHI2FIT seems to fail
         This happened on plate 2333/53679 exposure b1-00034582,
         which is a bright SEGUE plate with all sorts of S/N problems.
 
+bin/sprobot_start,sprobot_stop,sprobot.sh: Remove these scripts that
+        loaded the Spectro cron robot, which have now been split off
+        into the rsync and reduce cron jobs started with spsynrobot_start
+        and spredrobot_start.
+bin/spsyncrobot_start,spsyncrobot_stop,spsyncrobot.sh,
+        spredrobot_start,spredrobot_stop,spredrobot.sh:
+        Split sprobot.sh script into an rsync task that will
+        be run as a cron job by the "dssdata" user, and a processing task
+        that will be run as a cron job by "dssrun" user. The intent is to
+        match the photoop userid logic, where data is copied as one
+	user and reduced as another. 
 etc/spChunkList.par: Add chunks 139-142.
 examples/opECalib-blank.par: Files with gain, bias, linearity, set to 1,0,1
         to make it a bit easier to investigate raw frames with the standard
