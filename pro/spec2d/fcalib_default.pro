@@ -18,7 +18,8 @@
 ;                (probably 900 sec)
 ;
 ; OUTPUTS:
-;   calibfac   - Flux-calibration values, set to 0 if outside
+;   calibfac   - Flux-calibration values in units of
+;                electrons/(e-17 erg/s/cm^2/Ang); set to 0 if outside
 ;                the knonwn wavelengths; the spectra in electrons (not ADU)
 ;                should be divided by this
 ;
