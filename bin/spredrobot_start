@@ -77,16 +77,6 @@ if [ -z "$SPECTRO_DATA" ] ; then
   exit
 fi
 
-if [ -z "$SPROBOT_HOST" ] ; then
-  echo "SPROBOT_HOST must be set!"
-  exit
-fi
-
-if [ -z "$SPROBOT_LOCALDISKS" ] ; then
-  echo "SPROBOT_LOCALDISKS must be set!"
-  exit
-fi
-
 # If the PATH is too long, then abort.
 if [ `echo $PATH | wc -c` -gt 1020 ] ; then
   echo "PATH is too long (more than 1020 characters)"
@@ -154,14 +144,6 @@ echo "SPECLOG_DIR=$SPECLOG_DIR" >> $cronfile
 echo "SPECFLAT_DIR=$SPECFLAT_DIR" >> $cronfile
 echo "RAWDATA_DIR=$RAWDATA_DIR" >> $cronfile
 echo "SPECTRO_DATA=$SPECTRO_DATA" >> $cronfile
-echo "SPROBOT_HOST=$SPROBOT_HOST" >> $cronfile
-echo "SPROBOT_LOCALDISKS=$SPROBOT_LOCALDISKS" >> $cronfile
-if [ -n "$SPROBOT_RSH" ] ; then
-   echo "SPROBOT_RSH=$SPROBOT_RSH" >> $cronfile
-fi
-if [ -n "$CVS_RSH" ] ; then
-   echo "CVS_RSH=$CVS_RSH" >> $cronfile
-fi
 echo "# This job will run at 12:59 am every day." >> $cronfile
 echo "59 0 * * * \mv $SPRLOG.1dayold $SPRLOG.2dayold; \mv $SPRLOG $SPRLOG.1dayold" >> $cronfile
 echo "# This job will run at 1:00 am every day." >> $cronfile
