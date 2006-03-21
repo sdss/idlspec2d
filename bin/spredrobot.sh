@@ -16,7 +16,6 @@
 
 astrologdir=$ASTROLOG_DIR
 toprawdir=$RAWDATA_DIR
-localdisks=$SPROBOT_LOCALDISKS
 topoutdir=$SPECTRO_DATA
 
 copiedMJDs=$toprawdir/copiedMJDs.list
@@ -27,11 +26,6 @@ plannedMJDs=$topoutdir/plannedMJDs.list
 
 if [ -z "$RAWDATA_DIR" ] ; then
   echo "RAWDATA_DIR must be set!"
-  exit
-fi
-
-if [ -z "$SPROBOT_LOCALDISKS" ] ; then
-  echo "SPROBOT_LOCALDISKS must be set!"
   exit
 fi
 
