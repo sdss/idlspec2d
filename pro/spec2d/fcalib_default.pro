@@ -19,9 +19,10 @@
 ;
 ; OUTPUTS:
 ;   calibfac   - Flux-calibration values in units of
-;                electrons/(e-17 erg/s/cm^2/Ang); set to 0 if outside
+;                electrons/(e-17 erg/cm^2/Ang); set to 0 if outside
 ;                the knonwn wavelengths; the spectra in electrons (not ADU)
-;                should be divided by this
+;                should be divided by this; note that this calibration vector
+;                is for the specified exposure time, so there is not time unit
 ;
 ; OPTIONAL OUTPUTS:
 ;
