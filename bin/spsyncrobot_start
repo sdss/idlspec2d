@@ -138,10 +138,10 @@ vers=`echo "print,idlspec2d_version()" | idl 2> /dev/null`
 # then append more to it.
 
 # Assume some obvious things:
-if [ -z "$CVS_RSH" }; then 
+if [ -z "$CVS_RSH" ]; then 
     CVS_RSH=ssh
 fi
-if [ -z "$SPROBOT_RSH" }; then 
+if [ -z "$SPROBOT_RSH" ]; then 
     SPROBOT_RSH=ssh
 fi
 
