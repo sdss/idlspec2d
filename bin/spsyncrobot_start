@@ -137,6 +137,14 @@ vers=`echo "print,idlspec2d_version()" | idl 2> /dev/null`
 # Construct the cron file to be loaded.  Start with the existing cron file,
 # then append more to it.
 
+# Assume some obvious things:
+if [ -z "$CVS_RSH" }; then 
+    CVS_RSH=ssh
+fi
+if [ -z "$SPROBOT_RSH" }; then 
+    SPROBOT_RSH=ssh
+fi
+
 # Print the cron tab w/out the first 3 lines and w/out the SPSYNCROBOT lines.
 crontab -l | awk 'BEGIN{doprint = 1}{if ($2 == "SPSYNCROBOT" && $3 == "BEGIN") {doprint = 0}; if (NR > 3 && doprint == 1) {print $0}; if ($2 == "SPSYNCROBOT" && $3 == "END") {doprint = 1} }' > $cronfile
 
@@ -148,7 +156,6 @@ fi
 if [ -n "$SSH_AGENT_PID" ] ; then
    echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> $cronfile
 fi
-echo "DISPLAY=\"\"" >> $cronfile
 echo "IDLSPEC2D_DIR=$IDLSPEC2D_DIR" >> $cronfile
 echo "IDLUTILS_DIR=$IDLUTILS_DIR" >> $cronfile
 echo "IDL_DIR=$IDL_DIR" >> $cronfile
@@ -160,12 +167,9 @@ echo "RAWDATA_DIR=$RAWDATA_DIR" >> $cronfile
 echo "SPECTRO_DATA=$SPECTRO_DATA" >> $cronfile
 echo "SPROBOT_HOST=$SPROBOT_HOST" >> $cronfile
 echo "SPROBOT_LOCALDISKS=$SPROBOT_LOCALDISKS" >> $cronfile
-if [ -n "$SPROBOT_RSH" ] ; then
-   echo "SPROBOT_RSH=$SPROBOT_RSH" >> $cronfile
-fi
-if [ -n "$CVS_RSH" ] ; then
-   echo "CVS_RSH=$CVS_RSH" >> $cronfile
-fi
+echo "SPROBOT_RSH=$SPROBOT_RSH" >> $cronfile
+echo "CVS_RSH=$CVS_RSH" >> $cronfile
+
 echo "# This job will run at 12:59 am every day." >> $cronfile
 echo "59 0 * * * \mv $SPRLOG.1dayold $SPRLOG.2dayold; \mv $SPRLOG $SPRLOG.1dayold" >> $cronfile
 echo "# This job will run at 10:30 am every day (local time)." >> $cronfile
