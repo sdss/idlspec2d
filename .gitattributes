@@ -191,6 +191,7 @@ pro/photoz/lrgmodel_train.pro -text
 pro/photoz/lrgmodel_tweak_template.pro -text
 pro/photoz/lrgsim.pro -text
 pro/photoz/skyspec_paranal.pro -text
+pro/photoz/sptemplate_rebin.pro -text
 pro/plan/badfmags.pro -text
 pro/plan/badfstars.pro -text
 pro/plan/daytime_test.pro -text
