@@ -32,6 +32,16 @@ SPRLOG=$SPECTRO_DATA/spredrobot.log
 #------------------------------------------------------------------------------
 # Test that certain environment variables are already set.
 
+if [ -z "$SSH_AUTH_SOCK" ] ; then
+  echo "SSH_AUTH_SOCK must be set!"
+  exit
+fi
+
+if [ -z "$SSH_AGENT_PID" ] ; then
+  echo "SSH_AGENT_PID must be set!"
+  exit
+fi
+
 if [ -z "$IDLSPEC2D_DIR" ] ; then
   echo "IDLSPEC2D_DIR must be set!"
   exit
@@ -128,13 +138,8 @@ crontab -l | awk 'BEGIN{doprint = 1}{if ($2 == "SPREDROBOT" && $3 == "BEGIN") {d
 
 echo "# SPREDROBOT BEGIN "$vers >> $cronfile
 echo "PATH=$PATH" >> $cronfile
-if [ -n "$SSH_AUTH_SOCK" ] ; then
-   echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> $cronfile
-fi
-if [ -n "$SSH_AGENT_PID" ] ; then
-   echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> $cronfile
-fi
-echo "DISPLAY=\"\"" >> $cronfile
+echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> $cronfile
+echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> $cronfile
 echo "IDLSPEC2D_DIR=$IDLSPEC2D_DIR" >> $cronfile
 echo "IDLUTILS_DIR=$IDLUTILS_DIR" >> $cronfile
 echo "IDL_DIR=$IDL_DIR" >> $cronfile
