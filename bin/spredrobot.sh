@@ -46,7 +46,7 @@ echo "IDLUTILS_DIR="$IDLUTILS_DIR
 #------------------------------------------------------------------------------
 # Find copied mjds which have not been reduced
 
-mjds=`fgrep -v -f $plannedMJDs $copiedMJDs`
+mjds=`fgrep -v -f $plannedMJDs $copiedMJDs | sort -n | uniq`
 mjdlist=`echo $mjds | perl -ane 'print join(",",split())'`
 
 #------------------------------------------------------------------------------

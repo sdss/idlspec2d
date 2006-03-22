@@ -91,7 +91,7 @@ mjdlist=''
 # The following line fails, because the directory list too long!
 # So instead, "cd" into the directory first.
 # remotedir=`$SPROBOT_RSH $hostname ls -d /data/spectro/astrolog/[5-9]???? | tail -7 | sed 's/\/data\/spectro\/astrolog\///g' | sed 's/\///g'`
-remotedir=`$SPROBOT_RSH $hostname "(cd /data/spectro/astrolog ; ls -d [5-9]???? | tail -20 | sed 's/\///g')"`
+remotedir=`$SPROBOT_RSH $hostname "(cd /data/spectro/astrolog ; ls -d [5-9]???? | tail -7 | sed 's/\///g')"`
 echo REMOTEDIR=$remotedir
 
 for mjdstr in $remotedir ; do
