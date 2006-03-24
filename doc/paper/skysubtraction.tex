@@ -31,7 +31,6 @@ or a slightly steeper profile characterized by $e^{-|x|^3/\sigma^3}$.  The profi
 are defined to be normalized to unity, so the amplitude of the profile fit gives a direct estimator
 of the counts at a single spectral position. 
 
-
 Extraction is first carried out on all flat-field exposures (typically 10 second observations of
 4 quartz lamps projected on petals covering the entrance aperture of the telescope) which were observed
 with a common plug plate configuration.  The flat-field extraction is used to determine the shape of
@@ -39,6 +38,19 @@ the profile as a function of wavelength and position on the CCD.  The resulting 
 determine the empirical fiber-to-fiber variations in throughput (as a function of wavelength) 
 during a single setup.   
 
+The first very critical step is to robustly determine the fiber positions in CCD pixel coordinates.
+This is performed by identifying peaks in a cross-sectional cut of across the center row (actually a median
+cross-section of the central 9 rows).  The correct identification of the 320
+fibers per frame can be uniquely determined by demanding a wider spacing between the bundles (about 10 pixels)
+relative to the nominal inter-fiber spacing (6.1 pixels on average).  Once the starting peaks and 
+identification have been determined, we trace the fiber centers by performing flux-weighted centroids on subsequent rows
+using the previous row's center as the intial guess.  This has proven to work spectacularly well on SDSS
+flat-fields, and we have yet to uncover a failure mode in over 10000 flat-field frames.
+The flux-weighted centroids do have scatter from shot noise, so we fit a 7th order polynomial to each set of
+fiber centroids, and the best-fit coefficients are stored to represent the fiber positions on each
+flat-field frame.
+
+ 
 
 
 
