@@ -97,6 +97,10 @@ if [ -z "$SPROBOT_LOCALDISKS" ] ; then
   exit
 fi
 
+if [ -z "$CVSROOT" ] ; then
+  echo "CVSROOT must be set!"
+  exit
+fi
 # Assume some obvious things:
 if [ -z "$CVS_RSH" ]; then 
     CVS_RSH=ssh
@@ -171,6 +175,7 @@ echo "SPROBOT_HOST=$SPROBOT_HOST" >> $cronfile
 echo "SPROBOT_LOCALDISKS=$SPROBOT_LOCALDISKS" >> $cronfile
 echo "SPROBOT_RSH=$SPROBOT_RSH" >> $cronfile
 echo "CVS_RSH=$CVS_RSH" >> $cronfile
+echo "CVSROOT=$CVSROOT" >> $cronfile
 
 echo "# This job will run at 12:59 am every day." >> $cronfile
 echo "59 0 * * * \mv $SPRLOG.1dayold $SPRLOG.2dayold; \mv $SPRLOG $SPRLOG.1dayold" >> $cronfile
