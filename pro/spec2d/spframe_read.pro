@@ -7,7 +7,8 @@
 ;
 ; CALLING SEQUENCE:
 ;   spframe_read, filename, [ indx, objflux=, objivar=, mask=, $
-;    wset=, loglam=, dispset=, dispimg=, plugmap=, skyflux=, hdr=, adderr= ]
+;    wset=, loglam=, dispset=, dispimg=, plugmap=, skyflux=, superflat=, $
+;    hdr=, adderr= ]
 ;
 ; INPUTS:
 ;   filename   - Input file name
@@ -28,6 +29,7 @@
 ;   dispset    - Trace-set for dispersion solution
 ;   dispimg    - Dispersion image (per native pixel)
 ;   skyflux    - Sky flux (same units as OBJFLUX)
+;   superflat  - Superflat vector from quartz lamps
 ;   hdr        - FITS header for HDU#0
 ;
 ; COMMENTS:
@@ -43,8 +45,8 @@
 ;   HDU #4:  dispset   dispimg
 ;   HDU #5:  plugmap   plugmap
 ;   HDU #6:  sky       sky
-;   HDU #7:  flatfit
-;   HDU #8:  telluric (deprecated)
+;   HDU #7:  superflat
+;   HDU #8:  skystruct
 ;
 ; EXAMPLES:
 ;
@@ -64,7 +66,7 @@
 ;------------------------------------------------------------------------------
 pro spframe_read, filename, indx, objflux=objflux, objivar=objivar, $
  mask=mask, wset=wset, loglam=loglam, dispset=dispset, dispimg=dispimg, $
- plugmap=plugmap, skyflux=skyflux, hdr=hdr, adderr=adderr
+ plugmap=plugmap, skyflux=skyflux, superflat=superflat, hdr=hdr, adderr=adderr
 
    qtrim = n_elements(indx) GT 0
 
@@ -73,7 +75,8 @@ pro spframe_read, filename, indx, objflux=objflux, objivar=objivar, $
 
    ; Is this a flux-caliibrated frame file?
    qcframe = strmatch(fileandpath(filename),'spCFrame*')
-   if (qcframe AND (arg_present(wset) OR arg_present(dispset))) then $
+   if (qcframe AND (arg_present(wset) OR arg_present(dispset) $
+    OR arg_present(superflat))) then $
     message, 'Cannot request WSET or DISPSET from a spCFrame file'
 
    thisfile = lookforgzip(filename[0])
@@ -137,6 +140,11 @@ pro spframe_read, filename, indx, objflux=objflux, objivar=objivar, $
    if (arg_present(skyflux)) then begin
       skyflux = mrdfits(thisfile[0], 6, /silent)
       if (qtrim) then skyflux = skyflux[*,indx]
+   endif
+
+   if (arg_present(superflat)) then begin
+      superflat = mrdfits(thisfile[0], 7, /silent)
+      if (qtrim) then superflat = superflat[*,indx]
    endif
 
    return
