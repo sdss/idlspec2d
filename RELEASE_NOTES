@@ -9,6 +9,7 @@ SKYSUBTRACT: The rescaling of the errors with RELCHI2FIT seems to fail
         in the case where all sky fibers but 4 have been rejected.
         This happened on plate 2333/53679 exposure b1-00034582,
         which is a bright SEGUE plate with all sorts of S/N problems.
+SPFRAME_READ: Add option to read superflat vectors from spFrame files.
 SPTEMPLATE_REBIN: New function to read and optionally rebin spectral
         templates.  This is for use for Monte Carlo simulations of
         a spectroscopic survey at different resolutions.
