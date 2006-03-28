@@ -1,5 +1,5 @@
 
-Discussion of the telescope + instrument + site
+Discussion of the telescope + instrument + site (reference Gunn paper)
   Telescope
   Instrument: spectrographs + cartridges
   Site, transparency, seeing
@@ -65,7 +65,8 @@ Flux-calibration and flux-correction vectors (DJS)
 
 Co-adding spectra (DJS + SB)
   Re-sampling with B-splines, retaining variance maps too
-  Deal w/variable PSF (not)
+  Deal w/variable PSF 
+     (should cite Kelson's Gauss-Hermite paper, that's for spatial profiles)
   More outlier rejection
   Demonstrate no residual from dichroic
 

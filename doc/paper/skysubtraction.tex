@@ -3,65 +3,144 @@
 \subsection{Extraction}
 
 We utilize an optimal extraction procedure to transform a 2-dimensional image of
-the fiber spectrograms to a set of 320 1-dimensional spectra.  We use the same procedure
-on all processed frames, and will describe the details in processing the flat-field frames, the
+the fiber spectrograms to a set of 320 1-dimensional spectra (per spectrograph).
+We use the same procedure on all processed frames, 
+and will describe the details in processing the flat-field frames, the
 arc lamp frames, and finally the science frames.  
-The extraction is performed row-by-row, so each frame requires an outside loop over 2048 individual rows.
-The counts in each row of 2048 pixels are modeled with a linear combination of 320 profiles plus a low-order
-polynomial background.  We decided to perform profile fitting to the SDSS spectral images 
-for the following reasons:  
+The extraction is performed row-by-row, so each frame requires an 
+outside loop over 2048 individual rows.
+The counts in each row of 2048 columns are modeled with a linear 
+combination of 320 profiles plus a low-order
+polynomial background.  In addition, deviations to the trace centers and
+the profile widths are calculated as linear basis modes (reflecting the first
+and second spatial derivatives, respectively).  The compiled routine
+we implement to fit the profiles in a single row (extract_row.c) can
+be invoked with any combination of these parameters.
+
+We decided to perform profile fitting to the 
+SDSS spectral images for the following reasons:  
 
 \begin{enumerate}
 
 \item{The fiber profiles overlap significantly with their nearest neighbors.}
 
-\item{The profiles are relatively stable and smoothly vary over location on the CCDs.  
-They result from the convolution of the fiber illumination pattern + the point-spread function
-of the optics in the SDSS spectrographs + the window funciton of the Site CCD 24 micron square pixels. }
+\item{The profiles are relatively stable and smoothly vary over 
+location on the CCDs.  They result from the convolution of the fiber 
+illumination pattern + the point-spread function
+of the optics in the SDSS spectrographs + the window funciton of the 
+Site CCD 24 micron square pixels. }
 
-\item{A least-squares fit with the true profile delivers an unbiased and minimum variance estimate of the counts
-(e.g. Horne et al. 1995).}
+\item{A least-squares fit with the true profile delivers an 
+unbiased and minimum variance estimate of the counts (e.g. Horne et al. 1995).}
 
 \end{enumerate}
 
-The major obstacle to actual optimal extraction is the determination of the exact shape and position 
-of the underlying profile.  We investigated a range of symmetric, analytic profiles with a 
-minimum number of free parameters.  In the end, we found the best results using a simple gaussian 
-or a slightly steeper profile characterized by $e^{-|x|^3/\sigma^3}$.  The profiles
-are defined to be normalized to unity, so the amplitude of the profile fit gives a direct estimator
-of the counts at a single spectral position. 
+The major obstacle to actual optimal extraction is the determination of 
+the exact shape and position of the underlying profile.  
+We investigated a range of symmetric, analytic profiles with a 
+minimum number of free parameters.  In the end, we found the best 
+results using a simple Gaussian or a slightly steeper profile 
+characterized by $e^{-|x|^3/\sigma^3}$.  The profiles are defined to be 
+normalized to unity, so the amplitude of the profile fit is a 
+direct estimator of the counts at a single spectral position. 
 
-Extraction is first carried out on all flat-field exposures (typically 10 second observations of
-4 quartz lamps projected on petals covering the entrance aperture of the telescope) which were observed
-with a common plug plate configuration.  The flat-field extraction is used to determine the shape of
-the profile as a function of wavelength and position on the CCD.  The resulting spectral extractions are also used to 
-determine the empirical fiber-to-fiber variations in throughput (as a function of wavelength) 
-during a single setup.   
+Extraction is first carried out on all flat-field exposures 
+(typically 10 second observations of 4 quartz lamps projected on petals covering the entrance aperture of the telescope) which were observed
+with a common plug plate configuration.  The flat-field extraction is 
+used to determine the shape of
+the profile as a function of wavelength and position on the CCD.  
+The resulting spectral extractions are also used to 
+determine the empirical fiber-to-fiber variations in throughput 
+(as a function of wavelength) during a single setup.   
+A flat-field frame is labeled rejected by the pipeline if one of the
+following conditions is met:  1) More the 2\% of the CCD pixels are labeled
+bad by sdssproc, 2) More than 100 rows of the image show saturation, 
+3) The 80th percentile count level is less than 1000 counts, 
+4) Fewer than all 8 flat-field telescope petals were closed, 
+5) Fewer than all 4 flat-field lamps were on,
+6) More than 10000 pixels were rejected during fiber tracing, 
+7) Fiber tracing fails, or traces are seperated by less than 3 pixels anywhere
+on the flat-field image.
 
-The first very critical step is to robustly determine the fiber positions in CCD pixel coordinates.
-This is performed by identifying peaks in a cross-sectional cut of across the center row (actually a median
-cross-section of the central 9 rows).  The correct identification of the 320
-fibers per frame can be uniquely determined by demanding a wider spacing between the bundles (about 10 pixels)
-relative to the nominal inter-fiber spacing (6.1 pixels on average).  Once the starting peaks and 
-identification have been determined, we trace the fiber centers by performing flux-weighted centroids on subsequent rows
-using the previous row's center as the intial guess.  This has proven to work spectacularly well on SDSS
-flat-fields, and we have yet to uncover a failure mode in over 10000 flat-field frames.
-The flux-weighted centroids do have scatter from shot noise, so we fit a 7th order polynomial to each set of
-fiber centroids, and the best-fit coefficients are stored to represent the fiber positions on each
-flat-field frame.
+The first very critical step is to robustly determine the fiber positions 
+in CCD pixel coordinates.
+This is performed by identifying peaks in a cross-sectional cut of across 
+the center row (actually a median cross-section of the central 9 rows).  
+The correct identification of the 320 fibers per frame can be 
+uniquely determined by demanding a wider spacing between the bundles 
+of 20 fibers (spaced by about 10 pixels) relative to the nominal inter-fiber 
+spacing (6.1 pixels on average).  Once the starting peaks and 
+identification have been determined, we trace the fiber centers 
+by performing flux-weighted centroids on subsequent rows
+using the previous row's center as the intial guess.  This has proven to 
+work well on SDSS flat-fields, and we have yet to uncover a failure 
+mode in over 10000 flat-field frames.
+The flux-weighted centroids do have scatter from shot noise, 
+so we fit a 7th order polynomial to each set of fiber centroids, 
+and the best-fit coefficients are stored to represent the fiber positions 
+on each flat-field frame.
 
- 
+
+Each flat-field frame is extracted twice, once assuming a Gaussian
+profile and again assuming the steeper $|x|^3$ profile.  In both cases,
+the width is allowed to vary freely.  The total number of free parameters
+per row in the flat-field extractions is equal to 2 per fiber plus 10
+parameters to represent a smooth polynomial background.  After the extractions
+are complete, $\chi^2$ is computed by directly comparing the model fit
+to the flat-field image.  The median $\chi^2$ for each case is compared
+directly, and the better fit and profile (lower median $\chi^2$) are retained
+and implemented for the extraction of the remaining frames.  Also retained
+is a smooth polynomial fit the average profile width in each fiber bundle
+as a function of CCD row number.
+
+After all flat-field frames for a given sequence have been extracted
+and stored, the arc-lamp frames in the same sequence are extracted.  
+Each arc-lamp frame is matched with the nearest (in time) 
+non-rejected flat-field frame.  The matched flat-field gives the 
+initial trace centers to
+be assumed, as well as the profile shape and width determined from the
+flat-field.  To account for any flexure between the frames, the trace
+centers are allowed to shift/stretch to the arc-lamp image given a 
+3x3 polynomial distortion kernel over the entire extent of the image
+(match_trace.pro).
+
+The arc-lamp frames are extracted row-by-row, in the same
+manner as the flat-fields, the number of free parameters assumed
+for the model fit is 2 per fiber (profile area and width) and 1 parameter
+to fit for a constant background per row.  The restricted freedom in the
+background parameterization reflects the lower scattered light levels in
+the images of the arc-lamps.
+
+\subsection{(or arc-lamp spectra -> wavelength map)}
+
+We determine an initial wavelength solution for every arc-lamp frame
+successfully extracted in the following manner:
+
+For the appropriate side of each spectrograph (red or blue), we 
+construct a list of suitable unblended lines from a parent list including
+known lines of Mercury, Cadmium, Neon and (a trace of) Argon 
+that are readily observable in the standard set of SDSS arc-lamps. 
+A representative spectrum is calculated as the median extracted spectrum
+of the 5 closest "unflagged" spectra falling near the central columns 
+of the arc-lamp image.  This median arc-spectrum is matched with 
+cross-correlation to a simulated spectrum of suitable arc-line positions and 
+strengths by systematically searching a small volume of 
+parameter space which conservatively covers
+the polynomial coefficients of the SDSS wavelength solution.
+In the first iteration, we search a set of 
+100 coefficient vectors allowing for quadratic changes and return 
+the best match.  In the second iteration, we search in a smaller region
+about the previous best match, and search a list of 125 coefficient vector
+allowing for cubic deviations.  The coefficient vector with the best
+match from the second iteration is returned as an initial guess along with
+the cross-correlation coefficient.  
 
 
 
+A 2-step iterative procedure is loop through
+a range of possible polynomial
 
-Three types of exposures, corresponding to flat-field, arc lamp and science frames,
- are extracted with the same basic procedure
-which we describe below.  The frames associated with a single observing sequence 
-are processed in a certain order.  The first types to be extracted are the 
-flat-fields frames ("FLATS").  
 
-The object extraction lists 5 steps in header:
 
 \begin{enumerate}
 \item{Locate bright fibers (aka whopping fibers)}
