@@ -135,10 +135,58 @@ allowing for cubic deviations.  The coefficient vector with the best
 match from the second iteration is returned as an initial guess along with
 the cross-correlation coefficient.  
 
+We apply the best guess coefficients to predict the approximate pixel 
+positions of the suitable list of arc lines.  The arc line centroids
+are traced across extracted spectra (along the axis of 320 fibers).
+The centroids are fit to a smooth polynomial as a function of fiber
+position on the arc-lamp image, and subsequently fit through 6 iterations
+with simple flux weighting to arrive at a converged measure of line 
+centroids in each extracted spectrum.  Lines are excluded from the resulting
+list if the flux-weighted centroids are bad in more than 10\% of the
+spectra or if the RMS residuals are larger than 20\% of a pixel.
+We perform an iterative 4th order Legendre polynomial fit of 
+logarithmic wavelength as a function of pixel in each spectrum, 
+and retain a list of rejected centroids, 
+which have deviations relative to the model of
+10\% of a pixel width.  An additional requirement is applied to each
+suitable arc line, wherein the line is rejected in no more than 3 fibers
+per bundle of 20.  Rejected centroids are replaced with the appropriate
+positions based on a linear interpolation of the differences of non-masked
+centroids relative to updated polynomial fits per spectrum.
+The final set of positions, where the same number of line positions have
+reliable centroids per spectrum, are fit to produce the final wavelength
+coefficients which give the logarithmic (base 10) wavelengths as a function
+of spectral pixel.
 
+An arc-lamp image is declared bad using the first 4 tests as employed
+in tests of the flat-field images.  In addition, an arc-lamp exposure
+is declared unacceptable ("BAD") if any of these following criteria are met:
+5) All 8 arc-lamps must be on, 4 Neon lamps and 5 Mercury-Cadmium lamps,
+6) The initial cross-correlation coefficient is less than 0.5,
+7) Less than 6 arc lines are acceptable after quality assurance checks.
 
-A 2-step iterative procedure is loop through
-a range of possible polynomial
+The width of unblended arc lines are determined as an average over
+each bundle of 20 spectra.  In short, the arc-lamp emission lines 
+are extracted (with a Gaussian spectral profile) 
+allowing free parameters for the area and width of each suitable line.
+The resulting Gaussian widths per fiber bundle are fit 
+with a low order polynomial as a function of average line position
+(the fit is quadratic and cubic for the blue and red side respectively).
+The fitted quantity is misnomerly (sp?) referred to as the arc-lamp dispersion,
+although the values reflect the standard deviation of a Gaussian spectral
+profile in pixel units.
+
+(or just refer to data model appendix instead of the paragraph below:)
+
+The arc-lamp reductions are written to disk at this stage, and
+stored in an extended FITS file:  HDU #0 contains the processed
+and extracted arc-lamp spectra as counts per pixel, HDU #1 contains
+the identified arc line wavelengths and the measured line centroids
+(including replaced positions of rejections), HDU #2 contains a single
+structure with the Legendre polynomial coefficients applicable to each
+of the 320 arc-lamp spectra, HDU #3 contains the maskbits for each spectrum,
+and HDU #4 contains the polynomial coefficients to describe the arc-lamp
+Gaussian widths as a function of spectral pixel.
 
 
 
