@@ -141,11 +141,13 @@ for spectrograph \#2 are plugged for the north.
 % units ($\ergs$).
 % $ 100 \ergscmang$
 
+We first convert from ADUs to physical flux units under the
+assumption that there are no guiding or object centroiding errors.
 A mean relative response between fibers has already been corrected
 using the quartz flat-field lamps (see Section ???).
 Because of this flat-fielding, the remaining conversion from ADUs
 to physical units should be identical for each spectrum on the 
-same CCD, except for small differences from different pixel scales
+same CCD, except for small, known differences from different pixel scales
 and airmass.
 
 The SDSS spectrophotometry is based upon our understanding
@@ -223,29 +225,75 @@ We also reject stars if more than $20\%$ of the pixels are bad
 in any of the 3 or more observations, which typically only happens
 if a fiber is broken or the spectrum falls on bad columns on the CCD.
 Figure ??? shows the distribution of parameters that we have fit
-for the ??? flux-calibration stars on the Data Release 4 plates.
+for the ??? flux-calibration stars through Data Release 5.
 
 Each flux-calibration star provides a means of converting our
 observed spectra to physical units.  
 In practice, a single star is not sufficient because of the
 slight undersampling in wavelength, bad pixels in any
-particular observation, stellar typing errors,
+particular observation, uncertainties in our stellar typing,
 and the desire to achieve better S/N in the flux-calibration
-vector than one star provides.
+vector than one star provides.  Each of these F star spectra
+are ratioed with the best-fit model at the best-fit redshift,
+reddened with the SFD reddening maps, and scaled to the SDSS r-band
+magnitudes.  The reddening is applied using an $R_V=3.1$ extinction
+law from O'Donnell (1994), and assuming that these stars reside
+behind all the Galactic dust.
+These ratios are called the ``flux calibration vectors.''
+
+The set of flux-calibration vectors for an entire plate are combined
+using B-splines to compute an average flux-calibration vector per CCD.
+For the red CCDs, we fit 2-dimensional B-splines where the fits are
+allowed to vary linearly with airmass at each spline break point
+in wavelength.  These airmass terms are disabled if the plate spans
+less than 0.1 in airmass, or if there are fewer than 3 good stars.
+Because the B-spline fits can be dominated by
+spectrophotometry errors of low order in wavelength, and by
+atmospheric throughput variations, each fluxing
+vector is first corrected to the mean vector using cubic polynomials.
+The B-spline fits are then evaluated on an object-by-object basis,
+using the airmass of each fiber, and multiplying back in the mean
+cubic correction for the F stars each exposure.
+The mean of those cubic corrections are computed such that they
+are consistent for the same objects between the blue and red CCDs
+on each exposure.
+
+At this point, the spectra can be flux-calibrated to the mean
+F star response in each exposure, including correction for
+atmospheric absorption on an object-by-object basis.
+The problem would be solved at this point if there were
+no centroiding errors, guiding errors, differential refraction,
+or transparency variations across the 3-degree field.
+...???
 
 
-Models are redshifted, fluxed, reddened.
 
 
-The stuff I'm calibrating to has been public for a while.  The original
-ref is Gray \& Corbally, 1994, AJ 107, 742.  There are some updates in
-Gray, Graham, \& Hoyt 2001, AJ, 121, 2159.  Gray's code SPECTRUM is
-available http://www.acs.appstate.edu/dept/physics/spectrum/spectrum.html
-You can't download the models -- you have to run them.  But I can send you
-the ones I've run if you like.  (They start out as text, then I convolve
-to SDSS resolution and make FITS files.)  Richard Gray was pretty nice
-about resonding to email too.
+%------------------------------------------------------------------------------
+\subsection{GALACTIC REDDENING}
 
+The SDSS spectra are presented as observed above the Earth's
+atmosphere, but not above the Galaxy's atmosphere.
+If one is studying distant stars or extragalactic objects,
+one may wish to remove the effects of Galactic extinction
+on these spectra.  It is suggested that one use the SFD reddening
+maps and the extinction curves from either Cardelli \etal\ (1989)
+or O'Donnell (1994) with $R_V=3.1$.  The differences between the
+two extinction curves is less than $1\%$, but we choose the O'Donnell
+curves as the more modern values.  For the optical wavelengths
+of interest, the relevant formulae are
+assembled from those two papers below:
+$$ {A_\lambda \over A_V} = a(y) + {b(y)\over R_V} $$
+$$ y \equiv {10^4\AA \over \lambda} - 1.82 $$
+$$ a(y) = 1.000 + 0.104 y - 0.609 y^2 + 0.701 y^3 + 1.137 y^4
+  - 1.718 y^5 - 0.827 y^6 + 1.647 y^7 - 0.505 y^8 $$
+$$ b(y) = 1.952 y + 2.908 y^2 - 3.989 y^3 - 7.985 y^4
+  + 11.102 y^5 + 5.491 y^6 - 10.805 y^7 + 3.347 y^8 $$
+
+{\bf Need CCM above 9091 Ang!!!???}
+
+Note that the extinction corrections should be applied in the
+observed wavelength frame, before any de-redshifting of extragalactic objects.
 
 
 %------------------------------------------------------------------------------
@@ -270,6 +318,9 @@ Gray, R.\ O., Graham, P.\ W., \& Hoyt, S.\ R. 2001, \aj, 121, 2159
 
 \bibitem[Gray \& Corbally 1994]{gray94}
 Gray, R.\ O., \& Corbally, C.\ J. 1994, \aj, 107, 742
+
+\bibitem[O'Donnell 1994]{odonnell94} 
+O'Donnell, J.\ E. 1994, \apj, 422, 158
 
 \bibitem[Schlegel, Finkbeiner \& Davis 1998 (SFD)]{sfd98} 
 Schlegel, D.\ J., Finkbeiner, D.\ P., \& Davis M.\ 1998, \apj, 500, 525 (SFD)
