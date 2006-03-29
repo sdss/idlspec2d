@@ -33,6 +33,9 @@ Site CCD 24 micron square pixels. }
 \item{A least-squares fit with the true profile delivers an 
 unbiased and minimum variance estimate of the counts (e.g. Horne et al. 1995).}
 
+\item{A model profile fit leads to a model image of the SDSS data,
+and iteration allows cosmic-ray rejection and goodness-of-fit tests.}
+
 \end{enumerate}
 
 The major obstacle to actual optimal extraction is the determination of 
@@ -46,13 +49,13 @@ direct estimator of the counts at a single spectral position.
 
 Extraction is first carried out on all flat-field exposures 
 (typically 10 second observations of 4 quartz lamps projected on petals covering the entrance aperture of the telescope) which were observed
-with a common plug plate configuration.  The flat-field extraction is 
-used to determine the shape of
+with a common plug plate configuration (a spectroscopic sequence). 
+The flat-field extraction is used to determine the shape of
 the profile as a function of wavelength and position on the CCD.  
 The resulting spectral extractions are also used to 
 determine the empirical fiber-to-fiber variations in throughput 
-(as a function of wavelength) during a single setup.   
-A flat-field frame is labeled rejected by the pipeline if one of the
+as a function of wavelength.   
+A flat-field frame is rejected by the pipeline if one of the
 following conditions is met:  1) More the 2\% of the CCD pixels are labeled
 bad by sdssproc, 2) More than 100 rows of the image show saturation, 
 3) The 80th percentile count level is less than 1000 counts, 
@@ -154,11 +157,12 @@ per bundle of 20.  Rejected centroids are replaced with the appropriate
 positions based on a linear interpolation of the differences of non-masked
 centroids relative to updated polynomial fits per spectrum.
 The final set of positions, where the same number of line positions have
-reliable centroids per spectrum, are fit to produce the final wavelength
+reliable centroids per spectrum, are fit with equal weighting per line
+position to produce the final wavelength
 coefficients which give the logarithmic (base 10) wavelengths as a function
 of spectral pixel.
 
-An arc-lamp image is declared bad using the first 4 tests as employed
+An arc-lamp image is declared unacceptable using the first 4 tests as employed
 in tests of the flat-field images.  In addition, an arc-lamp exposure
 is declared unacceptable ("BAD") if any of these following criteria are met:
 5) All 8 arc-lamps must be on, 4 Neon lamps and 5 Mercury-Cadmium lamps,
@@ -172,9 +176,10 @@ allowing free parameters for the area and width of each suitable line.
 The resulting Gaussian widths per fiber bundle are fit 
 with a low order polynomial as a function of average line position
 (the fit is quadratic and cubic for the blue and red side respectively).
-The fitted quantity is misnomerly (sp?) referred to as the arc-lamp dispersion,
-although the values reflect the standard deviation of a Gaussian spectral
-profile in pixel units.
+The fitted quantity is referred to as the arc-lamp dispersion,
+but the values reflect the standard deviation of a Gaussian 
+profile in pixel units and represents the line-spread function of the 
+arc-lamp spectra.
 
 (or just refer to data model appendix instead of the paragraph below:)
 
@@ -187,6 +192,82 @@ structure with the Legendre polynomial coefficients applicable to each
 of the 320 arc-lamp spectra, HDU #3 contains the maskbits for each spectrum,
 and HDU #4 contains the polynomial coefficients to describe the arc-lamp
 Gaussian widths as a function of spectral pixel.
+
+\subsection{Constructing fiber flats}
+
+The final step in the reduction of the calibration frames in a given
+sequence is the construction of the fiber flat vectors.  Each flat-field
+frame is matched to the nearest arc-lamp frame as before, and the
+final flat-field fiber spectra are extracted in two steps.  The first
+step uses the preferred spatial profile and width determined above,
+and the extraction procedure produces a model of the flat-field frame.
+The model is used to subtract a diffuse scattered background given
+by an exponential point-spread function of :  (CCD halo PSF).
+We apply a 1-dimensional version of this 2-d PSF as an approximation,
+and allow the PSF to vary appropriately with wavelength.
+The final extraction is applied to the scattered light subtracted flat-field
+image allowing for 2 free paramters per fiber per row and 
+5 background parameters per row.
+
+The final flat-field spectra are stored as 
+detected counts per fiber per pixel with wavelengths of each pixel
+given by the associated solution of the arc-lamp frame.  
+We model the flat-field spectra as the product:
+
+
+\begin{equation} 
+{\rm Flat Model}_{ij} = A * f_{avg}(\lambda) \, {\rm fflat_i} (\lambda) 
+\end{equation} 
+
+where $A$ is a overall normalization in counts, 
+$f_{avg}$ is the average response per constant logarithmic wavelength
+interval, $fflat_i$ is the fiber-to-fiber response as a function of wavelength.
+This model of the extracted flat-field spectra provides a transformation to
+compare detected counts from one fiber to another.  
+
+This should remove the differential response due to the individual fiber
+throughput, as well as the small relative differences in the size of the
+spectral pixels at a constant wavelength.  ??Why do we correct for pixel
+sizes later on if the differential wavelength dispersion is included in fflat??
+
+The common normalized response function, $f_{avg}$, is specified as a B-spline
+function with breakpoints spaced approximately every native pixels.
+An example of normalized individual fiber spectra 
+and the resulting B-spline fit are shown in Figure ?.  The individual fiber
+flat vectors are fits to the ratio of the extracted spectra to the superflat
+(define above).  The individual vector fits are also B-splines with breakpoints
+spaced approximately every 5 native pixels.  The final set of flat vectors are
+stored as an image with dimensions Nfiber x Npixels.
+
+
+\subsection{Object Extraction}
+
+With the extracted calibration frames for a given spectroscopic sequence
+reduced, we proceed to extract the remaining science frames.
+%To minimize the differences between individual science frames
+We first select a set of arc-lamp and flat-field frames as the common
+choice of initial calibrations for all science frame extractions in a given
+observing sequence.  We loop through the science exposures, processing the
+raw images with bias and pixel-to-pixel flat images (see section ??).
+We reject a science exposure outright if 1) more than 10\% of the pixels
+are flagged as bad, 2) more than 100 rows are saturated, 3) the 25th
+percentile count level is greater than 1000 counts (the nominal level
+is of order 10 counts), 4) any of the flat-field petals are closed, or 5)
+any of the calibration lamps are recorded as on.
+
+Inputs to object extraction include the wavelength coefficients derived
+from the associated arc-lamp exposure, both the superflat and fiber flat
+vectors from the selected flat-field exposure, the profile shape and width
+as a function of position on the CCD image.
+
+The first step in object extraction is a simple tophat aperture (boxcar) 
+extraction centered at the fiber positions determined from the flat-field 
+and with a full spatial width of 6 CCD pixels.  The median counts per fiber 
+are passed directly to a test for overly bright fibers. Fiber spectra are 
+identified as bright (a.k.a. "WHOPPING") if the median counts per pixel in the 
+boxcar extraction is greater than 10000 counts above the median counts in the 
+frame.  In addition, only the brightest fiber in a spatially continuous set of 
+bright fibers is labelled "WHOPPING". 
 
 
 
