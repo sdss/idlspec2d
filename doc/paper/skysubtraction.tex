@@ -1,3 +1,13 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Definitions
+%\pagestyle{empty}
+\documentclass[12pt,preprint]{aastex}
+%\documentstyle[emulateapj,danonecolfloat]{article}
+%\usepackage{emulateapj,danonecolfloat}
+\usepackage{rotating}
+
+\begin{document}
 
 
 \subsection{Extraction}
@@ -14,7 +24,7 @@ combination of 320 profiles plus a low-order
 polynomial background.  In addition, deviations to the trace centers and
 the profile widths are calculated as linear basis modes (reflecting the first
 and second spatial derivatives, respectively).  The compiled routine
-we implement to fit the profiles in a single row (extract_row.c) can
+we implement to fit the profiles in a single row (extract\_row.c) can
 be invoked with any combination of these parameters.
 
 We decided to perform profile fitting to the 
@@ -105,7 +115,7 @@ be assumed, as well as the profile shape and width determined from the
 flat-field.  To account for any flexure between the frames, the trace
 centers are allowed to shift/stretch to the arc-lamp image given a 
 3x3 polynomial distortion kernel over the entire extent of the image
-(match_trace.pro).
+(match\_trace.pro).
 
 The arc-lamp frames are extracted row-by-row, in the same
 manner as the flat-fields, the number of free parameters assumed
@@ -184,13 +194,13 @@ arc-lamp spectra.
 (or just refer to data model appendix instead of the paragraph below:)
 
 The arc-lamp reductions are written to disk at this stage, and
-stored in an extended FITS file:  HDU #0 contains the processed
-and extracted arc-lamp spectra as counts per pixel, HDU #1 contains
+stored in an extended FITS file:  HDU \#0 contains the processed
+and extracted arc-lamp spectra as counts per pixel, HDU \#1 contains
 the identified arc line wavelengths and the measured line centroids
-(including replaced positions of rejections), HDU #2 contains a single
+(including replaced positions of rejections), HDU \#2 contains a single
 structure with the Legendre polynomial coefficients applicable to each
-of the 320 arc-lamp spectra, HDU #3 contains the maskbits for each spectrum,
-and HDU #4 contains the polynomial coefficients to describe the arc-lamp
+of the 320 arc-lamp spectra, HDU \#3 contains the maskbits for each spectrum,
+and HDU \#4 contains the polynomial coefficients to describe the arc-lamp
 Gaussian widths as a function of spectral pixel.
 
 \subsection{Constructing fiber flats}
@@ -320,7 +330,7 @@ for the midpoint of the observation to produce respresentative sky spectra for
 an airmass of 1.  The inverse variance is scaled accordingly.}
 
 \item{Group and sort the sky spectra as a function of wavelength.  This step
-transforms a 2-dimensional set of N_sky x 2048 pixels into a sorted 1-dimensional array.  
+transforms a 2-dimensional set of $N_{\rm sky}$ x 2048 pixels into a sorted 1-dimensional array.  
 Each pixel maintains its associated central wavelength and inverse variance. }
 
 \item{Perform a single cubic b-spline fit as a function of wavelength.  
@@ -337,7 +347,7 @@ fiber, and the rescaled super-sky is subtracted from each spectrum.}
 \item{Estimate the significance of the residuals in the sky fibers used for the
 fit in wavelength bins separated by breakpoints determined above.  for each bin
 where inverse the 67th percentile of $\chi^2$ is greater than 1, we rescale 
-all the inverse variance values down by the 67th percentile value of $\chi^$.
+all the inverse variance values down by the 67th percentile value of $\chi^2$.
 The rescaling is actually done with a smooth interpolation as a function of 
 redshift with a constraint that the inverse variances cannot increase. }
 
@@ -348,7 +358,7 @@ redshift with a constraint that the inverse variances cannot increase. }
 
 The sequence followed in the determination of the sky subtracted spectrum
 and re-scaled errors is called 3 times successively.  After the 1st call,
-any sky fibers which have a median \chi^2 per pixel greater than 2 is 
+any sky fibers which have a median $\chi^2$ per pixel greater than 2 is 
 masked as a 'BADSKYFIBER' and the corresponding bit is set in the fibermask
 array.  If any fibers are masked, the sky subtraction is iterated a 2nd time.
 The sky subtraction routine is invoked for one final iteration, but with extra 
@@ -379,4 +389,6 @@ Gaussian and Laplace distribution (Bolton et al. 2004).
 The influence of the exponential tail is greatly enhanced in the vicinity of strong sky 
 emission lines representative of systematic errors in the brightest lines, but the gaussian 
 width closely is closely represented by the reported variance array.
+
+\end{document}
 
