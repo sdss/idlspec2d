@@ -150,6 +150,8 @@ to physical units should be identical for each spectrum on the
 same CCD, except for small, known differences from different pixel scales
 and airmass.
 
+\subsection{Flux calibration to F stars}
+
 The SDSS spectrophotometry is based upon our understanding
 of F star subdwarfs.  These stars are the easiest main sequence
 stars to theoretically model because ...???
@@ -264,10 +266,75 @@ atmospheric absorption on an object-by-object basis.
 The problem would be solved at this point if there were
 no centroiding errors, guiding errors, differential refraction,
 or transparency variations across the 3-degree field.
-...???
+We assume that these remaining fluxing problems are all
+low-order functions with wavelength.
 
+\subsection{Flux correction vectors}
 
+The co-adding of spectra from multiple exposures demands
+consistency of the spectrophotometry at high precision between those
+exposures, more so than the overall accuracy.
+For this reason, we choose a ``best'' exposure for each plate
+to which the other exposures are corrected on an object-by-object basis.
+The best exposure is chosen to be that whose worst CCD is higher S/N
+than the worst CCD in any other exposure.
+We loop over each fiber on each camera, and solve for the multiplicative,
+cubic function that remaps each exposure to the best exposure.
+This need be done carefully to avoid any remaining bad pixels,
+such as cosmic rays, from throwing the fit.
+The fit is first performed by fixing the errors per pixel, and only
+rescaling the spectrum from the exposure being compared to the best exposure.
+This is a linear problem which we iterate, rejecting 2.5-sigma outliers.
+(These points will not necessarily be rejected from the final spectra.)
+The flux-correction vectors are then re-fit as a non-linear problem,
+where the per-pixel errors are rescaled with the spectra.
+Some of the spectra, such as for sky fibers, do not warrant high-order
+polynomial corrections.  For this reason, we perform fits to the
+flux-correction vectors with increasing polynomial orders.
+If the next-higher order does not improve the $\chi^2$ of the fit
+by at least 5, then we stop the fit at that order.  The highest-order
+fits allowed are cubic.
 
+\subsection{Co-adding the spectra with B-splines}
+
+The set of all blue and red exposures for each fiber are
+combined using a B-spline.
+The splines are evaluated on a wavelength grid that
+is uniform is log-wavelengths, with the scale always chosen
+as $10^{-4}$ in log-wavelength.  The wavelength ranges are
+slightly different for each plate, chosen to span the input data.
+
+\subsection{Flux distortion image}
+
+The remaining spectro-photometric corrections are functions across
+the entire plate that are designed to remove large-spatial scale centering
+and guiding errors.
+Some of the terms are achromatic with position on the focal plane
+(X=XFOCAL and Y=YFOCAL).  There are also chromatic terms that scale
+as $ L \equiv 1 - (5100\AA / \lambda)^2 $, since that function gives
+an equal effect between $3900$ and $5070\AA$ as between $5070$
+and $9000\AA$.
+There are also magnitude offsets as a function fo spectrograph ID,
+and a chromatic offset as a function of spectrograph ID.
+$$ F' = F  \times \left[ a_0 ({\rm SPECID~EQ~1}) + a_1 ({\rm SPECID~EQ~2}) \right]
+  \times \exp \left[ a_2 x + a_3 y + a_4 xy + a_5 x^2 + a_6 y^2 + a_7 xL + a_8 yL
+  + a_9 L ({\rm SPECID~EQ~1}) + a_10 L ({\rm SPECID~EQ~2})
+  + a_11 L^2 ({\rm SPECID~EQ~1}) + a_12 L^2 ({\rm SPECID~EQ~2}) \right] $$
+$$ X \equiv {\rm XFOCAL} $$
+$$ Y \equiv {\rm YFOCAL} $$
+$$ L \equiv 1 - (5100\AA / \lambda)^2 $$
+
+All stellar and galaxy objects are used to fit the flux distortion
+image.  Sky fibers and QSOs are ignored in the fit.
+These objects are required to have positive flux in gri photometric imaging,
+with at least $90\%$ of the pixels good in the spectra.
+For stars, we use the PSF fluxes as measured by PHOTO.
+For galaxies, we rescale the fiber fluxes as measured by PHOTO,
+rescaled by one multiplicative factor in each band such that the
+PSF and fiber fluxes agree for stars.  Typically, that mupliplies
+the PHOTO fiber fluxes by factors of 1.37 in any band.
+
+The typical flux distortion corrections amount to ???.
 
 %------------------------------------------------------------------------------
 \subsection{GALACTIC REDDENING}
