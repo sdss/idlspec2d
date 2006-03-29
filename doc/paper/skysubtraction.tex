@@ -265,23 +265,39 @@ extraction centered at the fiber positions determined from the flat-field
 and with a full spatial width of 6 CCD pixels.  The median counts per fiber 
 are passed directly to a test for overly bright fibers. Fiber spectra are 
 identified as bright (a.k.a. "WHOPPING") if the median counts per pixel in the 
-boxcar extraction is greater than 10000 counts above the median counts in the 
-frame.  In addition, only the brightest fiber in a spatially continuous set of 
-bright fibers is labelled "WHOPPING". 
+boxcar extraction are greater than 10000 counts above the median in the 
+frame.  In addition, only the brightest fiber in a spatially contiguous set of 
+bright fibers is labelled "WHOPPING".  
 
+A pixelmask vector is created for each fiber spectrum to be extracted.
+See Appendix ?? for a description of the mask bits and their use.
 
+We fit for a slight distortion of the stored flat-field fiber traces to 
+best match the fiber positions of the science image.  Nominal shifts and
+distortions are usually less than a native CCD pixel.  The science frame
+is now extracted in a series of 6 steps which we detail below.
 
 \begin{enumerate}
-\item{Locate bright fibers (aka whopping fibers)}
-\item{Assess sky fiber levels}
-\item{Commence iterative Optimal extraction }
-\item{Shift wavelength solution to match sky lines (describe in wavelength solution)}
-\item{Sky subtract}
-
+\item{Initial extraction including broad wings of bright (WHOPPING) fibers.}
+\item{Reconstruct a smooth background light model based on fitted parameters.}
+\item{Calculate a scattered halo image using the model of the fiber spectra less
+the aforementioned smooth background.}
+\item{Re-extract fiber spectra on the scattered halo subtracted image.}
+\item{Reconstruct smooth background and subtract.}
+\item{Final extraction with no free parameters in the background and
+no free parameters in the profile widths.}
 \end{enumerate}
 
-Note: Flux correction and Telluric correction have been moved (a long time ago).
-
+The extracted science spectra are first normalized by the fiber flat vectors.
+Strong atmospheric emission lines (sky lines) are identified in the the 
+set of spectra, and the wavelength solution is shifted to match the 
+identified lines.  Examples of the shift corrections are shown in Figure ??.  
+The widths of the identified sky lines are also measured with the same method
+as the arc-line width measurements.  All spectra are also normalized by
+the average flat-field spectrum (the superflat) to remove small scale
+features likely attributed to the chromatic response of the dichroic.
+The wavelength solution is corrected to both vacuum wavelengths and the
+heliocentric velocity frame.
 
 \subsection{Sky Subtraction}
 
