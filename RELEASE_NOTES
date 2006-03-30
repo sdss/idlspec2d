@@ -13,6 +13,8 @@ SPFRAME_READ: Add option to read superflat vectors from spFrame files.
 SPTEMPLATE_REBIN: New function to read and optionally rebin spectral
         templates.  This is for use for Monte Carlo simulations of
         a spectroscopic survey at different resolutions.
+SPTHROUGHPUT: New function to return the throughput and efficiency for
+        a given plate+camera+exposure
 
 bin/sprobot_start,sprobot_stop,sprobot.sh: Remove these scripts that
         loaded the Spectro cron robot, which have now been split off
