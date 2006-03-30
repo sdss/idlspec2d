@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;  photons_per_flux_per_sec = spthroughput( plate, [ indx ], camname=, $
-;   expnum=, [ loglam=, exptime=, efficiency=, /median ]
+;   expnum=, [ loglam=, exptime=, airmass=, efficiency=, /median ]
 ;
 ; INPUTS:
 ;   plate      - Plate number
@@ -32,6 +32,7 @@
 ;                pixel scale, if LOGLAM is not specified; this is an
 ;                array with the same dimensions as PHOTONS_PER_FLUX_PER_SEC
 ;   exptime    - Exposure time (seconds)
+;   airmass    - Airmass for this exposure
 ;   efficiency - Fractional efficiency using the parameters of the SDSS
 ;                telescope mirror sizes; return 0 if the flux-calibration
 ;                failed for this camera and default values were used
@@ -56,7 +57,8 @@
 ;-
 ;------------------------------------------------------------------------------
 function spthroughput, plate, indx1, camname=camname, expnum=expnum, $
- loglam=loglam, exptime=exptime, efficiency=efficiency, median=median
+ loglam=loglam, exptime=exptime, airmass=airmass, $
+ efficiency=efficiency, median=median
 
    efficiency = 0 ; default return value
 
@@ -87,6 +89,7 @@ function spthroughput, plate, indx1, camname=camname, expnum=expnum, $
    if (NOT keyword_set(calibfac)) then return, 0
    flatexp = long(strmid(sxpar(objhdr, 'FLATFILE'),7,8))
    exptime = sxpar(objhdr, 'EXPTIME')
+   if (arg_present(airmass)) then airmass = sxpar(objhdr, 'AIRMASS')
 
    correct_dlam, calibfac, 0, wset, /inverse
    loglam1 = loglam1[*,indx]
