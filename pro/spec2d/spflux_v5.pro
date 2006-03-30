@@ -981,7 +981,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       spframe_read, objname[ifile], loglam=loglam1
       if (tag_exist(thisset,'NPOLY')) then x2 = airmass[*,ifile,*] $
        else x2 = 0
-      calibimg = bspline_valu(loglam1, thisset, x2=x2)
+      calibimg = float( bspline_valu(loglam1, thisset, x2=x2) )
 if (max(calibimg) EQ 0) then stop ; ???
 
       ; Set to zero any pixels outside the known flux-calibration region
