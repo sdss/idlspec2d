@@ -14,6 +14,8 @@ SKYSUBTRACT: The rescaling of the errors with RELCHI2FIT seems to fail
         This happened on plate 2333/53679 exposure b1-00034582,
         which is a bright SEGUE plate with all sorts of S/N problems.
 SPFRAME_READ: Add option to read superflat vectors from spFrame files.
+SPFLUX_V5: We were writing calibration vectors in HDU #0 of the spFluxcalib
+        files that were double-precision.  Recast those to single precision.
 SPTEMPLATE_REBIN: New function to read and optionally rebin spectral
         templates.  This is for use for Monte Carlo simulations of
         a spectroscopic survey at different resolutions.
