@@ -2,11 +2,16 @@
 ;------------------------------------------------------------------------------
 pro plot_thru, plate, mjd=mjd
 
+   ;----------
+   ; Get the list of EDR-DR5 plates
+
+   public = ['EDR','DR1','DR2','DR3','DR4','DR5']
    platelist, plist=plist
-   indx = where(keyword_set(strtrim(plist.public)) $
-AND plist.plate GT 400 AND plist.plate LT 410 $ ; ???
-    AND strmatch(plist.statuscombine,'Done*'), nplate)
-   plist = plist[indx]
+   qkeep = bytarr(n_elements(plist))
+   for i=0, n_elements(public)-1 do $
+    qkeep = qkeep OR strmatch(plist.public,public[i])
+   qkeep = qkeep AND strmatch(plist.statuscombine,'Done*')
+   plist = plist[where(qkeep, nplate)]
 
    ;----------
    ; Start by counting the number of CCD frames

@@ -1,4 +1,5 @@
 ; Plot the histograms of spectrophotometry vs. photo residuals
+;------------------------------------------------------------------------------
 pro plot_sphoto1, mdiff, istd, igal, iqso, xtitle=xtitle, plotfile=plotfile
 
    dfpsplot, plotfile, /color, /square
@@ -45,19 +46,40 @@ pro plot_sphoto1, mdiff, istd, igal, iqso, xtitle=xtitle, plotfile=plotfile
    return
 end
 
-pro plot_sphoto
+;------------------------------------------------------------------------------
+pro plot_sphoto, synflux=synflux
 
-   spfile = filepath('spAll.fits', $
-    root_dir='/u/dss/spectro_v5')
    minflux = 1.0
+
+   ;----------
+   ; Get the list of EDR-DR5 plates
+
+   public = ['EDR','DR1','DR2','DR3','DR4','DR5']
+   platelist, plist=plist
+   qkeep = bytarr(n_elements(plist))
+   for i=0, n_elements(public)-1 do $ 
+    qkeep = qkeep OR strmatch(plist.public,public[i])
+   qkeep = qkeep AND strmatch(plist.statuscombine,'Done*')
+   plist = plist[where(qkeep, nplate)]
 
    columns=[ 'PLATE', 'MJD', 'FIBERID', $
     'CLASS', 'SUBCLASS', $
-    'CALIBFLUX', 'SPECTROFLUX', $
+    'CALIBFLUX', 'SPECTROFLUX', 'SPECTROSYNFLUX', $
     'PRIMTARGET', 'SECTARGET', 'Z', 'ZWARNING']
 
-   objs = hogg_mrdfits(spfile, 1, $
-    columns=columns, nrowchunk=10000L)
+   for iplate=0L, nplate-1L do begin
+      print, format='("Plate ",i4," of ",i4,a1,$)', iplate, nplate, string(13b)
+      readspec, plist[iplate].plate, mjd=plist[iplate].mjd, $
+       zans=zans1, plug=plug1, /silent
+      zans1 = struct_selecttags(zans1, select_tags=columns)
+      plug1 = struct_selecttags(plug1, select_tags=columns)
+      plug1 = struct_selecttags(plug1, except_tags=tag_names(zans1))
+      obj1 = struct_addtags(zans1, plug1)
+      if (iplate EQ 0) then objs = replicate(obj1[0], nplate*640L)
+      copy_struct_inx, obj1, objs, index_to=640L*iplate+lindgen(640)
+   endfor
+
+   if (keyword_set(synflux)) then objs.spectroflux = objs.spectrosynflux
 
    qgood = total(objs.calibflux[1:3] GT minflux,1) EQ 3 $
     AND total(objs.spectroflux[1:3] GT minflux,1) EQ 3 $
@@ -99,3 +121,4 @@ pro plot_sphoto
 
    return
 end
+;------------------------------------------------------------------------------

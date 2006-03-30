@@ -78,7 +78,7 @@ to obtain spectra for $600,000$ galaxies, QSOs and stars.
 We present the algorithms for reducing the raw data to
 wavelength-calibrated, flux-calibrated one-dimensional spectra.
 The wavelength calibration is shown to have an accuracy of $3 \kms$,
-and the broad-band spectrophotometry has an accuracy of better than $10\%$.
+and the broad-band spectrophotometry has an accuracy of better than $6\%$.
 
 %------------------------------------------------------------------------------
 % SUBJECT HEADINGS
@@ -764,6 +764,14 @@ For galaxies, we rescale the fiber fluxes as measured by PHOTO,
 rescaled by one multiplicative factor in each band such that the
 PSF and fiber fluxes agree for stars.  Typically, that mupliplies
 the PHOTO fiber fluxes by factors of 1.37 in any band.
+Both PSF fluxes and fiber fluxes are converted to AB magnitudes
+using the following:
+$$ u_{AB} = u - 0.042 $$
+$$ g_{AB} = g + 0.036 $$
+$$ r_{AB} = r + 0.015 $$
+$$ i_{AB} = i + 0.013 $$
+$$ z_{AB} = z - 0.002 $$
+{\bf See D. Hogg sdss-calib/845}
 
 The typical flux distortion corrections amount to ???.
 
