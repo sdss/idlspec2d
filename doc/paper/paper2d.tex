@@ -483,14 +483,14 @@ an airmass of 1.  The inverse variance is scaled accordingly.}
 transforms a 2-dimensional set of $N_{\rm sky}$ x 2048 pixels into a sorted 1-dimensional array.  
 Each pixel maintains its associated central wavelength and inverse variance. }
 
-\item{Perform a single cubic b-spline fit as a function of wavelength.  
+\item{Perform a single cubic B-spline fit as a function of wavelength.  
 The number of breakpoints (number of free parameters is 4 greater) is set 
 at 2048 on the red side and 1536 on the blue side.  The breakpoint spacing 
 is set automatically to maintain approximately constant S/N between breakpoint 
-positions. The b-spline fit itself is iterative, with upper and lower rejection 
+positions. The B-spline fit itself is iterative, with upper and lower rejection 
 thresholds set to mask bad or deviant pixels. }
 
-\item{The b-spline fit is evaluated at all 320x2048 wavelengths representing all
+\item{The B-spline fit is evaluated at all 320x2048 wavelengths representing all
 spectral pixels in the frame.  The airmass correction is applied for each individual 
 fiber, and the rescaled super-sky is subtracted from each spectrum.}
 
@@ -503,7 +503,7 @@ redshift with a constraint that the inverse variances cannot increase. }
 
 \end{enumerate}
 
-%The b-spline routines from the numerical fortran library: {\bf slatec}
+%The B-spline routines from the numerical fortran library: {\bf slatec}
 %were ported to IDL to be easily incorporated into the pipeline.
 
 The sequence followed in the determination of the sky subtracted spectrum
@@ -522,7 +522,7 @@ of position on the CCD.  In principle, one could make use of the known
 dispersion per spectral pixel to better model the sky spectrum
 in each fiber.
 
-The sky subtraction method which utilizes the b-spline model takes advantage 
+The sky subtraction method which utilizes the B-spline model takes advantage 
 of the inherent over-sampling in wavelength due to the large number of 
 sky fibers assigned per plate, without the requirement of resampling the 
 pixel value to a fixed linear wavelength scale.  The least squares fit
@@ -728,7 +728,8 @@ fits allowed are cubic.
 \subsection{Co-adding the spectra with B-splines}
 
 The set of all blue and red exposures for each fiber are
-combined using a B-spline.
+combined using an iterative B-spline fit to reject outlying flux pixels
+and remaining cosmic rays.
 The splines are evaluated on a wavelength grid that
 is uniform is log-wavelengths, with the scale always chosen
 as $10^{-4}$ in log-wavelength.  The wavelength ranges are
@@ -808,6 +809,16 @@ observed wavelength frame, before any de-redshifting of extragalactic objects.
 
 \begin{thebibliography}{DUM}
 
+\bibitem[Bolton et al.(2006)]{2006ApJ...638..703B} Bolton, A.~S., Burles, 
+S., Koopmans, L.~V.~E., Treu, T., \& Moustakas, L.~A.\ 2006, \apj, 638, 703 
+
+\bibitem[Bolton et al.(2004)]{2004AJ....127.1860B} Bolton, A.~S., Burles, 
+S., Schlegel, D.~J., Eisenstein, D.~J., \& Brinkmann, J.\ 2004, \aj, 127, 
+1860 
+
+\bibitem[de Boor 1977]{deboor77}
+de Boor, C. 1977,  SIAM Journal on Numerical Analysis 14, 3, 441
+
 \bibitem[de Boor 1978]{deboor78}
 de Boor, C. 1978, A Practical Guide to Splines, Springer, New York.
 
@@ -819,12 +830,27 @@ Gray, R.\ O., Graham, P.\ W., \& Hoyt, S.\ R. 2001, \aj, 121, 2159
 \bibitem[Gray \& Corbally 1994]{gray94}
 Gray, R.\ O., \& Corbally, C.\ J. 1994, \aj, 107, 742
 
+\bibitem[Gunn et al.(2006)]{2006astro.ph..2326G} Gunn, J.~E., Siegmund, 
+W.~A., \& Mannery, E.~J.\ 2006, arXiv:astro-ph/0602326 
+
+\bibitem[Kelson(2003)]{2003PASP..115..688K} Kelson, D.~D.\ 2003, \pasp, 
+115, 688 
+
+\bibitem[Nollett \& Burles(2000)]{2000PhRvD..61l3505N} Nollett, K.~M., \& 
+Burles, S.\ 2000, \prd, 61, 123505 
+ 
 \bibitem[O'Donnell 1994]{odonnell94} 
 O'Donnell, J.\ E. 1994, \apj, 422, 158
 
 \bibitem[Schlegel, Finkbeiner \& Davis 1998 (SFD)]{sfd98} 
 Schlegel, D.\ J., Finkbeiner, D.\ P., \& Davis M.\ 1998, \apj, 500, 525 (SFD)
 
+\bibitem[Tytler et al.(2004)]{2004ApJ...617....1T} Tytler, D., et al.\ 
+2004, \apj, 617, 1 
+
+\bibitem[Uomoto et al.(1999)]{1999AAS...195.8701U} Uomoto, A., et al.\ 
+1999, Bulletin of the American Astronomical Society, 31, 1501 
+ 
 \bibitem[York et al. 2000]{york00}
 York, D.\ G. \etal\ 2000, \aj, 120, 1579
 
@@ -840,8 +866,10 @@ York, D.\ G. \etal\ 2000, \aj, 120, 1579
 In many of our algorithms we utilize a class of fitting functions known
 as B-splines (de Boor 1978).  These are very flexible and efficient 
 continous functions which have been applied to numerous spectroscopic
-and photometric data sets (cite Kelson ??, Kirkman/O'Meara ??, 
-Bolton et al. 2005, Davis/Newman/Finkbeiner).  We also extend the 1-dimensional
+and photometric data sets (cite Kelson ??, Tytler et al. 2004, 
+Bolton et al. 2005, Davis/Newman/Finkbeiner) as well as other interpolative
+analyses (e.g. Nollett \& Burles 2000).  
+We also extend the 1-dimensional
 B-splines to slightly higher dimension by allowing the B-spline evalutions
 represent polynomial coefficients in a second independent variable.  We 
 call these 2-dimensional B-splines, but in fact, 
@@ -850,7 +878,7 @@ that allow the same degree of freedom in both independent variable domains.
 
 In its basic form, a B-spline represents
 a continous set of piecewise polynomials as a function of a single independent
-variable.  The b-spline of order $n$ is equivalent to a set 
+variable.  The B-spline of order $n$ is equivalent to a set 
 of individual polynomial curves (order 4 = cubic, for example) with $m$ 
 breakpoints at positions of the boundaries of the individual polynomial 
 curves in the independent variable domain.  Unconstrained, the fitting function
@@ -859,12 +887,12 @@ constrained such that only the highest non-trivial spatial derivative is
 allowed to change, which sums to a total number of constraints = 
 $(n-1) * (m-2)$.  A B-spline of order $n$ is therefore described by 
 $n + m - 2$ free parameters.  A simple example is to set m=2 breakpoints at
-the extreme range of the independent variable domain, and the B-spline 
+the extreme range of the independent variable domain, and the B-spline then
 represents a simple single polynomial function with $n$ free parameters.
 Cast in this form, each B-spline coefficient is correlated with the
 $n-1$ nearest neighbors.  This allows for very efficient banded linear matrix
 inversion.  For our purposes, we have adopted the original fortran subroutines
-in the slatec library (ref??) and translated completely to IDL.
+in the slatec library (de Boor 1977) to complete translation in IDL.
 
 %------------------------------------------------------------------------------
 %------------------------------------------------------------------------------
