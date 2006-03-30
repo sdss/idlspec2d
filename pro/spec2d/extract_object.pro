@@ -336,8 +336,10 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ; Correct LAMBDA, which is used to shift to vacuum wavelengths.
 
    helio=0.0
-   ra = sxpar(objhdr,'RA')
-   dec = sxpar(objhdr,'DEC')
+   ra = sxpar(objhdr, 'RA', count=ct_ra)
+   dec = sxpar(objhdr, 'DEC', count=ct_dec)
+   if (ct_ra NE 1 OR ct_dec NE 1) then $
+    splog, 'WARNING: Missing RA and/or DEC from header'
 
    ;--------------------------------------------------------
    ; Call standard proc to determine time-stamps
@@ -547,7 +549,8 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    sxaddpar,objhdr,'EQUINOX',2000.0,after='DEC'
    sxaddpar,objhdr,'RADECSYS', 'FK5', after='EQUINOX'
    sxaddpar,objhdr,'AIRMASS',$
-          float(tai2airmass(ra, dec, tai=tai_mid)), after='ALT'
+    float(tai2airmass(ra, dec, tai=tai_mid)) $
+    * (ct_ra EQ 1) * (ct_dec EQ 1) * (tai_mid GT 0), after='ALT'
 
    spadd_guiderinfo, objhdr
 
