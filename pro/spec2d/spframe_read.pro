@@ -113,7 +113,8 @@ pro spframe_read, filename, indx, objflux=objflux, objivar=objivar, $
       if (arg_present(wset) OR arg_present(loglam)) then begin
          wset = mrdfits(thisfile[0], 3, /silent)
          if (qtrim) then wset = traceset_trim(wset, indx)
-         if (arg_present(loglam)) then traceset2xy, wset, xtmp, loglam
+         if (arg_present(loglam) AND keyword_set(wset)) then $
+          traceset2xy, wset, xtmp, loglam
          xtmp = 0
       endif
    endelse
