@@ -24,7 +24,8 @@
 ;
 ; OUTPUTS:
 ;   photons_per_flux_per_sec - Calibration vector(s) of photons per
-;                (10^-17 erg/s/cm^2/Ang)
+;                (10^-17 erg/s/cm^2/Ang); return 0 if the flux-calibration
+;                failed for this camera and default values were used
 ;
 ; OPTIONAL OUTPUTS:
 ;   loglam     - Wavelength scale in vacuum log-10-Angstroms for the native
@@ -32,7 +33,8 @@
 ;                array with the same dimensions as PHOTONS_PER_FLUX_PER_SEC
 ;   exptime    - Exposure time (seconds)
 ;   efficiency - Fractional efficiency using the parameters of the SDSS
-;                telescope mirror sizes
+;                telescope mirror sizes; return 0 if the flux-calibration
+;                failed for this camera and default values were used
 ;
 ; COMMENTS:
 ;
@@ -56,7 +58,7 @@
 function spthroughput, plate, indx1, camname=camname, expnum=expnum, $
  loglam=loglam, exptime=exptime, efficiency=efficiency, median=median
 
-plate=406 & camname='r1' & expnum=6790 & indx=[140,141]
+   efficiency = 0 ; default return value
 
    if (n_elements(plate) NE 1) then $
     message, 'PLATE must be a scalar!'
@@ -80,11 +82,9 @@ plate=406 & camname='r1' & expnum=6790 & indx=[140,141]
     '.fits*'), root_dir=outdir)
    spframe_read, filename1, loglam=loglam1, hdr=objhdr, wset=wset, $
     superflat=superflat
-   if (NOT keyword_set(loglam1)) then $
-    message, 'Failed reading file ' + filename1
+   if (NOT keyword_set(loglam1)) then return, 0
    calibfac = mrdfits(filename2, 0, /silent)
-   if (NOT keyword_set(calibfac)) then $
-    message, 'Failed reading file ' + filename2
+   if (NOT keyword_set(calibfac)) then return, 0
    flatexp = long(strmid(sxpar(objhdr, 'FLATFILE'),7,8))
    exptime = sxpar(objhdr, 'EXPTIME')
 
