@@ -457,7 +457,7 @@ as the arc-line width measurements.  All spectra are also normalized by
 the average flat-field spectrum (the superflat) to remove small scale
 features likely attributed to the chromatic response of the dichroic.
 The wavelength solution is corrected to both vacuum wavelengths and the
-heliocentric velocity frame.
+barycenter velocity frame.
 
 \subsection{Sky Subtraction}
 
@@ -542,6 +542,18 @@ Gaussian and Laplace distribution (Bolton et al. 2004).
 The influence of the exponential tail is greatly enhanced in the vicinity of strong sky 
 emission lines representative of systematic errors in the brightest lines, but the gaussian 
 width closely is closely represented by the reported variance array.
+
+
+\section{Testing velocities}
+
+% See sdss-spcommish/206 for description of plate 321
+
+A plate was drilled centered on the open cluster M67 with the
+specific idea of testing the SDSS velocity precision.
+130 stars were targetted from the radial velocity catalog
+of Mathieu \etal\ (1986), falling in the magnitude range of 8 to 14.
+The 19 stars brighter than $m=11$ were not plugged, since they
+would have saturated the detectors.  This was plate 321 MJD 51612.
 
 %------------------------------------------------------------------------------
 %------------------------------------------------------------------------------
@@ -844,6 +856,10 @@ W.~A., \& Mannery, E.~J.\ 2006, arXiv:astro-ph/0602326
 \bibitem[Kelson(2003)]{2003PASP..115..688K} Kelson, D.~D.\ 2003, \pasp, 
 115, 688 
 
+% Precise radial velocities of late-type stars in the open clusters M11 and M67
+\bibitem[Mathieu \etal\ (1896)]{1986AJ...92...1100} Mathieu, R.~D.,
+Latham, D.~W., Griffin, R.~F., \& Gunn, J.~E.\ 1986, \aj, 92, 1100
+
 \bibitem[Nollett \& Burles(2000)]{2000PhRvD..61l3505N} Nollett, K.~M., \& 
 Burles, S.\ 2000, \prd, 61, 123505 
  
@@ -904,11 +920,260 @@ in the slatec library (de Boor 1977) to complete translation in IDL.
 
 %------------------------------------------------------------------------------
 %------------------------------------------------------------------------------
-\appendix
 \section{DATA MODEL}
-\label{bsplines}
+\label{datamodel}
 
-What the heck is a B-spline?
+This spCFrame files contain the extracted spectra for a single CCD of a
+single exposure. In general, each object has several blue exposures and
+several red exposures. These spectra are still in the native wavelength
+mapping, which is neither linear in wavelength nor log-wavelength.
+However, the spectra are flux-calibrated, and deviant pixels are
+rejected in the pixel mask (from the comparison with the other exposures).
+The spCFrame file contains the following:
+\begin{verbatim}
+HDU #0 = Flux in units of 10^(-17) erg/s/cm^2/Ang [FLOAT]
+HDU #1 = Inverse variance (1/sigma^2) for the above [FLOAT]
+HDU #2 = Pixel mask [32-bit INT]
+HDU #3 = Wavelength solution in log-10 Angstroms (vacuum) [FLOAT]
+HDU #4 = Wavelength dispersion in units of (10e-4 log-10 wavelength)^(-1) [FLOAT]
+         (these are the same units as in the combined-spectrum spPlate file)
+HDU #5 = Plug-map structure from plPlugMapM file [BINARY FITS TABLE]
+HDU #6 = Sky flux in units of 10^(-17) erg/s/cm^2/Ang [FLOAT]
+\end{verbatim}
+
+The spPlate files contains the combined spectra for all exposures
+(potentially spanning multiple nights) for a given mapped plate.
+The first 5 HDU's contain NPIX by 640 images, where NPIX is the number
+of wavelengths. The pixel scale is exactly 1e-4 in log-wavelength
+(any units), which corresponds to $10^{-4} c \ln(10) = 69.029765 \kms$.
+The spPlate file contains the following:
+\begin{verbatim}
+HDU #0 = Flux in units of 10^(-17) erg/s/cm^2/Ang [FLOAT]
+HDU #1 = Inverse variance (1/sigma^2) for the above [FLOAT]
+HDU #2 = AND mask [32-bit INT]
+HDU #3 = OR mask [32-fit INT]
+HDU #4 = Wavelength dispersion in pixels [FLOAT]
+HDU #5 = Plug-map structure from plPlugMapM file [BINARY FITS TABLE]
+HDU #6 = Average sky flux in units of 10^(-17) erg/s/cm^2/Ang [FLOAT]
+\end{verbatim}
+
+The following header keywords are of interest (in HDU \#0):
+\begin{verbatim}
+PLATEID = Plate ID
+TILEID  = Tile ID
+MJD     = Modified Julian date for first night of observation
+MJDLIST = Modified Julian date for all nights of observation
+MAPID   = Fiber mapper ID
+CARTID  = Fiber cartridge used at the telescope
+NAME    = Name of target: Plate ID, MJD, Fiber mapper rerun
+COEFF0  = Central wavelength (log10-Angstroms) of first pixel
+COEFF1  = Wavelength range of each pixel (log-10 Angstroms)
+CRVAL1  = (Same as COEFF0)
+CD1_1   = (Same as COEFF1)
+RADEG   = Right ascension of plate center (J2000 degrees)
+DECDEG  = Declination of plate center (J2000 degrees)
+AIRMASS = Airmass for mid-point of observation
+RA      = Right ascension of where the telescope thinks it is pointing
+DEC     = Declination of where the telescope thinks it is pointing
+AZ      = Azimuth of the telescope (degrees)
+ALT     = Altitude of the telescope (degrees)
+NEXP    = Total number of frames from all cameras used in the co-adding;
+          since there are 4 cameras, NEXP=12 would typically mean that there
+          were 3 exposures in each camera.
+EXPT_B1 = b1 camera exposure time (seconds)
+EXPT_B2 = b2 camera exposure time (seconds)
+EXPT_R1 = r1 camera exposure time (seconds)
+EXPT_R2 = r2 camera exposure time (seconds)
+EXPTIME = Minimum of exposure times for all cameras
+SPEC1_G = (S/N)^2 per pixel at g=20.2 on spectrograph #1
+SPEC2_G = (S/N)^2 per pixel at g=20.2 on spectrograph #2
+SPEC1_R = (S/N)^2 per pixel at r=20.25 on spectrograph #1
+SPEC2_R = (S/N)^2 per pixel at r=20.25 on spectrograph #2
+SPEC1_I = (S/N)^2 per pixel at i=19.9 on spectrograph #1
+SPEC2_I = (S/N)^2 per pixel at i=19.9 on spectrograph #2
+GOFFSTD = Median spectrophotometry minus photo mag for standard stars in g-band
+ROFFSTD = Median spectrophotometry minus photo mag for standard stars in r-band
+IOFFSTD = Median spectrophotometry minus photo mag for standard stars in i-band
+GOFFRMS = RMS of spectrophotometry minus photo mag for standard stars in g-band
+ROFFRMS = RMS of spectrophotometry minus photo mag for standard stars in r-band
+IOFFRMS = RMS of spectrophotometry minus photo mag for standard stars in i-band
+GOFFGAL = Median spectrophotometry minus photo mag for "main" galaxies in g-band
+ROFFGAL = Median spectrophotometry minus photo mag for "main" galaxies in r-band
+IOFFGAL = Median spectrophotometry minus photo mag for "main" galaxies in i-band
+GOFFGAL = RMS of spectrophotometry minus photo mag for "main" galaxies in g-band
+ROFFGAL = RMS of spectrophotometry minus photo mag for "main" galaxies in r-band
+IOFFGAL = RMS of spectrophotometry minus photo mag for "main" galaxies in i-band
+BESTEXP = Exposure number for the "best" exposure (all 4 cameras)
+EXPIDxx = Identifier for the each invididual exposure+CCD used in this combine,
+          for ex. 'b1-00006853-00006857-00006858' refers to the b1 CCD,
+          exposure #6853, using flat #6857 and arc #6858
+TAI     = Number of seconds since Nov 17 1858 for mid-point of observation
+TAI-BEG = Number of seconds since Nov 17 1858 for beginning of observation
+TAI-END = Number of seconds since Nov 17 1858 for end of observation
+SEEING20= 20th-percentile of seeing during exposure (arcsec)
+SEEING50= 50th-percentile of seeing during exposure (arcsec)
+SEEING80= 80th-percentile of seeing during exposure (arcsec)
+RMSOFF20= 20th-percentile of RMS offset of guide fibers (arcsec)
+RMSOFF50= 50th-percentile of RMS offset of guide fibers (arcsec)
+RMSOFF80= 80th-percentile of RMS offset of guide fibers (arcsec)
+VERSIDL = Version of IDL
+VERS2D  = Version of idlspec2d for 2D reduction
+VERSCOMB= Version of idlspec2d for combining multiple spectra
+VERSFLAT= Version of specflat for spectroscopic flat-fields
+VERS1D  = Version of idlspec2d for 1D reduction
+HELIO_RV= Barycentric velocity correction (km/sec)
+\end{verbatim}
+
+There are two masks, an "AND" mask and an "OR" mask. The spectra
+are constructed from 3 or more 15-minute observations, and the
+"AND" mask bits are set if that bit is set for each and every
+input observation. The "OR" mask bits are set if that bit is set
+for any of the observations. Usually, I only look at the "AND" mask.
+The mask bits are set as follows:
+\begin{verbatim}
+ 0 NOPLUG          Fiber not listed in plugmap file
+ 1 BADTRACE        Bad trace from routine TRACE320CRUDE
+ 2 BADFLAT         Low counts in fiberflat
+ 3 BADARC          Bad arc solution
+ 4 MANYBADCOLUMNS  >10% pixels are bad columns
+ 5 MANYREJECTED    >10% pixels are rejected in extraction
+ 6 LARGESHIFT      Large spatial shift between flat and object pos'n
+ 7 BADSKYFIBER     Sky Fiber shows extreme residuals
+ 8 NEARWHOPPER     Within 2 fibers of a whopping fiber (inclusive)
+ 9 WHOPPER         Whopping fiber
+16 NEARBADPIXEL    Bad pixel within 3 pixels of trace
+17 LOWFLAT         Flat field less than 0.5
+18 FULLREJECT      Pixel fully rejected in extraction (INVVAR=0)
+19 PARTIALREJECT   Some pixels rejected in extraction
+20 SCATTEREDLIGHT  Scattered light significant
+21 CROSSTALK       Cross-talk significant
+22 NOSKY           Sky level unknown at this wavelength (INVVAR=0)
+23 BRIGHTSKY       Sky level > flux + 10*(flux error)
+                   AND sky > 2.0 * median(sky,99 pixels)
+24 NODATA          No data available in combine B-spline (INVVAR=0)
+25 COMBINEREJ      Rejected in combine B-spline
+26 BADFLUXFACTOR   Low flux-calibration or flux-correction factor
+27 BADSKYCHI       Relative chi^2 > 3 in sky residuals at this wavelength
+28 REDMONSTER      Contiguous region of bad chi^2 in sky residuals
+                   (with threshhold of relative chi^2 > 3)
+\end{verbatim}
+When low numbered bits ($<16$) are set, those will be set for half of the
+spectra -- either the blue or red spectrograph. The higher-numbered bits
+($>=16$) are set for individual pixels.
+
+Which mask bits are important?
+The conditions that are considered very bad are already used to set
+the errors to infinity for the effected pixels (specifically, the
+inverse variance is set to zero). The most useful mask bit to look
+at is BRIGHTSKY, which indicates when the sky is so bright relative
+to the object that perhaps one shouldn't trust any of the object
+flux there. Our reported errors are meant to include sky-subtraction
+errors, but there are instances (particularly around 5577) where
+these errors may be untrustworthy.
+
+The dispersion per pixel and the sky flux are computed at each pixel
+by re-weighting the individual spectra at each pixel according to
+their formal errors. This re-weighting is only approximate.
+
+Note that the sky lines are slightly shifted in the reductions
+because we transform the velocities to the barycenter of the solar
+system. Each exposure that contributes to the co-added spectra will
+have slightly different barycenter correction, so the "average sky"
+contains a superposition of these slightly-offset sky lines. These
+shifts keep the object spectra as-measured at the barycenter,
+regardless of the time of year or the Earth's rotation relative to
+the spectroscopic targets.
+
+\subsection{Target Flags}
+
+The target selection sets bits in two flags called PRIMTARGET and
+SECTARGET. An object can have multiple bits set. For example, if
+the target selection code determined that an object was both a
+QSO\_SKIRT and a STAR\_WHITE\_DWARF, then two bits will be set. The
+value of PRIMTARGET in this example will be $2^4 + 2^{19} = 524304$.
+
+The PRIMTARGET bit values are as follows (in hex and decimal):
+\begin{verbatim}
+  QSO_HIZ           = 0x1          = bit # 0 =        1
+  QSO_CAP           = 0x2          = bit # 1 =        2
+  QSO_SKIRT         = 0x4          = bit # 2 =        4
+  QSO_FIRST_CAP     = 0x8          = bit # 3 =        8
+  QSO_FIRST_SKIRT   = 0x10         = bit # 4 =       16
+  QSO_MAG_OUTLIER   = 0x2000000    = bit #25 = 33554432
+  QSO_REJECT        = 0x20000000   = bit #29 =536870912
+  GALAXY_RED        = 0x20         = bit # 5 =       32
+  GALAXY_RED_II     = 0x4000000    = bit #26 = 67108864
+  GALAXY            = 0x40         = bit # 6 =       64
+  GALAXY_BIG        = 0x80         = bit # 7 =      128
+  GALAXY_BRIGHT_CORE= 0x100        = bit # 8 =      256
+  ROSAT_A           = 0x200        = bit # 9 =      512
+  ROSAT_B           = 0x400        = bit #10 =     1024
+  ROSAT_C           = 0x800        = bit #11 =     2048
+  ROSAT_D           = 0x1000       = bit #12 =     4096
+  ROSAT_E           = 0x8000000    = bit #27 =134217728
+  STAR_BHB          = 0x2000       = bit #13 =     8192
+  STAR_CARBON       = 0x4000       = bit #14 =    16384
+  STAR_BROWN_DWARF  = 0x8000       = bit #15 =    32768
+  STAR_SUB_DWARF    = 0x10000      = bit #16 =    65536
+  STAR_CATY_VAR     = 0x20000      = bit #17 =   131072
+  STAR_RED_DWARF    = 0x40000      = bit #18 =   262144
+  STAR_WHITE_DWARF  = 0x80000      = bit #19 =   524288
+  STAR_PN           = 0x10000000   = bit #28 =268435456
+  SERENDIP_BLUE     = 0x100000     = bit #20 =  1048576
+  SERENDIP_FIRST    = 0x200000     = bit #21 =  2097152
+  SERENDIP_RED      = 0x400000     = bit #22 =  4194304
+  SERENDIP_DISTANT  = 0x800000     = bit #23 =  8388608
+  SERENDIP_MANUAL   = 0x100000     = bit #24 = 16777216
+  QSO_MAG_OUTLIER   = 0x200000     = bit #25 = 33554432
+  GALAXY_RED_II     = 0x400000     = bit #26 = 67108864
+  ROSAT_E           = 0x800000     = bit #27 =134217728
+  STAR_PN           = 0x1000000    = bit #28 =268435456
+  QSO_REJECT        = 0x2000000    = bit #29 =536870912
+  SOUTHERN_SURVEY   = 0x8000000    = bit #31 =-2147483648
+\end{verbatim}
+
+The SECTARGET bit values are as follows (in hex and decimal):
+\begin{verbatim}
+  LIGHT_TRAP        = 0x1          = bit # 0 =        1
+  REDDEN_STD        = 0x2          = bit # 1 =        2
+  TEST_TARGET       = 0x4          = bit # 2 =        4
+  QA                = 0x8          = bit # 3 =        8
+  SKY               = 0x10         = bit # 4 =       16
+  SPECTROPHOTO_STD  = 0x20         = bit # 5 =       32
+  GUIDE_STAR        = 0x40         = bit # 6 =       64
+  BUNDLE_HOLE       = 0x80         = bit # 7 =      128
+  QUALITY_HOLE      = 0x100        = bit # 8 =      256
+  HOT_STD           = 0x200        = bit # 9 =      512
+  SOUTHERN_SURVEY   = 0x8000000    = bit #31 =-2147483648
+\end{verbatim}
+
+\subsection{Vacuum wavelengths}
+
+The data are stored using vacuum wavelengths.
+Most optical astronomers know the wavelengths of transitions
+as measured at S.T.P., which is how the CRC lists them for any
+transitions redward of $2000\AA$.
+
+The IAU standard for conversion from air to vacuum wavelengths
+is given in Morton (1991, ApJS, 77, 119). For vacuum wavelengths ($\lambda$)
+in Angstroms, convert to air wavelength ($\lambda_{\rm air}$) via:
+$$\lambda_{\rm air} = \lambda / (1 + 2.735182E-4 + 131.4182 / \lambda^2 + 2.76249E8 / \lambda^4) $$
+
+Below, I've listed the vacuum wavelength of some transitions:
+\begin{verbatim}
+ Air       Vacuum
+ --------  --------
+ 4861.363  4862.721  H_beta
+ 4958.911  4960.295  [O III]
+ 5006.843  5008.239  [O III]
+ 6548.05   6549.86   [N II]
+ 6562.801  6564.614  H_alpha
+ 6583.45   6585.27   [N II]
+ 6716.44   6718.29   [S II]
+ 6730.82   6732.68   [S II]
+\end{verbatim}
+The wavelengths are shifted such that measured velocities are relative
+to barycentric at the mid-point of each 15-minute exposure.
 
 %------------------------------------------------------------------------------
 
