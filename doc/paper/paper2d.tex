@@ -412,19 +412,19 @@ image allowing for 2 free paramters per fiber per row and
 
 The final flat-field spectra are stored as 
 detected counts per fiber per pixel with wavelengths of each pixel
-given by the associated solution of the arc-lamp frame.  
+given by the solution of the matched arc-lamp frame.  
 We model the flat-field spectra as the product:
 
 
 \begin{equation} 
-{\rm Flat Model}_{ij} = A * f_{avg}(\lambda) \, {\rm fflat_i} (\lambda) 
+{\rm Model}_{ij} = A \times {\rm SF}(\lambda) \times {\rm (fiber~flat)_i} (\lambda) 
 \end{equation} 
 
 where $A$ is a overall normalization in counts, 
-$f_{avg}$ is the average response per constant logarithmic wavelength
-interval, $fflat_i$ is the fiber-to-fiber response as a function of wavelength.
+$SF$ is the average wavelength dependent response called the ``superflat'', and
+${\rm fiber~flat_i}$ is the fiber-to-fiber response as a function of wavelength.
 This model of the extracted flat-field spectra provides a transformation to
-compare detected counts from one fiber to another.  
+compare detected counts from one fiber to another.
 
 This should remove the differential response due to the individual fiber
 throughput, as well as the small relative differences in the size of the
@@ -510,12 +510,12 @@ barycenter velocity frame.
 \subsection{Sky Subtraction}
 
 Sky subtraction is performed on a frame by frame basis using the 
-"flattened" wavelength calibrated extractions.  The goal of sky subtraction
+``flattened'' wavelength calibrated extractions.  The goal of sky subtraction
 is to estimate the expected background counts contributing to each of 
-the native 320x2048 pixels in each extracted frame.  A "supersky" model 
+the native 320x2048 pixels in each extracted frame.  A ``supersky'' model 
 at a fiducial airmass of 1 is constructed by performing iterative fits to
 the extracted spectra associated with blank sky positions (so-called
-"sky" fibers).   The following steps are taken in 3 sequential iterations
+``sky'' fibers).   The following steps are taken in 3 sequential iterations
 in order to produce the sky-subtracted spectra:
 
 \begin{enumerate}
@@ -792,7 +792,8 @@ combined using an iterative B-spline fit to reject outlying flux pixels
 and remaining cosmic rays.
 The splines are evaluated on a wavelength grid that
 is uniform is log-wavelengths, with the scale always chosen
-as $10^{-4}$ in log-wavelength.  The wavelength ranges are
+as $10^{-4}$ in log$_{10}$-wavelength (pixels are constant in 
+velocity width with $\Delta v = 69.02$ km/s).  The wavelength ranges are
 slightly different for each plate, chosen to span the input data.
 
 \subsection{Flux distortion image}
@@ -805,12 +806,14 @@ Some of the terms are achromatic with position on the focal plane
 as $ L \equiv 1 - (5100\AA / \lambda)^2 $, since that function gives
 an equal effect between $3900$ and $5070\AA$ as between $5070$
 and $9000\AA$.
-There are also magnitude offsets as a function fo spectrograph ID,
+There are also magnitude offsets as a function of spectrograph ID,
 and a chromatic offset as a function of spectrograph ID.
-$$ F' = F  \times \left[ a_0 ({\rm SPECID~EQ~1}) + a_1 ({\rm SPECID~EQ~2}) \right]
-  \times \exp \left[ a_2 x + a_3 y + a_4 xy + a_5 x^2 + a_6 y^2 + a_7 xL + a_8 yL
-  + a_9 L ({\rm SPECID~EQ~1}) + a_10 L ({\rm SPECID~EQ~2})
-  + a_11 L^2 ({\rm SPECID~EQ~1}) + a_12 L^2 ({\rm SPECID~EQ~2}) \right] $$
+$$ F' =  F  \times \left[ a_0 {\rm S_1} + a_1 {\rm S_2} \right]
+ \times \exp \left[ a_2 x + a_3 y + a_4 xy + a_5 x^2 + a_6 y^2  + a_7 xL + a_8 yL \right] $$
+$$  \times \exp \left[ a_9 L \, {\rm S_1} + a_{10} L \, {\rm S_2}
+  + a_{11} L^2 \, {\rm S_1} + a_{12} L^2 \, {\rm S_2} \right]  $$
+$$ S_1 \equiv {\rm SPECID~EQ~1} $$
+$$ S_2 \equiv {\rm SPECID~EQ~2} $$
 $$ X \equiv {\rm XFOCAL} $$
 $$ Y \equiv {\rm YFOCAL} $$
 $$ L \equiv 1 - (5100\AA / \lambda)^2 $$
@@ -1231,7 +1234,7 @@ transitions redward of $2000\AA$.
 The IAU standard for conversion from air to vacuum wavelengths
 is given in Morton (1991, ApJS, 77, 119). For vacuum wavelengths ($\lambda$)
 in Angstroms, convert to air wavelength ($\lambda_{\rm air}$) via:
-$$\lambda_{\rm air} = \lambda / (1 + 2.735182E-4 + 131.4182 / \lambda^2 + 2.76249E8 / \lambda^4) $$
+$$\lambda_{\rm air} = \lambda / (1 + 0.0002735182 + 131.4182 / \lambda^2 + 2.76249E8 / \lambda^4) $$
 
 Below, I've listed the vacuum wavelength of some transitions:
 \begin{verbatim}
@@ -1250,5 +1253,24 @@ The wavelengths are shifted such that measured velocities are relative
 to barycentric at the mid-point of each 15-minute exposure.
 
 %------------------------------------------------------------------------------
+%% Figures
+
+\begin{figure}[tb]
+\figurenum{7}
+\epsscale{0.9}
+\plotone{plot_disp.ps}
+\figcaption{Measurements of spectral resolution in the four SDSS 
+spectrograph cameras.  For each camera, we should the median
+FWHM arc-line widths as a function of wavelength as 
+solid lines for cameras b1 (cyan) and r1 (orange),
+dashed lines for cameras b2 (blue) and r2 (red).
+The range of resolution is shown as error bars representing
+the 10\% to 90\% ranges in each camera over all fibers and
+all plates through DR5.
+\label{fig7}
+}
+\end{figure}
+
+
 
 \end{document}
