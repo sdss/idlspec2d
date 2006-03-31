@@ -49,12 +49,12 @@ You will need the environment variables CVS_RSH and CVSROOT set.
 If you are using C-shell:
 <DL><DD><PRE>
   % setenv CVS_RSH ssh
-  % setenv CVSROOT :pserver:anonymous@spectro.princeton.edu:/usr/local/cvsroot
+  % setenv CVSROOT :pserver:anonymous@sdsscvs.astro.princeton.edu:/usr/local/cvsroot
 </PRE></DD></DL>
 If you are using Borne-shell:
 <DL><DD><PRE>
   % CVS_RSH=ssh
-  % CVSROOT=:pserver:anonymous@spectro.princeton.edu:/usr/local/cvsroot
+  % CVSROOT=:pserver:anonymous@sdsscvs.astro.princeton.edu:/usr/local/cvsroot
 </PRE></DD></DL>
 The above definitions could be put in your ~/.cshrc file (for C-shell
 users) or ~/.bashrc file (for Borne-shell users).
@@ -125,14 +125,14 @@ The code is in a world-readable Princeton CVS repository.
 To access this repository, you will first need to generate a ~/.cvspass
 file as follows:
 <DL><DD><PRE>
-  % cvs -d :pserver:anonymous@spectro.princeton.edu:/usr/local/cvsroot login
+  % cvs -d :pserver:anonymous@sdsscvs.astro.princeton.edu:/usr/local/cvsroot login
 </PRE></DD></DL>
 When the above asks for a password, just hit Enter.
 You will also need the environment variables CVS_RSH and CVSROOT set.
 If you are using Borne-shell:
 <DL><DD><PRE>
   % CVS_RSH=ssh
-  % CVSROOT=:pserver:anonymous@spectro.princeton.edu:/usr/local/cvsroot
+  % CVSROOT=:pserver:anonymous@sdsscvs.astro.princeton.edu:/usr/local/cvsroot
 </PRE></DD></DL>
 The above definitions could be put in your ~/.cshrc file (for C-shell
 users) or ~/.bashrc file (for Borne-shell users).
