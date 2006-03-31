@@ -7,7 +7,7 @@ pro plot_sphoto1, mdiff, istd, igal, iqso, xtitle=xtitle, plotfile=plotfile
    binsz = 0.002
    minval = -1.0
    maxval = 1.0
-   csize = 1.7
+   csize = 1.5
 
    ; Plot standard stars
    djs_iterstat, mdiff[istd], mean=mn1, sigma=sig1
@@ -20,6 +20,7 @@ pro plot_sphoto1, mdiff, istd, igal, iqso, xtitle=xtitle, plotfile=plotfile
    djs_xyouts, 0.9*minval, 0.9*!y.crange[1], 'Standard stars', charsize=csize
    djs_xyouts, 0.1*maxval, 0.9*!y.crange[1], charsize=csize, $
     string(mn1, sig1, format='(f6.3, " offset, ", f5.3," RMS")')
+   splog, 'Stars ' + xtitle, ' mean=', mn1, ' sigma=', sig1
 
    ; Plot galaxies
    djs_iterstat, mdiff[igal], mean=mn1, sigma=sig1
@@ -30,6 +31,7 @@ pro plot_sphoto1, mdiff, istd, igal, iqso, xtitle=xtitle, plotfile=plotfile
    djs_xyouts, 0.9*minval, 0.8*!y.crange[1], 'Galaxies', color='red', charsize=csize
    djs_xyouts, 0.1*maxval, 0.8*!y.crange[1], color='red', charsize=csize, $
     string(mn1, sig1, format='(f6.3, " offset, ", f5.3," RMS")')
+   splog, 'Galaxies ' + xtitle, ' mean=', mn1, ' sigma=', sig1
 
    ; Plot QSOs
    djs_iterstat, mdiff[iqso], mean=mn1, sigma=sig1
@@ -40,6 +42,7 @@ pro plot_sphoto1, mdiff, istd, igal, iqso, xtitle=xtitle, plotfile=plotfile
    djs_xyouts, 0.9*minval, 0.7*!y.crange[1], 'QSOs', color='blue', charsize=csize
    djs_xyouts, 0.1*maxval, 0.7*!y.crange[1], color='blue', charsize=csize, $
     string(mn1, sig1, format='(f6.3, " offset, ", f5.3," RMS")')
+   splog, 'QSOs ' + xtitle, ' mean=', mn1, ' sigma=', sig1
 
    dfpsclose
 
@@ -118,6 +121,9 @@ pro plot_sphoto, synflux=synflux
     xtitle='(g-r)_{spectro} - (g-r)_{photo}', plotfile='sphoto_gr.ps'
    plot_sphoto1, transpose(colordiff[2,*]), istd, igal, iqso, $
     xtitle='(r-i)_{spectro} - (r-i)_{photo}', plotfile='sphoto_ri.ps'
+   plot_sphoto1, transpose(colordiff[1,*]-colordiff[2,*]), istd, igal, iqso, $
+    xtitle='(g-i)_{spectro} - (g-i)_{photo}', plotfile='sphoto_gi.ps'
+stop
 
    return
 end
