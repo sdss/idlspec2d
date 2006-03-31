@@ -151,6 +151,45 @@ differential focus changes not corrected with the common collimator.
 The four spectrograph cameras are labeled "b1, r1, b2, r2".  
 
 
+\section{Typical Spectroscopic Observations}
+\label{sec_observ}
+
+At the beginning of a typical survey night, up to 9 plates have been mounted
+in cartridges, plugged with 640 science fibers and 11 guide fibers. 
+The position of the 640 fibers along each of the two fiber slitheads
+are mapped by the 8th wonder of the world,
+the SDSS plugplate fiber mapper (Schlegel and Finkbeiner).
+All usable spectroscopic data obtained for a single plugging, 
+and therefore a single fiber mapping, will eventually be combined into 
+a final data product for that plugging.  In this scheme, an individual 
+output spectrum is uniquely specified by the plate number, the first night
+of observations (in MJD), and the science fiber number.
+
+A plate is mounted in the telescope through a efficient procedure described
+in Gunn et al. 2006.  The switch from the imaging camera to a spectroscopic
+cartridge takes an average of xx minutes, while a switch from one cartridge
+to another takes merely x minutes.  Once the cartridge is mounted, the telescope is slewed to the coordinates of the plate center.  
+Before acquisition of the guide stars, the 8 flat-field petals are closed and
+a sequence of one 10-second flat-field exposure and one 2-second 
+Neon-Mercury-Cadmium arc exposure are obtained.  While the arc-lamp frame is
+being readout, the flat-field petals are opened, and guide stars are acquired
+through the 11 coherent guide bundles (9 are this big and 2 are even bigger??).
+With at least 4 guide stars acquired, closed loop guiding is started, and
+usually converges to stable guiding within 2 minutes??
+The plate scale of the SDSS telescope can be adjusted, and the guiding software
+suggest a scale change if one is required.  Once close loop 
+guiding has settled, the first science exposure is started.  The typical 
+exposure time is 900 seconds, but exposure times from 600 to 1200 second are
+not unexpected based on conditions and time constraints.  A second exposure
+is started immediately after the first science exposure is complete and readout.A fast linux workstation onsite copies the data from the data acquisition host,
+and automatically performs a quick spectral extraction with a subset of the 
+steps explained here.  The results are posted to sos.apo.nmsu.edu, and
+the SDSS observers can check the S/N obtained in each of the 4 spectroscopic
+cameras in real-time.  A plate is considered to have met SDSS survey standards
+if all 4 cameras have a cumulative (S/N)^2 greater than 15 at 
+fidicual magnitudes of ?? and ??.  
+
+
 
 \section{OPTIMAL EXTRACTION}
 \label{sec_extract}
@@ -168,7 +207,11 @@ polynomial background.  In addition, deviations to the trace centers and
 the profile widths are calculated as linear basis modes (reflecting the first
 and second spatial derivatives, respectively).  The compiled routine
 we implement to fit the profiles in a single row (extract\_row.c) can
-be invoked with any combination of these parameters.
+be invoked with any combination of these parameters.  The parameters are
+sorted in order of fiber number with background parameters included at the
+end of the list.  This facilitates and banded matrix inversion, and 
+significantly increases the speed of Cholesky decomposition step in each
+iteration of the extraction.
 
 We decided to perform profile fitting to the 
 SDSS spectral images for the following reasons:  
@@ -426,7 +469,12 @@ are passed directly to a test for overly bright fibers. Fiber spectra are
 identified as bright (a.k.a. "WHOPPING") if the median counts per pixel in the 
 boxcar extraction are greater than 10000 counts above the median in the 
 frame.  In addition, only the brightest fiber in a spatially contiguous set of 
-bright fibers is labelled "WHOPPING".  
+bright fibers is labelled "WHOPPING".  Each whopping fiber adds an additional
+background parameter to the fit per row, which is an exponential profile
+with a spatial scale of 25 pixels.  Such a profile correlates with many
+neighboring fibers, so the parameter is treated as a background to supplement
+the smooth polynomial background.  The flux contained in the exponential 
+profile is not included in the extracted spectra.
 
 A pixelmask vector is created for each fiber spectrum to be extracted.
 See Appendix ?? for a description of the mask bits and their use.
@@ -819,6 +867,29 @@ observed wavelength frame, before any de-redshifting of extragalactic objects.
 %------------------------------------------------------------------------------
 %\section{SUMMARY}
 
+%------------------------------------------------------------------------------
+% ACKNOWLEDGMENTS
+%------------------------------------------------------------------------------
+\bigskip
+We are very grateful to Michael Strauss for
+useful and helpful comments on the manuscript.
+Funding for the creation and distribution of the SDSS Archive has been
+provided by the Alfred P. Sloan Foundation, the Participating
+Institutions, the National Aeronautics and Space Administration, the
+National Science Foundation, the U.S. Department of Energy, the
+Japanese Monbukagakusho, and the Max Planck Society. The SDSS Web site
+is http://www.sdss.org/. The SDSS is managed by the Astrophysical
+Research Consortium (ARC) for the Participating Institutions. The
+Participating Institutions are The University of Chicago, Fermilab,
+the Institute for Advanced Study, the Japan Participation Group,
+The Johns Hopkins University, the Korean Scientist Group, Los Alamos
+National Laboratory, the Max-Planck-Institute for Astronomy (MPIA),
+the Max-Planck-Institute for Astrophysics (MPA), New Mexico State
+University, University of Ohio, University of Pittsburgh,
+University of Portsmouth,
+Princeton University, the United States Naval Observatory, and
+the University of Washington.
+
 \newpage
 %------------------------------------------------------------------------------
 % REFERENCES
@@ -874,7 +945,10 @@ Schlegel, D.\ J., Finkbeiner, D.\ P., \& Davis M.\ 1998, \apj, 500, 525 (SFD)
 
 \bibitem[Uomoto et al.(1999)]{1999AAS...195.8701U} Uomoto, A., et al.\ 
 1999, Bulletin of the American Astronomical Society, 31, 1501 
- 
+
+\bibitem[Wild \& Hewett(2005)]{2005MNRAS.358.1083W} Wild, V., \& Hewett, 
+P.~C.\ 2005, \mnras, 358, 1083 
+  
 \bibitem[York et al. 2000]{york00}
 York, D.\ G. \etal\ 2000, \aj, 120, 1579
 
