@@ -57,6 +57,8 @@ doc/paper/plot_velcompare.pro -text
 doc/paper/readpublic.pro -text
 doc/paper/skysubtraction.tex -text
 doc/paper/spDiag2d-0412-52258.ps_1 -text
+doc/paper/spDiag2d-0412-52258.ps_153 -text
+doc/paper/spDiag2d-0412-52258_156.eps -text
 doc/www/.cvsignore -text
 doc/www/idlspec2d_install.html -text
 doc/www/idlspec2d_reduce.html -text
