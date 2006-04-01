@@ -99,6 +99,29 @@ selected from the imaging survey \cite{york00}.  The primary
 science goals of the project are to provide the data to investigate the
 large scale structure of the Universe and other extragalactic science.
 
+In this paper, we describe the details of the SDSS 2-d spectroscopic pipeline
+(idlspec2d) including steps starting with processing of the raw CCD frames to final
+flux calibration and spectral co-addition.  Downstream pipelines which
+calculate redshifts, spectral types, emission and absorption line identification,
+and velocity dispersions are described elsewhere.
+As of writing the 2-d pipeline has been run successfully on all spectroscopic
+data obtained in the course of the survey from February 28, 2000 (MJD 2451602) 
+to June 15, 2005 (MJD 2453536).  Over this timespan, which includes public data 
+releases EDR through DR5, SDSS obtained survey quality spectroscopic data on
+1656 fiber pluggings (640 fibers each in 1575 unique plates).   
+A total of 972,111 sky positions were targetted, with the following 
+breakdown in the best matched spectral classification:  651920 galaxies, 
+208054 stars, 112137 QSOs and 51300 sky spectra.
+
+Mean exposure time per plate is 3914 seconds, and the median is 3302 seconds.
+In Figure 1 we show three of the observing diagnostics, on the top is
+the effective signal-to-noise of the whole plate normalized to 3600 second
+exposure time, the median seeing in arcseconds and the rms guide probe offset
+in arcseconds are shown below.  The abscissa is in days after Feb 26, 2000
+(MJD 2451600).
+
+
+
 The data reduction and products described herein are very similar to
 those produced by the SDSS, with the most significant differences
 in our treatment of spectro-photometric calibrations.

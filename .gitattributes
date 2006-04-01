@@ -44,6 +44,9 @@ doc/paper/frames.jpg -text svneol=unset#unset
 doc/paper/layout.gif -text
 doc/paper/outline -text
 doc/paper/paper2d.tex -text
+doc/paper/plate_stats.pro -text
+doc/paper/plate_stats.ps -text
+doc/paper/platelist-public.fits -text svneol=unset#application/octet-stream
 doc/paper/plot_disp.pro -text
 doc/paper/plot_disp.ps -text
 doc/paper/plot_m67.pro -text
