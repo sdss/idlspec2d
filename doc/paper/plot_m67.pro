@@ -17,7 +17,8 @@ pro plot_m67
    rmag = 22.5 - 2.5 * alog10(zans.spectroflux[2] > 1)
 ;   rmag = plug.mag[2]
 
-   indx = where(strmatch(zans.class,'STAR*') AND zans.zwarning EQ 0 $
+   indx = where(strmatch(zans.class,'STAR*') $
+;    AND zans.zwarning EQ 0 $
     AND plug.expl GT -900 AND plug.expl NE 0 AND rmag LT 20)
 
    dfpsplot, 'plot_m67.ps', /square
@@ -28,6 +29,18 @@ pro plot_m67
    djs_oplot, !x.crange, !y.crange, $
     charsize=csize, charthick=thick, thick=thick
    dfpsclose
+
+   splog, 'Number of stars plotted = ', n_elements(indx)
+   splog, 'Min/max velocity difference = ', minmax(vel1[indx] - vel2[indx])
+   splog, 'Median velocity difference = ', median(vel1[indx] - vel2[indx])
+   splog, 'Stdev velocity difference = ', djsig(vel1[indx] - vel2[indx])
+
+   ibad = where(abs(vel1[indx] - vel2[indx]) GT 30, nbad)
+   for i=0, nbad-1 do $
+    splog, 'Fiber ', plug[indx[ibad[i]]].fiberid, $
+     ' at RA=', plug[indx[ibad[i]]].ra, $
+     ' Dec=', plug[indx[ibad[i]]].dec, ' v(CAT)=', vel1[indx[ibad[i]]], $
+     ' v(Elodie)=', vel2[indx[ibad[i]]]
 
    return
 end
