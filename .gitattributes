@@ -42,6 +42,7 @@ doc/paper/.cvsignore -text
 doc/paper/disp_bounds.fits -text
 doc/paper/frames.jpg -text svneol=unset#unset
 doc/paper/layout.gif -text
+doc/paper/layout.ps -text
 doc/paper/outline -text
 doc/paper/paper2d.tex -text
 doc/paper/plate_stats.pro -text
