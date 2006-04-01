@@ -123,7 +123,6 @@ pro plot_sphoto, synflux=synflux
     xtitle='(r-i)_{spectro} - (r-i)_{photo}', plotfile='sphoto_ri.ps'
    plot_sphoto1, transpose(colordiff[1,*]-colordiff[2,*]), istd, igal, iqso, $
     xtitle='(g-i)_{spectro} - (g-i)_{photo}', plotfile='sphoto_gi.ps'
-stop
 
    return
 end

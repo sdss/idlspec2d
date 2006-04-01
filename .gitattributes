@@ -53,6 +53,7 @@ doc/paper/plot_m67.pro -text
 doc/paper/plot_sphoto.pro -text
 doc/paper/plot_thru.pro -text
 doc/paper/plot_velcompare.pro -text
+doc/paper/readpublic.pro -text
 doc/paper/skysubtraction.tex -text
 doc/www/.cvsignore -text
 doc/www/idlspec2d_install.html -text
