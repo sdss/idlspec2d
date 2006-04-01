@@ -50,6 +50,7 @@ doc/paper/platelist-public.fits -text svneol=unset#application/octet-stream
 doc/paper/plot_disp.pro -text
 doc/paper/plot_disp.ps -text
 doc/paper/plot_m67.pro -text
+doc/paper/plot_m67.ps -text
 doc/paper/plot_sphoto.pro -text
 doc/paper/plot_thru.pro -text
 doc/paper/plot_velcompare.pro -text

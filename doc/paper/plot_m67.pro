@@ -20,7 +20,7 @@ pro plot_m67
    indx = where(strmatch(zans.class,'STAR*') AND zans.zwarning EQ 0 $
     AND plug.expl GT -900 AND plug.expl NE 0 AND rmag LT 20)
 
-   dfpsplot, 'm67.ps', /square
+   dfpsplot, 'plot_m67.ps', /square
    djs_plot, xrange=xrange, yrange=yrange, /xstyle, /ystyle, $
     xtitle='Mathieu et al. velocity [km/s]', ytitle='SDSS velocity [km/s]', $
     vel1[indx], vel2[indx], psym=4, $
