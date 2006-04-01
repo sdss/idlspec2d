@@ -101,6 +101,14 @@ ophdrfix sdR-??-0000277[4-9] QUALITY   "'test'"
 ophdrfix sdR-??-0000278[0-9] QUALITY   "'test'"
 ophdrfix sdR-??-0000279[0-7] QUALITY   "'test'"
 
+# The data on plate 321 (M67) on MJD 51612 ended with an arc exposure
+# where the Ne lamp did not shut off (exposure 2916), three bad science
+# exposures where the stars drifted off the fibers (exposures 2917-2919),
+# and three calib exposures where not all the lamps turned on
+# (exposures 2920-2922)
+ophdrfix sdR-??-0000291[6-9] QUALITY   "'bad'"
+ophdrfix sdR-??-0000292[0-2] QUALITY   "'bad'"
+
 # Wrong plate information in these headers for plate 318 on MJD 51629.
 ophdrfix sdR-??-0000321[0-3] PLATEID  318
 ophdrfix sdR-??-0000321[0-3] TILEID   124
