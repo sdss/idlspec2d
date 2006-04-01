@@ -448,16 +448,14 @@ $SF$ is the average wavelength dependent response called the ``superflat'', and
 ${\rm fiber~flat_i}$ is the fiber-to-fiber response as a function of wavelength.
 This model of the extracted flat-field spectra provides a transformation to
 compare detected counts from one fiber to another.
-
-This should remove the differential response due to the individual fiber
+The flat-field vectors correct the differential response due to the individual fiber
 throughput, as well as the small relative differences in the size of the
-spectral pixels at a constant wavelength.  ??Why do we correct for pixel
-sizes later on if the differential wavelength dispersion is included in fflat??
+spectral pixels at a constant wavelength.  
 
-The common normalized response, $f_{avg}$, is specified as a B-spline
+The common normalized response, $SF$, is specified as a B-spline
 function with breakpoints spaced approximately every native pixels.
 An example of normalized individual fiber spectra 
-and the resulting B-spline fit are shown in Figure ?.  The individual fiber
+and the resulting B-spline fit are shown in Figure 2.  The individual fiber
 flat vectors are fits to the ratio of the extracted spectra to the superflat
 (define above).  The individual vector fits are also B-splines with breakpoints
 spaced approximately every 5 native pixels.  The final set of flat vectors are
@@ -1272,6 +1270,35 @@ to barycentric at the mid-point of each 15-minute exposure.
 
 %------------------------------------------------------------------------------
 %% Figures
+
+\begin{figure}[tb]
+\figurenum{1}
+\epsscale{1.0}
+\plotone{plate_stats.ps}
+\figcaption{Observational summary of the 1656 publicly released
+SDSS spectroscopic
+plates observed between MJD 2451600 to 2453600.  Each plate is
+represented by 3 symbols showing the median RMS guiding residuals
+in the 11 guide fibers in arcseconds (diamonds), 
+the median seeing of the 11 guide star PSFs in arcseconds (stars), 
+and the effective (S/N)$^2$ of the plate observation
+normalized to a 1 hour exposure.  Vertical lines show the date of July 15 across
+the years of 2000 to 2005.
+\label{fig1}
+}
+\end{figure}
+
+
+\begin{figure}[tb]
+\figurenum{2}
+\epsscale{1.0}
+\plotone{spDiag2d-0412-52258.ps_1}
+\figcaption{A typical example of the common flat-field spectra, $SF$,
+for the b1 camera observations of plate 412.  The solid line is the best-fit
+B-spline function, and the red points are rejected 2-sigma outliers. 
+\label{fig2}
+}
+\end{figure}
 
 \begin{figure}[tb]
 \figurenum{7}
