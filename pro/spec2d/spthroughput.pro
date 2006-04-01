@@ -42,6 +42,7 @@
 ; EXAMPLES:
 ;
 ; BUGS:
+;   The fiber flats (FFLAT) should also be included.
 ;
 ; DATA FILES:
 ;
