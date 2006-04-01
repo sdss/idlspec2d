@@ -42,7 +42,7 @@ $IDL_DICT begin 54 360 translate 0.0283465 dup scale MITERLIMIT
 %%IncludeResource: font Helvetica
 423.333 /Helvetica STDFONT
 %%EndPageSetup
-10 setlinewidth L0 0.000 0.000 0.000 setrgbcolor 2861 12514 M 0 -307 R D
+30 setlinewidth L0 0.000 0.000 0.000 setrgbcolor 2861 12514 M 0 -307 R D
 2861 12514 M 131 0 R 44 -15 R 15 -14 R 15 -29 R 0 -44 R -15 -29 R -15 -15 R
 -44 -15 R -131 0 R D 3168 12514 M 0 -307 R 175 0 R D 3489 12514 M
 -117 -307 R D 3489 12514 M 117 -307 R D 3416 12310 M 146 0 R D 3737 12514 M
