@@ -36,7 +36,7 @@ bin/spsyncrobot_start,spsyncrobot_stop,spsyncrobot.sh,
 doc/www/idlspec2d_install.html,spectro_inspect.html: The CVS repository
         has been changed from spectro.princeton.edu to
         sdsscvs.astro.princeton.edu .
-etc/spChunkList.par: Add chunks 139-142.
+etc/spChunkList.par: Add chunks 139-142, 143-144.
 examples/opECalib-blank.par: Files with gain, bias, linearity, set to 1,0,1
         to make it a bit easier to investigate raw frames with the standard
         tools (Loomis).
