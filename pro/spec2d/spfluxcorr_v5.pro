@@ -54,7 +54,7 @@ function fcorr_goodvector, ymult1
 
    ymin = min(ymult1, max=ymax)
 
-   return, ymin GT 0.2 AND ymax LT 5.
+   return, ymin GT 0.1 AND ymax LT 10.
 end
 ;------------------------------------------------------------------------------
 pro spfluxcorr_v5, objname, adderr=adderr, combinedir=combinedir, $
@@ -287,13 +287,17 @@ pro spfluxcorr_v5, objname, adderr=adderr, combinedir=combinedir, $
                    yfit=yfit1, ymult=ymult1, yadd=yadd1, acoeff=thiscoeff, $
                    totchi2=thischi2, status=status, perror=perror
 
-                  if (fcorr_goodvector(ymult1) $
-                   AND (npoly1 EQ 1 OR lastchi2-thischi2 GT 5.)) then begin
-                     ymult[*,iobj,i2] = ymult1
-                     yadd[*,iobj,i2] = yadd1
-                     lastchi2 = thischi2
-                     lastnpoly = npoly1
-                     inparams = thiscoeff
+                  if (npoly1 EQ 1 OR lastchi2-thischi2 GT 5.) then begin
+                     if (fcorr_goodvector(ymult1)) then begin
+                        ymult[*,iobj,i2] = ymult1
+                        yadd[*,iobj,i2] = yadd1
+                        lastchi2 = thischi2
+                        lastnpoly = npoly1
+                        inparams = thiscoeff
+                     endif else begin
+                        splog, 'Warning: Bad fluxcorr for object ', iobj, $
+                         ' at npoly=', npoly1
+                     endelse
                   endif
                endwhile
 
@@ -337,6 +341,7 @@ pro spfluxcorr_v5, objname, adderr=adderr, combinedir=combinedir, $
       corrfile = djs_filepath(string(camname[ifile], expnum[ifile], $
        format='("spFluxcorr-", a2, "-", i8.8, ".fits")'), $
        root_dir=combinedir)
+      splog, 'Writing file ' + corrfile
       mwrfits, ymult[*,*,ifile], corrfile, /create
       mwrfits, yadd[*,*,ifile], corrfile
       spawn, ['gzip','-f',corrfile], /noshell
