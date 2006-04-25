@@ -2,10 +2,11 @@
 ;------------------------------------------------------------------------------
 pro plot_m67
 
-   setenv, 'SPECTRO_DATA=/nfs/baryon8/data/spectro/2d_test'
+;   setenv, 'SPECTRO_DATA=/nfs/baryon8/data/spectro/2d_test'
+   setenv, 'SPECTRO_DATA=/nfs/baryon8/data/spectro/2d_120sec'
 
-   xrange = [-40,120]
-   yrange = [-40,120]
+   xrange = [-30,60]
+   yrange = [-25,25]
    thick = 3
    csize = 2
 
@@ -23,10 +24,11 @@ pro plot_m67
 
    dfpsplot, 'plot_m67.ps', /square
    djs_plot, xrange=xrange, yrange=yrange, /xstyle, /ystyle, $
-    xtitle='Mathieu et al. velocity [km/s]', ytitle='SDSS velocity [km/s]', $
-    vel1[indx], vel2[indx], psym=4, $
+    xtitle='Mathieu et al. velocity [km/s]', $
+    ytitle='SDSS - Mathieu velocity [km/s]', $
+    vel1[indx], vel2[indx]-vel1[indx], psym=4, $
     charsize=csize, charthick=thick, thick=thick
-   djs_oplot, !x.crange, !y.crange, $
+   djs_oplot, !x.crange, [0,0], $
     charsize=csize, charthick=thick, thick=thick
    dfpsclose
 

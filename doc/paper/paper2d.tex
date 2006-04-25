@@ -619,10 +619,27 @@ width closely is closely represented by the reported variance array.
 
 A plate was drilled centered on the open cluster M67 with the
 specific idea of testing the SDSS velocity precision.
+This was plate 321 observed on MJD 51612.  
 130 stars were targetted from the radial velocity catalog
 of Mathieu \etal\ (1986), falling in the magnitude range of 8 to 14.
-The 19 stars brighter than $m=11$ were not plugged, since they
-would have saturated the detectors.  This was plate 321 MJD 51612.
+The 19 stars brighter than $m=11$ were intentionally not plugged, since they
+would have saturated the detectors, and another 8 stars appear not
+to have been plugged.  SDSS velocities for these stars were determined
+by fitting these spectra to all stars in the Elodie-2 stellar catalog,
+and choosing the best-fit Elodie star using $\chi^2$ minimization.  (ref???)
+The derived veocites have a median offset of $-5.5\kms$, with a sigma-clipped
+dispersion of $3.0 \kms$ (see Figure \ref{fig_m67}).
+There were three very discrepent velocities. (look these up???)
+% Fiber 224 at RA= 132.40396 Dec= 11.484270 v(CAT)= 13.30 v(Elodie)= 100.50532
+% Fiber 301 at RA= 132.01817 Dec= 12.167990 v(CAT)= 12.10 v(Elodie)= 104.35960
+
+Our expectation is that this plate represents a worst-case scenario
+for the zero-points in the wavelength scales, and therefore velocties.
+The exposure times were 30, 60 and 120 sec for this plate, as opposed
+to typical exposure times of 900 to 1500 sec on SDSS main survey plates.
+With the shorter exposures, there is not as much signal in the sky lines
+for computing the instrument flexure between the arc lamp spectra and
+the science exposures.
 
 %------------------------------------------------------------------------------
 %------------------------------------------------------------------------------
@@ -1252,7 +1269,7 @@ is given in Morton (1991, ApJS, 77, 119). For vacuum wavelengths ($\lambda$)
 in Angstroms, convert to air wavelength ($\lambda_{\rm air}$) via:
 $$\lambda_{\rm air} = \lambda / (1 + 0.0002735182 + 131.4182 / \lambda^2 + 2.76249E8 / \lambda^4) $$
 
-Below, I've listed the vacuum wavelength of some transitions:
+Below are listed the vacuum wavelength of some transitions:
 \begin{verbatim}
  Air       Vacuum
  --------  --------
@@ -1271,7 +1288,7 @@ to barycentric at the mid-point of each 15-minute exposure.
 %------------------------------------------------------------------------------
 %% Figures
 
-\begin{figure}[tb]
+\begin{figure}
 \figurenum{1}
 \epsscale{1.0}
 \plotone{plate_stats.ps}
@@ -1289,7 +1306,7 @@ the years of 2000 to 2005.
 \end{figure}
 
 
-\begin{figure}[tb]
+\begin{figure}
 \figurenum{2}
 \epsscale{0.9}
 \plotone{layout.ps}
@@ -1313,22 +1330,33 @@ B-spline function, and the red points are rejected 2-sigma outliers.
 \end{figure}
 
 \begin{figure}[tb]
-\figurenum{7}
 \epsscale{0.9}
 \plotone{plot_disp.ps}
 \figcaption{Measurements of spectral resolution in the four SDSS 
-spectrograph cameras.  For each camera, we should the median
+spectrograph cameras.  Shown for each camera is the median
 FWHM arc-line widths as a function of wavelength as 
 solid lines for cameras b1 (cyan) and r1 (orange),
 dashed lines for cameras b2 (blue) and r2 (red).
 The range of resolution is shown as error bars representing
 the 10\% to 90\% ranges in each camera over all fibers and
-all plates through DR5.
-\label{fig7}
+all public data release plates through DR5.
+\label{fig_disp}
 }
 \end{figure}
 
-\begin{figure}[tb]
+\begin{figure}
+\epsscale{0.9}
+\plotone{plot_m67.ps}
+\figcaption{
+SDSS velocities of 103 stars in or near the open cluster M67
+compared to published velocities in Mathieu \etal\  (1986).
+There is an offset of $5.0\kms$, and a sigma-clipped dispersion
+of $3.0\kms$.
+\label{fig_m67}
+}
+\end{figure}
+
+\begin{figure}
 \figurenum{8}
 \epsscale{1.0}
 \plotone{spDiag2d-0412-52258_156.eps}
@@ -1342,7 +1370,7 @@ spectra.
 }
 \end{figure}
 
-\begin{figure}[tb]
+\begin{figure}
 \figurenum{9}
 \epsscale{1.0}
 \plotone{spDiag2d-0412-52258.ps_153}
@@ -1357,7 +1385,6 @@ full pixel in the top left corner, and are much smaller than 5\%.
 \label{fig9}
 }
 \end{figure}
-
 
 
 \end{document}

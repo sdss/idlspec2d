@@ -123,23 +123,26 @@ save, file='velcompare.ss'
    vdiff_all = abs([vdiff_main, vdiff_lrg, vdiff_fstar])
    vchi_all = abs([vchi_main, vchi_lrg, vchi_fstar])
    rmag_all = [rmag_main, rmag_lrg, rmag_fstar]
-   isort = sort(rmag)
+   isort = sort(rmag_all)
    vdiff_all = vdiff_all[isort]
    vchi_all = vchi_all[isort]
    rmag_all = rmag_all[isort]
    rmin = min(rmag_all, max=rmax)
    dmag = 0.20
-   nbin = findgen(fix(rmax - rmin)/dmag)
-   rmag_vec = rmin + findgen(dmag+1) * 0.1
+   nbin = fix((rmax - rmin)/dmag)
+   rmag_vec = rmin + findgen(nbin+1) * 0.1
    vdiff_vec = fltarr(nbin)
    vchi_vec = fltarr(nbin)
    for j=0L, nbin-1L do begin
       ii = where(rmag_all GE rmag_vec[j] AND rmag_all LT rmag_vec[j+1], ct)
-      jsort = sort(vdiff_all[ii])
-      vdiff_vec[j] = vdiff_all[ii[jsort[0.67*ct]]]
-      jsort = sort(vchi_all[ii])
-      vchi_vec[j] = vchi_all[ii[jsort[0.67*ct]]]
+      if (ct GT 1) then begin
+         jsort = sort(vdiff_all[ii])
+         vdiff_vec[j] = vdiff_all[ii[jsort[0.67*ct]]]
+         jsort = sort(vchi_all[ii])
+         vchi_vec[j] = vchi_all[ii[jsort[0.67*ct]]]
+      endif
    endfor
+
 stop
 
    return
