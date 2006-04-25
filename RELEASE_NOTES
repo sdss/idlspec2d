@@ -16,6 +16,12 @@ SKYSUBTRACT: The rescaling of the errors with RELCHI2FIT seems to fail
 SPFRAME_READ: Add option to read superflat vectors from spFrame files.
 SPFLUX_V5: We were writing calibration vectors in HDU #0 of the spFluxcalib
         files that were double-precision.  Recast those to single precision.
+SPFLUXCORR_V5: Allow a range of 0.1-10 for the flux correction vectors,
+        which had been 0.2-5.  There were perverse cases (like for plate 321,
+        c.f. PR #6774) where these large flux correction vectors were
+        necessary, although the correct solution in that case was to
+        reject three bad exposures.  Also, print a Warning message if the
+        flux-correction vector is out-of-bounds and then ignored.
 SPTEMPLATE_REBIN: New function to read and optionally rebin spectral
         templates.  This is for use for Monte Carlo simulations of
         a spectroscopic survey at different resolutions.
