@@ -3,6 +3,8 @@ EXTRACT_OBJECT: Print a WARNING statement if either RA or DEC are
         missing from the header, since that will result in an invalid
         AIRMASS calculation (see PR #6953).  Also, report AIRMASS=0
         in the header if RA, DEC or TAI are zero.
+LRGMODEL_SPECTRA: New routine, split out of LRGMODEL_PHOTOZ and/or LRGSIM,
+        for generating the LRG model spectra.
 PLOTSPECQA: Wrapper to PLOTSPEC to select only standard stars or skies.
 SDSSPROC: In response to PR #6893 against Son-of-Spectro, don't print
         any error messages if the spawn of 'speclog_version' fails.
