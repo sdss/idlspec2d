@@ -177,20 +177,20 @@ pro platelist, infile, plist=plist, create=create, $
    ;----------
    ; Generate the list of plan files or plate files if not specified
 
-   if (NOT keyword_set(infile)) then begin
-      dirlist = get_mjd_dir( getenv('SPECTRO_DATA'), mjstart=1, mjend=9999)
-      for i=0L, n_elements(dirlist)-1L do begin
-         thisfile = findfile(djs_filepath('spPlancomb-*.par', $
-          root_dir=dirlist[i]), count=ct)
-         if (ct EQ 0) then $
-          thisfile = findfile(djs_filepath('spPlate-*.fits', $
-           root_dir=dirlist[i]), count=ct)
+   if (keyword_set(infile)) then begin
+      for i=0L, n_elements(infile)-1L do begin
+         thisfile = findfile(infile[i], count=ct)
          if (ct GT 0) then $
           fullfile = keyword_set(fullfile) ? [fullfile, thisfile] : thisfile
       endfor
    endif else begin
-      for i=0L, n_elements(infile)-1L do begin
-         thisfile = findfile(infile[i], count=ct)
+      dirlist = get_mjd_dir( getenv('SPECTRO_DATA'), mjstart=1, mjend=9999)
+      for i=0L, n_elements(dirlist)-1L do begin
+         thisfile = findfile(djs_filepath('spPlancomb-*.par', $
+          root_dir=getenv('SPECTRO_DATA'), subdir=dirlist[i]), count=ct)
+         if (ct EQ 0) then $
+          thisfile = findfile(djs_filepath('spPlate-*.fits', $
+           root_dir=getenv('SPECTRO_DATA'), subdir=dirlist[i]), count=ct)
          if (ct GT 0) then $
           fullfile = keyword_set(fullfile) ? [fullfile, thisfile] : thisfile
       endfor
