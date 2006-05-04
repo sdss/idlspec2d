@@ -5,6 +5,10 @@ EXTRACT_OBJECT: Print a WARNING statement if either RA or DEC are
         in the header if RA, DEC or TAI are zero.
 LRGMODEL_SPECTRA: New routine, split out of LRGMODEL_PHOTOZ and/or LRGSIM,
         for generating the LRG model spectra.
+PLATELIST: Fix the bit of code that finds all input plate files to be
+        more robust to large number of plates, since a dumb use of
+        the FINDFILE() function will overflow.  Instead, first get the
+        list of all directories, and then search within each of those.
 PLOTSPECQA: Wrapper to PLOTSPEC to select only standard stars or skies.
 SDSSPROC: In response to PR #6893 against Son-of-Spectro, don't print
         any error messages if the spawn of 'speclog_version' fails.
