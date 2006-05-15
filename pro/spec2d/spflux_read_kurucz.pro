@@ -11,7 +11,7 @@
 ;    kindx_return= ] )
 ;
 ; INPUTS:
-;   loglam     - Log10 wavelengths [NPIX]
+;   loglam     - Log10 wavelengths (vacuum Angstroms) [NPIX]
 ;   dispimg    - Dispersion image, in units of pixels [NPIX]
 ;
 ; OPTIONAL INPUTS:
