@@ -1,4 +1,5 @@
-
+FITARCIMAGE: Detector wavelength limits were not being accounted for
+ 	when checking for big wavelength gaps.
 EXTRACT_OBJECT: Print a WARNING statement if either RA or DEC are
         missing from the header, since that will result in an invalid
         AIRMASS calculation (see PR #6953).  Also, report AIRMASS=0
