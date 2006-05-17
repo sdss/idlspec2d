@@ -352,7 +352,7 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    logwmax = median(ytmp[npix-1,*])
    logwlist = [logwmin, alog10(lamps.lambda), logwmax]
    logwlist = logwlist[sort(logwlist)]
-   logwdiff = logwlist[1:nlamp-1] - logwlist[0:nlamp-2]
+   logwdiff = logwlist[1:nlamp+1] - logwlist[0:nlamp] ; Allow for endpoints.
 
    for i=0, N_elements(logwdiff)-1 do begin
       if (logwdiff[i] GT 0.10) then begin
