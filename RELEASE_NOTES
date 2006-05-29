@@ -1,9 +1,10 @@
-FITARCIMAGE: Detector wavelength limits were not being accounted for
- 	when checking for big wavelength gaps.
+
 EXTRACT_OBJECT: Print a WARNING statement if either RA or DEC are
         missing from the header, since that will result in an invalid
         AIRMASS calculation (see PR #6953).  Also, report AIRMASS=0
         in the header if RA, DEC or TAI are zero.
+FITARCIMAGE: Detector wavelength limits were not being accounted for
+ 	when checking for big wavelength gaps (Loomis).
 LRGMODEL_SPECTRA: New routine, split out of LRGMODEL_PHOTOZ and/or LRGSIM,
         for generating the LRG model spectra.
 PLATELIST: Fix the bit of code that finds all input plate files to be
