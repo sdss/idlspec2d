@@ -93,6 +93,12 @@ if [ `echo $PATH | wc -c` -gt 1020 ] ; then
   exit
 fi
 
+# Make sure someone can hear cron scream.
+if [ -z "$MAILTO" ] ; then
+  echo "MAILTO must be set!"
+  exit
+fi
+
 #------------------------------------------------------------------------------
 # Insist that we have set up the cvs version of speclog.  This is because
 # these scripts automatically check in new files to that product.
@@ -137,6 +143,7 @@ vers=`echo "print,idlspec2d_version()" | idl 2> /dev/null`
 crontab -l | awk 'BEGIN{doprint = 1}{if ($2 == "SPREDROBOT" && $3 == "BEGIN") {doprint = 0}; if (NR > 3 && doprint == 1) {print $0}; if ($2 == "SPREDROBOT" && $3 == "END") {doprint = 1} }' > $cronfile
 
 echo "# SPREDROBOT BEGIN "$vers >> $cronfile
+echo "MAILTO=$MAILTO" >> $cronfile
 echo "PATH=$PATH" >> $cronfile
 echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> $cronfile
 echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> $cronfile

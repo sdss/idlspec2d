@@ -109,6 +109,12 @@ if [ -z "$SPROBOT_RSH" ]; then
     SPROBOT_RSH=ssh
 fi
 
+# Make sure someone can hear cron scream.
+if [ -z "$MAILTO" ] ; then
+  echo "MAILTO must be set!"
+  exit
+fi
+
 # If the PATH is too long, then abort.
 if [ `echo $PATH | wc -c` -gt 1020 ] ; then
   echo "PATH is too long (more than 1020 characters)"
@@ -159,6 +165,7 @@ vers=`echo "print,idlspec2d_version()" | idl 2> /dev/null`
 crontab -l | awk 'BEGIN{doprint = 1}{if ($2 == "SPSYNCROBOT" && $3 == "BEGIN") {doprint = 0}; if (NR > 3 && doprint == 1) {print $0}; if ($2 == "SPSYNCROBOT" && $3 == "END") {doprint = 1} }' > $cronfile
 
 echo "# SPSYNCROBOT BEGIN "$vers >> $cronfile
+echo "MAILTO=$MAILTO" >> $cronfile
 echo "PATH=$PATH" >> $cronfile
 echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> $cronfile
 echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> $cronfile
