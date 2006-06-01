@@ -1,3 +1,6 @@
+----------------------------------------------------------------
+v5_1_4 (May 31, 2006) idlspec2d running on IDL 5.4 - 6.2
+Built against specflat v1_6, elodie v1_0, idlutils v5_1_4
 
 EXTRACT_OBJECT: Print a WARNING statement if either RA or DEC are
         missing from the header, since that will result in an invalid
