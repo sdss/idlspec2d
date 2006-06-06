@@ -1,3 +1,7 @@
+examples/opECalib-$MJD.par:
+	Raise the full well limit to 65535, as the detectors are not showing signs of saturation.
+	Make the (unused) linearity adjustements 1.0, just for clarity.
+
 ----------------------------------------------------------------
 v5_1_4 (May 31, 2006) idlspec2d running on IDL 5.4 - 6.2
 Built against specflat v1_6, elodie v1_0, idlutils v5_1_4
