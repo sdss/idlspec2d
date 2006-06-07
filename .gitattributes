@@ -39,6 +39,7 @@ doc/IR_scattering.txt -text
 doc/Makefile -text
 doc/mk_doc -text
 doc/paper/.cvsignore -text
+doc/paper/Photo1lg.jpg -text svneol=unset#unset
 doc/paper/SpecSecFull.ps -text
 doc/paper/disp_bounds.fits -text
 doc/paper/frames.jpg -text svneol=unset#unset
