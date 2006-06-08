@@ -1027,7 +1027,7 @@ HDU #0 = Flux in units of 10^(-17) erg/s/cm^2/Ang [FLOAT]
 HDU #1 = Inverse variance (1/sigma^2) for the above [FLOAT]
 HDU #2 = Pixel mask [32-bit INT]
 HDU #3 = Wavelength solution in log-10 Angstroms (vacuum) [FLOAT]
-HDU #4 = Wavelength dispersion in units of (10e-4 log-10 wavelength)^(-1) [FLOAT]
+HDU #4 = Wavelength dispersion in units of (10^(-4) log-10 wavelength)^(-1) [FLOAT]
          (these are the same units as in the combined-spectrum spPlate file)
 HDU #5 = Plug-map structure from plPlugMapM file [BINARY FITS TABLE]
 HDU #6 = Sky flux in units of 10^(-17) erg/s/cm^2/Ang [FLOAT]
@@ -1153,7 +1153,6 @@ The mask bits are set as follows: <BR>
  6 LARGESHIFT      Large spatial shift between flat and object pos'n
  7 BADSKYFIBER     Sky Fiber shows extreme residuals
  8 NEARWHOPPER     Within 2 fibers of a whopping fiber (inclusive)
- 9 WHOPPER         Whopping fiber
 10 SMEARIMAGE      Smear available for red and blue cameras (deprecated)
 11 SMEARHIGHSN     S/N sufficient for full smear fit (deprecated)
 12 SMEARMEDSN      S/N only sufficient for scaled median fit (deprecated)
@@ -1169,7 +1168,7 @@ The mask bits are set as follows: <BR>
 24 NODATA          No data available in combine B-spline (INVVAR=0)
 25 COMBINEREJ      Rejected in combine B-spline
 26 BADFLUXFACTOR   Low flux-calibration or flux-correction factor
-27 BADSKYCHI       Relative chi^2 > 4.0 in sky residuals at this wavelength
+27 BADSKYCHI       Relative chi^2 > 3 in sky residuals at this wavelength
 28 REDMONSTER      Contiguous region of bad chi^2 in sky residuals
                    (with threshhold of relative chi^2 > 3)
 </PRE>
