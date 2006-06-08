@@ -876,6 +876,9 @@ $$ z_{AB} = z - 0.002 $$
 
 The typical flux distortion corrections amount to ???.
 
+\subsection{Tests of Spectrophotometry}
+
+
 %------------------------------------------------------------------------------
 \subsection{GALACTIC REDDENING}
 
@@ -1309,11 +1312,10 @@ the years of 2000 to 2005.
 \begin{figure}
 \figurenum{2}
 \epsscale{0.9}
-\plotone{layout.ps}
-\figcaption{Schematic layout of one of the SDSS spectrographs, from the 
-SDSS Project Book (http://www.astro.princeton.edu/PBOOK/spectro/spectro.htm).
-Four main components are labeled: A) the slithead, B) the collimator, 
-C) the beamsplitter, D) the grisms.
+\plotone{SpecSecFull.ps}
+\figcaption{Schematic layout of one of the SDSS double-spectrographs.
+The light is fed from 320 fibers entering at the slithead (A), which
+is in the center of the beam in this Schmidt camera design.
 \label{fig2}
 }
 \end{figure}
@@ -1383,6 +1385,21 @@ positions are based on the updated solution after shifting and stretching to
 match the observed sky lines positions.  The residuals can be compared to a
 full pixel in the top left corner, and are much smaller than 5\%.
 \label{fig9}
+}
+\end{figure}
+
+\begin{figure}
+\figurenum{10}
+\epsscale{1.0}
+\plotone{plot_bestthru.ps}
+\figcaption{Throughput of the SDSS spectroscopic system,
+as measured relative to the photon density expected above
+the Earth's atmospheric by an aperture of 2.5-m with a 1.3-m
+obscuration by the secondary mirror baffling.  These curves
+are for plate 406 observed on MJD 51817.
+Solid curves are for spectrograph \#1, and dotted curves
+for spectrograph \#2.
+\label{fig10}
 }
 \end{figure}
 
