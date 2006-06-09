@@ -1,5 +1,5 @@
 %!PS-Adobe-3.0
-%%BoundingBox: 54 360 558 720
+%%BoundingBox: 54 360 558 702
 %%Title: Graphics produced by IDL
 %%For: schlegel@node0003, /autofs/d0/spectro/2d_v5_1/0412
 %%Creator: IDL Version 6.2 Beta (linux x86_64 m64)
@@ -35,7 +35,7 @@ bdef /MITERLIMIT { 2.5 setmiterlimit } bdef end
 %%PageRequirements: color
 %%PageResources: (atend)
 %%PageOrientation: Portrait
-%%PageBoundingBox: 54 360 558 720
+%%PageBoundingBox: 54 360 558 702
 %%BeginPageSetup
 save
 $IDL_DICT begin 54 360 translate 0.0283465 dup scale MITERLIMIT

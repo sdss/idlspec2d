@@ -66,6 +66,7 @@ doc/paper/plot_velcompare.pro -text
 doc/paper/readpublic.pro -text
 doc/paper/sky_res_v4.fits -text
 doc/paper/sky_res_v5.fits -text
+doc/paper/skysub_1d.ps -text
 doc/paper/skysubtraction.tex -text
 doc/paper/spDiag2d-0412-52258.ps_1 -text
 doc/paper/spDiag2d-0412-52258.ps_153 -text

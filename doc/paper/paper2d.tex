@@ -190,15 +190,17 @@ of observations (in MJD), and the science fiber number.
 
 A plate is mounted in the telescope through a efficient procedure described
 in Gunn et al. 2006.  The switch from the imaging camera to a spectroscopic
-cartridge takes an average of xx minutes, while a switch from one cartridge
-to another takes merely x minutes.  Once the cartridge is mounted, the telescope is slewed to the coordinates of the plate center.  
+cartridge takes an average of 30 minutes, while a switch from one cartridge
+to another takes 10 minutes.  Once the cartridge is mounted, 
+the telescope is slewed to the coordinates of the plate center.  
 Before acquisition of the guide stars, the 8 flat-field petals are closed and
 a sequence of one 10-second flat-field exposure and one 2-second 
 Neon-Mercury-Cadmium arc exposure are obtained.  While the arc-lamp frame is
 being readout, the flat-field petals are opened, and guide stars are acquired
-through the 11 coherent guide bundles (9 are this big and 2 are even bigger??).
+through the 11 coherent guide bundles (9 are 7$"$ in diameter and 
+2 are even larger at 11$"$).
 With at least 4 guide stars acquired, closed loop guiding is started, and
-usually converges to stable guiding within 2 minutes??
+usually converges to stable guiding within 2 minutes.
 The plate scale of the SDSS telescope can be adjusted, and the guiding software
 suggest a scale change if one is required.  Once close loop 
 guiding has settled, the first science exposure is started.  The typical 
@@ -210,7 +212,8 @@ steps explained here.  The results are posted to sos.apo.nmsu.edu, and
 the SDSS observers can check the S/N obtained in each of the 4 spectroscopic
 cameras in real-time.  A plate is considered to have met SDSS survey standards
 if all 4 cameras have a cumulative (S/N)$^2$ greater than 15 at 
-fidicual magnitudes of ?? and ??.  
+fidicual magnitudes (what the heck is a fiducial magnitude??)
+of 20.33 and 20.06 in SDSS g and i filters respectively.  
 
 
 
@@ -232,7 +235,7 @@ and second spatial derivatives, respectively).  The compiled routine
 we implement to fit the profiles in a single row (extract\_row.c) can
 be invoked with any combination of these parameters.  The parameters are
 sorted in order of fiber number with background parameters included at the
-end of the list.  This facilitates and banded matrix inversion, and 
+end of the list.  This facilitates a banded matrix inversion, and 
 significantly increases the speed of Cholesky decomposition step in each
 iteration of the extraction.
 
@@ -263,8 +266,10 @@ The major obstacle to actual optimal extraction is the determination of
 the exact shape and position of the underlying profile.  
 We investigated a range of symmetric, analytic profiles with a 
 minimum number of free parameters.  In the end, we found the best 
-results using a simple Gaussian or a slightly steeper profile 
-characterized by $e^{-|x|^3/\sigma^3}$.  The profiles are defined to be 
+results using a simple Gaussian (noted as PROFTYPE 1 in the primary HDU header) 
+or a slightly steeper profile characterized by 
+the average of a profile with $e^{-|x|^3/\sigma^3}$ and a Gaussian
+with the same sigma (PROFTYPE 3).  The profiles are defined to be 
 normalized to unity, so the amplitude of the profile fit is a 
 direct estimator of the counts at a single spectral position. 
 
@@ -307,7 +312,7 @@ on each flat-field frame.
 
 
 Each flat-field frame is extracted twice, once assuming a Gaussian
-profile and again assuming the steeper $|x|^3$ profile.  In both cases,
+profile and again assuming the steeper PROFTYPE 3 profile.  In both cases,
 the width is allowed to vary freely.  The total number of free parameters
 per row in the flat-field extractions is equal to 2 per fiber plus 10
 parameters to represent a smooth polynomial background.  After the extractions
@@ -565,7 +570,7 @@ fiber, and the rescaled super-sky is subtracted from each spectrum.}
 
 \item{Estimate the significance of the residuals in the sky fibers used for the
 fit in wavelength bins separated by breakpoints determined above.  For each bin
-where inverse the 67th percentile of $\chi^2$ is greater than 1, we rescale 
+where the 67th percentile of $\chi^2$ is greater than 1, we rescale 
 all the inverse variance values down by the 67th percentile value of $\chi^2$.
 The rescaling is actually done with a smooth interpolation as a function of 
 redshift with a constraint that the inverse variances cannot increase. }
@@ -599,18 +604,42 @@ is carried out for native spectral pixels where the errors are very nearly
 uncorrelated and the fit is evaluated for all the native pixels (320x2048)  
 at the central wavelengths of the single spectral frames.
     
-The accuracy of the SDSS spectral sky subtraction has been tested in recent
-scientific analyses using large numbers of background-limited spectra.   
-The distribution of flux residuals between spectral observations 
-on separate nights has been shown to be 8\% larger in width than the average expected
-from the reported errors (McDonald et al. 2004, Burgess \& Burles 2006).
-The spectra of faint, background-limited galaxies observed with SDSS exhibit a 
-distribution of residuals about the best fit spectral models described by the 
-sum of a
-Gaussian and Laplace distribution (Bolton et al. 2004).  
-The influence of the exponential tail is greatly enhanced in the vicinity of strong sky 
-emission lines representative of systematic errors in the brightest lines, but the gaussian 
-width closely is closely represented by the reported variance array.
+The accuracy of the SDSS spectral sky subtraction can been tested by examining
+the residuals in final reduced spectra, where spectra of blank sky, high-z QSOs
+and luminous red galaxies have been investigated to date.
+For early releases of spectroscopic data, reduced by version 4 and include
+data releases 4 and earlier, there have been mulitple confirmations of an
+underestimation of the true variance as reported in the output of the 
+spectroscopic pipeline.  By comparing multiple observations of the same
+high-z QSOs in studies of the Lyman-$\alpha$ forest, the average variance was
+shown to be underestimated by approximately 16\% (McDonald et al. 2004).  
+A fraction of the effect arises due to large tails in the distribution 
+of the noise and the remainder from the predicted FWHM of the noise 
+distribution.  Switzer (2004) identified two causes for the underestimates,
+citing both the awkward treatment of large sky residuals relative to the
+supersky and the corresponding correction described above, and also a general
+overestimation of the gains applied for the 8 CCD amplifiers. 
+
+Using the sample of plates here, we investigate the distribution of the 
+noise in a large sample of sky fibers as
+well as a sample of model fit luminous red galaxies.  Inclusion of
+the latter sample is motivated by earlier studies which showed 
+the spectroscopic residuals about the best fit galaxy models 
+can be described by a sum of Gaussian and Laplace 
+distributions (Bolton et al. 2004).  We construct histograms of the flux
+pixels directly from the SDSS spectroscopic products for two versions
+of the software (versions 4 \& 5).  In the first sample, flux measurements
+from the sky fibers are shown relative to zero and normalized by their reported
+inverse variances 
+(${\rm residual} = {\rm flux} \, \sqrt{\rm inverse variance}$).  
+In the second sample, residuals in galaxy spectra, 
+which were targetted as luminous red galaxies, were constructed by subtracting
+the best fit galaxy model and then normalizing by the inverse variance.
+
+The results are shown in Figure 11, and also summarized in Table 1.
+In Fig. 11, we present the distributions (histograms) as 
+probability densities (normalized to unit probability) on a logarithmic 
+scale for spectro\_2d versions 4 \& 5.   
 
 \begin{table}
 \begin{tabular}{ccccccccccc}
@@ -992,6 +1021,8 @@ Burles, S.\ 2000, \prd, 61, 123505
 \bibitem[O'Donnell 1994]{odonnell94} 
 O'Donnell, J.\ E. 1994, \apj, 422, 158
 
+\bibitem[Schoenberg 1946]{} Schoenberg, I. J. 1946, Quart. Appl. Math., 4, 45
+
 \bibitem[Schlegel, Finkbeiner \& Davis 1998 (SFD)]{sfd98} 
 Schlegel, D.\ J., Finkbeiner, D.\ P., \& Davis M.\ 1998, \apj, 500, 525 (SFD)
 
@@ -1017,7 +1048,8 @@ York, D.\ G. \etal\ 2000, \aj, 120, 1579
 \label{bsplines}
 
 In many of our algorithms we utilize a class of fitting functions known
-as B-splines (de Boor 1978).  These are very flexible and efficient 
+as B-splines ("basis splines", de Boor 1978, Schoenberg 1946).  
+These are very flexible and efficient 
 continous functions which have been applied to numerous spectroscopic
 and photometric data sets (cite Kelson ??, Tytler et al. 2004, 
 Bolton et al. 2005, Davis/Newman/Finkbeiner) as well as other interpolative
@@ -1333,8 +1365,11 @@ is in the center of the beam in this Schmidt camera design.
 
 \begin{figure}[tb]
 \figurenum{3}
-\epsscale{1.0}
-\plotone{spDiag2d-0412-52258.ps_1}
+\centering
+\leavevmode
+\includegraphics[width=\columnwidth,clip]{spDiag2d-0412-52258.ps_1}
+%\epsscale{1.0}
+%\plotone{spDiag2d-0412-52258.ps_1}
 \figcaption{A typical example of the common flat-field spectra, $SF$,
 for the b1 camera observations of plate 412.  The solid line is the best-fit
 B-spline function, and the red points are rejected 2-sigma outliers. 
@@ -1351,7 +1386,7 @@ FWHM arc-line widths as a function of wavelength as
 solid lines for cameras b1 (cyan) and r1 (orange),
 dashed lines for cameras b2 (blue) and r2 (red).
 The range of resolution is shown as error bars representing
-the 10\% to 90\% ranges in each camera over all fibers and
+the 10\% to 90\% range in each camera over all fibers and
 all public data release plates through DR5.
 \label{fig_disp}
 }
@@ -1372,7 +1407,7 @@ of $3.0\kms$.
 \begin{figure}
 \figurenum{8}
 \epsscale{1.0}
-\plotone{spDiag2d-0412-52258.ps_156}
+\plotone{skysub_1d.ps}
 \figcaption{An example of 1-d sky subtraction for camera r1 on SDSS
 plate 412.  The top panel shows data from 16 sky fibers corrected to airmass
 unity with vertical extent equal to 67\% errors.  The solid red line shows
@@ -1385,16 +1420,19 @@ spectra.
 
 \begin{figure}
 \figurenum{9}
-\epsscale{1.0}
-\plotone{spDiag2d-0412-52258.ps_153}
+\centering
+\leavevmode
+\includegraphics[width=\columnwidth,clip]{spDiag2d-0412-52258.ps_153}
+%\plotone{spDiag2d-0412-52258.ps_153}
 \figcaption{An example of the wavelength corrections to match expected 
 sky emission line wavelength centers in a single r1 exposure.  The position
 residuals in spectral pixels are shown as measurements of 12 sky 
 emission lines for all 320 fibers.  The red positions show the initial 
 predicted positions based on the arc-lamp wavelength solutions, and the green
 positions are based on the updated solution after shifting and stretching to
-match the observed sky lines positions.  The residuals can be compared to a
-full pixel in the top left corner, and are much smaller than 5\%.
+match the observed sky lines positions.  The residuals can be compared to a 
+full pixel in the top left corner, and are much smaller than 5\% of a pixel
+width.
 \label{fig9}
 }
 \end{figure}
@@ -1422,8 +1460,9 @@ for spectrograph \#2.
 \plottwo{plot_sky_reshist.ps}{plot_lrg_reshist.ps}
 \figcaption{ Distribution of SDSS flux residuals normalized 
 by the reported pipeline inverse variances.  The left plot shows
-the distribution of 214 million sky pixels in reductions from both
-Version 4 (upper), and Version 5 (lower) of spectro-2d.  
+the distribution as a histrogram of 214 million sky pixels in 
+reductions from both version 4 (DR4 and earlier, upper) 
+and version 5 (lower) of spectro\_2d.  
 The best fit functional form is shown as a solid red line (see text).
 The filled region shows the area between the observed version 5 distribution 
 of sky flux residuals and a gaussian with identical 1-sigma confidence limits.
