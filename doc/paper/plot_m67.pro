@@ -27,9 +27,8 @@ pro plot_m67
     xtitle='Mathieu et al. velocity [km/s]', $
     ytitle='SDSS - Mathieu velocity [km/s]', $
     vel1[indx], vel2[indx]-vel1[indx], psym=4, $
-    charsize=csize, charthick=thick, thick=thick
-   djs_oplot, !x.crange, [0,0], $
-    charsize=csize, charthick=thick, thick=thick
+    charsize=csize, charthick=thick, thick=thick, xthick=thick, ythick=thick
+   djs_oplot, !x.crange, [0,0], charsize=csize, charthick=thick, thick=thick
    dfpsclose
 
    splog, 'Number of stars plotted = ', n_elements(indx)

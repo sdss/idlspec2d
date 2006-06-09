@@ -63,8 +63,8 @@
 S. Burles\altaffilmark{\ref{MIT}}
 and D. J. Schlegel\altaffilmark{\ref{Princeton}}
 }
-\altaffiltext{1}{Massachussetts Institute of Technology,
-Boston, MA ????? \label{MIT}}
+\altaffiltext{1}{Department of Physics and Kavli Institute for Astrophysics 
+and Space Research, MIT, Cambridge, MA 02139 \label{MIT}}
 \altaffiltext{2}{Princeton University Observatory, Peyton Hall, Princeton,
 NJ 08544 \label{Princeton}}
 
@@ -611,6 +611,17 @@ Gaussian and Laplace distribution (Bolton et al. 2004).
 The influence of the exponential tail is greatly enhanced in the vicinity of strong sky 
 emission lines representative of systematic errors in the brightest lines, but the gaussian 
 width closely is closely represented by the reported variance array.
+
+\begin{table}
+\begin{tabular}{ccccccccccc}
+   -5   &  -4   &   -3  &   -2  &  -1   & 0 &  1   &  2 &  3   & 4 & 5 \\
+\hline
+ -15.19 & -6.65 & -3.13 & -1.86 & -0.89 &  0.047  & 0.98 &  1.95 &  3.22 &  6.74 & 15.29 \\
+ -15.76 & -7.31 & -3.35 & -1.95 & -0.93 &  0.041  & 1.01 &  2.04 &  3.44 &  7.40 & 15.85 \\
+ -16.37 & -8.52 & -3.72 & -2.04 & -0.98 & -0.014  & 0.95 &  2.01 &  3.69 &  8.50 & 16.35 \\
+ -16.77 &-10.43 & -4.43 & -2.21 & -1.05 & -0.063  & 0.93 &  2.08 &  4.30 & 10.31 & 16.65 \\
+\end{tabular}
+\end{table}
 
 
 \section{Testing velocities}
@@ -1361,7 +1372,7 @@ of $3.0\kms$.
 \begin{figure}
 \figurenum{8}
 \epsscale{1.0}
-\plotone{spDiag2d-0412-52258_156.eps}
+\plotone{spDiag2d-0412-52258.ps_156}
 \figcaption{An example of 1-d sky subtraction for camera r1 on SDSS
 plate 412.  The top panel shows data from 16 sky fibers corrected to airmass
 unity with vertical extent equal to 67\% errors.  The solid red line shows
@@ -1392,7 +1403,7 @@ full pixel in the top left corner, and are much smaller than 5\%.
 \figurenum{10}
 \epsscale{1.0}
 \plotone{plot_bestthru.ps}
-\figcaption{Throughput of the SDSS spectroscopic system,
+\figcaption{ Throughput of the SDSS spectroscopic system,
 as measured relative to the photon density expected above
 the Earth's atmospheric by an aperture of 2.5-m with a 1.3-m
 obscuration by the secondary mirror baffling.  These curves
@@ -1400,6 +1411,24 @@ are for plate 406 observed on MJD 51817.
 Solid curves are for spectrograph \#1, and dotted curves
 for spectrograph \#2.
 \label{fig10}
+}
+\end{figure}
+
+\begin{figure}
+\figurenum{11}
+\epsscale{1.0}
+\plottwo{plot_sky_reshist.ps}{plot_lrg_reshist.ps}
+\figcaption{ Distribution of SDSS flux residuals normalized 
+by the reported pipeline inverse variances.  The left plot shows
+the distribution of 214 million sky pixels in reductions from both
+Version 4 (upper), and Version 5 (lower) of spectro-2d.  
+The best fit functional form is shown as a solid red line (see text).
+The filled region shows the area between the observed version 5 distribution 
+of sky flux residuals and a gaussian with identical 1-sigma confidence limits.
+The right plot is the same but shows the distribution of approximately 
+550 million pixels drawn from residuals with respect to best fit models of
+luminous red galaxies.
+\label{fig11}
 }
 \end{figure}
 

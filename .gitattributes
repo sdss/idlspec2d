@@ -43,6 +43,7 @@ doc/paper/Photo1lg.jpg -text svneol=unset#unset
 doc/paper/SpecSecFull.ps -text
 doc/paper/disp_bounds.fits -text
 doc/paper/frames.jpg -text svneol=unset#unset
+doc/paper/gauss_l2.pro -text
 doc/paper/layout.gif -text
 doc/paper/layout.ps -text
 doc/paper/outline -text
@@ -54,15 +55,21 @@ doc/paper/plot_bestthru.pro -text
 doc/paper/plot_bestthru.ps -text
 doc/paper/plot_disp.pro -text
 doc/paper/plot_disp.ps -text
+doc/paper/plot_lrg_reshist.ps -text
 doc/paper/plot_m67.pro -text
 doc/paper/plot_m67.ps -text
+doc/paper/plot_reshist.pro -text
+doc/paper/plot_sky_reshist.ps -text
 doc/paper/plot_sphoto.pro -text
 doc/paper/plot_thru.pro -text
 doc/paper/plot_velcompare.pro -text
 doc/paper/readpublic.pro -text
+doc/paper/sky_res_v4.fits -text
+doc/paper/sky_res_v5.fits -text
 doc/paper/skysubtraction.tex -text
 doc/paper/spDiag2d-0412-52258.ps_1 -text
 doc/paper/spDiag2d-0412-52258.ps_153 -text
+doc/paper/spDiag2d-0412-52258.ps_156 -text
 doc/paper/spDiag2d-0412-52258_156.eps -text
 doc/www/.cvsignore -text
 doc/www/idlspec2d_install.html -text
