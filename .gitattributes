@@ -62,6 +62,7 @@ doc/paper/plot_reshist.pro -text
 doc/paper/plot_sky_reshist.ps -text
 doc/paper/plot_sphoto.pro -text
 doc/paper/plot_thru.pro -text
+doc/paper/plot_thru.ps -text
 doc/paper/plot_velcompare.pro -text
 doc/paper/readpublic.pro -text
 doc/paper/sky_res_v4.fits -text
