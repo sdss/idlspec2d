@@ -74,11 +74,12 @@ NJ 08544 \label{Princeton}}
 
 \begin{abstract}
 The Sloan Digital Sky Survey (SDSS) fiber-fed spectrographs have been used
-to obtain spectra for $600,000$ galaxies, QSOs and stars.
+to obtain spectra for ~$600,000$ galaxies, quasars and stars
+with a resolution of ~2000 over the wavelength range 3800\AA -9600\AA.
 We present the algorithms for reducing the raw data to
 wavelength-calibrated, flux-calibrated one-dimensional spectra.
 The wavelength calibration is shown to have an accuracy of $3 \kms$,
-and the broad-band spectrophotometry has an accuracy of better than $6\%$.
+and the broad-band spectrophotometry to have an accuracy of better than $6\%$.
 
 %------------------------------------------------------------------------------
 % SUBJECT HEADINGS
@@ -95,7 +96,7 @@ and the broad-band spectrophotometry has an accuracy of better than $6\%$.
 The Sloan Digital Sky Survey (SDSS) is a 5-band photometric survey of
 approximately $10,000$ square degrees of the Northern sky and a concurrent
 redshift survey of up to a million galaxies and 100,000 quasars
-selected from the imaging survey \cite{york00}.  The primary 
+selected from the imaging survey (York et al 2000).  The primary 
 science goals of the project are to provide the data to investigate the
 large scale structure of the Universe and other extragalactic science.
 
@@ -107,25 +108,26 @@ and velocity dispersions are described elsewhere.
 As of writing the 2-d pipeline has been run successfully on all spectroscopic
 data obtained in the course of the survey from February 28, 2000 (MJD 2451602) 
 to June 15, 2005 (MJD 2453536).  Over this timespan, which includes public data 
-releases EDR through DR5, SDSS obtained survey quality spectroscopic data on
+releases EDR through DR5 (Stoughton et al ??, Abazajian et al ??, 
+Adelman-McCarthy et al)
+, SDSS obtained survey quality spectroscopic data on
 1656 fiber pluggings (640 fibers each in 1575 unique plates).   
 A total of 972,111 sky positions were targetted, with the following 
 breakdown in the best matched spectral classification:  651920 galaxies, 
 208054 stars, 112137 QSOs and 51300 sky spectra.
 
 Mean exposure time per plate is 3914 seconds, and the median is 3302 seconds.
-In Figure 1 we show three of the observing diagnostics, on the top is
-the effective signal-to-noise of the whole plate normalized to 3600 second
-exposure time, the median seeing in arcseconds and the rms guide probe offset
-in arcseconds are shown below.  The abscissa is in days after Feb 26, 2000
-(MJD 2451600).
-
-
+In Figure 1 we show three of the data quality diagnostics. This figure shows
+the effective signal-to-noise ratio of each spectroscopic plug plate 
+normalized to 3600 seconds exposure time, the median seeing in arcseconds,
+and the RMS guide probe offset
+in arcseconds, versus time in days after Feb 26, 2000 (MJD 2451600).
 
 The data reduction and products described herein are very similar to
-those produced by the SDSS, with the most significant differences
-in our treatment of spectro-photometric calibrations.
-The data are released
+those produced by the official SDSS data releases, 
+with the most significant differences begin in our treatment of 
+spectro-photometric calibrations.  The data as processed as described
+are released
 with this paper and may be accessed via the WWW.\footnote{Full details
 are at \texttt{http://spectro.princeton.edu}}
 Future data releases will also be accessible at this site. 
@@ -136,15 +138,16 @@ Future data releases will also be accessible at this site.
 \label{sec_spectrographs}
 
 The SDSS spectroscopic survey was carried out with twin multi-fiber 
-spectrographs mounted at the back of the SDSS telescope (see Gunn et al.
-2006).  One of nine spectrograph cartidges can be mounted for a single
+double spectrographs mounted at the back of the SDSS telescope 
+(see Gunn et al.  2006).  
+One of nine spectrograph cartidges can be mounted for a single
 spectroscopic observing sequence.  The cartridge holds a single aluminum
 plate, 813mm in diameter, pre-drilled and plugged with 640 fibers 
 fed into the twin spectrographs, 
 and 11 coherent fibers fed into a simple air-cooled camera (model \#??)
 for telescope guiding.
 
-The fibers are 180 $\mu m$ in diameter and subtend 2.97" at Cassegrain focus.
+The fibers are 180 $\mu m$ in diameter and subtend $2.97"$ at Cassegrain focus.
 The fibers accept the f/5 beam directly and, due to focal degradation, input
 an f/4 exit beam into each of the spectrographs.  The fibers are mounted in
 bundles of 20 with inter-fiber spacings of 390 $\mu m$.  Sixteen bundles are
@@ -154,24 +157,26 @@ an extra spacing of approximately 200 $\mu m$ between bundles.
 In Figure 1, we show a top-view schematic of one the spectrographs, and
 will detail the light path below starting at the slithead.
 The output light from the fiber is collimated with a spherical mirror
-(radius of curvature is 1264 mm), which is aligned by 3 motor mounts to
-control focus, tip \& tilt.  A left/right hartmann mask 
+(of radius of curvature 1264 mm), which is aligned by 3 motor mounts to
+control focus, tip and tilt.  A left/right Hartmann mask 
 covers the collimator to act as both a spectrograph shutter and traditional 
-shack-hartmann mask for focus tests.  The collimator in spectrograph 2
+Shack-Hartmann mask for focus tests.  The collimator in spectrograph 2
 was coated with an enhanced silver coating and delivers slightly higher
 reflectivity compared to the aluminum coated collimator in spectrograph 1.
 The collimated beam encounters a 40mm thick dichroic (beamsplitter) which
-reflect light blueward of 6000$\AA$.  The blue reflected light is dispersed
-with a 640 l/mm grism with zero deviation at 4960$\AA$.  The red transmitted
-light is dispersed with a 440 l/mm grism with zero deviation at 7400$\AA$.
+reflect light blueward of 6000\AA.  The blue reflected light is dispersed
+with a 640 l/mm grism with zero deviation at 4960\AA.  The red transmitted
+light is dispersed with a 440 l/mm grism with zero deviation at 7400\AA.
 The dispersed light in each arm of the spectrograph enters a transmission camera
-wth a 240mm focal length (demagnification of 2.5) which is tuned for the 
-corresponding range of wavelengths.  Each of the 4 camera produce RMS 
+with a 240mm focal length (demagnification of 2.5) which is tuned for the 
+corresponding range of wavelengths.  Each of the 4 cameras produce RMS 
 spot sizes of approximately 20$\mu m$ over a 16.5$\degree$ diameter 
-f.o.v. delivered to a single thinned Tektronix 2048x2048x24$\mu m$ CCD.
+field-of-view delivered to a single thinned Tektronix 2048x2048x24$\mu m$ CCD
+(see Gunn et al. 2006).
 An external focus ring is adjustable by hand for each CCD camera to accomodate
 differential focus changes not corrected with the common collimator.
-The four spectrograph cameras are labeled "b1, r1, b2, r2".  
+The four spectrograph cameras are labeled $``$b1, r1, b2, r2", where
+1 and 2 refer to the spectrographs and b and r to their blue and red sides.  
 
 
 \section{Typical Spectroscopic Observations}
@@ -179,37 +184,43 @@ The four spectrograph cameras are labeled "b1, r1, b2, r2".
 
 At the beginning of a typical survey night, up to 9 plates have been mounted
 in cartridges, plugged with 640 science fibers and 11 guide fibers. 
-The position of the 640 fibers along each of the two fiber slitheads
-are mapped by the 8th wonder of the world,
-the SDSS plugplate fiber mapper (Schlegel and Finkbeiner).
+The positions of the 640 fibers along each of the two fiber slitheads
+%are mapped by the 8th wonder of the world,
+by 
+the SDSS plugplate fiber mapper (Schlegel and Finkbeiner, unpublished).
 All usable spectroscopic data obtained for a single plugging, 
 and therefore a single fiber mapping, will eventually be combined into 
 a final data product for that plugging.  In this scheme, an individual 
 output spectrum is uniquely specified by the plate number, the first night
-of observations (in MJD), and the science fiber number.
+of observations\footnote{On occasion, to accumulate enough signal, a given
+plate/plugging configuration may be exposed on more than one night.} (in MJD), 
+and the science fiber number.
 
 A plate is mounted in the telescope through a efficient procedure described
-in Gunn et al. 2006.  The switch from the imaging camera to a spectroscopic
+by Gunn et al (2006).  The switch from the imaging camera to a spectroscopic
 cartridge takes an average of 30 minutes, while a switch from one cartridge
 to another takes 10 minutes.  Once the cartridge is mounted, 
 the telescope is slewed to the coordinates of the plate center.  
 Before acquisition of the guide stars, the 8 flat-field petals are closed and
 a sequence of one 10-second flat-field exposure and one 2-second 
 Neon-Mercury-Cadmium arc exposure are obtained.  While the arc-lamp frame is
-being readout, the flat-field petals are opened, and guide stars are acquired
+being read out, the flat-field petals are opened, and guide stars are acquired
 through the 11 coherent guide bundles (9 are 7$"$ in diameter and 
 2 are even larger at 11$"$).
 With at least 4 guide stars acquired, closed loop guiding is started, and
 usually converges to stable guiding within 2 minutes.
 The plate scale of the SDSS telescope can be adjusted, and the guiding software
-suggest a scale change if one is required.  Once close loop 
+suggests a scale change if one is required.  Once close loop 
 guiding has settled, the first science exposure is started.  The typical 
 exposure time is 900 seconds, but exposure times from 600 to 1200 second are
 not unexpected based on conditions and time constraints.  A second exposure
-is started immediately after the first science exposure is complete and readout.A fast linux workstation onsite copies the data from the data acquisition host,
+is started immediately after the first science exposure is complete and read
+out.
+A fast Linux workstation onsite copies the data from the data acquisition host,
 and automatically performs a quick spectral extraction with a subset of the 
 steps explained here.  The results are posted to sos.apo.nmsu.edu, and
-the SDSS observers can check the S/N obtained in each of the 4 spectroscopic
+the SDSS observers can check the signal-to-noise ratio (S/N) 
+obtained in each of the 4 spectroscopic
 cameras in real-time.  A plate is considered to have met SDSS survey standards
 if all 4 cameras have a cumulative (S/N)$^2$ greater than 15 at 
 fidicual magnitudes (what the heck is a fiducial magnitude??)
@@ -221,8 +232,8 @@ of 20.33 and 20.06 in SDSS g and i filters respectively.
 \label{sec_extract}
 
 We utilize an optimal extraction procedure to transform a 2-dimensional image of
-the fiber spectrograms to a set of 320 1-dimensional spectra (per spectrograph).
-We use the same procedure on all processed frames, 
+the fiber spectrograms to a set of 320 one-dimensional spectra 
+(per spectrograph).  We use the same procedure on all processed frames, 
 and will describe the details in processing the flat-field frames, the
 arc lamp frames, and finally the science frames.  
 The extraction is performed row-by-row, so each frame requires an 
@@ -236,7 +247,7 @@ we implement to fit the profiles in a single row (extract\_row.c) can
 be invoked with any combination of these parameters.  The parameters are
 sorted in order of fiber number with background parameters included at the
 end of the list.  This facilitates a banded matrix inversion, and 
-significantly increases the speed of Cholesky decomposition step in each
+significantly increases the speed of the Cholesky decomposition step in each
 iteration of the extraction.
 
 We decided to perform profile fitting to the 
@@ -258,7 +269,8 @@ unbiased and minimum variance estimate of the counts (e.g. Horne et al. 1995).}
 \item{A model profile fit leads to a model image of the SDSS data,
 and iteration allows cosmic-ray rejection and goodness-of-fit tests.}
 
-\item{A valid estimate of the error in flux measurement at each spectral pixel.}
+\item{A valid estimate of the error in a flux measurement at 
+each spectral pixel can be made.}
 
 \end{enumerate}
 
@@ -282,9 +294,9 @@ The resulting spectral extractions are also used to
 determine the empirical fiber-to-fiber variations in throughput 
 as a function of wavelength.   
 A flat-field frame is rejected by the pipeline if one of the
-following conditions is met:  1) more the 2\% of the CCD pixels are labeled
-bad by sdssproc, 2) more than 100 rows of the image have more than 20 saturated
-pixels, 
+following conditions is met:  1) more than 2\% of the CCD pixels are labeled
+bad by {\tt sdssproc} (see below), 
+2) more than 100 rows of the image have more than 20 saturated pixels, 
 3) the 80th percentile count level is less than 1000 counts, 
 4) fewer than all 8 flat-field telescope petals were closed, 
 5) fewer than all 4 flat-field lamps were on,
@@ -294,7 +306,7 @@ on the flat-field image.
 
 The first very critical step is to robustly determine the fiber positions 
 in CCD pixel coordinates.
-This is performed by identifying peaks in a cross-sectional cut of across 
+This is performed by identifying peaks in a cross-sectional cut across 
 the center row (actually a median cross-section of the central 9 rows).  
 The correct identification of the 320 fibers per frame can be 
 uniquely determined by demanding a wider spacing between the bundles 
@@ -320,7 +332,7 @@ are complete, $\chi^2$ is computed by directly comparing the model fit
 to the flat-field image.  The median $\chi^2$ for each case is compared
 directly, and the better fit and profile (lower median $\chi^2$) are retained
 and implemented for the extraction of the remaining frames.  Also retained
-is a smooth polynomial fit the average profile width in each fiber bundle
+is a smooth polynomial fit to the average profile width in each fiber bundle
 as a function of CCD row number.
 
 After all flat-field frames for a given sequence have been extracted
@@ -351,7 +363,7 @@ construct a list of suitable unblended lines from a parent list including
 known lines of Mercury, Cadmium, Neon and (a trace of) Argon 
 that are readily observable in the standard set of SDSS arc-lamps. 
 A representative spectrum is calculated as the median extracted spectrum
-of the 5 closest "unflagged" spectra falling near the central columns 
+of the 5 closest $``$unflagged" spectra falling near the central columns 
 of the arc-lamp image.  This median arc-spectrum is matched with 
 cross-correlation to a simulated spectrum of suitable arc-line positions and 
 strengths by systematically searching a small volume of 
@@ -392,7 +404,7 @@ of spectral pixel.
 An arc-lamp image is declared unacceptable using the first 4 tests as employed
 in tests of the flat-field images.  In addition, an arc-lamp exposure
 is declared unacceptable ("BAD") if any of these following criteria are met:
-5) all 8 arc-lamps must be on, 4 Neon lamps and 4 Mercury-Cadmium lamps,
+5) not all 8 arc-lamps are on, 4 Neon lamps and 4 Mercury-Cadmium lamps,
 6) the initial cross-correlation coefficient is less than 0.5,
 7) fewer than 6 arc lines are acceptable after quality assurance checks.
 
@@ -447,7 +459,6 @@ We model the flat-field spectra as the product:
 \begin{equation} 
 {\rm Model}_{ij} = A \times {\rm SF}(\lambda) \times {\rm (fiber~flat)_i} (\lambda) 
 \end{equation} 
-
 where $A$ is a overall normalization in counts, 
 $SF$ is the average wavelength dependent response called the ``superflat'', and
 ${\rm fiber~flat_i}$ is the fiber-to-fiber response as a function of wavelength.
@@ -457,15 +468,14 @@ The flat-field vectors correct the differential response due to the individual f
 throughput, as well as the small relative differences in the size of the
 spectral pixels at a constant wavelength.  
 
-The common normalized response, $SF$, is specified as a B-spline
-function with breakpoints spaced approximately every native pixels.
+The common normalized response, $SF$, is specified as a B-spline (basis spline)
+function with breakpoints spaced at approximately the native pixel spacing.
 An example of normalized individual fiber spectra 
-and the resulting B-spline fit are shown in Figure 2.  The individual fiber
+and the resulting B-spline fit is shown in Figure 3.  The individual fiber
 flat vectors are fits to the ratio of the extracted spectra to the superflat
-(define above).  The individual vector fits are also B-splines with breakpoints
+(defined above).  The individual vector fits are also B-splines with breakpoints
 spaced approximately every 5 native pixels.  The final set of flat vectors are
-stored as an image with dimensions Nfiber x Npixels.
-
+stored as an image with dimensions of Nfiber,Npixels.
 
 \subsection{Object Extraction}
 
@@ -477,7 +487,7 @@ choice of initial calibrations for all science frame extractions in a given
 observing sequence.  We loop through the science exposures, processing the
 raw images with bias and pixel-to-pixel flat images (see section ??).
 We reject a science exposure outright if 1) more than 10\% of the pixels
-are flagged as bad, 2) more than 100 rows are have more than 20 saturated
+are flagged as bad, 2) more than 100 rows have more than 20 saturated
 pixels, 3) the 25th
 percentile count level is greater than 1000 counts (the nominal level
 is of order 10 counts), 4) any of the flat-field petals are closed, or 5)
@@ -492,10 +502,11 @@ The first step in object extraction is a simple tophat aperture (boxcar)
 extraction centered at the fiber positions determined from the flat-field 
 and with a full spatial width of 6 CCD pixels.  The median counts per fiber 
 are passed directly to a test for overly bright fibers. Fiber spectra are 
-identified as bright (a.k.a. "WHOPPING") if the median counts per pixel in the 
+identified as bright (a.k.a. $``$WHOPPING") 
+if the median counts per pixel in the 
 boxcar extraction are greater than 10000 counts above the median in the 
 frame.  In addition, only the brightest fiber in a spatially contiguous set of 
-bright fibers is labelled "WHOPPING".  Each whopping fiber adds an additional
+bright fibers is labelled $``$WHOPPING".  Each whopping fiber adds an additional
 background parameter to the fit per row, which is an exponential profile
 with a spatial scale of 25 pixels.  Such a profile correlates with many
 neighboring fibers, so the parameter is treated as a background to supplement
@@ -503,7 +514,7 @@ the smooth polynomial background.  The flux contained in the exponential
 profile is not included in the extracted spectra.
 
 A pixelmask vector is created for each fiber spectrum to be extracted.
-See Appendix ?? for a description of the mask bits and their use.
+See Appendix B for a description of the mask bits and their use.
 
 We fit for a slight distortion of the stored flat-field fiber traces to 
 best match the fiber positions of the science image.  Nominal shifts and
@@ -525,13 +536,13 @@ The extracted science spectra are first normalized by the fiber flat vectors.
 Strong atmospheric emission lines (sky lines) are identified in the the 
 set of spectra, and the wavelength solution is shifted and stretched 
 to match the identified sky line positions.  
-Examples of the shift corrections are shown in Figure ??.  
+Examples of the shift corrections are shown in Figure 9.  
 The widths of the identified sky lines are also measured with the same method
 as the arc-line width measurements.  All spectra are also normalized by
 the average flat-field spectrum (the superflat) to remove small scale
 features likely attributed to the chromatic response of the dichroic.
 The wavelength solution is corrected to both vacuum wavelengths and the
-barycenter velocity frame.
+solar system barycenter velocity frame.
 
 \subsection{Sky Subtraction}
 
@@ -582,8 +593,8 @@ redshift with a constraint that the inverse variances cannot increase. }
 
 The sequence followed in the determination of the sky subtracted spectrum
 and re-scaled errors is called 3 times successively.  After the 1st call,
-any sky fibers which have a median $\chi^2$ per pixel greater than 2 is 
-masked as a 'BADSKYFIBER' and the corresponding bit is set in the fibermask
+any sky fiber which has a median $\chi^2$ per pixel greater than 2 is 
+masked as a $``$BADSKYFIBER" and the corresponding bit is set in the fibermask
 array.  If any fibers are masked, the sky subtraction is iterated a 2nd time.
 The sky subtraction routine is invoked for one final iteration, but with extra 
 freedom allowed in the fit.  The same freedom is allowed in wavelength, by
@@ -642,13 +653,16 @@ probability densities (normalized to unit probability) on a logarithmic
 scale for spectro\_2d versions 4 \& 5.   
 
 \begin{table}
-\begin{tabular}{ccccccccccc}
-   -5   &  -4   &   -3  &   -2  &  -1   & 0 &  1   &  2 &  3   & 4 & 5 \\
+\begin{tabular}{cccccccccccc}
 \hline
- -15.19 & -6.65 & -3.13 & -1.86 & -0.89 &  0.047  & 0.98 &  1.95 &  3.22 &  6.74 & 15.29 \\
- -15.76 & -7.31 & -3.35 & -1.95 & -0.93 &  0.041  & 1.01 &  2.04 &  3.44 &  7.40 & 15.85 \\
- -16.37 & -8.52 & -3.72 & -2.04 & -0.98 & -0.014  & 0.95 &  2.01 &  3.69 &  8.50 & 16.35 \\
- -16.77 &-10.43 & -4.43 & -2.21 & -1.05 & -0.063  & 0.93 &  2.08 &  4.30 & 10.31 & 16.65 \\
+sigma &   -5   &  -4   &   -3  &   -2  &  -1   & 0 &  1   &  2 &  3   & 4 & 5 \\
+\hline
+\hline
+Sky V5 & -15.19 & -6.65 & -3.13 & -1.86 & -0.89 &  0.047  & 0.98 &  1.95 &  3.22 &  6.74 & 15.29 \\
+Sky V4 & -15.76 & -7.31 & -3.35 & -1.95 & -0.93 &  0.041  & 1.01 &  2.04 &  3.44 &  7.40 & 15.85 \\
+LRG V5 & -16.37 & -8.52 & -3.72 & -2.04 & -0.98 & -0.014  & 0.95 &  2.01 &  3.69 &  8.50 & 16.35 \\
+LRG V4 & -16.77 &-10.43 & -4.43 & -2.21 & -1.05 & -0.063  & 0.93 &  2.08 &  4.30 & 10.31 & 16.65 \\
+\hline
 \end{tabular}
 \end{table}
 
@@ -900,10 +914,12 @@ All stellar and galaxy objects are used to fit the flux distortion
 image.  Sky fibers and QSOs are ignored in the fit.
 These objects are required to have positive flux in gri photometric imaging,
 with at least $90\%$ of the pixels good in the spectra.
-For stars, we use the PSF fluxes as measured by PHOTO.
+For stars, we use the PSF fluxes as measured by
+the SDSS imaging as reduced by the photometric pipeline PHOTO 
+(Lupton et al ??).
 For galaxies, we rescale the fiber fluxes as measured by PHOTO,
 rescaled by one multiplicative factor in each band such that the
-PSF and fiber fluxes agree for stars.  Typically, that mupliplies
+PSF and fiber fluxes agree for stars.  Typically, that multiplies
 the PHOTO fiber fluxes by factors of 1.37 in any band.
 Both PSF fluxes and fiber fluxes are converted to AB magnitudes
 using the following:
@@ -949,14 +965,22 @@ observed wavelength frame, before any de-redshifting of extragalactic objects.
 %------------------------------------------------------------------------------
 % CONCLUSIONS
 %------------------------------------------------------------------------------
-%\section{SUMMARY}
+\section{SUMMARY}
+
+Other pipelines using the data.
+
+Known problems with the data.
+
+Still need to finish testing velocities and sdssproc description.
 
 %------------------------------------------------------------------------------
 % ACKNOWLEDGMENTS
 %------------------------------------------------------------------------------
 \bigskip
-We are very grateful to Michael Strauss for
-useful and helpful comments on the manuscript.
+We are very grateful to Jill Knapp, Craig Loomis, and Michael Strauss for
+useful and helpful comments on the manuscript.  Adam Bolton 
+graciously supplied some unpublished results on the measured noise residuals.
+
 Funding for the creation and distribution of the SDSS Archive has been
 provided by the Alfred P. Sloan Foundation, the Participating
 Institutions, the National Aeronautics and Space Administration, the
@@ -1439,8 +1463,11 @@ width.
 
 \begin{figure}
 \figurenum{10}
-\epsscale{1.0}
-\plotone{plot_bestthru.ps}
+\centering
+\leavevmode
+\includegraphics[width=0.8\columnwidth,angle=90]{plot_bestthru.ps}
+%\epsscale{1.0}
+%\plotone{plot_bestthru.ps}
 \figcaption{ Throughput of the SDSS spectroscopic system,
 as measured relative to the photon density expected above
 the Earth's atmospheric by an aperture of 2.5-m with a 1.3-m
@@ -1488,5 +1515,19 @@ luminous red galaxies.
 }
 \end{figure}
 
+\begin{figure}
+\figurenum{12}
+\epsscale{1.0}
+\plotone{sky_cross.ps}
+\figcaption{The fractional contribution of the flux from 
+spectroscopic fibers neighboring sky fibers.  We fit for the unweighted 
+amplitude using the extracted neighbors as a template.  We include 93837
+spectroscopic neighbors of sky fibers with $r$ fiber magnitude between 14.5
+and 20.0.  The median contamination of the sky fiber is 0.0013 of the 
+flux level of the neighbor.  The histrograms show the 25\%, 50\% and 75\%
+quartiles as a function of magnitude.
+\label{fig12}
+}
+\end{figure}
 
 \end{document}

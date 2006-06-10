@@ -42,6 +42,7 @@ doc/paper/.cvsignore -text
 doc/paper/Photo1lg.jpg -text svneol=unset#unset
 doc/paper/SpecSecFull.ps -text
 doc/paper/disp_bounds.fits -text
+doc/paper/frame_obj.ps -text
 doc/paper/frames.jpg -text svneol=unset#unset
 doc/paper/gauss_l2.pro -text
 doc/paper/layout.gif -text
@@ -65,6 +66,9 @@ doc/paper/plot_thru.pro -text
 doc/paper/plot_thru.ps -text
 doc/paper/plot_velcompare.pro -text
 doc/paper/readpublic.pro -text
+doc/paper/sky_cross.ps -text
+doc/paper/sky_crosstalk.pro -text
+doc/paper/sky_res.pro -text
 doc/paper/sky_res_v4.fits -text
 doc/paper/sky_res_v5.fits -text
 doc/paper/skysub_1d.ps -text
