@@ -4,6 +4,7 @@ examples/opECalib-50000.par,opECalib-51430.par,opECalib-51577.par:
         are not showing signs of saturation.
 	Make the (unused) linearity adjustements 1.0, just for clarity.
         PR #6592 discusses these issues in detail.
+lib/Makefile: Correctly copy built libraries for platforms other than Linux.
 
 ----------------------------------------------------------------
 v5_1_4 (May 31, 2006) idlspec2d running on IDL 5.4 - 6.2
