@@ -11,7 +11,7 @@ all :;
 # Install things in their proper places in $(IDLSPEC2D_DIR)
 #
 install :
-	- cp *.so $(IDLSPEC2D_DIR)/lib
+	- cp *.$(SO_EXT) $(IDLSPEC2D_DIR)/lib
 	- cp Makefile $(IDLSPEC2D_DIR)/lib
 clean :
 	- /bin/rm -f *~ core *.so *.a *.dylib
