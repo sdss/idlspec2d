@@ -1,4 +1,5 @@
 
+doc/www/spectro_home.html: Update for DR5.
 examples/opECalib-50000.par,opECalib-51430.par,opECalib-51577.par:
 	Raise the full well limit to 65535 from 35000, as the detectors
         are not showing signs of saturation.
