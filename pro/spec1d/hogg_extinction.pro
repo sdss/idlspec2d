@@ -62,14 +62,16 @@ device, filename= prefix+'.ps'
 hogg_plot_defaults
 readcol, '~/Longslit/calib/extinction/atm_trans_am1.0.dat', $
   longwave,longthru
-longwave= longwave*1D4
+longwave= alog10(longwave*1D4)
 readcol, '~/primus/data/atmosphere.dat', $
   primwave,primthru
+primwave= alog10(primwave)
 filename= prefix+'.fits'
 foo= mrdfits(filename)
 good= where((foo[*,2] GT 0.0))
-hoggwave= 1D1^foo[good,0]
-; hoggthru= 0.10+0.58*foo[good,1]
+hoggwave= foo[good,0]
+hoggthru= foo[good,1]
+; hoggthru= 0.10+0.58*hoggthru
 plot, hoggwave,hoggthru,psym=10,/nodata, $
   xrange=[3500,9500],xtitle= 'wavelength  (A)', $
   yrange=[-1.5,0.1],ytitle= 'd ln(throughput) / d airmass', $
