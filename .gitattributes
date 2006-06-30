@@ -358,6 +358,7 @@ pro/spec1d/fourier_difference.pro -text
 pro/spec1d/fourier_quotient.pro -text
 pro/spec1d/fundamental_line.pro -text
 pro/spec1d/gauss_periodic.pro -text
+pro/spec1d/hogg_extinction.pro -text
 pro/spec1d/kurucz_fitsfile.pro -text
 pro/spec1d/lambda_match.pro -text
 pro/spec1d/linebackfit.pro -text
