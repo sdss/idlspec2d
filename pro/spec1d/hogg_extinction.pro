@@ -1,4 +1,6 @@
 ;+
+; COMMENTS:
+;  - Check out Burki et al, A&ASS, 112, 383 (1995).
 ; BUGS:
 ;  - Many things hard-coded.
 ;  - No comment header.
@@ -58,13 +60,23 @@ endif
 set_plot, 'ps'
 device, filename= prefix+'.ps'
 hogg_plot_defaults
+readcol, '~/Longslit/calib/extinction/atm_trans_am1.0.dat', $
+  longwave,longthru
+longwave= longwave*1D4
+readcol, '~/primus/data/atmosphere.dat', $
+  primwave,primthru
 filename= prefix+'.fits'
 foo= mrdfits(filename)
 good= where((foo[*,2] GT 0.0))
-plot, 1D1^foo[good,0],foo[good,1],psym=10, $
+hoggwave= 1D1^foo[good,0]
+; hoggthru= 0.10+0.58*foo[good,1]
+plot, hoggwave,hoggthru,psym=10,/nodata, $
   xrange=[3500,9500],xtitle= 'wavelength  (A)', $
   yrange=[-1.5,0.1],ytitle= 'd ln(throughput) / d airmass', $
   title='all cameras'
+oplot, longwave,alog(longthru),color=djs_icolor('grey'),psym=10
+oplot, primwave,-primthru,color=djs_icolor('grey'),psym=10
+oplot, hoggwave,hoggthru,psym=10
 ; oplot, 1D1^foo[good,0],foo[good,1]+2.0/sqrt(foo[good,2]),psym=10
 ; oplot, 1D1^foo[good,0],foo[good,1]-2.0/sqrt(foo[good,2]),psym=10
 for cc=0,ncam-1 do begin
