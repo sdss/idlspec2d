@@ -5,61 +5,75 @@
 ;-
 pro hogg_extinction
 prefix= 'hogg_extinction'
-
 camname= ['b1','b2','r1','r2']
-for cc= 0,3 do begin
-    outfilename= prefix+'_'+camname[cc]+'.fits'
+ncam= 4
 
-    if (NOT file_test(outfilename)) then begin
-        if (NOT keyword_set(efficiency)) then begin
-            savefile= 'plot_thru.ss'
-            if (NOT file_test(savefile)) then plot_thru
-            splog, 'restoring '+savefile
-            restore, savefile
-        endif
-        lne0= dblarr(n_elements(loglam))
-        lne0_invvar= lne0
-        k0= lne0
-        k0_invvar= lne0
-
-        splog, 'starting work on camera '+camname[cc]
-        good= where(strmid(explist,0,2) EQ camname[cc],ngood)
-        for ii=0L,n_elements(loglam)-1L do begin
-            vgood= where((efficiency[ii,good] GT 0.0) AND $
-                         (airmass[good] GT 1.0) AND $
-                         (airmass[good] LT 2.0),nvgood)
-            if (nvgood GT 100) then $
-              if ((max(airmass[good[vgood]])-min(airmass[good[vgood]])) GT 0.2) $
-              then begin
-                lne= reform(alog(efficiency[ii,good[vgood]]),nvgood)
-                aa= transpose([[replicate(1d0,nvgood)],[airmass[good[vgood]]]])
-                ww= replicate(1d0,nvgood)
-                hogg_iter_linfit, aa,lne,ww,xx,covar=covar
-;            plot, airmass[good[vgood]],lne,psym=1
-;            oplot, !X.CRANGE,transpose([[1,1],[!X.CRANGE]]##xx),psym=0
-                lne0[ii]= xx[0]
-                lne0_invvar[ii]= 1.0/covar[0,0]
-                k0[ii]= xx[1]
-                k0_invvar[ii]= 1.0/covar[1,1]
-            endif
-        endfor
-        splog, 'writing file '+outfilename
-        mwrfits, [[loglam],[k0],[k0_invvar],[lne0],[lne0_invvar]], $
-          outfilename,/create
+outfilename= prefix+'.fits'
+if (NOT file_test(outfilename)) then begin
+    if (NOT keyword_set(efficiency)) then begin
+        savefile= 'plot_thru.ss'
+        if (NOT file_test(savefile)) then plot_thru
+        splog, 'restoring '+savefile
+        restore, savefile
     endif
-endfor
+    k0= dblarr(n_elements(loglam))
+    k0_invvar= k0
+    camamp= dblarr(n_elements(loglam),ncam)
+    camamp_invvar= camamp
+
+    for ii=0L,n_elements(loglam)-1L do begin
+        if ((ii MOD 100) EQ 0) then splog, 1D1^(loglam[ii])
+        vgood= where((efficiency[ii,*] GT 0.0) AND $
+                     (airmass GT 1.0) AND $
+                     (airmass LT 1.5),nvgood)
+        if (nvgood GT 100) then begin
+            lne= reform(alog(efficiency[ii,vgood]),nvgood)
+            aa= [[airmass[vgood]]]
+            thiscamlist= [-1]
+            for cc=0,ncam-1 do begin
+                thiscam= double(strmid(explist[vgood],0,2) EQ camname[cc])
+                if (total(thiscam) GT 0.0) then begin
+                    thiscamlist= [thiscamlist,cc]
+                    aa= [[aa],[thiscam]]
+                endif
+            endfor
+            thiscamlist= thiscamlist[1:n_elements(thiscamlist)-1]
+            ww= replicate(1d0,nvgood)
+            hogg_iter_linfit, transpose(aa),lne,ww,xx,covar=covar
+;                 plot, airmass[good[vgood]],lne,psym=1
+;                 oplot, !X.CRANGE,transpose([[1,1],[!X.CRANGE]]##xx),psym=0
+            k0[ii]= xx[0]
+            k0_invvar[ii]= 1.0/covar[0,0]
+            for cc=0,n_elements(thiscamlist)-1 do begin
+                camamp[ii,thiscamlist[cc]]= xx[1+cc]
+                camamp_invvar[ii,thiscamlist[cc]]= 1.0/covar[1+cc,1+cc]
+            endfor
+        endif
+    endfor
+    splog, 'writing file '+outfilename
+    mwrfits, [[loglam],[k0],[k0_invvar],[camamp],[camamp_invvar]], $
+      outfilename,/create
+endif
 
 set_plot, 'ps'
 device, filename= prefix+'.ps'
 hogg_plot_defaults
-for cc=0,3 do begin
-    filename= prefix+'_'+camname[cc]+'.fits'
-    foo= mrdfits(filename)
-    good= where(foo[*,2] GT 0.0)
-    plot, 1D1^foo[good,0],foo[good,1],psym=10, $
+filename= prefix+'.fits'
+foo= mrdfits(filename)
+good= where((foo[*,2] GT 0.0))
+plot, 1D1^foo[good,0],foo[good,1],psym=10, $
+  xrange=[3500,9500],xtitle= 'wavelength  (A)', $
+  yrange=[-1.5,0.1],ytitle= 'd ln(throughput) / d airmass', $
+  title='all cameras'
+; oplot, 1D1^foo[good,0],foo[good,1]+2.0/sqrt(foo[good,2]),psym=10
+; oplot, 1D1^foo[good,0],foo[good,1]-2.0/sqrt(foo[good,2]),psym=10
+for cc=0,ncam-1 do begin
+    plot, 1D1^foo[good,0],foo[good,cc+3],psym=10, $
       xrange=[3500,9500],xtitle= 'wavelength  (A)', $
-      yrange=[-1.5,0.1],ytitle= 'd ln(throughput) / d airmass', $
+      yrange=[-5,0],ytitle= 'ln(throughput)', $
       title=camname[cc]
+;    oplot, 1D1^foo[good,0],foo[good,3]+2.0/sqrt(foo[good,4]),psym=10
+;    oplot, 1D1^foo[good,0],foo[good,3]-2.0/sqrt(foo[good,4]),psym=10
 endfor
 device,/close
 
