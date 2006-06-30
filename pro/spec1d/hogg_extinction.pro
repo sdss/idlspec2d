@@ -58,11 +58,12 @@ if (NOT file_test(outfilename)) then begin
 endif
 
 set_plot, 'ps'
-device, filename= prefix+'.ps'
+device, filename= prefix+'.ps',/color
 hogg_plot_defaults
 readcol, '~/Longslit/calib/extinction/atm_trans_am1.0.dat', $
   longwave,longthru
 longwave= alog10(longwave*1D4)
+longthru= -2.5*alog10(longthru)
 readcol, '~/primus/data/atmosphere.dat', $
   primwave,primthru
 primwave= alog10(primwave)
@@ -71,19 +72,23 @@ foo= mrdfits(filename)
 good= where((foo[*,2] GT 0.0))
 hoggwave= foo[good,0]
 hoggthru= foo[good,1]
-; hoggthru= 0.10+0.58*hoggthru
+hoggthru= -1.086*hoggthru
+burkwave= hoggwave
+burkthru= 0.17*(1D1^burkwave/4400.0)^(-4.05)+0.08*(1D1^burkwave/4400.0)^(-1.39)
+xrange= alog10([3500,9500])
 plot, hoggwave,hoggthru,psym=10,/nodata, $
-  xrange=[3500,9500],xtitle= 'wavelength  (A)', $
-  yrange=[-1.5,0.1],ytitle= 'd ln(throughput) / d airmass', $
-  title='all cameras'
-oplot, longwave,alog(longthru),color=djs_icolor('grey'),psym=10
-oplot, primwave,-primthru,color=djs_icolor('grey'),psym=10
+  xrange=xrange,xtitle= 'log!d10!n wavelength  (A)', $
+  yrange=[0.01,1.5],ytitle= 'extinction  (mag/airmass)', $
+  title='all cameras',/ylog
+oplot, longwave,longthru,color=djs_icolor('grey'),psym=10
+oplot, primwave,primthru,color=djs_icolor('grey'),psym=10
+oplot, burkwave,burkthru,color=djs_icolor('grey')
 oplot, hoggwave,hoggthru,psym=10
 ; oplot, 1D1^foo[good,0],foo[good,1]+2.0/sqrt(foo[good,2]),psym=10
 ; oplot, 1D1^foo[good,0],foo[good,1]-2.0/sqrt(foo[good,2]),psym=10
 for cc=0,ncam-1 do begin
     plot, 1D1^foo[good,0],foo[good,cc+3],psym=10, $
-      xrange=[3500,9500],xtitle= 'wavelength  (A)', $
+      xrange=xrange,xtitle= 'wavelength  (A)', $
       yrange=[-5,0],ytitle= 'ln(throughput)', $
       title=camname[cc]
 ;    oplot, 1D1^foo[good,0],foo[good,3]+2.0/sqrt(foo[good,4]),psym=10
