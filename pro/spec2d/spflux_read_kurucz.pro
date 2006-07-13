@@ -51,6 +51,9 @@ function spflux_read_kurucz, loglam, dispimg, iselect=iselect1, $
    common com_spflux_kurucz, kfile, kflux, kindx, kloglam, nmodel, $
     gridsig, gridlam, gridflux
 
+   if (n_elements(loglam) NE n_elements(dispimg)) then $
+    message, 'LOGLAM and DISPIMG must have same number of elements!'
+
    ;----------
    ; Read the high-resolution Kurucz models
 
