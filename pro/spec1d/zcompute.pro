@@ -6,9 +6,10 @@
 ;   Compute relative redshift of object(s) vs. eigen-templates.
 ;
 ; CALLING SEQUENCE:
-;   zans = zcompute(objflux, objivar, starflux, [starmask, nfind=, $
+;   zans = zcompute(objflux, objivar, starflux, [starmask, $
+;    fixed_template=, nfind=, $
 ;    poffset=, pspace=, pmin=, pmax=, mindof=, width=, minsep=, $
-;    plottitle=, /doplot, /debug, /verbose ]
+;    plottitle=, /doplot, /debug, /verbose, zans_fixed= ]
 ;
 ; INPUTS:
 ;   objflux    - Object fluxes [NPIXOBJ,NOBJ]
@@ -17,6 +18,9 @@
 ;
 ; OPTIONAL INPUTS:
 ;   starmask   - Eigen-template mask; 0=bad, 1=good [NPIXSTAR]
+;   fixed_template - If set, then these are templates that are fit
+;                simultaneoulsy with the STARFLUX templates, but without
+;                ever redshifting them [NPIXOBJ,NFIXED]
 ;   nfind      - Number of solutions to find per object; default to 1.
 ;   poffset    - Offset between all objects and templates, in pixels.
 ;                A value of 10 indicates that STARFLUX begins ten pixels
@@ -52,6 +56,9 @@
 ;                theta : Mixing angles [NTEMPLATE].  These are computed at the
 ;                        nearest integral redshift, e.g. at ROUND(ZOFFSET).
 ;                theta_covar : Covariance matrix for THETA
+;  zans_fixed - Structure with fit information for those templates
+;               fixed in redshift if FIXED_TEMPLATE is passed.
+;
 ;
 ; COMMENTS:
 ;   Fits are done to chi^2/DOF, not to chi^2.
@@ -90,16 +97,20 @@ function create_zans, nstar, nfind
 end
 
 ;------------------------------------------------------------------------------
-function zcompute, objflux, objivar, starflux, starmask, nfind=nfind, $
- poffset=poffset, pspace=pspace, pmin=pmin, pmax=pmax, $
+function zcompute, objflux, objivar, starflux, starmask, $
+ fixed_template=fixed_template, $
+ nfind=nfind, poffset=poffset, pspace=pspace, pmin=pmin, pmax=pmax, $
  mindof=mindof, width=width, minsep=minsep, $
  plottitle=plottitle, doplot=doplot1, debug=debug, verbose=verbose, $
-                   silent=silent
+ zans_fixed=zans_fixed, silent=silent
 
    if (NOT keyword_set(nfind)) then nfind = 1
    if (NOT keyword_set(pspace)) then pspace = 1
    if (NOT keyword_set(width)) then width = 3 * pspace
    if (NOT keyword_set(plottitle)) then plottitle = ''
+   if (size(fixed_template,/n_dimen) EQ 0) then nfixed = 0 $
+    else if (size(fixed_template,/n_dimen) EQ 1) then nfixed = 1 $
+    else nfixed = (size(fixed_template,/dimens))[1]
 
    ; Plot if either /DOPLOT or /DEBUG is set.
    if (keyword_set(doplot1)) then doplot = doplot1
@@ -196,6 +207,8 @@ function zcompute, objflux, objivar, starflux, starmask, nfind=nfind, $
    dofarr = fltarr(nlag)
    thetaarr = fltarr(nstar,nlag)
    zans = create_zans(nstar, nfind)
+   if (keyword_set(fixed_template)) then $
+    zans_fixed = create_zans(nfixed, nfind)
 
    ;---------------------------------------------------------------------------
 
@@ -213,8 +226,14 @@ function zcompute, objflux, objivar, starflux, starmask, nfind=nfind, $
       j1 = j1 > 0L
       j2 = npixstar-1 < (npixobj+j1-i1-1L)
       i2 = i1 + j2 - j1
-      chi2arr[ilag] = computechi2( objflux_double[i1:i2], $
-       sqivar[i1:i2] * starmask[j1:j2], starflux_double[j1:j2,*], dof=dof)
+      if (keyword_set(fixed_template)) then $
+       chi2arr[ilag] = computechi2( objflux_double[i1:i2], $
+        sqivar[i1:i2] * starmask[j1:j2], $
+        [[starflux_double[j1:j2,*]],[fixed_template[i1:i2,*]]], dof=dof) $
+      else $
+       chi2arr[ilag] = computechi2( objflux_double[i1:i2], $
+        sqivar[i1:i2] * starmask[j1:j2], $
+        starflux_double[j1:j2,*], dof=dof)
       dofarr[ilag] = dof
 ;      thetaarr[*,ilag] = acoeff
 
@@ -276,13 +295,26 @@ function zcompute, objflux, objivar, starflux, starmask, nfind=nfind, $
       j1 = j1 > 0L
       j2 = npixstar-1 < (npixobj+j1-i1-1L)
       i2 = i1 + j2 - j1
-      thischi2 = computechi2( objflux_double[i1:i2], $
-       sqivar[i1:i2] * starmask[j1:j2], starflux_double[j1:j2,*], $
-       acoeff=acoeff, covar=covar)
-      zans[ipeak].theta = acoeff
-      zans[ipeak].theta_covar = covar
+      if (keyword_set(fixed_template)) then begin
+         thischi2 = computechi2( objflux_double[i1:i2], $
+          sqivar[i1:i2] * starmask[j1:j2], $
+          [[starflux_double[j1:j2,*]],[fixed_template[i1:i2,*]]], $
+          acoeff=acoeff, covar=covar)
+         zans_fixed[ipeak].chi2 = zans[ipeak].chi2
+         zans_fixed[ipeak].dof = zans[ipeak].dof
+         zans[ipeak].theta = acoeff[0:nstar-1]
+         zans_fixed[ipeak].theta = acoeff[nstar:nstar+nfixed-1]
+         zans[ipeak].theta_covar = covar[0:nstar-1,0:nstar-1]
+         zans_fixed[ipeak].theta_covar = $
+          covar[nstar:nstar+nfixed-1,nstar:nstar+nfixed-1]
+      endif else begin
+         thischi2 = computechi2( objflux_double[i1:i2], $
+          sqivar[i1:i2] * starmask[j1:j2], starflux_double[j1:j2,*], $
+          acoeff=acoeff, covar=covar)
+         zans[ipeak].theta = acoeff
+         zans[ipeak].theta_covar = covar
+      endelse
    endfor
-
 
    return, zans
 end
