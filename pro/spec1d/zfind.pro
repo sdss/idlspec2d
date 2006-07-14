@@ -10,7 +10,8 @@
 ;   result = zfind( objflux, objivar, hdr=hdr, $
 ;    [ starflux=, starloglam0=, stardloglam=, $
 ;    eigenfile=, eigendir=, columns=, npoly=, $
-;    zmin=, zmax=, zguess=, pwidth=, nfind=, width=, _EXTRA= ]
+;    zmin=, zmax=, zguess=, pwidth=, nfind=, width=, $
+;    zans_fixed=, _EXTRA= ]
 ;
 ; INPUTS:
 ;   objflux    - Object fluxes [NPIXOBJ,NOBJ]
@@ -52,6 +53,8 @@
 ;                elements are left blank if fewer than NFIND peaks are found.
 ;
 ; OPTIONAL OUTPUTS:
+;   zans_fixed - Structure with fit information for those templates
+;                fixed in redshift if FIXED_TEMPLATE is passed.
 ;
 ; COMMENTS:
 ;   One can specify a search domain for the redshift with ZMIN and ZMAX, or
@@ -115,7 +118,7 @@ function zfind, objflux, objivar, hdr=hdr, $
  starflux=starflux, starloglam0=starloglam0, stardloglam=stardloglam, $
  eigenfile=eigenfile, eigendir=eigendir, columns=columns, npoly=npoly, $
  zmin=zmin, zmax=zmax, zguess=zguess, pwidth=pwidth, $
- nfind=nfind, width=width, _EXTRA=EXTRA
+ nfind=nfind, width=width, zans_fixed=zans_fixed, _EXTRA=EXTRA
 
    if (n_elements(eigendir) EQ 0) then $
     eigendir = concat_dir(getenv('IDLSPEC2D_DIR'), 'templates')
@@ -223,13 +226,13 @@ function zfind, objflux, objivar, hdr=hdr, $
 
       zans = zcompute_qso(objflux, objivar, starset, starflux, poffset=poffset, $
        pmin=pmin, pmax=pmax, nfind=nfind, width=width, $
-       plottitle=plottitle, _EXTRA=EXTRA)
+       plottitle=plottitle, zans_fixed=zans_fixed, _EXTRA=EXTRA)
    endif else begin
       ; Mask any pixels on the templates where the first template contains zeros
       starmask = starflux[*,0] NE 0
       zans = zcompute(objflux, objivar, starflux, starmask, poffset=poffset, $
        pmin=pmin, pmax=pmax, nfind=nfind, width=width, $
-       plottitle=plottitle, _EXTRA=EXTRA)
+       plottitle=plottitle, zans_fixed=zans_fixed, _EXTRA=EXTRA)
    endelse
 
    ;----------
