@@ -1,6 +1,6 @@
 
 ;------------------------------------------------------------------------------
-pro lrgmodel_spectra, filtloglam, filtcurve, zarr=zarr1, $
+pro lrgmodel_spectra, loglam, zarr=zarr1, $
  ageburst=ageburst1, zmetal=zmetal1, OmegaM=OmegaM1, OmegaL=OmegaL1, $
  objflux=objflux, synflux=synflux
 
@@ -12,18 +12,11 @@ pro lrgmodel_spectra, filtloglam, filtcurve, zarr=zarr1, $
     else ageburst = 2.5
    if (keyword_set(zmetal1)) then zmetal = zmetal1 $
     else zmetal = 0.018
-   if (keyword_set(filtcurve)) then begin
-      ndimf = size(filtcurve, /n_dimen)
-      if (ndimf EQ 1) then nfilt = 1 $
-       else nfilt = (size(filtcurve,/dimens))[1]
-      if (n_elements(filtloglam) NE (size(filtcurve,/dimens))[0]) then $
-       message, 'Number of elements in LOGLAM and FILTCURVE are inconsistent'
-   endif
    if (n_elements(OmegaM1) GT 0) then OmegaM = OmegaM1[0] $
     else OmegaM = 0.27
    if (n_elements(OmegaL1) GT 0) then OmegaL = OmegaL1[0] $
     else OmegaL = 0.73
-   nfpix = n_elements(filtloglam)
+   nfpix = n_elements(loglam)
 
    ;----------
    ; Read the Bruzual-Charlot model spectra FITS files.
@@ -42,16 +35,19 @@ pro lrgmodel_spectra, filtloglam, filtcurve, zarr=zarr1, $
             npix = n_elements(bcdat.wave)
             nage = n_elements(bcdat.age)
             allwave = bcdat.wave
+            airtovac, allwave ; Convert to vacuum!!
             agevec = bcdat.age / 1e9 ; convert to Gyr
             allflux = fltarr(npix, nage, nmetal)
          endif
          allflux[*,*,imetal] = bcdat.flux
       endfor
       ; Convert to f_nu
-      flambda2fnu = allwave^2 / 2.99792d18
+; ???
+;      flambda2fnu = allwave^2 / 2.99792d18
       for imetal=0, nmetal-1 do $
        for iage=0, nage-1 do $
-        allflux[*,iage,imetal] = allflux[*,iage,imetal] * flambda2fnu
+        allflux[*,iage,imetal] = allflux[*,iage,imetal]
+;        allflux[*,iage,imetal] = allflux[*,iage,imetal] * flambda2fnu
    endif
 
    ;----------
@@ -101,18 +97,18 @@ pro lrgmodel_spectra, filtloglam, filtcurve, zarr=zarr1, $
       thiswave = allwave * (1 + zarr[iz])
       thisloglam = alog10(thiswave)
 
-      thispix = interpol(dindgen(nfpix), filtloglam, thisloglam)
+      thispix = interpol(dindgen(nfpix), loglam, thisloglam)
       newmask = fltarr(nfpix)
       newflux = fltarr(nfpix)
       populate_image, newmask, thispix, assign='cic'
       populate_image, newflux, thispix, weights=thisflux, assign='cic'
       qgood = newmask GT 0
       newflux = qgood * newflux / (newmask + (qgood EQ 0))
-      newflux = djs_maskinterp(newflux, newmask, /const)
-stop
+      newflux = djs_maskinterp(newflux, newmask LE 0, /const)
 
       if (arg_present(objflux)) then objflux[*,iz] = newflux
 
+; ???
       if (arg_present(synflux)) then begin
          dloglam = 0.5 * abs(shift(filtloglam,-1) - shift(filtloglam,1))
          dloglam[0] = dloglam[1]
