@@ -4,7 +4,7 @@ pro lrgmodel_spectra, loglam, zarr=zarr1, $
  ageburst=ageburst1, zmetal=zmetal1, OmegaM=OmegaM1, OmegaL=OmegaL1, $
  objflux=objflux, synflux=synflux
 
-   common com_lrgmodel_photoz, allwave, allflux, agevec
+   common com_lrgmodel_spectra, allwave, allflux, agevec
 
    if (keyword_set(zarr1)) then zarr = zarr1 $
     else zarr = 0
