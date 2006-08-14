@@ -181,8 +181,11 @@ spchunklist     141 2475 2476 special   "SEGUE cluster"
 spchunklist     143 2477 2515 main      ""
 spchunklist     145 2516 2533 main      ""
 spchunklist     146 2534 2541 special   "SEGUE bright"
-spchunklist     147 2542 2549 special   "SEGUE bright"
+spchunklist     147 2542 2549 special   "SEGUE faint"
+spchunklist     148 2550 2559 special   "SEGUE bright"
+spchunklist     149 2560 2569 special   "SEGUE faint"
 
 spchunklist     142 8024 8027 special   "ET Project"
 spchunklist     144 8028 8029 special   "ET project"
+spchunklist     150 8030 8032 special   "ET project"
 
