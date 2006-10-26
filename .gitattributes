@@ -245,7 +245,10 @@ pro/plate/Makefile -text
 pro/plate/README -text
 pro/plate/README.OBSERVE -text
 pro/plate/README.RUNPLATE -text
+pro/plate/apo_refrac.pro -text
 pro/plate/brightcmag.pro -text
+pro/plate/co_refract_list.pro -text
+pro/plate/decollide.pro -text
 pro/plate/design_multiplate.pro -text
 pro/plate/design_n1817.pro -text
 pro/plate/design_n752.pro -text
@@ -270,8 +273,11 @@ pro/plate/pleiades.j14 -text
 pro/plate/praesepe.j10 -text
 pro/plate/praesepe.j13 -text
 pro/plate/praesepe.match.j10 -text
+pro/plate/radec_to_xyfocal.pro -text
 pro/plate/random_decollide.pro -text
 pro/plate/sbss_testplate.pro -text
+pro/plate/splot_vec.pro -text
+pro/plate/test_r2x.pro -text
 pro/plate/test_sbss_testplate.pro -text
 pro/plate/tyc_sdssmags.pro -text
 pro/science/Makefile -text
