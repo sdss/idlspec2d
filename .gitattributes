@@ -257,6 +257,7 @@ pro/plate/design_read2mass.pro -text
 pro/plate/design_sdss3test.pro -text
 pro/plate/design_starstruct.pro -text
 pro/plate/design_taurus.pro -text
+pro/plate/holesize.pro -text
 pro/plate/n1817.j11 -text
 pro/plate/n1817.match -text
 pro/plate/n752.j10 -text
@@ -269,6 +270,7 @@ pro/plate/pleiades.j14 -text
 pro/plate/praesepe.j10 -text
 pro/plate/praesepe.j13 -text
 pro/plate/praesepe.match.j10 -text
+pro/plate/random_decollide.pro -text
 pro/plate/sbss_testplate.pro -text
 pro/plate/test_sbss_testplate.pro -text
 pro/plate/tyc_sdssmags.pro -text
