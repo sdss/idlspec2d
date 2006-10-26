@@ -1,4 +1,5 @@
 
+DESIGN_SDSS3TEST: New proc to design test plates for SDSS-3.
 LINEBACKFIT: Fix crash condition for when no BACKGROUND vectors are set.
 ZCOMPUTE: Add FIXED_TEMPLATE as optional input, and ZANS_FIXED output.
 ZFIND: Add optional ZANS_FIXED return keyword from ZCOMPUTE.
