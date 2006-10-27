@@ -306,7 +306,7 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
       diffs = (fimage - ymodel) * sqrt(workinvvar) 
       chisq = total(diffs*diffs)
       countthese = total(wfixarr)
-      reducedChi = chisq / (total(mask) - countthese)
+      reducedChi = chisq / ((total(mask) - countthese) > 1)
       errscale = 1.0
       if (relative) then errscale = sqrt((chisq/total(mask)) > 1.0)
 
