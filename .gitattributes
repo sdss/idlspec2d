@@ -277,6 +277,7 @@ pro/plate/radec_to_xyfocal.pro -text
 pro/plate/random_decollide.pro -text
 pro/plate/sbss_testplate.pro -text
 pro/plate/splot_vec.pro -text
+pro/plate/test_design_plate.pro -text
 pro/plate/test_r2x.pro -text
 pro/plate/test_sbss_testplate.pro -text
 pro/plate/tyc_sdssmags.pro -text

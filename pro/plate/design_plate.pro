@@ -105,8 +105,8 @@ holeok=bytarr(n_elements(data))
 
 ; check for things in the plate and not too near the center
 spherematch, racen, deccen, data.ra, data.dec, $
-  platesize, m1, m2, d12
-if(m2[0] eq -1) then return
+  platesize, m1, m2, d12, max=0
+if(m2[0] eq -1) then return, holeok
 holeok[m2]=1 
 iclose=where(d12 lt platecen, nclose)
 if(nclose gt 0) then $
@@ -131,7 +131,7 @@ if(nguide gt 0) then begin
     spherematch, holedata[iguide].ra, holedata[iguide].dec, $
       newdata.ra, newdata.dec, 0.5*(holesize+guidesize), $
       m1, m2, d12
-    if(m2[-1] gt -1) then $
+    if(m2[0] gt -1) then $
       holeok[m2]=0
 endif
 
@@ -141,7 +141,7 @@ if(nnotguide gt 0) then begin
     spherematch, holedata.ra, holedata.dec, $
       newdata[inotguide].ra, newdata[inotguide].dec, $ 
       0.5*(holesize+guidesize), m1, m2, d12
-    if(m2[-1] gt -1) then $
+    if(m2[0] gt -1) then $
       holeok[inotguide[m2]]=0
 endif
 
@@ -177,23 +177,25 @@ end
 ; Main program
 pro design_plate, stardata1, tilenums=tilenum, platenums=platenum, $
                   racen=racen, deccen=deccen, airtemp=airtemp, nstd=nstd, $
-                  nminsky=nminsky
+                  nminsky=nminsky, lst=lst
 
-if (NOT keyword_set(tilenum)) then tilenum = 1
-if (NOT keyword_set(platenum)) then platenum = tilenum
-if (NOT keyword_set(racen) OR NOT keyword_set(deccen)) then $
+if (NOT keyword_set(tilenum)) then tilenum = 583
+if (NOT keyword_set(platenum)) then platenum = 820
+if (n_elements(racen) eq 0 OR n_elements(deccen) eq 0) then $
   message, 'RACEN,DECCEN must be specified'
 if (n_elements(airtemp) EQ 0) then airtemp = 5.0
-if (NOT keyword_set(nstd)) then nstd = 16L
-if (NOT keyword_set(nminsky)) then nminsky = 32L
+if (n_elements(nstd) eq 0) then nstd = 16L
+if (n_elements(nminsky) eq 0) then nminsky = 32L
+if (n_elements(lst) eq 0) then lst = racen
 ntot = 640L                     ; Number of fibers
 nsci = ntot-nstd-nminsky
-used=bytarr(n_elements(stardata))
+used=bytarr(n_elements(stardata1))
 
 ;----------
 ; Set up outputs
 plugmaptfile = 'plPlugMapT-' + string(tilenum,format='(i4.4)') + '.par'
 plugmappfile = 'plPlugMapP-' + string(platenum,format='(i4.4)') + '.par'
+plugmappfile2 = 'plPlugMapP2-' + string(platenum,format='(i4.4)') + '.par'
 paramdir = concat_dir(getenv('IDLSPEC2D_DIR'), 'examples')
 blankplug = (yanny_readone(filepath('plPlugMapT-XXXX.par', $
                                     root_dir=paramdir), pp, $
@@ -209,7 +211,12 @@ xydata = replicate(create_struct('XFOCAL', 0L, 'YFOCAL', 0L), $
                    n_elements(stardata1))
 xydata.xfocal = xfocal
 xydata.yfocal = yfocal
-stardata = struct_addtags(stardata1, xydata)
+if(tag_indx(stardata1[0], 'XFOCAL') eq 0) then begin
+    stardata = struct_addtags(stardata1, xydata) 
+endif else begin
+    stardata=stardata1
+    struct_assign, xydata, stardata, /nozero
+endelse
 
 ;----------
 ; Set up info for guide fibers.
@@ -256,6 +263,7 @@ gfiber.yprefer = transpose(guideparam[5,*])
 ;   nothing closer than 68'' to center
 ;   nothing further than 1.49 deg from center
 indx = where(strtrim(stardata.holetype,2) EQ 'OBJECT' $
+             AND strtrim(stardata.objtype,2) NE 'SPECTROPHOTO_STD' $
              AND strtrim(stardata.objtype,2) NE 'SKY', ct)
 if(ct ne nsci) then $
   message, 'Not enough non-sky, non-std objects? That must be wrong.'
@@ -304,7 +312,7 @@ for iguide=0, nguide-1 do begin
     
     indx = where(used eq 0 and guide gt 0, ct)
     if (ct EQ 0) then $
-      message, 'No guide stars for guide #', iguide
+      splog, 'No guide stars for guide #'+strtrim(string(iguide),2)
     if (ct GT 0) then begin
         adiff = djs_diff_angle(gfiber[iguide].xprefer, $
                                gfiber[iguide].yprefer, $
@@ -328,92 +336,99 @@ iused=where(used)
 
 ;----------
 ; Add spectro-photo standards
-indx=where(strtrim(stardata.holetype,2) EQ 'OBJECT' AND $
-           strtrim(stardata.objtype,2) EQ 'SPECTROPHOTO_STD' AND $
-           used EQ 0, ct)
-if(ct eq 0) then $
-  message, 'No spectro-photo standards! Abort!'
-holeok=geometry_check(stardata[indx], racen, deccen)
-iok=where(holeok, nok)
-if(nok eq 0) then $
-  message, 'No spectro-photo standards stars on plate!'
-indx=indx[iok]
-collok=collision_check(stardata[iused], stardata[indx])
-iok=where(collok, nok)
-if(nok eq 0) then $
-  message, 'No spectro-photo standards do not collide!'
-indx=indx[iok]
-idec=random_decollide(stardata[indx].ra, stardata[indx].dec, seed=seed, $
-                      ndec=ndec)
-std=bytarr(n_elements(stardata))
-std[indx[idec]]=1
-
-for nsouth=-1, 1, 2 do begin ; First do South, then North half of plate
-    nadd = 0L
-    while (nadd LT nstd/2.) do begin
-        indx = where(std gt 0 AND used eq 0 AND $
-                     AND nsouth*stardata.yfocal GE 0, ct)
-        if (ct EQ 0) then $
-          message, 'Ran out of spectro-photo stars!'
-        
-        junk = max(priority[indx], ibest)
-        addplug = blankplug
-        struct_assign, stardata[indx[ibest]], addplug
-        addplug.holetype = 'OBJECT'
-        addplug.objtype = 'SPECTROPHOTO_STD'
-        addplug.sectarget = 32L
-        
-        allplug = design_append(allplug, addplug, nadd=nadd1)
-        nadd = nadd + nadd1
-        
-        used[indx[ibest]] = 1 ; Don't try to target again
-    endwhile
-endfor
+if(nstd gt 0) then begin
+    indx=where(strtrim(stardata.holetype,2) EQ 'OBJECT' AND $
+               strtrim(stardata.objtype,2) EQ 'SPECTROPHOTO_STD' AND $
+               used EQ 0, ct)
+    if(ct lt nstd) then $
+      message, 'Not enough spectro-photo standards! Abort'
+    holeok=geometry_check(stardata[indx], racen, deccen)
+    iok=where(holeok, nok)
+    if(nok eq 0) then $
+      message, 'No spectro-photo standards stars on plate!'
+    indx=indx[iok]
+    collok=collision_check(stardata[iused], stardata[indx])
+    iok=where(collok, nok)
+    if(nok eq 0) then $
+      message, 'No spectro-photo standards do not collide!'
+    indx=indx[iok]
+    idec=random_decollide(stardata[indx].ra, stardata[indx].dec, seed=seed, $
+                          ndec=ndec)
+    std=bytarr(n_elements(stardata))
+    std[indx[idec]]=1
+    
+    for nsouth=-1, 1, 2 do begin ; First do South, then North half of plate
+        nadd = 0L
+        while (nadd LT nstd/2.) do begin
+            indx = where(std gt 0 AND used eq 0 AND $
+                         nsouth*stardata.yfocal GE 0, ct)
+            if (ct EQ 0) then $
+              message, 'Ran out of spectro-photo stars!'
+            
+            ibest=(shuffle_indx(ct, num_sub=1))[0]
+            addplug = blankplug
+            struct_assign, stardata[indx[ibest]], addplug
+            addplug.holetype = 'OBJECT'
+            addplug.objtype = 'SPECTROPHOTO_STD'
+            addplug.sectarget = 32L
+            
+            allplug = design_append(allplug, addplug, nadd=nadd1)
+            nadd = nadd + nadd1
+            
+            used[indx[ibest]] = 1 ; Don't try to target again
+        endwhile
+    endfor
+endif
 iused=where(used)
 
 ;----------
 ; Add sky fibers
-indx=where(strtrim(stardata.holetype,2) EQ 'OBJECT' AND $
-           strtrim(stardata.objtype,2) EQ 'SKY' AND $
-           used EQ 0, ct)
-if(ct eq 0) then $
-  message, 'No sky! Abort!'
-holeok=geometry_check(stardata[indx], racen, deccen)
-iok=where(holeok, nok)
-if(nok eq 0) then $
-  message, 'No sky on plate!'
-indx=indx[iok]
-collok=collision_check(stardata[iused], stardata[indx])
-iok=where(collok, nok)
-if(nok eq 0) then $
-  message, 'No sky do not collide!'
-indx=indx[iok]
-idec=random_decollide(stardata[indx].ra, stardata[indx].dec, seed=seed, $
-                      ndec=ndec)
-sky=bytarr(n_elements(stardata))
-sky[indx[idec]]=1
-
-while (n_elements(allplug) LT ntot) do begin
-    indx = where(sky gt 0 and used eq 0, ct)
-    if (ct EQ 0) then $
-      message, 'Ran out of sky targets!'
+if(nminsky gt 0) then begin
+    indx=where((strtrim(stardata.holetype,2) EQ 'COHERENT_SKY' OR $
+                (strtrim(stardata.holetype,2) EQ 'OBJECT' AND $
+                 strtrim(stardata.objtype,2) EQ 'SKY')) AND $
+               used EQ 0, ct)
+    if(ct lt nminsky) then $
+      message, 'Not enough sky! Abort!'
+    holeok=geometry_check(stardata[indx], racen, deccen)
+    iok=where(holeok, nok)
+    if(nok eq 0) then $
+      message, 'No sky on plate!'
+    indx=indx[iok]
+    collok=collision_check(stardata[iused], stardata[indx])
+    iok=where(collok, nok)
+    if(nok eq 0) then $
+      message, 'No sky do not collide!'
+    indx=indx[iok]
+    idec=random_decollide(stardata[indx].ra, stardata[indx].dec, seed=seed, $
+                          ndec=ndec)
+    sky=bytarr(n_elements(stardata))
+    sky[indx[idec]]=1
     
-    junk = max(priority[indx], ibest)
-    addplug = blankplug
-    struct_assign, stardata[indx[ibest]], addplug
-    addplug.holetype = 'COHERENT_SKY'
-    addplug.objtype = 'NA'
-    addplug.sectarget = 16L
+    while (n_elements(allplug) LT ntot) do begin
+        indx = where(sky gt 0 and used eq 0, ct)
+        if (ct EQ 0) then $
+          message, 'Ran out of sky targets!'
+        
+        ibest=(shuffle_indx(ct, num_sub=1))[0]
+        addplug = blankplug
+        struct_assign, stardata[indx[ibest]], addplug
+        addplug.holetype = 'OBJECT'
+        addplug.objtype = 'SKY'
+        addplug.sectarget = 16L
+        
+        allplug = design_append(allplug, addplug)
+        
+        used[indx[ibest]] = 1   ; Don't try to target again
+    endwhile
+endif
+iused=where(used, nused)
     
-    allplug = design_append(allplug, addplug)
-    
-    used[indx[ibest]] = 1       ; Don't try to target again
-endwhile
-
 ;----------
 ; Write the plPlugMapT file
 outhdr = ['completeTileVersion   v1_0', $
           'tileId ' + string(tilenum), $
+          'LST ' + string(lst), $
           'raCen ' + string(racen), $
           'decCen ' + string(deccen) ]
 
@@ -423,6 +438,15 @@ allplug.spectrographid = -999L ; These values will be computed by PLATE
 allplug.fiberid = -999L       ; These values will be computed by PLATE
 allplug.throughput = 1L       ; These values will be computed by PLATE
 yanny_write, plugmaptfile, ptr_new(allplug), hdr=outhdr, $
+  enums=plugenum, structs=plugstruct
+
+radec_to_xyfocal, allplug.ra, allplug.dec, xfocal, yfocal, racen=racen, $
+  deccen=deccen, airtemp=airtemp, lst=lst
+allplug.xfocal = xfocal
+allplug.yfocal = yfocal
+yanny_write, plugmappfile, ptr_new(allplug), hdr=outhdr, $
+  enums=plugenum, structs=plugstruct
+yanny_write, plugmappfile2, ptr_new(allplug), hdr=outhdr, $
   enums=plugenum, structs=plugstruct
 
 ;---------------------------------------------------------------------------
@@ -474,16 +498,13 @@ yanny_write, 'plObs.par', ptr_new(plobs), hdr=plhdr, structs=plstructs
 
 print
 print, 'In the "plate" product run the following commands:"'
-print, '   makePlates'
-print, '   fiberPlates -skipBrightCheck'
 print, '   makeFanuc'
 print, '   makeDrillPos'
 print, '   use_cs3'
 print, '   makePlots -skipBrightCheck'
 print
 ;   setupplate = 'setup plate'
-setupplate = 'setup -r /u/schlegel/plate plate' ; ???
-spawn, setupplate +'; echo "makePlates" | plate'
+setupplate = 'setup -r /home/users/mb144/plate plate' ; ???
 spawn, setupplate +'; echo "fiberPlates -skipBrightCheck" | plate'
 spawn, setupplate +'; echo "makeFanuc" | plate'
 spawn, setupplate +'; echo "makeDrillPos" | plate'

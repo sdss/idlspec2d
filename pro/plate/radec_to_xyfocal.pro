@@ -45,34 +45,58 @@ endif else begin
 endelse
 
 ;; convert to focal coordinates
-;;radec_to_munu, ra_refrac, dec_refrac, mu, nu, node=racen-90.D,
-;;incl=deccen
-dradeg = 180.0d0/!dpi
-dtheta = djs_diff_angle(ra_refrac, dec_refrac, racen, deccen)
-cosdtheta = cos(dtheta/dradeg)
-fac = dtheta/tan(dtheta/dradeg)
-r1 = ra_refrac/dradeg
-d1 = dec_refrac/dradeg
-d0 = deccen/dradeg
-r0 = racen/dradeg
-xsky = cos(d1) * sin(r1-r0)/cosdtheta * fac
-ysky = (cos(d0)*sin(d1) - sin(d0)*cos(d1)*cos(r1-r0))/cosdtheta * fac
-xfocal = xsky*platescale
-yfocal = ysky*platescale
+;radec_to_munu, ra_refrac, dec_refrac, mu, nu, node=racen-90., $
+;incl=deccen
+;xfocal = platescale * (mu - racen)
+;yfocal = platescale * (nu )
+xx= -sin(ra_refrac*!DPI/180.) * sin((90.-dec_refrac)*!DPI/180.)
+yy= -cos(ra_refrac*!DPI/180.) * sin((90.-dec_refrac)*!DPI/180.)
+zz= cos((90.-dec_refrac)*!DPI/180.)
+xi= -xx*cos(racen*!DPI/180.) + yy*sin(racen*!DPI/180.)
+yi= -yy*cos(racen*!DPI/180.) - xx*sin(racen*!DPI/180.)
+zi= zz
+xl= xi
+yl= yi*sin((90.-deccen)*!DPI/180.) + zi*cos((90.-deccen)*!DPI/180.)
+zl= zi*sin((90.-deccen)*!DPI/180.) - yi*cos((90.-deccen)*!DPI/180.)
+rfocal=asin(sqrt(xl^2+zl^2))*180/!DPI*platescale
+posang=atan(-xl, zl)
 
-;; apply radial distortions
 if(NOT keyword_set(nodistort)) then begin
-    rfocal= double(sqrt(xfocal^2+yfocal^2))
     correction=replicate(rcoeffs[0], n_elements(rfocal))
     for i=1L, n_elements(rcoeffs)-1L do begin
         correction=correction+rcoeffs[i]*((double(rfocal))^(double(i)))
     endfor
-    rnew= rfocal+correction
-    rscale=rnew/rfocal
-    
-    xfocal=xfocal*(correction/rfocal+1.D)
-    yfocal=yfocal*(correction/rfocal+1.D)
+    rfocal= rfocal+correction
 endif
+
+xfocal= -rfocal*sin(posang)
+yfocal= rfocal*cos(posang)
+
+
+;;dradeg = 180.0d0/!dpi
+;;dtheta = djs_diff_angle(ra_refrac, dec_refrac, racen, deccen)
+;;sra=2.*(float((ra_refrac-racen) gt 0)-0.5)
+;;dra = djs_diff_angle(ra_refrac, replicate(deccen, n_elements(dec_refrac)), $
+;;                     racen, deccen)*sra
+;;sdec=2.*(float((dec_refrac-deccen) gt 0)-0.5)
+;;ddec = djs_diff_angle(replicate(racen, n_elements(ra_refrac)), dec_refrac, $
+;;                      racen, deccen)*sdec
+;;dr= tan(dtheta/dradeg)
+;;xsky= dtheta/dradeg*dra/dr
+;;ysky= ddec
+;;xfocal = xsky*platescale
+;;yfocal = ysky*platescale
+
+;cosdtheta = cos(dtheta/dradeg)
+;fac = dtheta/tan(dtheta/dradeg)
+;r1 = ra_refrac/dradeg
+;d1 = dec_refrac/dradeg
+;d0 = (deccen)/dradeg
+;r0 = racen/dradeg
+;xsky = cos(d1) * sin(r1-r0)/cosdtheta * fac
+;ysky = (cos(d0)*sin(d1) - sin(d0)*cos(d1)*cos(r1-r0))/cosdtheta * fac 
+
+;; apply radial distortions
 
 return
 end
