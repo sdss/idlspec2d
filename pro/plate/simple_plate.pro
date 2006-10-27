@@ -13,7 +13,7 @@
 ;   stardata   - Structure with data for each star; must contain the
 ;                fields RA, DEC, MAG[5], HOLETYPE, OBJTYPE.
 ;                HOLETYPE should be either 'OBJECT' or 'GUIDE'.
-;                Special values of OBJTYPE are 'SKY' and 'SPECTROPHOTO_STD'.
+;                Special values of OBJTYPE are 'SKY', 'REDDEN_STD' and 'SPECTROPHOTO_STD'.
 ;                Other elements in the structure (such as PRIMTARGET,...)
 ;                will be copied into the output plug-map files.
 ;   racen      - RA center for tile
@@ -27,7 +27,7 @@
 ;   All objects will be put on the plate. It will not choose STDs or
 ;   SKY on its own, leaving those to makePlates. 
 ;
-;   If non-SKY and non-SPECTROPHOTO_STD objects collide with one
+;   If non-SKY and non-SPECTROPHOTO/REDDEN_STD objects collide with one
 ;   another at all (are < 55'' apart) this routine will halt and
 ;   report an error.
 ;
@@ -176,6 +176,13 @@ if (n_elements(lst) eq 0) then lst = racen
 ntot = 640L                     ; Number of fibers
 used=bytarr(n_elements(stardata1))
 
+;------- 
+; The fiberPlates code wants sky fibers to be called COHERENT_SKY/NA,
+; which it then renames to OBJECT/SKY.
+icrap = where(strmatch(stardata1.objtype,'SKY*'))
+stardata1[icrap].holetype = 'COHERENT_SKY'
+stardata1[icrap].objtype = 'NA'
+
 ;----------
 ; Set up outputs
 plugmaptfile = 'plPlugMapT-' + string(tilenum,format='(i4.4)') + '.par'
@@ -210,7 +217,8 @@ endelse
 ;   nothing further than 1.49 deg from center
 indx = where(strtrim(stardata.holetype,2) EQ 'OBJECT' $
              AND strtrim(stardata.objtype,2) NE 'SPECTROPHOTO_STD' $
-             AND strtrim(stardata.objtype,2) NE 'SKY', ct)
+             AND strtrim(stardata.objtype,2) NE 'SKY' $
+             AND strtrim(stardata.objtype,2) NE 'REDDEN_STD', ct)
 if(ct eq 0) then $
   message, 'No non-sky, non-std objects? That must be wrong.'
 ;;if(ct ne nsci) then $
@@ -273,7 +281,8 @@ iused=where(used)
 ;----------
 ; Add spectro-photo standards
 indx=where(strtrim(stardata.holetype,2) EQ 'OBJECT' AND $
-           strtrim(stardata.objtype,2) EQ 'SPECTROPHOTO_STD' AND $
+           (strtrim(stardata.objtype,2) EQ 'SPECTROPHOTO_STD' OR $
+           strtrim(stardata.objtype,2) EQ 'REDDEN_STD') AND $
            used EQ 0, ct)
 ;;if(ct lt nstd) then $
   ;;message, 'Not enough spectro-photo standards! Abort'
@@ -412,7 +421,7 @@ print, '   use_cs3'
 print, '   makePlots -skipBrightCheck'
 print
 ;   setupplate = 'setup plate'
-setupplate = 'setup -r /home/users/mb144/plate plate' ; ???
+setupplate = 'setup -r ~/devel/plate/plate plate' ; ???
 spawn, setupplate +'; echo "makePlates " | plate'
 spawn, setupplate +'; echo "fiberPlates -skipBrightCheck" | plate'
 spawn, setupplate +'; echo "makeFanuc" | plate'

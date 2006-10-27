@@ -26,6 +26,7 @@
 ;     setenv,'PHOTO_REDUX=/u/dss/redux'
 ;     setenv,'PHOTO_RESOLVE=/u/dss/redux/resolve/full_02apr06'
 ;     setenv,'PHOTO_CALIB=/u/dss/redux/resolve/full_02apr06/calib/default0'
+;     setenv,'SPECTRO_DATA=/u/dss/spectro_v5'
 ;     design_sdss3test, 2634
 ;     design_sdss3test, 2638
 ;
@@ -220,7 +221,7 @@ pro design_sdss3test, platenum, nminsky=nminsky, nstd=nstd
    endcase
 
    ;----------
-   ; Read all objects from pfObjc files
+   ; Read all objects from fpObjc files
 
    objs = 0
    for irun=0, n_elements(runnum)-1 do begin
@@ -311,8 +312,8 @@ pro design_sdss3test, platenum, nminsky=nminsky, nstd=nstd
    fstarobj.objtype = 'SPECTROPHOTO_STD'
 ; Including the lines below would call some objects REDDEN_STD,
 ; but that may not be supported by the DESIGN_PLATE code.
-;   iredden = where(psfmag[1,ifstar] GT 17.25, nredden)
-;   if (nredden GT 0) then fstarobj[iredden].objtype = 'REDDEN_STD'
+   iredden = where(psfmag[1,ifstar] GT 17.25, nredden)
+   if (nredden GT 0) then fstarobj[iredden].objtype = 'REDDEN_STD'
    fstarobj.primtarget = 0
    fstarobj.sectarget = sdss_flagval('TTARGET',fstarobj.objtype)
    fstarobj.priority = $
@@ -441,9 +442,12 @@ pro design_sdss3test, platenum, nminsky=nminsky, nstd=nstd
    for iplate=0L, nplate-1L do begin
       splog, 'Generating plate number = ', platenum+iplate
       allobj = [skyobj, guideobj, fstarobj, sciobj[where(qassign[iplate,*])]]
-      design_plate, allobj, racen=racen, deccen=deccen, $
-       tilenum=tilenum+iplate, platenum=platenum+iplate, $
-       nstd=nstd, nminsky=nminsky
+;      design_plate, allobj, racen=racen, deccen=deccen, $
+;       tilenum=tilenum+iplate, platenum=platenum+iplate, $
+;       nstd=nstd, nminsky=nminsky
+      simple_plate, allobj, racen=racen, deccen=deccen, $
+       tilenum=tilenum+iplate, platenum=platenum+iplate
+   
    endfor
 
    return
