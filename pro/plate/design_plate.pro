@@ -13,7 +13,8 @@
 ;   stardata   - Structure with data for each star; must contain the
 ;                fields RA, DEC, MAG[5], HOLETYPE, OBJTYPE.
 ;                HOLETYPE should be either 'OBJECT' or 'GUIDE'.
-;                Special values of OBJTYPE are 'SKY' and 'SPECTROPHOTO_STD'.
+;                Special values of OBJTYPE are 'SKY', 'SPECTROPHOTO_STD',
+;                and 'REDDEN_STD'.
 ;                Other elements in the structure (such as PRIMTARGET,...)
 ;                will be copied into the output plug-map files.
 ;   racen      - RA center for tile
@@ -28,15 +29,15 @@
 ;                half of the plate, and the same number on the South.
 ;   nminsky    - Minimum number of sky fibers; default to 32.
 ; COMMENTS:
-;   All non-SKY and non-SPECTROPHOTO_STD objects will be put on the
-;   plate. This routine will choose which of the given SKY and
-;   SPECTROPHOTO_STD targets to put on the plate.
+;   All non-SKY and non-SPECTROPHOTO_STD/REDDEN_STD objects will be put on the
+;   plate. This routine will choose which of the given SKY,
+;   SPECTROPHOTO_STD, and REDDEN_STD targets to put on the plate.
 ;
-;   If non-SKY and non-SPECTROPHOTO_STD objects collide with one
+;   If non-SKY and non-SPECTROPHOTO_STD/REDDEN_STD objects collide with one
 ;   another at all (are < 55'' apart) this routine will halt and
 ;   report an error.
 ;
-;   If non-SKY and non-SPECTROPHOTO_STD objects are within 68 arcsec
+;   If non-SKY and non-SPECTROPHOTO_STD/REDDEN_STD objects are within 68 arcsec
 ;   of the center, or are outside 1.49 deg, this routine will halt and
 ;   report an error.
 ;
@@ -207,11 +208,11 @@ struct_assign, {junk:0}, blankplug
 ; Add the tags XFOCAL,YFOCAL to the structure of object data.
 approx_radec_to_xyfocal, stardata1.ra, stardata1.dec, xfocal, yfocal, $
   racen=racen, deccen=deccen, airtemp=airtemp
-xydata = replicate(create_struct('XFOCAL', 0L, 'YFOCAL', 0L), $
+xydata = replicate(create_struct('XFOCAL', 0D, 'YFOCAL', 0D), $
                    n_elements(stardata1))
 xydata.xfocal = xfocal
 xydata.yfocal = yfocal
-if(tag_indx(stardata1[0], 'XFOCAL') eq 0) then begin
+if(tag_indx(stardata1, 'XFOCAL') EQ -1) then begin
     stardata = struct_addtags(stardata1, xydata) 
 endif else begin
     stardata=stardata1
@@ -264,9 +265,10 @@ gfiber.yprefer = transpose(guideparam[5,*])
 ;   nothing further than 1.49 deg from center
 indx = where(strtrim(stardata.holetype,2) EQ 'OBJECT' $
              AND strtrim(stardata.objtype,2) NE 'SPECTROPHOTO_STD' $
+             AND strtrim(stardata.objtype,2) NE 'REDDEN_STD' $
              AND strtrim(stardata.objtype,2) NE 'SKY', ct)
 if(ct ne nsci) then $
-  message, 'Not enough non-sky, non-std objects? That must be wrong.'
+  message, 'Inconsistency in number of science targets'
 holeok=geometry_check(stardata[indx], racen, deccen)
 iok=where(holeok, nok)
 if(nok ne ct) then $
@@ -287,7 +289,8 @@ iused=where(used)
 
 ;----------
 ; Add guide fibers
-indx=where(strtrim(stardata.holetype,2) EQ 'GUIDE', ct)
+qguide = strtrim(stardata.holetype,2) EQ 'GUIDE'
+indx=where(qguide, ct)
 if(ct eq 0) then $
   message, 'No guide fibers! Abort!'
 holeok=geometry_check(stardata[indx], racen, deccen, /guide)
@@ -311,7 +314,7 @@ for iguide=0, nguide-1 do begin
     
     print, 'Assigning guide fiber number ', iguide+1
     
-    indx = where(used eq 0 and guide gt 0, ct)
+    indx = where(used eq 0 and qguide gt 0, ct)
     if (ct EQ 0) then $
       splog, 'No guide stars for guide #'+strtrim(string(iguide),2)
     if (ct GT 0) then begin
@@ -324,12 +327,50 @@ for iguide=0, nguide-1 do begin
         
         addplug = blankplug
         struct_assign, stardata[indx[ibest]], addplug
+        struct_assign, stardata[indx[ibest]], addplug
         addplug.holetype = 'GUIDE'
         addplug.objtype = 'NA'
         addplug.sectarget = 64L
-        
-        addplug.throughput = 150994944
+        addplug.fiberid = iguide+1
+        addplug.throughput = 9999
         allplug = design_append(allplug, addplug, nadd=nadd1)
+
+        ; Now add the alignment hole for this guide fiber
+        DRADEG = 180.d0/!dpi
+        twist_coeff = 0.46
+        align_hole_dist = 2.54
+        if (addplug.yfocal GT 0) then $
+         thisang = 90.d0 + twist_coeff * addplug.yfocal $
+        else $
+         thisang = -90.d0 - twist_coeff * addplug.yfocal
+        xfocal = addplug.xfocal + align_hole_dist * cos(thisang/DRADEG)
+        yfocal = addplug.yfocal + align_hole_dist * sin(thisang/DRADEG)
+        addplug = blankplug
+        addplug.holetype = 'ALIGNMENT'
+        addplug.objtype = 'NA'
+        addplug.xfocal = xfocal
+        addplug.yfocal = yfocal
+        addplug.throughput = -9999
+        addplug.fiberid = iguide+1
+        allplug = design_append(allplug, addplug, nadd=nadd1)
+
+         ; Now add the alignment hole for this guide fiber
+         DRADEG = 180.d0/!dpi
+         twist_coeff = 0.46
+         align_hole_dist = 2.54
+         if (yfocal GT 0) then $
+          thisang = 90.d0 + twist_coeff * yfocal $
+         else $
+          thisang = -90.d0 - twist_coeff * yfocal
+         xfocal = addplug.xfocal + align_hole_dist * cos(thisang/DRADEG)
+         yfocal = addplug.yfocal + align_hole_dist * sin(thisang/DRADEG)
+         addplug = blankplug
+         addplug.holetype = 'ALIGNMENT'
+         addplug.objtype = 'NA'
+         addplug.xfocal = xfocal
+         addplug.yfocal = yfocal
+         addplug.throughput = -9999
+         addplug.fiberid = iguide+1
         
         used[indx[ibest]] = 1   ; Don't try to target again
     endif
@@ -338,9 +379,11 @@ iused=where(used)
 
 ;----------
 ; Add spectro-photo standards
+; We want to use the priority, and select both SPECTROPHOTO and REDDEN_STD???
 if(nstd gt 0) then begin
     indx=where(strtrim(stardata.holetype,2) EQ 'OBJECT' AND $
-               strtrim(stardata.objtype,2) EQ 'SPECTROPHOTO_STD' AND $
+               (strtrim(stardata.objtype,2) EQ 'SPECTROPHOTO_STD' $
+                OR strtrim(stardata.objtype,2) EQ 'REDDEN_STD') AND $
                used EQ 0, ct)
     if(ct lt nstd) then $
       message, 'Not enough spectro-photo standards! Abort'
@@ -373,11 +416,10 @@ if(nstd gt 0) then begin
             addplug.holetype = 'OBJECT'
             addplug.objtype = 'SPECTROPHOTO_STD'
             addplug.sectarget = 32L
-            
-            addplug.throughput = 11207959552
+            addplug.throughput = 9999
             allplug = design_append(allplug, addplug, nadd=nadd1)
             nadd = nadd + nadd1
-            
+
             used[indx[ibest]] = 1 ; Don't try to target again
         endwhile
     endfor
@@ -499,9 +541,9 @@ print, '   use_cs3'
 print, '   makePlots -skipBrightCheck'
 print
 ;   setupplate = 'setup plate'
-setupplate = 'setup -r /home/users/mb144/plate plate' ; ???
-spawn, setupplate +'; echo "makePlates " | plate'
-spawn, setupplate +'; echo "fiberPlates -skipBrightCheck" | plate'
+setupplate = 'setup  plate' ; ???
+;spawn, setupplate +'; echo "makePlates " | plate'
+;spawn, setupplate +'; echo "fiberPlates -skipBrightCheck" | plate'
 spawn, setupplate +'; echo "makeFanuc" | plate'
 spawn, setupplate +'; echo "makeDrillPos" | plate'
 spawn, setupplate +'; echo "use_cs3" | plate'
