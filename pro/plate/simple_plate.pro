@@ -404,6 +404,8 @@ yanny_write, 'plObs.par', ptr_new(plobs), hdr=plhdr, structs=plstructs
 
 print
 print, 'In the "plate" product run the following commands:"'
+print, '   makePlates'
+print, '   fiberPlate -skipBrightCheck'
 print, '   makeFanuc'
 print, '   makeDrillPos'
 print, '   use_cs3'
