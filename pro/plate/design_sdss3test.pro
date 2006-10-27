@@ -6,12 +6,14 @@
 ;   Design test plates for SDSS-3
 ;
 ; CALLING SEQUENCE:
-;   design_sdss3test, platenum
+;   design_sdss3test, platenum, [ nminsky=, nstd= ]
 ;
 ; INPUTS:
 ;   platenum   - Plate number
 ;
 ; OPTIONAL INPUTS:
+;   nminsky    - Minimum number of sky fibers per plate; default to 64
+;   nstd       - Number of F star standards per plate; default to 16
 ;
 ; OUTPUTS:
 ;
@@ -20,6 +22,12 @@
 ; COMMENTS:
 ;
 ; EXAMPLES:
+;   Design our test plates for the Oct 2006 drill run at Princeton:
+;     setenv,'PHOTO_REDUX=/u/dss/redux'
+;     setenv,'PHOTO_RESOLVE=/u/dss/redux/resolve/full_02apr06'
+;     setenv,'PHOTO_CALIB=/u/dss/redux/resolve/full_02apr06/calib/default0'
+;     design_sdss3test, 2634
+;     design_sdss3test, 2638
 ;
 ; BUGS:
 ;
@@ -31,7 +39,7 @@
 ;   design_struct()
 ;
 ; REVISION HISTORY:
-;   29-Oct-2006  Written by D. Schlegel, LBL
+;   29-Oct-2006  Written by D. Schlegel and N. Padmanabhan, LBL
 ;-
 ;------------------------------------------------------------------------------
 function design_struct, num
@@ -49,6 +57,14 @@ function design_struct, num
    if (keyword_set(num)) then result = replicate(result, num)
 
    return, result
+end
+;------------------------------------------------------------------------------
+function design_decollide, ra, dec, mindist
+
+   if (NOT keyword_set(mindist)) then mindist = 55./3600
+   ingroup = spheregroup(ra, dec, mindist, firstgroup=firstgroup)
+
+   return, firstgroup
 end
 ;------------------------------------------------------------------------------
 function lrg_dperp, modelmag
@@ -176,21 +192,24 @@ function design_color_prioritize, colors
    return, priority
 end
 ;------------------------------------------------------------------------------
-pro design_sdss3test, platenum
+pro design_sdss3test, platenum, nminsky=nminsky, nstd=nstd
+
+   if (NOT keyword_set(nminsky)) then nminsky = 64
+   if (NOT keyword_set(nstd)) then nstd = 16
 
    case platenum of
    2634: begin ; Centered at plate 406
       ; Note there is a bright star near ra=35.49, dec=0.40
+      tilenum = 9549
       racen = 35.88296
       deccen = 0.1250122
-      tilenum = 9549
       runnum = [4263, 4874]
       rerun = [137, 137]
       end
-   2637: begin ; Centered at plate 416
+   2638: begin ; Centered at plate 416
+      tilenum = 9553
       racen =  55.49162
       deccen = 0.01375204
-      tilenum = 9550
       runnum = [4136, 4145, 4874]
       rerun = [137, 137, 137]
       end
@@ -213,7 +232,7 @@ pro design_sdss3test, platenum
           LT 1.49, ct)
          if (ct GT 0) then begin
             obj1 = sdss_readobj(runnum[irun], camcol, fields[indx], $
-             rerun=rerun[irun])
+             rerun=rerun[irun], /silent)
             if (keyword_set(obj1)) then $
              objs = keyword_set(objs) ? [objs,obj1] : obj1
          endif
@@ -290,8 +309,10 @@ pro design_sdss3test, platenum
    fstarobj.mag = fibermag[*,ifstar]
    fstarobj.holetype = 'OBJECT'
    fstarobj.objtype = 'SPECTROPHOTO_STD'
-   iredden = where(psfmag[1,ifstar] GT 17.25, nredden)
-   if (nredden GT 0) then fstarobj[iredden].objtype = 'REDDEN_STD'
+; Including the lines below would call some objects REDDEN_STD,
+; but that may not be supported by the DESIGN_PLATE code.
+;   iredden = where(psfmag[1,ifstar] GT 17.25, nredden)
+;   if (nredden GT 0) then fstarobj[iredden].objtype = 'REDDEN_STD'
    fstarobj.primtarget = 0
    fstarobj.sectarget = sdss_flagval('TTARGET',fstarobj.objtype)
    fstarobj.priority = $
@@ -329,10 +350,10 @@ pro design_sdss3test, platenum
 ;soplot, var_ugcolor[i2], var_grcolor[i2], ps=3, color='red'
 
    ;----------
-   ; Select the LRG targets
+   ; Select the LRG targets, and further trim to i(fiber) > 16
 
    ilist = lrg_select_target(objs, /all)
-   ilrg = where(ilist GT 0)
+   ilrg = where(ilist GT 0 AND fibermag[3,*] GT 16, nlrg)
    lrgobj = design_struct(nlrg)
    lrgobj.ra = objs[ilrg].ra
    lrgobj.dec = objs[ilrg].dec
@@ -343,18 +364,8 @@ pro design_sdss3test, platenum
    lrgobj.sectarget = 0
    lrgobj.priority = ilist[ilrg]
 
-;   modelmag = 22.5 - 2.5*alog10(objs.modelflux>0.01) - objs.extinction
-;   ugcolor = reform(modelmag[0,*] - modelmag[1,*])
-;   grcolor = reform(modelmag[1,*] - modelmag[2,*])
-;   ricolor = reform(modelmag[2,*] - modelmag[3,*])
-
    ;----------
-   ; Concatenate all of the objects
-
-   allobj = [skyobj, guideobj, fstarobj, qsoobj]
-
-   ;----------
-   ; Read the existing plates, and lower priorities for existing spectra ???
+   ; Read the existing plates, and lower priorities for existing spectra
 
    platelist, plist=plist
    adist = djs_diff_angle(plist.ra, plist.dec, racen, deccen)
@@ -363,23 +374,78 @@ pro design_sdss3test, platenum
     AND (strmatch(plist.platequality,'good*') $
      OR strmatch(plist.platequality,'marginal*')))
    plist = plist[ikeep]
-   readspec, plist.plate, mjd=plist.mjd, zans=zans, tsobj=tsobj
+   readspec, plist.plate, mjd=plist.mjd, zans=zans, tsobj=tsobj, /silent
    indx = where(djs_diff_angle(zans.plug_ra, zans.plug_dec, racen, deccen) $
     LT 1.49 AND zans.zwarning EQ 0)
    zans = zans[indx]
    tsobj = tsobj[indx]
 
-   spherematch, allobj.ra, allobj.dec, zans.plug_ra, zans.plug_dec, 1./3600, $
+   sciobj = [qsoobj, lrgobj]
+   nsci = n_elements(sciobj)
+   spherematch, sciobj.ra, sciobj.dec, zans.plug_ra, zans.plug_dec, 1./3600, $
     i1, i2, d12
+   qexist = bytarr(nsci)
+   if (i1[0] NE -1) then qexist[i1] = 1B
 
    ;----------
-   ; Create the plug-map file
+   ; Assign science targets to each plate
 
-stop
-; Need to split up the targets into multiple plates ???!!!
-   allobj = [skyobj, guideobj, fstarobj, qsoobj]
-   design_plate, allobj, racen=racen, deccen=deccen, tilenum=tilenum, $
-    platenum=platenum, nstd=16, nminsky=64
+   ; Decide how many plates we need based upon the number of targets
+   ; not yet observed...
 
+   maxtarget = 640 - nminsky - nstd ; Max science targets per plate
+   nplate = ceil((nsci - total(qexist)) / float(maxtarget))
+   splog, 'Number of required plates = ', nplate
+   qassign = lonarr(nplate,nsci) ; Set to 1 wherever a target is assigned
+
+   ; Assign science targets one at a time, starting with those not yet observed
+   ; We loop over each object in a random order, then over each plate randomly
+   iseed = 123456
+   irandom = sort(randomu(iseed, nsci) + qexist)
+   for i=0L, nsci-1L do begin
+      porder = sort(randomu(iseed+i, nplate))
+      qadd = 0B
+      for j=0L, nplate-1L do begin
+         ; Try putting object number irandom[i] on plate porder[j]
+         if (total(qassign[porder[j],*]) LT maxtarget AND qadd EQ 0) then begin
+            indx = where(qassign[porder[j],*], ct)
+            if (ct EQ 0) then qadd = 1B $
+             else qadd = min(djs_diff_angle(sciobj[irandom[i]].ra, $
+              sciobj[irandom[i]].dec, sciobj[indx].ra, sciobj[indx].dec)) $
+               GT 55./3600
+            qassign[porder[j],irandom[i]] = qadd
+         endif
+      endfor
+   endfor
+
+   splog, 'Number of SKY fibers = ', nsky
+   splog, 'Number of GUIDE stars = ', nguide
+   splog, 'Number of F stars = ', nfstar
+   splog, 'Number of QSO targets = ', nqso
+   splog, 'Number of LRG targets = ', nlrg
+
+   splog, 'Number of objects targetted = ', $
+    long(total(total(qassign,1) NE 0))
+   splog, 'Number of objects not targetted = ', $
+    long(total(total(qassign,1) EQ 0))
+   splog, 'Number of unobserved objects not targetted = ', $
+    long(total(qexist EQ 0 AND total(qassign,1) EQ 0))
+   splog, 'Number of observed objects not targetted = ', $
+    long(total(qexist EQ 1 AND total(qassign,1) EQ 0))
+   splog, 'Number of observed objects targetted = ', $
+    long(total(qexist EQ 1 AND total(qassign,1) EQ 1))
+
+   ;----------
+   ; Create the plug-map files
+
+   for iplate=0L, nplate-1L do begin
+      splog, 'Generating plate number = ', platenum+iplate
+      allobj = [skyobj, guideobj, fstarobj, sciobj[where(qassign[iplate,*])]]
+      design_plate, allobj, racen=racen, deccen=deccen, $
+       tilenum=tilenum+iplate, platenum=platenum+iplate, $
+       nstd=nstd, nminsky=nminsky
+   endfor
+
+   return
 end
 ;------------------------------------------------------------------------------
