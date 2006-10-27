@@ -24,6 +24,8 @@ lst=racen+(0.5*(hamin+hamax))
 ii=where(plugs.ra ne 0., nii)
 plugs=plugs[ii]
 
+;simple_plate, plugs, racen=racen, deccen=deccen, airtemp=airtemp
+
 design_plate, plugs, racen=racen, deccen=deccen, airtemp=airtemp, $
   nminsky=32, nstd=8
 

@@ -1,12 +1,12 @@
 ;+
 ; NAME:
-;   design_plate
+;   simple_plate
 ;
 ; PURPOSE:
 ;   Routine to design a single plate.
 ;
 ; CALLING SEQUENCE:
-;   design_plate, stardata, [ racen=, deccen=, tilenum=, platenum=, $
+;   simple_plate, stardata, [ racen=, deccen=, tilenum=, platenum=, $
 ;    airtemp=, nstd=, nminsky=, ngtarg=, /southern ]
 ;
 ; INPUTS:
@@ -23,25 +23,13 @@
 ;   tilenum    - Tile number; default to 1.
 ;   platenum   - Plate number; default to the same as TILENUMS.
 ;   airtemp    - Design temperature for APO; default to 5 deg C.
-;   nstd       - Number of spectro-photo standards; default to 16.
-;                This will be split with NSTD/2 standards on the North
-;                half of the plate, and the same number on the South.
-;   nminsky    - Minimum number of sky fibers; default to 32.
 ; COMMENTS:
-;   All non-SKY and non-SPECTROPHOTO_STD objects will be put on the
-;   plate. This routine will choose which of the given SKY and
-;   SPECTROPHOTO_STD targets to put on the plate.
+;   All objects will be put on the plate. It will not choose STDs or
+;   SKY on its own, leaving those to makePlates. 
 ;
 ;   If non-SKY and non-SPECTROPHOTO_STD objects collide with one
 ;   another at all (are < 55'' apart) this routine will halt and
 ;   report an error.
-;
-;   If non-SKY and non-SPECTROPHOTO_STD objects are within 68 arcsec
-;   of the center, or are outside 1.49 deg, this routine will halt and
-;   report an error.
-;
-;   We always assign then objects, then guide stars, then
-;   spectro-photo standards, then skies.  
 ;
 ;   This script generates the following files:
 ;     plObs.par
@@ -175,27 +163,23 @@ end
 
 ;------------------------------------------------------------------------------
 ; Main program
-pro design_plate, stardata1, tilenums=tilenum, platenums=platenum, $
-                  racen=racen, deccen=deccen, airtemp=airtemp, nstd=nstd, $
-                  nminsky=nminsky, lst=lst
+pro simple_plate, stardata1, tilenums=tilenum, platenums=platenum, $
+                  racen=racen, deccen=deccen, airtemp=airtemp, $
+                  lst=lst
 
 if (NOT keyword_set(tilenum)) then tilenum = 583
 if (NOT keyword_set(platenum)) then platenum = 820
 if (n_elements(racen) eq 0 OR n_elements(deccen) eq 0) then $
   message, 'RACEN,DECCEN must be specified'
 if (n_elements(airtemp) EQ 0) then airtemp = 5.0
-if (n_elements(nstd) eq 0) then nstd = 16L
-if (n_elements(nminsky) eq 0) then nminsky = 32L
 if (n_elements(lst) eq 0) then lst = racen
 ntot = 640L                     ; Number of fibers
-nsci = ntot-nstd-nminsky
 used=bytarr(n_elements(stardata1))
 
 ;----------
 ; Set up outputs
 plugmaptfile = 'plPlugMapT-' + string(tilenum,format='(i4.4)') + '.par'
 plugmappfile = 'plPlugMapP-' + string(platenum,format='(i4.4)') + '.par'
-plugmappfile2 = 'plPlugMapP2-' + string(platenum,format='(i4.4)') + '.par'
 paramdir = concat_dir(getenv('IDLSPEC2D_DIR'), 'examples')
 blankplug = (yanny_readone(filepath('plPlugMapT-XXXX.par', $
                                     root_dir=paramdir), pp, $
@@ -219,44 +203,6 @@ endif else begin
 endelse
 
 ;----------
-; Set up info for guide fibers.
-;
-; The following info is from the "plate" product in the
-; file "$PLATE_DIR/test/plParam.par".
-;   XREACH,YREACH = Center of the fiber reach [mm]
-;   RREACH = Radius of the fiber reach [mm]
-;   XPREFER,YREACH = Preferred position for the fiber [mm]
-; Note that the plate scale is approx 217.7358 mm/degree.
-; Moving +RA is +XFOCAL, +DEC is +YFOCAL.
-
-gfiber = create_struct( $
-                        'xreach'   , 0.0, $
-                        'yreach'   , 0.0, $
-                        'rreach'   , 0.0, $
-                        'xprefer'  , 0.d, $
-                        'yprefer'  , 0.d )
-nguide = 11
-gfiber = replicate(gfiber, nguide)
-   
-platescale = 217.7358           ; mm/degree
-guideparam = [[  1,  199.0,  -131.0,  165.0,  199.0,  -131.0 ], $
-              [  2,   93.0,  -263.0,  165.0,   93.0,  -263.0 ], $
-              [  3, -121.0,  -263.0,  165.0, -121.0,  -263.0 ], $
-              [  4, -227.0,  -131.0,  165.0, -227.0,  -131.0 ], $
-              [  5, -199.0,   131.0,  165.0, -199.0,   131.0 ], $
-              [  6,  -93.0,   263.0,  165.0,  -93.0,   263.0 ], $
-              [  7,  121.0,   263.0,  165.0,  121.0,   263.0 ], $
-              [  8,  227.0,   131.0,  165.0,  227.0,   131.0 ], $
-              [  9,   14.0,   131.0,  139.5,   14.0,    65.0 ], $
-              [ 10,  -14.0,  -131.0,  165.0,  -14.0,   -65.0 ], $
-              [ 11,   93.0,  -131.0,  139.5,   93.0,  -131.0 ] ]
-gfiber.xreach = transpose(guideparam[1,*])
-gfiber.yreach = transpose(guideparam[2,*])
-gfiber.rreach = transpose(guideparam[3,*])
-gfiber.xprefer = transpose(guideparam[4,*])
-gfiber.yprefer = transpose(guideparam[5,*])
-
-;----------
 ; Add objects that are neither sky nor stds
 ; First check that geometric conditions are met:
 ;   no 55'' collisions
@@ -265,8 +211,10 @@ gfiber.yprefer = transpose(guideparam[5,*])
 indx = where(strtrim(stardata.holetype,2) EQ 'OBJECT' $
              AND strtrim(stardata.objtype,2) NE 'SPECTROPHOTO_STD' $
              AND strtrim(stardata.objtype,2) NE 'SKY', ct)
-if(ct ne nsci) then $
-  message, 'Not enough non-sky, non-std objects? That must be wrong.'
+if(ct eq 0) then $
+  message, 'No non-sky, non-std objects? That must be wrong.'
+;;if(ct ne nsci) then $
+  ;;message, 'Not enough non-sky, non-std objects? That must be wrong.'
 holeok=geometry_check(stardata[indx], racen, deccen)
 iok=where(holeok, nok)
 if(nok ne ct) then $
@@ -279,7 +227,7 @@ for i=0L, ct-1L do begin
     addplug = blankplug
     struct_assign, stardata[indx[i]], addplug
     addplug.holetype = 'OBJECT'
-    addplug.throughput = 1L   
+    addplug.throughput = 1
     allplug = design_append(allplug, addplug, nadd=nadd1)
     used[indx[i]]=1
 endfor
@@ -290,98 +238,66 @@ iused=where(used)
 indx=where(strtrim(stardata.holetype,2) EQ 'GUIDE', ct)
 if(ct eq 0) then $
   message, 'No guide fibers! Abort!'
-holeok=geometry_check(stardata[indx], racen, deccen, /guide)
-iok=where(holeok, nok)
-if(nok eq 0) then $
-  message, 'No guide stars on plate!'
-indx=indx[iok]
-collok=collision_check(stardata[iused], stardata[indx], /guide)
-iok=where(collok, nok)
-if(nok eq 0) then $
-  message, 'No guide stars do not collide!'
-indx=indx[iok]
-;;idec=random_decollide(stardata[indx].ra, stardata[indx].dec, seed=seed, $
-;;                      ndec=ndec, /guide)
-;;guide=bytarr(n_elements(stardata))
-;;guide[indx[idec]]=1
-
-for iguide=0, nguide-1 do begin
-;----------
-; Assign the nearest available guide fiber(s) to this guide position.
-    
-    print, 'Assigning guide fiber number ', iguide+1
-    
-    indx = where(used eq 0 and guide gt 0, ct)
-    if (ct EQ 0) then $
-      splog, 'No guide stars for guide #'+strtrim(string(iguide),2)
-    if (ct GT 0) then begin
-        adiff = djs_diff_angle(gfiber[iguide].xprefer, $
-                               gfiber[iguide].yprefer, $
-                               stardata[indx].xfocal, $
-                               stardata[indx].yfocal)
-        
-        junk = min(adiff, ibest)
-        
+if(0) then begin
+    holeok=geometry_check(stardata[indx], racen, deccen, /guide)
+    iok=where(holeok, nok)
+    if(nok eq 0) then $
+      message, 'No guide stars on plate!'
+    indx=indx[iok]
+    collok=collision_check(stardata[iused], stardata[indx], /guide)
+    iok=where(collok, nok)
+    if(nok eq 0) then $
+      message, 'No guide stars do not collide!'
+    indx=indx[iok]
+    idec=random_decollide(stardata[indx].ra, stardata[indx].dec, seed=seed, $
+                          ndec=ndec, /guide)
+    guide=bytarr(n_elements(stardata))
+    guide[indx[idec]]=1
+    for i=0L, ndec-1L do begin
         addplug = blankplug
-        struct_assign, stardata[indx[ibest]], addplug
-        addplug.holetype = 'GUIDE'
-        addplug.objtype = 'NA'
-        addplug.sectarget = 64L
-        
+        struct_assign, stardata[indx[idec[i]]], addplug
         addplug.throughput = 150994944
         allplug = design_append(allplug, addplug, nadd=nadd1)
-        
-        used[indx[ibest]] = 1   ; Don't try to target again
-    endif
+        used[indx[idec[i]]]=1
+    endfor
+endif
+for i=0L, ct-1L do begin
+    addplug = blankplug
+    struct_assign, stardata[indx[i]], addplug
+    addplug.throughput = 150994944
+    allplug = design_append(allplug, addplug, nadd=nadd1)
+    used[i]=1
 endfor
 iused=where(used)
 
 ;----------
 ; Add spectro-photo standards
-if(nstd gt 0) then begin
-    indx=where(strtrim(stardata.holetype,2) EQ 'OBJECT' AND $
-               strtrim(stardata.objtype,2) EQ 'SPECTROPHOTO_STD' AND $
-               used EQ 0, ct)
-    if(ct lt nstd) then $
-      message, 'Not enough spectro-photo standards! Abort'
-    holeok=geometry_check(stardata[indx], racen, deccen)
-    iok=where(holeok, nok)
-    if(nok eq 0) then $
-      message, 'No spectro-photo standards stars on plate!'
-    indx=indx[iok]
-    collok=collision_check(stardata[iused], stardata[indx])
-    iok=where(collok, nok)
-    if(nok eq 0) then $
-      message, 'No spectro-photo standards do not collide!'
-    indx=indx[iok]
-    idec=random_decollide(stardata[indx].ra, stardata[indx].dec, seed=seed, $
-                          ndec=ndec)
-    std=bytarr(n_elements(stardata))
-    std[indx[idec]]=1
-    
-    for nsouth=-1, 1, 2 do begin ; First do South, then North half of plate
-        nadd = 0L
-        while (nadd LT nstd/2.) do begin
-            indx = where(std gt 0 AND used eq 0 AND $
-                         nsouth*stardata.yfocal GE 0, ct)
-            if (ct EQ 0) then $
-              message, 'Ran out of spectro-photo stars!'
-            
-            ibest=(shuffle_indx(ct, num_sub=1))[0]
-            addplug = blankplug
-            struct_assign, stardata[indx[ibest]], addplug
-            addplug.holetype = 'OBJECT'
-            addplug.objtype = 'SPECTROPHOTO_STD'
-            addplug.sectarget = 32L
-            
-            addplug.throughput = 11207959552
-            allplug = design_append(allplug, addplug, nadd=nadd1)
-            nadd = nadd + nadd1
-            
-            used[indx[ibest]] = 1 ; Don't try to target again
-        endwhile
-    endfor
-endif
+indx=where(strtrim(stardata.holetype,2) EQ 'OBJECT' AND $
+           strtrim(stardata.objtype,2) EQ 'SPECTROPHOTO_STD' AND $
+           used EQ 0, ct)
+;;if(ct lt nstd) then $
+  ;;message, 'Not enough spectro-photo standards! Abort'
+holeok=geometry_check(stardata[indx], racen, deccen)
+iok=where(holeok, nok)
+if(nok eq 0) then $
+  message, 'No spectro-photo standards stars on plate!'
+indx=indx[iok]
+collok=collision_check(stardata[iused], stardata[indx])
+iok=where(collok, nok)
+if(nok eq 0) then $
+  message, 'No spectro-photo standards do not collide!'
+indx=indx[iok]
+idec=random_decollide(stardata[indx].ra, stardata[indx].dec, seed=seed, $
+                      ndec=ndec)
+std=bytarr(n_elements(stardata))
+std[indx[idec]]=1
+for i=0L, ndec-1L do begin
+    addplug = blankplug
+    struct_assign, stardata[indx[idec[i]]], addplug
+    addplug.throughput = 11207959552
+    allplug = design_append(allplug, addplug, nadd=nadd1)
+    used[indx[idec[i]]]=1
+endfor
 iused=where(used)
 
 ;----------
@@ -390,8 +306,8 @@ indx=where((strtrim(stardata.holetype,2) EQ 'COHERENT_SKY' OR $
             (strtrim(stardata.holetype,2) EQ 'OBJECT' AND $
              strtrim(stardata.objtype,2) EQ 'SKY')) AND $
            used EQ 0, ct)
-if(ct lt nminsky) then $
-  message, 'Not enough sky! Abort!'
+;;if(ct lt nminsky) then $
+  ;;message, 'Not enough sky! Abort!'
 holeok=geometry_check(stardata[indx], racen, deccen)
 iok=where(holeok, nok)
 if(nok eq 0) then $
@@ -411,12 +327,9 @@ for i=0L, ndec-1L do begin
     struct_assign, stardata[indx[idec[i]]], addplug
     addplug.holetype = 'COHERENT_SKY'
     addplug.objtype = 'NA'
-    addplug.sectarget = 16L
-    
-    addplug.throughput = 1
-    allplug = design_append(allplug, addplug)
-    
-    used[indx[idec[i]]] = 1       ; Don't try to target again
+    addplug.throughput = 16777216
+    allplug = design_append(allplug, addplug, nadd=nadd1)
+    used[indx[idec[i]]]=1
 endfor
 iused=where(used, nused)
     
@@ -440,8 +353,6 @@ radec_to_xyfocal, allplug.ra, allplug.dec, xfocal, yfocal, racen=racen, $
 allplug.xfocal = xfocal
 allplug.yfocal = yfocal
 yanny_write, plugmappfile, ptr_new(allplug), hdr=outhdr, $
-  enums=plugenum, structs=plugstruct
-yanny_write, plugmappfile2, ptr_new(allplug), hdr=outhdr, $
   enums=plugenum, structs=plugstruct
 
 ;---------------------------------------------------------------------------
