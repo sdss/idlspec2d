@@ -142,10 +142,16 @@ end
 ; special --- MRB)
 function design_append, allplug, oneplug, nadd=nadd
 
+common com_simple, blah
+
 if (n_elements(oneplug) NE 1) then $
   message, 'ONEPLUG must contain only one element'
 if (NOT keyword_set(oneplug)) then oneplug = 0
 nadd = 0L
+
+if(NOT keyword_set(blah)) then blah=0L
+oneplug.objid=[1,1,1,1,blah]
+blah=blah+1L
 
 ;----------
 ; If this is the 1st object in the list, then we can always keep it
@@ -179,9 +185,11 @@ used=bytarr(n_elements(stardata1))
 ;------- 
 ; The fiberPlates code wants sky fibers to be called COHERENT_SKY/NA,
 ; which it then renames to OBJECT/SKY.
-icrap = where(strmatch(stardata1.objtype,'SKY*'))
-stardata1[icrap].holetype = 'COHERENT_SKY'
-stardata1[icrap].objtype = 'NA'
+icrap = where(strmatch(stardata1.objtype,'SKY*'), ncrap)
+if(ncrap gt 0) then begin
+    stardata1[icrap].holetype = 'COHERENT_SKY'
+    stardata1[icrap].objtype = 'NA'
+endif
 
 ;----------
 ; Set up outputs
@@ -421,7 +429,7 @@ print, '   use_cs3'
 print, '   makePlots -skipBrightCheck'
 print
 ;   setupplate = 'setup plate'
-setupplate = 'setup -r ~/devel/plate/plate plate' ; ???
+setupplate = 'setup -r ~/plate plate' ; ???
 spawn, setupplate +'; echo "makePlates " | plate'
 spawn, setupplate +'; echo "fiberPlates -skipBrightCheck" | plate'
 spawn, setupplate +'; echo "makeFanuc" | plate'
