@@ -47,7 +47,7 @@ endelse
 ;; convert to focal coordinates
 ;;radec_to_munu, ra_refrac, dec_refrac, mu, nu, node=racen-90.D,
 ;;incl=deccen
-dradeg = 180.0d0/4.0/atan(1.0d0)
+dradeg = 180.0d0/!dpi
 dtheta = djs_diff_angle(ra_refrac, dec_refrac, racen, deccen)
 cosdtheta = cos(dtheta/dradeg)
 fac = dtheta/tan(dtheta/dradeg)
@@ -57,9 +57,6 @@ d0 = deccen/dradeg
 r0 = racen/dradeg
 xsky = cos(d1) * sin(r1-r0)/cosdtheta * fac
 ysky = (cos(d0)*sin(d1) - sin(d0)*cos(d1)*cos(r1-r0))/cosdtheta * fac
-;recenter, ra_refrac, dec_refrac, racen, deccen, dlon, dlat
-;w = where(dlon GE 180.0, nw)
-;if (nw GT 0) then dlon[w] = dlon[w] - 360.0
 xfocal = xsky*platescale
 yfocal = ysky*platescale
 
