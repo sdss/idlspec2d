@@ -504,7 +504,7 @@ print, '   use_cs3'
 print, '   makePlots -skipBrightCheck'
 print
 ;   setupplate = 'setup plate'
-setupplate = 'setup -r /home/users/mb144/plate plate' ; ???
+;;;setupplate = 'setup -r /home/users/mb144/plate plate' ; ???
 spawn, setupplate +'; echo "fiberPlates -skipBrightCheck" | plate'
 spawn, setupplate +'; echo "makeFanuc" | plate'
 spawn, setupplate +'; echo "makeDrillPos" | plate'
