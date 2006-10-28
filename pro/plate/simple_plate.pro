@@ -109,6 +109,7 @@ function collision_check, holedata, newdata, guide=guide
 
 holesize=holesize(guide=guide)
 guidesize=holesize(/guide)
+normsize=holesize()
 
 ; find which new objects don't collide with old
 holeok=bytarr(n_elements(newdata))+1
@@ -126,11 +127,11 @@ endif
 ; first check new non-guide stars
 inotguide=where(strtrim(holedata.holetype,2) ne 'GUIDE', nnotguide)
 if(nnotguide gt 0) then begin
-    spherematch, holedata.ra, holedata.dec, $
-      newdata[inotguide].ra, newdata[inotguide].dec, $ 
-      0.5*(holesize+guidesize), m1, m2, d12
+    spherematch, holedata[inotguide].ra, holedata[inotguide].dec, $
+      newdata.ra, newdata.dec, $ 
+      0.5*(holesize+normsize), m1, m2, d12
     if(m2[0] gt -1) then $
-      holeok[inotguide[m2]]=0
+      holeok[m2]=0
 endif
 
 return, holeok
@@ -183,12 +184,11 @@ ntot = 640L                     ; Number of fibers
 used=bytarr(n_elements(stardata1))
 
 ;------- 
-; The fiberPlates code wants sky fibers to be called COHERENT_SKY/NA,
-; which it then renames to OBJECT/SKY.
-icrap = where(strmatch(stardata1.objtype,'SKY*'), ncrap)
+; The fiberPlates code counts REDDEN_STDs as regular objects
+; so just rename 'em to SPECTROPHOTO
+icrap = where(strmatch(stardata1.objtype,'REDDEN_STD'), ncrap)
 if(ncrap gt 0) then begin
-    stardata1[icrap].holetype = 'COHERENT_SKY'
-    stardata1[icrap].objtype = 'NA'
+    stardata1[icrap].objtype = 'SPECTROPHOTO_STD'
 endif
 
 ;----------
@@ -254,7 +254,7 @@ iused=where(used)
 indx=where(strtrim(stardata.holetype,2) EQ 'GUIDE', ct)
 if(ct eq 0) then $
   message, 'No guide fibers! Abort!'
-if(0) then begin
+if(1) then begin
     holeok=geometry_check(stardata[indx], racen, deccen, /guide)
     iok=where(holeok, nok)
     if(nok eq 0) then $
@@ -276,6 +276,7 @@ if(0) then begin
         allplug = design_append(allplug, addplug, nadd=nadd1)
         used[indx[idec[i]]]=1
     endfor
+    ct = n_elements(indx)
 endif
 for i=0L, ct-1L do begin
     addplug = blankplug
@@ -429,7 +430,7 @@ print, '   use_cs3'
 print, '   makePlots -skipBrightCheck'
 print
 ;   setupplate = 'setup plate'
-setupplate = 'setup -r ~/plate plate' ; ???
+setupplate = 'setup -r ~/devel/plate/plate plate' ; ???
 spawn, setupplate +'; echo "makePlates " | plate'
 spawn, setupplate +'; echo "fiberPlates -skipBrightCheck" | plate'
 spawn, setupplate +'; echo "makeFanuc" | plate'
