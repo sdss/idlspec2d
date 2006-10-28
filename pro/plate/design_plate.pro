@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   design_plate, stardata, [ racen=, deccen=, tilenum=, platenum=, $
-;    airtemp=, nstd=, nminsky=, ngtarg=, /southern ]
+;    airtemp=, nstd=, nminsky=, /southern ]
 ;
 ; INPUTS:
 ;   stardata   - Structure with data for each star; must contain the
@@ -28,6 +28,7 @@
 ;                This will be split with NSTD/2 standards on the North
 ;                half of the plate, and the same number on the South.
 ;   nminsky    - Minimum number of sky fibers; default to 32.
+;
 ; COMMENTS:
 ;   All non-SKY and non-SPECTROPHOTO_STD/REDDEN_STD objects will be put on the
 ;   plate. This routine will choose which of the given SKY,
@@ -47,21 +48,12 @@
 ;   This script generates the following files:
 ;     plObs.par
 ;     plPlan.par
-;     plPlugMapT-$TILE.par
 ;     plPlugMapP-$PLATE.par
 ;   The commands from the SDSS "plate" product generate the following files:
-;     makePlates - Generate plPlugMapP-$PLATE.par
-;     fiberPlates - Generate plOverlay-$PLATE.par, and **overwrite**
-;                   the file plPlugMapP-$PLATE.par
 ;     makeFanuc - Generate plFanuc-$PLATE.par
 ;     makeDrillPos - Generate plMeas-$PLATE.par, plDrillPos-$PLATE.par
 ;     use_cs3 - Generates no files.  Simply reports fiber collisions.
 ;     makePlots - Generate plOverlay-$PLATE.ps
-;
-;   When there is a problem, the "fiberPlates" script outputs error
-;   messages like:
-;     collision at 554 = {307 125 6 160 47} OBJECT with...
-;     collision at 565 = {307 125 2 168 4015} COHERENT_SKY with...
 ;
 ; EXAMPLES:
 ;
@@ -76,493 +68,430 @@
 ;   yanny_write
 ;
 ; INTERNAL SUPPORT ROUTINES:
-;   approx_radec_to_xyfocal
 ;   design_append()
 ;
 ; REVISION HISTORY:
 ;   14-Jan-2002  Written by D. Schlegel, Princeton
 ;-
 ;------------------------------------------------------------------------------
-; Approximately transform RA,DEC -> XFOCAL,YFOCAL.
-pro approx_radec_to_xyfocal, ra, dec, xfocal, yfocal, $
-                             racen=racen, deccen=deccen, airtemp=airtemp
+; Search for conflicts between an existing list of drill holes and one
+; more potential object.  Return the existing list with the new object
+; appended if there was no conflict.
 
-platescale = 217.7358           ; mm/degree
-
-radec_to_munu, ra, dec, mu, nu, node=racen-90, incl=deccen
-xfocal = platescale * (mu - racen)
-yfocal = platescale * nu
-
-return
-end
-;-------------------------------------------------------
-; Check geometrical conditions
-function geometry_check, data, racen, deccen, guide=guide
-
-platesize=1.49
-platecen=68./3600.
-
-holeok=bytarr(n_elements(data))
-
-; check for things in the plate and not too near the center
-spherematch, racen, deccen, data.ra, data.dec, $
-  platesize, m1, m2, d12, max=0
-if(m2[0] eq -1) then return, holeok
-holeok[m2]=1 
-iclose=where(d12 lt platecen, nclose)
-if(nclose gt 0) then $
-  holeok[m2[iclose]]=0
-
-return, holeok
-
-end
-;---------------------------------------------------------
-; return whether each new data collides with an old hole
-function collision_check, holedata, newdata, guide=guide
-
-holesize=holesize(guide=guide)
-guidesize=holesize(/guide)
-
-; find which new objects don't collide with old
-holeok=bytarr(n_elements(newdata))+1
-
-; first check old guide stars
-iguide=where(strtrim(holedata.holetype,2) eq 'GUIDE', nguide)
-if(nguide gt 0) then begin
-    spherematch, holedata[iguide].ra, holedata[iguide].dec, $
-      newdata.ra, newdata.dec, 0.5*(holesize+guidesize), $
-      m1, m2, d12
-    if(m2[0] gt -1) then $
-      holeok[m2]=0
-endif
-
-; first check new non-guide stars
-inotguide=where(strtrim(holedata.holetype,2) ne 'GUIDE', nnotguide)
-if(nnotguide gt 0) then begin
-    spherematch, holedata.ra, holedata.dec, $
-      newdata[inotguide].ra, newdata[inotguide].dec, $ 
-      0.5*(holesize+guidesize), m1, m2, d12
-    if(m2[0] gt -1) then $
-      holeok[inotguide[m2]]=0
-endif
-
-return, holeok
-
-end
-;------------------------------------------------------------------------------
-; Append to current list. (This used to check for collisions, etc; I
-; am keeping it as a separate function in case we need to do something
-; special --- MRB)
 function design_append, allplug, oneplug, nadd=nadd
 
-if (n_elements(oneplug) NE 1) then $
-  message, 'ONEPLUG must contain only one element'
-if (NOT keyword_set(oneplug)) then oneplug = 0
-nadd = 0L
+   if (n_elements(oneplug) NE 1) then $ 
+    message, 'ONEPLUG must contain only one element'
+   if (NOT keyword_set(oneplug)) then oneplug = 0
+   nadd = 0L
 
-;----------
-; If this is the 1st object in the list, then we can always keep it
-if (NOT keyword_set(allplug)) then begin
-    nadd = 1L
-    return, oneplug
-endif
+   platescale = 217.7358 ; mm/degree
 
-;----------
-; Or just append it
-nadd = 1L
-return, [allplug, oneplug]
+   ; Add more space around GUIDE fibers.
+   if (strmatch(oneplug.holetype, 'GUIDE*')) then morespace = 7.0 $ ; in mm 
+    else morespace = 0.
 
+   ;----------
+   ; If this is the 1st object in the list, then we can always keep it
+
+   if (NOT keyword_set(allplug)) then begin
+      nadd = 1L
+      return, oneplug
+   endif
+
+   ;----------
+   ; Discard objects within 68 arcsec of the center hole or more
+   ; then 1.49 deg from the plate center (pad to 75 arcsec and 1.485 deg).
+
+   thisrad = sqrt(oneplug.xfocal^2 + oneplug.yfocal^2)
+   if (thisrad LE platescale*75./3600.+morespace $ 
+    OR thisrad GE platescale*1.485-morespace) then return, allplug
+
+   ;----------
+   ; Discard objects within 55 arcsec of existing objects. (Pad to 70 arcsec.)
+   ; Do this based upon XFOCAL,YFOCAL positions. 
+   ; The closest two fibers can be is PLATESCALE * 55/3600(deg) = 3.32652 mm
+
+   if (keyword_set(allplug)) then begin
+      r2 = (allplug.xfocal - oneplug.xfocal)^2 $
+           + (allplug.yfocal - oneplug.yfocal)^2
+      mindist = min(sqrt(r2))
+      if (mindist LT platescale*70./3600.+morespace) then return, allplug
+   endif
+
+   ;----------
+   ; Discard objects within 7.0 mm of existing guide fibers.
+   ; (Pad this to 9 mm just to be extra careful, since the downstream PLATE
+   ; code is so stupid.)
+
+   if (keyword_set(allplug)) then begin
+      iguide = where(strtrim(allplug.holetype) EQ 'GUIDE', ct)
+      if (ct GT 0) then begin
+         r2 = (allplug[iguide].xfocal - oneplug.xfocal)^2 $
+              + (allplug[iguide].yfocal - oneplug.yfocal)^2
+         mindist = min(sqrt(r2))
+         if (mindist LT 9.0+morespace) then return, allplug
+      endif
+   endif
+
+   nadd = 1L
+   return, [allplug, oneplug]
 end
-
 ;------------------------------------------------------------------------------
-; Main program
 pro design_plate, stardata1, tilenums=tilenum, platenums=platenum, $
-                  racen=racen, deccen=deccen, airtemp=airtemp, nstd=nstd, $
-                  nminsky=nminsky, lst=lst
+ racen=racen, deccen=deccen, airtemp=airtemp, nstd=nstd, $
+ nminsky=nminsky, lst=lst
 
-if (NOT keyword_set(tilenum)) then tilenum = 583
-if (NOT keyword_set(platenum)) then platenum = 820
-if (n_elements(racen) eq 0 OR n_elements(deccen) eq 0) then $
-  message, 'RACEN,DECCEN must be specified'
-if (n_elements(airtemp) EQ 0) then airtemp = 5.0
-if (n_elements(nstd) eq 0) then nstd = 16L
-if (n_elements(nminsky) eq 0) then nminsky = 32L
-if (n_elements(lst) eq 0) then lst = racen
-ntot = 640L                     ; Number of fibers
-nsci = ntot-nstd-nminsky
-used=bytarr(n_elements(stardata1))
+   if (NOT keyword_set(tilenum)) then tilenum = 1L
+   if (NOT keyword_set(platenum)) then platenum = tilenum
+   if (n_elements(racen) EQ 0 OR n_elements(deccen) EQ 0) then $
+     message, 'RACEN,DECCEN must be specified'
+   if (n_elements(airtemp) EQ 0) then airtemp = 5.0
+   if (n_elements(nstd) eq 0) then nstd = 16L
+   if (n_elements(nminsky) eq 0) then nminsky = 32L
+   if (n_elements(lst) eq 0) then lst = racen
+   ntot = 640L                     ; Number of fibers
+   nsci = ntot - nstd - nminsky ; Max number of science targets to add
 
-;----------
-; Set up outputs
-plugmaptfile = 'plPlugMapT-' + string(tilenum,format='(i4.4)') + '.par'
-plugmappfile = 'plPlugMapP-' + string(platenum,format='(i4.4)') + '.par'
-plugmappfile2 = 'plPlugMapP2-' + string(platenum,format='(i4.4)') + '.par'
-paramdir = concat_dir(getenv('IDLSPEC2D_DIR'), 'examples')
-blankplug = (yanny_readone(filepath('plPlugMapT-XXXX.par', $
-                                    root_dir=paramdir), pp, $
-                           hdr=plughdr, enums=plugenum, $
-                           structs=plugstruct))[0]
-struct_assign, {junk:0}, blankplug
+   plugmappfile = 'plPlugMapP-' + string(platenum,format='(i4.4)') + '.par'
+   maxpriority = 2L^31 - 1 ; Maximum value; this is the value for GUIDE stars
+   paramdir = concat_dir(getenv('IDLSPEC2D_DIR'), 'examples')
 
-;----------
-; Add the tags XFOCAL,YFOCAL to the structure of object data.
-approx_radec_to_xyfocal, stardata1.ra, stardata1.dec, xfocal, yfocal, $
-  racen=racen, deccen=deccen, airtemp=airtemp
-xydata = replicate(create_struct('XFOCAL', 0D, 'YFOCAL', 0D), $
-                   n_elements(stardata1))
-xydata.xfocal = xfocal
-xydata.yfocal = yfocal
-if(tag_indx(stardata1, 'XFOCAL') EQ -1) then begin
-    stardata = struct_addtags(stardata1, xydata) 
-endif else begin
-    stardata=stardata1
-    struct_assign, xydata, stardata, /nozero
-endelse
+   ;----------
+   ; If the priorities of targets are not specified in the input structure,
+   ; then assign random priorities between 1 and 100.
 
-;----------
-; Set up info for guide fibers.
-;
-; The following info is from the "plate" product in the
-; file "$PLATE_DIR/test/plParam.par".
-;   XREACH,YREACH = Center of the fiber reach [mm]
-;   RREACH = Radius of the fiber reach [mm]
-;   XPREFER,YREACH = Preferred position for the fiber [mm]
-; Note that the plate scale is approx 217.7358 mm/degree.
-; Moving +RA is +XFOCAL, +DEC is +YFOCAL.
+   if ((where(tag_names(stardata1) EQ 'PRIORITY'))[0] NE -1) then $
+    priority = (stardata1.priority > 1L) < (maxpriority-2) $
+   else $
+    priority = long(randomu(24680, n_elements(stardata1)) * 100) + 1
 
-gfiber = create_struct( $
-                        'xreach'   , 0.0, $
-                        'yreach'   , 0.0, $
-                        'rreach'   , 0.0, $
-                        'xprefer'  , 0.d, $
-                        'yprefer'  , 0.d )
-nguide = 11
-gfiber = replicate(gfiber, nguide)
+   ;----------
+   ; Add the tags XFOCAL,YFOCAL to the structure of object data.
    
-platescale = 217.7358           ; mm/degree
-guideparam = [[  1,  199.0,  -131.0,  165.0,  199.0,  -131.0 ], $
-              [  2,   93.0,  -263.0,  165.0,   93.0,  -263.0 ], $
-              [  3, -121.0,  -263.0,  165.0, -121.0,  -263.0 ], $
-              [  4, -227.0,  -131.0,  165.0, -227.0,  -131.0 ], $
-              [  5, -199.0,   131.0,  165.0, -199.0,   131.0 ], $
-              [  6,  -93.0,   263.0,  165.0,  -93.0,   263.0 ], $
-              [  7,  121.0,   263.0,  165.0,  121.0,   263.0 ], $
-              [  8,  227.0,   131.0,  165.0,  227.0,   131.0 ], $
-              [  9,   14.0,   131.0,  139.5,   14.0,    65.0 ], $
-              [ 10,  -14.0,  -131.0,  165.0,  -14.0,   -65.0 ], $
-              [ 11,   93.0,  -131.0,  139.5,   93.0,  -131.0 ] ]
-gfiber.xreach = transpose(guideparam[1,*])
-gfiber.yreach = transpose(guideparam[2,*])
-gfiber.rreach = transpose(guideparam[3,*])
-gfiber.xprefer = transpose(guideparam[4,*])
-gfiber.yprefer = transpose(guideparam[5,*])
+   radec_to_xyfocal, stardata1.ra, stardata1.dec, xfocal, yfocal, $
+    racen=racen, deccen=deccen, airtemp=airtemp
+   xydata = replicate(create_struct('XFOCAL', 0L, 'YFOCAL', 0L), $
+    n_elements(stardata1))
+   xydata.xfocal = xfocal
+   xydata.yfocal = yfocal
+   if(tag_indx(stardata1, 'XFOCAL') EQ -1) then begin
+      stardata = struct_addtags(stardata1, xydata) 
+   endif else begin
+      stardata=stardata1
+      struct_assign, xydata, stardata, /nozero
+   endelse
 
-;----------
-; Add objects that are neither sky nor stds
-; First check that geometric conditions are met:
-;   no 55'' collisions
-;   nothing closer than 68'' to center
-;   nothing further than 1.49 deg from center
-indx = where(strtrim(stardata.holetype,2) EQ 'OBJECT' $
-             AND strtrim(stardata.objtype,2) NE 'SPECTROPHOTO_STD' $
-             AND strtrim(stardata.objtype,2) NE 'REDDEN_STD' $
-             AND strtrim(stardata.objtype,2) NE 'SKY', ct)
-if(ct ne nsci) then $
-  message, 'Inconsistency in number of science targets'
-holeok=geometry_check(stardata[indx], racen, deccen)
-iok=where(holeok, nok)
-if(nok ne ct) then $
-  message, 'Some non-sky, non-std objects not on plate!'
-idec=random_decollide(stardata[indx].ra, stardata[indx].dec, seed=seed, $
-                      ndec=ndec)
-if(ndec ne ct) then $
-  message, 'Non-sky, non-std objects collide with one another!'
-for i=0L, ct-1L do begin
-    addplug = blankplug
-    struct_assign, stardata[indx[i]], addplug
-    addplug.holetype = 'OBJECT'
-    addplug.throughput = 1L   
-    allplug = design_append(allplug, addplug, nadd=nadd1)
-    used[indx[i]]=1
-endfor
-iused=where(used)
+   ;----------
+   ; Read a template plugmap structure
 
-;----------
-; Add guide fibers
-qguide = strtrim(stardata.holetype,2) EQ 'GUIDE'
-indx=where(qguide, ct)
-if(ct eq 0) then $
-  message, 'No guide fibers! Abort!'
-holeok=geometry_check(stardata[indx], racen, deccen, /guide)
-iok=where(holeok, nok)
-if(nok eq 0) then $
-  message, 'No guide stars on plate!'
-indx=indx[iok]
-collok=collision_check(stardata[iused], stardata[indx], /guide)
-iok=where(collok, nok)
-if(nok eq 0) then $
-  message, 'No guide stars do not collide!'
-indx=indx[iok]
-;;idec=random_decollide(stardata[indx].ra, stardata[indx].dec, seed=seed, $
-;;                      ndec=ndec, /guide)
-;;guide=bytarr(n_elements(stardata))
-;;guide[indx[idec]]=1
+   blankplug = (yanny_readone( $
+    filepath('plPlugMapT-XXXX.par', root_dir=paramdir), pp, $
+    hdr=plughdr, enums=plugenum, structs=plugstruct))[0]
+   struct_assign, {junk:0}, blankplug
 
-for iguide=0, nguide-1 do begin
-;----------
-; Assign the nearest available guide fiber(s) to this guide position.
-    
-    print, 'Assigning guide fiber number ', iguide+1
-    
-    indx = where(used eq 0 and qguide gt 0, ct)
-    if (ct EQ 0) then $
-      splog, 'No guide stars for guide #'+strtrim(string(iguide),2)
-    if (ct GT 0) then begin
-        adiff = djs_diff_angle(gfiber[iguide].xprefer, $
-                               gfiber[iguide].yprefer, $
-                               stardata[indx].xfocal, $
-                               stardata[indx].yfocal)
-        
-        junk = min(adiff, ibest)
-        
-        addplug = blankplug
-        struct_assign, stardata[indx[ibest]], addplug
-        struct_assign, stardata[indx[ibest]], addplug
-        addplug.holetype = 'GUIDE'
-        addplug.objtype = 'NA'
-        addplug.sectarget = 64L
-        addplug.fiberid = iguide+1
-        addplug.throughput = 9999
-        allplug = design_append(allplug, addplug, nadd=nadd1)
+   ;----------
+   ; Set up info for guide fibers.
+   ;
+   ; The following info is from the "plate" product in the
+   ; file "$PLATE_DIR/test/plParam.par".
+   ;   XREACH,YREACH = Center of the fiber reach [mm]
+   ;   RREACH = Radius of the fiber reach [mm]
+   ;   XPREFER,YREACH = Preferred position for the fiber [mm]
+   ; Note that the plate scale is approx 217.7358 mm/degree.
+   ; Moving +RA is +XFOCAL, +DEC is +YFOCAL.
 
-        ; Now add the alignment hole for this guide fiber
-        DRADEG = 180.d0/!dpi
-        twist_coeff = 0.46
-        align_hole_dist = 2.54
-        if (addplug.yfocal GT 0) then $
-         thisang = 90.d0 + twist_coeff * addplug.yfocal $
-        else $
-         thisang = -90.d0 - twist_coeff * addplug.yfocal
-        xfocal = addplug.xfocal + align_hole_dist * cos(thisang/DRADEG)
-        yfocal = addplug.yfocal + align_hole_dist * sin(thisang/DRADEG)
-        addplug = blankplug
-        addplug.holetype = 'ALIGNMENT'
-        addplug.objtype = 'NA'
-        addplug.xfocal = xfocal
-        addplug.yfocal = yfocal
-        addplug.throughput = -9999
-        addplug.fiberid = iguide+1
-        allplug = design_append(allplug, addplug, nadd=nadd1)
+   gfiber = create_struct( $
+    'xreach'   , 0.0, $
+    'yreach'   , 0.0, $
+    'rreach'   , 0.0, $
+    'xprefer'  , 0.d, $
+    'yprefer'  , 0.d )
+   nguide = 11
+   gfiber = replicate(gfiber, nguide)
 
-         ; Now add the alignment hole for this guide fiber
-         DRADEG = 180.d0/!dpi
-         twist_coeff = 0.46
-         align_hole_dist = 2.54
-         if (yfocal GT 0) then $
-          thisang = 90.d0 + twist_coeff * yfocal $
-         else $
-          thisang = -90.d0 - twist_coeff * yfocal
-         xfocal = addplug.xfocal + align_hole_dist * cos(thisang/DRADEG)
-         yfocal = addplug.yfocal + align_hole_dist * sin(thisang/DRADEG)
+   platescale = 217.7358 ; mm/degree
+   guideparam = [[  1,  199.0,  -131.0,  165.0,  199.0,  -131.0 ], $
+                 [  2,   93.0,  -263.0,  165.0,   93.0,  -263.0 ], $
+                 [  3, -121.0,  -263.0,  165.0, -121.0,  -263.0 ], $
+                 [  4, -227.0,  -131.0,  165.0, -227.0,  -131.0 ], $
+                 [  5, -199.0,   131.0,  165.0, -199.0,   131.0 ], $
+                 [  6,  -93.0,   263.0,  165.0,  -93.0,   263.0 ], $
+                 [  7,  121.0,   263.0,  165.0,  121.0,   263.0 ], $
+                 [  8,  227.0,   131.0,  165.0,  227.0,   131.0 ], $
+                 [  9,   14.0,   131.0,  139.5,   14.0,    65.0 ], $
+                 [ 10,  -14.0,  -131.0,  165.0,  -14.0,   -65.0 ], $
+                 [ 11,   93.0,  -131.0,  139.5,   93.0,  -131.0 ] ]
+   gfiber.xreach = transpose(guideparam[1,*])
+   gfiber.yreach = transpose(guideparam[2,*])
+   gfiber.rreach = transpose(guideparam[3,*])
+   gfiber.xprefer = transpose(guideparam[4,*])
+   gfiber.yprefer = transpose(guideparam[5,*])
+
+   ;----------
+   ; Add science objects
+
+   ct = 2
+   while (n_elements(allplug) LT ntot - nminsky AND ct GT 1) do begin
+      indx = where(strtrim(stardata.holetype,2) EQ 'OBJECT' $
+       AND strtrim(stardata.objtype,2) NE 'SKY' $
+       AND strtrim(stardata.objtype,2) NE 'SPECTROPHOTO_STD' $
+       AND strtrim(stardata.objtype,2) NE 'REDDEN_STD' $
+       AND priority GT 0, ct)
+      if (ct GT 0) then begin
+         junk = max(priority[indx], ibest)
          addplug = blankplug
-         addplug.holetype = 'ALIGNMENT'
-         addplug.objtype = 'NA'
-         addplug.xfocal = xfocal
-         addplug.yfocal = yfocal
-         addplug.throughput = -9999
-         addplug.fiberid = iguide+1
-        
-        used[indx[ibest]] = 1   ; Don't try to target again
-    endif
-endfor
-iused=where(used)
+         struct_assign, stardata[indx[ibest]], addplug
+         addplug.holetype = 'OBJECT'
 
-;----------
-; Add spectro-photo standards
-; We want to use the priority, and select both SPECTROPHOTO and REDDEN_STD???
-if(nstd gt 0) then begin
-    indx=where(strtrim(stardata.holetype,2) EQ 'OBJECT' AND $
-               (strtrim(stardata.objtype,2) EQ 'SPECTROPHOTO_STD' $
-                OR strtrim(stardata.objtype,2) EQ 'REDDEN_STD') AND $
-               used EQ 0, ct)
-    if(ct lt nstd) then $
-      message, 'Not enough spectro-photo standards! Abort'
-    holeok=geometry_check(stardata[indx], racen, deccen)
-    iok=where(holeok, nok)
-    if(nok eq 0) then $
-      message, 'No spectro-photo standards stars on plate!'
-    indx=indx[iok]
-    collok=collision_check(stardata[iused], stardata[indx])
-    iok=where(collok, nok)
-    if(nok eq 0) then $
-      message, 'No spectro-photo standards do not collide!'
-    indx=indx[iok]
-    idec=random_decollide(stardata[indx].ra, stardata[indx].dec, seed=seed, $
-                          ndec=ndec)
-    std=bytarr(n_elements(stardata))
-    std[indx[idec]]=1
-    
-    for nsouth=-1, 1, 2 do begin ; First do South, then North half of plate
-        nadd = 0L
-        while (nadd LT nstd/2.) do begin
-            indx = where(std gt 0 AND used eq 0 AND $
-                         nsouth*stardata.yfocal GE 0, ct)
-            if (ct EQ 0) then $
-              message, 'Ran out of spectro-photo stars!'
-            
-            ibest=(shuffle_indx(ct, num_sub=1))[0]
+         allplug = design_append(allplug, addplug)
+
+         priority[indx[ibest]] = 0 ; Don't try to target again
+      endif
+   endwhile
+
+   ;----------
+   ; Add guide fibers
+
+   for iguide=0, nguide-1 do begin
+      ;----------
+      ; Assign the nearest available guide fiber(s) to this guide position.
+
+      print, 'Assigning guide fiber number ', iguide+1
+
+      nadd1 = 0
+      while (nadd1 EQ 0) do begin
+         indx = where(strtrim(stardata.holetype,2) EQ 'GUIDE' $
+          AND priority GT 0, ct)
+         if (ct EQ 0) then $
+          message, 'No guide stars for guide #', iguide
+         if (ct GT 0) then begin
+            adiff = djs_diff_angle( $
+             gfiber[iguide].xprefer, gfiber[iguide].yprefer, $
+             stardata[indx].xfocal, stardata[indx].yfocal)
+
+            junk = min(adiff, ibest)
             addplug = blankplug
             struct_assign, stardata[indx[ibest]], addplug
-            addplug.holetype = 'OBJECT'
-            addplug.objtype = 'SPECTROPHOTO_STD'
-            addplug.sectarget = 32L
-            addplug.throughput = 9999
+            addplug.holetype = 'GUIDE'
+            addplug.objtype = 'NA'
+            addplug.sectarget = 64L
+            addplug.fiberid = iguide+1
             allplug = design_append(allplug, addplug, nadd=nadd1)
-            nadd = nadd + nadd1
+            ntot = ntot + nadd1
+            priority[indx[ibest]] = 0 ; Don't try to target again
 
-            used[indx[ibest]] = 1 ; Don't try to target again
-        endwhile
-    endfor
-endif
-iused=where(used)
+            if (nadd1 EQ 1) then begin
+            ; Now add the alignment hole for this guide fiber
+               DRADEG = 180.d0/!dpi
+               twist_coeff = 0.46
+               align_hole_dist = 2.54
+               if (addplug.yfocal GT 0) then $
+                thisang = 90.d0 + twist_coeff * addplug.yfocal $
+               else $
+                thisang = -90.d0 - twist_coeff * addplug.yfocal
+               xfocal = addplug.xfocal + align_hole_dist * cos(thisang/DRADEG)
+               yfocal = addplug.yfocal + align_hole_dist * sin(thisang/DRADEG)
+               addplug = blankplug
+               addplug.holetype = 'ALIGNMENT'
+               addplug.objtype = 'NA'
+               addplug.xfocal = xfocal
+               addplug.yfocal = yfocal
+               addplug.throughput = -9999
+               addplug.fiberid = iguide+1
+               allplug = [allplug, addplug] ; Add this hole with no checking!
+               ntot = ntot + nadd1
+            endif
+         endif
+      endwhile
+   endfor
 
-;----------
-; Add sky fibers
-indx=where((strtrim(stardata.holetype,2) EQ 'COHERENT_SKY' OR $
-            (strtrim(stardata.holetype,2) EQ 'OBJECT' AND $
-             strtrim(stardata.objtype,2) EQ 'SKY')) AND $
-           used EQ 0, ct)
-if(ct lt nminsky) then $
-  message, 'Not enough sky! Abort!'
-holeok=geometry_check(stardata[indx], racen, deccen)
-iok=where(holeok, nok)
-if(nok eq 0) then $
-  message, 'No sky on plate!'
-indx=indx[iok]
-collok=collision_check(stardata[iused], stardata[indx])
-iok=where(collok, nok)
-if(nok eq 0) then $
-  message, 'No sky do not collide!'
-indx=indx[iok]
-idec=random_decollide(stardata[indx].ra, stardata[indx].dec, seed=seed, $
-                      ndec=ndec)
-sky=bytarr(n_elements(stardata))
-sky[indx[idec]]=1
-for i=0L, ndec-1L do begin
-    addplug = blankplug
-    struct_assign, stardata[indx[idec[i]]], addplug
-    addplug.holetype = 'COHERENT_SKY'
-    addplug.objtype = 'NA'
-    addplug.sectarget = 16L
-    
-    addplug.throughput = 1
-    allplug = design_append(allplug, addplug)
-    
-    used[indx[idec[i]]] = 1       ; Don't try to target again
-endfor
-iused=where(used, nused)
-    
-;----------
-; Write the plPlugMapT file
-outhdr = ['completeTileVersion   v1_0', $
-          'tileId ' + string(tilenum), $
-          'LST ' + string(lst), $
-          'raCen ' + string(racen), $
-          'decCen ' + string(deccen) ]
+   ;----------
+   ; Add spectro-photo standards
 
-allplug.xfocal = -999         ; These values will be computed by PLATE
-allplug.yfocal = -999         ; These values will be computed by PLATE
-allplug.spectrographid = -999L ; These values will be computed by PLATE
-allplug.fiberid = -999L       ; These values will be computed by PLATE
-yanny_write, plugmaptfile, ptr_new(allplug), hdr=outhdr, $
-  enums=plugenum, structs=plugstruct
+   for nsouth=-1, 1, 2 do begin ; First do South, then North half of plate
+      nadd = 0L
+      while (nadd LT nstd/2.) do begin
+         indx = where(strtrim(stardata.holetype,2) EQ 'OBJECT' $
+          AND strtrim(stardata.objtype,2) EQ 'SPECTROPHOTO_STD' $
+          AND nsouth*stardata.yfocal GE 0 $
+          AND priority GT 0, ct)
+         if (ct EQ 0) then $ 
+          message, 'Ran out of spectro-photo stars!'
 
-radec_to_xyfocal, allplug.ra, allplug.dec, xfocal, yfocal, racen=racen, $
-  deccen=deccen, airtemp=airtemp, lst=lst
-allplug.xfocal = xfocal
-allplug.yfocal = yfocal
-yanny_write, plugmappfile, ptr_new(allplug), hdr=outhdr, $
-  enums=plugenum, structs=plugstruct
-yanny_write, plugmappfile2, ptr_new(allplug), hdr=outhdr, $
-  enums=plugenum, structs=plugstruct
+         junk = max(priority[indx], ibest)
+         addplug = blankplug
+         struct_assign, stardata[indx[ibest]], addplug
+         addplug.holetype = 'OBJECT'
+         addplug.objtype = 'SPECTROPHOTO_STD'
+         addplug.sectarget = 32L
 
-;---------------------------------------------------------------------------
-; RUN "makePlates" IN THE SDSS "PLATE" PRODUCT.
-; The required inputs are the plPlugMapT-$TILE.par files,
-; plus plPlan.par, plObs.par, plParam.par.
-; The fiberPlates code selects the guide stars and sky fibers from
-; those available, and renames COHERENT_SKY/NA objects to OBJECT/SKY.
-; It also generates the ALIGNMENT holes for each GUIDE fiber.
-;---------------------------------------------------------------------------
+         allplug = design_append(allplug, addplug, nadd=nadd1)
+         nadd = nadd + nadd1
 
-;----------
-; Create the file "plPlan.par" in the current directory.
+         priority[indx[ibest]] = 0 ; Don't try to target again
+      endwhile
+   endfor
 
-cd, current=thisdir
-cd, thisdir
-plhdr = '# Created on ' + systime()
-plhdr = [plhdr, "parametersDir " + paramdir]
-plhdr = [plhdr, "parameters    " + "plParam.par"]
-plhdr = [plhdr, "plObsFile     " + "plObs.par"]
-plhdr = [plhdr, "outFileDir    " + thisdir]
-plhdr = [plhdr, "tileDir       " + thisdir]
-yanny_write, 'plPlan.par', hdr=plhdr
+   ;----------
+   ; Add skies
 
-;----------
-; Create the file "plObs.par" in the current directory.
+   nsky = ntot - n_elements(allplug) ; Number of sky fibers to be added here
 
-plhdr = '# Created on ' + systime()
-plhdr = [plhdr, "plateRun special"]
-plstructs = ["typedef struct {", $
-             "   int plateId;", $
-             "   int tileId;", $
-             "   float temp;", $
-             "   float haMin;", $
-             "   float haMax;", $
-             "   int mjdDesign", $
-             "} PLOBS;"]
-plobs = create_struct(name='PLOBS', $
-                      'PLATEID'  , platenum, $
-                      'TILEID'   , tilenum, $
-                      'TEMP'     , airtemp, $
-                      'HAMIN'    , 0.0, $
-                      'HAMAX'    , 0.0, $
-                      'MJDDESIGN', current_mjd())
-yanny_write, 'plObs.par', ptr_new(plobs), hdr=plhdr, structs=plstructs
+   ; Construct a list of preferred RA,DEC positions for the sky fibers
+   ; that is evenly spaced with respect to the object positions.
+   ra_prefer = dblarr(nsky)
+   dec_prefer = dblarr(nsky)
+   nxbin = floor(sqrt(nsky))
+   nybin = floor(nsky / nxbin)
+   indx = where(strtrim(allplug.holetype,2) EQ 'OBJECT', nobj)
+   isort = indx[ sort(allplug[indx].dec) ]
+   for iy=0, nybin-1 do begin
+      ; Select objects in this declination slice
+      ii = isort[ $
+       where(allplug[isort].dec GE allplug[isort[nobj*float(iy)/nybin]].dec $
+       AND allplug[isort].dec LE allplug[isort[nobj*float(iy+1)/nybin-1]].dec, $
+       nsamp) ]
+      for ix=0, nxbin-1 do begin
+         ; Select objects in some RA box within this declination slice
+         jsort = ii[ sort(allplug[ii].ra) ]
+         jj = jsort[ $
+          where(allplug[jsort].ra GE allplug[jsort[nsamp*float(ix)/nxbin]].ra $
+          AND allplug[jsort].ra LE allplug[jsort[nsamp*float(ix+1)/nxbin-1]].ra) ]
+         ra_prefer[ix+iy*nxbin] = median(allplug[jj].ra)
+         dec_prefer[ix+iy*nxbin] = median(allplug[jj].dec)
+      endfor
+   endfor
+   ; Add any additional preferred sky positions
+   nmore = nsky - nxbin * nybin
+   if (nmore GT 0) then begin
+      jj = long(nobj*randomu(nmore))
+      ra_prefer[nsky-nmore:nsky-1] = allplug[indx[jj]].ra
+      dec_prefer[nsky-nmore:nsky-1] = allplug[indx[jj]] .dec
+   endif
 
-;----------
-; Run the SDSS "PLATE" code
+   for isky=0L, nsky-1L do begin
+      nadd1 = 0
+      while (nadd1 EQ 0) do begin
+         indx = where(strtrim(stardata.holetype,2) EQ 'OBJECT' $
+          AND strtrim(stardata.objtype,2) EQ 'SKY' $
+          AND priority GT 0, ct)
+         if (ct EQ 0) then $
+          message, 'Ran out of sky targets!'
 
-print
-print, 'In the "plate" product run the following commands:"'
-print, '   makeFanuc'
-print, '   makeDrillPos'
-print, '   use_cs3'
-print, '   makePlots -skipBrightCheck'
-print
-;   setupplate = 'setup plate'
-setupplate = 'setup  plate' ; ???
-;spawn, setupplate +'; echo "makePlates " | plate'
-;spawn, setupplate +'; echo "fiberPlates -skipBrightCheck" | plate'
-spawn, setupplate +'; echo "makeFanuc" | plate'
-spawn, setupplate +'; echo "makeDrillPos" | plate'
-spawn, setupplate +'; echo "use_cs3" | plate'
-spawn, setupplate +'; echo "makePlots -skipBrightCheck" | plate'
+         ; Attempt to assign the closest sky fiber to the preferred position
+         adist = djs_diff_angle(stardata[indx].ra, stardata[indx].dec, $
+          ra_prefer[isky], dec_prefer[isky])
+         junk = min(adist, ibest)
 
-;----------
-; Read the final plPlugMapP file
+         addplug = blankplug
+         struct_assign, stardata[indx[ibest]], addplug
+         addplug.holetype = 'OBJECT'
+         addplug.objtype = 'SKY'
+         addplug.sectarget = 16L
 
-plugmap = yanny_readone(plugmappfile)
-junk = where(strmatch(plugmap.holetype,'GUIDE*'), nguide)
-junk = where(strmatch(plugmap.holetype,'COHERENT_SKY*'), ncoherent)
-junk = where(strmatch(plugmap.holetype,'OBJECT*'), nobject)
-junk = where(strmatch(plugmap.objtype,'SKY*'), nsky)
+         allplug = design_append(allplug, addplug, nadd=nadd1)
+         priority[indx[ibest]] = 0 ; Don't try to target again, even if this
+                                   ; fiber was not assigned
+      endwhile
+   endfor
 
-splog, 'Final NGUIDE = ', nguide
-splog, 'Final NCOHERENT_SKY = ', ncoherent
-splog, 'Final NSKY = ', nsky
-splog, 'Final non-SKY objects = ', nobject - nsky
+   ;----------
+   ; If Southern plate, then set the Southern target-selection bit
 
-return
+   if (keyword_set(southern)) then begin
+      indx = where(strmatch(allplug.holetype,'OBJECT*'))
+      allplug[indx].primtarget = allplug[indx].primtarget OR 2L^31
+      allplug[indx].sectarget = allplug[indx].sectarget OR 2L^31
+   endif
+
+   ;----------
+   ; Write the plPlugMapP file
+
+   ; Compute the median reddening for objects on this plate
+   indx = where(strtrim(allplug.holetype,2) EQ 'OBJECT', nobj)
+   euler, allplug[indx].ra, allplug[indx].dec, ll, bb, 1
+   reddenvec = [5.155, 3.793, 2.751, 2.086, 1.479] $
+    * median(dust_getval(ll, bb, /interp))
+
+   outhdr = ['completeTileVersion   v0', $
+             'reddeningMed ' + string(reddenvec,format='(5f8.4)'), $
+             'tileId ' + string(tilenum), $
+             'raCen ' + string(racen,format='(f10.6)'), $
+             'decCen ' + string(deccen,format='(f10.6)'), $
+             'plateVersion v0', $
+             'plateId ' + string(platenum), $
+             'temp ' + string(airtemp), $
+             'haMin ' + string(lst-racen), $
+             'haMax ' + string(lst-racen), $
+             'mjdDesign ' + string(long(current_mjd())), $
+             'theta 0 ' ]
+   yanny_write, plugmappfile, ptr_new(allplug), hdr=outhdr, $
+    enums=plugenum, structs=plugstruct
+
+   ;----------
+   ; Create the file "plPlan.par" in the current directory.
+
+   cd, current=thisdir
+   cd, thisdir
+   plhdr = '# Created on ' + systime()
+   plhdr = [plhdr, "parametersDir " + paramdir]
+   plhdr = [plhdr, "parameters    " + "plParam.par"]
+   plhdr = [plhdr, "plObsFile     " + "plObs.par"]
+   plhdr = [plhdr, "outFileDir    " + thisdir]
+   plhdr = [plhdr, "tileDir       " + thisdir]
+   yanny_write, 'plPlan.par', hdr=plhdr
+
+   ;----------
+   ; Create the file "plObs.par" in the current directory.
+
+   plhdr = '# Created on ' + systime()
+   plhdr = [plhdr, "plateRun special"]
+   plstructs = ["typedef struct {", $
+                "   int plateId;", $
+                "   int tileId;", $
+                "   float temp;", $
+                "   float haMin;", $
+                "   float haMax;", $
+                "   int mjdDesign", $
+                "} PLOBS;"]
+   plobs = create_struct(name='PLOBS', $
+                         'PLATEID'  , platenum, $
+                         'TILEID'   , tilenum, $
+                         'TEMP'     , airtemp, $
+                         'HAMIN'    , (lst-racen), $
+                         'HAMAX'    , (lst-racen), $
+                         'MJDDESIGN', current_mjd())
+   yanny_write, 'plObs.par', ptr_new(plobs), hdr=plhdr, structs=plstructs
+
+   ;----------
+   ; Run the SDSS "PLATE" code
+
+   print
+   print, 'In the "plate" product run the following commands:"'
+   print, '   makeFanuc'
+   print, '   makeDrillPos'
+   print, '   use_cs3'
+   print, '   makePlots -skipBrightCheck'
+   print
+   setupplate = 'setup plate'
+   spawn, setupplate +'; echo "makeFanuc" | plate -noTk'
+   spawn, setupplate +'; echo "makeDrillPos" | plate -noTk'
+   spawn, setupplate +'; echo "use_cs3" | plate -noTk'
+   spawn, setupplate +'; echo "makePlots -skipBrightCheck" | plate -noTk'
+
+   ;----------
+   ; Read the final plPlugMapP file
+
+   plugmap = yanny_readone(plugmappfile)
+   junk = where(strmatch(plugmap.holetype,'GUIDE*'), nguide)
+   junk = where(strmatch(plugmap.objtype,'SKY*'), nsky)
+   junk = where(strmatch(plugmap.holetype,'OBJECT*'), nobject)
+
+   splog, 'Final NGUIDE = ', nguide
+   splog, 'Final NSKY = ', nsky
+   splog, 'Final non-SKY objects = ', nobject - nsky
+
+   return
 end
 ;------------------------------------------------------------------------------
