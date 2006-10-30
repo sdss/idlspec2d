@@ -323,9 +323,11 @@ pro design_plate, stardata1, racen=racen, deccen=deccen, $
                twist_coeff = 0.46
                align_hole_dist = 2.54
                if (addplug.yfocal GT 0) then $
-                thisang = 90.d0 + twist_coeff * addplug.yfocal $
+                thisang = 90.d0 + twist_coeff * (addplug.yfocal $
+                 - gfiber[iguide].yreach) $
                else $
-                thisang = -90.d0 - twist_coeff * addplug.yfocal
+                thisang = -90.d0 - twist_coeff * (addplug.yfocal $
+                 - gfiber[iguide].yreach)
                xfocal = addplug.xfocal + align_hole_dist * cos(thisang/DRADEG)
                yfocal = addplug.yfocal + align_hole_dist * sin(thisang/DRADEG)
                addplug = blankplug
