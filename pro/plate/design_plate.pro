@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   design_plate, stardata, [ racen=, deccen=, tilenum=, platenum=, $
-;    airtemp=, nstd=, nminsky=, /southern ]
+;    airtemp=, nstd=, nminsky=, lst=, ntotal=, /southern ]
 ;
 ; INPUTS:
 ;   stardata   - Structure with data for each star; must contain the
@@ -28,6 +28,11 @@
 ;                This will be split with NSTD/2 standards on the North
 ;                half of the plate, and the same number on the South.
 ;   nminsky    - Minimum number of sky fibers; default to 32.
+;   lst        - Local sidereal time (LST) for plate design; default to
+;                setting this equal to RACEN, which means observing at transit.
+;   ntotal     - Number of object fibers; default to 640.
+;   southern   - If set, then set the SOUTHERN targetting bits in both
+;                the PRIMTARGET and SECTARGET output flags.
 ;
 ; COMMENTS:
 ;   All non-SKY and non-SPECTROPHOTO_STD/REDDEN_STD objects will be put on the
@@ -87,10 +92,13 @@ function design_append, allplug, oneplug, nadd=nadd
 
    platescale = 217.7358 ; mm/degree
 
-   ; Add more space around GUIDE fibers.
-   if (strmatch(oneplug.holetype, 'GUIDE*')) then morespace = 7.0 $ ; in mm 
-    else morespace = 0.
-
+   ; Add more space around GUIDE fibers and LIGHT_TRAP holes.
+   case strtrim(oneplug.holetype,2) of
+   'GUIDE': morespace = 7.0 ; in mm
+   'LIGHT_TRAP': morespace = 4.0 ; in mm
+   else: morespace = 0.
+   endcase
+   
    ;----------
    ; If this is the 1st object in the list, then we can always keep it
 
@@ -101,14 +109,14 @@ function design_append, allplug, oneplug, nadd=nadd
 
    ;----------
    ; Discard objects within 68 arcsec of the center hole or more
-   ; then 1.49 deg from the plate center (pad to 75 arcsec and 1.485 deg).
+   ; then 1.49 deg from the plate center (pad to 75 arcsec).
 
    thisrad = sqrt(oneplug.xfocal^2 + oneplug.yfocal^2)
    if (thisrad LE platescale*75./3600.+morespace $ 
-    OR thisrad GE platescale*1.485-morespace) then return, allplug
+    OR thisrad GE platescale*1.49-morespace) then return, allplug
 
    ;----------
-   ; Discard objects within 55 arcsec of existing objects. (Pad to 70 arcsec.)
+   ; Discard objects within 55 arcsec of existing objects.
    ; Do this based upon XFOCAL,YFOCAL positions. 
    ; The closest two fibers can be is PLATESCALE * 55/3600(deg) = 3.32652 mm
 
@@ -116,13 +124,11 @@ function design_append, allplug, oneplug, nadd=nadd
       r2 = (allplug.xfocal - oneplug.xfocal)^2 $
            + (allplug.yfocal - oneplug.yfocal)^2
       mindist = min(sqrt(r2))
-      if (mindist LT platescale*70./3600.+morespace) then return, allplug
+      if (mindist LT platescale*55./3600.+morespace) then return, allplug
    endif
 
    ;----------
    ; Discard objects within 7.0 mm of existing guide fibers.
-   ; (Pad this to 9 mm just to be extra careful, since the downstream PLATE
-   ; code is so stupid.)
 
    if (keyword_set(allplug)) then begin
       iguide = where(strtrim(allplug.holetype) EQ 'GUIDE', ct)
@@ -130,7 +136,7 @@ function design_append, allplug, oneplug, nadd=nadd
          r2 = (allplug[iguide].xfocal - oneplug.xfocal)^2 $
               + (allplug[iguide].yfocal - oneplug.yfocal)^2
          mindist = min(sqrt(r2))
-         if (mindist LT 9.0+morespace) then return, allplug
+         if (mindist LT 7.0+morespace) then return, allplug
       endif
    endif
 
@@ -138,9 +144,37 @@ function design_append, allplug, oneplug, nadd=nadd
    return, [allplug, oneplug]
 end
 ;------------------------------------------------------------------------------
-pro design_plate, stardata1, tilenums=tilenum, platenums=platenum, $
- racen=racen, deccen=deccen, airtemp=airtemp, nstd=nstd, $
- nminsky=nminsky, lst=lst
+; Group fibers into NXBIN by NYBIN groups, and return the group number
+; between [0,NXBIN*NYBIN-1] for each fiber.
+function design_groupfibers, allplug, nxbin, nybin
+
+   nobj = n_elements(allplug)
+   groupnum = lonarr(n_elements(allplug)) - 1L
+
+   isort = sort(allplug.dec)
+   for iy=0, nybin-1 do begin
+      ; Select objects in this declination slice
+      ii = isort[ $
+       where(allplug[isort].dec GE allplug[isort[nobj*float(iy)/nybin]].dec $
+       AND allplug[isort].dec LE allplug[isort[nobj*float(iy+1)/nybin-1]].dec $
+       AND groupnum[isort] EQ -1, nsamp) ]
+      for ix=0, nxbin-1 do begin
+         ; Select objects in some RA box within this declination slice
+         jsort = ii[ sort(allplug[ii].ra) ]
+         jj = jsort[ $
+          where(allplug[jsort].ra GE allplug[jsort[nsamp*float(ix)/nxbin]].ra $
+          AND allplug[jsort].ra LE allplug[jsort[nsamp*float(ix+1)/nxbin-1]].ra $
+          AND groupnum[jsort] EQ -1) ]
+         groupnum[jj] = iy * nxbin + ix
+      endfor
+   endfor
+
+   return, groupnum
+end
+;------------------------------------------------------------------------------
+pro design_plate, stardata1, racen=racen, deccen=deccen, $
+ tilenums=tilenum, platenums=platenum, airtemp=airtemp, nstd=nstd, $
+ nminsky=nminsky, lst=lst, ntotal=ntotal, southern=southern
 
    if (NOT keyword_set(tilenum)) then tilenum = 1L
    if (NOT keyword_set(platenum)) then platenum = tilenum
@@ -150,7 +184,8 @@ pro design_plate, stardata1, tilenums=tilenum, platenums=platenum, $
    if (n_elements(nstd) eq 0) then nstd = 16L
    if (n_elements(nminsky) eq 0) then nminsky = 32L
    if (n_elements(lst) eq 0) then lst = racen
-   ntot = 640L                     ; Number of fibers
+   if (NOT keyword_set(ntotal)) then ntotal = 640L
+   ntot = ntotal
    nsci = ntot - nstd - nminsky ; Max number of science targets to add
 
    plugmappfile = 'plPlugMapP-' + string(platenum,format='(i4.4)') + '.par'
@@ -266,9 +301,9 @@ pro design_plate, stardata1, tilenums=tilenum, platenums=platenum, $
          if (ct EQ 0) then $
           message, 'No guide stars for guide #', iguide
          if (ct GT 0) then begin
-            adiff = djs_diff_angle( $
-             gfiber[iguide].xprefer, gfiber[iguide].yprefer, $
-             stardata[indx].xfocal, stardata[indx].yfocal)
+            adiff = sqrt( $
+             (gfiber[iguide].xprefer - stardata[indx].xfocal)^2 $
+             + (gfiber[iguide].yprefer - stardata[indx].yfocal)^2 )
 
             junk = min(adiff, ibest)
             addplug = blankplug
@@ -345,27 +380,16 @@ pro design_plate, stardata1, tilenums=tilenum, platenums=platenum, $
    nxbin = floor(sqrt(nsky))
    nybin = floor(nsky / nxbin)
    indx = where(strtrim(allplug.holetype,2) EQ 'OBJECT', nobj)
-   isort = indx[ sort(allplug[indx].dec) ]
-   for iy=0, nybin-1 do begin
-      ; Select objects in this declination slice
-      ii = isort[ $
-       where(allplug[isort].dec GE allplug[isort[nobj*float(iy)/nybin]].dec $
-       AND allplug[isort].dec LE allplug[isort[nobj*float(iy+1)/nybin-1]].dec, $
-       nsamp) ]
-      for ix=0, nxbin-1 do begin
-         ; Select objects in some RA box within this declination slice
-         jsort = ii[ sort(allplug[ii].ra) ]
-         jj = jsort[ $
-          where(allplug[jsort].ra GE allplug[jsort[nsamp*float(ix)/nxbin]].ra $
-          AND allplug[jsort].ra LE allplug[jsort[nsamp*float(ix+1)/nxbin-1]].ra) ]
-         ra_prefer[ix+iy*nxbin] = median(allplug[jj].ra)
-         dec_prefer[ix+iy*nxbin] = median(allplug[jj].dec)
-      endfor
+   groupnum = design_groupfibers(allplug[indx], nxbin, nybin)
+   for igroup=0, max(groupnum) do begin
+      jj = where(groupnum EQ igroup)
+      ra_prefer[igroup] = median(allplug[indx[jj]].ra)
+      dec_prefer[igroup] = median(allplug[indx[jj]].dec)
    endfor
    ; Add any additional preferred sky positions
    nmore = nsky - nxbin * nybin
    if (nmore GT 0) then begin
-      jj = long(nobj*randomu(nmore))
+      jj = long(nobj*randomu(1234,nmore))
       ra_prefer[nsky-nmore:nsky-1] = allplug[indx[jj]].ra
       dec_prefer[nsky-nmore:nsky-1] = allplug[indx[jj]] .dec
    endif
@@ -397,6 +421,35 @@ pro design_plate, stardata1, tilenums=tilenum, platenums=platenum, $
    endfor
 
    ;----------
+   ; Add LIGHT_TRAP stars
+
+   tycvlimit = 7.5
+   tycdat = tycho_read(racen=racen, deccen=deccen, radius=1.49)
+   if (keyword_set(tycdat)) then begin
+      ; Sort so that we add the brightest Tycho stars first.
+      tycdat = tycdat[sort(tycdat.vtmag)]
+      indx = where(tycdat.vtmag LT tycvlimit, ct)
+      if (ct EQ 0) then tycdat = 0 $
+       else tycdat = tycdat[indx]
+   endif
+   if (keyword_set(tycdat)) then begin
+      radec_to_xyfocal, tycdat.radeg, tycdat.dedeg, xfocal, yfocal, $
+       racen=racen, deccen=deccen, airtemp=airtemp
+      for ityc=0, n_elements(tycdat)-1 do begin
+         addplug = blankplug
+         addplug.holetype = 'LIGHT_TRAP'
+         addplug.objtype = 'NA'
+         addplug.ra = tycdat[ityc].radeg
+         addplug.dec = tycdat[ityc].dedeg
+         addplug.xfocal = xfocal[ityc]
+         addplug.yfocal = yfocal[ityc]
+         addplug.mag = [0, tycdat[ityc].btmag, tycdat[ityc].vtmag, 0, 0]
+         allplug = design_append(allplug, addplug, nadd=nadd1)
+         nadd = nadd + nadd1
+      endfor
+   endif
+
+   ;----------
    ; If Southern plate, then set the Southern target-selection bit
 
    if (keyword_set(southern)) then begin
@@ -404,6 +457,37 @@ pro design_plate, stardata1, tilenums=tilenum, platenums=platenum, $
       allplug[indx].primtarget = allplug[indx].primtarget OR 2L^31
       allplug[indx].sectarget = allplug[indx].sectarget OR 2L^31
    endif
+
+   ;----------
+   ; Set the FIBERID from -1 to -NTOTAL for the object targets,
+   ; for the PostScript overlay code.
+
+   nybin = 4
+   nperbundle = 20
+   nxbin = long(ntotal/nxbin/nperbundle)
+   if ((ntotal MOD nxbin*nybin) NE 0) then $
+    message, 'Number of fibers not divisible by 80'
+   indx = where(strtrim(allplug.holetype,2) EQ 'OBJECT', nobj)
+   groupnum = design_groupfibers(allplug[indx], nxbin, nybin)
+   i0 = 1L
+   for igroup=0, max(groupnum) do begin
+      jj = where(groupnum EQ igroup, ct)
+      jj = jj[sort(allplug[indx[jj]].dec)]
+      allplug[indx[jj]].fiberid = -(i0 + lindgen(ct))
+      i0 = i0 + ct
+   endfor
+
+   ;----------
+   ; Re-sort the plugmap entries to be the same as for survey files.
+   ; This should not matter, but perhaps it does for the U.W. shop
+   ; if this actually reflects the order of drilling holes.
+
+   sortstring = allplug.holetype
+   sortstring = repstr(sortstring, 'LIGHT_TRAP', 'AAA')
+   sortstring = repstr(sortstring, 'GUIDE', 'BBB')
+   sortstring = repstr(sortstring, 'ALIGNMENT', 'BBB')
+   sortstring = repstr(sortstring, 'OBJECT', 'CCC')
+   allplug = allplug[sort(sortstring)]
 
    ;----------
    ; Write the plPlugMapP file
