@@ -1,6 +1,11 @@
 
 DESIGN_SDSS3TEST: New proc to design test plates for SDSS-3.
+DESIGN_PLATE: Modified to not use most of the dumb TCL scripts in the
+        "plate" product.
+EXTRACT_ROW: Catch divide by 0 in reduced chi^2.
 LINEBACKFIT: Fix crash condition for when no BACKGROUND vectors are set.
+SIMPLE_PLATE: This is essentially a re-write of DESIGN_PLATE that
+        still calls all the dumb TCL scripts in the "plate" product.
 ZCOMPUTE: Add FIXED_TEMPLATE as optional input, and ZANS_FIXED output.
 ZFIND: Add optional ZANS_FIXED return keyword from ZCOMPUTE.
 
