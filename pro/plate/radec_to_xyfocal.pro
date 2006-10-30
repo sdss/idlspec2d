@@ -29,6 +29,7 @@ pro radec_to_xyfocal, ra, dec, xfocal, yfocal, racen=racen, deccen=deccen, $
                       nodistort=nodistort
 
 platescale = 217.7358D           ; mm/degree
+fudge=1.D/1.0003D
 
 ;; from $PLATE_DIR/test/plParam.par
 rcoeffs=[-0.000137627D, -0.00125238D, 1.5447D-09, 8.23673D-08, $
@@ -69,7 +70,7 @@ if(NOT keyword_set(nodistort)) then begin
     rfocal= rfocal+correction
 endif
 
-xfocal= -rfocal*sin(posang)
+xfocal= -rfocal*sin(posang)*fudge
 yfocal= rfocal*cos(posang)
 
 
