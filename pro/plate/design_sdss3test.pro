@@ -204,15 +204,19 @@ pro design_sdss3test, platenum, nminsky=nminsky, nstd=nstd
       tilenum = 9549
       racen = 35.88296
       deccen = 0.1250122
-      runnum = [4263, 4874]
+;      runnum = [4263, 4874]
+;      rerun = [137, 137]
+      runnum = [2709, 3384]
       rerun = [137, 137]
       end
    2638: begin ; Centered at plate 416
       tilenum = 9553
       racen =  55.49162
       deccen = 0.01375204
-      runnum = [4136, 4145, 4874]
-      rerun = [137, 137, 137]
+;      runnum = [4136, 4145, 4874]
+;      rerun = [137, 137, 137]
+      runnum = [2709, 3384]
+      rerun = [137, 137]
       end
    else: begin
       print, 'Unknown plate number!'
