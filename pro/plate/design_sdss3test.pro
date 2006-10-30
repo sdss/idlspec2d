@@ -115,42 +115,51 @@ function lrg_select_target, calibobj, lowz=lowz, hiz=hiz, all=all,$
      ; Extract the relevant magnitudes
      ; We really should have used cmodelmags, and will later.
      modelmag = 22.5 - 2.5*alog10(calibobj.modelflux > 0.001)
+     devmag = 22.5 - 2.5*alog10(calibobj.devflux > 0.001)
+     expmag = 22.5 - 2.5*alog10(calibobj.expflux > 0.001)
+     cmodelmag = devmag*calibobj.fracpsf + expmag*(1.0-calibobj.fracpsf)
+     fibermag = 22.5 - 2.5*alog10(calibobj.fiberflux > 0.001)
      psfmag = 22.5 - 2.5*alog10(calibobj.psfflux > 0.001)
      ; Extinction correct
      modelmag = modelmag - calibobj.extinction
      psfmag = psfmag - calibobj.extinction
+     cmodelmag = cmodelmag - calibobj.extinction
+     fibermag = fibermag - calibobj.extinction
      
      ; Compute cperp and cpllel
      cperp = lrg_cperp(modelmag)
      dperp = lrg_dperp(modelmag)
-     cpllel = lrg_cpllel(modelmag)
+     cpllel = lrg_cpllel(modelmag)     
 
      ; First lowz cuts
      if (keyword_set(lowz) OR keyword_set(all)) then begin
-         icut1 = modelmag[2,*] LT (maglim[0] + cpllel/0.3d0)
+         icut1 = cmodelmag[2,*] LT (maglim[0] + cpllel/0.3d0)
          icut1 = icut1 AND (abs(cperp) LT 0.2d0)
-         icut1 = icut1 AND (modelmag[2,*] LT maglim[1]) 
+         icut1 = icut1 AND (cmodelmag[2,*] LT maglim[1]) 
+         icut1 = icut1 AND (cmodelmag[3,*] LT fibermag[3,*])
          ilrg = icut1 * 2L^1
      endif
 
      ;	Now hiz cuts
      maglow = 18.3+2*dperp1
      if (keyword_set(hiz) OR keyword_set(all)) then begin
-         icut2 = (modelmag[3,*] GT 18.5d0) AND (modelmag[3,*] LT maglow)
+         icut2 = (cmodelmag[3,*] GT 18.5d0) AND (cmodelmag[3,*] LT maglow)
          icut2 = icut2 AND ((modelmag[1,*] - modelmag[2,*]) GT 1.4d0)
          icut2 = icut2 AND ((modelmag[1,*] - modelmag[2,*]) LT 3.0d0)
          icut2 = icut2 AND ((modelmag[2,*] - modelmag[3,*]) LT 2.0d0)
          icut2 = icut2 AND (dperp GT dperp0) AND (dperp LT dperp1)
+         icut2 = icut2 AND (cmodelmag[3,*] LT fibermag[3,*])
          ilrg  = ilrg + icut2*2L^2
      endif
 
 
      if (keyword_set(hiz) OR keyword_set(all)) then begin
-         icut3 = (modelmag[3,*] GT 18.5) AND (modelmag[3,*] LT 20.0d0)
+         icut3 = (cmodelmag[3,*] GT 18.5) AND (cmodelmag[3,*] LT 20.0d0)
          icut3 = icut3 AND ((modelmag[1,*] - modelmag[2,*]) GT 1.4d0)
          icut3 = icut3 AND ((modelmag[1,*] - modelmag[2,*]) LT 3.0d0)
          icut3 = icut3 AND ((modelmag[2,*] - modelmag[3,*]) LT 2.0d0)
          icut3 = icut3 AND (dperp GT dperp1)
+         icut3 = icut3 AND (cmodelmag[3,*] LT fibermag[3,*])
          ilrg  = ilrg + icut3*2L^3
      endif
 
