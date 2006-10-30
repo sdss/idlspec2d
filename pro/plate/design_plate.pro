@@ -74,6 +74,7 @@
 ;
 ; INTERNAL SUPPORT ROUTINES:
 ;   design_append()
+;   design_groupfibers()
 ;
 ; REVISION HISTORY:
 ;   14-Jan-2002  Written by D. Schlegel, Princeton
@@ -206,7 +207,7 @@ pro design_plate, stardata1, racen=racen, deccen=deccen, $
    
    radec_to_xyfocal, stardata1.ra, stardata1.dec, xfocal, yfocal, $
     racen=racen, deccen=deccen, airtemp=airtemp
-   xydata = replicate(create_struct('XFOCAL', 0L, 'YFOCAL', 0L), $
+   xydata = replicate(create_struct('XFOCAL', 0D, 'YFOCAL', 0D), $
     n_elements(stardata1))
    xydata.xfocal = xfocal
    xydata.yfocal = yfocal
@@ -342,31 +343,79 @@ pro design_plate, stardata1, racen=racen, deccen=deccen, $
    endfor
 
    ;----------
-   ; Add spectro-photo standards
+   ; Add SPECTROPHOTO_STD and REDDEN_STD stars
 
-   for nsouth=-1, 1, 2 do begin ; First do South, then North half of plate
-      nadd = 0L
-      while (nadd LT nstd/2.) do begin
-         indx = where(strtrim(stardata.holetype,2) EQ 'OBJECT' $
-          AND strtrim(stardata.objtype,2) EQ 'SPECTROPHOTO_STD' $
-          AND nsouth*stardata.yfocal GE 0 $
-          AND priority GT 0, ct)
-         if (ct EQ 0) then $ 
-          message, 'Ran out of spectro-photo stars!'
-
-         junk = max(priority[indx], ibest)
-         addplug = blankplug
-         struct_assign, stardata[indx[ibest]], addplug
-         addplug.holetype = 'OBJECT'
-         addplug.objtype = 'SPECTROPHOTO_STD'
-         addplug.sectarget = 32L
-
-         allplug = design_append(allplug, addplug, nadd=nadd1)
-         nadd = nadd + nadd1
-
-         priority[indx[ibest]] = 0 ; Don't try to target again
-      endwhile
+   nadd = 0L
+   nxbin = 4
+   nybin = 2
+   indx = where(strtrim(allplug.holetype,2) EQ 'OBJECT', nobj)
+   groupnum = design_groupfibers(allplug[indx], nxbin, nybin)
+   for igroup=0, max(groupnum) do begin
+      nthisbox = 0L
+      jj = where(groupnum EQ igroup)
+      ra_range = minmax(allplug[indx[jj]].ra)
+      dec_range = minmax(allplug[indx[jj]].dec)
+      ; Attempt to add up to NSTD/(NXBIN*NYBIN*2) of each flavor of
+      ; calibration star in this region of the plate.
+      ntry1 = nstd / (nxbin * nybin * 2) > 1
+      ntry2 = nstd / (nxbin * nybin * 2)
+      i1 = where(strtrim(stardata.holetype,2) EQ 'OBJECT' $
+       AND strtrim(stardata.objtype,2) EQ 'SPECTROPHOTO_STD' $
+       AND stardata.ra GE ra_range[0] AND stardata.ra LE ra_range[1] $
+       AND stardata.dec GE dec_range[0] AND stardata.dec LE dec_range[1] $
+       AND priority GT 0, ct1)
+      i2 = where(strtrim(stardata.holetype,2) EQ 'OBJECT' $
+       AND strtrim(stardata.objtype,2) EQ 'REDDEN_STD' $
+       AND stardata.ra GE ra_range[0] AND stardata.ra LE ra_range[1] $
+       AND stardata.dec GE dec_range[0] AND stardata.dec LE dec_range[1] $
+       AND priority GT 0, ct2)
+      if (ntry1 GT 0 AND ct1 GT 0) then begin
+         ; First try adding the best SPECTROPHOTO_STD stars
+         while (total(priority[i1] NE 0) GT 0 AND nthisbox LT ntry1) do begin
+            junk = max(priority[i1], ibest)
+            addplug = blankplug
+            struct_assign, stardata[i1[ibest]], addplug
+            addplug.primtarget = 0
+            addplug.sectarget = sdss_flagval('TTARGET', addplug.objtype)
+            allplug = design_append(allplug, addplug, nadd=nadd1)
+            nadd = nadd + nadd1
+            nthisbox = nthisbox + nadd1
+            priority[i1[ibest]] = 0 ; Don't try to target again
+         endwhile
+      endif
+      if (ntry2 GT 0 AND ct2 GT 0) then begin
+         ; Next try adding the best REDDEN_STD stars
+         while (total(priority[i2] NE 0) GT 0 $
+          AND nthisbox LT ntry1+ntry2) do begin
+            junk = max(priority[i2], ibest)
+            addplug = blankplug
+            struct_assign, stardata[i2[ibest]], addplug
+            addplug.primtarget = 0
+            addplug.sectarget = sdss_flagval('TTARGET', addplug.objtype)
+            allplug = design_append(allplug, addplug, nadd=nadd1)
+            nadd = nadd + nadd1
+            nthisbox = nthisbox + nadd1
+            priority[i2[ibest]] = 0 ; Don't try to target again
+         endwhile
+      endif
    endfor
+
+   ; If we have not assigned all of the requested standard stars,
+   ; then attempt adding more anywhere on the plate, sorted by priority.
+   indx = where(strtrim(stardata.holetype,2) EQ 'OBJECT' $
+    AND (strtrim(stardata.objtype,2) EQ 'SPECTROPHOTO_STD' $
+     OR strtrim(stardata.objtype,2) EQ 'REDDEN_STD') $
+    AND priority GT 0, ct)
+   while (total(priority[indx] NE 0) GT 0 AND nadd LT nstd) do begin
+      junk = max(priority[indx], ibest)
+      addplug = blankplug
+      struct_assign, stardata[indx[ibest]], addplug
+      addplug.primtarget = 0
+      addplug.sectarget = sdss_flagval('TTARGET', addplug.objtype)
+      allplug = design_append(allplug, addplug, nadd=nadd1)
+      nadd = nadd + nadd1
+      priority[indx[ibest]] = 0 ; Don't try to target again
+   endwhile
 
    ;----------
    ; Add skies
@@ -490,6 +539,21 @@ pro design_plate, stardata1, racen=racen, deccen=deccen, $
    allplug = allplug[sort(sortstring)]
 
    ;----------
+   ; Print the number of targetted objects
+
+   nobject = long(total(strmatch(allplug.holetype,'OBJECT*')))
+   nguide = long(total(strmatch(allplug.holetype,'GUIDE*')))
+   nspectrophoto = long(total(strmatch(allplug.objtype,'SPECTROPHOTO_STD*')))
+   nredden = long(total(strmatch(allplug.objtype,'REDDEN_STD*')))
+   nsky = long(total(strmatch(allplug.objtype,'SKY*')))
+   splog, 'Final number of GUIDE = ', nguide
+   splog, 'Final number of SKY = ', nsky
+   splog, 'Final number of SPECTROPHOTO_STD = ', nspectrophoto
+   splog, 'Final number of REDDEN_STD = ', nredden
+   splog, 'Final number of science objects = ', $
+    nobject - nsky - nspectrophoto - nredden
+
+   ;----------
    ; Write the plPlugMapP file
 
    ; Compute the median reddening for objects on this plate
@@ -563,18 +627,6 @@ pro design_plate, stardata1, racen=racen, deccen=deccen, $
    spawn, setupplate +'; echo "makeDrillPos" | plate -noTk'
    spawn, setupplate +'; echo "use_cs3" | plate -noTk'
    spawn, setupplate +'; echo "makePlots -skipBrightCheck" | plate -noTk'
-
-   ;----------
-   ; Read the final plPlugMapP file
-
-   plugmap = yanny_readone(plugmappfile)
-   junk = where(strmatch(plugmap.holetype,'GUIDE*'), nguide)
-   junk = where(strmatch(plugmap.objtype,'SKY*'), nsky)
-   junk = where(strmatch(plugmap.holetype,'OBJECT*'), nobject)
-
-   splog, 'Final NGUIDE = ', nguide
-   splog, 'Final NSKY = ', nsky
-   splog, 'Final non-SKY objects = ', nobject - nsky
 
    return
 end
