@@ -276,6 +276,8 @@ pro design_sdss3test, platenum, nminsky=nminsky, nstd=nstd
     AND psf_ricolor GT 0.0 AND psf_ricolor LT 0.7 $
     AND psf_izcolor GT -0.4 AND psf_izcolor LT 1.0 $
     AND objs.objc_type EQ 6, nguide)
+   iguide = iguide[ sdss_selectobj(objs[iguide], ancestry='single', $
+    /trim, count=nguide) ]
    guideobj = design_struct(nguide)
    guideobj.ra = objs[iguide].ra
    guideobj.dec = objs[iguide].dec
@@ -302,6 +304,8 @@ pro design_sdss3test, platenum, nminsky=nminsky, nstd=nstd
     AND psf_grcolor GT 0.0 AND psf_grcolor LT 0.6 $
     AND psf_grcolor GT 0.75*psf_ugcolor-0.45 $
     AND objs.objc_type EQ 6, nfstar)
+   ifstar = ifstar[ sdss_selectobj(objs[ifstar], ancestry='single', $
+    /trim, count=nfstar) ]
    cdist = sqrt( (psf_ugcolor[ifstar] - 0.934)^2 $
     + (psf_grcolor[ifstar] - 0.280)^2 $
     + (psf_ricolor[ifstar] - 0.101)^2 $
@@ -326,6 +330,7 @@ pro design_sdss3test, platenum, nminsky=nminsky, nstd=nstd
 
    iqso = where(psfmag[1,*] GT 17 AND psfmag[1,*] LT 22 $
     AND psf_ugcolor GT 0.40 AND psf_grcolor LT 0.20 $
+    AND objs.fiberflux[1] LT objs.psfflux[1] $
 ;    AND ((psf_ugcolor GE 0.40 AND psf_ugcolor LE 0.75 AND psf_grcolor LT 0.5) $
 ;     OR (psf_ugcolor GE 0.75 AND psf_grcolor LT 0.45*psf_ugcolor-0.25) $
 ;     OR (psf_grcolor LT 0.20 AND psf_ugcolor GT 0.75)) $
