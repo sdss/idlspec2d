@@ -52,7 +52,7 @@ function design_struct, num
     'mag'       , fltarr(5), $
     'holetype'  ,   '', $
     'objtype'   ,   '', $
-    'priority'  ,   0L, $
+    'priority'  ,   1L, $
     'primtarget',   0L, $
     'sectarget' ,   0L)
    if (keyword_set(num)) then result = replicate(result, num)
@@ -442,11 +442,11 @@ pro design_sdss3test, platenum, nminsky=nminsky, nstd=nstd
    for iplate=0L, nplate-1L do begin
       splog, 'Generating plate number = ', platenum+iplate
       allobj = [skyobj, guideobj, fstarobj, sciobj[where(qassign[iplate,*])]]
-;      design_plate, allobj, racen=racen, deccen=deccen, $
-;       tilenum=tilenum+iplate, platenum=platenum+iplate, $
-;       nstd=nstd, nminsky=nminsky
-      simple_plate, allobj, racen=racen, deccen=deccen, $
-       tilenum=tilenum+iplate, platenum=platenum+iplate
+      design_plate, allobj, racen=racen, deccen=deccen, $
+       tilenum=tilenum+iplate, platenum=platenum+iplate, $
+       nstd=nstd, nminsky=nminsky
+;      simple_plate, allobj, racen=racen, deccen=deccen, $
+;       tilenum=tilenum+iplate, platenum=platenum+iplate
    
    endfor
 
