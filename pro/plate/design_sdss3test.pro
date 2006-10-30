@@ -261,7 +261,9 @@ pro design_sdss3test, platenum, nminsky=nminsky, nstd=nstd
    skyobj.priority = 1
 
    ;----------
-   ; Select the guide stars, using the criteria outlines in sdss-spectro/955
+   ; Select the guide stars, using the criteria outlines in sdss-spectro/955,
+   ; but changing the magnitude limit to go 0.5 mag fainter.
+   ; This is because stars can saturate at g=15.5 in good-seeing runs.
 
    psfmag = 22.5 - 2.5*alog10(objs.psfflux>0.01) ; no extinction-correction
    psf_ugcolor = reform(psfmag[0,*] - psfmag[1,*])
@@ -269,7 +271,7 @@ pro design_sdss3test, platenum, nminsky=nminsky, nstd=nstd
    psf_ricolor = reform(psfmag[2,*] - psfmag[3,*])
    psf_izcolor = reform(psfmag[3,*] - psfmag[4,*])
 
-   iguide = where(psfmag[1,*] GT 13.0 AND psfmag[1,*] LT 15.5 $
+   iguide = where(psfmag[1,*] GT 13.5 AND psfmag[1,*] LT 16.0 $
     AND psf_grcolor GT 0.3 AND psf_grcolor LT 1.4 $
     AND psf_ricolor GT 0.0 AND psf_ricolor LT 0.7 $
     AND psf_izcolor GT -0.4 AND psf_izcolor LT 1.0 $
