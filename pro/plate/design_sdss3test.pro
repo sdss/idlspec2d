@@ -253,9 +253,25 @@ pro design_sdss3test, platenum, nminsky=nminsky, nstd=nstd
       endfor
    endfor
    objs = objs[ sdss_selectobj(objs, /trim) ]
+   ; Trim based upon the default options in the SDSS_SELECTOBJ routine,
+   ; as well as the INTERP_CENTER.
+   indx = where( $
+    (objs.objc_flags2 AND sdss_flagval('OBJECT2','INTERP_CENTER')) EQ 0
+   objs = objs[indx]
    objs = objs[uniq(objs.thing_id,sort(objs.thing_id))]
    objs = objs[where(djs_diff_angle(objs.ra, objs.dec, racen, deccen) $
     LT 1.49)]
+
+   ; Logic to see which objects are or maybe are moving...
+   qmoved = $
+    (objs.objc_flags2 AND sdss_flagval('OBJECT2','DEBLENDED_AS_MOVING')) EQ 0 $
+    AND (abs(objs.rowv) GE 3.0*abs(objs.rowverr) $
+     OR abs(objs.colv) GE 3.0*abs(objs.colverr))
+   qmaybe_moved = $
+    (objs.objc_flags2 AND sdss_flagval('OBJECT2','DEBLENDED_AS_MOVING')) EQ 0 $
+    AND (abs(objs.rowv) GE 3.0*abs(objs.rowverr) $
+     OR abs(objs.colv) GE 3.0*abs(objs.colverr) $
+     OR objs.rowverr LE 0 OR objs.colverr LE 0)
 
    fibermag = 22.5 - 2.5*alog10(objs.fiberflux>0.01)
 
@@ -344,6 +360,7 @@ pro design_sdss3test, platenum, nminsky=nminsky, nstd=nstd
    iqso = where(psfmag[1,*] GT 17 AND psfmag[1,*] LT 22 $
     AND psf_ugcolor GT 0.40 AND psf_grcolor LT 0.20 $
     AND objs.fiberflux[1] LT objs.psfflux[1] $
+    AND (qmaybe_moved EQ 0) $
 ;    AND ((psf_ugcolor GE 0.40 AND psf_ugcolor LE 0.75 AND psf_grcolor LT 0.5) $
 ;     OR (psf_ugcolor GE 0.75 AND psf_grcolor LT 0.45*psf_ugcolor-0.25) $
 ;     OR (psf_grcolor LT 0.20 AND psf_ugcolor GT 0.75)) $
