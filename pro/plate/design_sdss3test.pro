@@ -256,7 +256,7 @@ pro design_sdss3test, platenum, nminsky=nminsky, nstd=nstd
    ; Trim based upon the default options in the SDSS_SELECTOBJ routine,
    ; as well as the INTERP_CENTER.
    indx = where( $
-    (objs.objc_flags2 AND sdss_flagval('OBJECT2','INTERP_CENTER')) EQ 0
+    (objs.objc_flags2 AND sdss_flagval('OBJECT2','INTERP_CENTER')) EQ 0)
    objs = objs[indx]
    objs = objs[uniq(objs.thing_id,sort(objs.thing_id))]
    objs = objs[where(djs_diff_angle(objs.ra, objs.dec, racen, deccen) $
