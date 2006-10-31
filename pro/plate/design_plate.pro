@@ -147,27 +147,35 @@ end
 ;------------------------------------------------------------------------------
 ; Group fibers into NXBIN by NYBIN groups, and return the group number
 ; between [0,NXBIN*NYBIN-1] for each fiber.
-function design_groupfibers, allplug, nxbin, nybin
+; NXBIN can either be a scalar representing the number of groupings in X
+; for each slice in Y, or it can be an array with a different number of
+; grouping for each slice in Y.
+function design_groupfibers, allplug, nxbin1, nybin
+
+   if (n_elements(nxbin1) EQ nybin) then nxbin = nxbin1 $
+    else nxbin = replicate(nxbin1,nybin)
 
    nobj = n_elements(allplug)
    groupnum = lonarr(n_elements(allplug)) - 1L
 
    isort = sort(allplug.dec)
+   igroup = 0L
+   i0 = 0L
    for iy=0, nybin-1 do begin
       ; Select objects in this declination slice
-      ii = isort[ $
-       where(allplug[isort].dec GE allplug[isort[nobj*float(iy)/nybin]].dec $
-       AND allplug[isort].dec LE allplug[isort[nobj*float(iy+1)/nybin-1]].dec $
-       AND groupnum[isort] EQ -1, nsamp) ]
-      for ix=0, nxbin-1 do begin
+      nsamp = long((nxbin[iy] / total(nxbin)) * nobj) > 1
+      ii = isort[i0:i0+nsamp-1L]
+      for ix=0, nxbin[iy]-1 do begin
          ; Select objects in some RA box within this declination slice
          jsort = ii[ sort(allplug[ii].ra) ]
          jj = jsort[ $
-          where(allplug[jsort].ra GE allplug[jsort[nsamp*float(ix)/nxbin]].ra $
-          AND allplug[jsort].ra LE allplug[jsort[nsamp*float(ix+1)/nxbin-1]].ra $
+          where(allplug[jsort].ra GE allplug[jsort[nsamp*float(ix)/nxbin[iy]]].ra $
+          AND allplug[jsort].ra LE allplug[jsort[nsamp*float(ix+1)/nxbin[iy]-1]].ra $
           AND groupnum[jsort] EQ -1) ]
-         groupnum[jj] = iy * nxbin + ix
+         groupnum[jj] = igroup
+         igroup = igroup + 1
       endfor
+      i0 = i0 + nsamp
    endfor
 
    return, groupnum
@@ -515,15 +523,19 @@ pro design_plate, stardata1, racen=racen, deccen=deccen, $
 
    nybin = 4
    nperbundle = 20
-   nxbin = long(ntotal/nxbin/nperbundle)
-   if ((ntotal MOD nxbin*nybin) NE 0) then $
-    message, 'Number of fibers not divisible by 80'
+   if (ntotal EQ 640) then begin
+      nxbin = [7,9,9,7]
+   endif else begin
+      nxbin = long(ntotal/nxbin/nperbundle)
+      if ((ntotal MOD nxbin*nybin) NE 0) then $
+       message, 'Number of fibers not divisible by 80'
+   endelse
    indx = where(strtrim(allplug.holetype,2) EQ 'OBJECT', nobj)
    groupnum = design_groupfibers(allplug[indx], nxbin, nybin)
    i0 = 1L
    for igroup=0, max(groupnum) do begin
       jj = where(groupnum EQ igroup, ct)
-      jj = jj[sort(allplug[indx[jj]].dec)]
+      jj = jj[sort(-allplug[indx[jj]].dec)]
       allplug[indx[jj]].fiberid = -(i0 + lindgen(ct))
       i0 = i0 + ct
    endfor
