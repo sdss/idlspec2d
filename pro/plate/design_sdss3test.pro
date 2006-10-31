@@ -47,6 +47,7 @@ function design_struct, num
 
    result = create_struct( $
     name = 'TARGETDATA', $
+    'objid'     ,  lonarr(5), $
     'ra'        ,  0.d, $
     'dec'       ,  0.d, $
     'mag'       , fltarr(5), $
@@ -252,9 +253,22 @@ pro design_sdss3test, platenum, nminsky=nminsky, nstd=nstd
          endif
       endfor
    endfor
-   objs = objs[ sdss_selectobj(objs, /trim) ]
+
+   ;----------
+   ; Add the OBJID array for the plugmaps
+
+   objid = replicate(create_struct('objid', lonarr(5)), n_elements(objs))
+   objid.objid[0] = objs.run
+   objid.objid[1] = long(objs.rerun)
+   objid.objid[2] = objs.camcol
+   objid.objid[3] = objs.field
+   objid.objid[4] = objs.id
+   objs = struct_addtags(objs, objid)
+
+   ;----------
    ; Trim based upon the default options in the SDSS_SELECTOBJ routine,
    ; as well as the INTERP_CENTER.
+   objs = objs[ sdss_selectobj(objs, /trim) ]
    indx = where( $
     (objs.objc_flags2 AND sdss_flagval('OBJECT2','INTERP_CENTER')) EQ 0)
    objs = objs[indx]
@@ -280,6 +294,7 @@ pro design_sdss3test, platenum, nminsky=nminsky, nstd=nstd
 
    isky = where(objs.objc_type EQ 8, nsky)
    skyobj = design_struct(nsky)
+   skyobj.objid = objs[isky].objid
    skyobj.ra = objs[isky].ra
    skyobj.dec = objs[isky].dec
    skyobj.mag = 30.
@@ -308,6 +323,7 @@ pro design_sdss3test, platenum, nminsky=nminsky, nstd=nstd
    iguide = iguide[ sdss_selectobj(objs[iguide], ancestry='single', $
     /trim, count=nguide) ]
    guideobj = design_struct(nguide)
+   guideobj.objid = objs[iguide].objid
    guideobj.ra = objs[iguide].ra
    guideobj.dec = objs[iguide].dec
    guideobj.mag = fibermag[*,iguide]
@@ -340,6 +356,7 @@ pro design_sdss3test, platenum, nminsky=nminsky, nstd=nstd
     + (psf_ricolor[ifstar] - 0.101)^2 $
     + (psf_izcolor[ifstar] - 0.013)^2 )
    fstarobj = design_struct(nfstar)
+   fstarobj.objid = objs[ifstar].objid
    fstarobj.ra = objs[ifstar].ra
    fstarobj.dec = objs[ifstar].dec
    fstarobj.mag = fibermag[*,ifstar]
@@ -367,6 +384,7 @@ pro design_sdss3test, platenum, nminsky=nminsky, nstd=nstd
 ;    AND psf_grcolor GT -0.8 AND psf_grcolor LT 0.7 $
     AND objs.objc_type EQ 6, nqso)
    qsoobj = design_struct(nqso)
+   qsoobj.objid = objs[iqso].objid
    qsoobj.ra = objs[iqso].ra
    qsoobj.dec = objs[iqso].dec
    qsoobj.mag = fibermag[*,iqso]
@@ -393,6 +411,7 @@ pro design_sdss3test, platenum, nminsky=nminsky, nstd=nstd
    ilist = lrg_select_target(objs, /all)
    ilrg = where(ilist GT 0 AND fibermag[3,*] GT 16, nlrg)
    lrgobj = design_struct(nlrg)
+   lrgobj.objid = objs[ilrg].objid
    lrgobj.ra = objs[ilrg].ra
    lrgobj.dec = objs[ilrg].dec
    lrgobj.mag = fibermag[*,ilrg]
