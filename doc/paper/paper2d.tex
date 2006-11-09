@@ -85,7 +85,8 @@ and the broad-band spectrophotometry to have an accuracy of better than $6\%$.
 % SUBJECT HEADINGS
 %------------------------------------------------------------------------------
 \emph{Subject headings: }
-???
+instrumentation: spectrographs --- techniques: spectroscopic --- 
+methods: data analysis --- surveys -- galaxies: distances and redshifts
 \end{abstract}
 
 %------------------------------------------------------------------------------
@@ -101,15 +102,16 @@ science goals of the project are to provide the data to investigate the
 large scale structure of the Universe and other extragalactic science.
 
 In this paper, we describe the details of the SDSS 2-d spectroscopic pipeline
-(idlspec2d) including steps starting with processing of the raw CCD frames to final
-flux calibration and spectral co-addition.  Downstream pipelines which
-calculate redshifts, spectral types, emission and absorption line identification,
-and velocity dispersions are described elsewhere.
+(idlspec2d) including steps starting with processing of the raw CCD frames 
+to final flux calibration and spectral co-addition.  Downstream pipelines 
+which calculate redshifts, spectral types, emission and absorption line 
+identification, and velocity dispersions are described elsewhere.
 As of writing the 2-d pipeline has been run successfully on all spectroscopic
-data obtained in the course of the survey from February 28, 2000 (MJD 2451602) 
+data obtained in the course of the survey from February 28, 2000 
+(Modified Julian Data, MJD 2451602) 
 to June 15, 2005 (MJD 2453536).  Over this timespan, which includes public data 
-releases EDR through DR5 (Stoughton et al ??, Abazajian et al ??, 
-Adelman-McCarthy et al)
+releases EDR through DR5 (Stoughton et al 2002, 
+Abazajian et al 2003, 2004, 2005, Adelman-McCarthy et al 2006)
 , SDSS obtained survey quality spectroscopic data on
 1656 fiber pluggings (640 fibers each in 1575 unique plates).   
 A total of 972,111 sky positions were targetted, with the following 
@@ -117,6 +119,10 @@ breakdown in the best matched spectral classification:  651920 galaxies,
 208054 stars, 112137 QSOs and 51300 sky spectra.
 
 Mean exposure time per plate is 3914 seconds, and the median is 3302 seconds.
+;
+;   Should we include a histogram of exposure times??
+;
+
 In Figure 1 we show three of the data quality diagnostics. This figure shows
 the effective signal-to-noise ratio of each spectroscopic plug plate 
 normalized to 3600 seconds exposure time, the median seeing in arcseconds,
@@ -154,9 +160,10 @@ bundles of 20 with inter-fiber spacings of 390 $\mu m$.  Sixteen bundles are
 mounted on a single slithead with a radius of curvature of 640 mm and have
 an extra spacing of approximately 200 $\mu m$ between bundles.
 
-In Figure 1, we show a top-view schematic of one the spectrographs, and
-will detail the light path below starting at the slithead.
-The output light from the fiber is collimated with a spherical mirror
+In Figure 1, we show a top-view schematic of one the spectrographs.  Here
+we provide a short summary of the light path starting at the slithead,
+further details can be found in Uomoto et al. (20??) and Gunn et al. (2006).
+The output light from the fiber is collimated by a spherical mirror
 (of radius of curvature 1264 mm), which is aligned by 3 motor mounts to
 control focus, tip and tilt.  A left/right Hartmann mask 
 covers the collimator to act as both a spectrograph shutter and traditional 
@@ -164,7 +171,7 @@ Shack-Hartmann mask for focus tests.  The collimator in spectrograph 2
 was coated with an enhanced silver coating and delivers slightly higher
 reflectivity compared to the aluminum coated collimator in spectrograph 1.
 The collimated beam encounters a 40mm thick dichroic (beamsplitter) which
-reflect light blueward of 6000\AA.  The blue reflected light is dispersed
+reflects light blueward of 6000\AA.  The blue reflected light is dispersed
 with a 640 l/mm grism with zero deviation at 4960\AA.  The red transmitted
 light is dispersed with a 440 l/mm grism with zero deviation at 7400\AA.
 The dispersed light in each arm of the spectrograph enters a transmission camera
@@ -222,10 +229,28 @@ steps explained here.  The results are posted to sos.apo.nmsu.edu, and
 the SDSS observers can check the signal-to-noise ratio (S/N) 
 obtained in each of the 4 spectroscopic
 cameras in real-time.  A plate is considered to have met SDSS survey standards
-if all 4 cameras have a cumulative (S/N)$^2$ greater than 15 at 
-fidicual magnitudes (what the heck is a fiducial magnitude??)
-of 20.33 and 20.06 in SDSS g and i filters respectively.  
+if all 4 cameras have a cumulative (S/N)$^2 > 15$ at 
+fiber magnitudes of 20.33 and 20.06 in SDSS g and i filters respectively.  
 
+\section{IMAGE PROCESSING}
+\label{sec_process}
+
+sdssproc:
+
+1000 lines of IDL code...
+
+read opEcalib
+     op something else
+
+Read file header, require...
+mention spHdrFix here.
+
+
+
+\section{SPATIAL TRACING}
+\label{sec_tracing}
+
+trace320, Trace crude, and trace fitting
 
 
 \section{OPTIMAL EXTRACTION}
@@ -403,8 +428,8 @@ of spectral pixel.
 
 An arc-lamp image is declared unacceptable using the first 4 tests as employed
 in tests of the flat-field images.  In addition, an arc-lamp exposure
-is declared unacceptable ("BAD") if any of these following criteria are met:
-5) not all 8 arc-lamps are on, 4 Neon lamps and 4 Mercury-Cadmium lamps,
+is declared unacceptable (``BAD") if any of these following criteria are met:
+5) not all 8 arc-lamps are on: 4 Neon lamps and 4 Mercury-Cadmium lamps,
 6) the initial cross-correlation coefficient is less than 0.5,
 7) fewer than 6 arc lines are acceptable after quality assurance checks.
 
@@ -420,7 +445,7 @@ but the values reflect the standard deviation of a Gaussian
 profile in pixel units and represents the line-spread function of the 
 arc-lamp spectra.  Detailed analysis of the measured arc-line widths
 compared to the observed sky emission line shapes show less than a 1\%
-difference on average (McDonald et al. 2004). 
+difference on average (McDonald et al. 2006). 
 
 %%(or just refer to data model appendix instead of the paragraph below:)
 %%
@@ -623,7 +648,7 @@ data releases 4 and earlier, there have been mulitple confirmations of an
 underestimation of the true variance as reported in the output of the 
 spectroscopic pipeline.  By comparing multiple observations of the same
 high-z QSOs in studies of the Lyman-$\alpha$ forest, the average variance was
-shown to be underestimated by approximately 16\% (McDonald et al. 2004).  
+shown to be underestimated by approximately 16\% (McDonald et al. 2006).  
 A fraction of the effect arises due to large tails in the distribution 
 of the noise and the remainder from the predicted FWHM of the noise 
 distribution.  Switzer (2004) identified two causes for the underestimates,
@@ -642,7 +667,7 @@ pixels directly from the SDSS spectroscopic products for two versions
 of the software (versions 4 \& 5).  In the first sample, flux measurements
 from the sky fibers are shown relative to zero and normalized by their reported
 inverse variances 
-(${\rm residual} = {\rm flux} \, \sqrt{\rm inverse variance}$).  
+(${\rm residual} = {\rm flux} \, \sqrt{\rm 1}$).  
 In the second sample, residuals in galaxy spectra, 
 which were targetted as luminous red galaxies, were constructed by subtracting
 the best fit galaxy model and then normalizing by the inverse variance.
@@ -759,9 +784,8 @@ those stars with colors closest to the following:
 $$ u-g = 0.80 $$
 $$ g-r = 0.30 $$
 $$ r-i = 0.10 $$
-This is meant to select those stars closest in color to BD +17 4708,
-which is computed to have a similar color (0.93, 0.28, 0.01, courtesy
-of David Hogg, priv. comm.).
+in order to select those stars closest in color to BD +17 4708 
+(0.93, 0.28, 0.01, courtesy of David Hogg, priv. comm.).
 From these stars, we select 8 on each plate in the magnitude
 range $15.5 < g < 17.0$ (which we call SPECTROPHOTO\_STD stars)
 and 8 in the magnitude range $17.0 < g < 18.5$ (which we call
@@ -1007,6 +1031,24 @@ the University of Washington.
 \bibliography{gsrp}
 
 \begin{thebibliography}{DUM}
+
+\bibitem[McDonald et al.(2006)]{2006ApJS..163...80M} McDonald, P., et al.\ 
+2006, \apjs, 163, 80 
+
+\bibitem[Stoughton et al.(2002)]{2002AJ....123..485S} Stoughton, C., et 
+al.\ 2002, \aj, 123, 485 
+
+\bibitem[Adelman-McCarthy et al.(2006)]{2006ApJS..162...38A} 
+Adelman-McCarthy, J.~K., et al.\ 2006, \apjs, 162, 38 
+
+\bibitem[Abazajian et al.(2005)]{2005AJ....129.1755A} Abazajian, K., et 
+al.\ 2005, \aj, 129, 1755 
+
+\bibitem[Abazajian et al.(2004)]{2004AJ....128..502A} Abazajian, K., et 
+al.\ 2004, \aj, 128, 502 
+
+\bibitem[Abazajian et al.(2003)]{2003AJ....126.2081A} Abazajian, K., et 
+al.\ 2003, \aj, 126, 2081 
 
 \bibitem[Bolton et al.(2006)]{2006ApJ...638..703B} Bolton, A.~S., Burles, 
 S., Koopmans, L.~V.~E., Treu, T., \& Moustakas, L.~A.\ 2006, \apj, 638, 703 
