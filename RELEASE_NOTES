@@ -11,7 +11,7 @@ ZCOMPUTE: Add FIXED_TEMPLATE as optional input, and ZANS_FIXED output.
 ZFIND: Add optional ZANS_FIXED return keyword from ZCOMPUTE.
 
 doc/www/spectro_home.html: Update for DR5.
-etc/spChunkList.par: Add chunks 148-157, 153A.
+etc/spChunkList.par: Add chunks 148-157, 153A, 158-160.
 examples/opECalib-50000.par,opECalib-51430.par,opECalib-51577.par:
 	Raise the full well limit to 65535 from 35000, as the detectors
         are not showing signs of saturation.
