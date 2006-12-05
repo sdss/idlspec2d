@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   result = linebackfit(lambda, loglam, flux, invvar=, $
 ;    linename=, zindex=, windex=, findex=, fvalue=, zlimits=, siglimits=, $
-;    background=, zguess=, sigguess=, yfit=, bfit=, bterms= )
+;    background=, zguess=, sigguess=, yfit=, bfit=, bterms=, /silent )
 ;
 ; INPUTS:
 ;   lambda     - Rest-frame vacuum wavelength of lines to fit in Ang [NLINE]
@@ -46,6 +46,7 @@
 ;   sigguess   - Initial guess for sigmas of all lines in log-10 Angstroms
 ;                (scalar or vector with one entry per line); default to 1.5d-4
 ;                (105 km/sec).
+;   silent     - If set, then make no print statements with SPLOG
 ;
 ; OUTPUTS:
 ;   result     - Output structure with result of line fits [NLINE].
@@ -149,7 +150,7 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
  zindex=zindex, windex=windex, findex=findex, fvalue=fvalue, $
  zlimits=zlimits1, siglimits=siglimits1, $
  background=background, zguess=zguess1, sigguess=sigguess1, $
- yfit=yfit, bfit=bfit, bterms=bterms
+ yfit=yfit, bfit=bfit, bterms=bterms, silent=silent
 
    cspeed = 2.99792458e5
 
@@ -331,13 +332,16 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
        1./sqrt(invvar[igood]), parinfo=parinfo, $
        covar=covar, perror=perror, yfit=yfit1, functargs=functargs, $
        nfev=nfev, niter=niter, status=status, /quiet)
-      splog, 'MPFIT nfev=', nfev, ' niter=', niter, ' status=', status
-      if (status EQ 5) then $
-       splog, 'Warning: Maximum number of iterations reached: ', niter
+      if (NOT keyword_set(silent)) then begin
+         splog, 'MPFIT nfev=', nfev, ' niter=', niter, ' status=', status
+         if (status EQ 5) then $
+          splog, 'Warning: Maximum number of iterations reached: ', niter
+      endif
       yfit[igood] = yfit1
    endif
    if (ngood EQ 0 OR status EQ 0) then begin
-      splog, 'Too few points to fit ', ngood
+      if (NOT keyword_set(silent)) then $
+       splog, 'Too few points to fit ', ngood
       nparam = 3 * nline + nback
       lfit = fltarr(nparam)
       perror = fltarr(nparam)
