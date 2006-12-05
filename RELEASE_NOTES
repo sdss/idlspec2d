@@ -4,6 +4,7 @@ DESIGN_PLATE: Modified to not use most of the dumb TCL scripts in the
         "plate" product.
 EXTRACT_ROW: Catch divide by 0 in reduced chi^2.
 LINEBACKFIT: Fix crash condition for when no BACKGROUND vectors are set.
+        Add /SILENT option.
 READ1SPEC: Remove this deprecated routine.
 SIMPLE_PLATE: This is essentially a re-write of DESIGN_PLATE that
         still calls all the dumb TCL scripts in the "plate" product.
