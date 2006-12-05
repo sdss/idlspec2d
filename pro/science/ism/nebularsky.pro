@@ -6,7 +6,8 @@
 ;   Fit nebular emission lines in SDSS sky + galaxy spectra
 ;
 ; CALLING SEQUENCE:
-;   nebularsky, [ plate, mjd=, lambda=, fitrange=, zlimits=, siglimits=, $
+;   nebularsky, [ plate, mjd=, lambda=, skyfile=, fitrange=, $
+;    zlimits=, siglimits=, $
 ;    npoly=, fitflux=, lwidth=, outfile=, /debug ]
 ;
 ; INPUTS:
@@ -16,7 +17,10 @@
 ;                to select all reduced plates without quality set to 'bad'
 ;   mjd        - MJD corresponding to each PLATE
 ;   lambda     - Wavelengths for sky emission lines [vacuum Ang]
-;   fitrange   - Fitting region; default to [6650,6800] vacuum Ang
+;   skyfile    - FITS file containing the PCA components for the sky,
+;                with the spectra in HDU #0, and the log-wavelengths
+;                in HDU #1
+;   fitrange   - Fitting region in vacuum Ang; default to using all wavelengths
 ;   zlimits    - Redshift limits for all emission lines; default to
 ;                [-300,300]/3e5
 ;   siglimits  - Velocity dispersion limits for all emission lines; default to
@@ -24,7 +28,7 @@
 ;   npoly      - Number of polynomial terms for sky spectrum; default to 3
 ;                (quadratic)
 ;   fitflux    - Subtract out either the 'synflux' or 'lineflux' spectrum;
-;                default to 'lineflux', which is the velocity-dispersion
+;                default to 'synflux'
 ;                broadened Elodie templates plus emission lines.
 ;   lwidth     - Full width for masking around possible galaxy emission lines;
 ;                default to 0.002 in log-wavelenghth (about 1382 km/s)
@@ -68,14 +72,15 @@
 ;   12-Jan-2006  Written by A. West & D. Schlegel, Berkeley
 ;-
 ;------------------------------------------------------------------------------
-pro nebularsky, plate, mjd=mjd1, lambda=lambda1, fitrange=fitrange1, $
+pro nebularsky, plate, mjd=mjd1, lambda=lambda1, skyfile=skyfile1, $
+ fitrange=fitrange, $
  zlimits=zlimits1, siglimits=siglimits1, fitflux=fitflux1, lwidth=lwidth1, $
  npoly=npoly1, outfile=outfile1, debug=debug
 
    if (keyword_set(lambda1)) then lambda = lambda1 $
-    else lambda = [6718.294, 6732.678]
-   if (keyword_set(fitrange1)) then fitrange = fitrange1 $
-    else fitrange = [6650,6800]
+    else lambda = [6549.859d0, 6564.614d0, 6585.268d0, 6718.294d0, 6732.678]
+   if (keyword_set(skyfile1)) then skyfile = skyfile1 $
+    else skyfile = 'pcasky.fits'
    if (keyword_set(zlimits1)) then zlimits = zlimits1 $
     else zlimits = [-300.,300.]/3e5
    if (keyword_set(siglimits1)) then siglimits = siglimits1 $
@@ -85,7 +90,7 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, fitrange=fitrange1, $
    if (keyword_set(outfile1)) then outfile = outfile1 $
     else outfile = 'nebular.fits'
    if (keyword_set(fitflux1)) then fitflux = strlowcase(fitflux1) $
-    else fitflux = 'lineflux'
+    else fitflux = 'synflux'
    if (keyword_set(lwidth1)) then lwidth = lwidth1 $
     else lwidth = 0.002
    if (fitflux NE 'synflux' AND fitflux NE 'lineflux') then $
@@ -102,7 +107,16 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, fitrange=fitrange1, $
    select_tags = ['PLATE','MJD','FIBERID','PLUG_RA','PLUG_DEC']
 
    ;----------
-   ; Read line lists and convert to vacuum
+   ; Read the sky PCA components
+
+   skypcaflux = mrdfits(skyfile)
+   skyloglam = mrdfits(skyfile, 1)
+   if (NOT keyword_set(skypcaflux)*keyword_set(skyloglam)) then $
+    message, 'Unable to read sky file ' + skyfile
+
+   ;----------
+   ; Read line lists and convert to vacuum (used for masking lines
+   ; in galaxy spectra)
 
    linefile = filepath('emlines.par', $
     root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
@@ -151,28 +165,49 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, fitrange=fitrange1, $
             if (qsky[ifiber] OR qgalaxy[ifiber] OR qstar[ifiber]) then begin
 
                ; Read in all the individual exposures for this object
-               ; (red cameras only)
+               ; (blue and red cameras)
                readonespec, plist[iplate].plate, mjd=plist[iplate].mjd, $
-                zans[ifiber].fiberid, cameras='r', $
+                zans[ifiber].fiberid, $
                 flux=flux, invvar=invvar, mask=mask, loglam=loglam, $
-                sky=sky, synflux=synflux, lineflux=lineflux, /silent
+                sky=sky, synflux=synflux, lineflux=lineflux, expnum=expnum, $
+                framehdr=framehdr, /silent
                invvar = invvar * ((mask AND pixelmask_bits('COMBINEREJ')) EQ 0)
                if (fitflux EQ 'lineflux') then synflux = lineflux
 
-               if (keyword_set(npoly)) then begin
-                  ; Generate background terms of orderr NPOLY, with a set of
-                  ; background terms for each exposure
-                  ndim = size(flux,/n_dimen)
-                  dims = size(flux,/dimens)
-                  npix = dims[0]
-                  if (ndim EQ 1) then nobs = 1 else nobs = dims[1]
-                  background = fltarr(npix,nobs,nobs,npoly)
-                  for iobs=0, nobs-1 do $
-                   background[*,iobs,iobs,*] = poly_array(npix,npoly)
-                  background = reform(background,npix*nobs,nobs*npoly)
-               endif else begin
-                  npoly = 0
-               endelse
+               ;----------
+               ; Generate PCA sky background basis vectors,
+               ; resampled to the wavelength mapping of the data
+
+               ndim = size(flux,/n_dimen)
+               dims = size(flux,/dimens)
+               npix = dims[0]
+               if (ndim EQ 1) then nobs = 1 else nobs = dims[1]
+
+               ndim = size(skypcaflux,/n_dimen)
+               dims = size(skypcaflux,/dimens)
+               if (ndim EQ 1) then nsky = 1 else nsky = dims[1]
+
+               explist = expnum[uniq(expnum,sort(expnum))]
+               nexp = n_elements(explist)
+               background = fltarr(npix, nobs, nexp, nsky)
+               for iexp=0L, nexp-1L do begin
+                  ithis = where(expnum EQ explist[iexp])
+                  ; Convert the sky PCA spectra from Earth rest-frame
+                  ; to heliocentric...???
+                  heliov = sxpar(*framehdr[ithis[0]], 'HELIO_RV')
+                  for isky=0L, nsky-1L do begin
+                     combine1fiber, $
+                      skyloglam - alog10(1.d0 + heliov/2.99792458d5), $
+                      skypcaflux[*,isky], $
+                      newloglam=loglam[*,ithis], newflux=thisflux
+                     background[*,ithis,iexp,isky] = thisflux
+                  endfor
+               endfor
+               background = reform(background, npix*nobs, nexp*nsky)
+
+               ; Discard wavelengths outside of the synthetic template fits
+               if (qsky[ifiber] EQ 0) then $
+                invvar = invvar * (synflux NE 0)
 
                ; Set SYNFLUX=0 if this is a sky fiber
                synflux = synflux * (1-qsky[ifiber])
@@ -187,13 +222,9 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, fitrange=fitrange1, $
                endif
 
                ; Fit only within the fitting range
-               invvar = invvar * (loglam GE alog10(fitrange[0]) $
-                AND loglam LE alog10(fitrange[1]))
-
-;               res1 = linebackfit(lambda, reform(loglam,npix*nobs), $
-;                reform(flux+sky-synflux,npix*nobs), $
-;                invvar=reform(invvar,npix*nobs), background=background, $
-;                zindex=zindex, windex=windex, zguess=zguess, yfit=yfit)
+               if (keyword_set(fitrange)) then $
+                invvar = invvar * (loglam GE alog10(fitrange[0]) $
+                 AND loglam LE alog10(fitrange[1]))
 
                ii = where(invvar NE 0, ngpix)
                if (ngpix EQ 0) then ii = 0
@@ -201,9 +232,11 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, fitrange=fitrange1, $
                 flux[ii]+sky[ii]-synflux[ii], $
                 invvar=invvar[ii], background=background[ii,*], $
                 zindex=zindex, windex=windex, zguess=zguess, $
-                zlimits=zlimits, siglimits=siglimits, yfit=yfit1)
+                zlimits=zlimits, siglimits=siglimits, yfit=yfit1, bfit=bfit1)
                yfit = fltarr(npix,nobs)
                yfit[ii] = yfit1
+               bfit = fltarr(npix,nobs)
+               bfit[ii] = bfit1
 
                if (NOT keyword_set(res_all)) then begin
                   res_blank = create_struct(zans_trim[0], res1[0])
@@ -225,6 +258,7 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, fitrange=fitrange1, $
                      xrange = minmax(xplot)
                      yrange = minmax(yplot)
                   endelse
+xrange = [6500,6800] & yrange=[-20,100] ; ???
                   title = string(plist[iplate].plate, plist[iplate].mjd, $
                    zans[ifiber].fiberid, $
                    format='("Plate ", i4, " MJD ", i5, " Fiber ", i3)')
@@ -232,11 +266,15 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, fitrange=fitrange1, $
                    xrange=xrange, yrange=yrange, /xstyle, /ystyle, $
                    charsize=csize, xtitle='Wavelength [Ang]', ytitle='Flux', $
                    title=title
+                  for iline=0, n_elements(lambda)-1 do $
+                   soplot, lambda[iline]+[0,0], !y.crange, color='green'
                   for iobs=0, nobs-1 do begin
                      jj = where(invvar[*,iobs] NE 0, ct)
                      if (ct GT 1) then begin
                         soplot, xplot[jj,iobs], yplot[jj,iobs]
                         soplot, xplot[jj,iobs], yfit[jj,iobs], color='red'
+                        soplot, xplot[jj,iobs], yfit[jj,iobs]-bfit[jj,iobs], $
+                         color='green'
                      endif
                   endfor
                   thisclass = qsky[ifiber] ? 'SKY' : zans[ifiber].class
