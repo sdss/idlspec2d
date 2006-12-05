@@ -59,6 +59,7 @@
 ; PROCEDURES CALLED:
 ;   copy_struct_inx
 ;   linebackfit()
+;   mrdfits()
 ;   mwrfits_chunks
 ;   pixelmask_bits()
 ;   readonespec
@@ -113,6 +114,8 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, skyfile=skyfile1, $
    skyloglam = mrdfits(skyfile, 1)
    if (NOT keyword_set(skypcaflux)*keyword_set(skyloglam)) then $
     message, 'Unable to read sky file ' + skyfile
+   if (keyword_set(npoly)) then $
+    skypcaflux = [[skypcaflux], [poly_array(n_elements(skyloglam),npoly)]]
 
    ;----------
    ; Read line lists and convert to vacuum (used for masking lines
