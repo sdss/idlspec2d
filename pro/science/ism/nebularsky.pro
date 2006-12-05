@@ -78,8 +78,6 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, skyfile=skyfile1, $
  zlimits=zlimits1, siglimits=siglimits1, fitflux=fitflux1, lwidth=lwidth1, $
  npoly=npoly1, outfile=outfile1, debug=debug
 
-   if (keyword_set(lambda1)) then lambda = lambda1 $
-    else lambda = [6549.859d0, 6564.614d0, 6585.268d0, 6718.294d0, 6732.678]
    if (keyword_set(skyfile1)) then skyfile = skyfile1 $
     else skyfile = 'pcasky.fits'
    if (keyword_set(zlimits1)) then zlimits = zlimits1 $
@@ -98,11 +96,6 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, skyfile=skyfile1, $
     message, 'Invalid string for FITFLUX'
 
    res_all = 0
-   nline = n_elements(lambda)
-
-   zindex = fltarr(n_elements(lambda))
-   windex = fltarr(n_elements(lambda))
-   zguess = fltarr(n_elements(lambda))
 
    csize = 1.6
    select_tags = ['PLATE','MJD','FIBERID','PLUG_RA','PLUG_DEC']
@@ -130,6 +123,19 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, skyfile=skyfile1, $
    vaclambda = linelist.lambda
    airtovac, vaclambda
    linelist.lambda = vaclambda
+
+   ;----------
+   ; Generate the line list that will be used for fitting the sky nebular
+   ; lines, where we force everything to have the same velocity, etc.,
+   ; except for all the [O I] lines which can be atmospheric.
+
+   indx = where(linelist.lambda GT 3800.)
+   lambda = linelist[indx].lambda
+   q_oxygen = strmid(linelist[indx].name,0,5) EQ '[O_I]'
+   nline = n_elements(lambda)
+   zindex = lonarr(n_elements(lambda)) + q_oxygen
+   windex = lonarr(n_elements(lambda)) + q_oxygen
+   zguess = lonarr(n_elements(lambda))
 
    ;----------
    ; Select the list of  plates
