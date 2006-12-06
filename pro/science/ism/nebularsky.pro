@@ -7,8 +7,8 @@
 ;
 ; CALLING SEQUENCE:
 ;   nebularsky, [ plate, mjd=, lambda=, skyfile=, fitrange=, $
-;    zlimits=, siglimits=, $
-;    npoly=, fitflux=, lwidth=, outfile=, /create, /debug ]
+;    zlimits=, siglimits=, npoly=, fitflux=, lwidth=, $
+;    outfile=, logfile=logfile, /onlysky, /create, /debug ]
 ;
 ; INPUTS:
 ;
@@ -35,7 +35,10 @@
 ;                broadened Elodie templates plus emission lines.
 ;   lwidth     - Full width for masking around possible galaxy emission lines;
 ;                default to 0.002 in log-wavelenghth (about 1382 km/s)
-;   outfile    - Output file; default to 'nebular.fits'
+;   onlysky    - If set, then only fit to good sky fibers; otherwise, fits
+;                are performed to good sky fibers, galaxies, and stars
+;   outfile    - Output FITS file; default to 'nebular.fits'
+;   logfile    - Output log file; default to 'nebular.log'
 ;   create     - If set, then create a new output file; default to appending
 ;                to an existing file if it already exists
 ;   debug      - If set, then make debugging plots, and wait for keystroke
@@ -60,6 +63,7 @@
 ;
 ; BUGS:
 ;   Make use of the instrumental response at each line center ???
+;   Test the FITFLUX='lineflux' option ???
 ;
 ; DATA FILES:
 ;   $IDLSPEC2D_DIR/etc/emlines.par
@@ -86,7 +90,8 @@
 pro nebularsky, plate, mjd=mjd1, lambda=lambda1, skyfile=skyfile1, $
  fitrange=fitrange, $
  zlimits=zlimits1, siglimits=siglimits1, fitflux=fitflux1, lwidth=lwidth1, $
- npoly=npoly1, outfile=outfile1, create=create1, debug=debug
+ npoly=npoly1, onlysky=onlysky, outfile=outfile1, logfile=logfile1, $
+ create=create1, debug=debug
 
    if (keyword_set(skyfile1)) then skyfile = skyfile1 $
     else skyfile = 'pcasky.fits'
@@ -98,6 +103,8 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, skyfile=skyfile1, $
     else npoly = 3
    if (keyword_set(outfile1)) then outfile = outfile1 $
     else outfile = 'nebular.fits'
+   if (keyword_set(logfile1)) then logfile = logfile1 $
+    else logfile = 'nebular.log'
    if (keyword_set(fitflux1)) then fitflux = strlowcase(fitflux1) $
     else fitflux = 'synflux'
    if (keyword_set(lwidth1)) then lwidth = lwidth1 $
@@ -108,7 +115,11 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, skyfile=skyfile1, $
    res_all = 0
 
    csize = 1.6
-   select_tags = ['PLATE','MJD','FIBERID','PLUG_RA','PLUG_DEC']
+   select_tags = ['PLATE','MJD','FIBERID','OBJTYPE','PLUG_RA','PLUG_DEC', $
+    'CLASS','SUBCLASS','Z','ZWARNING']
+   res_append = create_struct('SFD_EBV', 0.)
+
+;   splog, filename=logfile
 
    ;----------
    ; Read the sky PCA components
@@ -145,6 +156,7 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, skyfile=skyfile1, $
    endif else begin
       indx = where(linelist.lambda GT 3800.)
       lambda = linelist[indx].lambda
+      linename = linelist[indx].name
       q_oxygen = strmid(linelist[indx].name,0,5) EQ '[O_I]'
    endelse
    nline = n_elements(lambda)
@@ -173,21 +185,26 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, skyfile=skyfile1, $
    splog, 'Number of plates = ', nplate
 
    for iplate=0L, nplate-1 do begin
+splog, filename='nebular-'+string(format='(i4.4,"-",i5.5)',plist[iplate].plate,plist[iplate].mjd)+'.log' ; ???
       t0 = systime(1)
       readspec, plist[iplate].plate, mjd=plist[iplate].mjd, $
        zans=zans, plug=plug, /silent
       if (keyword_set(zans[0])) then begin
          plist[iplate].mjd = zans[0].mjd ; Fill in if this was zero
          zans_trim = struct_selecttags(zans, select_tags=select_tags)
+
          qsky = (zans.zwarning AND 1) NE 0 AND (zans.zwarning AND 2^1+2^7) EQ 0
          qgalaxy = zans.zwarning EQ 0 AND strmatch(zans.class,'GALAXY*')
          qstar = zans.zwarning EQ 0 AND strmatch(zans.class,'STAR*')
+         if (keyword_set(onlysky)) then qgood = qsky $
+          else qgood = qsky OR qgalaxy OR qstar
+;qsky = qsky AND zans.fiberid LT 30 ; ???
 
          nfiber = n_elements(zans)
          for ifiber=0L, nfiber-1L do begin
-            splog, 'Working on PLATE= ', zans[ifiber].plate, $
-             ' MJD= ', zans[ifiber].mjd, ' FIBER=', zans[ifiber].fiberid
-            if (qsky[ifiber] OR qgalaxy[ifiber] OR qstar[ifiber]) then begin
+            if (qgood[ifiber]) then begin
+               splog, 'Working on PLATE= ', zans[ifiber].plate, $
+                ' MJD= ', zans[ifiber].mjd, ' FIBER=', zans[ifiber].fiberid
 
                ; Read in all the individual exposures for this object
                ; (blue and red cameras)
@@ -254,8 +271,8 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, skyfile=skyfile1, $
                ii = where(invvar NE 0, ngpix)
                if (ngpix EQ 0) then ii = 0
                res1 = linebackfit(lambda, loglam[ii], $
-                flux[ii]+sky[ii]-synflux[ii], $
-                invvar=invvar[ii], background=background[ii,*], $
+                flux[ii]+sky[ii]-synflux[ii], invvar=invvar[ii], $
+                linename=linename, background=background[ii,*], $
                 zindex=zindex, windex=windex, zguess=zguess, $
                 zlimits=zlimits, siglimits=siglimits, yfit=yfit1, bfit=bfit1)
                yfit = fltarr(npix,nobs)
@@ -264,13 +281,11 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, skyfile=skyfile1, $
                bfit[ii] = bfit1
 
                if (NOT keyword_set(res_all)) then begin
-                  res_blank = create_struct(zans_trim[0], res1[0])
+                  res_blank = create_struct(zans_trim[0], res1[0], res_append)
                   struct_assign, {junk:0}, res_blank
                   res_all = replicate(res_blank, nline, nfiber)
                endif
                index_to = ifiber*nline+lindgen(nline)
-               copy_struct_inx, replicate(zans_trim[ifiber],nline), res_all, $
-                index_to=index_to
                copy_struct_inx, res1, res_all, index_to=index_to
 
                if (keyword_set(debug)) then begin
@@ -309,20 +324,47 @@ xrange = [6500,6800] & yrange=[-20,100] ; ???
                endif
             endif
          endfor
+
+         ;----------
+         ; Copy ZANS data into the output structure
+
+         for ifiber=0L, nfiber-1L do begin
+            index_to = ifiber*nline+lindgen(nline)
+            copy_struct_inx, replicate(zans_trim[ifiber],nline), res_all, $
+             index_to=index_to
+            ; Copy over LINENAME,LINEWAVE even for fibers that were not fit
+            res_all[index_to].linename = res1.linename
+            res_all[index_to].linewave = res1.linewave
+         endfor
+
+         ;----------
+         ; Add the SFD reddening values
+
+         euler, res_all.plug_ra, res_all.plug_dec, ll, bb, 1
+         res_all.sfd_ebv = dust_getval(ll, bb, /interp)
+
+         ;----------
+         ; Create/append to the output file
+
          while(djs_lockfile(outfile) EQ 0) do wait, 1
-         create = (iplate EQ 0) AND keyword_set(create)
+         create = ((iplate EQ 0) AND (file_test(outfile) EQ 0)) $
+          OR keyword_set(create)
          splog, 'Writing PLATE=', plist[iplate].plate, $
           ' MJD= ', plist[iplate].mjd, ' to file ', outfile
          mwrfits_chunks, res_all, outfile, create=create, $
           append=(create EQ 0), /silent
          djs_unlockfile, outfile
+
          splog, 'Elapsed time for plate ', iplate+1, ' of ', nplate, $
           ' = ', systime(1)-t0, ' sec'
       endif else begin
          splog, 'Skipping PLATE= ', plist[iplate].plate, $
           ' MJD= ', plist[iplate].mjd, ' (not found)'
       endelse
+splog, /close ; ???
    endfor
+
+;   splog, /close
 
    return
 end

@@ -285,6 +285,7 @@ pro/plate/tyc_sdssmags.pro -text
 pro/science/Makefile -text
 pro/science/README -text
 pro/science/bandpassinfo.pro -text
+pro/science/ism/nebular_batch.pro -text
 pro/science/ism/nebular_pcasky.pro -text
 pro/science/ism/nebularsky.pro -text
 pro/science/k_correct.pro -text
