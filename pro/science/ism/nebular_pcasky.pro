@@ -111,7 +111,7 @@ pro nebular_pcasky, waverange=wrange1, wavefit=wfit1, $
    ;----------
    ; Write a FITS file
 
-   mwrfits, res, outfile, /create
+   mwrfits, float(res), outfile, /create
    mwrfits, newloglam, outfile
 
    return
