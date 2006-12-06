@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   nebularsky, [ plate, mjd=, lambda=, skyfile=, fitrange=, $
 ;    zlimits=, siglimits=, $
-;    npoly=, fitflux=, lwidth=, outfile=, /debug ]
+;    npoly=, fitflux=, lwidth=, outfile=, /create, /debug ]
 ;
 ; INPUTS:
 ;
@@ -33,6 +33,8 @@
 ;   lwidth     - Full width for masking around possible galaxy emission lines;
 ;                default to 0.002 in log-wavelenghth (about 1382 km/s)
 ;   outfile    - Output file; default to 'nebular.fits'
+;   create     - If set, then create a new output file; default to appending
+;                to an existing file if it already exists
 ;   debug      - If set, then make debugging plots, and wait for keystroke
 ;                after each plot
 ;
@@ -42,7 +44,8 @@
 ;
 ; COMMENTS:
 ;   This routine creates the output file, and then appends to it one
-;   plate at a time.
+;   plate at a time.  Several instances of this procedure can safely
+;   write to the same file.
 ;
 ;   All wavelengths are in vacuum, and velocities are barycentric.
 ;
@@ -58,6 +61,8 @@
 ;
 ; PROCEDURES CALLED:
 ;   copy_struct_inx
+;   djs_lockfile()
+;   djs_unlockfile
 ;   linebackfit()
 ;   mrdfits()
 ;   mwrfits_chunks
@@ -76,7 +81,7 @@
 pro nebularsky, plate, mjd=mjd1, lambda=lambda1, skyfile=skyfile1, $
  fitrange=fitrange, $
  zlimits=zlimits1, siglimits=siglimits1, fitflux=fitflux1, lwidth=lwidth1, $
- npoly=npoly1, outfile=outfile1, debug=debug
+ npoly=npoly1, outfile=outfile1, create=create1, debug=debug
 
    if (keyword_set(skyfile1)) then skyfile = skyfile1 $
     else skyfile = 'pcasky.fits'
@@ -163,14 +168,15 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, skyfile=skyfile1, $
        zans=zans, plug=plug, /silent
       if (keyword_set(zans[0])) then begin
          plist[iplate].mjd = zans[0].mjd ; Fill in if this was zero
-         splog, 'Working on PLATE= ', plist[iplate].plate, $
-          ' MJD= ', plist[iplate].mjd
          zans_trim = struct_selecttags(zans, select_tags=select_tags)
          qsky = (zans.zwarning AND 1) NE 0 AND (zans.zwarning AND 2^1+2^7) EQ 0
          qgalaxy = zans.zwarning EQ 0 AND strmatch(zans.class,'GALAXY*')
          qstar = zans.zwarning EQ 0 AND strmatch(zans.class,'STAR*')
 
-         for ifiber=0, 639 do begin
+         nfiber = n_elements(zans)
+         for ifiber=0L, nfiber-1L do begin
+            splog, 'Working on PLATE= ', zans[ifiber].plate, $
+             ' MJD= ', zans[ifiber].mjd, ' FIBER=', zans[ifiber].fiberid
             if (qsky[ifiber] OR qgalaxy[ifiber] OR qstar[ifiber]) then begin
 
                ; Read in all the individual exposures for this object
@@ -202,7 +208,7 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, skyfile=skyfile1, $
                for iexp=0L, nexp-1L do begin
                   ithis = where(expnum EQ explist[iexp])
                   ; Convert the sky PCA spectra from Earth rest-frame
-                  ; to heliocentric...???
+                  ; to heliocentric.
                   heliov = sxpar(*framehdr[ithis[0]], 'HELIO_RV')
                   for isky=0L, nsky-1L do begin
                      combine1fiber, $
@@ -250,7 +256,7 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, skyfile=skyfile1, $
                if (NOT keyword_set(res_all)) then begin
                   res_blank = create_struct(zans_trim[0], res1[0])
                   struct_assign, {junk:0}, res_blank
-                  res_all = replicate(res_blank, nline, 640)
+                  res_all = replicate(res_blank, nline, nfiber)
                endif
                index_to = ifiber*nline+lindgen(nline)
                copy_struct_inx, replicate(zans_trim[ifiber],nline), res_all, $
@@ -293,8 +299,11 @@ xrange = [6500,6800] & yrange=[-20,100] ; ???
                endif
             endif
          endfor
-         mwrfits_chunks, res_all, outfile, create=(iplate EQ 0), $
-          append=(iplate NE 0), /silent
+         while(djs_lockfile(outfile) EQ 0) do wait, 1
+         create = (iplate EQ 0) AND keyword_set(create)
+         mwrfits_chunks, res_all, outfile, create=create, $
+          append=(create EQ 0), /silent
+         djs_unlockfile, outfile
          splog, 'Elapsed time for plate ', iplate+1, ' of ', nplate, $
           ' = ', systime(1)-t0, ' sec'
       endif else begin
