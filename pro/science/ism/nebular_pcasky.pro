@@ -1,5 +1,51 @@
-; Lots of O I emission on 286/51999-422 ???
-; plotspec,286,m=51999,422,xr=[6200,6400],/sky,yr=[-10,1000]
+;+
+; NAME:
+;   nebular_pcasky
+;
+; PURPOSE:
+;   Solve for the PCA components of the night sky emission
+;
+; CALLING SEQUENCE:
+;   nebular_pcasky, [ waverange=, wavefit=, outfile=, niter=, nkeep= ]
+;
+; INPUTS:
+;
+; OPTIONAL INPUTS:
+;   waverange  - Wavelength range for output; default to [3750.,9250.] Ang
+;   wavefit    - Fitting wavelength range; default to [4000.,7700.] Ang
+;   outfile    - Output file; default to 'pcasky.fits'
+;   niter      - Parameter for PCA_SOLVE(); default to 10
+;   nkeep      - Parameter for PCA_SOLVE(); default to 4
+;
+; OUTPUTS:
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;
+; BUGS:
+;   Make use of the instrumental response at each pixel ???
+;
+;   Do we adequately describe the geocoronal emission as one of the
+;   PCA components?  This would be strong especially for O I at 6300
+;   and 6363 Ang.  For example, see 286/51999-422.
+;
+; PROCEDURES CALLED:
+;   combine1fiber
+;   mwrfits
+;   pca_solve()
+;   platelist()
+;   readonespec
+;   readspec
+;   splog
+;   sxpar()
+;   wavevector()
+;
+; REVISION HISTORY:
+;   05-Dec-2006  Written by A. West & D. Schlegel, Berkeley
+;-
 ;------------------------------------------------------------------------------
 pro nebular_pcasky, waverange=wrange1, wavefit=wfit1, $
  outfile=outfile1, niter=niter1, nkeep=nkeep1
