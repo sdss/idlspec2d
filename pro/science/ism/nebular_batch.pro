@@ -29,6 +29,8 @@
 ;   The list of hosts and protocols should be in the Yanny parameter file
 ;   specified in the file TOPDIR/batch1d.par if it exists, or the default
 ;   file "$IDLSPEC2D_DIR/examples/batch1d.par" is used.
+;   This batch processing only supports machines with cross-mounted disks.
+;   It will not run if REMOTEDIR is set for any machine.
 ;
 ;   The command is piped to the bash shell on the remote machine, so IDL
 ;   and the idlspec2d product must be present when running "bash --login".
@@ -53,8 +55,7 @@
 ;   djs_filepath()
 ;   platelist
 ;   splog
-;   yanny_free
-;   yanny_read
+;   yanny_readone
 ;
 ; REVISION HISTORY:
 ;   05-Dec-2006  Written by D. Schlegel, LBNL
@@ -115,13 +116,13 @@ pro nebular_batch, plate, mjd=mjd, topdir=topdir, upsversion=upsversion, $
     hostfile = filepath('batch1d.par', $
      root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='examples')
    splog, 'Reading batch file ' + hostfile
-   yanny_read, hostfile, pp
-   if (NOT keyword_set(pp)) then begin
+   hostconfig = yanny_readone(hostfile)
+   if (NOT keyword_set(hostconfig)) then begin
       splog, 'WARNING: Could not file batch file ' + hostfile
       return
    endif
-   hostconfig = *pp[0]
-   yanny_free, pp
+   if (total(strtrim(hostconfig.remotedir) NE '') NE 0) then $
+    message, 'This routine only supports cross-mounted machines!'
 
    ;----------
    ; Begin the batch jobs.
