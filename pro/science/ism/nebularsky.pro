@@ -16,10 +16,13 @@
 ;   plate      - List of plates; default to using the PLATELIST procedure
 ;                to select all reduced plates without quality set to 'bad'
 ;   mjd        - MJD corresponding to each PLATE
-;   lambda     - Wavelengths for sky emission lines [vacuum Ang]
+;   lambda     - Wavelengths for sky emission lines [vacuum Ang]; default to
+;                using the galaxy emission line list at > 3800 Ang, but where
+;                the [O_I] lines are allowed to have a velocity and width
+;                independent of the other lines
 ;   skyfile    - FITS file containing the PCA components for the sky,
 ;                with the spectra in HDU #0, and the log-wavelengths
-;                in HDU #1
+;                in HDU #1; this file can be generated with NEBULAR_PCASKY.
 ;   fitrange   - Fitting region in vacuum Ang; default to using all wavelengths
 ;   zlimits    - Redshift limits for all emission lines; default to
 ;                [-300,300]/3e5
@@ -49,11 +52,13 @@
 ;
 ;   All wavelengths are in vacuum, and velocities are barycentric.
 ;
+;   All lines are constrained to have the same velocity and width, except
+;   for the [O_I] lines since those can be due to solar activity.
+;
 ; EXAMPLES:
 ;   nebularsky, 231, mjd=51456
 ;
 ; BUGS:
-;   Discard galaxies that are too bright ???
 ;   Make use of the instrumental response at each line center ???
 ;
 ; DATA FILES:
@@ -134,9 +139,14 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, skyfile=skyfile1, $
    ; lines, where we force everything to have the same velocity, etc.,
    ; except for all the [O I] lines which can be atmospheric.
 
-   indx = where(linelist.lambda GT 3800.)
-   lambda = linelist[indx].lambda
-   q_oxygen = strmid(linelist[indx].name,0,5) EQ '[O_I]'
+   if (keyword_set(lambda1)) then begin
+      lambda = lambda1
+      q_oxygen = 0
+   endif else begin
+      indx = where(linelist.lambda GT 3800.)
+      lambda = linelist[indx].lambda
+      q_oxygen = strmid(linelist[indx].name,0,5) EQ '[O_I]'
+   endelse
    nline = n_elements(lambda)
    zindex = lonarr(n_elements(lambda)) + q_oxygen
    windex = lonarr(n_elements(lambda)) + q_oxygen
@@ -301,6 +311,8 @@ xrange = [6500,6800] & yrange=[-20,100] ; ???
          endfor
          while(djs_lockfile(outfile) EQ 0) do wait, 1
          create = (iplate EQ 0) AND keyword_set(create)
+         splog, 'Writing PLATE=', plist[iplate].plate, $
+          ' MJD= ', plist[iplate].mjd, ' to file ', outfile
          mwrfits_chunks, res_all, outfile, create=create, $
           append=(create EQ 0), /silent
          djs_unlockfile, outfile
