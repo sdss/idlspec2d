@@ -25,9 +25,9 @@
 ;                in HDU #1; this file can be generated with NEBULAR_PCASKY.
 ;   fitrange   - Fitting region in vacuum Ang; default to using all wavelengths
 ;   zlimits    - Redshift limits for all emission lines; default to
-;                [-300,300]/3e5
+;                [-200,200]/3e5
 ;   siglimits  - Velocity dispersion limits for all emission lines; default to
-;                [50,200] km/s
+;                [60,150] km/s
 ;   npoly      - Number of polynomial terms for sky spectrum; default to 3
 ;                (quadratic)
 ;   fitflux    - Subtract out either the 'synflux' or 'lineflux' spectrum;
@@ -96,9 +96,9 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, skyfile=skyfile1, $
    if (keyword_set(skyfile1)) then skyfile = skyfile1 $
     else skyfile = 'pcasky.fits'
    if (keyword_set(zlimits1)) then zlimits = zlimits1 $
-    else zlimits = [-300.,300.]/3e5
+    else zlimits = [-200.,200.]/3e5
    if (keyword_set(siglimits1)) then siglimits = siglimits1 $
-    else siglimits = [50.,200.]
+    else siglimits = [60.,150.]
    if (n_elements(npoly1) GT 0) then npoly = npoly1 $
     else npoly = 3
    if (keyword_set(outfile1)) then outfile = outfile1 $
@@ -198,7 +198,6 @@ splog, filename='nebular-'+string(format='(i4.4,"-",i5.5)',plist[iplate].plate,p
          qstar = zans.zwarning EQ 0 AND strmatch(zans.class,'STAR*')
          if (keyword_set(onlysky)) then qgood = qsky $
           else qgood = qsky OR qgalaxy OR qstar
-;qsky = qsky AND zans.fiberid LT 30 ; ???
 
          nfiber = n_elements(zans)
          for ifiber=0L, nfiber-1L do begin
