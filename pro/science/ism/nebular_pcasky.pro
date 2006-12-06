@@ -28,9 +28,11 @@
 ; BUGS:
 ;   Make use of the instrumental response at each pixel ???
 ;
-;   Do we adequately describe the geocoronal emission as one of the
-;   PCA components?  This would be strong especially for O I at 6300
-;   and 6363 Ang.  For example, see 286/51999-422.
+;   Since we do not adequately describe the auroral emission, the
+;   three [O I] lines at 5577, 6300, 6363 are simply masked from the
+;   fit and interpolated over, such that they don't appear at all
+;   in the output PCA spectra.
+;   For and example of strong auroal activity, see the spectrum 286/51999-422.
 ;
 ; PROCEDURES CALLED:
 ;   combine1fiber
@@ -142,17 +144,36 @@ pro nebular_pcasky, waverange=wrange1, wavefit=wfit1, $
    endfor
    print
 
+   ngoodpt = total(newivar NE 0,2)
+
    ;----------
    ; Mask out wavelengths outside the fitting domain
+   ; and mask out the three [O_I] lines
 
-   qmask = (newloglam GE alog10(wfit[0])) * (newloglam LE alog10(wfit[1]))
+   fitmask = (newloglam GE alog10(wfit[0])) * (newloglam LE alog10(wfit[1]))
+
+   lambda = [5577.339, 6300.304, 6363.776]
+   linesig = [4.5d-4, 4.5d-4, 3.5e-4]
+   airtovac, lambda
+   linemask = bytarr(n_elements(newloglam)) + 1B
+   for i=0, n_elements(lambda)-1 do $
+    linemask *= abs(newloglam - alog10(lambda[i])) GT linesig[i]
+
    for i=0L, ntot-1L do $
-    newivar[*,i] *= qmask
+    newivar[*,i] *= fitmask * linemask
 
    ;----------
    ; Do the PCA solution
 
-   res = pca_solve(newflux, newivar, niter=niter, nkeep=nkeep)
+   res = pca_solve(newflux, newivar, niter=niter, nkeep=nkeep, usemask=usemask)
+
+   ; Discard any wavelength with fewer than 20 good measurements
+   ; (before my addditional masking)
+   for ikeep=0, nkeep-1 do res[*,ikeep] *= (ngoodpt GE 10)
+
+   ; Interpolate over the masked emission lines
+   for ikeep=0, nkeep-1 do $
+    res[*,ikeep] = djs_maskinterp(res[*,ikeep], linemask EQ 0, /const)
 
    ;----------
    ; Write a FITS file
