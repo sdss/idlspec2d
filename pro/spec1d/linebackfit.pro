@@ -8,7 +8,8 @@
 ; CALLING SEQUENCE:
 ;   result = linebackfit(lambda, loglam, flux, invvar=, $
 ;    linename=, zindex=, windex=, findex=, fvalue=, zlimits=, siglimits=, $
-;    background=, zguess=, sigguess=, yfit=, bfit=, bterms=, /silent )
+;    background=, zguess=, sigguess=, backguess=, $
+;    yfit=, bfit=, bterms=, /silent )
 ;
 ; INPUTS:
 ;   lambda     - Rest-frame vacuum wavelength of lines to fit in Ang [NLINE]
@@ -46,6 +47,8 @@
 ;   sigguess   - Initial guess for sigmas of all lines in log-10 Angstroms
 ;                (scalar or vector with one entry per line); default to 1.5d-4
 ;                (105 km/sec).
+;   backguess  - Initial guess for background term coefficients [NBACK];
+;                default to 1 for all coefficients
 ;   silent     - If set, then make no print statements with SPLOG
 ;
 ; OUTPUTS:
@@ -150,7 +153,7 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
  zindex=zindex, windex=windex, findex=findex, fvalue=fvalue, $
  zlimits=zlimits1, siglimits=siglimits1, $
  background=background, zguess=zguess1, sigguess=sigguess1, $
- yfit=yfit, bfit=bfit, bterms=bterms, silent=silent
+ backguess=backguess1, yfit=yfit, bfit=bfit, bterms=bterms, silent=silent
 
    cspeed = 2.99792458e5
 
@@ -195,6 +198,19 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
    endif else begin
       sigguess = replicate(1.5d-4, nline)
    endelse
+   if (nback GT 0) then begin
+      if (keyword_set(backguess1)) then begin
+         if (n_elements(backguess1) EQ 1) then begin
+            backguess = replicate(backguess1[0], nback)
+         endif else if (n_elements(backguess1) EQ nback) then begin
+            backguess = backguess1
+         endif else begin
+            message, 'Wrong number of elements for BACKGUESS'
+         endelse
+      endif else begin
+         backguess = replicate(1., nback)
+      endelse
+   endif
 
    npix = n_elements(flux)
 
@@ -229,10 +245,8 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
       parinfo[2+iline*3].value = sigguess[iline]
    endfor
 
-   ; Set the initial guess for the scaling of each background vector to unity.
-   for iback=0, nback-1 do begin
-      parinfo[nline*3+iback].value = 1.0
-   endfor
+   ; Set the initial guess for the scaling of each background vector
+   parinfo[nline*3+lindgen(nback)].value = backguess
 
    ;----------
    ; Make a list of the number of fitting terms per line.
@@ -332,6 +346,7 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
        1./sqrt(invvar[igood]), parinfo=parinfo, $
        covar=covar, perror=perror, yfit=yfit1, functargs=functargs, $
        nfev=nfev, niter=niter, status=status, /quiet)
+
       if (NOT keyword_set(silent)) then begin
          splog, 'MPFIT nfev=', nfev, ' niter=', niter, ' status=', status
          if (status EQ 5) then $
