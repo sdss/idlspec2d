@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   readonespec, plate, fiber, [mjd=, cameras=, flux=, flerr=, invvar=, $
 ;    mask=, disp=, sky=, loglam=, wave=, synflux=, lineflux=, $
-;    objhdr=, framehdr=, topdir=, path=, /silent ]
+;    objhdr=, framehdr=, expnum=, topdir=, path=, /silent ]
 ;
 ; INPUTS:
 ;   plate      - Plate number (scalar)
@@ -44,6 +44,7 @@
 ;                cannot be found
 ;   objhdr     - The FITS header from the spPlate file
 ;   framehdr   - Pointer array to the FITS headers from all the spCFrame files
+;   expnum     - Exposure number for each NFILE spectra
 ;
 ; COMMENTS:
 ;   The environment variable SPECTRO_DATA must be set to tell this routine
@@ -72,7 +73,7 @@ pro readonespec, plate, fiber, mjd=mjd, cameras=cameras, $
  flux=flux, flerr=flerr, invvar=invvar, $
  mask=mask, disp=disp, sky=sky, loglam=loglam, wave=wave, $
  synflux=synflux, lineflux=lineflux, objhdr=objhdr, framehdr=framehdr, $
- topdir=topdir, path=path, silent=silent
+ expnum=expnum, topdir=topdir, path=path, silent=silent
 
    ; Set default return values
    flux = 0
@@ -255,6 +256,8 @@ pro readonespec, plate, fiber, mjd=mjd, cameras=cameras, $
          lineflux = 0 * loglam
       endelse
    endif
+
+   if (arg_present(expnum)) then expnum = long(strmid(expid,3,8))
 
    return
 end
