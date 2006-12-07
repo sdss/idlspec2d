@@ -6,7 +6,8 @@
 ;   Batch process the NEBULARSKY code
 ;
 ; CALLING SEQUENCE:
-;   nebular_batch, [ plate, mjd=, topdir=, upsversion=, nice=, /onlysky ]
+;   nebular_batch, [ plate, mjd=, topdir=, upsversion=, nice=, /onlysky, $
+;    outfile= ]
 ;
 ; INPUTS:
 ;
@@ -21,6 +22,7 @@
 ;                is declared current under UPS.
 ;   nice       - Unix nice-ness for spawned jobs; default to 19.
 ;   onlysky    - Keyword for NEBULARSKY
+;   outfile    - Output file for all plates; default to 'nebular.fits'
 ;
 ; OUTPUTS:
 ;
@@ -49,6 +51,7 @@
 ; EXAMPLES:
 ;
 ; BUGS:
+;   Should pass OUTFILE to the batch commands, but there's a quote problem???
 ;
 ; DATA FILES:
 ;   $IDLSPEC2D_DIR/examples/batch1d.par
@@ -65,13 +68,15 @@
 ;-
 ;------------------------------------------------------------------------------
 pro nebular_batch, plate, mjd=mjd, topdir=topdir, upsversion=upsversion, $
- nice=nice, onlysky=onlysky
+ nice=nice, onlysky=onlysky, outfile=outfile
 
    if (NOT keyword_set(topdir)) then begin
       cd, current=topdir
    endif
    cd, topdir
    if (n_elements(nice) EQ 0) then nice = 19
+
+   if (NOT keyword_set(outfile)) then outfile = 'nebular.fits'
 
    splog, prelog='(NEBULAR)'
 
@@ -101,6 +106,31 @@ pro nebular_batch, plate, mjd=mjd, topdir=topdir, upsversion=upsversion, $
       splog, 'No plate files found'
       return
    endif
+
+   ;----------
+   ; Determine which plates are already reduced
+
+   olddat = hogg_mrdfits(outfile, 1, columns=['PLATE','MJD'], $
+    nchunk=10, /silent)
+   qexist = bytarr(nplate)
+   if (keyword_set(olddat)) then begin
+      for i=0L, nplate-1L do begin
+         if (total(olddat.plate EQ plist[i].plate $
+          AND olddat.mjd EQ plist[i].mjd) GT 0) then $
+           qexist[i] = 1B
+      endfor
+      olddat = 0 ; clear memory
+   endif
+
+   ikeep = where(qexist EQ 0, nkeep)
+   if (nkeep EQ 0) then begin
+      splog, 'All plates already reduced'
+      return
+   endif else begin
+      splog, 'Skipping ', nplate-nkeep, ' reduced plates'
+      plist = plist[ikeep]
+      nplate = nkeep
+   endelse
 
    ;----------
    ; Prioritize to do the highest-reddened plates first
