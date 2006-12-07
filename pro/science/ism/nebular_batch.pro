@@ -12,6 +12,7 @@
 ;
 ; OPTIONAL INPUTS:
 ;   plate      - Plate number(s) to reduce; default to all non-bad plates
+;                and all public plates.
 ;   mjd        - MJD(s) for each PLATE
 ;   topdir     - Top directory for reductions; default to current directory.
 ;   upsversion - If set, then do a "setup idlspec2d $UPSVERSION" on the 
@@ -42,6 +43,8 @@
 ;   machine to make certain that we only use one IDL license per machine.
 ;   (Any IDL jobs that have the same the username, machine name, and $DISPLAY
 ;   use the same license.)
+;
+;   Prioritize to do the highly-reddened plates first.
 ;
 ; EXAMPLES:
 ;
@@ -88,7 +91,8 @@ pro nebular_batch, plate, mjd=mjd, topdir=topdir, upsversion=upsversion, $
       platelist, plist=plist
       if (keyword_set(plist)) then begin
          indx = where(strmatch(plist.status1d,'Done*') $
-          AND strmatch(plist.platequality,'bad*') EQ 0, nplate)
+          AND strmatch(plist.platequality,'bad*') EQ 0 $
+           OR (strtrim(plist.public) NE ''), nplate)
          if (nplate GT 0) then plist = plist[indx] $
           else plist = 0
       endif
@@ -99,11 +103,15 @@ pro nebular_batch, plate, mjd=mjd, topdir=topdir, upsversion=upsversion, $
    endif
 
    ;----------
-   ; Prioritize to do the lowest-numbered plates first
+   ; Prioritize to do the highest-reddened plates first
 
-   priority = lonarr(nplate)
-   isort = sort(plist.plate)
-   priority[isort] = reverse(lindgen(nplate)) + 1
+   euler, plist.ra, plist.dec, ll, bb, 1
+   priority = dust_getval(ll, bb,/ interp)
+
+   ; Prioritize to do the lowest-numbered plates first
+;   priority = lonarr(nplate)
+;   isort = sort(plist.plate)
+;   priority[isort] = reverse(lindgen(nplate)) + 1
 
    ;----------
    ; Determine which computers to use for these reductions.
