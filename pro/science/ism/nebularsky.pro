@@ -112,6 +112,8 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, skyfile=skyfile1, $
    if (fitflux NE 'synflux' AND fitflux NE 'lineflux') then $
     message, 'Invalid string for FITFLUX'
 
+   cspeed = 2.99792458e5
+
    res_all = 0
 
    csize = 1.6
@@ -162,7 +164,6 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, skyfile=skyfile1, $
    nline = n_elements(lambda)
    zindex = lonarr(n_elements(lambda)) + q_oxygen
    windex = lonarr(n_elements(lambda)) + q_oxygen
-   zguess = lonarr(n_elements(lambda))
 
    ;----------
    ; Select the list of  plates
@@ -187,6 +188,7 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, skyfile=skyfile1, $
    for iplate=0L, nplate-1 do begin
 splog, filename='nebular-'+string(format='(i4.4,"-",i5.5)',plist[iplate].plate,plist[iplate].mjd)+'.log' ; ???
       t0 = systime(1)
+      bterms_all = 0
       readspec, plist[iplate].plate, mjd=plist[iplate].mjd, $
        zans=zans, plug=plug, /silent
       if (keyword_set(zans[0])) then begin
@@ -230,7 +232,7 @@ splog, filename='nebular-'+string(format='(i4.4,"-",i5.5)',plist[iplate].plate,p
 
                explist = expnum[uniq(expnum,sort(expnum))]
                nexp = n_elements(explist)
-               background = fltarr(npix, nobs, nexp, nsky)
+               background = fltarr(npix, nobs, nsky, nexp)
                for iexp=0L, nexp-1L do begin
                   ithis = where(expnum EQ explist[iexp])
                   ; Convert the sky PCA spectra from Earth rest-frame
@@ -241,10 +243,10 @@ splog, filename='nebular-'+string(format='(i4.4,"-",i5.5)',plist[iplate].plate,p
                       skyloglam - alog10(1.d0 + heliov/2.99792458d5), $
                       skypcaflux[*,isky], $
                       newloglam=loglam[*,ithis], newflux=thisflux
-                     background[*,ithis,iexp,isky] = thisflux
+                     background[*,ithis,isky,iexp] = thisflux
                   endfor
                endfor
-               background = reform(background, npix*nobs, nexp*nsky)
+               background = reform(background, npix*nobs, nsky*nexp)
 
                ; Discard wavelengths outside of the synthetic template fits
                if (qsky[ifiber] EQ 0) then $
@@ -267,13 +269,43 @@ splog, filename='nebular-'+string(format='(i4.4,"-",i5.5)',plist[iplate].plate,p
                 invvar = invvar * (loglam GE alog10(fitrange[0]) $
                  AND loglam LE alog10(fitrange[1]))
 
+               ; Initial guesses for the em. line Z and SIGMA from
+               ; previous fibers on the same plate
+               if (ifiber GT 0) then k = where(qgood[0:ifiber-1]) $
+                else k = -1
+               if (k[0] EQ -1) then begin
+                  zguess = lonarr(n_elements(lambda))
+                  sigguess = lonarr(n_elements(lambda)) + 1.5d-4
+               endif else begin
+                  zguess = djs_median( $
+                   reform(res_all[*,k].linez,nline,n_elements(k)), 2)
+                  sigguess = djs_median( $
+                   reform(res_all[*,k].linesigma,nline,n_elements(k)), 2) $
+                   / (alog(10.)*cspeed)
+               endelse
+               if (keyword_set(bterms_all)) then begin
+                  if (size(bterms_all,/n_dimen) EQ 1) then $
+                   backguess = bterms_all $
+                  else $
+                   backguess = djs_median(bterms_all, 2)
+                  ; Replicate this guess for all exposures...
+                  backguess = reform(rebin(backguess, nsky, nexp), nsky*nexp)
+               endif else begin
+                  backguess = fltarr(nsky*nexp)
+               endelse
+
                ii = where(invvar NE 0, ngpix)
                if (ngpix EQ 0) then ii = 0
                res1 = linebackfit(lambda, loglam[ii], $
                 flux[ii]+sky[ii]-synflux[ii], invvar=invvar[ii], $
                 linename=linename, background=background[ii,*], $
-                zindex=zindex, windex=windex, zguess=zguess, $
-                zlimits=zlimits, siglimits=siglimits, yfit=yfit1, bfit=bfit1)
+                zindex=zindex, windex=windex, $
+                zguess=zguess, sigguess=sigguess, backguess=backguess, $
+                zlimits=zlimits, siglimits=siglimits, $
+                yfit=yfit1, bfit=bfit1, bterms=bterms1)
+               bterms1 = reform(bterms1, nsky, nexp)
+               bterms_all = keyword_set(bterms_all) ? $
+                [[bterms_all],[bterms1]] : bterms1
                yfit = fltarr(npix,nobs)
                yfit[ii] = yfit1
                bfit = fltarr(npix,nobs)
