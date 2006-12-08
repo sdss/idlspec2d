@@ -141,9 +141,9 @@ function manygauss, xindx, pp, nline=nline, nback=nback, loglam=loglam, $
  background=background
 
    yval = 0.d
-   for iline=0, nline-1 do $
+   for iline=0L, nline-1L do $
     yval = yval + onegauss(loglam[xindx], pp[iline*3:iline*3+2])
-   for iback=0, nback-1 do $
+   for iback=0L, nback-1L do $
     yval = yval + background[xindx,iback] * pp[nline*3+iback]
 
    return, yval
@@ -239,7 +239,7 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
    ;----------
    ; Set the initial guesses
 
-   for iline=0, nline-1 do begin
+   for iline=0L, nline-1L do begin
       parinfo[0+iline*3].value = fvalue[iline]
       parinfo[1+iline*3].value = alog10( lambda[iline] * (1. + zguess[iline]) )
       parinfo[2+iline*3].value = sigguess[iline]
@@ -259,11 +259,11 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
    ; Apply constraints to peak flux values (not integrated flux in a line)
 
    allindex = findex[ uniq(findex,sort(findex)) ]
-   for iall=0, n_elements(allindex)-1 do begin
+   for iall=0L, n_elements(allindex)-1L do begin
       ii = where(findex EQ allindex[iall], ct)
       nfitterms[ii] = nfitterms[ii] + 1.0/ct
       if (ct GT 1) then begin
-         for jj=1, ct-1 do begin
+         for jj=1L, ct-1L do begin
             fratio = fvalue[ii[jj]] / fvalue[ii[0]]
             parinfo[0+ii[jj]*3].tied = $
              string(fratio, 0+ii[0]*3, $
@@ -276,11 +276,11 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
    ; Apply constraints to couple redshifts
 
    allindex = zindex[ uniq(zindex,sort(zindex)) ]
-   for iall=0, n_elements(allindex)-1 do begin
+   for iall=0L, n_elements(allindex)-1L do begin
       ii = where(zindex EQ allindex[iall], ct)
       nfitterms[ii] = nfitterms[ii] + 1.0/ct
       if (ct GT 1) then begin
-        for jj=1, ct-1 do begin
+        for jj=1L, ct-1L do begin
             lamshift = alog10(lambda[ii[jj]] / lambda[ii[0]])
             parinfo[1+ii[jj]*3].tied = $
              string(lamshift, 1+ii[0]*3, $
@@ -293,11 +293,11 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
    ; Apply constraints to couple widths
 
    allindex = windex[ uniq(windex,sort(windex)) ]
-   for iall=0, n_elements(allindex)-1 do begin
+   for iall=0L, n_elements(allindex)-1L do begin
       ii = where(windex EQ allindex[iall], ct)
       nfitterms[ii] = nfitterms[ii] + 1.0/ct
       if (ct GT 1) then begin
-        for jj=1, ct-1 do begin
+        for jj=1L, ct-1L do begin
             parinfo[2+ii[jj]*3].tied = $
              string(2+ii[0]*3, format='("P(",i,")")')
          endfor
@@ -369,20 +369,20 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
    ; scale those errors according to the ratio of the flux levels.
 
    allindex = findex[ uniq(findex,sort(findex)) ]
-   for iall=0, n_elements(allindex)-1 do begin
+   for iall=0L, n_elements(allindex)-1L do begin
       ii = where(findex EQ allindex[iall], ct)
       if (ct GT 1) then perror[ii*3+0] = perror[ii[0]*3+0] $
        * fvalue[ii] / fvalue[ii[0]]
    endfor
 
    allindex = zindex[ uniq(zindex,sort(zindex)) ]
-   for iall=0, n_elements(allindex)-1 do begin
+   for iall=0L, n_elements(allindex)-1L do begin
       ii = where(zindex EQ allindex[iall], ct)
       if (ct GT 1) then perror[ii*3+1] = perror[ii[0]*3+1]
    endfor
 
    allindex = windex[ uniq(windex,sort(windex)) ]
-   for iall=0, n_elements(allindex)-1 do begin
+   for iall=0L, n_elements(allindex)-1L do begin
       ii = where(windex EQ allindex[iall], ct)
       if (ct GT 1) then perror[ii*3+2] = perror[ii[0]*3+2]
    endfor
@@ -428,7 +428,7 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
       bfit = bterms ## background
 
       berr = fltarr(npix)
-      for ipix=0, npix-1 do $
+      for ipix=0L, npix-1L do $
        berr[ipix] = sqrt( (transpose(background[ipix,*]) $
         # bcovar # transpose(background[ipix,*])) )
    endelse
@@ -439,7 +439,7 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
 
    logmin = min(loglam)
    logmax = max(loglam)
-   for iline=0, nline-1 do begin
+   for iline=0L, nline-1L do begin
       if (lfit[iline*3+1] LT logmin) then begin
          ; Case where the line center is blueward of the entire spectrum.
          linestruct[iline].linecontlevel = bfit[0]
@@ -462,7 +462,7 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
    ; Note that if the line is very (unphysically) narrow, it is
    ; possible to have no lines within this domain.  Reject those fits.
 
-   for iline=0, nline-1 do begin
+   for iline=0L, nline-1L do begin
       qleft = loglam GE lfit[iline*3+1] - 3 * lfit[iline*3+2] $
        AND loglam LE lfit[iline*3+1]
       qright = loglam LE lfit[iline*3+1] + 3 * lfit[iline*3+2] $
@@ -499,7 +499,7 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
    ;----------
    ; Construct the line equivalent widths
 
-   for iline=0, nline-1 do begin
+   for iline=0L, nline-1L do begin
       if (linestruct[iline].linenpixleft + linestruct[iline].linenpixright $
        LE 0) then begin
          linestruct[iline].lineew_err = -2L
