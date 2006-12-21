@@ -273,6 +273,22 @@ pro design_plate, stardata1, racen=racen, deccen=deccen, $
    gfiber.yprefer = transpose(guideparam[5,*])
 
    ;----------
+   ; Add the center hole
+   ; This **must** be the first object added.
+
+   addplug = blankplug
+   addplug.objid[0] = -1
+   addplug.holetype = 'QUALITY'
+   addplug.objtype = 'NA'
+   addplug.spectrographid = -9999
+   addplug.fiberid = -9999
+   addplug.throughput = -9999
+   allplug = design_append(allplug, addplug, nadd=nadd1)
+   ntot = ntot + nadd1
+   if (nadd1 NE 1) then $
+    message,' Error adding the center hole'
+
+   ;----------
    ; Add science objects
 
    ct = 2
