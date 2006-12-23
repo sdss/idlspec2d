@@ -21,6 +21,9 @@ ZCOMPUTE: Add FIXED_TEMPLATE as optional input, and ZANS_FIXED output.
 ZFIND: Add optional ZANS_FIXED return keyword from ZCOMPUTE.
 
 doc/www/spectro_home.html: Update for DR5.
+doc/www/specroSOS.html: Add warning message corresponding to the fix
+        for PR #6840: "Wrong number of elements for reddeningMed",
+        which was fixed in v5_1_2.
 etc/emlines.par: Add 8 more nebular lines of interest to Andrew West:
         [Ne_III] 3868, [Ne_III] 3970, H_epsilon, He_II 4685, He_II 5411,
         [O_I] 5577, [S_III] 6312, [Ar_III] 7135
