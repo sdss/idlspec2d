@@ -186,11 +186,11 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, skyfile=skyfile1, $
    splog, 'Number of plates = ', nplate
 
    for iplate=0L, nplate-1 do begin
-splog, filename='nebular-'+string(format='(i4.4,"-",i5.5)',plist[iplate].plate,plist[iplate].mjd)+'.log' ; ???
-      t0 = systime(1)
       bterms_all = 0
       readspec, plist[iplate].plate, mjd=plist[iplate].mjd, $
        zans=zans, plug=plug, /silent
+splog, filename='nebular-'+string(format='(i4.4,"-",i5.5)',plist[iplate].plate,zans[0].mjd)+'.log' ; ???
+      t0 = systime(1)
       if (keyword_set(zans[0])) then begin
          plist[iplate].mjd = zans[0].mjd ; Fill in if this was zero
          zans_trim = struct_selecttags(zans, select_tags=select_tags)
