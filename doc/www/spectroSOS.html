@@ -692,6 +692,12 @@ The following messages may appear:
     (see <A HREF="spectro_apodisplay.html">Displaying Spectra at APO</A>).
     Should it be saturating, reduce the exposure time to prevent saturation
     or move on to the next plate.
+<LI><B>Wrong number of elements for REDDEN_MED</B> <BR>
+    This is a warning that the reddening vector for this plate (REDDEN_MED
+    in the plPlugMapM file) is not a 5-element vector, as expected).
+    In this case, reddening values of zero are assumed.  This means that
+    the plate will not be observed as deep as it would have if non-zero
+    reddening values were provided.
 <LI><A NAME="diskfull"><B>SOS disk is ...% full</B></A> <BR>
     The specified disk on sos.apo is more than 95% full.  This could be
     either the disk used to copy the raw sdR images from sdsshost.apo,
