@@ -108,7 +108,6 @@ function arcfit_iter, spec, loglam, intensity, $
 
    ; Set minimum number of lags to check equal to 10 pixels
    lagmax = long( dcoeff[0] / (2. * abs(aset.coeff[1]) / npix) + 1 ) > 10
-;lagmax = long( dcoeff[0] / (2. * abs(aset.coeff[1])) + 1 ) > 10 ; ???
    nlag = long(lagmax/dlag)
    lags = (indgen(nlag) - long(nlag/2)) * dlag
    splog, 'Searching lags from ', min(lags), ' to ', max(lags), $
@@ -212,13 +211,13 @@ function arcfit_guess, spec, loglam, intensity, color=color, func=func, $
 ;      acoeff = [3.6846, -0.1060, -0.0042, 0.00012] ; Blue-1 (01)
 ;      acoeff = [3.7014, -0.1028, -0.0040, 0.00020] ; Blue-2 (03)
          acoeff = [3.6930, -0.1044, -0.0041, 0.00016]
-         dcoeff = [0.0500,  0.0080,  0.0003, 0.00010]
+         dcoeff = [0.1500,  0.0080,  0.0003, 0.00010]
       endif else if (color EQ 'red') then begin
 ;      acoeff = [ 3.8640, 0.1022, -0.0044, -0.00024] ; Red-1 (01)
 ;      acoeff = [ 3.8740, 0.0994, -0.0043, -0.00020] ; Red-2 (02)
 ;      acoeff = [ 3.8808, 0.0980, -0.0044, -0.00023] ; Another Red-2 (02)
          acoeff = [ 3.8700, 0.1008, -0.0044, -0.00022]
-         dcoeff = [ 0.0500, 0.0080,  0.0003,  0.00010]
+         dcoeff = [ 0.1500, 0.0080,  0.0003,  0.00010]
       endif
    endif
 
