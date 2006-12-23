@@ -1,4 +1,11 @@
 
+ARCFIT_GUESS: Change search range for the central wavelength from
+       0.05 in log-wavelength to 0.15 in log-wavelength.  This is
+       for UV throughput tests that we want to do (see PR #7190).
+       Until now, the search would only cover +/-200 Ang from 3800 Ang
+       on the blue side.  This is the default DCOEFF[0]=0.05.
+       The default DCOEFF[0] has been increased to 0.15, for a search
+       of approx 3200-4520 Ang for the blue side of the blue CCDs.
 DESIGN_SDSS3TEST: New proc to design test plates for SDSS-3.
 DESIGN_PLATE: Modified to not use most of the dumb TCL scripts in the
         "plate" product.
