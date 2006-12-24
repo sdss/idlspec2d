@@ -133,6 +133,18 @@ if [ "`speclog_version`" != "NOCVS: cvs" ] ; then
 fi
 
 #------------------------------------------------------------------------------
+# Insist that the SSH keys we were told about can actually do what we need them to.
+# Testing that CVS to speclog works is tricky, so the caller will have to cope with
+# failure -- cvs will ask for a passphrase.
+echo 
+ssh -o PasswordAuthentication=no $SPROBOT_HOST uptime
+if test $? -ne 0; then 
+    echo "the defined ssh key cannot retrieve files from $SPROBOT_HOST"
+    exit 1
+fi
+( cd $SPECLOG_DIR; cvs diff RELEASE_NOTES )
+
+#------------------------------------------------------------------------------
 # Don't allow this to be run from the machine "sdsshost"!
 
 echo
