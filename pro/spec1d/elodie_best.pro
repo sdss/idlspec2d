@@ -128,15 +128,14 @@ function elodie_best, objflux, objivar, $
    ;----------
    ; Read all the Elodie spectra
 
-   elodie_path = getenv('ELODIE_DIR')
-   allfiles = findfile(filepath('00*', root_dir=elodie_path, $
-    subdir='LL_ELODIE'), count=nstar)
+   allfiles = elodie_filelist(minwave=minwave)
+   nstar = n_elements(allfiles)
 
    t0 = systime(1)
    starhdr = replicate(ptr_new(), nstar)
    for istar=0L, nstar-1 do begin
       splog, 'Reading file ', istar+1, ' of ', nstar
-      thisflux = read_elodie(allfiles[istar], loglam=starloglam, hdr=thishdr)
+      thisflux = read_elodie(allfiles[istar], loglam=starloglam, hdr=thishdr, minloglamclip=alog10(minwave))
       if (NOT keyword_set(starflux)) then starflux = thisflux $
        else starflux = [[starflux],[thisflux]]
       starhdr[istar] = ptr_new(thishdr)

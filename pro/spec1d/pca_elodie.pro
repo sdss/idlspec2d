@@ -9,13 +9,13 @@ pro pca_elodie
    ;----------
    ; Read all the Elodie spectra
 
-   elodie_path = getenv('ELODIE_DIR')
-   allfiles = findfile(filepath('00*', root_dir=elodie_path, $
-    subdirectory='LL_ELODIE'), count=nfile)
+   allfiles = elodie_filelist(minwave=minwave)
+   nstar = n_elements(allfiles)
+   
    t0 = systime(1)
    for ifile=0, nfile-1 do begin
       splog, 'Reading file ', ifile+1, ' of ', nfile
-      thisflux = read_elodie(allfiles[ifile], loglam=loglam)
+      thisflux = read_elodie(allfiles[ifile], loglam=loglam, minloglamclip=alog10(minwave))
       if (NOT keyword_set(allflux)) then allflux = thisflux $
        else allflux = [[allflux],[thisflux]]
    endfor
