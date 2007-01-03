@@ -9,10 +9,16 @@ ARCFIT_GUESS: Change search range for the central wavelength from
 DESIGN_SDSS3TEST: New proc to design test plates for SDSS-3.
 DESIGN_PLATE: Modified to not use most of the dumb TCL scripts in the
         "plate" product.
+ELODIE_BEST,PCA_ELODIE: Small change to call the new function ELODIE_FILELIST,
+        and pass MINLOGLAMCLIP to READ_ELODIE.
+ELODIE_FILELIST: New function for returning only good Elodie files (Loomis).
 EXTRACT_ROW: Catch divide by 0 in reduced chi^2.
 LINEBACKFIT: Fix crash condition for when no BACKGROUND vectors are set.
         Add /SILENT option.  Add BACKGUESS keyword.
         Make all loop variables type long (2 places where this could matter).
+READ_ELODIE: Updates for the new Elodie-3 catalog.  Add keyword MINLOGLAMCLIP
+        and an internal spline-interpolation over masked pixels.  The code
+        should still return exactly the same results for Elodie-2.
 READ1SPEC: Remove this deprecated routine.
 READONESPEC: Add optional EXPNUM return value.
 SIMPLE_PLATE: This is essentially a re-write of DESIGN_PLATE that
@@ -20,6 +26,8 @@ SIMPLE_PLATE: This is essentially a re-write of DESIGN_PLATE that
 ZCOMPUTE: Add FIXED_TEMPLATE as optional input, and ZANS_FIXED output.
 ZFIND: Add optional ZANS_FIXED return keyword from ZCOMPUTE.
 
+bin/spsyncrobot_start: Insist that the SSH keys we were told about can
+        actually do what we need them to (Loomis).
 doc/www/spectro_home.html: Update for DR5.
 doc/www/specroSOS.html: Add warning message corresponding to the fix
         for PR #6840: "Wrong number of elements for reddeningMed",
