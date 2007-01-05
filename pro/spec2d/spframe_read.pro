@@ -7,8 +7,8 @@
 ;
 ; CALLING SEQUENCE:
 ;   spframe_read, filename, [ indx, objflux=, objivar=, mask=, $
-;    wset=, loglam=, dispset=, dispimg=, plugmap=, skyflux=, superflat=, $
-;    hdr=, adderr= ]
+;    wset=, loglam=, dispset=, dispimg=, ximg=, $
+;    plugmap=, skyflux=, superflat=, hdr=, adderr= ]
 ;
 ; INPUTS:
 ;   filename   - Input file name
@@ -28,6 +28,7 @@
 ;   loglam     - Wavelength image (vacuum log-10 Ang)
 ;   dispset    - Trace-set for dispersion solution
 ;   dispimg    - Dispersion image (per native pixel)
+;   ximg       - X position on CCD image
 ;   skyflux    - Sky flux (same units as OBJFLUX)
 ;   superflat  - Superflat vector from quartz lamps
 ;   hdr        - FITS header for HDU#0
@@ -45,8 +46,9 @@
 ;   HDU #4:  dispset   dispimg
 ;   HDU #5:  plugmap   plugmap
 ;   HDU #6:  sky       sky
-;   HDU #7:  superflat
-;   HDU #8:  skystruct
+;   HDU #7:  ximg      ximg
+;   HDU #8:  superflat
+;   HDU #9:  skystruct
 ;
 ; EXAMPLES:
 ;
@@ -66,7 +68,8 @@
 ;------------------------------------------------------------------------------
 pro spframe_read, filename, indx, objflux=objflux, objivar=objivar, $
  mask=mask, wset=wset, loglam=loglam, dispset=dispset, dispimg=dispimg, $
- plugmap=plugmap, skyflux=skyflux, superflat=superflat, hdr=hdr, adderr=adderr
+ ximg=ximg, plugmap=plugmap, skyflux=skyflux, superflat=superflat, $
+ hdr=hdr, adderr=adderr
 
    qtrim = n_elements(indx) GT 0
 
@@ -143,8 +146,13 @@ pro spframe_read, filename, indx, objflux=objflux, objivar=objivar, $
       if (qtrim) then skyflux = skyflux[*,indx]
    endif
 
+   if (arg_present(ximg)) then begin
+      ximg = mrdfits(thisfile[0], 7, /silent)
+      if (qtrim) then ximg = ximg[*,indx]
+   endif
+
    if (arg_present(superflat)) then begin
-      superflat = mrdfits(thisfile[0], 7, /silent)
+      superflat = mrdfits(thisfile[0], 8, /silent)
       if (qtrim) then superflat = superflat[*,indx]
    endif
 

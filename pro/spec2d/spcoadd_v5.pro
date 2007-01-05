@@ -166,7 +166,7 @@ pro spcoadd_v5, spframes, outputname, $
        prename=filenames[ifile]
       spframe_read, filenames[ifile], objflux=tempflux, objivar=tempivar, $
        mask=temppixmask, wset=tempwset, dispset=tempdispset, plugmap=tempplug, $
-       skyflux=tempsky, hdr=hdr, adderr=adderr
+       skyflux=tempsky, ximg=tempximg, hdr=hdr, adderr=adderr
 
       if (ifile EQ 0) then $
        hdrarr = ptr_new(hdr) $
@@ -285,6 +285,7 @@ pro spcoadd_v5, spframes, outputname, $
          dispersion = float(tempdispersion)
          pixelmask = temppixmask
          skyflux = tempsky
+         ximg = tempximg
 
          camerasvec = cameras
          label = makelabel(hdr)
@@ -298,6 +299,7 @@ pro spcoadd_v5, spframes, outputname, $
          dispersion = [[dispersion], [float(tempdispersion)]]
          pixelmask = [[pixelmask], [temppixmask]]
          skyflux = [[skyflux], [tempsky]]
+         ximg = [[ximg], [tempximg]]
 
          ; Append as vectors...
          camerasvec = [camerasvec, cameras]
@@ -522,6 +524,7 @@ pro spcoadd_v5, spframes, outputname, $
       mwrfits, dispersion[*,indx], thisfile
       mwrfits, plugmap[indx], thisfile
       mwrfits, skyflux[*,indx], thisfile
+      mwrfits, ximg[*,indx], thisfile
    endfor
    splog, prename=''
 

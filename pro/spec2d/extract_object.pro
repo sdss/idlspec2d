@@ -566,10 +566,11 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    mwrfits, dispset, outname
    mwrfits, plugsort, outname
    mwrfits, skyimg, outname
+   mwrfits, xnow, outname
    mwrfits, superfit, outname
    mwrfits, skystruct, outname
-   if (keyword_set(do_telluric)) then $
-    mwrfits, telluricfactor, outname ; This array only exists for red frames.
+;   if (keyword_set(do_telluric)) then $
+;    mwrfits, telluricfactor, outname ; This array only exists for red frames.
    spawn, ['gzip', '-f', outname], /noshell
 
    heap_gc
