@@ -35,7 +35,7 @@ doc/www/specroSOS.html: Add warning message corresponding to the fix
 etc/emlines.par: Add 8 more nebular lines of interest to Andrew West:
         [Ne_III] 3868, [Ne_III] 3970, H_epsilon, He_II 4685, He_II 5411,
         [O_I] 5577, [S_III] 6312, [Ar_III] 7135
-etc/spChunkList.par: Add chunks 148-157, 153A, 158-160.
+etc/spChunkList.par: Add chunks 148-157, 153A, 158-162.
 examples/opECalib-50000.par,opECalib-51430.par,opECalib-51577.par:
 	Raise the full well limit to 65535 from 35000, as the detectors
         are not showing signs of saturation.
