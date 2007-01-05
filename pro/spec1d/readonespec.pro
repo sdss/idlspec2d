@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   readonespec, plate, fiber, [mjd=, cameras=, flux=, flerr=, invvar=, $
-;    mask=, disp=, sky=, loglam=, wave=, synflux=, lineflux=, $
+;    mask=, disp=, sky=, loglam=, wave=, ximg=, synflux=, lineflux=, $
 ;    objhdr=, framehdr=, expnum=, topdir=, path=, /silent ]
 ;
 ; INPUTS:
@@ -36,6 +36,7 @@
 ;   sky        - Sky flux [NPIXEL,NFILE]
 ;   loglam     - Log10-wavelength in log10-Angstroms [NPIXEL,NFILE]
 ;   wave       - Wavelength in Angstroms [NPIXEL,NFIBER]
+;   ximg       - X position on the CCD [NPIXEL,NFIBER]
 ;   synflux    - Best-fit synthetic eigen-spectrum [NPIXEL,NFILE];
 ;                return vectors of zeros if the Spectro-1D files
 ;                cannot be found
@@ -71,7 +72,7 @@
 ;------------------------------------------------------------------------------
 pro readonespec, plate, fiber, mjd=mjd, cameras=cameras, $
  flux=flux, flerr=flerr, invvar=invvar, $
- mask=mask, disp=disp, sky=sky, loglam=loglam, wave=wave, $
+ mask=mask, disp=disp, sky=sky, loglam=loglam, wave=wave, ximg=ximg, $
  synflux=synflux, lineflux=lineflux, objhdr=objhdr, framehdr=framehdr, $
  expnum=expnum, topdir=topdir, path=path, silent=silent
 
@@ -84,6 +85,7 @@ pro readonespec, plate, fiber, mjd=mjd, cameras=cameras, $
    sky = 0
    loglam = 0
    wave = 0
+   ximg = 0
    synflux = 0
    lineflux = 0
    objhdr = 0
@@ -215,6 +217,14 @@ pro readonespec, plate, fiber, mjd=mjd, cameras=cameras, $
          loglam[*,ifile] = loglam1
       endfor
       if (arg_present(wave)) then wave = 10.d^loglam
+   endif
+
+   if (arg_present(ximg)) then begin
+      ximg = fltarr(2048,nfile)
+      for ifile=0L, nfile-1 do begin
+         spframe_read, filename[ifile], indx, ximg=ximg1
+         ximg[*,ifile] = ximg1
+      endfor
    endif
 
    if (arg_present(disp)) then begin
