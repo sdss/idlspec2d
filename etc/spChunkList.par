@@ -194,6 +194,8 @@ spchunklist    153A 2641 2666 main      ""
 spchunklist     158 2667 2670 special   "SEGUE bright"
 spchunklist     159 2671 2674 special   "SEGUE faint"
 spchunklist     160 2675 2675 special   "SEGUE cluster"
+spchunklist     161 2676 2693 special   "SEGUE bright"
+spchunklist     162 2694 2711 special   "SEGUE faint"
 
 spchunklist     142 8024 8027 special   "ET Project"
 spchunklist     144 8028 8029 special   "ET project"
