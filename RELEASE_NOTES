@@ -1,4 +1,9 @@
 
+-------------------------------------------------------------------------------
+v5_1_7 (January 5, 2007) idlspec2d running on IDL 5.4 - 6.3
+Tagged for Son-of-Spectro.
+Built against specflat v1_7, elodie v1_0, idlutils v5_1_7.
+
 ARCFIT_GUESS: Change search range for the central wavelength from
        0.05 in log-wavelength to 0.15 in log-wavelength.  This is
        for UV throughput tests that we want to do (see PR #7190).
@@ -12,6 +17,9 @@ DESIGN_PLATE: Modified to not use most of the dumb TCL scripts in the
 ELODIE_BEST,PCA_ELODIE: Small change to call the new function ELODIE_FILELIST,
         and pass MINLOGLAMCLIP to READ_ELODIE.
 ELODIE_FILELIST: New function for returning only good Elodie files (Loomis).
+EXTRACT_OBJECT,SPCOADD_V5,SPFRAME_READ: Add the spatial traces to the
+        spFrame and spCFrame files as the last HDU (#7), as per the request
+        of PR #7137.
 EXTRACT_ROW: Catch divide by 0 in reduced chi^2.
 LINEBACKFIT: Fix crash condition for when no BACKGROUND vectors are set.
         Add /SILENT option.  Add BACKGUESS keyword.
@@ -20,15 +28,19 @@ READ_ELODIE: Updates for the new Elodie-3 catalog.  Add keyword MINLOGLAMCLIP
         and an internal spline-interpolation over masked pixels.  The code
         should still return exactly the same results for Elodie-2.
 READ1SPEC: Remove this deprecated routine.
-READONESPEC: Add optional EXPNUM return value.
+READONESPEC: Add optional EXPNUM return value.  Add support for reading
+        the spatial traces (XIMG) from the new outputs.
 SIMPLE_PLATE: This is essentially a re-write of DESIGN_PLATE that
         still calls all the dumb TCL scripts in the "plate" product.
+SPREDUCE1D: Comment-out the STAR_DVELOCITY code for the time being,
+        since it is not yet debugged but takes many CPU cycles.
 ZCOMPUTE: Add FIXED_TEMPLATE as optional input, and ZANS_FIXED output.
 ZFIND: Add optional ZANS_FIXED return keyword from ZCOMPUTE.
 
 bin/spsyncrobot_start: Insist that the SSH keys we were told about can
         actually do what we need them to (Loomis).
-doc/www/spectro_home.html: Update for DR5.
+doc/www/spectro_home.html: Update for DR5.  Add info to data model about
+        spatial traces (XIMG) for spCFrame files.
 doc/www/specroSOS.html: Add warning message corresponding to the fix
         for PR #6840: "Wrong number of elements for reddeningMed",
         which was fixed in v5_1_2.
@@ -43,7 +55,7 @@ examples/opECalib-50000.par,opECalib-51430.par,opECalib-51577.par:
         PR #6592 discusses these issues in detail.
 lib/Makefile: Correctly copy built libraries for platforms other than Linux.
 
-----------------------------------------------------------------
+-------------------------------------------------------------------------------
 v5_1_4 (May 31, 2006) idlspec2d running on IDL 5.4 - 6.2
 Built against specflat v1_6, elodie v1_0, idlutils v5_1_4
 
