@@ -638,6 +638,7 @@ flambda2fnu = 0 ; Free memory
    ;----------
    ; Find the velocity shifts for all objects classified as stars
 
+if (0) then begin ; ???
    fitindx = where(strtrim(res_all[0,*].class,2) EQ 'STAR', nfit)
    if (nfit EQ 0) then thisid = 0 $
     else thisid = res_all[0,fitindx].fiberid
@@ -649,6 +650,7 @@ flambda2fnu = 0 ; Free memory
    res_vshift = res_vshift[ res_all[0,*].fiberid-1 ]
 
    splog, 'CPU time to fit to star velocity shifts = ', systime(1)-t0
+endif
 
    ;----------
    ; Compute the errors in the magnitudes.
@@ -755,7 +757,7 @@ flambda2fnu = 0 ; Free memory
    sxaddpar, hdr, 'UNAME', uname[0]
 
    zans = struct_addtags((res_all[0,*])[*], res_elodie)
-   zans = struct_addtags(zans, res_vshift)
+;   zans = struct_addtags(zans, res_vshift)
    mwrfits, 0, zbestfile, hdr, /create ; Retain the original header in first HDU
    mwrfits, zans, zbestfile
    mwrfits, synflux, zbestfile
