@@ -195,8 +195,7 @@ pro apoplot1, plate, fiberid, mjd=mjd, expnum=allexpnum, nsmooth=nsmooth, $
 
       ; Mask out any regions where we don't know the flux-calibration vector
       for jj=0, n_elements(jscience)-1 do $
-       objsubivar[*,jscience[jj]] = objsubivar[*,jscience[jj]] $
-       * (thisloglam GT alog10(cwavemin) AND thisloglam LT alog10(cwavemax))
+       objsubivar[*,jscience[jj]] = objsubivar[*,jscience[jj]] * (calibfac NE 0)
 
    endfor
 
