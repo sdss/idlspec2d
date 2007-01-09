@@ -1,3 +1,9 @@
+-------------------------------------------------------------------------------
+v5_1_8 (January 9, 2007) idlspec2d running on IDL 5.4 - 6.3
+Tagged for Son-of-Spectro.
+Built against specflat v1_7, elodie v1_0, idlutils v5_1_7.
+
+APOPLOT: Bug fix -- use the implied wavelength limits from fcalib_default
 
 -------------------------------------------------------------------------------
 v5_1_7 (January 5, 2007) idlspec2d running on IDL 5.4 - 6.3
