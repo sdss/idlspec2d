@@ -480,7 +480,8 @@ pro spcoadd_v5, spframes, outputname, $
    ; (This over-writes header cards written in the first call.)
    splog, prelog='Final'
    platesn, finalflux, finalivar, finalandmask, finalplugmap, finalwave, $
-    hdr=bighdr, plotfile=djs_filepath(plotsnfile, root_dir=combinedir)
+    hdr=bighdr, plotfile=djs_filepath(plotsnfile, root_dir=combinedir), $
+    synthmag=synthmag
    splog, prelog=''
 
    ;---------------------------------------------------------------------------
@@ -743,6 +744,25 @@ pro spcoadd_v5, spframes, outputname, $
 
    ; HDU #6 is the sky
    mwrfits, finalsky, fulloutname
+
+                                ; OK, this is a (small) mess. There
+                                ; were two HDUs (snvec & synthmag) in
+                                ; the v4 spPlate files as HDU 6 and 7,
+                                ; though never listed in the product
+                                ; documentation. The snvec was
+                                ; certainly just for engineering, and
+                                ; the synthmags are better taken from
+                                ; elsewhere (the 1d spZ files). So v5
+                                ; removed them and added the sky HDU
+                                ; in their place.  But some survey s/w
+                                ; expects and consumes at least the 2d
+                                ; synth mag data. So we are dropping
+                                ; the S/N HDU and appending the synth
+                                ; mag HDU, which will happily put it
+                                ; in the same place it had been.
+
+   ; HDU #7 is  synthetic magnitude vectors
+   mwrfits, synthmag, fulloutname, althdr
 
    return
 end

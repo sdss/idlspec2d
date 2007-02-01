@@ -49,7 +49,7 @@ function calcscatimage, ansimage, yrow, nscatbkpts=nscatbkpts, $
 
    nrows = (size(ansimage))[2]
    if n_elements(yrow) EQ 0 then yrow = lindgen(nrows)
-   if(NOT keyword_set(nscatbkpts)) then nscatbkpts=40 ;scattered light
+   if(NOT keyword_set(nscatbkpts)) then nscatbkpts=16 ;scattered light
    if(NOT keyword_set(ymin)) then ymin=0.0	 
    if(NOT keyword_set(ymax)) then ymax=2047.0	 
    if(NOT keyword_set(fullrows)) then fullrows=2048	 

@@ -69,6 +69,7 @@
 ;   djs_median()
 ;   djs_oplot
 ;   djs_plot
+;   doscatter()
 ;   extract_boxcar()
 ;   extract_image
 ;   fibermask_bits()
@@ -86,7 +87,6 @@
 ;   qaplot_skysub
 ;   skyline_dispersion()
 ;   skysubtract
-;   smooth_halo2d()
 ;   spadd_guiderinfo
 ;   splog
 ;   sxaddpar
@@ -109,6 +109,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 
    objname = strtrim(sxpar(objhdr,'OBJFILE'),2) 
    flavor  = strtrim(sxpar(objhdr,'FLAVOR'),2) 
+   camera  = strtrim(sxpar(objhdr,'CAMERAS'),2) 
  
    ;------------------
    ; Identify very bright objects
@@ -204,7 +205,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    highrej = 10  ; just for first extraction steps
    lowrej = 10   ; just for first extraction steps
                  ; We need to check npoly with new scattered light backgrounds
-   npoly = 8 ; maybe more structure, lots of structure
+   npoly = 16 ; maybe more structure, lots of structure
    nrow = (size(image))[2]
    yrow = lindgen(nrow) 
    nfirst = n_elements(yrow)
@@ -218,36 +219,43 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 
    splog, 'Step 1: Initial Object extraction'
 
-   extract_image, image, invvar, xnow, sigma2, tempflux, tempfluxivar, $
+   extract_image, image, invvar, xnow, sigma2, flux0, flux0ivar, $
     proftype=proftype, wfixed=wfixed, yrow=yrow, $
     highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
-    ansimage=ansimage, chisq=firstchisq, ymodel=ymodel, /relative
+    ansimage=ansimage, chisq=firstchisq, ymodel=ymodel0, /relative
 
-   ; (2) Calculate scattered light
+   ; (1a) Calculate scattered light, just for curiosity
    splog, 'Step 2: Find scattered light image'
-   scatfit = calcscatimage(ansimage[ntrace*nterms:*,*], yrow)
+   scatfit0 = calcscatimage(ansimage[ntrace*nterms:*,*], yrow, nscatbkpts=npoly)
+
+   qaplot_scatlight, scatfit0, yrow, $
+    wset=wset, xcen=xtrace, fibermask=fibermask, $
+    title=plottitle+'Scattered Light before halo removal on '+objname
+
+   ; (3) Calculate per-camera modelled scattering surface
+   splog, 'Step 3: Calculate halo image'
+   scatter = doscatter(camera, ymodel0, invvar, wset, sigma=0.9)
+
+   ; (4) Re-extract with scattering model
+   ; subtracted in order to measure
+   ;     any remaining scattered light
+   splog, 'Step 4: Extracting with halos removed'
+   image_sub = image - scatter
+
+   extract_image, image_sub, invvar, xnow, sigma2, tempflux, tempfluxivar, $
+    proftype=proftype, wfixed=wfixed, yrow=yrow, $
+    highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
+    ansimage=ansimage2, chisq=secondchisq, ymodel=tempymodel, /relative
+
+   ; (4) Calculate remaining scattered light
+   splog, 'Step 4: Find scattered light image'
+   scatfit = calcscatimage(ansimage2[ntrace*nterms:*,*], yrow, nscatbkpts=npoly)
 
    qaplot_scatlight, scatfit, yrow, $
     wset=wset, xcen=xtrace, fibermask=fibermask, $
     title=plottitle+'Scattered Light on '+objname
 
-   ; (3) Calculate halo image
-   splog, 'Step 3: Calculate halo image'
-   smooth2 = 1.5 * smooth_halo2d(ymodel - scatfit, wset)
-
-   ; (4) Re-extract with halo image subtracted in order to measure
-   ;     any remaining scattered light
-   splog, 'Step 4: Extracting with halos removed'
-   image_sub = image - smooth2
-
-   extract_image, image_sub, invvar, xnow, sigma2, tempflux, tempfluxivar, $
-    proftype=proftype, wfixed=wfixed, yrow=yrow, $
-    highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
-    ansimage=ansimage2, chisq=firstchisq, ymodel=ymodel, /relative
-
-   ; (5) Calculate scattered light
-   splog, 'Step 5: Find scattered light image again'
-   scatfit2 = calcscatimage(ansimage2[ntrace*nterms:*,*], yrow)
+   image_sub2 = image_sub - scatfit
 
    ;-----------------------------------------------------------------------
    ;  Now, subtract halo image and do final extraction with all rows
@@ -264,8 +272,8 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    reject = [0.2,0.2,0.2]
    npoly = 0
 
-   extract_image, image_sub - scatfit2, invvar, xnow, sigma2, flux, fluxivar,$
-    proftype=proftype, wfixed=wfixed, ansimage=ansimage, $
+   extract_image, image_sub2, invvar, xnow, sigma2, flux, fluxivar,$
+    proftype=proftype, wfixed=wfixed, ansimage=ansimage3, $
     highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
     chisq=chisq, ymodel=ymodel, pixelmask=pixelmask, reject=reject, /relative
 
@@ -285,11 +293,14 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
     title=plottitle+'Extraction chi^2 for '+objname
 
    djs_oplot, !x.crange, [1,1]
+   djs_oplot, yrow, secondchisq[yrow], color='blue'
    djs_oplot, yrow, firstchisq[yrow], color='green'
 
    xyouts, 100, 0.05*!y.crange[0]+0.95*!y.crange[1], $
             'BLACK = Final chisq extraction'
    xyouts, 100, 0.08*!y.crange[0]+0.92*!y.crange[1], $
+            'BLUE = Initial-scattered chisq extraction'
+   xyouts, 100, 0.08*!y.crange[0]+0.89*!y.crange[1], $
             'GREEN = Initial chisq extraction'
 
    ;------------------
@@ -336,10 +347,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ; Correct LAMBDA, which is used to shift to vacuum wavelengths.
 
    helio=0.0
-   ra = sxpar(objhdr, 'RA', count=ct_ra)
-   dec = sxpar(objhdr, 'DEC', count=ct_dec)
-   if (ct_ra NE 1 OR ct_dec NE 1) then $
-    splog, 'WARNING: Missing RA and/or DEC from header'
+   get_platecenter, plugsort, ra, dec
 
    ;--------------------------------------------------------
    ; Call standard proc to determine time-stamps
@@ -350,10 +358,8 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ; If all these keywords are present in the header, they will be either
    ; type FLOAT or DOUBLE.  Note that SDSS will put NaN in the header for
    ; these values if they are unknown.
-   if ( size(ra, /tname) NE 'INT' $
-    AND size(dec, /tname) NE 'INT' $
-    AND size(tai_mid, /tname) NE 'INT' $
-    AND finite(ra) AND finite(dec) AND finite(tai_mid) ) then begin
+   if (size(tai_mid, /tname) NE 'INT' $
+       AND finite(ra) AND finite(dec) AND finite(tai_mid) ) then begin
       helio = heliocentric(ra, dec, tai=tai_mid)
       splog, 'Heliocentric correction = ', helio, ' km/s'
       sxaddpar, objhdr, 'HELIO_RV', helio, $
@@ -542,7 +548,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    endelse
 
    fitmag = snmag + [-2.0,-0.5]
-   sncoeff = fitsn(mag, snvec, fitmag=fitmag)
+   sncoeff = fitsn(mag, snvec, fitmag=fitmag, sigma=sigma)
    sn2 = 10^(2.0 * poly([snmag],sncoeff))
 
    sxaddpar,objhdr,'FRAMESN2', sn2[0]
@@ -550,7 +556,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    sxaddpar,objhdr,'RADECSYS', 'FK5', after='EQUINOX'
    sxaddpar,objhdr,'AIRMASS',$
     float(tai2airmass(ra, dec, tai=tai_mid)) $
-    * (ct_ra EQ 1) * (ct_dec EQ 1) * (tai_mid GT 0), after='ALT'
+            * (tai_mid GT 0), after='ALT'
 
    spadd_guiderinfo, objhdr
 
@@ -566,11 +572,11 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    mwrfits, dispset, outname
    mwrfits, plugsort, outname
    mwrfits, skyimg, outname
-   mwrfits, xnow, outname
    mwrfits, superfit, outname
    mwrfits, skystruct, outname
-;   if (keyword_set(do_telluric)) then $
-;    mwrfits, telluricfactor, outname ; This array only exists for red frames.
+   mwrfits, scatter, outname
+   if (keyword_set(do_telluric)) then $
+    mwrfits, telluricfactor, outname ; This array only exists for red frames.
    spawn, ['gzip', '-f', outname], /noshell
 
    heap_gc

@@ -27,6 +27,7 @@
 ; EXAMPLES:
 ;
 ; BUGS:
+;   The masking logic should be inverted: only listed files should be matched.
 ;
 ; PROCEDURES CALLED:
 ;   yanny_read()
@@ -36,7 +37,7 @@ function elodie_filelist, minwave=minwave
 
                                 ; List all Elodie path- and filenames
    elodie_path = getenv('ELODIE_DIR')
-   allfiles = findfile(filepath('00*', root_dir=elodie_path, $
+   allfiles = findfile(filepath('0*', root_dir=elodie_path, $
     subdir='LL_ELODIE'), count=nstar)
    lastslash = strpos(allfiles[0], '/', /reverse_search)
    fparts = strmid(allfiles, lastslash+1)
@@ -64,8 +65,10 @@ function elodie_filelist, minwave=minwave
    for i=0, n_elements(emasked)-1 do begin
       maskedname = especlist[i].filename
       match = where(strpos(fparts, maskedname) eq 0, cnt)
-      if cnt EQ 0 then message, "masked elodie file ", maskedname, " not found"
-      maskedspecs[match] = 1
+      if cnt EQ 0 then $
+         splog, "WARNING: masked elodie file " + maskedname + " not found" $
+      else $
+         maskedspecs[match] = 1
    end
 
    return, allfiles[where(maskedspecs eq 0)]

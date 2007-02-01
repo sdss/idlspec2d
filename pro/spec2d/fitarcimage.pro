@@ -34,6 +34,10 @@
 ;                wavelengths solution; default to 5
 ;   maxdev     - max deviation in log lambda to allow (default 1.0e-5=7 km/s)
 ;   gauss      - Use gaussian profile fitting for final centroid fit
+;   dofirst    - Skip all the steps which require decent data. This is 
+;                only for engineering purposes, when you might want an
+;                approximate solution, regardless of how strange the
+;                data are.
 ;
 ; OUTPUTS:
 ;   aset       - (Modified)
@@ -89,7 +93,7 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
  color=color, lampfile=lampfile, fibermask=fibermask, $
  func=func, aset=aset, ncoeff=ncoeff, lambda=lambda, thresh=thresh, $
  row=row, nmed=nmed, xdif_tset=xdif_tset, bestcorr=bestcorr, $
- gauss=gauss, maxdev=maxdev
+ gauss=gauss, maxdev=maxdev,dofirst=dofirst
 
    ;---------------------------------------------------------------------------
    ; Preliminary stuff
@@ -115,7 +119,7 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
     message, 'ARC and ARCIVAR must have same dimensions'
    if (NOT keyword_set(fibermask)) then fibermask = bytarr(nfiber)
 
-   if (NOT keyword_set(row)) then row = (nfiber-30)/2
+   if (NOT arg_present(row)) then row = nfiber/2
    if (NOT keyword_set(nmed)) then nmed = 5
 
    if (NOT keyword_set(thresh)) then begin
@@ -165,10 +169,14 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
       ii = where(fibermask EQ 0, ngfiber)
       if (ngfiber EQ 0) then $
        message, 'No unmasked fibers according to FIBERMASK'
-      ii = ii[ sort(abs(ii-row)) ]
-      ii = ii[0:(nmed<ngfiber)] ; At most NGFIBER good fibers
 
-      spec = djs_median(arc[*,ii], 2)
+      if nmed GT 1 then begin
+         ii = ii[ sort(abs(ii-row)) ]
+         ii = ii[0:(nmed<ngfiber)] ; At most NGFIBER good fibers
+         spec = djs_median(arc[*,ii], 2)
+      end else begin
+         spec = arc[*,row]
+      end
 
       aset = arcfit_guess( spec, lamps.loglam, lamps.intensity, color=color, $
        bestcorr=bestcorr )
@@ -302,6 +310,11 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    print, 'Pass 1 complete'
 
    xmask = xmask AND transpose(xfitmask)
+
+   if keyword_set(dofirst) then begin
+      wset = wfirst
+      return
+   end
 
    ;------------------------------------------------------------------------
    ; Select good lines with the <=3 bad per bundle test

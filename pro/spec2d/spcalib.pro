@@ -52,6 +52,7 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
+;   doscatter()
 ;   extract_image
 ;   fiberflat()
 ;   fitarcimage
@@ -63,7 +64,6 @@
 ;   reject_flat()
 ;   sdssproc
 ;   shift_trace()
-;   smooth_halo2d()
 ;   splog
 ;   trace320crude()
 ;   traceset2xy
@@ -231,19 +231,6 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
          npoly = 10 ; Fit 1 terms to background
          wfixed = [1,1] ; Fit the first gaussian term + gaussian width
 
-         ; Step 1: Extract flat field with polynomial background for
-         ;           fitflatwidth 
-         
-         splog, 'Extracting flat with Gaussian (proftype 1)'
-         extract_image, flatimg, flativar, xsol, sigma, flux, fluxivar, $
-          proftype=1, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
-          npoly=npoly, relative=1, ansimage=ansimage, reject=[0.1, 0.6, 0.6], $
-          chisq=chisq1
-
-         widthset1 = fitflatwidth(flux, fluxivar, ansimage, tmp_fibmask, $
-          ncoeff=5, sigma=sigma, medwidth=xsigarr)
-         ansimage = 0
-
          splog, 'Extracting flat with exponential cubic (proftype 3)'
          extract_image, flatimg, flativar, xsol, sigma, flux, fluxivar, $
           proftype=3, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
@@ -254,20 +241,9 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
           ncoeff=5, sigma=sigma, medwidth=medwidth)
          ansimage = 0
 
-         ; I would prefer to use x^3, so weight by 0.8
-
-         m1 = median(chisq1)
-         m3 = 0.8 * median(chisq3)
-
-         if m1 LT m3 then begin
-           proftype = 1 ; Gaussian
-           widthset = widthset1
-           splog, 'WARNING: Using Gaussian, median chi squareds:', m1, ' vs',m3
-         endif else begin
-           proftype = 3 ; |x|^3
-           widthset = widthset3
-           splog, 'Using Cubic, median chi squareds: ', m3, ' vs', m1
-         endelse
+         proftype = 3           ; |x|^3
+         widthset = widthset3
+         splog, 'Using Cubic, median chi squareds: ', m3, ' vs', m1
 
          junk = where(flux GT 1.0e5, nbright)
          splog, 'Found ', nbright, ' bright pixels in extracted flat ', $
@@ -276,7 +252,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
          flatstruct[iflat].proftype  = proftype
          flatstruct[iflat].fibermask = ptr_new(tmp_fibmask)
          flatstruct[iflat].widthset = ptr_new(widthset)
-         flatstruct[iflat].medwidth  = xsigarr
+         flatstruct[iflat].medwidth  = medwidth
 
       endif
 
@@ -526,7 +502,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
 
          extract_image, flatimg, flativar, xsol, sigma2, flux, fluxivar, $
           proftype=proftype, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
-          npoly=npoly, relative=1, ymodel=ym, chisq=fchisq, $
+          npoly=npoly, relative=1, ymodel=ym, chisq=fchisq, ansimage=ansimage, $
           reject=[0.1, 0.6, 0.6]
 
 ;-----------------------------------------------------------------------------
@@ -534,7 +510,10 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
 ;      effect
 ;----------------------------------------------------------------------------
 
-         flatimg = flatimg - 1.5*smooth_halo2d(ym, wset)
+         ;flatimg = flatimg - 1.5*smooth_halo2d(ym, wset)
+         camera  = strtrim(sxpar(flathdr,'CAMERAS'),2) 
+         scatter = doscatter(camera, flatimg, flativar, wset, sigma=0.9)
+         smoothedflat = flatimg - scatter
          ym = 0
 
 ;----------------------------------------------------------------------------
@@ -542,12 +521,28 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
 ;  with NIR and optical scattered light removed 
 ;----------------------------------------------------------------------------
 
-         extract_image, flatimg, flativar, xsol, sigma2, flux, fluxivar, $
+         extract_image, smoothedflat, flativar, xsol, sigma2, flux, fluxivar, $
           proftype=proftype, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
-          npoly=npoly, relative=1, chisq=schisq, reject=[0.1, 0.6, 0.6]
+          npoly=npoly, relative=1, chisq=schisq, ansimage=ansimage2, $
+          reject=[0.1, 0.6, 0.6]
          
          splog, 'First  extraction chi^2 ', minmax(fchisq)
          splog, 'Second extraction chi^2 ', minmax(schisq)
+
+         xaxis = lindgen(n_elements(schisq)) + 1
+         djs_plot, xaxis, schisq, $
+           xrange=[0,N_elements(schisq)], xstyle=1, $
+           yrange=[0,max([max(fchisq), max(schisq)])], $
+           xtitle='Row number',  ytitle = '\chi^2', $
+           title=plottitle+' flat extraction chi^2 for '+flatname[iflat]
+
+         djs_oplot, !x.crange, [1,1]
+         djs_oplot, xaxis, fchisq, color='green'
+
+         xyouts, 100, 0.05*!y.crange[0]+0.95*!y.crange[1], $
+           'BLACK = Final chisq extraction'
+         xyouts, 100, 0.08*!y.crange[0]+0.89*!y.crange[1], $
+           'GREEN = Initial chisq extraction'
 
          ;---------------------------------------------------------------------
          ; Compute fiber-to-fiber flat-field variations
@@ -594,7 +589,6 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
    endfor
 
    splog, 'Elapsed time = ', systime(1)-stime1, ' seconds', format='(a,f6.0,a)'
-
    return
 end
 ;------------------------------------------------------------------------------

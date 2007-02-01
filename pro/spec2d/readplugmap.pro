@@ -162,7 +162,7 @@ function readplugmap, plugfile, plugdir=plugdir, $
       ;----------
       ; Attempt to read the calibObj photometry data
 
-      tsobj = plug2tsobj(plateid, plugmap=plugmap[iobj])
+      tsobj = plug2tsobj(plateid, plugmap=plugmap[iobj], plugfile=plugfile)
 
       ; Do not use the calibObj structure if more than 10% of the non-sky
       ; objects do not have fluxes.

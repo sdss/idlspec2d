@@ -144,6 +144,14 @@ examples/opHdrFix.par -text
 examples/opLimits.par -text
 examples/plParam.par -text
 examples/plPlugMapT-XXXX.par -text
+examples/scattering-b1-00000.fits -text
+examples/scattering-b2-00000.fits -text
+examples/scattering-r1-00000.fits -text
+examples/scattering-r2-00000.fits -text
+examples/spFluxTemplates-b1.fits -text
+examples/spFluxTemplates-b2.fits -text
+examples/spFluxTemplates-r1.fits -text
+examples/spFluxTemplates-r2.fits -text
 examples/spFluxcalib-b1.fits -text svneol=unset#unset
 examples/spFluxcalib-b2.fits -text svneol=unset#unset
 examples/spFluxcalib-r1.fits -text svneol=unset#unset
@@ -451,6 +459,8 @@ pro/spec2d/chunkinfo.pro -text
 pro/spec2d/combine1fiber.pro -text
 pro/spec2d/correct_dlam.pro -text
 pro/spec2d/divideflat.pro -text
+pro/spec2d/doscatfit.pro -text
+pro/spec2d/doscatter.pro -text
 pro/spec2d/extract2.pro -text
 pro/spec2d/extract_boxcar.pro -text
 pro/spec2d/extract_image.pro -text
@@ -483,8 +493,10 @@ pro/spec2d/fluxfix.pro -text
 pro/spec2d/focalplane.pro -text
 pro/spec2d/funccheb.pro -text
 pro/spec2d/gauss_smooth.pro -text
+pro/spec2d/gen_scatter.pro -text
 pro/spec2d/genflatmask.pro -text
 pro/spec2d/get_mjd_dir.pro -text
+pro/spec2d/get_platecenter.pro -text
 pro/spec2d/get_tai.pro -text
 pro/spec2d/idlspec2d_version.pro -text
 pro/spec2d/locateskylines.pro -text
@@ -543,6 +555,11 @@ pro/spec2d/spflatgen.pro -text
 pro/spec2d/spflatten.pro -text
 pro/spec2d/spflatten2.pro -text
 pro/spec2d/spflux.pro -text
+pro/spec2d/spflux_basespline.pro -text
+pro/spec2d/spflux_byexp.pro -text
+pro/spec2d/spflux_fittemplates.pro -text
+pro/spec2d/spflux_maketellurictemplates.pro -text
+pro/spec2d/spflux_masklines.pro -text
 pro/spec2d/spflux_read_kurucz.pro -text
 pro/spec2d/spflux_v5.pro -text
 pro/spec2d/spfluxcorr_v5.pro -text

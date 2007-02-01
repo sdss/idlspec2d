@@ -65,7 +65,6 @@
 ;   wavevector()
 ;
 ; INTERNAL SUPPORT ROUTINES:
-;   spflux_masklines()
 ;   spflux_medianfilt()
 ;   spflux_bestmodel()
 ;   spflux_goodfiber()
@@ -78,60 +77,6 @@
 ; REVISION HISTORY:
 ;   05-Feb-2004  Written by D. Schlegel, Princeton
 ;-
-;------------------------------------------------------------------------------
-; Create a mask of 1's and 0's, where wavelengths that should not be used
-; for fluxing (like near stellar features) are masked.
-; 0 = not near lines, 1 = near lines
-; HWIDTH = half width in log-wavelength for masking stellar lines
-
-function spflux_masklines, loglam, hwidth=hwidth, stellar=stellar, $
- telluric=telluric
-
-   if (NOT keyword_set(hwidth)) then $
-    hwidth = 5.7e-4 ; Default is to mask +/- 5.7 pix = 400 km/sec
-
-   mask = bytarr(size(loglam,/dimens))
-
-   if (keyword_set(stellar)) then begin
-      starwave = [ $
-       3830.0 , $ ; ? (H-7 is at 3835 Ang)
-       3889.0 , $ ; H-6
-       3933.7 , $ ; Ca_k
-       3968.5 , $ ; Ca_H (and H-5 at 3970. Ang)
-       4101.7 , $ ; H-delta
-       4300.  , $ ; G-band
-       4305.  , $ ; G-band
-       4310.  , $ ; more G-band
-       4340.5 , $ ; H-gamma
-       4861.3 , $ ; H-beta
-       5893.0 , $ ; Mg
-       6562.8 , $ ; H-alpha
-       8500.8 , $
-       8544.6 , $
-       8665.0 , $
-       8753.3 , $
-       8866.1 , $
-       9017.5 , $
-       9232.0 ]
-      airtovac, starwave
-
-      for i=0L, n_elements(starwave)-1 do begin
-         mask = mask OR (loglam GT alog10(starwave[i])-hwidth $
-          AND loglam LT alog10(starwave[i])+hwidth)
-      endfor
-   endif
-
-   if (keyword_set(telluric)) then begin
-      tellwave1 = [6850., 7150., 7560., 8105., 8930.]
-      tellwave2 = [6960., 7350., 7720., 8240., 9030.]
-      for i=0L, n_elements(tellwave1)-1 do begin
-         mask = mask OR (loglam GT alog10(tellwave1[i]) $
-          AND loglam LT alog10(tellwave2[i]))
-      endfor
-   endif
-
-   return, mask
-end
 ;------------------------------------------------------------------------------
 ; Divide the spectrum by a median-filtered spectrum.
 ; The median-filtered version is computed ignoring stellar absorp. features.
@@ -536,6 +481,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
    camname = strarr(nfile)
    expnum = lonarr(nfile)
    spectroid = lonarr(nfile)
+   heliorv = fltarr(nfile)
    for ifile=0, nfile-1 do begin
       spframe_read, objname[ifile], hdr=hdr
       plateid[ifile] = strtrim(sxpar(hdr, 'PLATEID'),2)
@@ -543,6 +489,10 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       camname[ifile] = strtrim(sxpar(hdr, 'CAMERAS'),2)
       spectroid[ifile] = strmid(camname[ifile],1,1)
       expnum[ifile] = sxpar(hdr, 'EXPOSURE')
+      heliorv[ifile] = sxpar(hdr, 'HELIO_RV', count=hcnt)
+      if hcnt eq 0 then begin
+         splog, "no HELIO_RV card found: no correction can be applied to ", objname[ifile]
+      end
    endfor
    maxmjd = max(mjd)
 
@@ -794,12 +744,12 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       ; least 3 good stars.
 
       everyn = nred * nfinal * 1.5
-      if (max(airmass) - min(airmass) GT 0.10 AND nfinal GE 3) then begin ; ???
-         ; Get an airmass value for every *pixel* being fit
-         thisair = airmass[*,ired,iphoto[ifinal]]
-      endif else begin
+;      if (max(airmass) - min(airmass) GT 0.10 AND nfinal GE 3) then begin ; ???
+;         ; Get an airmass value for every *pixel* being fit
+;         thisair = airmass[*,ired,iphoto[ifinal]]
+;      endif else begin
          thisair = 0
-      endelse
+;      endelse
       sset_r = spflux_bspline(loglam[*,ired,ifinal], $
        mratio[*,ired,ifinal], mrativar[*,ired,ifinal], $
        everyn=everyn, outmask=mask_r, airmass=thisair)
@@ -904,6 +854,16 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
        x2 = airmass[*,ifile,iphoto[ifinal]] $
       else $
        x2 = 0
+      
+                                ; Calculate per-exposure
+                                ; splines. Note that we keep all the
+                                ; existing machinery connected, both
+                                ; for comparisons and to avoid
+                                ; changing the existing standard
+                                ; selection/masking logic.
+      expset = spflux_byexp(camname[ifile], thisloglam, thismratio, thismrativar, $
+                            heliorv[ifile], airmass=x2, $
+                            yfit=expfit, coeffs=expcoeffs, resids=expresids)
 
       ; Evaluate the B-spline for the stars at their measured wavelengths
       ; in this exposure, then modulated by the mean FLATARR
@@ -935,6 +895,18 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
          thisset.icoeff = thisset.icoeff * tmpmult
       endelse
 
+      etmpmult = interpol(flatarr_mean, tmploglam, expset.fullbkpt)
+      etmpmult = etmpmult[1:n_elements(expset.fullbkpt)-expset.nord]
+      if (keyword_set(x2)) then begin
+         for ipoly=0, expset.npoly-1 do $
+          expset.coeff[ipoly,*] = expset.coeff[ipoly,*] * etmpmult
+         for ipoly=0, expset.npoly-1 do $
+          expset.icoeff[ipoly,*] = expset.icoeff[ipoly,*] * etmpmult
+      endif else begin
+         expset.coeff = expset.coeff * etmpmult
+         expset.icoeff = expset.icoeff * etmpmult
+      endelse
+
       if (keyword_set(x2)) then begin
          x2_min = min(x2, max=x2_max)
          splog, 'Exposure ', objname[ifile], $
@@ -944,6 +916,17 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       endif else begin
          tmpflux1 = bspline_valu(tmploglam, thisset)
          tmpflux2 = 0
+      endelse
+
+      if (keyword_set(x2)) then begin
+         x2_min = min(x2, max=x2_max)
+         splog, 'Exposure ', objname[ifile], $
+          ' spans airmass range ', x2_min, x2_max
+         etmpflux1 = bspline_valu(tmploglam, expset, x2=x2_min+0*tmploglam)
+         etmpflux2 = bspline_valu(tmploglam, expset, x2=x2_max+0*tmploglam)
+      endif else begin
+         etmpflux1 = bspline_valu(tmploglam, expset)
+         etmpflux2 = 0
       endelse
 
       ;----------
@@ -960,11 +943,11 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       logrange = logmax - logmin
       spflux_plotcalib, $
        thisloglam, thismratio, thismrativar, $
-       tmploglam, tmpflux1/flatarr_mean, tmpflux2/flatarr_mean, $
+       tmploglam, tmpflux1/flatarr_mean, etmpflux1/flatarr_mean, $
        logrange=(logmin+[0,1]*logrange/2.), plottitle=plottitle
       spflux_plotcalib, $
        thisloglam, thismratio, thismrativar, $
-       tmploglam, tmpflux1/flatarr_mean, tmpflux2/flatarr_mean, $
+       tmploglam, tmpflux1/flatarr_mean, etmpflux1/flatarr_mean, $
        logrange=(logmin+[1,2]*logrange/2.)
       !p.multi = 0
 
@@ -979,9 +962,9 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       ; Generate the pixel map of the flux-calibration for this exposure+CCD
 
       spframe_read, objname[ifile], loglam=loglam1
-      if (tag_exist(thisset,'NPOLY')) then x2 = airmass[*,ifile,*] $
+      if (tag_exist(expset,'NPOLY')) then x2 = airmass[*,ifile,*] $
        else x2 = 0
-      calibimg = float( bspline_valu(loglam1, thisset, x2=x2) )
+      calibimg = float( bspline_valu(loglam1, expset, x2=x2) )
 if (max(calibimg) EQ 0) then stop ; ???
 
       ; Set to zero any pixels outside the known flux-calibration region
@@ -1005,7 +988,7 @@ if (max(calibimg) EQ 0) then stop ; ???
        format='("spFluxcalib-", a2, "-", i8.8, ".fits")'), $
        root_dir=combinedir)
       mwrfits, calibimg, calibfile, hdr, /create
-      mwrfits, thisset, calibfile
+      mwrfits, expset, calibfile
       mwrfits, kindx, calibfile
       spawn, ['gzip','-f',calibfile], /noshell
       splog, prelog=''

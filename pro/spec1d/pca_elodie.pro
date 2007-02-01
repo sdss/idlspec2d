@@ -10,7 +10,7 @@ pro pca_elodie
    ; Read all the Elodie spectra
 
    allfiles = elodie_filelist(minwave=minwave)
-   nstar = n_elements(allfiles)
+   nfile = n_elements(allfiles)
    
    t0 = systime(1)
    for ifile=0, nfile-1 do begin

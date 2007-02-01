@@ -371,6 +371,8 @@ pro batch2d, platenums1, topdir=topdir, $
 ;         printf, olun, 'setenv, ' + fq+'RAWDATA_DIR=../rawdata'+fq
          printf, olun, 'setenv, ' + fq+'RAWDATA_DIR=' $
           +concat_dir(topdir,'rawdata')+fq
+         if getenv('TSOBJMAPROOT') ne '' then $
+            printf, olun, 'setenv, ' + fq+'TSOBJMAPROOT='+getenv('TSOBJMAPROOT')+fq
          for i=0, n_elements(planfile2d)-1 do $
           printf, olun, 'spreduce2d, ' + fq+planfile2d[i]+fq
          printf, olun, 'spcombine_v5, ' + fq+planfilecomb+fq
