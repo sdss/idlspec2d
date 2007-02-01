@@ -1,3 +1,33 @@
+v5_2_0 (February 1, 2007) idlspec2d running on IDL 5.4 - 6.3
+Built against specflat v1_7, elodie v1_1, idlutils v5_2_0.
+
+ Merge from v5_2_test branch, with the following changes:
+
+ELODIE_FILELIST, PCA_ELODIE: Handle v1_1 and later elodie products
+      with a template list and blue cutoff.par file. Handle Elodie v3
+      catalogs, even though we don't use them. Update
+      spEigenElodie.fits to match. [This was mostly in by v5_1_7, but
+      there have been some bugfixes since. ]
+PLUG2TSOBJ, BATHCH2D, READPLUMAP: If the TSOBJMAPROOT environment
+      variable is set, read Survey $TSOBJMAPROOT/tObj-$PLATE files
+      instead of $SPECTRO_DATA/calibObj/calibPlateP-$PLATE files.
+CALCSCATIMAGE, EXTRACT_OBJECT, SPCALIB, DOSCATFIT, 
+DOSCATTER, GEN_SCATTER, examples/scattering-CAM-MJD.fits: Add
+      per-camera scattering models; modify spcalib and extract_object
+      to call doscatter to generate them.
+SPFLUX_MASKLINES: Move out of splux_f5. Add /o2 and /h2o options.
+SPFLUX_MAKETELLURICTEMPLATES, examples/spFluxTemplates-CAM.fits:
+      Create telluric template files.
+SPFLUX_V5, SPFLUX_BASESPLINE, SPFLUX_BYEXP, SPFLUX_FITTEMPLATES:
+      Generate flux calibration vectors based on per-exposure
+      low-order splines plus scaled telluric templates.
+FITARCIMAGE: Add /dofirst option to allow getting crude results from sparse
+       plates, etc.
+SPCOADD_V5: Re-add the deprecated synthetic magnitude HDU and the
+      (ugh) S/N HDU. Appended to end of spPlate.fits
+
+Added doc/spphoto.ps: JEG on spectro-photometry.
+
 -------------------------------------------------------------------------------
 v5_1_8 (January 9, 2007) idlspec2d running on IDL 5.4 - 6.3
 Tagged for Son-of-Spectro.
