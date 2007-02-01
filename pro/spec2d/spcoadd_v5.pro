@@ -481,7 +481,7 @@ pro spcoadd_v5, spframes, outputname, $
    splog, prelog='Final'
    platesn, finalflux, finalivar, finalandmask, finalplugmap, finalwave, $
     hdr=bighdr, plotfile=djs_filepath(plotsnfile, root_dir=combinedir), $
-    synthmag=synthmag
+    synthmag=synthmag, snvec=snvec
    splog, prelog=''
 
    ;---------------------------------------------------------------------------
@@ -756,13 +756,13 @@ pro spcoadd_v5, spframes, outputname, $
                                 ; removed them and added the sky HDU
                                 ; in their place.  But some survey s/w
                                 ; expects and consumes at least the 2d
-                                ; synth mag data. So we are dropping
-                                ; the S/N HDU and appending the synth
-                                ; mag HDU, which will happily put it
-                                ; in the same place it had been.
-
+                                ; synth mag data. So we are re-adding
+                                ; the S/N synth mag HDUs
    ; HDU #7 is  synthetic magnitude vectors
    mwrfits, synthmag, fulloutname, althdr
+
+   ; HDU #8 is  synthetic magnitude vectors
+   mwrfits, snvec, fulloutname, althdr
 
    return
 end
