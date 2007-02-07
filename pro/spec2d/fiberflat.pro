@@ -112,7 +112,7 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
     fibermask=fibermask, minval=minval, lower=3.0, upper=3.0, $
     medval=medval, title=plottitle)
 
-   if (n_elements(allfullbkpt) EQ 1) then begin
+   if (NOT keyword_set(superflatset)) then begin
       splog, 'WARNING: Spline fit failed' 
       return, -1
    endif
