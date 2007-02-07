@@ -84,6 +84,10 @@ function superflat, flux, fluxivar, wset, x2=x2, $
       logmin = max(loglam[ny-1,igood])
       logmax = min(loglam[0,igood])
    endelse
+   if (logmin GE logmax) then begin
+      splog, 'WARNING: Wavelength mapping makes no sense!'
+      return, 0
+   endif
 
    ;------
    ; Find the approximate scalings between all fibers
