@@ -1,3 +1,9 @@
+
+FIBERFLAT: Fix test as to whether B-spline fit failed.
+SUPERFLAT: Print warning message and return 0 if the wavelength mapping makes
+      no sense (this could have crashed before, and did for UV test data).
+
+-------------------------------------------------------------------------------
 v5_2_0 (February 1, 2007) idlspec2d running on IDL 5.4 - 6.3
 Built against specflat v1_7, elodie v1_1, idlutils v5_2_0.
 
