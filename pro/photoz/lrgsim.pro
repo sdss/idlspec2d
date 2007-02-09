@@ -188,7 +188,7 @@ mrange = [-24, -20.5]
    ; Compute dVolume in units of (Mpc/h)^3
 
    znum = long((zrange[1] - zrange[0]) / deltaz) + 1
-   zvec = (findgen(znum) + 0.5) * deltaz
+   zvec = (findgen(znum) + 0.5) * deltaz + zrange[0]
    ; Compute the volume in (Mpc/h)^3 per redshift slice
    dVolume = deltaz * dcomvoldz(zvec, OmegaM, OmegaL) * (cspeed/100)^3 $
     * (!pi/180.)^2 * area
