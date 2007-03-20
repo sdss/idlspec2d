@@ -4,6 +4,7 @@ SUPERFLAT: Print warning message and return 0 if the wavelength mapping makes
       no sense (this could have crashed before, and did for UV test data).
 
 etc/spChunkList.par: Add chunks 162-163.
+      Chunks 99, 99A and 100A should have been "main" rather than "special".
 
 -------------------------------------------------------------------------------
 v5_2_0 (February 1, 2007) idlspec2d running on IDL 5.4 - 6.3
