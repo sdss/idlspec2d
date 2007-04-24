@@ -1,5 +1,7 @@
 
 FIBERFLAT: Fix test as to whether B-spline fit failed.
+READSPEC_FOOTPRINT: New routine for reading all spectro objects
+      within the footprint of a specified plate.
 SUPERFLAT: Print warning message and return 0 if the wavelength mapping makes
       no sense (this could have crashed before, and did for UV test data).
 
