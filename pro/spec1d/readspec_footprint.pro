@@ -66,9 +66,10 @@ pro readspec_footprint, platenum, mjd=mjd, best=best, silent=silent, $
    ra = sxpar(hdr, 'RA')
    dec = sxpar(hdr, 'DEC')
    platelist, plist=plist
-   plist = plist[where(strmatch(plist.status1d,'Done*') $
-    AND (strmatch(plist.platequality,'good*') $
-    OR strmatch(plist.platequality,'marginal*')))]
+   plist = plist[where(strmatch(plist.status1d,'Done*'))]
+;   plist = plist[where(strmatch(plist.status1d,'Done*') $
+;    AND (strmatch(plist.platequality,'good*') $
+;    OR strmatch(plist.platequality,'marginal*')))]
    adist = djs_diff_angle(plist.ra, plist.dec, ra, dec)
    plist = plist[where(adist LE 3.)]
 
