@@ -34,6 +34,8 @@ typedef struct {
  emlineid  5006.843   "[O_III] 5007"  zemission  wemission  f5007  3.0
  emlineid  5411.52    "He_II 5411"    zemission  wemission  f5411  1
  emlineid  5577.339   "[O_I] 5577"    zemission  wemission  f5577  1
+ emlineid  5754.59    "[N_II] 5755"   zemission  wemission  f5755  1
+ emlineid  5875.68    "He_I 5876"     zemission  wemission  f5876  1 # blend
  emlineid  6300.304   "[O_I] 6300"    zemission  wemission  f6300  1
  emlineid  6312.06    "[S_III] 6312"  zemission  wemission  f7312  1
  emlineid  6363.776   "[O_I] 6363"    zemission  wemission  f6363  1
