@@ -38,7 +38,9 @@
 ;   onlysky    - If set, then only fit to good sky fibers; otherwise, fits
 ;                are performed to good sky fibers, galaxies, and stars
 ;   outfile    - Output FITS file; default to 'nebular.fits'
-;   logfile    - Output log file; default to 'nebular.log'
+;   logfile    - Output log file; default to a separate log file per plate,
+;                named logfile-$PLATE-$MJD.log.  If specified, then a single
+;                log file by that name is used for all plates.
 ;   create     - If set, then create a new output file; default to appending
 ;                to an existing file if it already exists
 ;   debug      - If set, then make debugging plots, and wait for keystroke
@@ -90,7 +92,7 @@
 pro nebularsky, plate, mjd=mjd1, lambda=lambda1, skyfile=skyfile1, $
  fitrange=fitrange, $
  zlimits=zlimits1, siglimits=siglimits1, fitflux=fitflux1, lwidth=lwidth1, $
- npoly=npoly1, onlysky=onlysky, outfile=outfile1, logfile=logfile1, $
+ npoly=npoly1, onlysky=onlysky, outfile=outfile1, logfile=logfile, $
  create=create1, debug=debug
 
    if (keyword_set(skyfile1)) then skyfile = skyfile1 $
@@ -103,8 +105,6 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, skyfile=skyfile1, $
     else npoly = 3
    if (keyword_set(outfile1)) then outfile = outfile1 $
     else outfile = 'nebular.fits'
-   if (keyword_set(logfile1)) then logfile = logfile1 $
-    else logfile = 'nebular.log'
    if (keyword_set(fitflux1)) then fitflux = strlowcase(fitflux1) $
     else fitflux = 'synflux'
    if (keyword_set(lwidth1)) then lwidth = lwidth1 $
@@ -121,7 +121,10 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, skyfile=skyfile1, $
     'CLASS','SUBCLASS','Z','ZWARNING']
    res_append = create_struct('SFD_EBV', 0.)
 
-;   splog, filename=logfile
+   if (keyword_set(logfile)) then begin
+      splog, filename=logfile
+      splog, 'Log file opened ' + systime()
+   endif
 
    ;----------
    ; Read the sky PCA components
@@ -189,7 +192,19 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, skyfile=skyfile1, $
       bterms_all = 0
       readspec, plist[iplate].plate, mjd=plist[iplate].mjd, $
        zans=zans, plug=plug, /silent
-splog, filename='nebular-'+string(format='(i4.4,"-",i5.5)',plist[iplate].plate,zans[0].mjd)+'.log' ; ???
+
+      if (NOT keyword_set(logfile)) then begin
+         splog, filename='nebular-'+string(format='(i4.4,"-",i5.5)',plist[iplate].plate,zans[0].mjd)+'.log'
+         splog, 'Log file opened ' + systime()
+      endif
+      splog, 'IDL version: ' + string(!version,format='(99(a," "))')
+      spawn, 'uname -a', uname
+      splog, 'UNAME: ' + uname[0]
+      splog, 'DISPLAY=' + getenv('DISPLAY')
+      splog, 'SPECTRO_DATA=' + getenv('SPECTRO_DATA')
+      splog, 'idlspec2d version ' + idlspec2d_version()
+      splog, 'idlutils version ' + idlutils_version()
+
       t0 = systime(1)
       if (keyword_set(zans[0])) then begin
          plist[iplate].mjd = zans[0].mjd ; Fill in if this was zero
@@ -329,7 +344,7 @@ splog, filename='nebular-'+string(format='(i4.4,"-",i5.5)',plist[iplate].plate,z
                      xrange = minmax(xplot)
                      yrange = minmax(yplot)
                   endelse
-xrange = [6500,6800] & yrange=[-20,100] ; ???
+;xrange = [6500,6800] & yrange=[-20,100] ; ???
                   title = string(plist[iplate].plate, plist[iplate].mjd, $
                    zans[ifiber].fiberid, $
                    format='("Plate ", i4, " MJD ", i5, " Fiber ", i3)')
@@ -392,10 +407,10 @@ xrange = [6500,6800] & yrange=[-20,100] ; ???
          splog, 'Skipping PLATE= ', plist[iplate].plate, $
           ' MJD= ', plist[iplate].mjd, ' (not found)'
       endelse
-splog, /close ; ???
+      if (NOT keyword_set(logfile)) then splog, /close
    endfor
 
-;   splog, /close
+   if (keyword_set(logfile)) then splog, /close
 
    return
 end

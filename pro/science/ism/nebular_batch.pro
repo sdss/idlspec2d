@@ -6,8 +6,8 @@
 ;   Batch process the NEBULARSKY code
 ;
 ; CALLING SEQUENCE:
-;   nebular_batch, [ plate, mjd=, topdir=, upsversion=, nice=, /onlysky, $
-;    outfile= ]
+;   nebular_batch, [ plate, mjd=, topdir=, outdir=, upsversion=, nice=, $
+;    /onlysky, outfile= ]
 ;
 ; INPUTS:
 ;
@@ -15,7 +15,8 @@
 ;   plate      - Plate number(s) to reduce; default to all non-bad plates
 ;                and all public plates.
 ;   mjd        - MJD(s) for each PLATE
-;   topdir     - Top directory for reductions; default to current directory.
+;   topdir     - Top directory for reductions; default $SPECTRO_DATA
+;   outdir     - Top directory for outfile files; default to current directory
 ;   upsversion - If set, then do a "setup idlspec2d $UPSVERSION" on the 
 ;                remote machine before executing the IDL job.  This allows
 ;                you to batch jobs using a version other than that which
@@ -67,13 +68,14 @@
 ;   05-Dec-2006  Written by D. Schlegel, LBNL
 ;-
 ;------------------------------------------------------------------------------
-pro nebular_batch, plate, mjd=mjd, topdir=topdir, upsversion=upsversion, $
- nice=nice, onlysky=onlysky, outfile=outfile
+pro nebular_batch, plate, mjd=mjd, topdir=topdir, outdir=outdir, $
+ upsversion=upsversion, nice=nice, onlysky=onlysky, outfile=outfile
 
-   if (NOT keyword_set(topdir)) then begin
-      cd, current=topdir
+   if (NOT keyword_set(topdir)) then topdir = getenv('SPECTRO_DATA')
+   if (NOT keyword_set(outdir)) then begin
+      cd, current=outdir
    endif
-   cd, topdir
+   cd, outdir
    if (n_elements(nice) EQ 0) then nice = 19
 
    if (NOT keyword_set(outfile)) then outfile = 'nebular.fits'
@@ -93,6 +95,7 @@ pro nebular_batch, plate, mjd=mjd, topdir=topdir, upsversion=upsversion, $
          plist.mjd = mjd1
       endif
    endif else begin
+      if (keyword_set(topdir)) then setenv, 'SPECTRO_DATA=' + topdir
       platelist, plist=plist
       if (keyword_set(plist)) then begin
          indx = where(strmatch(plist.status1d,'Done*') $
@@ -175,16 +178,19 @@ pro nebular_batch, plate, mjd=mjd, topdir=topdir, upsversion=upsversion, $
    platestr = strtrim(plist.plate,2)
    mjdstr = strtrim(plist.mjd,2)
    addstring = keyword_set(onlysky) ? ',/onlysky' : ''
-   fq = '\"'
    setenv, 'SHELL=bash'
    precommand = 'echo "DISPLAY=; '
+   fq = '\"'
    if (keyword_set(upsversion)) then $
     precommand = precommand + 'setup idlspec2d ' + upsversion + '; '
+   if (keyword_set(topdir)) then $
+    precommand = precommand + 'SPECTRO_DATA='+fq+topdir+fq+'; '
    if (keyword_set(nice)) then $
     precommand = precommand + '/bin/nice -n ' + strtrim(string(nice),2)
    command = precommand + ' echo '+fq+'nebularsky,'+platestr+',mjd='+mjdstr+addstring+fq+' | idl ' + '" | bash --login >& /dev/null'
 
-   djs_batch, topdir, 0, 0, $
+stop
+   djs_batch, outdir, 0, 0, $
     hostconfig.protocol, hostconfig.remotehost, hostconfig.remotedir, $
     command, priority=priority
 
