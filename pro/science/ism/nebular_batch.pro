@@ -172,7 +172,7 @@ pro nebular_batch, plate, mjd=mjd, topdir=topdir, outdir=outdir, $
    ;   either bash or csh shells.
    ; The command will look something like (but all in one line):
    ;   cd /u/dss/spectro;
-   ;     echo "DISPLAY=; setup idlspec2d v4_9_6; /bin/nice -n 10
+   ;     echo "DISPLAY=; setup idlspec2d v4_9_6; /bin/nice -10
    ;     echo \"nebularsky,230,mjd=52251\" | idl " | bash --login >& /dev/null'
 
    platestr = strtrim(plist.plate,2)
@@ -186,10 +186,9 @@ pro nebular_batch, plate, mjd=mjd, topdir=topdir, outdir=outdir, $
    if (keyword_set(topdir)) then $
     precommand = precommand + 'SPECTRO_DATA='+fq+topdir+fq+'; '
    if (keyword_set(nice)) then $
-    precommand = precommand + '/bin/nice -n ' + strtrim(string(nice),2)
+    precommand = precommand + '/bin/nice -' + strtrim(string(nice),2)
    command = precommand + ' echo '+fq+'nebularsky,'+platestr+',mjd='+mjdstr+addstring+fq+' | idl ' + '" | bash --login >& /dev/null'
 
-stop
    djs_batch, outdir, 0, 0, $
     hostconfig.protocol, hostconfig.remotehost, hostconfig.remotedir, $
     command, priority=priority
