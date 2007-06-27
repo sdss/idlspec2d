@@ -1,4 +1,6 @@
 
+BATCH1D,BATCH2D,NEBULAR_BATCH: Fix the priority option to call
+      '/bin/nice -19' rather than '/bin/nice -n 19' (for example).
 FIBERFLAT: Fix test as to whether B-spline fit failed.
 READSPEC_FOOTPRINT: New routine for reading all spectro objects
       within the footprint of a specified plate.
