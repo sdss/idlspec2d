@@ -44,7 +44,7 @@
 ;
 ;   The command that is spawned will look something like (but all in one line):
 ;     ssh1 wire1.princeton.edu 'cd /u/dss/spectro;
-;       echo "DISPLAY=; setup idlspec2d v4_9_6; /bin/nice -n 10
+;       echo "DISPLAY=; setup idlspec2d v4_9_6; /bin/nice -10
 ;       idl 0406/spPlate-0406-51817.batch" | bash --login >& /dev/null'
 ;
 ;   The $DISPLAY environment variable is always set to "" on the remote
@@ -207,7 +207,7 @@ pro batch1d, fullplatefile, topdir=topdir, upsversion=upsversion, $
    ;   either bash or csh shells.
    ; The command will look something like (but all in one line):
    ;   cd /u/dss/spectro;
-   ;     echo "DISPLAY=; setup idlspec2d v4_9_6; /bin/nice -n 10
+   ;     echo "DISPLAY=; setup idlspec2d v4_9_6; /bin/nice -10
    ;     idl 0406/spPlate-0406-51817.batch" | bash --login >& /dev/null'
 
    setenv, 'SHELL=bash'
@@ -215,7 +215,7 @@ pro batch1d, fullplatefile, topdir=topdir, upsversion=upsversion, $
    if (keyword_set(upsversion)) then $
     precommand = precommand + 'setup idlspec2d ' + upsversion + '; '
    if (keyword_set(nice)) then $
-    precommand = precommand + '/bin/nice -n ' + strtrim(string(nice),2)
+    precommand = precommand + '/bin/nice -' + strtrim(string(nice),2)
    command = precommand + ' idl ' + fullscriptfile + '" | bash --login >& /dev/null'
 
    djs_batch, topdir, infile, outfile, $
