@@ -204,6 +204,18 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, skyfile=skyfile1, $
       splog, 'SPECTRO_DATA=' + getenv('SPECTRO_DATA')
       splog, 'idlspec2d version ' + idlspec2d_version()
       splog, 'idlutils version ' + idlutils_version()
+      splog, ''
+      splog, 'SKYFILE= ', skyfile
+      splog, 'FITRANGE=', (keyword_set(fitrange) ? fitrange : '')
+      splog, 'ZLIMITS=', (keyword_set(zlimits) ? zlimits : '')
+      splog, 'SIGLIMITS=', (keyword_set(siglimits) ? siglimits : '')
+      splog, 'NPOLY=', (keyword_set(siglimits) ? npoly : '')
+      splog, 'NPOLY=', (n_elements(siglimits) NE 0 ? npoly : '')
+      splog, 'FITFLUX= ', (keyword_set(fitflux) ? fitflux : '')
+      splog, 'LWIDTH=', (keyword_set(lwidth) ? lwidth : '')
+      splog, 'LWIDTH=', (keyword_set(lwidth) ? lwidth : '')
+      splog, 'OUTFILE= ', outfile
+      splog, 'ONLYSKY=', (keyword_set(onlysky) ? 1 : 0)
 
       t0 = systime(1)
       if (keyword_set(zans[0])) then begin
