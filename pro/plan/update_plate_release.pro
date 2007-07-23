@@ -13,7 +13,7 @@
 ;
 ; OPTIONAL INPUTS:
 ;   release    - Data release name to put into plate list file;
-;                default to 'DR2'
+;                default to 'DR6'
 ;   rfile      - Yanny param file with PLATEID,MJD,RELEASE columns,
 ;                where the release names should appear in the RELEASE entries;
 ;                default to "$IDLSPEC2D_DIR/etc/dr2spectro.par",
@@ -43,9 +43,9 @@
 ; REVISION HISTORY:
 ;   04-Feb-2004  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
-pro update_plate_release, release, rfile
+pro update_plate_release, release, rfile, outfile
 
-   if (NOT keyword_set(release)) then release = 'DR2'
+   if (NOT keyword_set(release)) then release = 'DR6'
    if (NOT keyword_set(rfile)) then $
     rfile = filepath('dr2spectro.par', $
      root_dir=getenv('IDLSPEC2D_DIR'), subdir='etc')
@@ -56,18 +56,20 @@ pro update_plate_release, release, rfile
     hdr=hdr, enums=enums, structs=structs, stnames=stnames)
    drlist = yanny_readone(rfile)
 
-   indx = where(strmatch(strupcase(drlist.release), release), ct)
-   if (ct EQ 0) then begin
-      print, 'No matches found to RELEASE=', release
-   endif
-   drlist = drlist[indx]
+;   indx = where(strmatch(strupcase(drlist.release), release), ct)
+;   if (ct EQ 0) then begin
+;      print, 'No matches found to RELEASE=', release
+;   endif
+;   drlist = drlist[indx]
 
    for i=0L, n_elements(drlist)-1 do begin
       j = where(plist.plate EQ drlist[i].plateid $
        AND plist.mjd EQ drlist[i].mjd, ct)
       if (ct NE 1) then $
-       message, 'Not found: ', drlist[i]
-      plist[j].public = strtrim(plist[j].public+' '+release, 2)
+       message, 'Not found: ' + string(drlist[i].plateid) $
+        + ' ' + string(drlist[i].mjd)
+      if (NOT keyword_set(plist[j].public)) then $
+       plist[j].public = strtrim(plist[j].public+' '+release, 2)
    endfor
 
    yanny_write, outfile, ptr_new(plist), hdr=hdr, enums=enums, $
