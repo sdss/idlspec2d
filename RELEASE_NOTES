@@ -11,6 +11,10 @@ etc/emlines.par: Add 2 more nebular lines of interest to Andrew West:
         [N_II] 5755 and He_I 5876.
 etc/spChunkList.par: Add chunks 162-167.
       Chunks 99, 99A and 100A should have been "main" rather than "special".
+etc/spPlateList.par: Update from 2005 through summer 2007 shutdown
+      (MJD 54275).  This adds a total of 226 new plates to the list, and two
+      plates have had their MJDs changed: 1026/52534 and 1028/52562 are
+      removed from the list and replaced with 1026/52532 and 1028/52559.
 
 -------------------------------------------------------------------------------
 v5_2_0 (February 1, 2007) idlspec2d running on IDL 5.4 - 6.3
