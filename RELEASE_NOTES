@@ -15,6 +15,11 @@ etc/spPlateList.par: Update from 2005 through summer 2007 shutdown
       (MJD 54275).  This adds a total of 226 new plates to the list, and two
       plates have had their MJDs changed: 1026/52534 and 1028/52562 are
       removed from the list and replaced with 1026/52532 and 1028/52559.
+      Denote 349 plates as DR6 plates, including 22 that are marked as bad
+      in the v5_1 reductions.  There is just one inconsistency in MJDs on
+      the sdss.org web site, which is they include plate 1135/53018 instead
+      of 1135/53024 (which has one exposure from that later date).
+      This DR6 plate list is from http://www.sdss.org/dr6/coverage/alldr6spectro.par
 
 -------------------------------------------------------------------------------
 v5_2_0 (February 1, 2007) idlspec2d running on IDL 5.4 - 6.3
