@@ -325,7 +325,8 @@ Data Release 1 (DR1) adds to this 192 plates (122,880 spectra),
 Data Release 2 (DR2) adds to this 279 plates (178,560 spectra),
 Data Release 3 (DR3) adds to this 252 plates (161,280 spectra),
 Data Release 4 (DR4) adds to this 479 plates (306,560 spectra),
-and Data Release 5 (DR5) adds to this 324 plates (207,360 spectra),
+Data Release 5 (DR5) adds to this 324 plates (207,360 spectra),
+and Data Release 6 (DR6) adds to this 349 plates (223,360 spectra).
 
 <P>
 To download the 14 Gb of EDR data
@@ -378,14 +379,22 @@ To download the 31 Gb of data new to DR5
    --accept "*.fits" --accept "spAll*" \
    http://spectro.princeton.edu/spectro_DR5/
 </PRE></DD></DL>
+To download the 34 Gb of data new to DR6
+(including the <A HREF="#summary">spAll-DR6 summary file</A>):
+<DL><DD><PRE>
+ wget --dot-style=mega --quota=0 --no-host-directories \
+   --no-parent --non-verbose --recursive --retr-symlinks \
+   --accept "*.fits" --accept "spAll*" \
+   http://spectro.princeton.edu/spectro_DR6/
+</PRE></DD></DL>
 For members of the SDSS collaboration only, 
-once DR6 is available, it can be downloaded with the following command
+once DR7 is available, it can be downloaded with the following command
 (after substituting the usual username and password):
 <DL><DD><PRE>
  wget --dot-style=mega --quota=0 --no-host-directories \
    --no-parent --non-verbose --recursive --retr-symlinks \
    --accept "*.fits" --accept "spAll*" \
-   http://www.astro.princeton.edu:81/spectro_DR6/ \
+   http://www.astro.princeton.edu:81/spectro_DR7/ \
    --http-user=??? --http-passwd=???
 </PRE></DD></DL>
 
