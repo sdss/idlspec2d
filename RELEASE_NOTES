@@ -7,6 +7,7 @@ READSPEC_FOOTPRINT: New routine for reading all spectro objects
 SUPERFLAT: Print warning message and return 0 if the wavelength mapping makes
       no sense (this could have crashed before, and did for UV test data).
 
+doc/www/spectro_home.html: Add instructions for downloading DR6.
 etc/emlines.par: Add 2 more nebular lines of interest to Andrew West:
         [N_II] 5755 and He_I 5876.
 etc/spChunkList.par: Add chunks 162-167.
