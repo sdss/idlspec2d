@@ -4,6 +4,9 @@ BATCH1D,BATCH2D,NEBULAR_BATCH: Fix the priority option to call
 FIBERFLAT: Fix test as to whether B-spline fit failed.
 READSPEC_FOOTPRINT: New routine for reading all spectro objects
       within the footprint of a specified plate.
+SPFLUX_BASESPLINE: Bug fixes in case the wavelength range is 10s of Ang
+      away from the canonical setup.  Our blue throughput tests on
+      plate 2587/54137 was such a case, where this code crashed.
 SPPLAN2D: Get the plate ID from the final output structure, which has
       excluded bad files.
 SUPERFLAT: Print warning message and return 0 if the wavelength mapping makes
