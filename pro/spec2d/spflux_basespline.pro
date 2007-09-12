@@ -23,7 +23,11 @@ function spflux_basespline, color, loglam, flux, ivar, outmask=outmask, airmass=
        rawbkpt = [3810.,3855,3910,3950,$
                   4030,4150,4250,4370,4450,4550,4650,4750,4840,4950,$
                   5050,5130,5230,5330,5430,5500,5550,5600,5650,5700,5750,5800,5850,5875]
-       rawbkpt = [rawbkpt, fillspan(5970.,maxwave, spacing=20)]
+       bspace = 20
+       rawbkpt = rawbkpt[where(rawbkpt GT minwave $
+        AND rawbkpt LT maxwave-bspace-1.)]
+       rawbkpt = [rawbkpt, fillspan(5970.<(maxwave-bspace-1.),maxwave, $
+        spacing=bspace)]
     end else if color EQ 'r' then begin
                                 ; The points red of 8930 are within a
                                 ; telluric region, and so are masked
@@ -36,11 +40,9 @@ function spflux_basespline, color, loglam, flux, ivar, outmask=outmask, airmass=
        if cnt gt 0 then mask1[tm] = 1
 
        tm = where(10^loglam[isort] GE 9040 AND 10^loglam[isort] LE 9060)
-       mask1[tm] = 1
        if cnt gt 0 then mask1[tm] = 1
                                 ; 
        tm = where(10^loglam[isort] GE 6935 AND 10^loglam[isort] LE 6940)
-       mask1[tm] = 1
        if cnt gt 0 then mask1[tm] = 1
        
        minwave = 10^min(loglam)+10 ; Find better endpoint? CPL
