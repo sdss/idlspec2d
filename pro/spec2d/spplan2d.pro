@@ -221,7 +221,10 @@ pro spplan2d, topoutdir=topoutdir, mjd=mjd, $
             ; Discard these observations if the plate number is not
             ; in the range 1 to 9990.
 
-            pltid = PLATEID[indx[0]]
+            if (keyword_set(spexp)) then $
+             pltid = long(spexp[0].plateid) $
+            else $
+             pltid = 0
             if (pltid GT 0 AND pltid LT 9990) then begin
                platestr = string(pltid, format='(i04.4)')
             endif else begin
