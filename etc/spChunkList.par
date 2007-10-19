@@ -203,6 +203,11 @@ spchunklist    165A 2772 2795 main      ""
 spchunklist     166 2796 2816 special   "SEGUE bright"
 spchunklist     167 2817 2837 special   "SEGUE faint"
 
+spchunklist     169 2848 2862 special   "SEGUE bright"
+spchunklist     170 2863 2877 special   "SEGUE faint"
+spchunklist     171 2878 2878 main      ""
+spchunklist     172 2879 2879 special   "SDSS3 plug test"
+
 spchunklist     142 8024 8027 special   "ET Project"
 spchunklist     144 8028 8029 special   "ET project"
 spchunklist     150 8030 8032 special   "ET project"
