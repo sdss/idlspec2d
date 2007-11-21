@@ -32,7 +32,7 @@
 ;   24-Mar-1999  Written by David Schlegel, Princeton.
 ;-
 ;------------------------------------------------------------------------------
-function extract_boxcar, fimage, xcen, ycen, radius=radius
+function extract_boxcar, fimage, xcen, ycen, radius=radius, idl=idl
 
    ; Need 2 parameters
    if (N_params() LT 2) then begin
@@ -64,12 +64,18 @@ function extract_boxcar, fimage, xcen, ycen, radius=radius
 ;    message, 'YCEN contains values out of range'
 
    fextract = float(0 * xcen)
-   soname = filepath('libspec2d.'+idlutils_so_ext(), $
-    root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='lib')
-   result = call_external(soname, 'extract_boxcar', $
-    nx, ny, float(fimage), float(radius), ncen, float(xcen), long(ycen), $
-    fextract)
 
+   if keyword_set(idl) then begin
+      left = xcen - radius
+      right = xcen + radius
+      fextract = extract_asymbox2(fimage, left, right, ycen)
+   endif else begin
+     soname = filepath('libspec2d.'+idlutils_so_ext(), $
+      root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='lib')
+     result = call_external(soname, 'extract_boxcar', $
+      nx, ny, float(fimage), float(radius), ncen, float(xcen), long(ycen), $
+      fextract)
+   endelse
    return, fextract
 end
 ;------------------------------------------------------------------------------
