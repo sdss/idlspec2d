@@ -107,4 +107,8 @@ flatDistParity  1
 flatDistXcenter 0.0
 flatDistYcenter 0.0
 #flatDistCoeff   0.0 5.28e-4 0.0 -1.109e-8 0.0 5.26e-14 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-flatDistCoeff  0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+#flatDistCoeff  0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+
+#12/12/01 Steve Kent
+#Use new distortion coefficients from Russ Owen.  These give drill - flat.
+flatDistCoeff  0.0 6.322e-4 -4.733e-6 1.775e-8 -6.639e-11 1.412e-13 -1.039e-16 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
