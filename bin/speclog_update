@@ -12,6 +12,9 @@
 #   % speclog_update 52781 52782 52783
 #
 # D. Schlegel, Princeton, 18 Jun 2003
+#
+# Added a "-forcecvs" option. CPL 2008-05-30
+#
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
@@ -46,6 +49,13 @@ fi
 
 datestring=`date`
 
+# Allow -forcecvs as a 1st argument, to recover from situations where the files
+# were copied but were not added to CVS.
+if test "$1" == "-forcecvs"; then
+    forcecvs=yes
+    shift 1
+fi
+
 thismjd=$1
 while [ -n "$thismjd" ] ; do
   echo Working on MJD=$thismjd
@@ -60,23 +70,27 @@ while [ -n "$thismjd" ] ; do
     if [ -n "$files" ] ; then
 
       # Create the output directory, if not already there
-      if [ ! -d $outdir ] ; then
-        echo Make directory $outdir
-        \mkdir $outdir
-        (cd $SPECLOG_DIR; cvs add $thismjd)
-        (cd $SPECLOG_DIR; cvs commit -m "Auto-added on $datestring" $thismjd)
+      if [ ! -d $outdir -o "$forcecvs" == "yes" ] ; then
+	if [ ! -d $outdir ]; then
+	    echo Make directory $outdir
+	    \mkdir $outdir
+	fi
+	(cd $SPECLOG_DIR; cvs add $thismjd)
+	(cd $SPECLOG_DIR; cvs commit -m "Auto-added on $datestring" $thismjd)
       else
         echo Dir already exists $outdir
       fi
 
       for thisfile in $files; do
-        if [ -e "$outdir/$thisfile" ] ; then
-          echo File already exists $outdir/$thisfile
-        else
-          echo Adding file $outdir/$thisfile
-          \cp $indir/$thisfile $outdir/$thisfile
+        if [ ! -e "$outdir/$thisfile" -o "$forcecvs" == "yes" ] ; then
+	  if [ ! -e "$outdir/$thisfile" ]; then
+            echo Adding file $outdir/$thisfile
+            \cp $indir/$thisfile $outdir/$thisfile
+	  fi
           (cd $outdir; cvs add $thisfile)
           (cd $outdir; cvs commit -m "Auto-added on $datestring" $thisfile)
+        else
+          echo File already exists $outdir/$thisfile
         fi
       done
     else
