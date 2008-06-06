@@ -19,6 +19,7 @@ etc/emlines.par: Add 2 more nebular lines of interest to Andrew West:
         [N_II] 5755 and He_I 5876.
 etc/spChunkList.par: Add chunks 162-167,168,169-172.
       Chunks 99, 99A and 100A should have been "main" rather than "special".
+      Add chunks 173-192 and 34A.
 etc/spPlateList.par: Update from 2005 through summer 2007 shutdown
       (MJD 54275).  This adds a total of 226 new plates to the list, and two
       plates have had their MJDs changed: 1026/52534 and 1028/52562 are
