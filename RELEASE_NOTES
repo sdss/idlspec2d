@@ -6,6 +6,7 @@ BATCH1D,BATCH2D,NEBULAR_BATCH: Fix the priority option to call
 FIBERFLAT: Fix test as to whether B-spline fit failed.
 READSPEC_FOOTPRINT: New routine for reading all spectro objects
       within the footprint of a specified plate.
+SDSSGUIDE: New IDL guider for the Sloan Telescope.
 SPFLUX_BASESPLINE: Bug fixes in case the wavelength range is 10s of Ang
       away from the canonical setup.  Our blue throughput tests on
       plate 2587/54137 was such a case, where this code crashed.
@@ -29,6 +30,8 @@ etc/spPlateList.par: Update from 2005 through summer 2007 shutdown
       the sdss.org web site, which is they include plate 1135/53018 instead
       of 1135/53024 (which has one exposure from that later date).
       This DR6 plate list is from http://www.sdss.org/dr6/coverage/alldr6spectro.par
+examples/cartridgeInfo.par: Data file for SDSSGUIDE copied out of the IOP/SOP
+      product.
 
 -------------------------------------------------------------------------------
 v5_2_0 (February 1, 2007) idlspec2d running on IDL 5.4 - 6.3
