@@ -267,7 +267,6 @@ function sdssguide_cartinfo, cartid, img
    if (NOT keyword_set(allcart)) then begin
       cartfile = djs_filepath('cartridgeInfo.par', $
        root_dir=getenv('IDLSPEC2D_DIR'), subdir='examples')
-cartfile='cartridgeInfo.par' ; ???
       allcart = yanny_readone(cartfile, /anon)
    endif
 
@@ -555,8 +554,8 @@ end
 ;------------------------------------------------------------------------------
 pro sdssguide, plugdir=plugdir1, guidedir=guidedir1
 
-plugdir1='/Users/schlegel/guider/plugmap' ; ???
-guidedir1 ='/Users/schlegel/rawdata/51820/guider' ; ???
+;plugdir1='/Users/schlegel/guider/plugmap' ; ???
+;guidedir1 ='/Users/schlegel/rawdata/51820/guider' ; ???
 
    ; Set defaults
    if (keyword_set(plugdir1)) then plugdir = plugdir1 $
@@ -589,7 +588,7 @@ guidedir1 ='/Users/schlegel/rawdata/51820/guider' ; ???
       finfo = file_info(files)
       junk = max(finfo.mtime, i) ; Find the most recently modified file
       thisfile = files[i]
-thisfile ='afoc21.fits' ; ???
+;thisfile ='afoc21.fits' ; ???
 ;thisfile ='/Users/schlegel/rawdata/51820/guider/gimg0052.fits.gz' ; ???
 ;thisfile ='/Users/schlegel/rawdata/51820/guider/gimg0127.fits.gz' ; ???
 ;thisfile ='test-cart4.fits'
@@ -618,7 +617,7 @@ thisfile ='afoc21.fits' ; ???
             wait, 1 ; Wait 1 sec if no new image found yet
          endelse
       endif
-lastfile = '' ; ???
+;lastfile = '' ; ???
 
       print
       print, 'Options:'
