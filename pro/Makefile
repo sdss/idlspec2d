@@ -10,7 +10,7 @@ SHELL = /bin/sh
 #
 CFLAGS  = $(SDSS_CFLAGS) -DCHECK_LEAKS -I../include
 
-SUBDIRS = apo2d fluxfix inspect photoz plan plate science spec1d spec2d specdb
+SUBDIRS = apo2d fluxfix guider inspect photoz plan plate science spec1d spec2d specdb
 
 all :
 	@ for f in $(SUBDIRS); do \
