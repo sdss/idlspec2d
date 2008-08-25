@@ -128,6 +128,7 @@ examples/Makefile -text
 examples/README -text
 examples/batch1d.par -text
 examples/batch2d.par -text
+examples/cartridgeInfo.par -text
 examples/g_codes_alignment.txt -text
 examples/g_codes_completion.txt -text
 examples/g_codes_lighttrap.txt -text
