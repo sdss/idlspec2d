@@ -1,13 +1,35 @@
 
+ARCFIT_GUESS: For the red camera, extend the range of the last
+      polynomial term, which is necessary for some test data taken
+      where the wavelength ranges were shifted by large amounts.
 BATCH1D,BATCH2D,NEBULAR_BATCH: Fix the priority option to call
       '/bin/nice -19' rather than '/bin/nice -n 19' (for example).
+CALCSCATIMAGE: Change default break points to NSCATBKPTS=16 (from 40).
 EXTRACT_ASYMBOX: Variant of the boxcar-extraction routine that allows
       for asymmetric and/or variable windows (Burles).
 EXTRACT_BOXCAR: New /IDL keyword to call pure IDL boxcar extraction (Burles).
+EXTRACT_OBJECT: Roll back to using RA,DEC from the headers, and try to fix
+      that upstream of this if it's ever a problem.
+      Don't return SIGMA from call to FITSN (since it's not used).
+      Output X structure as HDU #7 to be complient with data model.
+      Output superflat as HDU #8 (which is used by SPTHROUGHPUT).
+      Remove HDUs after that unless/until added to the data model.
 FIBERFLAT: Fix test as to whether B-spline fit failed.
+GET_PLATECENTER: Remove since we'll want this functionality upstream
+      if needed.
+PLUG2TSOBJ: Remove undocumented PLUGFILE keyword.
 READSPEC_FOOTPRINT: New routine for reading all spectro objects
       within the footprint of a specified plate.
 SDSSGUIDE: New IDL guider for the Sloan Telescope.
+SOLVEFILTER: Update to use current photometry files.
+SPCOADD_V5: Re-remove the synthetic magnitude HDU and the S/N HDU
+      that should have never been at the end of the spPlate files.
+      Add superflat as HDU #8.
+SPFLUX_V5,SPCOMBINE_V5: Revert to v5_2_0 version until we document
+      and go through v5_3 branch changes.
+SPFLUX_BASESPLINE,SPFLUX_BYEXP,SPFLUX_FITTEMPLATES,
+      SPFLUX_MAKETELLURICTEMPLATES,SPFLUX_MASKLINES:
+      Remove from the main-line, and we'll presumably merge back in from v5_3.
 SPFLUX_BASESPLINE: Bug fixes in case the wavelength range is 10s of Ang
       away from the canonical setup.  Our blue throughput tests on
       plate 2587/54137 was such a case, where this code crashed.
@@ -19,6 +41,7 @@ SUPERFLAT: Print warning message and return 0 if the wavelength mapping makes
 bin/speclog_update: add -forcecvs option, to help recover from nights 
       which were copied in, but had CVS problems.
 doc/www/spectro_home.html: Add instructions for downloading DR6.
+      Update Data Model for spCFrame files for superflat in HDU #8.
 etc/emlines.par: Add 2 more nebular lines of interest to Andrew West:
         [N_II] 5755 and He_I 5876.
 etc/spChunkList.par: Add chunks 162-167,168,169-172.
