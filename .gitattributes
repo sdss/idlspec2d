@@ -562,11 +562,6 @@ pro/spec2d/spflatgen.pro -text
 pro/spec2d/spflatten.pro -text
 pro/spec2d/spflatten2.pro -text
 pro/spec2d/spflux.pro -text
-pro/spec2d/spflux_basespline.pro -text
-pro/spec2d/spflux_byexp.pro -text
-pro/spec2d/spflux_fittemplates.pro -text
-pro/spec2d/spflux_maketellurictemplates.pro -text
-pro/spec2d/spflux_masklines.pro -text
 pro/spec2d/spflux_read_kurucz.pro -text
 pro/spec2d/spflux_v5.pro -text
 pro/spec2d/spfluxcorr_v5.pro -text
