@@ -62,9 +62,9 @@
 ;-
 ;------------------------------------------------------------------------------
 function plug2tsobj, plateid, ra1, dec1, plugmap=plugmap, dmin=dmin, $
-                     silent=silent, plugfile=plugfile
+ silent=silent
 
-   root_dir = getenv('SPECTRO_DATA')
+    root_dir = getenv('SPECTRO_DATA')
    tsroot_dir = getenv('TSOBJMAPROOT')
    if (NOT keyword_set(root_dir) and NOT keyword_set(tsroot_dir)) then $
     message, 'Environment variable SPECTRO_DATA or TSROOT_DIR must be set!'
@@ -105,20 +105,15 @@ function plug2tsobj, plateid, ra1, dec1, plugmap=plugmap, dmin=dmin, $
                                 ; Prefer the tsObj files. 
    sortedmap = 0
    if keyword_set(tsroot_dir) then begin
-                                ; If we know the plugmap name, use it
-                                ; as a template. There should be a
-                                ; directly corresponding tsObj filename
-      if keyword_set(plugfile) then begin
-         filename = 'tsObj' + strmid(plugfile, 10, 15) + 'fit'
-         filename = (findfile(filepath(filename, root_dir=tsroot_dir)))[0]
+      platestr = string(plateid[0],format='(i4.4)')
+      filename = 'tsObj-' + platestr + '.fit*'
+      filename = (findfile(filepath(filename, root_dir=tsroot_dir)))[0]
+      if (keyword_set(filename)) then begin
          sortedmap = 1
-      end else begin
-         platestr = strtrim(string(fix(plateid[0])),2)
+      endif else begin
          filename = 'tsObj*-*' + platestr + '.fit*'
-                                ; Select the first matching file if there are several
          filename = (findfile(filepath(filename, root_dir=root_dir)))[0]
       end
-
       hdu = 2                   ; Go for BEST.
    end else begin
       platestr = string(plateid[0],format='(i4.4)')
