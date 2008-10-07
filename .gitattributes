@@ -504,7 +504,6 @@ pro/spec2d/gauss_smooth.pro -text
 pro/spec2d/gen_scatter.pro -text
 pro/spec2d/genflatmask.pro -text
 pro/spec2d/get_mjd_dir.pro -text
-pro/spec2d/get_platecenter.pro -text
 pro/spec2d/get_tai.pro -text
 pro/spec2d/idlspec2d_version.pro -text
 pro/spec2d/locateskylines.pro -text
