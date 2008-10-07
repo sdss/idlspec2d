@@ -6,14 +6,15 @@
 ;   Just return smoothed scattered light image
 ;
 ; CALLING SEQUENCE:
-;   scatfit = calcscatimage(ansimage, yrow, nscatbkpts=nscatbkpts, $
-;            ymin=ymin, ymax=ymax, fullrows=fullrows)
+;   scatfit = calcscatimage(ansimage, yrow, [ nscatbkpts= , $
+;    ymin= , ymax= , fullrows= ])
 ;
 ; INPUTS:
 ;     ansimage  -  Keyword Output from extract_image
 ;     yrow      -  Array of rows extracted in first pass 
 ;
 ; OPTIONAL KEYWORDS:
+;     nscatbkpts- Number of break points in B-spline; default to 16
 ;     ymin      -  lower limit for chebyshev background (default 0)
 ;     ymax      -  upper limit for chebyshev background (default 2047)
 ;     fullrows  -  number of rows in full image (default 2048)
