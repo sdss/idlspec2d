@@ -1,8 +1,9 @@
 
-bin/speclog_update: add -forcecvs option, to help recover from nights 
-      which were copied in, but had CVS problems.
 BATCH1D,BATCH2D,NEBULAR_BATCH: Fix the priority option to call
       '/bin/nice -19' rather than '/bin/nice -n 19' (for example).
+EXTRACT_ASYMBOX: Variant of the boxcar-extraction routine that allows
+      for asymmetric and/or variable windows (Burles).
+EXTRACT_BOXCAR: New /IDL keyword to call pure IDL boxcar extraction (Burles).
 FIBERFLAT: Fix test as to whether B-spline fit failed.
 READSPEC_FOOTPRINT: New routine for reading all spectro objects
       within the footprint of a specified plate.
@@ -15,6 +16,8 @@ SPPLAN2D: Get the plate ID from the final output structure, which has
 SUPERFLAT: Print warning message and return 0 if the wavelength mapping makes
       no sense (this could have crashed before, and did for UV test data).
 
+bin/speclog_update: add -forcecvs option, to help recover from nights 
+      which were copied in, but had CVS problems.
 doc/www/spectro_home.html: Add instructions for downloading DR6.
 etc/emlines.par: Add 2 more nebular lines of interest to Andrew West:
         [N_II] 5755 and He_I 5876.
