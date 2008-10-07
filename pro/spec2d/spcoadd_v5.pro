@@ -166,7 +166,8 @@ pro spcoadd_v5, spframes, outputname, $
        prename=filenames[ifile]
       spframe_read, filenames[ifile], objflux=tempflux, objivar=tempivar, $
        mask=temppixmask, wset=tempwset, dispset=tempdispset, plugmap=tempplug, $
-       skyflux=tempsky, ximg=tempximg, hdr=hdr, adderr=adderr
+       skyflux=tempsky, ximg=tempximg, superflat=tempsuperflat, $
+       hdr=hdr, adderr=adderr
 
       if (ifile EQ 0) then $
        hdrarr = ptr_new(hdr) $
@@ -286,6 +287,7 @@ pro spcoadd_v5, spframes, outputname, $
          pixelmask = temppixmask
          skyflux = tempsky
          ximg = tempximg
+         superflat = tempsuperflat
 
          camerasvec = cameras
          label = makelabel(hdr)
@@ -300,6 +302,7 @@ pro spcoadd_v5, spframes, outputname, $
          pixelmask = [[pixelmask], [temppixmask]]
          skyflux = [[skyflux], [tempsky]]
          ximg = [[ximg], [tempximg]]
+         superflat = [[superflat], [tempsuperflat]]
 
          ; Append as vectors...
          camerasvec = [camerasvec, cameras]
@@ -480,8 +483,7 @@ pro spcoadd_v5, spframes, outputname, $
    ; (This over-writes header cards written in the first call.)
    splog, prelog='Final'
    platesn, finalflux, finalivar, finalandmask, finalplugmap, finalwave, $
-    hdr=bighdr, plotfile=djs_filepath(plotsnfile, root_dir=combinedir), $
-    synthmag=synthmag, snvec=snvec
+    hdr=bighdr, plotfile=djs_filepath(plotsnfile, root_dir=combinedir)
    splog, prelog=''
 
    ;---------------------------------------------------------------------------
@@ -526,6 +528,7 @@ pro spcoadd_v5, spframes, outputname, $
       mwrfits, plugmap[indx], thisfile
       mwrfits, skyflux[*,indx], thisfile
       mwrfits, ximg[*,indx], thisfile
+      mwrfits, superflat[*,indx], thisfile
    endfor
    splog, prename=''
 
@@ -538,6 +541,7 @@ pro spcoadd_v5, spframes, outputname, $
    temppixmask = 0
    dispersion = 0
    skyflux = 0
+   superflat = 0
 
    ;---------------------------------------------------------------------------
    ; Create the output header
@@ -744,25 +748,6 @@ pro spcoadd_v5, spframes, outputname, $
 
    ; HDU #6 is the sky
    mwrfits, finalsky, fulloutname
-
-                                ; OK, this is a (small) mess. There
-                                ; were two HDUs (snvec & synthmag) in
-                                ; the v4 spPlate files as HDU 6 and 7,
-                                ; though never listed in the product
-                                ; documentation. The snvec was
-                                ; certainly just for engineering, and
-                                ; the synthmags are better taken from
-                                ; elsewhere (the 1d spZ files). So v5
-                                ; removed them and added the sky HDU
-                                ; in their place.  But some survey s/w
-                                ; expects and consumes at least the 2d
-                                ; synth mag data. So we are re-adding
-                                ; the S/N synth mag HDUs
-   ; HDU #7 is  synthetic magnitude vectors
-   mwrfits, synthmag, fulloutname, althdr
-
-   ; HDU #8 is  synthetic magnitude vectors
-   mwrfits, snvec, fulloutname, althdr
 
    return
 end
