@@ -112,7 +112,7 @@
 ;   Should we more heavily weight the QSOs?
 ;
 ; DATA FILES:
-;   $IDLSPEC2D_DIR/etc/sdss_jun2001_$FILTER_atm.dat
+;   $IDLUTILS/data/filters/sdss_jun2001_$FILTER_atm.dat
 ;   $SPECTRO_DATA/0432/spFrame-r2-00007466.fits*  (for telluric-correction)
 ;   $SPECTRO_DATA/$PLATE/spPlate-$PLATE-$MJD.fits
 ;   $SPECTRO_DATA/$PLATE/spZbest-$PLATE-$MJD.fits
@@ -279,7 +279,7 @@ pro solvefilter, filttype=filttype1, filternum=filternum1, $
    gunnfilt = dblarr(nbigpix,n_elements(filtname))
    for ifilt=0, n_elements(filtname)-1 do begin
       filename = filepath('sdss_jun2001_'+filtname[ifilt]+'_atm.dat', $
-       root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
+       root_dir=getenv('IDLUTILS_DIR'), subdirectory=['data','filters'])
       readcol, filename, fwave1, fthru1, fthru2, fthru3, fext1, /silent
 
       ; Convert wavelengths to vacuum.
@@ -356,15 +356,17 @@ pro solvefilter, filttype=filttype1, filternum=filternum1, $
 
    framefile = filepath('spFrame-r2-00007466.fits*', $
     root_dir=getenv('SPECTRO_DATA'), subdir='0432')
+   fcalibfile = filepath('spFluxcalib-r2-00007466.fits*', $
+    root_dir=getenv('SPECTRO_DATA'), subdir='0432')
    framefile = (findfile(framefile))[0]
+   fcalibfile = (findfile(fcalibfile))[0]
    hdr = headfits(framefile)
    thisair = sxpar(hdr, 'AIRMASS')
    wset = mrdfits(framefile, 3)
    traceset2xy, wset, xx, tloglam
-   telluric = mrdfits(framefile, 8)
+   telluric = mrdfits(fcalibfile, 0)
    linterp, tloglam[*,0], telluric[*,0], bigloglam, tellcorr
    tautelluric = -alog(tellcorr)/thisair ; Scale back to one airmass
-
    tauextinct = (tausimple + tautelluric) > 0
 
    ;----------
@@ -386,7 +388,8 @@ pro solvefilter, filttype=filttype1, filternum=filternum1, $
    endif else begin
       splog, 'Find list of good plates'
       platelist, plist=plist
-      iuse = where(strmatch(plist.public,'*DR1*') AND plist.plate GT 431)
+      iuse = where(strmatch(plist.public,'*DR1*') AND plist.plate GT 431 $
+       AND strmatch(plist.status1d,'Done*'))
       plist = plist[iuse]
    endelse
 
@@ -436,10 +439,11 @@ pro solvefilter, filttype=filttype1, filternum=filternum1, $
       qinterp = transpose(bflag2[11,*] OR bflag2[12,*] OR bflag2[15,*])
 
       ; Compute the airmass for each object
-      junk = sdss_run2mu(tsobj.run, tsobj.field, tai=tai)
-      airmass1 = tai2airmass(zans.plug_ra, zans.plug_dec, tai=tai)
-      if (min(airmass1) LT 0.99 OR max(airmass1) GT 3.5) then $
-       message, 'Invalid AIRMASS'
+;      junk = sdss_run2mu(tsobj.run, tsobj.field, tai=tai)
+;      airmass1 = tai2airmass(zans.plug_ra, zans.plug_dec, tai=tai)
+;      if (min(airmass1) LT 0.99 OR max(airmass1) GT 3.5) then $
+;       message, 'Invalid AIRMASS'
+      airmass1 = tsobj.airmass[2]
 
       ; Group objects with the same run+rerun+camcol+plate+spectrographid
       idstring = string(tsobj.run) + string(tsobj.rerun) $
@@ -449,8 +453,8 @@ pro solvefilter, filttype=filttype1, filternum=filternum1, $
 
       ; Reject wild mag outliers, which are often objects where there
       ; is a bright blend but the PHOTO flux is only for a fainter child
-      magdiff = - 2.5 * alog10(zans.counts_spectro[filternum]) $
-       - tsobj.psfcounts[filternum]
+      magdiff = - 2.5 * alog10(zans.spectroflux[filternum]) $
+       - tsobj.psfflux[filternum]
       meddiff = median(magdiff)
 
       qstar = strmatch(zans.class,'STAR*')
@@ -532,13 +536,19 @@ objivar = 0
    ;----------
    ; Decide upon the object counts and errors from PHOTO.
 
-   photoflux = 10.d0^(-tsall.psfcounts[filternum]/2.5)
-   photoflerr = tsall.psfcountserr[filternum] * abs(photoflux)
+;   photoflux = 10.d0^(-tsall.psfcounts[filternum]/2.5)
+;   photoflerr = tsall.psfcountserr[filternum] * abs(photoflux)
+   photoflux = tsall.psfflux[filternum]
+   photoflivar = tsall.psfflux_ivar[filternum]
+   qgood = photoflivar GT 0
 
    ; Add an additional error term
    qstar = strmatch(zall.class,'STAR*')
    qqso = strmatch(zall.class,'QSO*')
-   photoinvsig = 1. / sqrt( photoflerr^2 $
+;   photoinvsig = 1. / sqrt( photoflerr^2 $
+;    + (qstar * starerr * abs(photoflux))^2 $
+;    + (qqso * qsoerr * abs(photoflux))^2 )
+   photoinvsig = qgood / sqrt( 1./(photoflivar+qgood-1) $
     + (qstar * starerr * abs(photoflux))^2 $
     + (qqso * qsoerr * abs(photoflux))^2 )
 
@@ -706,7 +716,8 @@ objivar = 0
 
    istar = where(strmatch(zall.class,'STAR*'), nstar)
    iqso = where(strmatch(zall.class,'QSO*'), nqso)
-   photocolor = tsall.psfcounts[2] - tsall.psfcounts[3]
+;   photocolor = tsall.psfcounts[2] - tsall.psfcounts[3]
+   photocolor = -2.5 * alog10(tsall.psfflux[2] / tsall.psfflux[3])
 
    if (nstar GT 1) then begin
       plot, photocolor[istar], guessdiff2[istar], psym=3, charsize=csize, $
