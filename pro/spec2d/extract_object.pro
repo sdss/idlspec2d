@@ -578,7 +578,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    mwrfits, plugsort, outname
    mwrfits, skyimg, outname
    mwrfits, xnow, outname
-;   mwrfits, superfit, outname
+   mwrfits, superfit, outname
 ;   mwrfits, skystruct, outname
 ;   mwrfits, scatter, outname
 ;   if (keyword_set(do_telluric)) then $
