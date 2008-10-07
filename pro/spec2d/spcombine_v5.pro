@@ -17,7 +17,11 @@
 ;   adderr     - Additional error to add to the formal errors, as a
 ;                fraction of the flux; default to 0.03 (3 per cent).
 ;   xdisplay   - Send plots to X display rather than to plot file
-;   minsn2     - Minimum S/N^2 to include science frame in coadd (default 0.2)
+;   minsn2     - Minimum S/N^2 to include science frame in coadd; default
+;                to 0 to only include those with S/N > 0.
+;                Note that all exposures with a score less than 0.2 times
+;                the score of the best exposure are discarded; for those
+;                purposes, the score used is the worst of all 4 cameras.
 ;
 ; OUTPUT:
 ;
@@ -26,9 +30,8 @@
 ; EXAMPLES:
 ;
 ; BUGS:
-;   We currently hard-wire the rejection of all smears, all exposures
-;   with any CCDs with (S/N)^2 < 1, and any with (S/N)^2 less than 20% of
-;   the best exposure.
+;   We currently hard-wire the rejection of all smears and
+;   any with (S/N)^2 less than 20% of the best exposure.
 ;
 ; PROCEDURES CALLED:
 ;   cpbackup
@@ -57,7 +60,7 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
 
    if (NOT keyword_set(planfile)) then planfile = findfile('spPlancomb*.par')
    if (n_elements(adderr) EQ 0) then adderr = 0.03
-   if (n_elements(minsn2) EQ 0) then minsn2 = 0.2
+   if (n_elements(minsn2) EQ 0) then minsn2 = 0.
 
    thismem = memory()
    maxmem = 0
@@ -156,12 +159,13 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
    ;----------
    ; Compute a score for each frame and each exposure.
    ; Replace all UNKNOWN file names with nulls.
-   ; The score will be zero if the file name is set to "NULL" or does not exist.
+   ; The score will be MINSN2 if the file name is set to "NULL"
+   ; or does not exist.
 
    dims = size(allseq)
    nexp = n_elements(allseq)
    ndocam = n_elements(icams)
-   score = fltarr(ndocam, nexp)
+   score = fltarr(ndocam, nexp) - (minsn2<0)
    camspecid = lonarr(ndocam, nexp)
    expnum = lonarr(ndocam, nexp)
    for i=0L, nexp-1 do begin
@@ -185,9 +189,11 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
       endfor
    endfor
 
-   ; Discard the smear exposures by setting their scores equal to zero
+   ; Discard the smear exposures by setting their scores equal to (MINSN2<0)
+  qsmear = allseq.flavor EQ 'smear'
    for iexp=0L, nexp-1 do $
-    score[*,iexp] = score[*,iexp] * (allseq[iexp].flavor NE 'smear')
+    score[*,iexp] = score[*,iexp] * (qsmear[iexp] EQ 0) $
+     + (minsn2<0) * qsmear[iexp]
 
    ;----------
    ; Select the "best" exposure based upon the minimum score in all cameras
@@ -203,19 +209,19 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
    ; best exposure, or whose score is less than some absolute value.
    ; These numbers are hard-wired!!!???
 
-   ibad = where(expscore LE 0.0 OR expscore LT 0.20*bestscore, nbad)
+   ibad = where(expscore LE minsn2 OR expscore LT 0.20*bestscore, nbad)
    if (nbad GT 0) then begin
       for j=0, nbad-1 do splog, 'WARNING: Discarding ' $
        + allseq[ibad[j]].flavor + ' exposure #', $
        expnum[0,ibad[j]], ' with score=', expscore[ibad[j]]
-      score[*,ibad] = 0
+      score[*,ibad] = (minsn2<0)
    endif
 
    ;----------
    ; Compute the spectro-photometry
 
-   i1 = where(camspecid EQ 1 AND score GT 0, ct1)
-   i2 = where(camspecid EQ 2 AND score GT 0, ct2)
+   i1 = where(camspecid EQ 1 AND score GT minsn2, ct1)
+   i2 = where(camspecid EQ 2 AND score GT minsn2, ct2)
    objname = allseq.name[icams]
 
    splog, prename='sp1'
@@ -254,13 +260,13 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
    ;----------
    ; Co-add the fluxed exposures
 
-   ii = where(score GT 0, ct)
+   ii = where(score GT minsn2, ct)
    if (ct GT 0) then $
     spcoadd_v5, objname[ii], combinefile, mjd=thismjd, combinedir=combinedir, $
      adderr=adderr, docams=docams, plotsnfile=plotsnfile, $
      bestexpnum=expnum[0,ibest] $
    else $
-    splog, 'ABORT: No exposures with SCORE > 0'
+    splog, 'ABORT: No exposures with SCORE > ' + strtrim(string(minsn2),2)
 
    heap_gc   ; garbage collection
 
