@@ -347,7 +347,10 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ; Correct LAMBDA, which is used to shift to vacuum wavelengths.
 
    helio=0.0
-   get_platecenter, plugsort, ra, dec
+   ra = sxpar(objhdr, 'RA', count=ct_ra)
+   dec = sxpar(objhdr, 'DEC', count=ct_dec)
+   if (ct_ra NE 1 OR ct_dec NE 1) then $
+    splog, 'WARNING: Missing RA and/or DEC from header'
 
    ;--------------------------------------------------------
    ; Call standard proc to determine time-stamps
@@ -358,8 +361,10 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ; If all these keywords are present in the header, they will be either
    ; type FLOAT or DOUBLE.  Note that SDSS will put NaN in the header for
    ; these values if they are unknown.
-   if (size(tai_mid, /tname) NE 'INT' $
-       AND finite(ra) AND finite(dec) AND finite(tai_mid) ) then begin
+   if ( size(ra, /tname) NE 'INT' $
+    AND size(dec, /tname) NE 'INT' $
+    AND size(tai_mid, /tname) NE 'INT' $
+    AND finite(ra) AND finite(dec) AND finite(tai_mid) ) then begin
       helio = heliocentric(ra, dec, tai=tai_mid)
       splog, 'Heliocentric correction = ', helio, ' km/s'
       sxaddpar, objhdr, 'HELIO_RV', helio, $
@@ -548,7 +553,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    endelse
 
    fitmag = snmag + [-2.0,-0.5]
-   sncoeff = fitsn(mag, snvec, fitmag=fitmag, sigma=sigma)
+   sncoeff = fitsn(mag, snvec, fitmag=fitmag)
    sn2 = 10^(2.0 * poly([snmag],sncoeff))
 
    sxaddpar,objhdr,'FRAMESN2', sn2[0]
@@ -556,7 +561,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    sxaddpar,objhdr,'RADECSYS', 'FK5', after='EQUINOX'
    sxaddpar,objhdr,'AIRMASS',$
     float(tai2airmass(ra, dec, tai=tai_mid)) $
-            * (tai_mid GT 0), after='ALT'
+    * (ct_ra EQ 1) * (ct_dec EQ 1) * (tai_mid GT 0), after='ALT'
 
    spadd_guiderinfo, objhdr
 
@@ -572,11 +577,12 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    mwrfits, dispset, outname
    mwrfits, plugsort, outname
    mwrfits, skyimg, outname
-   mwrfits, superfit, outname
-   mwrfits, skystruct, outname
-   mwrfits, scatter, outname
-   if (keyword_set(do_telluric)) then $
-    mwrfits, telluricfactor, outname ; This array only exists for red frames.
+   mwrfits, xnow, outname
+;   mwrfits, superfit, outname
+;   mwrfits, skystruct, outname
+;   mwrfits, scatter, outname
+;   if (keyword_set(do_telluric)) then $
+;    mwrfits, telluricfactor, outname ; This array only exists for red frames.
    spawn, ['gzip', '-f', outname], /noshell
 
    heap_gc
