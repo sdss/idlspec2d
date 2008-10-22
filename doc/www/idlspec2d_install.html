@@ -11,9 +11,9 @@ This document explains how to install the idlutils,idlspec2d,specflat products
 needed for reducing SDSS spectroscopic data.  The current (Nov 2003) versions
 of the code are:
 <DL><DD><PRE>
-  idlutils v4_10_6
+  idlutils v5_3_0
   specflat v1_5
-  idlspec2d v4_10_6
+  idlspec2d v5_2_0
 </PRE></DD></DL>
 
 <P>
@@ -84,12 +84,21 @@ puts the code in the directory $HOME/products:
 </LI>
 
 <LI>
-Now install the code, installing first "idlutils" and "specflat", and
+The idlutils code is in a world-readable SVN repository at Berkeley Lab.
+<DL><DD><PRE>
+  % svn co https://projects.lbl.gov/svn/idlutils/tags/v5_3_0 $HOME/products/idlutils/$EUPS_FLAVOR/v5_3_0
+  % cd $HOME/products/$EUPS_FLAVOR/idlutils/v5_3_0
+  % bin/evilmake
+  % eups_declare -f $EUPS_FLAVOR -r $EUPS_PATH/$EUPS_FLAVOR/idlutils/v5_3_0 -c idlutils v5_3_0
+</PRE></DD></DL>
+</LI>
+
+<LI>
+Now install the remaining code, installing first "specflat" and
 then "idlspec2d".  Installing in this order gets the dependencies right,
 since the UPS database needs to know that idlspec2d depends upon particular
 versions of those other products.  An install would then look something like:
 <DL><DD><PRE>
-  % evilinstall idlutils v4_10_6 ; setup idlutils
   % evilinstall specflat v1_5 ; setup specflat
   % evilinstall idlspec2d v4_10_6 ; setup idlspec2d
 </PRE></DD></DL>
@@ -121,7 +130,14 @@ IDL must be installed on your system, and
 the environment variables IDL_DIR and IDL_PATH must already be set.
 
 <LI>
-The code is in a world-readable Princeton CVS repository.
+The idlutils code is in a world-readable SVN repository at Berkeley Lab.
+<DL><DD><PRE>
+  svn co https://projects.lbl.gov/svn/idlutils/tags/v5_3_0 idlutils
+</PRE></DD></DL>
+</LI>
+
+<LI>
+The other code is in a world-readable Princeton CVS repository.
 To access this repository, you will first need to generate a ~/.cvspass
 file as follows:
 <DL><DD><PRE>
@@ -141,10 +157,8 @@ users) or ~/.bashrc file (for Borne-shell users).
 Check out tagged versions of "idlutils", "specflat" and "idlspec2d".
 Put them into your home directory (for this example).
 <DL><DD><PRE>
-  % cd
-  % cvs co -r v4_10_6 idlutils
   % cvs co -r v1_5 specflat
-  % cvs co -r v4_10_6 idlspec2d
+  % cvs co -r v5_2_0 idlspec2d
 </PRE></DD></DL>
 
 <LI>
