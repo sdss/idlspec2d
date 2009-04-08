@@ -495,6 +495,7 @@ pro/spec2d/fitsn.pro -text
 pro/spec2d/fitvacset.pro -text
 pro/spec2d/fitwithmx.pro -text
 pro/spec2d/flatinterp.pro -text
+pro/spec2d/flux2maggie.pro -text
 pro/spec2d/flux_distortion.pro -text
 pro/spec2d/fluxcorr_new.pro -text
 pro/spec2d/fluxfix.pro -text
