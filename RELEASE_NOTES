@@ -15,6 +15,7 @@ EXTRACT_OBJECT: Roll back to using RA,DEC from the headers, and try to fix
       Output superflat as HDU #8 (which is used by SPTHROUGHPUT).
       Remove HDUs after that unless/until added to the data model.
 FIBERFLAT: Fix test as to whether B-spline fit failed.
+FLUX2MAGGIE: New simple wrapper for FILTER_THRU.
 GET_PLATECENTER: Remove since we'll want this functionality upstream
       if needed.
 PLUG2TSOBJ: Remove undocumented PLUGFILE keyword.
