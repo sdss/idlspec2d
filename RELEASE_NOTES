@@ -18,6 +18,9 @@ FIBERFLAT: Fix test as to whether B-spline fit failed.
 FLUX2MAGGIE: New simple wrapper for FILTER_THRU.
 GET_PLATECENTER: Remove since we'll want this functionality upstream
       if needed.
+GUIDERMOVIE,GUIDERMPEG: Update to use the dark frames for the original
+      SDSS guide camera that are now checked into the etc directory,
+      rather than a hard-wired file name that only existed at sdsshost.apo.
 PLUG2TSOBJ: Remove undocumented PLUGFILE keyword.
 READSPEC_FOOTPRINT: New routine for reading all spectro objects
       within the footprint of a specified plate.
@@ -43,6 +46,9 @@ bin/speclog_update: add -forcecvs option, to help recover from nights
       which were copied in, but had CVS problems.
 doc/www/spectro_home.html: Add instructions for downloading DR6.
       Update Data Model for spCFrame files for superflat in HDU #8.
+etc/dark-??-*.fits: Dark frames from the original SDSS guide camera,
+      copied from sdsshost.apo.nmsu.edu:/data/spectro/guiderDarks.
+      These files are now used by GUIDERMOVIE,GUIDERMPEG.
 etc/emlines.par: Add 2 more nebular lines of interest to Andrew West:
         [N_II] 5755 and He_I 5876.
 etc/spChunkList.par: Add chunks 162-167,168,169-172.
