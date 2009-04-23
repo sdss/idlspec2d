@@ -40,11 +40,13 @@
 ;   atvxyouts
 ;   djs_filepath()
 ;   fileandpath()
+;   findopfile()
 ;   get_tai
 ;   jdcnv
 ;   mrdfits()
 ;   splog
 ;   sdsshead()
+;   sxpar()
 ;
 ; REVISION HISTORY:
 ;   13-May-2002  Written by D. Schlegel, Princeton
@@ -251,10 +253,12 @@ pro guidermovie, mjd=mjd, plate=plate, expnum=expnum, _EXTRA=KeywordsForATV
    end
 
    ;----------
-   ; Read the dark image
+   ; Read the dark image (select only from the 30-sec darks)
 
-   dark = mrdfits('~jeg/Data/guider/darks/30s/SUMDKBIN.FIT')
-
+   darkdir = filepath('',root_dir=getenv('IDLSPEC2D_DIR'), subdir='etc')
+   darkfile = findopfile('dark-30-*.fits*', mjd[0], darkdir)
+   if (keyword_set(darkfile)) then $
+    dark = mrdfits(filepath(darkfile, root_dir=darkdir), /fscale)
 
    titlestring = 'MJD ' + mjdstr
    if (keyword_set(plate)) then $
@@ -301,16 +305,16 @@ pro guidermovie, mjd=mjd, plate=plate, expnum=expnum, _EXTRA=KeywordsForATV
 
       ; Only display this image if it is different from the last image displayed
       if (ifile NE lastfile) then begin
-         img = mrdfits(gfiles[ifile], 0, /silent) + 32768.
+         img = mrdfits(gfiles[ifile], 0, hdr, /silent) + 32768.
+         exptime = sxpar(hdr, 'EXPTIME')
 
          splog, ifile+1, nfile, fileandpath(gfiles[ifile]), utstring, $
           format='("File ",i4," of ",i4,": ",a,2x,a)'
 
-         ; Dark-subtract
-         if (total(size(dark,/dimens) - size(img,/dimens)) EQ 0) then begin
-            res = linfit(dark[*,0:50], img[*,0:50])
-            img = img - res[0] - res[1] * dark
-         endif
+         ; Dark-subtract, scaling the dark current from the 30-sec dark
+         qsamesize = total(size(img,/dimens) EQ size(dark,/dimens)) EQ 2
+         if (keyword_set(exptime)*qsamesize) then $
+          img -= (exptime/30.) * dark
 
          atv, img, _EXTRA=KeywordsForATV
          atvxyouts, 0, (size(img,/dimens))[1], titlestring, $

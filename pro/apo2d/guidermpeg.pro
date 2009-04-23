@@ -35,8 +35,10 @@
 ; PROCEDURES CALLED:
 ;   djs_filepath()
 ;   fileandpath()
+;   findopfile()
 ;   mrdfits()
 ;   splog
+;   sxpar()
 ;
 ; REVISION HISTORY:
 ;   13-May-2002  Written by D. Schlegel, Princeton
@@ -85,9 +87,12 @@ pro guidermpeg, mjd=mjd, expnum=expnum
    endif
 
    ;----------
-   ; Read the dark image
+   ; Read the dark image (select only from the 30-sec darks)
 
-   dark = mrdfits('~jeg/Data/guider/darks/30s/SUMDKBIN.FIT')
+   darkdir = filepath('',root_dir=getenv('IDLSPEC2D_DIR'), subdir='etc')
+   darkfile = findopfile('dark-30-*.fits*', mjd[0], darkdir)
+   if (keyword_set(darkfile)) then $
+    dark = mrdfits(filepath(darkfile, root_dir=darkdir), /fscale)
 
    ;----------
    ; Constuct the output byte array
@@ -105,12 +110,12 @@ pro guidermpeg, mjd=mjd, expnum=expnum
    for ifile=0, nfile-1 do begin
 
       img = mrdfits(gfiles[ifile], 0, hdr, /silent) + 32768
+      exptime = sxpar(hdr, 'EXPTIME')
 
-      ; Dark-subtract
-      if (total(size(dark,/dimens) - size(img,/dimens)) EQ 0) then begin
-         res = linfit(dark[*,0:50], img[*,0:50])
-         img = img - res[0] - res[1] * dark
-      endif
+      ; Dark-subtract, scaling the dark current from the 30-sec dark
+      qsamesize = total(size(img,/dimens) EQ size(dark,/dimens)) EQ 2
+      if (keyword_set(exptime)*qsamesize) then $
+       img -= (exptime/30.) * dark
 
       ; Trim image to XSIZE,YSIZE
       img = img[xoff:xoff+xsize-1,yoff:yoff+ysize-1]
