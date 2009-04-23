@@ -104,6 +104,15 @@ etc/atmdisp_vec_am1.4see2.0.fit -text
 etc/atmdisp_vec_am1.5see2.0.fit -text
 etc/blue.bkpts -text
 etc/brg.08.gk.01 -text
+etc/dark-10-54664.fits -text svneol=unset#unset
+etc/dark-15-54713.fits -text svneol=unset#unset
+etc/dark-20-54713.fits -text svneol=unset#unset
+etc/dark-30-53611.fits -text svneol=unset#unset
+etc/dark-30-54235.fits -text svneol=unset#unset
+etc/dark-30-54327.fits -text svneol=unset#unset
+etc/dark-30-54514.fits -text svneol=unset#unset
+etc/dark-30-54757.fits -text svneol=unset#unset
+etc/dark-30-54814.fits -text svneol=unset#unset
 etc/emlines.par -text
 etc/f8v.abs -text
 etc/f8vspline.dat -text
