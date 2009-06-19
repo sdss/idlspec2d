@@ -1,4 +1,10 @@
 
+-------------------------------------------------------------------------------
+v5_4_0 (June 19, 2009) idlspec2d running on IDL 5.4 - 7.0
+Tagged to begin development for BOSS spectrographs, backing
+out SEGUE-specific development.
+Built against specflat v1_7, elodie v1_3, idlutils v5_4_2.
+
 ARCFIT_GUESS: For the red camera, extend the range of the last
       polynomial term, which is necessary for some test data taken
       where the wavelength ranges were shifted by large amounts.
