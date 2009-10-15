@@ -1,0 +1,56 @@
+#!/bin/bash
+#------------------------------------------------------------------------------
+# Script to return SVN version of the idlspec2d product.
+#
+# For trunk and exported the script uses the $TEMPLATE_DIR/bin directory to
+# compute the svnversion.  This is because calculating the full svnversion
+# on a product like speclog can take a long time.
+#
+# Written by C. Loomis, Princeton; Modified by Gary Kushner and Ben Weaver
+#------------------------------------------------------------------------------
+#
+# This will inhibit glob processing, just in case regexes have lots of * in
+# them
+#
+set -o noglob
+#
+# The trailing part of this executable's filename, with respect to the product root.
+# CHANGE THIS LINE
+myName='bin/idlspec2d_version'
+#
+# Compute the value of $TEMPLATE_DIR based on the name
+#
+myEnv=$(echo "${myName}" | cut -d/ -f2 | sed 's/version/dir/' | tr '[:lower:]' '[:upper:]')
+eval "myDir=\$${myEnv}"
+#
+# The following line will include an URL name after the colon
+# for any SVN version.
+#
+svnURL='$HeadURL$'
+#
+# Special case the trunk, which we want to recognize as a version named "trunk"
+#
+svnTag=$(echo "${svnURL}" | sed 's,^$HeadURL: .*/trunk/,trunk/,; s, \$$,,' | sed "s,/${myName},,")
+svnVersion=$(svnversion "${myDir}/bin")
+if test "${svnTag}" = "trunk"; then
+    echo "trunk ${svnVersion}"
+    exit 0
+fi
+#
+# Look for the tag name
+#
+# To change output to "tag $tag" and "branch $branch" change "\3" to "\1 \3"
+svnTag=$(perl -pe 's{^\$HeadURL: .*/(tag|branch)(s|es)/(.*)/'"${myName}"' \$$}{\3}' <<< "${svnURL}")
+if test -z "${svnTag}" || $(echo "${svnTag}" | grep -s -q '/') ; then
+    # Noisy failure:
+    echo "NOTAG: unparseable ${svnVersion} ${svnURL}"
+    # Quiet failure:
+    # echo "NOTAG: unparseable"
+    exit 1
+fi
+#
+# Print the tag & exit nicely.
+#
+echo ${svnTag}
+exit 0
+

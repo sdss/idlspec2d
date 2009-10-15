@@ -7,6 +7,7 @@ bin/aporsync_blue.sh -text
 bin/aporsync_logs.sh -text
 bin/aporsync_red.sh -text
 bin/data_rsync.sh -text
+bin/idlspec2d_version -text
 bin/killdata.sh -text
 bin/mailhtml.sh -text
 bin/make_room.sh -text
