@@ -88,7 +88,6 @@
 ;   Spawns the Unix command 'tail' to get the last line of log files.
 ;
 ; DATA FILES:
-;   $IDLSPEC2D_DIR/etc/spChunkList.par
 ;   $IDLSPEC2D_DIR/etc/spPlateList.par
 ;
 ; PROCEDURES CALLED:
