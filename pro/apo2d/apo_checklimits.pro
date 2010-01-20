@@ -41,52 +41,59 @@
 ;   30-Apr-2000  Written by D. Schlegel, APO
 ;-
 ;------------------------------------------------------------------------------
-FUNCTION apo_checklimits, flavor, field, camera, value, html=html
-    COMMON apo_limits, numlimits, textlimits
-    markstring = ''
-    IF ~KEYWORD_SET(value) THEN RETURN, markstring
-    ;
-    ; Read this Yanny file only the first time this routine is called,
-    ; then save the limits in a common block.
-    ;
-    IF ~KEYWORD_SET(numlimits) THEN BEGIN
-        limitfile = FILEPATH('opLimits.par', ROOT_DIR=GETENV('IDLSPEC2D_DIR'), $
-            SUBDIRECTORY='examples')
-        yanny_read, limitfile, pdata, stnames=stnames
-        numlimits = *pdata[(WHERE(stnames EQ 'SPECLIMIT'))[0]]
-        textlimits = *pdata[(WHERE(stnames EQ 'TEXTLIMIT'))[0]]
-        yanny_free, pdata
-    ENDIF
-    IF (size(value,/tname) EQ 'STRING') THEN BEGIN
-        ;
-        ; Case of text limit
-        ;
-        FOR ilim=0, N_ELEMENTS(textlimits)-1 DO BEGIN
-            IF (STRMATCH(field, textlimits[ilim].field) $
-                && STRMATCH(camera, textlimits[ilim].camera) $
-                && STRMATCH(flavor, textlimits[ilim].flavor) $
-                && STRMATCH(STRTRIM(value,2), textlimits[ilim].strval)) THEN BEGIN
-                markstring = textlimits[ilim].color
-                IF KEYWORD_SET(html) THEN markstring = '<span style="color:' $
-                    + apo_color2hex(markstring) + ';font-weight:bold;">'
-            ENDIF
-        ENDFOR
-    ENDIF ELSE BEGIN
-        ;
-        ; Case of floating-point limit
-        ;
-        FOR ilim=0, N_ELEMENTS(numlimits)-1 DO BEGIN
-            IF (STRMATCH(field, numlimits[ilim].field) $
-                && strmatch(camera, numlimits[ilim].camera) $
-                && strmatch(flavor, numlimits[ilim].flavor) $
-                && value GE numlimits[ilim].lovalue $
-                && value LE numlimits[ilim].hivalue) THEN BEGIN
-                markstring = numlimits[ilim].color
-                IF KEYWORD_SET(html) THEN markstring = '<span style="color:' $
-                    + apo_color2hex(markstring) + ';font-weight:bold;">'
-            ENDIF
-        ENDFOR
-    ENDELSE
-    RETURN, markstring
-END
+function apo_checklimits, flavor, field, camera, value, html=html
+
+   common apo_limits, numlimits, textlimits
+
+   markstring = ''
+   if (NOT keyword_set(value)) then return, markstring
+
+   ;----------
+   ; Read this Yanny file only the first time this routine is called,
+   ; then save the limits in a common block.
+
+   if (NOT keyword_set(numlimits)) then begin
+      limitfile = filepath('opLimits.par', root_dir=getenv('IDLSPEC2D_DIR'), $
+       subdirectory='examples')
+      yanny_read, limitfile, pdata, stnames=stnames
+      numlimits = *pdata[(where(stnames EQ 'SPECLIMIT'))[0]]
+      textlimits = *pdata[(where(stnames EQ 'TEXTLIMIT'))[0]]
+      yanny_free, pdata
+   endif
+
+   if (size(value,/tname) EQ 'STRING') then begin
+      ;----------
+      ; Case of text limit
+
+      for ilim=0, n_elements(textlimits)-1 do begin
+         if (strmatch(field, textlimits[ilim].field) $
+          AND strmatch(camera, textlimits[ilim].camera) $
+          AND strmatch(flavor, textlimits[ilim].flavor) $
+          AND strmatch(strtrim(value,2), textlimits[ilim].strval)) then begin
+            markstring = textlimits[ilim].color
+            if (keyword_set(html)) then $
+             markstring = '<span style="color:' $
+              + apo_color2hex(markstring) + ';font-weight:bold;">'
+         endif
+      endfor
+   endif else begin
+      ;----------
+      ; Case of floating-point limit
+
+      for ilim=0, n_elements(numlimits)-1 do begin
+         if (strmatch(field, numlimits[ilim].field) $
+          AND strmatch(camera, numlimits[ilim].camera) $
+          AND strmatch(flavor, numlimits[ilim].flavor) $
+          AND value GE numlimits[ilim].lovalue $
+          AND value LE numlimits[ilim].hivalue) then begin
+            markstring = numlimits[ilim].color
+            if (keyword_set(html)) then $
+             markstring = '<span style="color:' $
+              + apo_color2hex(markstring) + ';font-weight:bold;">'
+         endif
+      endfor
+   endelse
+
+   return, markstring
+end
 ;------------------------------------------------------------------------------
