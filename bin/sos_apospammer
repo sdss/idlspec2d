@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+#
+#  This is a highly technical and subtle script.  Edit at your own risk!
+#
+#  Generally this should be run via the crontab line:
+#            0 12 * * * /abs/path/to/file/sos_apospammer
+#
+#  Written by Gary Kushner (LBL).  Jan 2010.
+
+mail kushner@lbl.gov -s "SOS Critical Error Log" < /home/observer/sos/sos-logs/sos_log-b1-error
+
+#
+###  The python logger doesn't roll over the log unless it writes to it.  So unless
+###  there is a critical error, the same log will be sent over and over.  This is a
+###  hack to roll them manually to the email makes more sense
+#
+
+cp /home/observer/sos/sos-logs/sos_log-b1-error-2 /home/observer/sos/sos-logs/sos_log-b1-error-3
+cp /home/observer/sos/sos-logs/sos_log-b1-error-1 /home/observer/sos/sos-logs/sos_log-b1-error-2
+cp /home/observer/sos/sos-logs/sos_log-b1-error /home/observer/sos/sos-logs/sos_log-b1-error-1
+
+cat >/home/observer/sos/sos-logs/sos_log-b1-error <<< "Log Rolled"

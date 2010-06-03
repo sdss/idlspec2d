@@ -10,7 +10,7 @@ pro sbss_testplate
    plateid = 9001L
    tileid = 9001L
    setenv, 'HIPPARCOS_DIR=/u/schlegel/hipparcos'
-;   setenv, 'SPECTRO_DATA=/u/dss/spectro'
+;   setenv, 'BOSS_SPECTRO_REDUX=/u/dss/spectro'
 
    ;----------
    ; Read plug-map info for plate 360, which we will use for selecting

@@ -155,8 +155,17 @@ pro spcoadd_v5, spframes, outputname, $
    ;---------------------------------------------------------------------------
    ; Loop through each 2D output and read in the data
    ;---------------------------------------------------------------------------
-   for ifile=0, nfiles-1 do begin
 
+   ; Start by determining the size of all the files
+   npixarr = lonarr(nfiles)
+   for ifile=0, nfiles-1 do begin
+      spframe_read, filenames[ifile], hdr=objhdr
+      npixarr[ifile] = sxpar(objhdr,'NAXIS1')
+   endfor
+   npixmax = max(npixarr)
+   nobj = sxpar(objhdr,'NAXIS2') ; Number of fibers per spectrograph
+
+   for ifile=0, nfiles-1 do begin
       ;----------
       ; Read in all data from this input file.
       ; Reading the plug-map structure will fail if its structure is
@@ -186,17 +195,22 @@ pro spcoadd_v5, spframes, outputname, $
       ;----------
       ; Solve for wavelength and lambda-dispersion at each pixel in the image
 
+      ;need to reset junk since the array lengths change
+      junk=0
       traceset2xy, tempwset, junk, tempwave
       traceset2xy, tempdispset, junk, tempdispersion
-
       ;----------
       ; Here is the correct conversion from pixels to log-lambda dispersion.
       ; We are converting from the dispersion in units of spFrame pixel sizes
       ; to the dispersion in units of the new rebinned pixel size, which is
       ; BINSZ in log-lambda units.
-
+      
+      ; this probably should be fixed elsewhere but limit where the fit range
+      tempxmax=tempwset.xmax
+      tempwset.xmax=(size(tempdispersion,/dimens))[0]-1
       correct_dlam, tempdispersion, 0, tempwset, dlam=binsz, /inverse
-
+      tempwset.xmax=tempxmax
+   
       ;----------
 
       dims = size(tempflux, /dimens)
@@ -258,9 +272,10 @@ pro spcoadd_v5, spframes, outputname, $
       bterm = mrdfits(thisfile, 1)
       invertcorr = 1. / aterm
       minval = 0.05 / mean(aterm)
-      divideflat, tempflux, invvar=tempivar, invertcorr, minval=minval
+      nrownative=(size(tempflux,/dimens))[0]
+      divideflat, tempflux, invvar=tempivar, invertcorr[0:nrownative-1,*], minval=minval
       tempflux = tempflux + bterm
-      divideflat, tempsky, invertcorr, minval=minval
+      divideflat, tempsky, invertcorr[0:nrownative-1,*], minval=minval
       temppixmask = temppixmask $
        OR (invertcorr LE minval) * pixelmask_bits('BADFLUXFACTOR')
 
@@ -280,36 +295,45 @@ pro spcoadd_v5, spframes, outputname, $
       ; Concatenate data from all images
 
       if (ifile EQ 0) then begin
-         flux = tempflux
-         fluxivar = tempivar
-         wave = tempwave
-         dispersion = float(tempdispersion)
-         pixelmask = temppixmask
-         skyflux = tempsky
-         ximg = tempximg
-         superflat = tempsuperflat
+         ; Construct the image arrays
+         flux = make_array(npixmax,nobj*nfiles,type=size(tempflux,/type))
+         fluxivar = make_array(npixmax,nobj*nfiles,type=size(tempivar,/type))
+         wave = make_array(npixmax,nobj*nfiles,type=size(tempwave,/type))
+         dispersion = make_array(npixmax,nobj*nfiles,type=size(tempdisp,/type))
+         pixelmask = make_array(npixmax,nobj*nfiles,type=size(temppixmask,/type))
+         skyflux = make_array(npixmax,nobj*nfiles,type=size(tempsky,/type))
+         ximg = make_array(npixmax,nobj*nfiles,type=size(tempximg,/type))
+         superflat = make_array(npixmax,nobj*nfiles,type=size(tempsuperflat,/type))
 
+         ; Append as vectors...
          camerasvec = cameras
          label = makelabel(hdr)
          filenum = lonarr(nfib) + ifile
          plugmap = tempplug
       endif else begin
-         ; Append as images...
-         flux = [[flux], [tempflux]]
-         fluxivar = [[fluxivar], [tempivar]]
-         wave = [[wave], [tempwave]]
-         dispersion = [[dispersion], [float(tempdispersion)]]
-         pixelmask = [[pixelmask], [temppixmask]]
-         skyflux = [[skyflux], [tempsky]]
-         ximg = [[ximg], [tempximg]]
-         superflat = [[superflat], [tempsuperflat]]
-
          ; Append as vectors...
          camerasvec = [camerasvec, cameras]
          label = [label, makelabel(hdr)]
          filenum = [filenum, lonarr(nfib) + ifile]
          plugmap = [plugmap, tempplug]
       endelse
+
+      flux[0:npixarr[ifile]-1,nobj*ifile:nobj*(ifile+1)-1] = tempflux
+      fluxivar[0:npixarr[ifile]-1,nobj*ifile:nobj*(ifile+1)-1] = tempivar
+      wave[0:npixarr[ifile]-1,nobj*ifile:nobj*(ifile+1)-1] = tempwave
+      ; Pad the wavelengths with reasonable values
+      if (npixarr[ifile] LT npixmax) then begin
+         dwave = tempwave[npixarr[ifile]-1,*] - tempwave[npixarr[ifile]-2,*]
+         addwave = tempwave[npixarr[ifile]-1,*] $
+          ## (1+lonarr(npixmax-npixarr[ifile])) $
+          + dwave ## (1+lindgen(npixmax-npixarr[ifile]))
+         wave[npixarr[ifile]:npixmax-1,nobj*ifile:nobj*(ifile+1)-1] = addwave
+      endif
+      dispersion[0:npixarr[ifile]-1,nobj*ifile:nobj*(ifile+1)-1] = tempdispersion
+      pixelmask[0:npixarr[ifile]-1,nobj*ifile:nobj*(ifile+1)-1] = temppixmask
+      skyflux[0:npixarr[ifile]-1,nobj*ifile:nobj*(ifile+1)-1] = tempsky
+      ximg[0:npixarr[ifile]-1,nobj*ifile:nobj*(ifile+1)-1] = tempximg
+      superflat[0:npixarr[ifile]-1,nobj*ifile:nobj*(ifile+1)-1] = tempsuperflat
 
       splog, prename=''
    endfor
@@ -396,7 +420,7 @@ pro spcoadd_v5, spframes, outputname, $
 
       if (indx NE -1) then begin
          splog, 'Fiber', ifiber+1, ' ', plugmap[indx].objtype, $
-          plugmap[indx].mag, format = '(a, i4.3, a, a, f6.2, 5f6.2)'
+          plugmap[indx].mag, format = '(a, i5.4, a, a, f6.2, 5f6.2)'
 
          finalplugmap[ifiber] = plugmap[indx]
 
@@ -405,11 +429,11 @@ pro spcoadd_v5, spframes, outputname, $
          ; If all pluggings are identical, then this will always be
          ; the same fiber ID.
          ; Also, insist that the object type is not 'NA', which would
-         ; occur for unplugged fibers.
+         ; occur for unplugged fibers. <--- Disable this for BOSS ???
 
          indx = where(abs(plugmap.xfocal - plugmap[indx].xfocal) LT 0.0001 $
-          AND abs(plugmap.yfocal - plugmap[indx].yfocal) LT 0.0001 $
-          AND strtrim(plugmap.objtype,2) NE 'NA')
+          AND abs(plugmap.yfocal - plugmap[indx].yfocal) LT 0.0001)
+;          AND strtrim(plugmap.objtype,2) NE 'NA')
       endif
 
       if (indx[0] NE -1) then begin
@@ -422,6 +446,7 @@ pro spcoadd_v5, spframes, outputname, $
           newsky=bestsky, $
           nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep, $
           maxiter=50, upper=3.0, lower=3.0, maxrej=1
+;stop ; ???
 
          finalflux[*,ifiber] = bestflux
          finalivar[*,ifiber] = bestivar
@@ -438,7 +463,6 @@ pro spcoadd_v5, spframes, outputname, $
          finalormask[*,ifiber] = pixelmask_bits('NODATA')
       endelse
    endfor
-
    ;----------
    ; Modify the 1st file's header to use for the combined plate header.
 
@@ -561,6 +585,9 @@ pro spcoadd_v5, spframes, outputname, $
 
    sxdelpar, bighdr, ['SPA', 'IPA', 'IPARATE']
    sxdelpar, bighdr, 'EXPOSURE'
+   sxdelpar, bighdr, 'REQTIME'
+   sxdelpar, bighdr, 'QUALITY'
+   sxdelpar, bighdr, 'FILENAME'
    sxdelpar, bighdr, 'SEQID'
    sxdelpar, bighdr, 'DARKTIME'
    sxdelpar, bighdr, 'CAMERAS'
@@ -689,9 +716,13 @@ pro spcoadd_v5, spframes, outputname, $
    qbadpix = skymask(finalivar, finalandmask, finalormask) EQ 0 $
     AND (finalandmask AND pixelmask_bits('NODATA')) EQ 0
    if (nfib1 GT 0) then $
-    fbadpix1 = total(qbadpix[*,ifib1]) / (nfib1 * nfinalpix)
+    fbadpix1 = total(qbadpix[*,ifib1]) / (nfib1 * nfinalpix) $
+   else $
+    fbadpix1 = 0
    if (nfib2 GT 0) then $
-    fbadpix2 = total(qbadpix[*,ifib2]) / (nfib2 * nfinalpix)
+    fbadpix2 = total(qbadpix[*,ifib2]) / (nfib2 * nfinalpix) $
+   else $
+    fbadpix2 = 0
    if (nfib1 GT 0 AND nfib2 GT 0) then $
     fbadpix = total(qbadpix[*,[ifib1,ifib2]]) / ((nfib1+nfib2) * nfinalpix) $
    else if (nfib1 GT 0) then $

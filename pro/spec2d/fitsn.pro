@@ -6,8 +6,8 @@
 ;   Perform a simple parameter fit to log S/N vs magnitude
 ;
 ; CALLING SEQUENCE:
-;   coeffs = fitsn(mag, snvec, [ sigrej=, maxiter=, $
-;    fitmag=, colorband=, sigma= ] )
+;   coeffs = fitsn(mag, snvec, [ sigrej=, maxiter=, sncode=, $
+;    filter=, sigma=, specsnlimit=, sn2= ] )
 ;
 ; INPUTS:
 ;   mag        - Fiber magnitudes
@@ -15,36 +15,23 @@
 ;
 ; OPTIONAL KEYWORDS:
 ;   sigrej     - Sigma rejection threshold; default to 3
+;                (only used in computing SIGMA)
 ;   maxiter    - Maximum number of rejection iterations; default to 5
-;   fitmag     - Magnitude range over which to fit (S/N) as function of mag;
-;                no defaults unless COLOR is set.
-;   colorband  - If set, then override FITMAG with the following fitting ranges:
-;                  'B' : [18.20, 19.70]  <-- Used for Son-of-Spectro
-;                  'R' : [17.90, 19.40]  <-- Used for Son-of-Spectro
-;                  'G' : [18.20, 19.70]
-;                  'R' : [18.25, 19.75]
-;                  'I' : [17.90, 19.40]
-;                The above ranges will be extended to [0,23] if fewer than
-;                20 points are found in the above ranges, but at least 3
-;                good points at any magnitude.
+;                (no longer used with median-fit line)
+;   sncode     - Pipeline code for determining fit range
+;   filter     - Filter band for determining fit range
 ;
 ; OUTPUTS:
-;   coeffs     - Coefficients from fit; return 0 if fit failed
+;   coeffs     - Coefficients from fit; return 0 if fit failed;
+;                log10(S/N) = coeffs[0] - coeffs[1] * mag
 ;
 ; OPTIONAL OUTPUTS:
 ;   sigma      - Standard deviation of residuals
-;   fitmag     - (Modified if COLOR is set)
+;   specsnlimit- Structure with FITMAG,SNMAG,FIDUCIAL_COEFF
+;   sn2        - Fit value of (S/N)^2 at fiducial magnitude
 ;
 ; COMMENTS:
 ;   If there are fewer than 3 points, then return COEFFS=0.
-;
-;   This function is called by the following routes in Son-of-Spectro:
-;     APO_PLOTSN -> PLOTSN -> FITSN
-;     QUICKEXTRACT -> FITSN
-;
-;   This function is called by the following routes in Spectro-2D:
-;     PLATESN -> PLOTSN -> FITSN
-;     EXTRACT_OBJECT -> FITSN
 ;
 ; EXAMPLES:
 ;
@@ -58,33 +45,31 @@
 ;-
 ;------------------------------------------------------------------------------
 function fitsn, mag, snvec, sigrej=sigrej, maxiter=maxiter, $
- fitmag=fitmag, colorband=colorband, sigma=sigma
+ sncode=sncode, filter=filter, sigma=sigma, specsnlimit=specsnlimit1, sn2=sn2
+
+   common com_fitsn, specsnlimit
 
    if (NOT keyword_set(sigrej)) then sigrej = 3
    if (NOT keyword_set(maxiter)) then maxiter = 5
 
-   if (keyword_set(colorband)) then begin
-      case strupcase(colorband) of
-         'B' : fitmag = [18.33, 19.83] ; For SOS
-         'R' : fitmag = [18.06, 19.56] ; For SOS
-         'G' : fitmag = [18.20, 19.70]
-         'R' : fitmag = [18.25, 19.75]
-         'I' : fitmag = [17.90, 19.40]
-         else: message, 'Invalid COLOR keyword value'
-      endcase
-
-      ; If fewer than 20 good points within the default fitting mag range,
-      ; then redefine that fitting range to be [0,+1] mag from the median
-      ; of good magnitudes
-      if (total(snvec GT 0 AND mag GT fitmag[0] AND mag LT fitmag[1]) $
-       LT 20 AND total(snvec GT 0) GT 2) then begin
-         igood = where(snvec GT 0 AND mag NE 0, ngood)
-         if (ngood LT 3) then fitmag = [0,23] $
-          else fitmag = median(mag[igood]) + [0,1]
-      endif
+   if (NOT keyword_set(specsnlimit)) then begin
+      specsnlimit = yanny_readone(djs_filepath('opSNlimits.par', $
+       root_dir=getenv('IDLSPEC2D_DIR'), subdir='opfiles'), 'SPECSNLIMIT')
+      if (NOT keyword_set(specsnlimit)) then $
+       message, 'opSNlimits.par file not found!'
    endif
 
+   i = where(specsnlimit.sncode EQ sncode $
+    AND specsnlimit.filter EQ filter, ct)
+   if (ct EQ 0) then $
+    message, 'No limits found for specified CODE,FILTER!'
+   specsnlimit1 = specsnlimit[i]
+   fitmag = specsnlimit1.fitmag
+   snmag = specsnlimit1.snmag
+   slope = specsnlimit1.slope
+
    sigma = 0
+   sn2 = 0
    nspec = n_elements(snvec)
    mask = (snvec GT 0 AND mag GT fitmag[0] AND mag LT fitmag[1])
 
@@ -95,24 +80,30 @@ function fitsn, mag, snvec, sigrej=sigrej, maxiter=maxiter, $
                         ; values are masked from the fit anyway
    logsn[igood] = alog10(snvec[igood])
 
-   for i=0, maxiter-1 do begin
-      igood = where(mask, ngood)
-      if (ngood LE 2) then return, 0
-      if (!version.release LT '5.4') then begin
-         coeffs = poly_fit(mag[igood], logsn[igood], 1)
-      endif else begin
-         coeffs = poly_fit(mag[igood], logsn[igood], 1, /double)
-      endelse
-      yfit = poly(mag, coeffs)
- 
-      diff = logsn - yfit
-      djs_iterstat, diff[igood], sigrej=sigrej, sigma=sigma, mask=smask
-      treject = total(1-smask)
-      if (treject EQ 0) then return, coeffs
+   if (ngood GE 3) then begin
+      coeffs = [median(logsn[igood] - slope * mag[igood]), slope]
+      yfit = coeffs[0] + coeffs[1] * mag
+      sigma = djsig(logsn[igood] - yfit[igood], sigrej=sigrej)
+      sn2 = 10^(2.0*poly(snmag,coeffs))
+   endif else begin
+      coeffs = 0
+   endelse
 
-      mask[igood] = mask[igood] * smask
-      if (total(mask) LE 2) then return, 0
-   endfor
+;   for i=0, maxiter-1 do begin
+;      igood = where(mask, ngood)
+;      if (ngood LT 3) then return, 0
+;      coeffs = poly_fit(mag[igood], logsn[igood], 1, /double)
+;      yfit = poly(mag, coeffs)
+;      sn2 = 10^(2.0*poly(snmag,coeffs))
+; 
+;      diff = logsn - yfit
+;      djs_iterstat, diff[igood], sigrej=sigrej, sigma=sigma, mask=smask
+;      treject = total(1-smask)
+;      if (treject EQ 0) then return, coeffs
+;
+;      mask[igood] = mask[igood] * smask
+;      if (total(mask) LE 2) then return, 0
+;   endfor
 
    return, coeffs
 end

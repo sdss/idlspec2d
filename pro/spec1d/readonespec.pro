@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   readonespec, plate, fiber, [mjd=, cameras=, flux=, flerr=, invvar=, $
 ;    mask=, disp=, sky=, loglam=, wave=, ximg=, synflux=, lineflux=, $
-;    objhdr=, framehdr=, expnum=, topdir=, path=, /silent ]
+;    objhdr=, framehdr=, expnum=, topdir=, path=, run2d=, run1d=, /silent ]
 ;
 ; INPUTS:
 ;   plate      - Plate number (scalar)
@@ -19,9 +19,11 @@
 ;                data for this plate (largest MJD).
 ;   cameras    - If specified, then only match to either the blue ('b')
 ;                or red ('r')
-;   topdir     - Top-level directory for data; default to the environment
-;                variable $SPECTRO_DATA.
+;   topdir     - Optional override value for the environment
+;                variable $BOSS_SPECTRO_REDUX.
 ;   path       - Override all path information with this directory name.
+;   run2d ???
+;   run1d ???
 ;   silent     - If set, then call MRDFITS with /SILENT.
 ;
 ; OUTPUTS:
@@ -48,7 +50,7 @@
 ;   expnum     - Exposure number for each NFILE spectra
 ;
 ; COMMENTS:
-;   The environment variable SPECTRO_DATA must be set to tell this routine
+;   The environment variable BOSS_SPECTRO_REDUX must be set to tell this routine
 ;   where to find the data.  The list of spCFrame files to read are determined
 ;   from the EXPID header keywords in the spPlate file.
 ;
@@ -57,8 +59,8 @@
 ; BUGS:
 ;
 ; DATA FILES:
-;   $SPECTRO_DATA/$PLATE/spPlate-$PLATE-$MJD.fits
-;   $SPECTRO_DATA/$PLATE/spCFrame-$CAMERA-$EXPOSURE.fits*
+;   $BOSS_SPECTRO_REDUX/$PLATE/spPlate-$PLATE-$MJD.fits
+;   $BOSS_SPECTRO_REDUX/$PLATE/spCFrame-$CAMERA-$EXPOSURE.fits*
 ;
 ; PROCEDURES CALLED:
 ;   combine1fiber()
@@ -74,7 +76,15 @@ pro readonespec, plate, fiber, mjd=mjd, cameras=cameras, $
  flux=flux, flerr=flerr, invvar=invvar, $
  mask=mask, disp=disp, sky=sky, loglam=loglam, wave=wave, ximg=ximg, $
  synflux=synflux, lineflux=lineflux, objhdr=objhdr, framehdr=framehdr, $
- expnum=expnum, topdir=topdir, path=path, silent=silent
+ expnum=expnum, topdir=topdir1, path=path, run2d=run2d, run1d=run1d, $
+ silent=silent
+
+   if (keyword_set(path)) then begin
+      topdir = path
+   endif else begin
+      topdir = keyword_set(topdir1) ? topdir1[0] : getenv('BOSS_SPECTRO_REDUX')
+      twoddir = n_elements(run2d) GT 0 ? run2d[0] : getenv('RUN2D')
+   endelse
 
    ; Set default return values
    flux = 0
@@ -103,14 +113,8 @@ pro readonespec, plate, fiber, mjd=mjd, cameras=cameras, $
       endif
    endif
 
-   if (NOT keyword_set(topdir) AND NOT keyword_set(path)) then begin
-      topdir = getenv('SPECTRO_DATA')
-      if (NOT keyword_set(topdir)) then $
-       message, 'Environment variable SPECTRO_DATA must be set!'
-   endif
-
    readspec, plate, mjd=mjd, fiber, objhdr=objhdr, topdir=topdir, path=path, $
-    silent=silent
+    run2d=run2d, run1d=run1d, silent=silent
    if (NOT keyword_set(objhdr)) then begin
       print, 'spPlate file not found'
       return
@@ -122,13 +126,14 @@ pro readonespec, plate, fiber, mjd=mjd, cameras=cameras, $
 
    expid = sxpar(objhdr, 'EXPID*')
    filename = 'spCFrame-' + strmid(expid,0,11) + '.fits*'
+   nfibers= sxpar(objhdr, 'NAXIS2')
 
-   if (fiber LE 320) then begin
+   if (fiber LE nfibers/2.) then begin
       spectroid = '1'
       indx = fiber - 1
    endif else begin
       spectroid = '2'
-      indx = fiber - 321
+      indx = fiber - (nfibers/2.) - 1
    endelse
 
    ; Trim to the files that correspond to the spectrograph with this fiber
@@ -151,7 +156,7 @@ pro readonespec, plate, fiber, mjd=mjd, cameras=cameras, $
         root_dir=path)) $
       else $
        tmpname = lookforgzip(filepath(filename[ifile], $
-        root_dir=topdir, subdirectory=platestr))
+        root_dir=topdir, subdirectory=[twoddir,platestr]))
       if (NOT keyword_set(tmpname)) then begin
          print, 'File not found: ' + filename[ifile]
          return
@@ -168,9 +173,10 @@ pro readonespec, plate, fiber, mjd=mjd, cameras=cameras, $
    endif
 
    if (arg_present(flux)) then begin
-      flux = fltarr(2048,nfile)
       for ifile=0L, nfile-1 do begin
          spframe_read, filename[ifile], indx, objflux=flux1
+         npix = (size(flux1,/dimens))[0]
+         if (ifile EQ 0) then flux = fltarr(npix,nfile)
          flux[*,ifile] = flux1
       endfor
    endif
@@ -182,9 +188,10 @@ pro readonespec, plate, fiber, mjd=mjd, cameras=cameras, $
    filename = filename[itrim]
 
    if (arg_present(invvar) OR arg_present(flerr)) then begin
-      invvar = fltarr(2048,nfile)
       for ifile=0L, nfile-1 do begin
          spframe_read, filename[ifile], indx, objivar=invvar1
+         npix = (size(invvar1,/dimens))[0]
+         if (ifile EQ 0) then invvar = fltarr(npix,nfile)
          invvar[*,ifile] = invvar1
       endfor
       if (arg_present(flerr)) then begin
@@ -194,58 +201,55 @@ pro readonespec, plate, fiber, mjd=mjd, cameras=cameras, $
    endif
 
    if (arg_present(mask)) then begin
-      mask = lonarr(2048,nfile)
       for ifile=0L, nfile-1 do begin
          spframe_read, filename[ifile], indx, mask=mask1
+         npix = (size(mask1,/dimens))[0]
+         if (ifile EQ 0) then mask = fltarr(npix,nfile)
          mask[*,ifile] = mask1
-      endfor
-   endif
-
-   if (arg_present(loglam)) then begin
-      loglam = fltarr(2048,nfile)
-      for ifile=0L, nfile-1 do begin
-         spframe_read, filename[ifile], indx, loglam=loglam1
-         loglam[*,ifile] = loglam1
       endfor
    endif
 
    if (arg_present(loglam) OR arg_present(wave) OR arg_present(synflux) $
     OR arg_present(lineflux)) then begin
-      loglam = fltarr(2048,nfile)
       for ifile=0L, nfile-1 do begin
          spframe_read, filename[ifile], indx, loglam=loglam1
+         npix = (size(loglam1,/dimens))[0]
+         if (ifile EQ 0) then loglam = fltarr(npix,nfile)
          loglam[*,ifile] = loglam1
       endfor
       if (arg_present(wave)) then wave = 10.d^loglam
    endif
 
    if (arg_present(ximg)) then begin
-      ximg = fltarr(2048,nfile)
       for ifile=0L, nfile-1 do begin
          spframe_read, filename[ifile], indx, ximg=ximg1
+         npix = (size(ximg1,/dimens))[0]
+         if (ifile EQ 0) then ximg = fltarr(npix,nfile)
          ximg[*,ifile] = ximg1
       endfor
    endif
 
    if (arg_present(disp)) then begin
-      disp = fltarr(2048,nfile)
       for ifile=0L, nfile-1 do begin
          spframe_read, filename[ifile], indx, dispimg=disp1
+         npix = (size(disp1,/dimens))[0]
+         if (ifile EQ 0) then disp = fltarr(npix,nfile)
          disp[*,ifile] = disp1
       endfor
    endif
 
    if (arg_present(sky)) then begin
-      sky = fltarr(2048,nfile)
       for ifile=0L, nfile-1 do begin
          spframe_read, filename[ifile], indx, sky=sky1
+         npix = (size(sky1,/dimens))[0]
+         if (ifile EQ 0) then sky = fltarr(npix,nfile)
          sky[*,ifile] = sky1
       endfor
    endif
 
    if (arg_present(synflux)) then begin
       readspec, plate, fiber, mjd=mjd, loglam=loglam1, synflux=synflux1, $
-       topdir=topdir, path=path, silent=silent
+       topdir=topdir, path=path, run2d=run2d, run1d=run1d, silent=silent
       if (keyword_set(synflux1)) then begin
          combine1fiber, loglam1, synflux1, newloglam=loglam, newflux=synflux
          synflux = reform(synflux, size(loglam,/dimens))
@@ -257,7 +261,7 @@ pro readonespec, plate, fiber, mjd=mjd, cameras=cameras, $
 
    if (arg_present(lineflux)) then begin
       readspec, plate, fiber, mjd=mjd, loglam=loglam1, lineflux=lineflux1, $
-       topdir=topdir, path=path, silent=silent
+       topdir=topdir, path=path, run2d=run2d, run1d=run1d, silent=silent
       if (keyword_set(lineflux1)) then begin
          combine1fiber, loglam1, lineflux1, newloglam=loglam, newflux=lineflux
          lineflux = reform(lineflux, size(loglam,/dimens))

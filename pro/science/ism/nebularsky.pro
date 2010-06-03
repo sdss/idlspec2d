@@ -201,7 +201,7 @@ pro nebularsky, plate, mjd=mjd1, lambda=lambda1, skyfile=skyfile1, $
       spawn, 'uname -a', uname
       splog, 'UNAME: ' + uname[0]
       splog, 'DISPLAY=' + getenv('DISPLAY')
-      splog, 'SPECTRO_DATA=' + getenv('SPECTRO_DATA')
+      splog, 'BOSS_SPECTRO_REDUX=' + getenv('BOSS_SPECTRO_REDUX')
       splog, 'idlspec2d version ' + idlspec2d_version()
       splog, 'idlutils version ' + idlutils_version()
       splog, ''

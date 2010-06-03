@@ -6,8 +6,7 @@
 ;   Just return smoothed scattered light image
 ;
 ; CALLING SEQUENCE:
-;   scatfit = calcscatimage(ansimage, yrow, [ nscatbkpts= , $
-;    ymin= , ymax= , fullrows= ])
+;   scatfit = calcscatimage(ansimage, yrow, [ nscatbkpts= , nx=, ny= ] )
 ;
 ; INPUTS:
 ;     ansimage  -  Keyword Output from extract_image
@@ -15,9 +14,8 @@
 ;
 ; OPTIONAL KEYWORDS:
 ;     nscatbkpts- Number of break points in B-spline; default to 16
-;     ymin      -  lower limit for chebyshev background (default 0)
-;     ymax      -  upper limit for chebyshev background (default 2047)
-;     fullrows  -  number of rows in full image (default 2048)
+;     nx        - X dimension of output image
+;     ny        - Y dimension of output image
 ;
 ; OUTPUTS:
 ;    scatfit    - Image of scattered light from smoothing polynomials
@@ -25,6 +23,8 @@
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
+;   Chebyshev background terms defined over a domain [0,NX-1]
+;   mapped to [-1,1]
 ;
 ; EXAMPLES:
 ;
@@ -39,47 +39,44 @@
 ;   29-Sep-2000  Written by S. Burles, FNAL, adopted from fitansimage
 ;-
 ;------------------------------------------------------------------------------
-function calcscatimage, ansimage, yrow, nscatbkpts=nscatbkpts, $
-        ymin=ymin, ymax=ymax, fullrows=fullrows
+function calcscatimage, ansimage, yrow, nscatbkpts=nscatbkpts, nx=nx, ny=ny
 
    if (N_params() LT 1) then begin
-      print, 'Syntax - calcscatimage(ansimage, yrow, nscatbkpts=nscatbkpts, '
-      print, '  ymin=ymin, ymax=ymax, fullrows=fullrows)'
+      print, 'Syntax - calcscatimage(ansimage, yrow, nscatbkpts=, nx=, ny= )'
       return, -1
    endif
 
-   nrows = (size(ansimage))[2]
-   if n_elements(yrow) EQ 0 then yrow = lindgen(nrows)
+   dims = size(ansimage, /dimens)
+   npoly = dims[0]
+   nrows = dims[1]
+   if (nrows NE n_elements(yrow)) then $
+    message, 'Inconsistent dimensions for ANSIMAGE and YROW'
+
    if(NOT keyword_set(nscatbkpts)) then nscatbkpts=16 ;scattered light
-   if(NOT keyword_set(ymin)) then ymin=0.0	 
-   if(NOT keyword_set(ymax)) then ymax=2047.0	 
-   if(NOT keyword_set(fullrows)) then fullrows=2048	 
 
-   npoly = (size(ansimage))[1]
-   ynorm = (2.0*yrow-(ymax+ymin))/(ymax-ymin) 
-   yfnorm = (2.0*findgen(fullrows)-(ymax+ymin))/(ymax-ymin) 
-   fitans = fltarr(npoly,fullrows)
-
+   fitans = fltarr(npoly,ny)
+   xnorm = (2.0*findgen(nx)-nx)/(nx-1)
+   ynorm = (2.0*findgen(ny)-ny)/(ny-1)
+   ynorm_subsamp = (2.0*yrow-ny)/(ny-1)
 
    ;---------------------------------------------------
    ;	Now do background terms
-   ;	First expand terms into nrows x nrows image
+   ;	First expand terms into NX x NY image
    ;    Without the step function at halfway
 
-   scatfit = fltarr(fullrows,fullrows)
-   fitans = fltarr(npoly, fullrows)
+   scatfit = fltarr(nx,ny)
+   fitans = fltarr(npoly, ny)
   
    for i=0, npoly-1 do begin
-     sset = bspline_iterfit(ynorm, ansimage[i,*], nbkpts=nscatbkpts, $
+     sset = bspline_iterfit(ynorm_subsamp, ansimage[i,*], nbkpts=nscatbkpts, $
       requiren=2)
-     fitans[i,*] = bspline_valu(yfnorm, sset)
+     fitans[i,*] = bspline_valu(ynorm, sset)
    endfor
 
-   fullcheb = fchebyshev(yfnorm, nPoly)
-   for i=0,fullrows-1 do $
+   fullcheb = fchebyshev(xnorm, npoly)
+   for i=0,ny-1 do $
 	  scatfit[*,i] = fullcheb # fitans[*,i]  
 
    return, scatfit
-
-end   
-	  
+end
+;------------------------------------------------------------------------------

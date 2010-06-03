@@ -50,8 +50,8 @@
 ;
 ; DATA FILES:
 ;   Both SDSS redshifts and 2dF redshifts are used, reading the files:
-;      $SPECTRO_DATA/spAll.fits
-;      $SPECTRO_DATA/spAll-$PUBLIC.fits (if PUBLIC is specified)
+;      $BOSS_SPECTRO_REDUX/spAll.fits
+;      $BOSS_SPECTRO_REDUX/spAll-$PUBLIC.fits (if PUBLIC is specified)
 ;      $SDSS_2DF/data/calibObj-2003A.fits
 ;      $SDSS_2DF/data/calibObj-2003B.fits
 ;      $SDSS_2DF/data/catalogue2003A.fits

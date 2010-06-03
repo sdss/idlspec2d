@@ -134,7 +134,7 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    minlag = min(xnew-xcen)
    maxlag = max(xnew-xcen)
    splog, 'Match_trace range: ', minlag, bestlag, maxlag
-   if (bestlag LT -0.15 OR bestlag GT 0.15) then $
+   if (abs(bestlag) GT 0.50) then $
     splog, 'WARNING: Large flexure flat<->science ' $
     + string(bestlag,format='(f5.2)') + ' pix (Post-calibs recommended!)'
 
@@ -148,7 +148,9 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
     npoly=npoly, ansimage=ansimage, relative=1
 
    ntrace = (size(tempflux,/dimens))[1]
-   scatfit = calcscatimage(ansimage[ntrace*nterms:*,*], yrow)
+   dims = size(image, /dimens)
+   scatfit = calcscatimage(ansimage[ntrace*nterms:*,*], yrow, $
+    nscatbkpts=npoly, nx=dims[0], ny=dims[1])
    scatflux = extract_boxcar(scatfit, xcen, radius=radius)
 
    exptime_factor = (exptime/900.0) > 1.0
@@ -174,7 +176,7 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    ; if the spectrographs appear out of focus.
 
    widthset = fitflatwidth(tempflux, tempfluxivar, ansimage, fibermask, $
-    ncoeff=5, sigma=sigma, medwidth=medwidth)
+    ncoeff=5, sigma=sigma, medwidth=medwidth, /double)
 
    ; Use the limits as set for the flats, since we don't set limits
    ; for the science exposure widths.  Do not issue a warning message
@@ -256,27 +258,27 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
 
    skystruct = skysubtract(fluxsub, fluxivar, plugsort, wset, $
     objsub, objsubivar, iskies=iskies, fibermask=fibermask, tai=tai_mid, $
-    relchi2set=relchi2set, sset=sset)
+    sset=sset)
 
    ;----------
    ; Issue warnings about very large sky-subtraction chi^2
 
-   if (keyword_set(skystruct)) then begin
-      thiswave = logwave[*,0]
-      rchi2 = bspline_valu(thiswave, relchi2set)
-      ; Ignore wavelengths near 5577 Ang
-      i5577 = where(thiswave GT alog10(5577.-10.) $
-       AND thiswave LT alog10(5577.+10.))
-      if (i5577[0] NE -1) then rchi2[i5577] = 0
-      medval = median(rchi2)
-      maxval = max(rchi2, imax)
-      maxwave = 10.^thiswave[imax]
-      if (medval GT 2.) then $
-       splog, 'WARNING: Median sky-residual chi2 = ', medval
-      if (maxval GT 60.) then $
-       splog, 'WARNING: Max sky-residual chi2 = ', maxval, $
-        ' at' , maxwave, ' Ang (ignoring 5577)'
-   endif
+;   if (keyword_set(skystruct)) then begin
+;      thiswave = logwave[*,0]
+;      rchi2 = bspline_valu(thiswave, relchi2set)
+;      ; Ignore wavelengths near 5577 Ang
+;      i5577 = where(thiswave GT alog10(5577.-10.) $
+;       AND thiswave LT alog10(5577.+10.))
+;      if (i5577[0] NE -1) then rchi2[i5577] = 0
+;      medval = median(rchi2)
+;      maxval = max(rchi2, imax)
+;      maxwave = 10.^thiswave[imax]
+;      if (medval GT 2.) then $
+;       splog, 'Warning: Median sky-residual chi2 = ', medval
+;      if (maxval GT 60.) then $
+;       splog, 'Warning: Max sky-residual chi2 = ', maxval, $
+;        ' at' , maxwave, ' Ang (ignoring 5577)'
+;   endif
 
    ;---------------------------------------------------------------------------
    ; Analyze spectra for the sky level and signal-to-noise
@@ -287,12 +289,14 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
 
    if (colorband EQ 'b') then begin
       icolor = 1
+      snfilter = 'g'
       wrange = [4000,5500] ; coverage of g-band
-      snmag = 20.33 ; Changed from 20.20 as per PR #5642
+      snmag = 22.0 ; Changed from 20.33 for BOSS
    endif else begin
       icolor = 3
+      snfilter = 'i'
       wrange = [6910,8500] ; coverage of i-band
-      snmag = 20.06 ; Changed from 19.90 as per PR #5642
+      snmag = 21.0 ; Changed from 20.06 for BOSS
    endelse
 
    ;----------
@@ -334,13 +338,9 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
 
    if (iobj[0] NE -1) then begin
       coeffs = fitsn(plugsort[iobj].mag[icolor], meansn[iobj], $
-       colorband=colorband)
-      if (keyword_set(coeffs)) then $
-       snoise2 = 10^(2.0 * poly(snmag, coeffs)) $ ; The 2.0 is to square the S/N
-      else $
-       snoise2 = 0
+       sncode='sos', filter=snfilter, sn2=sn2)
    endif else begin
-      snoise2 = 0
+      sn2 = 0
    endelse
 
    if (keyword_set(rchi2)) then skychi2 = mean(rchi2) $
@@ -353,16 +353,17 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
                            'SKYCHI2', skychi2, $
                            'FIBERMAG', plugsort.mag[icolor], $
                            'SN2VECTOR', meansn^2, $
-                           'SN2', snoise2 )
+                           'SN2', sn2 )
 
    ;----------
    ; Write out the extracted spectra
 
-   mwrfits, objsub, outsci, /create
+   sxaddpar, hdr, 'FRAMESN2', sn2
+   mwrfits, objsub, outsci, hdr, /create
    mwrfits, objsubivar, outsci
    mwrfits, meansn, outsci
    mwrfits, sset, outsci
-   mwrfits, relchi2set, outsci
+;   mwrfits, relchi2set, outsci
 
    return, rstruct
 end

@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   dispset = fitdispersion(arc_flux, arc_fluxivar, xcen, $
-;    [ ncoeff=, sigma=, xmin=, xmax=, medwidth= ] )
+;    [ ncoeff=, sigma=, xmin=, xmax=, medwidth=, numbundles= ] )
 ;
 ; INPUTS:
 ;   arc_flux     - arc image extracted flux
@@ -22,6 +22,7 @@
 ;                or an [NLINE,NFIBER] array.
 ;   xmin       - Lowest row number for trace set; default to 0.
 ;   xmax       - Highest row number for trace set; default to 2047.
+;   numbundles - The number of fiber bundles
 ;
 ; OUTPUTS:
 ;   dispset   - Traceset structure containing fit coefficients
@@ -47,17 +48,17 @@
 ;-
 ;------------------------------------------------------------------------------
 function fitdispersion, arc_flux, arc_fluxivar, xcen_inp, $
- sigma=sigma, ncoeff=ncoeff, xmin=xmin, xmax=xmax, medwidth=medwidth
+ sigma=sigma, ncoeff=ncoeff, xmin=xmin, xmax=xmax, medwidth=medwidth, $
+  numBundles = numBundles
 
    if (NOT keyword_set(sigma)) then sigma = 1.0
    if (NOT keyword_set(ncoeff)) then ncoeff = 4
    if (NOT keyword_set(xmin)) then xmin = 0.0
    if (NOT keyword_set(xmax)) then xmax = 2047.0
+   if (NOT keyword_set(numbundles)) then numbundles = 16
 
    nline = (size(xcen_inp,/dimen))[1]
    ntrace = (size(xcen_inp,/dimen))[0]
-   if (ntrace NE 320) then $
-    message, 'Must have 320 traces!'
    npix = (size(arc_flux,/dimen))[0]
 
    if (nline LT 3) then begin
@@ -120,12 +121,12 @@ function fitdispersion, arc_flux, arc_fluxivar, xcen_inp, $
    ; Perform median across bundles on good arclines only
    ; somewhat tedious, but it works
 
-   width = reform(width,nline,20,16)
-   gmask = reform(gmask,nline,20,16)
-   width_bundle = fltarr(nline,16)
+   width = reform(width,nline,20,numbundles)
+   gmask = reform(gmask,nline,20,numbundles)
+   width_bundle = fltarr(nline,numbundles)
 
    for iline=0, nline-1 do begin
-     for j=0, 15 do begin
+     for j=0, numbundles-1 do begin
         ss = where(gmask[iline,*,j] AND width[iline,*,j] GT 0)
         if (ss[0] NE -1) then $
          width_bundle[iline,j] = djs_median(width[iline,ss,j]) 
@@ -141,13 +142,22 @@ function fitdispersion, arc_flux, arc_fluxivar, xcen_inp, $
     ncoeff=ncoeff, xmin=xmin, xmax=xmax
 
    ;----------
-   ; Compute the widths in each of 4 quandrants on the CCD.
+   ; Compute the widths in each of 4 quandrants on the CCD
+   ; as the median of the unmasked pixels
 
    traceset2xy, dispset, xx, width_fit
-   medwidth = [ median(width_fit[0:npix/2-1,0:ntrace/2-1]), $
-                median(width_fit[0:npix/2-1,ntrace/2:ntrace-1]), $
-                median(width_fit[npix/2:npix-1,0:ntrace/2-1]), $
-                median(width_fit[npix/2:npix-1,ntrace/2:ntrace-1]) ]
+   x1 = [0,0,npix/2,npix/2]
+   x2 = [npix/2-1,npix/2-1,npix-1,npix-1]
+   y1 = [0,ntrace/2,0,ntrace/2]
+   y2 = [ntrace/2-1,ntrace-1,ntrace/2-1,ntrace-1]
+   medwidth = fltarr(4)
+   for i=0,3 do begin
+      indx = where(arcmask[x1[i]:x2[i],y1[i]:y2[i]],ct)
+      if (ct GT 0) then $
+       medwidth[i] = $
+        median([ (width_fit[x1[i]:x2[i],y1[i]:y2[i]])[indx] ])
+   endfor
+
    splog, 'Median wavelength widths = ' $
     + string(medwidth,format='(4f5.2)') + ' pix (LL LR UL UR)'
 

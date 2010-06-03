@@ -12,10 +12,10 @@
 #   pullspectra /my/directory
 #
 # Assume that the data comes from:
-#   alfred@spectro.princeton.edu:$SPECTRO_DATA
+#   alfred@spectro.princeton.edu:$BOSS_SPECTRO_REDUX
 # Assume that the data goes to the local machine at the destination
 # given by the first argument to this command, or, if not set, then to:
-#   $SPECTRO_DATA
+#   $BOSS_SPECTRO_REDUX
 # These defaults can be over-written by changing the appropriate lines
 # in this script.  For example, if you are copying the "test" reductions
 # from Princeton, you would use this line:
@@ -54,24 +54,24 @@ fi
 exit
 
 # Use the first argument to this command as the local destination directory.
-# Otherwise, use the environment variable $SPECTRO_DATA.
+# Otherwise, use the environment variable $BOSS_SPECTRO_REDUX.
 
 if [ $# -ge 1 ] ; then
   toplocal=$1
 else
-  toplocal=$SPECTRO_DATA
+  toplocal=$BOSS_SPECTRO_REDUX
 fi
 if [ -z "$toplocal" ] ; then
-  echo "Environment variable SPECTRO_DATA is not set on local machine"
+  echo "Environment variable BOSS_SPECTRO_REDUX is not set on local machine"
   exit
 fi
 
-# Use the environment variable $SPECTRO_DATA on the remote machine
+# Use the environment variable $BOSS_SPECTRO_REDUX on the remote machine
 # as the path for the spectroscopic data.
 
-topremote=`ssh1 $remotehost "echo $SPECTRO_DATA"`
+topremote=`ssh1 $remotehost "echo $BOSS_SPECTRO_REDUX"`
 if [ -z "$topremote" ] ; then
-  echo "Environment variable SPECTRO_DATA is not set on remote machine"
+  echo "Environment variable BOSS_SPECTRO_REDUX is not set on remote machine"
   exit
 fi
 

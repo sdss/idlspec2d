@@ -1,0 +1,561 @@
+#!/usr/bin/env python
+
+import os, sys, fcntl, time, commands
+import logging, logging.handlers, getopt, glob
+import sos_classes, fb_classes, sxpar
+
+""" 
+sos_runnerd:
+
+sos_runnerd polls a directory structure looking for new files matching a glob and appending them to a process list.
+The directory structure is root/$MJD. By default, when run sos_runnerd goes to the latest MDJ and starts looking
+for new files. Many globs can be specified.  
+
+Each glob will go into its own process queue numbered 1 .. n, n being the number of globs specified. Exactly one
+sos_batchd process must be run per glob. Each sos_batchd process must specifiy which numbered process queue it should
+service. This is a bit of hack and not that flixible, but the original design didn't take into account that the files
+needed to be processed sequentially by glob, so this is what we have.
+
+Everytime the sos_runnerd looks for a new file, if it doesn't find one, it will also look for a later MJD.  If it 
+finds one, it will start looking there for new files.  sos_runnerd never looks at previous MJDs and will only look
+at one MJD at a time.
+
+sos_runnerd look at command line arguments and a configuration file named sos_config.ini.  Command line arguments
+always have precedence.  Parameters and sos_config.ini names are defined in usage().
+
+Notes to run:
+	In order to run, the environment must be setup:
+		setup platedb
+		ssh-agent a key that can commit svn
+		
+	setting up platedb is optional.  runnerd will try and do it automatically, but it
+	requires a late version of eups to work and isn't guaranteed to work.
+
+Written by Gary Kushner (LBL).  Oct 2009.
+
+"""
+
+####
+##   Globals Block. 
+####
+
+
+
+####
+def usage():
+	"""Display usage and exit"""
+	
+	usageCMD = os.path.basename(sys.argv[0])
+
+	print """
+Parameters and sos_config.ini names are:
+
+
+glob (-g) : default * : glob to look for.  Can have many.  Each glob will preserve order 
+                        processing of files
+nosvn (-x) : default not set : Run without doing any svn processing
+command (-c) : default echo-to-log : Command to run on found files.  
+pollDelay (-d) : default 60 seconds : Seconds to wait before interrogating directing
+logDir (-l) : default . : Place to place log files
+logLevel (-v) : default 30 : 30 = WARNING; -v = 20 = INFO; -v -v = 10 = DEBUG
+controlDir (-o) : default . : Place to find config file and place process lists
+fitsDir (-r) : default $FITSFILES : Where to look for new files in MJD subdirectories
+plugDir (-p) : default $SPECLOG_DIR : Where to look for and put plugmap files in MJD subdirs
+initialMJD (-m) : default now : MJD to start looking for new files.  Can't imagine why it wouldn't 
+                                be the current mjd.  (Not Implemented)
+
+For the command, the following substitutions can be made:
+   %%f   for the globbed (fits) file name w/o path information
+   %%qf  for the fully qualified globbed (fits) file name.
+   %%pf  for the path to the globbed (fits) file.
+   %%p   for the plugmap file w/o path information
+   %%qp  for the fully qualified plugmap file name
+   %%pp  for the path to the plugmap file.
+   %%m   for the current mjd
+	"""
+	sys.exit(1)
+
+
+####
+def screamAndDie(msg):
+	"""Log a message and then exit"""
+
+	print >> sys.stderr, msg
+	print >> sys.stderr, "GOODBYE!"
+	log = logging.getLogger(sos_classes.Consts().logName)
+	log.critical(msg)
+	log.critical("GOODBYE!")
+	sys.exit(1)
+
+####
+def oneInstanceCheck():
+	"""Only one instance of this daemon should be running.  The normal setup is to have chron try
+	   and start it every so often and if it is still running, then this procedure will abort.  It
+	   writes a message to stdout, but that usually should be shipped to >dev/null"""
+	
+	lock = open(sos_classes.Consts().runnerLockFile, 'w')
+	try:
+		fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+	except IOError as (errno, errstr):
+		if errno != 35:  raise
+		print >> sys.stderr, "oneInstanceCheck failed gracefully."
+		sys.exit(0)
+		
+	return lock
+ 		
+
+####
+def setupPlateDb():
+	"""Setup plateDb.  Do nothing on failure."""
+
+	try:
+		import eups
+		Eups = eups.Eups(verbose=0)
+		cmds = eups.setup(Eups, "platedb", eups.Current())
+	except:
+		pass
+
+####
+def parseConfigFile(cfg):
+	"""Parse the config file"""
+	
+
+####
+def parseCmdLine(cfg):
+	"""Parse command line arguments"""
+	
+	globs    = []		# fill in the command line globs
+	verbose  = 0
+	
+	# parse with options
+	try:
+		opts, pargs = getopt.gnu_getopt(sys.argv[1:], "g:c:d:l:vc:p:r:m:o:x")
+	except:
+		usage()
+	
+	if len(pargs) != 0:
+		usage()
+	
+	#	Fill in the config
+	for (opt, value) in opts:
+		if opt == "-g":
+			globs.append(value)
+		if opt == "-c":
+			cfg.command = value
+		if opt == "-d":
+			cfg.pollDelay= int(value)
+		if opt == "-l":
+			cfg.logDir = value
+		if opt == "-v":
+			verbose += 1
+		if opt == "-o":
+			cfg.controlDir = value
+		if opt == "-r":
+			cfg.fitsDir = value
+		if opt == "-p":
+			cfg.plugDir = value
+		if opt == "-m":
+			cfg.MJD = value;
+		if opt == "-x":
+			cfg.nosvn = True
+			
+	#	Any globs override default
+	if (len(globs) != 0):
+		cfg.glob = globs
+	#	Don't want to apply -v on each call, so always start with a base
+	if (verbose > 0):
+		cfg.logLevel = max(1, sos_classes.Config().logLevel - verbose * 10)
+		
+	#	Display config values on any verbosity
+	if (verbose > 1):
+		print "Config values: \n" + str(cfg)
+
+
+####
+def initializeParms():
+	"""Initialize all the parameters."""
+	cfg = sos_classes.Config();
+	
+	#	Parse command line to get config.ini information
+	parseCmdLine(cfg)
+	#	Parse config.ini to get new defaults
+	parseConfigFile(cfg)
+	#	Parse command line again to give command line precedence 
+	parseCmdLine(cfg)
+	
+	return cfg
+
+
+####
+def initializeLogger(cfg):
+	"""Startup logging and set the level"""
+	
+	lname = os.path.join(cfg.logDir, sos_classes.Consts().logName)
+	print "Starting to log to " + lname
+	
+	log = logging.getLogger(sos_classes.Consts().logName)
+	h = logging.handlers.RotatingFileHandler(lname, maxBytes=1024*1024, backupCount=3)
+	f = logging.Formatter("%(asctime)s-%(levelname)s: %(message)s")
+	h.setFormatter(f)
+	h.setLevel(cfg.logLevel)
+	log.setLevel(cfg.logLevel)
+	log.addHandler(h)
+	
+	log.critical("Hello. " + sys.argv[0] + " started.")
+	log.critical("Startup Configuration is: \n\n" + str(cfg) + "\n\n")
+	
+	return log
+	
+	
+####
+def createPollWorkers(cfg, log):
+	"""Create poll workers"""
+
+	workers = []
+
+	num = 1
+	for glob in cfg.glob:
+		p = sos_classes.PollWorker()
+		p.glob = glob
+		p.workerNumber = num
+		num += 1
+		workers.append(p)
+		log.debug("\nnew PollWorker:\n" + str(p))
+		
+	return workers
+		
+
+####
+def initializePollWorkers(workers, cfg, log):
+	"""Initialize poll workers with latest file counts"""
+	
+	for worker in workers:
+		worker.fileCount = len(glob.glob(os.path.join(cfg.fitsDir, cfg.MJD, worker.glob)))
+		log.debug("\nInitialized PollWorker:\n" +  str(worker))
+
+
+
+####
+def lsltr(dir, regex="*"):
+	"""return a modification-time sorted list of files in dir"""
+	
+	files = [os.path.join(dir, f) for f in glob.glob(os.path.join(dir,regex))]
+	files.sort(key=lambda tm: os.path.getmtime(tm))
+	
+	return files
+	
+	
+####
+def ls(dir, regex="*"):
+	"""return a name sorted list of files in dir"""
+	
+	files = [os.path.join(dir, f) for f in glob.glob(os.path.join(dir,regex))]
+	files.sort()
+	
+	return files
+	
+	
+	
+
+####
+def initializeMJD(cfg, log):
+	"""Find the correct MJD to start looking for new files.  If the user specifies an MJD just test
+	to see if it exists, otherwise, use the latest MJD."""
+	
+	#	First check for user specified
+	if cfg.MJD != "0":
+		path = os.path.join(cfg.fitsDir, cfg.MJD)
+		if not os.path.isdir(path):
+			screamAndDie("Could not find user specified MJD path: " + path)
+		log.info("Using user specified MJD " + path)
+	else:
+		regex = sos_classes.Consts().MJDGlob;
+		try:
+			log.debug("Looking for initial MJD in " + cfg.fitsDir)
+			cfg.MJD = ls(cfg.fitsDir, regex)[-1][-5:]
+			log.info("Latest initial MJD found to be " + os.path.join(cfg.fitsDir, cfg.MJD))
+		except:
+			screamAndDie("Could not find latest MJD in " + cfg.fitsDir)
+			
+
+####
+def updateMJD(workers, cfg, log):
+	"""Check to see if a new MJD exists"""
+	
+	regex = sos_classes.Consts().MJDGlob;
+	try:
+		MJD = ls(cfg.fitsDir, regex)[-1][-5:]
+		if (MJD == cfg.MJD):
+			return
+			
+		cfg.MJD = MJD[-5:]
+		for worker in workers:
+			worker.fileCount = 0
+
+		log.info("Latest updated MJD found to be " + os.path.join(cfg.fitsDir, cfg.MJD))
+	except:
+		screamAndDie("Could not find latest MJD in " + cfg.fitsDir)
+
+
+####
+def svnAdd(uri, cfg, log):
+	"""Add a file to svn"""
+	
+	if cfg.nosvn:
+		return
+		
+	log.info("svn adding " + uri + " to svn")
+	rc = commands.getstatusoutput("svn add " + uri)
+	if rc[0] != 0:
+		log.critical("\nCould not add to svn: " + uri + "\n" + rc[1])
+		
+def svnCommit(uri, cfg, log):
+	"""Run commit on a dir"""
+	
+	if cfg.nosvn:
+		return
+		
+	log.info("svn committing " + uri)
+	rc = commands.getstatusoutput("svn commit " + uri + " -m 'committed by sos_runnerd'")
+	if rc[0] != 0:
+		log.critical("\nCommit failed on " + uri + "\n" + rc[1])
+		
+def svnUp(uri, cfg, log):
+	"""Update a dir"""
+	
+	if cfg.nosvn:
+		return
+		
+	log.info("svn updating " + uri)
+	rc = commands.getstatusoutput("svn up " + uri)
+	if rc[0] != 0:
+		log.critical("\nUpdate failed on " + uri + "\n" + rc[1])
+	
+	
+def svnCheck(uri, cfg, log):
+	"""Check that we can access the log of the file.  Return False on not able to access."""
+
+	if cfg.nosvn:
+		return True
+		
+	log.info("Checking svn access to " + uri)
+	rc = commands.getstatusoutput("svn log " + uri)
+	return rc[0] == 0
+	 
+	
+####
+def checkPlugMan(file, cfg, log):
+	"""
+	Get a plugmap file from the database if needed.  Uses the platedb command catPlPlugMapM so
+	make sure platedb is setup!
+	
+	Returns the fully qualified name of the plugmap file
+	"""
+	
+	dirty = False # svn dirty bit
+	speclogDir = cfg.plugDir
+	plugmapDir = os.path.join(speclogDir, cfg.MJD)
+
+	log.debug("Current plugmap directory is " +  plugmapDir)
+		
+	#	Get plugmap used by file
+	try:
+		plugmapFullId = sxpar.sxpar(file, "NAME")[0]
+	except TypeError as t:
+		log.critical("\nCould not parse " + file + "\n ->" + str(t))
+		return ""
+
+		
+	#	Parse plugmap name
+	plugmapName   = "plPlugMapM-" + plugmapFullId + ".par"
+	plugmapId     = plugmapFullId.split("-")[0]
+	log.debug(file + " uses plugmap " + plugmapFullId + " with Id " + plugmapId)
+	log.debug("  full name of plugmap file is " + plugmapName)
+	
+	#	See if the plugmap $MJD dir exists, if not create it and add it to svn
+	if not os.path.isdir(plugmapDir):
+		log.info("Creating " + plugmapDir)
+		os.mkdir(plugmapDir)
+		svnAdd(plugmapDir, cfg, log)
+		dirty = True
+		
+	#	Check if the file exists, if not get it and add it to svn
+	plugpath = os.path.join(plugmapDir, plugmapName)
+	if not os.path.isfile(plugpath):
+		log.info("Getting from platdb: " + plugmapName)
+		rc = commands.getstatusoutput("catPlPlugMapM " + plugmapId)
+		if rc[0] != 0:
+			log.critical("Could not get plugmap for Id " + plugmapId)
+		else:
+			f = open(plugpath, "w")
+			f.write(rc[1])
+			f.close()
+			log.info("Created " + plugpath)
+			svnAdd(plugpath, cfg, log)
+			svnCommit(speclogDir, cfg, log)
+	
+	return os.path.abspath(plugpath)
+	
+
+
+####
+def createCMD(fglob, plugPath, cfg):
+	"""Create command with substitutions
+	
+	%%f   for the globbed (fits) file name w/o path information
+	%%qf  for the fully qualified globbed (fits) file name.
+	%%pf  for the path to the globbed (fits) file.
+	%%p   for the plugmap file w/o path information
+	%%qp  for the fully qualified plugmap file name
+	%%pp  for the path to the plugmap file.
+	%%m   for the current MJD
+	"""
+
+	qf = os.path.abspath(fglob)
+	f  = os.path.basename(qf)
+	pf = os.path.dirname(qf)
+	
+	qp = os.path.abspath(plugPath)
+	p  = os.path.basename(qp)
+	pp = os.path.dirname(qp)
+
+	cmd = cfg.command
+
+	cmd = cmd.replace("%%f", f)
+	cmd = cmd.replace("%%qf", qf)
+	cmd = cmd.replace("%%pf", pf)
+	cmd = cmd.replace("%%pp", pp)	# this line needs to be before %%p
+	cmd = cmd.replace("%%p", p)
+	cmd = cmd.replace("%%qp", qp)
+	cmd = cmd.replace("%%m", cfg.MJD)
+	
+	return cmd 
+
+		
+
+####		
+def	processNewBOSSFiles(worker, files, cfg, log):
+	"""  Process new fits files
+	
+	Check to see if the plugmap file exists in the correct location, if it does not then 
+	create it (get it from the database).  Then add the appropiate APO command to the
+	correctly numbered process list.  """
+	
+	for f in files:
+		log.info("processing new file: " + f)
+		
+		#	Pull plugmap from the db if needed
+		plugpath = checkPlugMan(f, cfg, log)
+		
+		#	Create the command and add to batch queue
+		cmd = createCMD(f, plugpath, cfg)
+		plname = fb_classes.Consts().processListName
+		plname = os.path.join(cfg.controlDir, plname) + str(worker.workerNumber)
+		fb_classes.ProcessList(plname).append(cmd)
+		log.info("\nAdding command to process list:\n ->" + cmd)
+
+
+####
+def doBookKeeping(cfg, log):
+	"""Do SVN Book Keeping.  Command are not retried."""
+	
+	speclogDir = cfg.plugDir
+	
+	log.info("Doing a bookkeeping svn update on $SPECLOG_DIR: " + speclogDir)
+	svnUp(speclogDir, cfg, log)
+	log.info("Doing a bookkeeping svn commit on $SPECLOG_DIR: " + speclogDir)
+	svnCommit(speclogDir, cfg, log)
+		
+
+		
+####
+def watch(workers, cfg, log):
+	"""  Watch for new files
+	
+	When a new file comes in read the header to look for the plugmap and then check to see
+	if the plugmap file exists.  If it doesn't, get the plugmap from the database and put it
+	into the proper MJD directory.  Create the proper MJD directory for the plugmap if needed.
+	
+	Next, check to see if a newer MJD has been created.  If there are no new files and no new 
+	MJD then sleep for cfg.pollDelay. 
+	
+	Note that only the latest MJD is ever checked, so once a new MJD is created only that MJD
+	will be checked.  """		
+	
+	#	We do some book keeping every 30 minutes, calculate the number of pauses between book keeping
+#	bookKeepingPauses = 30 * 60 / cfg.pollDelay
+	bookKeepingPauses = 5 * 60 / cfg.pollDelay
+	bookKeepingCount  = bookKeepingPauses
+	  
+	while True:
+		pause = True
+
+		#	First check for new files
+		for worker in workers:
+			files = lsltr(os.path.join(cfg.fitsDir, cfg.MJD), worker.glob)
+			if len(files) != worker.fileCount:
+				pause = False
+				new = len(files) - worker.fileCount
+				log.info("Found " + str(new) + " new files in " +
+				          os.path.join(cfg.fitsDir, cfg.MJD, worker.glob))
+				#	File could get deleted...
+				if new > 0:
+					processNewBOSSFiles(worker, files[-1 * new:], cfg, log)
+				worker.fileCount = len(files)
+	
+		#	Next check for a new MJD.  Don't wait if there's a new MJD
+		if updateMJD(workers, cfg, log):  pause = False
+		
+		#	Pause if asked
+		if pause: 
+			bookKeepingCount -= 1
+			if bookKeepingCount < 1:
+				log.info("Entering book keeping mode")
+				bookKeepingCount = bookKeepingPauses
+				doBookKeeping(cfg, log)
+			log.debug("Sleeping for " + str(cfg.pollDelay) + " seconds.  Bookkeeping in " + str(bookKeepingCount) + " pauses.")
+			time.sleep(cfg.pollDelay)
+		
+
+####
+def main():
+	"""The program"""
+		
+	#	Make sure we're the only copy running.  If we're not, then exit cleanly
+	lock = oneInstanceCheck()
+
+	config = sos_classes.Config();
+	logger = None
+
+	#	A cry for help?
+	if len(sys.argv) > 1 and (sys.argv[1] == "-h" or sys.argv[1] == "-?"):
+		usage()
+		sys.exit(100)
+
+	#	Initialize
+	setupPlateDb()
+	config = initializeParms()
+	logger = initializeLogger(config)
+	
+	#	Check svn access
+	if not svnCheck(config.plugDir):
+		screamAndDie("Could not svn access " + config.plugDir)
+
+	#	Find correct MJD to start on
+	initializeMJD(config, logger)
+
+	#	Create poll workers and initialize file counts
+	pollWorkers = createPollWorkers(config, logger)
+	initializePollWorkers(pollWorkers, config, logger)
+
+	#	Watch for new files.  Forever...
+	watch(pollWorkers, config, logger)
+
+
+
+### Start of script
+
+if __name__=='__main__':
+	main()
+	
+	

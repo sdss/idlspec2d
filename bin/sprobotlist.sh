@@ -12,7 +12,7 @@ echo "SPROBOTLIST: Started at "`date`
 echo "IDLSPEC2D_DIR="$IDLSPEC2D_DIR
 echo "IDLUTILS_DIR="$IDLUTILS_DIR
 
-cd $SPECTRO_DATA
+cd $BOSS_SPECTRO_REDUX
 echo "platelist, /create" | idl
 echo "platemerge" | idl 2> /dev/null
 #echo "platemerge, /public" | idl 2> /dev/null

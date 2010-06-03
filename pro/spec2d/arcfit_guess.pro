@@ -179,8 +179,8 @@ function arcfit_iter, spec, loglam, intensity, $
       endif
 
       ; Schlegel counter of step number...
-      print, format='("Step ",i5," of ",i5,a1,$)', $
-       istep, nsteptot, string(13b)
+;      print, format='("Step ",i5," of ",i5,a1,$)', $
+;       istep, nsteptot, string(13b)
 
    endfor
 
@@ -229,14 +229,18 @@ function arcfit_guess, spec, loglam, intensity, color=color, func=func, $
 
    ; First search only varies the first 3 coefficients
    splog, 'Searching about coefficients = ', aset.coeff, format='(a,99f9.5)'
-   if not keyword_set(nsteps) then nsteps = [1, 20, 5, 1]
+   if (NOT keyword_set(nsteps)) then begin
+      nsteps = intarr(nacoeff) + 1
+      nsteps[0:3] = [1,20,5,1]
+   endif
    wset = arcfit_iter(spec, loglam, intensity, $
     aset, dcoeff, nsteps, nsmooth=6.0, dlag=2, bestcorr=bestcorr)
 
    ; Second search varies 4 coefficients, but narrows search window
    ; for the first two coefficients
    splog, 'Searching about coefficients = ', wset.coeff, format='(a,99f9.5)'
-   nsteps = [1, 5, 5, 5]
+   nsteps[*] = 1
+   nsteps[0:3] = [1, 5, 5, 5]
    dcoeff[0] = dcoeff[0] / 5. ; Narrow search on coefficient #0
    dcoeff[1] = dcoeff[1] / 6. ; Narrow search on coefficient #1
    wset = arcfit_iter(spec, loglam, intensity, $

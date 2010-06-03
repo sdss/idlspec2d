@@ -58,233 +58,263 @@
 pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
  minsn2=minsn2
 
-   if (NOT keyword_set(planfile)) then planfile = findfile('spPlancomb*.par')
-   if (n_elements(adderr) EQ 0) then adderr = 0.03
-   if (n_elements(minsn2) EQ 0) then minsn2 = 0.
+  if (NOT keyword_set(planfile)) then planfile = findfile('spPlancomb*.par')
+  if (n_elements(adderr) EQ 0) then adderr = 0.03
+  if (n_elements(minsn2) EQ 0) then minsn2 = 0.
+ 
+  thismem = memory()
+  maxmem = 0
+ 
+  ;----------
+  ; If multiple plan files exist, then call this script recursively
+  ; for each such plan file.
 
-   thismem = memory()
-   maxmem = 0
+  if (N_elements(planfile) GT 1) then begin
+    for i=0, N_elements(planfile)-1 do $
+      spcombine_v5, planfile[i], docams=docams, adderr=adderr, $
+      xdisplay=xdisplay, minsn=minsn
+    return
+  endif
 
-   ;----------
-   ; If multiple plan files exist, then call this script recursively
-   ; for each such plan file.
+  if (NOT keyword_set(docams)) then docams = ['b1', 'b2', 'r1', 'r2']
 
-   if (N_elements(planfile) GT 1) then begin
-      for i=0, N_elements(planfile)-1 do $
-       spcombine_v5, planfile[i], docams=docams, adderr=adderr, $
-        xdisplay=xdisplay, minsn=minsn
-      return
-   endif
+  ;----------
+  ; Strip path from plan file name, and change to that directory
 
-   if (NOT keyword_set(docams)) then docams = ['b1', 'b2', 'r1', 'r2']
+  thisplan = fileandpath(planfile[0], path=outdir)
+  cd, outdir, current=origdir
+  if (NOT keyword_set(outdir)) then cd, origdir
 
-   ;----------
-   ; Strip path from plan file name, and change to that directory
+  ;----------
+  ; Find the SPEXP structure
 
-   thisplan = fileandpath(planfile[0], path=thispath)
-   cd, thispath, current=origdir
-   if (NOT keyword_set(thispath)) then cd, origdir
+  allseq = yanny_readone(thisplan, 'SPEXP', hdr=hdr, /anon)
+  if (N_elements(allseq) EQ 0) then begin
+    splog, 'ABORT: No SPEXP structures in plan file ' + thisplan
+    cd, origdir
+    return
+  endif
 
-   ;----------
-   ; Find the SPEXP structure
+  ;----------
+  ; Find keywords from the header and construct output file names
 
-   yanny_read, thisplan, pdata, hdr=hdr
-   for i=0, N_elements(pdata)-1 do begin
-      if (tag_names(*pdata[i], /structure_name) EQ 'SPEXP') then $
-       allseq = *pdata[i]
-   endfor
-   yanny_free, pdata
+  run2d = strtrim(string(yanny_par(hdr,'RUN2D')),2)
 
-   if (N_elements(allseq) EQ 0) then begin
-      splog, 'ABORT: No SPEXP structures in plan file ' + thisplan
-      cd, origdir
-      return
-   endif
+  thismjd = long(yanny_par(hdr, 'MJD'))
+  if (NOT keyword_set(thismjd)) then $
+   thismjd = max(allseq.mjd)
+  platemjd = string(yanny_par(hdr,'plateid'),format='(i4.4)') $
+   + '-' + string(thismjd,format='(i5.5)')
+  logfile = 'spDiagcomb-' + platemjd + '.log'
+  plotfile = 'spDiagcomb-' + platemjd + '.ps'
+  fcalibprefix = 'spFluxcalib-' + platemjd
+  combinefile = 'spPlate-' + platemjd + '.fits'
+  plotsnfile = 'spSN2d-' + platemjd + '.ps'
 
-   ;----------
-   ; Find keywords from the header
+  stime0 = systime(1)
 
-   extractdir = yanny_par(hdr, 'extractdir')
-   combinedir = yanny_par(hdr, 'combinedir')
-   logfile = yanny_par(hdr, 'logfile')
-   plotfile = yanny_par(hdr, 'plotfile')
-   plotsnfile = yanny_par(hdr, 'plotsnfile')
-   fcalibprefix = yanny_par(hdr, 'fcalibprefix')
-   combinefile = yanny_par(hdr, 'combinefile')
-   thismjd = long(yanny_par(hdr, 'MJD'))
-   if (NOT keyword_set(thismjd)) then $
-    thismjd = max(allseq.mjd)
+  ;----------
+  ; Open log files for output
 
-   if (keyword_set(combinedir)) then $
-    spawn, 'mkdir -p ' + combinedir
+  if (keyword_set(logfile)) then begin
+    cpbackup, djs_filepath(logfile, root_dir=outdir)
+    splog, filename=djs_filepath(logfile, root_dir=outdir)
+    splog, 'Log file ' + logfile + ' opened ' + systime()
+    splog, 'IDL version: ' + string(!version,format='(99(a," "))')
+    spawn, 'uname -a', uname
+    splog, 'UNAME: ' + uname[0]
+  endif
+  if (keyword_set(plotfile) AND NOT keyword_set(xdisplay)) then begin
+    cpbackup, djs_filepath(plotfile, root_dir=outdir)
+    set_plot, 'ps'
+    dfpsplot, djs_filepath(plotfile, root_dir=outdir), /color
+    splog, 'Plot file ' + plotfile
+  endif
+  splog, 'Plan file ', thisplan
+  splog, 'DOCAMS = ', docams
 
-   stime0 = systime(1)
+  splog, 'idlspec2d version ' + idlspec2d_version()
+  splog, 'idlutils version ' + idlutils_version()
 
-   ;----------
-   ; Open log files for output
+  camnames = ['b1', 'b2', 'r1', 'r2']
+  ncam = N_elements(camnames)
 
-   if (keyword_set(logfile)) then begin
-      cpbackup, djs_filepath(logfile, root_dir=combinedir)
-      splog, filename=djs_filepath(logfile, root_dir=combinedir)
-      splog, 'Log file ' + logfile + ' opened ' + systime()
-      splog, 'IDL version: ' + string(!version,format='(99(a," "))')
-      spawn, 'uname -a', uname
-      splog, 'UNAME: ' + uname[0]
-   endif
-   if (keyword_set(plotfile) AND NOT keyword_set(xdisplay)) then begin
-      cpbackup, djs_filepath(plotfile, root_dir=combinedir)
-      set_plot, 'ps'
-      dfpsplot, djs_filepath(plotfile, root_dir=combinedir), /color
-      splog, 'Plot file ' + plotfile
-   endif
-   splog, 'Plan file ', thisplan
-   splog, 'DOCAMS = ', docams
+  ;----------
+  ; Select frames that match the cameras specified by DOCAM.
 
-   splog, 'idlspec2d version ' + idlspec2d_version()
-   splog, 'idlutils version ' + idlutils_version()
+  for ido=0, n_elements(docams)-1 do begin
+    ii = (where(camnames EQ docams[ido], camct))[0]
+    if (camct NE 1) then message, 'Non-unique camera ID: ' + docams[ido]
+    if (ido EQ 0) then icams = ii $
+    else icams = [icams,ii]
+  endfor
 
-   camnames = ['b1', 'b2', 'r1', 'r2']
-   ncam = N_elements(camnames)
+  ;----------
+  ; Compute a score for each frame and each exposure.
+  ; Replace all UNKNOWN file names with nulls.
+  ; The score will be MINSN2 if the file name is set to "NULL"
+  ; or does not exist.
 
-   ;----------
-   ; Select frames that match the cameras specified by DOCAM.
+  dims = size(allseq)
+  nexp = n_elements(allseq)
+  ndocam = n_elements(icams)
+  score = fltarr(ndocam, nexp) - (minsn2<0)
+  camspecid = lonarr(ndocam, nexp)
+  expnum = lonarr(ndocam, nexp)
+  camerasarr= strarr(ndocam, nexp)
+  for i=0L, nexp-1 do begin
+    for j=0L, ndocam-1 do begin
+      if (allseq[i].name[icams[j]] EQ 'UNKNOWN') then begin
+        allseq[i].name[icams[j]] = ''
+      endif else begin
+        thisfile = (lookforgzip(djs_filepath(allseq[i].name[icams[j]], $
+          root_dir=outdir)))[0]
+        if (keyword_set(thisfile)) then begin
+          hdr = headfits(thisfile)
+          score[j,i] = sxpar(hdr, 'FRAMESN2')
+          cameras = strtrim(sxpar(hdr, 'CAMERAS'),2)
+          camspecid[j,i] = strmid(cameras, 1, 1)
+          camerasarr[j,i] = cameras
+          expnum[j,i] = sxpar(hdr, 'EXPOSURE')
+        endif else begin
+          expnum[j,i] = long(strmid(allseq[i].name[icams[j]],11,8))
+          allseq[i].name[icams[j]] = ''
+        endelse
+      endelse
+    endfor
+  endfor
 
-   for ido=0, n_elements(docams)-1 do begin
-      ii = (where(camnames EQ docams[ido], camct))[0]
-      if (camct NE 1) then message, 'Non-unique camera ID: ' + docams[ido]
-      if (ido EQ 0) then icams = ii $
-       else icams = [icams,ii]
-   endfor
+  ;----------
+  ; If all data is missing from one of the cameras, then discard
+  ; both cameras from that spectrograph.  This is a hack!???
 
-   ;----------
-   ; Compute a score for each frame and each exposure.
-   ; Replace all UNKNOWN file names with nulls.
-   ; The score will be MINSN2 if the file name is set to "NULL"
-   ; or does not exist.
+  ; Case where we discard spectrograph #1
+  if (total(camspecid EQ 1) LT 2*nexp) then begin
+     ii = where(docams EQ 'b2' OR docams EQ 'r2', ct)
+     if (ct GT 0) then begin
+        camerasarr = camerasarr[ii,*]
+        camspecid = camspecid[ii,*]
+        docams = docams[ii]
+        expnum = expnum[ii,*]
+        icams = icams[ii]
+        score = score[ii,*]
+     endif
+  endif
 
-   dims = size(allseq)
-   nexp = n_elements(allseq)
-   ndocam = n_elements(icams)
-   score = fltarr(ndocam, nexp) - (minsn2<0)
-   camspecid = lonarr(ndocam, nexp)
-   expnum = lonarr(ndocam, nexp)
-   for i=0L, nexp-1 do begin
-      for j=0L, ndocam-1 do begin
-         if (allseq[i].name[icams[j]] EQ 'UNKNOWN') then begin
-            allseq[i].name[icams[j]] = ''
-         endif else begin
-            thisfile = (lookforgzip(djs_filepath(allseq[i].name[icams[j]], $
-             root_dir=extractdir)))[0]
-            if (keyword_set(thisfile)) then begin
-               hdr = headfits(thisfile)
-               score[j,i] = sxpar(hdr, 'FRAMESN2')
-               cameras = strtrim(sxpar(hdr, 'CAMERAS'),2)
-               camspecid[j,i] = strmid(cameras, 1, 1)
-               expnum[j,i] = sxpar(hdr, 'EXPOSURE')
-            endif else begin
-               expnum[j,i] = long(strmid(allseq[i].name[icams[j]],11,8))
-               allseq[i].name[icams[j]] = ''
-            endelse
-         endelse
-      endfor
-   endfor
+  ; Case where we discard spectrograph #2
+  if (total(camspecid EQ 2) LT 2*nexp) then begin
+     ii = where(docams EQ 'b1' OR docams EQ 'r1', ct)
+     if (ct GT 0) then begin
+        camerasarr = camerasarr[ii,*]
+        camspecid = camspecid[ii,*]
+        docams = docams[ii]
+        expnum = expnum[ii,*]
+        icams = icams[ii]
+        score = score[ii,*]
+     endif
+  endif
 
-   ; Discard the smear exposures by setting their scores equal to (MINSN2<0)
+  ; Discard the smear exposures by setting their scores equal to (MINSN2<0)
   qsmear = allseq.flavor EQ 'smear'
-   for iexp=0L, nexp-1 do $
+  for iexp=0L, nexp-1 do $
     score[*,iexp] = score[*,iexp] * (qsmear[iexp] EQ 0) $
-     + (minsn2<0) * qsmear[iexp]
+    + (minsn2<0) * qsmear[iexp]
 
-   ;----------
-   ; Select the "best" exposure based upon the minimum score in all cameras
+  ;----------
+  ; Select the "best" exposure based upon the minimum score in all cameras
 
-   expscore = fltarr(nexp)
-   for iexp=0L, nexp-1 do $
+  expscore = fltarr(nexp)
+  for iexp=0L, nexp-1 do $
     expscore[iexp] = min([score[*,iexp]])
-   bestscore = max(expscore, ibest)
-   splog, 'Best exposure = ', expnum[0,ibest], ' score = ', bestscore
+  bestscore = max(expscore, ibest)
+  splog, 'Best exposure = ', expnum[0,ibest], ' score = ', bestscore
 
-   ;----------
-   ; Discard exposures whose score is less than some fraction of the
-   ; best exposure, or whose score is less than some absolute value.
-   ; These numbers are hard-wired!!!???
+  ;----------
+  ; Discard exposures whose score is less than some fraction of the
+  ; best exposure, or whose score is less than some absolute value.
+  ; These numbers are hard-wired!!!???
 
-   ibad = where(expscore LE minsn2 OR expscore LT 0.20*bestscore, nbad)
-   if (nbad GT 0) then begin
-      for j=0, nbad-1 do splog, 'WARNING: Discarding ' $
-       + allseq[ibad[j]].flavor + ' exposure #', $
-       expnum[0,ibad[j]], ' with score=', expscore[ibad[j]]
-      score[*,ibad] = (minsn2<0)
-   endif
+  ibad = where(expscore LE minsn2 OR expscore LT 0.20*bestscore, nbad)
+  if (nbad GT 0) then begin
+    for j=0, nbad-1 do splog, 'WARNING: Discarding ' $
+      + allseq[ibad[j]].flavor + ' exposure #', $
+      expnum[0,ibad[j]], ' with score=', expscore[ibad[j]]
+    score[*,ibad] = (minsn2<0)
+  endif
 
-   ;----------
-   ; Compute the spectro-photometry
+  ;----------
+  ; Compute the spectro-photometry
 
-   i1 = where(camspecid EQ 1 AND score GT minsn2, ct1)
-   i2 = where(camspecid EQ 2 AND score GT minsn2, ct2)
-   objname = allseq.name[icams]
+  i1 = where(camspecid EQ 1 AND score GT minsn2, ct1)
+  i2 = where(camspecid EQ 2 AND score GT minsn2, ct2)
+  objname = allseq.name[icams]
 
-   splog, prename='sp1'
-   if (ct1 GT 0) then $
-    spflux_v5, objname[i1], adderr=adderr, combinedir=combinedir
-   splog, prename='sp2'
-   if (ct2 GT 0) then $
-    spflux_v5, objname[i2], adderr=adderr, combinedir=combinedir
-   splog, prename=''
+  configuration=obj_new("configuration",thismjd)
+  splog, prename='sp1'
+  if (ct1 GT 0) then begin
+    spflux_v5, objname[i1], adderr=adderr, combinedir=outdir, $
+     minfracthresh=configuration->spflux_v5_minfracthresh()
+  endif
+  splog, prename='sp2'
+  if (ct2 GT 0) then begin
+    spflux_v5, objname[i2], adderr=adderr, combinedir=outdir, $
+     minfracthresh=configuration->spflux_v5_minfracthresh()
+  endif
+  splog, prename=''
 
-   ; Track memory usage
-   thismem = memory()
-   maxmem = maxmem > thismem[3]
-   splog, 'Max memory usage = ', string(maxmem/1e6,format='(f7.1)'), ' MB'
+  ; Track memory usage
+  thismem = memory()
+  maxmem = maxmem > thismem[3]
+  splog, 'Max memory usage = ', string(maxmem/1e6,format='(f7.1)'), ' MB'
 
-   ;----------
-   ; Compute the flux-correction vectors
+  ;----------
+  ; Compute the flux-correction vectors
 
-   if (ct1 GT 0) then $
-    spfluxcorr_v5, objname[i1], adderr=adderr, combinedir=combinedir, $
-     bestexpnum=expnum[0,ibest]
-   if (ct2 GT 0) then $
-    spfluxcorr_v5, objname[i2], adderr=adderr, combinedir=combinedir, $
-     bestexpnum=expnum[0,ibest]
+  if (ct1 GT 0) then $
+   spfluxcorr_v5, objname[i1], adderr=adderr, combinedir=outdir, $
+    bestexpnum=expnum[0,ibest]
+  if (ct2 GT 0) then $
+   spfluxcorr_v5, objname[i2], adderr=adderr, combinedir=outdir, $
+    bestexpnum=expnum[0,ibest]
 
-   ; Track memory usage
-   thismem = memory()
-   maxmem = maxmem > thismem[3]
-   splog, 'Max memory usage = ', string(maxmem/1e6,format='(f7.1)'), ' MB'
+  ; Track memory usage
+  thismem = memory()
+  maxmem = maxmem > thismem[3]
+  splog, 'Max memory usage = ', string(maxmem/1e6,format='(f7.1)'), ' MB'
 
-   ;----------
-   ; Close plot file - S/N plots are then put in the PLOTSNFILE file.
+  ;----------
+  ; Close plot file - S/N plots are then put in the PLOTSNFILE file.
 
-   if (keyword_set(plotfile) AND NOT keyword_set(xdisplay)) then dfpsclose
+  if (keyword_set(plotfile) AND NOT keyword_set(xdisplay)) then dfpsclose
 
-   ;----------
-   ; Co-add the fluxed exposures
+  ;----------
+  ; Co-add the fluxed exposures
 
-   ii = where(score GT minsn2, ct)
-   if (ct GT 0) then $
-    spcoadd_v5, objname[ii], combinefile, mjd=thismjd, combinedir=combinedir, $
-     adderr=adderr, docams=docams, plotsnfile=plotsnfile, $
-     bestexpnum=expnum[0,ibest] $
-   else $
-    splog, 'ABORT: No exposures with SCORE > ' + strtrim(string(minsn2),2)
+  ii = where(score GT minsn2, ct)
+  if (ct GT 0) then begin
+     spcoadd_v5, objname[ii], combinefile, mjd=thismjd, combinedir=outdir, $
+      adderr=adderr, docams=docams, plotsnfile=plotsnfile, $
+      bestexpnum=expnum[0,ibest]
+  endif else $
+     splog, 'ABORT: No exposures with SCORE > ' + strtrim(string(minsn2),2)
+  obj_destroy,configuration    
+  heap_gc   ; garbage collection
 
-   heap_gc   ; garbage collection
+  ; Track memory usage
+  thismem = memory()
+  maxmem = maxmem > thismem[3]
+  splog, 'Max memory usage = ', string(maxmem/1e6,format='(f7.1)'), ' MB'
 
-   ; Track memory usage
-   thismem = memory()
-   maxmem = maxmem > thismem[3]
-   splog, 'Max memory usage = ', string(maxmem/1e6,format='(f7.1)'), ' MB'
+  splog, 'Total time for SPCOMBINE = ', systime(1)-stime0, ' seconds', $
+   format='(a,f6.0,a)'
+  splog, 'Successful completion of SPCOMBINE at ' + systime()
 
-   splog, 'Total time for SPCOMBINE = ', systime(1)-stime0, ' seconds', $
-    format='(a,f6.0,a)'
-   splog, 'Successful completion of SPCOMBINE at ' + systime()
+  ;----------
+  ; Close log files and change to original directory
 
-   ;----------
-   ; Close log files and change to original directory
+  if (keyword_set(logfile)) then splog, /close
+  cd, origdir
 
-   if (keyword_set(logfile)) then splog, /close
-   cd, origdir
-
-   return
+  return
 end
 ;------------------------------------------------------------------------------

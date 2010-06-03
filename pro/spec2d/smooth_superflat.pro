@@ -80,6 +80,19 @@ function smooth_superflat, superflatset, airset, plottitle=plottitle
    endif
 
    fullfit = bspline_valu(loglam, smoothset)
+
+   ; Set any points outside the fit range to zero
+   ; This should not matter, but prevents us from carrying
+   ; crazy values further downstream.
+   loglam_min = superflatset.fullbkpt[superflatset.nord]
+   loglam_max = $
+    superflatset.fullbkpt[n_elements(superflatset.fullbkpt)-1-superflatset.nord]
+   ibad = where(loglam LT loglam_min OR loglam GT loglam_max, nbad)
+   if (nbad GT 0) then fullfit[ibad] = 0
+   ibad = where(sparselam LT loglam_min OR sparselam GT loglam_max, nbad)
+   if (nbad GT 0) then model[ibad] = 0
+   if (nbad GT 0) then yfit[ibad] = 0
+
    ratiodiff = model/(yfit + (yfit LE 0)) - 1.
    ratiodiff = ratiodiff * (yfit GT 0)
    if (keyword_set(inmask)) then ratiodiff = ratiodiff * (inmask NE 0)
@@ -97,14 +110,14 @@ function smooth_superflat, superflatset, airset, plottitle=plottitle
      !p.multi =[0,1,2]
      wave = 10^sparselam
      xrange = [min(wave),max(wave)] - [1,-1] * (max(wave) - min(wave)) * 0.02
-
-     djs_plot, wave, model, title=plottitle, xchars=0.001,/xs,xrange=xrange
+     djs_plot, wave, model, xrange=xrange, xstyle=1, $
+      xtickname=replicate(' ',10), title=plottitle
      djs_oplot, wave, yfit, color='red'
-     djs_plot, wave, ratiodiff + 1, /ynozero, $
+     djs_plot, wave, ratiodiff + 1, yrange=[0.95,1.05], ystyle=1, $
       ymargin=[4,-4], /xstyle, xrange=xrange, xtitle='Wavelength (\AA)'
      djs_oplot, wave, yfit-yfit+1
-     xyouts, [0.05], [0.5], 'Fraction of flux in emission lines= '+sarea+' ', $
-      alignment=1.0, /normal 
+     xyouts, total([0.05,0.95]*!x.crange), total([0.10,0.90]*!y.crange), $
+      'Fraction of flux in emission lines= '+strtrim(sarea,2), /normal
      !p.multi = oldmulti
    endif
  

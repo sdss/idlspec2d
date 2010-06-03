@@ -70,27 +70,21 @@ pro spadd_guiderinfo, hdr
    plugdir = concat_dir(speclog_dir, mjdstr)
 
    guidermonfile = filepath('guiderMon-'+mjdstr+'.par', root_dir=plugdir)
-   yanny_read, guidermonfile, pdata, stnames=stnames, /anonymous
+   guidermon = yanny_readone(guidermonfile, 'GUIDEOBJ', $
+    stnames=stnames, /anonymous)
 
-   if (keyword_set(pdata)) then begin
-      i = (where(stnames EQ 'GUIDEOBJ'))[0]
-      if (i NE -1) then begin
-         tags = tag_names(*pdata[i])
+   if (keyword_set(guidermon)) then begin
          ; Ensure that this guiderMon file has all of the following tag
          ; names, which wasn't the case for the early data.
-         if ((where(tags EQ 'TIMESTAMP'))[0] NE -1 $
-          AND (where(tags EQ 'FWHM'))[0] NE -1 $
-          AND (where(tags EQ 'DRA'))[0] NE -1 $
-          AND (where(tags EQ 'DDEC'))[0] NE -1) then begin
-            guidermon = *pdata[i]
+         if (tag_exist(guidermon, 'timestamp') $
+          AND tag_exist(guidermon, 'fwhm') $
+          AND tag_exist(guidermon, 'dra') $
+          AND tag_exist(guidermon, 'ddec')) then begin
+            guidermon = guidermon
          endif else begin
+            guidermon = 0
             splog, 'WARNING: Invalid format for guiderMon file ' + guidermonfile
          endelse
-      endif else begin
-         splog, 'WARNING: No GUIDEOBJ entries in guiderMon file ' + guidermonfile
-      endelse
-
-      yanny_free, pdata
    endif else begin
       splog, 'WARNING: Empty guiderMon file ' + guidermonfile
    endelse
@@ -111,7 +105,11 @@ pro spadd_guiderinfo, hdr
 ;      if (ifound[0] NE -1) then guidermon = guidermon[ifound] 
 
       get_tai, hdr, tai_beg, tai_mid, tai_end
-      taiplate = guidermon.timeStamp + 3506716800.0d
+      ; If this is an old SDSS-I file, then the timstamps are all offset
+      ; and need correcting; if BOSS, then no corrections
+      taiplate = guidermon.timestamp
+      if (tag_exist(guidermon, 'focusoffset') EQ 0) then $
+       taiplate += 3506716800.0d
       ifound = where(taiplate GE tai_beg AND taiplate LE tai_end, nfound)
 
       if (nfound GT 8) then begin   ; at least 8 fibers in the time interval?
@@ -120,13 +118,20 @@ pro spadd_guiderinfo, hdr
          ; Count the number of guider frames based upon the unique number
          ; of time stamps.
          alltimes = guidermon.timestamp
-         alltimes = uniq(alltimes, sort(alltimes))
+         alltimes = alltimes[uniq(alltimes, sort(alltimes))]
          nguide = n_elements(alltimes)
          splog, 'Number of guider frames = ', nguide
 
          seeing  = 0.0
-         igood = where(guidermon.fwhm GT 0.0, ngood)
-         if (igood[0] NE -1) then begin
+         qgood = (guidermon.fwhm GT 0) AND finite(guidermon.fwhm)
+         if (tag_exist(guidermon, 'focusoffset')) then $
+          qgood *= (guidermon.focusoffset LT 100) ; in-focus fibers only
+         if (tag_exist(guidermon, 'exists')) then $
+          qgood *= (guidermon.exists EQ 'T')
+         if (tag_exist(guidermon, 'enabled')) then $
+          qgood *= (guidermon.enabled EQ 'T')
+         igood = where(qgood, ngood)
+         if (ngood GT 0) then begin
             seeing = guidermon[igood].fwhm
             seeing = seeing[sort(seeing)]           
             see20 = seeing[(long(ngood*0.20) - 1) > 0]
@@ -135,8 +140,13 @@ pro spadd_guiderinfo, hdr
          endif else splog, 'Warning: No non-zero FWHM entries'
 
          rmsoff = 0.0
-         igood = where(guidermon.dra NE 0.0 OR guidermon.ddec NE 0.0, ngood)
-         if (igood[0] NE -1) then begin
+         qgood = guidermon.dra NE 0.0 OR guidermon.ddec NE 0.0
+         if (tag_exist(guidermon, 'exists')) then $
+          qgood *= (guidermon.exists EQ 'T')
+         if (tag_exist(guidermon, 'enabled')) then $
+          qgood *= (guidermon.enabled EQ 'T')
+         igood = where(qgood, ngood)
+         if (ngood GT 0) then begin
             rmsoff = sqrt(guidermon[igood].dra^2 + guidermon[igood].ddec^2)
             rmsoff = rmsoff[sort(rmsoff)]
             rms20 = rmsoff[(long(ngood*0.20) - 1) > 0]

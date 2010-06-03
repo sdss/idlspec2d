@@ -77,8 +77,8 @@ pro qaplot_fflat, fflat, wset, fibermask=fibermask, dx=dx, title=title
          fsort = fflat[j]
          fsort = fsort[sort(fsort)]
 
-         botval[ibin] = fsort[ceil(0.01*ct) < ct-1]
-         topval[ibin] = fsort[floor(0.99*ct)]
+         botval[ibin] = fsort[ceil(0.025*ct) < ct-1]
+         topval[ibin] = fsort[floor(0.975*ct)]
 
          meanval[ibin] = median([fflat[j]])
 
@@ -96,11 +96,15 @@ pro qaplot_fflat, fflat, wset, fibermask=fibermask, dx=dx, title=title
     xstyle=1, ystyle=1, xtitle='\lambda [A]', ytitle='Fiber-Flat', $
     title=title
 
-   ; Overplot individual outlier points in green
+   ; Overplot individual outlier points in red
    noutlier = N_elements(ioutlier) - 1
    if (noutlier GT 1) then begin ; The first outlier is a dummy set to [0]
-      ioutlier = ioutlier[1:noutlier-1]
-      djs_oplot, 10^loglam[ioutlier], fflat[ioutlier], ps=3, color='green'
+      ; Do not plot more than 20000 points
+      if (noutlier GT 20000) then $
+       iplot = ioutlier[1+lindgen(20000)*(n_elements(fflat)/20000.)] $
+      else $
+       iplot = ioutlier[1:noutlier-1]
+      djs_oplot, 10^loglam[iplot], fflat[iplot], ps=3, color='red'
    endif
 
    ; Overplot the mean flat-field vector, and the dispersion
@@ -108,7 +112,7 @@ pro qaplot_fflat, fflat, wset, fibermask=fibermask, dx=dx, title=title
 
    xpos = 10^xaxis[fix(nbin/20)]
    xyouts, xpos, 1.8, 'BLACK = Median value'
-   xyouts, xpos, 1.7, 'ENVELOPE = 1% to 99% range'
+   xyouts, xpos, 1.7, 'ENVELOPE = 95% of points'
    xyouts, xpos, 1.6, 'GREEN = Outlier points'
    xyouts, xpos, 1.5, $
     'Min value =' + string(min(fflat[where(fflat NE 0)]),format='(f9.3)')

@@ -433,12 +433,12 @@ then you can copy the data with "rsync" or "scp".
 <P>
 Each plate has the following files associated with it:
 <DL><DD><PRE>
-$SPECTRO_DATA/$PLATE/spPlate-$PLATE-$MJD.fits
-$SPECTRO_DATA/$PLATE/spZbest-$PLATE-$MJD.fits
-$SPECTRO_DATA/$PLATE/spZline-$PLATE-$MJD.fits
-$SPECTRO_DATA/$PLATE/spZall-$PLATE-$MJD.fits
+$BOSS_SPECTRO_REDUX/$PLATE/spPlate-$PLATE-$MJD.fits
+$BOSS_SPECTRO_REDUX/$PLATE/spZbest-$PLATE-$MJD.fits
+$BOSS_SPECTRO_REDUX/$PLATE/spZline-$PLATE-$MJD.fits
+$BOSS_SPECTRO_REDUX/$PLATE/spZall-$PLATE-$MJD.fits
 </PRE></DD></DL>
-where $SPECTRO_DATA refers to the top-level directory (spectro), and $PLATE
+where $BOSS_SPECTRO_REDUX refers to the top-level directory (spectro), and $PLATE
 refers to a subdirectory with the plate name (e.g., 0301), and $MJD refers
 to the date of observation (e.g., 52000).
 There are also some intermediate output files (e.g., spCFrame files)
@@ -843,7 +843,7 @@ First, set up the "idlutils" and "idlspec2d" software, as described above.
 You need to set an environment variable that points to the top-level
 directory of the data.  At Princeton, this would be:
 <DL><DD><PRE>
-setenv SPECTRO_DATA /u/dss/spectro
+setenv BOSS_SPECTRO_REDUX /u/dss/spectro
 </PRE></DD></DL>
 
 <P>
@@ -923,7 +923,7 @@ Michael's <A HREF="spectro_sm/README.spectro">README file</A>.
 At Princeton, you could type the following to display plate 306 fiber 100,
 then overplot the best-fit template:
 <DL><DD><PRE>
-setenv SPECTRO_DATA /u/dss/spectro
+setenv BOSS_SPECTRO_REDUX /u/dss/spectro
 setenv IDLSPEC2D_DIR /u/schlegel/idlspec2d
 cd ~strauss/spectro_sm/release
 sm
@@ -1320,6 +1320,7 @@ ZWARNING   A flag set for bad redshift fits in place of calling CLASS=UNKNOWN.
            6 = Negative emission in a QSO line, triggered only in QSO spectra
                iff C_IV, C_III, Mg_II, H_beta, or H_alpha has
                LINEAREA + 3 * LINEAREA_ERR < 0
+           7 = Unplugged fiber
 SN_MEDIAN  Median S/N for all good pixels
 CHI68P     68-th percentile value of abs(chi) of the best-fit synthetic
            spectrum to the actual spectrum, which would be 1.0 for a good fit

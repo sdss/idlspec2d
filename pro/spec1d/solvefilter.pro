@@ -38,7 +38,7 @@
 ;                objects used in sample; default to 2.0
 ;   maxiter    - Maximum number of iterations in call to MPFIT(); default to 200
 ;   fluxpath   - Path name for spPlate files used for reading the spectra.
-;                The spZ files are still read from $SPECTRO_DATA/$PLATE
+;                The spZ files are still read from $BOSS_SPECTRO_REDUX/$PLATE
 ;                regardless of this keyword.
 ;   value      - Initial guess values for the fit parameters.  The default
 ;                values are chosen to closely match the Gunn Jun-2001 curves.
@@ -113,10 +113,10 @@
 ;
 ; DATA FILES:
 ;   $IDLUTILS/data/filters/sdss_jun2001_$FILTER_atm.dat
-;   $SPECTRO_DATA/0432/spFrame-r2-00007466.fits*  (for telluric-correction)
-;   $SPECTRO_DATA/$PLATE/spPlate-$PLATE-$MJD.fits
-;   $SPECTRO_DATA/$PLATE/spZbest-$PLATE-$MJD.fits
-;   $SPECTRO_DATA/plates/tsObj*-$PLATE.fit
+;   $BOSS_SPECTRO_REDUX/0432/spFrame-r2-00007466.fits*  (for telluric-correction)
+;   $BOSS_SPECTRO_REDUX/$PLATE/spPlate-$PLATE-$MJD.fits
+;   $BOSS_SPECTRO_REDUX/$PLATE/spZbest-$PLATE-$MJD.fits
+;   $BOSS_SPECTRO_REDUX/plates/tsObj*-$PLATE.fit
 ;
 ; PROCEDURES CALLED:
 ;   dfpsclose
@@ -355,9 +355,9 @@ pro solvefilter, filttype=filttype1, filternum=filternum1, $
    tausimple = djs_maskinterp(taugunn, tmask, /const)
 
    framefile = filepath('spFrame-r2-00007466.fits*', $
-    root_dir=getenv('SPECTRO_DATA'), subdir='0432')
+    root_dir=getenv('BOSS_SPECTRO_REDUX'), subdir='0432')
    fcalibfile = filepath('spFluxcalib-r2-00007466.fits*', $
-    root_dir=getenv('SPECTRO_DATA'), subdir='0432')
+    root_dir=getenv('BOSS_SPECTRO_REDUX'), subdir='0432')
    framefile = (findfile(framefile))[0]
    fcalibfile = (findfile(fcalibfile))[0]
    hdr = headfits(framefile)
@@ -795,7 +795,7 @@ objivar = 0
    printf, olun, '# WAVEMIN = ' + string(wavemin)
    printf, olun, '# WAVEMAX = ' + string(wavemax)
    printf, olun, '# MAXITER = ' + string(maxiter)
-   printf, olun, '# SPECTRO_DATA = ' + getenv('SPECTRO_DATA')
+   printf, olun, '# BOSS_SPECTRO_REDUX = ' + getenv('BOSS_SPECTRO_REDUX')
    if (keyword_set(fluxpath)) then printf, olun, '# FLUXPATH = ' + fluxpath
    printf, olun, '#'
    printf, olun, '# Number of plates = ' + string(nplate)

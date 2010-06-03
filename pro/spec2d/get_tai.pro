@@ -36,6 +36,10 @@ pro get_tai, hdr, tai_beg, tai_mid, tai_end, silent=silent
       tai_end = tai - 60.0   ; average buffer for readout 
       tai_beg = tai_end - exptime
       tai_mid = (tai_beg + tai_end)/2.0
+   endif else if (tai_beg GT 4.0d9) then begin
+      ; BOSS data only has TAI_BEG and EXPTIME keywords
+      tai_end = tai_beg + (exptime>0)
+      tai_mid = (tai_beg + tai_end)/2.0
    endif else begin
       tai_mid = 0
       if (NOT keyword_set(silent)) then $

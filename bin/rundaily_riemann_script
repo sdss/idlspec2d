@@ -1,0 +1,196 @@
+#!/usr/bin/env bash
+#
+#  Start the daily BOSS spectro pipeline.  This script is called from rundaily using
+#  "rundaily_script $MJD" where $MJD is the mjd to process.
+#
+#  Written by Gary Kushner (LBL).  Jan 2010.
+
+function usage
+{
+    local execName=$(basename $0)
+    ( 
+	echo "usage: $execName \$MJD"
+    ) >&2
+    exit 1
+}
+
+function screamAndDie
+{
+    echo "!! Failed: $*" | tee -a $LOGDIR/$MJD.warning
+
+    echo "Goodbye from rundaily_riemann_script!"
+
+	#  Make it easy to see the failure
+	echo "Failed!" >>$LOGDIR/$MJD.failed
+	
+	### This hack is too ugly, need to change it ###
+	echo "Mailing Error Report"
+	mail -s "$MJD failed" kushner@lbl.gov <<< $LOGDIR/$MJD.warning
+	
+    exit 1
+}
+
+function printAndRun
+{
+    echo "$*"
+
+# 	if "$dryMode"; then
+#		return
+#	fi
+		
+    # Silently do nothing
+    if test "_$*" = "_"; then
+        return
+    fi
+
+    eval "$@"
+    if test $? -ne 0; then
+        screamAndDie "failed running $*"
+    fi
+}
+
+
+function tryAndRun
+{
+    echo "$*"
+
+# 	if "$dryMode"; then
+#		return
+#	fi
+		
+    # Silently do nothing
+    if test "_$*" = "_"; then
+        return
+    fi
+
+    eval "$@"
+}
+
+function svnUp
+{
+	echo "Attempting to svn up $1"
+	
+	tryAndRun "svn up $1"
+	if test $? == 0; then
+		return
+    fi
+
+	echo "svn up $1 failed.  Going to try a cleanup." | tee -a $LOGDIR/$MJD.warning
+	tryAndRun "sleep 600"
+	tryAndRun "svn cleanup $1"
+	printAndRun "svn up $1"
+}
+
+#
+###	 Start of script
+#
+
+###	 Parse command line
+
+if ! test $# == 1; then
+  	echo "Wrong number of parameters"
+  	echo " "
+  	usage
+fi
+if ! test -z $(perl -n -e 'print "not" unless /^[0-9]{5}$/' <<< $1); then
+	echo "First parameter must be an MJD not $1"
+	echo " "
+	usage
+fi
+
+MJD=$1
+
+###  Start logging
+
+LOGDIR=/home/boss/daily/logs
+exec >>$LOGDIR/$MJD.log 2>&1
+echo "Hello at $(date), processing $MJD"
+
+
+###  Sanity Checks (disabled: for now script is setting up products)
+
+#if test -z $IDLSPEC2D_DIR; then
+#	screamAndDie "idlspec2d must be setup"
+#fi
+#if test -z $PHOTOOP_DIR; then
+#	screamAndDie "photoop must be setup"
+#fi
+
+
+
+###  Tell ssh to use the autoboss key
+
+export SVN_SSH="ssh -i /home/boss/.ssh/id_dsa-autoboss"
+
+###  (Optionally) Setup or Specify eups products and versions and configuration options
+###  that we want to use.
+
+##printAndRun "setup idlspec2d v5_4_6"
+printAndRun "setup idlspec2d v5_4"
+printAndRun "setup photoop"
+printAndRun "setup runz"
+UPS1D=",upsvers2d=v5_4_9"
+UPS2D=",upsvers1d=v5_4_9"
+ZCODE=",/zcode"
+
+###  Setup environment variables
+
+export BOSS_SPECTRO_REDUX=$DAILY_BOSS_SPECTRO_REDUX
+export PHOTO_DATA=$DAILY_PHOTO_DATA
+export PHOTO_REDUX=$DAILY_PHOTO_REDUX
+export PHOTOPLATE_DIR=$DAILY_PHOTOPLATE_DIR
+export PHOTO_SWEEP=$DAILY_PHOTO_SWEEP
+export PHOTO_RESOLVE=$DAILY_PHOTO_RESOLVE
+export PHOTO_CALIB=$DAILY_PHOTO_CALIB
+export RAWDATA_DIR=$DAILY_RAWDATA_DIR
+
+#	Uncomment the next line to run in test mode
+export BOSS_SPECTRO_REDUX=/home/boss/testdata
+
+echo "BOSS_SPECTRO_REDUX=$BOSS_SPECTRO_REDUX"
+echo "PHOTO_DATA=$PHOTO_DATA"
+echo "PHOTO_REDUX=$PHOTO_REDUX"
+echo "PHOTOPLATE_DIR=$PHOTOPLATE_DIR"
+echo "PHOTO_SWEEP=$PHOTO_SWEEP"
+echo "PHOTO_RESOLVE=$PHOTO_RESOLVE"
+echo "PHOTO_CALIB=$PHOTO_CALIB"
+echo "RAWDATA_DIR=$RAWDATA_DIR"
+
+
+#  Determine idlspec2d version and set
+spec2d=$(perl -p -e 's{.*/(.*)$}{\1}' <<< $IDLSPEC2D_DIR)
+echo "Using idlspec2d version $spec2d"
+export RUN1D=${spec2d}
+export RUN2D=${spec2d}
+#  Override RUN1D and/or RUN2D if UPS1D or UPS2D is defined
+if ! test -z $UPS1D; then
+	export RUN1D=$(perl -p -e 's{.*=(.*)$}{\1}' <<< $UPS1D)
+fi
+if ! test -z $UPS2D; then
+	export RUN2D=$(perl -p -e 's{.*=(.*)$}{\1}' <<< $UPS2D)
+fi
+#
+echo "RUN1D=$RUN1D, RUN2D=$RUN2D"
+
+
+###
+###  Start of main processing
+###
+
+echo "Processing svn updates"
+svnUp $PLATELIST_DIR
+svnUp $SPECLOG_DIR
+svnUp $SPINSPECT_DIR
+
+echo "Running IDL code"
+printAndRun "idl -e 'platelist'"
+printAndRun "idl -e 'spplan2d, MJD=$MJD'"
+printAndRun "idl -e 'spplan1d, MJD=$MJD'"
+#printAndRun "idl -e 'batchpbs, QUEUE=\"high_pri\", MJD=$MJD $UPS1D $UPS2D $ZCODE'"
+printAndRun "idl -e 'batchpbs, MJD=$MJD $UPS1D $UPS2D $ZCODE'"
+printAndRun "idl -e 'platelist'"
+printAndRun "idl -e 'platemerge'"
+
+
+###  All Done
+echo "Goodbye at $(date)"

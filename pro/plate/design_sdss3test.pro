@@ -26,7 +26,7 @@
 ;     setenv,'PHOTO_REDUX=/u/dss/redux'
 ;     setenv,'PHOTO_RESOLVE=/u/dss/redux/resolve/full_02apr06'
 ;     setenv,'PHOTO_CALIB=/u/dss/redux/resolve/full_02apr06/calib/default0'
-;     setenv,'SPECTRO_DATA=/u/dss/spectro_v5'
+;     setenv,'BOSS_SPECTRO_REDUX=/u/dss/spectro_v5'
 ;     design_sdss3test, 2634
 ;     design_sdss3test, 2638
 ;

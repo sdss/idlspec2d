@@ -50,6 +50,7 @@
 ; REVISION HISTORY:
 ;   3-Apr-2000  Written by S. Burles & D. Schlegel, APO
 ;  28-Feb-2002  Modified to do full tracing, speed difference is critical
+;  26-Jul-2009  Added keyword for nfibers, KD
 ;-
 ;------------------------------------------------------------------------------
 function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
@@ -68,10 +69,15 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
     nsatrow=nsatrow, fbadpix=fbadpix, $
     spectrographid=spectrographid, camname=camname, /do_lock
 
+   ; load in configuration parameters from object
+   configuration=obj_new('configuration', sxpar(flathdr, 'MJD'))
+
    ;-----
    ; Decide if this flat is bad
 
-   qbadflat = reject_flat(flatimg, flathdr, nsatrow=nsatrow, fbadpix=fbadpix)
+   qbadflat = reject_flat(flatimg, flathdr, nsatrow=nsatrow, fbadpix=fbadpix, $
+    percent80thresh=configuration->spcalib_reject_calib_percent80thresh())
+
    if (qbadflat) then begin
       splog, 'ABORT: Unable to reduce flat'
       return, 0
@@ -80,8 +86,8 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
    ;----------
    ; Read in the plug map file, and sort it
 
-   plugmap = readplugmap(plugmapfile, /deredden, /apotags)
-   plugsort = sortplugmap(plugmap, spectrographid, fibermask=fibermask)
+   plugmap = readplugmap(plugmapfile, spectrographid, /deredden, /apotags, $
+    fibermask=fibermask)
 
    ;----------
    ; Compute the trace set, but binning every NBIN rows for speed
@@ -99,10 +105,32 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
 ;   nsmallrow = nrow / nbin
 ;   smallimg = djs_median(reform(flatimg,ncol,nbin,nsmallrow),2)
 
-   xsol = trace320crude(flatimg, flativar, yset=ycen, maxdev=0.15, $
-                        fibermask=fibermask)
-   ngfiber = total(fibermask EQ 0)
-   xy2traceset, ycen, xsol, tset, ncoeff=7, maxdev=0.1
+; Needed to increase MAXDEV from 0.15 to not drop end fibers on bundles ???
+   if (strmid(camname,0,1) EQ 'b') then color = 'blue' $
+    else color = 'red'
+   ; Set the maxdev to twice what it would be for optimal extraction...
+   xsol = trace320crude(flatimg, flativar, yset=ycen, maxdev=0.30, $
+    fibermask=fibermask, xerr=xerr, $
+    padding=configuration->spcalib_trace320crude_padding(), $
+    nfiber=configuration->getNumberFibersPerSpectrograph(), $
+    nbundle=configuration->getNumberBundles(), $
+    xstart=configuration->spcalib_trace320cen_xstart(color,spectrographid), $
+    deltax=configuration->spcalib_trace320cen_deltax(color,spectrographid))
+
+   ; Consider a fiber bad only if any of the following mask bits are set,
+   ; but specifically not if BADTRACE is set.
+   badbits = sdss_flagval('SPPIXMASK','NOPLUG') $
+    OR sdss_flagval('SPPIXMASK','BADFLAT')
+   ngfiber = total((fibermask AND badbits) EQ 0)
+
+;   xy2traceset, ycen, xsol, tset, ncoeff=7, maxdev=0.1
+; The following with XERR takes 10X longer than the above, but won't crash ???
+     outmask = 0
+     ; Ignore values whose central point falls on a bad pixel
+     inmask = flativar[xsol,ycen] GT 0
+     xy2traceset, ycen, xsol, tset, $
+      ncoeff=configuration->spcalib_xy2traceset_ncoeff(), $
+      maxdev=0.1, outmask=outmask, /double, xerr=xerr, inmask=inmask
 
    ;----------
    ; Boxcar extract
@@ -144,8 +172,8 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
 
    ; ARGONSN = 5 looks to be about normal, argonsn > 15 should throw warning
 
-   if (argonsn GT 15.0) then $
-    splog,'WARNING: Emission lines (Argon?) in flats at significance=', argonsn
+;   if (argonsn GT 15.0) then $
+;    splog,'WARNING: Emission lines (Argon?) in flats at significance=', argonsn
 
    ;----------
    ; Write traceset to FITS file
@@ -154,7 +182,7 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
       mwrfits, flux, tsetfile, /create
       mwrfits, fluxivar, tsetfile
       mwrfits, tset, tsetfile
-      mwrfits, plugsort, tsetfile
+      mwrfits, plugmap, tsetfile
       mwrfits, fibermask, tsetfile
    endif else begin
       splog, 'Quality is not excellent - do not write tsetfile'
@@ -163,15 +191,18 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
    ;----------
    ; Construct the returned structure
 
+   ; Compute the X position between the central 2 fibers
+   ; at their central 2 pixels.
    traceset2xy, tset, xx, yy
-   xmin = min(yy)
-   xmax = max(yy)
+   xmid = mean( yy[nrow/2-1:nrow/2,ntrace/2-1:ntrace/2] )
+
    rstruct = create_struct('TSETFILE', fileandpath(tsetfile), $
                            'NGOODFIBER', ngfiber, $
-                           'XMIN', xmin, $
-                           'XMAX', xmax, $
+                           'XMID', xmid, $
                            'XSIGMA_QUADRANT', medwidth, $
                            'XSIGMA', max(medwidth) )
+
+   obj_destroy, configuration
 
    return, rstruct
 end

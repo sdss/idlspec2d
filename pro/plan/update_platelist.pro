@@ -19,7 +19,7 @@
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
-;   The file in $IDLSPEC2D_DIR/etc/spPlateList.par is read, and we
+;   The file in $SPECLOG_DIR/opfiles/spPlateList.par is read, and we
 ;   merge in the list of plates returned by the PLATELIST procedure.
 ;   Manual comments from the first file are retained.
 ;
@@ -28,7 +28,7 @@
 ; BUGS:
 ;
 ; DATA FILES:
-;   $IDLSPEC2D_DIR/etc/spPlateList.par
+;   $SPECLOG_DIR/opfiles/spPlateList.par
 ;
 ; PROCEDURES CALLED:
 ;   copy_struct_inx
@@ -46,8 +46,8 @@ pro update_platelist, outfile
    ;----------
    ; Read the existing list of plates
 
-   thisfile = filepath('spPlateList.par', root_dir=getenv('IDLSPEC2D_DIR'), $
-    subdir='etc')
+   thisfile = filepath('spPlateList.par', root_dir=getenv('SPECLOG_DIR'), $
+    subdir='opfiles')
    yanny_read, thisfile, pdat, structs=structs, /anonymous
    thislist = *pdat[0]
    yanny_free, pdat

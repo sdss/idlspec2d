@@ -17,7 +17,7 @@
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
-;   Find all the files matching '$SPECTRO_DATA/*/spPlate*.fits', and test
+;   Find all the files matching '$BOSS_SPECTRO_REDUX/*/spPlate*.fits', and test
 ;   whether the RA,DEC positions disagree by more than 0.1 degrees from
 ;   RADEC,DECDEG.  This would indicate some inconsistency in the header
 ;   info that should be fixed.
@@ -37,7 +37,7 @@
 ;------------------------------------------------------------------------------
 pro platecen_test
 
-   platefile = findfile(getenv('SPECTRO_DATA')+'/*/spPlate*.fits', $
+   platefile = findfile(getenv('BOSS_SPECTRO_REDUX')+'/*/spPlate*.fits', $
     count=nfile)
 
    ra = fltarr(nfile)

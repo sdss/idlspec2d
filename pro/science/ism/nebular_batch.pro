@@ -15,7 +15,7 @@
 ;   plate      - Plate number(s) to reduce; default to all non-bad plates
 ;                and all public plates.
 ;   mjd        - MJD(s) for each PLATE
-;   topdir     - Top directory for reductions; default $SPECTRO_DATA
+;   topdir     - Top directory for reductions; default $BOSS_SPECTRO_REDUX
 ;   outdir     - Top directory for outfile files; default to current directory
 ;   upsversion - If set, then do a "setup idlspec2d $UPSVERSION" on the 
 ;                remote machine before executing the IDL job.  This allows
@@ -71,7 +71,7 @@
 pro nebular_batch, plate, mjd=mjd, topdir=topdir, outdir=outdir, $
  upsversion=upsversion, nice=nice, onlysky=onlysky, outfile=outfile
 
-   if (NOT keyword_set(topdir)) then topdir = getenv('SPECTRO_DATA')
+   if (NOT keyword_set(topdir)) then topdir = getenv('BOSS_SPECTRO_REDUX')
    if (NOT keyword_set(outdir)) then begin
       cd, current=outdir
    endif
@@ -95,7 +95,7 @@ pro nebular_batch, plate, mjd=mjd, topdir=topdir, outdir=outdir, $
          plist.mjd = mjd1
       endif
    endif else begin
-      if (keyword_set(topdir)) then setenv, 'SPECTRO_DATA=' + topdir
+      if (keyword_set(topdir)) then setenv, 'BOSS_SPECTRO_REDUX=' + topdir
       platelist, plist=plist
       if (keyword_set(plist)) then begin
          indx = where(strmatch(plist.status1d,'Done*') $
@@ -185,7 +185,7 @@ pro nebular_batch, plate, mjd=mjd, topdir=topdir, outdir=outdir, $
    if (keyword_set(upsversion)) then $
     precommand = precommand + 'setup idlspec2d ' + upsversion + '; '
    if (keyword_set(topdir)) then $
-    precommand = precommand + 'SPECTRO_DATA='+fq+topdir+fq+'; '
+    precommand = precommand + 'BOSS_SPECTRO_REDUX='+fq+topdir+fq+'; '
    if (keyword_set(nice)) then nicestr = '/bin/nice -' + strtrim(string(nice),2) $
     else nicestr = ''
    command = precommand + ' echo '+fq+'nebularsky,'+platestr+',mjd='+mjdstr+addstring+fq+' | ' + nicestr + ' idl ' + '" | bash --login >& /dev/null'

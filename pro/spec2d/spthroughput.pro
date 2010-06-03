@@ -15,8 +15,8 @@
 ;   expnum     - Exposure number
 ;
 ; OPTIONAL INPUTS:
-;   indx       - Fiber index number(s) in the range [0,319]; default
-;                to lindgen(320)
+;   indx       - Fiber index number(s) 0-indexed; default to [0,N-1]
+;                where N is the number of fibers in one spectrograph
 ;   loglam     - Wavelengths in vacuum log10-Angstroms; if specified, then this
 ;                is a vector of the same wavelengths for all fibers
 ;   median     - If set, and LOGLAM is input, then median-filter all
@@ -65,8 +65,6 @@ function spthroughput, plate, indx1, camname=camname, expnum=expnum, $
 
    if (n_elements(plate) NE 1) then $
     message, 'PLATE must be a scalar!'
-   if (n_elements(indx1) GT 0) then indx = indx1 $
-    else indx = lindgen(320)
    if (size(camname,/tname) NE 'STRING') then $
     message, 'CAMNAME is not valid!'
    if (NOT keyword_set(expnum)) then $
@@ -74,9 +72,9 @@ function spthroughput, plate, indx1, camname=camname, expnum=expnum, $
    if (keyword_set(loglam)) then $
     if (size(loglam,/n_dimen) NE 1) then $
      message, 'LOGLAM must be 1-dimensional vector!'
-   nfiber = n_elements(indx)
 
-   outdir = concat_dir(getenv('SPECTRO_DATA'), string(plate,format='(i4.4)'))
+   outdir = getenv('BOSS_SPECTRO_REDUX') + '/' + getenv('RUN2D') $
+    + '/' + string(plate,format='(i4.4)')
    filename1 = djs_filepath('spFrame-' $
     +string(format='(a2,a,i8.8,a)',camname,'-',expnum, $
     '.fits*'), root_dir=outdir)
@@ -91,6 +89,10 @@ function spthroughput, plate, indx1, camname=camname, expnum=expnum, $
    flatexp = long(strmid(sxpar(objhdr, 'FLATFILE'),7,8))
    exptime = sxpar(objhdr, 'EXPTIME')
    if (arg_present(airmass)) then airmass = sxpar(objhdr, 'AIRMASS')
+
+   if (n_elements(indx1) GT 0) then indx = indx1 $
+    else indx = lindgen(sxpar(objhdr,'NAXIS2'))
+   nfiber = n_elements(indx)
 
    correct_dlam, calibfac, 0, wset, /inverse
    loglam1 = loglam1[*,indx]

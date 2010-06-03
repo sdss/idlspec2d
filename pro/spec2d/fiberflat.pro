@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   fflat = fiberflat( flux, fluxivar, wset, [ fibermask=fibermask, $
 ;    minval=, ncoeff=, pixspace=, /dospline, nord=, lower=, upper=,
-;    /dospline, /nonorm, plottitle= ])
+;    /dospline, /nonorm, plottitle=, badflatfracthresh= ])
 ;
 ; INPUTS:
 ;   flux       - Array of extracted flux from a flat-field image [Nrow,Ntrace]
@@ -30,6 +30,8 @@
 ;   plottitle  - Title for QA plot; if not set, then do not plot.
 ;   nonorm     - Do not normalize the fluxes in FFLAT by the super-flat.
 ;   superflatset-Bspline set to reconstruct superflat
+;   badflatfracthresh - the fraction of bad flat pixels to decide if
+;                       the flat is bad
 ;
 ; PARAMETERS FOR SLATEC_SPLINEFIT:
 ;   nord
@@ -79,7 +81,8 @@
 function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
  minval=minval, ncoeff=ncoeff, pixspace=pixspace, nord=nord, $
  lower=lower, upper=upper, dospline=dospline, plottitle=plottitle, $
- nonorm=nonorm, superflatset=superflatset
+ nonorm=nonorm, superflatset=superflatset, badflatfracthresh=badflatfracthresh
+
 
    dims = size(flux, /dimens)
    ny = dims[0]
@@ -93,6 +96,7 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
    if (N_elements(lower) EQ 0) then lower = 10.0
    if (N_elements(upper) EQ 0) then upper = 10.0
    if (N_elements(fibermask) NE ntrace) then fibermask = bytarr(ntrace)
+   if (not keyword_set(badflatfracthresh)) then badflatfracthresh=0.7
 
    igood = where(fibermask EQ 0, ngood)
    if (ngood EQ 0) then begin
@@ -236,7 +240,8 @@ function fiberflat, flux, fluxivar, wset, fibermask=fibermask, $
    ;----------
    ;  Set flatfield bit in FIBERMASK if needed
 
-   indx = where(medval LT 0.7 * globalmed OR total(fflat GT 0,1) LT 0.7*ny)
+   indx = where(medval LT 0.7 * globalmed $
+    OR total(fflat GT 0,1) LT badflatfracthresh*ny)
    if (indx[0] NE -1) then $
     fibermask[indx] = fibermask[indx] OR fibermask_bits('BADFLAT')
 

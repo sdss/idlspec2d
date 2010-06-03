@@ -121,8 +121,11 @@ pro locateskylines, skylinefile, fimage, ivar, wset, xarc, arcshift=arcshift, $
 
    lambda = alog10(skywaves)
    xskyold = xsky
-   xdiff = fitmeanx(wset, lambda, xskyold, aveinvvar, $
-    inmask=(gxerr LT 900.), mx=mx)
+   inmask = gxerr LT 900.
+   ; Insist that 80% of the sky lines be well-fit to use that line at all
+   for i=0, nskyline-1 do $
+    inmask[*,i] *= mean(inmask[*,i]) GT 0.80
+   xdiff = fitmeanx(wset, lambda, xskyold, aveinvvar, inmask=inmask, mx=mx)
 
    junk = where(aveinvvar GT 1./(0.2)^2, ngood)
    if (ngood EQ 0) then begin

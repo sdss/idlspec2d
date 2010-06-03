@@ -109,6 +109,7 @@ function reject_science, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix
        + string(percentxx)
    endif
 
+   qbad = 0 ; Hack for during BOSS commissioning!!!???
    return, qbad
 end
 ;------------------------------------------------------------------------------

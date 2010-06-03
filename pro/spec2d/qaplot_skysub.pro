@@ -50,7 +50,8 @@ pro skyplot, skywave, skyflux, skyfluxsub, skyivar, xrange=xrange, $
  title=title
 
    ; Only plot if the wavelength range spans at least all of XRANGE
-   if (10^min(skywave) LT xrange[0] AND 10^max(skywave) GT xrange[1]) then begin
+   jj = where(skyivar GT 0)
+   if (10^min(skywave[jj]) LT xrange[0] AND 10^max(skywave[jj]) GT xrange[1]) then begin
 
       ; Set multi-plot format
       !p.multi = [0,1,2]
@@ -80,7 +81,6 @@ pro skyplot, skywave, skyflux, skyfluxsub, skyivar, xrange=xrange, $
 end
 
 ;------------------------------------------------------------------------------
-
 pro qaplot_skysub, obj, objivar, objsub, objsubivar, wset, iskies, $
  title=title
 
@@ -98,12 +98,28 @@ pro qaplot_skysub, obj, objivar, objsub, objsubivar, wset, iskies, $
    ;----------
    ; Find sky fibers
 
-   nskies = n_elements(iskies)
+   nsky = n_elements(iskies)
 
-   if (nskies EQ 0) then begin
+   if (nsky EQ 0) then begin
       splog, 'No sky fibers!'
       return
    endif
+
+   ;----------
+   ; Compute median sky flux and abs(chi)
+   medskyflux = fltarr(nsky)
+   medskychi = fltarr(nsky)
+   medskysubchi = fltarr(nsky)
+   for j=0, nsky-1 do begin
+      qgood = where(objsubivar[*, iskies[j]] GT 0, ct)
+      if (ct GT 0) then begin
+         medskyflux[j] = djs_median(objsub[qgood,iskies[j]])
+         medskychi[j] = djs_median(abs(objsub[qgood,iskies[j]]) $
+          * sqrt(objivar[qgood,iskies[j]]))
+         medskysubchi[j] = djs_median(abs(objsub[qgood,iskies[j]]) $
+          * sqrt(objsubivar[qgood,iskies[j]]))
+      endif
+   endfor
 
    ;---------------------------------------------------------------------------
    ; Plot median chi^2 and median flux level for sky fibers.
@@ -111,21 +127,27 @@ pro qaplot_skysub, obj, objivar, objsub, objsubivar, wset, iskies, $
    ; Set multi-plot format
    !p.multi = [0,1,2]
 
-   djs_plot, [iskies], $
-    [djs_median( objsub[*,iskies]^2 * objivar[*,iskies], 1)], $
-    xrange=[1,nrow], xstyle=1, psym=2, charsize=1.1, $
-    xtitle = 'Fiber number', ytitle='Median \chi^2', $
+   csize = 0.8
+   xrange = [0,nrow+1]
+   yrange = [0, max(medskychi) > 1]
+   djs_plot, [iskies], [medskychi], $
+    xrange=xrange, yrange=yrange, xstyle=1, ystyle=1, $
+    psym=2, charsize=csize, $
+    xtitle = 'Fiber number', ytitle='Median |\chi|', $
     title=title+' Sky Fibers'
-   djs_oplot, [iskies], $
-    [djs_median( objsub[*,iskies]^2 * objsubivar[*,iskies], 1)], $
+   djs_oplot, [iskies], [medskysubchi], $
     psym=2, color='blue'
-   xyouts, 10, 0.1, 'BLUE=After rescaling variance', charsize=1.1
+   djs_oplot, xrange, [0.67,0.67] ; expected level if Gaussian
+   xyouts, 0.94*xrange[1], 0.72, 'Gaussian', align=1.0
+   xyouts, 0.06*xrange[1], 0.90*yrange[1], $
+    'BLACK=Before rescaling variance', charsize=csize
+   xyouts, 0.06*xrange[1], 0.82*yrange[1], $
+    'BLUE=After rescaling variance', charsize=csize
 
    ;----------
    ; Report all sky-subtracted sky fibers with |median flux| > 10 electrons
    ; (Add 1 to fiber number to get it 1-indexed.)
 
-   medskyflux = djs_median(objsub[*,iskies], 1)
    ibad = where(abs(medskyflux) GT 10, nbad)
    if (nbad GT 0) then begin
       for i=0, nbad-1 do $
@@ -134,7 +156,7 @@ pro qaplot_skysub, obj, objivar, objsub, objsubivar, wset, iskies, $
    endif
 
    djs_plot, [iskies], [medskyflux], $
-    xrange=[1,nrow], xstyle=1, psym=2, charsize=1.5, $
+    xrange=[1,nrow], xstyle=1, psym=2, charsize=csize, $
     xtitle = 'Fiber number', ytitle='Median Sky-Sub Flux'
    djs_oplot, [1,nrow], [0,0], color='red'
 
@@ -147,7 +169,6 @@ pro qaplot_skysub, obj, objivar, objsub, objsubivar, wset, iskies, $
    skyflux = obj[*,iskies]
    skyfluxsub = objsub[*,iskies]
    skyivar = objsubivar[*,iskies]
-
    skyplot, skywave, skyflux, skyfluxsub, skyivar, title=title, $
     xrange=[5570,5590]
 
@@ -198,15 +219,14 @@ pro qaplot_skysub, obj, objivar, objsub, objsubivar, wset, iskies, $
       djs_plot, xaxis, yaxis, $
        xrange=xrange, yrange=[0.0,5.0], xstyle=1, ystyle=1, $
        xtitle='\lambda [A]', ytitle='Relative \chi', $
-       title=title, charsize=1.5
+       title=title, charsize=csize
 
       if (ipanel EQ 0) then $
        xyouts, 0.95*xrange[0] + 0.05*xrange[1], 6.0, $
-        'Number of sky fibers = ' + strtrim(string(nskies),2), $
-        charsize=1.5
+        'Number of sky fibers = ' + strtrim(string(nsky),2), $
+        charsize=csize
 
    endfor
-
    !p.multi= 0
 
    ;---------------------------------------------------------------------------

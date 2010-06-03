@@ -6,7 +6,7 @@ pro plotsky, plate, expnum, camname=camname, plotfile=plotfile1, $
 
    filename = string(camname, expnum, $
     format='("spFrame-",a2,"-",i8.8,".fits*")')
-   fullname = (findfile(filepath(filename, root_dir=getenv('SPECTRO_DATA'), $
+   fullname = (findfile(filepath(filename, root_dir=getenv('BOSS_SPECTRO_REDUX'), $
     subdir=string(plate,format='(i4.4)')), count=ct))[0]
    if (ct EQ 0) then begin
       splog, 'File not found ' + filename

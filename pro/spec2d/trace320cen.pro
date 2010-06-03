@@ -6,7 +6,9 @@
 ;   Find the 320 fiber positions for the central row of an image.
 ;
 ; CALLING SEQUENCE:
-;   xfiber = trace320cen( fimage, [mthresh=, ystart=, nmed=, xgood= ] )
+;   xfiber = trace320cen( fimage, [mthresh=, ystart=, nmed=, xgood=, $
+;          bundlebreakrange=, nextpeakrange=, bundlegap=,
+;          numberFibersPerSide=, deltax=, mthreshfactor= ] )
 ;
 ; INPUTS:
 ;   fimage     - Image
@@ -16,7 +18,16 @@
 ;                times the dispersion (found with djs_iterstat).
 ;   ystart     - Y position in image to search for initial X centers; default
 ;                to the central row
-;   nmed       - Number of rows to median filter around YSTART; default to 21
+;   nmed       - Number of rows to median filter around YSTART;
+;                default to 21
+;   bundlebreakrange - range in which the bundle break is expected in
+;                      units of deltax
+;   nextpeakrange - range in which the next peak is expected in
+;                      units of deltax
+;   bundlegap   - approximate gap between bundles
+;   numberFibersPerSide - default 320 if not set
+;   deltax      - the expected spacing between fibers in pixel units
+;   mtheshfactor      - noise factor for getting lines
 ;
 ; OUTPUTS:
 ;   xfiber     - Vector of 320 X centers
@@ -36,7 +47,12 @@
 ;-
 ;------------------------------------------------------------------------------
 function trace320cen, fimage, mthresh=mthresh, ystart=ystart, nmed=nmed, $
- xgood=xgood
+ xgood=xgood, bundlebreakreange=bundlebreakrange, nextpeakrange=nextpeakrange, $
+bundlegap=bundlegap, numberFibersPerSide=nfiber, deltax=deltax, mthreshfactor=mthreshfactor
+
+  if (NOT keyword_set(bundlebreakrange)) then bundlebreakrange=[1,1.6]
+  if (NOT keyword_set(nextpeakrange)) then nextpeakrange=[0.35,0.25]
+  if (NOT keyword_set(bundlegap)) then bundlegap=0.28
 
    ; Need 1 parameter
    if (N_params() LT 1) then begin
@@ -49,11 +65,11 @@ function trace320cen, fimage, mthresh=mthresh, ystart=ystart, nmed=nmed, $
    if (NOT keyword_set(ystart)) then ystart = ny/2
    if (NOT keyword_set(nmed)) then nmed = 21
 
-   nfiber = 320     ; Number of fibers per side
+  if (NOT keyword_set(nfiber)) then nfiber = 320     ; Number of fibers per side
    npbundle = 20    ; Number of fibers per bundle
    nbun = nfiber / npbundle   ; Number of bundles
-   deltax = 6.25
-
+   if (NOT keyword_set(deltax)) then deltax = 6.25
+   
    ; Make a sub-image copy of the image and error map
    ylo = ystart - (nmed-1)/2 > 0
    yhi = ystart + (nmed-1)/2 < ny-1
@@ -74,9 +90,10 @@ function trace320cen, fimage, mthresh=mthresh, ystart=ystart, nmed=nmed, $
    conrow = convol(imrow, kern)
 
    ; Set threshold based upon the dispersion in the filtered row
+   if (NOT keyword_set(mthreshfactor)) then mthreshfactor=0.5
    if (NOT keyword_set(mthresh)) then begin
       djs_iterstat, imrow, sigma=sig
-      mthresh = 0.5 * sig
+      mthresh = mthreshfactor * sig
    endif
 
    ; Find all local peaks that are also above MTHRESH in the convolved row
@@ -101,7 +118,7 @@ function trace320cen, fimage, mthresh=mthresh, ystart=ystart, nmed=nmed, $
          dx = min(xpeak[k] - xfiber[j-1], i)
          if (dx GT 0.75*deltax AND dx LT 1.20 * deltax) then begin
             xfiber[j] = xpeak[k[i]]
-         endif else if (dx GT 1.0 * deltax AND dx LT 1.6 * deltax) then begin
+         endif else if (dx GT bundlebreakrange[0] * deltax AND dx LT bundlebreakrange[1] * deltax) then begin
             ; Try to find break between bundles of 20 by looking
             ; from [1,1.6]*deltax after last center
             xfiber[j] = xpeak[k[i]]
@@ -117,10 +134,28 @@ function trace320cen, fimage, mthresh=mthresh, ystart=ystart, nmed=nmed, $
 
    ; Assume that we may have either missing or extra fibers in the beginning.
    ; Find where this first fiber should be relative to the bundle gaps.
-   ffiber = fix( median( (ibiggap[0:nbiggap-1]+20) MOD 20 ) )
-   if (ffiber LE 10) then xcen = xfiber[ffiber] $ ; up to 10 bogus peaks
-    else xcen = xfiber[0] - (20-ffiber) * deltax ; missing up to 10 fibers
-
+  ;; ffiber = fix( median( (ibiggap[0:nbiggap-1]+20) MOD 20 ) )
+   ;this identifies the last fiber before a gap
+  gaps = shift(xfiber,-1)-xfiber
+  gaps=gaps[0:n_elements(gaps)-2]
+  normgaps=gaps/deltax
+  bundlegap=median(normgaps(where(normgaps gt 2.2 and normgaps lt 3.8)))
+  ffiber=min(where(abs(normgaps-bundlegap) lt 0.1))
+   if (ffiber LE 10) then begin
+      xcen = xfiber[ffiber]; up to 10 bogus peaks
+      endif  else begin
+      ;;trying a robust determination of the location of the "first" fiber
+ ;used to be something wrong     xcen = xfiber[0] - (20-ffiber) * deltax ; missing up to 10 fibers
+        gaps = shift(xfiber,-1)-xfiber
+        gaps=gaps[0:ffiber]
+        w=where(gaps/deltax LT 1.5)
+        guessdeltax=median(gaps(w))
+       xcenGuess = xfiber[ffiber] - 19 * guessdeltax
+       xChoices=xfiber[0]+deltax*(findgen(41)-20)
+       dum2=min(abs(xChoices-xcenGuess),in)
+       xcen=xChoices[in]
+    endelse
+    
    ; Second iteration, where we insist upon the bundle gap positions
    xgood = lonarr(nfiber)
    for ibun=0, nbun-1 do begin
@@ -130,8 +165,8 @@ function trace320cen, fimage, mthresh=mthresh, ystart=ystart, nmed=nmed, $
          dx = min(abs(xpeak - xcen), i)
          ; Be more lenient about finding the next peak where it should be
          ; if we are at a big gap.
-         if ((jbun EQ 0 AND dx LT 0.35 * deltax) OR $
-             (jbun NE 0 AND dx LT 0.25 * deltax)) then begin
+         if ((jbun EQ 0 AND dx LT nextpeakrange[0] * deltax) OR $
+             (jbun NE 0 AND dx LT nextpeakrange[1] * deltax)) then begin
             xfiber[n] = xpeak[i]
             xgood[n] = 1
          endif else begin
@@ -141,7 +176,7 @@ function trace320cen, fimage, mthresh=mthresh, ystart=ystart, nmed=nmed, $
 
          xcen = xfiber[n] + deltax
       endfor
-      xcen = xcen + 0.28 * deltax ; Add approximate bundle gap
+      xcen = xcen + bundlegap * deltax ; Add approximate bundle gap
    endfor
 
 ;plot,imrow,xr=[0,300],yr=[-50,50],/xst

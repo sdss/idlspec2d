@@ -126,7 +126,7 @@ function spflux_read_kurucz, loglam, dispimg, iselect=iselect1, $
       gridlam = kloglam ; Keep the same wavelength mapping
       gridflux = fltarr(npix, nres, nmodel)
       for ires=0L, nres-1 do begin
-         print, format='("Grid ",i5," of ",i5,a1,$)', ires, nres, string(13b)
+;         print, format='("Grid ",i5," of ",i5,a1,$)', ires, nres, string(13b)
          kern = exp(-0.5 * (findgen(nkpix*2+1) - nkpix)^2 $
           / (gridsig[ires]*subsamp)^2)
          kern = kern / total(kern)

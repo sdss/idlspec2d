@@ -1,4 +1,3 @@
-;+
 ; NAME:
 ;   fitarcimage
 ;
@@ -7,10 +6,10 @@
 ;
 ; CALLING SEQUENCE:
 ;   fitarcimage, arc, arcivar, xcen, ycen, wset, [wfirst=, $
-;    color=color, lampfile=lampfile, fibermask=fibermask, $
-;    func=func, aset=aset, ncoeff=ncoeff, lambda=lambda, $
-;    thresh=thresh, row=row, nmed=nmed, /gauss, $
-;    xdif_tset=xdif_tset, bestcorr=bestcorr ]
+;    color=, lampfile=, fibermask=, func=, aset=, ncoeff=, $
+;    thresh=, row=, nmed=, maxdev=, /gauss, wrange=, $
+;    lambda=, rejline=,  xdif_tset=, $
+;    bestcorr=, _EXTRA=KeywordsForArcfit_guess
 ;
 ; INPUTS:
 ;   arc        - Extracted arc spectra with dimensions [NY,NFIBER]
@@ -29,15 +28,14 @@
 ;   thresh     - Threshhold counts for significant lines;
 ;                default to 200 if COLOR='blue' or 500 if COLOR='red'
 ;   row        - Row to use in initial guess of wavelength solution;
-;                default to (NFIBER-30)/2
+;                default to NFIBER/2
 ;   nmed       - Number of rows around ROW to median filter for initial
 ;                wavelengths solution; default to 5
-;   maxdev     - max deviation in log lambda to allow (default 1.0e-5=7 km/s)
+;   maxdev     - max deviation in log lambda to allow (default 2d-5=13.8 km/s)
 ;   gauss      - Use gaussian profile fitting for final centroid fit
-;   dofirst    - Skip all the steps which require decent data. This is 
-;                only for engineering purposes, when you might want an
-;                approximate solution, regardless of how strange the
-;                data are.
+;   wrange     - Wavelength range [Ang vacuum] for searching for arc lines and
+;                for issuing warnings about big wavelength gaps in solution
+;   _EXTRA     - Keywords for ARCFIT_GUESS, specifically ACOEFF,DCOEFF
 ;
 ; OUTPUTS:
 ;   aset       - (Modified)
@@ -48,6 +46,7 @@
 ; OPTIONAL OUTPUTS:
 ;   lampfile   - Modified from input to include full path name of file
 ;   lambda     - Returns wavelengths of good lamp lines [Angstroms]
+;   rejline    - String set to non-zero for any rejected arc lines
 ;   fibermask  - (Modified)
 ;   xdif_tset  - Fit residual of lamp lines to fit positions [pixels]
 ;   bestcorr   - Correlation coefficient with simulated arc spectrum
@@ -88,12 +87,26 @@
 ;   20-Jan-2000  Gone back to very simple procedure: replacement (S. Burles)
 ;-
 ;------------------------------------------------------------------------------
+function fitarc_maskbadfib, wset, outmask
+   maxline = max( total(outmask,1) ) ; max number of good arc lines in 1 fiber
+   ibadfib = where( total(outmask,1) LT 0.70 * maxline, nbadfib)
+   if (nbadfib GT 0) then begin
+      for i=0L, nbadfib-1L do $
+       splog, 'Replacing all centroids in fiber ', ibadfib[i]
+      imask = lonarr(size(wset.coeff,/dimens))
+      imask[*,ibadfib] = 1
+      wset.coeff = djs_maskinterp(wset.coeff, imask, iaxis=1, /const)
+   endif
 
+   return, wset
+end
+;------------------------------------------------------------------------------
 pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
  color=color, lampfile=lampfile, fibermask=fibermask, $
- func=func, aset=aset, ncoeff=ncoeff, lambda=lambda, thresh=thresh, $
- row=row, nmed=nmed, xdif_tset=xdif_tset, bestcorr=bestcorr, $
- gauss=gauss, maxdev=maxdev,dofirst=dofirst
+ func=func, aset=aset, ncoeff=ncoeff, thresh=thresh, $
+ row=row, nmed=nmed, maxdev=maxdev, gauss=gauss, wrange=wrange, $
+ lambda=lambda, rejline=rejline, $
+ xdif_tset=xdif_tset, bestcorr=bestcorr, _EXTRA=KeywordsForArcfit_guess
 
    ;---------------------------------------------------------------------------
    ; Preliminary stuff
@@ -105,7 +118,8 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    endif
    if (NOT keyword_set(func)) then func = 'legendre'
    if (NOT keyword_set(ans)) then ans = 0
-   if NOT keyword_set(maxdev) then maxdev = 1.0d-5
+   if NOT keyword_set(maxdev) then maxdev = 2.0d-5
+   minlamp = 6 ; Minimum number of lamp lines
 
    t_begin = systime(1)
 
@@ -128,6 +142,7 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    endif
 
    if (NOT keyword_set(ncoeff)) then ncoeff = 5
+   splog, 'Setting ncoeff= ', ncoeff
 
    ;---------------------------------------------------------------------------
    ; Read LAMPLIST file for wavelength calibration
@@ -179,7 +194,7 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
       end
 
       aset = arcfit_guess( spec, lamps.loglam, lamps.intensity, color=color, $
-       bestcorr=bestcorr )
+       bestcorr=bestcorr, _EXTRA=KeywordsForArcfit_guess)
 
       splog, 'Best correlation = ', bestcorr
       splog, 'ASET = ', aset.coeff, format='(a,99f9.5)'
@@ -192,7 +207,10 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    ; and denoted as good in the LAMPS structure.
 
    xstart = traceset2pix(aset, lamps.loglam)
-   qtrim = xstart GT 1 AND xstart LT npix-2 AND lamps.good
+   qtrim = xstart GT 0 AND xstart LT npix-2 AND lamps.good
+   if (keyword_set(wrange)) then $
+    qtrim = qtrim AND lamps.loglam GT alog10(wrange[0]) $
+     AND lamps.loglam LT alog10(wrange[1])
    itrim = where(qtrim, ct)
    if (ct EQ 0) then $
     message, 'No arc lines in wavelength range'
@@ -206,14 +224,15 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    ; Allow for a shift of up to 2 pixels in the initial centers,
    ; but only 0.5 pixels while tracing
 
-   splog, 'Tracing', N_elements(lamps), ' arc lines'
-   xcen = trace_crude(arc, yset=ycen, nave=1, nmed=1, xstart=xstart, $
+   nlamp = n_elements(lamps)
+   splog, 'Tracing', nlamp, ' arc lines'
+   xcen = trace_crude(arc, arcivar, yset=ycen, nave=1, nmed=1, xstart=xstart, $
     ystart=row, maxshifte=0.5d, maxshift0=2.0d)
 
    ; Now fit traceset to trace_crude, this will "interpolate" or bad fibers
    ; as well as extend trace off CCD if need be.
 
-   xy2traceset, ycen, xcen, crudeset, yfit=xcrudefit
+   xy2traceset, ycen, xcen, crudeset, yfit=xcrudefit, ncoeff=ncoeff
 
    ; Iterate the flux-weighted centers
    ; In the last iteration, use the formal errors in the arc image
@@ -236,9 +255,8 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    ;  xdiff is used to determine whether a trace has converged
    xdiff = xcen - xmid
 
-   ;---------------------------------------------------------------------------
-   ; Reject bad (i.e., saturated) lines
-   ;---------------------------------------------------------------------------
+   ;----------
+   ; Reject bad lines that are saturated or very noisy
 
    ; Reject any arc line with more than 10% of the "good" fibers have bad arcs.
    ; Bad fibers are any with an infinite error (ARCIVAR=0) within 1 pixel
@@ -247,7 +265,7 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
 
    nmatch = N_elements(xstart) ; Number of lamp lines traced
    igfiber = where(fibermask EQ 0, ngfiber) ; Number of good fibers
-   qgood = bytarr(nmatch)
+   rejline = strarr(nlamp)
 
    for i=0, nmatch-1 do begin
       xpix = round(xcen[*,i]) ; Nearest X position (wavelength) in all traces
@@ -257,100 +275,138 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
       endfor
       junk = where(mivar EQ 0, nbad)
       fracbad = float(nbad) / ngfiber
-      qgood[i] = fracbad LE 0.10
-      if (qgood[i] EQ 0) then $
-       splog, 'Discarding trace', i, ' at ', lamps[i].lambda, $
-        ' Ang: FRACBAD=', fracbad
-
-      djs_iterstat, xdiff[*,i], sigma=sigma
-      if sigma GT 0.2 then begin
-       qgood[i] = 0
-       splog, 'Discarding trace', i, ', at ', lamps[i].lambda, $
-        ' Ang: RMS=', sigma, ' pix'
+      if (fracbad GT 0.10) then begin
+         rejline[i] = 'Reject-fracbad'
+         splog, 'Discarding line', i, ' at ', lamps[i].lambda, $
+          ' Ang: FRACBAD=', fracbad
       endif
 
+      djs_iterstat, xdiff[*,i], sigma=sigma
+      if (sigma GT 0.2) then begin
+         rejline[i] = 'Reject-RMS'
+         splog, 'Discarding line', i, ', at ', lamps[i].lambda, $
+          ' Ang: RMS=', sigma, ' pix'
+      endif
    endfor
 
-   ; Trim linelist
-
-   igood = where(qgood, ngood)
-   splog, 'Number of good arc lines: ', ngood
-   if (ngood LT 6) then begin
-      splog, 'WARNING: Reject arc. Number of arclines  = ', ngood
+   igood = where(rejline EQ '', ngood)
+   splog, 'Number of arc lines: ', ngood
+   if (ngood LT minlamp) then begin
+      splog, 'WARNING: Reject arc image too few lines'
       wset = 0
       return
-   endif else begin
-      splog, 'Number of arclines  = ', ngood
-   endelse
+   endif
 
-   xcen = xcen[*,igood]
-   ycen = ycen[*,igood]
-   lamps = lamps[igood]
-   xerr = xerr[*,igood]
+   ; Trim linelist
+;   xcen = xcen[*,igood]
+;   ycen = ycen[*,igood]
+;   lamps = lamps[igood]
+;   xerr = xerr[*,igood]
 
-   ;---------------------------------------------------------------------
+   ;----------
    ; Mask all bad centers
 
    ; Mask all centers with xerr = 999.0 (from trace_fweight)
 
-   xmask = (xerr LT 990)
+   inmask = (xerr LT 990)
 
-   ;---------------------------------------------------------------------------
-   ; Do the first traceset fit
-   ;---------------------------------------------------------------------------
-
-   nlamp = N_elements(lamps)
    if (nlamp EQ 1) then ytmp = transpose(lamps.loglam * (dblarr(nfiber)+1)) $
     else ytmp = lamps.loglam # (dblarr(nfiber)+1)
-   xy2traceset, transpose(double(xcen)), ytmp, $
-     wfirst, invvar=transpose(xmask), func=func, ncoeff=ncoeff, $
-     maxdev=maxdev, maxiter=nlamp, maxrej=1, /sticky, $
-     outmask=xfitmask, xmin=0, xmax=npix-1, yfit=yfit
-
-   print, 'Pass 1 complete'
-
-   xmask = xmask AND transpose(xfitmask)
-
-   if keyword_set(dofirst) then begin
-      wset = wfirst
-      return
-   end
 
    ;------------------------------------------------------------------------
-   ; Select good lines with the <=3 bad per bundle test
-   ;------------------------------------------------------------------------
+   ; Iterate the fit, rejecting the worst-fit line each time
 
-   ; The following logic means that an arc line is rejected if any bundle
-   ; has more than 3 bad centers (not including bad fibers in FIBERMASK).
+   iiter = 0
+   while (iiter LT nlamp) do begin
+      splog, 'Iteration ', iiter
+      xy2traceset, transpose(double(xcen)), ytmp, wset, $
+       func=func, ncoeff=ncoeff, maxiter=nlamp, maxrej=nlamp, maxdev=maxdev, $
+       xmin=0, xmax=npix-1, $
+       inmask=transpose(inmask)*rebin(rejline EQ '',nlamp,nfiber), $
+       outmask=outmask, yfit=yfit
+      ydiff = ytmp - yfit
 
-   badfibers = where(fibermask GT 0)
-   testg = transpose(xmask)
-   if (badfibers[0] NE -1) then testg[*,badfibers] = 1
+      if (total(outmask) EQ 0) then begin
+         splog, 'WARNING: All centroids rejected'
+         wset = 0
+         return
+      endif
 
-   if (nfiber NE 320) then $
-    message, 'Not 320 fibers -- Cannot figure out bundle test'
-   testg = reform(testg, nlamp, 20, 16)
-   gind = where(total(total(testg EQ 0,2) GT 3, 2) EQ 0, nlamp)
-   bind = where(total(total(testg EQ 0,2) GT 3, 2) NE 0)
-   if (nlamp LT 6) then begin
-      splog, 'WARNING: Reject arc. Number of arclines after bundle test = ', nlamp
+      ; For each lamp, compute median offset, RMS, and slope
+      offsets = fltarr(nlamp)
+      badper = lonarr(nlamp)
+      for i=0, nlamp-1 do begin
+         indx = where(outmask[i,*], ct)
+         if (ct GT 2) then begin
+            djs_iterstat, ydiff[i,indx], median=med1, sigma=sig1
+            res1 = polyfitw(findgen(nfiber), ydiff[i,*], outmask[i,*], $
+             2, yfit1)
+            offsets[i] = sig1 > abs(med1) > abs(max(yfit1))
+            ; For each lamp, compute max # of bad fibers per bundle
+            badper[i] = max(total(reform(1L-outmask[i,*], 20, nfiber/20),1))
+         endif else begin
+            yfit1 = 0
+            rejline[i] = 'Reject-offset'
+            badper[i] = 20
+         endelse
+      endfor
+
+      ; Preferentially mask any lines with any bundles of more than 5 bad,
+      ; then after that mask any lines with bad deviations
+      thismax = max(offsets*(rejline EQ '') $
+       + ((badper-5)>0)*(rejline EQ ''), iworst)
+      if (thismax GT maxdev) then begin
+         splog, 'Rejecting line at ', 10d0^lamps[iworst].loglam, ' Ang ' $
+          + rejline[iworst]
+         rejline[iworst] = 'Reject'
+         iiter++
+      endif else begin
+         splog, 'Iterations done'
+         iiter = nlamp
+      endelse
+   endwhile
+
+   ; Replace all centroids in any bad fibers
+; Should this be in the loop above ???
+   wset = fitarc_maskbadfib(wset, outmask)
+
+   if (total(rejline EQ '') LT minlamp) then begin
+      splog, 'WARNING: Reject arc image too few lines'
       wset = 0
       return
-   endif else begin
-      splog, 'Number of arclines after bundle test = ', nlamp
-   endelse
-
-   if bind[0] NE -1 then begin
-       splog, ' # Lambda                   Bundles           ', /noname
-       for jj=0,n_elements(bind)-1 do $
-       splog, bind[jj], lamps[bind[jj]].lambda, (total(testg EQ 0,2))[bind[jj],*], $
-           format='(i2,f8.2,16i3)', /noname
    endif
 
-   xcen = xcen[*,gind]
-   xmask = xmask[*,gind]
-   ycen = ycen[*,gind]
-   lamps = lamps[gind]
+   ;----------
+   ; Replace the higher-order coeff terms with polynomial (cubic) fits of those
+   ; coefficients over fiber numbers
+   ; The first 3 terms are fit fiber-by-fiber, the others other smoothed.
+
+   if (ncoeff GT 3) then csmooth = lindgen(ncoeff-3) + 3
+   if (keyword_set(csmooth)) then begin
+      wset_tmp = wset
+      for i=0, n_elements(csmooth)-1 do begin
+         poly_iter, lindgen(nfiber), wset_tmp.coeff[csmooth[i],*], 3, 3.0, $
+          ycoeff1
+         wset_tmp.coeff[csmooth[i],*] = ycoeff1
+      endfor
+      wset_tmp2 = wset_tmp
+      wset_tmp2.coeff[csmooth,*] = 0
+      ; Compute the offsets from only the (smoothed) higher-order terms
+      xoffset = traceset2pix(wset_tmp, alog10(lamps.lambda)) $
+       - traceset2pix(wset_tmp2, alog10(lamps.lambda))
+      ; Re-fit, subtracting off those higher-order terms first
+      xy2traceset, transpose(double(xcen)) - xoffset, ytmp, wset_lo, $
+       func=func, ncoeff=3, maxiter=0, xmin=0, xmax=npix-1, $
+       inmask=outmask, yfit=yfit
+      wset.coeff[3:ncoeff-1,*] = wset_tmp.coeff[3:ncoeff-1,*]
+      wset.coeff[0:2,*] = wset_lo.coeff[0:2,*]
+   endif
+
+   for i=0, nlamp-1 do $
+    splog, 'Line ', i, lamps[i].lambda, offsets[i], ' '+rejline[i]
+
+   ; Replace all centroids in any bad fibers
+   wset = fitarc_maskbadfib(wset, outmask)
 
    ;----------
    ; Look for large gaps before the first arc line, between any consecutive
@@ -360,85 +416,38 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    ; and LOGWMAX will be switched if wavelengths are descending; that's
    ; why I sort that list.
 
-   traceset2xy, wfirst, xtmp, ytmp
-   logwmin = median(ytmp[0,*])
-   logwmax = median(ytmp[npix-1,*])
-   logwlist = [logwmin, alog10(lamps.lambda), logwmax]
+   traceset2xy, wset, xx, yy
+   indx = where(arcivar GT 0)
+   logwmin = min(yy[indx], max=logwmax)
+   if (keyword_set(wrange)) then begin
+      logwmin = logwmin > alog10(wrange[0])
+      logwmax = logwmax < alog10(wrange[1])
+   endif
+   logwlist = [logwmin, alog10(lamps[where(rejline EQ '')].lambda), logwmax]
    logwlist = logwlist[sort(logwlist)]
-   logwdiff = logwlist[1:nlamp+1] - logwlist[0:nlamp] ; Allow for endpoints.
+   n = n_elements(logwlist)
+   logwdiff = logwlist[1:n-1] - logwlist[0:n-2] ; Allow for endpoints.
 
    for i=0, N_elements(logwdiff)-1 do begin
       if (logwdiff[i] GT 0.10) then begin
          ; Abort for gaps as large as [4000,5035] or [8000,10071] Angstroms.
          splog, 'WARNING: Reject arc. Big wavelength gap from ', 10^logwlist[i], $
-          ' to ', 10^logwlist[i+1], ' Ang (LAMPS NOT WARM?)'
+          ' to ', 10^logwlist[i+1], ' Ang'
          wset = 0
          return
-      endif else if (logwdiff[i] GT 0.04) then begin
-         ; Warning for gaps as large as [4000,4386] or [8000,8771] Angstroms.
+      endif else if (logwdiff[i] GT 0.05) then begin
+         ; Warning for gaps as large as [3650,4095] or [8000,8976] Angstroms.
          splog, 'WARNING: Big wavelength gap from ', 10^logwlist[i], $
-          ' to ', 10^logwlist[i+1], ' Ang (LAMPS NOT WARM?)'
+          ' to ', 10^logwlist[i+1], ' Ang'
       endif
    endfor
 
-   ;---------------------------------------------------------------------------
-   ;  Now look to replace pixels masked 
-   ;---------------------------------------------------------------------------
-
-   ;--------------------------------------------------------------------
-   ;  If more than half the lines are masked, than don't use shift
-
-   xy2traceset, ycen, xcen, meanset, yfit=meanfit, invvar=xmask
-
-   meandiff = xcen - meanfit
-   badcount = total(xmask EQ 0, 2)
-   maxbad = nlamp/4
-
-   fixthese = where(badcount GT 0 AND badcount LT maxbad, nfix)
-   splog, 'Fixing centroids in '+string(nfix)+' fibers'
-   splog, fixthese
-
-   replacethese = where(badcount GE maxbad, nreplace) 
-   splog, 'Replacing all centroids in '+string(nreplace)+' fibers'
-   splog, replacethese
-
-   if (fixthese[0] NE -1) then begin
-     xy2traceset, transpose(xcen[fixthese,*]), transpose(meandiff[fixthese,*]),$
-      diffset, ncoeff=2, invvar=transpose(xmask[fixthese,*]), yfit=diffit, $
-      maxdev=0.1
-
-     ; Just replace masked centroids here, with linear fit above
-
-     badmask = where(xmask[fixthese,*] EQ 0)
-     xcentemp = xcen[fixthese,*]
-     xcentemp[badmask] = $
-             (meanfit[fixthese,*])[badmask] + (transpose(diffit))[badmask]
-     xcen[fixthese,*] = xcentemp
-
+   ; Specifically test for the Cd 3610 line (ticket #641)
+   if (color EQ 'blue') then begin
+      junk = where( abs(lamps[where(rejline EQ '')].lambda - 3610.5) LT 2, ct)
+      if (ct EQ 0) then $
+       splog, 'WARNING: Cd I 3610 line missing (lamps not warm?)'
    endif
-
-   if (replacethese[0] NE -1) then begin
-     fibermask[replacethese] = fibermask[replacethese] OR $
-            fibermask_bits('BADARC')
-
-     ; Replace the entire fiber with fit, definitely biases wavelength
-     xcen[replacethese,*] = meanfit[replacethese,*]
-   endif
-
-   ;--------------------------------------------------------------------------
-   ;  Now do final traceset fit
-   ;--------------------------------------------------------------------------
-
-   if (nlamp EQ 1) then ytmp = transpose(lamps.loglam * (dblarr(nfiber)+1)) $
-    else ytmp = lamps.loglam # (dblarr(nfiber)+1)
-   xy2traceset, transpose(double(xcen)), ytmp, $
-    wset, func=func, ncoeff=ncoeff, $
-    maxiter=nlamp, maxrej=1, /sticky, $
-    xmin=0, xmax=npix-1, yfit=yfit
-
-   print, 'Final arcfit complete'
-
-   xmeasured = xcen
 
    ;---------------------------------------------------------------------------
    ; Quality Assurance
@@ -448,8 +457,8 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
 
    tset_pix = transpose( traceset2pix(wset, lamps.loglam) )
 
-   xdif_tset = (xmeasured-tset_pix)  ; difference between measured line
-                                     ; positions and fit positions
+   xdif_tset = xcen - tset_pix  ; difference between measured line
+                                ; positions and fit positions
 
    splog, 'Time ',systime(1)-t_begin, ' seconds elapsed', $
     format='(A,F6.0,A)'
@@ -457,7 +466,7 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    lampfile = lampfilename ; Return the name of the lampfile used.
    lambda = lamps.lambda
 
-   ; Replace the "measured" arc line positions (XNEW) with the fit positions
+   ; Replace the "measured" arc line positions with the fit positions
    ; Do this so that the sky-line fitting will use those fit positions for
    ; the arc lines
    xcen = tset_pix

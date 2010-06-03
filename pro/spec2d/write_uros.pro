@@ -69,10 +69,10 @@
 ; BUGS:
 ;
 ; DATA FILES:
-;   $SPECTRO_DATA/$PLATE/spFrame-$CAMERA-$EXPNUM.fits*
-;   $SPECTRO_DATA/$PLATE/spFluxcalib-$PLATE-$MJD-$CAMERA.fits
-;   $SPECTRO_DATA/$PLATE/spFluxcorr-$EXPNUM-$SPECID.fits
-;   $SPECTRO_DATA/$PLATE/spPlate-$PLATE-$MJD.fits
+;   $BOSS_SPECTRO_REDUX/$PLATE/spFrame-$CAMERA-$EXPNUM.fits*
+;   $BOSS_SPECTRO_REDUX/$PLATE/spFluxcalib-$PLATE-$MJD-$CAMERA.fits
+;   $BOSS_SPECTRO_REDUX/$PLATE/spFluxcorr-$EXPNUM-$SPECID.fits
+;   $BOSS_SPECTRO_REDUX/$PLATE/spPlate-$PLATE-$MJD.fits
 ;
 ; PROCEDURES CALLED:
 ;   bspline_valu()
@@ -93,9 +93,9 @@
 ;------------------------------------------------------------------------------
 pro write_uros1, plate, fiber, mjd=mjd
 
-   topdir = getenv('SPECTRO_DATA')
+   topdir = getenv('BOSS_SPECTRO_REDUX')
    if (NOT keyword_set(topdir)) then $
-    message, 'Environment variable SPECTRO_DATA must be set!'
+    message, 'Environment variable BOSS_SPECTRO_REDUX must be set!'
 
    if (fiber LE 320) then specid = 1 $
     else specid = 2

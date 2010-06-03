@@ -6,9 +6,9 @@
 ;   Extract, wavelength-calibrate, and flatten SDSS spectral frame(s).
 ;
 ; CALLING SEQUENCE:
-;   spreduce, flatname, arcname, objname, $
+;   spreduce, flatname, arcname, objname, [ run2d=, $
 ;    plugfile=, lampfile=, indir=, plugdir=, outdir=, $
-;    ecalibfile=, plottitle=, summarystruct=, /do_telluric
+;    ecalibfile=, plottitle=, /do_telluric, writeflatmodel= ]
 ;
 ; INPUTS:
 ;   flatname   - Name(s) of flat-field SDSS image(s)
@@ -19,6 +19,7 @@
 ;   plugfile   - Name of plugmap file (Yanny parameter file)
 ;
 ; OPTIONAL KEYWORDS:
+;   run2d      - 2D reduction name, to include in output headers
 ;   lampfile   - Name of file describing arc lamp lines;
 ;                default to the file 'lamphgcdne.dat' in $IDLSPEC2D_DIR/etc.
 ;   indir      - Input directory for FLATNAME, ARCNAME, OBJNAME;
@@ -27,8 +28,11 @@
 ;   outdir     - Directory for output files; default to '.'
 ;   ecalibfile - opECalib.par file for SDSSPROC
 ;   plottitle  - Prefix for titles in QA plots.
-;   summarystruct - Good intentions ???
 ;   do_telluric- Passed to EXTRACT_OBJECT
+;   writeflatmodel - passed to SPCALIB to write out flat image
+;                    model info to file
+;   writearcmodel  - passed to SPCALIB to write out arc image
+;                    model info to file
 ;
 ; OUTPUTS:
 ;
@@ -63,13 +67,14 @@
 ;
 ; REVISION HISTORY:
 ;   12-Oct-1999  Written by D. Schlegel & S. Burles, APO
+;      Apr-2010  Added "write[flat,arc]model" pass-through (A. Bolton, Utah)
 ;-
 ;------------------------------------------------------------------------------
-pro spreduce, flatname, arcname, objname, $
+pro spreduce, flatname, arcname, objname, run2d=run2d, $
  plugfile=plugfile, lampfile=lampfile, $
  indir=indir, plugdir=plugdir, outdir=outdir, $
- ecalibfile=ecalibfile, plottitle=plottitle, summarystruct=summarystruct, $
- do_telluric=do_telluric
+ ecalibfile=ecalibfile, plottitle=plottitle, do_telluric=do_telluric, $
+ writeflatmodel=writeflatmodel, writearcmodel=writearcmodel
 
    if (NOT keyword_set(indir)) then indir = '.'
    if (NOT keyword_set(plugdir)) then plugdir=indir
@@ -100,21 +105,17 @@ pro spreduce, flatname, arcname, objname, $
 
    ;---------------------------------------------------------------------------
    ; Read PLUGMAP file and sort
+   ; Look for photoPlate file in directory OUTDIR
    ;---------------------------------------------------------------------------
- 
-   plugmap = readplugmap(plugfile, plugdir=plugdir, $
-    exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrplug, /calibobj)
+
+   plugmap = readplugmap(plugfile, spectrographid, $
+    plugdir=plugdir, /calibobj, mjd=sxpar(objhdr,'MJD'), indir=outdir, $
+    exptime=sxpar(objhdr,'EXPTIME'), hdr=hdrplug, fibermask=fibermask)
    if (NOT keyword_set(plugmap)) then begin
       splog, 'ABORT: Plug map not found ' $
        + djs_filepath(plugfile, root_dir=plugdir)
       return
    endif
-
-   ;-------------------------------------------------------------------------
-   ; Plugsort will also return a mask of unplugged fibers
-   ;-------------------------------------------------------------------------
-
-   plugsort = sortplugmap(plugmap, spectrographid, fibermask=fibermask)
  
    ;---------------------------------------------------------------------------
    ; REDUCE CALIBRATION FRAMES
@@ -134,7 +135,8 @@ pro spreduce, flatname, arcname, objname, $
     lampfile=lampfile, indir=indir, $
     ecalibfile=ecalibfile, plottitle=plottitle, $
     flatinfoname=flatinfoname, arcinfoname=arcinfoname, $
-    arcstruct=arcstruct, flatstruct=flatstruct
+    arcstruct=arcstruct, flatstruct=flatstruct, $
+    writeflatmodel=writeflatmodel, writearcmodel=writearcmodel
 
    ;----------
    ; Find the mid-point in time for all of the science observations
@@ -191,6 +193,7 @@ pro spreduce, flatname, arcname, objname, $
    dispset = *(bestarc.dispset)
 
    qaplot_arcline, *(bestarc.xdif_tset), wset, lambda, $
+    rejline=*(bestarc.rejline), $
     color=color, title=plottitle+' Arcline Fit for '+bestarc.name
 
    ;---------------------------------------------------------------------------
@@ -210,12 +213,14 @@ pro spreduce, flatname, arcname, objname, $
       sdssproc, objname[iobj], image, invvar, indir=indir, hdr=objhdr, $
        /applybias, /applypixflat, spectrographid=spectrographid, color=color, $
        ecalibfile=ecalibfile, minflat=0.8, maxflat=1.2, $
-       nsatrow=nsatrow, fbadpix=fbadpix
+       nsatrow=nsatrow, fbadpix=fbadpix,/applycrosstalk
 
       ;-----
       ; Decide if this science exposure is bad
 
       qbadsci = reject_science(image, objhdr, nsatrow=nsatrow, fbadpix=fbadpix)
+
+      sxaddpar, objhdr, 'RUN2D', run2d, ' Spectro-2D reduction name'
 
       ; In case TAI-BEG,TAI-END were missing from the header, add them in.
       get_tai, objhdr, tai_beg, tai_mid, tai_end
@@ -223,8 +228,10 @@ pro spreduce, flatname, arcname, objname, $
       sxaddpar, objhdr, 'TAI-END', tai_end
 
       sxaddpar, objhdr, 'FRAMESN2', 0.0
+      sxaddpar, objhdr, 'TILEID', long(yanny_par(hdrplug, 'tileId')), $
+       'Cartridge used in this plugging', after='PLATEID'
       sxaddpar, objhdr, 'CARTID', long(yanny_par(hdrplug, 'cartridgeId')), $
-       'Cartridge used in this plugging', after='TILEID'
+       'Cartridge used in this plugging', after='PLATEID'
 
       if (qbadsci) then begin
 
@@ -277,7 +284,7 @@ pro spreduce, flatname, arcname, objname, $
          ;-----
          ; Extract the object frame
 
-         extract_object, outname, objhdr, image, invvar, plugsort, wset, $
+         extract_object, outname, objhdr, image, invvar, plugmap, wset, $
           xpeak, lambda, xsol, fflat, fibermask, color=color, $
           proftype=proftype, superflatset=superflatset, $
           widthset=widthset, dispset=dispset, skylinefile=fullskyfile, $

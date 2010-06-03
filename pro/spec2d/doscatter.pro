@@ -31,7 +31,8 @@
 
 function doscatter, camera, image, ivar, wset, mjd=mjd, $
                     bandrows=bandrows, params=params, sigma=sigma, $
-                    configfile=configfile, configdir=configdir
+                    configfile=configfile, configdir=configdir, $
+                    maxkernr=maxkernr, addrows=addrows
 
     if not keyword_set(sigma) then sigma = 0.9
 
@@ -84,13 +85,13 @@ function doscatter, camera, image, ivar, wset, mjd=mjd, $
 
     if color EQ 'r' then begin
        evalfunc = 'redhalo'
-       maxkernr = 256
-       addrows = 64
+       if (NOT keyword_set(maxkernr)) then maxkernr = 256
+       if (NOT keyword_set(addrows)) then addrows = 64
        bandrows = keyword_set(bandrows) ? bandrows : 8
     end else if color eq 'b' then begin
        evalfunc = 'bluescat'
-       maxkernr = 64
-       addrows = 32
+       if (NOT keyword_set(maxkernr)) then maxkernr = 64
+       if (NOT keyword_set(addrows)) then  addrows = 32
        bandrows = keyword_set(bandrows) ? bandrows : 4
     end else message, "unknown color, camera: ", color, camera
 

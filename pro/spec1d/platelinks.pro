@@ -12,7 +12,7 @@
 ;
 ; OPTIONAL INPUTS:
 ;   outdir      - Directory in which to build all links.  These links are
-;                 built to the files in $SPECTRO_DATA.
+;                 built to the files in $BOSS_SPECTRO_REDUX.
 ;   public      - If set with /PUBLIC, then build links to any files with
 ;                 anything in the PUBLIC field of the plate list.
 ;                 If set to a string, then select those plates that contain
@@ -42,7 +42,7 @@
 ;------------------------------------------------------------------------------
 pro platelinks, outdir, public=public
 
-   indir = getenv('SPECTRO_DATA')
+   indir = getenv('BOSS_SPECTRO_REDUX')
    if (NOT keyword_set(outdir)) then begin
       splog, 'OUTDIR must be specified'
       return
@@ -85,8 +85,8 @@ pro platelinks, outdir, public=public
       junk = findfile(file1, count=ct)
       if (ct GT 0) then begin
          junk = fileandpath(file2, path=thisdir)
-         spawn, ['mkdir', '-p', thisdir], /noshell
-         spawn, ['ln', '-s', file1, file2], /noshell
+         spawn, ['mkdir', '-p', thisdir]
+         spawn, ['ln', '-s', file1, file2]
       endif
    endfor
 

@@ -21,7 +21,9 @@
 ;                for all objects [NPIX]
 ;
 ; OPTIONAL INPUTS:
-;   minflux    - Minimum flux levels for objects to be used in the fit;
+;   minflux    - Minimum flux levels in ugriz-bands for objects to be used
+;                in the fit; set to zero to ignore a band; default to
+;                [0,0,2.5,0,0] to limit to r<21.5 objects
 ;                default to 5 nMgy in all three (gri) bands, corresponding
 ;                to 20.7-th mag.
 ;   minobj     - Minimum number of objects that have good fluxes in all
@@ -35,7 +37,8 @@
 ;                also, generate PostScript plots using the PLATESN procedure.
 ;   plotfile   - If set, then make a contour plot of the distortion
 ;                corrections to this PostScript file
-;   hdr        - If set, then get the PLATE and MJD from this FITS header
+;   hdr        - If set, then get the PLATE and MJD from this FITS
+;                header
 ;
 ; OUTPUTS:
 ;   corrimg    - Flux-distortion image by which OBJFLUX should be multiplied
@@ -95,8 +98,8 @@ function flux_distort_corrvec, coeff, wavevec, thisplug
 
    lam0 = 5070.d0
    lwave2 = 1. - (lam0/wavevec)^2 ; Basically normalized to [0.5,2.0]
-   xx = thisplug.xfocal / 320.d0
-   yy = thisplug.yfocal / 320.d0
+   xx = thisplug.xfocal / 325.d0 ; This 325 is mm on the plate
+   yy = thisplug.yfocal / 325.d0 ; This 325 is mm on the plate
    specid = thisplug.spectrographid
    cvec = (1. + coeff[0] * (specid EQ 1) + coeff[1] * (specid EQ 2)) $
     * exp(coeff[2] * xx $
@@ -129,7 +132,7 @@ function flux_distort_fn, coeff, nomask=nomask
    for i=0L, nobj-1 do $
     for j=0, 2 do $
      newflux[i,j] = total(trimflux[*,i] * fmask[*,j] $
-      * flux_distort_corrvec(coeff, wavevec, trimplug[i]), /double)
+      * flux_distort_corrvec(coeff, wavevec, trimplug[i]))
 
 ;   retval = (newflux / calibflux) - 1.
    retval = (newflux - calibflux) * calibisig
@@ -142,14 +145,15 @@ function flux_distort_fn, coeff, nomask=nomask
 end
 ;------------------------------------------------------------------------------
 function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
- loglam=loglam, minflux=minflux, minobj=minobj, maxdelta=maxdelta, $
+ loglam=loglam, minflux=minflux1, minobj=minobj, maxdelta=maxdelta, $
  platefile=platefile, plotfile=plotfile, hdr=hdr, coeff=coeff
 
    common com_flux_distort, trimflux, wavevec, fmask, calibflux, calibisig, $
     trimplug, outmask
 
    if (NOT keyword_set(minobj)) then minobj = 50
-   if (NOT keyword_set(minflux)) then minflux = 5.
+   if (keyword_set(minflux1)) then minflux = minflux1 $
+    else minflux = [0,0,2.5,0,0] ; Limit to r<21.5 only
    if (n_elements(maxdelta) EQ 0) then maxdelta = 0.03
    t0 = systime(1)
 
@@ -230,10 +234,9 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
    qtrim = strmatch(plugmap.objtype,'SKY*') EQ 0 $
     AND strmatch(plugmap.objtype,'QSO*') EQ 0 $
     AND plugmap.offsetid EQ 1 $
-    AND plugmap.calibflux[1] GT minflux $
-    AND plugmap.calibflux[2] GT minflux $
-    AND plugmap.calibflux[3] GT minflux $
     AND fracgood GT 0.90
+   for i=0, 4 do if (minflux[i] NE 0) then $
+    qtrim *= (plugmap.calibflux[i] GT minflux[i])
    if (total(qtrim AND qivar) GT 0.8*total(qtrim)) then begin
       splog, 'Trimming to ', 100*total(qtrim AND qivar)/total(qtrim), $
        '% of objects w/known photom errors from calibObj'
@@ -298,9 +301,11 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
    xtol = 1d-20
    iiter = 0L
    outmask = 0
+
    while (iiter LT maxiter1) do begin
       splog, 'Flux distortion fit iteration #', iiter
-      splog, 'Initial chi^2=', total((flux_distort_fn(parinfo.value*0))^2)
+      splog, 'Initial chi^2=', total((flux_distort_fn(parinfo.value*0))^2), $
+       ' dof=', long(total(fmask NE 0) - n_elements(parinfo))
 
       ; Always start with tiny values, rather than values from the
       ; previous fit.  This is to prevent us from "walking away" from
@@ -443,10 +448,12 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
    endif
 
    if (keyword_set(plotfile)) then begin
-      xx = djs_laxisgen([641,641],iaxis=0) - 320
-      yy = djs_laxisgen([641,641],iaxis=1) - 320
+      ; Construct a fake plugmap across the image, with a sampling of
+      ; every millimeter in x and y to evaluate these fits.
+      xx = djs_laxisgen([651,651],iaxis=0) - 325
+      yy = djs_laxisgen([651,651],iaxis=1) - 325
       thisplug = replicate(create_struct('XFOCAL', 0., 'YFOCAL', 0., $
-       'SPECTROGRAPHID', 0), 641, 641)
+       'SPECTROGRAPHID', 0), 651, 651)
       thisplug.xfocal = xx
       thisplug.yfocal = yy
       thisplug.spectrographid = 1 + (yy GT 0)
@@ -473,7 +480,7 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
          endelse
 
          cvec = flux_distort_corrvec(coeff, wcen[iplot], thisplug)
-         mvec = -2.5*alog10(cvec) * (sqrt(xx^2 + yy^2) LT 320.)
+         mvec = -2.5*alog10(cvec) * (sqrt(xx^2 + yy^2) LT 325.)
 
          maxdiff = max(abs(mvec))
          if (maxdiff LT 0.10) then levels = 0.01*findgen(21) - 0.10 $
@@ -483,7 +490,7 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
          c_colors = (levels GE 0) * djs_icolor('blue') $
           + (levels LT 0) * djs_icolor('red')
          contour, mvec, xx[*,0], transpose(yy[0,*]), /follow, $
-          levels=levels, xrange=[-320,320], yrange=[-320,320], $
+          levels=levels, xrange=[-325,325], yrange=[-325,325], $
           /xstyle, /ystyle, c_colors=c_colors, c_charsize=1, $
           xtitle=xtitle, ytitle='Y [mm]', charsize=1, $
           title=title

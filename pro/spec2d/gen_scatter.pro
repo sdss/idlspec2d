@@ -278,8 +278,8 @@ function gen_scatter, img, lambdas, params, evalfunc=evalfunc, $
        res[rescol0:rescol0+bandsize[0]-1, resrow0:resrow0+bandsize[1]-1] += rowres
 
                                 ; Depressingly useful counter of step number...
-       print, format='("Step ",i5," of ",i6,f5.2,i4,f5.2,f5.2, a1,$)', $
-              r_i, nr, lam, needr, t1-t0, systime(1)-t0, string(13b)
+;       print, format='("Step ",i5," of ",i6,f5.2,i4,f5.2,f5.2, a1,$)', $
+;              r_i, nr, lam, needr, t1-t0, systime(1)-t0, string(13b)
        
     end
 

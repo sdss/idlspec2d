@@ -6,7 +6,7 @@
 ;   Decide whether a flat is bad.
 ;
 ; CALLING SEQUENCE:
-;   qbad = reject_flat(img, [ hdr, nsatrow=, fbadpix= ] )
+;   qbad = reject_flat(img, [ hdr, nsatrow=, fbadpix=, percent80thresh= ] )
 ;
 ; INPUTS:
 ;   img        - Raw flat-field image
@@ -15,6 +15,8 @@
 ;   hdr        - Header for image
 ;   nsatrow    - Returned from SDSSPROC()
 ;   fbadpix    - Returned from SDSSPROC()
+;                percent80thresh - threshold for the number of pixels
+;                                  that can fall below 80% flux
 ;
 ; OUTPUTS:
 ;   qbad       - Return 1 if a flat is bad, 0 if good.
@@ -44,7 +46,9 @@
 ;                This code is copied out of SPCALIB.
 ;-
 ;------------------------------------------------------------------------------
-function reject_flat, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix
+function reject_flat, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix, percent80thresh=percent80thresh
+
+  if (NOT keyword_set(percent80thresh)) then percent80thresh=1000.
 
    qbad = 0
 
@@ -86,7 +90,7 @@ function reject_flat, img, hdr, nsatrow=nsatrow, fbadpix=fbadpix
 
    isort = sort(img)
    percent80 = img[ isort[ 0.80 * n_elements(img) ] ]
-   if (percent80 LT 1000.) then begin
+   if (percent80 LT percent80thresh) then begin
       qbad = 1
       splog, 'WARNING: Reject flat as too faint: 80-th-percentile =' $
        + string(percent80)

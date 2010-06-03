@@ -70,6 +70,8 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
    sdssproc, arcname, arcimg, hdr=archdr, color=color, camname=camname, $
     nsatrow=nsatrow, fbadpix=fbadpix, /do_lock
 
+   configuration=obj_new('configuration', sxpar(archdr, 'MJD'))
+
    ;-----
    ; Decide if this arc is bad
 
@@ -84,7 +86,11 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
 
    tset = mrdfits(tsetfile,2)
    fibermask = mrdfits(tsetfile,4)
-   traceset2xy, tset, ycen, xcen 
+   traceset2xy, tset, ycen, xcen
+
+   dims = size(xcen, /dimens)
+   nrow = dims[0]
+   ntrace = dims[1]
 
    ;----------
    ; Boxcar extract the arc
@@ -99,9 +105,14 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
    ;----------
    ; Now find the wavelength solution
 
-   fitarcimage, flux, fluxivar, xpeak, ypeak, wset, aset=aset, $
-     fibermask=fibermask, bestcorr=bestcorr, lambda=lambda, $
-     color=color, maxdev=2.0e-5, xdif_tset=xdif_tset
+   arccoeff = configuration->spcalib_arccoeff()
+
+   fitarcimage, flux, fluxivar, xpeak, ypeak, wset, ncoeff=arccoeff, $
+     aset=aset, color=color, fibermask=fibermask, $ ; ?? maxdev=4.d-5, $
+     bestcorr=bestcorr, lambda=lambda, xdif_tset=xdif_tset, $
+     acoeff=configuration->spcalib_arcfitguess_acoeff(color), $
+     dcoeff=configuration->spcalib_arcfitguess_dcoeff(color), $
+     wrange=configuration->spcalib_fitarcimage_wrange(color)
 
    if keyword_set(doplot) then qaplot_arcline, xdif_tset, wset, lambda, $
      color=color, title=' Arcline Fit for '+arcname
@@ -113,9 +124,11 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
    ; Fit the wavelength dispersion, and trigger warnings if the spectrographs
    ; look out-of-focus in the wavelength dimension.
 
-   nfitcoeff = color EQ 'red' ? 4 : 3
+   nfitcoeff = configuration->spcalib_ncoeff(color)
    dispset = fitdispersion(flux, fluxivar, xpeak, $
-    sigma=1.0, ncoeff=nfitcoeff, xmin=0.0, xmax=2047.0, medwidth=medwidth)
+    sigma=configuration->spcalib_sigmaguess(), ncoeff=nfitcoeff, $
+    xmin=0.0, xmax=(configuration->getDetectorFormat(color))[0]-1., $
+    medwidth=medwidth,  numbundles=configuration->getNumberBundles())
 
    if (apo_checklimits('arc', 'WSIGMA', camname, max(medwidth)) $
     EQ 'red') then $
@@ -127,17 +140,21 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
    ; First see if we've already done this.
 
    fflatexist = keyword_set(findfile(fflatfile))
-   if (NOT fflatexist) then begin
+;   if (NOT fflatexist) then begin
       flat_flux = mrdfits(tsetfile,0)
       flat_ivar = mrdfits(tsetfile,1)
       fflat = fiberflat(flat_flux, flat_ivar, wset, fibermask=fibermask, $
-       /dospline)
+       /dospline, $
+       badflatfracthresh=configuration->spcalib_fiberflat_badflatfracthresh(),$
+       minval=configuration->spcalib_fiberflat_minval(flux))
       flat_flux = 0 ; clear memory
       flat_ivar = 0 ; clear memory
       mwrfits, fflat, fflatfile, /create
       mwrfits, fibermask, fflatfile
       fflat = 0 ; clear memory
-   endif
+;   endif
+
+   obj_destroy,configuration
 
    ;----------
    ; Write out wavelength solution
@@ -152,12 +169,13 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
       splog, 'Quality is not excellent - do not write wsetfile'
    endelse
 
-   wavemin = 10^(min(loglam))
-   wavemax = 10^(max(loglam))
+   ; Compute the wavelength between the central 2 fibers
+   ; at their central 2 pixels.
+   wavemid = mean( 10.^loglam[nrow/2-1:nrow/2,ntrace/2-1:ntrace/2] )
+
    nlamps = (size(xpeak,/dimens))[1]
    rstruct = create_struct('WSETFILE', fileandpath(wsetfile), $
-                           'WAVEMIN', wavemin, $
-                           'WAVEMAX', wavemax, $
+                           'WAVEMID', wavemid, $
                            'BESTCORR', bestcorr, $
                            'NLAMPS', nlamps, $
                            'WSIGMA_QUADRANT', medwidth, $

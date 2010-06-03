@@ -46,13 +46,12 @@
 ;------------------------------------------------------------------------------
 pro plughistory, mjdrange=mjdrange
 
-   astrolog = getenv('ASTROLOG_DIR')
-   if (NOT keyword_set(astrolog)) then astrolog = '/astrolog'
-   splog, 'Searching astrolog directory ASTROLOG_DIR=' + astrolog
+   speclog = getenv('SPECLOG_DIR')
+   splog, 'Searching astrolog directory SPECLOG_DIR=' + speclog
 
    searchname = filepath('plPlugMapM-????-?????-??.par', $
-    root_dir=astrolog, subdir='?????')
-   plugfiles = findfile(searchname, count=nfile)
+    root_dir=speclog, subdir='?????')
+   plugfiles = file_search(searchname, count=nfile)
    splog, 'Found ', nfile, ' plPlugMapM files'
    if (nfile EQ 0) then begin
       splog, 'No matches to ' + searchname
@@ -72,13 +71,16 @@ pro plughistory, mjdrange=mjdrange
       endif
       splog, 'Trimming to ', nfile, ' files within specified MJD range'
       plugfiles = plugfiles[indx]
-   endif
+      mjdvec = mjdvec[indx]
+   endif else begin
+      mdjrange = minmax(mjdvec)
+   endelse
 
    cartvec = lonarr(nfile)
 ;   mjdvec = lonarr(nfile)
-   plugarr = lonarr(nfile,641)
+   plugarr = lonarr(nfile,1001)
 
-   plotfile = string(min(mjdvec), max(mjdvec), $
+   plotfile = string(min(mjdrange), max(mjdrange), $
     format='("Plughistory-",i5.5,"-",i5.5,".ps")')
    dfpsplot, plotfile
 
@@ -91,35 +93,34 @@ pro plughistory, mjdrange=mjdrange
       plugmap = *pp[0]
       yanny_free, pp
       indx = where(strtrim(plugmap.holetype,2) EQ 'OBJECT', ct)
-      if (ct NE 640) then $
-       splog, 'Warning: Fewer than 640 objects in ' $
-        + fileandpath(plugfiles[ifile])
       fiberid = plugmap[indx].fiberid
       plugarr[ifile,fiberid] = plugarr[ifile,fiberid] + 1
    endfor
 
    !p.multi = [0,1,2]
    xrange = minmax(mjdvec[where(mjdvec NE 0)]) + [-30,30]
-   yrange = [620,645]
 
-   for cartid=1, 9 do begin
+   for cartid=1, 17 do begin
+      if (cartid LE 9) then nfiber = 640 $
+       else nfiber = 1000
+      yrange = [nfiber-20,nfiber+5]
       ifile = where(cartvec EQ cartid, nmatch)
       if (nmatch GT 0) then begin
          splog, 'Generating plots for cartridge #', cartid
 
-         plot, mjdvec[ifile], total(plugarr[ifile,1:640], 2), $
+         plot, mjdvec[ifile], total(plugarr[ifile,1:nfiber], 2), $
           psym=2, symsize=0.5, $
           xrange=xrange, /xstyle, yrange=yrange, /ystyle, $
           xtickformat='(i5)', $
           xtitle='MJD', ytitle='Number plugged fibers', $
           title='Plugging History Cartridge #' + strtrim(string(cartid),2)
-         oplot, !x.crange, [640,640]
-         xyouts, !x.crange[0], 642, $
+         oplot, !x.crange, [nfiber,nfiber]
+         xyouts, !x.crange[0], nfiber+2, $
           '  Number of pluggings = ' + strtrim(string(nmatch),2)
 
-         meannum = total(plugarr[ifile,1:640], 1) / nmatch
-         plot, lindgen(640)+1, meannum, psym=10, $
-          xrange=[-20,660], /xstyle, yrange=[-0.1,1.2], /ystyle, $
+         meannum = total(plugarr[ifile,1:nfiber], 1) / nmatch
+         plot, lindgen(nfiber)+1, meannum, psym=10, $
+          xrange=[-20,nfiber+20], /xstyle, yrange=[-0.1,1.2], /ystyle, $
           xtitle='Fiber number', ytitle='Fraction times plugged'
          ; Overplot wherever this fraction is less than 90%
          ibad = where(meannum LT 0.90, nbad)

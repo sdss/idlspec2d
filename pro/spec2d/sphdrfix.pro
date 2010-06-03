@@ -6,13 +6,14 @@
 ;   Fix header cards in raw SDSS spectroscopic data.
 ;
 ; CALLING SEQUENCE:
-;   sphdrfix, filename, hdr, [ /do_lock ]
+;   sphdrfix, filename, hdr, [ silent, /do_lock ]
 ;
 ; INPUTS:
 ;   filename   - Name of raw FITS file
 ;   hdr        - FITS header
 ;
 ; OPTIONAL INPUTS:
+;   silent     - If set, then don't output any text.
 ;   do_lock    - If set, then lock the "sdHdrFix-$MJD.par" file
 ;                using DJS_LOCKFILE().
 ;
@@ -58,7 +59,7 @@
 ;   29-Dec-2009  Written by D. Schlegel, Princeton
 ;-
 ;------------------------------------------------------------------------------
-pro sphdrfix1, filename, hdr, hfixpar
+pro sphdrfix1, filename, hdr, hfixpar, silent=silent
 
    npar = n_elements(hfixpar)
 
@@ -102,8 +103,9 @@ pro sphdrfix1, filename, hdr, hfixpar
           else thisvalue = ival
       endelse
 
-      splog, 'Changing ' + thiskey + '=' + string(sxpar(hdr,thiskey)) $
-       + ' -> ' + string(thisvalue)
+      if (NOT keyword_set(silent)) then $
+       splog, 'Changing ' + thiskey + '=' + string(sxpar(hdr,thiskey)) $
+        + ' -> ' + string(thisvalue)
       sxaddpar, hdr, thiskey, thisvalue
    endfor
 
@@ -111,7 +113,7 @@ pro sphdrfix1, filename, hdr, hfixpar
 end
 
 ;------------------------------------------------------------------------------
-pro sphdrfix, filename, hdr, do_lock=do_lock
+pro sphdrfix, filename, hdr, silent=silent, do_lock=do_lock
 
    common spec2d_hfixpar, hfix1
 
@@ -136,7 +138,7 @@ pro sphdrfix, filename, hdr, do_lock=do_lock
     message, 'Parameter file opHdrfix.par not found!'
 
    ; Apply header fixes from  the "opHdrFix.par" file.
-   sphdrfix1, filename, hdr, hfix1
+   sphdrfix1, filename, hdr, hfix1, silent=silent
 
    ;----------
    ; Read the sdHdrFix file for this night to look for more possible header
@@ -164,7 +166,8 @@ pro sphdrfix, filename, hdr, do_lock=do_lock
     djs_unlockfile, reportfile
 
    if (errcode NE 0) then begin
-      splog, 'WARNING: Error reading sdHdrFix file '+fileandpath(reportfile)
+      if (NOT keyword_set(silent)) then $
+       splog, 'WARNING: Error reading sdHdrFix file '+fileandpath(reportfile)
    endif else if (keyword_set(pdata)) then begin
       ; Find the ONEEXP structure
       for i=0, N_elements(pdata)-1 do $
@@ -174,7 +177,7 @@ pro sphdrfix, filename, hdr, do_lock=do_lock
 
       ; Apply header fixes from  the "sdHdrFix-$MJD.par" file.
       if (keyword_set(hfix2)) then $
-       sphdrfix1, filename, hdr, hfix2
+       sphdrfix1, filename, hdr, hfix2, silent=silent
 
       yanny_free, pdata
    endif

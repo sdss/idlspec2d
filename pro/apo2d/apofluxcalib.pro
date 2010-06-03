@@ -69,7 +69,7 @@ pro apofluxcalib, platenum, mjd=mjd
    expnum = sxpar(hdr, 'BESTEXP')
    splog, 'Choosing exposure number ', expnum
 
-   root_dir = getenv('SPECTRO_DATA')
+   root_dir = getenv('BOSS_SPECTRO_REDUX')
    platestr = string(platenum, format='(i4.4)')
    expstr = string(expnum, format='(i8.8)')
 

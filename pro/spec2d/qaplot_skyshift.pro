@@ -54,7 +54,7 @@ pro qaplot_skyshift, wset, xsky, skywaves, skyshift, title=title
     xtitle='Sky Line Wavelength', ytitle='Fiber Number', $
     xticks=nskyline-1, xtickv=indgen(nskyline), $
     xtickname=string(fix(skywaves),format='(i4)'), $
-    title=title, charsize=1.0, /xstyle, /ystyle
+    title=title, charsize=0.8, /xstyle, /ystyle
 
    ;----------
    ; Plot zero lines for each sky wavelength

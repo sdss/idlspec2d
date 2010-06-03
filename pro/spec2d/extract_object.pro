@@ -107,6 +107,8 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
  widthset=widthset, dispset=dispset, skylinefile=skylinefile, $
  plottitle=plottitle, superflatset=superflatset, do_telluric=do_telluric
 
+   configuration=obj_new('configuration', sxpar(objhdr, 'MJD'))
+
    objname = strtrim(sxpar(objhdr,'OBJFILE'),2) 
    flavor  = strtrim(sxpar(objhdr,'FLAVOR'),2) 
    camera  = strtrim(sxpar(objhdr,'CAMERAS'),2) 
@@ -162,7 +164,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ny = (size(fextract,/dim))[1] 
    pixelmask = lonarr(nx,ny)
 
-   badcolumns = where(total(badcheck GT 0,1) GT 0.1 * nx)
+   badcolumns = where(total(badcheck GT 0,1) GT 0.45 * nx) ; change from 0.1 ???
 
    if (badplace[0] NE -1) then pixelmask[badplace] = $
                 pixelmask[badplace] OR pixelmask_bits('NEARBADPIXEL')
@@ -186,8 +188,10 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ;-----------------------------------------------------------------------
    ;  This is a kludge to fix first and last column ???
    ;-----------------------------------------------------------------------
-   image[0,*] = image[0,*]*0.7
-   image[2047,*] = image[2047,*]*0.7
+  if (configuration->extract_object_fixcolumns()) then begin
+     image[0,*] = image[0,*]*0.7
+     image[(configuration->getDetectorFormat(color))[0]-1,*] = image[(configuration->getDetectorFormat(color))[0]-1,*]*0.7
+     endif
 
    ;
    ;  First we should attempt to shift trace to object flexure
@@ -226,7 +230,10 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 
    ; (1a) Calculate scattered light, just for curiosity
    splog, 'Step 2: Find scattered light image'
-   scatfit0 = calcscatimage(ansimage[ntrace*nterms:*,*], yrow, nscatbkpts=npoly)
+   scatfit0 = calcscatimage(ansimage[ntrace*nterms:*,*], yrow, $
+    nscatbkpts=npoly,$
+    nx=(configuration->getDetectorFormat(color))[1], $
+    ny=(configuration->getDetectorFormat(color))[0] )
 
    qaplot_scatlight, scatfit0, yrow, $
     wset=wset, xcen=xtrace, fibermask=fibermask, $
@@ -234,7 +241,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 
    ; (3) Calculate per-camera modelled scattering surface
    splog, 'Step 3: Calculate halo image'
-   scatter = doscatter(camera, ymodel0, invvar, wset, sigma=0.9)
+   scatter = configuration->getscatter(camera, ymodel0, invvar, wset, sigma=0.9)
 
    ; (4) Re-extract with scattering model
    ; subtracted in order to measure
@@ -249,7 +256,10 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 
    ; (4) Calculate remaining scattered light
    splog, 'Step 4: Find scattered light image'
-   scatfit = calcscatimage(ansimage2[ntrace*nterms:*,*], yrow, nscatbkpts=npoly)
+   scatfit = calcscatimage(ansimage2[ntrace*nterms:*,*], yrow, $
+    nscatbkpts=npoly, $
+    nx=(configuration->getDetectorFormat(color))[1], $
+    ny=(configuration->getDetectorFormat(color))[0] )
 
    qaplot_scatlight, scatfit, yrow, $
     wset=wset, xcen=xtrace, fibermask=fibermask, $
@@ -287,8 +297,10 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ; QA chisq plot for fit calculated in extract image (make QAPLOT ???)
 
    xaxis = lindgen(n_elements(chisq)) + 1
+   ymax = 2.*median(chisq)
    djs_plot, xaxis, chisq, $
     xrange=[0,N_elements(chisq)], xstyle=1, $
+    yrange=[0,ymax], ystyle=1, $
     xtitle='Row number',  ytitle = '\chi^2', $
     title=plottitle+'Extraction chi^2 for '+objname
 
@@ -306,7 +318,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ;------------------
    ; Flat-field the extracted object fibers with the global flat
 
-   divideflat, flux, invvar=fluxivar, fflat
+   divideflat, flux, invvar=fluxivar, fflat, /quiet
  
    pixelmask = pixelmask OR ((fflat LT 0.5) * pixelmask_bits('LOWFLAT'))
 
@@ -396,7 +408,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
      superfit = float(smooth_superflat(superflatset, airset, $
       plottitle=plottitle+'Smooth superflat for '+objname))
      if keyword_set(superfit) then begin
-       divideflat, flux, invvar=fluxivar, superfit 
+       divideflat, flux, invvar=fluxivar, superfit, /quiet
        sxaddpar, objhdr, 'SFLATTEN', 'T', ' Superflat has been applied'
      endif
    endif  
@@ -445,6 +457,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
     dispset=dispset, npoly=nskypoly, nbkpt=nbkpt, $
     relchi2set=relchi2set, newmask=newmask)
    pixelmask = newmask
+
    if (NOT keyword_set(skystruct)) then return
 
    ;----------
@@ -496,7 +509,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
        fibermask=fibermask, $
        plottitle=plottitle+'Telluric correction for '+objname)
 
-      divideflat, flambda, invvar=flambdaivar, telluricfactor, minval=0.1
+      divideflat, flambda, invvar=flambdaivar, telluricfactor, minval=0.1, /quiet
    endif
 
    ;----------
@@ -544,17 +557,14 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    sxaddpar, objhdr, 'XCHI2', mean(chisq), ' Extraction: Mean chi^2'
 
    snvec = djs_median(flambda*sqrt(flambdaivar),1)
-   if color EQ 'blue' then begin
-        mag=plugsort.mag[1] 
-        snmag = 20.2
+   if (color EQ 'blue') then begin
+      filter = 'g'
+      mag = plugsort.mag[1] 
    endif else begin
-        mag=plugsort.mag[3]
-        snmag = 19.9
+      filter = 'i'
+      mag = plugsort.mag[3]
    endelse
-
-   fitmag = snmag + [-2.0,-0.5]
-   sncoeff = fitsn(mag, snvec, fitmag=fitmag)
-   sn2 = 10^(2.0 * poly([snmag],sncoeff))
+   sncoeff = fitsn(mag, snvec, sncode='spreduce', filter=filter, sn2=sn2)
 
    sxaddpar,objhdr,'FRAMESN2', sn2[0]
    sxaddpar,objhdr,'EQUINOX',2000.0,after='DEC'
@@ -586,6 +596,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    spawn, ['gzip', '-f', outname], /noshell
 
    heap_gc
+   obj_destroy,configuration
 
    return
 end

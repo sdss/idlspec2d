@@ -1,0 +1,24 @@
+# Limits for S/N fitting and plots.
+# This file is used by the function FITSN.
+
+typedef struct {
+  char sncode[10]; # Name of pipeline: sos spreduce spcombine
+  char filter[2];  # Camera name: g r i
+  float fitmag[2]; # Magnitude range for fit
+  float snmag;     # Magnitude range at which to evaluate fit
+  float slope;     # Force this slope in fit (S/N) = (S/N)_0 + slope * mag
+} SPECSNLIMIT;
+
+# Fidicual blue line set to show S/N^2=16,26 at g,i=22,21
+specsnlimit sos       g {21.0 22.0} 22.0 -0.30
+specsnlimit sos       i {20.0 21.0} 21.0 -0.30
+
+# Fidicual blue line set to show S/N^2=16,16,26 at g,i=21.2,21.2,20.2
+specsnlimit spreduce  g {20.2 21.2} 21.2 -0.30
+specsnlimit spreduce  r {19.2 20.2} 20.2 -0.30
+specsnlimit spreduce  i {19.2 20.2} 20.2 -0.30
+ 
+specsnlimit spcombine g {20.2 21.2} 21.2 -0.30
+specsnlimit spcombine r {19.2 20.2} 20.2 -0.30
+specsnlimit spcombine i {19.2 20.2} 20.2 -0.30
+

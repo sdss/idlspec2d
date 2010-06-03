@@ -1,4 +1,706 @@
 
+GUIDERPLAY: Wrapper for IDL guider to simply allow play-back of images
+      for a specified night.
+PLUGHISTORY: Plot out to fiber #1000 for BOSS cartridges.
+
+-------------------------------------------------------------------------------
+v5_4_12 (May 31, 2010) idlspec2d
+Tag for new S/N fits for SOS, and revert to SDSS-I templates in Spectro-2D.
+Built against specflat v1_11, elodie v1_3, idlutils v5_4_13.
+
+APOALL,SLITHISTORY,SPECDB_CREATE,SPPLAN2D: Change references to
+      the now-defunct $ASTROLOG_DIR directory to $SPECLOG_DIR.
+BOLTON_SN_FIT: new low-level routine for (hopefully) robust
+      estimation of exposure SN.
+FITSN: Another major change to how the S/N lines are fit.  Force the fit
+      to be a line with a fixed slope (as specified in opSNlimits.par),
+      and choose the offset such that half the points are below and half
+      above in the fitting magnitude range.  Call this a "median line."
+      This addresses ticket #754, but really continues ticket #750.
+PLATE_SPEC_IMAGE: Smoothly die if zans is missing.
+PLOTSN: Sort the points randomly, such that not all the spec2 points
+      are plotted on top of the spec1 points, and make the points smaller.
+PLUG2TSOBJ: Read photoPosPlate files instead of photoPlate files.
+      This addresses ticke #809.
+QUICKWAVE: Always generate the fiber-flat vectors for the corresponding
+      flat-field image, even if that fiber-flat already exists.  If it
+      exists, it gets over-written.  This is confusing behaviour, and
+      might do bad things in some cases, but addresses ticket #831.
+SDREPORTMAKE: Remove this now-unused piece of code.
+SPCOADD_V5: Delete QUALITY,REQTIME keywords (ticket #789).
+SPREDUCE1D: Back out last change to use Bolton's new spMLpca templates
+      and change the default of chop_data back.
+TRACE_SPARSE_CRUDE: New semi-crude, semi-robust sparse flat tracing routine.
+
+opfiles/opSNlimits.par: Changes to be consistent with FITSN.  Remove
+      the fiducial_coeff field which was unused.  Add a slope which is
+      set to -0.30 for all cases.  The fitting mag range is set to be
+      the range [snmag-1,snmag] for the new, median-line fits.
+
+-------------------------------------------------------------------------------
+v5_4_11 (May 16, 2010) idlspec2d
+Tag to test spMLpca templates (bug fixes to last tag)
+Built against specflat v1_11, elodie v1_3, idlutils v5_4_13.
+
+BATCHPBS: Fix typo on naming script files with /skip2d option.
+SDSS_SPEC_IMAGE: Change flat to target.
+SPREDUCE1D: Modify to test Bolton's new spMLpca templates, and change
+      default of chop_data to 3600 to 10000 Ang.
+
+-------------------------------------------------------------------------------
+v5_4_10 (May 15, 2010) idlspec2d
+Tag to test spMLpca templates
+Built against specflat v1_11, elodie v1_3, idlutils v5_4_13.
+
+BATCHPBS: Add /SKIP2D option.
+BOLTON_MLPCA,BOLTON_MLPCA_DEMO: New proc with Bolton's maximum-likelihood PCA.
+COMBSMALLCOLLIMATE: Document explicitly outputs (with /SIMPLE) to be read by
+      telescope control SOP code.
+PLATE_SPEC_IMAGE,SDSS_SPEC_IMAGE: New code for making JPGs of spectra (Blanton).
+PLOTSPEC: Along with printing the target flags, print whether it is 'SKY'.
+PLUGHISTORY: Update to work with BOSS cartridges 10-17 with 1000 fibers.
+SPTHROUGHPUT: Return correct number of vectors if INDX not set.
+UUPLOTSPEC: Modified version of PLOTSPEC for interfacing with an online
+      database at http://boss.astro.utah.edu (Brownstein).
+
+pro/Makefile: Add templates directory.
+pro/templates: Files (code + data files) for generating Bolton's new templates,
+      but need to clean this up.
+templates/spMLpcaCVstar-55332.fits,spMLpcaQSO-55332.fits,
+      spMLpcaGal-55332.fits,spMLpcaStar-55332.fits:  New templates
+      to test from Bolton.  Galaxies span [1800,10020] Ang, QSOs [580,9963] Ang,
+      stars [3580,10318] Ang, CV stars [3581,10315] Ang.
+
+-------------------------------------------------------------------------------
+v5_4_9c (May 5, 2010) idlspec2d
+Tag for SOS with gzipped files.
+
+APOFIX: Remove references to $ASTROLOG_DIR, instead using $SPECLOG_DIR.
+      New keyword SOS_DIR?  Put back in code to edit the logsheet-$MJD.fits
+      file when the quality of an exposure is changed.
+APOREDUCE: Report "WARNING" message if the HARTMANN header keyword is
+      set to either "Left" or "Right".  Note that this creates a lot
+      of unnecessary warning messages on the SOS web page.
+BESTFOCUS: Allow images where the shift was more than 2.5 pix (those were
+      intentionally ignored previously).
+COLLIMATE: Call COMBSMALLCOLLIMATE if the SUBFRAME keyword exists in
+      the header.
+COMBSMALLCOLLIMATE: New fast collimate routine to focus
+      sp1 and sp2, uses subarray readouts, single region, and splits the
+      difference between red and blue offsets.  Called by "sop doHartmann"
+      as part of the new field acquisition.  
+SMALLCOLLIMATE: New routine.  Don't know how this differs from the other
+      collimation routines?
+
+bin/filecheck.py, sos_redorunner, sxpar.py: Read gz files
+bin/getPlugmap: Get plugmaps for multiple-pointing plates, assume "A"
+      pointing if not specified.
+bin/putils.py: Add openRead to open a normal or gz file for reading.
+bin/run_collimate.csh: Print more blank lines.
+bin/rundaily_riemann: Bug fix (typo).
+bin/rundaily_riemann_script: Bug fix for env variables (typo).
+bin/sos_apocommand: Add quality type to error message.  Add directory
+     as well as files.
+bin/sos_apocontrol: Added print statement of options.
+bin/sos_aporedo,sos_apostart: Work with gz files and filesequencer
+bin/sos_filesequencer: Handle cases where files need to go into aporeduce not
+     in the order the come out of the icc.  Right now it special cases
+     arcs and flats.  Then changed the code to allow all arcs, but switch
+     the order if the arc comes in before the flat.
+bin/sos_runnerd.py: Display output of svn commands to log.
+bin/sxpar.py: Work with gz files.
+examples/opLimits.par: Enlarge all the ranges for XMID and WAVEMID.
+     Further analysis reveals that the scatter in wavemid is larger than
+     the original constraints and producing a lot of warnings that are being
+     ignored.  Following figures from David Harris that show scatter, change
+     limits to have center at WAVEMID= 4908 4995 7987 8071
+     Issue warning if more than 10 Ang from these best values, and error if
+     more than 20 Ang (red) and 15 Ang (blue).
+
+-------------------------------------------------------------------------------
+v5_4_9a (Apr 30, 2010) idlspec2d
+Tag before SOS changes for gzipped files.
+
+APOFIX: What changed ???
+BATCHPBS: Add QUEUE keyword to specify the queue for qsub
+PCA_GAL: Add /FLUX and /REPLACE keywords.  The /FLUX option loads in
+     a save set from a previous call with this option???
+PCA_SOLVE: Added FLUX keyword
+PLATELIST: Tiny html fix.
+PLATEMERGE: Target flags should be 64-bit (type LONG64).
+      Bug fix to select correct RUN2Ds when several exist in the platelist file.
+SPCALIB, SPREDUCE, SPREDUCE2D: Add /writeflatflatmodel to call to
+      SPREDUCE2D to add the model image for flat-fields to the spFlat files.
+
+bin/filecheck.py: Test for quality=test|excellent fits files.  Fixed bug
+      if there is no keyword.
+bin/loadSN2Value,updatePluggingStatus: Now update quality on --update
+bin/putils.py: Change method of executing commands and handling svn.
+      Now command output is displayed as the command executes, not all
+      when it finishes.  Files are not added to svn as they are created,
+      but right before check-in.
+bin/rundaily: Send output of getWikiMJD to the bitbucket.
+bin/rundaily_riemann_script: Use env variables that are set in .bashrc .
+bin/sos_apocommand: Skip all non-excellent images and test exposures.
+      (But not actually done, see ticket #684).
+bin/sos_apocontrol: Run a status after start.
+bin/sos_aporedo: Outout b1 in real time and wait for all processes to complete.
+bin/sos_runnerd.py: Changed method of executing commands and handling svn.
+      Now command output is displayed as the command executes, not all
+      when it finishes. Files are not added to svn as they are created,
+      but right before check-in.
+
+-------------------------------------------------------------------------------
+v5_4_9 (Apr 16, 2010) idlspec2d tested on IDL 7.0 - 7.1
+Tag to fix install problem.
+Built against specflat v1_11, elodie v1_3, idlutils v5_4_13.
+
+opfiles/Makefile: Need Makefile for install.
+
+-------------------------------------------------------------------------------
+v5_4_8 (Apr 16, 2010) idlspec2d tested on IDL 7.0 - 7.1
+Substantial bug fixes to SOS scripts.
+Spectro-2D uses photoPlate files in new directory tree.
+Built against specflat v1_10, elodie v1_3, idlutils v5_4_13.
+
+APO_LOG2HTML,APO_PLOTSN,APOREDUCE: Replace "APO Spectro" with "BOSS Spectro".
+APO_PLOTSN,EXTRACT_OBJECT,FITSN,PLATESN,PLOTSN,QUICKEXTRACT:
+      Consolidate all the fitting magnitudes into one parameter file,
+      and use FITSN to reference that file.  This is to address ticket #750
+      and ticket #749.
+APOFIX: Bug fix.  Add /EXCELLENT keyword.
+APOREDUCE: Copy the single-exposure S/N plot to the COPYDIR directory
+      (ticket #675).
+BATCH1D,BATCH2D,DOSCATFIT,EXTRACT_ROW_SAFE,FIT_TSET,FITARCIMAGE_OLD,
+      FLATINTERP,FUNCCHEB,GAUSS_SMOOTH,LOCATESKYLINES_TEST,MONSTER,
+      MYFLUXCALIB,READ2DOUT,READSMEAR,SPCOADD_FRAMES,SPCOMBINE,SPFLUX,USHIFT:
+      Remove unused code.
+BATCHPBS: Call new proc SDSS_PLATE_SORT to generate the photoPlate files.
+FINDSPEC: Allow this to work with different plugmap structures by
+      just explicitly using fiberid,ra,dec.
+      Trim whitespace on run2d,run1d.
+FITFLATWIDTH: Assume bundles have 20 fibers, and get rid of numbundles keyword.
+LEDFLAT: Major changes to loop through each pixel, computing statistics
+      using a subset of the best images for each pixel.
+PCA_GAL: Add headers and other minor fixes.
+PLATELIST: Exclude runz subdirs from searches for run1d files.
+PLOTSN: On right-hand plots, only plot the objects used in the fit range
+      and not all the faint, noisy points.
+      Add SNMIN keyword, and default to 0.5, to exclude all the very
+      low-signal fibers from the fitting.  Addresses ticket #754, although
+      with the a simple solution rather than a well-motivated one.
+      Show the fit line for each spectrograph.
+PLUG2TSOBJ: Only look for photoPlate files in plate redux directory,
+       and not in subdirectories.
+QUICKEXTRACT: No need for config.
+       Issue flexure warning only if larger than 0.5 pix, not 0.25 pix.
+QUICKTRACE: Remove "Argon in flats" message until its triggering can be
+      tracked down (ticket #755).
+SDSS_PLATE_SORT: New proc for sorting photoPlate files to be the same
+      as a given plugmap.  This addresses ticket #721.
+SDSSPROC: Remove CHECKSUM,DATASUM keywords from headers so that they are
+      not propogated to downstream files (ticket #756).
+      Measure gain values for the new r2 CCD from LED flats #113197-113198,
+      to be used starting on MJD 55300 (13/14 April 2010).
+      The exact location, width, and counts of the serial transients
+      appear to be different on the new r2 CCD as compared to the old
+      r2 CCD. These values have been appropriately updated in
+      SDSSPROC->SDSSPROC_BADFORMAT for starting on MJD 55300 (ticket #766).
+SPCALIB: Remove deprecated keyword in FITFLATWIDTH.
+SPCOMBINE_V5,SPFLUX_V5,SPFLUXCORR_V5,SPCOADD_V5: Clean up code to not
+      pass the number of pixels in images, but compute based on the images.
+SPCOMBINE_V5: Hack to limit the combine to either b1+r1 or b2+r2 in the
+      case where any images from one of the cameras is missing.
+      This addresses ticket #764, but in an inelegant way.
+SPPLAN1D: Get rid of unused file name definitions.
+SPREDUCE: Look for photoPlate files in current reduction directory,
+      rather than using env variables to determine.
+SPTHROUGHPUT: Remove hard-wired number of fibers.
+
+bin/loadSN2Value,updatePluggingStatus: Better db error-handling.
+bin/sos_aporedo,sos_redorunner,sos_runnerd.py:
+      Results have an option to now go into 
+      http://sdss3.apo.nmsu.edu/~observer/sosredo/logfile-current.html and 
+      /data/boss/sosredo.
+etc/BG14.txt,FG3.txt,altbg14.txt,blue.bkpts,brg.08.gk.01,f8v.ab,f8vspline.dat,
+      fluxcorr.bkpts,intrinsic1.dat,intrinsicF2.dat,red.bkpts:
+      Remove unused files.
+Makefile: Add opfiles subdirectory.
+examples/opLimits.par: Increase the values for XSIGMA based upon the
+      best achievable on MJD 55300.  Yellow at 1.10 1.15 1.10 1.25 (b1 b2 r1 r2)
+      and red if 0.05 worse than tose values.  Decrease the values for
+      WSIGMA to yellow at 1.05 in all cameras, red at 1.15.
+opfiles/opSNlimits.par: New file for tracking the S/N-fitting magnitudes.
+
+-------------------------------------------------------------------------------
+v5_4_7 (Mar 31, 2010) idlspec2d tested on IDL 7.0 - 7.1
+Substantial changes to SOS scripts.
+New Spectro-2D with rewrite of wavelength fits and use BOSS pixel flats.
+Built against specflat v1_9, elodie v1_3, idlutils v5_4_13.
+
+APOD: New cheat script for running SOS at Apache Point (not documented).
+APOFIX: Update default astrolog_dir.  Remove all of the code to edit
+      the APO logfile, and instead spawn a call to sos_aporedo.
+APO_LOG2HTML: Include links to S/N plot for each individual exposure.
+APO_LOG2HTML,APOREDUCE: Include cartid in the last HDU of the logfile,
+      and display on the web page.  This does change the data model for
+      the logfile, meaning that we cannot have this and the previous
+      version of SOS writing to the same file.
+APO_PLOTSN,APOREDUCE: Generate S/N plots for individual exposures as well
+      as for the full plate.
+ARCFIT_GUESS, EXTRACT_IMAGE, GEN_SCATTER, MYFLUXCORR, SKYSUBTRACT, 
+SMOOTH_HALO2D, SPFLUX_READ_KURUCZ, VDISPFIT, ZCOMPUTE, ZCOMPUTE_QSO:
+      Commented out some print updates that were making the PBS log files
+      large (all those with string(13b)).
+APO2D,QUICKTRACE,SPREDUCE: Simplified call to READPLUGMAP, and remove
+      call to SORTPLUGMAP.
+APOREDUCE: Get airtemp from the MC1TEMDN or MC2TEMDN keyword for BOSS,
+      since the AIRTEMP keyword does not exist.
+APOREDUCE,APO_PLOTSN: No need to use the configuration file to determine
+      the number of fibers.
+BATCHPBS:  Add option to join stderr and stdout in log file (kushner)
+      Create a set of files per MJD observed, even though they should be
+      identical.
+COLLIMATE: Report failure if Hartmann's not in proper sequence - KD
+COMBINEBPM,FLATFIELD: New routines for generating BOSS pixel flats from LED
+      images (Olmstead).
+CONFIGURATION__DEFINE: Increase spcalib_trace320cen_deltax by a small
+      amount for the r1 camera to be consistent with the median solution.
+FIND_RESOLVE: Bug fix for 3-digit plate numbers.  Deprecate, putting the
+      logic internal to PLUG2TSOBJ, which is the only place this was called.
+FINDSPEC: Make consistent with platelist files.
+FITARCIMAGE: Major changes to the iteration of the fitting and the
+      tracking of rejected arc lines.  Iterate the full fits, rejecting at
+      most 1 arc line per iteration.  Track the reason for rejecting lines
+      and return in REJLINE.  Final fits are done where the higher-order
+      terms in the trace-set are replaced with polynomials (cubics).
+      Those final fits use the actual centroid locations + errors, rather
+      than the "replaced" positions (as was done in the last version of this
+      code).  Using the actual centroids should be fine with the smoothed
+      higher-order terms.
+      Warning message if Cd I 3610 lamp not good (ticket #641).
+      Issue warning about big wavelength gap is bigger than log10=0.05
+      instead of 0.04, such that a gap between 3650-4046 is barely OK.
+      Comment back in the failure if log10>0.10.
+      The fits were sometimes being effected by a fiber with very bad
+      fits, where loglam would be nonsense values.  The floating point
+      precision was then making the fits to all of the fibers much noisier.
+      An example of this was on palte 3651/55246 on the frame
+      sdR-b2-00108656.fit .  For such bad fibers, always interpolate over
+      those fiber coeffs before calling traceset2xy.
+FLUX_DISTORTION: Bug fix where some values of 320 that represented the
+      plate radius in mm were replaced with the number of fibers.
+      Change those numbers to 325 mm to avoid future mis-interpretations.
+      Change MINFLUX to a 5-element array, with the minimum flux reduced
+      from 5,5,5 nmy in gri-bands to 2.5 nmy in r-band.
+IDLSPEC2D_VERSION: Replace spawn to shell script bin/idlspec2d_version with IDL
+      (Weaver).
+LEDFLAT: New proc for making pixel flats from Natalie's LED flats.
+LOGSHEET: Print timestamp from TAI-BEG in header, since TAI keyword no
+      longer exists.
+PCA_GAL: Updates from Weaver.  Add optional BINSZ keyword.
+PLATELIST: Include all of the GAL_CMASS* flags for the high-z LRGs.
+PLATELIST,UPDATE_PLATELIST,UPDATE_PLATE_RELEASE: Move the spPlateList.par
+      files from this product to the speclog product.
+PLATEMERGE: Changes to the outputs in the ASCII file, make shorter aliases
+      for some of those ASCII headers, and trim unneccessary whitespace
+      from the string values.
+      Include manual redshifts and comments from spInspect files.
+      Include more values from the new plugmaps (lambda_eff,bluefiber,zoffset).
+      Make the new target flags 64-bit (bug fix).
+      Add /INCLUDE_BAD option.
+PLATESN,PLOTSN: Make the fiducial magnitudes all brigher by 0.80 mag, so that
+      one is analyzing w.r.t. the same magnitudes as SOS.  PSF magnitudes
+      are used for stars here, whereas fiberflux2 are used for SOS.
+PLOTSPEC: Smooth flux values for /allexp option.
+PLUG2TSOBJ,READPLUGMAP,SPREDUCE: Fix and simplify finding photoPlate files,
+      insisting that one exist for each plate+MJD that a plate is observed.
+QAPLOT_ARCLINE: Plot rejected arc lines (in red).  Make sure all arc lines
+      show up in the lower plot by at least putting a point near the location.
+QAPLOT_SKYSUB: Plot median |chi| rather than chi^2, and compare to Gaussian.
+READONESPEC: Work with either the 2048-row SDSS-I spectra or the 4128-row
+      BOSS spectra (but still assume same number of rows in blue or red).
+READPLUGMAP: Do the sorting internal to this routine, rather than a later
+      call to SORTPLUGMAP.  Include SPECTROGRAPHID,FIBERMASK to call.
+      Fix crash condition in ticket #604.
+      Demand that FIBERMASK is not already set.
+READSPEC: Add optional output ZMANUAL.
+      For cases where the data files cannot be found, default to either 640
+      or 1000 blank rows in the outputs based upon MJD, with 1000 fibers
+      assumed for data starting on MJD 55025.  (One-line change at line 206.)
+SDSSPROC: Bug fix for ticket #610 in identifying the pixel shifts.
+      There was a bug in defining one of the overscan transients in the b2 CCD
+      (line 144).  Aside from that, the transient is not always easily detected
+      in all rows.  The somewhat hacky solution is to apply the same shift
+      (or no shift) to any row where the transient is not easily measured.
+      Re-organize to call much of the code, like bias and flat-subtraction,
+      for either SDSS or BOSS data.
+      Look for compressed pixel bias or pixel flat images.
+SORTPLUGMAP: Remove this routine, and make it internal to READPLUGMAP.
+SPADD_GUIDERINFO: If this is an old SDSS-I file, then the timstamps are all
+      offset and need correcting; if BOSS, then no corrections.
+      Test that FWHM values are not NaN.
+SPCALIB: Print proftype.
+SPCALIB,SPREDUCE: Add REJLINE to the ARCSTRUCT structure, allowing one to
+      include rejected arc lines in the QA plots.
+SPCALIB,QUICKWAVE: Remove numberBundles in call to FITARCIMAGE.
+SPCOADD_V5: Remove unneccesary keyword to FLUX_DISTORTION call.
+SPMANUAL: New function to read manual inspection files (spInspect).
+SPREDUCE1D: Replace spawn of Unix mkdir command with FILE_MKDIR.
+SPTHROUGHPUT: Fix directory structure for BOSS.
+SUPERFLAT: Change min + max wavelength ranges such that it spans the range
+       that includes at least one good pix.  Bug fix in computing the
+       flux scaling between the fibers.
+
+bin/sos_apocommand: Process all images, even non-BOSS images
+bin/rundaily, rundaily, rundaily_riemann_script: Always exit zero so as
+       not to upset cron.
+bin/sos_redorunner, sos_aporedo, sos_aporedomakecmd: New re-do command
+bin/sos_apostart: Don't sued nuce.
+bin/rundaily_riemann_script: Added /zcode.
+bin/sos_runnerd.py: Only do svn ci durring bookeeping.
+bin/sos_runnerd.py, sos_classes.py: Add exposure number option.
+bin/loadSN2Value, updatePluggingStatus: New code to load S/N^2 values
+       into platedb.
+doc/www/spectroSOS.html: Update SOS stop / restart instructions.
+       Document warning message pertaining to ticket #641.
+etc/lamphgcdne.par: Add back in the lines as 3650+3654 and do not mark
+       as blends, so that the 3650 line can be used when the 3610 line
+       is too faint (ticket #644).  Also add back in 6506, 8408, 9313 lines
+       since the code is more robust against bad lines now.  Add new
+       lines at 9657, 9784 (both faint Ar I lines).
+etc/spPlateList.par: Move this file to $SPECLOG_DIR/opfiles.
+examples/opLimits.par: Update WAVEMID values for sp2 to center up
+       the new collimator masks (ticket #636).
+pro/Makefile: Add specflat subdirectory.
+src/Makefile: Make compatible with GNU make (Weaver).
+ups/idlspec2d.table: Added setupOptional("platedb")
+
+-------------------------------------------------------------------------------
+v5_4_6 (Feb 9, 2010) idlspec2d tested on IDL 7.0 - 7.1
+Tagged to fix critical ticket #600 on SOS.
+Built against specflat v1_8, elodie v1_3, idlutils v5_4_12.
+
+Major environment change: Global replace of SPECTRO_DATA -> BOSS_SPECTRO_REDUX
+(B. A. Weaver, 2010-01-26)
+
+BATCHPBS: Typo fix for making match files.  Add /ZCODE option to setup up
+      and run Zcode.
+BESTFOCUS: Dawson and Olmstead code for solving for CCD focal plane.
+CCDTILT: New proc to measure CCD tilt from a whole sequence of Hartmanns,
+      based upon the COLLIMATE routine.
+CHUNKINFO: Read info from $PLATELIST_DIR/platePlans.par file.
+FINDSPEC: Warning message for missing files.
+PLATELIST: Fix bug finding the spDiagcomb file.
+      Fix umask for the PBS log files (Weaver).
+      Add interpretation of the BOSS target flags, and include
+      %LRG1,%LRG2 in the outputs.
+      Include SURVEY, PROGRAMNAME, CHUNK and remove PROGNAME,CHUNKNAME.
+      Also included are TILE, RACEN, DECCEN, EPOCH from platePlans.par
+      since those are probably more trusted than other sources.
+      Include N_TOTAL as total number of objects (640 or 1000).
+PLATEMERGE: Optional calling sequence with RUN2D rather than with PUBLIC.
+      Read all input data from READSPEC instead of other various wrappers.
+PLUG2TSOBJ: Simplify to only support photoPlate and calibPlateP files.
+      Remove PLUGMAP option and add RUN2D option.
+READSPEC: Small changes to support change to PLUG2TSOBJ.
+SPREDUCE: Read TILEID from the plugmap file, since it is no longer
+      in the sdR file headers (ticket #562).
+TRACE320CRUDE: Bug fix for when only a few good pixels exist in a row
+      (ticket #600).
+
+bin/rundaily, rundaily, rundaily_riemann_script: Scripts for after daily
+       data transfers.
+bin/sos_apospammer: Updated to roll log and reset error messages.
+etc/spChunkList.par: Remove file, as this is deprecated by
+      $PLATELIST_DIR/platePlans.par
+examples/opLimits.par: Remove the warnings for SUCCESS_QSO in the platelist.
+
+-------------------------------------------------------------------------------
+v5_4_5 (Jan 23, 2010) idlspec2d tested on IDL 7.0 - 7.1
+Tagged to fix batch processing of BOSS data.
+Built against specflat v1_8, elodie v1_3, idlutils v5_4_12.
+
+APO_CHECKLIMITS: Different font formatting (Weaver).
+BATCHPBS:  Add automatic plate matching (Weaver), but adds dependency
+      on the sas product.
+EXTRACT_OBJECT: Fix bug where FRAMESN2 was being set to 1 instead of 0
+      when there was no flux on an exposure.
+GET_MJD_DIR: Use FILE_SEARCH() instead of calls to SPAWN, and only
+      return directories and not file names.
+PLATELIST: Support new RUN2D,RUN1D directory structures.
+      Put RUN2D,RUN1D in the html files rather than PROG,CHUNK.
+      Switch from html to xthml (Weaver).
+      Only mark plates as 'bad' or 'good', not 'marginal' (too confusing).
+PLOTSPEC,READSPEC,READONESPEC: Add support for RUN2D,RUN1D.
+READPLUGMAP: Remove PSFFLUX*,FIBERFLUX*,FIBER2FLUX*, since those appear
+      to all be zeros in the platelist files.
+SPCOMBINE_V5: Accidentally had removed setting the name of one plot file.
+SPREDUCE2D: Fix mis-formatted names for output log and PostScript files.
+
+bin/sos_apostart,sos_apocontrol: Added a delete for the socket file.
+      Created more descriptive error and warning messages
+bin/sos_apocontrol: Update stop messages.
+pro/Makefile: Include all the pro/science subdirs.
+
+-------------------------------------------------------------------------------
+v5_4_4 (Jan 18, 2010) idlspec2d tested on IDL 7.0 - 7.1
+Tagged to allow batch processing of BOSS data.
+Built against specflat v1_8, elodie v1_3, idlutils v5_4_10.
+
+pro/Makefile: Turn this into a common makefile for all subdirs.
+pro/*/Makefile: Remove these old makefiles.
+
+-------------------------------------------------------------------------------
+v5_4_3 (Jan 17, 2010) idlspec2d tested on IDL 7.0 - 7.1
+Tagged to allow batch processing of BOSS data (but crashes).
+Built against specflat v1_8, elodie v1_3, idlutils v5_4_10.
+
+BATCHPBS: Remove accidental return before calling qsub.
+SPREDUCE2D,SPCOMBINE_V5: Fix typos.
+
+-------------------------------------------------------------------------------
+v5_4_2 (Jan 17, 2010) idlspec2d tested on IDL 7.0 - 7.1
+Tagged to allow batch processing of BOSS data (but crashes).
+Built against specflat v1_8, elodie v1_3, idlutils v5_4_10.
+
+READSPEC,SPREDUCE1D,READONESPEC,SPCOMBINE_V5,SPPLAN1D,SPREDUCE,
+      SPPLAN2D,SPREDUCE2D: Implement new data model for directory
+      structure that makes use of $RUN2D and $RUN1D subdirectories.
+      Remove some of the file name declarations in the plan files
+      in preference to generating those just based upon plate+MJD.
+APO_COLOR2HEX: Change the yellow color from a bright yellow that's hard
+      to see to a darker yellow.
+APO_LOG2HTML,APOREDUCE: Generate a JPEG file instead of a GIF.
+APO_PLOTSN: Change fit magnitudes passed to PLOTSN from 20.33 to 22.0 in g-band
+      and from 20.06 to 20.0 in i-band, and set the other unused bands to zero.
+APOREDUCE: Create output directory if it does not exist.
+ARCFIT_GUESS: Allow more than 4 coefficients in initial wavelength solution.
+BAD_BOSSFORMAT: New routine to search for shifted rows in raw images,
+      like on MJD 55176 exp #104648,104652
+BATCHPBS: New proc for batching both Spectro-2D and Spectro-1D with PBS.
+BOSS_GAIN: New proc for computing gains on BOSS CCDs.
+COLLIMATE: Display specific commands for observers to cut & paste.
+      Simplify the basic call to this routine to compute the Y offsets
+      in a hard-wired region in the center of each CCD.  The offset maps
+      are produced only if the /DOPLOT option is set.
+      Tested against BOSS data on MJD 55113, and SDSS-I data on MJD 54932.
+      Changed calibrations that convert from pixel shifts to offsets.
+      Test for proper values of FFS, NE, HGCD in headers.
+CORRECT_CROSSTALK: Include crosstalk correction in the spec2d processing chain
+EXTRACT_OBJECT: Evaluate the S/N at fainter mags: change from g,i=20.2,19.9
+      to 22.0,20.0.
+FITARCIMAGE: Filtering of initial crude centroids was done with xy2traceset
+      with only 3 coefficients, which is too few for BOSS.  Change to
+      using the value of NCOEFF (line 224).
+      Add more traceset fits at the end, rejecting arc lines that are too
+      noisy or too far offset from the solution.  Do the final fit by
+      weighting each line by its scatter from the previous solution.
+FITSN: Change magnitudes to fainter values.
+FITDISPERSION,FITFLATWIDTH: Return the medians in each quadrant
+      excluding masked portions of the CCD.
+FITFLATWIDTH: Generate a mask that is the same within each bundle
+      before sending the width to the trace-set fitting.  This fixes a
+      crash condition on plate 3538/55124-r1, where there was a fiber
+      with only a few unmasked pixels that was getting a crazy fit.
+      For the case of no input mask (INMASK), then generate a mask
+      to use only good pixels.
+GUIDERMONFILE: New procedure to create guiderMon file using proc-gimg files.
+IDLSPEC2D_VERSION: Now have this just call the shell script idlspec2d_version.
+LOCATESKYLINES: Do not use any sky lines that don't have at least 80%
+      good centroids.  This mattered for 3790/55208-b1, where the line
+      at 6363 Ang was only being well-fit in a few fibers.
+LOGSHEET: Default to 'b1' only.
+PLATESN: Change fiducial mags from [20.2, 20.25, 19.9] to [22.0, 21.0, 21.0].
+PLOTSN: Change fiducial mags from [20.0, 20.2, 20.25, 19.9, 19.0]
+      to [20.0, 22.0, 21.0, 21.0, 20.0].
+      Plotting range to include FITMAG and SNMAG.
+PLOTSPEC: Add option to do on-the-fly template fits with "z".
+PLUGMAP_VERIFY: New code to run some sanity checks on plate designs
+      (plPlugMapP files).
+QUICKBIAS: Reject if >40% pixels bad, not 10%, since we are currently
+      masking 31% of the blue images and 12% of the red that are beyond
+      the useful wavelength ranges.
+QUICKEXTRACT: Include more calling parameters to fitflatwidth.
+      Change mangitudes at which to evaluate S/N from 20.33 to 22.0 in g-band
+      and from 20.06 to 21.0 in i-band.
+      Remove the code that would issue the warning messages
+      to the SOS web page about bad chi^2 residuals.
+      No longer pass SKYCHI2SET to SKYSUBTRACT routine, and do not output
+      to the FITS file.
+      Trigger flexure warning message at 0.25 pix instead of 0.15.
+      Include the raw data header in the output FITS (sci-*) file,
+      including the "FRAMESN2" keyword.
+QUICKTRACE: Fix typo.  Include more calling params to trace320crude.
+      Consider a fiber bad only if any of the following mask bits are set,
+      but specifically not if BADTRACE is set.
+QUICKTRACE,SPCALIB: Change call to XY2TRACESET to ignore values that
+      fall on bad parts of the CCD.
+QUICKWAVE: Include more calling params to fiberflat and fitarcimage.
+RDNOISE_HISTORY: New proc for computing read noise history of BOSS CCDs.
+SDSSGUIDE: Comment-out the parts of code that reads the plugmap files
+      and that computes the telescope offsets.
+      Remove the camera offsets that were used by the old camera hardware;
+      the code will presently only work with the new camera.
+SDSSPROC: Images are rotated 180 deg starting on MJD 55113.
+      So we no longer need to rotate those images.  The gains have
+      been remapped, and the masked regions, to these rotated coordinates.
+      Declare Hartmann exposures (Left or Right) to be 'test'.
+      Update BOSS gain values based upon outputs of BOSS_GAIN flat-field tests.
+      Add keyword /APPLYCROSSTALK and call to cross-talk fixing code.
+      Pass /SILENT option to SPHDRFIX.
+      Only call WARN_DAYTIME if not called silently.
+      Saddlebags swapped between r1 and r2 on MJD 55132.  This changes
+      the gain on both CCDs.  The high noise on the lower-left of r1
+      is now fixed, and we've moved a higher noise on r2 (but not as bad).
+      Measure gain from LED flats on MJD 55142 on exposures 103065+103066.
+      No longer splice in columns to the center of b1+b2 from the edges;
+      the central columns were supposedly fixed on MJD 55141, and data
+      predating that actually looks like it shouldn't have two extra
+      columns in there either.
+      Only call WARN_DAYTIME for science exposures.
+      Remove BZERO,BSCALE from the headers.  These appear newly in
+      the BOSS headers, and otherwise propogate to the reductions.
+      This is ticket #400.
+      New internal proc SDSSPROC_BADFORMAT to identify and fix shifted
+      rows in the raw image (ticket #423).
+      Cache the code versions, since they involve calls to spawn that
+      are very slow.
+SKYSUBTRACT: Only call REDMONSTER routine if RELCHI2SET keyword is passed,
+      thus disabling those error messages from appearing on the SOS
+      web page.
+SORTPLUGMAP: Bug fix assigning dead fibers (as with plate 3674/55153).
+SPADD_GUIDERINFO: Interpret the new guiderMon files generated by
+      GUIDERMONFILE, while being backwards-compatible with the old ones.
+      Guider offsets measured for all enabled fibers, and FWHM measured
+      from only those where focusoffset is <100 microns (in-focus fibers).
+SPFLUX_V5: Fix plotting limits.
+SPHDRFIX: Add /SILENT option.
+SPREDUCE1D: Force the use of /CHOP_DATA until we fix the templates.
+SUPERFLAT: Fix plotting range.
+      Better selection of which fibers to use (otherwise fails
+      on plate 3604/55146-b1), not getting thrown by a few fibers.
+TRACE_CEN: In intial fit, explore a small range of fiberspace around
+      the nominal, as well as the cross-correlation.  That scale range
+      is +/- 0.5%.
+
+Makefile: Add config to install directories.
+bin/aporsync_alllog.sh, aporsync_blue.sh, aporsync_logs.sh, aporsync_red.sh,
+      data_rsync.sh, killdata.sh, sos.sh, sos_redo, sos_start, sos_status,
+      sos_stop, spamdup, spreduce_batch, spsyncrobot.sh, spsyncrobot_start,
+      spsyncrobot_stop, startapo.sh: Remove all these deprecated routines
+bin/fb_classes.py, getPlugmap, sos_apoclog, sos_apocontrol, sos_apostart,
+      sos_batchd, sos_classes.py, sos_runnerd, sos_runnerd_processlist,
+      sxpar.py: New routines for Son-of-Spectro
+bin/idlspec2d_version: Script to return SVN version of the idlspec2d product.
+      This is to replace the IDL version of this.
+bin/run_collimate.csh: Script to run collimate in parallel processing (Dawson).
+bin/sos_README: Updated documentation for Son-of-Spectro
+doc/www/spectroSOS.html: Include warning message about "Electronics shifted".
+examples/cartridgeInfo.par: Add entries for cartridges 10-17, with the
+      same values for all of them.  This is for SDSSGUIDE.
+examples/lamphgcdne.dat: Remove the Ne I line at 8118 Ang, since the
+      arc line at 8115 was being called 8118.
+      Remove the line 7943 which appears to get incorrectly identified.
+examples/opLimits.par: Define the XMID,WAVEMID to be those observed
+      with plate 3552/55142 on cartridge 11.
+      Set S/N^2 limits as 16 in blue and 26 in red for "good", and
+      13 + 22 as "marginal" (yellow).  The red limits are based upon
+      an analysis posted by Peter Brown on Nov 30.
+examples/plPlugMapP-verify.par: Data file of header keywords to check
+      using the PLUGMAP_VERIFY code.
+
+-------------------------------------------------------------------------------
+v5_4_1 (Sep 25, 2009) idlspec2d running on IDL 5.4 - 7.1
+Tagged to begin development for BOSS spectrographs, backing
+out SEGUE-specific development.
+Built against specflat v1_8, elodie v1_3, idlutils v5_4_4.
+
+APOREDUCE,QUICKTRACE,QUICKWAVE: Use BOSS configuration.
+CALCSCATIMAGE: Fix for non-square images!
+COLLIMATE: Update to work on the BOSS data.  Simplify the code to
+      only look for offsets in Y, and do so by looking at subpixel
+      shifts rather than fitting to the shift from integer-pixel shifts.
+      The calibration for the collimator and focus rings will be
+      different for BOSS, because the CCD pixels are smaller by 15/24.
+      Add /PRINT option to print the table of values used for the figure.
+CONFIGURATION__DEFINE: Configuration file to set pipeline parameters
+      for either SDSS-I or BOSS.
+EXTRACT_OBJECT: Simplify call to CALCSCATIMAGE.
+      Make calls to DIVIDEFLAT less verbose.
+      Bad columns only if 30% of pixels (not 10% previously for SDSS-I).
+EXTRACT_ROW: Hack to keep the C code from failing, by setting masked
+      pixels to have values of invvar slightly above zero.
+      This is ticket 298.
+FITARCIMAGE: Pass parameters (ACOEFF,DCOEFF) to ARCFIT_GUESS using _EXTRA.
+      New input keyword WRANGE to explicitly limit the wavelength range
+      of the arc lines used.
+      New input keyword NUMBERBUNDLES.
+      Get rid of /STICKY in all to XY2TRACESET, since that rejects too
+      many arc lines.
+GET_TAI: Work if only TAI_BEG and EXPTIME are defined (which is all we
+      seem to have for BOSS commissioning).
+PLOTSPEC: Support for plotting BOSS files with different numbers of fibers.
+      Print old or new target names.
+QAPLOT_ARCLINE: Minor plot changes.
+QUICKTRACE:
+      Call to XY2TRACESET using errors, which is much slower (by 10X),
+      but prevents crashes from extrapolating the traces to bad positions.
+READPLUGMAP: Read the plateHoles file and append some tags to the plugmap
+      structure.
+READSPEC: Support for reading BOSS files with different numbers of
+      fibers per plate.  This should be backwards compatible, except
+      with different behaviour if one tries to read non-existent files.
+      Previous behaviour was to return 640-length vectors of zeros.
+      Now return 1-length vectors of zeros, since we in general don't
+      know how many objects there are per plate.
+      Optional return value of NFIBER to tell the number of fibers per plate.
+SDSSPROC: Hack for reading the first BOSS test data on MJD 55052,
+      which are not yet properly-formatted images.
+SKYSUBTRACT: Change calls to bspline_iterfit to pass all double-precision.
+SPCALIB,SPCOMBINE_V5,SFLUX_V5,SPFLUXCORR_V5,SPCOADD_V5:
+      Changes to use Alex's new configuration definitions for SDSS-I/BOSS.
+SPCALIB: Pass configuration values to FITARCIMAGE.
+SMOOTH_SUPERFLAT: Return zeros for the returned image outside of the
+      wavelength range used for the fit.  Also don't include the
+      crazy values outside the fit region in the plots.
+SPECHEADERS: New routine for consolodating all of the spectro FITS headers
+      into a single FITS binary table.
+SPPLAN1D,SPPLAN2D,SPREDUCE1D,SPREDUCE2D,SDSSPROC,
+      SPCOADD_FRAMES,SPCOMBINE,SPCOMBINE_V5: Use the /noshell option
+      for some calls to spawn (except for mkdir,uname,ls).
+SPPLAN_FINDRAWDATA: Look for .fits files as well as .fit, since such
+      files were written on MJD 55052.
+SPREDUCE1D: Add CHOP_DATA keyword for reducing the new BOSS spectra with
+      the old SDSS templates that do not have sufficient wavelength range.
+SUPERFLAT: QA plot now only plots percentiles of the fiber values at
+      each wavelength, rather than a very large number of points.
+TRACE_CEN: New routine for finding the initial X positions of the traces,
+       to replace TRACE320CEN.  The logic is based upon the new code
+       in the fiber-mapper.
+TRACE320CEN,TRACE320CRUDE: Fix error in guessing the position of the
+      first fiber.  Add new keyword MTHRESHFACTOR, defined in configuration.
+TRACE320CRUDE,SPCALIB: Use TRACE_CEN instead of TRACE320CEN.
+ZFIND: Add /mask_emission option (Vaishali), although should this be
+      done external to this routine?
+
+etc/lamphgcdne.dat: New lines and their fluxes added in the UV
+      and the near-IR for the BOSS detectors.  Remove the line
+      at 6506 Ang from the list because it gets confused with
+      a line at 2nd-order in the b1 spectrograph.
+examples/opLimits.par: New parameters for BOSS.  Not made to be
+      backwards-compatable with SDSS-I.
+examples/opConfig-55025.par,opECalib-55025.par: CCD parameter
+      files for Lauren's original simulations.
+examples/opConfig-55026.par,opECalib-55026.par: CCD parameter
+      files for real BOSS data based upon Gunn's document
+      "Arrangement of Serial Data for BOSS CCD Images Into Images".
+      We don't yet use these for real data, but use all the hacks
+      within SDSSPROC instead.
+ups/idlspec2d.table: Add optional dependence on the platelist product,
+      which is used to add information from the plateHoles files to the
+      plPlugMapM files.
+
 -------------------------------------------------------------------------------
 v5_4_0 (June 19, 2009) idlspec2d running on IDL 5.4 - 7.0
 Tagged to begin development for BOSS spectrographs, backing
@@ -45,10 +747,12 @@ SPFLUX_BASESPLINE: Bug fixes in case the wavelength range is 10s of Ang
       plate 2587/54137 was such a case, where this code crashed.
 SPPLAN2D: Get the plate ID from the final output structure, which has
       excluded bad files.
+      Only define code versions once, since it involved a slow spawn command.
+      Crash if the output directory cannot be created or written to.
 SUPERFLAT: Print warning message and return 0 if the wavelength mapping makes
       no sense (this could have crashed before, and did for UV test data).
 
-bin/speclog_update: add -forcecvs option, to help recover from nights 
+bin/speclog_update: add -forcecvs option, to help recover from nights
       which were copied in, but had CVS problems.
 doc/www/spectro_home.html: Add instructions for downloading DR6.
       Update Data Model for spCFrame files for superflat in HDU #8.
@@ -86,7 +790,7 @@ ELODIE_FILELIST, PCA_ELODIE: Handle v1_1 and later elodie products
 PLUG2TSOBJ, BATHCH2D, READPLUMAP: If the TSOBJMAPROOT environment
       variable is set, read Survey $TSOBJMAPROOT/tObj-$PLATE files
       instead of $SPECTRO_DATA/calibObj/calibPlateP-$PLATE files.
-CALCSCATIMAGE, EXTRACT_OBJECT, SPCALIB, DOSCATFIT, 
+CALCSCATIMAGE, EXTRACT_OBJECT, SPCALIB, DOSCATFIT,
 DOSCATTER, GEN_SCATTER, examples/scattering-CAM-MJD.fits: Add
       per-camera scattering models; modify spcalib and extract_object
       to call doscatter to generate them.
@@ -160,9 +864,9 @@ etc/emlines.par: Add 8 more nebular lines of interest to Andrew West:
         [O_I] 5577, [S_III] 6312, [Ar_III] 7135
 etc/spChunkList.par: Add chunks 148-157, 153A, 158-162.
 examples/opECalib-50000.par,opECalib-51430.par,opECalib-51577.par:
-	Raise the full well limit to 65535 from 35000, as the detectors
+    Raise the full well limit to 65535 from 35000, as the detectors
         are not showing signs of saturation.
-	Make the (unused) linearity adjustements 1.0, just for clarity.
+    Make the (unused) linearity adjustements 1.0, just for clarity.
         PR #6592 discusses these issues in detail.
 lib/Makefile: Correctly copy built libraries for platforms other than Linux.
 
@@ -175,7 +879,7 @@ EXTRACT_OBJECT: Print a WARNING statement if either RA or DEC are
         AIRMASS calculation (see PR #6953).  Also, report AIRMASS=0
         in the header if RA, DEC or TAI are zero.
 FITARCIMAGE: Detector wavelength limits were not being accounted for
- 	when checking for big wavelength gaps (Loomis).
+    when checking for big wavelength gaps (Loomis).
 LRGMODEL_SPECTRA: New routine, split out of LRGMODEL_PHOTOZ and/or LRGSIM,
         for generating the LRG model spectra.
 PLATELIST: Fix the bit of code that finds all input plate files to be
@@ -217,7 +921,7 @@ bin/spsyncrobot_start,spsyncrobot_stop,spsyncrobot.sh,
         be run as a cron job by the "dssdata" user, and a processing task
         that will be run as a cron job by "dssrun" user. The intent is to
         match the photoop userid logic, where data is copied as one
-	user and reduced as another. 
+    user and reduced as another.
 doc/www/idlspec2d_install.html,spectro_inspect.html: The CVS repository
         has been changed from spectro.princeton.edu to
         sdsscvs.astro.princeton.edu .
@@ -502,8 +1206,8 @@ SKYSUBTRACT: Return the trace-set RELCHI2SET instead of RELCHI2STRUCT,
           for use by the EXTRACT_OBJECT code.
         Fix a bug, where the "airmass_correction" term was not squared
           when applied to the sky variance (on line 285).
-        Apply a ratio of "number of sky pixels in a breakpoint bin" to the 
-          number of degrees of freedom in the fit to the correction to 
+        Apply a ratio of "number of sky pixels in a breakpoint bin" to the
+          number of degrees of freedom in the fit to the correction to
           local chi^2.
         Recast "fullfit" to floating-point to avoid returning a double-
           precision sky array.  This was happening due to same changes to
@@ -631,7 +1335,7 @@ etc/spPlateList.par: Add 436 new plates, through MJD 53360 (Dec 21, 2004).
         (I posted some inconsistencies about these plate lists to
         sdss-archive/2376.)  Note that I have all the same plates being
         marked as public, except there are four plates from the EDR
-        the FNAL has dropped from their lists: 314/51641, 357/51813, 
+        the FNAL has dropped from their lists: 314/51641, 357/51813,
         362/51999, 412/51871.
         The following plates are public, but bad:
           504       52316 DR2 bad Bad spectrograph collimation
@@ -1010,7 +1714,7 @@ PHOTO_LOADER: New proc to write PHOTO outputs from SDSS_READOBJ() to an
 PLATECEN_TEST: Proc to check the consistency of the RA,DEC positions in
         the output spPlate file headers.
 PLATESN: New header keywords ROFFSET & RSIGMA store the offset and standard
-        deviation of the r-band difference in the spectro and photo mags.  
+        deviation of the r-band difference in the spectro and photo mags.
         GIOFF and GISIGMA store the offset and scatter in the (g-i) color.
         Changed (g-i) to (g-r).
 PLOTSN: Fixed histogram scales, changed colors for histograms.
@@ -1059,7 +1763,7 @@ etc/spChunkList.par: Add chunks 28A, 71, 68A.  Chunk 62 should be "special",
            not "main".  Add chunks 77,78,79.
 etc/spPlateList.par: Update from 20 Nov 2002 to 11 Sep 2003.
 pro/Makefile: Add the plan subdirectory.
-ups/idlspec2d.table: Get rid of all the $UPS_PROD_FLAVOR references for 
+ups/idlspec2d.table: Get rid of all the $UPS_PROD_FLAVOR references for
            dependent products.
 
 -------------------------------------------------------------------------------
@@ -1150,7 +1854,7 @@ examples/opHdrFix.par: Go through all the headers looking for flat, arc,
            MJD 52426 (1-Jun-03), after which the sdHdrFix-$MJD.par files
            are used.
 ups/idlspec2d.table: Add dependency on "speclog" product.
-ups/Makefile - Get rid of the confusing dependency on 
+ups/Makefile - Get rid of the confusing dependency on
                $(SDSSTOOLS_DIR)/bin/install_ups_table.
 
 -------------------------------------------------------------------------------
@@ -1473,7 +2177,7 @@ PLATEMERGE: Use MWRFITS_CHUNKS to allow us to write bigger files
            the words in the ASCII file rather than a space (so that awk will
            work).
 PLOTSPEC: Added option to use Blanton + Hogg's java viewer (Blanton).
-PLUG2TSOBJ: Slight change to find Blanton's files which are now named 
+PLUG2TSOBJ: Slight change to find Blanton's files which are now named
            tsObjPlate-*.fits rather than tsObj-*.fit.
 SDSSPROC: If MJD <= 51813, then set QUALITY=excellent unless this is
            over-written by SPHDRFIX.  This is because for the early data,
@@ -2068,13 +2772,13 @@ APO_LOG2HTML: Generate the HTML file name even if the FITS file has a path
 BATCH2D: Include 'smear' exposures when generating list of output files.
             (Not doing this caused a crash for plates w/ only smears).
 FLUXCORR_NEW: Provide a better test of valid smear correction, fixes PR #2478.
-QUICKTRACE: Reverted to doing full trace for flats.  Time saving by only 
+QUICKTRACE: Reverted to doing full trace for flats.  Time saving by only
             tracing part of the flat image introduces a risk not worth the gain.
 REMOVE2REDO: Fix possible crash condition, and change calling sequence to
             DJS_MODFITS in the case that an HDU should become empty.
             If files have been removed, then update the HTML file so that the
             files to be re-reduced are removed from the web page until then.
-SPCOADD_FRAMES: set BADFLUXFACTOR only for extreme smear corrections=20x median 
+SPCOADD_FRAMES: set BADFLUXFACTOR only for extreme smear corrections=20x median
 TRACE320CRUDE:  Fix bug dependent on invvar being set.
             Small change to note number of goodrows in xmask, non-critical.
 
@@ -2151,6 +2855,7 @@ REJECT_SCIENCE: Check in the header that all the flat-field screens are
             With this check, exposure #11504 of plate 727/52207 would
             have been automatically rejected for having the FF lamps
             turned on (see PR #3169).
+            For now, never actually reject science frames.
 SDSS_FLAGNAME: Change some of the target names to agree with what's been
             changed in the target code in the past year or so.  Note that
             I had already updated the target names in spectro_home.html.
@@ -2299,7 +3004,7 @@ FIND_NMINIMA: Add /DEBUG keyword; small changes to plotting.
             since it looks like they broke the latter in IDL 5.4.1.
 FINDCHI2MIN: Clean up this code some.
            This routine used to be used by VDISPFIT, but is no longer.
-FLUXCORR_NEW:  Return all zeros in fluxcorr image if 
+FLUXCORR_NEW:  Return all zeros in fluxcorr image if
                   "WARNING: No spectrophoto with high S/N"
            No longer required checking of "Bad" values for medium S/N.
 GET_TAI: A short proc to determine, beginning, mid-point, and ending
@@ -2376,7 +3081,7 @@ VDISPFIT: Option to return the best fit with YFIT keyword.
            Also return VDISPCHI2,VDISPNPIX,VDISPDOF in output structure.
 ZFIND: Add fields to the output structure needed for velocity dispersions.
 
-aporsync_logs.sh : 
+aporsync_logs.sh :
            Changed the syntax to just copy these type of files in astrolog
            (which we *thought* we were doing, but wasn't quite working):
              Unplugged*.ps
@@ -2853,7 +3558,7 @@ Built against specflat v1_2.
 
 Trivial changes for running this version at Fermi.
 
-SPALLREDUCE: SPECFLAT_DIR is not set now, if SPECFLAT product exists and 
+SPALLREDUCE: SPECFLAT_DIR is not set now, if SPECFLAT product exists and
           is specified (this proc only used at Fermi).
 
 PLATECOMPARE: New proc for interactive comparison of descrepant redshifts.
@@ -2919,16 +3624,16 @@ FITVACSET :  keyword "airset" which return air wavelength solution with
           no heliocentric correction (required to properly sample superflat
           shifted to skyline frame)
 FIBERFLAT :  keyword superflatset to return normalized superflat fit
-DIVIDEFLAT:  removed all traces of fibermask 
+DIVIDEFLAT:  removed all traces of fibermask
 EXTRACT_OBJECT, SKYSUBTRACT, SPCALIB: Implement 2D-splining for sky-
           subtraction, now set to do quadratic PSF fit.
           Also, first attempt to put in airmass correction to the sky
           brightness by dividing all the sky vectors by the airmass of
           each fiber, then fitting for the supersky, then multiplying
-          back in the airmass terms. 
+          back in the airmass terms.
           New limits to mask in pixelflat 0.8 < flat < 1.2.
                               old values: 0.5 < flat < 1.5
-          
+
 EXTRACT_OBJECT: Set the "NEARWHOPPER" mask bits only for fibers within 2
           fibers of a bright fiber, but not the bright fiber itself.
           For the bright fibers, add the bit "WHOPPER" (added to the
@@ -3182,14 +3887,14 @@ v4_7_0 (Mar 16, 2001 idlspec2d+idlutils)
 
 FLUXCORR_NEW: Replace deviant fluxcorr coefficients with the median
               Attempt to mask large positive deviations in inverse variance
-              (PR #2040) 
+              (PR #2040)
 SPCOMBINE:    combinedir is now a keyword for spcoadd_frames.
               SPFLUX and SPCOADD_FRAMES utilize directory keywords as well.
               Start by zeroing-out the 4 mask bits set by combining step.
 FIBERFLAT:     Simple check to exclude extrema  (PR #2123)
 COMBINE1FIBER: Replace the lines which errantly set NODATA with a check for the
                extrema wavelengths which have no signal. (PR #1939)
-SPPLANCOMB, 
+SPPLANCOMB,
 SPALLCOMBINE:  Fixed Bug to combine a specific MJD
 
 BSPLINE_ITERFIT (in idlutils): Modified to avoid crashing SPREDUCE1D.
@@ -3257,8 +3962,8 @@ SKYSUBTRACT: The "fix" in the previous version didn't properly check the
 -------------------------------------------------------------------------------
 v4_6_0 (Feb 9, 2001)
 
-EXTRACT_OBJECT: Reverted to Gaussian Profile, more robust flat field 
-                 interpolation, still 3% are fluctuations when 
+EXTRACT_OBJECT: Reverted to Gaussian Profile, more robust flat field
+                 interpolation, still 3% are fluctuations when
                  NEARBADPIXEL is set.
 FIBERFLAT: Fiber is flagged BADFLAT is more than 30% of pixels are masked.
 FLATINTERP: Remove call to this code.
@@ -3421,10 +4126,10 @@ s         spectrograph
 Just before combining 2 or more exposures into fully merged spectra
 we perform two flux calibration steps.   The outputs are:
 
-    spFluxcalib-xxxxxxxx-s.fits   Bspline structure to convert 
+    spFluxcalib-xxxxxxxx-s.fits   Bspline structure to convert
                                   flattened counts to 10^-17 ergs/s/cm^2/A
 
-    spFluxcorr-xxxxxxxx-s.fits    Polynomial coefficients to correct 
+    spFluxcorr-xxxxxxxx-s.fits    Polynomial coefficients to correct
                                   science frames to smear frame
 
 The final coaddition uses spFrame, spFluxcalib, and spFluxcorr to create
@@ -3441,20 +4146,20 @@ The final coaddition uses spFrame, spFluxcalib, and spFluxcorr to create
                   in units of 1.0e-4 log10 lambda
         HDU5 :  plPlugMapP                              STRUCTURE
 
-After the final coaddition, the data will be restructured into 
+After the final coaddition, the data will be restructured into
 individual files, one for each fiber:
 
     spMerge2d-pppp-mmmmm-fff.fits   (fff is fiber number 1 through 640)
-        
+
         HDU0 :  Flux and err      Float npix x 2
         HDU1 :  Pixelmask AND,OR  LONG  npix x 2
         HDU2 :  Dipsersion image  Float npix x 1
 
 
 !!!!!Notice:  Multiple MJDs with the same plugging will be combined!!!!!
-             into single outputs, but will be labeled with the 
+             into single outputs, but will be labeled with the
                  highest MJD of the group.
-  
+
              Bad data which should not be combined
              with subsequent data should be deleted before the subsequent
              data is run through 2d.
@@ -3464,12 +4169,12 @@ New features of v4_1_0:
   Major New Features:
 
     1) Spectrophotometry:
-       
+
       a)  Flux calibrate with all available SPECTROPHOTO_STD and
           REDDEN_STD stars.  Use PCA to derive first and second
           eigenspectra.  Compare directly with SDSS Fundamentals to
-          calibrate each smear exposure.  
-      
+          calibrate each smear exposure.
+
       b)  Flux correct each science frame with throughput and color
           terms to match spectrophoto solution of smear image for
           each fiber.  Use SPECTROPHOTO_STD solution to low S/N fibers.
@@ -3479,7 +4184,7 @@ New features of v4_1_0:
        is estimated from a model profile of the full 2048x2048 image.
 
     3) New maskbits:
-       
+
         Each individual frame extracted by 2d has the following maskbits
         possibly set for each pixel: (found in idlspec2d/etc/spMaskbits.par)
 
@@ -3505,24 +4210,24 @@ maskbits 23 BRIGHTSKY       # Sky level > flux + 10*(flux-error)
 maskbits 24 NODATA          # No data available in combine B-spline (INVVAR=0)
 maskbits 25 COMBINEREJ      # Rejected in combine B-spline
 
-        Maskbits 0 through 7 apply to the full set of 2048 pixels on 
+        Maskbits 0 through 7 apply to the full set of 2048 pixels on
         blue or red spectra.
 
         The combined spectra found in spPlate*fits or spMerge2d*fits
-        have two masks:  
+        have two masks:
           AND mask: the bit is set if all overlapping pixels is set.
           OR  mask:         "         any overlapping pixel bit is set.
 
-Minor changes: 
-     
-    1) Lower limit to variance in raw image, 
+Minor changes:
+
+    1) Lower limit to variance in raw image,
        equivalent to S/N < 100 per pixel.
 
     2) New optimal extraction profile: 0.5 * exp(-x^2) + 0.5*exp(-|x|^3)
        (proftype 3)
 
     3) Restricted wavelength range in telluric correction
-    
+
     4) Tighter rejection limits, more stringent cosmic rejection
        limits: +- 4 sigma
 
@@ -3532,7 +4237,7 @@ Minor changes:
 
          CALID*  has been deleted
          UNSIGNED has been deleted
-         
+
          FRAMESN2    S/N^2 for each frame, does not apply to merged
                           spectra
          EXPID       can accomodate more than 10 exposures
@@ -3543,20 +4248,20 @@ Minor changes:
 
          SPEC1_G, SPEC1_R, SPEC1_I
          SPEC2_G, SPEC2_R, SPEC2_I :  Fiducial S/N across spectrographs
-            
+
          MAG_G, MAG_R, MAG_I : Synthetic magnitude after
                                spectrophotometry
 
-      
+
      7) Bspline package no longer requires slatec library
 
      8) Sky fibers with significant extra flux are rejected
 
      9) Number of bad fibers with given bits set are tabulated at end
-   
+
     10) pipeline can run and use .fit.gz  gzipped raw data files,
         saving about 40% of space required by raw spectro data
-     
+
     11) Spectral Resolution is output in the final merged spectra.
 
     12) Use a better algorithm to tweak flat field trace to match object

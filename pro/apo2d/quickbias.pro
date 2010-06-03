@@ -12,8 +12,8 @@ function quickbias, biasname
 
    igood = where(biasivar NE 0, ngood)
    fracgood = float(ngood) / n_elements(biasivar)
-   if (fracgood LT 0.9) then begin
-      splog, 'ABORT: More than 10% of the image is rejected as bad!'
+   if (fracgood LT 0.6) then begin
+      splog, 'ABORT: More than 40% of the image is rejected as bad!'
       ptiles = fltarr(101) - 9999.0
       return, create_struct('PERCENTILE', ptiles)
    endif

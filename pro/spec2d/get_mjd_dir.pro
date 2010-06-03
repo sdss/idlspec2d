@@ -37,7 +37,6 @@
 ;        0123 0124
 ;
 ; BUGS:
-;   Note we assume Unix directory names and we spawn the Unix 'ls' command.
 ;
 ; PROCEDURES CALLED:
 ;   fileandpath()
@@ -46,13 +45,14 @@
 ;   30-May-2000  Written by David Schlegel, Princeton.
 ;-
 ;------------------------------------------------------------------------------
-
 function get_mjd_dir, topdir, mjd=mjd, mjstart=mjstart, mjend=mjend
 
    ;----------
    ; Save the current directory name, and change directories to TOPDIR
 
    if (keyword_set(topdir)) then begin
+      ; Return if the TOPDIR is not a directory
+      if (file_test(topdir, /directory) EQ 0) then return, ''
       cd, topdir, current=olddir
    endif else begin
       cd, current=olddir
@@ -64,14 +64,16 @@ function get_mjd_dir, topdir, mjd=mjd, mjstart=mjstart, mjend=mjend
    ; Find all directories, or all directories matching MJD
 
    if (keyword_set(mjd)) then begin
-      tmpstring = ''
       if (NOT keyword_set(topdir)) then topdir = '.'
-      for i=0, N_elements(mjd)-1 do $
-       tmpstring = tmpstring + ' ' $
-        + filepath(strtrim(string(mjd[i]),2), root_dir=topdir)
-      spawn, '\ls -d '+tmpstring, mjdlist
+      for i=0, N_elements(mjd)-1 do begin
+         tmpstring1 = filepath(strtrim(string(mjd[i]),2), root_dir=topdir)
+         tmpstring = keyword_set(tmpstring) ? $
+         [tmpstring,tmpstring1] : tmpstring1
+       endfor
+      mjdlist = file_search(tmpstring, /test_directory)
+      mjdlist = mjdlist[uniq(mjdlist, sort(mjdlist))]
    endif else begin
-      mjdlist = findfile()
+      mjdlist = file_search(/test_directory)
    endelse
    if (NOT keyword_set(mjdlist)) then return, ''
 

@@ -6,7 +6,7 @@
 ;   Generate S/N plot for one plate from a FITS logfile written by APOREDUCE.
 ;
 ; CALLING SEQUENCE:
-;   apo_plotsn, logfile, plate, [ plugdir=, plotfile= ]
+;   apo_plotsn, logfile, plate, [ expnum=, plugdir=, plotfile= ]
 ;
 ; INPUTS:
 ;   logfile    - Logfile as written by APOREDUCE.  This is a FITS file
@@ -14,6 +14,8 @@
 ;   plate      - Plate number to plot.
 ;
 ; OPTIONAL KEYWORDS:
+;   expnum     - If set, then make plot with S/N from exposures matching
+;                this value (which can be an array of exposure numbers)
 ;   plugdir    - Input directory for PLUGFILE; default to '.'
 ;                The name of the plugmap file is taken from the first
 ;                structure in the LOGFILE.
@@ -36,7 +38,6 @@
 ;   djs_unlockfile
 ;   mrdfits
 ;   plotsn
-;   sortplugmap()
 ;   splog
 ;   readplugmap()
 ;
@@ -44,14 +45,14 @@
 ;   02-May-2000  Written by D. Schlegel, APO
 ;-
 ;------------------------------------------------------------------------------
-pro apo_plotsn, logfile, plate, plugdir=plugdir, plotfile=plotfile
+pro apo_plotsn, logfile, plate, expnum=expnum, plugdir=plugdir, $
+ plotfile=plotfile
 
    if (NOT keyword_set(plate)) then return
    if (NOT keyword_set(plugdir)) then plugdir = './'
 
    platestr = string(plate, format='(i4.4)')
    splog, 'Generating S/N plot for plate '+platestr
-   bands = [1,3]
 
    ;----------
    ; Read the science frames for this plate
@@ -68,28 +69,38 @@ pro apo_plotsn, logfile, plate, plugdir=plugdir, plotfile=plotfile
    plugfile = PPSCIENCE[0].plugfile
 
    ;----------
-   ; Read the plug map file for all 640 fibers
+   ; Read the plug map file for all fibers (both spectrographs)
 
    fullplugfile = filepath(plugfile, root_dir=plugdir)
-   plugmap = readplugmap(fullplugfile, /deredden, /apotags)
-   plugsort = sortplugmap(plugmap, fibermask=fibermask)
+   plugmap = readplugmap(fullplugfile, /deredden, /apotags, fibermask=fibermask)
 
    ;----------
    ; Loop through reductions for all science frames, and add S/N
    ; in quadrature, e.g. sum (S/N)^2.
-   ; Only add (S/N)^2 that is not flagged as anything bad in
-   ; the opLimits file (currently anything < 2.0 is bad).
+   ; Only add (S/N)^2 that is not flagged as anything bad in the opLimits file
 
-   sn2array = fltarr(2, 640)
    for ii=0, n_elements(PPSCIENCE)-1 do begin
       meansn2 = PPSCIENCE[ii].sn2vector
-      if (apo_checklimits('science', 'SN2', PPSCIENCE[ii].camera, $
-                          PPSCIENCE[ii].sn2) EQ '') then begin
+
+      if (ii EQ 0) then begin
+         nfiber = n_elements(meansn2) ; per spectrograph
+         sn2array = fltarr(2, 2*nfiber)
+      endif
+
+      ; Test that the exposure falls within valid S/N^2 limits
+      qkeep = apo_checklimits('science', 'SN2', PPSCIENCE[ii].camera, $
+       PPSCIENCE[ii].sn2) EQ ''
+
+      ; If EXPNUM is specified, then only use data from those exposure(s)
+      if (keyword_set(expnum)) then $
+       qkeep = qkeep AND (total(expnum EQ PPSCIENCE[ii].expnum) GT 0)
+
+      if (qkeep) then begin
          case PPSCIENCE[ii].camera of
-            'b1': sn2array[0,0:319] =  sn2array[0,0:319] + meansn2
-            'b2': sn2array[0,320:639] =  sn2array[0,320:639] + meansn2
-            'r1': sn2array[1,0:319] =  sn2array[1,0:319] + meansn2
-            'r2': sn2array[1,320:639] =  sn2array[1,320:639] + meansn2
+            'b1': sn2array[0,0:nfiber-1] += meansn2
+            'b2': sn2array[0,nfiber:2*nfiber-1] += meansn2
+            'r1': sn2array[1,0:nfiber-1] += meansn2
+            'r2': sn2array[1,nfiber:2*nfiber-1] += meansn2
          endcase
       endif
    endfor
@@ -101,9 +112,11 @@ pro apo_plotsn, logfile, plate, plugdir=plugdir, plotfile=plotfile
    if (keyword_set(plotfile)) then $
     while(djs_lockfile(plotfile, lun=plot_lun) EQ 0) do wait, 5
 
-   plottitle = 'APO Spectro MJD=' + strtrim(string(mjd),2) $
+   plottitle = 'BOSS Spectro MJD=' + strtrim(string(mjd),2) $
     + ' Plate=' + strtrim(string(plate),2)
-   plotsn, sqrt(sn2array), plugsort, bands=bands, snmag=[0,20.33,0,20.06,0], $
+   if (keyword_set(expnum)) then $
+    plottitle += ' exp=' + strtrim(expnum[0],2)
+   plotsn, sqrt(sn2array), plugmap, sncode='sos', filter=['g','i'], $
     plottitle=plottitle, plotfile=plotfile
 
    if (keyword_set(plotfile)) then $

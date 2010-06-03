@@ -19,7 +19,7 @@
 ; COMMENTS:
 ;   A single PostScript file is created "Focushistory-$MJDSTART-$MJDEND.ps".
 ;   The plate list must exist for the PLATELIST procedure, and the spPlate
-;   files should be in $SPECTRO_DATA.
+;   files should be in $BOSS_SPECTRO_REDUX.
 ;
 ; EXAMPLES:
 ;   Make plots of history of wavelength focus for all time:

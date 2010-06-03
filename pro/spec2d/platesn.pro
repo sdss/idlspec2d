@@ -135,8 +135,10 @@ pro platesn, objflux, objivar, andmask, plugmap, loglam, $
    if (keyword_set(hdr)) then $
     plottitle = 'PLATE=' + strtrim(string(sxpar(hdr,'PLATEID')),2) $
      + '  MJD=' + strtrim(string(sxpar(hdr,'MJD')),2)
+   filter = ['g','r','i']
    plotsn, snvec, plugmap, plotfile=plotfile, plottitle=plottitle, $
-    synthmag=synthmag, snplate=snplate
+    sncode='spcombine', filter=filter, synthmag=synthmag, snplate=snplate, $
+    specsnlimit=specsnlimit
 
    ;----------
    ; Add header keywords if HDR is passed.
@@ -147,13 +149,12 @@ pro platesn, objflux, objivar, andmask, plugmap, loglam, $
       ; per spectrograph.
 
       bands = ['G','R','I']
-      snmag = [20.2, 20.25, 19.9]
 
       for ispec=1, 2 do begin
          for bb=0, n_elements(bands)-1 do begin
-            key1 = 'SPEC'+ strtrim(ispec,2)+'_'+bands[bb]
+            key1 = 'SPEC'+ strtrim(ispec,2)+'_'+strupcase(filter[bb])
             comment = string(format='(a,i2,a,f5.2)', $
-             '(S/N)^2 for spec ', ispec, ' at mag ', snmag[bb])
+             '(S/N)^2 for spec ', ispec, ' at mag ', specsnlimit[bb].snmag)
             sxaddpar, hdr, key1, snplate[ispec-1,bb], comment, before='LOWREJ'
          endfor
       endfor

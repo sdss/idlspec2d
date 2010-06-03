@@ -6,15 +6,15 @@
 ;   Create plan file(s) for combining Spectro-2D outputs into one plate.
 ;
 ; CALLING SEQUENCE:
-;   spplan1d, [ topindir=, topoutdir=, mjd=, mjstart=, mjend=, $
+;   spplan1d, [ topdir=, run2d=, mjd=, mjstart=, mjend=, $
 ;    platenum=, platestart=, plateend=, /clobber ]
 ;
 ; INPUTS:
 ;
 ; OPTIONAL INPUTS:
-;   topindir   - Top directory name for 2D outputs; default to ''
-;   topoutdir  - Top directory name for 2D outputs; default to the
-;                same as TOPINDIR.
+;   topdir     - Optional override value for the environment
+;                variable $BOSS_SPECTRO_REDUX.
+;   run2d      - Optional override value for the environment variable $RUN2D
 ;   mjd        - Use data from these MJD's.
 ;   mjstart    - Starting MJD.
 ;   mjend      - Ending MJD.
@@ -55,28 +55,32 @@
 ;   04-Jul-2000  Written by David Schlegel, Princeton.
 ;-
 ;------------------------------------------------------------------------------
-pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
+pro spplan1d, topdir=topdir1, run2d=run2d1, $
  mjd=mjd, mjstart=mjstart, mjend=mjend, $
  platenum=platenum, platestart=platestart, plateend=plateend, $
  clobber=clobber
 
    ;----------
-   ; Determine the top-level of the input and output directory tree
+   ; Determine the top-level of the directory tree
 
-   if (NOT keyword_set(topindir) OR NOT keyword_set(topoutdir)) then begin
-      defaultdir = ''
+   if (keyword_set(topdir1)) then topdir = topdir1 $
+    else topdir = getenv('BOSS_SPECTRO_REDUX')
+   splog, 'Setting TOPDIR=', topdir
+   if (keyword_set(run2d1)) then run2d = strtrim(run2d1,2) $
+    else run2d = getenv('RUN2D')
+   splog, 'Setting RUN2D=', run2d
+   if (keyword_set(run2d)) then $
+    topdir = djs_filepath('', root_dir=topdir, subdir=run2d)
+   finfo = file_info(topdir)
+   if (finfo.directory EQ 0) then begin
+      splog, 'Directory does not exist: '+topdir
+      return
    endif
-
-   if (NOT keyword_set(topindir)) then topindir = defaultdir
-   if (NOT keyword_set(topoutdir)) then topoutdir = topindir
-
-   splog, 'Setting TOPINDIR=', topindir
-   splog, 'Setting TOPOUTDIR=', topoutdir
 
    ;----------
    ; Create a list of the plate directories (as strings)
 
-   platelist = get_mjd_dir(topindir, mjd=platenum, mjstart=platestart, $
+   platelist = get_mjd_dir(topdir, mjd=platenum, mjstart=platestart, $
     mjend=plateend)
    splog, 'Number of plate directories = ', n_elements(platelist)
 
@@ -96,7 +100,7 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
       ;----------
       ; Find all 2D plan files
 
-      allplan = findfile(filepath('spPlan2d*.par', root_dir=topindir, $
+      allplan = findfile(djs_filepath('spPlan2d*.par', root_dir=topdir, $
        subdirectory=platedir), count=nplan)
 
       ;----------
@@ -107,7 +111,6 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
 
       allexp = 0
       planlist = 0
-      extractdir = ''
 
       for iplan=0, nplan-1 do begin
          yanny_read, allplan[iplan], pp, hdr=hdr
@@ -126,8 +129,6 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
                    replicate(fileandpath(allplan[iplan]), nadd)]
                   mjdlist = [mjdlist, replicate(thismjd, nadd)]
                endelse
-               if (NOT keyword_set(extractdir)) then $
-                extractdir = yanny_par(hdr, 'extractdir')
             endif
          endfor
          yanny_free, pp
@@ -194,15 +195,9 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
                platestr = string(pltid, format='(i04.4)')
                thismjd = max(spexp.mjd)
                mjdstr = string(thismjd, format='(i05.5)')
-               outdir = concat_dir(topoutdir, platedir)
+               outdir = concat_dir(topdir, platedir)
 
                planfile = 'spPlancomb-' + platestr + '-' + mjdstr + '.par'
-               logfile = 'spDiagcomb-' + platestr + '-' + mjdstr + '.log'
-               plotfile = 'spDiagcomb-' + platestr + '-' + mjdstr + '.ps'
-               combinefile = 'spPlate-' + platestr + '-' + mjdstr + '.fits'
-               fcalibprefix = 'spFluxcalib-' + platestr + '-' + mjdstr
-               plotsnfile = 'spSN2d-' + platestr + '-' + mjdstr + '.ps'
-               snfits = 'spSN2d-' + platestr + '-' + mjdstr + '.fits'
 
                ;----------
                ; Create keyword pairs for plan file
@@ -211,35 +206,18 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
                hdr = [hdr, "plateid  " + platestr + "  # Plate number"]
                hdr = [hdr, "MJD      " + mjdstr $
                 + "  # Modified Julian Date for most recent observation"]
+               hdr = [hdr, "RUN2D  " + run2d + "  # 2D reduction name"]
                sq = "'"
                hdr = [hdr, "planfile2d  " $
                 + string(sq+planlist1+sq+' ', format='(99a)') $
                 + " # Plan file(s) for 2D spectral reductions"]
-;               hdr = [hdr, "planfile2d  '" + planlist1 $
-;                + "'  # Plan file for 2D spectral reductions"]
                hdr = [hdr, "planfilecomb '" + planfile $
-                + "'  # Plan file for combining spectra"]
-               hdr = [hdr, "extractdir '" + extractdir $
-                + "'  # Directory for spFrame files"]
-               hdr = [hdr, "combinedir ''" $
-                + "  # Directory for spPlate files"]
-               hdr = [hdr, "logfile    '" + logfile $
-                + "'  # Text log file"]
-               hdr = [hdr, "plotfile   '" + plotfile $
-                + "'  # PostScript log file"]
-               hdr = [hdr, "fcalibprefix '" + fcalibprefix $
-                + "'  # Prefix for flux-calibration files"]
-               hdr = [hdr, "combinefile   '" + combinefile $
-                + "'  # Output combined spectra file"]
-               hdr = [hdr, "plotsnfile        '" + plotsnfile $
-                + "'  # Two page S/N and magnitude plot"]
-               hdr = [hdr, "snfile        '" + snfits $
-                + "'  # Small fits file with S/N numbers "]
+                + "'  # Plan file for combine (this file)"]
                hdr = [hdr, "idlspec2dVersion '" + idlspec2d_version() $
                 + "'  # Version of idlspec2d when building plan file"]
                hdr = [hdr, "idlutilsVersion '" + idlutils_version() $
                 + "'  # Version of idlutils when building plan file"]
-               spawn, 'speclog_version', logvers
+               spawn, 'speclog_version', logvers, /noshell
                hdr = [hdr, "speclogVersion '" + logvers $
                 + "'  # Version of speclog when building plan file"]
 
@@ -247,7 +225,7 @@ pro spplan1d, topindir=topindir, topoutdir=topoutdir, $
                ; Write output file
 
                spawn, 'mkdir -p ' + outdir
-               fullplanfile = filepath(planfile, root_dir=outdir)
+               fullplanfile = djs_filepath(planfile, root_dir=outdir)
                qexist = keyword_set(findfile(fullplanfile))
                if (qexist) then begin
                   if (keyword_set(clobber)) then $

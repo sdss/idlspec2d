@@ -10,7 +10,7 @@ SHELL = /bin/sh
 #
 CFLAGS  = $(SDSS_CFLAGS) -DCHECK_LEAKS -I../include
 
-SUBDIRS = bin doc etc examples include lib misc pro src templates ups
+SUBDIRS = bin doc etc examples include lib misc opfiles pro src templates ups
 
 all :
 	@ for f in $(SUBDIRS); do \

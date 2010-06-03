@@ -1,0 +1,194 @@
+This file includes a description of the files, processes and procedures used by sos.
+
+Contents:
+  Files
+  Processes
+  Procedures
+
+*************
+*** Files ***
+*************
+
+Here is a list of the sos files, what the do, and, options:
+
+* sos_runnerd *
+
+sos_runnerd is the front end executable for sos_runnerd.py.
+
+* sos_runnerd.py *
+
+sos_runnerd.py is a daemon that looks for new files from the icc, gets plugmaps, and
+updates and commits speclog. Each instance of runnerd can look for one more glob of files.
+runnerd can optionally run a command on new files. Originally runnerd was written to be
+general purpose, but with the addition of pulling plugmaps and committing them that isn't
+that case anymore. If we need another polling daemon, it would be easy to make the sos
+specific parts optional. Currently, four instances are run on sos3, one per camera and for
+each new file the aporeduce command is called.
+
+There are many options to sos_runnerd that can be listed by specifying "-?".  It would be very unusual to ever start sos_runnerd directly.  Normally either sos_apostart or sos_apocontrol would be used.  sos_apocontrol is the normal method and sos_apostart can be used if some nonstandard options need to be specified.
+
+The log files are stored in observer@sos3.apo.nmsu.edu:sos/sos-logs.  There are two log files per camera per day.  One is all of the messages and the other is just for error messages.  The log files are kept for four days.  The stdout and stderr for each process is also stored in the same location as b1.out, etc, but unless there's a problem these shouldn't be useful--exceptions and errors should be in the error log file.
+
+* sos_apocontrol *
+
+sos_apocontrol is the normal method for controlling the sos daemons on sos3.  It has the following commands:
+
+start : will use sos_apostart to start four daemon processes, one per camera.  This is the normal way to start the sos process.  
+
+stop : this will create a 'die' file that will tell the daemons to exit.  They will all exit within 2 minutes.  As long as that file is present, the daemons will not start.  The start command automatically deletes the 'die' file.
+
+stopWait : will execute the stop command and wait for the daemons to quit.  If they don't quit, this command will never return--hit ^c.
+
+status : will display the running sos_runnerd processes.  If everything is running correctly, there should be 4.  If everything is stopped, there should be 0.
+
+allow: allow deletes the 'die' file so that sos_apostart can be used to start the daemons with custom options.
+
+* sos_apostart *
+
+sos_apostart will start the sos processes at apo.  Use -? for the complete options.
+
+This will start the four sos daemons with the correct options to run at APO.  Normally
+sos_apostart it not called directly, but indirectly via sos_apocontrol.  There are a few options which might be useful in some circumstances.  If calling directly, make sure to execute "sos_apocontrol allow" first.  
+
+Normally the sos_runnerd daemons need to be run under an ssh-agent daemon in order to process svn commands.  sos_apostart will normally try to connect to an ssh-agent session, or if one is not running, then start a new session.  If it needs to start a new ssh-agent session, then the user will need to know the password of observer@sos3.apo.nmsu.edu:id_dsa-sos.  sos_apostart will store the agent info in the file observer@sos3.apo.nmsu.edu:sos/control/agent.info.  The agent socket will be observer@sos3.apo.nmsu.edu:sos/control/agent.socket.
+
+The options are:
+
+-x : Start the daemons so that they do not -most- process svn commands.  Normally,
+the daemons update and commit the speclog product during the processing of plugmap files.  With this option, the daemons will still "svn add" the plugmap files and directories but will but commit or update the speclog product.  If -x is not specified, then sos_apostart will attempt to confirm that an ssh-agent daemon is connected so that the svn commands will succeed.
+
+-a : In order to process svn commands, the daemons will normally be running configured to use an ssh-agent daemon.  sos_apostart will normally either connect to an existing ssh-agent or start one--this option prevents that from happening.  There are two cases where this can be useful.  The first is if the -x option is specified.  The second is if you wish to use custom ssh-agent handling.  If -a is specified, but not -x, then sos_apostart will still insure that sos_runnerd can execute ssh commands via some ssh_agent.
+
+-s : Unless -s is specified, sos_apostart will try and setup the idlspec2d and platedb products.  This switch allows you to run the sos_runnerd daemons under non current versions of these products.  
+
+-t : Start up the 4 daemons in test mode using directories under /tmp/sos.
+
+-e : Will start sos_runnerd in a "mini redo" mode.  This is a special case, usually use the sos_aporedo command to redo processing.  Normally, sos_runnerd will start processing 'new' files--that means any files added to the /data/speclog/$MJD directory after starting.  When -e is specified, sos_runnerd will process all of the existing files in the 'current' $MJD first and then look for new files (see -e for info on the current MJD).  This is useful if the process wasn't started until after observing has already started for the night.
+
+-m : Specify the MJD to start processing.  Without this switch, sos_runnerd will look for the latest MJD in /data/spectro and start there.  With this switch, sos_runnerd will start with the given MJD and then go to the LATEST MJD--it will not go to the NEXT MJD.  This switch is only useful with the -e switch.  Specifying the -e switch and the -m switch together will result in MJD files specified by the -m switch getting reprocessed.  Normally, it is better to use the sos_aporedo command.
+
+-d : Print the command that would be executed, but don't execute them.
+
+-g : GO.  sos_apostart will not run without the go switch.  This is prevent someone typing sos_apostart in the hopes of getting usage.
+
+
+* sos_aporedo *
+
+sos_aporedo will manually run or rerun aporeduce on a given set of files or directories. 
+
+This command will run aporeduce on all the files in a given MJD.  It will not wait for new files or move on to a different MJD.  sos_aporedo will start 4 sos_redorunner commands, one per camera.  Four log files will be written to the current directory.
+
+options are:
+
+-m : the MJD to process
+
+-X : Normally sos_redo will only add new plugmap files, it will not commit or update the speclog product.  With the -X command, sos_redo will commit the plugmap files.
+
+-A : Normally sos_redo doesn't do any svn processing that needs authentication and so doesn't need to be connected to an ssh-agent process.  If you specify -X you should specify -A, or manually insure that sos_aporedo is running under an ssh-agent daemon.
+
+-t : Start up the 4 process in test mode using directories under /tmp/sos.
+
+-d : Print the command that would be executed, but don't execute them.
+
+-g : GO.  sos_aporedo will not run without the go switch.  This is prevent someone typing sos_aporedo in the hopes of getting usage.
+
+* sxpar.py *
+
+sxpar.py ia a module that can be called from the command line to parse and display a fits header.
+
+The syntax is sxpar.py -v fits-file [keyword].  The option -v displays all of the keyword records just as they are stored in the fits header.  If no keyword is given, all keyword value pairs will be displayed.
+
+getPlugmap : a command line utility to display and optionally get a plugmap file associated with a fits file.
+
+* sos_redorunner *
+
+sos_redorunner is the program to process or reprocess a files from a specific MJD.  Normally this program is called via sos_aporedo and it would be unusual to call this program directly.  If you want to reprocess some files manually it is generally better to call aporeduce from IDL directly.
+
+
+* sos_runnerd_processlist *
+
+sos_runnerd_processlist is a version of sos_runnerd that puts all the aporeduce commands into a general queue managed by sos_batchd instead of processing them itself.  This can be very efficient, but breaks the required file ordering.  This file will be removed and archived soon.
+
+* sos_classes.py *
+
+sos_classes.py contains classes used internally by sos_runnerd.py and programs that interface to it.
+
+* sos_batchd *
+
+sos_batchd is the "femto batch" runner. It allows other processes to submit jobs and then
+it runs them. You can run multiple instances and that many concurrent jobs will run. A
+normal configuration is one instance per cpu. Like a real batch system, this allows many processes to add jobs to a queue that will be parceled out to the next free core.  It can be configured in many ways, for example, one queue for all cores, or some percentage of cores dedicated to a particular task.  
+
+* This is not currently being used * because the original design did not take into account that aporeduce needed the files to arrive in a specific order.  Sending all the files to a batch system messed that up.  It's left here because it works and maybe it will be used for something else.  We can move it or remove it as desired.
+
+* fb_classes.py *
+
+fb_classes.py contains classes used internally by sos_batchd and programs that interface to it.
+
+*****************
+*** Processes ***
+*****************
+
+* sos_runnerd *
+
+Four instances of sos_runnerd--one per camera--should always be running on sos3.  These processes are normally started using sos_apocontrol.
+
+* ssh-agent *
+
+There should be a long lived ssh-agent used be sos_runnerd to execute svn commands.  It is usually started by sos_apostart which is called from sos_apocontrol.  The agent info file is observer@sos3:sos/control/agent.info and the socket file is observer@sos3:sos/control/agent.socket.
+
+
+******************
+*** Procedures ***
+******************
+
+=== All commands are executed from observer@sos3 ===
+=== All commands assume that idlspec2d is setup ===
+
+* Confirm SOS Processes are Running *
+
+$ sos_apocontrol status
+There should be four instances of sos_runnerd displayed, one per camera.  The first line will be "Running", the last line will be "Done".  Between those lines should be four instances of sos_runnerd.  Each instance will be a long line separated by a blank line. 
+
+If you do not see see four processes running, stop the processes and then start the processes.
+
+
+* Confirm the SOS Process are Not Running *
+
+$ sos_apocontrol status
+There should be zero instances of sos_runnerd displayed.  The first line will be "Running", the last line will be "Done".  There should be nothing between those two lines.
+
+
+* Start SOS Processes *
+
+$ sos_apocontrol start
+Then confirm the sos processes are running.
+
+
+* Start SOS Processes After Observing Has Started For the Night *
+
+$ sos_apocontrol allow
+$ sos_apostart -e
+Then confirm the sos processes are running.
+
+* Stop SOS Processes *
+
+$ sos_apocontrol stopWait
+Then confirm the sos processes are not running.
+
+
+* Reprocess a Nights Worth of Spectro *
+
+$ sos_aporedo -w -g -m 00000 (Where 00000 is the MJD to reprocess)
+The output files are stored in ~/sos/redo.  cat ~/sos/redo/redo-b1.out for the output of the reprocessing of the b1 camera.
+
+
+* Confirm that the ssh-agent Process Used by sos_runnerd is Running *
+
+$ ps ax | grep ssh-agent
+This line should be present:
+"ssh-agent -a /home/observer/sos/control/agent.socket"
+
+If it is not, then stop the sos processes and restart them.
+
+

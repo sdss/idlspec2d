@@ -1,0 +1,220 @@
+#!/usr/bin/env python
+
+import os, sys
+import copy, getopt
+import putils
+from sxpar import sxpar
+
+""" 
+sos_filesequencer:
+
+Originally it was a requirement that the files go into aporeduce in exactly the 
+order they came from the icc.  We now need to pass the files in in a slightly
+different order.  This file is a *hack* to accomplish that.
+
+Currently there is one rule:
+
+1.  
+
+#commented out# a) If arc, was the previous a flat?  If yes: processes arc.  If no: ignore.
+b) If flat, was the previous a arc?  If yes: process flat, then process arc.  If no: process flat.
+
+a) & b) check to make sure the arc and flats are from the same plugging
+
+
+Written by Gary Kushner (LBL).  May 2010.
+
+"""
+
+
+
+####
+def usage():
+	"""Display usage and exit"""
+	
+	print """
+	usage: sos_filesequencer -f name -i path -p name -l path -s path -m 00000 
+	
+    -f    Fits file name
+    -i    Fits file directory path
+    -p    Plugmap file name
+    -l    Plugmap file directory path
+    -s    SOS Directory
+    -m    MJD
+	"""
+	sys.exit(1)
+
+
+####
+class Config:
+	"""Config Info"""
+	
+	def __init__(self):
+		self.fitname  = ""
+		self.fitdir   = ""
+		self.plugname = ""
+		self.plugdir  = ""
+		self.sosdir   = ""
+		self.mjd      = ""
+		
+	def __str__(self):
+		return ("fitname:  " + self.fitname + "\n" +
+		        "fitdir:   " + self.fitdir + "\n" +
+		        "plugname: " + self.plugname + "\n" +
+		        "plugdir:  " + self.plugdir + "\n" +
+		        "sosdir:   " + self.sosdir + "\n" +
+		        "mjd:      " + self.mjd);
+
+
+
+####
+def parseCmdLine(args):
+	"""Parse command line arguments"""
+
+	cfg = Config()
+	
+	# parse with options
+	try:
+		opts, pargs = getopt.gnu_getopt(args, "f:i:p:l:s:m:")
+	except Exception as e:
+		print "Illegal option specified."
+		print " "
+		print str(e)
+		print " "
+		usage()
+	
+	if len(pargs) != 0:
+		print "All arguments should be parameters (start with '-')"
+		print "found " + str(pargs)
+		usage()
+	
+	#	Fill in the config
+	for (opt, value) in opts:
+		if opt == "-f":
+			cfg.fitname = value
+		if opt == "-i":
+			cfg.fitpath = value
+		if opt == "-p":
+			cfg.plugname = value
+		if opt == "-l":
+			cfg.plugpath = value
+		if opt == "-s":
+			cfg.sosdir = value
+		if opt == "-m":
+			cfg.mjd = value
+
+	print "Config values: \n" + str(cfg)
+	
+	return cfg
+
+
+####
+def flavor(cfg):
+	"""return the flavor of the fits file"""
+	return sxpar(os.path.join(cfg.fitpath,cfg.fitname), "flavor")[0].lower()
+
+####	
+def plugging(cfg):
+	"""return the plugging of the fits file"""
+	return sxpar(os.path.join(cfg.fitpath,cfg.fitname), "name")[0].lower()
+	
+####
+def samePlugging(cfg1, cfg2):
+	"""returns True if the fits files use the same plugging"""
+	return plugging(cfg1) == plugging(cfg2)
+	
+####
+def fitsExist(cfg):
+	"""Return true if the fits file exists"""
+	return os.path.exists(os.path.join(cfg.fitpath, cfg.fitname))
+	
+
+####
+def previousExposure(cfg):
+	"""return a config for the previous exposure"""
+	
+	#	Parse: sdR-b1-00114186.fit.gz
+	left  = cfg.fitname[:9]
+	right = cfg.fitname[15:]
+	exp   = str(int(cfg.fitname[9:15]) - 1)
+	
+	prevcfg = copy.copy(cfg)
+	prevcfg.fitname = left + exp + right
+	print "previous cfg:\n" + str(prevcfg)
+	
+	return prevcfg	
+	
+
+####
+def processFile(cfg, flavor=""):
+	"""call sos_apocommand on the file.  Will exit with error code if the command failts."""
+	
+	cmd  = "sos_apocommand"
+	cmd += " -f " + cfg.fitname
+	cmd += " -i " + cfg.fitpath
+	cmd += " -p " + cfg.plugname
+	cmd += " -l " + cfg.plugpath
+	cmd += " -s " + cfg.sosdir
+	cmd += " -m " + cfg.mjd
+	
+	prefix = "sos_apocommand(" + flavor + "): "
+	
+	print "executing: " + cmd
+	rv = putils.runCommand(cmd, echo=True, prefix=prefix)
+	if rv[0] != 0:
+		print "\nCommand failed with rc = " + str(rv[0]) + "\n"
+		sys.exit(1)
+	
+	
+####
+def rule1(cfg):
+	"""Handle arc/flat ordering"""
+	prevcfg = previousExposure(cfg)
+		
+	print "Exposure Flavor: " + flavor(cfg)
+	print "Previous exposure exists: " + str(fitsExist(prevcfg))
+	if fitsExist(prevcfg):
+		print "Previous Flavor: " + flavor(prevcfg)
+		print "Same Plugging: " + str(samePlugging(cfg, prevcfg))
+	
+	#	Handle arcs -- ignore if previous wasn't flat
+#	if flavor(cfg) == "arc":
+#		print "Exposure is an arc"
+#		if fitsExist(prevcfg) and flavor(prevcfg) == "flat" and samePlugging(cfg, prevCfg):
+#			print "Processing arc"
+#			processFile(cfg)
+#		return True
+		
+	#	Handle flats -- process, and arc if was previous
+	if flavor(cfg) == "flat":
+		print "Exposure is a flat"
+		processFile(cfg, "flat")
+		if fitsExist(prevcfg) and samePlugging(cfg, prevcfg) and flavor(prevcfg)  == "arc":
+			print "Processing previous arc"
+			processFile(prevcfg, "arc")
+		return True
+		
+	#	Not one of ours
+	return False
+		 
+	
+####
+def main(args):
+	"""The program"""
+	
+	#	Initialize
+	config = parseCmdLine(args)
+	
+	#	Rules return true if they processed the file and processing should stop
+	
+	#	process rule 1
+	if rule1(config):
+		return
+		
+	processFile(config, flavor(config))
+	
+		
+#### Start of script
+
+if __name__=='__main__':
+	main(sys.argv[1:])

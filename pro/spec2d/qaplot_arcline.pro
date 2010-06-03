@@ -6,11 +6,12 @@
 ;   Generate QA plot for arcline fits
 ;
 ; CALLING SEQUENCE:
-;   qaplot_arcline, xdif, lambda, [color=, fibermask=, title=]
+;   qaplot_arcline, xdif, lambda, [rejline=, color=, fibermask=, title=]
 ;
 ; INPUTS:
 ;   xdif       - Deviations in arc line fits in pixels, array [NFIBER, NLAMP]
 ;   lambda     - Wavelength for each lamp in Angstroms, vector [NLAMP]
+;   rejline    - String set to nonzero for any rejected arc line (plot in red)
 ;
 ; OPTIONAL KEYWORDS:
 ;   color      - Specify 'blue' or 'red' to fix plotting limits
@@ -42,8 +43,8 @@
 ;   23-Nov-1999  Modified by D. Schlegel, Princeton
 ;-
 ;------------------------------------------------------------------------------
-pro qaplot_arcline, xdif, wset, lambda, color=color, fibermask=fibermask, $
- title=title
+pro qaplot_arcline, xdif, wset, lambda, rejline=rejline, $
+ color=color, fibermask=fibermask, title=title
 
    if (NOT keyword_set(title)) then title = ''
 
@@ -52,9 +53,9 @@ pro qaplot_arcline, xdif, wset, lambda, color=color, fibermask=fibermask, $
    nlamp = dims[1]
 
    if (keyword_set(fibermask)) then $
-    igood = where((fibermask AND fibermask_bits('BADARC')) EQ 0) $
+    igfib = where((fibermask AND fibermask_bits('BADARC')) EQ 0) $
    else $
-    igood = lindgen(nfiber)
+    igfib = lindgen(nfiber)
 
    ;----------
    ; Compute offset + stddev for each line center
@@ -62,7 +63,7 @@ pro qaplot_arcline, xdif, wset, lambda, color=color, fibermask=fibermask, $
    mnarr = fltarr(nlamp)
    sgarr = fltarr(nlamp)
    for k=0, nlamp-1 do begin 
-      djs_iterstat, xdif[igood,k], mean=mn, sigma=sg
+      djs_iterstat, xdif[igfib,k], mean=mn, sigma=sg
       mnarr[k] = mn
       sgarr[k] = sg
    endfor
@@ -93,12 +94,15 @@ pro qaplot_arcline, xdif, wset, lambda, color=color, fibermask=fibermask, $
    for k=0, nlamp-1 do $
     splog, 'Arcline ',k,': lambda=',lambda[k], $
      ' Ang, median dev=', mnarr[k], $
-     ' pix, sigma dev=', sgarr[k], ' pix', $
-     format='(A,I3,A,F8.2,A,F7.3,A,F7.3,A)'
+     ' pix, sigma dev=', sgarr[k], ' pix ', rejline[k], $
+     format='(A,I3,A,F8.2,A,F7.3,A,F7.3,A,A)'
 
    ;---------------------------------------------------------------------------
    ; Set multi-plot format
    !p.multi = [0,1,2]
+
+   igood = where(rejline EQ '', ngood)
+   ibad = where(rejline NE '', nbad)
 
    ; Determine the plot limits in wavelength
    ; Pad wavelength range by an additional 5% on either end
@@ -111,11 +115,15 @@ pro qaplot_arcline, xdif, wset, lambda, color=color, fibermask=fibermask, $
 
    djs_plot, [0], [0], /nodata, xrange=xrange, yrange=[-10,nfiber+10], $
     xstyle=1, ystyle=1, $
-    xtitle='\lambda [A] + 500 * Deviation', ytitle='Fiber Number', $
+    xtitle='\lambda [A] + 300 * Deviation', ytitle='Fiber Number', $
     title=title
    fibernum = findgen(nfiber)+1
-   for k=0, nlamp-1 do $
-    djs_oplot, 500*xdif[igood,k]+lambda[k], fibernum[igood]
+   if (nbad GT 0) then $
+    for k=0, nbad-1 do $
+     djs_oplot, 300*xdif[igfib,ibad[k]]+lambda[ibad[k]], fibernum[igfib], color='red'
+   if (ngood GT 0) then $
+    for k=0, ngood-1 do $
+     djs_oplot, 300*xdif[igfib,igood[k]]+lambda[igood[k]], fibernum[igfib]
 
    djs_oplot, 10^minwave, fibernum, color='green', thick=2
    djs_oplot, 10^maxwave, fibernum, color='green', thick=2
@@ -123,11 +131,22 @@ pro qaplot_arcline, xdif, wset, lambda, color=color, fibermask=fibermask, $
    ;----------
    ; Make plot of deviations
 
-   djs_plot, lambda, mnarr, xrange=xrange, yrange=[-0.1,0.1], psym=6, $
-    xstyle=1, ystyle=1, $
+   yrange = [-0.15,0.15]
+   djs_plot, lambda[igood], mnarr[igood], xrange=xrange, yrange=yrange, $
+    psym=6, xstyle=1, ystyle=1, $
     xtitle='\lambda [A]', ytitle='Deviation [pix]'
+   if (nbad GT 0) then $
+    djs_oplot, lambda[ibad], mnarr[ibad], psym=6, color='red'
    djs_oplot, xrange, [0,0]
-   errplot, lambda, mnarr-sgarr, mnarr+sgarr
+   ylo = (mnarr - sgarr) < 0.9*yrange[1]
+   yhi = (mnarr + sgarr) > 0.9*yrange[0]
+   if (nbad GT 0) then $
+    errplot, lambda[ibad], ylo[ibad], yhi[ibad], $
+     color=djs_icolor('red')
+   if (ngood GT 0) then $
+    errplot, lambda[igood], ylo[igood], yhi[igood]
+   djs_xyouts, total([0.95,0.05]*!x.crange), total([0.10,0.90]*!y.crange), $
+    'Ncoeff = ' + strtrim(n_elements(wset.coeff[*,0]),2)
 
    xyouts, 0.95, 0., systime(), /normal, align=1 ; , charsize=0.5
 

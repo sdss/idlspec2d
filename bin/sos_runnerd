@@ -1,0 +1,22 @@
+#!/usr/bin/env python
+
+import sos_runnerd
+
+""" 
+sos_runnerd:
+
+This is the front end for sos_runnerd.py
+
+Written by Gary Kushner (LBL).  Nov 2009.
+
+"""
+
+try:
+	sos_runnerd.main()
+except SystemExit:
+	raise
+except:
+	sos_runnerd.logger.exception("Uncaught Exception -- program terminating !!!")
+	raise
+	
+	

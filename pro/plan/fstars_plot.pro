@@ -29,7 +29,7 @@
 ; BUGS:
 ;
 ; DATA FILES:
-;   $SPECTRO_DATA/spAll.fits
+;   $BOSS_SPECTRO_REDUX/spAll.fits
 ;   $PHOTO_DATA/94/7/calibChunks/$CAMCOL/tsObj-000094-$CAMCOL-7-$FIELD.fit
 ;
 ; PROCEDURES CALLED:
@@ -53,7 +53,7 @@ pro fstars_plot, deredden=deredden
    ;----------
    ; Read spAll file, and trim to plates >= 432.
 
-   spfile = djs_filepath('spAll-public.fits', root_dir=getenv('SPECTRO_DATA'))
+   spfile = djs_filepath('spAll-public.fits', root_dir=getenv('BOSS_SPECTRO_REDUX'))
    spall = mrdfits(spfile, 1)
    indx = where(spall.plate GE 432 AND spall.specprimary EQ 1)
    spall = spall[indx]

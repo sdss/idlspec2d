@@ -20,7 +20,7 @@ export IDLSPEC2D_DIR=/u/schlegel/idlspec2d
 export IDLUTILS_DIR=/u/schlegel/idlutils
 export IDL_DIR=/usr/peyton/common/licensed/idl_5.4
 export IDL_PATH=+/u/schlegel/idlspec2d/pro:+/u/schlegel/idlutils/pro:+/u/schlegel/idlutils/goddard/pro:.:+/usr/peyton/common/licensed/idl_5.4/lib
-export SPECTRO_DATA=/u/dss/spectro
+export BOSS_SPECTRO_REDUX=/u/dss/spectro
 export RA=$1
 export DEC=$2
 echo Looking for $RA $DEC

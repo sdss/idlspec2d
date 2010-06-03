@@ -1,0 +1,150 @@
+#!/usr/bin/env python
+
+import os, os.path, sys, time, getopt
+import sxpar
+
+""" 
+rundaily:
+
+Written by Gary Kushner (LBL).  Jan 2010.
+"""
+
+####
+def usage():
+	"""Display usage and exit"""
+	
+	print "usage:"
+	print "rundaily -m path -s path -p path"
+	print " "
+	print \
+"""
+	rundaily is meant to be run on rieman via cron.  It will wait until the next MJD is
+	downloaded and then run a script.  It will output the status or errors to stdout.
+	
+	Note : you must "setup trac" before running this script.  Also, anything the 
+	       given script might need.
+
+	The parameters are:
+
+	  -m path to file to store next mjd to look for
+	  -s path to file to exec on new mjd.  The file will be run like this "file $MJD"
+	  -p path to getWikiMJD password file
+	
+	NOTE:  To avoid upsetting cron, rundaily always exists with zero.
+"""
+
+	sys.exit(0)
+	
+	
+####
+def screamAndDie(msg):
+	"""Print a message to stdout and then exit"""
+
+	print msg
+	sys.exit(0)
+	
+####
+def parseCmdLine(args):
+	"""Parse command line arguments and return a (mjdFile, scriptFile, pwFile)"""
+
+	# parse with options
+	try:
+		opts, pargs = getopt.gnu_getopt(args, "m:s:p:")
+	except:
+		usage()
+
+	if len(pargs) != 0:
+		print "wrong number of command line arguments.\n"
+		usage()
+
+	mjdFile    = ""
+	scriptFile = ""
+	pwFile     = ""
+
+	#	Fill in the config
+	for (opt, value) in opts:
+		if opt == "-m":
+			mjdFile = value
+		if opt == "-s":
+			scriptFile = value
+		if opt == "-p":
+			pwFile = value
+
+	if mjdFile == "" or scriptFile == "" or pwFile == "":
+		usage()
+		
+	return (mjdFile, scriptFile, pwFile)
+
+
+####
+def getMJD(mjdFile):
+	"""Return the single number stored in the given file"""
+
+#	with open(mjdFile) as f:
+#		return int(f.read())
+	
+	return int(open(mjdFile).read())
+	
+####
+def incrementMJD(mjdFile):
+	"""Increment the single number in the given file by one"""
+	
+#	with open(mjdsFile) as f:
+#		mjd = int(f.read())
+#		f.seek(0)
+#		f.write(str(++mjd))
+#		f.truncate()
+
+	f = open(mjdFile, "r+")
+	mjd = int(f.read()) + 1
+	f.seek(0)
+	f.write(str(mjd))
+	f.truncate()
+	f.close()
+
+	print "Next MJD to wait for will be " + str(mjd)
+		 
+####
+def runScript(scriptFile, mjd):
+	"""Run the script 'scriptFile $MJD'"""
+	
+	print "Running script " + scriptFile + " " + str(mjd)
+	os.spawnl(os.P_NOWAIT, scriptFile, scriptFile, str(mjd))
+	
+
+####
+def nextMJD(mjd, pwFile):
+	"""Return true if the given MJD has been transfered"""
+	
+	cmd = "getWikiMJD " + pwFile + " " + str(mjd) + " &> /dev/null"
+	rc = os.system(cmd)
+	return rc == 0
+	
+	
+####
+def main(args):
+	(mjdFile, scriptFile, pwFile) = parseCmdLine(args)
+	
+	#	Some early sanity checks
+	if not os.path.exists(mjdFile):
+		screamAndDie("Can not find MJD file: " + mjdFile)
+	if not os.path.exists(scriptFile):
+		screamAndDie("Can not find script file: " + scriptFile)
+	if not os.path.exists(pwFile):
+		screamAndDie("Can not find password file: " + scriptFile)
+
+	#	Is the next MJD here?
+	mjd = getMJD(mjdFile)
+	if nextMJD(mjd, pwFile):
+		print "New MJD transfered: " + str(mjd) + "."
+		incrementMJD(mjdFile)
+		runScript(scriptFile, mjd)
+	else:
+		print "MJD " + str(mjd) + " is not here yet."
+	
+
+#### Start of script
+
+if __name__=='__main__':
+	main(sys.argv[1:])
+		

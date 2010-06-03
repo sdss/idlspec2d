@@ -15,7 +15,8 @@
 ;                can be an array of file names, but cannot include wildcards
 ;
 ; OPTIONAL INPUTS:
-;   indir      - Input directory for FILENAME; default to './'
+;   indir      - Input directory for FILENAME; default to './';
+;                conventionally will explicitly contain $MJD in the name
 ;   outdir     - Output directory for reduced data and log files;
 ;                default to INDIR
 ;   plugfile   - Name of plugmap file (Yanny parameter file); default to
@@ -104,6 +105,19 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    endif
 
    ;----------
+   ; Create the output directory if it does not exist
+
+   if (keyword_set(outdir)) then begin
+      if (file_test(outdir, /directory) EQ 0) then begin
+         spawn, '\mkdir -p '+outdir
+      endif
+      if (file_test(outdir, /directory, /write) EQ 0) then begin
+         splog, 'OUTDIR not a writeable directory '+outdir
+         return
+      endif
+   endif
+
+   ;----------
    ; If multiple file names are passed, then call this script recursively
    ; for each file.
 
@@ -183,14 +197,16 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    splog, 'DIRLIST '+lsstring
 
    ;----------
-   ; Find flavor, plate and MJD
+   ; Find flavor, hartmann status, plate and MJD
 
    splog, 'Using SDSSHEAD() to read FITS header'
    hdr = sdsshead(fullname, /do_lock)
 
+   hartmann=strtrim(sxpar(hdr,'HARTMANN'),2)
    flavor = strtrim(sxpar(hdr, 'FLAVOR'),2)
    plate = sxpar(hdr, 'PLATEID')
    platestr = string(plate, format='(i4.4)')
+   cartid = sxpar(hdr, 'CARTID')
    mjd = sxpar(hdr, 'MJD')
    mjdstr = strtrim(string(mjd),2)
 
@@ -203,6 +219,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    htmlfile = filepath('logfile-' + mjdstr + '.html', root_dir=outdir)
    currentfile = filepath('logfile-current.html', root_dir=outdir)
     
+
    ;----------
    ; Find the full name of the plugmap file
 
@@ -267,11 +284,18 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
 
    ;----------
    ; Reduce file depending on its flavor: bias/dark, flat, arc, or science/smear
+   ; Report to log file if exposure is HARTMANN left of right
 
    rstruct = 0
    myflavor = flavor
    if (myflavor EQ 'smear') then myflavor = 'science'
    if (myflavor EQ 'dark') then myflavor = 'bias'
+
+
+   if hartmann eq 'Left' then splog, 'WARNING:  This exposure is a HARTMANN LEFT'
+   if hartmann eq 'Right' then splog, 'WARNING:  This exposure is a HARTMANN RIGHT'
+
+
    case myflavor of
       'bias' : begin
          rstruct = quickbias(fullname)
@@ -334,6 +358,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       tstruct = create_struct('FILENAME', filename, $
                               'MJD', mjd, $
                               'PLATE', plate, $
+                              'CARTID', cartid, $
                               'EXPNUM', filee, $
                               'CAMERA', camnames[icam], $
                               'TEXT', '' )
@@ -355,6 +380,14 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       cardname = (['TEMP01', 'TEMP03', 'TEMP04', 'TEMP02'])[icam]
       ccdtemp = float(sxpar(hdr,cardname))
 
+      airtemp = float(sxpar(hdr,'AIRTEMP', count=ct))
+      if (ct EQ 0) then begin
+         case strmid(camnames[icam],1,1) of
+         '1': airtemp = float(sxpar(hdr,'MC1TEMDN', count=ct))
+         '2': airtemp = float(sxpar(hdr,'MC2TEMDN', count=ct))
+         endcase
+      endif
+
       ; The following prevents a crash in MWRFITS.
       if (NOT keyword_set(shortplugfile)) then shortplugfile = ' '
 
@@ -368,7 +401,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
                               'FLAVOR', string(flavor), $
                               'CAMERA', string(camnames[icam]), $
                               'TAI', double(tai_mid), $
-                              'AIRTEMP', float(sxpar(hdr,'AIRTEMP')), $
+                              'AIRTEMP', airtemp, $
                               'CCDTEMP', ccdtemp, $
                               'QUALITY', string(sxpar(hdr,'QUALITY')), $
                               'NAME', string(sxpar(hdr,'QUALITY')), $
@@ -397,13 +430,25 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    if (keyword_set(rstruct) OR keyword_set(tstruct)) then begin
 
       if (myflavor EQ 'science') then begin
+         ; Generate the added S/N^2 for this one exposure only
+         plotfile1 = filepath('snplot-'+mjdstr+'-'+platestr+'-'+filee+'.ps', $
+          root_dir=outdir)
+         jpegfile1 = filepath('snplot-'+mjdstr+'-'+platestr+'-'+filee+'.jpeg', $
+          root_dir=outdir)
+         splog, 'Generating S/N plot '+plotfile1
+         apo_plotsn, logfile, plate, expnum=long(filee), $
+          plugdir=plugdir, plotfile=plotfile1
+         spawn, 'gs -sOutputFile='+jpegfile1+' -sDEVICE=jpeg -dNOPAUSE -dBATCH '+plotfile1
+         splog, 'Done generating plot'
+
+         ; Generate the added S/N^2 for all exposures on this plate
          plotfile = filepath('snplot-'+mjdstr+'-'+platestr+'.ps', $
           root_dir=outdir)
-         giffile = filepath('snplot-'+mjdstr+'-'+platestr+'.gif', $
+         jpegfile = filepath('snplot-'+mjdstr+'-'+platestr+'.jpeg', $
           root_dir=outdir)
          splog, 'Generating S/N plot '+plotfile
          apo_plotsn, logfile, plate, plugdir=plugdir, plotfile=plotfile
-         spawn, 'pstogif ' + plotfile
+         spawn, 'gs -sOutputFile='+jpegfile+' -sDEVICE=jpeg -dNOPAUSE -dBATCH '+plotfile
          splog, 'Done generating plot'
       endif
 
@@ -419,7 +464,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
        '<BODY ONLOAD=\"timerID=setTimeout(' $
        +squote+'location.reload(true)'+squote+',60000)\">'
       sedcommand = '-e "s/<\/HEAD>/<\/HEAD>'+addstring+'/g"'
-      sedcommand = sedcommand + ' -e "s/APO Spectro/APO Spectro (Current)/g"'
+      sedcommand = sedcommand + ' -e "s/BOSS Spectro/BOSS Spectro (Current)/g"'
       setenv, 'SHELL=bash'
       spawn, 'sed ' + sedcommand + ' ' + htmlfile + ' > ' + currentfile
 
@@ -431,7 +476,8 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
          spawn, 'scp ' + currentfile + ' ' + copydir
          spawn, 'scp ' + logfile  + ' ' + copydir
          if (keyword_set(plotfile)) then $
-          spawn, 'scp ' + plotfile + ' ' + giffile + ' ' + copydir
+          spawn, 'scp ' + plotfile + ' ' + plotfile1 $
+           + ' ' + jpegfile + ' ' + jpegfile1 + ' ' + copydir
          splog, 'Done.'
       endif
    endif

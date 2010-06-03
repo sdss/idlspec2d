@@ -6,13 +6,15 @@
 ;   Read plugmap file and append tags as requested
 ;
 ; CALLING SEQUENCE:
-;   plugmap = readplugmap( plugfile, [ plugdir=, /apotags, /deredden, $
-;    exptime=, hdr=, /calibobj ] )
+;   plugmap = readplugmap( plugfile, [ spectrographid, plugdir=, $
+;    /apotags, /deredden, /calibobj, exptime=, hdr=, fibermask=, _EXTRA= ] )
 ;
 ; INPUTS:
 ;   plugfile  - Name of Yanny-parameter plugmap file
 ;
-; OPTIONAL KEYWORDS:
+; OPTIONAL INPUTS:
+;   spectrographid  - The spectrograph number, either 1 or 2;
+;                     if not set (or 0), then return all object fibers
 ;   plugdir   - Directory for PLUGFILE
 ;   apotags   - If set, then add a number of tags to the output structure
 ;               constructed from the Yanny header.  These tags are:
@@ -28,7 +30,8 @@
 ;               the exposure time in each pointing is scaled such that
 ;               their sum is EXPTIME.
 ;   calibobj  - If set, then add a CALIBFLUX,CALIBFLUX_IVAR entries based upon
-;               the calibObj files.  For stellar objects, this contains the
+;               the calibObj (deprecated) or photoPlate files.
+;               For stellar objects, this contains the
 ;               PSF fluxes in nMgy.  For galaxies, it contains the fiber fluxes
 ;               multiplied by the median (PSF/fiber) flux ratio for stars.
 ;               The MAG fields are left unchanged.
@@ -37,12 +40,14 @@
 ;               We apply the putative AB corrections to these fluxes
 ;               (but not to the MAG values).
 ;               Also add the SFD reddening values as SFD_EBV.
+;   _EXTRA    - Keywords for PLUG2TSOBJ(), such as MJD,INDIR
 ;
 ; OUTPUTS:
 ;   plugmap   - Plugmap structure
 ;
 ; OPTIONAL OUTPUTS:
 ;   hdr       - Header from Yanny-formatted plugmap file
+;   fibermask - Byte array with bits set for unknown fibers
 ;
 ; COMMENTS:
 ;   Do not use the calibObj structure if more than 10% of the non-sky
@@ -69,15 +74,59 @@
 ;   29-Jan-2001  Written by S. Burles, FNAL
 ;-
 ;------------------------------------------------------------------------------
-function readplugmap, plugfile, plugdir=plugdir, $
+function readplugmap_sort, plugmap, fibermask=fibermask
+
+   qobj = strmatch(plugmap.holetype,'OBJECT')
+   indx = where(qobj, nfiber)
+   if (NOT keyword_set(fibermask)) then fibermask = bytarr(nfiber) $
+   else if (n_elements(fibermask) NE nfiber) then $
+    message, 'Number of elements in FIBERMASK do not match NFIBER'
+
+   blankmap = plugmap[0]
+   struct_assign, {junk:0}, blankmap
+   plugsort = replicate(blankmap, nfiber)
+   plugsort.holetype = 'OBJECT'
+   plugsort.objtype = 'NA'
+   plugsort.fiberid = -1
+
+   igood = where(qobj AND plugmap.fiberid GT 0, ngood)
+   if (ngood EQ 0) then $
+    message, 'No fibers found in plugmap!'
+   iplace = plugmap[igood].fiberid - 1
+   plugsort[iplace] = plugmap[igood]
+
+   ; Set the appropriate fibermask bit if a fiber not found in plugmap file.
+   ; Do this by first setting all bits to 1, then unsetting the good ones.
+   fibermask = fibermask OR fibermask_bits('NOPLUG')
+   fibermask[iplace] = fibermask[iplace] - fibermask_bits('NOPLUG')
+
+   ; Fill in unplugged fibers with arbitrary entries, and assign
+   ; them a FIBERID.  After this, plugsort.fiberid should run from 1...nfiber
+   imissing = where(plugsort.fiberid LE 0, nmissing)
+   splog, 'Number of missing fibers: ', nmissing
+   if (nmissing GT 0) then begin
+      ifill = where(qobj AND plugmap.fiberid LE 0, nfill)
+      plugsort[imissing] = plugmap[ifill]
+      plugsort[imissing].fiberid = imissing + 1
+   endif
+
+   return, plugsort
+end
+;------------------------------------------------------------------------------
+function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
  apotags=apotags, deredden=deredden, exptime=exptime, calibobj=calibobj, $
- hdr=hdr
+ hdr=hdr, fibermask=fibermask, _EXTRA=KeywordsForPhoto
 
    hdr = 0 ; Default return value
+   if (keyword_set(fibermask)) then $
+    message, 'FIBERMASK is already set!'
 
    ; The correction vector is here --- adjust this as necessary.
    ; These are the same numbers as in SDSSFLUX2AB in the photoop product.
    correction = [-0.042, 0.036, 0.015, 0.013, -0.002]
+
+   ;----------
+   ; Read the file
 
    thisfile = (findfile(djs_filepath(plugfile, root_dir=plugdir), $
     count=ct))[0]
@@ -92,11 +141,18 @@ function readplugmap, plugfile, plugdir=plugdir, $
       return, 0
    endif
    plugmap = *pstruct[(where(stnames EQ 'PLUGMAPOBJ'))[0]]
-   nplug = n_elements(plugmap)
 
+   ;----------
+   ; Trim to object fibers only, sort them, and trim to spectrographid
+
+   plugmap = readplugmap_sort(plugmap, fibermask=fibermask)
+
+   ;----------
    ; Add the tags OFFSETID and SCI_EXPTIME for 
+
    plugmap = struct_addtags(plugmap, $
-    replicate(create_struct('OFFSETID', 0L, 'SCI_EXPTIME', 0.), nplug))
+    replicate(create_struct('OFFSETID', 0L, 'SCI_EXPTIME', 0.), $
+    n_elements(plugmap)))
    i = (where(stnames EQ 'PLUGMAPPOINT', ct))[0]
    if (ct GT 0) then begin
       splog, 'Using OFFSETID and SCI_EXPTIME from PLUGMAPPOINT structure'
@@ -130,6 +186,38 @@ function readplugmap, plugfile, plugdir=plugdir, $
       redden_med = fltarr(5)
    endif
 
+   ;----------
+   ; Append some information from the plateHoles file
+
+   platelist_dir = getenv('PLATELIST_DIR')
+   platefile = 'plateHoles-' + string(plateid,format='(i6.6)') + '.par'
+   if (keyword_set(platelist_dir)) then begin
+      thisfile = (findfile(djs_filepath(platefile, $
+       root_dir=platelist_dir, subdir=['plates','*','*']), count=ct))[0]
+      if (ct GT 0) then begin
+         plateholes = yanny_readone(thisfile, /anonymous)
+         iobj = where(strmatch(plateholes.holetype,'BOSS*'))
+         plateholes = plateholes[iobj]
+         isort = lonarr(n_elements(plugmap)) - 1
+         for i=0L, n_elements(plugmap)-1 do $
+          isort[i] = where(plateholes.xfocal EQ plugmap[i].xfocal $
+           AND plateholes.yfocal EQ plugmap[i].yfocal)
+         plateholes = plateholes[isort>0]
+         blankhole = plateholes[0]
+         struct_assign, {junk: 0}, blankhole
+         ibad = where(iobj EQ -1, nbad)
+         for i=0L, nbad-1 do plateholes[ibad[i]] = blankhole
+         htags = ['SOURCETYPE','LAMBDA_EFF','ZOFFSET','BLUEFIBER', $
+          'BOSS_TARGET*','ANCILLARY_TARGET*', $
+          'RUN','RERUN','CAMCOL','FIELD','ID']
+         plugmap = struct_addtags(plugmap, $
+          struct_selecttags(plateholes, select_tags=htags))
+      endif
+   endif
+
+   ;----------
+   ; Optionally add tags for SOS
+
    if (keyword_set(apotags)) then begin
       addtags = { $
        cartid   : long((yanny_par(hdr, 'cartridgeId'))[0]), $
@@ -140,35 +228,36 @@ function readplugmap, plugfile, plugdir=plugdir, $
        redden_med : float(redden_med), $
        fibersn    : fltarr(3), $
        synthmag   : fltarr(3) }
-      plugmap = struct_addtags(plugmap, replicate(addtags, nplug))
+      plugmap = struct_addtags(plugmap, replicate(addtags, n_elements(plugmap)))
    endif
+
+   ;----------
+   ; Read calibObj or photoPlate photometry data
 
    if (keyword_set(calibobj)) then begin
       splog, 'Adding fields from calibObj file'
       addtags = replicate(create_struct( $
        'CALIBFLUX', fltarr(5), $
        'CALIBFLUX_IVAR', fltarr(5), $
-       'SFD_EBV', 0.), nplug)
+       'SFD_EBV', 0.), n_elements(plugmap))
       plugmap = struct_addtags(plugmap, addtags)
-
-      iobj = where(strmatch(plugmap.holetype,'OBJECT*'))
 
       ;----------
       ; Read the SFD dust maps
 
-      euler, plugmap[iobj].ra, plugmap[iobj].dec, ll, bb, 1
-      plugmap[iobj].sfd_ebv = dust_getval(ll, bb, /interp)
+      euler, plugmap.ra, plugmap.dec, ll, bb, 1
+      plugmap.sfd_ebv = dust_getval(ll, bb, /interp)
 
       ;----------
       ; Attempt to read the calibObj photometry data
 
-      tsobj = plug2tsobj(plateid, plugmap=plugmap[iobj])
+      tsobj = plug2tsobj(plateid, _EXTRA=KeywordsForPhoto)
 
-      ; Do not use the calibObj structure if more than 10% of the non-sky
+      ; Do not use the calibObj structure if more than 20% of the non-sky
       ; objects do not have fluxes.
       if (keyword_set(tsobj)) then begin
          qexist = tsobj.psfflux[2] NE 0
-         qsky = strmatch(plugmap[iobj].objtype,'SKY*')
+         qsky = strmatch(plugmap.objtype,'SKY*')
          splog, 'Matched ', fix(total(qsky EQ 0 AND qexist)), $
           ' of ', fix(total(qsky EQ 0)), ' non-SKY objects'
          if (total((qsky EQ 0) AND qexist) LT 0.80*total(qsky EQ 0)) then begin
@@ -180,19 +269,26 @@ function readplugmap, plugfile, plugdir=plugdir, $
       if (keyword_set(tsobj)) then begin
 
          ; Assume that all objects not called a 'GALAXY' are stellar objects
-         qstar = strmatch(plugmap[iobj].objtype, 'GALAXY*') EQ 0
+         qstar = strmatch(plugmap.objtype, 'GALAXY*') EQ 0
          istar = where(qstar AND qexist, nstar)
          igal = where(qstar EQ 0 AND qexist, ngal)
          pratio = fltarr(5) + 1
+         if (tag_exist(tsobj,'FIBER2FLUX')) then begin
+            fiberflux = transpose(tsobj.fiber2flux)
+            fiberflux_ivar = transpose(tsobj.fiber2flux_ivar)
+         endif else begin
+            fiberflux = transpose(tsobj.fiberflux)
+            fiberflux_ivar = transpose(tsobj.fiberflux_ivar)
+         endelse
          if (nstar GT 0) then begin
-            plugmap[iobj[istar]].calibflux = tsobj[istar].psfflux
-            plugmap[iobj[istar]].calibflux_ivar = tsobj[istar].psfflux_ivar
+            plugmap[istar].calibflux = tsobj[istar].psfflux
+            plugmap[istar].calibflux_ivar = tsobj[istar].psfflux_ivar
             ; Compute the ratio of PSF/FIBER flux for stars in each filter,
             ; using only stars that are brighter than 30 nMgy (= 18.8 mag).
             ; If no such stars, then this ratio is set to unity.
             for ifilt=0, 4 do begin
                v1 = tsobj[istar].psfflux[ifilt]
-               v2 = tsobj[istar].fiberflux[ifilt]
+               v2 = fiberflux[istar,ifilt]
                jj = where(v1 GT 30 AND v2 GT 30, ct)
                if (ct GT 0) then pratio[ifilt] = median([ v1[jj] / v2[jj] ])
             endfor
@@ -201,10 +297,10 @@ function readplugmap, plugfile, plugdir=plugdir, $
          splog, 'PSF/fiber flux ratios = ', pratio
          if (ngal GT 0) then begin
             for ifilt=0, 4 do begin
-               plugmap[iobj[igal]].calibflux[ifilt] = $
-                tsobj[igal].fiberflux[ifilt] * pratio[ifilt]
-               plugmap[iobj[igal]].calibflux_ivar[ifilt] = $
-                tsobj[igal].fiberflux_ivar[ifilt] / (pratio[ifilt])^2
+               plugmap[igal].calibflux[ifilt] = $
+                fiberflux[igal,ifilt] * pratio[ifilt]
+               plugmap[igal].calibflux_ivar[ifilt] = $
+                fiberflux_ivar[igal,ifilt] / (pratio[ifilt])^2
             endfor
          endif
 
@@ -214,8 +310,8 @@ function readplugmap, plugfile, plugdir=plugdir, $
           OR sdss_flagval('OBJECT2','INTERP_CENTER') $
           OR sdss_flagval('OBJECT2','PSF_FLUX_INTERP')
          qgoodphot = (tsobj.flags2 AND badbits2) EQ 0
-         plugmap[iobj].calibflux = plugmap[iobj].calibflux * qgoodphot
-         plugmap[iobj].calibflux_ivar = plugmap[iobj].calibflux_ivar * qgoodphot
+         plugmap.calibflux = plugmap.calibflux * qgoodphot
+         plugmap.calibflux_ivar = plugmap.calibflux_ivar * qgoodphot
       endif else begin
          splog, 'WARNING: No calibObj structure found for plate ', plateid
       endelse
@@ -226,15 +322,15 @@ function readplugmap, plugfile, plugdir=plugdir, $
       ; (as long as those values are in the range 0 < MAG < +50).
 
       for ifilt=0, 4 do begin
-         ibad = where(plugmap[iobj].calibflux[ifilt] EQ 0 $
-          AND plugmap[iobj].mag[ifilt] GT 0 $
-          AND plugmap[iobj].mag[ifilt] LT 50, nbad)
+         ibad = where(plugmap.calibflux[ifilt] EQ 0 $
+          AND plugmap.mag[ifilt] GT 0 $
+          AND plugmap.mag[ifilt] LT 50, nbad)
          if (nbad GT 0) then begin
             splog, 'Using plug-map fluxes for ', nbad, $
              ' values in filter ', ifilt
-            plugmap[iobj[ibad]].calibflux[ifilt] = $
-             10.^((22.5 - plugmap[iobj[ibad]].mag[ifilt]) / 2.5)
-            plugmap[iobj[ibad]].calibflux_ivar[ifilt] = 0
+            plugmap[ibad].calibflux[ifilt] = $
+             10.^((22.5 - plugmap[ibad].mag[ifilt]) / 2.5)
+            plugmap[ibad].calibflux_ivar[ifilt] = 0
          endif
       endfor
 
@@ -249,9 +345,16 @@ function readplugmap, plugfile, plugdir=plugdir, $
 
    if (keyword_set(deredden)) then begin
       splog, 'Applying reddening vector ', redden_med
-      iobj = where(strmatch(plugmap.holetype,'OBJECT*'))
       for ifilt=0, 4 do $
-       plugmap[iobj].mag[ifilt] = plugmap[iobj].mag[ifilt] - redden_med[ifilt]
+       plugmap.mag[ifilt] = plugmap.mag[ifilt] - redden_med[ifilt]
+   endif
+
+   ; Optionally trim to selected spectrograph
+   nfiber = n_elements(plugmap)
+   if (keyword_set(spectrographid)) then begin
+      indx = (spectrographid-1)*nfiber/2 + lindgen(nfiber/2)
+      plugmap = plugmap[indx]
+      fibermask = fibermask[indx]
    endif
 
    return, plugmap

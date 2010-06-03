@@ -6,13 +6,15 @@
 ;   Create plan file(s) for running the Spectro-2D pipeline.
 ;
 ; CALLING SEQUENCE:
-;   spplan2d, [ topoutdir=, mjd=, mjstart=, mjend=, minexp=, $
+;   spplan2d, [ topdir=, run2d=, mjd=, mjstart=, mjend=, minexp=, $
 ;    /clobber ]
 ;
 ; INPUTS:
 ;
 ; OPTIONAL INPUTS:
-;   topoutdir  - Top directory name for output files; default to ''.
+;   topdir     - Optional override value for the environment
+;                variable $BOSS_SPECTRO_REDUX.
+;   run2d      - Optional override value for the environment variable $RUN2D
 ;   mjd        - Look for raw data files in RAWDATA_DIR/MJD; default to
 ;                search all subdirectories.  Note that this need not be
 ;                integer-valued, but could be for example '51441_test'.
@@ -67,16 +69,20 @@
 ;   02-Nov-1999  Written by David Schlegel, Princeton.
 ;-
 ;------------------------------------------------------------------------------
-pro spplan2d, topoutdir=topoutdir, mjd=mjd, $
- mjstart=mjstart, mjend=mjend, minexp=minexp, clobber=clobber
+pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, $
+ mjstart=mjstart, mjend=mjend, minexp=minexp, clobber=clobber, _extra=foo
 
    if (NOT keyword_set(minexp)) then minexp = 1
 
    ;----------
    ; Determine the top-level of the output directory tree
 
-   if (NOT keyword_set(topoutdir)) then topoutdir = ''
-   splog, 'Setting TOPOUTDIR=', topoutdir
+   if (keyword_set(topdir1)) then topdir = topdir1 $
+    else topdir = getenv('BOSS_SPECTRO_REDUX')
+   splog, 'Setting TOPDIR=', topdir
+   if (keyword_set(run2d1)) then run2d = strtrim(run2d1,2) $
+    else run2d = getenv('RUN2D')
+   splog, 'Setting RUN2D=', run2d
 
    ;----------
    ; Read environment variable for RAWDATA_DIR for finding raw data files.
@@ -87,13 +93,11 @@ pro spplan2d, topoutdir=topoutdir, mjd=mjd, $
    splog, 'Setting RAWDATA_DIR=', rawdata_dir
 
    speclog_dir = getenv('SPECLOG_DIR')
-   if (NOT keyword_set(speclog_dir)) then begin
-      speclog_dir = getenv('ASTROLOG_DIR')
-      setenv, 'SPECLOG_DIR='+speclog_dir
-   endif
    if (NOT keyword_set(speclog_dir)) then $
-    message, 'Must set environment variable SPECLOG_DIR or ASTROLOG_DIR'
+    message, 'Must set environment variable SPECLOG_DIR'
    splog, 'Setting SPECLOG_DIR=', speclog_dir
+
+   spawn, 'speclog_version', logvers, /noshell
 
    ;----------
    ; Create a list of the MJD directories (as strings)
@@ -268,7 +272,8 @@ pro spplan2d, topoutdir=topoutdir, mjd=mjd, $
                ;----------
                ; Determine names of output files
 
-               outdir = concat_dir(topoutdir, platestr)
+               outdir = djs_filepath('', root_dir=topdir, $
+                subdir=[run2d,platestr])
 
                planfile = 'spPlan2d-' + platestr + '-' + mjdstr + '.par'
                logfile = 'spDiag2d-' + platestr + '-' + mjdstr + '.log'
@@ -281,26 +286,30 @@ pro spplan2d, topoutdir=topoutdir, mjd=mjd, $
                hdr = [hdr, "plateid  " + platestr + "  # Plate number"]
                hdr = [hdr, "MJD     " + mjdstr $
                 + "  # Modified Julian Date"]
+               hdr = [hdr, "RUN2D  " + run2d + "  # 2D reduction name"]
                hdr = [hdr, "planfile2d  '" + planfile $
-                + "'  # Plan file for 2D spectral reductions"]
-               hdr = [hdr, "extractdir ''" $
-                + "  # Directory for spFrame files"]
-               hdr = [hdr, "logfile    '" $
-                + logfile + "'  # Text log file"]
-               hdr = [hdr, "plotfile   '" + plotfile $
-                + "'  # PostScript log file"]
+                + "'  # Plan file for 2D spectral reductions (this file)"]
                hdr = [hdr, "idlspec2dVersion '" + idlspec2d_version() $
                 + "'  # Version of idlspec2d when building plan file"]
                hdr = [hdr, "idlutilsVersion '" + idlutils_version() $
                 + "'  # Version of idlutils when building plan file"]
-               spawn, 'speclog_version', logvers
                hdr = [hdr, "speclogVersion '" + logvers $
                 + "'  # Version of speclog when building plan file"]
 
                ;----------
                ; Write output file
 
-               spawn, 'mkdir -p ' + outdir
+               ; Create output directory if it does not yet exist
+               if (file_test(outdir, /directory) EQ 0) then begin
+                  ; Bad if this exists as a file
+                  if (file_test(outdir)) then $
+                    message, 'Expecting directory not file '+outdir
+                  spawn, 'mkdir -p ' + outdir
+               endif
+               ; Bad if this exists as an unwriteable dir
+               if (file_test(outdir, /directory, /write) EQ 0) then $
+                message, 'Cannot write to directory '+outdir
+
                fullplanfile = filepath(planfile, root_dir=outdir)
                qexist = keyword_set(findfile(fullplanfile))
                if (qexist) then begin

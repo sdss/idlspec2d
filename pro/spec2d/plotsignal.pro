@@ -72,7 +72,7 @@ pro plotsignal, plate, expnum, camname=camname, addsky=addsky
       return
    endif
    if (NOT keyword_set(camname)) then camname = ['b2','r2','b1','r1']
-   topdir = getenv('SPECTRO_DATA')
+   topdir = getenv('BOSS_SPECTRO_REDUX')
    csize = 1.1
    platestr = string(plate, format='(i4.4)')
 

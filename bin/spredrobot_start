@@ -1,7 +1,7 @@
 #!/bin/bash -f
 #------------------------------------------------------------------------------
 # Script to start the processing part of the Spectro-Robot (as a cron job).
-# Logging information is written to the file "$SPECTRO_DATA/sprobot.log".
+# Logging information is written to the file "$BOSS_SPECTRO_REDUX/sprobot.log".
 #
 # For ssh to work, you need the environment variables SSH_AUTH_SOCK
 # and SSH_AGENT_PID set.
@@ -27,7 +27,7 @@ fi
 # Set file names used internally in this script.
 
 cronfile=/tmp/$USER.spredrobot.cron
-SPRLOG=$SPECTRO_DATA/spredrobot.log
+SPRLOG=$BOSS_SPECTRO_REDUX/spredrobot.log
 
 #------------------------------------------------------------------------------
 # Test that certain environment variables are already set.
@@ -82,8 +82,8 @@ if [ -z "$RAWDATA_DIR" ] ; then
   exit
 fi
 
-if [ -z "$SPECTRO_DATA" ] ; then
-  echo "SPECTRO_DATA must be set!"
+if [ -z "$BOSS_SPECTRO_REDUX" ] ; then
+  echo "BOSS_SPECTRO_REDUX must be set!"
   exit
 fi
 
@@ -155,7 +155,7 @@ echo "ASTROLOG_DIR=$ASTROLOG_DIR" >> $cronfile
 echo "SPECLOG_DIR=$SPECLOG_DIR" >> $cronfile
 echo "SPECFLAT_DIR=$SPECFLAT_DIR" >> $cronfile
 echo "RAWDATA_DIR=$RAWDATA_DIR" >> $cronfile
-echo "SPECTRO_DATA=$SPECTRO_DATA" >> $cronfile
+echo "BOSS_SPECTRO_REDUX=$BOSS_SPECTRO_REDUX" >> $cronfile
 echo "# This job will run at 12:59 am every day." >> $cronfile
 echo "59 0 * * * \mv $SPRLOG.1dayold $SPRLOG.2dayold; \mv $SPRLOG $SPRLOG.1dayold" >> $cronfile
 echo "# This job will run at 1:00 am every day." >> $cronfile
@@ -164,7 +164,7 @@ echo "# This job will run every 30 minutes." >> $cronfile
 echo "*/30 * * * * spredrobot.sh >> $SPRLOG 2>&1" >> $cronfile
 # echo "# This job will run at 45 minutes past each hour." >> $cronfile
 # if [ ${vers:0:5} != NOCVS ] ; then upsversion=$vers ; fi
-# echo "45 * * * * sprobot1d.sh \",topdir=\'$SPECTRO_DATA\', upsversion=\`$upsversion\`, nice=19\" >> $SPRLOG 2>&1" >> $cronfile
+# echo "45 * * * * sprobot1d.sh \",topdir=\'$BOSS_SPECTRO_REDUX\', upsversion=\`$upsversion\`, nice=19\" >> $SPRLOG 2>&1" >> $cronfile
 echo "# This job will run every 10 minutes to keep the disk automounter up." >> $cronfile
 # echo "*/10 * * * * spamdup 2> /dev/null" >> $cronfile
 echo "# SPREDROBOT END" >> $cronfile

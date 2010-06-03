@@ -6,9 +6,10 @@
 ;   Routine for plotting spectra from Princeton-1D spectro outputs.
 ;
 ; CALLING SEQUENCE:
-;   plotspec, plate, [ fiberid, mjd=, znum=, nsmooth=, /zline, /nosyn, /noerr, $
+;   plotspec, plate, [ fiberid, mjd=, znum=, zmanual=, $
+;    nsmooth=, /zline, /nosyn, /noerr, $
 ;    /sky, /ormask, /andmask, psfile=, /restframe, /netimage, $
-;    /zwarning, /allexp, topdir=, _EXTRA= ]
+;    /zwarning, /allexp, _EXTRA= ]
 ;
 ; INPUTS:
 ;   plate      - Plate number(s)
@@ -20,6 +21,11 @@
 ;                data for each plate (largest MJD).
 ;   znum       - If set, then return not the best-fit redshift, but the
 ;                ZUM-th best-fit; e.g., set ZNUM=2 for second-best fit.
+;   zmanual    - If set, then do an on-the-fly fit to either a galaxy
+;                template (if ZMANUAL[0]<1) or QSO (if ZMANUAL[0]>=1),
+;                overriding ZNUM.  If this is a 2-element array, then fit
+;                between all redshifts in the range [ZMANUAL[0],ZMANUAL[1]].
+;                Do not include any polynomial terms with the PCA templates.
 ;   nsmooth    - If set, then boxcar smooth both the object and synthetic
 ;                spectra with a width equal to NSMOOTH.
 ;   zline      - If set, then overplot the emission line fits.
@@ -48,9 +54,9 @@
 ;                specifying fiber numbers with FIBERID.
 ;   allexp     - If set, then plot all the individual exposure spectra,
 ;                rather than the co-added spectrum.
-;   topdir     - Top-level directory for data; default to the environment
-;                variable $SPECTRO_DATA.
-;   _EXTRA     - Kewords for SPLOT and XYOUTS, such as XRANGE, YRANGE, THICK.
+;   _EXTRA     - Keywords for SPLOT and XYOUTS, such as XRANGE, YRANGE, THICK,
+;                or keywords for READSPEC and READONESPEC such as TOPDIR,
+;                RUN2D, RUN1D.
 ;
 ; OUTPUTS:
 ;
@@ -123,7 +129,7 @@
 ;-
 ;------------------------------------------------------------------------------
 pro plotspec_mask, wave, thismask, psfile=psfile, nolabel=nolabel, $
- _EXTRA=KeywordsForPlot
+ _EXTRA=Extra
 
    bitlabel = sdss_flagname('SPPIXMASK', 2UL^32-1, /silent)
    bitnum = where(bitlabel NE '', nlabel)
@@ -138,19 +144,19 @@ pro plotspec_mask, wave, thismask, psfile=psfile, nolabel=nolabel, $
       if (npix GT 0) then begin
          if (keyword_set(psfile)) then begin
             djs_oplot, [wave[ipix]], [replicate(ypos,npix)], $
-             _EXTRA=KeywordsForPlot
+             _EXTRA=Extra
          endif else begin
             soplot, [wave[ipix]], [replicate(ypos,npix)], $
-             _EXTRA=KeywordsForPlot
+             _EXTRA=Extra
          endelse
       endif
       if (NOT keyword_set(nolabel)) then begin
          if (keyword_set(psfile)) then begin
             djs_xyouts, !x.window[1], ynorm, bitlabel[ilabel]+' ', $
-             charsize=1.4, align=1.0, _EXTRA=KeywordsForPlot, /normal
+             charsize=1.4, align=1.0, _EXTRA=Extra, /normal
          endif else begin
             sxyouts, !x.window[1], ynorm, bitlabel[ilabel]+' ', $
-             charsize=1.4, align=1.0, _EXTRA=KeywordsForPlot, /normal
+             charsize=1.4, align=1.0, _EXTRA=Extra, /normal
          endelse
       endif
    endfor
@@ -158,12 +164,11 @@ pro plotspec_mask, wave, thismask, psfile=psfile, nolabel=nolabel, $
    return
 end
 ;------------------------------------------------------------------------------
-pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
- zline=q_zline, nosyn=nosyn, noerr=noerr, sky=sky, $
-  ormask=ormask, andmask=andmask, $
+pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, zmanual=zmanual, $
+ nsmooth=nsmooth1, zline=q_zline, nosyn=nosyn, noerr=noerr, sky=sky, $
+ ormask=ormask, andmask=andmask, $
  psfile=psfile, xrange=passxr, yrange=passyr, noerase=noerase, $
- restframe=restframe, netimage=netimage, allexp=allexp, $
- topdir=topdir, _EXTRA=KeywordsForSplot
+ restframe=restframe, netimage=netimage, allexp=allexp, _EXTRA=Extra
 
    cspeed = 2.99792458e5
    textcolor = 'green'
@@ -172,7 +177,7 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
    andcolor = 'red'
 
    readspec, plate, fiberid, mjd=mjd, znum=znum, flux=objflux, $
-    wave=wave, plug=plug, zans=zans, topdir=topdir, /silent
+    wave=wave, plug=plug, zans=zans, _EXTRA=Extra, /silent
    if (NOT keyword_set(objflux)) then begin
       print, plate, mjd, fiberid, $
        format='("Spectrum not found for plate=", i4, " MJD=", i5, " fiber=", i3)'
@@ -180,38 +185,72 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
    endif
    if (keyword_set(allexp)) then $
     readonespec, plate, fiberid, mjd=mjd, wave=allwave, flux=allflux, $
-     topdir=topdir, /silent
+     _EXTRA=Extra, /silent
    if (keyword_set(restframe)) then begin
       wave = wave / (1. + zans.z)
       if (keyword_set(allwave)) then allwave = allwave / (1. + zans.z)
    endif
    if (NOT keyword_set(noerr)) then $
-    readspec, plate, fiberid, mjd=mjd, flerr=objerr, topdir=topdir, /silent
-   if (NOT keyword_set(nosyn)) then $
-    readspec, plate, fiberid, mjd=mjd, znum=znum, synflux=synflux, $
-     topdir=topdir, /silent
+    readspec, plate, fiberid, mjd=mjd, flerr=objerr, _EXTRA=Extra, /silent
+   if (keyword_set(zmanual)) then begin
+      readspec, plate, fiberid, mjd=mjd, invvar=objivar, loglam=loglam, $
+       objhdr=hdr, _EXTRA=Extra, /silent
+      if (zmanual[0] LT 1.) then eigenfile = 'spEigenGal-*.fits' $
+       else eigenfile = 'spEigenQSO-*.fits'
+      npoly = 0
+      if (n_elements(zmanual) EQ 1) then zrange=[zmanual,zmanual] $
+       else zrange=zmanual[0:1]
+      res_manual = zfind(objflux, objivar, hdr=hdr, $
+       eigenfile=eigenfile, npoly=npoly, zmin=zrange[0], zmax=zrange[1], $
+       pspace=1, nfind=1, width=1)
+      synflux = synthspec(res_manual, loglam=loglam)
+   endif else begin
+      if (NOT keyword_set(nosyn)) then $
+       readspec, plate, fiberid, mjd=mjd, znum=znum, synflux=synflux, $
+        _EXTRA=Extra, /silent
+   endelse
    if (keyword_set(sky)) then $
-    readspec, plate, fiberid, mjd=mjd, sky=sky, topdir=topdir, /silent
+    readspec, plate, fiberid, mjd=mjd, sky=sky, _EXTRA=Extra, /silent
    if (keyword_set(ormask)) then $
-    readspec, plate, fiberid, mjd=mjd, ormask=ormask, topdir=topdir, /silent
+    readspec, plate, fiberid, mjd=mjd, ormask=ormask, _EXTRA=Extra, /silent
    if (keyword_set(andmask)) then $
-    readspec, plate, fiberid, mjd=mjd, andmask=andmask, topdir=topdir, /silent
+    readspec, plate, fiberid, mjd=mjd, andmask=andmask, _EXTRA=Extra, /silent
    if (keyword_set(zans) AND keyword_set(q_zline)) then $
     readspec, plate, fiberid, mjd=mjd, zline=zline, lineflux=lineflux, $
-     topdir=topdir, /silent
+     _EXTRA=Extra, /silent
 
-   if (keyword_set(nsmooth)) then begin
-      if (nsmooth GT 1) then begin
-         objflux = smooth(objflux, nsmooth)
-         if (keyword_set(synflux)) then $
-          synflux = smooth(synflux, nsmooth)
-         if (keyword_set(lineflux)) then $
-          lineflux = smooth(lineflux, nsmooth)
+   if (keyword_set(nsmooth1)) then nsmooth = nsmooth1 $
+    else nsmooth = 1
+
+   if (nsmooth GT 1) then begin
+      objflux = smooth(objflux, nsmooth)
+      if (keyword_set(allflux)) then begin
+         ndim = size(allflux,/n_dimen)
+         if (ndim EQ 1) then nexp = 1 $
+          else nexp = (size(allflux,/dimens))[1]
+         for iexp=0, nexp-1 do $
+          allflux[*,iexp] = smooth(allflux[*,iexp], nsmooth)
       endif
+      if (keyword_set(synflux)) then $
+       synflux = smooth(synflux, nsmooth)
+      if (keyword_set(lineflux)) then $
+       lineflux = smooth(lineflux, nsmooth)
    endif
 
-   primtarget = sdss_flagname('TARGET', plug.primtarget, /concat)
-   sectarget = sdss_flagname('TTARGET', plug.sectarget, /concat)
+   targstring = strmatch(plug.objtype,'SKY*') ? 'SKY ' : ''
+   if (tag_exist(plug,'PRIMTARGET')) then $
+    targstring += sdss_flagname('TARGET', plug.primtarget, /concat)+' '
+   if (tag_exist(plug,'SECTARGET')) then $
+    targstring += sdss_flagname('TTARGET', plug.sectarget, /concat)+' '
+   if (tag_exist(plug,'BOSS_TARGET1')) then $
+    targstring += sdss_flagname('BOSS_TARGET1', plug.boss_target1, /concat)+' '
+   if (tag_exist(plug,'BOSS_TARGET2')) then $
+    targstring += sdss_flagname('BOSS_TARGET2', plug.boss_target2, /concat)+' '
+   if (tag_exist(plug,'ANCILLARY_TARGET1')) then targstring += $
+     sdss_flagname('ANCILLARY_TARGET1', plug.ancillary_target1, /concat)+' '
+   if (tag_exist(plug,'ANCILLARY_TARGET2')) then targstring += $
+     sdss_flagname('ANCILLARY_TARGET2', plug.ancillary_target2, /concat)+' '
+   targstring = strtrim(targstring) ; get rid of trailing spaces
 
    csize = 1.75
    if (keyword_set(passyr)) then begin
@@ -244,10 +283,13 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
       djs_plot, xrange, yrange, /nodata, xrange=xrange, yrange=yrange, $
        xtitle=xtitle, ytitle=TeXtoIDL('Flux [10^{-17} erg/s/cm^2/Ang]'), $
        title=title, charsize=csize, _EXTRA=KeywordsForSplot, /xstyle, /ystyle
-      if (keyword_set(allexp)) then $
-       djs_oplot, allwave, allflux, psym=3, _EXTRA=KeywordsForSplot $
-      else $
-       djs_oplot, wave, objflux, _EXTRA=KeywordsForSplot
+      if (keyword_set(allexp)) then begin
+         for iexp=0, nexp-1 do $
+          djs_oplot, allwave[*,iexp], allflux[*,iexp], $
+           psym=(nsmooth GT 1) ? 0 : 3, _EXTRA=KeywordsForSplot
+      endif else begin
+         djs_oplot, wave, objflux, _EXTRA=KeywordsForSplot
+      endelse
       if (NOT keyword_set(noerr)) then $
        djs_oplot, wave, objerr, color='red', _EXTRA=KeywordsForSplot
       if (keyword_set(sky)) then $
@@ -259,10 +301,13 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
        splot, xrange, yrange, /nodata, xrange=xrange, yrange=yrange, $
         xtitle=xtitle, ytitle=TeXtoIDL('Flux [10^{-17} erg/s/cm^2/Ang]'), $
         title=title, charsize=csize, _EXTRA=KeywordsForSplot
-      if (keyword_set(allexp)) then $
-       soplot, allwave, allflux, psym=3, _EXTRA=KeywordsForSplot $
-      else $
-       soplot, wave, objflux, _EXTRA=KeywordsForSplot
+      if (keyword_set(allexp)) then begin
+         for iexp=0, nexp-1 do $
+          soplot, allwave[*,iexp], allflux[*,iexp], $
+           psym=(nsmooth GT 1) ? 0 : 3, _EXTRA=KeywordsForSplot
+      endif else begin
+         soplot, wave, objflux, _EXTRA=KeywordsForSplot
+      endelse
       if (NOT keyword_set(noerr)) then $
        soplot, wave, objerr, color='red', _EXTRA=KeywordsForSplot
       if (keyword_set(sky)) then $
@@ -275,38 +320,45 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
    dypos = 0.05 * (!y.window[0] - !y.window[1])
    ypos = !y.window[1] + 1.5 * dypos
 
-   if (keyword_set(zans)) then begin
-      cz = zans.z * cspeed
-      if (abs(cz) LT 3000) then $
-        zstring = '  cz=' + string(cz,format='(f6.0)') + ' km/s' $
-       else $
-        zstring = '  z=' + string(zans.z,format='(f8.5)')
-      if (zans.zwarning NE 0) then $
-;       zstring = zstring + '  ZWARNING=' + strtrim(string(zans.zwarning),2) + ''
-       zstring = zstring + ' (' $
-        + sdss_flagname('ZWARNING', zans.zwarning, /concat) + ')'
-      if (keyword_set(znum)) then $
-       zstring = zstring + ' (fit #' + strtrim(string(znum),2) + ')'
+   if (keyword_set(zmanual) OR keyword_set(zans)) then begin
+      if (keyword_set(zmanual)) then begin
+         zstring = res_manual.tfile $
+          + '  z=' + string(res_manual.z,format='(f8.5)')
+      endif else begin
+         zstring = zans.class + ' ' + zans.subclass
+         cz = zans.z * cspeed
+         if (abs(cz) LT 3000) then $
+           zstring += '  cz=' + string(cz,format='(f6.0)') + ' km/s' $
+          else $
+           zstring += '  z=' + string(zans.z,format='(f8.5)')
+         if (zans.zwarning NE 0) then $
+          zstring +=  ' (' $
+           + sdss_flagname('ZWARNING', zans.zwarning, /concat) + ')'
+         if (keyword_set(znum)) then $
+          zstring += ' (fit #' + strtrim(string(znum),2) + ')'
+      endelse
 
       if (keyword_set(psfile)) then $
-       xyouts, xpos, ypos, zans.class + ' ' + zans.subclass + zstring, $
+       xyouts, xpos, ypos, zstring, $
         charsize=csize, color=djs_icolor(textcolor), /normal, $
         _EXTRA=KeywordsForSplot $
       else $
-       sxyouts, xpos, ypos, zans.class + ' ' + zans.subclass + zstring, $
+       sxyouts, xpos, ypos, zstring, $
         charsize=csize, color=textcolor, /normal, $
         _EXTRA=KeywordsForSplot
 
       ypos = ypos + dypos
 
+      if (keyword_set(res_manual)) then thisrchi2 = res_manual.rchi2 $
+       else thisrchi2 = zans.rchi2
       if (keyword_set(psfile)) then $
        xyouts, xpos, ypos, $
-        TeXtoIDL('X^2_r =' + strtrim(string(zans.rchi2, format='(f6.2)'),2)), $
+        TeXtoIDL('X^2_r =' + strtrim(string(thisrchi2, format='(f6.2)'),2)), $
         charsize=csize, color=djs_icolor(textcolor), /normal, $
         _EXTRA=KeywordsForSplot $
       else $
        sxyouts, xpos, ypos, $
-        TeXtoIDL('X^2_r =' + strtrim(string(zans.rchi2, format='(f6.2)'),2)), $
+        TeXtoIDL('X^2_r =' + strtrim(string(thisrchi2, format='(f6.2)'),2)), $
         charsize=csize, color=textcolor, /normal, $
         _EXTRA=KeywordsForSplot
    endif
@@ -349,26 +401,14 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
        psym=6, symsize=0.6, color=andcolor, _EXTRA=KeywordsForSplot
    endif
 
-   if (keyword_set(primtarget)) then begin
+   if (keyword_set(targstring)) then begin
       ypos = ypos + dypos
       if (keyword_set(psfile)) then $
-       xyouts, xpos, ypos, 'PRIMTARGET = ' + primtarget, $
+       xyouts, xpos, ypos, 'Target = '+targstring, $
         charsize=csize, color=djs_icolor(textcolor), /normal, $
         _EXTRA=KeywordsForSplot $
       else $
-       sxyouts, xpos, ypos, 'PRIMTARGET = ' + primtarget, $
-        charsize=csize, color=textcolor, /normal, $
-        _EXTRA=KeywordsForSplot
-   endif
-
-   if (keyword_set(sectarget)) then begin
-      ypos = ypos + dypos
-      if (keyword_set(psfile)) then $
-       xyouts, xpos, ypos, 'SECTARGET = ' + sectarget, $
-        charsize=csize, color=djs_icolor(textcolor), /normal, $
-        _EXTRA=KeywordsForSplot $
-      else $
-       sxyouts, xpos, ypos, 'SECTARGET = ' + sectarget, $
+       sxyouts, xpos, ypos, 'Target = '+targstring, $
         charsize=csize, color=textcolor, /normal, $
         _EXTRA=KeywordsForSplot
    endif
@@ -392,7 +432,7 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
  ormask=ormask, andmask=andmask, $
  psfile=psfile, xrange=xrange, yrange=yrange, noerase=noerase, $
  restframe=restframe, netimage=netimage, zwarning=zwarning, allspec=allspec, $
- topdir=topdir, _EXTRA=KeywordsForSplot
+ _EXTRA=Extra
 
    if (n_params() LT 1) then begin
       doc_library, 'plotspec'
@@ -410,7 +450,7 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
       mjd = lonarr(nplate)
       for iplate=0, nplate-1 do begin
          mjd1 = 0
-         readspec, plate[iplate], mjd=mjd1, topdir=topdir, /silent
+         readspec, plate[iplate], mjd=mjd1, _EXTRA=Extra, /silent
          if (NOT keyword_set(mjd1)) then begin
             print, 'No MJD found for plate ', plate[iplate]
             !quiet = quiet
@@ -436,9 +476,9 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
          return
       endif
 
-      for iplate=0, nplate-1 do begin
+      for iplate=0L, nplate-1L do begin
          readspec, plate[iplate], mjd=mjd[iplate], $
-          topdir=topdir, /silent, zans=zans
+          _EXTRA=Extra, /silent, zans=zans
          if (NOT keyword_set(zans)) then begin
             print, 'No spZ file found for selecting ZWARNING flags'
             !quiet = quiet
@@ -467,16 +507,31 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
    endif
 
    ;----------
-   ; Set FIBERID to [1,...,640] (for each plate) if not set.
+   ; Set FIBERID to [1,...,NFIBER] (for each plate) if not set.
    ;
    ; If writing to a PostScript file, then all plots are in the same file
    ; either if PSFILE is that file name, or if FIBERID is not specified
-   ; (and then all 640 spectra are being plotted).
+   ; (and then all spectra are being plotted).
 
    if (NOT keyword_set(fiberid)) then begin
-      fiberid = reform((lindgen(640L)+1L) # replicate(1L,nplate), 640L*nplate)
-      platelist = reform(replicate(1L,640L) # plate, 640L*nplate)
-      mjdlist = reform(replicate(1L,640L) # mjd, 640L*nplate)
+      readspec, plate, mjd=mjd, 0*plate+1, nfiber=nfiber_tmp, $
+       _EXTRA=Extra, /silent
+      nfiber_tot = long(total(nfiber_tmp))
+      if (nfiber_tot EQ 0) then begin
+         print, 'No fibers found'
+         !quiet = quiet
+         return
+      endif
+      platelist = lonarr(nfiber_tot)
+      mjdlist = lonarr(nfiber_tot)
+      fiberid = lonarr(nfiber_tot)
+      j = 0L
+      for iplate=0L, nplate-1L do begin
+         platelist[j:j+nfiber_tmp[iplate]-1] = plate[iplate]
+         mjdlist[j:j+nfiber_tmp[iplate]-1] = mjd[iplate]
+         fiberid[j:j+nfiber_tmp[iplate]-1] = lindgen(nfiber_tmp[iplate]) + 1
+         j += nfiber_tmp[iplate]
+      endfor
       if (keyword_set(psfile)) then begin
          q_onefile = 1
          psfilename = string(plate[0], mjd[0], $
@@ -484,10 +539,10 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
       endif
    endif
 
-   if (min(fiberid) LT 1 OR max(fiberid) GT 640) then begin
-      print, 'Invalid FIBERID (must be between 1 and 640)'
-      return
-   endif
+;   if (min(fiberid) LT 1 OR max(fiberid) GT 640) then begin
+;      print, 'Invalid FIBERID (must be between 1 and 640)'
+;      return
+;   endif
 
    ;----------
    ; If FIBERID is specified, and writing to a PostScript file,
@@ -519,7 +574,7 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
    ;----------
    ; Loop over each plot
 
-   ifiber = 0
+   ifiber = 0L
    while (ifiber LT nfiber) do begin
 
       ;----------
@@ -540,11 +595,11 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
       endif
 
       plotspec1, platelist[ifiber], fiberid[ifiber], mjd=mjdlist[ifiber], $
-       znum=znum, nsmooth=nsmooth, zline=zline, nosyn=nosyn, noerr=noerr, $
+       znum=znum, zmanual=zmanual, nsmooth=nsmooth, zline=zline, $
+       nosyn=nosyn, noerr=noerr, $
        sky=sky, ormask=ormask, andmask=andmask, psfile=psfile, $
        xrange=xrange, yrange=yrange, noerase=noerase, netimage=netimage, $
-       restframe=restframe, allexp=allexp, topdir=topdir, $
-       _EXTRA=KeywordsForSplot
+       restframe=restframe, allexp=allexp, _EXTRA=Extra
 
       if (keyword_set(psfile)) then begin
          if (NOT keyword_set(q_onefile) OR ifiber EQ nfiber-1) then dfpsclose
@@ -559,11 +614,12 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
             print, 'Press b=back one fiber'
             print, '      p=select new plate'
             print, '      f=select new fiber number'
+            print, '      n=change which PCA-fit to plot'
             print, '      q=quit (and enter interactive mode for this plot)'
             print, '      s=change boxcar smoothing' + sstring
             print, '      x=change X plotting range'
             print, '      y=change Y plotting range'
-            print, '      z=change which PCA-fit to overplot'
+            print, '      z=manual z'
             print, '      v=view reconstructed frame'
             print, '      any other key=forward'
 
@@ -573,31 +629,41 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
             'V': begin
                     if (keyword_set(getenv('PHOTOOP_DIR'))) then begin
                        readspec, platelist[ifiber], fiberid[ifiber], $
-                        mjd=mjdlist[ifiber], zans=zans, /silent
+                        mjd=mjdlist[ifiber], zans=zans, _EXTRA=Extra, /silent
                        plotspec_image, ra=zans.plug_ra, dec=zans.plug_dec, $
                         cutout=300, /calibrate, /register, /allid
                     endif else begin
                        print, 'Need to set up photoop product to display images'
                     endelse
                  end
-            'B': ifiber = (ifiber - 1) > 0
+            'B': begin
+                    ifiber = (ifiber - 1) > 0
+                    zmanual = 0.
+                 end
             'P': begin
                     read, plate, mjd, prompt='Enter new plate and MJD (enter 0 for unknown MJD): '
                     if (NOT keyword_set(mjd)) then $
-                     readspec, plate, mjd=mjd, topdir=topdir, /silent
+                     readspec, plate, mjd=mjd, _EXTRA=Extra, /silent
                     if (NOT keyword_set(mjd)) then begin
                        print, 'MJD not found for plate ', plate
                        !quiet = quiet
                        return
                     endif
-                    platelist = replicate(plate,640)
-                    mjdlist = replicate(mjd,640)
+                    readspec, plate, mjd=mjd, nfiber=nfiber, $
+                     _EXTRA=Extra, /silent
+                    platelist = replicate(plate,nfiber)
+                    mjdlist = replicate(mjd,nfiber)
+                    zmanual = 0.
+                 end
+            'N': begin
+                    read, znum, prompt='Enter 1=best redshift, 2=2nd best, ...: '
+                    znum = long(znum) > 0
+                    zmanual = 0.
                  end
             'F': begin
                     read, newfiber, prompt='Enter new fiber number: '
-                    nfiber = 640
-                    fiberid = lindgen(nfiber) + 1L
                     ifiber = ((long(newfiber)-1) > 0) < (nfiber-1)
+                    zmanual = 0.
                  end
             'Q': ifiber = nfiber
             'S': begin
@@ -615,10 +681,12 @@ pro plotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
                      else yrange = [ymin, ymax]
                  end
             'Z': begin
-                    read, znum, prompt='Enter 1=best redshift, 2=2nd best, ...: '
-                    znum = long(znum) > 0
+                    read, zmanual, prompt='Enter redshift guess (zmin zmax)...: '
                  end
-            else: ifiber = ifiber + 1
+            else: begin
+                     ifiber = ifiber + 1
+                     zmanual = 0.
+                 end
             endcase
          endif else begin
             ifiber = nfiber

@@ -1,0 +1,253 @@
+#!/usr/bin/env bash
+#
+#  Startup SOS daemon at APO with options
+#
+#  Written by Gary Kushner (LBL).  Oct 2009.
+
+###
+###  Functions
+###
+
+function usage
+{
+    local execName=$(basename $0)
+    ( 
+	echo "usage: $execName -e -t"
+	echo
+	echo "   -e    Redo latest or given MJD.  Good for use in a crash or if starting after observing starts."
+	echo "   -m    Specify string to use as current MJD.  Useful only with -e."
+	echo "   -t    Start in test mode using directories in /tmp."
+	echo "   -x    No svn processing"
+	echo "   -a    No agent processing"
+	echo "   -s    Don't do eups setups (--eups setup is currently disabled!--)"
+	echo "   -d    Dry run."
+	echo " "
+	echo "   -g    go.  Go must be specified.  This is to prevent accidentally running $execName."
+	echo " "
+	echo "Normally don't call $execName directly, but use sos_apocontrol."
+    ) >&2
+    exit 1
+}
+
+function screamAndDie
+{
+    echo "Failed: $*"
+
+    echo "Goodbye!"
+    exit 1
+}
+
+function printAndRun
+{
+    echo "$*"
+
+ 	if "$dryMode"; then
+		return
+	fi
+		
+    # Silently do nothing
+    if test "_$*" = "_"; then
+        return
+    fi
+
+    eval "$@"
+    if test $? -ne 0; then
+        screamAndDie "failed running $*"
+    fi
+}
+
+
+# Make the commands to execute
+#   Arg $1 - the camera name
+#   Arg $2 - extra commands to sos_runnerd
+#   
+#   Uses all the directory variables and redoMode and svnMode and testMode and setMJD
+#
+#   echos the command so use $(makeCommand b1)
+function makeCommand
+{
+	if ! "$testMode"; then
+		platedb="-b"
+	fi
+#	echo "sos_runnerd $2 $redoMode $svnMode $setMJD -i $1 -g \"sdR-$1-*.fit\" -c \"idl -e \\\"aporeduce, '%%f', indir='%%pf', plugfile='%%p', outdir='$SOSDIR/%%m', copydir='$SOSDIR/combined', plugdir='%%pp'\\\"\" -d $pause -o $CONTROLDIR -r $RAWDIR -p $PLUGDIR -l ${LOGDIR} -n $platedb -v -v -v -v -v -v"
+#	echo "sos_runnerd $2 $redoMode $svnMode $setMJD -i $1 -g \"sdR-$1-*.fit*\" -d $pause -o $CONTROLDIR -r $RAWDIR -p $PLUGDIR -l ${LOGDIR} $platedb -v -v -v -v -v -v -c \"sos_apocommand -f '%%f' -i '%%pf' -p '%%p' -l '%%pp' -s '$SOSDIR' -m '%%m'\""
+	echo "sos_runnerd $2 $redoMode $svnMode $setMJD -i $1 -g \"sdR-$1-*.fit\" -g \"sdR-$1-*.fit.gz\" -d $pause -o $CONTROLDIR -r $RAWDIR -p $PLUGDIR -l ${LOGDIR} $platedb -v -v -v -v -v -v -c \"sos_filesequencer -f '%%f' -i '%%pf' -p '%%p' -l '%%pp' -s '$SOSDIR' -m '%%m'\""
+
+}
+
+# Insure that this shell can access svn
+#
+# Uses PLUGDIR
+function doSVNCheck
+{
+	echo " "
+	echo "About to checking SVN Access..."
+	echo "If you get asked for a password, type ^C to abort the script!"
+	echo " "
+	echo "This is a final check to avoid authentication problems which will trigger"
+	echo "LBL to block sos3 from accessing svn.  DO NOT try to type in the password."
+	echo "This is a test which must succeed without the need to type in a password."
+	echo "Only type ^C to abort the script."
+	echo " "
+	printAndRun "svn log "$PLUGDIR" >/dev/null"
+}
+
+# Start or connect to ssh-agent
+#
+# Uses CONTROLDIR, sets SSH_AUTH_SOCK
+function sshagent
+{
+	startAgent=true
+
+	socket=$CONTROLDIR/agent.socket
+	info=$CONTROLDIR/agent.info
+	
+	#	We're going to end up with this in the end anyway, and it is handy
+	#   to do it here even though it isn't true yet.
+	export SSH_AUTH_SOCK=$socket
+	
+	#	See if there is an existing agent we can connect to, if not start it up and add key!
+	echo "Checking for agent file $info"
+	if [ -e $info ]; then
+		echo "Found agent file"
+		agentpid=$(grep PID $info | perl -pe "s{^.*PID=([0-9]+);.*$}{\1}")
+		if ! test -z "$agentpid"; then
+			echo "Checking agent pid $agentpid"
+			kill -0 $agentpid &>/dev/null
+			if test $? -eq 0; then
+				echo "Agent still running.  Will use existing agent."
+				startAgent=false
+			else
+				echo "Agent has stopped running"
+			fi
+		else
+			echo "Can't parse agent file"
+		fi
+	else
+		echo "Could not find agent file"
+	fi
+	
+	if "$startAgent"; then
+		echo "Starting new agent."
+		rm $socket &>/dev/null
+		rm $info &>/dev/null
+		printAndRun "ssh-agent -a $socket" ">$info"
+		echo " "
+		echo "About to add the private key sos uses, please enter the key password."
+		echo "It is the same password as used by the sdss3 data access web site"
+		echo " "
+		printAndRun ssh-add ~/.ssh/id_dsa-sos
+	fi
+}
+
+
+###
+###  Parse Options
+###
+
+testMode=false
+redoMode=""
+svnMode=""
+svnCheck=true
+agentCheck=true
+dryMode=false
+skipSetups=false
+pause=60
+setMJD=""
+go=false
+
+while getopts "aetxdsm:g" argname; do
+    case $argname in
+      e) redoMode="-e" ;;
+      x) svnMode="-x"; svnCheck=false ;;
+      a) agentCheck=false ;;
+      t) testMode=true;  pause=20 ;;
+	  d) dryMode=true ;;
+	  s) skipSetups=true ;;
+	  m) setMJD="-m $OPTARG" ;;
+	  g) go=true ;;
+      *) usage
+    esac
+done
+shift $((OPTIND-1))
+
+###  Good to go?
+if ! "$go"; then
+	usage
+fi
+
+###
+###  Setup Directories
+###
+
+if ! "$testMode"; then
+	SOSDIR=/data/boss/sos
+	CONTROLDIR=/home/observer/sos/control
+	RAWDIR=/data/spectro
+	PLUGDIR=/home/sdss3/products/NULL/speclog/trunk
+	LOGDIR=/home/observer/sos/sos-logs
+else
+	SOSDIR=/tmp/sos/out
+	CONTROLDIR=/tmp/sos/control
+	RAWDIR=/tmp/sos/spectro
+	PLUGDIR=/tmp/sos/plugdir
+	LOGDIR=/tmp/sos/logs
+	
+	if ! "$dryMode"; then
+		if [ ! -d ${SOSDIR} ]; then mkdir -p ${SOSDIR}; fi
+		if [ ! -d ${CONTROLDIR} ]; then mkdir -p ${CONTROLDIR}; fi
+		if [ ! -d ${RAWDIR} ]; then mkdir -p ${RAWDIR}; fi
+		if [ ! -d ${PLUGDIR} ]; then mkdir -p ${PLUGDIR}; fi
+		if [ ! -d ${LOGDIR} ]; then mkdir -p ${LOGDIR}; fi
+	fi
+fi
+
+###	Setup eups products
+#
+#########
+#if ! "$skipSetups"; then
+#	printAndRun "setup idlspec2d"
+#	printAndRun "setup platedb"
+#fi
+########
+#
+#
+###  Setup python options
+export PYTHONUNBUFFERED=1
+#
+#
+###  Connect to or startup agent
+if "$agentCheck"; then
+	sshagent
+	echo SSH_AUTH_SOCK=$SSH_AUTH_SOCK
+	if test -z "$SSH_AUTH_SOCK"; then screamAndDie "Did not correctly setup ssh-agent"; fi
+fi
+#
+#
+###  Confirm SVN access
+if "$svnCheck"; then
+	doSVNCheck
+fi
+#
+#
+#	Run from Control directory
+cd ${CONTROLDIR}
+#
+#
+printAndRun $(makeCommand b1 -k) "2>&1 >> ${LOGDIR}/b1.out" "&"
+if ! "$dryMode"; then disown -h $!; fi
+#
+#
+sleep 15
+printAndRun $(makeCommand b2) "2>&1 >>${LOGDIR}/b2.out" "&"
+if ! "$dryMode"; then disown -h $!; fi
+#
+#
+sleep 15
+printAndRun $(makeCommand r1) "2>&1 >> ${LOGDIR}/r1.out" "&"
+if ! "$dryMode"; then disown -h $!; fi
+#
+#
+sleep 15
+printAndRun $(makeCommand r2) "2>&1 >> ${LOGDIR}/r2.out" "&"
+if ! "$dryMode"; then disown -h $!; fi

@@ -186,7 +186,9 @@ function extract_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
 
    junk = where(xcen[0:ntrace-2] GE xcen[1:ntrace-1] - 3, ct)
    if (ct GT 0) then $
-    message, 'XCEN is not sorted or not separated by greater than 3 pixels.'
+;    message, 'XCEN is not sorted or not separated by greater than 3 pixels.'
+; Should definitely reject here!!!???
+    splog, 'XCEN is not sorted or not separated by greater than 3 pixels.'
 
    ;----------
    ; Allocate memory for the C subroutine.

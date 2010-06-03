@@ -4,15 +4,16 @@
 ###############################################################################
 
 SHELL = /bin/sh
-#
-.c.o :
-	$(CC) -c $(CCCHK) $(CFLAGS) $(X_CFLAGS) $*.c
-#
-CFLAGS  = -I$(IDL_DIR)/external $(SDSS_CFLAGS) -DCHECK_LEAKS -I$(INC) 
+
 
 INC = ../include
 LIB = $(IDLSPEC2D_DIR)/lib
-
+CFLAGS  = -I$(IDL_DIR)/external $(SDSS_CFLAGS) -DCHECK_LEAKS -I$(INC)
+#
+#.c.o :
+%.o : %.c
+	$(CC) -c $(CCCHK) $(CFLAGS) $(X_CFLAGS) $<
+#
 OBJECTS = \
 	extract_boxcar.o \
 	extract_row.o \
@@ -31,6 +32,9 @@ $(LIB)/libspec2d.$(SO_EXT): $(OBJECTS)
 install :
 	- cp *.c $(IDLSPEC2D_DIR)/src
 	- cp Makefile $(IDLSPEC2D_DIR)/src
-
+#
+# GNU make pre-defines $(RM).  The - in front of $(RM) causes make to
+# ignore any errors produced by $(RM).
+#
 clean :
-	- /bin/rm -f *~ core *.o so_locations
+	- $(RM) *~ core *.o

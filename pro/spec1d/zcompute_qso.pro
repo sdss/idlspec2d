@@ -233,8 +233,8 @@ qso_model = [ [qso_model], [polyterms] ]
       thetaarr[*,ilag] = acoeff
 
       ; Burles counter of lag number...
-      print, format='("Lag ",i5," of ",i5,a1,$)', $
-       ilag, nlag, string(13b)
+;      print, format='("Lag ",i5," of ",i5,a1,$)', $
+;       ilag, nlag, string(13b)
    endfor
 
    ;-----

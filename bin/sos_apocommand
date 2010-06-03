@@ -1,0 +1,171 @@
+#!/usr/bin/env bash
+#
+#  Run the sos commands.  This command is called from the sos daemon when new files are
+#  written by the icc.  The commands run are:
+#
+#  Check to make sure the file is a BOSS exposure.  Return if not.  [STEP SKIPPED]
+#  Check to make sure the file is no a test expose.  Return if it is.
+#  Call IDL aporeduce
+#  Check if exposure is a science exposure.  Return if not.
+#  Call script to get S/N
+#  Call script to update plateDb
+#
+#  Written by Gary Kushner (LBL).  Dec 2009.
+
+###
+###  Functions
+###
+
+function usage
+{
+    local execName=$(basename $0)
+    ( 
+	echo "usage: $execName -f name -i path -p name -l path -s path -m 00000 [-d]"
+	echo " "
+	echo "   -f    Fits file name"
+	echo "   -i    Fits file directory path"
+	echo "   -p    Plugmap file name"
+	echo "   -l    Plugmap file directory path"
+	echo "   -s    SOS Directory"
+	echo "   -m    MJD"
+	echo " "
+	echo "   -d    Dry run."
+	echo " "
+	echo "All parameters except -d are required."
+	echo "Normally $execName will be called by sos_runnerd."
+    ) >&2
+    exit 1
+}
+
+function screamAndDie
+{
+    echo "Failed: $*"
+
+    echo "Goodbye from sos_apocommand!"
+    exit 1
+}
+
+function die
+{
+	echo $*
+	
+	echo "Goodbye from sos_apocommand."
+	exit 0
+}
+
+function printAndRun
+{
+    echo "$*"
+
+ 	if "$dryMode"; then
+		return
+	fi
+		
+    # Silently do nothing
+    if test "_$*" = "_"; then
+        return
+    fi
+
+    eval "$@"
+    if test $? -ne 0; then
+        screamAndDie "failed running $*"
+    fi
+}
+
+
+# Make the IDL aporeduce command to execute
+#
+#  Uses: fitsName, inDir, plugName, plugDir, MJD, SOSDir
+#
+#   echos the command so use $(makeCommand b1)
+function makeSOSCommand
+{
+	echo "idl -e \"aporeduce, '$fitsName', indir='$inDir', plugfile='$plugName', outdir='$SOSDir/$MJD', copydir='$SOSDir/combined', plugdir='$plugDir'\""
+}
+
+# Turn a fits science frame name into an aporeduce output file name.  For example
+#     sdR-b1-00104994.fit -> sci-3587-b1-00104994.fits
+# In order to do this, it must read the fits science frame to get the plugid.
+#
+# Input : $1 - fits file name
+#
+# Output : echo : aporeduce science output name
+function getSOSSciName
+{
+	fname=$(basename $1)
+
+	plateId=$(sxpar.py $1 PLATEID)
+	camera=${fname: 4:2}
+	exposure=${fname: 7:8}
+	
+	echo sci-$plateId-$camera-$exposure.fits
+}
+
+
+###
+###  Parse Options
+###
+
+dryMode=false
+fitsName=""
+inDir=""
+plugName=""
+plugDir=""
+MJD=""
+SOSDir=""
+
+while getopts "f:i:p:l:s:m:d" argname; do
+    case $argname in
+	  f) fitsName=$OPTARG ;;
+	  i) inDir=$OPTARG ;;
+	  p) plugName=$OPTARG ;;
+	  l) plugDir=$OPTARG ;;
+	  s) SOSDir=$OPTARG ;;
+	  m) MJD=$OPTARG ;;
+	  d) dryMode=true ;;
+      *) usage
+    esac
+done
+shift $((OPTIND-1))
+
+###	Make sure we have everything we need
+
+if 	[ -z $fitsName ] || [ -z $inDir ] || [ -z $plugName ] || [ -z $plugDir ] ||
+	[ -z $SOSDir ] || [ -z $MJD ]; then
+	echo " "
+	echo "Missing Required Parameter!"
+	echo " "
+	usage
+fi
+
+###
+### Here is the SOS Command !
+###
+
+# 	If this isn't a boss file, we're done
+#if  [ "$(filecheck.py boss $plugDir/$plugName)" == "false" ]; then
+#	die "$plugDir/$plugName is not a boss plugmap file."
+#fi
+
+# 	If this is not an excellend file, we're done
+if  [ "$(filecheck.py excellent $inDir/$fitsName)" == "false" ]; then
+	die "$inDir/$fitsName is not an excellent exposure ($(sxpar.py $inDir/$fitsName quality))."
+fi
+echo "$inDir/$fitsName is excellent"
+
+#	Call aporeduce
+printAndRun $(makeSOSCommand)
+
+#	If this isn't a science file, we're done
+if [ "$(filecheck.py science $inDir/$fitsName)" == "false" ]; then
+	die "$inDir/$fitsName is not a science frame."
+fi
+echo "$inDir/$fitsName is a science frame"
+
+#	Update plateDB with (s/n)^2
+printAndRun "echo Is a Science Frame"
+printAndRun loadSN2Value --update -v ${SOSDir}/${MJD}/$(getSOSSciName $inDir/$fitsName) ${plugDir}/${plugName}
+
+#	Update plugging (s/n)^2 flag using new (s/n)^2
+plugmap=$(perl -pe 's{^plPlugMapM-(.*)\.par$}{\1}' <<< $plugName)
+printAndRun updatePluggingStatus -v -d -p $plugmap

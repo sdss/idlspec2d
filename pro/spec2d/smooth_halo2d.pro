@@ -74,8 +74,8 @@ function smooth_halo2d, image, wset, kernel_size=kernel_size
           convol(image[*,irow], bs[*,good[ic]], /edge_trunc)
 
      ; Schlegel counter of step number...
-       print, format='("Step ",i5," of ",i5,a1,$)', $
-         irow, ny, string(13b)
+;       print, format='("Step ",i5," of ",i5,a1,$)', $
+;         irow, ny, string(13b)
 
    endfor
    return, smooth_model

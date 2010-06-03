@@ -3,7 +3,7 @@
 # Script to reduce new spectro data, as reported by the rsync robot.
 #
 # Once the data is copied over, build plan files under the directories
-#    $SPECTRO_DATA/$PLATE
+#    $BOSS_SPECTRO_REDUX/$PLATE
 # then launch "batch2d" and "batch1d" to reduce them.  Run the same version
 # of the idlspec2d product as is set up for this script.  For example, even
 # if v4_9 is declared current, run v4_8 if that is what's set up when this
@@ -16,7 +16,7 @@
 
 astrologdir=$ASTROLOG_DIR
 toprawdir=$RAWDATA_DIR
-topoutdir=$SPECTRO_DATA
+topoutdir=$BOSS_SPECTRO_REDUX
 
 copiedMJDs=$toprawdir/copiedMJDs.list
 plannedMJDs=$topoutdir/plannedMJDs.list
@@ -86,7 +86,7 @@ if [ ${vers:0:5} != NOCVS ] ; then upsversion=$vers ; fi
 
    echo "SPREDROBOT: Current time "`date` UID=$UID PPID=$PPID
    sprobot2d.sh ",topdir='$topoutdir', upsversion='$upsversion', nice=19"
-   cd $SPECTRO_DATA
+   cd $BOSS_SPECTRO_REDUX
    echo "platelist, /create" | idl
    sprobot1d.sh ",topdir='$topoutdir', upsversion='$upsversion', nice=19" &
 

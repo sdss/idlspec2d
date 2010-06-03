@@ -92,7 +92,7 @@ function apo_log_tableline, ncams
 end
 
 ;------------------------------------------------------------------------------
-function apo_log_beginplate, platenum, mjd, camnames, outdir=outdir
+function apo_log_beginplate, platenum, cartid, mjd, camnames, outdir=outdir
 
    rowsep = ' <TR> <TH> '
    colsep = ' <TH> '
@@ -101,29 +101,21 @@ function apo_log_beginplate, platenum, mjd, camnames, outdir=outdir
 
    mjdstr = strtrim(string(mjd),2)
    platestr = strtrim(string(platenum),2)
+   cartstr = strtrim(string(cartid),2)
    platestr4 = string(platenum, format='(i4.4)')
    plotfile = 'snplot-'+mjdstr+'-'+platestr4+'.ps'
-   giffile = 'snplot-'+mjdstr+'-'+platestr4+'.gif'
-
-   ; See if the plot file actually exists, and only then create a link to it.
-;   junk = findfile( djs_filepath(plotfile, root_dir=outdir), count=plotct)
-;   if (platenum LT 0) then plotct = 0
-   ; Force the link to the plot file, whether it appears to exist or not...
-   plotct = 1
+   jpegfile = 'snplot-'+mjdstr+'-'+platestr4+'.jpeg'
 
    textout = ['<A NAME="PLATE' + platestr + '">']
    textout = [textout, '<TABLE BORDER=1 CELLPADDING=3>']
    textout = [textout, apo_log_tableline(ncams)]
-   nextline = '<CAPTION><FONT SIZE="+2"><B> Plate ' + platestr + '</B></FONT>'
-   if (plotct NE 0) then $
-    nextline = nextline $
-     + ' - <A HREF="' + giffile + '">S/N FIGURE</A>' $
-     + ' (<A HREF="' + plotfile + '">PostScript</A>)' + '</CAPTION>'
+   nextline = '<CAPTION><FONT SIZE="+2"><B> Plate ' + platestr $
+    + ' on Cart #' + cartstr + '</B></FONT>'
    textout = [textout, nextline]
    nextline = rowsep + colsep
    for icam=0, ncams-1 do $
     nextline = nextline + colsep + camnames[icam]
-   nextline = nextline + colsep + 'EXPTIME' + colsep + 'AIRTEMP' $
+   nextline = nextline + colsep + 'EXPTIME' + colsep + 'TEMP' $
     + colsep + 'UT' + colsep + 'QUALITY'
    textout = [textout, nextline]
 
@@ -259,27 +251,34 @@ pro apo_log2html, logfile, htmlfile
    endif
 
    allplates = [0]
+   allcarts = [0]
    if (keyword_set(PPBIAS)) then begin
       allplates = [allplates, PPBIAS.plate]
+      allcarts = [allcarts, PPBIAS.cartid]
       thismjd = PPBIAS[0].mjd
    endif
    if (keyword_set(PPFLAT)) then begin
       allplates = [allplates, PPFLAT.plate]
+      allcarts = [allcarts, PPFLAT.cartid]
       thismjd = PPFLAT[0].mjd
    endif
    if (keyword_set(PPTEXT)) then begin
       allplates = [allplates, PPTEXT.plate]
+      allcarts = [allcarts, PPTEXT.cartid]
       thismjd = PPTEXT[0].mjd
    endif
    allplates = allplates[1:n_elements(allplates)-1]
-   allplates = allplates[ uniq(allplates, sort(allplates)) ]
+   allcarts = allcarts[1:n_elements(allcarts)-1]
+   indx = uniq(allplates, sort(allplates))
+   allplates = allplates[indx]
+   allcarts = allcarts[indx]
    nplates = n_elements(allplates)
    mjdstr = strtrim(thismjd,2)
 
    ;----------
    ; Consruct the header of the output text
 
-   title1 = 'APO Spectro MJD=' + mjdstr + ' Plate='
+   title1 = 'BOSS Spectro MJD=' + mjdstr + ' Plate='
    platelist = 'Plate='
    for iplate=0, nplates-1 do begin
       platestr = strtrim(string(allplates[iplate]),2)
@@ -303,7 +302,7 @@ pro apo_log2html, logfile, htmlfile
     '<TD WIDTH="33%" ALIGN="LEFT">Yesterday: ' $
     + '<A HREF='+prevfile+'>MJD='+prevmjd+'</A></TD>']
    textout = [textout, $
-    '<TD WIDTH="34%" ALIGN="CENTER"><B><FONT SIZE="+4">APO Spectro MJD '+mjdstr+'</FONT></B></TD>']
+    '<TD WIDTH="34%" ALIGN="CENTER"><B><FONT SIZE="+4">BOSS Spectro MJD '+mjdstr+'</FONT></B></TD>']
    textout = [textout, $
     '<TD WIDTH="33%" ALIGN="RIGHT">Tomorrow: ' $
     + '<A HREF='+nextfile+'>MJD='+nextmjd+'</A></TD></TR>']
@@ -316,7 +315,7 @@ pro apo_log2html, logfile, htmlfile
 
    textout = [textout, $
     '<P>IDLSPEC2D version ' + vers2d + ' (' $
-    + '<A HREF="http://sdsshost.apo.nmsu.edu/idlspec2d/spectroSOS.html">documentation</A>).']
+    + '<A HREF="http://sdsshost2.apo.nmsu.edu/doc/idlspec2d/spectroSOS.html">documentation</A>).']
    if (!version.release LT '5.4') then $
     textout = [textout, $
      '<BR>This page last updated <B>'+systime()+' local time</B>.<P>'] $
@@ -334,9 +333,10 @@ pro apo_log2html, logfile, htmlfile
       ; Find which structures correspond to this plate
 
       thisplate = allplates[iplate]
+      thiscart = allcarts[iplate]
 
       textout = [textout, $
-       apo_log_beginplate(thisplate, thismjd, camnames, outdir=outdir)]
+       apo_log_beginplate(thisplate, thiscart, thismjd, camnames, outdir=outdir)]
 
       ;----------
       ; Find all biases and loop over each exposure number with any
@@ -392,8 +392,8 @@ pro apo_log2html, logfile, htmlfile
             endfor
 
             ; Output table line for this one flat exposure
-            fields = ['NGOODFIBER', 'XMIN', 'XMAX', 'XSIGMA']
-            formats = ['(i4)', '(f7.1)', '(f7.1)', '(f5.2)']
+            fields = ['NGOODFIBER', 'XMID', 'XSIGMA']
+            formats = ['(i4)', '(f7.1)', '(f5.2)']
             textout = [ textout, $
              apo_log_fields(pflats, fields, formats=formats) ]
 
@@ -421,8 +421,8 @@ pro apo_log2html, logfile, htmlfile
                 copy_struct_inx, PPARC[jj], parcs, index_to=icam
             endfor
 
-            formats = ['(f7.1)', '(f7.1)', '(f4.2)', '(i)', '(f5.2)']
-            fields = ['WAVEMIN', 'WAVEMAX', 'BESTCORR', 'NLAMPS', 'WSIGMA']
+            formats = ['(f7.1)', '(f4.2)', '(i)', '(f5.2)']
+            fields = ['WAVEMID', 'BESTCORR', 'NLAMPS', 'WSIGMA']
             textout = [ textout, $
              apo_log_fields(parcs, fields, formats=formats) ]
          endfor
@@ -465,13 +465,14 @@ pro apo_log2html, logfile, htmlfile
          ; Output SN2 for science exposures
 
          for iexp=0, nexp-1 do begin
-            if (pscience[0,iexp].flavor EQ 'science') then $
-              textout = [ textout, $
-               apo_log_fields(pscience[*,iexp], 'SN2', $
-                printnames='(S/N)^2', formats='(f7.1)') ] $
-            else textout = [ textout, $
-               apo_log_fields(pscience[*,iexp], 'SN2', $
-                printnames='(S/N)^2', formats='(f7.2)') ]
+            mjdstr = strtrim(string(thismjd),2)
+            platestr4 = string(thisplate, format='(i4.4)')
+            expstring = string(pscience[*,iexp].expnum, format='(i8.8)')
+            jpegfile1 = 'snplot-'+mjdstr+'-'+platestr4+'-'+expstring+'.jpeg'
+            printnames = '<A HREF="' + jpegfile1 + '">(S/N)^2</A>'
+            textout = [ textout, $
+             apo_log_fields(pscience[*,iexp], 'SN2', $
+             printnames=printnames, formats='(f7.1)') ]
          endfor
 
          ;----------
@@ -501,9 +502,13 @@ pro apo_log2html, logfile, htmlfile
                endif
             endfor
          endfor
+         mjdstr = strtrim(string(thismjd),2)
+         platestr4 = string(thisplate, format='(i4.4)')
+         jpegfile = 'snplot-'+mjdstr+'-'+platestr4+'.jpeg'
+         printnames = '<A HREF="' + jpegfile + '">TOTAL (S/N)^2</A>'
          textout = [ textout, $
           apo_log_fields(ptotal, 'TOTALSN2', $
-           printnames='TOTAL (S/N)^2', formats='(f7.1)') ]
+           printnames=printnames, formats='(f7.1)') ]
       endif
 
       textout = [textout, apo_log_endplate()]

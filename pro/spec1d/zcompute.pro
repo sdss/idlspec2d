@@ -238,9 +238,9 @@ function zcompute, objflux, objivar, starflux, starmask, $
 ;      thetaarr[*,ilag] = acoeff
 
       ; Burles counter of lag number...
-      if(NOT keyword_set(silent)) then $
-        print, format='("Lag ",i5," of ",i5,a1,$)', $
-        ilag, nlag, string(13b)
+;      if(NOT keyword_set(silent)) then $
+;        print, format='("Lag ",i5," of ",i5,a1,$)', $
+;        ilag, nlag, string(13b)
   endfor
 
    ;-----

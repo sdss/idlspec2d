@@ -1,0 +1,180 @@
+Lauren found a number of changes that had to be made in the
+spectroscopic processing code in order to process her simulated sdss3
+data.  The changes are due to differences in the detector format,
+number of fibers, the traces that land on the detectors, and the
+availability of the full suite of configuration information that
+wasn't produced for the simulation.  In the latter case, it is the
+data and not the code that has to be expanded upon.
+
+The objective is to produce code that works with existing sdss2 data
+and simulated and real sdss3 data.  In principle the new software
+should produce the same output as the head of the branch for sdss2
+data.  However, the new code may contain improvements that should be
+applied to sdss2 data.  We need a well-formulated test suite on both
+old and new data.
+
+The decision was made not to come up with an elegent design but rather
+do a hack that will work for the short term.  Once the pipeline is
+running and we have time (if ever), we will revisit whether
+improvements on the existing code or a new line of development is
+appropriate.
+
+To consolidate the changes and ensure flexibility on the code
+behavior, I put almost all of the configuration behavior into a single
+object.  The object is put in a new subdirectory
+config/configuration__define.pro.  The existing code already contains
+a number of hacks that control the processing of data based on the
+MJD.  Keeping with that tradition, the object is defined by an
+internal MJD variable.  This can be expanded upon as the need arises.
+
+I find that I can create/destroy this object in several places:
+
+sdssproc.pro - l616 the object is needed only to decide whether the
+rawdata goes through a processing that depends on bad pixel maps etc.
+
+spcalib.pro - l172 and l291 for the flats and arcs respectively
+
+extract_object.pro - l110
+
+spreduce.pro - l117 sortplugmap.pro has a keyword for nfibers,  Use configuration.
+
+All other code do not interact directly with the configuration object.
+Instead I add new keywords for the variables that can change.
+
+
+spcalib.pro
+
+l.175 - reject_flat: use calibration object for percent80thresh
+l.177 - use calibration object for temporary fibermask size
+l.187 - trace320crude: Add xerr=xerr.  xerr is an output so shouldn't harm backwards
+compatibility.   Add keyword for padding.  Add keywords that get passed into
+trace320cen, bundlebreakrange, nextpeakrange, bundlegap, num fibers per side
+l.191 - xy2traceset Add xerr, use calibration object for inputs of double,
+inmask, ncoeff
+l.198 - use calibration object for rejection threshold
+l.232 - extract_image: use calibration object for intial guess of sigma
+l.237 - extract_image: use calibration object for profile type
+l.241 - fitflatwidth: use calibration object for ncoeff, mask, numbundles,inmask,double
+l.244 - use calibration object for proftype
+l.366,387 - fitarcimage: use calibration object for acoeff, dcoeff, trimrange, logwrange, number of bundles
+l.385 - use calibration object for arccoeff
+l.393 - use calibration object for nfitcoeff
+l.395 - fitdispersion:  use calibration object for intial guess of
+sigma, number of bundles, xmax
+l.519 - doscatter: use calibration object for scatter image
+l.511 - create configuration object
+l.558 - fiberflat: use calibration object for badflatfracthresh, minval
+
+sdssproc.pro
+l.465 comment out warning message based on the dimension of the fits image
+l616 the object is needed only to decide whether the
+rawdata goes through a processing that depends on bad pixel maps etc.
+l887 make_badcolumn_mask  use the calculated values of nr, nc
+
+docsatter.pro
+add keywords to set maxkernr and addrows and use old values if
+keywords are not set.
+
+fiberflat.pro
+add keyword that controls the threshold fo acceptable flat
+badflatfractrhesh
+
+fitdispersion.pro
+l320 comment out message for check of 320 traces
+make keywords for number bundles
+replaced 16's and 15 with the variable numbundles, numbundles-1
+
+fitflatwidth.pro
+l.66 comment out message for check of 320 traces
+make the mask a keyword so that it can be set
+make keywords for number bundles
+replaced 16's and 15 with the variable numbundles, numbundles-1
+add keywords to call in xy2traceset, inmask and double
+
+reject_flat.pro
+add keyword percent80thresh that controls the number of pixels that
+can fall below 80% flux
+
+trace320crude.pro
+add keyword padding
+add keywords to call of trace320cen
+add keyword for number of fibers per side
+
+trace320cen
+add keyword bundlebreakrange
+add keyword nextpeakrange
+add keyword bundlegap
+add keyword for number of fibers per side
+
+fitarcimage
+add keywords acoeff and dcoeff to arcfit_guess call
+add keywords to fitarcimage itself
+add keyword for trim range
+add keyword for number of bundles, get rid of hardwired 16
+add arcivar to call of trace_crude.  This should be fine because trace_crude
+doesn't change this variable.
+add keyword for logwrange
+l.337 turn off fiber=320 test
+
+extract_object.pro
+l.188,189 do or don't do the kludge removing first and last column
+l.229, 252 calcscatimage: add fullrows keyword, ymax keyword
+l.442-447, logic to do 3rd order polynomial sky fit
+l.239 getscatter: use calibration object to get scatter map
+l.411 skysubtract: use calibration object to use alternativeSupersky
+
+qaplot_skysub.pro
+My impression is that Lauren's code is improved and works with old data.
+So I would keep her new version as is.
+
+skysubtract.pro
+l.195 and max keyword
+l.244 put in Lauren's change,  should work fine with old and new data
+l.260 put in Lauren's change which is called if the keyword alternativeSupersky is set.  Otherwise the original code is used.
+l.297 put in Lauren's change to skyvarfit.  I suspect that this should work fine on
+the old code.
+
+
+
+spcombine_v5
+l.227-230 create the configuration object
+spflux_v5 add keywords npix and nfibersperspectrograph
+l246 spfluxcorr_v5, add keyword for nfibersperspectrograph
+
+spcoadd_v5
+According to Lauren this is very temporary
+{
+l.395 create the configuration object.  Use the zeroth header
+l.443 destroy the configuration object
+do the logic
+l.414 the if/then switch
+}
+not temporary
+l.461 keyword for flux_distortion
+
+spflux_v5
+l173 get rid of places with 0.  This should be old data as well so no switch
+l566 add keyword for npix and nfibersperspectrograph
+l581, 610, 653, 690, 714, 730, 824, 874 nfibersperspectrograph set
+l758 get rid of places with 0.  This should be old data as well so no switch
+l692,822 add keyword for minimum fraction threshold
+
+spfluxcorr_v5
+l323 add keyword for nfibersperspectrograph
+
+flux_distortion
+l135,294,307352,448, 449,478, 479,489 add keyword for nfibersperspectrograph
+l96, 101, 102 flux_distort_corrvec add keyword for nfibersperspectrograph
+l125 flux_distort_fn add nfibersperspectrograph to common block com_flux_distort
+
+By my estimation, there are a number of programs that don't have to do with the pipeline itself that are in the directories.  These seem one-offish.
+
+spec2d/focalplane.pro
+spec2d/write_uros.pro
+spec2d/spgain
+spec2d/spflatgen
+spec2d/spflatten2
+spec2d/readsmear
+spec2d/plotsignal
+spec2d/doscatfit
+spec2d/fitansimage

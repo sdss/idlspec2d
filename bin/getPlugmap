@@ -1,0 +1,107 @@
+#!/usr/bin/env python
+
+import os, sys, fcntl, time, commands, getopt
+import sxpar
+
+""" 
+getPlugmap
+
+Given a fits file, getPlugmap will display the associated plugmap name and optionally get it using platedb.
+
+Written by Gary Kushner (LBL).  Oct 2009.
+
+"""
+
+####
+def usage():
+	"""Display usage and exit"""
+	
+	usageCMD = os.path.basename(sys.argv[0])
+
+	print usageCMD + " [-w] fits-file"
+	print '   -w writes the plugmap file.  Need to "setup platedb"'
+	
+	sys.exit(1)
+
+####
+def setupPlateDb():
+	"""Setup plateDb.  Do nothing on failure."""
+	
+	try:
+		import eups
+		Eups = eups.Eups(verbose=0)
+		cmds = eups.setup(Eups, "platedb", eups.Current())
+	except:
+		pass
+	
+
+####
+def parseCmdLine(argv):
+	"""Parse command line arguments.  Returns (fits name, write-plugmap)"""
+	
+	writePlugmap = False
+	
+	# parse with options
+	try:
+		opts, pargs = getopt.gnu_getopt(argv, "w")
+	except:
+		usage()
+	
+	if len(pargs) != 1:
+		usage()
+	
+	#	Fill in the config
+	for (opt, value) in opts:
+		if opt == "-w":
+			writePlugmap = True
+	
+	
+	return pargs[0], writePlugmap
+			
+####
+def plugmap(file, writePlugmap):
+	"""Display the plugmap file and optionally write it"""
+	
+	#	Get plugmap used by file
+	plugmapFullId = sxpar.sxpar(file, "NAME")[0]
+
+	#	Parse plugmap name
+	plugmapName   = "plPlugMapM-" + plugmapFullId + ".par"
+	
+	plugParse     = plugmapFullId.split("-")
+	plugmapId     = plugParse[0]
+	plugmapMJD    = plugParse[1]
+	plugmapMapId  = str(int(plugParse[2][0:2]))
+	plugmapPtg    = "A"
+	if len(plugParse[2]) == 3:
+		plugmapPtg = plugParse[2][2]
+	
+	
+	print "The plugmap used is " + plugmapName
+	
+	if writePlugmap:
+		setupPlateDb()
+		cmd  = "catPlPlugMapM";
+		cmd += " -m " + plugmapMJD
+		cmd += " -f " + plugmapMapId
+		if plugmapPtg != None:
+			cmd += " -p " + plugmapPtg
+		cmd += " " + plugmapId
+		print "executing " + cmd
+		rc = commands.getstatusoutput(cmd)
+		if rc[0] != 0:
+			print >> sys.stderr, rc[1] + "\n\n"
+			print >> sys.stderr, 'Could not get plugmap file.  Try "setup platedb"'
+			sys.exit(1)
+		f = open(plugmapName, "w")
+		f.write(rc[1])
+		f.close()
+		print "Created " + plugmapName
+	
+
+		
+
+### Start of script
+
+(fits, write) = parseCmdLine(sys.argv[1:])
+plugmap(fits, write)

@@ -1,8 +1,10 @@
 ;------------------------------------------------------------------------------
 function spplan_findrawdata, inputdir, nfile
 
-   fullnames = findfile(filepath('sdR*.fit', root_dir=inputdir), count=nfile)
-   gzipnames = findfile(filepath('sdR*.fit.gz', root_dir=inputdir), count=n)
+   fullnames = file_search(filepath(['sdR*.fit','sdR*.fits'], $
+    root_dir=inputdir), count=nfile)
+   gzipnames = file_search(filepath(['sdR*.fit.gz','sdR*.fits.gz'], $
+    root_dir=inputdir), count=n)
 
    if n EQ 0 then return, fullnames
 

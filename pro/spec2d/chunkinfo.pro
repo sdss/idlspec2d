@@ -25,28 +25,31 @@
 ; BUGS:
 ;
 ; DATA FILES:
-;   $IDLSPEC2D_DIR/etc/spChunkList.par
+;   $PLATELIST_DIR/platePlans.par
 ;
 ; PROCEDURES CALLED:
-;   yanny_free
-;   yanny_read
+;   yanny_readone()
 ;
 ; REVISION HISTORY:
 ;   08-Feb-2001  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
 function chunkinfo, plateid
 
+   common com_chunkinfo, chunkdata
+
    nplate = n_elements(plateid)
 
    ;----------
    ; Read the data file with the chunk information
 
-   chunkfile = filepath('spChunkList.par', $
-    root_dir=getenv('IDLSPEC2D_DIR'), subdirectory='etc')
-   yanny_read, chunkfile, pdata
-   chunkdata = *pdata[0]
-   yanny_free, pdata
-   nchunk = n_elements(chunkdata)
+   if (NOT keyword_set(chunkdata)) then begin
+      chunkfile = filepath('platePlans.par', root_dir=getenv('PLATELIST_DIR'))
+      chunkdata = yanny_readone(chunkfile)
+   endif
+   if (NOT keyword_set(chunkdata)) then begin
+      splog, 'Empty or missing platePlans.par file'
+      return, 0
+   endif
 
    ;----------
    ; Create output structure, setting all information to blanks.
@@ -59,12 +62,9 @@ function chunkinfo, plateid
    ;----------
    ; Find the chunk data for each plate
 
-   for iplate=0, nplate-1 do begin
-      for ichunk=0, nchunk-1 do begin
-         if (plateid[iplate] GE chunkdata[ichunk].plate_start $
-          AND plateid[iplate] LE chunkdata[ichunk].plate_end) then $
-           retval[iplate] = chunkdata[ichunk]
-      endfor
+   for iplate=0L, nplate-1L do begin
+      indx = where(chunkdata.plateid EQ plateid[iplate], ct)
+      if (ct GT 0) then retval[iplate] = chunkdata[indx[0]]
    endfor
 
    return, retval

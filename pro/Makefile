@@ -5,31 +5,23 @@
 
 SHELL = /bin/sh
 #
-.c.o :
-	$(CC) -c $(CCCHK) $(CFLAGS) $*.c
-#
-CFLAGS  = $(SDSS_CFLAGS) -DCHECK_LEAKS -I../include
+SUBDIRS = apo2d config fluxfix guider inspect photoz plan plate science science/ism science/kinematics science/lickindex science/lya science/qso spec1d spec2d specdb specflat templates testsuite
 
-SUBDIRS = apo2d fluxfix guider inspect photoz plan plate science spec1d spec2d specdb
-
-all :
-	@ for f in $(SUBDIRS); do \
-		(cd $$f ; echo In $$f; $(MAKE) $(MFLAGS) all ); \
-	done
+all :;
 
 #
 # Install things in their proper places in $(IDLSPEC2D_DIR)
 #
 install :
-	@ rm -rf $(IDLSPEC2D_DIR)/pro
-	@ mkdir $(IDLSPEC2D_DIR)/pro
 	@ for f in $(SUBDIRS); do \
-		(mkdir $(IDLSPEC2D_DIR)/pro/$$f; cd $$f ; echo In $$f; $(MAKE) $(MFLAGS) install ); \
+		(mkdir $(IDLSPEC2D_DIR)/pro/$$f; \
+		echo Copying $$f; \
+		cp $$f/* $(IDLSPEC2D_DIR)/pro/$$f ); \
 	done
-	- cp Makefile $(IDLSPEC2D_DIR)/pro
+	-@ cp Makefile $(IDLSPEC2D_DIR)/pro
 
 clean :
 	- /bin/rm -f *~ core
 	@ for f in $(SUBDIRS); do \
-		(cd $$f ; echo In $$f; $(MAKE) $(MFLAGS) clean ); \
+		(cd $$f ; echo In $$f; /bin/rm -f core *~ ); \
 	done

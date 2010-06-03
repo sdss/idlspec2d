@@ -17,7 +17,7 @@
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
-;   The exposure times of all files $SPECTRO_DATA/????/spFrame-b1-????????.fits
+;   The exposure times of all files $BOSS_SPECTRO_REDUX/????/spFrame-b1-????????.fits
 ;   are logged to the file 'listexp.log'.
 ;   This proc just looks at the b1 exposures to save time.
 ;
@@ -35,7 +35,7 @@
 ;------------------------------------------------------------------------------
 pro listexptime
 
-   spawn, '\ls -d '+getenv('SPECTRO_DATA') + '/????', mjdlist
+   spawn, '\ls -d '+getenv('BOSS_SPECTRO_REDUX') + '/????', mjdlist
    nmjd = n_elements(mjdlist)
 
    for imjd=0, nmjd-1 do begin

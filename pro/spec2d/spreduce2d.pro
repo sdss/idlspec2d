@@ -7,7 +7,7 @@
 ;   to a plan file.
 ;
 ; CALLING SEQUENCE:
-;   spreduce2d, [ planfile, docams=, /do_telluric, /xdisplay ]
+;   spreduce2d, [ planfile, docams=, /do_telluric, /xdisplay, /writeflatmodel ]
 ;
 ; INPUTS:
 ;
@@ -17,6 +17,10 @@
 ;   docams     - Cameras to reduce; default to ['b1', 'b2', 'r1', 'r2']
 ;   do_telluric- Passed to EXTRACT_OBJECT
 ;   xdisplay   - Send plots to X display rather than to plot file
+;   writeflatmodel - passed to SPCALIB via SPREDUCE to trigger writing
+;                    out of flat model info to file.
+;   writearcmodel  - passed to SPCALIB via SPREDUCE to trigger writing
+;                    out of arc model info to file.
 ;
 ; OUTPUT:
 ;
@@ -48,11 +52,12 @@
 ;
 ; REVISION HISTORY:
 ;   02-Nov-1999  Written by David Schlegel, Princeton.
+;      Apr-2010  Added "write[flat,arc]model" pass-through (A. Bolton, Utah)
 ;-
 ;------------------------------------------------------------------------------
 
 pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
- xdisplay=xdisplay
+ xdisplay=xdisplay, writeflatmodel=writeflatmodel, writearcmodel=writearcmodel
 
    if (NOT keyword_set(planfile)) then planfile = findfile('spPlan2d*.par')
 
@@ -97,13 +102,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
    ;----------
    ; Find the SPEXP structure
 
-   yanny_read, thisplan, pdata, hdr=hdr
-   for i=0, N_elements(pdata)-1 do begin
-      if (tag_names(*pdata[i], /structure_name) EQ 'SPEXP') then $
-       allseq = *pdata[i]
-   endfor
-   yanny_free, pdata
-
+   allseq = yanny_readone(thisplan, 'SPEXP', hdr=hdr, /anon)
    if (N_elements(allseq) EQ 0) then begin
       splog, 'ABORT: No SPEXP structures in plan file ' + thisplan
       cd, origdir
@@ -113,17 +112,20 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
    ;----------
    ; Find keywords from the header
 
+   run2d = strtrim(string(yanny_par(hdr,'RUN2D')),2)
    mjd = long(yanny_par(hdr, 'MJD'))
    mjdstr = string(mjd, format='(i05.5)')
 
    inputdir = concat_dir(rawdata_dir, mjdstr)
    plugdir = concat_dir(speclog_dir, mjdstr)
-   extractdir = yanny_par(hdr, 'extractdir')
-   logfile = yanny_par(hdr, 'logfile')
-   plotfile = yanny_par(hdr, 'plotfile')
 
-   if (keyword_set(extractdir)) then $
-    spawn, 'mkdir -p ' + extractdir
+   platemjd = string(yanny_par(hdr,'plateid'), format='(i04.4)') + '-' + mjdstr
+   logfile = 'spDiag2d-' + platemjd + '.log'
+   plotfile = 'spDiag2d-' + platemjd + '.ps'
+
+   foo = fileandpath(planfile, path=outdir)
+   if (keyword_set(outdir)) then $
+    spawn, 'mkdir -p ' + outdir
 
    stime0 = systime(1)
 
@@ -148,9 +150,9 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
 
    splog, 'idlspec2d version ' + idlspec2d_version()
    splog, 'idlutils version ' + idlutils_version()
-   spawn, 'specflat_version', flatvers
+   spawn, 'specflat_version', flatvers, /noshell
    splog, 'specflat version ' + flatvers[0]
-   spawn, 'speclog_version', slogvers
+   spawn, 'speclog_version', slogvers, /noshell
    splog, 'speclog version ' + slogvers[0]
 
    splog, 'Plan file ' + thisplan
@@ -243,11 +245,11 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
                plottitle = 'PLATE='+platestr $
                 + ' MJD='+strtrim(string(mjd),2)+' '
 
-               spreduce, flatname, arcname, objname, $
+               spreduce, flatname, arcname, objname, run2d=run2d, $
                 plugfile=plugfile, lampfile=lampfile, $
-                indir=inputdir, plugdir=plugdir, outdir=extractdir, $
-                summarystruct=summarystruct, plottitle=plottitle, $
-                do_telluric=do_telluric
+                indir=inputdir, plugdir=plugdir, outdir=outdir, $
+                plottitle=plottitle, do_telluric=do_telluric, $
+                writeflatmodel=writeflatmodel, writearcmodel=writearcmodel
             endif
 
             splog, 'Time to reduce camera ', camnames[icam], ' = ', $

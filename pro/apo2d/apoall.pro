@@ -27,7 +27,7 @@
 ;   and finally all of the science/smear frames.
 ;
 ;   Look for the raw sdR files in $RAWDATA_DIR/$MJD, the plPlugMapM files
-;   in $ASTROLOG_DIR/$MJD, and put the outputs in $SPECTROLOG_DIR/$MJD.
+;   in $SPECLOG_DIR/$MJD, and put the outputs in $SPECTROLOG_DIR/$MJD.
 ;   If that last environment variable is not set, then put the outputs
 ;   in the same directory as the sdR files.
 ;
@@ -60,9 +60,9 @@ pro apoall, mjd=mjd, mjstart=mjstart, mjend=mjend, $
    if (NOT keyword_set(rawdata_dir)) then $
     message, 'RAWDATA_DIR not set!'
 
-   astrolog_dir = getenv('ASTROLOG_DIR')
+   astrolog_dir = getenv('SPECLOG_DIR')
    if (NOT keyword_set(astrolog_dir)) then $
-    message, 'ASTROLOG_DIR not set!'
+    message, 'SPECLOG_DIR not set!'
 
    spectrolog_dir = getenv('SPECTROLOG_DIR')
    if (NOT keyword_set(spectrolog_dir)) then begin

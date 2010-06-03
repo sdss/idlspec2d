@@ -11,7 +11,7 @@ function lrgmodel_read_spall, public=public, regenerate=regenerate
 
       ; Read the spAll file
       spfile = filepath('spAll'+pstring+'.fits', $
-       root_dir=getenv('SPECTRO_DATA'))
+       root_dir=getenv('BOSS_SPECTRO_REDUX'))
       foo = findfile(spfile, count=ct)
       if (ct EQ 0) then message, 'Failed to find file ' + spfile
 

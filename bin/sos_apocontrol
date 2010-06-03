@@ -1,0 +1,194 @@
+#!/usr/bin/env python
+
+import os, sys, commands, time
+import sos_classes
+
+""" 
+sos_apocontrol:
+
+sos_apocontrol controls the running of the sos daemon.  Everything is hard coded to APO--no
+comfort is given as a general purpose configurable control program.
+
+Written by Gary Kushner (LBL).  Oct 2009.
+
+"""
+
+####
+##   Globals Block. 
+####
+
+#CONTROLDIR = "/tmp/sos/control"
+#STARTCMD = "sos_apostart -t -x -s"
+CONTROLDIR = "/home/observer/sos/control"
+STARTCMD = "sos_apostart -g"
+DIEFILE = os.path.join(CONTROLDIR, sos_classes.Consts().dieFileName)
+
+
+####
+def usage():
+	"""Display usage and exit"""
+	
+	usageCMD = os.path.basename(sys.argv[0])
+
+	print usageCMD + "\n\nusage: start|allow|stopWait|stop|status|stopKill"
+	print \
+	"""
+	start:
+	  delete the die file and run sos_apostart
+	
+	allow:
+	  delete the die file but don't start the daemons
+
+	stop:
+	  touch the die file.  With the die file, the daemon will not run even if restarted
+	  manually or via cron.
+
+	stopWait:
+	  touch the die file.  With the die file, the daemon will not run even if restarted
+	  manually or via cron.  stopWait will not return to the shell until all the 
+	  processes are stopped.  Normally, stopWait will return in less than 5 minutes, 
+	  however, if an idl process is active, stopWait can take more time.
+	
+	stopKill:
+	  touch the die file.  With the die file, the daemon will not run even if restarted
+	  manually or via cron.  stopKill will then kill all the processes by sending them
+	  a SIGINT, sleeping, and then sending any stragglers a SIGKILL.  It is best to try
+	  stopWait first. 
+
+	status:
+	  use ps to display running sos_runnerd processes
+
+	preferred sequence upon failure of one or more runnerd processes:
+	  sos_apocontrol status   --- if processes not running then
+	  sos_apocontrol stopWait
+	  sos_apocontrol status   --- check that zero processes are running
+	  sos_apocontrol start
+
+	"""
+	sys.exit(1)
+
+
+####
+def start():
+	if os.path.isfile(DIEFILE):
+		os.unlink(DIEFILE)
+	rc = os.system(STARTCMD)
+	if rc != 0:
+		print >> sys.stderr, "sos_apostart failed: " + str(rc)
+	time.sleep(5)
+	print " "
+	print "Running status now.  There should be 4 processes running."
+	status()
+
+####
+def allow():
+	if os.path.isfile(DIEFILE):
+		os.unlink(DIEFILE)
+	print "die file removed -- sos_runnerd allowed to run."
+	
+		
+####
+def stop():
+	open(DIEFILE, 'w').close()
+	print "die file created -- processes should stop.  If an idl command is"
+	print "executing, it will be allowed to finish before the process stops."
+
+	
+####
+def stopWait():
+	open(DIEFILE, 'w').close()
+	print "die file created -- processes should stop.  If an idl command is"
+	print "executing, it will be allowed to finish before the process stops."
+	print "Waiting . . .",
+	while True:
+		sys.stdout.flush()
+		rc = commands.getstatusoutput("ps ax | grep runnerd | grep -v grep | grep -Eo sos_runnerd.*$ | sed G")
+		if len(rc[1]) == 0:
+			break
+		time.sleep(5)
+		print ".",
+		
+		
+####
+def stopKill():
+	open(DIEFILE, 'w').close()
+	print "die file created -- processes should stop."
+	
+	#	Try SIGINT
+	rc = commands.getstatusoutput("ps ax -o pid,args | grep runnerd | grep -v grep | grep -Eo ^.*python | grep -Eo [0-9]+")
+	if len(rc[1]) != 0:
+		print "Sending SIGINT to processes..."
+		sys.stdout.flush()
+		pids = rc[1].split("\n")
+		for pid in pids:
+			os.kill(int(pid), 2)
+			
+	#	If still running, sleep and check again
+	rc = commands.getstatusoutput("ps ax -o pid,args | grep runnerd | grep -v grep | grep -Eo ^.*python | grep -Eo [0-9]+")
+	if len(rc[1]) != 0:
+		time.sleep(5)
+		
+	#	SIGKILL anyone left alive
+	rc = commands.getstatusoutput("ps ax -o pid,args | grep runnerd | grep -v grep | grep -Eo ^.*python | grep -Eo [0-9]+")
+	if len(rc[1]) != 0:
+		print "Sending SIGKILL to processes..."
+		sys.stdout.flush()
+		pids = rc[1].split("\n")
+		for pid in pids:
+			os.kill(int(pid), 9)
+		
+	#	If still running, sleep and check again
+	sys.stdout.flush()
+	rc = commands.getstatusoutput("ps ax -o pid,args | grep runnerd | grep -v grep | grep -Eo ^.*python | grep -Eo [0-9]+")
+	sys.stdout.flush()
+	if len(rc[1]) != 0:
+		time.sleep(5)
+	sys.stdout.flush()
+	rc = commands.getstatusoutput("ps ax -o pid,args | grep runnerd | grep -v grep | grep -Eo ^.*python | grep -Eo [0-9]+")
+	sys.stdout.flush()
+	if len(rc[1]) != 0:
+		print "** Could not kill processes **"
+	else:
+		print "No processes running."
+			
+####
+def status():
+	rc = commands.getstatusoutput("ps ax | grep runnerd | grep -v grep | grep -Eo sos_runnerd.*$ | sed G")
+	if len(rc[1]) == 0:
+		print "No processes running!"
+		return
+	print str(rc[1].count("sos_runnerd")) + " processes running:\n"
+	os.system("ps ax | grep runnerd | grep -v grep | grep -Eo sos_runnerd.*$ | sed G")
+		
+	
+
+####
+def main(argv):
+	"""control the apo sos daemon"""
+	
+	if len(argv) != 1:
+		usage()
+	cmd = argv[0]
+
+	if cmd == "start":
+		start()
+	elif cmd == "allow":
+		allow()
+	elif cmd == "stop":
+		stop()
+	elif cmd == "stopWait":
+		stopWait()
+	elif cmd == "stopKill":
+		stopKill()
+	elif cmd == "status":
+		status()
+	else:
+		usage()
+
+### Start of script
+
+if __name__=='__main__':
+	main(sys.argv[1:])
+	print os.path.basename(sys.argv[0]) + " finished running!"
+
+

@@ -17,7 +17,7 @@
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
-;   The exposure times of all files $SPECTRO_DATA/????/spFrame-??-????????.fits
+;   The exposure times of all files $BOSS_SPECTRO_REDUX/????/spFrame-??-????????.fits
 ;   are logged to the file 'listchi.log'.  Also, a save-set is written
 ;   to the file 'listchi.ss'.
 ;
@@ -35,7 +35,7 @@
 ;------------------------------------------------------------------------------
 pro listchi
 
-   spawn, '\ls -d '+getenv('SPECTRO_DATA') + '/????', mjdlist
+   spawn, '\ls -d '+getenv('BOSS_SPECTRO_REDUX') + '/????', mjdlist
    nmjd = n_elements(mjdlist)
 
    for imjd=0, nmjd-1 do begin

@@ -1,0 +1,182 @@
+#!/usr/bin/env python
+
+import os, sys, time, commands
+import logging, logging.handlers, getopt
+import fb_classes
+
+""" 
+sos_batchd (femto batch):
+
+sos_batchd reads jobs from a process queue and executes them.  You can run as many instances of sos_batchd
+as you'd like, for example, one per cpu.
+
+Notes to run:
+	In order to run, the environment must be setup:
+
+Written by Gary Kushner (LBL).  Oct 2009.
+
+"""
+
+####
+def usage():
+	"""Display usage and exit"""
+	
+	usageCMD = os.path.basename(sys.argv[0])
+
+	print """
+Parameters and fb_config.ini names are:
+
+nice (-n) : false : run commands via nice
+pollDelay (-d) : default 60 seconds : Seconds to wait before interrogating directing
+logDir (-l) : default . : Place to place log files
+logLevel (-v) : default 30 : 30 = WARNING; -v = 20 = INFO; -v -v = 10 = DEBUG
+controlDir (-o) : default . : Place to find config file and place process lists
+name (-i) : default "" : Name sent to logger to identify instance # or something
+         """
+
+	sys.exit(1)
+
+
+####
+def screamAndDie(msg):
+	"""Log a message and then exit"""
+	
+	log = logging.getLogger(sos_classes.Consts().logName)
+	log.critical(msg)
+	log.critical("GOODBYE!")
+	sys.exit(1)
+
+
+####
+def parseConfigFile(cfg):
+	"""Parse the config file"""
+	
+
+####
+def parseCmdLine(cfg):
+	"""Parse command line arguments"""
+	
+	verbose  = 0
+	
+	# parse with options
+	try:
+		opts, pargs = getopt.gnu_getopt(sys.argv[1:], "d:l:vo:i:n")
+	except:
+		usage()
+	
+	if len(pargs) != 0:
+		usage()
+	
+	#	Fill in the config
+	for (opt, value) in opts:
+		if opt == "-d":
+			cfg.pollDelay= int(value)
+		if opt == "-l":
+			cfg.logDir = value
+		if opt == "-v":
+			verbose += 1
+		if opt == "-o":
+			cfg.controlDir = value
+		if opt == "-i":
+			cfg.name = value
+		if opt == "-n":
+			cfg.nice = True
+			
+	#	Don't want to apply -v on each call, so always start with a base
+	if (verbose > 0):
+		cfg.logLevel = max(1, fb_classes.Config().logLevel - verbose * 10)
+		
+	#	Display config values on any verbosity
+	if (verbose > 1):
+		print "Config values: \n" + str(cfg)
+
+
+####
+def initializeParms():
+	"""Initialize all the parameters."""
+	cfg = fb_classes.Config();
+	
+	#	Parse command line to get config.ini information
+	parseCmdLine(cfg)
+	#	Parse config.ini to get new defaults
+	parseConfigFile(cfg)
+	#	Parse command line again to give command line precedence 
+	parseCmdLine(cfg)
+	
+	return cfg
+
+
+####
+def initializeLogger(cfg):
+	"""Startup logging and set the level"""
+	
+	lname = os.path.join(cfg.logDir, fb_classes.Consts().logName)
+	print "Starting to log to " + lname
+	
+	log = logging.getLogger(fb_classes.Consts().logName)
+	h = logging.handlers.RotatingFileHandler(lname, maxBytes=1024*1024, backupCount=3)
+	f = logging.Formatter("%(asctime)s-%(levelname)s: %(message)s")
+	h.setFormatter(f)
+	h.setLevel(cfg.logLevel)
+	log.setLevel(cfg.logLevel)
+	log.addHandler(h)
+	
+	log.critical("Hello from " + cfg.name + ". " + sys.argv[0] + " started.")
+	log.critical(cfg.name + ": Startup Configuration is: \n\n" + str(cfg) + "\n\n")
+	
+	return log
+	
+	
+####
+def watch(cfg, log):
+	"""  Watch for new process commands.  When when comes in, execute it.  """		
+	
+	plist = fb_classes.ProcessList(os.path.join(cfg.controlDir, fb_classes.Consts().processListName))
+	
+	while True:
+		pause = True
+		
+		#	Check for new commands
+		cmd = plist.pop()
+		if cmd != None:
+			pause = False
+			if cfg.nice:
+				cmd = "nice " + cmd
+			log.info(cfg.name + " executing: " + cmd)
+			rc = commands.getstatusoutput(cmd)
+			log.info(cfg.name + " -> rc = " + str(rc[0]))
+			log.debug(cfg.name + " -> output:\n" + rc[1])
+		
+		#	Pause if asked
+		if pause: 
+			log.debug(cfg.name + " sleeping for " + str(cfg.pollDelay) + " seconds.")
+			time.sleep(cfg.pollDelay)
+		
+
+####
+def main():
+	"""The program"""
+		
+	config = fb_classes.Config();
+	logger = None
+
+	#	A cry for help?
+	if len(sys.argv) > 1 and (sys.argv[1] == "-h" or sys.argv[1] == "-?"):
+		usage()
+		sys.exit(100)
+
+	#	Initialize
+	config = initializeParms()
+	logger = initializeLogger(config)
+
+	#	Watch for new commands.  Forever...
+	watch(config, logger)
+
+
+
+### Start of script
+
+if __name__=='__main__':
+	main()
+	
+	

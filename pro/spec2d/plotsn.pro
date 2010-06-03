@@ -6,36 +6,32 @@
 ;   Plot S/N and residuals in up to 3 bands
 ;
 ; CALLING SEQUENCE:
-;   plotsn, snvec, plugmap, [ bands=, plotmag=, fitmag=, snmag=, plottitle=, $
-;    plotfile=, synthmag=, snplate= ]
+;   plotsn, snvec, plugmap, [ filter=, plotmag=, plottitle=, snmin=, $
+;    plotfile=, synthmag=, snplate=, specsnlimit=, _EXTRA= ]
 ;
 ; INPUTS:
-;   snvec      - S/N array [nbands, nfibers]
-;   plugmap    - Plugmap structure [nfibers]
+;   snvec      - S/N array [NBAND,NFIBER]
+;   plugmap    - Plugmap structure [NFIBER]
 ;
 ; OPTIONAL KEYWORDS:
-;   bands      - Index of bands to fit; default to [1,2,3] for g,r,i bands.
-;   fitmag     - Magnitude range over which to fit (S/N) as function of mag;
-;                default to those used by FITSN().
-;   snmag      - Fit magnitudes for all 5 bands (even if we don't specify
-;                to use all of them with BANDS); default to
-;                [20.0, 20.2, 20.25, 19.9, 19.0]
-;   plotmag    - Magnitude range for plotting; default to [15,21], but
+;   filter     - Filter names; default to 'g','r','i'
+;   plotmag    - Magnitude range for plotting; default to [16,23], but
 ;                extend the range to include FITMAG if necessary.
+;   snmin      - Minimum S/N value to use in fits; default to 0.5
 ;   plottitle  - Title for top of plot
 ;   plotfile   - Optional plot file
-;   synthmag   - Vector of synthetic magnitudes dimensionsed [5,640],
-;                but only the central three mags (gri) are used;
+;   synthmag   - Vector of synthetic magnitudes dimensionsed [5,NFIBER];
 ;                if set, then make more than the first page of plots
+;   _EXTRA     - Keywords for FITSN, such as SNCODE
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL OUTPUTS:
-;   snplate    - Best fit (S/N)^2 at fiducial magnitude
+;   snplate    - Best fit (S/N)^2 at fiducial magnitude(s); array of [2,NBAND]
+;                to give the number in each spectrograph and each filter
+;   specsnlimit- Returned from FITSN
 ;
 ; COMMENTS:
-;   The fiducial magnitudes at which to evaluate the fit to (S/N) are
-;   [20.0, 20.2, 20.25, 19.9, 19.0] in u,g,r,i,z bands.
 ;
 ; EXAMPLES:
 ;
@@ -62,17 +58,22 @@
 ;   15-Apr-2000  Written by S. Burles, FNAL
 ;-
 ;------------------------------------------------------------------------------
-function plotsn_good, plugc, iband1, snvec, iband2, igood, s1, s2
+; Select good objects, and within FITMAG is specified
+function plotsn_good, plugmap, jband, snvec, iband, igood, s1, s2, $
+ fitmag=fitmag, snmin=snmin
 
-   qgood = strtrim(plugc.objtype,2) NE 'SKY' AND plugc.mag[iband1] GT 0 $
-    AND snvec[iband2,*] GT 0
+   qgood = strtrim(plugmap.objtype,2) NE 'SKY' AND plugmap.mag[jband] GT 0 $
+    AND snvec[iband,*] GT snmin
+   if (keyword_set(fitmag)) then $
+    qgood *= (plugmap.mag[jband] GT fitmag[0] $
+     AND plugmap.mag[jband] LT fitmag[1])
    igood = where(qgood, ngood)
    if (ngood LT 3) then $
-    splog, 'Warning: Too few non-sky objects to plot in band #', iband1
+    splog, 'Warning: Too few non-sky objects to plot in band #', iband
 
    ; The following variables are defined only for non-SKY objects...
-   s1 = where(plugc.spectrographid EQ 1 AND qgood)
-   s2 = where(plugc.spectrographid EQ 2 AND qgood)
+   s1 = where(plugmap.spectrographid EQ 1 AND qgood)
+   s2 = where(plugmap.spectrographid EQ 2 AND qgood)
 
    return, ngood
 end
@@ -172,245 +173,284 @@ pro plotsn1, plugc, synthmag, i1, i2, plottitle=plottitle, objtype=objtype
    return
 end
 ;------------------------------------------------------------------------------
-pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
- snmag=snmag, $
- plottitle=plottitle, plotfile=plotfile, synthmag=synthmag, snplate=snplate
+pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
+ plottitle=plottitle, plotfile=plotfile, synthmag=synthmag, snplate=snplate, $
+ specsnlimit=specsnlimit, _EXTRA=KeywordsForFitSN
 
-   if (size(snvec,/n_dim) NE 2) then return
-   if (NOT keyword_set(bands)) then bands=[1, 2, 3]
-   if (NOT keyword_set(plotmag)) then plotmag = [15.0, 21.0]
+   if (keyword_set(filter1)) then filter = filter1 $
+    else filter = ['g','r','i']
+   if (keyword_set(plotmag1)) then plotmag = plotmag1 $
+    else plotmag = [16.0, 23.0]
+   if (keyword_set(snmin1)) then snmin = snmin1 $
+    else snmin = 0.5
 
-   ; Set fiducial magnitudes about which to fit and evaluate the fit
-   if (NOT keyword_set(snmag)) then $
-    snmag = [20.0, 20.2, 20.25, 19.9, 19.0]
+   nband = n_elements(filter)
+   nfibers = n_elements(plugmap1)
 
-   nbands = n_elements(bands)
-   nfibers = n_elements(plug)
-
-   if ((size(snvec,/dimen))[0] NE nbands) then return
-   if ((size(snvec,/dimen))[1] NE nfibers) then return
-
-   bandnames = ['u','g','r','i','z']
-   slopelabel = " * "+bandnames
-   snlabel = '(S/N)^2 @ '+bandnames+' ='+string(snmag,format='(f7.2)')
+   if (size(snvec1,/n_dimen) EQ 1) then snvec = reform(snvec1,1,nfibers) $
+    else snvec = snvec1
+   if (n_elements(snvec) NE nband*nfibers) then $
+    message, 'Dimension of SNVEC not consistent with PLUGMAP'
 
    ; Use the CALIBFLUX magnitudes instead of MAG, if they exist
    ; from the call to READPLUGMAP() that generated this structure.
    ; For small fluxes, set MAG=0 so that they are ignored in the plots.
    ; Also, if CALIBFLUX_IVAR exist for any of the objects, then set MAG=0
    ; for the objects w/out it (e.g., for objects without calibObj photometry).
-   plugc = plug
-   if (tag_exist(plugc,'CALIBFLUX')) then begin
+   plugmap = plugmap1
+   if (tag_exist(plugmap,'CALIBFLUX')) then begin
       minflux = 0.1
-      plugc.mag = (22.5 - 2.5*alog10(plugc.calibflux > minflux)) $
-       * (plugc.calibflux GT minflux)
-      if (total(plugc.calibflux_ivar GT 0) GT 0) then $
-       plugc.mag = plugc.mag * (plugc.calibflux_ivar GT 0)
+      plugmap.mag =(22.5 - 2.5*alog10(plugmap.calibflux > minflux)) $
+       * (plugmap.calibflux GT minflux)
+;      if (total(plugmap.calibflux_ivar GT 0) GT 0) then $
+;       plugmap.mag *= (plugmap.calibflux_ivar GT 0)
    endif
-   nobj = n_elements(plugc)
+
+   ; Define jband as the index into the plugmap magnitudes,
+   ; for example, jband=[1,2,3] if g,r,i filters
+   jband = lonarr(nband)
+   for iband=0, nband-1 do begin
+      jband[iband] = where(filter[iband] EQ ['u','g','r','i','z'])
+   endfor
 
    ;----------
    ; Open plot file
 
    if (keyword_set(plotfile)) then begin
-      if (nbands LE 2) then ysize=7.0 $
+      if (nband LE 2) then ysize=7.0 $
        else ysize=9.5
-      set_plot, 'ps'
-      device, filename=plotfile, /color, /portrait, $
-       xsize=8.0, ysize=ysize, xoffset=0.25, yoffset=0.5, /inch
+      dfpsplot, plotfile, /color, square=(nband LE 2)
    endif
 
    oldmulti = !p.multi  
-   !p.multi = [0,2,nbands]
+   !p.multi = [0,2,nband]
 
-   fiducialfits = [[6.12, -0.28], $    ; u' fit
-                   [6.12, -0.28], $    ; g' fit
-                   [6.18, -0.28], $    ; r' fit
-                   [6.05, -0.28], $    ; i' fit
-                   [6.05, -0.28]]      ; z' fit
-
-   snplate = fltarr(2,nbands)
+   snplate = fltarr(2,nband)
 
    pmulti = !p.multi
    ymargin = !y.margin
    yomargin = !y.omargin
 
-   !p.multi = [0,2,nbands]
+   !p.multi = [0,2,nband]
    !y.margin = [1,0]
    !y.omargin = [5,3]
-   csize = 1.5
+   csize = 1.0
    textsize = 1.0
 
    ;---------------------------------------------------------------------------
    ; Loop over each band in the plot
    ;---------------------------------------------------------------------------
 
-   for iband=0, nbands-1 do begin
+   for iband=0, nband-1 do begin
 
-      ngood = plotsn_good(plugc, bands[iband], snvec, iband, igood, s1, s2)
-      if (ngood GE 3) then begin
+      thismag = plugmap.mag[jband[iband]]
 
-      ;------------------------------------------------------------------------
-      ; 1st PAGE PLOT 1: (S/N) vs. magnitude
-      ;------------------------------------------------------------------------
-
-      thismag = plugc.mag[bands[iband]]
+      ngood = plotsn_good(plugmap, jband[iband], snvec, iband, igood, s1, s2, $
+       snmin=snmin)
 
       ;----------
       ; Fit the data as S/N vs. mag
 
-      afit = fitsn(thismag[igood], snvec[iband,igood], sigma=sigma, $
-       colorband=bandnames[bands[iband]], fitmag=fitmag)
-      logsnc = alog10(snvec[iband,*] > 0.01)
-      sndiff = logsnc - poly(thismag, afit) ; Residuals from this fit
+      if (ngood GE 3) then $
+       afit = fitsn(thismag[igood], snvec[iband,igood], sigma=sigma, $
+        filter=filter[iband], specsnlimit=specsnlimit1, $
+        _EXTRA=KeywordsForFitSN) $
+      else $
+       afit = fitsn([0], [0], sigma=sigma, $
+        filter=filter[iband], specsnlimit=specsnlimit1, $
+        _EXTRA=KeywordsForFitSN)
+      if (iband EQ 0) then specsnlimit = specsnlimit1 $
+       else specsnlimit = [specsnlimit, specsnlimit1]
+      fitmag = specsnlimit1.fitmag
+      snmag = specsnlimit1.snmag
+      ; Residuals from this fit
+      sndiff = alog10(snvec[iband,*]>0.01) - poly(thismag, afit)
 
-      ;----------
-      ; Extend the plotting range if necessary to include FITMAG,
-      ; and all good magnitudes
+      if (ngood GT 3) then begin
+         ;---------------------------------------------------------------------
+         ; 1st PAGE PLOT 1: (S/N) vs. magnitude
+         ;---------------------------------------------------------------------
 
-      plotmag[0] = plotmag[0] < fitmag[0] < min(thismag[igood])
-      plotmag[1] = plotmag[1] > fitmag[1] > max(thismag[igood])
+         ;----------
+         ; Extend the plotting range if necessary to include FITMAG and SNMAG
 
-      ;----------
-      ; Set up the plot
+         plotmag[0] = plotmag[0] < (fitmag[0]-0.5)
+         plotmag[1] = plotmag[1] > (fitmag[1]+0.5)
+         plotmag[0] = plotmag[0] < (snmag-0.5)
+         plotmag[1] = plotmag[1] > (snmag+0.5)
+         snlabel = '(S/N)^2 @ '+filter[iband]+' ='+string(snmag,format='(f7.2)')
 
-      if (iband LT nbands-1) then begin
-         xtickname = strarr(20)+' ' ; Disable X axis on all but bottom plot
-         xtickname = ''
-         xtitle1 = ''
-         xtitle2 = ''
-      endif else begin
-         xtickname = ''
-         xtitle1 = 'mag'
-         xtitle2 = 'X [mm]'
-      endelse
-      symsize = 0.65
+         ;----------
+         ; Set up the plot
 
-      plot, thismag[igood], snvec[iband,igood], /nodata, /ylog, $
-;       xtickname=xtickname, $
-       xrange=plotmag, $
-       xtitle=xtitle1, ytitle='S/N in '+bandnames[bands[iband]]+'-band', $
-       /xstyle, yrange=[0.5,100], /ystyle, charsize=csize
+         if (iband LT nband-1) then begin
+            xtickname = strarr(20)+' ' ; Disable X axis on all but bottom plot
+            xtickname = ''
+            xtitle1 = ''
+            xtitle2 = ''
+         endif else begin
+            xtickname = ''
+            xtitle1 = 'mag'
+            xtitle2 = 'X [mm]'
+         endelse
+         symsize = 0.4
 
-      if (iband EQ 0 AND keyword_set(plottitle)) then $
-       xyouts, plotmag[1], 106.0, 'S/N for '+plottitle, align=0.5, $
-        charsize=csize
+         plot, thismag[igood], snvec[iband,igood], /nodata, /ylog, $
+;          xtickname=xtickname, $
+          xrange=plotmag, $
+          xtitle=xtitle1, ytitle='S/N in '+filter[iband]+'-band', $
+          /xstyle, yrange=[0.5,100], /ystyle, charsize=csize
 
-      ;----------
-      ; Plot the fiducial line (a thick blue line)
+         if (iband EQ 0 AND keyword_set(plottitle)) then $
+          xyouts, plotmag[1], 106.0, 'S/N for '+plottitle, align=0.5, $
+           charsize=csize
 
-      djs_oplot, plotmag, 10^poly(plotmag, fiducialfits[*,bands[iband]]), $
-       color='blue', thick=5
+         ;----------
+         ; Plot the fiducial line (black line)
 
-      ;----------
-      ; Plot the data points, (S/N) vs. magnitude.
-      ; Identify which points fall above and below this fit,
-      ;  color code green for positive residuals, red for negative.
-      ; Use different symbols for each spectrograph.
-      ; Plot these first so that the lines are visibly plotted on top.
+;         djs_oplot, plotmag, 10^poly(plotmag, specsnlimit1.fiducial_coeff)
 
-      psymvec = (plugc.spectrographid EQ 1) * 7 $
-       + (plugc.spectrographid EQ 2) * 6 
-      colorvec = replicate('red', nobj)
-      ipos = where(sndiff[igood] GE 0)
-      if (ipos[0] NE -1) then colorvec[ipos] = 'green'
-      djs_oplot, [thismag[igood]], [snvec[iband,igood] > 0.6], $
-       psym=psymvec, symsize=symsize, color=colorvec
+         ;----------
+         ; Plot the data points, (S/N) vs. magnitude.
 
-      ; Now overplot the fit line
-      if (keyword_set(afit)) then $
-       djs_oplot, plotmag, 10^poly(plotmag, afit)
+         ; Identify which points fall above and below this fit.
+         ; Color code green for positive residuals, red for negative.
+         ; Use different symbols for each spectrograph.
+;         psymvec = (plugmap.spectrographid EQ 1) * 7 $
+;          + (plugmap.spectrographid EQ 2) * 6 
+;         colorvec = replicate('red', nfibers)
+;         ipos = where(sndiff GE 0)
+;         if (ipos[0] NE -1) then colorvec[ipos] = 'green'
 
-      ;----------
-      ; Plot a fit to the data in the range specified by FITMAG,
-      ; independently for each spectrograph.
-      ; Also, draw an arrow that terminates at the S/N at the magnitude
-      ; where we measure the canonical (S/N)^2.
+         ; Color code spec1=cyan X, spec2=magenta square
+         ; Use different symbols for each spectrograph.
+         psymvec = (plugmap.spectrographid EQ 1) * 7 $
+          + (plugmap.spectrographid EQ 2) * 6 
+         colorvec = replicate('cyan', nfibers)
+         ipos = where(plugmap.spectrographid EQ 2)
+         if (ipos[0] NE -1) then colorvec[ipos] = 'magenta'
 
-      if (keyword_set(fitmag)) then myfitmag = fitmag
+         ; Sort the points randomly, such that not all the spec2 points
+         ; are plotted on top of the spec1 points
+         isort = sort(randomu(1234,n_elements(thismag)))
 
-      snoise2 = fltarr(2)
-      xloc = snmag[bands[iband]]
-      if (s1[0] NE -1) then begin
-         afit1 = fitsn(thismag[s1], snvec[iband,s1], fitmag=myfitmag, $
-          colorband=bandnames[bands[iband]])
+         ; Plot the points that would fall off the bottom of the plot
+         ; as points near the bottom
+         djs_oplot, [thismag[isort]], $
+          [snvec[iband,isort] > 1.1*(snmin>10^!y.crange[0])], $
+          psym=psymvec[isort], symsize=symsize, color=colorvec[isort]
+
+         ; Now overplot the fit line
+;         if (keyword_set(afit)) then $
+;          djs_oplot, plotmag, 10^poly(plotmag, afit)
+
+         ;----------
+         ; Plot a fit to the data in the range specified by FITMAG,
+         ; independently for each spectrograph.
+         ; Also, draw an arrow that terminates at the S/N at the magnitude
+         ; where we measure the canonical (S/N)^2.
+
+         afit1 = 0
+         sig1 = 0
+         if (s1[0] NE -1) then begin
+            afit1 = fitsn(thismag[s1], snvec[iband,s1], $
+             filter=filter[iband], _EXTRA=KeywordsForFitSN, sigma=sig1, sn2=sn2)
+            snplate[0,iband] = sn2
+         endif
+         sig2 = 0
+         afit2 = 0
+         if (s2[0] NE -1) then begin
+            afit2 = fitsn(thismag[s2], snvec[iband,s2], $
+             filter=filter[iband], _EXTRA=KeywordsForFitSN, sigma=sig2, sn2=sn2)
+            snplate[1,iband] = sn2
+         endif
+
+         ylimits = 10^[0.80 * !y.crange[0] + 0.20 * !y.crange[1], $
+                    0.35 * !y.crange[0] + 0.65 * !y.crange[1] ]
+         oplot, fitmag[0]+[0,0], ylimits, linestyle=1, thick=3
+         oplot, fitmag[1]+[0,0], ylimits, linestyle=1, thick=3
+
+         ;----------
+         ; Label the plot
+
+         ; Overplot the fit lines
          if (keyword_set(afit1)) then begin
-            snoise2[0] = 10^(2.0 * poly(snmag[bands[iband]],afit1)) 
-            yloc = 10^poly(xloc,afit1)
-            djs_arrow, xloc, 20, xloc, yloc, /data
+            djs_oplot, plotmag, 10^poly(plotmag, afit1)
+            xyouts, plotmag[0]+0.5, 1.35, string(format='(a,f6.3,f7.3,a)', $
+             'log S/N = ', afit1, ' * '+filter[iband]), charsize=textsize
          endif
-      endif
-      if (s2[0] NE -1) then begin
-         afit2 = fitsn(thismag[s2], snvec[iband,s2], fitmag=myfitmag, $
-          colorband=bandnames[bands[iband]])
          if (keyword_set(afit2)) then begin
-            snoise2[1] = 10^(2.0 * poly(snmag[bands[iband]],afit2)) 
-            yloc = 10^poly(xloc,afit2)
-            djs_arrow, xloc, 20, xloc, yloc, /data
+            djs_oplot, plotmag, 10^poly(plotmag, afit2), color='magenta'
+            xyouts, plotmag[0]+0.5, 0.90, string(format='(a,f6.3,f7.3,a)', $
+             'log S/N = ', afit2, ' * '+filter[iband]), charsize=textsize
          endif
+         ; Overplot arrows at fiducial mag
+         if (snplate[0,iband] GT 0) then $
+          djs_arrow, snmag, sqrt(snplate[0,iband])*2, snmag, $
+           sqrt(snplate[0,iband]), /data
+         if (snplate[1,iband] GT 0) then $
+          djs_arrow, snmag, sqrt(snplate[1,iband])*2, snmag, $
+           sqrt(snplate[1,iband]), /data
+
+         if (keyword_set(sig1)) then $
+          xyouts, plotmag[0]+0.5, 0.60, $
+           string(format='(a,f4.2,f6.2)','Stdev=', sig1, sig2), $
+           charsize=textsize
+
+         djs_xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.3], $
+          10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.93], $
+          snlabel, charsize=textsize
+
+         djs_oplot, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.57], $
+          10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.85], psym=7, $
+          symsize=symsize
+         djs_xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.60], $
+          10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.83], $
+          string(format='("Spec1: ", f5.1)', snplate[0,iband]), charsize=textsize
+
+         djs_oplot, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.57], $
+          10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.75], psym=6, $
+          symsize=symsize, color='magenta'
+         djs_xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.60], $
+          10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.73], $
+          string(format='("Spec2: ", f5.1)', snplate[1,iband]), charsize=textsize
+
+         splog, snlabel, snplate[*,iband], format='(a20, 2(f10.3))'
+
+         ;---------------------------------------------------------------------
+         ; 1st PAGE PLOT 2: Throughput deviations plotted on the focal plane
+         ;---------------------------------------------------------------------
+
+         plot, [0], [0], /nodata, xtickname=xtickname, $
+          xtitle=xtitle2, ytitle='Y [mm]', $
+          xrange=[-350,350], yrange=[-350,350], xstyle=1, ystyle=1, charsize=csize
+         ; Limit this plot to only those objects which are good
+         ng2 = plotsn_good(plugmap, jband[iband], snvec, iband, ig2, s1, s2, $
+          snmin=snmin)
+         if (ng2 GT 0) then begin
+            colorvec = (sndiff[ig2] GE 0) * djs_icolor('green') $
+             + (sndiff[ig2] LT 0) * djs_icolor('red')
+            symvec = (abs(sndiff[ig2]) * 5 < 2) > 0.2
+            djs_oplot, [plugmap[ig2].xfocal], [plugmap[ig2].yfocal], $
+             symsize=symvec, color=colorvec, psym=2
+         endif
+
+         djs_oplot, [-290], [290], symsize=2, psym=2, color='green'
+         djs_xyouts, -260, 290, '+0.4 mag', color='green'
+         djs_oplot, [-290], [250], symsize=2, psym=2, color='red'
+         djs_xyouts, -260, 250, '-0.4 mag', color='red'
+
       endif
-
-      ylimits = 10^[0.80 * !y.crange[0] + 0.20 * !y.crange[1], $
-                 0.35 * !y.crange[0] + 0.65 * !y.crange[1] ]
-      oplot, [myfitmag[0],myfitmag[0]], ylimits, linestyle=1
-      oplot, [myfitmag[1],myfitmag[1]], ylimits, linestyle=1
-
-      ;----------
-      ; Label the plot
-
-      if (keyword_set(afit)) then $
-       xyouts, plotmag[0]+0.5, 0.9, string(format='(a,f6.3,f7.3,a)', $
-        'log S/N = ', afit, slopelabel[bands[iband]]), charsize=textsize
-
-      if (keyword_set(sigma)) then $
-       xyouts, plotmag[0]+0.5, 1.5, string(format='(a,f4.2)','Stdev=', sigma), $
-        charsize=textsize
-
-      djs_xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.3], $
-       10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.93], $
-       snlabel[bands[iband]], charsize=textsize
-
-      djs_oplot, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.57], $
-         10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.85], psym=7, $
-         symsize=symsize
-      djs_xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.60], $
-         10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.83], $
-         string(format='("Spec1: ", f5.1)', snoise2[0]), charsize=textsize
-
-      djs_oplot, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.57], $
-         10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.75], psym=6, $
-         symsize=symsize
-      djs_xyouts, [!x.crange[0] + (!x.crange[1] - !x.crange[0])*0.60], $
-         10^[!y.crange[0] + (!y.crange[1] - !y.crange[0])*0.73], $
-         string(format='("Spec2: ", f5.1)', snoise2[1]), charsize=textsize
-
-      splog, snlabel[bands[iband]], snoise2, format='(a20, 2(f10.3))'
-
-      snplate[*,iband] = snoise2
-
-      ;------------------------------------------------------------------------
-      ; 1st PAGE PLOT 2: Throughput deviations plotted on the focal plane
-      ;------------------------------------------------------------------------
-
-      plot, [0], [0], /nodata, xtickname=xtickname, $
-       xtitle=xtitle2, ytitle='Y [mm]', $
-       xrange=[-320,320], yrange=[-320,320], xstyle=1, ystyle=1, charsize=csize
-      if (ngood GT 0) then begin
-         colorvec = (sndiff[igood] GE 0) * djs_icolor('green') $
-          + (sndiff[igood] LT 0) * djs_icolor('red')
-         symvec = (abs(sndiff[igood]) * 5 < 2) > 0.2
-         djs_oplot, [plugc[igood].xfocal], [plugc[igood].yfocal], $
-          symsize=symvec, color=colorvec, psym=2
-      endif
-
-   endif
    endfor
 
    !p.multi = pmulti
    !y.margin = ymargin
    !y.omargin = yomargin
 
-   if (NOT keyword_set(synthmag)) then return
+   if (NOT keyword_set(synthmag)) then begin
+      if (keyword_set(plotfile)) then dfpsclose
+      return
+   endif
 
    ;---------------------------------------------------------------------------
    ; PAGE 2: Plot spectro-mag vs. PHOTO-mag
@@ -421,18 +461,19 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
    ymargin = !y.margin
    yomargin = !y.omargin
 
-   !p.multi = [0,2,nbands]
+   !p.multi = [0,2,nband]
    !y.margin = [1,0]
    !y.omargin = [5,3]
 
-   magdiff = synthmag - plugc.mag
-   radius = sqrt(plugc.xfocal^2 + plugc.yfocal^2)
-   for iband=0, nbands-1 do begin
+   magdiff = synthmag - plugmap.mag
+   radius = sqrt(plugmap.xfocal^2 + plugmap.yfocal^2)
+   for iband=0, nband-1 do begin
 
-      ngood = plotsn_good(plugc, bands[iband], snvec, iband, igood, s1, s2)
+      ngood = plotsn_good(plugmap, jband[iband], snvec, iband, igood, s1, s2, $
+       snmin=snmin) ; fitmag=specsnlimit[iband].fitmag)
       if (ngood GE 3) then begin
 
-      if (iband LT nbands-1) then begin
+      if (iband LT nband-1) then begin
          xtickname = strarr(20)+' '
          xtitle1 = ''
          xtitle2 = ''
@@ -441,17 +482,17 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
          xtitle1 = 'Radius [mm]'
          xtitle2 = 'X [mm]'
       endelse
-      psym = strmatch(plugc.objtype, 'QSO*') * 1 $ ; Plus
-       + strmatch(plugc.objtype, 'GALAXY*') * 6 ; Square
+      psym = strmatch(plugmap.objtype, 'QSO*') * 1 $ ; Plus
+       + strmatch(plugmap.objtype, 'GALAXY*') * 6 ; Square
       psym = psym + (psym EQ 0) * 2 ; Asterisk for anything else
 
       plot, [0], [0], /nodata, $
-       xtickname=xtickname, xrange=[0,330], xtitle=xtitle1, $
-       ytitle='(Spectro-PHOTO) '+bandnames[bands[iband]]+'-mag', $
+       xtickname=xtickname, xrange=[0,350], xtitle=xtitle1, $
+       ytitle='(Spectro-PHOTO) '+filter[iband]+'-mag', $
        /xstyle, yrange=[-0.6,0.6], /ystyle, charsize=csize
       oplot, !x.crange, [0,0]
       if (ngood GT 0) then begin
-         thisdiff = transpose(magdiff[bands[iband],igood])
+         thisdiff = transpose(magdiff[jband[iband],igood])
          colorvec = (thisdiff LT 0) * djs_icolor('green') $
           + (thisdiff GE 0) * djs_icolor('red')
          symvec = (abs(thisdiff) * 5 < 2) > 0.1
@@ -471,11 +512,16 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
 
       plot, [0], [0], /nodata, xtickname=xtickname, $
        xtitle=xtitle2, ytitle='Y [mm]', $
-       xrange=[-320,320], yrange=[-320,320], /xstyle, /ystyle, charsize=csize
+       xrange=[-350,350], yrange=[-350,350], /xstyle, /ystyle, charsize=csize
       if (ngood GT 0) then begin
-         djs_oplot, [plugc[igood].xfocal], [plugc[igood].yfocal], $
+         djs_oplot, [plugmap[igood].xfocal], [plugmap[igood].yfocal], $
           symsize=symvec, color=colorvec, psym=psym[igood]
       endif
+
+      djs_oplot, [-290], [290], symsize=2, psym=2, color='green'
+      djs_xyouts, -260, 290, '+0.4 mag', color='green'
+      djs_oplot, [-290], [250], symsize=2, psym=2, color='red'
+      djs_xyouts, -260, 250, '-0.4 mag', color='red'
 
    endif
    endfor
@@ -488,28 +534,22 @@ pro plotsn, snvec, plug, bands=bands, plotmag=plotmag, fitmag=fitmag, $
    ; Plots of spectro mags vs. PHOTO mags
    ;------------------------------------------------------------------------
 
-   qstd = strmatch(plugc.objtype, '*STD*') 
-   i1 = where(plugc.spectrographid EQ 1 AND qstd AND plugc.mag[2] NE 0)
-   i2 = where(plugc.spectrographid EQ 2 AND qstd AND plugc.mag[2] NE 0)
-   plotsn1, plugc, synthmag, i1, i2, plottitle=plottitle, objtype='Std-stars'
+   qstd = strmatch(plugmap.objtype, '*STD*') 
+   i1 = where(plugmap.spectrographid EQ 1 AND qstd AND plugmap.mag[2] NE 0)
+   i2 = where(plugmap.spectrographid EQ 2 AND qstd AND plugmap.mag[2] NE 0)
+   plotsn1, plugmap, synthmag, i1, i2, plottitle=plottitle, objtype='Std-stars'
 
-   qgal = strmatch(plugc.objtype, 'GALAXY*')
-   i1 = where(plugc.spectrographid EQ 1 AND qgal AND plugc.mag[2] NE 0)
-   i2 = where(plugc.spectrographid EQ 2 AND qgal AND plugc.mag[2] NE 0)
-   plotsn1, plugc, synthmag, i1, i2, plottitle=plottitle, objtype='Galaxies'
+   qgal = strmatch(plugmap.objtype, 'GALAXY*')
+   i1 = where(plugmap.spectrographid EQ 1 AND qgal AND plugmap.mag[2] NE 0)
+   i2 = where(plugmap.spectrographid EQ 2 AND qgal AND plugmap.mag[2] NE 0)
+   plotsn1, plugmap, synthmag, i1, i2, plottitle=plottitle, objtype='Galaxies'
 
    qstellar = qgal EQ 0
-   i1 = where(plugc.spectrographid EQ 1 AND qstellar AND plugc.mag[2] NE 0)
-   i2 = where(plugc.spectrographid EQ 2 AND qstellar AND plugc.mag[2] NE 0)
-   plotsn1, plugc, synthmag, i1, i2, plottitle=plottitle, objtype='Stars+QSOs'
+   i1 = where(plugmap.spectrographid EQ 1 AND qstellar AND plugmap.mag[2] NE 0)
+   i2 = where(plugmap.spectrographid EQ 2 AND qstellar AND plugmap.mag[2] NE 0)
+   plotsn1, plugmap, synthmag, i1, i2, plottitle=plottitle, objtype='Stars+QSOs'
 
-   ;----------
-   ; Close plot file
-
-   if (keyword_set(plotfile)) then begin
-      device, /close
-      set_plot, 'x'
-   endif
+   if (keyword_set(plotfile)) then dfpsclose
 
    return
 end

@@ -41,7 +41,7 @@
 ;------------------------------------------------------------------------------
 pro badfstars, doplot=doplot
 
-   spfile = filepath('spAll.fits', root_dir=getenv('SPECTRO_DATA'))
+   spfile = filepath('spAll.fits', root_dir=getenv('BOSS_SPECTRO_REDUX'))
    columns = ['PLATE','FIBERID','MJD', $
     'PRIMTARGET','SECTARGET','OBJTYPE', $
     'RA','DEC','CLASS','SUBCLASS','Z','ZWARNING','WCOVERAGE']

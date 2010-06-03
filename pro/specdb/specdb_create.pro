@@ -22,8 +22,8 @@
 ;
 ; COMMENTS:
 ;   Look for the input files in:
-;     TOPDIR/MJD/2d/spSpec2d-b1-*.fits    - pppp=plate
-;     ASTROLOG/MJD/plPlugMapM-pppp-mmmmm-aa.par - Plug map files, aa=mapper
+;     $TOPDIR/MJD/2d/spSpec2d-b1-*.fits    - pppp=plate
+;     $SPECLOG/MJD/plPlugMapM-pppp-mmmmm-aa.par - Plug map files, aa=mapper
 ;
 ; EXAMPLES:
 ;

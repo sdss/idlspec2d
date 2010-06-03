@@ -1,4 +1,3 @@
-;+
 ; NAME:
 ;   fitflatwidth
 ;
@@ -7,7 +6,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   widthset = fitflatwidth(flux, fluxivar, ansimage, [ fibermask, $
-;    ncoeff=, sigma=, medwidth= ])
+;    ncoeff=, sigma=, medwidth=, mask=, inmask=, double= ])
 ;
 ; INPUTS:
 ;   flux       - flat-field extracted flux
@@ -25,13 +24,18 @@
 ; OUTPUTS:
 ;   widthset   - Traceset structure containing fitted coefficients
 ;
+; OPTION INPUTS:
+;   mask      - the mask
+;   inmask    - inmask for the call to xy2traceset
+;   double    - input for the call to xy2traceset
+;
 ; OPTIONAL OUTPUTS:
 ;   medwidth  - Median dispersion widths in each of the 4 quadrants
 ;               of the CCD, ordered LL,LR,UL,UR.
 ;
 ; COMMENTS:
 ;   The widths are forced to be the same as a function of row number
-;   for all 16 fibers in each fiber bundle.
+;   for all 20 fibers in each fiber bundle.
 ;
 ;   Used to fill flatstruct.widthset, which can then be applied
 ;   to object extraction (known profile widths).
@@ -48,20 +52,20 @@
 ;-
 ;------------------------------------------------------------------------------
 function fitflatwidth, flux, fluxivar, ansimage, fibermask, $
- ncoeff=ncoeff, sigma=sigma, medwidth=medwidth
+ ncoeff=ncoeff, sigma=sigma, medwidth=medwidth, mask=mask, $
+ inmask=inmask, double=double
 
    if (NOT keyword_set(ncoeff)) then ncoeff = 5
    if (NOT keyword_set(sigma)) then sigma = 1.0
 
    ntrace = (size(flux,/dimen))[1]
    nrow = (size(flux,/dimen))[0]
-   if (ntrace NE 320) then $
-    message, 'Must have 320 traces!'
+   numbundles = ntrace/20
 
    ;----------
    ; Generate a mask of good measurements based only upon the fibermask.
 
-   mask = (flux GT 0) * (fluxivar GT 0) 
+   if (NOT keyword_set(mask)) then mask = (flux GT 0) * (fluxivar GT 0) 
 
    if (keyword_set(fibermask)) then begin
       badflats = where(fibermask NE 0)
@@ -106,12 +110,12 @@ function fitflatwidth, flux, fluxivar, ansimage, fibermask, $
    ; Perform median across bundles on good arclines only
    ; somewhat tedious, but it works
 
-   width = reform(width,nrow,20,16)
-   mask = reform(mask,nrow,20,16)
-   width_bundle = fltarr(nrow,16)
+   width = reform(width,nrow,20,numbundles)
+   mask = reform(mask,nrow,20,numbundles)
+   width_bundle = fltarr(nrow,numbundles)
 
    for irow=0, nrow-1 do begin
-      for j=0, 15 do begin
+      for j=0, numbundles-1 do begin
          ss = where(mask[irow,*,j])
          if (ss[0] NE -1) then $
           width_bundle[irow,j] = djs_median(width[irow,ss,j])
@@ -123,17 +127,36 @@ function fitflatwidth, flux, fluxivar, ansimage, fibermask, $
    ;----------
    ; Turn the widths back into a traceset.
 
+   ; Generate the corresponding mask that is the same within each
+   ; bundle, and marked as good if at least 25% of the points are unmasked
+   if (n_elements(inmask) NE 0) then begin
+      mask_bundle = rebin(float(inmask), nrow, numbundles) GE 0.25
+      mask_final = rebin(mask_bundle, nrow, ntrace, /sample)
+   endif else begin
+      mask_final = width_final GT 0
+   endelse
+
    xy2traceset, findgen(nrow) # replicate(1,ntrace), $
-    width_final, widthset, ncoeff=ncoeff, xmin=xmin, xmax=xmax
+    width_final, widthset, ncoeff=ncoeff, xmin=xmin, xmax=xmax, $
+    inmask=mask_final, double=double
 
    ;----------
-   ; Compute the widths in each of 4 quandrants on the CCD.
+   ; Compute the widths in each of 4 quandrants on the CCD
+   ; as the median of the unmasked pixels
 
    traceset2xy, widthset, xx, width_fit
-   medwidth = [ median(width_fit[0:nrow/2-1,0:ntrace/2-1]), $
-                median(width_fit[0:nrow/2-1,ntrace/2:ntrace-1]), $
-                median(width_fit[nrow/2:nrow-1,0:ntrace/2-1]), $
-                median(width_fit[nrow/2:nrow-1,ntrace/2:ntrace-1]) ]
+   x1 = [0,0,nrow/2,nrow/2]
+   x2 = [nrow/2-1,nrow/2-1,nrow-1,nrow-1]
+   y1 = [0,ntrace/2,0,ntrace/2]
+   y2 = [ntrace/2-1,ntrace-1,ntrace/2-1,ntrace-1]
+   medwidth = fltarr(4)
+   for i=0,3 do begin
+      indx = where(mask_final[x1[i]:x2[i],y1[i]:y2[i]],ct)
+      if (ct GT 0) then $
+       medwidth[i] = $
+        median([ (width_fit[x1[i]:x2[i],y1[i]:y2[i]])[indx] ])
+   endfor
+
    splog, 'Median spatial widths = ' $
     + string(medwidth,format='(4f5.2)') + ' pix (LL LR UL UR)'
 

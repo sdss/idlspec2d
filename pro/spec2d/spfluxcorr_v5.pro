@@ -6,7 +6,7 @@
 ;   Compute flux-correction vectors for each CCD+exposure
 ;
 ; CALLING SEQUENCE:
-;   spfluxcorr_v5, objname, [ adderr=, combinedir=, ] bestexpnum=
+;   spfluxcorr_v5, objname, [ adderr=, combinedir=, bestexpnum= ]
 ;
 ; INPUTS:
 ;   objname    - File names (including path) for spFrame files, all from
@@ -47,6 +47,7 @@
 ;
 ; REVISION HISTORY:
 ;   05-Feb-2004  Written by D. Schlegel, Princeton
+;   11-Aug-2009  Edited by A. Kim: b and r spectra don't necessarily have the same dimension
 ;-
 ;------------------------------------------------------------------------------
 ; Return 1 if the flux-correction vector appears to be in bounds.
@@ -107,17 +108,32 @@ pro spfluxcorr_v5, objname, adderr=adderr, combinedir=combinedir, $
    ;----------
    ; Get the fiducial wavelength mapping from the "best" exposure
 
-   ibest_b = (where(camcolor EQ 'b' AND expnum EQ bestexpnum))[0]
-   ibest_r = (where(camcolor EQ 'r' AND expnum EQ bestexpnum))[0]
-   spframe_read, objname[ibest_b], loglam=loglam1
-   dims = size(loglam1, /dimens)
-   npix = dims[0]
-   nobj = dims[1]
+   ibest_b = (where(camcolor EQ 'b' AND expnum EQ bestexpnum, nblue))[0]
+   ibest_r = (where(camcolor EQ 'r' AND expnum EQ bestexpnum, nred))[0]
+
+   if (nblue GT 0) then spframe_read, objname[ibest_b], loglam=loglamb
+   if (nred GT 0) then spframe_read, objname[ibest_r], loglam=loglamr
+   dimsb = size(loglamb, /dimens)
+   dimsr = size(loglamr, /dimens)
+   npix = max([dimsb[0],dimsr[0]])
+   nobj = max([dimsb[1],dimsr[1]])   
    loglam = fltarr(npix, nobj, 2)
-   loglam[*,*,0] = loglam1
-   spframe_read, objname[ibest_r], loglam=loglam1
-   loglam[*,*,1] = loglam1
-   loglam1 = 0 ; clear memory
+   loglam[0:dimsb[0]-1,0:dimsb[1]-1,0] = loglamb
+   loglam[0:dimsr[0]-1,0:dimsr[1]-1,1] = loglamr
+   ; extrapolate wavelengths where there is no data
+   if (dimsb[0] LT npix) then begin
+        dllam=loglamb[dimsb[0]-1,*]-loglamb[dimsb[0]-2,*]
+        for j=0, nobj-1 do $
+           loglam[dimsb[0]:*,j,0] = loglamb[dimsb[0]-1,j]+dllam[0,j]*(1+findgen(npix-dimsb[0]))
+   endif
+   if (dimsr[0] LT npix) then begin
+        dllam=loglamr[dimsr[0]-1,*]-loglamr[dimsr[0]-2,*]
+        for j=0, nobj-1 do $
+           loglam[dimsr[0]:*,j,0] = loglamr[dimsr[0]-1,j]+dllam[0,j]*(1+findgen(npix-dimsr[0]))
+   endif
+ 
+   loglamb = 0 ; clear memory
+   loglamr = 0
 
    ;----------
    ; Read all the spectra + errors, and re-sample to the fiducial wavelengths
@@ -155,25 +171,27 @@ pro spfluxcorr_v5, objname, adderr=adderr, combinedir=combinedir, $
       divideflat, objflux1, invvar=objivar1, calibfac, minval=minval
 
       if (expnum[ifile] EQ bestexpnum) then begin
-         allflux[*,*,ifile] = objflux1
-         allivar[*,*,ifile] = objivar1
+         nrownative=(size(objflux1,/dimens))[0]
+         allflux[0:nrownative-1,*,ifile] = objflux1
+         allivar[0:nrownative-1,*,ifile] = objivar1
       endif else begin
+         nrownative=(size(objflux1,/dimens))[0]
          for iobj=0L, nobj-1 do begin
             ; We have to call COMBINE1FIBER with ascending wavelengths...
-            if (loglam1[0,iobj] GT loglam1[1,iobj]) then begin
+           if (loglam1[0,iobj] GT loglam1[1,iobj]) then begin
                combine1fiber, reverse(loglam1[*,iobj]), $
                 reverse(objflux1[*,iobj]), reverse(objivar1[*,iobj]), $
-                newloglam=reverse(loglam[*,iobj,icolor]), $
+                newloglam=reverse(loglam[0:nrownative-1,iobj,icolor]), $
                 newflux=newflux1, newivar=newivar1
-               allflux[*,iobj,ifile] = reverse(newflux1)
-               allivar[*,iobj,ifile] = reverse(newivar1)
+               allflux[0:nrownative-1,iobj,ifile] = reverse(newflux1)
+               allivar[0:nrownative-1,iobj,ifile] = reverse(newivar1)
             endif else begin
                combine1fiber, loglam1[*,iobj], $
                 objflux1[*,iobj], objivar1[*,iobj], $
-                newloglam=loglam[*,iobj,icolor], $
+                newloglam=loglam[0:nrownative-1,iobj,icolor], $
                 newflux=newflux1, newivar=newivar1
-               allflux[*,iobj,ifile] = newflux1
-               allivar[*,iobj,ifile] = newivar1
+                allflux[0:nrownative-1,iobj,ifile] = newflux1
+               allivar[0:nrownative-1,iobj,ifile] = newivar1
             endelse
          endfor
       endelse
@@ -319,7 +337,7 @@ pro spfluxcorr_v5, objname, adderr=adderr, combinedir=combinedir, $
 ;               endif
 
             endif
-            splog, 'Fiber #', 320*(spectroid[0]-1)+iobj+1, $
+            splog, 'Fiber #', nobj*(spectroid[0]-1)+iobj+1, $
              ' exposure #', explist[iexp], ' npoly=', lastnpoly
          endif
       endfor

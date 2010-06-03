@@ -6,7 +6,7 @@
 ;   Compute flux-calibration vectors for each CCD+exposure from std stars
 ;
 ; CALLING SEQUENCE:
-;   spflux_v5, objname, [ adderr=, combinedir= ]
+;   spflux_v5, objname, [ adderr=, combinedir=, minfracthresh= ]
 ;
 ; INPUTS:
 ;   objname    - File names (including path) for spFrame files, all from
@@ -16,6 +16,7 @@
 ;   adderr     - Additional error to add to the formal errors, as a
 ;                fraction of the flux; default to 0.03 (3 per cent)
 ;   combinedir - Directory for output files
+;   minfracthresh - the threshold for the minimum number of good pixels
 ;
 ; OUTPUTS:
 ;
@@ -53,6 +54,7 @@
 ;   fileandpath()
 ;   filter_thru()
 ;   find_nminima()
+;   get_tai
 ;   mrdfits()
 ;   mwrfits
 ;   pixelmask_bits()
@@ -170,7 +172,8 @@ function spflux_medianfilt, loglam, objflux, objivar, width=width, $
       hwidth = ceil((width-1)/2.)
       thisback[0:hwidth] = objflux[0:hwidth,ispec]
       thisback[npix-1-hwidth:npix-1] = objflux[npix-1-hwidth:npix-1,ispec]
-
+      czero2 = where(thisback eq 0., count2)
+      if count2 gt 0 then thisback[czero2] = 1.
       medflux[*,ispec] = objflux[*,ispec] / thisback
       if (arg_present(objivar)) then $
       newivar[*,ispec] = objivar[*,ispec] * thisback^2
@@ -523,8 +526,9 @@ pro spflux_plotcalib, mratiologlam, mratioflux, mrativar, $
 end
 
 ;------------------------------------------------------------------------------
-pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
-
+pro spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
+ minfracthresh=minfracthresh
+   if (not keyword_set(minfracthresh)) then minfracthresh=0.80
    if (n_elements(adderr) EQ 0) then adderr = 0.03
    nfile = n_elements(objname)
 
@@ -536,6 +540,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
    camname = strarr(nfile)
    expnum = lonarr(nfile)
    spectroid = lonarr(nfile)
+   npixarr = lonarr(nfile)
    for ifile=0, nfile-1 do begin
       spframe_read, objname[ifile], hdr=hdr
       plateid[ifile] = strtrim(sxpar(hdr, 'PLATEID'),2)
@@ -543,6 +548,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       camname[ifile] = strtrim(sxpar(hdr, 'CAMERAS'),2)
       spectroid[ifile] = strmid(camname[ifile],1,1)
       expnum[ifile] = sxpar(hdr, 'EXPOSURE')
+      npixarr[ifile] = sxpar(hdr, 'NAXIS1')
    endfor
    maxmjd = max(mjd)
 
@@ -562,12 +568,13 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
    ;----------
    ; Read the raw F-star spectra
 
-   npix = 2048
+   npix = max(npixarr)
+   nfiber = n_elements(plugmap) ; Number of fibers in one spectrograph
    loglam = fltarr(npix, nfile, nphoto)
    objflux = fltarr(npix, nfile, nphoto)
    objivar = fltarr(npix, nfile, nphoto)
    dispimg = fltarr(npix, nfile, nphoto)
-   airmass = fltarr(npix, nfile, 320)
+   airmass = fltarr(npix, nfile, nfiber)
    for ifile=0L, nfile-1 do begin
       spframe_read, objname[ifile], iphoto, wset=wset1, loglam=loglam1, $
        objflux=objflux1, objivar=objivar1, dispimg=dispimg1, $
@@ -575,9 +582,9 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
 
       ; Compute the airmass for every pixel of every object
       ; (every pixel is the same, of course)
-      tai = sxpar(hdr1, 'TAI')
-      for j=0, 319 do $
-       airmass[*,ifile,j] = tai2airmass(plugmap[j].ra, plugmap[j].dec, tai=tai)
+      get_tai, hdr1, tai_beg, tai, tai_end
+      for j=0, nfiber-1 do $
+       airmass[0:npixarr[ifile]-1,ifile,j] = tai2airmass(plugmap[j].ra, plugmap[j].dec, tai=tai)
 
       ; Make a map of the size of each pixel in delta-(log10-Angstroms).
       ; Re-normalize the flux to ADU/(dloglam).
@@ -588,10 +595,18 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       ; Mask pixels on bad fibers
       objivar1 = objivar1 * spflux_goodfiber(mask1)
 
-      loglam[*,ifile,*] = loglam1
-      objflux[*,ifile,*] = objflux1
-      objivar[*,ifile,*] = skymask(objivar1, mask1, mask1)
-      dispimg[*,ifile,*] = dispimg1
+      loglam[0:npixarr[ifile]-1,ifile,*] = loglam1
+      ;it wont do having a tail of zeros in the wavelength so add some dummy values
+      if (npix GT npixarr[ifile]) then begin
+        dllam=loglam1[npixarr[ifile]-1,*]-loglam1[npixarr[ifile]-2,*]
+        for j=0, nphoto-1 do $
+           loglam[npixarr[ifile]:*,ifile,j] = loglam1[npixarr[ifile]-1,j]+dllam[0,j]*(1+findgen(npix-npixarr[ifile]))
+      endif
+      objflux[0:npixarr[ifile]-1,ifile,*] = objflux1
+      ;hopefully the inverse variance of 0 of non-filled objects will indicate the uselessness
+      ; of the extra
+      objivar[0:npixarr[ifile]-1,ifile,*] = skymask(objivar1, mask1, mask1)
+      dispimg[0:npixarr[ifile]-1,ifile,*] = dispimg1
    endfor
 
    ;----------
@@ -605,7 +620,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
    !p.multi = [0,2,3]
    modflux = 0 * objflux
    for ip=0L, nphoto-1 do begin
-      thisfiber = iphoto[ip] + 1 + 320 * (spectroid[0] - 1)
+      thisfiber = iphoto[ip] + 1 + nfiber * (spectroid[0] - 1)
       splog, prelog='Fiber '+string(thisfiber,format='(I3)')
 
       plottitle = 'PLATE=' + string(plateid[0], format='(i4.4)') $
@@ -648,7 +663,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
          ; Reject this star if we don't know its flux.
          if (plugmap[iphoto[ip]].calibflux[2] LE 0) then begin
             splog, 'Warning: Rejecting std star in fiber = ', $
-             iphoto[ip] + 1 + 320 * (spectroid[0] - 1), $
+             iphoto[ip] + 1 + nfiber * (spectroid[0] - 1), $
              ' with unknown calibObj flux'
             qfinal[ip] = 0
          endif
@@ -682,10 +697,10 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
    fracgood = fltarr(nphoto)
    for ip=0L, nphoto-1 do begin
       for i=0L, nfile-1 do begin
-         markasbad = (qfinal[ip]) AND (mean(objivar[*,i,ip] GT 0) LT 0.80)
+         markasbad = (qfinal[ip]) AND (mean(objivar[*,i,ip] GT 0) LT minfracthresh)
          if (markasbad) then begin
             splog, 'Warning: Rejecting std star in fiber = ', $
-             iphoto[ip] + 1 + 320 * (spectroid[0] - 1), $
+             iphoto[ip] + 1 + nfiber * (spectroid[0] - 1), $
              ' with too many IVAR=0 pixels'
             qfinal[ip] = 0B
          endif
@@ -709,7 +724,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
    while (max(chi2list) GT chi2limit AND total(qfinal) GT nphoto/2.) do begin
       chi2max = max(chi2list, iworst)
       splog, 'Rejecting std star in fiber = ', $
-       iphoto[iworst] + 1 + 320 * (spectroid[0] - 1), $
+       iphoto[iworst] + 1 + nfiber * (spectroid[0] - 1), $
        ' with chi2=', chi2max
       chi2list[iworst] = 0
       qfinal[iworst] = 0B
@@ -725,7 +740,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
    while (min(snlist) LT snlimit AND total(qfinal) GT nphoto/2.) do begin
       snmin = min(snlist, iworst)
       splog, 'Rejecting std star in fiber = ', $
-       iphoto[iworst] + 1 + 320 * (spectroid[0] - 1), $
+       iphoto[iworst] + 1 + nfiber * (spectroid[0] - 1), $
        ' with median line S/N=', snmin
       snlist[iworst] = snlimit + 1
       qfinal[iworst] = 0B
@@ -754,9 +769,12 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
 
       ;----------
       ; The MRATIO vectors are the "raw" flux-calib vectors for each expos+CCD
-
-      mratio = objflux / modflux
-      mrativar = objivar * modflux^2
+      czero  = where(modflux eq 0, nczero) ;???
+      cmodflux = modflux ;??? 
+      if (nczero gt 0) then cmodflux[czero] = 1.;???
+  
+      mratio = objflux / cmodflux
+      mrativar = objivar * cmodflux^2
       flatarr = 0 * mratio
 
       ; Ignore regions around the stellar features
@@ -770,11 +788,13 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       ; between invidual stars, both from spectrograph throughput variations
       ; and from slight mis-typing of the stars.
 
-      flatarr[*,iblue,ifinal] = spflux_mratio_flatten(loglam[*,iblue,ifinal], $
-       mratio[*,iblue,ifinal], mrativar[*,iblue,ifinal], pres=pres_b)
+      if (nblue GT 0) then $
+       flatarr[*,iblue,ifinal] = spflux_mratio_flatten(loglam[*,iblue,ifinal], $
+        mratio[*,iblue,ifinal], mrativar[*,iblue,ifinal], pres=pres_b)
 
-      flatarr[*,ired,ifinal] = spflux_mratio_flatten(loglam[*,ired,ifinal], $
-       mratio[*,ired,ifinal], mrativar[*,ired,ifinal], pres=pres_r)
+      if (nred GT 0) then $
+       flatarr[*,ired,ifinal] = spflux_mratio_flatten(loglam[*,ired,ifinal], $
+        mratio[*,ired,ifinal], mrativar[*,ired,ifinal], pres=pres_r)
 
       mratio[*,*,ifinal] = mratio[*,*,ifinal] / flatarr[*,*,ifinal]
       mrativar[*,*,ifinal] = mrativar[*,*,ifinal] * flatarr[*,*,ifinal]^2
@@ -782,10 +802,12 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       ;----------
       ; Do the B-spline fits for the blue CCDs.
 
-      everyn = nblue * nfinal * 10
-      sset_b = spflux_bspline(loglam[*,iblue,ifinal], $
-       mratio[*,iblue,ifinal], mrativar[*,iblue,ifinal], $
-       everyn=everyn, outmask=mask_b)
+      if (nblue GT 0) then begin
+         everyn = nblue * nfinal * 10
+         sset_b = spflux_bspline(loglam[*,iblue,ifinal], $
+          mratio[*,iblue,ifinal], mrativar[*,iblue,ifinal], $
+          everyn=everyn, outmask=mask_b)
+      endif
 
       ;----------
       ; Do the B-spline fits for the red CCDs.
@@ -793,33 +815,37 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       ; but only if the airmass spans at least 0.10 and there are at
       ; least 3 good stars.
 
-      everyn = nred * nfinal * 1.5
-      if (max(airmass) - min(airmass) GT 0.10 AND nfinal GE 3) then begin ; ???
-         ; Get an airmass value for every *pixel* being fit
-         thisair = airmass[*,ired,iphoto[ifinal]]
-      endif else begin
-         thisair = 0
-      endelse
-      sset_r = spflux_bspline(loglam[*,ired,ifinal], $
-       mratio[*,ired,ifinal], mrativar[*,ired,ifinal], $
-       everyn=everyn, outmask=mask_r, airmass=thisair)
+      if (nred GT 0) then begin
+         everyn = nred * nfinal * 1.5
+         if (max(airmass) - min(airmass) GT 0.10 AND nfinal GE 3) then begin ; ???
+            ; Get an airmass value for every *pixel* being fit
+            thisair = airmass[*,ired,iphoto[ifinal]]
+         endif else begin
+            thisair = 0
+         endelse
+         sset_r = spflux_bspline(loglam[*,ired,ifinal], $
+          mratio[*,ired,ifinal], mrativar[*,ired,ifinal], $
+          everyn=everyn, outmask=mask_r, airmass=thisair)
+      endif
 
       ;----------
       ; Find which star has the most pixels rejected, and reject
       ; that star if it's bad enough
 
       fracgood = fltarr(nfinal)
-      for k=0L, nfinal-1 do $
-       fracgood[k] = 0.5 * (mean(mask_b[*,*,k]) + mean(mask_r[*,*,k]))
+      for k=0L, nfinal-1 do begin
+         if (nblue GT 0) then fracgood[k] += 0.5 * mean(mask_b[*,*,k])
+         if (nred GT 0) then fracgood[k] += 0.5 * mean(mask_r[*,*,k])
+      endfor
       minfrac = min(fracgood, iworst)
-      if (minfrac LT 0.80) then begin
+      if (minfrac LT minfracthresh) then begin
          if (nfinal LE nphoto/2.) then begin
             splog, 'WARNING: Already rejected ', nphoto-nfinal, ' of ', $
              nphoto, ' std stars'
             qdone = 1B
          endif else begin
             splog, 'Rejecting std star in fiber = ', $
-             iphoto[ifinal[iworst]] + 1 + 320 * (spectroid[0] - 1), $
+             iphoto[ifinal[iworst]] + 1 + nfiber * (spectroid[0] - 1), $
              ' with fracgood=', minfrac
             qfinal[ifinal[iworst]] = 0B
          endelse
@@ -836,18 +862,22 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
    ; in individual exposures.
 
    mratfit = 0 * mratio
-   mratfit[*,iblue,ifinal] = bspline_valu(loglam[*,iblue,ifinal], sset_b)
-   if (tag_exist(sset_r,'NPOLY')) then $
-    mratfit[*,ired,ifinal] = bspline_valu(loglam[*,ired,ifinal], sset_r, $
-     x2=airmass[*,ired,iphoto[ifinal]]) $
-   else $
-    mratfit[*,ired,ifinal] = bspline_valu(loglam[*,ired,ifinal], sset_r)
+   if (nblue GT 0) then $
+    mratfit[*,iblue,ifinal] = bspline_valu(loglam[*,iblue,ifinal], sset_b)
+   if (nred GT 0) then $
+    if (tag_exist(sset_r,'NPOLY')) then $
+     mratfit[*,ired,ifinal] = bspline_valu(loglam[*,ired,ifinal], sset_r, $
+      x2=airmass[*,ired,iphoto[ifinal]]) $
+    else $
+     mratfit[*,ired,ifinal] = bspline_valu(loglam[*,ired,ifinal], sset_r)
 
    !p.multi = [0,1,2]
    explist = expnum[uniq(expnum, sort(expnum))]
    colorvec = ['default','red','green','blue','cyan','magenta','grey']
    xrange = 10^minmax(loglam[*,*,ifinal])
-   yrange = minmax(mratfit[*,*,ifinal])
+   ii = where(mrativar[*,*,ifinal] GT 0, ct)
+   if (ct GT 1) then yrange = minmax((mratfit[*,*,ifinal])[ii]) $
+    else yrange = minmax(mratfit[*,*,ifinal])
    plottitle = 'PLATE=' + string(plateid[0], format='(i4.4)') $
     + ' MJD=' + string(maxmjd, format='(i5.5)')
    for iexp=0, n_elements(explist)-1 do begin
@@ -869,7 +899,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
          endfor
          djs_xyouts, 0.9*xrange[0]+0.1*xrange[1], $
           yrange[0] + (j+1)*(yrange[1]-yrange[0])/(nfinal+1), $
-          'Fiber '+strtrim(iphoto[ifinal[j]]+(spectroid[0]-1)*320,2), $
+          'Fiber '+strtrim(iphoto[ifinal[j]]+(spectroid[0]-1)*nfiber,2), $
           color=thiscolor
       endfor
    endfor
@@ -982,7 +1012,6 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir
       if (tag_exist(thisset,'NPOLY')) then x2 = airmass[*,ifile,*] $
        else x2 = 0
       calibimg = float( bspline_valu(loglam1, thisset, x2=x2) )
-if (max(calibimg) EQ 0) then stop ; ???
 
       ; Set to zero any pixels outside the known flux-calibration region
       qbad = loglam1 LT logmin OR loglam1 GT logmax

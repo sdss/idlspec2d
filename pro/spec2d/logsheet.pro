@@ -13,8 +13,8 @@
 ; OPTIONAL INPUTS:
 ;   mjd        - Directory name; default to largest numbered MJD
 ;                matching the directory "$RAWDATA_DIR/?????".
-;   camera     - Camera name of files to list; default to '??'
-;                for all cameras.
+;   camera     - Camera name of files to list; '??' for all cameras;
+;                default to 'b1'
 ;   outfile    - Output file
 ;
 ; OUTPUTS:
@@ -49,7 +49,7 @@ pro logsheet, mjd=mjd, camera=camera, outfile=outfile
    quiet = !quiet
    !quiet = 1
 
-   if (NOT keyword_set(camera)) then camera = '??'
+   if (NOT keyword_set(camera)) then camera = 'b1'
 
    ;----------
    ; Set input directory for sdR files
@@ -112,7 +112,7 @@ pro logsheet, mjd=mjd, camera=camera, outfile=outfile
    for i=0, nfile-1 do begin
       hdr = sdsshead(fullname[i])
 
-      jd = 2400000.5D + sxpar(hdr, 'TAI') / (24.D*3600.D)
+      jd = 2400000.5D + sxpar(hdr, 'TAI-BEG') / (24.D*3600.D)
       caldat, jd, jd_month, jd_day, jd_year, jd_hr, jd_min, jd_sec
       utstring = string(jd_hr, jd_min, format='(i2.2,":",i2.2," Z")')
 

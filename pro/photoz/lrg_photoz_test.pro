@@ -4,7 +4,7 @@
 pro lrg_photoz_test
 
    ; Read the spAll file
-   spfile = filepath('spAll.fits', root_dir=getenv('SPECTRO_DATA'))
+   spfile = filepath('spAll.fits', root_dir=getenv('BOSS_SPECTRO_REDUX'))
    columns = ['PROGNAME', 'PLATEQUALITY', 'PLATE', 'FIBERID', 'MJD', $
     'RUN', 'RERUN', 'CAMCOL', 'FIELD', 'ID', $
     'CLASS', 'SPECPRIMARY', 'PRIMTARGET', 'Z', 'Z_ERR', 'ZWARNING', $

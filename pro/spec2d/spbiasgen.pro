@@ -52,7 +52,7 @@
 ;   contain the camera name, MJD, and exposure number, all dash-separated.
 ;
 ; EXAMPLES:
-;   The following nights probably contain a bias sequence:
+;   The following SDSS-I nights probably contain a bias sequence:
 ;     51686 51781 51809 51852 51893 51950 51978 52010 52038 52069
 ;     52245 52276 52305 52333 52363 52392 52423 52454 52514 52551
 ;     52573 52602 52633 52655 52689 52718 52747 (<- should declare some bad!)
@@ -64,9 +64,12 @@
 ;   for other testing purposes:
 ;     52084 52085 52121 52229 52294 52550 52572 52601 52629
 ;     52657 52660 52661 52717 52807 52863 52864 52865 52926
-;
 ;   Generate one of these sets of biases with:
 ;     spbiasgen, mjd=51893, expstart=7607, expend=7616, outdir='.'
+;
+;   For BOSS:
+;     spbiasgen,mjd=55268,expstart=111620,expend=111645,outdir='.'
+;     spbiasgen,mjd=55271,expstart=111881,expend=111905,outdir='.'
 ;
 ; BUGS:
 ;

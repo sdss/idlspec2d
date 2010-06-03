@@ -1,0 +1,226 @@
+#!/usr/bin/env bash
+#
+#  Redo the SOS command on the given MJD
+
+###
+###  Functions
+###
+
+function usage
+{
+    local execName=$(basename $0)
+    ( 
+	echo "usage: $execName -g [-m] [-z] [-t|-r] [-X] [-A] [-w] [-d]"
+	echo
+	echo "   -m    Specify string to use as current MJD."
+	echo "   -z    Specify string to use as exposure number"
+	echo "   -t    Start in test mode using directories in /tmp."
+	echo "         Until fixed, test mode still updates plateDb so it should be avoided!"
+	echo "   -r    Start in redo mode where the output files go to a special redo"
+	echo "         directory hierarchy."
+	echo "   -w    Wait until redo commands complete (default now)"
+	echo "   -d    Dry run."
+	echo " "
+	echo "   -g    go.  Go must be specified.  This is to prevent accidentally running $execName."
+    ) >&2
+    exit 1
+}
+
+function screamAndDie
+{
+    echo "Failed: $*"
+
+    echo "Goodbye!"
+    exit 1
+}
+
+function printAndRun
+{
+    echo "$*"
+
+ 	if "$dryMode"; then
+		return
+	fi
+		
+    # Silently do nothing
+    if test "_$*" = "_"; then
+        return
+    fi
+
+    eval "$@"
+    if test $? -ne 0; then
+        screamAndDie "failed running $*"
+    fi
+}
+
+
+# Make the commands to execute
+#   Arg $1 - the camera name
+#   Arg $2 - extra commands to sos_redurunner
+#   
+#   Uses all the directory variables and svnMode and testMode and setMJD
+#        and setExposure
+#
+#   echos the command so use $(makeCommand b1)
+function makeCommand
+{
+#	echo "sos_redorunner $2 $svnMode $setMJD $setExposure -n -i $1 -g \"sdR-$1-*.fit*\" -c \"sos_apocommand -f '%%f' -i '%%pf' -p '%%p' -l '%%pp' -s '$SOSDIR' -m '%%m'\" -d $pause -o $CONTROLDIR -r $RAWDIR -p $PLUGDIR -n $platedb -v -v -v -v -v -v"
+	echo "sos_redorunner $2 $svnMode $setMJD $setExposure -n -i $1 -g \"sdR-$1-*.fit*\" -c \"sos_filesequencer -f '%%f' -i '%%pf' -p '%%p' -l '%%pp' -s '$SOSDIR' -m '%%m'\" -d $pause -o $CONTROLDIR -r $RAWDIR -p $PLUGDIR -n $platedb -v -v -v -v -v -v"
+}
+
+# Insure that this shell can access svn
+#
+# Uses PLUGDIR
+function doSVNCheck
+{
+	echo "Checking SVN Access.  If you get asked for a password, type ^C to abort the script."
+	printAndRun "svn log "$PLUGDIR" >/dev/null"
+}
+
+# Start or connect to ssh-agent
+#
+# Uses CONTROLDIR, sets SSH_AUTH_SOCK
+function sshagent
+{
+	startAgent=true
+
+	socket=$CONTROLDIR/agent.socket
+	info=$CONTROLDIR/agent.info
+	
+	#	We're going to end up with this in the end anyway, and it is handy
+	#   to do it here even though it isn't true yet.
+	export SSH_AUTH_SOCK=$socket
+	
+	#	See if there is an existing agent we can connect to, if not start it up and add key!
+	echo "Checking for agent file $info"
+	if [ -e $info ]; then
+		echo "Found agent file"
+		agentpid=$(grep PID $info | perl -pe "s{^.*PID=([0-9]+);.*$}{\1}")
+		if ! test -z "$agentpid"; then
+			echo "Checking agent pid $agentpid"
+			kill -0 $agentpid &>/dev/null
+			if test $? -eq 0; then
+				echo "Agent still running.  Will use existing agent."
+				startAgent=false
+			else
+				echo "Agent has stopped running"
+			fi
+		else
+			echo "Can't parse agent file"
+		fi
+	else
+		echo "Could not find agent file"
+	fi
+	
+	if "$startAgent"; then
+		echo "Starting new agent."
+		printAndRun "ssh-agent -a $socket" ">$info"
+		echo "About to add the private key sos uses, please enter the password"
+		printAndRun ssh-add ~/.ssh/id_dsa-sos
+	fi
+}
+
+
+###
+###  Parse Options
+###
+
+testMode=false
+svnMode="-x"
+svnCheck=false
+agentCheck=false
+dryMode=false
+redoMode=false
+setMJD=""
+setExposure=""
+pause=60
+doWait=true
+go=false
+
+while getopts "wtrdm:z:g" argname; do
+    case $argname in
+	  w) doWait=true ;;
+#      X) svnMode=""; svnCheck=true ;;
+#      A) agentCheck=true ;;
+      t) testMode=true;  pause=20 ;;
+      r) redoMode=true ;;
+	  d) dryMode=true ;;
+	  m) setMJD="-m $OPTARG" ;;
+	  z) setExposure="-z $OPTARG" ;;
+	  g) go=true ;;
+      *) usage
+    esac
+done
+shift $((OPTIND-1))
+
+###  Good to go?
+if ! "$go"; then
+	usage
+fi
+
+###
+###  Setup Directories
+###
+
+if "$redoMode"; then
+	SOSDIR=/data/boss/sosredo
+	CONTROLDIR=/home/observer/sos/control
+	RAWDIR=/data/spectro
+	PLUGDIR=/home/sdss3/products/NULL/speclog/trunk
+#	LOGDIR=/home/observer/sos/sos-logs
+elif "$testMode"; then
+	SOSDIR=/tmp/sos/out
+	CONTROLDIR=/tmp/sos/control
+	RAWDIR=/tmp/sos/spectro
+	PLUGDIR=/tmp/sos/plugdir
+#	LOGDIR=/tmp/sos/logs
+	
+	if ! "$dryMode"; then
+		if [ ! -d ${SOSDIR} ]; then mkdir -p ${SOSDIR}; fi
+		if [ ! -d ${CONTROLDIR} ]; then mkdir -p ${CONTROLDIR}; fi
+		if [ ! -d ${RAWDIR} ]; then mkdir -p ${RAWDIR}; fi
+		if [ ! -d ${PLUGDIR} ]; then mkdir -p ${PLUGDIR}; fi
+#		if [ ! -d ${LOGDIR} ]; then mkdir -p ${LOGDIR}; fi
+	fi
+else
+	#	SOSDIR=/data/boss/sos
+	SOSDIR=/data/boss/sos
+	CONTROLDIR=/home/observer/sos/control
+	RAWDIR=/data/spectro
+	PLUGDIR=/home/sdss3/products/NULL/speclog/trunk
+#	LOGDIR=/home/observer/sos/sos-logs
+fi
+echo "SOS output directory is $SOSDIR"
+
+###  Setup python options
+export PYTHONUNBUFFERED=1
+#
+#
+###  Run the redo
+#
+echo " "
+#
+#
+printAndRun $(makeCommand b1 -k) "&>redo-b1.out" "&"
+#
+#
+printAndRun $(makeCommand b2) "&>redo-b2.out" "&"
+#
+#
+printAndRun $(makeCommand r1) "&>redo-r1.out" "&"
+#
+#
+printAndRun $(makeCommand r2) "&>redo-r2.out" "&"
+#
+#
+###  Wait if asked
+if "$doWait"; then
+	echo " "
+	echo "ONLY THE B1 CAMERA'S OUTPUT IS SENT TO THE CONSOLE.  LOOK AT THE .OUT FILES FOR"
+	echo "THE OTHER CAMERAS"
+	echo " "
+	sleep 5
+	tail -f -n 9999 --pid=$! redo-b1.out
+#	echo "Waiting for jobs to complete!"
+	wait	# in case all the jobs aren't finished
+fi

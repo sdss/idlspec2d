@@ -20,7 +20,7 @@
 ;                in the PLATEMERGE routine (for spAll files).
 ;   silent     - If set, then call MRDFITS with /SILENT.
 ;   topdir     - Top-level directory for data; default to the environment
-;                variable $SPECTRO_DATA.
+;                variable $BOSS_SPECTRO_REDUX.
 ;
 ; OUTPUTS:
 ;

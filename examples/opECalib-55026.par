@@ -1,0 +1,147 @@
+# BLANK CCD Calibration File.
+#
+# This makes it easy to examine raw data files with the standard tools (opBC in particular) without 
+# having to undo gains, etc.
+#
+#   bias == 0
+#   gain == 1.0
+#   full well == 64k
+#   linearity curve points are all 1
+#
+#   Not exactly sure what I should be doing with the read noise. 0, maybe, but I worry about
+#   that breaking _something_.
+#
+#File Format: FTCL parameter file
+#
+#Name: opECalib-ddddd.par, where ddddd is the int(MJD).
+#
+#Produced by: mop, iop, sop
+#
+#Used by: mtframes, ssc, ps, frames
+#
+#Size: approximately 100 Kb
+#
+#Archived? Yes
+#
+#Description
+#
+#CCD calibration file, specifying the electronic characteristics (read noise,
+#gain, full-well, bias level, and linearity corrections) for each CCD
+#"program". This file is changed seldom. Each observing report is accompanied
+#by one of these files, specifying which CCD calibrations apply for that
+#night's observing. Each file should list all programs used for all CCDs in a
+#given instrument.
+#
+#Contents
+mjd            50001            # MJD day number when this file was created.
+                                # This should be unique over the collection
+                                # of all configuration files for a given
+                                # camera.
+
+nsteps 7                        # The linearity arrays are hardwired to be of
+                                # length 13 (we must adopt a size so that two
+                                # files with arrays of differing length aren't
+                                # read in together, which would lead to a
+                                # possibly undetectable bug).  This parameter
+                                # records the number of array elements which
+                                # actually contain data.
+                                # i.e., if "nsteps" = 7, then only the first
+                                # 7 elements of the linearity arrays contain
+                                # real data.  The remaining elements should
+                                # be ignored.
+
+typedef struct {
+        char program[40];       # program name
+
+        int camRow;             # camRow mt=0 spec=0 dsc=9
+        int camCol;             # camCol mt=0 spec=1234 dsc=9
+                                # 1=b1, 2=r2, 3=b2, 4=r1
+
+        float readNoiseDN0;     # in DN = ADU
+        float fullWellDN0;      # in DN = ADU
+        float gain0;            # in electrons/DN = electrons/ADU
+        float biasLevel0;       # in DN = ADU
+        float DN0[13];          # array of DN's where linearity correction
+                                # factors apply (after bias subtraction)
+        float linearity0[13];   # array of linearity correction factors
+                                # True_DN = Instrumental_DN *
+                                #   linearity(Instrumental_DN),
+                                # (after bias subtraction)
+
+        float readNoiseDN1;
+        float fullWellDN1;
+        float gain1;
+        float biasLevel1;
+        float DN1[13];
+        float linearity1[13];
+
+        float readNoiseDN2;
+        float fullWellDN2;
+        float gain2;
+        float biasLevel2;
+        float DN2[13];
+        float linearity2[13];
+
+        float readNoiseDN3;
+        float fullWellDN3;
+        float gain3;
+        float biasLevel3;
+        float DN3[13];
+        float linearity3[13];
+} ECALIB;
+
+ecalib spectro_amp2 0 1 \
+4.08 65536 1.0 0.0 \
+{5000 10000 15000 20000 25000 30000 35000 40000 45000 50000 55000 60000 65000} \
+{1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 } \
+4.08 65536 1.0 0.0 \
+{5000 10000 15000 20000 25000 30000 35000 40000 45000 50000 55000 60000 65000} \
+{1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 } \
+3.86 65536 1.0 0.0 \
+{5000 10000 15000 20000 25000 30000 35000 40000 45000 50000 55000 60000 65000} \
+{1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 } \
+3.24 65536 1.0 0.0 \
+{5000 10000 15000 20000 25000 30000 35000 40000 45000 50000 55000 60000 65000} \
+{1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 } 
+
+ecalib spectro_amp2 0 2 \
+4.08 65536 1.0 0.0 \
+{5000 10000 15000 20000 25000 30000 35000 40000 45000 50000 55000 60000 65000} \
+{1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 } \
+4.08 65536 1.0 0.0 \
+{5000 10000 15000 20000 25000 30000 35000 40000 45000 50000 55000 60000 65000} \
+{1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 } \
+4.32 65536 1.0 0.0 \
+{5000 10000 15000 20000 25000 30000 35000 40000 45000 50000 55000 60000 65000} \
+{1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 } \
+4.12 65536 1.0  0.0 \
+{5000 10000 15000 20000 25000 30000 35000 40000 45000 50000 55000 60000 65000} \
+{1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 } 
+
+ecalib spectro_amp2 0 3 \
+4.08 65536 1.0 0.0 \
+{5000 10000 15000 20000 25000 30000 35000 40000 45000 50000 55000 60000 65000} \
+{1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 } \
+4.08 65536 1.0 0.0 \
+{5000 10000 15000 20000 25000 30000 35000 40000 45000 50000 55000 60000 65000} \
+{1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 } \
+3.88 65536 1.0 0.0 \
+{5000 10000 15000 20000 25000 30000 35000 40000 45000 50000 55000 60000 65000} \
+{1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 } \
+3.38 65536 1.0 0.0 \
+{5000 10000 15000 20000 25000 30000 35000 40000 45000 50000 55000 60000 65000} \
+{1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 } 
+
+ecalib spectro_amp2 0 4 \
+4.08 65536 1.0 0.0 \
+{5000 10000 15000 20000 25000 30000 35000 40000 45000 50000 55000 60000 65000} \
+{1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 } \
+4.08 65536 1.0 0.0 \
+{5000 10000 15000 20000 25000 30000 35000 40000 45000 50000 55000 60000 65000} \
+{1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 } \
+4.08 65536 1.0 0.0 \
+{5000 10000 15000 20000 25000 30000 35000 40000 45000 50000 55000 60000 65000} \
+{1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 } \
+4.04 65536 1.0 0.0 \
+{5000 10000 15000 20000 25000 30000 35000 40000 45000 50000 55000 60000 65000} \
+{1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 } 

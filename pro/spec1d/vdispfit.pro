@@ -230,8 +230,8 @@ function vdispfit, objflux, objivar, objloglam, $
       splog, 'Oversampling eigentemplates'
       for istar=0, nstar-1 do begin
          ; Burles counter...
-         print, format='("Template ",i5," of ",i5,a1,$)', $
-          istar+1, nstar, string(13b)
+;         print, format='("Template ",i5," of ",i5,a1,$)', $
+;          istar+1, nstar, string(13b)
 
          combine1fiber, eloglam, eflux[*,istar], $
           newloglam=bigloglam, newflux=tmpflux, maxiter=0

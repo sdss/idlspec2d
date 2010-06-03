@@ -11,7 +11,7 @@ ALINK="#FF0000">
 This document desribes the real-time reductions of spectroscopic data
 taken with the SDSS 2.5-m.  These reductions are robotically posted
 to the
-<A HREF="http://sos.apo.nmsu.edu/logfile-current.html">
+<A HREF="http://sdss3.apo.nmsu.edu/~observer/sos/logfile-current.html">
 <!--
 <A HREF="http://hoggpt.apo.nmsu.edu/sos/logfile-current.html">
 -->
@@ -22,7 +22,8 @@ Princeton mailing list</A>.
 <P>
 In this document:
 <UL>
-  <LI><A HREF="#launch">How to Launch Son-of-Spectro</A>
+  <LI><A HREF="#overview">Son-of-Spectro Overview</A>
+  <LI><A HREF="#procedures">Procedures for Son-of-Spectro</A>
   <LI><A HREF="#version">Backing out to an older version</A>
   <LI><A HREF="#install">Installing a new version</A>
   <LI><A HREF="#howwork">How Son-of-Spectro Works</A>
@@ -42,142 +43,158 @@ In this document:
 Related documents:
 <UL>
   <LI><A HREF="spectro_apodisplay.html">Displaying Spectra at APO</A>
+  <LI><A HREF="https://trac.sdss3.org/browser/repo/idlspec2d/branches/v5_4/bin/sos_README">SOS Deamon readme file</A>
 </UL>
 
-<H2><A NAME="launch">How to Launch Son-of-Spectro</A></H2>
 
-<P>
-Son-of-Spectro is a cron job that runs from the "observer" account
-on "sos.apo.nmsu.edu".  It should always be running, and
-should even recover (as any cron job) if that machine is power-cycled.
-It has been run previously on the machines "hoggpt.apo" and
-"plate-mapper.apo".
+<H2><A NAME="overview">Overview of Son-of-Spectro</A></H2>
 
-<P>
-Log into "sos.apo" as user "observer".  Check if the SOS is running
-by typing:
-<DL><DD><PRE>
-  % sos_status
-</PRE></DD></DL>
-If it is <B>not</B> running, then you will see a response beginning with:
-<DL><DD><PRE>
-  The Son-of-Spectro cron job is NOT running for USER=observer MACHINE=sos.
-</PRE></DD></DL>
-If it <B>is</B> running, then you will see a response beginning with:
-<DL><DD><PRE>
-  The Son-of-Spectro cron job IS running for USER=observer MACHINE=sos.
-</PRE></DD></DL>
-This is then followed with some other information that may be useful
-for trouble-shooting.
+<p> Son-of-spectro is a set of daemon jobs that runs from the observer account on
+sos3.apo.nmsu.edu. The actual processes are named sos_runnerd.py and there will be four
+instances running, one per camera. Although sos_runnerd.py can be started manually, users
+will seldom if ever start the process using this command. Instead, there are two user
+commands that know about the setup at APO. They are sos_apocontrol and sos_apostart.
+sos_apocontrol is the highest level command and should be used most often. sos_apocontrol
+allows for the starting, stopping and monitoring of the daemon processes using the
+standard APO options. In order to start the processes, sos_apocontrol calls sos_apostart.
+sos_apostart can be called manually and allows more flexibility. Each of those commands
+will start four instances of sos_runnerd, one per camera, with the correct parameters for
+APO.<p>
 
-<P>
-To start up SOS, type:
-<DL><DD><PRE>
-  % sos_start
-</PRE></DD></DL>
+At APO the log files are stored in ~observer/sos/sos-logs and there is one log file per
+camera for all commands and one log file per camera that only stores errors.  It is a 
+good idea to periodically check the error log.  Each log file is rotated out daily and
+saved for four days.<p>
+	
+The sos daemon processes can not be automatically started at boot because they need a
+password to be manually entered in order to access svn.  Because of this, starting the
+sos daemons should be part of the SOS3 boot procedures document.<p>
 
-<P>
-To stop up SOS, type:
-<DL><DD><PRE>
-  % sos_stop
-</PRE></DD></DL>
+There is also a redo command, sos_aporedo that allows one nights of data to be manually
+rerun trough aporeduce.  Again, sos_aporedo will start four processes, one per camera,
+to reprocess the images.<p>
 
-<P>
-All of these commands can also be run from a remote machine.
-A second argument should be the machine name with an optional user-name, i.e.:
-<DL><DD><PRE>
-  % sos_status sos
-  % sos_status observer@sos.apo.nmsu.edu
-</PRE></DD></DL>
+For more information be sure and read the sos daemon 
+<A HREF="https://trac.sdss3.org/browser/repo/idlspec2d/branches/v5_4/bin/sos_README">readme</A>
+file.  Also, each command has usage information via the '-?' option.  Finally, for even
+more information each source file has a document header at the beginning of the file 
+with implementation details.<p>
 
-<P>
-Note that the following directories should exist on sos.apo and be
-write-able by the observer account:
-<DL><DD><PRE>
-  /data/spectro
-  /data/spectro/astrolog
-  /data/spectro/spectrologs
-  /data/spectro/spectrologs/html
-</PRE></DD></DL>
+<H2><A NAME="procedures">Procedures for Son-of-Spectro</A></H2>
 
-<P>
-Note that the following link should exist if running on sos.apo:
-<DL><DD><PRE>
-  ln -s /usr/local/www/data /data/spectro/spectrologs/html
-</PRE></DD></DL>
-Note that the following link should exist if running on hoggpt.apo:
-<DL><DD><PRE>
-  ln -s /data/spectro/spectrologs/html /usrdevel/skent/inventory/www/apo2d
-</PRE></DD></DL>
-Note that the following link should exist if running on plate-mapper.apo:
-<DL><DD><PRE>
-  ln -s /data/spectro/spectrologs/html /home/skent/inventory/www/apo2d
-</PRE></DD></DL>
+<b>=== All commands are executed from observer@sos3 ===</b><br>
+<b>=== All commands assume that idlspec2d is setup ===</b><br>
+<b>=== Read the <A HREF="https://trac.sdss3.org/browser/repo/idlspec2d/branches/v5_4/bin/sos_README">readme</A> file for more information on the commands.</b><p>
+
+<h4>Confirm SOS Processes are Running</h4>
+
+<dl><dd><code> 
+$ sos_apocontrol status 
+</dl></dd></code><p> 
+	
+There should be four instances of sos_runnerd
+displayed, one per camera. The first line will be "Running", the last line will be "Done".
+Between those lines should be four instances of sos_runnerd. Each instance will be a long
+line separated by a blank line.<p>
+
+If you do not see see four processes running, stop the processes and then start the
+processes.<p>
+
+<h4>Confirm the SOS Process are Not Running</h4>
+
+<dl><dd><code>
+$ sos_apocontrol status
+</dl></dd></code><p>
+
+There should be zero instances of sos_runnerd displayed. The first line will be "Running",
+the last line will be "Done". There should be nothing between those two lines.<p>
+
+<h4>Start SOS Processes</h4>
+
+<dl><dd><code>
+$ sos_apocontrol start
+</dl></dd></code><p>
+	
+When sos_apocontrol is run it will check to make sure that there is an ssh-agent that
+it can connect to for svn access.  If there is not, it will ask for the password of
+the key it uses.  The password is the same as is used for the sdss3 data access web site.<p>
+	
+When the command finishes, confirm the sos processes are running.<p>
+
+<h4>Start SOS Processes After Observing Has Started For the Night</h4>
+
+Use this command if the sos process was not started until after observing has started
+for the night.  This procedure will process all images already present for the current
+MJD.<p>
+
+<dl><dd><code>
+$ sos_apocontrol allow
+$ sos_apostart -g -e
+</dl></dd></code><p>
+	
+Then confirm the sos processes are running.<p>
+
+<h4>Stop SOS Processes</h4>
+
+<dl><dd><code>
+$ sos_apocontrol stopWait
+</dl></dd></code><p>
+	
+If sos is processing an image, this command will allow the current idl process to finish 
+before stopping sos.  If this command does not return after some time (~5 min), then
+^C to kill the process and use the following command:
+
+<dl><dd><code>
+$ sos_apocontrol stopKill
+</dl></dd></code><p>
+	
+Then confirm the sos processes are not running.<p>
+
+<h4>Reprocess a Nights Worth of Spectro</h4>
+
+<dl><dd><code>
+$ sos_aporedo -w -g -m 00000 (Where 00000 is the MJD to reprocess)
+</dl></dd></code><p>
+
+The output files are stored in ~/sos/redo. cat ~/sos/redo/redo-b1.out for the output of
+the reprocessing of the b1 camera.<p>
+
+<h4>Confirm that the ssh-agent Process Used by sos_runnerd is Running</h4>
+
+<dl><dd><code>
+$ ps ax | grep ssh-agent
+</dl></dd></code><p>
+	
+This line should be present:<p>
+<dl><dd><code>
+"ssh-agent -a /home/observer/sos/control/agent.socket"
+</dl></dd></code><p>
+
+If it is not, then stop the sos processes and restart them.<p>
 
 <H2><A NAME="version">Backing out to an older version</A></H2>
 
-<OL>
-<LI>
 You can run a different version of Son-of-Spectro by setting up
-the relevant version of idlspec2d before you launch it with "sos_start".
-This should be done from the "observer" account on "sos.apo.nmsu.edu".
-Check which version of the code is being run with:
-<DL><DD><PRE>
-  % sos_status
-</PRE></DD></DL>
-Stop this version from running with:
-<DL><DD><PRE>
-  % sos_stop
-</PRE></DD></DL>
+the relevant version of idlspec2d before you launch it with "sos_apocontrol".
+This should be done from the "observer" account on "sos3.apo.nmsu.edu".<p>
 
-<LI>
-Wait a minute or two for any running SOS reductions to complete.
-
-<LI>
-The output files of different versions of Son-of-Spectro
-can be incompatable with one another.
-We recommend deleting (or at least renaming) the
-current working directory:
-<DL><DD><PRE>
-  mv /data/spectro/spectrologs/$MJD /data/spectro/spectrologs/$MJD.old
-</PRE></DD></DL>
-The file whose existence will cause a new version of code to crash is:
-<DL><DD><PRE>
-  /data/spectro/spectrologs/$MJD/logfile-$MJD.fits
-</PRE></DD></DL>
-
-<LI>
-Now set up and start the new version:
-<DL><DD><PRE>
-  % setup idlspec2d v4_9_1
-  % sos_start
-</PRE></DD></DL>
-If you type "sos_status", it should tell you which version is now running.
-
-</OL>
-
-<P>
-Note that Son-of-Spectro is actually general enough to be run from any
-account on any remote computer.  The only requirements are as following:
-<UL>
-<LI>The directory /data/spectro must exist on the remote machine,
-    and be write-able by the user.
-<LI>This user@machine must have permission to copy files with "ssh"
-    "from sdsshost.apo.nmsu.edu".  This must be set up to work without
-    typing a passphrase.
-</UL>
+First stop any existing sos process using the procedures above.  Then setup the version
+of idlspec2d that you want to use.  Currently the latest stable tag is v5_4_1b.
+<dl><dd><code>
+	setup idlspec2d v5_4_1b
+</dl></dd></code>
+The startup the sos daemon using the procedures above.
 
 <H2><A NAME="install">Installing a new version</A></H2>
 
-<P>
-Follow the instructions for
-<A HREF="idlspec2d_install.html#install_evil">CVS install w/UPS and evilinstall</A>.
-This is the short-cut to installing code using UPS.  It will cvs-export
-code, build it, install it, and declare it current.  If the code is already
-installed, then it simply declares it the specified version current.
+SOS is part of the idlspec2d package and uses the normal sdss3 install procedures
+including being eups compliant and installed via sdss3install in the sdss3tools package. A
+good place for more information is 
+<A HREF="https://trac.sdss3.org/wiki/BossSoftwareInstall">BOSS Software Install
+Instructions</A>.
 
 <P>
-At APO, install both on the SOS machine (currently sos.apo), and
+At APO, install both on the SOS machine (currently sos3.apo), and
 on sdsshost.apo.  This is because the documentation on the sdsshost.apo
 procedures web page is linked to the installed version on that machine.
 
@@ -187,24 +204,23 @@ Now you are ready to <A HREF="#launch">launch</A> this new version of the code.
 <H2><A NAME="howwork">How Son-of-Spectro Works</A></H2>
 
 <P>
-Son-of-Spectro is a cron job that runs from the "observer" account
-on "sos.apo.nmsu.edu".  This cron job invokes rsync once
-every minute to copy raw spectro data from "sdsshost" to "sos.apo",
+Son-of-Spectro is a daemon job that runs from the "observer" account
+on "sos3.apo.nmsu.edu".  This daemon job monitors files written to /data/spectro/$MJD and
 then launches a package of shell scripts and IDL commands to reduce
 the data one frame at a time.  It is part of the <B>idlspec2d</B> data product.
 
-<P>
-There are actually <B>two</B> rsync processes that run, one for the blue
-camera images and one for the red.  We did this so that both processors on the
-computer can be utilized.  All 4 cameras should be reduced for an exposure
-within a few minutes.
+<P> There are actually <B>four</B> daemon processes that run, one for each camera. We did
+this so that both processors on the computer can be utilized.  All 4 cameras should be
+reduced for an exposure within a few minutes.
 
 <P>
-The raw data is copied into these directories on sos.apo:
-<DL><DD><PRE>
-  /data/spectro/astrolog/$MJD  - Copy of the same from sdsshost
-  /data/spectro/$MJD           - Copy of /astrolog from sdsshost
-</PRE></DD></DL>
+The output directors are:
+<dl><dd><pre>
+	/data/boss/sos/combined   - Copy of aporeduce output for the web site
+	/data/boss/sos/$MJD       - Output of aporeduce for that night
+	$SPECLOG_DIR/$MJD         - plugmap files used for running aporeduce
+	platedb database          - (s/n)^2 for each science frame reduced
+</dl></dd></pre>
 
 <P>
 The data reduction is not the same as the full-up spectroscopic pipeline.
@@ -213,11 +229,7 @@ very robust.  For example, boxcar extraction of the spectra is used instead
 of optimal extraction.
 
 <P>
-The reduced data will appear in the directory:
-<DL><DD><PRE>
-  /data/spectro/spectrologs/$MJD
-</PRE></DD></DL>
-Files like the following can be found in that directory:
+Files like the following can be found in the /data/boss/sos/$MJD directory:
 <DL><DD><PRE>
   splog-b1-00006541.log              - Text history of exp #6541 reduction
   tset-51795-0389-00006541-b1.fits   - Fiber traces (from flat exposure #6541)
@@ -236,11 +248,11 @@ crashed.
 <P>
 The HTML files and S/N plots for the web page are copied into the directory:
 <DL><DD><PRE>
-  /data/spectro/spectrologs/html
+  /data/boss/sos/combined
 </PRE></DD></DL>
 The most recent HTML file has a second copy as the file "logfile-current.html".
 This is the file pointed to by the
-<A HREF="http://sos.apo.nmsu.edu/logfile-current.html">
+<A HREF="http://sdss3.apo.nmsu.edu/~observer/sos/logfile-current.html">
 SOS web page</A>.
 
 <H2><A NAME="headers">FITS header cards (and how to change them)</A></H2>
@@ -572,6 +584,10 @@ The following messages may appear:
     The raw images actually have some rows shifted by 1 or 2 pixels,
     usually more so near the bottom of the CCD (the first rows to be read).
     Call Connie immediately.
+<LI><B>Electronics shifted xxx rows by 2 pix</B> <BR>
+    This is indicative of an electronics problem
+    with the BOSS electronics that shifts all or some of the rows in the
+    raw images in all 4 amplifiers (ticket 423).
 <LI><B>More than 10% of the image is rejected</B> <BR>
     This is very bad.  This can probably only happen if most of the CCD
     has saturated pixels, which probably means you're observing during
@@ -633,6 +649,10 @@ The following messages may appear:
     gap in wavelength space without any lines.  This will produce a poor
     wavelength solution.  More arcs should be taken until this message
     does not appear.
+<LI><B>Cd I 3610 line missing</B> <BR>
+    This particular arc line is the tie-down of the UV wavelength calibration
+    and is either missing or has a poor fit.  This is likely due to the HgCd
+    lamps not being sufficiently warm before the exposure start.
 <LI><B>Scattered light</B> <BR>
     There was a high baseline count rate on the CCD, and appears even
     between fibers.  This can most obviously occur if there are light

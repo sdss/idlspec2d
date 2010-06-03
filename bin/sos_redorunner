@@ -1,0 +1,161 @@
+#!/usr/bin/env python
+
+#import os, sys, fcntl, time, commands
+#import logging, logging.handlers, getopt, glob, random
+#import sos_classes, fb_classes, sxpar
+
+import sys, logging, os, re
+import sos_runnerd, sos_classes
+
+""" 
+sos_redorunnerd:
+
+sos_redorunnerd is used to rerun aporeduce (or any command) on a group files specified by a
+glob and in the directory root/$MJD. Once the files in that given subdirectory specified by
+the $MJD are processed, sos_redorunnerd exists.
+
+Many globs can be specified, and any file matching any specified glob will be processed. Many
+instances of sos_redorunnerd can be running, for example one per camera. It is important that
+only instance be looking for a particular kind of file or else files will be processed more
+than once, things will get overwritten, your hair will fall out and all sorts of bad things
+will happen.
+
+Note that like sos_runnerd, sos_redorunnerd does svn processing and plugmap
+processing by default -- turn it off if you don't want it.  I think sos_aporedo
+will turn it off by default.
+
+Written by Gary Kushner (LBL).  Nov 2009.
+
+"""
+
+
+####
+def usage():
+	"""Display usage and exit"""
+	
+	usageCMD = os.path.basename(sys.argv[0])
+
+	print """
+Parameters are:
+
+iname (-i) : defaut "" : instance name.  Appended to logfiles and other things that need
+                         to not clash.  Use the camera name.
+glob (-g) : default * : glob to look for.  Can have many.  Each glob will preserve order 
+                        processing of files
+nosvn (-x) : default not set : Run without doing any svn processing
+command (-c) : default echo-to-log : Command to run on found files.  
+logLevel (-v) : default 60 : 40 = ERROR; -v = 30 = WARNING; -v -v = 20 = INFO; -v -v -v = 10 = DEBUG
+fitsDir (-r) : default . : Where to look for new files in MJD subdirectories
+plugDir (-p) : default . : Where to look for and put plugmap files in MJD subdirs
+nice (-n) : default False : Run commands with nice
+platedb (-b) : default False : Exit if can't setup platedb
+initialMJD (-m) : default latest : MJD to start looking for new files. Note:  With the -e option,
+                                   this option will process files and in the specified MJD and then
+                                   go to the newest MJD, NOT the next one.
+exposureNumber (-z) : default None : if specified, then only that exposure will be redone.
+
+For the command, the following substitutions can be made:
+   %%f   for the globbed (fits) file name w/o path information
+   %%qf  for the fully qualified globbed (fits) file name.
+   %%pf  for the path to the globbed (fits) file.
+   %%p   for the plugmap file w/o path information
+   %%qp  for the fully qualified plugmap file name
+   %%pp  for the path to the plugmap file.
+   %%m   for the current mjd
+	"""
+
+	sys.exit(1)
+
+
+####
+def initializeLogger(cfg):
+	"""Startup logging and set the level"""
+	
+	lname = sos_classes.Consts().logName
+	if cfg.iname != "":
+		lname += "-" + cfg.iname
+#	print "Starting to log to " + lname
+	
+	log = logging.getLogger(sos_classes.Consts().logName)
+	h  = logging.StreamHandler()
+#	hf = logging.FileHandler(lname)
+	f = logging.Formatter("%(asctime)s-%(levelname)s: %(message)s")
+	h.setFormatter(f)
+#	hf.setFormatter(f)
+	h.setLevel(cfg.logLevel)
+#	hf.setLevel(cfg.logLevel)
+	log.setLevel(cfg.logLevel)
+	log.addHandler(h)
+#	log.addHandler(hf)
+	
+	log.critical("Hello. " + sys.argv[0] + " started.")
+	log.info("Startup Configuration is: \n\n" + str(cfg) + "\n\n")
+	
+	return log
+	
+	
+####
+def redo(workers, cfg, log):
+	"""Redo the command for files in the specified MJD"""
+	
+	#	Get files
+	for worker in workers:
+		files = sos_runnerd.lsltr(os.path.join(cfg.fitsDir, cfg.MJD), worker.glob)
+		if cfg.exposure != None:
+			allfiles = files
+			files = []
+			#	should only be one, but I do it this way to be sure things are working.
+			#   also, I do the numeric check to avoid worrying about leading zeroes.
+			for file in allfiles:
+				log.info("Checking exposure number of: " + file)
+				exp = re.search("sdR\-..-(\d{8})\.fit.*$", file)
+				if exp != None:
+					if int(exp.group(1)) == int(cfg.exposure):
+						log.info("correct exposure number")
+						files.append(file)
+		new = len(files)
+		log.info("Found " + str(new) + " files in " +
+		          os.path.join(cfg.fitsDir, cfg.MJD, worker.glob))
+		sos_runnerd.processNewBOSSFiles(worker, files, cfg, log)
+
+
+####
+def main():
+	"""The program"""
+	
+	global logger
+	
+	config = sos_classes.Config();
+	logger = None
+
+	#	A cry for help?
+	if len(sys.argv) > 1 and (sys.argv[1] == "-h" or sys.argv[1] == "-?"):
+		usage()
+		sys.exit(100)
+
+	#	Initialize
+	config = sos_runnerd.initializeParms()
+	logger = initializeLogger(config)
+	
+	#	Find correct MJD to start on
+	sos_runnerd.initializeMJD(config, logger)
+
+	#	Check svn access
+	if not sos_runnerd.svnCheck(config.plugDir, config, logger):
+		logger.critical("Could not svn access " + config.plugDir)
+		logger.critical("Could not svn access " + config.plugDir)
+		print >> sys.stderr, "Could not svn access " + config.plugDir
+
+	#	Create poll workers and initialize file counts
+	pollWorkers = sos_runnerd.createPollWorkers(config, logger)
+
+	redo(pollWorkers, config, logger)
+
+
+### Start of script
+
+
+if __name__=='__main__':
+	main()
+	
+	

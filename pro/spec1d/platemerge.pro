@@ -3,10 +3,10 @@
 ;   platemerge
 ;
 ; PURPOSE:
-;   Merge all Spectro-1D outputs with tsObj files.
+;   Merge all Spectro-1D outputs with photoPosPlate,spInspect files
 ;
 ; CALLING SEQUENCE:
-;   platemerge, [ plate, mjd=, except_tags=, outroot=, public= ]
+;   platemerge, [ plate, mjd=, except_tags=, outroot=, run2d=, /include_bad ]
 ;
 ; INPUTS:
 ;
@@ -17,21 +17,22 @@
 ;                 if specified, then PLATE and MJD should have the same
 ;                 number of elements.
 ;   except_tags - Tag names to exclude; default to '*COVAR'.
-;   outroot     - Root name for output files; default to '$SPECTRO_DATA/spAll';
-;                 the files are then 'spAll.fits', 'spAll.dat', 'spAllLine.dat'.
-;                 If /PUBLIC is set, then add '-public' to the root name.
-;                 If PUBLIC is set to a string, then add that string to the
-;                 root name.
-;   public      - If set with /PUBLIC, then limit to plates that have
-;                 any entry in the PUBLIC field of the plate list.
-;                 If set to a string, then select those plates that contain
-;                 the substring PUBLIC within their PUBLIC field.
+;   outroot     - Root name for output files; default to
+;                 $BOSS_SPECTRO_REDUX/spAll; the files are then
+;                 spAll-$RUN2D.fits, spAll-$RUN2D.dat, spAllLine-$RUN2D.dat.
+;   run2d       - List of RUN2D subdirectories to merge, one set of output
+;                 files per name in $RUN2D; default to all values of RUN2D
+;                 returned by PLATELIST.
+;   include_bad  - If set, then include bad plates
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
+;   Depends upon the platelist.fits file written by PLATELIST.
+;   Trims to only 'good' plates, or those in a public data release.
+;
 ;   The SPECPRIMARY output element is used to select a unique set of
 ;   objects in the case of duplicate observations.  Any objects observed
 ;   multiple times will have SPECPRIMARY=1 for one instance only, and =0
@@ -59,7 +60,6 @@
 ;   hogg_mrdfits()
 ;   mrdfits()
 ;   mwrfits_chunks
-;   plug2tsobj()
 ;   platelist
 ;   readspec
 ;   repstr
@@ -72,8 +72,8 @@
 ; REVISION HISTORY:
 ;   30-Oct-2000  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
-pro platemerge, plate, mjd=mjd, except_tags=except_tags1, $
- outroot=outroot1, public=public
+pro platemerge1, plate, mjd=mjd, except_tags=except_tags1, $
+ outroot=outroot1, run2d=run2d, include_bad=include_bad
 
    dtheta = 2.0 / 3600.
 
@@ -83,19 +83,15 @@ pro platemerge, plate, mjd=mjd, except_tags=except_tags1, $
       outroot = [outroot1, outroot1+'Line']
    endif else begin
       outroot = ['spAll','spAllLine']
-      if (keyword_set(public)) then begin
-         if (size(public,/tname) EQ 'STRING') then $
-          outroot = outroot + '-' + public $
-          else outroot = outroot + '-public'
-      endif
-      outroot = djs_filepath(outroot, root_dir=getenv('SPECTRO_DATA'))
+      if (keyword_set(run2d)) then outroot = outroot + '-' + run2d
+      outroot = djs_filepath(outroot, root_dir=getenv('BOSS_SPECTRO_REDUX'))
    endelse
 
    t1 = systime(1)
    thismem = memory()
 
    ;----------
-   ; Find the list of spZ files.
+   ; Trim to good (or public) plates
 
    platelist, plist=plist
    if (NOT keyword_set(plist)) then return
@@ -118,43 +114,27 @@ pro platemerge, plate, mjd=mjd, except_tags=except_tags1, $
       plist = plist[ikeep]
    endif
 
-   indx = where(strtrim(plist.status1d,2) EQ 'Done' AND $
-    (strtrim(plist.platequality,2) EQ 'good' $
-    OR strtrim(plist.platequality,2) EQ 'marginal' $
-    OR strtrim(plist.public,2) NE ''), ct)
-   if (ct EQ 0) then return
-   if (keyword_set(public)) then begin
-      if (size(public,/tname) EQ 'STRING') then begin
-         itrim = where(strmatch(plist[indx].public,'*'+public+'*'), ntrim)
-      endif else begin
-         itrim = where(strtrim(plist[indx].public) NE '', ntrim)
-      endelse
-      if (ntrim EQ 0) then return
-      indx = indx[itrim]
+   if (keyword_set(run2d)) then begin
+      qkeep = strmatch(strtrim(plist.run2d),run2d)
+      ikeep = where(qkeep, nkeep)
+      if (nkeep EQ 0) then return
+      plist = plist[ikeep]
    endif
+
+   qdone = strtrim(plist.status1d,2) EQ 'Done'
+   if (NOT keyword_set(include_bad)) then begin
+      qdone = qdone AND $
+       (strtrim(plist.platequality,2) EQ 'good' $
+       OR strtrim(plist.platequality,2) EQ 'marginal' $
+       OR strtrim(plist.public,2) NE '')
+   endif
+   indx = where(qdone, ct)
+   if (ct EQ 0) then return
    plist = plist[indx]
 
    nfile = n_elements(plist)
-   fullzfile = strarr(nfile)
-   fullzfile = 'spZbest-' + string(plist.plate, format='(i4.4)') $
-    + '-' + string(plist.mjd, format='(i5.5)') + '.fits'
-   zsubdir = string(plist.plate, format='(i4.4)')
-   for i=0L, nfile-1 do $
-    fullzfile[i] = djs_filepath(fullzfile[i], $
-     root_dir=getenv('SPECTRO_DATA'), subdirectory=zsubdir[i])
-
-   splog, 'Found ', nfile, ' files'
-   if (nfile EQ 0) then return
-   fullzfile = fullzfile[ sort(fullzfile) ]
-
-   nout = nfile * 640L
+   nout = total(plist.n_total)
    splog, 'Total number of objects = ', nout
-
-   ;----------
-   ; Find the corresponding spPlate files (needed only for PRIMTARGET+SECTARGET
-   ; flags, which are incorrect in the tsObj files.
-
-   fullplatefile = repstr(fullzfile, 'spZbest', 'spPlate')
 
    ;----------
    ; Find the first tsObj file that exists for use in constructing the
@@ -162,25 +142,38 @@ pro platemerge, plate, mjd=mjd, except_tags=except_tags1, $
 
    ifile = 0
    while (NOT keyword_set(tsobj0)) do begin
-      tsobj0 = plug2tsobj(plist[ifile].plate, 0, 0)
+      readspec, plist[ifile].plate, mjd=plist[ifile].mjd, $
+       run2d=strtrim(plist[ifile].run2d), tsobj=tsobj0, /silent
+      if (keyword_set(tsobj0)) then tsobj0 = tsobj0[0]
       ifile = ifile + 1
       if (ifile EQ nfile) then $
-       message, 'No calibObj files found!'
+       message, 'No photoPosPlate files found!'
    endwhile
 
    ;----------
    ; Create the additional tags to add to the output structure
 
    pstuff = create_struct( $
-    'progname'    , ' ', $
-    'chunkname'   , ' ', $
+    'programname' , ' ', $
+    'chunk'       , ' ', $
     'platequality', ' ', $
     'platesn2'    , 0.0, $
     'primtarget'  ,  0L, $
     'sectarget'   ,  0L, $
+    'lambda_eff'  , 0.0, $
+    'bluefiber'   ,  0L, $
+    'zoffset'     , 0.0, $
+    'boss_target1',  0LL, $
+    'boss_target2',  0LL, $
+    'ancillary_target1',  0LL, $
+    'ancillary_target2',  0LL, $
     'specprimary' ,  0B, $
     'specobj_id'  ,  0L, $
-    'nspecobs'    ,  0, $
+    'nspecobs'    ,   0, $
+    'z_person'    , 0.0, $
+    'class_person',  0L, $
+    'z_conf_person', 0L, $
+    'comments_person', '', $
     'calibflux'   , fltarr(5), $
     'calibflux_ivar', fltarr(5) )
 
@@ -191,10 +184,10 @@ pro platemerge, plate, mjd=mjd, except_tags=except_tags1, $
    for ifile=0L, nfile-1 do begin
       print, 'Reading ZANS file ',ifile+1, ' of ', nfile
 
-      hdr = headfits(fullzfile[ifile])
-      plate = sxpar(hdr, 'PLATEID')
-      zans = mrdfits(fullzfile[ifile], 1, /silent)
-      plugmap = mrdfits(fullplatefile[ifile], 5, /silent)
+      readspec, plist[ifile].plate, mjd=plist[ifile].mjd, $
+       run2d=strtrim(plist[ifile].run2d), run1d=strtrim(plist[ifile].run1d), $
+       zans=zans, zmanual=zmanual, plugmap=plugmap, /silent
+      zans = struct_selecttags(zans, except_tags='OBJID')
 
       if (ifile EQ 0) then begin
          outdat1 = create_struct(pstuff, zans[0])
@@ -202,7 +195,8 @@ pro platemerge, plate, mjd=mjd, except_tags=except_tags1, $
          outdat = replicate(outdat1, nout)
       endif
 
-      indx = (ifile * 640L) + lindgen(640)
+      indx = lindgen(plist[ifile].n_total)
+      if (ifile GT 0) then indx += total(plist[0:ifile-1].n_total)
 
       ; The following is very slow, so we do this differently...
 ;      copy_struct_inx, zans, outdat, index_to=indx
@@ -211,15 +205,36 @@ pro platemerge, plate, mjd=mjd, except_tags=except_tags1, $
       outdat[indx] = tmpdat
 
       ; Fill in the first columns of this output structure
-      outdat[indx].progname = plist[ifile].progname
-      outdat[indx].chunkname = plist[ifile].chunkname
+      outdat[indx].programname = plist[ifile].programname
+      outdat[indx].chunk = plist[ifile].chunk
       outdat[indx].platequality = plist[ifile].platequality
       outdat[indx].platesn2 = plist[ifile].platesn2
+
+      ; Read the following from the manual inspection
+      if (keyword_set(zmanual[0])) then begin
+         outdat[indx].z_person = zmanual.z_person
+         outdat[indx].class_person = zmanual.class_person
+         outdat[indx].z_conf_person = zmanual.z_conf_person
+         outdat[indx].comments_person = zmanual.comments
+      endif
 
       ; Get PRIMTARGET+SECTARGET with those values from
       ; the plug-map structure in spPlate file.
       outdat[indx].primtarget = plugmap.primtarget
       outdat[indx].sectarget = plugmap.sectarget
+      outdat[indx].lambda_eff = plugmap.lambda_eff
+      if (tag_exist(plugmap,'zoffset')) then $
+       outdat[indx].zoffset = plugmap.zoffset
+      if (tag_exist(plugmap,'bluefiber')) then $
+       outdat[indx].bluefiber = plugmap.bluefiber
+      if (tag_exist(plugmap,'boss_target1')) then $
+       outdat[indx].boss_target1 = plugmap.boss_target1
+      if (tag_exist(plugmap,'boss_target2')) then $
+       outdat[indx].boss_target2 = plugmap.boss_target2
+      if (tag_exist(plugmap,'ancillary_target1')) then $
+       outdat[indx].ancillary_target1 = plugmap.ancillary_target1
+      if (tag_exist(plugmap,'ancillary_target2')) then $
+       outdat[indx].ancillary_target2 = plugmap.ancillary_target2
 
       ; Read the following from the plug-map if those tags exist
       if (tag_exist(plugmap,'CALIBFLUX')) then $
@@ -279,7 +294,7 @@ pro platemerge, plate, mjd=mjd, except_tags=except_tags1, $
       if (size(outdat[0].(itag), /tname) EQ 'STRING') then begin
          if (NOT keyword_set(silent)) then $
           print, 'Padding whitespace for string array ' + tags[itag]
-         taglen = strlen(outdat.(itag))
+         taglen = strlen(strtrim(outdat.(itag)))
          maxlen = max(taglen)
          padspace = string('', format='(a'+string(maxlen)+')')
          outdat.(itag) = strmid(outdat.(itag) + padspace, 0, maxlen)
@@ -301,15 +316,15 @@ pro platemerge, plate, mjd=mjd, except_tags=except_tags1, $
    for ifile=0L, nfile-1 do begin
       print, 'Writing plate ', ifile+1, ' of ', nfile
 
-      platedat = replicate(platedat1, 640)
-      indx = (ifile * 640L) + lindgen(640)
-      tsobj = plug2tsobj(plist[ifile].plate, outdat[indx].plug_ra, $
-       outdat[indx].plug_dec)
+      platedat = replicate(platedat1, plist[ifile].n_total)
+      indx = lindgen(plist[ifile].n_total)
+      if (ifile GT 0) then indx += total(plist[0:ifile-1].n_total)
+      readspec, plist[ifile].plate, mjd=plist[ifile].mjd, $
+       run2d=strtrim(plist[ifile].run2d), tsobj=tsobj, /silent
       if (keyword_set(tsobj)) then $
-       copy_struct_inx, tsobj, platedat $
+       copy_struct, tsobj, platedat $
       else $
        splog, 'WARNING: No tsObj file found for plate ', outdat[indx[0]].plate
-;      copy_struct_inx, outdat, platedat, index_from=indx
       copy_struct, outdat[indx], platedat
 
       ; All strings must be the same length, or appending to the FITS file
@@ -335,27 +350,29 @@ pro platemerge, plate, mjd=mjd, except_tags=except_tags1, $
     'z'          , 0.0, $
     'z_err'      , 0.0, $
     'zwarning'   ,  0L, $
-    'rchi2'      , 0.0, $
     'plug_ra'    , 0.0d, $
     'plug_dec'   , 0.0d, $
-    'platesn2'   ,  0.0, $
-    'modelflux'  ,  fltarr(5), $
-    'objc_type'  ,  '', $
-    'primtarget' ,  0L, $
-    'sectarget'  ,  0L, $
-    'progname',     '', $
     'specprimary',  0L, $
-    'objtype'    ,  '' )
+    'chunk'      ,  '', $
+    'platesn2'   ,  0.0, $
+    'objtype'    ,  '', $
+    'boss_target1', 0LL, $
+    'ancillary_target1', 0LL, $
+    'tileid'     ,  0L, $
+    'objc_type'  ,  '', $
+    'modelflux'  ,  fltarr(5), $
+    'z_person'   , 0.0, $
+    'class_person', 0L, $
+    'z_conf_person', 0L )
 
-   ascii_tags = [ $
-    'plate', 'mjd', 'fiberid', 'class', 'subclass', 'z', 'z_err', $
-    'zwarning', 'rchi2', 'plug_ra', 'plug_dec', 'platesn2', $
-    'modelflux', 'objc_type', 'primtarget', 'sectarget', 'progname', $
-    'specprimary']
+   tag_alias = [['SPECPRIMARY','PRIMARY'], $
+    ['FIBERID','FIBER'], $
+    ['BOSS_TARGET1','BOSS1'], $
+    ['ANCILLARY_TARGET1','ANCILLARY1']]
 
    ; Read the tags that we need from the FITS file
    outdat = hogg_mrdfits(outroot[0]+'.fits.tmp', 1, nrowchunk=10000L, $
-    columns=ascii_tags)
+    columns=tag_names(adat1))
    adat = replicate(adat1, n_elements(outdat))
    copy_struct, outdat, adat
 
@@ -378,7 +395,7 @@ pro platemerge, plate, mjd=mjd, except_tags=except_tags1, $
    outdat = 0 ; Clear memory
 
    splog, 'Writing ASCII file ' + outroot[0]+'.dat'
-   struct_print, adat, filename=outroot[0]+'.dat.tmp'
+   struct_print, adat, filename=outroot[0]+'.dat.tmp', alias=tag_alias
 
    adat = 0 ; Clear memory
 
@@ -388,11 +405,13 @@ pro platemerge, plate, mjd=mjd, except_tags=except_tags1, $
    splog, 'Writing FITS zline file ' + outroot[1]+'.fits'
    for ifile=0L, nfile-1 do begin
       splog, 'Writing zline ', ifile+1, ' of ', nfile
-      readspec, plist[ifile].plate, mjd=plist[ifile].mjd, zline=linedat
+      readspec, plist[ifile].plate, mjd=plist[ifile].mjd, $
+       run2d=strtrim(plist[ifile].run2d), run1d=strtrim(plist[ifile].run1d), $
+       zline=linedat, /silent
 
       if (ifile EQ 0) then begin
-         nobj = nfile * 640L
-         nper = n_elements(linedat) / 640L
+         nobj = total(plist.n_total)
+         nper = n_elements(linedat) / plist[0].n_total
          sxaddpar, linehdr, 'DIMS0', nper, ' Number of emission lines'
          sxaddpar, linehdr, 'DIMS1', nobj, ' Number of objects'
          linedat1 = linedat[0]
@@ -419,6 +438,28 @@ pro platemerge, plate, mjd=mjd, except_tags=except_tags1, $
    maxmem = thismem[3]
    splog, 'Maximum memory usage = ', maxmem/1.d6, ' MB'
    splog, 'Total time = ', systime(1)-t1, ' sec'
+
+   return
+end
+;------------------------------------------------------------------------------
+pro platemerge, run2d=run2d, _EXTRA=Extra
+
+   platelist, plist=plist
+   if (NOT keyword_set(plist)) then return
+
+   alldir = strtrim(plist.run2d)
+   alldir = alldir[uniq(alldir, sort(alldir))]
+   if (keyword_set(run2d)) then begin
+      nmatch = lonarr(n_elements(alldir))
+      for i=0, n_elements(run2d)-1 do $
+       nmatch += strmatch(alldir,run2d[i])
+      indx = where(nmatch GT 0, ct)
+      if (ct EQ 0) then return
+      alldir = alldir[indx]
+   endif
+
+   for i=0, n_elements(alldir)-1 do $
+    platemerge1, run2d=alldir[i], _EXTRA=Extra
 
    return
 end

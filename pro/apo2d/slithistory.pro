@@ -26,7 +26,7 @@
 ;     IDL> slithistory
 ;
 ;   Make plots of history of slit-head positions between MJD 52000 and MJD 52020:
-;     IDL> setenv, 'ASTROLOG_DIR=/scr/spectro1/spectro/scan'
+;     IDL> setenv, 'SPECLOG_DIR=/scr/spectro1/spectro/scan'
 ;     IDL> slithistory, mjdrange=[52000,52020]
 ;
 ; BUGS:
@@ -45,9 +45,9 @@
 ;------------------------------------------------------------------------------
 pro slithistory, mjdrange=mjdrange
 
-   astrolog = getenv('ASTROLOG_DIR')
+   astrolog = getenv('SPECLOG_DIR')
    if (NOT keyword_set(astrolog)) then astrolog = '/astrolog'
-   splog, 'Searching astrolog directory ASTROLOG_DIR=' + astrolog
+   splog, 'Searching astrolog directory SPECLOG_DIR=' + astrolog
 
    searchname = filepath('plSlitpos-????-?????-??.par', $
     root_dir=astrolog, subdir='?????')

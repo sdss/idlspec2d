@@ -31,7 +31,7 @@
 ; EXAMPLES:
 ;
 ;   loglam = 3.57 + findgen(400)/1000.
-;   cd,getenv('SPECTRO_DATA')
+;   cd,getenv('BOSS_SPECTRO_REDUX')
 ;   allfiles = findfile('0*/*calib*fits', count=nf)
 ;   throughput = fltarr(400, nf)
 ;   for i=0,nf-1 do throughput[*,i] = throughput_calib(allfiles[i],loglam)

@@ -6,7 +6,7 @@
 ;   1-D reduction of spectra from 1 plate
 ;
 ; CALLING SEQUENCE:
-;   spreduce1d, [ platefile, fiberid=, /doplot, /debug ]
+;   spreduce1d, [ platefile, fiberid=, run1d=, /doplot, /debug, chop_data= ]
 ;
 ; INPUTS:
 ;
@@ -15,21 +15,29 @@
 ;                matching 'spPlate*.fits'
 ;   fiberid    - If specified, then only reduce these fiber numbers;
 ;                this must be a vector with unique values between 1 and
-;                the number of rows in the plate file (typically 640).
+;                the number of fibers in the plate file
+;   run1d      - Optional override value for the environment variable $RUN1D
 ;   doplot     - If set, then generate plots.  Send plots to a PostScript
 ;                file spDiagDebug1d-$PLATE-$MJD.ps unless /DEBUG is set.
 ;   debug      - If set, then send plots to the X display and wait for
 ;                a keystroke after each plot; setting /DEBUG forces /DOPLOT.
+;   chop_data  - If set, then trim wavelength range to the specified range
+;                in vacuum Ang (if a 2-element array), or to a default
+;                trim range of [3850,9200] Ang.
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
+;   Input files are read from the current directory.
+;   Output files are written to the subdirectory $RUN1D.
+;
 ;   Names of output files are derived from PLATEFILE.
 ;   For example, if PLATEFILE='spPlate-0306-51690.fits', then
 ;     ZALLFILE = 'spZall-0306-51690.fits'
 ;     ZBESTFILE = 'spZbest-0306-51690.fits'
+;     ZLINEFILE = 'spZline-0306-51690.fits'
 ;
 ; EXAMPLES:
 ;
@@ -65,7 +73,10 @@
 ; REVISION HISTORY:
 ;   28-Jun-2000  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
-pro spreduce1d, platefile, fiberid=fiberid, doplot=doplot, debug=debug
+pro spreduce1d, platefile, fiberid=fiberid, run1d=run1d1, $
+ doplot=doplot, debug=debug, chop_data=chop_data1
+
+chop_data1 = 1 ; Force this in the current reductions ???
 
    if (NOT keyword_set(platefile)) then begin
       platefile = findfile('spPlate*.fits*', count=nplate)
@@ -75,7 +86,13 @@ pro spreduce1d, platefile, fiberid=fiberid, doplot=doplot, debug=debug
       if (keyword_set(platefile)) then nplate = n_elements(platefile) $
        else nplate = 0
    endelse
+   if (keyword_set(run1d1)) then run1d = strtrim(run1d1,2) $
+    else run1d = getenv('RUN1D')
    if (keyword_set(debug)) then doplot = 1
+   if (keyword_set(chop_data1)) then begin
+      if (n_elements(chop_data1) EQ 1) then chop_data = [3850., 9200.] $
+       else chop_data = chop_data1
+   endif else chop_data = 0
 
    ;----------
    ; If multiple plate files exist, then call this script recursively
@@ -88,7 +105,8 @@ pro spreduce1d, platefile, fiberid=fiberid, doplot=doplot, debug=debug
       platefile = platefile[0]
    endif else begin
       for i=0, nplate-1 do begin
-         spreduce1d, platefile[i], fiberid=fiberid, doplot=doplot, debug=debug
+         spreduce1d, platefile[i], fiberid=fiberid, run1d=run1d, $
+          doplot=doplot, debug=debug, chop_data=chop_data
       endfor
       return
    endelse
@@ -99,20 +117,23 @@ pro spreduce1d, platefile, fiberid=fiberid, doplot=doplot, debug=debug
    ;----------
    ; Determine names of output files
 
-   platemjd = strmid(platefile, 8, 10)
+   platemjd = strmid(fileandpath(platefile), 8, 10)
 
-   zallfile = 'spZall-' + platemjd + '.fits'
-   zbestfile = 'spZbest-' + platemjd + '.fits'
-   zlinefile = 'spZline-' + platemjd + '.fits'
-   if (NOT keyword_set(logfile)) then $
-    logfile = 'spDiag1d-' + platemjd + '.log'
-   plotfile = 'spDiag1d-' + platemjd + '.ps'
+   zallfile = djs_filepath('spZall-' + platemjd + '.fits', root_dir=run1d)
+   zbestfile = djs_filepath('spZbest-' + platemjd + '.fits', root_dir=run1d)
+   zlinefile = djs_filepath('spZline-' + platemjd + '.fits', root_dir=run1d)
+   logfile = djs_filepath('spDiag1d-' + platemjd + '.log', root_dir=run1d)
+   plotfile = djs_filepath('spDiag1d-' + platemjd + '.ps', root_dir=run1d)
 
    if (keyword_set(doplot) AND NOT keyword_set(debug)) then begin
-      debugfile = 'spDiagDebug1d-' + platemjd + '.ps'
+      debugfile = djs_filepath('spDiagDebug1d-' + platemjd + '.ps')
       cpbackup, debugfile
       dfpsplot, debugfile, /color
    endif
+
+   ; Create output directory
+;   if (keyword_set(run1d)) then spawn, 'mkdir -p '+run1d
+   if (keyword_set(run1d)) then FILE_MKDIR,run1d
 
    stime0 = systime(1)
 
@@ -127,7 +148,7 @@ pro spreduce1d, platefile, fiberid=fiberid, doplot=doplot, debug=debug
     splog, 'Debug plot file ' + debugfile
    splog, 'IDL version: ' + string(!version,format='(99(a," "))')
    spawn, 'uname -a', uname
-   splog, 'UNAME: ' + uname[0]
+   splog, 'UNAME: ' + uname[0], /noshell
    splog, 'DISPLAY=' + getenv('DISPLAY')
 
    splog, 'idlspec2d version ' + idlspec2d_version()
@@ -147,23 +168,38 @@ pro spreduce1d, platefile, fiberid=fiberid, doplot=doplot, debug=debug
 ;   dispmap = mrdfits(platefile,4)
    plugmap = mrdfits(platefile,5)
    skyflux = mrdfits(platefile,6)
+   
+   objloglam0 = sxpar(hdr, 'COEFF0')                                       
+   objdloglam = sxpar(hdr, 'COEFF1')     
+
+   ;----------
    ; For plate files before Spectro-2D v5, there are no sky vectors,
    ; and this last HDU is something else.
    if (n_elements(skyflux) NE n_elements(objflux)) then skyflux = 0
 
+   ;----------
+   ;    Chop wavelength range of data for all fits if /CHOP_DATA specified
+   ; This is for templates that are shorter than the input spectra
+
+   if (keyword_set(chop_data)) then begin
+      i1 = ceil( (alog10(chop_data[0]) - objloglam0) / objdloglam )
+      i2 = floor( (alog10(chop_data[1]) - objloglam0) / objdloglam )
+      if (i1 GE 0) then objivar[0:i1,*] = 0
+      if (i2 LE npixobj-1) then objivar[i2:npixobj-1,*] = 0
+      splog, 'Trim wavelength range to ', chop_data
+   endif
+
    anyandmask = transpose(andmask[0,*])
    anyormask = transpose(ormask[0,*])
+
    for ipix=1, npixobj-1 do $
     anyandmask = anyandmask OR transpose(andmask[ipix,*])
    for ipix=1, npixobj-1 do $
     anyormask = anyormask OR transpose(ormask[ipix,*])
 
    objivar = skymask(objivar, andmask, ormask)
-andmask = 0 ; Free memory
-ormask = 0 ; Free memory
-
-   objloglam0 = sxpar(hdr, 'COEFF0')
-   objdloglam = sxpar(hdr, 'COEFF1')
+   andmask = 0                  ; Free memory
+   ormask = 0                   ; Free memory
 
    ;----------
    ; Trim to specified fibers if FIBERID is set
@@ -226,8 +262,9 @@ ormask = 0 ; Free memory
    t0 = systime(1)
    res_gal = zfind(objflux, objivar, hdr=hdr, $
     eigenfile=eigenfile, npoly=npoly, zmin=zmin, zmax=zmax, pspace=pspace, $
-    nfind=nfind, width=5*pspace, $
+    nfind=nfind, width=5*pspace,  $
     plottitle=plottitle, doplot=doplot, debug=debug, /verbose)
+   
    splog, 'CPU time to compute GALAXY redshifts = ', systime(1)-t0
 
    splog, 'Locally re-fitting GALAXY redshifts'
@@ -477,6 +514,8 @@ flambda2fnu = 0 ; Free memory
             tile:     long(sxpar(hdr, 'TILEID')), $
             mjd:      long(sxpar(hdr, 'MJD')), $
             fiberid:  0L        , $
+            run2d:    strtrim(sxpar(hdr, 'RUN2D'),2), $
+            run1d:    run1d, $
             objid:    lindgen(5), $
             objtype:  ' '       , $
             plug_ra:  0.0d      , $
@@ -546,10 +585,15 @@ flambda2fnu = 0 ; Free memory
    sxdelpar, hdr, 'NAXIS1'
    sxdelpar, hdr, 'NAXIS2'
    sxaddpar, hdr, 'EXTEND', 'T', after='NAXIS'
+   sxaddpar, hdr, 'RUN1D', run1d, after='RUN2D', ' Spectro-1D reduction name'
    sxaddpar, hdr, 'VERS1D', idlspec2d_version(), $
-    ' Version of idlspec2d for 1D reduction', after='VERSCOMB'
+    ' Version of idlspec2d for 1D reduction', after='RUN1D'
    spawn, 'uname -n', uname
    sxaddpar, hdr, 'UNAME', uname[0]
+   if (keyword_set(chop_data)) then begin
+      sxaddpar, hdr, 'CHOP_MIN', chop_data[0]
+      sxaddpar, hdr, 'CHOP_MAX', chop_data[1]
+   endif
 
    ;----------
    ; Call the line-fitting code for this plate
@@ -655,7 +699,7 @@ endif
    ;----------
    ; Compute the errors in the magnitudes.
    ; Do this by looking at the dispersion in the sky-fiber fluxes.
-   ; We assign identical errors (in linear flux units) to all 640 fibers.
+   ; We assign identical errors (in linear flux units) to all fibers.
 
    iskies = where(strtrim(plugmap.objtype,2) EQ 'SKY', nskies)
    if (nskies GT 1) then begin

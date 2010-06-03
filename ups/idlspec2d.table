@@ -11,10 +11,13 @@ Common:
       setupOptional("spinspect")
       setupOptional("specflat")
       setupOptional("speclog")
+      setupOptional("platelist")
+      setupOptional("platedb")
       setupRequired("idlutils")
       proddir()
       setupenv()
       pathAppend(PATH, ${UPS_PROD_DIR}/bin)
+      envPrepend(PYTHONPATH, ${PRODUCT_DIR}/bin)
       envPrepend(IDL_PATH, +${UPS_PROD_DIR}/pro)
 End:
 

@@ -26,12 +26,15 @@
 ;                super-sky vector using a variable PSF described by this
 ;                structure.
 ;   novariance - Set keyword to prevent variance correction for sky residuals
-;   relchi2set- Structure containing information of chi^2 fitting
+;   relchi2set - Structure containing information of chi^2 fitting;
+;                only call REDMONSTER to set those mask bits if this
+;                keyword is passed.
 ;   npoly      - Polynomial order of 2d fit.
 ;   tai        - TAI of plate exposure, if supplied a linear airmass correction
 ;                  is applied
 ;   nbkpt      - Number of bkpts to use for full sky spectrum fit.
-;                This gives us the freedom to use less points for the blue side.
+;                This gives us the freedom to use less points for the
+;                blue side.
 ;
 ; PARAMETERS FOR SLATEC_SPLINEFIT (for supersky fit):
 ;   nord       - Order of B-spline; default set in BSPLINE_ITERFIT()
@@ -81,12 +84,11 @@
 ;                Too many pixels were masked for high order fit!
 ;-
 ;------------------------------------------------------------------------------
-
 function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
-   iskies=iskies, fibermask=fibermask, nord=nord, upper=upper, $
-   lower=lower, maxiter=maxiter, pixelmask=pixelmask, thresh=thresh, $
-   dispset=dispset, npoly=npoly, relchi2set=relchi2set, $
-   novariance=novariance, tai=tai, nbkpt=nbkpt, newmask=newmask, sset=sset
+ iskies=iskies, fibermask=fibermask, nord=nord, upper=upper, $
+ lower=lower, maxiter=maxiter, pixelmask=pixelmask, thresh=thresh, $
+ dispset=dispset, npoly=npoly, relchi2set=relchi2set, $
+ novariance=novariance, tai=tai, nbkpt=nbkpt, newmask=newmask, sset=sset
 
    if (size(objflux, /n_dimen) NE 2) then message, 'OBJFLUX is not 2-D'
    if (size(objivar, /n_dimen) NE 2) then message, 'OBJIVAR is not 2-D'
@@ -141,6 +143,9 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
 
    airmass_correction = replicate(1.0,ncol) # airmass
 
+   splog, 'Warning: Disabling airmass terms in sky-sub!' ; ???
+   airmass_correction[*] = 1
+
    skywave = wave[*,iskies]
    skyflux = objflux[*,iskies]
    skyivar = objivar[*,iskies]
@@ -174,7 +179,8 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
 
    bkpt = 0
    everyn = floor(2.*nskies/3) > 1
-   sset = bspline_iterfit(skywave, skyflux, invvar=skyivar, $
+   sset = bspline_iterfit(skywave, double(skyflux), $
+    invvar=double(skyivar), $
     nord=nord, everyn=everyn, bkpt=bkpt, $
     upper=upper, lower=lower, maxiter=maxiter, $
     maxrej=maxrej, groupsize=groupsize, $
@@ -192,7 +198,7 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
    ; This also gives better behavior near the boundaries.
 
    igood = where(skyivar GT 0 AND outmask NE 0, ngoodpix)
-   minwave  = min(skywave[igood])
+   minwave  = min(skywave[igood],max=maxwave)
    snsqrt = sqrt((skyfit * sqrt(skyivar) > 0))
    ipos = where(snsqrt GT 0, npos)
    gkern = gauss_kernel(2.0*nskies)
@@ -221,20 +227,23 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
       width = 7 < (i2-i1+1)
       if (i1 LT newnbk AND i2 GT 0 AND width GT 1) then $
        bkpt[i1:i2] = (smooth(bkpt,width))[i1:i2]
+      ii = where(bkpt GE minwave AND bkpt LE maxwave, newnbk)
+      bkpt = bkpt[ii]
 
       ;----------
       ; Pad with (NORD-1) break points far to the left, and that
       ; many far to the right.  The factor of 10 in spacing is arbitrary!
 
-      lowdiff = (bkpt[1] - bkpt[0]) * 10.0
-      highdiff = (bkpt[newnbk-1] - bkpt[newnbk-2]) * 10.0
+      lowdiff = 10.0 * abs(skywave[igood[0]+1] - skywave[igood[0]])
+      highdiff = lowdiff
       fullbkpt = [ bkpt[0] - lowdiff*(reverse(lindgen(nord-1))+1), bkpt, $
        bkpt[newnbk-1] + highdiff*(lindgen(nord-1)+1) ]
 
       ;----------
       ; Re-do the super-fit with the new break points.
 
-      sset = bspline_iterfit(skywave, skyflux, invvar=skyivar, $
+      sset = bspline_iterfit(skywave, double(skyflux), $
+       invvar=double(skyivar), $
        nord=nord, fullbkpt=fullbkpt, $
        upper=upper*1.5, lower=lower*1.5, maxiter=maxiter, $
        maxrej=maxrej, groupsize=groupsize, $
@@ -253,28 +262,45 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
    ; Re-do the super-sky fit using the variable PSF, if DISPSET is set.
 
    if (keyword_set(dispset) AND keyword_set(fullbkpt)) then begin
-
+ 
       if (NOT keyword_set(npoly)) then npoly = 4L
 
-      ; SIGMA is smooth fit to widths of arclines ???
+      ; SIGMA is smooth fit to widths of arclines
       traceset2xy, dispset, pixnorm, sigma
       sigma = sigma - 1.0
       skysigma = (sigma[*,iskies])[isort]
-
       fullx2 = replicate(1.0,ncol) # findgen(nrow)
       x2 = (fullx2[*,iskies])[isort]
 
-      sset2d = bspline_iterfit(skywave, skyflux, invvar=skyivar*outmask, $
+      sset2d = bspline_iterfit(skywave, double(skyflux), $
+       invvar=double(skyivar*outmask), $
        nord=nord, npoly=npoly, fullbkpt=fullbkpt, $
        upper=1.5*upper, lower=1.5*lower, maxiter=maxiter, $
        maxrej=maxrej, groupsize=groupsize, $
-       yfit=skyfit, x2=x2, xmin=0., xmax=nrow, requiren=2)
+       yfit=skyfit, x2=double(x2), xmin=0., xmax=nrow, requiren=2)
+
+      if (keyword_set(sset2d)) then begin
+         if (total(sset2d.coeff) EQ 0) then begin
+            splog, 'WARNING: 2-D b-spline failed!'
+            sset2d = 0
+         endif
+      endif
 
       if (keyword_set(sset2d)) then begin
          sset = sset2d
          fullfit = bspline_valu(wave, sset, x2=fullx2) 
       endif
 
+      if (keyword_set(sset2d)) then begin
+         if (max(abs(sset2d.coeff)) GT 0) then qgood2d = 1B
+      endif 
+      if (keyword_set(qgood2d)) then begin
+         splog, 'Applying 2-dimensional sky b-spline'
+         sset = sset2d
+         fullfit = bspline_valu(wave, sset, x2=fullx2)
+      endif else begin
+         splog,' WARNING: 2-dimensional sky b-spline failed'
+      endelse
    endif
 
    ;----------
@@ -294,6 +320,8 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
        maxrej=maxrej, groupsize=groupsize, requiren=2)
 
       skyvarfit = bspline_valu(wave, skyvarset) * airmass_correction^2
+
+      skyvarfit = (skyvarfit>0) * (objivar GT 0) ;???
    endif
 
    ;----------
@@ -350,8 +378,8 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
             relchi2[ibin] = tmpchi2[ (sort(tmpchi2))[pos67] ] 
 
             ; Burles counter of bin number...
-            print, format='("Bin ",i4," of ",i4,a1,$)', $
-             ibin, nbin, string(13b)
+;            print, format='("Bin ",i4," of ",i4,a1,$)', $
+;             ibin, nbin, string(13b)
 
          endif
       endfor
@@ -429,7 +457,8 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
        * (relchi2fit GT thresh) $
        * ((newmask AND pixelmask_bits('NOSKY')) EQ 0)
 
-      redmonster, relwave, relchi2, wave, thresh=thresh, pixelmask=newmask
+      if (arg_present(relchi2set)) then $
+       redmonster, relwave, relchi2, wave, thresh=thresh, pixelmask=newmask
    endif
 
    ;----------

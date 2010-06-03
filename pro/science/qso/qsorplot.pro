@@ -5,7 +5,7 @@ pro qsorplot
     'OFFSETRA','OFFSETDEC','MODELFLUX','MODELFLUX_IVAR', $
     'SPECTROSYNFLUX','SPECTROSYNFLUX_IVAR']
    spall = hogg_mrdfits(filepath('spAll.fits', $
-    root_dir=getenv('SPECTRO_DATA')), 1, columns=columns, nchunk=20)
+    root_dir=getenv('BOSS_SPECTRO_REDUX')), 1, columns=columns, nchunk=20)
    indx = where(strmatch(spall.class,'QSO*') $
     AND spall.zwarning EQ 0 $
     AND (spall.primtarget AND 2L^0 + 2L^1 + 2L^2 +2L^3 + 2L^4) NE 0 $
