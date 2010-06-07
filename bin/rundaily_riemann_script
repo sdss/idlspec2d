@@ -126,7 +126,7 @@ export SVN_SSH="ssh -i /home/boss/.ssh/id_dsa-autoboss"
 ###  that we want to use.
 
 ##printAndRun "setup idlspec2d v5_4_6"
-printAndRun "setup idlspec2d v5_4"
+printAndRun "setup idlspec2d v5_4_11"
 printAndRun "setup photoop"
 printAndRun "setup runz"
 UPS1D=",upsvers2d=v5_4_9"
@@ -183,13 +183,13 @@ svnUp $SPECLOG_DIR
 svnUp $SPINSPECT_DIR
 
 echo "Running IDL code"
-printAndRun "idl -e 'platelist'"
+printAndRun "idl -e 'platelist, /create $UPS1D $UPS2D'"
 printAndRun "idl -e 'spplan2d, MJD=$MJD'"
 printAndRun "idl -e 'spplan1d, MJD=$MJD'"
 #printAndRun "idl -e 'batchpbs, QUEUE=\"high_pri\", MJD=$MJD $UPS1D $UPS2D $ZCODE'"
 printAndRun "idl -e 'batchpbs, MJD=$MJD $UPS1D $UPS2D $ZCODE'"
-printAndRun "idl -e 'platelist'"
-printAndRun "idl -e 'platemerge'"
+printAndRun "idl -e 'platelist, /create $UPS1D $UPS2D'"
+printAndRun "idl -e 'platemerge $UPS2D'"
 
 
 ###  All Done
