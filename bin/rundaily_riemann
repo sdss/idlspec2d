@@ -85,7 +85,7 @@ echo "Hello from rundaily_riemann at $(date)"
 
 if ! "$skipSetups"; then
 #	printAndRun "setup idlspec2d"
-	printAndRun "setup idlspec2d v5_4_11"
+	printAndRun "setup idlspec2d trunk"
 	printAndRun "setup trac"
 fi
 
