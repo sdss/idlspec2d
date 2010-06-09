@@ -8,6 +8,10 @@
 ## */15 * * * * /home/boss/daily/cmd/rundaily_cron
 ####
 
+####
+# Suggested installation is to create a ln -s from this file to ~boss/daily/cmd
+####
+
 
 ###  Start logging
 

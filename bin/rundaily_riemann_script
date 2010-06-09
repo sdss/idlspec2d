@@ -125,7 +125,6 @@ export SVN_SSH="ssh -i /home/boss/.ssh/id_dsa-autoboss"
 ###  (Optionally) Setup or Specify eups products and versions and configuration options
 ###  that we want to use.
 
-##printAndRun "setup idlspec2d v5_4_6"
 printAndRun "setup idlspec2d v5_4_11"
 printAndRun "setup photoop"
 printAndRun "setup runz"
@@ -145,7 +144,7 @@ export PHOTO_CALIB=$DAILY_PHOTO_CALIB
 export RAWDATA_DIR=$DAILY_RAWDATA_DIR
 
 #	Uncomment the next line to run in test mode
-export BOSS_SPECTRO_REDUX=/home/boss/testdata
+#export BOSS_SPECTRO_REDUX=/home/boss/testdata
 
 echo "BOSS_SPECTRO_REDUX=$BOSS_SPECTRO_REDUX"
 echo "PHOTO_DATA=$PHOTO_DATA"
