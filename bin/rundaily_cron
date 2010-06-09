@@ -35,5 +35,5 @@ echo "Hello from dailyrun at $date"
 ## export IDL_PATH=+/clusterfs/riemann/software/itt/idl70/lib:$IDL_PATH
 ## idl -e 'platelist'
 
-#/home/boss/products/Linux/idlspec2d/trunk/bin/rundaily_riemann -g
+/home/boss/products/Linux/idlspec2d/trunk/bin/rundaily_riemann -g
 echo "Goodbye from dailyrun started at $date"
