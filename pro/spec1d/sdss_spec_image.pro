@@ -122,7 +122,7 @@ loadct,0
 
 sflux= sdss_spec_smooth(alog10(wave), flux, 100.)
 
-igd= where(invvar gt 0 and abs(wave-5577.) gt 4., ngd)
+igd= where(invvar gt 0 and abs(wave-5577.) gt 4. and wave lt 10000., ngd)
 
 if(ngd gt 0) then $
   yra= minmax(sflux[igd]) $
