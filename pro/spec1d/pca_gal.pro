@@ -54,7 +54,7 @@
 ;
 ;------------------------------------------------------------------------------
 PRO pca_gal, inputfile=inputfile, wavemin=wavemin, wavemax=wavemax, $
-    binsz=binsz, flux=flux, niter=niter
+    binsz=binsz, flux=flux, niter=niter, savefile=savefile
     ;
     ; Define initial parameters
     ;
