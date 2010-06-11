@@ -64,7 +64,7 @@ FUNCTION aesthetics, flux, invvar, method=method
             newflux = djs_maskinterp(flux,invvar EQ 0)
         'mean': BEGIN
             newflux = flux
-            goodpts = WHERE(newivar GT 0, ngood)
+            goodpts = WHERE(invvar GT 0, ngood)
             newflux[badpts] = TOTAL(newflux[goodpts])/ngood
             END
         'nothing': $
