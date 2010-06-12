@@ -128,8 +128,8 @@ export SVN_SSH="ssh -i /home/boss/.ssh/id_dsa-autoboss"
 printAndRun "setup idlspec2d v5_4_11"
 printAndRun "setup photoop"
 printAndRun "setup runz"
-UPS1D=",upsvers2d=v5_4_9"
-UPS2D=",upsvers1d=v5_4_9"
+UPS1D=",upsvers1d=\"v5_4_9\""
+UPS2D=",upsvers2d=\"v5_4_9\""
 ZCODE=",/zcode"
 
 ###  Setup environment variables
@@ -144,7 +144,7 @@ export PHOTO_CALIB=$DAILY_PHOTO_CALIB
 export RAWDATA_DIR=$DAILY_RAWDATA_DIR
 
 #	Uncomment the next line to run in test mode
-#export BOSS_SPECTRO_REDUX=/home/boss/testdata
+export BOSS_SPECTRO_REDUX=/home/boss/testdata
 
 echo "BOSS_SPECTRO_REDUX=$BOSS_SPECTRO_REDUX"
 echo "PHOTO_DATA=$PHOTO_DATA"
@@ -168,8 +168,11 @@ fi
 if ! test -z $UPS2D; then
 	export RUN2D=$(perl -p -e 's{.*=(.*)$}{\1}' <<< $UPS2D)
 fi
+RUN1DKEY=",run1d=\"$RUN1D\""
+RUN1DKEY=",run2d=\"$RUN2D\""
 #
 echo "RUN1D=$RUN1D, RUN2D=$RUN2D"
+echo "RUN1DKEY=$RUN1DKEY, RUN2DKEY=$RUN2DKEY"
 
 
 ###
@@ -182,13 +185,13 @@ svnUp $SPECLOG_DIR
 svnUp $SPINSPECT_DIR
 
 echo "Running IDL code"
-printAndRun "idl -e 'platelist, /create $UPS1D $UPS2D'"
-printAndRun "idl -e 'spplan2d, MJD=$MJD'"
-printAndRun "idl -e 'spplan1d, MJD=$MJD'"
+printAndRun "idl -e 'platelist, /create $RUN1DKEY $RUN2DKEY'"
+printAndRun "idl -e 'spplan2d, MJD=$MJD $RUN2DKEY'"
+printAndRun "idl -e 'spplan1d, MJD=$MJD $RUN2DKEY'"
 #printAndRun "idl -e 'batchpbs, QUEUE=\"high_pri\", MJD=$MJD $UPS1D $UPS2D $ZCODE'"
 printAndRun "idl -e 'batchpbs, MJD=$MJD $UPS1D $UPS2D $ZCODE'"
-printAndRun "idl -e 'platelist, /create $UPS1D $UPS2D'"
-printAndRun "idl -e 'platemerge $UPS2D'"
+printAndRun "idl -e 'platelist, /create $RUN1DKEY $RUN2DKEY'"
+printAndRun "idl -e 'platemerge $RUN2DKEY'"
 
 
 ###  All Done
