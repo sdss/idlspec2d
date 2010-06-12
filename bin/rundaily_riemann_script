@@ -170,8 +170,8 @@ fi
 if ! test -z $UPS2D; then
 	export RUN2D=$(perl -p -e 's{.*=(.*)$}{\1}' <<< $UPS2D)
 fi
-RUN1DKEY=,run1d=\"$RUN1D\"
-RUN2DKEY=,run2d=\"$RUN2D\"
+RUN1DKEY=,run1d=$RUN1D
+RUN2DKEY=,run2d="$RUN2D"
 #
 echo "RUN1D=$RUN1D, RUN2D=$RUN2D"
 echo "RUN1DKEY=$RUN1DKEY, RUN2DKEY=$RUN2DKEY"
