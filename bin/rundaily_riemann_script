@@ -146,7 +146,7 @@ export PHOTO_CALIB=$DAILY_PHOTO_CALIB
 export RAWDATA_DIR=$DAILY_RAWDATA_DIR
 
 #	Uncomment the next line to run in test mode
-export BOSS_SPECTRO_REDUX=/home/boss/testdata
+#export BOSS_SPECTRO_REDUX=/home/boss/testdata
 
 echo "BOSS_SPECTRO_REDUX=$BOSS_SPECTRO_REDUX"
 echo "PHOTO_DATA=$PHOTO_DATA"
