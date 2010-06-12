@@ -128,8 +128,8 @@ export SVN_SSH="ssh -i /home/boss/.ssh/id_dsa-autoboss"
 printAndRun "setup idlspec2d v5_4_11"
 printAndRun "setup photoop"
 printAndRun "setup runz"
-UPS1D=",upsvers1d=\"v5_4_9\""
-UPS2D=",upsvers2d=\"v5_4_9\""
+UPS1D=,upsvers1d=\"v5_4_9\"
+UPS2D=,upsvers2d=\"v5_4_9\"
 ZCODE=",/zcode"
 
 ###  Setup environment variables
@@ -168,8 +168,8 @@ fi
 if ! test -z $UPS2D; then
 	export RUN2D=$(perl -p -e 's{.*=(.*)$}{\1}' <<< $UPS2D)
 fi
-RUN1DKEY=",run1d=\"$RUN1D\""
-RUN1DKEY=",run2d=\"$RUN2D\""
+RUN1DKEY=,run1d=\"$RUN1D\"
+RUN2DKEY=,run2d=\"$RUN2D\"
 #
 echo "RUN1D=$RUN1D, RUN2D=$RUN2D"
 echo "RUN1DKEY=$RUN1DKEY, RUN2DKEY=$RUN2DKEY"
