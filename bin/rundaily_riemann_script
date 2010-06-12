@@ -132,6 +132,8 @@ UPS1D=,upsvers1d=\"v5_4_9\"
 UPS2D=,upsvers2d=\"v5_4_9\"
 ZCODE=",/zcode"
 
+echo UPS1D=$UPS1D, UPS2D=$UPS2D, ZCODE=$ZCODE
+
 ###  Setup environment variables
 
 export BOSS_SPECTRO_REDUX=$DAILY_BOSS_SPECTRO_REDUX
