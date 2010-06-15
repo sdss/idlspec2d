@@ -25,7 +25,7 @@ class Consts:
 		        "dieFile:    " + self.dieFileName + "\n" +
 		        "logName:    " + self.logName + "\n" +
 		        "configName: " + self.configName + "\n" +
-		        "versionFile: " + self.versionFile
+		        "versionFile: " + self.versionFile + "\n" +
 		        "MJDGlob:    " + self.MJDGlob);
 		
 	
