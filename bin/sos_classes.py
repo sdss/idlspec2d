@@ -9,11 +9,12 @@ class Consts:
 	"""Holds various constants use by the sos programs"""
 	
 	def __init__(self):
-		self.lockFileBase    = "sos_runner"
-		self.dieFileName     = "sos_die.die.die"
-		self.logName         = "sos_log"				
-		self.configName      = "sos_config.conf"
-		self.MJDGlob         = "[0-9]"*5
+		self.lockFileBase = "sos_runner"
+		self.dieFileName  = "sos_die.die.die"
+		self.logName      = "sos_log"				
+		self.configName   = "sos_config.conf"
+		self.MJDGlob      = "[0-9]"*5
+		self.versionFile  = "sos_version"
 	
 	def __repr__(self):
 		return self.__str__()
@@ -24,6 +25,7 @@ class Consts:
 		        "dieFile:    " + self.dieFileName + "\n" +
 		        "logName:    " + self.logName + "\n" +
 		        "configName: " + self.configName + "\n" +
+		        "versionFile: " + self.versionFile
 		        "MJDGlob:    " + self.MJDGlob);
 		
 	

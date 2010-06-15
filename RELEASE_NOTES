@@ -1,7 +1,9 @@
 
+
 GUIDERPLAY: Wrapper for IDL guider to simply allow play-back of images
       for a specified night.
 PLUGHISTORY: Plot out to fiber #1000 for BOSS cartridges.
+sos_runnerd.py: write a version string a file so the running version can be determined
 
 -------------------------------------------------------------------------------
 v5_4_12 (May 31, 2010) idlspec2d

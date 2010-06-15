@@ -140,6 +140,19 @@ def oneInstanceCheck(cfg, log):
 		
 	return lock
  
+
+####
+def writeVersionInfo(cfg):
+	"""Write a version string to a file"""
+	
+	verFile = os.path.join(cfg.controlDir, sos_classes.Consts().versionFile)
+	rc = commands.getstatusoutput("idlspec2d_version")
+	f = open(verFile, "w")
+	f.write(time.ctime() + " " + rc[1] + "\n")
+	f.close()
+	
+	
+
 ####
 def isitTimeToDie(cfg, log):
 	"""check dirFileName to see if it is time to gracefully give up the ghost"""
@@ -725,6 +738,7 @@ def main():
 	#	Initialize
 	config = initializeParms()
 	logger = initializeLogger(config)
+	writeVersionInfo(config)
 #	setupPlateDbAndIdlspec2d(config)
 	
 	#	Do we have an outstanding die signal 
