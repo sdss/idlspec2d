@@ -200,5 +200,5 @@ printAndRun "idl -e 'platemerge $RUN2DKEY'"
 echo "Goodbye at $(date)"
 
 ###  This is a TEMPORARY hack just to make sure things are looking ok!
-echo "Mailing Report"
-mail -s "log for dailyrun $MJD" kushner@lbl.gov < $LOGDIR/$MJD.log
+##echo "Mailing Report"
+##mail -s "log for dailyrun $MJD" kushner@lbl.gov < $LOGDIR/$MJD.log
