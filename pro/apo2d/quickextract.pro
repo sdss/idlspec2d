@@ -291,12 +291,10 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
       icolor = 1
       snfilter = 'g'
       wrange = [4000,5500] ; coverage of g-band
-      snmag = 22.0 ; Changed from 20.33 for BOSS
    endif else begin
       icolor = 3
       snfilter = 'i'
       wrange = [6910,8500] ; coverage of i-band
-      snmag = 21.0 ; Changed from 20.06 for BOSS
    endelse
 
    ;----------
