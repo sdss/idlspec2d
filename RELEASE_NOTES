@@ -1,9 +1,17 @@
 
-
 GUIDERPLAY: Wrapper for IDL guider to simply allow play-back of images
       for a specified night.
 PLUGHISTORY: Plot out to fiber #1000 for BOSS cartridges.
-sos_runnerd.py: write a version string a file so the running version can be determined
+READPLUGMAP: Change PSF/fiber flux ratios from computed numbers to
+      fixed constants. For 2 arcsec fiber fluxes, these constants
+      are [2.085, 2.085, 2.116, 2.134, 3.135]. For 3 arcsec fiber
+      fluxes, they are [1.343, 1.336, 1.354, 1.363, 1.367].  Ticket #906.
+SPCALIB: Fix a bug introduced in v5_4_7 with the re-write of FITARCIMAGE,
+      where bad lines (marked as such in REJLINE) were passed along
+      to FITDISPERSION.  This fixes ticket #823.
+
+bin/sos_runnerd.py: Write a version string a file so the running version
+      can be determined
 
 -------------------------------------------------------------------------------
 v5_4_12 (May 31, 2010) idlspec2d
