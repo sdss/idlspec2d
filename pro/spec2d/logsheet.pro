@@ -6,7 +6,7 @@
 ;   Make a summary of header keywords in a directory of raw SDSS spectro files.
 ;
 ; CALLING SEQUENCE:
-;   logsheet, [mjd=, camera=, outfile=]
+;   logsheet, [mjd=, camera=, /collimator, outfile=]
 ;
 ; INPUTS:
 ;
@@ -15,6 +15,7 @@
 ;                matching the directory "$RAWDATA_DIR/?????".
 ;   camera     - Camera name of files to list; '??' for all cameras;
 ;                default to 'b1'
+;   collimator - Include collimator positions
 ;   outfile    - Output file
 ;
 ; OUTPUTS:
@@ -44,7 +45,7 @@
 ;   06-Oct-1999  Written by David Schlegel, Princeton.
 ;-
 ;------------------------------------------------------------------------------
-pro logsheet, mjd=mjd, camera=camera, outfile=outfile
+pro logsheet, mjd=mjd, camera=camera, collimator=collimator, outfile=outfile
 
    quiet = !quiet
    !quiet = 1
@@ -123,6 +124,12 @@ pro logsheet, mjd=mjd, camera=camera, outfile=outfile
       exptime = sxpar(hdr, 'EXPTIME')
       flavor = sxpar(hdr, 'FLAVOR') + '         '
       quality = sxpar(hdr, 'QUALITY') + '         '
+      if (keyword_set(collimator)) then $
+       collstring = string(sxpar(hdr, 'COLLA'),format='(i6)') $
+        + string(sxpar(hdr, 'COLLB'),format='(i6)') $
+        + string(sxpar(hdr, 'COLLC'),format='(i6)') + '         ' $
+      else $
+       collstring = ''
 
       ; Put a blank line before a new plate
       if (i EQ 0) then lastplate = plateid
@@ -132,8 +139,8 @@ pro logsheet, mjd=mjd, camera=camera, outfile=outfile
       endif
 
       printf, olun, utstring, printname, $
-       plugname, plateid, cartid, exptime, flavor, quality, $
-       format='(a7, " ", a15, " ", a14, " ", i5, " ", i5, f8.1, " ", a9, " ", a9)'
+       plugname, plateid, cartid, exptime, flavor, quality, collstring, $
+       format='(a7, " ", a15, " ", a14, " ", i5, " ", i5, f8.1, " ", a9, " ", a9, a)'
    endfor
 
    ; Close output file
