@@ -431,7 +431,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
       endif else begin
       
         nfitcoeff = configuration->spcalib_ncoeff(color)
-        dispset = fitdispersion(flux, fluxivar, xpeak, $
+        ilamp = where(rejline EQ '')
+        dispset = fitdispersion(flux, fluxivar, xpeak[*,ilamp], $
           sigma=configuration->spcalib_sigmaguess(), ncoeff=nfitcoeff, $
           xmin=0.0, xmax=(configuration->getDetectorFormat(color))[0]-1., $
           medwidth=wsigarr, numbundles=configuration->getNumberBundles())
