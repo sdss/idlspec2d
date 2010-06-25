@@ -1,6 +1,7 @@
 
 GUIDERPLAY: Wrapper for IDL guider to simply allow play-back of images
       for a specified night.
+LOGSHEET: Add /COLLIMATOR option to print the collimator motor positions.
 PLUGHISTORY: Plot out to fiber #1000 for BOSS cartridges.
 READPLUGMAP: Change PSF/fiber flux ratios from computed numbers to
       fixed constants. For 2 arcsec fiber fluxes, these constants
