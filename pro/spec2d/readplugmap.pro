@@ -272,28 +272,28 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
          qstar = strmatch(plugmap.objtype, 'GALAXY*') EQ 0
          istar = where(qstar AND qexist, nstar)
          igal = where(qstar EQ 0 AND qexist, ngal)
-         pratio = fltarr(5) + 1
          if (tag_exist(tsobj,'FIBER2FLUX')) then begin
             fiberflux = transpose(tsobj.fiber2flux)
             fiberflux_ivar = transpose(tsobj.fiber2flux_ivar)
+            pratio = [2.085, 2.085, 2.116, 2.134, 3.135]
          endif else begin
             fiberflux = transpose(tsobj.fiberflux)
             fiberflux_ivar = transpose(tsobj.fiberflux_ivar)
+            pratio = [1.343, 1.336, 1.354, 1.363, 1.367]
          endelse
-         if (nstar GT 0) then begin
-            plugmap[istar].calibflux = tsobj[istar].psfflux
-            plugmap[istar].calibflux_ivar = tsobj[istar].psfflux_ivar
-            ; Compute the ratio of PSF/FIBER flux for stars in each filter,
-            ; using only stars that are brighter than 30 nMgy (= 18.8 mag).
-            ; If no such stars, then this ratio is set to unity.
-            for ifilt=0, 4 do begin
-               v1 = tsobj[istar].psfflux[ifilt]
-               v2 = fiberflux[istar,ifilt]
-               jj = where(v1 GT 30 AND v2 GT 30, ct)
-               if (ct GT 0) then pratio[ifilt] = median([ v1[jj] / v2[jj] ])
-            endfor
-
-         endif
+;         if (nstar GT 0) then begin
+;            plugmap[istar].calibflux = tsobj[istar].psfflux
+;            plugmap[istar].calibflux_ivar = tsobj[istar].psfflux_ivar
+;            ; Compute the ratio of PSF/FIBER flux for stars in each filter,
+;            ; using only stars that are brighter than 30 nMgy (= 18.8 mag).
+;            ; If no such stars, then this ratio is set to unity.
+;            for ifilt=0, 4 do begin
+;               v1 = tsobj[istar].psfflux[ifilt]
+;               v2 = fiberflux[istar,ifilt]
+;               jj = where(v1 GT 30 AND v2 GT 30, ct)
+;               if (ct GT 0) then pratio[ifilt] = median([ v1[jj] / v2[jj] ])
+;            endfor
+;         endif
          splog, 'PSF/fiber flux ratios = ', pratio
          if (ngal GT 0) then begin
             for ifilt=0, 4 do begin
