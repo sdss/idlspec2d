@@ -221,7 +221,6 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
         score = score[ii,*]
      endif
   endif
-stop
 
   ; Discard the smear exposures by setting their scores equal to (MINSN2<0)
   qsmear = allseq.flavor EQ 'smear'
