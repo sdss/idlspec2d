@@ -14,6 +14,11 @@ SDSS_SPEC_IMAGE: Ignore greater than 1 micron for plot limits.
 SPCALIB: Fix a bug introduced in v5_4_7 with the re-write of FITARCIMAGE,
       where bad lines (marked as such in REJLINE) were passed along
       to FITDISPERSION.  This fixes ticket #823.
+SPCOMBINE_V5: Modify the fix implemented in v5_4_8, and discard all data
+      from a given spectrograph if there is a camera with no good files.
+      This retains the behaviour of discarding sp2 data for MJD 55290-55299
+      when r2 was dead (ticket #764).  But it retains sp2 for plate
+      3817/55276 when only two images are missing (ticket #787).
 
 bin/sos_runnerd.py: Write a version string a file so the running version
       can be determined
