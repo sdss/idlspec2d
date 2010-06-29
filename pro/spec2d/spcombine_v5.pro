@@ -186,12 +186,16 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
 
   ;----------
   ; If all data is missing from one of the cameras, then discard
-  ; both cameras from that spectrograph.  This is a hack!???
+  ; both cameras from that spectrograph.
 
   ; Case where we discard spectrograph #1
-  if (total(camspecid EQ 1) LT 2*nexp) then begin
+  ; If there are no exposures with both b1+b2 cameras
+  ; then discard all spectrograph#1 data
+  if (total( total(camerasarr EQ 'b1',1) GT 0 AND $
+   total(camerasarr EQ 'r1',1) GT 0 ) EQ 0) then begin
      ii = where(docams EQ 'b2' OR docams EQ 'r2', ct)
      if (ct GT 0) then begin
+        splog, 'Discarding spectro-1 data'
         camerasarr = camerasarr[ii,*]
         camspecid = camspecid[ii,*]
         docams = docams[ii]
@@ -202,9 +206,13 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
   endif
 
   ; Case where we discard spectrograph #2
-  if (total(camspecid EQ 2) LT 2*nexp) then begin
+  ; If there are no exposures with both b1+b2 cameras
+  ; then discard all spectrograph#1 data
+  if (total( total(camerasarr EQ 'b2',1) GT 0 AND $
+   total(camerasarr EQ 'r2',1) GT 0 ) EQ 0) then begin
      ii = where(docams EQ 'b1' OR docams EQ 'r1', ct)
      if (ct GT 0) then begin
+        splog, 'Discarding spectro-2 data'
         camerasarr = camerasarr[ii,*]
         camspecid = camspecid[ii,*]
         docams = docams[ii]
@@ -213,6 +221,7 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
         score = score[ii,*]
      endif
   endif
+stop
 
   ; Discard the smear exposures by setting their scores equal to (MINSN2<0)
   qsmear = allseq.flavor EQ 'smear'
