@@ -127,9 +127,9 @@ pro platelist_write, plist, trimtags=trimtags, alias=alias, $
     format=trimtags[1,*])
    struct_print, trimstring, filename=ascfile, fdigit=3, alias=alias
 
-   for itag=0, n_tags(trimdat)-1 do begin
-      for iarr=0, n_elements(trimdat[0].(itag))-1 do begin
-         for irow=0, n_elements(trimdat)-1 do begin
+   for itag=0L, n_tags(trimdat)-1L do begin
+      for iarr=0L, n_elements(trimdat[0].(itag))-1L do begin
+         for irow=0L, n_elements(trimdat)-1L do begin
             markstring = apo_checklimits('SUMMARY', $
              strupcase(trimtags[0,itag]), '', $
              trimdat[irow].(itag)[iarr], /html)
@@ -151,19 +151,19 @@ pro platelist_write, plist, trimtags=trimtags, alias=alias, $
    printf, lun, '<head>'
    printf, lun, '<title>' + title + '</title>'
    printf, lun, '<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />'
-   for c=0, n_elements(css)-1 do $
+   for c=0L, n_elements(css)-1L do $
     printf, lun, css[c]
    printf, lun, '</head>'
    printf, lun, '<body>'
    printf, lun, '<h1>' + title + '</h1>'
-   for i=0, n_elements(toptext)-1 do $
+   for i=0L, n_elements(toptext)-1L do $
     printf, lun, toptext[i]
 
 ;   for iline=0, n_elements(tarray)-1 do $
 ;    printf, lun, tarray[iline]
    ifirst = where(plist.run2d NE shift(plist.run2d,1))
    for i=0, 2 do printf, lun, tarray[i]
-   for iline=0, n_elements(plist)-1 do begin
+   for iline=0L, n_elements(plist)-1L do begin
       ; Make a new html table for each new RUN2D
       if (iline NE 0 AND total(iline EQ ifirst) NE 0) then $
        printf, lun, tarray[1]
@@ -449,10 +449,10 @@ pro platelist, plist=plist, create=create, $
       nsubdir = n_elements(*zbestrun1d[ifile])
       zbestfile[ifile] = ptr_new(strarr(nsubdir))
       zlogfile[ifile] = ptr_new(strarr(nsubdir))
-      for i=0, nsubdir-1 do $
+      for i=0L, nsubdir-1L do $
        (*zbestfile[ifile])[i] = djs_filepath('spZbest-'+platemjd+'.fits', $
         root_dir=path, subdir=((*zbestrun1d[ifile])[i]))
-      for i=0, nsubdir-1 do $
+      for i=0L, nsubdir-1L do $
        (*zlogfile[ifile])[i] = djs_filepath('spDiag1d-'+platemjd+'.log', $
         root_dir=path, subdir=((*zbestrun1d[ifile]))[i])
 
@@ -670,7 +670,7 @@ pro platelist, plist=plist, create=create, $
    isort = sort(plist.mapname+plist.run2d)
    isort = isort[ uniq(plist[isort].mapname+plist[isort].run2d) ]
    maplist = plist[isort].mapname+plist[isort].run2d
-   for imap=0, n_elements(maplist)-1 do begin
+   for imap=0L, n_elements(maplist)-1L do begin
       indx = where(plist.mapname+plist.run2d EQ maplist[imap])
       junk = max(plist[indx].mjd, imax)
       qkeep[indx[imax]] = 1
@@ -681,7 +681,7 @@ pro platelist, plist=plist, create=create, $
    if (indx[0] NE -1) then qkeep[indx] = 1
 
    ; List partially-combined plates that we're discarding from the list
-   for ifile=0, nfile-1 do begin
+   for ifile=0L, nfile-1L do begin
       if (qkeep[ifile] NE 1) then begin
          splog, 'Discard partially-combined ' + combparfile[ifile]
          if (keyword_set(killpartial)) then begin
@@ -691,7 +691,7 @@ pro platelist, plist=plist, create=create, $
                           platefile[ifile], $
                           *zbestfile[ifile], $
                           *zlogfile[ifile] ]
-            for ikill=0, n_elements(killfiles)-1 do $
+            for ikill=0L, n_elements(killfiles)-1L do $
              splog, 'KILLPARTIAL ', killfiles[ikill]
             rmfile, killfiles
          endif
@@ -728,7 +728,7 @@ pro platelist, plist=plist, create=create, $
    ; from the manually-assigned one in the "spPlateList.par" file.
 
    qualstring = ['bad', 'marginal', 'good']
-   for ifile=0, nfile-1 do begin
+   for ifile=0L, nfile-1L do begin
       if (strtrim(plist[ifile].statuscombine,2) EQ 'Done') then begin
          nexp_min = min( $
           [plist[ifile].nexp_b1, plist[ifile].nexp_b2, $
@@ -761,7 +761,7 @@ pro platelist, plist=plist, create=create, $
    isort = isort[ uniq(plist[isort].tileid) ]
    tilelist = plist[isort].tileid
 
-   for itile=0, n_elements(tilelist)-1 do begin
+   for itile=0L, n_elements(tilelist)-1L do begin
       indx = where(plist.tileid EQ tilelist[itile] $
        AND (strtrim(plist.platequality,2) EQ 'good' $
          OR strtrim(plist.platequality,2) EQ 'marginal') $
@@ -816,11 +816,11 @@ pro platelist, plist=plist, create=create, $
             nobj = n_elements(zans)
             targets = strarr(nobj)
 
-            for iobj=0, nobj-1 do $
+            for iobj=0L, nobj-1L do $
              targets[iobj] = sdss_flagname('TARGET',plug[iobj].primtarget, $
               /silent, /concat)+' '
             if (tag_exist(plug,'BOSS_TARGET1')) then $
-             for iobj=0, nobj-1 do $
+             for iobj=0L, nobj-1L do $
               targets[iobj] = sdss_flagname('BOSS_TARGET1', $
                plug[iobj].boss_target1, /silent, /concat)+' '
 
