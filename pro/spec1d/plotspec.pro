@@ -183,9 +183,13 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, zmanual=zmanual, $
        format='("Spectrum not found for plate=", i4, " MJD=", i5, " fiber=", i3)'
       return
    endif
-   if (keyword_set(allexp)) then $
-    readonespec, plate, fiberid, mjd=mjd, wave=allwave, flux=allflux, $
-     _EXTRA=Extra, /silent
+   if (keyword_set(allexp)) then begin
+      readonespec, plate, fiberid, mjd=mjd, wave=allwave, flux=allflux, $
+                   _EXTRA=Extra, /silent
+      ndim = size(allflux,/n_dimen)
+      if (ndim EQ 1) then nexp = 1 $
+       else nexp = (size(allflux,/dimens))[1]
+   endif
    if (keyword_set(restframe)) then begin
       wave = wave / (1. + zans.z)
       if (keyword_set(allwave)) then allwave = allwave / (1. + zans.z)
@@ -225,9 +229,6 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, zmanual=zmanual, $
    if (nsmooth GT 1) then begin
       objflux = smooth(objflux, nsmooth)
       if (keyword_set(allflux)) then begin
-         ndim = size(allflux,/n_dimen)
-         if (ndim EQ 1) then nexp = 1 $
-          else nexp = (size(allflux,/dimens))[1]
          for iexp=0, nexp-1 do $
           allflux[*,iexp] = smooth(allflux[*,iexp], nsmooth)
       endif
@@ -304,7 +305,7 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, zmanual=zmanual, $
       if (keyword_set(allexp)) then begin
          for iexp=0, nexp-1 do $
           soplot, allwave[*,iexp], allflux[*,iexp], $
-           psym=(nsmooth GT 1) ? 0 : 3, _EXTRA=KeywordsForSplot
+           _EXTRA=KeywordsForSplot
       endif else begin
          soplot, wave, objflux, _EXTRA=KeywordsForSplot
       endelse

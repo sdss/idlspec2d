@@ -1,4 +1,5 @@
 
+PLOTSPEC: Fixing Ticket #926 /ALLEXP bug and odd feature.
 AESTHETICS: New routine for filling in bad values for COMBINE1FIBER.
 COMBINE1FIBER: Call new routine AESTHETICS, but no change in default behaviour.
 GUIDERPLAY: Wrapper for IDL guider to simply allow play-back of images
