@@ -1,11 +1,14 @@
 
-PLOTSPEC: Fixing Ticket #926 /ALLEXP bug and odd feature.
 AESTHETICS: New routine for filling in bad values for COMBINE1FIBER.
 COMBINE1FIBER: Call new routine AESTHETICS, but no change in default behaviour.
 GUIDERPLAY: Wrapper for IDL guider to simply allow play-back of images
       for a specified night.
+IDLSPEC2D_VERSION: Back out to the previous version, since this does not
+      report the svn version number in the case of untagged code.
+      For that, we call the idlspec2d_version bash script (with a spawn).
 LOGSHEET: Add /COLLIMATOR option to print the collimator motor positions.
 PCA_GAL: Call AESTHETICS for filling in bad values.
+PLOTSPEC: Fixing Ticket #926 /ALLEXP bug and odd feature.
 PLUGHISTORY: Plot out to fiber #1000 for BOSS cartridges.
 READPLUGMAP: Change PSF/fiber flux ratios from computed numbers to
       fixed constants. For 2 arcsec fiber fluxes, these constants
