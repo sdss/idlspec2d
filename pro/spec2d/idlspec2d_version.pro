@@ -2,18 +2,17 @@
 ; NAME:
 ;   idlspec2d_version
 ; PURPOSE:
-;   Return the version name for the idlspec2d product
+;   Return the version name for the idlspec2d product 
 ; CALLING SEQUENCE:
-;   vers = idlspec2d_version()
+;   vers = idlspec2d()
 ; OUTPUTS:
-;   vers       - Version name for the product idlspec2d
+;   vers       - Version name for the product idlspec2d 
 ; COMMENTS:
-;   Requires that the IDLSPEC2D_DIR environment variable be set
-; VERSION:
-;   $Id$
+;   Depends on shell script in $IDLSPEC2D_DIR/bin
 ;-
 ;------------------------------------------------------------------------------
-FUNCTION idlspec2d_version
-    RETURN, FILE_BASENAME(GETENV('IDLSPEC2D_DIR'))
-END
+function idlspec2d_version
+   spawn, 'idlspec2d_version', stdout, /noshell
+   return, stdout[0]
+end
 ;------------------------------------------------------------------------------
