@@ -281,9 +281,9 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
             fiberflux_ivar = transpose(tsobj.fiberflux_ivar)
             pratio = [1.343, 1.336, 1.354, 1.363, 1.367]
          endelse
-;         if (nstar GT 0) then begin
-;            plugmap[istar].calibflux = tsobj[istar].psfflux
-;            plugmap[istar].calibflux_ivar = tsobj[istar].psfflux_ivar
+         if (nstar GT 0) then begin
+            plugmap[istar].calibflux = tsobj[istar].psfflux
+            plugmap[istar].calibflux_ivar = tsobj[istar].psfflux_ivar
 ;            ; Compute the ratio of PSF/FIBER flux for stars in each filter,
 ;            ; using only stars that are brighter than 30 nMgy (= 18.8 mag).
 ;            ; If no such stars, then this ratio is set to unity.
@@ -293,7 +293,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
 ;               jj = where(v1 GT 30 AND v2 GT 30, ct)
 ;               if (ct GT 0) then pratio[ifilt] = median([ v1[jj] / v2[jj] ])
 ;            endfor
-;         endif
+         endif
          splog, 'PSF/fiber flux ratios = ', pratio
          if (ngal GT 0) then begin
             for ifilt=0, 4 do begin
