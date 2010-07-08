@@ -13,7 +13,7 @@
 ; INPUTS:
 ;   plate      - Plate (scalar)
 ;   fiberid    - Fiber ID (scalar)
-;   wave       - Wavelength(s) at which to display raw images
+;   wave       - Wavelength(s) at which to display raw images (vacuum Ang)
 ;
 ; OPTIONAL INPUTS:
 ;   mjd        - MJD (scalar)
@@ -107,10 +107,10 @@ pro atvspec, plate, fiberid, mjd=mjd, wave=wavecen, $
             ; Find the x,y location on this particular image
             linterp, wave[*,j], xvec, wavecen[iwave], ycen
             linterp, xvec, ximg[*,j], ycen, xcen
-            x0 = (round(xcen) - xsize/2) > 0
-            x1 = (x0 + xsize-1) < thisdim[0]
-            y0 = (round(ycen) - ysize/2) > 0
-            y1 = (y0 + ysize-1) < thisdim[1]
+            x0 = ((round(xcen) - xsize/2) > 0) < (thisdim[0]-xsize)
+            x1 = x0 + xsize-1
+            y0 = ((round(ycen) - ysize/2) > 0) < (thisdim[1]-ysize)
+            y1 = y0 + ysize-1
             bigimg[iexp*xsize:(iexp+1)*xsize-1,iwave*ysize:(iwave+1)*ysize-1] $
              = thisimg[x0:x1,y0:y1]
             xlist[iexp,iwave] = xcen - x0 + iexp*xsize
