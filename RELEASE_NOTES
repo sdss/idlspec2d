@@ -1,5 +1,7 @@
 
 AESTHETICS: New routine for filling in bad values for COMBINE1FIBER.
+ATVSPEC: New proc for displaying cutouts of raw images around specified
+      wavelengths.
 COMBINE1FIBER: Call new routine AESTHETICS, but no change in default behaviour.
 GUIDERPLAY: Wrapper for IDL guider to simply allow play-back of images
       for a specified night.
