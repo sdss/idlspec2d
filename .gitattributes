@@ -480,6 +480,7 @@ pro/spec1d/ztweak_star.pro -text
 pro/spec2d/TODO -text
 pro/spec2d/arcfit_guess.pro -text
 pro/spec2d/arcsky_fit.pro -text
+pro/spec2d/atvspec.pro -text
 pro/spec2d/batchpbs.pro -text
 pro/spec2d/bolton_sn_fit.pro -text
 pro/spec2d/boss_gain.pro -text
