@@ -184,6 +184,7 @@ misc/distort.red -text
 misc/plate306.mail -text
 misc/uomoto.distortions -text
 opfiles/Makefile -text
+opfiles/boss_cartridge15_gaps.txt -text
 opfiles/opSNlimits.par -text
 pro/Makefile -text
 pro/apo2d/apo_appendlog.pro -text

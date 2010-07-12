@@ -1,4 +1,6 @@
 
+opfiles/boss_cartridge15_gaps.txt: added file with measured bundle gaps
+      for BOSS cartridge 15 (see ticket #817).
 AESTHETICS: New routine for filling in bad values for COMBINE1FIBER.
 ATVSPEC: New proc for displaying cutouts of raw images around specified
       wavelengths.

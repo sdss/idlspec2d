@@ -1,0 +1,33 @@
+# BOSS cartridge 15 fiber bundle gap sizes.
+# Measured from frame 00114428 on MJD 55320.
+# Measurements by A. Bolton, U. of Utah.
+#  using home-grown semi-interactive peak-finding routine.
+# Measured from median of +/- 5 rows about row 2000 in each of 4 cameras.
+# Reported in units of local median inter-fiber spacing.
+# Should have b1 = r1 and b2 = r2 approximately.
+# Columns are:
+# b1   r1   b2   r2
+ 2.30 2.31 2.71 2.73
+ 2.28 2.29 2.31 2.32
+ 2.71 2.72 2.46 2.46
+ 2.37 2.38 2.32 2.33
+ 2.31 2.31 2.59 2.60
+ 2.50 2.50 2.27 2.27
+ 2.29 2.28 2.38 2.38
+ 2.63 2.62 2.51 2.52
+ 2.33 2.33 2.61 2.61
+ 2.52 2.51 2.28 2.27
+ 2.45 2.45 2.61 2.60
+ 2.28 2.28 2.24 2.24
+ 2.86 2.85 2.50 2.51
+ 2.70 2.70 3.00 2.98
+ 2.32 2.32 2.23 2.23
+ 2.44 2.44 2.45 2.45
+ 2.28 2.28 2.39 2.38
+ 2.47 2.47 2.38 2.38
+ 2.82 2.82 2.56 2.56
+ 2.33 2.32 2.39 2.38
+ 2.83 2.84 2.51 2.53
+ 2.33 2.34 2.36 2.36
+ 1.88 1.91 2.42 2.43
+ 2.28 2.30 2.42 2.44
