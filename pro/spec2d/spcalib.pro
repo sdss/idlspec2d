@@ -195,7 +195,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
     
       splog, 'Tracing ', configuration->getNumberFibersPerSpectrograph(), $
        ' fibers in ', flatname[iflat]
-      xsol = trace320crude(flatimg, flativar, yset=ycen, maxdev=0.15, $
+      xsol = trace320crude(flatimg, flativar, yset=ycen, maxdev=1.0, $ ;0.15, $
        fibermask=tmp_fibmask, xerr=xerr, $
        padding=configuration->spcalib_trace320crude_padding(), $
        nfiber=configuration->getNumberFibersPerSpectrograph(), $

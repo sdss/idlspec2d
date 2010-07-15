@@ -82,7 +82,7 @@ end
 ;l395
 function configuration::spcalib_sigmaguess
   if self->isSDSS2() then return,1.0
-  return,  1.4 ; ???
+  return,  1.0 ; ASB changed from 1.4 ; ???
 end
 
 ;l236 extract_image
