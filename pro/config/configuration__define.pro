@@ -68,7 +68,7 @@ end
 ;l191 xy2traceset keyword
 function configuration::spcalib_xy2traceset_ncoeff
   if self->isSDSS2() then return,7
-  return,  4
+  return, 7 ; ASB: 4 too few for BOSS
 end
 
 
