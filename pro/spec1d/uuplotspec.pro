@@ -158,11 +158,11 @@ pro uuplotspec_mask, wave, thismask, psfile=psfile, nolabel=nolabel, $
   ;==============================================================================
   ; Plotspec procedure:  identical to plotspec_mask
   ;==============================================================================
-
+    
   bitlabel = sdss_flagname('SPPIXMASK', 2UL^32-1, /silent)
   bitnum = where(bitlabel NE '', nlabel)
   bitlabel = bitlabel[bitnum]
-
+  
   for ilabel=0, nlabel-1 do begin
     ypos = ( (ilabel+1) * !y.crange[1] + (nlabel-ilabel) * !y.crange[0] ) $
       / (nlabel+1)
@@ -188,7 +188,7 @@ pro uuplotspec_mask, wave, thismask, psfile=psfile, nolabel=nolabel, $
       endelse
     endif
   endfor
-
+  
   return
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -200,22 +200,35 @@ pro uuplotspec1, plate, fiberid, mjd=mjd, $
   ; uuplotspec floating window event handler
   ;==============================================================================
   common plotspec_state, platelist, fiberidlist, mjdlist, ifiber, keyword, keywordset, uumessage
-
+  common uuPlotspecBase_state, uuState, recentcommentlist
+  
   cspeed = 2.99792458e5
   textcolor = 'green'
   linecolor = 'magenta'
   orcolor = 'yellow'
   andcolor = 'red'
-
+  
   readspec, plate, fiberid, mjd=mjd, znum=keyword.znum, flux=objflux, $
     wave=wave, plug=plug, zans=zans, _EXTRA=Extra, /silent
   if (NOT keyword_set(objflux)) then begin
     uumessage = "Spectrum not found for plate="+strtrim(plate,2)+", MJD="+strtrim(mjd,2)+", fiberID="+strtrim(fiberid,2) & print, uumessage
     return
   endif
-  if (keyword_set(allexp)) then $
+  if (keywordset.allexp) then begin
     readonespec, plate, fiberid, mjd=mjd, wave=allwave, flux=allflux, $
-    _EXTRA=Extra, /silent
+      _EXTRA=Extra, /silent
+    if (n_elements(allflux) gt 1) then begin
+      ndim = size(allflux,/n_dimen)
+      if (ndim EQ 1) then nexp = 1 $
+      else nexp = (size(allflux,/dimens))[1]
+    endif else begin
+      keywordset.allexp=0
+      widget_control, uuState.uukeywordsid, get_value=uukeywordset
+      uukeywordset[6] = keywordset.allexp
+      widget_control, uuState.uukeywordsid, set_value=uukeywordset
+      uumessage = 'File not found: spCFrame*.fits'
+    endelse
+  endif
   if (keywordset.restframe) then begin
     wave = wave / (1. + zans.z)
     if (keyword_set(allwave)) then allwave = allwave / (1. + zans.z)
@@ -229,7 +242,7 @@ pro uuplotspec1, plate, fiberid, mjd=mjd, $
     else eigenfile = 'spEigenQSO-*.fits'
     npoly = 0
     zrange=keyword.zmanual
-
+    
     res_manual = zfind(objflux, objivar, hdr=hdr, $
       eigenfile=eigenfile, npoly=npoly, zmin=zrange[0], zmax=zrange[1], $
       pspace=1, nfind=1, width=1)
@@ -237,7 +250,7 @@ pro uuplotspec1, plate, fiberid, mjd=mjd, $
     synflux = synthspec(res_manual, loglam=loglam)
   endif else begin
     if (NOT keywordset.nosyn) then $
-       readspec, plate, fiberid, mjd=mjd, znum=keyword.znum, synflux=synflux, $
+      readspec, plate, fiberid, mjd=mjd, znum=keyword.znum, synflux=synflux, $
       _EXTRA=Extra, /silent
   endelse
   if (keywordset.sky) then $
@@ -249,15 +262,12 @@ pro uuplotspec1, plate, fiberid, mjd=mjd, $
   if (keyword_set(zans) AND keywordset.zline) then $
     readspec, plate, fiberid, mjd=mjd, zline=zline, lineflux=lineflux, $
     _EXTRA=Extra, /silent
-
+    
   if (keywordset.nsmooth) then nsmooth = keyword.nsmooth else nsmooth = 1
-
+  
   if (nsmooth GT 1) then begin
     objflux = smooth(objflux, nsmooth)
-    if (keyword_set(allflux)) then begin
-      ndim = size(allflux,/n_dimen)
-      if (ndim EQ 1) then nexp = 1 $
-      else nexp = (size(allflux,/dimens))[1]
+    if (keywordset.allflux) then begin
       for iexp=0, nexp-1 do $
         allflux[*,iexp] = smooth(allflux[*,iexp], nsmooth)
     endif
@@ -266,8 +276,8 @@ pro uuplotspec1, plate, fiberid, mjd=mjd, $
     if (keyword_set(lineflux)) then $
       lineflux = smooth(lineflux, nsmooth)
   endif
-
-  targstring = ''
+  
+  targstring = strmatch(plug.objtype,'SKY*') ? 'SKY ' : ''
   if (tag_exist(plug,'PRIMTARGET')) then $
     targstring += sdss_flagname('TARGET', plug.primtarget, /concat)+' '
   if (tag_exist(plug,'SECTARGET')) then $
@@ -281,7 +291,7 @@ pro uuplotspec1, plate, fiberid, mjd=mjd, $
   if (tag_exist(plug,'ANCILLARY_TARGET2')) then targstring += $
     sdss_flagname('ANCILLARY_TARGET2', plug.ancillary_target2, /concat)+' '
   targstring = strtrim(targstring) ; get rid of trailing spaces
-
+  
   csize = 1.75
   if (keyword_set(passyr)) then begin
     yrange = passyr
@@ -292,7 +302,7 @@ pro uuplotspec1, plate, fiberid, mjd=mjd, $
       yrange = minmax(synflux) $
     else $
       yrange = minmax(objflux)
-
+      
     if (yrange[0] EQ yrange[1]) then yrange = minmax(objflux)
     ymin = (1.3 * yrange[0] - 0.3 * yrange[1]) < 0
     ymax = -0.3 * yrange[0] + 1.3 * yrange[1]
@@ -303,7 +313,7 @@ pro uuplotspec1, plate, fiberid, mjd=mjd, $
   else xrange = minmax(wave)
   if (keywordset.ormask OR keywordset.andmask) then $
     xrange[1] = 1.15 * xrange[1] - 0.15 * xrange[0]
-
+    
   title = 'Plate ' + strtrim(string(plate),2) $
     + '  Fiber ' + strtrim(string(fiberid),2) $
     + '  MJD=' + strtrim(string(mjd),2)
@@ -313,10 +323,10 @@ pro uuplotspec1, plate, fiberid, mjd=mjd, $
     djs_plot, xrange, yrange, /nodata, xrange=xrange, yrange=yrange, $
       xtitle=xtitle, ytitle=TeXtoIDL('Flux [10^{-17} erg/s/cm^2/Ang]'), $
       title=title, charsize=csize, _EXTRA=KeywordsForSplot, /xstyle, /ystyle
-    if (keyword_set(allexp)) then begin
+    if (keywordset.allexp) then begin
       for iexp=0, nexp-1 do $
         djs_oplot, allwave[*,iexp], allflux[*,iexp], $
-        psym=(nsmooth GT 1) ? 0 : 3, _EXTRA=KeywordsForSplot
+        _EXTRA=KeywordsForSplot
     endif else begin
       djs_oplot, wave, objflux, _EXTRA=KeywordsForSplot
     endelse
@@ -327,14 +337,13 @@ pro uuplotspec1, plate, fiberid, mjd=mjd, $
     if (keyword_set(synflux)) then $
       djs_oplot, wave, synflux, color='blue', lw=2, _EXTRA=KeywordsForSplot
   endif else begin
-    if (NOT keywordset.noerase) then $
+    if (NOT keyword_set(noerase)) then $
       splot, xrange, yrange, /nodata, xrange=xrange, yrange=yrange, $
       xtitle=xtitle, ytitle=TeXtoIDL('Flux [10^{-17} erg/s/cm^2/Ang]'), $
       title=title, charsize=csize, _EXTRA=KeywordsForSplot
-    if (keyword_set(allexp)) then begin
+    if (keywordset.allexp) then begin
       for iexp=0, nexp-1 do $
-        soplot, allwave[*,iexp], allflux[*,iexp], $
-        psym=(nsmooth GT 1) ? 0 : 3, _EXTRA=KeywordsForSplot
+        soplot, allwave[*,iexp], allflux[*,iexp], _EXTRA=KeywordsForSplot
     endif else begin
       soplot, wave, objflux, _EXTRA=KeywordsForSplot
     endelse
@@ -345,11 +354,11 @@ pro uuplotspec1, plate, fiberid, mjd=mjd, $
     if (keyword_set(synflux)) then $
       soplot, wave, synflux, color='blue', lw=2, _EXTRA=KeywordsForSplot
   endelse
-
+  
   xpos = 0.9 * !x.window[0] + 0.1 * !x.window[1]
   dypos = 0.05 * (!y.window[0] - !y.window[1])
   ypos = !y.window[1] + 1.5 * dypos
-
+  
   if ((keywordset.zmanual) OR keyword_set(zans)) then begin
     keyword.manualclass = strtrim(zans.class,2)
     if (keywordset.zmanual) then begin
@@ -369,7 +378,7 @@ pro uuplotspec1, plate, fiberid, mjd=mjd, $
       if (keywordset.znum) then $
         zstring += ' (fit #' + strtrim(string(keyword.znum),2) + ')'
     endelse
-
+    
     if (keyword_set(psfile)) then $
       xyouts, xpos, ypos, zstring, $
       charsize=csize, color=djs_icolor(textcolor), /normal, $
@@ -378,9 +387,9 @@ pro uuplotspec1, plate, fiberid, mjd=mjd, $
       sxyouts, xpos, ypos, zstring, $
       charsize=csize, color=textcolor, /normal, $
       _EXTRA=KeywordsForSplot
-
+      
     ypos = ypos + dypos
-
+    
     if (keyword_set(res_manual)) then thisrchi2 = res_manual.rchi2 $
     else thisrchi2 = zans.rchi2
     if (keyword_set(psfile)) then $
@@ -394,13 +403,13 @@ pro uuplotspec1, plate, fiberid, mjd=mjd, $
       charsize=csize, color=textcolor, /normal, $
       _EXTRA=KeywordsForSplot
   endif
-
+  
   if (keyword_set(lineflux)) then begin
     if (keyword_set(psfile)) then $
       djs_oplot, wave, lineflux, color=linecolor, lw=2, _EXTRA=KeywordsForSplot $
     else $
       soplot, wave, lineflux, color=linecolor, lw=2, _EXTRA=KeywordsForSplot
-
+      
     linewave = zline.linewave $
       * (1 + zline.linez * (keywordset.restframe EQ 0))
     ; Convert line sigma from km/sec to Angstroms
@@ -421,18 +430,18 @@ pro uuplotspec1, plate, fiberid, mjd=mjd, $
       endif
     endfor
   endif
-
+  
   if (keywordset.ormask) then begin
     uuplotspec_mask, wave, ormask, psfile=psfile, $
       psym=1, symsize=0.6, color=orcolor, $
       nolabel=keywordset.andmask, _EXTRA=KeywordsForSplot
   endif
-
+  
   if (keywordset.andmask) then begin
     uuplotspec_mask, wave, andmask, psfile=psfile, $
       psym=6, symsize=0.6, color=andcolor, _EXTRA=KeywordsForSplot
   endif
-
+  
   if (keyword_set(targstring)) then begin
     ypos = ypos + dypos
     if (keyword_set(psfile)) then $
@@ -444,7 +453,7 @@ pro uuplotspec1, plate, fiberid, mjd=mjd, $
       charsize=csize, color=textcolor, /normal, $
       _EXTRA=KeywordsForSplot
   endif
-
+  
   return
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -455,14 +464,14 @@ pro uuplotspec_init, plate, fiberid, mjd=mjd, $
   ; Plotspec procedure:  modified from plotspec to accept keywords from the
   ; uuplotspec floating window event handler
   ;==============================================================================
-
+    
   common plotspec_state, platelist, fiberidlist, mjdlist, ifiber, keyword, keywordset, uumessage
-
+  
   quiet = !quiet
   !quiet = 1
   ;----------
   ; If MJD is not set, then find the MJD for each plate
-
+  
   nplate = n_elements(plate)
   if (NOT keyword_set(mjd)) then begin
     mjd = lonarr(nplate)
@@ -483,17 +492,17 @@ pro uuplotspec_init, plate, fiberid, mjd=mjd, $
       return
     endif
   endelse
-
+  
   ;----------
   ; If /ZWARNING is set, then find the flagged fibers to plot.
-
+  
   if (keywordset.zwarning) then begin
     if (keyword_set(fiberid)) then begin
       uumessage = 'FIBERID and /ZWARNING cannot both be set.' & print, uumessage
       !quiet = quiet
       return
     endif
-
+    
     for iplate=0L, nplate-1L do begin
       readspec, plate[iplate], mjd=mjd[iplate], $
         _EXTRA=Extra, /silent, zans=zans
@@ -523,7 +532,7 @@ pro uuplotspec_init, plate, fiberid, mjd=mjd, $
     nfiber = n_elements(fiberid)
     uumessage = 'Selecting '+strtrim(nfiber,2)+' non-sky fibers with ZWARNING flag set' & print, uumessage
   endif
-
+  
   ;----------
   ; Set FIBERID to [1,...,NFIBER] (for each plate) if not set.
   ;
@@ -559,25 +568,25 @@ pro uuplotspec_init, plate, fiberid, mjd=mjd, $
     if (n_elements(mjdlist) ne 0) then undefine, mjdlist
     if (n_elements(fiberidlist) ne 0) then undefine, fiberidlist
   endelse
-
+  
   ;   if (min(fiberid) LT 1 OR max(fiberid) GT 640) then begin
   ;      uumessage = 'Invalid FIBERID (must be between 1 and 640)' & print, uumessage
   ;      return
   ;   endif
-
+  
   ;----------
   ; If FIBERID is specified, and writing to a PostScript file,
   ; then open only one PS file for all plots.
-
+  
   nfiber = n_elements(fiberid)
   if (size(psfile,/tname) EQ 'STRING' AND nfiber GT 1) then begin
     psfilename = psfile
     q_onefile = 1
   endif
-
+  
   ;----------
   ; If /ZWARNING is not set, then construct the PLATELIST,MJDLIST.
-
+  
   if (n_elements(platelist) EQ 0) then begin
     if (nplate EQ 1) then begin
       platelist = replicate(plate, nfiber)
@@ -591,21 +600,21 @@ pro uuplotspec_init, plate, fiberid, mjd=mjd, $
     !quiet = quiet
     return
   endif
-
+  
   ;----------
   ; Loop over each plot if creating postscript files.
   ; otherwise navigate to each plate-mjd-fiberid identified by ifiber,
   ; starting with first in the platelist (ifiber=0)
-
-
+  
+  
   if (keyword_set(psfile)) then begin
-
+  
     ifiber = 0L
     while (ifiber LT nfiber) do begin
-
+    
       ;----------
       ; Open the PostScript file if appropriate
-
+    
       if (NOT keyword_set(q_onefile)) then begin
         if (size(psfile,/tname) EQ 'STRING') then $
           psfilename = psfile $
@@ -613,16 +622,16 @@ pro uuplotspec_init, plate, fiberid, mjd=mjd, $
           psfilename = string(platelist[ifiber], mjdlist[ifiber], $
           fiberid[ifiber], format='("spec-",i4.4,"-",i5.5,"-",i3.3,".ps")')
       endif
-
+      
       if (NOT keyword_set(q_onefile) OR ifiber EQ 0) then begin
         dfpsplot, psfilename, /color, /square
       endif
-
+      
       uuplotspec1, platelist[ifiber], fiberid[ifiber], mjd=mjdlist[ifiber], $
         psfile=psfile, $
         xrange=xrange, yrange=yrange, $
         allexp=allexp, _EXTRA=Extra
-
+        
       if (NOT keyword_set(q_onefile) OR ifiber EQ nfiber-1) then dfpsclose
       ifiber = ifiber + 1
     endwhile
@@ -633,9 +642,9 @@ pro uuplotspec_init, plate, fiberid, mjd=mjd, $
       psfile=psfile, $
       xrange=xrange, yrange=yrange, $
       allexp=allexp, _EXTRA=Extra
-
+      
   endelse
-
+  
   !quiet = quiet
   return
 end
@@ -793,12 +802,12 @@ end
 FUNCTION SetIntersection, set_a, set_b, $
     NORESULT=noresult, $
     SUCCESS=success
-
+    
   Compile_Opt StrictArr, DefInt32
-
+  
   ; Set up noresult value.
   IF N_Elements(noresult) EQ 0 THEN noresult = -1
-
+  
   ; Error handling.
   Catch, theError
   IF theError NE 0 THEN BEGIN
@@ -807,51 +816,51 @@ FUNCTION SetIntersection, set_a, set_b, $
     success = 0
     RETURN, noresult
   ENDIF
-
+  
   ; Check parameters.
   IF N_Params() NE 2 THEN Message, 'Two input parameters or sets are required.'
-
+  
   ; The input sets must be integers.
   IF (Size(set_a, /TYPE) GT 3) AND (Size(set_a, /TYPE) LT 12) THEN $
     Message, 'Set A must be an integer array.'
   IF (Size(set_b, /TYPE) GT 3) AND (Size(set_b, /TYPE) LT 12) THEN $
     Message, 'Set B must be an integer array.'
-
+    
   ; If either of the sets is a scalar, make it a vector.
   IF N_Elements(set_a) EQ 1 && (Size(set_a))[0] EQ 0 THEN set_a = [set_a]
   IF N_Elements(set_b) EQ 1 && (Size(set_b))[0] EQ 0 THEN set_b = [set_b]
-
+  
   ; Assume success.
   success = 1
-
+  
   ; Find the intersection of the ranges.
   mina = Min(set_a, Max=maxa)
   minb = Min(set_b, Max=maxb)
   minab = mina > minb
   maxab = maxa < maxb
-
+  
   ; If the set ranges don't intersect, leave now.
   IF ((maxa LT minab) AND (minb GT maxab)) OR ((maxb LT minab) AND (mina GT maxab)) THEN BEGIN
     success = 0
     RETURN, noresult
   ENDIF
-
+  
   ; Find the intersection.
   r = Where((Histogram(set_a, Min=minab, Max=maxab) NE 0) AND  $
     (Histogram(set_b, Min=minab, Max=maxab) NE 0), count)
-
+    
   ; Was there an intersection? If not, leave now.
   IF count EQ 0 THEN BEGIN
     success = 0
     RETURN, noresult
   ENDIF
-
+  
   ; Here is the result.
   result = Temporary(r) + minab
-
+  
   ; Return the result. Make sure to return scalar if only a single element.
   IF N_Elements(result) EQ 1 THEN RETURN, result[0] ELSE RETURN, result
-
+  
 END
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 Function uuLogin, Group_Leader=group_leader
@@ -859,7 +868,7 @@ Function uuLogin, Group_Leader=group_leader
   ; Login Function: create a modal window to accept username/password
   ;==============================================================================
   common uuPlotspecBase_state, uuState, recentcommentlist
-
+  
   if n_elements(group_leader) eq 0 then  uuLogin = Widget_Base(Title='Login', Row=3) ELSE  uuLogin = Widget_Base(Title='Login', Row=4, /Modal, Group_Leader=group_leader)
   uuLoginrow1 = widget_base(uuLogin,/row)
   uuLoginrow2 = widget_base(uuLogin,/row)
@@ -869,7 +878,7 @@ Function uuLogin, Group_Leader=group_leader
   uuLoginrow4 = widget_base(uuLogin,Col=2)
   uuLoginrow4col1 = widget_base(uuLoginrow4)
   uuLoginrow4col2 = widget_base(uuLoginrow4)
-
+  
   uuState.usernameid = cw_field(uuLoginrow1,/row,title = 'Username:',value = '', /string,/return_events,uvalue='username')
   label = widget_label(uuLoginrow2, Value='Password:',uvalue='label')
   password = widget_text(uuLoginrow2, Scr_XSize=142, All_Events=1, Editable=0,uvalue='password')
@@ -891,7 +900,7 @@ Function uuLogin, Group_Leader=group_leader
   uuState.password = *ptr
   ptr_Free, ptr
   return, ((uuState.username ne '') and (uuState.password ne ''))
-
+  
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 PRO uuLogin_event, event
@@ -899,7 +908,7 @@ PRO uuLogin_event, event
   ; Login Function: login window event handler to validate username/password
   ;==============================================================================
   common uuPlotspecBase_state, uuState, recentcommentlist
-
+  
   widget_control, uuState.usernameid, get_value=theusername
   uuState.username=theusername
   widget_control, event.id, get_uvalue=uvalue
@@ -940,7 +949,7 @@ PRO uuLogin_event, event
     widget_control, event.top, /Destroy
     return
   endif
-
+  
 END
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro uuPlotspecBase
@@ -972,18 +981,19 @@ pro uuPlotspecBase
       void = widget_label(uurow0,value =' ')
       uuState.loginbuttonid = widget_button(uurow0,value = 'Logout', uvalue = 'uuLoginbutton',xsize=80,ysize=36)
       void = widget_label(uurow0,value = ' ')
-      uuState.zmanual0id = cw_field(uurow1,/row,title = 'zmanual:',uvalue='uuzmanual0field',value ='', /string,/return_events,xsize=9)
-      uuState.zmanual1id = cw_field(uurow1,/row,title = '',uvalue='uuzmanual1field',value ='', /string,/return_events,xsize=9)
+      uuState.zmanual0id = cw_field(uurow1,/row,title = 'zmanual:',uvalue='uuzmanual0field',value ='', /string,/return_events,xsize=6)
+      uuState.zmanual1id = cw_field(uurow1,/row,title = '',uvalue='uuzmanual1field',value ='', /string,/return_events,xsize=6)
       uuzmanualbutton = cw_bgroup(uurow1, [' z Manual '],uvalue='uuzmanualbutton',/ROW, SPACE=2,ysize=31)
       void = widget_label(uurow1,value =' ')
       uuState.znumid = cw_field(uurow1,/row,title = 'Num:',uvalue='uuznumfield',value ='', /string,/return_events,xsize=2)
       uuznumbutton = cw_bgroup(uurow1, [' z Num '],uvalue='uuznumbutton',/ROW,ysize=31)
+      znumchangeid= cw_bgroup(uurow1, ['+','-'],/row,uvalue='uuznumchangebutton', space=0)
       void = widget_label(uurow1,value = ' ')
       uuState.nsmoothid = cw_field(uurow1,/row,title = 'N:',uvalue='uunsmoothfield',value ='', /string,/return_events,xsize=2)
       uunsmoothbutton = cw_bgroup(uurow1, [' N Smooth '],uvalue='uunsmoothbutton',/ROW,ysize=31)
       void = widget_label(uurow1,value = ' ')
-      uukeywords = ['zline','nosyn','noerr','sky','ormask','andmask','noerase','restframe','zwarning']
-      uukeywordset = [keywordset.zline,keywordset.nosyn,keywordset.noerr,keywordset.sky,keywordset.ormask,keywordset.andmask,keywordset.noerase,keywordset.restframe,keywordset.zwarning]
+      uukeywords = ['zline','nosyn','noerr','sky','ormask','andmask','allexp','restframe','zwarning']
+      uukeywordset = [keywordset.zline,keywordset.nosyn,keywordset.noerr,keywordset.sky,keywordset.ormask,keywordset.andmask,keywordset.allexp,keywordset.restframe,keywordset.zwarning]
       uuState.uukeywordsid = cw_bgroup(uurow2,uukeywords,/row,/nonexclusive,set_value=uukeywordset,uvalue='uukeywords')
       void = widget_label(uurow2,value = ' ')
       uuState.messageid = widget_label(uurow3,uvalue='uumessagefield',value = 'Please Login, or register for an account at http://boss.astro.utah.edu', xsize=590, frame=1)
@@ -1006,11 +1016,11 @@ pro uuPlotspecBase_event, event
   common splot_state, state, graphkeys
   common plotspec_state, platelist, fiberidlist, mjdlist, ifiber, keyword, keywordset, uumessage
   common uuPlotspecBase_state, uuState, recentcommentlist
-
+  
   if (uuState.loggedin) then uumessage='' else uumessage = 'Please Login to provide spectrum feedback to http://boss.astro.utah.edu'
   widget_control, event.id, get_uvalue=uvalue
   case uvalue of
-
+  
     'uuLoginbutton': begin
       if (uuState.loggedin) then begin
         uuState.action = 'logout'
@@ -1024,7 +1034,7 @@ pro uuPlotspecBase_event, event
         uuPlotspecBase_refresh
       endif
     end
-
+    
     'uunav': begin
       keywordset.zmanual=0
       keyword.zmanual=[0D,0D]
@@ -1051,61 +1061,61 @@ pro uuPlotspecBase_event, event
         endelse
         if (fiberid ne '') and is_integer(fiberid) then ifiber = long(fiberid[0])-1
       endif
-        case event.value of
-          1: begin ; < Button
-            if (ifiber gt 0) then ifiber = ifiber - 1 else begin
-              ifiber =  n_elements(fiberidlist)-1
-              uumessage = "Wrapping around to show final fiber" & print, uumessage
+      case event.value of
+        1: begin ; < Button
+          if (ifiber gt 0) then ifiber = ifiber - 1 else begin
+            ifiber =  n_elements(fiberidlist)-1
+            uumessage = "Wrapping around to show final fiber" & print, uumessage
+          endelse
+          uuplotspec1, platelist[ifiber], fiberidlist[ifiber], mjd=mjdlist[ifiber]
+        end
+        2: begin ; > Button
+          if (ifiber lt n_elements(fiberidlist)-1) then ifiber = ifiber + 1 else begin
+            ifiber = 0
+            uumessage = "Wrapping around to show initial fiber" & print, uumessage
+          endelse
+          uuplotspec1, platelist[ifiber], fiberidlist[ifiber], mjd=mjdlist[ifiber]
+        end
+        else: begin ; Get Button or plate-mjd-fiberid field
+          if (plate ne '') and is_integer(plate) and is_integer(mjd) and is_integer(fiberid) then begin
+            platefibers = where(platelist eq plate[0], ncomplement=nonplatefibers)
+            if (nonplatefibers ne n_elements(fiberidlist)) then begin
+              if (mjd eq '' and fiberid eq '') then begin
+                ifiber = platefibers[0]
+              endif else if (mjd ne '' and fiberid eq '') then begin
+                mjdfibers = where(mjdlist eq mjd[0], ncomplement=nonmjdfibers)
+                if (nonmjdfibers ne n_elements(fiberidlist)) then begin
+                  plateandmjdfibers = setIntersection(platefibers,mjdfibers)
+                  ifiber = plateandmjdfibers[0]
+                endif else ifiber = -1
+              endif else if (mjd eq '' and fiberid ne '') then begin
+                fiberidfibers = where(fiberidlist eq fiberid[0], ncomplement=nonfiberidfibers)
+                if (nonfiberidfibers ne n_elements(fiberidlist)) then begin
+                  plateandfiberidfibers = setIntersection(platefibers,fiberidfibers)
+                  ifiber = plateandfiberidfibers[0]
+                endif else ifiber = -1
+              endif else if (mjd ne '' and fiberid ne '') then begin
+                mjdfibers = where(mjdlist eq mjd[0], ncomplement=nonmjdfibers)
+                fiberidfibers = where(fiberidlist eq fiberid[0], ncomplement=nonfiberidfibers)
+                if (nonmjdfibers ne n_elements(fiberidlist)) and (nonfiberidfibers ne n_elements(fiberidlist)) then begin
+                  plateandmjdandfiberidfibers = setIntersection(setIntersection(platefibers,mjdfibers),fiberidfibers)
+                  ifiber = plateandmjdandfiberidfibers[0]
+                endif else ifiber = -1
+              endif
+            endif else ifiber = -1
+            if (ifiber ne -1) then begin
+              uuplotspec1, platelist[ifiber], fiberidlist[ifiber], mjd=mjdlist[ifiber]
+            endif else if (mjd ne '') then begin
+              uumessage = "Getting new plate/mjd" & print, uumessage
+              uuplotspec_init, plate, mjd=mjd
+            endif else begin
+              uumessage = "Getting new plate" & print, uumessage
+              uuplotspec_init, plate
             endelse
-            uuplotspec1, platelist[ifiber], fiberidlist[ifiber], mjd=mjdlist[ifiber]
-          end
-          2: begin ; > Button
-            if (ifiber lt n_elements(fiberidlist)-1) then ifiber = ifiber + 1 else begin
-              ifiber = 0
-              uumessage = "Wrapping around to show initial fiber" & print, uumessage
-            endelse
-            uuplotspec1, platelist[ifiber], fiberidlist[ifiber], mjd=mjdlist[ifiber]
-          end
-          else: begin ; Get Button or plate-mjd-fiberid field
-            if (plate ne '') and is_integer(plate) and is_integer(mjd) and is_integer(fiberid) then begin
-              platefibers = where(platelist eq plate[0], ncomplement=nonplatefibers)
-              if (nonplatefibers ne n_elements(fiberidlist)) then begin
-                if (mjd eq '' and fiberid eq '') then begin
-                  ifiber = platefibers[0]
-                endif else if (mjd ne '' and fiberid eq '') then begin
-                  mjdfibers = where(mjdlist eq mjd[0], ncomplement=nonmjdfibers)
-                  if (nonmjdfibers ne n_elements(fiberidlist)) then begin
-                    plateandmjdfibers = setIntersection(platefibers,mjdfibers)
-                    ifiber = plateandmjdfibers[0]
-                  endif else ifiber = -1
-                endif else if (mjd eq '' and fiberid ne '') then begin
-                  fiberidfibers = where(fiberidlist eq fiberid[0], ncomplement=nonfiberidfibers)
-                  if (nonfiberidfibers ne n_elements(fiberidlist)) then begin
-                    plateandfiberidfibers = setIntersection(platefibers,fiberidfibers)
-                    ifiber = plateandfiberidfibers[0]
-                  endif else ifiber = -1
-                endif else if (mjd ne '' and fiberid ne '') then begin
-                  mjdfibers = where(mjdlist eq mjd[0], ncomplement=nonmjdfibers)
-                  fiberidfibers = where(fiberidlist eq fiberid[0], ncomplement=nonfiberidfibers)
-                  if (nonmjdfibers ne n_elements(fiberidlist)) and (nonfiberidfibers ne n_elements(fiberidlist)) then begin
-                    plateandmjdandfiberidfibers = setIntersection(setIntersection(platefibers,mjdfibers),fiberidfibers)
-                    ifiber = plateandmjdandfiberidfibers[0]
-                  endif else ifiber = -1
-                endif
-              endif else ifiber = -1
-              if (ifiber ne -1) then begin
-                uuplotspec1, platelist[ifiber], fiberidlist[ifiber], mjd=mjdlist[ifiber]
-              endif else if (mjd ne '') then begin
-                uumessage = "Getting new plate/mjd" & print, uumessage
-                uuplotspec_init, plate, mjd=mjd
-              endif else begin
-                uumessage = "Getting new plate" & print, uumessage
-                uuplotspec_init, plate
-              endelse
-            endif
+          endif
           if (ifiber eq -1) then ifiber=0
-          end
-        endcase
+        end
+      endcase
       widget_control, uuState.plateid, set_value=strtrim(platelist[ifiber],2)
       widget_control, uuState.mjdid, set_value=strtrim(mjdlist[ifiber],2)
       widget_control, uuState.fiberid, set_value=strtrim(fiberidlist[ifiber],2)
@@ -1114,13 +1124,13 @@ pro uuPlotspecBase_event, event
       widget_control, uuState.ifiberid, set_value = strtrim(ifiber+1,2)
       widget_control, uuState.nfiberid, set_value = strmid(nfibertext,0,16)
     end
-
-     'uuifiberid': begin
+    
+    'uuifiberid': begin
       widget_control, uuState.ifiberid, get_value=ifiber0
       if (ifiber0 ne '') and (is_integer(ifiber0)) then begin
         if (ifiber0 ge 1) and (ifiber0 le n_elements(fiberidlist)) then begin
           if (ifiber ne long(ifiber0)-1) then begin
-            ifiber = long(ifiber0)-1 
+            ifiber = long(ifiber0)-1
             keywordset.zmanual=0
             keyword.zmanual=[0D,0D]
             keyword.manualz = 0D
@@ -1144,8 +1154,8 @@ pro uuPlotspecBase_event, event
         widget_control, uuState.ifiberid, set_value=strtrim(ifiber+1,2)
         uumessage = "Please enter a valid fiber index from 1 to "+strtrim(n_elements(fiberidlist),2) & print, uumessage
       endif
-     end
-
+    end
+    
     'uuzmanualbutton': begin
       keywordset.znum=0
       keyword.znum=0D
@@ -1174,16 +1184,16 @@ pro uuPlotspecBase_event, event
         keyword.zmanual=[0D,0D]
       endelse
       uuplotspec1, platelist[ifiber], fiberidlist[ifiber], mjd=mjdlist[ifiber]
-      if (uuState.loggedin) and (zmanual0 ne '') then begin      
+      if (uuState.loggedin) and (zmanual0 ne '') then begin
         widget_control, uuState.zid, set_value=keyword.manualz
         if (keyword.manualclass eq 'GALAXY') then widget_control, uuState.classid, set_droplist_select=1 else if (keyword.manualclass eq 'QSO') then widget_control, uuState.classid, set_droplist_select=2 else if (keyword.manualclass eq 'STAR') then widget_control, uuState.classid, set_droplist_select=3 else widget_control, uuState.classid, set_droplist_select=0
         widget_control, uuState.issueid, set_droplist_select=1
       endif else if (uuState.loggedin) then begin
-         widget_control, uuState.zid, set_value=''
-         widget_control, uuState.classid, set_droplist_select=0
+        widget_control, uuState.zid, set_value=''
+        widget_control, uuState.classid, set_droplist_select=0
       endif
     end
-
+    
     'uuzmanual0field': begin
       keywordset.znum=0
       keyword.znum=0D
@@ -1217,11 +1227,11 @@ pro uuPlotspecBase_event, event
         if (keyword.manualclass eq 'GALAXY') then widget_control, uuState.classid, set_droplist_select=1 else if (keyword.manualclass eq 'QSO') then widget_control, uuState.classid, set_droplist_select=2 else if (keyword.manualclass eq 'STAR') then widget_control, uuState.classid, set_droplist_select=3 else widget_control, uuState.classid, set_droplist_select=0
         widget_control, uuState.issueid, set_droplist_select=1
       endif else if (uuState.loggedin) then begin
-         widget_control, uuState.zid, set_value=''
-         widget_control, uuState.classid, set_droplist_select=0
+        widget_control, uuState.zid, set_value=''
+        widget_control, uuState.classid, set_droplist_select=0
       endif
     end
-
+    
     'uuzmanual1field': begin
       keywordset.znum=0
       keyword.znum=0D
@@ -1255,11 +1265,11 @@ pro uuPlotspecBase_event, event
         if (keyword.manualclass eq 'GALAXY') then widget_control, uuState.classid, set_droplist_select=1 else if (keyword.manualclass eq 'QSO') then widget_control, uuState.classid, set_droplist_select=2 else if (keyword.manualclass eq 'STAR') then widget_control, uuState.classid, set_droplist_select=3 else widget_control, uuState.classid, set_droplist_select=0
         widget_control, uuState.issueid, set_droplist_select=1
       endif else if (uuState.loggedin) then begin
-         widget_control, uuState.zid, set_value=''
-         widget_control, uuState.classid, set_droplist_select=0
+        widget_control, uuState.zid, set_value=''
+        widget_control, uuState.classid, set_droplist_select=0
       endif
     end
-
+    
     'uuznumbutton': begin
       keywordset.zmanual=0
       keyword.zmanual=[0D,0D]
@@ -1280,11 +1290,11 @@ pro uuPlotspecBase_event, event
         if (keyword.manualclass eq 'GALAXY') then widget_control, uuState.classid, set_droplist_select=1 else if (keyword.manualclass eq 'QSO') then widget_control, uuState.classid, set_droplist_select=2 else if (keyword.manualclass eq 'STAR') then widget_control, uuState.classid, set_droplist_select=3 else widget_control, uuState.classid, set_droplist_select=0
         widget_control, uuState.issueid, set_droplist_select=1
       endif else if (uuState.loggedin) then begin
-         widget_control, uuState.zid, set_value=''
-         widget_control, uuState.classid, set_droplist_select=0
+        widget_control, uuState.zid, set_value=''
+        widget_control, uuState.classid, set_droplist_select=0
       endif
     end
-
+    
     'uuznumfield': begin
       keywordset.zmanual=0
       keyword.zmanual=[0D,0D]
@@ -1305,8 +1315,59 @@ pro uuPlotspecBase_event, event
         if (keyword.manualclass eq 'GALAXY') then widget_control, uuState.classid, set_droplist_select=1 else if (keyword.manualclass eq 'QSO') then widget_control, uuState.classid, set_droplist_select=2 else if (keyword.manualclass eq 'STAR') then widget_control, uuState.classid, set_droplist_select=3 else widget_control, uuState.classid, set_droplist_select=0
         widget_control, uuState.issueid, set_droplist_select=1
       endif else if (uuState.loggedin) then begin
-         widget_control, uuState.zid, set_value=''
-         widget_control, uuState.classid, set_droplist_select=0
+        widget_control, uuState.zid, set_value=''
+        widget_control, uuState.classid, set_droplist_select=0
+      endif
+    end
+    
+    'uuznumchangebutton': begin
+      keywordset.zmanual=0
+      keyword.zmanual=[0D,0D]
+      keyword.manualz = 0D
+      widget_control, uuState.zmanual0id, set_value=''
+      widget_control, uuState.zmanual1id, set_value=''
+      widget_control, uuState.znumid, get_value=znum
+      if (znum ne '' and is_integer(znum)) then begin
+        case event.value of
+          0: begin
+            keyword.znum=znum+1
+            keywordset.znum=1
+            widget_control, uuState.znumid, set_value=keyword.znum
+          end
+          1: begin
+            if (znum gt 1) then begin
+              keyword.znum=znum-1
+              keywordset.znum=1
+              widget_control, uuState.znumid, set_value=keyword.znum
+            endif else begin
+              keyword.znum=0
+              keywordset.znum=0
+              widget_control, uuState.znumid, set_value=''
+            endelse
+          end
+        endcase
+      endif else begin
+         case event.value of
+          0: begin
+            keyword.znum=1
+            keywordset.znum=1
+            widget_control, uuState.znumid, set_value=keyword.znum
+          end
+          1: begin 
+            keyword.znum=0
+            keywordset.znum=0
+            widget_control, uuState.znumid, set_value=''
+          end
+        endcase
+      endelse
+      uuplotspec1, platelist[ifiber], fiberidlist[ifiber], mjd=mjdlist[ifiber]
+      if (uuState.loggedin) and (znum ne '') then begin
+        widget_control, uuState.zid, set_value=keyword.manualz
+        if (keyword.manualclass eq 'GALAXY') then widget_control, uuState.classid, set_droplist_select=1 else if (keyword.manualclass eq 'QSO') then widget_control, uuState.classid, set_droplist_select=2 else if (keyword.manualclass eq 'STAR') then widget_control, uuState.classid, set_droplist_select=3 else widget_control, uuState.classid, set_droplist_select=0
+        widget_control, uuState.issueid, set_droplist_select=1
+      endif else if (uuState.loggedin) then begin
+        widget_control, uuState.zid, set_value=''
+        widget_control, uuState.classid, set_droplist_select=0
       endif
     end
 
@@ -1321,7 +1382,7 @@ pro uuPlotspecBase_event, event
       endelse
       uuplotspec1, platelist[ifiber], fiberidlist[ifiber], mjd=mjdlist[ifiber]
     end
-
+    
     'uunsmoothfield': begin
       widget_control, uuState.nsmoothid, get_value=nsmooth
       if (nsmooth ne '') and (nsmooth ne '1') then begin
@@ -1333,7 +1394,7 @@ pro uuPlotspecBase_event, event
       endelse
       uuplotspec1, platelist[ifiber], fiberidlist[ifiber], mjd=mjdlist[ifiber]
     end
-
+    
     'uukeywords': begin
       widget_control, uuState.uukeywordsid, get_value=uukeyword
       i=0
@@ -1343,7 +1404,7 @@ pro uuPlotspecBase_event, event
       keywordset.sky=uukeyword[i++]
       keywordset.ormask=uukeyword[i++]
       keywordset.andmask=uukeyword[i++]
-      keywordset.noerase=uukeyword[i++]
+      keywordset.allexp=uukeyword[i++]
       keywordset.restframe=uukeyword[i++]
       keywordset.zwarning=uukeyword[i++]
       case event.value of
@@ -1398,30 +1459,30 @@ pro uuPlotspecBase_event, event
           widget_control, uuState.fiberid, set_value=strtrim(fiberidlist[ifiber],2)
           nfibertext = strtrim(ifiber+1,2)+' of '+strtrim(n_elements(fiberidlist),2)+'              '
           widget_control, uuState.nfiberid, set_value = strmid(nfibertext,0,16)
-       end
+        end
         else: begin
           uuplotspec1, platelist[ifiber], fiberidlist[ifiber], mjd=mjdlist[ifiber]
         end
       endcase
-
+      
     end
-
+    
     'uuclasslist': begin
       widget_control, uuState.classid, get_value=class
       if (event.index gt 0) then uuState.class = class[event.index] else uuState.class=''
     end
-
+    
     'uuissuelist': begin
       uuState.issue = uuState.issues[event.index]
     end
     'uurecentcommentlist': begin
       uuDatabase_select_comment, strtrim(recentcommentlist[event.index].commentid,2)
     end
-
+    
     'uuyannybutton': begin
       uuDatabase_make_yanny
     end
-
+    
     else: begin
       uuState.valid = 1
       widget_control, uuState.zid, get_value=z
@@ -1443,16 +1504,16 @@ pro uuPlotspecBase_event, event
           uuState.valid = 0
         endelse
       endelse
-
+      
       if (uuState.valid) then begin
         uuDatabase_comment
         uuDatabase_recentcommentlist
         widget_control, uuState.recentcommentid, set_value=recentcommentlist.comment
       endif
     end
-
+    
   endcase
-
+  
   widget_control, uuState.messageid, set_value=uumessage[0]
   return
 end
@@ -1506,7 +1567,7 @@ pro uuPlotspecBase_refresh
     uuState.commentid = cw_field(uuState.uurow5,/row,title = 'Comment:',uvalue='uucommentfield',value = '', /string,/return_events,xsize=72)
     yanny = widget_button(uuState.uurow5,value = 'Make Yanny',uvalue='uuyannybutton', xsize=80,ysize=36)
     void = widget_label(uuState.uurow5,value = ' ')
-
+    
   ;==============================================================================
   ; NOT LOGGED IN
   ;==============================================================================
@@ -1542,7 +1603,7 @@ pro uuDatabase_comment
   ;==============================================================================
   common plotspec_state, platelist, fiberidlist, mjdlist, ifiber, keyword, keywordset, uumessage
   common uuPlotspecBase_state, uuState, recentcommentlist
-
+  
   escapedcomment = uuState.comment
   if (strpos(escapedcomment,'%') ge 0) then escapedcomment = STRJOIN(STRSPLIT(escapedcomment,'%',/EXTRACT),'%25')
   if (strpos(escapedcomment,'&') ge 0) then escapedcomment = STRJOIN(STRSPLIT(escapedcomment,'&',/EXTRACT),'%26')
@@ -1566,7 +1627,7 @@ end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 function uuDatabase_download, url
   ;==============================================================================
-  ; Database Function: download a dynamic resource from the database using a 
+  ; Database Function: download a dynamic resource from the database using a
   ; Java method to launch the OS default browser.
   ;==============================================================================
   catch = 1
@@ -1576,15 +1637,15 @@ function uuDatabase_download, url
     return, 1
   endif
   oJavaDesktop = OBJ_NEW('IDLJavaObject$Static$JAVA_AWT_DESKTOP', 'java.awt.Desktop')
-  oJavaURI = OBJ_NEW('IDLJavaObject$JAVA_NET_URI', 'java.net.URI', url) 
+  oJavaURI = OBJ_NEW('IDLJavaObject$JAVA_NET_URI', 'java.net.URI', url)
   if (oJavaDesktop->isDesktopSupported()) then begin
-    oBrowser = oJavaDesktop->getDesktop(); 
-    oBrowser->browse,oJavaURI 
+    oBrowser = oJavaDesktop->getDesktop();
+    oBrowser->browse,oJavaURI
     OBJ_DESTROY, oBrowser
     catch = 0
-  endif 
+  endif
   OBJ_DESTROY, oJavaURI, oJavaDesktop
-  return, catch 
+  return, catch
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro uuDatabase_make_yanny
@@ -1594,7 +1655,7 @@ pro uuDatabase_make_yanny
   ;==============================================================================
   common uuPlotspecBase_state, uuState, recentcommentlist
   common plotspec_state, platelist, fiberidlist, mjdlist, ifiber, keyword, keywordset, uumessage
-
+  
   post = {func:'comment',mysql:'boss',ver:'050620101452',action:'yanny',username:uuState.username,password:uuState.password}
   item = {count:'',inserted:'',updated:'',unchanged:'',url:''}
   uuDatabase_select, post, uuState.sid, item, select
@@ -1610,11 +1671,11 @@ pro uuDatabase_make_yanny
       catch = 1
       if (url ne '') then catch = uuDatabase_download(url)
       if (catch eq 1) then uuMessage = "Please login to http://boss.astro.utah.edu/spinspect/data using the sdss3 username/password."
-    endif else if (count eq 0) then begin 
+    endif else if (count eq 0) then begin
       uumessage = "No yanny files were generated.  Please provide feedback first."
     endif else uumessage = "No yanny files were generated.  Please contact administrator."
   endif else begin
-    uumessage = "No yanny files were generated."  
+    uumessage = "No yanny files were generated."
   endelse
   print, uumessage
 end
@@ -1624,7 +1685,7 @@ pro uuDatabase_recentcommentlist
   ; Database Function: select list of recent comments from database
   ;==============================================================================
   common uuPlotspecBase_state, uuState, recentcommentlist
-
+  
   post = {func:'comment',mysql:'boss',ver:'050620101452',action:'recent',username:uuState.username,password:uuState.password}
   item = {comment:'',commentid:0L}
   uuDatabase_select, post, uuState.sid, item, select
@@ -1642,7 +1703,7 @@ pro uuDatabase_select_comment, commentid
   ; Database Function: select comment from database
   ;==============================================================================
   common uuPlotspecBase_state, uuState, recentcommentlist
-
+  
   if (commentid ne 0) then begin
     post = {func:'comment',mysql:'boss',ver:'050620101452',action:'select',commentid:commentid}
     item = {comment:'',commentid:0L,issueid:0L}
@@ -1706,25 +1767,26 @@ end
 pro uuplotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
     zline=zline, nosyn=nosyn, noerr=noerr, sky=sky, $
     ormask=ormask, andmask=andmask, $
-    psfile=psfile, xrange=xrange, yrange=yrange, noerase=noerase, $
+    psfile=psfile, xrange=xrange, yrange=yrange, allexp=allexp, $
     restframe=restframe, zwarning=zwarning, $
     _EXTRA=Extra
   ;==============================================================================
   ; Main program: reorganize keywords for plotspec (uuplotspec_init) and
   ; setup the uuPlotspecBase floating window.
   ;==============================================================================
-
+    
   common splot_state, state, graphkeys
   common plotspec_state, platelist, fiberidlist, mjdlist, ifiber, keyword, keywordset, uumessage
-
+  
   if (n_params() LT 1) then begin
-    doc_library, 'uuplotspec'
-    return
+    ;doc_library, 'uuplotspec'
+    plate =3521
+  ; return
   endif
-
+  
   if (xregistered ('splot')) then widget_control, state.base_id, /destroy
   keyword = {zmanual:[0D,0D],znum:0L,nsmooth:1L,manualz:0D,manualclass:''}
-  keywordset = {zmanual:0L,znum:keyword_set(znum),nsmooth:keyword_set(nsmooth),zline:keyword_set(zline),nosyn:keyword_set(nosyn),noerr:keyword_set(noerr),sky:keyword_set(sky),ormask:keyword_set(ormask),andmask:keyword_set(andmask),psfile:keyword_set(psfile),xrange:keyword_set(xrange),yrange:keyword_set(yrange),noerase:keyword_set(noerase),restframe:keyword_set(restframe),zwarning:keyword_set(zwarning)}
+  keywordset = {zmanual:0L,znum:keyword_set(znum),nsmooth:keyword_set(nsmooth),zline:keyword_set(zline),nosyn:keyword_set(nosyn),noerr:keyword_set(noerr),sky:keyword_set(sky),ormask:keyword_set(ormask),andmask:keyword_set(andmask),psfile:keyword_set(psfile),xrange:keyword_set(xrange),yrange:keyword_set(yrange),allexp:keyword_set(allexp),restframe:keyword_set(restframe),zwarning:keyword_set(zwarning)}
   if (keyword_set(zmanual)) then begin
     if (n_elements(zmanual) eq 1) then begin
       keywordset.zmanual = 1
@@ -1740,9 +1802,9 @@ pro uuplotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
   uuplotspec_init, plate, fiberid, mjd=mjd, $
     psfile=psfile, xrange=xrange, yrange=yrange, $
     _EXTRA=Extra
-
+    
   uuPlotspecBase
   splot_set_minmax
-
+  
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
