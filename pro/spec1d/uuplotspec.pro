@@ -267,7 +267,7 @@ pro uuplotspec1, plate, fiberid, mjd=mjd, $
   
   if (nsmooth GT 1) then begin
     objflux = smooth(objflux, nsmooth)
-    if (keywordset.allflux) then begin
+    if (keyword_set(allflux)) then begin
       for iexp=0, nexp-1 do $
         allflux[*,iexp] = smooth(allflux[*,iexp], nsmooth)
     endif
@@ -1779,9 +1779,9 @@ pro uuplotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
   common plotspec_state, platelist, fiberidlist, mjdlist, ifiber, keyword, keywordset, uumessage
   
   if (n_params() LT 1) then begin
-    ;doc_library, 'uuplotspec'
-    plate =3521
-  ; return
+    doc_library, 'uuplotspec'
+    ;plate =3521
+    return
   endif
   
   if (xregistered ('splot')) then widget_control, state.base_id, /destroy
