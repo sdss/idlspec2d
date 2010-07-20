@@ -1,10 +1,15 @@
 
-opfiles/boss_cartridge15_gaps.txt: added file with measured bundle gaps
-      for BOSS cartridge 15 (see ticket #817).
 AESTHETICS: New routine for filling in bad values for COMBINE1FIBER.
 ATVSPEC: New proc for displaying cutouts of raw images around specified
       wavelengths.
 COMBINE1FIBER: Call new routine AESTHETICS, but no change in default behaviour.
+CONFIGURATION__DEFINE: Change spcalib_xy2traceset_ncoeff from 4 to 7
+      for the polynomimial order of fitting the traces in the call
+      to XY2TRACESET in SPCALIB (ticket #845).
+      Change the initial guess for the sigma of the optimal extraction
+      in the spatial direction from 1.4 pix to 1.0 pix (spcalib_sigmaguess).
+      This is because there is only 1 iteration on this fitting, so it may
+      not otherwise converge to the correct result.
 GUIDERPLAY: Wrapper for IDL guider to simply allow play-back of images
       for a specified night.
 IDLSPEC2D_VERSION: Back out to the previous version, since this does not
@@ -22,6 +27,8 @@ SDSS_SPEC_IMAGE: Ignore greater than 1 micron for plot limits.
 SPCALIB: Fix a bug introduced in v5_4_7 with the re-write of FITARCIMAGE,
       where bad lines (marked as such in REJLINE) were passed along
       to FITDISPERSION.  This fixes ticket #823.
+      Change MAXDEV from 0.15 pix to 1.0 pix inthe call to TRACE320CRUDE.
+      This fixes ticket #845.
 SPCOMBINE_V5: Modify the fix implemented in v5_4_8, and discard all data
       from a given spectrograph if there is a camera with no good files.
       This retains the behaviour of discarding sp2 data for MJD 55290-55299
@@ -30,6 +37,8 @@ SPCOMBINE_V5: Modify the fix implemented in v5_4_8, and discard all data
 
 bin/sos_runnerd.py: Write a version string a file so the running version
       can be determined
+opfiles/boss_cartridge15_gaps.txt: added file with measured bundle gaps
+      for BOSS cartridge 15 (see ticket #817).
 
 -------------------------------------------------------------------------------
 v5_4_12 (May 31, 2010) idlspec2d
