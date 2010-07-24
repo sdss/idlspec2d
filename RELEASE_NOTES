@@ -15,6 +15,7 @@ GUIDERPLAY: Wrapper for IDL guider to simply allow play-back of images
 IDLSPEC2D_VERSION: Back out to the previous version, since this does not
       report the svn version number in the case of untagged code.
       For that, we call the idlspec2d_version bash script (with a spawn).
+INSPECT_VERIFY: New proc for testing the format of spInspect files.
 LOGSHEET: Add /COLLIMATOR option to print the collimator motor positions.
 PCA_GAL: Call AESTHETICS for filling in bad values.
 PLOTSPEC: Fixing Ticket #926 /ALLEXP bug and odd feature.
@@ -39,6 +40,7 @@ bin/sos_runnerd.py: Write a version string a file so the running version
       can be determined
 opfiles/boss_cartridge15_gaps.txt: added file with measured bundle gaps
       for BOSS cartridge 15 (see ticket #817).
+opfiles/spInspect-0000-00000.par: Template for spInspect files.
 
 -------------------------------------------------------------------------------
 v5_4_12 (May 31, 2010) idlspec2d
