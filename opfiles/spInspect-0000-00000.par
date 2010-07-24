@@ -1,0 +1,13 @@
+typedef struct {
+ long plate;
+ long mjd;
+ long fiberid;
+ float z_pipeline;
+ float z_person;
+ int class_person;
+ int z_conf_person;
+ char comments[40];
+} BOSSOBJECT;
+
+BOSSOBJECT 0 0 0 0.0 0.0 0 0 ""
+
