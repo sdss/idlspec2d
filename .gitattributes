@@ -243,6 +243,7 @@ pro/fluxfix/spread_frames.pro -text
 pro/fluxfix/stype_standard.pro -text
 pro/guider/guiderplay.pro -text
 pro/guider/sdssguide.pro -text
+pro/inspect/inspect_verify.pro -text
 pro/inspect/inspectfiles.pro -text
 pro/inspect/inspectgen.pro -text
 pro/photoz/lrg_photoz.pro -text
