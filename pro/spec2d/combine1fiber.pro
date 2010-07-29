@@ -356,7 +356,7 @@ pro combine1fiber, inloglam, objflux, objivar, $
     ;----------
     ; Fix up the masked pixels.
     ;
-    newflux = aesthetics(newflux,newivar,method='mean')
+    newflux = aesthetics(newflux,newivar) ;,method='mean')
     goodpts = where(newivar GT 0)
     if goodpts[0] NE -1 then begin
       minglam = min(newloglam[goodpts])

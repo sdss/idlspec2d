@@ -1,4 +1,5 @@
 
+PCA_GAL: Add a table of input spectra to the eigenspectra files.
 templates/spEigenGal-55399-baw-mean.fits: Test template file using the 'mean'
       setting of aesthetics.pro.
 AESTHETICS: New routine for filling in bad values for COMBINE1FIBER.
