@@ -67,6 +67,24 @@ FUNCTION aesthetics, flux, invvar, method=method
             goodpts = WHERE(invvar GT 0, ngood)
             newflux[badpts] = TOTAL(newflux[goodpts])/ngood
             END
+        'damp': BEGIN
+            l = 250 ; damping length in pixels
+            goodpts = WHERE(invvar GT 0, ngood)
+            nflux = N_ELEMENTS(flux)
+            mingood = MIN(goodpts)
+            maxgood = MAX(goodpts)
+            ; newflux = SMOOTH(flux,l,/EDGE_TRUNCATE)
+            newflux = djs_maskinterp(flux,invvar EQ 0,/const)
+            pixels = LINDGEN(nflux)
+            IF mingood GT 0 THEN BEGIN
+                damp1 = FLOAT(mingood < l)
+                newflux *= 0.5*(1.0+ERF(FLOAT(pixels-mingood)/damp1))
+            ENDIF
+            IF maxgood LT nflux-1 THEN BEGIN
+                damp2 = FLOAT(maxgood < l)
+                newflux *= 0.5*(1.0+ERF(FLOAT(maxgood-pixels)/damp2))
+            ENDIF
+            END
         'nothing': $
             newflux = flux
         ELSE: $

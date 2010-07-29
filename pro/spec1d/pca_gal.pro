@@ -146,8 +146,8 @@ PRO pca_gal, inputfile=inputfile, wavemin=wavemin, wavemax=wavemax, $
     ;
     ; Make plots
     ;
+    nspectra = (SIZE(newflux,/DIMENSIONS))[1]
     IF KEYWORD_SET(flux) THEN BEGIN
-        nspectra = (SIZE(newflux,/DIMENSIONS))[1]
         nfluxes = 30L
         separation = 5.0
         nplots = nspectra/nfluxes
@@ -167,6 +167,10 @@ PRO pca_gal, inputfile=inputfile, wavemin=wavemin, wavemax=wavemax, $
                     color=colorvec[i MOD N_ELEMENTS(colorvec)]
         ENDFOR
     ENDIF
+    djs_plot, 10^newloglam, TOTAL(newivar EQ 0,2)/nspectra, $
+        color=colorvec[0], xtitle='Wavelength [\AA]', $
+        ytitle='Fraction of spectra with missing data', $
+        title='Missing Data'
     djs_plot, 10^newloglam, pcaflux[*,0], $
         xrange=minmax(10^newloglam), yrange=minmax(pcaflux), /xstyle, $
         color=colorvec[0], $
@@ -205,6 +209,17 @@ PRO pca_gal, inputfile=inputfile, wavemin=wavemin, wavemax=wavemax, $
     FOR i=0, N_ELEMENTS(eigenval)-1 DO $
         sxaddpar, hdr, 'EIGEN'+STRTRIM(STRING(i),1), eigenval[i]
     mwrfits, pcaflux, outfile, hdr, /create
+    ;
+    ; Create a table of inputs
+    ;
+    sxaddpar, hdr2, 'FILENAME', inputfile
+    inputs0 = {inputs, plate:0L, mjd:0L, fiber:0L, redshift:0.0D}
+    inputs = REPLICATE(inputs0,N_ELEMENTS(plate))
+    inputs.plate = plate
+    inputs.mjd = mjd
+    inputs.fiber = fiber
+    inputs.redshift = zfit
+    mwrfits, inputs, outfile, hdr2
     dfpsclose
     RETURN
 END
