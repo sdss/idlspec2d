@@ -1,4 +1,5 @@
 
+PLATEMERGE: added EXCLUDE_CLASS and SKIP_LINE functionality.
 PCA_GAL: Add a table of input spectra to the eigenspectra files.
 templates/spEigenGal-55399-baw-mean.fits: Test template file using the 'mean'
       setting of aesthetics.pro.

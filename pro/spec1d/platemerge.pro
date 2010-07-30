@@ -24,6 +24,12 @@
 ;                 files per name in $RUN2D; default to all values of RUN2D
 ;                 returned by PLATELIST.
 ;   include_bad  - If set, then include bad plates
+;   exclude_class - Set this to a single class string to exclude this
+;                   class from the output spAll, moving down the list
+;                   of next-best redshifts until a different class is
+;                   found.  (Values can be 'GALAXY', 'STAR', or 'QSO'.)
+;   skip_line    - If set, skip the generation of spAllLine.fits
+;
 ;
 ; OUTPUTS:
 ;
@@ -71,9 +77,11 @@
 ;
 ; REVISION HISTORY:
 ;   30-Oct-2000  Written by D. Schlegel, Princeton
+;   29-Jul-2010  Added EXCLUDE_CLASS and SKIP_LINE, A. Bolton, Utah
 ;------------------------------------------------------------------------------
 pro platemerge1, plate, mjd=mjd, except_tags=except_tags1, $
- outroot=outroot1, run2d=run2d, include_bad=include_bad
+ outroot=outroot1, run2d=run2d, include_bad=include_bad, $
+ exclude_class=exclude_class, skip_line=skip_line
 
    dtheta = 2.0 / 3600.
 
@@ -188,6 +196,28 @@ pro platemerge1, plate, mjd=mjd, except_tags=except_tags1, $
        run2d=strtrim(plist[ifile].run2d), run1d=strtrim(plist[ifile].run1d), $
        zans=zans, zmanual=zmanual, plugmap=plugmap, /silent
       zans = struct_selecttags(zans, except_tags='OBJID')
+
+; ASB 2010 July: If EXCLUDE_CLASS is set, then rebuild ZANS from spZall:
+      if keyword_set(exclude_class) then begin
+          pstring = string(plist[ifile].plate, format='(i4.4)')
+          mstring = string(plist[ifile].mjd, format='(i5.5)')
+          zallfile = getenv('BOSS_SPECTRO_REDUX') + '/' + $
+            strtrim(plist[ifile].run2d, 2) + '/' + $
+            pstring + '/' + strtrim(plist[ifile].run1d, 2) + $
+            '/spZall-' + pstring + '-' + mstring + '.fits'
+          zall = mrdfits(zallfile,1)
+          nfib = max(zall.fiberid) - min(zall.fiberid) + 1L
+          nzall = n_elements(zall) / nfib
+          zall = reform(zall, nzall, nfib)
+          class_all = strtrim(zall.class)
+          id_noclass = replicate(-1L, nfib)
+          for ii = 0L, nfib-1 do id_noclass[ii] = min(where(class_all[*,ii] ne exclude_class))
+          zans_noclass = zall[id_noclass,lindgen(nfib)]
+          struct_assign, {junk:0}, zans
+          copy_struct, zans_noclass, zans
+          zall = 0
+          zans_noclass = 0
+      endif
 
       if (ifile EQ 0) then begin
          outdat1 = create_struct(pstuff, zans[0])
@@ -402,37 +432,40 @@ pro platemerge1, plate, mjd=mjd, except_tags=except_tags1, $
    ;----------
    ; Create the merged line data
 
-   splog, 'Writing FITS zline file ' + outroot[1]+'.fits'
-   for ifile=0L, nfile-1 do begin
-      splog, 'Writing zline ', ifile+1, ' of ', nfile
-      readspec, plist[ifile].plate, mjd=plist[ifile].mjd, $
-       run2d=strtrim(plist[ifile].run2d), run1d=strtrim(plist[ifile].run1d), $
-       zline=linedat, /silent
+   if (not keyword_set(skip_line)) then begin
+       splog, 'Writing FITS zline file ' + outroot[1]+'.fits'
+       for ifile=0L, nfile-1 do begin
+           splog, 'Writing zline ', ifile+1, ' of ', nfile
+           readspec, plist[ifile].plate, mjd=plist[ifile].mjd, $
+             run2d=strtrim(plist[ifile].run2d), run1d=strtrim(plist[ifile].run1d), $
+             zline=linedat, /silent
 
-      if (ifile EQ 0) then begin
-         nobj = total(plist.n_total)
-         nper = n_elements(linedat) / plist[0].n_total
-         sxaddpar, linehdr, 'DIMS0', nper, ' Number of emission lines'
-         sxaddpar, linehdr, 'DIMS1', nobj, ' Number of objects'
-         linedat1 = linedat[0]
-         struct_assign, {junk:0}, linedat1
-      endif
+           if (ifile EQ 0) then begin
+               nobj = total(plist.n_total)
+               nper = n_elements(linedat) / plist[0].n_total
+               sxaddpar, linehdr, 'DIMS0', nper, ' Number of emission lines'
+               sxaddpar, linehdr, 'DIMS1', nobj, ' Number of objects'
+               linedat1 = linedat[0]
+               struct_assign, {junk:0}, linedat1
+           endif
 
       ; Demand that the structure has the same format as the first
       ; one written.
-      linedat_out = replicate(linedat1, n_elements(linedat))
-      struct_assign, linedat, linedat_out
+           linedat_out = replicate(linedat1, n_elements(linedat))
+           struct_assign, linedat, linedat_out
 
-      mwrfits_chunks, linedat_out, outroot[1]+'.fits.tmp', $
-       create=(ifile EQ 0), append=(ifile GT 0)
-   endfor
+           mwrfits_chunks, linedat_out, outroot[1]+'.fits.tmp', $
+             create=(ifile EQ 0), append=(ifile GT 0)
+       endfor
+   endif
 
    ;----------
    ; Rename temporary files
 
    spawn, ['mv', outroot[0]+'.fits.tmp', outroot[0]+'.fits'], /noshell
    spawn, ['mv', outroot[0]+'.dat.tmp', outroot[0]+'.dat'], /noshell
-   spawn, ['mv', outroot[1]+'.fits.tmp', outroot[1]+'.fits'], /noshell
+   if (not keyword_set(skip_line)) then $
+    spawn, ['mv', outroot[1]+'.fits.tmp', outroot[1]+'.fits'], /noshell
 
    thismem = memory()
    maxmem = thismem[3]
@@ -445,6 +478,7 @@ end
 pro platemerge, run2d=run2d, _EXTRA=Extra
 
    platelist, plist=plist
+
    if (NOT keyword_set(plist)) then return
 
    alldir = strtrim(plist.run2d)
