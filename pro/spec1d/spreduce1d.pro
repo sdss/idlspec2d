@@ -248,7 +248,7 @@ chop_data1 = 1 ; Force this in the current reductions ???
    ;----------
    ; Find GALAXY redshifts
 
-   npoly = 3
+   npoly = 0 ; Changed from 3 by ASB Aug 2010 following redshift accuracy tests.
    zmin = -0.01 ; -3000 km/sec
    zmax = 1.00 ; Max z for a rest-frame template to 1850 Ang to cover 3700 Ang
    pspace = 2
@@ -295,7 +295,7 @@ chop_data1 = 1 ; Force this in the current reductions ???
    ;----------
    ; Find QSO redshifts
 
-   npoly = 3
+   npoly = 0 ; Changed from 3 by ASB Aug 2010.
    zmin = 0.0033 ; +1000 km/sec
    zmax = 7.00 ; Max range to use for now, with the template starting at
                ; 460 Ang (rest), which corresponds to 3680 Ang at this z.
@@ -331,7 +331,7 @@ chop_data1 = 1 ; Force this in the current reductions ???
    ;----------
    ; Find STAR redshifts
 
-   npoly = 4 ; With only 1 eigen-template, fit more polynomial terms for stars.
+   npoly = 1 ; Changed from 4 by ASB Aug 2010 following redshift accuracy tests.
    zmin = -0.004 ; -1200 km/sec
    zmax = 0.004 ; +1200 km/sec
    pspace = 1
@@ -370,30 +370,32 @@ chop_data1 = 1 ; Force this in the current reductions ???
    ;----------
    ; Find CV STAR redshifts
 
-   npoly = 3
-   zmin = -0.0033 ; -1000 km/sec
-   zmax = 0.0033 ; +1000 km/sec
-   pspace = 1
-   nfind = 1
-
-   eigenfile = 'spEigenCVstar-*.fits'
-
-   subclass = 'CV'
-   plottitle = subclass + '-Star Redshift'
-
-   splog, 'Compute STAR (' + subclass + ') redshifts:', $
-    ' ZMIN=', zmin, ' ZMAX=', zmax, ' PSPACE=', pspace
-   t0 = systime(1)
-   res_cvstar = zfind(objflux, objivar, hdr=hdr, $
-    eigenfile=eigenfile, npoly=npoly, $
-    zmin=zmin, zmax=zmax, pspace=1, nfind=nfind, width=5*pspace, $
-    plottitle=plottitle, doplot=doplot, debug=debug)
-   splog, 'CPU time to compute STAR redshifts = ', systime(1)-t0
-
-   res_cvstar.class = 'STAR'
-   res_cvstar.subclass = subclass
-
-   res_all = [res_all, res_cvstar] ; Append results
+   ; ASB, Aug 2010: Currently, CVs are red herrings for BOSS redshifting.
+   ; Commenting out to skip them.
+;   npoly = 1      ; Changed from 3 by ASB Aug 2010 following redshift accuracy tests.
+;   zmin = -0.0033 ; -1000 km/sec
+;   zmax = 0.0033  ; +1000 km/sec
+;   pspace = 1
+;   nfind = 1
+;
+;   eigenfile = 'spEigenCVstar-*.fits'
+;
+;   subclass = 'CV'
+;   plottitle = subclass + '-Star Redshift'
+;
+;   splog, 'Compute STAR (' + subclass + ') redshifts:', $
+;          ' ZMIN=', zmin, ' ZMAX=', zmax, ' PSPACE=', pspace
+;   t0 = systime(1)
+;   res_cvstar = zfind(objflux, objivar, hdr=hdr, $
+;    eigenfile=eigenfile, npoly=npoly, $
+;    zmin=zmin, zmax=zmax, pspace=1, nfind=nfind, width=5*pspace, $
+;    plottitle=plottitle, doplot=doplot, debug=debug)
+;   splog, 'CPU time to compute STAR redshifts = ', systime(1)-t0
+;
+;   res_cvstar.class = 'STAR'
+;   res_cvstar.subclass = subclass
+;
+;   res_all = [res_all, res_cvstar] ; Append results
 
    ;----------
    nper = (size(res_all,/dimens))[0]
@@ -744,9 +746,10 @@ endif
    ; Warning: Fraction of points above 5 sigma is too large (> 5%),
    ; except for QSO's where we just look at the fraction of high outliers
    ; since we expect absorption lines that could give many low outliers.
-   qflag = (strtrim(res_all.class) NE 'QSO' AND fracnsigma[4,*,*] GT 0.05) $
-    OR (strtrim(res_all.class) EQ 'QSO' AND fracnsighi[4,*,*] GT 0.05)
-   zwarning = zwarning OR qflag * sdss_flagval('ZWARNING', 'MANY_OUTLIERS')
+; Commenting out "MANY_OUTLIERS" flagging, ASB 2010 Aug:
+;   qflag = (strtrim(res_all.class) NE 'QSO' AND fracnsigma[4,*,*] GT 0.05) $
+;    OR (strtrim(res_all.class) EQ 'QSO' AND fracnsighi[4,*,*] GT 0.05)
+;   zwarning = zwarning OR qflag * sdss_flagval('ZWARNING', 'MANY_OUTLIERS')
 
    ; Warning: Redshift-error warning flag set to -1, which means that
    ; the chi^2 minimum was at the edge of the redshift-fitting range.
