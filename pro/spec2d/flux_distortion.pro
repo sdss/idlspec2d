@@ -151,7 +151,7 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
    common com_flux_distort, trimflux, wavevec, fmask, calibflux, calibisig, $
     trimplug, outmask
 
-   if (NOT keyword_set(minobj)) then minobj = 50
+   if (NOT keyword_set(minobj)) then minobj = 10
    if (keyword_set(minflux1)) then minflux = minflux1 $
     else minflux = [0,0,2.5,0,0] ; Limit to r<21.5 only
    if (n_elements(maxdelta) EQ 0) then maxdelta = 0.03
@@ -221,7 +221,7 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
    endif
 
    ;----------
-   ; Select only objects that are not SKY or QSO,
+   ; Explicitly select only SPECTROPHOTO_STD and REDDEN_STD stars
    ; on the first pointing offset (if there are multiple pointings),
    ; and with a positive flux in gri-bands,
    ; and at least 90% of pixels are good within the wavelengths of interest.
@@ -231,8 +231,8 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
    indx = where(wavevec GT 4000. AND wavevec LE 8300., nthis)
    fracgood = total(thisivar[indx,*] GT 0, 1) / nthis
    qivar = plugmap.calibflux_ivar[2] GT 0
-   qtrim = strmatch(plugmap.objtype,'SKY*') EQ 0 $
-    AND strmatch(plugmap.objtype,'QSO*') EQ 0 $
+   qtrim = (strmatch(plugmap.objtype,'SPECTROPHOTO_STD*') NE 0 $
+    OR strmatch(plugmap.objtype,'REDDEN_STD*') NE 0) $
     AND plugmap.offsetid EQ 1 $
     AND fracgood GT 0.90
    for i=0, 4 do if (minflux[i] NE 0) then $
@@ -273,7 +273,7 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
    ; Iterate the fit, rejecting outlier points.
 
    maxiter1 = 5
-   maxiter2 = 50
+   maxiter2 = 200
    sigrej = 5.
    maxrej = ceil(0.05 * ntrim) ; Do not reject more than 5% of remaining objects
    npar = 13
