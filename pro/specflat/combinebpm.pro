@@ -14,10 +14,10 @@
 ; INPUTS:
 ;
 ; docams     - camera to look at  ; default to ['b1','b2','r1','r2']
-; darkstart   - first dark exposure; default to 01786
-; darkend     - last  dark exposure; default to 01790
-; biasstart   - first bias exposure; default to 01768
-; biasend     - last  bias exposure; default to 01783
+; darkstart   - first dark exposure; default to 101786
+; darkend     - last  dark exposure; default to 101790
+; biasstart   - first bias exposure; default to 101768
+; biasend     - last  bias exposure; default to 101783
 ; nsig        - Number of sigma away from median to determine bad
 ;               pixel ;default to 5
 ; ncount      - Number of counts away from median to determine bad
