@@ -6,7 +6,8 @@
 ;   Merge all Spectro-1D outputs with photoPosPlate,spInspect files
 ;
 ; CALLING SEQUENCE:
-;   platemerge, [ plate, mjd=, except_tags=, outroot=, run2d=, /include_bad ]
+;   platemerge, [ plate, mjd=, except_tags=, outroot=, run2d=, /include_bad, $
+;    /exclude_class, /skip_line ]
 ;
 ; INPUTS:
 ;
