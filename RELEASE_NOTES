@@ -10,6 +10,11 @@ CONFIGURATION__DEFINE: Change spcalib_xy2traceset_ncoeff from 4 to 7
       in the spatial direction from 1.4 pix to 1.0 pix (spcalib_sigmaguess).
       This is because there is only 1 iteration on this fitting, so it may
       not otherwise converge to the correct result.
+FLUX_DISTORTION: Use only standard stars for the flux-distortion maps,
+      requiring at least 10 objects (instead of 50).  This will not work
+      with SDSS-I data, but will remove the strangeness of using galaxies
+      on BOSS plates.
+      Increase the number of iterations in MPFIT from 50 to 200.
 GUIDERPLAY: Wrapper for IDL guider to simply allow play-back of images
       for a specified night.
 IDLSPEC2D_VERSION: Back out to the previous version, since this does not
