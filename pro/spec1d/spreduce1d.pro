@@ -370,32 +370,30 @@ chop_data1 = 1 ; Force this in the current reductions ???
    ;----------
    ; Find CV STAR redshifts
 
-   ; ASB, Aug 2010: Currently, CVs are red herrings for BOSS redshifting.
-   ; Commenting out to skip them.
-;   npoly = 1      ; Changed from 3 by ASB Aug 2010 following redshift accuracy tests.
-;   zmin = -0.0033 ; -1000 km/sec
-;   zmax = 0.0033  ; +1000 km/sec
-;   pspace = 1
-;   nfind = 1
-;
-;   eigenfile = 'spEigenCVstar-*.fits'
-;
-;   subclass = 'CV'
-;   plottitle = subclass + '-Star Redshift'
-;
-;   splog, 'Compute STAR (' + subclass + ') redshifts:', $
-;          ' ZMIN=', zmin, ' ZMAX=', zmax, ' PSPACE=', pspace
-;   t0 = systime(1)
-;   res_cvstar = zfind(objflux, objivar, hdr=hdr, $
-;    eigenfile=eigenfile, npoly=npoly, $
-;    zmin=zmin, zmax=zmax, pspace=1, nfind=nfind, width=5*pspace, $
-;    plottitle=plottitle, doplot=doplot, debug=debug)
-;   splog, 'CPU time to compute STAR redshifts = ', systime(1)-t0
-;
-;   res_cvstar.class = 'STAR'
-;   res_cvstar.subclass = subclass
-;
-;   res_all = [res_all, res_cvstar] ; Append results
+   npoly = 0      ; Changed from 3 by ASB Aug 2010.
+   zmin = -0.0033 ; -1000 km/sec
+   zmax = 0.0033  ; +1000 km/sec
+   pspace = 1
+   nfind = 1
+
+   eigenfile = 'spEigenCVstar-*.fits'
+
+   subclass = 'CV'
+   plottitle = subclass + '-Star Redshift'
+
+   splog, 'Compute STAR (' + subclass + ') redshifts:', $
+          ' ZMIN=', zmin, ' ZMAX=', zmax, ' PSPACE=', pspace
+   t0 = systime(1)
+   res_cvstar = zfind(objflux, objivar, hdr=hdr, $
+    eigenfile=eigenfile, npoly=npoly, $
+    zmin=zmin, zmax=zmax, pspace=1, nfind=nfind, width=5*pspace, $
+    plottitle=plottitle, doplot=doplot, debug=debug)
+   splog, 'CPU time to compute STAR redshifts = ', systime(1)-t0
+
+   res_cvstar.class = 'STAR'
+   res_cvstar.subclass = subclass
+
+   res_all = [res_all, res_cvstar] ; Append results
 
    ;----------
    nper = (size(res_all,/dimens))[0]
