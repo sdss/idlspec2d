@@ -24,8 +24,9 @@
 ;               pixel; default to 10
 ; output      - Write the 3 intermediary fits files,
 ;               masterdark, masterbias, and darkminusbias
-; maxsat      - Any pixel that has a higher count than this in the averaged
-;               biases is counted as a bad pixel, default to 1500.
+; maxsat      - Any pixel that has a higher electron count than this
+;               in the averaged
+;               biases is counted as a bad pixel, default to 15.
 ; OPTIONAL KEYWORDS
 ;  
 ; OUTPUTS:
@@ -72,7 +73,7 @@ pro combinebpm,docams=docams,nsig=nsig,ncount=ncount,darkstart=darkstart,darkend
 
 if (NOT keyword_set(docams))   then docams =['b1','b2','r1','r2']
 if (NOT keyword_set(nsig))      then nsig=5
-if (NOT keyword_set(ncount))    then ncount=25;15
+if (NOT keyword_set(ncount))    then ncount=15
 if (NOT keyword_set(darkstart)) then darkstart=101786
 if (NOT keyword_set(darkend))   then darkend=101790
 if (NOT keyword_set(biasstart)) then biasstart=101768
