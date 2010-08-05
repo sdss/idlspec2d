@@ -605,6 +605,7 @@ pro/specdb/mysql_write.pro -text
 pro/specdb/photo_loader.pro -text
 pro/specdb/postgres_write.pro -text
 pro/specdb/specdb_create.pro -text
+pro/specflat/bpm_ledflat_combine.pro -text
 pro/specflat/combinebpm.pro -text
 pro/specflat/flatfield.pro -text
 pro/specflat/ledflat.pro -text
