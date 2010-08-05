@@ -1,15 +1,14 @@
 
+-------------------------------------------------------------------------------
+v5_4_13 (Aug 5, 2010) idlspec2d
+Tag for testing patches to Spectro-2D and npoly changes to Spectro-1D.
+Built against specflat v1_12, elodie v1_3, idlutils v5_4_19.
+
 CONFIGURATION__DEFINE: changing spcalib_sigmaguess to 1.15,
       a compromise BOSS value since range is approx. 0.85 to 1.35.
 templates/spEigenGalNew-55399-baw-mean.fits:
       Changed filename so as not to be found automatically by
       the wildcarding in the 1D code.
-
--------------------------------------------------------------------------------
-v5_4_13 (Aug 5, 2010) idlspec2d
-Tag for testing patches to Spectro-2D and npoly changes to Spectro-1D.
-Built against specflat v1_11, elodie v1_3, idlutils v5_4_19.
-
 AESTHETICS: New routine for filling in bad values for COMBINE1FIBER.
 ATVSPEC: New proc for displaying cutouts of raw images around specified
       wavelengths.
