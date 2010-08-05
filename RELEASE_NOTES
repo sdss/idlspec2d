@@ -1,5 +1,9 @@
 
-SPREDUCE1D: Restoring CV redshifting, but reducing NPOLY from 3 to 0.
+-------------------------------------------------------------------------------
+v5_4_13 (Aug 5, 2010) idlspec2d
+Tag for testing patches to Spectro-2D and npoly changes to Spectro-1D.
+Built against specflat v1_11, elodie v1_3, idlutils v5_4_19.
+
 AESTHETICS: New routine for filling in bad values for COMBINE1FIBER.
 ATVSPEC: New proc for displaying cutouts of raw images around specified
       wavelengths.
@@ -15,7 +19,7 @@ FLUX_DISTORTION: Use only standard stars for the flux-distortion maps,
       requiring at least 10 objects (instead of 50).  This will not work
       with SDSS-I data, but will remove the strangeness of using galaxies
       on BOSS plates.
-      Increase the number of iterations in MPFIT from 50 to 200.
+      Increase the number of iterations in MPFIT from 50 to 200 (ticket #938).
 GUIDERPLAY: Wrapper for IDL guider to simply allow play-back of images
       for a specified night.
 IDLSPEC2D_VERSION: Back out to the previous version, since this does not
@@ -44,7 +48,7 @@ SPCOMBINE_V5: Modify the fix implemented in v5_4_8, and discard all data
       when r2 was dead (ticket #764).  But it retains sp2 for plate
       3817/55276 when only two images are missing (ticket #787).
 SPREDUCE1D: Lowered NPOLY from 3 to 0 for galaxies, and 3 to 0 for QSOs,
-      and 4 to 1 for stars.  Comment out CV redshifting (ticket 851).
+      and 4 to 1 for stars.
       Commented out MANY_OUTLIERS flag setting (ticket 955).
 
 bin/sos_runnerd.py: Write a version string a file so the running version
