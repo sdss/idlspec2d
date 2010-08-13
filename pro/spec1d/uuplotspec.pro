@@ -705,7 +705,7 @@ pro undefine, key
   tempvar = size(temporary(key))
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;+
+;
 ; NAME:
 ;  SETINTERSECTION
 ;
@@ -1711,7 +1711,7 @@ pro uuDatabase_select_comment, commentid
     if (n_elements(select) eq 1) then begin
       if (select[0].commentid ne '0') then begin
         widget_control, uuState.commentid, set_value=select[0].comment
-        widget_control, uuState.issueid, set_droplist_select=long(select[0].issueid)
+        widget_control, uuState.issueid, set_droplist_select=long(select[0].issueid-1)
       endif else commentid = 0
     endif else commentid = 0
   endif
@@ -1779,9 +1779,9 @@ pro uuplotspec, plate, fiberid, mjd=mjd, znum=znum, nsmooth=nsmooth, $
   common plotspec_state, platelist, fiberidlist, mjdlist, ifiber, keyword, keywordset, uumessage
   
   if (n_params() LT 1) then begin
-    doc_library, 'uuplotspec'
-    ;plate =3521
-    return
+    ;doc_library, 'uuplotspec'
+    plate =3521
+    ;return
   endif
   
   if (xregistered ('splot')) then widget_control, state.base_id, /destroy
