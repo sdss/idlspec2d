@@ -1,4 +1,6 @@
 
+INSPECTGEN: Update to be consistent with the suggested Data Model, which
+      is what is tested with INSPECT_VERIFY.
 UPDATE_PLATELIST: The auto-generated "platequality" is used for plates
       being added if they didn't already have a quality in the file.
 
