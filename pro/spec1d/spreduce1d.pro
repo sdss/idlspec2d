@@ -248,7 +248,7 @@ chop_data1 = 1 ; Force this in the current reductions ???
    ;----------
    ; Find GALAXY redshifts
 
-   npoly = 0 ; Changed from 3 by ASB Aug 2010 following redshift accuracy tests.
+   npoly = 3 ; Changed from 3 to 0 back to 3 by ASB Aug 2010.
    zmin = -0.01 ; -3000 km/sec
    zmax = 1.00 ; Max z for a rest-frame template to 1850 Ang to cover 3700 Ang
    pspace = 2
@@ -295,7 +295,7 @@ chop_data1 = 1 ; Force this in the current reductions ???
    ;----------
    ; Find QSO redshifts
 
-   npoly = 0 ; Changed from 3 by ASB Aug 2010.
+   npoly = 3 ; Changed from 3 to 0 back to 3 by ASB Aug 2010.
    zmin = 0.0033 ; +1000 km/sec
    zmax = 7.00 ; Max range to use for now, with the template starting at
                ; 460 Ang (rest), which corresponds to 3680 Ang at this z.
