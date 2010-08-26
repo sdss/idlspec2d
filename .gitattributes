@@ -657,6 +657,7 @@ templates/spEigenGal-52146.fits -text svneol=unset#unset
 templates/spEigenGal-52223.fits -text svneol=unset#unset
 templates/spEigenGal-53054.fits -text svneol=unset#application/octet-stream
 templates/spEigenGal-53724.fits -text svneol=unset#application/octet-stream
+templates/spEigenGal-boss_v0_new1.fits -text svneol=unset#unset
 templates/spEigenGalNew-55399-baw-mean.fits -text svneol=unset#unset
 templates/spEigenQSO-52223.fits -text
 templates/spEigenQSO-53054.fits -text svneol=unset#application/octet-stream
