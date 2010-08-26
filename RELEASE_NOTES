@@ -1,14 +1,12 @@
 
+UPDATE_PLATELIST: The auto-generated "platequality" is used for plates
+      being added if they didn't already have a quality in the file.
+
 -------------------------------------------------------------------------------
 v5_4_13 (Aug 5, 2010) idlspec2d
 Tag for testing patches to Spectro-2D and npoly changes to Spectro-1D.
 Built against specflat v1_12, elodie v1_3, idlutils v5_4_19.
 
-CONFIGURATION__DEFINE: changing spcalib_sigmaguess to 1.15,
-      a compromise BOSS value since range is approx. 0.85 to 1.35.
-templates/spEigenGalNew-55399-baw-mean.fits:
-      Changed filename so as not to be found automatically by
-      the wildcarding in the 1D code.
 AESTHETICS: New routine for filling in bad values for COMBINE1FIBER.
 ATVSPEC: New proc for displaying cutouts of raw images around specified
       wavelengths.
@@ -20,6 +18,8 @@ CONFIGURATION__DEFINE: Change spcalib_xy2traceset_ncoeff from 4 to 7
       in the spatial direction from 1.4 pix to 1.0 pix (spcalib_sigmaguess).
       This is because there is only 1 iteration on this fitting, so it may
       not otherwise converge to the correct result.
+      Change spcalib_sigmaguess to 1.15, a compromise BOSS value since
+      range is approx. 0.85 to 1.35.
 FLUX_DISTORTION: Use only standard stars for the flux-distortion maps,
       requiring at least 10 objects (instead of 50).  This will not work
       with SDSS-I data, but will remove the strangeness of using galaxies
@@ -61,8 +61,10 @@ bin/sos_runnerd.py: Write a version string a file so the running version
 opfiles/boss_cartridge15_gaps.txt: added file with measured bundle gaps
       for BOSS cartridge 15 (see ticket #817).
 opfiles/spInspect-0000-00000.par: Template for spInspect files.
-templates/spEigenGal-55399-baw-mean.fits: Test template file using the 'mean'
+templates/spEigenGalNew-55399-baw-mean.fits: Test template file using the 'mean'
       setting of aesthetics.pro.
+      Changed filename (from spEigenGal-55399-baw-mean.fits) so as not to
+      not be found automatically by the wildcarding in the 1D code.
 
 -------------------------------------------------------------------------------
 v5_4_12 (May 31, 2010) idlspec2d
