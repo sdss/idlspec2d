@@ -1,4 +1,7 @@
 
+SPREDUCE1D: changed back to NPOLY=3, optimal for new galaxy templates.
+templates/spEigenGal-boss_v0_new1.fits:
+  New BOSS-based tempaltes from Yanmei Chen
 INSPECTGEN: Update to be consistent with the suggested Data Model, which
       is what is tested with INSPECT_VERIFY.
 UPDATE_PLATELIST: The auto-generated "platequality" is used for plates
