@@ -6,7 +6,7 @@
 ;   Create empty spInspect file(s) for manual inspection of classifications
 ;
 ; CALLING SEQUENCE:
-;   inspectgen, plate, mjd=, [ inspector=, specinspect=, $
+;   inspectgen, plate, mjd=, [ specinspect=, $
 ;    spectext=, specblend=, hdr=, structs= ]
 ;
 ; INPUTS:
@@ -14,8 +14,6 @@
 ;   MJD        - MJD number
 ;
 ; OPTIONAL INPUTS:
-;   inspector  - Name of inspector, which should be a string without
-;                any whitespace.  If not set, then use inspector='yourname'.
 ;
 ; OUTPUTS:
 ;
@@ -40,11 +38,8 @@
 ;   20-May-2002  Written by David Schlegel, Princeton.
 ;-
 ;------------------------------------------------------------------------------
-pro inspectgen, plate, mjd=mjd, inspector=inspector, specinspect=specinspect, $
+pro inspectgen, plate, mjd=mjd, specinspect=specinspect, $
  spectext=spectext, specblend=specblend, hdr=hdr, structs=structs
-
-   if (keyword_set(inspector)) then thisname = inspector $
-    else thisname = 'yourname'
 
    ;----------
    ; Read the redshifts
@@ -61,14 +56,10 @@ pro inspectgen, plate, mjd=mjd, inspector=inspector, specinspect=specinspect, $
     'plate'          ,  long(plate), $
     'mjd'            ,  long(mjd), $
     'fiberid'        ,  0L, $
-    'class'          ,  '', $
-    'subclass'       ,  '', $
-    'z'              , 0.0, $
-    'inspector'      ,  string(thisname), $
-    'manual_class'   ,  '', $
-    'manual_subclass',  '', $
-    'manual_z',        0.0, $
-    'manual_comments',  '' )
+    'z_pipeline'     , 0.0, $
+    'z_person'       , 0.0, $
+    'z_conf_person'  ,  string(thisname), $
+    'comments'       ,  '' )
 
    spectext = create_struct( $
     name = 'SPECTEXT', $
