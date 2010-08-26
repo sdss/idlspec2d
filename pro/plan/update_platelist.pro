@@ -22,6 +22,8 @@
 ;   The file in $SPECLOG_DIR/opfiles/spPlateList.par is read, and we
 ;   merge in the list of plates returned by the PLATELIST procedure.
 ;   Manual comments from the first file are retained.
+;   The auto-generated "platequality" is used for plates being added
+;   if they didn't already have a quality in the file.
 ;
 ; EXAMPLES:
 ;
@@ -76,10 +78,21 @@ pro update_platelist, outfile
    for i=0, nplate-1 do $
     newlist[i].mjd = long( (strsplit(platemjd[i],/extract))[1] )
 
-   for i=0, n_elements(thislist)-1 do begin
+   ; Retain any values from the original spPlateList.par file
+   for i=0L, n_elements(thislist)-1L do begin
       j = where(newlist.plate EQ thislist[i].plate $
        AND newlist.mjd EQ thislist[i].mjd)
       copy_struct_inx, thislist[i], newlist, index_to=j
+   endfor
+
+   ; Copy "platequality" from the auto-generated platelist file
+   ; if there isn't already a value for that field
+   for i=0L, n_elements(plist)-1L do begin
+      j = (where(newlist.plate EQ plist[i].plate $
+       AND newlist.mjd EQ plist[i].mjd, ct))[0]
+      if (ct GT 0) then $
+       if (strtrim(newlist[j].platequality) EQ '') then $
+        newlist[j].platequality = plist[i].platequality
    endfor
 
    yanny_write, outfile, ptr_new(newlist), $
