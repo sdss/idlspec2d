@@ -1,4 +1,9 @@
 
+-------------------------------------------------------------------------------
+v5_4_14 (Aug 26, 2010) idlspec2d
+Tag for testing new galaxy templates in Spectro-1D.
+Built against specflat v1_12, elodie v1_3, idlutils v5_4_19.
+
 SPREDUCE1D: changed back to NPOLY=3, optimal for new galaxy templates.
 templates/spEigenGal-boss_v0_new1.fits:
   New BOSS-based tempaltes from Yanmei Chen
