@@ -98,8 +98,6 @@ pro spcombine_v5, planfile, docams=docams, adderr=adderr, xdisplay=xdisplay, $
   ;----------
   ; Find keywords from the header and construct output file names
 
-  run2d = strtrim(string(yanny_par(hdr,'RUN2D')),2)
-
   thismjd = long(yanny_par(hdr, 'MJD'))
   if (NOT keyword_set(thismjd)) then $
    thismjd = max(allseq.mjd)
