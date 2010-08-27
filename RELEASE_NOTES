@@ -1,4 +1,7 @@
 
+SPCOMBINE_V5: Remove reading RUN2D from the spPlancomb file, since it
+      is unused.
+
 -------------------------------------------------------------------------------
 v5_4_14 (Aug 26, 2010) idlspec2d
 Tag for testing new galaxy templates in Spectro-1D.
