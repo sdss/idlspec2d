@@ -12,6 +12,7 @@ templates/spEigenGal-boss_v0_new1.fits:
   New BOSS-based tempaltes from Yanmei Chen
 INSPECTGEN: Update to be consistent with the suggested Data Model, which
       is what is tested with INSPECT_VERIFY.
+loadSN2Value, updatePlugginStatus:  update to use new version of platedb
 UPDATE_PLATELIST: The auto-generated "platequality" is used for plates
       being added if they didn't already have a quality in the file.
 
