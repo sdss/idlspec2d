@@ -473,8 +473,8 @@ bigimg2=fltarr(4114,4128)
          yoffsetr2=yoffset*m + b
       endif
 
-;m=1   ;for testing uncomment these
-;b=0
+m=1   ;for testing uncomment these
+b=0
 
       yoffset=yoffset*m + b
 
@@ -539,12 +539,13 @@ splog, ' '
       endelse
    endelse
 
+stop
 
 ;ADD FUNNY FUDGE FACTORS - KD
    if (camcolor EQ 'r') then begin
       pixscale = -15.           ; microns
-      if (camname EQ 'r1') then val = long( -9150. * meanyoff*1.07 * pixscale/24. )
-      if (camname EQ 'r2') then val = long( -9150. * meanyoff*1.21 * pixscale/24. )
+      if (camname EQ 'r1') then val = long( -9150. * meanyoff*1.12 * pixscale/24. )
+      if (camname EQ 'r2') then val = long( -9150. * meanyoff*1.12 * pixscale/24. )
       valr=val
       if keyword_set(simple) then begin
          print, string(camname, " PistonMove ", strtrim(val,2))
@@ -562,8 +563,9 @@ splog, ' '
       endelse
    endif else if (camcolor EQ 'b') then begin
       pixscale = 15.                        ; microns
-      val = -35.69 * meanyoff * pixscale/24.
-      if camname eq 'b1' then valb=-val*292;274;pixels per degree
+      if (camname EQ 'b1') then val = -31.87 * meanyoff * pixscale/24.
+      if (camname EQ 'b2') then val = -28.95 * meanyoff * pixscale/24.
+      if camname eq 'b1' then valb=-val*292;274;steps per degree
       if camname eq 'b2' then valb=-val*292;310
       if keyword_set(simple) then begin
          print, string(camname, " RingMove ", strtrim(val,2), $
