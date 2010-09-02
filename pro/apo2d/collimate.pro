@@ -487,8 +487,8 @@ pro collimate, expnum1, expnum2, docams=docams, indir=indir, $
 
 ;ADD FUNNY FUDGE FACTORS - KD
    if (camcolor EQ 'r') then begin
-      if (camname EQ 'r1') then val = long( -9150. * meanyoff*1.07 * pixscale/24. )
-      if (camname EQ 'r2') then val = long( -9150. * meanyoff*1.21 * pixscale/24. )
+      if (camname EQ 'r1') then val = long( -9150. * meanyoff*1.12 * pixscale/24. )
+      if (camname EQ 'r2') then val = long( -9150. * meanyoff*1.12 * pixscale/24. )
       splog, 'Predict (red) piston movement of ', val, $
        ' steps for spectro-' + spectroid
       if  (nx_orig LT 4000) then splog, 'Issue SOP command: "sp' + spectroid $
@@ -498,7 +498,8 @@ pro collimate, expnum1, expnum2, docams=docams, indir=indir, $
    endif else if (camcolor EQ 'b') then begin
    if (nx_orig LT 4000) then pixscale = 24. $ ; microns
     else pixscale = 15. ; microns
-      val = -35.69 * meanyoff * pixscale/24.
+      if (camname EQ 'b1') then val = -31.87 * meanyoff * pixscale/24. ;year one -35.69
+      if (camname EQ 'b2') then val = -28.95 * meanyoff * pixscale/24.
       splog, 'Predict blue camera ring movement of ' $
        + string(val, format='(f6.1)') + ' degrees for spectro-' + spectroid
       splog, '  (if red is already in focus)'
