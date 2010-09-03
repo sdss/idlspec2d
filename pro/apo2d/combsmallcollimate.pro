@@ -539,7 +539,6 @@ splog, ' '
       endelse
    endelse
 
-stop
 
 ;ADD FUNNY FUDGE FACTORS - KD
    if (camcolor EQ 'r') then begin
