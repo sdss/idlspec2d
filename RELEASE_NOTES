@@ -1,8 +1,13 @@
 
-COMBSMALLCOLLIMATE: Change offsets to gives same results as COLLIMATE using
-      data taken on MJD 55439
+APOREDUCE: Do not send any Hartmann exposures (full frame or subarray)
+      to the QUICKWAVE routine.  This is to address the problems
+      in ticket #1008.
+COLLIMATE,COMBSMALLCOLLIMATE: Change offsets to gives same results as
+      COLLIMATE using data taken on MJD 55440
 SPCOMBINE_V5: Remove reading RUN2D from the spPlancomb file, since it
       is unused.
+QUICKEXTRACT: Increase the tolerance at which to report a flexure error
+      message from 0.5 pix to 1.0 pix.  Ticket #1009.
 
 bin/loadSN2Value,updatePluggingStatus: Update to use the new version of platedb
 examples/opLimits.par: Change the WAVEMID value for r2 from 8071 to 8053,
