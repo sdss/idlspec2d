@@ -113,6 +113,7 @@
 ;   dfpsplot
 ;   djs_filepath()
 ;   djs_icolor()
+;   fits_wait()
 ;   sdssproc
 ;   splog
 ;   sxpar()
@@ -240,6 +241,14 @@ for icam=0,ncam-1 do begin     ;do focus for each camera
                                 ;----------
                                 ; Read the two images
    
+  if (fits_wait(filename1, deltat=5, tmax=30) EQ 0) then begin
+     print, 'Failure reading file ' + filename1
+     return
+  endif
+  if (fits_wait(filename2, deltat=5, tmax=30) EQ 0) then begin
+     print, 'Failure reading file ' + filename2
+     return
+  endif
   ; sdssproc, filename1, bigimg1, ivar1, hdr=hdr1, /silent
                                 ; sdssproc, filename2, bigimg2, ivar2,
                                 ; hdr=hdr2, /silent 
