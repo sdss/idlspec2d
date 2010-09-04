@@ -6,7 +6,8 @@
 ;   Trace and boxcar extract an SDSS flat field image
 ;
 ; CALLING SEQUENCE:
-;   rstruct = quicktrace (filename, tsetfile, plugmapfile, nbin=nbin)
+;   rstruct = quicktrace (filename, tsetfile, plugmapfile, [ nbin=, $
+;    /do_lock ] )
 ;
 ; INPUTS:
 ;   filename   - Flat-field filename
@@ -17,6 +18,7 @@
 ; OPTIONAL INPUTS:
 ;   nbin       - Sub-sampling of row numbers for measuring the spatial
 ;                profile widths; default to 16 for every 16-th row.
+;   do_lock    - Optional keyword for SDSSPROC
 ;
 ; OUTPUT:
 ;   rstruct    - Results to be added html file upon completion
@@ -53,7 +55,8 @@
 ;  26-Jul-2009  Added keyword for nfibers, KD
 ;-
 ;------------------------------------------------------------------------------
-function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
+function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin, $
+ do_lock=do_lock
 
    if (NOT keyword_set(nbin)) then nbin = 16
 
@@ -67,7 +70,7 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin
 
    sdssproc, filename, flatimg, flativar, hdr=flathdr, $
     nsatrow=nsatrow, fbadpix=fbadpix, $
-    spectrographid=spectrographid, camname=camname, /do_lock
+    spectrographid=spectrographid, camname=camname, do_lock=do_lock
 
    ; load in configuration parameters from object
    configuration=obj_new('configuration', sxpar(flathdr, 'MJD'))

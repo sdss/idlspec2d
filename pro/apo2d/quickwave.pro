@@ -8,7 +8,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   rstruct = quickwave( arcname, tsetfile, wsetfile, fflatfile, $
-;       radius=radius, doplot=doplot )
+;     [ radius=, /doplot, /do_lock ] )
 ;
 ; INPUTS:
 ;   arcname    - Raw SDSS Arclamp image to be processed
@@ -19,6 +19,7 @@
 ; OPTIONAL INPUTS:
 ;   radius     - Radius for boxcar extraction (default 3)
 ;   doplot     - Used for debugging purposes
+;   do_lock    - Optional keyword for SDSSPROC
 ;
 ; OUTPUT:
 ;   rstruct    - Results to be added html file upon completion
@@ -52,7 +53,7 @@
 ;-
 ;------------------------------------------------------------------------------
 function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
-    doplot=doplot
+ doplot=doplot, do_lock=do_lock
 
    if (n_elements(arcname) NE 1) then return, 0
    if (n_elements(wsetfile) NE 1) then return, 0
@@ -68,7 +69,7 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
    ; Read in image
 
    sdssproc, arcname, arcimg, hdr=archdr, color=color, camname=camname, $
-    nsatrow=nsatrow, fbadpix=fbadpix, /do_lock
+    nsatrow=nsatrow, fbadpix=fbadpix, do_lock=do_lock
 
    configuration=obj_new('configuration', sxpar(archdr, 'MJD'))
 

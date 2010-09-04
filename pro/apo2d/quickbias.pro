@@ -1,11 +1,12 @@
-function quickbias, biasname
+function quickbias, biasname, do_lock=do_lock
 
    if (n_elements(biasname) NE 1) then return, 0
 
    ;----------
    ; Read in image
 
-   sdssproc, biasname, biasimg, biasivar, color=color, camname=camname, /do_lock
+   sdssproc, biasname, biasimg, biasivar, color=color, camname=camname, $
+    do_lock=do_lock
 
    ;----------
    ; Test how much of the image was masked by SDSSPROC

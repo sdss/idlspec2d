@@ -8,7 +8,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   rstruct = quickextract(tsetfile, wsetfile, fflatfile, rawfile, outsci, $
-;    [ radius=, filtsz= ])
+;    [ radius=, filtsz=, /do_lock ])
 ;
 ; INPUTS:
 ;   tsetfile   - Name of fits file which contains matched trace
@@ -21,6 +21,7 @@
 ;   radius     - Radius for boxcar extraction (default 3)
 ;   filtsz     - Median filter size to apply before average S/N is calculated;
 ;                default to 25 pixels.
+;   do_lock    - Keyword for SDSSPROC
 ;
 ; OUTPUT:
 ;   rstruct    - Results to be added html file upon completion
@@ -61,7 +62,7 @@
 ;-
 ;------------------------------------------------------------------------------
 function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
- radius=radius, filtsz=filtsz
+ radius=radius, filtsz=filtsz, do_lock=do_lock
 
    if (n_params() LT 4) then begin
       print, 'Syntax - rstruct = quickextract(tsetfile, wsetfile, fflatfile, $'
@@ -79,7 +80,7 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    ; Read in the raw science image
 
    sdssproc, rawfile, image, invvar, hdr=hdr, camname=camname, $
-    nsatrow=nsatrow, fbadpix=fbadpix, /do_lock
+    nsatrow=nsatrow, fbadpix=fbadpix, do_lock=do_lock
    colorband = strmid(camname,0,1)
    spectroid = strmid(camname,1,1)
    exptime = sxpar(hdr, 'EXPTIME')

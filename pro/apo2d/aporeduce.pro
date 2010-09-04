@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   aporeduce, filename, [ indir=, outdir=, $
 ;    plugfile=, plugdir=, minexp=, $
-;    copydir=, /no_diskcheck ]
+;    copydir=, /no_diskcheck, /no_lock ]
 ;
 ; INPUTS:
 ;   filename   - Raw spectroscopic image file name(s) of any flavor; this
@@ -31,6 +31,8 @@
 ;                of the HTML file called 'logsheet-current.html'.
 ;   no_diskcheck- If set, then do not do the check for filling input or
 ;                output disks.  (This option is always set by the APOALL proc).
+;   no_lock    - If set, then do not create lock files for the input files;
+;                this option is useful for calls from APOALL.
 ;
 ; OUTPUT:
 ;
@@ -60,6 +62,7 @@
 ;   get_tai
 ;   idlspec2d_version()
 ;   idlutils_version()
+;   quickbias()
 ;   quickextract()
 ;   quicktrace()
 ;   quickwave()
@@ -92,7 +95,7 @@ end
 ;------------------------------------------------------------------------------
 pro aporeduce, filename, indir=indir, outdir=outdir, $
  plugfile=plugfile, plugdir=plugdir, minexp=minexp, $
- copydir=copydir, no_diskcheck=no_diskcheck
+ copydir=copydir, no_diskcheck=no_diskcheck, no_lock=no_lock
 
    if (n_params() LT 1) then begin
       doc_library, 'aporeduce'
@@ -125,7 +128,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
       for ifile=0, n_elements(filename)-1 do $
        aporeduce, filename[ifile], indir=indir, outdir=outdir, $
        plugfile=plugfile, plugdir=plugdir, minexp=minexp, $
-       copydir=copydir, no_diskcheck=no_diskcheck
+       copydir=copydir, no_diskcheck=no_diskcheck, no_lock=no_lock
       return
    endif else begin
       filename = filename[0] ; Convert from an array to a scalar.
@@ -196,11 +199,13 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    spawn, 'ls -l '+fullname, lsstring
    splog, 'DIRLIST '+lsstring
 
+   do_lock = keyword_set(no_lock) EQ 0
+
    ;----------
    ; Find flavor, hartmann status, plate and MJD
 
    splog, 'Using SDSSHEAD() to read FITS header'
-   hdr = sdsshead(fullname, /do_lock)
+   hdr = sdsshead(fullname, do_lock=do_lock)
 
    hartmann=strtrim(sxpar(hdr,'HARTMANN'),2)
    flavor = strtrim(sxpar(hdr, 'FLAVOR'),2)
@@ -297,12 +302,12 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
 
    case myflavor of
       'bias' : begin
-         rstruct = quickbias(fullname)
+         rstruct = quickbias(fullname, do_lock=do_lock)
       end
 
       'flat' : begin
          if (plugexist) then begin
-            rstruct = quicktrace(fullname, tsetfile1, fullplugfile)
+            rstruct = quicktrace(fullname, tsetfile1, fullplugfile, do_lock=do_lock)
          endif else begin
             splog, 'ABORT: Unable to reduce this flat exposure (need plug-map)'
          endelse
@@ -314,7 +319,8 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
 
       'arc' : begin
          if (flatexist) then begin
-            rstruct = quickwave(fullname, tsetfile_last, wsetfile1, fflatfile1)
+            rstruct = quickwave(fullname, tsetfile_last, wsetfile1, $
+             fflatfile1, do_lock=do_lock)
          endif else begin
              splog, 'ABORT: Unable to reduce this arc exposure (need flat)'
          endelse
@@ -327,7 +333,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
 
           if (flatexist AND arcexist AND exptime GE minexp) then begin
              rstruct = quickextract(tsetfile_last, wsetfile_last, $
-              fflatfile_last, fullname, outsci)
+              fflatfile_last, fullname, outsci, do_lock=do_lock)
           endif else begin
              if (NOT keyword_set(flatexist)) then $
               splog, 'ABORT: Unable to reduce this science exposure (need flat)'
