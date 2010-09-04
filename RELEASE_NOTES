@@ -1,6 +1,12 @@
 
+COMBSMALLCOLLIMATE: Change offsets to gives same results as COLLIMATE using
+      data taken on MJD 55439
 SPCOMBINE_V5: Remove reading RUN2D from the spPlancomb file, since it
       is unused.
+
+bin/loadSN2Value,updatePluggingStatus: Update to use the new version of platedb
+examples/opLimits.par: Change the WAVEMID value for r2 from 8071 to 8053,
+      to better fit what Kaike Pan found to be consistent with b2 position.
 
 -------------------------------------------------------------------------------
 v5_4_14 (Aug 26, 2010) idlspec2d
@@ -75,6 +81,8 @@ bin/sos_runnerd.py: Write a version string a file so the running version
 opfiles/boss_cartridge15_gaps.txt: added file with measured bundle gaps
       for BOSS cartridge 15 (see ticket #817).
 opfiles/spInspect-0000-00000.par: Template for spInspect files.
+templates/spEigenGal-boss_v0_new1.fits: Add Yanmei Chen's BOSS galaxy
+      eigentemplates
 templates/spEigenGalNew-55399-baw-mean.fits: Test template file using the 'mean'
       setting of aesthetics.pro.
       Changed filename (from spEigenGal-55399-baw-mean.fits) so as not to
