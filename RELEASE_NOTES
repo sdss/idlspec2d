@@ -1,4 +1,9 @@
 
+-------------------------------------------------------------------------------
+v5_4_15 (Sep 4, 2010) idlspec2d
+Tag for critical bug fix for SOS (ticket #1005).
+Built against specflat v1_12, elodie v1_3, idlutils v5_4_19.
+
 APOALL,APOREDUCE,QUICKBIAS,QUICKEXTRACT,QUICKREDUCE,QUICKTRACE,QUICKWAVE:
       Allow APOALL to run without generating lock files in the raw data
       directories.  Pass this as a /NO_LOCK keyword to APOREDUCE, and then
@@ -8,6 +13,9 @@ APOREDUCE: Do not send any Hartmann exposures (full frame or subarray)
       in ticket #1008.
 COLLIMATE,COMBSMALLCOLLIMATE: Change offsets to gives same results as
       COLLIMATE using data taken on MJD 55440
+COMBSMALLCOLLIMATE: Include calls to FITS_WAIT() before reading the file
+      to make sure that they're completely written (ticket #1005).
+      Test every 5 sec, and timeout after 30 sec.
 SPCOMBINE_V5: Remove reading RUN2D from the spPlancomb file, since it
       is unused.
 QUICKEXTRACT: Increase the tolerance at which to report a flexure error
