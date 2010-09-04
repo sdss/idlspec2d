@@ -12,6 +12,7 @@ SPCOMBINE_V5: Remove reading RUN2D from the spPlancomb file, since it
       is unused.
 QUICKEXTRACT: Increase the tolerance at which to report a flexure error
       message from 0.5 pix to 1.0 pix.  Ticket #1009.
+ZPLOT: Change to work for BOSS targets.
 
 bin/loadSN2Value,updatePluggingStatus: Update to use the new version of platedb
 examples/opLimits.par: Change the WAVEMID value for r2 from 8071 to 8053,
