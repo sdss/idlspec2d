@@ -290,11 +290,10 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    myflavor = flavor
    if (myflavor EQ 'smear') then myflavor = 'science'
    if (myflavor EQ 'dark') then myflavor = 'bias'
-
-
-   if hartmann eq 'Left' then splog, 'WARNING:  This exposure is a HARTMANN LEFT'
-   if hartmann eq 'Right' then splog, 'WARNING:  This exposure is a HARTMANN RIGHT'
-
+   if ((hartmann EQ 'Left') OR hartmann EQ 'Right')) then begin
+      myflavor = 'hartmann'
+      splog, 'WARNING: This exposure is a Hartmann '+hartmann
+   endif
 
    case myflavor of
       'bias' : begin
@@ -307,6 +306,10 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
          endif else begin
             splog, 'ABORT: Unable to reduce this flat exposure (need plug-map)'
          endelse
+      end
+
+      'hartmann': begin
+         splog, 'Skipping Hartmann exposure'
       end
 
       'arc' : begin
