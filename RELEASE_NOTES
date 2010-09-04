@@ -1,4 +1,8 @@
 
+APOALL,APOREDUCE,QUICKBIAS,QUICKEXTRACT,QUICKREDUCE,QUICKTRACE,QUICKWAVE:
+      Allow APOALL to run without generating lock files in the raw data
+      directories.  Pass this as a /NO_LOCK keyword to APOREDUCE, and then
+      pass /DO_LOCK to the subroutines.
 APOREDUCE: Do not send any Hartmann exposures (full frame or subarray)
       to the QUICKWAVE routine.  This is to address the problems
       in ticket #1008.
