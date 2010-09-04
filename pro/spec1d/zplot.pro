@@ -93,9 +93,10 @@ pro zplot_label, ramid=ramid
    return
 end
 ;------------------------------------------------------------------------------
-pro zplot
+pro zplot, decrange=decrange
 
    ramid = 0.0
+   if (NOT keyword_set(decrange)) then decrange = [-5,5]
 
    ; Exclude plates 202,260,326
 ;   plate = [265,266,267,268,269,270,271,274,275,276,277,278,279, $
@@ -107,32 +108,38 @@ pro zplot
 ;    388,389,390,391,392,393,394,395,396,397,398,399, $
 ;    400,401,402,403,404,405,406,407,408,409,410,411,412,413,414,415,416]
    platelist, plist=plist
-   ii = where(abs(plist.dec) LT 0.25 AND plist.qsurvey $
-    AND strtrim(plist.status1d,2) EQ 'Done')
+   ii = where(plist.deccen GE decrange[0] AND plist.deccen LE decrange[1] $
+    AND plist.qsurvey AND strtrim(plist.status1d,2) EQ 'Done')
 
    readspec, plist[ii].plate, mjd=plist[ii].mjd, plug=plug, zans=zans
 
    xplot = zans.z * cos((plug.ra - ramid) / !radeg)
    yplot = zans.z * sin((plug.ra - ramid) / !radeg)
 
+   nobj = n_elements(zans)
+   targets = strarr(nobj)
+
+   for iobj=0L, nobj-1L do $
+    targets[iobj] = sdss_flagname('TARGET',plug[iobj].primtarget, $
+     /silent, /concat)+' '
+   if (tag_exist(plug,'BOSS_TARGET1')) then $
+    for iobj=0L, nobj-1L do $
+     targets[iobj] = sdss_flagname('BOSS_TARGET1', $
+      plug[iobj].boss_target1, /silent, /concat)+' '
+
    spec_gal = strtrim(zans.class,2) EQ 'GALAXY' AND zans.zwarning EQ 0
    spec_qso = strtrim(zans.class,2) EQ 'QSO' AND zans.zwarning EQ 0
-   target_main = (plug.primtarget AND 2^6) NE 0 $
-    OR (plug.primtarget AND 2^7) NE 0 $
-    OR (plug.primtarget AND 2^8) NE 0
-   target_lrg = (plug.primtarget AND 2^5) NE 0 $
-    OR (plug.primtarget AND 2^26) NE 0
-   target_lrg = target_lrg AND (target_main EQ 0) ; Don't let an object be
-                                                  ; both in MAIN and BRG.
-   target_qso = (plug.primtarget AND 2^0) NE 0 $
-    OR (plug.primtarget AND 2^1) NE 0 $
-    OR (plug.primtarget AND 2^2) NE 0 $
-    OR (plug.primtarget AND 2^3) NE 0 $
-    OR (plug.primtarget AND 2^4) NE 0
 
-   imain = where(spec_gal AND target_lrg EQ 0, nmain)
-   ilrg = where(spec_gal AND target_lrg, nlrg)
-   iqso = where(spec_qso, nqso)
+   imain = where(spec_gal AND strmatch(targets,'*GALAXY *') $
+    OR strmatch(targets,'*GALAXY_BIG *') $
+    OR strmatch(targets,'*GALAXY_BRIGHT_CORE *'), nmain)
+   qlrg1 = strmatch(targets,'*GALAXY_RED *') $
+    OR strmatch(targets,'*GALAXY_RED_II *') $
+    OR strmatch(targets,'*GAL_LOZ *')
+   qlrg2 = strmatch(targets,'*GAL_HIZ *') $
+    OR strmatch(targets,'*GAL_CMASS*')
+   ilrg = where(spec_gal AND (qlrg1 OR qlrg2), nlrg)
+   iqso = where(spec_qso AND strmatch(targets,'*QSO_*'), nqso)
 
    !x.margin = [4,4]
    !y.margin = [2,2]
@@ -147,9 +154,12 @@ pro zplot
     xstyle=1, ystyle=1, xticks=1, yticks=1, $
     xtickname=[' ',' '], ytickname=[' ',' '], $
     title=string(nmain, format='("EQUATORIAL STRIPE    (", i6, " galaxies)")')
-   djs_oplot, xplot[imain], yplot[imain], ps=3
-   djs_oplot, xplot[ilrg], yplot[ilrg], ps=3, color='red'
-   djs_oplot, xplot[iqso], yplot[iqso], ps=3, color='blue'
+   if (nmain GT 1) then $
+    djs_oplot, xplot[imain], yplot[imain], ps=3
+   if (nlrg GT 1) then $
+    djs_oplot, xplot[ilrg], yplot[ilrg], ps=3, color='red'
+   if (nqso GT 1) then $
+    djs_oplot, xplot[iqso], yplot[iqso], ps=3, color='blue'
    zplot_circle, [0.05, 0.10], ltheta=70
    zplot_circle, [0.15]
    zplot_exclude_galaxy, ramid=ramid
@@ -157,38 +167,83 @@ pro zplot
    dfpsclose
 
    ;----------
-   ; Plot to z=0.60
+   ; Plot to z=0.80
 
    dfpsplot, 'zplot-lrg.ps', /color, /square
-   zmax = 0.601
+   zmax = 0.801
    plot, [0], [0], /nodata, xrange=[-zmax,zmax], yrange=[-zmax,zmax], $
     xstyle=1, ystyle=1, xticks=1, yticks=1, $
     xtickname=[' ',' '], ytickname=[' ',' '], $
     title=string(nlrg, format='("EQUATORIAL STRIPE    (", i6, " LRGs)")')
-   djs_oplot, xplot[imain], yplot[imain], ps=3
-   djs_oplot, xplot[ilrg], yplot[ilrg], ps=1, symsize=0.25, color='red'
-   djs_oplot, xplot[iqso], yplot[iqso], ps=3, symsize=0.25, color='blue'
-   zplot_circle, [0.20, 0.40], ltheta=70
-   zplot_circle, [0.60]
+   if (nmain GT 1) then $
+    djs_oplot, xplot[imain], yplot[imain], ps=3
+   if (nlrg GT 1) then $
+    djs_oplot, xplot[ilrg], yplot[ilrg], ps=1, symsize=0.25, color='red'
+   if (nqso GT 1) then $
+    djs_oplot, xplot[iqso], yplot[iqso], ps=3, symsize=0.25, color='blue'
+   zplot_circle, [0.20, 0.40, 0.60], ltheta=70
+   zplot_circle, [0.80]
    zplot_exclude_galaxy, ramid=ramid
    zplot_label, ramid=ramid
    dfpsclose
 
    ;----------
-   ; Plot to z=5
+   ; Select a subsample of LRGs such that it is more uniform with redshift
+   ; Cap at MAXPER galaxies within a 0.025 bin.
+   ; Select those objects not at random, but closest to Dec=0
+   qsamp = bytarr(nlrg)
+   dz = 0.025
+   maxper = 500
+   dec_ref = -1. ; deg
+   for zthis=0.0, 1.0, dz do begin
+      ii = where(zans[ilrg].z GE zthis AND zans[ilrg].z LT zthis+dz, nn)
+      if (nn GT 0) then begin
+         if (nn LT maxper) then qsamp[ii] = 1B $
+;          else qsamp[ii[ (sort(randomu(1234,nn)))[0L:maxper-1L] ]] = 1B
+          else qsamp[ii[ (sort(abs(zans[ilrg[ii]].plug_dec - dec_ref)))[0L:maxper-1L] ]] = 1B
+      endif
+   endfor
+   isamp = ilrg[where(qsamp, nsamp)]
+
+   ;----------
+   ; Plot to z=0.80 subsampled
+
+   dfpsplot, 'zplot-lrg-samp.ps', /color, /square
+   zmax = 0.801
+   plot, [0], [0], /nodata, xrange=[-zmax,zmax], yrange=[-zmax,zmax], $
+    xstyle=5, ystyle=5, xticks=1, yticks=1, $
+    xtickname=[' ',' '], ytickname=[' ',' '], $
+    title=string(nlrg, format='("EQUATORIAL STRIPE    (", i6, " LRGs)")')
+   if (nmain GT 1) then $
+    djs_oplot, xplot[imain], yplot[imain], ps=3
+   if (nsamp GT 1) then $
+    djs_oplot, xplot[isamp], yplot[isamp], ps=1, symsize=0.25, color='red'
+   if (nqso GT 1) then $
+    djs_oplot, xplot[iqso], yplot[iqso], ps=3, symsize=0.25, color='blue'
+   zplot_circle, [0.20, 0.40, 0.60], ltheta=70
+   zplot_circle, [0.80]
+   zplot_exclude_galaxy, ramid=ramid
+   zplot_label, ramid=ramid
+   dfpsclose
+
+   ;----------
+   ; Plot to z=4
 
    dfpsplot, 'zplot-qso.ps', /color, /square
-   zmax = 5.01
+   zmax = 4.01
    plot, [0], [0], /nodata, xrange=[-zmax,zmax], yrange=[-zmax,zmax], $
     xstyle=1, ystyle=1, xticks=1, yticks=1, $
     xtickname=[' ',' '], ytickname=[' ',' '], $
     title=string(nqso, format='("EQUATORIAL STRIPE    (", i6, " QSOs)")')
-   djs_oplot, xplot[imain], yplot[imain], ps=3
-   djs_oplot, xplot[ilrg], yplot[ilrg], ps=3, color='red'
-   djs_oplot, xplot[iqso], yplot[iqso], ps=1, $
-    symsize=zans[iqso].z/8., color='blue'
-   zplot_circle, [1,2,3,4], ltheta=70
-   zplot_circle, [5]
+   if (nmain GT 1) then $
+    djs_oplot, xplot[imain], yplot[imain], ps=3
+   if (nlrg GT 1) then $
+    djs_oplot, xplot[ilrg], yplot[ilrg], ps=3, color='red'
+   if (nqso GT 1) then $
+    djs_oplot, xplot[iqso], yplot[iqso], ps=1, $
+     symsize=zans[iqso].z/8., color='blue'
+   zplot_circle, [1,2,3], ltheta=70
+   zplot_circle, [4]
    zplot_exclude_galaxy, ramid=ramid
    zplot_label, ramid=ramid
    dfpsclose
@@ -209,10 +264,13 @@ pro zplot
     xstyle=1, ystyle=1, xticks=1, yticks=1, $
     xtickname=[' ',' '], ytickname=[' ',' '], $
     title=string(nmain+nlrg+nqso, format='("EQUATORIAL STRIPE    (", i6, " objects)")')
-   djs_oplot, xplot[imain], yplot[imain], ps=3
-   djs_oplot, xplot[ilrg], yplot[ilrg], ps=3, color='red'
-   djs_oplot, xplot[iqso], yplot[iqso], ps=1, $
-    symsize=zans[iqso].z/8., color='blue'
+   if (nmain GT 1) then $
+    djs_oplot, xplot[imain], yplot[imain], ps=3
+   if (nlrg GT 1) then $
+    djs_oplot, xplot[ilrg], yplot[ilrg], ps=3, color='red'
+   if (nqso GT 1) then $
+    djs_oplot, xplot[iqso], yplot[iqso], ps=1, $
+     symsize=zans[iqso].z/8., color='blue'
    zplot_circle, alog10([0.03,0.1,0.5,2])-logzmin, $
     label=['0.03', '0.1','0.5','2'], ltheta=70
    zplot_circle, alog10(5)-logzmin, label='5', ltheta=70
