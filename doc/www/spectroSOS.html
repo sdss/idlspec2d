@@ -43,7 +43,7 @@ In this document:
 Related documents:
 <UL>
   <LI><A HREF="spectro_apodisplay.html">Displaying Spectra at APO</A>
-  <LI><A HREF="https://trac.sdss3.org/browser/repo/idlspec2d/branches/v5_4/bin/sos_README">SOS Deamon readme file</A>
+  <LI><A HREF="https://trac.sdss3.org/browser/repo/idlspec2d/trunk/bin/sos_README">SOS Deamon readme file</A>
 </UL>
 
 
@@ -128,7 +128,7 @@ for the night.  This procedure will process all images already present for the c
 MJD.<p>
 
 <dl><dd><code>
-$ sos_apocontrol allow
+$ sos_apocontrol allow<br>
 $ sos_apostart -g -e
 </dl></dd></code><p>
 	
@@ -178,12 +178,15 @@ You can run a different version of Son-of-Spectro by setting up
 the relevant version of idlspec2d before you launch it with "sos_apocontrol".
 This should be done from the "observer" account on "sos3.apo.nmsu.edu".<p>
 
-First stop any existing sos process using the procedures above.  Then setup the version
-of idlspec2d that you want to use.  Currently the latest stable tag is v5_4_1b.
+For example, to stop the current version, set up v5_4_15, then re-start:
 <dl><dd><code>
-	setup idlspec2d v5_4_1b
+$ sos_apocontrol stopWait <br>
+$ setup idlspec2d v5_4_15 <br>
+$ sos_apocontrol allow <br>
+$ sos_apostart -g -e 
 </dl></dd></code>
-The startup the sos daemon using the procedures above.
+If "sos_apocontrol stopWait" hangs, then hit control-C and
+use "sos_apocontrol stopKill".
 
 <H2><A NAME="install">Installing a new version</A></H2>
 
