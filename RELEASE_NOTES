@@ -1,5 +1,14 @@
 
 -------------------------------------------------------------------------------
+v5_4_16 (Sep 6, 2010) idlspec2d
+Tag for critical bug fix for SOS (ticket #1012).
+Built against specflat v1_12, elodie v1_3, idlutils v5_4_19.
+
+bin/loadSN2Value,updatePluggingStatus: Back out to previous version,
+      since changes were made for a new version of platedb that does
+      not yet exist.
+
+-------------------------------------------------------------------------------
 v5_4_15 (Sep 4, 2010) idlspec2d
 Tag for critical bug fix for SOS (ticket #1005).
 Built against specflat v1_12, elodie v1_3, idlutils v5_4_19.
