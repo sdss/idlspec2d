@@ -19,10 +19,8 @@ Written by Gary Kushner (LBL).  March 2010.
 """
 
 try:
-	from platedb.APODatabaseConnection import db
+	from platedb.db_connection import engine, metadata, Session
 	from platedb.ModelClasses import *
-#	from platedb.db_connection import engine, metadata, Session
-#	from platedb.ModelClasses import *
 	from sqlalchemy import between
 	import sqlalchemy
 except:
@@ -318,7 +316,7 @@ def main(argv):
 	
 	try:
 		config  = parseCmdLine(sys.argv[1:])
-		session = db.Session()
+		session = Session()
 		processFlags(session, config)
 		session.commit()
 	except:
@@ -329,7 +327,7 @@ def main(argv):
 	finally:
 		if session != None:
 			session.close()
-			db.engine.dispose()
+			engine.dispose()
 		
 
 

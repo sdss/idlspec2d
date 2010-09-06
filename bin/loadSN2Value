@@ -16,9 +16,7 @@ Written by Gary Kushner (LBL).  Dec 2009.
 """
 
 try:
-#	from platedb.db_connection import engine, metadata, Session
-#	from platedb.ModelClasses import *
-	from platedb.APODatabaseConnection import db
+	from platedb.db_connection import engine, metadata, Session
 	from platedb.ModelClasses import *
 	import sqlalchemy
 except:
@@ -372,7 +370,7 @@ def main(args):
 	
 	try:
 		config  = parseCmdLine(sys.argv[1:])
-		session = db.Session()
+		session = Session()
 		addOrUpdateExposure(session, config)
 		session.commit()
 	except:
@@ -382,7 +380,7 @@ def main(args):
 	finally:
 		if session != None:
 			session.close()
-			db.engine.dispose()
+			engine.dispose()
 	
 #### Start of script
 
