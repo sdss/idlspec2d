@@ -1,5 +1,6 @@
 
 APOD: Search for gzipped sdR files.
+COMBSMALLCOLLIMATE: Remove test lines that slightly changed the offsets.
 
 -------------------------------------------------------------------------------
 v5_4_16 (Sep 6, 2010) idlspec2d
