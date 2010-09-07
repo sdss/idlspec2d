@@ -33,9 +33,10 @@ pro apod1, mjd=mjd, camname=camname
       logfile=filename[i]+'.log'
       thisfile = findfile(logfile)
       if (keyword_set(thisfile) EQ 0) then begin
+         splog, filename=logfile, 'Begin '+filename[i], /close
          aporeduce, filename[i], indir=indir, outdir=outdir, $
           plugdir=plugdir, copydir=copydir
-         splog, filename=logfile, 'Done '+filename[i], /close
+         splog, filename=logfile, 'Done '+filename[i], /close, /append
       endif
    endfor
 
