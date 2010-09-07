@@ -45,28 +45,29 @@ speclimit red flat EXPTIME * 33 9e9
 # Originally.  Define the locations from plate 3552/55142 on cartridge 11.
 # Further analysis shows a scatter that does not impact reductions, but a
 # a scatter that is larger than the constraints from 3552, see logs
-# from David Harris in pipeline mailing list for examples.  Now, define
-# XMID= 2034 2049 2047 2040, more than 8 pix is yellow, 12 pix is red
+# from David Harris in pipeline mailing list for examples.
+# Define XMID= 2036 2045 2043 2044, more than 8 pix is yellow, 12 pix is red
+# from Kaike Pan on 7 Sep 2010.
 
-speclimit yellow flat XMID b1 -9e9 2026
-speclimit yellow flat XMID b2 -9e9 2041
-speclimit yellow flat XMID r1 -9e9 2039
-speclimit yellow flat XMID r2 -9e9 2032
+speclimit yellow flat XMID b1 -9e9 2028
+speclimit yellow flat XMID b2 -9e9 2037
+speclimit yellow flat XMID r1 -9e9 2035
+speclimit yellow flat XMID r2 -9e9 2036
 
-speclimit yellow flat XMID b1 2042 9e9
-speclimit yellow flat XMID b2 2057 9e9
-speclimit yellow flat XMID r1 2055 9e9
-speclimit yellow flat XMID r2 2048 9e9
+speclimit yellow flat XMID b1 2044 9e9
+speclimit yellow flat XMID b2 2053 9e9
+speclimit yellow flat XMID r1 2051 9e9
+speclimit yellow flat XMID r2 2052 9e9
 
-speclimit red flat XMID b1 -9e9 2022
-speclimit red flat XMID b2 -9e9 2037
-speclimit red flat XMID r1 -9e9 2035
-speclimit red flat XMID r2 -9e9 2028
+speclimit red flat XMID b1 -9e9 2024
+speclimit red flat XMID b2 -9e9 2033
+speclimit red flat XMID r1 -9e9 2031
+speclimit red flat XMID r2 -9e9 2032
 
-speclimit red flat XMID b1 2046 9e9
-speclimit red flat XMID b2 2061 9e9
-speclimit red flat XMID r1 2059 9e9
-speclimit red flat XMID r2 2052 9e9
+speclimit red flat XMID b1 2048 9e9
+speclimit red flat XMID b2 2057 9e9
+speclimit red flat XMID r1 2055 9e9
+speclimit red flat XMID r2 2056 9e9
 
 # Issue a warning if 3 or more fibers are missing on either side of
 # the spectrograph, and an error if 10 or more.
