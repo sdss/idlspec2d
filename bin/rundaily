@@ -116,9 +116,13 @@ def runScript(scriptFile, mjd):
 def nextMJD(mjd, pwFile):
 	"""Return true if the given MJD has been transfered"""
 	
-	cmd = "getWikiMJD " + pwFile + " " + str(mjd) + " &> /dev/null"
-	rc = os.system(cmd)
-	return rc == 0
+#	cmd = "getWikiMJD " + pwFile + " " + str(mjd) + " &> /dev/null"
+#	rc = os.system(cmd)
+#	return rc == 0
+
+	path = os.path.join(os.getenv("DAILY_RAWDATA_DIR"), mjd)
+	print "Looking for %s" % path
+	return os.path.isdir(path)
 	
 	
 ####

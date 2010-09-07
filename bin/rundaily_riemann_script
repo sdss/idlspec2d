@@ -128,8 +128,10 @@ export SVN_SSH="ssh -i /home/boss/.ssh/id_dsa-autoboss"
 printAndRun "setup idlspec2d v5_4_11"
 printAndRun "setup photoop"
 printAndRun "setup runz"
-UPS1D=,upsvers1d=\"v5_4_9\"
-UPS2D=,upsvers2d=\"v5_4_9\"
+#UPS1D=,upsvers1d=\"v5_4_9\"
+#UPS2D=,upsvers2d=\"v5_4_9\"
+UPS1D=,upsvers1d=\"$DAILY_UPSVERS1D\"
+UPS2D=,upsvers2d=\"$DAILY_UPSVERS2D\"
 ZCODE=",/zcode"
 
 echo UPS1D=$UPS1D, UPS2D=$UPS2D, ZCODE=$ZCODE

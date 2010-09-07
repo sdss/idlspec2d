@@ -1,4 +1,5 @@
 
+bin/rundaily: Wait for the current MJD to show up in $DAILY_RAWDATA_DIR
 APOD: Search for gzipped sdR files.
 COMBSMALLCOLLIMATE: Remove test lines that slightly changed the offsets.
 
