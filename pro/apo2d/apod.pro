@@ -27,7 +27,7 @@ pro apod1, mjd=mjd, camname=camname
 ;outdir='./'
 ;plugdir='/Users/schlegel/rawdata/plugmaps'
 ;copydir=''
-   filename = fileandpath(findfile(indir+'/sdR-'+camname+'*.fit*',count=nfile))
+   filename = fileandpath(findfile(indir+'/sdR-'+camname+'*.fit.gz',count=nfile))
    filename = filename[sort(filename)]
    for i=0L,nfile-1L do begin
       logfile=filename[i]+'.log'
