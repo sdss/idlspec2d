@@ -482,8 +482,8 @@ bigimg2=fltarr(4114,4128)
          yoffsetr2=yoffset*m + b
       endif
 
-m=1   ;for testing uncomment these
-b=0
+;m=1   ;for testing uncomment these
+;b=0
 
       yoffset=yoffset*m + b
 
