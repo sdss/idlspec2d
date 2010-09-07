@@ -66,6 +66,21 @@ pro apo_appendlog, logfile, rstruct, tstruct
    ; Lock the file to do this - otherwise we might read/write to a partially
    ; written file.
 
+   ; If unable to get lock, then timeout after 200x1 sec
+   qdone = 0
+   iiter = 0L
+   while(qdone EQ 0) do begin
+      qdone = djs_lockfile(logfile)
+      if (qdone EQ 0) then begin
+         wait, 2
+         if (iiter GE 200) then begin
+            splog, 'ABORT: Timeout on lock file for '+logfile
+            return
+         endif
+      endif
+      iiter++
+   end
+
    while(djs_lockfile(logfile) EQ 0) do wait, 1
 
    ;----------
