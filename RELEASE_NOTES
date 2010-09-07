@@ -1,7 +1,25 @@
 
-bin/rundaily: Wait for the current MJD to show up in $DAILY_RAWDATA_DIR
+-------------------------------------------------------------------------------
+v5_4_17 (Sep 7, 2010) idlspec2d
+Tag for SOS bugs (tickets #636, 797, 1017, 1022 addressed at some level).
+Built against specflat v1_12, elodie v1_3, idlutils v5_4_19.
+
+APO_APPENDLOG: Timeout after 200 sec, at which point a frame might be
+      reduced but it will not be added to the log file or plots.
+      This might help address tickets #1017, #797, or at least provide
+      more info in the SOS logs about a possible problem.
 APOD: Search for gzipped sdR files.
-COMBSMALLCOLLIMATE: Remove test lines that slightly changed the offsets.
+      Add logic to reduce an arc preceding a flat (untested).
+COMBSMALLCOLLIMATE: Remove test lines that accidentally changed the offsets.
+      Apodize the top and bottom of the image to be robust against an arc
+      line fallling near the edge of the active region.  (Ticket #1022).
+
+bin/rundaily: Wait for the current MJD to show up in $DAILY_RAWDATA_DIR
+bin/rundaily_riemann_script: Use environment variables RUN2D,RUN1D
+      (or UPS2D,UPS1D if they exist) for the output directory names.
+examples/opLimits.par: Define XMID to 2036 2045 2043 2044 based upon
+      Kaike Pan's posting on 7 Sep 2010 to be more consistent between
+      the blue and red cameras (ticket #636).
 
 -------------------------------------------------------------------------------
 v5_4_16 (Sep 6, 2010) idlspec2d
