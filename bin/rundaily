@@ -120,7 +120,7 @@ def nextMJD(mjd, pwFile):
 #	rc = os.system(cmd)
 #	return rc == 0
 
-	path = os.path.join(os.getenv("DAILY_RAWDATA_DIR"), mjd)
+	path = os.path.join(os.getenv("DAILY_RAWDATA_DIR"), str(mjd))
 	print "Looking for %s" % path
 	return os.path.isdir(path)
 	
