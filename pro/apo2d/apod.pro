@@ -37,6 +37,25 @@ pro apod1, mjd=mjd, camname=camname
          aporeduce, filename[i], indir=indir, outdir=outdir, $
           plugdir=plugdir, copydir=copydir
          splog, filename=logfile, 'Done '+filename[i], /close, /append
+
+         ; Logic to reduce an arc preceding a flat.
+         ; Do this by deleting the log file for the arc.
+         hdr = sdsshead(filename[i], indir=indir)
+         if (strtrim(sxpar(hdr,'FLAVOR') EQ 'flat') AND $
+          strtrim(sxpar(hdr,'QUALITY') EQ 'excellent')) then begin
+            prevexp = sxpar(hdr,'EXPOSURE') - 1
+            prevfile = indir+'/sdR-'+camname+'-' $
+             +string(prevexp,format='(i8.8)')+'.fit.gz'
+            prevfile = findfile(prevfile)
+            if (keyword_set(prevfile)) then begin
+               prevhdr = sdsshead(prevfile, indir=indir)
+               if (strtrim(sxpar(prevhdr,'FLAVOR') EQ 'arc') AND $
+                strtrim(sxpar(hdr,'QUALITY') EQ 'excellent')) then begin
+                  prevlog = prevfile+'.log'
+                  spawn, '\rm -f '+prevlog
+               endif
+            endif
+         endif
       endif
    endfor
 
