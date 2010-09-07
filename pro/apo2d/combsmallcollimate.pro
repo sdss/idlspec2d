@@ -306,6 +306,12 @@ bigimg2=fltarr(4114,4128)
    xh=2500
  
    im=bigimg1[xl:xh,yl:yh]
+
+   for i=0, 10 do begin         ;Apodization step, to minimize edge effects
+       im[i,*]=i/10.*im[i,*]
+       im[450-i,*]=i/10.*im[450-i,*]
+   endfor
+
    if (docams[icam] eq 'b1' or docams[icam] eq 'b2') then var=variance(im[*,300:450])  else var=variance(im[*,0:150]) ; find variance near bright lines
   
          ; Remember original image size for contour plots
