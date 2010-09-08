@@ -81,7 +81,7 @@ pro apo_appendlog, logfile, rstruct, tstruct
       iiter++
    end
 
-   while(djs_lockfile(logfile) EQ 0) do wait, 1
+;   while(djs_lockfile(logfile) EQ 0) do wait, 1
 
    ;----------
    ; If the log file does not yet exist, then create it.  Otherwise,
