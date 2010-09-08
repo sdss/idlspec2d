@@ -15,8 +15,7 @@ COMBSMALLCOLLIMATE: Remove test lines that accidentally changed the offsets.
       line fallling near the edge of the active region.  (Ticket #1022).
 
 bin/rundaily: Wait for the current MJD to show up in $DAILY_RAWDATA_DIR
-bin/rundaily_riemann_script: Use environment variables RUN2D,RUN1D
-      (or UPS2D,UPS1D if they exist) for the output directory names.
+bin/rundaily_riemann_script: Use environment variables RUN2D,RUN1D.
 examples/opLimits.par: Define XMID to 2036 2045 2043 2044 based upon
       Kaike Pan's posting on 7 Sep 2010 to be more consistent between
       the blue and red cameras (ticket #636).
