@@ -442,12 +442,15 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
          ; Generate the added S/N^2 for this one exposure only
          plotfile1 = filepath('snplot-'+mjdstr+'-'+platestr+'-'+filee+'.ps', $
           root_dir=outdir)
+         jpegfiletmp = filepath('snplot-'+mjdstr+'-'+platestr+'-'+filee+'-'+filec+'.jpeg', $
+          root_dir=outdir)
          jpegfile1 = filepath('snplot-'+mjdstr+'-'+platestr+'-'+filee+'.jpeg', $
           root_dir=outdir)
          splog, 'Generating S/N plot '+plotfile1
          apo_plotsn, logfile, plate, expnum=long(filee), $
           plugdir=plugdir, plotfile=plotfile1
-         spawn, 'gs -sOutputFile='+jpegfile1+' -sDEVICE=jpeg -dNOPAUSE -dBATCH '+plotfile1
+;         spawn, 'gs -sOutputFile='+jpegfile1+' -sDEVICE=jpeg -dNOPAUSE -dBATCH '+plotfile1
+         spawn, 'convert '+plotfile1+' '+jpegfiletmp+' ; \mv '+jpegfiletmp+' '+jpegfile1
          splog, 'Done generating plot'
 
          ; Generate the added S/N^2 for all exposures on this plate
