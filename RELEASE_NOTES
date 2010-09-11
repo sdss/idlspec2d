@@ -1,4 +1,6 @@
 
+APO_APPENDLOG: Change timeout to 200 sec (was accidentally 400 sec).
+
 -------------------------------------------------------------------------------
 v5_4_17 (Sep 7, 2010) idlspec2d
 Tag for SOS bugs (tickets #636, 797, 1017, 1022 addressed at some level).
