@@ -450,7 +450,9 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
          apo_plotsn, logfile, plate, expnum=long(filee), $
           plugdir=plugdir, plotfile=plotfile1
 ;         spawn, 'gs -sOutputFile='+jpegfile1+' -sDEVICE=jpeg -dNOPAUSE -dBATCH '+plotfile1
-         spawn, 'convert '+plotfile1+' '+jpegfiletmp+' ; \mv '+jpegfiletmp+' '+jpegfile1
+         cmd = 'convert '+plotfile1+' '+jpegfiletmp+' ; \mv '+jpegfiletmp+' '+jpegfile1+' &'
+         splog, 'SPAWN '+cmd
+         spawn, cmd
          splog, 'Done generating plot'
 
          ; Generate the added S/N^2 for all exposures on this plate
