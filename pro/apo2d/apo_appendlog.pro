@@ -116,7 +116,7 @@ pro apo_appendlog, logfile, rstruct, tstruct
                        pp.camera EQ rstruct.camera)
 
       if exists[0] EQ -1 then pp = struct_append(pp, rstruct) $
-      else pp[exists[0]] = rstruct
+       else copy_struct_inx, rstruct, pp, index_to=exists[0]
 
       djs_modfits, logfile, pp, exten_no=thishdu
    endif
