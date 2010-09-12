@@ -2,10 +2,16 @@
 APO_APPENDLOG: Use COPY_STRUCT_INX to copy into an existing data structure,
       rather than an assignment that could fail if structures are different.
 APOD: Fix logic for re-reducing good arcs that precede good flats.
-APOREDUCE: Last tag replaced one instance of 'gs' with 'convert', but
+APOREDUCE: Last tag replaced one instance of 'gs' with '/usr/bin/convert', but
       do the second instance too.
+      Print the stdout and sterr from the call to convert.
 QUICKBIAS,QUICKEXTRACT,QUICKTRACE,QUICKWAVE: Explicitly set types of all
       output structure elements, which may help address ticket #1043.
+QUICKEXTRACT: Force data type of EXPTIME and SKYLEVEL to be floating-point.
+      The ICC changes can result in an EXPTIME that is either float or double,
+      and that gets propogated through and can result in a data-type mismatch
+      (ticket #1043).
+      to type double.  It appears this is the variable that is k
 SDSSPROC: Failed on line 363 if passing this routine an array of filenames,
       even a 1-element array.  Internally recast INFILE as a scalar to
       protect against that case (although never encountered in the pipeline).
