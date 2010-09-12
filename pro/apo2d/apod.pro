@@ -31,7 +31,7 @@ pro apod1, mjd=mjd, camname=camname
    filename = filename[sort(filename)]
    for i=0L,nfile-1L do begin
       logfile=filename[i]+'.log'
-      thisfile = findfile(logfile)
+      thisfile = (findfile(logfile))[0]
       if (keyword_set(thisfile) EQ 0) then begin
          splog, filename=logfile, 'Begin '+filename[i], /close
          aporeduce, filename[i], indir=indir, outdir=outdir, $
@@ -39,21 +39,28 @@ pro apod1, mjd=mjd, camname=camname
          splog, filename=logfile, 'Done '+filename[i], /close, /append
 
          ; Logic to reduce an arc preceding a flat.
-         ; Do this by deleting the log file for the arc.
          hdr = sdsshead(filename[i], indir=indir)
-         if (strtrim(sxpar(hdr,'FLAVOR') EQ 'flat') AND $
-          strtrim(sxpar(hdr,'QUALITY') EQ 'excellent')) then begin
+         if ((strtrim(sxpar(hdr,'FLAVOR')) EQ 'flat') AND $
+          strtrim(sxpar(hdr,'QUALITY')) EQ 'excellent') then begin
             prevexp = sxpar(hdr,'EXPOSURE') - 1
             prevfile = indir+'/sdR-'+camname+'-' $
              +string(prevexp,format='(i8.8)')+'.fit.gz'
-            prevfile = findfile(prevfile)
+            splog, 'Searching for previous file='+prevfile
+            prevfile = fileandpath((findfile(prevfile))[0])
             if (keyword_set(prevfile)) then begin
+               splog, 'Found previous file='+prevfile
                prevhdr = sdsshead(prevfile, indir=indir)
-               if (strtrim(sxpar(prevhdr,'FLAVOR') EQ 'arc') AND $
-                strtrim(sxpar(hdr,'QUALITY') EQ 'excellent')) then begin
+               if ((strtrim(sxpar(prevhdr,'FLAVOR')) EQ 'arc') AND $
+                (strtrim(sxpar(hdr,'QUALITY')) EQ 'excellent')) then begin
+                  splog, 'Reduce previous file='+prevfile
                   prevlog = prevfile+'.log'
-                  spawn, '\rm -f '+prevlog
-               endif
+                  splog, filename=prevlog, 'Begin '+prevfile, /close
+                  aporeduce, prevfile, indir=indir, outdir=outdir, $
+                   plugdir=plugdir, copydir=copydir
+                  splog, filename=prevlog, 'Done '+prevfile, /close, /append
+               endif else begin
+                  splog, 'Ignore previous file='+prevfile
+               endelse
             endif
          endif
       endif
