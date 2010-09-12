@@ -346,13 +346,13 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
     else skychi2 = 0.0
 
    rstruct = create_struct('SCIFILE', fileandpath(outsci), $
-                           'SKYPERSEC', skylevel, $
-                           'XSIGMA_QUADRANT', medwidth, $
-                           'XSIGMA', max(medwidth), $
-                           'SKYCHI2', skychi2, $
+                           'SKYPERSEC', double(skylevel), $
+                           'XSIGMA_QUADRANT', float(medwidth), $
+                           'XSIGMA', float(max(medwidth)), $
+                           'SKYCHI2', float(skychi2), $
                            'FIBERMAG', plugsort.mag[icolor], $
-                           'SN2VECTOR', meansn^2, $
-                           'SN2', sn2 )
+                           'SN2VECTOR', float(meansn^2), $
+                           'SN2', float(sn2) )
 
    ;----------
    ; Write out the extracted spectra
