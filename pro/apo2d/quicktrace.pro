@@ -200,10 +200,10 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin, $
    xmid = mean( yy[nrow/2-1:nrow/2,ntrace/2-1:ntrace/2] )
 
    rstruct = create_struct('TSETFILE', fileandpath(tsetfile), $
-                           'NGOODFIBER', ngfiber, $
-                           'XMID', xmid, $
-                           'XSIGMA_QUADRANT', medwidth, $
-                           'XSIGMA', max(medwidth) )
+                           'NGOODFIBER', float(ngfiber), $
+                           'XMID', double(xmid), $
+                           'XSIGMA_QUADRANT', float(medwidth), $
+                           'XSIGMA', float(max(medwidth)) )
 
    obj_destroy, configuration
 
