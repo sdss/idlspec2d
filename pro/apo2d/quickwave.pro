@@ -176,11 +176,11 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
 
    nlamps = (size(xpeak,/dimens))[1]
    rstruct = create_struct('WSETFILE', fileandpath(wsetfile), $
-                           'WAVEMID', wavemid, $
-                           'BESTCORR', bestcorr, $
-                           'NLAMPS', nlamps, $
-                           'WSIGMA_QUADRANT', medwidth, $
-                           'WSIGMA', max(medwidth) )
+                           'WAVEMID', double(wavemid), $
+                           'BESTCORR', float(bestcorr), $
+                           'NLAMPS', long(nlamps), $
+                           'WSIGMA_QUADRANT', float(medwidth), $
+                           'WSIGMA', float(max(medwidth)) )
 
    return, rstruct
 end
