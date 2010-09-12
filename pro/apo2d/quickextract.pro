@@ -330,9 +330,9 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
 
    if (iskies[0] NE -1) then begin
       skylevel = median( meanflux[iskies] )
-      if (exptime GT 0) then skylevel = skylevel / exptime
+      if (exptime GT 0) then skylevel = skylevel / float(exptime)
    endif else begin
-      skylevel = 0
+      skylevel = 0.
    endelse
 
    if (iobj[0] NE -1) then begin
@@ -346,7 +346,7 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
     else skychi2 = 0.0
 
    rstruct = create_struct('SCIFILE', fileandpath(outsci), $
-                           'SKYPERSEC', double(skylevel), $
+                           'SKYPERSEC', float(skylevel), $
                            'XSIGMA_QUADRANT', float(medwidth), $
                            'XSIGMA', float(max(medwidth)), $
                            'SKYCHI2', float(skychi2), $
