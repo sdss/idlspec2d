@@ -410,11 +410,11 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
                               'FLAVOR', string(flavor), $
                               'CAMERA', string(camnames[icam]), $
                               'TAI', double(tai_mid), $
-                              'AIRTEMP', airtemp, $
-                              'CCDTEMP', ccdtemp, $
+                              'AIRTEMP', float(airtemp), $
+                              'CCDTEMP', float(ccdtemp), $
                               'QUALITY', string(sxpar(hdr,'QUALITY')), $
-                              'NAME', string(sxpar(hdr,'QUALITY')), $
-                              'OBSCOMM', string(sxpar(hdr,'QUALITY')), $
+                              'NAME', string(sxpar(hdr,'NAME')), $
+                              'OBSCOMM', string(sxpar(hdr,'OBSCOMM')), $
                               'RADEG', float(radeg), $
                               'DECDEG', float(decdeg), $
                               'AIRMASS', float(tai2airmass(radeg,decdeg,tai=tai_mid)), $
@@ -442,7 +442,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
          ; Generate the added S/N^2 for this one exposure only
          plotfile1 = filepath('snplot-'+mjdstr+'-'+platestr+'-'+filee+'.ps', $
           root_dir=outdir)
-         jpegfiletmp = filepath('snplot-'+mjdstr+'-'+platestr+'-'+filee+'-'+filec+'.jpeg', $
+         jpegfiletmp1 = filepath('snplot-'+mjdstr+'-'+platestr+'-'+filee+'-'+filec+'.jpeg', $
           root_dir=outdir)
          jpegfile1 = filepath('snplot-'+mjdstr+'-'+platestr+'-'+filee+'.jpeg', $
           root_dir=outdir)
@@ -450,7 +450,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
          apo_plotsn, logfile, plate, expnum=long(filee), $
           plugdir=plugdir, plotfile=plotfile1
 ;         spawn, 'gs -sOutputFile='+jpegfile1+' -sDEVICE=jpeg -dNOPAUSE -dBATCH '+plotfile1
-         cmd = 'convert '+plotfile1+' '+jpegfiletmp+' ; \mv '+jpegfiletmp+' '+jpegfile1+' &'
+         cmd = 'convert '+plotfile1+' '+jpegfiletmp1+' ; \mv '+jpegfiletmp1+' '+jpegfile1+' &'
          splog, 'SPAWN '+cmd
          spawn, cmd
          splog, 'Done generating plot'
@@ -460,9 +460,14 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
           root_dir=outdir)
          jpegfile = filepath('snplot-'+mjdstr+'-'+platestr+'.jpeg', $
           root_dir=outdir)
+         jpegfiletmp = filepath('snplot-'+mjdstr+'-'+platestr+'-'+filec+'.jpeg', $
+          root_dir=outdir)
          splog, 'Generating S/N plot '+plotfile
          apo_plotsn, logfile, plate, plugdir=plugdir, plotfile=plotfile
-         spawn, 'gs -sOutputFile='+jpegfile+' -sDEVICE=jpeg -dNOPAUSE -dBATCH '+plotfile
+;         spawn, 'gs -sOutputFile='+jpegfile+' -sDEVICE=jpeg -dNOPAUSE -dBATCH '+plotfile
+         cmd = 'convert '+plotfile+' '+jpegfiletmp+' ; \mv '+jpegfiletmp+' '+jpegfile+' &'
+         splog, 'SPAWN '+cmd
+         spawn, cmd
          splog, 'Done generating plot'
       endif
 
