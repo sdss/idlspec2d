@@ -1,4 +1,13 @@
 
+APOD: Fix logic for re-reducing good arcs that precede good flats.
+APOREDUCE: Last tag replaced one instance of 'gs' with 'convert', but
+      do the second instance too.
+QUICKBIAS,QUICKEXTRACT,QUICKTRACE,QUICKWAVE: Explicitly set types of all
+      output structure elements, which may help address ticket #1043.
+SDSSPROC: Failed on line 363 if passing this routine an array of filenames,
+      even a 1-element array.  Internally recast INFILE as a scalar to
+      protect against that case (although never encountered in the pipeline).
+
 -------------------------------------------------------------------------------
 v5_4_18 (Sep 11, 2010) idlspec2d
 Tag for SOS critical bug (ticket #1034).
