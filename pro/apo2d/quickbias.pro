@@ -34,7 +34,7 @@ function quickbias, biasname, do_lock=do_lock
    ;----------
    ; Return a structure with the percentiles
 
-   rstruct = create_struct('PERCENTILE', ptiles)
+   rstruct = create_struct('PERCENTILE', float(ptiles))
 
    return, rstruct
 end
