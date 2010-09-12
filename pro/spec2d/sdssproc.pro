@@ -274,7 +274,7 @@ function make_badcolumn_mask, bcfile, camrow, camcol, nc=nc, nr=nr, $
 end
 
 ;------------------------------------------------------------------------------
-pro sdssproc, infile, image, invvar, indir=indir, $
+pro sdssproc, infile1, image, invvar, indir=indir, $
     outfile=outfile, varfile=varfile, nsatrow=nsatrow, fbadpix=fbadpix, $
     hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, bcfile=bcfile, $
     applybias=applybias, applypixflat=applypixflat, silent=silent, $
@@ -289,6 +289,7 @@ pro sdssproc, infile, image, invvar, indir=indir, $
     return
   endif
   
+  infile = infile1[0]
   readimg = arg_present(image) OR keyword_set(outfile)
   readivar = arg_present(invvar) OR keyword_set(varfile) $
     OR arg_present(nsatrow) OR arg_present(fbadpix)
