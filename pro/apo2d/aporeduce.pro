@@ -450,9 +450,11 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
          apo_plotsn, logfile, plate, expnum=long(filee), $
           plugdir=plugdir, plotfile=plotfile1
 ;         spawn, 'gs -sOutputFile='+jpegfile1+' -sDEVICE=jpeg -dNOPAUSE -dBATCH '+plotfile1
-         cmd = 'convert '+plotfile1+' '+jpegfiletmp1+' ; \mv '+jpegfiletmp1+' '+jpegfile1+' &'
-         splog, 'SPAWN '+cmd
+         cmd = '/usr/bin/convert '+plotfile1+' '+jpegfiletmp1+' ; \mv '+jpegfiletmp1+' '+jpegfile1+' &'
+         splog, 'SPAWN '+cmd, sh_out, sh_err
          spawn, cmd
+         splog, 'SPAWN out=', sh_out
+         splog, 'SPAWN err=', sh_err
          splog, 'Done generating plot'
 
          ; Generate the added S/N^2 for all exposures on this plate
@@ -465,9 +467,12 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
          splog, 'Generating S/N plot '+plotfile
          apo_plotsn, logfile, plate, plugdir=plugdir, plotfile=plotfile
 ;         spawn, 'gs -sOutputFile='+jpegfile+' -sDEVICE=jpeg -dNOPAUSE -dBATCH '+plotfile
-         cmd = 'convert '+plotfile+' '+jpegfiletmp+' ; \mv '+jpegfiletmp+' '+jpegfile+' &'
-         splog, 'SPAWN '+cmd
+         cmd = '/usr/bin/convert '+plotfile+' '+jpegfiletmp+' ; \mv '+jpegfiletmp+' '+jpegfile+' &'
+         splog, 'SPAWN '+cmd, sh_out, sh_err
          spawn, cmd
+         splog, 'SPAWN out=', sh_out
+         splog, 'SPAWN err=', sh_err
+         splog, 'Done generating plot'
          splog, 'Done generating plot'
       endif
 
