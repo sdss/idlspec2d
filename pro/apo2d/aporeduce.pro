@@ -406,7 +406,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
                               'PLATE', long(plate), $
                               'CARTID', long(sxpar(hdr,'CARTID')), $
                               'EXPNUM', long(filee), $
-                              'EXPTIME', double(sxpar(hdr, 'EXPTIME')), $
+                              'EXPTIME', float(sxpar(hdr, 'EXPTIME')), $
                               'FLAVOR', string(flavor), $
                               'CAMERA', string(camnames[icam]), $
                               'TAI', double(tai_mid), $
