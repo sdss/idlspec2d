@@ -16,6 +16,8 @@ QUICKEXTRACT: Force data type of EXPTIME and SKYLEVEL to be floating-point.
 SDSSPROC: Failed on line 363 if passing this routine an array of filenames,
       even a 1-element array.  Internally recast INFILE as a scalar to
       protect against that case (although never encountered in the pipeline).
+bin/sos_apocontrol:  stopKill now kills all child processes when called.  This
+      will (hopefully) kill any stuck idl jobs.
 
 -------------------------------------------------------------------------------
 v5_4_18 (Sep 11, 2010) idlspec2d
