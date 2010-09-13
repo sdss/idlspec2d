@@ -121,7 +121,7 @@ def stopKill():
 		sys.stdout.flush()
 		pids = rc[1].split("\n")
 		for pid in pids:
-			killAndChildren(kill, int(pid))
+			killAndChildren.kill(int(pid))
 
 	rc = commands.getstatusoutput("ps ax -o pid,args | grep runnerd | grep -v grep | grep -Eo ^.*python | grep -Eo [0-9]+")
 	if len(rc[1]) != 0:
