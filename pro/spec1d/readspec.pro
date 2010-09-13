@@ -162,7 +162,7 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
  synflux=synflux, lineflux=lineflux, znum=znum, objhdr=objhdr, zhdr=zhdr, $
  nfiber=nfiber, coeffzero=coeff0, coeffone=coeff1, npix=npix, $
  topdir=topdir1, run2d=run2d, run1d=run1d, path=path, $
- align=align, silent=silent, qread=qread
+ align=align, silent=silent, qread=qread, sdss=sdss
 
    platestr = string(plate,format='(i4.4)')
    if (NOT keyword_set(mjd)) then mjdstr = '*' $
@@ -170,11 +170,13 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    if (keyword_set(path)) then begin
       topdir = path
    endif else begin
-      topdir = keyword_set(topdir1) ? topdir1[0] : getenv('BOSS_SPECTRO_REDUX')
+      if keyword_set(topdir1) then topdir = topdir1[0] else $
+          topdir = keyword_set(sdss) ? getenv('SPECTRO_REDUX') : getenv('BOSS_SPECTRO_REDUX')
+      ; topdir = keyword_set(topdir1) ? topdir1[0] : getenv('BOSS_SPECTRO_REDUX')
       oneddir = n_elements(run1d) GT 0 ? strtrim(run1d[0],2) : getenv('RUN1D')
       twoddir = n_elements(run2d) GT 0 ? strtrim(run2d[0],2) : getenv('RUN2D')
    endelse
-   
+
 
    filename = 'spPlate-' + platestr + '-' + mjdstr + '.fits'
    if (keyword_set(path)) then $
@@ -256,8 +258,13 @@ pro readspec1, plate, rownums, mjd=mjd, flux=flux, flerr=flerr, invvar=invvar, $
    endif
 
    if (qread.tsobj) then begin
+      if keyword_set(sdss) then $
+         matchdir=getenv('SPECTRO_MATCH')+'/'+twodir+'/'+ $
+            file_basename(getenv('PHOTO_RESOLVE'))+'/'+platestr $
+      else $
+         matchdir=topdir+'/'+twoddir+'/'+platestr
       tsobj1 = plug2tsobj(plate, mjd=mjd, $
-       indir=topdir+'/'+twoddir+'/'+platestr, silent=silent)
+       indir=matchdir, silent=silent)
       if (keyword_set(tsobj1)) then tsobj = tsobj1[rownums]
    endif
 

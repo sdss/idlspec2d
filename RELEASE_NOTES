@@ -1,4 +1,5 @@
-
+READSPEC: Restore ability to read SDSS spectra, particularly the SDSS-I
+      photoPosPlate files.
 APO_APPENDLOG: Use COPY_STRUCT_INX to copy into an existing data structure,
       rather than an assignment that could fail if structures are different.
 APOD: Fix logic for re-reducing good arcs that precede good flats.
