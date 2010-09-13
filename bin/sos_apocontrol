@@ -111,9 +111,9 @@ def stopWait():
 		
 ####
 def stopKill():
-#	open(DIEFILE, 'w').close()
-#	print "die file created -- processes should stop.  Pausing one minute to check..."
-#	time.sleep(70)
+	open(DIEFILE, 'w').close()
+	print "die file created -- processes should stop.  Pausing one minute to check..."
+	time.sleep(70)
 	
 	rc = commands.getstatusoutput("ps ax -o pid,args | grep runnerd | grep -v grep | grep -Eo ^.*python | grep -Eo [0-9]+")
 	if len(rc[1]) != 0:
