@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import os, sys, commands, time
-import sos_classes
+import sos_classes, killAndChildren
 
 """ 
 sos_apocontrol:
@@ -112,44 +112,23 @@ def stopWait():
 ####
 def stopKill():
 	open(DIEFILE, 'w').close()
-	print "die file created -- processes should stop."
+	print "die file created -- processes should stop.  Pausing one minute to check..."
+	os.sleep(70)
 	
-	#	Try SIGINT
 	rc = commands.getstatusoutput("ps ax -o pid,args | grep runnerd | grep -v grep | grep -Eo ^.*python | grep -Eo [0-9]+")
 	if len(rc[1]) != 0:
-		print "Sending SIGINT to processes..."
+		print "Killing sos and associated idl processes..."
 		sys.stdout.flush()
 		pids = rc[1].split("\n")
 		for pid in pids:
-			os.kill(int(pid), 2)
-			
-	#	If still running, sleep and check again
+			killAndChildren(kill, int(pid))
+
 	rc = commands.getstatusoutput("ps ax -o pid,args | grep runnerd | grep -v grep | grep -Eo ^.*python | grep -Eo [0-9]+")
-	if len(rc[1]) != 0:
-		time.sleep(5)
-		
-	#	SIGKILL anyone left alive
-	rc = commands.getstatusoutput("ps ax -o pid,args | grep runnerd | grep -v grep | grep -Eo ^.*python | grep -Eo [0-9]+")
-	if len(rc[1]) != 0:
-		print "Sending SIGKILL to processes..."
-		sys.stdout.flush()
-		pids = rc[1].split("\n")
-		for pid in pids:
-			os.kill(int(pid), 9)
-		
-	#	If still running, sleep and check again
-	sys.stdout.flush()
-	rc = commands.getstatusoutput("ps ax -o pid,args | grep runnerd | grep -v grep | grep -Eo ^.*python | grep -Eo [0-9]+")
-	sys.stdout.flush()
-	if len(rc[1]) != 0:
-		time.sleep(5)
-	sys.stdout.flush()
-	rc = commands.getstatusoutput("ps ax -o pid,args | grep runnerd | grep -v grep | grep -Eo ^.*python | grep -Eo [0-9]+")
-	sys.stdout.flush()
 	if len(rc[1]) != 0:
 		print "** Could not kill processes **"
 	else:
 		print "No processes running."
+	sys.stdout.flush()
 			
 ####
 def status():

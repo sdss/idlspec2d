@@ -6,6 +6,7 @@ bin/fb_classes.py -text
 bin/filecheck.py -text
 bin/getPlugmap -text
 bin/idlspec2d_version -text
+bin/killAndChildren.py -text
 bin/loadSN2Value -text
 bin/mailhtml.sh -text
 bin/make_room.sh -text

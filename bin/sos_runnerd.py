@@ -142,7 +142,7 @@ def oneInstanceCheck(cfg, log):
  
 
 ####
-def writeVersionInfo(cfg):
+def writeVersionInfo(cfg, log):
 	"""Write a version string to a file"""
 	
 	verFile = os.path.join(cfg.controlDir, sos_classes.Consts().versionFile)
@@ -150,6 +150,7 @@ def writeVersionInfo(cfg):
 	f = open(verFile, "w")
 	f.write(time.ctime() + " " + rc[1] + "\n")
 	f.close()
+	log.info("Version is %s" % rc[1])
 	
 	
 
@@ -738,7 +739,7 @@ def main():
 	#	Initialize
 	config = initializeParms()
 	logger = initializeLogger(config)
-	writeVersionInfo(config)
+	writeVersionInfo(config, logger)
 #	setupPlateDbAndIdlspec2d(config)
 	
 	#	Do we have an outstanding die signal 
