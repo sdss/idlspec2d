@@ -1,5 +1,4 @@
-READSPEC: Restore ability to read SDSS spectra, particularly the SDSS-I
-      photoPosPlate files.
+
 APO_APPENDLOG: Use COPY_STRUCT_INX to copy into an existing data structure,
       rather than an assignment that could fail if structures are different.
 APOD: Fix logic for re-reducing good arcs that precede good flats.
@@ -13,9 +12,12 @@ QUICKEXTRACT: Force data type of EXPTIME and SKYLEVEL to be floating-point.
       and that gets propogated through and can result in a data-type mismatch
       (ticket #1043).
       to type double.  It appears this is the variable that is k
+READSPEC: Restore ability to read SDSS spectra, particularly the SDSS-I
+      photoPosPlate files.
 SDSSPROC: Failed on line 363 if passing this routine an array of filenames,
       even a 1-element array.  Internally recast INFILE as a scalar to
       protect against that case (although never encountered in the pipeline).
+
 bin/sos_apocontrol:  stopKill now kills all child processes when called.  This
       will (hopefully) kill any stuck idl jobs.
 
