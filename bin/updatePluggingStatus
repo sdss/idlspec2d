@@ -39,6 +39,7 @@ def usage():
 	print "\t%s -t MJD_start-MJD_end -p plugging -d" % usageCMD
 	print " "
 	print "  -t : Update all the pluggings that had exposures between the give dates."
+	print "       -t 55000-55100"
 	print "  -p : Update the given plugging (e.g. 3874-55278-01)."
 	print "  -d : update plateDb with the new status."
 	print "  -v : verbose output"
