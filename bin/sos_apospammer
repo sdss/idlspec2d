@@ -7,7 +7,7 @@
 #
 #  Written by Gary Kushner (LBL).  Jan 2010.
 
-mail kushner@lbl.gov -s "SOS Critical Error Log" < /home/observer/sos/sos-logs/sos_log-b1-error
+mail kushner@lbl.gov,StephenBailey@lbl.gov -s "SOS Critical Error Log" < /home/observer/sos/sos-logs/sos_log-b1-error
 
 #
 ###  The python logger doesn't roll over the log unless it writes to it.  So unless
