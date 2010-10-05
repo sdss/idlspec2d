@@ -1,3 +1,6 @@
+TRACE320CRUDE: added lines to ignore rows with invvar all zero (ticket 1025)
+
+-------------------------------------------------------------------------------
 v5_4_19 (2010-09-13)
 Tag to fix a number of bugs, esp. ticket #1043
 Built against specflat v1_12, elodie v1_3, idlutils v5_4_19.
