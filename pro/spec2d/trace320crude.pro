@@ -69,6 +69,7 @@
 ; REVISION HISTORY:
 ;   13-Sep-1999  Written by David Schlegel, Princeton.
 ;    8-Jul-2001  Added djs_maskinterp call
+;   05-Oct-2010  ASB added masking of rows with invvar all zero
 ;-
 ;------------------------------------------------------------------------------
 function trace320crude, image, invvar, xstart=xstart, ystart=ystart, nmed=nmed, $
@@ -109,6 +110,11 @@ function trace320crude, image, invvar, xstart=xstart, ystart=ystart, nmed=nmed, 
     radius=radius, yset=yset, maxerr=maxerr, maxshifte=maxshifte, $
     maxshift0=maxshift0, xerr=xerr)
    xmask = xerr LT 990  ; =1 for good centers, =0 for bad
+; Mask contributions from completely bad rows:
+   nullrow = total(invvar gt 0., 1) eq 0.
+   wh_null = where(nullrow, n_null)
+   if (n_null gt 0) then xmask[wh_null,*] = 0B
+;stop
 
    ;--------------------------------------------------------------------
    ; Mark this trace as potentially bad (xgood[itrace] = 0)
