@@ -1,4 +1,8 @@
-TRACE320CRUDE: added lines to ignore rows with invvar all zero (ticket 1025)
+
+TRACE320CRUDE: Added lines to ignore rows with invvar all zero (ticket #1025)
+
+bin/sos_apospammer: Added Stephen Bailey to SOS log spam list.
+bin/updatePluggingStatus: Update help message.
 
 -------------------------------------------------------------------------------
 v5_4_19 (2010-09-13)
