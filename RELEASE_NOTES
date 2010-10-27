@@ -1,8 +1,15 @@
 
+-------------------------------------------------------------------------------
+v5_4_20 (2010-10-27)
+Tag for SOS S/N changes (ticket #1116).
+Built against specflat v1_12, elodie v1_3, idlutils v5_4_19.
+
 TRACE320CRUDE: Added lines to ignore rows with invvar all zero (ticket #1025)
 
 bin/sos_apospammer: Added Stephen Bailey to SOS log spam list.
 bin/updatePluggingStatus: Update help message.
+examples/opLimts.par: Change S/N^2 limits to 10 (blue) and 22 (red cameras),
+      as per ticket #1116.
 
 -------------------------------------------------------------------------------
 v5_4_19 (2010-09-13)
