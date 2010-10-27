@@ -197,11 +197,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
        ' fibers in ', flatname[iflat]
       xsol = trace320crude(flatimg, flativar, yset=ycen, maxdev=1.0, $ ;0.15, $
        fibermask=tmp_fibmask, xerr=xerr, $
+       flathdr=flathdr, $
        padding=configuration->spcalib_trace320crude_padding(), $
-       nfiber=configuration->getNumberFibersPerSpectrograph(), $
-       nbundle=configuration->getNumberBundles(), $
-       xstart=configuration->spcalib_trace320cen_xstart(color,spectrographid), $
-       deltax=configuration->spcalib_trace320cen_deltax(color,spectrographid), $
        plottitle=plottitle+' Traces '+flatname[iflat])
         
       splog, 'Fitting traces in ', flatname[iflat]

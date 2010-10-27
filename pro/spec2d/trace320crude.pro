@@ -6,24 +6,21 @@
 ;   Calling script to return 320 full traces using TRACE_CRUDE.
 ;
 ; CALLING SEQUENCE:
-;   xset = trace320crude( fimage, invvar, [ xstart=,  ystart=, nmed=, $
+;   xset = trace320crude( fimage, invvar, [ ystart=, nmed=, $
 ;    xmask=, yset=, maxerr=, maxshifte=, maxshift0=, xerr=, maxdev=, ngrow=, $
-;    fibermask=, padding=, nfiber=, nbundle=, deltax=, plottitle= ] )
+;    fibermask=, flathdr=, padding=, plottitle= ] )
 ;
 ; INPUTS:
 ;   fimage     - Image
 ;
 ; OPTIONAL INPUTS FOR TRACE320CEN:
-;   xstart     - Initial guess for X position of first fiber
 ;   ystart     - Y position in image to search for initial X centers; default
 ;                to the central row
 ;   nmed       - Number of rows to median filter around YSTART; default to 21
-;   nfiber     -
-;   nbundle    -
-;   deltax     - expected spacing between fibers in pixel units
 ;   plottitle  -
 ;
 ; OPTIONAL INPUTS FOR TRACE_CRUDE:
+;   flathdr    - FITS header for determining CARTID and MJD
 ;   invvar     - Inverse variance (weight) image
 ;   radius     - Radius for centroiding; default to 3.0
 ;   maxerr     - Maximum error in centroid allowed for valid recentering;
@@ -42,7 +39,6 @@
 ;                of a bad centroid with the predicted centroid locations.
 ;                Default to 5.
 ;   fibermask  - Fiber status bits, set nonzero for bad status [NFIBER]
-;   deltax     - expected spacing between fibers in pixel units
 ;
 ; OUTPUTS:
 ;   xset       - X centers for all traces
@@ -72,16 +68,31 @@
 ;   05-Oct-2010  ASB added masking of rows with invvar all zero
 ;-
 ;------------------------------------------------------------------------------
-function trace320crude, image, invvar, xstart=xstart, ystart=ystart, nmed=nmed, $
+function trace320crude, image, invvar, ystart=ystart, nmed=nmed, $
  xmask=xmask, radius=radius, yset=yset, maxerr=maxerr, maxshifte=maxshifte, $
  maxshift0=maxshift0, xerr=xerr, maxdev=maxdev, ngrow=ngrow, $
- fibermask=fibermask, padding=padding, $
- nfiber=nfiber, nbundle=nbundle, deltax=deltax, plottitle=plottitle
+ fibermask=fibermask, flathdr=flathdr, padding=padding, $
+ plottitle=plottitle
 
    if (NOT keyword_set(maxdev)) then maxdev = 1.0
    if (NOT keyword_set(ngrow)) then ngrow = 5
    if (NOT keyword_set(radius)) then radius = 3.0
    if (NOT keyword_set(padding)) then padding=0
+
+   cartid = sxpar(flathdr, 'CARTID')
+   camname = strtrim(sxpar(flathdr, 'CAMERAS'),2)
+   mjd = sxpar(flathdr, 'MJD')
+   fiberparam = yanny_readone(djs_filepath('opFibers.par', $
+    root_dir=getenv('IDLSPEC2D_DIR'), subdir='opfiles'), 'FIBERPARAM')
+   if (NOT keyword_set(fiberparam)) then $
+    message, 'opFibers.par file not found!'
+   i = where(fiberparam.cartid EQ cartid AND fiberparam.camname EQ camname $
+    AND fiberparam.mjd LE mjd, ct)
+   if (ct EQ 0) then $
+    message, 'No match for this CARTID + MJD in opFibers.par!'
+   isort = i[reverse(sort(fiberparam[i].mjd))]
+   fiberparam = fiberparam[isort[0]]
+   nbundle = n_elements(fiberparam.fiberspace NE 0)
 
    ;----------
    ; If INVVAR is set, then start by interpolating over bad pixels
@@ -95,8 +106,11 @@ function trace320crude, image, invvar, xstart=xstart, ystart=ystart, nmed=nmed, 
    ; Find the 320 X-centers in the row specified by YSTART
 
    ; XGOOD=1 for fibers that were actually found, 0 otherwise
-   xposition = trace_cen(fimage, xstart=xstart, ystart=ystart, nmed=nmed, $
-    nfiber=nfiber, nbundle=nbundle, fiberspace=deltax, $
+   xposition = trace_cen(fimage, xstart=fiberparam.bundlegap[0], $
+    ystart=ystart, nmed=nmed, $
+    nfiber=fiberparam.nfiber, nbundle=nbundle, $
+    fiberspace=fiberparam.fiberspace[0:nbundle-1], $
+    bundlespace=fiberparam.bundlegap[1:nbundle-1], $
     xgood=xgood, plottitle=plottitle, fluxvec=fluxvec, fmodel=fmodel)
 ;splot,fluxvec & soplot,fmodel,color='red'
 

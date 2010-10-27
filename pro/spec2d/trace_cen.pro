@@ -120,7 +120,7 @@ function fn_trace_model, params, fluxvec=fluxvec, _EXTRA=KeywordsForParamtovec
 end
 ;------------------------------------------------------------------------------
 function trace_cen, fimage, xstart=xstart, ystart=ystart, nmed=nmed, $
- nfiber=nfiber, nbundle=nbundle, fiberspace=fiberspace, $
+ nfiber=nfiber, nbundle=nbundle, fiberspace=fiberspace, bundlespace=bundlespace, $
  xgood=xgood, flux=flux, plottitle=plottitle, fluxvec=fluxvec, fmodel=fmodel
 
    ; Need 1 parameter
@@ -131,16 +131,11 @@ function trace_cen, fimage, xstart=xstart, ystart=ystart, nmed=nmed, $
    dims = size(fimage, /dimens)
    nx = dims[0]
    ny = dims[1]
-   if (NOT keyword_set(xstart)) then xstart = 0.
    if (NOT keyword_set(ystart)) then ystart = ny/2
    if (NOT keyword_set(nmed)) then nmed = 11
-   if (NOT keyword_set(nfiber)) then nfiber = 320 ; for SDSS-I
-   if (NOT keyword_set(nbundle)) then nbundle = 16 ; for SDSS-I
-   if (NOT keyword_set(fiberspace)) then fiberspace = 6.25 ; for SDSS-I
 
    xstart_tol = 50.
    xstart_step = 0.25
-   bundlespace = 1.4 * fiberspace[0] ; in addition to fiberspace
    bundlespace_tol = 0.6 * fiberspace[0]
    bundlespace_step = 0.25
    scale_range = [0.9900, 1.0100, 0.0005] ; range of scalings +/- 1.0%
