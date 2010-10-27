@@ -197,17 +197,11 @@ speclimit red * SKYPERSEC r2 1.20 9e9
 
 speclimit yellow science SN2 * -9e9 0
 
-# Issue warnings about total (S/N)^2 for any blue camera not hitting 16/pix
-# (yellow warning), or 13/pix (red warning).
+# Issue red warning for total (S/N)^2 in blue below 10, red below 22
+# Make the numbers slighly lower to allow for the round-off on the web page
 
-speclimit red TOTAL TOTALSN2 b* 0 13
-speclimit yellow TOTAL TOTALSN2 b* 13 15.95
-
-# Issue warnings about total (S/N)^2 for any red camera not hitting 26/pix
-# (yellow warning), or 22/pix (red warning).
-
-speclimit red TOTAL TOTALSN2 r* 0 22
-speclimit yellow TOTAL TOTALSN2 r* 22 25.99
+speclimit red TOTAL TOTALSN2 b* 0 9.95
+speclimit red TOTAL TOTALSN2 r* 0 21.95
 
 # For smear frames, insist on exposure times of 240 sec.
 
