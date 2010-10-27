@@ -1,4 +1,7 @@
 
+OPFIBER_GENERATE: New proc for generating the opFibers.par file
+      used for trace-finding in TRACE320CRUDE.
+
 -------------------------------------------------------------------------------
 v5_4_20 (2010-10-27)
 Tag for SOS S/N changes (ticket #1116).
