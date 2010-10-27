@@ -272,6 +272,7 @@ pro/plan/find_unplugged.pro -text
 pro/plan/fstars_plot.pro -text
 pro/plan/listchi.pro -text
 pro/plan/listexptime.pro -text
+pro/plan/opfiber_generate.pro -text
 pro/plan/platecen_test.pro -text
 pro/plan/plugfile_relabel.pro -text
 pro/plan/plugfile_unmapped.pro -text
