@@ -66,7 +66,7 @@ pro batchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
  queue=queue, skip2d=skip2d, clobber=clobber
 
    if (size(platenums1,/tname) EQ 'STRING') then platenums = platenums1 $
-    else if (keyword_set(platenums)) then $
+    else if (keyword_set(platenums1)) then $
       platenums = string(platenums1,format='(i4.4)') $
     else platenums = '*'
 
