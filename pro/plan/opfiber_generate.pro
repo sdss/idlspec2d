@@ -105,7 +105,7 @@ pro opfiber_generate, plate, mjd=mjd, expnum=expnum1, camname=camname1
       spframe_read, fullname, ximg=ximg
       if (NOT keyword_set(ximg)) then $
        message, 'File not found: '+fullname
-      iy = (size(xpos,/dimens))[0] / 2
+      iy = (size(ximg,/dimens))[0] / 2
       xpos = reform(ximg[iy,*])
       xdiff = shift(xpos,-1) - xpos ; last value is then nonsense
 
