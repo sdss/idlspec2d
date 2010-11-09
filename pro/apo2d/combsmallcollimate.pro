@@ -464,29 +464,29 @@ bigimg2=fltarr(4114,4128)
    if cam_flag eq 0 then begin
 ;offsets for regions picked
 
-      if docams[icam] eq 'b1' then begin
+       if docams[icam] eq 'b1' then begin
          m=1.00873
-         b=0.456478
+         b=0.308
          yoffsetb1=yoffset*m + b
       endif
 
       if docams[icam] eq 'b2' then begin
          m=1.01007
-         b=-0.0366277
+         b=-0.112
          yoffsetb2=yoffset*m + b
       endif
 
       if docams[icam] eq 'r1' then begin
          m=1.00873
-         b=0.239029
+         b=0.143
          yoffsetr1=yoffset*m + b
       endif
 
       if docams[icam] eq 'r2' then begin
-         m=0.994462
-         b=0.180246
+         m=0.994
+         b=0.146
          yoffsetr2=yoffset*m + b
-      endif
+     endif
 
 ;m=1   ;for testing uncomment these
 ;b=0
