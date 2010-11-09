@@ -136,7 +136,7 @@ function trace_cen, fimage, xstart=xstart, ystart=ystart, nmed=nmed, $
 
    xstart_tol = 50.
    xstart_step = 0.25
-   bundlespace_tol = 0.6 * fiberspace[0]
+   bundlespace_tol = 0.25 * fiberspace[0]
    bundlespace_step = 0.25
    scale_range = [0.9900, 1.0100, 0.0005] ; range of scalings +/- 1.0%
    psfsigma = 1.5 ; pix
