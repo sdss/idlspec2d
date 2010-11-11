@@ -465,26 +465,26 @@ bigimg2=fltarr(4114,4128)
 ;offsets for regions picked
 
        if docams[icam] eq 'b1' then begin
-         m=1.00873
-         b=0.308
+         m=1.034
+         b=0.302
          yoffsetb1=yoffset*m + b
       endif
 
       if docams[icam] eq 'b2' then begin
-         m=1.01007
+         m=1.019
          b=-0.112
          yoffsetb2=yoffset*m + b
       endif
 
       if docams[icam] eq 'r1' then begin
-         m=1.00873
-         b=0.143
+         m=1.045
+         b=0.153
          yoffsetr1=yoffset*m + b
       endif
 
       if docams[icam] eq 'r2' then begin
-         m=0.994
-         b=0.146
+         m=0.991
+         b=0.134
          yoffsetr2=yoffset*m + b
      endif
 
