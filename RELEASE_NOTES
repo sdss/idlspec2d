@@ -1,7 +1,7 @@
 
 BATCHPBS: Fix bug when passing plate numbers as a number rather than string.
 COMBSMALLCOLLIMATE: Refine offsets to gives same results as
-      COLLIMATE using full Hartmanns taken from MJD 55440 to 55507
+      COLLIMATE using full Hartmanns taken from MJD 55440 to 55511
 OPFIBER_GENERATE: New proc for generating the opFibers.par file
       used for trace-finding in TRACE320CRUDE.
 QUICKTRACE,SPCALIB,TRACE_CEN,TRACE320CEN: Changes to use new trace
