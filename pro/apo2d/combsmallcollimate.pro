@@ -558,8 +558,8 @@ splog, ' '
 ;ADD FUNNY FUDGE FACTORS - KD
    if (camcolor EQ 'r') then begin
       pixscale = -15.           ; microns
-      if (camname EQ 'r1') then val = long( -9150. * meanyoff*1.12 * pixscale/24. )
-      if (camname EQ 'r2') then val = long( -9150. * meanyoff*1.12 * pixscale/24. )
+      if (camname EQ 'r1') then val = long( -9150. * meanyoff*1.12*1.09 * pixscale/24. )
+      if (camname EQ 'r2') then val = long( -9150. * meanyoff*1.12*1.09 * pixscale/24. ); 1.09 is new motor factor
       valr=val
       if keyword_set(simple) then begin
          print, string(camname, " PistonMove ", strtrim(val,2))
