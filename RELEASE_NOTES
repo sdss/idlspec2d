@@ -1,4 +1,5 @@
 
+VDISPFIT: added redshift marginalization and chi^2 map return options
 BATCHPBS: Fix bug when passing plate numbers as a number rather than string.
 COMBSMALLCOLLIMATE: Refine offsets to gives same results as
       COLLIMATE using full Hartmanns taken from MJD 55440 to 55511

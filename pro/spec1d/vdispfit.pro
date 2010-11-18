@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   vdans = vdispfit(objflux, objivar, [ objloglam, hdr=, zobj=, npoly=, $
 ;    eigenfile=, eigendir=, columns=, sigma=, sigerr=, yfit=, $
-;    plottitle=, /doplot, /debug ])
+;    plottitle=, dzpix=, /return_chisq, /doplot, /debug ])
 ;
 ; INPUTS:
 ;   objflux    - Galaxy spectrum (spectra); array of [NPIX,NGALAXY].
@@ -33,6 +33,9 @@
 ;   plottitle  - Title of plot (if /DOPLOT is set).
 ;   doplot     - If set, then make plots.
 ;   debug      - If set, then wait for keystroke after plot.
+;   dzpix      - If set, then marginalize over +/- dzpix pixels in
+;                redshift.  Probably needs more testing!
+;   return_chisq - If set, then append full chi^2 vector/map in vdans
 ;
 ; OUTPUTS:
 ;   vdans      - Output structure [NGALAXY] with the following elements:
@@ -92,6 +95,7 @@
 ;
 ; REVISION HISTORY:
 ;   13-Mar-2001  Written by D. Schlegel, Princeton
+;   2010 Added redshift marginalization option, Bolton & Shu, U. Utah
 ;------------------------------------------------------------------------------
 ; Create output structure
 function create_vdans, nstar
@@ -127,7 +131,8 @@ function vdispfit, objflux, objivar, objloglam, $
  hdr=hdr, zobj=zobj, npoly=npoly, $
  eigenfile=eigenfile, eigendir=eigendir, columns=columns, $
  sigma=sigma, sigerr=sigerr, yfit=yfit, $
- plottitle=plottitle, doplot=doplot1, debug=debug
+ plottitle=plottitle, doplot=doplot1, debug=debug, $
+ dzpix=dzpix, return_chisq=return_chisq
 
    common com_vdispfit, bigflux, bigloglam, bigmask, nsamp, bigsig, $
     nbigpix, nsig, dsig, nstar, lastfile
@@ -147,6 +152,8 @@ function vdispfit, objflux, objivar, objloglam, $
    ; Plot if either /DOPLOT or /DEBUG is set.
    if (keyword_set(doplot1)) then doplot = doplot1
    if (keyword_set(debug)) then doplot = 1
+
+   if (not keyword_set(dzpix)) then dzpix = 0L
 
    ;---------------------------------------------------------------------------
    ; If multiple object flux vectors exist, then call this routine recursively.
@@ -285,6 +292,8 @@ function vdispfit, objflux, objivar, objloglam, $
    ; Create the output structure
 
    vdans = create_vdans(nstar+npoly)
+   if keyword_set(return_chisq) then vdans = struct_addtags(vdans, $
+    {bigsig: fltarr(nsig), chi2arr: fltarr(nsig), bigchi2arr: fltarr(nsig,2L*dzpix+1)})
 
    ;----------
    ; Find the pixel numbers to use from the object and the templates
@@ -332,23 +341,25 @@ function vdispfit, objflux, objivar, objloglam, $
    nuse = n_elements(iuse)
 
    ;----------
-   ; Fit for chi^2 at each possible velocity dispersion
+   ; Fit for chi^2 at each possible velocity dispersion,
+   ; also marginalizing over redshift range if desired.
 
-   chi2arr = fltarr(nsig)
-
-   objsmall = objflux[indxo]
-   sqivar = sqrt( objivar[indxo] ) * bigmask[indxt]
-
-   acoeffarr = fltarr(nuse+npoly,nsig)
-   for isig=0, nsig-1 do begin
-      eigenflux = bigflux[indxt,iuse,isig]
-      if (keyword_set(npoly)) then eigenflux = [[eigenflux], [polyflux]]
-      chi2arr[isig] = computechi2(objsmall, sqivar, eigenflux, acoeff=acoeff)
-      acoeffarr[*,isig] = acoeff
+   bigchi2arr = fltarr(nsig,2L*dzpix+1L)
+   for izpix = 0L, 2*dzpix do begin
+      objsmall = objflux[indxo + izpix - dzpix]
+      sqivar = sqrt( objivar[indxo + izpix - dzpix] ) * bigmask[indxt]
+      acoeffarr = fltarr(nuse+npoly,nsig,2L*dzpix+1L)
+      for isig=0, nsig-1 do begin
+         eigenflux = bigflux[indxt,iuse,isig]
+         if (keyword_set(npoly)) then eigenflux = [[eigenflux], [polyflux]]
+         bigchi2arr[isig,izpix] = computechi2(objsmall, sqivar, eigenflux, acoeff=acoeff)
+         acoeffarr[*,isig,izpix] = acoeff
+      endfor
    endfor
 
    ;----------
-   ; Fit for the dispersion value at the minimum in chi^2
+   ; Fit for the dispersion value at the minimum in chi^2,
+   ; and marginalize over redshift range if requested.
 
 ;   findchi2min, bigsig, chi2arr, minchi2, sigma, sigerr, $
 ;    plottitle=plottitle, doplot=doplot, debug=debug
@@ -357,6 +368,14 @@ function vdispfit, objflux, objivar, objloglam, $
    ; next point as a negative dispersion value simply for the benefit
    ; of computing an error, and to prevent an error code from being
    ; generated in the call to FIND_NMINIMA.
+   if (dzpix gt 0) then begin
+      chi2arr = fltarr(nsig)
+      for isig = 0L, nsig-1 do begin
+         junk = min(bigchi2arr[isig,*], imin)
+         chi2arr[isig] = bigchi2arr[isig,imin]
+      endfor
+   endif else chi2arr = bigchi2arr
+
    junk = min(chi2arr, imin)
    if (imin GT 0) then $
     sigma = find_nminima(chi2arr, bigsig, $
@@ -373,6 +392,11 @@ function vdispfit, objflux, objivar, objloglam, $
    vdans.vdispchi2 = minchi2
    vdans.vdispnpix = npixcomp
    vdans.vdispdof = npixcomp - nstar - npoly - 1 ; One dof is for the vel. disp.
+   if keyword_set(return_chisq) then begin
+      vdans.bigsig = bigsig
+      vdans.chi2arr = chi2arr
+      vdans.bigchi2arr = bigchi2arr
+   endif
 
    ;----------
    ; Return the best-fit template (actually, the one with the closest
