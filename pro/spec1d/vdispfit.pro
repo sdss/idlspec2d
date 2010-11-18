@@ -154,6 +154,7 @@ function vdispfit, objflux, objivar, objloglam, $
    if (keyword_set(debug)) then doplot = 1
 
    if (not keyword_set(dzpix)) then dzpix = 0L
+   if (not keyword_set(return_chisq)) then return_chisq = 0
 
    ;---------------------------------------------------------------------------
    ; If multiple object flux vectors exist, then call this routine recursively.
@@ -168,7 +169,8 @@ function vdispfit, objflux, objivar, objloglam, $
           else if (lamdims EQ 2) then thisloglam = objloglam[*,iobj]
          vdans1 = vdispfit(objflux[*,iobj], objivar[*,iobj], $
           thisloglam, hdr=hdr, zobj=zobj[iobj], npoly=npoly, $
-          eigenfile=eigenfile, eigendir=eigendir, columns=columns, yfit=yfit1)
+          eigenfile=eigenfile, eigendir=eigendir, columns=columns, yfit=yfit1, $
+          dzpix=dzpix, return_chisq=return_chisq)
          if (iobj EQ 0) then vdans = vdans1 $
           else vdans = [[vdans], [vdans1]]
          if (keyword_set(yfit)) then yfit[*,iobj] = yfit1
