@@ -145,7 +145,7 @@ function vdispfit, objflux, objivar, objloglam, $
    npixobj = dims[0]
    if (size(objflux, /n_dimen) EQ 1) then nobj = 1 $
     else nobj = dims[1]
-   if (NOT keyword_set(zobj)) then zobj = fltarr(nobj)
+   if (n_elements(zobj) eq 0) then zobj = fltarr(nobj)
    if (NOT keyword_set(lastfile)) then lastfile = ''
    if (NOT keyword_set(plottitle)) then plottitle = ''
 

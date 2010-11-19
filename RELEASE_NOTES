@@ -1,4 +1,5 @@
 
+VDISPFIT: fixing bug for zobj=0. case
 VDISPFIT: added redshift marginalization and chi^2 map return options
   (but not switching them on in SPREDUCE1D yet!)
 BATCHPBS: Fix bug when passing plate numbers as a number rather than string.
