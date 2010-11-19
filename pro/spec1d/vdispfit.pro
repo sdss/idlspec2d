@@ -189,7 +189,7 @@ function vdispfit, objflux, objivar, objloglam, $
    endif else begin
       objdloglam = objloglam[1] - objloglam[0]
    endelse
-   restloglam = objloglam - alog10(1 + zobj) ; De-redshift this!
+   restloglam = objloglam - alog10(1 + zobj[0]) ; De-redshift this!
 
    ;---------------------------------------------------------------------------
    ; Generate the over-sampled eigen-templates for the stellar spectra.
