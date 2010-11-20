@@ -292,6 +292,7 @@ pro ccdtilt1, expnum1, expnum2, docams=docams, indir=indir, $
        c_colors=c_colors, c_charsize=2, $
        xrange=[0,nx_big], yrange=[0,ny_big], /xstyle, /ystyle, $
        xtitle='X [pix]', ytitle='Y [pix]', title=title
+      meanyoffstr = strtrim(mean(yoffimg),2)
       xyouts, 0.5*nx_big, 0.92*ny_big, align=0.5, $
        'Mean offset = ' + meanyoffstr + ' pix', charsize=1.5, charthick=2
 
