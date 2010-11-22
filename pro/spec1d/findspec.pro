@@ -91,7 +91,7 @@ pro findspec, ra, dec, infile=infile, outfile=outfile, searchrad=searchrad, $
       if (n_elements(platelist_files) GT 0) then $
          plist = mrdfits(platelist_files[0],1,/silent)
       if (n_elements(plates_files) GT 0) then $
-         plist = mrdfits(plate_files[0],1,/silent)
+         plist = mrdfits(plates_files[0],1,/silent)
       if (NOT keyword_set(plist)) then $
        message, 'Plate list (platelist.fits or plates-*.fits) not found in ' + topdir
       nlist = n_elements(plist)
