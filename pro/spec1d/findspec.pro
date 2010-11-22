@@ -89,7 +89,7 @@ pro findspec, ra, dec, infile=infile, outfile=outfile, searchrad=searchrad, $
       platelist_files = file_search(topdir+'/platelist.fits')
       plates_files = file_search(topdir+'/plates-*.fits')
       if (n_elements(platelist_files) GT 0) then $
-         plist = mrdfits(platlist_files[0],1,/silent)
+         plist = mrdfits(platelist_files[0],1,/silent)
       if (n_elements(plates_files) GT 0) then $
          plist = mrdfits(plate_files[0],1,/silent)
       if (NOT keyword_set(plist)) then $
