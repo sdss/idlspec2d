@@ -86,8 +86,13 @@ pro findspec, ra, dec, infile=infile, outfile=outfile, searchrad=searchrad, $
    if (keyword_set(plist) EQ 0 OR topdir NE lasttopdir) then begin
       lasttopdir = topdir
       platelist, plist=plist, topdir=topdir
+      if (NOT keyword_set(plist)) then begin
+        plates_files = file_search(topdir+'plates-*.fits')
+        if (n_elements(plates_files) GT 0) then $
+            plist = mrdfits(plate_files[0],1,/silent)
+      endif
       if (NOT keyword_set(plist)) then $
-       message, 'Plate list (platelist.fits) not found in $BOSS_SPECTRO_REDUX'
+       message, 'Plate list (platelist.fits) not found in ' + topdir
       nlist = n_elements(plist)
    endif
 
