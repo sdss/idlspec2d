@@ -1,4 +1,4 @@
-
+FINDSPEC: Works with SDSS-I,II data as well as BOSS data
 BATCHPBS: Fix bug when passing plate numbers as a number rather than string.
 CCDTILT: Fix crash condition for /DOPLOT option.
 COMBSMALLCOLLIMATE: Refine offsets to gives same results as
@@ -288,7 +288,7 @@ COLLIMATE: Call COMBSMALLCOLLIMATE if the SUBFRAME keyword exists in
 COMBSMALLCOLLIMATE: New fast collimate routine to focus
       sp1 and sp2, uses subarray readouts, single region, and splits the
       difference between red and blue offsets.  Called by "sop doHartmann"
-      as part of the new field acquisition.  
+      as part of the new field acquisition.
 SMALLCOLLIMATE: New routine.  Don't know how this differs from the other
       collimation routines?
 
@@ -419,8 +419,8 @@ SPTHROUGHPUT: Remove hard-wired number of fibers.
 
 bin/loadSN2Value,updatePluggingStatus: Better db error-handling.
 bin/sos_aporedo,sos_redorunner,sos_runnerd.py:
-      Results have an option to now go into 
-      http://sdss3.apo.nmsu.edu/~observer/sosredo/logfile-current.html and 
+      Results have an option to now go into
+      http://sdss3.apo.nmsu.edu/~observer/sosredo/logfile-current.html and
       /data/boss/sosredo.
 etc/BG14.txt,FG3.txt,altbg14.txt,blue.bkpts,brg.08.gk.01,f8v.ab,f8vspline.dat,
       fluxcorr.bkpts,intrinsic1.dat,intrinsicF2.dat,red.bkpts:
@@ -448,7 +448,7 @@ APO_LOG2HTML,APOREDUCE: Include cartid in the last HDU of the logfile,
       version of SOS writing to the same file.
 APO_PLOTSN,APOREDUCE: Generate S/N plots for individual exposures as well
       as for the full plate.
-ARCFIT_GUESS, EXTRACT_IMAGE, GEN_SCATTER, MYFLUXCORR, SKYSUBTRACT, 
+ARCFIT_GUESS, EXTRACT_IMAGE, GEN_SCATTER, MYFLUXCORR, SKYSUBTRACT,
 SMOOTH_HALO2D, SPFLUX_READ_KURUCZ, VDISPFIT, ZCOMPUTE, ZCOMPUTE_QSO:
       Commented out some print updates that were making the PBS log files
       large (all those with string(13b)).

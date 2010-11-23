@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   findspec, [ra, dec, infile=, outfile=, searchrad=, slist=, $
-;    topdir=, run2d=, run1d=, /best, /print ]
+;    topdir=, run2d=, run1d=, /best, /print, /sdss ]
 ;
 ; INPUTS:
 ;
@@ -31,6 +31,8 @@
 ;                per position, so that you get exactly a paired list between
 ;                RA,DEC and SLIST.
 ;   print      - If set, then print matches to the terminal.
+;   sdss       - This is a shortcut option that is exactly equivalent to
+;                topdir=GETENV('SPECTRO_REDUX'), run2d='26'
 ;
 ; OUTPUTS:
 ;
@@ -40,6 +42,15 @@
 ; COMMENTS:
 ;   The search radius is set to within 1.55 degress of a plate center,
 ;   then within 3 arcsec of an object.
+;
+;   findspec.pro is currently setup to use BOSS data, but it still works
+;   with SDSS-I,II data with the following procedure:
+;
+;   findspec, ra, dec, topdir=GETENV('SPECTRO_REDUX'), run2d='26'
+;
+;   or
+;
+;   findspec, ra, dec, /sdss
 ;
 ; EXAMPLES:
 ;   Make a file "file.in" with the following two lines:
@@ -70,10 +81,14 @@
 ;------------------------------------------------------------------------------
 pro findspec, ra, dec, infile=infile, outfile=outfile, searchrad=searchrad, $
  slist=slist, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
- best=best, print=print1
+ best=best, print=print1, sdss=sdss
 
    common com_findspec, plist, nlist, lasttopdir
 
+   if (keyword_set(sdss)) then begin
+      topdir1 = getenv('SPECTRO_REDUX')
+      run2d1 = '26'
+   endif
    if (keyword_set(run2d1)) then run2d = strtrim(run2d1,2) $
     else run2d = getenv('RUN2D')
    splog, 'Setting RUN2D=', run2d
