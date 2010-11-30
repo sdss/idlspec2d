@@ -58,13 +58,16 @@
 ;     217.7803    -0.8900855
 ;
 ;   Then run the command:
-;     IDL> findspec,infile='file.in'
+;     IDL> findspec,infile='file.in',/sdss,/print
 ;
 ;   This should print:
-;     PLATE   MJD FIBERID            RA            DEC
-;     ----- ----- ------- ------------- --------------
-;       306 51637     101      218.7478     -0.3745007
-;       306 51637     201      217.7803     -0.8900855
+;
+;PLATE   MJD FIBERID            RA            DEC    MATCHRAD
+;----- ----- ------- ------------- -------------- -----------
+;  306 51637     101      218.7478     -0.3745007      0.0000
+;  306 51690     117      218.7478     -0.3745007      0.0000
+;  306 51637     201      217.7803     -0.8900855  2.9996e-05
+;  306 51690     217      217.7803     -0.8900855  2.9996e-05
 ;
 ; BUGS:
 ;
@@ -191,7 +194,7 @@ pro findspec, ra, dec, infile=infile, outfile=outfile, searchrad=searchrad, $
       plugmap[index_to].dec = plugmap1.dec
 ;      copy_struct_inx, plugmap1, plugmap, index_to=index_to
 
-      i0 += n_total[i]
+      i0 += n_total[iplate[i]]
    endfor
    spherematch, ra, dec, plugmap.ra, plugmap.dec, searchrad, $
     i1, i2, d12, maxmatch=0
