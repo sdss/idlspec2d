@@ -464,9 +464,9 @@ bigimg2=fltarr(4114,4128)
    if cam_flag eq 0 then begin
 ;offsets for regions picked
 
-       if docams[icam] eq 'b1' then begin
+       if docams[icam] eq 'b1' then begin  ;using collimate and not collimate,/debug
          m=1.034
-         b=0.302
+         b=0.105
          yoffsetb1=yoffset*m + b
       endif
 
