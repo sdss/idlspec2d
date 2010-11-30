@@ -2,7 +2,8 @@ FINDSPEC: Works with SDSS-I,II data as well as BOSS data
 BATCHPBS: Fix bug when passing plate numbers as a number rather than string.
 CCDTILT: Fix crash condition for /DOPLOT option.
 COMBSMALLCOLLIMATE: Refine offsets to gives same results as
-      COLLIMATE using full Hartmanns taken from MJD 55440 to 55511
+      COLLIMATE using full Hartmanns taken from MJD 55440 to 55511. 
+      b1 offset created using collimate, not collimate,/debug.  
 OPFIBER_GENERATE: New proc for generating the opFibers.par file
       used for trace-finding in TRACE320CRUDE.
 QUICKTRACE,SPCALIB,TRACE_CEN,TRACE320CEN: Changes to use new trace
