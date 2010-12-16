@@ -198,7 +198,22 @@ function sdssguide_read_image, thisfile, hdr=imhdr
          rdnoise = 8.1 ; electrons
          gain = 1.4 ; electrons/ADU
          end
+      524: begin ; changed to this dimension on Aug 17, 2010 = MJD 55425
+         camera = 'new'
+         camoffsets = [0., 0.]
+         pixscale = 0.214 * 2
+         rdnoise = 8.1 ; electrons
+         gain = 1.4 ; electrons/ADU
+         end
       1024: begin
+         camera = 'new'
+         camoffsets = [0., 0.]
+         pixscale = 0.214 * 2
+         rdnoise = 8.1 ; electrons
+         gain = 1.4 ; electrons/ADU
+         image = rebin(image, dims/2) ; new camera unbinned
+         end
+      1048: begin ; changed to this dimension on Aug 17, 2010 = MJD 55425
          camera = 'new'
          camoffsets = [0., 0.]
          pixscale = 0.214 * 2
