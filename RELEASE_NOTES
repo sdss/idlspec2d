@@ -1,13 +1,16 @@
-FINDSPEC: Works with SDSS-I,II data as well as BOSS data
+
 BATCHPBS: Fix bug when passing plate numbers as a number rather than string.
 CCDTILT: Fix crash condition for /DOPLOT option.
 COMBSMALLCOLLIMATE: Refine offsets to gives same results as
       COLLIMATE using full Hartmanns taken from MJD 55440 to 55511. 
       b1 offset created using collimate, not collimate,/debug.  
+FINDSPEC: Works with SDSS-I,II data as well as BOSS data
 OPFIBER_GENERATE: New proc for generating the opFibers.par file
       used for trace-finding in TRACE320CRUDE.
 QUICKTRACE,SPCALIB,TRACE_CEN,TRACE320CEN: Changes to use new trace
       paramters stored in the file opFibers.par .  Ticket #817.
+SDSSGUIDE: Guider images looks like they changed dimensions slightly
+      on MJD 55425.
 VDISPFIT: Fix bug for zobj=0. case
       Add redshift marginalization and chi^2 map return options using
       DZPIX and RETURN_CHISQ keywords.  Do not use yet as default
