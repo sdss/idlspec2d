@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   platelist, [ /create, topdir=, run2d=, run1d=, $
-;    /purge2d, /purge1d, /killpartial, plist= ]
+;    /purge2d, /purge1d, /killpartial, skipcart=, plist= ]
 ;
 ; INPUTS:
 ;
@@ -38,6 +38,7 @@
 ;                 data from one night, but then more data is obtained for
 ;                 that plugging of the same plate on a later date.  This
 ;                 deletes spPlate and spZ files and their logs files.
+;   skipcart    - cart number or list of cart numbers to drop from platelist
 ;
 ; OUTPUTS:
 ;
@@ -83,6 +84,8 @@
 ;
 ; BUGS:
 ;   Spawns the Unix commands 'tail' and 'grep', which is very slow.
+;   If the spPlate file is missing, it doesn't try to figure out which
+;        cart it really is and thus ignores skipcart
 ;
 ; DATA FILES:
 ;   $PLATELIST_DIR/platePlans.par
@@ -181,7 +184,8 @@ end
 ;------------------------------------------------------------------------------
 pro platelist, plist=plist, create=create, $
  topdir=topdir1, run2d=run2d1, run1d=run1d1, $
- purge2d=purge2d, purge1d=purge1d, killpartial=killpartial
+ purge2d=purge2d, purge1d=purge1d, killpartial=killpartial, $
+ skipcart=skipcart
 
    if (keyword_set(topdir1)) then topdir = topdir1 $
     else topdir = getenv('BOSS_SPECTRO_REDUX')
@@ -191,6 +195,10 @@ pro platelist, plist=plist, create=create, $
     else run1d = '*'
 
    fitsfile = djs_filepath('platelist.fits', root_dir=topdir)
+
+   if keyword_set(skipcart) then begin
+      splog, 'WARNING: Dropping plates from carts', skipcart
+   endif
 
    ;----------
    ; If the /CREATE flag is not set, and the platelist file already exists
@@ -509,7 +517,6 @@ pro platelist, plist=plist, create=create, $
 
       ; Get RUN2D from the directory name...
       plist[ifile].run2d = fullrun2d[ifile]
-
       hdr1 = headfits(platefile[ifile], /silent, errmsg=errmsg)
       if (size(hdr1, /tname) EQ 'STRING') then begin
          plist[ifile].n_total = sxpar(hdr1, 'NAXIS2')
@@ -695,7 +702,19 @@ pro platelist, plist=plist, create=create, $
              splog, 'KILLPARTIAL ', killfiles[ikill]
             rmfile, killfiles
          endif
-      endif
+      
+      ; Drop plates from carts in skipcart
+      endif else begin
+         if keyword_set(skipcart) then begin
+            tmp = where(skipcart EQ plist[ifile].cartid, N)
+            if N GT 0 then begin
+               cartid = STRTRIM(STRING(plist[ifile].cartid), 1)
+               splog, 'Dropping ' + combparfile[ifile] + ' (cart ' + cartid + ')'
+               qkeep[ifile] = 0
+            endif
+         endif
+      endelse
+      
    endfor
 
    ;-----
