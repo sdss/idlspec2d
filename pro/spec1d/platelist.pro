@@ -72,7 +72,8 @@
 ;
 ;   PLATESN2 is set to the minimum of the 4 cameras.
 ;   PLATEQUALITY defaults to 'good'.
-;   PLATEQUALITY is set to 'bad'      if MINSN2 < 13.0
+;   PLATEQUALITY is set to 'bad'      if MINSN2(B) < 10.0 or MINSN2(R) < 22.0
+;                                     --> previously if MINSN2 < 13.0
 ;   PLATEQUALITY is set to 'bad'      if FBADPIX > 0.10
 ;   PLATEQUALITY is set to 'bad'      if min(NEXP_*) < 3
 ;
@@ -116,7 +117,28 @@
 ;
 ; REVISION HISTORY:
 ;   29-Oct-2000  Written by D. Schlegel, Princeton
+;   11-Jan-2011  Stephen Bailey, LBNL
+;     * Updated (S/N)^2 thresholds for "bad"
+;     * Added get_lastline to be faster than spawn tail -1
 ;------------------------------------------------------------------------------
+
+;----------
+; get lastline of a file faster than spawning 'tail -1'
+function get_lastline, filename
+   ;;; spawn, 'tail -1 '+filename, lastline
+   
+   ;;; openr, ilun, filename, /get_lun
+   ilun = 3
+   openr, ilun, filename
+   lastline = ''
+   while (NOT eof(ilun)) do begin
+      readf, ilun, lastline
+   endwhile
+   close, ilun
+   
+   return, lastline
+end
+
 pro platelist_write, plist, trimtags=trimtags, alias=alias, $
  fileprefix=fileprefix, title=title, toptext=toptext
 
@@ -490,7 +512,8 @@ pro platelist, plist=plist, create=create, $
          if (keyword_set(thislogfile)) then begin
             if (NOT keyword_set(logfile2d)) then logfile2d = thislogfile $
              else logfile2d = [logfile2d, thislogfile]
-            spawn, 'tail -1 '+thislogfile, lastline
+            ;;; spawn, 'tail -1 '+thislogfile, lastline
+            lastline = get_lastline(thislogfile)
             if (strmatch(lastline[0], '*Successful completion*')) then begin
                ; Case where this 2D log file completed
                statusdone = statusdone + 1
@@ -604,7 +627,8 @@ pro platelist, plist=plist, create=create, $
          thislogfile = (findfile(djs_filepath(thislogfile, root_dir=path)))[0]
 
          if (keyword_set(thislogfile)) then begin
-            spawn, 'tail -1 '+thislogfile, lastline
+            ;;; spawn, 'tail -1 '+thislogfile, lastline
+            lastline = get_lastline(thislogfile)
             if (strmatch(lastline[0], '*Successful completion*')) then begin
                ; Case where this combine log file completed,
                ; (but we're still missing the spPlate file, so must have failed)
@@ -756,7 +780,11 @@ pro platelist, plist=plist, create=create, $
           [plist[ifile].sn2_g1, plist[ifile].sn2_i1, $
           plist[ifile].sn2_g2, plist[ifile].sn2_i2])
          iqual = 2
-         if (plist[ifile].platesn2 LT 13) then iqual = iqual < 0
+         ; Changed cuts to reflect new thresholds; SJB 2011-01-10
+         if min([plist[ifile].sn2_g1, plist[ifile].sn2_g2]) LT 10.0 OR   $
+            min([plist[ifile].sn2_i1, plist[ifile].sn2_i2]) LT 22.0 then $
+            iqual = iqual < 0
+;         if (plist[ifile].platesn2 LT 13) then iqual = iqual < 0
 ;         if (plist[ifile].platesn2 LT 15) then iqual = iqual < 1
          if (plist[ifile].fbadpix GT 0.10) then iqual = iqual < 0
 ;         if (plist[ifile].fbadpix GT 0.05) then iqual = iqual < 1
@@ -883,7 +911,8 @@ pro platelist, plist=plist, create=create, $
             ; Find the state of the 1D reductions -- spZbest file is missing
 
             if (file_search((*zlogfile[i])[j])) then begin
-               spawn, 'tail -1 '+(*zlogfile[i])[j], lastline
+               ;;; spawn, 'tail -1 '+(*zlogfile[i])[j], lastline
+               lastline = get_lastline((*zlogfile[i])[j])
                if (strmatch(lastline[0], '*Successful completion*')) then begin
                   ; Case where this 1D log file completed, which is not
                   ; a case that should ever occur.
