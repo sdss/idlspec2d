@@ -1,4 +1,6 @@
 
+RUN_SDSSPROC: routine for running SDSSPROC over many sdR files and
+              saving resulting image and invvar data to new files.
 BATCHPBS: Fix bug when passing plate numbers as a number rather than string.
 CCDTILT: Fix crash condition for /DOPLOT option.
 COMBSMALLCOLLIMATE: Refine offsets to gives same results as
