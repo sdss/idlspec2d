@@ -46,7 +46,9 @@
 ;                to generalize to cluster computers by writing PBS commands to bundled pbs batch files,
 ;                which source job files containing the calls to sdssproc,
 ;                via the keywords pbs_nodes, pbs_ppn, pbs_a
-;                and with University of Utah defaults preset via the keyword ember.
+;                and with University of Utah defaults preset via the
+;                keyword ember.
+;   14-jan-2011 bolton fix of non-pbs bug.
 ;-
 
 pro run_sdssproc, indir=indir, outdir=outdir, mjdlist=mjdlist, clobber=clobber, $
@@ -121,7 +123,7 @@ pro run_sdssproc, indir=indir, outdir=outdir, mjdlist=mjdlist, clobber=clobber, 
   for i = 0L, nmjd - 1 do begin
      out_this = outdir + '/' + s_mjdlist[i]
      if (file_test(out_this) eq 0) then file_mkdir, out_this
-     if keyword_set(pbs_nodes) and (file_test(pbs_job_dir[i]) eq 0) then file_mkdir, pbs_job_dir[i]
+     if keyword_set(pbs_nodes) then if (file_test(pbs_job_dir[i]) eq 0) then file_mkdir, pbs_job_dir[i]
        
      sdr_full = file_search(indir + '/' + s_mjdlist[i] + '/' + 'sdR-[b,r][1,2]-????????.fit*')
      nsdr = n_elements(sdr_full)
@@ -158,6 +160,7 @@ pro run_sdssproc, indir=indir, outdir=outdir, mjdlist=mjdlist, clobber=clobber, 
              free_lun, pbs_job
  
            endif else begin                          ; interactive mode
+             print, ' File ' + strtrim(string(j),2) + ' (' + sdr_base + ')'
              sdssproc, sdr_full[j], outfile=outfile, varfile=varfile, /applycrosstalk, $
               /applypixflat, /applybias, minflat=minflat, maxflat=maxflat, /silent
               if keyword_set(gzip) then begin
