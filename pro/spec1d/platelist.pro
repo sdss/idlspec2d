@@ -127,14 +127,13 @@
 function get_lastline, filename
    ;;; spawn, 'tail -1 '+filename, lastline
    
-   ;;; openr, ilun, filename, /get_lun
-   ilun = 3
-   openr, ilun, filename
+   openr, ilun, filename, /get_lun
    lastline = ''
    while (NOT eof(ilun)) do begin
       readf, ilun, lastline
    endwhile
    close, ilun
+   free_lun, ilun
    
    return, lastline
 end
