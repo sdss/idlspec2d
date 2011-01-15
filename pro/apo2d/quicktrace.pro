@@ -113,8 +113,12 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin, $
     else color = 'red'
    ; Set the maxdev to twice what it would be for optimal extraction...
    xsol = trace320crude(flatimg, flativar, yset=ycen, maxdev=0.30, $
-    fibermask=fibermask, xerr=xerr, hdr=flathdr, $
-    padding=configuration->spcalib_trace320crude_padding() )
+    fibermask=fibermask, xerr=xerr, $
+    padding=configuration->spcalib_trace320crude_padding(), $
+    nfiber=configuration->getNumberFibersPerSpectrograph(), $
+    nbundle=configuration->getNumberBundles(), $
+    xstart=configuration->spcalib_trace320cen_xstart(color,spectrographid), $
+    deltax=configuration->spcalib_trace320cen_deltax(color,spectrographid))
 
    ; Consider a fiber bad only if any of the following mask bits are set,
    ; but specifically not if BADTRACE is set.
@@ -143,6 +147,8 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin, $
 
    traceset2xy, tset, rownums, xcen
    yrow = lindgen(long(nrow/nbin)) * nbin
+   mjd=sxpar(flathdr,'MJD')
+   if mjd gt 55055 then yrow=yrow[64:193] ;for BOSS, helps with xsig by using middle 1/2 of image
    sigma = 1.0
 
    extract_image, flatimg, flativar, xcen, sigma, $
@@ -202,7 +208,7 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin, $
                            'XSIGMA', float(max(medwidth)) )
 
    obj_destroy, configuration
-
+;stop
    return, rstruct
 end
 ;------------------------------------------------------------------------------
