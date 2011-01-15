@@ -14,7 +14,7 @@
 ;
 ; OPTIONAL INPUTS:
 ;   camname    - Camera name; default to all 4 cameras
-;   expnum     - Expsosure number (do not use if PLATE is an array);
+;   expnum     - Exposure number (do not use if PLATE is an array);
 ;                default to first science exposure for this plate+MJD
 ;
 ; OUTPUTS:
