@@ -1,19 +1,26 @@
 
-RUN_SDSSPROC: mods and bugfixes for pbs v. interactive
-RUN_SDSSPROC: routine for running SDSSPROC over many sdR files and
-              saving resulting image and invvar data to new files.
 BATCHPBS: Fix bug when passing plate numbers as a number rather than string.
 CCDTILT: Fix crash condition for /DOPLOT option.
 COMBSMALLCOLLIMATE: Refine offsets to gives same results as
-      COLLIMATE using full Hartmanns taken from MJD 55440 to 55511 and tests of 	-10000,0,10000 step offset. 
+      COLLIMATE using full Hartmanns taken from MJD 55440 to 55511 and tests
+      of -10000,0,10000 step offset. 
       b1 offset created using collimate, not collimate,/debug.  
 FINDSPEC: Works with SDSS-I,II data as well as BOSS data
+      Add /SDSS option that is hard-wired to run2d='26'
 OPFIBER_GENERATE: New proc for generating the opFibers.par file
       used for trace-finding in TRACE320CRUDE.
+PLATELIST: Add option for SKIPCART to skip problematic carts (like the
+      current problems with cart 15).
+      Change S/N^2 thresholds to > 10 in B and > 22 in R.
+      Add function get_lastline to read the last line of log files rather
+      than making a call to SPAWN.
 QUICKTRACE,SPCALIB,TRACE_CEN,TRACE320CEN: Changes to use new trace
       paramters stored in the file opFibers.par .  Ticket #817.
+RUN_SDSSPROC: New proc for running SDSSPROC over many sdR files and
+              saving resulting image and invvar data to new files.
 SDSSGUIDE: Guider images looks like they changed dimensions slightly
       on MJD 55425.
+UUBATCHPBS: Modified version of BATCHPBS to put many plates in a single job.
 VDISPFIT: Fix bug for zobj=0. case
       Add redshift marginalization and chi^2 map return options using
       DZPIX and RETURN_CHISQ keywords.  Do not use yet as default
