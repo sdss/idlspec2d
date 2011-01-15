@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   xfiber = trace_cen( fimage, [ xstart=, ystart=, nmed=, nfiber=, nbundle=, $
-;    fiberspace=, xgood=, flux=, plottitle= ] )
+;    fiberspace=, bundlespace=, xgood=, flux=, plottitle= ] )
 ;
 ; INPUTS:
 ;   fimage     - Image
@@ -20,7 +20,8 @@
 ;                default to 21
 ;   nfiber     - Number of fibers; default to 320
 ;   nbundle    - Number of bundles; default to 16
-;   fiberspace - Fiber-to-fiber spacing; default to 6.25 pix
+;   fiberspace - Fiber-to-fiber spacing in pix [NBUNDLE]
+;   bundlespace- Extra spacing between bundles in pix [NBUNDLE-1]
 ;   plottitle  - If set, then create plot with this title
 ;
 ; OUTPUTS:
@@ -139,7 +140,7 @@ function trace_cen, fimage, xstart=xstart, ystart=ystart, nmed=nmed, $
    bundlespace_tol = 0.25 * fiberspace[0]
    bundlespace_step = 0.25
    scale_range = [0.9900, 1.0100, 0.0005] ; range of scalings +/- 1.0%
-   psfsigma = 1.5 ; pix
+   psfsigma = 1.0 ; pix
 
    ; Make a sub-image copy of the image and error map
    ylo = ystart - (nmed-1)/2 > 0
@@ -164,7 +165,8 @@ function trace_cen, fimage, xstart=xstart, ystart=ystart, nmed=nmed, $
    parinfo[0].value = xstart
    parinfo[1:nbundle-1].name = 'bundlespace'
    parinfo[1:nbundle-1].value = bundlespace
-   parinfo[1:nbundle-1].limits = bundlespace + [-1,1] * bundlespace_tol
+   parinfo[1:nbundle-1].limits[0] = bundlespace - bundlespace_tol
+   parinfo[1:nbundle-1].limits[1] = bundlespace + bundlespace_tol
    parinfo[1:nbundle-1].limited = [1,1]
    parinfo[nbundle:2*nbundle-1].name = 'fiberspace'
    parinfo[nbundle:2*nbundle-1].value = fiberspace
@@ -223,6 +225,7 @@ function trace_cen, fimage, xstart=xstart, ystart=ystart, nmed=nmed, $
       parinfo[ibundle].value += lags[imax]
 
       ; Make sure these are still in-bounds (round-off can send them out)
+; The below not working if values are outside limits...???
       if (parinfo[ibundle].limited[0] EQ 1) then $
        parinfo[ibundle].value = parinfo[ibundle].value $
         > parinfo[ibundle].limits[0]
@@ -263,9 +266,10 @@ function trace_cen, fimage, xstart=xstart, ystart=ystart, nmed=nmed, $
       nfev = 0
       acoeff = mpfit('fn_trace_model', parinfo=parinfo_new, $
        functargs=functargs_all, $
-       maxiter=100, niter=niter, nfev=nfev, status=status, /quiet)
+       maxiter=100, niter=niter, nfev=nfev, status=status, /quiet, $
+       errmsg=errmsg)
       if (status EQ 0) then $
-       message, 'Invalid arguments to MPFIT (out of bounds?)'
+       message, 'Invalid arguments to MPFIT: '+errmsg
 
 ;foo = trace_param_to_vec(parinfo_new.value, _EXTRA=functargs_all)
 ;foo2 = trace_param_to_vec(acoeff, _EXTRA=functargs_all)
