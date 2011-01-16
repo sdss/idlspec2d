@@ -11,7 +11,7 @@
 ; CALLING SEQUENCE:
 ;   uubatchpbs, [ platenums, topdir=, run2d=, run1d=, platestart=, plateend=, $
 ;    mjd=, mjstart=, mjend=, upsvers2d=, upsvers1d=, /zcode, queue=, /skip2d, /clobber, $
-;    pbsnodes=pbsnodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, ember=ember]
+;    pbsnodes=pbsnodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_walltime=pbs_walltime, ember=ember]
 ;
 ; INPUTS:
 ;
@@ -49,10 +49,13 @@
 ;                default to #PBS -l nodes=1
 ;   pbs_a      - If set, use #PBS -A pbs_a, otherwise
 ;                default to none
+;   pbs_walltime - If set, use #PBS -l walltime=pbs_walltime, otherwise
+;                default to none
 ;   ember      - If set, then setup the defaults for the ember cluster at the University of Utah:
 ;                pbs_nodes = 8 (for 8 nodes, without node sharing) 
 ;                pbs_ppn = 12 (12 processors per node)
 ;                pbs_a = 'bolton-em' (Bolton's account, limited to 8 nodes: ember253 - ember260)
+;                pbs_walltime='48:00:00'
 ;
 ; OUTPUTS:
 ;
@@ -84,7 +87,8 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
  mjd=mjd, mjstart=mjstart, mjend=mjend, $
  upsvers2d=upsvers2d, upsvers1d=upsvers1d, zcode=zcode, $
  queue=queue, skip2d=skip2d, clobber=clobber, $ 
- pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, ember=ember
+ pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, $
+ pbs_walltime=pbs_walltime, ember=ember
 
    if (size(platenums1,/tname) EQ 'STRING') then platenums = platenums1 $
     else if (keyword_set(platenums1)) then $
@@ -112,11 +116,12 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
     else run2dstr = ''
 
    if keyword_set(ember) then begin
-     pbs_nodes=8
-     pbs_ppn=12
-     pbs_a = 'bolton-em'
+     if not keyword_set(pbs_nodes) then pbs_nodes=8
+     if not keyword_set(pbs_ppn) then pbs_ppn=12
+     if not keyword_set(pbs_walltime) then pbs_walltime='48:00:00'
+     if not keyword_set(pbs_a) then pbs_a = 'bolton-em'
    endif
-   
+      
    ;----------
    ; Create list of plate directories
    ; Limit the list to only those specified by PLATENUMS,PLATESTART,PLATEEND
@@ -188,13 +193,15 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
       pos1 = strlen(home)
       userID = strmid(home,pos0,pos1-pos0)
      endif else userID = 'user'
-     
      print, 'BATCHBPS: Starting for user:  ',userID
      
-     pbs_root_dir = topdir + 'PBS/' + run2d + '/' + run1d+ '/' + userID + '/'
-     if file_test(pbs_root_dir) then begin
-       shift_pbs_root_dir = topdir + 'PBS/' + run2d + '/' + run1d+ '/' + userID + '.*' + '/'
-       shift_pbs = file_search(shift_pbs_root_dir, count=nshift_pbs)
+     pbs_root_dir = getenv('BOSS_PBS')
+     if (pbs_root_dir eq '') then pbs_root_dir = djs_filepath('pbs',root_dir=topdir) $
+     else pbs_root_dir = djs_filepath('bossredux',root_dir=pbs_root_dir)
+     pbs_dir = djs_filepath(userID,root_dir=pbs_root_dir) + '/'
+     if file_test(pbs_dir) then begin
+       shift_pbs_dir = djs_filepath(userID+'.*',root_dir=pbs_root_dir) + '/'
+       shift_pbs = file_search(shift_pbs_dir, count=nshift_pbs)
        max_shift = -1L
        for i=0,nshift_pbs-1 do begin
          pos0 = strpos(shift_pbs[i],'/'+userID+'.',/reverse_search)+strlen('/'+userID+'.')
@@ -202,14 +209,14 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          next_shift = fix(strmid(shift_pbs[i],pos0,pos1-pos0))
          max_shift = (next_shift gt max_shift) ? next_shift : max_shift
        endfor
-       shift_pbs_root_dir = topdir + '/PBS/' + run2d + '/' + run1d+ '/' + userID + '.' + strtrim(max_shift+1,2) + '/'
-       print, 'BATCHBPS: Renaming previous PBS directory to: '+shift_pbs_root_dir
-       file_move, pbs_root_dir, shift_pbs_root_dir
-       file_mkdir, pbs_root_dir
-     endif else file_mkdir, pbs_root_dir
-     
+       shift_pbs_dir = topdir + '/PBS/' + run2d + '/' + run1d+ '/' + userID + '.' + strtrim(max_shift+1,2) + '/'
+       print, 'BATCHBPS: Renaming previous PBS directory to: '+shift_pbs_dir
+       file_move, pbs_dir, shift_pbs_dir
+       file_mkdir, pbs_dir
+     endif else file_mkdir, pbs_dir
+         
      pbs_node_index = 'node'+ strtrim(indgen(pbs_nodes),2)
-     pbs_node_script = djs_filepath(pbs_node_index+'.pbs',root_dir=pbs_root_dir)
+     pbs_node_script = djs_filepath(pbs_node_index+'.pbs',root_dir=pbs_dir)
      pbs_node_lun = intarr(pbs_nodes)
      if keyword_set(pbs_ppn) then begin
        pbs_ppn_index  = '_proc'+ strtrim(indgen(pbs_ppn),2)
@@ -221,14 +228,14 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
        pbs_node_lun[pbs_node] = get_lun
        printf, pbs_node_lun[pbs_node], '# Auto-generated batch file '+systime()
        if keyword_set(pbs_a) then printf, pbs_node_lun[pbs_node], '#PBS -A '+pbs_a
-       printf, pbs_node_lun[pbs_node], '#PBS -l walltime=120:00:00'
+       if keyword_set(pbs_walltime) then printf, pbs_node_lun[pbs_node], '#PBS -l walltime='+pbs_walltime
        printf, pbs_node_lun[pbs_node], '#PBS -W umask=0022'
        printf, pbs_node_lun[pbs_node], '#PBS -V'
        printf, pbs_node_lun[pbs_node], '#PBS -j oe'
        if (keyword_set(queue)) then printf, pbs_node_lun[pbs_node], '#PBS -q ' + queue
        if keyword_set(pbs_ppn) then begin
          printf, pbs_node_lun[pbs_node], '#PBS -l nodes=1:ppn='+strtrim(pbs_ppn,2)
-         pbs_ppn_script[pbs_node,*] = djs_filepath(pbs_node_index[pbs_node] + pbs_ppn_index +'.pbs',root_dir=pbs_root_dir)
+         pbs_ppn_script[pbs_node,*] = djs_filepath(pbs_node_index[pbs_node] + pbs_ppn_index +'.pbs',root_dir=pbs_dir)
          for pbs_proc = 0, pbs_ppn-1 do printf, pbs_node_lun[pbs_node], 'source '+pbs_ppn_script[pbs_node,pbs_proc] + ' &'
        endif else printf, pbs_node_lun[pbs_node], '#PBS -l nodes=1"
      endfor 
@@ -376,7 +383,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
         spawn, 'qsub '+thisfile
      endfor
    endif else begin
-     cd, pbs_root_dir
+     cd, pbs_dir
      for i=0L, pbs_nodes-1 do spawn, 'qsub '+pbs_node_script[i]
    endelse
 
