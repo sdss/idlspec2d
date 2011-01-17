@@ -113,7 +113,7 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin, $
     else color = 'red'
    ; Set the maxdev to twice what it would be for optimal extraction...
    xsol = trace320crude(flatimg, flativar, yset=ycen, maxdev=0.30, $
-                        fibermask=fibermask, xerr=xerr, hdr=flathdr, $ 
+                        fibermask=fibermask, xerr=xerr, flathdr=flathdr, $ 
                         padding=configuration->spcalib_trace320crude_padding() ) 
    ; Consider a fiber bad only if any of the following mask bits are set,
    ; but specifically not if BADTRACE is set.
