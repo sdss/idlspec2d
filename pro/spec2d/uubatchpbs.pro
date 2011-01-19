@@ -209,7 +209,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          next_shift = fix(strmid(shift_pbs[i],pos0,pos1-pos0))
          max_shift = (next_shift gt max_shift) ? next_shift : max_shift
        endfor
-       shift_pbs_dir = topdir + '/PBS/' + run2d + '/' + run1d+ '/' + userID + '.' + strtrim(max_shift+1,2) + '/'
+       shift_pbs_dir = djs_filepath(userID + '.' + strtrim(max_shift+1,2),root_dir=pbs_root_dir) + '/'
        print, 'BATCHBPS: Renaming previous PBS directory to: '+shift_pbs_dir
        file_move, pbs_dir, shift_pbs_dir
        file_mkdir, pbs_dir
