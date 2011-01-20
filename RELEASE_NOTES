@@ -2,9 +2,10 @@
 BATCHPBS: Fix bug when passing plate numbers as a number rather than string.
 CCDTILT: Fix crash condition for /DOPLOT option.
 COMBSMALLCOLLIMATE: Refine offsets to gives same results as
-      COLLIMATE using full Hartmanns taken from MJD 55440 to 55511 and tests
-      of -10000,0,10000 step offset. 
-      b1 offset created using collimate, not collimate,/debug.  
+      COLLIMATE using full Hartmanns taken from MJD 55440 to 55511  and tests
+      of -10000,0,10000 step offset and more tests from 55581. 
+      b1 offset created using collimate, not collimate,/debug.
+      Setting slope equal to 1.  	  
 FINDSPEC: Works with SDSS-I,II data as well as BOSS data
       Add /SDSS option that is hard-wired to run2d='26'
 OPFIBER_GENERATE: New proc for generating the opFibers.par file
