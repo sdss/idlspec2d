@@ -38,6 +38,7 @@
 ;   skip2d     - If set, then skip the Spectro-2D reductions.
 ;   clobber    - If set, then reduce all specified plates.  The default is
 ;                to not reduce plates where the script file already exists.
+;   nosubmit   - If set, generate script file but don't submit to queue
 ;
 ; OUTPUTS:
 ;
@@ -62,8 +63,11 @@
 pro batchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
  platestart=platestart, plateend=plateend, $
  mjd=mjd, mjstart=mjstart, mjend=mjend, $
- upsvers2d=upsvers2d, upsvers1d=upsvers1d, zcode=zcode, $
- queue=queue, skip2d=skip2d, clobber=clobber
+ upsvers2d=upsvers2d, upsvers1d=upsvers1d, $
+ rawdata_dir=rawdata_dir, $
+ boss_spectro_redux=boss_spectro_redux, $
+ zcode=zcode, $
+ queue=queue, skip2d=skip2d, clobber=clobber, nosubmit=nosubmit
 
    if (size(platenums1,/tname) EQ 'STRING') then platenums = platenums1 $
     else if (keyword_set(platenums1)) then $
@@ -164,7 +168,9 @@ pro batchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
       planfilecomb = fileandpath(planlist[iplate], path=pathcomb)
 
       ; Construct the name of the batch file
-      fullscriptfile[iplate] = djs_filepath('script-'+platemjd, $
+      ; "script" -> "redux" to make names fit within qstat column widths
+      ; fullscriptfile[iplate] = djs_filepath('script-'+platemjd, $
+      fullscriptfile[iplate] = djs_filepath('redux-'+platemjd, $
        root_dir=pathcomb)
       if (keyword_set(skip2d)) then fullscriptfile[iplate] += '-' + run1d
 
@@ -185,10 +191,25 @@ pro batchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
              printf, olun, '#PBS -q ' + queue
          printf, olun, 'cd $PBS_O_WORKDIR'
 
+         ; Override environment variables if requested
+         if (keyword_set(rawdata_dir)) then begin
+             printf, olun, 'export RAWDATA_DIR='+rawdata_dir
+         endif
+         if (keyword_set(boss_spectro_redux)) then begin
+             printf, olun, 'export BOSS_SPECTRO_REDUX='+boss_spectro_redux
+         endif
 
-         ; Echo commands to make debugging easier
+         printf, olun, ''
+         printf, olun, '#- Echo commands to make debugging easier'
          printf, olun, 'set -o verbose'
 
+         ; printf, olun, ''
+         ; printf, olun, '#- Dump job environment for debugging'
+         ; envlog = 'env-'+platemjd+'.txt'
+         ; printf, olun, 'printenv > '+envlog
+         
+         printf, olun, ''
+         printf, olun, '#- The real work'
          if (keyword_set(skip2d) EQ 0) then begin
             ; Set up requested code version
             if (keyword_set(upsvers2d)) then $
@@ -211,9 +232,23 @@ pro batchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
 
          ; Run Zcode
          if (keyword_set(zcode)) then begin
+            printf, olun, ''
             printf, olun, 'setup runz'
             printf, olun, 'runz_BOSS.sh ' + platefile +' -a'
          endif
+         
+         splog, "run1d is ", run1d
+         splog, "run2d is ", run2d
+         
+         ; Make pretty pictures
+         idlcmd  = "plate_spec_image, " + string(plateid[iplate],format='(i4.4)') 
+         idlcmd += ", mjd=" + string(mjd,format='(i5.5)')
+         idlcmd += ", run1d='" + run1d + "'"
+         idlcmd += ", run2d='" + run2d + "'"
+         printf, olun, ''
+         printf, olun, '#- Make pretty pictures'
+         printf, olun, 'idl -e "' + idlcmd + '"'
+         
          close, olun
          free_lun, olun
       endif
@@ -246,7 +281,12 @@ pro batchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
    for i=0L, nbatch-1L do begin
       thisfile = fileandpath(fullscriptfile[ibatch[i]], path=thispath)
       if (keyword_set(thispath)) then cd, thispath
-      spawn, 'qsub '+thisfile
+      if keyword_set(nosubmit) then begin
+          splog, 'Generated '+thisfile+' but not submitting to queue'
+      endif else begin
+          splog, 'Submitting '+thisfile
+          spawn, 'qsub '+thisfile
+      endelse
    endfor
 
    return
