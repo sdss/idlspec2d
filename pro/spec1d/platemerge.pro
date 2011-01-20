@@ -19,7 +19,7 @@
 ;                 number of elements.
 ;   except_tags - Tag names to exclude; default to '*COVAR'.
 ;   outroot     - Root name for output files; default to
-;                 $BOSS_SPECTRO_REDUX/spAll; the files are then
+;                 $BOSS_SPECTRO_REDUX/$RUN2D/spAll; the files are then
 ;                 spAll-$RUN2D.fits, spAll-$RUN2D.dat, spAllLine-$RUN2D.dat.
 ;   run2d       - List of RUN2D subdirectories to merge, one set of output
 ;                 files per name in $RUN2D; default to all values of RUN2D
@@ -89,11 +89,23 @@ pro platemerge1, plate, mjd=mjd, except_tags=except_tags1, $
    if (n_elements(except_tags1) GT 0) then except_tags = except_tags1 $
     else except_tags = '*COVAR'
    if (keyword_set(outroot1)) then begin
+      if file_test(outroot1, /directory) then begin
+         print, 'WARNING: ' + outroot1 + ' is a directory; appending "/spAll"'
+         outroot1 = outroot1 + '/spAll'
+      endif
+      
       outroot = [outroot1, outroot1+'Line']
+      if (keyword_set(run2d)) then begin
+         outroot = outroot + '-' + run2d
+      endif
    endif else begin
       outroot = ['spAll','spAllLine']
-      if (keyword_set(run2d)) then outroot = outroot + '-' + run2d
-      outroot = djs_filepath(outroot, root_dir=getenv('BOSS_SPECTRO_REDUX'))
+      root_dir = getenv('BOSS_SPECTRO_REDUX')
+      if (keyword_set(run2d)) then begin
+         outroot = outroot + '-' + run2d
+         root_dir = root_dir + '/' + run2d
+      endif
+      outroot = djs_filepath(outroot, root_dir=root_dir)
    endelse
 
    t1 = systime(1)
@@ -493,8 +505,9 @@ pro platemerge, run2d=run2d, _EXTRA=Extra
       alldir = alldir[indx]
    endif
 
-   for i=0, n_elements(alldir)-1 do $
-    platemerge1, run2d=alldir[i], _EXTRA=Extra
+   for i=0, n_elements(alldir)-1 do begin
+      platemerge1, run2d=alldir[i], _EXTRA= Extra
+   endfor
 
    return
 end
