@@ -464,27 +464,27 @@ bigimg2=fltarr(4114,4128)
    if cam_flag eq 0 then begin
 ;offsets for regions picked
 
-       if docams[icam] eq 'b1' then begin  ;using collimate and not collimate,/debug updated 12-20-10
+       if docams[icam] eq 'b1' then begin  ;using collimate and not collimate,/debug updated 12-20-10;using additional hartmanns on 55581 and keeping slope =1
          m=1.00
-         b=0.110
+         b=0.120
          yoffsetb1=yoffset*m + b
       endif
 
       if docams[icam] eq 'b2' then begin
          m=1.00
-         b=-0.11
+         b=-0.115
          yoffsetb2=yoffset*m + b
       endif
 
       if docams[icam] eq 'r1' then begin
          m=1.00
-         b=0.147
+         b=0.152
          yoffsetr1=yoffset*m + b
       endif
 
       if docams[icam] eq 'r2' then begin
          m=1.00
-         b=0.07
+         b=0.080
          yoffsetr2=yoffset*m + b
      endif
 
