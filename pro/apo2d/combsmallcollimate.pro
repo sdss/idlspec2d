@@ -577,8 +577,8 @@ splog, ' '
       endelse
    endif else if (camcolor EQ 'b') then begin
       pixscale = 15.                        ; microns
-      if (camname EQ 'b1') then val = -31.87 * meanyoff * pixscale/24.
-      if (camname EQ 'b2') then val = -28.95 * meanyoff * pixscale/24.
+      if (camname EQ 'b1') then val = -31.87 * meanyoff * pixscale/24.-2.35; 2.35 is offset from collimate to combsmallcollimate
+      if (camname EQ 'b2') then val = -28.95 * meanyoff * pixscale/24.+2.26
       if camname eq 'b1' then valb=-val*292;274;steps per degree
       if camname eq 'b2' then valb=-val*292;310
       if keyword_set(simple) then begin
