@@ -7,7 +7,8 @@ COMBSMALLCOLLIMATE: Refine offsets to gives same results as
       b1 offset created using collimate, not collimate,/debug.
       Setting slope equal to 1 for offset between collimate and 
       combsmallcollimate.
-      Minor change on b residual output  	  
+      Minor change on b residual output 
+      Added offsets for focus ring moves from collimate-combsmallcollimate 	  
 FINDSPEC: Works with SDSS-I,II data as well as BOSS data
       Add /SDSS option that is hard-wired to run2d='26'
 OPFIBER_GENERATE: New proc for generating the opFibers.par file
