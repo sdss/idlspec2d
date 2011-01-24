@@ -191,7 +191,7 @@ pro combsmallcollimate, expnum1, expnum2=expnum2, docams1=docams1,docams2=docams
    if (NOT keyword_set(spec)) then spec=['sp1','sp2']
    if (NOT keyword_set(expnum2)) then expnum2 = expnum1 + 1
    if (NOT keyword_set(maxshift)) then maxshift = 2
-   if (NOT keyword_set(badres)) then badres=5       ;bad residual on blue ring
+   if (NOT keyword_set(badres)) then badres=6       ;bad residual on blue ring
    ngrow = 2 ; Grow bad pixels by this number of pixels in every dimension
    focustol = 0.20 ;if yoffset less than this, in focus
 
@@ -577,8 +577,8 @@ splog, ' '
       endelse
    endif else if (camcolor EQ 'b') then begin
       pixscale = 15.                        ; microns
-      if (camname EQ 'b1') then val = -31.87 * meanyoff * pixscale/24.-2.35; 2.35 is offset from collimate to combsmallcollimate
-      if (camname EQ 'b2') then val = -28.95 * meanyoff * pixscale/24.+2.26
+      if (camname EQ 'b1') then val = -31.87 * meanyoff * pixscale/24.;-2.35; 2.35 is offset from collimate to combsmallcollimate
+      if (camname EQ 'b2') then val = -28.95 * meanyoff * pixscale/24.;+2.26
       if camname eq 'b1' then valb=-val*292;274;steps per degree
       if camname eq 'b2' then valb=-val*292;310
       if keyword_set(simple) then begin
@@ -606,11 +606,11 @@ if ncam eq 2 then  begin
    rres=valr-val
 endif
 
-if abs(bres) gt 1200 then begin  ;previously 1000
+if abs(rres) gt 1200 then begin  ;previously 1000
    if NOT keyword_set(simple) then begin 
       splog,'    '
       splog,'      !!!!!!!!!!!!!!!!!!!! '
-      splog, 'RESIDUALS OUT-OF-FOCUS (|' + strtrim(bres,2) + '| > 1200 pix)'
+      splog, 'RESIDUALS OUT-OF-FOCUS (|' + strtrim(rres,2) + '| > 1200 pix)'
       splog,''
       splog,bres, ' residual for blue in degrees'
       splog,rres, ' residual for red in steps'
