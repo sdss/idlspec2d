@@ -1,3 +1,8 @@
+SPCALIB, FITARCIMAGE:
+  Added code to handle 2-phase red-side BOSS readout discontinuity.
+  Coordinated with changes to xy2traceset, traceset2xy, traceset2pix
+  in IDLUTILS => new dependency at next tag.
+
 -------------------------------------------------------------------------------
 v5_4_26 (2011-01-20)
 COMBSMALLCOLLIMATE: Added offsets for focus ring moves from collimate-combsmallcollimate 	  

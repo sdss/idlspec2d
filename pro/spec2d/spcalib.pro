@@ -84,6 +84,7 @@
 ;    8-Jan-2001  And now back to proftype 1, more robust against bad columns
 ;   26-Jan-2001  And now let's check both 1&3, and use the better fit
 ;      Apr-2010  Added "write[flat,arc]model" option (A. Bolton, Utah)
+;   25-Jan-2011  Added "twophase" test and switching, A. Bolton, Utah
 ;
 ;-
 ;------------------------------------------------------------------------------
@@ -384,17 +385,23 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
         highrej=highrej, lowrej=lowrej, npoly=npoly, relative=1, $
         reject=[0.1, 0.6, 0.6], ymodel=ymodel
         
+      ; flag to determine whether or not to do 2-phase arc solution:
+      if (long(sxpar(archdr, 'MJD')) ge 55415) and (color eq 'red') then $
+       twophase = 1B else twophase = 0B
+      if keyword_set(twophase) then splog, 'Setting 2-phase readout flag'
+
       ;---------------------------------------------------------------------
       ; Compute correlation coefficient for this arc image
       ;---------------------------------------------------------------------
-        
+
       splog, 'Searching for wavelength solution'
       aset = 0
       fitarcimage, flux, fluxivar, aset=aset, color=color, $
        lampfile=lampfile, fibermask=tmp_fibmask, bestcorr=bestcorr, $
        acoeff=configuration->spcalib_arcfitguess_acoeff(color), $
        dcoeff=configuration->spcalib_arcfitguess_dcoeff(color), $
-       wrange=configuration->spcalib_fitarcimage_wrange(color)
+       wrange=configuration->spcalib_fitarcimage_wrange(color), $
+       twophase=twophase
 
       arcstruct[iarc].bestcorr = bestcorr
       
@@ -420,7 +427,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
        lambda=lambda, rejline=rejline, xdif_tset=xdif_tset, $
        acoeff=configuration->spcalib_arcfitguess_acoeff(color), $
        dcoeff=configuration->spcalib_arcfitguess_dcoeff(color), $
-       wrange=configuration->spcalib_fitarcimage_wrange(color)
+       wrange=configuration->spcalib_fitarcimage_wrange(color), $
+       twophase=twophase
 
       if (NOT keyword_set(wset)) then begin
         splog, 'Wavelength solution failed'

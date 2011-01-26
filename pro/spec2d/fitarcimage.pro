@@ -1,3 +1,4 @@
+;+
 ; NAME:
 ;   fitarcimage
 ;
@@ -34,7 +35,9 @@
 ;   maxdev     - max deviation in log lambda to allow (default 2d-5=13.8 km/s)
 ;   gauss      - Use gaussian profile fitting for final centroid fit
 ;   wrange     - Wavelength range [Ang vacuum] for searching for arc lines and
-;                for issuing warnings about big wavelength gaps in solution
+;                for issuing warnings about big wavelength gaps in
+;                solution
+;   twophase   - Set this keyword for BOSS red-side 2-phase readout format
 ;   _EXTRA     - Keywords for ARCFIT_GUESS, specifically ACOEFF,DCOEFF
 ;
 ; OUTPUTS:
@@ -85,6 +88,7 @@
 ;   15-Oct-1999  Written by S. Burles, D. Finkbeiner, & D. Schlegel, APO.
 ;   09-Nov-1999  Major modifications by D. Schlegel, Ringberg.
 ;   20-Jan-2000  Gone back to very simple procedure: replacement (S. Burles)
+;   25-Jan-2011  Added "twophase" keyword, A. Bolton, U. of Utah
 ;-
 ;------------------------------------------------------------------------------
 function fitarc_maskbadfib, wset, outmask
@@ -105,7 +109,7 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
  color=color, lampfile=lampfile, fibermask=fibermask, $
  func=func, aset=aset, ncoeff=ncoeff, thresh=thresh, $
  row=row, nmed=nmed, maxdev=maxdev, gauss=gauss, wrange=wrange, $
- lambda=lambda, rejline=rejline, $
+ lambda=lambda, rejline=rejline, twophase=twophase, $
  xdif_tset=xdif_tset, bestcorr=bestcorr, _EXTRA=KeywordsForArcfit_guess
 
    ;---------------------------------------------------------------------------
@@ -316,6 +320,17 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    ;------------------------------------------------------------------------
    ; Iterate the fit, rejecting the worst-fit line each time
 
+; Include 2-phase readout arguments if necessary:
+   if keyword_set(twophase) then begin
+      xjumplo = npix/2 - 1 - 0.5
+      xjumphi = npix/2 + 0.5
+      xjumpval = 1./3.
+   endif else begin
+      xjumplo = 0
+      xjumphi = 0
+      xjumpval = 0
+   endelse
+
    iiter = 0
    while (iiter LT nlamp) do begin
       splog, 'Iteration ', iiter
@@ -323,7 +338,8 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
        func=func, ncoeff=ncoeff, maxiter=nlamp, maxrej=nlamp, maxdev=maxdev, $
        xmin=0, xmax=npix-1, $
        inmask=transpose(inmask)*rebin(rejline EQ '',nlamp,nfiber), $
-       outmask=outmask, yfit=yfit
+       outmask=outmask, yfit=yfit, $
+       xjumplo=xjumplo, xjumphi=xjumphi, xjumpval=xjumpval
       ydiff = ytmp - yfit
 
       if (total(outmask) EQ 0) then begin
@@ -381,9 +397,19 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
    ; coefficients over fiber numbers
    ; The first 3 terms are fit fiber-by-fiber, the others other smoothed.
 
+   ; It gets really ugly here in order to cope with the internal traceset
+   ; coeff hacks, including the possibility of the 2-phase discontinuity.
+
+   ; First we make a version of "xcen" with the jump included, if necessary:
+   if tag_exist(wset, 'XJUMPVAL') then begin
+      jfrac = (((xcen - wset.xjumplo) / (wset.xjumphi - wset.xjumplo)) > 0.) < 1.
+      xncen = xcen + jfrac * wset.xjumpval
+   endif else xncen = xcen
+
    if (ncoeff GT 3) then csmooth = lindgen(ncoeff-3) + 3
    if (keyword_set(csmooth)) then begin
-      wset_tmp = wset
+      ; get rid of any jump-related tags, if present:
+      wset_tmp = struct_selecttags(wset, select_tags=['FUNC', 'XMIN', 'XMAX', 'COEFF'])
       for i=0, n_elements(csmooth)-1 do begin
          poly_iter, lindgen(nfiber), wset_tmp.coeff[csmooth[i],*], 3, 3.0, $
           ycoeff1
@@ -395,7 +421,7 @@ pro fitarcimage, arc, arcivar, xcen, ycen, wset, wfirst=wfirst, $
       xoffset = traceset2pix(wset_tmp, alog10(lamps.lambda)) $
        - traceset2pix(wset_tmp2, alog10(lamps.lambda))
       ; Re-fit, subtracting off those higher-order terms first
-      xy2traceset, transpose(double(xcen)) - xoffset, ytmp, wset_lo, $
+      xy2traceset, transpose(double(xncen)) - xoffset, ytmp, wset_lo, $
        func=func, ncoeff=3, maxiter=0, xmin=0, xmax=npix-1, $
        inmask=outmask, yfit=yfit
       wset.coeff[3:ncoeff-1,*] = wset_tmp.coeff[3:ncoeff-1,*]
