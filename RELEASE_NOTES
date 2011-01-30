@@ -1,3 +1,6 @@
+-------------------------------------------------------------------------------
+v5_4_27 (2011-01-29)
+
 SPCALIB, FITARCIMAGE:
   Added code to handle 2-phase red-side BOSS readout discontinuity.
   Coordinated with changes to xy2traceset, traceset2xy, traceset2pix
