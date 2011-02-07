@@ -1,5 +1,9 @@
 # Limits for S/N fitting and plots.
 # This file is used by the function FITSN.
+# Note: SOS ties to fiber2flux while spec2d ties to psfflux,
+#       which differ by 0.8 mag, thus the differences in the
+#       fit ranges and fiducial (S/N)^2 mags.
+#       See https://trac.sdss3.org/ticket/583
 
 typedef struct {
   char sncode[10]; # Name of pipeline: sos spreduce spcombine
