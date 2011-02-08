@@ -269,14 +269,14 @@ for icam=0,ncam-1 do begin     ;do focus for each camera
          bigimg2p=fltarr(4096,4112)
          bigimg1p[0:2047,0:2055]=gain[0]*(bigimg1[128:2175,56:2111]-bias1[0])
          bigimg1p[2048:4095,0:2055]=gain[1]*(bigimg1[2176:4223,56:2111]-bias1[1])
-         ;bigimg1p[0:2047,2056:4111]=gain[2]*(bigimg1[128:2175,2112:4167]-bias1[2])
+         ;bigimg1p[0:2047,2056:4111]=gain[2]*(bigimg1[128:2175,2112:4167]-bias1[2])                       ;not needed since only use bottom portion of ccd
          ;bigimg1p[2048:4095,2056:4111]=gain[3]*(bigimg1[2176:4223,2112:4167]-bias1[3])
          bigimg2p[0:2047,0:2055]=gain[0]*(bigimg2[128:2175,56:2111]-bias2[0])
          bigimg2p[2048:4095,0:2055]=gain[1]*(bigimg2[2176:4223,56:2111]-bias2[1])
          ;bigimg2p[0:2047,2056:4111]=gain[2]*(bigimg2[128:2175,2112:4167]-bias2[2])
          ;bigimg2p[2048:4095,2056:4111]=gain[3]*(bigimg2[2176:4223,2112:4167]-bias2[3])
-bigimg1=fltarr(4096,4112)
-bigimg2=fltarr(4096,4112)
+         bigimg1=fltarr(4096,4112)
+         bigimg2=fltarr(4096,4112)
          bigimg1[*,*]=bigimg1p[0:4095,0:4111]
          bigimg2[*,*]=bigimg2p[0:4095,0:4111]
       endif else begin
@@ -286,8 +286,8 @@ bigimg2=fltarr(4096,4112)
          bigimg1p[2057:4113,0:2063]=gain[1]*(bigimg1[2176:4232,48:2111]-bias1[1])
          bigimg2p[0:2056,0:2063]=gain[2]*(bigimg2[119:2175,48:2111]-bias2[0])
          bigimg2p[2057:4113,0:2063]=gain[3]*(bigimg2[2176:4232,48:2111]-bias2[1])
-bigimg1=fltarr(4114,4128)
-bigimg2=fltarr(4114,4128)
+         bigimg1=fltarr(4114,4128)
+         bigimg2=fltarr(4114,4128)
          bigimg1[*,*]=bigimg1p[0:4113,0:4127]
          bigimg2[*,*]=bigimg2p[0:4113,0:4127]
       endelse
@@ -354,7 +354,7 @@ bigimg2=fltarr(4114,4128)
    ny = dims[1]
 
 
-   if (keyword_set(nocheck)) then begin
+   if (keyword_set(nocheck)) then begin  ;if left right order of exposures switched
       hartpos1 = -1
       hartpos2 = 1
    endif else begin
@@ -386,8 +386,8 @@ bigimg2=fltarr(4114,4128)
                  ;----------
                  ; Make a mask of pixels that are good in both images, and grow
                  ; any bad pixels by NGROW in each dimension
-                 ; Also mask any pixels within MAXSHIFT from the edge of the CCD.
-;djs_iterstat,bigimg1,ivar=ivar1
+                                ; Also mask any pixels within MAXSHIFT from the edge of the CCD.
+;djs_iterstat,bigimg1,ivar=ivar1 ;can't use these since subarray
 ;djs_iterstat,bigimg2,ivar=ivar2
 
 ;;;;;;;;;;;;;;;;;;;
@@ -515,16 +515,11 @@ bigimg2=fltarr(4114,4128)
       splog, 'FILE1 = ' + filename1
       splog, 'FILE2 = ' + filename2
       splog, 'MJD = ', mjdstr
-;      splog, camname , ' mean offset = ' + meanyoffstr + ' pix'
       splog, 'Camera = ', camname
    splog, ' '
 splog, 'IMAGE OF WAVELENGTH-OFFSETS', /no_stdout
 splog, '(in the correct orientation that 0,0 is lower left)', /no_stdout
 splog, ' ', /no_stdout
-   ;for iregy=nregy-1, 0, -1 do begin
-    ; format = '(' + string(nregx) + 'f6.2)'
-    ;  splog, yoffset[*,iregy], format=format, /no_stdout
-   ;endfor
 splog, ' ', /no_stdout
 ;splog, 'Min offset = ' + minyoffstr + ' pix', /no_stdout
 ;splog, 'Max offset = ' + maxyoffstr + ' pix', /no_stdout
