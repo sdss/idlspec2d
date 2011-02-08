@@ -386,8 +386,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
         reject=[0.1, 0.6, 0.6], ymodel=ymodel
         
       ; flag to determine whether or not to do 2-phase arc solution:
-      if (long(sxpar(archdr, 'MJD')) ge 55415) and (color eq 'red') then $
-       twophase = 1B else twophase = 0B
+      twophase = sxpar(archdr, 'TWOPHASE')
       if keyword_set(twophase) then splog, 'Setting 2-phase readout flag'
 
       ;---------------------------------------------------------------------
