@@ -606,7 +606,7 @@ if ncam eq 2 then  begin
    rres=valr-val
 endif
 
-if abs(rres) gt 1200 then begin  ;previously 1000
+if abs(rres) gt 1400 then begin  ;previously 1000
    if NOT keyword_set(simple) then begin 
       splog,'    '
       splog,'      !!!!!!!!!!!!!!!!!!!! '
