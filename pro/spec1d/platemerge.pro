@@ -89,23 +89,12 @@ pro platemerge1, plate, mjd=mjd, except_tags=except_tags1, $
    if (n_elements(except_tags1) GT 0) then except_tags = except_tags1 $
     else except_tags = '*COVAR'
    if (keyword_set(outroot1)) then begin
-      if file_test(outroot1, /directory) then begin
-         print, 'WARNING: ' + outroot1 + ' is a directory; appending "/spAll"'
-         outroot1 = outroot1 + '/spAll'
-      endif
-      
       outroot = [outroot1, outroot1+'Line']
-      if (keyword_set(run2d)) then begin
-         outroot = outroot + '-' + run2d
-      endif
    endif else begin
       outroot = ['spAll','spAllLine']
-      root_dir = getenv('BOSS_SPECTRO_REDUX')
-      if (keyword_set(run2d)) then begin
-         outroot = outroot + '-' + run2d
-         root_dir = root_dir + '/' + run2d
-      endif
-      outroot = djs_filepath(outroot, root_dir=root_dir)
+      if (keyword_set(run2d)) then outroot = outroot + '-' + run2d
+      outroot = djs_filepath(outroot, root_dir=getenv('BOSS_SPECTRO_REDUX'), $
+       subdir=run2d)
    endelse
 
    t1 = systime(1)
@@ -505,9 +494,8 @@ pro platemerge, run2d=run2d, _EXTRA=Extra
       alldir = alldir[indx]
    endif
 
-   for i=0, n_elements(alldir)-1 do begin
-      platemerge1, run2d=alldir[i], _EXTRA= Extra
-   endfor
+   for i=0, n_elements(alldir)-1 do $
+    platemerge1, run2d=alldir[i], _EXTRA=Extra
 
    return
 end
