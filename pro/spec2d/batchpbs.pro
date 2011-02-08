@@ -8,7 +8,8 @@
 ;
 ; CALLING SEQUENCE:
 ;   batchpbs, [ platenums, topdir=, run2d=, run1d=, platestart=, plateend=, $
-;    mjd=, mjstart=, mjend=, upsvers2d=, upsvers1d=, /zcode, queue=, /skip2d, /clobber ]
+;    mjd=, mjstart=, mjend=, upsvers2d=, upsvers1d=, /zcode, queue=, /skip2d, $
+;     /clobber, /nosubmit ]
 ;
 ; INPUTS:
 ;
