@@ -400,12 +400,6 @@ pro sdssproc, infile1, image, invvar, indir=indir, $
   camcol = indx[0] + 1
   camrow = 0
 
-  ; Mark when the BOSS red CCDs switched from 1-phase to 2-phase readout
-  if (mjd GE 55415 AND strmatch(camname,'r*')) then $
-   sxaddpar, hdr, 'TWOPHASE', 1B $
-  else $
-   sxaddpar, hdr, 'TWOPHASE', 0B
-  
   ; Cache these versions in a common block, since the calls to spawn are slow
   if (NOT keyword_set(vers2d)) then begin
      vers2d = idlspec2d_version()
@@ -443,6 +437,12 @@ pro sdssproc, infile1, image, invvar, indir=indir, $
   sxaddpar, hdr, 'FLAVOR', flavor
   sxaddpar, hdr, 'CAMERAS', camname
 
+  ; Mark when the BOSS red CCDs switched from 1-phase to 2-phase readout
+  if (mjd GE 55415 AND strmatch(camname,'r*')) then $
+   sxaddpar, hdr, 'TWOPHASE', 1B $
+  else $
+   sxaddpar, hdr, 'TWOPHASE', 0B
+  
   ;-----------
   ; Deal with the first light BOSS data on MJD 55052
 
