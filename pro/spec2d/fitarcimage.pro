@@ -9,7 +9,7 @@
 ;   fitarcimage, arc, arcivar, xcen, ycen, wset, [wfirst=, $
 ;    color=, lampfile=, fibermask=, func=, aset=, ncoeff=, $
 ;    thresh=, row=, nmed=, maxdev=, /gauss, wrange=, $
-;    lambda=, rejline=,  xdif_tset=, $
+;    lambda=, rejline=, /twophase, xdif_tset=, $
 ;    bestcorr=, _EXTRA=KeywordsForArcfit_guess
 ;
 ; INPUTS:
