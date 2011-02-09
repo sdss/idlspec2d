@@ -1,4 +1,6 @@
 
+BOLTON_STD_THROUGHPUT: new function to compute end-to-end
+  throughput on standard stars.
 PLATEMERGE: Make directory-concatenation OS-independent, and remove
       undocumented use of a "spAll" subdir.
 SDSSPROC,SPCALIB: Move hard-coded logic of when the BOSS red CCDs switched

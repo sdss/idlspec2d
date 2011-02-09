@@ -489,6 +489,7 @@ pro/spec2d/arcsky_fit.pro -text
 pro/spec2d/atvspec.pro -text
 pro/spec2d/batchpbs.pro -text
 pro/spec2d/bolton_sn_fit.pro -text
+pro/spec2d/bolton_std_throughput.pro -text
 pro/spec2d/boss_gain.pro -text
 pro/spec2d/calcflux.pro -text
 pro/spec2d/calcscatimage.pro -text
