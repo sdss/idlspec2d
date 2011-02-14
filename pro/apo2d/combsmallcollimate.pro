@@ -601,11 +601,11 @@ if ncam eq 2 then  begin
    rres=valr-val
 endif
 
-if abs(rres) gt 1400 then begin  ;previously 1000
+if abs(rres) gt 1700 then begin  ;previously 1000; 1700 corresponds to ~.22 pix
    if NOT keyword_set(simple) then begin 
       splog,'    '
       splog,'      !!!!!!!!!!!!!!!!!!!! '
-      splog, 'RESIDUALS OUT-OF-FOCUS (|' + strtrim(rres,2) + '| > 1200 pix)'
+      splog, 'RESIDUALS OUT-OF-FOCUS (|' + strtrim(rres,2) + '| > 1700 pix)'
       splog,''
       splog,bres, ' residual for blue in degrees'
       splog,rres, ' residual for red in steps'
