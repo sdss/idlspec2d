@@ -14,6 +14,7 @@
 ; INPUTS:
 ;   spframes       - Name(s) of spFrame files (written by SPREDUCE)
 ;   outputname     - Output file name
+;   plotsnfile     - Name of output plot file
 ;
 ; OPTIONAL KEYWORDS:
 ;   mjd            - The MJD to put in the output header
