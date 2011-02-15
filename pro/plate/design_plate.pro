@@ -589,6 +589,8 @@ pro design_plate, stardata1, racen=racen, deccen=deccen, $
    ; Compute the median reddening for objects on this plate
    indx = where(strtrim(allplug.holetype,2) EQ 'OBJECT', nobj)
    euler, allplug[indx].ra, allplug[indx].dec, ll, bb, 1
+   ; NOTE: These constants are also hardwired in fitsn.pro
+   ;       If you change them here, also change them there.
    reddenvec = [5.155, 3.793, 2.751, 2.086, 1.479] $
     * median(dust_getval(ll, bb, /interp))
 

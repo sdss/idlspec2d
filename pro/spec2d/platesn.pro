@@ -137,8 +137,8 @@ pro platesn, objflux, objivar, andmask, plugmap, loglam, $
      + '  MJD=' + strtrim(string(sxpar(hdr,'MJD')),2)
    filter = ['g','r','i']
    plotsn, snvec, plugmap, plotfile=plotfile, plottitle=plottitle, $
-    sncode='spcombine', filter=filter, synthmag=synthmag, snplate=snplate, $
-    specsnlimit=specsnlimit
+    sncode='spcombine', filter=filter, synthmag=synthmag, $
+    snplate=snplate, dered_snplate=dered_snplate, specsnlimit=specsnlimit
 
    ;----------
    ; Add header keywords if HDR is passed.
@@ -147,15 +147,24 @@ pro platesn, objflux, objivar, andmask, plugmap, loglam, $
       ;----------
       ; Add the keywords SPEC1_G,SPEC1_R,... with the (S/N)^2 values
       ; per spectrograph.
+      ; Also add keywords SN2EXT1G, SN2EXT1R, ... with extinction
+      ; corrected (S/N)^2 values
 
       bands = ['G','R','I']
 
       for ispec=1, 2 do begin
          for bb=0, n_elements(bands)-1 do begin
+            ; Standard (S/N)^2
             key1 = 'SPEC'+ strtrim(ispec,2)+'_'+strupcase(filter[bb])
             comment = string(format='(a,i2,a,f5.2)', $
-             '(S/N)^2 for spec ', ispec, ' at mag ', specsnlimit[bb].snmag)
+             ' (S/N)^2 for spec ', ispec, ' at mag ', specsnlimit[bb].snmag)
             sxaddpar, hdr, key1, snplate[ispec-1,bb], comment, before='LOWREJ'
+            
+            ; Extinction corrected (S/N)^2
+            key1 = 'SN2EXT'+strtrim(ispec,2)+strupcase(filter[bb])
+            comment = ' Extinction corrected (S/N)^2'
+            sxaddpar, hdr, key1, dered_snplate[ispec-1,bb], $
+             comment, before='LOWREJ'
          endfor
       endfor
 

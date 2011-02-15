@@ -564,9 +564,12 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
       filter = 'i'
       mag = plugsort.mag[3]
    endelse
-   sncoeff = fitsn(mag, snvec, sncode='spreduce', filter=filter, sn2=sn2)
+   sncoeff = fitsn(mag, snvec, sncode='spreduce', filter=filter, $
+    plugmap=plugsort, sn2=sn2, dered_sn2=dered_sn2)
 
-   sxaddpar,objhdr,'FRAMESN2', sn2[0]
+   sxaddpar,objhdr,'FRAMESN2', sn2[0], "(S/N)^2 at fidicial magnitude"
+   sxaddpar,objhdr,'DEREDSN2', dered_sn2[0], $
+    "Extinction corrected (S/N)^2 (like quick redux)", after='FRAMESN2'
    sxaddpar,objhdr,'EQUINOX',2000.0,after='DEC'
    sxaddpar,objhdr,'RADECSYS', 'FK5', after='EQUINOX'
    sxaddpar,objhdr,'AIRMASS',$

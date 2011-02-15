@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   plotsn, snvec, plugmap, [ filter=, plotmag=, plottitle=, snmin=, $
-;    plotfile=, synthmag=, snplate=, specsnlimit=, _EXTRA= ]
+;    plotfile=, synthmag=, snplate=, dered_snplate=, specsnlimit=, _EXTRA= ]
 ;
 ; INPUTS:
 ;   snvec      - S/N array [NBAND,NFIBER]
@@ -29,6 +29,7 @@
 ; OPTIONAL OUTPUTS:
 ;   snplate    - Best fit (S/N)^2 at fiducial magnitude(s); array of [2,NBAND]
 ;                to give the number in each spectrograph and each filter
+;   dered_snplate - Best fit (S/N)^2 extinction corrected like SOS pipeline
 ;   specsnlimit- Returned from FITSN
 ;
 ; COMMENTS:
@@ -175,7 +176,7 @@ end
 ;------------------------------------------------------------------------------
 pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
  plottitle=plottitle, plotfile=plotfile, synthmag=synthmag, snplate=snplate, $
- specsnlimit=specsnlimit, _EXTRA=KeywordsForFitSN
+ dered_snplate=dered_snplate, specsnlimit=specsnlimit, _EXTRA=KeywordsForFitSN
 
    if (keyword_set(filter1)) then filter = filter1 $
     else filter = ['g','r','i']
@@ -226,6 +227,7 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
    !p.multi = [0,2,nband]
 
    snplate = fltarr(2,nband)
+   dered_snplate = fltarr(2,nband)
 
    pmulti = !p.multi
    ymargin = !y.margin
@@ -354,15 +356,19 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
          sig1 = 0
          if (s1[0] NE -1) then begin
             afit1 = fitsn(thismag[s1], snvec[iband,s1], $
-             filter=filter[iband], _EXTRA=KeywordsForFitSN, sigma=sig1, sn2=sn2)
-            snplate[0,iband] = sn2
+             filter=filter[iband], plugmap=plugmap, _EXTRA=KeywordsForFitSN, $
+             sigma=sig1, sn2=sn2, dered_sn2=dered_sn2)
+          snplate[0,iband] = sn2
+          dered_snplate[0,iband] = dered_sn2
          endif
          sig2 = 0
          afit2 = 0
          if (s2[0] NE -1) then begin
             afit2 = fitsn(thismag[s2], snvec[iband,s2], $
-             filter=filter[iband], _EXTRA=KeywordsForFitSN, sigma=sig2, sn2=sn2)
-            snplate[1,iband] = sn2
+             filter=filter[iband], plugmap=plugmap, _EXTRA=KeywordsForFitSN, $
+              sigma=sig2, sn2=sn2, dered_sn2=dered_sn2)
+           snplate[1,iband] = sn2
+           dered_snplate[1,iband] = dered_sn2
          endif
 
          ylimits = 10^[0.80 * !y.crange[0] + 0.20 * !y.crange[1], $
