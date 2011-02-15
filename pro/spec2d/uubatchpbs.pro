@@ -193,7 +193,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
       pos1 = strlen(home)
       userID = strmid(home,pos0,pos1-pos0)
      endif else userID = 'user'
-     print, 'BATCHBPS: Starting for user:  ',userID
+     print, 'UUBATCHBPS: Starting for user:  ',userID
      
      pbs_root_dir = getenv('BOSS_PBS')
      if (pbs_root_dir eq '') then pbs_root_dir = djs_filepath('pbs',root_dir=topdir) $
@@ -210,7 +210,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          max_shift = (next_shift gt max_shift) ? next_shift : max_shift
        endfor
        shift_pbs_dir = djs_filepath(userID + '.' + strtrim(max_shift+1,2),root_dir=pbs_root_dir) + '/'
-       print, 'BATCHBPS: Renaming previous PBS directory to: '+shift_pbs_dir
+       print, 'UUBATCHBPS: Renaming previous PBS directory to: '+shift_pbs_dir
        file_move, pbs_dir, shift_pbs_dir
        file_mkdir, pbs_dir
      endif else file_mkdir, pbs_dir
@@ -342,8 +342,10 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
              if pbs_node ge pbs_nodes then begin
                pbs_node = 0
                pbs_proc += 1
-               if pbs_proc ge pbs_ppn then pbs_proc = 0 
-               if not pbs_ppn_append then pbs_ppn_append = 1
+               if pbs_proc ge pbs_ppn then begin
+                 pbs_proc = 0 
+                 if not pbs_ppn_append then pbs_ppn_append = 1
+               endif
              endif
            endif else begin
              printf, pbs_node_lun[pbs_node], script_cmd+fullscriptfile[iplate]+' &
@@ -354,7 +356,21 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
       endif
 
    endfor
-
+   
+   if not pbs_ppn_append then begin
+     pbs_node_i = pbs_node
+     pbs_proc_i = pbs_proc
+     for pbs_proc = pbs_proc_i,pbs_ppn-1 do begin
+       for pbs_node = pbs_node_i,pbs_nodes-1 do begin
+         openw, pbs_ppn_lun, pbs_ppn_script[pbs_node,pbs_proc], /get_lun
+         printf, pbs_ppn_lun, "#done"
+         close, pbs_ppn_lun
+         free_lun, pbs_ppn_lun
+       endfor
+       pbs_node_i = 0
+     endfor
+   endif else print, 'completed'
+   
    ; Close the bundled script files if pbs_nodes keyword is set
    if keyword_set(pbs_nodes) then begin
      for pbs_node = 0, pbs_nodes-1 do begin
