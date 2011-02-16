@@ -10,6 +10,9 @@ PLATESN: Add SN2EXT* keywords to spPlate output (ticket #879).
 PLOTSN: Pass through dered_snplate from fitsn dered_sn2 output
 SDSSPROC,SPCALIB: Move hard-coded logic of when the BOSS red CCDs switched
       from 1-phase to 2-phase readout to be inside the SDSSPROC routine.
+SN_MEDIAN: New proc to compute median spectroscopic S/N in the SDSS filters
+      (ticket #976).
+SPREDUCE1D: Add call to SN_MEDIAN.
 
 -------------------------------------------------------------------------------
 v5_4_29 (2011-02-01)
