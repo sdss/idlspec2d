@@ -25,7 +25,7 @@ function screamAndDie
 	
 	### This hack is too ugly, need to change it ###
 	echo "Mailing Error Report"
-	mail -s "$MJD failed" kushner@lbl.gov < $LOGDIR/$MJD.warning
+	mail -s "$MJD failed" StephenBailey@lbl.gov < $LOGDIR/$MJD.warning
 	
     exit 1
 }
@@ -193,7 +193,10 @@ printAndRun "idl -e 'spplan2d, MJD=$MJD $RUN2DKEY'"
 printAndRun "idl -e 'spplan1d, MJD=$MJD $RUN2DKEY'"
 #printAndRun "idl -e 'batchpbs, QUEUE=\"high_pri\", MJD=$MJD $UPS1D $UPS2D $ZCODE'"
 printAndRun "idl -e 'batchpbs, MJD=$MJD $UPS1D $UPS2D $ZCODE'"
-printAndRun "idl -e 'platelist, /create $RUN1DKEY $RUN2DKEY'"
+
+#- Setup v5_4_25 so that we can get version with skipcart
+setup idlspec2d v5_4_25
+printAndRun "idl -e 'platelist, /create, skipcart=15 $RUN1DKEY $RUN2DKEY'"
 printAndRun "idl -e 'platemerge $RUN2DKEY'"
 
 
@@ -201,5 +204,9 @@ printAndRun "idl -e 'platemerge $RUN2DKEY'"
 echo "Goodbye at $(date)"
 
 ###  This is a TEMPORARY hack just to make sure things are looking ok!
-##echo "Mailing Report"
-##mail -s "log for dailyrun $MJD" kushner@lbl.gov < $LOGDIR/$MJD.log
+echo "Mailing Report"
+### mail -s "log for dailyrun $MJD" StephenBailey@lbl.gov < $LOGDIR/$MJD.log
+grep 'Submitting redux' $LOGDIR/$MJD.log | mail -s "redux $MJD" StephenBailey@lbl.gov
+
+
+
