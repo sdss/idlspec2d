@@ -178,6 +178,12 @@ chop_data1 = 1 ; Force this in the current reductions ???
    if (n_elements(skyflux) NE n_elements(objflux)) then skyflux = 0
 
    ;----------
+   ; Compute the S/N in SDSS filters (before doing /chop_data)
+
+   objloglam = objloglam0 + lindgen(npixobj) * objdloglam
+   snmed = sn_median(objloglam, objflux, objivar)
+
+   ;----------
    ;    Chop wavelength range of data for all fits if /CHOP_DATA specified
    ; This is for templates that are shorter than the input spectra
 
@@ -441,7 +447,6 @@ chop_data1 = 1 ; Force this in the current reductions ???
    spectrosynflux = fltarr(5,nper,nobj)
    spectroskyflux = fltarr(5,nper,nobj)
 
-   objloglam = objloglam0 + lindgen(npixobj) * objdloglam
    wavevec = 10d^objloglam
    flambda2fnu = wavevec^2 / 2.99792e18
 
@@ -535,7 +540,7 @@ flambda2fnu = 0 ; Free memory
             wavemax:   0.0, $
             wcoverage: 0.0, $
             zwarning:  0L, $
-            sn_median: 0.0, $
+            sn_median: fltarr(5), $
             chi68p: 0.0, $
             fracnsigma: fltarr(nfsig), $
             fracnsighi: fltarr(nfsig), $
@@ -565,9 +570,8 @@ flambda2fnu = 0 ; Free memory
       res_all[*,iobj].wcoverage = ngood * objdloglam
       res_all[*,iobj].anyandmask = anyandmask[iobj]
       res_all[*,iobj].anyormask = anyormask[iobj]
-      if (ngood GT 0) then $
-       res_all[*,iobj].sn_median = $
-        median( sqrt(objivar[igood,iobj]) * abs(objflux[igood,iobj]))
+      for j=0, 4 do $
+       res_all[*,iobj].sn_median[j] = snmed[j,iobj]
    endfor
 
    res_all.chi68p = chi68p
