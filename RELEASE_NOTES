@@ -1,30 +1,13 @@
--------------------------------------------------------------------------------
-trunk (2011-02-14)
-
-SJB added keywords to spFrame and spPlate output to reflect dereddened
-(extinction corrected) (S/N)^2 numbers like the quick pipeline.
-- spFrame: DEREDSN2 as dereddened version of FRAMESN2
-- spPlate: SN2EXTxy as dereddened (EXTinction corrected) version of SPECx_y
-
-The dereddened calculation is done within FITSN, though this required changes
-to multiple pieces of code due to how the information is passed through and
-where the header keywords are actually written.j
-
-EXTRACT_OBJECT: Add DEREDSN2 keyword to spFrame output
-PLATESN: Add SN2EXTxy keywords to spPlate output
-PLOTSN: Pass through dered_snplate from fitsn dered_sn2 output
-FITSN: if plugmap is provided, fill in dered_sn2 as dereddened
-  version of sn2 output.  Document that sncode and filter are required.
-DESIGN_PLATE: Added comment that reddening constants are hardcoded both
-  here and in fitsn.pro; if you change them in one place, change them 
-  in both (or refactor to add a param file)
-
--------------------------------------------------------------------------------
 
 BOLTON_STD_THROUGHPUT: new function to compute end-to-end
   throughput on standard stars.
+EXTRACT_OBJECT: Add DEREDSN2 keyword to spFrame output.
+FITSN: If plugmap is provided, fill in dered_sn2 as dereddened
+      version of sn2 output (ticket #879).
 PLATEMERGE: Make directory-concatenation OS-independent, and remove
       undocumented use of a "spAll" subdir.
+PLATESN: Add SN2EXT* keywords to spPlate output (ticket #879).
+PLOTSN: Pass through dered_snplate from fitsn dered_sn2 output
 SDSSPROC,SPCALIB: Move hard-coded logic of when the BOSS red CCDs switched
       from 1-phase to 2-phase readout to be inside the SDSSPROC routine.
 
