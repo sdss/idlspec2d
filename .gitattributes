@@ -569,6 +569,7 @@ pro/spec2d/skysubtract.pro -text
 pro/spec2d/smooth_halo.pro -text
 pro/spec2d/smooth_halo2d.pro -text
 pro/spec2d/smooth_superflat.pro -text
+pro/spec2d/sn_median.pro -text
 pro/spec2d/spadd_guiderinfo.pro -text
 pro/spec2d/spallflat.pro -text
 pro/spec2d/spbiasave.pro -text
