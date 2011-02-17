@@ -13,6 +13,8 @@ SDSSPROC,SPCALIB: Move hard-coded logic of when the BOSS red CCDs switched
 SN_MEDIAN: New proc to compute median spectroscopic S/N in the SDSS filters
       (ticket #976).
 SPREDUCE1D: Add call to SN_MEDIAN.
+TRACE320CRUDE: Added condition on minimum fraction of traces for
+      application of polyfitw (ticket #1025) [ASB]
 
 -------------------------------------------------------------------------------
 v5_4_29 (2011-02-01)

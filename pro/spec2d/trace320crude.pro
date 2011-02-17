@@ -168,7 +168,9 @@ function trace320crude, image, invvar, ystart=ystart, nmed=nmed, $
 
    for iy=0, ny-1 do begin
       xcheck = xgood AND xmask[iy,*] ; Test for good fiber & good centroid
-      if (total(xcheck) GT ndegree+2) then begin
+; ASB: change to require some sensible minimum fraction of traces:
+;      if (total(xcheck) GT ndegree+2) then begin
+      if (total(xcheck) GT ((ndegree+2) > (0.2 * ntrace))) then begin
          if (!version.release LT '5.4') then begin
             coeff = polyfitw(xposition, xset[iy,*], xcheck, ndegree, xfit)
          endif else begin
