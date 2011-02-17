@@ -499,6 +499,7 @@ pro/spec2d/combine1fiber.pro -text
 pro/spec2d/correct_crosstalk.pro -text
 pro/spec2d/correct_dlam.pro -text
 pro/spec2d/divideflat.pro -text
+pro/spec2d/djs_polyfit.pro -text
 pro/spec2d/doscatter.pro -text
 pro/spec2d/extract2.pro -text
 pro/spec2d/extract_asymbox2.pro -text
