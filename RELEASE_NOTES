@@ -1,3 +1,31 @@
+-------------------------------------------------------------------------------
+2011-02-17, SJB
+PLATELIST and PLATEMERGE:
+- Output deredsn2 values to fits files and spAll.dat output
+- Use them when possible for platequality ASCII and html files
+- Additional options to control non-standard input and output dirs
+
+-------------------------------------------------------------------------------
+
+SJB added keywords to spFrame and spPlate output to reflect dereddened
+(extinction corrected) (S/N)^2 numbers like the quick pipeline.
+- spFrame: DEREDSN2 as dereddened version of FRAMESN2
+- spPlate: SN2EXTxy as dereddened (EXTinction corrected) version of SPECx_y
+
+The dereddened calculation is done within FITSN, though this required changes
+to multiple pieces of code due to how the information is passed through and
+where the header keywords are actually written.
+
+EXTRACT_OBJECT: Add DEREDSN2 keyword to spFrame output
+PLATESN: Add SN2EXTxy keywords to spPlate output
+PLOTSN: Pass through dered_snplate from fitsn dered_sn2 output
+FITSN: if plugmap is provided, fill in dered_sn2 as dereddened
+  version of sn2 output.  Document that sncode and filter are required.
+DESIGN_PLATE: Added comment that reddening constants are hardcoded both
+  here and in fitsn.pro; if you change them in one place, change them 
+  in both (or refactor to add a param file)
+
+-------------------------------------------------------------------------------
 
 BOLTON_STD_THROUGHPUT: new function to compute end-to-end
   throughput on standard stars.

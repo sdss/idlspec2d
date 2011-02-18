@@ -6,7 +6,7 @@
 ;   Make list of reduced plates
 ;
 ; CALLING SEQUENCE:
-;   platelist, [ /create, topdir=, run2d=, run1d=, $
+;   platelist, [ /create, topdir=, outdir=, run2d=, run1d=, $
 ;    /purge2d, /purge1d, /killpartial, skipcart=, plist= ]
 ;
 ; INPUTS:
@@ -16,6 +16,8 @@
 ;                 if not set, then simply read this file from a previous call.
 ;   topdir      - Optional override value for the environment
 ;                 variable $BOSS_SPECTRO_REDUX.
+;   outdir      - Optional override of both topdir and $BOSS_SPECTRO_REDUX
+;                 for output directory location
 ;   run2d       - Optional RUN2D subdirectories to include in outputs;
 ;                 set to '' to not search subdirectories; default to '*'
 ;   run1d       - Optional RUN1D subdirectories to include in outputs
@@ -39,6 +41,9 @@
 ;                 that plugging of the same plate on a later date.  This
 ;                 deletes spPlate and spZ files and their logs files.
 ;   skipcart    - cart number or list of cart numbers to drop from platelist
+;   rawsn2      - If set, output original raw SN2 numbers in html and text
+;                 files; otherwise use dereddened (dust extinction corrected)
+;                 values.  Both are always written to the fits file output.
 ;
 ; OUTPUTS:
 ;
@@ -71,6 +76,7 @@
 ;     spDiag1d-0306-51690.log
 ;
 ;   PLATESN2 is set to the minimum of the 4 cameras.
+;   DEREDSN2 like PLATESN2, but with dereddened SN2 values
 ;   PLATEQUALITY defaults to 'good'.
 ;   PLATEQUALITY is set to 'bad'      if MINSN2(B) < 10.0 or MINSN2(R) < 22.0
 ;                                     --> previously if MINSN2 < 13.0
@@ -139,12 +145,13 @@ function get_lastline, filename
 end
 
 pro platelist_write, plist, trimtags=trimtags, alias=alias, $
- fileprefix=fileprefix, title=title, toptext=toptext
+ fileprefix=fileprefix, title=title, toptext=toptext, outdir=outdir1
 
-   ascfile = djs_filepath(fileprefix+'.txt', $
-    root_dir=getenv('BOSS_SPECTRO_REDUX'))
-   htmlfile = djs_filepath(fileprefix+'.html', $
-    root_dir=getenv('BOSS_SPECTRO_REDUX'))
+   if (keyword_set(outdir1)) then outdir = outdir1 $
+   else outdir = getenv('BOSS_SPECTRO_REDUX')
+
+   ascfile = djs_filepath(fileprefix+'.txt', root_dir=outdir)
+   htmlfile = djs_filepath(fileprefix+'.html', root_dir=outdir)
 
    trimdat  = struct_trimtags(plist, select_tags=trimtags[0,*])
    trimstring = struct_trimtags(plist, select_tags=trimtags[0,*], $
@@ -204,18 +211,19 @@ pro platelist_write, plist, trimtags=trimtags, alias=alias, $
 end
 ;------------------------------------------------------------------------------
 pro platelist, plist=plist, create=create, $
- topdir=topdir1, run2d=run2d1, run1d=run1d1, $
+ topdir=topdir1, outdir=outdir1, $
+ run2d=run2d1, run1d=run1d1, $
  purge2d=purge2d, purge1d=purge1d, killpartial=killpartial, $
- skipcart=skipcart
+ skipcart=skipcart, rawsn2=rawsn2
 
    if (keyword_set(topdir1)) then topdir = topdir1 $
     else topdir = getenv('BOSS_SPECTRO_REDUX')
+   if keyword_set(outdir1) then outdir = outdir1 $
+    else outdir = topdir
    if (n_elements(run2d1) GT 0) then run2d = strtrim(run2d1,2) $
     else run2d = '*'
    if (n_elements(run1d1) GT 0) then run1d = strtrim(run1d1,2) $
     else run1d = '*'
-
-   fitsfile = djs_filepath('platelist.fits', root_dir=topdir)
 
    if keyword_set(skipcart) then begin
       splog, 'WARNING: Dropping plates from carts', skipcart
@@ -224,6 +232,8 @@ pro platelist, plist=plist, create=create, $
    ;----------
    ; If the /CREATE flag is not set, and the platelist file already exists
    ; on disk, then simply return the info in that file.
+
+   fitsfile = djs_filepath('platelist.fits', root_dir=topdir)
 
    if (NOT keyword_set(create) AND NOT keyword_set(purge2d) $
     AND NOT keyword_set(purge1d)) then begin
@@ -236,6 +246,8 @@ pro platelist, plist=plist, create=create, $
 
    ;----------
    ; Generate the list of plan files or plate files if not specified
+
+   fitsfile = djs_filepath('platelist.fits', root_dir=outdir)
 
    if (keyword_set(run2d)) then $
     run2dlist = get_mjd_dir(topdir, mjd=run2d) $
@@ -297,6 +309,7 @@ pro platelist, plist=plist, create=create, $
     'chunk'        , ' ', $
     'platequality' , ' ', $
     'platesn2'     , 0.0, $
+    'deredsn2'     , 0.0, $
     'qsurvey'      , 0L,  $
     'mjdlist'      , ' ', $
     'nexp'         , 0L,  $
@@ -314,6 +327,12 @@ pro platelist, plist=plist, create=create, $
     'sn2_g2'       , 0.0, $
     'sn2_r2'       , 0.0, $
     'sn2_i2'       , 0.0, $
+    'dered_sn2_g1' , 0.0, $
+    'dered_sn2_r1' , 0.0, $
+    'dered_sn2_i1' , 0.0, $
+    'dered_sn2_g2' , 0.0, $
+    'dered_sn2_r2' , 0.0, $
+    'dered_sn2_i2' , 0.0, $
     'goffstd'      , 0., $
     'grmsstd'      , 0., $
     'roffstd'      , 0., $
@@ -376,6 +395,15 @@ pro platelist, plist=plist, create=create, $
     'status1d'     , 'Missing', $
     'public'       , ' ', $
     'qualcomments' , ' ' )
+    
+   if keyword_set(rawsn2) then begin
+      sn2prefix = ''
+      sn2tag = 'platesn2'
+   endif else begin
+      sn2prefix = 'dered_'
+      sn2tag = 'deredsn2'
+   endelse
+ 
    trimtags1 = [ $
     ['plate'        ,   'i4'], $
     ['mjd'          ,   'i5'], $
@@ -384,7 +412,7 @@ pro platelist, plist=plist, create=create, $
     ['run2d'        ,    'a'], $
     ['run1d'        ,    'a'], $
     ['platequality' ,    'a'], $
-    ['platesn2'     , 'f5.1'], $
+    [sn2tag         , 'f5.1'], $
     ['n_galaxy'     ,   'i3'], $
     ['n_qso'        ,   'i3'], $
     ['n_star'       ,   'i3'], $
@@ -393,15 +421,17 @@ pro platelist, plist=plist, create=create, $
     ['survey'       ,    'a'], $
     ['chunk'        ,    'a'], $
     ['public'       ,    'a']  ]
+   
+   
    trimtags2 = [ $
     ['plate'        ,   'i4'], $
     ['mjd'          ,   'i5'], $
     ['run2d'        ,    'a'], $
     ['run1d'        ,    'a'], $
-    ['sn2_g1'       , 'f5.1'], $
-    ['sn2_i1'       , 'f5.1'], $
-    ['sn2_g2'       , 'f5.1'], $
-    ['sn2_i2'       , 'f5.1'], $
+    [sn2prefix+'sn2_g1' , 'f5.1'], $
+    [sn2prefix+'sn2_i1' , 'f5.1'], $
+    [sn2prefix+'sn2_g2' , 'f5.1'], $
+    [sn2prefix+'sn2_i2' , 'f5.1'], $
     ['fbadpix'      , 'f5.3'], $
     ['success_main' , 'f5.1'], $
     ['success_lrg1' , 'f5.1'], $
@@ -573,6 +603,15 @@ pro platelist, plist=plist, create=create, $
          plist[ifile].sn2_g2 = sxpar(hdr1, 'SPEC2_G')
          plist[ifile].sn2_r2 = sxpar(hdr1, 'SPEC2_R')
          plist[ifile].sn2_i2 = sxpar(hdr1, 'SPEC2_I')
+         
+         ; If these keywords don't exist, these will just get 0
+         plist[ifile].dered_sn2_g1 = sxpar(hdr1, 'SN2EXT1G')
+         plist[ifile].dered_sn2_r1 = sxpar(hdr1, 'SN2EXT1R')
+         plist[ifile].dered_sn2_i1 = sxpar(hdr1, 'SN2EXT1I')
+         plist[ifile].dered_sn2_g2 = sxpar(hdr1, 'SN2EXT2G')
+         plist[ifile].dered_sn2_r2 = sxpar(hdr1, 'SN2EXT2R')
+         plist[ifile].dered_sn2_i2 = sxpar(hdr1, 'SN2EXT2I')
+
          plist[ifile].goffstd = sxpar(hdr1, 'GOFFSTD')
          plist[ifile].grmsstd = sxpar(hdr1, 'GRMSSTD')
          plist[ifile].roffstd = sxpar(hdr1, 'ROFFSTD')
@@ -777,11 +816,21 @@ pro platelist, plist=plist, create=create, $
           plist[ifile].nexp_r1, plist[ifile].nexp_r2], max=nexp_max)
          plist[ifile].platesn2 = min( $
           [plist[ifile].sn2_g1, plist[ifile].sn2_i1, $
-          plist[ifile].sn2_g2, plist[ifile].sn2_i2])
+           plist[ifile].sn2_g2, plist[ifile].sn2_i2])
+         plist[ifile].deredsn2 = min( $
+          [plist[ifile].dered_sn2_g1, plist[ifile].dered_sn2_i1, $
+           plist[ifile].dered_sn2_g2, plist[ifile].dered_sn2_i2])
+         if keyword_set(rawsn2) then begin
+            min_sn2_b = min([plist[ifile].sn2_g1, plist[ifile].sn2_g2])
+            min_sn2_r = min([plist[ifile].sn2_i1, plist[ifile].sn2_i2])
+         endif else begin
+            min_sn2_b = min([plist[ifile].dered_sn2_g1, $
+                             plist[ifile].dered_sn2_g2])
+            min_sn2_r = min([plist[ifile].dered_sn2_i1, $
+                             plist[ifile].dered_sn2_i2])
+         endelse
          iqual = 2
-         ; Changed cuts to reflect new thresholds; SJB 2011-01-10
-         if min([plist[ifile].sn2_g1, plist[ifile].sn2_g2]) LT 10.0 OR   $
-            min([plist[ifile].sn2_i1, plist[ifile].sn2_i2]) LT 22.0 then $
+         if (min_sn2_b LT 10.0) OR (min_sn2_r LT 22.0) then $
             iqual = iqual < 0
 ;         if (plist[ifile].platesn2 LT 13) then iqual = iqual < 0
 ;         if (plist[ifile].platesn2 LT 15) then iqual = iqual < 1
@@ -938,6 +987,7 @@ pro platelist, plist=plist, create=create, $
 
    alias = [['PROGRAMNAME'  , 'PROG'    ], $
             ['PLATESN2'     , 'SN^2'    ], $
+            ['DEREDSN2'     , 'DeRedSN^2' ], $
             ['N_GALAXY'     , 'N_gal'   ], $
             ['N_QSO'        , 'N_QSO'   ], $
             ['N_STAR'       , 'N_star'  ], $
@@ -968,17 +1018,17 @@ pro platelist, plist=plist, create=create, $
     '<li>Plate list as <a href="platelist.fits">FITS</a></li>','</ul>']
 
    platelist_write, plist[isort1], trimtags=trimtags1, alias=alias, $
-    fileprefix='platelist', toptext=toptext, $
+    fileprefix='platelist', toptext=toptext, outdir=outdir, $
     title='SDSS Spectroscopy Plates Observed List'
    platelist_write, plist[isort2], trimtags=trimtags1, alias=alias, $
-    fileprefix='platelist-mjdsort', toptext=toptext, $
+    fileprefix='platelist-mjdsort', toptext=toptext, outdir=outdir, $
     title='SDSS Spectroscopy Plates Observed List'
 
    platelist_write, plist[isort1], trimtags=trimtags2, alias=alias, $
-    fileprefix='platequality', toptext=toptext, $
+    fileprefix='platequality', toptext=toptext, outdir=outdir, $
     title='SDSS Spectroscopy Plate Quality List'
    platelist_write, plist[isort2], trimtags=trimtags2, alias=alias, $
-    fileprefix='platequality-mjdsort', toptext=toptext, $
+    fileprefix='platequality-mjdsort', toptext=toptext, outdir=outdir, $
     title='SDSS Spectroscopy Plate Quality List'
 
    ;----------

@@ -6,8 +6,8 @@
 ;   Merge all Spectro-1D outputs with photoPosPlate,spInspect files
 ;
 ; CALLING SEQUENCE:
-;   platemerge, [ plate, mjd=, except_tags=, outroot=, run2d=, /include_bad, $
-;    /exclude_class, /skip_line ]
+;   platemerge, [ plate, mjd=, except_tags=, indir=, outroot=, $
+;    run2d=, /include_bad, /exclude_class, /skip_line ]
 ;
 ; INPUTS:
 ;
@@ -18,6 +18,8 @@
 ;                 if specified, then PLATE and MJD should have the same
 ;                 number of elements.
 ;   except_tags - Tag names to exclude; default to '*COVAR'.
+;   indir       - Input directory with platelist.fits file; passed to
+;                 platelist topir option which defaults to $BOSS_SPECTRO_REDUX
 ;   outroot     - Root name for output files; default to
 ;                 $BOSS_SPECTRO_REDUX/$RUN2D/spAll; the files are then
 ;                 spAll-$RUN2D.fits, spAll-$RUN2D.dat, spAllLine-$RUN2D.dat.
@@ -81,7 +83,7 @@
 ;   29-Jul-2010  Added EXCLUDE_CLASS and SKIP_LINE, A. Bolton, Utah
 ;------------------------------------------------------------------------------
 pro platemerge1, plate, mjd=mjd, except_tags=except_tags1, $
- outroot=outroot1, run2d=run2d, include_bad=include_bad, $
+ indir=indir, outroot=outroot1, run2d=run2d, include_bad=include_bad, $
  exclude_class=exclude_class, skip_line=skip_line
 
    dtheta = 2.0 / 3600.
@@ -101,10 +103,20 @@ pro platemerge1, plate, mjd=mjd, except_tags=except_tags1, $
    thismem = memory()
 
    ;----------
-   ; Trim to good (or public) plates
-
-   platelist, plist=plist
+   ; Read platelist
+   
+   platelist, plist=plist, topdir=indir
    if (NOT keyword_set(plist)) then return
+
+   ;----------
+   ; Find out if this plist includes dereddened SN2 values
+   
+   plist_tags = tag_names(plist)
+   ii = where(plist_tags EQ 'DEREDSN2', n)
+   if n GT 0 then has_deredsn2 = 1 else has_deredsn2 = 0
+
+   ;----------
+   ; Trim to good (or public) plates
 
    if (keyword_set(plate)) then begin
       nplate = n_elements(plist)
@@ -168,6 +180,7 @@ pro platemerge1, plate, mjd=mjd, except_tags=except_tags1, $
     'chunk'       , ' ', $
     'platequality', ' ', $
     'platesn2'    , 0.0, $
+    'deredsn2'    , 0.0, $
     'primtarget'  ,  0L, $
     'sectarget'   ,  0L, $
     'lambda_eff'  , 0.0, $
@@ -241,6 +254,8 @@ pro platemerge1, plate, mjd=mjd, except_tags=except_tags1, $
       outdat[indx].chunk = plist[ifile].chunk
       outdat[indx].platequality = plist[ifile].platequality
       outdat[indx].platesn2 = plist[ifile].platesn2
+      if has_deredsn2 then $
+       outdat[indx].deredsn2 = plist[ifile].deredsn2
 
       ; Read the following from the manual inspection
       if (keyword_set(zmanual[0])) then begin
@@ -387,6 +402,7 @@ pro platemerge1, plate, mjd=mjd, except_tags=except_tags1, $
     'specprimary',  0L, $
     'chunk'      ,  '', $
     'platesn2'   ,  0.0, $
+    'deredsn2'   ,  0.0, $
     'objtype'    ,  '', $
     'boss_target1', 0LL, $
     'ancillary_target1', 0LL, $
@@ -477,9 +493,9 @@ pro platemerge1, plate, mjd=mjd, except_tags=except_tags1, $
    return
 end
 ;------------------------------------------------------------------------------
-pro platemerge, run2d=run2d, _EXTRA=Extra
+pro platemerge, run2d=run2d, indir=indir, _EXTRA=Extra
 
-   platelist, plist=plist
+   platelist, plist=plist, topdir=indir
 
    if (NOT keyword_set(plist)) then return
 
@@ -495,7 +511,7 @@ pro platemerge, run2d=run2d, _EXTRA=Extra
    endif
 
    for i=0, n_elements(alldir)-1 do $
-    platemerge1, run2d=alldir[i], _EXTRA=Extra
+    platemerge1, run2d=alldir[i], indir=indir, _EXTRA=Extra
 
    return
 end
