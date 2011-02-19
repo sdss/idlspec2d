@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   platelist, [ /create, topdir=, outdir=, run2d=, run1d=, $
-;    /purge2d, /purge1d, /killpartial, skipcart=, plist= ]
+;    /purge2d, /purge1d, /killpartial, skipcart=, /rawsn2, plist= ]
 ;
 ; INPUTS:
 ;
@@ -43,7 +43,7 @@
 ;   skipcart    - cart number or list of cart numbers to drop from platelist
 ;   rawsn2      - If set, output original raw SN2 numbers in html and text
 ;                 files; otherwise use dereddened (dust extinction corrected)
-;                 values.  Both are always written to the fits file output.
+;                 values.  Both are always written to the FITS file output.
 ;
 ; OUTPUTS:
 ;
