@@ -1,10 +1,13 @@
 
+PLATECOMPARE: Add support for RUN2D,RUN1D kewyords for comparing
+      different version reductions of the same plates.
+
 -------------------------------------------------------------------------------
 v5_4_30 (2011-02-16)
 Built against specflat v1_13, elodie v1_3, idlutils v5_4_23.
 
 BOLTON_STD_THROUGHPUT: new function to compute end-to-end
-  throughput on standard stars.
+      throughput on standard stars.
 EXTRACT_OBJECT: Add DEREDSN2 keyword to spFrame output.
 FITSN: If plugmap is provided, fill in dered_sn2 as dereddened
       version of sn2 output (ticket #879).
