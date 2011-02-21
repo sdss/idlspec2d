@@ -6,7 +6,7 @@
 ;   Interactive comparison of descrepant redshifts for the same objects.
 ;
 ; CALLING SEQUENCE:
-;   platecompare, plate, [mjd=, topdir=, psfile= ]
+;   platecompare, plate, [mjd=, run2d=, run1d=, psfile= ]
 ;
 ; INPUTS:
 ;   plate       - Plate number(s)
@@ -16,8 +16,11 @@
 ;                must have one MJD per plate number.  If not specified,
 ;                then all MJD's associated with each plate are read.
 ;                That list of MJD's comes from the PLATELIST command.
-;   topdir     - Top-level directory for outputs if comparing different
-;                reductions (i.e., different versions) of the same data.
+;   run2d      - Names of 2D reductions if comparing different versions
+;                of the same data.
+;   run1d      - Names of 1D redutions if comparing different versions
+;                of the same data; must have same number of elements as RUN2D;
+;                if not set, then default to the same versions as RUN2D
 ;   psfile     - If set, then send plot to a PostScript file instead of
 ;                to the SPLOT interactive widget.  The PostScript file name
 ;                can be set explicitly, e.g. with PSFILE='test.ps'.  Or if
@@ -45,8 +48,8 @@
 ;   IDL> platecompare, [360,360,362], mjd=[51780,51816,51999]
 ;
 ;   Compare different reductions of the same data, in this case plate 401/51788:
-;   IDL> platecompare, 401, mjd=51788, $
-;   IDL>  topdir=['/u/dss/spectro','/u/dss/spectro/test']
+;   IDL> platecompare, 401, mjd=51788, run2d=['v5_4_14','v5_4_30'], $
+;    run1d=['v5_4_14','v5_4_30']
 ;
 ; BUGS:
 ;
@@ -65,7 +68,7 @@
 ; REVISION HISTORY:
 ;   14-Aug-2001  Written by D. Schlegel, Princeton
 ;------------------------------------------------------------------------------
-pro platecompare, plate, mjd=mjd, topdir=topdir, psfile=psfile
+pro platecompare, plate, mjd=mjd, run2d=run2d, run1d=run1d1, psfile=psfile
 
    if (n_params() LT 1) then begin
       print, 'Syntax - platecompare, plate, [mjd= ]'
@@ -73,6 +76,14 @@ pro platecompare, plate, mjd=mjd, topdir=topdir, psfile=psfile
    endif
 
    charsize = 1.5
+
+   if (keyword_set(run2d)) then begin
+      if (keyword_set(run1d1)) then run1d = run1d1 $
+       else run1d = run2d
+      if (n_elements(run2d) NE n_elements(run1d)) then $
+       message, 'Number of elements in RUN2D and RUN1D must agree!'
+   endif
+      
 
    if (keyword_set(mjd)) then begin
       if (n_elements(plate) EQ 1) then begin
@@ -106,18 +117,21 @@ pro platecompare, plate, mjd=mjd, topdir=topdir, psfile=psfile
    cspeed = 2.99792458e5
 
    ; Read the redshift files
-   if (NOT keyword_set(topdir)) then begin
+   if (NOT keyword_set(run2d)) then begin
       readspec, platevec, mjd=mjdvec, zans=zansall, plug=plugall
    endif else begin
-      for itop=0, n_elements(topdir)-1 do begin
+      for itop=0, n_elements(run2d)-1 do begin
          readspec, platevec, mjd=mjdvec, zans=zans1, plug=plug1, $
-          topdir=topdir[itop]
+          run2d=run2d[itop], run1d=run1d[itop]
          zansall = struct_append(zansall, zans1)
          plugall = struct_append(plugall, plug1)
-         if (itop EQ 0) then $
-          topall = replicate(topdir[itop], n_elements(zans1)) $
-         else $
-          topall = [topall, replicate(topdir[itop], n_elements(zans1))]
+         if (itop EQ 0) then begin
+            all2d = replicate(run2d[itop], n_elements(zans1))
+            all1d = replicate(run1d[itop], n_elements(zans1))
+         endif else begin
+            all2d = [all2d, replicate(run2d[itop], n_elements(zans1))]
+            all1d = [all1d, replicate(run1d[itop], n_elements(zans1))]
+         endelse
       endfor
    endelse
 
@@ -143,8 +157,10 @@ pro platecompare, plate, mjd=mjd, topdir=topdir, psfile=psfile
    for igroup=0, ngroup-1 do begin
       thiszans = zansall[gindx[gstart[igroup]:gstart[igroup]+gcount[igroup]-1]]
       thisplug = plugall[gindx[gstart[igroup]:gstart[igroup]+gcount[igroup]-1]]
-      if (keyword_set(topdir)) then $
-       thistop = topall[gindx[gstart[igroup]:gstart[igroup]+gcount[igroup]-1]]
+      if (keyword_set(run2d)) then begin
+         thisr2d = all2d[gindx[gstart[igroup]:gstart[igroup]+gcount[igroup]-1]]
+         thisr1d = all1d[gindx[gstart[igroup]:gstart[igroup]+gcount[igroup]-1]]
+      endif
 
       vdiff = (max(thiszans.z) - min(thiszans.z)) * cspeed
       totalwarn = total(thiszans.zwarning NE 0)
@@ -172,8 +188,11 @@ pro platecompare, plate, mjd=mjd, topdir=topdir, psfile=psfile
             title = string(thiszans[ii].plate, thiszans[ii].mjd, $
              thiszans[ii].fiberid, $
              format='("Plate ", i4, "-", i5, " Fiber ", i3)')
-            if (keyword_set(topdir)) then $
-             title = title + '  ' + thistop[ii]
+            ; Replace undescores with double-underscores that will
+            ; survive the conversion to TeX in DJS_PLOT
+            if (keyword_set(run2d)) then $
+             title = title + '  ' + repstr(thisr2d[ii],'_','__') $
+              + ' ' + repstr(thisr1d[ii],'_','__')
             cz = thiszans[ii].z * cspeed
             zstring = string(strtrim(thiszans[ii].class), $
              strtrim(' '+thiszans[ii].subclass), $
@@ -186,11 +205,13 @@ pro platecompare, plate, mjd=mjd, topdir=topdir, psfile=psfile
              zstring = zstring + $
               '  ZWARNING=' + strtrim(string(thiszans[ii].zwarning),2)
             print, zstring
-            if (keyword_set(topdir)) then thistop1 = thistop[ii] $
-             else thistop1 = 0
+            if (keyword_set(run2d)) then read2d = thisr2d[ii] $
+             else read2d = 0
+            if (keyword_set(run2d)) then read1d = thisr1d[ii] $
+             else read1d = 0
             readspec, thiszans[ii].plate, thiszans[ii].fiberid, $
              mjd=thiszans[ii].mjd, wave=wave, flux=objflux, synflux=synflux, $
-             topdir=thistop1
+             run2d=read2d, run1d=read1d
             ytitle = 'F_\lambda'
             if (nsmooth GT 1) then begin
                objflux = smooth(objflux, nsmooth)
