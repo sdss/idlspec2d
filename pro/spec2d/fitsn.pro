@@ -6,8 +6,8 @@
 ;   Perform a simple parameter fit to log S/N vs magnitude
 ;
 ; CALLING SEQUENCE:
-;   coeffs = fitsn(mag, snvec, [ sigrej=, maxiter=, sncode=, $
-;    filter=, sigma=, specsnlimit=, sn2= ] )
+;   coeffs = fitsn(mag, snvec, [ sigrej=, maxiter=, plugmap=, sncode=, $
+;    filter=, sigma=, specsnlimit=, sn2=, dered_sn2= ] )
 ;
 ; INPUTS:
 ;   mag        - Fiber magnitudes
@@ -74,6 +74,7 @@ function fitsn, mag, snvec, sigrej=sigrej, maxiter=maxiter, plugmap=plugmap, $
 
    sigma = 0
    sn2 = 0
+   dered_sn2 = 0
    nspec = n_elements(snvec)
    mask = (snvec GT 0 AND mag GT fitmag[0] AND mag LT fitmag[1])
 
