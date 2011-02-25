@@ -238,8 +238,8 @@ pro batchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
             printf, olun, 'runz_BOSS.sh ' + platefile +' -a'
          endif
          
-         splog, "run1d is ", run1d
-         splog, "run2d is ", run2d
+         ; splog, "run1d is ", run1d
+         ; splog, "run2d is ", run2d
          
          ; Make pretty pictures
          idlcmd  = "plate_spec_image, " + string(plateid[iplate],format='(i4.4)') 
