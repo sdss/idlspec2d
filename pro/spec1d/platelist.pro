@@ -987,7 +987,6 @@ pro platelist, plist=plist, create=create, $
 
    alias = [['PROGRAMNAME'  , 'PROG'    ], $
             ['PLATESN2'     , 'SN^2'    ], $
-            ['DEREDSN2'     , 'DeRedSN^2' ], $
             ['N_GALAXY'     , 'N_gal'   ], $
             ['N_QSO'        , 'N_QSO'   ], $
             ['N_STAR'       , 'N_star'  ], $
