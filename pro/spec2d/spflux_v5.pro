@@ -621,7 +621,7 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
    modflux = 0 * objflux
    for ip=0L, nphoto-1 do begin
       thisfiber = iphoto[ip] + 1 + nfiber * (spectroid[0] - 1)
-      splog, prelog='Fiber '+string(thisfiber,format='(I3)')
+      splog, prelog='Fiber '+string(thisfiber,format='(I4)')
 
       plottitle = 'PLATE=' + string(plateid[0], format='(i4.4)') $
        + ' MJD=' + string(maxmjd, format='(i5.5)') $
@@ -769,12 +769,10 @@ pro spflux_v5, objname, adderr=adderr, combinedir=combinedir, $
 
       ;----------
       ; The MRATIO vectors are the "raw" flux-calib vectors for each expos+CCD
-      czero  = where(modflux eq 0, nczero) ;???
-      cmodflux = modflux ;??? 
-      if (nczero gt 0) then cmodflux[czero] = 1.;???
-  
-      mratio = objflux / cmodflux
-      mrativar = objivar * cmodflux^2
+
+      mmask = modflux GT 0
+      mratio = objflux / (modflux*mmask + (1-mmask))
+      mrativar = objivar * modflux^2
       flatarr = 0 * mratio
 
       ; Ignore regions around the stellar features
