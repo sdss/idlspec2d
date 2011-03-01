@@ -1,6 +1,8 @@
 
+BATCHPBS: Don't print run1d and run2d multiple times.
 PLATECOMPARE: Add support for RUN2D,RUN1D kewyords for comparing
       different version reductions of the same plates.
+PLATELIST: DeRedSN^2 -> DEREDSN2 in column name.
 
 -------------------------------------------------------------------------------
 v5_4_30 (2011-02-16)
