@@ -397,10 +397,8 @@ pro platelist, plist=plist, create=create, $
     'qualcomments' , ' ' )
     
    if keyword_set(rawsn2) then begin
-      sn2prefix = ''
       sn2tag = 'platesn2'
    endif else begin
-      sn2prefix = 'dered_'
       sn2tag = 'deredsn2'
    endelse
  
@@ -421,17 +419,16 @@ pro platelist, plist=plist, create=create, $
     ['survey'       ,    'a'], $
     ['chunk'        ,    'a'], $
     ['public'       ,    'a']  ]
-   
-   
+
    trimtags2 = [ $
     ['plate'        ,   'i4'], $
     ['mjd'          ,   'i5'], $
     ['run2d'        ,    'a'], $
     ['run1d'        ,    'a'], $
-    [sn2prefix+'sn2_g1' , 'f5.1'], $
-    [sn2prefix+'sn2_i1' , 'f5.1'], $
-    [sn2prefix+'sn2_g2' , 'f5.1'], $
-    [sn2prefix+'sn2_i2' , 'f5.1'], $
+    ['sn2_g1'       , 'f5.1'], $
+    ['sn2_i1'       , 'f5.1'], $
+    ['sn2_g2'       , 'f5.1'], $
+    ['sn2_i2' ,       'f5.1'], $
     ['fbadpix'      , 'f5.3'], $
     ['success_main' , 'f5.1'], $
     ['success_lrg1' , 'f5.1'], $
