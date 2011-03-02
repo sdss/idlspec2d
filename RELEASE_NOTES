@@ -3,6 +3,7 @@ BATCHPBS: Don't print run1d and run2d multiple times.
 PLATECOMPARE: Add support for RUN2D,RUN1D kewyords for comparing
       different version reductions of the same plates.
 PLATELIST: DeRedSN^2 -> DEREDSN2 in column name.
+      Shorten the SN2 column names for the html output.
 SDSSPROC: The header values for the recently-added TWOPHASE keyword
       were not properly boolian values, with the result that the blue CCDs
       were having the 2-phase wavelength-correction accidentally applied
