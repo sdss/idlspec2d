@@ -203,7 +203,7 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin, $
                            'XSIGMA', float(max(medwidth)) )
 
    obj_destroy, configuration
-;stop
+
    return, rstruct
 end
 ;------------------------------------------------------------------------------
