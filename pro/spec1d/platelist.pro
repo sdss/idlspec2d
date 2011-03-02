@@ -146,9 +146,12 @@ end
 
 pro platelist_write, plist, trimtags=trimtags, alias=alias, $
  fileprefix=fileprefix, title=title, toptext=toptext, outdir=outdir1
-
-   if (keyword_set(outdir1)) then outdir = outdir1 $
-   else outdir = getenv('BOSS_SPECTRO_REDUX')
+ 
+   if (keyword_set(outdir1)) then begin
+       outdir = outdir1
+   endif else begin
+       outdir = getenv('BOSS_SPECTRO_REDUX')
+   endelse
 
    ascfile = djs_filepath(fileprefix+'.txt', root_dir=outdir)
    htmlfile = djs_filepath(fileprefix+'.html', root_dir=outdir)
@@ -218,8 +221,17 @@ pro platelist, plist=plist, create=create, $
 
    if (keyword_set(topdir1)) then topdir = topdir1 $
     else topdir = getenv('BOSS_SPECTRO_REDUX')
-   if keyword_set(outdir1) then outdir = outdir1 $
-    else outdir = topdir
+
+   if (keyword_set(outdir1)) then begin
+       outdir = outdir1
+       if strmid(outdir, 0, 1) NE '/' then begin
+           cd, current=current_dir
+           outdir = current_dir + '/' + outdir
+       endif
+   endif else begin
+       outdir = topdir
+   endelse
+
    if (n_elements(run2d1) GT 0) then run2d = strtrim(run2d1,2) $
     else run2d = '*'
    if (n_elements(run1d1) GT 0) then run1d = strtrim(run1d1,2) $
@@ -398,8 +410,10 @@ pro platelist, plist=plist, create=create, $
     
    if keyword_set(rawsn2) then begin
       sn2tag = 'platesn2'
+      dereddened_sn2 = 0
    endif else begin
       sn2tag = 'deredsn2'
+      dereddened_sn2 = 1
    endelse
  
    trimtags1 = [ $
@@ -984,6 +998,7 @@ pro platelist, plist=plist, create=create, $
 
    alias = [['PROGRAMNAME'  , 'PROG'    ], $
             ['PLATESN2'     , 'SN^2'    ], $
+            ['DEREDSN2'     , 'SN^2'    ], $
             ['N_GALAXY'     , 'N_gal'   ], $
             ['N_QSO'        , 'N_QSO'   ], $
             ['N_STAR'       , 'N_star'  ], $
@@ -997,6 +1012,10 @@ pro platelist, plist=plist, create=create, $
             ['STATUS2D'     , '2D'      ], $
             ['STATUSCOMBINE', 'Combine' ], $
             ['STATUS1D'     , '1D'      ], $
+            ['DERED_SN2_G1' , 'SN2_G1'  ], $
+            ['DERED_SN2_G2' , 'SN2_G2'  ], $
+            ['DERED_SN2_I1' , 'SN2_G1'  ], $
+            ['DERED_SN2_I2' , 'SN2_I2'  ], $
             ['PLATEQUALITY' , 'QUALITY' ] ]
 
    isort1 = reverse(sort(strtrim(strcompress(plist.run2d+' ' $
@@ -1012,6 +1031,12 @@ pro platelist, plist=plist, create=create, $
     '<li>Plate quality sorted by <a href="platequality.html">plate</a>,' $
      + ' <a href="platequality-mjdsort.html">MJD</a></li>', $
     '<li>Plate list as <a href="platelist.fits">FITS</a></li>','</ul>']
+
+   if dereddened_sn2 NE 0 then begin
+      toptext = [toptext, '<p>(S/N)^2 values are corrected for galactic dust reddening</p>']
+   endif else begin
+      toptext = [toptext, '<p>(S/N)^2 values are <b>not</b> corrected for galactic dust reddening</p>']
+   endelse
 
    platelist_write, plist[isort1], trimtags=trimtags1, alias=alias, $
     fileprefix='platelist', toptext=toptext, outdir=outdir, $
