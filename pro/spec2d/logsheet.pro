@@ -73,7 +73,7 @@ pro logsheet, mjd=mjd, camera=camera, collimator=collimator, outfile=outfile
    ; then look for files matching "sdR*.fit".
 
    mjdstr = string(mjd, format='(i5.5)')
-   filename = 'sdR-' + camera + '-*.fit'
+   filename = 'sdR-' + camera + '-*.fit*'
    fullname = findfile(djs_filepath(filename+'.gz', $
     root_dir=rawdata_dir, subdir=mjdstr), count=nfile)
    if (nfile EQ 0) then $
