@@ -124,11 +124,11 @@ function trace320crude, image, invvar, ystart=ystart, nmed=nmed, $
     radius=radius, yset=yset, maxerr=maxerr, maxshifte=maxshifte, $
     maxshift0=maxshift0, xerr=xerr)
    xmask = xerr LT 990  ; =1 for good centers, =0 for bad
-; Mask contributions from completely bad rows:
+
+   ; Mask contributions from completely bad rows (ticket #1025)
    nullrow = total(invvar gt 0., 1) eq 0.
    wh_null = where(nullrow, n_null)
    if (n_null gt 0) then xmask[wh_null,*] = 0B
-;stop
 
    ;--------------------------------------------------------------------
    ; Mark this trace as potentially bad (xgood[itrace] = 0)
@@ -171,11 +171,18 @@ function trace320crude, image, invvar, ystart=ystart, nmed=nmed, $
 ; ASB: change to require some sensible minimum fraction of traces:
 ;      if (total(xcheck) GT ndegree+2) then begin
       if (total(xcheck) GT ((ndegree+2) > (0.2 * ntrace))) then begin
-         if (!version.release LT '5.4') then begin
-            coeff = polyfitw(xposition, xset[iy,*], xcheck, ndegree, xfit)
-         endif else begin
-            coeff = polyfitw(xposition, xset[iy,*], xcheck, ndegree, xfit, /double)
-         endelse
+;         if (!version.release LT '5.4') then begin
+;            coeff = polyfitw(xposition, xset[iy,*], xcheck, ndegree, xfit)
+;         endif else begin
+;            coeff = polyfitw(xposition, xset[iy,*], xcheck, ndegree, xfit, /double)
+
+; ???
+res = djs_polyfit(xposition, reform(xset[iy,*]), ndegree, variance=xcheck, yfit=xfit)
+;res = svdfit(xposition, reform(xset[iy,*]), ndegree+1, variance=xcheck, yfit=xfit, status=stat)
+;indx = where(xcheck)
+;coeff = poly_fit(xposition[indx], xset[iy,indx], ndegree, /double,status=stat)
+;xfit = poly(xposition, coeff)
+;         endelse
 
         xdiff = xfit - xset[iy,*]
         ibad = where(abs(xdiff) GT maxdev)

@@ -157,6 +157,7 @@ function fitdispersion, arc_flux, arc_fluxivar, xcen_inp, $
        medwidth[i] = $
         median([ (width_fit[x1[i]:x2[i],y1[i]:y2[i]])[indx] ])
    endfor
+;stop ; ???
 
    splog, 'Median wavelength widths = ' $
     + string(medwidth,format='(4f5.2)') + ' pix (LL LR UL UR)'

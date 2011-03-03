@@ -185,17 +185,16 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
     
     qbadflat = reject_flat(flatimg, flathdr, nsatrow=nsatrow, fbadpix=fbadpix, $
       percent80thresh=configuration->spcalib_reject_calib_percent80thresh())
-      
-    if (NOT keyword_set(fibermask)) then tmp_fibmask = bytarr(configuration->getNumberFibersPerSpectrograph()) $
-    else tmp_fibmask = fibermask
-    
+
+    if (NOT keyword_set(fibermask)) then tmp_fibmask = 0 $
+     else tmp_fibmask = fibermask
+
     if (NOT qbadflat) then begin
       ;------------------------------------------------------------------
       ; Create spatial tracing from flat-field image
       ;------------------------------------------------------------------
     
-      splog, 'Tracing ', configuration->getNumberFibersPerSpectrograph(), $
-       ' fibers in ', flatname[iflat]
+      splog, 'Tracing fibers in ', flatname[iflat]
       xsol = trace320crude(flatimg, flativar, yset=ycen, maxdev=1.0, $ ;0.15, $
        fibermask=tmp_fibmask, xerr=xerr, $
        flathdr=flathdr, $
@@ -433,14 +432,14 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
         splog, 'Wavelength solution failed'
         qbadarc = 1
       endif else begin
-      
+
         nfitcoeff = configuration->spcalib_ncoeff(color)
         ilamp = where(rejline EQ '')
         dispset = fitdispersion(flux, fluxivar, xpeak[*,ilamp], $
           sigma=configuration->spcalib_sigmaguess(), ncoeff=nfitcoeff, $
           xmin=0.0, xmax=(configuration->getDetectorFormat(color))[0]-1., $
-          medwidth=wsigarr, numbundles=configuration->getNumberBundles())
-          
+          medwidth=wsigarr, numbundles=ntrace/20) ; Hard-wires 20 fibers/bundle???
+
         arcstruct[iarc].dispset = ptr_new(dispset)
         arcstruct[iarc].wset = ptr_new(wset)
         arcstruct[iarc].nmatch = N_elements(lambda)

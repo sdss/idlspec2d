@@ -9,14 +9,6 @@ function configuration::getMJD
 end
 
 
-function configuration::getNumberFibersPerSpectrograph
-  return, self->getNumberBundles() * self->getNumberFibersPerBundle()
-end
-
-function configuration::getNumberFibersTotal
-  return, self->getNumberFibersPerSpectrograph() * self->getNumberSpectrographs()
-end
-
 pro configuration::toString
   print, self.mjd, self.sdss3_start_mjd
 end
@@ -25,29 +17,12 @@ function configuration::cleanup
   return,1
 end
 
-;
-;  Methods that contain parameters that are expected to be static for
-;  the lifetime of this code
-;
-function configuration::getNumberFibersPerBundle
-  return, 20
-end
-
-function configuration::getNumberSpectrographs
-  return,2
-end
 
 ;
 ; The methods that contain the special configurations that must
 ; be specified
 ;
 
-
-; l395 need new keyword in fitdispersion
-function configuration::getNumberBundles
-  if self->isSDSS2() then return, 16
-  return, 25
-end
 
 ;+
 ;return the detector format.  blue is assumed for anything that
@@ -152,7 +127,7 @@ end
 ;l241 set keyword for fitflatwidth
 function configuration::spcalib_fitflatwidth_inmask,flux,fluxivar
   if self->isSDSS2() then return, 0
-  return, reform(self->spcalib_fitflatwidth_mask(flux,fluxivar),(size(flux,/dimen))[0],20*self->getNumberBundles())
+  return, reform(self->spcalib_fitflatwidth_mask(flux,fluxivar),(size(flux,/dimen))[0],500)
 end
 
 
@@ -385,9 +360,6 @@ end
 
 function configuration::isFaintFlat
   return, (self.mjd eq 55052 or self.mjd eq 55070)
-end
-
-function configuration::isSDSS3
 end
 
 pro configuration__define
