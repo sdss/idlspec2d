@@ -1,4 +1,6 @@
 
+CONFIGURATION__DEFINE,FITDISPERSION,QUICKWAVE,SPCALIB,TRACE320CRUDE:
+     Remove some unnecessary definitions from the configuration__define proc.
 FLUX_DISTORTION: For determining if this is a multiple-pointing plate,
      don't look at missing plugmap entries.  This change necessary for
      the change with SPCOADD_V5 to include all zeros for a missing spectrograph.
