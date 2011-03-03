@@ -208,16 +208,19 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, $
 
             for iexp=0, n_elements(allexpnum)-1 do begin
                indx = where(MAPNAME EQ allmaps[imap] $
-                AND EXPOSURE EQ allexpnum[iexp])
+                AND EXPOSURE EQ allexpnum[iexp] $
+                AND FLAVOR NE 'unknown', ct)
 
-               spexp1 = spplan_create_spexp(allexpnum[iexp], $
-                PLATEID[indx[0]], thismjd, $
-                MAPNAME[indx[0]], FLAVOR[indx[0]], EXPTIME[indx[0]], $
-                shortname[indx], CAMERAS[indx], minexp=minexp)
+               if (ct GT 0) then begin
+                  spexp1 = spplan_create_spexp(allexpnum[iexp], $
+                   PLATEID[indx[0]], thismjd, $
+                   MAPNAME[indx[0]], FLAVOR[indx[0]], EXPTIME[indx[0]], $
+                   shortname[indx], CAMERAS[indx], minexp=minexp)
 
-               if (keyword_set(spexp1)) then begin
-                  if (keyword_set(spexp)) then spexp = [spexp, spexp1] $
-                   else spexp = spexp1
+                  if (keyword_set(spexp1)) then begin
+                     if (keyword_set(spexp)) then spexp = [spexp, spexp1] $
+                      else spexp = spexp1
+                  endif
                endif
             endfor
 
