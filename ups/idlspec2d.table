@@ -7,13 +7,13 @@ Qualifiers=""
 
 Common:
    Action=setup
-      setupOptional("elodie")
+      setupOptional("elodie v1_3")
       setupOptional("spinspect")
-      setupOptional("specflat")
+      setupOptional("specflat v1_13")
       setupOptional("speclog")
       setupOptional("platelist")
       setupOptional("platedb")
-      setupRequired("idlutils")
+      setupRequired("idlutils v5_4_23")
       proddir()
       setupenv()
       pathAppend(PATH, ${UPS_PROD_DIR}/bin)

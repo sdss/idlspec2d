@@ -1,4 +1,8 @@
 
+-------------------------------------------------------------------------------
+v5_4_31 (2011-03-02)
+Built against specflat v1_13, elodie v1_3, idlutils v5_4_23.
+
 BATCHPBS: Don't print run1d and run2d multiple times.
 LOGSHEET: Also look for files that might be .fits instead of .fit,
       as some were during the early BOSS commissioning.
