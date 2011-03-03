@@ -360,8 +360,9 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
    ; If multiple pointings on this plate, then deal with that here by
    ; rescaling the fluxes of each fiber according to its exposure time.
 
-   offsetlist = plugmap[uniq(plugmap.offsetid, sort(plugmap.offsetid))].offsetid
-   offsetlist = offsetlist[sort(offsetlist)]
+   igood = where(plugmap.fiberid GT 0)
+   offsetlist = plugmap[igood].offsetid
+   offsetlist = offsetlist[uniq(offsetlist,sort(offsetlist))]
    nlist = n_elements(offsetlist)
    if (nlist GT 1) then begin
       for ilist=1L, nlist-1L do begin
