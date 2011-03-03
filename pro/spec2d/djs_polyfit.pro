@@ -55,7 +55,8 @@ function djs_polyfit, x, y, ndegree, variance=variance1, yfit=yfit
    status = 1
    while (nfit GT 0 AND status NE 0) do begin
       res = svdfit(reform(double(x),npix), reform(double(y),npix), $
-       nfit, variance=variance, yfit=yfit, status=status)
+       nfit, variance=variance, yfit=yfit, status=status, singular=singular, $
+       sing_values=sing_values)
       nfit -= 1
    endwhile
 
