@@ -12,7 +12,6 @@ all :;
 #
 install :
 	- cp *.* $(IDLSPEC2D_DIR)/opfiles
-	- cp README $(IDLSPEC2D_DIR)/opfiles
 	- cp Makefile $(IDLSPEC2D_DIR)/opfiles
 
 clean :
