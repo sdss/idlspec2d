@@ -389,7 +389,8 @@ pro spcoadd_v5, spframes, outputname, $
    nfinalpix = spotmax - spotmin + 1L
    finalwave = dindgen(nfinalpix) * binsz + wavemin
 
-   nfiber = max(plugmap.fiberid)
+;   nfiber = max(plugmap.fiberid)
+   nfiber = 2 * nfib
 
    finalflux = fltarr(nfinalpix, nfiber)
    finalivar = fltarr(nfinalpix, nfiber)
