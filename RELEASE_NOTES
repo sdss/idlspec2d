@@ -1,4 +1,14 @@
 
+FLUX_DISTORTION: For determining if this is a multiple-pointing plate,
+     don't look at missing plugmap entries.  This change necessary for
+     the change with SPCOADD_V5 to include all zeros for a missing spectrograph.
+SPCOADD_V5: Always set the number of output fibers as 2X the number on
+     a single spectrograph.  Otherwise, if data from one BOSS spectrograph
+     is missing, then previous reductions made output files with 500 instead
+     of 1000 objects.  Related to ticket #764.
+SPPLAN2D: For any frames that are 'bad', enter them as 'UNKNOWN'
+     in the plan files so that we don't attempt to reduce them (ticket #764).
+
 -------------------------------------------------------------------------------
 v5_4_31 (2011-03-02)
 Built against specflat v1_13, elodie v1_3, idlutils v5_4_23.
