@@ -11,6 +11,10 @@ SPCOADD_V5: Always set the number of output fibers as 2X the number on
 SPPLAN2D: For any frames that are 'bad', enter them as 'UNKNOWN'
      in the plan files so that we don't attempt to reduce them (ticket #764).
 
+examples/opLimits.par: Change the S/N limits to be consistent with
+     the numbers hard-wired in PLATELIST.
+     Add yellow/red limits for %LRG1, %LRG2.
+
 -------------------------------------------------------------------------------
 v5_4_31 (2011-03-02)
 Built against specflat v1_13, elodie v1_3, idlutils v5_4_23.
