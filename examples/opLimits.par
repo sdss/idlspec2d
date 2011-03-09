@@ -222,26 +222,31 @@ textlimit red * QUALITY * bad
 #------------------------------------------------------------------------------
 # The following set of limits are used by the PLATELIST procedure.
 
-speclimit yellow SUMMARY SN2_G1 * 0.0 15.0
-speclimit yellow SUMMARY SN2_G2 * 0.0 15.0
-speclimit yellow SUMMARY SN2_I1 * 0.0 15.0
-speclimit yellow SUMMARY SN2_I2 * 0.0 15.0
-speclimit red SUMMARY SN2_G1 * 0.0 13.0
-speclimit red SUMMARY SN2_G2 * 0.0 13.0
-speclimit red SUMMARY SN2_I1 * 0.0 13.0
-speclimit red SUMMARY SN2_I2 * 0.0 13.0
+#speclimit yellow SUMMARY SN2_G1 * 0.0 15.0
+#speclimit yellow SUMMARY SN2_G2 * 0.0 15.0
+#speclimit yellow SUMMARY SN2_I1 * 0.0 15.0
+#speclimit yellow SUMMARY SN2_I2 * 0.0 15.0
+speclimit red SUMMARY SN2_G1 * 0.0 10.0
+speclimit red SUMMARY SN2_G2 * 0.0 10.0
+speclimit red SUMMARY SN2_I1 * 0.0 22.0
+speclimit red SUMMARY SN2_I2 * 0.0 22.0
 
 speclimit yellow SUMMARY FBADPIX * 0.05 1.00
 speclimit red SUMMARY FBADPIX * 0.10 1.00
 
+# Success rates for SDSS-I plates
 speclimit yellow SUMMARY SUCCESS_MAIN * 0.0 95.0
 speclimit red SUMMARY SUCCESS_MAIN * 0.0 90.0
-
 speclimit yellow SUMMARY SUCCESS_LRG * 0.0 92.0
 speclimit red SUMMARY SUCCESS_LRG * 0.0 87.0
-
 #speclimit yellow SUMMARY SUCCESS_QSO * 0.0 60.0
 #speclimit red SUMMARY SUCCESS_QSO * 0.0 45.0
+
+# Success rates for BOSS plates
+speclimit yellow "%LRG1" * 0 95
+speclimit red "%LRG1" * 0 92
+speclimit yellow "%LRG2" * 0 88
+speclimit red "%LRG2" * 0 80
 
 textlimit yellow SUMMARY PLATEQUALITY * marginal
 textlimit red SUMMARY PLATEQUALITY * bad
