@@ -607,6 +607,7 @@ pro spcoadd_v5, spframes, outputname, $
    sxdelpar, bighdr, 'ARCFILE'
    sxdelpar, bighdr, 'OBJFILE'
    sxdelpar, bighdr, 'FRAMESN2'
+   sxdelpar, bighdr, 'DEREDSN2'
 
    ;----------
    ; Average together some of the fields from the individual headers.
