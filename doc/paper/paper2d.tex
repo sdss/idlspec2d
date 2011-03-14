@@ -60,11 +60,10 @@
 \title{The Sloan Digital Sky Survey: Two-dimensional Spectroscopic Reduction Pipeline}
 
 \author{
-S. Burles\altaffilmark{\ref{MIT}}
-and D. J. Schlegel\altaffilmark{\ref{Princeton}}
+Scott Burles\altaffilmark{\ref{email}}
+and David J. Schlegel\altaffilmark{\ref{Princeton}}
 }
-\altaffiltext{1}{Department of Physics and Kavli Institute for Astrophysics 
-and Space Research, MIT, Cambridge, MA 02139 \label{MIT}}
+\altaffiltext{1}{sburles@gmail.com \label{sburles}}
 \altaffiltext{2}{Princeton University Observatory, Peyton Hall, Princeton,
 NJ 08544 \label{Princeton}}
 
@@ -76,10 +75,16 @@ NJ 08544 \label{Princeton}}
 The Sloan Digital Sky Survey (SDSS) fiber-fed spectrographs have been used
 to obtain spectra for ~$600,000$ galaxies, quasars and stars
 with a resolution of ~2000 over the wavelength range 3800\AA -9600\AA.
-We present the algorithms for reducing the raw data to
+We present the pipeline design and algorithms for reducing the raw data to
 wavelength-calibrated, flux-calibrated one-dimensional spectra.
+It is designed to automatically reduce survey quality data sets and output 
+uniformly processed results.  No human intervention is required in any step 
+of the pipeline beyond invoking the top level command pointing to the 
+applicable data.
 The wavelength calibration is shown to have an accuracy of $3 \kms$,
 and the broad-band spectrophotometry to have an accuracy of better than $6\%$.
+What about reported errors and their accuracy/robustness?
+The reported errors capture the statistical and the expected have 
 
 %------------------------------------------------------------------------------
 % SUBJECT HEADINGS
@@ -99,17 +104,24 @@ approximately $10,000$ square degrees of the Northern sky and a concurrent
 redshift survey of up to a million galaxies and 100,000 quasars
 selected from the imaging survey (York et al 2000).  The primary 
 science goals of the project are to provide the data to investigate the
-large scale structure of the Universe and other extragalactic science.
+large scale structure of the Universe as well as other extragalactic and 
+galactic science.
 
 In this paper, we describe the details of the SDSS 2-d spectroscopic pipeline
 (idlspec2d) including steps starting with processing of the raw CCD frames 
-to final flux calibration and spectral co-addition.  Downstream pipelines 
-which calculate redshifts, spectral types, emission and absorption line 
-identification, and velocity dispersions are described elsewhere.
+to final flux calibration and spectral co-addition\footnote{By SDSS, 
+we specifically refer to the reduction pipeline for SDSS-I and the 
+legacy reductions for SDSS-II}.  The goal of the two-dimensional pipeline is to
+produce the best empirical estimate of spectral intensity as a function of 
+wavelength for each object observed by the SDSS spectroscopic system.  
+Downstream pipelines which calculate redshifts, spectral types, 
+emission and absorption line identification, and velocity dispersions 
+are described elsewhere (citations??).
+?? Update the numbers below to include data through DR7 or DR8 ??
 As of writing the 2-d pipeline has been run successfully on all spectroscopic
 data obtained in the course of the survey from February 28, 2000 
-(Modified Julian Data, MJD 2451602) 
-to June 15, 2005 (MJD 2453536).  Over this timespan, which includes public data 
+(Modified Julian Data, MJD 51602) to June 15, 2005 (MJD 53536).  
+Over this timespan, which includes public data 
 releases EDR through DR5 (Stoughton et al 2002, 
 Abazajian et al 2003, 2004, 2005, Adelman-McCarthy et al 2006)
 , SDSS obtained survey quality spectroscopic data on
@@ -121,22 +133,25 @@ breakdown in the best matched spectral classification:  651920 galaxies,
 Mean exposure time per plate is 3914 seconds, and the median is 3302 seconds.
 ;
 ;   Should we include a histogram of exposure times??
+;   No, probably not.
 ;
 
 In Figure 1 we show three of the data quality diagnostics. This figure shows
 the effective signal-to-noise ratio of each spectroscopic plug plate 
 normalized to 3600 seconds exposure time, the median seeing in arcseconds,
 and the RMS guide probe offset
-in arcseconds, versus time in days after Feb 26, 2000 (MJD 2451600).
+in arcseconds, versus time in days after Feb 26, 2000 (MJD 51600).
 
 The data reduction and products described herein are very similar to
 those produced by the official SDSS data releases, 
 with the most significant differences begin in our treatment of 
 spectro-photometric calibrations.  The data as processed as described
 are released
-with this paper and may be accessed via the WWW.\footnote{Full details
-are at \texttt{http://spectro.princeton.edu}}
+with this paper and may be accessed online.\footnote{Full details
+are at (should we point to DR sdss.org link??) \texttt{http://spectro.princeton.edu}}
 Future data releases will also be accessible at this site. 
+
+In Section ??, we do this, in the next section we do this, and in the final sections we do this and that??
 
 %------------------------------------------------------------------------------
 %------------------------------------------------------------------------------
@@ -156,7 +171,8 @@ for telescope guiding.
 The fibers are 180 $\mu m$ in diameter and subtend $2.97"$ at Cassegrain focus.
 The fibers accept the f/5 beam directly and, due to focal degradation, input
 an f/4 exit beam into each of the spectrographs.  The fibers are mounted in
-bundles of 20 with inter-fiber spacings of 390 $\mu m$.  Sixteen bundles are
+linear bundles of 20 with inter-fiber spacings of 390 $\mu m$.  
+Sixteen bundles are
 mounted on a single slithead with a radius of curvature of 640 mm and have
 an extra spacing of approximately 200 $\mu m$ between bundles.
 
@@ -194,14 +210,16 @@ in cartridges, plugged with 640 science fibers and 11 guide fibers.
 The positions of the 640 fibers along each of the two fiber slitheads
 %are mapped by the 8th wonder of the world,
 by 
-the SDSS plugplate fiber mapper (Schlegel and Finkbeiner, unpublished).
+the SDSS plugplate fiber mapper (Schlegel and Finkbeiner, unpublished, ??should we use another reference??).
 All usable spectroscopic data obtained for a single plugging, 
 and therefore a single fiber mapping, will eventually be combined into 
 a final data product for that plugging.  In this scheme, an individual 
 output spectrum is uniquely specified by the plate number, the first night
-of observations\footnote{On occasion, to accumulate enough signal, a given
-plate/plugging configuration may be exposed on more than one night.} (in MJD), 
-and the science fiber number.
+of observations (in MJD)\footnote{On occasion, to accumulate enough signal, a given
+plate/plugging configuration may be exposed on more than one night.} 
+, and the science fiber number (001-640).  If the same plate is replugged 
+(different fiber mapping), and re-observed and processed, 
+a separate set of spectra are extracted for the new plate-night combination.
 
 A plate is mounted in the telescope through a efficient procedure described
 by Gunn et al (2006).  The switch from the imaging camera to a spectroscopic
@@ -219,38 +237,102 @@ usually converges to stable guiding within 2 minutes.
 The plate scale of the SDSS telescope can be adjusted, and the guiding software
 suggests a scale change if one is required.  Once close loop 
 guiding has settled, the first science exposure is started.  The typical 
-exposure time is 900 seconds, but exposure times from 600 to 1200 second are
-not unexpected based on conditions and time constraints.  A second exposure
-is started immediately after the first science exposure is complete and read
-out.
-A fast Linux workstation onsite copies the data from the data acquisition host,
+exposure time is 900 seconds, but exposure times from 600 to 1200 second are not
+unexpected based on conditions and time constraints.  A second exposure is 
+started immediately after the first science exposure is complete and read out.
+A workstation onsite copies the data from the data acquisition host,
 and automatically performs a quick spectral extraction with a subset of the 
-steps explained here.  The results are posted to sos.apo.nmsu.edu, and
-the SDSS observers can check the signal-to-noise ratio (S/N) 
-obtained in each of the 4 spectroscopic
-cameras in real-time.  A plate is considered to have met SDSS survey standards
-if all 4 cameras have a cumulative (S/N)$^2 > 15$ at 
-fiber magnitudes of 20.33 and 20.06 in SDSS g and i filters respectively.  
+steps explained here.  The results are posted to a local website to allow the 
+SDSS telescope operators to check the signal-to-noise ratio (S/N) 
+obtained in each of the 4 spectroscopic cameras in real-time.  
+A plate is considered to have met SDSS survey standards
+if all 4 cameras have a cumulative (S/N)$^2 > 15$ (per native spectral pixel) 
+at fiber magnitudes of 20.33 and 20.06 in SDSS g and i filters respectively.  
+The on-the-mountain automated reductions maintained to a good degree the quality
+standards of the spectroscopic survey and reduced the number of times plates 
+were reobserved due to lack of signal.
+
+\section{PIPELINE ORGANIZATION}
+\label{spplan}
+
+The full two-dimensional survey pipeline works in a small number of fixed steps
+that are run??/invoked sequentially.  These steps are summarized here, and then described in more detail in the remaining sections of this manuscript.
+\begin{enumerate}
+\item{Categorize and group every CCD frame taken on a single MJD night}
+\end{enumerate} 
+Describe the organization of data, and the types of data 
+used/required by the pipeline.
 
 \section{IMAGE PROCESSING}
 \label{sec_process}
 
-sdssproc:
+The raw spectroscopic data from each of the four CCDs is stored as 16 bit images
+with 2128 columns and 2069 rows.  The active area is represented by 2048x2048 
+24$\u$m pixels and read out by two indepedent amplifiers for each CCD.  
+Readout time for an unbinned image is nominally (27 ms per row) ?? seconds.
+A single IDL script is responsible for converting the raw fits files into 
+1) A header consisting on keyword-value pairs, 
+2) a 2048x2048 floating point data image, and 
+3) a corresponding inverse variance image. 
 
-1000 lines of IDL code...
+The main steps of the image processing for every frame are described here.
 
-read opEcalib
-     op something else
+- Identify correct exposure number and camera ID based on header and filename.
+- Apply neccesary header fixes based on external support file (spHeaderFix), and also purge any NaNs from header values.
+- Identify type of exposure (types??) and expected quality (test, unknown, bad, acceptable, good, excellent). 
+- Locate and read supporting operation files, including CCD layout (opConfig), CCD amplifier gains (opEcalib), and CCD bad pixel masks (opBC).
+- Subtract amplifier bias value computed as mean in appropriate overscan region.
+- Multiply by inverse gain to convert from bias corrected ADU to electrons.
+- Find columns subject to bleeding (when a saturated pixel that affects others along the same column).
+- Create a corresponding image representing variance, which is the per pixel sum of the data image, the gain corrected read noise squared, and a term limiting the reported pixel signal to noise at 100.??footnote this is an extra contribution to the variance given as (0.01 * data value)^2??
+- Convert variance image to inverse variance, and set inverse variance to zero (giving those pixels zero weight downstream) for any pixels with set in masks of bad or saturated pixels
+- Optionally subtract a bias image (usually created offline with a combined set of zero second exposures), no effect on inverse variance
+- Optionally divide by a flat-field image which represents the relative pixel-to-pixel response.  Correct inverse variance by 1/flat-field value squared.  
+- 
 
-Read file header, require...
-mention spHdrFix here.
+It is flexible, for instance it can be used just to read the header, and will not read the entire raw frame.
 
+There were also many special case situations that are 
+Case 1:  shifted rows due to electronic issues on select nights in 2000.
+Case 2:  Correct image for data acquired on nights when images were readout with shutter open.
+
+??applycrosstalk, check svn blame??
 
 
 \section{SPATIAL TRACING}
 \label{sec_tracing}
 
-trace320, Trace crude, and trace fitting
+Top level, call frm spcalib as of r54990 (20020301):  
+ - Trace320crude, then fit with 5th-order polynomial.
+ - The current trunk code does not match what was used for the SDSS legacy reductions, especially trace_cen.  What revision corresponds to the one used in the DR reductions??
+
+ - Find initial fiber positions on each flat-field frame acquired during the 
+plate observation sequence.  The final structure is a 320x2048 set of column 
+positions representing the best estimate of the fiber column position in each 
+row of the frame.
+ - Given the camera optics the column positions bow inward towards the middle 
+of the CCD frame.  The fibers are more closely spaced in column position for 
+rows near the middle of the CCD.  The set of 21 rows about the center of the 
+CCD is chosen to find the initial fiber positions.  A median\footnote{iterative
+median, see appendix} is performed at each column positions, and a single row
+is analyzed representing the median value per column.  The "median" central row
+is cross correlated with a template representing expected fiber positions taking
+into account fiber spacings and bundle separations.
+- Given the best correlation offset (and minimum correlation value of ??), 
+tweak each expected position from the template to the best empirical position 
+in the median row by calculating a flux-weighted mean over a window of 6 pixels.
+
+to locate the majority of profile peaks (see Figure ??? for examples of fiber
+profiles in a typical SDSS frame).  
+
+Find approximate centers of all 320 fiber profiles for a single row, and note uncertain identifications due to bad pixels or falling off CCD frame.  The profile position is calculated as the interpolated peak in cross-sectional counts.  Cross correlate the identified positions with a template based on known fiber spacings.  
+??  When did trace_cen move to parinfo standard ??
+
+From initial centers move up and down the CCD images and "trace" the position centers by calculating the best count-weighted center over a fixed window based on the previous center.
+
+Then perform a polynomial fit on all 320 fibers profiles as column positions versus row number.  A 4th order chebyshev?? polynomial is sufficient.  The polynomial fit is purely empirical and there is no optical model or other physical constraint on the polynomial solutions.
+
+Next steps??
 
 
 \section{OPTIMAL EXTRACTION}
@@ -691,6 +773,20 @@ LRG V4 & -16.77 &-10.43 & -4.43 & -2.21 & -1.05 & -0.063  & 0.93 &  2.08 &  4.30
 \end{tabular}
 \end{table}
 
+\begin{table}
+\begin{tabular}{ccc}
+\hline
+DR &  2d version & rerun ? \\
+\hline
+\hline
+EDR - DR4 & 4\_?? & \\
+DR5 & 5\_?? & \\
+DR6 & ?? & 25 \\
+DR7 & ?? & \\
+\hline
+\end{tabular}
+\end{table}
+
 
 \section{Testing velocities}
 
@@ -706,11 +802,12 @@ would have saturated the detectors, and another 8 stars appear not
 to have been plugged.  SDSS velocities for these stars were determined
 by fitting these spectra to all stars in the Elodie-2 stellar catalog,
 and choosing the best-fit Elodie star using $\chi^2$ minimization.  (ref???)
-The derived veocites have a median offset of $-5.5\kms$, with a sigma-clipped
+The derived velocites have a median offset of $-5.5\kms$, with a sigma-clipped
 dispersion of $3.0 \kms$ (see Figure \ref{fig_m67}).
 There were three very discrepent velocities. (look these up???)
 % Fiber 224 at RA= 132.40396 Dec= 11.484270 v(CAT)= 13.30 v(Elodie)= 100.50532
 % Fiber 301 at RA= 132.01817 Dec= 12.167990 v(CAT)= 12.10 v(Elodie)= 104.35960
+% What's the third one?  SMB 20110302
 
 Our expectation is that this plate represents a worst-case scenario
 for the zero-points in the wavelength scales, and therefore velocties.
@@ -1406,7 +1503,7 @@ to barycentric at the mid-point of each 15-minute exposure.
 \plotone{plate_stats.ps}
 \figcaption{Observational summary of the 1656 publicly released
 SDSS spectroscopic
-plates observed between MJD 2451600 to 2453600.  Each plate is
+plates observed between MJD 51600 to 53600.  Each plate is
 represented by 3 symbols showing the median RMS guiding residuals
 in the 11 guide fibers in arcseconds (diamonds), 
 the median seeing of the 11 guide star PSFs in arcseconds (stars), 
