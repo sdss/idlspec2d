@@ -482,7 +482,10 @@ function spflux_mratio_flatten, loglam1, mratio1, mrativar1, pres=pres
 ;          measure_errors=1./sqrt(thisivar))
 
          ; The following would be an unweighted fit...
-         pres1 = poly_fit(thisloglam-3.5d0, thisratio, npoly-1)
+;         pres1 = poly_fit(thisloglam-3.5d0, thisratio, npoly-1)
+
+         ; The following is an unweighted fit but with outlier-rejection...
+         poly_iter, thisloglam-3.5d0, thisratio, npoly-1, 3., coeff=pres1
 
          flatarr[*,iobj] = poly(loglam[*,iobj]-3.5d0, pres1)
          pres[*,iobj] = reform(pres1, npoly)
