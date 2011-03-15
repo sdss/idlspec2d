@@ -8,6 +8,9 @@ SPCOADD_V5: Always set the number of output fibers as 2X the number on
      a single spectrograph.  Otherwise, if data from one BOSS spectrograph
      is missing, then previous reductions made output files with 500 instead
      of 1000 objects.  Related to ticket #764.
+SPFLUX_V5: In the internal function spflux_mratio_flatten, do a fit with
+     outlier rejection when fitting each star's mratio to the mean
+     (ticket #1249).
 SPPLAN2D: For any frames that are 'bad', enter them as 'UNKNOWN'
      in the plan files so that we don't attempt to reduce them (ticket #764).
 
