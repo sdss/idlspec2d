@@ -243,10 +243,10 @@ speclimit red SUMMARY SUCCESS_LRG * 0.0 87.0
 #speclimit red SUMMARY SUCCESS_QSO * 0.0 45.0
 
 # Success rates for BOSS plates
-speclimit yellow "%LRG1" * 0 95
-speclimit red "%LRG1" * 0 92
-speclimit yellow "%LRG2" * 0 88
-speclimit red "%LRG2" * 0 80
+speclimit yellow SUMMARY "%LRG1" * 0 95
+speclimit red SUMMARY "%LRG1" * 0 92
+speclimit yellow SUMMARY "%LRG2" * 0 88
+speclimit red SUMMARY "%LRG2" * 0 80
 
 textlimit yellow SUMMARY PLATEQUALITY * marginal
 textlimit red SUMMARY PLATEQUALITY * bad
