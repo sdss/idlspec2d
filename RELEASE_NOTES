@@ -10,7 +10,7 @@ SPCOADD_V5: Always set the number of output fibers as 2X the number on
      of 1000 objects.  Related to ticket #764.
 SPFLUX_V5: In the internal function spflux_mratio_flatten, do a fit with
      outlier rejection when fitting each star's mratio to the mean
-     (ticket #1249).
+     (ticket #1249 and #1252).
 SPPLAN2D: For any frames that are 'bad', enter them as 'UNKNOWN'
      in the plan files so that we don't attempt to reduce them (ticket #764).
 
