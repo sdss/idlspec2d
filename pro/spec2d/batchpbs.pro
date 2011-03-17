@@ -236,6 +236,7 @@ pro batchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
             printf, olun, ''
             printf, olun, 'setup runz'
             printf, olun, 'runz_BOSS.sh ' + platefile +' -a'
+            printf, olun, 'runz_BOSS.sh ' + platefile +' -a -G -t GAL'
          endif
          
          ; splog, "run1d is ", run1d
@@ -246,6 +247,7 @@ pro batchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          idlcmd += ", mjd=" + string(mjd,format='(i5.5)')
          idlcmd += ", run1d='" + run1d + "'"
          idlcmd += ", run2d='" + run2d + "'"
+         idlcmd += ", /silent"
          printf, olun, ''
          printf, olun, '#- Make pretty pictures'
          printf, olun, 'idl -e "' + idlcmd + '"'
