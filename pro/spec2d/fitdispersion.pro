@@ -127,8 +127,8 @@ function fitdispersion, arc_flux, arc_fluxivar, xcen_inp, $
 
    for iline=0, nline-1 do begin
      for j=0, numbundles-1 do begin
-        ss = where(gmask[iline,*,j] AND width[iline,*,j] GT 0)
-        if (ss[0] NE -1) then $
+        ss = where(gmask[iline,*,j] AND width[iline,*,j] GT 0, ct)
+        if (ct GE 0.5*numbundles) then $
          width_bundle[iline,j] = djs_median(width[iline,ss,j]) 
      endfor
    endfor
@@ -138,12 +138,12 @@ function fitdispersion, arc_flux, arc_fluxivar, xcen_inp, $
    ;----------
    ; Turn the widths back into a traceset.
 
-   xy2traceset, transpose(xcen), width_final, dispset, $
+   xy2traceset, transpose(xcen), width_final, dispset, inmask=(width_final GT 0), $
     ncoeff=ncoeff, xmin=xmin, xmax=xmax
 
    ;----------
    ; Compute the widths in each of 4 quandrants on the CCD
-   ; as the median of the unmasked pixels
+   ; as the median of the unmasked pixels around the lines being fit
 
    traceset2xy, dispset, xx, width_fit
    x1 = [0,0,npix/2,npix/2]
@@ -157,7 +157,6 @@ function fitdispersion, arc_flux, arc_fluxivar, xcen_inp, $
        medwidth[i] = $
         median([ (width_fit[x1[i]:x2[i],y1[i]:y2[i]])[indx] ])
    endfor
-;stop ; ???
 
    splog, 'Median wavelength widths = ' $
     + string(medwidth,format='(4f5.2)') + ' pix (LL LR UL UR)'
