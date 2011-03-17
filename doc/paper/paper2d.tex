@@ -303,35 +303,14 @@ Case 2:  Correct image for data acquired on nights when images were readout with
 \label{sec_tracing}
 
 Top level, call frm spcalib as of r54990 (20020301):  
- - Trace320crude, then fit with 5th-order polynomial.
- - The current trunk code does not match what was used for the SDSS legacy reductions, especially trace_cen.  What revision corresponds to the one used in the DR reductions??
-
- - Find initial fiber positions on each flat-field frame acquired during the 
-plate observation sequence.  The final structure is a 320x2048 set of column 
-positions representing the best estimate of the fiber column position in each 
-row of the frame.
- - Given the camera optics the column positions bow inward towards the middle 
-of the CCD frame.  The fibers are more closely spaced in column position for 
-rows near the middle of the CCD.  The set of 21 rows about the center of the 
-CCD is chosen to find the initial fiber positions.  A median\footnote{iterative
-median, see appendix} is performed at each column positions, and a single row
-is analyzed representing the median value per column.  The "median" central row
-is cross correlated with a template representing expected fiber positions taking
-into account fiber spacings and bundle separations.
-- Given the best correlation offset (and minimum correlation value of ??), 
-tweak each expected position from the template to the best empirical position 
-in the median row by calculating a flux-weighted mean over a window of 6 pixels.
-
-to locate the majority of profile peaks (see Figure ??? for examples of fiber
-profiles in a typical SDSS frame).  
-
-Find approximate centers of all 320 fiber profiles for a single row, and note uncertain identifications due to bad pixels or falling off CCD frame.  The profile position is calculated as the interpolated peak in cross-sectional counts.  Cross correlate the identified positions with a template based on known fiber spacings.  
-??  When did trace_cen move to parinfo standard ??
-
-From initial centers move up and down the CCD images and "trace" the position centers by calculating the best count-weighted center over a fixed window based on the previous center.
-
-Then perform a polynomial fit on all 320 fibers profiles as column positions versus row number.  A 4th order chebyshev?? polynomial is sufficient.  The polynomial fit is purely empirical and there is no optical model or other physical constraint on the polynomial solutions.
-
+ - Trace320crude, then fit with 7th-order polynomial for column positions versus CCD row.
+ - First, find all 16 bundles of 20 fibers by assuming known fiber (6.25 pixel)
+and bundle (8 pixel) spacings.  Locate peaks by convolving the composite set of 21 central rows with a peak finding kernel\footnote{The kernel used was [-1, -1, 1, 2, 1, -1, -1]} that must match the known fiber pattern. ??please make more readble??
+ - Starting with the initially determined column locations of all 320 fibers, 
+improve estimate of centroids using a simple flux-weighted mean over a window of 6 pixels centered at the current position.  
+ - Step in rows sequentially up and down using the previous row's positions as the initial window position in the flux-weighted mean.
+ - Mask fibers which had problematic centroids, and replace centroids for all rows with interpolated values from neighboring traces.
+ - Fit each spatial trace with a 7th order polynomial, with iteration and rejecting pixels which fall outside of 0.15 pixels from the best fit.
 Next steps??
 
 
@@ -779,10 +758,13 @@ LRG V4 & -16.77 &-10.43 & -4.43 & -2.21 & -1.05 & -0.063  & 0.93 &  2.08 &  4.30
 DR &  2d version & rerun ? \\
 \hline
 \hline
-EDR - DR4 & 4\_?? & \\
-DR5 & 5\_?? & \\
-DR6 & ?? & 25 \\
-DR7 & ?? & \\
+DR2 & 4\_10\_4  & 23 \\
+DR3 & 4\_10\_4  & 23 \\
+DR4 & 4\_10\_4  & 23 \\
+DR5 & 4\_10\_4 & 23 \\
+DR6 & 5\_3\_3  & 25 \\
+DR7 & 5\_3\_12 & 26 \\
+DR8 & 5\_3\_12 & 26 \\
 \hline
 \end{tabular}
 \end{table}
@@ -1055,9 +1037,14 @@ The typical flux distortion corrections amount to ???.
 
 \subsection{Tests of Spectrophotometry}
 
+?? Refer to DR5? paper and Tremonti's SDSS paper which compares 
+spectrophotometric colors to photo colors ??
+
 
 %------------------------------------------------------------------------------
 \subsection{GALACTIC REDDENING}
+
+?? Drop galactic reddening, users should known when or when not to correct for it ??
 
 The SDSS spectra are presented as observed above the Earth's
 atmosphere, but not above the Galaxy's atmosphere.
@@ -1135,8 +1122,16 @@ the University of Washington.
 \bibitem[Stoughton et al.(2002)]{2002AJ....123..485S} Stoughton, C., et 
 al.\ 2002, \aj, 123, 485 
 
+\bibitem[Subbarao et al. (2002)]{2002SPIE.4847..452S} SubbaRao, M., et al.\ 2002, SPIE, 4847, 452
+
 \bibitem[Adelman-McCarthy et al.(2006)]{2006ApJS..162...38A} 
 Adelman-McCarthy, J.~K., et al.\ 2006, \apjs, 162, 38 
+
+\bibitem[Adelman-McCarthy et al.(2007)]{2007ApJS..172..634A} 
+Adelman-McCarthy, J.~K., et al.\ 2007, \apjs, 172, 634 
+
+\bibitem[Abazajian et al.(2009)]{2009ApJS..182..543A} Abazajian, K., et 
+al.\ 2009, \apjs, 182, 543
 
 \bibitem[Abazajian et al.(2005)]{2005AJ....129.1755A} Abazajian, K., et 
 al.\ 2005, \aj, 129, 1755 
@@ -1247,6 +1242,7 @@ in the slatec library (de Boor 1977) to complete translation in IDL.
 \section{DATA MODEL}
 \label{datamodel}
 
+?? Alot of this is already published in the DR papers or on the DR websites ??
 This spCFrame files contain the extracted spectra for a single CCD of a
 single exposure. In general, each object has several blue exposures and
 several red exposures. These spectra are still in the native wavelength
@@ -1410,6 +1406,8 @@ the spectroscopic targets.
 
 \subsection{Target Flags}
 
+?? Just refer to EDR paper, or one of the DR papers, and drop this section ??
+
 The target selection sets bits in two flags called PRIMTARGET and
 SECTARGET. An object can have multiple bits set. For example, if
 the target selection code determined that an object was both a
@@ -1522,6 +1520,7 @@ the years of 2000 to 2005.
 \figcaption{Schematic layout of one of the SDSS double-spectrographs.
 The light is fed from 320 fibers entering at the slithead (A), which
 is in the center of the beam in this Schmidt camera design.
+?? Drop this figure and refer to the Smee spectrograph paper ??
 \label{fig2}
 }
 \end{figure}
@@ -1607,7 +1606,9 @@ width.
 \includegraphics[width=0.8\columnwidth,angle=90]{plot_bestthru.ps}
 %\epsscale{1.0}
 %\plotone{plot_bestthru.ps}
-\figcaption{ Throughput of the SDSS spectroscopic system,
+\figcaption{ 
+?? A similar figure is shown in the EDR paper, let's save space and refer to that??
+Throughput of the SDSS spectroscopic system,
 as measured relative to the photon density expected above
 the Earth's atmospheric by an aperture of 2.5-m with a 1.3-m
 obscuration by the secondary mirror baffling.  These curves
