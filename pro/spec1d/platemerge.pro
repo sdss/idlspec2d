@@ -27,10 +27,9 @@
 ;                 files per name in $RUN2D; default to all values of RUN2D
 ;                 returned by PLATELIST.
 ;   include_bad  - If set, then include bad plates
-;   exclude_class - Set this to a single class string to exclude this
-;                   class from the output spAll, moving down the list
-;                   of next-best redshifts until a different class is
-;                   found.  (Values can be 'GALAXY', 'STAR', or 'QSO'.)
+;   exclude_class - If set, then include redshift info for restricted
+;                   classes -- specifically, best non-QSO and best
+;                   non-galaxy redshifts.  Defaults to being set.
 ;   skip_line    - If set, skip the generation of spAllLine.fits
 ;
 ;
@@ -81,6 +80,7 @@
 ; REVISION HISTORY:
 ;   30-Oct-2000  Written by D. Schlegel, Princeton
 ;   29-Jul-2010  Added EXCLUDE_CLASS and SKIP_LINE, A. Bolton, Utah
+;   17-Mar-2011  Changed EXCLUDE_CLASS behavior, A. Bolton, Utah
 ;------------------------------------------------------------------------------
 pro platemerge1, plate, mjd=mjd, except_tags=except_tags1, $
  indir=indir, outroot=outroot1, run2d=run2d, include_bad=include_bad, $
@@ -98,6 +98,7 @@ pro platemerge1, plate, mjd=mjd, except_tags=except_tags1, $
       outroot = djs_filepath(outroot, root_dir=getenv('BOSS_SPECTRO_REDUX'), $
        subdir=run2d)
    endelse
+   if (n_elements(exclude_class) eq 0) then exclude_class = 1B
 
    t1 = systime(1)
    thismem = memory()
@@ -212,26 +213,46 @@ pro platemerge1, plate, mjd=mjd, except_tags=except_tags1, $
        zans=zans, zmanual=zmanual, plugmap=plugmap, /silent
       zans = struct_selecttags(zans, except_tags='OBJID')
 
-; ASB 2010 July: If EXCLUDE_CLASS is set, then rebuild ZANS from spZall:
+; ASB 2011 Mar: append info on best non-galaxy and non-qso redshifts/classes:
       if keyword_set(exclude_class) then begin
-          pstring = string(plist[ifile].plate, format='(i4.4)')
-          mstring = string(plist[ifile].mjd, format='(i5.5)')
-          zallfile = getenv('BOSS_SPECTRO_REDUX') + '/' + $
-            strtrim(plist[ifile].run2d, 2) + '/' + $
-            pstring + '/' + strtrim(plist[ifile].run1d, 2) + $
-            '/spZall-' + pstring + '-' + mstring + '.fits'
-          zall = mrdfits(zallfile,1)
-          nfib = max(zall.fiberid) - min(zall.fiberid) + 1L
-          nzall = n_elements(zall) / nfib
-          zall = reform(zall, nzall, nfib)
-          class_all = strtrim(zall.class)
-          id_noclass = replicate(-1L, nfib)
-          for ii = 0L, nfib-1 do id_noclass[ii] = min(where(class_all[*,ii] ne exclude_class))
-          zans_noclass = zall[id_noclass,lindgen(nfib)]
-          struct_assign, {junk:0}, zans
-          copy_struct, zans_noclass, zans
-          zall = 0
-          zans_noclass = 0
+         print, '  Finding class-restricted redshift info.'
+         pstring = string(plist[ifile].plate, format='(i4.4)')
+         mstring = string(plist[ifile].mjd, format='(i5.5)')
+         zallfile = getenv('BOSS_SPECTRO_REDUX') + '/' + $
+                    strtrim(plist[ifile].run2d, 2) + '/' + $
+                    pstring + '/' + strtrim(plist[ifile].run1d, 2) + $
+                    '/spZall-' + pstring + '-' + mstring + '.fits'
+         zall = mrdfits(zallfile,1)
+         nfib = max(zall.fiberid) - min(zall.fiberid) + 1L
+         nzall = n_elements(zall) / nfib
+         zall = reform(zall, nzall, nfib)
+         class_all = strtrim(zall.class,2)
+         id_noqso = replicate(-1L, nfib)
+         id_nogal = replicate(-1L, nfib)
+         for ii = 0L, nfib-1 do id_noqso[ii] = min(where(class_all[*,ii] ne 'QSO'))
+         for ii = 0L, nfib-1 do id_nogal[ii] = min(where(class_all[*,ii] ne 'GALAXY'))
+         zans_noqso = zall[id_noqso,lindgen(nfib)]
+         zans_nogal = zall[id_nogal,lindgen(nfib)]
+         eclass_struc = replicate( $
+                        {z_noqso: 0., z_err_noqso: 0., zwarning_noqso: 0L, $
+                         class_noqso: ' ', subclass_noqso: ' ', $
+                         z_nogal: 0., z_err_nogal: 0., zwarning_nogal: 0L, $
+                         class_nogal: ' ', subclass_nogal: ' '}, nfib)
+         eclass_struc.z_noqso = zans_noqso.z
+         eclass_struc.z_err_noqso = zans_noqso.z_err
+         eclass_struc.zwarning_noqso = zans_noqso.zwarning
+         eclass_struc.class_noqso = zans_noqso.class
+         eclass_struc.subclass_noqso = zans_noqso.subclass
+         eclass_struc.z_nogal = zans_nogal.z
+         eclass_struc.z_err_nogal = zans_nogal.z_err
+         eclass_struc.zwarning_nogal = zans_nogal.zwarning
+         eclass_struc.class_nogal = zans_nogal.class
+         eclass_struc.subclass_nogal = zans_nogal.subclass
+         zans = struct_addtags(zans, eclass_struc)
+         eclass_struc = 0
+         zall = 0
+         zans_noqso = 0
+         zans_nogal = 0
       endif
 
       if (ifile EQ 0) then begin

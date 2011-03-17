@@ -4,6 +4,8 @@ CONFIGURATION__DEFINE,FITDISPERSION,QUICKWAVE,SPCALIB,TRACE320CRUDE:
 FLUX_DISTORTION: For determining if this is a multiple-pointing plate,
      don't look at missing plugmap entries.  This change necessary for
      the change with SPCOADD_V5 to include all zeros for a missing spectrograph.
+PLATEMERGE: Modified to include minimal info on best non-QSO and
+     best non-galaxy redshifts and classifications by default.
 SPCOADD_V5: Always set the number of output fibers as 2X the number on
      a single spectrograph.  Otherwise, if data from one BOSS spectrograph
      is missing, then previous reductions made output files with 500 instead
