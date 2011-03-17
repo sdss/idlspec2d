@@ -196,8 +196,8 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
      print, 'UUBATCHBPS: Starting for user:  ',userID
      
      pbs_root_dir = getenv('BOSS_PBS')
-     if (pbs_root_dir eq '') then pbs_root_dir = djs_filepath('pbs',root_dir=topdir) $
-     else pbs_root_dir = djs_filepath('bossredux',root_dir=pbs_root_dir)
+     if (pbs_root_dir eq '') then pbs_root_dir = djs_filepath('pbs/'+run2d,root_dir=topdir) $
+     else pbs_root_dir = djs_filepath('bossredux/'+run2d,root_dir=pbs_root_dir)
      pbs_dir = djs_filepath(userID,root_dir=pbs_root_dir) + '/'
      if file_test(pbs_dir) then begin
        shift_pbs_dir = djs_filepath(userID+'.*',root_dir=pbs_root_dir) + '/'
