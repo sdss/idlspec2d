@@ -1,4 +1,9 @@
 
+-------------------------------------------------------------------------------
+v5_4_32 (2011-03-18)
+Tag for testing spectrophotometry fixes.
+Built against specflat v1_13, elodie v1_3, idlutils v5_4_23.
+
 BATCHPBS: Added -G -t GAL to runz_BOSS.sh call (ticket #1251).
 CONFIGURATION__DEFINE,FITDISPERSION,QUICKWAVE,SPCALIB,TRACE320CRUDE:
      Remove some unnecessary definitions from the configuration__define proc.
@@ -29,6 +34,7 @@ examples/opLimits.par: Change the S/N limits to be consistent with
 
 -------------------------------------------------------------------------------
 v5_4_31 (2011-03-02)
+Tag for production 2D reductions.
 Built against specflat v1_13, elodie v1_3, idlutils v5_4_23.
 
 BATCHPBS: Don't print run1d and run2d multiple times.
