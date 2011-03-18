@@ -1,4 +1,6 @@
 
+BATCHPBS: Change back to the original directory at end of proc.
+
 -------------------------------------------------------------------------------
 v5_4_32 (2011-03-18)
 Tag for testing spectrophotometry fixes.
