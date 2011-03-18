@@ -1,5 +1,6 @@
 
 BATCHPBS: Change back to the original directory at end of proc.
+VDISPFIT: Enable more sophisticated redshift-error marginalization.
 
 -------------------------------------------------------------------------------
 v5_4_32 (2011-03-18)

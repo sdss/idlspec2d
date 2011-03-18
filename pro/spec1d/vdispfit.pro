@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   vdans = vdispfit(objflux, objivar, [ objloglam, hdr=, zobj=, npoly=, $
 ;    eigenfile=, eigendir=, columns=, sigma=, sigerr=, yfit=, $
-;    plottitle=, dzpix=, /return_chisq, /doplot, /debug ])
+;    plottitle=, dzpix=, z_err=, /return_chisq, /doplot, /debug ])
 ;
 ; INPUTS:
 ;   objflux    - Galaxy spectrum (spectra); array of [NPIX,NGALAXY].
@@ -34,7 +34,10 @@
 ;   doplot     - If set, then make plots.
 ;   debug      - If set, then wait for keystroke after plot.
 ;   dzpix      - If set, then marginalize over +/- dzpix pixels in
-;                redshift.  Probably needs more testing!
+;                redshift.  Works in conjunction with z_err (below).
+;                Probably needs more testing!  Also, makes the
+;                interpretation of chisq a bit more fuzzy...
+;   z_err      - Object redshift errors, used in redshift marginalization.
 ;   return_chisq - If set, then append full chi^2 vector/map in vdans
 ;
 ; OUTPUTS:
@@ -95,7 +98,7 @@
 ;
 ; REVISION HISTORY:
 ;   13-Mar-2001  Written by D. Schlegel, Princeton
-;   2010 Added redshift marginalization option, Bolton & Shu, U. Utah
+;   2010-11 Added redshift marginalization option, Bolton & Shu, U. Utah
 ;------------------------------------------------------------------------------
 ; Create output structure
 function create_vdans, nstar
@@ -132,7 +135,7 @@ function vdispfit, objflux, objivar, objloglam, $
  eigenfile=eigenfile, eigendir=eigendir, columns=columns, $
  sigma=sigma, sigerr=sigerr, yfit=yfit, $
  plottitle=plottitle, doplot=doplot1, debug=debug, $
- dzpix=dzpix, return_chisq=return_chisq
+ dzpix=dzpix, z_err=z_err, return_chisq=return_chisq
 
    common com_vdispfit, bigflux, bigloglam, bigmask, nsamp, bigsig, $
     nbigpix, nsig, dsig, nstar, lastfile
@@ -155,6 +158,7 @@ function vdispfit, objflux, objivar, objloglam, $
 
    if (not keyword_set(dzpix)) then dzpix = 0L
    if (not keyword_set(return_chisq)) then return_chisq = 0
+   if (n_elements(z_err) eq 0) then z_err = replicate(0., nobj)
 
    ;---------------------------------------------------------------------------
    ; If multiple object flux vectors exist, then call this routine recursively.
@@ -170,7 +174,7 @@ function vdispfit, objflux, objivar, objloglam, $
          vdans1 = vdispfit(objflux[*,iobj], objivar[*,iobj], $
           thisloglam, hdr=hdr, zobj=zobj[iobj], npoly=npoly, $
           eigenfile=eigenfile, eigendir=eigendir, columns=columns, yfit=yfit1, $
-          dzpix=dzpix, return_chisq=return_chisq)
+          dzpix=dzpix, z_err=z_err[iobj], return_chisq=return_chisq)
          if (iobj EQ 0) then vdans = vdans1 $
           else vdans = [[vdans], [vdans1]]
          if (keyword_set(yfit)) then yfit[*,iobj] = yfit1
@@ -372,9 +376,17 @@ function vdispfit, objflux, objivar, objloglam, $
    ; generated in the call to FIND_NMINIMA.
    if (dzpix gt 0) then begin
       chi2arr = fltarr(nsig)
+      ; Convert redshift errors to pixel errors:
+      pix_err = z_err[0] / ((1. + zobj[0]) * objdloglam * alog(10.))
+      ; Probability weights for the redshift steps:
+      p_of_z = exp(-0.5*(findgen(2L*dzpix+1L)-float(dzpix))^2/pix_err^2)
+      p_of_z = p_of_z / total(p_of_z)
       for isig = 0L, nsig-1 do begin
-         junk = min(bigchi2arr[isig,*], imin)
-         chi2arr[isig] = bigchi2arr[isig,imin]
+;         junk = min(bigchi2arr[isig,*], imin)
+;         chi2arr[isig] = bigchi2arr[isig,imin]
+         mchi2 = min(bigchi2arr[isig,*])
+         chi2arr[isig] = mchi2 - 2.0*alog(total(p_of_z * $
+          exp(-0.5*(bigchi2arr[isig,*]-mchi2))))
       endfor
    endif else chi2arr = bigchi2arr
 
