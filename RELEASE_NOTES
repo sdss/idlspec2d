@@ -1,6 +1,10 @@
 
+BATCHPBS: Added -G -t GAL to runz_BOSS.sh call (ticket #1251).
 CONFIGURATION__DEFINE,FITDISPERSION,QUICKWAVE,SPCALIB,TRACE320CRUDE:
      Remove some unnecessary definitions from the configuration__define proc.
+FITDISPERSION: In the call to XY2TRACESET, pass a mask of the badly
+     measured individual widths such that they do not throw the fits
+     (ticket #822).
 FLUX_DISTORTION: For determining if this is a multiple-pointing plate,
      don't look at missing plugmap entries.  This change necessary for
      the change with SPCOADD_V5 to include all zeros for a missing spectrograph.
@@ -16,6 +20,9 @@ SPFLUX_V5: In the internal function spflux_mratio_flatten, do a fit with
 SPPLAN2D: For any frames that are 'bad', enter them as 'UNKNOWN'
      in the plan files so that we don't attempt to reduce them (ticket #764).
 
+etc/lamphgcdne.dat: Remove the Hg I lines at 4105 Ang, as it was the
+     culpret for ticket #822 (although the fix to FITDISPERSION should
+     make SOS robust to that anyway).
 examples/opLimits.par: Change the S/N limits to be consistent with
      the numbers hard-wired in PLATELIST.
      Add yellow/red limits for %LRG1, %LRG2.
