@@ -283,7 +283,7 @@ pro batchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
 
    for i=0L, nbatch-1L do begin
       thisfile = fileandpath(fullscriptfile[ibatch[i]], path=thispath)
-      if (keyword_set(thispath)) then cd, thispath
+      if (keyword_set(thispath)) then cd, thispath, current=origdir
       if keyword_set(nosubmit) then begin
           splog, 'Generated '+thisfile+' but not submitting to queue'
       endif else begin
@@ -291,6 +291,7 @@ pro batchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
           spawn, 'qsub '+thisfile
       endelse
    endfor
+   cd, origdir
 
    return
 end
