@@ -142,6 +142,8 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
    endif
    plugmap = *pstruct[(where(stnames EQ 'PLUGMAPOBJ'))[0]]
 
+   plugmap.plug_ra = (360d0 + plugmag.plug_ra) MOD 360d0
+
    ;----------
    ; Trim to object fibers only, sort them, and trim to spectrographid
 
