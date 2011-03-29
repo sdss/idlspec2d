@@ -1,7 +1,12 @@
 
 BATCHPBS: Change back to the original directory at end of proc.
 EXTRACT_BUNDLE_ROW, EXTRACT_BUNDLE_IMAGE, GAUSSPIX  (ASB, U. Utah):
-  Routines to enable pure IDL extraction, chunked up bundle-wise.
+     Routines to enable pure IDL extraction, chunked up bundle-wise.
+PLATEMERGE: The setting of SPECPRIMARY needs to address SN_MEDIAN
+     as a 5-element array rather than a scalar.  Select based upon
+     this S/N in r-band.
+READPLUGMAP: MOD the range of values for PLUG_RA to fall strictly in
+     the range [0,360) deg (ticket #1255).
 VDISPFIT: Enable more sophisticated redshift-error marginalization.
 
 -------------------------------------------------------------------------------
