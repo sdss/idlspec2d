@@ -1,5 +1,7 @@
 
 BATCHPBS: Change back to the original directory at end of proc.
+EXTRACT_BUNDLE_ROW, EXTRACT_BUNDLE_IMAGE, GAUSSPIX  (ASB, U. Utah):
+  Routines to enable pure IDL extraction, chunked up bundle-wise.
 VDISPFIT: Enable more sophisticated redshift-error marginalization.
 
 -------------------------------------------------------------------------------
