@@ -503,6 +503,8 @@ pro/spec2d/doscatter.pro -text
 pro/spec2d/extract2.pro -text
 pro/spec2d/extract_asymbox2.pro -text
 pro/spec2d/extract_boxcar.pro -text
+pro/spec2d/extract_bundle_image.pro -text
+pro/spec2d/extract_bundle_row.pro -text
 pro/spec2d/extract_image.pro -text
 pro/spec2d/extract_object.pro -text
 pro/spec2d/extract_profile.pro -text
@@ -528,6 +530,7 @@ pro/spec2d/flux_distortion.pro -text
 pro/spec2d/fluxcorr_new.pro -text
 pro/spec2d/fluxfix.pro -text
 pro/spec2d/focalplane.pro -text
+pro/spec2d/gausspix.pro -text
 pro/spec2d/gen_scatter.pro -text
 pro/spec2d/genflatmask.pro -text
 pro/spec2d/get_mjd_dir.pro -text
