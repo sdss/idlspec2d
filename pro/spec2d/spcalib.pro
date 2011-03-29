@@ -85,6 +85,7 @@
 ;   26-Jan-2001  And now let's check both 1&3, and use the better fit
 ;      Apr-2010  Added "write[flat,arc]model" option (A. Bolton, Utah)
 ;   25-Jan-2011  Added "twophase" test and switching, A. Bolton, Utah
+;   29-Mar-2011  Switched to bundle-wise pure IDL extraction, A. Bolton, Utah
 ;
 ;-
 ;------------------------------------------------------------------------------
@@ -375,14 +376,24 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
       
       highrej = 15
       lowrej = 15
-      npoly = 1  ; just fit flat background to each row
-      wfixed = [1,1] ; Just fit the first gaussian term
+;x      npoly = 1  ; just fit flat background to each row
+;x      wfixed = [1,1] ; Just fit the first gaussian term
       
+;x      splog, 'Extracting arc'
+;x      extract_image, arcimg, arcivar, xcor, sigma2, $
+;x        flux, fluxivar, proftype=proftype, wfixed=wfixed, $
+;x        highrej=highrej, lowrej=lowrej, npoly=npoly, relative=1, $
+;x        reject=[0.1, 0.6, 0.6], ymodel=ymodel
+
+; ASB: extract bundle-wise:
+
+      wfixed = [1,0] ; ASB: Don't fit for width terms.
+
       splog, 'Extracting arc'
-      extract_image, arcimg, arcivar, xcor, sigma2, $
+      extract_bundle_image, arcimg, arcivar, xcor, sigma2, $
         flux, fluxivar, proftype=proftype, wfixed=wfixed, $
-        highrej=highrej, lowrej=lowrej, npoly=npoly, relative=1, $
-        reject=[0.1, 0.6, 0.6], ymodel=ymodel
+        highrej=highrej, lowrej=lowrej, npoly=2L, relative=1, $
+        reject=[0.1, 0.6, 0.6], ymodel=ymodel, nperbun=20L, buffsize=8L
         
       ; flag to determine whether or not to do 2-phase arc solution:
       twophase = sxpar(archdr, 'TWOPHASE')
@@ -559,10 +570,11 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
       wfixed = [1,1] ; Fit gaussian plus both derivatives
  
 wfixed = [1,0] ; Do not refit for Gaussian widths, only flux ???
-      extract_image, flatimg, flativar, xsol, sigma2, flux, fluxivar, $
-        proftype=proftype, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
-        npoly=npoly, relative=1, ymodel=ym, chisq=fchisq, ansimage=ansimage, $
-        reject=[0.1, 0.6, 0.6]
+; ASB: this step is now unnecessary for BOSS...
+;x      extract_image, flatimg, flativar, xsol, sigma2, flux, fluxivar, $
+;x       proftype=proftype, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
+;x        npoly=npoly, relative=1, ymodel=ym, chisq=fchisq, ansimage=ansimage, $
+;x        reject=[0.1, 0.6, 0.6]
 ;stop ; ??? The above fails for lots of rows on b2...
 ;; Fit with sigma=1.4 for all cases, but fitting flux+width...
 ;extract_image, flatimg, flativar, xsol, sigma, flux0, fluxivar0, $
@@ -580,39 +592,49 @@ wfixed = [1,0] ; Do not refit for Gaussian widths, only flux ???
       ;      effect
       ;------------------------------------------------------------------------
         
+; ASB: commenting out: for BOSS, this does nothing
+; but waste time and cause coding confusion:       
       ;flatimg = flatimg - 1.5*smooth_halo2d(ym, wset)
-      camera  = strtrim(sxpar(flathdr,'CAMERAS'),2)
-      scatter =configuration->getscatter(camera, flatimg, flativar, wset, sigma=0.9)
-      smoothedflat = flatimg - scatter
-      ym = 0
+;x     camera  = strtrim(sxpar(flathdr,'CAMERAS'),2)
+;x      scatter =configuration->getscatter(camera, flatimg, flativar, wset, sigma=0.9)
+;x      smoothedflat = flatimg - scatter
+;x      ym = 0
       
       ;------------------------------------------------------------------------
       ;  Extract flat field for a third time.  This time extracting
       ;  with NIR and optical scattered light removed
       ;------------------------------------------------------------------------
-      
-      extract_image, smoothedflat, flativar, xsol, sigma2, flux, fluxivar, $
+
+;x      extract_image, smoothedflat, flativar, xsol, sigma2, flux, fluxivar, $
+;x        proftype=proftype, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
+;x        npoly=npoly, relative=1, chisq=schisq, ansimage=ansimage2, $
+;x        reject=[0.1, 0.6, 0.6], ymodel=ymodel
+
+; ASB: replacing with bundle-wise extraction:
+
+      extract_bundle_image, flatimg, flativar, xsol, sigma2, flux, fluxivar, $
         proftype=proftype, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
-        npoly=npoly, relative=1, chisq=schisq, ansimage=ansimage2, $
-        reject=[0.1, 0.6, 0.6], ymodel=ymodel
-        
-      splog, 'First  extraction chi^2 ', minmax(fchisq)
+        npoly=2L, relative=1, chisq=schisq, ansimage=ansimage2, $
+        reject=[0.1, 0.6, 0.6], ymodel=ymodel, nperbun=20L, buffsize=8L
+
+;x      splog, 'First  extraction chi^2 ', minmax(fchisq)
       splog, 'Second extraction chi^2 ', minmax(schisq)
       
       xaxis = lindgen(n_elements(schisq)) + 1
       djs_plot, xaxis, schisq, $
         xrange=[0,N_elements(schisq)], xstyle=1, $
-        yrange=[0,max([max(fchisq), max(schisq)])], $
+;x        yrange=[0,max([max(fchisq), max(schisq)])], $
+        yrange=[0,max(schisq)], $
         xtitle='Row number',  ytitle = '\chi^2', $
         title=plottitle+' flat extraction chi^2 for '+flatname[iflat]
         
       djs_oplot, !x.crange, [1,1]
-      djs_oplot, xaxis, fchisq, color='green'
+;x      djs_oplot, xaxis, fchisq, color='green'
       
       xyouts, 100, 0.05*!y.crange[0]+0.95*!y.crange[1], $
         'BLACK = Final chisq extraction'
-      xyouts, 100, 0.08*!y.crange[0]+0.89*!y.crange[1], $
-        'GREEN = Initial chisq extraction'
+;x      xyouts, 100, 0.08*!y.crange[0]+0.89*!y.crange[1], $
+;x        'GREEN = Initial chisq extraction'
         
       ;---------------------------------------------------------------------
       ; Compute fiber-to-fiber flat-field variations

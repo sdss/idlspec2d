@@ -7,6 +7,8 @@ PLATEMERGE: The setting of SPECPRIMARY needs to address SN_MEDIAN
      this S/N in r-band.
 READPLUGMAP: MOD the range of values for PLUG_RA to fall strictly in
      the range [0,360) deg (ticket #1255).
+EXTRACT_OBJECT, SPCALIB (ASB, U. Utah):
+  Switched to pure IDL bundle-wise extraction.
 VDISPFIT: Enable more sophisticated redshift-error marginalization.
 
 -------------------------------------------------------------------------------

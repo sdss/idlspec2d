@@ -100,6 +100,7 @@
 ; REVISION HISTORY:
 ;   24-Jan-2000  Written by S. Burles, Chicago
 ;   26-Jul-2001  Also pass proftype and superflatset
+;   29-Mar-2011  Switching to pure IDL bundle-wise extraction (A. Bolton, U. Utah)
 ;-
 ;------------------------------------------------------------------------------
 pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
@@ -221,51 +222,52 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    wfixed = [1,1] ; Fit gaussian height + width (fixed center position)
    nterms = n_elements(wfixed)
 
-   splog, 'Step 1: Initial Object extraction'
+; ASB: taking out all this fiddly scattered-light business:
+;x   splog, 'Step 1: Initial Object extraction'
 
-   extract_image, image, invvar, xnow, sigma2, flux0, flux0ivar, $
-    proftype=proftype, wfixed=wfixed, yrow=yrow, $
-    highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
-    ansimage=ansimage, chisq=firstchisq, ymodel=ymodel0, /relative
+;x   extract_image, image, invvar, xnow, sigma2, flux0, flux0ivar, $
+;x    proftype=proftype, wfixed=wfixed, yrow=yrow, $
+;x    highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
+;x    ansimage=ansimage, chisq=firstchisq, ymodel=ymodel0, /relative
 
    ; (1a) Calculate scattered light, just for curiosity
-   splog, 'Step 2: Find scattered light image'
-   scatfit0 = calcscatimage(ansimage[ntrace*nterms:*,*], yrow, $
-    nscatbkpts=npoly,$
-    nx=(configuration->getDetectorFormat(color))[1], $
-    ny=(configuration->getDetectorFormat(color))[0] )
+;x   splog, 'Step 2: Find scattered light image'
+;x   scatfit0 = calcscatimage(ansimage[ntrace*nterms:*,*], yrow, $
+;x    nscatbkpts=npoly,$
+;x    nx=(configuration->getDetectorFormat(color))[1], $
+;x    ny=(configuration->getDetectorFormat(color))[0] )
 
-   qaplot_scatlight, scatfit0, yrow, $
-    wset=wset, xcen=xtrace, fibermask=fibermask, $
-    title=plottitle+'Scattered Light before halo removal on '+objname
+;x   qaplot_scatlight, scatfit0, yrow, $
+;x    wset=wset, xcen=xtrace, fibermask=fibermask, $
+;x    title=plottitle+'Scattered Light before halo removal on '+objname
 
    ; (3) Calculate per-camera modelled scattering surface
-   splog, 'Step 3: Calculate halo image'
-   scatter = configuration->getscatter(camera, ymodel0, invvar, wset, sigma=0.9)
+;x   splog, 'Step 3: Calculate halo image'
+;x   scatter = configuration->getscatter(camera, ymodel0, invvar, wset, sigma=0.9)
 
    ; (4) Re-extract with scattering model
    ; subtracted in order to measure
    ;     any remaining scattered light
-   splog, 'Step 4: Extracting with halos removed'
-   image_sub = image - scatter
+;x   splog, 'Step 4: Extracting with halos removed'
+;x   image_sub = image - scatter
 
-   extract_image, image_sub, invvar, xnow, sigma2, tempflux, tempfluxivar, $
-    proftype=proftype, wfixed=wfixed, yrow=yrow, $
-    highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
-    ansimage=ansimage2, chisq=secondchisq, ymodel=tempymodel, /relative
+;x   extract_image, image_sub, invvar, xnow, sigma2, tempflux, tempfluxivar, $
+;x    proftype=proftype, wfixed=wfixed, yrow=yrow, $
+;x    highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
+;x    ansimage=ansimage2, chisq=secondchisq, ymodel=tempymodel, /relative
 
    ; (4) Calculate remaining scattered light
-   splog, 'Step 4: Find scattered light image'
-   scatfit = calcscatimage(ansimage2[ntrace*nterms:*,*], yrow, $
-    nscatbkpts=npoly, $
-    nx=(configuration->getDetectorFormat(color))[1], $
-    ny=(configuration->getDetectorFormat(color))[0] )
+;x   splog, 'Step 4: Find scattered light image'
+;x   scatfit = calcscatimage(ansimage2[ntrace*nterms:*,*], yrow, $
+;x    nscatbkpts=npoly, $
+;x    nx=(configuration->getDetectorFormat(color))[1], $
+;x    ny=(configuration->getDetectorFormat(color))[0] )
 
-   qaplot_scatlight, scatfit, yrow, $
-    wset=wset, xcen=xtrace, fibermask=fibermask, $
-    title=plottitle+'Scattered Light on '+objname
+;x   qaplot_scatlight, scatfit, yrow, $
+;x    wset=wset, xcen=xtrace, fibermask=fibermask, $
+;x    title=plottitle+'Scattered Light on '+objname
 
-   image_sub2 = image_sub - scatfit
+;x   image_sub2 = image_sub - scatfit
 
    ;-----------------------------------------------------------------------
    ;  Now, subtract halo image and do final extraction with all rows
@@ -282,10 +284,18 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    reject = [0.2,0.2,0.2]
    npoly = 0
 
-   extract_image, image_sub2, invvar, xnow, sigma2, flux, fluxivar,$
+;x   extract_image, image_sub2, invvar, xnow, sigma2, flux, fluxivar,$
+;x    proftype=proftype, wfixed=wfixed, ansimage=ansimage3, $
+;x    highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
+;x    chisq=chisq, ymodel=ymodel, pixelmask=pixelmask, reject=reject, /relative
+
+; ASB: switching to bundle-wise extraction:
+
+   extract_bundle_image, image, invvar, xnow, sigma2, flux, fluxivar,$
     proftype=proftype, wfixed=wfixed, ansimage=ansimage3, $
-    highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
-    chisq=chisq, ymodel=ymodel, pixelmask=pixelmask, reject=reject, /relative
+    highrej=highrej, lowrej=lowrej, npoly=2L, $ ; whopping=whopping, $
+    chisq=chisq, ymodel=ymodel, pixelmask=pixelmask, reject=reject, /relative, $
+    nperbun=20L, buffsize=8L
 
    ;----------------------------------------------------------------------
    ; Can we find cosmic rays by looking for outlandish ansimage ratios???
@@ -305,15 +315,15 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
     title=plottitle+'Extraction chi^2 for '+objname
 
    djs_oplot, !x.crange, [1,1]
-   djs_oplot, yrow, secondchisq[yrow], color='blue'
-   djs_oplot, yrow, firstchisq[yrow], color='green'
+;x   djs_oplot, yrow, secondchisq[yrow], color='blue'
+;x   djs_oplot, yrow, firstchisq[yrow], color='green'
 
    xyouts, 100, 0.05*!y.crange[0]+0.95*!y.crange[1], $
             'BLACK = Final chisq extraction'
-   xyouts, 100, 0.08*!y.crange[0]+0.92*!y.crange[1], $
-            'BLUE = Initial-scattered chisq extraction'
-   xyouts, 100, 0.08*!y.crange[0]+0.89*!y.crange[1], $
-            'GREEN = Initial chisq extraction'
+;x   xyouts, 100, 0.08*!y.crange[0]+0.92*!y.crange[1], $
+;x            'BLUE = Initial-scattered chisq extraction'
+;x   xyouts, 100, 0.08*!y.crange[0]+0.89*!y.crange[1], $
+;x            'GREEN = Initial chisq extraction'
 
    ;------------------
    ; Flat-field the extracted object fibers with the global flat
@@ -325,9 +335,11 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ;------------------
    ; Look for pixels where scattered light is dominating
 
-   scatteredpix = where(extract_boxcar(scatfit, xnow, radius=2.0) GT 2.0 * flux)
-   if (scatteredpix[0] NE -1) then pixelmask[scatteredpix] = $
-                 pixelmask[scatteredpix] + pixelmask_bits('SCATTEREDLIGHT')
+; ASB: no longer relevant
+
+;x   scatteredpix = where(extract_boxcar(scatfit, xnow, radius=2.0) GT 2.0 * flux)
+;x   if (scatteredpix[0] NE -1) then pixelmask[scatteredpix] = $
+;x                 pixelmask[scatteredpix] + pixelmask_bits('SCATTEREDLIGHT')
 
    ;------------------
    ; Tweak up the wavelength solution to agree with the sky lines.
