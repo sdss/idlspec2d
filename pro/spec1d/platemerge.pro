@@ -46,10 +46,10 @@
 ;   multiple times will have SPECPRIMARY=1 for one instance only, and =0
 ;   for all other instances.  The criteria (in order of importance) are
 ;   as follows:
-;     1) Prefer observations with positive SN_MEDIAN
+;     1) Prefer observations with positive SN_MEDIAN in r-band
 ;     2) Prefer PLATEQUALITY='good' over any other plate quality
 ;     3) Prefer observations with ZWARNING=0
-;     4) Prefer objects with larger SN_MEDIAN
+;     4) Prefer objects with larger SN_MEDIAN in r-band
 ;
 ;   Temporary files are created first, such as 'spAll.fits.tmp', which
 ;   are renamed at the end of the routine to 'spAll.fits', etc.
@@ -319,14 +319,16 @@ pro platemerge1, plate, mjd=mjd, except_tags=except_tags1, $
    t2 = systime(1)
 
    ; Determine the score for each object
-   ; 1) Prefer observations with positive SN_MEDIAN
+   ; 1) Prefer observations with positive SN_MEDIAN in r-band
    ; 2) Prefer PLATEQUALITY='good' over any other plate quality
    ; 3) Prefer observations with ZWARNING=0
-   ; 4) Prefer objects with larger SN_MEDIAN
-   score = 4 * (outdat.sn_median GT 0) $
+   ; 4) Prefer objects with larger SN_MEDIAN in r-band
+   if (n_elements(outdat[0].sn_median) EQ 1) then jfilt = 0 $
+    else jfilt = 2
+   score = 4 * (outdat.sn_median[j] GT 0) $
     + 2 * (strmatch(outdat.platequality,'good*') EQ 1) $
     + 1 * (outdat.zwarning EQ 0) $
-    + (outdat.sn_median>0) / max(outdat.sn_median+1.)
+    + (outdat.sn_median[j]>0) / max(outdat.sn_median[j]+1.)
 
    ingroup = spheregroup(outdat.plug_ra, outdat.plug_dec, dtheta, $
     multgroup=multgroup, firstgroup=firstgroup, nextgroup=nextgroup)
