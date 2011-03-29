@@ -1,6 +1,6 @@
 ;+
 ; NAME:
-;   spplan1d
+;   mjd_match
 ;
 ; PURPOSE:
 ;   Decide if any of these MJD's are within the bounds specified by
