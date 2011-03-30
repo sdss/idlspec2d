@@ -1,4 +1,9 @@
 
+-------------------------------------------------------------------------------
+v5_4_33 (2011-03-30 by ASB)
+Tag for testing bundle-wise IDL extraction
+Built against specflat v1_13, elodie v1_3, idlutils v5_4_23.
+
 BATCHPBS: Change back to the original directory at end of proc.
 EXTRACT_BUNDLE_ROW, EXTRACT_BUNDLE_IMAGE, GAUSSPIX  (ASB, U. Utah):
      Routines to enable pure IDL extraction, chunked up bundle-wise.
