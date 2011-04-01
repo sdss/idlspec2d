@@ -40,7 +40,7 @@
 ;                ['sp1','sp2'](default)
 ;
 ;   badres     - bad residual for blue ring.  Greater than this,
-;                observers will need to move the ring.  Default to 5 degrees
+;                observers will need to move the ring.  Default to 6 degrees
 ; OUTPUTS:
 ;
 ; OPTIONAL OUTPUTS:
