@@ -12,7 +12,7 @@
 ;   uuplotspec, plate, [ fiberid, mjd=, znum=, zmanual=, $
 ;    nsmooth=, /zline, /nosyn, /noerr, $
 ;    /sky, /ormask, /andmask, psfile=, /restframe, $
-;    /zwarning, /allexp, _EXTRA= ]
+;    /zwarning, /allexp, topdir=, run1d=, run2d=, _EXTRA= ]
 ;
 ; INPUTS:
 ;   plate      - Plate number(s)
@@ -52,6 +52,9 @@
 ;                specifying fiber numbers with FIBERID.
 ;   allexp     - If set, then plot all the individual exposure spectra,
 ;                rather than the co-added spectrum.
+;   topdir     - TOPDIR; if not set, then default to BOSS_SPECTRO_REDUX
+;   run1d      - RUN1D; if not set, then default to RUN1D
+;   run2d      - RUN2D; if not set, then default to RUN2D
 ;   _EXTRA     - Keywords for SPLOT and XYOUTS, such as XRANGE, YRANGE, THICK,
 ;                or keywords for READSPEC and READONESPEC such as TOPDIR,
 ;                RUN2D, RUN1D.
