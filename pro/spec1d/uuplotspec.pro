@@ -1148,10 +1148,10 @@ pro uuPlotspecBase_event, event
               uuplotspec1, platelist[ifiber], fiberidlist[ifiber], mjd=mjdlist[ifiber], topdir=topdirlist[ifiber], run1d=run1dlist[ifiber], run2d=run2dlist[ifiber]
             endif else if (mjd ne '') then begin
               uumessage = "Getting new plate/mjd" & print, uumessage
-              uuplotspec_init, plate, mjd=mjd, topdir=topdir[0], run1d=run1d[0], run2d=run2d[0]
+              uuplotspec_init, plate, mjd=mjd, topdir=topdirlist[0], run1d=run1dlist[0], run2d=run2dlist[0]
             endif else begin
               uumessage = "Getting new plate" & print, uumessage
-              uuplotspec_init, plate, topdir=topdir, run1d=run1d[0], run2d=run2d[0]
+              uuplotspec_init, plate, topdir=topdirlist[0], run1d=run1dlist[0], run2d=run2dlist[0]
             endelse
           endif
           if (ifiber eq -1) then ifiber=0
@@ -1830,8 +1830,8 @@ pro uuDatabase_post, cmd, post, sid, response=response
   ;==============================================================================
   ; Database Function: communicate with database URL by HTTP POST
   ;==============================================================================
-  ;url = ['http://boss.astro.utah.edu/','http://cosmo.astro.utah.edu/boss/']
-  url = ['http://cosmo.astro.utah.edu/boss/','http://cosmo.astro.utah.edu/boss/']
+  url = ['http://boss.astro.utah.edu/','http://cosmo.astro.utah.edu/boss/']
+  ;url = ['http://cosmo.astro.utah.edu/boss/','http://cosmo.astro.utah.edu/boss/']
   if (sid ne '') then cmdurl = url + cmd + '.php?PHPSESSID='+sid else cmdurl = url + cmd + '.php'
   response = uuDatabase_webget(cmdurl,POST=post)
 end
@@ -1893,11 +1893,10 @@ pro uuplotspec, plate, fiberid, mjd=mjd, topdir=topdir, run1d=run1d, run2d=run2d
   endif
   
   if (n_params() LT 1) then begin
-    ;doc_library, 'uuplotspec'
-    ;return
-    plate = 3609
+    doc_library, 'uuplotspec'
+    return
   endif
-  
+   
   if (xregistered ('splot')) then widget_control, state.base_id, /destroy
   keyword = {zmanual:[0D,0D],znum:0L,nsmooth:1L,manualz:0D,manualclass:''}
   keywordset = {zmanual:0L,znum:keyword_set(znum),nsmooth:keyword_set(nsmooth),zline:keyword_set(zline),nosyn:keyword_set(nosyn),noerr:keyword_set(noerr),sky:keyword_set(sky),ormask:keyword_set(ormask),andmask:keyword_set(andmask),psfile:keyword_set(psfile),xrange:keyword_set(xrange),yrange:keyword_set(yrange),allexp:keyword_set(allexp),restframe:keyword_set(restframe),zwarning:keyword_set(zwarning)}
@@ -1920,8 +1919,10 @@ pro uuplotspec, plate, fiberid, mjd=mjd, topdir=topdir, run1d=run1d, run2d=run2d
     psfile=psfile, xrange=xrange, yrange=yrange, $
     _EXTRA=Extra
     
-  uuPlotspecBase
-  splot_set_minmax
+  if (uumessage eq '') then begin
+    uuPlotspecBase
+    splot_set_minmax
+  endif
   
 end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
