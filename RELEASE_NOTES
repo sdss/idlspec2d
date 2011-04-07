@@ -1,4 +1,7 @@
 
+WRITESPEC, WRITE_UROS: Format file names for 1000-fiber (4 digit) fibers
+     (ticket #1275).
+
 -------------------------------------------------------------------------------
 v5_4_33 (2011-03-30 by ASB)
 Tag for testing bundle-wise IDL extraction
@@ -7,13 +10,13 @@ Built against specflat v1_13, elodie v1_3, idlutils v5_4_23.
 BATCHPBS: Change back to the original directory at end of proc.
 EXTRACT_BUNDLE_ROW, EXTRACT_BUNDLE_IMAGE, GAUSSPIX  (ASB, U. Utah):
      Routines to enable pure IDL extraction, chunked up bundle-wise.
+EXTRACT_OBJECT, SPCALIB (ASB, U. Utah):
+  Switched to pure IDL bundle-wise extraction.
 PLATEMERGE: The setting of SPECPRIMARY needs to address SN_MEDIAN
      as a 5-element array rather than a scalar.  Select based upon
      this S/N in r-band.
 READPLUGMAP: MOD the range of values for PLUG_RA to fall strictly in
      the range [0,360) deg (ticket #1255).
-EXTRACT_OBJECT, SPCALIB (ASB, U. Utah):
-  Switched to pure IDL bundle-wise extraction.
 VDISPFIT: Enable more sophisticated redshift-error marginalization.
 
 -------------------------------------------------------------------------------
