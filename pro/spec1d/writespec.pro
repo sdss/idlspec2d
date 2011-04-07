@@ -59,7 +59,7 @@ pro writespec, plate, fiberid, mjd=mjd, filename=filename
 
    platestr = string(plate, format='(i4.4)')
    mjdstr = string(mjd, format='(i5.5)')
-   fibstr = string(fiberid, format='(i3.3)')
+   fibstr = string(fiberid, format='(i4.4)')
 
    if (NOT keyword_set(filename)) then $
     filename = 'spec-' + platestr + '-' + mjdstr + '-' + fibstr + '.dat'

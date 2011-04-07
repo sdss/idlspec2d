@@ -126,7 +126,7 @@ pro write_uros1, plate, fiber, mjd=mjd
        format='("spFluxcalib-",i4.4,"-",i5.5,"-",a2,".fits*")')
       outfile = string(plate,mjd,fiber,expnums[iuse[ifile]], $
        expcams[iuse[ifile]], $
-       format='("spUros-",i4.4,"-",i5.5,"-",i3.3,"-",i8.8,"-",a2,".dat")')
+       format='("spUros-",i4.4,"-",i5.5,"-",i4.4,"-",i8.8,"-",a2,".dat")')
 
       framefile = (findfile(filepath(framefile, root_dir=topdir, $
        subdir=platestr)))[0]
