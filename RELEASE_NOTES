@@ -2,6 +2,9 @@
 WRITESPEC, WRITE_UROS: Format file names for 1000-fiber (4 digit) fibers
      (ticket #1275).
 
+templates/eigeninput_typeIIqso.dat: Type II qso training sample drawn
+     from BOSS galaxy targets, for GALAXY redshift templates (ticket #633)
+
 -------------------------------------------------------------------------------
 v5_4_33 (2011-03-30 by ASB)
 Tag for testing bundle-wise IDL extraction
