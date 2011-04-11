@@ -1,4 +1,10 @@
 
+2011-04-11 [SJB]
+  pro/spec1d/platemerge.pro
+  - Added XFOCAL and YFOCAL from plPlugMap to spAll (ticket #1270)
+  - fixed plate= syntax to allow spAll generation for subset of plates
+
+-------------------------------------------------------------------------------
 WRITESPEC, WRITE_UROS: Format file names for 1000-fiber (4 digit) fibers
      (ticket #1275).
 
@@ -6,6 +12,7 @@ templates/eigeninput_typeIIqso.dat: Type II qso training sample drawn
      from BOSS galaxy targets, for GALAXY redshift templates (ticket #633)
 
 -------------------------------------------------------------------------------
+
 v5_4_33 (2011-03-30 by ASB)
 Tag for testing bundle-wise IDL extraction
 Built against specflat v1_13, elodie v1_3, idlutils v5_4_23.
