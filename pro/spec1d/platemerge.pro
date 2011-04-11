@@ -6,7 +6,7 @@
 ;   Merge all Spectro-1D outputs with photoPosPlate,spInspect files
 ;
 ; CALLING SEQUENCE:
-;   platemerge, [ plate, mjd=, except_tags=, indir=, outroot=, $
+;   platemerge, [ plate=, mjd=, except_tags=, indir=, outroot=, $
 ;    run2d=, /include_bad, /exclude_class, /skip_line ]
 ;
 ; INPUTS:
@@ -82,7 +82,7 @@
 ;   29-Jul-2010  Added EXCLUDE_CLASS and SKIP_LINE, A. Bolton, Utah
 ;   17-Mar-2011  Changed EXCLUDE_CLASS behavior, A. Bolton, Utah
 ;------------------------------------------------------------------------------
-pro platemerge1, plate, mjd=mjd, except_tags=except_tags1, $
+pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
  indir=indir, outroot=outroot1, run2d=run2d, include_bad=include_bad, $
  exclude_class=exclude_class, skip_line=skip_line
 
@@ -126,11 +126,14 @@ pro platemerge1, plate, mjd=mjd, except_tags=except_tags1, $
 
       qkeep = bytarr(nplate)
       if (keyword_set(mjd)) then begin
+         for i=0L, n_elements(plate)-1 do begin
+            for j=0L, n_elements(mjd)-1 do begin
+               qkeep = qkeep OR (plist.plate EQ plate[i] AND plist.mjd EQ mjd[j])
+            endfor
+         endfor
+      endif else begin         
          for i=0L, n_elements(plate)-1 do $
           qkeep = qkeep OR plist.plate EQ plate[i]
-      endif else begin
-         for i=0L, n_elements(plate)-1 do $
-          qkeep = qkeep OR (plist.plate EQ plate[i] AND plist.mjd EQ mjd[i])
       endelse
       ikeep = where(qkeep, nkeep)
       if (nkeep EQ 0) then return
@@ -167,10 +170,13 @@ pro platemerge1, plate, mjd=mjd, except_tags=except_tags1, $
    while (NOT keyword_set(tsobj0)) do begin
       readspec, plist[ifile].plate, mjd=plist[ifile].mjd, $
        run2d=strtrim(plist[ifile].run2d), tsobj=tsobj0, /silent
-      if (keyword_set(tsobj0)) then tsobj0 = tsobj0[0]
-      ifile = ifile + 1
-      if (ifile EQ nfile) then $
-       message, 'No photoPosPlate files found!'
+      if (keyword_set(tsobj0)) then begin
+         tsobj0 = tsobj0[0]
+      endif else begin
+         ifile = ifile + 1
+         if (ifile EQ nfile) then $
+          message, 'No photoPosPlate files found!'
+      endelse
    endwhile
 
    ;----------
@@ -187,6 +193,8 @@ pro platemerge1, plate, mjd=mjd, except_tags=except_tags1, $
     'lambda_eff'  , 0.0, $
     'bluefiber'   ,  0L, $
     'zoffset'     , 0.0, $
+    'xfocal'      , 0.0, $
+    'yfocal'      , 0.0, $
     'boss_target1',  0LL, $
     'boss_target2',  0LL, $
     'ancillary_target1',  0LL, $
@@ -293,6 +301,10 @@ pro platemerge1, plate, mjd=mjd, except_tags=except_tags1, $
       outdat[indx].lambda_eff = plugmap.lambda_eff
       if (tag_exist(plugmap,'zoffset')) then $
        outdat[indx].zoffset = plugmap.zoffset
+      if (tag_exist(plugmap,'xfocal')) then $
+       outdat[indx].xfocal = plugmap.xfocal
+      if (tag_exist(plugmap,'yfocal')) then $
+       outdat[indx].yfocal = plugmap.yfocal
       if (tag_exist(plugmap,'bluefiber')) then $
        outdat[indx].bluefiber = plugmap.bluefiber
       if (tag_exist(plugmap,'boss_target1')) then $
@@ -325,10 +337,10 @@ pro platemerge1, plate, mjd=mjd, except_tags=except_tags1, $
    ; 4) Prefer objects with larger SN_MEDIAN in r-band
    if (n_elements(outdat[0].sn_median) EQ 1) then jfilt = 0 $
     else jfilt = 2
-   score = 4 * (outdat.sn_median[j] GT 0) $
+   score = 4 * (outdat.sn_median[jfilt] GT 0) $
     + 2 * (strmatch(outdat.platequality,'good*') EQ 1) $
     + 1 * (outdat.zwarning EQ 0) $
-    + (outdat.sn_median[j]>0) / max(outdat.sn_median[j]+1.)
+    + (outdat.sn_median[jfilt]>0) / max(outdat.sn_median[jfilt]+1.)
 
    ingroup = spheregroup(outdat.plug_ra, outdat.plug_dec, dtheta, $
     multgroup=multgroup, firstgroup=firstgroup, nextgroup=nextgroup)
