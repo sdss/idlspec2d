@@ -3,6 +3,8 @@
   pro/spec1d/platemerge.pro
   - Added XFOCAL and YFOCAL from plPlugMap to spAll (ticket #1270)
   - fixed plate= syntax to allow spAll generation for subset of plates
+  pro/spec2d/spadd_guiderinfo.pro
+  - Exclude NaNs in guidermon files when calculating RMS
 
 -------------------------------------------------------------------------------
 WRITESPEC, WRITE_UROS: Format file names for 1000-fiber (4 digit) fibers
