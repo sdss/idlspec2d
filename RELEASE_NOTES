@@ -1,4 +1,6 @@
 
+EXTRACT_BUNDLE_ROW: rejection mask handling bugfixes (ASB)
+
 2011-04-11 [SJB]
   pro/spec1d/platemerge.pro
   - Added XFOCAL and YFOCAL from plPlugMap to spAll (ticket #1270)

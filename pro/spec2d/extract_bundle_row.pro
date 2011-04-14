@@ -329,10 +329,12 @@ mask = mask * (xvar ge min(jmin)) * (xvar le max(jmax))
    partial = lonarr(ntrace)
    fullreject = lonarr(ntrace)
    finished = 0
-   workinvvar = (FLOAT(invvar * mask))
    fiberbase = findgen(nperbun)
 
    while(finished NE 1) do begin 
+
+      ; Apply current mask to invvar:
+      workinvvar = (FLOAT(invvar * mask))
 
       for ibun = 0L, nbun-1 do begin
 
@@ -351,13 +353,14 @@ mask = mask * (xvar ge min(jmin)) * (xvar le max(jmax))
 ; Associate pixels with fibers:
          pixelfiber = round(interpol(fiberbase, workxcen, workx))
 
-; Determine the good area fraction for each fiber:
+; Determine the good area fraction for each fiber,
+; limiting to pixels "associated with" that fiber:
          bworkinvvar = workinvvar[jmin[ibun]:jmax[ibun]]
-         goodarea = fltarr(nperbun)
+         goodarea = 0. * fltarr(nperbun)
          for ijk = 0L, nperbun-1 do begin
-            totalpix = total(pixelfiber eq ijk)
-            totalgood = total((pixelfiber eq ijk) * (bworkinvvar gt 0.))
-            if (totalpix gt 0.) then goodarea[ijk] = totalgood / totalpix
+            totalarea = total((pixelfiber eq ijk) * (workbasis[*,ijk]))
+            totalgood = total((pixelfiber eq ijk) * (bworkinvvar gt 0.) * (workbasis[*,ijk]))
+            if (totalarea gt 0.) then goodarea[ijk] = totalgood / totalarea
          endfor
 
 ; Populate the rejection masks:
@@ -401,6 +404,10 @@ if (n_use gt 0) then begin
 endif
 
 endfor
+
+; Apply fullreject mask to output flux and inverse-error:
+p = p * (fullreject eq 0)
+ans = ans * (fullreject eq 0)
 
 ; DISABLING "INPUTANS":
 ;#      if (keyword_set(inputans)) then begin
