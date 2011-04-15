@@ -322,7 +322,8 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
             rstruct = quickwave(fullname, tsetfile_last, wsetfile1, $
              fflatfile1, do_lock=do_lock)
          endif else begin
-             splog, 'ABORT: Unable to reduce this arc exposure (need flat)'
+             ;; splog, 'ABORT: Unable to reduce this arc exposure (need flat)'
+             splog, 'INFO: Arc exposure, waiting for flat to reduce'
          endelse
       end
 
