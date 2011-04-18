@@ -1,4 +1,4 @@
-FIT_DISPERSION:  changed so looking at top, bottom, left, right for wsig for
+FITDISPERSION:  changed so looking at top, bottom, left, right for wsig for
 	quadrupole effect   (MDO, Utah)
 EXTRACT_BUNDLE_ROW: rejection mask handling bugfixes (ASB)
 
