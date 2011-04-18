@@ -156,10 +156,25 @@ function fitdispersion, arc_flux, arc_fluxivar, xcen_inp, $
       if (ct GT 0) then $
        medwidth[i] = $
         median([ (width_fit[x1[i]:x2[i],y1[i]:y2[i]])[indx] ])
+  endfor
+
+;matt modify for 4x4 grid, use quadrupole terms
+   traceset2xy, dispset, xx, width_fit
+   x1 = [0,npix/4,npix/4,3*npix/4]
+   x2 = [npix/4-1,3*npix/4-1,3*npix/4-1,npix-1]
+
+   y1 = [ntrace/4,0,3*ntrace/4,ntrace/4]
+   y2 = [3*ntrace/4-1,ntrace/4-1,ntrace-1,3*ntrace/4-1]
+   medwidth = fltarr(4)
+   for i=0,3 do begin
+      indx = where(arcmask[x1[i]:x2[i],y1[i]:y2[i]],ct)
+      if (ct GT 0) then $
+       medwidth[i] = $
+        median([ (width_fit[x1[i]:x2[i],y1[i]:y2[i]])[indx] ])
    endfor
 
    splog, 'Median wavelength widths = ' $
-    + string(medwidth,format='(4f5.2)') + ' pix (LL LR UL UR)'
+    + string(medwidth,format='(4f5.2)') + ' pix (L B T R)' ;left bottom top right
 
    return, dispset
 end
