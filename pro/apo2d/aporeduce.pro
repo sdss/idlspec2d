@@ -323,7 +323,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
              fflatfile1, do_lock=do_lock)
          endif else begin
              ;; splog, 'ABORT: Unable to reduce this arc exposure (need flat)'
-             splog, 'INFO: Arc exposure, waiting for flat to reduce'
+             splog, 'INFO: Arc exposure, waiting for flat before reducing'
          endelse
       end
 
@@ -363,7 +363,7 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    ; Find WARNINGs and ABORTs from splog file.  Recast them as string
    ; arrays that are not empty (e.g., ''), or MWRFITS will fail.
 
-   spawn, 'grep -e WARNING -e ABORT '+splgfile, tstring
+   spawn, 'grep -e WARNING -e ABORT -e INFO '+splgfile, tstring
    if (keyword_set(tstring)) then begin
       tstruct = create_struct('FILENAME', filename, $
                               'MJD', mjd, $
