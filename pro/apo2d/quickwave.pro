@@ -134,7 +134,7 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
    if (apo_checklimits('arc', 'WSIGMA', camname, max(medwidth)) $
     EQ 'red') then $
     splog, 'WARNING: Median wavelength widths = ' $
-    + string(medwidth,format='(4f5.2)') + ' pix (Left Bottom Top Rright)';quadrupole
+    + string(medwidth,format='(4f5.2)') + ' pix (Left Bottom Top Right)';quadrupole
    ;----------
    ; Compute fiber-to-fiber flat-field variations.
    ; First see if we've already done this.
