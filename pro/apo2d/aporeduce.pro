@@ -297,7 +297,9 @@ pro aporeduce, filename, indir=indir, outdir=outdir, $
    if (myflavor EQ 'dark') then myflavor = 'bias'
    if ((hartmann EQ 'Left') OR (hartmann EQ 'Right')) then begin
       myflavor = 'hartmann'
-      splog, 'WARNING: This exposure is a Hartmann '+hartmann
+                                ;   splog, 'WARNING: This exposure is
+                                ;   a Hartmann '+hartmann ;no longer
+                                ;   warning message on hartmanns
    endif
 
    case myflavor of
