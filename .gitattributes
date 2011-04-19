@@ -13,6 +13,7 @@ bin/make_room.sh -text
 bin/pullspectra -text
 bin/pushguider -text
 bin/putils.py -text
+bin/riemann_redux_snapshot -text
 bin/run_collimate.sh -text
 bin/rundaily -text
 bin/rundaily_cron -text
