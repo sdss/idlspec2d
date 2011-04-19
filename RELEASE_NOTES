@@ -1,20 +1,29 @@
-FITDISPERSION:  changed so looking at top, bottom, left, right for wsig for
-	quadrupole effect   (MDO, Utah)
-EXTRACT_BUNDLE_ROW: rejection mask handling bugfixes (ASB)
 
-2011-04-11 [SJB]
-  pro/spec1d/platemerge.pro
-  - Added XFOCAL and YFOCAL from plPlugMap to spAll (ticket #1270)
-  - fixed plate= syntax to allow spAll generation for subset of plates
-  pro/spec2d/spadd_guiderinfo.pro
-  - Exclude NaNs in guidermon files when calculating RMS
-
--------------------------------------------------------------------------------
+APOREDUCE: Look for INFO as well as ABORT,WARNING messages in log file
+COMBSMALLCOLLIMATE: Change default values of badres from 5 to 6 deg
+     (related to ticket #1266).
+FITDISPERSION: Change fitting regions from the 4 quadrants to being
+     subimages in the Left, Bottom, Top, Right (part of ticket #822).
+GAUSSPIX: New routine for pixel-integrated gaussians, similar to but
+     not to be confused with GAUSSPIX1D.
+PLATEMERGE: Add XFOCAL,YFOCAL to spAll file (ticket #1271).
+     Change PLATE from an optional input to an optional keyword to allow spAll
+     generation for a subset of plates.
+READPLUGMAP: MOD the range of values for PLUG_RA to fall strictly in
+     the range [0,360) deg (ticket #1255).
+SPADD_GUIDERINFO: Exclude NaN,Inf in guiderMon files when calculating
+     guider statistics (ticket #1276).
+SPCALIB,EXTRACT_OBJECT,EXTRACT_BUNDLE_IMAGE,EXTRACT_BUNDLE_ROW: Replace calls
+     to EXTRACT_IMAGE with the newly-written bundle-by-bundle IDL extraction
+     code (ASB).
 WRITESPEC, WRITE_UROS: Format file names for 1000-fiber (4 digit) fibers
      (ticket #1275).
 
-templates/eigeninput_typeIIqso.dat: Type II qso training sample drawn
-     from BOSS galaxy targets, for GALAXY redshift templates (ticket #633)
+examples/opLimits.par: Change thresholds on WSIGMA to be larger
+     (part of ticket #822).
+templates/eigeninput_typeIIqso.dat: Type II QSO training sample drawn
+     from BOSS galaxy targets, for GALAXY redshift templates (ticket #633).
+     Not yet used.
 
 -------------------------------------------------------------------------------
 
