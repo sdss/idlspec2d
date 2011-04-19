@@ -145,11 +145,10 @@ pro spadd_guiderinfo, hdr
           qgood *= (guidermon.exists EQ 'T')
          if (tag_exist(guidermon, 'enabled')) then $
           qgood *= (guidermon.enabled EQ 'T')
-          
-         ;- Ensure offsets aren't NaN
-         qgood *= (guidermon.dra EQ guidermon.dra)
-         qgood *= (guidermon.ddec EQ guidermon.ddec)
-          
+
+         ;- Ensure offsets aren't NaN or Inf
+         qgood *= finite(guidermon.dra) * finite(guidermon.ddec)
+
          igood = where(qgood, ngood)
          if (ngood GT 0) then begin
             rmsoff = sqrt(guidermon[igood].dra^2 + guidermon[igood].ddec^2)
