@@ -154,7 +154,7 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin, $
     highrej=5, lowrej=5, npoly=10, ansimage=ansimage, relative=1
 
    widthset = fitflatwidth(tempflux, tempfluxivar, ansimage, fibermask, $
-    ncoeff=5, sigma=sigma, medwidth=medwidth)
+    ncoeff=5, sigma=sigma, medwidth=medwidth,/quick)
 
    if (apo_checklimits('flat', 'XSIGMA', camname, max(medwidth)) $ 
     EQ 'red') then $
