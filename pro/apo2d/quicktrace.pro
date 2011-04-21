@@ -142,8 +142,11 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin, $
 
    traceset2xy, tset, rownums, xcen
    yrow = lindgen(long(nrow/nbin)) * nbin
-   mjd=sxpar(flathdr,'MJD')
-   if mjd gt 55055 then yrow=yrow[64:193] ;for BOSS, helps with xsig by using middle 1/2 of image
+
+   ;   mjd=sxpar(flathdr,'MJD')
+   ;   if mjd gt 55055 then yrow=yrow[nrow/nbin/4.:3*nrow/nbin/4.] ;for
+   ;   BOSS, helps with xsig by using middle 1/2 of image ; for example
+   ;   use only[64:193] ; moving this into fitflatwidth instead
    sigma = 1.0
 
    extract_image, flatimg, flativar, xcen, sigma, $
@@ -156,7 +159,7 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin, $
    if (apo_checklimits('flat', 'XSIGMA', camname, max(medwidth)) $ 
     EQ 'red') then $
     splog, 'WARNING: Median spatial widths = ' $
-    + string(medwidth,format='(4f5.2)') + ' pix (LL LR UL UR)'
+    + string(medwidth,format='(4f5.2)') + ' pix (Left Bottom Top Right)'
 
    ;----------
    ; Look for Argon lines (or any other emission lines) in the flat-fields,
