@@ -186,7 +186,7 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    if (apo_checklimits('flat', 'XSIGMA', camname, max(medwidth)) $
     EQ 'red' AND strtrim(sxpar(hdr,'FLAVOR'),2) NE 'smear') then $
     splog, 'WARNING: Median spatial widths = ' $
-    + string(medwidth,format='(4f5.2)') + ' pix (LL LR UL UR)'
+    + string(medwidth,format='(4f5.2)') + ' pix (Left Bottom Top Right)'
 
    ;----------
    ; Boxcar extract - no scattered light correction!
