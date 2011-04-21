@@ -1,3 +1,6 @@
+-------------------------------------------------------------------------------
+v5_4_34 tag for install at the summit for better SOS errors/warnings
+
 QUICKEXTRACT: Updated comment message for quadrupole, add a flag for calling
      fitflatwidth for quick reduction
 QUICKTRACE:   Remove using middle of image here, added to fitflatwidth, 
