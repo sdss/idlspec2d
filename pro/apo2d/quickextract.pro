@@ -117,6 +117,7 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    ncol = (size(image,/dimens))[0]
    skiprow = 8
    yrow = lindgen(nrow/skiprow) * skiprow + skiprow/2
+
    nfirst = n_elements(yrow)
    wfixed = [1,1] ; Fit gaussian height + width (fixed center position)
 
@@ -296,6 +297,8 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
       icolor = 3
       snfilter = 'i'
       wrange = [6910,8500] ; coverage of i-band
+      
+
    endelse
 
    ;----------
