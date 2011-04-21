@@ -9,6 +9,8 @@ GAUSSPIX: New routine for pixel-integrated gaussians, similar to but
 PLATEMERGE: Add XFOCAL,YFOCAL to spAll file (ticket #1271).
      Change PLATE from an optional input to an optional keyword to allow spAll
      generation for a subset of plates.
+QUICKWAVE: Change reporting of dispersion warning messages to be consistent
+     with that reported by FITDISPERSION.
 READPLUGMAP: MOD the range of values for PLUG_RA to fall strictly in
      the range [0,360) deg (ticket #1255).
 SPADD_GUIDERINFO: Exclude NaN,Inf in guiderMon files when calculating
@@ -19,6 +21,8 @@ SPCALIB,EXTRACT_OBJECT,EXTRACT_BUNDLE_IMAGE,EXTRACT_BUNDLE_ROW: Replace calls
 WRITESPEC, WRITE_UROS: Format file names for 1000-fiber (4 digit) fibers
      (ticket #1275).
 
+bin/riemann_redux_snapshot: New script to make a snapshot of the BOSS
+     reductions of the platelist*,spAll* files.
 examples/opLimits.par: Change thresholds on WSIGMA to be larger
      (part of ticket #822).
 templates/eigeninput_typeIIqso.dat: Type II QSO training sample drawn
