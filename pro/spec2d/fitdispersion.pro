@@ -49,7 +49,7 @@
 ;------------------------------------------------------------------------------
 function fitdispersion, arc_flux, arc_fluxivar, xcen_inp, $
  sigma=sigma, ncoeff=ncoeff, xmin=xmin, xmax=xmax, medwidth=medwidth, $
-  numBundles = numBundles
+  numBundles = numBundles, quick=quick
 
    if (NOT keyword_set(sigma)) then sigma = 1.0
    if (NOT keyword_set(ncoeff)) then ncoeff = 4
@@ -160,13 +160,24 @@ function fitdispersion, arc_flux, arc_fluxivar, xcen_inp, $
    ;  endfor
    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-   ;matt modify for 4x4 grid, use quadrupole terms
+                                ;matt modify for 4x4 grid, use
+                                ;quadrupole terms for quick extract
+                                ;otherwise do old quadrant fit
    traceset2xy, dispset, xx, width_fit
-   x1 = [0,npix/4,npix/4,3*npix/4]
-   x2 = [npix/4-1,3*npix/4-1,3*npix/4-1,npix-1]
+ 
+   if keyword_set(quick) then begin
+       x1 = [0,npix/4,npix/4,3*npix/4]
+       x2 = [npix/4-1,3*npix/4-1,3*npix/4-1,npix-1]
+       
+       y1 = [ntrace/4,0,3*ntrace/4,ntrace/4]
+       y2 = [3*ntrace/4-1,ntrace/4-1,ntrace-1,3*ntrace/4-1]
+   endif else begin
+       x1 = [0,0,npix/2,npix/2]
+       x2 = [npix/2-1,npix/2-1,npix-1,npix-1]
+       y1 = [0,ntrace/2,0,ntrace/2]
+       y2 = [ntrace/2-1,ntrace-1,ntrace/2-1,ntrace-1]
+   endelse
 
-   y1 = [ntrace/4,0,3*ntrace/4,ntrace/4]
-   y2 = [3*ntrace/4-1,ntrace/4-1,ntrace-1,3*ntrace/4-1]
    medwidth = fltarr(4)
    for i=0,3 do begin
       indx = where(arcmask[x1[i]:x2[i],y1[i]:y2[i]],ct)
