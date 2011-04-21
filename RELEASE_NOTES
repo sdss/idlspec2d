@@ -13,6 +13,8 @@ GAUSSPIX: New routine for pixel-integrated gaussians, similar to but
 PLATEMERGE: Add XFOCAL,YFOCAL to spAll file (ticket #1271).
      Change PLATE from an optional input to an optional keyword to allow spAll
      generation for a subset of plates.
+PLUGMAP_REPLACE: New proc for replacing plPlugMapM files in the speclog
+     product with new versions from re-running EVILREMAP on the mapper movies.
 QUICKWAVE: Change reporting of dispersion warning messages to be consistent
      with that reported by FITDISPERSION.
 READPLUGMAP: MOD the range of values for PLUG_RA to fall strictly in
