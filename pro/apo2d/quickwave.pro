@@ -183,5 +183,5 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
 
    return, rstruct
 
-end
+end 
 ;------------------------------------------------------------------------------
