@@ -53,7 +53,7 @@
 ;------------------------------------------------------------------------------
 function fitflatwidth, flux, fluxivar, ansimage, fibermask, $
  ncoeff=ncoeff, sigma=sigma, medwidth=medwidth, mask=mask, $
- inmask=inmask, double=double
+ inmask=inmask, double=double, quick=quick
 
    if (NOT keyword_set(ncoeff)) then ncoeff = 5
    if (NOT keyword_set(sigma)) then sigma = 1.0
@@ -63,15 +63,17 @@ function fitflatwidth, flux, fluxivar, ansimage, fibermask, $
    numbundles = ntrace/20
 
    ;new changes so using the middle half of image
-   flux2=flux[nrow/4.:3*nrow/4.-1,*]
-   fluxivar2=fluxivar[nrow/4.:3*nrow/4.-1,*]
-   ansimage2=ansimage[*,nrow/4.:3*nrow/4.-1]
-   nrow2 = (size(flux2,/dimen))[0]
+   if keyword_set(quick) then begin
+       flux=flux[nrow/4.:3*nrow/4.-1,*]
+       fluxivar=fluxivar[nrow/4.:3*nrow/4.-1,*]
+       ansimage=ansimage[*,nrow/4.:3*nrow/4.-1]
+       nrow = (size(flux,/dimen))[0]
+   endif
 
    ;----------
    ; Generate a mask of good measurements based only upon the fibermask.
 
-   if (NOT keyword_set(mask)) then mask = (flux2 GT 0) * (fluxivar2 GT 0) 
+   if (NOT keyword_set(mask)) then mask = (flux GT 0) * (fluxivar GT 0) 
 
    if (keyword_set(fibermask)) then begin
       badflats = where(fibermask NE 0)
@@ -82,10 +84,10 @@ function fitflatwidth, flux, fluxivar, ansimage, fibermask, $
    ; Determine the widths from the output array from EXTRACT_IMAGE.
 
    igood = where(mask)
-   widthterm = transpose(ansimage2[lindgen(ntrace)*2+1,*])
-   width = make_array(size=size(flux2), /float)
+   widthterm = transpose(ansimage[lindgen(ntrace)*2+1,*])
+   width = make_array(size=size(flux), /float)
    if (igood[0] NE -1) then $
-    width[igood] = (1 + widthterm[igood] / flux2[igood])
+    width[igood] = (1 + widthterm[igood] / flux[igood])
 
    ndim = size(sigma, /n_dimen)
    if (n_elements(sigma) EQ 1) then begin
@@ -116,11 +118,11 @@ function fitflatwidth, flux, fluxivar, ansimage, fibermask, $
    ; Perform median across bundles on good arclines only
    ; somewhat tedious, but it works
 
-   width = reform(width,nrow2,20,numbundles)
-   mask = reform(mask,nrow2,20,numbundles)
-   width_bundle = fltarr(nrow2,numbundles)
+   width = reform(width,nrow,20,numbundles)
+   mask = reform(mask,nrow,20,numbundles)
+   width_bundle = fltarr(nrow,numbundles)
 
-   for irow=0, nrow2-1 do begin
+   for irow=0, nrow-1 do begin
       for j=0, numbundles-1 do begin
          ss = where(mask[irow,*,j])
          if (ss[0] NE -1) then $
@@ -128,7 +130,7 @@ function fitflatwidth, flux, fluxivar, ansimage, fibermask, $
       endfor
    endfor
 
-   width_final = rebin(width_bundle, nrow2, ntrace, /sample)
+   width_final = rebin(width_bundle, nrow, ntrace, /sample)
 
    ;----------
    ; Turn the widths back into a traceset.
@@ -136,13 +138,13 @@ function fitflatwidth, flux, fluxivar, ansimage, fibermask, $
    ; Generate the corresponding mask that is the same within each
    ; bundle, and marked as good if at least 25% of the points are unmasked
    if (n_elements(inmask) NE 0) then begin
-      mask_bundle = rebin(float(inmask), nrow2, numbundles) GE 0.25
-      mask_final = rebin(mask_bundle, nrow2, ntrace, /sample)
+      mask_bundle = rebin(float(inmask), nrow, numbundles) GE 0.25
+      mask_final = rebin(mask_bundle, nrow, ntrace, /sample)
    endif else begin
       mask_final = width_final GT 0
    endelse
 
-   xy2traceset, findgen(nrow2) # replicate(1,ntrace), $
+   xy2traceset, findgen(nrow) # replicate(1,ntrace), $
     width_final, widthset, ncoeff=ncoeff, xmin=xmin, xmax=xmax, $
     inmask=mask_final, double=double
 
@@ -168,11 +170,18 @@ function fitflatwidth, flux, fluxivar, ansimage, fibermask, $
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;matt modify for 4x4 grid, use quadrupole terms
    traceset2xy, widthset, xx, width_fit
-   x1 = [0,nrow2/4,nrow2/4,3*nrow2/4]
-   x2 = [nrow2/4-1,3*nrow2/4-1,3*nrow2/4-1,nrow2-1]
-
-   y1 = [ntrace/4,0,3*ntrace/4,ntrace/4]
-   y2 = [3*ntrace/4-1,ntrace/4-1,ntrace-1,3*ntrace/4-1]
+   if keyword_set(quick) then begin
+       x1 = [0,nrow/4,nrow/4,3*nrow/4]
+       x2 = [nrow/4-1,3*nrow/4-1,3*nrow/4-1,nrow-1]
+       
+       y1 = [ntrace/4,0,3*ntrace/4,ntrace/4]
+       y2 = [3*ntrace/4-1,ntrace/4-1,ntrace-1,3*ntrace/4-1]
+   endif else begin
+       x1 = [0,0,nrow/2,nrow/2]
+       x2 = [nrow/2-1,nrow/2-1,nrow-1,nrow-1]
+       y1 = [0,ntrace/2,0,ntrace/2]
+       y2 = [ntrace/2-1,ntrace-1,ntrace/2-1,ntrace-1]
+   endelse     
    medwidth = fltarr(4)
    for i=0,3 do begin
       indx = where(mask_final[x1[i]:x2[i],y1[i]:y2[i]],ct)
