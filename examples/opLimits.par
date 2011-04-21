@@ -86,12 +86,12 @@ speclimit red flat NGOODFIBER r2 0 490
 
 speclimit yellow flat XSIGMA b1 1.10 9e9
 speclimit yellow flat XSIGMA b2 1.15 9e9
-speclimit yellow flat XSIGMA r1 1.10 9e9
+speclimit yellow flat XSIGMA r1 1.20 9e9
 speclimit yellow flat XSIGMA r2 1.25 9e9
 
 speclimit red flat XSIGMA b1 1.15 9e9
 speclimit red flat XSIGMA b2 1.20 9e9
-speclimit red flat XSIGMA r1 1.15 9e9
+speclimit red flat XSIGMA r1 1.25 9e9
 speclimit red flat XSIGMA r2 1.30 9e9
 
 # For arcs, insist on exposure times of 3-5 sec.
