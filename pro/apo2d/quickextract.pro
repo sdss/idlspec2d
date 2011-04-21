@@ -178,7 +178,7 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    ; if the spectrographs appear out of focus.
 
    widthset = fitflatwidth(tempflux, tempfluxivar, ansimage, fibermask, $
-    ncoeff=5, sigma=sigma, medwidth=medwidth, /double)
+    ncoeff=5, sigma=sigma, medwidth=medwidth, /double, /quick)
 
    ; Use the limits as set for the flats, since we don't set limits
    ; for the science exposure widths.  Do not issue a warning message
