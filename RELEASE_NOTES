@@ -1,13 +1,17 @@
-QUICKEXTRACT: Updated comment message for quadrupole
+QUICKEXTRACT: Updated comment message for quadrupole, add a flag for calling
+     fitflatwidth for quick reduction
 QUICKTRACE:   Remove using middle of image here, added to fitflatwidth, 
-     updated comment message for quadrupole
-FITFLATWIDTH: Use middle half of image to determine xsig (previously in 
-     quicktrace).  Also use quadrupole region instead of quadrants
+     updated comment message for quadrupole, add a flag for calling 
+     fitflatwidth for quick reductions
+FITFLATWIDTH: Use middle half of image to determine xsig for quick reduction
+     (previously in quicktrace) using fitflatwidth,/quick.  Also use quadrupole
+     region instead of quadrants
 APOREDUCE: Look for INFO as well as ABORT,WARNING messages in log file
 COMBSMALLCOLLIMATE: Change default values of badres from 5 to 6 deg
      (related to ticket #1266).
 FITDISPERSION: Change fitting regions from the 4 quadrants to being
      subimages in the Left, Bottom, Top, Right (part of ticket #822).
+     Use middle half of image in quick reductions with fitdispersion,/quick
 GAUSSPIX: New routine for pixel-integrated gaussians, similar to but
      not to be confused with GAUSSPIX1D.
 PLATEMERGE: Add XFOCAL,YFOCAL to spAll file (ticket #1271).
