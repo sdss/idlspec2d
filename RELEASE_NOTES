@@ -1,4 +1,8 @@
-
+QUICKEXTRACT: Updated comment message for quadrupole
+QUICKTRACE:   Remove using middle of image here, added to fitflatwidth, 
+     updated comment message for quadrupole
+FITFLATWIDTH: Use middle half of image to determine xsig (previously in 
+     quicktrace).  Also use quadrupole region instead of quadrants
 APOREDUCE: Look for INFO as well as ABORT,WARNING messages in log file
 COMBSMALLCOLLIMATE: Change default values of badres from 5 to 6 deg
      (related to ticket #1266).
