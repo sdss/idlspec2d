@@ -1,3 +1,12 @@
+CONFIGURATION__DEFINE: Increased ncoeff used for BOSS linewidth fits
+     to 5 (red) or 4 (blue) (ASB).
+EXTRACT_ROW, EXTRACT_BUNDLE_ROW: moved separation check below "ngood"
+     check, to avoid pointless warnings on fully invvar=0 rows
+     (goes to ticket 1209) (ASB).
+FITDISPERSION: Added maxdev=0.2 in traceset fit (ASB).
+SPCALIB: new definition of "inmask" for trace-position fits, and
+     new value for "maxdev" (goes to ticket #1269) (ASB).
+
 -------------------------------------------------------------------------------
 v5_4_34 tag for install at the summit for better SOS errors/warnings
 
