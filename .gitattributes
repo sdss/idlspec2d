@@ -275,6 +275,7 @@ pro/plan/listchi.pro -text
 pro/plan/listexptime.pro -text
 pro/plan/opfiber_generate.pro -text
 pro/plan/platecen_test.pro -text
+pro/plan/plugfile_diff.pro -text
 pro/plan/plugfile_relabel.pro -text
 pro/plan/plugfile_unmapped.pro -text
 pro/plan/plugmap_replace.pro -text
