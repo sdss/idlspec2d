@@ -138,8 +138,9 @@ function fitdispersion, arc_flux, arc_fluxivar, xcen_inp, $
    ;----------
    ; Turn the widths back into a traceset.
 
+   ; ASB: adding maxdev=0.2
    xy2traceset, transpose(xcen), width_final, dispset, inmask=(width_final GT 0), $
-    ncoeff=ncoeff, xmin=xmin, xmax=xmax
+    ncoeff=ncoeff, xmin=xmin, xmax=xmax, maxdev=0.2
 
    ;----------
    ; Compute the widths in each of 4 quandrants on the CCD
