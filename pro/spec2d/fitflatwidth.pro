@@ -6,7 +6,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   widthset = fitflatwidth(flux, fluxivar, ansimage, [ fibermask, $
-;    ncoeff=, sigma=, medwidth=, mask=, inmask=, double= ])
+;    ncoeff=, sigma=, medwidth=, mask=, inmask=, double=, /quick ])
 ;
 ; INPUTS:
 ;   flux       - flat-field extracted flux
@@ -20,6 +20,8 @@
 ;   sigma      - The SIGMA input to EXTRACT_IMAGE when determining ANSIMAGE;
 ;                default to 1.0 pix.  This can be a scalar, an [NFIBER] vector,
 ;                or an [NROW,NFIBER] array.
+;   quick      - If set, then trim the input images to the central half
+;                of the image and report MEDWIDTH in different regions
 ;
 ; OUTPUTS:
 ;   widthset   - Traceset structure containing fitted coefficients
@@ -30,8 +32,8 @@
 ;   double    - input for the call to xy2traceset
 ;
 ; OPTIONAL OUTPUTS:
-;   medwidth  - Median dispersion widths in each of the 4 quadrants
-;               of the CCD, ordered LL,LR,UL,UR.
+;   medwidth  - Median dispersion widths in each of 4 regions of the CCD
+;               of the CCD, ordered LL,LR,UL,UR or L,B,T,R if /QUICK is set.
 ;
 ; COMMENTS:
 ;   The widths are forced to be the same as a function of row number
@@ -149,38 +151,22 @@ function fitflatwidth, flux, fluxivar, ansimage, fibermask, $
     inmask=mask_final, double=double
 
    ;----------
-   ; Compute the widths in each of 4 quandrants on the CCD
+   ; Compute the widths in each of 4 regions on the CCD
    ; as the median of the unmasked pixels
 
-
-   ;commented out 4-19 ;;;;;;;;;;;;;   
-   ;old method using quadrant
-   ;traceset2xy, widthset, xx, width_fit
-   ;x1 = [0,0,nrow/2,nrow/2]
-   ;x2 = [nrow/2-1,nrow/2-1,nrow-1,nrow-1]
-   ;y1 = [0,ntrace/2,0,ntrace/2]
-   ;y2 = [ntrace/2-1,ntrace-1,ntrace/2-1,ntrace-1]
-   ;medwidth = fltarr(4)
-   ;for i=0,3 do begin
-   ;   indx = where(mask_final[x1[i]:x2[i],y1[i]:y2[i]],ct)
-   ;   if (ct GT 0) then $
-   ;    medwidth[i] = $
-   ;     median([ (width_fit[x1[i]:x2[i],y1[i]:y2[i]])[indx] ])
-   ;endfor
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    ;matt modify for 4x4 grid, use quadrupole terms
    traceset2xy, widthset, xx, width_fit
    if keyword_set(quick) then begin
        x1 = [0,nrow/4,nrow/4,3*nrow/4]
        x2 = [nrow/4-1,3*nrow/4-1,3*nrow/4-1,nrow-1]
-       
        y1 = [ntrace/4,0,3*ntrace/4,ntrace/4]
        y2 = [3*ntrace/4-1,ntrace/4-1,ntrace-1,3*ntrace/4-1]
+       comment = '(L B T R)'
    endif else begin
        x1 = [0,0,nrow/2,nrow/2]
        x2 = [nrow/2-1,nrow/2-1,nrow-1,nrow-1]
        y1 = [0,ntrace/2,0,ntrace/2]
        y2 = [ntrace/2-1,ntrace-1,ntrace/2-1,ntrace-1]
+       comment = '(LL UL LR UR)'
    endelse     
    medwidth = fltarr(4)
    for i=0,3 do begin
@@ -190,9 +176,8 @@ function fitflatwidth, flux, fluxivar, ansimage, fibermask, $
         median([ (width_fit[x1[i]:x2[i],y1[i]:y2[i]])[indx] ])
    endfor
 
-
    splog, 'Median spatial widths = ' $
-    + string(medwidth,format='(4f5.2)') + ' pix (L B T R)';left bottom top right
+    + string(medwidth,format='(4f5.2)') + ' pix ' + comment
    return, widthset
 end
 ;------------------------------------------------------------------------------
