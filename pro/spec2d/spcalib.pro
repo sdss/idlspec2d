@@ -203,14 +203,18 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
        plottitle=plottitle+' Traces '+flatname[iflat])
         
       splog, 'Fitting traces in ', flatname[iflat]
+      ntrace = (size(xsol, /dimens))[1]
       outmask = 0
-      ; Ingore values whose central point falls on a bad pixel
-      inmask = flativar[xsol,ycen] GT 0
+      ; Ignore values whose central point falls on a bad pixel
+      ;inmask = flativar[xsol,ycen] GT 0
+      ; ASB: New recipe for inmask, just masking fully useless rows,
+      ;      since trace320crude has already done clever fill-ins:
+      inmask = (total(flativar gt 0., 1) gt 0.) # replicate(1B, ntrace)
       xy2traceset, ycen, xsol, tset, $
        ncoeff=configuration->spcalib_xy2traceset_ncoeff(), $
 ;       ncoeff=5, $
 ;       ncoeff=7, $
-       maxdev=0.1, outmask=outmask, /double, xerr=xerr, inmask=inmask
+       maxdev=0.5, outmask=outmask, /double, xerr=xerr, inmask=inmask
 
       junk = where(outmask EQ 0, totalreject)
       if (totalreject GT configuration->spcalib_rejecttheshold()) then begin
@@ -232,7 +236,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
     ; Verify that traces are separated by > 3 pixels
     
     if (qbadflat EQ 0) then begin
-      ntrace = (size(xsol, /dimens))[1]
+; ASB: ntrace definition moved further up:
+;      ntrace = (size(xsol, /dimens))[1]
       sep = xsol[*,1:ntrace-1] - xsol[*,0:ntrace-2]
       tooclose = where(sep LT 3)
       if (tooclose[0] NE -1) then begin
