@@ -5,6 +5,9 @@ EXTRACT_ROW, EXTRACT_BUNDLE_ROW: moved separation check below "ngood"
      check, to avoid pointless warnings on fully invvar=0 rows
      (goes to ticket 1209) (ASB).
 FITDISPERSION: Added maxdev=0.2 in traceset fit (ASB).
+PLUGMAP_DIFF: New proc to find instances where the plPlugMapM file in
+     the speclog file differs from what was used in the reductions.
+     Used to see which fibers changed when fixing tickets #819,1262.
 SPCALIB: new definition of "inmask" for trace-position fits, and
      new value for "maxdev" (goes to ticket #1269) (ASB).
 SPREDUCE1D: Force the SPEC2_* values in the ZANS structure to always
