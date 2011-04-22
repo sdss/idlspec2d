@@ -552,12 +552,12 @@ flambda2fnu = 0 ; Free memory
             spectroskyflux: fltarr(5), $
             anyandmask: 0L, $
             anyormask:  0L, $
-            spec1_g:   sxpar(hdr, 'SPEC1_G'), $
-            spec1_r:   sxpar(hdr, 'SPEC1_R'), $
-            spec1_i:   sxpar(hdr, 'SPEC1_I'), $
-            spec2_g:   sxpar(hdr, 'SPEC2_G'), $
-            spec2_r:   sxpar(hdr, 'SPEC2_R'), $
-            spec2_i:   sxpar(hdr, 'SPEC2_I') }
+            spec1_g: float(sxpar(hdr, 'SPEC1_G')), $
+            spec1_r: float(sxpar(hdr, 'SPEC1_R')), $
+            spec1_i: float(sxpar(hdr, 'SPEC1_I')), $
+            spec2_g: float(sxpar(hdr, 'SPEC2_G')), $
+            spec2_r: float(sxpar(hdr, 'SPEC2_R')), $
+            spec2_i: float(sxpar(hdr, 'SPEC2_I')) }
    res_append = make_array(value=res1, dimension=size(res_all,/dimens))
    res_all = struct_addtags(res_all, res_append)
 
