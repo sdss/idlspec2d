@@ -82,7 +82,8 @@ end
 ;l393
 function configuration::spcalib_ncoeff, color
   if self->isSDSS2() then return,color EQ 'red' ? 4 : 3
-  return,  2
+  ; ASB: the following seem most appropriate for BOSS:
+  return, color EQ 'red' ? 5 : 4
 end
 
 ;l519
