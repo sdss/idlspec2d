@@ -1,3 +1,4 @@
+
 CONFIGURATION__DEFINE: Increased ncoeff used for BOSS linewidth fits
      to 5 (red) or 4 (blue) (ASB).
 EXTRACT_ROW, EXTRACT_BUNDLE_ROW: moved separation check below "ngood"
@@ -6,24 +7,21 @@ EXTRACT_ROW, EXTRACT_BUNDLE_ROW: moved separation check below "ngood"
 FITDISPERSION: Added maxdev=0.2 in traceset fit (ASB).
 SPCALIB: new definition of "inmask" for trace-position fits, and
      new value for "maxdev" (goes to ticket #1269) (ASB).
+SPREDUCE1D: Force the SPEC2_* values in the ZANS structure to always
+     be type float (ticket #1290).
 
 -------------------------------------------------------------------------------
-v5_4_34 tag for install at the summit for better SOS errors/warnings
+v5_4_34 tag for SOS errors/warnings
+Built against specflat v1_13, elodie v1_3, idlutils v5_4_23.
 
-QUICKEXTRACT: Updated comment message for quadrupole, add a flag for calling
-     fitflatwidth for quick reduction
-QUICKTRACE:   Remove using middle of image here, added to fitflatwidth, 
-     updated comment message for quadrupole, add a flag for calling 
-     fitflatwidth for quick reductions
-FITFLATWIDTH: Use middle half of image to determine xsig for quick reduction
-     (previously in quicktrace) using fitflatwidth,/quick.  Also use quadrupole
-     region instead of quadrants
 APOREDUCE: Look for INFO as well as ABORT,WARNING messages in log file
 COMBSMALLCOLLIMATE: Change default values of badres from 5 to 6 deg
      (related to ticket #1266).
-FITDISPERSION: Change fitting regions from the 4 quadrants to being
-     subimages in the Left, Bottom, Top, Right (part of ticket #822).
-     Use middle half of image in quick reductions with fitdispersion,/quick
+FITDISPERSION: Add /QUICK option for reporting MEDWIDTH for different
+     regions on the CCD (ticket #822).  This option used by QUICKWAVE.
+FITFLATWIDTH: Add /QUICK option to trim to the central region of CCD
+     and report MEDWIDTH in different regions.  This option used by
+     QUICKTRACE (for flats) and QUICKEXTRACT (for scienc frames).
 GAUSSPIX: New routine for pixel-integrated gaussians, similar to but
      not to be confused with GAUSSPIX1D.
 PLATEMERGE: Add XFOCAL,YFOCAL to spAll file (ticket #1271).
@@ -31,8 +29,9 @@ PLATEMERGE: Add XFOCAL,YFOCAL to spAll file (ticket #1271).
      generation for a subset of plates.
 PLUGMAP_REPLACE: New proc for replacing plPlugMapM files in the speclog
      product with new versions from re-running EVILREMAP on the mapper movies.
+QUICKEXTRACT,QUICKTRACE: Use /QUICK flag in call to FITFLATWIDTH.
 QUICKWAVE: Change reporting of dispersion warning messages to be consistent
-     with that reported by FITDISPERSION.
+     with that reported by FITDISPERSION.  Use /QUICK flag to FITDISPERSION.
 READPLUGMAP: MOD the range of values for PLUG_RA to fall strictly in
      the range [0,360) deg (ticket #1255).
 SPADD_GUIDERINFO: Exclude NaN,Inf in guiderMon files when calculating
@@ -45,8 +44,12 @@ WRITESPEC, WRITE_UROS: Format file names for 1000-fiber (4 digit) fibers
 
 bin/riemann_redux_snapshot: New script to make a snapshot of the BOSS
      reductions of the platelist*,spAll* files.
-examples/opLimits.par: Change thresholds on WSIGMA to be larger
-     (part of ticket #822).
+examples/opLimits.par: Change red thresholds on XSIGMA from
+     1.15,1.20,1.25,1.30 to 1.20,1.20,1.25,1.25 (with yellow lower by 0.05).
+     This is to be consistent with the changes to FITFLATWIDTH.
+     Change red thresholds on WSIGMA from 1.35,1.35,1.25,1.25 to
+     1.25,1.30,1.20,1.25 (with yellow lower by 0.05) to be consistent
+     with changes in FITDISPERSION.
 templates/eigeninput_typeIIqso.dat: Type II QSO training sample drawn
      from BOSS galaxy targets, for GALAXY redshift templates (ticket #633).
      Not yet used.
