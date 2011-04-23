@@ -18,7 +18,8 @@ SPREDUCE1D: Force the SPEC2_* values in the ZANS structure to always
      be type float (ticket #1290).
 
 -------------------------------------------------------------------------------
-v5_4_34 tag for SOS errors/warnings
+v5_4_34 (2011-04-21)
+Tag for SOS errors/warnings.
 Built against specflat v1_13, elodie v1_3, idlutils v5_4_23.
 
 APOREDUCE: Look for INFO as well as ABORT,WARNING messages in log file
