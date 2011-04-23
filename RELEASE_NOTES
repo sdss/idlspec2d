@@ -1,3 +1,7 @@
+-------------------------------------------------------------------------------
+v5_4_35 (2011-04-22 by ASB)
+Tag for further test of bundle-wise extraction and other fixes
+Built against specflat v1_13, elodie v1_3, idlutils v5_4_23.
 
 CONFIGURATION__DEFINE: Increased ncoeff used for BOSS linewidth fits
      to 5 (red) or 4 (blue) (ASB).
