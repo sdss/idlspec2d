@@ -73,7 +73,7 @@ pro plughistory, mjdrange=mjdrange
       plugfiles = plugfiles[indx]
       mjdvec = mjdvec[indx]
    endif else begin
-      mdjrange = minmax(mjdvec)
+      mjdrange = minmax(mjdvec)
    endelse
 
    cartvec = lonarr(nfile)
