@@ -46,7 +46,8 @@ speclimit red flat EXPTIME * 33 9e9
 # Further analysis shows a scatter that does not impact reductions, but a
 # a scatter that is larger than the constraints from 3552, see logs
 # from David Harris in pipeline mailing list for examples.
-# Define XMID= 2036 2045 2043 2044, more than 8 pix is yellow, 12 pix is red
+# Define XMID= 2036 2043 2045 2044 (b1,r1,b2,r2) , more than 8 pix from xmid
+# is yellow, 12 pix is red
 # from Kaike Pan on 7 Sep 2010.
 
 speclimit yellow flat XMID b1 -9e9 2028
