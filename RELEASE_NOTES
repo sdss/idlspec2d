@@ -1,3 +1,11 @@
+
+-------------------------------------------------------------------------------
+v5_4_36 (2011-05-17)
+Tag for SOS addressing ticket #822.
+
+etc/opLimits.par: Changed red and yellow limits on xsig,wsig for r1;
+     corrected order of r1 b1.
+
 -------------------------------------------------------------------------------
 v5_4_35 (2011-04-22 by ASB)
 Tag for further test of bundle-wise extraction and other fixes
