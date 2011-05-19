@@ -176,9 +176,6 @@ function fitdispersion, arc_flux, arc_fluxivar, xcen_inp, $
    splog, 'Median wavelength widths = ' $
     + string(medwidth,format='(4f5.2)') + ' pix (L B T R)' ;left bottom top right
 
-
-;stop
-
    return, dispset
 end
 ;------------------------------------------------------------------------------
