@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   sdssproc, infile, [image, invvar, indir=, $
-;    outfile=, varfile=, nsatrow=, fbadpix=, $
+;    outfile=, nsatrow=, fbadpix=, $
 ;    hdr=hdr, configfile=, ecalibfile=, bcfile=, $
 ;    /applybias, /applypixflat, /silent, /do_lock, minflat=, maxflat=, $
 ;    spectrographid=, color=, camname=, /applycrosstalk ]
@@ -17,8 +17,9 @@
 ;
 ; OPTIONAL KEYWORDS:
 ;   indir      - Input directory for INFILE
-;   outfile    - Calibrated 2d frame, after processing
-;   varfile    - Inverse variance frame after processing
+;   outfile    - Calibrated 2D frame, HDU#0 is the image and #1 is invvar;
+;                if set as /OUTFILE, then default name is constructed from
+;                INFILE as sdProc-XX-XXXXXXXX.fits, excluding any path info
 ;   nsatrow    - Number of saturated rows, assuming that a row is saturated
 ;                if at least 20 of its pixels are above saturation level
 ;   fbadpix    - Fraction of bad pixels, not including bad columns
@@ -275,12 +276,12 @@ end
 
 ;------------------------------------------------------------------------------
 pro sdssproc, infile1, image, invvar, indir=indir, $
-    outfile=outfile, varfile=varfile, nsatrow=nsatrow, fbadpix=fbadpix, $
-    hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, bcfile=bcfile, $
-    applybias=applybias, applypixflat=applypixflat, silent=silent, $
-    do_lock=do_lock, minflat=minflat, maxflat=maxflat, $
-    spectrographid=spectrographid, color=color, camname=camname, $
-    applycrosstalk=applycrosstalk
+ outfile=outfile1, nsatrow=nsatrow, fbadpix=fbadpix, $
+ hdr=hdr, configfile=configfile, ecalibfile=ecalibfile, bcfile=bcfile, $
+ applybias=applybias, applypixflat=applypixflat, silent=silent, $
+ do_lock=do_lock, minflat=minflat, maxflat=maxflat, $
+ spectrographid=spectrographid, color=color, camname=camname, $
+ applycrosstalk=applycrosstalk
 
   common com_sdssproc, vers2d, versutils, versflat, verslog
     
@@ -288,18 +289,26 @@ pro sdssproc, infile1, image, invvar, indir=indir, $
     doc_library, 'sdssproc'
     return
   endif
-  
+
   infile = infile1[0]
   readimg = arg_present(image) OR keyword_set(outfile)
-  readivar = arg_present(invvar) OR keyword_set(varfile) $
+  readivar = arg_present(invvar) OR keyword_set(outfile) $
     OR arg_present(nsatrow) OR arg_present(fbadpix)
-    
+
   fullname = djs_filepath(infile, root_dir=indir)
   fullname = (lookforgzip(fullname, count=ct))[0]
   ;   fullname = (findfile(fullname, count=ct))[0]
   if (ct NE 1) then $
     message, 'Cannot find image ' + infile
     
+  if (keyword_set(outfile1)) then begin
+     if (size(outfile1,/tname) EQ 'STRING') then begin
+        outfile = outfile1
+     endif else begin
+        outfile = 'sdProc-' + strmid(fileandpath(infile),4,11)+'.fits'
+     endelse
+  endif
+
   if (readimg OR readivar) then $
     rawdata = rdss_fits(fullname, hdr, /nofloat, silent=silent) $
   else $
@@ -1243,17 +1252,8 @@ if keyword_set(ecalibfile) then sxaddpar, hdr, 'OPECALIB', ecalibfile
 sxdelpar, hdr, 'UNSIGNED'
 
 if (keyword_set(outfile)) then begin
-  if (keyword_set(varfile)) then $
-    sxaddpar, hdr, 'VARFILE', varfile, ' Corresponding inverse var file'
-  writefits, outfile, image, hdr
-endif
-
-if (readivar) then begin
-  varhdr = hdr
-  if (keyword_set(outfile)) then $
-    sxaddpar, hdr, 'IMGFILE', outfile, ' Corresponding image file'
-  if (keyword_set(varfile)) then $
-    writefits, varfile, invvar, varhdr
+  writefits, outfile, image, hdr, /create
+  writefits, varfile, invvar
 endif
 
 return
