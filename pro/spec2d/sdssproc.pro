@@ -84,12 +84,12 @@
 ;   idlspec2d_version()
 ;   idlutils_version()
 ;   lookforgzip()
+;   mwrfits
 ;   rdss_fits()
 ;   sphdrfix
 ;   splog
 ;   sxaddpar
 ;   sxpar()
-;   writefits
 ;   yanny_free
 ;   yanny_read
 ;
@@ -291,8 +291,8 @@ pro sdssproc, infile1, image, invvar, indir=indir, $
   endif
 
   infile = infile1[0]
-  readimg = arg_present(image) OR keyword_set(outfile)
-  readivar = arg_present(invvar) OR keyword_set(outfile) $
+  readimg = arg_present(image) OR keyword_set(outfile1)
+  readivar = arg_present(invvar) OR keyword_set(outfile1) $
     OR arg_present(nsatrow) OR arg_present(fbadpix)
 
   fullname = djs_filepath(infile, root_dir=indir)
@@ -1252,8 +1252,8 @@ if keyword_set(ecalibfile) then sxaddpar, hdr, 'OPECALIB', ecalibfile
 sxdelpar, hdr, 'UNSIGNED'
 
 if (keyword_set(outfile)) then begin
-  writefits, outfile, image, hdr, /create
-  writefits, varfile, invvar
+  mwrfits, image, outfile, hdr, /create
+  mwrfits, invvar, outfile
 endif
 
 return
