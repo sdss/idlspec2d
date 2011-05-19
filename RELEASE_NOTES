@@ -1,4 +1,6 @@
-
+FITDISPERSION: Change quadrupole region for /QUICK option for reporting 
+     MEDWIDTH for different regions on the CCD (ticket #822).  This 
+     option used by QUICKWAVE
 -------------------------------------------------------------------------------
 v5_4_36 (2011-05-17)
 Tag for SOS addressing ticket #822.
@@ -37,7 +39,7 @@ FITDISPERSION: Add /QUICK option for reporting MEDWIDTH for different
      regions on the CCD (ticket #822).  This option used by QUICKWAVE.
 FITFLATWIDTH: Add /QUICK option to trim to the central region of CCD
      and report MEDWIDTH in different regions.  This option used by
-     QUICKTRACE (for flats) and QUICKEXTRACT (for scienc frames).
+     QUICKTRACE (for flats) and QUICKEXTRACT (for science frames).
 GAUSSPIX: New routine for pixel-integrated gaussians, similar to but
      not to be confused with GAUSSPIX1D.
 PLATEMERGE: Add XFOCAL,YFOCAL to spAll file (ticket #1271).
