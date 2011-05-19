@@ -16,7 +16,7 @@
 ;   extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 ;    xarc, lambda, xtrace, fflat, fibermask, proftype=, color=, $
 ;    [ widthset=, dispset=, skylinefile=, plottitle=, superflatset=, $
-;    /do_telluric ]
+;    /do_telluric, /bbspec ]
 ;
 ; INPUTS:
 ;   outname    - Name of outputs FITS file
@@ -36,6 +36,7 @@
 ;   widthset   - ???
 ;   dispset    - ???
 ;   skylinefile- ???
+;   bbspec         - use bbspec extraction code
 ;
 ; REQUIRED KEYWORDS:
 ;   color      - camera color (red or blue)
@@ -106,7 +107,8 @@
 pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
  xarc, lambda, xtrace, fflat, fibermask, color=color, proftype=proftype, $
  widthset=widthset, dispset=dispset, skylinefile=skylinefile, $
- plottitle=plottitle, superflatset=superflatset, do_telluric=do_telluric
+ plottitle=plottitle, superflatset=superflatset, do_telluric=do_telluric, $
+ bbspec=bbspec
 
    configuration=obj_new('configuration', sxpar(objhdr, 'MJD'))
 
@@ -296,6 +298,13 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
     highrej=highrej, lowrej=lowrej, npoly=2L, $ ; whopping=whopping, $
     chisq=chisq, ymodel=ymodel, pixelmask=pixelmask, reject=reject, /relative, $
     nperbun=20L, buffsize=8L
+
+   ; Replace the extracted fluxes with bbspec extractions
+   if (keyword_set(bbspec)) then begin
+      basisfile = 'spBasisPSF-'+strmid(sxpar(objhdr,'ARCFILE'),4,11)+'.fits'
+      bbspec_extract, image, invvar, xnow, flux, fluxivar, $
+        basisfile=basisfile
+   endif
 
    ;----------------------------------------------------------------------
    ; Can we find cosmic rays by looking for outlandish ansimage ratios???
