@@ -569,7 +569,6 @@ pro/spec2d/sdsshead.pro -text
 pro/spec2d/sdssproc.pro -text
 pro/spec2d/select_arc.pro -text
 pro/spec2d/select_flat.pro -text
-pro/spec2d/shift_trace.pro -text
 pro/spec2d/skyline_dispersion.pro -text
 pro/spec2d/skysubtract.pro -text
 pro/spec2d/smooth_halo.pro -text
