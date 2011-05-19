@@ -1,6 +1,13 @@
+
 FITDISPERSION: Change quadrupole region for /QUICK option for reporting 
      MEDWIDTH for different regions on the CCD (ticket #822).  This 
-     option used by QUICKWAVE
+     option used by QUICKWAVE.
+SDSSPROC: Remove the VARFILE option, and write the inverse variance
+     as HDU #1 of OUTFILE instead.  Define a default naming scheme for OUTFILE.
+SPREDUCE2D: Propogate all the test keywords to the recursive calling of
+     this routine.
+     Add /bbspec option.
+
 -------------------------------------------------------------------------------
 v5_4_36 (2011-05-17)
 Tag for SOS addressing ticket #822.
