@@ -23,6 +23,8 @@
 ;   xmin       - Lowest row number for trace set; default to 0.
 ;   xmax       - Highest row number for trace set; default to 2047.
 ;   numbundles - The number of fiber bundles
+;   quick      - Flag used during quick reduction on the mountain in
+;                apo routines using only middle region of ccd
 ;
 ; OUTPUTS:
 ;   dispset   - Traceset structure containing fit coefficients
@@ -146,32 +148,16 @@ function fitdispersion, arc_flux, arc_fluxivar, xcen_inp, $
    ; Compute the widths in each of 4 quandrants on the CCD
    ; as the median of the unmasked pixels around the lines being fit
 
-   ;commented out 4-18 ;old routine using quadrants
-   ;   traceset2xy, dispset, xx, width_fit
-   ;   x1 = [0,0,npix/2,npix/2]
-   ;   x2 = [npix/2-1,npix/2-1,npix-1,npix-1]
-   ;   y1 = [0,ntrace/2,0,ntrace/2]
-   ;   y2 = [ntrace/2-1,ntrace-1,ntrace/2-1,ntrace-1]
-   ;   medwidth = fltarr(4)
-   ;   for i=0,3 do begin
-   ;      indx = where(arcmask[x1[i]:x2[i],y1[i]:y2[i]],ct)
-   ;      if (ct GT 0) then $
-   ;       medwidth[i] = $
-   ;        median([ (width_fit[x1[i]:x2[i],y1[i]:y2[i]])[indx] ])
-   ;  endfor
-   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-                                ;matt modify for 4x4 grid, use
-                                ;quadrupole terms for quick extract
-                                ;otherwise do old quadrant fit
+   ; matt modify for 4x4 grid, use quadrupole terms and only half ccd
+   ; for quick extract 
+   ; otherwise do old quadrant fit
    traceset2xy, dispset, xx, width_fit
  
    if keyword_set(quick) then begin
-       x1 = [0,npix/4,npix/4,3*npix/4]
-       x2 = [npix/4-1,3*npix/4-1,3*npix/4-1,npix-1]
-       
-       y1 = [ntrace/4,0,3*ntrace/4,ntrace/4]
-       y2 = [3*ntrace/4-1,ntrace/4-1,ntrace-1,3*ntrace/4-1]
+       x1 = [npix/4,3*npix/8,3*npix/8,5*npix/8]
+       x2 = [3*npix/8-1,5*npix/8-1,5*npix/8-1,3*npix/4-1]
+       y1 = [3*ntrace/8,ntrace/4,5*ntrace/8,3*ntrace/8]
+       y2 = [5*ntrace/8-1,3*ntrace/8-1,3*ntrace/4-1,5*ntrace/8-1]
    endif else begin
        x1 = [0,0,npix/2,npix/2]
        x2 = [npix/2-1,npix/2-1,npix-1,npix-1]
@@ -189,6 +175,9 @@ function fitdispersion, arc_flux, arc_fluxivar, xcen_inp, $
 
    splog, 'Median wavelength widths = ' $
     + string(medwidth,format='(4f5.2)') + ' pix (L B T R)' ;left bottom top right
+
+
+;stop
 
    return, dispset
 end
