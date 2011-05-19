@@ -7,7 +7,8 @@
 ;   to a plan file.
 ;
 ; CALLING SEQUENCE:
-;   spreduce2d, [ planfile, docams=, /do_telluric, /xdisplay, /writeflatmodel ]
+;   spreduce2d, [ planfile, docams=, /do_telluric, /xdisplay, $
+;    /writeflatmodel, /writearcmodel, /bbspec ]
 ;
 ; INPUTS:
 ;
@@ -21,6 +22,7 @@
 ;                    out of flat model info to file.
 ;   writearcmodel  - passed to SPCALIB via SPREDUCE to trigger writing
 ;                    out of arc model info to file.
+;   bbspec         - use bbspec extraction code
 ;
 ; OUTPUT:
 ;
@@ -57,7 +59,8 @@
 ;------------------------------------------------------------------------------
 
 pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
- xdisplay=xdisplay, writeflatmodel=writeflatmodel, writearcmodel=writearcmodel
+ xdisplay=xdisplay, writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
+ bbspec=bbspec
 
    if (NOT keyword_set(planfile)) then planfile = findfile('spPlan2d*.par')
 
@@ -68,7 +71,8 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
    if (N_elements(planfile) GT 1) then begin
       for i=0, N_elements(planfile)-1 do $
        spreduce2d, planfile[i], docams=docams, do_telluric=do_telluric, $
-        xdisplay=xdisplay
+        xdisplay=xdisplay, writeflatmodel=writeflatmodel, $
+        writearcmodel=writearcmodel, bbspec=bbspec
       return
    endif
 
@@ -249,7 +253,8 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
                 plugfile=plugfile, lampfile=lampfile, $
                 indir=inputdir, plugdir=plugdir, outdir=outdir, $
                 plottitle=plottitle, do_telluric=do_telluric, $
-                writeflatmodel=writeflatmodel, writearcmodel=writearcmodel
+                writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
+                bbspec=bbspec
             endif
 
             splog, 'Time to reduce camera ', camnames[icam], ' = ', $
