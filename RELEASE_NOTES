@@ -8,6 +8,8 @@ SPREDUCE2D: Propogate all the test keywords to the recursive calling of
      this routine.
      Add /bbspec option.
 
+ups/idlspec2d.table: Add optional dependency on bbspec product.
+
 -------------------------------------------------------------------------------
 v5_4_36 (2011-05-17)
 Tag for SOS addressing ticket #822.
