@@ -8,7 +8,8 @@
 ; CALLING SEQUENCE:
 ;   spreduce, flatname, arcname, objname, [ run2d=, $
 ;    plugfile=, lampfile=, indir=, plugdir=, outdir=, $
-;    ecalibfile=, plottitle=, /do_telluric, writeflatmodel= ]
+;    ecalibfile=, plottitle=, /do_telluric, writeflatmodel=, writearcmodel=, $
+;    /bbspec ]
 ;
 ; INPUTS:
 ;   flatname   - Name(s) of flat-field SDSS image(s)
@@ -33,6 +34,7 @@
 ;                    model info to file
 ;   writearcmodel  - passed to SPCALIB to write out arc image
 ;                    model info to file
+;   bbspec         - use bbspec extraction code
 ;
 ; OUTPUTS:
 ;
@@ -74,7 +76,7 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, $
  plugfile=plugfile, lampfile=lampfile, $
  indir=indir, plugdir=plugdir, outdir=outdir, $
  ecalibfile=ecalibfile, plottitle=plottitle, do_telluric=do_telluric, $
- writeflatmodel=writeflatmodel, writearcmodel=writearcmodel
+ writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, bbspec=bbspec
 
    if (NOT keyword_set(indir)) then indir = '.'
    if (NOT keyword_set(plugdir)) then plugdir=indir
@@ -196,6 +198,15 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, $
     rejline=*(bestarc.rejline), $
     color=color, title=plottitle+' Arcline Fit for '+bestarc.name
 
+   ; Generate the sdProc files for the arc images and the PSF models
+   if (keyword_set(bbspec)) then begin
+      sdssproc, bestarc.name, indir=indir, /outfile, $
+       /applybias, /applypixflat, /applycrosstalk
+      name1 = 'spArc-' + strmid(bestarc.name,4,11) + '.fits'
+      name2 = 'spFlat-' + strmid(bestflat.name,4,11) + '.fits'
+;      spawn, 'python make-my-psf.py'+bestarc+' '+name1+' '+name1 ; ???
+   endif
+
    ;---------------------------------------------------------------------------
    ; LOOP THROUGH OBJECT FRAMES
    ;---------------------------------------------------------------------------
@@ -288,7 +299,7 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, $
           xpeak, lambda, xsol, fflat, fibermask, color=color, $
           proftype=proftype, superflatset=superflatset, $
           widthset=widthset, dispset=dispset, skylinefile=fullskyfile, $
-          plottitle=plottitle, do_telluric=do_telluric
+          plottitle=plottitle, do_telluric=do_telluric, bbspec=bbspec
 
          splog, 'Elapsed time = ', systime(1)-stimeobj, ' seconds', $
           format='(a,f6.0,a)' 
