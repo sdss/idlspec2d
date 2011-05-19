@@ -1,5 +1,7 @@
 pro bbspec_extract, image, invvar, xnow, flux, fluxivar, basisfile=basisfile
 
+   stime0 = systime(1)
+
    nsmallx = 40 ; number of columns to extract in each call
    nsmally = 200 ; number of rows to extract in each call
    npady = 20 ; number of rows to use as padding
@@ -53,6 +55,8 @@ pro bbspec_extract, image, invvar, xnow, flux, fluxivar, basisfile=basisfile
          fluxivar[y0+trim1:y1-trim2,ifiber] = fluxivar1[trim1:y1-y0-trim2]
       endfor
    endfor
+
+   splog, 'Time to bbspec = ', systime(1)-stime0, ' seconds'
 
    return
 end
