@@ -46,7 +46,9 @@ pro bbspec_extract, image, invvar, xnow, flux, fluxivar, basisfile=basisfile
             mwrfits, basis1, psffile, create=(ihdu EQ 0)
          endfor
 
-         spwan, 'python pix2spec.py -i '+imgfile+' -p '+psffile+' -o '+fluxfile
+         pyfile = djs_filepath('pix2spec.py', root_dir=getenv('BBSPEC_DIR'), $
+          subdir='examples')
+         spwan, 'python '+pyfile+' -i '+imgfile+' -p '+psffile+' -o '+fluxfile
          flux1 = mrdfits(fluxfile)
          fluxivar1 = mrdfits(fluxfile,1)
          if (ichunk EQ 0) then trim1 = 0 else trim1 = npady
