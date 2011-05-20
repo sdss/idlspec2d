@@ -2,8 +2,9 @@ pro bbspec_extract, image, invvar, xnow, flux, fluxivar, basisfile=basisfile
 
    stime0 = systime(1)
 
-   nsmallx = 40 ; number of columns to extract in each call
-   nsmally = 200 ; number of rows to extract in each call
+   nfibper = 3 ; number of fibers to extract in each call
+   nsmallx = 50 ; number of columns to extract in each call
+   nsmally = 100 ; number of rows to extract in each call
    npady = 20 ; number of rows to use as padding
 
    dims = size(image,/dimens)
@@ -14,7 +15,7 @@ pro bbspec_extract, image, invvar, xnow, flux, fluxivar, basisfile=basisfile
    psffile = 'tmp_psf.fits'
    fluxfile = 'tmp_flux.fits'
 
-   nhdu = 18 ; ??? should be dynamically determined
+   nhdu = 19 ; ??? should be dynamically determined
    bhdr = headfits(basisfile)
    nfiber = sxpar(bhdr,'NAXIS2')
    if (sxpar(bhdr,'NAXIS1') NE ny) then $
@@ -27,6 +28,8 @@ pro bbspec_extract, image, invvar, xnow, flux, fluxivar, basisfile=basisfile
       basis[*,*,ihdu] = mrdfits(basisfile,ihdu,bhdr1)
       bhdr[ihdu] = ptr_new(bhdr1)
    endfor
+   ibad = where(finite(basis) EQ 0, nbad)
+   if (nbad GT 0) then basis[ibad] = 0 ; replace NaN values ???
    ; Replace with the X centroids shifted, and trim to only the first entries
    ; if the PSF is only solved for the first fibers in the first rows
 ;   basis[*,*,0] = xnow[0:ny-1,0:nfiber-1] ; ???
@@ -35,6 +38,10 @@ pro bbspec_extract, image, invvar, xnow, flux, fluxivar, basisfile=basisfile
    nstepy = nsmally - 2*npady ; number of rows to step up in each call
    nchunk = ceil((ny - 2*npady)/nstepy)
    for ifiber=0, nfiber-1 do begin
+      fib1 = ifiber - (nfibper-1)/2
+      fib2 = fib1 + nfibper
+      fib1 = fib1 > 0
+      fib2 = fib2 < (nfiber-1)
       for ichunk=0, nchunk-1 do begin
          y0 = ichunk * (nsmally - 2*npady)
          y1 = (y0 + nsmally - 1) < (ny-1)
@@ -48,11 +55,21 @@ print,ifiber,ichunk,x0,x1,y0,y1
          mwrfits, invvar[x0:x1,y0:y1], imgfile
 
          for ihdu=0, nhdu-1 do begin
-            basis1 = basis[y0:y1,ifiber,ihdu]
+            basis1 = basis[y0:y1,fib1:fib2,ihdu]
+            bhdr1 = *bhdr[ihdu]
             ; Replace the X and Y positions to refer to the subimage positions
             if (ihdu EQ 0) then basis1 -= x0
             if (ihdu EQ 1) then basis1 -= y0
-            mwrfits, basis1, psffile, *bhdr[ihdu], create=(ihdu EQ 0)
+            sxaddpar, bhdr1, 'NAXIS', 2 ; Does not work!!!???
+            sxaddpar, bhdr1, 'NAXIS1', y1-y0+1
+            sxaddpar, bhdr1, 'NAXIS2', fib2-fib1+1
+            if (ihdu EQ 0) then begin
+               sxaddpar, bhdr1, 'NPIX_X', x1-x0+1
+               sxaddpar, bhdr1, 'NPIX_Y', y1-y0+1
+               sxaddpar, bhdr1, 'NSPEC', fib2-fib1+1
+               sxaddpar, bhdr1, 'NFLUX', y1-y0+1
+            endif
+            mwrfits, basis1, psffile, bhdr1, create=(ihdu EQ 0)
          endfor
 
          pyfile = djs_filepath('pix2spec.py', root_dir=getenv('BBSPEC_DIR'), $
@@ -62,8 +79,8 @@ print,ifiber,ichunk,x0,x1,y0,y1
          fluxivar1 = mrdfits(fluxfile,1)
          if (ichunk EQ 0) then trim1 = 0 else trim1 = npady
          if (ichunk EQ nchunk-1) then trim2 = 0 else trim2 = npady
-         flux[y0+trim1:y1-trim2,ifiber] = flux1[trim1:y1-y0-trim2]
-         fluxivar[y0+trim1:y1-trim2,ifiber] = fluxivar1[trim1:y1-y0-trim2]
+         flux[y0+trim1:y1-trim2,ifiber] = flux1[trim1:y1-y0-trim2,ifiber-fib1]
+         fluxivar[y0+trim1:y1-trim2,ifiber] = fluxivar1[trim1:y1-y0-trim2,ifiber-fib1]
       endfor
    endfor
 
