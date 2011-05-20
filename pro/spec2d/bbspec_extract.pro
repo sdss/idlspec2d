@@ -22,8 +22,11 @@ pro bbspec_extract, image, invvar, xnow, flux, fluxivar, basisfile=basisfile
    flux = fltarr(ny,nfiber)
    fluxivar = fltarr(ny,nfiber)
    basis = dblarr(ny,nfiber,nhdu)
-   for ihdu=0, nhdu-1 do $
-    basis[*,*,ihdu] = mrdfits(basisfile,ihdu)
+   bhdr = ptrarr(nhdu)
+   for ihdu=0, nhdu-1 do begin
+      basis[*,*,ihdu] = mrdfits(basisfile,ihdu,bhdr1)
+      bhdr[ihdu] = ptr_new(bhdr1)
+   endfor
    ; Replace with the X centroids shifted, and trim to only the first entries
    ; if the PSF is only solved for the first fibers in the first rows
 ;   basis[*,*,0] = xnow[0:ny-1,0:nfiber-1] ; ???
@@ -44,11 +47,11 @@ pro bbspec_extract, image, invvar, xnow, flux, fluxivar, basisfile=basisfile
          mwrfits, invvar[x0:x1,y0:y1], imgfile
 
          for ihdu=0, nhdu-1 do begin
-            basis1 = reform(basis[y0:y1,ifiber,ihdu],y1-y0+1,1)
+            basis1 = basis[y0:y1,ifiber,ihdu]
             ; Replace the X and Y positions to refer to the subimage positions
             if (ihdu EQ 0) then basis1 -= x0
             if (ihdu EQ 1) then basis1 -= y0
-            mwrfits, basis1, psffile, create=(ihdu EQ 0)
+            mwrfits, basis1, psffile, *bhdr[ihdu], create=(ihdu EQ 0)
          endfor
 
          pyfile = djs_filepath('pix2spec.py', root_dir=getenv('BBSPEC_DIR'), $
@@ -62,6 +65,8 @@ pro bbspec_extract, image, invvar, xnow, flux, fluxivar, basisfile=basisfile
          fluxivar[y0+trim1:y1-trim2,ifiber] = fluxivar1[trim1:y1-y0-trim2]
       endfor
    endfor
+
+   for ihdu=0, nhdu-1 do ptr_free, bhdr[ihdu]
 
    splog, 'Time to bbspec = ', systime(1)-stime0, ' seconds'
 
