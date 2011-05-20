@@ -448,7 +448,6 @@ pro spcoadd_v5, spframes, outputname, $
           newsky=bestsky, $
           nord=nord, binsz=binsz, bkptbin=bkptbin, maxsep=maxsep, $
           maxiter=50, upper=3.0, lower=3.0, maxrej=1
-;stop ; ???
 
          finalflux[*,ifiber] = bestflux
          finalivar[*,ifiber] = bestivar
