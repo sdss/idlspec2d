@@ -6,14 +6,19 @@ pro bbspec_extract, image, invvar, xnow, flux, fluxivar, basisfile=basisfile
    nsmally = 200 ; number of rows to extract in each call
    npady = 20 ; number of rows to use as padding
 
+   dims = size(image,/dimens)
+   nx = dims[0]
+   ny = dims[1]
+
    imgfile = 'tmp_img.fits'
    psffile = 'tmp_psf.fits'
    fluxfile = 'tmp_flux.fits'
 
-   nhdu = 7
+   nhdu = 18 ; ??? should be dynamically determined
    bhdr = headfits(basisfile)
-   nfiber = sxpar(bhdr,'NAXIS1')
-   ny = sxpar(bhdr,'NAXIS2')
+   nfiber = sxpar(bhdr,'NAXIS2')
+   if (sxpar(bhdr,'NAXIS1') NE ny) then $
+    message, 'Dimensions do not agree between image and PSF model!'
    flux = fltarr(ny,nfiber)
    fluxivar = fltarr(ny,nfiber)
    basis = dblarr(nfiber,ny,nhdu)
@@ -21,15 +26,15 @@ pro bbspec_extract, image, invvar, xnow, flux, fluxivar, basisfile=basisfile
     basis[*,*,ihdu] = mrdfits(basisfile,ihdu)
    ; Replace with the X centroids shifted, and trim to only the first entries
    ; if the PSF is only solved for the first fibers in the first rows
-   basis[*,*,1] = transpose(xnow[0:ny-1,0:nfiber-1])
+;   basis[*,*,1] = transpose(xnow[0:ny-1,0:nfiber-1]) ; ???
 
    ; Loop through sub-images, solving for nsmall rows at a time on 1 fiber only
-   nstepy = nsmally - 2*npad ; number of rows to step up in each call
-   nchunk = ceil((ny - 2*npad)/nstepy)
+   nstepy = nsmally - 2*npady ; number of rows to step up in each call
+   nchunk = ceil((ny - 2*npady)/nstepy)
    for ifiber=0, nfiber-1 do begin
       for ichunk=0, nchunk-1 do begin
          y0 = ichunk * (nsmally - 2*npady)
-         y1 = (y0 + nsmally) < (ny-1)
+         y1 = (y0 + nsmally - 1) < (ny-1)
          x0 = median(xnow[y0:y1,ifiber]) - nsmallx/2
          x1 = x0 + nsmallx - 1
          x0 = x0 > 0 ; keep in bounds of image
@@ -48,7 +53,7 @@ pro bbspec_extract, image, invvar, xnow, flux, fluxivar, basisfile=basisfile
 
          pyfile = djs_filepath('pix2spec.py', root_dir=getenv('BBSPEC_DIR'), $
           subdir='examples')
-         spwan, 'python '+pyfile+' -i '+imgfile+' -p '+psffile+' -o '+fluxfile
+         spawn, 'python '+pyfile+' -i '+imgfile+' -p '+psffile+' -o '+fluxfile
          flux1 = mrdfits(fluxfile)
          fluxivar1 = mrdfits(fluxfile,1)
          if (ichunk EQ 0) then trim1 = 0 else trim1 = npady
