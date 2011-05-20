@@ -38,10 +38,11 @@ pro bbspec_extract, image, invvar, xnow, flux, fluxivar, basisfile=basisfile
       for ichunk=0, nchunk-1 do begin
          y0 = ichunk * (nsmally - 2*npady)
          y1 = (y0 + nsmally - 1) < (ny-1)
-         x0 = median(xnow[y0:y1,ifiber]) - nsmallx/2
+         x0 = fix(median(xnow[y0:y1,ifiber])) - nsmallx/2
          x1 = x0 + nsmallx - 1
          x0 = x0 > 0 ; keep in bounds of image
          x1 = x1 < (nx-1) ; keep in bounds of image
+print,ifiber,ichunk,x0,x1,y0,y1
 
          mwrfits, image[x0:x1,y0:y1], imgfile, /create
          mwrfits, invvar[x0:x1,y0:y1], imgfile
