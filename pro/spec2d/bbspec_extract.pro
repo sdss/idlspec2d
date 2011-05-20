@@ -21,12 +21,12 @@ pro bbspec_extract, image, invvar, xnow, flux, fluxivar, basisfile=basisfile
     message, 'Dimensions do not agree between image and PSF model!'
    flux = fltarr(ny,nfiber)
    fluxivar = fltarr(ny,nfiber)
-   basis = dblarr(nfiber,ny,nhdu)
+   basis = dblarr(ny,nfiber,nhdu)
    for ihdu=0, nhdu-1 do $
     basis[*,*,ihdu] = mrdfits(basisfile,ihdu)
    ; Replace with the X centroids shifted, and trim to only the first entries
    ; if the PSF is only solved for the first fibers in the first rows
-;   basis[*,*,1] = transpose(xnow[0:ny-1,0:nfiber-1]) ; ???
+;   basis[*,*,0] = xnow[0:ny-1,0:nfiber-1] ; ???
 
    ; Loop through sub-images, solving for nsmall rows at a time on 1 fiber only
    nstepy = nsmally - 2*npady ; number of rows to step up in each call
@@ -44,7 +44,7 @@ pro bbspec_extract, image, invvar, xnow, flux, fluxivar, basisfile=basisfile
          mwrfits, invvar[x0:x1,y0:y1], imgfile
 
          for ihdu=0, nhdu-1 do begin
-            basis1 = basis[ifiber,y0:y1,ihdu]
+            basis1 = reform(basis[y0:y1,ifiber,ihdu],y1-y0+1,1)
             ; Replace the X and Y positions to refer to the subimage positions
             if (ihdu EQ 0) then basis1 -= x0
             if (ihdu EQ 1) then basis1 -= y0
