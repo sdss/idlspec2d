@@ -579,18 +579,7 @@ wfixed = [1,0] ; Do not refit for Gaussian widths, only flux ???
 ;x       proftype=proftype, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
 ;x        npoly=npoly, relative=1, ymodel=ym, chisq=fchisq, ansimage=ansimage, $
 ;x        reject=[0.1, 0.6, 0.6]
-;stop ; ??? The above fails for lots of rows on b2...
-;; Fit with sigma=1.4 for all cases, but fitting flux+width...
-;extract_image, flatimg, flativar, xsol, sigma, flux0, fluxivar0, $
-; proftype=proftype, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
-; npoly=npoly, relative=1, ansimage=ansimage0, reject=[0.1, 0.6, 0.6], $
-; chisq=chisq0, ymodel=ym0
-;; Fit with only the flux and not width...
-;extract_image, flatimg, flativar, xsol, sigma2, flux1, fluxivar1, $
-; proftype=proftype, wfixed=[1,0], highrej=highrej, lowrej=lowrej, $
-; npoly=npoly, relative=1, ansimage=ansimage1, reject=[0.1, 0.6, 0.6], $
-; chisq=chisq1, ymodel=ym1
-        
+
       ;------------------------------------------------------------------------
       ;    Another attempt to remove halo, but proftype has **MUCH** bigger
       ;      effect
