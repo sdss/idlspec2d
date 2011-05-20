@@ -202,9 +202,10 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, $
    if (keyword_set(bbspec)) then begin
       sdssproc, bestarc.name, indir=indir, /outfile, $
        /applybias, /applypixflat, /applycrosstalk
-      name1 = 'spArc-' + strmid(bestarc.name,4,11) + '.fits'
-      name2 = 'spFlat-' + strmid(bestflat.name,4,11) + '.fits'
-;      spawn, 'python make-my-psf.py'+bestarc+' '+name1+' '+name1 ; ???
+      name1 = 'sdProc-' + strmid(bestarc.name,4,11) + '.fits'
+      name2 = 'spArc-' + strmid(bestarc.name,4,11) + '.fits'
+      name3 = 'spFlat-' + strmid(bestflat.name,4,11) + '.fits'
+;      spawn, 'python make-my-psf.py '+name1+' '+name2+' '+name3 ; ???
    endif
 
    ;---------------------------------------------------------------------------
