@@ -338,8 +338,6 @@ mask = mask * (xvar ge min(jmin)) * (xvar le max(jmax))
 
       for ibun = 0L, nbun-1 do begin
 
-;if (ibun eq 4) then stop
-
 ; Make the extracting basis:
          workxcen = xcen[t_lo[ibun]:t_hi[ibun]]
          worksigma = sigma[t_lo[ibun]:t_hi[ibun]]
