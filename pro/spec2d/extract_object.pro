@@ -302,8 +302,17 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ; Replace the extracted fluxes with bbspec extractions
    if (keyword_set(bbspec)) then begin
       basisfile = 'spBasisPSF-'+strmid(sxpar(objhdr,'ARCFILE'),4,11)+'.fits'
-      bbspec_extract, image, invvar, xnow, flux, fluxivar, $
+      bbspec_extract, image, invvar, xnow, bbflux, bbfluxivar, $
         basisfile=basisfile
+
+      ; Deal with case of only the first few spectra being re-extracted...
+      dims = size(bbflux)
+      flux[0:dims[0]-1,0:dims[1]-1] = bbflux
+      fluxivar[0:dims[0]-1,0:dims[1]-1] = bbfluxivar
+
+      ; Re-apply the rejection from the old extraction code...
+      fluxivar *= ((pixelmask AND (pixelmask_bits('PARTIALREJECT') + $
+       pixelmask_bits('FULLREJECT'))) EQ 0)
    endif
 
    ;----------------------------------------------------------------------
