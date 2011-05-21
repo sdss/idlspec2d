@@ -3,9 +3,9 @@ pro bbspec_extract, image, invvar, xnow, flux, fluxivar, basisfile=basisfile
    stime0 = systime(1)
 
    nfibper = 3 ; number of fibers to extract in each call
-   nsmallx = 50 ; number of columns to extract in each call
-   nsmally = 100 ; number of rows to extract in each call
-   npady = 20 ; number of rows to use as padding
+   nsmallx = 40 ; number of columns to extract in each call
+   nsmally = 80 ; number of rows to extract in each call
+   npady = 15 ; number of rows to use as padding
 
    dims = size(image,/dimens)
    nx = dims[0]
@@ -25,22 +25,26 @@ pro bbspec_extract, image, invvar, xnow, flux, fluxivar, basisfile=basisfile
    basis = dblarr(ny,nfiber,nhdu)
    bhdr = ptrarr(nhdu)
    for ihdu=0, nhdu-1 do begin
-      basis[*,*,ihdu] = mrdfits(basisfile,ihdu,bhdr1)
-      ibad = where(finite(basis[*,*,ihdu]) EQ 0, nbad)
-      igood = where(finite(basis[*,*,ihdu]) EQ 1)
-      if (nbad GT 0) then basis[ibad,ihdu] = median(basis[igood,ihdu]) ; replace NaNs
+      basis1 = mrdfits(basisfile,ihdu,bhdr1)
+; The below to replace NaNs shouldn't be necessary!???
+      ibad = where(finite(basis1) EQ 0, nbad)
+      igood = where(finite(basis1) EQ 1)
+      if (nbad GT 0) then basis1[ibad] = median(basis1[igood]) ; replace NaNs
+      basis[*,*,ihdu] = basis1
       bhdr[ihdu] = ptr_new(bhdr1)
    endfor
+   if (total(1-finite(basis)) GT 0) then $
+    message, 'NaN values in PSF file'
    ; Replace with the X centroids shifted, and trim to only the first entries
    ; if the PSF is only solved for the first fibers in the first rows
-;   basis[*,*,0] = xnow[0:ny-1,0:nfiber-1] ; ???
+;   basis[*,*,0] = xnow[0:ny-1,0:nfiber-1] ; dimensions don't agree ???
 
    ; Loop through sub-images, solving for nsmall rows at a time on 1 fiber only
    nstepy = nsmally - 2*npady ; number of rows to step up in each call
    nchunk = ceil((ny - 2*npady)/nstepy)
    for ifiber=0, nfiber-1 do begin
       fib1 = ifiber - (nfibper-1)/2
-      fib2 = fib1 + nfibper
+      fib2 = fib1 + nfibper - 1
       fib1 = fib1 > 0
       fib2 = fib2 < (nfiber-1)
       for ichunk=0, nchunk-1 do begin
@@ -78,6 +82,8 @@ print,ifiber,ichunk,x0,x1,y0,y1
          spawn, 'python '+pyfile+' -i '+imgfile+' -p '+psffile+' -o '+fluxfile
          flux1 = mrdfits(fluxfile)
          fluxivar1 = mrdfits(fluxfile,1)
+; The reform below shouldn't be necessary!???
+         fluxivar1 = reform(mrdfits(fluxfile,1),size(flux1,/dimen))
          if (ichunk EQ 0) then trim1 = 0 else trim1 = npady
          if (ichunk EQ nchunk-1) then trim2 = 0 else trim2 = npady
          flux[y0+trim1:y1-trim2,ifiber] = flux1[trim1:y1-y0-trim2,ifiber-fib1]
@@ -88,6 +94,7 @@ print,ifiber,ichunk,x0,x1,y0,y1
    for ihdu=0, nhdu-1 do ptr_free, bhdr[ihdu]
 
    splog, 'Time to bbspec = ', systime(1)-stime0, ' seconds'
+; Compute and return ymodel ???
 
    return
 end
