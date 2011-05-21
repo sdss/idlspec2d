@@ -26,10 +26,11 @@ pro bbspec_extract, image, invvar, xnow, flux, fluxivar, basisfile=basisfile
    bhdr = ptrarr(nhdu)
    for ihdu=0, nhdu-1 do begin
       basis[*,*,ihdu] = mrdfits(basisfile,ihdu,bhdr1)
+      ibad = where(finite(basis[*,*,ihdu]) EQ 0, nbad)
+      igood = where(finite(basis[*,*,ihdu]) EQ 1)
+      if (nbad GT 0) then basis[ibad,ihdu] = median(basis[igood,ihdu]) ; replace NaNs
       bhdr[ihdu] = ptr_new(bhdr1)
    endfor
-   ibad = where(finite(basis) EQ 0, nbad)
-   if (nbad GT 0) then basis[ibad] = 0 ; replace NaN values ???
    ; Replace with the X centroids shifted, and trim to only the first entries
    ; if the PSF is only solved for the first fibers in the first rows
 ;   basis[*,*,0] = xnow[0:ny-1,0:nfiber-1] ; ???
