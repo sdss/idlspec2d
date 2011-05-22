@@ -266,13 +266,13 @@ pro extract_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $
      mask[*,cur] = masktemp
 
      if (total(finite(ansrow) EQ 0) GT 0) then $
-      message, 'ABORT! ansrow has NaNs at row', cur
+      message, 'ABORT! ansrow has NaNs at row ' + strtrim(cur,2)
 
      if (total(finite(ymodelrow) EQ 0) GT 0) then $
-      message, 'ABORT! ymodelrow has NaNs at row', cur
+      message, 'ABORT! ymodelrow has NaNs at row ' + string(cur,2)
 
      if (total(finite(fscatrow) EQ 0) GT 0) then $
-      message, 'ABORT! fscatrow has NaNs at row', cur
+      message, 'ABORT! fscatrow has NaNs at row ' + string(cur,2)
 
      if(ARG_PRESENT(ymodel)) then ymodel[*,cur] = ymodelrow
      if(ARG_PRESENT(fscat)) then fscat[iy,*] = fscatrow
