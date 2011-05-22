@@ -3,8 +3,8 @@ pro bbspec_extract, image, invvar, xnow, flux, fluxivar, basisfile=basisfile
    stime0 = systime(1)
 
    nfibper = 3 ; number of fibers to extract in each call
-   nsmallx = 40 ; number of columns to extract in each call
-   nsmally = 80 ; number of rows to extract in each call
+   nsmallx = 30 ; number of columns to extract in each call
+   nsmally = 60 ; number of rows to extract in each call
    npady = 15 ; number of rows to use as padding
 
    dims = size(image,/dimens)
@@ -56,6 +56,8 @@ pro bbspec_extract, image, invvar, xnow, flux, fluxivar, basisfile=basisfile
          x1 = x1 < (nx-1) ; keep in bounds of image
 print,ifiber,ichunk,x0,x1,y0,y1
 
+; Only solve if there are any unmasked points in this sub-region...
+if (total(invvar[x0:x1,y0:y1] NE 0) GT 0) then begin
          mwrfits, image[x0:x1,y0:y1], imgfile, /create
          mwrfits, invvar[x0:x1,y0:y1], imgfile
 
@@ -84,7 +86,7 @@ print,ifiber,ichunk,x0,x1,y0,y1
          fluxivar1 = mrdfits(fluxfile,1)
 ; The test for NaNs shouldn't be necessary!???
 ; This appears to happen if there are no good data points
-         ibad = where(finite(flux1) EQ 0 OR finite(fluxivar1) EQ 0), nbad)
+         ibad = where(finite(flux1) EQ 0 OR finite(fluxivar1) EQ 0, nbad)
          if (nbad GT 0) then begin
             flux1[ibad] = 0
             fluxivar1[ibad] = 0
@@ -95,6 +97,7 @@ print,ifiber,ichunk,x0,x1,y0,y1
          if (ichunk EQ nchunk-1) then trim2 = 0 else trim2 = npady
          flux[y0+trim1:y1-trim2,ifiber] = flux1[trim1:y1-y0-trim2,ifiber-fib1]
          fluxivar[y0+trim1:y1-trim2,ifiber] = fluxivar1[trim1:y1-y0-trim2,ifiber-fib1]
+endif
       endfor
    endfor
 
