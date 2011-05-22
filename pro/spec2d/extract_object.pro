@@ -306,7 +306,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
         basisfile=basisfile
 
       ; Deal with case of only the first few spectra being re-extracted...
-      dims = size(bbflux)
+      dims = size(bbflux,/dimens)
       flux[0:dims[0]-1,0:dims[1]-1] = bbflux
       fluxivar[0:dims[0]-1,0:dims[1]-1] = bbfluxivar
 
