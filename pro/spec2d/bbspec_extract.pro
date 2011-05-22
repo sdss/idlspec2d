@@ -82,6 +82,13 @@ print,ifiber,ichunk,x0,x1,y0,y1
          spawn, 'python '+pyfile+' -i '+imgfile+' -p '+psffile+' -o '+fluxfile
          flux1 = mrdfits(fluxfile)
          fluxivar1 = mrdfits(fluxfile,1)
+; The test for NaNs shouldn't be necessary!???
+; This appears to happen if there are no good data points
+         ibad = where(finite(flux1) EQ 0 OR finite(fluxivar1) EQ 0), nbad)
+         if (nbad GT 0) then begin
+            flux1[ibad] = 0
+            fluxivar1[ibad] = 0
+         endif
 ; The reform below shouldn't be necessary!???
          fluxivar1 = reform(mrdfits(fluxfile,1),size(flux1,/dimen))
          if (ichunk EQ 0) then trim1 = 0 else trim1 = npady
