@@ -88,14 +88,21 @@ if (total(invvar[x0:x1,y0:y1] NE 0) GT 0) then begin
 
          pyfile = djs_filepath('pix2spec.py', root_dir=getenv('BBSPEC_DIR'), $
           subdir='examples')
-         spawn, 'python '+pyfile+' -i '+imgfile+' -p '+psffile+' -o '+fluxfile
+         cmd = 'python '+pyfile+' -i '+imgfile+' -p '+psffile+' -o '+fluxfile
+         spawn, cmd, res, errcode
+         if (keyword_set(errcode) AND strmatch(errcode,'*LinAlgError*') EQ 0) $
+          then $
+          message, 'Error calling '+cmd
          flux1 = mrdfits(fluxfile)
          fluxivar1 = mrdfits(fluxfile,1)
 
          pyfile = djs_filepath('spec2pix.py', root_dir=getenv('BBSPEC_DIR'), $
           subdir='examples')
-         spawn, 'python '+pyfile+' -i '+fluxfile+' -p '+psffile+' -o '+modfile $
+         cmd = 'python '+pyfile+' -i '+fluxfile+' -p '+psffile+' -o '+modfile $
           + ' --hdu 3'
+         spawn, cmd, res, errcode
+         if (keyword_set(errcode)) then $
+          message, 'Error calling '+cmd
          ymodel1 = mrdfits(modfile)
 ; The test for NaNs shouldn't be necessary!???
 ; This appears to happen if there are no good data points
