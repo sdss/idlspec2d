@@ -15,6 +15,7 @@ pro bbspec_extract, image, invvar, xnow, flux, fluxivar, basisfile=basisfile, $
    imgfile = 'tmp_img.fits'
    psffile = 'tmp_psf.fits'
    fluxfile = 'tmp_flux.fits'
+   modfile = 'tmp_model.fits'
 
    ; Determine the number of HDUs in the PSF file
    nhdu = 0
@@ -90,7 +91,12 @@ if (total(invvar[x0:x1,y0:y1] NE 0) GT 0) then begin
          spawn, 'python '+pyfile+' -i '+imgfile+' -p '+psffile+' -o '+fluxfile
          flux1 = mrdfits(fluxfile)
          fluxivar1 = mrdfits(fluxfile,1)
-         ymodel1 = 0 * image[x0:x1,y0:y1] ; Need to create ymodel!???
+
+         pyfile = djs_filepath('spec2pix.py', root_dir=getenv('BBSPEC_DIR'), $
+          subdir='examples')
+         spawn, 'python '+pyfile+' -i '+fluxfile+' -p '+psffile+' -o '+modfile $
+          + ' --hdu 3'
+         ymodel1 = mrdfits(modfile)
 ; The test for NaNs shouldn't be necessary!???
 ; This appears to happen if there are no good data points
          ibad = where(finite(flux1) EQ 0 OR finite(fluxivar1) EQ 0, nbad)
@@ -103,13 +109,14 @@ if (total(invvar[x0:x1,y0:y1] NE 0) GT 0) then begin
          flux[y0+trim1:y1-trim2,ifiber] = flux1[trim1:y1-y0-trim2,ifiber-fib1]
          fluxivar[y0+trim1:y1-trim2,ifiber] = fluxivar1[trim1:y1-y0-trim2,ifiber-fib1]
          ; Use the model image +/- 3 pix from the central fiber...
-         for iy=trim, y1-y0-trim2 do begin
+         for iy=y0+trim2, y1-trim2 do begin
             thisx = round(xnow[iy,ifiber])
             thisx1 = (thisx - 3) > 0
             thisx2 = (thisx + 3) < (nx-1)
-            ymodel[thisx1:thisx2,y0+iy] = ymodel1[thisx1-x1:thisx2-x1,iy]
+            thisx1 = ((thisx1 - x0) > 0) + x0 ; bounds for ymodel1
+            thisx2 = ((thisx2 - x0) < (x1-x0-1)) + x0 ; bounds for ymodel1
+            ymodel[thisx1:thisx2,iy] = ymodel1[thisx1-x0:thisx2-x0,iy-y0]
          endfor
-         ymodel[y0+trim1:y1-trim2,ifiber] = ymodel1[trim1:y1-y0-trim2,ifiber-fib1]
 endif
       endfor
    endfor
