@@ -119,8 +119,6 @@ xy2traceset, transpose(ypeak), transpose(xpeak_new), tset, ncoeff=ncoeff, maxdev
 ; Make new yset:
 ypos = (findgen(max(yhi) - min(ylo) + 1) + min(ylo)) # replicate(1., nreal)
 
-;stop
-
 ; Compute xset from it:
 traceset2xy, tset, ypos, xpos
 
