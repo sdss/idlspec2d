@@ -1,4 +1,5 @@
-pro bbspec_extract, image, invvar, xnow, flux, fluxivar, basisfile=basisfile
+pro bbspec_extract, image, invvar, xnow, flux, fluxivar, basisfile=basisfile, $
+ ymodel=ymodel
 
    stime0 = systime(1)
 
@@ -15,13 +16,18 @@ pro bbspec_extract, image, invvar, xnow, flux, fluxivar, basisfile=basisfile
    psffile = 'tmp_psf.fits'
    fluxfile = 'tmp_flux.fits'
 
-   nhdu = 19 ; ??? should be dynamically determined
+   ; Determine the number of HDUs in the PSF file
+   nhdu = 0
+   while (size(headfits(basisfile,exten=nhdu,/silent),/tname) EQ 'STRING') do $
+    nhdu++
+
    bhdr = headfits(basisfile)
    nfiber = sxpar(bhdr,'NAXIS2')
    if (sxpar(bhdr,'NAXIS1') NE ny) then $
     message, 'Dimensions do not agree between image and PSF model!'
    flux = fltarr(ny,nfiber)
    fluxivar = fltarr(ny,nfiber)
+   ymodel = fltarr(nx,ny)
    basis = dblarr(ny,nfiber,nhdu)
    bhdr = ptrarr(nhdu)
    for ihdu=0, nhdu-1 do begin
@@ -67,7 +73,7 @@ if (total(invvar[x0:x1,y0:y1] NE 0) GT 0) then begin
             ; Replace the X and Y positions to refer to the subimage positions
             if (ihdu EQ 0) then basis1 -= x0
             if (ihdu EQ 1) then basis1 -= y0
-            sxaddpar, bhdr1, 'NAXIS', 2 ; Does not work!!!???
+            sxaddpar, bhdr1, 'NAXIS', 2
             sxaddpar, bhdr1, 'NAXIS1', y1-y0+1
             sxaddpar, bhdr1, 'NAXIS2', fib2-fib1+1
             if (ihdu EQ 0) then begin
@@ -84,8 +90,7 @@ if (total(invvar[x0:x1,y0:y1] NE 0) GT 0) then begin
          spawn, 'python '+pyfile+' -i '+imgfile+' -p '+psffile+' -o '+fluxfile
          flux1 = mrdfits(fluxfile)
          fluxivar1 = mrdfits(fluxfile,1)
-; The reform below shouldn't be necessary!???
-         fluxivar1 = reform(fluxivar1,size(flux1,/dimen))
+         ymodel1 = 0 * image[x0:x1,y0:y1] ; Need to create ymodel!???
 ; The test for NaNs shouldn't be necessary!???
 ; This appears to happen if there are no good data points
          ibad = where(finite(flux1) EQ 0 OR finite(fluxivar1) EQ 0, nbad)
@@ -97,6 +102,14 @@ if (total(invvar[x0:x1,y0:y1] NE 0) GT 0) then begin
          if (ichunk EQ nchunk-1) then trim2 = 0 else trim2 = npady
          flux[y0+trim1:y1-trim2,ifiber] = flux1[trim1:y1-y0-trim2,ifiber-fib1]
          fluxivar[y0+trim1:y1-trim2,ifiber] = fluxivar1[trim1:y1-y0-trim2,ifiber-fib1]
+         ; Use the model image +/- 3 pix from the central fiber...
+         for iy=trim, y1-y0-trim2 do begin
+            thisx = round(xnow[iy,ifiber])
+            thisx1 = (thisx - 3) > 0
+            thisx2 = (thisx + 3) < (nx-1)
+            ymodel[thisx1:thisx2,y0+iy] = ymodel1[thisx1-x1:thisx2-x1,iy]
+         endfor
+         ymodel[y0+trim1:y1-trim2,ifiber] = ymodel1[trim1:y1-y0-trim2,ifiber-fib1]
 endif
       endfor
    endfor
@@ -104,7 +117,6 @@ endif
    for ihdu=0, nhdu-1 do ptr_free, bhdr[ihdu]
 
    splog, 'Time to bbspec = ', systime(1)-stime0, ' seconds'
-; Compute and return ymodel ???
 
    return
 end

@@ -303,7 +303,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    if (keyword_set(bbspec)) then begin
       basisfile = 'spBasisPSF-'+strmid(sxpar(objhdr,'ARCFILE'),4,11)+'.fits'
       bbspec_extract, image, invvar, xnow, bbflux, bbfluxivar, $
-        basisfile=basisfile
+        basisfile=basisfile, ymodel=bb_ymodel
 
       ; Deal with case of only the first few spectra being re-extracted...
       dims = size(bbflux,/dimens)
@@ -313,6 +313,9 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
       ; Re-apply the rejection from the old extraction code...
       fluxivar *= ((pixelmask AND (pixelmask_bits('PARTIALREJECT') + $
        pixelmask_bits('FULLREJECT'))) EQ 0)
+
+      mwrfits, ymodel, 'ymodel-'+outname, /create
+      mwrfits, bb_ymodel, 'ymodel-'+outname
    endif
 
    ;----------------------------------------------------------------------
