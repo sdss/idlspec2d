@@ -1,10 +1,66 @@
-pro bbspec_extract, image, invvar, xnow, flux, fluxivar, basisfile=basisfile, $
- ymodel=ymodel
+;+
+; NAME:
+;   bbspec_extract
+;
+; PURPOSE:
+;   Run bbspec 2D extraction code
+;
+; CALLING SEQUENCE:
+;   bbspec_extract, image, invvar, flux, fluxivar, basisfile=, $
+;    [ ximg=, frange=, yrange=, ymodel= ]
+;
+; INPUTS:
+;   image      - Image [NX,NY]
+;   innvar     - Inverse variance image corresponding to IMAGE [NX,NY]
+;
+; OPTIONAL INPUTS:
+;   ximg       - X centroids of fibers on IMAGE, to replace those entries
+;                in the PSF file [NY,NFIBER]
+;   frange     - Fiber number range (0-indexed); default to all fibers
+;                represented in the PSF file
+;   yrange     - Range of rows to extract; default to all rows that contain
+;                any unmasked pixels
+;
+; OUTPUTS:
+;   flux       - Extracted flux vectors [NY,NFIBER]
+;   fluxivar   - Extracted inverse variance vectors [NY,NFIBER]
+;   basisfile  - File with PSF model for bbspec
+;
+; OPTIONAL OUTPUTS:
+;   ymodel     - Model-fit image
+;
+; COMMENTS:
+;   Currently hard-wired to extract in chunks of 20 fibers by 60 rows,
+;   with the 15 rows on the top and bottom to be used as padding and
+;   discarded.
+;
+; EXAMPLES:
+;
+; BUGS:
+;
+; DATA FILES:
+;
+; PROCEDURES CALLED:
+;   splog
+;
+; INTERNAL SUPPORT ROUTINES:
+;
+; REVISION HISTORY:
+;   24-May-2011  Written by D. Schlegel, LBL
+;-
+;------------------------------------------------------------------------------
+pro bbspec_extract, image, invvar, flux, fluxivar, basisfile=basisfile, $
+ ximg=ximg, frange=frange1, yrange=yrange1, ymodel=ymodel
+
+   if (n_params() NE 5 OR keyword_set(basisfile) EQ 0) then $
+    message, 'Parameters not set'
+   if (keyword_set(yrange1)) then yrange = yrange1 $
+    else yrange = minmax(where(total(invvar,1) GT 0))
 
    stime0 = systime(1)
 
-   nfibper = 3 ; number of fibers to extract in each call
-   nsmallx = 20 ; number of columns to extract in each call
+   nfibper = 20 ; number of fibers to extract in each call
+   npadx = 7 ; pad sub-image to left+right by this number of pixels
    nsmally = 60 ; number of rows to extract in each call
    npady = 15 ; number of rows to use as padding
 
@@ -21,14 +77,23 @@ pro bbspec_extract, image, invvar, xnow, flux, fluxivar, basisfile=basisfile, $
    nhdu = 0
    while (size(headfits(basisfile,exten=nhdu,/silent),/tname) EQ 'STRING') do $
     nhdu++
+   if (nhdu EQ 0) then $
+    message, 'PSF file not found '+string(basisfile)
 
    bhdr = headfits(basisfile)
    nfiber = sxpar(bhdr,'NAXIS2')
+   if (keyword_set(frange1)) then begin
+      if (frange1[0] LT 0 OR frange1[1] GE nfiber) then $
+       message, 'FRANGE extends beyond the fiber numbers in PSF file'
+      frange = frange1
+   endif else begin
+      frange = [0,nfiber-1]
+   endelse
    if (sxpar(bhdr,'NAXIS1') NE ny) then $
     message, 'Dimensions do not agree between image and PSF model!'
    flux = fltarr(ny,nfiber)
    fluxivar = fltarr(ny,nfiber)
-   ymodel = fltarr(nx,ny)
+   if (arg_present(ymodel)) then ymodel = fltarr(nx,ny)
    basis = dblarr(ny,nfiber,nhdu)
    bhdr = ptrarr(nhdu)
    for ihdu=0, nhdu-1 do begin
@@ -36,35 +101,35 @@ pro bbspec_extract, image, invvar, xnow, flux, fluxivar, basisfile=basisfile, $
 ; The below to replace NaNs shouldn't be necessary!???
       ibad = where(finite(basis1) EQ 0, nbad)
       igood = where(finite(basis1) EQ 1)
-      if (nbad GT 0) then basis1[ibad] = median(basis1[igood]) ; replace NaNs
+      if (nbad GT 0) then begin
+         splog, 'Replacing ', nbad, ' values in PSF file '+basisfile
+         basis1[ibad] = median(basis1[igood]) ; replace NaNs
+      endif
       basis[*,*,ihdu] = basis1
       bhdr[ihdu] = ptr_new(bhdr1)
    endfor
    if (total(1-finite(basis)) GT 0) then $
     message, 'NaN values in PSF file'
+
    ; Replace with the X centroids shifted, and trim to only the first entries
    ; if the PSF is only solved for the first fibers in the first rows
-;   basis[*,*,0] = xnow[0:ny-1,0:nfiber-1] ; dimensions don't agree ???
+   if (keyword_set(ximg)) then begin
+      basis[*,*,0] = ximg[0:ny-1,0:nfiber-1]
+   endif
 
-   ; Loop through sub-images, solving for nsmall rows at a time on 1 fiber only
+   ; Loop through sub-images, solving for nsmall rows at a time
+   ; on nfibper fibers
    nstepy = nsmally - 2*npady ; number of rows to step up in each call
-   nchunk = ceil((ny - 2*npady)/nstepy)
-   for ifiber=0, nfiber-1 do begin
-      fib1 = ifiber - (nfibper-1)/2
-      fib2 = fib1 + nfibper - 1
-      fib1 = fib1 > 0
-      fib2 = fib2 < (nfiber-1)
+   nchunk = ceil((yrange[1] - yrange[0] + 1 - 2*npady)/nstepy)
+   for fib1=frange[0], frange[1], nfibper do begin
+      fib2 = (fib1 + nfibper - 1) < frange[1]
       for ichunk=0, nchunk-1 do begin
-         y0 = ichunk * (nsmally - 2*npady)
+         y0 = yrange[0] + ichunk * (nsmally - 2*npady)
          y1 = (y0 + nsmally - 1) < (ny-1)
-         x0 = fix(median(xnow[y0:y1,ifiber])) - nsmallx/2
-         x1 = x0 + nsmallx - 1
-         x0 = x0 > 0 ; keep in bounds of image
-         x1 = x1 < (nx-1) ; keep in bounds of image
-print,ifiber,ichunk,x0,x1,y0,y1
+         x0 = (fix(min(ximg[y0:y1,fib1:fib2])) - npadx) > 0
+         x1 = (fix(max(ximg[y0:y1,fib1:fib2])) + npadx) < (nx-1)
+print,fib1,fib2,ichunk,x0,x1,y0,y1
 
-; Only solve if there are any unmasked points in this sub-region...
-if (total(invvar[x0:x1,y0:y1] NE 0) GT 0) then begin
          mwrfits, image[x0:x1,y0:y1], imgfile, /create
          mwrfits, invvar[x0:x1,y0:y1], imgfile
 
@@ -90,9 +155,9 @@ if (total(invvar[x0:x1,y0:y1] NE 0) GT 0) then begin
           subdir='examples')
          cmd = 'python '+pyfile+' -i '+imgfile+' -p '+psffile+' -o '+fluxfile
          spawn, cmd, res, errcode
-         if (keyword_set(errcode) AND $
-          strmatch(errcode[0],'*LinAlgError*') EQ 0) then $
-          message, 'Error calling '+cmd
+;         if (keyword_set(errcode) AND $
+;          strmatch(errcode[0],'*LinAlgError*') EQ 0) then $
+;          message, 'Error calling '+cmd
          flux1 = mrdfits(fluxfile)
          fluxivar1 = mrdfits(fluxfile,1)
 
@@ -103,9 +168,8 @@ if (total(invvar[x0:x1,y0:y1] NE 0) GT 0) then begin
          spawn, cmd, res, errcode
          if (keyword_set(errcode)) then $
           message, 'Error calling '+cmd
-         ymodel1 = mrdfits(modfile)
+         if (arg_present(ymodel)) then ymodel1 = mrdfits(modfile)
 ; The test for NaNs shouldn't be necessary!???
-; This appears to happen if there are no good data points
          ibad = where(finite(flux1) EQ 0 OR finite(fluxivar1) EQ 0, nbad)
          if (nbad GT 0) then begin
             flux1[ibad] = 0
@@ -113,18 +177,11 @@ if (total(invvar[x0:x1,y0:y1] NE 0) GT 0) then begin
          endif
          if (ichunk EQ 0) then trim1 = 0 else trim1 = npady
          if (ichunk EQ nchunk-1) then trim2 = 0 else trim2 = npady
-         flux[y0+trim1:y1-trim2,ifiber] = flux1[trim1:y1-y0-trim2,ifiber-fib1]
-         fluxivar[y0+trim1:y1-trim2,ifiber] = fluxivar1[trim1:y1-y0-trim2,ifiber-fib1]
-         ; Use the model image +/- 3 pix from the central fiber...
-         for iy=y0+trim2, y1-trim2 do begin
-            thisx = round(xnow[iy,ifiber])
-            thisx1 = (thisx - 3) > 0
-            thisx2 = (thisx + 3) < (nx-1)
-            thisx1 = ((thisx1 - x0) > 0) + x0 ; bounds for ymodel1
-            thisx2 = ((thisx2 - x0) < (x1-x0-1)) + x0 ; bounds for ymodel1
-            ymodel[thisx1:thisx2,iy] = ymodel1[thisx1-x0:thisx2-x0,iy-y0]
-         endfor
-endif
+         flux[y0+trim1:y1-trim2,fib1:fib2] = flux1[trim1:y1-y0-trim2,*]
+         fluxivar[y0+trim1:y1-trim2,fib1:fib2] = fluxivar1[trim1:y1-y0-trim2,*]
+         ; Use the model image +/- 3.5 pix from the central fiber...
+         if (arg_present(ymodel)) then $
+          ymodel[x0:x1,y0+trim2:y1-trim2] = ymodel1[*,trim2:y1-y0-trim2]
       endfor
    endfor
 
@@ -134,3 +191,4 @@ endif
 
    return
 end
+;------------------------------------------------------------------------------
