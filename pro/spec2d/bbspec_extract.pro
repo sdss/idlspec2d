@@ -52,7 +52,7 @@
 pro bbspec_extract, image, invvar, flux, fluxivar, basisfile=basisfile, $
  ximg=ximg, frange=frange1, yrange=yrange1, ymodel=ymodel
 
-   if (n_params() NE 5 OR keyword_set(basisfile) EQ 0) then $
+   if (n_params() NE 4 OR keyword_set(basisfile) EQ 0) then $
     message, 'Parameters not set'
    if (keyword_set(yrange1)) then yrange = yrange1 $
     else yrange = minmax(where(total(invvar,1) GT 0))

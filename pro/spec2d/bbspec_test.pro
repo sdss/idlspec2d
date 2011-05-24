@@ -42,20 +42,30 @@ pro bbspec_test, scifile, outfile=outfile1, clobber=clobber, _EXTRA=Extra
 
    if (n_params() NE 1) then $
     message, 'Wrong number of parameters'
+   rawdata_dir = getenv('RAWDATA_DIR')
 
-   image = mrdfits(scifile, 0, hdr)
-   if (NOT keyword_set(image)) then $
+   hdr = headfits(scifile)
+   if (NOT keyword_set(hdr)) then $
     message, 'Error reading file '+scifile
-   invvar = mrdfits(scifile, 1)
+   mjdstr = string(sxpar(hdr, 'MJD'),format='(i5.5)')
+   indir = concat_dir(rawdata_dir, mjdstr)
+
+   rawfile = 'sdR-'+strmid(sxpar(hdr, 'FILENAME'),4,11)+'.fit*'
+   splog, 'Reading raw science image'
+   sdssproc, rawfile, image, invvar, indir=indir, $
+    /applybias, /applypixflat, /applycrosstalk, minflat=0.8, maxflat=1.2
+   if (NOT keyword_set(image)) then $
+    message, 'Unable to find raw science frame'
+
    arcstr = strmid(sxpar(hdr, 'ARCFILE'),4,11)
    flatstr = strmid(sxpar(hdr, 'FLATFILE'),4,11)
    if (keyword_set(outfile1)) then outfile = outfile1 $
     else outfile = 'ymodel-test.fits'
 
-   arcfile = (findfile('spArc'+arcstr+'.fits*', count=ct))[0]
+   arcfile = (findfile('spArc-'+arcstr+'.fits*', count=ct))[0]
    if (ct EQ 0) then $
     message, 'Unable to find spArc file'
-   flatfile = (findfile('spFlat'+flatstr+'.fits*', count=ct))[0]
+   flatfile = (findfile('spFlat-'+flatstr+'.fits*', count=ct))[0]
    if (ct EQ 0) then $
     message, 'Unable to find spFlat file'
 
@@ -64,9 +74,6 @@ pro bbspec_test, scifile, outfile=outfile1, clobber=clobber, _EXTRA=Extra
    if (ct EQ 0 OR keyword_set(clobber)) then begin
       splog, 'Generating sdProc file for arc'
       arcname = 'sdR-'+arcstr+'.fit'
-      rawdata_dir = getenv('RAWDATA_DIR')
-      mjdstr = sxpar(hdr, 'MJD')
-      indir = concat_dir(rawdata_dir, mjdstr)
       sdssproc, arcname, indir=indir, /outfile, $
        /applybias, /applypixflat, /applycrosstalk
       splog, 'Generating spBasisPSF file '+basisfile
