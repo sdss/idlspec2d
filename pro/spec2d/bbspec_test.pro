@@ -72,7 +72,12 @@ pro bbspec_test, scifile, outfile=outfile1, clobber=clobber, _EXTRA=Extra
       splog, 'Generating spBasisPSF file '+basisfile
       pyfile = djs_filepath('make-my-psf.py', root_dir=getenv('BBSPEC_DIR'), $
        subdir='examples')
-      spawn, 'python '+pyfile+' '+arcstr+' '+flatstr
+      cmd = 'python '+pyfile+' '+arcstr+' '+flatstr
+      spawn, cmd, res, errcode
+      if (keyword_set(errcode)) then begin
+         splog, errcode
+         message, 'Error calling '+cmd
+      endif
    endif
 
    splog, 'Reading existing traceset '+flatfile

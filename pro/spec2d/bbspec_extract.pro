@@ -155,9 +155,11 @@ print,fib1,fib2,ichunk,x0,x1,y0,y1
           subdir='examples')
          cmd = 'python '+pyfile+' -i '+imgfile+' -p '+psffile+' -o '+fluxfile
          spawn, cmd, res, errcode
-;         if (keyword_set(errcode) AND $
-;          strmatch(errcode[0],'*LinAlgError*') EQ 0) then $
-;          message, 'Error calling '+cmd
+         if (keyword_set(errcode) AND $
+          strmatch(errcode[0],'*LinAlgError*') EQ 0) then begin
+            splog, errcode
+            message, 'Error calling '+cmd
+         endif
          flux1 = mrdfits(fluxfile)
          fluxivar1 = mrdfits(fluxfile,1)
 
@@ -166,8 +168,10 @@ print,fib1,fib2,ichunk,x0,x1,y0,y1
          cmd = 'python '+pyfile+' -i '+fluxfile+' -p '+psffile+' -o '+modfile $
           + ' --hdu 3'
          spawn, cmd, res, errcode
-         if (keyword_set(errcode)) then $
-          message, 'Error calling '+cmd
+         if (keyword_set(errcode)) then begin
+            splog, errcode
+            message, 'Error calling '+cmd
+         endif
          if (arg_present(ymodel)) then ymodel1 = mrdfits(modfile)
 ; The test for NaNs shouldn't be necessary!???
          ibad = where(finite(flux1) EQ 0 OR finite(fluxivar1) EQ 0, nbad)

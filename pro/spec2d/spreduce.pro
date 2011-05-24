@@ -207,7 +207,12 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, $
       ; Assume files exist: sdProc-$arcstr spArc-$arcstr spFlat-$flatstr
       pyfile = djs_filepath('make-my-psf.py', root_dir=getenv('BBSPEC_DIR'), $
        subdir='examples')
-      spawn, 'python '+pyfile+' '+arcstr+' '+flatstr
+      cmd = 'python '+pyfile+' '+arcstr+' '+flatstr
+      spawn, cmd, res, errcode
+      if (keyword_set(errcode)) then begin
+         splog, errcode
+         message, 'Error calling '+cmd
+      endif
    endif
 
    ;---------------------------------------------------------------------------
