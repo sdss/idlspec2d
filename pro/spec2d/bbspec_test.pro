@@ -85,7 +85,9 @@ pro bbspec_test, scifile, outfile=outfile1, clobber=clobber, _EXTRA=Extra
          splog, errcode
          message, 'Error calling '+cmd
       endif
-   endif
+   endif else begin
+      splog, 'Use existing PSF file'
+   endelse
 
    splog, 'Reading existing traceset '+flatfile
    xset = mrdfits(flatfile, 1)
