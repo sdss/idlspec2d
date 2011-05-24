@@ -155,8 +155,10 @@ print,fib1,fib2,ichunk,x0,x1,y0,y1
           subdir='examples')
          cmd = 'python '+pyfile+' -i '+imgfile+' -p '+psffile+' -o '+fluxfile
          spawn, cmd, res, errcode
-         if (keyword_set(errcode) AND $
-          strmatch(errcode[0],'*LinAlgError*') EQ 0) then begin
+; Should not need to ignore some error messages below???
+         if (keyword_set(errcode) $
+          AND strmatch(errcode[0],'*LinAlgError*') EQ 0 $
+          AND strmatch(errcode[0],'*invert matrix*')) then begin
             splog, errcode
             message, 'Error calling '+cmd
          endif
@@ -176,6 +178,7 @@ print,fib1,fib2,ichunk,x0,x1,y0,y1
 ; The test for NaNs shouldn't be necessary!???
          ibad = where(finite(flux1) EQ 0 OR finite(fluxivar1) EQ 0, nbad)
          if (nbad GT 0) then begin
+            splog, 'Replacing ', nbad, ' NaN values in extracted flux'
             flux1[ibad] = 0
             fluxivar1[ibad] = 0
          endif
