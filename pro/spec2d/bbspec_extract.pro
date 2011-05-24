@@ -90,8 +90,8 @@ if (total(invvar[x0:x1,y0:y1] NE 0) GT 0) then begin
           subdir='examples')
          cmd = 'python '+pyfile+' -i '+imgfile+' -p '+psffile+' -o '+fluxfile
          spawn, cmd, res, errcode
-         if (keyword_set(errcode) AND strmatch(errcode,'*LinAlgError*') EQ 0) $
-          then $
+         if (keyword_set(errcode) AND $
+          strmatch(errcode[0],'*LinAlgError*') EQ 0) then $
           message, 'Error calling '+cmd
          flux1 = mrdfits(fluxfile)
          fluxivar1 = mrdfits(fluxfile,1)
