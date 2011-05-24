@@ -97,7 +97,7 @@ pro bbspec_extract, image, invvar, flux, fluxivar, basisfile=basisfile, $
    basis = dblarr(ny,nfiber,nhdu)
    bhdr = ptrarr(nhdu)
    for ihdu=0, nhdu-1 do begin
-      basis1 = mrdfits(basisfile,ihdu,bhdr1)
+      basis1 = mrdfits(basisfile, ihdu, bhdr1, /silent)
 ; The below to replace NaNs shouldn't be necessary!???
       ibad = where(finite(basis1) EQ 0, nbad)
       igood = where(finite(basis1) EQ 1)
@@ -128,10 +128,10 @@ pro bbspec_extract, image, invvar, flux, fluxivar, basisfile=basisfile, $
          y1 = (y0 + nsmally - 1) < (ny-1)
          x0 = (fix(min(ximg[y0:y1,fib1:fib2])) - npadx) > 0
          x1 = (fix(max(ximg[y0:y1,fib1:fib2])) + npadx) < (nx-1)
-print,fib1,fib2,ichunk,x0,x1,y0,y1
+         splog, 'Extracting FIBER=', fib1, fib2, ' Y=', y0, y1
 
-         mwrfits, image[x0:x1,y0:y1], imgfile, /create
-         mwrfits, invvar[x0:x1,y0:y1], imgfile
+         mwrfits, image[x0:x1,y0:y1], imgfile, /create, /silent
+         mwrfits, invvar[x0:x1,y0:y1], imgfile, /silent
 
          for ihdu=0, nhdu-1 do begin
             basis1 = basis[y0:y1,fib1:fib2,ihdu]
@@ -148,7 +148,7 @@ print,fib1,fib2,ichunk,x0,x1,y0,y1
                sxaddpar, bhdr1, 'NSPEC', fib2-fib1+1
                sxaddpar, bhdr1, 'NFLUX', y1-y0+1
             endif
-            mwrfits, basis1, psffile, bhdr1, create=(ihdu EQ 0)
+            mwrfits, basis1, psffile, bhdr1, create=(ihdu EQ 0), /silent
          endfor
 
          pyfile = djs_filepath('pix2spec.py', root_dir=getenv('BBSPEC_DIR'), $
@@ -162,8 +162,8 @@ print,fib1,fib2,ichunk,x0,x1,y0,y1
             splog, errcode
             message, 'Error calling '+cmd
          endif
-         flux1 = mrdfits(fluxfile)
-         fluxivar1 = mrdfits(fluxfile,1)
+         flux1 = mrdfits(fluxfile, /silent)
+         fluxivar1 = mrdfits(fluxfile, 1, /silent)
 
          pyfile = djs_filepath('spec2pix.py', root_dir=getenv('BBSPEC_DIR'), $
           subdir='examples')
@@ -174,7 +174,7 @@ print,fib1,fib2,ichunk,x0,x1,y0,y1
             splog, errcode
             message, 'Error calling '+cmd
          endif
-         if (arg_present(ymodel)) then ymodel1 = mrdfits(modfile)
+         if (arg_present(ymodel)) then ymodel1 = mrdfits(modfile, /silent)
 ; The test for NaNs shouldn't be necessary!???
          ibad = where(finite(flux1) EQ 0 OR finite(fluxivar1) EQ 0, nbad)
          if (nbad GT 0) then begin
