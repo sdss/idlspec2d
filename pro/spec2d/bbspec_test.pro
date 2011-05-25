@@ -68,7 +68,7 @@ pro bbspec_test_batch, scifile, _EXTRA=Extra
    printf, olun, '#PBS -j oe'
    printf, olun, 'cd $PBS_O_WORKDIR'
    printf, olun, 'set -o verbose'
-   printf, olun, 'setup idlspec2d '+(strsplit(idlspec2d_version(),/extract))[0]
+#   printf, olun, 'setup idlspec2d '+(strsplit(idlspec2d_version(),/extract))[0]
    printf, olun, cmd
    close, olun
    free_lun, olun
