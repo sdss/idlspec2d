@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   bbspec_extract, image, invvar, flux, fluxivar, basisfile=, $
-;    [ ximg=, frange=, yrange=, ymodel= ]
+;    [ ximg=, frange=, yrange=, ymodel=, tmproot= ]
 ;
 ; INPUTS:
 ;   image      - Image [NX,NY]
@@ -20,6 +20,10 @@
 ;                represented in the PSF file
 ;   yrange     - 0-indexed ange of rows to extract; default to all rows
 ;                that contain any unmasked pixels
+;   tmproot    - Root file name for temporary files; default to 'tmp-';
+;                necessary to be a unique string identifier if multiple
+;                instances of this procedure running in the same directory,
+;                for example those spawned by BBSPECT_TEST.
 ;
 ; OUTPUTS:
 ;   flux       - Extracted flux vectors [NY,NFIBER]
@@ -50,12 +54,14 @@
 ;-
 ;------------------------------------------------------------------------------
 pro bbspec_extract, image, invvar, flux, fluxivar, basisfile=basisfile, $
- ximg=ximg, frange=frange1, yrange=yrange1, ymodel=ymodel
+ ximg=ximg, frange=frange1, yrange=yrange1, tmproot=tmproot1, ymodel=ymodel
 
    if (n_params() NE 4 OR keyword_set(basisfile) EQ 0) then $
     message, 'Parameters not set'
    if (keyword_set(yrange1)) then yrange = yrange1 $
     else yrange = minmax(where(total(invvar,1) GT 0))
+   if (keyword_set(tmproot1)) then tmproot = tmproot1 $
+    else tmproot = 'tmp-'
 
    stime0 = systime(1)
 
@@ -68,10 +74,10 @@ pro bbspec_extract, image, invvar, flux, fluxivar, basisfile=basisfile, $
    nx = dims[0]
    ny = dims[1]
 
-   imgfile = 'tmp_img.fits'
-   psffile = 'tmp_psf.fits'
-   fluxfile = 'tmp_flux.fits'
-   modfile = 'tmp_model.fits'
+   imgfile = tmproot+'img.fits'
+   psffile = tmproot+'psf.fits'
+   fluxfile = tmproot+'flux.fits'
+   modfile = tmproot+'model.fits'
 
    ; Determine the number of HDUs in the PSF file
    nhdu = 0
