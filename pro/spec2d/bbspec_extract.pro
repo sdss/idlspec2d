@@ -128,7 +128,7 @@ pro bbspec_extract, image, invvar, flux, fluxivar, basisfile=basisfile, $
          y1 = (y0 + nsmally - 1) < (ny-1)
          x0 = (fix(min(ximg[y0:y1,fib1:fib2])) - npadx) > 0
          x1 = (fix(max(ximg[y0:y1,fib1:fib2])) + npadx) < (nx-1)
-         splog, 'Extracting FIBER=', fib1, fib2, ' Y=', y0, y1
+         splog, 'Extracting FIBER=', fib1, fib2, ' Y=', y0, y1, ' '+systime()
 
          mwrfits, image[x0:x1,y0:y1], imgfile, /create, /silent
          mwrfits, invvar[x0:x1,y0:y1], imgfile, /silent
