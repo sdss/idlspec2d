@@ -29,6 +29,11 @@
 ;   exists an spFrame, spArc, spFlat.  Existing spBasisPSF files are not
 ;   over-written unless /CLOBBER is set.
 ;
+;   If the spBasisPSF file cotains only the first N fibers, then only
+;   those N fibers are extracted.  If /BATCH is set, then N must be
+;   a multiple of 20 since the code is then called in explicit batches
+;   of 20 fibers.
+;
 ;   The output file contains 3 HDUs with the 2-D model image,
 ;   extracted fluxes, and extracted inverse variances.
 ;
