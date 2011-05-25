@@ -174,7 +174,7 @@ pro bbspec_test, scifile, outfile=outfile1, clobber=clobber, batch=batch, $
        if (file_test(tmpoutfile[i])) then file_delete, tmpoutfile[i]
       for i=0, njob-1 do $
        bbspec_test_batch, scifile, _EXTRA=Extra, frange=[i*20,i*20+19], $
-        outfile=tmpoutfile[i], tmproot=tmproot[i]
+        outfile=tmpoutfile[i], tmproot=tmproot[i]+'-'
       bbspec_test_wait, tmpoutfile
       bb_ymodel = 0
       flux = 0
