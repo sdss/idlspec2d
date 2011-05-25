@@ -6,7 +6,7 @@
 ;   Run bbspec 2D extraction code as an after-burner to existing reductions
 ;
 ; CALLING SEQUENCE:
-;   bbspec_test, scifile, [ outfile=, /clobber, _EXTRA= ]
+;   bbspec_test, scifile, [ outfile=, /clobber, /batch, _EXTRA= ]
 ;
 ; INPUTS:
 ;   scifile    - spFrame file name
@@ -15,6 +15,8 @@
 ;   outfile    - Output FITS file with 2D image model; default to
 ;                'ymodel-test.fits'
 ;   clobber    - If set, then clobber any existing PSF and re-generate it
+;   batch      - If set, then batch each bundle of 20 fibers to a different
+;                PBS job; FRANGE keyword cannot also be set
 ;   _EXTRA     - Keywords for BBSPEC_EXTRACT, such as FRANGE,YRANGE
 ;
 ; OUTPUTS:
@@ -38,11 +40,70 @@
 ;   24-May-2011  Written by D. Schlegel, LBL
 ;-
 ;------------------------------------------------------------------------------
-pro bbspec_test, scifile, outfile=outfile1, clobber=clobber, _EXTRA=Extra
+pro bbspec_test_batch, scifile, _EXTRA=Extra
+
+   fq = "'"
+   cmd = 'idl -e "bbspec_test,'+fq+scifile+fq
+   tags = tag_names(Extra)
+   for i=0, n_elements(tags)-1 do begin
+      qstring = size(Extra.(i),/tname) EQ 'STRING'
+      thisquote = qstring ? fq : ''
+      num = n_elements(Extra.(i))
+      cmd += ','+tags[i]+'='+(num GT 1 ? '[':'') $
+       +thisquote+strtrim(Extra.(i)[0],2)+thisquote
+      for j=1, num-1 do $
+       cmd += ','+strtrim(Extra.(i)[j],2)
+      cmd += (num GT 1 ? ']':'')
+   endfor
+   cmd += '"'
+   splog, cmd
+
+   pbsfile = 'pbs-'+Extra.(where(tags EQ 'OUTFILE'))
+   openw, olun, pbsfile, /get_lun
+   printf, olun, '# Auto-generated batch file '+systime()
+   printf, olun, '#PBS -l nodes=1'
+   printf, olun, '#PBS -l walltime=48:00:00'
+   printf, olun, '#PBS -W umask=0022'
+   printf, olun, '#PBS -V'
+   printf, olun, '#PBS -j oe'
+   printf, olun, 'cd $PBS_O_WORKDIR'
+   printf, olun, 'set -o verbose'
+   printf, olun, 'setup idlspec2d '+(strsplit(idlspec2d_version(),/extract))[0]
+   printf, olun, cmd
+   close, olun
+   free_lun, olun
+
+   splog, 'Submitting file '+pbsfile
+   spawn, 'qsub '+pbsfile
+
+   return
+end
+;------------------------------------------------------------------------------
+; Wait for all files to exist, then return
+pro bbspec_test_wait, outfile
+
+   qdone = 0B
+   while (qdone EQ 0) do begin
+print,'Waiting for completion...'
+      qdone = 1B
+      for i=0, n_elements(outfile)-1 do $
+       qdone *= file_test(outfile[i])
+      wait, 15
+   endwhile
+
+   return
+end
+;------------------------------------------------------------------------------
+pro bbspec_test, scifile, outfile=outfile1, clobber=clobber, batch=batch, $
+ _EXTRA=Extra
 
    if (n_params() NE 1) then $
     message, 'Wrong number of parameters'
    rawdata_dir = getenv('RAWDATA_DIR')
+   if (keyword_set(batch) AND keyword_set(Extra)) then begin
+      if (tag_exist(Extra,'FRANGE')) then $
+       message, 'Cannot specify both BATCH and FRANGE'
+   endif
 
    hdr = headfits(scifile)
    if (NOT keyword_set(hdr)) then $
@@ -94,8 +155,26 @@ pro bbspec_test, scifile, outfile=outfile1, clobber=clobber, _EXTRA=Extra
    traceset2xy, xset, xx, ximg
 
    splog, 'Running 2D extraction'
-   bbspec_extract, image, invvar, flux, fluxivar, basisfile=basisfile, $
-    ximg=ximg, ymodel=bb_ymodel, _EXTRA=Extra
+   if (NOT keyword_set(batch)) then begin
+      bbspec_extract, image, invvar, flux, fluxivar, basisfile=basisfile, $
+       ximg=ximg, ymodel=bb_ymodel, _EXTRA=Extra
+   endif else begin
+      njob = 25
+      tmpoutfile = 'tmp-'+strmid(scifile,8,11)+'-' $
+       +string(lindgen(njob),format='(i2.2)')+'.fits'
+      for i=0, njob-1 do $
+       if (file_test(tmpoutfile[i])) then file_delete, tmpoutfile[i]
+      for i=0, njob-1 do $
+       bbspec_test_batch, scifile, _EXTRA=Extra, frange=[i*20,i*20+19], $
+        outfile=tmpoutfile[i]
+      bbspec_test_wait, tmpoutfile
+      bb_ymodel = 0
+      flux = 0
+      fluxivar = 0
+      for i=0, njob-1 do bb_ymodel += mrdfits(tmpoutfile[i],0)
+      for i=0, njob-1 do flux += mrdfits(tmpoutfile[i],1)
+      for i=0, njob-1 do fluxivar += mrdfits(tmpoutfile[i],2)
+   endelse
 
    splog, 'Writing file '+outfile
    mwrfits, bb_ymodel, outfile, /create
