@@ -159,7 +159,9 @@ pro bbspec_test, scifile, outfile=outfile1, clobber=clobber, batch=batch, $
       bbspec_extract, image, invvar, flux, fluxivar, basisfile=basisfile, $
        ximg=ximg, ymodel=bb_ymodel, _EXTRA=Extra
    endif else begin
-      njob = 25
+      nfiber = sxpar(headfits(basisfile),'NAXIS2')
+      njob = nfiber / 20
+      splog, 'Batching ', njob, ' jobs for ', nfiber, ' fibers in PSF file'
       tmproot = 'tmp-'+strmid(scifile,8,11)+'-' $
        +string(lindgen(njob),format='(i2.2)')
       tmpoutfile = tmproot+'.fits'
