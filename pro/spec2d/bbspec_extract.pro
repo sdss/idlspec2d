@@ -18,8 +18,8 @@
 ;                in the PSF file [NY,NFIBER]
 ;   frange     - Fiber number range (0-indexed); default to all fibers
 ;                represented in the PSF file
-;   yrange     - Range of rows to extract; default to all rows that contain
-;                any unmasked pixels
+;   yrange     - 0-indexed ange of rows to extract; default to all rows
+;                that contain any unmasked pixels
 ;
 ; OUTPUTS:
 ;   flux       - Extracted flux vectors [NY,NFIBER]
