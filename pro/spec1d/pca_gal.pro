@@ -206,6 +206,8 @@ PRO pca_gal, inputfile=inputfile, wavemin=wavemin, wavemax=wavemax, $
     sxaddpar, hdr, 'COEFF1', binsz
     sxaddpar, hdr, 'IDLUTILS', idlutils_version(), 'Version of idlutils'
     sxaddpar, hdr, 'SPEC2D', idlspec2d_version(), 'Version of idlspec2d'
+    sxaddpar, hdr, 'RUN2D', GETENV('RUN2D'), 'Version of 2d reduction'
+    sxaddpar, hdr, 'RUN1D', GETENV('RUN1D'), 'Version of 1d reduction'
     FOR i=0, N_ELEMENTS(eigenval)-1 DO $
         sxaddpar, hdr, 'EIGEN'+STRTRIM(STRING(i),1), eigenval[i]
     mwrfits, pcaflux, outfile, hdr, /create
