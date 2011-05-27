@@ -137,7 +137,7 @@ pro bbspec_test, scifile, outfile=outfile1, clobber=clobber, batch=batch, $
     message, 'Unable to find spFlat file'
 
    basisfile = 'spBasisPSF-' + strmid(sxpar(hdr, 'ARCFILE'),4,11) + '.fits'
-   junk = findfile(basisfile, count=ct)
+   junk = (findfile(basisfile+'*', count=ct))[0]
    if (ct EQ 0 OR keyword_set(clobber)) then begin
       splog, 'Generating sdProc file for arc'
       arcname = 'sdR-'+arcstr+'.fit'
@@ -153,7 +153,7 @@ pro bbspec_test, scifile, outfile=outfile1, clobber=clobber, batch=batch, $
          message, 'Error calling '+cmd
       endif
    endif else begin
-      splog, 'Use existing PSF file'
+      splog, 'Use existing PSF file '+basisfile
    endelse
 
    splog, 'Reading existing traceset '+flatfile
