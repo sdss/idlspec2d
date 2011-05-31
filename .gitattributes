@@ -186,6 +186,7 @@ misc/distort.red -text
 misc/plate306.mail -text
 misc/uomoto.distortions -text
 opfiles/Makefile -text
+opfiles/lamplines.par -text
 opfiles/opFibers.par -text
 opfiles/opSNlimits.par -text
 opfiles/spInspect-0000-00000.par -text
