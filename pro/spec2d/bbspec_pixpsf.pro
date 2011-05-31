@@ -7,7 +7,7 @@ pro bbspec_pixpsf, arcstr, flatstr, pradius=pradius, rradius=rradius, $
 arcstr='r1-00115982' ; ???
 flatstr='r1-00115981' ; ???
 
-   if (NOT keyword_set(npoly)) then npoly = [2,4]
+   if (NOT keyword_set(npoly)) then npoly = [2,3]
    if (NOT keyword_set(pradius)) then pradius = 8. + fltarr(npoly[0]*npoly[1])
    if (NOT keyword_set(rradius)) then rradius = 0. + fltarr(npoly[0]*npoly[1])
    if (n_elements(pradius) NE n_elements(rradius)) then $
@@ -35,7 +35,6 @@ flatstr='r1-00115981' ; ???
    arcname = 'sdR-'+arcstr+'.fit'
    sdssproc, arcname, image, invvar, indir=indir, $
     /applybias, /applypixflat, /applycrosstalk
-;image = mrdfits('fakeimg.fits') ; ???
    if (NOT keyword_set(image)) then $
     message, 'Error reading file '+arcname
    dims = size(image, /dimens)
@@ -70,26 +69,19 @@ flatstr='r1-00115981' ; ???
     calg='none', salg='none', /quick)
 
    objs.goodmask = 1B
-   ; Choose every 20th fiber with >3000 counts for PSF construction
    fibernum = djs_laxisgen([nlamp,nfiber], iaxis=1)
+
+   ; Choose every 20th fiber with >3000 counts for PSF construction
 ;   objs.bestmask = rebin(strmatch(lamps.use_psf,'*YES_PSF*'),nlamp,nfiber)
 ;   objs.bestmask = rebin(strmatch(lamps.use_wset,'*GOOD*'),nlamp,nfiber) $
 ;    AND (fibernum MOD 20) EQ 0 AND objs.flux GT 3000
-   objs.bestmask = rebin(strmatch(lamps.use_wset,'*GOOD*'),nlamp,nfiber) $
-    AND (fibernum LT 25) AND (objs.flux GT 3000)
-objs = objs[where(fibernum LT 25)]
-;invvar[415:*,*] = 0 ; zero-out everything after 20 fibers ???
+;   objs.bestmask = rebin(strmatch(lamps.use_wset,'*GOOD*'),nlamp,nfiber) $
+;    AND (fibernum LT 25) AND (objs.flux GT 3000)
+;objs = objs[where(fibernum LT 25)]
+;invvar[415:*,*] = 0 ; zero-out everything after 20 fibers
 ;objs.bestmask = rebin(strmatch(lamps.use_psf,'*YES_PSF*'),nlamp,nfiber) $
 ; AND (fibernum MOD 5) EQ 0 ; every 5th fiber on these lines
 
-   ; Trim to only objects on the image
-   itrim = where(objs.xcen GE 0 AND objs.xcen LE nx-1 $
-    AND objs.ycen GE 0 AND objs.ycen LE ny-1)
-   objs = objs[itrim]
-; Additional trimming for edge effects...
-itrim = where(objs.xcen GE 10 AND objs.xcen LE nx-10 $
- AND objs.ycen GE 10 AND objs.ycen LE ny-10)
-objs = objs[itrim]
 ;atv,image*(invvar ne 0)
 ;jj=where(objs.bestmask)
 ;atvplot,xpix[jj],ypix[jj],ps=1,syms=0.5,color='green'
@@ -99,12 +91,36 @@ objs = objs[itrim]
    ; and fixing the centers (maxshift=0)
 
    psfpix = psolve_pixelization(pradius=pradius, rradius=rradius)
-;   skyimg = 0.*image
-   psolve_iter, image, invvar, objs, psfpix, psfimg, skyimg, $
-    xpad=0, ypad=0, npoly=npoly, niter=3, maxshift=0, fixpsf=0 ; shift???
 
-   fakeimg = skyimg
-   psolve_addstars, fakeimg, psfimg, objs
+   ngroup = nfiber/20
+   fakeimg = 0
+;   for igroup=0, ngroup-1 do begin
+for igroup=0,1 do begin ; ???
+      splog, 'Generating PSF for group ', igroup, ngroup
+      objs1 = objs
+
+      ; Choose every fiber with >1000 counts for PSF construction
+      objs1.bestmask = rebin(strmatch(lamps.use_wset,'*GOOD*'),nlamp,nfiber) $
+       AND (fibernum GE igroup*20 AND fibernum LT (igroup+1)*20) $
+       AND (objs.flux GT 1000)
+      ; Additional trimming for edge effects...???
+      itrim = where(fibernum GE igroup*20 AND fibernum LT (igroup+1)*20 $
+       AND objs1.xcen GE 10 AND objs1.xcen LE nx-10 $
+       AND objs1.ycen GE 10 AND objs1.ycen LE ny-10)
+      objs1 = objs1[itrim]
+
+      skyimg1 = 0 ; re-fit the sky image on each group of fibers
+      psolve_iter, image, invvar, objs1, psfpix, psfimg1, skyimg1, $
+       xpad=0, ypad=0, npoly=npoly, niter=3, maxshift=0, fixpsf=0
+
+      if (NOT keyword_set(psfimg)) then $
+       psfimg = fltarr([size(psfimg1,/dimens),ngroup])
+      psfimg[*,*,*,igroup] = psfimg1
+
+      ; Add to the model image for the entire image
+      fakeimg += skyimg1
+      psolve_addstars, fakeimg, psfimg1, objs1
+   endfor
 
 ;stop
 ;jj=where(objs.bestmask)
@@ -130,20 +146,28 @@ objs = objs[itrim]
    mwrfits, ally, outfile, outhdr0
    sxaddpar, outhdr0, 'PSFPARAM', 'LogLam'
    mwrfits, loglam, outfile, outhdr0
-   mkhdr, outhdr1, psfimg[*,*,0]
-   for iy=0, npoly[1]-1 do begin
-      for ix=0, npoly[0]-1 do begin
-         if (ix EQ 0 AND iy EQ 0) then begin
-            psfparam = 'const'
-         endif else begin
-            psfparam = ''
-            for j=1, ix do psfparam += 'x'
-            for j=1, iy do psfparam += 'y'
-         endelse
-         sxaddpar, outhdr1, 'PSFPARAM', psfparam
-         mwrfits, psfimg[*,*,ix+iy*npoly[0]], outfile, outhdr1
-      endfor
-   endfor
+
+   ; HDU #3 has list of polynomial exponents
+   polydat = replicate(create_struct('IMODEL', 0L, 'XEXP', 0L, 'YEXP', 0L), $
+    npoly[0]*npoly[1])
+   polydat.imodel = lindgen(npoly[0]*npoly[1])
+   polydat.xexp = (djs_laxisgen(npoly, iaxis=0))[*]
+   polydat.yexp = (djs_laxisgen(npoly, iaxis=1))[*]
+   mwrfits, polydat, outfile
+
+   ; HDU #4 has the indexing for each fiber ID
+   fibdat = replicate(create_struct('IGROUP', 0L, 'X0', 0.0, 'XSCALE', 0.0, $
+    'Y0', 0.0, 'YSCALE', 0.0), nfiber)
+   fibdat.igroup = lindgen(nfiber) / 20L
+   fibdat.x0 = 0
+   fibdat.xscale = 0.001
+   fibdat.y0 = 0
+   fibdat.yscale = 0.001
+   mwrfits, fibdat, outfile
+
+   ; HDU #5 has the PSF images indexed [X,Y,IMODEL,IGROUP]
+   mkhdr, outhdr1, psfimg
+   mwrfits, psfimg, outfile
 
 stop
    return
