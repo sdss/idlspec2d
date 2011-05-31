@@ -45,7 +45,7 @@
 ;   24-May-2011  Written by D. Schlegel, LBL
 ;-
 ;------------------------------------------------------------------------------
-pro bbspec_test_batch, scifile, _EXTRA=Extra
+function bbspec_test_batch, scifile, _EXTRA=Extra
 
    fq = "'"
    cmd = 'idl -e "bbspec_test,'+fq+scifile+fq
@@ -80,28 +80,29 @@ pro bbspec_test_batch, scifile, _EXTRA=Extra
    free_lun, olun
 
    splog, 'Submitting file '+pbsfile
-   spawn, 'qsub '+pbsfile
+   spawn, 'qsub '+pbsfile, jobid
 
-   return
+   return, jobid
 end
 ;------------------------------------------------------------------------------
-; Wait for all files to exist, then return
-pro bbspec_test_wait, outfile
+; Wait for all PBS jobs to complete, then return
+pro bbspec_test_wait, jobid
 
-   qdone = 0B
-   while (qdone EQ 0) do begin
-print,'Waiting for completion...'
-      qdone = 1B
-      for i=0, n_elements(outfile)-1 do $
-       qdone *= file_test(outfile[i])
-      wait, 15
-   endwhile
+   joblist = ''
+   for i=0, n_elements(jobid)-1 do joblist += ' '+strtrim(jobid[i])
+   retval = 1B
+   while (keyword_set(retval)) do begin
+      spawn, 'qstat'+joblist, retval, reterr
+      wait, 5
+   end
 
    return
 end
 ;------------------------------------------------------------------------------
 pro bbspec_test, scifile, outfile=outfile1, clobber=clobber, batch=batch, $
  _EXTRA=Extra
+
+   t0 = systime(1)
 
    if (n_params() NE 1) then $
     message, 'Wrong number of parameters'
@@ -167,6 +168,7 @@ pro bbspec_test, scifile, outfile=outfile1, clobber=clobber, batch=batch, $
    endif else begin
       nfiber = sxpar(headfits(basisfile),'NAXIS2')
       njob = nfiber / 20
+      jobid = lonarr(njob)
       splog, 'Batching ', njob, ' jobs for ', nfiber, ' fibers in PSF file'
       tmproot = 'tmp-'+strmid(scifile,8,11)+'-' $
        +string(lindgen(njob),format='(i2.2)')
@@ -174,9 +176,9 @@ pro bbspec_test, scifile, outfile=outfile1, clobber=clobber, batch=batch, $
       for i=0, njob-1 do $
        if (file_test(tmpoutfile[i])) then file_delete, tmpoutfile[i]
       for i=0, njob-1 do $
-       bbspec_test_batch, scifile, _EXTRA=Extra, frange=[i*20,i*20+19], $
-        outfile=tmpoutfile[i], tmproot=tmproot[i]+'-'
-      bbspec_test_wait, tmpoutfile
+       jobid[i] = bbspec_test_batch(scifile, _EXTRA=Extra, $
+        frange=[i*20,i*20+19], outfile=tmpoutfile[i], tmproot=tmproot[i]+'-')
+      bbspec_test_wait, jobid
       bb_ymodel = 0
       flux = 0
       fluxivar = 0
@@ -189,6 +191,8 @@ pro bbspec_test, scifile, outfile=outfile1, clobber=clobber, batch=batch, $
    mwrfits, bb_ymodel, outfile, /create
    mwrfits, flux, outfile
    mwrfits, fluxivar, outfile
+
+   splog, 'Elapsed time = ', systime(1)-t0, ' sec'
 
    return
 end
