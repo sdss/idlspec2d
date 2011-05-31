@@ -491,6 +491,7 @@ pro/spec2d/arcsky_fit.pro -text
 pro/spec2d/atvspec.pro -text
 pro/spec2d/batchpbs.pro -text
 pro/spec2d/bbspec_extract.pro -text
+pro/spec2d/bbspec_pixpsf.pro -text
 pro/spec2d/bbspec_test.pro -text
 pro/spec2d/bolton_sn_fit.pro -text
 pro/spec2d/bolton_std_throughput.pro -text
@@ -553,6 +554,7 @@ pro/spec2d/platesn.pro -text
 pro/spec2d/plotsignal.pro -text
 pro/spec2d/plotsky.pro -text
 pro/spec2d/plotsn.pro -text
+pro/spec2d/psolve.pro -text
 pro/spec2d/qaplot_arcline.pro -text
 pro/spec2d/qaplot_fflat.pro -text
 pro/spec2d/qaplot_scatlight.pro -text
