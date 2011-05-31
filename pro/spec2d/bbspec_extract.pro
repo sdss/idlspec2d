@@ -164,7 +164,7 @@ pro bbspec_extract, image, invvar, flux, fluxivar, basisfile=basisfile, $
 ; Should not need to ignore some error messages below???
          if (keyword_set(errcode) $
           AND strmatch(errcode[0],'*LinAlgError*') EQ 0 $
-          AND strmatch(errcode[0],'*invert matrix*') EQ 0) then begin
+          AND strmatch(errcode[0],'*Singular matrix*') EQ 0) then begin
             splog, errcode
             message, 'Error calling '+cmd
          endif
