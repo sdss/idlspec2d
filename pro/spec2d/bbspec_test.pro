@@ -64,7 +64,7 @@ pro bbspec_test_batch, scifile, _EXTRA=Extra
    splog, cmd
 
    outfile = Extra.(where(tags EQ 'OUTFILE'))
-   psbfile = repstr(outfile,'.fits','')
+   pbsfile = repstr(outfile,'.fits','')
    openw, olun, pbsfile, /get_lun
    printf, olun, '# Auto-generated batch file '+systime()
    printf, olun, '#PBS -l nodes=1'
