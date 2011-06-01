@@ -77,31 +77,6 @@ pro psolve_addstars, image, psfimg, objs
    return
 end
 ;------------------------------------------------------------------------------
-function psolve_obj_struct, nobj
-
-   obj1 = create_struct( $
-    'XCEN', 0., $
-    'XCEN_ERR', 0., $
-    'YCEN', 0., $
-    'YCEN_ERR', 0., $
-    'FLUX', 0., $
-    'FLUX_ERR', 0., $
-    'QSATUR', 0b, $
-    'GOODMASK', 0b, $
-    'BESTMASK', 0b, $
-    'FITSTATUS', 0, $
-    'FITITER', 0, $
-    'CHI2', 0., $
-    'DOF', 0., $
-    'RMOMENT', 0., $
-    'NEFF', 0., $
-    'NERR', 0., $
-    'PVALUE', fltarr(16) ) ; This should really be dimensioned by nmap !!!???
-   if (keyword_set(nobj)) then return, replicate(obj1, nobj) $
-    else return, obj1
-
-end
-;------------------------------------------------------------------------------
 function psolve_solve_matrix, mmatrix, bvec, chi2=chi2
 
    mmatrixt = transpose( mmatrix )
@@ -540,36 +515,6 @@ function psolve_mask, objs, ivar, psfpix, itouch=itouch
    return, retmask
 end
 ;------------------------------------------------------------------------------
-function psolve_pixelization, pradius=pradius, rradius=rradius
-
-   nmap = n_elements(pradius)
-   nhalf = ceil(max([pradius,rradius]))
-   nside = 2 * nhalf + 1
-   rmap = shift(dist(nside,nside), nhalf, nhalf)
-
-   ntot = 0L
-   psfpix = lonarr(nside,nside,nmap)
-   for imap=0, nmap-1 do begin
-      psfpix1 = lonarr(nside,nside) - 1
-
-      indx1 = where(rmap LT pradius[imap], n1)
-      if (n1 GT 0) then $
-       psfpix1[indx1] = lindgen(n1) + ntot
-      ntot = ntot + n1
-
-      indx2 = where(rmap GE pradius[imap] AND rmap LT rradius[imap], n2)
-      if (n2 GT 0) then begin
-         thisval = floor(rmap[indx2] - pradius[imap])
-         psfpix1[indx2] = thisval + ntot
-         ntot = ntot + max(thisval) + 1
-      endif
-
-      psfpix[*,*,imap] = psfpix1
-   endfor
-
-   return, psfpix
-end
-;------------------------------------------------------------------------------
 function psolve_specsky, image, ivar, xpad=xpad, ypad=ypad
 
    dims = size(image, /dimens)
@@ -640,7 +585,10 @@ end
 ; MAXSHIFT is a required keyword
 pro psolve_iter, image, ivar, objs, psfpix, psfimg, skyimg, $
  xpad=xpad, ypad=ypad, $
- nselect=nselect, npoly=npoly, niter=niter, maxshift=maxshift, fixpsf=fixpsf
+ nselect=nselect, npoly=npoly, niter=niter, maxshift=maxshift, fixpsf=fixpsf, $
+ filename=filename
+
+   if (keyword_set(filename)) then restore, filename
 
    dims = size(image, /dimens)
    t0 = systime(1)
@@ -777,164 +725,9 @@ pro psolve_iter, image, ivar, objs, psfpix, psfimg, skyimg, $
 
    splog, 'Total time = ', t4-t0, ' sec'
 
-   return
-end
-;------------------------------------------------------------------------------
-pro psolve, image1, ivar1, rnoise=rnoise, pradius=pradius, rradius=rradius, $
- npoly=npoly, nselect=nselect, niter=niter, maxshift=maxshift
-
-   if (NOT keyword_set(rnoise)) then rnoise = 5.
-   if (NOT keyword_set(pradius)) then pradius = 7.
-   if (NOT keyword_set(rradius)) then rradius = 18.
-   if (NOT keyword_set(npoly)) then npoly = [1,1]
-   if (n_elements(pradius) NE n_elements(rradius)) then $
-    message, 'Number of elements for PRADIUS,RRADIUS must agree'
-   if (npoly[0]*npoly[1] NE n_elements(rradius)) then $
-    message, 'NPOLY is inconsistent with PRADIUS,RRADIUS'
-   if (NOT keyword_set(nselect)) then nselect = 40
-   if (NOT keyword_set(niter)) then niter = 4L
-   if (n_elements(maxshift) EQ 0) then maxshift = 0.5
-
-   ;----------
-   ; Pad the input image
-
-   dims1 = size(image1, /dimens)
-   pdim = size(psfpix, /dimens)
-   xpad = 2 * (max(pradius) > max(rradius))
-   ypad = 2 * (max(pradius) > max(rradius))
-   image = fltarr(dims1+[2*xpad,2*ypad])
-   ivar = fltarr(dims1+[2*xpad,2*ypad])
-   image[xpad:xpad+dims1[0]-1,ypad:ypad+dims1[1]-1] = image1
-   ivar[xpad:xpad+dims1[0]-1,ypad:ypad+dims1[1]-1] = ivar1
-
-   ;----------
-   ; Find objects
-
-   hmin = 6. * djsig(image) ; ???
-;   hmin = 6. * sqrt(rnoise^2 + (djsig(skyimg))^2)
-   psolve_find, image, ivar, objs, hmin=hmin
-
-   ;----------
-   ; Solve for PSF + objects using a single PSF
-
-;   psfpix = psolve_pixelization(pradius=pradius[0], rradius=rradius[0])
-;   psolve_iter, image, ivar, objs, psfpix, psfimg, skyimg, $
-;    xpad=xpad, ypad=ypad, $
-;    nselect=nselect, npoly=[1,1], niter=niter, maxshift=maxshift
-
-   ;----------
-   ; Solve for PSF + objects using a single PSF, fixing object centroids
-
-;   psfpix = psolve_pixelization(pradius=pradius, rradius=rradius)
-;   psolve_iter, image, ivar, objs, psfpix, psfimg, skyimg, $
-;    xpad=xpad, ypad=ypad, $
-;    nselect=nselect, npoly=npoly, niter=niter, maxshift=0
-
-   ;----------
-   ; Solve for the PSF + objects allowing all parameters to float
-
-   psfpix = psolve_pixelization(pradius=pradius, rradius=rradius)
-skyimg = 0. * image ; Turn off sky-subtraction
-   psolve_iter, image, ivar, objs, psfpix, psfimg, skyimg, $
-    xpad=xpad, ypad=ypad, $
-    nselect=nselect, npoly=npoly, niter=niter, maxshift=maxshift
-
-psf3 = psfimg & obj3 = objs
-fakeimg3 = skyimg & psolve_addstars, fakeimg3, psfimg, objs
-stop
+   if (keyword_set(filename)) then $
+    save, filename=filename, psfimg, skyimg
 
    return
-end
-;------------------------------------------------------------------------------
-pro ptest1
-   image = mrdfits('test-211-6-384.fits')
-   gain = 4.90
-   rnoise = 0.95
-;image = image[0:999,0:999]
-   ivar = (image LT 20000.) / ((image>0)/gain + rnoise^2 + 0.02*(image>0))
-
-;   psolve, image, ivar, rnoise=rnoise
-   psolve, image, ivar, rnoise=rnoise, $
-    npoly=[3,2], prad=7+lonarr(6),rrad=18+lonarr(6), maxshift=1.0, nselect=80
-end
-;------------------------------------------------------------------------------
-pro ptest2
-   image = mrdfits('fpCoadd-95.0p00.0S-r1-0230.fits.gz', 0, hdr)
-;image = image[0:499,0:399]
-   varimg = ((image>0) + sxpar(hdr,'SKYVAL')) / sxpar(hdr,'GAIN') $
-    + (sxpar(hdr,'RNOISE'))^2
-   ; Arbitrarily say that we saturate at 16.5 mag/pixel
-   ivar = 1. / varimg * (image LT 250.)
-   psolve, image, ivar, rnoise=sxpar(hdr,'RNOISE'), $
-    npoly=[3,2], prad=7+lonarr(6),rrad=18+lonarr(6), maxshift=1.0, nselect=80
-end
-;------------------------------------------------------------------------------
-pro ptest2b
-   image = mrdfits('fpCoadd-95.0p00.0S-r1-0230.fits.gz', 0, hdr)
-;image = image[0:499,0:399]
-image = image[0:299,0:299]
-   varimg = ((image>0) + sxpar(hdr,'SKYVAL')) / sxpar(hdr,'GAIN') $
-    + (sxpar(hdr,'RNOISE'))^2
-   ; Arbitrarily say that we saturate at 16.5 mag/pixel
-   ivar = 1. / varimg * (image LT 250.)
-;   psolve, image, ivar, rnoise=sxpar(hdr,'RNOISE')
-   psolve, image, ivar, rnoise=sxpar(hdr,'RNOISE'), npoly=[2,2], $
-    prad=7+lonarr(4),rrad=18+lonarr(4)
-end
-;------------------------------------------------------------------------------
-pro ptest2c
-   adderr = 0.02
-   image = mrdfits('fpCoadd-95.0p00.0S-r1-0230.fits.gz', 0, hdr)
-;image = image[0:499,0:399]
-;image = image[0:299,0:299]
-   varimg = ((image>0) + sxpar(hdr,'SKYVAL')) / sxpar(hdr,'GAIN') $
-    + (sxpar(hdr,'RNOISE') + adderr*(image>0))^2
-   ; Arbitrarily say that we saturate at 18.25 mag/pixel
-   satmask = dilate(image GT 50., bytarr(5,5)+1B)
-   ivar = 1. / varimg * (satmask EQ 0)
-;   psolve, image, ivar, rnoise=sxpar(hdr,'RNOISE')
-   psolve, image, ivar, rnoise=sxpar(hdr,'RNOISE'), $
-    npoly=[2,1], prad=7+lonarr(2),rrad=18+lonarr(2)
-;    npoly=[2,1], prad=14+lonarr(2),rrad=18+lonarr(2)
-end
-;------------------------------------------------------------------------------
-pro ptest3
-   rnoise = 5.
-   image = fltarr(500,400) + 100.
-   psf1 = exp(-(shift(dist(15,15),7,7)/2.)^2)
-   psf1 = psf1 + 0.2*shift(psf1,-2,-3)
-   nobj = 40
-   objs = psolve_obj_struct(nobj)
-   objs.xcen = randomu(1234,nobj) * 400 + 50
-   objs.ycen = randomu(5678,nobj) * 300 + 50
-   objs.flux = randomu(5678,nobj) * 1000 + 1000
-   objs.pvalue[0] = 1
-   psolve_addstars, image, psf1, objs
-   ivar = 1. / ((image>0) + rnoise^2)
-   image = image + sqrt(image) * randomn(13579,size(image,/dimens))
-   psolve, image, ivar, rnoise=rnoise
-end
-;------------------------------------------------------------------------------
-pro ptest3c
-; Try shifting PSF2 and see if it still works???!!!
-   rnoise = 5.
-   image = fltarr(500,400) + 100.
-   psf1 = exp(-(shift(dist(15,15),7,7)/2.)^2)
-   psf1 = psf1 + 0.2*shift(psf1,-2,-3)
-   psf2 = 5.*smooth(psf1,5)
-   psfimg = [[[[psf1]],[[psf2]]]]
-   nobj = 40
-   objs = psolve_obj_struct(nobj)
-   objs.xcen = randomu(1234,nobj) * 400 + 50
-   objs.ycen = randomu(5678,nobj) * 300 + 50
-   objs.flux = randomu(5678,nobj) * 1000 + 1000
-   objs.pvalue[0] = 1
-   objs.pvalue[1] = objs.xcen/1000.
-   psolve_addstars, image, psfimg, objs
-   ivar = 1. / ((image>0) + rnoise^2)
-; ???
-   image = image + (sqrt(image+rnoise^2)) * randomn(13579,size(image,/dimens))
-   psolve, image, ivar, rnoise=rnoise, $
-    npoly=[3,1], prad=7+lonarr(3),rrad=18+lonarr(3), maxshift=0.1
 end
 ;------------------------------------------------------------------------------

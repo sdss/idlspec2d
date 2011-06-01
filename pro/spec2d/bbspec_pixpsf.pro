@@ -2,7 +2,7 @@
 ; Generate pixelated PSF
 ;------------------------------------------------------------------------------
 pro bbspec_pixpsf, arcstr, flatstr, pradius=pradius, rradius=rradius, $
- npoly=npoly, outfile=outfile1
+ npoly=npoly, outfile=outfile1, batch=batch
 
 arcstr='r1-00115982' ; ???
 flatstr='r1-00115981' ; ???
@@ -33,7 +33,7 @@ flatstr='r1-00115981' ; ???
    mjdstr = string(sxpar(archdr, 'MJD'),format='(i5.5)')
    indir = concat_dir(rawdata_dir, mjdstr)
    arcname = 'sdR-'+arcstr+'.fit'
-   sdssproc, arcname, image, invvar, indir=indir, $
+   sdssproc, arcname, image, ivar, indir=indir, $
     /applybias, /applypixflat, /applycrosstalk
    if (NOT keyword_set(image)) then $
     message, 'Error reading file '+arcname
@@ -61,28 +61,17 @@ flatstr='r1-00115981' ; ???
    nlamp = dims[0]
    nfiber = dims[1]
 
-   objs = reform(psolve_obj_struct(n_elements(xpix)),nlamp,nfiber)
-   objs.xcen = xpix
-   objs.ycen = ypix
-;   objs.flux = rebin(lamps.intensity,nlamp,nfiber)
-   objs[*].flux = djs_phot(objs[*].xcen, objs[*].ycen, 3., 0, image, $
+   objs_all = reform(psolve_obj_struct(n_elements(xpix)),nlamp,nfiber)
+   objs_all.xcen = xpix
+   objs_all.ycen = ypix
+;   objs_all.flux = rebin(lamps.intensity,nlamp,nfiber)
+   objs_all[*].flux = djs_phot(objs_all[*].xcen, objs_all[*].ycen, 3., 0, image, $
     calg='none', salg='none', /quick)
 
-   objs.goodmask = 1B
+   objs_all.goodmask = 1B
    fibernum = djs_laxisgen([nlamp,nfiber], iaxis=1)
 
-   ; Choose every 20th fiber with >3000 counts for PSF construction
-;   objs.bestmask = rebin(strmatch(lamps.use_psf,'*YES_PSF*'),nlamp,nfiber)
-;   objs.bestmask = rebin(strmatch(lamps.use_wset,'*GOOD*'),nlamp,nfiber) $
-;    AND (fibernum MOD 20) EQ 0 AND objs.flux GT 3000
-;   objs.bestmask = rebin(strmatch(lamps.use_wset,'*GOOD*'),nlamp,nfiber) $
-;    AND (fibernum LT 25) AND (objs.flux GT 3000)
-;objs = objs[where(fibernum LT 25)]
-;invvar[415:*,*] = 0 ; zero-out everything after 20 fibers
-;objs.bestmask = rebin(strmatch(lamps.use_psf,'*YES_PSF*'),nlamp,nfiber) $
-; AND (fibernum MOD 5) EQ 0 ; every 5th fiber on these lines
-
-;atv,image*(invvar ne 0)
+;atv,image*(ivar ne 0)
 ;jj=where(objs.bestmask)
 ;atvplot,xpix[jj],ypix[jj],ps=1,syms=0.5,color='green'
 
@@ -91,36 +80,67 @@ flatstr='r1-00115981' ; ???
    ; and fixing the centers (maxshift=0)
 
    psfpix = psolve_pixelization(pradius=pradius, rradius=rradius)
+   xpad = 0
+   ypad = 0
+   niter = 3
+   maxshift = 0
+   fixpsf = 0
 
    ngroup = nfiber/20
    fakeimg = 0
+   filename = 'tmppsf-'+arcstr+'-'+string(lindgen(ngroup),format='(i2.2)')+'.ss'
+   pbsfile = 'pbs-tmppsf-'+arcstr+'-'+string(lindgen(ngroup),format='(i2.2)')
+   jobid = lonarr(ngroup)
 ;   for igroup=0, ngroup-1 do begin
 for igroup=0,1 do begin ; ???
       splog, 'Generating PSF for group ', igroup, ngroup
-      objs1 = objs
+      objs = objs_all
 
       ; Choose every fiber with >1000 counts for PSF construction
-      objs1.bestmask = rebin(strmatch(lamps.use_wset,'*GOOD*'),nlamp,nfiber) $
+      objs.bestmask = rebin(strmatch(lamps.use_wset,'*GOOD*'),nlamp,nfiber) $
        AND (fibernum GE igroup*20 AND fibernum LT (igroup+1)*20) $
        AND (objs.flux GT 1000)
       ; Additional trimming for edge effects...???
-      itrim = where(fibernum GE igroup*20 AND fibernum LT (igroup+1)*20 $
-       AND objs1.xcen GE 10 AND objs1.xcen LE nx-10 $
-       AND objs1.ycen GE 10 AND objs1.ycen LE ny-10)
-      objs1 = objs1[itrim]
+      ; Include stars in the neighboring bundles to left + right for blending purposes.
+      itrim = where(fibernum GE igroup*20-20 AND fibernum LT (igroup+1)*20+20 $
+       AND objs.xcen GE 10 AND objs.xcen LE nx-10 $
+       AND objs.ycen GE 10 AND objs.ycen LE ny-10)
+      objs = objs[itrim]
 
-      skyimg1 = 0 ; re-fit the sky image on each group of fibers
-      psolve_iter, image, invvar, objs1, psfpix, psfimg1, skyimg1, $
-       xpad=0, ypad=0, npoly=npoly, niter=3, maxshift=0, fixpsf=0
+      skyimg = 0 ; re-fit the sky image on each group of fibers
 
-      if (NOT keyword_set(psfimg)) then $
-       psfimg = fltarr([size(psfimg1,/dimens),ngroup])
-      psfimg[*,*,*,igroup] = psfimg1
+      if (NOT keyword_set(batch)) then begin
+         psolve_iter, image, ivar, objs, psfpix, skyimg, $
+          xpad=xpad, ypad=ypad, npoly=npoly, niter=niter, maxshift=maxshift, fixpsf=fixpsf
+      endif else begin
+         fq = "'"
+         save, filename=filename[igroup], image, ivar, objs, psfpix, skyimg, $
+          xpad, ypad, npoly, niter, maxshift, fixpsf
+         jobid[igroup] = bbspec_batch('psolve_iter,filename='+fq+filename[igroup]+fq, $
+          pbsfile=pbsfile[igroup])
+      endelse
 
-      ; Add to the model image for the entire image
-      fakeimg += skyimg1
-      psolve_addstars, fakeimg, psfimg1, objs1
+      if (NOT keyword_set(batch)) then begin
+         if (NOT keyword_set(psfimg_all)) then $
+          psfimg_all = fltarr([size(psfimg,/dimens),ngroup])
+         psfimg_all[*,*,*,igroup] = psfimg
+         fakeimg += skyimg
+         psolve_addstars, fakeimg, psfimg, objs
+      endif
    endfor
+
+   if (keyword_set(batch)) then begin
+       bbspec_batch_wait, jobid
+;      for igroup=0, ngroup-1 do begin
+for igroup=0,1 do begin ; ???
+         restore, filename=filename[igroup]
+         if (NOT keyword_set(psfimg_all)) then $
+          psfimg_all = fltarr([size(psfimg,/dimens),ngroup])
+         psfimg_all[*,*,*,igroup] = psfimg
+         fakeimg += skyimg
+         psolve_addstars, fakeimg, psfimg, objs
+      endfor
+   endif
 
 ;stop
 ;jj=where(objs.bestmask)
@@ -166,10 +186,10 @@ for igroup=0,1 do begin ; ???
    mwrfits, fibdat, outfile
 
    ; HDU #5 has the PSF images indexed [X,Y,IMODEL,IGROUP]
-   mkhdr, outhdr1, psfimg
-   mwrfits, psfimg, outfile
+   mkhdr, outhdr1, psfimg_all
+   mwrfits, psfimg_all, outfile
 
-stop
+stop ; ???
    return
 end
 ;------------------------------------------------------------------------------

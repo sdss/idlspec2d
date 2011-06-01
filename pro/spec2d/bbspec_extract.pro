@@ -87,6 +87,7 @@ pro bbspec_extract, image, invvar, flux, fluxivar, basisfile=basisfile, $
     message, 'PSF file not found '+string(basisfile)
 
    bhdr = headfits(basisfile)
+   psftype = sxpar(bhdr,'PSFTYPE')
    nfiber = sxpar(bhdr,'NAXIS2')
    if (keyword_set(frange1)) then begin
       if (frange1[0] LT 0 OR frange1[1] GE nfiber) then $

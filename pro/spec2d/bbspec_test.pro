@@ -48,55 +48,10 @@
 function bbspec_test_batch, scifile, _EXTRA=Extra
 
    fq = "'"
-   cmd = 'idl -e "bbspec_test,'+fq+scifile+fq
-   tags = tag_names(Extra)
-   for i=0, n_elements(tags)-1 do begin
-      qstring = size(Extra.(i),/tname) EQ 'STRING'
-      thisquote = qstring ? fq : ''
-      num = n_elements(Extra.(i))
-      cmd += ','+tags[i]+'='+(num GT 1 ? '[':'') $
-       +thisquote+strtrim(Extra.(i)[0],2)+thisquote
-      for j=1, num-1 do $
-       cmd += ','+strtrim(Extra.(i)[j],2)
-      cmd += (num GT 1 ? ']':'')
-   endfor
-   cmd += '"'
-   splog, cmd
-
-   outfile = Extra.(where(tags EQ 'OUTFILE'))
-   pbsfile = repstr(outfile,'.fits','')
-   openw, olun, pbsfile, /get_lun
-   printf, olun, '# Auto-generated batch file '+systime()
-   printf, olun, '#PBS -l nodes=1'
-   printf, olun, '#PBS -l walltime=48:00:00'
-   printf, olun, '#PBS -W umask=0022'
-   printf, olun, '#PBS -V'
-   printf, olun, '#PBS -j oe'
-   printf, olun, 'cd $PBS_O_WORKDIR'
-   printf, olun, 'set -o verbose'
-;   printf, olun, 'setup idlspec2d '+(strsplit(idlspec2d_version(),/extract))[0]
-   printf, olun, cmd
-   close, olun
-   free_lun, olun
-
-   splog, 'Submitting file '+pbsfile
-   spawn, 'qsub '+pbsfile, jobid
+   idlcmd = 'bbspec_test,'+fq+scifile+fq
+   jobid = bbspec_batch(idlcmd, _EXTRA=Extra)
 
    return, jobid
-end
-;------------------------------------------------------------------------------
-; Wait for all PBS jobs to complete, then return
-pro bbspec_test_wait, jobid
-
-   joblist = ''
-   for i=0, n_elements(jobid)-1 do joblist += ' '+strtrim(jobid[i])
-   retval = 1B
-   while (keyword_set(retval)) do begin
-      spawn, 'qstat'+joblist, retval, reterr
-      wait, 5
-   end
-
-   return
 end
 ;------------------------------------------------------------------------------
 pro bbspec_test, scifile, outfile=outfile1, clobber=clobber, batch=batch, $
@@ -178,7 +133,7 @@ pro bbspec_test, scifile, outfile=outfile1, clobber=clobber, batch=batch, $
       for i=0, njob-1 do $
        jobid[i] = bbspec_test_batch(scifile, _EXTRA=Extra, $
         frange=[i*20,i*20+19], outfile=tmpoutfile[i], tmproot=tmproot[i]+'-')
-      bbspec_test_wait, jobid
+      bbspec_batch_wait, jobid
       bb_ymodel = 0
       flux = 0
       fluxivar = 0
