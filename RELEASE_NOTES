@@ -2,11 +2,14 @@
 BBSPEC_EXTRACT: New proc to act as wrapper to bbspec extraction code.
      This first implementation only does a small sub-image for a single
      fiber at a time.
+BBSPEC_PIXPSF: Initial check-in for code that generates a pixelated PSF
+     from an arc frame.
 EXTRACT_OBJECT: Add /bbspec option, and if set call BBSPEC_EXTRACT to replace
      fluxes and errors.
 FITDISPERSION: Change quadrupole region for /QUICK option for reporting 
      MEDWIDTH for different regions on the CCD (ticket #822).  This 
      option used by QUICKWAVE.
+PSOLVE: Initial check-in of routines used by BBSPEC_PIXPSF.
 SDSSPROC: Remove the VARFILE option, and write the inverse variance
      as HDU #1 of OUTFILE instead.  Define a default naming scheme for OUTFILE.
 SHIFT_TRACE: Remove this deprecated routine.
@@ -16,6 +19,7 @@ SPREDUCE2D: Propogate all the test keywords to the recursive calling of
      this routine.
      Add /bbspec option.
 
+opfiles/lamplines.par: New file for lamp lines in bbspec PSF fitting.
 ups/idlspec2d.table: Add optional dependency on bbspec product.
 
 -------------------------------------------------------------------------------
@@ -99,7 +103,7 @@ BATCHPBS: Change back to the original directory at end of proc.
 EXTRACT_BUNDLE_ROW, EXTRACT_BUNDLE_IMAGE, GAUSSPIX  (ASB, U. Utah):
      Routines to enable pure IDL extraction, chunked up bundle-wise.
 EXTRACT_OBJECT, SPCALIB (ASB, U. Utah):
-  Switched to pure IDL bundle-wise extraction.
+     Switched to pure IDL bundle-wise extraction.
 PLATEMERGE: The setting of SPECPRIMARY needs to address SN_MEDIAN
      as a 5-element array rather than a scalar.  Select based upon
      this S/N in r-band.
