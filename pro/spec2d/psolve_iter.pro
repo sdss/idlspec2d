@@ -699,7 +699,7 @@ pro psolve_iter, image, ivar, objs, psfpix, psfimg, skyimg, $
    splog, 'Total time = ', t4-t0, ' sec'
 
    if (keyword_set(filename)) then $
-    save, filename=filename, psfimg, skyimg
+    save, filename=filename, psfimg, skyimg, objs
 
    return
 end
