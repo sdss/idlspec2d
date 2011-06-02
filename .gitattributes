@@ -557,6 +557,7 @@ pro/spec2d/platesn.pro -text
 pro/spec2d/plotsignal.pro -text
 pro/spec2d/plotsky.pro -text
 pro/spec2d/plotsn.pro -text
+pro/spec2d/psolve_addstars.pro -text
 pro/spec2d/psolve_iter.pro -text
 pro/spec2d/psolve_obj_struct.pro -text
 pro/spec2d/psolve_pixelization.pro -text
