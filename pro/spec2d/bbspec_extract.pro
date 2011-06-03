@@ -34,7 +34,7 @@
 ;   ymodel     - Model-fit image
 ;
 ; COMMENTS:
-;   Currently hard-wired to extract in chunks of 20 fibers by 60 rows,
+;   Currently hard-wired to extract in chunks of 20 fibers by 100 rows,
 ;   with the 15 rows on the top and bottom to be used as padding and
 ;   discarded.
 ;
@@ -128,7 +128,7 @@ pro bbspec_extract, image, invvar, flux, fluxivar, basisfile=basisfile, $
 
    nfibper = 20 ; number of fibers to extract in each call
    npadx = 7 ; pad sub-image to left+right by this number of pixels
-   nsmally = 60 ; number of rows to extract in each call
+   nsmally = 100 ; number of rows to extract in each call
    npady = 15 ; number of rows to use as padding
 
    dims = size(image,/dimens)
