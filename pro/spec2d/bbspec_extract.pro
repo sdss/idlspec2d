@@ -53,6 +53,67 @@
 ;   24-May-2011  Written by D. Schlegel, LBL
 ;-
 ;------------------------------------------------------------------------------
+pro bbspec_extract_readpsf, basisfile, pbasis, phdr, nfiber=nfiber
+
+   ; Determine the number of HDUs in the PSF file
+   nhdu = 0
+   while (size(headfits(basisfile,exten=nhdu,/silent),/tname) EQ 'STRING') do $
+    nhdu++
+   if (nhdu EQ 0) then $
+    message, 'PSF file not found '+string(basisfile)
+
+   phdr = ptrarr(nhdu)
+   pbasis = ptrarr(nhdu)
+   for ihdu=0, nhdu-1 do begin
+      pbasis[ihdu] = ptr_new(mrdfits(basisfile, ihdu, hdr1))
+      phdr[ihdu] = ptr_new(hdr1)
+      if (ihdu EQ 0) then nfiber = sxpar(hdr1,'NAXIS2')
+   endfor
+
+   return
+end
+;------------------------------------------------------------------------------
+pro bbspec_extract_trimpsf, pbasis, phdr, psffile, x0, x1, y0, y1, fib1, fib2, $
+ ximg=ximg
+
+   psftype = strtrim(sxpar(*phdr[0],'PSFTYPE'),2)
+   ny = sxpar(*phdr[0],'NAXIS1')
+   nfiber = sxpar(*phdr[0],'NAXIS2')
+
+   for ihdu=0, n_elements(pbasis)-1 do begin
+      basis1 = *pbasis[ihdu]
+      hdr1 = *phdr[ihdu]
+
+      ; Replace with the X centroids shifted, and trim to only the first entries
+      ; if the PSF is only solved for the first fibers in the first rows
+      if (ihdu EQ 0 AND keyword_set(ximg)) then basis1 = ximg[0:ny-1,0:nfiber-1]
+ 
+     ; Replace the X and Y positions to refer to the subimage positions
+      if (ihdu EQ 0) then basis1 -= x0
+      if (ihdu EQ 1) then basis1 -= y0
+
+      if (ihdu LE 2 OR psftype EQ 'GAUSS-HERMITE') then begin
+         basis1 = basis1[y0:y1,fib1:fib2]
+         sxaddpar, hdr1, 'NPIX_X', x1-x0+1
+         sxaddpar, hdr1, 'NPIX_Y', y1-y0+1
+         sxaddpar, hdr1, 'NSPEC', fib2-fib1+1
+         sxaddpar, hdr1, 'NFLUX', y1-y0+1
+         sxaddpar, hdr1, 'NAXIS', 2
+         sxaddpar, hdr1, 'NAXIS1', y1-y0+1
+         sxaddpar, hdr1, 'NAXIS2', fib2-fib1+1
+      endif
+      if (ihdu EQ 4 AND psftype EQ 'PCA-PIX') then begin
+         basis1.x0 = basis1.x0 - x0
+         basis1.y0 = basis1.y0 - y0
+         basis1 = basis1[fib1:fib2]
+      endif
+
+      mwrfits, basis1, psffile, hdr1, create=(ihdu EQ 0), /silent
+   endfor
+
+   return
+end
+;------------------------------------------------------------------------------
 pro bbspec_extract, image, invvar, flux, fluxivar, basisfile=basisfile, $
  ximg=ximg, frange=frange1, yrange=yrange1, tmproot=tmproot1, ymodel=ymodel
 
@@ -79,16 +140,9 @@ pro bbspec_extract, image, invvar, flux, fluxivar, basisfile=basisfile, $
    fluxfile = tmproot+'flux.fits'
    modfile = tmproot+'model.fits'
 
-   ; Determine the number of HDUs in the PSF file
-   nhdu = 0
-   while (size(headfits(basisfile,exten=nhdu,/silent),/tname) EQ 'STRING') do $
-    nhdu++
-   if (nhdu EQ 0) then $
-    message, 'PSF file not found '+string(basisfile)
+   ; Read the full PSF file
+   bbspec_extract_readpsf, basisfile, pbasis, phdr, nfiber=nfiber
 
-   bhdr = headfits(basisfile)
-   psftype = sxpar(bhdr,'PSFTYPE')
-   nfiber = sxpar(bhdr,'NAXIS2')
    if (keyword_set(frange1)) then begin
       if (frange1[0] LT 0 OR frange1[1] GE nfiber) then $
        message, 'FRANGE extends beyond the fiber numbers in PSF file'
@@ -96,33 +150,10 @@ pro bbspec_extract, image, invvar, flux, fluxivar, basisfile=basisfile, $
    endif else begin
       frange = [0,nfiber-1]
    endelse
-   if (sxpar(bhdr,'NAXIS1') NE ny) then $
-    message, 'Dimensions do not agree between image and PSF model!'
+
    flux = fltarr(ny,nfiber)
    fluxivar = fltarr(ny,nfiber)
    if (arg_present(ymodel)) then ymodel = fltarr(nx,ny)
-   basis = dblarr(ny,nfiber,nhdu)
-   bhdr = ptrarr(nhdu)
-   for ihdu=0, nhdu-1 do begin
-      basis1 = mrdfits(basisfile, ihdu, bhdr1, /silent)
-; The below to replace NaNs shouldn't be necessary!???
-      ibad = where(finite(basis1) EQ 0, nbad)
-      igood = where(finite(basis1) EQ 1)
-      if (nbad GT 0) then begin
-         splog, 'Replacing ', nbad, ' values in PSF file '+basisfile
-         basis1[ibad] = median(basis1[igood]) ; replace NaNs
-      endif
-      basis[*,*,ihdu] = basis1
-      bhdr[ihdu] = ptr_new(bhdr1)
-   endfor
-   if (total(1-finite(basis)) GT 0) then $
-    message, 'NaN values in PSF file'
-
-   ; Replace with the X centroids shifted, and trim to only the first entries
-   ; if the PSF is only solved for the first fibers in the first rows
-   if (keyword_set(ximg)) then begin
-      basis[*,*,0] = ximg[0:ny-1,0:nfiber-1]
-   endif
 
    ; Loop through sub-images, solving for nsmall rows at a time
    ; on nfibper fibers
@@ -140,23 +171,8 @@ pro bbspec_extract, image, invvar, flux, fluxivar, basisfile=basisfile, $
          mwrfits, image[x0:x1,y0:y1], imgfile, /create, /silent
          mwrfits, invvar[x0:x1,y0:y1], imgfile, /silent
 
-         for ihdu=0, nhdu-1 do begin
-            basis1 = basis[y0:y1,fib1:fib2,ihdu]
-            bhdr1 = *bhdr[ihdu]
-            ; Replace the X and Y positions to refer to the subimage positions
-            if (ihdu EQ 0) then basis1 -= x0
-            if (ihdu EQ 1) then basis1 -= y0
-            sxaddpar, bhdr1, 'NAXIS', 2
-            sxaddpar, bhdr1, 'NAXIS1', y1-y0+1
-            sxaddpar, bhdr1, 'NAXIS2', fib2-fib1+1
-            if (ihdu EQ 0) then begin
-               sxaddpar, bhdr1, 'NPIX_X', x1-x0+1
-               sxaddpar, bhdr1, 'NPIX_Y', y1-y0+1
-               sxaddpar, bhdr1, 'NSPEC', fib2-fib1+1
-               sxaddpar, bhdr1, 'NFLUX', y1-y0+1
-            endif
-            mwrfits, basis1, psffile, bhdr1, create=(ihdu EQ 0), /silent
-         endfor
+         bbspec_extract_trimpsf, pbasis, phdr, psffile, x0, x1, y0, y1, $
+          fib1, fib2, ximg=ximg
 
          pyfile = djs_filepath('pix2spec.py', root_dir=getenv('BBSPEC_DIR'), $
           subdir='examples')
@@ -199,7 +215,8 @@ pro bbspec_extract, image, invvar, flux, fluxivar, basisfile=basisfile, $
       endfor
    endfor
 
-   for ihdu=0, nhdu-1 do ptr_free, bhdr[ihdu]
+   for i=0, n_elements(phdr)-1 do ptr_free, phdr[i]
+   for i=0, n_elements(pbasis)-1 do ptr_free, pbasis[i]
 
    splog, 'Time to bbspec = ', systime(1)-stime0, ' seconds'
 

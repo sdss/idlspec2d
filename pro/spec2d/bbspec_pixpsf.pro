@@ -91,8 +91,7 @@ flatstr='r1-00115981' ; ???
    filename = 'tmppsf-'+arcstr+'-'+string(lindgen(ngroup),format='(i2.2)')+'.ss'
    pbsfile = 'pbs-tmppsf-'+arcstr+'-'+string(lindgen(ngroup),format='(i2.2)')
    jobid = lonarr(ngroup)
-;   for igroup=0, ngroup-1 do begin
-for igroup=0,1 do begin ; ???
+   for igroup=0, ngroup-1 do begin
       splog, 'Generating PSF for group ', igroup, ngroup
       objs = objs_all
 
@@ -131,14 +130,16 @@ for igroup=0,1 do begin ; ???
 
    if (keyword_set(batch)) then begin
        bbspec_batch_wait, jobid
-;      for igroup=0, ngroup-1 do begin
-for igroup=0,1 do begin ; ???
+      for igroup=0, ngroup-1 do begin
          restore, filename=filename[igroup]
-         if (NOT keyword_set(psfimg_all)) then $
-          psfimg_all = fltarr([size(psfimg,/dimens),ngroup])
+         if (NOT keyword_set(psfimg_all)) then begin
+            psfimg_all = fltarr([size(psfimg,/dimens),ngroup])
+            fakeimg += skyimg
+         endif
          psfimg_all[*,*,*,igroup] = psfimg
-         fakeimg += skyimg
-         psolve_addstars, fakeimg, psfimg, objs
+         indx = where(objs.bestmask, ct)
+         if (ct GT 0) then $
+          psolve_addstars, fakeimg, psfimg, objs
       endfor
    endif
 
