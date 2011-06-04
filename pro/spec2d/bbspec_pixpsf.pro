@@ -4,8 +4,8 @@
 pro bbspec_pixpsf, arcstr, flatstr, pradius=pradius, rradius=rradius, $
  npoly=npoly, outfile=outfile1, batch=batch
 
-arcstr='r1-00115982' ; ???
-flatstr='r1-00115981' ; ???
+;arcstr='r1-00115982' ; ???
+;flatstr='r1-00115981' ; ???
 
    if (NOT keyword_set(npoly)) then npoly = [2,3]
    if (NOT keyword_set(pradius)) then pradius = 8. + fltarr(npoly[0]*npoly[1])
@@ -13,7 +13,7 @@ flatstr='r1-00115981' ; ???
    if (n_elements(pradius) NE n_elements(rradius)) then $
     message, 'Number of elements for PRADIUS,RRADIUS must agree'
    if (keyword_set(outfile1)) then outfile = outfile1 $
-    else outfile ='spBasisPSF-'+arcstr+'.fits'
+    else outfile ='spBasisPSF-PIX-'+arcstr+'.fits'
 
    ;----------
    ; Read the pipeline arc + flat files
@@ -109,7 +109,7 @@ flatstr='r1-00115981' ; ???
       skyimg = 0 ; re-fit the sky image on each group of fibers
 
       if (NOT keyword_set(batch)) then begin
-         psolve_iter, image, ivar, objs, psfpix, skyimg, $
+         psolve_iter, image, ivar, objs, psfpix, psfimg, skyimg, $
           xpad=xpad, ypad=ypad, npoly=npoly, niter=niter, maxshift=maxshift, fixpsf=fixpsf
       endif else begin
          fq = "'"
@@ -190,7 +190,6 @@ flatstr='r1-00115981' ; ???
    mkhdr, outhdr1, psfimg_all
    mwrfits, psfimg_all, outfile
 
-stop ; ???
    return
 end
 ;------------------------------------------------------------------------------

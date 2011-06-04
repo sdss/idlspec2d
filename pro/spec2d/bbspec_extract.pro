@@ -53,14 +53,17 @@
 ;   24-May-2011  Written by D. Schlegel, LBL
 ;-
 ;------------------------------------------------------------------------------
-pro bbspec_extract_readpsf, basisfile, pbasis, phdr, nfiber=nfiber
+pro bbspec_extract_readpsf, basisfile1, pbasis, phdr, nfiber=nfiber
 
    ; Determine the number of HDUs in the PSF file
    nhdu = 0
+   basisfile = findfile(basisfile1, count=ct)
+   if (ct EQ 0) then $
+    message, 'PSF file not found '+string(basisfile1)
    while (size(headfits(basisfile,exten=nhdu,/silent),/tname) EQ 'STRING') do $
     nhdu++
    if (nhdu EQ 0) then $
-    message, 'PSF file not found '+string(basisfile)
+    message, 'Error reading PSF file '+string(basisfile)
 
    phdr = ptrarr(nhdu)
    pbasis = ptrarr(nhdu)

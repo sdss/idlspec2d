@@ -92,8 +92,9 @@ pro bbspec_test, scifile, outfile=outfile1, clobber=clobber, batch=batch, $
    if (ct EQ 0) then $
     message, 'Unable to find spFlat file'
 
-   basisfile = 'spBasisPSF-' + strmid(sxpar(hdr, 'ARCFILE'),4,11) + '.fits'
+   basisfile = 'spBasisPSF-*-' + strmid(sxpar(hdr, 'ARCFILE'),4,11) + '.fits'
    junk = (findfile(basisfile+'*', count=ct))[0]
+   splog, 'Selecting file '+basisfile
    if (ct EQ 0 OR keyword_set(clobber)) then begin
       splog, 'Generating sdProc file for arc'
       arcname = 'sdR-'+arcstr+'.fit'
