@@ -95,7 +95,11 @@ pro bbspec_extract_trimpsf, pbasis, phdr, psffile, x0, x1, y0, y1, fib1, fib2, $
       if (ihdu EQ 0) then basis1 -= x0
       if (ihdu EQ 1) then basis1 -= y0
 
-      if (ihdu LE 2 OR psftype EQ 'GAUSS-HERMITE') then begin
+      ; Should not need the following to protect against NaNs ???
+      ibad = where(finite(basis1) EQ 0, nbad)
+      if (nbad GT 0) then basis1[ibad] = 1
+
+      if (ihdu LE 2) then begin
          basis1 = basis1[y0:y1,fib1:fib2]
          sxaddpar, hdr1, 'NPIX_X', x1-x0+1
          sxaddpar, hdr1, 'NPIX_Y', y1-y0+1
@@ -103,6 +107,10 @@ pro bbspec_extract_trimpsf, pbasis, phdr, psffile, x0, x1, y0, y1, fib1, fib2, $
          sxaddpar, hdr1, 'NFLUX', y1-y0+1
          sxaddpar, hdr1, 'NAXIS', 2
          sxaddpar, hdr1, 'NAXIS1', y1-y0+1
+         sxaddpar, hdr1, 'NAXIS2', fib2-fib1+1
+      endif
+      if (ihdu GE 3 AND psftype EQ 'GAUSS-HERMITE') then begin
+         basis1 = basis1[*,fib1:fib2]
          sxaddpar, hdr1, 'NAXIS2', fib2-fib1+1
       endif
       if (ihdu EQ 4 AND psftype EQ 'PCA-PIX') then begin
