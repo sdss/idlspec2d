@@ -301,9 +301,9 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 
    ; Replace the extracted fluxes with bbspec extractions
    if (keyword_set(bbspec)) then begin
-      basisfile = 'spBasisPSF-'+strmid(sxpar(objhdr,'ARCFILE'),4,11)+'.fits'
+      basisfile = 'spBasisPSF-*-'+strmid(sxpar(objhdr,'ARCFILE'),4,11)+'.fits'
       bbspec_extract, image, invvar, bbflux, bbfluxivar, $
-       basisfile=basisfile, ximg=xnow, ymodel=bb_ymodel
+       basisfile=basisfile, ximg=xnow, ymodel=bb_ymodel, /batch ; ??? set batch
 
       ; Deal with case of only the first few spectra being re-extracted...
       dims = size(bbflux,/dimens)
