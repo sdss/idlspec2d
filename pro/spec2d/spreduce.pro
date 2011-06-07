@@ -138,7 +138,8 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, $
     ecalibfile=ecalibfile, plottitle=plottitle, $
     flatinfoname=flatinfoname, arcinfoname=arcinfoname, $
     arcstruct=arcstruct, flatstruct=flatstruct, $
-    writeflatmodel=writeflatmodel, writearcmodel=writearcmodel
+    writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
+    bbspec=bbspec
 
    ;----------
    ; Find the mid-point in time for all of the science observations
@@ -199,21 +200,24 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, $
     color=color, title=plottitle+' Arcline Fit for '+bestarc.name
 
    ; Generate the sdProc files for the arc images and the PSF models
+if (0) then begin ; ???
    if (keyword_set(bbspec)) then begin
       sdssproc, bestarc.name, indir=indir, /outfile, $
        /applybias, /applypixflat, /applycrosstalk
       arcstr = strmid(bestarc.name,4,11)
       flatstr = strmid(bestflat.name,4,11)
       ; Assume files exist: sdProc-$arcstr spArc-$arcstr spFlat-$flatstr
-      pyfile = djs_filepath('make-my-psf.py', root_dir=getenv('BBSPEC_DIR'), $
-       subdir='examples')
-      cmd = 'python '+pyfile+' '+arcstr+' '+flatstr
-      spawn, cmd, res, errcode
-      if (keyword_set(errcode)) then begin
-         splog, errcode
-         message, 'Error calling '+cmd
-      endif
+;      pyfile = djs_filepath('make-my-psf.py', root_dir=getenv('BBSPEC_DIR'), $
+;       subdir='examples')
+;      cmd = 'python '+pyfile+' '+arcstr+' '+flatstr
+;      spawn, cmd, res, errcode
+;      if (keyword_set(errcode)) then begin
+;         splog, errcode
+;         message, 'Error calling '+cmd
+;      endif
+      bbspec_pixpsf, arcstr, flatstr, /batch
    endif
+endif
 
    ;---------------------------------------------------------------------------
    ; LOOP THROUGH OBJECT FRAMES

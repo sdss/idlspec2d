@@ -9,7 +9,7 @@
 ;   spcalib, flatname, arcname, fibermask=, $
 ;    lampfile=, indir=, timesep=, ecalibfile=, plottitle=, $
 ;    minflat=, maxflat=, arcinfoname=, flatinfoname=, $
-;    arcstruct=, flatstruct=, writeflatmodel=]
+;    arcstruct=, flatstruct=, writeflatmodel=, /bbspec]
 ;
 ; INPUTS:
 ;   flatname   - Name(s) of flat-field SDSS image(s)
@@ -39,6 +39,7 @@
 ; writearcmodel- Set this keyword to write arc data image, ivar, and
 ;                final extraction model image to a file.  Will only
 ;                work if "arcinfoname" is present also (ASB).
+;   bbspec         - use bbspec extraction code
 ;
 ; OUTPUTS:
 ;   arcstruct  - Structure array with extracted arc calibration information
@@ -141,7 +142,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
     arcinfoname=arcinfoname, flatinfoname=flatinfoname, $
     arcstruct=arcstruct, flatstruct=flatstruct, $
     minflat=minflat, maxflat=maxflat, $
-    writeflatmodel=writeflatmodel, writearcmodel=writearcmodel
+    writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, bbspec=bbspec
     
   if (NOT keyword_set(indir)) then indir = '.'
   if (NOT keyword_set(timesep)) then timesep = 7200
@@ -609,6 +610,24 @@ wfixed = [1,0] ; Do not refit for Gaussian widths, only flux ???
         proftype=proftype, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
         npoly=2L, relative=1, chisq=schisq, ansimage=ansimage2, $
         reject=[0.1, 0.6, 0.6], ymodel=ymodel, nperbun=20L, buffsize=8L
+
+      if (keyword_set(bbspec)) then begin
+         basisfile = 'spBasisPSF-*-'+strmid(arcstruct[iarc].name,4,11)+'.fits'
+         tmproot = 'tmp-'+strmid(flatstruct[iflat].name,4,11)
+         bbspec_extract, flatimg, flativar, bbflux, bbfluxivar, $
+          basisfile=basisfile, ximg=xsol, ymodel=bb_ymodel, $
+          tmproot=tmproot, /batch ; ??? set batch
+
+         ; Deal with case of only the first few spectra being re-extracted...
+         dims = size(bbflux,/dimens)
+         flux[0:dims[0]-1,0:dims[1]-1] = bbflux
+         fluxivar[0:dims[0]-1,0:dims[1]-1] = bbfluxivar $
+          * (fluxivar[0:dims[0]-1,0:dims[1]-1] GT 0) ; <- Retain old rejection
+
+         outfile = 'ymodel-'+strmid(flatstruct[iflat].name,4,11)+'.fits'
+         mwrfits, bb_ymodel, outfile, /create
+         mwrfits, ymodel, outfile
+      endif
 
 ;x      splog, 'First  extraction chi^2 ', minmax(fchisq)
       splog, 'Second extraction chi^2 ', minmax(schisq)
