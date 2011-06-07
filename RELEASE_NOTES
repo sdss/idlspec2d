@@ -9,16 +9,22 @@ EXTRACT_OBJECT: Add /bbspec option, and if set call BBSPEC_EXTRACT to replace
 FITDISPERSION: Change quadrupole region for /QUICK option for reporting 
      MEDWIDTH for different regions on the CCD (ticket #822).  This 
      option used by QUICKWAVE.
+FITFLATWIDTH: At least half the points should be good to fit the median
+     value within a bundle.
 PSOLVE: Initial check-in of routines used by BBSPEC_PIXPSF.
 SDSSPROC: Remove the VARFILE option, and write the inverse variance
      as HDU #1 of OUTFILE instead.  Define a default naming scheme for OUTFILE.
 SHIFT_TRACE: Remove this deprecated routine.
+SPCALIB: Add /bbspec option, and if set then extract the flat-field with
+     the 2D PSF.
 SPREDUCE: Add /bbspec option, and if set then generated sdProc and
      spBasisPSFfiles for the best arc image.  Pass keyword to EXTRACT_OBJECT.
 SPREDUCE2D: Propogate all the test keywords to the recursive calling of
      this routine.
      Add /bbspec option.
 
+examples/opLimits.par: Switch the b1 and b2 values for WSIGMA,XSIGMA
+     since those were in error (ticket *822).
 opfiles/lamplines.par: New file for lamp lines in bbspec PSF fitting.
 ups/idlspec2d.table: Add optional dependency on bbspec product.
 
