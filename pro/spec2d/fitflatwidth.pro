@@ -126,9 +126,12 @@ function fitflatwidth, flux, fluxivar, ansimage, fibermask, $
 
    for irow=0, nrow-1 do begin
       for j=0, numbundles-1 do begin
-         ss = where(mask[irow,*,j])
-         if (ss[0] NE -1) then $
-          width_bundle[irow,j] = djs_median(width[irow,ss,j])
+         ss = where(mask[irow,*,j], ct)
+         ; At least half the points should be good
+         if (ct GE 0.5*20) then $
+          width_bundle[irow,j] = djs_median(width[irow,ss,j]) $
+         else $
+          width_bundle[irow,j] = 0
       endfor
    endfor
 
