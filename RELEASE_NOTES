@@ -23,8 +23,8 @@ SPREDUCE2D: Propogate all the test keywords to the recursive calling of
      this routine.
      Add /bbspec option.
 
-examples/opLimits.par: Switch the b1 and b2 values for WSIGMA,XSIGMA
-     since those were in error (ticket *822).
+examples/opLimits.par: Switch the values for WSIGMA,XSIGMA
+     since those were in error (ticket #822).
 opfiles/lamplines.par: New file for lamp lines in bbspec PSF fitting.
 ups/idlspec2d.table: Add optional dependency on bbspec product.
 
