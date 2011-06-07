@@ -162,13 +162,13 @@ speclimit red arc NLAMPS r2 0 30
 
 # Issue an error if the wavelength widths are too big (out of focus)
 
-speclimit yellow arc WSIGMA b1 1.20 9e9
-speclimit yellow arc WSIGMA b2 1.25 9e9
+speclimit yellow arc WSIGMA b1 1.15 9e9
+speclimit yellow arc WSIGMA b2 1.15 9e9
 speclimit yellow arc WSIGMA r1 1.20 9e9
 speclimit yellow arc WSIGMA r2 1.20 9e9
 
-speclimit red arc WSIGMA b1 1.25 9e9
-speclimit red arc WSIGMA b2 1.30 9e9
+speclimit red arc WSIGMA b1 1.20 9e9
+speclimit red arc WSIGMA b2 1.20 9e9
 speclimit red arc WSIGMA r1 1.25 9e9
 speclimit red arc WSIGMA r2 1.25 9e9
 
