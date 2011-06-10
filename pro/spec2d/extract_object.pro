@@ -317,9 +317,10 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
       fluxivar *= ((pixelmask AND (pixelmask_bits('PARTIALREJECT') + $
        pixelmask_bits('FULLREJECT'))) EQ 0)
 
-      mwrfits, bb_ymodel, 'ymodel-'+outname, /create
-      mwrfits, ymodel, 'ymodel-'+outname
-      splog, 'BBSPEC output file ymodel-'+outname
+      thisfile = 'ymodel-'+fileandpath(outname)
+      mwrfits, bb_ymodel, thisfile, /create
+      mwrfits, ymodel, thisfile
+      splog, 'BBSPEC output file ymodel-'+thisfile
    endif
 
    ;----------------------------------------------------------------------
