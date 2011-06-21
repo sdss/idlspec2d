@@ -1,4 +1,7 @@
-
+Checking in new CV PCA redshift templates for BOSS (ASB):
+  templates/spEigenCVstar-55734.fits
+  templates/eigeninput_cvstar_boss.dat
+  pro/spec1d/pca_cvstar_boss.pro
 Checking in new QSO PCA redshift templates for BOSS (ASB):
   templates/eigeninput_qso_boss.dat
   templates/spEigenQSO-55732.fits

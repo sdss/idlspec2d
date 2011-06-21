@@ -422,6 +422,7 @@ pro/spec1d/make_regress1d.pro -text
 pro/spec1d/matchplugmap.pro -text
 pro/spec1d/multisynthspec.pro -text
 pro/spec1d/pca_cvstar.pro -text
+pro/spec1d/pca_cvstar_boss.pro -text
 pro/spec1d/pca_elodie.pro -text
 pro/spec1d/pca_gal.pro -text
 pro/spec1d/pca_lrgtest.pro -text
@@ -652,6 +653,7 @@ templates/bc03_padova1994_chab_z008_ssp.fit.gz -text svneol=unset#unset
 templates/bc03_padova1994_chab_z02_ssp.fit.gz -text svneol=unset#unset
 templates/bc03_padova1994_chab_z05_ssp.fit.gz -text svneol=unset#unset
 templates/eigeninput_cvstar.dat -text
+templates/eigeninput_cvstar_boss.dat -text
 templates/eigeninput_gal.dat -text
 templates/eigeninput_qso.dat -text
 templates/eigeninput_qso_boss.dat -text
@@ -673,6 +675,7 @@ templates/spBsplineQSO-53115.fits -text svneol=unset#application/octet-stream
 templates/spEigenCVstar-52223.fits -text svneol=unset#unset
 templates/spEigenCVstar-53054.fits -text
 templates/spEigenCVstar-53724.fits -text
+templates/spEigenCVstar-55734.fits -text svneol=unset#unset
 templates/spEigenElodie.fits -text svneol=unset#unset
 templates/spEigenGal-51838.fits -text svneol=unset#unset
 templates/spEigenGal-51846.fits -text svneol=unset#unset
