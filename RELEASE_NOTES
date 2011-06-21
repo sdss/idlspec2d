@@ -1,4 +1,7 @@
 
+Checking in new QSO PCA redshift templates for BOSS (ASB):
+  templates/eigeninput_qso_boss.dat
+  templates/spEigenQSO-55732.fits
 BBSPEC_EXTRACT: New proc to act as wrapper to bbspec extraction code.
      This first implementation only does a small sub-image for a single
      fiber at a time.
