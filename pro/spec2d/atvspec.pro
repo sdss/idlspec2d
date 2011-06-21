@@ -8,7 +8,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   atvspec, plate, fiberid, wave=, [ mjd=, xsize=, ysize=, $
-;    psym=, symsize=, color=, _EXTRA= ]
+;    psym=, symsize=, color=, _EXTRA=, /verbose ]
 ;
 ; INPUTS:
 ;   plate      - Plate (scalar)
@@ -22,6 +22,7 @@
 ;   psym       - PSYM keyword for ATVPLOT; default to 6 (squares)
 ;   symsize    - SYMSIZE keyword for ATVPLOT; default to 3
 ;   color      - COLOR keyword for ATVPLOT; default to 'red'
+;   verbose    - If set, then print X,Y locations on CCD
 ;   _EXTRA     - Keywords for ATV, such as /ALIGN or /STRETCH
 ;
 ; OUTPUTS:
@@ -46,7 +47,7 @@
 ;------------------------------------------------------------------------------
 pro atvspec, plate, fiberid, mjd=mjd, wave=wavecen, $
  xsize=xsize1, ysize=ysize1, psym=psym1, symsize=symsize1, color=color1, $
- _EXTRA=KeywordsForATV
+ verbose=verbose, _EXTRA=KeywordsForATV
 
    if (n_params() LT 2 OR keyword_set(wavecen) EQ 0) then begin
       print, 'Must set PLATE, FIBERID, WAVECEN'
@@ -107,6 +108,8 @@ pro atvspec, plate, fiberid, mjd=mjd, wave=wavecen, $
             ; Find the x,y location on this particular image
             linterp, wave[*,j], xvec, wavecen[iwave], ycen
             linterp, xvec, ximg[*,j], ycen, xcen
+            if (keyword_set(verbose)) then $
+             print, fileandpath(filename[j]), ' X=', xcen, ' Y=', ycen
             x0 = ((round(xcen) - xsize/2) > 0) < (thisdim[0]-xsize)
             x1 = x0 + xsize-1
             y0 = ((round(ycen) - ysize/2) > 0) < (thisdim[1]-ysize)
