@@ -654,6 +654,7 @@ templates/bc03_padova1994_chab_z05_ssp.fit.gz -text svneol=unset#unset
 templates/eigeninput_cvstar.dat -text
 templates/eigeninput_gal.dat -text
 templates/eigeninput_qso.dat -text
+templates/eigeninput_qso_boss.dat -text
 templates/eigeninput_star.par -text
 templates/eigeninput_typeIIqso.dat -text
 templates/eigeninput_vstnd.dat -text
@@ -685,6 +686,7 @@ templates/spEigenGalNew-55399-baw-mean.fits -text svneol=unset#unset
 templates/spEigenQSO-52223.fits -text
 templates/spEigenQSO-53054.fits -text svneol=unset#application/octet-stream
 templates/spEigenQSO-53724.fits -text svneol=unset#application/octet-stream
+templates/spEigenQSO-55732.fits -text
 templates/spEigenQSO.fits -text
 templates/spEigenStar-51845.fits -text svneol=unset#unset
 templates/spEigenStar-51984.fits -text svneol=unset#unset
