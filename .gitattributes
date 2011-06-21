@@ -429,6 +429,7 @@ pro/spec1d/pca_lrgtest.pro -text
 pro/spec1d/pca_qso.pro -text
 pro/spec1d/pca_solve.pro -text
 pro/spec1d/pca_star.pro -text
+pro/spec1d/pca_star_boss.pro -text
 pro/spec1d/pca_vstnd.pro -text
 pro/spec1d/plate_spec_image.pro -text
 pro/spec1d/platecompare.pro -text
@@ -658,6 +659,7 @@ templates/eigeninput_gal.dat -text
 templates/eigeninput_qso.dat -text
 templates/eigeninput_qso_boss.dat -text
 templates/eigeninput_star.par -text
+templates/eigeninput_star_boss.dat -text
 templates/eigeninput_typeIIqso.dat -text
 templates/eigeninput_vstnd.dat -text
 templates/fluxed_sky_346.fits -text svneol=unset#application/octet-stream
@@ -671,6 +673,7 @@ templates/fluxed_sky_860U.fits -text svneol=unset#application/octet-stream
 templates/kurucz_stds_raw_v5.fits -text
 templates/qso.template -text
 templates/qsolist.27plates -text
+templates/spArchIndoUS.fits -text
 templates/spBsplineQSO-53115.fits -text svneol=unset#application/octet-stream
 templates/spEigenCVstar-52223.fits -text svneol=unset#unset
 templates/spEigenCVstar-53054.fits -text
@@ -700,6 +703,7 @@ templates/spEigenStar-52333.fits -text svneol=unset#unset
 templates/spEigenStar-52374.fits -text svneol=unset#unset
 templates/spEigenStar-53054.fits -text
 templates/spEigenStar-53724.fits -text
+templates/spEigenStar-55734.fits -text
 templates/spEigenVdisp.fits -text svneol=unset#unset
 templates/spEigenVstnd.fits -text svneol=unset#unset
 templates/spLRG-52928.fits -text
