@@ -72,11 +72,14 @@
 ;
 ; REVISION HISTORY:
 ;   28-Jun-2000  Written by D. Schlegel, Princeton
+;   2010-2011: various template-related tweaks, A. Bolton, Utah
 ;------------------------------------------------------------------------------
 pro spreduce1d, platefile, fiberid=fiberid, run1d=run1d1, $
  doplot=doplot, debug=debug, chop_data=chop_data1
 
-chop_data1 = 1 ; Force this in the current reductions ???
+; ASB june2011: removing hard chop_data, but keeping a softer
+; chop_data as given below by default
+;chop_data1 = 1 ; Force this in the current reductions ???
 
    if (NOT keyword_set(platefile)) then begin
       platefile = findfile('spPlate*.fits*', count=nplate)
@@ -92,7 +95,8 @@ chop_data1 = 1 ; Force this in the current reductions ???
    if (keyword_set(chop_data1)) then begin
       if (n_elements(chop_data1) EQ 1) then chop_data = [3850., 9200.] $
        else chop_data = chop_data1
-   endif else chop_data = 0
+;   endif else chop_data = 0
+   endif else chop_data = [3600., 10400.]
 
    ;----------
    ; If multiple plate files exist, then call this script recursively
@@ -261,7 +265,9 @@ chop_data1 = 1 ; Force this in the current reductions ???
    nfind = 5
    plottitle = 'Galaxy Redshift'
 
-   eigenfile = 'spEigenGal-*.fits'
+; ASB: subtle wildcarding change for file-picking management:
+;   eigenfile = 'spEigenGal-*.fits'
+   eigenfile = 'spEigenGal-?????.fits'
 
    splog, 'Compute GALAXY redshifts:', $
     ' ZMIN=', zmin, ' ZMAX=', zmax, ' PSPACE=', pspace
@@ -309,7 +315,9 @@ chop_data1 = 1 ; Force this in the current reductions ???
    nfind = 5
    plottitle = 'QSO Redshift'
 
-   eigenfile = 'spEigenQSO-*.fits'
+; ASB: subtle wildcarding change for file-picking management:
+;   eigenfile = 'spEigenQSO-*.fits'
+   eigenfile = 'spEigenQSO-?????.fits'
 ;   zmax = 6.50 ; Max range to use for now, with the template starting at
 ;   eigenfile = 'spBsplineQSO-*.fits'
 
@@ -337,13 +345,17 @@ chop_data1 = 1 ; Force this in the current reductions ???
    ;----------
    ; Find STAR redshifts
 
-   npoly = 1 ; Changed from 4 by ASB Aug 2010 following redshift accuracy tests.
+   npoly = 4 ; Changed from 4 to 1 by ASB Aug 2010 following redshift accuracy tests.
+                                ; then back up to 4 by ASB following
+                                ; installation of new BOSS tmeplates
    zmin = -0.004 ; -1200 km/sec
    zmax = 0.004 ; +1200 km/sec
    pspace = 1
    nfind = 1
 
-   eigenfile = 'spEigenStar-*.fits'
+; ASB: subtle wildcarding change for file-picking management:
+;   eigenfile = 'spEigenStar-*.fits'
+   eigenfile = 'spEigenStar-?????.fits'
 
    ; Select the stars eigen-file here to detemine how many templates are in it
    eigendir = concat_dir(getenv('IDLSPEC2D_DIR'), 'templates')
@@ -376,13 +388,16 @@ chop_data1 = 1 ; Force this in the current reductions ???
    ;----------
    ; Find CV STAR redshifts
 
-   npoly = 0      ; Changed from 3 by ASB Aug 2010.
+   npoly = 3      ; Changed from 3 by ASB Aug 2010.
+                  ; then back up to 3 following new template installation
    zmin = -0.0033 ; -1000 km/sec
    zmax = 0.0033  ; +1000 km/sec
    pspace = 1
    nfind = 1
 
-   eigenfile = 'spEigenCVstar-*.fits'
+; ASB: subtle wildcarding change for file-picking management:
+;   eigenfile = 'spEigenCVstar-*.fits'
+   eigenfile = 'spEigenCVstar-?????.fits'
 
    subclass = 'CV'
    plottitle = subclass + '-Star Redshift'

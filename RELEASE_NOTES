@@ -35,6 +35,8 @@ SPCALIB: Add /bbspec option, and if set then extract the flat-field with
      the 2D PSF.
 SPREDUCE: Add /bbspec option, and if set then generated sdProc and
      spBasisPSFfiles for the best arc image.  Pass keyword to EXTRACT_OBJECT.
+SPREDUCE1D: removing hard CHOP_DATA and restoring old NPOLY choices,
+     following installation of new suite of templates (ASB).
 SPREDUCE2D: Propogate all the test keywords to the recursive calling of
      this routine.
      Add /bbspec option.
