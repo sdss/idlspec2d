@@ -351,10 +351,10 @@ function vdispfit, objflux, objivar, objloglam, $
    ; also marginalizing over redshift range if desired.
 
    bigchi2arr = fltarr(nsig,2L*dzpix+1L)
+   acoeffarr = fltarr(nuse+npoly,nsig,2L*dzpix+1L)
    for izpix = 0L, 2*dzpix do begin
       objsmall = objflux[indxo + izpix - dzpix]
       sqivar = sqrt( objivar[indxo + izpix - dzpix] ) * bigmask[indxt]
-      acoeffarr = fltarr(nuse+npoly,nsig,2L*dzpix+1L)
       for isig=0, nsig-1 do begin
          eigenflux = bigflux[indxt,iuse,isig]
          if (keyword_set(npoly)) then eigenflux = [[eigenflux], [polyflux]]
@@ -421,9 +421,9 @@ function vdispfit, objflux, objivar, objloglam, $
       eigenflux = bigflux[indxt,iuse,isig]
       if (keyword_set(npoly)) then eigenflux = [[eigenflux], [polyflux]]
       yfit = fltarr(npixobj)
-      yfit[indxo] = acoeffarr[*,isig] ## eigenflux
+      yfit[indxo] = acoeffarr[*,isig,dzpix] ## eigenflux
    endif
-   vdans.vdisptheta = acoeffarr[*,isig]
+   vdans.vdisptheta = acoeffarr[*,isig,dzpix]
 
    ;----------
    ; If the best-fit value is at the maximum dispersion value tested,
