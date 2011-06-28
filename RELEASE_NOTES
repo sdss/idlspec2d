@@ -1,4 +1,7 @@
 
+ZFIND: change to disallow negative-model fits for single-component
+     template sets (i.e., most stars) upstream of ZWARNINGs (ASB)
+
 -------------------------------------------------------------------------------
 v5_4_38 (2011-06-21, ASB)
 Tag for testing new redshift templates

@@ -240,7 +240,9 @@ function zfind, objflux, objivar, hdr=hdr, $
    ; value.  Do not modify any errors that are less than zero, since those
    ; can be used as just warning flags from the fit.
 
-   indx = where(zans.dof GT 0, npeak)
+; ASB: change to disallow negative-model stellar fits before the ZWARNING stage:
+;   indx = where(zans.dof GT 0, npeak)
+   indx = where((zans.dof GT 0) and ((n_elements(columns) NE 1) or (zans.theta[0] GT 0.)), npeak)
    if (npeak GT 0) then $
     zans[indx].z = 10.^(objdloglam * zans[indx].z) - 1.
 
