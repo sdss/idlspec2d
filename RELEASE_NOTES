@@ -1,4 +1,7 @@
 
+Yanmei Chen's latest galaxy redshift templates, renamed to match
+wildcarding, covering 1800 to 10500 Ang (committed by ASB):
+  templates/spEigenGal-55740.fits
 ZFIND: change to disallow negative-model fits for single-component
      template sets (i.e., most stars) upstream of ZWARNINGs (ASB)
 
