@@ -1,4 +1,8 @@
 
+-------------------------------------------------------------------------------
+v5_4_39 (2011-06-28, ASB)
+Tag for a few 1D fiddles
+
 Yanmei Chen's latest galaxy redshift templates, renamed to match
 wildcarding, covering 1800 to 10500 Ang (committed by ASB):
   templates/spEigenGal-55740.fits
