@@ -299,24 +299,26 @@ endfor
 ;endfor
 
 
-;add ticket 1368,1369
+;add ticket 1368,1369, 1363  not listed from here
+
 if docams eq 'b1' then  bpmhot[3734,1087:1344]+=16 ;blocked column only appears at low flux levels.  It blocks light for a fixed period of time, and then releases it creating a warm column. The signal does not appear in pixel flats or calibration flats, but does appear in science frames and arcs. For an example, see 55209/sdR-b1-00107423.fit.gz.  ds9 coordinates
 
 if docams eq 'b2' then bpmhot[1833,2048:2226]+=16 ;same defect as b1  55186/sdR-b2-00105398.fit.gz ds9 coordinates
 
-if docams eq 'r2' and  mjd ge 55300 and  mjd lt 55413 then bpmhot[2672,2064:2295]+=16 ;;r2, fiber~840. 8300 \aa\, sdssproc images, flag x=2673, 2065<y<2296 for data after 55300 (r2 replacement). This is a warm column that appears to vary in magnitude. See 55539/sdR-r2-00123636.fit.gz for an example. ds9 coordinates
-;
 
-if docams eq 'r1' and  mjd lt 55413 then bpmhot[2166:2184,1362:1383]+=32
-;if docams eq 'r1' and  mjd lt 55413 then bpmhot[2171:2178,1367:1371]+=32
-if docams eq 'r1' and  mjd lt 55413 then bpmhot[783:793,3468:3485]+=32
-if docams eq 'r1' and  mjd lt 55413 then bpmhot[481:488,2141:2150]+=32
-if docams eq 'r1' and  mjd lt 55413 then bpmhot[1618:1630,2047:2080]+=32
-if docams eq 'r1' and  mjd lt 55413 then bpmhot[3635:3651,397:416]+=32
-if docams eq 'r1' and  mjd lt 55413 then bpmhot[780:798,3467:3486]+=32
-if docams eq 'r1' then bpmhot[3635:3652,398:414]+=32
+if docams eq 'r1' then bpmhot[3635:3652,397:416]+=32
 if docams eq 'r1' then bpmhot[3810:3812,2278:2282]+=32
+
+if docams eq 'r1' and  mjd lt 55413 then bpmhot[481:488,2141:2150]+=32
+if docams eq 'r1' and  mjd ge 55413 then  bpmhot[692:710,3194]+=32
+if docams eq 'r1' and  mjd lt 55413 then bpmhot[780:798,3467:3486]+=32
+if docams eq 'r1' and  mjd lt 55413 then bpmhot[783:793,3468:3485]+=32
+if docams eq 'r1' and  mjd lt 55413 then bpmhot[1618:1630,2047:2080]+=32
+if docams eq 'r1' and  mjd lt 55413 then bpmhot[2166:2184,1362:1383]+=32
+;if docams eq 'r1' and  mjd lt 55413 then bpmhot[2171:2178,1367:1371]+=32 ;kyles region larger
+if docams eq 'r1' and  mjd lt 55413 then bpmhot[3635:3651,397:416]+=32
 if docams eq 'r1' and  mjd ge 55413 then  bpmhot[3648:3649,395:2063]+=8
+
 
 if docams eq 'r2' and mjd lt 55300 then bpmhot[2171:2192,2115:2217]+=32
 
@@ -329,12 +331,18 @@ if docams eq 'r2' and  mjd ge 55300 and  mjd lt 55413 then begin
     bpmhot[3865:3884,2636:3533]+=2         ;from looking at darks to get bad columns;doesn't get all; like ticket 1363
     bpmhot[3936:3958,2846:3106]+=2         ;from looking at darks to get bad columns;doesn't get all; like ticket 1363
     bpmhot[2619:2628,2232:2304]+=2  ;;ticket 1363
+    bpmhot[2672,2064:2295]+=16 ;;r2, fiber~840. 8300 \aa\, sdssproc images, flag x=2673, 2065<y<2296 for data after 55300 (r2 replacement). This is a warm column that appears to vary in magnitude. See 55539/sdR-r2-00123636.fit.gz for an example. ds9 coordinates
 endif
 
+if docams eq 'r2' and  mjd ge 55413 then  bpmhot[508,2064:3513]+=8
+;if docams eq 'r2' and  mjd ge 55413 then  bpmhot[509:520,3510:3512]+=32
+if docams eq 'r2' and  mjd ge 55413 then  bpmhot[508:523,3510:3513]+=32
+if docams eq 'r2' and  mjd ge 55413 then  bpmhot[2616:2629:2283]+=32
+if docams eq 'r2' and  mjd ge 55413 then  bpmhot[2661:2673,2292]+=32
 if docams eq 'r2' and  mjd ge 55413 then bpmhot[2984,2064:4127]+=32 ;from looking at darks to get bad columns;doesn't get all
 if docams eq 'r2' and  mjd ge 55413 then bpmhot[3882,2064:4127]+=32 ;from looking at darks to get bad columns;doesn't get all
-if docams eq 'r2' and  mjd ge 55413 then  bpmhot[508,2064:3513]+=8
-if docams eq 'r2' and  mjd ge 55413 then  bpmhot[509:520,3510:3512]+=32
+if docams eq 'r2' and  mjd ge 55413 then  bpmhot[3940:3958,2850:3096]+=32
+
 
 bpms=bpms+bpmhot
 bpmc=bpmc+bpmhot
