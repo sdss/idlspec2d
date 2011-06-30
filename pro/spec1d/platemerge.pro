@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   platemerge, [ plate=, mjd=, except_tags=, indir=, outroot=, $
-;    run2d=, /include_bad, /exclude_class, /skip_line ]
+;    run2d=, /include_bad, /calc_noqso, /skip_line ]
 ;
 ; INPUTS:
 ;
@@ -27,9 +27,8 @@
 ;                 files per name in $RUN2D; default to all values of RUN2D
 ;                 returned by PLATELIST.
 ;   include_bad  - If set, then include bad plates
-;   exclude_class - If set, then include redshift info for restricted
-;                   classes -- specifically, best non-QSO and best
-;                   non-galaxy redshifts.  Defaults to being set.
+;   calc_noqso  - If set, then also include redshift info for best non-QSO
+;                 redshift fits.  Defaults to being set.
 ;   skip_line    - If set, skip the generation of spAllLine.fits
 ;
 ;
@@ -81,10 +80,12 @@
 ;   30-Oct-2000  Written by D. Schlegel, Princeton
 ;   29-Jul-2010  Added EXCLUDE_CLASS and SKIP_LINE, A. Bolton, Utah
 ;   17-Mar-2011  Changed EXCLUDE_CLASS behavior, A. Bolton, Utah
+;   30-Jun-2011  Changed EXCLUDE_CLASS to more specific and correct
+;                CALC_NOQSO, including proper rchi2diff, A. Bolton, Utah
 ;------------------------------------------------------------------------------
 pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
  indir=indir, outroot=outroot1, run2d=run2d, include_bad=include_bad, $
- exclude_class=exclude_class, skip_line=skip_line
+ calc_noqso=calc_noqso, skip_line=skip_line
 
    dtheta = 2.0 / 3600.
 
@@ -98,7 +99,7 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
       outroot = djs_filepath(outroot, root_dir=getenv('BOSS_SPECTRO_REDUX'), $
        subdir=run2d)
    endelse
-   if (n_elements(exclude_class) eq 0) then exclude_class = 1B
+   if (n_elements(calc_noqso) eq 0) then calc_noqso = 1B
 
    t1 = systime(1)
    thismem = memory()
@@ -222,8 +223,9 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
       zans = struct_selecttags(zans, except_tags='OBJID')
 
 ; ASB 2011 Mar: append info on best non-galaxy and non-qso redshifts/classes:
-      if keyword_set(exclude_class) then begin
-         print, '  Finding class-restricted redshift info.'
+; ASB 2011 Jun: changed to do the "no-qso" case exclusively, and more correctly.
+      if keyword_set(calc_noqso) then begin
+         print, '  Finding non-QSO redshift info.'
          pstring = string(plist[ifile].plate, format='(i4.4)')
          mstring = string(plist[ifile].mjd, format='(i5.5)')
          zallfile = getenv('BOSS_SPECTRO_REDUX') + '/' + $
@@ -236,31 +238,35 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
          zall = reform(zall, nzall, nfib)
          class_all = strtrim(zall.class,2)
          id_noqso = replicate(-1L, nfib)
-         id_nogal = replicate(-1L, nfib)
-         for ii = 0L, nfib-1 do id_noqso[ii] = min(where(class_all[*,ii] ne 'QSO'))
-         for ii = 0L, nfib-1 do id_nogal[ii] = min(where(class_all[*,ii] ne 'GALAXY'))
+         rchi2diff_noqso = replicate(0., nfib)
+         for ii = 0L, nfib-1 do begin
+            wh_noqso = where(class_all[*,ii] ne 'QSO')
+            wh_noqso = (wh_noqso[sort(wh_noqso)])[0:1]
+            id_noqso[ii] = wh_noqso[0]
+            rchi2diff_noqso[ii] = total(zall[wh_noqso[0]:wh_noqso[1]-1,ii].rchi2diff)
+         endfor
          zans_noqso = zall[id_noqso,lindgen(nfib)]
-         zans_nogal = zall[id_nogal,lindgen(nfib)]
-         eclass_struc = replicate( $
-                        {z_noqso: 0., z_err_noqso: 0., zwarning_noqso: 0L, $
-                         class_noqso: ' ', subclass_noqso: ' ', $
-                         z_nogal: 0., z_err_nogal: 0., zwarning_nogal: 0L, $
-                         class_nogal: ' ', subclass_nogal: ' '}, nfib)
-         eclass_struc.z_noqso = zans_noqso.z
-         eclass_struc.z_err_noqso = zans_noqso.z_err
-         eclass_struc.zwarning_noqso = zans_noqso.zwarning
-         eclass_struc.class_noqso = zans_noqso.class
-         eclass_struc.subclass_noqso = zans_noqso.subclass
-         eclass_struc.z_nogal = zans_nogal.z
-         eclass_struc.z_err_nogal = zans_nogal.z_err
-         eclass_struc.zwarning_nogal = zans_nogal.zwarning
-         eclass_struc.class_nogal = zans_nogal.class
-         eclass_struc.subclass_nogal = zans_nogal.subclass
-         zans = struct_addtags(zans, eclass_struc)
-         eclass_struc = 0
+         noqso_struc = replicate( $
+                       {z_noqso: 0., z_err_noqso: 0., zwarning_noqso: 0L, $
+                        class_noqso: ' ', subclass_noqso: ' ', $
+                        rchi2diff_noqso: 0.}, nfib)
+         noqso_struc.z_noqso = zans_noqso.z
+         noqso_struc.z_err_noqso = zans_noqso.z_err
+         noqso_struc.class_noqso = zans_noqso.class
+         noqso_struc.subclass_noqso = zans_noqso.subclass
+         noqso_struc.rchi2diff_noqso = rchi2diff_noqso
+; Re-set the small-delta-chi2 bit:
+         minrchi2diff = 0.01
+         small_rchi2diff = rchi2diff_noqso lt minrchi2diff
+         zw_new = zans_noqso.zwarning
+         zflagval = sdss_flagval('ZWARNING', 'SMALL_DELTA_CHI2')
+         zw_new = zw_new - (zw_new and zflagval)
+         zw_new = zw_new or (zflagval * small_rchi2diff)
+         noqso_struc.zwarning_noqso = zw_new
+         zans = struct_addtags(zans, noqso_struc)
+         noqso_struc = 0
          zall = 0
          zans_noqso = 0
-         zans_nogal = 0
       endif
 
       if (ifile EQ 0) then begin
