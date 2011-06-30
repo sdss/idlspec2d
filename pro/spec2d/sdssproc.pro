@@ -1200,7 +1200,7 @@ if (keyword_set(applypixflat) AND (readimg OR readivar)) then begin
   if (NOT keyword_set(pixflatname)) then $
     pixflatname = findopfile('pixflat-*-'+camname+'.fits*', mjd, pp, $
     silent=silent)
-    
+   
   if (NOT keyword_set(pixflatname)) then begin
     if (NOT keyword_set(silent)) then $
       splog, 'WARNING: Pixel flat not found for camera ' + camname
@@ -1212,7 +1212,29 @@ if (keyword_set(applypixflat) AND (readimg OR readivar)) then begin
      /fscale, silent=silent)
     if (total(size(pixflatimg,/dimens) NE size(image,/dimens)) GT 0) then $
      message, 'Dimensions of image and pixel flat differ!'
-      
+
+    ; now get bad pixel mask
+  badpixelname = findopfile('badpixels-*-'+camname+'.fits*', mjd, pp, $
+    silent=silent)
+   
+  if (NOT keyword_set(badpixelname)) then begin
+    if (NOT keyword_set(silent)) then $
+      splog, 'WARNING: Badpixels not found for camera ' + camname
+  endif else begin
+      if (NOT keyword_set(silent)) then $
+      splog, 'Correcting with badpixels ' + badpixelname
+  
+    badpixelimg = mrdfits(djs_filepath(badpixelname, root_dir=pp), $
+     /fscale, silent=silent)
+    if (total(size(badpixelimg,/dimens) NE size(image,/dimens)) GT 0) then $
+     message, 'Dimensions of image and badpixels differ!'
+    
+    ; include badpixels into pixflat
+    badpixuse=where(badpixelimg ne 0,ct)
+    if (ct ne 0) then pixflatimg[badpixuse]=0.0
+
+  endelse
+
     if (readimg) then image /= (pixflatimg + (pixflatimg LE 0))
     if (NOT keyword_set(minflat)) then minflat = 0.0
     if (NOT keyword_set(maxflat)) then maxflat = 1.0e10
@@ -1220,9 +1242,12 @@ if (keyword_set(applypixflat) AND (readimg OR readivar)) then begin
       invvar = invvar * pixflatimg^2 * (pixflatimg GT minflat) $
       * (pixflatimg LT maxflat)
     pixflatimg = 0 ; clear memory
-    
+    badpixelimg = 0 ; clear memory
+
     ; Add pixflatname to header since it has just been applied
     sxaddpar, hdr, 'PIXFLAT', pixflatname
+    sxaddpar, hdr, 'BADPIXEL', badpixelname
+
   endelse
 endif
 
