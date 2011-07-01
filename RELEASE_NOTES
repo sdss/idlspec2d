@@ -1,4 +1,4 @@
-
+SDSSPROC:   When using /applypixflat, the badpixel masks are applied immediately      after reading in the pixflat.  
 PLATEMERGE: Improved handling of best non-QSO redshifts (ASB)
 
 -------------------------------------------------------------------------------
