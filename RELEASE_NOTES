@@ -1,4 +1,8 @@
-SDSSPROC:   When using /applypixflat, the badpixel masks are applied immediately      after reading in the pixflat.  
+v5_4_40 (2011-07-05, ASB)
+Tag for new bad-pixel masks, against specflat v1_14
+
+SDSSPROC:   When using /applypixflat, the badpixel masks are applied
+     immediately after reading in the pixflat.  
 PLATEMERGE: Improved handling of best non-QSO redshifts (ASB)
 
 -------------------------------------------------------------------------------
