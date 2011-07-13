@@ -23,7 +23,7 @@
 ;                a keystroke after each plot; setting /DEBUG forces /DOPLOT.
 ;   chop_data  - If set, then trim wavelength range to the specified range
 ;                in vacuum Ang (if a 2-element array), or to a default
-;                trim range of [3850,9200] Ang.
+;                trim range of [3600,10400] Ang.
 ;
 ; OUTPUTS:
 ;
