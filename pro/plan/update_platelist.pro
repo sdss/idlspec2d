@@ -3,7 +3,7 @@
 ;   update_platelist
 ;
 ; PURPOSE:
-;   Update the plate list file found in this idlspec2d product.
+;   Update the plate list file found in the speclog product.
 ;
 ; CALLING SEQUENCE:
 ;   update_platelist, [ outfile ]
