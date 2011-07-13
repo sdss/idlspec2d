@@ -125,7 +125,7 @@ pro spadd_guiderinfo, hdr
          seeing  = 0.0
          qgood = (guidermon.fwhm GT 0) AND finite(guidermon.fwhm)
          if (tag_exist(guidermon, 'focusoffset')) then $
-          qgood *= (guidermon.focusoffset LT 100) ; in-focus fibers only
+          qgood *= (abs(guidermon.focusoffset) LT 100) ; in-focus fibers only
          if (tag_exist(guidermon, 'exists')) then $
           qgood *= (guidermon.exists EQ 'T')
          if (tag_exist(guidermon, 'enabled')) then $
