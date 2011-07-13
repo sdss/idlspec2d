@@ -28,6 +28,7 @@ templates/spEigenGal-55740.fits:
 v5_4_38 (2011-06-21, ASB)
 Tag for testing new redshift templates
 
+ATVSPEC: Add /verbose option.
 BBSPEC_EXTRACT: New proc to act as wrapper to bbspec extraction code.
      This first implementation only does a small sub-image for a single
      fiber at a time.
