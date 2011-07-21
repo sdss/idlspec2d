@@ -1,5 +1,5 @@
 
-PLATEMERGE: setting of SPECPRIMARY for GALAXY targets now based upon
+PLATEMERGE: Set SPECPRIMARY for GALAXY targets now based upon
      ZWARNING_NOQSO (if present) rather than ZWARNING (ASB, ticket #1389)
 SPADD_GUIDERINFO: Limit reporting of seeing to in-focal-plane fibers only
      (ticket #1391).
