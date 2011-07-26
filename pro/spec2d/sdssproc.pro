@@ -566,6 +566,12 @@ if (mjd GE 55052) then begin
          endif
          end
       endcase
+      
+      ; Add read-noise to header
+      sxaddpar, hdr, 'RDNOISE0', rdnoise[0], 'CCD read noise amp 0 [electrons]'
+      sxaddpar, hdr, 'RDNOISE1', rdnoise[1], 'CCD read noise amp 1 [electrons]'
+      sxaddpar, hdr, 'RDNOISE2', rdnoise[2], 'CCD read noise amp 2 [electrons]'
+      sxaddpar, hdr, 'RDNOISE3', rdnoise[3], 'CCD read noise amp 3 [electrons]'
 
       ; Identify CRs, and grow by 1 pix
       if (keyword_set(invvar)) then begin
