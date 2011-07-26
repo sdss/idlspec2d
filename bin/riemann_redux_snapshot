@@ -11,8 +11,6 @@ if [ $# -ne 1 ] || [ "$1" != "-g" ] ; then
     exit 1
 fi
 
-#- Hardcode current version to archive; consider adding option
-export RUN2D='v5_4_31'
 export DATETAG=`date '+%Y-%m-%d'`
 
 #- Check if any files are missing before copying any of them
