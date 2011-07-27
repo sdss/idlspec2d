@@ -72,7 +72,7 @@
 ;
 ; REVISION HISTORY:
 ;   28-Jun-2000  Written by D. Schlegel, Princeton
-;   2010-2011: various template-related tweaks, A. Bolton, Utah
+;   2010-2011: various template-related tweaks and Z_NOQSO, A. Bolton, Utah
 ;------------------------------------------------------------------------------
 pro spreduce1d, platefile, fiberid=fiberid, run1d=run1d1, $
  doplot=doplot, debug=debug, chop_data=chop_data1
@@ -789,6 +789,45 @@ endif
      OR (qflag[iobj] * sdss_flagval('ZWARNING', 'UNPLUGGED'))
 
    res_all.zwarning = zwarning
+   zans = struct_addtags((res_all[0,*])[*], res_elodie)
+;   zans = struct_addtags(zans, res_vshift)
+
+   ;----------
+   ; Compute & assign the "_NOQSO" values:
+   ; (bolton@utah 2011july)
+
+   print, '  Determining non-QSO redshift info.'
+   class_all = strtrim(res_all.class,2)
+   id_noqso = replicate(-1L, nobj)
+   rchi2diff_noqso = replicate(0., nobj)
+   for ii = 0L, nobj-1 do begin
+      wh_noqso = where(class_all[*,ii] ne 'QSO')
+      wh_noqso = (wh_noqso[sort(wh_noqso)])[0:1]
+      id_noqso[ii] = wh_noqso[0]
+      rchi2diff_noqso[ii] = total(res_all[wh_noqso[0]:wh_noqso[1]-1,ii].rchi2diff)
+   endfor
+   zans_noqso = (res_all[id_noqso,lindgen(nobj)])[*]
+   noqso_struc = replicate( $
+                 {z_noqso: 0., z_err_noqso: 0., zwarning_noqso: 0L, $
+                  class_noqso: ' ', subclass_noqso: ' ', $
+                  rchi2diff_noqso: 0.}, nobj)
+   noqso_struc.z_noqso = zans_noqso.z
+   noqso_struc.z_err_noqso = zans_noqso.z_err
+   noqso_struc.class_noqso = zans_noqso.class
+   noqso_struc.subclass_noqso = zans_noqso.subclass
+   noqso_struc.rchi2diff_noqso = rchi2diff_noqso
+; Re-set the small-delta-chi2 bit:
+;;         minrchi2diff = 0.01 ; (set above)
+   small_rchi2diff = rchi2diff_noqso lt minrchi2diff
+   zw_new = zans_noqso.zwarning
+   zflagval = sdss_flagval('ZWARNING', 'SMALL_DELTA_CHI2')
+   zw_new = zw_new - (zw_new and zflagval)
+   zw_new = zw_new or (zflagval * small_rchi2diff)
+   noqso_struc.zwarning_noqso = zw_new
+   zans = struct_addtags(zans, noqso_struc)
+   noqso_struc = 0
+   zans_noqso = 0
+
 
    ;----------
    ; Write the output files
@@ -803,8 +842,6 @@ endif
    spawn, 'uname -n', uname
    sxaddpar, hdr, 'UNAME', uname[0]
 
-   zans = struct_addtags((res_all[0,*])[*], res_elodie)
-;   zans = struct_addtags(zans, res_vshift)
    mwrfits, 0, zbestfile, hdr, /create ; Retain the original header in first HDU
    mwrfits, zans, zbestfile
    mwrfits, synflux, zbestfile

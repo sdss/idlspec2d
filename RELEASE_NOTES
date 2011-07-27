@@ -5,8 +5,12 @@ SDSSPROC: Add measured readnoise for each amp as fits header keywords
 
 PLATEMERGE: Set SPECPRIMARY for GALAXY targets now based upon
      ZWARNING_NOQSO (if present) rather than ZWARNING (ASB, ticket #1389)
+PLATEMERGE: Test for inheritance of Z_NOQSO & related before computing
+     (see SPREDUCE1D changes) (ASB, ticket #1385).
 SPADD_GUIDERINFO: Limit reporting of seeing to in-focal-plane fibers only
      (ticket #1391).
+SPREDUCE1D: Compute Z_NOQSO and related values here, rather than in
+     PLATEMERGE (ASB, ticket #1385).
 
 -------------------------------------------------------------------------------
 v5_4_40 (2011-07-05, ASB)

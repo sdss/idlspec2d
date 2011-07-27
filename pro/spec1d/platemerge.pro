@@ -224,7 +224,11 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
 
 ; ASB 2011 Mar: append info on best non-galaxy and non-qso redshifts/classes:
 ; ASB 2011 Jun: changed to do the "no-qso" case exclusively, and more correctly.
-      if keyword_set(calc_noqso) then begin
+; ASB 2011 Jul: moved this into SPREDUCE1D.  Retained for now, but
+;               test to see if the tags are already present.  To be
+;               removed following verification.
+;;      if keyword_set(calc_noqso) then begin
+      if (keyword_set(calc_noqso) and (tag_exist(zans, 'z_noqso') eq 0)) then begin
          print, '  Finding non-QSO redshift info.'
          pstring = string(plist[ifile].plate, format='(i4.4)')
          mstring = string(plist[ifile].mjd, format='(i5.5)')
