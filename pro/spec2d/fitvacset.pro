@@ -38,6 +38,7 @@
 ;
 ; REVISION HISTORY:
 ;   20-Jan-2000  Written by S. Burles, Chicago
+;   27-Jul-2011  Added CCD discontinuity handling: A. Bolton, Utah
 ;-
 ;------------------------------------------------------------------------------
 function fitvacset, xpeak, lambda, wset, arcshift, helio=helio, airset=airset
@@ -46,6 +47,17 @@ function fitvacset, xpeak, lambda, wset, arcshift, helio=helio, airset=airset
    xmax = wset.xmax
    ncoeff = (size(wset.coeff, /dimens))[0]
    nfiber = (size(xpeak, /dimens))[0]
+
+; Two-phase readout handling (ASB, jul2011):
+   if tag_exist(wset, 'xjumpval') then begin
+      xjumplo = wset.xjumplo
+      xjumphi = wset.xjumphi
+      xjumpval = wset.xjumpval
+   endif else begin
+      xjumplo = 0
+      xjumphi = 0
+      xjumpval = 0
+   endelse
 
    if (NOT keyword_set(arcshift)) then arcshift = 0 $
     else splog, 'Tweaking to sky lines'
@@ -72,12 +84,14 @@ function fitvacset, xpeak, lambda, wset, arcshift, helio=helio, airset=airset
 
    xy2traceset, transpose(double(xpeak+arcshift)), $
     vacloglam # (dblarr(nfiber)+1), $
-    vacset, ncoeff=ncoeff, xmin=xmin, xmax=xmax
+    vacset, ncoeff=ncoeff, xmin=xmin, xmax=xmax, $
+    xjumplo=xjumplo, xjumphi=xjumphi, xjumpval=xjumpval
 
    if ARG_PRESENT(airset) then $
      xy2traceset, transpose(double(xpeak+arcshift)), $ 
                   alog10(lambda) # (dblarr(nfiber)+1), $
-                  airset, ncoeff=ncoeff, xmin=xmin, xmax=xmax
+                  airset, ncoeff=ncoeff, xmin=xmin, xmax=xmax, $
+                  xjumplo=xjumplo, xjumphi=xjumphi, xjumpval=xjumpval
 
 
    return, vacset

@@ -1,4 +1,5 @@
 
+FITVACSET: Added handling of 2-phase discontinuity info (ASB)
 SDSSPROC: Add measured readnoise for each amp as fits header keywords
     RDNOISE0/1/2/3.  We might want that info some day for noise modeling.
 
