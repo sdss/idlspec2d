@@ -355,6 +355,8 @@ function vdispfit, objflux, objivar, objloglam, $
    for izpix = 0L, 2*dzpix do begin
       objsmall = objflux[indxo + izpix - dzpix]
       sqivar = sqrt( objivar[indxo + izpix - dzpix] ) * bigmask[indxt]
+      ; Find the number of masked pixels (at the middle of the redshift range):
+      if (izpix eq dzpix) then nmasked = long(total(sqivar eq 0.))
       for isig=0, nsig-1 do begin
          eigenflux = bigflux[indxt,iuse,isig]
          if (keyword_set(npoly)) then eigenflux = [[eigenflux], [polyflux]]
@@ -405,7 +407,8 @@ function vdispfit, objflux, objivar, objloglam, $
    vdans.vdisp_err = sigerr * (errcode EQ 0) + errcode
    vdans.vdispchi2 = minchi2
    vdans.vdispnpix = npixcomp
-   vdans.vdispdof = npixcomp - nstar - npoly - 1 ; One dof is for the vel. disp.
+   ; ASB: subtracting masked pixels from dof:
+   vdans.vdispdof = npixcomp - nstar - npoly - nmasked - 1 ; One dof is for the vel. disp.
    if keyword_set(return_chisq) then begin
       vdans.bigsig = bigsig
       vdans.chi2arr = chi2arr

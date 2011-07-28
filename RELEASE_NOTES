@@ -11,6 +11,7 @@ SPADD_GUIDERINFO: Limit reporting of seeing to in-focal-plane fibers only
      (ticket #1391).
 SPREDUCE1D: Compute Z_NOQSO and related values here, rather than in
      PLATEMERGE (ASB, ticket #1385).
+VDISPFIT: Subtract the # of invvar=0 pixels from vdispdof (ASB).
 
 -------------------------------------------------------------------------------
 v5_4_40 (2011-07-05, ASB)
