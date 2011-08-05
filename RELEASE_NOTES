@@ -1,8 +1,9 @@
 
+BOLTON_BIASGEN: Minimum-chi^2 master bias model-building routine (ASB)
+BOLTON_BIASSUB: Bias-subtraction using bolton_biasgen outputs (ASB)
 FITVACSET: Added handling of 2-phase discontinuity info (ASB)
 SDSSPROC: Add measured readnoise for each amp as fits header keywords
     RDNOISE0/1/2/3.  We might want that info some day for noise modeling.
-
 PLATEMERGE: Set SPECPRIMARY for GALAXY targets now based upon
      ZWARNING_NOQSO (if present) rather than ZWARNING (ASB, ticket #1389)
 PLATEMERGE: Test for inheritance of Z_NOQSO & related before computing
