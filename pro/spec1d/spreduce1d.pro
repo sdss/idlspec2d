@@ -828,6 +828,21 @@ endif
    noqso_struc = 0
    zans_noqso = 0
 
+   ;-----------
+   ; Compute redshift-marginalized velocity-dispersion
+   ; likelihood curves for galaxies (bolton@utah 2011aug):
+   wh_v = where(strmatch(zans.objtype, 'GALAXY*') and $
+                strmatch(zans.class_noqso, 'GALAXY*'), n_v)
+   if (n_v gt 0) then begin
+      vdans_new = vdispfit(objflux[*,wh_v], objivar[*,wh_v], objloglam, $
+       zobj=zans[wh_v].z_noqso, eigenfile='spEigenElodie.fits', columns=lindgen(5), $
+       npoly=5, z_err=(zans[wh_v].z_err_noqso > 3.e-5), dzpix=3, /return_chisq)
+      vdans_new = reform(vdans_new)
+      nchi2 = n_elements(vdans_new[0].chi2arr)
+      vstruc_new = replicate({vdisp_lnl: replicate(0., nchi2)}, nobj)
+      vstruc_new[wh_v].vdisp_lnl = - vdans_new.chi2arr / 2.
+      zans = struct_addtags(zans, vstruc_new)
+   endif
 
    ;----------
    ; Write the output files

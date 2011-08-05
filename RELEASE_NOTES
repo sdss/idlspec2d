@@ -11,6 +11,8 @@ SPADD_GUIDERINFO: Limit reporting of seeing to in-focal-plane fibers only
      (ticket #1391).
 SPREDUCE1D: Compute Z_NOQSO and related values here, rather than in
      PLATEMERGE (ASB, ticket #1385).
+     Also compute redshift-marginalized vdisp likelihood curves
+     with the Shu et al. 2011 parameter settings.
 VDISPFIT: Subtract the # of invvar=0 pixels from vdispdof (ASB).
 
 -------------------------------------------------------------------------------
