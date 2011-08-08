@@ -127,6 +127,7 @@
 ;                since the median is always only an integer value.
 ;   31-Jan-2001  Determine the exposure number from the file name itself,
 ;                since the counting got off by one on MJD=51882.
+;   08-Aug-2011: Changing bias-subtraction recipe for BOSS (A. Bolton, Utah)
 ;-
 ;------------------------------------------------------------------------------
 pro sdssproc_badformat, image, camname=camname, mjd=mjd
@@ -446,6 +447,10 @@ pro sdssproc, infile1, image, invvar, indir=indir, $
   sxaddpar, hdr, 'FLAVOR', flavor
   sxaddpar, hdr, 'CAMERAS', camname
 
+  ;--------------
+  ; Flag to trigger bolton bias subtraction for survey-quality BOSS data:
+  if (mjd ge 55170) then bossgood = 1B else bossgood = 0B
+
   ; Mark when the BOSS red CCDs switched from 1-phase to 2-phase readout
   if (mjd GE 55415 AND strmatch(camname,'r*')) then $
    sxaddpar, hdr, 'TWOPHASE', 'T' $
@@ -479,24 +484,44 @@ if (mjd GE 55052) then begin
          case spectrographid of
             1: gain = [1.048, 1.048, 1.018, 1.006] ; b1 gain
             2: gain = [1.040, 0.994, 1.002, 1.010] ; b2 gain
-            end
-         image = fltarr(4096,4112)
-         bias = [ median(rawdata[10:67,56:2111]), $
-                  median(rawdata[4284:4340,56:2111]), $
-                  median(rawdata[10:67,2112:4167]), $
-                  median(rawdata[4284:4340,2112:4167]) ]
+         end
+         ; Do bolton bias subtraction for survey-quality BOSS dates:
+         ; (Note that these lines are identical between b and r cams.)
+         if bossgood then begin
+            if (keyword_set(silent) EQ 0) then $
+               splog, 'BOSS survey-quality MJD: applying pixbias whether you like it or not!'
+            pp = filepath('', root_dir=getenv('SPECFLAT_DIR'), subdirectory='biases')
+            pixbiasname = findopfile('boss_pixbias-*-'+camname+'.fits*', mjd, pp, $
+                                     silent=silent)
+            image = bolton_biassub(fullname, pp+pixbiasname, rnoise=rnoise, sigthresh=3.0)
+            xwid = (size(image))[1]
+            ywid = (size(image))[2]
+            rdnoise = rnoise[*] * 1.015 * gain ; account for sigma-clipping
+            if (keyword_set(silent) EQ 0) then $
+               splog, 'Read noise = ', rdnoise, ' electrons'
+            image[0:xwid/2-1,0:ywid/2-1] *= gain[0]
+            image[xwid/2:xwid-1,0:ywid/2-1] *= gain[1]
+            image[0:xwid/2-1,ywid/2:ywid-1] *= gain[2]
+            image[xwid/2:xwid-1,ywid/2:ywid-1] *= gain[3]
+         endif else begin
+            image = fltarr(4096,4112)
+            bias = [ median(rawdata[10:67,56:2111]), $
+                     median(rawdata[4284:4340,56:2111]), $
+                     median(rawdata[10:67,2112:4167]), $
+                     median(rawdata[4284:4340,2112:4167]) ]
          ; Subtract the bias before computing noise for numerical reasons
-         rdnoise = [ djsig(rawdata[10:67,56:2111] - bias[0], sigrej=3.0), $
-                     djsig(rawdata[4284:4340,56:2111] - bias[1], sigrej=3.0), $
-                     djsig(rawdata[10:67,2112:4167] - bias[2], sigrej=3.0), $
-                     djsig(rawdata[4284:4340,2112:4167] - bias[3], sigrej=3.0) ]
-         rdnoise *= 1.015 * gain ; account for sigma-clipping
-         if (keyword_set(silent) EQ 0) then $
-          splog, 'Read noise = ', rdnoise, ' electrons'
-         image[0:2047,0:2055] = gain[0] * (rawdata[128:2175,56:2111] - bias[0])
-         image[2048:4095,0:2055] = gain[1] * (rawdata[2176:4223,56:2111] - bias[1])
-         image[0:2047,2056:4111] = gain[2] * (rawdata[128:2175,2112:4167] - bias[2])
-         image[2048:4095,2056:4111] = gain[3] * (rawdata[2176:4223,2112:4167] - bias[3])
+            rdnoise = [ djsig(rawdata[10:67,56:2111] - bias[0], sigrej=3.0), $
+                        djsig(rawdata[4284:4340,56:2111] - bias[1], sigrej=3.0), $
+                        djsig(rawdata[10:67,2112:4167] - bias[2], sigrej=3.0), $
+                        djsig(rawdata[4284:4340,2112:4167] - bias[3], sigrej=3.0) ]
+            rdnoise *= 1.015 * gain ; account for sigma-clipping
+            if (keyword_set(silent) EQ 0) then $
+               splog, 'Read noise = ', rdnoise, ' electrons'
+            image[0:2047,0:2055] = gain[0] * (rawdata[128:2175,56:2111] - bias[0])
+            image[2048:4095,0:2055] = gain[1] * (rawdata[2176:4223,56:2111] - bias[1])
+            image[0:2047,2056:4111] = gain[2] * (rawdata[128:2175,2112:4167] - bias[2])
+            image[2048:4095,2056:4111] = gain[3] * (rawdata[2176:4223,2112:4167] - bias[3])
+         endelse
          if (readivar) then begin
             invvar = 0.*image
             invvar[0:2047,0:2055] = $
@@ -520,35 +545,55 @@ if (mjd GE 55052) then begin
              else if (mjd LT 55141) then gain = [2.66, 2.53, 2.02, 3.00] $
              else if (mjd LT 55300) then gain = [1.956, 1.618, 1.538, 1.538] $
              else gain = [1.598, 1.656, 1.582, 1.594]
-            end
-         image = fltarr(4114,4128)
-         bias = [ median(rawdata[10:100,48:2111]), $
-                  median(rawdata[4250:4340,48:2111]), $
-                  median(rawdata[10:100,2112:4175]), $
-                  median(rawdata[4250:4340,2112:4175]) ]
-         ; Subtract the bias before computing noise for numerical reasons
-         rdnoise = [ djsig(rawdata[10:100,48:2111] - bias[0], sigrej=3.0), $
-                     djsig(rawdata[4250:4340,48:2111] - bias[1], sigrej=3.0), $
-                     djsig(rawdata[10:100,2112:4175] - bias[2], sigrej=3.0), $
-                     djsig(rawdata[4250:4340,2112:4175] - bias[3], sigrej=3.0) ]
-         rdnoise *= 1.015 * gain ; account for sigma-clipping
-         if (keyword_set(silent) EQ 0) then $
-          splog, 'Read noise = ', rdnoise, ' electrons'
-         if (mjd LT 55067) then begin
-            image[0:2055,0:2063] = gain[0] * (rawdata[120:2175,48:2111] - bias[0])
-            image[2056,0:2063] = gain[0] * (rawdata[0,48:2111] - bias[0])
-            image[2058:4113,0:2063] = gain[1] * (rawdata[2176:4231,48:2111] - bias[1])
-            image[2057,0:2063] = gain[1] * (rawdata[4351,48:2111] - bias[1])
-            image[0:2055,2064:4127] = gain[2] * (rawdata[120:2175,2112:4175] - bias[2])
-            image[2056,2064:4127] = gain[2] * (rawdata[0,2112:4175] - bias[2])
-            image[2058:4113,2064:4127] = gain[3] * (rawdata[2176:4231,2112:4175] - bias[3])
-            image[2057,2064:4127] = gain[3] * (rawdata[4351,2112:4175] - bias[3])
+         end
+          ; Do bolton bias subtraction for survey-quality BOSS dates:
+         ; (Note that these lines are identical between b and r cams.)
+         if bossgood then begin
+            if (keyword_set(silent) EQ 0) then $
+               splog, 'BOSS survey-quality MJD: applying pixbias whether you like it or not!'
+            pp = filepath('', root_dir=getenv('SPECFLAT_DIR'), subdirectory='biases')
+            pixbiasname = findopfile('boss_pixbias-*-'+camname+'.fits*', mjd, pp, $
+                                     silent=silent)
+            image = bolton_biassub(fullname, pp+pixbiasname, rnoise=rnoise, sigthresh=3.0)
+            xwid = (size(image))[1]
+            ywid = (size(image))[2]
+            rdnoise = rnoise[*] * 1.015 * gain ; account for sigma-clipping
+            if (keyword_set(silent) EQ 0) then $
+               splog, 'Read noise = ', rdnoise, ' electrons'
+            image[0:xwid/2-1,0:ywid/2-1] *= gain[0]
+            image[xwid/2:xwid-1,0:ywid/2-1] *= gain[1]
+            image[0:xwid/2-1,ywid/2:ywid-1] *= gain[2]
+            image[xwid/2:xwid-1,ywid/2:ywid-1] *= gain[3]
          endif else begin
-            ; Craig fixed the r1,r2 image formatting on MJD 55067
-            image[0:2056,0:2063] = gain[0] * (rawdata[119:2175,48:2111] - bias[0])
-            image[2057:4113,0:2063] = gain[1] * (rawdata[2176:4232,48:2111] - bias[1])
-            image[0:2056,2064:4127] = gain[2] * (rawdata[119:2175,2112:4175] - bias[2])
-            image[2057:4113,2064:4127] = gain[3] * (rawdata[2176:4232,2112:4175] - bias[3])
+            image = fltarr(4114,4128)
+            bias = [ median(rawdata[10:100,48:2111]), $
+                     median(rawdata[4250:4340,48:2111]), $
+                     median(rawdata[10:100,2112:4175]), $
+                     median(rawdata[4250:4340,2112:4175]) ]
+            ; Subtract the bias before computing noise for numerical reasons
+            rdnoise = [ djsig(rawdata[10:100,48:2111] - bias[0], sigrej=3.0), $
+                        djsig(rawdata[4250:4340,48:2111] - bias[1], sigrej=3.0), $
+                        djsig(rawdata[10:100,2112:4175] - bias[2], sigrej=3.0), $
+                        djsig(rawdata[4250:4340,2112:4175] - bias[3], sigrej=3.0) ]
+            rdnoise *= 1.015 * gain ; account for sigma-clipping
+            if (keyword_set(silent) EQ 0) then $
+               splog, 'Read noise = ', rdnoise, ' electrons'
+            if (mjd LT 55067) then begin
+               image[0:2055,0:2063] = gain[0] * (rawdata[120:2175,48:2111] - bias[0])
+               image[2056,0:2063] = gain[0] * (rawdata[0,48:2111] - bias[0])
+               image[2058:4113,0:2063] = gain[1] * (rawdata[2176:4231,48:2111] - bias[1])
+               image[2057,0:2063] = gain[1] * (rawdata[4351,48:2111] - bias[1])
+               image[0:2055,2064:4127] = gain[2] * (rawdata[120:2175,2112:4175] - bias[2])
+               image[2056,2064:4127] = gain[2] * (rawdata[0,2112:4175] - bias[2])
+               image[2058:4113,2064:4127] = gain[3] * (rawdata[2176:4231,2112:4175] - bias[3])
+               image[2057,2064:4127] = gain[3] * (rawdata[4351,2112:4175] - bias[3])
+            endif else begin
+               ; Craig fixed the r1,r2 image formatting on MJD 55067
+               image[0:2056,0:2063] = gain[0] * (rawdata[119:2175,48:2111] - bias[0])
+               image[2057:4113,0:2063] = gain[1] * (rawdata[2176:4232,48:2111] - bias[1])
+               image[0:2056,2064:4127] = gain[2] * (rawdata[119:2175,2112:4175] - bias[2])
+               image[2057:4113,2064:4127] = gain[3] * (rawdata[2176:4232,2112:4175] - bias[3])
+            endelse
          endelse
          if (readivar) then begin
             invvar = 0.*image
@@ -1161,9 +1206,10 @@ endelse ; End toggle between reading BOSS or SDSS-I images
 
 ;---------------------------------------------------------------------------
 ; Correct image with bias image
+; (If BOSSGOOD then this has already been done -- ASB 2011aug.)
 ;---------------------------------------------------------------------------
 
-if (keyword_set(applybias) AND readimg) then begin
+if (keyword_set(applybias) AND readimg AND (bossgood eq 0)) then begin
   pp = filepath('', root_dir=getenv('SPECFLAT_DIR'), subdirectory='biases')
   ; First search for files "pixbiasave-*.fits*", and if not found then
   ; look for "pixbias-*.fits".
