@@ -12,11 +12,12 @@
 ;         sigthresh=sigthresh, rnoise=rnoise, notrim=notrim])
 ;
 ; ARGUMENTS:
-;   fname: full path qualified srR filename to read
-;   biasname: name of bias file to subtract:
+;   fname: full path qualified sdR filename to read
+;   biasname: name of bias file to subtract.
 ;   sigthresh (optional) # of sigmas threshold for pixel masking in
 ;     the overscan region used to solve for offset relative to pixbias.
-;   notrim: set this keyword to bypass trimming of overscan regions.
+;     (default is 4.0).
+;   notrim: set this keyword to skip trimming of overscan regions.
 ;
 ; OUTPUTS:
 ;   img: bias-subtracted and (normally) overscan-trimmed image
@@ -48,7 +49,7 @@ cam = strtrim(sxpar(hdr, 'CAMERAS'), 2)
 if ((cam eq 'r1') or (cam eq 'r2')) then begin
    bx0 = 10
    bx1 = 100
-   by0 = 52 ; 48 ; ASB: I don't like row 48
+   by0 = 56 ; 48 ; ASB: skip some of those edge rows
    by1 = 2110 ; 2111 ; ASB: middle rows suspect.
    dx0 = 119
 ;   dx1 = 2175 ; ASB: don't need this
@@ -59,7 +60,7 @@ endif
 if ((cam eq 'b1') or (cam eq 'b2')) then begin
    bx0 = 10
    bx1 = 67
-   by0 = 60 ; 56 ; ASB: boosting this while boosting same for r above
+   by0 = 64 ; 56 ; ASB: boosting this while boosting same for r above
    by1 = 2111
    dx0 = 128
 ;   dx1 = 2175 ; ASB: don't need this

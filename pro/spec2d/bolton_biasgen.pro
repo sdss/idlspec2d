@@ -77,7 +77,7 @@ outrchi2 = fltarr(niter+1, 2, 2)
 ; Begin the various loops:
 
 ; We'll work with quadrant flags in x and y:
-; 0 for the low-numbers, 1 for the high numbers.
+; 0 for the low numbers, 1 for the high numbers.
 
 for xflag = 0, 1 do begin
    for yflag = 0, 1 do begin
