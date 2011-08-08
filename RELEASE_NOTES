@@ -1,3 +1,7 @@
+-------------------------------------------------------------------------------
+v5_4_41 (2011-08-08, ASB)
+Tag for new bias recipe, new pixflats, misc 1d changes, misc 2d bugfixes.
+Built against elodie/v1_3, specflat/v1_16, idlutils/v5_4_24.
 
 BOLTON_BIASGEN: Minimum-chi^2 master bias model-building routine (ASB)
 BOLTON_BIASSUB: Bias-subtraction using bolton_biasgen outputs (ASB)
