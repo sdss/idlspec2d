@@ -164,6 +164,7 @@ pro bbspec_pixpsf, arcstr, flatstr, pradius=pradius, rradius=rradius, $
    sxaddpar, outhdr0, 'PSFPARAM', 'X'
    mwrfits, allx, outfile, outhdr0, /create
    sxaddpar, outhdr0, 'PSFPARAM', 'Y'
+   sxdelpar, outhdr0, 'SIMPLE'  ; Can't have SIMPLE in extensions
    mwrfits, ally, outfile, outhdr0
    sxaddpar, outhdr0, 'PSFPARAM', 'LogLam'
    mwrfits, loglam, outfile, outhdr0
