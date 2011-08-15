@@ -55,6 +55,7 @@
 ; REVISION HISTORY:
 ;   02-Nov-1999  Written by David Schlegel, Princeton.
 ;      Apr-2010  Added "write[flat,arc]model" pass-through (A. Bolton, Utah)
+;   15-Aug-2011  Added pass-through for spatial split of sky model (A. Bolton, Utah)
 ;-
 ;------------------------------------------------------------------------------
 
@@ -198,6 +199,11 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
          if (camct NE 1) then message, 'Non-unique camera ID: ' + docams[ido]
 
          ;----------
+         ; Set the flag for splitting the sky model between spatial CCD halves:
+         ; (Re: ticket #1388: strange r2 amplifier-boundary break)
+         if ((camnames[icam] eq 'r2') and (mjd ge 55300)) then splitsky = 1B else splitsky = 0B
+
+         ;----------
          ; Find the corresponding pixel flat
 
          j = where(allseq.mapname EQ thismap $
@@ -254,7 +260,7 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
                 indir=inputdir, plugdir=plugdir, outdir=outdir, $
                 plottitle=plottitle, do_telluric=do_telluric, $
                 writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, $
-                bbspec=bbspec
+                bbspec=bbspec, splitsky=splitsky
             endif
 
             splog, 'Time to reduce camera ', camnames[icam], ' = ', $

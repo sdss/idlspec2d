@@ -35,6 +35,7 @@
 ;   writearcmodel  - passed to SPCALIB to write out arc image
 ;                    model info to file
 ;   bbspec         - use bbspec extraction code
+;   splitsky       - split sky model between spatial halves
 ;
 ; OUTPUTS:
 ;
@@ -76,7 +77,8 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, $
  plugfile=plugfile, lampfile=lampfile, $
  indir=indir, plugdir=plugdir, outdir=outdir, $
  ecalibfile=ecalibfile, plottitle=plottitle, do_telluric=do_telluric, $
- writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, bbspec=bbspec
+ writeflatmodel=writeflatmodel, writearcmodel=writearcmodel, bbspec=bbspec, $
+ splitsky=splitsky
 
    if (NOT keyword_set(indir)) then indir = '.'
    if (NOT keyword_set(plugdir)) then plugdir=indir
@@ -311,7 +313,8 @@ endif
           xpeak, lambda, xsol, fflat, fibermask, color=color, $
           proftype=proftype, superflatset=superflatset, $
           widthset=widthset, dispset=dispset, skylinefile=fullskyfile, $
-          plottitle=plottitle, do_telluric=do_telluric, bbspec=bbspec
+          plottitle=plottitle, do_telluric=do_telluric, bbspec=bbspec, $
+          splitsky=splitsky
 
          splog, 'Elapsed time = ', systime(1)-stimeobj, ' seconds', $
           format='(a,f6.0,a)' 

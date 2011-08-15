@@ -1,6 +1,6 @@
 
-EXTRACT_OBJECT: Enabling split sky model between spatial halves (ASB)
-  (Chasing ticket #1388)
+EXTRACT_OBJECT, SPREDUCE, SPREDUCE2D: Enabling split sky model between
+   spatial halves (ASB, chasing ticket #1388)
 
 -------------------------------------------------------------------------------
 v5_4_41 (2011-08-08, ASB)
