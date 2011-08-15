@@ -1,3 +1,7 @@
+
+EXTRACT_OBJECT: Enabling split sky model between spatial halves (ASB)
+  (Chasing ticket #1388)
+
 -------------------------------------------------------------------------------
 v5_4_41 (2011-08-08, ASB)
 Tag for new bias recipe, new pixflats, misc 1d changes, misc 2d bugfixes.
