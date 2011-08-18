@@ -492,8 +492,11 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 
    nskypoly = 3L
    if keyword_set(splitsky) then begin
-; Split sky subtraction between halves of the CCD if requested.
+; Split sky subtraction between halves of the CCD if requested
+; (bolton@utah 2011).
       splog, 'Splitting sky model across spatial CCD halves.'
+; Dial down the sptial polynomial order in this case:
+      nskypoly = 2L
 ; Determine where the traces cross the amp break:
       nxfull = (size(image))[1]
       nyfull = (size(image))[2]
