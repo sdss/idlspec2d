@@ -1,4 +1,10 @@
 
+-------------------------------------------------------------------------------
+v5_4_42 (2011-08-18, ASB)
+Tag to fix 8000ang break feature with discontinuous sky model.
+If good, this tag will be the DR9 tag.
+Built against elodie/v1_3, specflat/v1_16, idlutils/v5_4_24.
+
 EXTRACT_OBJECT, SPREDUCE, SPREDUCE2D: Enabling split sky model between
    spatial halves (ASB, chasing ticket #1388)
 
