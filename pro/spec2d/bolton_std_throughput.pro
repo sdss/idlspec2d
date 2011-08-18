@@ -32,7 +32,7 @@
 ; NOTES:
 ;  This procedure uses sdR files and spCFrame files.
 ;  It needs to find them via the environment variables
-;    $RAWDATA_DIR
+;    $BOSS_SPECTRO_DATA
 ;    $BOSS_SPECTRO_REDUX
 ;    $RUN2D
 ;
@@ -65,7 +65,7 @@ if keyword_set(plate) then begin
     endif
     mjd = sxpar(headfits(cframe), 'MJD')
     ; sdR:
-    sciframe = getenv('RAWDATA_DIR') + '/' $
+    sciframe = getenv('BOSS_SPECTRO_DATA') + '/' $
       + string(mjd, format='(i5)') + $
       '/sdR-' + fileid + '.fit*'
     sciframe = (file_search(sciframe))[0]
@@ -75,7 +75,7 @@ if keyword_set(plate) then begin
     endif
 endif else if keyword_set(mjd) then begin
     ; sdR:
-    sciframe = getenv('RAWDATA_DIR') + '/' $
+    sciframe = getenv('BOSS_SPECTRO_DATA') + '/' $
       + string(mjd, format='(i5)') + $
       '/sdR-' + fileid + '.fit*'
     sciframe = (file_search(sciframe))[0]

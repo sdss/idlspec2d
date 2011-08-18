@@ -12,7 +12,7 @@
 ;
 ; OPTIONAL INPUTS:
 ;   mjd        - Directory name; default to largest numbered MJD
-;                matching the directory "$RAWDATA_DIR/?????".
+;                matching the directory "$BOSS_SPECTRO_DATA/?????".
 ;   camera     - Camera name of files to list; '??' for all cameras;
 ;                default to 'b1'
 ;   collimator - Include collimator positions
@@ -22,7 +22,7 @@
 ;
 ; COMMENTS:
 ;   First look at files matching "sdR*.fit.gz" in the directory
-;   $RAWDATA_DIR/$MJD, and if none found then look for files
+;   $BOSS_SPECTRO_DATA/$MJD, and if none found then look for files
 ;   matching "sdR*.fit".
 ;
 ; EXAMPLES:
@@ -55,7 +55,7 @@ pro logsheet, mjd=mjd, camera=camera, collimator=collimator, outfile=outfile
    ;----------
    ; Set input directory for sdR files
 
-   rawdata_dir = getenv('RAWDATA_DIR')
+   rawdata_dir = getenv('BOSS_SPECTRO_DATA')
    if (NOT keyword_set(rawdata_dir)) then $
     rawdata_dir = '/data/spectro'
 

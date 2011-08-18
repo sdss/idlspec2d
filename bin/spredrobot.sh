@@ -15,7 +15,7 @@
 # Set file names.
 
 astrologdir=$ASTROLOG_DIR
-toprawdir=$RAWDATA_DIR
+toprawdir=$BOSS_SPECTRO_DATA
 topoutdir=$BOSS_SPECTRO_REDUX
 
 copiedMJDs=$toprawdir/copiedMJDs.list
@@ -24,8 +24,8 @@ plannedMJDs=$topoutdir/plannedMJDs.list
 #------------------------------------------------------------------------------
 # Test that certain environment variables are already set.
 
-if [ -z "$RAWDATA_DIR" ] ; then
-  echo "RAWDATA_DIR must be set!"
+if [ -z "$BOSS_SPECTRO_DATA" ] ; then
+  echo "BOSS_SPECTRO_DATA must be set!"
   exit
 fi
 

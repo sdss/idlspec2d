@@ -61,7 +61,7 @@ pro bbspec_test, scifile, outfile=outfile1, clobber=clobber, batch=batch, $
 
    if (n_params() NE 1) then $
     message, 'Wrong number of parameters'
-   rawdata_dir = getenv('RAWDATA_DIR')
+   rawdata_dir = getenv('BOSS_SPECTRO_DATA')
    if (keyword_set(batch) AND keyword_set(Extra)) then begin
       if (tag_exist(Extra,'FRANGE')) then $
        message, 'Cannot specify both BATCH and FRANGE'

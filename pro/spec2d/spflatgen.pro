@@ -12,7 +12,7 @@
 ; INPUTS:
 ;
 ; OPTIONAL INPUTS:
-;   mjd        - If INDIR not set, then look for files in $RAWDATA_DIR/MJD.
+;   mjd        - If INDIR not set, then look for files in $BOSS_SPECTRO_DATA/MJD.
 ;   expnum     - If set, then use these exposure numbers
 ;   expstart   - If set, then only use exposure numbers >= EXPSTART
 ;   expend     - If set, then only use exposure numbers >= EXPEND
@@ -86,7 +86,7 @@ pro spflatgen, mjd=mjd, expnum=expnum, expstart=expstart, expend=expend, $
    ; Find all file names in the directory corresponding to this MJD
 
    if (keyword_set(mjd) AND NOT keyword_set(indir)) then begin
-      indir = filepath('', root_dir=getenv('RAWDATA_DIR'), $
+      indir = filepath('', root_dir=getenv('BOSS_SPECTRO_DATA'), $
        subdirectory=string(mjd,format='(i5.5)'))
    endif
    if (keyword_set(indir) AND NOT keyword_set(outdir)) then $

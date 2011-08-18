@@ -28,10 +28,10 @@
 ;
 ; COMMENTS:
 ;   The following environment variables must be set:
-;      RAWDATA_DIR
+;      BOSS_SPECTRO_DATA
 ;      SPECLOG_DIR
 ;      SPECFLAT_DIR
-;   Look for raw FITS data files in RAWDATA_DIR/MJD.
+;   Look for raw FITS data files in BOSS_SPECTRO_DATA/MJD.
 ;   Look for plug map files in SPECLOG_DIR/MJD.
 ;   Look for spectroscopic flat files in SPECFLAT_DIR.
 ;
@@ -83,11 +83,11 @@ pro spreduce2d, planfile, docams=docams, do_telluric=do_telluric, $
    maxmem = 0
 
    ;----------
-   ; Read environment variables for RAWDATA_DIR, SPECLOG_DIR, SPECFLAT_DIR
+   ; Read environment variables for BOSS_SPECTRO_DATA, SPECLOG_DIR, SPECFLAT_DIR
 
-   rawdata_dir = getenv('RAWDATA_DIR')
+   rawdata_dir = getenv('BOSS_SPECTRO_DATA')
    if (NOT keyword_set(rawdata_dir)) then $
-    message, 'Must set environment variable RAWDATA_DIR'
+    message, 'Must set environment variable BOSS_SPECTRO_DATA'
 
    speclog_dir = getenv('SPECLOG_DIR')
    if (NOT keyword_set(speclog_dir)) then $

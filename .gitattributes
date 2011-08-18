@@ -184,6 +184,7 @@ misc/brg.list -text
 misc/distort.blue -text
 misc/distort.red -text
 misc/plate306.mail -text
+misc/rawdata2bossdata -text
 misc/uomoto.distortions -text
 opfiles/Makefile -text
 opfiles/lamplines.par -text

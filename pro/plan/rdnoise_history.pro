@@ -14,7 +14,7 @@
 ;
 ; OPTIONAL KEYWORDS:
 ;   docams     - Camera(s); default to ['b1','b2','r1','r2']
-;   mjd        - Search for all files in $RAWDATA_DIR/MJD;
+;   mjd        - Search for all files in $BOSS_SPECTRO_DATA/MJD;
 ;                default to '55???'
 ;
 ; OUTPUTS:
@@ -55,7 +55,7 @@ pro rdnoise_history, docams=docams, mjd=mjd1
 
    mjdlist = ''
    for i=0, n_elements(mjdstr)-1 do begin
-      spawn, '\ls -d '+getenv('RAWDATA_DIR') + '/' + mjdstr[i], mjdlist1
+      spawn, '\ls -d '+getenv('BOSS_SPECTRO_DATA') + '/' + mjdstr[i], mjdlist1
       if (keyword_set(mjdlist1)) then $
        mjdlist = keyword_set(mjdlist) ? [mjdlist,mjdlist1] : mjdlist1
    endfor

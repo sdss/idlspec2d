@@ -194,7 +194,7 @@ pro batchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
 
          ; Override environment variables if requested
          if (keyword_set(rawdata_dir)) then begin
-             printf, olun, 'export RAWDATA_DIR='+rawdata_dir
+             printf, olun, 'export BOSS_SPECTRO_DATA='+rawdata_dir
          endif
          if (keyword_set(boss_spectro_redux)) then begin
              printf, olun, 'export BOSS_SPECTRO_REDUX='+boss_spectro_redux

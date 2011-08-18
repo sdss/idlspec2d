@@ -90,7 +90,7 @@ if (NOT keyword_set(biasstart)) then biasstart=101768
 if (NOT keyword_set(biasend))   then biasend=101783
 if (NOT keyword_set(maxsat))    then maxsat=15000.
 if (NOT keyword_set(indir))     then begin
-    indir = getenv('RAWDATA_DIR')
+    indir = getenv('BOSS_SPECTRO_DATA')
     if (NOT keyword_set(indir)) then $
       indir='/data/spectro'
     indir = indir + '/*'

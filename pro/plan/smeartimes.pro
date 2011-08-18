@@ -45,7 +45,7 @@ pro smeartimes
    ;----------
    ; Find all the b1 spFrame files, and sort by exposure number
 
-   spawn, 'ls -d ' + getenv('RAWDATA_DIR') + '/?????', mjdlist
+   spawn, 'ls -d ' + getenv('BOSS_SPECTRO_DATA') + '/?????', mjdlist
    for imjd=0L, n_elements(mjdlist)-1 do begin
       splog, 'Searching for files in ' + mjdlist[imjd]
       flist = findfile( $

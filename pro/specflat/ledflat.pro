@@ -14,7 +14,7 @@
 ; OPTIONAL KEYWORDS:
 ;   docams     - Cameras to analyze; default to ['b1','b2','r1','r2'].
 ;   indir      - Input directory for files; default to searching for
-;                files in $RAWDATA_DIR/*.  If $RAWDATA_DIR is not set,
+;                files in $BOSS_SPECTRO_DATA/*.  If $BOSS_SPECTRO_DATA is not set,
 ;                then it is assumed to be /data/spectro.
 ;   threshrms  - Threshold for masking pixels whose fractional RMS (after
 ;                outlier-rejection) is larger than this value; default 0.05
@@ -69,7 +69,7 @@ pro ledflat, expnum, docams=docams, indir=indir1, threshrms=threshrms1, $
    if (keyword_set(indir1)) then begin
       indir = indir1
    endif else begin
-      indir = getenv('RAWDATA_DIR')
+      indir = getenv('BOSS_SPECTRO_DATA')
       if (NOT keyword_set(indir)) then $
        indir = '/data/spectro'
       indir = indir + '/*'

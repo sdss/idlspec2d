@@ -57,8 +57,8 @@
 pro flatfield, expflat,expbias,docams=docams,indir=indir
 
 if (NOT keyword_set(docams))   then docams =['b1','b2','r1','r2']
-if (NOT keyword_set(indir))     then begin                         ;set RAWDATA_DIR
-    indir = getenv('RAWDATA_DIR')
+if (NOT keyword_set(indir))     then begin                         ;set BOSS_SPECTRO_DATA
+    indir = getenv('BOSS_SPECTRO_DATA')
     if (NOT keyword_set(indir)) then $
       indir='/data/spectro'
     indir = indir + '/*'

@@ -13,7 +13,7 @@
 ;   pbs_walltime=pbs_walltime, pbs_scratch=pbs_scratch, ember=ember]
 
 ; ARGUMENTS:
-;  indir: raw data directory, defaulting to $RAWDATA_DIR
+;  indir: raw data directory, defaulting to $BOSS_SPECTRO_DATA
 ;  outdir: top directory to write processed files, defaulting
 ;          to $PROCDATA_DIR if set, otherwise working dir ('.')
 ;  mjdlist: list of MJDs to process, defaulting to all MJDs
@@ -63,7 +63,7 @@ pro run_sdssproc, indir=indir, outdir=outdir, mjdlist=mjdlist, clobber=clobber, 
   ; Defaults and prep:
   if (n_elements(minflat) ne 1) then minflat = 0.8
   if (n_elements(maxflat) ne 1) then maxflat = 1.2
-  if (not keyword_set(indir)) then indir = getenv('RAWDATA_DIR')
+  if (not keyword_set(indir)) then indir = getenv('BOSS_SPECTRO_DATA')
   if (not keyword_set(outdir)) then if getenv('PROCDATA_DIR') ne '' then outdir=getenv('PROCDATA_DIR') else outdir = '.'
   if (not keyword_set(mjdlist)) then mjdlist = fileandpath(file_search(indir+'/?????'))
   mjdlist = fileandpath(mjdlist)

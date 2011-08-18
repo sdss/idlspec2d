@@ -117,7 +117,7 @@ pro remove2redo, mjd=mjd, plate=plate, expnum=expnum, not_sos=not_sos
    endif
 
    if (keyword_set(plate) OR keyword_set(expnum)) then begin
-      rawdata_dir = getenv('RAWDATA_DIR')
+      rawdata_dir = getenv('BOSS_SPECTRO_DATA')
       if (NOT keyword_set(rawdata_dir)) then $
        rawdata_dir = '/data/spectro'
    endif

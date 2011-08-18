@@ -17,7 +17,7 @@
 ;   docams1     - Cameras to analyze; default to ['b1','r1'].
 ;   docams2     - Cameras to analyze; default to ['b2','r2'].
 ;   indir      - Input directory for files; default to searching for
-;                files in $RAWDATA_DIR/*.  If $RAWDATA_DIR is not set,
+;                files in $BOSS_SPECTRO_DATA/*.  If $BOSS_SPECTRO_DATA is not set,
 ;                then it is assumed to be /data/spectro.
 ;   nregx      - Number of sub-regions in the X dimension; default to 8.
 ;   nregy      - Number of sub-regions in the Y dimension; default to 8.
@@ -212,7 +212,7 @@ if (NOT keyword_set(docams2)) then docams2=['b2','r2']
     ;----------
    ; Locate the input files (either compressed or un-compressed)   
    if (NOT keyword_set(indir)) then begin
-      indir = getenv('RAWDATA_DIR')
+      indir = getenv('BOSS_SPECTRO_DATA')
       if (NOT keyword_set(indir)) then $
          indir = '/data/spectro'
       indir = indir + '/*'

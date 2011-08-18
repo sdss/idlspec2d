@@ -32,7 +32,7 @@ specflat.</p>
 <p>The directory stucture for spectroscopic data is described by environment
 variables as follows:</p>
 <pre>
-$RAWDATA_DIR/<i>mmmmm</i> - The raw image, "sdR-<i>cc-eeeeeeee</i>.fit"
+$BOSS_SPECTRO_DATA/<i>mmmmm</i> - The raw image, "sdR-<i>cc-eeeeeeee</i>.fit"
 $SPECLOG_DIR/<i>mmmmm</i> - The plug-map files, "plPlugMapM-<i>pppp-mmmmm-rr</i>.par"
 </pre>
 <p>where <i>mmmmm</i> refers to an MJD (such as 51690), <i>cc</i> refers
@@ -42,7 +42,7 @@ number (such as 0306), <i>eeeeeeee</i> refers to an exposure number
 (such as 01).</p>
 <p>At Princeton, these paths would be set as follows:</p>
 <pre>
-RAWDATA_DIR=/u/dss/rawdata
+BOSS_SPECTRO_DATA=/u/dss/rawdata
 SPECLOG_DIR=/u/dss/astrolog
 </pre>
 <p>To re-run a plate through the spectro pipeline, you need all of these files.
@@ -138,7 +138,7 @@ launched from the bash shell.</p>
 and reduces it on a day-by-day basis.  The command "sprobot_start" loads
 the cron job.  The raw data is copied to the first disk with space listed
 in the SPROBOT_LOCALDISKS environment variable, then a link is built from
-$RAWDATA_DIR/$MJD to that directory.  At Princeton, the disk list is
+$BOSS_SPECTRO_DATA/$MJD to that directory.  At Princeton, the disk list is
 something like:</p>
 <pre>
 SPROBOT_LOCALDISKS='/scr/spectro1/data/rawdata /scr/spectro2/data/rawdata'
@@ -167,7 +167,7 @@ $BOSS_SPECTRO_REDUX/$RUN2D/$PLATE.</li>
 </ul>
 <p>If any of the above variables are not set, then
 "sprobot_start" will issue an error message and fail to load.  A log file
-is written to the file "$RAWDATA_DIR/sprobot.log".</p>
+is written to the file "$BOSS_SPECTRO_DATA/sprobot.log".</p>
 <p>There are two Yanny parameter files that list the computer names and protocols
 to use.  There are default files in "$IDLSPEC2D_DIR/examples/batch2d.par"
 and "$IDLSPEC2D_DIR/examples/batch1d.par" for use with Spectro-2D and P-1D

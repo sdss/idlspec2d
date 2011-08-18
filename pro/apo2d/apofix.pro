@@ -124,7 +124,7 @@ pro apofix, expnum, card, newval, copydir=copydir, camera=camera, bad=bad, test=
    ;----------
    ; Set input directory for sdR files and sdHdrFix file
 
-   rawdata_dir = getenv('RAWDATA_DIR')
+   rawdata_dir = getenv('BOSS_SPECTRO_DATA')
    if (NOT keyword_set(rawdata_dir)) then $
     rawdata_dir = '/data/spectro'
 

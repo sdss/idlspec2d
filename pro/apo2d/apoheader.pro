@@ -23,7 +23,7 @@
 ;
 ; EXAMPLES:
 ;   Print out all FITS header keywords of interest for exposure # 14728
-;   (assuming that exposure is still on disk somewhere under $RAWDATA_DIR):
+;   (assuming that exposure is still on disk somewhere under $BOSS_SPECTRO_DATA):
 ;     IDL> apoheader, 14728
 ;
 ; BUGS:
@@ -51,7 +51,7 @@ pro apoheader, expnum, mjd=mjd
    ;----------
    ; Set input directory for sdR files
 
-   rawdata_dir = getenv('RAWDATA_DIR')
+   rawdata_dir = getenv('BOSS_SPECTRO_DATA')
    if (NOT keyword_set(rawdata_dir)) then $
     rawdata_dir = '/data/spectro'
 

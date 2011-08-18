@@ -43,7 +43,7 @@ pro specheaders
    ;----------
    ; Find all the b1 spFrame files, and sort by exposure number
 
-   spawn, 'ls -d ' + getenv('RAWDATA_DIR') + '/?????', mjdlist
+   spawn, 'ls -d ' + getenv('BOSS_SPECTRO_DATA') + '/?????', mjdlist
 ;mjdlist = mjdlist[2500:2550] ; ???
    for imjd=0L, n_elements(mjdlist)-1 do begin
       splog, 'Searching for files in ' + mjdlist[imjd]

@@ -26,7 +26,7 @@
 ;   A fiducial line is drawn as a thick blue line.  This line approximates
 ;   what we expect to see for each camera.
 ;
-;   If $RAWDATA_DIR is not set, then it is assumed to be
+;   If $BOSS_SPECTRO_DATA is not set, then it is assumed to be
 ;     /data/spectro
 ;
 ; EXAMPLES:
@@ -58,7 +58,7 @@ pro apo_plotbias, expnum, plotfile=plotfile
       return
    endif
 
-   rawdata_dir = getenv('RAWDATA_DIR')
+   rawdata_dir = getenv('BOSS_SPECTRO_DATA')
    if (NOT keyword_set(rawdata_dir)) then $
     rawdata_dir = '/data/spectro'
 

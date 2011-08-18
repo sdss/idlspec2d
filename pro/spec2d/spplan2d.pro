@@ -15,7 +15,7 @@
 ;   topdir     - Optional override value for the environment
 ;                variable $BOSS_SPECTRO_REDUX.
 ;   run2d      - Optional override value for the environment variable $RUN2D
-;   mjd        - Look for raw data files in RAWDATA_DIR/MJD; default to
+;   mjd        - Look for raw data files in BOSS_SPECTRO_DATA/MJD; default to
 ;                search all subdirectories.  Note that this need not be
 ;                integer-valued, but could be for example '51441_test'.
 ;   mjstart    - Starting MJD.
@@ -27,10 +27,10 @@
 ; OUTPUT:
 ;
 ; COMMENTS:
-;   The environment variables SPECLOG_DIR and RAWDATA_DIR must be set.
+;   The environment variables SPECLOG_DIR and BOSS_SPECTRO_DATA must be set.
 ;
 ;   Look for the raw FITS data files in:
-;     RAWDATA_DIR/MJD/sdR-cs-eeeeeeee.fit
+;     BOSS_SPECTRO_DATA/MJD/sdR-cs-eeeeeeee.fit
 ;   where c=color, s=spectrograph number, eeeeeeee=exposure number.
 ;
 ;   The output 2D plan files created are:
@@ -85,12 +85,12 @@ pro spplan2d, topdir=topdir1, run2d=run2d1, mjd=mjd, $
    splog, 'Setting RUN2D=', run2d
 
    ;----------
-   ; Read environment variable for RAWDATA_DIR for finding raw data files.
+   ; Read environment variable for BOSS_SPECTRO_DATA for finding raw data files.
 
-   rawdata_dir = getenv('RAWDATA_DIR')
+   rawdata_dir = getenv('BOSS_SPECTRO_DATA')
    if (NOT keyword_set(rawdata_dir)) then $
-    message, 'Must set environment variable RAWDATA_DIR'
-   splog, 'Setting RAWDATA_DIR=', rawdata_dir
+    message, 'Must set environment variable BOSS_SPECTRO_DATA'
+   splog, 'Setting BOSS_SPECTRO_DATA=', rawdata_dir
 
    speclog_dir = getenv('SPECLOG_DIR')
    if (NOT keyword_set(speclog_dir)) then $

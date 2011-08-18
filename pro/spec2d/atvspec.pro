@@ -77,7 +77,7 @@ pro atvspec, plate, fiberid, mjd=mjd, wave=wavecen, $
    for i=0, nfile-1 do begin
       filename[i] = 'sdR-'+cameras[i] $
        +'-'+string(expnum[i],format='(i8.8)')+'.fit*'
-      filename[i] = filepath(filename[i], root_dir=getenv('RAWDATA_DIR'), $
+      filename[i] = filepath(filename[i], root_dir=getenv('BOSS_SPECTRO_DATA'), $
        subdir=mjds[i])
       filename[i] = findfile(filename[i], count=ct)
    endfor

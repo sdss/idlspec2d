@@ -48,8 +48,8 @@ if [ -z "$SPECFLAT_DIR" ] ; then
   exit
 fi
 
-if [ -z "$RAWDATA_DIR" ] ; then
-  echo "RAWDATA_DIR must be set!"
+if [ -z "$BOSS_SPECTRO_DATA" ] ; then
+  echo "BOSS_SPECTRO_DATA must be set!"
   exit
 fi
 
@@ -89,7 +89,7 @@ echo "IDL_PATH=$IDL_PATH" >> $cronfile
 echo "ASTROLOG_DIR=$ASTROLOG_DIR" >> $cronfile
 echo "SPECLOG_DIR=$SPECLOG_DIR" >> $cronfile
 echo "SPECFLAT_DIR=$SPECFLAT_DIR" >> $cronfile
-echo "RAWDATA_DIR=$RAWDATA_DIR" >> $cronfile
+echo "BOSS_SPECTRO_DATA=$BOSS_SPECTRO_DATA" >> $cronfile
 echo "BOSS_SPECTRO_REDUX=$BOSS_SPECTRO_REDUX" >> $cronfile
 echo "# This job will run every 10 minutes to keep the disk automounter up." >> $cronfile
 echo "*/10 * * * * spamdup 2> /dev/null" >> $cronfile

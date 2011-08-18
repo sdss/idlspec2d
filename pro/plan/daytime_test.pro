@@ -18,7 +18,7 @@
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
-;   Find all the files matching '$RAWDATA_DIR/$MJD/sdR-b1-????????.fit*',
+;   Find all the files matching '$BOSS_SPECTRO_DATA/$MJD/sdR-b1-????????.fit*',
 ;   and print a warning message for any science, flat, or arc exposures
 ;   that are not marked as test exposures, and were taken during the
 ;   daytime.  The warnings are also printed to the file 'daytime.log'.
@@ -82,7 +82,7 @@ pro daytime_test
    splog, filename='daytime.log'
 
    ; Get the list of MJDs
-   rawdata_dir = getenv('RAWDATA_DIR')
+   rawdata_dir = getenv('BOSS_SPECTRO_DATA')
    mjdlist = get_mjd_dir(rawdata_dir, mjstart=1, mjend=99999, mjd='?????')
 
    for imjd=0L, n_elements(mjdlist)-1 do begin

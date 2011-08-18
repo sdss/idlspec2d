@@ -26,7 +26,7 @@
 ;   reduce all the biases/darks, then all the flats, then all the arcs,
 ;   and finally all of the science/smear frames.
 ;
-;   Look for the raw sdR files in $RAWDATA_DIR/$MJD, the plPlugMapM files
+;   Look for the raw sdR files in $BOSS_SPECTRO_DATA/$MJD, the plPlugMapM files
 ;   in $SPECLOG_DIR/$MJD, and put the outputs in $SPECTROLOG_DIR/$MJD.
 ;   If that last environment variable is not set, then put the outputs
 ;   in the same directory as the sdR files.
@@ -34,7 +34,7 @@
 ; EXAMPLES:
 ;   Rerun the SOS code on the spectro data from MJD 53682, putting
 ;   the results in the current directory:
-;     IDL> setenv, 'RAWDATA_DIR=.'
+;     IDL> setenv, 'BOSS_SPECTRO_DATA=.'
 ;     IDL> apoall, mjd=53682
 ;
 ; BUGS:
@@ -56,9 +56,9 @@ pro apoall, mjd=mjd, mjstart=mjstart, mjend=mjend, $
    ;----------
    ; Set directory names, where $SPECTROLOG_DIR is used for the output dir
 
-   rawdata_dir = getenv('RAWDATA_DIR')
+   rawdata_dir = getenv('BOSS_SPECTRO_DATA')
    if (NOT keyword_set(rawdata_dir)) then $
-    message, 'RAWDATA_DIR not set!'
+    message, 'BOSS_SPECTRO_DATA not set!'
 
    astrolog_dir = getenv('SPECLOG_DIR')
    if (NOT keyword_set(astrolog_dir)) then $

@@ -2,6 +2,9 @@
 EXTRACT_OBJECT, SPREDUCE, SPREDUCE2D: Enabling split sky model between
    spatial halves (ASB, chasing ticket #1388)
 
+Changed RAWDATA_DIR to BOSS_SPECTRO_DATA in 40 files (Ticket #1067).
+   Script that did this is in misc/rawdata2bossdata (ASB)
+
 -------------------------------------------------------------------------------
 v5_4_41 (2011-08-08, ASB)
 Tag for new bias recipe, new pixflats, misc 1d changes, misc 2d bugfixes.

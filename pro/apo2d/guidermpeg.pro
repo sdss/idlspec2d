@@ -13,7 +13,7 @@
 ;
 ; OPTIONAL INPUTS:
 ;   mjd        - MJD number; if not set, then select the most recent MJD
-;                in the $RAWDATA_DIR directory.
+;                in the $BOSS_SPECTRO_DATA directory.
 ;   expnum     - Exposure numbers as an array
 ;
 ; OUTPUTS:
@@ -30,7 +30,7 @@
 ; BUGS:
 ;
 ; DATA FILES:
-;   $RAWDATA_DIR/$MJD/guider/gimg*.fits.gz
+;   $BOSS_SPECTRO_DATA/$MJD/guider/gimg*.fits.gz
 ;
 ; PROCEDURES CALLED:
 ;   djs_filepath()
@@ -49,7 +49,7 @@ pro guidermpeg, mjd=mjd, expnum=expnum
    ;----------
    ; If MJD is not specified, then find the most recent MJD for output files
 
-   rawdata_dir = getenv('RAWDATA_DIR')
+   rawdata_dir = getenv('BOSS_SPECTRO_DATA')
    if (NOT keyword_set(rawdata_dir)) then $
     rawdata_dir = '/data/spectro'
 

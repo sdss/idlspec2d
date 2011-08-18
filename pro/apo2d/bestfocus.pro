@@ -24,7 +24,7 @@
 
 ;   camname    - Cameras to analyze; default to ['b1','b2','r1','r2'].
 ;   indir      - Input directory for files; default to searching for
-;                files in $RAWDATA_DIR/*.  If $RAWDATA_DIR is not set,
+;                files in $BOSS_SPECTRO_DATA/*.  If $BOSS_SPECTRO_DATA is not set,
 ;                then it is assumed to be /data/spectro.
 ;  
 ;   skipcollimate - If the Collimate*.log files already exist in the
@@ -108,7 +108,7 @@ ncam = n_elements(camname)
   endif
 
  if (NOT keyword_set(indir)) then begin                        ;setting raw data directory
-      indir = getenv('RAWDATA_DIR')
+      indir = getenv('BOSS_SPECTRO_DATA')
       if (NOT keyword_set(indir)) then $
         indir='/data/spectro'
       indir = indir + '/*'

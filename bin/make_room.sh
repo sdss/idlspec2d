@@ -6,9 +6,9 @@
 # S. Burles, APO, 7 June 2001
 #------------------------------------------------------------------------------
 
-if [ -n "$RAWDATA_DIR" ]
+if [ -n "$BOSS_SPECTRO_DATA" ]
 then
-   rawdata_dir=$RAWDATA_DIR
+   rawdata_dir=$BOSS_SPECTRO_DATA
 fi
 
 if [ -n "$ASTROLOG_DIR" ]

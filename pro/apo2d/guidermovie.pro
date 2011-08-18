@@ -12,7 +12,7 @@
 ;
 ; OPTIONAL INPUTS:
 ;   mjd        - MJD number; if not set, then select the most recent MJD
-;                in the $RAWDATA_DIR directory.
+;                in the $BOSS_SPECTRO_DATA directory.
 ;   plate      - Plate number; if specified, then select all exposures
 ;                within the time frame for the science+smear exposures
 ;                for this plate during the night in question.
@@ -32,8 +32,8 @@
 ; BUGS:
 ;
 ; DATA FILES:
-;   $RAWDATA_DIR/$MJD/guider/gimg*.fits.gz
-;   $RAWDATA_DIR/$MJD/sdR-b1-????????.fit.gz
+;   $BOSS_SPECTRO_DATA/$MJD/guider/gimg*.fits.gz
+;   $BOSS_SPECTRO_DATA/$MJD/sdR-b1-????????.fit.gz
 ;
 ; PROCEDURES CALLED:
 ;   atv
@@ -66,7 +66,7 @@ pro guidermovie, mjd=mjd, plate=plate, expnum=expnum, _EXTRA=KeywordsForATV
    ;----------
    ; If MJD is not specified, then find the most recent MJD for output files
 
-   rawdata_dir = getenv('RAWDATA_DIR')
+   rawdata_dir = getenv('BOSS_SPECTRO_DATA')
    if (NOT keyword_set(rawdata_dir)) then $
     rawdata_dir = '/data/spectro'
 
@@ -191,7 +191,7 @@ pro guidermovie, mjd=mjd, plate=plate, expnum=expnum, _EXTRA=KeywordsForATV
          ;----------
          ; Set input directory for sdR files
 
-         rawdata_dir = getenv('RAWDATA_DIR')
+         rawdata_dir = getenv('BOSS_SPECTRO_DATA')
          if (NOT keyword_set(rawdata_dir)) then $
           rawdata_dir = '/data/spectro'
 

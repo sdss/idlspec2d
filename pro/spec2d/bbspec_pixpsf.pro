@@ -29,7 +29,7 @@ pro bbspec_pixpsf, arcstr, flatstr, pradius=pradius, rradius=rradius, $
    ;----------
    ; Read the raw arc image
 
-   rawdata_dir = getenv('RAWDATA_DIR')
+   rawdata_dir = getenv('BOSS_SPECTRO_DATA')
    mjdstr = string(sxpar(archdr, 'MJD'),format='(i5.5)')
    indir = concat_dir(rawdata_dir, mjdstr)
    arcname = 'sdR-'+arcstr+'.fit'
