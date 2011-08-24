@@ -1,4 +1,7 @@
 
+BOLTON_BIASSUB, SDSSPROC: Fix to make use of SDSSPROC_BADFORMAT
+    image corrections (ASB, re: ticket # 1408)
+
 -------------------------------------------------------------------------------
 v5_4_42 (2011-08-18, ASB)
 Tag to fix 8000ang break feature with discontinuous sky model.

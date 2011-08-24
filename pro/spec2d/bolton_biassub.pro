@@ -8,16 +8,18 @@
 ;  also trim off overscan.
 ;
 ; USAGE:
-;  img = bolton_biassub(fname, biasname [, $
+;  img = bolton_biassub(rawdata, biasname [, cam=cam, $
 ;         sigthresh=sigthresh, rnoise=rnoise, notrim=notrim])
 ;
 ; ARGUMENTS:
-;   fname: full path qualified sdR filename to read
+;   rawdata: raw (sdssproc_badformat-corrected) image frame
 ;   biasname: name of bias file to subtract.
 ;   sigthresh (optional) # of sigmas threshold for pixel masking in
 ;     the overscan region used to solve for offset relative to pixbias.
 ;     (default is 4.0).
 ;   notrim: set this keyword to skip trimming of overscan regions.
+;   cam: camera (one of 'b1', 'b2', 'r1', or 'r2').
+;        (Will attempt to determine from biasname if not supplied)
 ;
 ; OUTPUTS:
 ;   img: bias-subtracted and (normally) overscan-trimmed image
@@ -26,26 +28,28 @@
 ;
 ; NOTES:
 ;   Applied bias file should be output from BOLTON_BIASGEN,
-;   with name like 'boss_pixbias-r?-MJDXX.fits.gz'
+;   with name like 'boss_pixbias-MJDXX-r1.fits.gz'
 ;
 ;   See algorithmic notes in BOLTON_BIASGEN.
-;
-; BUGS:
-;   Does not complain if you mix up fname and biasname, whereas
-;   it probably ought to.
 ;
 ; WRITTEN:
 ;  A. Bolton, U. of Utah, 2011 aug.
 ;
 ;-
 
-function bolton_biassub, fname, biasname, sigthresh=sigthresh, rnoise=rnoise, notrim=notrim
+function bolton_biassub, rawdata, biasname, sigthresh=sigthresh, rnoise=rnoise, $
+ cam=cam, notrim=notrim
 
 if (n_elements(sigthresh) eq 0) then sigthresh = 4.
 
-hdr = headfits(fname)
-cam = strtrim(sxpar(hdr, 'CAMERAS'), 2)
+; Guess camera name if not supplied:
+if (n_elements(cam) eq 0) then begin
+   spos = strpos(biasname, '.fit', /reverse_search)
+   cam = strmid(biasname, spos-2, 2)
+   splog, 'Guessing camera name ' + cam + ' from biasname ' + biasname
+endif
 
+; Define overscan region to use:
 if ((cam eq 'r1') or (cam eq 'r2')) then begin
    bx0 = 10
    bx1 = 100
@@ -68,7 +72,7 @@ if ((cam eq 'b1') or (cam eq 'b2')) then begin
 ;   dy1 = 2111 ; ASB: don't need this
 endif
 
-data_img = mrdfits(fname, 0, /fscale)
+data_img = rawdata
 bias_img = mrdfits(biasname)
 rnoise = fltarr(2, 2)
 nxfull = (size(data_img))[1]

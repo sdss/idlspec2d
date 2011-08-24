@@ -493,7 +493,8 @@ if (mjd GE 55052) then begin
             pp = filepath('', root_dir=getenv('SPECFLAT_DIR'), subdirectory='biases')
             pixbiasname = findopfile('boss_pixbias-*-'+camname+'.fits*', mjd, pp, $
                                      silent=silent)
-            image = bolton_biassub(fullname, pp+pixbiasname, rnoise=rnoise, sigthresh=3.0)
+            image = bolton_biassub(rawdata, pp+pixbiasname, rnoise=rnoise, $
+                                   cam=camname, sigthresh=3.0)
             xwid = (size(image))[1]
             ywid = (size(image))[2]
             rdnoise = rnoise[*] * 1.015 * gain ; account for sigma-clipping
@@ -554,7 +555,8 @@ if (mjd GE 55052) then begin
             pp = filepath('', root_dir=getenv('SPECFLAT_DIR'), subdirectory='biases')
             pixbiasname = findopfile('boss_pixbias-*-'+camname+'.fits*', mjd, pp, $
                                      silent=silent)
-            image = bolton_biassub(fullname, pp+pixbiasname, rnoise=rnoise, sigthresh=3.0)
+            image = bolton_biassub(rawdata, pp+pixbiasname, rnoise=rnoise, $
+                                   cam=camname, sigthresh=3.0)
             xwid = (size(image))[1]
             ywid = (size(image))[2]
             rdnoise = rnoise[*] * 1.015 * gain ; account for sigma-clipping
