@@ -134,7 +134,7 @@ function sshagent
 		printAndRun "ssh-agent -a $socket" ">$info"
 		echo " "
 		echo "About to add the private key sos uses, please enter the key password."
-		echo "It is the same password as used by the sdss3 data access web site"
+		echo "It is the old SDSS password, not the new SDSS3 password."
 		echo " "
 		printAndRun ssh-add ~/.ssh/id_dsa-sos
 	fi
