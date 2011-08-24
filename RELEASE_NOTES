@@ -1,6 +1,7 @@
 
 BOLTON_BIASSUB, SDSSPROC: Fix to make use of SDSSPROC_BADFORMAT
     image corrections (ASB, re: ticket # 1408)
+SPREDUCE1D: Fix spurious "broadline" subclassing (ASB, ticket #1316)
 
 -------------------------------------------------------------------------------
 v5_4_42 (2011-08-18, ASB)

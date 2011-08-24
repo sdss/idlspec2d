@@ -650,6 +650,8 @@ flambda2fnu = 0 ; Free memory
     for iline=0, nline-1 do $
      if (strtrim(zline[iline,iobj].linename,2) NE 'Ly_alpha' $
       AND zline[iline,iobj].linearea GT 10*zline[iline,iobj].linearea_err $
+; ASB: adding d.o.f. test:
+      AND (zline[iline,iobj].linedof GE 1.) $
       AND zline[iline,iobj].linesigma_err GT 0) then $
        maxsigma[iobj] = maxsigma[iobj] > $
         (zline[iline,iobj].linesigma - 5*zline[iline,iobj].linesigma_err)
