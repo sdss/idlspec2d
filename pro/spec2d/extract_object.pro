@@ -16,7 +16,7 @@
 ;   extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 ;    xarc, lambda, xtrace, fflat, fibermask, proftype=, color=, $
 ;    [ widthset=, dispset=, skylinefile=, plottitle=, superflatset=, $
-;    /do_telluric, /bbspec ]
+;    /do_telluric, /bbspec, /splitsky, ccdmask= ]
 ;
 ; INPUTS:
 ;   outname    - Name of outputs FITS file
@@ -47,6 +47,7 @@
 ;   do_telluric- If set, then perform telluric-corrections for the red CCDs;
 ;                the default is to no longer do this, because the v5 code
 ;                does this in the later flux-calibration steps
+;   ccdmask    - If set, then use this to set some pixel values in pixmask
 ;
 ; OUTPUTS:
 ;   A fits file is output in outname, which contains
@@ -71,7 +72,6 @@
 ;   djs_median()
 ;   djs_oplot
 ;   djs_plot
-;   doscatter()
 ;   extract_boxcar()
 ;   extract_image
 ;   fibermask_bits()
@@ -110,7 +110,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
  xarc, lambda, xtrace, fflat, fibermask, color=color, proftype=proftype, $
  widthset=widthset, dispset=dispset, skylinefile=skylinefile, $
  plottitle=plottitle, superflatset=superflatset, do_telluric=do_telluric, $
- bbspec=bbspec, splitsky=splitsky
+ bbspec=bbspec, splitsky=splitsky, ccdmask=ccdmask
 
    configuration=obj_new('configuration', sxpar(objhdr, 'MJD'))
 
@@ -188,6 +188,18 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
       wp = [whopping - 2 , whopping -1, whopping+1 , whopping+2]
       wp = wp[ where(wp GE 0 AND wp LT ny) ]
       fibermask[wp] = fibermask[wp] OR pixelmask_bits('NEARWHOPPER')
+   endif
+
+   ;-----
+   ; Inherit any mask bits from the ccdmask, by setting the pixmask bits
+   ; for anything that would be hit in a boxcar extraction
+
+   if (keyword_set(ccdmask)) then begin
+      for ibit=0, 31 do begin
+         thischeck = extract_boxcar((ccdmask AND 2L^ibit) NE 0, xtrace, $
+          radius=2.5)
+         pixelmask = pixelmask OR (2L^ibit * (thischeck GT 0))
+      endfor
    endif
 
    ;-----------------------------------------------------------------------
@@ -609,6 +621,15 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    finalmask = pixelmask
    for itrace=0, ntrace-1 do $
     finalmask[*,itrace] = finalmask[*,itrace] OR fibermask[itrace]
+
+   ;----------
+   ; Disable some mask bits in regions where 'NODATA' is set
+
+   q_nodata = (finalmask AND sdss_flagval('SPPIXMASK','NODATA')) NE 0
+   discards = ['NEARBADPIXEL','LOWFLAT','SCATTEREDLIGHT','NOSKY']
+   for j=0, n_elements(discards)-1 do $
+    finalmask = finalmask - q_nodata $
+     * (finalmask AND sdss_flagval('SPPIXMASK',discards[j]))
 
    ;----------
    ; Get an estimate of the relative chi^2 at each pixel.

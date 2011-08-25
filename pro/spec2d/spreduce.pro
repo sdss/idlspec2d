@@ -238,7 +238,7 @@ endif
       sdssproc, objname[iobj], image, invvar, indir=indir, hdr=objhdr, $
        /applybias, /applypixflat, spectrographid=spectrographid, color=color, $
        ecalibfile=ecalibfile, minflat=0.8, maxflat=1.2, $
-       nsatrow=nsatrow, fbadpix=fbadpix,/applycrosstalk
+       nsatrow=nsatrow, fbadpix=fbadpix, /applycrosstalk, ccdmask=ccdmask
 
       ;-----
       ; Decide if this science exposure is bad
@@ -314,7 +314,7 @@ endif
           proftype=proftype, superflatset=superflatset, $
           widthset=widthset, dispset=dispset, skylinefile=fullskyfile, $
           plottitle=plottitle, do_telluric=do_telluric, bbspec=bbspec, $
-          splitsky=splitsky
+          splitsky=splitsky, ccdmask=ccdmask
 
          splog, 'Elapsed time = ', systime(1)-stimeobj, ' seconds', $
           format='(a,f6.0,a)' 
