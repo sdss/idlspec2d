@@ -1,7 +1,18 @@
 
 BOLTON_BIASSUB, SDSSPROC: Fix to make use of SDSSPROC_BADFORMAT
     image corrections (ASB, re: ticket # 1408)
+PLATEMERGE: Add DIMS0,DIMS1 keywords to spAllLine file (ticket #1031)
+SPECLINEFIT,LINEBACKFIT: Add new CONTRANGE keyword for setting the region
+    for the continuum-fitting for each line.  A mean (unweighted) continuum
+    is evaluated in the blueward and redward bands, and then the average of
+    those two bands.  This is used at a range of [300,600] km/s for stars
+    and galaxies.  QSOs retain the default of selecting the continuum level
+    at the mid-point of the line, which is actually equivalent since the
+    background terms are all straight lines for QSOs. (ticket #1243)
 SPREDUCE1D: Fix spurious "broadline" subclassing (ASB, ticket #1316)
+
+bin/sos_apostart: Correct instructions about which password to use for ssh
+    daemon.
 
 -------------------------------------------------------------------------------
 v5_4_42 (2011-08-18, ASB)
