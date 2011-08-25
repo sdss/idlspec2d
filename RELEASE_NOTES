@@ -1,7 +1,21 @@
 
+Remove some deprecated routines: FLUXFIX, DOSCATTER, GEN_SCATTER
+
 BOLTON_BIASSUB, SDSSPROC: Fix to make use of SDSSPROC_BADFORMAT
     image corrections (ASB, re: ticket # 1408)
+FITSN: If there are fewer than 10 points in the mag fit range,
+    then extend that range to all brighter magnitudes.  This will
+    not effect any proper survey plates.  But it allows the S/N fit
+    to occur for some special plates, such as 5017-5019 which have
+    much fainter targets.  For those plates, then the spectro-photo
+    stars are selected for the fit.  (ticket #1351)
 PLATEMERGE: Add DIMS0,DIMS1 keywords to spAllLine file (ticket #1031)
+SDSSPROC: Add option to return CCDMASK pixel mask that sets the 'NODATA'
+    bit for regions of the BOSS CCD that are unused.  This should allow
+    the option of including more mask bits at this stage to propogate
+    through the pipeline, such as CR masks.
+SPBIASGEN: Add /NOPROC option for generating average bias frames
+    without overscan-trimming, etc.
 SPECLINEFIT,LINEBACKFIT: Add new CONTRANGE keyword for setting the region
     for the continuum-fitting for each line.  A mean (unweighted) continuum
     is evaluated in the blueward and redward bands, and then the average of
@@ -10,6 +24,12 @@ SPECLINEFIT,LINEBACKFIT: Add new CONTRANGE keyword for setting the region
     at the mid-point of the line, which is actually equivalent since the
     background terms are all straight lines for QSOs. (ticket #1243)
 SPREDUCE1D: Fix spurious "broadline" subclassing (ASB, ticket #1316)
+SPREDUCE,EXTRACT_OBJECT: Make use of the CCDMASK from SDSSPROC,
+    and include those mask values through the pixel mask.  A 'NODATA'
+    value is currently inherited from the initial SDSSPROC.
+    Erase several of the bits in the 'NODATA' regions: 
+    ['NEARBADPIXEL','LOWFLAT','SCATTEREDLIGHT','NOSKY'].
+    This partially addresses ticket #1301.
 
 bin/sos_apostart: Correct instructions about which password to use for ssh
     daemon.
@@ -176,7 +196,7 @@ QUICKEXTRACT,QUICKTRACE: Use /QUICK flag in call to FITFLATWIDTH.
 QUICKWAVE: Change reporting of dispersion warning messages to be consistent
      with that reported by FITDISPERSION.  Use /QUICK flag to FITDISPERSION.
 READPLUGMAP: MOD the range of values for PLUG_RA to fall strictly in
-     the range [0,360) deg (ticket #1255).
+     the range [0,360) deg (tickets #1131, #1255).
 SPADD_GUIDERINFO: Exclude NaN,Inf in guiderMon files when calculating
      guider statistics (ticket #1276).
 SPCALIB,EXTRACT_OBJECT,EXTRACT_BUNDLE_IMAGE,EXTRACT_BUNDLE_ROW: Replace calls
