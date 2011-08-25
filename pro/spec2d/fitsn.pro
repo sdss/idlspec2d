@@ -79,6 +79,16 @@ function fitsn, mag, snvec, sigrej=sigrej, maxiter=maxiter, plugmap=plugmap, $
    mask = (snvec GT 0 AND mag GT fitmag[0] AND mag LT fitmag[1])
 
    igood = where(mask, ngood)
+   splog, 'Default fit range contains ', ngood, ' values'
+
+   ; If fewer than 10 points in the fitting range, then extend the fit
+   ; to all brighter magnitudes (avoiding missing photometry where mag=0)
+   if (ngood LT 10) then begin
+      mask = (snvec GT 0 AND mag GT 0 AND mag LT fitmag[1])
+      igood = where(mask, ngood)
+      splog, 'Expanded fit range contains ', ngood, ' values'
+   endif
+
    if (ngood LE 2) then return, 0
 
    logsn = snvec*0.0 - 1.0 ; Arbitrarily set bad values to -1, though these
