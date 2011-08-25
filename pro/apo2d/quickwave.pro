@@ -126,9 +126,10 @@ function quickwave, arcname, tsetfile, wsetfile, fflatfile, radius=radius, $
    ; look out-of-focus in the wavelength dimension.
 
    nfitcoeff = configuration->spcalib_ncoeff(color)
+   nx = (size(arcimg,/dimens))[0]
    dispset = fitdispersion(flux, fluxivar, xpeak, $
     sigma=configuration->spcalib_sigmaguess(), ncoeff=nfitcoeff, $
-    xmin=0.0, xmax=(configuration->getDetectorFormat(color))[0]-1., $
+    xmin=0.0, xmax=nx-1., $
     medwidth=medwidth, numbundles=ntrace/20, /quick) ; Hard-wires 20 fibers/bundle???
 
    if (apo_checklimits('arc', 'WSIGMA', camname, max(medwidth)) $
