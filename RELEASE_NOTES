@@ -1,11 +1,7 @@
 
-Stephen Bailey, 2011-08-25
-bin/loadSN2Value : fix platedb database connection method.
-
-Remove some deprecated routines: FLUXFIX, DOSCATTER, GEN_SCATTER
-
 BOLTON_BIASSUB, SDSSPROC: Fix to make use of SDSSPROC_BADFORMAT
     image corrections (ASB, re: ticket # 1408)
+CONFIGURATION__DEFINE: Remove some deprecated functions.
 FITSN: If there are fewer than 10 points in the mag fit range,
     then extend that range to all brighter magnitudes.  This will
     not effect any proper survey plates.  But it allows the S/N fit
@@ -34,6 +30,7 @@ SPREDUCE,EXTRACT_OBJECT: Make use of the CCDMASK from SDSSPROC,
     ['NEARBADPIXEL','LOWFLAT','SCATTEREDLIGHT','NOSKY'].
     This partially addresses ticket #1301.
 
+bin/loadSN2Value : fix platedb database connection method.
 bin/sos_apostart: Correct instructions about which password to use for ssh
     daemon.
 
