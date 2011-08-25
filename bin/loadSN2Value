@@ -16,6 +16,7 @@ Written by Gary Kushner (LBL).  Dec 2009.
 """
 
 try:
+	from platedb.APODatabaseConnection import db
 	from platedb.db_connection import engine, metadata, Session
 	from platedb.ModelClasses import *
 	import sqlalchemy

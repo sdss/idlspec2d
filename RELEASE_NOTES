@@ -1,4 +1,7 @@
 
+Stephen Bailey, 2011-08-25
+bin/loadSN2Value : fix platedb database connection method.
+
 Remove some deprecated routines: FLUXFIX, DOSCATTER, GEN_SCATTER
 
 BOLTON_BIASSUB, SDSSPROC: Fix to make use of SDSSPROC_BADFORMAT
