@@ -542,7 +542,6 @@ pro/spec2d/fitwithmx.pro -text
 pro/spec2d/flux2maggie.pro -text
 pro/spec2d/flux_distortion.pro -text
 pro/spec2d/fluxcorr_new.pro -text
-pro/spec2d/fluxfix.pro -text
 pro/spec2d/focalplane.pro -text
 pro/spec2d/gausspix.pro -text
 pro/spec2d/gen_scatter.pro -text
