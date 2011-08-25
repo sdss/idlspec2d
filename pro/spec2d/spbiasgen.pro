@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   spbiasgen, [ mjd=, expnum=, expstart=, expend=, timesep=, $
-;    indir=, outdir=, docam=, sigrej=, maxiter= ]
+;    indir=, outdir=, docam=, sigrej=, maxiter=, /noproc ]
 ;
 ; INPUTS:
 ;
@@ -28,6 +28,8 @@
 ;                for 1,2,3,4,5 or 6 flats.  For more then 6 flats, default
 ;                to 2.0.
 ;   maxiter    - Number of rejection iterations; default to 3.
+;   noproc     - If set, then use MRDFITS to process images, otherwise use
+;                SDSSPROC and remove the overscan regions
 ;
 ; OUTPUTS:
 ;
@@ -93,7 +95,7 @@
 ;-
 ;------------------------------------------------------------------------------
 pro spbiasgen1, files, outfile=outfile, outdir=outdir, $
- sigrej=sigrej, maxiter=maxiter
+ sigrej=sigrej, maxiter=maxiter, noproc=noproc
 
    nfile = n_elements(files)
 
@@ -109,8 +111,12 @@ pro spbiasgen1, files, outfile=outfile, outdir=outdir, $
 
    for ifile=0, nfile-1 do begin
       splog, 'Reading file #', ifile+1, ' of ', nfile
-      sdssproc, files[ifile], thisimg, thisivar, hdr=hdr, $
-       bcfile='opBC-empty.par'
+      if (keyword_set(noproc)) then begin
+         thisimg = mrdfits(files[ifile], 0, hdr, /fscale)
+      endif else begin
+         sdssproc, files[ifile], thisimg, thisivar, hdr=hdr, $
+          bcfile='opBC-empty.par'
+      endelse
       if (ifile EQ 0) then begin
          hdr0 = hdr
          imgarr = make_array(dimension=[size(thisimg,/dimens),nfile], /float)
@@ -119,7 +125,8 @@ pro spbiasgen1, files, outfile=outfile, outdir=outdir, $
           before='EXPTIME'
       endif
       imgarr[*,*,ifile] = thisimg
-      inmask[*,*,ifile] = thisivar LE 0
+      if (keyword_set(thisivar)) then $
+       inmask[*,*,ifile] = thisivar LE 0
 
       sxaddpar, hdr0, string(ifile+1,format='("EXPID",i2.2)'), $
        string( sxpar(hdr,'CAMERAS'), sxpar(hdr,'EXPOSURE'), $
@@ -136,7 +143,7 @@ pro spbiasgen1, files, outfile=outfile, outdir=outdir, $
 end
 ;------------------------------------------------------------------------------
 pro spbiasgen, mjd=mjd, expnum=expnum, expstart=expstart, expend=expend, $
- timesep=timesep, indir=indir, outdir=outdir, docam=docam
+ timesep=timesep, indir=indir, outdir=outdir, docam=docam, noproc=noproc
 
    if (NOT keyword_set(timesep)) then timesep = 300
    if (keyword_set(docam)) then camnames = docam $
@@ -208,7 +215,7 @@ pro spbiasgen, mjd=mjd, expnum=expnum, expstart=expstart, expend=expend, $
    for icam=0, ncam-1 do begin
       ; Select biases for this camera
       ibias = where(cameras EQ camnames[icam] $
-       AND strtrim(flavor,2) EQ 'bias', nbias)
+       AND (strtrim(flavor,2) EQ 'bias' OR strtrim(flavor,2) EQ 'dark'), nbias)
 
       ; Discard any bias that isn't within TIMESEP seconds after
       ; another bias (this always discards the first one in any sequence).
@@ -230,7 +237,7 @@ pro spbiasgen, mjd=mjd, expnum=expnum, expstart=expstart, expend=expend, $
          splog, 'Generating pixel bias ' + pixbiasname
          splog, 'Output directory ' + outdir
          spbiasgen1, files[jbias], outfile=pixbiasname, outdir=outdir, $
-          sigrej=sigrej, maxiter=maxiter
+          sigrej=sigrej, maxiter=maxiter, noproc=noproc
 
       endif else begin
          splog, 'Expected at least 3 biases (not including 1st), got ' $
