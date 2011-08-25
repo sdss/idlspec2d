@@ -36,10 +36,6 @@ function configuration::getDetectorFormat, color
   if (strmid(color,0,1) EQ 'r') then return,  [4128, 4114]
 end
 
-;
-; Changes in spcalib.pro, tag v5_4_0
-;
-
 ;l191 xy2traceset keyword
 function configuration::spcalib_xy2traceset_ncoeff
   if self->isSDSS2() then return,7
@@ -86,27 +82,6 @@ function configuration::spcalib_ncoeff, color
   return, color EQ 'red' ? 5 : 4
 end
 
-;l519
-function configuration::spcalib_doscatter_maxkernr, color
-  if self->isSDSS2() then begin
-    if color EQ 'r' then return, 256
-    if color EQ 'b' then return, 64
-  endif else begin
-    if color EQ 'r' then return, 100*4
-    if color EQ 'b' then return, 100
-  endelse
-end
-;l519
-function configuration::spcalib_doscatter_addrows, color
-  if self->isSDSS2() then begin
-    if color EQ 'r' then return, 64
-    if color EQ 'b' then return, 32
-  endif else begin
-    if color EQ 'r' then return, 100
-    if color EQ 'b' then return, 50
-  endelse
-end
-
 ;l555 set keyword for fiberflat
 function configuration::spcalib_fiberflat_minval,flux
   if self->isSDSS2() then return, 0.03 * median(flux)
@@ -139,74 +114,10 @@ function configuration::spcalib_reject_calib_percent80thresh
   return, 900.
 end
 
-
-;l175 set keyword for reject_flact
-function configuration::spcalib_mthreshFactor
-  if self->isFaintflat() then return, .2
-  return, .5
-end
-
 ;l186 set keyword for trace320crude
 function configuration::spcalib_trace320crude_padding
   if self->isSDSS2() then return, 0
   return, 10
-end
-
-
-;l186 set keyword for trace320crude
-; within trace320crude l90 for trace320cen
-function configuration::spcalib_trace320cen_deltax, color, spectrographid
-  if self->isSDSS2() then return, 6.25 ; SDSS-I
-
-  ; For BOSS, return the fiber spacing per bundle
-  nbundle = 25
-  if (color EQ 'blue' AND spectrographid EQ 1) then $
-;   return, 6.605 + 0.05*abs(2*(findgen(nbundle)-0.5*nbundle)/nbundle)
-   return, 6.545 + 0.12*abs(2*(findgen(nbundle)-0.5*nbundle)/nbundle)
-  if (color EQ 'blue' AND spectrographid EQ 2) then $
-   return, 6.543 + 0.11*abs(2*(findgen(nbundle)-0.5*nbundle)/nbundle)
-  if (color EQ 'red' AND spectrographid EQ 1) then begin
-     ; The CCD was moved and scale changed on MJD 55168 (Dec 4, 2009)
-     if (self.mjd lt 55168) then $
-      return, 6.653 + 0.15*abs(2*(findgen(nbundle)-0.5*nbundle)/nbundle)
-     return, 6.551 + 0.15*abs(2*(findgen(nbundle)-0.5*nbundle)/nbundle)
-  endif
-  if (color EQ 'red' AND spectrographid EQ 2) then $
-   return, 6.595 + 0.16*abs(2*(findgen(nbundle)-0.5*nbundle)/nbundle)
-end
-
-function configuration::spcalib_trace320cen_xstart, color, spectrographid
-  if self->isSDSS2() then return, 0. ; SDSS-I
-
-  if (color EQ 'blue' AND spectrographid EQ 1) then return, 266.
-  if (color EQ 'blue' AND spectrographid EQ 2) then return, 288.
-  if (color EQ 'red' AND spectrographid EQ 1) then begin
-    if (self.mjd lt 55168) then return, 245.
-    return, 271.
-  endif
-  if (color EQ 'red' AND spectrographid EQ 2) then return, 259.
-end
-
-
-;l186 set keyword for trace320crude
-; within trace320crude l90 for trace320cen
-function configuration::spcalib_trace320cen_bundlebreakrange
-  if self->isSDSS2() then return, [1,1.6]
-  return, [1,2.7]
-end
-
-;l186 set keyword for trace320crude
-; within trace320crude l90 for trace320cen
-function configuration::spcalib_trace320cen_nextpeakrange
-  if self->isSDSS2() then return, [0.35,0.25]
-  return, [0.45,0.25]
-end
-
-;l186 set keyword for trace320crude
-; within trace320crude l90 for trace320cen
-function configuration::spcalib_trace320cen_bundlegap
-  if self->isSDSS2() then return, 0.28
-  return, 1.40
 end
 
 ;l363,385 set keyword for fitarcimage
@@ -239,42 +150,16 @@ function configuration::spcalib_arcfitguess_dcoeff,color
 end
 
 ;l363,385 set keyword for fitarcimage
-;function configuration::spcalib_fitarcimage_trimrange,arc,color
-;  if self->isSDSS2() then begin
-;    npix= (size(arc, /dim))[0]
-;    return, [1,npix-2]
-;  endif
-;  if (self->isLaurenSimulation_v1() or self->isLaurenSimulation_v2()) then begin
-;    if (color EQ 'blue') then return, [1075,3110]
-;    if (color EQ 'red') then return, [490,2850]
-;  endif
-;  if (color EQ 'blue') then return, [870,3350]
-;  if (color EQ 'red') then return, [360,3600]
-;end
-
-;l363,385 set keyword for fitarcimage
 function configuration::spcalib_fitarcimage_wrange,color
   if self->isSDSS2() then return,0
   if (color EQ 'blue') then return, [3500.,6540.]
   if (color EQ 'red') then return, [5400.,10500.]
 end
 
-
-function configuration::extract_object_skyfit2dbspline
-  if self->isSDSS2() then return,1
-  return, 0
-end
-
 ;l237 extract_object
 function configuration::getscatter, camera, flatimg, flativar, wset, sigma=sigma
   if self->isSDSS2() then return, doscatter(camera, flatimg, flativar, wset, sigma=sigma)
   return, 0.*flatimg
-end
-
-;
-function configuration::extract_object_skysubtract_alternative
-  if self->isSDSS2() then return, 0
-  return, 1
 end
 
 ;l188,189
@@ -349,18 +234,6 @@ end
 ;
 function configuration::isSDSS2
   return, self.mjd lt self.sdss3_start_mjd
-end
-
-function configuration::isLaurenSimulation_v1
-  return, self.mjd eq 55025
-end
-
-function configuration::isLaurenSimulation_v2
-  return, self.mjd eq 55026
-end
-
-function configuration::isFaintFlat
-  return, (self.mjd eq 55052 or self.mjd eq 55070)
 end
 
 pro configuration__define
