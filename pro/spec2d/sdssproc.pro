@@ -10,7 +10,7 @@
 ;    outfile=, nsatrow=, fbadpix=, $
 ;    hdr=hdr, configfile=, ecalibfile=, bcfile=, $
 ;    /applybias, /applypixflat, /silent, /do_lock, minflat=, maxflat=, $
-;    spectrographid=, color=, camname=, /applycrosstalk ]
+;    spectrographid=, color=, camname=, /applycrosstalk, ccdmask= ]
 ;
 ; INPUTS:
 ;   infile     - Raw SDSS file name
@@ -49,6 +49,7 @@
 ;   spectrographid - Return spectrograph ID (1 or 2)
 ;   color      - Return spectrograph color ('red' or 'blue')
 ;   camname    - Return camera name: 'b1', 'r1', 'b2', or 'r2'
+;   ccdmask    - Image with 'NODATA' bit set for parts of BOSS data
 ;
 ; COMMENTS:
 ;   Only the header is read from the image if IMAGE, INVVAR, OUTFILE and
@@ -282,7 +283,7 @@ pro sdssproc, infile1, image, invvar, indir=indir, $
  applybias=applybias, applypixflat=applypixflat, silent=silent, $
  do_lock=do_lock, minflat=minflat, maxflat=maxflat, $
  spectrographid=spectrographid, color=color, camname=camname, $
- applycrosstalk=applycrosstalk
+ applycrosstalk=applycrosstalk, ccdmask=ccdmask
 
   common com_sdssproc, vers2d, versutils, versflat, verslog
     
@@ -613,7 +614,12 @@ if (mjd GE 55052) then begin
          endif
          end
       endcase
-      
+
+      if (arg_present(ccdmask)) then begin
+         ccdmask = lonarr(size(image,/dimens))
+         ccdmask += (mask EQ 0) * sdss_flagval('SPPIXMASK','NODATA')
+      endif
+
       ; Add read-noise to header
       sxaddpar, hdr, 'RDNOISE0', rdnoise[0], 'CCD read noise amp 0 [electrons]'
       sxaddpar, hdr, 'RDNOISE1', rdnoise[1], 'CCD read noise amp 1 [electrons]'
@@ -1203,6 +1209,10 @@ endif ; endif from what statement ???
 satmask = 0 ; clear memory
 admask = 0 ; clear memory
 ; bcmask = 0 ; clear memory
+
+; Generate the CCD pixel mask (all zeros for SDSS-I data)
+if (arg_present(ccdmask) AND readimg) then $
+ ccdmask = lonarr(size(image,/dimens))
 
 endelse ; End toggle between reading BOSS or SDSS-I images
 
