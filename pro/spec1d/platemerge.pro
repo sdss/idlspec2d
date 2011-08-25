@@ -524,8 +524,8 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
            linedat_out = replicate(linedat1, n_elements(linedat))
            struct_assign, linedat, linedat_out
 
-           mwrfits_chunks, linedat_out, outroot[1]+'.fits.tmp', $
-             create=(ifile EQ 0), append=(ifile GT 0)
+           mwrfits_chunks, linedat_out, outroot[1]+'.fits.tmp', linehdr, $
+            create=(ifile EQ 0), append=(ifile GT 0)
        endfor
    endif
 
