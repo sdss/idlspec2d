@@ -71,6 +71,9 @@
 ;   The initial guess for the dispersion is 2000 km/sec for QSO's
 ;   (ZGUESS=0.0030), and 105 kms/sec for all other objects (ZGUESS=0.00015).
 ;
+;   The continuum level is evaluated at the line center for QSOs,
+;   and otherwise is set to [300,600] km/s on either side of the line center.
+;
 ; EXAMPLES:
 ;
 ; BUGS:
@@ -305,12 +308,15 @@ pro speclinefit, platefile, fiberid=fiberid, $
       ; for galaxies, or the synthetic spectrum for other types of objects.
       if (strtrim(zans[iobj].class,2) EQ 'GALAXY') then begin
          background = dispflux[*,iobj]
+         contrange = [300.,600.]
          sigguess = 1.5d-4
       endif else if (strtrim(zans[iobj].class,2) EQ 'QSO') then begin
          background = 0
+         contrange = 0
          sigguess = 0.003d0
       endif else begin
          background = synflux[*,iobj]
+         contrange = [300.,600.]
          sigguess = 1.5d-4
       endelse
 
@@ -404,7 +410,8 @@ pro speclinefit, platefile, fiberid=fiberid, $
           zindex=linelist[iuse].zindex, windex=linelist[iuse].windex, $
           findex=linelist[iuse].findex, fvalue=linelist[iuse].fvalue, $
           zguess=zguess, sigguess=sigguess, $
-          background=background, yfit=yfit1, bfit=bfit, bterms=bterms)
+          background=background, contrange=contrange, $
+          yfit=yfit1, bfit=bfit, bterms=bterms)
 
          if (keyword_set(yfit)) then yfit[*,iobj] = yfit1
 

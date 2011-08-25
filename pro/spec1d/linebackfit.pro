@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   result = linebackfit(lambda, loglam, flux, invvar=, $
 ;    linename=, zindex=, windex=, findex=, fvalue=, zlimits=, siglimits=, $
-;    background=, zguess=, sigguess=, backguess=, $
+;    background=, contrange=, zguess=, sigguess=, backguess=, $
 ;    yfit=, bfit=, bterms=, /silent )
 ;
 ; INPUTS:
@@ -42,6 +42,12 @@
 ;                rather we maintain the one-to-one correspondence of each
 ;                BACKGROUND pixel to each FLUX pixel.  The initial guess
 ;                for the scaling of each background vector is unity.
+;   contrange  - Continuum-level fitting range.  If not set or set to zero,
+;                then use the background level at the line center.
+;                Or set as 2-element array for fitting ranges on either side
+;                of the line center in km/s.  A mean (unweighted) continuum
+;                is evaluated in the blueward and redward bands, and then
+;                the average of those two bands.
 ;   zguess     - Initial guess for redshifts of all lines (scalar or vector
 ;                with one entry per line); default to 0.
 ;   sigguess   - Initial guess for sigmas of all lines in log-10 Angstroms
@@ -152,7 +158,8 @@ end
 function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
  zindex=zindex, windex=windex, findex=findex, fvalue=fvalue, $
  zlimits=zlimits1, siglimits=siglimits1, $
- background=background, zguess=zguess1, sigguess=sigguess1, $
+ background=background, contrange=contrange, $
+ zguess=zguess1, sigguess=sigguess1, $
  backguess=backguess1, yfit=yfit, bfit=bfit, bterms=bterms, silent=silent
 
    cspeed = 2.99792458e5
@@ -431,6 +438,14 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
       for ipix=0L, npix-1L do $
        berr[ipix] = sqrt( (transpose(background[ipix,*]) $
         # bcovar # transpose(background[ipix,*])) )
+
+      ; If the returned uncertainty for a template is ill-defined in MPFIT,
+      ; then any non-zero pixels for that template should propogate to
+      ; an ill-defined template fit
+      for iback=0L, nback-1L do begin
+         if (perror[nline*3+iback] LE 0) then $
+          berr *= (background[*,iback] EQ 0)
+      endfor
    endelse
 
    ;----------
@@ -440,20 +455,51 @@ function linebackfit, lambda, loglam, flux, invvar=invvar, linename=linename, $
    logmin = min(loglam)
    logmax = max(loglam)
    for iline=0L, nline-1L do begin
-      if (lfit[iline*3+1] LT logmin) then begin
-         ; Case where the line center is blueward of the entire spectrum.
-         linestruct[iline].linecontlevel = bfit[0]
-         linestruct[iline].linecontlevel_err = -1L
-      endif else if (lfit[iline*3+1] GT logmax) then begin
-         ; Case where the line center is redward of the entire spectrum.
-         linestruct[iline].linecontlevel = bfit[npix-1]
-         linestruct[iline].linecontlevel_err = -1L
+      junk = min(abs(loglam - lfit[iline*3+1]), ipix)
+      if (keyword_set(contrange)) then begin
+         if (n_elements(contrange) NE 2) then $
+          message, 'CONTRANGE must be 2-element array!'
+         if (contrange[0] LT 0 OR contrange[1] LT 0 $
+          OR contrange[0] GT contrange[1]) then $
+          message, 'CONTRANGE has invalid values!'
+         loglam1 = lfit[iline*3+1] - alog10(1+contrange[1]/cspeed)
+         loglam2 = lfit[iline*3+1] - alog10(1+contrange[0]/cspeed)
+         loglam3 = lfit[iline*3+1] - alog10(1-contrange[0]/cspeed)
+         loglam4 = lfit[iline*3+1] - alog10(1-contrange[1]/cspeed)
+         junk = min(abs(loglam - loglam1), ipix1)
+         junk = min(abs(loglam - loglam2), ipix2)
+         junk = min(abs(loglam - loglam3), ipix3)
+         junk = min(abs(loglam - loglam4), ipix4)
+         cont_left = mean(bfit[ipix1:ipix2])
+         cont_right = mean(bfit[ipix3:ipix4])
+         if (loglam2 LT logmin) then begin
+            ; Case where the left continuum band is blueward of the spectrum.
+            linestruct[iline].linecontlevel = cont_right
+            linestruct[iline].linecontlevel_err = -1L
+         endif else if (loglam3 GT logmax) then begin
+            ; Case where the right continuum band is redward of the spectrum.
+            linestruct[iline].linecontlevel = cont_left
+            linestruct[iline].linecontlevel_err = -1L
+         endif else begin
+            ; Evaluate the mean of the left and right continuum bands.
+            linestruct[iline].linecontlevel = 0.5 * (cont_left + cont_right)
+            linestruct[iline].linecontlevel_err = berr[ipix] ; ???
+         endelse
       endif else begin
-         ; Select the nearest pixel for evaluating the background
-         ; level at this line center.
-         junk = min(abs(loglam - lfit[iline*3+1]), ipix)
-         linestruct[iline].linecontlevel = bfit[ipix]
-         linestruct[iline].linecontlevel_err = berr[ipix]
+         if (lfit[iline*3+1] LT logmin) then begin
+            ; Case where the line center is blueward of the entire spectrum.
+            linestruct[iline].linecontlevel = bfit[0]
+            linestruct[iline].linecontlevel_err = -1L
+         endif else if (lfit[iline*3+1] GT logmax) then begin
+            ; Case where the line center is redward of the entire spectrum.
+            linestruct[iline].linecontlevel = bfit[npix-1]
+            linestruct[iline].linecontlevel_err = -1L
+         endif else begin
+            ; Select the nearest pixel for evaluating the background
+            ; level at this line center.
+            linestruct[iline].linecontlevel = bfit[ipix]
+            linestruct[iline].linecontlevel_err = berr[ipix]
+         endelse
       endelse
    endfor
 
