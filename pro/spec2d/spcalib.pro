@@ -211,8 +211,6 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
       inmask = (total(flativar gt 0., 1) gt 0.) # replicate(1B, ntrace)
       xy2traceset, ycen, xsol, tset, $
        ncoeff=configuration->spcalib_xy2traceset_ncoeff(), $
-;       ncoeff=5, $
-;       ncoeff=7, $
        maxdev=0.5, outmask=outmask, /double, xerr=xerr, inmask=inmask
 
       junk = where(outmask EQ 0, totalreject)
@@ -235,8 +233,6 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
     ; Verify that traces are separated by > 3 pixels
     
     if (qbadflat EQ 0) then begin
-; ASB: ntrace definition moved further up:
-;      ntrace = (size(xsol, /dimens))[1]
       sep = xsol[*,1:ntrace-1] - xsol[*,0:ntrace-2]
       tooclose = where(sep LT 3)
       if (tooclose[0] NE -1) then begin
@@ -317,6 +313,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
     sdssproc, arcname[iarc], arcimg, arcivar, indir=indir, hdr=archdr, $
       /applybias, /applypixflat, nsatrow=nsatrow, fbadpix=fbadpix, $
       ecalibfile=ecalibfile, minflat=minflat, maxflat=maxflat,/applycrosstalk
+    nx = (size(arcimg,/dimens))[0]
       
     configuration=obj_new('configuration', sxpar(archdr, 'MJD'))
     
@@ -380,16 +377,6 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
       
       highrej = 15
       lowrej = 15
-;x      npoly = 1  ; just fit flat background to each row
-;x      wfixed = [1,1] ; Just fit the first gaussian term
-      
-;x      splog, 'Extracting arc'
-;x      extract_image, arcimg, arcivar, xcor, sigma2, $
-;x        flux, fluxivar, proftype=proftype, wfixed=wfixed, $
-;x        highrej=highrej, lowrej=lowrej, npoly=npoly, relative=1, $
-;x        reject=[0.1, 0.6, 0.6], ymodel=ymodel
-
-; ASB: extract bundle-wise:
 
       wfixed = [1,0] ; ASB: Don't fit for width terms.
 
@@ -452,7 +439,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
         ilamp = where(rejline EQ '')
         dispset = fitdispersion(flux, fluxivar, xpeak[*,ilamp], $
           sigma=configuration->spcalib_sigmaguess(), ncoeff=nfitcoeff, $
-          xmin=0.0, xmax=(configuration->getDetectorFormat(color))[0]-1., $
+          xmin=0.0, xmax=nx, $
           medwidth=wsigarr, numbundles=ntrace/20) ; Hard-wires 20 fibers/bundle???
 
         arcstruct[iarc].dispset = ptr_new(dispset)
@@ -571,39 +558,8 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
       highrej = 15
       lowrej = 15
       npoly = 5 ; Fit 5 terms to background, just get best model
-      wfixed = [1,1] ; Fit gaussian plus both derivatives
- 
-wfixed = [1,0] ; Do not refit for Gaussian widths, only flux ???
-; ASB: this step is now unnecessary for BOSS...
-;x      extract_image, flatimg, flativar, xsol, sigma2, flux, fluxivar, $
-;x       proftype=proftype, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
-;x        npoly=npoly, relative=1, ymodel=ym, chisq=fchisq, ansimage=ansimage, $
-;x        reject=[0.1, 0.6, 0.6]
-
-      ;------------------------------------------------------------------------
-      ;    Another attempt to remove halo, but proftype has **MUCH** bigger
-      ;      effect
-      ;------------------------------------------------------------------------
-        
-; ASB: commenting out: for BOSS, this does nothing
-; but waste time and cause coding confusion:       
-      ;flatimg = flatimg - 1.5*smooth_halo2d(ym, wset)
-;x     camera  = strtrim(sxpar(flathdr,'CAMERAS'),2)
-;x      scatter =configuration->getscatter(camera, flatimg, flativar, wset, sigma=0.9)
-;x      smoothedflat = flatimg - scatter
-;x      ym = 0
-      
-      ;------------------------------------------------------------------------
-      ;  Extract flat field for a third time.  This time extracting
-      ;  with NIR and optical scattered light removed
-      ;------------------------------------------------------------------------
-
-;x      extract_image, smoothedflat, flativar, xsol, sigma2, flux, fluxivar, $
-;x        proftype=proftype, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
-;x        npoly=npoly, relative=1, chisq=schisq, ansimage=ansimage2, $
-;x        reject=[0.1, 0.6, 0.6], ymodel=ymodel
-
-; ASB: replacing with bundle-wise extraction:
+;      wfixed = [1,1] ; Fit gaussian plus both derivatives
+      wfixed = [1,0] ; Do not refit for Gaussian widths, only flux ???
 
       extract_bundle_image, flatimg, flativar, xsol, sigma2, flux, fluxivar, $
         proftype=proftype, wfixed=wfixed, highrej=highrej, lowrej=lowrej, $
