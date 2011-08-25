@@ -2,6 +2,8 @@
 BOLTON_BIASSUB, SDSSPROC: Fix to make use of SDSSPROC_BADFORMAT
     image corrections (ASB, re: ticket # 1408)
 CONFIGURATION__DEFINE: Remove some deprecated functions.
+EXTRACT_OBJECT,SPCALIB,QUICKWAVE: Remove call to getDetectorFormat and
+     determine the image size from the image.
 FITSN: If there are fewer than 10 points in the mag fit range,
     then extend that range to all brighter magnitudes.  This will
     not effect any proper survey plates.  But it allows the S/N fit
@@ -15,6 +17,7 @@ SDSSPROC: Add option to return CCDMASK pixel mask that sets the 'NODATA'
     through the pipeline, such as CR masks.
 SPBIASGEN: Add /NOPROC option for generating average bias frames
     without overscan-trimming, etc.
+SPCALIB: Remove some clutter of commented-out code.
 SPECLINEFIT,LINEBACKFIT: Add new CONTRANGE keyword for setting the region
     for the continuum-fitting for each line.  A mean (unweighted) continuum
     is evaluated in the blueward and redward bands, and then the average of
@@ -228,6 +231,7 @@ EXTRACT_BUNDLE_ROW, EXTRACT_BUNDLE_IMAGE, GAUSSPIX  (ASB, U. Utah):
      Routines to enable pure IDL extraction, chunked up bundle-wise.
 EXTRACT_OBJECT, SPCALIB (ASB, U. Utah):
      Switched to pure IDL bundle-wise extraction.
+     Also addresses ticket #781, removing a redundant extraction step.
 PLATEMERGE: The setting of SPECPRIMARY needs to address SN_MEDIAN
      as a 5-element array rather than a scalar.  Select based upon
      this S/N in r-band.
