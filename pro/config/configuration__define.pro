@@ -23,19 +23,6 @@ end
 ; be specified
 ;
 
-
-;+
-;return the detector format.  blue is assumed for anything that
-;starts with b so 'blue', 'b1' or 'b2'.  likewise for red.
-;-
-function configuration::getDetectorFormat, color
-  if self->isSDSS2() then return, [2048,2048]
-  if self->isLaurenSimulation_v1() then return, [4096,4096]
-  
-  if (strmid(color,0,1) EQ 'b') then return, [4112, 4096]
-  if (strmid(color,0,1) EQ 'r') then return,  [4128, 4114]
-end
-
 ;l191 xy2traceset keyword
 function configuration::spcalib_xy2traceset_ncoeff
   if self->isSDSS2() then return,7
