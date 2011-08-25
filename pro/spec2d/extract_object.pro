@@ -238,53 +238,6 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    wfixed = [1,1] ; Fit gaussian height + width (fixed center position)
    nterms = n_elements(wfixed)
 
-; ASB: taking out all this fiddly scattered-light business:
-;x   splog, 'Step 1: Initial Object extraction'
-
-;x   extract_image, image, invvar, xnow, sigma2, flux0, flux0ivar, $
-;x    proftype=proftype, wfixed=wfixed, yrow=yrow, $
-;x    highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
-;x    ansimage=ansimage, chisq=firstchisq, ymodel=ymodel0, /relative
-
-   ; (1a) Calculate scattered light, just for curiosity
-;x   splog, 'Step 2: Find scattered light image'
-;x   scatfit0 = calcscatimage(ansimage[ntrace*nterms:*,*], yrow, $
-;x    nscatbkpts=npoly,$
-;x    nx=(configuration->getDetectorFormat(color))[1], $
-;x    ny=(configuration->getDetectorFormat(color))[0] )
-
-;x   qaplot_scatlight, scatfit0, yrow, $
-;x    wset=wset, xcen=xtrace, fibermask=fibermask, $
-;x    title=plottitle+'Scattered Light before halo removal on '+objname
-
-   ; (3) Calculate per-camera modelled scattering surface
-;x   splog, 'Step 3: Calculate halo image'
-;x   scatter = configuration->getscatter(camera, ymodel0, invvar, wset, sigma=0.9)
-
-   ; (4) Re-extract with scattering model
-   ; subtracted in order to measure
-   ;     any remaining scattered light
-;x   splog, 'Step 4: Extracting with halos removed'
-;x   image_sub = image - scatter
-
-;x   extract_image, image_sub, invvar, xnow, sigma2, tempflux, tempfluxivar, $
-;x    proftype=proftype, wfixed=wfixed, yrow=yrow, $
-;x    highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
-;x    ansimage=ansimage2, chisq=secondchisq, ymodel=tempymodel, /relative
-
-   ; (4) Calculate remaining scattered light
-;x   splog, 'Step 4: Find scattered light image'
-;x   scatfit = calcscatimage(ansimage2[ntrace*nterms:*,*], yrow, $
-;x    nscatbkpts=npoly, $
-;x    nx=(configuration->getDetectorFormat(color))[1], $
-;x    ny=(configuration->getDetectorFormat(color))[0] )
-
-;x   qaplot_scatlight, scatfit, yrow, $
-;x    wset=wset, xcen=xtrace, fibermask=fibermask, $
-;x    title=plottitle+'Scattered Light on '+objname
-
-;x   image_sub2 = image_sub - scatfit
-
    ;-----------------------------------------------------------------------
    ;  Now, subtract halo image and do final extraction with all rows
    ;-----------------------------------------------------------------------
@@ -299,11 +252,6 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    nterms = n_elements(wfixed)
    reject = [0.2,0.2,0.2]
    npoly = 0
-
-;x   extract_image, image_sub2, invvar, xnow, sigma2, flux, fluxivar,$
-;x    proftype=proftype, wfixed=wfixed, ansimage=ansimage3, $
-;x    highrej=highrej, lowrej=lowrej, npoly=npoly, whopping=whopping, $
-;x    chisq=chisq, ymodel=ymodel, pixelmask=pixelmask, reject=reject, /relative
 
 ; ASB: switching to bundle-wise extraction:
 
@@ -374,12 +322,6 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
 
    ;------------------
    ; Look for pixels where scattered light is dominating
-
-; ASB: no longer relevant
-
-;x   scatteredpix = where(extract_boxcar(scatfit, xnow, radius=2.0) GT 2.0 * flux)
-;x   if (scatteredpix[0] NE -1) then pixelmask[scatteredpix] = $
-;x                 pixelmask[scatteredpix] + pixelmask_bits('SCATTEREDLIGHT')
 
    ;------------------
    ; Tweak up the wavelength solution to agree with the sky lines.
