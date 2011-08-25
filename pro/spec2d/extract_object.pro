@@ -207,8 +207,8 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    ;-----------------------------------------------------------------------
   if (configuration->extract_object_fixcolumns()) then begin
      image[0,*] = image[0,*]*0.7
-     image[(configuration->getDetectorFormat(color))[0]-1,*] = image[(configuration->getDetectorFormat(color))[0]-1,*]*0.7
-     endif
+     image[nx-1,*] = image[nx-1,*]*0.7
+  endif
 
    ;
    ;  First we should attempt to shift trace to object flexure
