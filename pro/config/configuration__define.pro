@@ -223,6 +223,10 @@ function configuration::isSDSS2
   return, self.mjd lt self.sdss3_start_mjd
 end
 
+function configuration::isFaintFlat
+  return, (self.mjd eq 55052 or self.mjd eq 55070)
+end
+
 pro configuration__define
   void={configuration, mjd:0L, sdss3_start_mjd:0.D}
   return
