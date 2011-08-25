@@ -59,7 +59,6 @@
 ; BUGS:
 ;
 ; PROCEDURES CALLED:
-;   doscatter()
 ;   extract_image
 ;   fiberflat()
 ;   fitarcimage
