@@ -3,9 +3,13 @@
 ;   extract_bundle_image
 ;
 ; PURPOSE:
-;   Extract the fiber profile flux for an entire image
-;  ***MODIFIED FROM EXTRACT_IMAGE TO WORK BUNDLE_WISE IN PURE IDL***
-;  ***DOCUMENTATION NOW OBSOLETE!!!***
+;   Extract the fiber profile flux for an entire image, using
+;   extract_bundle_row to chunk it up over bundles.
+;
+;   Modified from extract_image, which called extract_row.
+;
+; **SEE DETAILED DOCUMENTATION COMMENTS IN EXTRACT_BUNDLE_ROW.PRO**
+; **FOR MORE INFO ON THE CONVERSION FROM EXTRACT_IMAGE/ROW**
 ;
 ; CALLING SEQUENCE:
 ;   extract_bundle_image, fimage, invvar, xcen, sigma, flux, [finv, yrow=,
@@ -23,8 +27,20 @@
 ;                This can be a scalar, an [NFIBER] vector, or
 ;                an [NROW,NFIBER] array.
 ;
-; OPTIONAL KEYWORDS:
+; OPTIONAL KEYWORDS (retained):
 ;   yrow       - List of row numbers (0-indexed) to extract; default to all.
+;   mask       - byte mask: 1 is good and 0 is bad [NCOL,NROW] 
+;   pixelmask  - bits set due to extraction rejection [NROW,NFIBER]
+;   reject     - Array setting rejection threshholds; defaults are set
+;                in EXTRACT_BUNDLE_ROW().
+;   nPoly      - order of polynomial background, default to 2
+;   maxIter    - maximum number of profile fitting iterations; default to 20
+;   highrej    - positive sigma deviation to be rejected (default 10.0)
+;   lowrej     - negative sigma deviation to be rejected (default 10.0)
+;   relative   - Scale rejection thresholds by reduced chi-squared (default 0)
+;   oldreject  - ???
+;
+; OPTIONAL KEYWORDS (deprecated):
 ;   proftype   - currently, one can only use 1: Gaussian (scalar)
 ;              - or                          2: Exp Cubic
 ;              - or                          3: Double Gaussian
@@ -34,34 +50,27 @@
 ;                     [1, 1] fit gaussian + sigma correction
 ;                     [1, 0, 1] fit gaussian + center correction
 ;                     [1, 1, 1] fit gaussian + sigma and center corrections.   
-;   mask       - byte mask: 1 is good and 0 is bad [NCOL,NROW] 
-;   pixelmask  - bits set due to extraction rejection [NROW,NFIBER]
-;   reject     - Array setting rejection threshholds; defaults are set
-;                in EXTRACT_ROW().
-;   nPoly      - order of chebyshev scattered light background; default to 4
 ;   nband      - band-width of full covariance fiber profile matrix;
 ;                default to 1.
-;   maxIter    - maximum number of profile fitting iterations; default to 20
-;   highrej    - positive sigma deviation to be rejected (default 10.0)
-;   lowrej     - negative sigma deviation to be rejected (default 10.0)
 ;   fitans     - ratio of profiles to do in single profile fitting
-;   relative   - Scale rejection thresholds by reduced chi-squared (default 0)
 ;   whopping   - traces which have WHOPPINGingly high counts, and need extra
 ;                background terms
 ;   wsigma     - sigma width of whopping profile (exponential, default 25)
-;   oldreject  - ???
 ;
 ; OUTPUTS:
 ;   flux       - Total extracted flux in each profile [nRowExtract,NFIBER]
 ;
-; OPTIONAL OUTPUTS:
+; OPTIONAL OUTPUTS (retained):
 ;   ansimage   - Coefficients of fit for each row [nCoeff,nRow]
 ;   mask       - Modified by setting the values of bad pixels to 0
 ;   finv       - Estimated inverse variance each profile [nRowExtract,NFIBER]
 ;   ymodel     - Model best fit of row [NCOL,NROW]
-;   fscat      - Scattered light contribution in each fiber [NROW,NFIBER]
 ;   pimage     - ???
 ;   chisq      - Chi^2 of each row [NROW]
+;
+; OPTIONAL OUTPUTS (deprecated):
+;   ansimage   - Coefficients of fit for each row [nCoeff,nRow]
+;   fscat      - Scattered light contribution in each fiber [NROW,NFIBER]
 ;
 ; COMMENTS:
 ;
@@ -73,17 +82,11 @@
 ;   pixelmask_bits()
 ;   splog
 ;
-; BUGS:
-;
-;   Documentation now outdated since change to _bundle_ form.
-;   Some of this stuff I don't understand -- I have just done my
-;   best to retain outward functionality while changing internal
-;   extraction algorithm.  (ASB, Utah, 2010/2011)
-;
 ; REVISION HISTORY:
 ;   08-Aug-1999  Written by Scott Burles, Chicago 
 ;   22-Aug-2000  Added banded-matrix possibility 
 ;   2010 Modified to _bundle_ form by A. Bolton, U. of Utah.
+;   2011 Aug: documentation cleanup by A. Bolton, U. of Utah.
 ;-
 ;------------------------------------------------------------------------------
 pro extract_bundle_image, fimage, invvar, xcen, sigma, flux, finv, yrow=yrow, $

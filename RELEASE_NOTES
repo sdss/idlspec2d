@@ -2,6 +2,8 @@
 BOLTON_BIASSUB, SDSSPROC: Fix to make use of SDSSPROC_BADFORMAT
     image corrections (ASB, re: ticket # 1408)
 CONFIGURATION__DEFINE: Remove some deprecated functions.
+EXTRACT_BUNDLE_ROW, EXTRACT_BUNDLE_IMAGE: documentation cleanup
+    to reflect the bundle-wise extraction mods (ASB)
 EXTRACT_OBJECT,SPCALIB,QUICKWAVE: Remove call to getDetectorFormat and
     determine the image size from the image.
 EXTRACT_OBJECT,FITSN,SPREDUCE: Pass the median reddening values for

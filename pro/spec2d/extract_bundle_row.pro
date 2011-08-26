@@ -4,12 +4,32 @@
 ;
 ; PURPOSE:
 ;   Fit the fiber profiles and background in a single row with least
-;   squares, chunking it up by bundle
+;   squares, chunking it up by bundle, using Gaussians plus polynomial
+;   background.
 ;
 ;   Based upon extract_row.pro, which was a call to extract_row.c
 ;
-;   Now contains a bunch of commented-out code form the previous form.
+; NOTES ON CONVERSION TO EXTRACT_BUNDLE_ROW (A. Bolton, Utah, 2011Aug):
+;   The extraction guts of this program are entirely new,
+;   written in pure IDL rather than in IDL-wrapped C.
+;   However, I have attempted (1) to preserve most of the same
+;   outward functionality in terms of inputs and outputs, at least
+;   those that are relevant to the BOSS case, and (2) to retain
+;   the same rejection-iteration behavior, so that the same sorts
+;   of cases trigger rejection as before.  I did not parse all
+;   the details of the rejection logic.  One thing I know is that
+;   the rejection in current form would be more efficient if it were
+;   done on each bundle separately, rather than on the entire row.
+;   But that would require a fine-grained refactoring that would risk
+;   breaking the rejection logic, so I didn't attempt it.
 ;
+;   Some deprecated (and even retained) keyword input/output variables
+;   may have unexpected behavior is used in a context other than the
+;   current BOSS-implementation calls in EXTRACT_IMAGE.
+;
+;   I have retained a fair bit of the original code in commented-out
+;   form, for forensic purposes.  Anything removed during the
+;   conversion to bundle form is commented out with a ";#".
 ;
 ; CALLING SEQUENCE:
 ;; First four positional arguments inherited from extract_row:
@@ -17,13 +37,15 @@
 ;; Next keyword arguments new to extract_bundle_row:
 ;; (skew and kurt not currently enabled)
 ;              [nperbun=, buffsize=, skew=, kurt=,
-;; Next keyword arguments inherited, and may or may not still be relevant:
-;              ymodel=, fscat=
-;              proftype=, wfixed=, inputans=, iback=, bfixarr=, xvar=,
-;              mask=, relative=, diagonal=, fullcovar=, wfixarr=, npoly=,
-;              maxiter=, lowrej=, highrej=, niter=, squashprofile=,
-;              whopping=, wsigma=, pixelmask=, reject=, reducedChi=,
-;              nBand=  ])
+;; Next keyword retained but reinterpreted:
+;              npoly=, 
+;; Next keywords retained in more or less the same role (I think):
+;              maxiter=, lowrej=, highrej=, niter=, reducedChi=, xvar=,
+;              mask=, relative=, diagonal=, pixelmask=, reject=,, ymodel=
+;; Next keyword arguments deprecated:
+;              fscat=, proftype=, wfixed=, inputans=, iback=, bfixarr=,
+;              fullcovar=, wfixarr=, squashprofile=, whopping=,
+;              wsigma=, nBand=  ])
 ;
 ; INPUTS:
 ;   fimage     - Vector [nCol]
@@ -31,29 +53,16 @@
 ;   xcen       - Initial guesses for X centers [nFiber]
 ;   sigma      - Sigma of gaussian profile; (scalar or [nFiber])
 ;
-; OPTIONAL KEYWORDS:
-;   proftype   - Select profile type:
-;                  1: Gaussian
-;                  2: (exponential)^3
-;                  3: (exponential)^2.5
-;                Default to 1.
-;   inputans   - Input fit, excluding background and whopping terms
-;                [ncoeff*nFiber]
-;                The array is sorted as follows:
-;                  [ncoeff] values for fiber #0
-;                   ...
-;                  [ncoeff] values for fiber #(nFiber-1)
-;   relative   - Set to use reduced chi-square to scale rejection threshold
-;   squashprofile - ???
-;   npoly      - Order of chebyshev scattered light background; default to 5
-;   nband      - Band-width of covariance matrix of fiber profiles: default 1
+; OPTIONAL KEYWORDS (new):
+;   nperbun    - Number of fibers per bundle (default is 20).
+;   buffsize   - Pixel buffer size on the very outside of the image
+;                (default is 8)
+;   npoly      - order of polynomial background in bundle, default=2 (linear).
+;
+; OPTIONAL KEYWORDS (retained):
 ;   maxiter    - Maximum number of profile fitting iterations; default to 10
 ;   lowrej     - Negative sigma deviation to be rejected; default to 5
 ;   highrej    - Positive sigma deviation to be rejected; default to 5
-;   whopping   - X locations to center additional "whopping" terms to describe
-;                the exponentail tails of flux near bright fibers; default
-;                to -1, which means not to use any such terms.
-;   wsigma     - Sigma width for exponential whopping profiles; default to 25
 ;   reject     - Three-element array setting partial and full rejection
 ;                thresholds for profiles; default [0.2, 0.6, 0.6].
 ;                When there is less than REJECT[2] of the area is left,
@@ -63,8 +72,29 @@
 ;                When there is less than REJECT[0] of the area is left,
 ;                  then assume that there's no fiber there, and don't fit
 ;                  for that fiber at all.
+;   relative   - Set to use reduced chi-square to scale rejection threshold
 ;
-; MODIFIED INPUTS (OPTIONAL):
+; DEPRECATED KEYWORDS:
+;   inputans   - Input fit, excluding background and whopping terms
+;                [ncoeff*nFiber]
+;                The array is sorted as follows:
+;                  [ncoeff] values for fiber #0
+;                   ...
+;                  [ncoeff] values for fiber #(nFiber-1)
+;   squashprofile - ???
+;   nband      - Band-width of covariance matrix of fiber profiles: default 1
+;   whopping   - X locations to center additional "whopping" terms to describe
+;                the exponentail tails of flux near bright fibers; default
+;                to -1, which means not to use any such terms.
+;   wsigma     - Sigma width for exponential whopping profiles; default to 25
+;
+; MODIFIED INPUTS (OPTIONAL, retained):
+;   xvar       - X values of fimage and invvar; default is findgen(NX).
+;   mask       - Image mask: 1=good, 0=bad [NX]
+;   pixelmask  - Bits set for each fiber due to extraction rejection
+;                [nFiber]
+;
+; MODIFIED INPUTS (OPTIONAL, deprecated):
 ;   wfixed     - Array to describe which parameters to fix in the profile;
 ;                0=fixed, 1=float; default to [1].
 ;                The number of parameters to fit per fiber is determined
@@ -84,53 +114,27 @@
 ;                  [ncoeff] values for fiber #(nFiber-1)
 ;                  [npoly] values for the background polynomial terms
 ;                  [whoppingct] values for the whopping terms
-;   xvar       - X values of fimage and invvar; default is findgen(NX).
-;   mask       - Image mask: 1=good, 0=bad [NX]
-;   pixelmask  - Bits set for each fiber due to extraction rejection [nFiber]
 ;
-; OUTPUTS:
-;   ans        - Output fit [ncoeff*nFiber+npoly+whoppingct]
-;                The array is sorted as follows:
-;                  [nFiber] values for coefficient #0
-;                   ...
-;                  [nFiber] values for coefficient #(nCoeff-1)
-;                  [npoly] values for the background polynomial terms
-;                  [whoppingct] values for the whopping terms
-;                Note this array is **not** sorted as INPUTANS or WFIXARR!
+; OUTPUTS (reinterpreted):
+;   ans        - Output fit [nFiber]
+;                (extracted Gaussian profile amplitudes)
 ;
-; OPTIONAL OUTPUTS:
+; OPTIONAL OUTPUTS (retained):
 ;   ymodel     - Evaluation of best fit [nCol]
-;   fscat      - Scattered light contribution in each fiber [nFiber]
-;   diagonal   - 1D diagonal of covariance matrix.  Currently, this is
-;                the diagonal from the Cholesky decompostion, which is
-;                1/error[j].  [ncoeff*nFiber+npoly+whoppingct]
-;   fullcovar  - 2D covariance matrix.  This is a symmetric matrix, and we
-;                only fill the lower triangle.  Computing this increases CPU
-;                time by a factor of 2 or 3.
+;   diagonal   - 1D diagonal of covariance matrix
 ;   niter      - Number of rejection iterations performed
 ;   reducedChi - Reduced chi ???
 ;
-; COMMENTS:
-;
-; BUGS:
-;    Still need to do:
-;       limits on chebyshev polynomial are assumed to be 0.0 <--> nx
-;       these may need to be optional if only partial rows are being fit
-;
-;       Error codes need to be returned, currently no such codes are
-;       returned
-;
-;   Documentation now outdated since change to _bundle_ form.
-;   Some of this stuff I don't understand -- I have just done my
-;   best to retain outward functionality while changing internal
-;   extraction algorithm.  (ASB, Utah, 2010/2011)
-;
-; EXAMPLES:
-;
+; OPTIONAL OUTPUTS (deprecated):
+;   fscat      - Scattered light contribution in each fiber [nFiber]
+;   fullcovar  - 2D covariance matrix.  This is a symmetric matrix, and we
+;                only fill the lower triangle.  Computing this increases CPU
+;                time by a factor of 2 or 3.
 ;
 ; REVISION HISTORY:
 ;    8-Aug-1999  extract_row Written by Scott Burles, Chicago 
 ;    Sep 2010    converted to extract_bundle_row by Adam S. Bolton, Utah
+;    Aug 2011    attempted documentation cleanup, Adam S. Bolton, Utah
 ;-
 ;------------------------------------------------------------------------------
 function extract_bundle_row, fimage, invvar, xcen, sigma, ymodel=ymodel, $
