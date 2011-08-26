@@ -313,7 +313,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
     sdssproc, arcname[iarc], arcimg, arcivar, indir=indir, hdr=archdr, $
       /applybias, /applypixflat, nsatrow=nsatrow, fbadpix=fbadpix, $
       ecalibfile=ecalibfile, minflat=minflat, maxflat=maxflat,/applycrosstalk
-    nx = (size(arcimg,/dimens))[0]
+    ny = (size(arcimg,/dimens))[1]
       
     configuration=obj_new('configuration', sxpar(archdr, 'MJD'))
     
@@ -439,7 +439,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
         ilamp = where(rejline EQ '')
         dispset = fitdispersion(flux, fluxivar, xpeak[*,ilamp], $
           sigma=configuration->spcalib_sigmaguess(), ncoeff=nfitcoeff, $
-          xmin=0.0, xmax=nx, $
+          xmin=0.0, xmax=ny-1, $
           medwidth=wsigarr, numbundles=ntrace/20) ; Hard-wires 20 fibers/bundle???
 
         arcstruct[iarc].dispset = ptr_new(dispset)
