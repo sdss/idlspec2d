@@ -1,4 +1,7 @@
 
+BUNDLETHRU: New proc to measure relative throughput of fiber bundles from
+    flat-fields
+
 -------------------------------------------------------------------------------
 v5_4_44 (2011-08-26, ASB)
 Tag to catch that last change
