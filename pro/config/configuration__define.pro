@@ -138,12 +138,6 @@ function configuration::spcalib_fitarcimage_wrange,color
   if (color EQ 'red') then return, [5400.,10500.]
 end
 
-;l237 extract_object
-function configuration::getscatter, camera, flatimg, flativar, wset, sigma=sigma
-  if self->isSDSS2() then return, doscatter(camera, flatimg, flativar, wset, sigma=sigma)
-  return, 0.*flatimg
-end
-
 ;l188,189
 function configuration::extract_object_fixcolumns
   if self->isSDSS2() then return, 1
