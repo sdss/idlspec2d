@@ -1,4 +1,7 @@
 
+EXTRACT_OBJECT: Compute the SKYCHI2 output in the science frame headers
+    only for good pixels (ticket #712)
+
 -------------------------------------------------------------------------------
 v5_4_43 (2011-08-25, ASB)
 Tag to clean up a bunch of bugs and straggler tickets.
