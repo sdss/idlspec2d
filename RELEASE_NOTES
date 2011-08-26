@@ -1,4 +1,10 @@
 
+-------------------------------------------------------------------------------
+v5_4_43 (2011-08-25, ASB)
+Tag to clean up a bunch of bugs and straggler tickets.
+If good, this tag will be the DR9 tag.
+Built against elodie/v1_3, specflat/v1_16, idlutils/v5_4_24.
+
 BOLTON_BIASSUB, SDSSPROC: Fix to make use of SDSSPROC_BADFORMAT
     image corrections (ASB, re: ticket # 1408)
 CONFIGURATION__DEFINE: Remove some deprecated functions.
