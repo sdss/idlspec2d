@@ -269,6 +269,7 @@ pro/photoz/sptemplate_rebin.pro -text
 pro/plan/bad_bossformat.pro -text
 pro/plan/badfmags.pro -text
 pro/plan/badfstars.pro -text
+pro/plan/bundlethru.pro -text
 pro/plan/daytime_test.pro -text
 pro/plan/dr1list_best.pro -text
 pro/plan/find_unplugged.pro -text
