@@ -1,4 +1,10 @@
 
+-------------------------------------------------------------------------------
+v5_4_44 (2011-08-26, ASB)
+Tag to catch that last change
+If good, this tag will be the DR9 tag.
+Built against elodie/v1_3, specflat/v1_16, idlutils/v5_4_24.
+
 EXTRACT_OBJECT: Compute the SKYCHI2 output in the science frame headers
     only for good pixels (ticket #712)
 
