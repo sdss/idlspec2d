@@ -582,7 +582,19 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
       traceset2xy, vacset, xx, loglam
 ;      rchi2img = interpol(relchi2struct.chi2, relchi2struct.wave, loglam)
       rchi2img = bspline_valu(loglam, relchi2set)
-      skychi2 = mean(rchi2img)
+      ; Compute the mean relative chi2 of sky-subtraction, after masking
+      ; bad regions of the CCD
+      fval = sdss_flagval('SPPIXMASK','NOPLUG') $
+       + sdss_flagval('SPPIXMASK','BADTRACE') $
+       + sdss_flagval('SPPIXMASK','BADFLAT') $
+       + sdss_flagval('SPPIXMASK','BADARC') $
+       + sdss_flagval('SPPIXMASK','LOWFLAT') $
+       + sdss_flagval('SPPIXMASK','NOSKY') $
+       + sdss_flagval('SPPIXMASK','NODATA') $
+       + sdss_flagval('SPPIXMASK','BADFLUXFACTOR')
+      indx = where((finalmask AND fval) EQ 0 AND flambdaivar NE 0, ct)
+      if (ct EQ 0) then skychi2 = 0. $
+       else skychi2 = mean(rchi2img[indx])
    endif else begin
       rchi2img = 0 * flambda + 1.
       skychi2 = 0.
