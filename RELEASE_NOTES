@@ -3,7 +3,12 @@ BOLTON_BIASSUB, SDSSPROC: Fix to make use of SDSSPROC_BADFORMAT
     image corrections (ASB, re: ticket # 1408)
 CONFIGURATION__DEFINE: Remove some deprecated functions.
 EXTRACT_OBJECT,SPCALIB,QUICKWAVE: Remove call to getDetectorFormat and
-     determine the image size from the image.
+    determine the image size from the image.
+EXTRACT_OBJECT,FITSN,SPREDUCE: Pass the median reddening values for
+    the plate from the plugmap file (as "reddeningMed" in the header)
+    as a set of "REDDEN*" keywords in the output science frames.
+    Use these values for evaluating the reddening-corrected S/N values
+    in FITSN. (ticket #879)
 FITSN: If there are fewer than 10 points in the mag fit range,
     then extend that range to all brighter magnitudes.  This will
     not effect any proper survey plates.  But it allows the S/N fit
