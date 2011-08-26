@@ -257,6 +257,11 @@ endif
        'Cartridge used in this plugging', after='PLATEID'
       sxaddpar, objhdr, 'CARTID', long(yanny_par(hdrplug, 'cartridgeId')), $
        'Cartridge used in this plugging', after='PLATEID'
+      redden = float(yanny_par(hdrplug, 'reddeningMed'))
+      if (n_elements(redden) NE 5) then redden = fltarr(5)
+      for j=0, n_elements(redden)-1 do $
+       sxaddpar, objhdr, string('REDDEN',j+1, format='(a6,i2.2)'), redden[j], $
+       ' Median extinction in '+(['u','g','r','i','z'])[j]+'-band'
 
       if (qbadsci) then begin
 

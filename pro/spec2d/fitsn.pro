@@ -6,21 +6,23 @@
 ;   Perform a simple parameter fit to log S/N vs magnitude
 ;
 ; CALLING SEQUENCE:
-;   coeffs = fitsn(mag, snvec, [ sigrej=, maxiter=, plugmap=, sncode=, $
+;   coeffs = fitsn(mag, snvec, [ sigrej=, maxiter=, redden=, sncode=, $
 ;    filter=, sigma=, specsnlimit=, sn2=, dered_sn2= ] )
 ;
 ; INPUTS:
 ;   mag        - Fiber magnitudes
 ;   snvec      - S/N vector for fibers
 ;   sncode     - Pipeline code for determining fit range
-;   filter     - Filter band for determining fit range
+;   filter     - Filter band for determining fit range; only works for
+;                ugriz filters
 ;
 ; OPTIONAL KEYWORDS:
 ;   sigrej     - Sigma rejection threshold; default to 3
 ;                (only used in computing SIGMA)
 ;   maxiter    - Maximum number of rejection iterations; default to 5
 ;                (no longer used with median-fit line)
-;   plugmap    - Plugmap structure (required for sn2ext output)
+;   redden     - 5-element array with median extinction in all bands
+;                for use in computing DERED_SN2
 ;
 ; OUTPUTS:
 ;   coeffs     - Coefficients from fit; return 0 if fit failed;
@@ -31,7 +33,7 @@
 ;   specsnlimit- Structure with FITMAG,SNMAG,FIDUCIAL_COEFF
 ;   sn2        - Fit value of (S/N)^2 at fiducial magnitude
 ;   dered_sn2  - Extinction corrected (S/N)^2 at fiducial magnitude
-;                (requires plugmap as input)
+;                (requires REDDEN as input)
 ;
 ; COMMENTS:
 ;   If there are fewer than 3 points, then return COEFFS=0.
@@ -47,7 +49,7 @@
 ;   15-Apr-2000  Written by S. Burles, FNAL
 ;-
 ;------------------------------------------------------------------------------
-function fitsn, mag, snvec, sigrej=sigrej, maxiter=maxiter, plugmap=plugmap, $
+function fitsn, mag, snvec, sigrej=sigrej, maxiter=maxiter, redden=redden, $
  sncode=sncode, filter=filter, sigma=sigma, specsnlimit=specsnlimit1, $
  sn2=sn2, dered_sn2=dered_sn2
 
@@ -122,20 +124,16 @@ function fitsn, mag, snvec, sigrej=sigrej, maxiter=maxiter, plugmap=plugmap, $
 
    ;----------
    ; Correct sn2 for galactic dust reddening to match quick SOS reductions
-   ; Recalculate reddening since information isn't propagated through plugmap.
    ; NOTE: These constants are also hardwired in design_plate.pro
    ;       If you change them here, also change them there
-   if keyword_set(plugmap) then begin
-      indx = where(strtrim(plugmap.holetype,2) EQ 'OBJECT', nobj)
-      euler, plugmap[indx].ra, plugmap[indx].dec, ll, bb, 1
-      reddenvec = [5.155, 3.793, 2.751, 2.086, 1.479] $
-       * median(dust_getval(ll, bb, /interp))
+   if keyword_set(redden) then begin
+      splog, 'Computing with REDDEN=', redden, format='(a,5f7.3)'
       case filter of
-         'u' : dered_sn2 = sn2 + coeffs[1]*reddenvec[0]
-         'g' : dered_sn2 = sn2 + coeffs[1]*reddenvec[1]
-         'r' : dered_sn2 = sn2 + coeffs[1]*reddenvec[2]
-         'i' : dered_sn2 = sn2 + coeffs[1]*reddenvec[3]
-         'z' : dered_sn2 = sn2 + coeffs[1]*reddenvec[4]
+         'u' : dered_sn2 = sn2 + coeffs[1]*redden[0]
+         'g' : dered_sn2 = sn2 + coeffs[1]*redden[1]
+         'r' : dered_sn2 = sn2 + coeffs[1]*redden[2]
+         'i' : dered_sn2 = sn2 + coeffs[1]*redden[3]
+         'z' : dered_sn2 = sn2 + coeffs[1]*redden[4]
       endcase
    endif
 

@@ -614,7 +614,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
       mag = plugsort.mag[3]
    endelse
    sncoeff = fitsn(mag, snvec, sncode='spreduce', filter=filter, $
-    plugmap=plugsort, sn2=sn2, dered_sn2=dered_sn2)
+    redden=sxpar(objhdr,'REDDEN*'), sn2=sn2, dered_sn2=dered_sn2)
 
    sxaddpar,objhdr,'FRAMESN2', sn2[0], "(S/N)^2 at fidicial magnitude"
    sxaddpar,objhdr,'DEREDSN2', dered_sn2[0], $
