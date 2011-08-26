@@ -115,11 +115,6 @@ function configuration::spcalib_arcfitguess_acoeff,color
     if (color EQ 'red') then return, [ 3.8700, 0.1008, -0.0044, -0.00022]
     return,-1
   endif
-  if (self->isLaurenSimulation_v1() or self->isLaurenSimulation_v2()) then begin
-    if (color EQ 'blue') then return, [3.6842,0.2002,-0.0242,0.0012]
-    if (color EQ 'red') then return, [ 3.8991,0.1613,-0.0178,0.0012]
-    return,-1
-  endif
   ; all other cases
 ; The following are for the BOSS commissioning data w/out rotating the images
 ;  if (color EQ 'blue') then return, [3.6846659,-0.19959101, -0.023845067, -0.0012433996]
@@ -154,13 +149,6 @@ function configuration::extract_object_fixcolumns
   if self->isSDSS2() then return, 1
   return, 0
 end
-
-;l609 sdssproc
-function configuration::sdssproc_skipprocessrawdata
-  if self->isLaurenSimulation_v1() then return,1
-  return,  0
-end
-
 
 function configuration::spflux_v5_minfracthresh
   if self->isSDSS2() then return,0.80
