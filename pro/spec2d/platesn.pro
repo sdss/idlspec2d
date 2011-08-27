@@ -136,9 +136,10 @@ pro platesn, objflux, objivar, andmask, plugmap, loglam, $
     plottitle = 'PLATE=' + strtrim(string(sxpar(hdr,'PLATEID')),2) $
      + '  MJD=' + strtrim(string(sxpar(hdr,'MJD')),2)
    filter = ['g','r','i']
-   plotsn, snvec, plugmap, plotfile=plotfile, plottitle=plottitle, $
+   plotsn, snvec, plotfile=plotfile, plottitle=plottitle, $
     sncode='spcombine', filter=filter, synthmag=synthmag, $
-    snplate=snplate, dered_snplate=dered_snplate, specsnlimit=specsnlimit
+    snplate=snplate, dered_snplate=dered_snplate, specsnlimit=specsnlimit, $
+    redden=sxpar(hdr,'REDDEN*')
 
    ;----------
    ; Add header keywords if HDR is passed.
