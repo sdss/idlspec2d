@@ -356,7 +356,7 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
          sig1 = 0
          if (s1[0] NE -1) then begin
             afit1 = fitsn(thismag[s1], snvec[iband,s1], $
-             filter=filter[iband], plugmap=plugmap, _EXTRA=KeywordsForFitSN, $
+             filter=filter[iband], _EXTRA=KeywordsForFitSN, $
              sigma=sig1, sn2=sn2, dered_sn2=dered_sn2)
           snplate[0,iband] = sn2
           dered_snplate[0,iband] = dered_sn2
@@ -365,7 +365,7 @@ pro plotsn, snvec1, plugmap1, filter=filter1, plotmag=plotmag1, snmin=snmin1, $
          afit2 = 0
          if (s2[0] NE -1) then begin
             afit2 = fitsn(thismag[s2], snvec[iband,s2], $
-             filter=filter[iband], plugmap=plugmap, _EXTRA=KeywordsForFitSN, $
+             filter=filter[iband], _EXTRA=KeywordsForFitSN, $
               sigma=sig2, sn2=sn2, dered_sn2=dered_sn2)
            snplate[1,iband] = sn2
            dered_snplate[1,iband] = dered_sn2
