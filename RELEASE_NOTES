@@ -1,4 +1,10 @@
 
+-------------------------------------------------------------------------------
+v5_4_45 (2011-08-27, ASB)
+Tag to catch more bugfixes
+If good, this tag will be the DR9 tag.
+Built against elodie/v1_3, specflat/v1_16, idlutils/v5_4_24.
+
 BUNDLETHRU: New proc to measure relative throughput of fiber bundles from
     flat-fields
 PLATESN,PLOTSN: Bug fix(es) for new calling sequence to FITSN, where we no
