@@ -1,6 +1,8 @@
 
 BUNDLETHRU: New proc to measure relative throughput of fiber bundles from
     flat-fields
+PLATESN: Bug fix for new calling sequence to FITSN, where we no longer
+    are passing the plugmap but instead the redden values.
 
 -------------------------------------------------------------------------------
 v5_4_44 (2011-08-26, ASB)
