@@ -175,9 +175,9 @@ pro platecompare, plate, mjd=mjd, run2d=run2d, run1d=run1d1, psfile=psfile
 
       if (vbad) then begin
          !p.multi = [0, 1, gcount[igroup]]
-         if (thiszans[0].sn_median LT 1) then nsmooth = 7 $
-          else if (thiszans[0].sn_median LT 3) then nsmooth = 5 $
-          else if (thiszans[0].sn_median LT 5) then nsmooth = 3 $
+         if (thiszans[0].sn_median[2] LT 1) then nsmooth = 7 $
+          else if (thiszans[0].sn_median[2] LT 3) then nsmooth = 5 $
+          else if (thiszans[0].sn_median[2] LT 5) then nsmooth = 3 $
           else nsmooth = 1
 
          for ii=0, gcount[igroup]-1 do begin
