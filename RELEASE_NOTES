@@ -1,4 +1,5 @@
 
+PLATECOMPARE: Fix to work with change from SNMEDIAN from vector to array.
 PLOTSPEC, UUPLOTSPEC: Show 3 digits after decimal in rchi2 (ASB)
 
 -------------------------------------------------------------------------------
