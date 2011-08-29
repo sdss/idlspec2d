@@ -354,12 +354,12 @@ pro plotspec1, plate, fiberid, mjd=mjd, znum=znum, zmanual=zmanual, $
        else thisrchi2 = zans.rchi2
       if (keyword_set(psfile)) then $
        xyouts, xpos, ypos, $
-        TeXtoIDL('X^2_r =' + strtrim(string(thisrchi2, format='(f6.2)'),2)), $
+        TeXtoIDL('X^2_r =' + strtrim(string(thisrchi2, format='(f7.3)'),2)), $
         charsize=csize, color=djs_icolor(textcolor), /normal, $
         _EXTRA=KeywordsForSplot $
       else $
        sxyouts, xpos, ypos, $
-        TeXtoIDL('X^2_r =' + strtrim(string(thisrchi2, format='(f6.2)'),2)), $
+        TeXtoIDL('X^2_r =' + strtrim(string(thisrchi2, format='(f7.3)'),2)), $
         charsize=csize, color=textcolor, /normal, $
         _EXTRA=KeywordsForSplot
    endif
