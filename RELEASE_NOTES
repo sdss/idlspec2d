@@ -3,7 +3,7 @@ COLLIMATE: Add test keyword to help find offsets with smallcollimate.
 COMBSMALLCOLLIMATE: Update offsets and add test keyword.
 
 bin/reformat_spectra.py: New proc to reformat spectra into one-file-per-object
-    format
+    format (basically ticket #837)
 bin/sos_apocommand : updatePluggingStatus no longer accepts -d -v options,
     so remove them from the call.
 bin/updatePluggingStatus - this has been replaced by
