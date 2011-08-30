@@ -46,6 +46,7 @@ bin/sprobot_status -text
 bin/sprobotlist.sh -text
 bin/sxpar.py -text
 bin/updatePluggingStatus -text
+bin/updatePluggingStatus_old -text
 bin/zplot -text
 /branches -text
 doc/IR_scattering.txt -text
