@@ -1,4 +1,14 @@
+-------------------------------------------------------------------------------
+2011-08-30 (Stephen):
+  bin/updatePluggingStatus - this has been replaced by
+    PLATEDB_DIR/bin/updatePluggingStatus.  Rename this copy to .._old just
+    in case we need to get to it again.  After next APO install, if things are
+    running smoothly and we don't need this, we can delete it for good (history
+    will still be in svn)
+  bin/sos_apocommand : updatePluggingStatus no longer accepts -d -v options,
+    so remove them from the call.
 
+-------------------------------------------------------------------------------
 PLATECOMPARE: Fix to work with change from SNMEDIAN from vector to array.
 PLOTSPEC, UUPLOTSPEC: Show 3 digits after decimal in rchi2 (ASB)
 

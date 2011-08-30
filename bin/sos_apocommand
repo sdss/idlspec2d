@@ -168,4 +168,5 @@ printAndRun loadSN2Value --update -v ${SOSDir}/${MJD}/$(getSOSSciName $inDir/$fi
 
 #	Update plugging (s/n)^2 flag using new (s/n)^2
 plugmap=$(perl -pe 's{^plPlugMapM-(.*)\.par$}{\1}' <<< $plugName)
-printAndRun updatePluggingStatus -v -d -p $plugmap
+### printAndRun updatePluggingStatus -v -d -p $plugmap
+printAndRun updatePluggingStatus -p $plugmap
