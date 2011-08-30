@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   collimate, expnum1, [ expnum2, docams=, indir=, nregx=, nregy=, $
-;    maxshift=, /nocheck, /debug ]
+;    maxshift=, /nocheck, /debug, /test ]
 ;
 ; INPUTS:
 ;   expnum1    - First exposure number of raw sdR file.
@@ -32,6 +32,7 @@
 ;                process all of the data in the array.  Much slower than the
 ;                nominal routine but informative for tests of focus variation
 ;                across full illuminated area
+;   test       - flag that prints out 1 line for comparison with smallcollimate
 ;
 ; OUTPUTS:
 ;
@@ -137,7 +138,7 @@ end
 ;------------------------------------------------------------------------------
 pro collimate, expnum1, expnum2, docams=docams, indir=indir, $
  nregx=nregx, nregy=nregy, maxshift=maxshift, nocheck=nocheck, $
- debug=debug
+ debug=debug, test=test
 
    if (n_params() LT 1) then begin
       print, 'Syntax - collimate, expnum1, [ expnum2, docams=, indir=, $'
@@ -201,7 +202,7 @@ pro collimate, expnum1, expnum2, docams=docams, indir=indir, $
       for icam=0, ncam-1 do begin
          collimate, expnum1, expnum2, docams=docams[icam], indir=indir, $
           nregx=nregx, nregy=nregy, maxshift=maxshift, nocheck=nocheck, $
-          debug=debug
+          debug=debug, test=test
       endfor
       !quiet = quiet
       return
@@ -464,6 +465,9 @@ pro collimate, expnum1, expnum2, docams=docams, indir=indir, $
    splog, 'RMS across CCD = ' + meanydevstr + ' pix', /no_stdout
    splog, ' ', /no_stdout
    splog, 'Mean offset = ' + meanyoffstr + ' pix'
+   if keyword_set(test) then print,'collimate-test '+ $
+     string(expnum1,format='(i8.8)')+ ' ' +camname+ $
+  ' mean offset = '+ meanyoffstr +' pix'
    splog, ' '
 
    ;----------
