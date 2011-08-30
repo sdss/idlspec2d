@@ -7,7 +7,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   smallcollimate, expnum1, [ expnum2, docam1s=,docams2= indir=, nregx=, nregy=, $
-;    maxshift=, /nocheck, /debug, /simple,spec=spec ]
+;    maxshift=, /nocheck, /debug, /simple,spec= ,/test ]
 ;
 ; INPUTS:
 ;   expnum1    - First exposure number of raw sdR file.
@@ -40,7 +40,9 @@
 ;                ['sp1','sp2'](default)
 ;
 ;   badres     - bad residual for blue ring.  Greater than this,
-;                observers will need to move the ring.  Default to 6 degrees
+;                observers will need to move the ring.  Default to 6
+;                degrees
+;   test       - flag that prints out 1 line for comparison with smallcollimate
 ; OUTPUTS:
 ;
 ; OPTIONAL OUTPUTS:
@@ -177,7 +179,7 @@ end
 ;------------------------------------------------------------------------------
 pro combsmallcollimate, expnum1, expnum2=expnum2, docams1=docams1,docams2=docams2, indir=indir, $
   maxshift=maxshift, nocheck=nocheck,debug=debug, $
- simple=simple,spec=spec,badres=badres
+ simple=simple,spec=spec,badres=badres,test=test
  
 
    if (n_params() LT 0) then begin
@@ -201,7 +203,10 @@ pro combsmallcollimate, expnum1, expnum2=expnum2, docams1=docams1,docams2=docams
    nspec=n_elements(spec)
    if (nspec gt 1) then begin
       for ispec=0, nspec-1  do begin
-         combsmallcollimate,expnum1,expnum2=expnum2,docams1=docams1,indir=indir,maxshift=maxshift,nocheck=nocheck,debug=debug,simple=simple,spec=spec[ispec],docams2=docams2,badres=badres
+          combsmallcollimate,expnum1,expnum2=expnum2,docams1=docams1, $
+            indir=indir,maxshift=maxshift, nocheck=nocheck,debug=debug, $ 
+            simple=simple,spec=spec[ispec],docams2=docams2, $ 
+            badres=badres,test=test
       endfor
       return
    endif
@@ -464,32 +469,32 @@ for icam=0,ncam-1 do begin     ;do focus for each camera
    if cam_flag eq 0 then begin
 ;offsets for regions picked
 
-       if docams[icam] eq 'b1' then begin  ;using collimate and not collimate,/debug updated 12-20-10;using additional hartmanns on 55581 and keeping slope =1
+       if docams[icam] eq 'b1' then begin  ;using collimate and not collimate,/debug with data from 55802
          m=1.00
-         b=0.120
+         b=0.143
          yoffsetb1=yoffset*m + b
       endif
 
       if docams[icam] eq 'b2' then begin
          m=1.00
-         b=-0.115
+         b=-0.087
          yoffsetb2=yoffset*m + b
       endif
 
       if docams[icam] eq 'r1' then begin
          m=1.00
-         b=0.152
+         b=0.124
          yoffsetr1=yoffset*m + b
       endif
 
       if docams[icam] eq 'r2' then begin
          m=1.00
-         b=0.080
+         b=0.089
          yoffsetr2=yoffset*m + b
      endif
 
-;m=1   ;for testing uncomment these
-;b=0
+if keyword_set(test) then m=1. & b=0. ;for determining above offsets
+
 
       yoffset=yoffset*m + b
 
@@ -526,6 +531,8 @@ splog, ' ', /no_stdout
 ;splog, 'RMS across CCD = ' + meanydevstr + ' pix', /no_stdout
 splog, ' ', /no_stdout
 splog, camname , ' mean offset = ' + meanyoffstr + ' pix'
+if keyword_set(test) then print,'test '+string(expnum1,format='(i8.8)')+ ' ' +camname+ $
+  ' mean offset = '+ meanyoffstr +' pix'
 splog, ' '
    endif
    ;----------
