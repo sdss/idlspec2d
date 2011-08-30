@@ -19,6 +19,7 @@ Written by Gary Kushner (LBL).  March 2010.
 """
 
 try:
+	from platedb.APODatabaseConnection import db
 	from platedb.db_connection import engine, metadata, Session
 	from platedb.ModelClasses import *
 	from sqlalchemy import between
@@ -35,6 +36,7 @@ def usage():
 	
 	usageCMD = os.path.basename(sys.argv[0])
 
+	print "DEPRECATED -- Use $PLATEDB_DIR/bin/updatePluggingStatus instead\n"
 	print "usage:"
 	print "\t%s -t MJD_start-MJD_end -p plugging -d" % usageCMD
 	print " "
