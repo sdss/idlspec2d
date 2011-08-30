@@ -14,8 +14,8 @@ Bugs/Features:
 import sys
 import os
 import os.path
-from glob import glob
-import re        #- regular expressions
+from glob import glob           #- File pattern globbing (spFrame*.fits)
+import re                       #- Regular expressions
 import numpy as N
 import pyfits
 
@@ -92,6 +92,8 @@ HDU 1 : Coadded Spectrum
         model     : best fit model for classification & redshift (from spZbest)
 
 HDU 2 : Copy of row for this object from spAll"""
+
+    #- Continue with explanation of per-exposure HDUs if included
     if allexp:
         print >> fx, """
 HDU 3 .. n+3 : Individual exposures
@@ -411,6 +413,48 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True):
     FXplate.close()
     FXzbest.close()
 
+def get_selection_doc(opts):
+    """
+    Return a documentation string about which data cuts were applied.
+    """
+    doc = list()
+    doc.append("Object selection criteria:")
+    if opts.plates is not None:
+        doc.append("    Plates: " + ", ".join(map(str, opts.plates)) )
+    if opts.fibers is not None:
+        doc.append("    Fibers: " + opts.fibers_orig )
+    else:
+        if opts.subset == "ALL":
+            doc.append("    All objects kept")
+        elif opts.subset == 'QSO':
+            doc.append("    Only quasar targets:")
+            doc.append("      - Targetted as QSOs")
+            doc.append("      - Targetted as GALAXY but CLASS=QSO")
+            doc.append("      - QSO ancillary programs")
+        elif opts.subset == 'GALAXY':
+            doc.append("    Only galaxies: OBJTYPE=GALAXY or CLASS=GALAXY")
+        elif opts.subset == 'STAR':
+            doc.append("    Only stars: OBJTYPE=SPECTROPHOTO_STD or CLASS=STAR")
+        elif opts.subset in ('STD', 'SPECTROPHOTO_STD'):
+            doc.append("    Only SpecPhoto standard stars: OBJTYPE=SPECTROPHOTO_STD")
+        elif opts.subset == 'SKY':
+            doc.append("    Only sky fibers: OBJTYPE=SKY")
+
+    return "\n".join(doc)
+
+def parse_string_range(s):
+    """
+    e.g. "1,2,5-8,20" -> [1,2,5,6,7,8,20]
+
+    modified from Sven Marnach,
+    http://stackoverflow.com/questions/5704931/parse-string-of-integer-sets-with-intervals-to-list
+
+    Feature/Bug: Only works with positive numbers
+    """
+    ranges = (x.split("-") for x in s.split(","))
+    x = [i for r in ranges for i in range(int(r[0]), int(r[-1]) + 1)]
+    return x
+
 def check_options(opts, args):
     """Sanity check options"""
     if opts.spall is None:
@@ -424,7 +468,7 @@ def check_options(opts, args):
         sys.exit(1)
         
     if opts.fibers is not None:
-        if opts.plates is None or len(plates) != 1:
+        if opts.plates is None or len(opts.plates) != 1:
             print "If you specify fibers, you must specify one and only one plate"
             sys.exit(1)
     
@@ -450,7 +494,8 @@ opts, args = parser.parse_args()
 if opts.plates is not None:
     opts.plates = [int(x) for x in opts.plates.split(',')]
 if opts.fibers is not None:
-    opts.plates = [int(x) for x in opts.fibers.split(',')]
+    opts.fibers_orig = opts.fibers
+    opts.fibers = parse_string_range(opts.fibers)
 
 #- Sanity check
 check_options(opts, args)
@@ -473,11 +518,9 @@ else:
 
 #- Trim to requested plates
 if opts.plates is not None:
-    plates = [int(x) for x in opts.plates.split(',')]
-
-    print "Trimming to plate(s) %s" % ", ".join(map(str, plates))
+    print "Trimming to plate(s) %s" % ", ".join(map(str, opts.plates))
     ii = N.zeros(len(spectra), dtype=bool)
-    for p in plates:
+    for p in opts.plates:
         ii |= (spectra.PLATE == p)    
     spectra = spectra[ii]
 else:
@@ -486,7 +529,9 @@ else:
 
 #- Keep only target type subset
 if opts.fibers is None:
-    if opts.subset == 'QSO':
+    if opts.subset == 'ALL':
+        print "Keeping all objects"
+    elif opts.subset == 'QSO':
         print "Trimming to just QSO targets"
         ii  = (spectra.OBJTYPE == 'QSO') 
         ii |= ((spectra.OBJTYPE == 'GALAXY') & (spectra.CLASS == 'QSO'))
@@ -522,7 +567,8 @@ else:
 #- Write README and spSome files
 if opts.meta:
     print "Writing spSome and README files"
-    header = "Input data from:\n    %s" % datadir
+    header = "Input data from:\n    %s\n" % datadir
+    header += get_selection_doc(opts)
     write_readme(opts.outdir + '/README.txt', header=header)
     pyfits.writeto(opts.outdir + '/spSome.fits', spectra, clobber=True)
     sys.exit(0)
