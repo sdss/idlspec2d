@@ -167,7 +167,7 @@ function collimate_bad_hdr, hdr
       if (ne_sum LT 4) then $
        splog, 'WARNING: Only ' + strtrim(ne_sum,2) + ' of 4 Ne lamps turned on'
       if (hgcd_sum LT 4) then $
-       splog, 'WARNING: Only ' + strtrim(ne_sum,2) + ' of 4 HgCd lamps turned on'
+       splog, 'WARNING: Only ' + strtrim(hgcd_sum,2) + ' of 4 HgCd lamps turned on'
       if (ne_sum + hgcd_sum EQ 0) then qbad = 1
    endif else begin
       splog, 'WARNING: NE or HGCD not in file header'
