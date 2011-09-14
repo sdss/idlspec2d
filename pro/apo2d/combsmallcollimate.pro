@@ -471,25 +471,25 @@ for icam=0,ncam-1 do begin     ;do focus for each camera
 
        if docams[icam] eq 'b1' then begin  ;using collimate and not collimate,/debug with data from 55802
          m=1.00
-         b=0.143
+         b=0.146
          yoffsetb1=yoffset*m + b
       endif
 
       if docams[icam] eq 'b2' then begin
          m=1.00
-         b=-0.087
+         b=-0.103
          yoffsetb2=yoffset*m + b
       endif
 
       if docams[icam] eq 'r1' then begin
          m=1.00
-         b=0.124
+         b=0.129
          yoffsetr1=yoffset*m + b
       endif
 
       if docams[icam] eq 'r2' then begin
          m=1.00
-         b=0.089
+         b=0.0657
          yoffsetr2=yoffset*m + b
      endif
 
