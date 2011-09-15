@@ -111,7 +111,7 @@ speclimit red arc EXPTIME * 6 9e9
 # more than 20 Ang (red) and 15 Ang (blue).
 
 # The wavemid for r2 is changed to 8053 on August 31 to better fit what Kaike Pan found.  This also better fits the scatter found by David Harris.
-# Change wavemid to new values based on no-reflection range from Kaike for 55800+, see infrastructre e-mail 5637
+# Change wavemid to new values based on no-reflection range from Kaike for 55800+, see infrastructre e-mail 5637 ( 4912 A for b1, 8000 A for r1)
 
 speclimit yellow arc WAVEMID b1 -9e9 4902
 speclimit yellow arc WAVEMID b2 -9e9 4985
