@@ -111,25 +111,26 @@ speclimit red arc EXPTIME * 6 9e9
 # more than 20 Ang (red) and 15 Ang (blue).
 
 # The wavemid for r2 is changed to 8053 on August 31 to better fit what Kaike Pan found.  This also better fits the scatter found by David Harris.
+# Change wavemid to new values based on no-reflection range from Kaike for 55800+, see infrastructre e-mail 5637
 
-speclimit yellow arc WAVEMID b1 -9e9 4898
+speclimit yellow arc WAVEMID b1 -9e9 4902
 speclimit yellow arc WAVEMID b2 -9e9 4985
-speclimit yellow arc WAVEMID r1 -9e9 7977
+speclimit yellow arc WAVEMID r1 -9e9 7990
 speclimit yellow arc WAVEMID r2 -9e9 8043
 
-speclimit yellow arc WAVEMID b1 4918 9e9
+speclimit yellow arc WAVEMID b1 4922 9e9
 speclimit yellow arc WAVEMID b2 5005 9e9
-speclimit yellow arc WAVEMID r1 7997 9e9
+speclimit yellow arc WAVEMID r1 8010 9e9
 speclimit yellow arc WAVEMID r2 8063 9e9
 
-speclimit red arc WAVEMID b1 -9e9 4893
+speclimit red arc WAVEMID b1 -9e9 4897
 speclimit red arc WAVEMID b2 -9e9 4980
-speclimit red arc WAVEMID r1 -9e9 7967
+speclimit red arc WAVEMID r1 -9e9 7980
 speclimit red arc WAVEMID r2 -9e9 8033
 
-speclimit red arc WAVEMID b1 4923 9e9
+speclimit red arc WAVEMID b1 4927 9e9
 speclimit red arc WAVEMID b2 5010 9e9
-speclimit red arc WAVEMID r1 8007 9e9
+speclimit red arc WAVEMID r1 8020 9e9
 speclimit red arc WAVEMID r2 8073 9e9
 
 # The correlations of the arc lamps to that expected almost always
