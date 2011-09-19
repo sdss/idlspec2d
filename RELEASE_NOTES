@@ -1,3 +1,7 @@
+2011-09-17 (Kyle)
+examples/opLimits.par: Switch the values for WAVEMID for r2 and b2
+examples/opLimits.par: Set flag for exptimes less than 300 seconds
+examples/opLimits.par: Set flag for SN2 less than 0.2
 
 2011-09-14 (Matt)
 COMBSMALLCOLLIMATE: Update offsets using all hartmanns from 55800-817

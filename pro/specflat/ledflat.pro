@@ -167,7 +167,7 @@ print,'Row ',ix,dims[0],string(13b),format='(a,i,i,a,$)'
       totmask[ix,iy] = total(mask1) ; number of good points
    endfor
    endfor
-print
+
 
 ;   res = djs_avsigclip(imgarr, 3, sigrej=sigrej, maxiter=2, $
 ;    inmask=maskarr, outmask=outmask)

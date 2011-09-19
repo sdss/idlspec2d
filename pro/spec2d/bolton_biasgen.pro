@@ -165,6 +165,7 @@ endfor
 
 ; Write out final pixel bias (probably want more header cards at some point):
 mwrfits, outbias, outfile, hdr0, /create
-
+;writefits,'wf-'+outfile,outbias,hdr0
+;stop
 return
 end

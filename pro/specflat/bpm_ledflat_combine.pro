@@ -1,4 +1,4 @@
-pro bpm_ledflat_combine
+pro bpm_ledflat_combine2
 
 imb1=mrdfits('pixflatave-55055-b1.old.fits.gz',0,hdrb1)
 imb2=mrdfits('pixflatave-55055-b2.old.fits.gz',0,hdrb2)

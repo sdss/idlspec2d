@@ -50,25 +50,25 @@ speclimit red flat EXPTIME * 33 9e9
 # is yellow, 12 pix is red
 # from Kaike Pan on 7 Sep 2010/ May 3 2011 (previously r1,b2 switched).  
 
-speclimit yellow flat XMID b1 -9e9 2028
-speclimit yellow flat XMID b2 -9e9 2035
-speclimit yellow flat XMID r1 -9e9 2037
-speclimit yellow flat XMID r2 -9e9 2036
+speclimit yellow flat XMID b1 -9e9 2032
+speclimit yellow flat XMID b2 -9e9 2036
+speclimit yellow flat XMID r1 -9e9 2032
+speclimit yellow flat XMID r2 -9e9 2030
 
-speclimit yellow flat XMID b1 2044 9e9
-speclimit yellow flat XMID b2 2051 9e9
-speclimit yellow flat XMID r1 2053 9e9
-speclimit yellow flat XMID r2 2052 9e9
+speclimit yellow flat XMID b1 2048 9e9
+speclimit yellow flat XMID b2 2052 9e9
+speclimit yellow flat XMID r1 2048 9e9
+speclimit yellow flat XMID r2 2046 9e9
 
-speclimit red flat XMID b1 -9e9 2024
-speclimit red flat XMID b2 -9e9 2031
-speclimit red flat XMID r1 -9e9 2033
-speclimit red flat XMID r2 -9e9 2032
+speclimit red flat XMID b1 -9e9 2028
+speclimit red flat XMID b2 -9e9 2032
+speclimit red flat XMID r1 -9e9 2028
+speclimit red flat XMID r2 -9e9 2026
 
-speclimit red flat XMID b1 2048 9e9
-speclimit red flat XMID b2 2055 9e9
-speclimit red flat XMID r1 2057 9e9
-speclimit red flat XMID r2 2056 9e9
+speclimit red flat XMID b1 2052 9e9
+speclimit red flat XMID b2 2056 9e9
+speclimit red flat XMID r1 2052 9e9
+speclimit red flat XMID r2 2050 9e9
 
 # Issue a warning if 3 or more fibers are missing on either side of
 # the spectrograph, and an error if 10 or more.
@@ -110,27 +110,29 @@ speclimit red arc EXPTIME * 6 9e9
 # Issue warning if more than 10 Ang from these best values, and error if
 # more than 20 Ang (red) and 15 Ang (blue).
 
-# The wavemid for r2 is changed to 8053 on August 31 to better fit what Kaike Pan found.  This also better fits the scatter found by David Harris.
-# Change wavemid to new values based on no-reflection range from Kaike for 55800+, see infrastructre e-mail 5637 ( 4912 A for b1, 8000 A for r1)
+# The wavemid for r2 is changed to 8053 on August 31 to better fit what Kaike Pan found.
+# This also better fits the scatter found by David Harris.
+# Change wavemid to new values based on no-reflection range from Kaike for 55800+,
+# see infrastructre e-mail 5637 ( 4912 A for b1, 8000 A for r1)
 
-speclimit yellow arc WAVEMID b1 -9e9 4902
-speclimit yellow arc WAVEMID b2 -9e9 4985
-speclimit yellow arc WAVEMID r1 -9e9 7990
+speclimit yellow arc WAVEMID b1 -9e9 4900
+speclimit yellow arc WAVEMID b2 -9e9 4980
+speclimit yellow arc WAVEMID r1 -9e9 7988
 speclimit yellow arc WAVEMID r2 -9e9 8043
 
-speclimit yellow arc WAVEMID b1 4922 9e9
-speclimit yellow arc WAVEMID b2 5005 9e9
-speclimit yellow arc WAVEMID r1 8010 9e9
+speclimit yellow arc WAVEMID b1 4920 9e9
+speclimit yellow arc WAVEMID b2 5000 9e9
+speclimit yellow arc WAVEMID r1 8008 9e9
 speclimit yellow arc WAVEMID r2 8063 9e9
 
-speclimit red arc WAVEMID b1 -9e9 4897
-speclimit red arc WAVEMID b2 -9e9 4980
-speclimit red arc WAVEMID r1 -9e9 7980
+speclimit red arc WAVEMID b1 -9e9 4895
+speclimit red arc WAVEMID b2 -9e9 4975
+speclimit red arc WAVEMID r1 -9e9 7978
 speclimit red arc WAVEMID r2 -9e9 8033
 
-speclimit red arc WAVEMID b1 4927 9e9
-speclimit red arc WAVEMID b2 5010 9e9
-speclimit red arc WAVEMID r1 8020 9e9
+speclimit red arc WAVEMID b1 4925 9e9
+speclimit red arc WAVEMID b2 5005 9e9
+speclimit red arc WAVEMID r1 8018 9e9
 speclimit red arc WAVEMID r2 8073 9e9
 
 # The correlations of the arc lamps to that expected almost always
@@ -173,9 +175,9 @@ speclimit red arc WSIGMA b2 1.20 9e9
 speclimit red arc WSIGMA r1 1.25 9e9
 speclimit red arc WSIGMA r2 1.25 9e9
 
-# For science frames, insist on exposure times between 599 and 1804 sec.
+# For science frames, insist on exposure times between 299 and 1804 sec.
 
-speclimit red science EXPTIME * -9e9 598
+speclimit red science EXPTIME * -9e9 299
 speclimit red science EXPTIME * 1805 9e9
 
 # The sky levels were 0.15 e-/pix and 0.30 e-/pix in the blue and
@@ -195,9 +197,9 @@ speclimit red * SKYPERSEC r2 1.20 9e9
 
 # For individual science exposures, only issue a warning (not an error)
 # for exposures with (S/N)^2 < 2.0.  For the moment, effectively remove
-# this cut by making it < 0.
+# this cut by making it < 0.2, applicable only in terrible weather
 
-speclimit yellow science SN2 * -9e9 0
+speclimit yellow science SN2 * -9e9 0.2
 
 # Issue red warning for total (S/N)^2 in blue below 10, red below 22
 # Make the numbers slighly lower to allow for the round-off on the web page

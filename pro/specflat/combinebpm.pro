@@ -77,8 +77,9 @@
 ; combinebpm,docams='r2',darkstart=113290,darkend=113297,biasstart=113263,biasend=113285,/output
 ; for year 2 combinebpm,darkstart=118462,darkend=118472,biasstart=118538,biasend=118543,/output
 ; for year 2 combinebpm,darkstart=118462,darkend=118472,biasstart=119380,biasend=119395,/output
-
 ; for year 1    combinebpm,/output
+; for year 3 new r1  combinebpm,darkstart=133104,darkend=133116,biasstart=133158,biasend=133175,docams='r1',/output
+
 pro combinebpm,docams=docams,nsig=nsig,ncount=ncount,darkstart=darkstart,darkend=darkend,biasstart=biasstart,biasend=biasend,maxsat=maxsat,output=output,indir=indir ;
 
 if (NOT keyword_set(docams))   then docams =['b1','b2','r1','r2']
@@ -303,22 +304,30 @@ endfor
 
 if docams eq 'b1' then  bpmhot[3734,1087:1344]+=16 ;blocked column only appears at low flux levels.  It blocks light for a fixed period of time, and then releases it creating a warm column. The signal does not appear in pixel flats or calibration flats, but does appear in science frames and arcs. For an example, see 55209/sdR-b1-00107423.fit.gz.  ds9 coordinates
 
-if docams eq 'b2' then bpmhot[1833,2048:2226]+=16 ;same defect as b1  55186/sdR-b2-00105398.fit.gz ds9 coordinates
+if docams eq 'b2' then begin
+    bpmhot[1833,2048:2226]+=16 ;same defect as b1  55186/sdR-b2-00105398.fit.gz ds9 coordinates
+    bpmhot[334,1337:2055]+=8 ;bad column from lossy fibers flats 115057 and others
+    bpmhot[1966,1638:2055]+=8 ;bad column from lossy fibers flats 115057 and others
+    bpmhot[2494,2056:3400]+=8 ;bad column from lossy fibers flats 115057 and others
+endif
 
 
-if docams eq 'r1' then bpmhot[3635:3652,397:416]+=32
-if docams eq 'r1' then bpmhot[3810:3812,2278:2282]+=32
+if docams eq 'r1' and  mjd lt 55413 then begin 
+    bpmhot[481:488,2141:2150]+=32
+    bpmhot[780:798,3467:3486]+=32
+    bpmhot[783:793,3468:3485]+=32
+    bpmhot[1618:1630,2047:2080]+=32
+    bpmhot[2166:2184,1362:1383]+=32
+    bpmhot[3635:3652,397:416]+=32
+endif
 
-if docams eq 'r1' and  mjd lt 55413 then bpmhot[481:488,2141:2150]+=32
-if docams eq 'r1' and  mjd ge 55413 then  bpmhot[692:710,3194]+=32
-if docams eq 'r1' and  mjd lt 55413 then bpmhot[780:798,3467:3486]+=32
-if docams eq 'r1' and  mjd lt 55413 then bpmhot[783:793,3468:3485]+=32
-if docams eq 'r1' and  mjd lt 55413 then bpmhot[1618:1630,2047:2080]+=32
-if docams eq 'r1' and  mjd lt 55413 then bpmhot[2166:2184,1362:1383]+=32
-;if docams eq 'r1' and  mjd lt 55413 then bpmhot[2171:2178,1367:1371]+=32 ;kyles region larger
-if docams eq 'r1' and  mjd lt 55413 then bpmhot[3635:3651,397:416]+=32
-if docams eq 'r1' and  mjd ge 55413 then  bpmhot[3648:3649,395:2063]+=8
+if docams eq 'r1' and  mjd ge 55413  and mjd lt 55800 then begin
+    bpmhot[692:710,3194]+=32
+    bpmhot[3648:3649,395:2063]+=8
+    bpmhot[3810:3812,2278:2282]+=32
+endif
 
+if docams eq 'r1' and  mjd ge 55800 then bpmhot[1342:1353,2063:4127]+=32
 
 if docams eq 'r2' and mjd lt 55300 then bpmhot[2171:2192,2115:2217]+=32
 
@@ -334,14 +343,15 @@ if docams eq 'r2' and  mjd ge 55300 and  mjd lt 55413 then begin
     bpmhot[2672,2064:2295]+=16 ;;r2, fiber~840. 8300 \aa\, sdssproc images, flag x=2673, 2065<y<2296 for data after 55300 (r2 replacement). This is a warm column that appears to vary in magnitude. See 55539/sdR-r2-00123636.fit.gz for an example. ds9 coordinates
 endif
 
-if docams eq 'r2' and  mjd ge 55413 then  bpmhot[508,2064:3513]+=8
-;if docams eq 'r2' and  mjd ge 55413 then  bpmhot[509:520,3510:3512]+=32
-if docams eq 'r2' and  mjd ge 55413 then  bpmhot[508:523,3510:3513]+=32
-if docams eq 'r2' and  mjd ge 55413 then  bpmhot[2616:2629:2283]+=32
-if docams eq 'r2' and  mjd ge 55413 then  bpmhot[2661:2673,2292]+=32
-if docams eq 'r2' and  mjd ge 55413 then bpmhot[2984,2064:4127]+=32 ;from looking at darks to get bad columns;doesn't get all
-if docams eq 'r2' and  mjd ge 55413 then bpmhot[3882,2064:4127]+=32 ;from looking at darks to get bad columns;doesn't get all
-if docams eq 'r2' and  mjd ge 55413 then  bpmhot[3940:3958,2850:3096]+=32
+if docams eq 'r2' and  mjd ge 55413 then begin
+    bpmhot[508,2064:3513]+=8
+    bpmhot[508:523,3510:3513]+=32
+    bpmhot[2616:2629:2283]+=32
+    bpmhot[2661:2673,2292]+=32
+    bpmhot[2984,2064:4127]+=32 ;from looking at darks to get bad columns;doesn't get all
+    bpmhot[3882,2064:4127]+=32 ;from looking at darks to get bad columns;doesn't get all
+    bpmhot[3940:3958,2850:3096]+=32
+endif
 
 
 bpms=bpms+bpmhot
@@ -362,6 +372,7 @@ bpmc=bpmc
 if mjd lt 55413 then use='55025'
 if docams eq 'r2' and mjd ge 55300 and mjd lt 55413 then use='55300'
 if mjd ge 55413  then use='55413'  
+if mjd ge 55800  then use='55800'
 filenamesigma='bpm-'+use+'-'+docams+'-sigma.fit'
 writefits,filenamesigma,bpms,hdr
 filenamecount='bpm-'+use+'-'+docams+'-count.fit'
@@ -373,6 +384,25 @@ writefits,filenamesigma,bpms,hdr
 filenamecount='bpm-'+use+'-'+docams+'-'+string(darkstart,format='(i8.8)')+'-'+string(biasstart,format='(i8.8)')+'-count.fit'
 writefits,filenamecount,bpmc,hdr
 
+
+im2=bpmc[0:10,0:10]
+writefits,'test-header.fits',im2
+im2=mrdfits('test-header.fits',hdr)
+sxaddpar,hdr, 'Bias start ',string(biasstart,format='(i8.8)'),'first bias exposure '
+sxaddpar,hdr, 'Bias end ', string(biasend,format='(i8.8)'),'last bias exposure '
+sxaddpar,hdr, 'Dark start ',string(darkstart,format='(i8.8)'),'first dark exposure '
+sxaddpar,hdr, 'Dark end ',string(darkend,format='(i8.8)'),' last dark exposure '
+
+sxaddpar,hdr, 'BM0',0,'good to use'
+sxaddpar,hdr, 'BM1',1,' > 10 sigma deviation, weaker'  
+sxaddpar,hdr, 'BM2',2,'saturated pixel, greater than 15000 in bias'
+sxaddpar,hdr, 'BM4',4,'> 10 sigma deviation, stronger'
+sxaddpar,hdr, 'BM8',8,'bad column'
+sxaddpar,hdr, 'BM16',16,'warm bad column, ticket 1368,1369'
+sxaddpar,hdr, 'BM32',32,'by hand corrections'
+
+filename_badpix='badpixels-'+string(mjd,format='(i5.5)')+docams+'.fits'
+writefits,filename_badpix,im2,hdr
 
 ;stop
 
