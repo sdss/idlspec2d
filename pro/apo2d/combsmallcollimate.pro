@@ -493,7 +493,7 @@ for icam=0,ncam-1 do begin     ;do focus for each camera
          yoffsetr2=yoffset*m + b
      endif
 
-if keyword_set(test) then m=1. & b=0. ;for determining above offsets
+     if keyword_set(test) then b=0. ;for determining above offsets
 
 
       yoffset=yoffset*m + b
