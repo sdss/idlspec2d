@@ -16,8 +16,10 @@ import os
 import os.path
 from glob import glob           #- File pattern globbing (spFrame*.fits)
 import re                       #- Regular expressions
+from time import asctime
 import numpy as N
 import pyfits
+import fitsio
 
 def write_readme(filename, header=None, allexp=True):
     """
@@ -181,7 +183,7 @@ def load_spCFrame_files(platedir):
     print "loading spCFrame files from " + platedir
     cframes = dict()
     for filename in glob(os.path.join(platedir, 'spCFrame-*.fits')):
-        ### print filename
+        print '   ', os.path.basename(filename), asctime()
         expid = get_expid(filename)
         cframes[expid] = CFrame(filename)
 
@@ -529,10 +531,11 @@ check_options(opts, args)
 if not os.path.isdir(opts.outdir):
     os.makedirs(opts.outdir)
 
-#- Load spAllFile and trim to boss9 chunk for testing
-print "Reading spAll file"
+#- Load spAllFile
+print "Reading spAll file", asctime()
 try:
-    spectra = pyfits.getdata(opts.spall).view(N.recarray)
+    # spectra = pyfits.getdata(opts.spall).view(N.recarray)
+    spectra = fitsio.read(opts.spall, 1).view(N.recarray)
 except MemoryError:
     print "ERROR: Not enough memory to read the spAll file."
     print "If you are on riemann, try again from an interactive batch job:"
@@ -542,22 +545,22 @@ except MemoryError:
 #- Default input directory is BOSS_SPECTRO_REDUX/RUN2D,
 #- with RUN2D from spAll (*not* environment variable)
 #- Assumes spAll has one and only one RUN2D
-run2d = spectra.RUN2D[0]
+if len(set(spectra.RUN2D)) == 1:
+    run2d = spectra.RUN2D[0]
+else:
+    print >> sys.stderr, "ERROR: spAll file has more than one RUN2D."
+    print >> sys.stderr, set(spectra.RUN2D)
+    sys.exit(2)
+    
 if opts.indir is None:
     datadir = os.path.join(os.environ['BOSS_SPECTRO_REDUX'], run2d)
 else:
     datadir = opts.indir
 
-#- Trim to requested plates
-if opts.plates is not None:
-    print "Trimming to plate(s) %s" % ", ".join(map(str, opts.plates))
-    ii = N.zeros(len(spectra), dtype=bool)
-    for p in opts.plates:
-        ii |= (spectra.PLATE == p)    
-    spectra = spectra[ii]
-else:
-    plates = set(spectra.PLATE)
-    print "Using all %d plates" % len(plates)
+#- If plates aren't specified, use all of them
+if opts.plates is None:
+    opts.plates = sorted(set(spectra.PLATE))
+    print "Using all %d plates" % len(opts.plates)
 
 #- Keep only target type subset
 if opts.fibers is None:
@@ -607,9 +610,9 @@ if opts.meta:
     sys.exit(0)
 
 #- For efficiency, process one plate at a time
-print "Processing plates"
-for plate in sorted(set(spectra.PLATE)):    
-    print 'plate %d' % plate
+print "Starting plate processing", asctime()
+for plate in sorted(set(opts.plates)):    
+    print 'Plate %d : %s' % (plate, asctime())
     outdir = '%s/%04d/' % (opts.outdir, plate)
     
     #- find MJDs for this plate
@@ -629,6 +632,7 @@ for plate in sorted(set(spectra.PLATE)):
         fibers = spectra.FIBERID[ii]
         process_plate(datadir, outdir, plate, mjd, fibers, spectra, allexp=not opts.coadd)
             
-print 'Done!  Wrote files to ' + opts.outdir
+print "Wrote files to " + opts.outdir
+print "Done", asctime()
             
         
