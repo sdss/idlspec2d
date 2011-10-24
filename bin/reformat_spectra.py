@@ -373,7 +373,7 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True):
             key = "EXPID%02d" % (iexp+1, )
             hdr.update(key, expid)
             if allexp:
-                print "Setting EXTNAME for %d to %s" % (4+iexp, expid)
+                ### print "Setting EXTNAME for %d to %s" % (4+iexp, expid)
                 hdux[4+iexp].update_ext_name(expid)
 
         #- Remove mention of the other spectrograph
