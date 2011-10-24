@@ -29,8 +29,7 @@ def write_readme(filename, header=None, allexp=True):
     """
     import time
     fx = open(filename, 'w')
-    print >> fx, "Spectra repackaging"
-    print >> fx, "Generated on " + time.asctime()
+    print >> fx, "Spectra repackaging generated on " + time.asctime()
     if header is not None:
         print >> fx
         print >> fx, header
@@ -91,12 +90,19 @@ HDU 1 : Coadded Spectrum
         sky       : subtracted sky flux in 10^-17 ergs/s/cm^2/A
         model     : best fit model for classification & redshift (from spZbest)
 
-HDU 2 : Copy of row for this object from spAll"""
+HDU 2 : Copy of row for this object from spAll table
+    http://data.sdss3.org/datamodel/files/BOSS_SPECTRO_REDUX/spAll.html
+
+HDU 3 : Copy of rows for this object from spZline table
+    http://data.sdss3.org/datamodel/files/BOSS_SPECTRO_REDUX/RUN2D/PLATE4/RUN1D/spZline.html"""
 
     #- Continue with explanation of per-exposure HDUs if included
     if allexp:
         print >> fx, """
-HDU 3 .. n+3 : Individual exposures
+HDU 4 .. n+4 : Individual frames.
+    For each exposure, there is one HDU for the red camera and one for the blue.
+    These are in the order of the EXPIDnn keywords in the HDU0 header.
+
     Header: Taken from HDU0 of individual spCFrame files
     Data: Binary table with columns taken from spCFrame files:
         flux
@@ -114,9 +120,7 @@ How to convert flux, sky, and ivar back to extracted photons (electrons):
     ivar_photons = ivar * calib^2
       (includes variance from all sources: object, sky, read noise, etc)
 
-Future versions may also include a "var_extra" column which estimates
-the amount of extra variance which does *not* scale with the object+sky
-flux.  For now you can approximately estimate this with:
+You can approximately estimate the non-photon variance with:
 
     photons = (flux + sky) / calib
     var_photons = 1.0 / (ivar * calib^2)
@@ -226,7 +230,7 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True):
     if allexp:
         cframes = load_spCFrame_files(platedir)
 
-    #- Open spPlate and spZbest files
+    #- Open spPlate, spZbest, and spZline files
     spPlateFile = '%s/spPlate-%d-%d.fits' % (platedir, plate, mjd)
     print 'Processing', os.path.basename(spPlateFile)
     FXplate = pyfits.open(spPlateFile, memmap=True)
@@ -235,6 +239,10 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True):
     spZbestFile = '%s/%s/spZbest-%d-%d.fits' % \
         (platedir, code_version, plate, mjd)
     FXzbest = pyfits.open(spZbestFile, memmap=True)
+    
+    spZlineFile = '%s/%s/spZline-%d-%d.fits' % \
+        (platedir, code_version, plate, mjd)
+    zline = pyfits.getdata(spZlineFile, 1)
 
     #- HDU0 will be a modified copy of the spPlate header
     plate_hdu = pyfits.PrimaryHDU(header=FXplate[0].header)
@@ -279,7 +287,11 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True):
                          
         hdux.append( pyfits.BinTableHDU(data=spAll[ispec:ispec+1]) )
         
-        #- HDU 3 .. 3+n : spectra from individual exposures
+        #- HDU 3: copy of rows from spZline
+        ii = N.where(zline.FIBERID == fiber)[0]
+        hdux.append( pyfits.BinTableHDU(data=zline[ii]) )
+        
+        #- HDU 4 .. 4+n : spectra from individual exposures
         #- Loop over individual exposures.  Do this even if we aren't
         #- writing those HDUs, so that we can update the headers with
         #- which exposures went into the coadd
@@ -337,9 +349,15 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True):
             
         #- Change some keyword headers which don't make sense when
         #- converting a plate header into a single object header
+
+        #- HDU 0 is now a blank image, so fitsverify doesn't like CRPIX1 etc.
+        hdr = hdux[0].header
+        del hdr['CRPIX1']
+        del hdr['CRVAL1']
+        del hdr['CTYPE1']
+        del hdr['CD1_1']
         
         #- Remove original expid list which has both SP1 and SP2
-        hdr = hdux[0].header
         nexp_orig = hdr['NEXP']
         del hdr['NEXP']
         for iexp in range(nexp_orig):
@@ -353,7 +371,8 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True):
             key = "EXPID%02d" % (iexp+1, )
             hdr.update(key, expid)
             if allexp:
-                hdux[3+iexp].update_ext_name(expid)
+                print "Setting EXTNAME for %d to %s" % (4+iexp, expid)
+                hdux[4+iexp].update_ext_name(expid)
 
         #- Remove mention of the other spectrograph
         #- sp1
@@ -399,7 +418,14 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True):
         hdux[1].header.add_comment('Coadded spectrum')
         hdux[1].update_ext_name('COADD')
         hdux[2].header.add_comment('Metadata from spAll row')
-        hdux[1].update_ext_name('SPALL')
+        hdux[2].update_ext_name('SPALL')
+        hdux[3].header.add_comment('Line fits from spZline')
+        hdux[3].update_ext_name('SPZLINE')
+
+        #- BUNIT is invalid for binary table HDUs
+        for i in range(1, len(hdux)):
+            if 'BUNIT' in hdux[i].header:
+                del hdux[i].header['BUNIT']
 
         #- Write final file
         outfile = '%s/spec-%d-%d-%04d.fits' % (outdir, plate, mjd, fiber)
@@ -479,14 +505,14 @@ import optparse
 
 parser = optparse.OptionParser(usage = "%prog [options]")
 parser.add_option("-s", "--spall",  type="string",  help="input spAll file")
-parser.add_option("-i", "--indir",  type="string",  help="input directory [$BOSS_SPECTRO_REDUX/run2D/]")
+parser.add_option("-i", "--indir",  type="string",  help="input directory [$BOSS_SPECTRO_REDUX/$RUN2D/]")
 parser.add_option("-o", "--outdir", type="string",  help="output directory")
 parser.add_option("-m", "--meta",   action='store_true', help="only write top level metadata (README, spSome)")
 parser.add_option("-u", "--update", action='store_true', help="update missing plates; don't overwrite others")
 parser.add_option("-p", "--plates", type="string",  help="plates to process (comma separated, no spaces) default to all plates")
 parser.add_option("-c", "--coadd",  action='store_true', help="Only write coadded spectrum (no individual exposures)")
 parser.add_option("-f", "--fibers", type="string", help="Comma separated list of fibers")
-parser.add_option("-S", "--subset", type="string", default='QSO', help="Subset of objects to process [QSO, GALAXY]")
+parser.add_option("-S", "--subset", type="string", default='ALL', help="Subset of objects to process [ALL, QSO, GALAXY, STAR, STD, or SKY]")
 
 opts, args = parser.parse_args()
 
@@ -505,13 +531,19 @@ if not os.path.isdir(opts.outdir):
 
 #- Load spAllFile and trim to boss9 chunk for testing
 print "Reading spAll file"
-spectra = pyfits.getdata(opts.spall).view(N.recarray)
+try:
+    spectra = pyfits.getdata(opts.spall).view(N.recarray)
+except MemoryError:
+    print "ERROR: Not enough memory to read the spAll file."
+    print "If you are on riemann, try again from an interactive batch job:"
+    print "    qsub -I -q fast -X -V"
+    sys.exit(1)
 
 #- Default input directory is BOSS_SPECTRO_REDUX/RUN2D,
 #- with RUN2D from spAll (*not* environment variable)
 #- Assumes spAll has one and only one RUN2D
+run2d = spectra.RUN2D[0]
 if opts.indir is None:
-    run2d = spectra.RUN2D[0]
     datadir = os.path.join(os.environ['BOSS_SPECTRO_REDUX'], run2d)
 else:
     datadir = opts.indir
@@ -555,7 +587,7 @@ if opts.fibers is None:
         ii  = (spectra.OBJTYPE == 'SKY') 
         spectra = spectra[ii]
     elif opts.subset is not None:
-        print "FATAL: subclass must be QSO, GALAXY, STAR, STD, or SKY"
+        print "FATAL: subclass must be ALL, QSO, GALAXY, STAR, STD, or SKY"
         sys.exit(1)    
 else:
     print "Fibers specified; not trimming by target type"
@@ -570,7 +602,8 @@ if opts.meta:
     header = "Input data from:\n    %s\n" % datadir
     header += get_selection_doc(opts)
     write_readme(opts.outdir + '/README.txt', header=header)
-    pyfits.writeto(opts.outdir + '/spSome.fits', spectra, clobber=True)
+    spSomeName = opts.outdir + '/spSome-%s-%s.fits' % (opts.subset, run2d)
+    pyfits.writeto(spSomeName, spectra, clobber=True)
     sys.exit(0)
 
 #- For efficiency, process one plate at a time
