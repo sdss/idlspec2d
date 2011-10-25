@@ -32,6 +32,10 @@
 ;
 ;   See algorithmic notes in BOLTON_BIASGEN.
 ;
+;   Currently handles sub-frame readout cases by testing for
+;   data value of zero and not doing any bias offest determination
+;   or subtraction with those pixels.
+;
 ; WRITTEN:
 ;  A. Bolton, U. of Utah, 2011 aug.
 ;
@@ -99,9 +103,13 @@ for xflag = 0, 1 do begin
       bxhi = xflag ? nxfull - bx0 - 2 : bx1
       bylo = yflag ? nyfull - by1 - 2 : by0
       byhi = yflag ? nyfull - by0 - 2 : by1
-; Get data and bias subimages:
+; Get data and bias subimages, but only where they are non-zero
+; (so as to handle sub-frame readout gracefully)
       data_sub = data_img[bxlo:bxhi,bylo:byhi]
       bias_sub = bias_img[bxlo:bxhi,bylo:byhi]
+      wh_nonzero = where(data_sub ne 0.)
+      data_sub = data_sub[wh_nonzero]
+      bias_sub = bias_sub[wh_nonzero]
 ; Initialize offset with median:
       offset = median(data_sub - bias_sub)
 ; Estimate error scale:
@@ -116,7 +124,7 @@ for xflag = 0, 1 do begin
 ; Compute the RMS fluctuation:
       rnoise[xflag,yflag] = sqrt(total((data_sub - bias_sub - offset)^2 * pmask, /double) / total(pmask, /double))
 ; Do the bias subtraction:
-      data_img[xlo:xhi,ylo:yhi] = data_img[xlo:xhi,ylo:yhi] - bias_img[xlo:xhi,ylo:yhi] - offset
+      data_img[xlo:xhi,ylo:yhi] = data_img[xlo:xhi,ylo:yhi] - (bias_img[xlo:xhi,ylo:yhi] + offset) * (data_img[xlo:xhi,ylo:yhi] ne 0.)
    endfor
 endfor
 

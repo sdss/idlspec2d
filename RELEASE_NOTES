@@ -1,3 +1,7 @@
+
+BOLTON_BIASSUB: add code to handle subarray readout bias subtraction
+  gracefully (ASB, re: ticket #1466)
+
 v5_5_2
 2010-10-19
 
