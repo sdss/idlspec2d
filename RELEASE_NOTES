@@ -1,3 +1,9 @@
+-------------------------------------------------------------------------------
+2011-10-26 (Stephen)
+SDSS_PLATE_SORT : Add MOD 360 to match_ra to prevent crashes on match_ra>360
+    in photoMatchPlate files (affects plates 4405 and 4277).
+
+-------------------------------------------------------------------------------
 
 BOLTON_BIASSUB: add code to handle subarray readout bias subtraction
   gracefully (ASB, re: ticket #1466)
