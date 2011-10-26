@@ -116,7 +116,8 @@ pro sdss_plate_sort, planfile
          splog, 'Input photoPosPlate file = '+infile2
 
          spherematch, plugmap.ra, plugmap.dec, $
-          (matchdat.match_ra MOD 360), matchdat.match_dec, 1./3600, i1, i2, d12
+          ((matchdat.match_ra+360.0) MOD 360), matchdat.match_dec, $
+          1./3600, i1, i2, d12
          nfiber = n_elements(plugmap)
 
          if (n_elements(i1) NE nfiber) then $
