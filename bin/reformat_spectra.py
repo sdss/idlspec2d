@@ -38,15 +38,15 @@ def write_readme(filename, header=None, allexp=True):
 
     print >> fx, """
 For each object, there is one file per plugging (plate-mjd-fiber), 
-containing both the coadded spectrum and optionally the individual exposures.
-This groups the information from spFrame, spCFrame, spFlat, spPlate,
-spZbest, and spAll so that for each object you only need to read one file.
+containing both the coadded spectrum and optionally the individual exposure
+frames.  This groups the information from spFrame, spCFrame, spFlat, spPlate,
+spZbest, spZline, and spAll so that for each object you only need to read
+one file.
 
 These are grouped in subdirectories by plate, e.g.:
 
     README.txt    : this file
-    spSome.fits   : subset of spAll.fits for the objects contained here
-    spSome.sqlite : sqlite version of spSome.fits [TBD; TODO]
+    spXXX.fits    : subset of spAll.fits (e.g. Qso, Star, Gal)
     4080/         : dir for objects on plate 4080
         spec-4080-55368-0487.fits  : spec-PLATE-MJD-FIBER
         spec-4080-55471-0485.fits  : different plugging, same plate
@@ -102,7 +102,7 @@ HDU 3 : Copy of rows for this object from spZline table
     if allexp:
         print >> fx, """
 HDU 4 .. n+4 : Individual frames.
-    For each exposure, there is one HDU for the red camera and one for the blue.
+    For each exposure there is one HDU for the red camera and one for the blue.
     These are in the order of the EXPIDnn keywords in the HDU0 header.
 
     Header: Taken from HDU0 of individual spCFrame files
@@ -448,16 +448,30 @@ def get_selection_doc(opts):
     doc = list()
     doc.append("Object selection criteria:")
     if opts.plates is not None:
-        doc.append("    Plates: " + ", ".join(map(str, opts.plates)) )
+        if opts.subset == "ALL":
+            doc.append("    All plates")
+        else:
+            doc.append("    Plates: " + ", ".join(map(str, opts.plates)) )
     if opts.fibers is not None:
         doc.append("    Fibers: " + opts.fibers_orig )
     else:
         if opts.subset == "ALL":
             doc.append("    All objects kept")
+            doc.append("    Optional spXXX subsets defined by")
+            doc.append("      Qso:")
+            doc.append("        - Targetted as QSOs")
+            doc.append("        - Targetted as GALAXY but CLASS=QSO")
+            doc.append("        - FPG scan IDed as QSO")
+            doc.append("        - QSO ancillary programs")
+            doc.append("      Gal:  OBJTYPE=GALAXY or CLASS=GALAXY")
+            doc.append("      Star: OBJTYPE=SPECTROPHOTO_STD or CLASS=STAR")
+            doc.append("      Std:  OBJTYPE=SPECTROPHOTO_STD")
+            doc.append("      Sky:  OBJTYPE=SKY")
         elif opts.subset == 'QSO':
             doc.append("    Only quasar targets:")
             doc.append("      - Targetted as QSOs")
             doc.append("      - Targetted as GALAXY but CLASS=QSO")
+            doc.append("      - FPG scan IDed as QSO")
             doc.append("      - QSO ancillary programs")
         elif opts.subset == 'GALAXY':
             doc.append("    Only galaxies: OBJTYPE=GALAXY or CLASS=GALAXY")
@@ -562,6 +576,24 @@ if opts.plates is None:
     opts.plates = sorted(set(spectra.PLATE))
     print "Using all %d plates" % len(opts.plates)
 
+QSO_A1 = QSO_A2 = 0
+QSO_A1  |= 2**22  # QSO_AAL
+QSO_A1  |= 2**23  # QSO_AALS
+QSO_A1  |= 2**24  # QSO_IAL
+QSO_A1  |= 2**25  # QSO_RADIO
+QSO_A1  |= 2**26  # QSO_RADIO_AAL
+QSO_A1  |= 2**27  # QSO_RADIO_IAL
+QSO_A1  |= 2**28  # QSO_NOAALS
+QSO_A1  |= 2**29  # QSO_GRI
+QSO_A1  |= 2**30  # QSO_HIZ
+QSO_A1  |= 2**31  # QSO_RIZ
+QSO_A2  |= 2**3   # QSO_VAR
+QSO_A2  |= 2**4   # QSO_VAR_FPG
+QSO_A2  |= 2**5   # RADIO_2LOBE_QSO
+QSO_A2  |= 2**7   # QSO_SUPPZ
+QSO_A2  |= 2**8   # QSO_VAR_SDSS
+QSO_A2  |= 2**9   # QSO_WISE_SUPP
+
 #- Keep only target type subset
 if opts.fibers is None:
     if opts.subset == 'ALL':
@@ -570,8 +602,13 @@ if opts.fibers is None:
         print "Trimming to just QSO targets"
         ii  = (spectra.OBJTYPE == 'QSO') 
         ii |= ((spectra.OBJTYPE == 'GALAXY') & (spectra.CLASS == 'QSO'))
+        ii |= (spectra.CLASS_PERSON == 3)   # 3 == FPG IDed as QSO
+        #- Ancillary QSO programs
+        ii |= (spectra.ANCILLARY_TARGET1 & QSO_A1)
+        ii |= (spectra.ANCILLARY_TARGET2 & QSO_A2)
         spectra = spectra[ii]
-    elif opts.subset == 'GALAXY':
+    elif opts.subset == 'GALAXY' or opts.subset == 'GAL':
+        opts.subset = 'GAL'
         print "Trimming to just GALAXY targets"
         ii  = (spectra.OBJTYPE == 'GALAXY') 
         ii |= (spectra.CLASS == 'GALAXY')
@@ -605,8 +642,12 @@ if opts.meta:
     header = "Input data from:\n    %s\n" % datadir
     header += get_selection_doc(opts)
     write_readme(opts.outdir + '/README.txt', header=header)
-    spSomeName = opts.outdir + '/spSome-%s-%s.fits' % (opts.subset, run2d)
-    pyfits.writeto(spSomeName, spectra, clobber=True)
+    if opts.subset != "ALL":
+        spSomeName = opts.outdir+'/sp%s-%s.fits' % (opts.subset.title(), run2d)
+        pyfits.writeto(spSomeName, spectra, clobber=True)
+    else:
+        import shutil
+        shutil.copy(opts.spall, opts.outdir+'/spAll-%s.fits' % run2d)
     sys.exit(0)
 
 #- For efficiency, process one plate at a time
