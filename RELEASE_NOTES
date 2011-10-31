@@ -1,4 +1,8 @@
 -------------------------------------------------------------------------------
+2011-10-31 (Stephen)
+SDSS_SPEC_IMAGE, PLATE_SPEC_IMAGE : Added /silent hooks
+
+-------------------------------------------------------------------------------
 2011-10-26 (Stephen)
 SDSS_PLATE_SORT : Add MOD 360 to match_ra to prevent crashes on match_ra>360
     in photoMatchPlate files (affects plates 4405 and 4277).

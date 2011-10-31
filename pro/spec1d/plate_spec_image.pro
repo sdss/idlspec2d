@@ -27,7 +27,7 @@
 ;   $Id$
 ;------------------------------------------------------------------------------
 pro plate_spec_image, plate, mjd=mjd, run2d=run2d, run1d=run1d, topdir=topdir, $
-                      xra=xra
+                      xra=xra, silent=silent
 
 if(NOT keyword_set(run2d)) then run2d=''
 if(NOT keyword_set(run1d)) then run1d=''
@@ -71,7 +71,7 @@ for i=0L, n_elements(zans)-1L do begin
     currbase='spec-image-'+pmjdf
     outbase=outdir+'/'+currbase
     sdss_spec_image, outbase, plate, fiber, mjd=mjd, $
-      run2d=run2d, run1d=run1d, topdir=topdir, xra=xra
+      run2d=run2d, run1d=run1d, topdir=topdir, xra=xra, silent=silent
     printf, unit, '<td>'+pmjdf+ $
       '<br /><a href="'+currbase+'.png">'
     printf, unit, '<img src="'+currbase+'.thumb.png" alt="'+pmjdf+'" /></a>'

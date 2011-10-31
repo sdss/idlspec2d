@@ -32,6 +32,7 @@ function screamAndDie
 
 function printAndRun
 {
+    echo "Checkpoint at $(date)"
     echo "$*"
 
 # 	if "$dryMode"; then
@@ -192,11 +193,11 @@ printAndRun "idl -e 'platelist, /create $RUN1DKEY $RUN2DKEY'"
 printAndRun "idl -e 'spplan2d, MJD=$MJD $RUN2DKEY'"
 printAndRun "idl -e 'spplan1d, MJD=$MJD $RUN2DKEY'"
 #printAndRun "idl -e 'batchpbs, QUEUE=\"high_pri\", MJD=$MJD $UPS1D $UPS2D $ZCODE'"
-printAndRun "idl -e 'batchpbs, MJD=$MJD $UPS1D $UPS2D $ZCODE'"
+printAndRun "idl -e 'batchpbs, queue=\"fast\", MJD=$MJD $UPS1D $UPS2D $ZCODE'"
 
-#- Setup v5_4_25 so that we can get version with skipcart
-setup idlspec2d v5_4_25
-printAndRun "idl -e 'platelist, /create, skipcart=15 $RUN1DKEY $RUN2DKEY'"
+#- Use trunk for latest tweaks to platelist and platemerge
+setup idlspec2d trunk
+printAndRun "idl -e 'platelist, /create $RUN1DKEY $RUN2DKEY'"
 printAndRun "idl -e 'platemerge $RUN2DKEY'"
 
 

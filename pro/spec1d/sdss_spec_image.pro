@@ -45,7 +45,7 @@ return, smoothed_spec
 end
 ;;
 pro sdss_spec_image, outbase, plate, fiber, mjd=mjd, run2d=run2d, run1d=run1d, $
-                     topdir=topdir, xra=xra
+                     topdir=topdir, xra=xra, silent=silent
 
 common com_sdss_spec_image, plans
 
@@ -68,7 +68,8 @@ if(n_elements(outbase) gt 1 OR $
   message, 'OUTBASE, PLATE, FIBER must be scalar'
 
 readspec, plate, fiber, mjd=mjd, zans=zans, flux=flux, wave=wave, $
-  invvar=invvar, run2d=run2d, run1d=run1d, topdir=topdir, plug=plug
+  invvar=invvar, run2d=run2d, run1d=run1d, topdir=topdir, plug=plug, $
+  silent=silent
 
 ipl= where(plate eq plans.plateid, npl)
 
@@ -118,7 +119,7 @@ colorname= ['red','green','blue','magenta','cyan','dark yellow', $
             'purple','light green','orange','navy','light magenta', $
             'yellow green']
 ncolor= n_elements(colorname)
-loadct,0
+loadct,0,silent=silent
 
 sflux= sdss_spec_smooth(alog10(wave), flux, 100.)
 
@@ -165,7 +166,7 @@ else $
 title2= zstr+' Class='+strtrim(zans.class)+' '+strtrim(zans.subclass)
 
 warnings= strtrim(strjoin(sdss_flagname('ZWARNING', zans.zwarning),' '),2)
-print, zans.zwarning
+;;; print, zans.zwarning
 if(keyword_set(warnings) gt 0) then $
     title3= 'Warnings: '+warnings  $
 else $
@@ -284,16 +285,16 @@ if(keyword_set(bangx)) then !X=bangx
 if(keyword_set(bangy)) then !Y=bangy
 set_plot,'x'
 
-splog, 'Converting to JPG image.'
+if(not keyword_set(silent)) then splog, 'Converting to JPG image.'
 spawn, ['convert',outbase+'.ps', '-quality', '100', outbase+'.jpg'], /nosh
 spawn, ['convert',outbase+'.jpg', outbase+'.gif'], /nosh
 spawn, ['convert',outbase+'.gif', outbase+'.png'], /nosh
-splog, 'Making thumbnail image.'
+if(not keyword_set(silent)) then splog, 'Making thumbnail image.'
 spawn, ['convert',outbase+'.png', '-scale', '180x130', outbase+'.thumb.png'], $
        /nosh
 rmfile, outbase+'.ps'
 rmfile, outbase+'.jpg'
 rmfile, outbase+'.gif'
-splog, 'Done.'
+if(not keyword_set(silent)) then splog, 'Done.'
 
 end
