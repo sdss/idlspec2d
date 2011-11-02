@@ -1,3 +1,7 @@
+2011-11-2 (MATT)
+COMBINEBPM : added badcolumns for 55800-55850 on r1, after temperature change
+	r1 looks good with no bad columns
+
 -------------------------------------------------------------------------------
 2011-10-31 (Stephen)
 SDSS_SPEC_IMAGE, PLATE_SPEC_IMAGE : Added /silent hooks
