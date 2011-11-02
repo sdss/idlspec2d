@@ -327,7 +327,7 @@ if docams eq 'r1' and  mjd ge 55413  and mjd lt 55800 then begin
     bpmhot[3810:3812,2278:2282]+=32
 endif
 
-if docams eq 'r1' and  mjd ge 55800 then bpmhot[1342:1353,2063:4127]+=32
+if docams eq 'r1' and  mjd ge 55800 and mjd lt 55850 then bpmhot[1342:1353,2063:4127]+=32 ;changed r1 temp on 55850 to get rid of bad column
 
 if docams eq 'r2' and mjd lt 55300 then bpmhot[2171:2192,2115:2217]+=32
 
@@ -384,10 +384,14 @@ writefits,filenamesigma,bpms,hdr
 filenamecount='bpm-'+use+'-'+docams+'-'+string(darkstart,format='(i8.8)')+'-'+string(biasstart,format='(i8.8)')+'-count.fit'
 writefits,filenamecount,bpmc,hdr
 
+;hdr2=hdr
+;im2=fltarr(11,11)
+;mwrfits,im2,'test-header.fits'
+;im2=mrdfits('test-header.fits',0,hdr)
+;stop
+sxdelpar,hdr,['SIMPLE','BITPIX','EXTEND','FILENAME','EXPOSURE','SUBFRAME','ERRCNT','SYNCERR','SLINES','PIXERR','PLINES','PFERR','DIDFLUSH','MC1TRCB','MC1TRCT','MC1TBCB','MC1TBCT','REQTIME','EXPTIME','DARKTIME','COMMENT','CAMROW','CAMCOL','AUTHOR','RDNOISE0,','RDNOISE1','RDNOISE2','RDNOISE3','BOSSVER','TAI-BEG','DATE-OBS','NAME','MAPID','POINTING','OBJSYS','RA','DEC','RADEG','DECDEG','ROTTYPE','ROTPOS','BOREOFFX','BOREOFFY','ARCOFFX','ARCOFFY','OBJOFFX','OBJOFFY','CALOFFX','CALOFFY','CALOFFR','GUIDOFFX','GUIDOFFY','GUIDOFFR','AZ','ALT','IPA','FOCUS','M2PISTON','M2XTILT','M2YTILT','M2XTRAN','M2YTRAN','M1PISTON','M1XTILT','M1YTILT','M1XTRAN','M1YTRAN','SCALE','PRESSURE','WINDD','WINDS','GUSTD','GUSTS','AIRTEMP','DEWPOINT','DPERRPT','HUMIDITY','DUSTA','DUSTB','WINDD25M','WINDS25M','FF','NE','HGCD','FFS','GUIDER1','SLITID1','SLITID2','GUIDERN','COLLA','COLLB','COLLC','MC1HUMHT','MC1HUMCO','MC1TEMDN','MC1THT']
 
-im2=bpmc[0:10,0:10]
-writefits,'test-header.fits',im2
-im2=mrdfits('test-header.fits',hdr)
+
 sxaddpar,hdr, 'Bias start ',string(biasstart,format='(i8.8)'),'first bias exposure '
 sxaddpar,hdr, 'Bias end ', string(biasend,format='(i8.8)'),'last bias exposure '
 sxaddpar,hdr, 'Dark start ',string(darkstart,format='(i8.8)'),'first dark exposure '
@@ -401,7 +405,7 @@ sxaddpar,hdr, 'BM8',8,'bad column'
 sxaddpar,hdr, 'BM16',16,'warm bad column, ticket 1368,1369'
 sxaddpar,hdr, 'BM32',32,'by hand corrections'
 
-filename_badpix='badpixels-'+string(mjd,format='(i5.5)')+docams+'.fits'
+filename_badpix='badpixels-'+string(mjd,format='(i5.5)')+'-'+docams+'.fits'
 writefits,filename_badpix,im2,hdr
 
 ;stop
