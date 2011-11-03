@@ -22,19 +22,21 @@
 ;   thresh     - Treshold in relative chi^2 for identifying BADSKYCHI in;
 ;                the pixel mask.  Default to 4.0, and pass this value to
 ;                the REDMONSTER function.
-;   dispset    - Dispersion trace-set; if present, then solve for the
-;                super-sky vector using a variable PSF described by this
-;                structure.
 ;   novariance - Set keyword to prevent variance correction for sky residuals
 ;   relchi2set - Structure containing information of chi^2 fitting;
 ;                only call REDMONSTER to set those mask bits if this
 ;                keyword is passed.
-;   npoly      - Polynomial order of 2d fit.
+;   npoly      - Polynomial order of 2d fit for dependence on fiber number.
 ;   tai        - TAI of plate exposure, if supplied a linear airmass correction
 ;                  is applied
 ;   nbkpt      - Number of bkpts to use for full sky spectrum fit.
 ;                This gives us the freedom to use less points for the
 ;                blue side.
+;
+; DISABLED LEGACY KEYWORDS:
+;   dispset    - Dispersion trace-set; if present, then solve for the
+;                super-sky vector using a variable PSF described by this
+;                structure.  (Superseded by NPOLY and fiber number)
 ;
 ; PARAMETERS FOR SLATEC_SPLINEFIT (for supersky fit):
 ;   nord       - Order of B-spline; default set in BSPLINE_ITERFIT()
@@ -261,14 +263,16 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
    ;----------
    ; Re-do the super-sky fit using the variable PSF, if DISPSET is set.
 
-   if (keyword_set(dispset) AND keyword_set(fullbkpt)) then begin
- 
-      if (NOT keyword_set(npoly)) then npoly = 4L
+;   if (keyword_set(dispset) AND keyword_set(fullbkpt)) then begin
+   if (keyword_set(npoly) AND keyword_set(fullbkpt)) then begin
 
+; Next few lines commented out, since they weren't being used
+; anyway (ASB 2011nov): 
+;      if (NOT keyword_set(npoly)) then npoly = 4L
       ; SIGMA is smooth fit to widths of arclines
-      traceset2xy, dispset, pixnorm, sigma
-      sigma = sigma - 1.0
-      skysigma = (sigma[*,iskies])[isort]
+      ;traceset2xy, dispset, pixnorm, sigma
+      ;sigma = sigma - 1.0
+      ;skysigma = (sigma[*,iskies])[isort]
       fullx2 = replicate(1.0,ncol) # findgen(nrow)
       x2 = (fullx2[*,iskies])[isort]
 
