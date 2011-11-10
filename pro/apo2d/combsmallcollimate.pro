@@ -477,7 +477,7 @@ for icam=0,ncam-1 do begin     ;do focus for each camera
 
       if docams[icam] eq 'b2' then begin
          m=1.00
-         b=-0.103
+         b=0.050
          yoffsetb2=yoffset*m + b
       endif
 
