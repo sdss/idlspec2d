@@ -235,7 +235,7 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
    iskies = where(strtrim(plugsort.objtype,2) EQ 'SKY' $
     AND (plugsort.fiberid GT 0) AND (fibermask EQ 0), nskies)
 
-   nbundle = 16
+   nbundle = 25 ;was still 16 as of 11-15-11
    nfibersperbundle = 20
    if (nskies GT 40) then begin
       for i=0, nbundle-1 do begin
