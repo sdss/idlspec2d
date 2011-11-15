@@ -1,7 +1,15 @@
+
+
+2011-11-15 (MATT)
+QUICKEXTRACT:  changed to 25 bundles.
+
+-----------------------------------------------
+
 v5_5_3
 2011-11-14 (MATT)
-
 COMBSMALLCOLLIMATE:  Changed offsets for b2 after triplet swap
+
+-----------------------------------------------------------------
 
 2011-11-03 (ASB)
 SKYSUBTRACT : cleaned up DISPSET argunet cruft; needs test (ticket #1475).
