@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   skystruct = skysubtract(objflux, objivar, plugsort, wset, objsub, objsubivar, $
 ;    [ iskies= , fibermask=, nord=, upper=, lower=, maxiter=, pixelmask=, $
-;    dispset=, /novariance, relchi2set=, npoly=, tai=, newmask=, sset= ])
+;    /novariance, relchi2set=, npoly=, tai=, newmask=, sset= ])
 ;
 ; INPUTS:
 ;   objflux    - Image flux [NPIX,NFIBER]
@@ -32,11 +32,6 @@
 ;   nbkpt      - Number of bkpts to use for full sky spectrum fit.
 ;                This gives us the freedom to use less points for the
 ;                blue side.
-;
-; DISABLED LEGACY KEYWORDS:
-;   dispset    - Dispersion trace-set; if present, then solve for the
-;                super-sky vector using a variable PSF described by this
-;                structure.  (Superseded by NPOLY and fiber number)
 ;
 ; PARAMETERS FOR SLATEC_SPLINEFIT (for supersky fit):
 ;   nord       - Order of B-spline; default set in BSPLINE_ITERFIT()
@@ -80,16 +75,13 @@
 ;   16-Sep-1999  Written by S. Burles, APO
 ;   30-Dec-1999  Modified by D. Schlegel, Princeton
 ;    4-Oct-2000  Changed to bspline_iterfit 
-;   26-Jul-2001  Implemented Higher-order fits, if dispset is set it fits
-;                  against fiber number (I know this doesn't make sense)
-;                Also upped the tolerance on rejection by 5 times!
-;                Too many pixels were masked for high order fit!
+;   26-Jul-2001  Implemented higher-order fits
 ;-
 ;------------------------------------------------------------------------------
 function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
  iskies=iskies, fibermask=fibermask, nord=nord, upper=upper, $
  lower=lower, maxiter=maxiter, pixelmask=pixelmask, thresh=thresh, $
- dispset=dispset, npoly=npoly, relchi2set=relchi2set, $
+ npoly=npoly, relchi2set=relchi2set, $
  novariance=novariance, tai=tai, nbkpt=nbkpt, newmask=newmask, sset=sset
 
    if (size(objflux, /n_dimen) NE 2) then message, 'OBJFLUX is not 2-D'
@@ -263,16 +255,8 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
    ;----------
    ; Re-do the super-sky fit using the variable PSF, if DISPSET is set.
 
-;   if (keyword_set(dispset) AND keyword_set(fullbkpt)) then begin
    if (keyword_set(npoly) AND keyword_set(fullbkpt)) then begin
 
-; Next few lines commented out, since they weren't being used
-; anyway (ASB 2011nov): 
-;      if (NOT keyword_set(npoly)) then npoly = 4L
-      ; SIGMA is smooth fit to widths of arclines
-      ;traceset2xy, dispset, pixnorm, sigma
-      ;sigma = sigma - 1.0
-      ;skysigma = (sigma[*,iskies])[isort]
       fullx2 = replicate(1.0,ncol) # findgen(nrow)
       x2 = (fullx2[*,iskies])[isort]
 
@@ -358,7 +342,8 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
 
       ; Bin according to the break points used in the supersky fit.
 
-      if (NOT keyword_set(npoly)) then npoly = 1L
+      if (keyword_set(npoly)) then npoly1 = npoly $
+       else npoly1 = 1L
       nbin = N_elements(bkpt) - 1
       relwave = fltarr(nbin)
       relchi2 = fltarr(nbin)
@@ -367,7 +352,7 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
          ii = where(skywave GE bkpt[ibin] AND skywave LT bkpt[ibin+1] $
           AND skyivar GT 0, nn)
 
-         if (nn GT 2 AND nn GT (npoly+1)) then begin
+         if (nn GT 2 AND nn GT (npoly1+1)) then begin
             ; Find the mean wavelength for these points
             relwave[ibin] = total(skywave[ii]) / nn
 
@@ -378,7 +363,7 @@ function skysubtract, objflux, objivar, plugsort, wset, objsub, objsubivar, $
             ; The following evaluation looks at the 67th percentile of the
             ; points, which is much more robust.
             pos67 = ceil(2.*nn/3.) - 1
-            tmpchi2 = skychi2[ii] * (1.0*nn / (nn - npoly))
+            tmpchi2 = skychi2[ii] * (1.0*nn / (nn - npoly1))
             relchi2[ibin] = tmpchi2[ (sort(tmpchi2))[pos67] ] 
 
             ; Burles counter of bin number...
