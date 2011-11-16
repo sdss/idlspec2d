@@ -1,64 +1,55 @@
 
-
-2011-11-15 (MATT)
-QUICKEXTRACT:  changed to 25 bundles.
-
------------------------------------------------
-
-v5_5_3
-2011-11-14 (MATT)
-COMBSMALLCOLLIMATE:  Changed offsets for b2 after triplet swap
-
------------------------------------------------------------------
-
-2011-11-03 (ASB)
-SKYSUBTRACT : cleaned up DISPSET argunet cruft; needs test (ticket #1475).
+QUICKEXTRACT: Bug fix to sky-subtract in 25 bundles, not just 16.
+SKYSUBTRACT: Cleaned up use of DISPSET argument; needs test (ticket #1475).
 
 -------------------------------------------------------------------------------
-
-2011-11-2 (MATT)
-COMBINEBPM : added badcolumns for 55800-55850 on r1, after temperature change
-	r1 looks good with no bad columns
-
--------------------------------------------------------------------------------
-2011-10-31 (Stephen)
-SDSS_SPEC_IMAGE, PLATE_SPEC_IMAGE : Added /silent hooks
-
--------------------------------------------------------------------------------
-2011-10-26 (Stephen)
-SDSS_PLATE_SORT : Add MOD 360 to match_ra to prevent crashes on match_ra>360
-    in photoMatchPlate files (affects plates 4405 and 4277).
-
--------------------------------------------------------------------------------
+v5_5_3 (2011-11-14)
+Tag for SOS with small changes after b2 triplet replacement.
+Built against elodie/v1_3, specflat/v1_16, idlutils/v5_4_24.
 
 BOLTON_BIASSUB: add code to handle subarray readout bias subtraction
-  gracefully (ASB, re: ticket #1466)
+    gracefully (ASB, re: ticket #1466)
+COMBINEBPM : Added bad columns for 55800-55850 on r1. After putting the set
+    temperature for this CCD higher by 5 deg C, r1 looks good with no bad cols.
+COMBSMALLCOLLIMATE:  Changed offsets for b2 after triplet swap
+SDSS_PLATE_SORT : Add MOD 360 to match_ra to prevent crashes on match_ra>360
+    in photoMatchPlate files (affects plates 4405 and 4277).
+SDSS_SPEC_IMAGE, PLATE_SPEC_IMAGE : Added /silent hooks
 
-v5_5_2
-2010-10-19
+bin/rundaily_cron, rundaily_riemann_script, rundaily_riemann:
+    Added silent hooks for sdss_spec_image and plate_spec_image
 
-COMBSMALLCOLLIMATE: Correctly apply offsets
 -------------------------------------------------------------------------------
-v5_5_1
-2011-09-17 (Kyle)
-examples/opLimits.par: Switch the values for WAVEMID for r2 and b2
-examples/opLimits.par: Set flag for exptimes less than 300 seconds
-examples/opLimits.par: Set flag for SN2 less than 0.2
+v5_5_2 (2010-10-19)
+Tag for SOS bug fixes.
+Built against elodie/v1_3, specflat/v1_16, idlutils/v5_4_24.
 
-2011-09-14 (Matt)
+COMBSMALLCOLLIMATE: Correctly apply offsets.
+examples/opLimits.par: Tweaks to all XMID,WAVEMID values for year 3 (KSD).
+
+-------------------------------------------------------------------------------
+v5_5_1 (2011-09-17)
+Tag for SOS bug fixes.
+Built against elodie/v1_3, specflat/v1_16, idlutils/v5_4_24.
+
 COMBSMALLCOLLIMATE: Update offsets using all hartmanns from 55800-817
-examples/opLimits.par: Switch the values for WAVEMID for r1 & b1
+
+examples/opLimits.par: Switch incorrectly-swapped the values for WAVEMID
+    for r1 & b1.  Set error for EXPTIME < 300 sec.
+    Set error for SN2 less than 0.2.
 
 -------------------------------------------------------------------------------
-2011-09-06 (Stephen)
-Added new r1 CCD gains to sdssproc for data after MJD 55800:
+v5_5_0 (2011-09-09)
+Tag for full reductions using replacement r1 CCD.
+Built against elodie/v1_3, specflat/v1_16, idlutils/v5_4_24.
+
+COLLIMATE: Add test keyword to help find offsets with SMALLCOLLIMATE.
+COMBSMALLCOLLIMATE: Update offsets and add /TEST keyword.
+PLATECOMPARE: Fix to work with change from SNMEDIAN from vector to array.
+PLOTSPEC, UUPLOTSPEC: Show 3 digits after decimal in rchi2 (ASB)
+SDSSPROC: Added new r1 CCD gains to sdssproc for data after MJD 55800:
     amps 0-4 gains [1.9253, 1.5122, 1.4738, 1.5053]
 
--------------------------------------------------------------------------------
-COLLIMATE: Add test keyword to help find offsets with smallcollimate.
-COMBSMALLCOLLIMATE: Update offsets and add test keyword.
-
-2011-08-30 (Stephen)
 bin/reformat_spectra.py: New proc to reformat spectra into one-file-per-object
     format (basically ticket #837)
 bin/sos_apocommand : updatePluggingStatus no longer accepts -d -v options,
@@ -70,13 +61,8 @@ bin/updatePluggingStatus - this has been replaced by
     will still be in svn)
 
 -------------------------------------------------------------------------------
-PLATECOMPARE: Fix to work with change from SNMEDIAN from vector to array.
-PLOTSPEC, UUPLOTSPEC: Show 3 digits after decimal in rchi2 (ASB)
-
--------------------------------------------------------------------------------
 v5_4_45 (2011-08-27, ASB)
-Tag to catch more bugfixes
-If good, this tag will be the DR9 tag.
+Bug fixes for DR9 data release.
 Built against elodie/v1_3, specflat/v1_16, idlutils/v5_4_24.
 
 BUNDLETHRU: New proc to measure relative throughput of fiber bundles from
@@ -333,7 +319,6 @@ templates/eigeninput_typeIIqso.dat: Type II QSO training sample drawn
      Not yet used.
 
 -------------------------------------------------------------------------------
-
 v5_4_33 (2011-03-30 by ASB)
 Tag for testing bundle-wise IDL extraction
 Built against specflat v1_13, elodie v1_3, idlutils v5_4_23.
