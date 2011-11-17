@@ -231,14 +231,15 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
 
    ;----------
    ; If too many sky fibers then only choose the first+last per bundle.
+   ; Use 20 fibers per bundle, although it really doesn't matter
 
    iskies = where(strtrim(plugsort.objtype,2) EQ 'SKY' $
     AND (plugsort.fiberid GT 0) AND (fibermask EQ 0), nskies)
 
-   nbundle = nfiber / nfibersperbundle
-   if (nskies GT 40) then begin
+   nbundle = nfiber / 20
+   if (nskies GT 50) then begin
       for i=0, nbundle-1 do begin
-         iposs = where(fix(iskies/nfibersperbundle) EQ i, nposs)
+         iposs = where(fix(iskies/20) EQ i, nposs)
          if (nposs GT 2) then begin
             ; Trim all but the first + last sky fiber per bundle
             itrim = iskies[iposs[1:nposs-2]]
@@ -259,7 +260,7 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
 
    skystruct = skysubtract(fluxsub, fluxivar, plugsort, wset, $
     objsub, objsubivar, iskies=iskies, fibermask=fibermask, tai=tai_mid, $
-    sset=sset)
+    sset=sset, npoly=3)
 
    ;----------
    ; Issue warnings about very large sky-subtraction chi^2
