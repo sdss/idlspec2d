@@ -258,13 +258,62 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
 
    get_tai, hdr, tai_beg, tai_mid, tai_end
 
-   skystruct = skysubtract(fluxsub, fluxivar, plugsort, wset, $
-    objsub, objsubivar, iskies=iskies, fibermask=fibermask, tai=tai_mid, $
-    sset=sset, npoly=3)
-
-   ;----------
-   ; Issue warnings about very large sky-subtraction chi^2
-
+mjd=sxpar(hdr,'MJD')
+ 
+if ((camname eq 'r2') and (mjd ge 55300)) then begin
+      splog, 'Splitting sky model across spatial CCD halves.'
+; Dial down the sptial polynomial order in this case:
+      nskypoly = 2L
+; Determine where the traces cross the amp break:
+      nxfull = (size(image))[1]
+      nyfull = (size(image))[2]
+      yhw = nyfull / 2
+      xhw = nxfull / 2
+      isplit = max(where(reform(xnew[yhw,*]) le (xhw + 0.5)))
+; Unpack necessary structures:
+;      vcoeff = vacset.coeff
+;      vacset0 = struct_selecttags(vacset, except_tags='COEFF')
+;      vacset0 = struct_addtags(vacset0, {coeff: vcoeff[*,0:isplit]})
+;      vacset1 = struct_selecttags(vacset, except_tags='COEFF')
+;      vacset1 = struct_addtags(vacset1, {coeff: vcoeff[*,isplit+1:*]})
+      vacset0=10^logwave[*,0:isplit]
+      vacset1=10^logwave[*,isplit+1:*]
+      wset0=struct_selecttags(wset,except_tags='COEFF')
+      wset0=struct_addtags(wset0,{coeff: wset.coeff[*,0:isplit]})
+      wset1=struct_selecttags(wset,except_tags='COEFF')
+      wset1=struct_addtags(wset1,{coeff: wset.coeff[*,isplit+1:*]})
+; Sky subtract both halves:
+      pixelmask=flux*0.0
+      skystruct0 = skysubtract(flux[*,0:isplit], fluxivar[*,0:isplit], plugsort[0:isplit], wset0, $
+                               skysub0, skysubivar0, iskies=iskies0, pixelmask=pixelmask[*,0:isplit], $
+                               fibermask=fibermask[0:isplit], upper=10.0, lower=10.0, tai=tai_mid, $
+                               npoly=nskypoly, nbkpt=nbkpt, $
+                               relchi2set=relchi2set0, newmask=newmask0)
+      skystruct1 = skysubtract(flux[*,isplit+1:*], fluxivar[*,isplit+1:*], plugsort[isplit+1:*], wset1, $
+                               skysub1, skysubivar1, iskies=iskies1, pixelmask=pixelmask[*,isplit+1:*], $
+                               fibermask=fibermask[isplit+1:*], upper=10.0, lower=10.0, tai=tai_mid, $
+                               npoly=nskypoly, nbkpt=nbkpt, $
+                               relchi2set=relchi2set1, newmask=newmask1)
+; Reassemble outputs for use further below:
+      skysub = [[skysub0], [skysub1]]
+      skysubivar = [[skysubivar0], [skysubivar1]]
+      iskies = [iskies0, iskies1 + isplit + 1]
+      newmask = [[newmask0], [newmask1]]
+      pixelmask = newmask
+; These are needed for QA, although we'll only get the
+; low-fiber-number picture in this case:
+      skystruct = skystruct0
+      relchi2set = relchi2set0
+      objsubivar=skysubivar
+      objsub=skysub
+  endif else begin
+      skystruct = skysubtract(fluxsub, fluxivar, plugsort, wset, $
+                              objsub, objsubivar, iskies=iskies, fibermask=fibermask, tai=tai_mid, $
+                              sset=sset, npoly=3)
+  endelse
+                                ;----------
+                                ; Issue warnings about very large sky-subtraction chi^2
+  
 ;   if (keyword_set(skystruct)) then begin
 ;      thiswave = logwave[*,0]
 ;      rchi2 = bspline_valu(thiswave, relchi2set)
@@ -281,35 +330,35 @@ function quickextract, tsetfile, wsetfile, fflatfile, rawfile, outsci, $
 ;       splog, 'Warning: Max sky-residual chi2 = ', maxval, $
 ;        ' at' , maxwave, ' Ang (ignoring 5577)'
 ;   endif
-
-   ;---------------------------------------------------------------------------
-   ; Analyze spectra for the sky level and signal-to-noise
-   ;---------------------------------------------------------------------------
-
-   ;----------
+  
+                                ;-----------------------------------------------------------------
+                                ; Analyze spectra for the sky level and signal-to-noise
+                                ;-----------------------------------------------------------------
+  
+                                ;----------
    ; Select wavelength range to analyze
 
    if (colorband EQ 'b') then begin
       icolor = 1
       snfilter = 'g'
-      wrange = [4000,5500] ; coverage of g-band
+      wrange = [4000,5500]      ; coverage of g-band
    endif else begin
       icolor = 3
       snfilter = 'i'
-      wrange = [6910,8500] ; coverage of i-band
+      wrange = [6910,8500]      ; coverage of i-band
       
-
+      
    endelse
-
-   ;----------
-   ; Find which fibers are sky fibers + object fibers
-
+  
+                                ;----------
+                                ; Find which fibers are sky fibers + object fibers
+  
    iobj = where(strtrim(plugsort.objtype,2) NE 'SKY' $
-    AND plugsort.fiberid GT 0)
-
-   ;----------
-   ; Compute average (but median-filtered) flux and signal-to-noise
-
+               AND plugsort.fiberid GT 0)
+  
+                                ;----------
+                                ; Compute average (but median-filtered) flux and signal-to-noise
+  
    meanflux = fltarr(nfiber)
    meansn = fltarr(nfiber)
    for ifib=0, nfiber-1 do begin
