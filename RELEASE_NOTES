@@ -1,4 +1,9 @@
+-------------------------------------------------------------------------------
+2011-11-29, Stephen
+BATCHPBS : Turned off calls to plate_spec_image: post-DR9 one should use
+    plotspec or the spectrawebapp for casual browsing of spectra.
 
+-------------------------------------------------------------------------------
 QUICKEXTRACT: Bug fix to sky-subtract in 25 bundles, not just 16.
     Use 2-D sky-subtraction with NPOLY=3 in call to SKYSUBTRACT.
 SKYSUBTRACT: Cleaned up use of DISPSET argument; needs test (ticket #1475).

@@ -243,14 +243,15 @@ pro batchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          ; splog, "run2d is ", run2d
          
          ; Make pretty pictures
-         idlcmd  = "plate_spec_image, " + string(plateid[iplate],format='(i4.4)') 
-         idlcmd += ", mjd=" + string(mjd,format='(i5.5)')
-         idlcmd += ", run1d='" + run1d + "'"
-         idlcmd += ", run2d='" + run2d + "'"
-         idlcmd += ", /silent"
-         printf, olun, ''
-         printf, olun, '#- Make pretty pictures'
-         printf, olun, 'idl -e "' + idlcmd + '"'
+         ;- post-DR9, no longer supported; use spectrawebapp or plotspec instead
+         ; idlcmd  = "plate_spec_image, " + string(plateid[iplate],format='(i4.4)') 
+         ; idlcmd += ", mjd=" + string(mjd,format='(i5.5)')
+         ; idlcmd += ", run1d='" + run1d + "'"
+         ; idlcmd += ", run2d='" + run2d + "'"
+         ; idlcmd += ", /silent"
+         ; printf, olun, ''
+         ; printf, olun, '#- Make pretty pictures'
+         ; printf, olun, 'idl -e "' + idlcmd + '"'
          
          close, olun
          free_lun, olun
