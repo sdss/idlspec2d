@@ -392,7 +392,7 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True):
         #- Delete a bunch of per-exposure keywords which came along for
         #- the ride in the spPlate header
         for keyword in """
-        MJD      NGUIDE 
+        NGUIDE 
         SEEING20 SEEING50 SEEING80
         RMSOFF20 RMSOFF50 RMSOFF80 AZ       ALT      AIRMASS
         DAQVER   CAMDAQ   SUBFRAME ERRCNT   SYNCERR  SLINES
