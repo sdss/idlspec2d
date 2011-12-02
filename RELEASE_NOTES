@@ -1,7 +1,9 @@
 -------------------------------------------------------------------------------
-2011-11-29, Stephen
+
 BATCHPBS : Turned off calls to plate_spec_image: post-DR9 one should use
     plotspec or the spectrawebapp for casual browsing of spectra.
+QUICKEXTRACT: Replicate split sky model between spatial halves of CCD r1
+    as was done in EXTRACT_OBJECT for the full reductions (ticket #1388).
 
 -------------------------------------------------------------------------------
 QUICKEXTRACT: Bug fix to sky-subtract in 25 bundles, not just 16.
