@@ -10,7 +10,9 @@
 ;
 ; CALLING SEQUENCE:
 ;   uubatchpbs, [ platenums, topdir=, run2d=, run1d=, platestart=, plateend=, $
-;    mjd=, mjstart=, mjend=, upsvers2d=, upsvers1d=, /zcode, queue=, /skip2d, /clobber, $
+;    mjd=, mjstart=, mjend=, upsvers2d=, upsvers1d=, rawdata_dir=, $
+;    boss_spectro_redux=, /zcode, /galaxy, queue=, /skip2d, $
+;   /clobber, /nosubmit, $
 ;    pbsnodes=pbsnodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_walltime=pbs_walltime, ember=ember]
 ;
 ; INPUTS:
@@ -37,6 +39,7 @@
 ;                you to batch jobs using a version other than that which
 ;                is declared current under UPS.
 ;   zcode      - If set, run Zcode in auto mode.
+;   galaxy     - If set, run Galaxy (Portsmouth, PCA) Suite of Products.
 ;   queue      - If set, sets the submit queue.
 ;   skip2d     - If set, then skip the Spectro-2D reductions.
 ;   clobber    - If set, then reduce all specified plates.  The default is
@@ -56,6 +59,7 @@
 ;                pbs_ppn = 12 (12 processors per node)
 ;                pbs_a = 'bolton-em' (Bolton's account, limited to 8 nodes: ember253 - ember260)
 ;                pbs_walltime='48:00:00'
+;   nosubmit   - If set, generate script file but don't submit to queue
 ;
 ; OUTPUTS:
 ;
@@ -85,8 +89,11 @@
 pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
  platestart=platestart, plateend=plateend, $
  mjd=mjd, mjstart=mjstart, mjend=mjend, $
- upsvers2d=upsvers2d, upsvers1d=upsvers1d, zcode=zcode, $
- queue=queue, skip2d=skip2d, clobber=clobber, $ 
+ upsvers2d=upsvers2d, upsvers1d=upsvers1d, $
+ rawdata_dir=rawdata_dir, $
+ boss_spectro_redux=boss_spectro_redux, $
+ zcode=zcode, galaxy=galaxy, $
+ queue=queue, skip2d=skip2d, clobber=clobber, nosubmit=nosubmit, $ 
  pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, $
  pbs_walltime=pbs_walltime, ember=ember
 
@@ -263,14 +270,16 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
       planfilecomb = fileandpath(planlist[iplate], path=pathcomb)
 
       ; Construct the name of the batch file
-      fullscriptfile[iplate] = djs_filepath('script-'+platemjd, $
+      ; "script" -> "redux" to make names fit within qstat column widths
+      ; fullscriptfile[iplate] = djs_filepath('script-'+platemjd, $
+      fullscriptfile[iplate] = djs_filepath('redux-'+platemjd, $
        root_dir=pathcomb)
       if (keyword_set(skip2d)) then fullscriptfile[iplate] += '-' + run1d
 
       ; Write the batch file
       if (keyword_set(clobber) EQ 0) then $
        qbatch[iplate] = file_test(fullscriptfile[iplate]) EQ 0
-       
+
       if (qbatch[iplate]) then begin
          openw, olun, fullscriptfile[iplate], /get_lun
          printf, olun, '# Auto-generated batch file '+systime()
@@ -287,10 +296,25 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
            printf, olun, 'cd $PBS_O_WORKDIR'
          endif else printf, olun, 'cd '+pathcomb
 
+         ; Override environment variables if requested
+         if (keyword_set(rawdata_dir)) then begin
+             printf, olun, 'export BOSS_SPECTRO_DATA='+rawdata_dir
+         endif
+         if (keyword_set(boss_spectro_redux)) then begin
+             printf, olun, 'export BOSS_SPECTRO_REDUX='+boss_spectro_redux
+         endif
 
-         ; Echo commands to make debugging easier
+         printf, olun, ''
+         printf, olun, '#- Echo commands to make debugging easier'
          printf, olun, 'set -o verbose'
 
+         ; printf, olun, ''
+         ; printf, olun, '#- Dump job environment for debugging'
+         ; envlog = 'env-'+platemjd+'.txt'
+         ; printf, olun, 'printenv > '+envlog
+         
+         printf, olun, ''
+         printf, olun, '#- The real work'
          if (keyword_set(skip2d) EQ 0) then begin
             ; Set up requested code version
             if (keyword_set(upsvers2d)) then $
@@ -313,12 +337,36 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
 
          ; Run Zcode
          if (keyword_set(zcode)) then begin
+            printf, olun, ''
             printf, olun, 'setup runz'
             printf, olun, 'runz_BOSS.sh ' + platefile +' -a'
+            printf, olun, 'runz_BOSS.sh ' + platefile +' -a -G -t GAL'
          endif
+         
+         ; Run Galaxy (Portsmouth, PCA) Suite of Products
+         if (keyword_set(galaxy)) then begin
+             printf, olun, 'setup galaxy'
+             for i=0, n_elements(planfile2d)-1 do $
+               printf, olun, 'echo '+fq+'galaxy_pipeline,"'+planfile2d[i]+'"'+fq+' | idl'
+         endif
+
+         ; splog, "run1d is ", run1d
+         ; splog, "run2d is ", run2d
+         
+         ; Make pretty pictures
+         ;- post-DR9, no longer supported; use spectrawebapp or plotspec instead
+         ; idlcmd  = "plate_spec_image, " + string(plateid[iplate],format='(i4.4)') 
+         ; idlcmd += ", mjd=" + string(mjd,format='(i5.5)')
+         ; idlcmd += ", run1d='" + run1d + "'"
+         ; idlcmd += ", run2d='" + run2d + "'"
+         ; idlcmd += ", /silent"
+         ; printf, olun, ''
+         ; printf, olun, '#- Make pretty pictures'
+         ; printf, olun, 'idl -e "' + idlcmd + '"'
+         
          close, olun
          free_lun, olun
-         
+
          ;----------
          ; Do not reduce any plan files that are only partial reductions
          ; (If we tried, then we would get multiple instances of SPREDUCE2D
@@ -393,14 +441,27 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
    ; Submit jobs to the PBS queue
 
    if (not keyword_set(pbs_nodes)) then begin
-     for i=0L, nbatch-1L do begin
-        thisfile = fileandpath(fullscriptfile[ibatch[i]], path=thispath)
-        if (keyword_set(thispath)) then cd, thispath
-        spawn, 'qsub '+thisfile
-     endfor
+      for i=0L, nbatch-1L do begin
+         thisfile = fileandpath(fullscriptfile[ibatch[i]], path=thispath)
+         if (keyword_set(thispath)) then cd, thispath, current=origdir
+         if keyword_set(nosubmit) then begin
+            splog, 'Generated '+thisfile+' but not submitting to queue'
+         endif else begin
+            splog, 'Submitting '+thisfile
+            spawn, 'qsub '+thisfile
+         endelse
+      endfor
+      cd, origdir
    endif else begin
      cd, pbs_dir
-     for i=0L, pbs_nodes-1 do spawn, 'qsub '+pbs_node_script[i]
+     for i=0L, pbs_nodes-1 do begin
+        if keyword_set(nosubmit) then begin
+            splog, 'Generated '+pbs_node_script[i]+' but not submitting to queue'
+        endif else begin
+           splog, 'Submitting '+pbs_node_script[i]
+           spawn, 'qsub '+pbs_node_script[i]
+        endelse
+     endfor
    endelse
 
    return
