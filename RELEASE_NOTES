@@ -1,5 +1,11 @@
 -------------------------------------------------------------------------------
 
+VDISPFIT: change to flatten probability in optional redshift marginalization,
+          may or may not be retained (ASB)
+VDISP_PLATEFIT: routine to facilitate re-batching of vdisp fitting code (ASB)
+
+-------------------------------------------------------------------------------
+
 BATCHPBS : Turned off calls to plate_spec_image: post-DR9 one should use
     plotspec or the spectrawebapp for casual browsing of spectra.
 QUICKEXTRACT: Replicate split sky model between spatial halves of CCD r1

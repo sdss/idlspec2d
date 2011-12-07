@@ -379,10 +379,11 @@ function vdispfit, objflux, objivar, objloglam, $
    if (dzpix gt 0) then begin
       chi2arr = fltarr(nsig)
       ; Convert redshift errors to pixel errors:
-      pix_err = z_err[0] / ((1. + zobj[0]) * objdloglam * alog(10.))
-      ; Probability weights for the redshift steps:
-      p_of_z = exp(-0.5*(findgen(2L*dzpix+1L)-float(dzpix))^2/pix_err^2)
-      p_of_z = p_of_z / total(p_of_z)
+;;      pix_err = z_err[0] / ((1. + zobj[0]) * objdloglam * alog(10.))
+;;      ; Probability weights for the redshift steps:
+;;      p_of_z = exp(-0.5*(findgen(2L*dzpix+1L)-float(dzpix))^2/pix_err^2)
+;;      p_of_z = p_of_z / total(p_of_z)
+      p_of_z = 1. / replicate(float(2*dzpix+1), 2*dzpix+1)
       for isig = 0L, nsig-1 do begin
 ;         junk = min(bigchi2arr[isig,*], imin)
 ;         chi2arr[isig] = bigchi2arr[isig,imin]

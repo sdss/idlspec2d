@@ -476,6 +476,7 @@ pro/spec1d/spreduce1d.pro -text
 pro/spec1d/star_dvelocity.pro -text
 pro/spec1d/synthspec.pro -text
 pro/spec1d/uuplotspec.pro -text
+pro/spec1d/vdisp_platefit.pro -text
 pro/spec1d/vdispfit.pro -text
 pro/spec1d/vdisptest.pro -text
 pro/spec1d/veldisp.pro -text
