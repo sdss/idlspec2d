@@ -1,6 +1,8 @@
 
 BATCHPBS: Turned off calls to plate_spec_image: post-DR9 one should use
     plotspec or the spectrawebapp for casual browsing of spectra.
+BBSPEC_EXTRACT,FITSCATTER: Implement a naive scattered light model for
+    the bbspec extraction.
 QUICKEXTRACT: Bug fix to sky-subtract in 25 bundles, not just 16.
     Use 2-D sky-subtraction with NPOLY=3 in call to SKYSUBTRACT.
     Replicate split sky model between spatial halves of CCD r1
