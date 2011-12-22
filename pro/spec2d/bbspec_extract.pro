@@ -40,9 +40,9 @@
 ;   ymodel     - Model-fit image
 ;
 ; COMMENTS:
-;   Currently hard-wired to extract in chunks of 20 fibers by 100 rows,
-;   with the 15 rows on the top and bottom to be used as padding and
-;   discarded.
+;   Temporary files are created with the name TMPROOT+'img.fits'
+;   that contain the scattered-light-subtracted images (HDU #0)
+;   and invvar (HDU #1).  These files are currently not deleted.
 ;
 ; EXAMPLES:
 ;
@@ -144,10 +144,6 @@ pro bbspec_extract, image, invvar, flux, fluxivar, basisfile=basisfile, $
 
    stime0 = systime(1)
 
-   ; Write the image file
-   mwrfits, image, imgfile, /create, /silent
-   mwrfits, invvar, imgfile, /silent
-
    ; If XIMG is set, then shift the PSF traces
    if (keyword_set(ximg)) then begin
       psffile = tmproot+'psf.fits'
@@ -158,6 +154,7 @@ pro bbspec_extract, image, invvar, flux, fluxivar, basisfile=basisfile, $
       splog, 'Done with PSF shift '
    endif else begin
       psffile = basisfile
+      ximg = mrdfits(basisfile, 0)
    endelse
    psfhdr = headfits(psffile)
    ny = sxpar(psfhdr,'NAXIS1')
@@ -165,6 +162,11 @@ pro bbspec_extract, image, invvar, flux, fluxivar, basisfile=basisfile, $
    if (keyword_set(frange1)) then frange = frange1 $
     else frange = [0,nfiber-1]
    brange = [frange[0]/20,ceil(frange[1]/20)] ; range of bundle numbers
+
+   ; Write the image file
+   scatimg = fitscatter(image, invvar, ximg)
+   mwrfits, image - scatimg, imgfile, /create, /silent
+   mwrfits, invvar, imgfile, /silent
 
    pyfile = djs_filepath('extract_spectra.py', root_dir=getenv('BBSPEC_DIR'), $
     subdir='bin')
@@ -183,7 +185,7 @@ pro bbspec_extract, image, invvar, flux, fluxivar, basisfile=basisfile, $
       flux = mrdfits(fluxfile,0)
       fluxivar = mrdfits(fluxfile,1)
       ymodel = mrdfits(fluxfile,6)
-;      rmfile, fluxfile
+      rmfile, fluxfile
    endif else begin
       njob = brange[1] - brange[0] + 1
       bvec = brange[0] + lindgen(njob)
@@ -203,8 +205,9 @@ pro bbspec_extract, image, invvar, flux, fluxivar, basisfile=basisfile, $
       for i=0, njob-1 do flux += mrdfits(fluxfile[i],0)
       for i=0, njob-1 do fluxivar += mrdfits(fluxfile[i],1)
       for i=0, njob-1 do ymodel += mrdfits(fluxfile[i],5)
-;      for i=0, njob-1 do rmfile, fluxfile[i]
+      for i=0, njob-1 do rmfile, fluxfile[i]
    endelse
+   ymodel += scatimg
 
    for i=0, n_elements(phdr)-1 do ptr_free, phdr[i]
    for i=0, n_elements(pbasis)-1 do ptr_free, pbasis[i]
