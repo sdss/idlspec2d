@@ -71,13 +71,16 @@ pro bbspec_extract_readpsf, basisfile1, pbasis, phdr
    if (nhdu EQ 0) then $
     message, 'Error reading PSF file '+string(basisfile)
 
+   splog, nhdu, ' HDUs in ', basisfile
    phdr = ptrarr(nhdu)
    pbasis = ptrarr(nhdu)
    for ihdu=0, nhdu-1 do begin
+      splog, 'Reading HDU ', ihdu
       pbasis[ihdu] = ptr_new(mrdfits(basisfile, ihdu, hdr1))
       phdr[ihdu] = ptr_new(hdr1)
    endfor
 
+   splog, 'Done reading ', basisfile
    return
 end
 ;------------------------------------------------------------------------------
@@ -114,6 +117,7 @@ function bbspec_cmd_batch, cmd, pbsfile=pbsfile
    printf, olun, '#PBS -j oe'
    printf, olun, 'cd $PBS_O_WORKDIR'
    printf, olun, 'set -o verbose'
+   printf, olun, 'echo $BBSPEC_DIR'
    printf, olun, cmd
    close, olun
    free_lun, olun
@@ -147,8 +151,11 @@ pro bbspec_extract, image, invvar, flux, fluxivar, basisfile=basisfile, $
    ; If XIMG is set, then shift the PSF traces
    if (keyword_set(ximg)) then begin
       psffile = tmproot+'psf.fits'
+      splog, 'Reading bbspec PSF ', basisfile
       bbspec_extract_readpsf, basisfile, pbasis, phdr
+      splog, 'Shifting PSF to ', psffile
       bbspec_extract_shiftpsf, pbasis, phdr, psffile, ximg=ximg
+      splog, 'Done with PSF shift '
    endif else begin
       psffile = basisfile
    endelse
@@ -175,7 +182,7 @@ pro bbspec_extract, image, invvar, flux, fluxivar, basisfile=basisfile, $
       spawn, cmd, res, errcode
       flux = mrdfits(fluxfile,0)
       fluxivar = mrdfits(fluxfile,1)
-      ymodel = mrdfits(fluxfile,5)
+      ymodel = mrdfits(fluxfile,6)
 ;      rmfile, fluxfile
    endif else begin
       njob = brange[1] - brange[0] + 1
