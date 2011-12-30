@@ -5,7 +5,7 @@ BBSPEC_EXTRACT,FITSCATTER: Implement a naive scattered light model for
     the bbspec extraction.
 QUICKEXTRACT: Bug fix to sky-subtract in 25 bundles, not just 16.
     Use 2-D sky-subtraction with NPOLY=3 in call to SKYSUBTRACT.
-    Replicate split sky model between spatial halves of CCD r1
+    Replicate split sky model between spatial halves of CCD r2
     as was done in EXTRACT_OBJECT for the full reductions (ticket #1388).
 SKYSUBTRACT: Cleaned up use of DISPSET argument; needs test (ticket #1475).
 VDISPFIT: Change to flatten probability in optional redshift marginalization,
