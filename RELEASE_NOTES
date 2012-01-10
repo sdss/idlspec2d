@@ -1,4 +1,4 @@
-
+v5_5_4 (2012-1-10)
 BATCHPBS: Turned off calls to plate_spec_image: post-DR9 one should use
     plotspec or the spectrawebapp for casual browsing of spectra.
 BBSPEC_EXTRACT,FITSCATTER: Implement a naive scattered light model for
