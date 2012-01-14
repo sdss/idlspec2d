@@ -89,7 +89,7 @@ pro apo_plotsn, logfile, plate, expnum=expnum, plugdir=plugdir, $
 
       ; Test that the exposure falls within valid S/N^2 limits
       qkeep = apo_checklimits('science', 'SN2', PPSCIENCE[ii].camera, $
-       PPSCIENCE[ii].sn2) EQ ''
+       PPSCIENCE[ii].sn2) NE 'red'
 
       ; If EXPNUM is specified, then only use data from those exposure(s)
       if (keyword_set(expnum)) then $
