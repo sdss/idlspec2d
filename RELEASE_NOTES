@@ -1,3 +1,14 @@
+
+v5_5_7 (2012-1-13)
+opLimits.par:  speclimit yellow science SN2 * -9e9 -0.2
+    set limits so that the line remains as a template for changes to the
+    SN2 error messages, but set the values so that no reductions at APO
+    will trigger the warning.  
+    (KD)
+
+-------------------------------------------------------------------------------
+
+
 v5_5_4 (2012-1-10)
 BATCHPBS: Turned off calls to plate_spec_image: post-DR9 one should use
     plotspec or the spectrawebapp for casual browsing of spectra.

@@ -327,7 +327,7 @@ if docams eq 'r1' and  mjd ge 55413  and mjd lt 55800 then begin
     bpmhot[3810:3812,2278:2282]+=32
 endif
 
-if docams eq 'r1' and  mjd ge 55800 and mjd lt 55850 then bpmhot[1342:1353,2063:4127]+=32 ;changed r1 temp on 55850 to get rid of bad column
+;if docams eq 'r1' and  mjd ge 55800 and mjd lt 55850 then bpmhot[1342:1353,2063:4127]+=32 ;changed r1 temp on 55850 to get rid of bad column
 
 if docams eq 'r2' and mjd lt 55300 then bpmhot[2171:2192,2115:2217]+=32
 
