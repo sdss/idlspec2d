@@ -1,9 +1,16 @@
+-------------------------------------------------------------------------------
+v5_5_7 (2012-01-18)
+--> Installed at APO
 
 APO_PLOTSN: Line 92 changed to address ticket #1506: SOS not plotting
-    data from vry low S/N exposures.
+    data from very low S/N exposures.
+
+ups/idlspec2d.table : force explicit version dependency idlutils v5_4_26.
 
 -------------------------------------------------------------------------------
-v5_5_4 (2012-1-10)
+v5_5_4 - v5_5_6 (2012-1-10)
+[several busted tag iterations sorting out dependencies]
+--> Never installed at APO; skip to v5_5_7
 
 BATCHPBS: Turned off calls to plate_spec_image: post-DR9 one should use
     plotspec or the spectrawebapp for casual browsing of spectra.
@@ -19,6 +26,7 @@ VDISP_PLATEFIT: New routine to facilitate re-batching of vdisp fitting code
 
 -------------------------------------------------------------------------------
 v5_5_3 (2011-11-14)
+--> Installed at APO
 Tag for SOS with small changes after b2 triplet replacement.
 Built against elodie/v1_3, specflat/v1_16, idlutils/v5_4_24.
 

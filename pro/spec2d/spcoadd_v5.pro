@@ -220,7 +220,7 @@ pro spcoadd_v5, spframes, outputname, $
 
       ;----------
       ; Make a map of the size of each pixel in delta-(log10-Angstroms),
-      ; and re-normalize the flux to ADU/(dloglam)
+      ; and re-normalize the flux to electrons/(dloglam)
 
       correct_dlam, tempflux, tempivar, tempwset, dlam=binsz
       correct_dlam, tempsky, 0, tempwset, dlam=binsz

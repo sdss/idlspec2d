@@ -3,7 +3,7 @@
 ;   spcombine_v5
 ;
 ; PURPOSE:
-;   Calling script for SPCOADD_FRAMES.
+;   Calling script for SPCOADD_V5.
 ;
 ; CALLING SEQUENCE:
 ;   spcombine_v5, [ planfile, docams=, adderr=, /xdisplay, minsn2= ]
@@ -40,7 +40,7 @@
 ;   headfits
 ;   idlspec2d_version()
 ;   idlutils_version()
-;   spcoadd_frames
+;   spcoadd_v5
 ;   spflux_v5
 ;   spfluxcorr_v5
 ;   splog

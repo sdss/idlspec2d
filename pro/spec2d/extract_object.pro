@@ -258,7 +258,7 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
    extract_bundle_image, image, invvar, xnow, sigma2, flux, fluxivar,$
     proftype=proftype, wfixed=wfixed, ansimage=ansimage3, $
     highrej=highrej, lowrej=lowrej, npoly=2L, $ ; whopping=whopping, $
-    chisq=chisq, ymodel=ymodel, pixelmask=pixelmask, reject=reject, /relative, $
+    chisq=chisq, ymodel=ymodel, pixelmask=pixelmask, reject=reject, /relative,$
     nperbun=20L, buffsize=8L
 
    ; Replace the extracted fluxes with bbspec extractions
