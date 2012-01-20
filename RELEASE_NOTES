@@ -1,3 +1,8 @@
+
+etc/emlines.par: The H_gamma line fit width was accidentally tied to the
+    forbidden lines rather than the Balmer lines.  Fixed.
+ups/idlspec2d.table: Remove explicit version dependency idlutils v5_4_26.
+
 -------------------------------------------------------------------------------
 v5_5_7 (2012-01-18)
 --> Installed at APO
@@ -5,7 +10,9 @@ v5_5_7 (2012-01-18)
 APO_PLOTSN: Line 92 changed to address ticket #1506: SOS not plotting
     data from very low S/N exposures.
 
-ups/idlspec2d.table : force explicit version dependency idlutils v5_4_26.
+bin/updatePluggingStatus: Remove to avoid conflict with version in
+    the platedb product.
+ups/idlspec2d.table: Force explicit version dependency idlutils v5_4_26.
 
 -------------------------------------------------------------------------------
 v5_5_4 - v5_5_6 (2012-1-10)
