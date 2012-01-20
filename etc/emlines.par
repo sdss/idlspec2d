@@ -26,7 +26,7 @@ typedef struct {
  emlineid  3889.049   "H_epsilon"     zemission  w_balmer   f3889  1
  emlineid  3970.00    "[Ne_III] 3970" zemission  wemission  f3970  1
  emlineid  4101.734   "H_delta"       zemission  w_balmer   f4101  1
- emlineid  4340.464   "H_gamma"       zemission  wemission  f4340  1
+ emlineid  4340.464   "H_gamma"       zemission  w_balmer   f4340  1
  emlineid  4363.209   "[O_III] 4363"  zemission  wemission  f4363  1
  emlineid  4685.68    "He_II 4685"    zemission  wemission  f4685  1
  emlineid  4861.325   "H_beta"        zemission  w_balmer   f4861  1
