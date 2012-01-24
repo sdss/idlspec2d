@@ -8,7 +8,7 @@
 ; CALLING SEQUENCE:
 ;   pca_qso, [inputfile=inputfile], [wavemin=wavemin], [wavemax=wavemax], $
 ;            [binsz=binsz], [niter=niter], [savefile=savefile], [/flux], $
-;            [/qso]
+;            [/allatonce]
 ;
 ; INPUTS:
 ;   None
@@ -23,7 +23,7 @@
 ;   flux      - Plot redshift-shifted spectra.
 ;   niter     - Number of iterations to pass to pca_solve, default 200.
 ;   savefile  - Save the input spectra to a named file for debugging.
-;   qso       - Solve for components one at a time, instead of all at once.
+;   allatonce - Solve for components all at once instead of one at a time.
 ;
 ; OUTPUTS:
 ;   None, but creates the files spEigenQSO-MJD.fits & spEigenQSO-MJD.ps
@@ -39,6 +39,7 @@
 ;   skymask()
 ;   wavevector()
 ;   pca_solve()
+;   computechi2()
 ;   djs_median()
 ;   djs_plot
 ;   djs_oplot
@@ -117,7 +118,18 @@ PRO pca_qso, inputfile=inputfile, wavemin=wavemin, wavemax=wavemax, $
     ;
     IF ~KEYWORD_SET(binsz) THEN binsz = objloglam[1,0] - objloglam[0,0]
     newloglam = wavevector(ALOG10(wavemin), ALOG10(wavemax), binsz=binsz)
-    IF ~KEYWORD_SET(qso) THEN BEGIN
+    IF KEYWORD_SET(allatonce) THEN BEGIN
+        ;
+        ; Do PCA solution -- all components at once.
+        ;
+        ; The following would solve for all the eigen-vectors at once.
+        ; This can result in an unphysical 1st eigencomponent, probably
+        ; because each spectrum only covers a small range of rest wavelength.
+        ;
+        pcaflux = pca_solve(objflux, objivar, objloglam, zfit, $
+            wavemin=wavemin, wavemax=wavemax, $
+            niter=niter, nkeep=nkeep, newloglam=newloglam, eigenval=eigenval)
+    ENDIF ELSE BEGIN
         ;
         ; Do PCA solution -- but one component at a time.
         ;
@@ -158,17 +170,6 @@ PRO pca_qso, inputfile=inputfile, wavemin=wavemin, wavemax=wavemax, $
             objflux = saveflux - acoeff ## pcaflux
             objivar = newivar
         ENDFOR
-    ENDIF ELSE BEGIN
-        ;
-        ; Do PCA solution -- all components at once.
-        ;
-        ; The following would solve for all the eigen-vectors at once.
-        ; This can result in an unphysical 1st eigencomponent, probably
-        ; because each spectrum only covers a small range of rest wavelength.
-        ;
-        pcaflux = pca_solve(objflux, objivar, objloglam, zfit, $
-            wavemin=wavemin, wavemax=wavemax, $
-            niter=niter, nkeep=nkeep, newloglam=newloglam, eigenval=eigenval)
     ENDELSE
     pcaflux = FLOAT(pcaflux)
     ;
