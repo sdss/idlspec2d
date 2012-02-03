@@ -1,4 +1,6 @@
 
+PCA_QSO: Add /allatonce keyword.
+
 etc/emlines.par: The H_gamma line fit width was accidentally tied to the
     forbidden lines rather than the Balmer lines.  Fixed.
 ups/idlspec2d.table: Remove explicit version dependency idlutils v5_4_26.
