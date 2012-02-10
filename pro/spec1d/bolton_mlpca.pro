@@ -1,8 +1,10 @@
 ;+
 ;
-; NAME: bolton_mlpca
+; NAME:
+;  bolton_mlpca
 ;
-; PURPOSE: Bolton's maximum-likelihood PCA implementation for astronomy
+; PURPOSE:
+;  Bolton's maximum-likelihood PCA implementation for astronomy
 ;
 ; USAGE:
 ;  tempset = bolton_mlpca(objflux=objflux, objivar=objivar [, $

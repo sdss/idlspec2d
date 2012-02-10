@@ -1,6 +1,6 @@
 ;+
 ; NAME:
-;   inspectfiles
+;   inspectgen
 ;
 ; PURPOSE:
 ;   Create empty spInspect file(s) for manual inspection of classifications

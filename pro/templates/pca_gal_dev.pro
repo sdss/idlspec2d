@@ -1,10 +1,13 @@
 ;+
 ;
-; NAME: pca_gal_dev
+; NAME:
+;  pca_gal_dev
 ;
-; PURPOSE: Developmental PCA of BOSS Galaxies
+; PURPOSE:
+;  Developmental PCA of BOSS Galaxies
 ;
-; WRITTEN: bolton@utah 2010may
+; WRITTEN:
+;  bolton@utah 2010may
 ;
 ;-
 

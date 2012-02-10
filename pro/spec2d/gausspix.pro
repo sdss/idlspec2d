@@ -1,8 +1,10 @@
 ;+
 ;
-; NAME: gausspix
+; NAME:
+;  gausspix
 ;
-; PURPOSE: pixel-integrated 1D Gaussian.
+; PURPOSE:
+;  pixel-integrated 1D Gaussian.
 ;
 ; USAGE:
 ;  profile = gausspix(x, par [, /skew, /kurt])

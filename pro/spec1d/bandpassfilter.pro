@@ -3,6 +3,7 @@
 ;   bandpassfilter
 ;
 ; PURPOSE:
+;   Apply a bandpass to Fourier-transformed data.
 ;
 ; CALLING SEQUENCE:
 ;   newdata = bandpassfilter( datafft, [ klo_cut=, khi_cut= ] )

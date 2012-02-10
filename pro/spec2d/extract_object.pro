@@ -3,7 +3,6 @@
 ;   extract_object
 ;
 ; PURPOSE:
-;
 ;   Performs all object extraction tasks
 ;      0) Locate bright fibers, and test image background
 ;      1) 4 Step Optimal extraction

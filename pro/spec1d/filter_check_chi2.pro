@@ -3,9 +3,7 @@
 ;   filter_check_chi2
 ;
 ; PURPOSE:
-;   
-;   Calculate the chi^2 for a particular set of bandpass
-;   residuals. 
+;   Calculate the chi^2 for a particular set of bandpass residuals.
 ;
 ; CALLING SEQUENCE:
 ;   chi2 = filter_check_chi2(binflux, binR, photocounts)

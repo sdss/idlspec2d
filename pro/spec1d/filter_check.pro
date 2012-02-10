@@ -3,7 +3,6 @@
 ;   filter_check
 ;
 ; PURPOSE:
-;   
 ;   Fit for the filter curves by comparing photometry and spectrophotometry
 ;
 ; CALLING SEQUENCE:

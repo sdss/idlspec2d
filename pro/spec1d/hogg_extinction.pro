@@ -1,4 +1,8 @@
 ;+
+; NAME:
+;  hogg_extinction
+; PURPOSE:
+;  Plot some things having to do with extinction.
 ; COMMENTS:
 ;  - Check out Burki et al, A&ASS, 112, 383 (1995).
 ; BUGS:

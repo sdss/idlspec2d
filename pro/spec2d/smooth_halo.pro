@@ -1,6 +1,6 @@
 ;+
 ; NAME:
-;   smooth_halo
+;   smooth_halo()
 ;
 ; PURPOSE:
 ;   Given a model image of the CCD, smooth and return a halo image

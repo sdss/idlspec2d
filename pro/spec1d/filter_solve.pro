@@ -3,9 +3,7 @@
 ;   filter_solve
 ;
 ; PURPOSE:
-;   
-;   Minimize the chi^2 by varying the filter residuals. Basically
-;   solve Ax=b.
+;   Minimize the chi^2 by varying the filter residuals. Basically solve Ax=b.
 ;
 ; CALLING SEQUENCE:
 ;   filter_solve,binflux,photocounts,binR

@@ -2,7 +2,7 @@
 ; NAME:
 ;   bbspec_test
 ;
-; PURPOSE:;
+; PURPOSE:
 ;   Run bbspec 2D extraction code as an after-burner to existing reductions
 ;
 ; CALLING SEQUENCE:

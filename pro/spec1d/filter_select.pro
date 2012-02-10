@@ -3,10 +3,8 @@
 ;   filter_select
 ;
 ; PURPOSE:
-;   
-;   Gather spectra based on an input file of the form 
-;   created by platemerge (the spAll file). Calculate the 
-;   ugriz throughput for each object in the plates, possibly
+;   Gather spectra based on an input file of the form created by platemerge (the spAll file).
+;   Calculate the ugriz throughput for each object in the plates, possibly
 ;   putting limits on target type, MJD, or signal-to-noise
 ;   (essentially by requiring survey quality). 
 ;

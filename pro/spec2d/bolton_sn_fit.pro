@@ -1,8 +1,10 @@
 ;+
 ;
-; NAME: bolton_sn_fit
+; NAME:
+;   bolton_sn_fit
 ;
-; PURPOSE: robust fit to SN^2 versus fibermag
+; PURPOSE:
+;   robust fit to SN^2 versus fibermag
 ;
 ; USAGE:
 ;   sn2ref = bolton_sn_fit(fibermag, sn2vector [, $
