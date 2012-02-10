@@ -1,24 +1,11 @@
-File=Table
-Product=idlspec2d
-
-Group:
-Flavor=ANY
-Qualifiers=""
-
-Common:
-   Action=setup
-      setupOptional("bbspec")
-      setupOptional("elodie")
-      setupOptional("spinspect")
-      setupOptional("specflat")
-      setupOptional("speclog")
-      setupOptional("platelist")
-      setupOptional("platedb")
-      setupRequired("idlutils")
-      proddir()
-      setupenv()
-      pathAppend(PATH, ${UPS_PROD_DIR}/bin)
-      envPrepend(PYTHONPATH, ${PRODUCT_DIR}/bin)
-      envPrepend(IDL_PATH, +${UPS_PROD_DIR}/pro)
-End:
-
+setupOptional("bbspec")
+setupOptional("elodie")
+setupOptional("spinspect")
+setupOptional("specflat")
+setupOptional("speclog")
+setupOptional("platelist")
+setupOptional("platedb")
+setupRequired("idlutils")
+envAppend(PATH, ${PRODUCT_DIR}/bin)
+envPrepend(PYTHONPATH, ${PRODUCT_DIR}/bin)
+envPrepend(IDL_PATH, +${PRODUCT_DIR}/pro)

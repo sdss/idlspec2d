@@ -1,51 +1,78 @@
 ###############################################################################
-# Sloan Digital Sky Survey (SDSS) -- 2D spectroscopic reduction code
+# Sloan Digital Sky Survey III (SDSS-III) -- 2D spectroscopic reduction code
+# Code for product: idlspec2d
+#
 # S. Burles & D. Schlegel
+#
+# This Makefile & all Makefiles in this product are GNU make compliant.
+# Please help keep them that way.  See
+# http://www.gnu.org/software/make/manual/make.html
+#
+# $Id$
+#
 ###############################################################################
-
-SHELL = /bin/sh
 #
-.c.o :
-	$(CC) -c $(CCCHK) $(CFLAGS) $*.c
+# Change TEMPLATE_DIR here!
 #
-CFLAGS  = $(SDSS_CFLAGS) -DCHECK_LEAKS -I../include
-
-SUBDIRS = bin doc etc examples include lib misc opfiles pro src templates ups
-
+INSTALL_DIR = $(IDLSPEC2D_DIR)
+#
+# Use this shell to interpret shell commands, & pass its value to sub-make
+#
+export SHELL = /bin/sh
+#
+# This is like doing 'make -w' on the command line.  This tells make to
+# print the directory it is in.
+#
+MAKEFLAGS = w
+#
+# This is a list of subdirectories that make should descend into.  Makefiles
+# in these subdirectories should also understand 'make all' & 'make clean'.
+# This list can be empty, but should still be defined.
+#
+SUBDIRS = include src
+#
+# This line helps prevent make from getting confused in the case where you
+# have a file named 'clean'.
+#
+.PHONY : clean doc
+#
+# This should compile all code prior to it being installed
+#
 all :
-	@ for f in $(SUBDIRS); do \
-		(cd $$f ; echo In $$f; $(MAKE) $(MFLAGS) all ); \
-	done
-
+	@ for f in $(SUBDIRS); do $(MAKE) -C $$f all ; done
 #
-# Install things in their proper places in $(IDLSPEC2D_DIR)
+# Used to (re)make the documentation files
+#
+doc :
+	$(MAKE) -C doc clean
+	$(MAKE) -C doc all
+#
+# Install things in their proper places in $(INSTALL_DIR)
 #
 install :
-	@echo "You should be sure to have updated before doing this."
-	@echo ""
-	@if [ "$(IDLSPEC2D_DIR)" = "" ]; then \
+	@ echo "You should be sure to have updated before doing this."
+	@ echo ""
+	@ if [ "$(INSTALL_DIR)" = "" ]; then \
 		echo You have not specified a destination directory >&2; \
 		exit 1; \
-	fi 
-	@if [ -e $(IDLSPEC2D_DIR) ]; then \
+	fi
+	@ if [ -e $(INSTALL_DIR) ]; then \
 		echo The destination directory already exists >&2; \
 		exit 1; \
-	fi 
-	@echo ""
-	@echo "You will be installing in \$$IDLSPEC2D_DIR=$$IDLSPEC2D_DIR"
-	@echo "I'll give you 5 seconds to think about it"
-	@echo sleep 5
-	@echo ""
-	@ rm -rf $(IDLSPEC2D_DIR)
-	@ mkdir $(IDLSPEC2D_DIR)
-	@ for f in $(SUBDIRS); do \
-		(mkdir $(IDLSPEC2D_DIR)/$$f; cd $$f ; echo In $$f; $(MAKE) $(MFLAGS) install ); \
-	done
-	- cp Makefile $(IDLSPEC2D_DIR)
-	- cp RELEASE_NOTES $(IDLSPEC2D_DIR)
+	fi
+	@ echo ""
+	@ echo "You will be installing in \$$INSTALL_DIR=$(INSTALL_DIR)"
+	@ echo "I'll give you 5 seconds to think about it"
+	@ sleep 5
+	@ echo ""
+	@ rm -rf $(INSTALL_DIR)
+	@ mkdir $(INSTALL_DIR)
+	@ cp -Rf . $(INSTALL_DIR)
 
+#
+# GNU make pre-defines $(RM).  The - in front of $(RM) causes make to
+# ignore any errors produced by $(RM).
+#
 clean :
-	- /bin/rm -f *~ core
-	@ for f in $(SUBDIRS); do \
-		(cd $$f ; echo In $$f; $(MAKE) $(MFLAGS) clean ); \
-	done
+	- $(RM) *~ core
+	@ for f in $(SUBDIRS); do $(MAKE) -C $$f clean ; done

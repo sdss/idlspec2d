@@ -7,3 +7,4 @@ doc/www/idlspec2d_doc.html
 lib/*.a
 lib/*.dylib
 lib/*.so
+src/*.o

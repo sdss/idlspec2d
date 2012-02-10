@@ -1,7 +1,6 @@
 * text=auto !eol
 /Makefile -text
 /RELEASE_NOTES -text
-bin/Makefile -text
 bin/fb_classes.py -text
 bin/filecheck.py -text
 bin/getPlugmap -text
@@ -52,7 +51,6 @@ bin/zplot -text
 doc/IR_scattering.txt -text
 doc/Makefile -text
 doc/PlateDbDone-v3.pdf -text
-doc/mk_doc -text
 doc/paper/Photo1lg.jpg -text svneol=unset#unset
 doc/paper/SpecSecFull.ps -text
 doc/paper/disp_bounds.fits -text
@@ -106,7 +104,6 @@ doc/www/zplot-brg.ps -text
 doc/www/zplot-log.ps -text
 doc/www/zplot-main.ps -text
 doc/www/zplot-qso.ps -text
-etc/Makefile -text
 etc/atmdisp_vec_am1.1see2.0.fit -text
 etc/atmdisp_vec_am1.2see2.0.fit -text
 etc/atmdisp_vec_am1.3see2.0.fit -text
@@ -133,7 +130,6 @@ etc/regress1d_all.chicago -text
 etc/regress1d_all.dat -text
 etc/regress1d_all.plates -text
 etc/skylines.dat -text
-examples/Makefile -text
 examples/README -text
 examples/batch1d.par -text
 examples/batch2d.par -text
@@ -173,10 +169,7 @@ examples/spFluxcalib-b2.fits -text svneol=unset#unset
 examples/spFluxcalib-r1.fits -text svneol=unset#unset
 examples/spFluxcalib-r2.fits -text svneol=unset#unset
 include/Makefile -text
-include/export.h -text
 include/extract_row.h -text
-lib/Makefile -text
-misc/Makefile -text
 misc/atomic.dat -text
 misc/brg.list -text
 misc/distort.blue -text
@@ -184,12 +177,10 @@ misc/distort.red -text
 misc/plate306.mail -text
 misc/rawdata2bossdata -text
 misc/uomoto.distortions -text
-opfiles/Makefile -text
 opfiles/lamplines.par -text
 opfiles/opFibers.par -text
 opfiles/opSNlimits.par -text
 opfiles/spInspect-0000-00000.par -text
-pro/Makefile -text
 pro/apo2d/apo_appendlog.pro -text
 pro/apo2d/apo_checklimits.pro -text
 pro/apo2d/apo_color2hex.pro -text
@@ -649,7 +640,6 @@ src/Makefile -text
 src/extract_boxcar.c -text
 src/extract_row.c -text
 src/sshiftvec.c -text
-templates/Makefile -text
 templates/bc03_padova1994_chab_z004_ssp.fit.gz -text svneol=unset#unset
 templates/bc03_padova1994_chab_z008_ssp.fit.gz -text svneol=unset#unset
 templates/bc03_padova1994_chab_z02_ssp.fit.gz -text svneol=unset#unset
@@ -746,5 +736,4 @@ templates/ssp_900Myr_z02.spec -text
 templates/ssp_900Myr_z05.spec -text
 templates/wfEigenGal-52223.fits -text
 templates/wfEigenStar-52374.fits -text
-ups/Makefile -text
 ups/idlspec2d.table -text

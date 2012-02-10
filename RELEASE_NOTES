@@ -1,3 +1,9 @@
+mk_doc: Removed, document generation now handled directly by doc/Makefile
+idlspec2d.table: remove outdated notation.
+Makefile (top-level): make doc is now not part of default install
+Makefile (lower-level): All unnecessary Makefiles (that only did make install)
+    are removed.
+include/export.h: Remove old export.h and link to $IDL_DIR/external/export.h
 .cvsignore: Removed unnecessary .cvsignore files
 examples/opECalib-*.par: Removed executable tags on some files.
 
@@ -156,7 +162,7 @@ SPREDUCE1D: Fix spurious "broadline" subclassing (ASB, ticket #1316)
 SPREDUCE,EXTRACT_OBJECT: Make use of the CCDMASK from SDSSPROC,
     and include those mask values through the pixel mask.  A 'NODATA'
     value is currently inherited from the initial SDSSPROC.
-    Erase several of the bits in the 'NODATA' regions: 
+    Erase several of the bits in the 'NODATA' regions:
     ['NEARBADPIXEL','LOWFLAT','SCATTEREDLIGHT','NOSKY'].
     This partially addresses ticket #1301.
 
@@ -234,8 +240,8 @@ BBSPEC_PIXPSF: Initial check-in for code that generates a pixelated PSF
      from an arc frame.
 EXTRACT_OBJECT: Add /bbspec option, and if set call BBSPEC_EXTRACT to replace
      fluxes and errors.
-FITDISPERSION: Change quadrupole region for /QUICK option for reporting 
-     MEDWIDTH for different regions on the CCD (ticket #822).  This 
+FITDISPERSION: Change quadrupole region for /QUICK option for reporting
+     MEDWIDTH for different regions on the CCD (ticket #822).  This
      option used by QUICKWAVE.
 FITFLATWIDTH: At least half the points should be good to fit the median
      value within a bundle.
@@ -489,11 +495,11 @@ BATCHPBS: Fix bug when passing plate numbers as a number rather than string.
 CCDTILT: Fix crash condition for /DOPLOT option.
 COMBSMALLCOLLIMATE: Refine offsets to gives same results as
       COLLIMATE using full Hartmanns taken from MJD 55440 to 55511  and tests
-      of -10000,0,10000 step offset and more tests from 55581. 
+      of -10000,0,10000 step offset and more tests from 55581.
       b1 offset created using collimate, not collimate,/debug.
-      Setting slope equal to 1 for offset between collimate and 
+      Setting slope equal to 1 for offset between collimate and
       combsmallcollimate.
-      Minor change on b residual output 
+      Minor change on b residual output
 FINDSPEC: Works with SDSS-I,II data as well as BOSS data
       Add /SDSS option that is hard-wired to run2d='26'
 OPFIBER_GENERATE: New proc for generating the opFibers.par file

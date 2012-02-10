@@ -1,6 +1,0 @@
-; IDL commands for building HTML documentation
-
-cd, '..'
-make_html_help, 'pro/*/', 'doc/www/idlspec2d_doc.html', $
- /strict, title='IDL Help for IDLSPEC2D', /verbose
-exit

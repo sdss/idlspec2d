@@ -1,22 +1,36 @@
 ###############################################################################
-# Sloan Digital Sky Survey (SDSS) -- 2D spectroscopic reduction code
+# Sloan Digital Sky Survey III (SDSS-III) -- 2D spectroscopic reduction code
+# Code for product: idlspec2d
+#
 # S. Burles & D. Schlegel
+#
+# This Makefile & all Makefiles in this product are GNU make compliant.
+# Please help keep them that way.  See
+# http://www.gnu.org/software/make/manual/make.html
+#
+# $Id$
+#
 ###############################################################################
-
-SHELL = /bin/sh
 #
-all :
-	idl mk_doc
+# This line helps prevent make from getting confused in the case where you
+# have a file named 'clean'.
+#
+.PHONY : clean
+#
+# This should compile all code prior to it being installed.
+#
+all : www/idlspec2d_doc.html
 
 #
-# Install things in their proper places in $(IDLSPEC2D_DIR)
+# Replace mk_doc
 #
-install :
-	@ rm -rf $(IDLSPEC2D_DIR)/doc/www
-	@ mkdir $(IDLSPEC2D_DIR)/doc/www
-	- cp www/*.html $(IDLSPEC2D_DIR)/doc/www
-	- cp Makefile $(IDLSPEC2D_DIR)/doc
+www/idlutils_doc.html :
+	idl -e 'make_html_help, getenv("IDLSPEC2D_DIR")+"/pro/*/", "www/idlspec2d_doc.html", /strict, title="IDL Help for IDLSPEC2D", /verbose, version="idlspec2d"'
 
+#
+# GNU make pre-defines $(RM).  The - in front of $(RM) causes make to
+# ignore any errors produced by $(RM).
+#
 clean :
-	- /bin/rm -f *~ core www/*~ www/core
+	- $(RM) www/idlspec2d_doc.html
 
