@@ -24,7 +24,7 @@ all : www/idlspec2d_doc.html
 #
 # Replace mk_doc
 #
-www/idlutils_doc.html :
+www/idlspec2d_doc.html :
 	idl -e 'make_html_help, getenv("IDLSPEC2D_DIR")+"/pro/*/", "www/idlspec2d_doc.html", /strict, title="IDL Help for IDLSPEC2D", /verbose, version="idlspec2d"'
 
 #
