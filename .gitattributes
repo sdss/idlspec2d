@@ -53,7 +53,6 @@ doc/IR_scattering.txt -text
 doc/Makefile -text
 doc/PlateDbDone-v3.pdf -text
 doc/mk_doc -text
-doc/paper/.cvsignore -text
 doc/paper/Photo1lg.jpg -text svneol=unset#unset
 doc/paper/SpecSecFull.ps -text
 doc/paper/disp_bounds.fits -text
@@ -93,7 +92,6 @@ doc/paper/spDiag2d-0412-52258.ps_153 -text
 doc/paper/spDiag2d-0412-52258.ps_156 -text
 doc/paper/spDiag2d-0412-52258_156.eps -text
 doc/spphoto.ps -text
-doc/www/.cvsignore -text
 doc/www/idlspec2d_install.html -text
 doc/www/idlspec2d_reduce.html -text
 doc/www/pathall.ps -text
@@ -177,7 +175,6 @@ examples/spFluxcalib-r2.fits -text svneol=unset#unset
 include/Makefile -text
 include/export.h -text
 include/extract_row.h -text
-lib/.cvsignore -text
 lib/Makefile -text
 misc/Makefile -text
 misc/atomic.dat -text

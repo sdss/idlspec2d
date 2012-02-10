@@ -1,3 +1,5 @@
+.cvsignore: Removed unnecessary .cvsignore files
+examples/opECalib-*.par: Removed executable tags on some files.
 
 PCA_QSO: Add /allatonce keyword.
 
