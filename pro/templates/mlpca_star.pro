@@ -1,6 +1,7 @@
 ;+
 ;
-; NAME: mlpca_star
+; NAME:
+;  mlpca_star
 ;
 ; PURPOSE:
 ;  Generate ML-PCA templates for stars

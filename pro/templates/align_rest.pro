@@ -1,6 +1,7 @@
 ;+
 ;
-; NAME: align_rest
+; NAME:
+;  align_rest
 ;
 ; PURPOSE:
 ;  Align spectra in rest wavelength given redshift.

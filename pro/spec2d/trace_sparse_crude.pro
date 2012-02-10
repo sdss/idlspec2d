@@ -1,6 +1,7 @@
 ;+
 ;
-; NAME: trace_sparse_crude
+; NAME:
+;  trace_sparse_crude
 ;
 ; PURPOSE:
 ;  Semi-crude, semi-robust tracing of sparse flats.
