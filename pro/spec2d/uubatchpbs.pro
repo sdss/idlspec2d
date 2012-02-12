@@ -10,10 +10,10 @@
 ;
 ; CALLING SEQUENCE:
 ;   uubatchpbs, [ platenums, topdir=, run2d=, run1d=, platestart=, plateend=, $
-;    mjd=, mjstart=, mjend=, upsvers2d=, upsvers1d=, rawdata_dir=, $
-;    boss_spectro_redux=, /zcode, /galaxy, queue=, /skip2d, $
+;    mjd=, mjstart=, mjend=, upsvers2d=, upsvers1d=, upsversutils=, rawdata_dir=, $
+;    boss_spectro_redux=, /zcode, /galaxy, upsversgalaxy=, pbsdir=, queue=, /skip2d, $
 ;   /clobber, /nosubmit, $
-;    pbsnodes=pbsnodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_walltime=pbs_walltime, ember=ember]
+;    pbsnodes=pbsnodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_walltime=pbs_walltime, /riemann, /ember]
 ;
 ; INPUTS:
 ;
@@ -38,8 +38,13 @@
 ;                remote machine before executing Spectro-1D.  This allows
 ;                you to batch jobs using a version other than that which
 ;                is declared current under UPS.
+;   upsversutils - If set, then do a "setup idlspecutils $IDLUTILS" on the
+;                remote machine.
 ;   zcode      - If set, run Zcode in auto mode.
 ;   galaxy     - If set, run Galaxy (Portsmouth, PCA) Suite of Products.
+;   upsversgalaxy  - If set, then do a "setup galaxy $GALAXY" on the
+;                remote machine.
+;   pbsdir     - Optional override value for the environment variable $BOSS_PBS_DIR.
 ;   queue      - If set, sets the submit queue.
 ;   skip2d     - If set, then skip the Spectro-2D reductions.
 ;   clobber    - If set, then reduce all specified plates.  The default is
@@ -58,6 +63,10 @@
 ;                pbs_nodes = 8 (for 8 nodes, without node sharing) 
 ;                pbs_ppn = 12 (12 processors per node)
 ;                pbs_a = 'bolton-em' (Bolton's account, limited to 8 nodes: ember253 - ember260)
+;                pbs_walltime='48:00:00'
+;   riemann    - If set, then setup the defaults for the riemann cluster at LBL:
+;                pbs_nodes = 12 (for 12 nodes, without node sharing) 
+;                pbs_ppn = 8 (8 processors per node)
 ;                pbs_walltime='48:00:00'
 ;   nosubmit   - If set, generate script file but don't submit to queue
 ;
@@ -83,19 +92,20 @@
 ;                to generalize to cluster computers that do not have pbs node sharing
 ;                by relocating the PBS commands to bundled script files, 
 ;                in general via the keywords pbs_nodes, pbs_ppn, pbs_a
+;                and with LBL defaults preset via the keyword riemann.
 ;                and with University of Utah defaults preset via the keyword ember.
 ;-
 ;------------------------------------------------------------------------------
 pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
  platestart=platestart, plateend=plateend, $
  mjd=mjd, mjstart=mjstart, mjend=mjend, $
- upsvers2d=upsvers2d, upsvers1d=upsvers1d, $
+ upsvers2d=upsvers2d, upsvers1d=upsvers1d, upsversutils=upsversutils, $
  rawdata_dir=rawdata_dir, $
  boss_spectro_redux=boss_spectro_redux, $
- zcode=zcode, galaxy=galaxy, $
+ zcode=zcode, galaxy=galaxy, upsversgalaxy=upsversgalaxy, pbsdir=pbsdir, $
  queue=queue, skip2d=skip2d, clobber=clobber, nosubmit=nosubmit, $ 
  pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, $
- pbs_walltime=pbs_walltime, ember=ember
+ pbs_walltime=pbs_walltime, riemann=riemann, ember=ember, _EXTRA=Extra
 
    if (size(platenums1,/tname) EQ 'STRING') then platenums = platenums1 $
     else if (keyword_set(platenums1)) then $
@@ -115,6 +125,12 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
    if (keyword_set(run1d1)) then run1d = strtrim(run1d1,2) $
     else run1d = getenv('RUN1D')
    splog, 'Setting RUN1D=', run1d
+   if (keyword_set(upsvers1d)) then splog, 'Setting IDLSPEC2D=', upsvers1d $
+   else if (keyword_set(upsvers2d)) then splog, 'Setting IDLSPEC2D=', upsvers2d
+   if (keyword_set(upsversutils)) then splog, 'Setting IDLUTILS=', upsversutils
+   if (keyword_set(upsversgalaxy)) then splog, 'Setting GALAXY=', upsversgalaxy
+   if (keyword_set(pbsdir)) then pbsdir = strtrim(pbsdir,2) else pbsdir = getenv('BOSS_PBS_DIR')
+   if strpos(pbsdir,'/',strlen(pbsdir)-1) lt 0 then pbsdir+='/'
 
    topdir2d = djs_filepath('', root_dir=topdir, subdir=run2d)
    if (keyword_set(run1d)) then run1dstr = ',run1d="'+run1d+'"' $
@@ -122,7 +138,11 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
    if (keyword_set(run2d)) then run2dstr = ',run2d="'+run2d+'"' $
     else run2dstr = ''
 
-   if keyword_set(ember) then begin
+   if keyword_set(riemann) then begin
+     if not keyword_set(pbs_nodes) then pbs_nodes=12
+     if not keyword_set(pbs_ppn) then pbs_ppn=8
+     if not keyword_set(pbs_walltime) then pbs_walltime='48:00:00'
+   endif else if keyword_set(ember) then begin
      if not keyword_set(pbs_nodes) then pbs_nodes=8
      if not keyword_set(pbs_ppn) then pbs_ppn=12
      if not keyword_set(pbs_walltime) then pbs_walltime='48:00:00'
@@ -192,7 +212,9 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
    ; Setup the bundled script files if pbs_nodes keyword is set
    if keyword_set(pbs_nodes) then begin
 
-     if nplate lt pbs_nodes then pbs_nodes = nplate
+     if keyword_set(pbs_ppn) then nodes_required = ceil(float(nplate)/pbs_ppn) else nodes_required = nplate
+     if nodes_required lt pbs_nodes then pbs_nodes = nodes_required
+     print, 'BATCHPBS: Preparing to qsub '+strtrim(pbs_nodes,2)+' nodes ('+strtrim(pbs_ppn,2)+' processors per node) for '+strtrim(nplate,2)+' plates.'
 
      home = getenv('HOME')
      if (home ne '') then begin
@@ -202,12 +224,11 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
      endif else userID = 'user'
      print, 'UUBATCHBPS: Starting for user:  ',userID
      
-     pbs_root_dir = getenv('BOSS_PBS')
-     if (pbs_root_dir eq '') then pbs_root_dir = djs_filepath('pbs/'+run2d,root_dir=topdir) $
-     else pbs_root_dir = djs_filepath('bossredux/'+run2d,root_dir=pbs_root_dir)
-     pbs_dir = djs_filepath(userID,root_dir=pbs_root_dir) + '/'
+     if (pbsdir eq '') then pbsdir = djs_filepath('pbs/'+run2d,root_dir=topdir) $
+     else pbs_dir = djs_filepath('bossredux/'+run2d,root_dir=pbsdir)
+     pbs_dir = djs_filepath('',root_dir=pbsdir,subdir=run2d+'/'+userID)
      if file_test(pbs_dir) then begin
-       shift_pbs_dir = djs_filepath(userID+'.*',root_dir=pbs_root_dir) + '/'
+       shift_pbs_dir = djs_filepath('',root_dir=pbsdir,subdir=run2d+'/'+userID+'.*')
        shift_pbs = file_search(shift_pbs_dir, count=nshift_pbs)
        max_shift = -1L
        for i=0,nshift_pbs-1 do begin
@@ -216,8 +237,8 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          next_shift = fix(strmid(shift_pbs[i],pos0,pos1-pos0))
          max_shift = (next_shift gt max_shift) ? next_shift : max_shift
        endfor
-       shift_pbs_dir = djs_filepath(userID + '.' + strtrim(max_shift+1,2),root_dir=pbs_root_dir) + '/'
-       print, 'UUBATCHBPS: Renaming previous PBS directory to: '+shift_pbs_dir
+       shift_pbs_dir = djs_filepath('',root_dir=pbsdir,subdir=run2d+'/'+userID+ '.' + strtrim(max_shift+1,2))
+       splog, 'Renaming previous PBS directory to: '+shift_pbs_dir
        file_move, pbs_dir, shift_pbs_dir
        file_mkdir, pbs_dir
      endif else file_mkdir, pbs_dir
@@ -244,7 +265,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          printf, pbs_node_lun[pbs_node], '#PBS -l nodes=1:ppn='+strtrim(pbs_ppn,2)
          pbs_ppn_script[pbs_node,*] = djs_filepath(pbs_node_index[pbs_node] + pbs_ppn_index +'.pbs',root_dir=pbs_dir)
          for pbs_proc = 0, pbs_ppn-1 do printf, pbs_node_lun[pbs_node], 'source '+pbs_ppn_script[pbs_node,pbs_proc] + ' &'
-       endif else printf, pbs_node_lun[pbs_node], '#PBS -l nodes=1"
+       endif else printf, pbs_node_lun[pbs_node], '#PBS -l nodes=1'
      endfor 
 
    endif
@@ -285,9 +306,9 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          printf, olun, '# Auto-generated batch file '+systime()
          if not keyword_set(pbs_nodes) then begin
            if keyword_set(pbs_ppn) then printf, olun, '#PBS -l nodes=1:ppn='+strtrim(pbs_ppn,2) $
-            else printf, olun, '#PBS -l nodes=1"
+            else printf, olun, '#PBS -l nodes=1'
            if keyword_set(pbs_a) then printf, olun, '#PBS -A '+pbs_a
-           printf, olun, '#PBS -l walltime=48:00:00'
+           if keyword_set(pbs_walltime) then printf, pbs_node_lun[pbs_node], '#PBS -l walltime='+pbs_walltime
            printf, olun, '#PBS -W umask=0022'
            printf, olun, '#PBS -V'
            printf, olun, '#PBS -j oe'
@@ -315,6 +336,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          
          printf, olun, ''
          printf, olun, '#- The real work'
+
          if (keyword_set(skip2d) EQ 0) then begin
             ; Set up requested code version
             if (keyword_set(upsvers2d)) then $
@@ -334,6 +356,8 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          if (keyword_set(upsvers1d)) then $
           printf, olun, 'setup idlspec2d '+upsvers1d
          printf, olun, 'echo '+fq+'spreduce1d,"'+platefile+'"'+run1dstr+fq+' | idl'
+         
+         if (keyword_set(upsversutils)) then printf, olun, 'setup idlutils '+upsversutils
 
          ; Run Zcode
          if (keyword_set(zcode)) then begin
@@ -343,11 +367,16 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
             printf, olun, 'runz_BOSS.sh ' + platefile +' -a -G -t GAL'
          endif
          
-         ; Run Galaxy (Portsmouth, PCA) Suite of Products
+         ; Run Galaxy Suite of Products
          if (keyword_set(galaxy)) then begin
-             printf, olun, 'setup galaxy'
+             if (keyword_set(upsversgalaxy)) then printf, olun, 'setup galaxy '+upsversgalaxy $
+             else printf, olun, 'setup galaxy '
+             skip_keywords = ''
+             if keyword_set(skip_wisconsin_pca) then skip_keywords += ', /skip_wisconsin_pca'
+             if keyword_set(skip_portsmouth_stellarmass) then skip_keywords += ', /skip_portsmouth_stellarmass'
+             skip_keywords += ', /skip_portsmouth_emlinekin' ;ie always skip! 
              for i=0, n_elements(planfile2d)-1 do $
-               printf, olun, 'echo '+fq+'galaxy_pipeline,"'+planfile2d[i]+'"'+fq+' | idl'
+             qprintf, olun, 'echo '+fq+'galaxy_pipeline,"'+planfile2d[i]+'"'+skip_keywords+fq+' | idl'
          endif
 
          ; splog, "run1d is ", run1d
@@ -405,7 +434,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
 
    endfor
    
-   if not pbs_ppn_append then begin
+   if keyword_set(pbs_ppn) and not keyword_set(pbs_ppn_append) then begin
      pbs_node_i = pbs_node
      pbs_proc_i = pbs_proc
      for pbs_proc = pbs_proc_i,pbs_ppn-1 do begin
