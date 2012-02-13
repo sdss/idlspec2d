@@ -613,6 +613,7 @@ pro/spec2d/trace_fix.pro -text
 pro/spec2d/trace_sparse_crude.pro -text
 pro/spec2d/tweaktrace.pro -text
 pro/spec2d/uubatchpbs.pro -text
+pro/spec2d/uubatchpbs_run.pro -text
 pro/spec2d/warn_daytime.pro -text
 pro/spec2d/write_uros.pro -text
 pro/specdb/README -text
