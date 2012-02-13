@@ -225,10 +225,9 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
      print, 'UUBATCHBPS: Starting for user:  ',userID
      
      date = strtrim(bin_date(),2)
-     for i=1,n_elements(date)-1 do begin
+     for i=1,n_elements(date)-1 do $
         if (strlen(date[i]) eq 1) then date[i] = '0'+date[i] 
-     endfor
-     userID+='_'+string(date, format='(I4,I2,I2,I2,I2,I2)')
+     userID+='_'+string(date, format='(A4,A2,A2,A2,A2,A2)')
 
      if (pbsdir eq '') then pbsdir = djs_filepath('pbs/'+run2d,root_dir=topdir) $
      else pbs_dir = djs_filepath('bossredux/'+run2d,root_dir=pbsdir)
