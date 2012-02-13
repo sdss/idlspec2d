@@ -1,3 +1,6 @@
+DECOLLIDE,RANDOM_DECOLLIDE: Fixed problem with duplicate function names.
+IDL documentation: Fixed the formatting for IDL documentation in a number of
+    files.
 mk_doc: Removed, document generation now handled directly by doc/Makefile
 idlspec2d.table: remove outdated notation.
 Makefile (top-level): make doc is now not part of default install

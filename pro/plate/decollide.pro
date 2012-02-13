@@ -1,16 +1,18 @@
 ;+
 ; NAME:
-;   random_decollide
+;   decollide
 ; PURPOSE:
 ;   Take a set of RAs and DECs and find a random, decollided set
 ; CALLING SEQUENCE:
-;   random_decollide, 
+;   decollide, ra, dec
 ; INPUTS:
+; NOTE:
+;   This function is superseded by random_decollide.
 ; REVISION HISTORY:
 ;   26-Oct-2006  Written by MRB, NYU
 ;-
 ;------------------------------------------------------------------------------
-function random_decollide, ra, dec, holesize=holesize, seed=seed
+function decollide, ra, dec, holesize=holesize, seed=seed
 
 iran=shuffle_indx(n_elements(ra), seed=seed)
 ing=spheregroup(ra[iran], dec[iran], holesize, firstg=firstg, $

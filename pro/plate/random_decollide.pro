@@ -4,7 +4,7 @@
 ; PURPOSE:
 ;   Take a set of RAs and DECs and find a random, decollided set
 ; CALLING SEQUENCE:
-;   random_decollide, 
+;   random_decollide, ra, dec
 ; INPUTS:
 ; REVISION HISTORY:
 ;   26-Oct-2006  Written by MRB, NYU
