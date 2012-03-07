@@ -27,6 +27,8 @@ Fixing some files that don't need to be executable
     examples/opECalib-55026.par
 
 DECOLLIDE,RANDOM_DECOLLIDE: Fixed problem with duplicate function names.
+GAMA_TO_SDSS: New proc for converting 2dF GAMA spectra files to spPlate
+    format for redshift-fitting with Spectro-1D.
 PCA_QSO: Add /allatonce keyword.
 
 Makefile (top-level): make doc is now not part of default install
