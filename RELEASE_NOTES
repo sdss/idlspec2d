@@ -1,20 +1,47 @@
+
+Documentation: Fixed the formatting for IDL documentation in a number of files:
+    pro/spec1d/bandpassfilter.pro
+    pro/spec1d/filter_check_chi2.pro
+    pro/spec1d/filter_solve.pro
+    pro/spec1d/filter_check.pro
+    pro/spec1d/filter_select.pro
+    pro/spec1d/hogg_extinction.pro
+    pro/spec1d/bolton_mlpca.pro
+    pro/spec2d/extract_object.pro
+    pro/spec2d/bolton_sn_fit.pro
+    pro/spec2d/gausspix.pro
+    pro/spec2d/bbspec_test.pro
+    pro/spec2d/trace_sparse_crude.pro
+    pro/spec2d/smooth_halo.pro
+    pro/spec2d/smooth_halo2d.pro
+    pro/inspect/inspectgen.pro
+    pro/templates/pca_qso_dev.pro
+    pro/templates/pca_gal_dev.pro
+    pro/templates/mlpca_star.pro
+    pro/templates/align_rest.pro
+    pro/templates/mlpca_cvstar.pro
+Fixing some files that don't need to be executable 
+    examples/opECalib-51430.par
+    examples/opECalib-blank.par
+    examples/opECalib-51577.par
+    examples/opECalib-55026.par
+
 DECOLLIDE,RANDOM_DECOLLIDE: Fixed problem with duplicate function names.
-IDL documentation: Fixed the formatting for IDL documentation in a number of
-    files.
-mk_doc: Removed, document generation now handled directly by doc/Makefile
-idlspec2d.table: remove outdated notation.
+PCA_QSO: Add /allatonce keyword.
+
 Makefile (top-level): make doc is now not part of default install
 Makefile (lower-level): All unnecessary Makefiles (that only did make install)
     are removed.
-include/export.h: Remove old export.h and link to $IDL_DIR/external/export.h
 .cvsignore: Removed unnecessary .cvsignore files
-examples/opECalib-*.par: Removed executable tags on some files.
-
-PCA_QSO: Add /allatonce keyword.
-
+bin/idlspec2d_version: Change from bash to sh.
+doc/mk_doc: Removed, document generation now handled directly by doc/Makefile
 etc/emlines.par: The H_gamma line fit width was accidentally tied to the
     forbidden lines rather than the Balmer lines.  Fixed.
+examples/opECalib-*.par: Removed executable tags on some files.
+include/export.h: Remove old export.h and link to $IDL_DIR/external/export.h
+    This is the same as what is done in the idlutils product.
 ups/idlspec2d.table: Remove explicit version dependency idlutils v5_4_26.
+    Remove outdated notation.
 
 -------------------------------------------------------------------------------
 v5_5_7 (2012-01-18)
