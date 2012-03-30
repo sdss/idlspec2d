@@ -462,21 +462,23 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
       vacset0 = struct_addtags(vacset0, {coeff: vcoeff[*,0:isplit]})
       vacset1 = struct_selecttags(vacset, except_tags='COEFF')
       vacset1 = struct_addtags(vacset1, {coeff: vcoeff[*,isplit+1:*]})
-      dcoeff = dispset.coeff
-      dispset0 = struct_selecttags(dispset, except_tags='COEFF')
-      dispset0 = struct_addtags(dispset0, {coeff: dcoeff[*,0:isplit]})
-      dispset1 = struct_selecttags(dispset, except_tags='COEFF')
-      dispset1 = struct_addtags(dispset1, {coeff: dcoeff[*,isplit+1:*]})
+      ;dcoeff = dispset.coeff
+      ;dispset0 = struct_selecttags(dispset, except_tags='COEFF')
+      ;dispset0 = struct_addtags(dispset0, {coeff: dcoeff[*,0:isplit]})
+      ;dispset1 = struct_selecttags(dispset, except_tags='COEFF')
+      ;dispset1 = struct_addtags(dispset1, {coeff: dcoeff[*,isplit+1:*]})
 ; Sky subtract both halves:
       skystruct0 = skysubtract(flux[*,0:isplit], fluxivar[*,0:isplit], plugsort[0:isplit], vacset0, $
        skysub0, skysubivar0, iskies=iskies0, pixelmask=pixelmask[*,0:isplit], $
        fibermask=fibermask[0:isplit], upper=10.0, lower=10.0, tai=tai_mid, $
-       dispset=dispset0, npoly=nskypoly, nbkpt=nbkpt, $
+       ;dispset=dispset0, $
+       npoly=nskypoly, nbkpt=nbkpt, $
        relchi2set=relchi2set0, newmask=newmask0)
       skystruct1 = skysubtract(flux[*,isplit+1:*], fluxivar[*,isplit+1:*], plugsort[isplit+1:*], vacset1, $
        skysub1, skysubivar1, iskies=iskies1, pixelmask=pixelmask[*,isplit+1:*], $
        fibermask=fibermask[isplit+1:*], upper=10.0, lower=10.0, tai=tai_mid, $
-       dispset=dispset1, npoly=nskypoly, nbkpt=nbkpt, $
+       ;dispset=dispset1, $
+       npoly=nskypoly, nbkpt=nbkpt, $
        relchi2set=relchi2set1, newmask=newmask1)
 ; Reassemble outputs for use further below:
       skysub = [[skysub0], [skysub1]]
@@ -492,7 +494,8 @@ pro extract_object, outname, objhdr, image, invvar, plugsort, wset, $
       skystruct = skysubtract(flux, fluxivar, plugsort, vacset, $
        skysub, skysubivar, iskies=iskies, pixelmask=pixelmask, $
        fibermask=fibermask, upper=10.0, lower=10.0, tai=tai_mid, $
-       dispset=dispset, npoly=nskypoly, nbkpt=nbkpt, $
+       ; dispset=dispset, $
+       npoly=nskypoly, nbkpt=nbkpt, $
        relchi2set=relchi2set, newmask=newmask)
        pixelmask = newmask
     endelse
