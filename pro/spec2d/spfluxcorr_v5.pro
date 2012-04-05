@@ -48,6 +48,9 @@
 ; REVISION HISTORY:
 ;   05-Feb-2004  Written by D. Schlegel, Princeton
 ;   11-Aug-2009  Edited by A. Kim: b and r spectra don't necessarily have the same dimension
+;   05-Apr-2012  A. Bolton, Utah: increase sigrej & maxpoly;
+;                  fit to refractive index rather than loglam;
+;                  npoly=maxpoly for rejection step
 ;-
 ;------------------------------------------------------------------------------
 ; Return 1 if the flux-correction vector appears to be in bounds.
@@ -68,11 +71,15 @@ pro spfluxcorr_v5, objname, adderr=adderr, combinedir=combinedir, $
    ; The following parameters are used for the first pass, which is used only
    ; in rejecting points.
    maxiter1 = 5
-   sigrej = 2.5
+   ;  bolton@utah 2012mar: increase sigrej:
+   ;sigrej = 2.5
+   sigrej = 6.0
 
    ; The following parameters are used for the final fits, where there is
    ; no more rejection and the errors are re-scaled in each iteration.
-   maxpoly = 3
+   ;  bolton@utah 2012mar: increase maxpoly:
+   ;maxpoly = 3
+   maxpoly = 5
    nback = 0
 
    t0 = systime(1)
@@ -201,8 +208,17 @@ pro spfluxcorr_v5, objname, adderr=adderr, combinedir=combinedir, $
    ; Loop over each object, solving for the correction vectors
 
    ; Rescale the wavelengths to be in the range [0,1]
+   ; bolton@utah 2012mar: change to implement dependence on
+   ; refractive index rather than log-wavelength:
    minlog = min(loglam, max=maxlog)
-   xarray = (loglam - minlog) / (maxlog - minlog)
+   ;;xarray = (loglam - minlog) / (maxlog - minlog)
+   wave = 10.d^double(loglam)
+   vacwave = wave
+   vactoair, wave
+   nrefract = vacwave / wave
+   nrmin = min(nrefract)
+   nrmax = max(nrefract)
+   xarray = (nrefract - nrmin) / (nrmax - nrmin)
 
    ymult = fltarr(npix,nobj,nfile) + 1.
    yadd = fltarr(npix,nobj,nfile)
@@ -235,7 +251,8 @@ pro spfluxcorr_v5, objname, adderr=adderr, combinedir=combinedir, $
                  + 1./(allivar[*,iobj,i2])[indx])
                solve_poly_ratio, xarray[*,iobj,*], $
                 allflux[*,iobj,i2], allflux[*,iobj,i1], thisivar*qgood, $
-                npoly=3, nback=2, yfit=yfit1, ymult=ymult1, yadd=yadd1
+;                npoly=3, nback=2, yfit=yfit1, ymult=ymult1, yadd=yadd1
+                npoly=maxpoly, nback=2, yfit=yfit1, ymult=ymult1, yadd=yadd1
 
                ; SIGVEC1 = the returned sigma per pixel, even for masked pixels
                ; which were excluded from the fit

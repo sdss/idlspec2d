@@ -1,5 +1,7 @@
 EXTRACT_OBJECT: Commented out dispset in calls to skysubtract.pro. (ticket #1475)
                 (JCR)
+SPFLUXCORR_V5: changed multiplicative polynomial fit parameters and
+  changed fit to depend on index of refraction of air (ASB, ticket #1509)
 
 Documentation: Fixed the formatting for IDL documentation in a number of files:
     pro/spec1d/bandpassfilter.pro
