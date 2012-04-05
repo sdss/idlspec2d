@@ -42,8 +42,9 @@ doc/mk_doc: Removed, document generation now handled directly by doc/Makefile
 etc/emlines.par: The H_gamma line fit width was accidentally tied to the
     forbidden lines rather than the Balmer lines.  Fixed.
 examples/opECalib-*.par: Removed executable tags on some files.
-examples/opLimits.par: increased limits on b1 xsig and r1 wsig by 0.05.  
-	b1 xsig goes high for high fibers at middle pixel numbers 
+examples/opLimits.par: increased limits on r1 wsig by 0.05.  
+	b1 xsig goes high for high fibers at middle pixel numbers but after 
+		collimator swap still within old limits so didn't change
 	r1 wsig goes high for middle fibers at high pixel numbers
 include/export.h: Remove old export.h and link to $IDL_DIR/external/export.h
     This is the same as what is done in the idlutils product.
