@@ -1,3 +1,9 @@
+-------------------------------------------------------------------------------
+v5_5_8 (2012-04-05, ASB)
+Tag for sepctrophoto bugfix (Ticket #1509), as well as
+  various SOS-related changes, file cleanups, bug fixes, etc.
+Built against elodie/v1_3, specflat/v1_18, idlutils/v5_4_28.
+
 EXTRACT_OBJECT: Commented out dispset in calls to skysubtract.pro. (ticket #1475)
                 (JCR)
 SPFLUXCORR_V5: changed multiplicative polynomial fit parameters and
