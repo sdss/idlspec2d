@@ -43,18 +43,24 @@ frames.  This groups the information from spFrame, spCFrame, spFlat, spPlate,
 spZbest, spZline, and spAll so that for each object you only need to read
 one file.
 
+    HDU 0  : Header info
+    HDU 1  : Coadded spectrum
+    HDU 2  : Summary metadata copied from spAll
+    HDU 3  : Line fitting metadata from spZline
+    HDU 4+ : [Optional] Individual frame spectra [B, R for each exposure]
+
 These are grouped in subdirectories by plate, e.g.:
 
-    README.txt    : this file
-    spXXX.fits    : subset of spAll.fits (e.g. Qso, Star, Gal)
-    4080/         : dir for objects on plate 4080
+    README.txt     : this file
+    spAll-XXX.fits : subset of spAll*.fits (e.g. qso, star, gal)
+    4080/          : dir for objects on plate 4080
         spec-4080-55368-0487.fits  : spec-PLATE-MJD-FIBER
         spec-4080-55471-0485.fits  : different plugging, same plate
     ...
 
 Note that the same THING_ID may have been observed on more than
 one plate.  Use the THING_ID, PLATE, MJD, FIBERID metadata in
-spSome to find the files you need.
+spAll to find the files you need.
 
 The format of each spec file is:
 
@@ -103,9 +109,12 @@ HDU 3 : Copy of rows for this object from spZline table
         print >> fx, """
 HDU 4 .. n+4 : Individual frames.
     For each exposure there is one HDU for the red camera and one for the blue.
-    These are in the order of the EXPIDnn keywords in the HDU0 header.
+    These are in the order of the EXPIDnn keywords in the HDU 0 header, and
+    their EXTNAME keywords match the EXPIDnn keywords from HDU 0.
 
     Header: Taken from HDU0 of individual spCFrame files
+    Keyword YPIX0 defines the y-pixel location of the first flux bin.
+
     Data: Binary table with columns taken from spCFrame files:
         flux
         loglam
@@ -114,6 +123,7 @@ HDU 4 .. n+4 : Individual frames.
         wdisp
         sky
         calib : conversion between flux and electrons: flux = electrons*calib
+        x     : x-pixel location of trace on CCD
 
 How to convert flux, sky, and ivar back to extracted photons (electrons):
 
@@ -457,16 +467,16 @@ def get_selection_doc(opts):
     else:
         if opts.subset == "ALL":
             doc.append("    All objects kept")
-            doc.append("    Optional spXXX subsets defined by")
-            doc.append("      Qso:")
+            doc.append("    Optional spAll-XXX subsets defined by")
+            doc.append("      qso:")
             doc.append("        - Targetted as QSOs")
             doc.append("        - Targetted as GALAXY but CLASS=QSO")
             doc.append("        - FPG scan IDed as QSO")
             doc.append("        - QSO ancillary programs")
-            doc.append("      Gal:  OBJTYPE=GALAXY or CLASS=GALAXY")
-            doc.append("      Star: OBJTYPE=SPECTROPHOTO_STD or CLASS=STAR")
-            doc.append("      Std:  OBJTYPE=SPECTROPHOTO_STD")
-            doc.append("      Sky:  OBJTYPE=SKY")
+            doc.append("      gal:  OBJTYPE=GALAXY or CLASS=GALAXY")
+            doc.append("      star: OBJTYPE=SPECTROPHOTO_STD or CLASS=STAR")
+            doc.append("      std:  OBJTYPE=SPECTROPHOTO_STD")
+            doc.append("      sky:  OBJTYPE=SKY")
         elif opts.subset == 'QSO':
             doc.append("    Only quasar targets:")
             doc.append("      - Targetted as QSOs")
@@ -483,6 +493,14 @@ def get_selection_doc(opts):
             doc.append("    Only sky fibers: OBJTYPE=SKY")
 
     return "\n".join(doc)
+
+def write_file_list(filename, spectra):
+    FX = open(filename, 'w')
+    for plate, mjd, fiber in sorted( zip(spectra.PLATE, spectra.MJD, spectra.FIBERID) ):
+        specfile = "%04d/spec-%04d-%05d-%04d.fits" % (plate, plate, mjd, fiber)
+        print >> FX, specfile
+
+    FX.close()
 
 def parse_string_range(s):
     """
@@ -638,13 +656,19 @@ else:
 
 #- Write README and spSome files
 if opts.meta:
-    print "Writing spSome and README files"
+    print "Writing README.txt"
     header = "Input data from:\n    %s\n" % datadir
     header += get_selection_doc(opts)
     write_readme(opts.outdir + '/README.txt', header=header)
     if opts.subset != "ALL":
-        spSomeName = opts.outdir+'/sp%s-%s.fits' % (opts.subset.title(), run2d)
+        spSomeName = opts.outdir+'/spAll-%s-%s.fits' % \
+                                        (opts.subset.lower(), run2d)
+        print "Writing", os.path.basename(spSomeName)
         pyfits.writeto(spSomeName, spectra, clobber=True)
+        filelist = opts.outdir+'/specfiles-%s-%s.txt' % \
+                                        (opts.subset.lower(), run2d)
+        print "Writing", os.path.basename(filelist)
+        write_file_list(filelist, spectra)
     else:
         import shutil
         shutil.copy(opts.spall, opts.outdir+'/spAll-%s.fits' % run2d)
