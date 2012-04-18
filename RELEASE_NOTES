@@ -4,11 +4,6 @@ Tag for spectrophoto bug fix (Ticket #1509), as well as
   various SOS-related changes, file cleanups, bug fixes, etc.
 Built against elodie/v1_3, specflat/v1_18, idlutils/v5_4_28.
 
-EXTRACT_OBJECT: Commented out dispset in calls to skysubtract.pro. (ticket #1475)
-                (JCR)
-SPFLUXCORR_V5: changed multiplicative polynomial fit parameters and
-  changed fit to depend on index of refraction of air (ASB, ticket #1509)
-
 Documentation: Fixed the formatting for IDL documentation in a number of files:
     pro/spec1d/bandpassfilter.pro
     pro/spec1d/filter_check_chi2.pro
@@ -37,9 +32,13 @@ Fixing some files that don't need to be executable
     examples/opECalib-55026.par
 
 DECOLLIDE,RANDOM_DECOLLIDE: Fixed problem with duplicate function names.
+EXTRACT_OBJECT: Commented out dispset in calls to SKYSUBSTRACT.
+    (ticket #1475, JCR).
 GAMA_TO_SDSS: New proc for converting 2dF GAMA spectra files to spPlate
     format for redshift-fitting with Spectro-1D.
 PCA_QSO: Add /allatonce keyword.
+SPFLUXCORR_V5: changed multiplicative polynomial fit parameters and
+  changed fit to depend on index of refraction of air (ASB, ticket #1509)
 
 Makefile (top-level): make doc is now not part of default install
 Makefile (lower-level): All unnecessary Makefiles (that only did make install)
