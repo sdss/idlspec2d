@@ -685,7 +685,7 @@ array.  If any fibers are masked, the sky subtraction is iterated a 2nd time.
 The sky subtraction routine is invoked for one final iteration, but with extra 
 freedom allowed in the fit.  The same freedom is allowed in wavelength, by
 keeping the same number of breakpoints, but a quadratic polynomial fit is
-allowed as a function of wavelength.  This triples the number of free 
+allowed as a function of fiber number.  This triples the number of free 
 parameters in the linear least-squares fit, but the values are still 
 overconstrained due to the ample number of sky fibers.  The extra freedom
 in the model can accomodate variation in the PSF of sky features as a function 
