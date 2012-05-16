@@ -101,7 +101,7 @@ pro opfiber_generate, plate, mjd=mjd, expnum=expnum1, camname=camname1
       filename = 'spCFrame-'+camname[icam]+'-'+string(expnum,format='(i8.8)') $
        + '.fits'
       fullname = filepath(filename, root_dir=getenv('BOSS_SPECTRO_REDUX'), $
-       subdir=[getenv('RUN2D'), strtrim(plate,2)])
+       subdir=[getenv('RUN2D'), string(plate,format='(i4.4)')])
       spframe_read, fullname, ximg=ximg
       if (NOT keyword_set(ximg)) then $
        message, 'File not found: '+fullname
