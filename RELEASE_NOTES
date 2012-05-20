@@ -1,7 +1,27 @@
+
+APO_CHECKLIMITS: Bug fix to test against values of exactly zero,
+    although this wouldn't have been triggered.
+BAD_BOSSFORMAT: Print mean and 95% of each sub-image.
+OPFIBER_GENERATE: Bug fix to work for SDSS-I plates with plate # < 1000
+    and read traces from spFlat files for the old data model.
+
+opfiles/opFibers.par: Add trace positions for SDSS-I spectra using
+    the following cart+plate+MJDs, but then edited to start at MJD=50000
+    in this file:
+       1         414       51901
+       2         400       51820
+       3         404       51877
+       4         418       51884
+       5         406       51869
+       6         431       51877
+       7         412       51931
+       8         410       51816
+       9         401       51788
+
 -------------------------------------------------------------------------------
 v5_5_8 (2012-04-05, ASB)
 Tag for spectrophoto bug fix (Ticket #1509), as well as
-  various SOS-related changes, file cleanups, bug fixes, etc.
+various SOS-related changes, file cleanups, bug fixes, etc.
 Built against elodie/v1_3, specflat/v1_18, idlutils/v5_4_28.
 
 Documentation: Fixed the formatting for IDL documentation in a number of files:
@@ -38,7 +58,7 @@ GAMA_TO_SDSS: New proc for converting 2dF GAMA spectra files to spPlate
     format for redshift-fitting with Spectro-1D.
 PCA_QSO: Add /allatonce keyword.
 SPFLUXCORR_V5: changed multiplicative polynomial fit parameters and
-  changed fit to depend on index of refraction of air (ASB, ticket #1509)
+    changed fit to depend on index of refraction of air (ASB, ticket #1509)
 
 Makefile (top-level): make doc is now not part of default install
 Makefile (lower-level): All unnecessary Makefiles (that only did make install)
