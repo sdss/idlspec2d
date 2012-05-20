@@ -102,9 +102,22 @@ pro opfiber_generate, plate, mjd=mjd, expnum=expnum1, camname=camname1
        + '.fits'
       fullname = filepath(filename, root_dir=getenv('BOSS_SPECTRO_REDUX'), $
        subdir=[getenv('RUN2D'), string(plate,format='(i4.4)')])
-      spframe_read, fullname, ximg=ximg
+      spframe_read, fullname, ximg=ximg, hdr=hdr
+      ; test that this is a valid XIMG, otherwise read from spFlat file
+      if (max(ximg) LT 1000) then begin
+         flatname = 'spFlat-'+strmid(sxpar(hdr,'FLATFILE'),4,11)+'.fits'
+         fullflatname = filepath(flatname, root_dir=getenv('BOSS_SPECTRO_REDUX'), $
+          subdir=[getenv('RUN2D'), string(plate,format='(i4.4)')])
+         fullflatname = (findfile(fullflatname+'*'))[0]
+         if (keyword_set(fullflatname)) then begin
+            tset = mrdfits(fullflatname,1)
+            traceset2xy, tset, xx, ximg
+         endif else ximg = 0
+      endif
+
       if (NOT keyword_set(ximg)) then $
        message, 'File not found: '+fullname
+
       iy = (size(ximg,/dimens))[0] / 2
       xpos = reform(ximg[iy,*])
       xdiff = shift(xpos,-1) - xpos ; last value is then nonsense
