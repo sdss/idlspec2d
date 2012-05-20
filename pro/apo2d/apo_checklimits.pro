@@ -46,7 +46,7 @@ function apo_checklimits, flavor, field, camera, value, html=html
    common apo_limits, numlimits, textlimits
 
    markstring = ''
-   if (NOT keyword_set(value)) then return, markstring
+   if (n_elements(value) EQ 0) then return, markstring
 
    ;----------
    ; Read this Yanny file only the first time this routine is called,
