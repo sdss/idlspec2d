@@ -8,10 +8,11 @@
 ; CALLING SEQUENCE:
 ;   xset = trace320crude( fimage, invvar, [ ystart=, nmed=, $
 ;    xmask=, yset=, maxerr=, maxshifte=, maxshift0=, xerr=, maxdev=, ngrow=, $
-;    fibermask=, flathdr=, padding=, plottitle= ] )
+;    fibermask=, cartid=, flathdr=, padding=, plottitle= ] )
 ;
 ; INPUTS:
 ;   fimage     - Image
+;   cartid     - Cartridge ID from plugmap
 ;
 ; OPTIONAL INPUTS FOR TRACE320CEN:
 ;   ystart     - Y position in image to search for initial X centers; default
@@ -71,7 +72,7 @@
 function trace320crude, image, invvar, ystart=ystart, nmed=nmed, $
  xmask=xmask, radius=radius, yset=yset, maxerr=maxerr, maxshifte=maxshifte, $
  maxshift0=maxshift0, xerr=xerr, maxdev=maxdev, ngrow=ngrow, $
- fibermask=fibermask, flathdr=flathdr, padding=padding, $
+ fibermask=fibermask, cartid=cartid, flathdr=flathdr, padding=padding, $
  plottitle=plottitle
 
    if (NOT keyword_set(maxdev)) then maxdev = 1.0
@@ -79,9 +80,11 @@ function trace320crude, image, invvar, ystart=ystart, nmed=nmed, $
    if (NOT keyword_set(radius)) then radius = 3.0
    if (NOT keyword_set(padding)) then padding=0
 
-   cartid = sxpar(flathdr, 'CARTID')
+;   cartid = sxpar(flathdr, 'CARTID')
    camname = strtrim(sxpar(flathdr, 'CAMERAS'),2)
    mjd = sxpar(flathdr, 'MJD')
+   if (keyword_set(cartid) * keyword_set(camname) * keyword_set(mjd) EQ 0) $
+    then message, 'Must set CARTID, CAMERAS, MJD in flat header!'
    fiberparam = yanny_readone(djs_filepath('opFibers.par', $
     root_dir=getenv('IDLSPEC2D_DIR'), subdir='opfiles'), 'FIBERPARAM')
    if (NOT keyword_set(fiberparam)) then $
@@ -92,7 +95,10 @@ function trace320crude, image, invvar, ystart=ystart, nmed=nmed, $
     message, 'No match for this CARTID + MJD in opFibers.par!'
    isort = i[reverse(sort(fiberparam[i].mjd))]
    fiberparam = fiberparam[isort[0]]
-   nbundle = n_elements(fiberparam.fiberspace NE 0)
+   ; Assume the fiber bundles used are the first NBUNDLE ones...
+   nbundle = (long(total(fiberparam.fiberspace NE 0)))[0]
+   if (total(fiberparam.fiberspace[0:nbundle-1] EQ 0) GT 0) then $
+    message, 'Some FIBERSPACE parameters are zero!'
 
    ;----------
    ; If INVVAR is set, then start by interpolating over bad pixels

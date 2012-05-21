@@ -142,7 +142,7 @@ function fitflatwidth, flux, fluxivar, ansimage, fibermask, $
 
    ; Generate the corresponding mask that is the same within each
    ; bundle, and marked as good if at least 25% of the points are unmasked
-   if (n_elements(inmask) NE 0) then begin
+   if (keyword_set(inmask) NE 0) then begin
       mask_bundle = rebin(float(inmask), nrow, numbundles) GE 0.25
       mask_final = rebin(mask_bundle, nrow, ntrace, /sample)
    endif else begin

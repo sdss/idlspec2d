@@ -6,7 +6,7 @@
 ;   Extract calibration frames.
 ;
 ; CALLING SEQUENCE:
-;   spcalib, flatname, arcname, fibermask=, $
+;   spcalib, flatname, arcname, fibermask=, cartid=, $
 ;    lampfile=, indir=, timesep=, ecalibfile=, plottitle=, $
 ;    minflat=, maxflat=, arcinfoname=, flatinfoname=, $
 ;    arcstruct=, flatstruct=, writeflatmodel=, /bbspec]
@@ -14,6 +14,7 @@
 ; INPUTS:
 ;   flatname   - Name(s) of flat-field SDSS image(s)
 ;   arcname    - Name(s) of arc SDSS image(s)
+;   cartid     - Cartridge ID from plugmap
 ;
 ; OPTIONAL KEYWORDS:
 ;   fibermask  - Fiber status bits, set nonzero for bad status [NFIBER].
@@ -135,7 +136,7 @@ function create_flatstruct, nflat
 end
 ;------------------------------------------------------------------------------
 
-pro spcalib, flatname, arcname, fibermask=fibermask, $
+pro spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     lampfile=lampfile, indir=indir, timesep=timesep, $
     ecalibfile=ecalibfile, plottitle=plottitle, $
     arcinfoname=arcinfoname, flatinfoname=flatinfoname, $
@@ -196,7 +197,7 @@ pro spcalib, flatname, arcname, fibermask=fibermask, $
     
       splog, 'Tracing fibers in ', flatname[iflat]
       xsol = trace320crude(flatimg, flativar, yset=ycen, maxdev=1.0, $ ;0.15, $
-       fibermask=tmp_fibmask, xerr=xerr, $
+       fibermask=tmp_fibmask, cartid=cartid, xerr=xerr, $
        flathdr=flathdr, $
        padding=configuration->spcalib_trace320crude_padding(), $
        plottitle=plottitle+' Traces '+flatname[iflat])

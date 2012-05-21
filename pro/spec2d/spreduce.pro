@@ -135,7 +135,8 @@ pro spreduce, flatname, arcname, objname, run2d=run2d, $
 
    heap_gc   ; Garbage collection for all lost pointers
 
-   spcalib, flatname, arcname, fibermask=fibermask, $
+   cartid = long(yanny_par(hdrplug, 'cartridgeId'))
+   spcalib, flatname, arcname, fibermask=fibermask, cartid=cartid, $
     lampfile=lampfile, indir=indir, $
     ecalibfile=ecalibfile, plottitle=plottitle, $
     flatinfoname=flatinfoname, arcinfoname=arcinfoname, $
