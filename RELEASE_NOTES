@@ -6,6 +6,10 @@ FITFLATWIDTH,SPCALIB,SPREDUCE,TRACE320CRUDE: Minor changes to use a
     different number of traces for the SDSS-I spectra (ticket #541).
 OPFIBER_GENERATE: Bug fix to work for SDSS-I plates with plate # < 1000
     and read traces from spFlat files for the old data model.
+SDSS_PLATE_SORT: The photoMatch,photoPlate,photoMatch files for the SDSS-I
+    plates are alread sorted to a particular plugging, and have MJD
+    in their names.  Rather than assume these are sorted, take the first
+    matching file for a plate and re-sort, as we do for the BOSS files.
 
 opfiles/opFibers.par: Add trace positions for SDSS-I spectra using
     the following cart+plate+MJDs, but then edited to start at MJD=50000
