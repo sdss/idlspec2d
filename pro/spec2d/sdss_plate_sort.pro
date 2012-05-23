@@ -79,11 +79,11 @@ pro sdss_plate_sort, planfile
       mjdstr = string(allseq[ilist[i]].mjd,format='(i5.5)')
       plugfile = 'plPlugMapM-'+allseq[ilist[i]].mapname+'.par'
       plugdir = getenv('SPECLOG_DIR')+'/'+mjdstr
-      matchfile = (findfile(djs_filepath('photoMatchPlate-'+platestr+'.fits*', $
+      matchfile = (findfile(djs_filepath('photoMatchPlate-'+platestr+'*.fits*', $
        root_dir=getenv('PHOTOPLATE_DIR'), subdir=platestr)))[0]
-      infile1 = (findfile(djs_filepath('photoPlate-'+platestr+'.fits*', $
+      infile1 = (findfile(djs_filepath('photoPlate-'+platestr+'*.fits*', $
        root_dir=getenv('PHOTOPLATE_DIR'), subdir=platestr)))[0]
-      infile2 = (findfile(djs_filepath('photoPosPlate-'+platestr+'.fits*', $
+      infile2 = (findfile(djs_filepath('photoPosPlate-'+platestr+'*.fits*', $
        root_dir=getenv('PHOTOPLATE_DIR'), subdir=platestr)))[0]
       outfile0 = 'photoMatchPlate-'+platestr+'-'+mjdstr+'.fits'
       outfile1 = 'photoPlate-'+platestr+'-'+mjdstr+'.fits'
