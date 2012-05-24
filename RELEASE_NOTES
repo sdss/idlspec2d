@@ -4,6 +4,8 @@ APO_CHECKLIMITS: Bug fix to test against values of exactly zero,
 BAD_BOSSFORMAT: Print mean and 95% of each sub-image.
 FITFLATWIDTH,SPCALIB,SPREDUCE,TRACE320CRUDE: Minor changes to use a
     different number of traces for the SDSS-I spectra (ticket #541).
+PLATELIST: Remove %Main from the HTML file, since those targets do
+    not exist in BOSS.
 OPFIBER_GENERATE: Bug fix to work for SDSS-I plates with plate # < 1000
     and read traces from spFlat files for the old data model.
 SDSS_PLATE_SORT: The photoMatch,photoPlate,photoMatch files for the SDSS-I
