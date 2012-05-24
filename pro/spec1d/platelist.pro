@@ -444,7 +444,7 @@ pro platelist, plist=plist, create=create, $
     ['sn2_g2'       , 'f5.1'], $
     ['sn2_i2' ,       'f5.1'], $
     ['fbadpix'      , 'f5.3'], $
-    ['success_main' , 'f5.1'], $
+;    ['success_main' , 'f5.1'], $
     ['success_lrg1' , 'f5.1'], $
     ['success_lrg2' , 'f5.1'], $
     ['success_qso'  , 'f5.1'], $
@@ -1005,7 +1005,7 @@ pro platelist, plist=plist, create=create, $
             ['N_UNKNOWN'    , 'N_unk'   ], $
             ['N_SKY'        , 'N_sky'   ], $
             ['FBADPIX'      , 'Badpix'  ], $
-            ['SUCCESS_MAIN' , '%Main'   ], $
+;            ['SUCCESS_MAIN' , '%Main'   ], $
             ['SUCCESS_LRG1' , '%LRG1'   ], $
             ['SUCCESS_LRG2' , '%LRG2'   ], $
             ['SUCCESS_QSO'  , '%QSO'    ], $
