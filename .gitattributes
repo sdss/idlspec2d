@@ -460,6 +460,7 @@ pro/spec1d/skymask.pro -text
 pro/spec1d/solvefilter.pro -text
 pro/spec1d/spec_append.pro -text
 pro/spec1d/speclinefit.pro -text
+pro/spec1d/spectro_summary.pro -text
 pro/spec1d/spmanual.pro -text
 pro/spec1d/spreduce1d.pro -text
 pro/spec1d/star_dvelocity.pro -text

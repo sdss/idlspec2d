@@ -12,6 +12,8 @@ SDSS_PLATE_SORT: The photoMatch,photoPlate,photoMatch files for the SDSS-I
     plates are alread sorted to a particular plugging, and have MJD
     in their names.  Rather than assume these are sorted, take the first
     matching file for a plate and re-sort, as we do for the BOSS files.
+SPECTRO_SUMMARY: Summarize BOSS spectro totals from spAll file.
+    (ASB: motivated by DR9.)
 
 opfiles/opFibers.par: Add trace positions for SDSS-I spectra using
     the following cart+plate+MJDs, but then edited to start at MJD=50000
