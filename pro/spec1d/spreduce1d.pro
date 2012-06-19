@@ -256,7 +256,7 @@ pro spreduce1d, platefile, fiberid=fiberid, run1d=run1d1, $
 
    npoly = 3
    zmin = -0.01 ; -3000 km/sec
-   zmax = 1.25 ; Max z for a rest-frame template to 1850 Ang to cover 3700 Ang
+   zmax = 1.0 ; Max z for a rest-frame template to 1850 Ang to cover 3700 Ang
    pspace = 2
    nfind = 5
    plottitle = 'Galaxy Redshift'
