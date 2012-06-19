@@ -57,34 +57,41 @@
 
 \begin{document}
 
-\title{The Sloan Digital Sky Survey: Two-dimensional Spectroscopic Reduction Pipeline}
+\title{The Sloan Digital Sky Survey Two-dimensional Spectroscopic Reduction Pipeline}
 
 \author{
-Scott Burles\altaffilmark{\ref{email}}
-and David J. Schlegel\altaffilmark{\ref{Princeton}}
+David J. Schlegel\altaffilmark{\ref{LBL}}
+and Scott Burles\altaffilmark{\ref{email}}
 }
 \altaffiltext{1}{sburles@gmail.com \label{sburles}}
-\altaffiltext{2}{Princeton University Observatory, Peyton Hall, Princeton,
-NJ 08544 \label{Princeton}}
+\altaffiltext{2}{Lawrence Berkeley National Laboratory,
+1 Cycltotron Road, Berkeley, CA 94720 \label{LBL}}
 
 %------------------------------------------------------------------------------
 % ABSTRACT
 %------------------------------------------------------------------------------
 
 \begin{abstract}
-The Sloan Digital Sky Survey (SDSS) fiber-fed spectrographs have been used
-to obtain spectra for ~$600,000$ galaxies, quasars and stars
-with a resolution of ~2000 over the wavelength range 3800\AA -9600\AA.
-We present the pipeline design and algorithms for reducing the raw data to
-wavelength-calibrated, flux-calibrated one-dimensional spectra.
-It is designed to automatically reduce survey quality data sets and output 
-uniformly processed results.  No human intervention is required in any step 
-of the pipeline beyond invoking the top level command pointing to the 
-applicable data.
-The wavelength calibration is shown to have an accuracy of $3 \kms$,
-and the broad-band spectrophotometry to have an accuracy of better than $6\%$.
-What about reported errors and their accuracy/robustness?
-The reported errors capture the statistical and the expected have 
+We describe the data reduction pipeline for the spectroscopic data
+reduction for the optical spectrographs on the Sloan Telescope.
+These spectrographs were used to obtain spectra of 900,000 galaxies,
+100,000 QSOs and 300,000 stars during the Sloan Digital Sky Survey
+(SDSS) and Sloan Digital Sky Survey II (SDSS-II) from 1999 through 2009.
+The instrument was rebuilt in 2009 for the Sloan Digital Sky Survey III
+(SDSS-III) and will be used to complete a survey of an additional
+1.35 million galaxies and 200,000 QSOs by 2014.
+We present the pipeline design and algorithms for reducing the raw
+data to wavelength-calibrated, flux-calibrated one-dimensional spectra
+and per-pixel error estimates.
+The pipeline has been used to automatically reduce the survey data
+sets and output uniformly-processed results.
+The wavelength calibration is demonstrated to have an accuracy
+of $3\kms$ and the broad-band spectrophotometry to have an accuracy
+of $6\%$ for SDSS-I and II and $9\%$ for SDSS-III.
+These spectra are of sufficient quality to allow automated redshift
+fits to $99\%$ of the galaxies in SDSS-I and II and $\98\%$ of the much
+fainter galaxies in SDSS-III, and catestrophic redshift errors
+of much less than $1\%$ in all cases.
 
 %------------------------------------------------------------------------------
 % SUBJECT HEADINGS
@@ -99,13 +106,34 @@ methods: data analysis --- surveys -- galaxies: distances and redshifts
 %------------------------------------------------------------------------------
 \section{INTRODUCTION}
 \label{sec_intro}
-The Sloan Digital Sky Survey (SDSS) is a 5-band photometric survey of
-approximately $10,000$ square degrees of the Northern sky and a concurrent
-redshift survey of up to a million galaxies and 100,000 quasars
-selected from the imaging survey (York et al 2000).  The primary 
-science goals of the project are to provide the data to investigate the
-large scale structure of the Universe as well as other extragalactic and 
-galactic science.
+The Sloan Telescope was designed to provide 5-band imaging
+of approximately one-quarter of the sky and spectroscopic follow-up
+of millions of galaxies, QSOs and stars in that same footprint.
+The original SDSS operated from 1998-2005 and
+imaged 7600 deg$^2$ with spectroscopic follow-up of ???.
+SDSS-II operated from 2005-2008 as a combination of three programs:
+spectroscopic follow-up in the remainder of the original SDSS footprint,
+a supernova search from repeated imaging of an equatorial stripe,
+and imaging and spectroscopic follow-up for Galactic stars (SEGUE).
+
+The SDSS spectroscopic pipeline (idlspec2d) was written in support
+of the original galaxy and QSO redshift survey.
+This pipeline was modified to provide more accurate redshifts
+and spectrophotometry in support of the SEGUE program in SDSS-II.
+The pipeline was again modified to support the rebuilt spectrographs
+for the Baryon Oscillation Spectroscopic Survey (BOSS) in SDSS-III,
+which is observing targets 2.5 mag fainter than SDSS.
+Finally, many of the algorithms and code have been used for
+the spectroscopic reductions of the DEEP2 survey.
+
+The pipeline is written in the IDL language with some C bindings.
+It makes use of the Goddard IDL astronomy library.
+The code and all previous versions are publicly-available
+through the SDSS-III project at {sdss3.org}.
+
+The goal of the SDSS spectroscopic pipeline is to produce the
+best estimate of spectral intensity as a function of wavelength.
+
 
 In this paper, we describe the details of the SDSS 2-d spectroscopic pipeline
 (idlspec2d) including steps starting with processing of the raw CCD frames 
@@ -755,16 +783,18 @@ LRG V4 & -16.77 &-10.43 & -4.43 & -2.21 & -1.05 & -0.063  & 0.93 &  2.08 &  4.30
 \begin{table}
 \begin{tabular}{ccc}
 \hline
-DR &  2d version & rerun ? \\
+Data Release & Instrument & Code version ? \\
 \hline
 \hline
-DR2 & 4\_10\_4  & 23 \\
-DR3 & 4\_10\_4  & 23 \\
-DR4 & 4\_10\_4  & 23 \\
-DR5 & 4\_10\_4 & 23 \\
-DR6 & 5\_3\_3  & 25 \\
-DR7 & 5\_3\_12 & 26 \\
-DR8 & 5\_3\_12 & 26 \\
+DR1 & SDSS & ?   \\
+DR2 & SDSS & v4\_10\_4   \\
+DR3 & SDSS & v4\_10\_4   \\
+DR4 & SDSS & v4\_10\_4   \\
+DR5 & SDSS & v4\_10\_4  \\
+DR6 & SDSS & v5\_3\_3   \\
+DR7 & SDSS & v5\_3\_12  \\
+DR8 & SDSS & v5\_3\_12  \\
+DR9 & BOSS & ? \\
 \hline
 \end{tabular}
 \end{table}
