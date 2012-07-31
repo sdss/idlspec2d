@@ -616,7 +616,7 @@ flambda2fnu = 0 ; Free memory
    ; Classify galaxies and QSO's based upon emission lines:
    ;   log10(OIII/Hbeta) > 0.7 - 1.2 * (log10(NII/Halpha) - 0.4)  AGN
    ;                     <                                        STARFORMING
-   ; If the H_alpha E.W. > 500 Ang, then upgrade STARFORMING -> STARBURST.
+   ; If the H_alpha E.W. > 50 Ang, then upgrade STARFORMING -> STARBURST.
    ; If any galaxies or quasars have lines detected at the 10-sigma level
    ;   with sigmas > 200 km/sec at the 5-sigma level, call them BROADLINE.
 
