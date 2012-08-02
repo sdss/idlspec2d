@@ -1,4 +1,7 @@
 
+PLATEMERGE : read opfiles/washers.par for override list of washer
+    status for ZOFFSET (SJB 2012-08-02).
+
 APO_CHECKLIMITS: Bug fix to test against values of exactly zero,
     although this wouldn't have been triggered.
 BAD_BOSSFORMAT: Print mean and 95% of each sub-image.
