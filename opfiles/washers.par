@@ -6,8 +6,8 @@
 # resulting in bookkeeping for which plates do (not) have washers.
 #
 # Chronology:
-#   MJD < 55442 : never has washers
-#   55442 <= MJD <= 55474 : Transition period
+#   MJD < 55440 : never has washers (first coadd: 55442)
+#   55440 <= MJD <= 55474 : Transition period
 #     May or may not have washers, or maybe only thick; status tracked by hand
 #   MJD > 55474 :
 #     Has washers *if* this was the first plugging of that plate.
@@ -22,6 +22,9 @@
 # observed on MJDs 55474-55476.  That plate had a series of observations
 # without washers and then later washers were added, but it is unknown
 # whether they were added for this plugging or after MJD 55472.
+#
+# Some plugmaps have 100 micron washers listed in addition to 175 and 300.
+# These were never used and are set to 0 by readplugmap.pro .
 #
 # Status:
 #   Y = has QSO z-offset washers, both thick and thin
