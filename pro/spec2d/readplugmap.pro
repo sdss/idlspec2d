@@ -52,6 +52,10 @@
 ; COMMENTS:
 ;   Do not use the calibObj structure if more than 10% of the non-sky
 ;   objects do not have fluxes.
+;           
+;   Reads $IDLSPEC2D_DIR/opfiles/washers.par for ZOFFSET status overrides.
+;   The original plugmap files reflect what we wanted to do; the overrides
+;   and the return of this function reflect what we actually did.
 ;
 ; EXAMPLES:
 ;
@@ -72,6 +76,7 @@
 ;
 ; REVISION HISTORY:
 ;   29-Jan-2001  Written by S. Burles, FNAL
+;   07-Aug-2012  Added ZOFFSET overrides; S. Bailey, LBL
 ;-
 ;------------------------------------------------------------------------------
 function readplugmap_sort, plugmap, fibermask=fibermask
@@ -214,8 +219,47 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
           'RUN','RERUN','CAMCOL','FIELD','ID']
          plugmap = struct_addtags(plugmap, $
           struct_selecttags(plateholes, select_tags=htags))
-      endif
-   endif
+          
+         ;- We never used washers < 175 microns
+         ii = where(plugmap.zoffset lt 175)
+         plugmap[ii].zoffset = 0
+      
+         ;- Check opfiles/washers.par for overrides to ZOFFSET
+         ;;; print, "Reading washers.par"
+         washers_file = getenv('IDLSPEC2D_DIR') + '/opfiles/washers.par'
+         washers = yanny_readone(washers_file)
+
+         ; extract plugmap file name to match header keyword NAME
+         ; plPlugMapM-5317-56000-01.par -> 5317-56000-01
+         tmp = strsplit(file_basename(plugfile), '-.', /extract)
+         plugname = strjoin(tmp[1:3], '-')
+         mjd = long(tmp[2])
+         
+         ii = where(washers.plugname eq plugname)
+         if (n_elements(ii) gt 1) then $
+             message, "ERROR: multiple washers.par entries for " + plugname
+         if (ii[0] ge 0) then begin
+             status = washers[ii[0]].status
+             splog, "INFO: washer ZOFFSET override ", plugname, " ", status
+             if (status ne 'Y') then begin
+               if (status eq 'N') then plugmap.zoffset = 0.0
+               if (status eq 'L') then plugmap.zoffset = (plugmap.zoffset ne 0) * 300.0
+               if (status eq 'X') then begin
+                 splog, "WARNING: We know that we don't know ZOFFSET washer status for ", plugname
+                 splog, "WARNING: setting washer ZOFFSET to default 0.0 for ", plugname
+                 plugmap.zoffset = 0.0
+               endif
+             endif  ; status ne 'Y'
+         endif else begin
+             ; No explicit override; check mjd before washers were available
+             splog, "INFO: no washers.par entry for ", plugname
+             if (mjd lt 55442) then begin
+                 splog, "INFO: setting ZOFFSET=0 for MJD", mjd, " < 55442"
+                 plugmap.zoffset = 0.0
+             endif
+         endelse
+      endif  ; ct gt 0
+   endif  ; platelist_dir set
 
    ;----------
    ; Optionally add tags for SOS

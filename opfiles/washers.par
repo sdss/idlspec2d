@@ -18,1493 +18,1500 @@
 #   But some plates observed without washers later had washers added.
 #     These plates are tracked by hand.
 #
-# As of 2012-04-25, the only ambiguous case is plate 3647 MJD 55476.  It
-# had a series of observations without washers and then washers were added
-# but it is unknown whether they were added before or after MJD 55476.
+# As of 2012-04-25, the only ambiguous case is plugging 3647-55472-01,
+# observed on MJDs 55474-55476.  That plate had a series of observations
+# without washers and then later washers were added, but it is unknown
+# whether they were added for this plugging or after MJD 55472.
 #
 # Status:
 #   Y = has QSO z-offset washers, both thick and thin
 #   N = does not have any washers
 #   L = has only large(thick) washers for all holes with z-offsets
 #   X = unknown washer status
+#
+# The keys below are the plugging names, whose MJD are on or before the
+# MJD of the observations.  These are stored as HDU keyword "NAME"
+# in the spPlate, spCFrame, spFrame, and spec files.
 
 typedef struct {
-  int plate;       # plate ID
-  int mjd;         # MJD of observation
-  char status[1];  # Y/N/L/X status of washers on the plate
+  char plugname[13];  # Plate plugging name
+  char status[1];     # Y/N/L/X status of washers on the plate
 } WASHERSTATUS;
 
-washerstatus 3520 55071 N
-washerstatus 3523 55071 N
-washerstatus 3523 55144 N
-washerstatus 3536 55098 N
-washerstatus 3536 55123 N
-washerstatus 3537 55116 N
-washerstatus 3538 55124 N
-washerstatus 3540 55127 N
-washerstatus 3548 55157 N
-washerstatus 3549 55144 N
-washerstatus 3550 55155 N
-washerstatus 3551 55156 N
-washerstatus 3552 55089 N
-washerstatus 3552 55095 N
-washerstatus 3552 55098 N
-washerstatus 3552 55142 N
-washerstatus 3552 55154 N
-washerstatus 3558 55123 N
-washerstatus 3564 55146 N
-washerstatus 3578 55144 N
-washerstatus 3578 55154 N
-washerstatus 3579 55156 N
-washerstatus 3580 55157 N
-washerstatus 3586 55181 N
-washerstatus 3587 55128 N
-washerstatus 3587 55182 N
-washerstatus 3588 55127 N
-washerstatus 3588 55184 N
-washerstatus 3589 55186 N
-washerstatus 3590 55201 N
-washerstatus 3599 55103 N
-washerstatus 3604 55146 N
-washerstatus 3605 55156 N
-washerstatus 3606 55154 N
-washerstatus 3606 55182 N
-washerstatus 3607 55155 N
-washerstatus 3607 55186 N
-washerstatus 3609 55129 N
-washerstatus 3609 55201 N
-washerstatus 3611 55128 N
-washerstatus 3615 55089 N
-washerstatus 3615 55099 N
-washerstatus 3615 55145 N
-washerstatus 3615 55153 N
-washerstatus 3615 55179 N
-washerstatus 3615 55208 N
-washerstatus 3615 55445 N
-washerstatus 3615 55856 N
-washerstatus 3621 55104 N
-washerstatus 3622 55123 N
-washerstatus 3624 55113 N
-washerstatus 3625 55135 N
-washerstatus 3626 55141 N
-washerstatus 3639 55146 N
-washerstatus 3639 55205 N
-washerstatus 3640 55158 N
-washerstatus 3641 55159 N
-washerstatus 3642 55177 N
-washerstatus 3643 55160 N
-washerstatus 3647 55129 N
-washerstatus 3647 55157 N
-washerstatus 3647 55181 N
-washerstatus 3647 55241 N
-washerstatus 3647 55476 X
-washerstatus 3647 55827 Y
-washerstatus 3647 55945 Y
-washerstatus 3648 55131 N
-washerstatus 3650 55244 N
-washerstatus 3651 55247 N
-washerstatus 3655 55127 N
-washerstatus 3655 55240 N
-washerstatus 3656 55128 N
-washerstatus 3656 55241 N
-washerstatus 3657 55131 N
-washerstatus 3657 55244 N
-washerstatus 3658 55146 N
-washerstatus 3658 55152 N
-washerstatus 3658 55205 N
-washerstatus 3659 55151 N
-washerstatus 3659 55181 N
-washerstatus 3660 55153 N
-washerstatus 3660 55209 N
-washerstatus 3661 55154 N
-washerstatus 3661 55212 N
-washerstatus 3661 55614 N
-washerstatus 3662 55155 N
-washerstatus 3662 55182 N
-washerstatus 3663 55156 N
-washerstatus 3663 55176 N
-washerstatus 3663 55183 N
-washerstatus 3664 55157 N
-washerstatus 3664 55245 N
-washerstatus 3665 55158 N
-washerstatus 3665 55247 N
-washerstatus 3666 55159 N
-washerstatus 3666 55185 N
-washerstatus 3667 55186 N
-washerstatus 3667 55566 L
-washerstatus 3668 55478 Y
-washerstatus 3669 55481 Y
-washerstatus 3670 55480 Y
-washerstatus 3671 55483 Y
-washerstatus 3672 55484 Y
-washerstatus 3673 55152 N
-washerstatus 3673 55160 N
-washerstatus 3673 55178 N
-washerstatus 3674 55153 N
-washerstatus 3674 55182 N
-washerstatus 3675 55154 N
-washerstatus 3675 55163 N
-washerstatus 3675 55183 N
-washerstatus 3676 55155 N
-washerstatus 3676 55186 N
-washerstatus 3677 55156 N
-washerstatus 3677 55205 N
-washerstatus 3678 55157 N
-washerstatus 3678 55208 N
-washerstatus 3679 55158 N
-washerstatus 3679 55209 N
-washerstatus 3680 55159 N
-washerstatus 3680 55210 N
-washerstatus 3681 55243 N
-washerstatus 3682 55244 N
-washerstatus 3683 55178 N
-washerstatus 3683 55245 N
-washerstatus 3684 55246 N
-washerstatus 3685 55247 N
-washerstatus 3686 55268 N
-washerstatus 3687 55269 N
-washerstatus 3688 55273 N
-washerstatus 3689 55180 N
-washerstatus 3690 55182 N
-washerstatus 3691 55274 N
-washerstatus 3692 55186 N
-washerstatus 3693 55192 N
-washerstatus 3693 55208 N
-washerstatus 3694 55209 N
-washerstatus 3695 55212 N
-washerstatus 3696 55277 N
-washerstatus 3697 55290 N
-washerstatus 3698 55501 Y
-washerstatus 3699 55517 Y
-washerstatus 3700 55542 Y
-washerstatus 3701 55540 Y
-washerstatus 3735 55209 N
-washerstatus 3736 55214 N
-washerstatus 3744 55209 N
-washerstatus 3745 55234 N
-washerstatus 3751 55234 N
-washerstatus 3752 55236 N
-washerstatus 3753 55486 Y
-washerstatus 3754 55488 Y
-washerstatus 3755 55504 Y
-washerstatus 3756 55505 Y
-washerstatus 3757 55508 Y
-washerstatus 3758 55506 Y
-washerstatus 3759 55236 N
-washerstatus 3760 55268 N
-washerstatus 3761 55272 N
-washerstatus 3762 55507 Y
-washerstatus 3763 55508 Y
-washerstatus 3764 55514 Y
-washerstatus 3765 55508 Y
-washerstatus 3766 55213 N
-washerstatus 3767 55214 N
-washerstatus 3768 55247 N
-washerstatus 3768 55564 Y
-washerstatus 3769 55240 N
-washerstatus 3770 55234 N
-washerstatus 3771 55293 N
-washerstatus 3771 55544 Y
-washerstatus 3772 55277 N
-washerstatus 3773 55240 N
-washerstatus 3774 55244 N
-washerstatus 3775 55207 N
-washerstatus 3776 55209 N
-washerstatus 3777 55210 N
-washerstatus 3778 55213 N
-washerstatus 3779 55222 N
-washerstatus 3780 55240 N
-washerstatus 3781 55243 N
-washerstatus 3782 55244 N
-washerstatus 3783 55246 N
-washerstatus 3784 55269 N
-washerstatus 3785 55241 N
-washerstatus 3785 55273 N
-washerstatus 3786 55563 Y
-washerstatus 3787 55565 Y
-washerstatus 3788 55246 N
-washerstatus 3789 55269 N
-washerstatus 3790 55208 N
-washerstatus 3791 55501 Y
-washerstatus 3792 55212 N
-washerstatus 3793 55214 N
-washerstatus 3794 55241 N
-washerstatus 3800 55486 Y
-washerstatus 3801 55509 Y
-washerstatus 3802 55514 Y
-washerstatus 3802 55528 Y
-washerstatus 3803 55513 Y
-washerstatus 3804 55267 N
-washerstatus 3805 55269 N
-washerstatus 3806 55505 Y
-washerstatus 3807 55511 Y
-washerstatus 3808 55513 Y
-washerstatus 3809 55533 Y
-washerstatus 3810 55531 Y
-washerstatus 3810 56015 Y
-washerstatus 3811 55538 Y
-washerstatus 3812 55513 Y
-washerstatus 3813 55532 Y
-washerstatus 3814 55535 Y
-washerstatus 3815 55537 Y
-washerstatus 3816 55272 N
-washerstatus 3817 55277 N
-washerstatus 3818 55308 N
-washerstatus 3818 55532 Y
-washerstatus 3819 55540 Y
-washerstatus 3820 55542 Y
-washerstatus 3821 55535 Y
-washerstatus 3822 55544 Y
-washerstatus 3823 55293 N
-washerstatus 3823 55534 Y
-washerstatus 3825 55533 Y
-washerstatus 3826 55296 N
-washerstatus 3826 55563 Y
-washerstatus 3827 55298 N
-washerstatus 3827 55565 Y
-washerstatus 3828 55539 Y
-washerstatus 3829 55300 N
-washerstatus 3830 55574 Y
-washerstatus 3831 55543 Y
-washerstatus 3832 55289 N
-washerstatus 3833 55290 N
-washerstatus 3834 55296 N
-washerstatus 3834 55569 Y
-washerstatus 3834 56014 Y
-washerstatus 3835 55298 N
-washerstatus 3835 55570 Y
-washerstatus 3836 55302 N
-washerstatus 3837 55572 Y
-washerstatus 3838 55588 Y
-washerstatus 3839 55575 Y
-washerstatus 3840 55574 Y
-washerstatus 3841 55295 N
-washerstatus 3841 55572 Y
-washerstatus 3841 56016 Y
-washerstatus 3842 55565 Y
-washerstatus 3843 55278 N
-washerstatus 3844 55321 N
-washerstatus 3845 55323 N
-washerstatus 3846 55327 N
-washerstatus 3847 55298 N
-washerstatus 3847 55588 Y
-washerstatus 3848 55278 N
-washerstatus 3848 55647 Y
-washerstatus 3849 55274 N
-washerstatus 3850 55293 N
-washerstatus 3850 55298 N
-washerstatus 3850 55575 Y
-washerstatus 3851 55298 N
-washerstatus 3851 55302 N
-washerstatus 3852 55243 N
-washerstatus 3853 55268 N
-washerstatus 3854 55247 N
-washerstatus 3855 55268 N
-washerstatus 3856 55269 N
-washerstatus 3857 55272 N
-washerstatus 3858 55273 N
-washerstatus 3859 55246 N
-washerstatus 3860 55269 N
-washerstatus 3861 55274 N
-washerstatus 3862 55276 N
-washerstatus 3863 55280 N
-washerstatus 3864 55649 Y
-washerstatus 3865 55272 N
-washerstatus 3866 55623 Y
-washerstatus 3867 55652 Y
-washerstatus 3868 55360 N
-washerstatus 3869 55273 N
-washerstatus 3870 55273 N
-washerstatus 3871 55307 N
-washerstatus 3872 55382 N
-washerstatus 3873 55277 N
-washerstatus 3874 55280 N
-washerstatus 3875 55364 N
-washerstatus 3876 55245 N
-washerstatus 3877 55365 N
-washerstatus 3878 55361 N
-washerstatus 3879 55244 N
-washerstatus 3922 55333 N
-washerstatus 3923 55325 N
-washerstatus 3924 55332 N
-washerstatus 3925 55338 N
-washerstatus 3926 55327 N
-washerstatus 3927 55333 N
-washerstatus 3928 55331 N
-washerstatus 3929 55335 N
-washerstatus 3930 55332 N
-washerstatus 3931 55350 N
-washerstatus 3932 55337 N
-washerstatus 3933 55335 N
-washerstatus 3934 55336 N
-washerstatus 3935 55326 N
-washerstatus 3936 55302 N
-washerstatus 3937 55352 N
-washerstatus 3938 55328 N
-washerstatus 3939 55633 Y
-washerstatus 3940 55327 N
-washerstatus 3941 55321 N
-washerstatus 3942 55338 N
-washerstatus 3943 55336 N
-washerstatus 3944 55660 Y
-washerstatus 3945 55648 Y
-washerstatus 3946 55298 N
-washerstatus 3946 55659 Y
-washerstatus 3947 55332 N
-washerstatus 3948 55331 N
-washerstatus 3949 55650 Y
-washerstatus 3950 55680 Y
-washerstatus 3951 55681 Y
-washerstatus 3952 55330 N
-washerstatus 3953 55322 N
-washerstatus 3954 55680 Y
-washerstatus 3955 55678 Y
-washerstatus 3956 55656 Y
-washerstatus 3957 55664 Y
-washerstatus 3958 55329 N
-washerstatus 3959 55679 Y
-washerstatus 3960 55663 Y
-washerstatus 3961 55654 Y
-washerstatus 3962 55660 Y
-washerstatus 3963 55659 Y
-washerstatus 3964 55648 Y
-washerstatus 3965 55302 N
-washerstatus 3966 55571 Y
-washerstatus 3967 55294 N
-washerstatus 3967 55704 Y
-washerstatus 3968 55590 Y
-washerstatus 3969 55307 N
-washerstatus 3970 55296 N
-washerstatus 3970 55591 Y
-washerstatus 3971 55322 N
-washerstatus 3972 55297 N
-washerstatus 3972 55589 Y
-washerstatus 3973 55323 N
-washerstatus 3974 55320 N
-washerstatus 3975 55321 N
-washerstatus 3976 55298 N
-washerstatus 3976 55302 N
-washerstatus 3977 55335 N
-washerstatus 3978 55330 N
-washerstatus 3979 55597 Y
-washerstatus 3980 55331 N
-washerstatus 3981 55295 N
-washerstatus 3981 55603 Y
-washerstatus 3982 55332 N
-washerstatus 3983 55603 Y
-washerstatus 3984 55333 N
-washerstatus 3985 55320 N
-washerstatus 3986 55329 N
-washerstatus 3987 55296 N
-washerstatus 3987 55590 Y
-washerstatus 4004 55321 N
-washerstatus 4005 55325 N
-washerstatus 4006 55328 N
-washerstatus 4007 55327 N
-washerstatus 4008 55356 N
-washerstatus 4009 55648 Y
-washerstatus 4010 55321 N
-washerstatus 4010 55350 N
-washerstatus 4011 55635 Y
-washerstatus 4012 55327 N
-washerstatus 4013 55629 Y
-washerstatus 4014 55630 Y
-washerstatus 4015 55624 Y
-washerstatus 4016 55632 Y
-washerstatus 4017 55329 N
-washerstatus 4018 55622 Y
-washerstatus 4019 55363 N
-washerstatus 4020 55332 N
-washerstatus 4021 55620 Y
-washerstatus 4022 55352 N
-washerstatus 4023 55328 N
-washerstatus 4024 55646 Y
-washerstatus 4025 55330 N
-washerstatus 4025 55350 N
-washerstatus 4026 55325 N
-washerstatus 4027 55629 Y
-washerstatus 4028 55621 Y
-washerstatus 4029 55618 Y
-washerstatus 4030 55634 Y
-washerstatus 4031 55604 Y
-washerstatus 4032 55333 N
-washerstatus 4033 55332 N
-washerstatus 4034 55635 Y
-washerstatus 4035 55383 N
-washerstatus 4036 55330 N
-washerstatus 4037 55631 Y
-washerstatus 4038 55363 N
-washerstatus 4039 55648 Y
-washerstatus 4040 55605 Y
-washerstatus 4041 55361 N
-washerstatus 4042 55626 Y
-washerstatus 4043 55630 Y
-washerstatus 4044 55359 N
-washerstatus 4045 55622 Y
-washerstatus 4046 55605 Y
-washerstatus 4047 55352 N
-washerstatus 4048 55602 Y
-washerstatus 4049 55591 Y
-washerstatus 4050 55599 Y
-washerstatus 4051 55337 N
-washerstatus 4052 55589 Y
-washerstatus 4052 55600 Y
-washerstatus 4053 55591 Y
-washerstatus 4054 55358 N
-washerstatus 4055 55359 N
-washerstatus 4056 55357 N
-washerstatus 4057 55357 N
-washerstatus 4058 55358 N
-washerstatus 4059 55360 N
-washerstatus 4060 55359 N
-washerstatus 4061 55362 N
-washerstatus 4062 55383 N
-washerstatus 4063 55364 N
-washerstatus 4064 55366 N
-washerstatus 4065 55368 N
-washerstatus 4066 55444 N
-washerstatus 4067 55361 N
-washerstatus 4068 55445 N
-washerstatus 4069 55365 N
-washerstatus 4070 55681 Y
-washerstatus 4071 55660 Y
-washerstatus 4072 55362 N
-washerstatus 4073 55663 Y
-washerstatus 4074 55679 Y
-washerstatus 4075 55352 N
-washerstatus 4077 55361 N
-washerstatus 4078 55358 N
-washerstatus 4079 55363 N
-washerstatus 4080 55368 N
-washerstatus 4080 55471 L
-washerstatus 4081 55365 N
-washerstatus 4082 55367 N
-washerstatus 4083 55441 N
-washerstatus 4083 55443 Y
-washerstatus 4084 55447 N
-washerstatus 4085 55452 L
-washerstatus 4086 55446 N
-washerstatus 4087 55449 L
-washerstatus 4088 55451 L
-washerstatus 4089 55470 N
-washerstatus 4090 55500 Y
-washerstatus 4091 55498 Y
-washerstatus 4092 55477 Y
-washerstatus 4093 55475 Y
-washerstatus 4094 55481 Y
-washerstatus 4095 55497 Y
-washerstatus 4096 55501 Y
-washerstatus 4097 55506 Y
-washerstatus 4174 55659 Y
-washerstatus 4175 55680 Y
-washerstatus 4176 55682 Y
-washerstatus 4177 55688 Y
-washerstatus 4178 55653 Y
-washerstatus 4179 55684 Y
-washerstatus 4180 55679 Y
-washerstatus 4181 55685 Y
-washerstatus 4182 55446 N
-washerstatus 4183 55447 N
-washerstatus 4184 55450 L
-washerstatus 4185 55469 L
-washerstatus 4186 55691 Y
-washerstatus 4187 55693 Y
-washerstatus 4188 55684 Y
-washerstatus 4189 55679 Y
-washerstatus 4190 55686 Y
-washerstatus 4191 55444 N
-washerstatus 4192 55469 N
-washerstatus 4193 55476 Y
-washerstatus 4194 55450 L
-washerstatus 4195 55452 L
-washerstatus 4196 55478 Y
-washerstatus 4197 55479 Y
-washerstatus 4198 55480 Y
-washerstatus 4199 55481 Y
-washerstatus 4200 55499 Y
-washerstatus 4201 55443 N
-washerstatus 4202 55445 N
-washerstatus 4203 55447 N
-washerstatus 4204 55470 L
-washerstatus 4205 55454 L
-washerstatus 4206 55471 N
-washerstatus 4207 55475 Y
-washerstatus 4208 55476 Y
-washerstatus 4209 55478 Y
-washerstatus 4210 55444 N
-washerstatus 4211 55446 N
-washerstatus 4212 55447 N
-washerstatus 4213 55449 L
-washerstatus 4214 55451 L
-washerstatus 4215 55471 N
-washerstatus 4216 55477 Y
-washerstatus 4217 55478 Y
-washerstatus 4218 55479 Y
-washerstatus 4219 55480 Y
-washerstatus 4220 55447 N
-washerstatus 4221 55443 N
-washerstatus 4222 55444 N
-washerstatus 4223 55451 L
-washerstatus 4224 55481 Y
-washerstatus 4225 55455 L
-washerstatus 4226 55475 Y
-washerstatus 4227 55481 Y
-washerstatus 4228 55484 Y
-washerstatus 4229 55501 Y
-washerstatus 4230 55483 Y
-washerstatus 4231 55444 N
-washerstatus 4232 55447 N
-washerstatus 4233 55449 L
-washerstatus 4234 55478 Y
-washerstatus 4235 55451 L
-washerstatus 4236 55479 Y
-washerstatus 4237 55478 Y
-washerstatus 4238 55455 L
-washerstatus 4239 55458 L
-washerstatus 4240 55455 L
-washerstatus 4241 55450 N
-washerstatus 4242 55476 Y
-washerstatus 4256 55477 Y
-washerstatus 4257 55480 Y
-washerstatus 4258 55481 Y
-washerstatus 4259 55501 Y
-washerstatus 4260 55478 Y
-washerstatus 4261 55503 Y
-washerstatus 4262 55482 Y
-washerstatus 4263 55484 Y
-washerstatus 4264 55506 Y
-washerstatus 4265 55505 Y
-washerstatus 4266 55486 Y
-washerstatus 4267 55484 Y
-washerstatus 4268 55483 Y
-washerstatus 4269 55502 Y
-washerstatus 4270 55511 Y
-washerstatus 4271 55507 Y
-washerstatus 4272 55509 Y
-washerstatus 4273 55506 Y
-washerstatus 4274 55508 Y
-washerstatus 4275 55501 Y
-washerstatus 4276 55505 Y
-washerstatus 4277 55506 Y
-washerstatus 4278 55505 Y
-washerstatus 4279 55508 Y
-washerstatus 4280 55503 Y
-washerstatus 4281 55836 Y
-washerstatus 4282 55507 Y
-washerstatus 4283 55864 Y
-washerstatus 4284 55863 Y
-washerstatus 4285 55881 Y
-washerstatus 4286 55499 Y
-washerstatus 4287 55483 Y
-washerstatus 4288 55501 Y
-washerstatus 4289 55856 Y
-washerstatus 4290 55527 Y
-washerstatus 4291 55525 Y
-washerstatus 4292 55532 Y
-washerstatus 4293 55509 Y
-washerstatus 4294 55500 Y
-washerstatus 4295 55858 Y
-washerstatus 4296 55499 Y
-washerstatus 4297 55806 Y
-washerstatus 4298 55511 Y
-washerstatus 4299 55827 Y
-washerstatus 4300 55528 Y
-washerstatus 4301 55810 Y
-washerstatus 4302 55531 Y
-washerstatus 4303 55508 Y
-washerstatus 4304 55506 Y
-washerstatus 4305 55509 Y
-washerstatus 4306 55584 Y
-washerstatus 4307 55531 Y
-washerstatus 4308 55565 Y
-washerstatus 4309 55528 Y
-washerstatus 4310 55508 Y
-washerstatus 4311 55506 Y
-washerstatus 4312 55511 Y
-washerstatus 4313 55857 Y
-washerstatus 4314 55855 Y
-washerstatus 4315 55503 Y
-washerstatus 4316 55505 Y
-washerstatus 4317 55480 Y
-washerstatus 4318 55508 Y
-washerstatus 4319 55507 Y
-washerstatus 4320 55894 Y
-washerstatus 4321 55504 Y
-washerstatus 4322 55503 Y
-washerstatus 4323 55884 Y
-washerstatus 4341 55538 Y
-washerstatus 4342 55531 Y
-washerstatus 4343 55540 Y
-washerstatus 4344 55557 Y
-washerstatus 4345 55569 Y
-washerstatus 4346 55955 Y
-washerstatus 4347 55830 Y
-washerstatus 4348 55559 Y
-washerstatus 4349 55803 Y
-washerstatus 4350 55556 Y
-washerstatus 4351 55538 Y
-washerstatus 4352 55533 Y
-washerstatus 4353 55532 Y
-washerstatus 4354 55810 Y
-washerstatus 4355 55533 Y
-washerstatus 4356 55829 Y
-washerstatus 4357 55829 Y
-washerstatus 4358 55833 Y
-washerstatus 4359 55533 Y
-washerstatus 4360 55539 Y
-washerstatus 4361 55831 Y
-washerstatus 4362 55828 Y
-washerstatus 4363 55537 Y
-washerstatus 4364 55855 Y
-washerstatus 4365 55539 Y
-washerstatus 4366 55536 Y
-washerstatus 4367 55566 Y
-washerstatus 4368 55559 Y
-washerstatus 4369 55827 Y
-washerstatus 4370 55534 Y
-washerstatus 4371 55830 Y
-washerstatus 4372 55541 Y
-washerstatus 4373 55811 Y
-washerstatus 4374 55883 Y
-washerstatus 4375 55889 Y
-washerstatus 4376 55863 Y
-washerstatus 4377 55828 Y
-washerstatus 4378 55853 Y
-washerstatus 4379 55881 Y
-washerstatus 4380 55857 Y
-washerstatus 4381 55824 Y
-washerstatus 4382 55742 Y
-washerstatus 4383 55881 Y
-washerstatus 4385 55752 Y
-washerstatus 4386 55540 Y
-washerstatus 4387 55534 Y
-washerstatus 4388 55536 Y
-washerstatus 4389 55539 Y
-washerstatus 4390 55948 Y
-washerstatus 4391 55866 Y
-washerstatus 4392 55833 Y
-washerstatus 4393 55944 Y
-washerstatus 4394 55924 Y
-washerstatus 4395 55828 Y
-washerstatus 4396 55829 Y
-washerstatus 4397 55921 Y
-washerstatus 4398 55946 Y
-washerstatus 4399 55811 Y
-washerstatus 4400 55509 Y
-washerstatus 4401 55510 Y
-washerstatus 4402 55514 Y
-washerstatus 4403 55536 Y
-washerstatus 4404 55513 Y
-washerstatus 4405 55854 Y
-washerstatus 4406 55858 Y
-washerstatus 4407 55884 Y
-washerstatus 4408 55888 Y
-washerstatus 4409 55883 Y
-washerstatus 4412 55912 Y
-washerstatus 4413 55894 Y
-washerstatus 4414 55882 Y
-washerstatus 4415 55831 Y
-washerstatus 4416 55828 Y
-washerstatus 4417 55829 Y
-washerstatus 4418 55862 Y
-washerstatus 4419 55867 Y
-washerstatus 4420 55883 Y
-washerstatus 4421 55858 Y
-washerstatus 4422 55533 Y
-washerstatus 4423 55889 Y
-washerstatus 4424 55532 Y
-washerstatus 4425 55864 Y
-washerstatus 4440 55539 Y
-washerstatus 4441 55532 Y
-washerstatus 4442 55532 Y
-washerstatus 4443 55539 Y
-washerstatus 4444 55538 Y
-washerstatus 4445 55622 Y
-washerstatus 4445 55869 Y
-washerstatus 4446 55589 Y
-washerstatus 4447 55542 Y
-washerstatus 4448 55538 Y
-washerstatus 4449 55544 Y
-washerstatus 4450 55540 Y
-washerstatus 4451 55537 Y
-washerstatus 4452 55536 Y
-washerstatus 4453 55535 Y
-washerstatus 4454 55536 Y
-washerstatus 4455 55539 Y
-washerstatus 4456 55537 Y
-washerstatus 4457 55858 Y
-washerstatus 4458 55536 Y
-washerstatus 4459 55533 Y
-washerstatus 4460 55533 Y
-washerstatus 4461 55888 Y
-washerstatus 4462 55600 Y
-washerstatus 4463 55868 Y
-washerstatus 4464 55866 Y
-washerstatus 4465 55858 Y
-washerstatus 4466 55857 Y
-washerstatus 4467 55894 Y
-washerstatus 4468 55894 Y
-washerstatus 4469 55863 Y
-washerstatus 4470 55587 Y
-washerstatus 4471 55617 Y
-washerstatus 4472 55893 Y
-washerstatus 4473 55589 Y
-washerstatus 4478 55600 Y
-washerstatus 4479 55592 Y
-washerstatus 4480 55591 Y
-washerstatus 4481 55630 Y
-washerstatus 4482 55617 Y
-washerstatus 4483 55587 Y
-washerstatus 4484 55565 Y
-washerstatus 4485 55836 Y
-washerstatus 4486 55588 Y
-washerstatus 4487 55866 Y
-washerstatus 4488 55571 Y
-washerstatus 4489 55545 Y
-washerstatus 4490 55629 Y
-washerstatus 4491 55570 Y
-washerstatus 4492 55565 Y
-washerstatus 4493 55585 Y
-washerstatus 4494 55569 Y
-washerstatus 4495 55566 Y
-washerstatus 4496 55544 Y
-washerstatus 4497 55564 Y
-washerstatus 4498 55615 Y
-washerstatus 4499 55572 Y
-washerstatus 4500 55543 Y
-washerstatus 4501 55590 Y
-washerstatus 4502 55569 Y
-washerstatus 4503 55563 Y
-washerstatus 4504 55571 Y
-washerstatus 4505 55603 Y
-washerstatus 4506 55568 Y
-washerstatus 4507 55564 Y
-washerstatus 4508 55600 Y
-washerstatus 4509 55574 Y
-washerstatus 4510 55559 Y
-washerstatus 4511 55602 Y
-washerstatus 4526 55559 Y
-washerstatus 4527 55590 Y
-washerstatus 4528 55559 Y
-washerstatus 4529 55563 Y
-washerstatus 4530 55564 Y
-washerstatus 4531 55563 Y
-washerstatus 4532 55559 Y
-washerstatus 4533 55855 Y
-washerstatus 4534 55863 Y
-washerstatus 4535 55860 Y
-washerstatus 4536 55857 Y
-washerstatus 4537 55806 Y
-washerstatus 4538 55860 Y
-washerstatus 4539 55865 Y
-washerstatus 4540 55863 Y
-washerstatus 4541 55882 Y
-washerstatus 4542 55833 Y
-washerstatus 4543 55888 Y
-washerstatus 4544 55855 Y
-washerstatus 4545 55567 Y
-washerstatus 4546 55835 Y
-washerstatus 4547 55893 Y
-washerstatus 4548 55565 Y
-washerstatus 4549 55556 Y
-washerstatus 4550 55894 Y
-washerstatus 4551 55569 Y
-washerstatus 4552 55884 Y
-washerstatus 4553 55584 Y
-washerstatus 4556 55912 Y
-washerstatus 4557 55588 Y
-washerstatus 4558 55569 Y
-washerstatus 4559 55597 Y
-washerstatus 4560 55575 Y
-washerstatus 4561 55614 Y
-washerstatus 4562 55570 Y
-washerstatus 4563 55617 Y
-washerstatus 4564 55570 Y
-washerstatus 4565 55591 Y
-washerstatus 4566 55630 Y
-washerstatus 4567 55589 Y
-washerstatus 4568 55600 Y
-washerstatus 4569 55631 Y
-washerstatus 4570 55623 Y
-washerstatus 4571 55629 Y
-washerstatus 4572 55622 Y
-washerstatus 4573 55587 Y
-washerstatus 4574 55621 Y
-washerstatus 4575 55590 Y
-washerstatus 4576 55592 Y
-washerstatus 4601 55589 Y
-washerstatus 4602 55644 Y
-washerstatus 4603 55999 Y
-washerstatus 4604 55983 Y
-washerstatus 4605 55971 Y
-washerstatus 4608 55973 Y
-washerstatus 4610 55621 Y
-washerstatus 4611 55603 Y
-washerstatus 4612 55590 Y
-washerstatus 4613 55591 Y
-washerstatus 4614 55604 Y
-washerstatus 4615 55618 Y
-washerstatus 4616 55617 Y
-washerstatus 4617 55617 Y
-washerstatus 4618 55600 Y
-washerstatus 4619 55599 Y
-washerstatus 4620 55652 Y
-washerstatus 4621 55603 Y
-washerstatus 4621 55649 Y
-washerstatus 4622 55629 Y
-washerstatus 4623 55621 Y
-washerstatus 4624 55654 Y
-washerstatus 4625 55632 Y
-washerstatus 4626 55647 Y
-washerstatus 4627 55626 Y
-washerstatus 4628 55646 Y
-washerstatus 4629 55630 Y
-washerstatus 4630 55623 Y
-washerstatus 4631 55617 Y
-washerstatus 4632 55644 Y
-washerstatus 4633 55620 Y
-washerstatus 4634 55626 Y
-washerstatus 4635 55615 Y
-washerstatus 4636 55945 Y
-washerstatus 4637 55616 Y
-washerstatus 4638 55956 Y
-washerstatus 4639 55944 Y
-washerstatus 4640 55927 Y
-washerstatus 4641 55947 Y
-washerstatus 4642 55926 Y
-washerstatus 4643 55946 Y
-washerstatus 4644 55922 Y
-washerstatus 4645 55623 Y
-washerstatus 4646 55622 Y
-washerstatus 4647 55621 Y
-washerstatus 4648 55673 Y
-washerstatus 4649 55621 Y
-washerstatus 4650 55648 Y
-washerstatus 4651 56008 Y
-washerstatus 4652 55672 Y
-washerstatus 4653 55622 Y
-washerstatus 4654 55659 Y
-washerstatus 4655 55620 Y
-washerstatus 4656 55828 Y
-washerstatus 4657 55591 Y
-washerstatus 4658 55592 Y
-washerstatus 4659 55587 Y
-washerstatus 4661 55614 Y
-washerstatus 4662 55590 Y
-washerstatus 4663 55893 Y
-washerstatus 4666 55832 Y
-washerstatus 4667 55868 Y
-washerstatus 4669 55831 Y
-washerstatus 4671 55670 Y
-washerstatus 4683 55924 Y
-washerstatus 4685 55657 Y
-washerstatus 4686 56013 Y
-washerstatus 4688 56008 Y
-washerstatus 4689 55656 Y
-washerstatus 4690 55653 Y
-washerstatus 4691 55651 Y
-washerstatus 4692 55644 Y
-washerstatus 4693 55632 Y
-washerstatus 4694 55649 Y
-washerstatus 4695 55957 Y
-washerstatus 4697 55660 Y
-washerstatus 4698 55623 Y
-washerstatus 4699 55684 Y
-washerstatus 4700 55709 Y
-washerstatus 4701 55709 Y
-washerstatus 4702 55618 Y
-washerstatus 4703 55617 Y
-washerstatus 4704 55681 Y
-washerstatus 4705 55705 Y
-washerstatus 4706 55705 Y
-washerstatus 4707 55653 Y
-washerstatus 4708 55704 Y
-washerstatus 4709 55720 Y
-washerstatus 4710 55707 Y
-washerstatus 4711 55737 Y
-washerstatus 4712 55738 Y
-washerstatus 4714 56041 Y
-washerstatus 4715 55653 Y
-washerstatus 4716 55738 Y
-washerstatus 4717 55742 Y
-washerstatus 4718 55750 Y
-washerstatus 4718 56014 Y
-washerstatus 4719 55736 Y
-washerstatus 4720 55691 Y
-washerstatus 4721 55709 Y
-washerstatus 4722 55735 Y
-washerstatus 4723 55748 Y
-washerstatus 4723 56033 Y
-washerstatus 4724 55742 Y
-washerstatus 4725 55711 Y
-washerstatus 4726 55712 Y
-washerstatus 4727 55693 Y
-washerstatus 4729 55626 Y
-washerstatus 4730 55630 Y
-washerstatus 4731 55656 Y
-washerstatus 4732 55648 Y
-washerstatus 4733 55649 Y
-washerstatus 4734 55646 Y
-washerstatus 4735 55651 Y
-washerstatus 4736 55631 Y
-washerstatus 4737 55630 Y
-washerstatus 4738 55650 Y
-washerstatus 4739 55644 Y
-washerstatus 4740 55651 Y
-washerstatus 4741 55704 Y
-washerstatus 4742 55660 Y
-washerstatus 4743 55645 Y
-washerstatus 4745 55892 Y
-washerstatus 4746 55632 Y
-washerstatus 4747 55652 Y
-washerstatus 4748 55631 Y
-washerstatus 4749 55633 Y
-washerstatus 4750 55630 Y
-washerstatus 4751 55646 Y
-washerstatus 4752 55653 Y
-washerstatus 4753 55674 Y
-washerstatus 4754 55649 Y
-washerstatus 4755 55660 Y
-washerstatus 4756 55631 Y
-washerstatus 4757 55653 Y
-washerstatus 4758 55682 Y
-washerstatus 4759 55649 Y
-washerstatus 4760 55656 Y
-washerstatus 4761 55633 Y
-washerstatus 4762 55888 Y
-washerstatus 4763 55869 Y
-washerstatus 4764 55646 Y
-washerstatus 4765 55674 Y
-washerstatus 4766 55677 Y
-washerstatus 4767 55946 Y
-washerstatus 4768 55944 Y
-washerstatus 4769 55931 Y
-washerstatus 4770 55928 Y
-washerstatus 4771 55925 Y
-washerstatus 4772 55654 Y
-washerstatus 4773 55648 Y
-washerstatus 4774 55659 Y
-washerstatus 4775 55708 Y
-washerstatus 4776 55652 Y
-washerstatus 4777 55707 Y
-washerstatus 4778 55706 Y
-washerstatus 4779 55656 Y
-washerstatus 4780 55682 Y
-washerstatus 4781 55653 Y
-washerstatus 4782 55654 Y
-washerstatus 4783 55652 Y
-washerstatus 4784 55677 Y
-washerstatus 4785 55659 Y
-washerstatus 4786 55651 Y
-washerstatus 4787 55863 Y
-washerstatus 4788 55889 Y
-washerstatus 4789 55923 Y
-washerstatus 4790 55888 Y
-washerstatus 4791 55889 Y
-washerstatus 4792 55925 Y
-washerstatus 4793 55648 Y
-washerstatus 4794 55647 Y
-washerstatus 4795 55889 Y
-washerstatus 4796 55924 Y
-washerstatus 4797 55662 Y
-washerstatus 4798 55672 Y
-washerstatus 4799 55656 Y
-washerstatus 4800 55674 Y
-washerstatus 4801 55653 Y
-washerstatus 4802 55652 Y
-washerstatus 4803 55734 Y
-washerstatus 4804 55679 Y
-washerstatus 4805 55715 Y
-washerstatus 4806 55688 Y
-washerstatus 4807 55687 Y
-washerstatus 4808 55705 Y
-washerstatus 4831 55679 Y
-washerstatus 4832 55680 Y
-washerstatus 4833 55679 Y
-washerstatus 4834 55685 Y
-washerstatus 4835 55688 Y
-washerstatus 4835 56016 Y
-washerstatus 4836 55689 Y
-washerstatus 4837 55707 Y
-washerstatus 4838 55686 Y
-washerstatus 4839 55703 Y
-washerstatus 4840 55690 Y
-washerstatus 4841 55895 Y
-washerstatus 4842 55867 Y
-washerstatus 4843 55860 Y
-washerstatus 4847 55713 Y
-washerstatus 4847 55931 Y
-washerstatus 4848 55955 Y
-washerstatus 4849 55945 Y
-washerstatus 4850 55929 Y
-washerstatus 4851 55680 Y
-washerstatus 4852 55689 Y
-washerstatus 4853 55928 Y
-washerstatus 4854 55685 Y
-washerstatus 4855 55926 Y
-washerstatus 4856 55712 Y
-washerstatus 4857 55711 Y
-washerstatus 4858 55686 Y
-washerstatus 4859 55684 Y
-washerstatus 4860 55691 Y
-washerstatus 4861 55710 Y
-washerstatus 4862 55685 Y
-washerstatus 4863 55688 Y
-washerstatus 4864 55680 Y
-washerstatus 4865 55713 Y
-washerstatus 4866 55895 Y
-washerstatus 4867 55924 Y
-washerstatus 4868 55895 Y
-washerstatus 4869 55896 Y
-washerstatus 4870 55923 Y
-washerstatus 4871 55928 Y
-washerstatus 4872 55944 Y
-washerstatus 4873 55926 Y
-washerstatus 4874 55673 Y
-washerstatus 4875 55677 Y
-washerstatus 4876 55679 Y
-washerstatus 4877 55707 Y
-washerstatus 4878 55710 Y
-washerstatus 4879 55706 Y
-washerstatus 4881 55733 Y
-washerstatus 4882 55721 Y
-washerstatus 4885 55735 Y
-washerstatus 4886 55737 Y
-washerstatus 4889 55709 Y
-washerstatus 4890 55741 Y
-washerstatus 4891 55736 Y
-washerstatus 4892 55738 Y
-washerstatus 4893 55709 Y
-washerstatus 4895 55708 Y
-washerstatus 4896 55712 Y
-washerstatus 4900 55739 Y
-washerstatus 4901 55711 Y
-washerstatus 4903 55927 Y
-washerstatus 4953 55749 Y
-washerstatus 4955 55750 Y
-washerstatus 4956 55737 Y
-washerstatus 4960 55747 Y
-washerstatus 4961 55719 Y
-washerstatus 4964 55749 Y
-washerstatus 4965 55721 Y
-washerstatus 4966 55712 Y
-washerstatus 4969 56041 Y
-washerstatus 4970 56039 Y
-washerstatus 4971 55747 Y
-washerstatus 4973 56042 Y
-washerstatus 4974 56038 Y
-washerstatus 4975 56037 Y
-washerstatus 4978 56036 Y
-washerstatus 4983 55836 Y
-washerstatus 4984 55827 Y
-washerstatus 4987 55746 Y
-washerstatus 4988 55825 Y
-washerstatus 4989 55743 Y
-washerstatus 4990 55743 Y
-washerstatus 4992 55723 Y
-washerstatus 4993 55738 Y
-washerstatus 4994 55739 Y
-washerstatus 4995 55739 Y
-washerstatus 4996 55720 Y
-washerstatus 4997 55738 Y
-washerstatus 4998 55722 Y
-washerstatus 4999 55721 Y
-washerstatus 5000 55715 Y
-washerstatus 5001 55719 Y
-washerstatus 5002 55710 Y
-washerstatus 5003 55715 Y
-washerstatus 5004 55711 Y
-washerstatus 5005 55751 Y
-washerstatus 5006 55706 Y
-washerstatus 5007 55710 Y
-washerstatus 5008 55744 Y
-washerstatus 5009 55707 Y
-washerstatus 5010 55748 Y
-washerstatus 5011 55739 Y
-washerstatus 5013 55723 Y
-washerstatus 5014 55717 Y
-washerstatus 5015 55707 Y
-washerstatus 5016 55709 Y
-washerstatus 5017 55715 Y
-washerstatus 5018 55734 Y
-washerstatus 5020 55852 Y
-washerstatus 5021 55863 Y
-washerstatus 5022 55827 Y
-washerstatus 5023 55858 Y
-washerstatus 5024 55854 Y
-washerstatus 5025 55836 Y
-washerstatus 5026 55855 Y
-washerstatus 5028 55836 Y
-washerstatus 5029 55750 Y
-washerstatus 5030 55830 Y
-washerstatus 5035 55829 Y
-washerstatus 5036 55751 Y
-washerstatus 5037 55823 Y
-washerstatus 5041 55749 Y
-washerstatus 5042 55856 Y
-washerstatus 5047 55833 Y
-washerstatus 5052 55857 Y
-washerstatus 5055 55889 Y
-washerstatus 5056 55921 Y
-washerstatus 5061 55806 Y
-washerstatus 5062 55803 Y
-washerstatus 5063 55831 Y
-washerstatus 5064 55864 Y
-washerstatus 5065 55739 Y
-washerstatus 5066 55749 Y
-washerstatus 5067 55751 Y
-washerstatus 5068 55749 Y
-washerstatus 5106 55833 Y
-washerstatus 5107 55940 Y
-washerstatus 5108 55888 Y
-washerstatus 5109 55892 Y
-washerstatus 5110 55913 Y
-washerstatus 5111 55840 Y
-washerstatus 5112 55895 Y
-washerstatus 5113 55924 Y
-washerstatus 5114 55883 Y
-washerstatus 5115 55885 Y
-washerstatus 5116 55857 Y
-washerstatus 5117 55925 Y
-washerstatus 5118 55830 Y
-washerstatus 5119 55836 Y
-washerstatus 5120 55895 Y
-washerstatus 5121 55855 Y
-washerstatus 5121 55856 Y
-washerstatus 5122 55841 Y
-washerstatus 5123 55841 Y
-washerstatus 5124 55894 Y
-washerstatus 5125 55863 Y
-washerstatus 5126 55923 Y
-washerstatus 5127 55889 Y
-washerstatus 5128 55912 Y
-washerstatus 5129 55864 Y
-washerstatus 5130 55835 Y
-washerstatus 5131 55835 Y
-washerstatus 5132 55858 Y
-washerstatus 5133 55860 Y
-washerstatus 5134 55868 Y
-washerstatus 5135 55862 Y
-washerstatus 5136 55836 Y
-washerstatus 5137 55833 Y
-washerstatus 5138 55830 Y
-washerstatus 5139 55866 Y
-washerstatus 5140 55836 Y
-washerstatus 5141 55746 Y
-washerstatus 5142 55825 Y
-washerstatus 5143 55828 Y
-washerstatus 5144 55829 Y
-washerstatus 5145 55835 Y
-washerstatus 5146 55831 Y
-washerstatus 5147 55854 Y
-washerstatus 5149 55944 Y
-washerstatus 5152 56010 Y
-washerstatus 5154 55864 Y
-washerstatus 5155 55946 Y
-washerstatus 5156 55925 Y
-washerstatus 5157 55923 Y
-washerstatus 5158 55913 Y
-washerstatus 5159 55856 Y
-washerstatus 5160 55895 Y
-washerstatus 5161 55968 Y
-washerstatus 5162 55893 Y
-washerstatus 5163 55889 Y
-washerstatus 5168 56035 Y
-washerstatus 5171 56038 Y
-washerstatus 5175 55955 Y
-washerstatus 5179 55957 Y
-washerstatus 5180 55947 Y
-washerstatus 5183 55976 Y
-washerstatus 5185 55978 Y
-washerstatus 5186 55987 Y
-washerstatus 5188 55803 Y
-washerstatus 5196 55831 Y
-washerstatus 5197 55828 Y
-washerstatus 5198 55823 Y
-washerstatus 5201 55832 Y
-washerstatus 5202 55824 Y
-washerstatus 5203 56034 Y
-washerstatus 5204 56036 Y
-washerstatus 5205 56040 Y
-washerstatus 5206 56033 Y
-washerstatus 5207 56018 Y
-washerstatus 5208 56008 Y
-washerstatus 5209 56002 Y
-washerstatus 5210 56003 Y
-washerstatus 5211 56002 Y
-washerstatus 5212 56016 Y
-washerstatus 5284 55866 Y
-washerstatus 5285 55946 Y
-washerstatus 5287 55952 Y
-washerstatus 5288 55865 Y
-washerstatus 5289 55893 Y
-washerstatus 5290 55862 Y
-washerstatus 5291 55947 Y
-washerstatus 5292 55926 Y
-washerstatus 5293 55953 Y
-washerstatus 5294 55922 Y
-washerstatus 5295 55978 Y
-washerstatus 5296 55922 Y
-washerstatus 5297 55913 Y
-washerstatus 5298 55979 Y
-washerstatus 5299 55927 Y
-washerstatus 5300 55982 Y
-washerstatus 5301 55987 Y
-washerstatus 5302 55896 Y
-washerstatus 5303 55980 Y
-washerstatus 5304 55925 Y
-washerstatus 5305 55984 Y
-washerstatus 5306 55926 Y
-washerstatus 5307 55998 Y
-washerstatus 5308 55976 Y
-washerstatus 5309 55929 Y
-washerstatus 5310 55983 Y
-washerstatus 5311 55956 Y
-washerstatus 5312 56001 Y
-washerstatus 5313 55973 Y
-washerstatus 5314 55952 Y
-washerstatus 5315 55978 Y
-washerstatus 5316 55955 Y
-washerstatus 5317 56000 Y
-washerstatus 5318 55983 Y
-washerstatus 5319 55953 Y
-washerstatus 5320 55999 Y
-washerstatus 5321 55945 Y
-washerstatus 5322 56003 Y
-washerstatus 5323 55957 Y
-washerstatus 5324 55947 Y
-washerstatus 5325 55980 Y
-washerstatus 5326 56002 Y
-washerstatus 5327 55979 Y
-washerstatus 5328 55982 Y
-washerstatus 5329 55946 Y
-washerstatus 5330 55986 Y
-washerstatus 5330 56000 Y
-washerstatus 5331 55976 Y
-washerstatus 5332 55981 Y
-washerstatus 5333 56001 Y
-washerstatus 5334 55928 Y
-washerstatus 5335 56013 Y
-washerstatus 5336 55957 Y
-washerstatus 5337 55987 Y
-washerstatus 5338 56002 Y
-washerstatus 5339 55922 Y
-washerstatus 5340 56011 Y
-washerstatus 5341 55931 Y
-washerstatus 5342 56003 Y
-washerstatus 5343 55999 Y
-washerstatus 5344 55924 Y
-washerstatus 5345 56010 Y
-washerstatus 5346 55955 Y
-washerstatus 5347 56008 Y
-washerstatus 5348 55978 Y
-washerstatus 5349 55929 Y
-washerstatus 5350 56009 Y
-washerstatus 5351 55952 Y
-washerstatus 5353 55980 Y
-washerstatus 5354 55927 Y
-washerstatus 5355 56009 Y
-washerstatus 5356 55979 Y
-washerstatus 5357 55956 Y
-washerstatus 5358 56016 Y
-washerstatus 5359 55953 Y
-washerstatus 5360 55983 Y
-washerstatus 5361 55973 Y
-washerstatus 5362 56017 Y
-washerstatus 5363 55956 Y
-washerstatus 5364 56000 Y
-washerstatus 5365 55945 Y
-washerstatus 5366 55958 Y
-washerstatus 5367 55986 Y
-washerstatus 5368 56001 Y
-washerstatus 5369 55952 Y
-washerstatus 5370 56003 Y
-washerstatus 5371 55976 Y
-washerstatus 5372 55978 Y
-washerstatus 5373 56010 Y
-washerstatus 5374 55947 Y
-washerstatus 5375 55973 Y
-washerstatus 5376 55987 Y
-washerstatus 5377 55957 Y
-washerstatus 5378 56011 Y
-washerstatus 5379 55986 Y
-washerstatus 5380 55980 Y
-washerstatus 5381 56009 Y
-washerstatus 5382 55982 Y
-washerstatus 5383 56013 Y
-washerstatus 5384 55984 Y
-washerstatus 5385 55960 Y
-washerstatus 5386 56008 Y
-washerstatus 5387 56009 Y
-washerstatus 5388 55983 Y
-washerstatus 5389 55953 Y
-washerstatus 5390 56002 Y
-washerstatus 5391 56000 Y
-washerstatus 5392 56010 Y
-washerstatus 5393 55946 Y
-washerstatus 5394 56001 Y
-washerstatus 5395 56003 Y
-washerstatus 5396 55947 Y
-washerstatus 5397 55944 Y
-washerstatus 5398 56011 Y
-washerstatus 5399 55956 Y
-washerstatus 5401 55949 Y
-washerstatus 5402 55927 Y
-washerstatus 5403 55979 Y
-washerstatus 5404 56013 Y
-washerstatus 5405 56010 Y
-washerstatus 5406 55955 Y
-washerstatus 5407 55926 Y
-washerstatus 5408 56038 Y
-washerstatus 5409 55957 Y
-washerstatus 5410 56016 Y
-washerstatus 5411 55953 Y
-washerstatus 5412 55981 Y
-washerstatus 5413 55976 Y
-washerstatus 5414 56014 Y
-washerstatus 5415 55982 Y
-washerstatus 5416 56002 Y
-washerstatus 5417 55978 Y
-washerstatus 5418 56037 Y
-washerstatus 5419 55983 Y
-washerstatus 5420 56009 Y
-washerstatus 5421 55980 Y
-washerstatus 5422 55986 Y
-washerstatus 5423 55958 Y
-washerstatus 5424 56033 Y
-washerstatus 5425 56003 Y
-washerstatus 5426 55987 Y
-washerstatus 5427 56001 Y
-washerstatus 5428 56029 Y
-washerstatus 5429 55979 Y
-washerstatus 5430 56000 Y
-washerstatus 5431 56011 Y
-washerstatus 5432 56008 Y
-washerstatus 5433 55981 Y
-washerstatus 5434 56033 Y
-washerstatus 5435 55982 Y
-washerstatus 5436 56015 Y
-washerstatus 5437 55973 Y
-washerstatus 5438 56002 Y
-washerstatus 5440 55983 Y
-washerstatus 5441 56017 Y
-washerstatus 5442 55978 Y
-washerstatus 5443 56010 Y
-washerstatus 5444 56038 Y
-washerstatus 5445 55987 Y
-washerstatus 5446 56014 Y
-washerstatus 5447 55958 Y
-washerstatus 5448 56013 Y
-washerstatus 5449 56030 Y
-washerstatus 5450 55986 Y
-washerstatus 5451 56010 Y
-washerstatus 5452 55957 Y
-washerstatus 5453 56001 Y
-washerstatus 5454 56015 Y
-washerstatus 5455 56009 Y
-washerstatus 5456 55980 Y
-washerstatus 5457 55976 Y
-washerstatus 5458 56011 Y
-washerstatus 5459 56035 Y
-washerstatus 5460 56000 Y
-washerstatus 5461 56018 Y
-washerstatus 5462 55978 Y
-washerstatus 5463 56003 Y
-washerstatus 5464 56035 Y
-washerstatus 5465 55988 Y
-washerstatus 5466 56033 Y
-washerstatus 5467 55973 Y
-washerstatus 5468 56014 Y
-washerstatus 5469 56037 Y
-washerstatus 5470 56008 Y
-washerstatus 5471 56034 Y
-washerstatus 5472 55976 Y
-washerstatus 5473 56033 Y
-washerstatus 5474 56036 Y
-washerstatus 5475 56011 Y
-washerstatus 5476 55986 Y
-washerstatus 5477 56030 Y
-washerstatus 5478 56014 Y
-washerstatus 5479 56016 Y
-washerstatus 5480 56001 Y
-washerstatus 5481 55983 Y
-washerstatus 5482 56017 Y
-washerstatus 5483 56017 Y
-washerstatus 5484 56039 Y
-washerstatus 5486 56030 Y
-washerstatus 5487 55982 Y
-washerstatus 5488 56013 Y
-washerstatus 5489 55990 Y
-washerstatus 5490 56003 Y
-washerstatus 5491 56034 Y
-washerstatus 5492 56010 Y
-washerstatus 5493 56009 Y
-washerstatus 5494 55857 Y
-washerstatus 5495 55896 Y
-washerstatus 5496 55888 Y
-washerstatus 5648 55923 Y
-washerstatus 5649 55912 Y
-washerstatus 5656 55940 Y
-washerstatus 5695 55978 Y
-washerstatus 5696 55946 Y
-washerstatus 5697 55944 Y
-washerstatus 5698 55947 Y
-washerstatus 5699 55953 Y
-washerstatus 5701 55949 Y
-washerstatus 5705 55973 Y
-washerstatus 5719 56014 Y
-washerstatus 5722 56008 Y
-washerstatus 5735 55980 Y
-washerstatus 5736 55984 Y
-washerstatus 5738 56002 Y
-washerstatus 5739 55976 Y
-washerstatus 5740 55998 Y
-washerstatus 5741 55980 Y
-washerstatus 5743 56011 Y
-washerstatus 5745 55998 Y
-washerstatus 5768 56017 Y
-washerstatus 5770 56014 Y
-washerstatus 5771 56011 Y
-washerstatus 5772 56003 Y
-washerstatus 5773 56009 Y
-washerstatus 5774 56002 Y
-washerstatus 5775 56009 Y
-washerstatus 5776 56010 Y
-washerstatus 5783 56017 Y
-washerstatus 5784 56029 Y
-washerstatus 5846 56017 Y
-washerstatus 5847 56037 Y
-washerstatus 5848 56029 Y
-washerstatus 5849 56033 Y
-washerstatus 5850 56042 Y
-washerstatus 5852 56034 Y
-washerstatus 5854 56035 Y
-washerstatus 5863 56042 Y
-washerstatus 5866 56035 Y
-washerstatus 5867 56034 Y
-washerstatus 5871 56041 Y
-washerstatus 5872 56027 Y
-washerstatus 5873 56035 Y
-washerstatus 5874 56039 Y
-washerstatus 5875 56038 Y
-washerstatus 5876 56042 Y
-washerstatus 5877 56041 Y
-washerstatus 5878 56033 Y
-washerstatus 5880 56042 Y
-washerstatus 5881 56038 Y
-washerstatus 5882 56029 Y
-washerstatus 5883 56033 Y
-washerstatus 5885 56036 Y
-washerstatus 5886 56034 Y
-washerstatus 5887 56035 Y
-washerstatus 5888 56041 Y
-washerstatus 5889 56038 Y
-washerstatus 5890 56037 Y
-washerstatus 5891 56034 Y
-washerstatus 5892 56035 Y
-washerstatus 5893 56034 Y
-washerstatus 5894 56039 Y
-washerstatus 5897 56042 Y
-washerstatus 5899 56038 Y
-washerstatus 5901 56039 Y
-washerstatus 5902 56042 Y
+WASHERSTATUS 3523-55065-01 N
+WASHERSTATUS 3520-55070-02 N
+WASHERSTATUS 3523-55142-01 N
+WASHERSTATUS 3536-55096-01 N
+WASHERSTATUS 3536-55117-01 N
+WASHERSTATUS 3537-55113-01 N
+WASHERSTATUS 3538-55124-01 N
+WASHERSTATUS 3540-55125-01 N
+WASHERSTATUS 3548-55157-01 N
+WASHERSTATUS 3549-55143-01 N
+WASHERSTATUS 3550-55155-01 N
+WASHERSTATUS 3551-55156-01 N
+WASHERSTATUS 3552-55086-01 N
+WASHERSTATUS 3552-55093-01 N
+WASHERSTATUS 3552-55096-01 N
+WASHERSTATUS 3552-55142-01 N
+WASHERSTATUS 3552-55154-01 N
+WASHERSTATUS 3558-55114-03 N
+WASHERSTATUS 3564-55145-01 N
+WASHERSTATUS 3578-55142-01 N
+WASHERSTATUS 3578-55151-01 N
+WASHERSTATUS 3579-55155-01 N
+WASHERSTATUS 3580-55157-01 N
+WASHERSTATUS 3586-55171-01 N
+WASHERSTATUS 3587-55128-01 N
+WASHERSTATUS 3587-55182-01 N
+WASHERSTATUS 3588-55117-01 N
+WASHERSTATUS 3588-55183-01 N
+WASHERSTATUS 3589-55185-01 N
+WASHERSTATUS 3590-55200-01 N
+WASHERSTATUS 3599-55100-01 N
+WASHERSTATUS 3604-55146-01 N
+WASHERSTATUS 3605-55156-01 N
+WASHERSTATUS 3606-55154-01 N
+WASHERSTATUS 3606-55180-01 N
+WASHERSTATUS 3607-55155-01 N
+WASHERSTATUS 3607-55183-01 N
+WASHERSTATUS 3609-55129-01 N
+WASHERSTATUS 3609-55200-01 N
+WASHERSTATUS 3611-55124-01 N
+WASHERSTATUS 3615-55089-01 N
+WASHERSTATUS 3615-55093-01 N
+WASHERSTATUS 3615-55143-03 N
+WASHERSTATUS 3615-55147-01 N
+WASHERSTATUS 3615-55172-09 N
+WASHERSTATUS 3615-55201-09 N
+WASHERSTATUS 3615-55445-01 N
+WASHERSTATUS 3615-55856-01 N
+WASHERSTATUS 3621-55101-01 N
+WASHERSTATUS 3622-55117-01 N
+WASHERSTATUS 3624-55112-02 N
+WASHERSTATUS 3537-55113-01 N
+WASHERSTATUS 3625-55133-01 N
+WASHERSTATUS 3635-55134-01 N
+WASHERSTATUS 3087-55136-01 N
+WASHERSTATUS 3513-55139-01 N
+WASHERSTATUS 3626-55141-01 N
+WASHERSTATUS 3639-55146-01 N
+WASHERSTATUS 3639-55182-02 N
+WASHERSTATUS 3640-55158-01 N
+WASHERSTATUS 3641-55159-01 N
+WASHERSTATUS 3642-55177-02 N
+WASHERSTATUS 3643-55160-01 N
+WASHERSTATUS 3647-55129-01 N
+WASHERSTATUS 3647-55157-01 N
+WASHERSTATUS 3647-55173-01 N
+WASHERSTATUS 3647-55237-01 N
+WASHERSTATUS 3647-55472-01 X
+WASHERSTATUS 3647-55826-01 Y
+WASHERSTATUS 3647-55937-01 Y
+WASHERSTATUS 3648-55130-01 N
+WASHERSTATUS 3650-55242-01 N
+WASHERSTATUS 3651-55245-01 N
+WASHERSTATUS 3655-55126-02 N
+WASHERSTATUS 3655-55237-01 N
+WASHERSTATUS 3656-55128-01 N
+WASHERSTATUS 3656-55241-01 N
+WASHERSTATUS 3657-55129-01 N
+WASHERSTATUS 3657-55244-01 N
+WASHERSTATUS 3658-55146-01 N
+WASHERSTATUS 3658-55152-01 N
+WASHERSTATUS 3658-55202-19 N
+WASHERSTATUS 3659-55147-01 N
+WASHERSTATUS 3659-55178-01 N
+WASHERSTATUS 3660-55153-01 N
+WASHERSTATUS 3660-55206-01 N
+WASHERSTATUS 3661-55154-02 N
+WASHERSTATUS 3661-55210-01 N
+WASHERSTATUS 3661-55613-01 N
+WASHERSTATUS 3662-55155-01 N
+WASHERSTATUS 3662-55182-01 N
+WASHERSTATUS 3663-55156-01 N
+WASHERSTATUS 3663-55161-01 N
+WASHERSTATUS 3663-55183-01 N
+WASHERSTATUS 3664-55157-01 N
+WASHERSTATUS 3664-55245-01 N
+WASHERSTATUS 3665-55158-01 N
+WASHERSTATUS 3665-55246-01 N
+WASHERSTATUS 3666-55159-01 N
+WASHERSTATUS 3666-55184-10 N
+WASHERSTATUS 3667-55186-01 N
+WASHERSTATUS 3667-55566-01 L
+WASHERSTATUS 3668-55476-01 Y
+WASHERSTATUS 3669-55481-01 Y
+WASHERSTATUS 3670-55479-01 Y
+WASHERSTATUS 3671-55482-01 Y
+WASHERSTATUS 3672-55484-01 Y
+WASHERSTATUS 3673-55146-01 N
+WASHERSTATUS 3673-55160-01 N
+WASHERSTATUS 3673-55178-01 N
+WASHERSTATUS 3674-55153-01 N
+WASHERSTATUS 3674-55182-03 N
+WASHERSTATUS 3675-55154-01 N
+WASHERSTATUS 3675-55160-01 N
+WASHERSTATUS 3675-55183-01 N
+WASHERSTATUS 3676-55155-01 N
+WASHERSTATUS 3676-55184-01 N
+WASHERSTATUS 3677-55156-01 N
+WASHERSTATUS 3677-55203-03 N
+WASHERSTATUS 3678-55157-02 N
+WASHERSTATUS 3678-55206-01 N
+WASHERSTATUS 3679-55158-01 N
+WASHERSTATUS 3679-55209-01 N
+WASHERSTATUS 3680-55159-01 N
+WASHERSTATUS 3680-55210-01 N
+WASHERSTATUS 3681-55242-01 N
+WASHERSTATUS 3682-55244-01 N
+WASHERSTATUS 3683-55177-01 N
+WASHERSTATUS 3683-55245-03 N
+WASHERSTATUS 3684-55246-01 N
+WASHERSTATUS 3685-55247-01 N
+WASHERSTATUS 3686-55268-01 N
+WASHERSTATUS 3687-55269-01 N
+WASHERSTATUS 3688-55273-01 N
+WASHERSTATUS 3689-55179-01 N
+WASHERSTATUS 3690-55181-01 N
+WASHERSTATUS 3691-55274-03 N
+WASHERSTATUS 3692-55183-01 N
+WASHERSTATUS 3693-55187-01 N
+WASHERSTATUS 3693-55203-01 N
+WASHERSTATUS 3694-55209-01 N
+WASHERSTATUS 3695-55210-01 N
+WASHERSTATUS 3696-55275-01 N
+WASHERSTATUS 3697-55278-01 N
+WASHERSTATUS 3698-55501-01 Y
+WASHERSTATUS 3699-55514-01 Y
+WASHERSTATUS 3700-55541-01 Y
+WASHERSTATUS 3701-55540-01 Y
+WASHERSTATUS 3735-55209-01 N
+WASHERSTATUS 3736-55210-01 N
+WASHERSTATUS 3744-55206-01 N
+WASHERSTATUS 3745-55210-01 N
+WASHERSTATUS 3751-55213-01 N
+WASHERSTATUS 3752-55235-01 N
+WASHERSTATUS 3753-55485-01 Y
+WASHERSTATUS 3754-55487-01 Y
+WASHERSTATUS 3755-55502-01 Y
+WASHERSTATUS 3756-55505-01 Y
+WASHERSTATUS 3757-55507-01 Y
+WASHERSTATUS 3758-55506-01 Y
+WASHERSTATUS 3759-55211-01 N
+WASHERSTATUS 3760-55248-01 N
+WASHERSTATUS 3761-55270-01 N
+WASHERSTATUS 3762-55506-01 Y
+WASHERSTATUS 3763-55507-01 Y
+WASHERSTATUS 3764-55509-01 Y
+WASHERSTATUS 3765-55508-01 Y
+WASHERSTATUS 3766-55213-07 N
+WASHERSTATUS 3767-55214-01 N
+WASHERSTATUS 3768-55247-01 N
+WASHERSTATUS 3768-55564-01 Y
+WASHERSTATUS 3769-55236-01 N
+WASHERSTATUS 3770-55218-01 N
+WASHERSTATUS 3771-55278-01 N
+WASHERSTATUS 3771-55544-01 Y
+WASHERSTATUS 3772-55274-01 N
+WASHERSTATUS 3773-55235-01 N
+WASHERSTATUS 3774-55241-01 N
+WASHERSTATUS 3775-55203-01 N
+WASHERSTATUS 3776-55209-02 N
+WASHERSTATUS 3777-55210-02 N
+WASHERSTATUS 3778-55213-18 N
+WASHERSTATUS 3779-55215-01 N
+WASHERSTATUS 3780-55235-01 N
+WASHERSTATUS 3781-55241-02 N
+WASHERSTATUS 3782-55242-01 N
+WASHERSTATUS 3783-55245-01 N
+WASHERSTATUS 3784-55261-01 N
+WASHERSTATUS 3785-55241-01 N
+WASHERSTATUS 3785-55270-01 N
+WASHERSTATUS 3786-55545-01 Y
+WASHERSTATUS 3787-55564-01 Y
+WASHERSTATUS 3788-55245-01 N
+WASHERSTATUS 3789-55247-01 N
+WASHERSTATUS 3790-55208-02 N
+WASHERSTATUS 3791-55501-01 Y
+WASHERSTATUS 3792-55211-02 N
+WASHERSTATUS 3793-55214-01 N
+WASHERSTATUS 3794-55232-01 N
+WASHERSTATUS 3800-55485-01 Y
+WASHERSTATUS 3801-55509-01 Y
+WASHERSTATUS 3802-55514-01 Y
+WASHERSTATUS 3802-55515-01 Y
+WASHERSTATUS 3803-55510-01 Y
+WASHERSTATUS 3804-55260-01 N
+WASHERSTATUS 3805-55269-01 N
+WASHERSTATUS 3806-55502-01 Y
+WASHERSTATUS 3807-55510-01 Y
+WASHERSTATUS 3808-55512-01 Y
+WASHERSTATUS 3809-55533-01 Y
+WASHERSTATUS 3810-55528-01 Y
+WASHERSTATUS 3810-56015-01 Y
+WASHERSTATUS 3811-55537-01 Y
+WASHERSTATUS 3812-55509-01 Y
+WASHERSTATUS 3813-55514-01 Y
+WASHERSTATUS 3814-55535-01 Y
+WASHERSTATUS 3815-55536-02 Y
+WASHERSTATUS 3816-55262-01 N
+WASHERSTATUS 3817-55273-01 N
+WASHERSTATUS 3818-55301-01 N
+WASHERSTATUS 3818-55532-01 Y
+WASHERSTATUS 3819-55540-01 Y
+WASHERSTATUS 3820-55541-01 Y
+WASHERSTATUS 3821-55535-02 Y
+WASHERSTATUS 3822-55543-01 Y
+WASHERSTATUS 3823-55291-01 N
+WASHERSTATUS 3823-55534-01 Y
+WASHERSTATUS 3825-55533-01 Y
+WASHERSTATUS 3826-55294-01 N
+WASHERSTATUS 3826-55545-01 Y
+WASHERSTATUS 3827-55297-01 N
+WASHERSTATUS 3827-55565-01 Y
+WASHERSTATUS 3828-55538-01 Y
+WASHERSTATUS 3829-55300-01 N
+WASHERSTATUS 3830-55573-01 Y
+WASHERSTATUS 3831-55540-01 Y
+WASHERSTATUS 3832-55289-02 N
+WASHERSTATUS 3833-55290-01 N
+WASHERSTATUS 3834-55294-03 N
+WASHERSTATUS 3834-55566-01 Y
+WASHERSTATUS 3834-56014-01 Y
+WASHERSTATUS 3835-55297-01 N
+WASHERSTATUS 3835-55566-02 Y
+WASHERSTATUS 3836-55299-01 N
+WASHERSTATUS 3837-55572-01 Y
+WASHERSTATUS 3838-55587-01 Y
+WASHERSTATUS 3839-55575-02 Y
+WASHERSTATUS 3840-55571-01 Y
+WASHERSTATUS 3841-55289-01 N
+WASHERSTATUS 3841-55566-01 Y
+WASHERSTATUS 3841-56015-01 Y
+WASHERSTATUS 3842-55560-01 Y
+WASHERSTATUS 3843-55270-02 N
+WASHERSTATUS 3844-55321-01 N
+WASHERSTATUS 3845-55322-01 N
+WASHERSTATUS 3846-55323-01 N
+WASHERSTATUS 3847-55297-01 N
+WASHERSTATUS 3847-55576-02 Y
+WASHERSTATUS 3848-55274-01 N
+WASHERSTATUS 3848-55647-02 Y
+WASHERSTATUS 3849-55274-01 N
+WASHERSTATUS 3850-55291-01 N
+WASHERSTATUS 3850-55294-01 N
+WASHERSTATUS 3850-55573-01 Y
+WASHERSTATUS 3851-55292-01 N
+WASHERSTATUS 3851-55300-01 N
+WASHERSTATUS 3852-55242-01 N
+WASHERSTATUS 3853-55262-01 N
+WASHERSTATUS 3854-55247-01 N
+WASHERSTATUS 3855-55262-01 N
+WASHERSTATUS 3856-55269-01 N
+WASHERSTATUS 3857-55270-01 N
+WASHERSTATUS 3858-55273-01 N
+WASHERSTATUS 3859-55246-01 N
+WASHERSTATUS 3860-55269-04 N
+WASHERSTATUS 3861-55274-01 N
+WASHERSTATUS 3862-55275-01 N
+WASHERSTATUS 3863-55277-01 N
+WASHERSTATUS 3864-55646-01 Y
+WASHERSTATUS 3865-55270-02 N
+WASHERSTATUS 3866-55623-01 Y
+WASHERSTATUS 3867-55651-01 Y
+WASHERSTATUS 3868-55360-01 N
+WASHERSTATUS 3869-55273-01 N
+WASHERSTATUS 3870-55273-01 N
+WASHERSTATUS 3871-55303-01 N
+WASHERSTATUS 3872-55366-01 N
+WASHERSTATUS 3873-55275-01 N
+WASHERSTATUS 3874-55278-01 N
+WASHERSTATUS 3875-55362-01 N
+WASHERSTATUS 3876-55245-01 N
+WASHERSTATUS 3877-55365-01 N
+WASHERSTATUS 3878-55361-01 N
+WASHERSTATUS 3879-55244-02 N
+WASHERSTATUS 3922-55333-01 N
+WASHERSTATUS 3923-55323-01 N
+WASHERSTATUS 3924-55328-01 N
+WASHERSTATUS 3925-55336-01 N
+WASHERSTATUS 3926-55326-01 N
+WASHERSTATUS 3927-55333-01 N
+WASHERSTATUS 3928-55328-01 N
+WASHERSTATUS 3929-55333-01 N
+WASHERSTATUS 3930-55332-01 N
+WASHERSTATUS 3931-55339-01 N
+WASHERSTATUS 3932-55337-01 N
+WASHERSTATUS 3933-55334-01 N
+WASHERSTATUS 3934-55336-01 N
+WASHERSTATUS 3935-55321-01 N
+WASHERSTATUS 3936-55299-01 N
+WASHERSTATUS 3937-55349-01 N
+WASHERSTATUS 3938-55326-01 N
+WASHERSTATUS 3939-55632-01 Y
+WASHERSTATUS 3940-55327-01 N
+WASHERSTATUS 3941-55303-01 N
+WASHERSTATUS 3942-55338-01 N
+WASHERSTATUS 3943-55335-01 N
+WASHERSTATUS 3944-55660-01 Y
+WASHERSTATUS 3945-55643-02 Y
+WASHERSTATUS 3946-55296-01 N
+WASHERSTATUS 3946-55657-01 Y
+WASHERSTATUS 3947-55332-01 N
+WASHERSTATUS 3948-55331-01 N
+WASHERSTATUS 3949-55649-02 Y
+WASHERSTATUS 3950-55680-01 Y
+WASHERSTATUS 3951-55681-01 Y
+WASHERSTATUS 3952-55330-01 N
+WASHERSTATUS 3953-55322-01 N
+WASHERSTATUS 3954-55680-01 Y
+WASHERSTATUS 3955-55675-01 Y
+WASHERSTATUS 3956-55654-01 Y
+WASHERSTATUS 3957-55661-01 Y
+WASHERSTATUS 3958-55329-01 N
+WASHERSTATUS 3959-55679-01 Y
+WASHERSTATUS 3960-55661-01 Y
+WASHERSTATUS 3961-55654-01 Y
+WASHERSTATUS 3962-55660-01 Y
+WASHERSTATUS 3963-55657-01 Y
+WASHERSTATUS 3964-55648-01 Y
+WASHERSTATUS 3965-55300-01 N
+WASHERSTATUS 3966-55571-01 Y
+WASHERSTATUS 3967-55294-01 N
+WASHERSTATUS 3967-55704-01 Y
+WASHERSTATUS 3968-55590-01 Y
+WASHERSTATUS 3969-55303-01 N
+WASHERSTATUS 3970-55296-02 N
+WASHERSTATUS 3970-55591-01 Y
+WASHERSTATUS 3971-55321-01 N
+WASHERSTATUS 3972-55297-01 N
+WASHERSTATUS 3972-55589-01 Y
+WASHERSTATUS 3973-55322-01 N
+WASHERSTATUS 3974-55318-01 N
+WASHERSTATUS 3975-55308-01 N
+WASHERSTATUS 3976-55298-01 N
+WASHERSTATUS 3976-55300-01 N
+WASHERSTATUS 3977-55334-01 N
+WASHERSTATUS 3978-55330-01 N
+WASHERSTATUS 3979-55592-01 Y
+WASHERSTATUS 3980-55331-01 N
+WASHERSTATUS 3981-55295-01 N
+WASHERSTATUS 3981-55601-01 Y
+WASHERSTATUS 3982-55332-01 N
+WASHERSTATUS 3983-55602-01 Y
+WASHERSTATUS 3984-55333-01 N
+WASHERSTATUS 3985-55320-01 N
+WASHERSTATUS 3986-55329-01 N
+WASHERSTATUS 3987-55296-01 N
+WASHERSTATUS 3987-55590-01 Y
+WASHERSTATUS 4004-55321-01 N
+WASHERSTATUS 4005-55322-01 N
+WASHERSTATUS 4006-55328-01 N
+WASHERSTATUS 4007-55326-01 N
+WASHERSTATUS 4008-55351-01 N
+WASHERSTATUS 4009-55647-01 Y
+WASHERSTATUS 4010-55321-01 N
+WASHERSTATUS 4010-55334-01 N
+WASHERSTATUS 4011-55634-01 Y
+WASHERSTATUS 4012-55321-01 N
+WASHERSTATUS 4013-55623-01 Y
+WASHERSTATUS 4014-55627-01 Y
+WASHERSTATUS 4015-55622-01 Y
+WASHERSTATUS 4016-55631-01 Y
+WASHERSTATUS 4017-55324-01 N
+WASHERSTATUS 4018-55621-01 Y
+WASHERSTATUS 4019-55353-01 N
+WASHERSTATUS 4020-55329-01 N
+WASHERSTATUS 4021-55606-01 Y
+WASHERSTATUS 4022-55351-01 N
+WASHERSTATUS 4023-55328-01 N
+WASHERSTATUS 4024-55635-01 Y
+WASHERSTATUS 4025-55330-01 N
+WASHERSTATUS 4025-55332-01 N
+WASHERSTATUS 4026-55324-01 N
+WASHERSTATUS 4027-55625-02 Y
+WASHERSTATUS 4028-55619-01 Y
+WASHERSTATUS 4029-55604-01 Y
+WASHERSTATUS 4030-55633-01 Y
+WASHERSTATUS 4031-55604-01 Y
+WASHERSTATUS 4032-55333-01 N
+WASHERSTATUS 4033-55331-01 N
+WASHERSTATUS 4034-55632-01 Y
+WASHERSTATUS 4035-55364-01 N
+WASHERSTATUS 4036-55328-01 N
+WASHERSTATUS 4037-55631-01 Y
+WASHERSTATUS 4038-55362-01 N
+WASHERSTATUS 4039-55634-02 Y
+WASHERSTATUS 4040-55605-01 Y
+WASHERSTATUS 4041-55360-01 N
+WASHERSTATUS 4042-55624-01 Y
+WASHERSTATUS 4043-55630-01 Y
+WASHERSTATUS 4044-55353-01 N
+WASHERSTATUS 4045-55622-01 Y
+WASHERSTATUS 4046-55604-01 Y
+WASHERSTATUS 4047-55350-01 N
+WASHERSTATUS 4048-55592-01 Y
+WASHERSTATUS 4049-55591-01 Y
+WASHERSTATUS 4050-55592-01 Y
+WASHERSTATUS 4051-55334-01 N
+WASHERSTATUS 4052-55587-02 Y
+WASHERSTATUS 4052-55600-01 Y
+WASHERSTATUS 4053-55589-01 Y
+WASHERSTATUS 4054-55357-01 N
+WASHERSTATUS 4055-55359-01 N
+WASHERSTATUS 4056-55353-01 N
+WASHERSTATUS 4057-55353-01 N
+WASHERSTATUS 4058-55358-01 N
+WASHERSTATUS 4059-55359-01 N
+WASHERSTATUS 4060-55358-01 N
+WASHERSTATUS 4061-55361-01 N
+WASHERSTATUS 4062-55381-01 N
+WASHERSTATUS 4063-55363-03 N
+WASHERSTATUS 4064-55365-01 N
+WASHERSTATUS 4065-55367-01 N
+WASHERSTATUS 4066-55439-01 N
+WASHERSTATUS 4067-55360-01 N
+WASHERSTATUS 4068-55444-01 N
+WASHERSTATUS 4069-55363-01 N
+WASHERSTATUS 4070-55680-01 Y
+WASHERSTATUS 4071-55660-02 Y
+WASHERSTATUS 4072-55362-01 N
+WASHERSTATUS 4073-55661-03 Y
+WASHERSTATUS 4074-55675-01 Y
+WASHERSTATUS 4075-55349-01 N
+WASHERSTATUS 4077-55351-01 N
+WASHERSTATUS 4078-55351-01 N
+WASHERSTATUS 4079-55359-01 N
+WASHERSTATUS 4080-55362-01 N
+WASHERSTATUS 4080-55469-01 L
+WASHERSTATUS 4081-55364-01 N
+WASHERSTATUS 4082-55366-01 N
+WASHERSTATUS 4083-55439-01 N
+WASHERSTATUS 4083-55442-01 Y
+WASHERSTATUS 4084-55447-01 N
+WASHERSTATUS 4085-55451-01 L
+WASHERSTATUS 4086-55446-01 N
+WASHERSTATUS 4087-55448-01 L
+WASHERSTATUS 4088-55450-01 L
+WASHERSTATUS 4089-55470-01 N
+WASHERSTATUS 4090-55499-01 Y
+WASHERSTATUS 4091-55498-01 Y
+WASHERSTATUS 4092-55477-01 Y
+WASHERSTATUS 4093-55472-01 Y
+WASHERSTATUS 4094-55481-02 Y
+WASHERSTATUS 4095-55497-01 Y
+WASHERSTATUS 4096-55501-01 Y
+WASHERSTATUS 4097-55506-01 Y
+WASHERSTATUS 4174-55654-01 Y
+WASHERSTATUS 4175-55680-02 Y
+WASHERSTATUS 4176-55680-01 Y
+WASHERSTATUS 4177-55686-01 Y
+WASHERSTATUS 4178-55649-01 Y
+WASHERSTATUS 4179-55683-01 Y
+WASHERSTATUS 4180-55661-01 Y
+WASHERSTATUS 4181-55685-01 Y
+WASHERSTATUS 4182-55445-01 N
+WASHERSTATUS 4183-55446-01 N
+WASHERSTATUS 4184-55448-01 L
+WASHERSTATUS 4185-55452-01 L
+WASHERSTATUS 4186-55687-01 Y
+WASHERSTATUS 4187-55689-01 Y
+WASHERSTATUS 4188-55681-01 Y
+WASHERSTATUS 4189-55679-01 Y
+WASHERSTATUS 4190-55685-01 Y
+WASHERSTATUS 4191-55415-01 N
+WASHERSTATUS 4192-55468-01 N
+WASHERSTATUS 4193-55476-01 Y
+WASHERSTATUS 4194-55448-01 L
+WASHERSTATUS 4195-55451-01 L
+WASHERSTATUS 4196-55477-01 Y
+WASHERSTATUS 4197-55479-01 Y
+WASHERSTATUS 4198-55479-01 Y
+WASHERSTATUS 4199-55480-01 Y
+WASHERSTATUS 4200-55499-01 Y
+WASHERSTATUS 4201-55440-03 N
+WASHERSTATUS 4202-55444-01 N
+WASHERSTATUS 4203-55447-01 N
+WASHERSTATUS 4204-55455-01 L
+WASHERSTATUS 4205-55453-01 L
+WASHERSTATUS 4206-55471-01 N
+WASHERSTATUS 4207-55472-01 Y
+WASHERSTATUS 4208-55476-01 Y
+WASHERSTATUS 4209-55478-01 Y
+WASHERSTATUS 4210-55440-01 N
+WASHERSTATUS 4211-55446-01 N
+WASHERSTATUS 4212-55447-01 N
+WASHERSTATUS 4213-55449-01 L
+WASHERSTATUS 4214-55450-01 L
+WASHERSTATUS 4215-55470-01 N
+WASHERSTATUS 4216-55472-01 Y
+WASHERSTATUS 4217-55476-01 Y
+WASHERSTATUS 4218-55479-01 Y
+WASHERSTATUS 4219-55480-01 Y
+WASHERSTATUS 4220-55446-01 N
+WASHERSTATUS 4221-55440-01 N
+WASHERSTATUS 4222-55444-01 N
+WASHERSTATUS 4223-55450-02 L
+WASHERSTATUS 4224-55481-01 Y
+WASHERSTATUS 4225-55452-01 L
+WASHERSTATUS 4226-55452-01 Y
+WASHERSTATUS 4227-55480-01 Y
+WASHERSTATUS 4228-55482-01 Y
+WASHERSTATUS 4229-55500-03 Y
+WASHERSTATUS 4230-55482-01 Y
+WASHERSTATUS 4231-55442-01 N
+WASHERSTATUS 4232-55446-01 N
+WASHERSTATUS 4233-55448-01 L
+WASHERSTATUS 4234-55477-01 Y
+WASHERSTATUS 4235-55448-01 L
+WASHERSTATUS 4236-55479-01 Y
+WASHERSTATUS 4237-55472-02 Y
+WASHERSTATUS 4238-55452-01 L
+WASHERSTATUS 4239-55456-01 L
+WASHERSTATUS 4240-55455-01 L
+WASHERSTATUS 4241-55446-01 N
+WASHERSTATUS 4242-55457-01 Y
+WASHERSTATUS 4256-55477-01 Y
+WASHERSTATUS 4257-55479-01 Y
+WASHERSTATUS 4258-55479-01 Y
+WASHERSTATUS 4259-55500-01 Y
+WASHERSTATUS 4260-55478-01 Y
+WASHERSTATUS 4261-55502-01 Y
+WASHERSTATUS 4262-55481-01 Y
+WASHERSTATUS 4263-55483-01 Y
+WASHERSTATUS 4264-55506-01 Y
+WASHERSTATUS 4265-55504-01 Y
+WASHERSTATUS 4266-55485-01 Y
+WASHERSTATUS 4267-55484-01 Y
+WASHERSTATUS 4268-55483-01 Y
+WASHERSTATUS 4269-55485-02 Y
+WASHERSTATUS 4270-55511-01 Y
+WASHERSTATUS 4271-55507-02 Y
+WASHERSTATUS 4272-55509-01 Y
+WASHERSTATUS 4273-55503-01 Y
+WASHERSTATUS 4274-55507-01 Y
+WASHERSTATUS 4275-55485-01 Y
+WASHERSTATUS 4276-55504-01 Y
+WASHERSTATUS 4277-55506-01 Y
+WASHERSTATUS 4278-55504-01 Y
+WASHERSTATUS 4279-55508-01 Y
+WASHERSTATUS 4280-55502-01 Y
+WASHERSTATUS 4281-55834-01 Y
+WASHERSTATUS 4282-55507-01 Y
+WASHERSTATUS 4283-55864-01 Y
+WASHERSTATUS 4284-55861-01 Y
+WASHERSTATUS 4285-55865-01 Y
+WASHERSTATUS 4286-55497-01 Y
+WASHERSTATUS 4287-55482-01 Y
+WASHERSTATUS 4288-55501-01 Y
+WASHERSTATUS 4289-55856-01 Y
+WASHERSTATUS 4290-55525-01 Y
+WASHERSTATUS 4291-55510-01 Y
+WASHERSTATUS 4292-55528-01 Y
+WASHERSTATUS 4293-55509-01 Y
+WASHERSTATUS 4294-55500-01 Y
+WASHERSTATUS 4295-55858-01 Y
+WASHERSTATUS 4296-55499-01 Y
+WASHERSTATUS 4297-55800-01 Y
+WASHERSTATUS 4298-55509-01 Y
+WASHERSTATUS 4299-55826-01 Y
+WASHERSTATUS 4300-55526-01 Y
+WASHERSTATUS 4301-55807-02 Y
+WASHERSTATUS 4302-55529-01 Y
+WASHERSTATUS 4303-55507-01 Y
+WASHERSTATUS 4304-55502-01 Y
+WASHERSTATUS 4305-55509-01 Y
+WASHERSTATUS 4306-55566-01 Y
+WASHERSTATUS 4307-55527-01 Y
+WASHERSTATUS 4308-55560-01 Y
+WASHERSTATUS 4309-55528-01 Y
+WASHERSTATUS 4310-55508-01 Y
+WASHERSTATUS 4311-55506-01 Y
+WASHERSTATUS 4312-55510-01 Y
+WASHERSTATUS 4313-55857-01 Y
+WASHERSTATUS 4314-55837-01 Y
+WASHERSTATUS 4315-55502-01 Y
+WASHERSTATUS 4316-55505-01 Y
+WASHERSTATUS 4317-55478-01 Y
+WASHERSTATUS 4318-55508-01 Y
+WASHERSTATUS 4319-55507-01 Y
+WASHERSTATUS 4320-55890-01 Y
+WASHERSTATUS 4321-55504-01 Y
+WASHERSTATUS 4322-55502-01 Y
+WASHERSTATUS 4323-55884-01 Y
+WASHERSTATUS 4341-55537-01 Y
+WASHERSTATUS 4342-55528-01 Y
+WASHERSTATUS 4343-55540-01 Y
+WASHERSTATUS 4344-55541-01 Y
+WASHERSTATUS 4345-55567-01 Y
+WASHERSTATUS 4346-55949-01 Y
+WASHERSTATUS 4347-55830-01 Y
+WASHERSTATUS 4348-55558-01 Y
+WASHERSTATUS 4349-55800-01 Y
+WASHERSTATUS 4350-55541-01 Y
+WASHERSTATUS 4351-55537-01 Y
+WASHERSTATUS 4352-55533-01 Y
+WASHERSTATUS 4353-55532-01 Y
+WASHERSTATUS 4354-55801-01 Y
+WASHERSTATUS 4355-55533-01 Y
+WASHERSTATUS 4356-55829-01 Y
+WASHERSTATUS 4357-55828-01 Y
+WASHERSTATUS 4358-55832-01 Y
+WASHERSTATUS 4359-55532-01 Y
+WASHERSTATUS 4360-55538-01 Y
+WASHERSTATUS 4361-55830-01 Y
+WASHERSTATUS 4362-55825-01 Y
+WASHERSTATUS 4363-55534-01 Y
+WASHERSTATUS 4364-55855-01 Y
+WASHERSTATUS 4365-55537-01 Y
+WASHERSTATUS 4366-55535-01 Y
+WASHERSTATUS 4367-55560-01 Y
+WASHERSTATUS 4368-55557-01 Y
+WASHERSTATUS 4369-55811-01 Y
+WASHERSTATUS 4370-55534-01 Y
+WASHERSTATUS 4371-55830-01 Y
+WASHERSTATUS 4372-55539-01 Y
+WASHERSTATUS 4373-55807-01 Y
+WASHERSTATUS 4374-55882-01 Y
+WASHERSTATUS 4375-55885-01 Y
+WASHERSTATUS 4376-55859-01 Y
+WASHERSTATUS 4377-55824-01 Y
+WASHERSTATUS 4378-55852-01 Y
+WASHERSTATUS 4379-55864-01 Y
+WASHERSTATUS 4380-55857-01 Y
+WASHERSTATUS 4381-55806-01 Y
+WASHERSTATUS 4382-55738-01 Y
+WASHERSTATUS 4383-55865-01 Y
+WASHERSTATUS 4385-55750-01 Y
+WASHERSTATUS 4386-55539-01 Y
+WASHERSTATUS 4387-55534-01 Y
+WASHERSTATUS 4388-55535-01 Y
+WASHERSTATUS 4389-55539-01 Y
+WASHERSTATUS 4390-55947-01 Y
+WASHERSTATUS 4391-55864-01 Y
+WASHERSTATUS 4392-55832-01 Y
+WASHERSTATUS 4393-55937-01 Y
+WASHERSTATUS 4394-55922-01 Y
+WASHERSTATUS 4395-55811-01 Y
+WASHERSTATUS 4396-55829-01 Y
+WASHERSTATUS 4397-55913-01 Y
+WASHERSTATUS 4398-55937-01 Y
+WASHERSTATUS 4399-55804-01 Y
+WASHERSTATUS 4400-55509-01 Y
+WASHERSTATUS 4401-55510-01 Y
+WASHERSTATUS 4402-55514-01 Y
+WASHERSTATUS 4403-55534-01 Y
+WASHERSTATUS 4404-55512-01 Y
+WASHERSTATUS 4405-55837-01 Y
+WASHERSTATUS 4406-55858-01 Y
+WASHERSTATUS 4407-55882-01 Y
+WASHERSTATUS 4408-55884-01 Y
+WASHERSTATUS 4409-55883-01 Y
+WASHERSTATUS 4412-55895-01 Y
+WASHERSTATUS 4413-55890-01 Y
+WASHERSTATUS 4414-55882-01 Y
+WASHERSTATUS 4415-55831-01 Y
+WASHERSTATUS 4416-55828-01 Y
+WASHERSTATUS 4417-55829-01 Y
+WASHERSTATUS 4418-55859-01 Y
+WASHERSTATUS 4419-55866-01 Y
+WASHERSTATUS 4420-55883-01 Y
+WASHERSTATUS 4421-55858-01 Y
+WASHERSTATUS 4422-55533-01 Y
+WASHERSTATUS 4423-55889-01 Y
+WASHERSTATUS 4424-55532-01 Y
+WASHERSTATUS 4425-55864-01 Y
+WASHERSTATUS 4440-55539-01 Y
+WASHERSTATUS 4441-55529-01 Y
+WASHERSTATUS 4442-55529-01 Y
+WASHERSTATUS 4443-55539-01 Y
+WASHERSTATUS 4444-55538-01 Y
+WASHERSTATUS 4445-55618-01 Y
+WASHERSTATUS 4445-55867-01 Y
+WASHERSTATUS 4446-55587-01 Y
+WASHERSTATUS 4447-55541-01 Y
+WASHERSTATUS 4448-55538-01 Y
+WASHERSTATUS 4449-55540-02 Y
+WASHERSTATUS 4450-55540-01 Y
+WASHERSTATUS 4451-55537-01 Y
+WASHERSTATUS 4452-55536-01 Y
+WASHERSTATUS 4453-55534-01 Y
+WASHERSTATUS 4454-55534-01 Y
+WASHERSTATUS 4455-55537-01 Y
+WASHERSTATUS 4456-55536-01 Y
+WASHERSTATUS 4457-55840-01 Y
+WASHERSTATUS 4458-55534-01 Y
+WASHERSTATUS 4459-55533-01 Y
+WASHERSTATUS 4460-55533-01 Y
+WASHERSTATUS 4461-55870-01 Y
+WASHERSTATUS 4462-55592-01 Y
+WASHERSTATUS 4463-55867-01 Y
+WASHERSTATUS 4464-55865-01 Y
+WASHERSTATUS 4465-55858-01 Y
+WASHERSTATUS 4466-55856-01 Y
+WASHERSTATUS 4467-55894-01 Y
+WASHERSTATUS 4468-55894-01 Y
+WASHERSTATUS 4469-55859-01 Y
+WASHERSTATUS 4470-55584-01 Y
+WASHERSTATUS 4471-55601-01 Y
+WASHERSTATUS 4472-55890-01 Y
+WASHERSTATUS 4473-55588-01 Y
+WASHERSTATUS 4478-55593-01 Y
+WASHERSTATUS 4479-55591-01 Y
+WASHERSTATUS 4480-55591-01 Y
+WASHERSTATUS 4481-55624-01 Y
+WASHERSTATUS 4482-55616-01 Y
+WASHERSTATUS 4483-55585-01 Y
+WASHERSTATUS 4484-55565-01 Y
+WASHERSTATUS 4485-55831-01 Y
+WASHERSTATUS 4486-55588-01 Y
+WASHERSTATUS 4487-55865-01 Y
+WASHERSTATUS 4488-55570-01 Y
+WASHERSTATUS 4489-55545-01 Y
+WASHERSTATUS 4490-55623-01 Y
+WASHERSTATUS 4491-55570-01 Y
+WASHERSTATUS 4492-55565-01 Y
+WASHERSTATUS 4493-55573-01 Y
+WASHERSTATUS 4494-55567-01 Y
+WASHERSTATUS 4495-55564-01 Y
+WASHERSTATUS 4496-55544-03 Y
+WASHERSTATUS 4497-55560-01 Y
+WASHERSTATUS 4498-55615-01 Y
+WASHERSTATUS 4499-55571-01 Y
+WASHERSTATUS 4500-55543-01 Y
+WASHERSTATUS 4501-55590-01 Y
+WASHERSTATUS 4502-55569-01 Y
+WASHERSTATUS 4503-55560-01 Y
+WASHERSTATUS 4504-55571-01 Y
+WASHERSTATUS 4505-55603-01 Y
+WASHERSTATUS 4506-55566-01 Y
+WASHERSTATUS 4507-55564-01 Y
+WASHERSTATUS 4508-55593-01 Y
+WASHERSTATUS 4509-55572-01 Y
+WASHERSTATUS 4510-55558-01 Y
+WASHERSTATUS 4511-55601-01 Y
+WASHERSTATUS 4526-55557-01 Y
+WASHERSTATUS 4527-55590-01 Y
+WASHERSTATUS 4528-55556-01 Y
+WASHERSTATUS 4529-55560-01 Y
+WASHERSTATUS 4530-55564-01 Y
+WASHERSTATUS 4531-55560-01 Y
+WASHERSTATUS 4532-55557-01 Y
+WASHERSTATUS 4533-55855-01 Y
+WASHERSTATUS 4534-55863-01 Y
+WASHERSTATUS 4535-55859-01 Y
+WASHERSTATUS 4536-55856-01 Y
+WASHERSTATUS 4537-55805-01 Y
+WASHERSTATUS 4538-55857-01 Y
+WASHERSTATUS 4539-55865-01 Y
+WASHERSTATUS 4540-55861-01 Y
+WASHERSTATUS 4541-55881-01 Y
+WASHERSTATUS 4542-55832-01 Y
+WASHERSTATUS 4543-55885-01 Y
+WASHERSTATUS 4544-55837-01 Y
+WASHERSTATUS 4545-55566-01 Y
+WASHERSTATUS 4546-55834-01 Y
+WASHERSTATUS 4547-55893-01 Y
+WASHERSTATUS 4548-55565-01 Y
+WASHERSTATUS 4549-55555-01 Y
+WASHERSTATUS 4550-55894-01 Y
+WASHERSTATUS 4551-55568-01 Y
+WASHERSTATUS 4552-55884-01 Y
+WASHERSTATUS 4553-55570-01 Y
+WASHERSTATUS 4556-55910-01 Y
+WASHERSTATUS 4557-55588-01 Y
+WASHERSTATUS 4558-55567-01 Y
+WASHERSTATUS 4559-55592-03 Y
+WASHERSTATUS 4560-55575-01 Y
+WASHERSTATUS 4561-55601-01 Y
+WASHERSTATUS 4562-55570-01 Y
+WASHERSTATUS 4563-55617-01 Y
+WASHERSTATUS 4564-55570-01 Y
+WASHERSTATUS 4565-55591-01 Y
+WASHERSTATUS 4566-55630-01 Y
+WASHERSTATUS 4567-55589-01 Y
+WASHERSTATUS 4568-55598-01 Y
+WASHERSTATUS 4569-55631-01 Y
+WASHERSTATUS 4570-55623-01 Y
+WASHERSTATUS 4571-55627-01 Y
+WASHERSTATUS 4572-55622-01 Y
+WASHERSTATUS 4573-55587-01 Y
+WASHERSTATUS 4574-55621-01 Y
+WASHERSTATUS 4575-55590-01 Y
+WASHERSTATUS 4576-55592-01 Y
+WASHERSTATUS 4601-55589-01 Y
+WASHERSTATUS 4602-55631-01 Y
+WASHERSTATUS 4603-55999-01 Y
+WASHERSTATUS 4604-55981-01 Y
+WASHERSTATUS 4605-55968-01 Y
+WASHERSTATUS 4608-55972-01 Y
+WASHERSTATUS 4610-55621-01 Y
+WASHERSTATUS 4611-55603-01 Y
+WASHERSTATUS 4612-55590-01 Y
+WASHERSTATUS 4613-55591-01 Y
+WASHERSTATUS 4614-55604-01 Y
+WASHERSTATUS 4615-55618-01 Y
+WASHERSTATUS 4616-55616-01 Y
+WASHERSTATUS 4617-55615-01 Y
+WASHERSTATUS 4618-55600-01 Y
+WASHERSTATUS 4619-55598-01 Y
+WASHERSTATUS 4620-55652-01 Y
+WASHERSTATUS 4621-55602-07 Y
+WASHERSTATUS 4621-55649-01 Y
+WASHERSTATUS 4622-55624-01 Y
+WASHERSTATUS 4623-55618-01 Y
+WASHERSTATUS 4624-55654-01 Y
+WASHERSTATUS 4625-55631-01 Y
+WASHERSTATUS 4626-55647-02 Y
+WASHERSTATUS 4627-55623-01 Y
+WASHERSTATUS 4628-55645-01 Y
+WASHERSTATUS 4629-55630-01 Y
+WASHERSTATUS 4630-55622-01 Y
+WASHERSTATUS 4631-55616-01 Y
+WASHERSTATUS 4632-55633-01 Y
+WASHERSTATUS 4633-55618-01 Y
+WASHERSTATUS 4634-55624-01 Y
+WASHERSTATUS 4635-55614-01 Y
+WASHERSTATUS 4636-55945-01 Y
+WASHERSTATUS 4637-55615-01 Y
+WASHERSTATUS 4638-55954-01 Y
+WASHERSTATUS 4639-55941-01 Y
+WASHERSTATUS 4640-55927-01 Y
+WASHERSTATUS 4641-55947-01 Y
+WASHERSTATUS 4642-55925-01 Y
+WASHERSTATUS 4643-55946-01 Y
+WASHERSTATUS 4644-55914-01 Y
+WASHERSTATUS 4645-55618-01 Y
+WASHERSTATUS 4646-55622-01 Y
+WASHERSTATUS 4647-55619-01 Y
+WASHERSTATUS 4648-55673-01 Y
+WASHERSTATUS 4649-55618-01 Y
+WASHERSTATUS 4650-55648-01 Y
+WASHERSTATUS 4651-56004-01 Y
+WASHERSTATUS 4652-55661-01 Y
+WASHERSTATUS 4653-55622-01 Y
+WASHERSTATUS 4654-55658-01 Y
+WASHERSTATUS 4655-55619-01 Y
+WASHERSTATUS 4656-55828-01 Y
+WASHERSTATUS 4657-55586-01 Y
+WASHERSTATUS 4658-55591-01 Y
+WASHERSTATUS 4659-55581-01 Y
+WASHERSTATUS 4661-55592-01 Y
+WASHERSTATUS 4662-55588-01 Y
+WASHERSTATUS 4663-55889-01 Y
+WASHERSTATUS 4666-55832-01 Y
+WASHERSTATUS 4667-55867-01 Y
+WASHERSTATUS 4669-55831-01 Y
+WASHERSTATUS 4683-55924-01 Y
+WASHERSTATUS 4685-55657-01 Y
+WASHERSTATUS 4686-56012-01 Y
+WASHERSTATUS 4688-56004-05 Y
+WASHERSTATUS 4689-55655-01 Y
+WASHERSTATUS 4690-55653-01 Y
+WASHERSTATUS 4691-55650-01 Y
+WASHERSTATUS 4692-55633-01 Y
+WASHERSTATUS 4693-55632-01 Y
+WASHERSTATUS 4694-55649-01 Y
+WASHERSTATUS 4695-55957-01 Y
+WASHERSTATUS 4697-55660-01 Y
+WASHERSTATUS 4698-55623-01 Y
+WASHERSTATUS 4699-55681-01 Y
+WASHERSTATUS 4700-55708-01 Y
+WASHERSTATUS 4701-55708-01 Y
+WASHERSTATUS 4702-55618-01 Y
+WASHERSTATUS 4703-55616-01 Y
+WASHERSTATUS 4704-55681-01 Y
+WASHERSTATUS 4705-55705-01 Y
+WASHERSTATUS 4706-55705-01 Y
+WASHERSTATUS 4707-55653-01 Y
+WASHERSTATUS 4708-55692-01 Y
+WASHERSTATUS 4709-55711-01 Y
+WASHERSTATUS 4710-55706-01 Y
+WASHERSTATUS 4711-55737-01 Y
+WASHERSTATUS 4712-55738-01 Y
+WASHERSTATUS 4714-56041-01 Y
+WASHERSTATUS 4715-55653-01 Y
+WASHERSTATUS 4716-55738-01 Y
+WASHERSTATUS 4717-55739-01 Y
+WASHERSTATUS 4718-55750-01 Y
+WASHERSTATUS 4718-56011-01 Y
+WASHERSTATUS 4719-55736-01 Y
+WASHERSTATUS 4720-55689-01 Y
+WASHERSTATUS 4721-55709-01 Y
+WASHERSTATUS 4722-55721-01 Y
+WASHERSTATUS 4723-55748-01 Y
+WASHERSTATUS 4723-56030-01 Y
+WASHERSTATUS 4724-55740-01 Y
+WASHERSTATUS 4725-55708-01 Y
+WASHERSTATUS 4726-55712-01 Y
+WASHERSTATUS 4727-55692-01 Y
+WASHERSTATUS 4729-55624-02 Y
+WASHERSTATUS 4730-55627-01 Y
+WASHERSTATUS 4731-55654-01 Y
+WASHERSTATUS 4732-55646-02 Y
+WASHERSTATUS 4733-55649-01 Y
+WASHERSTATUS 4734-55645-04 Y
+WASHERSTATUS 4735-55651-01 Y
+WASHERSTATUS 4736-55630-01 Y
+WASHERSTATUS 4737-55627-01 Y
+WASHERSTATUS 4738-55650-01 Y
+WASHERSTATUS 4739-55631-01 Y
+WASHERSTATUS 4740-55649-01 Y
+WASHERSTATUS 4741-55686-01 Y
+WASHERSTATUS 4742-55657-01 Y
+WASHERSTATUS 4743-55645-01 Y
+WASHERSTATUS 4745-55890-01 Y
+WASHERSTATUS 4746-55632-01 Y
+WASHERSTATUS 4747-55652-01 Y
+WASHERSTATUS 4748-55631-01 Y
+WASHERSTATUS 4749-55633-01 Y
+WASHERSTATUS 4750-55630-01 Y
+WASHERSTATUS 4751-55634-01 Y
+WASHERSTATUS 4752-55650-01 Y
+WASHERSTATUS 4753-55654-01 Y
+WASHERSTATUS 4754-55649-01 Y
+WASHERSTATUS 4755-55657-01 Y
+WASHERSTATUS 4756-55631-01 Y
+WASHERSTATUS 4757-55653-01 Y
+WASHERSTATUS 4758-55681-01 Y
+WASHERSTATUS 4759-55649-01 Y
+WASHERSTATUS 4760-55652-01 Y
+WASHERSTATUS 4761-55632-01 Y
+WASHERSTATUS 4762-55871-01 Y
+WASHERSTATUS 4763-55868-01 Y
+WASHERSTATUS 4764-55645-01 Y
+WASHERSTATUS 4765-55674-01 Y
+WASHERSTATUS 4766-55675-01 Y
+WASHERSTATUS 4767-55946-01 Y
+WASHERSTATUS 4768-55930-01 Y
+WASHERSTATUS 4769-55930-01 Y
+WASHERSTATUS 4770-55928-01 Y
+WASHERSTATUS 4771-55923-01 Y
+WASHERSTATUS 4772-55654-01 Y
+WASHERSTATUS 4773-55647-01 Y
+WASHERSTATUS 4774-55657-01 Y
+WASHERSTATUS 4775-55708-01 Y
+WASHERSTATUS 4776-55650-01 Y
+WASHERSTATUS 4777-55707-01 Y
+WASHERSTATUS 4778-55688-01 Y
+WASHERSTATUS 4779-55655-01 Y
+WASHERSTATUS 4780-55682-01 Y
+WASHERSTATUS 4781-55653-01 Y
+WASHERSTATUS 4782-55654-01 Y
+WASHERSTATUS 4783-55650-01 Y
+WASHERSTATUS 4784-55660-01 Y
+WASHERSTATUS 4785-55655-01 Y
+WASHERSTATUS 4786-55650-02 Y
+WASHERSTATUS 4787-55861-01 Y
+WASHERSTATUS 4788-55889-01 Y
+WASHERSTATUS 4789-55923-01 Y
+WASHERSTATUS 4790-55885-01 Y
+WASHERSTATUS 4791-55889-01 Y
+WASHERSTATUS 4792-55925-01 Y
+WASHERSTATUS 4793-55648-01 Y
+WASHERSTATUS 4794-55647-03 Y
+WASHERSTATUS 4795-55889-01 Y
+WASHERSTATUS 4796-55924-01 Y
+WASHERSTATUS 4797-55660-01 Y
+WASHERSTATUS 4798-55671-01 Y
+WASHERSTATUS 4799-55655-01 Y
+WASHERSTATUS 4800-55674-01 Y
+WASHERSTATUS 4801-55653-01 Y
+WASHERSTATUS 4802-55652-01 Y
+WASHERSTATUS 4803-55733-01 Y
+WASHERSTATUS 4804-55678-01 Y
+WASHERSTATUS 4805-55713-01 Y
+WASHERSTATUS 4806-55687-01 Y
+WASHERSTATUS 4807-55682-01 Y
+WASHERSTATUS 4808-55692-01 Y
+WASHERSTATUS 4831-55678-01 Y
+WASHERSTATUS 4832-55680-01 Y
+WASHERSTATUS 4833-55675-01 Y
+WASHERSTATUS 4834-55682-01 Y
+WASHERSTATUS 4835-55687-01 Y
+WASHERSTATUS 4835-56015-01 Y
+WASHERSTATUS 4836-55689-01 Y
+WASHERSTATUS 4837-55706-01 Y
+WASHERSTATUS 4838-55686-03 Y
+WASHERSTATUS 4839-55691-01 Y
+WASHERSTATUS 4840-55683-01 Y
+WASHERSTATUS 4841-55893-01 Y
+WASHERSTATUS 4842-55867-01 Y
+WASHERSTATUS 4843-55858-01 Y
+WASHERSTATUS 4847-55712-01 Y
+WASHERSTATUS 4847-55929-01 Y
+WASHERSTATUS 4848-55954-01 Y
+WASHERSTATUS 4849-55945-01 Y
+WASHERSTATUS 4850-55929-01 Y
+WASHERSTATUS 4851-55680-01 Y
+WASHERSTATUS 4852-55685-01 Y
+WASHERSTATUS 4853-55928-01 Y
+WASHERSTATUS 4854-55681-01 Y
+WASHERSTATUS 4855-55926-01 Y
+WASHERSTATUS 4856-55712-01 Y
+WASHERSTATUS 4857-55711-01 Y
+WASHERSTATUS 4858-55685-01 Y
+WASHERSTATUS 4859-55683-01 Y
+WASHERSTATUS 4860-55689-01 Y
+WASHERSTATUS 4861-55710-01 Y
+WASHERSTATUS 4862-55681-01 Y
+WASHERSTATUS 4863-55686-01 Y
+WASHERSTATUS 4864-55680-01 Y
+WASHERSTATUS 4865-55711-01 Y
+WASHERSTATUS 4866-55895-01 Y
+WASHERSTATUS 4867-55924-01 Y
+WASHERSTATUS 4868-55894-01 Y
+WASHERSTATUS 4869-55896-01 Y
+WASHERSTATUS 4870-55923-01 Y
+WASHERSTATUS 4871-55928-01 Y
+WASHERSTATUS 4872-55942-01 Y
+WASHERSTATUS 4873-55926-01 Y
+WASHERSTATUS 4874-55673-02 Y
+WASHERSTATUS 4875-55675-01 Y
+WASHERSTATUS 4876-55678-02 Y
+WASHERSTATUS 4877-55707-01 Y
+WASHERSTATUS 4878-55710-01 Y
+WASHERSTATUS 4879-55705-01 Y
+WASHERSTATUS 4881-55713-01 Y
+WASHERSTATUS 4882-55716-01 Y
+WASHERSTATUS 4885-55735-01 Y
+WASHERSTATUS 4886-55737-01 Y
+WASHERSTATUS 4889-55709-01 Y
+WASHERSTATUS 4890-55740-01 Y
+WASHERSTATUS 4891-55736-01 Y
+WASHERSTATUS 4892-55738-01 Y
+WASHERSTATUS 4893-55709-01 Y
+WASHERSTATUS 4895-55708-01 Y
+WASHERSTATUS 4896-55710-01 Y
+WASHERSTATUS 4900-55739-01 Y
+WASHERSTATUS 4901-55711-03 Y
+WASHERSTATUS 4903-55927-01 Y
+WASHERSTATUS 4953-55747-01 Y
+WASHERSTATUS 4955-55750-01 Y
+WASHERSTATUS 4956-55722-01 Y
+WASHERSTATUS 4960-55743-01 Y
+WASHERSTATUS 4961-55718-01 Y
+WASHERSTATUS 4964-55749-02 Y
+WASHERSTATUS 4965-55720-01 Y
+WASHERSTATUS 4966-55712-01 Y
+WASHERSTATUS 4969-56040-01 Y
+WASHERSTATUS 4970-56039-01 Y
+WASHERSTATUS 4971-55743-01 Y
+WASHERSTATUS 4973-56042-01 Y
+WASHERSTATUS 4974-56038-01 Y
+WASHERSTATUS 4975-56037-01 Y
+WASHERSTATUS 4978-56034-01 Y
+WASHERSTATUS 4983-55833-01 Y
+WASHERSTATUS 4984-55827-01 Y
+WASHERSTATUS 4987-55744-01 Y
+WASHERSTATUS 4988-55824-01 Y
+WASHERSTATUS 4989-55740-01 Y
+WASHERSTATUS 4990-55740-01 Y
+WASHERSTATUS 4992-55722-01 Y
+WASHERSTATUS 4993-55737-01 Y
+WASHERSTATUS 4994-55723-01 Y
+WASHERSTATUS 4995-55739-01 Y
+WASHERSTATUS 4996-55716-01 Y
+WASHERSTATUS 4997-55736-01 Y
+WASHERSTATUS 4998-55720-01 Y
+WASHERSTATUS 4999-55721-01 Y
+WASHERSTATUS 5000-55713-01 Y
+WASHERSTATUS 5001-55716-01 Y
+WASHERSTATUS 5002-55708-01 Y
+WASHERSTATUS 5003-55712-01 Y
+WASHERSTATUS 5004-55710-01 Y
+WASHERSTATUS 5005-55739-01 Y
+WASHERSTATUS 5006-55705-01 Y
+WASHERSTATUS 5007-55710-01 Y
+WASHERSTATUS 5008-55742-01 Y
+WASHERSTATUS 5009-55706-01 Y
+WASHERSTATUS 5010-55745-01 Y
+WASHERSTATUS 5011-55739-01 Y
+WASHERSTATUS 5013-55722-01 Y
+WASHERSTATUS 5014-55713-01 Y
+WASHERSTATUS 5015-55705-01 Y
+WASHERSTATUS 5016-55707-01 Y
+WASHERSTATUS 5017-55714-01 Y
+WASHERSTATUS 5018-55716-01 Y
+WASHERSTATUS 5020-55851-01 Y
+WASHERSTATUS 5021-55859-01 Y
+WASHERSTATUS 5022-55826-01 Y
+WASHERSTATUS 5023-55858-01 Y
+WASHERSTATUS 5024-55853-01 Y
+WASHERSTATUS 5025-55834-01 Y
+WASHERSTATUS 5026-55855-01 Y
+WASHERSTATUS 5028-55836-01 Y
+WASHERSTATUS 5029-55750-01 Y
+WASHERSTATUS 5030-55830-01 Y
+WASHERSTATUS 5035-55829-01 Y
+WASHERSTATUS 5036-55751-01 Y
+WASHERSTATUS 5037-55807-01 Y
+WASHERSTATUS 5041-55743-01 Y
+WASHERSTATUS 5042-55856-01 Y
+WASHERSTATUS 5047-55832-01 Y
+WASHERSTATUS 5052-55857-01 Y
+WASHERSTATUS 5055-55889-01 Y
+WASHERSTATUS 5056-55895-01 Y
+WASHERSTATUS 5061-55804-01 Y
+WASHERSTATUS 5062-55800-01 Y
+WASHERSTATUS 5063-55831-01 Y
+WASHERSTATUS 5064-55864-01 Y
+WASHERSTATUS 5065-55738-01 Y
+WASHERSTATUS 5066-55748-01 Y
+WASHERSTATUS 5067-55750-01 Y
+WASHERSTATUS 5068-55740-03 Y
+WASHERSTATUS 5106-55831-01 Y
+WASHERSTATUS 5107-55925-01 Y
+WASHERSTATUS 5108-55886-01 Y
+WASHERSTATUS 5109-55890-01 Y
+WASHERSTATUS 5110-55913-02 Y
+WASHERSTATUS 5111-55837-01 Y
+WASHERSTATUS 5112-55895-01 Y
+WASHERSTATUS 5113-55923-01 Y
+WASHERSTATUS 5114-55869-01 Y
+WASHERSTATUS 5115-55884-01 Y
+WASHERSTATUS 5116-55857-01 Y
+WASHERSTATUS 5117-55924-01 Y
+WASHERSTATUS 5118-55830-01 Y
+WASHERSTATUS 5119-55836-01 Y
+WASHERSTATUS 5120-55894-01 Y
+WASHERSTATUS 5121-55842-01 Y
+WASHERSTATUS 5121-55856-02 Y
+WASHERSTATUS 5122-55837-01 Y
+WASHERSTATUS 5123-55836-01 Y
+WASHERSTATUS 5124-55890-01 Y
+WASHERSTATUS 5125-55863-01 Y
+WASHERSTATUS 5126-55914-01 Y
+WASHERSTATUS 5127-55885-01 Y
+WASHERSTATUS 5128-55895-01 Y
+WASHERSTATUS 5129-55864-01 Y
+WASHERSTATUS 5130-55834-01 Y
+WASHERSTATUS 5131-55834-01 Y
+WASHERSTATUS 5132-55858-01 Y
+WASHERSTATUS 5133-55859-01 Y
+WASHERSTATUS 5134-55867-01 Y
+WASHERSTATUS 5135-55861-01 Y
+WASHERSTATUS 5136-55836-01 Y
+WASHERSTATUS 5137-55833-01 Y
+WASHERSTATUS 5138-55829-01 Y
+WASHERSTATUS 5139-55865-01 Y
+WASHERSTATUS 5140-55834-01 Y
+WASHERSTATUS 5141-55744-01 Y
+WASHERSTATUS 5142-55824-01 Y
+WASHERSTATUS 5143-55828-01 Y
+WASHERSTATUS 5144-55829-01 Y
+WASHERSTATUS 5145-55832-01 Y
+WASHERSTATUS 5146-55830-01 Y
+WASHERSTATUS 5147-55853-01 Y
+WASHERSTATUS 5149-55940-01 Y
+WASHERSTATUS 5152-56010-01 Y
+WASHERSTATUS 5154-55863-01 Y
+WASHERSTATUS 5155-55945-01 Y
+WASHERSTATUS 5156-55925-01 Y
+WASHERSTATUS 5157-55914-01 Y
+WASHERSTATUS 5158-55896-01 Y
+WASHERSTATUS 5159-55837-01 Y
+WASHERSTATUS 5160-55895-01 Y
+WASHERSTATUS 5161-55968-01 Y
+WASHERSTATUS 5162-55890-01 Y
+WASHERSTATUS 5163-55889-01 Y
+WASHERSTATUS 5168-56035-01 Y
+WASHERSTATUS 5171-56037-01 Y
+WASHERSTATUS 5175-55948-01 Y
+WASHERSTATUS 5179-55956-01 Y
+WASHERSTATUS 5180-55947-01 Y
+WASHERSTATUS 5183-55969-01 Y
+WASHERSTATUS 5185-55977-01 Y
+WASHERSTATUS 5186-55985-01 Y
+WASHERSTATUS 5188-55799-01 Y
+WASHERSTATUS 5196-55830-01 Y
+WASHERSTATUS 5197-55828-01 Y
+WASHERSTATUS 5198-55822-01 Y
+WASHERSTATUS 5201-55829-01 Y
+WASHERSTATUS 5202-55804-01 Y
+WASHERSTATUS 5203-56034-01 Y
+WASHERSTATUS 5204-56036-01 Y
+WASHERSTATUS 5205-56036-01 Y
+WASHERSTATUS 5206-56031-01 Y
+WASHERSTATUS 5207-56017-01 Y
+WASHERSTATUS 5208-56004-01 Y
+WASHERSTATUS 5209-56000-01 Y
+WASHERSTATUS 5210-56003-03 Y
+WASHERSTATUS 5211-56002-01 Y
+WASHERSTATUS 5212-56015-01 Y
+WASHERSTATUS 5284-55866-01 Y
+WASHERSTATUS 5285-55946-01 Y
+WASHERSTATUS 5287-55948-01 Y
+WASHERSTATUS 5288-55864-01 Y
+WASHERSTATUS 5289-55890-01 Y
+WASHERSTATUS 5290-55859-01 Y
+WASHERSTATUS 5291-55947-01 Y
+WASHERSTATUS 5292-55926-01 Y
+WASHERSTATUS 5293-55953-01 Y
+WASHERSTATUS 5294-55897-01 Y
+WASHERSTATUS 5295-55977-01 Y
+WASHERSTATUS 5296-55897-01 Y
+WASHERSTATUS 5297-55897-01 Y
+WASHERSTATUS 5298-55979-01 Y
+WASHERSTATUS 5299-55927-01 Y
+WASHERSTATUS 5300-55981-01 Y
+WASHERSTATUS 5301-55985-01 Y
+WASHERSTATUS 5302-55896-01 Y
+WASHERSTATUS 5303-55980-01 Y
+WASHERSTATUS 5304-55925-01 Y
+WASHERSTATUS 5305-55984-01 Y
+WASHERSTATUS 5306-55926-01 Y
+WASHERSTATUS 5307-55997-01 Y
+WASHERSTATUS 5308-55974-01 Y
+WASHERSTATUS 5309-55929-01 Y
+WASHERSTATUS 5310-55983-01 Y
+WASHERSTATUS 5311-55956-01 Y
+WASHERSTATUS 5312-56001-01 Y
+WASHERSTATUS 5313-55970-01 Y
+WASHERSTATUS 5314-55948-01 Y
+WASHERSTATUS 5315-55977-01 Y
+WASHERSTATUS 5316-55954-01 Y
+WASHERSTATUS 5317-56000-01 Y
+WASHERSTATUS 5318-55983-01 Y
+WASHERSTATUS 5319-55953-01 Y
+WASHERSTATUS 5320-55999-01 Y
+WASHERSTATUS 5321-55945-01 Y
+WASHERSTATUS 5322-56003-01 Y
+WASHERSTATUS 5323-55957-01 Y
+WASHERSTATUS 5324-55947-01 Y
+WASHERSTATUS 5325-55980-01 Y
+WASHERSTATUS 5326-56002-01 Y
+WASHERSTATUS 5327-55979-01 Y
+WASHERSTATUS 5328-55982-01 Y
+WASHERSTATUS 5329-55946-01 Y
+WASHERSTATUS 5330-55984-01 Y
+WASHERSTATUS 5330-55999-01 Y
+WASHERSTATUS 5331-55974-01 Y
+WASHERSTATUS 5332-55981-01 Y
+WASHERSTATUS 5333-56001-01 Y
+WASHERSTATUS 5334-55928-01 Y
+WASHERSTATUS 5335-56012-01 Y
+WASHERSTATUS 5336-55957-01 Y
+WASHERSTATUS 5337-55987-01 Y
+WASHERSTATUS 5338-56002-01 Y
+WASHERSTATUS 5339-55914-01 Y
+WASHERSTATUS 5340-56011-01 Y
+WASHERSTATUS 5341-55930-01 Y
+WASHERSTATUS 5342-56003-01 Y
+WASHERSTATUS 5343-55987-01 Y
+WASHERSTATUS 5344-55924-01 Y
+WASHERSTATUS 5345-56010-01 Y
+WASHERSTATUS 5346-55954-01 Y
+WASHERSTATUS 5347-56004-01 Y
+WASHERSTATUS 5348-55977-01 Y
+WASHERSTATUS 5349-55929-01 Y
+WASHERSTATUS 5350-56009-01 Y
+WASHERSTATUS 5351-55948-01 Y
+WASHERSTATUS 5353-55980-01 Y
+WASHERSTATUS 5354-55927-02 Y
+WASHERSTATUS 5355-56009-01 Y
+WASHERSTATUS 5356-55979-01 Y
+WASHERSTATUS 5357-55956-02 Y
+WASHERSTATUS 5358-56015-01 Y
+WASHERSTATUS 5359-55953-01 Y
+WASHERSTATUS 5360-55981-01 Y
+WASHERSTATUS 5361-55971-01 Y
+WASHERSTATUS 5362-56014-01 Y
+WASHERSTATUS 5363-55956-01 Y
+WASHERSTATUS 5364-56000-01 Y
+WASHERSTATUS 5365-55945-02 Y
+WASHERSTATUS 5366-55958-01 Y
+WASHERSTATUS 5367-55984-01 Y
+WASHERSTATUS 5368-56001-01 Y
+WASHERSTATUS 5369-55948-01 Y
+WASHERSTATUS 5370-56003-01 Y
+WASHERSTATUS 5371-55974-01 Y
+WASHERSTATUS 5372-55977-01 Y
+WASHERSTATUS 5373-56010-01 Y
+WASHERSTATUS 5374-55947-01 Y
+WASHERSTATUS 5375-55971-01 Y
+WASHERSTATUS 5376-55987-01 Y
+WASHERSTATUS 5377-55957-01 Y
+WASHERSTATUS 5378-56011-01 Y
+WASHERSTATUS 5379-55985-01 Y
+WASHERSTATUS 5380-55980-01 Y
+WASHERSTATUS 5381-56009-01 Y
+WASHERSTATUS 5382-55981-01 Y
+WASHERSTATUS 5383-56012-02 Y
+WASHERSTATUS 5384-55984-01 Y
+WASHERSTATUS 5385-55958-01 Y
+WASHERSTATUS 5386-56004-01 Y
+WASHERSTATUS 5387-56009-01 Y
+WASHERSTATUS 5388-55983-01 Y
+WASHERSTATUS 5389-55953-01 Y
+WASHERSTATUS 5390-56002-02 Y
+WASHERSTATUS 5391-56000-01 Y
+WASHERSTATUS 5392-56010-01 Y
+WASHERSTATUS 5393-55945-01 Y
+WASHERSTATUS 5394-56001-01 Y
+WASHERSTATUS 5395-56003-01 Y
+WASHERSTATUS 5396-55947-01 Y
+WASHERSTATUS 5397-55942-01 Y
+WASHERSTATUS 5398-56011-01 Y
+WASHERSTATUS 5399-55956-01 Y
+WASHERSTATUS 5401-55948-01 Y
+WASHERSTATUS 5402-55927-01 Y
+WASHERSTATUS 5403-55979-01 Y
+WASHERSTATUS 5404-56012-01 Y
+WASHERSTATUS 5405-56010-01 Y
+WASHERSTATUS 5406-55954-01 Y
+WASHERSTATUS 5407-55925-01 Y
+WASHERSTATUS 5408-56038-01 Y
+WASHERSTATUS 5409-55957-01 Y
+WASHERSTATUS 5410-56016-01 Y
+WASHERSTATUS 5411-55950-01 Y
+WASHERSTATUS 5412-55981-01 Y
+WASHERSTATUS 5413-55974-01 Y
+WASHERSTATUS 5414-56014-01 Y
+WASHERSTATUS 5415-55982-01 Y
+WASHERSTATUS 5416-56002-01 Y
+WASHERSTATUS 5417-55977-01 Y
+WASHERSTATUS 5418-56036-01 Y
+WASHERSTATUS 5419-55983-01 Y
+WASHERSTATUS 5420-56009-01 Y
+WASHERSTATUS 5421-55980-01 Y
+WASHERSTATUS 5422-55984-01 Y
+WASHERSTATUS 5423-55958-01 Y
+WASHERSTATUS 5424-56030-01 Y
+WASHERSTATUS 5425-56003-01 Y
+WASHERSTATUS 5426-55987-01 Y
+WASHERSTATUS 5427-56001-01 Y
+WASHERSTATUS 5428-56028-01 Y
+WASHERSTATUS 5429-55979-02 Y
+WASHERSTATUS 5430-55988-01 Y
+WASHERSTATUS 5431-56011-01 Y
+WASHERSTATUS 5432-56004-01 Y
+WASHERSTATUS 5433-55981-01 Y
+WASHERSTATUS 5434-56031-01 Y
+WASHERSTATUS 5435-55982-01 Y
+WASHERSTATUS 5436-56015-01 Y
+WASHERSTATUS 5437-55959-01 Y
+WASHERSTATUS 5438-56002-01 Y
+WASHERSTATUS 5440-55983-01 Y
+WASHERSTATUS 5441-56017-01 Y
+WASHERSTATUS 5442-55977-01 Y
+WASHERSTATUS 5443-56010-01 Y
+WASHERSTATUS 5444-56036-01 Y
+WASHERSTATUS 5445-55987-01 Y
+WASHERSTATUS 5446-56014-01 Y
+WASHERSTATUS 5447-55958-01 Y
+WASHERSTATUS 5448-56012-01 Y
+WASHERSTATUS 5449-56030-01 Y
+WASHERSTATUS 5450-55984-01 Y
+WASHERSTATUS 5451-56010-01 Y
+WASHERSTATUS 5452-55957-01 Y
+WASHERSTATUS 5453-56001-01 Y
+WASHERSTATUS 5454-56015-01 Y
+WASHERSTATUS 5455-56009-01 Y
+WASHERSTATUS 5456-55979-01 Y
+WASHERSTATUS 5457-55974-01 Y
+WASHERSTATUS 5458-56011-01 Y
+WASHERSTATUS 5459-56035-01 Y
+WASHERSTATUS 5460-55989-01 Y
+WASHERSTATUS 5461-56018-01 Y
+WASHERSTATUS 5462-55977-01 Y
+WASHERSTATUS 5463-56003-01 Y
+WASHERSTATUS 5464-56035-01 Y
+WASHERSTATUS 5465-55988-01 Y
+WASHERSTATUS 5466-56031-01 Y
+WASHERSTATUS 5467-55971-01 Y
+WASHERSTATUS 5468-56014-01 Y
+WASHERSTATUS 5469-56037-01 Y
+WASHERSTATUS 5470-56004-01 Y
+WASHERSTATUS 5471-56034-01 Y
+WASHERSTATUS 5472-55975-01 Y
+WASHERSTATUS 5473-56030-01 Y
+WASHERSTATUS 5474-56036-01 Y
+WASHERSTATUS 5475-56011-01 Y
+WASHERSTATUS 5476-55984-01 Y
+WASHERSTATUS 5477-56030-01 Y
+WASHERSTATUS 5478-56014-01 Y
+WASHERSTATUS 5479-56015-01 Y
+WASHERSTATUS 5480-56000-01 Y
+WASHERSTATUS 5481-55983-01 Y
+WASHERSTATUS 5482-56017-01 Y
+WASHERSTATUS 5483-56017-01 Y
+WASHERSTATUS 5484-56039-01 Y
+WASHERSTATUS 5486-56018-01 Y
+WASHERSTATUS 5487-55980-01 Y
+WASHERSTATUS 5488-56012-01 Y
+WASHERSTATUS 5489-55987-01 Y
+WASHERSTATUS 5490-56003-01 Y
+WASHERSTATUS 5491-56034-01 Y
+WASHERSTATUS 5492-56010-01 Y
+WASHERSTATUS 5493-56009-01 Y
+WASHERSTATUS 5494-55856-01 Y
+WASHERSTATUS 5495-55896-01 Y
+WASHERSTATUS 5496-55869-01 Y
+WASHERSTATUS 5648-55913-01 Y
+WASHERSTATUS 5649-55909-01 Y
+WASHERSTATUS 5656-55922-01 Y
+WASHERSTATUS 5695-55969-01 Y
+WASHERSTATUS 5696-55945-01 Y
+WASHERSTATUS 5697-55940-01 Y
+WASHERSTATUS 5698-55946-01 Y
+WASHERSTATUS 5699-55948-01 Y
+WASHERSTATUS 5701-55947-01 Y
+WASHERSTATUS 5705-55954-01 Y
+WASHERSTATUS 5719-56012-01 Y
+WASHERSTATUS 5722-56004-01 Y
+WASHERSTATUS 5735-55979-01 Y
+WASHERSTATUS 5736-55981-01 Y
+WASHERSTATUS 5738-56000-01 Y
+WASHERSTATUS 5739-55974-01 Y
+WASHERSTATUS 5740-55984-01 Y
+WASHERSTATUS 5741-55979-01 Y
+WASHERSTATUS 5743-56011-01 Y
+WASHERSTATUS 5745-55998-01 Y
+WASHERSTATUS 5768-56016-01 Y
+WASHERSTATUS 5770-56012-01 Y
+WASHERSTATUS 5771-56011-01 Y
+WASHERSTATUS 5772-56003-01 Y
+WASHERSTATUS 5773-56009-01 Y
+WASHERSTATUS 5774-56002-01 Y
+WASHERSTATUS 5775-56004-01 Y
+WASHERSTATUS 5776-56010-01 Y
+WASHERSTATUS 5783-56016-01 Y
+WASHERSTATUS 5784-56027-01 Y
+WASHERSTATUS 5846-56017-01 Y
+WASHERSTATUS 5847-56036-01 Y
+WASHERSTATUS 5848-56027-01 Y
+WASHERSTATUS 5849-56030-02 Y
+WASHERSTATUS 5850-56042-01 Y
+WASHERSTATUS 5852-56034-01 Y
+WASHERSTATUS 5854-56035-01 Y
+WASHERSTATUS 5863-56039-01 Y
+WASHERSTATUS 5866-56035-01 Y
+WASHERSTATUS 5867-56034-01 Y
+WASHERSTATUS 5871-56039-01 Y
+WASHERSTATUS 5872-56027-01 Y
+WASHERSTATUS 5873-56035-01 Y
+WASHERSTATUS 5874-56039-01 Y
+WASHERSTATUS 5875-56037-01 Y
+WASHERSTATUS 5876-56042-01 Y
+WASHERSTATUS 5877-56040-01 Y
+WASHERSTATUS 5878-56030-01 Y
+WASHERSTATUS 5880-56042-01 Y
+WASHERSTATUS 5881-56038-01 Y
+WASHERSTATUS 5882-56028-01 Y
+WASHERSTATUS 5883-56030-01 Y
+WASHERSTATUS 5885-56036-01 Y
+WASHERSTATUS 5886-56034-01 Y
+WASHERSTATUS 5887-56035-01 Y
+WASHERSTATUS 5888-56039-01 Y
+WASHERSTATUS 5889-56038-01 Y
+WASHERSTATUS 5890-56036-01 Y
+WASHERSTATUS 5891-56034-01 Y
+WASHERSTATUS 5892-56035-01 Y
+WASHERSTATUS 5893-56034-01 Y
+WASHERSTATUS 5894-56039-01 Y
+WASHERSTATUS 5897-56040-01 Y
+WASHERSTATUS 5899-56038-01 Y
+WASHERSTATUS 5901-56039-01 Y
+WASHERSTATUS 5902-56040-01 Y

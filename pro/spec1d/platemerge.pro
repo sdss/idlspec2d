@@ -84,48 +84,6 @@
 ;                CALC_NOQSO, including proper rchi2diff, A. Bolton, Utah
 ;------------------------------------------------------------------------------
 
-function calc_zoffset, plate, mjd, washers, plugmap_zoffset
-    ; Given a plate, mjd, washers struct from opfiles/washers.par,
-    ; and the zoffset from the plugmap, decide whether there really
-    ; was a washer on this plate and what the offset really is.
-    
-    ;- If the plate is in the washers file, believe that
-    ; Y : plugmap_zoffset is correct
-    ; N : no washers were used, zoffset is 0.0
-    ; L : Large washers only.  If plugmap_washer ne 0, then zoffset=300
-    i = where((washers.plate eq plate) and (washers.mjd eq mjd))
-    if (n_elements(i) gt 1) then $
-        message, "ERROR: multiple washers.par entries for PLATE-MJD" + string(plate) + string(mjd)
-
-    if (i[0] ge 0) then begin
-        status = washers[i[0]].status
-        if (status ne 'Y') then $
-          splog, "INFO: found washer override for ", $
-                 strtrim(string(plate), 1), " ", $
-                 strtrim(string(mjd), 1), " ", status
-        if (status eq 'Y') then return, plugmap_zoffset
-        if (status eq 'N') then return, 0.0
-        if (status eq 'L') then return, (plugmap_zoffset ne 0) * 300.0
-        if (status eq 'X') then begin
-            splog, "WARNING: We know that we don't know ZOFFSET washer status for ", strtrim(string(plate), 1), " ", strtrim(string(mjd), 1)
-            splog, "WARNING: setting washer ZOFFSET to default 0.0 for ", $
-                 strtrim(string(plate), 1), " ", $
-                 strtrim(string(mjd), 1), " "
-            return, 0.0
-        endif
-        message, "ERROR: unknown washer status ", status, string(plate), string(mjd)
-    endif
-    
-    ;- Not in washers.par, decide based upon MJD
-    if (mjd lt 55442) then return, 0.0
-    if (mjd gt 55474) then return, plugmap_zoffset
-    
-    ;- If we don't otherwise know, consider it missing
-    splog, "WARNING: assuming no washers on ", string(plate), string(mjd)
-    return, 0.0
-end
-
-;----------------------------------------------------------------------------
 pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
  indir=indir, outroot=outroot1, run2d=run2d, include_bad=include_bad, $
  calc_noqso=calc_noqso, skip_line=skip_line
@@ -152,13 +110,6 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
    
    platelist, plist=plist, topdir=indir
    if (NOT keyword_set(plist)) then return
-
-   ;----------
-   ; Read washers.par for QSO target zoffset overrides
-   ; during interim period when washers may or may not have been used
-   
-   washers_file = getenv('IDLSPEC2D_DIR') + '/opfiles/washers.par'
-   washers = yanny_readone(washers_file)
 
    ;----------
    ; Find out if this plist includes dereddened SN2 values
@@ -359,9 +310,8 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
       outdat[indx].primtarget = plugmap.primtarget
       outdat[indx].sectarget = plugmap.sectarget
       outdat[indx].lambda_eff = plugmap.lambda_eff
-      if (tag_exist(plugmap,'zoffset')) then begin
-        outdat[indx].zoffset = calc_zoffset(plist[ifile].plate, plist[ifile].mjd, washers, plugmap.zoffset)
-      endif  
+      if (tag_exist(plugmap,'zoffset')) then $
+       outdat[indx].zoffset = plugmap.zoffset
       if (tag_exist(plugmap,'xfocal')) then $
        outdat[indx].xfocal = plugmap.xfocal
       if (tag_exist(plugmap,'yfocal')) then $
