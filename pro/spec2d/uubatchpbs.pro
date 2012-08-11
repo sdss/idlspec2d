@@ -11,7 +11,7 @@
 ; CALLING SEQUENCE:
 ;   uubatchpbs, [ platenums, topdir=, run2d=, run1d=, platestart=, plateend=, $
 ;    mjd=, mjstart=, mjend=, upsvers2d=, upsvers1d=, upsversutils=, rawdata_dir=, $
-;    boss_spectro_redux=, /zcode, /galaxy, upsversgalaxy=, pbsdir=, queue=, /skip2d, $
+;    boss_spectro_redux=, scratchdir=, /zcode, /galaxy, upsversgalaxy=, pbsdir=, queue=, /skip2d, $
 ;   /clobber, /nosubmit, $
 ;    pbsnodes=pbsnodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_walltime=pbs_walltime, /riemann, /ember]
 ;
@@ -40,6 +40,7 @@
 ;                is declared current under UPS.
 ;   upsversutils - If set, then do a "setup idlspecutils $IDLUTILS" on the
 ;                remote machine.
+;   scratchdir   - If set, then treat this as topdir until the computation is complete
 ;   zcode      - If set, run Zcode in auto mode.
 ;   galaxy     - If set, run Galaxy (Portsmouth, PCA) Suite of Products.
 ;   upsversgalaxy  - If set, then do a "setup galaxy $GALAXY" on the
@@ -101,7 +102,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
  mjd=mjd, mjstart=mjstart, mjend=mjend, $
  upsvers2d=upsvers2d, upsvers1d=upsvers1d, upsversutils=upsversutils, $
  rawdata_dir=rawdata_dir, $
- boss_spectro_redux=boss_spectro_redux, $
+ boss_spectro_redux=boss_spectro_redux, scratchdir=scratchdir, $
  zcode=zcode, galaxy=galaxy, upsversgalaxy=upsversgalaxy, pbsdir=pbsdir, $
  queue=queue, skip2d=skip2d, clobber=clobber, nosubmit=nosubmit, $ 
  pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, $
@@ -119,6 +120,13 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
     else topdir = getenv('BOSS_SPECTRO_REDUX')
    if strpos(topdir,'/',strlen(topdir)-1) lt 0 then topdir+='/'
    splog, 'Setting TOPDIR=', topdir
+
+   if (not keyword_set(scratchdir)) then scratchdir = getenv('BOSS_SCRATCH_DIR')
+   if (keyword_set(scratchdir)) then begin
+     if strpos(scratchdir,'/',strlen(scratchdir)-1) lt 0 then scratchdir+='/'
+     splog, 'Setting SCRATCHDIR=', scratchdir
+   endif
+   
    if (keyword_set(run2d1)) then run2d = strtrim(run2d1,2) $
     else run2d = getenv('RUN2D')
    splog, 'Setting RUN2D=', run2d
@@ -133,19 +141,22 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
    if strpos(pbsdir,'/',strlen(pbsdir)-1) lt 0 then pbsdir+='/'
 
    topdir2d = djs_filepath('', root_dir=topdir, subdir=run2d)
+
    if (keyword_set(run1d)) then run1dstr = ',run1d="'+run1d+'"' $
     else run1dstr = ''
    if (keyword_set(run2d)) then run2dstr = ',run2d="'+run2d+'"' $
     else run2dstr = ''
+    
+   
 
    if keyword_set(riemann) then begin
      if not keyword_set(pbs_nodes) then pbs_nodes=12
      if not keyword_set(pbs_ppn) then pbs_ppn=8
      if not keyword_set(pbs_walltime) then pbs_walltime='48:00:00'
    endif else if keyword_set(ember) then begin
-     if not keyword_set(pbs_nodes) then pbs_nodes=12
+     if not keyword_set(pbs_nodes) then pbs_nodes=8
      if not keyword_set(pbs_ppn) then pbs_ppn=12
-     if not keyword_set(pbs_walltime) then pbs_walltime='240:00:00'
+     if not keyword_set(pbs_walltime) then pbs_walltime='48:00:00'
      if not keyword_set(pbs_a) then pbs_a = 'bolton-em'
    endif
       
@@ -229,8 +240,10 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
         if (strlen(date[i]) eq 1) then date[i] = '0'+date[i] 
      userID+='_'+string(date, format='(A4,A2,A2,A2,A2,A2)')
 
-     if (pbsdir eq '') then pbsdir = djs_filepath('pbs/'+run2d,root_dir=topdir) $
-     else pbs_dir = djs_filepath('bossredux/'+run2d,root_dir=pbsdir)
+     if (pbsdir eq '') then begin
+        if keyword_set(scratchdir) then pbsdir = djs_filepath('pbs/'+run2d,root_dir=scratchdir) $
+        else pbsdir = djs_filepath('pbs/'+run2d,root_dir=topdir)
+     endif else pbs_dir = djs_filepath('bossredux/'+run2d,root_dir=pbsdir)
      pbs_dir = djs_filepath('',root_dir=pbsdir,subdir=run2d+'/'+userID)
      if file_test(pbs_dir) then begin
        shift_pbs_dir = djs_filepath('',root_dir=pbsdir,subdir=run2d+'/'+userID+'.*')
@@ -294,19 +307,35 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
 
       ; Split the combine plan file name into a directory and file name
       planfilecomb = fileandpath(planlist[iplate], path=pathcomb)
-
-      ; Construct the name of the batch file
-      ; "script" -> "redux" to make names fit within qstat column widths
-      ; fullscriptfile[iplate] = djs_filepath('script-'+platemjd, $
-      fullscriptfile[iplate] = djs_filepath('redux-'+platemjd, $
-       root_dir=pathcomb)
+      
+      
+      if keyword_set(scratchdir) then fullscriptfile[iplate] = djs_filepath('redux-'+platemjd, root_dir=scratchdir2d) $
+      else fullscriptfile[iplate] = djs_filepath('redux-'+platemjd, root_dir=pathcomb)
       if (keyword_set(skip2d)) then fullscriptfile[iplate] += '-' + run1d
-
+      
       ; Write the batch file
-      if (keyword_set(clobber) EQ 0) then $
-       qbatch[iplate] = file_test(fullscriptfile[iplate]) EQ 0
+      if (keyword_set(clobber) EQ 0) then begin
+        ;qbatch[iplate] = file_test(fullscriptfile[iplate]) EQ 0
+        pos = strpos(planlist[iplate],'spPlancomb')
+        spZbest = 'spZbest'+strmid(planlist[iplate],pos+strlen('spPlancomb'),strlen(planlist[iplate])-pos-14)+'.fits'
+        spZbest = djs_filepath(spZbest,root_dir=strmid(planlist[iplate],0,pos),subdir=run1d)
+        qbatch[iplate] = file_test(spZbest) EQ 0
+      endif
 
       if (qbatch[iplate]) then begin
+
+        if keyword_set(scratchdir) then begin
+          ; Construct run2d and run1d directories for each plate within scratchdir
+          scratchdir2d = djs_filepath(string(plateid[iplate],format='(i4.4)'), root_dir=scratchdir, subdir=run2d)
+          scratchdir1d = djs_filepath('', root_dir=scratchdir2d, subdir=run1d)
+        
+          ; cp the plan files to scratch if needed:
+          if (not file_test(scratchdir2d)) then file_mkdir, scratchdir2d
+          file_copy, planlist[iplate], scratchdir2d, /over
+          planfile2d_source = file_search(djs_filepath(planfile2d,root_dir=topdir2d,subdir=string(plateid[iplate],format='(i4.4)')),count=has_plan2d)
+          if keyword_set(has_plan2d) then file_copy, planfile2d_source, scratchdir2d, /over
+        endif 
+
          openw, olun, fullscriptfile[iplate], /get_lun
          printf, olun, '# Auto-generated batch file '+systime()
          if not keyword_set(pbs_nodes) then begin
@@ -320,7 +349,10 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
            ; set queue if asked
            if (keyword_set(queue)) then printf, olun, '#PBS -q ' + queue
            printf, olun, 'cd $PBS_O_WORKDIR'
-         endif else printf, olun, 'cd '+pathcomb
+         endif else begin
+            if keyword_set(scratchdir) then  printf, olun, 'cd '+scratchdir2d $
+            else printf, olun, 'cd '+pathcomb
+         endelse 
 
          ; Override environment variables if requested
          if (keyword_set(rawdata_dir)) then begin
@@ -381,7 +413,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
              if keyword_set(skip_portsmouth_stellarmass) then skip_keywords += ', /skip_portsmouth_stellarmass'
              skip_keywords += ', /skip_portsmouth_emlinekin' ;ie always skip! 
              for i=0, n_elements(planfile2d)-1 do $
-             qprintf, olun, 'echo '+fq+'galaxy_pipeline,"'+planfile2d[i]+'"'+skip_keywords+fq+' | idl'
+             printf, olun, 'echo '+fq+'galaxy_pipeline,"'+planfile2d[i]+'"'+skip_keywords+fq+' | idl'
          endif
 
          ; splog, "run1d is ", run1d
@@ -398,6 +430,13 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          ; printf, olun, '#- Make pretty pictures'
          ; printf, olun, 'idl -e "' + idlcmd + '"'
          
+         
+         ; If using scratchdir, uubatchcp (selected) final reductions to topdir
+         if (keyword_set(scratchdir)) then begin
+            for i=0, n_elements(planfile2d)-1 do $
+            printf, olun, 'echo '+fq+'uubatchcp,"'+planfile2d[i]+'", topdir="'+topdir+'", run2d="'+run2d+'", run1d="'+run1d+'", scratchdir="'+scratchdir+'"'+fq+' | idl'
+         endif
+
          close, olun
          free_lun, olun
 

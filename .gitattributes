@@ -578,6 +578,7 @@ pro/spec2d/trace_cen.pro -text
 pro/spec2d/trace_fix.pro -text
 pro/spec2d/trace_sparse_crude.pro -text
 pro/spec2d/tweaktrace.pro -text
+pro/spec2d/uubatchcp.pro -text
 pro/spec2d/uubatchpbs.pro -text
 pro/spec2d/uubatchpbs_run.pro -text
 pro/spec2d/warn_daytime.pro -text
