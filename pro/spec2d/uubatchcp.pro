@@ -74,12 +74,11 @@ pro uubatchcp, planfile, topdir=topdir, run2d=run2d, run1d=run1d, scratchdir=scr
    if strpos(topdir,'/',strlen(topdir)-1) lt 0 then topdir+='/'
 
    if (not keyword_set(scratchdir)) then scratchdir = getenv('BOSS_SCRATCH_DIR')
-   if strpos(scratchdir,'/',strlen(scratchdir)-1) lt 0 then scratchdir+='/'
-
-   if (keyword_set(scratchdir)) then begin
-       print, "UUBATCHCP:  Please set scratch_dir keyword or $BOSS_SCRATCH_DIR"
+   if (not keyword_set(scratchdir)) then begin
+       print, "UUBATCHCP:  Please set scratchdir keyword or $BOSS_SCRATCH_DIR"
        return
    endif
+   if strpos(scratchdir,'/',strlen(scratchdir)-1) lt 0 then scratchdir+='/'
    
    if (topdir eq scratchdir) then begin
        print, "UUBATCHCP:  Nothing to do because topdir=scratchdir"
