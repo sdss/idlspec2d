@@ -60,10 +60,10 @@
 ;   pbs_walltime - If set, use #PBS -l walltime=pbs_walltime, otherwise
 ;                default to none
 ;   ember      - If set, then setup the defaults for the ember cluster at the University of Utah:
-;                pbs_nodes = 8 (for 8 nodes, without node sharing) 
+;                pbs_nodes = 12 (for 12 nodes, without node sharing) 
 ;                pbs_ppn = 12 (12 processors per node)
-;                pbs_a = 'bolton-em' (Bolton's account, limited to 8 nodes: ember253 - ember260)
-;                pbs_walltime='48:00:00'
+;                pbs_a = 'bolton-em' (Bolton's account, limited to 12 nodes: ember253-260,377-380)
+;                pbs_walltime='240:00:00'
 ;   riemann    - If set, then setup the defaults for the riemann cluster at LBL:
 ;                pbs_nodes = 12 (for 12 nodes, without node sharing) 
 ;                pbs_ppn = 8 (8 processors per node)
@@ -143,9 +143,9 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
      if not keyword_set(pbs_ppn) then pbs_ppn=8
      if not keyword_set(pbs_walltime) then pbs_walltime='48:00:00'
    endif else if keyword_set(ember) then begin
-     if not keyword_set(pbs_nodes) then pbs_nodes=8
+     if not keyword_set(pbs_nodes) then pbs_nodes=12
      if not keyword_set(pbs_ppn) then pbs_ppn=12
-     if not keyword_set(pbs_walltime) then pbs_walltime='48:00:00'
+     if not keyword_set(pbs_walltime) then pbs_walltime='240:00:00'
      if not keyword_set(pbs_a) then pbs_a = 'bolton-em'
    endif
       
