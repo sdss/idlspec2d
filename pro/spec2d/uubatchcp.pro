@@ -128,28 +128,44 @@ pro uubatchcp, planfile, topdir=topdir, run2d=run2d, run1d=run1d, scratchdir=scr
        
         if (not keyword_set(skip2d)) then begin
             scratchdir2d_files = djs_filepath('*'+platemjd+'.*', root_dir=scratchdir2d)
-            file_copy, scratchdir2d_files, topdir2d, /overwrite, /require_directory
+            found = where(file_test(scratchdir2d_files) ne 0, nfound)
+            if (nfound gt 0) then begin
+                scratchdir2d_files_found = scratchdir2d_files[found]
+                file_copy, scratchdir2d_files, topdir2d, /overwrite, /require_directory
+                splog, "Copy run2d plate-mjd output files to "+topdir2d
+            endif else splog, "Warning - run2d plate-mjd output files missing."
             for c=0,n_elements(cameras)-1 do begin
                 camera_files = djs_filepath('*'+cameras[c]+'*.*', root_dir=scratchdir2d)
-                wh = where(file_test(djs_filepath(file_basename(camera_files), root_dir=topdir2d)) eq 0,nc)
-                if (nc gt 0) then file_copy, camera_files[wh], topdir2d, /require_directory
+                found = where(file_test(camera_files) ne 0, nfound)
+                if (nfound gt 0) then begin
+                    camera_files_found = camera_files[found]
+                    wh = where(file_test(djs_filepath(file_basename(camera_files_found), root_dir=topdir2d)) eq 0,nc)
+                    if (nc gt 0) then begin
+                        file_copy, camera_files_found[wh], topdir2d, /require_directory
+                        splog, "Copy run2d "+cameras[c]+" output files to "+topdir2d
+                    endif 
+                endif else splog, "Warning - run2d "+cameras[c]+" output files missing. "
             endfor
-            splog, "Copy run2d output to "+topdir2d
         endif
+        
         
         topdir1d = djs_filepath('', root_dir=topdir2d, subdir=run1d)
         scratchdir1d = djs_filepath('', root_dir=scratchdir2d, subdir=run1d)
 
         if (not file_test(scratchdir1d)) then begin
-           splog, "Nothing to copy. "+scratchdir1d+" does not exist."
+           splog, "Warning - "+scratchdir1d+" does not exist."
            return
         endif
 
         if (not file_test(topdir1d)) then file_mkdir, topdir1d
 
         scratchdir1d_files = djs_filepath('*'+platemjd+'.*', root_dir=scratchdir1d)
-        file_copy, scratchdir1d_files, topdir1d, /overwrite, /require_directory
-        splog, "Copy run1d output to "+topdir1d
+        found = where(file_test(scratchdir1d_files) ne 0, nfound)
+        if (nfound gt 0) then begin
+            scratchdir1d_files_found = scratchdir1d_files[found]
+            file_copy, scratchdir1d_files, topdir1d, /overwrite, /require_directory
+            splog, "Copy run1d output files to "+topdir1d
+        endif else splog, "Warning - run1d output files missing."
 
        
     endif
