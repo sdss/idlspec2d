@@ -75,13 +75,13 @@ pro uubatchcp, planfile, topdir=topdir, run2d=run2d, run1d=run1d, scratchdir=scr
 
    if (not keyword_set(scratchdir)) then scratchdir = getenv('BOSS_SCRATCH_DIR')
    if (not keyword_set(scratchdir)) then begin
-       print, "UUBATCHCP:  Please set scratchdir keyword or $BOSS_SCRATCH_DIR"
+       splog, " Please set scratchdir keyword or $BOSS_SCRATCH_DIR"
        return
    endif
    if strpos(scratchdir,'/',strlen(scratchdir)-1) lt 0 then scratchdir+='/'
    
    if (topdir eq scratchdir) then begin
-       print, "UUBATCHCP:  Nothing to do because topdir=scratchdir"
+       splog, " Nothing to do because topdir=scratchdir"
        return
    endif
    
@@ -109,17 +109,19 @@ pro uubatchcp, planfile, topdir=topdir, run2d=run2d, run1d=run1d, scratchdir=scr
     uubatchcp_init, planfile[0]
     
     if (has_platemjd) then begin
-    
-        plate2d = plate + '/' + run2d
+
+        plate2d = run2d + '/' + plate
 
         topdir2d = djs_filepath('', root_dir=topdir, subdir=plate2d)
         scratchdir2d = djs_filepath('', root_dir=scratchdir, subdir=plate2d)
 
         if (not file_test(scratchdir2d)) then begin
-           print, "UUBATCHCP: Nothing to copy. "+scratchdir2d+" does not exist."
+           splog, "Nothing to copy. "+scratchdir2d+" does not exist."
            return
         endif
-       
+        
+        splog, "Found bossredux scratch: "+scratchdir2d
+
         if (not file_test(topdir2d)) then file_mkdir, topdir2d
         
         cameras = ['r1','r2','b1','b2']
@@ -132,13 +134,14 @@ pro uubatchcp, planfile, topdir=topdir, run2d=run2d, run1d=run1d, scratchdir=scr
                 wh = where(file_test(djs_filepath(file_basename(camera_files), root_dir=topdir2d)) eq 0,nc)
                 if (nc gt 0) then file_copy, camera_files[wh], topdir2d, /require_directory
             endfor
+            splog, "Copy run2d output to "+topdir2d
         endif
         
         topdir1d = djs_filepath('', root_dir=topdir2d, subdir=run1d)
         scratchdir1d = djs_filepath('', root_dir=scratchdir2d, subdir=run1d)
 
         if (not file_test(scratchdir1d)) then begin
-           print, "UUBATCHCP: Nothing to copy. "+scratchdir1d+" does not exist."
+           splog, "Nothing to copy. "+scratchdir1d+" does not exist."
            return
         endif
 
@@ -146,6 +149,7 @@ pro uubatchcp, planfile, topdir=topdir, run2d=run2d, run1d=run1d, scratchdir=scr
 
         scratchdir1d_files = djs_filepath('*'+platemjd+'.*', root_dir=scratchdir1d)
         file_copy, scratchdir1d_files, topdir1d, /overwrite, /require_directory
+        splog, "Copy run1d output to "+topdir1d
 
        
     endif
