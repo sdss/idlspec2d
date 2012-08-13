@@ -120,7 +120,7 @@ pro uubatchcp, planfile, topdir=topdir, run2d=run2d, run1d=run1d, scratchdir=scr
            return
         endif
         
-        splog, "Found bossredux scratch: "+scratchdir2d
+        ;splog, "Found bossredux scratch: "+scratchdir2d
 
         if (not file_test(topdir2d)) then file_mkdir, topdir2d
         
@@ -133,7 +133,7 @@ pro uubatchcp, planfile, topdir=topdir, run2d=run2d, run1d=run1d, scratchdir=scr
                 scratchdir2d_files_found = scratchdir2d_files[found]
                 file_copy, scratchdir2d_files, topdir2d, /overwrite, /require_directory
                 splog, "Copy run2d plate-mjd output files to "+topdir2d
-            endif else splog, "Warning - run2d plate-mjd output files missing."
+            endif else splog, "Warning - run2d plate-mjd output files missing"+platemjd
             for c=0,n_elements(cameras)-1 do begin
                 camera_files = djs_filepath('*'+cameras[c]+'*.*', root_dir=scratchdir2d)
                 found = where(file_test(camera_files) ne 0, nfound)
@@ -144,7 +144,7 @@ pro uubatchcp, planfile, topdir=topdir, run2d=run2d, run1d=run1d, scratchdir=scr
                         file_copy, camera_files_found[wh], topdir2d, /require_directory
                         splog, "Copy run2d "+cameras[c]+" output files to "+topdir2d
                     endif 
-                endif else splog, "Warning - run2d "+cameras[c]+" output files missing. "
+                endif else splog, "Warning - run2d "+cameras[c]+" output files missing"+platemjd
             endfor
         endif
         
@@ -165,8 +165,7 @@ pro uubatchcp, planfile, topdir=topdir, run2d=run2d, run1d=run1d, scratchdir=scr
             scratchdir1d_files_found = scratchdir1d_files[found]
             file_copy, scratchdir1d_files, topdir1d, /overwrite, /require_directory
             splog, "Copy run1d output files to "+topdir1d
-        endif else splog, "Warning - run1d output files missing."
-
+        endif else splog, "Warning - run1d output files missing"+platemjd
        
     endif
    
