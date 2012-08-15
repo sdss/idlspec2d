@@ -5,7 +5,7 @@
 ;
 ; PURPOSE:
 ;  Perform BOSS 4-amp bias subtraction using master pixel bias.
-;  also trim off overscan.
+;  Also trim off overscan.
 ;
 ; USAGE:
 ;  img = bolton_biassub(rawdata, biasname [, cam=cam, $
@@ -131,19 +131,28 @@ for xflag = 0, 1 do begin
       rnoise[xflag,yflag] = sqrt(total((data_sub - bias_sub - offset)^2 * pmask, /double) / total(pmask, /double))
 ; Compute the bias image for this quadrant:
       quadbias = (bias_img[xlo:xhi,ylo:yhi] + offset) * (data_img[xlo:xhi,ylo:yhi] ne 0.)
-; Do the alternative row-by-row estimation kluge for b1:
+; Do the alternative row-by-row estimation kluge for b2:
       if ((mjd ge 56152) and (cam eq 'b2') and (xflag eq 1) and (yflag eq 1)) then begin
          splog, 'INFO: doing row-by-row bias for b2 crazy quadrant.'
          rowscan_sub = data_img[bxlo:bxhi,ylo:yhi]
          rowscan_nx = (size(rowscan_sub))[1]
          rowscan_mean = total(rowscan_sub, 1) / float(rowscan_nx)
-         quadbias = replicate(1., xhw) # rowscan_mean
-         rowscan_varvec = total((rowscan_sub - replicate(1., rowscan_nx) # rowscan_mean)^2, 1) / float(rowscan_nx)
-         rnoise[xflag,yflag] = sqrt(mean(rowscan_varvec[1:1500]))
+         rowscan_model = replicate(1., rowscan_nx) # rowscan_mean
+         rowscan_varvec = total((rowscan_sub - rowscan_model)^2, 1) / float(rowscan_nx)
          ; Track & warn on whether lowest crazy-readnoise-row is too low:
          whbad = where(sqrt(rowscan_varvec) gt 4.0, nbad)
          if (nbad gt 0) then minbad = min(whbad) else minbad = 5000L
-         if (minbad lt 1776) then splog, 'WARNING: bias exploding in b2 crazy quadrant!'
+         junkrow = 1776 ; that is added to 2056 or 2112 depending...
+         if (minbad lt junkrow) then splog, 'WARNING: bias exploding in b2 crazy quadrant!'
+         ; Compute read-noise estimate:
+         rowscan_rnoise = sqrt(mean(rowscan_varvec[0:junkrow-150]))
+         ; Make a cosmic-ray rejection mask:
+         rowscan_mask = (abs(rowscan_sub - rowscan_model) / rowscan_rnoise) le sigthresh
+         rowscan_mask[*,junkrow:*] = 1B ; don't bother masking in the junk region
+         ; Make the rowbias model, using the rejection mask:
+         rowscan_mean = total(rowscan_sub * rowscan_mask, 1) / (total(rowscan_mask, 1) > 1.)
+         quadbias = replicate(1., xhw) # rowscan_mean
+         rnoise[xflag,yflag] = rowscan_rnoise
       endif
 ; Do the bias subtraction:
       data_img[xlo:xhi,ylo:yhi] -= quadbias
