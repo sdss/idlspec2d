@@ -1,4 +1,7 @@
 
+BOLTON_BIASSUB: Adding kluge to do row-by-row bias subtraction for
+    upper right quadrant of b2 post-Summer 2012, due to crazy bias
+    phenomenon that has appeared there (ASB, 2012-Aug-15).
 READPLUGMAP : reads opfiles/washer.par to get override status for
     ZOFFSET.  (SJB 2012-08-07)
 

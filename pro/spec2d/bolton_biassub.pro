@@ -36,8 +36,13 @@
 ;   data value of zero and not doing any bias offest determination
 ;   or subtraction with those pixels.
 ;
+;   Includes ugly kluge to apply row-by-row bias subtraction
+;   in the upper right quadrant of b2 for MJDs 56152 and later,
+;   due to the appearance of an unstable bias phenomenon there.
+;
 ; WRITTEN:
-;  A. Bolton, U. of Utah, 2011 aug.
+;  original version: A. Bolton, U. of Utah, 2011 aug.
+;  b2 kluge: A. Bolton, U. of Utah, 2012 aug.
 ;
 ;-
 
@@ -77,7 +82,8 @@ if ((cam eq 'b1') or (cam eq 'b2')) then begin
 endif
 
 data_img = rawdata
-bias_img = mrdfits(biasname)
+bias_img = mrdfits(biasname, 0, hdr)
+mjd = sxpar(hdr, 'mjd')
 rnoise = fltarr(2, 2)
 nxfull = (size(data_img))[1]
 nyfull = (size(data_img))[2]
@@ -123,8 +129,24 @@ for xflag = 0, 1 do begin
       offset = float(total((data_sub - bias_sub) * pmask, /double) / total(pmask, /double))
 ; Compute the RMS fluctuation:
       rnoise[xflag,yflag] = sqrt(total((data_sub - bias_sub - offset)^2 * pmask, /double) / total(pmask, /double))
+; Compute the bias image for this quadrant:
+      quadbias = (bias_img[xlo:xhi,ylo:yhi] + offset) * (data_img[xlo:xhi,ylo:yhi] ne 0.)
+; Do the alternative row-by-row estimation kluge for b1:
+      if ((mjd ge 56152) and (cam eq 'b2') and (xflag eq 1) and (yflag eq 1)) then begin
+         splog, 'INFO: doing row-by-row bias for b2 crazy quadrant.'
+         rowscan_sub = data_img[bxlo:bxhi,ylo:yhi]
+         rowscan_nx = (size(rowscan_sub))[1]
+         rowscan_mean = total(rowscan_sub, 1) / float(rowscan_nx)
+         quadbias = replicate(1., xhw) # rowscan_mean
+         rowscan_varvec = total((rowscan_sub - replicate(1., rowscan_nx) # rowscan_mean)^2, 1) / float(rowscan_nx)
+         rnoise[xflag,yflag] = sqrt(mean(rowscan_varvec[1:1500]))
+         ; Track & warn on whether lowest crazy-readnoise-row is too low:
+         whbad = where(sqrt(rowscan_varvec) gt 4.0, nbad)
+         if (nbad gt 0) then minbad = min(whbad) else minbad = 5000L
+         if (minbad lt 1776) then splog, 'WARNING: bias exploding in b2 crazy quadrant!'
+      endif
 ; Do the bias subtraction:
-      data_img[xlo:xhi,ylo:yhi] = data_img[xlo:xhi,ylo:yhi] - (bias_img[xlo:xhi,ylo:yhi] + offset) * (data_img[xlo:xhi,ylo:yhi] ne 0.)
+      data_img[xlo:xhi,ylo:yhi] -= quadbias
    endfor
 endfor
 
