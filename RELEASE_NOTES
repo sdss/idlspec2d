@@ -1,19 +1,23 @@
 
-BOLTON_BIASSUB: Adding kluge to do row-by-row bias subtraction for
-    upper right quadrant of b2 post-Summer 2012, due to crazy bias
-    phenomenon that has appeared there (ASB, 2012-Aug-15).
-READPLUGMAP : reads opfiles/washer.par to get override status for
-    ZOFFSET.  (SJB 2012-08-07)
+-------------------------------------------------------------------------------
+v5_5_9 (2012-08-15)
+Tag for electronics bias drift on b2 UR quadrant.
+Built against elodie/v1_3, specflat/v1_19, idlutils/v5_4_28+.
 
 APO_CHECKLIMITS: Bug fix to test against values of exactly zero,
     although this wouldn't have been triggered.
 BAD_BOSSFORMAT: Print mean and 95% of each sub-image.
+BOLTON_BIASSUB: Adding kluge to do row-by-row bias subtraction for
+    upper right quadrant of b2 post-Summer 2012, due to crazy bias
+    phenomenon that has appeared there (ASB, 2012-Aug-15).
 FITFLATWIDTH,SPCALIB,SPREDUCE,TRACE320CRUDE: Minor changes to use a
     different number of traces for the SDSS-I spectra (ticket #541).
 PLATELIST: Remove %Main from the HTML file, since those targets do
     not exist in BOSS.
 OPFIBER_GENERATE: Bug fix to work for SDSS-I plates with plate # < 1000
     and read traces from spFlat files for the old data model.
+READPLUGMAP : reads opfiles/washer.par to get override status for
+    ZOFFSET.  (SJB 2012-08-07)
 SDSS_PLATE_SORT: The photoMatch,photoPlate,photoMatch files for the SDSS-I
     plates are alread sorted to a particular plugging, and have MJD
     in their names.  Rather than assume these are sorted, take the first
