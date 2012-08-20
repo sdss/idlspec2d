@@ -1,4 +1,8 @@
 
+QUICKTRACE: Bug fix for SOS reductions, which now need to pass cartID
+    as a keyword to TRACE320CRUDE to be consistent with recent changes
+    (ticket #1656).
+
 -------------------------------------------------------------------------------
 v5_5_9 (2012-08-15)
 Tag for electronics bias drift on b2 UR quadrant.
