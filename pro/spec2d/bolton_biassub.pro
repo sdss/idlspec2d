@@ -133,7 +133,7 @@ for xflag = 0, 1 do begin
       quadbias = (bias_img[xlo:xhi,ylo:yhi] + offset) * (data_img[xlo:xhi,ylo:yhi] ne 0.)
 ; Do the alternative row-by-row estimation kluge for b2:
       if ((mjd ge 56152) and (cam eq 'b2') and (xflag eq 1) and (yflag eq 1)) then begin
-         splog, 'INFO: doing row-by-row bias for b2 crazy quadrant.'
+         ;;; splog, 'INFO: doing row-by-row bias for b2 crazy quadrant.'
          rowscan_sub = data_img[bxlo:bxhi,ylo:yhi]
          rowscan_nx = (size(rowscan_sub))[1]
          rowscan_mean = total(rowscan_sub, 1) / float(rowscan_nx)
