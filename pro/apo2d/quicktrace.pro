@@ -90,7 +90,8 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin, $
    ; Read in the plug map file, and sort it
 
    plugmap = readplugmap(plugmapfile, spectrographid, /deredden, /apotags, $
-    fibermask=fibermask)
+    hdr=hdrplug, fibermask=fibermask)
+   cartid = long(yanny_par(hdrplug, 'cartridgeId'))
 
    ;----------
    ; Compute the trace set, but binning every NBIN rows for speed
@@ -113,8 +114,8 @@ function quicktrace, filename, tsetfile, plugmapfile, nbin=nbin, $
     else color = 'red'
    ; Set the maxdev to twice what it would be for optimal extraction...
    xsol = trace320crude(flatimg, flativar, yset=ycen, maxdev=0.30, $
-                        fibermask=fibermask, xerr=xerr, flathdr=flathdr, $ 
-                        padding=configuration->spcalib_trace320crude_padding() ) 
+    fibermask=fibermask, cartid=cartid, xerr=xerr, flathdr=flathdr, $ 
+    padding=configuration->spcalib_trace320crude_padding() ) 
    ; Consider a fiber bad only if any of the following mask bits are set,
    ; but specifically not if BADTRACE is set.
    badbits = sdss_flagval('SPPIXMASK','NOPLUG') $
