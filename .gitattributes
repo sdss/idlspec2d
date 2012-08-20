@@ -460,6 +460,7 @@ pro/spec2d/bolton_biassub.pro -text
 pro/spec2d/bolton_sn_fit.pro -text
 pro/spec2d/bolton_std_throughput.pro -text
 pro/spec2d/boss_gain.pro -text
+pro/spec2d/bosslog.pro -text
 pro/spec2d/calcflux.pro -text
 pro/spec2d/calcscatimage.pro -text
 pro/spec2d/checkflavor.pro -text
