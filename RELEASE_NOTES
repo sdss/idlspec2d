@@ -1,4 +1,5 @@
-
+BOLTON_BIASSUB: Bug fix for CRs in row-by-row kluge-processed overscan
+    region of wonky b2 quadrant (ASB, ticket #1651).
 QUICKTRACE: Bug fix for SOS reductions, which now need to pass cartID
     as a keyword to TRACE320CRUDE to be consistent with recent changes
     (ticket #1656).
