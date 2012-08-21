@@ -121,11 +121,11 @@ pro sdss_plate_sort, planfile
          nfiber = n_elements(plugmap)
 
          if (n_elements(i1) NE nfiber) then $
-          message, 'Failure matching all objects!'
+          message, 'ERROR: Failure matching all objects!'
          if (total(i1[sort(i1)] EQ lindgen(nfiber)) LT nfiber) then $
-          message, 'Double-matching of some objects!'
+          message, 'ERROR: Double-matching of some objects!'
          if (total(i2[sort(i2)] EQ lindgen(nfiber)) LT nfiber) then $
-          message, 'Double-matching of some objects!'
+          message, 'ERROR: Double-matching of some objects!'
          isort = lonarr(nfiber)
          isort[i1] = lindgen(nfiber)
 
