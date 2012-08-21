@@ -118,6 +118,7 @@ function bbspec_cmd_batch, cmd, pbsfile=pbsfile
    printf, olun, 'cd $PBS_O_WORKDIR'
    printf, olun, 'set -o verbose'
    printf, olun, 'echo $BBSPEC_DIR'
+   printf, olun, 'pwd'
    printf, olun, cmd
    close, olun
    free_lun, olun
@@ -204,7 +205,7 @@ pro bbspec_extract, image, invvar, flux, fluxivar, basisfile=basisfile, $
       fluxivar = 0
       for i=0, njob-1 do flux += mrdfits(fluxfile[i],0)
       for i=0, njob-1 do fluxivar += mrdfits(fluxfile[i],1)
-      for i=0, njob-1 do ymodel += mrdfits(fluxfile[i],5)
+      for i=0, njob-1 do ymodel += mrdfits(fluxfile[i],6)
       for i=0, njob-1 do rmfile, fluxfile[i]
    endelse
    ymodel += scatimg
