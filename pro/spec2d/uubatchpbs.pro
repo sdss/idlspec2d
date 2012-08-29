@@ -154,7 +154,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
      if not keyword_set(pbs_ppn) then pbs_ppn=8
      if not keyword_set(pbs_walltime) then pbs_walltime='48:00:00'
    endif else if keyword_set(ember) then begin
-     if not keyword_set(pbs_nodes) then pbs_nodes=8
+     if not keyword_set(pbs_nodes) then pbs_nodes=12
      if not keyword_set(pbs_ppn) then pbs_ppn=12
      if not keyword_set(pbs_walltime) then pbs_walltime='48:00:00'
      if not keyword_set(pbs_a) then pbs_a = 'bolton-em'
