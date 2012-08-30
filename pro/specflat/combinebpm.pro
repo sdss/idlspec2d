@@ -79,6 +79,7 @@
 ; for year 2 combinebpm,darkstart=118462,darkend=118472,biasstart=119380,biasend=119395,/output
 ; for year 1    combinebpm,/output
 ; for year 3 new r1  combinebpm,darkstart=133104,darkend=133116,biasstart=133158,biasend=133175,docams='r1',/output
+;for year 4 first month   combinebpm,darkstart=145667,darkend=145673,biasstart=145643,biasend=145660,/output
 
 pro combinebpm,docams=docams,nsig=nsig,ncount=ncount,darkstart=darkstart,darkend=darkend,biasstart=biasstart,biasend=biasend,maxsat=maxsat,output=output,indir=indir ;
 
@@ -302,17 +303,46 @@ endfor
 
 ;add ticket 1368,1369, 1363  not listed from here
 
-if docams eq 'b1' then  bpmhot[3734,1087:1344]+=16 ;blocked column only appears at low flux levels.  It blocks light for a fixed period of time, and then releases it creating a warm column. The signal does not appear in pixel flats or calibration flats, but does appear in science frames and arcs. For an example, see 55209/sdR-b1-00107423.fit.gz.  ds9 coordinates
+if docams eq 'b1' then  begin 
+    bpmhot[3734,1087:1344]+=16 ;blocked column only appears at low flux levels.  It blocks light for a fixed period of time, and then releases it creating a warm column. The signal does not appear in pixel flats or calibration flats, but does appear in science frames and arcs. For an example, see 55209/sdR-b1-00107423.fit.gz.  ds9 coordinates
+    bpmhot[2567,2056:4111]+=16  ;from 118469
+    bpmhot[2558:2569,2667:2672]+=32
+    bpmhot[1894,0:2055]+=16
+    bpmhot[1893:1913,1935:1943]+=32 ;from exp 132443
+endif
 
-if docams eq 'b2' then begin
+
+if docams eq 'b1' and mjd gt 56112 then begin
+    bpmhot[3734,1087:1344]+=16 ; from above
+    bpmhot[1894,0:2055]+=16
+    bpmhot[3020,2056:4111]+=16  ;from 145673
+    bpmhot[3984,2056:4111]+=16;from 145673
+    bpmhot[1607,0:2055]+=16;from 145673
+endif
+
+if docams eq 'b2' and mjd lt 56112 then begin
     bpmhot[1833,2048:2226]+=16 ;same defect as b1  55186/sdR-b2-00105398.fit.gz ds9 coordinates
     bpmhot[334,1337:2055]+=8 ;bad column from lossy fibers flats 115057 and others
     bpmhot[1966,1638:2055]+=8 ;bad column from lossy fibers flats 115057 and others
     bpmhot[2494,2056:3400]+=8 ;bad column from lossy fibers flats 115057 and others
 endif
 
+;for year 4 add several bad columns
+if docams eq 'b2' and mjd ge 56112 then begin
+    bpmhot[1833,2048:2226]+=16 ;same defect as b1  55186/sdR-b2-00105398.fit.gz ds9 coordinates
+    bpmhot[334,1337:2055]+=8 ;bad column from lossy fibers flats 115057 and others
+    bpmhot[1966,1638:2055]+=8 ;bad column from lossy fibers flats 115057 and others
+    bpmhot[2494,2056:3400]+=8 ;bad column from lossy fibers flats 115057 and others
 
-if docams eq 'r1' and  mjd lt 55413 then begin 
+    bpmhot[2205,0:2055]+=16;from 145673
+    bpmhot[2910,0:2055]+=16;from 145673
+    bpmhot[2161,2056:4111]+=16;from 145673
+    bpmhot[3850,2056:4111]+=16;from 145673
+    bpmhot[3665,0:2055]+=16;from 145673
+
+endif
+
+if docams eq 'r1' and  mjd lt 55413 then begin ;year 1
     bpmhot[481:488,2141:2150]+=32
     bpmhot[780:798,3467:3486]+=32
     bpmhot[783:793,3468:3485]+=32
@@ -321,11 +351,32 @@ if docams eq 'r1' and  mjd lt 55413 then begin
     bpmhot[3635:3652,397:416]+=32
 endif
 
-if docams eq 'r1' and  mjd ge 55413  and mjd lt 55800 then begin
+if docams eq 'r1' and  mjd ge 55413  and mjd lt 55800 then begin ;year 2
     bpmhot[692:710,3194]+=32
     bpmhot[3648:3649,395:2063]+=8
     bpmhot[3810:3812,2278:2282]+=32
+    bpmhot[693,2064:4127]+=8 ;bad column ticket 1424, exposure 118469
+    bpmhot[781,2064:4127]+=16 ;bad column ticket 1424, exposure 118469
+    bpmhot[1620,2064:4127]+=8 ;bad column ticket 1424, exposure 118469
+    bpmhot[1621:1628,2064:2075]+=8 ;bad column ticket 1424, exposure 118469
+    bpmhot[2180:2182,0:2063]+=8 ;bad column ticket 1424, exposure 118469
+    bpmhot[2166:2184,1362:1383]+=32 ;bad column ticket 1424, exposure 118469
+    bpmhot[3648:3649,0:2063]+=16 ;bad column ticket 1424, exposure 118469
+    bpmhot[3635:3652,394:420]+=32 ;bad column ticket 1424, exposure 118469
 endif
+
+if docams eq 'r1' and mjd ge 55800 and mjd lt 55805 then begin  ;new ccd starting year 3
+    bpmhot[1344:1350,2064:4127]+=16
+endif
+
+if docams eq 'r1' and mjd ge 55805 and mjd lt 56112 then begin  ;new ccd starting year 3
+    ;bpmhot[1344:1350,2064:4127]+=16 ;gone after temp change
+endif
+
+
+if docams eq 'r1' and  mjd gt 56112 then begin ;nothing for year 4
+endif
+
 
 ;if docams eq 'r1' and  mjd ge 55800 and mjd lt 55850 then bpmhot[1342:1353,2063:4127]+=32 ;changed r1 temp on 55850 to get rid of bad column
 
@@ -343,14 +394,65 @@ if docams eq 'r2' and  mjd ge 55300 and  mjd lt 55413 then begin
     bpmhot[2672,2064:2295]+=16 ;;r2, fiber~840. 8300 \aa\, sdssproc images, flag x=2673, 2065<y<2296 for data after 55300 (r2 replacement). This is a warm column that appears to vary in magnitude. See 55539/sdR-r2-00123636.fit.gz for an example. ds9 coordinates
 endif
 
-if docams eq 'r2' and  mjd ge 55413 then begin
+if docams eq 'r2' and  mjd ge 55413 and mjd lt 55800 then begin
     bpmhot[508,2064:3513]+=8
     bpmhot[508:523,3510:3513]+=32
-    bpmhot[2616:2629:2283]+=32
     bpmhot[2661:2673,2292]+=32
     bpmhot[2984,2064:4127]+=32 ;from looking at darks to get bad columns;doesn't get all
-    bpmhot[3882,2064:4127]+=32 ;from looking at darks to get bad columns;doesn't get all
-    bpmhot[3940:3958,2850:3096]+=32
+    bpmhot[3882,2064:4127]+=16 ;from looking at darks to get bad columns;doesn't get all
+    bpmhot[3940:3956,2850:3096]+=32
+    bpmhot[3956,2064:4127]+=16;bad column ticket 1424, exposure 118469
+    bpmhot[1112,2064:4127]+=32;bad column ticket 1424, exposure 118469, MDO can't find but added after discussion with ASB as it was ticketed earlier
+    bpmhot[2110,0:2063]+=32;bad column ticket 1424, exposure 118469, MDO can't find but added after discussion with ASB as it was ticketed earlier
+;visually inspected year 3 and year 4 and no additional bad columns
+    bpmhot[2628,2064:4127]+=16
+    bpmhot[2623:2627,2282:2284]+=32
+
+    bpmhot[2672,2064:4127]+=16
+    bpmhot[2668:2671,2290:2294]+=32
+    bpmhot[2924,2064:3030]+=16 ;not year 3 or maybe year 4 so year mask
+
+endif
+
+
+
+
+if docams eq 'r2' and  mjd ge 55800 and mjd lt 56112 then begin
+    bpmhot[508,2064:3513]+=8
+    bpmhot[508:523,3510:3513]+=32
+    bpmhot[2661:2673,2292]+=32
+    bpmhot[2984,2064:4127]+=32 ;from looking at darks to get bad columns;doesn't get all
+    bpmhot[3882,2064:4127]+=16 ;from looking at darks to get bad columns;doesn't get all
+    bpmhot[3940:3956,2850:3096]+=32
+    bpmhot[3956,2064:4127]+=16;bad column ticket 1424, exposure 118469
+    bpmhot[1112,2064:4127]+=32;bad column ticket 1424, exposure 118469, MDO can't find but added after discussion with ASB as it was ticketed earlier
+    bpmhot[2110,0:2063]+=32;bad column ticket 1424, exposure 118469, MDO can't find but added after discussion with ASB as it was ticketed earlier
+;visually inspected year 3 and year 4 and no additional bad columns
+    bpmhot[2628,2064:4127]+=16
+    bpmhot[2623:2627,2282:2284]+=32
+    bpmhot[2672,2064:4127]+=16
+    bpmhot[2668:2671,2290:2294]+=32
+endif
+
+if docams eq 'r2' and  mjd ge 56112 then begin
+    bpmhot[508,2064:3513]+=8
+    bpmhot[508:523,3510:3513]+=32
+    bpmhot[2661:2673,2292]+=32
+    bpmhot[2984,2064:4127]+=32 ;from looking at darks to get bad columns;doesn't get all
+    bpmhot[3882,2064:4127]+=16 ;from looking at darks to get bad columns;doesn't get all
+    bpmhot[3878:3883,2064:2830]+=16 ;darks 145857
+
+    bpmhot[3940:3956,2850:3096]+=32
+    bpmhot[3956,2064:4127]+=16;bad column ticket 1424, exposure 118469
+    bpmhot[1112,2064:4127]+=32;bad column ticket 1424, exposure 118469, MDO can't find but added after discussion with ASB as it was ticketed earlier
+    bpmhot[2110,0:2063]+=32;bad column ticket 1424, exposure 118469, MDO can't find but added after discussion with ASB as it was ticketed earlier
+;visually inspected year 3 and year 4 and no additional bad columns
+    bpmhot[2628,2064:4127]+=16
+    bpmhot[2623:2627,2282:2284]+=32
+    bpmhot[2672,2064:4127]+=16
+    bpmhot[2668:2671,2290:2294]+=32
+    bpmhot[3882,1298:2063]+=16 ; also goes down 145617 example
+
 endif
 
 
@@ -369,10 +471,11 @@ print,'counts '+docams+'         ',n_0c*1./n_bpms
 bpms=bpms
 bpmc=bpmc
 
-if mjd lt 55413 then use='55025'
-if docams eq 'r2' and mjd ge 55300 and mjd lt 55413 then use='55300'
-if mjd ge 55413  then use='55413'  
-if mjd ge 55800  then use='55800'
+if mjd lt 55300 then use='55025'
+if mjd ge 55300 then use='55300'
+if mjd ge 55413 then use='55413'  
+if mjd ge 55800 then use='55800'
+if mjd ge 56112 then use='56149'
 filenamesigma='bpm-'+use+'-'+docams+'-sigma.fit'
 writefits,filenamesigma,bpms,hdr
 filenamecount='bpm-'+use+'-'+docams+'-count.fit'
@@ -401,7 +504,7 @@ sxaddpar,hdr, 'BM16',16,'warm bad column, ticket 1368,1369'
 sxaddpar,hdr, 'BM32',32,'by hand corrections'
 
 filename_badpix='badpixels-'+string(mjd,format='(i5.5)')+'-'+docams+'.fits'
-writefits,filename_badpix,bpms,hdr
+mwrfits,bpms,filename_badpix,hdr
 
 ;stop
 
