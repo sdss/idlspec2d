@@ -225,7 +225,8 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
 
      if keyword_set(pbs_ppn) then nodes_required = ceil(float(nplate)/pbs_ppn) else nodes_required = nplate
      if nodes_required lt pbs_nodes then pbs_nodes = nodes_required
-     print, 'BATCHPBS: Preparing to qsub '+strtrim(pbs_nodes,2)+' nodes ('+strtrim(pbs_ppn,2)+' processors per node) for '+strtrim(nplate,2)+' plates.'
+     if keyword_set(pbs_ppn) then splog, 'Preparing to qsub '+strtrim(pbs_nodes,2)+' nodes ('+strtrim(pbs_ppn,2)+' processors per node) for '+strtrim(nplate,2)+' plates.' $
+     else splog, 'Preparing to qsub '+strtrim(nplate,2)+' plates.'
 
      home = getenv('HOME')
      if (home ne '') then begin
