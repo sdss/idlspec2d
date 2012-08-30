@@ -309,8 +309,11 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
       planfilecomb = fileandpath(planlist[iplate], path=pathcomb)
       
       
-      if keyword_set(scratchdir) then fullscriptfile[iplate] = djs_filepath('redux-'+platemjd, root_dir=scratchdir2d) $
-      else fullscriptfile[iplate] = djs_filepath('redux-'+platemjd, root_dir=pathcomb)
+      if keyword_set(scratchdir) then begin
+        scratchdir2d = djs_filepath(string(plateid[iplate],format='(i4.4)'), root_dir=scratchdir, subdir=run2d)
+        scratchdir1d = djs_filepath('', root_dir=scratchdir2d, subdir=run1d)
+        fullscriptfile[iplate] = djs_filepath('redux-'+platemjd, root_dir=scratchdir2d)
+      endif else fullscriptfile[iplate] = djs_filepath('redux-'+platemjd, root_dir=pathcomb)
       if (keyword_set(skip2d)) then fullscriptfile[iplate] += '-' + run1d
       
       ; Write the batch file
@@ -325,12 +328,11 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
       if (qbatch[iplate]) then begin
 
         if keyword_set(scratchdir) then begin
-          ; Construct run2d and run1d directories for each plate within scratchdir
-          scratchdir2d = djs_filepath(string(plateid[iplate],format='(i4.4)'), root_dir=scratchdir, subdir=run2d)
-          scratchdir1d = djs_filepath('', root_dir=scratchdir2d, subdir=run1d)
         
-          ; cp the plan files to scratch if needed:
+          ; Construct run2d and run1d directories for each plate within scratchdir
           if (not file_test(scratchdir2d)) then file_mkdir, scratchdir2d
+          
+          ; cp the plan files to scratch if needed:
           file_copy, planlist[iplate], scratchdir2d, /over
           planfile2d_source = file_search(djs_filepath(planfile2d,root_dir=topdir2d,subdir=string(plateid[iplate],format='(i4.4)')),count=has_plan2d)
           if keyword_set(has_plan2d) then file_copy, planfile2d_source, scratchdir2d, /over
