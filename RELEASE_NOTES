@@ -1,4 +1,4 @@
-
+COMBINEBPM: updated hand edited bad columns
 BBSPEC_EXTRACT: bbspec ymodel moved to HDU 6 in extracted spectra.
 BOSSLOG: New proc.
 SDSS_PLATE_SORT: Adding ERROR to error messages for easier grepping
