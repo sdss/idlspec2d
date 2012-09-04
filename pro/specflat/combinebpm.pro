@@ -452,7 +452,7 @@ if docams eq 'r2' and  mjd ge 56112 then begin
     bpmhot[2672,2064:4127]+=16
     bpmhot[2668:2671,2290:2294]+=32
     bpmhot[3882,1298:2063]+=16 ; also goes down 145617 example
-
+    bpmhot[3955:3956,1100:1275]+=32 ;46454
 endif
 
 
@@ -504,7 +504,7 @@ sxaddpar,hdr, 'BM16',16,'warm bad column, ticket 1368,1369'
 sxaddpar,hdr, 'BM32',32,'by hand corrections'
 
 filename_badpix='badpixels-'+string(mjd,format='(i5.5)')+'-'+docams+'.fits'
-mwrfits,bpms,filename_badpix,hdr
+mwrfits,bpms,filename_badpix,hdr,/create
 
 ;stop
 
