@@ -324,7 +324,7 @@ if docams eq 'b2' and mjd lt 56112 then begin
     bpmhot[1833,2048:2226]+=16 ;same defect as b1  55186/sdR-b2-00105398.fit.gz ds9 coordinates
     bpmhot[334,1337:2055]+=8 ;bad column from lossy fibers flats 115057 and others
     bpmhot[1966,1638:2055]+=8 ;bad column from lossy fibers flats 115057 and others
-    bpmhot[2494,2056:3400]+=8 ;bad column from lossy fibers flats 115057 and others
+    bpmhot[2493,2056:3400]+=8 ;bad column from lossy fibers flats 115057 and others
 endif
 
 ;for year 4 add several bad columns
@@ -332,7 +332,7 @@ if docams eq 'b2' and mjd ge 56112 then begin
     bpmhot[1833,2048:2226]+=16 ;same defect as b1  55186/sdR-b2-00105398.fit.gz ds9 coordinates
     bpmhot[334,1337:2055]+=8 ;bad column from lossy fibers flats 115057 and others
     bpmhot[1966,1638:2055]+=8 ;bad column from lossy fibers flats 115057 and others
-    bpmhot[2494,2056:3400]+=8 ;bad column from lossy fibers flats 115057 and others
+    bpmhot[2493,2056:3400]+=8 ;bad column from lossy fibers flats 115057 and others
 
     bpmhot[2205,0:2055]+=16;from 145673
     bpmhot[2910,0:2055]+=16;from 145673
@@ -365,11 +365,11 @@ if docams eq 'r1' and  mjd ge 55413  and mjd lt 55800 then begin ;year 2
     bpmhot[3635:3652,394:420]+=32 ;bad column ticket 1424, exposure 118469
 endif
 
-if docams eq 'r1' and mjd ge 55800 and mjd lt 55805 then begin  ;new ccd starting year 3
+if docams eq 'r1' and mjd ge 55800 and mjd lt 55802 then begin  ;new ccd starting year 3
     bpmhot[1344:1350,2064:4127]+=16
 endif
 
-if docams eq 'r1' and mjd ge 55805 and mjd lt 56112 then begin  ;new ccd starting year 3
+if docams eq 'r1' and mjd ge 55802 and mjd lt 56112 then begin  ;new ccd starting year 3
     ;bpmhot[1344:1350,2064:4127]+=16 ;gone after temp change
 endif
 
