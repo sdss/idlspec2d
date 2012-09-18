@@ -1,8 +1,8 @@
-COMBINEBPM: updated hand edited bad columns
 BBSPEC_EXTRACT: bbspec ymodel moved to HDU 6 in extracted spectra.
 BOSSLOG: New proc.
+COMBINEBPM: updated hand edited bad columns  (ticket 1424, MDO)
 SDSS_PLATE_SORT: Adding ERROR to error messages for easier grepping
-
+SDSSPROC: added masking for hotpixel trails (MDO)
 -------------------------------------------------------------------------------
 v5_5_10 (2012-08-21)
 
