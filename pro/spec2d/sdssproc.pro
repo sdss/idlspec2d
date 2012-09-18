@@ -1299,6 +1299,57 @@ if (keyword_set(applypixflat) AND (readimg OR readivar)) then begin
       if (ct ne 0) then pixflatimg[badpixuse]=0.0
     endelse
 
+                                ; now check for saturated pixels/bad 
+                                ; columns on individual exposure
+                                ; compare to neighbor columns, add
+                                ; columns with hotpixel trail to pixflatimg 
+    
+    if (camname eq 'b1' or camname eq 'b2') and flavor eq 'science' then begin
+        nxsat=n_elements(image[*,0])
+        nysat=n_elements(image[0,*])
+        rowsat=20       ;  number of rows to average
+        threshsat=10    ;  threshold for column comparison
+        satrat=0.05     ;  ratio of column brightness for trail
+        for i=2,nxsat-3 do begin
+            hp=where(image[i,*] gt 60000 and $ 
+                     (pixflatimg[i,*] ge 0.5 or pixflatimg[i,*] eq 0),ct) 
+                                ;  column search for hotpixels gt
+                                ;  60000 not caused by pixflat
+            if ct ne 0 then begin
+                if hp[0] lt nysat/2. and hp[0] +10 +rowsat lt nysat/2.$
+                then begin      ;bottom half compare to neighbor columns
+                    colleft=mean(image[i-1,hp[0]+10:hp[0]+10+rowsat])
+                    colcen=mean(image[i,hp[0]+10:hp[0]+10+rowsat])
+                    colright=mean(image[i+1,hp[0]+10:hp[0]+10+rowsat])
+                                ; if difference greater than
+                                ; threshold, mask to center
+                    if colcen-colleft gt threshsat and colcen-colright gt $ 
+                      threshsat and colleft gt 0 and colcen gt 0 and $
+                      colright gt 0 and (colcen-colleft)/colcen gt satrat and $
+                      (colcen-colright)/colcen gt satrat $ 
+                      then pixflatimg[i,hp[0]-3:nysat/2.]=0.0
+                endif  
+                                ; if hotpixel near center, mask to center
+                if hp[0] lt nysat/2. and hp[0] +10 +rowsat ge nysat/2. $ 
+                  then pixflatimg[i,hp[0]-3:nysat/2.]=0.0
+                
+                if max(hp) gt nysat/2. and max(hp)-10-rowsat gt nysat/2. $
+                  then begin    ;top half same as above
+                    colleft=mean(image[i-1,max(hp)-10-rowsat:max(hp)-10])
+                    colcen=mean(image[i,max(hp)-10-rowsat:max(hp)-10])
+                    colright=mean(image[i+1,max(hp)-10-rowsat:max(hp)-10])
+                    if colcen-colleft gt threshsat and colcen-colright gt $ 
+                      threshsat and colleft gt 0 and colcen gt 0 and $
+                      colright gt 0 and (colcen-colleft)/colcen gt satrat and $
+                      (colcen-colright)/colcen gt satrat $ 
+                      then pixflatimg[i,nysat/2.:max(hp)+3]=0.0
+                endif 
+                if max(hp) gt nysat/2. and max(hp)-10 -rowsat le nysat/2. $
+                  then pixflatimg[i,nysat/2.:max(hp)+3]=0.0
+            endif
+        endfor
+    endif
+
     if (readimg) then image /= (pixflatimg + (pixflatimg LE 0))
     if (NOT keyword_set(minflat)) then minflat = 0.0
     if (NOT keyword_set(maxflat)) then maxflat = 1.0e10
