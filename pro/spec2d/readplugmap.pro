@@ -316,7 +316,8 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
       if (keyword_set(tsobj)) then begin
 
          ; Propagate CALIB_STATUS information:
-         plugmap.calib_status = tsobj.calib_status
+         if tag_exist(tsobj, 'CALIB_STATUS') then $
+            plugmap.calib_status = tsobj.calib_status
 
          ; Assume that all objects not called a 'GALAXY' are stellar objects
          qstar = strmatch(plugmap.objtype, 'GALAXY*') EQ 0
