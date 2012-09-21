@@ -221,6 +221,12 @@ function flux_distortion, objflux, objivar, andmask, ormask, plugmap=plugmap, $
    endif
 
    ;----------
+   ; Mask any flux values associated with catastrophically bad astrometry
+   ; (ASB, 2012sep):
+   if tag_exist(plugmap, 'CALIB_STATUS') then plugmap.calibflux_ivar *= $
+      ((plugmap.calib_status AND sdss_flagval('CALIB_STATUS', 'ASTROMBAD')) eq 0)
+
+   ;----------
    ; Explicitly select only SPECTROPHOTO_STD and REDDEN_STD stars
    ; on the first pointing offset (if there are multiple pointings),
    ; and with a positive flux in gri-bands,
