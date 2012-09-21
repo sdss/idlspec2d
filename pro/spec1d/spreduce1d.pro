@@ -729,6 +729,13 @@ endif
        zwarning[*,iobj] = zwarning[*,iobj] OR sdss_flagval('ZWARNING', 'SKY')
    endfor
 
+   ; Warning: Catastrophically bad targeting data.
+   if tag_exist(plugmap, 'CALIB_STATUS') then begin
+      astrombad_flag = sdss_flagval('CALIB_STATUS', 'ASTROMBAD')
+      for iobj=0, nobj-1 do if (max(plugmap[iobj].calib_status AND astrombad_flag) GT 0) then $
+         zwarning[*,iobj] = zwarning[*,iobj] OR sdss_flagval('ZWARNING', 'BAD_TARGET')
+   endif
+
    ; Warning: too little wavelength coverage.
    qflag = res_all.wcoverage LT 0.18
    zwarning = zwarning OR qflag * sdss_flagval('ZWARNING', 'LITTLE_COVERAGE')

@@ -285,6 +285,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
       addtags = replicate(create_struct( $
        'CALIBFLUX', fltarr(5), $
        'CALIBFLUX_IVAR', fltarr(5), $
+       'CALIB_STATUS', lonarr(5), $
        'SFD_EBV', 0.), n_elements(plugmap))
       plugmap = struct_addtags(plugmap, addtags)
 
@@ -313,6 +314,9 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
       endif
 
       if (keyword_set(tsobj)) then begin
+
+         ; Propagate CALIB_STATUS information:
+         plugmap.calib_status = tsobj.calib_status
 
          ; Assume that all objects not called a 'GALAXY' are stellar objects
          qstar = strmatch(plugmap.objtype, 'GALAXY*') EQ 0

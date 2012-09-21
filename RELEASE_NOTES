@@ -1,8 +1,13 @@
 BBSPEC_EXTRACT: bbspec ymodel moved to HDU 6 in extracted spectra.
 BOSSLOG: New proc.
 COMBINEBPM: updated hand edited bad columns  (ticket 1424, MDO)
+READPLUGMAP: append CALIB_STATUS when /calibobj is passed
+  (ticket #1583, A. Bolton, Utah)
 SDSS_PLATE_SORT: Adding ERROR to error messages for easier grepping
 SDSSPROC: added masking for hotpixel trails (MDO)
+SPREDUCE1D: push CALIB_STATUS->ASTROMBAD to ZWARNING->BAD_TARGET
+  (ticket #1583, A. Bolton, Utah)
+
 -------------------------------------------------------------------------------
 v5_5_10 (2012-08-21)
 
