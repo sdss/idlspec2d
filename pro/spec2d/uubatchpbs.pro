@@ -38,7 +38,7 @@
 ;                remote machine before executing Spectro-1D.  This allows
 ;                you to batch jobs using a version other than that which
 ;                is declared current under UPS.
-;   upsversutils - If set, then do a "setup idlspecutils $IDLUTILS" on the
+;   upsversutils - If set, then do a "setup idlutils $IDLUTILS" on the
 ;                remote machine.
 ;   scratchdir   - If set, then treat this as topdir until the computation is complete
 ;   zcode      - If set, run Zcode in auto mode.
@@ -381,6 +381,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
             ; Set up requested code version
             if (keyword_set(upsvers2d)) then $
              printf, olun, 'setup idlspec2d '+upsvers2d
+            if (keyword_set(upsversutils)) then printf, olun, 'setup idlutils '+upsversutils
 
             ; Create sorted photoPlate files
             for i=0, n_elements(planfile2d)-1 do $
@@ -395,9 +396,9 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          ; Run Spectro-1D
          if (keyword_set(upsvers1d)) then $
           printf, olun, 'setup idlspec2d '+upsvers1d
+         if (keyword_set(upsversutils)) then printf, olun, 'setup idlutils '+upsversutils
          printf, olun, 'echo '+fq+'spreduce1d,"'+platefile+'"'+run1dstr+fq+' | idl'
          
-         if (keyword_set(upsversutils)) then printf, olun, 'setup idlutils '+upsversutils
 
          ; Run Zcode
          if (keyword_set(zcode)) then begin
