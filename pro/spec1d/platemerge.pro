@@ -204,10 +204,11 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
     'specprimary' ,  0B, $
     'specobj_id'  ,  0L, $
     'nspecobs'    ,   0, $
-    'z_person'    , 0.0, $
-    'class_person',  0L, $
-    'z_conf_person', 0L, $
-    'comments_person', '', $
+;;- SB Oct 2012: remove QSO VAC inputs for DR10
+;;    'z_person'    , 0.0, $
+;;    'class_person',  0L, $
+;;    'z_conf_person', 0L, $
+;;    'comments_person', '', $
     'calibflux'   , fltarr(5), $
     'calibflux_ivar', fltarr(5) )
 
@@ -220,7 +221,9 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
 
       readspec, plist[ifile].plate, mjd=plist[ifile].mjd, $
        run2d=strtrim(plist[ifile].run2d), run1d=strtrim(plist[ifile].run1d), $
-       zans=zans, zmanual=zmanual, plugmap=plugmap, /silent
+       zans=zans, $  ;; zmanual=zmanual, 
+       plugmap=plugmap, /silent
+      
       zans = struct_selecttags(zans, except_tags='OBJID')
 
 ; ASB 2011 Mar: append info on best non-galaxy and non-qso redshifts/classes:
@@ -298,12 +301,13 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
        outdat[indx].deredsn2 = plist[ifile].deredsn2
 
       ; Read the following from the manual inspection
-      if (keyword_set(zmanual[0])) then begin
-         outdat[indx].z_person = zmanual.z_person
-         outdat[indx].class_person = zmanual.class_person
-         outdat[indx].z_conf_person = zmanual.z_conf_person
-         outdat[indx].comments_person = zmanual.comments
-      endif
+      ;- SB Oct 2012: removed for DR10
+      ;; if (keyword_set(zmanual[0])) then begin
+      ;;    outdat[indx].z_person = zmanual.z_person
+      ;;    outdat[indx].class_person = zmanual.class_person
+      ;;    outdat[indx].z_conf_person = zmanual.z_conf_person
+      ;;    outdat[indx].comments_person = zmanual.comments
+      ;; endif
 
       ; Get PRIMTARGET+SECTARGET with those values from
       ; the plug-map structure in spPlate file.
@@ -461,10 +465,10 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
     'ancillary_target1', 0LL, $
     'tileid'     ,  0L, $
     'objc_type'  ,  '', $
-    'modelflux'  ,  fltarr(5), $
-    'z_person'   , 0.0, $
-    'class_person', 0L, $
-    'z_conf_person', 0L )
+    'modelflux'  ,  fltarr(5) )
+    ;; 'z_person'   , 0.0, $
+    ;; 'class_person', 0L, $
+    ;; 'z_conf_person', 0L )
 
    tag_alias = [['SPECPRIMARY','PRIMARY'], $
     ['FIBERID','FIBER'], $

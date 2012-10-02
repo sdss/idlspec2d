@@ -42,19 +42,27 @@
 ;   N_QSO_ZGOOD    : number of previous with confident class & z
 ;   N_QSO_ISQSO    : number of previous that are QSOs (spectro class)
 ;   N_QSO_LYA      : number of previous that have 2.1 < z < 3.0
-;   N_QSO_SCANNED  : number of FPG-scanned unique QSO sample targets
-;   N_LYA_INCOMP   : confident 2.1 < z < 3.0 FPG QSOs missed by pipeline
-;   N_LYA_IMPURE   : pipeline 2.1 < z < 3.0 QSOs w/ conflicting FPG info
 ;   N_SKY          : number of sky spectra
 ;   N_SKY_UNIQ     : number of unique sky-spectrum lines of sight
 ;   N_STD          : number of spectrophoto standard spectra
 ;   N_STD_UNIQ     : number of unique spectrophoto standards
 ;   N_OTHER        : number of other spectra
 ;   N_OTHER_UNIQ   : number of unique other objects
+;        
+;  Removed for DR10:
+;   N_QSO_SCANNED  : number of FPG-scanned unique QSO sample targets
+;   N_LYA_INCOMP   : confident 2.1 < z < 3.0 FPG QSOs missed by pipeline
+;   N_LYA_IMPURE   : pipeline 2.1 < z < 3.0 QSOs w/ conflicting FPG info
 ;
 ;
 ; WRITTEN BY:
 ;  bolton@utah 2012apr--jun
+;        
+;  UPDATES:
+;     Decoupled FPG QSO scans from spAll for DR10;
+;     removed incompleteness and impurity statistics here.
+;     Could be re-added based upon final DRxQ.fits input when available.
+;        -- Stephen Bailey, Oct 2012
 ;
 ;-
 
@@ -87,10 +95,7 @@ cols = [ $
        'FIBER2FLUX', $
        'FIBER2MAG', $
        'SPECPRIMARY', $
-       'SN_MEDIAN', $
-       'Z_PERSON', $
-       'CLASS_PERSON', $
-       'Z_CONF_PERSON']
+       'SN_MEDIAN' ]
 
 ostruc = {run2d: run2d, $
           run1d: run1d, $
@@ -117,9 +122,9 @@ ostruc = {run2d: run2d, $
           n_qso_zgood: 0L, $
           n_qso_isqso: 0L, $
           n_qso_lya: 0L, $
-          n_qso_scanned: 0L, $
-          n_lya_incomp: 0L, $
-          n_lya_impure: 0L, $
+          ;; n_qso_scanned: 0L, $
+          ;; n_lya_incomp: 0L, $
+          ;; n_lya_impure: 0L, $
           n_sky: 0L, $
           n_sky_uniq: 0L, $
           n_std: 0L, $
@@ -200,7 +205,6 @@ ostruc.n_cmloz_zgood = total(is_loz * is_cmass * (spall.specprimary gt 0.) * (sp
 ; How many are known to be galaxies?
 ostruc.n_cmloz_isgal = total(is_loz * is_cmass * (spall.specprimary gt 0.) * (spall.zwarning_noqso eq 0) $
                              * (strtrim(spall.class_noqso, 2) eq 'GALAXY'))
-
 ; Get the QSO sample:
 is_qsotarg = ((spall.boss_target1 AND 3298535930880LL) NE 0) * with_data
 
@@ -212,80 +216,85 @@ ostruc.n_qso_isqso = total(is_qsotarg * (spall.specprimary gt 0) * (spall.zwarni
 ostruc.n_qso_lya = total(is_qsotarg * (spall.specprimary gt 0) * (spall.zwarning eq 0) $
                           * (strtrim(spall.class, 2) eq 'QSO') * (spall.z ge 2.1) * (spall.z le 3.0))
 
-; spAll subset for objects with FPG inspections:
-wh_fpg = where(spall.z_conf_person gt 0)
-spall_fpg = spall[wh_fpg]
-
-; spAll subset for QSO target specprimary:
-wh_qso = where(is_qsotarg and (spall.specprimary gt 0))
-spall_qso = spall[wh_qso]
-
-;help, where(spall_qso.z_conf_person eq 0) 
-;<Expression>    LONG      = Array[299]
-
-; See if all the FPG stuff matches internally:
-;spherematch, spall_fpg.plug_ra, spall_fpg.plug_dec, spall_fpg.plug_ra, spall_fpg.plug_dec, $
-;             1.0/3600., m1, m2, d12, maxmatch=0
-;wh_cross = where(m1 ne m2)
-;m1 = m1[wh_cross]
-;m2 = m2[wh_cross]
-;splot, spall_fpg[m1].z_person, spall_fpg[m2].z_person, ps=1, color=2
-;print, minmax(spall_fpg[m1].z_person - spall_fpg[m2].z_person)
-;print, minmax(spall_fpg[m1].z_conf_person - spall_fpg[m2].z_conf_person)
-;print, minmax(spall_fpg[m1].class_person - spall_fpg[m2].class_person)
-; There are a couple strange mis-matches, but all seems to be in
-; reasonably good agreements...
-
-spherematch, spall_qso.plug_ra, spall_qso.plug_dec, spall_fpg.plug_ra, spall_fpg.plug_dec, $
-             1./3600., m_qso, m_fpg, d12, maxmatch=0
-
-; Fill in:
-spall_qso[m_qso].z_person = spall_fpg[m_fpg].z_person
-spall_qso[m_qso].z_conf_person = spall_fpg[m_fpg].z_conf_person
-spall_qso[m_qso].class_person = spall_fpg[m_fpg].class_person
-
-; Comparison computations:
-dzmax = 0.05
-pipe_zgood = (spall_qso.zwarning eq 0) and (strtrim(spall_qso.class, 2) eq 'QSO')
-fpg_zgood = (spall_qso.z_conf_person ge 3) and (spall_qso.class_person eq 3)
-pipe_zconf = (spall_qso.zwarning eq 0)
-fpg_zconf = (spall_qso.z_conf_person ge 3)
-in_agreement = abs(spall_qso.z - spall_qso.z_person) le dzmax
-is_scanned = spall_qso.z_conf_person gt 0
-in_range_pipe = (spall_qso.z ge 2.1) and (spall_qso.z le 3.0)
-in_range_fpg = (spall_qso.z_person ge 2.1) and (spall_qso.z_person le 3.0)
-
-
-
-; Various other trial comparisons, none of which appear to be super-informative:
-;whx = where(is_scanned * pipe_zgood * (spall_qso.z_conf_person ge 3) * $
-;            (spall_qso.class_person eq 4) * (spall_qso.z ge 2.0))
-
-;whx = where(is_scanned * pipe_zgood * (spall_qso.z_conf_person ge 3) * (spall_qso.z ge 2.0) * $
-;            (spall_qso.class_person eq 1))
-
-
-; N.B.: If it's a GALAXY, FPG doesn't usually provide a redshift.
-
-; Number scanned by FPG:
-ostruc.n_qso_scanned = total(is_scanned)
-
-; "Impurity": both confident, but in disagreement:
-is_impure = (in_agreement eq 0) * pipe_zgood * in_range_pipe * fpg_zconf
-
-;wh_junk = where(is_impure)
-;uuplotspec, spall_qso[wh_junk].plate, spall_qso[wh_junk].fiberid, mjd=spall_qso[wh_junk].mjd
-; A few absorption issues, a few line mis-IDs.
-
-; "Incompleteness": FPG confident, pipeline not:
-is_incomplete = fpg_zgood * (pipe_zgood eq 0) * in_range_fpg
-;wh_junk = where(is_incomplete)
-;uuplotspec, spall_qso[wh_junk].plate, spall_qso[wh_junk].fiberid, mjd=spall_qso[wh_junk].mjd
-; Low SNR, negative emission, small-delta-chi2 between two reasonably
-; close z's.  Those are the main explanations.
-
-ostruc.n_lya_incomp = total(is_incomplete)
-ostruc.n_lya_impure = total(is_impure)
+;;-------------------------------------------------------------------
+;; START FPG QSO SCAN COMPARISON
+;;  ; spAll subset for objects with FPG inspections:
+;;  wh_fpg = where(spall.z_conf_person gt 0)
+;;  spall_fpg = spall[wh_fpg]
+;;  
+;;  ; spAll subset for QSO target specprimary:
+;;  wh_qso = where(is_qsotarg and (spall.specprimary gt 0))
+;;  spall_qso = spall[wh_qso]
+;;  
+;;  ;help, where(spall_qso.z_conf_person eq 0) 
+;;  ;<Expression>    LONG      = Array[299]
+;;  
+;;  ; See if all the FPG stuff matches internally:
+;;  ;spherematch, spall_fpg.plug_ra, spall_fpg.plug_dec, spall_fpg.plug_ra, spall_fpg.plug_dec, $
+;;  ;             1.0/3600., m1, m2, d12, maxmatch=0
+;;  ;wh_cross = where(m1 ne m2)
+;;  ;m1 = m1[wh_cross]
+;;  ;m2 = m2[wh_cross]
+;;  ;splot, spall_fpg[m1].z_person, spall_fpg[m2].z_person, ps=1, color=2
+;;  ;print, minmax(spall_fpg[m1].z_person - spall_fpg[m2].z_person)
+;;  ;print, minmax(spall_fpg[m1].z_conf_person - spall_fpg[m2].z_conf_person)
+;;  ;print, minmax(spall_fpg[m1].class_person - spall_fpg[m2].class_person)
+;;  ; There are a couple strange mis-matches, but all seems to be in
+;;  ; reasonably good agreements...
+;;  
+;;  spherematch, spall_qso.plug_ra, spall_qso.plug_dec, spall_fpg.plug_ra, spall_fpg.plug_dec, $
+;;              1./3600., m_qso, m_fpg, d12, maxmatch=0
+;;  
+;;  ; Fill in:
+;;  spall_qso[m_qso].z_person = spall_fpg[m_fpg].z_person
+;;  spall_qso[m_qso].z_conf_person = spall_fpg[m_fpg].z_conf_person
+;;  spall_qso[m_qso].class_person = spall_fpg[m_fpg].class_person
+;;  
+;;  ; Comparison computations:
+;;  dzmax = 0.05
+;;  pipe_zgood = (spall_qso.zwarning eq 0) and (strtrim(spall_qso.class, 2) eq 'QSO')
+;;  fpg_zgood = (spall_qso.z_conf_person ge 3) and (spall_qso.class_person eq 3)
+;;  pipe_zconf = (spall_qso.zwarning eq 0)
+;;  fpg_zconf = (spall_qso.z_conf_person ge 3)
+;;  in_agreement = abs(spall_qso.z - spall_qso.z_person) le dzmax
+;;  is_scanned = spall_qso.z_conf_person gt 0
+;;  in_range_pipe = (spall_qso.z ge 2.1) and (spall_qso.z le 3.0)
+;;  in_range_fpg = (spall_qso.z_person ge 2.1) and (spall_qso.z_person le 3.0)
+;;  
+;;  
+;;  
+;;  ; Various other trial comparisons, none of which appear to be super-informative:
+;;  ;whx = where(is_scanned * pipe_zgood * (spall_qso.z_conf_person ge 3) * $
+;;  ;            (spall_qso.class_person eq 4) * (spall_qso.z ge 2.0))
+;;  
+;;  ;whx = where(is_scanned * pipe_zgood * (spall_qso.z_conf_person ge 3) * (spall_qso.z ge 2.0) * $
+;;  ;            (spall_qso.class_person eq 1))
+;;  
+;;  
+;;  ; N.B.: If it's a GALAXY, FPG doesn't usually provide a redshift.
+;;  
+;;  ; Number scanned by FPG:
+;;  ostruc.n_qso_scanned = total(is_scanned)
+;;  
+;;  ; "Impurity": both confident, but in disagreement:
+;;  is_impure = (in_agreement eq 0) * pipe_zgood * in_range_pipe * fpg_zconf
+;;  
+;;  ;wh_junk = where(is_impure)
+;;  ;uuplotspec, spall_qso[wh_junk].plate, spall_qso[wh_junk].fiberid, mjd=spall_qso[wh_junk].mjd
+;;  ; A few absorption issues, a few line mis-IDs.
+;;  
+;;  ; "Incompleteness": FPG confident, pipeline not:
+;;  is_incomplete = fpg_zgood * (pipe_zgood eq 0) * in_range_fpg
+;;  ;wh_junk = where(is_incomplete)
+;;  ;uuplotspec, spall_qso[wh_junk].plate, spall_qso[wh_junk].fiberid, mjd=spall_qso[wh_junk].mjd
+;;  ; Low SNR, negative emission, small-delta-chi2 between two reasonably
+;;  ; close z's.  Those are the main explanations.
+;;  
+;;  ostruc.n_lya_incomp = total(is_incomplete)
+;;  ostruc.n_lya_impure = total(is_impure)
+;;  
+;; END FPG QSO SCAN COMPARISON
+;;-------------------------------------------------------------------
 
 ; Spectrophotometric standards:
 is_std = strmatch(spall.objtype, '*SPECTROPHOTO_STD*') * with_data

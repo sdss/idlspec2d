@@ -1,4 +1,11 @@
-SJB 2012-10-01:
+SJB 2012-10-02:
+PLATEMERGE: removed Z_PERSON, CLASS_PERSON, Z_CONF_PERSON,
+    COMMENTS_PERSON from spAll so that quasar catalogs can proceed on
+    timescale indepdenent of pipeline.  DRxQ will be authoritative
+    source of FPG scans rather than also propagating to spAll.
+SPECTRO_SUMMARY: removed N_QSO_SCANNED, N_LYA_INCOMP, and N_LYA_IMPURE
+    statistics.
+ 
 PLATELIST: Change defult input/output location to be in RUN2D subdir
     to make it easier to work with multiple versions.  Can be overriden
     with TOPDIR and OUTDIR options, and multiple RUN2D versions can
