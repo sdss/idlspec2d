@@ -107,10 +107,10 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
 
    ;----------
    ; Read platelist
-   
-   platelist, plist=plist, topdir=indir
+      
+   platelist, plist=plist, topdir=indir, run2d=run2d
    if (NOT keyword_set(plist)) then return
-
+      
    ;----------
    ; Find out if this plist includes dereddened SN2 values
    
@@ -549,8 +549,8 @@ end
 ;------------------------------------------------------------------------------
 pro platemerge, run2d=run2d, indir=indir, _EXTRA=Extra
 
-   platelist, plist=plist, topdir=indir
-
+   platelist, plist=plist, topdir=indir, run2d=run2d
+   
    if (NOT keyword_set(plist)) then return
 
    alldir = strtrim(plist.run2d)

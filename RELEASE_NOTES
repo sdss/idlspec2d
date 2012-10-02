@@ -1,3 +1,11 @@
+SJB 2012-10-01:
+PLATELIST: Change defult input/output location to be in RUN2D subdir
+    to make it easier to work with multiple versions.  Can be overriden
+    with TOPDIR and OUTDIR options, and multiple RUN2D versions can
+    still be combined into a single platelist using RUN2D='*' or
+    RUN2D=[x, y, z], in which case the platelist is written to
+    $BOSS_SPECTRO_REDUX (not in the RUN2D subdir).
+
 BBSPEC_EXTRACT: bbspec ymodel moved to HDU 6 in extracted spectra.
 BOSSLOG: New proc.
 COMBINEBPM: updated hand edited bad columns  (ticket 1424, MDO)

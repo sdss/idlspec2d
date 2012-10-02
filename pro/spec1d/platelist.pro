@@ -9,7 +9,7 @@
 ;   platelist, [ /create, topdir=, outdir=, run2d=, run1d=, $
 ;    /purge2d, /purge1d, /killpartial, skipcart=, /rawsn2, plist= ]
 ;
-; INPUTS:
+; INPUTS
 ;
 ; OPTIONAL INPUTS:
 ;   create      - If set, then re-generate the "platelist.fits" file;
@@ -19,9 +19,11 @@
 ;   outdir      - Optional override of both topdir and $BOSS_SPECTRO_REDUX
 ;                 for output directory location
 ;   run2d       - Optional RUN2D subdirectories to include in outputs;
-;                 set to '' to not search subdirectories; default to '*'
+;                 set to '' to not search subdirectories;
+;                 set to '*' to search all subdirs; default to $RUN2D
 ;   run1d       - Optional RUN1D subdirectories to include in outputs
-;                 set to '' to not search subdirectories; default to '*'
+;                 set to '' to not search subdirectories;
+;                 set to '*' to search all subdirs; default to $RUN1D
 ;   purge2d     - If set, then delete all log files for plates that are
 ;                 considered to be 'RUNNING', but not those that are 'Done',
 ;                 'Pending' or 'FAILED'.  Those plates are then listed as
@@ -51,16 +53,30 @@
 ;   plist       - Output structure with information for each plate.
 ;
 ; COMMENTS:
-;   The following files are generated:
-;     $BOSS_SPECTRO_REDUX/platelist.fits
-;     $BOSS_SPECTRO_REDUX/platelist.txt
-;     $BOSS_SPECTRO_REDUX/platelist.html
-;     $BOSS_SPECTRO_REDUX/platelist-mjdsort.txt
-;     $BOSS_SPECTRO_REDUX/platelist-mjdsort.html
-;     $BOSS_SPECTRO_REDUX/platequality.txt
-;     $BOSS_SPECTRO_REDUX/platequality.html
-;     $BOSS_SPECTRO_REDUX/platequality-mjdsort.txt
-;     $BOSS_SPECTRO_REDUX/platequalitymjdsort.html
+;   Output directory:
+;     If OUTDIR is set, use that.
+;     Otherwise, if a single RUN2D is given, use $BOSS_SPECTRO_REDUX/[RUN2D]/
+;        --> Note: RUN2D option, not $RUN2D environment variable
+;     Otherwise (none or multiple RUN2D), use $BOSS_SPECTRO_REDUX/
+;     Option TOPDIR can override the value of $BOSS_SPECTRO_REDUX
+;        in the above, but it won't override OUTDIR
+;  
+;   RUN2D/RUN1D = '*' means seach all subdirs
+;           
+;   TOPDIR is used to override $BOSS_SPECTRO_REDUX for both input and
+;   output.  OUTDIR can be used to override TOPDIR for output if you want
+;   to get input from one dir while writing output to a different dir.
+;        
+;   The following files are generated in the output directory
+;     platelist.fits
+;     platelist.txt
+;     platelist.html
+;     platelist-mjdsort.txt
+;     platelist-mjdsort.html
+;     platequality.txt
+;     platequality.html
+;     platequality-mjdsort.txt
+;     platequalitymjdsort.html
 ;
 ;   If INFILE is a list of plan files, i.e.
 ;     spPlancomb-0306-51690.par
@@ -126,6 +142,8 @@
 ;   11-Jan-2011  Stephen Bailey, LBNL
 ;     * Updated (S/N)^2 thresholds for "bad"
 ;     * Added get_lastline to be faster than spawn tail -1
+;   21-Aug-2012  Stephen Bailey, LBNL
+;     * Changed default output directory to RUN2D
 ;------------------------------------------------------------------------------
 
 ;----------
@@ -219,6 +237,23 @@ pro platelist, plist=plist, create=create, $
  purge2d=purge2d, purge1d=purge1d, killpartial=killpartial, $
  skipcart=skipcart, rawsn2=rawsn2
 
+   if (n_elements(run2d1) GT 0) then run2d = strtrim(run2d1,2) $
+    else run2d = getenv('RUN2D')
+    
+   if (n_elements(run1d1) GT 0) then begin
+      run1d = strtrim(run1d1,2)
+   endif else begin
+      if (n_elements(run2d) EQ 1) then begin
+         run1d = run2d
+      endif else begin
+         if (n_elements(run2d) GT 1) then begin
+            run1d = '*'
+         endif else begin
+            run1d = getenv('RUN1D')
+         endelse
+      endelse
+   endelse
+
    if (keyword_set(topdir1)) then topdir = topdir1 $
     else topdir = getenv('BOSS_SPECTRO_REDUX')
 
@@ -229,14 +264,13 @@ pro platelist, plist=plist, create=create, $
            outdir = current_dir + '/' + outdir
        endif
    endif else begin
+      ; If exactly one run2d is given, use that subdir
+      if (n_elements(run2d) EQ 1) && (run2d NE '*') then $
+       outdir = topdir + '/' + run2d $
+      else $
        outdir = topdir
    endelse
-
-   if (n_elements(run2d1) GT 0) then run2d = strtrim(run2d1,2) $
-    else run2d = '*'
-   if (n_elements(run1d1) GT 0) then run1d = strtrim(run1d1,2) $
-    else run1d = '*'
-
+   
    if keyword_set(skipcart) then begin
       splog, 'WARNING: Dropping plates from carts', skipcart
    endif
@@ -245,7 +279,7 @@ pro platelist, plist=plist, create=create, $
    ; If the /CREATE flag is not set, and the platelist file already exists
    ; on disk, then simply return the info in that file.
 
-   fitsfile = djs_filepath('platelist.fits', root_dir=topdir)
+   fitsfile = djs_filepath('platelist.fits', root_dir=outdir)
 
    if (NOT keyword_set(create) AND NOT keyword_set(purge2d) $
     AND NOT keyword_set(purge1d)) then begin
@@ -968,6 +1002,8 @@ pro platelist, plist=plist, create=create, $
          endif else begin
             ;----------
             ; Find the state of the 1D reductions -- spZbest file is missing
+
+            print, run1d, ' ', (*zlogfile[i])[j]
 
             if (file_search((*zlogfile[i])[j])) then begin
                ;;; spawn, 'tail -1 '+(*zlogfile[i])[j], lastline
