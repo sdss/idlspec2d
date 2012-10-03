@@ -181,7 +181,7 @@ pro spreduce1d, platefile, fiberid=fiberid, run1d=run1d1, $
    ; Compute the S/N in SDSS filters (before doing /chop_data)
 
    objloglam = objloglam0 + lindgen(npixobj) * objdloglam
-   snmed = sn_median(objloglam, objflux, objivar)
+   snmed = sn_median(objloglam, objflux, objivar, sn_all=sn_all)
 
    ;----------
    ;    Chop wavelength range of data for all fits if /CHOP_DATA specified
@@ -539,6 +539,7 @@ flambda2fnu = 0 ; Free memory
             wcoverage: 0.0, $
             zwarning:  0L, $
             sn_median: fltarr(5), $
+            sn_median_all: 0.0, $
             chi68p: 0.0, $
             fracnsigma: fltarr(nfsig), $
             fracnsighi: fltarr(nfsig), $
@@ -570,6 +571,7 @@ flambda2fnu = 0 ; Free memory
       res_all[*,iobj].anyormask = anyormask[iobj]
       for j=0, 4 do $
        res_all[*,iobj].sn_median[j] = snmed[j,iobj]
+      res_all[*,iobj].sn_median_all = sn_all[iobj]
    endfor
 
    res_all.chi68p = chi68p
