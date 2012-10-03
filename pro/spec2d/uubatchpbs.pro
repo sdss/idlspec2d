@@ -124,7 +124,8 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
    if (not keyword_set(scratchdir)) then scratchdir = getenv('BOSS_SCRATCH_DIR')
    if (keyword_set(scratchdir)) then begin
      if strpos(scratchdir,'/',strlen(scratchdir)-1) lt 0 then scratchdir+='/'
-     splog, 'Setting SCRATCHDIR=', scratchdir
+     if (scratchdir eq topdir) then scratchdir = 0 $
+     else splog, 'Setting SCRATCHDIR=', scratchdir
    endif
    
    if (keyword_set(run2d1)) then run2d = strtrim(run2d1,2) $
