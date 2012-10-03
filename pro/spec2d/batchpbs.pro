@@ -37,6 +37,7 @@
 ;   zcode      - If set, run Zcode in auto mode.
 ;   queue      - If set, sets the submit queue.
 ;   skip2d     - If set, then skip the Spectro-2D reductions.
+;   skip1d     - If set, then skip the Spectro-1D reductions.
 ;   clobber    - If set, then reduce all specified plates.  The default is
 ;                to not reduce plates where the script file already exists.
 ;   nosubmit   - If set, generate script file but don't submit to queue
@@ -59,6 +60,7 @@
 ;
 ; REVISION HISTORY:
 ;   17-Jan-2010  Written by D. Schlegel, LBL
+;   03-Oct-2012  Added /skip1d option, Stephen Bailey LBL
 ;-
 ;------------------------------------------------------------------------------
 pro batchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
@@ -68,7 +70,7 @@ pro batchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
  rawdata_dir=rawdata_dir, $
  boss_spectro_redux=boss_spectro_redux, $
  zcode=zcode, $
- queue=queue, skip2d=skip2d, clobber=clobber, nosubmit=nosubmit
+ queue=queue, skip2d=skip2d, skip1d=skip1d, clobber=clobber, nosubmit=nosubmit
 
    if (size(platenums1,/tname) EQ 'STRING') then platenums = platenums1 $
     else if (keyword_set(platenums1)) then $
@@ -227,9 +229,11 @@ pro batchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          endif
 
          ; Run Spectro-1D
-         if (keyword_set(upsvers1d)) then $
-          printf, olun, 'setup idlspec2d '+upsvers1d
-         printf, olun, 'echo '+fq+'spreduce1d,"'+platefile+'"'+run1dstr+fq+' | idl'
+         if (keyword_set(skip1d) EQ 0) then begin
+            if (keyword_set(upsvers1d)) then $
+             printf, olun, 'setup idlspec2d '+upsvers1d
+            printf, olun, 'echo '+fq+'spreduce1d,"'+platefile+'"'+run1dstr+fq+' | idl'
+         endif
 
          ; Run Zcode
          if (keyword_set(zcode)) then begin

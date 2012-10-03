@@ -1,3 +1,7 @@
+SJB 2012-10-03:
+BATCHPBS: Added /skip1d option
+Added bin/copy_spPlan.py
+
 SJB 2012-10-02:
 PLATEMERGE: removed Z_PERSON, CLASS_PERSON, Z_CONF_PERSON,
     COMMENTS_PERSON from spAll so that quasar catalogs can proceed on

@@ -1,6 +1,7 @@
 * text=auto !eol
 /Makefile -text
 /RELEASE_NOTES -text
+bin/copy_spPlan.py -text
 bin/fb_classes.py -text
 bin/filecheck.py -text
 bin/getPlugmap -text
