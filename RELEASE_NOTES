@@ -42,6 +42,7 @@ SPREDUCE1D: push CALIB_STATUS->ASTROMBAD to ZWARNING->BAD_TARGET
   (ticket #1583, ASB)
 SPREDUCE1D: Added SN_MEDIAN_ALL (median S/N across all bands) to
   output structure (ticket #1634, ASB).
+SPREDUCE1D: Added ZNUM_NOQSO (Brownstein)
 
 -------------------------------------------------------------------------------
 v5_5_10 (2012-08-21)
