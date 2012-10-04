@@ -53,6 +53,8 @@
 ;   plist       - Output structure with information for each plate.
 ;
 ; COMMENTS:
+;   RUN2D: If option isn't set, use $RUN2D env var
+;   RUN2D/RUN1D = '*' means seach all subdirs
 ;   Output directory:
 ;     If OUTDIR is set, use that.
 ;     Otherwise, if a single RUN2D is given, use $BOSS_SPECTRO_REDUX/[RUN2D]/
@@ -60,8 +62,6 @@
 ;     Otherwise (none or multiple RUN2D), use $BOSS_SPECTRO_REDUX/
 ;     Option TOPDIR can override the value of $BOSS_SPECTRO_REDUX
 ;        in the above, but it won't override OUTDIR
-;  
-;   RUN2D/RUN1D = '*' means seach all subdirs
 ;           
 ;   TOPDIR is used to override $BOSS_SPECTRO_REDUX for both input and
 ;   output.  OUTDIR can be used to override TOPDIR for output if you want
@@ -243,7 +243,7 @@ pro platelist, plist=plist, create=create, $
    if (n_elements(run1d1) GT 0) then begin
       run1d = strtrim(run1d1,2)
    endif else begin
-      if (n_elements(run2d) EQ 1) then begin
+      if (n_elements(run2d1) EQ 1) then begin
          run1d = run2d
       endif else begin
          if (n_elements(run2d) GT 1) then begin

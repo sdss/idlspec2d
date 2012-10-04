@@ -1,3 +1,7 @@
+SJB 2012-10-04:
+COMBINE1FIBER: only set NODATA in AND_MASK if there really is no data
+    on any input spectrum; resolves ticket 1301.
+
 SJB 2012-10-03:
 BATCHPBS: Added /skip1d option
 Added bin/copy_spPlan.py
@@ -16,6 +20,7 @@ PLATELIST: Change defult input/output location to be in RUN2D subdir
     still be combined into a single platelist using RUN2D='*' or
     RUN2D=[x, y, z], in which case the platelist is written to
     $BOSS_SPECTRO_REDUX (not in the RUN2D subdir).
+    Resolves ticket 1659.
 
 BBSPEC_EXTRACT: bbspec ymodel moved to HDU 6 in extracted spectra.
 BOSSLOG: New proc.

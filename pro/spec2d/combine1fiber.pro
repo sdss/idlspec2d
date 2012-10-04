@@ -366,6 +366,8 @@ pro combine1fiber, inloglam, objflux, objivar, $
       if (ibad[0] NE -1) then begin
         if (keyword_set(ormask)) then $
           ormask[ibad] = ormask[ibad] OR pixelmask_bits('NODATA')
+       if (keyword_set(andmask)) then $
+         andmask[ibad] = andmask[ibad] OR pixelmask_bits('NODATA')
       endif
     endif
 
@@ -387,12 +389,6 @@ pro combine1fiber, inloglam, objflux, objivar, $
 
   if (keyword_set(andmask)) then $
     andmask = andmask * (andmask NE -1L)
-
-  ;----------
-  ; Copy the NODATA bad pixels from the ORMASK to the ANDMASK
-
-  if (keyword_set(andmask)) then $
-    andmask = andmask OR (ormask AND pixelmask_bits('NODATA'))
 
   return
 end
