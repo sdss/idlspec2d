@@ -1,3 +1,8 @@
+ASB 2012-10-04:
+PLATEMERGE: Added BOSSPRIMARY tag to replicate SPECPRIMARY but to be
+    immune from downstream modification; changed SPECOBJ_ID to
+    BOSS_SPECOBJ_ID (Ticket #1634).
+
 SJB 2012-10-04:
 COMBINE1FIBER: only set NODATA in AND_MASK if there really is no data
     on any input spectrum; resolves ticket 1301.

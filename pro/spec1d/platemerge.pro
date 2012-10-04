@@ -82,6 +82,7 @@
 ;   17-Mar-2011  Changed EXCLUDE_CLASS behavior, A. Bolton, Utah
 ;   30-Jun-2011  Changed EXCLUDE_CLASS to more specific and correct
 ;                CALC_NOQSO, including proper rchi2diff, A. Bolton, Utah
+;   04-Oct-2012  Added BOSSPRIMARY tag (ASB, Utah).
 ;------------------------------------------------------------------------------
 
 pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
@@ -202,7 +203,8 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
     'ancillary_target1',  0LL, $
     'ancillary_target2',  0LL, $
     'specprimary' ,  0B, $
-    'specobj_id'  ,  0L, $
+    'bossprimary' ,  0B, $
+    'boss_specobj_id'  ,  0L, $
     'nspecobs'    ,   0, $
 ;;- SB Oct 2012: remove QSO VAC inputs for DR10
 ;;    'z_person'    , 0.0, $
@@ -368,7 +370,7 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
     multgroup=multgroup, firstgroup=firstgroup, nextgroup=nextgroup)
 
    ; Set the unique object IDs
-   outdat.specobj_id = ingroup + 1L
+   outdat.boss_specobj_id = ingroup + 1L
 
    for j=0L, n_elements(firstgroup)-1L do begin
       if (firstgroup[j] NE -1) then begin
@@ -385,6 +387,10 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
          endelse
       endif
    endfor
+
+   ; ASB: Copy specprimary into bossprimary
+   ; (Thinking is that specprimary can be superseded downstream.)
+   outdat.bossprimary = outdat.specprimary
 
    splog, 'Time to assign primaries = ', systime(1)-t2, ' sec'
 
