@@ -73,6 +73,7 @@
 ; REVISION HISTORY:
 ;   28-Jun-2000  Written by D. Schlegel, Princeton
 ;   2010-2011: various template-related tweaks and Z_NOQSO, A. Bolton, Utah
+;   01-Oct-2012: Adding ZNUM to the Z_NOQSO section, Joel Brownstein, Utah
 ;------------------------------------------------------------------------------
 pro spreduce1d, platefile, fiberid=fiberid, run1d=run1d1, $
  doplot=doplot, debug=debug, chop_data=chop_data1
@@ -806,24 +807,31 @@ endif
    ;----------
    ; Compute & assign the "_NOQSO" values:
    ; (bolton@utah 2011july)
-
+   ; 01-Oct-2012: Adding ZNUM to the NOQSO structure, Joel Brownstein, Utah
+   
    print, '  Determining non-QSO redshift info.'
    class_all = strtrim(res_all.class,2)
    id_noqso = replicate(-1L, nobj)
    rchi2diff_noqso = replicate(0., nobj)
+   
+   ;adding a column to hold the value of znum 
+   znum = lonarr(nobj)
+   
    for ii = 0L, nobj-1 do begin
       wh_noqso = where(class_all[*,ii] ne 'QSO')
       wh_noqso = (wh_noqso[sort(wh_noqso)])[0:1]
+      znum[ii] = wh_noqso[0] + 1    ;znum calculation
       id_noqso[ii] = wh_noqso[0]
       rchi2diff_noqso[ii] = total(res_all[wh_noqso[0]:wh_noqso[1]-1,ii].rchi2diff)
    endfor
    zans_noqso = (res_all[id_noqso,lindgen(nobj)])[*]
    noqso_struc = replicate( $
-                 {z_noqso: 0., z_err_noqso: 0., zwarning_noqso: 0L, $
+                 {z_noqso: 0., z_err_noqso: 0., znum:0L, zwarning_noqso: 0L, $
                   class_noqso: ' ', subclass_noqso: ' ', $
                   rchi2diff_noqso: 0.}, nobj)
    noqso_struc.z_noqso = zans_noqso.z
    noqso_struc.z_err_noqso = zans_noqso.z_err
+   noqso_struc.znum = znum
    noqso_struc.class_noqso = zans_noqso.class
    noqso_struc.subclass_noqso = zans_noqso.subclass
    noqso_struc.rchi2diff_noqso = rchi2diff_noqso
