@@ -1323,6 +1323,7 @@ if (keyword_set(applypixflat) AND (readimg OR readivar)) then begin
                     colright=mean(image[i+1,hp[0]+10:hp[0]+10+rowsat])
                                 ; if difference greater than
                                 ; threshold, mask to center
+                    if hp[0] lt 3 then hp[0]=3 ;fix edge problem
                     if colcen-colleft gt threshsat and colcen-colright gt $ 
                       threshsat and colleft gt 0 and colcen gt 0 and $
                       colright gt 0 and (colcen-colleft)/colcen gt satrat and $
@@ -1338,6 +1339,7 @@ if (keyword_set(applypixflat) AND (readimg OR readivar)) then begin
                     colleft=mean(image[i-1,max(hp)-10-rowsat:max(hp)-10])
                     colcen=mean(image[i,max(hp)-10-rowsat:max(hp)-10])
                     colright=mean(image[i+1,max(hp)-10-rowsat:max(hp)-10])
+                    if max(hp) gt nysat-4 then hp=nysat-4 ;fix edge problem
                     if colcen-colleft gt threshsat and colcen-colright gt $ 
                       threshsat and colleft gt 0 and colcen gt 0 and $
                       colright gt 0 and (colcen-colleft)/colcen gt satrat and $
