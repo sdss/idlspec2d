@@ -1,3 +1,6 @@
+MDO 2012-10-09:
+SDSSPROC: add case to check if saturated pixel occurs within 3 pixels of top and bottom of image.  (Ticket $1424)
+
 SJB 2012-10-09:
 opfiles/washers.par: remove duplicate entry 3537-55116
 
