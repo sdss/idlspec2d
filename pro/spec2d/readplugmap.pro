@@ -252,7 +252,8 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
              endif  ; status ne 'Y'
          endif else begin
              ; No explicit override; check mjd before washers were available
-             splog, "INFO: no washers.par entry for ", plugname
+             ; don't print info for current plates to keep SoS quiet
+             if (mjd lt 56200) then splog, "INFO: no washers.par entry for ", plugname
              if (mjd lt 55442) then begin
                  splog, "INFO: setting ZOFFSET=0 for MJD", mjd, " < 55442"
                  plugmap.zoffset = 0.0
