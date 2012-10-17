@@ -100,10 +100,8 @@ endif
 
 ;----------
 ; Write the output file:
-print, 'CREATE: '+ozfile
 mwrfits, 0, ozfile, zhdr, /create ; Retain the original spZbest header
 mwrfits, newzans, ozfile
-print, 'DONE'
 
    return
 end
