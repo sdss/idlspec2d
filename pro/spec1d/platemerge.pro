@@ -203,7 +203,7 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
     'ancillary_target1',  0LL, $
     'ancillary_target2',  0LL, $
 ;;- JB Oct 2012: add cas-style specobjid from sas/pro/sdss/sdss_specobjid()
-    'specobjid', 0LL, $
+;    'specobjid', 0LL, $
     'specprimary' ,  0B, $
     'specboss' ,  0B, $
     'boss_specobj_id'  ,  0L, $
@@ -372,9 +372,9 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
    multgroup=multgroup, firstgroup=firstgroup, nextgroup=nextgroup)
 
    ; Set the cas-styled specobjid
-   words= STREGEX(STRTRIM(run2d,2),'^v([0-9]+)_([0-9]+)_([0-9]+)', /SUB, /EXTRACT)
-   rerun= (long(words[1,*])-5L)*10000L+ (long(words[2,*])*100L)+ (long(words[3,*]))
-   outdat.specobjid = sdss_specobjid(plate,fiberid,mjd,rerun)
+   ;words= STREGEX(STRTRIM(run2d,2),'^v([0-9]+)_([0-9]+)_([0-9]+)', /SUB, /EXTRACT)
+   ;rerun= (long(words[1,*])-5L)*10000L+ (long(words[2,*])*100L)+ (long(words[3,*]))
+   ;outdat.specobjid = sdss_specobjid(plate,fiberid,mjd,rerun)
 
 
    ; Set the unique object IDs
