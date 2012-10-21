@@ -733,11 +733,14 @@ endif
    endfor
 
    ; Warning: Catastrophically bad targeting data.
-   if tag_exist(plugmap, 'CALIB_STATUS') then begin
-      astrombad_flag = sdss_flagval('CALIB_STATUS', 'ASTROMBAD')
-      for iobj=0, nobj-1 do if (max(plugmap[iobj].calib_status AND astrombad_flag) GT 0) then $
-         zwarning[*,iobj] = zwarning[*,iobj] OR sdss_flagval('ZWARNING', 'BAD_TARGET')
-   endif
+;   if tag_exist(plugmap, 'CALIB_STATUS') then begin
+;      astrombad_flag = sdss_flagval('CALIB_STATUS', 'ASTROMBAD')
+;      for iobj=0, nobj-1 do if (max(plugmap[iobj].calib_status AND astrombad_flag) GT 0) then $
+;         zwarning[*,iobj] = zwarning[*,iobj] OR sdss_flagval('ZWARNING', 'BAD_TARGET')
+;   endif
+   badflag = sdss_astrombad(plugmap.run, plugmap.camcol, plugmap.field)
+   for iobj=0, nobj-1 do if (badflag[iobj] ne 0) then $
+      zwarning[*,iobj] = zwarning[*,iobj] OR sdss_flagval('ZWARNING', 'BAD_TARGET')
 
    ; Warning: too little wavelength coverage.
    qflag = res_all.wcoverage LT 0.18
