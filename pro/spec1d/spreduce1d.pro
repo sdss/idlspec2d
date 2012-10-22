@@ -867,6 +867,13 @@ endif
    endif
 
    ;----------
+   ; Add the cas-styled specobjid to output
+   zans = struct_addtags(zans, replicate({specobjid:0LL},n_elements(zans)))
+   words= STREGEX(STRTRIM(zans.run2d,2),'^v([0-9]+)_([0-9]+)_([0-9]+)', /SUB, /EXTRACT)
+   rerun= (long(words[1,*])-5L)*10000L+ (long(words[2,*])*100L)+ (long(words[3,*]))
+   zans.specobjid = sdss_specobjid(zans.plate,zans.fiberid,zans.mjd,rerun)
+
+   ;----------
    ; Write the output files
 
    splog, 'Writing output files'
