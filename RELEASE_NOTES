@@ -1,3 +1,13 @@
+-------------------------------------------------------------------------------
+v5_5_12 (2012-10-23) -- DR10 release candidate
+
+SJB 2012-10-23:
+SPREDUCE2D: add photolog_version to log output
+SPCOADD_V5: add EXTNAME keywords to spCFrame and spPlate files
+
+JB 2012-10-22:
+PLATEMERGE, SPREDUCE1D: Add CAS-styled specobjid to spreduce1d output
+
 ASB 2012-10-20:
 FLUX_DISTORTION, SPREDUCE1D: call SDSS_ASTROMBAD rather than looking
 for CALIB_STATUS bit to flag bad fields.  (Ticket #1583).
