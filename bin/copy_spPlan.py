@@ -36,11 +36,13 @@ description="""Copy spPlan files from one redux version to another while replaci
 """)
 parser.add_option("-i", "--input", type="string",  help="input directory [default $BOSS_SPECTRO_REDUX/$RUN2D/]")
 parser.add_option("-o", "--output", type="string",  help="output directory")
-parser.add_option("--run2d", type="string",  help="output RUN2D version")
+parser.add_option("--run2d",  type="string",  help="output RUN2D version")
+parser.add_option("--minmjd", type="int",  help="min MJD to include", default=0)
+parser.add_option("--maxmjd", type="int",  help="max MJD to include", default=100000)
 parser.add_option("-n", "--numplates", type="int",  help="number of plates to copy [default all]")
 parser.add_option("-R", "--randseed", type="int", default=0, help="random seed [default 0]")
 ### parser.add_option("--run1d", type="string",  help="output RUN1D version")
-### parser.add_option("-x", "--xxx",   help="some flag", action="store_true")
+### parser.add_option("-g", "--good",   help="copy only good plates (requires platelist.txt in input dir)", action="store_true")
 opts, args = parser.parse_args()
 
 #- Set random seed so that results are reproducible
@@ -74,6 +76,9 @@ for platedir in sorted(inplates):
     sys.stdout.flush()
     plan2dfiles = glob(platedir + '/spPlan*.par')
     for planfile in plan2dfiles:
+        mjd = int(planfile[-9:-4])
+        if mjd < opts.minmjd or mjd > opts.maxmjd:
+            continue
         outdir = opts.output + "/" + plate
         if not os.path.isdir(outdir):
             os.makedirs(outdir)
@@ -82,3 +87,4 @@ for platedir in sorted(inplates):
 
 #- final blank line print to get CR since we were being fancy with '\r...'
 print
+
