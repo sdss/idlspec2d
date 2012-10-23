@@ -546,14 +546,35 @@ pro spcoadd_v5, spframes, outputname, $
       endfor
 
       mwrfits, flux[*,indx], thisfile, hdr, /create
-      mwrfits, fluxivar[*,indx], thisfile
-      mwrfits, pixelmask[*,indx], thisfile
-      mwrfits, wave[*,indx], thisfile
-      mwrfits, dispersion[*,indx], thisfile
-      mwrfits, plugmap[indx], thisfile
-      mwrfits, skyflux[*,indx], thisfile
-      mwrfits, ximg[*,indx], thisfile
-      mwrfits, superflat[*,indx], thisfile
+      
+      fxaddpar, exthdr, 'EXTNAME', 'IVAR', ' Inverse variance'
+      mwrfits, fluxivar[*,indx], thisfile, exthdr
+      
+      fxaddpar, exthdr, 'EXTNAME', 'MASK', ' Pixel mask'
+      mwrfits, pixelmask[*,indx], thisfile, exthdr
+      
+      fxaddpar, exthdr, 'EXTNAME', 'WAVELENGTH', ' Wavelength solution'
+      mwrfits, wave[*,indx], thisfile, exthdr
+      
+      fxaddpar, exthdr, 'EXTNAME', 'WAVEDISP', ' Wavelength dispersion'
+      mwrfits, dispersion[*,indx], thisfile, exthdr
+      
+      ;; need a different header for plugmap structure
+      ;; undefine it first so that mwrfits doesn't duplicate comments
+      ;; on successive writes
+      undefine, plughdr
+      fxaddpar, plughdr, 'EXTNAME', 'PLUGMAP', ' Plugmap structure'
+      mwrfits, plugmap[indx], thisfile, plughdr
+      
+      fxaddpar, exthdr, 'EXTNAME', 'SKY', ' Subtracted sky flux'
+      mwrfits, skyflux[*,indx], thisfile, exthdr
+      
+      fxaddpar, exthdr, 'EXTNAME', 'X', ' Trace X locations on CCD'
+      mwrfits, ximg[*,indx], thisfile, exthdr
+      
+      fxaddpar, exthdr, 'EXTNAME', 'SUPERFLAT', ' Superflat'
+      mwrfits, superflat[*,indx], thisfile, exthdr
+      
    endfor
    splog, prename=''
 
@@ -764,23 +785,29 @@ pro spcoadd_v5, spframes, outputname, $
 
    ; HDU #1 is inverse variance
    sxaddpar, hdrfloat, 'BUNIT', '1/(1E-17 erg/cm^2/s/Ang)^2'
+   sxaddpar, hdrfloat, 'EXTNAME', 'IVAR', ' Inverse variance'
    mwrfits, finalivar, fulloutname, hdrfloat
 
    ; HDU #2 is AND-pixelmask
+   sxaddpar, hdrlong, 'EXTNAME', 'ANDMASK', ' AND Mask'
    mwrfits, finalandmask, fulloutname, hdrlong
 
    ; HDU #3 is OR-pixelmask
+   sxaddpar, hdrlong, 'EXTNAME', 'ORMASK', ' OR Mask'
    mwrfits, finalormask, fulloutname, hdrlong
 
    ; HDU #4 is dispersion map
    sxaddpar, hdrfloat, 'BUNIT', 'pixels'
+   sxaddpar, hdrfloat, 'EXTNAME', 'WAVEDISP', ' Wavelength dispersion'
    mwrfits, finaldispersion, fulloutname, hdrfloat
 
    ; HDU #5 is plugmap
-   mwrfits, finalplugmap, fulloutname
+   sxaddpar, hdrplug, 'EXTNAME', 'PLUGMAP', ' Plugmap structure'
+   mwrfits, finalplugmap, fulloutname, hdrplug
 
    ; HDU #6 is the sky
-   mwrfits, finalsky, fulloutname
+   sxaddpar, hdrsky, 'EXTNAME', 'SKY', ' Subtracted sky flux'
+   mwrfits, finalsky, fulloutname, hdrsky
 
    return
 end
