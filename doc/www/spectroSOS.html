@@ -93,12 +93,29 @@ $ sos_apocontrol status
 </dl></dd></code><p> 
 	
 There should be four instances of sos_runnerd
-displayed, one per camera. The first line will be "Running", the last line will be "Done".
+displayed, one per camera. The first line will be "N processes running",
+the last line will be "sos_apocontrol finished running!".
 Between those lines should be four instances of sos_runnerd. Each instance will be a long
 line separated by a blank line.<p>
 
 If you do not see see four processes running, stop the processes and then start the
 processes.<p>
+
+<h4>Stop SOS Processes</h4>
+
+<dl><dd><code>
+$ sos_apocontrol stopWait
+</dl></dd></code><p>
+
+If sos is processing an image, this command will allow the current idl process to finish 
+before stopping sos.  If this command does not return after some time (~5 min), then
+^C to kill the process and use the following command:
+
+<dl><dd><code>
+$ sos_apocontrol stopKill
+</dl></dd></code><p>
+
+Then confirm the sos processes are not running.<p>
 
 <h4>Confirm the SOS Process are Not Running</h4>
 
@@ -106,8 +123,10 @@ processes.<p>
 $ sos_apocontrol status
 </dl></dd></code><p>
 
-There should be zero instances of sos_runnerd displayed. The first line will be "Running",
-the last line will be "Done". There should be nothing between those two lines.<p>
+There should be zero instances of sos_runnerd displayed. The first line will be
+"0 processes running",
+the last line will be "sos_apocontrol finished running!".
+There should be nothing between those two lines.<p>
 
 <h4>Start SOS Processes</h4>
 
@@ -123,9 +142,10 @@ When the command finishes, confirm the sos processes are running.<p>
 
 <h4>Start SOS Processes After Observing Has Started For the Night</h4>
 
+<p>
 Use this command if the sos process was not started until after observing has started
 for the night.  This procedure will process all images already present for the current
-MJD.<p>
+MJD.</p>
 
 <dl><dd><code>
 $ sos_apocontrol allow<br>
@@ -134,21 +154,20 @@ $ sos_apostart -g -e
 	
 Then confirm the sos processes are running.<p>
 
-<h4>Stop SOS Processes</h4>
+<h4>Reprocess a Single Exposure</h4>
 
-<dl><dd><code>
-$ sos_apocontrol stopWait
-</dl></dd></code><p>
-	
-If sos is processing an image, this command will allow the current idl process to finish 
-before stopping sos.  If this command does not return after some time (~5 min), then
-^C to kill the process and use the following command:
+<p>
+This command must be run in a directory with write permissions, e.g.
+<tt>/home/observer/sos/sos-logs/</tt>.
+</p>
 
+To reprocess exposure <tt>EXPIDXX</tt> on MJD <tt>MJDXX</tt>
 <dl><dd><code>
-$ sos_apocontrol stopKill
-</dl></dd></code><p>
-	
-Then confirm the sos processes are not running.<p>
+$ cd /home/observer/sos/sos-logs/</br>
+$ sos_aporedo -g -m MJDXX -z EXPIDXX
+</code></dd></dl>
+The output files will be stored in the directory you run this command in,
+with names like <tt>redo-b1.out</tt>.
 
 <h4>Reprocess a Nights Worth of Spectro</h4>
 
@@ -528,6 +547,13 @@ bad sky-residuals.
 <P>
 The following messages may appear:
 <UL>
+<LI><B>bias exploding in b2 crazy quadrant</B><BR/>
+  This indicates a hardware electronics problem with the b2 bias levels.
+  Keep observing, but note this prominently in the night log.
+  The SOS b2 (S/N)^2 values might be crazy -- if they look unusual, use
+  the other channels to determine plate doneness, and note this in the
+  log.
+  </LI>
 <LI><B>Error reading sdHdrFix file</B> <BR>
     The sdHdrFix file (sdHdrFix-$MJD.par) in sos.apo:/data/spectro/astrolog/$MJD
     exists but is not a valid Yanny parameter file.  This file is written
@@ -935,39 +961,6 @@ However, if it appears to not be working one could check the following:
     Obviously, this could take a couple of hours if its already late
     into the night.
 </OL>
-
-<H2><A NAME="rereduce">Re-Reducing (Failed) Exposures</A></H2>
-
-<P>
-There is a mechanism to re-reduce exposures with "sos_redo".
-You may need to do this if a reduction failed, or the pre-calibs failed
-and SOS could not reduce the science exposures, or if you needed
-to edit the sdR header information by putting entries in the sdHdrFix
-file (see <A HREF="http://spectro.princeton.edu/idlspec2d_doc.html#APOFIX">APOFIX</A>).
-
-<P>
-It is fastest to only re-reduce a specific exposure number.
-To force a re-reduction of exposure number 12345 on all 4 cameras
-(whether it has already been reduced or not) use the EXPNUM option:
-<DL><DD><PRE>
-  % ssh observer@sos.apo.nmsu.edu
-  % sos_redo expnum=12345
-</PRE></DD></DL>
-If you want to find and reduce only failed reductions for a plate
-use the PLATE option.  This may take several more minutes because
-all of the FITS headers for the night are parsed.
-To re-reduce only missing exposures for plate 666:
-<DL><DD><PRE>
-  % ssh observer@sos.apo.nmsu.edu
-  % sos_redo plate=666
-</PRE></DD></DL>
-The last exposure taken is not re-reduced unless explicitly told to
-with the EXPNUM option.  Currently, either EXPNUM or PLATE must be
-specified.
-
-<P>
-Note that science exposures for a plate cannot be reduced until both
-flat and arc exposures have been successfully reduced for that same plate.
 
 <HR>
 
