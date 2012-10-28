@@ -167,6 +167,7 @@ class CFrame(object):
         self.loglam = fx[3].data[:, 0:npix]
         self.wdisp  = fx[4].data[:, 0:npix]
         self.sky    = fx[6].data[:, 0:npix]
+        self.x      = fx[7].data[:, 0:npix]
         self.header = fx[0].header
         
         #- Load superflat spCFrame[8] and fiberflat spFlat[0]
@@ -199,7 +200,7 @@ def load_spCFrame_files(platedir):
 
     return cframes
 
-def good_ivar(ivar):
+def good_ivar(ivar, fiber=None):
     """
     return indices of for array from first non-zero ivar to the last
     non-zero ivar.  i.e. trim off leading and trailing contiguously zero ivars.
@@ -208,7 +209,10 @@ def good_ivar(ivar):
     grumpy with completely blank arrays.
     """
     if N.all(ivar == 0):
-        print 'WARNING: All ivar==0'
+        if fiber is not None:
+            print 'WARNING: All ivar==0 for fiber', fiber
+        else:
+            print 'WARNING: All ivar==0'
         return N.arange(len(ivar))
 
     ivar_good = N.where(ivar > 0.0)[0]
@@ -275,7 +279,7 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True):
 
         #- trim off leading and trailing ivar=0 bins,
         #- but keep ivar=0 bins in the middle of the spectrum
-        igood = good_ivar(ivar)
+        igood = good_ivar(ivar, fiber=fiber)
 
         #- Create coadded spectrum table for HDU 1
         cols = list()
@@ -337,7 +341,7 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True):
 
                 #- trim off leading and trailing ivar=0 bins,
                 #- but keep ivar=0 bins in the middle of the spectrum
-                igood = good_ivar(d.ivar[ifib])
+                igood = good_ivar(d.ivar[ifib], fiber='%s %d' % (expid, fiber))
         
                 cols = list()
                 cols.append( pyfits.Column(name='flux',   format='E', array=d.flux[ifib][igood]) )
@@ -347,6 +351,7 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True):
                 cols.append( pyfits.Column(name='wdisp',  format='E', array=d.wdisp[ifib][igood]) )
                 cols.append( pyfits.Column(name='sky',    format='E', array=d.sky[ifib][igood]) )
                 cols.append( pyfits.Column(name='calib',  format='E', array=d.calib[ifib][igood]) )
+                cols.append( pyfits.Column(name='x',      format='E', array=d.x[ifib][igood]) )
 
                 #- Place holder - someday we may want to calculate and include
                 #- the "extra" variance which isn't proportional to the signal.
