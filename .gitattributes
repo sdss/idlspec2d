@@ -605,8 +605,6 @@ pro/templates/pca_cvstar_boss.pro -text
 pro/templates/pca_gal_dev.pro -text
 pro/templates/pca_qso_dev.pro -text
 pro/testsuite/compare_dr.pro -text
-pro/testsuite/compareinout.pro -text
-pro/testsuite/compareinout.pro~ -text
 pro/testsuite/sphoto_resid_qso.pro -text
 src/Makefile -text
 src/extract_boxcar.c -text
