@@ -1,3 +1,7 @@
+SJB 2012-11-02:
+  SDSSPROC : Added warning for readnoise<1.0 which could mean
+             CCD voltages are wrong
+
 SJB 2012-10-28: reformat_spectra.py - Added x column to exp HDUs of spec files.
 
 -------------------------------------------------------------------------------
