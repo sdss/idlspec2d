@@ -1,3 +1,6 @@
+ASB 2012-11-15: Added MATCH_SPALL (routine) and
+  CHECK_CMASS_CHANGES (script) in pro/testsuite
+
 SJB 2012-11-02:
   SDSSPROC : Added warning for readnoise<1.0 which could mean
              CCD voltages are wrong

@@ -604,7 +604,9 @@ pro/templates/mlpcainput_star.txt -text
 pro/templates/pca_cvstar_boss.pro -text
 pro/templates/pca_gal_dev.pro -text
 pro/templates/pca_qso_dev.pro -text
+pro/testsuite/check_cmass_changes.scr.pro -text
 pro/testsuite/compare_dr.pro -text
+pro/testsuite/match_spall.pro -text
 pro/testsuite/sphoto_resid_qso.pro -text
 src/Makefile -text
 src/extract_boxcar.c -text
