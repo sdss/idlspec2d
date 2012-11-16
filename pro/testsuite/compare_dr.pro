@@ -69,15 +69,16 @@ pro compare_dr, run1=run1, run2=run2
    sp2 = sp2[ilist2[ikeep]]
 
    vdiff = (sp1.z - sp2.z) * 3e5
+   vdiff_noqso = (sp1.z_noqso - sp2.z_noqso) * 3e5
 
    compare_dr_loz, sp1, sp2, indx, qgood1, qgood2
    igood = indx[where(qgood1*qgood2)]
    splog, ''
    splog, n_elements(indx), ' LOWZ targets'
    splog, mean(qgood1*qgood2), ' fraction good'
-   splog, median(vdiff[igood]), ' median vdiff'
-   splog, djsig(vdiff[igood]), ' rms vdiff'
-   splog, mean(abs(vdiff[igood]) GT 200), ' fraction changed redshift'
+   splog, median(vdiff_noqso[igood]), ' median vdiff'
+   splog, djsig(vdiff_noqso[igood]), ' rms vdiff'
+   splog, mean(abs(vdiff_noqso[igood]) GT 300), ' fraction changed redshift'
    splog, mean(qgood1 EQ 0 AND qgood2 EQ 1), ' fraction good -> bad'
    splog, mean(qgood2 EQ 0 AND qgood1 EQ 1), ' fraction bad -> good'
 
@@ -86,9 +87,9 @@ pro compare_dr, run1=run1, run2=run2
    splog, ''
    splog, n_elements(indx), ' CMASS targets'
    splog, mean(qgood1*qgood2), ' fraction good'
-   splog, median(vdiff[igood]), ' median vdiff'
-   splog, djsig(vdiff[igood]), ' rms vdiff'
-   splog, mean(abs(vdiff[igood]) GT 200), ' fraction changed redshift'
+   splog, median(vdiff_noqso[igood]), ' median vdiff'
+   splog, djsig(vdiff_noqso[igood]), ' rms vdiff'
+   splog, mean(abs(vdiff_noqso[igood]) GT 300), ' fraction changed redshift'
    splog, mean(qgood1 EQ 0 AND qgood2 EQ 1), ' fraction good -> bad'
    splog, mean(qgood2 EQ 0 AND qgood1 EQ 1), ' fraction bad -> good'
 
