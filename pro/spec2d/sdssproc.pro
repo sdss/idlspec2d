@@ -630,9 +630,9 @@ if (mjd GE 55052) then begin
 
       ; Trigger warning if readnoise is way too low
       for iamp=0,3 do begin
-         if rnoise[iamp] LT 1.0 then begin
+         if rdnoise[iamp] LT 1.0 then begin
             splog, 'WARNING: ', camname, ' Amp ', iamp, $
-             ' crazy low read noise = ', rnoise[iamp], ' DN; Are CCD voltages correct?', $
+             ' crazy low read noise = ', rdnoise[iamp], ' DN; Are CCD voltages correct?', $
              format='(a,a,a,i1,a,f5.2,a)'
          endif
       endfor
