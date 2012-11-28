@@ -116,7 +116,7 @@ def flavor(cfg):
 ####
 def cart(cfg):
 	"""return the cart of the fits file"""
-	return sxpar(os.path.join(cfg.fitpath,cfg.fitname), "cartid")[0].lower()
+	return int(sxpar(os.path.join(cfg.fitpath,cfg.fitname), "cartid")[0])
 
 ####	
 def plugging(cfg):
@@ -205,8 +205,11 @@ def rule1(cfg):
 ####
 def rule2(cfg):
 	"""Don't process arc/flat/science from non-BOSS carts"""
-	
-	if flavor(cfg) in ('arc', 'flat', 'science') and cart(cfg) < 10:
+
+	thisflavor = flavor(cfg)
+	thiscart = cart(cfg)
+	if thisflavor in ('arc', 'flat', 'science') and thiscart < 10:
+		print "Skipping %s exposure for non-BOSS cart %d file %s" % (thisflavor, thiscart, cfg.fitname)
 		return True
 	else:
 		return False
