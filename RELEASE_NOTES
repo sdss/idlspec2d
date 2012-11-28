@@ -1,3 +1,8 @@
+SJB 2012-11-28:
+bin/sos_filesequencer: don't process arc/flat/science for cart<10
+  to protect BOSS from MaNGA tests.  Process dark/bias from any cart
+  to allow afternoon checkout tests while APOGEE carts are loaded.
+
 -------------------------------------------------------------------------------
 v5_6_0 (2012-11-16) Tag to reprocess all data; starts a new season toward DR11
 
