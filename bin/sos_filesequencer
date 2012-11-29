@@ -224,12 +224,18 @@ def main(args):
 	#	Rules return true if they processed the file and processing should stop
 	
 	#	process rules
-	if rule1(config):
-		return
-		
+        # Rule2 checks for arc/flat/science on non-BOSS cart; check this
+	# first so that it doesn't trigger arc/flat pre-exp logic in rule 1
+	# which can call processFile before returning.
+	print "Checking Rule 2"
 	if rule2(config):
 		return
 		
+	print "Checking Rule 1"
+	if rule1(config):
+		return
+		
+	print "Passed Rules; let's go!"
 	processFile(config, flavor(config))
 	
 		
