@@ -15,8 +15,9 @@
 ;
 ; OPTIONAL INPUTS:
 ;   platenums  - Plate numbers to reduce; default to '*'
-;   topdir     - Optional override value for the environment
-;                variable $BOSS_SPECTRO_REDUX.
+;   topdir     - Optional override value for the environment variable
+;                $BOSS_SPECTRO_REDUX.  Used as input directory for generating
+;                batch scripts and written into the scripts themselves.
 ;   run2d      - Optional override value for the environment variable $RUN2D
 ;   run1d      - Optional override value for the environment variable $RUN1D
 ;   platestart - Starting plate number.
@@ -210,6 +211,12 @@ pro batchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          ; printf, olun, '#- Dump job environment for debugging'
          ; envlog = 'env-'+platemjd+'.txt'
          ; printf, olun, 'printenv > '+envlog
+         
+         if topdir ne getenv('BOSS_SPECTRO_REDUX') then begin
+            printf, olun, ''
+            printf, olun, '#- Override default BOSS_SPECTRO_REDUX'
+            printf, olun, 'export BOSS_SPECTRO_REDUX='+topdir
+         endif
          
          printf, olun, ''
          printf, olun, '#- The real work'
