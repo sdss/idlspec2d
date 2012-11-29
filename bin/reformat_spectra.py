@@ -280,6 +280,7 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True):
         #- trim off leading and trailing ivar=0 bins,
         #- but keep ivar=0 bins in the middle of the spectrum
         igood = good_ivar(ivar, fiber=fiber)
+        new_coeff0 = round(float(loglam[igood[0]]),4) #- fix float32 rounding
 
         #- Create coadded spectrum table for HDU 1
         cols = list()
@@ -373,6 +374,9 @@ def process_plate(datadir, outdir, plate, mjd, fibers, spAll, allexp=True):
         del hdr['CRVAL1']
         del hdr['CTYPE1']
         del hdr['CD1_1']
+
+        #- We trimmed leading/trailing ivar=0 pixels, so update COEFF0
+        hdr.update('COEFF0', new_coeff0)
         
         #- Remove original expid list which has both SP1 and SP2
         nexp_orig = hdr['NEXP']
