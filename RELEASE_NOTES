@@ -1,3 +1,11 @@
+SJB 2012-11-29:
+bin/reformat_spectra.py: fix COEFF0 keyword when trimming ivar=0 leading
+  pixels.  Back propagate by hand into v5_6_0.
+bin/copy_spPlan.py : refactor to only copy plans for good plate-mjd
+  unless --bad option
+BATCHPBS: if topdir option is used to override BOSS_SPECTRO_REDUX,
+  put that into the batch script as well.
+
 SJB 2012-11-28:
 bin/sos_filesequencer: don't process arc/flat/science for cart<10
   to protect BOSS from MaNGA tests.  Process dark/bias from any cart
