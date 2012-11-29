@@ -1,6 +1,6 @@
 SJB 2012-11-29:
 bin/reformat_spectra.py: fix COEFF0 keyword when trimming ivar=0 leading
-  pixels.  Back propagate by hand into v5_6_0.
+  pixels.  Back propagate by hand into v5_5_12.
 bin/copy_spPlan.py : refactor to only copy plans for good plate-mjd
   unless --bad option
 BATCHPBS: if topdir option is used to override BOSS_SPECTRO_REDUX,
