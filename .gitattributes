@@ -432,6 +432,7 @@ pro/spec1d/synthspec.pro -text
 pro/spec1d/uuplotspec.pro -text
 pro/spec1d/vdisp_platefit.pro -text
 pro/spec1d/vdispfit.pro -text
+pro/spec1d/vdispfit_marg.pro -text
 pro/spec1d/vdisptest.pro -text
 pro/spec1d/veldisp.pro -text
 pro/spec1d/wavevector.pro -text
