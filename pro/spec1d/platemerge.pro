@@ -120,7 +120,7 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
    if n GT 0 then has_deredsn2 = 1 else has_deredsn2 = 0
 
    ;----------
-   ; Trim to good (or public) plates
+   ; Trim to good (or non-bad public) plates
 
    if (keyword_set(plate)) then begin
       nplate = n_elements(plist)
@@ -155,7 +155,8 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
       qdone = qdone AND $
        (strtrim(plist.platequality,2) EQ 'good' $
        OR strtrim(plist.platequality,2) EQ 'marginal' $
-       OR strtrim(plist.public,2) NE '')
+       OR (strtrim(plist.public,2) NE '' AND $
+           strtrim(plist.platequality,2) NE 'bad') )
    endif
    indx = where(qdone, ct)
    if (ct EQ 0) then return

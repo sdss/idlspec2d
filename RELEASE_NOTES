@@ -3,6 +3,7 @@ SPREDUCE1D : allow RUN1D strings which don't match vX_Y_Z.
 
 PLATELIST: Added columns PROGRAMNAME and TILEID to platelist.txt and .html
   --> resolves ticket 1716.
+PLATEMERGE: Don't include public bad plates in spAll (e.g. 3698).
 
 -------------------------------------------------------------------------------
 v5_6_1 (2012-11-29) Tag for SoS to ignore cart<10 data
