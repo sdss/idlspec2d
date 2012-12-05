@@ -449,7 +449,9 @@ pro platelist, plist=plist, create=create, $
       sn2tag = 'deredsn2'
       dereddened_sn2 = 1
    endelse
- 
+
+   ;; Which columns to keep for HTML and ASCII files
+   ;; For platelist
    trimtags1 = [ $
     ['plate'        ,   'i4'], $
     ['mjd'          ,   'i5'], $
@@ -465,9 +467,12 @@ pro platelist, plist=plist, create=create, $
     ['n_unknown'    ,   'i3'], $
     ['n_sky'        ,   'i3'], $
     ['survey'       ,    'a'], $
+    ['programname'  ,    'a'], $
     ['chunk'        ,    'a'], $
+    ['tileid'       ,    'i'], $
     ['public'       ,    'a']  ]
 
+   ;; For platequality
    trimtags2 = [ $
     ['plate'        ,   'i4'], $
     ['mjd'          ,   'i5'], $
