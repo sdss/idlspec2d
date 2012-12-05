@@ -1,3 +1,9 @@
+SJB 2012-12-05:
+SPREDUCE1D : allow RUN1D strings which don't match vX_Y_Z.
+
+-------------------------------------------------------------------------------
+v5_6_1 (2012-11-29) Tag for SoS to ignore cart<10 data
+
 SJB 2012-11-29:
 bin/reformat_spectra.py: fix COEFF0 keyword when trimming ivar=0 leading
   pixels.  Back propagate by hand into v5_5_12.

@@ -870,7 +870,13 @@ endif
    ; Add the cas-styled specobjid to output
    zans = struct_addtags(zans, replicate({specobjid:0LL},n_elements(zans)))
    words= STREGEX(STRTRIM(zans.run2d,2),'^v([0-9]+)_([0-9]+)_([0-9]+)', /SUB, /EXTRACT)
-   rerun= (long(words[1,*])-5L)*10000L+ (long(words[2,*])*100L)+ (long(words[3,*]))
+   ; did it parse as vXX_YY_ZZ?
+   if words[0] ne '' then begin
+       rerun= (long(words[1,*])-5L)*10000L+ (long(words[2,*])*100L)+ (long(words[3,*]))
+   endif else begin
+       splog, "WARNING: Unable to parse RERUN from", zans.run2d, "for CAS-style SPECOBJID; Using 0 instead"
+       rerun= intarr(n_elements(zans.plate))
+   endelse
    zans.specobjid = sdss_specobjid(zans.plate,zans.fiberid,zans.mjd,rerun)
 
    ;----------
