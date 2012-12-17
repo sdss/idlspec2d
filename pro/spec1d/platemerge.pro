@@ -545,7 +545,8 @@ pro platemerge1, plate=plate, mjd=mjd, except_tags=except_tags1, $
    ; Rename temporary files
 
    spawn, ['mv', outroot[0]+'.fits.tmp', outroot[0]+'.fits'], /noshell
-   spawn, ['mv', outroot[0]+'.dat.tmp', outroot[0]+'.dat'], /noshell
+   spawn, ['gzip', outroot[0]+'.dat.tmp'], /noshell
+   spawn, ['mv', outroot[0]+'.dat.tmp.gz', outroot[0]+'.dat.gz'], /noshell
    if (not keyword_set(skip_line)) then $
     spawn, ['mv', outroot[1]+'.fits.tmp', outroot[1]+'.fits'], /noshell
 
