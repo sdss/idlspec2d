@@ -64,6 +64,9 @@
 ;     Could be re-added based upon final DRxQ.fits input when available.
 ;        -- Stephen Bailey, Oct 2012
 ;
+;     Also exclude BAD_TARGETs from effective number of spectra
+;        -- bolton@utah 2012dec
+;
 ;-
 
 function spectro_summary, topdir=topdir, run2d=run2d, run1d=run1d
@@ -157,8 +160,8 @@ ostruc.n_tile = n_elements(utile)
 ; Number of spectra:
 ostruc.n_spectra = n_elements(spall)
 
-; Flag out unplugged and little coverage:
-with_data = (spall.zwarning and (2^1 + 2^7)) eq 0
+; Flag out unplugged, little coverage, and bad target:
+with_data = (spall.zwarning and (2^1 + 2^7 + 2^8)) eq 0
 ostruc.n_spectra_eff = total(with_data)
 
 ; Unique spectra:
