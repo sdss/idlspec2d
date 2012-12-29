@@ -1,0 +1,40 @@
+#!/bin/bash
+
+
+#### crontab:
+## SHELL=/bin/bash
+## BASH_ENV=/uufs/chpc.utah.edu/common/home/bolton_data3/boss/daily/cmd/.bashrc
+##
+## */15 * * * * /uufs/chpc.utah.edu/common/home/bolton_data3/boss/daily/cmd/uurundaily_cron
+####
+
+####
+# Suggested installation is to create a ln -s from this file to ~boss/daily/cmd
+####
+
+export BOSS_HOME=/uufs/chpc.utah.edu/common/home/bolton_data3/boss
+
+###  Start logging
+
+timestamp=`date "+%m%d%Y"`
+LOGDIR=$BOSS_HOME/daily/logs
+exec >>$LOGDIR/daily_$timestamp.log 2<&1
+
+###  Use this to temporarily turn off script
+#exec echo "turned off at $(date)"
+
+###  Start Script
+
+date=$(date)
+echo "UURUNDAILY_CRON: ========================================"
+echo "UURUNDAILY_CRON: Starting at $date"
+
+export MODULES_SILENT=1
+source $BOSS_HOME/software/modules/init/bash
+export SSH_ENV=/uufs/astro.utah.edu/common/home/u0707758/.ssh/environment
+source $SSH_ENV
+
+uurundaily -g
+date=$(date)
+echo "UURUNDAILY_CRON: Completing at $date"
+

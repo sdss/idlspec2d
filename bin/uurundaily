@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+#
+#  Setup the environment to run dailyrun in either cron mode or daemon mode
+#
+#  Written by Gary Kushner (LBL).  Feb 2010.
+
+function usage
+{
+    local execName=$(basename $0)
+    ( 
+	echo "usage: $execName -e -t"
+	echo
+	echo "   -d    run in quasi-daemon mode, sleeping 10 minutes (default) between invocations"
+	echo "   -s    Don't setup products"
+	echo "   -h    this help"
+	echo "   -p    poll delay in seconds (default 600)"
+	echo " "
+	echo "   -g    go.  Go must be specified.  This is to prevent accidentally running $execName."
+    ) >&2
+    exit 1
+}
+
+function screamAndDie
+{
+    echo "Failed: $*"
+
+    echo "Goodbye!"
+    exit 1
+}
+
+function printAndRun
+{
+    echo "$*"
+
+# 	if "$dryMode"; then
+#		return
+#	fi
+		
+    # Silently do nothing
+    if test "_$*" = "_"; then
+        return
+    fi
+
+    eval "$@"
+    if test $? -ne 0; then
+        screamAndDie "failed running $*"
+    fi
+}
+
+
+###
+###  Start of script
+###
+
+###  Parse Options
+
+delay=600
+daemon=false
+pwfile=""
+skipSetups=true
+go=false
+
+while getopts "sdgp:" argname; do
+    case $argname in
+      d) daemon=true ;;
+	  s) skipSetups=true ;;
+	  g) go=true ;;
+	  p) delay=$OPTARG ;;
+      *) usage
+    esac
+done
+shift $((OPTIND-1))
+
+###  Good to go?
+if ! "$go"; then
+	usage
+fi
+
+### Say hello Gracie
+
+echo "UURUNDAILY: Starting at $(date)"
+
+###	Setup eups products
+
+if ! "$skipSetups"; then
+#	printAndRun "setup idlspec2d"
+	printAndRun "setup idlspec2d trunk"
+	printAndRun "setup trac"
+fi
+
+
+###  Setup python options
+export PYTHONUNBUFFERED=1
+export DAILY_BOSS_SPECTRO_DATA=$BOSS_SPECTRO_DATA
+
+
+###  If not daemon mode, run once and exit
+if ! "$daemon"; then
+	exec rundaily -m $BOSS_HOME/daily/etc/nextmjd -s $IDLSPEC2D_DIR/bin/uurundaily_script -p $BOSS_HOME/daily/etc/wiki
+fi
+
+###	 Run in daemonish mode
+while true; do
+	rundaily -m $BOSS_HOME/daily/etc/nextmjd -s $IDLSPEC2D_DIR/bin/uurundaily_script -p $BOSS_HOME/daily/etc/wiki
+	echo "Sleeping for $delay seconds at $(date)"
+	sleep $delay
+done
+
+echo "UURUNDAILY: Completing at $(date)"
+
