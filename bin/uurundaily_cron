@@ -31,8 +31,6 @@ echo "UURUNDAILY_CRON: Starting at $date"
 
 export MODULES_SILENT=1
 source $BOSS_HOME/software/modules/init/bash
-export SSH_ENV=/uufs/astro.utah.edu/common/home/u0707758/.ssh/environment
-source $SSH_ENV
 
 uurundaily -g
 date=$(date)
