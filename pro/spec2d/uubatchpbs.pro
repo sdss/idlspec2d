@@ -11,9 +11,11 @@
 ; CALLING SEQUENCE:
 ;   uubatchpbs, [ platenums, topdir=, run2d=, run1d=, platestart=, plateend=, $
 ;    mjd=, mjstart=, mjend=, upsvers2d=, upsvers1d=, upsversutils=, rawdata_dir=, $
-;    boss_spectro_redux=, scratchdir=, /zcode, /galaxy, upsversgalaxy=, pbsdir=, queue=, /skip2d, $
-;   /clobber, /nosubmit, $
-;    pbsnodes=pbsnodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_walltime=pbs_walltime, /riemann, /ember]
+;    boss_spectro_redux=, scratchdir=, /zcode, /galaxy, upsversgalaxy=, boss_galaxy_redux=, boss_galaxy_scratch=, $
+;    pbsdir=, /verbose, queue=, /skip2d, $
+;    /skip_granada_fsps, /skip_portsmouth_stellarmass, /skip_portsmouth_emlinekin, /skip_wisconsin_pca, $
+;   /clobber, /nosubmit, /test, $
+;    pbsnodes=pbsnodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_walltime=pbs_walltime, /pbs_batch, /riemann, /ember]
 ;
 ; INPUTS:
 ;
@@ -42,14 +44,22 @@
 ;                remote machine.
 ;   scratchdir   - If set, then treat this as topdir until the computation is complete
 ;   zcode      - If set, run Zcode in auto mode.
-;   galaxy     - If set, run Galaxy (Portsmouth, PCA) Suite of Products.
+;   galaxy     - If set, run Galaxy (Granada, Portsmouth, Wisconsin) Suite of Products.
 ;   upsversgalaxy  - If set, then do a "setup galaxy $GALAXY" on the
 ;                remote machine.
+;   boss_galaxy_redux   - Optional override value for the environment variable $BOSS_GALAXY_REDUX,
+;   boss_galaxy_scratch - Optional override value for the environment variable $GALAXY_SCRATCH_DIR.
 ;   pbsdir     - Optional override value for the environment variable $BOSS_PBS_DIR.
+;   verbose    - If set, then add "set -o verbose" for easier debugging.
 ;   queue      - If set, sets the submit queue.
 ;   skip2d     - If set, then skip the Spectro-2D reductions.
+;   skip_wisconsin_pca   - If galaxy set and if not set [default], then run wisconsin_pca code
+;   skip_granada_fsps - If galaxy set and if not set [default], then run granada_fsps code
+;   skip_portsmouth_stellarmass   - If galaxy set and if not set [default], then run portsmouth_stellarmass 
+;   skip_portsmouth_emlinekin   - If galaxy set and if not set [default], then run portsmouth_emlinekin
 ;   clobber    - If set, then reduce all specified plates.  The default is
 ;                to not reduce plates where the script file already exists.
+;   pbs_batch  - If set, collect the pbs_nodes into an PBS array
 ;   pbs_nodes  - If set, collect the pbs qsub commands into pbs_nodes script files
 ;                in order to run on clusters without node sharing (ie Utah).
 ;                default to node sharing, and keep the pbs qsub commands in the
@@ -64,11 +74,11 @@
 ;                pbs_nodes = 12 (for 12 nodes, without node sharing) 
 ;                pbs_ppn = 12 (12 processors per node)
 ;                pbs_a = 'bolton-em' (Bolton's account, limited to 12 nodes: ember253-260,377-380)
-;                pbs_walltime='240:00:00'
+;                pbs_walltime='336:00:00'
 ;   riemann    - If set, then setup the defaults for the riemann cluster at LBL:
 ;                pbs_nodes = 12 (for 12 nodes, without node sharing) 
 ;                pbs_ppn = 8 (8 processors per node)
-;                pbs_walltime='48:00:00'
+;                pbs_walltime='336:00:00'
 ;   nosubmit   - If set, generate script file but don't submit to queue
 ;
 ; OUTPUTS:
@@ -104,8 +114,11 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
  rawdata_dir=rawdata_dir, $
  boss_spectro_redux=boss_spectro_redux, scratchdir=scratchdir, $
  zcode=zcode, galaxy=galaxy, upsversgalaxy=upsversgalaxy, pbsdir=pbsdir, $
- queue=queue, skip2d=skip2d, clobber=clobber, nosubmit=nosubmit, $ 
- pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, $
+ boss_galaxy_redux=boss_galaxy_redux, boss_galaxy_scratch=boss_galaxy_scratch, $
+ verbose=verbose, queue=queue, skip2d=skip2d, clobber=clobber, nosubmit=nosubmit, test=test, $
+ skip_granada_fsps=skip_granada_fsps, skip_portsmouth_stellarmass=skip_portsmouth_stellarmass, $
+ skip_portsmouth_emlinekin=skip_portsmouth_emlinekin, skip_wisconsin_pca=skip_wisconsin_pca,  $
+ pbs_nodes=pbs_nodes, pbs_ppn=pbs_ppn, pbs_a=pbs_a, pbs_batch=pbs_batch, $
  pbs_walltime=pbs_walltime, riemann=riemann, ember=ember, _EXTRA=Extra
 
    if (size(platenums1,/tname) EQ 'STRING') then platenums = platenums1 $
@@ -117,17 +130,40 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
    ; Determine the top-level of the output directory tree
 
    if (keyword_set(topdir1)) then topdir = topdir1 $
-    else topdir = getenv('BOSS_SPECTRO_REDUX')
+   else begin
+     topdir = getenv('BOSS_SPECTRO_REDUX')
+     if strpos(topdir,'/',strlen(topdir)-1) lt 0 then topdir+='/'
+     if keyword_set(test) and not (strlen(topdir)-rstrpos(dir,'/test/') eq strlen('/test/')) then topdir=djs_filepath('',root_dir=topdir, subdir='test')
+   endelse
    if strpos(topdir,'/',strlen(topdir)-1) lt 0 then topdir+='/'
    splog, 'Setting TOPDIR=', topdir
 
    if (not keyword_set(scratchdir)) then scratchdir = getenv('BOSS_SCRATCH_DIR')
    if (keyword_set(scratchdir)) then begin
+     if keyword_set(test) then scratchdir=djs_filepath('',root_dir=scratchdir, subdir='test')
      if strpos(scratchdir,'/',strlen(scratchdir)-1) lt 0 then scratchdir+='/'
      if (scratchdir eq topdir) then scratchdir = 0 $
      else splog, 'Setting SCRATCHDIR=', scratchdir
    endif
    
+   if keyword_set(galaxy) then begin
+       if (keyword_set(boss_galaxy_redux)) then boss_galaxy_redux = strtrim(boss_galaxy_redux,2) else begin
+         boss_galaxy_redux = getenv('BOSS_GALAXY_REDUX')
+         if strpos(boss_galaxy_redux,'/',strlen(boss_galaxy_redux)-1) lt 0 then boss_galaxy_redux+='/'
+         if keyword_set(test) and not (strlen(boss_galaxy_redux)-rstrpos(boss_galaxy_redux,'/test/') eq strlen('/test/')) then boss_galaxy_redux=djs_filepath('',root_dir=boss_galaxy_redux, subdir='test')
+       endelse
+       if strpos(boss_galaxy_redux,'/',strlen(boss_galaxy_redux)-1) lt 0 then boss_galaxy_redux+='/'
+       splog, 'Setting BOSS_GALAXY_REDUX=', boss_galaxy_redux
+
+       if (keyword_set(boss_galaxy_scratch)) then boss_galaxy_scratch = strtrim(boss_galaxy_scratch,2) else begin
+         boss_galaxy_scratch = getenv('GALAXY_SCRATCH_DIR')
+         if strpos(boss_galaxy_scratch,'/',strlen(boss_galaxy_scratch)-1) lt 0 then boss_galaxy_scratch+='/'
+         if keyword_set(test) and not (strlen(boss_galaxy_scratch)-rstrpos(boss_galaxy_scratch,'/test/') eq strlen('/test/')) then boss_galaxy_scratch=djs_filepath('',root_dir=boss_galaxy_scratch, subdir='test')
+       endelse
+       if strpos(boss_galaxy_scratch,'/',strlen(boss_galaxy_scratch)-1) lt 0 then boss_galaxy_scratch+='/'
+       splog, 'Setting GALAXY_SCRATCH_DIR=', boss_galaxy_scratch
+   endif
+
    if (keyword_set(run2d1)) then run2d = strtrim(run2d1,2) $
     else run2d = getenv('RUN2D')
    splog, 'Setting RUN2D=', run2d
@@ -138,8 +174,14 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
    else if (keyword_set(upsvers2d)) then splog, 'Setting IDLSPEC2D=', upsvers2d
    if (keyword_set(upsversutils)) then splog, 'Setting IDLUTILS=', upsversutils
    if (keyword_set(upsversgalaxy)) then splog, 'Setting GALAXY=', upsversgalaxy
-   if (keyword_set(pbsdir)) then pbsdir = strtrim(pbsdir,2) else pbsdir = getenv('BOSS_PBS_DIR')
-   if strpos(pbsdir,'/',strlen(pbsdir)-1) lt 0 then pbsdir+='/'
+   
+    if (keyword_set(pbsdir)) then pbsdir = strtrim(pbsdir,2) else begin
+        pbsdir = getenv('BOSS_PBS_DIR')
+        if strpos(pbsdir,'/',strlen(pbsdir)-1) lt 0 then pbsdir+='/'
+        if keyword_set(test) and not (strlen(pbsdir)-rstrpos(pbsdir,'/test/') eq strlen('/test/')) then pbsdir=djs_filepath('',root_dir=pbsdir, subdir='test')
+    endelse
+    if strpos(pbsdir,'/',strlen(pbsdir)-1) lt 0 then pbsdir+='/'
+    splog, 'Setting BOSS_PBS_DIR=', pbsdir
 
    topdir2d = djs_filepath('', root_dir=topdir, subdir=run2d)
 
@@ -147,20 +189,20 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
     else run1dstr = ''
    if (keyword_set(run2d)) then run2dstr = ',run2d="'+run2d+'"' $
     else run2dstr = ''
-    
-   
 
    if keyword_set(riemann) then begin
-     if not keyword_set(pbs_nodes) then pbs_nodes=12
+     if not keyword_set(pbs_nodes) then pbs_nodes=28
      if not keyword_set(pbs_ppn) then pbs_ppn=8
-     if not keyword_set(pbs_walltime) then pbs_walltime='48:00:00'
+     if not keyword_set(pbs_walltime) then pbs_walltime='336:00:00'
    endif else if keyword_set(ember) then begin
      if not keyword_set(pbs_nodes) then pbs_nodes=12
      if not keyword_set(pbs_ppn) then pbs_ppn=12
-     if not keyword_set(pbs_walltime) then pbs_walltime='48:00:00'
+     if not keyword_set(pbs_walltime) then pbs_walltime='336:00:00'
      if not keyword_set(pbs_a) then pbs_a = 'bolton-em'
    endif
       
+   if ((keyword_set(riemann) or keyword_set(ember)) and (pbs_nodes gt 1)) then pbs_batch = 1L
+
    ;----------
    ; Create list of plate directories
    ; Limit the list to only those specified by PLATENUMS,PLATESTART,PLATEEND
@@ -226,8 +268,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
 
      if keyword_set(pbs_ppn) then nodes_required = ceil(float(nplate)/pbs_ppn) else nodes_required = nplate
      if nodes_required lt pbs_nodes then pbs_nodes = nodes_required
-     if keyword_set(pbs_ppn) then splog, 'Preparing to qsub '+strtrim(pbs_nodes,2)+' nodes ('+strtrim(pbs_ppn,2)+' processors per node) for '+strtrim(nplate,2)+' plates.' $
-     else splog, 'Preparing to qsub '+strtrim(nplate,2)+' plates.'
+     ncycle = ceil(float(nplate)/(pbs_nodes*pbs_ppn))
 
      home = getenv('HOME')
      if (home ne '') then begin
@@ -235,11 +276,12 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
       pos1 = strlen(home)
       userID = strmid(home,pos0,pos1-pos0)
      endif else userID = 'user'
-     print, 'UUBATCHBPS: Starting for user:  ',userID
      
      date = strtrim(bin_date(),2)
      for i=1,n_elements(date)-1 do $
         if (strlen(date[i]) eq 1) then date[i] = '0'+date[i] 
+
+     splog, 'Starting for user:  ',userID
      userID+='_'+string(date, format='(A4,A2,A2,A2,A2,A2)')
 
      if (pbsdir eq '') then begin
@@ -262,15 +304,19 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
        file_move, pbs_dir, shift_pbs_dir
        file_mkdir, pbs_dir
      endif else file_mkdir, pbs_dir
+     splog, "cd "+pbs_dir
          
-     pbs_node_index = 'node'+ strtrim(indgen(pbs_nodes),2)
+     pbs_node_index = 'node'+ string(indgen(pbs_nodes)+1,format='(i2.2)')
      pbs_node_script = djs_filepath(pbs_node_index+'.pbs',root_dir=pbs_dir)
      pbs_node_lun = intarr(pbs_nodes)
      if keyword_set(pbs_ppn) then begin
-       pbs_ppn_index  = '_proc'+ strtrim(indgen(pbs_ppn),2)
+       pbs_ppn_index  = '_proc'+ string(indgen(pbs_ppn)+1,format='(i2.2)')
        pbs_ppn_script = strarr(pbs_nodes,pbs_ppn)
      endif
      
+     if keyword_set(pbs_ppn) then splog, 'Preparing to qsub '+strtrim(pbs_nodes,2)+' nodes ('+strtrim(pbs_ppn,2)+' processors per node) for '+strtrim(nplate,2)+' plates.' $
+     else splog, 'Preparing to qsub '+strtrim(nplate,2)+' plates.'
+
      for pbs_node = 0, pbs_nodes-1 do begin
        openw, get_lun, pbs_node_script[pbs_node] ,/get_lun
        pbs_node_lun[pbs_node] = get_lun
@@ -286,13 +332,46 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          pbs_ppn_script[pbs_node,*] = djs_filepath(pbs_node_index[pbs_node] + pbs_ppn_index +'.pbs',root_dir=pbs_dir)
          for pbs_proc = 0, pbs_ppn-1 do printf, pbs_node_lun[pbs_node], 'source '+pbs_ppn_script[pbs_node,pbs_proc] + ' &'
        endif else printf, pbs_node_lun[pbs_node], '#PBS -l nodes=1'
+       if not keyword_set(pbs_batch) and keyword_set(riemann) and keyword_set(galaxy) and not keyword_set(skip_portsmouth_stellarmass) then $
+	 printf, pbs_node_lun, 'source /home/boss/.intel64'
+       close, pbs_node_lun[pbs_node]
      endfor 
 
+     if keyword_set(pbs_batch) then begin
+        pbs_batch_script = djs_filepath('uubatch.pbs',root_dir=pbs_dir)
+        openw, pbs_batch_lun, pbs_batch_script, /get_lun
+        printf, pbs_batch_lun, '# Auto-generated by uubatchpbs.pro '+systime()
+        if keyword_set(pbs_a) then printf, pbs_batch_lun, '#PBS -A '+pbs_a
+        if keyword_set(pbs_walltime) then printf, pbs_batch_lun, '#PBS -l walltime='+pbs_walltime
+        printf, pbs_batch_lun, '#PBS -W umask=0022'
+        printf, pbs_batch_lun, '#PBS -V'
+        printf, pbs_batch_lun, '#PBS -j oe'
+        printf, pbs_batch_lun, '#PBS -t 1-'+strtrim(pbs_nodes,2)
+        printf, pbs_batch_lun, '#PBS -N uubatch'
+        if (keyword_set(queue)) then printf, pbs_batch_lun, '#PBS -q ' + queue
+        if keyword_set(pbs_ppn) then printf, pbs_batch_lun, '#PBS -l nodes=1:ppn='+strtrim(pbs_ppn,2)
+        if keyword_set(riemann) and keyword_set(galaxy) and not keyword_set(skip_portsmouth_stellarmass) then printf, pbs_batch_lun, 'source /home/boss/.intel64'
+        printf, pbs_batch_lun, 'PBS_JOBID=$( printf "%02d\n" "$PBS_ARRAYID" )
+        printf, pbs_batch_lun, 'source '+pbs_dir+'node${PBS_JOBID}.pbs'
+        close, pbs_batch_lun
+        free_lun, pbs_batch_lun
+     endif
+     
    endif
    pbs_node = 0
    pbs_proc = 0
    pbs_ppn_append = 0
    
+   if keyword_set(galaxy) then begin
+       n_redux = 5
+       galaxy_redux = replicate({group:'', product:'', file:'', counter:0L, done:0L, skip:0B, keyword:''},n_redux)
+       galaxy_redux.group = ['granada','portsmouth','portsmouth','utah','wisconsin']
+       galaxy_redux.product = ['fsps','stellarmass','emlinekin','bells','pca']
+       galaxy_redux.skip = [keyword_set(skip_granada_fsps),keyword_set(skip_portsmouth_stellarmass),keyword_set(skip_portsmouth_emlinekin),keyword_set(skip_utah_bells),keyword_set(skip_wisconsin_pca)]
+       galaxy_redux.keyword = ['/skip_granada_fsps','/skip_portsmouth_stellarmass','/skip_portsmouth_emlinekin','/skip_utah_bells','/skip_wisconsin_pca']
+   endif
+
+   cycle = 0
    for iplate=0, nplate-1 do begin
       ; Find all relevant 2D plan files
       yanny_read, planlist[iplate], hdr=hdr
@@ -309,22 +388,38 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
 
       ; Split the combine plan file name into a directory and file name
       planfilecomb = fileandpath(planlist[iplate], path=pathcomb)
-      
-      
+           
       if keyword_set(scratchdir) then begin
         scratchdir2d = djs_filepath(string(plateid[iplate],format='(i4.4)'), root_dir=scratchdir, subdir=run2d)
         scratchdir1d = djs_filepath('', root_dir=scratchdir2d, subdir=run1d)
         fullscriptfile[iplate] = djs_filepath('redux-'+platemjd, root_dir=scratchdir2d)
-      endif else fullscriptfile[iplate] = djs_filepath('redux-'+platemjd, root_dir=pathcomb)
+        redux_file = djs_filepath('redux-'+platemjd, root_dir=topdir2d,subdir=string(plateid[iplate],format='(i4.4)'))
+      endif else begin
+        fullscriptfile[iplate] = djs_filepath('redux-'+platemjd, root_dir=pathcomb)
+        redux_file = fullscriptfile[iplate]
+      endelse 
       if (keyword_set(skip2d)) then fullscriptfile[iplate] += '-' + run1d
       
-      ; Write the batch file
-      if (keyword_set(clobber) EQ 0) then begin
-        ;qbatch[iplate] = file_test(fullscriptfile[iplate]) EQ 0
-        pos = strpos(planlist[iplate],'spPlancomb')
-        spZbest = 'spZbest'+strmid(planlist[iplate],pos+strlen('spPlancomb'),strlen(planlist[iplate])-pos-14)+'.fits'
-        spZbest = djs_filepath(spZbest,root_dir=strmid(planlist[iplate],0,pos),subdir=run1d)
-        qbatch[iplate] = file_test(spZbest) EQ 0
+      if keyword_set(clobber) then file_delete, redux_file, /quiet, /allow_nonexistent $
+      else qbatch[iplate] = file_test(redux_file) ? 0B : 1B
+
+      if keyword_set(galaxy) then begin
+        galaxy_outdir =  djs_filepath('', root_dir=boss_galaxy_redux, subdir=run2d+'/'+string(plateid[iplate],format='(i4.4)')+'/'+run1d)
+
+        galaxy_redux_file = strarr(n_redux)
+        for r=0,n_redux-1 do galaxy_redux_file[r] = djs_filepath(galaxy_redux[r].group + '_' + galaxy_redux[r].product + '_redux-'+ platemjd, root_dir=galaxy_outdir, subdir=galaxy_redux[r].group + '/' + galaxy_redux[r].product)
+
+        keywords = ''
+        for r=0,n_redux-1 do begin
+          if keyword_set(galaxy_redux[r].skip) then begin
+              keywords += ', '+galaxy_redux[r].keyword
+              if file_test(galaxy_redux_file[r]) then galaxy_redux[r].done += 1L
+          endif else begin
+              galaxy_redux[r].counter += 1L
+              if keyword_set(clobber) then file_delete, galaxy_redux_file[r], /quiet, /allow_nonexistent
+          endelse
+        endfor
+        if keyword_set(test) then keywords += ', /test'
       endif
 
       if (qbatch[iplate]) then begin
@@ -338,7 +433,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
           file_copy, planlist[iplate], scratchdir2d, /over
           planfile2d_source = file_search(djs_filepath(planfile2d,root_dir=topdir2d,subdir=string(plateid[iplate],format='(i4.4)')),count=has_plan2d)
           if keyword_set(has_plan2d) then file_copy, planfile2d_source, scratchdir2d, /over
-        endif 
+        endif
 
          openw, olun, fullscriptfile[iplate], /get_lun
          printf, olun, '# Auto-generated batch file '+systime()
@@ -346,7 +441,7 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
            if keyword_set(pbs_ppn) then printf, olun, '#PBS -l nodes=1:ppn='+strtrim(pbs_ppn,2) $
             else printf, olun, '#PBS -l nodes=1'
            if keyword_set(pbs_a) then printf, olun, '#PBS -A '+pbs_a
-           if keyword_set(pbs_walltime) then printf, pbs_node_lun[pbs_node], '#PBS -l walltime='+pbs_walltime
+           if keyword_set(pbs_walltime) then printf, olun, '#PBS -l walltime='+pbs_walltime
            printf, olun, '#PBS -W umask=0022'
            printf, olun, '#PBS -V'
            printf, olun, '#PBS -j oe'
@@ -366,17 +461,13 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
              printf, olun, 'export BOSS_SPECTRO_REDUX='+boss_spectro_redux
          endif
 
-         printf, olun, ''
-         printf, olun, '#- Echo commands to make debugging easier'
-         printf, olun, 'set -o verbose'
-
-         ; printf, olun, ''
-         ; printf, olun, '#- Dump job environment for debugging'
-         ; envlog = 'env-'+platemjd+'.txt'
-         ; printf, olun, 'printenv > '+envlog
-         
-         printf, olun, ''
-         printf, olun, '#- The real work'
+         if keyword_set(verbose) then begin
+             printf, olun, ''
+             printf, olun, '#- Echo commands to make debugging easier'
+             printf, olun, 'set -o verbose'
+             printf, olun, ''
+             printf, olun, '#- The real work'
+         endif
 
          if (keyword_set(skip2d) EQ 0) then begin
             ; Set up requested code version
@@ -413,10 +504,13 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          if (keyword_set(galaxy)) then begin
              if (keyword_set(upsversgalaxy)) then printf, olun, 'setup galaxy '+upsversgalaxy $
              else printf, olun, 'setup galaxy '
+             printf, olun, 'export BOSS_GALAXY_REDUX='+boss_galaxy_redux
+             printf, olun, 'export GALAXY_SCRATCH_DIR='+boss_galaxy_scratch
              skip_keywords = ''
+             if keyword_set(skip_granada_fsps) then skip_keywords += ', /skip_granada_fsps'
              if keyword_set(skip_wisconsin_pca) then skip_keywords += ', /skip_wisconsin_pca'
              if keyword_set(skip_portsmouth_stellarmass) then skip_keywords += ', /skip_portsmouth_stellarmass'
-             skip_keywords += ', /skip_portsmouth_emlinekin' ;ie always skip! 
+             if keyword_set(skip_portsmouth_emlinekin) then skip_keywords += ', /skip_portsmouth_emlinekin'
              for i=0, n_elements(planfile2d)-1 do $
              printf, olun, 'echo '+fq+'galaxy_pipeline,"'+planfile2d[i]+'"'+skip_keywords+fq+' | idl'
          endif
@@ -459,6 +553,10 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
          ; in the absence of node sharing
          if (keyword_set(pbs_nodes)) then begin
            script_cmd = (ct GT 0) ? '#skip ' : 'source ' 
+           if not keyword_set(pbs_node) and not keyword_set(pbs_proc) then begin
+             cycle += 1
+             splog, "Preparing node cycle "+string(cycle,format='(i2)')+'/'+strtrim(ncycle,2)
+           endif
            if keyword_set(pbs_ppn) then begin
              openw, pbs_ppn_lun, pbs_ppn_script[pbs_node,pbs_proc], append=pbs_ppn_append, /get_lun
              printf, pbs_ppn_lun, script_cmd+fullscriptfile[iplate]+' > '+fullscriptfile[iplate]+'.o'
@@ -474,7 +572,9 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
                endif
              endif
            endif else begin
-             printf, pbs_node_lun[pbs_node], script_cmd+fullscriptfile[iplate]+' &
+             openw, pbs_node_lun[pbs_node], pbs_node_script[pbs_node], /append
+             printf, pbs_node_lun[pbs_node], script_cmd+fullscriptfile[iplate]+' &'
+             close, pbs_node_lun[pbs_node]
              pbs_node += 1
              if pbs_node ge pbs_nodes then pbs_node = 0           
            endelse
@@ -500,7 +600,9 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
    ; Close the bundled script files if pbs_nodes keyword is set
    if keyword_set(pbs_nodes) then begin
      for pbs_node = 0, pbs_nodes-1 do begin
+       openw, pbs_node_lun[pbs_node], pbs_node_script[pbs_node], /append
        printf, pbs_node_lun[pbs_node], 'wait'
+       printf, pbs_node_lun[pbs_node], 'echo "DONE"'
        close, pbs_node_lun[pbs_node]
        free_lun, pbs_node_lun[pbs_node]
      endfor
@@ -513,6 +615,27 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
    if (nbatch EQ 0) then begin
       splog, 'All plates have been reduced'
       return
+   endif
+
+   if keyword_set(pbs_batch) and keyword_set(galaxy) then begin
+       galaxy_redux_file = djs_filepath('galaxy_redux.fits',root_dir=pbs_dir)
+       splog, "CREATE: "+galaxy_redux_file
+       mwrfits, galaxy_redux, galaxy_redux_file, /create, /silent
+   endif
+
+   void = where(qbatch eq 1B,n_todo)
+   void = where(qbatch eq 0B,n_done)
+   message = string("boss_redux",format='(a22)')+': '
+   message += "#BOSS PLATES DONE = " + string(n_done,format='(i4)') + "       #BOSS PLATES TO DO = " + string(n_todo,format='(i4)')
+   if not keyword_set(clobber) then splog, message $
+   else splog, message + ".  [/clobber]"
+   if keyword_set(galaxy) then begin
+     for r=0,n_redux-1 do begin
+       message = string(strtrim(galaxy_redux[r].group,2) + "_" + strtrim(galaxy_redux[r].product,2),format='(a22)')+': '
+       message += "#GALAXY JOBS DONE = " + string(galaxy_redux[r].done,format='(i4)') + "       #GALAXY JOBS TO DO = " + string(galaxy_redux[r].counter,format='(i4)')
+       if not galaxy_redux[r].skip then splog, message $
+       else splog, message + ".  ["+galaxy_redux[r].keyword+"]"
+     endfor
    endif
 
    ;----------
@@ -532,14 +655,23 @@ pro uubatchpbs, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
       cd, origdir
    endif else begin
      cd, pbs_dir
-     for i=0L, pbs_nodes-1 do begin
+     if keyword_set(pbs_batch) then begin
         if keyword_set(nosubmit) then begin
-            splog, 'Generated '+pbs_node_script[i]+' but not submitting to queue'
+            splog, 'Generated '+pbs_batch_script+' but not submitting to queue'
         endif else begin
-           splog, 'Submitting '+pbs_node_script[i]
-           spawn, 'qsub '+pbs_node_script[i]
+           splog, 'Submitting '+pbs_batch_script
+           spawn, 'qsub '+pbs_batch_script
         endelse
-     endfor
+     endif else begin
+       for i=0L, pbs_nodes-1 do begin
+          if keyword_set(nosubmit) then begin
+              splog, 'Generated '+pbs_node_script[i]+' but not submitting to queue'
+          endif else begin
+             splog, 'Submitting '+pbs_node_script[i]
+             spawn, 'qsub '+pbs_node_script[i]
+          endelse
+       endfor
+     endelse
    endelse
 
    return
