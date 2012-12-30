@@ -158,7 +158,7 @@ echo "UURUNDAILY_SCRIPT: Running IDL Pipeline"
 printAndRun "idl -e 'platelist, /create '"
 printAndRun "idl -e 'spplan2d, MJD=$MJD '"
 printAndRun "idl -e 'spplan1d, MJD=$MJD '"
-printAndRun "idl -e 'uubatchpbs, MJD=$MJD '"
+printAndRun "idl -e 'uubatchpbs, /ember, /pbs_nodes=1, MJD=$MJD '"
 
 #printAndRun "idl -e 'platelist, /create '"
 #printAndRun "idl -e 'platemerge '"
