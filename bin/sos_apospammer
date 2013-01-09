@@ -7,7 +7,10 @@
 #
 #  Written by Gary Kushner (LBL).  Jan 2010.
 
-mail StephenBailey@lbl.gov -s "SOS Critical Error Log" < /home/observer/sos/sos-logs/sos_log-b1-error
+#- If there is any message other than just "Log Rolled", send an email
+if [ "`cat /home/observer/sos/sos-logs/sos_log-b1-error`" != "Log Rolled" ] ; then
+    mail StephenBailey@lbl.gov,jonathan.richards@utah.edu -s "SOS Critical Error Log" < /home/observer/sos/sos-logs/sos_log-b1-error
+fi
 
 #
 ###  The python logger doesn't roll over the log unless it writes to it.  So unless
