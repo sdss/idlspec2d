@@ -45,7 +45,7 @@
 ;   30-May-2000  Written by David Schlegel, Princeton.
 ;-
 ;------------------------------------------------------------------------------
-function get_mjd_dir, topdir, mjd=mjd, mjstart=mjstart, mjend=mjend
+function get_mjd_dir, topdir, mjd=mjd, mjstart=mjstart, mjend=mjend, alldirs=alldirs
 
    ;----------
    ; Save the current directory name, and change directories to TOPDIR
@@ -109,6 +109,12 @@ function get_mjd_dir, topdir, mjd=mjd, mjstart=mjstart, mjend=mjend
 ;         junk = findfile(filepath('', root_dir=mjdlist[imjd]), count=ct)
 ;         if (ct EQ 0) then mjdonly[imjd] = ''
 ;      endif
+
+       if not keyword_set(alldirs) then begin 
+          ; remove any non-integer directory names from mjdonly
+          if not valid_num(mjdonly[imjd]) then mjdonly[imjd] = ''
+       endif 
+
    endfor
 
    ii = where(mjdonly NE '', ct)
