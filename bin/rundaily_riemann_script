@@ -25,7 +25,7 @@ function screamAndDie
 	
 	### This hack is too ugly, need to change it ###
 	echo "Mailing Error Report"
-	mail -s "$MJD failed" StephenBailey@lbl.gov < $LOGDIR/$MJD.warning
+	mail -s "$MJD failed" StephenBailey@lbl.gov,jonathan.richards@utah.edu < $LOGDIR/$MJD.warning
 	
     exit 1
 }
@@ -207,7 +207,7 @@ echo "Goodbye at $(date)"
 ###  This is a TEMPORARY hack just to make sure things are looking ok!
 echo "Mailing Report"
 ### mail -s "log for dailyrun $MJD" StephenBailey@lbl.gov < $LOGDIR/$MJD.log
-grep 'Submitting redux' $LOGDIR/$MJD.log | mail -s "redux $MJD" StephenBailey@lbl.gov
+grep 'Submitting redux' $LOGDIR/$MJD.log | mail -s "redux $MJD" StephenBailey@lbl.gov,jonathan.richards@utah.edu
 
 
 
