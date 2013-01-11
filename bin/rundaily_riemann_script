@@ -204,18 +204,16 @@ printAndRun "idl -e 'batchpbs, queue=\"fast\", MJD=$MJD $UPS1D $UPS2D $ZCODE'"
 setup idlspec2d trunk
 printAndRun "idl -e 'platelist, /create $RUN1DKEY $RUN2DKEY'"
 
-#- Don't run platemerge as part of cron job -- too long
-#- Runs as part of batchmerge job each morning now
-### printAndRun "idl -e 'platemerge $RUN2DKEY'"
+#- Mail subset of report to get a heartbeat that jobs were submitted0
+echo "Mailing Report"
+grep 'Submitting redux' $LOGDIR/$MJD.log | mail -s "redux $MJD" StephenBailey@lbl.gov,jonathan.richards@utah.edu
 
+#- Don't run platemerge as part of cron job -- too long
+#- It runs as part of batchmerge job each morning now
+### printAndRun "idl -e 'platemerge $RUN2DKEY'"
 
 ###  All Done
 echo "Goodbye at $(date)"
-
-###  This is a TEMPORARY hack just to make sure things are looking ok!
-echo "Mailing Report"
-### mail -s "log for dailyrun $MJD" StephenBailey@lbl.gov < $LOGDIR/$MJD.log
-grep 'Submitting redux' $LOGDIR/$MJD.log | mail -s "redux $MJD" StephenBailey@lbl.gov,jonathan.richards@utah.edu
 
 
 
