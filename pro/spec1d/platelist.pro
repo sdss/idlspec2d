@@ -296,7 +296,7 @@ pro platelist, plist=plist, create=create, $
    fitsfile = djs_filepath('platelist.fits', root_dir=outdir)
 
    if (keyword_set(run2d)) then $
-    run2dlist = get_mjd_dir(topdir, mjd=run2d) $
+    run2dlist = get_mjd_dir(topdir, mjd=run2d, /alldirs) $
    else $
     run2dlist = ''
 
@@ -551,7 +551,7 @@ pro platelist, plist=plist, create=create, $
       ; the value '*'
       ;
       if (keyword_set(run1d[0])) then begin
-       allsubdirs = get_mjd_dir(path, mjd=run1d)
+       allsubdirs = get_mjd_dir(path, mjd=run1d, /alldirs)
        zbestrun1d[ifile] = ptr_new( allsubdirs[where(~strcmp(allsubdirs,'runz_',5))] )
       endif else $
        zbestrun1d[ifile] = ptr_new('')

@@ -1,3 +1,8 @@
+SJB 2012-01-10:
+PLATELIST: Added /alldirs option to call to get_mjd_dir when using it
+to get a list of possible run2d and run1d dirs.  This is required because
+of recent change to get_mjd_dir to by default only return numeric subdirs.
+
 -------------------------------------------------------------------------------
 v5_6_2 (2012-12-28) Tag for SoS with new offset values for XMID and WAVEMID
 
