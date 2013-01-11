@@ -1,3 +1,8 @@
+SJB 2012-01-11:
+rundaily_riemann_script: always use trunk for platelist.
+Turn off platemerge to reduce load on master node; this is
+now done in the morning batchmerge job.
+
 SJB 2012-01-10:
 PLATELIST: Added /alldirs option to call to get_mjd_dir when using it
 to get a list of possible run2d and run1d dirs.  This is required because

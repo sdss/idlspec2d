@@ -189,7 +189,12 @@ svnUp $SPECLOG_DIR
 svnUp $SPINSPECT_DIR
 
 echo "Running IDL code"
+
+#- Always use trunk for platelist, then switch back
+setup idlspec2d trunk
 printAndRun "idl -e 'platelist, /create $RUN1DKEY $RUN2DKEY'"
+
+setup idlspec2d $RUN2D
 printAndRun "idl -e 'spplan2d, MJD=$MJD $RUN2DKEY'"
 printAndRun "idl -e 'spplan1d, MJD=$MJD $RUN2DKEY'"
 #printAndRun "idl -e 'batchpbs, QUEUE=\"high_pri\", MJD=$MJD $UPS1D $UPS2D $ZCODE'"
@@ -198,7 +203,10 @@ printAndRun "idl -e 'batchpbs, queue=\"fast\", MJD=$MJD $UPS1D $UPS2D $ZCODE'"
 #- Use trunk for latest tweaks to platelist and platemerge
 setup idlspec2d trunk
 printAndRun "idl -e 'platelist, /create $RUN1DKEY $RUN2DKEY'"
-printAndRun "idl -e 'platemerge $RUN2DKEY'"
+
+#- Don't run platemerge as part of cron job -- too long
+#- Runs as part of batchmerge job each morning now
+### printAndRun "idl -e 'platemerge $RUN2DKEY'"
 
 
 ###  All Done
