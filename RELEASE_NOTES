@@ -1,3 +1,6 @@
+BAW 2013-01-16:
+bin/knownMissing.py: script to search for missing files in $SPECTRO_REDUX.
+
 SJB 2012-01-11:
 rundaily_riemann_script: always use trunk for platelist.
 Turn off platemerge to reduce load on master node; this is
