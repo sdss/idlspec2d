@@ -9,7 +9,7 @@ function usage
 {
     local execName=$(basename $0)
     ( 
-	echo "UURUNDAILY_SCRIPT: usage $execName \$MJD"
+	echo "UURUNDAILY_SCRIPT: usage $execName \$MJD [noupdate]"
     ) >&2
     exit 1
 }
@@ -104,16 +104,32 @@ function sdss3rsync
 
 ###	 Parse command line
 
-if ! test $# == 1; then
+update=true
+if test $# == 0; then
   	echo "UURUNDAILY_SCRIPT: Wrong number of parameters"
-  	echo " "
   	usage
+elif ! test $# > 2; then
+  	echo "UURUNDAILY_SCRIPT: Wrong number of parameters"
+  	usage
+elif test $# == 2; then
+    if test $2="noupdate"; then
+        update=false
+    else
+        echo "UURUNDAILY_SCRIPT: Second parameter must be noupdate"
+        usage
+    fi
 fi
 if ! test -z $(perl -n -e 'print "not" unless /^[0-9]{5}$/' <<< $1); then
 	echo "UURUNDAILY_SCRIPT: First parameter must be an MJD not $1"
-	echo " "
 	usage
 fi
+
+if $update; then
+    echo "UURUNDAILY_SCRIPT: rsync photoObj plates"
+else
+    echo "UURUNDAILY_SCRIPT: Skipping rsync/svn updates"
+fi
+
 
 MJD=$1
 
@@ -147,13 +163,17 @@ echo "UURUNDAILY_SCRIPT: Using idlspec2d version $spec2d"
 ###  Start of main processing
 ###
 
-echo "UURUNDAILY_SCRIPT: rsync photoObj plates"
-#sdss3rsync "--include '*/' --include 'photo*.fits'  --exclude '*' rsync://sdss3@data.sdss3.org/sas/bosswork/boss/photoObj/plates/2010-05-23 $BOSS_PHOTOOBJ_DIR/plates/"
 
-echo "UURUNDAILY_SCRIPT: Processing svn updates"
-svnUp $PLATELIST_DIR
-svnUp $SPECLOG_DIR
-svnUp $SPINSPECT_DIR
+if $update; then
+    echo "UURUNDAILY_SCRIPT: rsync photoObj plates"
+    sdss3rsync "--include '*/' --include 'photo*.fits'  --exclude '*' rsync://sdss3@data.sdss3.org/sas/bosswork/boss/photoObj/plates/2010-05-23 $BOSS_PHOTOOBJ_DIR/plates/"
+    echo "UURUNDAILY_SCRIPT: Processing svn updates"
+    svnUp $PLATELIST_DIR
+    svnUp $SPECLOG_DIR
+    svnUp $SPINSPECT_DIR
+else
+    echo "UURUNDAILY_SCRIPT: Skipping rsync/svn updates"
+fi
 
 echo "UURUNDAILY_SCRIPT: Running IDL Pipeline"
 printAndRun "idl -e 'platelist, /create '"
