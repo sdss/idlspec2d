@@ -165,7 +165,7 @@ if $update; then
     svnUp $SPECLOG_DIR
     svnUp $SPINSPECT_DIR
 else
-    echo "UURUNDAILY_SCRIPT: Skipping rsync/svn updates"
+    echo "UURUNDAILY_SCRIPT: Skipping updates"
 fi
 
 echo "UURUNDAILY_SCRIPT: Running IDL Pipeline"
