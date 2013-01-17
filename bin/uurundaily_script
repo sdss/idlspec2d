@@ -124,13 +124,6 @@ if ! test -z $(perl -n -e 'print "not" unless /^[0-9]{5}$/' <<< $1); then
 	usage
 fi
 
-if $update; then
-    echo "UURUNDAILY_SCRIPT: rsync photoObj plates"
-else
-    echo "UURUNDAILY_SCRIPT: Skipping rsync/svn updates"
-fi
-
-
 MJD=$1
 
 ###  Start logging
