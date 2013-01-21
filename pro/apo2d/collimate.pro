@@ -437,7 +437,7 @@ pro collimate, expnum1, expnum2, docams=docams, indir=indir, $
       meanydev = stddev(yoffset[igood])
       minyoff = min(yoffset[igood])
       maxyoff = max(yoffset[igood])
-      if camname eq 'r1' then meanyoff+=0.34 ;for x/wsig offset in r1 1-21-13 MDO
+      if camname eq 'r1' then meanyoff-=0.34 ;for x/wsig offset in r1 1-21-13 MDO
       meanyoffstr = string(meanyoff, format='(f5.2)')
       meanydevstr = string(meanydev, format='(f5.2)')
       minyoffstr = string(minyoff, format='(f5.2)')
