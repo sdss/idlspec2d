@@ -1,3 +1,9 @@
+MDO 2013-01-21:
+collimate.pro: add offset for r1 so focus includes minimizing 
+xsig+wsig in regions used for SOS
+combsmallcollimate.pro: change offsets for xsig/wsig problems 
+from temperature and focus ring changes
+
 BAW 2013-01-16:
 bin/knownMissing.py: script to search for missing files in $SPECTRO_REDUX.
 
