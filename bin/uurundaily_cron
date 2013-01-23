@@ -18,7 +18,8 @@ export BOSS_HOME=/uufs/chpc.utah.edu/common/home/bolton_data3/boss
 
 timestamp=`date "+%m%d%Y"`
 LOGDIR=$BOSS_HOME/daily/logs
-exec >>$LOGDIR/daily_$timestamp.log 2<&1
+LOGFILE=$LOGDIR/daily_$timestamp.log
+exec >>$LOGFILE 2<&1
 
 ###  Use this to temporarily turn off script
 #exec echo "turned off at $(date)"
