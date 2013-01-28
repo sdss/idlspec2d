@@ -159,7 +159,7 @@ echo "UURUNDAILY_SCRIPT: Using idlspec2d version $spec2d"
 
 if $update; then
     echo "UURUNDAILY_SCRIPT: rsync photoObj plates"
-    sdss3rsync "--include '*/' --include 'photo*.fits'  --exclude '*' rsync://sdss3@data.sdss3.org/sas/bosswork/boss/photoObj/plates/2010-05-23 $BOSS_PHOTOOBJ/plates/"
+    sdss3rsync "--include '*/' --include 'photo*.fits'  --exclude '*' rsync://sdss3@mirror.sdss3.org/sas/bosswork/boss/photoObj/plates/2010-05-23 $BOSS_PHOTOOBJ/plates/"
     echo "UURUNDAILY_SCRIPT: Processing svn updates"
     svnUp $PLATELIST_DIR
     svnUp $SPECLOG_DIR
