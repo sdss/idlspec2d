@@ -81,21 +81,18 @@ function svnUp
 	tryAndRun "sleep 600"
 	tryAndRun "svn cleanup $1"
 	printAndRun "svn up $1"
-        if test $? == 0; then
-                return
-        fi
-        echo "UURUNDAILY_SCRIPT: svn up $1 failed. Cleanup unsuccessful." | tee -a $LOGDIR/$MJD.warning
 }
 
 function sdss3rsync
 {
-        echo "UURUNDAILY_SCRIPT: Attempting to rsync"
+        echo "UURUNDAILY_SCRIPT: Attempting to rsync MIRROR"
 
         tryAndRun "rsync -aLrvz --password-file $SDSS3_PASSWD_FILE $1"
         if test $? == 0; then
                 return
         fi
-        echo "UURUNDAILY_SCRIPT: rsync failed." | tee -a $LOGDIR/$MJD.warning
+        echo "UURUNDAILY_SCRIPT: rsync MIRROR failed. Attempting to rsync MAIN"  | tee -a $LOGDIR/$MJD.warning
+        printAndRun "rsync -aLrvz --password-file $SDSS3_PASSWD_FILE $2"
 }
 
 #
@@ -159,7 +156,7 @@ echo "UURUNDAILY_SCRIPT: Using idlspec2d version $spec2d"
 
 if $update; then
     echo "UURUNDAILY_SCRIPT: rsync photoObj plates"
-    sdss3rsync "--include '*/' --include 'photo*.fits'  --exclude '*' rsync://sdss3@mirror.sdss3.org/sas/bosswork/boss/photoObj/plates/2010-05-23 $BOSS_PHOTOOBJ/plates/"
+    sdss3rsync "--include '*/' --include 'photo*.fits'  --exclude '*' rsync://sdss3@mirror.sdss3.org/sas/bosswork/boss/photoObj/plates/2010-05-23 $BOSS_PHOTOOBJ/plates/" "--include '*/' --include 'photo*.fits'  --exclude '*' rsync://sdss3@data.sdss3.org/sas/bosswork/boss/photoObj/plates/2010-05-23 $BOSS_PHOTOOBJ/plates/"
     echo "UURUNDAILY_SCRIPT: Processing svn updates"
     svnUp $PLATELIST_DIR
     svnUp $SPECLOG_DIR
