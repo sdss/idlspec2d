@@ -30,7 +30,7 @@
 ;
 ; OPTIONAL OUTPUTS:
 ;   bestshift  - Best shift between lines in log10(Ang)
-;   besterr    - Formal error in BESTSHIFT, but rescaled by BESTCHI2
+;   besterr    - Formal error in BESTSHIFT, but rescaled by BESTRCHI2
 ;   bestratio  - Fit to flux ratio (line 2):(line 1)
 ;   bestrchi2  - Reduced chi^2 of the best fit
 ;
@@ -77,8 +77,8 @@ function fitfineconst1, ishift, fitflux=fitflux, theta=theta
    ; Construct the basis vectors, which are polynomial terms
    ; and the shifted 5007 line.
 ;   basisvec = [[poly_array(npix1,npoly)], [bigflux[ibigpix]]]
-   basisvec = [[bigflux[ibigpix]], [poly_array(npix1,npoly)]]
-   mmatrix = fltarr(npix1,npoly+1)
+   basisvec = [[bigflux[ibigpix]], [poly_array(ngood,npoly)]]
+   mmatrix = fltarr(ngood,npoly+1)
    for i=0, npoly do mmatrix[*,i] = basisvec[*,i] * weight
    mtrans = transpose(mmatrix)
    bvec = objflux[itrim] * weight
