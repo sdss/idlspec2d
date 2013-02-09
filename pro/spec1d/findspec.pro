@@ -86,7 +86,7 @@ pro findspec, ra, dec, infile=infile, outfile=outfile, searchrad=searchrad, $
  slist=slist, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
  best=best, print=print1, sdss=sdss
 
-   common com_findspec, plist, nlist, lasttopdir
+   common com_findspec, plist, nlist, lasttopdir, last2d=last2d, last1d=last1d
 
    if (keyword_set(sdss)) then begin
       topdir1 = getenv('SPECTRO_REDUX')
@@ -97,21 +97,27 @@ pro findspec, ra, dec, infile=infile, outfile=outfile, searchrad=searchrad, $
    splog, 'Setting RUN2D=', run2d
    if (keyword_set(run1d1)) then run1d = strtrim(run1d1,2) $
     else run1d = getenv('RUN1D')
+   splog, 'Setting RUN1D=', run2d
    if (keyword_set(topdir1)) then topdir = topdir1 $
     else topdir = getenv('BOSS_SPECTRO_REDUX')
 
    if (keyword_set(lasttopdir) EQ 0) then lasttopdir = ''
-   if (keyword_set(plist) EQ 0 OR topdir NE lasttopdir) then begin
+   if (keyword_set(last2d) EQ 0) then last2d = ''
+   if (keyword_set(last1d) EQ 0) then last1d = ''
+   if (keyword_set(plist) EQ 0 OR topdir NE lasttopdir $
+    OR run2d NE last2d OR run1d NE last1d) then begin
       lasttopdir = topdir
-      ; platelist, plist=plist, topdir=topdir
-      platelist_files = file_search(topdir+'/platelist.fits')
-      plates_files = file_search(topdir+'/plates-*.fits')
-      if (strlen(platelist_files[0]) GT 0) then $
-         plist = mrdfits(platelist_files[0],1,/silent)
-      if (strlen(plates_files[0]) GT 0) then $
-         plist = mrdfits(plates_files[0],1,/silent)
-      if (NOT keyword_set(plist)) then $
-       message, 'Plate list (platelist.fits or plates-*.fits) not found in ' + topdir
+      last2d = run2d
+      last1d = run1d
+      platelist, plist=plist, topdir=topdir, run2d=run2d, run1d=run1d
+;      platelist_files = file_search(topdir+'/platelist.fits')
+;      plates_files = file_search(topdir+'/plates-*.fits')
+;      if (strlen(platelist_files[0]) GT 0) then $
+;         plist = mrdfits(platelist_files[0],1,/silent)
+;      if (strlen(plates_files[0]) GT 0) then $
+;         plist = mrdfits(plates_files[0],1,/silent)
+;      if (NOT keyword_set(plist)) then $
+;       message, 'Plate list (platelist.fits or plates-*.fits) not found in ' + topdir
       nlist = n_elements(plist)
    endif
 
