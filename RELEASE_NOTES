@@ -1,3 +1,7 @@
+
+FINDSPEC: Fix to work with new behaviour of PLATELIST looking in RUN2D
+    subdir names for the platelist.fits file
+
 MDO 2013-01-21:
 collimate.pro: add offset for r1 so focus includes minimizing 
 xsig+wsig in regions used for SOS
