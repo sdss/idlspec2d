@@ -184,6 +184,8 @@ pro/apo2d/quickwave.pro -text
 pro/apo2d/remove2redo.pro -text
 pro/apo2d/slithistory.pro -text
 pro/apo2d/smallcollimate.pro -text
+pro/apo2d/sos_logs_concat.pro -text
+pro/apo2d/sos_logs_plotsky.pro -text
 pro/config/configuration__define.pro -text
 pro/config/configuration_test.pro -text
 pro/config/notes.txt -text
