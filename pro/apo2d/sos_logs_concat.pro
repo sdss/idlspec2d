@@ -12,7 +12,7 @@
 ;
 ; OPTIONAL INPUTS:
 ;   mjd        - Search for all files in $SPECTROLOGS_DIR/MJD;
-;                default to '55???'
+;                default to '5????'
 ;   outfile    - Output file name; default to 'logfile-all.fits'
 ;
 ; OUTPUT:
@@ -43,7 +43,7 @@ pro sos_logs_concat, mjd=mjd1, outfile=outfile1
    spectrolog_dir = getenv('SPECTROLOG_DIR')
 
    if (keyword_set(mjd1)) then mjdstr = strtrim(mjd1,2) $
-    else mjdstr = '55???'
+    else mjdstr = '5????'
    if (keyword_set(outfile1)) then outfile = outfile1 $
     else outfile = 'logfile-all.fits'
 
@@ -62,11 +62,12 @@ pro sos_logs_concat, mjd=mjd1, outfile=outfile1
 
    ; Find if a logfile exists in each MJD, and count the number
    ; of entries in each HDU
-   thislist1 = create_struct('FILENAME', '', num, lonarr(nhdu))
-   for imjd=0, nmjd-1 do begin
-      mjdstr = string(mjdlist[i],format='(i6.6)')
+   filelist = 0
+   thislist1 = create_struct('FILENAME', '', 'NUM', lonarr(nhdu))
+   for i=0L, nmjd-1L do begin
+      mjdstr = string(fileandpath(mjdlist[i]),format='(i5.5)')
       thisname = filepath('logfile-'+mjdstr+'.fits', $
-       root_dir=mjdlist[imjd])
+       root_dir=mjdlist[i])
       thisname = findfile(thisname, count=ct)
       if (ct GT 0) then begin
          thislist1.filename = thisname
@@ -80,17 +81,18 @@ pro sos_logs_concat, mjd=mjd1, outfile=outfile1
    ; Read all data and copy into one data structure per HDU
    nfile = n_elements(filelist)
    count = lonarr(nhdu)
-   outdat = ptr_arr(nhdu)
-   for i=0, nfile-1 do begin
+   outdat = ptrarr(nhdu)
+   for i=0L, nfile-1L do begin
       print, 'Reading file ', i, ' of ', nfile, ': ' + filelist[i].filename
       for j=0, nhdu-1 do begin
          if (filelist[i].num[j] GT 0) then begin
             dat1 = mrdfits(filelist[i].filename,j+1)
-            if (NOT keyword_set(outdat[i])) then begin
+            if (NOT keyword_set(outdat[j])) then begin
                blankdat = dat1[0]
-               assign_struct, {junk:0}, blankdat
-               outdat[i] = ptr_new( replicate(blankdat,total(count[j])) )
+               struct_assign, {junk:0}, blankdat
+               outdat[j] = ptr_new( replicate(blankdat,total(filelist.num[j])) )
             endif
+;            (*outdat[j])[count[j]+lindgen(filelist[i].num[j])] = dat1
             copy_struct_inx, dat1, *outdat[j], $
              index_to=count[j]+lindgen(filelist[i].num[j])
             count[j] += filelist[i].num[j]
