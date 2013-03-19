@@ -15,7 +15,7 @@
 ; OPTIONAL KEYWORDS:
 ;   docams     - Camera(s); default to ['b1','b2','r1','r2']
 ;   mjd        - Search for all files in $BOSS_SPECTRO_DATA/MJD;
-;                default to '55???'
+;                default to '5[5-9]???'
 ;
 ; OUTPUTS:
 ;
@@ -51,7 +51,7 @@ pro rdnoise_history, docams=docams, mjd=mjd1
    endif
 
    if (keyword_set(mjd1)) then mjdstr = strtrim(mjd1,2) $
-    else mjdstr = '55???'
+    else mjdstr = '5[5-9]???'
 
    mjdlist = ''
    for i=0, n_elements(mjdstr)-1 do begin
