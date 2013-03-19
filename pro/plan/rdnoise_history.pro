@@ -122,11 +122,11 @@ pro rdnoise_history, docams=docams, mjd=mjd1
                rddrift[ifile,j] = stddev(bvec)
             endfor
          endif
+         splog, fileandpath(framename[ifile]), $
+          mjd[ifile], tai[ifile], (exptime[ifile]>0)<99999, $
+          rdnoise[ifile,*], rddrift[ifile,*], $
+          format='(a,i6,f12.0,f8.1,8f10.3)', /noname
       endif
-      splog, fileandpath(framename[ifile]), $
-       mjd[ifile], tai[ifile], (exptime[ifile]>0)<99999, $
-       rdnoise[ifile,*], rddrift[ifile,*], $
-       format='(a,i6,f12.0,f8.1,8f10.3)', /noname
    endfor
 
    splog, /close
