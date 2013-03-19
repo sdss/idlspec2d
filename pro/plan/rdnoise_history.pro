@@ -25,6 +25,7 @@
 ;   Output files with 12 columns: file name, MJD, TAI, exposure time (seconds),
 ;   read noise in DN in each of the 4 quadrants, standard deviation of the
 ;   bias drift in DN (row-to-row) in each of the 4 quadrants.
+;   Skip any Hartmann exposures (where HARTMANN header is not 'Out').
 ;
 ; EXAMPLES:
 ;
@@ -99,24 +100,28 @@ pro rdnoise_history, docams=docams, mjd=mjd1
    nfile = n_elements(framename)
    mjd = lonarr(nfile)
    tai = dblarr(nfile)
+   hartmann = strarr(nfile)
    exptime = fltarr(nfile)
    rdnoise = fltarr(nfile,4)
    rddrift = fltarr(nfile,4)
    for ifile=0, nfile-1 do begin
       print, 'Reading file ', ifile, ' of ', nfile, ': ' + framename[ifile]
       sdssproc, framename[ifile], hdr=hdr, /silent
+      hartmann[ifile] = strtrim(sxpar(hdr, 'HARTMANN'),2)
       exptime[ifile] = sxpar(hdr, 'EXPTIME')
       mjd[ifile] = sxpar(hdr, 'MJD')
       tai[ifile] = sxpar(hdr, 'TAI-BEG')
-      img = mrdfits(framename[ifile],/fscale)
-      if (keyword_set(img)) then begin
-         if (mjd[ifile] LT 55113) then img = rotate(img,2)
-         for j=0,3 do begin
-            biasimg = img[xbias0[j]:xbias1[j],y0[j]:y1[j]]
-            rdnoise[ifile,j] = djsig(biasimg) * 1.015
-            bvec = djs_avsigclip(biasimg, 1)
-            rddrift[ifile,j] = stddev(bvec)
-         endfor
+      if (hartmann[ifile] EQ 'Out') then begin
+         img = mrdfits(framename[ifile],/fscale)
+         if (keyword_set(img)) then begin
+            if (mjd[ifile] LT 55113) then img = rotate(img,2)
+            for j=0,3 do begin
+               biasimg = img[xbias0[j]:xbias1[j],y0[j]:y1[j]]
+               rdnoise[ifile,j] = djsig(biasimg) * 1.015
+               bvec = djs_avsigclip(biasimg, 1)
+               rddrift[ifile,j] = stddev(bvec)
+            endfor
+         endif
       endif
       splog, fileandpath(framename[ifile]), $
        mjd[ifile], tai[ifile], (exptime[ifile]>0)<99999, $
