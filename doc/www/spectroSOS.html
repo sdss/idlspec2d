@@ -132,13 +132,50 @@ There should be nothing between those two lines.<p>
 
 <dl><dd><code>
 $ sos_apocontrol start
-</dl></dd></code><p>
-	
+</code></dd></dl>
+
+<p>	
 When sos_apocontrol is run it will check to make sure that there is an ssh-agent that
 it can connect to for svn access.  If there is not, it will ask for the password of
-the key it uses.  The password is the same as is used for the sdss3 data access web site.<p>
+the key it uses.  The password is the same as is used for the sdss3 data access web site.
+</p>
+
+<p><b>This password request is OK:</b></p>
+<pre>
+Checking for agent file /home/observer/sos/control/agent.info
+Found agent file
+Checking agent pid 5142
+Agent has stopped running
+Starting new agent.
+ssh-agent -a /home/observer/sos/control/agent.socket >/home/observer/sos/control/agent.info
+
+About to add the private key sos uses, please enter the key password.
+It is the old SDSS password, not the new SDSS3 password.
+
+ssh-add /home/observer/.ssh/id_dsa-sos
+Enter passphrase for /home/observer/.ssh/id_dsa-sos: 
+</pre>
+
+<p>
+One the agent is running, it should not require further passwords.
+If you get the following message and a prompt for a password, exit
+with control-C
+</p>
+<p><b>This password request is NOT OK:</b></p>
+<pre>
+This is a final check to avoid authentication problems which will trigger
+LBL to block sos3 from accessing svn.  DO NOT try to type in the password.
+This is a test which must succeed without the need to type in a password.
+Only type ^C to abort the script.
+
+svn log /home/sdss3/products/NULL/speclog/trunk >/dev/null
+Enter passphrase for key '/home/observer/.ssh/id_dsa-sos': 
+</pre>
 	
-When the command finishes, confirm the sos processes are running.<p>
+<p>When the command finishes, confirm the sos processes are running.</p>
+<dl><dd><code>
+$ sos_apocontrol status
+</code></dd></dl>
 
 <h4>Start SOS Processes After Observing Has Started For the Night</h4>
 
@@ -172,6 +209,7 @@ with names like <tt>redo-b1.out</tt>.
 <h4>Reprocess a Nights Worth of Spectro</h4>
 
 <dl><dd><code>
+$ cd /home/observer/sos/sos-logs/</br>
 $ sos_aporedo -w -g -m 00000 (Where 00000 is the MJD to reprocess)
 </dl></dd></code><p>
 
@@ -200,9 +238,12 @@ This should be done from the "observer" account on "sos3.apo.nmsu.edu".<p>
 For example, to stop the current version, set up v5_4_15, then re-start:
 <dl><dd><code>
 $ sos_apocontrol stopWait <br>
+$ sos_apocontrol status <br>
+  --> should say "No processes running!" <br/>
 $ setup idlspec2d v5_4_15 <br>
-$ sos_apocontrol allow <br>
-$ sos_apostart -g -e 
+$ sos_apocontrol start <br>
+$ sos_apocontrol status <br>
+  --> should show 4 "sos_runnerd" processes running <br/>
 </dl></dd></code>
 If "sos_apocontrol stopWait" hangs, then hit control-C and
 use "sos_apocontrol stopKill".
