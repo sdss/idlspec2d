@@ -628,14 +628,20 @@ if (mjd GE 55052) then begin
       sxaddpar, hdr, 'RDNOISE3', rdnoise[3], 'CCD read noise amp 3 [electrons]'
 
 
-      ; Trigger warning if readnoise is way too low
+      ; Trigger warning if readnoise is way too low or high
       for iamp=0,3 do begin
          if rdnoise[iamp] LT 1.0 then begin
             splog, 'WARNING: ', camname, ' Amp ', iamp, $
-             ' crazy low read noise = ', rdnoise[iamp], ' DN; Are CCD voltages correct?', $
+             ' crazy low read noise = ', rdnoise[iamp], ' e-; Are CCD voltages correct?', $
+             format='(a,a,a,i1,a,f5.2,a)'
+         endif
+         if rdnoise[iamp] GT 3.5 then begin
+            splog, 'WARNING: ', camname, ' Amp ', iamp, $
+             ' high read noise = ', rdnoise[iamp], $ 
              format='(a,a,a,i1,a,f5.2,a)'
          endif
       endfor
+
         
       ; Identify CRs, and grow by 1 pix
       if (keyword_set(invvar)) then begin

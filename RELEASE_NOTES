@@ -1,3 +1,5 @@
+SJB 2013-04-27:
+SDSSPROC: Add warning for high read noise in addition to low read noise.
 
 FINDSPEC: Fix to work with new behaviour of PLATELIST looking in RUN2D
     subdir names for the platelist.fits file
