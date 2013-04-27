@@ -1,8 +1,21 @@
+-------------------------------------------------------------------------------
+v5_6_4 (2013-01-22) SJB
+New tag for SOS for high read noise warning.
+
 SJB 2013-04-27:
 SDSSPROC: Add warning for high read noise in addition to low read noise.
 
+RDNOISE_HISTORY: Skip hartmanns (DJS)
+
+SOS_LOGS_CONCAT, SOS_LOGS_PLOTSKY (DJS)
+New procs for looking at summary SOS log statistics
+
 FINDSPEC: Fix to work with new behaviour of PLATELIST looking in RUN2D
     subdir names for the platelist.fits file
+
+-------------------------------------------------------------------------------
+v5_6_3 (2013-01-22) MDO
+Changed collimate offsets and r1 focus to minimize xsig/wsig
 
 MDO 2013-01-21:
 collimate.pro: add offset for r1 so focus includes minimizing 
