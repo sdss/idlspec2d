@@ -5,6 +5,7 @@ bin/copy_spPlan.py -text
 bin/fb_classes.py -text
 bin/filecheck.py -text
 bin/getPlugmap -text
+bin/guidermon_checkin.sh -text
 bin/idlspec2d_version -text
 bin/killAndChildren.py -text
 bin/loadSN2Value -text
