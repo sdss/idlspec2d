@@ -969,14 +969,22 @@ pro platelist, plist=plist, create=create, $
               targets[iobj] = sdss_flagname('BOSS_TARGET1', $
                plug[iobj].boss_target1, /silent, /concat)+' '
 
-            imain = where(strmatch(targets,'*GALAXY *') $
+            ;; Objects which shouldn't count against the success statistics
+            bad_fiber = sdss_flagval('ZWARNING', 'LITTLE_COVERAGE') OR $
+                        sdss_flagval('ZWARNING', 'UNPLUGGED') OR $
+                        sdss_flagval('ZWARNING', 'BAD_TARGET')
+
+            imain = where((strmatch(targets,'*GALAXY *') $
              OR strmatch(targets,'*GALAXY_BIG *') $
-             OR strmatch(targets,'*GALAXY_BRIGHT_CORE *'), nmain)
-            ilrg1 = where(strmatch(targets,'*GALAXY_RED *') $
+             OR strmatch(targets,'*GALAXY_BRIGHT_CORE *')) $
+             AND (zans.zwarning AND bad_fiber) EQ 0, nmain)
+            ilrg1 = where((strmatch(targets,'*GALAXY_RED *') $
              OR strmatch(targets,'*GALAXY_RED_II *') $
-             OR strmatch(targets,'*GAL_LOZ *'), nlrg1)
-            ilrg2 = where(strmatch(targets,'*GAL_HIZ *') $
-             OR strmatch(targets,'*GAL_CMASS*'), nlrg2)
+             OR strmatch(targets,'*GAL_LOZ *')) $
+             AND (zans.zwarning AND bad_fiber) EQ 0,  nlrg1)
+            ilrg2 = where((strmatch(targets,'*GAL_HIZ *') $
+             OR strmatch(targets,'*GAL_CMASS*')) $
+             AND (zans.zwarning AND bad_fiber) EQ 0, nlrg2)
 ;            iqso = where(strmatch(targets,'*QSO_HIZ *') $
 ;             OR strmatch(targets,'*QSO_CAP *') $
 ;             OR strmatch(targets,'*QSO_SKIRT *') $
