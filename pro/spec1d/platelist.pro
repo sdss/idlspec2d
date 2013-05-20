@@ -977,20 +977,22 @@ pro platelist, plist=plist, create=create, $
             imain = where((strmatch(targets,'*GALAXY *') $
              OR strmatch(targets,'*GALAXY_BIG *') $
              OR strmatch(targets,'*GALAXY_BRIGHT_CORE *')) $
-             AND (zans.zwarning AND bad_fiber) EQ 0, nmain)
+             AND (zans.zwarning_noqso AND bad_fiber) EQ 0, nmain)
             ilrg1 = where((strmatch(targets,'*GALAXY_RED *') $
              OR strmatch(targets,'*GALAXY_RED_II *') $
              OR strmatch(targets,'*GAL_LOZ *')) $
-             AND (zans.zwarning AND bad_fiber) EQ 0,  nlrg1)
+             AND (zans.zwarning_noqso AND bad_fiber) EQ 0,  nlrg1)
             ilrg2 = where((strmatch(targets,'*GAL_HIZ *') $
              OR strmatch(targets,'*GAL_CMASS*')) $
-             AND (zans.zwarning AND bad_fiber) EQ 0, nlrg2)
+             AND (zans.zwarning_noqso AND bad_fiber) EQ 0, nlrg2)
 ;            iqso = where(strmatch(targets,'*QSO_HIZ *') $
 ;             OR strmatch(targets,'*QSO_CAP *') $
 ;             OR strmatch(targets,'*QSO_SKIRT *') $
 ;             OR strmatch(targets,'*QSO_FIRST_CAP *') $
 ;             OR strmatch(targets,'*QSO_FIRST_SKIRT *'), nqso)
-            iqso = where(strmatch(targets,'*QSO_*'), nqso)
+            iqso = where(strmatch(targets,'*QSO_*') $
+                AND (zans.zwarning AND bad_fiber) EQ 0, nqso)
+
             plist[ifile].n_target_main = nmain
             plist[ifile].n_target_lrg1 = nlrg1
             plist[ifile].n_target_lrg2 = nlrg2
