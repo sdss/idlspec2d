@@ -1,0 +1,27 @@
+
+infile = 'spEigenGal-55740.fits'
+outfile = 'spEigenGal-56436.fits'
+flux = mrdfits(infile, 0, hdr)
+loglam0 = sxpar(hdr,'COEFF0')
+loglam = loglam0 + dindgen(sxpar(hdr,'NAXIS1')) * sxpar(hdr,'COEFF1')
+new0 = 3.0730d0
+xpad = round((loglam0 - new0) * 1d4)
+sz = size(flux,/dimens)
+newflux = fltarr(sz[0]+xpad,sz[1])
+xaxis = findgen(sz[0]+xpad)
+fitlen = 200 ; pixels to extrapolate with
+apvec = (findgen(xpad)/xpad)^2 ; apodization vector
+for i=0, sz[1]-1 do begin $
+   newflux[xpad:*,i] = flux[*,i] & $
+   res = linfit(xaxis[xpad:xpad+fitlen-1], flux[0:fitlen-1,i]) & $
+   medval = median(flux[0:fitlen-1,i]) & $
+   newflux[0:xpad-1,i] = poly(xaxis[0:xpad-1], res) * apvec + medval * (1-apvec)
+newhdr = hdr
+sxaddpar, newhdr, 'COEFF0', new0
+mwrfits, newflux, outfile, newhdr, /create
+
+splot,newflux[*,0]/max(abs(newflux[*,0])),yr=[-1,1]
+soplot,newflux[*,1]/max(abs(newflux[*,1])),yr=[-1,1],color='red'
+soplot,newflux[*,2]/max(abs(newflux[*,2])),yr=[-1,1],color='green'
+soplot,newflux[*,3]/max(abs(newflux[*,3])),yr=[-1,1],color='blue'
+
