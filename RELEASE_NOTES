@@ -6,6 +6,10 @@ SJB 2013-05-20:
 PLATELIST: exclude LITTLE_COVERAGE, UNPLUGGED, and BAD_TARGET fibers from
     statistics for platelist.  Ticket 1727.
 
+templates/spEigenGal-56436.fits: Copy of galaxy templates pEigenGal-55740.fits
+    with an extrapolation further to the red to logwave=3.0730, such that
+    these can be used to z=2.
+
 -------------------------------------------------------------------------------
 v5_6_4 (2013-01-22) SJB
 New tag for SOS for high read noise warning.
