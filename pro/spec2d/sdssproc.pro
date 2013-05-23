@@ -495,7 +495,7 @@ if (mjd GE 55052) then begin
             pixbiasname = findopfile('boss_pixbias-*-'+camname+'.fits*', mjd, pp, $
                                      silent=silent)
             image = bolton_biassub(rawdata, pp+pixbiasname, rnoise=rnoise, $
-                                   cam=camname, sigthresh=3.0)
+                                   cam=camname, sigthresh=3.0, mjd=mjd)
             xwid = (size(image))[1]
             ywid = (size(image))[2]
             rdnoise = rnoise[*] * 1.015 * gain ; account for sigma-clipping
@@ -558,7 +558,7 @@ if (mjd GE 55052) then begin
             pixbiasname = findopfile('boss_pixbias-*-'+camname+'.fits*', mjd, pp, $
                                      silent=silent)
             image = bolton_biassub(rawdata, pp+pixbiasname, rnoise=rnoise, $
-                                   cam=camname, sigthresh=3.0)
+                                   cam=camname, sigthresh=3.0, mjd=mjd)
             xwid = (size(image))[1]
             ywid = (size(image))[2]
             rdnoise = rnoise[*] * 1.015 * gain ; account for sigma-clipping

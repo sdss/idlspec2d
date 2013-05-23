@@ -1,3 +1,7 @@
+ASB 2013-05-23:
+BOLTON_BIASSUB, SDSSPROC: New code to deal with r2 power-supply bias
+    instability over MJD range [56352, 56371] (Ticket #1759).
+
 SJB 2013-05-20:
 PLATELIST: exclude LITTLE_COVERAGE, UNPLUGGED, and BAD_TARGET fibers from
     statistics for platelist.  Ticket 1727.

@@ -20,6 +20,8 @@
 ;   notrim: set this keyword to skip trimming of overscan regions.
 ;   cam: camera (one of 'b1', 'b2', 'r1', or 'r2').
 ;        (Will attempt to determine from biasname if not supplied)
+;   mjd: mjd for case selection logic.  Will take from BIAS FILE if
+;        not supplied!
 ;
 ; OUTPUTS:
 ;   img: bias-subtracted and (normally) overscan-trimmed image
@@ -43,11 +45,12 @@
 ; WRITTEN:
 ;  original version: A. Bolton, U. of Utah, 2011 aug.
 ;  b2 kluge: A. Bolton, U. of Utah, 2012 aug.
+;  r2 kluge, minor indexing bugfix: A. Bolton, U. of Utah, 2013 may.
 ;
 ;-
 
 function bolton_biassub, rawdata, biasname, sigthresh=sigthresh, rnoise=rnoise, $
- cam=cam, notrim=notrim
+ cam=cam, notrim=notrim, mjd=mjd
 
 if (n_elements(sigthresh) eq 0) then sigthresh = 4.
 
@@ -83,7 +86,7 @@ endif
 
 data_img = rawdata
 bias_img = mrdfits(biasname, 0, hdr)
-mjd = sxpar(hdr, 'mjd')
+if (not keyword_set(mjd)) then mjd = sxpar(hdr, 'mjd')
 rnoise = fltarr(2, 2)
 nxfull = (size(data_img))[1]
 nyfull = (size(data_img))[2]
@@ -105,10 +108,10 @@ for xflag = 0, 1 do begin
       xhi = (xflag + 1) * xhw - 1
       yhi = (yflag + 1) * yhw - 1
 ; Indices to pick out the bias region:
-      bxlo = xflag ? nxfull - bx1 - 2 : bx0
-      bxhi = xflag ? nxfull - bx0 - 2 : bx1
-      bylo = yflag ? nyfull - by1 - 2 : by0
-      byhi = yflag ? nyfull - by0 - 2 : by1
+      bxlo = xflag ? nxfull - bx1 - 1 : bx0
+      bxhi = xflag ? nxfull - bx0 - 1 : bx1
+      bylo = yflag ? nyfull - by1 - 1 : by0
+      byhi = yflag ? nyfull - by0 - 1 : by1
 ; Get data and bias subimages, but only where they are non-zero
 ; (so as to handle sub-frame readout gracefully)
       data_sub = data_img[bxlo:bxhi,bylo:byhi]
@@ -148,6 +151,29 @@ for xflag = 0, 1 do begin
          rnoise[xflag,yflag] = sqrt(mean(rowscan_varvec[0:junkrow-150]))
          ; Compute the quadrant bias:
          quadbias = replicate(1., xhw) # rowscan_mean
+      endif
+; Do the alternative row-by-row estimation kluge for r2 power-supply afflicted frames:
+      if ((mjd ge 56352) and (mjd le 56371) and (cam eq 'r2') and (rnoise[xflag,yflag] ge 3.0)) then begin
+;      if keyword_set(rowbias) then begin
+         splog, 'Doing row-by-row bias for r2 CrazyPowerSupply'
+; Pre-subtract the overall bias pattern via the quadbias from above:
+         data_img[xlo:xhi,ylo:yhi] -= quadbias
+; Compute the row-wise bias vector:
+         rowscan_sub = data_img[bxlo:bxhi,ylo:yhi]
+         rowscan_nx = (size(rowscan_sub))[1]
+         rowscan_mean = djs_avsigclip(rowscan_sub, 1, sigrej=sigthresh, outmask=omask)
+         rowscan_model = replicate(1., rowscan_nx) # rowscan_mean
+         rowscan_varvec = total((rowscan_sub - rowscan_model)^2 * (omask EQ 0), 1) / (total(omask EQ 0,1) > 1.)
+; Compute read-noise estimate:
+         rnoise[xflag,yflag] = sqrt(median(rowscan_varvec)) ; use median for CR outlier robustness here
+; Generate the column-dependent interpolation weight image:
+         row_weight = (findgen(xhw) / float(xhw-1)) # replicate(1., yhw)
+         if xflag then row_weight = 1. - row_weight
+; Identify the adjacent row that we need to look at for the interpolation:
+         rowscan_shift = yflag ? shift(rowscan_mean, -1) : shift(rowscan_mean, 1)
+; Compute the quadrant bias, with interpolation:
+         quadbias = row_weight * (replicate(1., xhw) # rowscan_mean) + $
+                    (1. - row_weight) * (replicate(1., xhw) # rowscan_shift)
       endif
 ; Do the bias subtraction:
       data_img[xlo:xhi,ylo:yhi] -= quadbias
