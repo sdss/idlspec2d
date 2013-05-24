@@ -1,10 +1,11 @@
-ASB 2013-05-23:
+
 BOLTON_BIASSUB, SDSSPROC: New code to deal with r2 power-supply bias
     instability over MJD range [56352, 56371] (Ticket #1759).
-
-SJB 2013-05-20:
 PLATELIST: exclude LITTLE_COVERAGE, UNPLUGGED, and BAD_TARGET fibers from
-    statistics for platelist.  Ticket 1727.
+    statistics for platelist.  Ticket #1727.
+SPREDUCE1D: Add ability to override default redshift-fitting range for
+    galaxy templates by using a file $SPECLOG_DIR/opfiles/spPlateZrange.par
+    (ticket #1084).
 
 templates/spEigenGal-56436.fits: Copy of galaxy templates pEigenGal-55740.fits
     with an extrapolation further to the red to logwave=3.0730, such that
@@ -14,16 +15,12 @@ templates/spEigenGal-56436.fits: Copy of galaxy templates pEigenGal-55740.fits
 v5_6_4 (2013-01-22) SJB
 New tag for SOS for high read noise warning.
 
-SJB 2013-04-27:
-SDSSPROC: Add warning for high read noise in addition to low read noise.
-
-RDNOISE_HISTORY: Skip hartmanns (DJS)
-
-SOS_LOGS_CONCAT, SOS_LOGS_PLOTSKY (DJS)
-New procs for looking at summary SOS log statistics
-
 FINDSPEC: Fix to work with new behaviour of PLATELIST looking in RUN2D
     subdir names for the platelist.fits file
+RDNOISE_HISTORY: Skip hartmanns
+SDSSPROC: Add warning for high read noise in addition to low read noise.
+SOS_LOGS_CONCAT, SOS_LOGS_PLOTSKY: New procs for looking at summary
+    SOS log statistics
 
 -------------------------------------------------------------------------------
 v5_6_3 (2013-01-22) MDO
@@ -112,33 +109,19 @@ for CALIB_STATUS bit to flag bad fields.  (Ticket #1583).
 MDO 2012-10-09:
 SDSSPROC: add case to check if saturated pixel occurs within 3 pixels of top and bottom of image.  (Ticket $1424)
 
-SJB 2012-10-09:
-opfiles/washers.par: remove duplicate entry 3537-55116
+opfiles/washers.par: Remove duplicate entry 3537-55116
 
 -------------------------------------------------------------------------------
 v5_5_11 (2012-10-04) -- dry run for DR10
 
-ASB 2012-10-04:
-PLATEMERGE: Added BOSSPRIMARY tag to replicate SPECPRIMARY but to be
-    immune from downstream modification; changed SPECOBJ_ID to
-    BOSS_SPECOBJ_ID (Ticket #1634).
-
-SJB 2012-10-04:
+BATCHPBS: Added /skip1d option
+BBSPEC_EXTRACT: bbspec ymodel moved to HDU 6 in extracted spectra.
+BOSSLOG: New proc.
 COMBINE1FIBER: only set NODATA in AND_MASK if there really is no data
     on any input spectrum; resolves ticket 1301.
-
-SJB 2012-10-03:
-BATCHPBS: Added /skip1d option
-Added bin/copy_spPlan.py
-
-SJB 2012-10-02:
-PLATEMERGE: removed Z_PERSON, CLASS_PERSON, Z_CONF_PERSON,
-    COMMENTS_PERSON from spAll so that quasar catalogs can proceed on
-    timescale indepdenent of pipeline.  DRxQ will be authoritative
-    source of FPG scans rather than also propagating to spAll.
-SPECTRO_SUMMARY: removed N_QSO_SCANNED, N_LYA_INCOMP, and N_LYA_IMPURE
-    statistics.
- 
+COMBINEBPM: updated hand edited bad columns  (ticket 1424, MDO)
+FLUX_DISTORTION: mask CALIB_STATUS->ASTROMBAD fluxes
+  (ticket #1583, ASB)
 PLATELIST: Change defult input/output location to be in RUN2D subdir
     to make it easier to work with multiple versions.  Can be overriden
     with TOPDIR and OUTDIR options, and multiple RUN2D versions can
@@ -146,23 +129,28 @@ PLATELIST: Change defult input/output location to be in RUN2D subdir
     RUN2D=[x, y, z], in which case the platelist is written to
     $BOSS_SPECTRO_REDUX (not in the RUN2D subdir).
     Resolves ticket 1659.
-
-BBSPEC_EXTRACT: bbspec ymodel moved to HDU 6 in extracted spectra.
-BOSSLOG: New proc.
-COMBINEBPM: updated hand edited bad columns  (ticket 1424, MDO)
-FLUX_DISTORTION: mask CALIB_STATUS->ASTROMBAD fluxes
-  (ticket #1583, ASB)
+PLATEMERGE: removed Z_PERSON, CLASS_PERSON, Z_CONF_PERSON,
+    COMMENTS_PERSON from spAll so that quasar catalogs can proceed on
+    timescale indepdenent of pipeline.  DRxQ will be authoritative
+    source of FPG scans rather than also propagating to spAll.
+PLATEMERGE: Added BOSSPRIMARY tag to replicate SPECPRIMARY but to be
+    immune from downstream modification; changed SPECOBJ_ID to
+    BOSS_SPECOBJ_ID (Ticket #1634).
 READPLUGMAP: append CALIB_STATUS when /calibobj is passed
   (ticket #1583, ASB)
 SDSS_PLATE_SORT: Adding ERROR to error messages for easier grepping
 SDSSPROC: added masking for hotpixel trails (MDO)
 SN_MEDIAN: Added "sn_all" keyword for median S/N across all bands
   (ticket #1634, ASB)
+SPECTRO_SUMMARY: removed N_QSO_SCANNED, N_LYA_INCOMP, and N_LYA_IMPURE
+    statistics.
 SPREDUCE1D: push CALIB_STATUS->ASTROMBAD to ZWARNING->BAD_TARGET
   (ticket #1583, ASB)
 SPREDUCE1D: Added SN_MEDIAN_ALL (median S/N across all bands) to
   output structure (ticket #1634, ASB).
 SPREDUCE1D: Added ZNUM_NOQSO (Brownstein)
+
+bin/copy_spPlan.py - New (SJB)
 
 -------------------------------------------------------------------------------
 v5_5_10 (2012-08-21)
