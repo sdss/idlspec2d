@@ -469,27 +469,27 @@ for icam=0,ncam-1 do begin     ;do focus for each camera
    if cam_flag eq 0 then begin
 ;offsets for regions picked
 
-       if docams[icam] eq 'b1' then begin  ;using collimate and not collimate,/debug with data from 55802
+       if docams[icam] eq 'b1' then begin  ;using collimate and not collimate,/debug with data from 56434; focus ring change
          m=1.00
-         b=0.066
+         b=0.028
          yoffsetb1=yoffset*m + b
       endif
 
       if docams[icam] eq 'b2' then begin
          m=1.00
-         b=-0.00
+         b=-0.05
          yoffsetb2=yoffset*m + b
       endif
 
       if docams[icam] eq 'r1' then begin
          m=1.00
-         b=-0.31
+         b=-0.25
          yoffsetr1=yoffset*m + b
       endif
 
       if docams[icam] eq 'r2' then begin
          m=1.00
-         b=0.024
+         b=-0.013
          yoffsetr2=yoffset*m + b
      endif
 
