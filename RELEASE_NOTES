@@ -1,3 +1,5 @@
+MDO 2013-05-24:
+combsmallcollimate.pro:  Change offsets because focus ring changes on 56434 
 
 BOLTON_BIASSUB, SDSSPROC: New code to deal with r2 power-supply bias
     instability over MJD range [56352, 56371] (Ticket #1759).
