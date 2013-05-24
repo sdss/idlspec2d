@@ -1,3 +1,11 @@
+-------------------------------------------------------------------------------
+v5_6_5 (2013-06-24) ASB
+Candidate tag for DR11 galaxy LSS analysis
+Built against:
+  elodie/v1_3
+  specflat/v1_20
+  idlutils/v5_5_10
+
 MDO 2013-05-24:
 combsmallcollimate.pro:  Change offsets because focus ring changes on 56434 
 
