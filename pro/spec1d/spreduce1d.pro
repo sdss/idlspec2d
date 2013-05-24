@@ -161,6 +161,7 @@ pro spreduce1d, platefile, fiberid=fiberid, run1d=run1d1, $
    objflux = mrdfits(platefile,0,hdr)
    if (NOT keyword_set(hdr)) then $
     message, 'Plate file not valid: ' + platefile
+   plateid = long(sxpar(hdr, 'PLATEID'))
    npixobj = sxpar(hdr, 'NAXIS1')
    nobj = sxpar(hdr, 'NAXIS2')
    objivar = mrdfits(platefile,1)
@@ -177,6 +178,21 @@ pro spreduce1d, platefile, fiberid=fiberid, run1d=run1d1, $
    ; For plate files before Spectro-2D v5, there are no sky vectors,
    ; and this last HDU is something else.
    if (n_elements(skyflux) NE n_elements(objflux)) then skyflux = 0
+
+   ;----------
+   ; For special plates, there may be a redshift-fitting range other
+   ; than the defaults if specified in the spPlateZrange file
+   zrange_gal = [-0.01, 1.0] ; Templates extend to 1200 Ang for 3600 Ang
+   zrange_qso = [0.0033, 7.00] ; Templates extend to 450 Ang for 3600 Ang
+   zrange_star = [-0.004, 0.004]
+   zrange_cvstar = [-0.0033, 0.0033]
+   zrfile = findfile(filepath('spPlateZrange.par', $
+    root_dir=getenv('SPECLOG_DIR'), subdir='opfiles'), count=ct)
+   if (ct GT 0) then zrparam = yanny_readone(zrfile[0])
+   if (keyword_set(zrparam)) then begin
+      i = where(zrparam.plate EQ plateid, ct)
+      if (ct GT 0) then zrange_gal = zrparam[i[0]].zrange_gal
+   endif
 
    ;----------
    ; Compute the S/N in SDSS filters (before doing /chop_data)
@@ -256,8 +272,6 @@ pro spreduce1d, platefile, fiberid=fiberid, run1d=run1d1, $
    ; Find GALAXY redshifts
 
    npoly = 3
-   zmin = -0.01 ; -3000 km/sec
-   zmax = 1.0 ; Max z for a rest-frame template to 1850 Ang to cover 3700 Ang
    pspace = 2
    nfind = 5
    plottitle = 'Galaxy Redshift'
@@ -265,11 +279,11 @@ pro spreduce1d, platefile, fiberid=fiberid, run1d=run1d1, $
    eigenfile = 'spEigenGal-?????.fits'
 
    splog, 'Compute GALAXY redshifts:', $
-    ' ZMIN=', zmin, ' ZMAX=', zmax, ' PSPACE=', pspace
+    ' ZMIN=', zrange_gal[0], ' ZMAX=', zrange_gal[1], ' PSPACE=', pspace
    t0 = systime(1)
    res_gal = zfind(objflux, objivar, hdr=hdr, $
-    eigenfile=eigenfile, npoly=npoly, zmin=zmin, zmax=zmax, pspace=pspace, $
-    nfind=nfind, width=5*pspace,  $
+    eigenfile=eigenfile, npoly=npoly, zmin=zrange_gal[0], zmax=zrange_gal[1], $
+    pspace=pspace, nfind=nfind, width=5*pspace,  $
     plottitle=plottitle, doplot=doplot, debug=debug, /verbose)
    
    splog, 'CPU time to compute GALAXY redshifts = ', systime(1)-t0
@@ -303,9 +317,6 @@ pro spreduce1d, platefile, fiberid=fiberid, run1d=run1d1, $
    ; Find QSO redshifts
 
    npoly = 3
-   zmin = 0.0033 ; +1000 km/sec
-   zmax = 7.00 ; Max range to use for now, with the template starting at
-               ; 450 Ang (rest), which corresponds to 3600 Ang at this z.
    pspace = 4
    nfind = 5
    plottitle = 'QSO Redshift'
@@ -313,11 +324,11 @@ pro spreduce1d, platefile, fiberid=fiberid, run1d=run1d1, $
    eigenfile = 'spEigenQSO-?????.fits'
 
    splog, 'Compute QSO redshifts:', $
-    ' ZMIN=', zmin, ' ZMAX=', zmax, ' PSPACE=', pspace
+    ' ZMIN=', zrange_qso[0], ' ZMAX=', zrange_qso[1], ' PSPACE=', pspace
    t0 = systime(1)
    res_qso = zfind(objflux, objivar, hdr=hdr, $
-    eigenfile=eigenfile, npoly=npoly, zmin=zmin, zmax=zmax, pspace=pspace, $
-    nfind=nfind, width=7*pspace, $
+    eigenfile=eigenfile, npoly=npoly, zmin=zrange_qso[0], zmax=zrange_qso[1], $
+    pspace=pspace, nfind=nfind, width=7*pspace, $
     plottitle=plottitle, doplot=doplot, debug=debug, /verbose)
    splog, 'CPU time to compute QSO redshifts = ', systime(1)-t0
 
@@ -337,8 +348,6 @@ pro spreduce1d, platefile, fiberid=fiberid, run1d=run1d1, $
    ; Find STAR redshifts
 
    npoly = 4
-   zmin = -0.004 ; -1200 km/sec
-   zmax = 0.004 ; +1200 km/sec
    pspace = 1
    nfind = 1
 
@@ -358,11 +367,12 @@ pro spreduce1d, platefile, fiberid=fiberid, run1d=run1d1, $
       plottitle = subclass + '-Star Redshift'
 
       splog, 'Compute STAR (' + subclass + ') redshifts:', $
-       ' ZMIN=', zmin, ' ZMAX=', zmax, ' PSPACE=', pspace
+       ' ZMIN=', zrange_star[0], ' ZMAX=', zrange_star[1], ' PSPACE=', pspace
       t0 = systime(1)
       res_star = zfind(objflux, objivar, hdr=hdr, $
        eigenfile=eigenfile, columns=istar, npoly=npoly, $
-       zmin=zmin, zmax=zmax, pspace=1, nfind=nfind, width=5*pspace, $
+       zmin=zrange_star[0], zmax=zrange_star[1], $
+       pspace=1, nfind=nfind, width=5*pspace, $
        plottitle=plottitle, doplot=doplot, debug=debug)
       splog, 'CPU time to compute STAR redshifts = ', systime(1)-t0
 
@@ -376,8 +386,6 @@ pro spreduce1d, platefile, fiberid=fiberid, run1d=run1d1, $
    ; Find CV STAR redshifts
 
    npoly = 3
-   zmin = -0.0033 ; -1000 km/sec
-   zmax = 0.0033  ; +1000 km/sec
    pspace = 1
    nfind = 1
 
@@ -387,11 +395,12 @@ pro spreduce1d, platefile, fiberid=fiberid, run1d=run1d1, $
    plottitle = subclass + '-Star Redshift'
 
    splog, 'Compute STAR (' + subclass + ') redshifts:', $
-          ' ZMIN=', zmin, ' ZMAX=', zmax, ' PSPACE=', pspace
+          ' ZMIN=', zrange_cvstar[0], ' ZMAX=', zrange_cvstar[1], ' PSPACE=', pspace
    t0 = systime(1)
    res_cvstar = zfind(objflux, objivar, hdr=hdr, $
     eigenfile=eigenfile, npoly=npoly, $
-    zmin=zmin, zmax=zmax, pspace=1, nfind=nfind, width=5*pspace, $
+    zmin=zrange_cvstar[0], zmax=zrange_cvstar[1], $
+    pspace=1, nfind=nfind, width=5*pspace, $
     plottitle=plottitle, doplot=doplot, debug=debug)
    splog, 'CPU time to compute STAR redshifts = ', systime(1)-t0
 
@@ -514,7 +523,7 @@ flambda2fnu = 0 ; Free memory
    ; Add other fields to the output structure
 
    splog, 'Adding other fields to output structure'
-   res1 = { plate:    long(sxpar(hdr, 'PLATEID')), $
+   res1 = { plate:    long(plateid), $
             tile:     long(sxpar(hdr, 'TILEID')), $
             mjd:      long(sxpar(hdr, 'MJD')), $
             fiberid:  0L        , $
