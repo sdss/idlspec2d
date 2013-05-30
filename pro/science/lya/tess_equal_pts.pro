@@ -120,7 +120,7 @@ pro tess_equal_pts, infile, outfile, nchunk=nchunk1, ntry=ntry1, niter=niter1, $
          thisfile = fileandpath(outfile, path=thispath)
          ipos = strpos(thisfile, '.fits', /reverse_search)
          if (ipos EQ -1) then ipos = strlen(thisfile)
-         plotfile = djs_filepath(strmid(thisfile,0,ipos)+'-ps', $
+         plotfile = djs_filepath(strmid(thisfile,0,ipos)+'.ps', $
           root_dir=thispath)
       endelse
    endif
