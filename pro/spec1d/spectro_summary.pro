@@ -303,8 +303,8 @@ ostruc.n_other = total(is_other)
 ostruc.n_other_uniq = total(is_other * (spall.specprimary gt 0))
 
 ; Unknown
-is_unknown = ((is_cmass OR is_loz) AND (spall.zwarning_noqso gt 0)) OR $
-             (spall.zwarning gt 0) AND with_data
+is_unknown = (((is_cmass OR is_loz) AND (spall.zwarning_noqso gt 0)) OR $
+             (spall.zwarning gt 0)) AND with_data
 is_unknown *= is_unknown and (is_sky eq 0)
 ostruc.n_unknown = total(is_unknown)
 ostruc.n_unknown_uniq = total(is_unknown * is_uniq)
