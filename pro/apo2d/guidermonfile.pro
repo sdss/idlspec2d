@@ -66,39 +66,47 @@ pro guidermonfile, mjd=mjd, mjstart=mjstart, mjend=mjend, clobber=clobber
       endif
    endif
 
-   infile = filepath('proc-gimg-????.fits', root_dir=guide_dir, $
+   infile = filepath('proc-gimg-????.fits*', root_dir=guide_dir, $
     subdir=mjdlist)
    infile = findfile(infile, count=nfile)
 
    for i=0L, nfile-1L do begin
       hdr = headfits(infile[i])
-      gdat1 = mrdfits(infile[i], 6, /silent)
-      nfib1 = n_elements(gdat1)
-      if (keyword_set(gdat1)) then begin
-         if (keyword_set(outdat) EQ 0) then begin
-            outdat1 = gdat1[0]
+      type = strtrim(sxpar(hdr, 'IMAGETYP'))
+      if (type NE 'dark' AND type NE 'flat') then begin
+         gdat1 = mrdfits(infile[i], 6, /silent)
+         nfib1 = n_elements(gdat1)
+         if (keyword_set(gdat1)) then begin
+            if (keyword_set(outdat) EQ 0) then begin
+               outdat1 = gdat1[0]
+               if (tag_exist(gdat1, 'timestamp') EQ 0) then $
+                  outdat1 = struct_addtags({timestamp: 0LL}, outdat1)
+               if (tag_exist(gdat1, 'fiberid') EQ 0) then $
+                  outdat1 = struct_addtags({fiberid: 0L}, outdat1)
+               struct_assign, {junk: 0}, outdat1
+               outdat = replicate(outdat1, nfile*17)
+            endif
+            index_to=17*i+lindgen(nfib1)
+            copy_struct_inx, gdat1, outdat, index_to=index_to
             if (tag_exist(gdat1, 'timestamp') EQ 0) then $
-             outdat1 = struct_addtags({timestamp: 0LL}, outdat1)
+               outdat[index_to].timestamp = $
+               long64(date_conv(sxpar(hdr,'DATE-OBS'), 'MODIFIED') * 24.D * 3600.D)
             if (tag_exist(gdat1, 'fiberid') EQ 0) then $
-             outdat1 = struct_addtags({fiberid: 0L}, outdat1)
-            struct_assign, {junk: 0}, outdat1
-            outdat = replicate(outdat1, nfile*17)
+               outdat[index_to].fiberid = 1 + indgen(nfib1)
          endif
-         index_to=17*i+lindgen(nfib1)
-         copy_struct_inx, gdat1, outdat, index_to=index_to
-         if (tag_exist(gdat1, 'timestamp') EQ 0) then $
-          outdat[index_to].timestamp = $
-           long64(date_conv(sxpar(hdr,'DATE-OBS'), 'MODIFIED') * 24.D * 3600.D)
-         if (tag_exist(gdat1, 'fiberid') EQ 0) then $
-          outdat[index_to].fiberid = 1 + indgen(nfib1)
       endif
    endfor
 
    ; Trim to non-zero entries
-   if (NOT keyword_set(outdat)) then return
-   indx = where(outdat.timestamp GT 0, ct)
-   if (ct EQ 0) then return
-   outdat = outdat[indx]
+   if (keyword_set(outdat)) then begin
+      indx = where(outdat.timestamp GT 0, ct)
+      if ct GT 0 then outdat = outdat[indx]
+      if ct EQ 0 then return
+   endif
+
+   if (NOT keyword_set(outdat)) then begin
+      guidermonfile_dummy, speclog_dir, mjdlist, outdat=outdat
+   endif
 
    outhdr = 'mjd '+mjdlist
 
@@ -115,5 +123,23 @@ pro guidermonfile, mjd=mjd, mjstart=mjstart, mjend=mjend, clobber=clobber
     /align
 
    return
+end
+;------------------------------------------------------------------------------
+
+pro guidermonfile_dummy, speclog_dir, mjdlist, outdat=outdat
+  ; Look in a previous MJD and get the guidermon file as a pattern
+  mjd = mjdlist
+  filefound = 0
+  while filefound eq 0 do begin
+     mjd = strtrim(long(mjd)-1, 2)
+     infile = filepath('guiderMon-?????.par', root_dir=speclog_dir, subdir=mjd)
+     infile = findfile(infile, count=nfile)
+     if nfile ne 0 then filefound = 1
+  endwhile
+  outdat = yanny_readone(infile, 'GUIDEOBJ')
+  outdat = outdat[0]
+  struct_assign, {junk: 0}, outdat
+
+  return
 end
 ;------------------------------------------------------------------------------
