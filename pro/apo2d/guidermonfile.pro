@@ -35,6 +35,25 @@
 ;   13-Jan-2010  Written by D. Schlegel, LBL
 ;-
 ;------------------------------------------------------------------------------
+pro guidermonfile_dummy, speclog_dir, mjdlist, outdat=outdat
+  ; Look in a previous MJD and get the guidermon file as a pattern                           
+  mjd = mjdlist
+  filefound = 0
+  while filefound eq 0 do begin
+     mjd = strtrim(long(mjd)-1, 2)
+     infile = filepath('guiderMon-?????.par', root_dir=speclog_dir, subdir=mjd)
+     infile = findfile(infile, count=nfile)
+     if nfile ne 0 then filefound = 1
+  endwhile
+  outdat = yanny_readone(infile, 'GUIDEOBJ')
+  outdat = outdat[0]
+  struct_assign, {junk: 0}, outdat
+
+  return
+end
+;------------------------------------------------------------------------------ 
+
+
 pro guidermonfile, mjd=mjd, mjstart=mjstart, mjend=mjend, clobber=clobber
 
    speclog_dir = getenv('SPECLOG_DIR')
@@ -104,7 +123,7 @@ pro guidermonfile, mjd=mjd, mjstart=mjstart, mjend=mjend, clobber=clobber
       if ct EQ 0 then return
    endif
 
-   if (NOT keyword_set(outdat)) then begin
+   if (~keyword_set(outdat)) then begin
       guidermonfile_dummy, speclog_dir, mjdlist, outdat=outdat
    endif
 
@@ -123,23 +142,5 @@ pro guidermonfile, mjd=mjd, mjstart=mjstart, mjend=mjend, clobber=clobber
     /align
 
    return
-end
-;------------------------------------------------------------------------------
-
-pro guidermonfile_dummy, speclog_dir, mjdlist, outdat=outdat
-  ; Look in a previous MJD and get the guidermon file as a pattern
-  mjd = mjdlist
-  filefound = 0
-  while filefound eq 0 do begin
-     mjd = strtrim(long(mjd)-1, 2)
-     infile = filepath('guiderMon-?????.par', root_dir=speclog_dir, subdir=mjd)
-     infile = findfile(infile, count=nfile)
-     if nfile ne 0 then filefound = 1
-  endwhile
-  outdat = yanny_readone(infile, 'GUIDEOBJ')
-  outdat = outdat[0]
-  struct_assign, {junk: 0}, outdat
-
-  return
 end
 ;------------------------------------------------------------------------------
