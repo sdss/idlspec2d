@@ -23,7 +23,7 @@ export SSH_AUTH_SOCK=/home/observer/sos/control/agent.socket
 
 # cronjobs need the idlspec2d product
 source /home/sdss3/products/eups/bin/setups.sh
-setup idlspec2d trunk
+setup idlspec2d
 
 # for password-less ssh
 export SVN_SSH="ssh -i /home/observer/.ssh/id_dsa-sos"
