@@ -20,11 +20,20 @@
 ;
 ; REVISION HISTORY:
 ;   Dec. 2012 Written by Yiping Shu, Utah
+;   July 2013 Modified by Joel Brownstein, replacing
+;       nobj=(size(vdisp_lnl))[2]
+;       with
+;       nobj = (size(vdisp_lnl))[0] eq 2) ? (size(vdisp_lnl))[2] : 1
 ;------------------------------------------------------------------------------
 
 pro vdispfit_marg, vdisp_lnl, vdisp_marg=vdisp_marg, vdisp_err_marg=vdisp_err_marg
 
-   nobj=(size(vdisp_lnl))[2]
+   ;nobj=(size(vdisp_lnl))[2]
+   
+   ; Modified on July 13, 2013 
+   ; to handle the case when VDISP_LNL = Array[35, nobj] = Array[35] when nobj=1
+   nobj = (size(vdisp_lnl))[0] eq 2) ? (size(vdisp_lnl))[2] : 1
+
    vdisp_marg=fltarr(nobj)
    vdisp_err_marg=fltarr(nobj)
 
