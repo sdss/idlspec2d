@@ -327,7 +327,7 @@ function readplugmap, plugfile, spectrographid, plugdir=plugdir, $
          if (tag_exist(tsobj,'FIBER2FLUX')) then begin
             fiberflux = transpose(tsobj.fiber2flux)
             fiberflux_ivar = transpose(tsobj.fiber2flux_ivar)
-            pratio = [2.085, 2.085, 2.116, 2.134, 3.135]
+            pratio = [2.085, 2.085, 2.116, 2.134, 2.135]
          endif else begin
             fiberflux = transpose(tsobj.fiberflux)
             fiberflux_ivar = transpose(tsobj.fiberflux_ivar)
