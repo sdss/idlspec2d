@@ -1,3 +1,6 @@
+CPL 2013-08-02:
+readplugmap: Fix typo in #906 PSF/fiber2flux corrections
+
 SJB 2013-06-07:
 SPECTRO_SUMMARY: Merged with version in boss/papers/OneDee.  Added entries
     from DR9 publications which weren't calculated here.
