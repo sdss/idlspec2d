@@ -93,14 +93,16 @@ pro plughistory, mjdrange=mjdrange
       plugmap = *pp[0]
       yanny_free, pp
       indx = where(strtrim(plugmap.holetype,2) EQ 'OBJECT', ct)
-      fiberid = plugmap[indx].fiberid
-      plugarr[ifile,fiberid] = plugarr[ifile,fiberid] + 1
+      if (ct GT 0) then begin
+         fiberid = plugmap[indx].fiberid
+         plugarr[ifile,fiberid] = plugarr[ifile,fiberid] + 1
+      endif
    endfor
 
    !p.multi = [0,1,2]
    xrange = minmax(mjdvec[where(mjdvec NE 0)]) + [-30,30]
 
-   for cartid=1, 17 do begin
+   for cartid=1, 18 do begin
       if (cartid LE 9) then nfiber = 640 $
        else nfiber = 1000
       yrange = [nfiber-20,nfiber+5]
