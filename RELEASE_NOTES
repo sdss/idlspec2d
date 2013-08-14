@@ -1,9 +1,9 @@
-CPL 2013-08-02:
-readplugmap: Fix typo in #906 PSF/fiber2flux corrections
 
-SJB 2013-06-07:
+PLUGHISTORY: Report for cart #18, and don't crash when trying to read
+    data for MANGA data (ie, plate 6655 on cart 1)
+READPLUGMAP: Fix typo in #906 PSF/fiber2flux corrections (CPL)
 SPECTRO_SUMMARY: Merged with version in boss/papers/OneDee.  Added entries
-    from DR9 publications which weren't calculated here.
+    from DR9 publications which weren't calculated here. (SJB)
 
 -------------------------------------------------------------------------------
 v5_6_5 (2013-06-24) ASB
@@ -13,11 +13,9 @@ Built against:
   specflat/v1_20
   idlutils/v5_5_10
 
-MDO 2013-05-24:
-combsmallcollimate.pro:  Change offsets because focus ring changes on 56434 
-
 BOLTON_BIASSUB, SDSSPROC: New code to deal with r2 power-supply bias
     instability over MJD range [56352, 56371] (Ticket #1759).
+COMBSMALLCOLLIMATE: Change offsets because focus ring changes on 56434 (MDO)
 PLATELIST: exclude LITTLE_COVERAGE, UNPLUGGED, and BAD_TARGET fibers from
     statistics for platelist.  Ticket #1727.
 SPREDUCE1D: Add ability to override default redshift-fitting range for
