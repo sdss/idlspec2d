@@ -128,7 +128,7 @@ There should be zero instances of sos_runnerd displayed. The first line will be
 the last line will be "sos_apocontrol finished running!".
 There should be nothing between those two lines.<p>
 
-<h4>Start SOS Processes</h4>
+<h4 id="launch">Start SOS Processes</h4>
 
 <dl><dd><code>
 $ sos_apocontrol start
@@ -171,7 +171,12 @@ Only type ^C to abort the script.
 svn log /home/sdss3/products/NULL/speclog/trunk >/dev/null
 Enter passphrase for key '/home/observer/.ssh/id_dsa-sos': 
 </pre>
-	
+
+<p>
+If you get that password request, type control-c as it instructs, and
+see the troubleshooting section below.
+</p>
+
 <p>When the command finishes, confirm the sos processes are running.</p>
 <dl><dd><code>
 $ sos_apocontrol status
@@ -932,19 +937,36 @@ to declare a plate done.
 <H2><A NAME="trouble">Trouble-shooting Son-of-Spectro</A></H2>
 
 <P>
-The Son-of-Spectro (SOS) reduction robot has proven to be quite robust.
+The historic Son-of-Spectro (SOS) reduction robot has proven to be quite robust.
 However, if it appears to not be working one could check the following:
+</P>
 <OL>
+<LI><B>"sos_apocontrol start" asks for a password when trying to connect to LBL</B><BR/>
+  <ul>
+    <li>Check if LBL may have blocked APO: Can you see
+      <a href="http://sdss3.org">sdss3.org</a> and
+      <a href="http://data.sdss3.org">data.sdss3.org</a>?</li>
+      If not, call experts for help.
+    </li>
+    <li>Kill old SOS ssh-agents and try again:
+      Run "ps aux | grep ssh-agent" and look for entries which include
+      "ssh-agent -a /home/observer/sos/control/agent.socket".  Then kill
+      that agent with "kill PID" where "PID" is the number in the second
+      column.  Then try "sos_apocontrol start" again.  If that doesn't work,
+      call experts for help.
+    </li>
+  </ul>
+  
 <LI><B>Has a "loadCartridge" command been issued?</B><BR>
     If this has not been done from SOP, then there is no PLATE entry
     in the images.  This prevents SOS from reducing anything but bias
     and dark frames.
-<LI><B>Is the cron job running?</B><BR>
-    Log into "observer@sos.apo.nmsu.edu", and issue a "sos_status"
+<LI><B>Is the daemon running?</B><BR>
+    Log into "observer@sos3.apo.nmsu.edu", and issue a "sos_apocontrol status"
     command.  This should report that SOS is running.
-    If not, then <A HREF="#launch">restart the cron job</A>.
+    If not, then <A HREF="#launch">restart the daemons</A>.
 <LI><B>Is the data being copied over?</B><BR>
-    The raw data files should be copied from "sdsshost" to "sos.apo"
+    The raw data files should be copied from "sdsshost" to "sos3.apo"
     in the /data/spectro/$MJD directory.  If it is not, then the disk
     may be full (see <A HREF="#diskfull">SOS disk is full</A> warning message).
     Or, the rsync command may not be working.
@@ -972,35 +994,33 @@ However, if it appears to not be working one could check the following:
     running concurrently.  Note that Son-of-Spectro, the fiber mapper,
     and HoggPT all use IDL licenses.
 <LI><B>Is anything amiss with running the scripts?</B><BR>
-    Perhaps there is a communication problem between sdsshost.apo and sos.apo,
-    or a problem running the code on sos.apo.  There is logging information
-    written once per minute into the file
-    <DL><DD><PRE>
-    /data/spectro/spectrologs/sos.log
-    </PRE></DD></DL>
-    which may indicate such problems.
+    Perhaps there is a communication problem between sdsshost.apo and sos3.apo,
+    or a problem running the code on sos3.apo.  The daemon logs are in
+    /home/observer/sos/sos-logs/ .  Check those for problems.
+<!-- SJB: I don't think these instructions are correct anymore.
 <LI><B>Is the logfile corrupted?</B><BR>
     This is probably the worst thing that could happen.  If the file
     <DL><DD><PRE>
-    /data/spectro/spectrologs/$MJD/logfile-$MJD.fits
+    /data/logs/sos/[timestamp].log
     </PRE></DD></DL>
     gets corrupted, then SOS will repeatedly crash.  One could just
     delete this file, which would basically wipe out all the previous
     reductions for that night from the web page.  Alternatively, one
     could delete all the raw and reduced data for that night from
-    "sos.apo" (but not from sdsshost.apo!).  Best to stop the SOS robot
+    "sos3.apo" (but not from sdsshost.apo!).  Best to stop the SOS robot
     before doing this:
     <DL><DD><PRE>
-    % sos_stop
-    % sos_status   <-- Wait for any running processes to complete.
+    % sos_apocontrol stopWait
+    % sos_apocontrol status   <-- Wait for any running processes to complete.
     % rm -rf /data/spectro/spectrologs/$MJD
     % rm -rf /data/spectro/$MJD
-    % sos_start
+    % sos_apocontrol start
     </PRE></DD></DL>
     That might sound extreme, but SOS will simply start re-copying
     everything from "sdsshost" and re-build the reductions for the night.
     Obviously, this could take a couple of hours if its already late
     into the night.
+-->
 </OL>
 
 <HR>
