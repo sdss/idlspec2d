@@ -1,3 +1,8 @@
+COMBSMALLCOLLIMATE: Updated offsets from data on 56528 for the record (offsets 
+	are now stored in Hartmann.__init__(),specifically the "fudge"
+	 dictionary that is defined at line 100. 
+	https://trac.sdss3.org/browser/repo/ops/actors/sopActor/trunk/python
+	/sopActor/utils/boss_collimate.py   (MDO)
 
 PLUGHISTORY: Report for cart #18, and don't crash when trying to read
     data for MANGA data (ie, plate 6655 on cart 1)
