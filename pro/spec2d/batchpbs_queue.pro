@@ -346,11 +346,11 @@ pro batchpbs_queue, platenums1, topdir=topdir1, run2d=run2d1, run1d=run1d1, $
       pbs_queue, key=key, label='boss pipeline', nodes=pbs_nodes, walltime=pbs_walltime, /create
       for i=0L, nbatch-1L do begin
          pbs_queue, key=key, script=scriptfile[i], /append
-         if keyword_set(nosubmit) then begin splog, 'Appending '+thisfile+' to queue, but not submitting it'
+         if keyword_set(nosubmit) then splog, 'Appending '+thisfile+' to queue, but not submitting it'
       endfor
       pbs_queue, key=key, /commit, submit=keyword_set(nosubmit)
          
-   else begin
+   endif else begin
    
       for i=0L, nbatch-1L do begin
          thisfile = fileandpath(scriptfile[i], path=thispath)
